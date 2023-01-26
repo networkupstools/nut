@@ -833,7 +833,7 @@ upslist_normalizeFile_filter() {
         -e 's,=\"\([^\ '"$TABCHAR"']*\)\"$,=\1,' \
         -e 's,^\(\[[^]'"$TABCHAR"'\ ]*\]\)['"$TABCHAR"'\ ]*\(#.*\)*$,\1,' \
     | grep -E -v '^$' \
-    | grep -E '([\[\=]|^[^ '"$TABCHAR"']*$|^[^ '"$TABCHAR"']*[ '"$TABCHAR"']*\#.*$)'
+    | grep -E '([\[\=]|^[^ '"$TABCHAR"']*$|^[^ '"$TABCHAR"']*[ '"$TABCHAR"']*#.*$)'
 }
 
 upslist_normalizeFile() {

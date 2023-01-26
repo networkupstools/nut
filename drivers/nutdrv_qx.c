@@ -2670,6 +2670,7 @@ void	upsdrv_makevartable(void)
 
 #ifdef QX_USB
 	addvar(VAR_VALUE, "subdriver", "Serial-over-USB subdriver selection");
+
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
 	nut_usb_addvars();
 
@@ -3162,11 +3163,15 @@ static ssize_t	qx_command(const char *cmd, char *buf, size_t buflen)
 #  endif	/* QX_SERIAL (&& QX_USB)*/
 
 		if (udev == NULL) {
+			dstate_setinfo("driver.state", "reconnect.trying");
+
 			ret = usb->open_dev(&udev, &usbdevice, reopen_matcher, NULL);
 
 			if (ret < 1) {
 				return ret;
 			}
+
+			dstate_setinfo("driver.state", "reconnect.updateinfo");
 		}
 
 		ret = (*subdriver_command)(cmd, buf, buflen);
@@ -3228,6 +3233,7 @@ static ssize_t	qx_command(const char *cmd, char *buf, size_t buflen)
 		case LIBUSB_ERROR_NOT_FOUND:	/* No such file or directory */
 		fallthrough_case_reconnect:
 			/* Uh oh, got to reconnect! */
+			dstate_setinfo("driver.state", "reconnect.trying");
 			usb->close_dev(udev);
 			udev = NULL;
 			break;

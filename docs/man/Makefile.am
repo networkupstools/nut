@@ -177,6 +177,9 @@ SRC_DEV_PAGES = \
 	nutscan_scan_avahi.txt \
 	nutscan_scan_ipmi.txt \
 	nutscan_scan_eaton_serial.txt \
+	nutscan_display_sanity_check.txt \
+	nutscan_display_sanity_check_serial.txt \
+	nutscan_display_ups_conf_with_sanity_check.txt \
 	nutscan_display_ups_conf.txt \
 	nutscan_display_parsable.txt \
 	nutscan_cidr_to_ip.txt \
@@ -290,6 +293,9 @@ MAN3_DEV_PAGES = \
 	nutscan_scan_avahi.3 \
 	nutscan_scan_ipmi.3 \
 	nutscan_scan_eaton_serial.3 \
+	nutscan_display_sanity_check.3 \
+	nutscan_display_sanity_check_serial.3 \
+	nutscan_display_ups_conf_with_sanity_check.3 \
 	nutscan_display_ups_conf.3 \
 	nutscan_display_parsable.3 \
 	nutscan_cidr_to_ip.3 \
@@ -352,6 +358,9 @@ HTML_DEV_MANS = \
 	nutscan_scan_avahi.html \
 	nutscan_scan_ipmi.html \
 	nutscan_scan_eaton_serial.html \
+	nutscan_display_sanity_check.html \
+	nutscan_display_sanity_check_serial.html \
+	nutscan_display_ups_conf_with_sanity_check.html \
 	nutscan_display_ups_conf.html \
 	nutscan_display_parsable.html \
 	nutscan_cidr_to_ip.html \
@@ -528,11 +537,13 @@ SRC_USB_LIBUSB_PAGES = \
 	blazer-common.txt	\
 	blazer_usb.txt	\
 	nutdrv_atcl_usb.txt \
+	nut_usb_addvars.txt \
 	richcomm_usb.txt \
 	riello_usb.txt	\
 	tripplite_usb.txt \
 	usbhid-ups.txt
 
+# NOTE: nut_usb_addvars and blazer-common are not standalone man pages
 if WITH_MANS
 MAN_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.8 \
@@ -890,7 +901,7 @@ DOCBUILD_BEGIN = { \
     if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
         rm -rf "./$${A2X_OUTDIR}" || true ; \
         test -d "$@" && rm -rf "$@" || true ; \
-        mkdir -p "./$${A2X_OUTDIR}" || exit ; \
+        $(MKDIR_P) "./$${A2X_OUTDIR}" || exit ; \
         for F in $(LINKMAN_INCLUDE_GENERATED) ; do \
             if [ -s "./$$F" ] ; then ln -f -s "../../$$F" "./$${A2X_OUTDIR}/" ; else \
             if [ -s "$(abs_srcdir)/$$F" ] ; then ln -f -s "$(abs_srcdir)/$$F" "./$${A2X_OUTDIR}/" ; fi ; fi ; \
@@ -1046,4 +1057,4 @@ spellcheck spellcheck-interactive spellcheck-sortdict:
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 clean-local:
-	rm -rf tmp
+	$(AM_V_at)rm -rf tmp

@@ -22,7 +22,7 @@
 # ksh, busybox sh...)
 #
 # Copyright
-#	2022 Jim Klimov <jimklimov+nut@gmail.com>
+#	2022-2023 Jim Klimov <jimklimov+nut@gmail.com>
 #
 # License: GPLv2+
 
@@ -45,20 +45,20 @@ shouldDebug() {
 
 log_debug() {
     if shouldDebug ; then
-        echo "[DEBUG] $@" >&2
+        echo "`TZ=UTC LANG=C date` [DEBUG] $@" >&2
     fi
 }
 
 log_info() {
-    echo "[INFO] $@" >&2
+    echo "`TZ=UTC LANG=C date` [INFO] $@" >&2
 }
 
 log_warn() {
-    echo "[WARNING] $@" >&2
+    echo "`TZ=UTC LANG=C date` [WARNING] $@" >&2
 }
 
 log_error() {
-    echo "[ERROR] $@" >&2
+    echo "`TZ=UTC LANG=C date` [ERROR] $@" >&2
 }
 
 report_NUT_PORT() {
@@ -114,7 +114,7 @@ isBusy_NUT_PORT() {
         (   # Hide this looped noise:
             # ./nit.sh: connect: Connection refused
             # ./nit.sh: line 112: /dev/tcp/localhost/35050: Connection refused
-            if ! shouldDebug ; then
+            if shouldDebug ; then : ; else
                 exec 2>/dev/null
             fi
             for H in "localhost" "127.0.0.1" "::1"; do
@@ -176,7 +176,7 @@ case "${BUILDDIR}" in
         TOP_BUILDDIR="`cd "${BUILDDIR}"/../.. && pwd`" ;;
     *) log_info "Current directory '${BUILDDIR}' is not a .../tests/NIT" ;;
 esac
-if ! test -w "${BUILDDIR}" ; then
+if test ! -w "${BUILDDIR}" ; then
     log_error "BUILDDIR='${BUILDDIR}' is not writeable, tests may fail below"
 fi
 
@@ -189,9 +189,10 @@ case "${SRCDIR}" in
     *) log_info "Script source directory '${SRCDIR}' is not a .../tests/NIT" ;;
 esac
 
-# No fuss about LD_LIBRARY_PATH: for binaries that need it,
-# PATH entries below would contain libtool wrapper scripts;
-# for other builds we use system default or caller's env.
+# No fuss about LD_LIBRARY_PATH: for most of the (client) binaries that
+# need it, the PATH entries below would contain libtool wrapper scripts;
+# for other builds we use system default or caller's env. One exception
+# so far is nut-scanner that needs to know where libupsclient.so is...
 PATH_ADD="${BUILDDIR}"
 if [ x"${SRCDIR}" != x"${BUILDDIR}" ]; then
     PATH_ADD="${PATH_ADD}:${SRCDIR}"
@@ -211,6 +212,20 @@ unset PATH_ADD
 
 log_debug "Using PATH='$PATH'"
 
+LD_LIBRARY_PATH_ORIG="${LD_LIBRARY_PATH-}"
+LD_LIBRARY_PATH_CLIENT=""
+if [ x"${TOP_BUILDDIR}" != x ]; then
+    LD_LIBRARY_PATH_CLIENT="${TOP_BUILDDIR}/clients:${TOP_BUILDDIR}/clients/.libs"
+fi
+
+if [ x"${LD_LIBRARY_PATH_CLIENT}" != x ]; then
+    if [ -n "${LD_LIBRARY_PATH_ORIG-}" ]; then
+        LD_LIBRARY_PATH_CLIENT="${LD_LIBRARY_PATH_CLIENT}:${LD_LIBRARY_PATH_ORIG}"
+    fi
+else
+    LD_LIBRARY_PATH_CLIENT="${LD_LIBRARY_PATH_ORIG}"
+fi
+
 for PROG in upsd upsc dummy-ups upsmon ; do
     (command -v ${PROG}) || die "Useless setup: ${PROG} not found in PATH: ${PATH}"
 done
@@ -226,7 +241,9 @@ TESTDIR="$BUILDDIR/tmp"
 # we reserve 17 chars for "/dummy-ups-dummy" longest filename.
 if [ `echo "$TESTDIR" | wc -c` -gt 80 ]; then
     log_info "'$TESTDIR' is too long to store AF_UNIX socket files, will mktemp"
-    if ! ( [ -n "${TMPDIR-}" ] && [ -d "${TMPDIR-}" ] && [ -w "${TMPDIR-}" ] ) ; then
+    if ( [ -n "${TMPDIR-}" ] && [ -d "${TMPDIR-}" ] && [ -w "${TMPDIR-}" ] ) ; then
+        :
+    else
         if [ -d /dev/shm ] && [ -w /dev/shm ]; then TMPDIR=/dev/shm ; else TMPDIR=/tmp ; fi
     fi
     TESTDIR="`mktemp -d "${TMPDIR}/nit-tmp.$$.XXXXXX"`" || die "Failed to mktemp"
@@ -278,7 +295,7 @@ else
         && [ "$NUT_PORT" -gt 0 ] && [ "$NUT_PORT" -lt 65536 ] \
         || NUT_PORT=34931
 
-        if ! isBusy_NUT_PORT ; then
+        if isBusy_NUT_PORT ; then : ; else
             break
         fi
 
@@ -296,7 +313,7 @@ else
             && [ "$DELTA2" -ge 0 ] || die "Can not pick random port"
 
             NUT_PORT="`expr $DELTA1 + $DELTA2`"
-            if ! isBusy_NUT_PORT ; then
+            if isBusy_NUT_PORT ; then : ; else
                 break
             fi
 
@@ -504,8 +521,11 @@ EOF
         # HACK: Avoid empty ups.status that may be present in example docs
         # FIXME: Might we actually want that value (un-)set for tests?..
         # TODO: Check if the problem was with dummy-ups looping? [#1385]
+        # Avoid "sed -i", it behaves differently on some platforms
+        # and is completely absent on others [#1736 and earlier]
         for F in "$NUT_CONFPATH/"*.dev "$NUT_CONFPATH/"*.seq ; do
-            sed -e 's,^ups.status: *$,ups.status: OL BOOST,' -i'.bak' "$F"
+            sed -e 's,^ups.status: *$,ups.status: OL BOOST,' "$F" > "$F.bak"
+            mv -f "$F.bak" "$F"
             grep -E '^ups.status:' "$F" >/dev/null || { echo "ups.status: OL BOOST" >> "$F"; }
         done
     fi
@@ -604,11 +624,18 @@ testcase_upsd_allow_no_device() {
 
         log_separator
         log_info "Query listing from UPSD by UPSC (no devices configured yet) to test that UPSD responds to UPSC"
-        if ! runcmd upsc -l localhost:$NUT_PORT ; then
+        if runcmd upsc -l localhost:$NUT_PORT ; then
+            :
+        else
             # Note: avoid exact matching for stderr, because it can have Init SSL messages etc.
             if echo "$CMDERR" | grep "Error: Server disconnected" >/dev/null ; then
                 log_warn "Retry once to rule out laggy systems"
                 sleep 3
+                runcmd upsc -l localhost:$NUT_PORT
+            fi
+            if echo "$CMDERR" | grep "Error: Server disconnected" >/dev/null ; then
+                log_warn "Retry once more to rule out very laggy systems"
+                sleep 15
                 runcmd upsc -l localhost:$NUT_PORT
             fi
             [ "$CMDRES" = 0 ] || die "upsd does not respond on port ${NUT_PORT} ($?): $CMDOUT"
@@ -830,9 +857,8 @@ testcase_sandbox_start_drivers_after_upsd() {
             COUNTDOWN=60
             # TODO: Convert to runcmd()?
             OUT=""
-            while [ x"$OUT" = x"ups.status: WAIT" ] \
-            || ! OUT="`upsc $U@localhost:$NUT_PORT ups.status`" \
-            ; do
+            while [ x"$OUT" = x"ups.status: WAIT" ] ; do
+                OUT="`upsc $U@localhost:$NUT_PORT ups.status`" || break
                 [ x"$OUT" = x"ups.status: WAIT" ] || { log_info "Got output:"; echo "$OUT"; break; }
                 sleep 1
                 COUNTDOWN="`expr $COUNTDOWN - 1`"
@@ -908,6 +934,10 @@ isTestablePython() {
     if [ x"${TOP_BUILDDIR}" = x ] \
     || [ ! -x "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py" ] \
     ; then
+        return 1
+    fi
+    PY_SHEBANG="`head -1 "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"`"
+    if [ x"${PY_SHEBANG}" = x"#!no" ] ; then
         return 1
     fi
     return 0
@@ -1091,7 +1121,87 @@ testcases_sandbox_cppnit() {
     testcase_sandbox_cppnit_simple_admin
 }
 
+####################################
+
+isTestableNutScanner() {
+    # We optionally make and here can run nut-scanner (as NUT client)
+    # tests, which tangentially tests the C client library:
+    if [ x"${TOP_BUILDDIR}" = x ] \
+    || [ ! -x "${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner" ] \
+    ; then
+        log_warn "SKIP: ${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner: Not found"
+        return 1
+    fi
+    return 0
+}
+
+testcase_sandbox_nutscanner_list() {
+    isTestableNutScanner || return 0
+
+    log_separator
+    log_info "Call libupsclient test suite: nut-scanner on localhost:${NUT_PORT}"
+    log_info "Preparing LD_LIBRARY_PATH='${LD_LIBRARY_PATH_CLIENT}'"
+
+    # Note: for some reason `LD_LIBRARY_PATH=... runcmd ...` loses it :\
+    LD_LIBRARY_PATH="${LD_LIBRARY_PATH_CLIENT}"
+    export LD_LIBRARY_PATH
+
+    # NOTE: Currently mask mode is IPv4 only
+    runcmd "${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner" -m 127.0.0.1/32 -O -p "${NUT_PORT}" \
+    || runcmd "${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner" -s localhost -O -p "${NUT_PORT}"
+
+    LD_LIBRARY_PATH="${LD_LIBRARY_PATH_ORIG}"
+    export LD_LIBRARY_PATH
+
+    # Note: the reported "driver" string is not too helpful as a "nutclient".
+    # In practice this could be a "dummy-ups" repeater or "clone" driver,
+    # or some of the config elements needed for upsmon (lacking creds/role)
+    if (
+        test -n "$CMDOUT" \
+        && echo "$CMDOUT" | grep -E '^\[nutdev1\]$' \
+        && echo "$CMDOUT" | grep 'port = "dummy@' \
+        || return
+
+        if [ "${NUT_PORT}" = 3493 ] || [ x"$NUT_PORT" = x ]; then
+            echo "Note: not testing for suffixed port number" >&2
+        else
+            echo "$CMDOUT" | grep -E 'dummy@.*'":${NUT_PORT}" \
+            || return
+        fi
+
+        if [ x"${TOP_SRCDIR}" = x ]; then
+            echo "Note: only testing one dummy device" >&2
+        else
+            echo "$CMDOUT" | grep -E '^\[nutdev2\]$' \
+            && echo "$CMDOUT" | grep 'port = "UPS1@' \
+            && echo "$CMDOUT" | grep -E '^\[nutdev3\]$' \
+            && echo "$CMDOUT" | grep 'port = "UPS2@' \
+            || return
+        fi
+    ) ; then
+        log_info "OK, nut-scanner found all expected devices"
+        PASSED="`expr $PASSED + 1`"
+    else
+        if ( echo "$CMDERR" | grep -E "Cannot load NUT library.*libupsclient.*found.*NUT search disabled" ) ; then
+            log_warn "SKIP: ${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner: $CMDERR"
+        else
+            log_error "nut-scanner complained or did not return all expected data, check above"
+            FAILED="`expr $FAILED + 1`"
+            FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_nutscanner_list"
+        fi
+    fi
+}
+
+testcases_sandbox_nutscanner() {
+    isTestableNutScanner || return 0
+    testcase_sandbox_nutscanner_list
+}
+
+####################################
+
 # TODO: Some upsmon tests?
+
+####################################
 
 testgroup_sandbox() {
     testcase_sandbox_start_drivers_after_upsd
@@ -1100,6 +1210,7 @@ testgroup_sandbox() {
     testcase_sandbox_upsc_query_timer
     testcases_sandbox_python
     testcases_sandbox_cppnit
+    testcases_sandbox_nutscanner
 
     sandbox_forget_configs
 }
@@ -1125,11 +1236,19 @@ testgroup_sandbox_cppnit_simple_admin() {
     sandbox_forget_configs
 }
 
+testgroup_sandbox_nutscanner() {
+    # Arrange for quick test iterations
+    testcase_sandbox_start_drivers_after_upsd
+    testcases_sandbox_nutscanner
+    sandbox_forget_configs
+}
+
 ################################################################
 
 case "${NIT_CASE}" in
     cppnit) testgroup_sandbox_cppnit ;;
     python) testgroup_sandbox_python ;;
+    nutscanner|nut-scanner) testgroup_sandbox_nutscanner ;;
     testcase_*|testgroup_*|testcases_*|testgroups_*)
         log_warn "========================================================"
         log_warn "You asked to run just a specific testcase* or testgroup*"
@@ -1154,7 +1273,7 @@ fi
 # Allow to leave the sandbox daemons running for a while,
 # to experiment with them interactively:
 if [ -n "${DEBUG_SLEEP-}" ] ; then
-    if ! [ "${DEBUG_SLEEP-}" -gt 0 ] ; then
+    if [ "${DEBUG_SLEEP-}" -gt 0 ] ; then : ; else
         DEBUG_SLEEP=60
     fi
 

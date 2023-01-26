@@ -29,8 +29,7 @@
 
 #include "config.h"
 
-#include <stdint.h>
-#include <inttypes.h>
+#include "nut_stdint.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

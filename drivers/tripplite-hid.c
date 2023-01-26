@@ -299,7 +299,7 @@ static usage_tables_t tripplite_utab[] = {
 /* HID2NUT lookup table */
 static hid_info_t tripplite_hid2nut[] = {
 
-#ifdef USBHID_UPS_TRIPPLITE_DEBUG
+#if WITH_UNMAPPED_DATA_POINTS || (defined USBHID_UPS_TRIPPLITE_DEBUG)
 
 	/* unmapped variables - meaning unknown */
 	{ "UPS.Flow.0xffff0097", 0, 0, "UPS.Flow.0xffff0097", NULL, "%.0f", 0, NULL },
@@ -340,7 +340,7 @@ static hid_info_t tripplite_hid2nut[] = {
 	{ "UPS.OutletSystem.Outlet.0xffff00ac", 0, 0, "UPS.OutletSystem.Outlet.0xffff00ac", NULL, "%.0f", 0, NULL },
 	{ "UPS.PowerSummary.iOEMInformation", 0, 0, "UPS.PowerSummary.iOEMInformation", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
 
-#endif /* USBHID_UPS_TRIPPLITE_DEBUG */
+#endif	/* if WITH_UNMAPPED_DATA_POINTS || USBHID_UPS_TRIPPLITE_DEBUG */
 
 	/* Device page */
 	{ "device.part", 0, 0, "UPS.TLCustom.[1].iUPSPartNumber", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },

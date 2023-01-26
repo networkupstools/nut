@@ -60,6 +60,19 @@ Raise the debug level.  Use this multiple times for additional details.
 
 *-d*::
 Pass the selected debug level from `upsdrvctl` to launched drivers.
+Note that by default for NUT daemons, enabled debugging means running
+in foreground mode; you can specify *-B* additionally to avoid that.
+
+*-F*::
+Driver will run in the foreground (not fork away from the `upsdrvctl`
+process), regardless of debugging settings. This may be counterproductive
+if you start "everything" (do not specify an *ups* argument) as the loop
+would never proceed beyond the first device in the list, so `upsdrvctl`
+will warn about such situations.
+
+*-B*::
+Drivers will run in the background, regardless of debugging settings,
+as set by *-D* and passed-through by *-d* options.
 
 COMMANDS
 --------
@@ -74,17 +87,23 @@ Start the UPS driver(s). In case of failure, further attempts may be executed
 by using the 'maxretry' and 'retrydelay' options - see linkman:ups.conf[5].
 
 *stop*::
-Stop the UPS driver(s).
+Stop the UPS driver(s).  This does not send commands to the UPS.
 
 *shutdown*::
-Command the UPS driver(s) to run their shutdown sequence.  Drivers are
-stopped according to their sdorder value - see linkman:ups.conf[5].
+Command the UPS driver(s) to run their shutdown sequence.  This
+assumes that the driver is no longer running, and starts a fresh
+instance via "driver -k".  It is intended to be used as the last step
+in system shutdown, after the filesystems are no longer mounted rw.
+Drivers are stopped according to their sdorder value - see
+linkman:ups.conf[5].
 
 WARNING: this will probably power off your computers, so don't
 play around with this option.  Only use it when your systems are prepared
 to lose power.
 
 NOTE: refer to linkman:ups.conf[5] for using the *nowait* parameter.
+It can be overridden by `NUT_IGNORE_NOWAIT` environment variable
+(e.g. used to work around certain issues with systemd otherwise).
 
 ENVIRONMENT VARIABLES
 ---------------------

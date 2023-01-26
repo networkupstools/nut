@@ -32,8 +32,8 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdint.h>
 
+#include "nut_stdint.h"
 #include "eaton-pdu-marlin-helpers.h"
 #include "dstate.h"
 #include "common.h"

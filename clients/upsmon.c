@@ -55,6 +55,18 @@ static	int deadtime = 15;
 	/* default polling interval = 5 sec */
 static	unsigned int	pollfreq = 5, pollfreqalert = 5;
 
+	/* If pollfail_log_throttle_max > 0, error messages for same
+	 * state of an UPS (e.g. "Data stale" or "Driver not connected")
+	 * will only be repeated every so many POLLFREQ loops.
+	 * If pollfail_log_throttle_max == 0, such error messages will
+	 * only be reported once when that situation starts, and ends.
+	 * By default it is logged every pollfreq (which can abuse syslog
+	 * and its storage).
+	 * To support this, each utype_t (UPS) structure tracks individual
+	 * pollfail_log_throttle_count and pollfail_log_throttle_state
+	 */
+static	int	pollfail_log_throttle_max = -1;
+
 	/* secondary hosts are given 15 sec by default to logout from upsd */
 static	int	hostsync = 15;
 
@@ -104,6 +116,10 @@ static	struct sigaction sa;
 static	sigset_t nut_upsmon_sigmask;
 #endif
 
+#ifdef HAVE_SYSTEMD
+# define SERVICE_UNIT_NAME "nut-monitor.service"
+#endif
+
 /* Users can pass a -D[...] option to enable debugging.
  * For the service tracing purposes, also the upsmon.conf
  * can define a debug_min value in the global section,
@@ -111,6 +127,10 @@ static	sigset_t nut_upsmon_sigmask;
  * than that would not have effect, can only have more).
  */
 static int nut_debug_level_global = -1;
+/* Debug level specified via command line - we revert to
+ * it when reloading if there was no DEBUG_MIN in ups.conf
+ */
+static int nut_debug_level_args = 0;
 
 static void setflag(int *val, int flag)
 {
@@ -218,11 +238,18 @@ static void notify(const char *notice, int flags, const char *ntype,
 	int	ret;
 #endif
 
-	if (flag_isset(flags, NOTIFY_IGNORE))
-		return;
+	upsdebugx(6, "%s: sending notification for [%s]: type %s with flags 0x%04x: %s",
+		__func__, upsname, ntype, flags, notice);
 
-	if (flag_isset(flags, NOTIFY_SYSLOG))
+	if (flag_isset(flags, NOTIFY_IGNORE)) {
+		upsdebugx(6, "%s: NOTIFY_IGNORE", __func__);
+		return;
+	}
+
+	if (flag_isset(flags, NOTIFY_SYSLOG)) {
+		upsdebugx(6, "%s: NOTIFY_SYSLOG (as LOG_NOTICE)", __func__);
 		upslogx(LOG_NOTICE, "%s", notice);
+	}
 
 #ifndef WIN32
 	/* fork here so upsmon doesn't get wedged if the notifier is slow */
@@ -233,16 +260,24 @@ static void notify(const char *notice, int flags, const char *ntype,
 		return;
 	}
 
-	if (ret != 0)	/* parent */
+	if (ret != 0) {	/* parent */
+		upsdebugx(6, "%s (parent): forked a child to notify via subprocesses", __func__);
 		return;
+	}
 
 	/* child continues and does all the work */
+	upsdebugx(6, "%s (child): forked to notify via subprocesses", __func__);
 
-	if (flag_isset(flags, NOTIFY_WALL))
+	if (flag_isset(flags, NOTIFY_WALL)) {
+		upsdebugx(6, "%s (child): NOTIFY_WALL", __func__);
 		wall(notice);
+	}
 
 	if (flag_isset(flags, NOTIFY_EXEC)) {
 		if (notifycmd != NULL) {
+			upsdebugx(6, "%s (child): NOTIFY_EXEC: calling NOTIFYCMD as '%s \"%s\"'",
+				__func__, notifycmd, notice);
+
 			snprintf(exec, sizeof(exec), "%s \"%s\"", notifycmd, notice);
 
 			if (upsname)
@@ -254,6 +289,8 @@ static void notify(const char *notice, int flags, const char *ntype,
 			if (system(exec) == -1) {
 				upslog_with_errno(LOG_ERR, "%s", __func__);
 			}
+		} else {
+			upsdebugx(6, "%s (child): NOTIFY_EXEC: no NOTIFYCMD was configured", __func__);
 		}
 	}
 
@@ -596,6 +633,8 @@ static void doshutdown(void)
 
 static void doshutdown(void)
 {
+	upsnotify(NOTIFY_STATE_STOPPING, "Executing automatic power-fail shutdown");
+
 	/* this should probably go away at some point */
 	upslogx(LOG_CRIT, "Executing automatic power-fail shutdown");
 	wall("Executing automatic power-fail shutdown\n");
@@ -1025,6 +1064,11 @@ static void drop_connection(utype_t *ups)
 
 	ups->commstate = 0;
 	ups->linestate = 0;
+
+	/* forget poll-failure logging throttling */
+	ups->pollfail_log_throttle_count = -1;
+	ups->pollfail_log_throttle_state = UPSCLI_ERR_NONE;
+
 	clearflag(&ups->status, ST_LOGIN);
 	clearflag(&ups->status, ST_CLICONNECTED);
 
@@ -1216,6 +1260,10 @@ static void addups(int reloading, const char *sys, const char *pvs,
 	tmp->commstate = -1;
 	tmp->linestate = -1;
 
+	/* forget poll-failure logging throttling */
+	tmp->pollfail_log_throttle_count = -1;
+	tmp->pollfail_log_throttle_state = UPSCLI_ERR_NONE;
+
 	tmp->lastpoll = 0;
 	tmp->lastnoncrit = 0;
 	tmp->lastrbwarn = 0;
@@ -1403,6 +1451,17 @@ static int parse_conf_arg(size_t numargs, char **arg)
 			upsdebugx(0, "Ignoring invalid POLLFREQALERT value: %d", ipollfreqalert);
 		} else {
 			pollfreqalert = (unsigned int)ipollfreqalert;
+		}
+		return 1;
+	}
+
+	/* POLLFAIL_LOG_THROTTLE_MAX <num> */
+	if (!strcmp(arg[0], "POLLFAIL_LOG_THROTTLE_MAX")) {
+		int ipollfail_log_throttle_max = atoi(arg[1]);
+		if (ipollfail_log_throttle_max < 0 || ipollfail_log_throttle_max == INT_MAX) {
+			upsdebugx(0, "Ignoring invalid POLLFAIL_LOG_THROTTLE_MAX value: %d", ipollfail_log_throttle_max);
+		} else {
+			pollfail_log_throttle_max = ipollfail_log_throttle_max;
 		}
 		return 1;
 	}
@@ -1607,6 +1666,19 @@ static void loadconfig(void)
 				"Applying debug_min=%d from upsmon.conf",
 				nut_debug_level_global);
 			nut_debug_level = nut_debug_level_global;
+		} else {
+			/* DEBUG_MIN is absent or commented-away in ups.conf */
+			upslogx(LOG_INFO,
+				"Applying debug level %d from "
+				"original command line arguments",
+				nut_debug_level_args);
+			nut_debug_level = nut_debug_level_args;
+		}
+
+		if (pollfail_log_throttle_max >= 0) {
+			upslogx(LOG_INFO,
+				"Applying pollfail_log_throttle_max=%d from upsmon.conf",
+				pollfail_log_throttle_max);
 		}
 	}
 
@@ -1870,11 +1942,15 @@ static void parse_status(utype_t *ups, char *status)
 static void pollups(utype_t *ups)
 {
 	char	status[SMALLBUF];
+	int	pollfail_log = 0;	/* if we throttle, only upsdebugx() but not upslogx() the failures */
+	int	upserror;
 
 	/* try a reconnect here */
-	if (!flag_isset(ups->status, ST_CLICONNECTED))
-		if (try_connect(ups) != 1)
+	if (!flag_isset(ups->status, ST_CLICONNECTED)) {
+		if (try_connect(ups) != 1) {
 			return;
+		}
+	}
 
 	if (upscli_ssl(&ups->conn) == 1)
 		upsdebugx(2, "%s: %s [SSL]", __func__, ups->sys);
@@ -1885,6 +1961,27 @@ static void pollups(utype_t *ups)
 
 	if (get_var(ups, "status", status, sizeof(status)) == 0) {
 		clear_alarm();
+
+		/* reset pollfail log throttling */
+#if 0
+		/* Note: last error is never cleared, so we reset it below */
+		upserror = upscli_upserror(&ups->conn);
+		upsdebugx(3, "%s: Poll UPS [%s] after getvar(status) okay: upserror=%d: %s",
+			__func__, ups->sys, upserror, upscli_strerror(&ups->conn));
+#endif
+		upserror = UPSCLI_ERR_NONE;
+		if (pollfail_log_throttle_max >= 0
+		&&  ups->pollfail_log_throttle_state != upserror
+		) {
+			/* Notify throttled log that we are okay now */
+			upslogx(LOG_ERR, "Poll UPS [%s] recovered from "
+				"failure state code %d - now %d",
+				ups->sys, ups->pollfail_log_throttle_state,
+				upserror);
+		}
+		ups->pollfail_log_throttle_state = upserror;
+		ups->pollfail_log_throttle_count = -1;
+
 		parse_status(ups, status);
 		return;
 	}
@@ -1893,18 +1990,75 @@ static void pollups(utype_t *ups)
 	clear_alarm();
 
 	/* try to make some of these a little friendlier */
+	upserror = upscli_upserror(&ups->conn);
+	upsdebugx(3, "%s: Poll UPS [%s] after getvar(status) failed: upserror=%d",
+		__func__, ups->sys, upserror);
+	if (pollfail_log_throttle_max < 0) {
+		/* Log properly on each loop */
+		pollfail_log = 1;
+	} else {
+		if (ups->pollfail_log_throttle_state == upserror) {
+			/* known issue, no syslog spam now... maybe */
+			if (pollfail_log_throttle_max == 0) {
+				/* Only log once for start or end of the same
+				 * failure state */
+				pollfail_log = 0;
+			} else {
+				/* Only log once for start, every MAX iterations,
+				 * and end of the same failure state */
+				if (ups->pollfail_log_throttle_count++ >= pollfail_log_throttle_max) {
+					/* ping... */
+					pollfail_log = 1;
+					ups->pollfail_log_throttle_count = 0;
+				} else {
+					pollfail_log = 0;
+				}
+			}
+		} else {
+			/* new error => reset pollfail log throttling and log it
+			 * now (numeric states here, string for new state below) */
+			if (pollfail_log_throttle_max == 0) {
+				upslogx(LOG_ERR, "Poll UPS [%s] failure state code "
+					"changed from %d to %d; "
+					"report below will not be repeated to syslog:",
+					ups->sys, ups->pollfail_log_throttle_state,
+					upserror);
+			} else {
+				upslogx(LOG_ERR, "Poll UPS [%s] failure state code "
+					"changed from %d to %d; "
+					"report below will only be repeated to syslog "
+					"every %d polling loop cycles:",
+					ups->sys, ups->pollfail_log_throttle_state,
+					upserror, pollfail_log_throttle_max);
+			}
 
-	switch (upscli_upserror(&ups->conn)) {
+			ups->pollfail_log_throttle_state = upserror;
+			ups->pollfail_log_throttle_count = 0;
+			pollfail_log = 1;
+		}
+	}
 
+	switch (upserror) {
 		case UPSCLI_ERR_UNKNOWNUPS:
-			upslogx(LOG_ERR, "Poll UPS [%s] failed - [%s] "
-			"does not exist on server %s",
-			ups->sys, ups->upsname,	ups->hostname);
-
+			if (pollfail_log) {
+				upslogx(LOG_ERR, "Poll UPS [%s] failed - [%s] "
+					"does not exist on server %s",
+					ups->sys, ups->upsname,	ups->hostname);
+			} else {
+				upsdebugx(1, "Poll UPS [%s] failed - [%s] "
+					"does not exist on server %s",
+					ups->sys, ups->upsname,	ups->hostname);
+			}
 			break;
+
 		default:
-			upslogx(LOG_ERR, "Poll UPS [%s] failed - %s",
-				ups->sys, upscli_strerror(&ups->conn));
+			if (pollfail_log) {
+				upslogx(LOG_ERR, "Poll UPS [%s] failed - %s",
+					ups->sys, upscli_strerror(&ups->conn));
+			} else {
+				upsdebugx(1, "Poll UPS [%s] failed - [%s]",
+					ups->sys, upscli_strerror(&ups->conn));
+			}
 			break;
 	}
 
@@ -2027,6 +2181,8 @@ static void help(const char *arg_progname)
 	printf("  -u <user>	run child as user <user> (ignored when using -p)\n");
 	printf("  -4		IPv4 only\n");
 	printf("  -6		IPv6 only\n");
+
+	nut_report_config_flags();
 
 	exit(EXIT_SUCCESS);
 }
@@ -2315,6 +2471,7 @@ int main(int argc, char *argv[])
 #endif
 			case 'D':
 				nut_debug_level++;
+				nut_debug_level_args++;
 				break;
 			case 'F':
 				foreground = 1;
@@ -2342,7 +2499,8 @@ int main(int argc, char *argv[])
 				run_as_user = xstrdup(optarg);
 				break;
 			case 'V':
-				/* just show the banner */
+				/* just show the optional CONFIG_FLAGS banner */
+				nut_report_config_flags();
 				exit(EXIT_SUCCESS);
 			case '4':
 				opt_af = AF_INET;
@@ -2366,60 +2524,123 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (cmd) {
+	/* Note: "cmd" may be non-trivial to command that instance by
+	 * explicit PID number or lookup in PID file (error if absent).
+	 * Otherwise, we are being asked to start and "cmd" is 0/NULL -
+	 * for probing whether a competing older instance of this program
+	 * is running (error if it is).
+	 */
 #ifndef WIN32
-		if (oldpid < 0) {
-			cmdret = sendsignal(prog, cmd);
-		} else {
-			cmdret = sendsignalpid(oldpid, cmd);
-		}
-#else
-		cmdret = sendsignal(UPSMON_PIPE_NAME, cmd);
-#endif
-		/* exit(EXIT_SUCCESS); */
-		exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
-	}
-
-	/* otherwise, we are being asked to start.
-	 * so check if a previous instance is running by sending signal '0'
-	 * (Ie 'kill <pid> 0') */
-#ifndef WIN32
+	/* If cmd == 0 we are starting and check if a previous instance
+	 * is running by sending signal '0' (i.e. 'kill <pid> 0' equivalent)
+	 */
 	if (oldpid < 0) {
-		cmdret = sendsignal(prog, 0);
+		cmdret = sendsignal(prog, cmd);
 	} else {
-		cmdret = sendsignalpid(oldpid, 0);
-	}
-#else
-	mutex = CreateMutex(NULL,TRUE,UPSMON_PIPE_NAME);
-	if(mutex == NULL ) {
-		if( GetLastError() != ERROR_ACCESS_DENIED ) {
-			fatalx(EXIT_FAILURE, "Can not create mutex %s : %d.\n",UPSMON_PIPE_NAME,(int)GetLastError());
-		}
+		cmdret = sendsignalpid(oldpid, cmd);
 	}
 
-	cmdret = -1; /* unknown, maybe ok */
-	if (GetLastError() == ERROR_ALREADY_EXISTS || GetLastError() == ERROR_ACCESS_DENIED)
-		cmdret = 0; /* known conflict */
-#endif
+#else	/* WIN32 */
+	if (cmd) {
+		/* Command the running daemon, it should be there */
+		cmdret = sendsignal(UPSMON_PIPE_NAME, cmd);
+	} else {
+		/* Starting new daemon, check for competition */
+		mutex = CreateMutex(NULL, TRUE, UPSMON_PIPE_NAME);
+		if (mutex == NULL) {
+			if (GetLastError() != ERROR_ACCESS_DENIED) {
+				fatalx(EXIT_FAILURE,
+					"Can not create mutex %s : %d.\n",
+					UPSMON_PIPE_NAME, (int)GetLastError());
+			}
+		}
+
+		cmdret = -1; /* unknown, maybe ok */
+		if (GetLastError() == ERROR_ALREADY_EXISTS
+		||  GetLastError() == ERROR_ACCESS_DENIED
+		) {
+			cmdret = 0; /* known conflict */
+		}
+	}
+#endif	/* WIN32 */
 
 	switch (cmdret) {
 	case 0:
-		printf("Fatal error: A previous upsmon instance is already running!\n");
-		printf("Either stop the previous instance first, or use the 'reload' command.\n");
-		exit(EXIT_FAILURE);
+		if (cmd) {
+			upsdebugx(1, "Signaled old daemon OK");
+		} else {
+			if (checking_flag) {
+				printf("Note: A previous upsmon instance is already running!\n");
+				printf("Usually it should not be running during OS shutdown,\n");
+				printf("which is when checking POWERDOWNFLAG makes most sense.\n");
+			} else {
+				printf("Fatal error: A previous upsmon instance is already running!\n");
+				printf("Either stop the previous instance first, or use the 'reload' command.\n");
+				exit(EXIT_FAILURE);
+			}
+		}
+		break;
 
 	case -3:
 	case -2:
+		/* if starting new daemon, no competition running -
+		 *    maybe OK (or failed to detect it => problem)
+		 * if signaling old daemon - certainly have a problem
+		 */
 		upslogx(LOG_WARNING, "Could not %s PID file "
 			"to see if previous upsmon instance is "
-			"already running!\n",
+			"already running!",
 			(cmdret == -3 ? "find" : "parse"));
 		break;
 
 	case -1:
+	case 1:	/* WIN32 */
 	default:
-		/* Just failed to send signal, no competitor running */
+		/* if cmd was nontrivial - speak up below, else be quiet */
+		upsdebugx(1, "Just failed to send signal, no daemon was running");
 		break;
+	}
+
+	if (cmd) {
+		/* We were signalling a daemon, successfully or not - exit now... */
+		if (cmdret != 0) {
+			/* sendsignal*() above might have logged more details
+			 * for troubleshooting, e.g. about lack of PID file
+			 */
+			upslogx(LOG_NOTICE, "Failed to signal the currently running daemon (if any)");
+#ifndef WIN32
+# ifdef HAVE_SYSTEMD
+			switch (cmd) {
+			case SIGCMD_RELOAD:
+				upslogx(LOG_NOTICE, "Try 'systemctl reload %s'%s",
+					SERVICE_UNIT_NAME,
+					(oldpid < 0 ? " or add '-P $PID' argument" : ""));
+				break;
+			case SIGCMD_STOP:
+				upslogx(LOG_NOTICE, "Try 'systemctl stop %s'%s",
+					SERVICE_UNIT_NAME,
+					(oldpid < 0 ? " or add '-P $PID' argument" : ""));
+				break;
+			case SIGCMD_FSD:
+				if (oldpid < 0) {
+					upslogx(LOG_NOTICE, "Try to add '-P $PID' argument");
+				}
+				break;
+			default:
+				upslogx(LOG_NOTICE, "Try 'systemctl <command> %s'%s",
+					SERVICE_UNIT_NAME,
+					(oldpid < 0 ? " or add '-P $PID' argument" : ""));
+				break;
+			}
+# else
+			if (oldpid < 0) {
+				upslogx(LOG_NOTICE, "Try to add '-P $PID' argument");
+			}
+# endif
+#endif	/* not WIN32 */
+		}
+
+		exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
 	}
 
 	argc -= optind;
@@ -2463,10 +2684,6 @@ int main(int argc, char *argv[])
 		background();
 	}
 
-	if (nut_debug_level >= 1) {
-		upsdebugx(1, "debug level is '%d'", nut_debug_level);
-	}
-
 	/* only do the pipe stuff if the user hasn't disabled it */
 	if (use_pipe) {
 		struct passwd	*new_uid = get_user_pwent(run_as_user);
@@ -2488,6 +2705,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (upscli_init(certverify, certpath, certname, certpasswd) < 0) {
+		upsnotify(NOTIFY_STATE_STOPPING, "Failed upscli_init()");
 		exit(EXIT_FAILURE);
 	}
 
@@ -2498,15 +2716,22 @@ int main(int argc, char *argv[])
 	closelog();
 	open_syslog(prog);
 
+	upsnotify(NOTIFY_STATE_READY_WITH_PID, NULL);
+
 	while (exit_flag == 0) {
 		utype_t	*ups;
+
+		upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
 
 		/* check flags from signal handlers */
 		if (userfsd)
 			forceshutdown();
 
-		if (reload_flag)
+		if (reload_flag) {
+			upsnotify(NOTIFY_STATE_RELOADING, NULL);
 			reload_conf();
+			upsnotify(NOTIFY_STATE_READY, NULL);
+		}
 
 		for (ups = firstups; ups != NULL; ups = ups->next)
 			pollups(ups);
@@ -2584,6 +2809,7 @@ int main(int argc, char *argv[])
 	}
 
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
+	upsnotify(NOTIFY_STATE_STOPPING, "Signal %d: exiting", exit_flag);
 	upsmon_cleanup();
 
 	exit(EXIT_SUCCESS);

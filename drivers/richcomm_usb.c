@@ -24,12 +24,13 @@
  */
 
 #include "main.h"
+#include "nut_libusb.h"
 #include "usb-common.h"
 #include "nut_stdint.h"
 
 /* driver version */
 #define DRIVER_NAME	"Richcomm dry-contact to USB driver"
-#define DRIVER_VERSION	"0.10"
+#define DRIVER_VERSION	"0.11"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -331,7 +332,8 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 	ssize_t devcount = 0;
 	libusb_device_handle *handle;
 	struct libusb_device_descriptor dev_desc;
-	uint8_t bus;
+	uint8_t bus_num;
+	/* TODO: consider device_addr */
 	int i;
 
 	devcount = libusb_get_device_list(NULL, &devlist);
@@ -390,13 +392,13 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 #if WITH_LIBUSB_1_0
 			device->VendorID = dev_desc.idVendor;
 			device->ProductID = dev_desc.idProduct;
-			bus = libusb_get_bus_number(dev);
+			bus_num = libusb_get_bus_number(dev);
 			device->Bus = (char *)malloc(4);
 			if (device->Bus == NULL) {
 				libusb_free_device_list(devlist, 1);
 				fatal_with_errno(EXIT_FAILURE, "Out of memory");
 			}
-			sprintf(device->Bus, "%03d", bus);
+			sprintf(device->Bus, "%03d", bus_num);
 			iManufacturer = dev_desc.iManufacturer;
 			iProduct = dev_desc.iProduct;
 			iSerialNumber = dev_desc.iSerialNumber;
@@ -637,11 +639,13 @@ void upsdrv_updateinfo(void)
 	int	ret, online, battery_normal;
 
 	if (!udev) {
+		dstate_setinfo("driver.state", "reconnect.trying");
 		ret = usb_device_open(&udev, &usbdevice, &device_matcher, &driver_callback);
 
 		if (ret < 0) {
 			return;
 		}
+		dstate_setinfo("driver.state", "reconnect.updateinfo");
 	}
 
 	ret = query_ups(reply);
@@ -650,6 +654,7 @@ void upsdrv_updateinfo(void)
 		usb_comm_fail("Query to UPS failed");
 		dstate_datastale();
 
+		dstate_setinfo("driver.state", "reconnect.trying");
 		usb_device_close(udev);
 		udev = NULL;
 
@@ -734,4 +739,8 @@ void upsdrv_help(void)
 
 void upsdrv_makevartable(void)
 {
+	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
+	/* TODO: Uncomment while addressing https://github.com/networkupstools/nut/issues/1768
+	nut_usb_addvars();
+	*/
 }

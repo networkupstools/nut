@@ -24,6 +24,10 @@ riello_usb supports all recent Riello UPS with USB.
 
 Older Riello UPS products are not supported.
 
+EXTRA ARGUMENTS
+---------------
+
+include::nut_usb_addvars.txt[]
 
 EXTRA ARGUMENTS
 ---------------

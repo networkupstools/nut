@@ -936,11 +936,11 @@ static int masterguard_claim(void) {
 	item_t *item;
 	/* mandatory values */
 	char *mandatory[] = {
-		"series",		/* SKIP */
+		"experimental.series",	/* SKIP */
 		"device.model",		/* minimal number of battery packs */
 		"ups.power.nominal",	/* load computation */
 		"ups.id",		/* slave address */
-		"output_voltages",	/* output voltages enum */
+		"experimental.output_voltages",	/* output voltages enum */
 #if 0
 		"battery.packs",	/* battery voltage computation */
 #endif

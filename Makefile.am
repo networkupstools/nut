@@ -27,6 +27,10 @@ EXTRA_DIST = INSTALL.nut LICENSE-GPL2 LICENSE-GPL3 MAINTAINERS UPGRADING
 # want to adapt it to their autotools or locally fix a tarball-based build.
 EXTRA_DIST += autogen.sh
 
+if KEEP_NUT_REPORT
+nodist_data_DATA = config.nut_report_feature.log
+endif
+
 # ----------------------------------------------------------------------
 # flags to pass to ./configure when calling "make distcheck" and "make
 # distcheck-light". Try to check as many features as possible! Also
@@ -97,7 +101,7 @@ MAINTAINERCLEANFILES += Makefile.in .dirstamp include/config.h.in
 
 # Executed after default rules
 maintainer-clean-local:
-	rm -f missing || true
+	$(AM_V_at)rm -f missing || true
 
 # Do not let $SUBDIRS/Makefile rules delete their local .deps because
 # this breaks our ability to clean up (e.g. some common/.../*.Plo files
@@ -111,8 +115,8 @@ distclean-local:
 			( cd "$${DIR}" && $(MAKE) -s distclean ) || exit ; \
 		fi ; \
 	 done
-	rm -rf .inst tmp autom4te.cache
-	find "$(builddir)" -type d -name '.deps' | while read DIR ; do rm -rf "$${DIR}" ; done
+	$(AM_V_at)rm -rf .inst tmp autom4te.cache
+	$(AM_V_at)find "$(builddir)" -type d -name '.deps' | while read DIR ; do rm -rf "$${DIR}" ; done
 
 # Hook the documentation building and validating recipes
 # Note: these are optionally available (as determined during configure runs)
@@ -211,6 +215,9 @@ endif !HAVE_CPPCHECK
 # ----------------------------------------------------------------------
 # Automatically generate the ChangeLog from Git logs:
 MAINTAINERCLEANFILES += ChangeLog
+
+# CI builds can leave a log of selected features:
+MAINTAINERCLEANFILES += config.nut_report_feature.log*
 
 # Older boundary of the ChangeLog commits range
 # It can be a tag ('v2.2.0'), a commit hash, a date, ...
@@ -368,18 +375,18 @@ install-win-bundle-thirdparty:
 	@if test -z "$$ARCH" ; then \
 	    if test -n "$(target)" ; then \
 	        ARCH='$(target)' \
-        ; else \
-            if test -n "$(target_triplet)" ; then ARCH='$(target_triplet)' ; fi ; \
-        fi ; \
-     fi ; \
-     if test -n "$$ARCH" ; then export ARCH ; fi ; \
-     DESTDIR='$(DESTDIR)' ; export DESTDIR ; \
+	    ; else \
+	        if test -n "$(target_triplet)" ; then ARCH='$(target_triplet)' ; fi ; \
+	    fi ; \
+	 fi ; \
+	 if test -n "$$ARCH" ; then export ARCH ; fi ; \
+	 DESTDIR='$(DESTDIR)' ; export DESTDIR ; \
 	 (  cd '$(DESTDIR)' || exit ; \
 	    DESTDIR="" '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
 	        echo "   DLL->bin   $$D" 2>&1 ; \
 	        cp -pf "$$D" './$(bindir)/' ; \
-        done ; \
+	    done ; \
 	 ) || exit ; \
 	 (  if test x"$(bindir)" = x"$(sbindir)" ; then exit 0 ; fi ; \
 	    cd '$(DESTDIR)/$(sbindir)' || exit ; \
@@ -387,7 +394,7 @@ install-win-bundle-thirdparty:
 	    | while read D ; do \
 	        echo "   DLL->sbin  $$D" 2>&1 ; \
 	        ln -f '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
-        done ; \
+	    done ; \
 	 ) || exit ; \
 	 (  if test x"$(driverexecdir)" = x"$(bindir)" ; then exit 0 ; fi ; \
 	    if test x"$(driverexecdir)" = x"$(sbindir)" ; then exit 0 ; fi ; \
@@ -396,7 +403,7 @@ install-win-bundle-thirdparty:
 	    | while read D ; do \
 	        echo "   DLL->drv   $$D" 2>&1 ; \
 	        ln -f '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
-        done ; \
+	    done ; \
 	 ) || exit ; \
 	 (  if test -z "$(cgiexecdir)" -o ! -d "$(DESTDIR)/$(cgiexecdir)" ; then exit 0 ; fi ; \
 	    if test x"$(cgiexecdir)" = x"$(bindir)" ; then exit 0 ; fi ; \
@@ -407,7 +414,7 @@ install-win-bundle-thirdparty:
 	    | while read D ; do \
 	        echo "   DLL->cgi   $$D" 2>&1 ; \
 	        ln -f '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
-        done ; \
+	    done ; \
 	 ) || exit
 	@echo "CHECKING if any executable files were installed to locations other than those covered by this recipe, so might not have needed DLLs bundled near them" >&2 ; \
 	 relbindir="`echo './$(bindir)/' | sed 's,//*,/,g'`" ; \

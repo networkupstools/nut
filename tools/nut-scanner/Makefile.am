@@ -58,6 +58,10 @@ if WITH_LIBLTDL
 libnutscan_la_LIBADD += $(LIBLTDL_LIBS)
 endif
 libnutscan_la_LIBADD += $(top_builddir)/common/libcommonclient.la
+if HAVE_SEMAPHORE_LIBS
+# Are additional libraries needed for semaphore support?
+libnutscan_la_LIBADD += $(SEMLIBS)
+endif
 
 # FIXME: From old ages onward, SERLIBS are added here and not in LIBADD... why?
 libnutscan_la_LDFLAGS = $(SERLIBS)
@@ -74,7 +78,7 @@ endif
 # object .so names would differ)
 #
 # libnutscan version information
-libnutscan_la_LDFLAGS += -version-info 2:0:0
+libnutscan_la_LDFLAGS += -version-info 2:1:0
 
 # libnutscan exported symbols regex
 # WARNING: Since the library includes parts of libcommon (as much as needed
@@ -85,7 +89,7 @@ libnutscan_la_LDFLAGS += -version-info 2:0:0
 # copies of "nut_debug_level" making fun of our debug-logging attempts.
 # One solution to tackle if needed for those cases would be to make some
 # dynamic/shared libnutcommon (etc.)
-libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebugx|max_threads|curr_threads)'
+libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebugx|max_threads|curr_threads|nut_report_config_flags)'
 libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include \
 			$(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
 
@@ -145,4 +149,4 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
 # the root Makefile.am takes care of that!
 #clean-local:
-#	rm -rf $(builddir)/.deps
+#	$(AM_V_at)rm -rf $(builddir)/.deps

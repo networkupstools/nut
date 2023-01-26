@@ -53,6 +53,7 @@ static int (*nut_usb_get_string_simple)(libusb_device_handle *dev, int index,
  static ssize_t (*nut_usb_get_device_list)(libusb_context *ctx,	libusb_device ***list);
  static void (*nut_usb_free_device_list)(libusb_device **list, int unref_devices);
  static uint8_t (*nut_usb_get_bus_number)(libusb_device *dev);
+ static uint8_t (*nut_usb_get_device_address)(libusb_device *dev);
  static int (*nut_usb_get_device_descriptor)(libusb_device *dev,
 	struct libusb_device_descriptor *desc);
 #else /* => WITH_LIBUSB_0_1 */
@@ -146,6 +147,16 @@ int nutscan_load_usb_library(const char *libname_path)
 			goto err;
 	}
 
+	/* Note: per https://nxmnpg.lemoda.net/3/libusb_get_device_address there
+	 * was a libusb_get_port_path() equivalent with different arguments, but
+	 * not for too long (libusb-1.0.12...1.0.16) and now it is deprecated.
+	 */
+	*(void **) (&nut_usb_get_device_address) = lt_dlsym(dl_handle,
+					"libusb_get_device_address");
+	if ((dl_error = lt_dlerror()) != NULL) {
+			goto err;
+	}
+
 	*(void **) (&nut_usb_get_device_descriptor) = lt_dlsym(dl_handle,
 					"libusb_get_device_descriptor");
 	if ((dl_error = lt_dlerror()) != NULL) {
@@ -222,18 +233,38 @@ nutscan_device_t * nutscan_scan_usb()
 {
 	int ret;
 	char string[256];
+	/* Items below are learned by libusbN version-specific API code
+	 * Keep in sync with items matched by drivers/libusb{0,1}.c
+	 * (nut)libusb_open methods, and fields of USBDevice_t struct
+	 * (drivers/usb-common.h).
+	 */
 	char *driver_name = NULL;
 	char *serialnumber = NULL;
 	char *device_name = NULL;
 	char *vendor_name = NULL;
 	uint8_t iManufacturer = 0, iProduct = 0, iSerialNumber = 0;
-	uint16_t VendorID;
-	uint16_t ProductID;
-	char *busname;
+	uint16_t VendorID = 0;
+	uint16_t ProductID = 0;
+	char *busname = NULL;
+	/* device_port physical meaning: connection port on that bus;
+	 *   different consumers plugged into same socket should have
+	 *   the same port value. However in practice such functionality
+	 *   depends on platform and HW involved.
+	 * In libusb1 API: first libusb_get_port_numbers() earlier known
+	 *    as libusb_get_port_path() for physical port number on the bus, see
+	 *    https://libusb.sourceforge.io/api-1.0/group__libusb__dev.html#ga14879a0ea7daccdcddb68852d86c00c4
+	 *    later changed to logical libusb_get_bus_number() (which
+	 *    often yields same numeric value, except on systems that
+	 *    can not see or tell about physical topology)
+	 * In libusb0 API: "device filename"
+	 */
+	char *device_port = NULL;
+	/* bcdDevice: aka "Device release number" - note we currently do not match by it */
+	uint16_t bcdDevice = 0;
 #if WITH_LIBUSB_1_0
 	libusb_device *dev;
 	libusb_device **devlist;
-	uint8_t bus;
+	uint8_t bus_num;
 #else  /* => WITH_LIBUSB_0_1 */
 	struct usb_device *dev;
 	struct usb_bus *bus;
@@ -282,14 +313,31 @@ nutscan_device_t * nutscan_scan_usb()
 		iManufacturer = dev_desc.iManufacturer;
 		iProduct = dev_desc.iProduct;
 		iSerialNumber = dev_desc.iSerialNumber;
-		bus = (*nut_usb_get_bus_number)(dev);
+		bus_num = (*nut_usb_get_bus_number)(dev);
+
 		busname = (char *)malloc(4);
 		if (busname == NULL) {
 			(*nut_usb_free_device_list)(devlist, 1);
 			(*nut_usb_exit)(NULL);
 			fatal_with_errno(EXIT_FAILURE, "Out of memory");
 		}
-		snprintf(busname, 4, "%03d", bus);
+		snprintf(busname, 4, "%03d", bus_num);
+
+		device_port = (char *)malloc(4);
+		if (device_port == NULL) {
+			(*nut_usb_free_device_list)(devlist, 1);
+			(*nut_usb_exit)(NULL);
+			fatal_with_errno(EXIT_FAILURE, "Out of memory");
+		} else {
+			uint8_t device_addr = (*nut_usb_get_device_address)(dev);
+			if (device_addr > 0) {
+				snprintf(device_port, 4, "%03d", device_addr);
+			} else {
+				snprintf(device_port, 4, ".*");
+			}
+		}
+
+		bcdDevice = dev_desc.bcdDevice;
 #else  /* => WITH_LIBUSB_0_1 */
 # ifndef WIN32
 	for (bus = (*nut_usb_busses); bus; bus = bus->next) {
@@ -305,6 +353,8 @@ nutscan_device_t * nutscan_scan_usb()
 			iProduct = dev->descriptor.iProduct;
 			iSerialNumber = dev->descriptor.iSerialNumber;
 			busname = bus->dirname;
+			device_port = dev->filename;
+			bcdDevice = dev->descriptor.bcdDevice;
 #endif
 			if ((driver_name =
 				is_usb_device_supported(usb_device_table,
@@ -314,9 +364,9 @@ nutscan_device_t * nutscan_scan_usb()
 #if WITH_LIBUSB_1_0
 				ret = (*nut_usb_open)(dev, &udev);
 				if (!udev || ret != LIBUSB_SUCCESS) {
-					fprintf(stderr,"Failed to open device "
-						"bus '%s', skipping: %s\n",
-						busname,
+					fprintf(stderr, "Failed to open device "
+						"bus '%s' device/port '%s', skipping: %s\n",
+						busname, device_port,
 						(*nut_usb_strerror)(ret));
 
 					/* Note: closing is not applicable
@@ -325,7 +375,8 @@ nutscan_device_t * nutscan_scan_usb()
 					 * when e.g. permissions problem)
 					 */
 
-					free (busname);
+					free(busname);
+					free(device_port);
 
 					continue;
 				}
@@ -334,8 +385,8 @@ nutscan_device_t * nutscan_scan_usb()
 				if (!udev) {
 					/* TOTHINK: any errno or similar to test? */
 					fprintf(stderr, "Failed to open device "
-						"bus '%s',skipping: %s\n",
-						busname,
+						"bus '%s' device/port '%s', skipping: %s\n",
+						busname, device_port,
 						(*nut_usb_strerror)());
 					continue;
 				}
@@ -351,6 +402,7 @@ nutscan_device_t * nutscan_scan_usb()
 							(*nut_usb_close)(udev);
 #if WITH_LIBUSB_1_0
 							free(busname);
+							free(device_port);
 							(*nut_usb_free_device_list)(devlist, 1);
 							(*nut_usb_exit)(NULL);
 #endif	/* WITH_LIBUSB_1_0 */
@@ -370,6 +422,7 @@ nutscan_device_t * nutscan_scan_usb()
 							(*nut_usb_close)(udev);
 #if WITH_LIBUSB_1_0
 							free(busname);
+							free(device_port);
 							(*nut_usb_free_device_list)(devlist, 1);
 							(*nut_usb_exit)(NULL);
 #endif	/* WITH_LIBUSB_1_0 */
@@ -390,6 +443,7 @@ nutscan_device_t * nutscan_scan_usb()
 							(*nut_usb_close)(udev);
 #if WITH_LIBUSB_1_0
 							free(busname);
+							free(device_port);
 							(*nut_usb_free_device_list)(devlist, 1);
 							(*nut_usb_exit)(NULL);
 #endif	/* WITH_LIBUSB_1_0 */
@@ -409,6 +463,7 @@ nutscan_device_t * nutscan_scan_usb()
 					(*nut_usb_close)(udev);
 #if WITH_LIBUSB_1_0
 					free(busname);
+					free(device_port);
 					(*nut_usb_free_device_list)(devlist, 1);
 					(*nut_usb_exit)(NULL);
 #endif	/* WITH_LIBUSB_1_0 */
@@ -459,6 +514,16 @@ nutscan_device_t * nutscan_scan_usb()
 					"bus",
 					busname);
 
+				nutscan_add_option_to_device(nut_dev,
+					"device",
+					device_port);
+
+				/* Not currently matched by drivers, hence commented for now: */
+				sprintf(string, "%04X", bcdDevice);
+				nutscan_add_option_to_device(nut_dev,
+					"###NOTMATCHED-YET###bcdDevice",
+					string);
+
 				current_nut_dev = nutscan_add_device_to_device(
 					current_nut_dev,
 					nut_dev);
@@ -472,6 +537,7 @@ nutscan_device_t * nutscan_scan_usb()
 	}
 #else	/* not WITH_LIBUSB_0_1 */
 		free(busname);
+		free(device_port);
 	}
 
 	(*nut_usb_free_device_list)(devlist, 1);

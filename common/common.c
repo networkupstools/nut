@@ -32,9 +32,25 @@
 #endif
 
 #include <dirent.h>
-#if !HAVE_REALPATH
+#if !HAVE_DECL_REALPATH
 # include <sys/stat.h>
 #endif
+
+#ifdef WITH_LIBSYSTEMD
+# include <systemd/sd-daemon.h>
+/* upsnotify() debug-logs its reports; a watchdog ping is something we
+ * try to send often so report it just once (whether enabled or not) */
+static int upsnotify_reported_watchdog_systemd = 0;
+/* Similarly for only reporting once if the notification subsystem is disabled */
+static int upsnotify_reported_disabled_systemd = 0;
+# ifndef DEBUG_SYSTEMD_WATCHDOG
+/* Define this to 1 for lots of spam at debug level 6, and ignoring WATCHDOG_PID
+ * so trying to post reports anyway if WATCHDOG_USEC is valid */
+#  define DEBUG_SYSTEMD_WATCHDOG 0
+# endif
+#endif
+/* Similarly for only reporting once if the notification subsystem is not built-in */
+static int upsnotify_reported_disabled_notech = 0;
 
 /* the reason we define UPS_VERSION as a static string, rather than a
 	macro, is to make dependency tracking easier (only common.o depends
@@ -49,7 +65,7 @@ const char *UPS_VERSION = NUT_VERSION_MACRO;
 /* Know which bitness we were built for,
  * to adjust the search paths for get_libname() */
 #include "nut_stdint.h"
-#if UINTPTR_MAX == 0xffffffffffffffffULL
+#if defined(UINTPTR_MAX) && (UINTPTR_MAX + 0) == 0xffffffffffffffffULL
 # define BUILD_64   1
 #else
 # ifdef BUILD_64
@@ -229,7 +245,7 @@ struct passwd *get_user_pwent(const char *name)
 	   some implementations of getpwnam() do not set errno when this
 	   happens. */
 	if (errno == 0)
-		fatalx(EXIT_FAILURE, "user %s not found", name);
+		fatalx(EXIT_FAILURE, "OS user %s not found", name);
 	else
 		fatal_with_errno(EXIT_FAILURE, "getpwnam(%s)", name);
 #else
@@ -268,14 +284,26 @@ void become_user(struct passwd *pw)
 {
 #ifndef WIN32
 	/* if we can't switch users, then don't even try */
-	if ((geteuid() != 0) && (getuid() != 0)) {
-		upsdebugx(1, "Can not become_user(%s): not root initially, "
-			"remaining UID=%jd GID=%jd",
-			pw->pw_name, (intmax_t)getuid(), (intmax_t)getgid());
+	intmax_t initial_uid = getuid();
+	intmax_t initial_euid = geteuid();
+	if ((initial_euid != 0) && (initial_uid != 0)) {
+		intmax_t initial_gid = getgid();
+		if (initial_euid == (intmax_t)pw->pw_uid
+		||   initial_uid == (intmax_t)pw->pw_uid
+		) {
+			upsdebugx(1, "No need to become_user(%s): "
+				"already UID=%jd GID=%jd",
+				pw->pw_name, initial_uid, initial_gid);
+		} else {
+			upsdebugx(1, "Can not become_user(%s): "
+				"not root initially, "
+				"remaining UID=%jd GID=%jd",
+				pw->pw_name, initial_uid, initial_gid);
+		}
 		return;
 	}
 
-	if (getuid() == 0)
+	if (initial_uid == 0)
 		if (seteuid(0))
 			fatal_with_errno(EXIT_FAILURE, "getuid gave 0, but seteuid(0) failed");
 
@@ -426,9 +454,15 @@ int sendsignalpid(pid_t pid, int sig)
 pid_t parsepid(const char *buf)
 {
 	pid_t	pid = -1;
+	intmax_t	_pid;
+
+	if (!buf) {
+		upsdebugx(6, "%s: called with NULL input", __func__);
+		return pid;
+	}
 
 	/* assuming 10 digits for a long */
-	intmax_t _pid = strtol(buf, (char **)NULL, 10);
+	_pid = strtol(buf, (char **)NULL, 10);
 	if (_pid <= get_max_pid_t()) {
 		pid = (pid_t)_pid;
 	} else {
@@ -577,6 +611,351 @@ const char *xbasename(const char *file)
 	if (p == NULL)
 		return file;
 	return p + 1;
+}
+
+/* Send (daemon) state-change notifications to an
+ * external service management framework such as systemd
+ */
+int upsnotify(upsnotify_state_t state, const char *fmt, ...)
+{
+	int ret = -127;
+	va_list va;
+	char	buf[LARGEBUF];
+	char	msgbuf[LARGEBUF];
+	size_t	msglen = 0;
+
+	/* Prepare the message (if any) as a string */
+	msgbuf[0] = '\0';
+	if (fmt) {
+		va_start(va, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+		/* generic message... */
+		ret = vsnprintf(msgbuf, sizeof(msgbuf), fmt, va);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
+		va_end(va);
+
+		if ((ret < 0) || (ret >= (int) sizeof(msgbuf))) {
+			syslog(LOG_WARNING,
+				"%s (%s:%d): vsnprintf needed more than %" PRIuSIZE " bytes: %d",
+				__func__, __FILE__, __LINE__, sizeof(msgbuf), ret);
+		} else {
+			msglen = strlen(msgbuf);
+		}
+		/* Reset for actual notification processing below */
+		ret = -127;
+	}
+
+#if defined(WITH_LIBSYSTEMD) && (WITH_LIBSYSTEMD)
+# if defined(WITHOUT_LIBSYSTEMD) && (WITHOUT_LIBSYSTEMD)
+	NUT_UNUSED_VARIABLE(buf);
+	NUT_UNUSED_VARIABLE(msglen);
+	if (!upsnotify_reported_disabled_systemd)
+		upsdebugx(6, "%s: notify about state %i with libsystemd: "
+		"skipped for libcommonclient build, "
+		"will not spam more about it", __func__, state);
+	upsnotify_reported_disabled_systemd = 1;
+# else
+	if (!getenv("NOTIFY_SOCKET")) {
+		if (!upsnotify_reported_disabled_systemd)
+			upsdebugx(6, "%s: notify about state %i with libsystemd: "
+				"was requested, but not running as a service unit now, "
+				"will not spam more about it",
+				__func__, state);
+		upsnotify_reported_disabled_systemd = 1;
+	} else {
+#  ifdef HAVE_SD_NOTIFY
+
+#   if ! DEBUG_SYSTEMD_WATCHDOG
+		if (state != NOTIFY_STATE_WATCHDOG || !upsnotify_reported_watchdog_systemd)
+#   endif
+			upsdebugx(6, "%s: notify about state %i with libsystemd: use sd_notify()", __func__, state);
+
+		/* https://www.freedesktop.org/software/systemd/man/sd_notify.html */
+		if (msglen) {
+			ret = snprintf(buf, sizeof(buf), "STATUS=%s", msgbuf);
+			if ((ret < 0) || (ret >= (int) sizeof(buf))) {
+				syslog(LOG_WARNING,
+					"%s (%s:%d): snprintf needed more than %" PRIuSIZE " bytes: %d",
+					__func__, __FILE__, __LINE__, sizeof(buf), ret);
+				msglen = 0;
+			} else {
+				msglen = (size_t)ret;
+			}
+		}
+
+		switch (state) {
+			case NOTIFY_STATE_READY:
+				ret = snprintf(buf + msglen, sizeof(buf) - msglen,
+					"%sREADY=1",
+					msglen ? "\n" : "");
+				break;
+
+			case NOTIFY_STATE_READY_WITH_PID:
+				if (1) { /* scoping */
+					char pidbuf[SMALLBUF];
+					if (snprintf(pidbuf, sizeof(pidbuf), "%lu", (unsigned long) getpid())) {
+						ret = snprintf(buf + msglen, sizeof(buf) - msglen,
+							"%sREADY=1\n"
+							"MAINPID=%s",
+							msglen ? "\n" : "",
+							pidbuf);
+						upsdebugx(6, "%s: notifying systemd about MAINPID=%s",
+							__func__, pidbuf);
+						/* https://github.com/systemd/systemd/issues/25961
+						 * Reset the WATCHDOG_PID so we know this is the
+						 * process we want to post pings from!
+						 */
+						unsetenv("WATCHDOG_PID");
+						setenv("WATCHDOG_PID", pidbuf, 1);
+					} else {
+						upsdebugx(6, "%s: NOT notifying systemd about MAINPID, "
+							"got an error stringifying it; processing as "
+							"plain NOTIFY_STATE_READY",
+							__func__);
+						ret = snprintf(buf + msglen, sizeof(buf) - msglen,
+							"%sREADY=1",
+							msglen ? "\n" : "");
+						/* TODO: Maybe revise/drop this tweak if
+						 * loggers other than systemd are used: */
+						state = NOTIFY_STATE_READY;
+					}
+				}
+				break;
+
+			case NOTIFY_STATE_RELOADING:
+				ret = snprintf(buf + msglen, sizeof(buf) - msglen, "%s%s",
+					msglen ? "\n" : "",
+					"RELOADING=1");
+				break;
+
+			case NOTIFY_STATE_STOPPING:
+				ret = snprintf(buf + msglen, sizeof(buf) - msglen, "%s%s",
+					msglen ? "\n" : "",
+					"STOPPING=1");
+				break;
+
+			case NOTIFY_STATE_STATUS:
+				/* Only send a text message per "fmt" */
+				if (!msglen) {
+					upsdebugx(6, "%s: failed to notify about status: none provided", __func__);
+					ret = -1;
+				} else {
+					ret = (int)msglen;
+				}
+				break;
+
+			case NOTIFY_STATE_WATCHDOG:
+				/* Ping the framework that we are still alive */
+				if (1) {	/* scoping */
+					int	postit = 0;
+
+#   ifdef HAVE_SD_WATCHDOG_ENABLED
+					uint64_t	to = 0;
+					postit = sd_watchdog_enabled(0, &to);
+
+					if (postit < 0) {
+#    if ! DEBUG_SYSTEMD_WATCHDOG
+						if (!upsnotify_reported_watchdog_systemd)
+#    endif
+							upsdebugx(6, "%s: sd_enabled_watchdog query failed: %s",
+								__func__, strerror(postit));
+					} else {
+#    if ! DEBUG_SYSTEMD_WATCHDOG
+						if (!upsnotify_reported_watchdog_systemd || postit > 0)
+#    else
+						if (postit > 0)
+#    endif
+							upsdebugx(6, "%s: sd_enabled_watchdog query returned: %d "
+								"(%" PRIu64 "msec remain)",
+								__func__, postit, to);
+					}
+#   endif
+
+					if (postit < 1) {
+						char *s = getenv("WATCHDOG_USEC");
+#    if ! DEBUG_SYSTEMD_WATCHDOG
+						if (!upsnotify_reported_watchdog_systemd)
+#    endif
+							upsdebugx(6, "%s: WATCHDOG_USEC=%s", __func__, s);
+						if (s && *s) {
+							long l = strtol(s, (char **)NULL, 10);
+							if (l > 0) {
+								pid_t wdpid = parsepid(getenv("WATCHDOG_PID"));
+								if (wdpid == (pid_t)-1 || wdpid == getpid()) {
+#    if ! DEBUG_SYSTEMD_WATCHDOG
+									if (!upsnotify_reported_watchdog_systemd)
+#    endif
+										upsdebugx(6, "%s: can post: WATCHDOG_PID=%li",
+											__func__, (long)wdpid);
+									postit = 1;
+								} else {
+#    if ! DEBUG_SYSTEMD_WATCHDOG
+									if (!upsnotify_reported_watchdog_systemd)
+#    endif
+										upsdebugx(6, "%s: watchdog is configured, "
+											"but not for this process: "
+											"WATCHDOG_PID=%li",
+											__func__, (long)wdpid);
+#    if DEBUG_SYSTEMD_WATCHDOG
+									/* Just try to post - at worst, systemd
+									 * NotifyAccess will prohibit the message.
+									 * The envvar simply helps child processes
+									 * know they should not spam the watchdog
+									 * handler (usually only MAINPID should):
+									 *   https://github.com/systemd/systemd/issues/25961#issuecomment-1373947907
+									 */
+									postit = 1;
+#    else
+									postit = 0;
+#    endif
+								}
+							}
+						}
+					}
+
+					if (postit > 0) {
+						ret = snprintf(buf + msglen, sizeof(buf) - msglen, "%s%s",
+							msglen ? "\n" : "",
+							"WATCHDOG=1");
+					} else if (postit == 0) {
+#    if ! DEBUG_SYSTEMD_WATCHDOG
+						if (!upsnotify_reported_watchdog_systemd)
+#    endif
+							upsdebugx(6, "%s: failed to tickle the watchdog: not enabled for this unit", __func__);
+						ret = -126;
+					}
+				}
+				break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+				/* All enum cases defined as of the time of coding
+				 * have been covered above. Handle later definitions,
+				 * memory corruptions and buggy inputs below...
+				 */
+			default:
+				if (!msglen) {
+					upsdebugx(6, "%s: unknown state and no status message provided", __func__);
+					ret = -1;
+				} else {
+					upsdebugx(6, "%s: unknown state but have a status message provided", __func__);
+					ret = (int)msglen;
+				}
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
+		}
+
+		if ((ret < 0) || (ret >= (int) sizeof(buf))) {
+			/* Refusal to send the watchdog ping is not an error to report */
+			if ( !(ret == -126 && (state == NOTIFY_STATE_WATCHDOG)) ) {
+				syslog(LOG_WARNING,
+					"%s (%s:%d): snprintf needed more than %" PRIuSIZE " bytes: %d",
+					__func__, __FILE__, __LINE__, sizeof(buf), ret);
+			}
+			ret = -1;
+		} else {
+			upsdebugx(6, "%s: posting sd_notify: %s", __func__, buf);
+			msglen = (size_t)ret;
+			ret = sd_notify(0, buf);
+			if (ret > 0 && state == NOTIFY_STATE_READY_WITH_PID) {
+				/* Usually we begin the main loop just after this
+				 * and post a watchdog message but systemd did not
+				 * yet prepare to handle us */
+				upsdebugx(6, "%s: wait for NOTIFY_STATE_READY_WITH_PID to be handled by systemd", __func__);
+#   ifdef HAVE_SD_NOTIFY_BARRIER
+				sd_notify_barrier(0, UINT64_MAX);
+#   else
+				usleep(3 * 1000000);
+#   endif
+			}
+		}
+
+#  else	/* not HAVE_SD_NOTIFY: */
+		/* FIXME: Try to fork and call systemd-notify helper program */
+		upsdebugx(6, "%s: notify about state %i with libsystemd: lacking sd_notify()", __func__, state);
+		ret = -127;
+#  endif	/* HAVE_SD_NOTIFY */
+	}
+# endif	/* if not WITHOUT_LIBSYSTEMD (explicit avoid) */
+#else	/* not WITH_LIBSYSTEMD */
+	NUT_UNUSED_VARIABLE(buf);
+	NUT_UNUSED_VARIABLE(msglen);
+#endif	/* WITH_LIBSYSTEMD */
+
+	if (ret < 0
+#if defined(WITH_LIBSYSTEMD) && (WITH_LIBSYSTEMD) && !(defined(WITHOUT_LIBSYSTEMD) && (WITHOUT_LIBSYSTEMD)) && (defined(HAVE_SD_NOTIFY) && HAVE_SD_NOTIFY)
+# if ! DEBUG_SYSTEMD_WATCHDOG
+	&& (!upsnotify_reported_watchdog_systemd || (state != NOTIFY_STATE_WATCHDOG))
+# endif
+#endif
+	) {
+		if (ret == -127) {
+			if (!upsnotify_reported_disabled_notech)
+				upsdebugx(6, "%s: failed to notify about state %i: no notification tech defined, will not spam more about it", __func__, state);
+			upsnotify_reported_disabled_notech = 1;
+		} else {
+			upsdebugx(6, "%s: failed to notify about state %i", __func__, state);
+		}
+	}
+
+#if defined(WITH_LIBSYSTEMD) && (WITH_LIBSYSTEMD)
+# if ! DEBUG_SYSTEMD_WATCHDOG
+	if (state == NOTIFY_STATE_WATCHDOG && !upsnotify_reported_watchdog_systemd) {
+		upsdebugx(6, "%s: logged the systemd watchdog situation once, will not spam more about it", __func__);
+		upsnotify_reported_watchdog_systemd = 1;
+	}
+# endif
+#endif
+
+	return ret;
+}
+
+void nut_report_config_flags(void)
+{
+	/* Roughly similar to upslogx() but without the buffer-size limits and
+	 * timestamp/debug-level prefixes. Only printed if debug (any) is on.
+	 * Depending on amount of configuration tunables involved by a particular
+	 * build of NUT, the string can be quite long (over 1KB).
+	 */
+	if (nut_debug_level < 1)
+		return;
+
+	if (xbit_test(upslog_flags, UPSLOG_STDERR))
+		fprintf(stderr, "Network UPS Tools version %s configured with flags: %s\n",
+			UPS_VERSION, CONFIG_FLAGS);
+
+	/* NOTE: May be ignored or truncated by receiver if that syslog server
+	 * (and/or OS sender) does not accept messages of such length */
+	if (xbit_test(upslog_flags, UPSLOG_SYSLOG))
+		syslog(LOG_DEBUG, "Network UPS Tools version %s configured with flags: %s",
+			UPS_VERSION, CONFIG_FLAGS);
 }
 
 static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
@@ -1294,7 +1673,7 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 	}
 	while ((dirp = readdir(dp)) != NULL)
 	{
-#if !HAVE_REALPATH
+#if !HAVE_DECL_REALPATH
 		struct stat	st;
 #endif
 
@@ -1304,7 +1683,7 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 		&&  dirp->d_name[base_libname_length] == '\0' /* avoid "*.dll.a" etc. */
 		) {
 			snprintf(current_test_path, LARGEBUF, "%s/%s", dirname, dirp->d_name);
-#if HAVE_REALPATH
+#if HAVE_DECL_REALPATH
 			libname_path = realpath(current_test_path, NULL);
 #else
 			/* Just check if candidate name is (points to?) valid file */
@@ -1341,7 +1720,7 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 				}
 			}
 # endif /* WIN32 */
-#endif  /* HAVE_REALPATH */
+#endif  /* HAVE_DECL_REALPATH */
 
 			upsdebugx(2,"Candidate path for lib %s is %s (realpath %s)",
 				base_libname, current_test_path,

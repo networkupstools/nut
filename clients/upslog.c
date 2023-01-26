@@ -176,6 +176,8 @@ static void help(const char *prog)
 	printf("\n");
 	printf("See the upslog(8) man page for more information.\n");
 
+	nut_report_config_flags();
+
 	exit(EXIT_SUCCESS);
 }
 
@@ -501,6 +503,7 @@ int main(int argc, char **argv)
 				break;
 
 			case 'V':
+				nut_report_config_flags();
 				exit(EXIT_SUCCESS);
 
 			case 'p':
@@ -618,7 +621,11 @@ int main(int argc, char **argv)
 
 	compile_format();
 
+	upsnotify(NOTIFY_STATE_READY_WITH_PID, NULL);
+
 	while (exit_flag == 0) {
+		upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
+
 		time(&now);
 
 		if (nextpoll > now) {
@@ -631,10 +638,12 @@ int main(int argc, char **argv)
 		}
 
 		if (reopen_flag) {
+			upsnotify(NOTIFY_STATE_RELOADING, NULL);
 			upslogx(LOG_INFO, "Signal %d: reopening log file",
 				reopen_flag);
 			reopen_log();
 			reopen_flag = 0;
+			upsnotify(NOTIFY_STATE_READY, NULL);
 		}
 
 		for (monhost_ups_current = monhost_ups_anchor;
@@ -657,6 +666,8 @@ int main(int argc, char **argv)
 	}
 
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
+	upsnotify(NOTIFY_STATE_STOPPING, "Signal %d: exiting", exit_flag);
+
 	for (monhost_ups_current = monhost_ups_anchor;
 	     monhost_ups_current != NULL;
 	     monhost_ups_current = monhost_ups_current->next) {

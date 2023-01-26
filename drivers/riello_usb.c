@@ -28,15 +28,13 @@
 
 #include "config.h" /* must be the first header */
 
-#include <stdint.h>
-
 #include "main.h"
 #include "nut_libusb.h"
 #include "usb-common.h"
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello USB driver"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.08"
 
 #define DEFAULT_OFFDELAY   5  /*!< seconds (max 0xFF) */
 #define DEFAULT_BOOTDELAY  5  /*!< seconds (max 0xFF) */
@@ -354,13 +352,17 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 	int ret;
 
 	if (udev == NULL) {
+		dstate_setinfo("driver.state", "reconnect.trying");
+
 		ret = usb->open_dev(&udev, &usbdevice, reopen_matcher, &driver_callback);
 
 		upsdebugx (3, "riello_command err udev NULL : %d ", ret);
 		if (ret < 0)
 			return ret;
 
+		dstate_setinfo("driver.state", "reconnect.updateinfo");
 		upsdrv_initinfo();	/* reconnect usb cable */
+		dstate_setinfo("driver.state", "quiet");
 	}
 
 	ret = (*subdriver_command)(cmd, buf, length, buflen);
@@ -410,6 +412,7 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 	case LIBUSB_ERROR_NOT_FOUND:		/* No such file or directory */
 	fallthrough_case_reconnect:
 		/* Uh oh, got to reconnect! */
+		dstate_setinfo("driver.state", "reconnect.trying");
 		usb->close_dev(udev);
 		udev = NULL;
 		break;
@@ -837,6 +840,9 @@ void upsdrv_help(void)
 
 void upsdrv_makevartable(void)
 {
+	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
+	nut_usb_addvars();
+
 	addvar(VAR_FLAG, "localcalculation", "Calculate battery charge and runtime locally");
 }
 

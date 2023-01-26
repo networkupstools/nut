@@ -687,8 +687,10 @@ static hid_info_t ever_hid2nut[] = {
   /* WAS: experimental.powersummary.delay_before_shutdown */
   { "ups.timer.shutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL },
 
+#if WITH_UNMAPPED_DATA_POINTS
   /* not implemented*/
-  /* { "unmapped.ups.powersummary.powersummaryid", 0, 0, "UPS.PowerSummary.PowerSummaryID", NULL, "%.0f", 0, NULL }, */
+  { "unmapped.ups.powersummary.powersummaryid", 0, 0, "UPS.PowerSummary.PowerSummaryID", NULL, "%.0f", 0, NULL },
+#endif	/* if WITH_UNMAPPED_DATA_POINTS */
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, online_info },
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.AwaitingPower", NULL, NULL, HU_FLAG_QUICK_POLL, awaitingpower_info },
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.BatteryPresent", NULL, NULL, 0, nobattery_info },

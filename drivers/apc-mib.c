@@ -269,14 +269,14 @@ static snmp_info_t apcc_mib[] = {
 	{ "output.voltage.nominal", ST_FLAG_STRING | ST_FLAG_RW, 3, ".1.3.6.1.4.1.318.1.1.1.5.2.1.0", "", SU_TYPE_INT | SU_FLAG_OK, NULL },
 
 	/* Measure-UPS ambient variables */
-/* Environmental sensors (AP9612TH and others) */
+	/* Environmental sensors (AP9612TH and others) */
 	{ "ambient.temperature", 0, 1, ".1.3.6.1.4.1.318.1.1.2.1.1.0", "", SU_FLAG_OK, NULL },
 	{ "ambient.1.temperature.alarm.high", 0, 1, ".1.3.6.1.4.1.318.1.1.10.1.2.2.1.3.1", "", SU_FLAG_OK, NULL },
 	{ "ambient.1.temperature.alarm.low", 0, 1, ".1.3.6.1.4.1.318.1.1.10.1.2.2.1.4.1", "", SU_FLAG_OK, NULL },
 	{ "ambient.humidity", 0, 1, ".1.3.6.1.4.1.318.1.1.2.1.2.0", "", SU_FLAG_OK, NULL },
 	{ "ambient.1.humidity.alarm.high", 0, 1, ".1.3.6.1.4.1.318.1.1.10.1.2.2.1.6.1", "", SU_FLAG_OK, NULL },
 	{ "ambient.1.humidity.alarm.low", 0, 1, ".1.3.6.1.4.1.318.1.1.10.1.2.2.1.7.1", "", SU_FLAG_OK, NULL },
-/* IEM: integrated environment monitor probe */
+	/* IEM: integrated environment monitor probe */
 	{ "ambient.temperature", 0, 1, APCC_OID_IEM_TEMP, "", SU_FLAG_OK, NULL },
 	{ "ambient.humidity", 0, 1, APCC_OID_IEM_HUMID, "", SU_FLAG_OK, NULL },
 

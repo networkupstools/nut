@@ -59,6 +59,19 @@ https://github.com/networkupstools/nut/milestone/8
      v2.8.1 [#1420]
    * Fixed building of NUT man pages when just a few drivers are selected
      by `configure` script for custom builds [#1467]
+   * Now that `upsdrvctl` can pass debugging level through to the launched
+     driver(s), they would by default stay in the foreground. This can
+     complicate (or simplify, when intentional) the management of service
+     instances. Now there are explicit `upsdrvctl` options for choosing
+     this (`-F`/`-B`), although default behavior is retained. Note that
+     foregrounding and mass-management loop to start all drivers (without
+     specifying the single device) do not play well together [#1759]
+
+ - New `configure --enable-inplace-runtime` option should set default values
+   for `--sysconfdir`, `--with-user` and `--with-group` options to match an
+   existing NUT deployment -- for users who are trying if a custom build
+   of recent codebase solves their practical issues. For "quick tests", a
+   shortcut operation `./ci_build.sh inplace` was added [#1714]
 
  - We lacked log information about changes of chroot jail (uncommon) and
    of UID/GID (everywhere), which makes troubleshooting harder (e.g. lack
@@ -75,6 +88,7 @@ https://github.com/networkupstools/nut/milestone/8
    * cps-hid subdriver now applies same report descriptor fixing logic to
      devices with ProductID 0x0601 as done earlier for 0x0501, to get the
      correct output voltage data [#1497]
+   * apc-hid subdriver now also supports ProductID 0x0004 [#1429]
    * the `usbhid-ups` driver should now reconnect if `libusb` returned a
      memory allocation error [#1422] (seen as "Can't retrieve Report 0a:
      Resource temporarily unavailable"), which can cause practical problems
@@ -87,6 +101,8 @@ https://github.com/networkupstools/nut/milestone/8
  - riello_usb updates:
    * added `localcalculation` option to compute `battery.runtime` and
      `battery.charge` if the device provides bogus values [#1692, #1685]
+
+ - powercom driver should now try harder to refresh data from device [#356]
 
  - NUT for Windows:
    * Ability to build NUT for Windows, last tackled with a branch based on
@@ -104,11 +120,25 @@ https://github.com/networkupstools/nut/milestone/8
      and MacOS on CircleCI [#1552]
 
  - snmp-ups updates:
+   * Fixed detection for device agents which wrongly return the sysOID value
+     as a string instead of an OID [#1710]
    * IETF MIB mapping updated for data points where negative readings
      are invalid [#1558]
    * Added SNMP subdriver "apc-epdu-mib" for APC easy PDU support [#1674]
+   * Added SNMP subdriver "eaton-pdu-nlogic-mib" for nLogic (rebranded Eaton)
+     support [#1698]
+   * Added SNMP subdriver "hpe-pdu3-cis-mib" for HPE G2 Metered & Switched PDU
+     initial "unitary" support (no daisychain support yet); also note that due
+     to SNMP v1 implementation limitations on this device, you should prefer
+     SNMP v3 to get both read and write rights [#1713]
    * Fixed processing loop for large SNMPv2/SNMPv3 responses where one item
      in the middle has a type error [#1682]
+   * Better manage the slight nuances (especially in ups.status) between
+     Eaton UPSs, and rename mibs from `pw` to `eaton_pw_nm2`, and from
+     `pxgx_ups` to `eaton_pxg_ups` [#1715]
+   * Fixed the long standing "Warning: excessive poll failures" issue, that
+     was tied to non-existent OIDs, not well handled in some parts of the
+     driver [#1716]
 
  - Added support for `make install` of PyNUT module and NUT-Monitor desktop
    application [#1462, #1504]
@@ -120,8 +150,24 @@ https://github.com/networkupstools/nut/milestone/8
  - NUT software-only drivers (dummy-ups, clone, clone-outlet) separated from
    serial drivers in respective Makefile and configure script options [#1446]
 
+ - Fixed support for common USB matching options ("vendor", "device", "bus",
+   etc.) for `riello_usb` and `richcomm_usb` [#1763] and updated man pages
+   of all USB drivers using these options to include the same description
+   [#1766]
+
+ - Added an `allow_duplicates` flag for common USB matching options which
+   may help monitor several related no-name devices (although without knowing
+   reliably which one is which... better than nothing) [#1756]
+
+ - The `nut-scanner` program should now suggest same configuration fields as
+   those used by common USB matching options in (most of the) drivers, e.g.
+   adding "device" to the generated configuration section [#1790]
+
  - Stuck drivers that do not react to `SIGTERM` quickly are now retried with
    `SIGKILL` [#1424]
+
+ - Each driver should now report its `driver.state` to help readers determine
+   whether it is initializing, reconnecting, or running regular loops [#1767]
 
  - Code which resolves full paths to libraries should now consider the common
    environment variable `LD_LIBRARY_PATH` as a preferred possible override
@@ -129,28 +175,53 @@ https://github.com/networkupstools/nut/milestone/8
    this variable unless troubleshooting, although other systems rely on it)
    [#805]
 
- - the nut-scanner program was updated to fall back to loading unresolved
+ - The nut-scanner program was updated to fall back to loading unresolved
    library filenames, hoping that `lt_dlopen()` implementation on the current
    platform would find library files better [#805]
 
- - detection of `libltdl` in `configure` script updated with fallback code to
+ - Detection of `libltdl` in `configure` script updated with fallback code to
    find it on systems that deliver the library to `/usr/local/lib` (e.g. on
    FreeBSD) [#1577]
 
- - an explicit `configure --with-nut-scanner` toggle was added, specifically
+ - An explicit `configure --with-nut-scanner` toggle was added, specifically
    so that build environments requesting `--with-all` but lack `libltdl` would
    abort and require either to install the dependency or explicitly forfeit
    the tool (some distro packages missed it quietly in the past) [#1560]
 
- - existing openssl-1.1.0 support added for NUT v2.8.0 release was tested to
+ - The `nut-scanner` program should now by default warn about serial numbers
+   which do not make much sense (are duplicate, empty, all same character, etc)
+   [#1810]
+
+ - Existing openssl-1.1.0 support added for NUT v2.8.0 release was tested to
    be sufficient without deprecation warnings for builds against openssl-3.0.x
    (but no real-time testing was done yet) [#1547]
 
  - upslog: Added support for logging multiple devices with one call to the
    program [#1604]
 
- - some fixes applied to Solaris/illumos packaging and SMF service support
+ - Some fixes applied to Solaris/illumos packaging and SMF service support
    [#1554, #1564]
+
+ - Some fixes for builds on older OSes with less functional default system
+   shell interpreters - now `autogen.sh` supports a `CONFIG_SHELL` envvar
+   to inject its value into generated `configure` script [#1736]
+   * Note that you may have to install additional tools (possibly from
+     third-party FOSS packaging efforts) to prepare and build the NUT
+     codebase, and/or prefer non-default system provided implementations
+     (e.g. to use the XPG4 `grep` with `-E` support on Solaris as detailed
+     in https://github.com/networkupstools/nut/issues/1736 comments)
+   * Build environment configuration notes in `docs/config-prereqs.txt` file
+     refreshed to cover building of current NUT codebase in CentOS 6 [#1804]
+     and Solaris 8 [#1736, #1738]
+
+ - `configure` script, reference init-script and packaging templates updated
+   to eradicate `@PIDPATH@/nut` ambiguity in favor of `@ALTPIDPATH@` for the
+   unprivileged processes vs. `@PIDPATH@` for those running as root [#1719]
+
+ - `configure` script enhanced: `--with-unmapped-data-points` option allows
+   to build SNMP and USB-HID subdrivers with entries discovered by the scripts
+   which generated them from data walks, but developers did not rename yet
+   to NUT mappings conforming to `docs/nut-names.txt` standards [#1699]
 
  - PyNUT.py version bumped to 1.5.0 with some improvements:
    * `ListClients()` method fixed (was broken in many ways), and is now
@@ -170,11 +241,30 @@ https://github.com/networkupstools/nut/milestone/8
    last reported themselves as "stale" (and might later crash) so their
    connections would be terminated if really no longer active [#1626]
 
+ - Clarified documentation in codebase according to end-user feedback [#1721,
+   #1750 and others over time]
+
+ - Several fixes for `upsmon` behavior [#1761, #1680...], including new
+   ability to configure default POWERDOWNFLAG location -- packagers are
+   encouraged to pick optimal location for their distributions (which
+   remains mounted at least read-only late in shutdown) and a new optional
+   POLLFAIL_LOG_THROTTLE_MAX setting [#529, #506]
+
+ - Extended Linux systemd support with optional notifications about daemon
+   state (READY, RELOADING, STOPPING) and watchdog keep-alive messages [#1590]
+
+ - Extended Linux systemd units with aliases named after the daemons:
+   `nut-server.service` as `upsd.service`, and `nut-monitor.service` as
+   `upsmon.service` (so simple `systemctl reload upsd` can work) [#1777]
+
  - Further revision of public headers delivered by NUT was done, particularly
    to address lack of common data types (`size_t`, `ssize_t`, `uint16_t`,
    `time_t` etc.) in third-party client code that earlier sufficed to only
    include NUT headers. Sort of regression by NUT 2.8.0 (note those consumers
    still have to re-declare some numeric variable types used) [#1638, #1615]
+
+ - The `COPYING` file was updated with licenses and attribution for certain
+   source code files and blocks coming from the Internet originally [#1758]
 
 ---------------------------------------------------------------------------
 Release notes for NUT 2.8.0 - what's new since 2.7.4:
@@ -2202,7 +2292,7 @@ Release notes for NUT 1.2.2 - what's new since 1.2.1:
  - upssched now uses a lock file to prevent a race where two could
    start at the same time.  The second upssched would "win", and the
    first one would be unreachable.  This had the side-effect of not
-   being able to cancel timers on the first one.	
+   being able to cancel timers on the first one.
 
    If you use upssched, you must define the LOCKFN directive when
    upgrading to this version, or it will not work.

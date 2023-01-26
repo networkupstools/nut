@@ -67,7 +67,7 @@ AC_DEFUN([AX_C___ATTRIBUTE__], [
 	  foo(__attribute__ ((unused)) int i) {
 	      return;
 	  }
-        ]], [func(1);])],
+        ]], [foo(1);])],
       [ax_cv___attribute__unused_arg=yes],
       [ax_cv___attribute__unused_arg=no]
     )

@@ -44,7 +44,6 @@
 #include "apc-mib.h"
 #include "mge-mib.h"
 #include "netvision-mib.h"
-#include "powerware-mib.h"
 #include "eaton-pdu-genesis2-mib.h"
 #include "eaton-pdu-marlin-mib.h"
 #include "eaton-pdu-pulizzi-mib.h"
@@ -67,6 +66,10 @@
 #include "eaton-ats30-mib.h"
 #include "emerson-avocent-pdu-mib.h"
 #include "hpe-pdu-mib.h"
+#include "hpe-pdu3-cis-mib.h"
+#include "eaton-pdu-nlogic-mib.h"
+#include "eaton-ups-pwnm2-mib.h"
+#include "eaton-ups-pxg-mib.h"
 
 /* Address API change */
 #if ( ! NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol ) && ( ! defined usmAESPrivProtocol )
@@ -106,17 +109,19 @@ static mib2nut_info_t *mib2nut[] = {
 	&eaton_ats16_nm2,	/* This struct comes from : eaton-ats16-nm2-mib.c */
 	&eaton_ats30,		/* This struct comes from : eaton-ats30-mib.c */
 	&eaton_marlin,		/* This struct comes from : eaton-mib.c */
+	&eaton_pdu_nlogic,	/* This struct comes from : eaton-pdu-nlogic-mib.c */
+	&eaton_pxg_ups,		/* This struct comes from : eaton-ups-pxg-mib.c */
+	&eaton_pw_nm2, 		/* This struct comes from : eaton-ups-pwnm2-mib.c */
 	&emerson_avocent_pdu,	/* This struct comes from : emerson-avocent-pdu-mib.c */
 	&aphel_revelation,	/* This struct comes from : eaton-mib.c */
 	&aphel_genesisII,	/* This struct comes from : eaton-mib.c */
 	&pulizzi_switched1,	/* This struct comes from : eaton-mib.c */
 	&pulizzi_switched2,	/* This struct comes from : eaton-mib.c */
 	&hpe_pdu,			/* This struct comes from : hpe-pdu-mib.c */
+	&hpe_pdu3_cis,		/* This struct comes from : hpe-pdu3-cis-mib.c */
 	&huawei,			/* This struct comes from : huawei-mib.c */
 	&mge,				/* This struct comes from : mge-mib.c */
 	&netvision,			/* This struct comes from : netvision-mib.c */
-	&powerware,			/* This struct comes from : powerware-mib.c */
-	&pxgx_ups,			/* This struct comes from : powerware-mib.c */
 	&raritan,			/* This struct comes from : raritan-pdu-mib.c */
 	&raritan_px2,		/* This struct comes from : raritan-px2-mib.c */
 	&xppc,				/* This struct comes from : xppc-mib.c */
@@ -168,7 +173,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"1.23"
+#define DRIVER_VERSION		"1.28"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -1127,6 +1132,7 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 			break;
 		}
 
+
 		if (!((status == STAT_SUCCESS) && (response->errstat == SNMP_ERR_NOERROR))) {
 			if (mibname == NULL) {
 				/* We are probing for proper mib - ignore errors */
@@ -1135,7 +1141,18 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 				return NULL;
 			}
 
+			if (response->errstat == SNMP_ERR_NOSUCHNAME) {
+				upsdebugx(4, "%s: OID does not exist, skipping", __func__);
+				snmp_free_pdu(response);
+				nut_snmp_free(ret_array);
+				return NULL;
+			}
+
+			upsdebugx(3, "status = %i, response->errstat = %li", status, response->errstat);
+
+			/* Error throttling otherwise */
 			numerr++;
+			upsdebugx(4, "%s: numerr++ (total=%i)", __func__, numerr);
 
 			if ((numerr == SU_ERR_LIMIT) || ((numerr % SU_ERR_RATE) == 0)) {
 				upslogx(LOG_WARNING, "[%s] Warning: excessive poll "
@@ -1883,82 +1900,87 @@ static mib2nut_info_t *match_sysoid()
 	int i;
 
 	/* Retrieve sysOID value of this device */
-	if (nut_snmp_get_oid(SYSOID_OID, sysOID_buf, sizeof(sysOID_buf)) == TRUE)
+	if (nut_snmp_get_oid(SYSOID_OID, sysOID_buf, sizeof(sysOID_buf)) != TRUE)
 	{
-		upsdebugx(1, "%s: device sysOID value = %s", __func__, sysOID_buf);
-
-		/* Build OIDs for comparison */
-		if (!read_objid(sysOID_buf, device_sysOID, &device_sysOID_len))
-		{
-			upsdebugx(2, "%s: can't build device_sysOID %s: %s",
-				__func__, sysOID_buf, snmp_api_errstring(snmp_errno));
-
+		upsdebugx(2, "Can't get sysOID value (using nut_snmp_get_oid())");
+		/* Fallback for non-compliant device, that returns a string and not an OID */
+		if (nut_snmp_get_str(SYSOID_OID, sysOID_buf, sizeof(sysOID_buf), NULL) != TRUE) {
+			upsdebugx(2, "Can't get sysOID value (using nut_snmp_get_str())");
 			return NULL;
 		}
+	}
 
-		/* Now, iterate on mib2nut definitions */
-		for (i = 0; mib2nut[i] != NULL; i++)
+	upsdebugx(1, "%s: device sysOID value = %s", __func__, sysOID_buf);
+
+	/* Build OIDs for comparison */
+	if (!read_objid(sysOID_buf, device_sysOID, &device_sysOID_len))
+	{
+		upsdebugx(2, "%s: can't build device_sysOID %s: %s",
+			__func__, sysOID_buf, snmp_api_errstring(snmp_errno));
+
+		return NULL;
+	}
+
+	/* Now, iterate on mib2nut definitions */
+	for (i = 0; mib2nut[i] != NULL; i++)
+	{
+		upsdebugx(1, "%s: checking MIB %s", __func__, mib2nut[i]->mib_name);
+
+		if (mib2nut[i]->sysOID == NULL)
+			continue;
+
+		/* Clear variables */
+		memset(mib2nut_sysOID, 0, sizeof(mib2nut_sysOID));
+		mib2nut_sysOID_len = MAX_OID_LEN;
+
+		if (!read_objid(mib2nut[i]->sysOID, mib2nut_sysOID, &mib2nut_sysOID_len))
 		{
-			upsdebugx(1, "%s: checking MIB %s", __func__, mib2nut[i]->mib_name);
+			upsdebugx(2, "%s: can't build OID %s: %s",
+				__func__, sysOID_buf, snmp_api_errstring(snmp_errno));
 
-			if (mib2nut[i]->sysOID == NULL)
-				continue;
-
-			/* Clear variables */
-			memset(mib2nut_sysOID, 0, sizeof(mib2nut_sysOID));
-			mib2nut_sysOID_len = MAX_OID_LEN;
-
-			if (!read_objid(mib2nut[i]->sysOID, mib2nut_sysOID, &mib2nut_sysOID_len))
-			{
-				upsdebugx(2, "%s: can't build OID %s: %s",
-					__func__, sysOID_buf, snmp_api_errstring(snmp_errno));
-
-				/* Try to continue anyway! */
-				continue;
-			}
-
-			/* Now compare these */
-			upsdebugx(1, "%s: comparing %s with %s", __func__, sysOID_buf, mib2nut[i]->sysOID);
-			if (!netsnmp_oid_equals(device_sysOID, device_sysOID_len, mib2nut_sysOID, mib2nut_sysOID_len))
-			{
-				upsdebugx(2, "%s: sysOID matches MIB '%s'!", __func__, mib2nut[i]->mib_name);
-				/* Counter verify, using {ups,device}.model */
-				snmp_info = mib2nut[i]->snmp_info;
-
-				if (snmp_info == NULL) {
-					upsdebugx(0, "%s: WARNING: snmp_info is not initialized "
-						"for mapping table entry #%d \"%s\"",
-						__func__, i, mib2nut[i]->mib_name
-						);
-					continue;
-				}
-				else if (snmp_info[0].info_type == NULL) {
-					upsdebugx(1, "%s: WARNING: snmp_info is empty "
-						"for mapping table entry #%d \"%s\"",
-						__func__, i, mib2nut[i]->mib_name);
-				}
-
-				if (match_model_OID() != TRUE)
-				{
-					upsdebugx(2, "%s: testOID provided and doesn't match MIB '%s'!", __func__, mib2nut[i]->mib_name);
-					snmp_info = NULL;
-					continue;
-				}
-				else
-					upsdebugx(2, "%s: testOID provided and matches MIB '%s'!", __func__, mib2nut[i]->mib_name);
-
-				return mib2nut[i];
-			}
+			/* Try to continue anyway! */
+			continue;
 		}
 
-		/* Yell all to call for user report */
-		upslogx(LOG_ERR, "No matching MIB found for sysOID '%s'!\n" \
-			"Please report it to NUT developers, with an 'upsc' output for your device.\n" \
-			"Going back to the classic MIB detection method.",
-			sysOID_buf);
+		/* Now compare these */
+		upsdebugx(1, "%s: comparing %s with %s", __func__, sysOID_buf, mib2nut[i]->sysOID);
+		if (!netsnmp_oid_equals(device_sysOID, device_sysOID_len, mib2nut_sysOID, mib2nut_sysOID_len))
+		{
+			upsdebugx(2, "%s: sysOID matches MIB '%s'!", __func__, mib2nut[i]->mib_name);
+			/* Counter verify, using {ups,device}.model */
+			snmp_info = mib2nut[i]->snmp_info;
+
+			if (snmp_info == NULL) {
+				upsdebugx(0, "%s: WARNING: snmp_info is not initialized "
+					"for mapping table entry #%d \"%s\"",
+					__func__, i, mib2nut[i]->mib_name
+					);
+				continue;
+			}
+			else if (snmp_info[0].info_type == NULL) {
+				upsdebugx(1, "%s: WARNING: snmp_info is empty "
+					"for mapping table entry #%d \"%s\"",
+					__func__, i, mib2nut[i]->mib_name);
+			}
+
+			if (match_model_OID() != TRUE)
+			{
+				upsdebugx(2, "%s: testOID provided and doesn't match MIB '%s'!", __func__, mib2nut[i]->mib_name);
+				snmp_info = NULL;
+				continue;
+			}
+			else
+				upsdebugx(2, "%s: testOID provided and matches MIB '%s'!", __func__, mib2nut[i]->mib_name);
+
+			return mib2nut[i];
+		}
 	}
-	else
-		upsdebugx(2, "Can't get sysOID value");
+
+	/* Yell all to call for user report */
+	upslogx(LOG_ERR, "No matching MIB found for sysOID '%s'!\n" \
+		"Please report it to NUT developers, with an 'upsc' output for your device.\n" \
+		"Going back to the classic MIB detection method.",
+		sysOID_buf);
 
 	return NULL;
 }
@@ -2800,6 +2822,7 @@ bool_t get_and_process_data(int mode, snmp_info_t *su_info_p)
 	} else {
 		if (mode == SU_WALKMODE_INIT) {
 			/* handle unsupported vars */
+			upsdebugx(4, "%s: Disabling var '%s'", __func__, su_info_p->info_type);
 			su_info_p->flags &= ~SU_FLAG_OK;
 		} else	{
 			if (!(su_info_p->flags & SU_FLAG_STALE)) {

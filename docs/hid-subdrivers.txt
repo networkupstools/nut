@@ -260,6 +260,11 @@ subdrivers are written:
 - powercom-hid.c/h
 - tripplite-hid.c/h
 
+NOTE: To test existing data points (including those not yet translated
+to standard NUT mappings conforming to <<nut-names,NUT command and
+variable naming scheme>>), you can use custom drivers built after you
+`./configure --with-unmapped-data-points`.
+Production driver builds must not include any non-standard names.
 
 Fixing report descriptors
 ~~~~~~~~~~~~~~~~~~~~~~~~~

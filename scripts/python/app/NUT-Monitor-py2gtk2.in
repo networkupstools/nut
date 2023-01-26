@@ -683,6 +683,11 @@ class interface :
             self.gui_status_notification( _("Device '%s' not found on server") % self.__current_ups, "warning.png" )
             return
 
+        if not self.__ups_handler.CheckUPSAvailable( self.__current_ups ):
+            self.gui_status_message( _("UPS '{0}' is not reachable").format( self.__current_ups ) )
+            self.gui_status_notification( _("UPS '{0}' is not reachable").format( self.__current_ups ), "warning.png" )
+            return
+
         self.__connected = True
         self.__widgets["ups_connect"].hide()
         self.__widgets["ups_disconnect"].show()

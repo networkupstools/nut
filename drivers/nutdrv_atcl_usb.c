@@ -82,7 +82,8 @@ static int device_match_func(USBDevice_t *device, void *privdata)
 					return 1;
 				}
 			}
-			upsdebugx(1, "To keep trying (in case your device does not have a vendor string), use vendor=NULL");
+			upsdebugx(0, "To keep trying (in case your device does not have a vendor string), use vendor=NULL. "
+				"Have you tried the nutdrv_qx driver?");
 			return 0;
 		}
 
@@ -97,15 +98,16 @@ static int device_match_func(USBDevice_t *device, void *privdata)
 				upsdebugx(3, "Matched device with vendor='%s'.", requested_vendor);
 				return 1;
 			} else {
-				upsdebugx(2, "idVendor=%04x and idProduct=%04x, "
-					"but provided vendor '%s' does not match device: '%s'.",
+				upsdebugx(0, "idVendor=%04x and idProduct=%04x, "
+					"but provided vendor '%s' does not match device: '%s'. "
+					"Have you tried the nutdrv_qx driver?",
 					device->VendorID, device->ProductID, requested_vendor, device->Vendor);
 				return 0;
 			}
 		}
 
 		/* TODO: automatic way of suggesting other drivers? */
-		upsdebugx(2, "idVendor=%04x and idProduct=%04x, "
+		upsdebugx(0, "idVendor=%04x and idProduct=%04x, "
 			"but device vendor string '%s' does not match expected string '%s'. "
 			"Have you tried the nutdrv_qx driver?",
 			device->VendorID, device->ProductID, device->Vendor, USB_VENDOR_STRING);
@@ -281,7 +283,8 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 	ssize_t devcount = 0;
 	libusb_device_handle *handle;
 	struct libusb_device_descriptor dev_desc;
-	uint8_t bus;
+	uint8_t bus_num;
+	/* TODO: consider device_addr */
 	int i;
 
 	devcount = libusb_get_device_list(NULL, &devlist);
@@ -339,13 +342,13 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 #if WITH_LIBUSB_1_0
 			device->VendorID = dev_desc.idVendor;
 			device->ProductID = dev_desc.idProduct;
-			bus = libusb_get_bus_number(dev);
+			bus_num = libusb_get_bus_number(dev);
 			device->Bus = (char *)malloc(4);
 			if (device->Bus == NULL) {
 				libusb_free_device_list(devlist, 1);
 				fatal_with_errno(EXIT_FAILURE, "Out of memory");
 			}
-			sprintf(device->Bus, "%03d", bus);
+			sprintf(device->Bus, "%03d", bus_num);
 			iManufacturer = dev_desc.iManufacturer;
 			iProduct = dev_desc.iProduct;
 			iSerialNumber = dev_desc.iSerialNumber;
@@ -679,5 +682,8 @@ void upsdrv_help(void)
 
 void upsdrv_makevartable(void)
 {
-        addvar(VAR_VALUE, "vendor", "USB vendor string (or NULL if none)");
+	/* NOTE: This driver uses a very custom device matching method,
+	 * so does not involve nut_usb_addvars() method like others do.
+	 */
+	addvar(VAR_VALUE, "vendor", "USB vendor string (or NULL if none)");
 }

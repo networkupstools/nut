@@ -33,7 +33,7 @@
 #include "nut_stdint.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.43"
+#define USB_DRIVER_VERSION	"0.45"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -66,6 +66,17 @@ void nut_usb_addvars(void)
 
 	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
 	addvar(VAR_VALUE, "device", "Regular expression to match USB device name");
+
+	/* Warning: this feature is inherently non-deterministic!
+	 * If you only care to know that at least one of your no-name UPSes is online,
+	 * this option can help. If you must really know which one, it will not!
+	 */
+	addvar(VAR_FLAG, "allow_duplicates",
+		"If you have several UPS devices which may not be uniquely "
+		"identified by options above, allow each driver instance with this "
+		"option to take the first match if available, or try another "
+		"(association of driver to device may vary between runs)");
+
 	addvar(VAR_VALUE, "usb_set_altinterface", "Force redundant call to usb_set_altinterface() (value=bAlternateSetting; default=0)");
 
 #ifdef LIBUSB_API_VERSION
@@ -151,7 +162,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 	struct libusb_config_descriptor *conf_desc = NULL;
 	const struct libusb_interface_descriptor *if_desc;
 	libusb_device_handle *udev;
-	uint8_t bus;
+	uint8_t bus_num, device_addr;
 	int ret, res;
 	unsigned char buf[20];
 	const unsigned char *p;
@@ -228,13 +239,45 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		free(curDevice->Device);
 		memset(curDevice, '\0', sizeof(*curDevice));
 
-		bus = libusb_get_bus_number(device);
+		/* Keep the list of items in sync with those matched by
+		 * drivers/libusb0.c and tools/nut-scanner/scan_usb.c:
+		 */
+		bus_num = libusb_get_bus_number(device);
 		curDevice->Bus = (char *)malloc(4);
 		if (curDevice->Bus == NULL) {
 			libusb_free_device_list(devlist, 1);
 			fatal_with_errno(EXIT_FAILURE, "Out of memory");
 		}
-		sprintf(curDevice->Bus, "%03d", bus);
+		if (bus_num > 0) {
+			sprintf(curDevice->Bus, "%03d", bus_num);
+		} else {
+			upsdebugx(1, "%s: invalid libusb bus number %i",
+				__func__, bus_num);
+		}
+
+		device_addr = libusb_get_device_address(device);
+		curDevice->Device = (char *)malloc(4);
+		if (curDevice->Device == NULL) {
+			libusb_free_device_list(devlist, 1);
+			fatal_with_errno(EXIT_FAILURE, "Out of memory");
+		}
+		if (device_addr > 0) {
+			/* 0 means not available, e.g. lack of platform support */
+			sprintf(curDevice->Device, "%03d", device_addr);
+		} else {
+			if (devnum <= 999) {
+				/* Log visibly so users know their number discovered
+				 * from `lsusb` or `dmesg` (if any) was ignored */
+				upsdebugx(0, "%s: invalid libusb device address %" PRIu8 ", "
+					"falling back to enumeration order counter %" PRIuSIZE,
+					__func__, device_addr, devnum);
+				sprintf(curDevice->Device, "%03d", (int)devnum);
+			} else {
+				upsdebugx(1, "%s: invalid libusb device address %" PRIu8,
+					__func__, device_addr);
+			}
+		}
+
 		curDevice->VendorID = dev_desc.idVendor;
 		curDevice->ProductID = dev_desc.idProduct;
 		curDevice->bcdDevice = dev_desc.bcdDevice;
@@ -331,8 +374,10 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 				goto next_device;
 			}
 		}
-		upsdebugx(2, "Device matches");
 
+		/* If we got here, none of the matchers said
+		 * that the device is not what we want. */
+		upsdebugx(2, "Device matches");
 
 		upsdebugx(2, "Reading first configuration descriptor");
 		ret = libusb_get_config_descriptor(device,
@@ -379,20 +424,28 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		/* TODO: Align with libusb1 - initially from Windows branch made against libusb0 */
 		libusb_set_configuration(udev, 1);
 #endif
+
 		while ((ret = libusb_claim_interface(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS) {
 			upsdebugx(2, "failed to claim USB device: %s",
 				libusb_strerror((enum libusb_error)ret));
 
+			if (ret == LIBUSB_ERROR_BUSY && testvar("allow_duplicates")) {
+				upsdebugx(2, "Configured to allow_duplicates so looking for another similar device");
+				goto next_device;
+			}
+
 # ifdef HAVE_LIBUSB_DETACH_KERNEL_DRIVER
-				if ((ret = libusb_detach_kernel_driver(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS) {
+			if ((ret = libusb_detach_kernel_driver(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS) {
 # else /* if defined HAVE_LIBUSB_DETACH_KERNEL_DRIVER_NP) */
-				if ((ret = libusb_detach_kernel_driver_np(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS) {
+			if ((ret = libusb_detach_kernel_driver_np(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS) {
 # endif
-				if (ret == LIBUSB_ERROR_NOT_FOUND)
+				if (ret == LIBUSB_ERROR_NOT_FOUND) {
+					/* logged as "Entity not found" if this persists */
 					upsdebugx(2, "Kernel driver already detached");
-				else
+				} else {
 					upsdebugx(1, "failed to detach kernel driver from USB device: %s",
 						libusb_strerror((enum libusb_error)ret));
+				}
 			} else {
 				upsdebugx(2, "detached kernel driver from USB device...");
 			}
@@ -412,6 +465,11 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		}
 #else
 		if ((ret = libusb_claim_interface(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS ) {
+			if (ret == LIBUSB_ERROR_BUSY && testvar("allow_duplicates")) {
+				upsdebugx(2, "Configured to allow_duplicates so looking for another similar device");
+				goto next_device;
+			}
+
 			libusb_free_config_descriptor(conf_desc);
 			libusb_free_device_list(devlist, 1);
 			fatalx(EXIT_FAILURE,
@@ -457,9 +515,9 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			upsdebugx(2, "Unable to get HID descriptor (%s)",
 				libusb_strerror((enum libusb_error)res));
 		} else if (res < 9) {
-			upsdebugx(2, "HID descriptor too short (expected %d, got %d)", 8, res);
+			upsdebugx(2, "HID descriptor too short (expected %d, got %d)", 9, res);
 		} else {
-
+			upsdebugx(2, "Retrieved HID descriptor (expected %d, got %d)", 9, res);
 			upsdebug_hex(3, "HID descriptor, method 1", buf, 9);
 
 			rdlen1 = ((uint8_t)buf[7]) | (((uint8_t)buf[8]) << 8);

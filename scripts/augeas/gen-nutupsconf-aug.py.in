@@ -84,6 +84,9 @@ if __name__ == '__main__':
 
 			# 1.4/ Extract variable names
 			for line in matchResults:
+				if ("Could not addvar" in line):
+					# Debug trace e.g. in snmp-ups.c
+					continue
 				row = line.split(',')
 				if len(row) >= 2:
 					# Absence of quotes indicate that we have a #define

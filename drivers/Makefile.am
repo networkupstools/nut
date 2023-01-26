@@ -15,6 +15,7 @@ LDADD_DRIVERS_SERIAL = libdummy_serial.la $(LDADD_DRIVERS) $(SERLIBS)
 
 # most targets are serial drivers, so make this the default
 LDADD = $(LDADD_DRIVERS_SERIAL)
+
 # Avoid per-target CFLAGS, because this will prevent re-use of object
 # files. In any case, CFLAGS are only -I options, so there is no harm,
 # but only add them if we really use the target.
@@ -215,7 +216,7 @@ blazer_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 nutdrv_atcl_usb_SOURCES = nutdrv_atcl_usb.c usb-common.c
 nutdrv_atcl_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
 
-richcomm_usb_SOURCES = richcomm_usb.c usb-common.c
+richcomm_usb_SOURCES = richcomm_usb.c $(LIBUSB_IMPL) usb-common.c
 richcomm_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
 
 riello_usb_SOURCES = riello.c riello_usb.c $(LIBUSB_IMPL) usb-common.c
@@ -236,14 +237,14 @@ snmp_ups_SOURCES = snmp-ups.c snmp-ups-helpers.c \
  compaq-mib.c cyberpower-mib.c \
  delta_ups-mib.c \
  eaton-pdu-genesis2-mib.c eaton-pdu-marlin-mib.c eaton-pdu-marlin-helpers.c \
- eaton-pdu-pulizzi-mib.c eaton-pdu-revelation-mib.c \
+ eaton-pdu-pulizzi-mib.c eaton-pdu-revelation-mib.c eaton-pdu-nlogic-mib.c \
  eaton-ats16-nmc-mib.c eaton-ats16-nm2-mib.c apc-ats-mib.c eaton-ats30-mib.c \
+ eaton-ups-pwnm2-mib.c eaton-ups-pxg-mib.c \
  emerson-avocent-pdu-mib.c \
- hpe-pdu-mib.c huawei-mib.c \
+ hpe-pdu-mib.c hpe-pdu3-cis-mib.c huawei-mib.c \
  ietf-mib.c \
  mge-mib.c \
  netvision-mib.c \
- powerware-mib.c \
  raritan-pdu-mib.c raritan-px2-mib.c \
  xppc-mib.c
 snmp_ups_CFLAGS = $(AM_CFLAGS)
@@ -292,9 +293,9 @@ socomec_jbus_SOURCES = socomec_jbus.c
 socomec_jbus_LDADD = $(LDADD_DRIVERS_SERIAL) $(LIBMODBUS_LIBS)
 
 # Linux I2C drivers
-asem_LDADD = $(LDADD_DRIVERS)
+asem_LDADD = $(LDADD_DRIVERS) $(LIBI2C_LIBS)
 asem_SOURCES = asem.c
-pijuice_LDADD = $(LDADD_DRIVERS)
+pijuice_LDADD = $(LDADD_DRIVERS) $(LIBI2C_LIBS)
 pijuice_SOURCES = pijuice.c
 
 # nutdrv_qx USB/Serial
@@ -329,7 +330,7 @@ dist_noinst_HEADERS = apc-mib.h apc-iem-mib.h apc-hid.h arduino-hid.h baytech-mi
  hidparser.h hidtypes.h ietf-mib.h libhid.h libshut.h nut_libusb.h liebert-hid.h	\
  main.h mge-hid.h mge-mib.h mge-utalk.h		\
  mge-xml.h microdowell.h microsol-apc.h microsol-common.h netvision-mib.h netxml-ups.h nut-ipmi.h oneac.h		\
- powercom.h powerpanel.h powerp-bin.h powerp-txt.h powerware-mib.h raritan-pdu-mib.h	\
+ powercom.h powerpanel.h powerp-bin.h powerp-txt.h raritan-pdu-mib.h	\
  safenet.h serial.h snmp-ups.h solis.h tripplite.h tripplite-hid.h 			\
  upshandler.h usb-common.h usbhid-ups.h powercom-hid.h compaq-mib.h idowell-hid.h \
  apcsmart.h apcsmart_tabs.h apcsmart-old.h apcupsd-ups.h cyberpower-mib.h riello.h openups-hid.h \
@@ -340,8 +341,8 @@ dist_noinst_HEADERS = apc-mib.h apc-iem-mib.h apc-hid.h arduino-hid.h baytech-mi
  nutdrv_qx_voltronic.h nutdrv_qx_voltronic-qs.h nutdrv_qx_voltronic-qs-hex.h nutdrv_qx_zinto.h \
  xppc-mib.h huawei-mib.h eaton-ats16-nmc-mib.h eaton-ats16-nm2-mib.h apc-ats-mib.h raritan-px2-mib.h eaton-ats30-mib.h \
  apc-pdu-mib.h apc-epdu-mib.h ever-hid.h eaton-pdu-genesis2-mib.h eaton-pdu-marlin-mib.h eaton-pdu-marlin-helpers.h \
- eaton-pdu-pulizzi-mib.h eaton-pdu-revelation-mib.h emerson-avocent-pdu-mib.h legrand-hid.h \
- hpe-pdu-mib.h powervar-hid.h delta_ups-hid.h generic_modbus.h salicru-hid.h adelsystem_cbi.h
+ eaton-pdu-pulizzi-mib.h eaton-pdu-revelation-mib.h emerson-avocent-pdu-mib.h eaton-ups-pwnm2-mib.h eaton-ups-pxg-mib.h legrand-hid.h \
+ hpe-pdu-mib.h hpe-pdu3-cis-mib.h powervar-hid.h delta_ups-hid.h generic_modbus.h salicru-hid.h adelsystem_cbi.h eaton-pdu-nlogic-mib.h
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,
@@ -363,4 +364,4 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
 # the root Makefile.am takes care of that!
 #clean-local:
-#	rm -rf $(builddir)/.deps
+#	$(AM_V_at)rm -rf $(builddir)/.deps

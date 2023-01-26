@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3050 utf-8
+personal_ws-1.1 en 3091 utf-8
 AAS
 ABI
 ACFAIL
@@ -340,6 +340,7 @@ FEMEA
 FFF
 FH
 FHS
+FILEPATH
 FINALDELAY
 FIPS
 FIXME
@@ -390,6 +391,7 @@ GPL
 GPSER
 GRs
 GTK
+GUESSTIMATION
 GUIs
 GWD
 GXE
@@ -457,7 +459,9 @@ HighBatt
 Hirschler
 Hlavinka
 Holger
+HomeKit
 Homebrew
+Homebridge
 Hoogervorst
 Hough
 Hunnox
@@ -468,6 +472,7 @@ IC
 ID's
 IDE
 IDEN
+IDEs
 IDentifiers
 IFBETWEEN
 IFF
@@ -631,6 +636,7 @@ MIBs
 MINLINEV
 MINSUPPLIES
 MINTIMEL
+MKDIRPROG
 MLH
 MMM
 MMMMMMMMMMMMMMM
@@ -742,7 +748,9 @@ NOTIFYMSG
 NQA
 NTP
 NUT's
+NUTClient
 NUTSRC
+NUTServer
 NVA
 NX
 Nadav
@@ -760,6 +768,7 @@ Niels
 Niklas
 Niro
 Nobreaks
+NodeJS
 Nom
 NomDCV
 NomVIn
@@ -840,6 +849,7 @@ PIPEFN
 PLD
 PLL
 PLVn
+POLLFAIL
 POLLFREQALERT
 POMode
 POSIX
@@ -1126,6 +1136,7 @@ Sequentializing
 SerialNumber
 Serv
 Shara
+ShareAlike
 Shaul
 ShdnDbnc
 ShdnDly
@@ -1230,6 +1241,7 @@ Theodor
 Thierry
 Tigra
 Tnn
+ToddGreenfield
 Tomek
 TopGuard
 Toth
@@ -1333,6 +1345,7 @@ WS
 WSE
 WTU
 Waldie
+WatchdogSec
 Werror
 Wextra
 WhizBang
@@ -1351,6 +1364,7 @@ XOFF
 XON
 XOPEN
 XP
+XPG
 XPPC
 XSL
 XT
@@ -1401,6 +1415,7 @@ addenum
 addinfo
 addr
 addrange
+addvars
 adelsystem
 adkorte
 adm
@@ -1505,6 +1520,7 @@ backends
 backgrounding
 backport
 backported
+backports
 backupspro
 badpassword
 baseurl
@@ -1614,6 +1630,7 @@ charset
 checksum
 chgrp
 chipset
+chkconfig
 chmod
 chown
 chr
@@ -1627,6 +1644,7 @@ chunking
 chv
 ci
 cidr
+cis
 clav
 clearalarms
 clearhistory
@@ -1780,6 +1798,7 @@ dsssl
 dstate
 dt
 dtds
+dtksh
 dtr
 du
 dumbterm
@@ -1796,12 +1815,14 @@ ec
 echoback
 eco
 edb
+editorconfig
 edl
 ef
 egrep
 ei
 el
 emacs
+emptor
 endchar
 enddate
 endian
@@ -1812,6 +1833,7 @@ energizerups
 energysave
 english
 enum
+env
 envvar
 envvars
 ep
@@ -1854,6 +1876,7 @@ fds
 fe
 fenton
 fentonups
+fffdddxxx
 ffff
 fi
 fieldset
@@ -1929,6 +1952,7 @@ gtk
 guardpend
 guardpstart
 guesstimate
+guesstimation
 guez
 gufw
 gui
@@ -1957,6 +1981,7 @@ hostnames
 hostsfile
 hotplug
 hotplugging
+hpe
 href
 htaccess
 html
@@ -2012,6 +2037,7 @@ initscripts
 initups
 inline
 innotech
+inplace
 installcheck
 installurl
 instcmd
@@ -2046,6 +2072,7 @@ ipmipsu
 ippon
 ipv
 isbmex
+ish
 iso
 isolator
 ivtscd
@@ -2121,6 +2148,7 @@ libregex
 libs
 libsnmp
 libssl
+libsystemd
 libtool
 libupsclient
 libusb
@@ -2135,6 +2163,7 @@ licensor
 licensors
 liebert
 liebertgxt
+lifecycle
 linesensitivity
 linevoltage
 linkdoc
@@ -2284,6 +2313,7 @@ myprivatepassphrase
 mysecurityname
 myups
 myupsname
+nLogic
 nabcd
 nameserver
 namespace
@@ -2313,6 +2343,8 @@ nielchiano
 nitram
 nl
 nlb
+nlogic
+nm
 nn
 nnn
 noAuthNoPriv
@@ -2462,6 +2494,7 @@ portname
 powercom
 powerdev
 powerdown
+powerdownflag
 powerfactor
 powerman
 powermand
@@ -2510,8 +2543,10 @@ pwl
 pwmib
 pwro
 px
+pxg
 pxgx
 py
+pycparser
 pydoc
 pygments
 pynut
@@ -2722,6 +2757,8 @@ strdup
 strerror
 strftime
 strlen
+strnlen
+strptime
 struct
 structs
 sts
@@ -2797,7 +2834,9 @@ testime
 testtime
 testuser
 textproc
+tgcware
 th
+timeframe
 timehead
 timeline
 timername
@@ -2963,6 +3002,7 @@ varname
 varvalue
 vbatt
 vc
+vectronic
 vendorid
 ver
 verifySourceSig
@@ -3027,6 +3067,7 @@ xhtml
 xmalloc
 xml
 xmllint
+xpg
 xr
 xrealloc
 xsl

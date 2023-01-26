@@ -129,7 +129,7 @@ static snmp_info_t delta_ups_mib[] = {
 	 * Mostly the first field (string) is to be changed
 	 * Check docs/nut-names.txt for the right variable names
 	 */
-#if 0
+#if WITH_UNMAPPED_DATA_POINTS
 	/* dupsIdentName.0 = "" */
 	{ "unmapped.dupsIdentName", 0, 1, ".1.3.6.1.4.1.2254.2.4.1.5.0", NULL, SU_FLAG_OK, NULL },
 	/* dupsAttachedDevices.0 = "" */
@@ -356,7 +356,7 @@ static snmp_info_t delta_ups_mib[] = {
 	{ "unmapped.dupsAlarmEnvRelay3", 0, 1, ".1.3.6.1.4.1.2254.2.4.10.13.0", NULL, SU_FLAG_OK, NULL },
 	/* dupsAlarmEnvRelay4.0 = INTEGER: off(0) */
 	{ "unmapped.dupsAlarmEnvRelay4", 0, 1, ".1.3.6.1.4.1.2254.2.4.10.14.0", NULL, SU_FLAG_OK, NULL },
-#endif /* #if 0 */
+#endif	/* #if WITH_UNMAPPED_DATA_POINTS */
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
