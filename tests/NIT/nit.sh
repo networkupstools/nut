@@ -45,20 +45,20 @@ shouldDebug() {
 
 log_debug() {
     if shouldDebug ; then
-        echo "[DEBUG] $@" >&2
+        echo "`TZ=UTC LANG=C date` [DEBUG] $@" >&2
     fi
 }
 
 log_info() {
-    echo "[INFO] $@" >&2
+    echo "`TZ=UTC LANG=C date` [INFO] $@" >&2
 }
 
 log_warn() {
-    echo "[WARNING] $@" >&2
+    echo "`TZ=UTC LANG=C date` [WARNING] $@" >&2
 }
 
 log_error() {
-    echo "[ERROR] $@" >&2
+    echo "`TZ=UTC LANG=C date` [ERROR] $@" >&2
 }
 
 report_NUT_PORT() {
