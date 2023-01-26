@@ -24,6 +24,7 @@ platform: x64
 environment:
   APPVEYOR_SAVE_CACHE_ON_ERROR: true
   APPVEYOR_CACHE_ENTRY_ZIP_ARGS: -t7z -m0=lzma -mx=9
+  CCACHE_DIR: /home/appveyor/.ccache
 
 # https://github.com/networkupstools/nut/blob/Windows-v2.8.0-1/docs/config-prereqs.txt#L951
 # Note: not using `time` in scripts currently - they did upset
@@ -48,7 +49,7 @@ install:
         set CHERE_INVOKING=yes
         REM Start a 64 bit Mingw environment:
         set MSYSTEM=MINGW64
-        C:\msys64\usr\bin\bash -lc 'PATH="/mingw64/bin:$PATH" ; export PATH ; pwd ; { ccache -sv && ccache -o sloppiness = file_macro && ccache -o compression = true ; } || echo "SKIP: Could not query ccache stats"'
+        C:\msys64\usr\bin\bash -lc 'PATH="/mingw64/bin:$PATH" ; export PATH ; pwd ; ccache -sv || echo "SKIP: Could not query ccache stats" ; ccache -o sloppiness=file_macro || true ; ccache -o compression=true || true '
 
 
 before_build:
@@ -107,7 +108,8 @@ after_test:
         set CHERE_INVOKING=yes
         REM Start a 64 bit Mingw environment:
         set MSYSTEM=MINGW64
-        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" ; export PATH ; { { ccache -sv || ccache -s ; } && { ccache -x 2>/dev/null || true ; } ; } || echo "SKIP: Could not query ccache stats"'
+        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" ; export PATH ; ccache -sv || ccache -s || echo "SKIP: Could not query ccache stats"'
+        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" ; export PATH ; ccache -x || echo "SKIP: Could not query ccache compression stats"'
 
 
 artifacts:
