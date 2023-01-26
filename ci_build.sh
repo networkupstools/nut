@@ -524,6 +524,7 @@ configure_nut() {
 
 build_to_only_catch_errors_target() {
     if [ $# = 0 ]; then
+        # Re-enter with an arg list
         build_to_only_catch_errors_target all ; return $?
     fi
 
@@ -546,9 +547,8 @@ build_to_only_catch_errors_target() {
     return 0
 }
 
-build_to_only_catch_errors() {
-    build_to_only_catch_errors_target all || return $?
-
+build_to_only_catch_errors_check() {
+    # Specifically run (an optional) "make check"
     if [ "${CI_SKIP_CHECK}" = true ] ; then
         echo "`date`: SKIP: not starting a '$MAKE check' for quick sanity test of the products built with the current compiler and standards, because caller requested CI_SKIP_CHECK=true; plain build has just succeeded however"
         return 0
@@ -559,6 +559,12 @@ build_to_only_catch_errors() {
     && echo "`date`: SUCCESS" \
     || return $?
 
+    return 0
+}
+
+build_to_only_catch_errors() {
+    build_to_only_catch_errors_target all || return $?
+    build_to_only_catch_errors_check || return $?
     return 0
 }
 
@@ -1525,13 +1531,27 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 
                 echo "=== Configured 'NUT_SSL_VARIANT=$NUT_SSL_VARIANT', $BUILDSTODO build variants (including this one) remaining to complete; trying to build..."
                 cd "${CI_BUILDDIR}"
-                build_to_only_catch_errors && {
+                # Use default target e.g. "all":
+                build_to_only_catch_errors_target && {
                     SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
                 } || {
                     RES_ALLERRORS=$?
                     FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
                     # Help find end of build (before cleanup noise) in logs:
                     echo "=== FAILED 'NUT_SSL_VARIANT=${NUT_SSL_VARIANT}' build"
+                    if [ "$CI_FAILFAST" = true ]; then
+                        echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
+                        break
+                    fi
+                }
+
+                build_to_only_catch_errors_check && {
+                    SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[check]"
+                } || {
+                    RES_ALLERRORS=$?
+                    FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[check]"
+                    # Help find end of build (before cleanup noise) in logs:
+                    echo "=== FAILED 'NUT_SSL_VARIANT=${NUT_SSL_VARIANT}' check"
                     if [ "$CI_FAILFAST" = true ]; then
                         echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
                         break
@@ -1661,13 +1681,27 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 
                 echo "=== Configured 'NUT_USB_VARIANT=$NUT_USB_VARIANT', $BUILDSTODO build variants (including this one) remaining to complete; trying to build..."
                 cd "${CI_BUILDDIR}"
-                build_to_only_catch_errors && {
+                # Use default target e.g. "all":
+                build_to_only_catch_errors_target && {
                     SUCCEEDED="${SUCCEEDED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[build]"
                 } || {
                     RES_ALLERRORS=$?
                     FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[build]"
                     # Help find end of build (before cleanup noise) in logs:
                     echo "=== FAILED 'NUT_USB_VARIANT=${NUT_USB_VARIANT}' build"
+                    if [ "$CI_FAILFAST" = true ]; then
+                        echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
+                        break
+                    fi
+                }
+
+                build_to_only_catch_errors_check && {
+                    SUCCEEDED="${SUCCEEDED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[check]"
+                } || {
+                    RES_ALLERRORS=$?
+                    FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[check]"
+                    # Help find end of build (before cleanup noise) in logs:
+                    echo "=== FAILED 'NUT_USB_VARIANT=${NUT_USB_VARIANT}' check"
                     if [ "$CI_FAILFAST" = true ]; then
                         echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
                         break
