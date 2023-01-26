@@ -24,6 +24,7 @@ platform: x64
 environment:
   APPVEYOR_SAVE_CACHE_ON_ERROR: true
   APPVEYOR_CACHE_ENTRY_ZIP_ARGS: -t7z -m0=lzma -mx=9
+  CCACHE_DIR: /home/appveyor/.ccache
 
 # https://github.com/networkupstools/nut/blob/Windows-v2.8.0-1/docs/config-prereqs.txt#L951
 # Note: not using `time` in scripts currently - they did upset
