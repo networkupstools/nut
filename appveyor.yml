@@ -48,7 +48,7 @@ install:
         set CHERE_INVOKING=yes
         REM Start a 64 bit Mingw environment:
         set MSYSTEM=MINGW64
-        C:\msys64\usr\bin\bash -lc 'PATH="/mingw64/bin:$PATH" ; export PATH ; pwd ; ccache -sv || echo "SKIP: Could not query ccache stats"'
+        C:\msys64\usr\bin\bash -lc 'PATH="/mingw64/bin:$PATH" ; export PATH ; pwd ; { ccache -sv && ccache -o sloppiness = file_macro && ccache -o compression = true ; } || echo "SKIP: Could not query ccache stats"'
 
 
 before_build:
