@@ -569,6 +569,12 @@ ccache_stats() {
         if [ -d "$CCACHE_DIR" ]; then
             echo "CCache stats $WHEN build:"
             ccache -s || true
+            # Some ccache versions support compression stats
+            # This may take time on slower systems however
+            # (and/or with larger cache contents) => off by default
+            if [ x"${CI_CCACHE_STATS_COMPRESSION-}" = xtrue ]; then
+                ccache -x 2>/dev/null || true
+            fi
         else
             echo "WARNING: CCache stats $WHEN build: tool is enabled, but CCACHE_DIR='$CCACHE_DIR' was not found now" >&2
         fi
