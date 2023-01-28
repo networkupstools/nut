@@ -45,9 +45,12 @@ Lead battery charge graph is not linear, so guesstimated charge value may not be
 perfectly accurate. However it should be good enough to determine battery
 actual status and roughly estimate the time it can power the system.
 +
-NOTE: This keyword may be deprecated in future releases of the driver, in favor of
+WARNING: This keyword may be deprecated in future releases of the driver, in favor of
 `runtimecal` and other settings which it requires (as seen in linkman:nutdrv_qx[8],
 linkman:blazer_ser[8] and linkman:blazer_usb[8] drivers).
++
+NOTE: In this release, such an option is not offered for the sibling
+linkman:riello_ser[8] driver.
 
 AUTHOR
 ------
@@ -57,8 +60,13 @@ Massimo Zampieri
 SEE ALSO
 --------
 
+Related drivers
+~~~~~~~~~~~~~~~
+
+linkman:riello_ser[8]
+
 The core driver
-~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~
 
 linkman:nutupsdrv[8]
 
