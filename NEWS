@@ -101,8 +101,8 @@ https://github.com/networkupstools/nut/milestone/8
  - riello_usb updates:
    * added `localcalculation` option to compute `battery.runtime` and
      `battery.charge` if the device provides bogus values [#1692, #1685]
-	 (similar to `runtimecal` in some other drivers, may be refactored
-	 to that configuration and logic model in later NUT releases)
+     (similar to `runtimecal` in some other drivers, may be refactored
+     to that configuration and logic model in later NUT releases)
 
  - powercom driver should now try harder to refresh data from device [#356]
 
@@ -141,6 +141,9 @@ https://github.com/networkupstools/nut/milestone/8
    * Fixed the long standing "Warning: excessive poll failures" issue, that
      was tied to non-existent OIDs, not well handled in some parts of the
      driver [#1716]
+
+ - The `bestfortress` driver shutdown handling was fixed to use a non-trivial
+   default timeout [#1820]
 
  - Added support for `make install` of PyNUT module and NUT-Monitor desktop
    application [#1462, #1504]
