@@ -44,7 +44,10 @@ nominal battery voltage, actual battery charge, maximum and actual UPS load.
 Lead battery charge graph is not linear, so guesstimated charge value may not be
 perfectly accurate. However it should be good enough to determine battery
 actual status and roughly estimate the time it can power the system.
-
++
+NOTE: This keyword may be deprecated in future releases of the driver, in favor of
+`runtimecal` and other settings which it requires (as seen in linkman:nutdrv_qx[8],
+linkman:blazer_ser[8] and linkman:blazer_usb[8] drivers).
 
 AUTHOR
 ------
