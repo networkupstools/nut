@@ -2928,10 +2928,10 @@ dnl of building and delivering unit files (which may be crafted separately).
 dnl TODO: although end-user deployments (for custom builds) may be lacking
 dnl libsystemd development files, they might have a `systemd-notify` program
 dnl intended to help scripted service units. Consider making use of that then.
-AC_MSG_CHECKING(whether to build binaries with tighter systemd integration support)
 NUT_ARG_WITH([libsystemd], [build binaries with tighter systemd integration (notifications etc)], [auto])
 NUT_CHECK_LIBSYSTEMD
 
+AC_MSG_CHECKING(whether requested and can build binaries with tighter systemd integration support)
 AS_IF([test x"${nut_with_libsystemd}" = xyes && test x"${nut_have_libsystemd}" != xyes],
 	[AC_MSG_ERROR([--with-libsystemd was requested, but the library was not found or usable])])
 AS_CASE(["${nut_with_libsystemd}"],
