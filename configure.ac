@@ -1763,13 +1763,16 @@ nut_with_nut_monitor_py3qt5=""
 nut_with_nut_monitor_desktop=""
 dnl TODO: Add a way to define this path? will have app/ maybe module/ inside...
 nut_with_nut_monitor_dir="${datarootdir}/nut-monitor"
+PYTHON_FAILED_TEST_DETAILS=""
 if test x"${nut_with_nut_monitor}" != xno ; then
     dnl While we might just install for "yes" request, in hopes user would
     dnl get their python ecosystem in place later, we need some criteria to
     dnl avoid installing it always :) Also, need to substitute the shebang.
     if test -z "${PYTHON}${PYTHON2}${PYTHON3}" ; then
         case "${nut_with_nut_monitor}" in
-            "auto") nut_with_nut_monitor="no" ;;
+            "auto") nut_with_nut_monitor="no"
+                    PYTHON_FAILED_TEST_DETAILS="No python 2/3 interpreter was found"
+                ;;
             "yes")  AC_MSG_ERROR([No python 2/3 interpreter was found, required for NUT-Monitor desktop application])
                 ;;
         esac
@@ -1778,21 +1781,29 @@ fi
 
 if test x"${nut_with_nut_monitor}" != xno ; then
     dnl Note: no double-quoting for use, the command string may be multi-token
+    dnl HACK NOTE: Here we redirect outputs to "&5" which is autoconf stream
+    dnl for "config.log" details since... forever? Still, hardcoded numbers...
+    PYTHON2_TEST_MODULES="re,glob,codecs,gtk,gtk.glade,gobject,ConfigParser"
+    PYTHON3_TEST_MODULES="re,glob,codecs,PyQt5.uic,configparser"
     if test -n "${PYTHON2}" \
     && (command -v ${PYTHON2} || which ${PYTHON2}) >/dev/null 2>/dev/null \
     ; then
-        if ${PYTHON2} -c "import re,glob,codecs,gtk,gtk.glade,gobject,ConfigParser" \
+        if ${PYTHON2} -c "import ${PYTHON2_TEST_MODULES}" 1>&5 2>&5 \
         ; then
             nut_with_nut_monitor_py2gtk2="yes"
+        else
+            PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python2 modules: '${PYTHON2_TEST_MODULES}'"
         fi
     fi
 
     if test -n "${PYTHON3}" \
     && (command -v ${PYTHON3} || which ${PYTHON3}) >/dev/null 2>/dev/null \
     ; then
-        if ${PYTHON3} -c "import re,glob,codecs,PyQt5.uic,configparser" \
+        if ${PYTHON3} -c "import ${PYTHON3_TEST_MODULES}" 1>&5 2>&5 \
         ; then
             nut_with_nut_monitor_py3qt5="yes"
+        else
+            PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python3 modules: '${PYTHON3_TEST_MODULES}'"
         fi
     fi
 
@@ -1801,14 +1812,23 @@ if test x"${nut_with_nut_monitor}" != xno ; then
     && test -n "${PYTHON}" \
     && (command -v ${PYTHON} || which ${PYTHON2}) >/dev/null 2>/dev/null \
     ; then
-        if ${PYTHON} -c "import re,glob,codecs,PyQt5.uic,configparser" \
+        if ${PYTHON} -c "import ${PYTHON3_TEST_MODULES}" 1>&5 2>&5 \
         ; then
             nut_with_nut_monitor_py3qt5="yes"
+        else
+            PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python3 modules: '${PYTHON3_TEST_MODULES}'"
         fi
 
-        if ${PYTHON} -c "import re,glob,codecs,gtk,gtk.glade,gobject,ConfigParser" \
+        if ${PYTHON} -c "import ${PYTHON2_TEST_MODULES}" 1>&5 2>&5 \
         ; then
             nut_with_nut_monitor_py2gtk2="yes"
+            PYTHON_FAILED_TEST_DETAILS=""
+        else
+            if test -n "${PYTHON_FAILED_TEST_DETAILS}" ; then
+                PYTHON_FAILED_TEST_DETAILS="${PYTHON_FAILED_TEST_DETAILS} and some or all of these Python2 modules: '${PYTHON2_TEST_MODULES}'"
+            else
+                PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python2 modules: '${PYTHON2_TEST_MODULES}'"
+            fi
         fi
     fi
 
@@ -1821,12 +1841,20 @@ if test x"${nut_with_nut_monitor}" != xno ; then
         case "${nut_with_nut_monitor}" in
             "auto") nut_with_nut_monitor="no" ;;
             "yes")
-                AC_MSG_ERROR([No python 2/3 interpreter with needed modules was found, as required for NUT-Monitor desktop application])
+                AC_MSG_ERROR([No python 2/3 interpreter with needed modules was found, as required for NUT-Monitor desktop application: ${PYTHON_FAILED_TEST_DETAILS}])
                 ;;
         esac
     fi
 fi
-AC_MSG_RESULT([${nut_with_nut_monitor}])
+case "${nut_with_nut_monitor}" in
+    "no") if test -n "${PYTHON_FAILED_TEST_DETAILS}" ; then
+            AC_MSG_RESULT([${nut_with_nut_monitor}: ${PYTHON_FAILED_TEST_DETAILS}])
+        else
+            AC_MSG_RESULT([${nut_with_nut_monitor}])
+        fi
+        ;;
+    *) AC_MSG_RESULT([${nut_with_nut_monitor}]) ;;
+esac
 
 if test x"${nut_with_nut_monitor}" != xno ; then
     if (command -v desktop-file-install || which desktop-file-install) >/dev/null 2>/dev/null ; then
