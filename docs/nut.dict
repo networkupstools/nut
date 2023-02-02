@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3088 utf-8
+personal_ws-1.1 en 3090 utf-8
 AAS
 ABI
 ACFAIL
@@ -792,6 +792,7 @@ ONF
 ONV
 OOM
 OSABI
+OSC
 OSF
 OSs
 OUTDIR
@@ -2418,6 +2419,7 @@ ontimedays
 ontiniedays
 ooce
 openSUSE
+opencollective
 openipmi
 openjdk
 openlog
