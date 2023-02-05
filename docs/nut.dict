@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3090 utf-8
+personal_ws-1.1 en 3095 utf-8
 AAS
 ABI
 ACFAIL
@@ -236,6 +236,7 @@ DATAPATH
 DCE
 DDD
 DDDDD
+DDDDDD
 DDF
 DDThh
 DEADTIME
@@ -247,6 +248,7 @@ DELPHYS
 DELRANGE
 DES
 DESTDIR
+DEVNAME
 DF
 DHEA
 DIGYS
@@ -1346,6 +1348,7 @@ WS
 WSE
 WTU
 Waldie
+WantedBy
 WatchdogSec
 Werror
 Wextra
@@ -1992,6 +1995,7 @@ httpd
 https
 huawei
 hunnox
+hwdb
 hypervisor
 hypervisors
 iBox
@@ -2082,6 +2086,7 @@ jbus
 jdk
 jenkins
 jessie
+jimklimov
 journalctl
 jpg
 jpgraph
