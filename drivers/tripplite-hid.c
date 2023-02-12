@@ -154,6 +154,8 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 
 	/* Delta/Minuteman Enterprise Plus E1500RM2U */
 	{ USB_DEVICE(DELTA_VENDORID, 0xa011), battery_scale_1dot0 },
+	/* Delta/Minuteman PRO1500RT2U */
+	{ USB_DEVICE(DELTA_VENDORID, 0xa0a0), battery_scale_1dot0 },
 
 	/* Terminating entry */
 	{ 0, 0, NULL }
