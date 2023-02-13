@@ -749,6 +749,10 @@ int main(int argc, char **argv)
 	while ((i = getopt(argc, argv, "+a:s:kFBDd:hx:Lqr:u:g:Vi:")) != -1) {
 		switch (i) {
 			case 'a':
+				if (upsname)
+					fatalx(EXIT_FAILURE, "Error: options '-a id' and '-s id' "
+						"are mutually exclusive and single-use only.");
+
 				upsname = optarg;
 
 				read_upsconf();
@@ -758,6 +762,10 @@ int main(int argc, char **argv)
 						optarg);
 				break;
 			case 's':
+				if (upsname)
+					fatalx(EXIT_FAILURE, "Error: options '-a id' and '-s id' "
+						"are mutually exclusive and single-use only.");
+
 				upsname = optarg;
 				upsname_found = 1;
 				break;
