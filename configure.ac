@@ -325,6 +325,13 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes], [
             ; then
                 sysconfdir="$D"
                 break
+            else
+                if test -d "$D/" && test ! -r "$D/" ; then
+                    dnl Keeping order of preference defined by "for" loop:
+                    AC_MSG_WARN([Picking directory '${D}' which exists but current build user may not read])
+                    sysconfdir="$D"
+                    break
+                fi
             fi
         done
         AC_MSG_RESULT([${sysconfdir}])
