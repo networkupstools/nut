@@ -32,6 +32,9 @@ endif
 if WITH_IPMI
   AM_CFLAGS += $(LIBIPMI_CFLAGS)
 endif
+if WITH_GPIO
+  AM_CFLAGS += $(LIBGPIO_CFLAGS)
+endif
 if WITH_MODBUS
   AM_CFLAGS += $(LIBMODBUS_CFLAGS)
 endif
@@ -56,12 +59,13 @@ MODBUS_DRIVERLIST = phoenixcontact_modbus generic_modbus huawei-ups2000 socomec_
 LINUX_I2C_DRIVERLIST = asem pijuice
 POWERMAN_DRIVERLIST = powerman-pdu
 IPMI_DRIVERLIST = nut-ipmipsu
+GPIO_DRIVERLIST = gpio
 
 # distribute all drivers, even ones that are not built by default
 EXTRA_PROGRAMS  = $(SERIAL_DRIVERLIST) $(USB_DRIVERLIST) $(SERIAL_USB_DRIVERLIST)
 EXTRA_PROGRAMS += $(SNMP_DRIVERLIST) $(NEONXML_DRIVERLIST) $(MACOSX_DRIVERLIST)
 EXTRA_PROGRAMS += $(LINUX_I2C_DRIVERLIST)
-EXTRA_PROGRAMS += $(NUTSW_DRIVERLIST)
+EXTRA_PROGRAMS += $(GPIO_DRIVERLIST)
 
 # construct the list of drivers to build
 if SOME_DRIVERS
@@ -89,6 +93,9 @@ if WITH_LIBPOWERMAN
 endif
 if WITH_IPMI
    driverexec_PROGRAMS += $(IPMI_DRIVERLIST)
+endif
+if WITH_GPIO
+   driverexec_PROGRAMS += $(GPIO_DRIVERLIST)
 endif
 if WITH_MACOSX
    driverexec_PROGRAMS += $(MACOSX_DRIVERLIST)
@@ -164,6 +171,9 @@ upscode2_LDADD = $(LDADD) -lm
 victronups_SOURCES = victronups.c
 riello_ser_SOURCES = riello.c riello_ser.c
 riello_ser_LDADD = $(LDADD) -lm
+gpio_SOURCES = gpio.c
+gpio_CFLAGS = $(AM_CFLAGS)
+gpio_LDADD = $(LDADD_DRIVERS) -lgpiod
 
 # non-serial drivers: these use custom LDADD and/or CFLAGS
 

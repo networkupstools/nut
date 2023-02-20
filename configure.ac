@@ -977,6 +977,7 @@ AC_ARG_WITH(drivers,
 		if test -z "${with_powerman}"; then with_powerman="yes"; fi
 		if test -z "${with_modbus}"; then with_modbus="yes"; fi
 		if test -z "${with_ipmi}"; then with_ipmi="yes"; fi
+		if test -z "${with_gpio}"; then with_gpio="yes"; fi
 
 		dnl Platform-dependent snowflakes that are required or auto:
 		if test -z "${with_linux_i2c}"; then
@@ -1004,6 +1005,7 @@ AC_ARG_WITH(drivers,
 		if test -z "${with_powerman}"; then with_powerman="${withval}"; fi
 		if test -z "${with_modbus}"; then with_modbus="${withval}"; fi
 		if test -z "${with_ipmi}"; then with_ipmi="${withval}"; fi
+		if test -z "${with_gpio}"; then with_gpio="${withval}"; fi
 		if test -z "${with_linux_i2c}"; then with_linux_i2c="${withval}"; fi
 		if test -z "${with_macosx_ups}"; then with_macosx_ups="${withval}"; fi
 		AC_MSG_RESULT(${DRIVER_BUILD_LIST})
@@ -1019,7 +1021,7 @@ AC_ARG_WITH(drivers,
 				SERIAL_DRIVERLIST USB_LIBUSB_DRIVERLIST SERIAL_USB_DRIVERLIST
 				SNMP_DRIVERLIST NEONXML_DRIVERLIST
 				MACOSX_DRIVERLIST MODBUS_DRIVERLIST LINUX_I2C_DRIVERLIST
-				POWERMAN_DRIVERLIST IPMI_DRIVERLIST"
+				POWERMAN_DRIVERLIST IPMI_DRIVERLIST GPIO_DRIVERLIST"
 
 			get_drvlist() (
 				dnl Note escaped brackets - "against" m4 parser
@@ -1131,6 +1133,11 @@ AC_ARG_WITH(drivers,
 										[AC_MSG_NOTICE([Requiring --with-ipmi=yes for driver "$DRV"])
 										with_ipmi=yes]
 									)],
+								[GPIO_DRIVERLIST], [
+									AS_IF([test -z "${with_gpio}"],
+										[AC_MSG_NOTICE([Requiring --with-gpio=yes for driver "$DRV"])
+										with_gpio=yes]
+									)],
 
 								[AC_MSG_WARN([Unhandled DRVLIST_NAME=$DRVLIST_NAME])]
 							)
@@ -1178,6 +1185,7 @@ AC_ARG_WITH(all,
 		if test -z "${with_powerman}"; then with_powerman="${withval}"; fi
 		if test -z "${with_modbus}"; then with_modbus="${withval}"; fi
 		if test -z "${with_ipmi}"; then with_ipmi="${withval}"; fi
+		if test -z "${with_gpio}"; then with_gpio="${withval}"; fi
 
 		dnl Platform-dependent snowflakes that are required or auto:
 		if test -z "${with_linux_i2c}"; then
@@ -1526,6 +1534,20 @@ dnl and AM_CONDITIONALs (see below)...
 AM_CONDITIONAL(WITH_FREEIPMI, test "${nut_with_freeipmi}" = "yes")
 dnl AM_CONDITIONAL(WITH_OPENIPMI, test "${nut_with_openipmi}" = "yes")
 
+dnl ----------------------------------------------------------------------
+dnl Check for with-gpio
+
+nut_gpio_lib=""
+
+NUT_ARG_WITH([gpio], [build and install GPIO driver], [auto])
+
+dnl ${nut_with_gpio}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_gpio}" != "yes"; then
+      nut_with_gpio="no"
+fi
+
+NUT_REPORT_FEATURE([build GPIO driver], [${nut_with_gpio}], [${nut_gpio_lib}],
+					[WITH_GPIO], [Define to enable GPIO support])
 
 dnl ----------------------------------------------------------------------
 dnl The Mac OS X meta-driver looks at IOKit Power Sources keys managed by
