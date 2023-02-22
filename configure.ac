@@ -393,12 +393,12 @@ dnl Note: the compiler/pragma/attr methods below are custom for NUT codebase:
 NUT_COMPILER_FAMILY
 
 dnl Note: DO NOT AC_DEFINE the "FULL" items: they are generally multi-line.
-dnl NUT_REPORT_TARGET([CC_VERSION_FULL],  [${CC_VERSION_FULL}],  [Version and other details of C compiler])
-dnl NUT_REPORT_TARGET([CXX_VERSION_FULL], [${CXX_VERSION_FULL}], [Version and other details of C++ compiler])
-dnl NUT_REPORT_TARGET([CPP_VERSION_FULL], [${CPP_VERSION_FULL}], [Version and other details of C preprocessor])
-NUT_REPORT_TARGET([CC_VERSION],  [${CC_VERSION}],  [Compact version of C compiler])
-NUT_REPORT_TARGET([CXX_VERSION], [${CXX_VERSION}], [Compact version of C++ compiler])
-NUT_REPORT_TARGET([CPP_VERSION], [${CPP_VERSION}], [Compact version of C preprocessor])
+dnl NUT_REPORT_TARGET([CC_VERSION_FULL],  ["${CC_VERSION_FULL}"],  [Version and other details of C compiler])
+dnl NUT_REPORT_TARGET([CXX_VERSION_FULL], ["${CXX_VERSION_FULL}"], [Version and other details of C++ compiler])
+dnl NUT_REPORT_TARGET([CPP_VERSION_FULL], ["${CPP_VERSION_FULL}"], [Version and other details of C preprocessor])
+NUT_REPORT_TARGET([CC_VERSION],  ["${CC_VERSION}"],  [Compact version of C compiler])
+NUT_REPORT_TARGET([CXX_VERSION], ["${CXX_VERSION}"], [Compact version of C++ compiler])
+NUT_REPORT_TARGET([CPP_VERSION], ["${CPP_VERSION}"], [Compact version of C preprocessor])
 
 dnl Help find warning/error details in a wall of text (must be processed before NUT_COMPILER_FAMILY_FLAGS):
 NUT_ARG_ENABLE([Wcolor],
