@@ -944,32 +944,35 @@ void nut_report_config_flags(void)
 	 * Depending on amount of configuration tunables involved by a particular
 	 * build of NUT, the string can be quite long (over 1KB).
 	 */
-	char *gitrev = NULL;
+	char *relver = NULL;
 	if (nut_debug_level < 1)
 		return;
 
-	/* Only report git revision if remarkably different from UPS_VERSION
-	 * which may be e.g. "2.8.0.1" or already include the source revision
+	/* Only report git revision if NUT_VERSION_MACRO in nut_version.h aka
+	 * UPS_VERSION here is remarkably different from PACKAGE_VERSION from
+	 * configure.ac AC_INIT() -- which may be e.g. "2.8.0.1" although some
+	 * distros, especially embedders, tend to place their product IDs here).
+	 * The macro may be that fixed version or refer to git source revision,
 	 * as decided when generating nut_version.h (and if it was re-generated
-	 * in case of rebuilds while developers are locally iterating).
-	 * If the same version string is indeed present, gitrev is "v<UPS_VERSION>".
+	 * in case of rebuilds while developers are locally iterating -- this
+	 * may be disabled for faster local iterations at a cost of a little lie).
 	 */
-	if (NUT_SOURCE_GITREV && UPS_VERSION &&
-		(strlen(UPS_VERSION) < 12 || !strstr(NUT_SOURCE_GITREV, UPS_VERSION))
+	if (PACKAGE_VERSION && UPS_VERSION &&
+		(strlen(UPS_VERSION) < 12 || !strstr(UPS_VERSION, PACKAGE_VERSION))
 	) {
 		/* If UPS_VERSION is too short (so likely a static string
 		 * from configure.ac AC_INIT() -- although some distros,
 		 * especially embedders, tend to place their product IDs here),
-		 * or if it is NOT a substring of NUT_SOURCE_GITREV: */
-		gitrev = NUT_SOURCE_GITREV;
+		 * or if PACKAGE_VERSION *is NOT* a substring of it: */
+		relver = PACKAGE_VERSION;
 	}
 
 	if (xbit_test(upslog_flags, UPSLOG_STDERR))
 		fprintf(stderr, "Network UPS Tools version %s%s%s%s configured with flags: %s\n",
 			UPS_VERSION,
-			(gitrev ? " (git revision " : ""),
-			(gitrev ? gitrev : ""),
-			(gitrev ? ")" : ""),
+			(relver ? " (release/snapshot of " : ""),
+			(relver ? relver : ""),
+			(relver ? ")" : ""),
 			CONFIG_FLAGS);
 
 	/* NOTE: May be ignored or truncated by receiver if that syslog server
@@ -977,9 +980,9 @@ void nut_report_config_flags(void)
 	if (xbit_test(upslog_flags, UPSLOG_SYSLOG))
 		syslog(LOG_DEBUG, "Network UPS Tools version %s%s%s%s configured with flags: %s",
 			UPS_VERSION,
-			(gitrev ? " (git revision " : ""),
-			(gitrev ? gitrev : ""),
-			(gitrev ? ")" : ""),
+			(relver ? " (release/snapshot of " : ""),
+			(relver ? relver : ""),
+			(relver ? ")" : ""),
 			CONFIG_FLAGS);
 }
 

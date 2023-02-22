@@ -15,9 +15,14 @@ dnl without reconfiguration, detailed version in the binaries will differ.
 && NUT_SOURCE_GITREV="`git describe --tags 2>/dev/null | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,'`" \
 || NUT_SOURCE_GITREV=""
 
-AS_IF([test -n "${NUT_SOURCE_GITREV-}"],
-    [AC_DEFINE_UNQUOTED([NUT_SOURCE_GITREV], ["${NUT_SOURCE_GITREV}"], [NUT source revision when the build was configured])],
-    [AC_DEFINE([NUT_SOURCE_GITREV], [NULL], [NUT source revision when the build was configured: not detected])])
+dnl Note: except for experiments, do not pass this into config.h - use
+dnl the NUT_VERSION_MACRO from nut_version.h instead. Developers may
+dnl want to disable their "force-nut-version-header" configure option
+dnl to reduce rebuild scope and so speed up the iterations with ccache.
+dnl New "config.h" contents for every reconfig would defeat that purpose!
+dnl ### AS_IF([test -n "${NUT_SOURCE_GITREV-}"],
+dnl ###     [AC_DEFINE_UNQUOTED([NUT_SOURCE_GITREV], ["${NUT_SOURCE_GITREV}"], [NUT source revision when the build was configured])],
+dnl ###     [AC_DEFINE([NUT_SOURCE_GITREV], [NULL], [NUT source revision when the build was configured: not detected])])
 
 dnl Keep track of command-line options passed to this script:
 AC_MSG_CHECKING([for CONFIG_FLAGS])
