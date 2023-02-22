@@ -126,6 +126,8 @@ int gpiod_line_event_wait_bulk(struct gpiod_line_bulk *bulk,
 }
 #endif
 
+/* reserve GPIO lines as per run options and inner parameter: do reservation once
+   or per each status read                                                       */
 static void reserve_lines(struct gpioups_t *gpioupsfd, int inner) {
 	upsdebugx(LOG_DEBUG, "reserve_lines runOptions %d, inner %d", gpioupsfd->runOptions, inner);
 	if(((gpioupsfd->runOptions&ROPT_REQRES)!=0)==inner) {
@@ -155,9 +157,10 @@ static void reserve_lines(struct gpioups_t *gpioupsfd, int inner) {
 	}
 }
 
+/* open gpiochip, process rules and check lines numbers validity */
 static struct gpioups_t *gpio_open(const char *chipName) {
 	struct gpioups_t *upsfdlocal=xcalloc(sizeof(*upsfdlocal),1);
-	upsfdlocal->runOptions=0; /*	ROPT_REQRES; ROPT_EVMODE;	*/
+	upsfdlocal->runOptions=0; /*	don't use ROPT_REQRES and ROPT_EVMODE yet	*/
 	gpio_get_ups_rules(upsfdlocal);
 	upsfdlocal->gpioChipHandle=gpiod_chip_open_by_name(chipName);
 	if(!upsfdlocal->gpioChipHandle) {
@@ -199,6 +202,7 @@ static struct gpioups_t *gpio_open(const char *chipName) {
 	return upsfdlocal;
 }
 
+/* close gpiochip and release any allocated resources */
 static void gpio_close(struct gpioups_t *gpioupsfd) {
 	if(gpioupsfd) {
 		if(gpioupsfd->gpioChipHandle) {
@@ -213,6 +217,9 @@ static void gpio_close(struct gpioups_t *gpioupsfd) {
 		if(gpioupsfd->rules) {
 			int i;
 			for(i=0; i<gpioupsfd->rulesCount; i++) {
+				if(gpioupsfd->rules[i].cRules) {
+					free(gpioupsfd->rules[i].cRules);
+				}
 				free(gpioupsfd->rules[i]);
 			}
 		}
@@ -220,6 +227,7 @@ static void gpio_close(struct gpioups_t *gpioupsfd) {
 	}
 }
 
+/* add compiled subrules item to the array */
 static void add_rule_item(struct gpioups_t *upsfd, int newValue) {
 	int     subCount=(upsfd->rules[upsfd->rulesCount-1]) ? upsfd->rules[upsfd->rulesCount-1]->subCount+1 : 1;
 	int     itemSize=subCount*sizeof(upsfd->rules[0]->cRules[0])+sizeof(rulesint);
@@ -228,6 +236,9 @@ static void add_rule_item(struct gpioups_t *upsfd, int newValue) {
 	upsfd->rules[upsfd->rulesCount-1]->cRules[subCount-1]=newValue;
 }
 
+/* get next lexem out of rules configuration string recognizing separators = and ; ,
+logical commands ^ , & , | , state names - several ascii characters matching NUT states,
+and several numbers to denote GPIO chip lines to read statuses   */
 static int get_rule_lex(unsigned char *rulesBuff, int *startPos, int *endPos) {
 	static unsigned char lexType[256]={
 		  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,    /*   00 0x00	*/
@@ -255,6 +266,7 @@ static int get_rule_lex(unsigned char *rulesBuff, int *startPos, int *endPos) {
 	return (int)lexTypeChr;
 }
 
+/* split subrules and translate them to array of commands/line numbers */
 static void gpio_get_ups_rules(struct gpioups_t *upsfd) {
 	unsigned char   *rulesString=(unsigned char *)getval("rules");
 	/*	statename=[^]line[&||[line]]	*/
@@ -278,7 +290,9 @@ static void gpio_get_ups_rules(struct gpioups_t *upsfd) {
 		);
 		switch(lexStatus) {
 			case 0:
-				if(lexType!='a') lexStatus=-1; else {
+				if(lexType!='a') {
+					lexStatus=-1;
+				} else {
 					lexStatus=1;
 					upsfd->rulesCount++;
 					upsfd->rules=xrealloc(upsfd->rules, (size_t)(sizeof(upsfd->rules[0])*upsfd->rulesCount));
@@ -288,7 +302,11 @@ static void gpio_get_ups_rules(struct gpioups_t *upsfd) {
 				}
 			break;
 			case 1:
-				if(lexType!='=') lexStatus=-1; else lexStatus=2;
+				if(lexType!='=') {
+					lexStatus=-1;
+				} else {
+					lexStatus=2;
+				}
 			break;
 			case 2:
 				if(lexType=='^') {
@@ -297,10 +315,14 @@ static void gpio_get_ups_rules(struct gpioups_t *upsfd) {
 				} else if(lexType=='0') {
 					lexStatus=4;
 					add_rule_item(upsfd, atoi((char *)(rulesString+startPos)));
-				} else lexStatus=-1;
+				} else {
+					lexStatus=-1;
+				}
 			break;
 			case 3:
-				if(lexType!='0') lexStatus=-1; else {
+				if(lexType!='0') {
+					lexStatus=-1;
+				} else {
 					lexStatus=4;
 					add_rule_item(upsfd, atoi((char *)(rulesString+startPos)));
 				}
@@ -313,15 +335,18 @@ static void gpio_get_ups_rules(struct gpioups_t *upsfd) {
 					lexStatus=2;
 					add_rule_item(upsfd, RULES_CMD_OR);
 				}
-				else if(lexType==';') lexStatus=0; else lexStatus=-1;
+				else if(lexType==';') {
+					lexStatus=0;
+				} else {
+					lexStatus=-1;
+				}
 			break;
 			default:
 				lexStatus=-1;
 			break;
 		}
-		if(lexStatus==-1) {
+		if(lexStatus==-1)
 			fatalx(LOG_ERR, "Line processing rule error at position %d", startPos);
-		}
 		startPos=endPos;
 	}
 
@@ -409,6 +434,7 @@ static void gpio_get_ups_rules(struct gpioups_t *upsfd) {
 	}
 }
 
+/* get GPIO line states for all needed lines */
 static void gpio_get_lines_states(struct gpioups_t *gpioupsfd) {
 	int i;
 	int gpioRc;
@@ -494,7 +520,7 @@ static void gpio_get_lines_states(struct gpioups_t *gpioupsfd) {
 	}
 }
 
-/* calculate state rule value based on GPIO pin values */
+/* calculate state rule value based on GPIO line values */
 static int gpio_calc_rule_states(int cRules[], int subCount, int sIndex) {
 	int ruleVal=0;
 	int iopStart=sIndex;
