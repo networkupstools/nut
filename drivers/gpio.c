@@ -67,7 +67,7 @@ static void gpio_get_ups_rules(struct gpioups_t *upsfd);
 static void gpio_get_lines_states(struct gpioups_t *gpioupsfd);
 static void gpio_set_states(struct gpioups_t *gpioupsfd);
 
-#undef LOCALTEST
+#define LOCALTEST
 #ifdef LOCALTEST
 struct gpiod_chip *gpiod_chip_open_by_name(const char *name) {
 	NUT_UNUSED_VARIABLE(name);
@@ -217,9 +217,6 @@ static void gpio_close(struct gpioups_t *gpioupsfd) {
 		if(gpioupsfd->rules) {
 			int i;
 			for(i=0; i<gpioupsfd->rulesCount; i++) {
-				if(gpioupsfd->rules[i].cRules) {
-					free(gpioupsfd->rules[i].cRules);
-				}
 				free(gpioupsfd->rules[i]);
 			}
 		}
@@ -354,8 +351,7 @@ static void gpio_get_ups_rules(struct gpioups_t *upsfd) {
 	for(i=0; i<upsfd->rulesCount; i++) {
 		upsdebugx(
 			LOG_DEBUG,
-			"rule state name [%s],
-			subcount %d",
+			"rule state name [%s], subcount %d",
 			upsfd->rules[i]->stateName,
 			upsfd->rules[i]->subCount
 		);

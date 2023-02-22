@@ -669,6 +669,17 @@ endif
 
 HTML_LINUX_I2C_MANS = asem.html pijuice.html
 
+SRC_LINUX_GPIO_PAGES = gpio.txt
+if WITH_MANS
+MAN_LINUX_GPIO_PAGES = gpio.8
+endif
+
+if WITH_GPIO
+man8_MANS += $(MAN_LINUX_GPIO_PAGES)
+endif
+
+HTML_LINUX_GPIO_MANS = gpio.html
+
 # SOME_DRIVERS
 endif
 
@@ -691,7 +702,8 @@ MAN_MANS += \
 	$(MAN_IPMIPSU_PAGES) \
 	$(MAN_MACOSX_PAGES) \
 	$(MAN_MODBUS_PAGES) \
-	$(MAN_LINUX_I2C_PAGES)
+	$(MAN_LINUX_I2C_PAGES) \
+	$(MAN_LINUX_GPIO_PAGES)
 endif
 
 SRC_DRIVERS_PAGES = \
@@ -704,7 +716,8 @@ SRC_DRIVERS_PAGES = \
 	$(SRC_IPMIPSU_PAGES) \
 	$(SRC_MACOSX_PAGES) \
 	$(SRC_MODBUS_PAGES) \
-	$(SRC_LINUX_I2C_PAGES)
+	$(SRC_LINUX_I2C_PAGES) \
+	$(SRC_LINUX_GPIO_PAGES)
 
 if SOME_DRIVERS
 # The list above probably came up empty in this case, so make sure that
@@ -762,7 +775,8 @@ HTML_MANS = \
 	$(HTML_IPMIPSU_MANS) \
 	$(HTML_MACOSX_MANS) \
 	$(HTML_MODBUS_MANS) \
-	$(HTML_LINUX_I2C_MANS)
+	$(HTML_LINUX_I2C_MANS) \
+	$(HTML_LINUX_GPIO_MANS)
 
 # Note: target documents, except nutupsdrv.txt itself, start the
 # list of drivers with `- linkman:nutupsdrv[8]` entry

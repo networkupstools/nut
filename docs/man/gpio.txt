@@ -38,9 +38,9 @@ Driver control:
 ~~~~~~~~~~~~~~
 
 *rules*='value'::
-A string consisting of substrings. Each substring describes GPIO line
+A string consisting of sub-strings. Each sub-string describes GPIO line
 states conversion formula to specific NUT state, like
-nut_state=[^]line_num[logical_operationline_num]. Not (^) , and (&) , or
+nut_state=[^]line_num[logical_operation.line_num]. Not (^) , and (&) , or
 (|)operations are supported for now. nut_state should correspond to NUT
 state, line_num to GPIO line number connected to UPS open collector pin.
 CyberShield CSN27U12V describes pins as:
@@ -81,7 +81,7 @@ Here is an example of GPIO driver configuration in *ups.conf* file:
   default.battery.charge.low = 20
 ----
 
-SHTDOWN COMMAND
+SHUTDOWN COMMAND
 ---------------
 
 This driver does not support shutdown command.
