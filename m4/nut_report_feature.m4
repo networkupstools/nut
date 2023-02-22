@@ -114,7 +114,10 @@ AC_DEFUN([NUT_REPORT_TARGET],
     dnl arg#3 = summary/config.log/autoconf description
     AC_MSG_CHECKING([$3])
     AC_MSG_RESULT([$2])
-    NUT_REPORT_FILE([$3], [$2], [8], "NUT Build/Target system info:")
+    dnl FIXME: value here is already quoted by caller (for AC_DEFINE_UNQUOTED
+    dnl with multi-token strings). Then quotes are added in NUT_REPORT_FILE()
+    dnl and turn it into multiple single-token strings. So we neuter that here:
+    NUT_REPORT_FILE([$3], ["$2"], [8], "NUT Build/Target system info:")
 
     dnl Note: unlike features, target info does not imply an AutoMake toggle
     AC_DEFINE_UNQUOTED($1, $2, $3)
