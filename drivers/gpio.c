@@ -67,7 +67,7 @@ static void gpio_get_ups_rules(struct gpioups_t *upsfd);
 static void gpio_get_lines_states(struct gpioups_t *gpioupsfd);
 static void gpio_set_states(struct gpioups_t *gpioupsfd);
 
-#define LOCALTEST
+#undef LOCALTEST
 #ifdef LOCALTEST
 struct gpiod_chip *gpiod_chip_open_by_name(const char *name) {
 	NUT_UNUSED_VARIABLE(name);
