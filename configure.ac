@@ -12,8 +12,17 @@ dnl primarily for better messaging in the script itself.
 dnl If the NUT codebase in this workspace is being developed and rebuilt
 dnl without reconfiguration, detailed version in the binaries will differ.
 (command -v git >/dev/null 2>/dev/null) \
-&& GITREV="`git describe --tags 2>/dev/null | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,'`" \
-|| GITREV=""
+&& NUT_SOURCE_GITREV="`git describe --tags 2>/dev/null | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,'`" \
+|| NUT_SOURCE_GITREV=""
+
+dnl Note: except for experiments, do not pass this into config.h - use
+dnl the NUT_VERSION_MACRO from nut_version.h instead. Developers may
+dnl want to disable their "force-nut-version-header" configure option
+dnl to reduce rebuild scope and so speed up the iterations with ccache.
+dnl New "config.h" contents for every reconfig would defeat that purpose!
+dnl ### AS_IF([test -n "${NUT_SOURCE_GITREV-}"],
+dnl ###     [AC_DEFINE_UNQUOTED([NUT_SOURCE_GITREV], ["${NUT_SOURCE_GITREV}"], [NUT source revision when the build was configured])],
+dnl ###     [AC_DEFINE([NUT_SOURCE_GITREV], [NULL], [NUT source revision when the build was configured: not detected])])
 
 dnl Keep track of command-line options passed to this script:
 AC_MSG_CHECKING([for CONFIG_FLAGS])
@@ -62,9 +71,9 @@ AC_SUBST(CONFIG_FLAGS)
 AC_CONFIG_AUX_DIR([.])
 AC_CONFIG_SRCDIR(server/upsd.c)
 AC_CONFIG_MACRO_DIR([m4])
-AS_IF([test x"${GITREV}" = x],
+AS_IF([test x"${NUT_SOURCE_GITREV}" = x],
     [echo "Network UPS Tools version ${PACKAGE_VERSION}"],
-    [echo "Network UPS Tools version ${PACKAGE_VERSION} (${GITREV})"])
+    [echo "Network UPS Tools version ${PACKAGE_VERSION} (${NUT_SOURCE_GITREV})"])
 AC_CANONICAL_TARGET
 NUT_CHECK_OS
 NUT_STASH_WARNINGS
@@ -376,12 +385,21 @@ NUT_ARG_ENABLE([keep_nut_report_feature],
     [Request that we keep config.nut_report_feature.log (normally deleted by configure script after displaying)],
     [no])
 
-AS_IF([test x"${GITREV}" = x],
+AS_IF([test x"${NUT_SOURCE_GITREV}" = x],
     [NUT_REPORT([configured version], [${PACKAGE_VERSION}])],
-    [NUT_REPORT([configured version], [${PACKAGE_VERSION} (${GITREV})])])
+    [NUT_REPORT([configured version], [${PACKAGE_VERSION} (${NUT_SOURCE_GITREV})])])
 
 dnl Note: the compiler/pragma/attr methods below are custom for NUT codebase:
 NUT_COMPILER_FAMILY
+
+dnl Note: DO NOT AC_DEFINE the "FULL" items: they are generally multi-line.
+dnl NUT_REPORT_TARGET([CC_VERSION_FULL],  ["${CC_VERSION_FULL}"],  [Version and other details of C compiler])
+dnl NUT_REPORT_TARGET([CXX_VERSION_FULL], ["${CXX_VERSION_FULL}"], [Version and other details of C++ compiler])
+dnl NUT_REPORT_TARGET([CPP_VERSION_FULL], ["${CPP_VERSION_FULL}"], [Version and other details of C preprocessor])
+NUT_REPORT_TARGET([CC_VERSION],  ["${CC_VERSION}"],  [Compact version of C compiler])
+NUT_REPORT_TARGET([CXX_VERSION], ["${CXX_VERSION}"], [Compact version of C++ compiler])
+NUT_REPORT_TARGET([CPP_VERSION], ["${CPP_VERSION}"], [Compact version of C preprocessor])
+
 dnl Help find warning/error details in a wall of text (must be processed before NUT_COMPILER_FAMILY_FLAGS):
 NUT_ARG_ENABLE([Wcolor],
     [Request that compiler output is colorized (no = leave it up to compiler defaults)],
@@ -3058,9 +3076,8 @@ AS_IF([test x"$have_PKG_CONFIG" = xyes],
          AS_IF([test "${have_cppunit}" != "yes"],
             [AC_MSG_WARN([libcppunit not found - those C++ tests will not be built.])
              have_cppunit=no],
-            [AS_IF([test -n "$CXX"],
-                [AS_IF([$CXX --version 2>&1 | grep 'Free Software Foundation' > /dev/null],
-                    [CPPUNIT_NUT_CXXFLAGS="-g -O0"])])
+            [AS_IF([test "x$GXX" = xyes],
+             [CPPUNIT_NUT_CXXFLAGS="-g -O0"])
             ])
         ])
     ], [AC_MSG_WARN([pkg-config not found, can not look properly for libcppunit - those C++ tests will not be built.])
@@ -3712,7 +3729,7 @@ AS_CASE(["${nut_enable_warnings}"],
             [AS_IF([test "${GCC}" = "yes"], [
                 AS_CASE(["${CFLAGS}"],
                     [*89*|*90*|*ansi*], [nut_enable_warnings="gcc-minimal"],
-                    [AS_CASE(["`$CC --version | grep -i gcc`"],
+                    [AS_CASE(["$CC_VERSION"],
                         [*" "1.*|*" "2.*|3.*|*" "4.0*|*" "4.1*|*" "4.2*|*" "4.3*], [
                             AC_MSG_WARN([Very old GCC in use, disabling warnings])
                             dnl #AS_IF([test x"${nut_enable_Werror}" = xauto], [nut_enable_Werror="no"])
