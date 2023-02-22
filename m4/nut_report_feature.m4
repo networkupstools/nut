@@ -24,7 +24,7 @@ AC_DEFUN([NUT_REPORT_FILE],
             echo ""
         fi > "config.nut_report_feature.log.$3"
     ])
-    printf "* $1:\t$2\n" >> "config.nut_report_feature.log.$3"
+    printf "* %s:\t%s\n" "$1" "$2" >> "config.nut_report_feature.log.$3"
 ])
 
 AC_DEFUN([NUT_REPORT],
