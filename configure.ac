@@ -3067,9 +3067,8 @@ AS_IF([test x"$have_PKG_CONFIG" = xyes],
          AS_IF([test "${have_cppunit}" != "yes"],
             [AC_MSG_WARN([libcppunit not found - those C++ tests will not be built.])
              have_cppunit=no],
-            [AS_IF([test -n "$CXX"],
-                [AS_IF([$CXX --version 2>&1 | grep 'Free Software Foundation' > /dev/null],
-                    [CPPUNIT_NUT_CXXFLAGS="-g -O0"])])
+            [AS_IF([test "x$GXX" = xyes],
+             [CPPUNIT_NUT_CXXFLAGS="-g -O0"])
             ])
         ])
     ], [AC_MSG_WARN([pkg-config not found, can not look properly for libcppunit - those C++ tests will not be built.])
@@ -3721,7 +3720,7 @@ AS_CASE(["${nut_enable_warnings}"],
             [AS_IF([test "${GCC}" = "yes"], [
                 AS_CASE(["${CFLAGS}"],
                     [*89*|*90*|*ansi*], [nut_enable_warnings="gcc-minimal"],
-                    [AS_CASE(["`$CC --version | grep -i gcc`"],
+                    [AS_CASE(["$CC_VERSION"],
                         [*" "1.*|*" "2.*|3.*|*" "4.0*|*" "4.1*|*" "4.2*|*" "4.3*], [
                             AC_MSG_WARN([Very old GCC in use, disabling warnings])
                             dnl #AS_IF([test x"${nut_enable_Werror}" = xauto], [nut_enable_Werror="no"])
