@@ -944,7 +944,11 @@ void nut_report_config_flags(void)
 	 * Depending on amount of configuration tunables involved by a particular
 	 * build of NUT, the string can be quite long (over 1KB).
 	 */
-	char *relver = NULL;
+	const char *acinit_ver = NULL;
+	/* Pass these as variables to avoid warning about never reaching one
+	 * of compiled codepaths: */
+	const char *compiler_ver = CC_VERSION;
+	const char *config_flags = CONFIG_FLAGS;
 	if (nut_debug_level < 1)
 		return;
 
@@ -964,20 +968,20 @@ void nut_report_config_flags(void)
 		 * from configure.ac AC_INIT() -- although some distros,
 		 * especially embedders, tend to place their product IDs here),
 		 * or if PACKAGE_VERSION *is NOT* a substring of it: */
-		relver = PACKAGE_VERSION;
+		acinit_ver = PACKAGE_VERSION;
 	}
 
 	if (xbit_test(upslog_flags, UPSLOG_STDERR))
 		fprintf(stderr, "Network UPS Tools version %s%s%s%s%s%s%s %s%s\n",
 			UPS_VERSION,
-			(relver ? " (release/snapshot of " : ""),
-			(relver ? relver : ""),
-			(relver ? ")" : ""),
-			(CC_VERSION && *CC_VERSION != '\0' ? " built with " : ""),
-			(CC_VERSION && *CC_VERSION != '\0' ? CC_VERSION : ""),
-			(CC_VERSION && *CC_VERSION != '\0' ? " and" : ""),
-			(CONFIG_FLAGS && *CONFIG_FLAGS != '\0' ? "configured with flags: " : "configured all by default guesswork"),
-			(CONFIG_FLAGS && *CONFIG_FLAGS != '\0' ? CONFIG_FLAGS : "")
+			(acinit_ver ? " (release/snapshot of " : ""),
+			(acinit_ver ? acinit_ver : ""),
+			(acinit_ver ? ")" : ""),
+			(compiler_ver && *compiler_ver != '\0' ? " built with " : ""),
+			(compiler_ver && *compiler_ver != '\0' ? compiler_ver : ""),
+			(compiler_ver && *compiler_ver != '\0' ? " and" : ""),
+			(config_flags && *config_flags != '\0' ? "configured with flags: " : "configured all by default guesswork"),
+			(config_flags && *config_flags != '\0' ? config_flags : "")
 		);
 
 	/* NOTE: May be ignored or truncated by receiver if that syslog server
@@ -985,14 +989,14 @@ void nut_report_config_flags(void)
 	if (xbit_test(upslog_flags, UPSLOG_SYSLOG))
 		syslog(LOG_DEBUG, "Network UPS Tools version %s%s%s%s%s%s%s %s%s",
 			UPS_VERSION,
-			(relver ? " (release/snapshot of " : ""),
-			(relver ? relver : ""),
-			(relver ? ")" : ""),
-			(CC_VERSION && *CC_VERSION != '\0' ? " built with " : ""),
-			(CC_VERSION && *CC_VERSION != '\0' ? CC_VERSION : ""),
-			(CC_VERSION && *CC_VERSION != '\0' ? " and" : ""),
-			(CONFIG_FLAGS && *CONFIG_FLAGS != '\0' ? "configured with flags: " : "configured all by default guesswork"),
-			(CONFIG_FLAGS && *CONFIG_FLAGS != '\0' ? CONFIG_FLAGS : "")
+			(acinit_ver ? " (release/snapshot of " : ""),
+			(acinit_ver ? acinit_ver : ""),
+			(acinit_ver ? ")" : ""),
+			(compiler_ver && *compiler_ver != '\0' ? " built with " : ""),
+			(compiler_ver && *compiler_ver != '\0' ? compiler_ver : ""),
+			(compiler_ver && *compiler_ver != '\0' ? " and" : ""),
+			(config_flags && *config_flags != '\0' ? "configured with flags: " : "configured all by default guesswork"),
+			(config_flags && *config_flags != '\0' ? config_flags : "")
 		);
 }
 
