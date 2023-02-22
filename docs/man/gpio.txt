@@ -1,0 +1,99 @@
+GPIO(8)
+=================
+
+NAME
+----
+
+GPIO - Driver for GPIO connected UPS
+
+SYNOPSIS
+--------
+
+*GPIO* -h
+
+*GPIO* -a 'GPIOCHIP0' ['OPTIONS']
+
+NOTE: This man page only documents the specific features of the *GPIO*
+driver. For information about the core driver, see linkman:nutupsdrv[8].
+
+SUPPORTED HARDWARE
+------------------
+
+This is the driver for GPIO attached UPS devices.
+
+The driver has been tested against CyberPower CyberShield CSN27U12V attached
+Orange Pi Zero GPIO.
+
+More information about this UPS can be found here: ::
+https://www.cyberpowersystems.com/resources/csn27u12v-um/
+
+
+EXTRA ARGUMENTS
+---------------
+
+This driver supports the following optional settings in the
+linkman:ups.conf[5] file:
+
+Driver control:
+~~~~~~~~~~~~~~
+
+*rules*='value'::
+A string consisting of substrings. Each substring describes GPIO line states conversion formula to specific NUT state, like nut_state=[^]line_num[logical_operationline_num]. And (&) and or (|) operations are supported for now.
+
+Battery Charge:
+~~~~~~~~~~~~~~
+
+*default.battery.charge.low*='value'::
+An integer specifying the battery charge level reported in LB case.
+
+
+CONFIGURATION
+-------------
+
+Here is an example of GPIO driver configuration in *ups.conf* file:
+----
+[CyberPower12v]
+  driver = GPIO
+  port = gpiochip0
+  description = "Modem and DNS server UPS"
+  mfr = CyberPower
+  model = "CyberShield CSN27U12V"
+  rules = "OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6;"
+  default.battery.charge.low = 20
+----
+
+SHTDOWN COMMAND
+----------------
+
+This driver does not support shutdown command.
+
+INSTALLATION
+------------
+
+This driver is not built by default. You can build it by installing
+libgpiod and running `configure --with-gpio=yes`.
+
+You also need to give proper permissions on the local serial device
+file (/dev/gpiochip0 for example) to allow the run-time NUT driver user
+account to access it, like by adding the following rule to rules.d directory:
+SUBSYSTEM=="gpio*", PROGRAM="/bin/sh -c '\
+        chown -R nut:nut /dev/gpiochip0 && chmod -R 700 /dev/gpiochip0\
+
+AUTHOR
+------
+
+Modris Berzonis <modrisb@apollo.lv>
+
+SEE ALSO
+--------
+
+The core driver:
+~~~~~~~~~~~~~~~~
+
+linkman:nutupsdrv[8], linkman:ups.conf[5]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
+* The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+* libmodbus home page: http://libmodbus.org
