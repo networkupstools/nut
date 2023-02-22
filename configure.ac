@@ -12,8 +12,12 @@ dnl primarily for better messaging in the script itself.
 dnl If the NUT codebase in this workspace is being developed and rebuilt
 dnl without reconfiguration, detailed version in the binaries will differ.
 (command -v git >/dev/null 2>/dev/null) \
-&& GITREV="`git describe --tags 2>/dev/null | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,'`" \
-|| GITREV=""
+&& NUT_SOURCE_GITREV="`git describe --tags 2>/dev/null | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,'`" \
+|| NUT_SOURCE_GITREV=""
+
+AS_IF([test -n "${NUT_SOURCE_GITREV-}"],
+    [AC_DEFINE_UNQUOTED([NUT_SOURCE_GITREV], ["${NUT_SOURCE_GITREV}"], [NUT source revision when the build was configured])],
+    [AC_DEFINE([NUT_SOURCE_GITREV], [NULL], [NUT source revision when the build was configured: not detected])])
 
 dnl Keep track of command-line options passed to this script:
 AC_MSG_CHECKING([for CONFIG_FLAGS])
@@ -62,9 +66,9 @@ AC_SUBST(CONFIG_FLAGS)
 AC_CONFIG_AUX_DIR([.])
 AC_CONFIG_SRCDIR(server/upsd.c)
 AC_CONFIG_MACRO_DIR([m4])
-AS_IF([test x"${GITREV}" = x],
+AS_IF([test x"${NUT_SOURCE_GITREV}" = x],
     [echo "Network UPS Tools version ${PACKAGE_VERSION}"],
-    [echo "Network UPS Tools version ${PACKAGE_VERSION} (${GITREV})"])
+    [echo "Network UPS Tools version ${PACKAGE_VERSION} (${NUT_SOURCE_GITREV})"])
 AC_CANONICAL_TARGET
 NUT_CHECK_OS
 NUT_STASH_WARNINGS
@@ -376,9 +380,9 @@ NUT_ARG_ENABLE([keep_nut_report_feature],
     [Request that we keep config.nut_report_feature.log (normally deleted by configure script after displaying)],
     [no])
 
-AS_IF([test x"${GITREV}" = x],
+AS_IF([test x"${NUT_SOURCE_GITREV}" = x],
     [NUT_REPORT([configured version], [${PACKAGE_VERSION}])],
-    [NUT_REPORT([configured version], [${PACKAGE_VERSION} (${GITREV})])])
+    [NUT_REPORT([configured version], [${PACKAGE_VERSION} (${NUT_SOURCE_GITREV})])])
 
 dnl Note: the compiler/pragma/attr methods below are custom for NUT codebase:
 NUT_COMPILER_FAMILY

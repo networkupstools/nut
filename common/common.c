@@ -944,18 +944,43 @@ void nut_report_config_flags(void)
 	 * Depending on amount of configuration tunables involved by a particular
 	 * build of NUT, the string can be quite long (over 1KB).
 	 */
+	char *gitrev = NULL;
 	if (nut_debug_level < 1)
 		return;
 
+	/* Only report git revision if remarkably different from UPS_VERSION
+	 * which may be e.g. "2.8.0.1" or already include the source revision
+	 * as decided when generating nut_version.h (and if it was re-generated
+	 * in case of rebuilds while developers are locally iterating).
+	 * If the same version string is indeed present, gitrev is "v<UPS_VERSION>".
+	 */
+	if (NUT_SOURCE_GITREV && UPS_VERSION &&
+		(strlen(UPS_VERSION) < 12 || !strstr(NUT_SOURCE_GITREV, UPS_VERSION))
+	) {
+		/* If UPS_VERSION is too short (so likely a static string
+		 * from configure.ac AC_INIT() -- although some distros,
+		 * especially embedders, tend to place their product IDs here),
+		 * or if it is NOT a substring of NUT_SOURCE_GITREV: */
+		gitrev = NUT_SOURCE_GITREV;
+	}
+
 	if (xbit_test(upslog_flags, UPSLOG_STDERR))
-		fprintf(stderr, "Network UPS Tools version %s configured with flags: %s\n",
-			UPS_VERSION, CONFIG_FLAGS);
+		fprintf(stderr, "Network UPS Tools version %s%s%s%s configured with flags: %s\n",
+			UPS_VERSION,
+			(gitrev ? " (git revision " : ""),
+			(gitrev ? gitrev : ""),
+			(gitrev ? ")" : ""),
+			CONFIG_FLAGS);
 
 	/* NOTE: May be ignored or truncated by receiver if that syslog server
 	 * (and/or OS sender) does not accept messages of such length */
 	if (xbit_test(upslog_flags, UPSLOG_SYSLOG))
-		syslog(LOG_DEBUG, "Network UPS Tools version %s configured with flags: %s",
-			UPS_VERSION, CONFIG_FLAGS);
+		syslog(LOG_DEBUG, "Network UPS Tools version %s%s%s%s configured with flags: %s",
+			UPS_VERSION,
+			(gitrev ? " (git revision " : ""),
+			(gitrev ? gitrev : ""),
+			(gitrev ? ")" : ""),
+			CONFIG_FLAGS);
 }
 
 static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
