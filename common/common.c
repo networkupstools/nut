@@ -968,7 +968,7 @@ void nut_report_config_flags(void)
 	}
 
 	if (xbit_test(upslog_flags, UPSLOG_STDERR))
-		fprintf(stderr, "Network UPS Tools version %s%s%s%s%s%s%s configured with flags: %s\n",
+		fprintf(stderr, "Network UPS Tools version %s%s%s%s%s%s%s %s%s\n",
 			UPS_VERSION,
 			(relver ? " (release/snapshot of " : ""),
 			(relver ? relver : ""),
@@ -976,12 +976,14 @@ void nut_report_config_flags(void)
 			(CC_VERSION && *CC_VERSION != '\0' ? " built with " : ""),
 			(CC_VERSION && *CC_VERSION != '\0' ? CC_VERSION : ""),
 			(CC_VERSION && *CC_VERSION != '\0' ? " and" : ""),
-			CONFIG_FLAGS);
+			(CONFIG_FLAGS && *CONFIG_FLAGS != '\0' ? "configured with flags: " : "configured all by default guesswork"),
+			(CONFIG_FLAGS && *CONFIG_FLAGS != '\0' ? CONFIG_FLAGS : "")
+		);
 
 	/* NOTE: May be ignored or truncated by receiver if that syslog server
 	 * (and/or OS sender) does not accept messages of such length */
 	if (xbit_test(upslog_flags, UPSLOG_SYSLOG))
-		syslog(LOG_DEBUG, "Network UPS Tools version %s%s%s%s%s%s%s configured with flags: %s",
+		syslog(LOG_DEBUG, "Network UPS Tools version %s%s%s%s%s%s%s %s%s",
 			UPS_VERSION,
 			(relver ? " (release/snapshot of " : ""),
 			(relver ? relver : ""),
@@ -989,7 +991,9 @@ void nut_report_config_flags(void)
 			(CC_VERSION && *CC_VERSION != '\0' ? " built with " : ""),
 			(CC_VERSION && *CC_VERSION != '\0' ? CC_VERSION : ""),
 			(CC_VERSION && *CC_VERSION != '\0' ? " and" : ""),
-			CONFIG_FLAGS);
+			(CONFIG_FLAGS && *CONFIG_FLAGS != '\0' ? "configured with flags: " : "configured all by default guesswork"),
+			(CONFIG_FLAGS && *CONFIG_FLAGS != '\0' ? CONFIG_FLAGS : "")
+		);
 }
 
 static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
