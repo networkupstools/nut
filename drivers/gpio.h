@@ -30,9 +30,8 @@ typedef struct rulesint_t { /* structure to store processed rules configuration 
 }   rulesint;
 
 typedef struct gpioups_t {
-    struct gpiod_chip *gpioChipHandle;      /* libgpiod chip handle when opened */
-    struct gpiod_line_bulk gpioLines;       /* libgpiod lines to monitor */
-    struct gpiod_line_bulk gpioEventLines;  /* libgpiod lines for event monitoring */
+    void    *lib_data;  /* pointer to driver's gpio support library data structure */
+    const char    *chipName;  /* port or file name to reference GPIO chip */
     int     initial;    /* initialization flag - 0 on 1st entry */
     int     runOptions; /* run options, not yet used */
     int     aInfoAvailable; /* non-zero if previous state information is available */
@@ -44,5 +43,11 @@ typedef struct gpioups_t {
     int     rulesCount;     /* rules subitem count: no of NUT states defined in rules*/
     struct rulesint_t **rules;
 } gpioups;
+
+typedef struct libgpiod_data_t {
+    struct gpiod_chip *gpioChipHandle;      /* libgpiod chip handle when opened */
+    struct gpiod_line_bulk gpioLines;       /* libgpiod lines to monitor */
+    struct gpiod_line_bulk gpioEventLines;  /* libgpiod lines for event monitoring */
+} libgpiod_data;
 
 #endif	/* GPIO_H */
