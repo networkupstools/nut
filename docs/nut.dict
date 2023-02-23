@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3095 utf-8
+personal_ws-1.1 en 3105 utf-8
 AAS
 ABI
 ACFAIL
@@ -131,6 +131,7 @@ BeepTone
 Belkin's
 Benedikt
 Berge
+Berzonis
 BestPort
 BiWeekly
 Bieringer
@@ -192,6 +193,7 @@ CPUs
 CRC
 CREAD
 CROSSTALK
+CSN
 CSS
 CSUM
 CTB
@@ -230,6 +232,7 @@ Ctrl
 Cuvellard
 Cyber
 CyberPower
+CyberShield
 Cygwin
 DATACABLE
 DATAPATH
@@ -255,6 +258,7 @@ DIGYS
 DISCHRG
 DMF
 DN
+DNS
 DOCTYPE
 DOMAINs
 DPC
@@ -389,6 +393,8 @@ GETADDRINFO
 GID
 GKrellM
 GND
+GPIO
+GPIOCHIP
 GPL
 GPSER
 GRs
@@ -699,6 +705,7 @@ Minislot
 Moar
 Modbus
 ModemManager
+Modris
 MonAMI
 MonUPS
 Monett
@@ -1949,6 +1956,8 @@ google
 goto
 gotos
 gpg
+gpio
+gpiochip
 graphviz
 groupadd
 groupname
@@ -2131,6 +2140,7 @@ libexec
 libfreeipmi
 libgd
 libgpgme
+libgpiod
 libhid
 libhidups
 libi

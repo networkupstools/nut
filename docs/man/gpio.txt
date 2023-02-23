@@ -52,7 +52,7 @@ BATTERY MISSING		Low when battery is present
 					Open when battery is missing
 LOW BATTERY			Low when battery is near full charge capacity
 					Open when operating from a battery with < 20% capacity
-and rules migh be defined as
+and rules might be defined as
 rules = "OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6;"
 assuming that line 0 is connected to ON BATTERY pin, REPLACE BATTERY to line 1,
 BATTERY MISSING pin to line 6 and LOW BATTERY to line 3. Expecting simple formula
@@ -82,7 +82,7 @@ Here is an example of GPIO driver configuration in *ups.conf* file:
 ----
 
 SHUTDOWN COMMAND
----------------
+----------------
 
 This driver does not support shutdown command.
 
