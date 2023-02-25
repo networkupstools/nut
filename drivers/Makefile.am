@@ -59,7 +59,7 @@ MODBUS_DRIVERLIST = phoenixcontact_modbus generic_modbus huawei-ups2000 socomec_
 LINUX_I2C_DRIVERLIST = asem pijuice
 POWERMAN_DRIVERLIST = powerman-pdu
 IPMI_DRIVERLIST = nut-ipmipsu
-GPIO_DRIVERLIST = gpio
+GPIO_DRIVERLIST = generic_gpio_libgpiod
 
 # distribute all drivers, even ones that are not built by default
 EXTRA_PROGRAMS  = $(SERIAL_DRIVERLIST) $(USB_DRIVERLIST) $(SERIAL_USB_DRIVERLIST)
@@ -171,9 +171,11 @@ upscode2_LDADD = $(LDADD) -lm
 victronups_SOURCES = victronups.c
 riello_ser_SOURCES = riello.c riello_ser.c
 riello_ser_LDADD = $(LDADD) -lm
-gpio_SOURCES = gpio.c
-gpio_CFLAGS = $(AM_CFLAGS)
-gpio_LDADD = $(LDADD_DRIVERS) -lgpiod
+#gpio_SOURCES = generic_gpio_common.c generic_gpio_libgpiod.c
+generic_gpio_libgpiod_SOURCES = generic_gpio_common.c generic_gpio_libgpiod.c
+#gpio_CFLAGS = $(AM_CFLAGS)
+#gpio_LDADD = $(LDADD_DRIVERS) -lgpiod
+generic_gpio_libgpiod_LDADD = $(LDADD_DRIVERS) -lgpiod
 
 # non-serial drivers: these use custom LDADD and/or CFLAGS
 

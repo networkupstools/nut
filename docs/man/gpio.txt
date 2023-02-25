@@ -1,17 +1,17 @@
-GPIO(8)
+GENERIC GPIO(8)
 =================
 
 NAME
 ----
 
-GPIO - Driver for GPIO connected UPS
+GENERIC GPIO - Driver for GPIO connected UPS
 
 SYNOPSIS
 --------
 
-*GPIO* -h
+*GENERIC_GPIO* -h
 
-*GPIO* -a 'GPIOCHIP0' ['OPTIONS']
+*GENERIC_GPIO* -a 'GPIOCHIP0' ['OPTIONS']
 
 NOTE: This man page only documents the specific features of the *GPIO*
 driver. For information about the core driver, see linkman:nutupsdrv[8].
@@ -21,7 +21,7 @@ SUPPORTED HARDWARE
 
 This is the driver for GPIO attached UPS devices.
 
-The driver has been tested against CyberPower CyberShield CSN27U12V attached
+The driver has been tested against CyberPower CyberShield CSN27U12V attached to
 Orange Pi Zero GPIO.
 
 More information about this UPS can be found here: ::
@@ -72,7 +72,7 @@ CONFIGURATION
 Here is an example of GPIO driver configuration in *ups.conf* file:
 ----
 [CyberPower12v]
-  driver = GPIO
+  driver = GENERIC_GPIO
   port = gpiochip0
   description = "Modem and DNS server UPS"
   mfr = CyberPower

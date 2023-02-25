@@ -1,13 +1,10 @@
-#ifndef GPIO_H
-#define GPIO_H
+#ifndef GENERIC_GPIO_COMMON_H
+#define GENERIC_GPIO_COMMON_H
 
 #include <stdlib.h>
 #include <gpiod.h>
 #include <regex.h>
 #include <ctype.h>
-
-#define DRIVER_NAME	"GPIO UPS driver"
-#define DRIVER_VERSION	"1.00"
 
 /*  rules commands definition    */
 #define RULES_CMD_NOT   -2
@@ -44,10 +41,8 @@ typedef struct gpioups_t {
     struct rulesint_t **rules;
 } gpioups;
 
-typedef struct libgpiod_data_t {
-    struct gpiod_chip *gpioChipHandle;      /* libgpiod chip handle when opened */
-    struct gpiod_line_bulk gpioLines;       /* libgpiod lines to monitor */
-    struct gpiod_line_bulk gpioEventLines;  /* libgpiod lines for event monitoring */
-} libgpiod_data;
+void gpio_open(struct gpioups_t *gpioupsfd);
+void gpio_get_lines_states(struct gpioups_t *gpioupsfd);
+void gpio_close(struct gpioups_t *gpioupsfd);
 
-#endif	/* GPIO_H */
+#endif	/* GENERIC_GPIO_COMMON_H */
