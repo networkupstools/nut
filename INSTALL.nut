@@ -365,7 +365,7 @@ This goes similar to usual build and install from Git:
 	:; cd nut
 	:; ./autogen.sh
 	:; ./configure --enable-inplace-runtime # --maybe-some-other-options
-	:; make -j 4 all check && sudo make install
+	:; make -j 4 all && make -j 4 check && sudo make install
 
 Note that `make install` does not currently handle all the nuances that
 packaging installation scripts would, such as customizing filesystem
@@ -393,7 +393,7 @@ symlinks) and to get them started:
 	:; cd nut
 	:; ./autogen.sh
 	:; ./configure --enable-inplace-runtime # --maybe-some-other-options
-	:; make -j 4 all check && \
+	:; make -j 4 all && make -j 4 check && \
 	    { sudo systemctl stop nut-monitor nut-server || true ; } && \
 	    { sudo systemctl stop nut-driver.service || true ; } && \
 	    { sudo systemctl stop nut-driver.target || true ; } && \
@@ -439,8 +439,14 @@ constructs to just restart the services after installing newly built files
 (if you know there were no changes to unit file definitions and dependencies),
 e.g.:
 
-	...
-	:; make -j 4 all check && \
+	:; cd /tmp
+	:; git clone https://github.com/networkupstools/nut
+	:; cd nut
+	:; git checkout -b issue-1234 ### your PR branch name, arbitrary
+	:; ./autogen.sh
+	:; ./configure --enable-inplace-runtime # --maybe-some-other-options
+	### Iterate your code changes (e.g. PR draft), build and install with:
+	:; make -j 4 all && make -j 4 check && \
 	    sudo make install && \
 	    sudo systemctl daemon-reload && \
 	    sudo systemd-tmpfiles --create && \
