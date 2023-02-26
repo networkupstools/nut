@@ -1,19 +1,19 @@
 GENERIC GPIO(8)
-=================
+===============
 
 NAME
 ----
 
-GENERIC GPIO - Driver for GPIO connected UPS
+generic_gpio - Driver for GPIO connected UPSes
 
 SYNOPSIS
 --------
 
-*GENERIC_GPIO* -h
+*generic_gpio* -h
 
-*GENERIC_GPIO* -a 'GPIOCHIP0' ['OPTIONS']
+*generic_gpio* -a 'gpiochip0' ['OPTIONS']
 
-NOTE: This man page only documents the specific features of the *GPIO*
+NOTE: This man page only documents the specific features of the *generic_gpio*
 driver. For information about the core driver, see linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
@@ -40,22 +40,30 @@ Driver control:
 *rules*='value'::
 A string consisting of sub-strings. Each sub-string describes GPIO line
 states conversion formula to specific NUT state, like
-nut_state=[^]line_num[logical_operation.line_num]. Not (^) , and (&) , or
+`nut_state=[^]line_num[logical_operation[^]line_num]...;`. Not (^) , and (&) , or
 (|)operations are supported for now. nut_state should correspond to NUT
 state, line_num to GPIO line number connected to UPS open collector pin.
 CyberShield CSN27U12V describes pins as:
-ON BATTERY			Low when operating from utility line
-					Open when operating from battery
-REPLACE BATTERY		Low when battery is charged
-					Open when battery fails the Self Test
-BATTERY MISSING		Low when battery is present
-					Open when battery is missing
-LOW BATTERY			Low when battery is near full charge capacity
-					Open when operating from a battery with < 20% capacity
+|===
+|Battery state|State details|GPIO line
+|ON BATTERY|*Low* when operating from utility line
+
+*Open* when operating from battery|0
+|REPLACE BATTERY|*Low* when battery is charged
+
+*Open* when battery fails the Self Test|1
+|BATTERY MISSING|*Low* when battery is present
+
+*Open* when battery is missing|6
+|LOW BATTERY|*Low* when battery is near full charge capacity
+
+*Open* when operating from a battery with < 20% capacity|3
+|===
 and rules might be defined as
-rules = "OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6;"
-assuming that line 0 is connected to ON BATTERY pin, REPLACE BATTERY to line 1,
-BATTERY MISSING pin to line 6 and LOW BATTERY to line 3. Expecting simple formula
+
+`rules = "OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6;"`
+
+assuming battery pin connection to GPIO lines as listed in table. Expecting simple formula
 to be used for each state, extra may increase state reliability and may need to be
 checked on each specific UPS.
 
@@ -94,9 +102,10 @@ libgpiod and running `configure --with-gpio=yes`.
 
 You also need to give proper permissions on the local serial device
 file (/dev/gpiochip0 for example) to allow the run-time NUT driver user
-account to access it, like by adding the following rule to rules.d directory:
-SUBSYSTEM=="gpio*", PROGRAM="/bin/sh -c '\
-        chown -R nut:nut /dev/gpiochip0 && chmod -R 700 /dev/gpiochip0\
+account to access it, like by adding the following rule to Linux rules.d directory:
+
+  SUBSYSTEM=="gpio*", PROGRAM="/bin/sh -c '\
+  chown -R nut:nut /dev/gpiochip0 && chmod -R 700 /dev/gpiochip0\
 
 AUTHOR
 ------

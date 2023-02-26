@@ -65,6 +65,7 @@ GPIO_DRIVERLIST = generic_gpio_libgpiod
 EXTRA_PROGRAMS  = $(SERIAL_DRIVERLIST) $(USB_DRIVERLIST) $(SERIAL_USB_DRIVERLIST)
 EXTRA_PROGRAMS += $(SNMP_DRIVERLIST) $(NEONXML_DRIVERLIST) $(MACOSX_DRIVERLIST)
 EXTRA_PROGRAMS += $(LINUX_I2C_DRIVERLIST)
+EXTRA_PROGRAMS += $(NUTSW_DRIVERLIST)
 EXTRA_PROGRAMS += $(GPIO_DRIVERLIST)
 
 # construct the list of drivers to build
@@ -171,11 +172,6 @@ upscode2_LDADD = $(LDADD) -lm
 victronups_SOURCES = victronups.c
 riello_ser_SOURCES = riello.c riello_ser.c
 riello_ser_LDADD = $(LDADD) -lm
-#gpio_SOURCES = generic_gpio_common.c generic_gpio_libgpiod.c
-generic_gpio_libgpiod_SOURCES = generic_gpio_common.c generic_gpio_libgpiod.c
-#gpio_CFLAGS = $(AM_CFLAGS)
-#gpio_LDADD = $(LDADD_DRIVERS) -lgpiod
-generic_gpio_libgpiod_LDADD = $(LDADD_DRIVERS) -lgpiod
 
 # non-serial drivers: these use custom LDADD and/or CFLAGS
 
@@ -309,6 +305,10 @@ asem_LDADD = $(LDADD_DRIVERS) $(LIBI2C_LIBS)
 asem_SOURCES = asem.c
 pijuice_LDADD = $(LDADD_DRIVERS) $(LIBI2C_LIBS)
 pijuice_SOURCES = pijuice.c
+
+# GPIO drivers
+generic_gpio_libgpiod_SOURCES = generic_gpio_common.c generic_gpio_libgpiod.c
+generic_gpio_libgpiod_LDADD = $(LDADD_DRIVERS) -lgpiod
 
 # nutdrv_qx USB/Serial
 nutdrv_qx_SOURCES = nutdrv_qx.c
