@@ -1541,6 +1541,8 @@ nut_gpio_lib=""
 
 NUT_ARG_WITH([gpio], [build and install GPIO driver], [auto])
 
+NUT_CHECK_LIBGPIO
+
 dnl ${nut_with_gpio}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_gpio}" != "yes"; then
       nut_with_gpio="no"
@@ -3641,6 +3643,8 @@ AC_SUBST(LIBMODBUS_CFLAGS)
 AC_SUBST(LIBMODBUS_LIBS)
 AC_SUBST(LIBIPMI_CFLAGS)
 AC_SUBST(LIBIPMI_LIBS)
+AC_SUBST(LIBGPIO_CFLAGS)
+AC_SUBST(LIBGPIO_LIBS)
 AC_SUBST(LIBI2C_LIBS)
 AC_SUBST(DOC_BUILD_LIST)
 AC_SUBST(DOC_CHECK_LIST)

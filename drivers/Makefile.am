@@ -308,7 +308,7 @@ pijuice_SOURCES = pijuice.c
 
 # GPIO drivers
 generic_gpio_libgpiod_SOURCES = generic_gpio_common.c generic_gpio_libgpiod.c
-generic_gpio_libgpiod_LDADD = $(LDADD_DRIVERS) -lgpiod
+generic_gpio_libgpiod_LDADD = $(LDADD_DRIVERS) $(LIBGPIO_LIBS)
 
 # nutdrv_qx USB/Serial
 nutdrv_qx_SOURCES = nutdrv_qx.c
