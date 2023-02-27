@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3095 utf-8
+personal_ws-1.1 en 3096 utf-8
 AAS
 ABI
 ACFAIL
@@ -3035,6 +3035,7 @@ wf
 wget
 whitespace
 wiki
+wildcards
 winnutclient
 winpthreads
 wmNUT
