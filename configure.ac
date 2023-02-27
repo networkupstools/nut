@@ -199,6 +199,47 @@ case "${target_os}" in
         ;;
 esac
 
+AC_CHECK_PROGS([REALPATH], [realpath], [])
+AC_DEFUN([realpath_m4], [
+    dnl # resolve links - $1 value (not quoted by caller)
+    dnl # or its directory may be a softlink
+    dnl # save into varname $2
+    AC_MSG_CHECKING([for "real path" of '$1'])
+    AS_IF([test -n "$REALPATH"], [
+        PRG="`${REALPATH} "$1"`"
+    ], [
+        dnl # Code below was adapted from Apache tomcat startup.sh
+        PRG="$1"
+
+        while test -h "$PRG" ; do
+            ls="`ls -ld "$PRG"`"
+            link="`expr "$ls" : '.*-> \(.*\)$'`"
+            if expr "$link" : '/.*' > /dev/null; then
+                PRG="$link"
+            else
+                PRG=`dirname "$PRG"`/"$link"
+            fi
+        done
+
+        PRGDIR="`dirname "$PRG"`"
+        PRGDIR="`cd "$PRGDIR" && pwd`"
+
+        while test -h "$PRGDIR" ; do
+            ls="`ls -ld "$PRGDIR"`"
+            link="`expr "$ls" : '.*-> \(.*\)$'`"
+            if expr "$link" : '/.*' > /dev/null; then
+                PRGDIR="$link"
+            else
+                PRGDIR=`dirname "$PRGDIR"`/"$link"
+            fi
+        done
+
+        PRG="$PRGDIR/`basename "$PRG"`"
+    ])
+    AC_MSG_RESULT([$PRG])
+    $2="$PRG"
+])
+
 dnl Note: this deals with run-time settings so that the newly built
 dnl programs can be "just executed" to use same configuration files
 dnl and filesystem object permissions as an older deployment of NUT
@@ -234,8 +275,14 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${sbindir}" != x], [
     AC_PATH_PROG([DEPLOYED_UPSD], [upsd], [], [${PREFIX_SBINDIR}:${PATH}:/sbin:/usr/sbin:/usr/local/sbin])
     dnl ...however "upsc" is a userland tool so should be there:
     AC_PATH_PROG([DEPLOYED_UPSC], [upsc], [], [${PREFIX_BINDIR}:${PATH}])
-    AS_IF([test -x "${DEPLOYED_UPSD}"], [DEPLOYED_SBINDIR="`dirname "${DEPLOYED_UPSD}"`"])
-    AS_IF([test -x "${DEPLOYED_UPSC}"], [DEPLOYED_BINDIR="`dirname "${DEPLOYED_UPSC}"`"])
+    AS_IF([test -x "${DEPLOYED_UPSD}"], [
+        realpath_m4([$DEPLOYED_UPSD], [DEPLOYED_UPSD])
+        DEPLOYED_SBINDIR="`dirname "${DEPLOYED_UPSD}"`"
+        ])
+    AS_IF([test -x "${DEPLOYED_UPSC}"], [
+        realpath_m4([$DEPLOYED_UPSC], [DEPLOYED_UPSC])
+        DEPLOYED_BINDIR="`dirname "${DEPLOYED_UPSC}"`"
+        ])
 
     DEPLOYED_PREFIX=""
     AS_IF([test -d "${DEPLOYED_SBINDIR}"],
