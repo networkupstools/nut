@@ -135,12 +135,15 @@ AC_DEFUN([AX_REALPATH],
     AS_IF([test -z "$REALPRG"], [
         RESOLVE_ERROR=0
 
-        AS_IF([test -e "$PRG"], [
-            AC_MSG_WARN([Path name '$PRG' not resolved (absent or access to ancestor directories denied)])
-            RESOLVE_ERROR=1
-        ], [
-            AX_REALPATH_SHELL_RECURSIVE([$1], [REALPRG])
+        dnl Note: not all "test" implementations have "-e", so got fallbacks:
+        AS_IF([test -e "$1" || test -f "$1" || test -s "$1" || test -d "$1" || test -L "$1" || test -h "$1" || test -c "$1" || test -b "$1" || test -p "$1"],
+            [], [
+            AC_MSG_WARN([Path name '$1' not found (absent or access to ancestor directories denied)])
+            dnl We can still try to resolve, e.g. to find
+            dnl the real location an absent file would be in
+            dnl RESOLVE_ERROR=1
         ])
+        AX_REALPATH_SHELL_RECURSIVE([$1], [REALPRG])
     ])
 
     AS_IF([test -n "$REALPRG"], [
