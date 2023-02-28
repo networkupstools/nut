@@ -1264,6 +1264,13 @@ static int conf_arg(size_t numargs, char **arg)
 	/* AT <notifytype> <upsname> <command> <cmdarg1> [<cmdarg2>] */
 	if (!strcmp(arg[0], "AT")) {
 
+		if (str_ends_with(arg[2], "@localhost")) {
+			/* Truncate: */
+			arg[2][strlen(arg[2]) - strlen("@localhost")] = '\0';
+			/* Make a little noise, but do not trash syslog about this: */
+			upsdebugx(1, "WARNING: The @localhost in UPS identifier is redundant for upssched");
+		}
+
 		/* don't use arg[5] unless we have it... */
 		if (numargs > 5)
 			parse_at(arg[1], arg[2], arg[3], arg[4], arg[5]);
