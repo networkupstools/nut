@@ -140,6 +140,10 @@ CFLAGS=${CFLAGS-"-O"}
 dnl Note: for practical and platform-independent use, see AX_REALPATH macro
 AC_CHECK_PROGS([REALPATH], [realpath], [])
 
+dnl FIXME: remove after dev-testing
+UNITTEST_AX_REALPATH
+exit
+
 dnl NOTE: for definition of NUT_* autoconf macros, see m4/ directory
 dnl and docs/macros.txt
 
