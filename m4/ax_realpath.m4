@@ -148,13 +148,13 @@ AC_DEFUN([AX_REALPATH],
 
     AS_IF([test -n "$REALPRG"], [
         AS_IF([test x"$REALPRG" = x"$1"],
-            [AC_MSG_RESULT([$REALPRG])],
-            [AC_MSG_RESULT([$REALPRG (differs from input)])]
+            [AC_MSG_RESULT(['$REALPRG'])],
+            [AC_MSG_RESULT(['$REALPRG' (differs from input)])]
         )
         $2="$REALPRG"
     ], [
         dnl Indent due to newline from warning and/or tool errors above
-        AC_MSG_RESULT([...failed to resolve, keeping original: $1])
+        AC_MSG_RESULT([...failed to resolve, keeping original: '$1'])
         $2="$1"
     ])
 
@@ -164,7 +164,7 @@ AC_DEFUN([AX_REALPATH],
 AC_DEFUN([UNITTEST_AX_REALPATH_EXPECT],
 [
     AX_REALPATH([$1], [TMPNAME])
-    AS_IF([test x"$TMPNAME" != x"$2"], [AC_MSG_WARN([>>> Got: $TMPNAME (should be $2)])])
+    AS_IF([test x"$TMPNAME" != x"$2"], [AC_MSG_WARN([>>> Got: '$TMPNAME' (should be '$2')])])
 ])
 
 AC_DEFUN([UNITTEST_AX_REALPATH],
@@ -190,11 +190,11 @@ AC_DEFUN([UNITTEST_AX_REALPATH],
     AC_MSG_NOTICE([=======])
     AC_MSG_NOTICE([=== Should be a shell interpreter here (if procfs is supported on the platform)])
     AX_REALPATH([/proc/$$/exe], [TMPNAME])
-    AC_MSG_NOTICE([>>> Got: $TMPNAME])
+    AC_MSG_NOTICE([>>> Got: '$TMPNAME'])
     AC_MSG_NOTICE([=======])
     AC_MSG_NOTICE([=== Should be an stdin socket here (if procfs is supported on the platform)])
     AX_REALPATH([/proc/$$/fd/1], [TMPNAME])
-    AC_MSG_NOTICE([>>> Got: $TMPNAME])
+    AC_MSG_NOTICE([>>> Got: '$TMPNAME'])
     AC_MSG_NOTICE([=======])
     AC_MSG_NOTICE([=== Should not have access to next SYMLINK (reading link content is forbidden, if procfs is supported on the platform and if not root)])
     UNITTEST_AX_REALPATH_EXPECT([/proc/1/exe], [/proc/1/exe])
