@@ -7,7 +7,7 @@ dnl Calling script is welcome to pre-detect external REALPATH implementation,
 dnl otherwise shell implementation would be used (hopefully capable enough):
 dnl AC_CHECK_PROGS([REALPATH], [realpath], [])
 
-AC_DEFUN([AX_REALPATH_SHELL_RECURSIVE],
+AC_DEFUN([AX_REALPATH_SHELL_ONELEVEL],
 [
     dnl # resolve links - #1 value (not quoted by caller) or some its
     dnl # ancestor directory may be a symlink; save into varname #2.
@@ -16,12 +16,12 @@ AC_DEFUN([AX_REALPATH_SHELL_RECURSIVE],
     dnl # to recurse backwards from original name to root "/"
     dnl # (or abort mid-way).
 
-    AS_IF([test x"$1" = x], [AC_MSG_ERROR([Bad call to REALPATH_SHELL_RECURSIVE macro (arg1)])])
-    AS_IF([test x"$2" = x], [AC_MSG_ERROR([Bad call to REALPATH_SHELL_RECURSIVE macro (arg2)])])
-    AS_IF([test x"$3" = x], [AC_MSG_ERROR([Bad call to REALPATH_SHELL_RECURSIVE macro (arg3)])])
+    AS_IF([test x"$1" = x], [AC_MSG_ERROR([Bad call to REALPATH_SHELL_ONELEVEL macro (arg1)])])
+    AS_IF([test x"$2" = x], [AC_MSG_ERROR([Bad call to REALPATH_SHELL_ONELEVEL macro (arg2)])])
+    AS_IF([test x"$3" = x], [AC_MSG_ERROR([Bad call to REALPATH_SHELL_ONELEVEL macro (arg3)])])
     AS_IF([test x"$RESOLVE_ERROR" = x], [RESOLVE_ERROR=0])
 
-    AS_IF([test x"$RESOLVE_ERROR" != x0], [dnl Quick bail out
+    AS_IF([test x"$RESOLVE_ERROR" != x0 || test x"$1" = x/], [dnl Quick bail out
         $2="$1"
     ], [
         dnl # Code below was adapted from Apache Tomcat startup.sh
@@ -71,6 +71,56 @@ AC_DEFUN([AX_REALPATH_SHELL_RECURSIVE],
     ])
 ])
 
+AC_DEFUN([AX_REALPATH_SHELL_RECURSIVE],
+[
+    dnl Autoconf/m4 is not really friendly for recursive functions
+    dnl so we have to do it like a loop. Sanity-checking is in the
+    dnl helper method above and will abort the script upon problems.
+    dnl The RESOLVE_ERROR is provided and unset by caller.
+
+    LVL=0
+    RESOLVE_PREFIX="$1"
+    RESOLVE_SUFFIX=""
+
+    while \
+           test x"$RESOLVE_PREFIX" != x \
+        && test x"$RESOLVE_PREFIX" != x/ \
+        && test x"$RESOLVE_ERROR" = x0 \
+    ; do
+        dnl In case of non-fatal resolve error, value in RESOLVE_PREFIX
+        dnl should remain unchanged, and a RESOLVE_ERROR flag raised.
+        AX_REALPATH_SHELL_ONELEVEL([$RESOLVE_PREFIX], [RESOLVE_PREFIX], [0])
+        if test x"$RESOLVE_ERROR" = x0 ; then
+            dnl Recurse to check the (grand)parent dir (if any)
+            if test -n "$RESOLVE_SUFFIX" ; then
+                RESOLVE_SUFFIX="`basename "$RESOLVE_PREFIX"`/$RESOLVE_SUFFIX"
+            else
+                RESOLVE_SUFFIX="`basename "$RESOLVE_PREFIX"`"
+            fi
+            RESOLVE_PREFIX="`dirname "$RESOLVE_PREFIX"`"
+        else
+            dnl Bail out, keep latest answer
+            break
+        fi
+        LVL="`expr $LVL + 1`"
+    done
+
+    if test -n "$RESOLVE_SUFFIX" ; then
+        if test x"$RESOLVE_PREFIX" = x ; then
+            RESOLVE_PREFIX="/"
+        fi
+        if test x"$RESOLVE_PREFIX" = x/ ; then
+            $2="/$RESOLVE_SUFFIX"
+        else
+            $2="$RESOLVE_PREFIX/$RESOLVE_SUFFIX"
+        fi
+    else
+        $2="$RESOLVE_PREFIX"
+    fi
+
+    unset LVL RESOLVE_PREFIX RESOLVE_SUFFIX
+])
+
 AC_DEFUN([AX_REALPATH],
 [
     dnl # resolve links - #1 value (not quoted by caller)
@@ -93,7 +143,7 @@ AC_DEFUN([AX_REALPATH],
             AC_MSG_WARN([Path name '$PRG' not resolved (absent or access to ancestor directories denied)])
             RESOLVE_ERROR=1
         ], [
-            AX_REALPATH_SHELL_RECURSIVE([$1], [REALPRG], [0])
+            AX_REALPATH_SHELL_RECURSIVE([$1], [REALPRG])
         ])
     ])
 
