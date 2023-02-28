@@ -161,6 +161,8 @@ static void help(const char *prog)
 	printf("  -m <tuple>	- Monitor UPS <ups,logfile>\n");
 	printf("		- Example: -m myups@server,/var/log/myups.log\n");
 	printf("  -u <user>	- Switch to <user> if started as root\n");
+	printf("  -V		- Display the version of this software\n");
+	printf("  -h		- Display this help text\n");
 
 	printf("\n");
 	printf("Some valid format string escapes:\n");
