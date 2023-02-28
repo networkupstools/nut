@@ -1190,27 +1190,50 @@ static void parse_at(const char *ntype, const char *un, const char *cmd,
 	}
 
 	/* check upsname: does this apply to us? */
-	if (strcmp(upsname, un) != 0)
-		if (strcmp(un, "*") != 0)
+	upsdebugx(2, "%s: is '%s' in AT command the '%s' we were launched to process?",
+		__func__, un, upsname);
+	if (strcmp(upsname, un) != 0) {
+		if (strcmp(un, "*") != 0) {
+			upsdebugx(1, "%s: SKIP: '%s' in AT command "
+				"did not match the '%s' UPSNAME "
+				"we were launched to process",
+				__func__, un, upsname);
 			return;		/* not for us, and not the wildcard */
+		} else {
+			upsdebugx(1, "%s: this AT command is for a wildcard: matched", __func__);
+		}
+	} else {
+		upsdebugx(1, "%s: '%s' in AT command matched the '%s' "
+			"UPSNAME we were launched to process",
+			__func__, un, upsname);
+	}
 
 	/* see if the current notify type matches the one from the .conf */
-	if (strcasecmp(notify_type, ntype) != 0)
+	if (strcasecmp(notify_type, ntype) != 0) {
+		upsdebugx(1, "%s: SKIP: '%s' in AT command "
+			"did not match the '%s' NOTIFYTYPE "
+			"we were launched to process",
+			__func__, ntype, notify_type);
 		return;
+	}
 
 	/* if command is valid, send it to the daemon (which may start it) */
 
 	if (!strcmp(cmd, "START-TIMER")) {
+		upsdebugx(1, "%s: processing %s", __func__, cmd);
 		sendcmd("START", ca1, ca2);
 		return;
 	}
 
 	if (!strcmp(cmd, "CANCEL-TIMER")) {
+		upsdebugx(1, "%s: processing %s", __func__, cmd);
 		sendcmd("CANCEL", ca1, ca2);
 		return;
 	}
 
 	if (!strcmp(cmd, "EXECUTE")) {
+		upsdebugx(1, "%s: processing %s", __func__, cmd);
+
 		if (ca1[0] == '\0') {
 			upslogx(LOG_ERR, "Empty EXECUTE command argument");
 			return;
