@@ -3,13 +3,82 @@ dnl or in a relative directory, or where directories are symlinks...
 dnl Copyright (C) 2023 by Jim Klimov <jimklimov+nut@gmail.com>
 dnl Licensed under the terms of GPLv2 or newer.
 
-dnl Calling script is welcome to pre-detect external REALPATH implementation:
+dnl Calling script is welcome to pre-detect external REALPATH implementation,
+dnl otherwise shell implementation would be used (hopefully capable enough):
 dnl AC_CHECK_PROGS([REALPATH], [realpath], [])
+
+AC_DEFUN([AX_REALPATH_SHELL_RECURSIVE],
+[
+    dnl # resolve links - #1 value (not quoted by caller) or some its
+    dnl # ancestor directory may be a symlink; save into varname #2.
+    dnl # In case of problems return #1 and set non-zero RESOLVE_ERROR
+    dnl # Recursion depth in #3 impacts local variable naming
+    dnl # to recurse backwards from original name to root "/"
+    dnl # (or abort mid-way).
+
+    AS_IF([test x"$1" = x], [AC_MSG_ERROR([Bad call to REALPATH_SHELL_RECURSIVE macro (arg1)])])
+    AS_IF([test x"$2" = x], [AC_MSG_ERROR([Bad call to REALPATH_SHELL_RECURSIVE macro (arg2)])])
+    AS_IF([test x"$3" = x], [AC_MSG_ERROR([Bad call to REALPATH_SHELL_RECURSIVE macro (arg3)])])
+    AS_IF([test x"$RESOLVE_ERROR" = x], [RESOLVE_ERROR=0])
+
+    AS_IF([test x"$RESOLVE_ERROR" != x0], [dnl Quick bail out
+        $2="$1"
+    ], [
+        dnl # Code below was adapted from Apache Tomcat startup.sh
+        TGT$3="$1"
+
+        while test -h "$TGT$3" ; do
+            LS_OUT="`ls -ld "$TGT$3"`" || { RESOLVE_ERROR=$? ; break ; }
+            LINK="`expr "$LS_OUT" : '.*-> \(.*\)$'`" || { RESOLVE_ERROR=$? ; break ; }
+            if expr "$LINK" : '/.*' > /dev/null; then
+                TGT$3="$LINK"
+            else
+                TGT$3="`dirname "$TGT$3"`/$LINK"
+            fi
+        done
+
+        if test "$RESOLVE_ERROR" = 0 ; then
+            TGTDIR$3="`dirname "$TGT$3"`" && \
+            TGTDIR$3="`cd "$TGTDIR$3" && pwd`" || {
+                TGTDIR$3="`dirname "$TGT$3"`" || \
+                RESOLVE_ERROR=$? ; }
+
+            if test "$RESOLVE_ERROR" = 0 ; then
+                while test -h "$TGTDIR$3" ; do
+                    LS_OUT="`ls -ld "$TGTDIR$3"`" || { RESOLVE_ERROR=$? ; break ; }
+                    LINK="`expr "$LS_OUT" : '.*-> \(.*\)$'`" || { RESOLVE_ERROR=$? ; break ; }
+                    if expr "$LINK" : '/.*' > /dev/null; then
+                        TGTDIR$3="$LINK"
+                    else
+                        PARENTDIR$3="`dirname "$TGTDIR$3"`"
+                        case "$PARENTDIR$3" in
+                            /) TGTDIR$3="/$LINK" ; break ;;
+                            *) TGTDIR$3="$PARENTDIR$3/$LINK" ;;
+                        esac
+                    fi
+                done
+            fi
+        fi
+
+        if test "$RESOLVE_ERROR" = 0 ; then
+            $2="$TGTDIR$3/`basename "$TGT$3"`"
+        else
+            $2="$1"
+        fi
+
+        unset TGT$3 TGTDIR$3 PARENTDIR$3
+        unset LS_OUT LINK
+    ])
+])
+
 AC_DEFUN([AX_REALPATH],
 [
     dnl # resolve links - #1 value (not quoted by caller)
     dnl # or its directory may be a softlink
     dnl # save into varname #2
+    AS_IF([test x"$1" = x], [AC_MSG_ERROR([Bad call to REALPATH macro (arg1)])])
+    AS_IF([test x"$2" = x], [AC_MSG_ERROR([Bad call to REALPATH macro (arg2)])])
+
     AC_MSG_CHECKING([for "real path" of '$1'])
 
     REALPRG=""
@@ -18,52 +87,14 @@ AC_DEFUN([AX_REALPATH],
     ])
 
     AS_IF([test -z "$REALPRG"], [
-        dnl # Code below was adapted from Apache Tomcat startup.sh
-        PRG="$1"
         RESOLVE_ERROR=0
 
-        if test \! -e "$PRG" ; then
-            AC_MSG_WARN([Path name '$PRG' not resolved (absent or access to ancestor directotries denied)])
+        AS_IF([test -e "$PRG"], [
+            AC_MSG_WARN([Path name '$PRG' not resolved (absent or access to ancestor directories denied)])
             RESOLVE_ERROR=1
-        fi
-
-        while test -h "$PRG" ; do
-            LS_OUT="`ls -ld "$PRG"`" || { RESOLVE_ERROR=$? ; break ; }
-            LINK="`expr "$LS_OUT" : '.*-> \(.*\)$'`" || { RESOLVE_ERROR=$? ; break ; }
-            if expr "$LINK" : '/.*' > /dev/null; then
-                PRG="$LINK"
-            else
-                PRG="`dirname "$PRG"`/$LINK"
-            fi
-        done
-
-        if test "$RESOLVE_ERROR" = 0 ; then
-            PRGDIR="`dirname "$PRG"`" && \
-            PRGDIR="`cd "$PRGDIR" && pwd`" || {
-                PRGDIR="`dirname "$PRG"`" || \
-                RESOLVE_ERROR=$? ; }
-
-            if test "$RESOLVE_ERROR" = 0 ; then
-                while test -h "$PRGDIR" ; do
-                    LS_OUT="`ls -ld "$PRGDIR"`" || { RESOLVE_ERROR=$? ; break ; }
-                    LINK="`expr "$LS_OUT" : '.*-> \(.*\)$'`" || { RESOLVE_ERROR=$? ; break ; }
-                    if expr "$LINK" : '/.*' > /dev/null; then
-                        PRGDIR="$LINK"
-                    else
-                        PARENTDIR="`dirname "$PRGDIR"`"
-                        case "$PARENTDIR" in
-                            /) PRGDIR="/$LINK" ; break ;;
-                            *) PRGDIR="$PARENTDIR/$LINK" ;;
-                        esac
-                    fi
-                done
-            fi
-        fi
-
-        if test "$RESOLVE_ERROR" = 0 ; then
-            REALPRG="$PRGDIR/`basename "$PRG"`"
-        fi
-        unset PRG PRGDIR PARENTDIR LS_OUT LINK
+        ], [
+            AX_REALPATH_SHELL_RECURSIVE([$1], [REALPRG], [0])
+        ])
     ])
 
     AS_IF([test -n "$REALPRG"], [
@@ -75,7 +106,7 @@ AC_DEFUN([AX_REALPATH],
         $2="$1"
     ])
 
-    unset REALPRG
+    unset REALPRG RESOLVE_ERROR
 ])
 
 AC_DEFUN([UNITTEST_AX_REALPATH_EXPECT],
