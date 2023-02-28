@@ -147,7 +147,10 @@ AC_DEFUN([AX_REALPATH],
     ])
 
     AS_IF([test -n "$REALPRG"], [
-        AC_MSG_RESULT([$REALPRG])
+        AS_IF([test x"$REALPRG" = x"$1"],
+            [AC_MSG_RESULT([$REALPRG])],
+            [AC_MSG_RESULT([$REALPRG (differs from input)])]
+        )
         $2="$REALPRG"
     ], [
         dnl Indent due to newline from warning and/or tool errors above
