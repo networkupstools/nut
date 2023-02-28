@@ -86,6 +86,9 @@ AC_DEFUN([AX_REALPATH_SHELL_RECURSIVE],
     ; do
         dnl In case of non-fatal resolve error, value in RESOLVE_PREFIX
         dnl should remain unchanged, and a RESOLVE_ERROR flag raised.
+        dnl Note that the recursion would technically re-check the last
+        dnl seen object (the parent directory), but should quickly move
+        dnl on since it is not a symlink anymore. So not too ineffecient.
         AX_REALPATH_SHELL_ONELEVEL([$RESOLVE_PREFIX], [RESOLVE_PREFIX])
         if test x"$RESOLVE_ERROR" = x0 ; then
             dnl Recurse to check the (grand)parent dir (if any)
