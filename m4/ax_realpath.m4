@@ -77,3 +77,32 @@ AC_DEFUN([AX_REALPATH],
 
     unset REALPRG
 ])
+
+AC_DEFUN([UNITTEST_AX_REALPATH],
+[
+    AC_MSG_NOTICE([======= starting UNITTEST for REALPATH macro])
+    AC_MSG_NOTICE([Testing macro for realpath; /tmp/q/x are directories, qwe is a file inside, and /tmp/Q is a symlink to /tmp/q])
+    rm -rf /tmp/q ; mkdir -p /tmp/q/x ; echo qwe > /tmp/q/x/qwe ; ln -fs q /tmp/Q
+    AX_REALPATH([/tmp/Q/x], [TMPNAME])
+    AX_REALPATH([/tmp/Q/x/qwe], [TMPNAME])
+    AC_MSG_NOTICE([Got: $TMPNAME (should be /tmp/q/x/qwe)])
+    AX_REALPATH([/etc/nut/ups.conf], [TMPNAME])
+    AX_REALPATH([/proc/$$/exe], [TMPNAME])
+    AC_MSG_NOTICE([=======])
+    AC_MSG_NOTICE([Should not have access to next file (does not exist) in a readable dir])
+    AX_REALPATH([/tmp/q/x/absent], [TMPNAME])
+    AC_MSG_NOTICE([Got: $TMPNAME])
+    AC_MSG_NOTICE([=======])
+    AC_MSG_NOTICE([Should not have access to next file (does not exist) in a SYMLINK to readable dir])
+    AX_REALPATH([/tmp/Q/x/absent], [TMPNAME])
+    AC_MSG_NOTICE([Got: $TMPNAME])
+    AC_MSG_NOTICE([=======])
+    AC_MSG_NOTICE([Should not have access to next SYMLINK (reading link content is forbidden)])
+    AX_REALPATH([/proc/1/exe], [TMPNAME])
+    AC_MSG_NOTICE([Got: $TMPNAME])
+    AC_MSG_NOTICE([=======])
+    AC_MSG_NOTICE([Should not have access to next dir (don't know if file exists)])
+    AX_REALPATH([/proc/1/fd/1], [TMPNAME])
+    AC_MSG_NOTICE([Got: $TMPNAME])
+    AC_MSG_NOTICE([======= end of UNITTEST for REALPATH macro])
+])
