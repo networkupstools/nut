@@ -11,49 +11,47 @@ AC_DEFUN([AX_REALPATH_SHELL_ONELEVEL],
 [
     dnl # resolve links - #1 value (not quoted by caller) or some its
     dnl # ancestor directory may be a symlink; save into varname #2.
-    dnl # In case of problems return #1 and set non-zero RESOLVE_ERROR
-    dnl # Recursion depth in #3 impacts local variable naming
-    dnl # to recurse backwards from original name to root "/"
+    dnl # In case of problems return #1 and set non-zero RESOLVE_ERROR.
+    dnl # We recurse backwards from original name to root "/"
     dnl # (or abort mid-way).
 
     AS_IF([test x"$1" = x], [AC_MSG_ERROR([Bad call to REALPATH_SHELL_ONELEVEL macro (arg1)])])
     AS_IF([test x"$2" = x], [AC_MSG_ERROR([Bad call to REALPATH_SHELL_ONELEVEL macro (arg2)])])
-    AS_IF([test x"$3" = x], [AC_MSG_ERROR([Bad call to REALPATH_SHELL_ONELEVEL macro (arg3)])])
     AS_IF([test x"$RESOLVE_ERROR" = x], [RESOLVE_ERROR=0])
 
     AS_IF([test x"$RESOLVE_ERROR" != x0 || test x"$1" = x/], [dnl Quick bail out
         $2="$1"
     ], [
         dnl # Code below was adapted from Apache Tomcat startup.sh
-        TGT$3="$1"
+        TGT="$1"
 
-        while test -h "$TGT$3" ; do
-            LS_OUT="`ls -ld "$TGT$3"`" || { RESOLVE_ERROR=$? ; break ; }
+        while test -h "$TGT" ; do
+            LS_OUT="`ls -ld "$TGT"`" || { RESOLVE_ERROR=$? ; break ; }
             LINK="`expr "$LS_OUT" : '.*-> \(.*\)$'`" || { RESOLVE_ERROR=$? ; break ; }
             if expr "$LINK" : '/.*' > /dev/null; then
-                TGT$3="$LINK"
+                TGT="$LINK"
             else
-                TGT$3="`dirname "$TGT$3"`/$LINK"
+                TGT="`dirname "$TGT"`/$LINK"
             fi
         done
 
         if test "$RESOLVE_ERROR" = 0 ; then
-            TGTDIR$3="`dirname "$TGT$3"`" && \
-            TGTDIR$3="`cd "$TGTDIR$3" && pwd`" || {
-                TGTDIR$3="`dirname "$TGT$3"`" || \
+            TGTDIR="`dirname "$TGT"`" && \
+            TGTDIR="`cd "$TGTDIR" && pwd`" || {
+                TGTDIR="`dirname "$TGT"`" || \
                 RESOLVE_ERROR=$? ; }
 
             if test "$RESOLVE_ERROR" = 0 ; then
-                while test -h "$TGTDIR$3" ; do
-                    LS_OUT="`ls -ld "$TGTDIR$3"`" || { RESOLVE_ERROR=$? ; break ; }
+                while test -h "$TGTDIR" ; do
+                    LS_OUT="`ls -ld "$TGTDIR"`" || { RESOLVE_ERROR=$? ; break ; }
                     LINK="`expr "$LS_OUT" : '.*-> \(.*\)$'`" || { RESOLVE_ERROR=$? ; break ; }
                     if expr "$LINK" : '/.*' > /dev/null; then
-                        TGTDIR$3="$LINK"
+                        TGTDIR="$LINK"
                     else
-                        PARENTDIR$3="`dirname "$TGTDIR$3"`"
-                        case "$PARENTDIR$3" in
-                            /) TGTDIR$3="/$LINK" ; break ;;
-                            *) TGTDIR$3="$PARENTDIR$3/$LINK" ;;
+                        PARENTDIR="`dirname "$TGTDIR"`"
+                        case "$PARENTDIR" in
+                            /) TGTDIR="/$LINK" ; break ;;
+                            *) TGTDIR="$PARENTDIR/$LINK" ;;
                         esac
                     fi
                 done
@@ -61,12 +59,12 @@ AC_DEFUN([AX_REALPATH_SHELL_ONELEVEL],
         fi
 
         if test "$RESOLVE_ERROR" = 0 ; then
-            $2="$TGTDIR$3/`basename "$TGT$3"`"
+            $2="$TGTDIR/`basename "$TGT"`"
         else
             $2="$1"
         fi
 
-        unset TGT$3 TGTDIR$3 PARENTDIR$3
+        unset TGT TGTDIR PARENTDIR
         unset LS_OUT LINK
     ])
 ])
@@ -78,7 +76,6 @@ AC_DEFUN([AX_REALPATH_SHELL_RECURSIVE],
     dnl helper method above and will abort the script upon problems.
     dnl The RESOLVE_ERROR is provided and unset by caller.
 
-    LVL=0
     RESOLVE_PREFIX="$1"
     RESOLVE_SUFFIX=""
 
@@ -89,7 +86,7 @@ AC_DEFUN([AX_REALPATH_SHELL_RECURSIVE],
     ; do
         dnl In case of non-fatal resolve error, value in RESOLVE_PREFIX
         dnl should remain unchanged, and a RESOLVE_ERROR flag raised.
-        AX_REALPATH_SHELL_ONELEVEL([$RESOLVE_PREFIX], [RESOLVE_PREFIX], [0])
+        AX_REALPATH_SHELL_ONELEVEL([$RESOLVE_PREFIX], [RESOLVE_PREFIX])
         if test x"$RESOLVE_ERROR" = x0 ; then
             dnl Recurse to check the (grand)parent dir (if any)
             if test -n "$RESOLVE_SUFFIX" ; then
@@ -102,7 +99,6 @@ AC_DEFUN([AX_REALPATH_SHELL_RECURSIVE],
             dnl Bail out, keep latest answer
             break
         fi
-        LVL="`expr $LVL + 1`"
     done
 
     if test -n "$RESOLVE_SUFFIX" ; then
@@ -118,7 +114,7 @@ AC_DEFUN([AX_REALPATH_SHELL_RECURSIVE],
         $2="$RESOLVE_PREFIX"
     fi
 
-    unset LVL RESOLVE_PREFIX RESOLVE_SUFFIX
+    unset RESOLVE_PREFIX RESOLVE_SUFFIX
 ])
 
 AC_DEFUN([AX_REALPATH],
