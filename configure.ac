@@ -453,11 +453,30 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         AC_MSG_CHECKING([for in-place replacement default user (better than '${RUN_AS_USER}')])
         nut_inplace_user=""
 
+        dnl Beside currently active setting, check the built-in default sugestion
         AS_IF([test -s "${CONFPATH}/upsmon.conf"],
-            [for nut_inplace_user in `grep -E '^ *RUN_AS_USER' "${CONFPATH}/upsmon.conf" | awk '{print $2}'`; do \
-                test -n "`getent passwd "${nut_inplace_user}"`" \
-                && AC_MSG_RESULT([Got from ${CONFPATH}/upsmon.conf]) \
-                || nut_inplace_user=""
+            [for nut_inplace_user in \
+                `grep -E '^ *RUN_AS_USER' "${CONFPATH}/upsmon.conf" | awk '{print $2}'`\
+                `grep -E '^ *##*RUN_AS_USER' "${CONFPATH}/upsmon.conf" | awk '{print $2}'`\
+                `grep -E '^ *##*  *RUN_AS_USER' "${CONFPATH}/upsmon.conf" | awk '{print $3}'`\
+            ; do \
+                AS_IF([test -z "${nut_inplace_user}"], [
+                    test -n "`getent passwd "${nut_inplace_user}"`" \
+                    && AC_MSG_RESULT([Got from ${CONFPATH}/upsmon.conf]) \
+                    || nut_inplace_user=""])
+             done
+        ])
+
+        AS_IF([test -s "${CONFPATH}/upsmon.conf.sample" && test -z "${nut_inplace_user}"],
+            [for nut_inplace_user in \
+                `grep -E '^ *RUN_AS_USER' "${CONFPATH}/upsmon.conf.sample" | awk '{print $2}'`\
+                `grep -E '^ *##*RUN_AS_USER' "${CONFPATH}/upsmon.conf.sample" | awk '{print $2}'`\
+                `grep -E '^ *##*  *RUN_AS_USER' "${CONFPATH}/upsmon.conf.sample" | awk '{print $3}'`\
+            ; do \
+                AS_IF([test -z "${nut_inplace_user}"], [
+                    test -n "`getent passwd "${nut_inplace_user}"`" \
+                    && AC_MSG_RESULT([Got from ${CONFPATH}/upsmon.conf]) \
+                    || nut_inplace_user=""])
              done
         ])
 
