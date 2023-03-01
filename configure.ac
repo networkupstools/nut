@@ -49,7 +49,7 @@ dnl so unspecified options are not necessarily at default values for this script
 F=""
 AS_CASE(["${_flag_enable_inplace_runtime}"],
     [no], [ dnl Explicitly disabled... did we re-enter? Save the value to be seen:
-        AS_IF([test x"${NUT_VERSION_DEPLOYED-}" != x], [
+        AS_IF([test x"${NUT_VERSION_DEPLOYED-}" != x && test x"${NUT_VERSION_DEPLOYED-}" != x"<reenter>"], [
             F="--enable-inplace-runtime='${NUT_VERSION_DEPLOYED}'"
         ])
     ],
@@ -313,8 +313,10 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${sbindir}" != x], [
         AC_MSG_NOTICE([exec "$0" $CONFIG_FLAGS_DEPLOYED $CONFIG_FLAGS --disable-inplace-runtime])
         AS_IF([test x"${NUT_VERSION_DEPLOYED}" != x], [
             AC_MSG_NOTICE([NUT_VERSION_DEPLOYED: ${NUT_VERSION_DEPLOYED}])
-            export NUT_VERSION_DEPLOYED
+        ],[
+            NUT_VERSION_DEPLOYED="<reenter>"
         ])
+        export NUT_VERSION_DEPLOYED
         eval exec "$0" $CONFIG_FLAGS_DEPLOYED $CONFIG_FLAGS --disable-inplace-runtime
     ],[
         AC_MSG_RESULT([not reported])
