@@ -238,6 +238,8 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${sbindir}" != x], [
     DEPLOYED_BINDIR="${PREFIX_BINDIR}"
     dnl Note use of AC_PATH_PROG for specific pathname (not AC_CHECK_PROGS which picks filename variants)!
     dnl Note: "ordinary" users might not have "sbin" in their default PATH, so appending it:
+    dnl Note: in some systems, the file in PATH is a shell
+    dnl       wrapper for /etc/nut/nut.conf MODE support
     AC_PATH_PROG([DEPLOYED_UPSD], [upsd], [], [${PREFIX_SBINDIR}:${PATH}:/sbin:/usr/sbin:/usr/local/sbin])
     dnl ...however "upsc" is a userland tool so should be there:
     AC_PATH_PROG([DEPLOYED_UPSC], [upsc], [], [${PREFIX_BINDIR}:${PATH}])
