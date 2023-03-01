@@ -67,7 +67,7 @@ static void reserve_lines_libgpiod(struct gpioups_t *gpioupsfd, int inner);
 	OL=^0;OB=0;LB=3;HB=^3;RB=1;DISCHRG=0&^3;BYPASS=6;
 */
 
-#define LOCALTEST
+#undef LOCALTEST
 #ifdef LOCALTEST
 struct gpiod_chip *gpiod_chip_open_by_name(const char *name) {
 	NUT_UNUSED_VARIABLE(name);
