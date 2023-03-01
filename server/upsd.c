@@ -1499,11 +1499,11 @@ static void help(const char *arg_progname)
 	printf("  -F		stay foregrounded even if no debugging is enabled\n");
 	printf("  -FF		stay foregrounded and still save the PID file\n");
 	printf("  -B		stay backgrounded even if debugging is bumped\n");
-	printf("  -h		display this help\n");
+	printf("  -h		display this help text\n");
+	printf("  -V		display the version of this software\n");
 	printf("  -r <dir>	chroots to <dir>\n");
 	printf("  -q		raise log level threshold\n");
 	printf("  -u <user>	switch to <user> (if started as root)\n");
-	printf("  -V		display the version of this software\n");
 	printf("  -4		IPv4 only\n");
 	printf("  -6		IPv6 only\n");
 

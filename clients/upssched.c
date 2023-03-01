@@ -68,7 +68,6 @@ typedef struct ttype_s {
 static ttype_t	*thead = NULL;
 static conn_t	*connhead = NULL;
 static char	*cmdscript = NULL, *pipefn = NULL, *lockfn = NULL;
-static int	verbose = 0;		/* use for debugging */
 
 /* ups name and notify type (string) as received from upsmon */
 static const	char	*upsname, *notify_type;
@@ -163,7 +162,7 @@ static void checktimers(void)
 		if (emptyctr < EMPTY_WAIT)
 			return;
 
-		if (verbose)
+		if (nut_debug_level)
 			upslogx(LOG_INFO, "Timer queue empty, exiting");
 
 #ifdef UPSSCHED_RACE_TEST
@@ -185,7 +184,7 @@ static void checktimers(void)
 		tmpnext = tmp->next;
 
 		if (now >= tmp->etime) {
-			if (verbose)
+			if (nut_debug_level)
 				upslogx(LOG_INFO, "Event: %s ", tmp->name);
 
 			exec_cmd(tmp->name);
@@ -215,7 +214,7 @@ static void start_timer(const char *name, const char *ofsstr)
 		return;
 	}
 
-	if (verbose)
+	if (nut_debug_level)
 		upslogx(LOG_INFO, "New timer: %s (%ld seconds)", name, ofs);
 
 	/* now add to the queue */
@@ -243,7 +242,7 @@ static void cancel_timer(const char *name, const char *cname)
 
 	for (tmp = thead; tmp != NULL; tmp = tmp->next) {
 		if (!strcmp(tmp->name, name)) {		/* match */
-			if (verbose)
+			if (nut_debug_level)
 				upslogx(LOG_INFO, "Cancelling timer: %s", name);
 			removetimer(tmp);
 			return;
@@ -252,7 +251,7 @@ static void cancel_timer(const char *name, const char *cname)
 
 	/* this is not necessarily an error */
 	if (cname && cname[0]) {
-		if (verbose)
+		if (nut_debug_level)
 			upslogx(LOG_INFO, "Cancel %s, event: %s", name, cname);
 
 		exec_cmd(cname);
@@ -779,7 +778,7 @@ static void start_daemon(TYPE_FD lockfd)
 
 	pipefd = open_sock();
 
-	if (verbose)
+	if (nut_debug_level)
 		upslogx(LOG_INFO, "Timer daemon started");
 
 	/* release the parent */
@@ -851,7 +850,7 @@ static void start_daemon(TYPE_FD lockfd)
 	}
 	pipefd = open_sock();
 
-	if (verbose)
+	if (nut_debug_level)
 		upslogx(LOG_INFO, "Timer daemon started");
 
 	/* drop the lock now that the background is running */
@@ -1191,33 +1190,56 @@ static void parse_at(const char *ntype, const char *un, const char *cmd,
 	}
 
 	/* check upsname: does this apply to us? */
-	if (strcmp(upsname, un) != 0)
-		if (strcmp(un, "*") != 0)
+	upsdebugx(2, "%s: is '%s' in AT command the '%s' we were launched to process?",
+		__func__, un, upsname);
+	if (strcmp(upsname, un) != 0) {
+		if (strcmp(un, "*") != 0) {
+			upsdebugx(1, "%s: SKIP: '%s' in AT command "
+				"did not match the '%s' UPSNAME "
+				"we were launched to process",
+				__func__, un, upsname);
 			return;		/* not for us, and not the wildcard */
+		} else {
+			upsdebugx(1, "%s: this AT command is for a wildcard: matched", __func__);
+		}
+	} else {
+		upsdebugx(1, "%s: '%s' in AT command matched the '%s' "
+			"UPSNAME we were launched to process",
+			__func__, un, upsname);
+	}
 
 	/* see if the current notify type matches the one from the .conf */
-	if (strcasecmp(notify_type, ntype) != 0)
+	if (strcasecmp(notify_type, ntype) != 0) {
+		upsdebugx(1, "%s: SKIP: '%s' in AT command "
+			"did not match the '%s' NOTIFYTYPE "
+			"we were launched to process",
+			__func__, ntype, notify_type);
 		return;
+	}
 
 	/* if command is valid, send it to the daemon (which may start it) */
 
 	if (!strcmp(cmd, "START-TIMER")) {
+		upsdebugx(1, "%s: processing %s", __func__, cmd);
 		sendcmd("START", ca1, ca2);
 		return;
 	}
 
 	if (!strcmp(cmd, "CANCEL-TIMER")) {
+		upsdebugx(1, "%s: processing %s", __func__, cmd);
 		sendcmd("CANCEL", ca1, ca2);
 		return;
 	}
 
 	if (!strcmp(cmd, "EXECUTE")) {
+		upsdebugx(1, "%s: processing %s", __func__, cmd);
+
 		if (ca1[0] == '\0') {
 			upslogx(LOG_ERR, "Empty EXECUTE command argument");
 			return;
 		}
 
-		if (verbose)
+		if (nut_debug_level)
 			upslogx(LOG_INFO, "Executing command: %s", ca1);
 
 		exec_cmd(ca1);
@@ -1324,17 +1346,48 @@ static void checkconf(void)
 	pconf_finish(&ctx);
 }
 
+static void help(const char *arg_progname)
+	__attribute__((noreturn));
+
+static void help(const char *arg_progname)
+{
+	printf("upssched: upsmon's scheduling helper for offset timers\n");
+	printf("Practical behavior is managed by UPSNAME and NOTIFYTYPE envvars\n");
+
+	printf("\nUsage: %s [OPTIONS]\n\n", arg_progname);
+	printf("  -D		raise debugging level (and stay foreground by default)\n");
+	printf("  -V		display the version of this software\n");
+	printf("  -h		display this help\n");
+
+	nut_report_config_flags();
+
+	exit(EXIT_SUCCESS);
+}
+
+
 int main(int argc, char **argv)
 {
-	const char	*prog = NULL;
-	/* More a use for argc to avoid warnings than a real need: */
-	if (argc > 0) {
-		xbasename(argv[0]);
-	} else {
-		xbasename("upssched");
-	}
+	const char	*prog = xbasename(argv[0]);
+	int i;
 
-	verbose = 1;		/* TODO: remove when done testing, or add -D */
+	while ((i = getopt(argc, argv, "+DVh")) != -1) {
+		switch (i) {
+			case 'D':
+				nut_debug_level++;
+				break;
+
+			case 'h':
+				help(argv[0]);
+#ifndef HAVE___ATTRIBUTE__NORETURN
+				break;
+#endif
+
+			case 'V':
+				/* just show the optional CONFIG_FLAGS banner */
+				nut_report_config_flags();
+				exit(EXIT_SUCCESS);
+		}
+	}
 
 	/* normally we don't have stderr, so get this going to syslog early */
 	open_syslog(prog);

@@ -53,6 +53,7 @@ static void usage(const char *prog)
 	printf("Demo program to set variables within UPS hardware.\n");
 	printf("\n");
 	printf("  -h            display this help text\n");
+	printf("  -V            display the version of this software\n");
 	printf("  -s <variable>	specify variable to be changed\n");
 	printf("		use -s VAR=VALUE to avoid prompting for value\n");
 	printf("  -l            show all possible read/write variables.\n");
