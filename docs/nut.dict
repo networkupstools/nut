@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3088 utf-8
+personal_ws-1.1 en 3096 utf-8
 AAS
 ABI
 ACFAIL
@@ -236,6 +236,7 @@ DATAPATH
 DCE
 DDD
 DDDDD
+DDDDDD
 DDF
 DDThh
 DEADTIME
@@ -247,6 +248,7 @@ DELPHYS
 DELRANGE
 DES
 DESTDIR
+DEVNAME
 DF
 DHEA
 DIGYS
@@ -792,6 +794,7 @@ ONF
 ONV
 OOM
 OSABI
+OSC
 OSF
 OSs
 OUTDIR
@@ -1345,6 +1348,7 @@ WS
 WSE
 WTU
 Waldie
+WantedBy
 WatchdogSec
 Werror
 Wextra
@@ -1991,6 +1995,7 @@ httpd
 https
 huawei
 hunnox
+hwdb
 hypervisor
 hypervisors
 iBox
@@ -2081,6 +2086,7 @@ jbus
 jdk
 jenkins
 jessie
+jimklimov
 journalctl
 jpg
 jpgraph
@@ -2418,6 +2424,7 @@ ontimedays
 ontiniedays
 ooce
 openSUSE
+opencollective
 openipmi
 openjdk
 openlog
@@ -3028,6 +3035,7 @@ wf
 wget
 whitespace
 wiki
+wildcards
 winnutclient
 winpthreads
 wmNUT

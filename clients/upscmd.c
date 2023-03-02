@@ -54,6 +54,7 @@ static void usage(const char *prog)
 	printf("Administration program to initiate instant commands on UPS hardware.\n");
 	printf("\n");
 	printf("  -h		display this help text\n");
+	printf("  -V		display the version of this software\n");
 	printf("  -l <ups>	show available commands on UPS <ups>\n");
 	printf("  -u <username>	set username for command authentication\n");
 	printf("  -p <password>	set password for command authentication\n");

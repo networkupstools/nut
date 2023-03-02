@@ -142,6 +142,9 @@ https://github.com/networkupstools/nut/milestone/8
      was tied to non-existent OIDs, not well handled in some parts of the
      driver [#1716]
 
+ - The `bestfortress` driver shutdown handling was fixed to use a non-trivial
+   default timeout [#1820]
+
  - Added support for `make install` of PyNUT module and NUT-Monitor desktop
    application [#1462, #1504]
 

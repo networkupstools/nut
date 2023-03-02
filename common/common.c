@@ -944,18 +944,60 @@ void nut_report_config_flags(void)
 	 * Depending on amount of configuration tunables involved by a particular
 	 * build of NUT, the string can be quite long (over 1KB).
 	 */
+	const char *acinit_ver = NULL;
+	/* Pass these as variables to avoid warning about never reaching one
+	 * of compiled codepaths: */
+	const char *compiler_ver = CC_VERSION;
+	const char *config_flags = CONFIG_FLAGS;
 	if (nut_debug_level < 1)
 		return;
 
+	/* Only report git revision if NUT_VERSION_MACRO in nut_version.h aka
+	 * UPS_VERSION here is remarkably different from PACKAGE_VERSION from
+	 * configure.ac AC_INIT() -- which may be e.g. "2.8.0.1" although some
+	 * distros, especially embedders, tend to place their product IDs here).
+	 * The macro may be that fixed version or refer to git source revision,
+	 * as decided when generating nut_version.h (and if it was re-generated
+	 * in case of rebuilds while developers are locally iterating -- this
+	 * may be disabled for faster local iterations at a cost of a little lie).
+	 */
+	if (PACKAGE_VERSION && UPS_VERSION &&
+		(strlen(UPS_VERSION) < 12 || !strstr(UPS_VERSION, PACKAGE_VERSION))
+	) {
+		/* If UPS_VERSION is too short (so likely a static string
+		 * from configure.ac AC_INIT() -- although some distros,
+		 * especially embedders, tend to place their product IDs here),
+		 * or if PACKAGE_VERSION *is NOT* a substring of it: */
+		acinit_ver = PACKAGE_VERSION;
+	}
+
 	if (xbit_test(upslog_flags, UPSLOG_STDERR))
-		fprintf(stderr, "Network UPS Tools version %s configured with flags: %s\n",
-			UPS_VERSION, CONFIG_FLAGS);
+		fprintf(stderr, "Network UPS Tools version %s%s%s%s%s%s%s %s%s\n",
+			UPS_VERSION,
+			(acinit_ver ? " (release/snapshot of " : ""),
+			(acinit_ver ? acinit_ver : ""),
+			(acinit_ver ? ")" : ""),
+			(compiler_ver && *compiler_ver != '\0' ? " built with " : ""),
+			(compiler_ver && *compiler_ver != '\0' ? compiler_ver : ""),
+			(compiler_ver && *compiler_ver != '\0' ? " and" : ""),
+			(config_flags && *config_flags != '\0' ? "configured with flags: " : "configured all by default guesswork"),
+			(config_flags && *config_flags != '\0' ? config_flags : "")
+		);
 
 	/* NOTE: May be ignored or truncated by receiver if that syslog server
 	 * (and/or OS sender) does not accept messages of such length */
 	if (xbit_test(upslog_flags, UPSLOG_SYSLOG))
-		syslog(LOG_DEBUG, "Network UPS Tools version %s configured with flags: %s",
-			UPS_VERSION, CONFIG_FLAGS);
+		syslog(LOG_DEBUG, "Network UPS Tools version %s%s%s%s%s%s%s %s%s",
+			UPS_VERSION,
+			(acinit_ver ? " (release/snapshot of " : ""),
+			(acinit_ver ? acinit_ver : ""),
+			(acinit_ver ? ")" : ""),
+			(compiler_ver && *compiler_ver != '\0' ? " built with " : ""),
+			(compiler_ver && *compiler_ver != '\0' ? compiler_ver : ""),
+			(compiler_ver && *compiler_ver != '\0' ? " and" : ""),
+			(config_flags && *config_flags != '\0' ? "configured with flags: " : "configured all by default guesswork"),
+			(config_flags && *config_flags != '\0' ? config_flags : "")
+		);
 }
 
 static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
