@@ -28,7 +28,8 @@
 struct gpioups_t *gpioupsfd=(struct gpioups_t *)NULL;
 
 static struct gpioups_t *generic_gpio_open(const char *chipName);
-static void get_ups_rules(struct gpioups_t *upsfd);
+static void generic_gpio_close(struct gpioups_t *gpioupsfd);
+static void get_ups_rules(struct gpioups_t *upsfd, unsigned char *rulesString);
 static void add_rule_item(struct gpioups_t *upsfd, int newValue);
 static int get_rule_lex(unsigned char *rulesBuff, int *startPos, int *endPos);
 static int calc_rule_states(int cRules[], int subCount, int sIndex);
@@ -41,7 +42,7 @@ static struct gpioups_t *generic_gpio_open(const char *chipName) {
 	struct gpioups_t *upsfdlocal=xcalloc(sizeof(*upsfdlocal),1);
 	upsfdlocal->runOptions=0; /*	don't use ROPT_REQRES and ROPT_EVMODE yet	*/
 	upsfdlocal->chipName=chipName;
-	get_ups_rules(upsfdlocal);
+	get_ups_rules(upsfdlocal, (unsigned char *)getval("rules"));
 	return upsfdlocal;
 }
 
@@ -114,8 +115,7 @@ static int get_rule_lex(unsigned char *rulesBuff, int *startPos, int *endPos) {
 /*
  * split subrules and translate them to array of commands/line numbers
  */
-static void get_ups_rules(struct gpioups_t *upsfd) {
-	unsigned char   *rulesString = (unsigned char *)getval("rules");
+static void get_ups_rules(struct gpioups_t *upsfd, unsigned char *rulesString) {
 	/*	statename=[^]line[&||[line]]	*/
 	char    lexBuff[33];
 	int     startPos = 0, endPos;
@@ -124,7 +124,7 @@ static void get_ups_rules(struct gpioups_t *upsfd) {
 	int	i, j, k;
 	int	tranformationDelta;
 
-	upsdebugx(LOG_DEBUG, "rules =[%s]", rulesString);
+	upsdebugx(LOG_DEBUG, "rules = [%s]", rulesString);
 	/* state machine to process rules definition */
 	while((lexType=get_rule_lex(rulesString, &startPos, &endPos)) > 0 && lexStatus >= 0) {
 		memset(lexBuff, 0, sizeof(lexBuff));
@@ -150,6 +150,7 @@ static void get_ups_rules(struct gpioups_t *upsfd) {
 					upsfd->rules[upsfd->rulesCount-1]->stateName[endPos-startPos] = 0;
 				}
 			break;
+
 			case 1:
 				if(lexType != '=') {
 					lexStatus = -1;
@@ -157,6 +158,7 @@ static void get_ups_rules(struct gpioups_t *upsfd) {
 					lexStatus = 2;
 				}
 			break;
+
 			case 2:
 				if(lexType == '^') {
 					lexStatus = 3;
@@ -168,6 +170,7 @@ static void get_ups_rules(struct gpioups_t *upsfd) {
 					lexStatus = -1;
 				}
 			break;
+
 			case 3:
 				if(lexType != '0') {
 					lexStatus = -1;
@@ -176,6 +179,7 @@ static void get_ups_rules(struct gpioups_t *upsfd) {
 					add_rule_item(upsfd, atoi((char *)(rulesString+startPos)));
 				}
 			break;
+
 			case 4:
 				if(lexType == '&') {
 					lexStatus = 2;
@@ -190,6 +194,7 @@ static void get_ups_rules(struct gpioups_t *upsfd) {
 					lexStatus = -1;
 				}
 			break;
+
 			default:
 				lexStatus = -1;
 			break;
@@ -199,6 +204,7 @@ static void get_ups_rules(struct gpioups_t *upsfd) {
 		startPos = endPos;
 	}
 
+	/* debug printout for extracted rules */
 	upsdebugx(LOG_DEBUG, "rules count [%d]", upsfd->rulesCount);
 	for(i = 0; i < upsfd->rulesCount; i++) {
 		upsdebugx(
@@ -218,6 +224,7 @@ static void get_ups_rules(struct gpioups_t *upsfd) {
 		}
 	}
 
+	/* get gpio lines used in rules, find max line number used to check with chip lines count*/
 	upsfd->upsLinesCount = 0;
 	upsfd->upsMaxLine = 0;
 	for(i = 0; i < upsfd->rulesCount; i++) {
@@ -246,6 +253,7 @@ static void get_ups_rules(struct gpioups_t *upsfd) {
 		upsdebugx(LOG_DEBUG, "UPS line%d number %d", i, upsfd->upsLines[i]);
 	}
 
+	/* transform lines to indexes for easier state calculation */
 	tranformationDelta = upsfd->upsMaxLine - RULES_CMD_LAST + 1;
 	for(i = 0; i < upsfd->rulesCount; i++) {
 		for(j = 0; j < upsfd->rules[i]->subCount; j++) {
@@ -263,6 +271,8 @@ static void get_ups_rules(struct gpioups_t *upsfd) {
 			}
 		}
 	}
+
+	/* debug printout of transformed lines numbers */
 	upsdebugx(LOG_DEBUG, "rules count [%d] translated", upsfd->rulesCount);
 	for(i = 0; i < upsfd->rulesCount; i++) {
 		upsdebugx(
@@ -422,6 +432,9 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "rules", "Line rules to produce status strings");
 	addvar(VAR_SENSITIVE, "description", "Device description");
 	addvar(VAR_SENSITIVE, "desc", "Device description");
+#ifdef LOCALTEST
+	test_rules();
+#endif
 }
 
 void upsdrv_initups(void)

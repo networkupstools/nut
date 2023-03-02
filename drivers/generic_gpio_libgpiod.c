@@ -67,72 +67,14 @@ static void reserve_lines_libgpiod(struct gpioups_t *gpioupsfd, int inner);
 	OL=^0;OB=0;LB=3;HB=^3;RB=1;DISCHRG=0&^3;BYPASS=6;
 */
 
-#undef LOCALTEST
-#ifdef LOCALTEST
-struct gpiod_chip *gpiod_chip_open_by_name(const char *name) {
-	NUT_UNUSED_VARIABLE(name);
-	return (struct gpiod_chip *)1;
-}
-
-unsigned int gpiod_chip_num_lines(struct gpiod_chip *chip) {
-	NUT_UNUSED_VARIABLE(chip);
-	return 32;
-}
-int gpiod_chip_get_lines(struct gpiod_chip *chip,
-			 unsigned int *offsets, unsigned int num_offsets,
-			 struct gpiod_line_bulk *bulk) {
-	return 0;
-}
-
-int gpiod_line_request_bulk(struct gpiod_line_bulk *bulk,
-			    const struct gpiod_line_request_config *config,
-			    const int *default_vals)
-{
-	return 0;
-}
-
-int gStatus = 0;
-
-int gpiod_line_get_value_bulk(struct gpiod_line_bulk *bulk,
-			      int *values)
-{
-	int pinPos=1;
-	if(gpioupsfd)
-	for(int i=0; i<gpioupsfd->upsLinesCount; i++) {
-		values[i]=(gStatus&pinPos)!=0;
-		pinPos=pinPos<<1;
-	}
-
-	gStatus++;
-	return 0;
-}
-
-int gpiod_line_event_wait_bulk(struct gpiod_line_bulk *bulk,
-			       const struct timespec *timeout,
-			       struct gpiod_line_bulk *event_bulk)
-{
-	switch(gStatus%3) {
-		case 0:
-			sleep(2);
-		break;
-		case 1:
-			sleep(4);
-		break;
-		case 2:
-			sleep(6);
-		break;
-	}
-	return 0;
-}
-#endif
-
 /*
  * reserve GPIO lines as per run options and inner parameter: do reservation once
  * or per each status read
  */
 static void reserve_lines_libgpiod(struct gpioups_t *gpioupsfd, int inner) {
 	struct libgpiod_data_t *libgpiod_data = (struct libgpiod_data_t *)(gpioupsfd->lib_data);
-	upsdebugx(LOG_DEBUG, "reserve_lines_libgpiod runOptions %d, inner %d", gpioupsfd->runOptions, inner);
+	upsdebugx(LOG_DEBUG, "reserve_lines_libgpiod runOptions 0x%x, inner %d", gpioupsfd->runOptions+1035, inner);
+
 	if(((gpioupsfd->runOptions&ROPT_REQRES) != 0) == inner) {
 		struct gpiod_line_request_config config;
 		int gpioRc;
@@ -167,17 +109,18 @@ static void reserve_lines_libgpiod(struct gpioups_t *gpioupsfd, int inner) {
 void gpio_open(struct gpioups_t *gpioupsfd) {
 	struct libgpiod_data_t *libgpiod_data = xcalloc(sizeof(struct libgpiod_data_t),1);
 	gpioupsfd->lib_data = libgpiod_data;
+
 	libgpiod_data->gpioChipHandle = gpiod_chip_open_by_name(gpioupsfd->chipName);
-	if(!libgpiod_data->gpioChipHandle) {
+	if(!libgpiod_data->gpioChipHandle)
 		fatal_with_errno(
 			LOG_ERR,
 			"Could not open GPIO chip [%s], check chips presence and/or access rights",
 			gpioupsfd->chipName
 		);
-	} else {
+	else {
 		int gpioRc;
 		upslogx(LOG_NOTICE, "GPIO chip [%s] opened", gpioupsfd->chipName);
-		gpioupsfd->chipLinesCount=gpiod_chip_num_lines(libgpiod_data->gpioChipHandle);
+		gpioupsfd->chipLinesCount = gpiod_chip_num_lines(libgpiod_data->gpioChipHandle);
 		upslogx(LOG_NOTICE, "Find %d lines on GPIO chip [%s]", gpioupsfd->chipLinesCount, gpioupsfd->chipName);
 		if(gpioupsfd->chipLinesCount<gpioupsfd->upsMaxLine)
 			fatalx(
@@ -229,6 +172,7 @@ void gpio_get_lines_states(struct gpioups_t *gpioupsfd) {
 	int i;
 	int gpioRc;
 	struct libgpiod_data_t *libgpiod_data = (struct libgpiod_data_t *)(gpioupsfd->lib_data);
+
 	reserve_lines_libgpiod(gpioupsfd, 1);
 	if(gpioupsfd->runOptions&ROPT_EVMODE) {
 		struct timespec timeoutLong = {1,0};
@@ -291,13 +235,16 @@ void gpio_get_lines_states(struct gpioups_t *gpioupsfd) {
 		&libgpiod_data->gpioLines,
 		gpioupsfd->upsLinesStates
 	);
+
 	if (gpioRc < 0)
 		fatal_with_errno(LOG_ERR, "GPIO line status read call failed");
+
 	upsdebugx(
 		LOG_DEBUG,
 		"GPIO gpiod_line_get_value_bulk completed with %d return code, status values:",
 		gpioRc
 	);
+
 	for(i=0; i < gpioupsfd->upsLinesCount; i++) {
 		upsdebugx(
 			LOG_DEBUG,
@@ -306,6 +253,7 @@ void gpio_get_lines_states(struct gpioups_t *gpioupsfd) {
 			gpioupsfd->upsLinesStates[i]
 		);
 	}
+
 	if(gpioupsfd->runOptions&ROPT_REQRES) {
 		gpiod_line_release_bulk(&libgpiod_data->gpioLines);
 	}
