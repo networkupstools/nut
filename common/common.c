@@ -951,6 +951,8 @@ void nut_report_config_flags(void)
 	 * of compiled codepaths: */
 	const char *compiler_ver = CC_VERSION;
 	const char *config_flags = CONFIG_FLAGS;
+	struct timeval		now;
+
 	if (nut_debug_level < 1)
 		return;
 
@@ -973,8 +975,25 @@ void nut_report_config_flags(void)
 		acinit_ver = PACKAGE_VERSION;
 	}
 
+	/* NOTE: If changing wording here, keep in sync with configure.ac logic
+	 * looking for CONFIG_FLAGS_DEPLOYED via "configured with flags:" string!
+	 */
+
+	gettimeofday(&now, NULL);
+
+	if (upslog_start.tv_sec == 0) {
+		upslog_start = now;
+	}
+
+	if (upslog_start.tv_usec > now.tv_usec) {
+		now.tv_usec += 1000000;
+		now.tv_sec -= 1;
+	}
+
 	if (xbit_test(upslog_flags, UPSLOG_STDERR))
-		fprintf(stderr, "Network UPS Tools version %s%s%s%s%s%s%s %s%s\n",
+		fprintf(stderr, "%4.0f.%06ld\t[D1] Network UPS Tools version %s%s%s%s%s%s%s %s%s\n",
+			difftime(now.tv_sec, upslog_start.tv_sec),
+			(long)(now.tv_usec - upslog_start.tv_usec),
 			UPS_VERSION,
 			(acinit_ver ? " (release/snapshot of " : ""),
 			(acinit_ver ? acinit_ver : ""),
