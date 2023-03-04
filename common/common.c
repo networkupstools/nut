@@ -288,6 +288,12 @@ void become_user(struct passwd *pw)
 	/* if we can't switch users, then don't even try */
 	intmax_t initial_uid = getuid();
 	intmax_t initial_euid = geteuid();
+
+	if (!pw) {
+		upsdebugx(1, "Can not become_user(<null>), skipped");
+		return;
+	}
+
 	if ((initial_euid != 0) && (initial_uid != 0)) {
 		intmax_t initial_gid = getgid();
 		if (initial_euid == (intmax_t)pw->pw_uid
@@ -323,7 +329,8 @@ void become_user(struct passwd *pw)
 #else
 	NUT_UNUSED_VARIABLE(pw);
 
-	upsdebugx(1, "Can not become_user(%s): not implemented on this platform", pw->pw_name);
+	upsdebugx(1, "Can not become_user(%s): not implemented on this platform",
+		pw ? pw->pw_name : "<null>");
 #endif
 }
 
