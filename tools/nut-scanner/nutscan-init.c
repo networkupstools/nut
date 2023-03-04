@@ -271,10 +271,10 @@ void nutscan_init(void)
 	/* TODO: Detect DLL name at build time, or rename it at install time? */
 	/* e.g. see clients/Makefile.am for version-info value */
 	if (!libname) {
-		libname = get_libname("libupsclient-3" SOEXT);
+		libname = get_libname("libupsclient-6" SOEXT);
 	}
 	if (!libname) {
-		libname = get_libname("libupsclient-6" SOEXT);
+		libname = get_libname("libupsclient-3" SOEXT);
 	}
 #endif
 	if (libname) {
@@ -285,10 +285,10 @@ void nutscan_init(void)
 		nutscan_avail_nut = nutscan_load_upsclient_library("libupsclient" SOEXT);
 #ifdef WIN32
 		if (!nutscan_avail_nut) {
-			nutscan_avail_nut = nutscan_load_upsclient_library("libupsclient-3" SOEXT);
+			nutscan_avail_nut = nutscan_load_upsclient_library("libupsclient-6" SOEXT);
 		}
 		if (!nutscan_avail_nut) {
-			nutscan_avail_nut = nutscan_load_upsclient_library("libupsclient-6" SOEXT);
+			nutscan_avail_nut = nutscan_load_upsclient_library("libupsclient-3" SOEXT);
 		}
 #endif
 	}
