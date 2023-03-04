@@ -110,6 +110,8 @@ pid_t get_max_pid_t()
 	int	nut_log_level = 0;
 	static	int	upslog_flags = UPSLOG_STDERR;
 
+	static struct timeval	upslog_start = { 0, 0 };
+
 static void xbit_set(int *val, int flag)
 {
 	*val |= flag;
@@ -1054,21 +1056,22 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 	}
 
 	if (nut_debug_level > 0) {
-		static struct timeval	start = { 0, 0 };
 		struct timeval		now;
 
 		gettimeofday(&now, NULL);
 
-		if (start.tv_sec == 0) {
-			start = now;
+		if (upslog_start.tv_sec == 0) {
+			upslog_start = now;
 		}
 
-		if (start.tv_usec > now.tv_usec) {
+		if (upslog_start.tv_usec > now.tv_usec) {
 			now.tv_usec += 1000000;
 			now.tv_sec -= 1;
 		}
 
-		fprintf(stderr, "%4.0f.%06ld\t", difftime(now.tv_sec, start.tv_sec), (long)(now.tv_usec - start.tv_usec));
+		fprintf(stderr, "%4.0f.%06ld\t",
+			difftime(now.tv_sec, upslog_start.tv_sec),
+			(long)(now.tv_usec - upslog_start.tv_usec));
 	}
 
 	if (xbit_test(upslog_flags, UPSLOG_STDERR))
