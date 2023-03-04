@@ -191,6 +191,11 @@ void nutscan_init(void)
 
 #ifdef WITH_SNMP
 	libname = get_libname("libnetsnmp" SOEXT);
+ #ifdef WIN32
+	if (!libname) {
+		libname = get_libname("libnetsnmp-40" SOEXT);
+	}
+ #endif
 	if (libname) {
 		nutscan_avail_snmp = nutscan_load_snmp_library(libname);
 		free(libname);
@@ -210,6 +215,14 @@ void nutscan_init(void)
 	if (!libname) {
 		libname = get_libname("libneon-gnutls" SOEXT);
 	}
+ #ifdef WIN32
+	if (!libname) {
+		libname = get_libname("libneon-27" SOEXT);
+	}
+	if (!libname) {
+		libname = get_libname("libneon-gnutls-27" SOEXT);
+	}
+ #endif
 	if (libname) {
 		nutscan_avail_xml_http = nutscan_load_neon_library(libname);
 		free(libname);
