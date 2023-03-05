@@ -205,7 +205,9 @@ int nutscan_load_usb_library(const char *libname_path)
 	return 1;
 
 err:
-	fprintf(stderr, "Cannot load USB library (%s) : %s. USB search disabled.\n", libname_path, dl_error);
+	fprintf(stderr,
+		"Cannot load USB library (%s) : %s. USB search disabled.\n",
+		libname_path, dl_error);
 	dl_handle = (void *)1;
 	lt_dlexit();
 	return 0;

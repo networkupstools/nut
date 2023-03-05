@@ -437,7 +437,8 @@ int nutscan_load_snmp_library(const char *libname_path)
 
 #ifndef WITH_SNMP_STATIC
 err:
-	fprintf(stderr, "Cannot load SNMP library (%s) : %s. SNMP search disabled.\n",
+	fprintf(stderr,
+		"Cannot load SNMP library (%s) : %s. SNMP search disabled.\n",
 		libname_path, dl_error);
 	dl_handle = (void *)1;
 	lt_dlexit();
