@@ -32,7 +32,7 @@ static void generic_gpio_close(struct gpioups_t *gpioupsfd);
 static void get_ups_rules(struct gpioups_t *upsfd, unsigned char *rulesString);
 static void add_rule_item(struct gpioups_t *upsfd, int newValue);
 static int get_rule_lex(unsigned char *rulesBuff, int *startPos, int *endPos);
-static int calc_rule_states(int cRules[], int subCount, int sIndex);
+static int calc_rule_states(int upsLinesStates[], int cRules[], int subCount, int sIndex);
 static void update_ups_states(struct gpioups_t *gpioupsfd);
 
 /*
@@ -203,6 +203,8 @@ static void get_ups_rules(struct gpioups_t *upsfd, unsigned char *rulesString) {
 			fatalx(LOG_ERR, "Line processing rule error at position %d", startPos);
 		startPos = endPos;
 	}
+	if(lexType == 0 && lexStatus != 0)
+		fatalx(LOG_ERR, "Line processing rule error at position %d", startPos);
 
 	/* debug printout for extracted rules */
 	upsdebugx(LOG_DEBUG, "rules count [%d]", upsfd->rulesCount);
@@ -295,28 +297,30 @@ static void get_ups_rules(struct gpioups_t *upsfd, unsigned char *rulesString) {
 /*
  * calculate state rule value based on GPIO line values
  */
-static int calc_rule_states(int cRules[], int subCount, int sIndex) {
+static int calc_rule_states(int upsLinesStates[], int cRules[], int subCount, int sIndex) {
 	int ruleVal = 0;
 	int iopStart = sIndex;
 	int rs;
-	if(iopStart < subCount) {
+	if(iopStart < subCount) { /* calculate left side */
 		if(cRules[iopStart] >= 0) {
-			ruleVal = gpioupsfd->upsLinesStates[cRules[iopStart]];
+			ruleVal = upsLinesStates[cRules[iopStart]];
 		} else {
 			iopStart++;
-			ruleVal = !gpioupsfd->upsLinesStates[cRules[iopStart]];
+			ruleVal = !upsLinesStates[cRules[iopStart]];
 		}
 		iopStart++;
 	}
-	if(iopStart < subCount && cRules[iopStart] == RULES_CMD_OR) {
-		ruleVal = ruleVal || calc_rule_states(cRules, subCount, iopStart+1);
-	} else {
-		for(; iopStart < subCount; iopStart++) {
+	for(; iopStart < subCount; iopStart++) { /* right side calculation */
+		if(cRules[iopStart] == RULES_CMD_OR) {
+			ruleVal = ruleVal || calc_rule_states(upsLinesStates, cRules, subCount, iopStart+1);
+			break;
+		} else {
+			iopStart++;
 			if(cRules[iopStart] == RULES_CMD_NOT) {
 				iopStart++;
-				rs = !gpioupsfd->upsLinesStates[cRules[iopStart]];
+				rs = !upsLinesStates[cRules[iopStart]];
 			} else {
-				rs = gpioupsfd->upsLinesStates[cRules[iopStart]];
+				rs = upsLinesStates[cRules[iopStart]];
 			}
 			ruleVal = ruleVal && rs;
 		}
@@ -339,6 +343,7 @@ static void update_ups_states(struct gpioups_t *gpioupsfd) {
 	for(ruleNo = 0; ruleNo < gpioupsfd->rulesCount; ruleNo++) {
 		gpioupsfd->rules[ruleNo]->currVal =
 			calc_rule_states(
+				gpioupsfd->upsLinesStates,
 				gpioupsfd->rules[ruleNo]->cRules,
 				gpioupsfd->rules[ruleNo]->subCount, 0
 			);
@@ -432,9 +437,6 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "rules", "Line rules to produce status strings");
 	addvar(VAR_SENSITIVE, "description", "Device description");
 	addvar(VAR_SENSITIVE, "desc", "Device description");
-#ifdef LOCALTEST
-	test_rules();
-#endif
 }
 
 void upsdrv_initups(void)
