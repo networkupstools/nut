@@ -205,6 +205,18 @@ else
     fi
 fi
 
+if [ -z "$TMPDIR" ]; then
+    echo "WARNING: TMPDIR not set, trying to guess"
+    if [ -d /tmp -a -w /tmp ] ; then
+        TMPDIR=/tmp
+        export TMPDIR
+    fi
+fi
+
+if [ -z "$TMPDIR" ]; then
+    echo "WARNING: TMPDIR still not set, some tools (notably clang) can fail"
+fi
+
 # For two-phase builds (quick parallel make first, sequential retry if failed)
 # how verbose should that first phase be? Nothing, automake list of ops, CLIs?
 # See build_to_only_catch_errors_target() for a consumer of this setting.
