@@ -327,8 +327,6 @@ void become_user(struct passwd *pw)
 	upsdebugx(1, "Succeeded to become_user(%s): now UID=%jd GID=%jd",
 		pw->pw_name, (intmax_t)getuid(), (intmax_t)getgid());
 #else
-	NUT_UNUSED_VARIABLE(pw);
-
 	upsdebugx(1, "Can not become_user(%s): not implemented on this platform",
 		pw ? pw->pw_name : "<null>");
 #endif
