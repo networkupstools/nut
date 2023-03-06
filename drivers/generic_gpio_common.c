@@ -42,7 +42,13 @@ static struct gpioups_t *generic_gpio_open(const char *chipName) {
 	struct gpioups_t *upsfdlocal=xcalloc(sizeof(*upsfdlocal),1);
 	upsfdlocal->runOptions=0; /*	don't use ROPT_REQRES and ROPT_EVMODE yet	*/
 	upsfdlocal->chipName=chipName;
+
+	if(!testvar("rules"))	/* rules is required configuration parameter */
+		fatalx(EXIT_FAILURE, "UPS status calculation rules not specified");
+
 	get_ups_rules(upsfdlocal, (unsigned char *)getval("rules"));
+	upsfdlocal->upsLinesStates = xcalloc(sizeof(int), upsfdlocal->upsLinesCount);
+
 	return upsfdlocal;
 }
 
@@ -64,6 +70,7 @@ static void generic_gpio_close(struct gpioups_t *gpioupsfd) {
 			}
 		}
 		free(gpioupsfd);
+		gpioupsfd=NULL;
 	}
 }
 
@@ -335,6 +342,7 @@ static int calc_rule_states(int upsLinesStates[], int cRules[], int subCount, in
  */
 static void update_ups_states(struct gpioups_t *gpioupsfd) {
 	int batLow = 0;
+	int bypass = 0;
 	int chargerStatusSet = 0;
 	int ruleNo;
 
@@ -361,6 +369,9 @@ static void update_ups_states(struct gpioups_t *gpioupsfd) {
 			if(!strcmp(gpioupsfd->rules[ruleNo]->stateName, "LB")) {
 				batLow = 1;
 			}
+			if(!strcmp(gpioupsfd->rules[ruleNo]->stateName, "BYPASS")) {
+				bypass = 1;
+			}
 		}
 		if(gpioupsfd->aInfoAvailable &&
 			gpioupsfd->rules[ruleNo]->archVal != gpioupsfd->rules[ruleNo]->currVal) {
@@ -384,6 +395,10 @@ static void update_ups_states(struct gpioups_t *gpioupsfd) {
 		}
 	}
 
+	if(bypass) {
+		dstate_delinfo("battery.charge");
+	}
+
 	gpioupsfd->aInfoAvailable = 1;
 
 	status_commit();
@@ -400,9 +415,6 @@ void upsdrv_initinfo(void)
 	if(testvar("description")) {
 		dstate_setinfo("device.description", "%s", getval("description"));
 	}
-
-	if(!testvar("rules"))	/* rules is required configuration parameter */
-		fatalx(EXIT_FAILURE, "UPS status calculation rules not specified");
 }
 
 void upsdrv_updateinfo(void)
