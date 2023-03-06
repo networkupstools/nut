@@ -412,7 +412,8 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 				upsdebugx(2, "successfully set kernel driver auto-detach flag");
 			}
 		} else {
-			upsdebugx(3, "libusb_kernel_driver_active() returned %d", ret);
+			upsdebugx(3, "libusb_kernel_driver_active() returned %d: %s",
+				ret, libusb_strerror((enum libusb_error)ret));
 		}
 #endif
 

@@ -288,6 +288,12 @@ void become_user(struct passwd *pw)
 	/* if we can't switch users, then don't even try */
 	intmax_t initial_uid = getuid();
 	intmax_t initial_euid = geteuid();
+
+	if (!pw) {
+		upsdebugx(1, "Can not become_user(<null>), skipped");
+		return;
+	}
+
 	if ((initial_euid != 0) && (initial_uid != 0)) {
 		intmax_t initial_gid = getgid();
 		if (initial_euid == (intmax_t)pw->pw_uid
@@ -321,9 +327,8 @@ void become_user(struct passwd *pw)
 	upsdebugx(1, "Succeeded to become_user(%s): now UID=%jd GID=%jd",
 		pw->pw_name, (intmax_t)getuid(), (intmax_t)getgid());
 #else
-	NUT_UNUSED_VARIABLE(pw);
-
-	upsdebugx(1, "Can not become_user(%s): not implemented on this platform", pw->pw_name);
+	upsdebugx(1, "Can not become_user(%s): not implemented on this platform",
+		pw ? pw->pw_name : "<null>");
 #endif
 }
 
@@ -1870,6 +1875,12 @@ char * get_libname(const char* base_libname)
 	/* TODO: Need a reliable cross-platform way to get the full path
 	 * of current executable -- possibly stash it when starting NUT
 	 * programs... consider some way for `nut-scanner` too */
+	if (!libname_path) {
+		/* First check near the EXE (if executing it from another
+		 * working directory) */
+		libname_path = get_libname_in_dir(base_libname, base_libname_length, getfullpath(NULL), counter++);
+	}
+
 # ifdef PATH_LIB
 	if (!libname_path) {
 		libname_path = get_libname_in_dir(base_libname, base_libname_length, getfullpath(PATH_LIB), counter++);
@@ -1878,7 +1889,7 @@ char * get_libname(const char* base_libname)
 
 	if (!libname_path) {
 		/* Resolve "lib" dir near the one with current executable ("bin" or "sbin") */
-		libname_path = get_libname_in_dir(base_libname, base_libname_length, getfullpath("../lib"), counter++);
+		libname_path = get_libname_in_dir(base_libname, base_libname_length, getfullpath("/../lib"), counter++);
 	}
 #endif  /* WIN32 so far */
 
