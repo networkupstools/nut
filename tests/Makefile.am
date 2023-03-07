@@ -58,6 +58,13 @@ getvaluetest_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
 getvaluetest_LDADD = $(top_builddir)/common/libcommon.la
 endif
 
+if WITH_GPIO
+TESTS += gpiotest
+
+gpiotest_SOURCES = generic_gpio_utest.c
+gpiotest_LDADD = $(top_builddir)/common/libcommon.la
+endif
+
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/common/libcommon.la: dummy
 	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
