@@ -46,7 +46,6 @@ static void reserve_lines_libgpiod(struct gpioups_t *gpioupsfd, int inner);
 							Open when battery is missing
 	3 LOW BATTERY			Low when battery is near full charge capacity
 							Open when operating from a battery with < 20% capacity
-
 	NUT supported states
 	OL      On line (mains is present)
 	OB      On battery (mains is not present)
@@ -62,7 +61,6 @@ static void reserve_lines_libgpiod(struct gpioups_t *gpioupsfd, int inner);
 	TRIM    UPS is trimming incoming voltage (called "buck" in some hardware)
 	BOOST   UPS is boosting incoming voltage
 	FSD     Forced Shutdown (restricted use, see the note below)
-
 	CyberPower rules setting
 	OL=^0;OB=0;LB=3;HB=^3;RB=1;DISCHRG=0&^3;BYPASS=6;
 */
