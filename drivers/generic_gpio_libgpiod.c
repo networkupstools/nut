@@ -71,7 +71,7 @@ static void reserve_lines_libgpiod(struct gpioups_t *gpioupsfd, int inner);
  */
 static void reserve_lines_libgpiod(struct gpioups_t *gpioupsfd, int inner) {
 	struct libgpiod_data_t *libgpiod_data = (struct libgpiod_data_t *)(gpioupsfd->lib_data);
-	upsdebugx(LOG_DEBUG, "reserve_lines_libgpiod runOptions 0x%x, inner %d", gpioupsfd->runOptions+1035, inner);
+	upsdebugx(LOG_DEBUG, "reserve_lines_libgpiod runOptions 0x%x, inner %d", gpioupsfd->runOptions, inner);
 
 	if(((gpioupsfd->runOptions&ROPT_REQRES) != 0) == inner) {
 		struct gpiod_line_request_config config;
