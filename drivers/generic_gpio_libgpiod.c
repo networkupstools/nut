@@ -122,14 +122,15 @@ void gpio_open(struct gpioups_t *gpioupsfd) {
 		upslogx(LOG_NOTICE, "GPIO chip [%s] opened", gpioupsfd->chipName);
 		gpioupsfd->chipLinesCount = gpiod_chip_num_lines(libgpiod_data->gpioChipHandle);
 		upslogx(LOG_NOTICE, "Find %d lines on GPIO chip [%s]", gpioupsfd->chipLinesCount, gpioupsfd->chipName);
-		if(gpioupsfd->chipLinesCount<gpioupsfd->upsMaxLine)
+		if(gpioupsfd->chipLinesCount<gpioupsfd->upsMaxLine) {
+			gpiod_chip_close(libgpiod_data->gpioChipHandle);
 			fatalx(
 				LOG_ERR,
 				"GPIO chip lines count %d smaller than UPS line number used (%d)",
 				gpioupsfd->chipLinesCount,
 				gpioupsfd->upsMaxLine
 			);
-		gpioupsfd->upsLinesStates = xcalloc(sizeof(int), gpioupsfd->upsLinesCount);
+		}
 		gpiod_line_bulk_init(&libgpiod_data->gpioLines);
 		gpiod_line_bulk_init(&libgpiod_data->gpioEventLines);
 		gpioRc = gpiod_chip_get_lines(

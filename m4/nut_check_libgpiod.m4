@@ -17,8 +17,8 @@ if test -z "${nut_have_gpio_seen}"; then
 		[dnl See which version of the gpiod library (if any) is installed
 		 dnl FIXME : Support detection of cflags/ldflags below by legacy
 		 dnl discovery if pkgconfig is not there
-		 AC_MSG_CHECKING(for libgpiod-dev version via pkg-config (1.0.0 minimum required))
-		 GPIO_VERSION="`$PKG_CONFIG --silence-errors --modversion libgpiod-dev 2>/dev/null`"
+		 AC_MSG_CHECKING(for libgpiod version via pkg-config (1.0.0 minimum required))
+		 GPIO_VERSION="`$PKG_CONFIG --silence-errors --modversion libgpiod 2>/dev/null`"
 		 if test "$?" != "0" -o -z "${GPIO_VERSION}"; then
 		    GPIO_VERSION="none"
 		 fi
@@ -43,7 +43,7 @@ if test -z "${nut_have_gpio_seen}"; then
 		esac
 	], [
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[CFLAGS="`$PKG_CONFIG --silence-errors --cflags libgpiod-dev 2>/dev/null`" || CFLAGS="-I/usr/include -I/usr/local/include"],
+			[CFLAGS="`$PKG_CONFIG --silence-errors --cflags libgpiod 2>/dev/null`" || CFLAGS="-I/usr/include -I/usr/local/include"],
 			[CFLAGS="-I/usr/include -I/usr/local/include"]
 		)]
 	)
@@ -63,7 +63,7 @@ if test -z "${nut_have_gpio_seen}"; then
 		esac
 	], [
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[LIBS="`$PKG_CONFIG --silence-errors --libs libgpiod-dev 2>/dev/null`" || LIBS="-lgpiod"],
+			[LIBS="`$PKG_CONFIG --silence-errors --libs libgpiod 2>/dev/null`" || LIBS="-lgpiod"],
 			[LIBS="-lgpiod"]
 		)]
 	)
@@ -71,7 +71,7 @@ if test -z "${nut_have_gpio_seen}"; then
 
 	dnl check if gpiod is usable
 	AC_CHECK_HEADERS(gpiod.h, [nut_have_gpio=yes], [nut_have_gpio=no], [AC_INCLUDES_DEFAULT])
-	AC_CHECK_FUNCS(gpiod_chip_open_by_name gpiod_line_get_value_bulk gpiod_chip_close, [], [nut_have_gpio=no])
+	AC_CHECK_FUNCS(gpiod_chip_open_by_name gpiod_chip_close, [], [nut_have_gpio=no])
 
 	if test "${nut_have_gpio}" = "yes"; then
 		LIBGPIO_CFLAGS="${CFLAGS}"
