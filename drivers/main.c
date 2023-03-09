@@ -871,9 +871,10 @@ int main(int argc, char **argv)
 	 * or issue tracker, as well as viewed locally, it can help to know the
 	 * build options involved when troubleshooting (especially when needed
 	 * to walk through building a PR branch with candidate fix for an issue).
+	 * Reference code for such message is in common/common.c prints to log
+	 * and/or syslog when any debug level is enabled.
 	 */
-	upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
-		UPS_VERSION, CONFIG_FLAGS);
+	nut_report_config_flags();
 
 	argc -= optind;
 	argv += optind;

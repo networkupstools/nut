@@ -12,8 +12,17 @@ dnl primarily for better messaging in the script itself.
 dnl If the NUT codebase in this workspace is being developed and rebuilt
 dnl without reconfiguration, detailed version in the binaries will differ.
 (command -v git >/dev/null 2>/dev/null) \
-&& GITREV="`git describe --tags 2>/dev/null | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,'`" \
-|| GITREV=""
+&& NUT_SOURCE_GITREV="`git describe --tags 2>/dev/null | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,'`" \
+|| NUT_SOURCE_GITREV=""
+
+dnl Note: except for experiments, do not pass this into config.h - use
+dnl the NUT_VERSION_MACRO from nut_version.h instead. Developers may
+dnl want to disable their "force-nut-version-header" configure option
+dnl to reduce rebuild scope and so speed up the iterations with ccache.
+dnl New "config.h" contents for every reconfig would defeat that purpose!
+dnl ### AS_IF([test -n "${NUT_SOURCE_GITREV-}"],
+dnl ###     [AC_DEFINE_UNQUOTED([NUT_SOURCE_GITREV], ["${NUT_SOURCE_GITREV}"], [NUT source revision when the build was configured])],
+dnl ###     [AC_DEFINE([NUT_SOURCE_GITREV], [NULL], [NUT source revision when the build was configured: not detected])])
 
 dnl Keep track of command-line options passed to this script:
 AC_MSG_CHECKING([for CONFIG_FLAGS])
@@ -37,15 +46,16 @@ for F in "$@" ; do
 done
 dnl Keep it "known" that we tried to re-use at least some local configuration
 dnl so unspecified options are not necessarily at default values for this script
+AS_IF([test x"${NUT_VERSION_DEPLOYED-}" = x"<reenter>"], [_flag_enable_inplace_runtime="reenter"])
 F=""
-AS_CASE(["${_flag_enable_inplace_runtime}"],
-    [no], [ dnl Explicitly disabled... did we re-enter? Save the value to be seen:
-        AS_IF([test x"${NUT_VERSION_DEPLOYED-}" != x], [
-            F="--enable-inplace-runtime='${NUT_VERSION_DEPLOYED}'"
-        ])
-    ],
-    [""], [],
-    [F="${_flag_enable_inplace_runtime}"])
+AS_IF([test x"${NUT_VERSION_DEPLOYED-}" != x && test x"${NUT_VERSION_DEPLOYED-}" != x"<reenter>"], [
+     dnl Even if explicitly disabled... did we re-enter? Save the value to be seen:
+     F="--enable-inplace-runtime='${NUT_VERSION_DEPLOYED}'"
+    ],[
+     AS_CASE(["${_flag_enable_inplace_runtime}"],
+        [no|""|reenter], [],
+        [F="${_flag_enable_inplace_runtime}"])
+    ])
 AS_IF([test x"$F" != x], [
     test -z "${CONFIG_FLAGS}" \
     && CONFIG_FLAGS="$F" \
@@ -62,9 +72,9 @@ AC_SUBST(CONFIG_FLAGS)
 AC_CONFIG_AUX_DIR([.])
 AC_CONFIG_SRCDIR(server/upsd.c)
 AC_CONFIG_MACRO_DIR([m4])
-AS_IF([test x"${GITREV}" = x],
+AS_IF([test x"${NUT_SOURCE_GITREV}" = x],
     [echo "Network UPS Tools version ${PACKAGE_VERSION}"],
-    [echo "Network UPS Tools version ${PACKAGE_VERSION} (${GITREV})"])
+    [echo "Network UPS Tools version ${PACKAGE_VERSION} (${NUT_SOURCE_GITREV})"])
 AC_CANONICAL_TARGET
 NUT_CHECK_OS
 NUT_STASH_WARNINGS
@@ -128,6 +138,13 @@ test "${exec_prefix}" = "NONE" && exec_prefix='${prefix}'
 
 CFLAGS=${CFLAGS-"-O"}
 
+dnl Note: for practical and platform-independent use, see AX_REALPATH macro
+AC_CHECK_PROGS([REALPATH], [realpath], [])
+
+dnl FIXME: remove after dev-testing
+dnl UNITTEST_AX_REALPATH
+dnl exit
+
 dnl NOTE: for definition of NUT_* autoconf macros, see m4/ directory
 dnl and docs/macros.txt
 
@@ -135,6 +152,23 @@ dnl +------------------------------------------------------------------+
 dnl | default values for things later on (can be overridden)           |
 
 STATEPATH="/var/state/ups"
+
+dnl Historically this refers to *system location* for PID files,
+dnl and more specifically that for `upsmon` (running as `root`).
+dnl See also ALTPIDPATH (defaulted to STATEPATH) setting below
+dnl for the unprivileged daemons (`upsd`, drivers).
+PIDPATH="/var/run"
+dnl Honour new LFS recommendations if applied on the build system:
+AS_IF([test -d "/run"], [PIDPATH="/run"])
+
+dnl Defaults for respective configure options below
+dnl Note these defaults may change further below depending on OS and
+dnl certain other configure options (e.g. "in-place replacement")
+RUN_AS_USER="nobody"
+RUN_AS_GROUP="nobody"
+AS_IF([test -n "`getent group nogroup`" && ! test -n "`getent group "${RUN_AS_GROUP}"`"],
+    [RUN_AS_GROUP="nogroup"]
+)
 
 dnl NOTE: NUT legacy default, keep as is for least surprise
 dnl Distributions are however welcome to specify the option to use tmpfs
@@ -203,7 +237,8 @@ NUT_ARG_ENABLE([inplace-runtime],
     [Request configure option defaults for runtime user/group/confpath based on currently installed NUT (to extent these can be detected)],
     [no])
 
-AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${sbindir}" != x], [
+dnl Check for not re-entering in this run - whether NUT_VERSION_DEPLOYED is set
+AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}" = x], [
     AC_MSG_NOTICE([checking for location, CONFIG_FLAGS and version of an already deployed NUT build (if it reports those)])
 
     dnl If existing NUT installation reports its build options, re-run this
@@ -222,11 +257,19 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${sbindir}" != x], [
     DEPLOYED_BINDIR="${PREFIX_BINDIR}"
     dnl Note use of AC_PATH_PROG for specific pathname (not AC_CHECK_PROGS which picks filename variants)!
     dnl Note: "ordinary" users might not have "sbin" in their default PATH, so appending it:
+    dnl Note: in some systems, the file in PATH is a shell
+    dnl       wrapper for /etc/nut/nut.conf MODE support
     AC_PATH_PROG([DEPLOYED_UPSD], [upsd], [], [${PREFIX_SBINDIR}:${PATH}:/sbin:/usr/sbin:/usr/local/sbin])
     dnl ...however "upsc" is a userland tool so should be there:
     AC_PATH_PROG([DEPLOYED_UPSC], [upsc], [], [${PREFIX_BINDIR}:${PATH}])
-    AS_IF([test -x "${DEPLOYED_UPSD}"], [DEPLOYED_SBINDIR="`dirname "${DEPLOYED_UPSD}"`"])
-    AS_IF([test -x "${DEPLOYED_UPSC}"], [DEPLOYED_BINDIR="`dirname "${DEPLOYED_UPSC}"`"])
+    AS_IF([test -x "${DEPLOYED_UPSD}"], [
+        AX_REALPATH([$DEPLOYED_UPSD], [DEPLOYED_UPSD])
+        DEPLOYED_SBINDIR="`dirname "${DEPLOYED_UPSD}"`"
+        ])
+    AS_IF([test -x "${DEPLOYED_UPSC}"], [
+        AX_REALPATH([$DEPLOYED_UPSC], [DEPLOYED_UPSC])
+        DEPLOYED_BINDIR="`dirname "${DEPLOYED_UPSC}"`"
+        ])
 
     DEPLOYED_PREFIX=""
     AS_IF([test -d "${DEPLOYED_SBINDIR}"],
@@ -260,6 +303,12 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${sbindir}" != x], [
         AS_IF([test x"${CONFIG_FLAGS_DEPLOYED}${NUT_VERSION_DEPLOYED}" = x], [], [break])
     done
 
+    AS_IF([test x"${CONFIG_FLAGS_DEPLOYED}" != x], [
+        AC_MSG_RESULT([CONFIG_FLAGS_DEPLOYED: ${CONFIG_FLAGS_DEPLOYED}])
+    ],[
+        AC_MSG_RESULT([CONFIG_FLAGS_DEPLOYED: not reported])
+    ])
+
     dnl Account for custom paths if known/found:
     AS_IF([test x"${DEPLOYED_PREFIX}" != x && test x"${DEPLOYED_PREFIX}" != x"${prefix}"],
         AC_MSG_WARN([Deployed NUT installation uses a PREFIX different from one specified (wins) or derived (loses) for this build: '${DEPLOYED_PREFIX}' vs. '${prefix}'])
@@ -282,37 +331,23 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${sbindir}" != x], [
             [CONFIG_FLAGS_DEPLOYED="${CONFIG_FLAGS_DEPLOYED} --bindir='${DEPLOYED_BINDIR}'"])
     ])
 
-    AS_IF([test x"${CONFIG_FLAGS_DEPLOYED}" != x], [
-        AC_MSG_RESULT([${CONFIG_FLAGS_DEPLOYED}])
-        AC_MSG_NOTICE([Detected CONFIG_FLAGS of an already deployed NUT installation, using them for --inplace-runtime configuration (restarting script)])
-        dnl For multiply-specified flags with conflicting values, last mention wins:
-        AC_MSG_NOTICE([exec "$0" $CONFIG_FLAGS_DEPLOYED $CONFIG_FLAGS --disable-inplace-runtime])
-        AS_IF([test x"${NUT_VERSION_DEPLOYED}" != x], [
-            AC_MSG_NOTICE([NUT_VERSION_DEPLOYED: ${NUT_VERSION_DEPLOYED}])
-            export NUT_VERSION_DEPLOYED
-        ])
-        eval exec "$0" $CONFIG_FLAGS_DEPLOYED $CONFIG_FLAGS --disable-inplace-runtime
-    ],[
-        AC_MSG_RESULT([not reported])
-    ])
-])
+    AS_CASE(["${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS}"],
+        [*--sysconfdir=*], [
+            for F in ${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS} ; do
+                case "$F" in
+                    "--sysconfdir="*) sysconfdir="`echo "$F" | ( IFS='=' read K V ; echo "$V" )`" ;;
+                esac
+            done
+        ],
+        [
+        dnl If there was no custom --sysconfdir=/etc/myNUT passed,
+        dnl try to default it to something from existing deployment.
+        dnl NOTE: Single-quotes are correct for autotools default,
+        dnl expanded at runtime (see conftemp tricks below)
 
-dnl Defaults for respective configure options below
-dnl Note these defaults may change further below depending on OS and
-dnl certain other configure options (e.g. "in-place replacement")
-RUN_AS_USER="nobody"
-RUN_AS_GROUP="nobody"
-AS_IF([test -n "`getent group nogroup`" && ! test -n "`getent group "${RUN_AS_GROUP}"`"],
-    [RUN_AS_GROUP="nogroup"]
-)
-
-AS_IF([test x"$nut_enable_inplace_runtime" = xyes], [
-    dnl If there was no custom --sysconfdir=/etc/myNUT passed,
-    dnl try to default it to something from existing deployment.
-    dnl NOTE: Single-quotes are correct for autotools default,
-    dnl expanded at runtime (see conftemp tricks below)
-    AS_IF([test x'${prefix}/etc' = x"${sysconfdir}"], [
         AC_MSG_CHECKING([for in-place replacement default sysconfdir (better than '${sysconfdir}')])
+        DEPLOYED_SYSCONFDIR=""
+
         dnl TODO: Any more reasonable defaults? Pile them on here :)
         for D in \
             /etc/nut /etc/ups \
@@ -323,28 +358,177 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes], [
             if test -e "$D/ups.conf" || test -e "$D/upsmon.conf" \
             || ( test -e "$D/upsd.conf" && test -e "$D/upsd.users" ) \
             ; then
-                sysconfdir="$D"
+                DEPLOYED_SYSCONFDIR="$D"
                 break
             else
                 if test -d "$D/" && test ! -r "$D/" ; then
                     dnl Keeping order of preference defined by "for" loop:
                     AC_MSG_WARN([Picking directory '${D}' which exists but current build user may not read])
-                    sysconfdir="$D"
+                    DEPLOYED_SYSCONFDIR="$D"
                     break
                 fi
             fi
         done
-        AC_MSG_RESULT([${sysconfdir}])
-        ])
-])
 
-dnl Historically this refers to *system location* for PID files,
-dnl and more specifically that for `upsmon` (running as `root`).
-dnl See also ALTPIDPATH (defaulted to STATEPATH) setting below
-dnl for the unprivileged daemons (`upsd`, drivers).
-PIDPATH="/var/run"
-dnl Honour new LFS recommendations if applied on the build system:
-AS_IF([test -d "/run"], [PIDPATH="/run"])
+        AS_IF([test -n "${DEPLOYED_SYSCONFDIR}"], [
+            AC_MSG_RESULT([${DEPLOYED_SYSCONFDIR}])
+            dnl May be used in searches below:
+            sysconfdir="${DEPLOYED_SYSCONFDIR}"
+            CONFIG_FLAGS_DEPLOYED="${CONFIG_FLAGS_DEPLOYED} --sysconfdir='${DEPLOYED_SYSCONFDIR}'"
+        ], [
+            AC_MSG_RESULT([not detected])
+        ])
+    ])
+
+    dnl Prepare paths that may be used in user/group searches below:
+    conftemp="${sysconfdir}"
+    eval conftemp=\"${conftemp}\"
+    eval conftemp=\"${conftemp}\"
+    CONFPATH="${conftemp}"
+
+    AS_CASE(["${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS}"],
+        [*--libdir=*], [
+            for F in ${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS} ; do
+                case "$F" in
+                    "--libdir="*) libdir="`echo "$F" | ( IFS='=' read K V ; echo "$V" )`" ;;
+                esac
+            done
+        ]
+    )
+
+    conftemp="${libdir}"
+    eval conftemp=\"${conftemp}\"
+    eval conftemp=\"${conftemp}\"
+    LIBDIR="${conftemp}"
+
+    AS_CASE(["${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS}"],
+        [*--with-pkgconfig-dir=*], [
+            for F in ${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS} ; do
+                case "$F" in
+                    "--with-pkgconfig-dir="*) pkgconfigdir="`echo "$F" | ( IFS='=' read K V ; echo "$V" )`" ;;
+                esac
+            done
+        ]
+    )
+
+    dnl pkgconfigdir may have more indirections:
+    conftemp="${pkgconfigdir}"
+    eval conftemp=\"${conftemp}\"
+    eval conftemp=\"${conftemp}\"
+    eval conftemp=\"${conftemp}\"
+    PKGCONFIGDIR="${conftemp}"
+
+    AS_CASE(["${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS}"],
+        [*--with-group=*], [],
+        [
+        AC_MSG_CHECKING([for in-place replacement default group (better than '${RUN_AS_GROUP}')])
+        nut_inplace_group=""
+        AS_IF([test -d "${udevdir}/rules.d"],
+            [for F in "${udevdir}/rules.d"/*-nut-*.rules ; do
+                if test -s "$F" ; then
+                    nut_inplace_group="`grep GROUP= "$F" | head -1 | sed 's,^.* GROUP="*\(.*\)"*.*$,\1,'`" \
+                    && test -n "`getent group "${nut_inplace_group}"`" \
+                    && AC_MSG_RESULT([Got from ${F}]) \
+                    && break \
+                    || nut_inplace_group=""
+                fi
+             done
+            ])
+
+        AS_IF([test -z "${nut_inplace_group}"],
+            [AS_IF([test -n "`getent group nut`"], [nut_inplace_group="nut"],
+                [AS_IF([test -n "`getent group ups`"], [nut_inplace_group="ups"])])])
+
+        AS_IF([test -n "${nut_inplace_group}"], [
+            AC_MSG_RESULT([${nut_inplace_group}])
+            CONFIG_FLAGS_DEPLOYED="${CONFIG_FLAGS_DEPLOYED} --with-group='${nut_inplace_group}'"
+        ], [
+            AC_MSG_RESULT([not detected])
+        ])
+    ])
+
+    AS_CASE(["${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS}"],
+        [*--with-user=*], [],
+        [
+        AC_MSG_CHECKING([for in-place replacement default user (better than '${RUN_AS_USER}')])
+        nut_inplace_user=""
+
+        dnl Beside currently active setting, check the built-in default sugestion
+        AS_IF([test -s "${CONFPATH}/upsmon.conf"],
+            [for nut_inplace_user in \
+                `grep -E '^ *RUN_AS_USER' "${CONFPATH}/upsmon.conf" | awk '{print $2}'`\
+                `grep -E '^ *##*RUN_AS_USER' "${CONFPATH}/upsmon.conf" | awk '{print $2}'`\
+                `grep -E '^ *##*  *RUN_AS_USER' "${CONFPATH}/upsmon.conf" | awk '{print $3}'`\
+            ; do \
+                AS_IF([test -z "${nut_inplace_user}"], [
+                    test -n "`getent passwd "${nut_inplace_user}"`" \
+                    && AC_MSG_RESULT([Got from ${CONFPATH}/upsmon.conf]) \
+                    || nut_inplace_user=""])
+             done
+        ])
+
+        AS_IF([test -s "${CONFPATH}/upsmon.conf.sample" && test -z "${nut_inplace_user}"],
+            [for nut_inplace_user in \
+                `grep -E '^ *RUN_AS_USER' "${CONFPATH}/upsmon.conf.sample" | awk '{print $2}'`\
+                `grep -E '^ *##*RUN_AS_USER' "${CONFPATH}/upsmon.conf.sample" | awk '{print $2}'`\
+                `grep -E '^ *##*  *RUN_AS_USER' "${CONFPATH}/upsmon.conf.sample" | awk '{print $3}'`\
+            ; do \
+                AS_IF([test -z "${nut_inplace_user}"], [
+                    test -n "`getent passwd "${nut_inplace_user}"`" \
+                    && AC_MSG_RESULT([Got from ${CONFPATH}/upsmon.conf]) \
+                    || nut_inplace_user=""])
+             done
+        ])
+
+        dnl Note: with default short inplace and no prefix, this would look under
+        dnl /usr/local/ups/lib/pkgconfig which may be irrelevant for packaged setups
+
+        dnl TODO: Any more reasonable defaults? Pile them on here :)
+        for F in \
+            "${PKGCONFDIR}/libupsclient.pc" \
+            "${PKGCONFDIR}/libnutclient.pc" \
+            "${LIBDIR}/pkgconfig/libupsclient.pc" \
+            "${LIBDIR}/pkgconfig/libnutclient.pc" \
+        ; do
+            AS_IF([test -z "${nut_inplace_user}" && test -s "$F"],
+                [nut_inplace_user="`grep -E '^ *nutuser=' "$F" | sed 's,^ *nutuser=,,'`" \
+                && test -n "`getent passwd "${nut_inplace_user}"`" \
+                && AC_MSG_RESULT([Got from $F]) \
+                || nut_inplace_user=""
+            ])
+        done
+
+        AS_IF([test -z "${nut_inplace_user}"],
+            [AS_IF([test -n "`getent passwd nut`"], [nut_inplace_user="nut"],
+                [AS_IF([test -n "`getent passwd ups`"], [nut_inplace_user="ups"])])])
+
+        AS_IF([test -n "${nut_inplace_user}"], [
+            AC_MSG_RESULT([${nut_inplace_user}])
+            CONFIG_FLAGS_DEPLOYED="${CONFIG_FLAGS_DEPLOYED} --with-user='${nut_inplace_user}'"
+        ], [
+            AC_MSG_RESULT([not detected])
+        ])
+    ])
+
+    AS_IF([test x"${CONFIG_FLAGS_DEPLOYED}" != x], [
+        AC_MSG_NOTICE([Detected CONFIG_FLAGS of an already deployed NUT installation, using them for --inplace-runtime configuration (restarting script)])
+        dnl For multiply-specified flags with conflicting values, last mention wins:
+        AC_MSG_NOTICE([exec "$0" $CONFIG_FLAGS_DEPLOYED $CONFIG_FLAGS --disable-inplace-runtime])
+        AS_IF([test x"${NUT_VERSION_DEPLOYED}" != x], [
+            AC_MSG_NOTICE([NUT_VERSION_DEPLOYED: ${NUT_VERSION_DEPLOYED}])
+        ],[
+            NUT_VERSION_DEPLOYED="<reenter>"
+        ])
+        export NUT_VERSION_DEPLOYED
+        eval exec "$0" $CONFIG_FLAGS_DEPLOYED $CONFIG_FLAGS --disable-inplace-runtime
+    ],[
+        AC_MSG_NOTICE([No CONFIG_FLAGS were reported or discovered from existing NUT deployment (if any); restarting script for a clean run])
+        NUT_VERSION_DEPLOYED="<reenter>"
+        export NUT_VERSION_DEPLOYED
+        AC_MSG_NOTICE([exec "$0" $CONFIG_FLAGS --disable-inplace-runtime])
+        eval exec "$0" $CONFIG_FLAGS --disable-inplace-runtime
+    ])
+])
 
 dnl Define directory where LIBOBJS replacement functions are
 AC_CONFIG_LIBOBJ_DIR([common])
@@ -376,12 +560,21 @@ NUT_ARG_ENABLE([keep_nut_report_feature],
     [Request that we keep config.nut_report_feature.log (normally deleted by configure script after displaying)],
     [no])
 
-AS_IF([test x"${GITREV}" = x],
+AS_IF([test x"${NUT_SOURCE_GITREV}" = x],
     [NUT_REPORT([configured version], [${PACKAGE_VERSION}])],
-    [NUT_REPORT([configured version], [${PACKAGE_VERSION} (${GITREV})])])
+    [NUT_REPORT([configured version], [${PACKAGE_VERSION} (${NUT_SOURCE_GITREV})])])
 
 dnl Note: the compiler/pragma/attr methods below are custom for NUT codebase:
 NUT_COMPILER_FAMILY
+
+dnl Note: DO NOT AC_DEFINE the "FULL" items: they are generally multi-line.
+dnl NUT_REPORT_TARGET([CC_VERSION_FULL],  ["${CC_VERSION_FULL}"],  [Version and other details of C compiler])
+dnl NUT_REPORT_TARGET([CXX_VERSION_FULL], ["${CXX_VERSION_FULL}"], [Version and other details of C++ compiler])
+dnl NUT_REPORT_TARGET([CPP_VERSION_FULL], ["${CPP_VERSION_FULL}"], [Version and other details of C preprocessor])
+NUT_REPORT_TARGET([CC_VERSION],  ["${CC_VERSION}"],  [Compact version of C compiler])
+NUT_REPORT_TARGET([CXX_VERSION], ["${CXX_VERSION}"], [Compact version of C++ compiler])
+NUT_REPORT_TARGET([CPP_VERSION], ["${CPP_VERSION}"], [Compact version of C preprocessor])
+
 dnl Help find warning/error details in a wall of text (must be processed before NUT_COMPILER_FAMILY_FLAGS):
 NUT_ARG_ENABLE([Wcolor],
     [Request that compiler output is colorized (no = leave it up to compiler defaults)],
@@ -3082,9 +3275,8 @@ AS_IF([test x"$have_PKG_CONFIG" = xyes],
          AS_IF([test "${have_cppunit}" != "yes"],
             [AC_MSG_WARN([libcppunit not found - those C++ tests will not be built.])
              have_cppunit=no],
-            [AS_IF([test -n "$CXX"],
-                [AS_IF([$CXX --version 2>&1 | grep 'Free Software Foundation' > /dev/null],
-                    [CPPUNIT_NUT_CXXFLAGS="-g -O0"])])
+            [AS_IF([test "x$GXX" = xyes],
+             [CPPUNIT_NUT_CXXFLAGS="-g -O0"])
             ])
         ])
     ], [AC_MSG_WARN([pkg-config not found, can not look properly for libcppunit - those C++ tests will not be built.])
@@ -3518,52 +3710,6 @@ dnl ----------------------------------------------------------------------
 dnl Check the user and group to run as last, so we can use the paths configured
 dnl above as data sources for default values if building an in-place replacement
 
-AS_IF([test x"$nut_enable_inplace_runtime" = xyes], [
-    AC_MSG_CHECKING([for in-place replacement default group (better than '${RUN_AS_GROUP}')])
-    nut_inplace_group=""
-    AS_IF([test -d "${udevdir}/rules.d"],
-        [for F in "${udevdir}/rules.d"/*-nut-*.rules ; do
-            if test -s "$F" ; then
-                nut_inplace_group="`grep GROUP= "$F" | head -1 | sed 's,^.* GROUP="*\(.*\)"*.*$,\1,'`" \
-                && test -n "`getent group "${nut_inplace_group}"`" \
-                && AC_MSG_RESULT([Got from ${F}]) \
-                && break \
-                || nut_inplace_group=""
-            fi
-         done])
-    AS_IF([test -n "${nut_inplace_group}"],
-        [RUN_AS_GROUP="${nut_inplace_group}"],
-        [AS_IF([test -n "`getent group nut`"], [RUN_AS_GROUP="nut"],
-            [AS_IF([test -n "`getent group ups`"], [RUN_AS_GROUP="ups"])])])
-    AC_MSG_RESULT([${RUN_AS_GROUP}])
-
-    AC_MSG_CHECKING([for in-place replacement default user (better than '${RUN_AS_USER}')])
-    nut_inplace_user=""
-    AS_IF([test -s "${CONFPATH}/upsmon.conf"],
-        [nut_inplace_user="`grep -E '^ *RUN_AS_USER' "${CONFPATH}/upsmon.conf" | awk '{print $2}'`" \
-        && test -n "`getent passwd "${nut_inplace_user}"`" \
-        && AC_MSG_RESULT([Got from ${CONFPATH}/upsmon.conf]) \
-        || nut_inplace_user=""])
-    dnl Note: with default short inplace and no prefix, this would look under
-    dnl /usr/local/ups/lib/pkgconfig which may be irrelevant for packaged setups
-    AS_IF([test -z "${nut_inplace_user}" && test -s "${LIBDIR}/pkgconfig/libupsclient.pc"],
-        [nut_inplace_user="`grep -E '^ *nutuser=' "${LIBDIR}/pkgconfig/libupsclient.pc" | sed 's,^ *nutuser=,,'`" \
-        && test -n "`getent passwd "${nut_inplace_user}"`" \
-        && AC_MSG_RESULT([Got from ${LIBDIR}/pkgconfig/libupsclient.pc]) \
-        || nut_inplace_user=""])
-    AS_IF([test -z "${nut_inplace_user}" && test -s "${LIBDIR}/pkgconfig/libnutclient.pc"],
-        [nut_inplace_user="`grep -E '^ *nutuser=' "${LIBDIR}/pkgconfig/libnutclient.pc" | sed 's,^ *nutuser=,,'`" \
-        && test -n "`getent passwd "${nut_inplace_user}"`" \
-        && AC_MSG_RESULT([Got from ${LIBDIR}/pkgconfig/libnutclient.pc]) \
-        || nut_inplace_user=""])
-
-    AS_IF([test -n "${nut_inplace_user}"],
-        [RUN_AS_USER="${nut_inplace_user}"],
-        [AS_IF([test -n "`getent passwd nut`"], [RUN_AS_USER="nut"],
-            [AS_IF([test -n "`getent passwd ups`"], [RUN_AS_USER="ups"])])])
-    AC_MSG_RESULT([${RUN_AS_USER}])
-])
-
 AC_MSG_CHECKING(if requested user to run as)
 AC_ARG_WITH(user,
 	AS_HELP_STRING([--with-user=username], [user for programs started as root (${RUN_AS_USER})]),
@@ -3738,7 +3884,7 @@ AS_CASE(["${nut_enable_warnings}"],
             [AS_IF([test "${GCC}" = "yes"], [
                 AS_CASE(["${CFLAGS}"],
                     [*89*|*90*|*ansi*], [nut_enable_warnings="gcc-minimal"],
-                    [AS_CASE(["`$CC --version | grep -i gcc`"],
+                    [AS_CASE(["$CC_VERSION"],
                         [*" "1.*|*" "2.*|3.*|*" "4.0*|*" "4.1*|*" "4.2*|*" "4.3*], [
                             AC_MSG_WARN([Very old GCC in use, disabling warnings])
                             dnl #AS_IF([test x"${nut_enable_Werror}" = xauto], [nut_enable_Werror="no"])

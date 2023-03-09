@@ -82,6 +82,7 @@ usb:v0592p0004*
 # Delta UPS
 usb:v05DDp041B*
 usb:v05DDpA011*
+usb:v05DDpA0A0*
  UPOWER_BATTERY_TYPE=ups
  UPOWER_VENDOR=Delta UPS
 

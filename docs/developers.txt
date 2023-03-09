@@ -542,6 +542,12 @@ if (condition) {
 }
 -------------------------------------------------------------------------------
 
+NOTE: Earlier revisions of coding style might suggest avoiding braces if just
+one line is added as condition/loop/etc. handling code. Current approach is to
+welcome them even for single lines: on one hand, this confirms the intention
+that only this line is the conditional code; on another, this minimizes the
+context differences for later code comparisons, relocation, refactoring, etc.
+
 Un-used variables and function arguments
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

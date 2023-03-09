@@ -110,6 +110,8 @@ pid_t get_max_pid_t()
 	int	nut_log_level = 0;
 	static	int	upslog_flags = UPSLOG_STDERR;
 
+	static struct timeval	upslog_start = { 0, 0 };
+
 static void xbit_set(int *val, int flag)
 {
 	*val |= flag;
@@ -286,6 +288,12 @@ void become_user(struct passwd *pw)
 	/* if we can't switch users, then don't even try */
 	intmax_t initial_uid = getuid();
 	intmax_t initial_euid = geteuid();
+
+	if (!pw) {
+		upsdebugx(1, "Can not become_user(<null>), skipped");
+		return;
+	}
+
 	if ((initial_euid != 0) && (initial_uid != 0)) {
 		intmax_t initial_gid = getgid();
 		if (initial_euid == (intmax_t)pw->pw_uid
@@ -319,9 +327,8 @@ void become_user(struct passwd *pw)
 	upsdebugx(1, "Succeeded to become_user(%s): now UID=%jd GID=%jd",
 		pw->pw_name, (intmax_t)getuid(), (intmax_t)getgid());
 #else
-	NUT_UNUSED_VARIABLE(pw);
-
-	upsdebugx(1, "Can not become_user(%s): not implemented on this platform", pw->pw_name);
+	upsdebugx(1, "Can not become_user(%s): not implemented on this platform",
+		pw ? pw->pw_name : "<null>");
 #endif
 }
 
@@ -944,18 +951,79 @@ void nut_report_config_flags(void)
 	 * Depending on amount of configuration tunables involved by a particular
 	 * build of NUT, the string can be quite long (over 1KB).
 	 */
+	const char *acinit_ver = NULL;
+	/* Pass these as variables to avoid warning about never reaching one
+	 * of compiled codepaths: */
+	const char *compiler_ver = CC_VERSION;
+	const char *config_flags = CONFIG_FLAGS;
+	struct timeval		now;
+
 	if (nut_debug_level < 1)
 		return;
 
+	/* Only report git revision if NUT_VERSION_MACRO in nut_version.h aka
+	 * UPS_VERSION here is remarkably different from PACKAGE_VERSION from
+	 * configure.ac AC_INIT() -- which may be e.g. "2.8.0.1" although some
+	 * distros, especially embedders, tend to place their product IDs here).
+	 * The macro may be that fixed version or refer to git source revision,
+	 * as decided when generating nut_version.h (and if it was re-generated
+	 * in case of rebuilds while developers are locally iterating -- this
+	 * may be disabled for faster local iterations at a cost of a little lie).
+	 */
+	if (PACKAGE_VERSION && UPS_VERSION &&
+		(strlen(UPS_VERSION) < 12 || !strstr(UPS_VERSION, PACKAGE_VERSION))
+	) {
+		/* If UPS_VERSION is too short (so likely a static string
+		 * from configure.ac AC_INIT() -- although some distros,
+		 * especially embedders, tend to place their product IDs here),
+		 * or if PACKAGE_VERSION *is NOT* a substring of it: */
+		acinit_ver = PACKAGE_VERSION;
+	}
+
+	/* NOTE: If changing wording here, keep in sync with configure.ac logic
+	 * looking for CONFIG_FLAGS_DEPLOYED via "configured with flags:" string!
+	 */
+
+	gettimeofday(&now, NULL);
+
+	if (upslog_start.tv_sec == 0) {
+		upslog_start = now;
+	}
+
+	if (upslog_start.tv_usec > now.tv_usec) {
+		now.tv_usec += 1000000;
+		now.tv_sec -= 1;
+	}
+
 	if (xbit_test(upslog_flags, UPSLOG_STDERR))
-		fprintf(stderr, "Network UPS Tools version %s configured with flags: %s\n",
-			UPS_VERSION, CONFIG_FLAGS);
+		fprintf(stderr, "%4.0f.%06ld\t[D1] Network UPS Tools version %s%s%s%s%s%s%s %s%s\n",
+			difftime(now.tv_sec, upslog_start.tv_sec),
+			(long)(now.tv_usec - upslog_start.tv_usec),
+			UPS_VERSION,
+			(acinit_ver ? " (release/snapshot of " : ""),
+			(acinit_ver ? acinit_ver : ""),
+			(acinit_ver ? ")" : ""),
+			(compiler_ver && *compiler_ver != '\0' ? " built with " : ""),
+			(compiler_ver && *compiler_ver != '\0' ? compiler_ver : ""),
+			(compiler_ver && *compiler_ver != '\0' ? " and" : ""),
+			(config_flags && *config_flags != '\0' ? "configured with flags: " : "configured all by default guesswork"),
+			(config_flags && *config_flags != '\0' ? config_flags : "")
+		);
 
 	/* NOTE: May be ignored or truncated by receiver if that syslog server
 	 * (and/or OS sender) does not accept messages of such length */
 	if (xbit_test(upslog_flags, UPSLOG_SYSLOG))
-		syslog(LOG_DEBUG, "Network UPS Tools version %s configured with flags: %s",
-			UPS_VERSION, CONFIG_FLAGS);
+		syslog(LOG_DEBUG, "Network UPS Tools version %s%s%s%s%s%s%s %s%s",
+			UPS_VERSION,
+			(acinit_ver ? " (release/snapshot of " : ""),
+			(acinit_ver ? acinit_ver : ""),
+			(acinit_ver ? ")" : ""),
+			(compiler_ver && *compiler_ver != '\0' ? " built with " : ""),
+			(compiler_ver && *compiler_ver != '\0' ? compiler_ver : ""),
+			(compiler_ver && *compiler_ver != '\0' ? " and" : ""),
+			(config_flags && *config_flags != '\0' ? "configured with flags: " : "configured all by default guesswork"),
+			(config_flags && *config_flags != '\0' ? config_flags : "")
+		);
 }
 
 static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
@@ -1012,21 +1080,22 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 	}
 
 	if (nut_debug_level > 0) {
-		static struct timeval	start = { 0, 0 };
 		struct timeval		now;
 
 		gettimeofday(&now, NULL);
 
-		if (start.tv_sec == 0) {
-			start = now;
+		if (upslog_start.tv_sec == 0) {
+			upslog_start = now;
 		}
 
-		if (start.tv_usec > now.tv_usec) {
+		if (upslog_start.tv_usec > now.tv_usec) {
 			now.tv_usec += 1000000;
 			now.tv_sec -= 1;
 		}
 
-		fprintf(stderr, "%4.0f.%06ld\t", difftime(now.tv_sec, start.tv_sec), (long)(now.tv_usec - start.tv_usec));
+		fprintf(stderr, "%4.0f.%06ld\t",
+			difftime(now.tv_sec, upslog_start.tv_sec),
+			(long)(now.tv_usec - upslog_start.tv_usec));
 	}
 
 	if (xbit_test(upslog_flags, UPSLOG_STDERR))
@@ -1806,6 +1875,12 @@ char * get_libname(const char* base_libname)
 	/* TODO: Need a reliable cross-platform way to get the full path
 	 * of current executable -- possibly stash it when starting NUT
 	 * programs... consider some way for `nut-scanner` too */
+	if (!libname_path) {
+		/* First check near the EXE (if executing it from another
+		 * working directory) */
+		libname_path = get_libname_in_dir(base_libname, base_libname_length, getfullpath(NULL), counter++);
+	}
+
 # ifdef PATH_LIB
 	if (!libname_path) {
 		libname_path = get_libname_in_dir(base_libname, base_libname_length, getfullpath(PATH_LIB), counter++);
@@ -1814,7 +1889,7 @@ char * get_libname(const char* base_libname)
 
 	if (!libname_path) {
 		/* Resolve "lib" dir near the one with current executable ("bin" or "sbin") */
-		libname_path = get_libname_in_dir(base_libname, base_libname_length, getfullpath("../lib"), counter++);
+		libname_path = get_libname_in_dir(base_libname, base_libname_length, getfullpath("/../lib"), counter++);
 	}
 #endif  /* WIN32 so far */
 
