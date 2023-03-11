@@ -139,6 +139,13 @@ https://github.com/networkupstools/nut/milestone/8
  - The `bestfortress` driver shutdown handling was fixed to use a non-trivial
    default timeout [#1820]
 
+ - GPIO drivers [#1855]:
+   * Added a new category of drivers, using GPIO interface to locally connected
+     devices (currently limited to Linux libgpiod, but its architecture was
+     designed to later support more OSes with their equivalents - PRs welcome)
+   * `generic_gpio_libgpiod` driver using `libgpiod` backend was added
+     (defaults to be required on Linux, optional on other platforms)
+
  - Added support for `make install` of PyNUT module and NUT-Monitor desktop
    application [#1462, #1504]
 

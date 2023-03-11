@@ -69,6 +69,10 @@ Changes from 2.8.0 to 2.8.1
   serial drivers in respective Makefile and configure script options - this
   may impact packaging decisions on some distributions going forward [#1446]
 
+- GPIO category of drivers was added (`--with-gpio` configure script option) -
+  this may impact packaging decisions on some (currently Linux) distributions
+  going forward [#1855]
+
 - An explicit `configure --with-nut-scanner` toggle was added, specifically
   so that build environments requesting `--with-all` but lacking `libltdl`
   would abort and require the packager either to install the dependency
