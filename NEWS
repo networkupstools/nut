@@ -141,8 +141,8 @@ https://github.com/networkupstools/nut/milestone/8
 
  - GPIO drivers [#1855]:
    * Added a new category of drivers, using GPIO interface to locally connected
-     devices (currently limited to Linux libgpiod, but its architecture was
-     designed to later support more OSes with their equivalents - PRs welcome)
+     devices (currently limited to 2018+ Linux libgpiod, but its architecture
+     was designed to support more OSes with their equivalents - PRs welcome)
    * `generic_gpio_libgpiod` driver using `libgpiod` backend was added
      (defaults to be required on Linux, optional on other platforms)
 
