@@ -12,6 +12,7 @@ if test -z "${nut_have_gpio_seen}"; then
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"
 	LIBS_ORIG="${LIBS}"
+	nut_gpio_lib=""
 
 	AS_IF([test x"$have_PKG_CONFIG" = xyes],
 		[dnl See which version of the gpiod library (if any) is installed
@@ -21,6 +22,8 @@ if test -z "${nut_have_gpio_seen}"; then
 		 GPIO_VERSION="`$PKG_CONFIG --silence-errors --modversion libgpiod 2>/dev/null`"
 		 if test "$?" != "0" -o -z "${GPIO_VERSION}"; then
 		    GPIO_VERSION="none"
+		 else
+		    nut_gpio_lib="libgpiod"
 		 fi
 		 AC_MSG_RESULT(${GPIO_VERSION} found)
 		],
@@ -71,11 +74,13 @@ if test -z "${nut_have_gpio_seen}"; then
 
 	dnl check if gpiod is usable
 	AC_CHECK_HEADERS(gpiod.h, [nut_have_gpio=yes], [nut_have_gpio=no], [AC_INCLUDES_DEFAULT])
-	AC_CHECK_FUNCS(gpiod_chip_open_by_name gpiod_chip_close, [], [nut_have_gpio=no])
+	AC_CHECK_FUNCS(gpiod_chip_open_by_name gpiod_chip_close, [nut_gpio_lib="libgpiod"], [nut_have_gpio=no])
 
 	if test "${nut_have_gpio}" = "yes"; then
 		LIBGPIO_CFLAGS="${CFLAGS}"
 		LIBGPIO_LIBS="${LIBS}"
+	else
+		nut_gpio_lib=""
 	fi
 
 	dnl restore original CFLAGS and LIBS

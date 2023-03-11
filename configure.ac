@@ -1502,7 +1502,6 @@ NUT_ARG_WITH([modbus], [build and install modbus drivers], [auto])
 NUT_CHECK_LIBMODBUS
 
 NUT_ARG_WITH([gpio], [build and install GPIO driver], [auto])
-nut_gpio_lib=""
 NUT_CHECK_LIBGPIO
 
 NUT_ARG_WITH([avahi], [build and install Avahi support], [auto])
@@ -1749,10 +1748,13 @@ dnl AM_CONDITIONAL(WITH_OPENIPMI, test "${nut_with_openipmi}" = "yes")
 dnl ----------------------------------------------------------------------
 dnl Check for with-gpio
 
+if test "${nut_with_gpio}" = "yes" -a "${nut_have_gpio}" != "yes"; then
+   AC_MSG_ERROR([No supported GPIO library was found, required for GPIO driver])
+fi
 
 dnl ${nut_with_gpio}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_gpio}" != "yes"; then
-      nut_with_gpio="no"
+if test "${nut_with_gpio}" != "no"; then
+   nut_with_gpio="${nut_have_gpio}"
 fi
 
 NUT_REPORT_FEATURE([build GPIO driver], [${nut_with_gpio}], [${nut_gpio_lib}],
