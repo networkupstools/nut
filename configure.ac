@@ -1501,6 +1501,10 @@ NUT_CHECK_LIBPOWERMAN
 NUT_ARG_WITH([modbus], [build and install modbus drivers], [auto])
 NUT_CHECK_LIBMODBUS
 
+NUT_ARG_WITH([gpio], [build and install GPIO driver], [auto])
+nut_gpio_lib=""
+NUT_CHECK_LIBGPIO
+
 NUT_ARG_WITH([avahi], [build and install Avahi support], [auto])
 NUT_CHECK_LIBAVAHI
 
@@ -1745,11 +1749,6 @@ dnl AM_CONDITIONAL(WITH_OPENIPMI, test "${nut_with_openipmi}" = "yes")
 dnl ----------------------------------------------------------------------
 dnl Check for with-gpio
 
-nut_gpio_lib=""
-
-NUT_ARG_WITH([gpio], [build and install GPIO driver], [auto])
-
-NUT_CHECK_LIBGPIO
 
 dnl ${nut_with_gpio}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_gpio}" != "yes"; then
