@@ -1170,9 +1170,16 @@ AC_ARG_WITH(drivers,
 		if test -z "${with_powerman}"; then with_powerman="yes"; fi
 		if test -z "${with_modbus}"; then with_modbus="yes"; fi
 		if test -z "${with_ipmi}"; then with_ipmi="yes"; fi
-		if test -z "${with_gpio}"; then with_gpio="yes"; fi
 
 		dnl Platform-dependent snowflakes that are required or auto:
+		if test -z "${with_gpio}"; then
+			dnl NOTE: Currently we only support a Linux libgpiod
+			dnl backend for GPIO; eventually there could be more.
+			case ${target_os} in
+				linux*) with_gpio="yes";;
+				*) with_gpio="auto";;
+			esac
+		fi
 		if test -z "${with_linux_i2c}"; then
 			case ${target_os} in
 				linux*) with_linux_i2c="yes";;
@@ -1378,9 +1385,17 @@ AC_ARG_WITH(all,
 		if test -z "${with_powerman}"; then with_powerman="${withval}"; fi
 		if test -z "${with_modbus}"; then with_modbus="${withval}"; fi
 		if test -z "${with_ipmi}"; then with_ipmi="${withval}"; fi
-		if test -z "${with_gpio}"; then with_gpio="${withval}"; fi
 
 		dnl Platform-dependent snowflakes that are required or auto:
+		if test -z "${with_gpio}"; then
+			dnl NOTE: Currently we only support a Linux libgpiod
+			dnl backend for GPIO; eventually there could be more.
+			with_gpio="${withval}"
+			case ${target_os} in
+				linux*) ;;
+				*) test x"${withval}" = xno || with_gpio="auto" ;;
+			esac
+		fi
 		if test -z "${with_linux_i2c}"; then
 			with_linux_i2c="${withval}"
 			case ${target_os} in
