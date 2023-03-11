@@ -176,7 +176,8 @@ GPIO bus drivers
 
 Build and install GPIO drivers (default: auto-detect)
 
-Note that on Linux you need to install libgpiod development package or files.
+Note that on Linux you need to install libgpiod development package or files,
+although usually it is part of linux-libc-dev or similar.
 Other platforms are not currently supported, but may be in the future.
 
 Modbus drivers
