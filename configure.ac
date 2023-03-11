@@ -1176,7 +1176,7 @@ AC_ARG_WITH(drivers,
 			dnl NOTE: Currently we only support a Linux libgpiod
 			dnl backend for GPIO; eventually there could be more.
 			case ${target_os} in
-				linux*) with_gpio="yes";;
+				linux*) with_gpio="auto";; dnl # TODO: Detect 2018+ distros?
 				*) with_gpio="auto";;
 			esac
 		fi
@@ -1371,7 +1371,7 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, linux_i2c (on Linux), macosx-ups (on MacOS), cgi, dev, avahi, nut-scanner, pynut]),
+	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, gpio (currently on Linux released after ~2018), linux_i2c (on Linux), macosx-ups (on MacOS), cgi, dev, avahi, nut-scanner, pynut]),
 [
 	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
