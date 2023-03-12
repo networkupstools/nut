@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3108 utf-8
+personal_ws-1.1 en 3114 utf-8
 AAS
 ABI
 ACFAIL
@@ -768,6 +768,7 @@ Nash
 NaturalDocs
 Necedah
 NetBSD
+NetBeans
 NetPro
 NetServer
 NetUps
@@ -782,6 +783,7 @@ Nom
 NomDCV
 NomVIn
 NomVOut
+NotePad
 Novell
 NrLoBatt
 NutException
@@ -1328,6 +1330,7 @@ VMM
 VMware
 VNC
 VPATH
+VSCode
 VSN
 VTIME
 VV
@@ -1925,6 +1928,7 @@ gcc
 gcpp
 gd
 gd's
+gdb
 gdlib
 ge
 genericsups
@@ -2251,6 +2255,7 @@ maxvalue
 maxvi
 maxvo
 mc
+mcedit
 md
 mdadm
 mecer
@@ -2332,6 +2337,7 @@ nLogic
 nabcd
 nameserver
 namespace
+nano
 nanosleep
 nashkaminski
 natively
