@@ -50,22 +50,27 @@ hidparser.c: $(top_srcdir)/drivers/hidparser.c
 
 if WITH_USB
 TESTS += getvaluetest
-endif
 
 getvaluetest_SOURCES = getvaluetest.c
 nodist_getvaluetest_SOURCES = hidparser.c
 # Pull the right include path for chosen libusb version:
 getvaluetest_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
 getvaluetest_LDADD = $(top_builddir)/common/libcommon.la
+else
+EXTRA_DIST += getvaluetest.c hidparser.c
+endif
 
 if WITH_GPIO
 TESTS += gpiotest
-endif
 
 gpiotest_SOURCES = generic_gpio_utest.c generic_gpio_liblocal.c
 nodist_gpiotest_SOURCES = $(top_srcdir)/drivers/generic_gpio_libgpiod.c $(top_srcdir)/drivers/generic_gpio_common.c
 gpiotest_LDADD = $(top_builddir)/drivers/libdummy_mockdrv.la
 gpiotest_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
+else
+EXTRA_DIST += generic_gpio_utest.c generic_gpio_liblocal.c
+endif
+
 EXTRA_DIST += generic_gpio_utest.h generic_gpio_test.txt
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
