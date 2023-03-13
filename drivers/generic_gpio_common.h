@@ -61,6 +61,8 @@ typedef struct gpioups_t {
     struct rulesint_t **rules;
 } gpioups;
 
+extern struct gpioups_t *gpioupsfd;
+
 void gpio_open(struct gpioups_t *gpioupsfd);
 void gpio_get_lines_states(struct gpioups_t *gpioupsfd);
 void gpio_close(struct gpioups_t *gpioupsfd);

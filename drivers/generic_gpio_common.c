@@ -25,7 +25,7 @@
 #include "attribute.h"
 #include "generic_gpio_common.h"
 
-struct gpioups_t *gpioupsfd=(struct gpioups_t *)NULL;
+struct gpioups_t *gpioupsfd = (struct gpioups_t *)NULL;
 
 static struct gpioups_t *generic_gpio_open(const char *chipName);
 static void generic_gpio_close(struct gpioups_t *gpioupsfd);
