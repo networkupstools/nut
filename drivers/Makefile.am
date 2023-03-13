@@ -369,6 +369,14 @@ libdummy_la_LDFLAGS = -no-undefined -static
 libdummy_serial_la_SOURCES = serial.c
 libdummy_serial_la_LDFLAGS = -no-undefined -static
 
+# The libdummy_mockdrv.la is used for unit-tests to mock a driver
+# with near-production codebase but without its standard main().
+# Otherwise, also not meant to be installed.
+EXTRA_LTLIBRARIES += libdummy_mockdrv.la
+libdummy_mockdrv_la_SOURCES = main.c dstate.c
+libdummy_mockdrv_la_CFLAGS = $(AM_CFLAGS) -DDRIVERS_MAIN_WITHOUT_MAIN=1
+libdummy_mockdrv_la_LDFLAGS = -static $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la
+
 dummy:
 
 CLEANFILES = $(EXTRA_LTLIBRARIES) $(EXTRA_PROGRAMS)

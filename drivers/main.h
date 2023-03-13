@@ -82,4 +82,13 @@ typedef struct upsdrv_info_s {
 /* public driver information from the driver file */
 extern upsdrv_info_t	upsdrv_info;
 
+/* functions and data possibly used via libdummy_mockdrv.la for unit-tests */
+#ifdef DRIVERS_MAIN_WITHOUT_MAIN
+extern vartab_t *vartab_h;
+void dparam_setinfo(const char *var, const char *val);
+void storeval(const char *var, char *val);
+void vartab_free(void);
+void setup_signals(void);
+#endif /* DRIVERS_MAIN_WITHOUT_MAIN */
+
 #endif /* NUT_MAIN_H_SEEN */
