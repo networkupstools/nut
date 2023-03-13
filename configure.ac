@@ -1507,6 +1507,16 @@ NUT_CHECK_LIBGPIO
 NUT_ARG_WITH([avahi], [build and install Avahi support], [auto])
 NUT_CHECK_LIBAVAHI
 
+NUT_ARG_WITH([ipmi], [build and install IPMI PSU driver], [auto])
+NUT_ARG_WITH([freeipmi], [enable IPMI support using FreeIPMI], [auto])
+dnl NUT_ARG_WITH([openipmi], [enable IPMI support using OpenIPMI], [auto])
+
+dnl Platform-dependent drivers, currently their detection code is directly
+dnl spelled out in configure.ac
+NUT_ARG_WITH([macosx_ups], [build and install Mac OS X Power Sources meta-driver], [auto])
+
+NUT_ARG_WITH([linux_i2c], [build and install i2c drivers], [auto])
+
 dnl A Python GUI client application for the sysadmin desktop
 dnl (not necessarily on the NUT server itself):
 NUT_ARG_WITH([nut_monitor], [install the NUT-Monitor GUI files], [auto])
@@ -1685,10 +1695,6 @@ dnl if both are available (since it is the only one supported ATM!!)
 
 nut_ipmi_lib=""
 
-NUT_ARG_WITH([ipmi], [build and install IPMI PSU driver], [auto])
-NUT_ARG_WITH([freeipmi], [enable IPMI support using FreeIPMI], [auto])
-dnl NUT_ARG_WITH([openipmi], [enable IPMI support using OpenIPMI], [auto])
-
 dnl ${nut_with_ipmi}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_ipmi}" != "no"; then
    dnl check if FreeIPMI (and maybe later OpenIPMI) was explicitly requested
@@ -1766,7 +1772,6 @@ dnl the internal USB UPS driver.
 dnl
 dnl FIXME: be slightly more clever here:
 
-NUT_ARG_WITH([macosx_ups], [build and install Mac OS X Power Sources meta-driver], [auto])
 if test "${nut_with_macosx_ups}" != no; then
    if test -d /System/Library/Frameworks/IOKit.framework/ ; then
       nut_with_macosx_ups="yes"
@@ -1785,7 +1790,6 @@ NUT_REPORT_FEATURE([build Mac OS X meta-driver],
 dnl ----------------------------------------------------------------------
 dnl checks related to --with_linux_i2c
 dnl Check for i2c header on Linux, used for ASEM UPS driver
-NUT_ARG_WITH([linux_i2c], [build and install i2c drivers], [auto])
 LIBI2C_LIBS=""
 if test "${nut_with_linux_i2c}" != no; then
     case ${target_os} in
