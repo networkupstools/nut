@@ -63,8 +63,16 @@ endif
 if WITH_GPIO
 TESTS += gpiotest
 
+# NOTE: Not using "$<" due to a legacy Sun/illumos dmake bug with resolver
+# of dynamic vars, see e.g. https://man.omnios.org/man1/make#BUGS
+generic_gpio_libgpiod.c: $(top_srcdir)/drivers/generic_gpio_libgpiod.c
+	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/generic_gpio_libgpiod.c" "$@"
+
+generic_gpio_common.c: $(top_srcdir)/drivers/generic_gpio_common.c
+	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/generic_gpio_common.c" "$@"
+
 gpiotest_SOURCES = generic_gpio_utest.c generic_gpio_liblocal.c
-nodist_gpiotest_SOURCES = $(top_srcdir)/drivers/generic_gpio_libgpiod.c $(top_srcdir)/drivers/generic_gpio_common.c
+nodist_gpiotest_SOURCES = generic_gpio_libgpiod.c generic_gpio_common.c
 gpiotest_LDADD = $(top_builddir)/drivers/libdummy_mockdrv.la
 gpiotest_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
 else
