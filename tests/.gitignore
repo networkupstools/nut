@@ -4,6 +4,9 @@
 /cppnit
 /cppnit.log
 /cppnit.trs
+/gpiotest
+/gpiotest.log
+/gpiotest.trs
 /test-suite.log
 /selftest-rw/*
 /nutlogtest-nofail.sh
