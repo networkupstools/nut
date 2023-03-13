@@ -33,11 +33,7 @@
 #include <stdlib.h>
 #include <setjmp.h>
 
-#define main ignore
-int ignore(int argc, char **argv);
-#include "main.c"
-#undef main
-#include "dstate.c"
+#include "dstate.h"
 
 extern struct gpioups_t *gpioupsfd;
 

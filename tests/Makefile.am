@@ -63,11 +63,12 @@ TESTS += gpiotest
 endif
 
 gpiotest_SOURCES = generic_gpio_utest.c
-gpiotest_LDADD = $(top_builddir)/common/libcommon.la
-gpiotest_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tests
+gpiotest_LDADD = $(top_builddir)/common/libcommon.la $(top_builddir)/drivers/libdummy_mockdrv.la
+gpiotest_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
 EXTRA_DIST += generic_gpio_liblocal.c generic_gpio_utest.h generic_gpio_test.txt
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
+$(top_builddir)/drivers/libdummy_mockdrv.la \
 $(top_builddir)/common/libcommon.la: dummy
 	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
