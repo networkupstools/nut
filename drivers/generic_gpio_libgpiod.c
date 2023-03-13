@@ -69,15 +69,15 @@ static void reserve_lines_libgpiod(struct gpioups_t *gpioupsfd, int inner);
  * reserve GPIO lines as per run options and inner parameter: do reservation once
  * or per each status read
  */
-static void reserve_lines_libgpiod(struct gpioups_t *gpioupsfd, int inner) {
-	struct libgpiod_data_t *libgpiod_data = (struct libgpiod_data_t *)(gpioupsfd->lib_data);
-	upsdebugx(LOG_DEBUG, "reserve_lines_libgpiod runOptions 0x%x, inner %d", gpioupsfd->runOptions, inner);
+static void reserve_lines_libgpiod(struct gpioups_t *gpioupsfdlocal, int inner) {
+	struct libgpiod_data_t *libgpiod_data = (struct libgpiod_data_t *)(gpioupsfdlocal->lib_data);
+	upsdebugx(LOG_DEBUG, "reserve_lines_libgpiod runOptions 0x%x, inner %d", gpioupsfdlocal->runOptions, inner);
 
-	if(((gpioupsfd->runOptions&ROPT_REQRES) != 0) == inner) {
+	if(((gpioupsfdlocal->runOptions&ROPT_REQRES) != 0) == inner) {
 		struct gpiod_line_request_config config;
 		int gpioRc;
 		config.consumer=upsdrv_info.name;
-		if(gpioupsfd->runOptions&ROPT_EVMODE) {
+		if(gpioupsfdlocal->runOptions&ROPT_EVMODE) {
 			config.request_type = GPIOD_LINE_REQUEST_EVENT_BOTH_EDGES;
 			upsdebugx(LOG_DEBUG, "reserve_lines_libgpiod GPIOD_LINE_REQUEST_EVENT_BOTH_EDGES");
 		} else {
@@ -104,37 +104,37 @@ static void reserve_lines_libgpiod(struct gpioups_t *gpioupsfd, int inner) {
  * allocate memeory for libary, open gpiochip
  * and check lines numbers validity - consistency with h/w chip
  */
-void gpio_open(struct gpioups_t *gpioupsfd) {
+void gpio_open(struct gpioups_t *gpioupsfdlocal) {
 	struct libgpiod_data_t *libgpiod_data = xcalloc(sizeof(struct libgpiod_data_t),1);
-	gpioupsfd->lib_data = libgpiod_data;
+	gpioupsfdlocal->lib_data = libgpiod_data;
 
-	libgpiod_data->gpioChipHandle = gpiod_chip_open_by_name(gpioupsfd->chipName);
+	libgpiod_data->gpioChipHandle = gpiod_chip_open_by_name(gpioupsfdlocal->chipName);
 	if(!libgpiod_data->gpioChipHandle)
 		fatal_with_errno(
 			LOG_ERR,
 			"Could not open GPIO chip [%s], check chips presence and/or access rights",
-			gpioupsfd->chipName
+			gpioupsfdlocal->chipName
 		);
 	else {
 		int gpioRc;
-		upslogx(LOG_NOTICE, "GPIO chip [%s] opened", gpioupsfd->chipName);
-		gpioupsfd->chipLinesCount = gpiod_chip_num_lines(libgpiod_data->gpioChipHandle);
-		upslogx(LOG_NOTICE, "Find %d lines on GPIO chip [%s]", gpioupsfd->chipLinesCount, gpioupsfd->chipName);
-		if(gpioupsfd->chipLinesCount<gpioupsfd->upsMaxLine) {
+		upslogx(LOG_NOTICE, "GPIO chip [%s] opened", gpioupsfdlocal->chipName);
+		gpioupsfdlocal->chipLinesCount = gpiod_chip_num_lines(libgpiod_data->gpioChipHandle);
+		upslogx(LOG_NOTICE, "Find %d lines on GPIO chip [%s]", gpioupsfdlocal->chipLinesCount, gpioupsfdlocal->chipName);
+		if(gpioupsfdlocal->chipLinesCount<gpioupsfdlocal->upsMaxLine) {
 			gpiod_chip_close(libgpiod_data->gpioChipHandle);
 			fatalx(
 				LOG_ERR,
 				"GPIO chip lines count %d smaller than UPS line number used (%d)",
-				gpioupsfd->chipLinesCount,
-				gpioupsfd->upsMaxLine
+				gpioupsfdlocal->chipLinesCount,
+				gpioupsfdlocal->upsMaxLine
 			);
 		}
 		gpiod_line_bulk_init(&libgpiod_data->gpioLines);
 		gpiod_line_bulk_init(&libgpiod_data->gpioEventLines);
 		gpioRc = gpiod_chip_get_lines(
 			libgpiod_data->gpioChipHandle,
-			(unsigned int *)gpioupsfd->upsLines,
-			gpioupsfd->upsLinesCount,
+			(unsigned int *)gpioupsfdlocal->upsLines,
+			gpioupsfdlocal->upsLinesCount,
 			&libgpiod_data->gpioLines
 		);
 		if(gpioRc)
@@ -144,22 +144,22 @@ void gpio_open(struct gpioups_t *gpioupsfd) {
 				gpioRc
 			);
 		upsdebugx(LOG_DEBUG, "GPIO gpiod_chip_get_lines return code %d", gpioRc);
-		reserve_lines_libgpiod(gpioupsfd, 0);
+		reserve_lines_libgpiod(gpioupsfdlocal, 0);
 	}
 }
 
 /*
  * close gpiochip  and release allocated memory
  */
-void gpio_close(struct gpioups_t *gpioupsfd) {
-	if(gpioupsfd) {
-		struct libgpiod_data_t *libgpiod_data = (struct libgpiod_data_t *)(gpioupsfd->lib_data);
+void gpio_close(struct gpioups_t *gpioupsfdlocal) {
+	if(gpioupsfdlocal) {
+		struct libgpiod_data_t *libgpiod_data = (struct libgpiod_data_t *)(gpioupsfdlocal->lib_data);
 		if(libgpiod_data) {
 			if(libgpiod_data->gpioChipHandle) {
 				gpiod_chip_close(libgpiod_data->gpioChipHandle);
 			}
-			free(gpioupsfd->lib_data);
-			gpioupsfd->lib_data = NULL;
+			free(gpioupsfdlocal->lib_data);
+			gpioupsfdlocal->lib_data = NULL;
 		}
 	}
 }
@@ -167,31 +167,31 @@ void gpio_close(struct gpioups_t *gpioupsfd) {
 /*
  * get GPIO line states for all needed lines
  */
-void gpio_get_lines_states(struct gpioups_t *gpioupsfd) {
+void gpio_get_lines_states(struct gpioups_t *gpioupsfdlocal) {
 	int i;
 	int gpioRc;
-	struct libgpiod_data_t *libgpiod_data = (struct libgpiod_data_t *)(gpioupsfd->lib_data);
+	struct libgpiod_data_t *libgpiod_data = (struct libgpiod_data_t *)(gpioupsfdlocal->lib_data);
 
-	reserve_lines_libgpiod(gpioupsfd, 1);
-	if(gpioupsfd->runOptions&ROPT_EVMODE) {
+	reserve_lines_libgpiod(gpioupsfdlocal, 1);
+	if(gpioupsfdlocal->runOptions&ROPT_EVMODE) {
 		struct timespec timeoutLong = {1,0};
 		struct gpiod_line_event event;
 		int monRes;
 		upsdebugx(
 			LOG_DEBUG,
 			"gpio_get_lines_states_libgpiod initial %d, timeout %ld",
-			gpioupsfd->initial,
+			gpioupsfdlocal->initial,
 			timeoutLong.tv_sec
 		);
-		if(gpioupsfd->initial) {
+		if(gpioupsfdlocal->initial) {
 			timeoutLong.tv_sec = 35;
 		} else {
-			gpioupsfd->initial = 1;
+			gpioupsfdlocal->initial = 1;
 		}
 		upsdebugx(
 			LOG_DEBUG,
 			"gpio_get_lines_states_libgpiod initial %d, timeout %ld",
-			gpioupsfd->initial,
+			gpioupsfdlocal->initial,
 			timeoutLong.tv_sec
 		);
 		gpiod_line_bulk_init(&libgpiod_data->gpioEventLines);
@@ -208,11 +208,11 @@ void gpio_get_lines_states(struct gpioups_t *gpioupsfd) {
 		);
 		if(monRes==1) {
 			int num_lines = (int)gpiod_line_bulk_num_lines(&libgpiod_data->gpioEventLines);
-			int i;
-			for(i=0; i<num_lines; i++) {
+			int j;
+			for(j=0; j<num_lines; j++) {
 				struct gpiod_line *eLine = gpiod_line_bulk_get_line(
 					&libgpiod_data->gpioEventLines,
-					i
+					j
 				);
 				int eventRc=gpiod_line_event_read(eLine, &event);
 				unsigned int lineOffset = gpiod_line_offset(eLine);
@@ -227,12 +227,12 @@ void gpio_get_lines_states(struct gpioups_t *gpioupsfd) {
 			}
 		}
 	}
-	for(i=0; i < gpioupsfd->upsLinesCount; i++) {
-		gpioupsfd->upsLinesStates[i] = -1;
+	for(i=0; i < gpioupsfdlocal->upsLinesCount; i++) {
+		gpioupsfdlocal->upsLinesStates[i] = -1;
 	}
 	gpioRc=gpiod_line_get_value_bulk(
 		&libgpiod_data->gpioLines,
-		gpioupsfd->upsLinesStates
+		gpioupsfdlocal->upsLinesStates
 	);
 
 	if (gpioRc < 0)
@@ -244,16 +244,16 @@ void gpio_get_lines_states(struct gpioups_t *gpioupsfd) {
 		gpioRc
 	);
 
-	for(i=0; i < gpioupsfd->upsLinesCount; i++) {
+	for(i=0; i < gpioupsfdlocal->upsLinesCount; i++) {
 		upsdebugx(
 			LOG_DEBUG,
 			"Line%d state = %d",
 			i,
-			gpioupsfd->upsLinesStates[i]
+			gpioupsfdlocal->upsLinesStates[i]
 		);
 	}
 
-	if(gpioupsfd->runOptions&ROPT_REQRES) {
+	if(gpioupsfdlocal->runOptions&ROPT_REQRES) {
 		gpiod_line_release_bulk(&libgpiod_data->gpioLines);
 	}
 }
