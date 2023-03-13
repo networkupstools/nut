@@ -23,8 +23,7 @@
 #include "common.h"
 #include <unistd.h>
 #include <errno.h>
-#include "generic_gpio_common.h"
-#include "generic_gpio_libgpiod.h"
+#include "generic_gpio_utest.h"
 
 static char  chipName[16];
 static unsigned int num_lines=0;
@@ -45,6 +44,7 @@ unsigned int gpiod_chip_num_lines(struct gpiod_chip *chip) {
 		return 2;
 	return 32;
 }
+
 int gpiod_chip_get_lines(struct gpiod_chip *chip,
 			 unsigned int *offsets, unsigned int num_offsets,
 			 struct gpiod_line_bulk *bulk) {
@@ -68,7 +68,7 @@ int gpiod_line_request_bulk(struct gpiod_line_bulk *bulk,
 static int gStatus = 0;
 static int errReqFor_line_get_value_bulk=0;
 
-void setNextLinesReadToFail() {
+void setNextLinesReadToFail(void) {
 	errReqFor_line_get_value_bulk=1;
 }
 

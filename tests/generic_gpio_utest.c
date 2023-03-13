@@ -23,6 +23,7 @@
 #include "config.h"
 #include "main.h"
 #include "attribute.h"
+#include "generic_gpio_utest.h"
 #include "generic_gpio_common.c"
 #include <stdio.h>
 

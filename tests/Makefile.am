@@ -64,6 +64,7 @@ endif
 
 gpiotest_SOURCES = generic_gpio_utest.c
 gpiotest_LDADD = $(top_builddir)/common/libcommon.la
+EXTRA_DIST += generic_gpio_liblocal.c generic_gpio_utest.h
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/common/libcommon.la: dummy
