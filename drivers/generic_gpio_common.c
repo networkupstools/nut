@@ -27,18 +27,48 @@
 
 struct gpioups_t *gpioupsfd = (struct gpioups_t *)NULL;
 
-static struct gpioups_t *generic_gpio_open(const char *chipName);
-static void generic_gpio_close(struct gpioups_t *gpioupsfd);
-static void get_ups_rules(struct gpioups_t *upsfd, unsigned char *rulesString);
-static void add_rule_item(struct gpioups_t *upsfd, int newValue);
-static int get_rule_lex(unsigned char *rulesBuff, int *startPos, int *endPos);
-static int calc_rule_states(int upsLinesStates[], int cRules[], int subCount, int sIndex);
-static void update_ups_states(struct gpioups_t *gpioupsfd);
+#ifndef DRIVERS_MAIN_WITHOUT_MAIN
+static
+#endif /* DRIVERS_MAIN_WITHOUT_MAIN */
+struct gpioups_t *generic_gpio_open(const char *chipName);
+
+#ifndef DRIVERS_MAIN_WITHOUT_MAIN
+static
+#endif /* DRIVERS_MAIN_WITHOUT_MAIN */
+void generic_gpio_close(struct gpioups_t *gpioupsfd);
+
+#ifndef DRIVERS_MAIN_WITHOUT_MAIN
+static
+#endif /* DRIVERS_MAIN_WITHOUT_MAIN */
+void get_ups_rules(struct gpioups_t *upsfd, unsigned char *rulesString);
+
+#ifndef DRIVERS_MAIN_WITHOUT_MAIN
+static
+#endif /* DRIVERS_MAIN_WITHOUT_MAIN */
+void add_rule_item(struct gpioups_t *upsfd, int newValue);
+
+#ifndef DRIVERS_MAIN_WITHOUT_MAIN
+static
+#endif /* DRIVERS_MAIN_WITHOUT_MAIN */
+int get_rule_lex(unsigned char *rulesBuff, int *startPos, int *endPos);
+
+#ifndef DRIVERS_MAIN_WITHOUT_MAIN
+static
+#endif /* DRIVERS_MAIN_WITHOUT_MAIN */
+int calc_rule_states(int upsLinesStates[], int cRules[], int subCount, int sIndex);
+
+#ifndef DRIVERS_MAIN_WITHOUT_MAIN
+static
+#endif /* DRIVERS_MAIN_WITHOUT_MAIN */
+void update_ups_states(struct gpioups_t *gpioupsfd);
 
 /*
  * allocate common data structures and process/check rules
  */
-static struct gpioups_t *generic_gpio_open(const char *chipName) {
+#ifndef DRIVERS_MAIN_WITHOUT_MAIN
+static
+#endif /* DRIVERS_MAIN_WITHOUT_MAIN */
+struct gpioups_t *generic_gpio_open(const char *chipName) {
 	struct gpioups_t *upsfdlocal=xcalloc(sizeof(*upsfdlocal),1);
 	upsfdlocal->runOptions=0; /*	don't use ROPT_REQRES and ROPT_EVMODE yet	*/
 	upsfdlocal->chipName=chipName;
@@ -55,7 +85,10 @@ static struct gpioups_t *generic_gpio_open(const char *chipName) {
 /*
  * release common data structures
  */
-static void generic_gpio_close(struct gpioups_t *gpioupsfdlocal) {
+#ifndef DRIVERS_MAIN_WITHOUT_MAIN
+static
+#endif /* DRIVERS_MAIN_WITHOUT_MAIN */
+void generic_gpio_close(struct gpioups_t *gpioupsfdlocal) {
 	if (gpioupsfdlocal) {
 		if (gpioupsfdlocal->upsLines) {
 			free(gpioupsfdlocal->upsLines);
@@ -77,7 +110,10 @@ static void generic_gpio_close(struct gpioups_t *gpioupsfdlocal) {
 /*
  * add compiled subrules item to the array
  */
-static void add_rule_item(struct gpioups_t *upsfdlocal, int newValue) {
+#ifndef DRIVERS_MAIN_WITHOUT_MAIN
+static
+#endif /* DRIVERS_MAIN_WITHOUT_MAIN */
+void add_rule_item(struct gpioups_t *upsfdlocal, int newValue) {
 	int     subCount = (upsfdlocal->rules[upsfdlocal->rulesCount-1]) ? upsfdlocal->rules[upsfdlocal->rulesCount-1]->subCount+1 : 1;
 	int     itemSize = subCount*sizeof(upsfdlocal->rules[0]->cRules[0])+sizeof(rulesint);
 
@@ -91,7 +127,10 @@ static void add_rule_item(struct gpioups_t *upsfdlocal, int newValue) {
  * logical commands ^ , & , | , state names - several ascii characters matching NUT states,
  * and several numbers to denote GPIO chip lines to read statuses
  */
-static int get_rule_lex(unsigned char *rulesBuff, int *startPos, int *endPos) {
+#ifndef DRIVERS_MAIN_WITHOUT_MAIN
+static
+#endif /* DRIVERS_MAIN_WITHOUT_MAIN */
+int get_rule_lex(unsigned char *rulesBuff, int *startPos, int *endPos) {
 	static unsigned char lexType[256]={
 		  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,    /*   00 0x00	*/
 		  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,	/*	 16	0x10	*/
@@ -122,7 +161,10 @@ static int get_rule_lex(unsigned char *rulesBuff, int *startPos, int *endPos) {
 /*
  * split subrules and translate them to array of commands/line numbers
  */
-static void get_ups_rules(struct gpioups_t *upsfdlocal, unsigned char *rulesString) {
+#ifndef DRIVERS_MAIN_WITHOUT_MAIN
+static
+#endif /* DRIVERS_MAIN_WITHOUT_MAIN */
+void get_ups_rules(struct gpioups_t *upsfdlocal, unsigned char *rulesString) {
 	/*	statename=[^]line[&||[line]]	*/
 	char    lexBuff[33];
 	int     startPos = 0, endPos;
@@ -304,7 +346,10 @@ static void get_ups_rules(struct gpioups_t *upsfdlocal, unsigned char *rulesStri
 /*
  * calculate state rule value based on GPIO line values
  */
-static int calc_rule_states(int upsLinesStates[], int cRules[], int subCount, int sIndex) {
+#ifndef DRIVERS_MAIN_WITHOUT_MAIN
+static
+#endif /* DRIVERS_MAIN_WITHOUT_MAIN */
+int calc_rule_states(int upsLinesStates[], int cRules[], int subCount, int sIndex) {
 	int ruleVal = 0;
 	int iopStart = sIndex;
 	int rs;
@@ -340,7 +385,10 @@ static int calc_rule_states(int upsLinesStates[], int cRules[], int subCount, in
  *	set ups state according to rules, do adjustments for CHRG/DISCHRG
  *  and battery charge states
  */
-static void update_ups_states(struct gpioups_t *gpioupsfdlocal) {
+#ifndef DRIVERS_MAIN_WITHOUT_MAIN
+static
+#endif /* DRIVERS_MAIN_WITHOUT_MAIN */
+void update_ups_states(struct gpioups_t *gpioupsfdlocal) {
 	int batLow = 0;
 	int bypass = 0;
 	int chargerStatusSet = 0;

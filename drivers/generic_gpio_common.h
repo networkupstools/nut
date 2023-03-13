@@ -71,4 +71,15 @@ void gpio_open(struct gpioups_t *gpioupsfd);
 void gpio_get_lines_states(struct gpioups_t *gpioupsfd);
 void gpio_close(struct gpioups_t *gpioupsfd);
 
+# ifdef DRIVERS_MAIN_WITHOUT_MAIN
+/* Methods externalized for unit-tests, otherwise private to this module */
+struct gpioups_t *generic_gpio_open(const char *chipName);
+void generic_gpio_close(struct gpioups_t *gpioupsfd);
+void get_ups_rules(struct gpioups_t *upsfd, unsigned char *rulesString);
+void add_rule_item(struct gpioups_t *upsfd, int newValue);
+int get_rule_lex(unsigned char *rulesBuff, int *startPos, int *endPos);
+int calc_rule_states(int upsLinesStates[], int cRules[], int subCount, int sIndex);
+void update_ups_states(struct gpioups_t *gpioupsfd);
+# endif /* DRIVERS_MAIN_WITHOUT_MAIN */
+
 #endif	/* GENERIC_GPIO_COMMON_H */

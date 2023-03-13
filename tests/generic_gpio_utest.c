@@ -22,18 +22,13 @@
 
 #include "config.h"
 #include "main.h"
+#include "dstate.h"
 #include "attribute.h"
 #include "generic_gpio_utest.h"
-#include "generic_gpio_common.c"
+
 #include <stdio.h>
-
-#include "generic_gpio_liblocal.c"
-#include "generic_gpio_libgpiod.c"
-
 #include <stdlib.h>
 #include <setjmp.h>
-
-#include "dstate.h"
 
 extern struct gpioups_t *gpioupsfd;
 
