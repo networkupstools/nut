@@ -79,6 +79,7 @@ else
 EXTRA_DIST += generic_gpio_utest.c generic_gpio_liblocal.c
 endif
 
+CLEANFILES += generic_gpio_libgpiod.c generic_gpio_common.c
 EXTRA_DIST += generic_gpio_utest.h generic_gpio_test.txt
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
