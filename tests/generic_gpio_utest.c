@@ -34,6 +34,7 @@
 #include <setjmp.h>
 
 #define main ignore
+int ignore(int argc, char **argv);
 #include "main.c"
 #undef main
 #include "dstate.c"
