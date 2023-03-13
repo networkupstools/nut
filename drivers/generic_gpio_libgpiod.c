@@ -207,9 +207,9 @@ void gpio_get_lines_states(struct gpioups_t *gpioupsfdlocal) {
 			timeoutLong.tv_sec
 		);
 		if(monRes==1) {
-			int num_lines = (int)gpiod_line_bulk_num_lines(&libgpiod_data->gpioEventLines);
+			int num_lines_local = (int)gpiod_line_bulk_num_lines(&libgpiod_data->gpioEventLines);
 			int j;
-			for(j=0; j<num_lines; j++) {
+			for(j=0; j<num_lines_local; j++) {
 				struct gpiod_line *eLine = gpiod_line_bulk_get_line(
 					&libgpiod_data->gpioEventLines,
 					j
