@@ -146,15 +146,39 @@ int main(int argc, char **argv) {
 	int jmp_result;
 	char rules[128];
 	char testType[128];
-	char *testDescFileName="./generic_gpio_test.txt";
+	char testDescFileNameBuf[LARGEBUF];
+	char *testDescFileName="generic_gpio_test.txt";
+
 	if(argc==2) {
 		testDescFileName=argv[1];
 	}
+
 	testData = fopen (testDescFileName, "r");
 	if(!testData) {
-		done = 1;
-		printf("failed to open test description file %s\n", testDescFileName);
-		exit(EXIT_FAILURE);
+		if (!strchr(testDescFileName, '/')) {
+			/* "srcdir" may be set by automake test harness, see
+			 * https://www.gnu.org/software/automake/manual/1.12.2/html_node/Scripts_002dbased-Testsuites.html
+			 */
+			char *testDescFileDir = getenv("srcdir");
+			if (testDescFileDir) {
+				printf("failed to open test description file %s "
+					"in current working directory, "
+					"retrying with srcdir %s\n",
+					testDescFileName, testDescFileDir);
+				if (snprintf(testDescFileNameBuf, sizeof(testDescFileNameBuf), "%s/%s",
+					testDescFileDir, testDescFileName) > 0
+				) {
+					testDescFileName = testDescFileNameBuf;
+					testData = fopen (testDescFileName, "r");
+				}
+			}
+		}
+
+		if(!testData) {
+			done = 1;
+			printf("failed to open test description file %s\n", testDescFileName);
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	cases_passed=0;
