@@ -25,7 +25,7 @@
 #include <errno.h>
 #include "generic_gpio_utest.h"
 
-static char  chipName[16];
+static char  chipName[NUT_GPIO_CHIPNAMEBUF];
 static unsigned int num_lines=0;
 
 struct gpiod_chip *gpiod_chip_open_by_name(const char *name) {

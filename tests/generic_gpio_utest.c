@@ -253,11 +253,11 @@ int main(int argc, char **argv) {
 				vartab_free(); vartab_h = NULL;
 			}
 			if(!strcmp(testType, "library")) {
-				char chipName[32];
+				char chipNameLocal[NUT_GPIO_CHIPNAMEBUF];
 				int expecting_failure;
-				char subType[16];
+				char subType[NUT_GPIO_SUBTYPEBUF];
 				fEof=fscanf(testData, "%d", &expecting_failure);
-				fEof=fscanf(testData, "%s", chipName);
+				fEof=fscanf(testData, "%s", chipNameLocal);
 				fEof=fscanf(testData, "%s", subType);
 				jmp_result = setjmp(env_buffer);
 				int failed=expecting_failure;
@@ -266,7 +266,7 @@ int main(int argc, char **argv) {
 					upsdrv_cleanup();
 				} else {
 					if(expecting_failure) failed=1;
-					device_path = chipName;
+					device_path = chipNameLocal;
 					if(strcmp(subType, "initinfo") || !expecting_failure) {
 						addvar(VAR_VALUE, "rules", "");
 						storeval("rules", rules);
@@ -299,7 +299,7 @@ int main(int argc, char **argv) {
 					upsdrv_cleanup();
 				}
 				printf("%s %s %s test rule %d [%s] %s %d\n",
-					pass_fail[failed], testType, subType, i, rules, chipName, expecting_failure);
+					pass_fail[failed], testType, subType, i, rules, chipNameLocal, expecting_failure);
 				if(!failed) {
 					cases_passed++;
 				} else {

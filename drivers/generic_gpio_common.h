@@ -38,6 +38,10 @@
 #define ROPT_REQRES 0x00000001  /* reserve GPIO lines only during request processing    */
 #define ROPT_EVMODE 0x00000002  /* event driven run                                     */
 
+/*  buffer size for chipName arrays */
+#define NUT_GPIO_CHIPNAMEBUF	32
+#define NUT_GPIO_SUBTYPEBUF 	16
+
 typedef struct rulesint_t { /* structure to store processed rules configuration per each state */
     char    stateName[12];  /* NUT state name for rules in cRules */
     int     archVal;        /* previous state value */
