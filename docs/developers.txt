@@ -430,6 +430,42 @@ Finally, note that such pre-set warnings can be mixed with options
 passed through `CFLAGS` or `CXXFLAGS` values to your local `configure`
 run, but it is up to your compiler how it interprets the resulting mix.
 
+Integrated Development Environments (IDEs) and debugging NUT
+------------------------------------------------------------
+
+Much of NUT has been coded using classic editors of developers' preference,
+like `vi`, `nano`, Midnight Commander `mcedit`, NotePad++ and tools like
+`meld` or WinMerge for file comparison and merge.
+
+Modern IDEs however do offer benefits, specifically for live debugging
+sessions in a more convenient fashion than with command-line `gdb` directly.
+They also simplify writing AsciiDoc files with real-time rendering support.
+
+NOTE: Due to use of `libtool` wrappers in "autotools" driven projects,
+it may be tricky to attach the debugger (mixing the correct `LD_LIBRARY_PATH`
+or equivalent with a binary under a `.libs` subdirectory).
+
+IDEs that were tested to work with NUT development and real-time debugger
+tracing include:
+
+* Sun NetBeans 8.2 on Solaris, Linux (including local and remote build
+  and debug ability);
+* Apache NetBeans 17 on Windows with MSYS2 support (as MinGW toolkit);
+* Visual Studio Code (VSCode) on Windows with MSYS2 support.
+
+////////
+TODO: Expand on adding include and library paths to NetBeans on Windows.
+Plugins: unpack200 from JDK11 or older to install NB8.2 repo C/C++ plugins.
+
+TODO: Expand on tools.json and launcher.json in VSCode on Windows
+
+TODO: Expand on envvars settings for MSYS to be callable on Windows
+(e.g. avoid NetBeans claims of missing shell).
+
+Make note of settings (and Run as Administrator) to use symlinks in MinGW x64.
+Check if required for sane (iterative re-)builds? ;)
+////////
+
 Coding style
 ------------
 
