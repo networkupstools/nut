@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3106 utf-8
+personal_ws-1.1 en 3108 utf-8
 AAS
 ABI
 ACFAIL
@@ -2136,6 +2136,7 @@ libcppunit
 libcrypto
 libcurl
 libdir
+libdummy
 libexec
 libfreeipmi
 libgd
@@ -2293,6 +2294,7 @@ mmZ
 mmap
 mmddyyyy
 mn
+mockdrv
 modbus
 modelname
 modprobe
