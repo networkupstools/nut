@@ -65,7 +65,7 @@ static void sock_fail(const char *fn)
 static void sock_fail(const char *fn)
 {
 	int	sockerr;
-	struct passwd	*user;
+	struct passwd	*pwuser;
 
 	/* save this so it doesn't get overwritten */
 	sockerr = errno;
@@ -75,9 +75,9 @@ static void sock_fail(const char *fn)
 	printf("\nFatal error: unable to create listener socket\n\n");
 	printf("bind %s failed: %s\n", fn, strerror(sockerr));
 
-	user = getpwuid(getuid());
+	pwuser = getpwuid(getuid());
 
-	if (!user) {
+	if (!pwuser) {
 		fatal_with_errno(EXIT_FAILURE, "getpwuid");
 	}
 
@@ -86,7 +86,7 @@ static void sock_fail(const char *fn)
 	{
 	case EACCES:
 		printf("\nCurrent user: %s (UID %d)\n\n",
-			user->pw_name, (int)user->pw_uid);
+			pwuser->pw_name, (int)pwuser->pw_uid);
 
 		printf("Things to try:\n\n");
 		printf(" - set different owners or permissions on %s\n\n",

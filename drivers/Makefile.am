@@ -32,6 +32,9 @@ endif
 if WITH_IPMI
   AM_CFLAGS += $(LIBIPMI_CFLAGS)
 endif
+if WITH_GPIO
+  AM_CFLAGS += $(LIBGPIO_CFLAGS)
+endif
 if WITH_MODBUS
   AM_CFLAGS += $(LIBMODBUS_CFLAGS)
 endif
@@ -56,12 +59,14 @@ MODBUS_DRIVERLIST = phoenixcontact_modbus generic_modbus huawei-ups2000 socomec_
 LINUX_I2C_DRIVERLIST = asem pijuice
 POWERMAN_DRIVERLIST = powerman-pdu
 IPMI_DRIVERLIST = nut-ipmipsu
+GPIO_DRIVERLIST = generic_gpio_libgpiod
 
 # distribute all drivers, even ones that are not built by default
 EXTRA_PROGRAMS  = $(SERIAL_DRIVERLIST) $(USB_DRIVERLIST) $(SERIAL_USB_DRIVERLIST)
 EXTRA_PROGRAMS += $(SNMP_DRIVERLIST) $(NEONXML_DRIVERLIST) $(MACOSX_DRIVERLIST)
 EXTRA_PROGRAMS += $(LINUX_I2C_DRIVERLIST)
 EXTRA_PROGRAMS += $(NUTSW_DRIVERLIST)
+EXTRA_PROGRAMS += $(GPIO_DRIVERLIST)
 
 # construct the list of drivers to build
 if SOME_DRIVERS
@@ -89,6 +94,9 @@ if WITH_LIBPOWERMAN
 endif
 if WITH_IPMI
    driverexec_PROGRAMS += $(IPMI_DRIVERLIST)
+endif
+if WITH_GPIO
+   driverexec_PROGRAMS += $(GPIO_DRIVERLIST)
 endif
 if WITH_MACOSX
    driverexec_PROGRAMS += $(MACOSX_DRIVERLIST)
@@ -298,6 +306,10 @@ asem_SOURCES = asem.c
 pijuice_LDADD = $(LDADD_DRIVERS) $(LIBI2C_LIBS)
 pijuice_SOURCES = pijuice.c
 
+# GPIO drivers
+generic_gpio_libgpiod_SOURCES = generic_gpio_common.c generic_gpio_libgpiod.c
+generic_gpio_libgpiod_LDADD = $(LDADD_DRIVERS) $(LIBGPIO_LIBS)
+
 # nutdrv_qx USB/Serial
 nutdrv_qx_SOURCES = nutdrv_qx.c
 nutdrv_qx_LDADD = $(LDADD_DRIVERS) -lm
@@ -327,6 +339,7 @@ nutdrv_qx_SOURCES += $(NUTDRV_QX_SUBDRIVERS)
 dist_noinst_HEADERS = apc-mib.h apc-iem-mib.h apc-hid.h arduino-hid.h baytech-mib.h bcmxcp.h bcmxcp_ser.h	\
  bcmxcp_io.h belkin.h belkin-hid.h bestpower-mib.h blazer.h cps-hid.h dstate.h	\
  dummy-ups.h explore-hid.h gamatronic.h genericups.h	\
+ generic_gpio_common.h generic_gpio_libgpiod.h	\
  hidparser.h hidtypes.h ietf-mib.h libhid.h libshut.h nut_libusb.h liebert-hid.h	\
  main.h mge-hid.h mge-mib.h mge-utalk.h		\
  mge-xml.h microdowell.h microsol-apc.h microsol-common.h netvision-mib.h netxml-ups.h nut-ipmi.h oneac.h		\
@@ -355,6 +368,14 @@ libdummy_la_SOURCES = main.c dstate.c
 libdummy_la_LDFLAGS = -no-undefined -static
 libdummy_serial_la_SOURCES = serial.c
 libdummy_serial_la_LDFLAGS = -no-undefined -static
+
+# The libdummy_mockdrv.la is used for unit-tests to mock a driver
+# with near-production codebase but without its standard main().
+# Otherwise, also not meant to be installed.
+EXTRA_LTLIBRARIES += libdummy_mockdrv.la
+libdummy_mockdrv_la_SOURCES = main.c dstate.c
+libdummy_mockdrv_la_CFLAGS = $(AM_CFLAGS) -DDRIVERS_MAIN_WITHOUT_MAIN=1
+libdummy_mockdrv_la_LDFLAGS = -static $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la
 
 dummy:
 
