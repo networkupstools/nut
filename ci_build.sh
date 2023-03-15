@@ -161,7 +161,7 @@ case "${CI_BUILDDIR-}" in
         ;;
 esac
 
-[ -n "$MAKE" ] || [ "$1" = spellcheck ] || MAKE=make
+[ -n "$MAKE" ] || [ "$1" = spellcheck -o "$1" = spellcheck-interactive ] || MAKE=make
 [ -n "$GGREP" ] || GGREP=grep
 
 [ -n "$MAKE_FLAGS_QUIET" ] || MAKE_FLAGS_QUIET="VERBOSE=0 V=0 -s"
@@ -203,6 +203,18 @@ else
         echo "INFO: Empty CI_CCACHE_SYMLINKDIR was explicitly requested" >&2
         CI_CCACHE_SYMLINKDIR=""
     fi
+fi
+
+if [ -z "$TMPDIR" ]; then
+    echo "WARNING: TMPDIR not set, trying to guess"
+    if [ -d /tmp -a -w /tmp ] ; then
+        TMPDIR=/tmp
+        export TMPDIR
+    fi
+fi
+
+if [ -z "$TMPDIR" ]; then
+    echo "WARNING: TMPDIR still not set, some tools (notably clang) can fail"
 fi
 
 # For two-phase builds (quick parallel make first, sequential retry if failed)
@@ -708,7 +720,7 @@ if [ "$1" = inplace ] && [ -z "$BUILD_TYPE" ] ; then
     BUILD_TYPE="inplace"
 fi
 
-if [ "$1" = spellcheck ] && [ -z "$BUILD_TYPE" ] ; then
+if [ "$1" = spellcheck -o "$1" = spellcheck-interactive ] && [ -z "$BUILD_TYPE" ] ; then
     # Note: this is a little hack to reduce typing
     # and scrolling in (docs) developer iterations.
     if [ -z "${MAKE-}" ] ; then
@@ -742,8 +754,12 @@ if [ "$1" = spellcheck ] && [ -z "$BUILD_TYPE" ] ; then
     esac >&2
     if [ -s Makefile ] && [ -s docs/Makefile ]; then
         echo "Processing quick and quiet spellcheck with already existing recipe files, will only report errors if any ..."
-        build_to_only_catch_errors_target spellcheck ; exit
+        build_to_only_catch_errors_target $1 ; exit
     else
+        # TODO: Actually do it (default-spellcheck-interactive)?
+        if [ "$1" = spellcheck-interactive ] ; then
+            echo "Only CI-building 'spellcheck', please do the interactive part manually if needed" >&2
+        fi
         BUILD_TYPE="default-spellcheck"
         shift
     fi

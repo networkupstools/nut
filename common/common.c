@@ -110,6 +110,8 @@ pid_t get_max_pid_t()
 	int	nut_log_level = 0;
 	static	int	upslog_flags = UPSLOG_STDERR;
 
+	static struct timeval	upslog_start = { 0, 0 };
+
 static void xbit_set(int *val, int flag)
 {
 	*val |= flag;
@@ -286,6 +288,12 @@ void become_user(struct passwd *pw)
 	/* if we can't switch users, then don't even try */
 	intmax_t initial_uid = getuid();
 	intmax_t initial_euid = geteuid();
+
+	if (!pw) {
+		upsdebugx(1, "Can not become_user(<null>), skipped");
+		return;
+	}
+
 	if ((initial_euid != 0) && (initial_uid != 0)) {
 		intmax_t initial_gid = getgid();
 		if (initial_euid == (intmax_t)pw->pw_uid
@@ -319,9 +327,8 @@ void become_user(struct passwd *pw)
 	upsdebugx(1, "Succeeded to become_user(%s): now UID=%jd GID=%jd",
 		pw->pw_name, (intmax_t)getuid(), (intmax_t)getgid());
 #else
-	NUT_UNUSED_VARIABLE(pw);
-
-	upsdebugx(1, "Can not become_user(%s): not implemented on this platform", pw->pw_name);
+	upsdebugx(1, "Can not become_user(%s): not implemented on this platform",
+		pw ? pw->pw_name : "<null>");
 #endif
 }
 
@@ -949,6 +956,8 @@ void nut_report_config_flags(void)
 	 * of compiled codepaths: */
 	const char *compiler_ver = CC_VERSION;
 	const char *config_flags = CONFIG_FLAGS;
+	struct timeval		now;
+
 	if (nut_debug_level < 1)
 		return;
 
@@ -971,8 +980,25 @@ void nut_report_config_flags(void)
 		acinit_ver = PACKAGE_VERSION;
 	}
 
+	/* NOTE: If changing wording here, keep in sync with configure.ac logic
+	 * looking for CONFIG_FLAGS_DEPLOYED via "configured with flags:" string!
+	 */
+
+	gettimeofday(&now, NULL);
+
+	if (upslog_start.tv_sec == 0) {
+		upslog_start = now;
+	}
+
+	if (upslog_start.tv_usec > now.tv_usec) {
+		now.tv_usec += 1000000;
+		now.tv_sec -= 1;
+	}
+
 	if (xbit_test(upslog_flags, UPSLOG_STDERR))
-		fprintf(stderr, "Network UPS Tools version %s%s%s%s%s%s%s %s%s\n",
+		fprintf(stderr, "%4.0f.%06ld\t[D1] Network UPS Tools version %s%s%s%s%s%s%s %s%s\n",
+			difftime(now.tv_sec, upslog_start.tv_sec),
+			(long)(now.tv_usec - upslog_start.tv_usec),
 			UPS_VERSION,
 			(acinit_ver ? " (release/snapshot of " : ""),
 			(acinit_ver ? acinit_ver : ""),
@@ -1054,21 +1080,22 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 	}
 
 	if (nut_debug_level > 0) {
-		static struct timeval	start = { 0, 0 };
 		struct timeval		now;
 
 		gettimeofday(&now, NULL);
 
-		if (start.tv_sec == 0) {
-			start = now;
+		if (upslog_start.tv_sec == 0) {
+			upslog_start = now;
 		}
 
-		if (start.tv_usec > now.tv_usec) {
+		if (upslog_start.tv_usec > now.tv_usec) {
 			now.tv_usec += 1000000;
 			now.tv_sec -= 1;
 		}
 
-		fprintf(stderr, "%4.0f.%06ld\t", difftime(now.tv_sec, start.tv_sec), (long)(now.tv_usec - start.tv_usec));
+		fprintf(stderr, "%4.0f.%06ld\t",
+			difftime(now.tv_sec, upslog_start.tv_sec),
+			(long)(now.tv_usec - upslog_start.tv_usec));
 	}
 
 	if (xbit_test(upslog_flags, UPSLOG_STDERR))
@@ -1848,6 +1875,12 @@ char * get_libname(const char* base_libname)
 	/* TODO: Need a reliable cross-platform way to get the full path
 	 * of current executable -- possibly stash it when starting NUT
 	 * programs... consider some way for `nut-scanner` too */
+	if (!libname_path) {
+		/* First check near the EXE (if executing it from another
+		 * working directory) */
+		libname_path = get_libname_in_dir(base_libname, base_libname_length, getfullpath(NULL), counter++);
+	}
+
 # ifdef PATH_LIB
 	if (!libname_path) {
 		libname_path = get_libname_in_dir(base_libname, base_libname_length, getfullpath(PATH_LIB), counter++);
@@ -1856,7 +1889,7 @@ char * get_libname(const char* base_libname)
 
 	if (!libname_path) {
 		/* Resolve "lib" dir near the one with current executable ("bin" or "sbin") */
-		libname_path = get_libname_in_dir(base_libname, base_libname_length, getfullpath("../lib"), counter++);
+		libname_path = get_libname_in_dir(base_libname, base_libname_length, getfullpath("/../lib"), counter++);
 	}
 #endif  /* WIN32 so far */
 

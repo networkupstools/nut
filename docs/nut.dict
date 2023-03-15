@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3096 utf-8
+personal_ws-1.1 en 3114 utf-8
 AAS
 ABI
 ACFAIL
@@ -131,6 +131,7 @@ BeepTone
 Belkin's
 Benedikt
 Berge
+Berzonis
 BestPort
 BiWeekly
 Bieringer
@@ -192,6 +193,7 @@ CPUs
 CRC
 CREAD
 CROSSTALK
+CSN
 CSS
 CSUM
 CTB
@@ -230,6 +232,7 @@ Ctrl
 Cuvellard
 Cyber
 CyberPower
+CyberShield
 Cygwin
 DATACABLE
 DATAPATH
@@ -255,6 +258,7 @@ DIGYS
 DISCHRG
 DMF
 DN
+DNS
 DOCTYPE
 DOMAINs
 DPC
@@ -389,6 +393,8 @@ GETADDRINFO
 GID
 GKrellM
 GND
+GPIO
+GPIOCHIP
 GPL
 GPSER
 GRs
@@ -699,6 +705,7 @@ Minislot
 Moar
 Modbus
 ModemManager
+Modris
 MonAMI
 MonUPS
 Monett
@@ -761,6 +768,7 @@ Nash
 NaturalDocs
 Necedah
 NetBSD
+NetBeans
 NetPro
 NetServer
 NetUps
@@ -775,6 +783,7 @@ Nom
 NomDCV
 NomVIn
 NomVOut
+NotePad
 Novell
 NrLoBatt
 NutException
@@ -1321,6 +1330,7 @@ VMM
 VMware
 VNC
 VPATH
+VSCode
 VSN
 VTIME
 VV
@@ -1918,6 +1928,7 @@ gcc
 gcpp
 gd
 gd's
+gdb
 gdlib
 ge
 genericsups
@@ -1949,6 +1960,8 @@ google
 goto
 gotos
 gpg
+gpio
+gpiochip
 graphviz
 groupadd
 groupname
@@ -2127,10 +2140,12 @@ libcppunit
 libcrypto
 libcurl
 libdir
+libdummy
 libexec
 libfreeipmi
 libgd
 libgpgme
+libgpiod
 libhid
 libhidups
 libi
@@ -2240,6 +2255,7 @@ maxvalue
 maxvi
 maxvo
 mc
+mcedit
 md
 mdadm
 mecer
@@ -2283,6 +2299,7 @@ mmZ
 mmap
 mmddyyyy
 mn
+mockdrv
 modbus
 modelname
 modprobe
@@ -2320,6 +2337,7 @@ nLogic
 nabcd
 nameserver
 namespace
+nano
 nanosleep
 nashkaminski
 natively

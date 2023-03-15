@@ -4,6 +4,9 @@
 /cppnit
 /cppnit.log
 /cppnit.trs
+/gpiotest
+/gpiotest.log
+/gpiotest.trs
 /test-suite.log
 /selftest-rw/*
 /nutlogtest-nofail.sh
@@ -14,3 +17,5 @@
 /getvaluetest.log
 /getvaluetest.trs
 /hidparser.c
+/generic_gpio_libgpiod.c
+/generic_gpio_common.c
