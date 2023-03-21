@@ -1172,6 +1172,14 @@ AC_ARG_WITH(drivers,
 		if test -z "${with_ipmi}"; then with_ipmi="yes"; fi
 
 		dnl Platform-dependent snowflakes that are required or auto:
+		if test -z "${with_gpio}"; then
+			dnl NOTE: Currently we only support a Linux libgpiod
+			dnl backend for GPIO; eventually there could be more.
+			case ${target_os} in
+				linux*) with_gpio="auto";; dnl # TODO: Detect 2018+ distros?
+				*) with_gpio="auto";;
+			esac
+		fi
 		if test -z "${with_linux_i2c}"; then
 			case ${target_os} in
 				linux*) with_linux_i2c="yes";;
@@ -1197,6 +1205,7 @@ AC_ARG_WITH(drivers,
 		if test -z "${with_powerman}"; then with_powerman="${withval}"; fi
 		if test -z "${with_modbus}"; then with_modbus="${withval}"; fi
 		if test -z "${with_ipmi}"; then with_ipmi="${withval}"; fi
+		if test -z "${with_gpio}"; then with_gpio="${withval}"; fi
 		if test -z "${with_linux_i2c}"; then with_linux_i2c="${withval}"; fi
 		if test -z "${with_macosx_ups}"; then with_macosx_ups="${withval}"; fi
 		AC_MSG_RESULT(${DRIVER_BUILD_LIST})
@@ -1212,7 +1221,7 @@ AC_ARG_WITH(drivers,
 				SERIAL_DRIVERLIST USB_LIBUSB_DRIVERLIST SERIAL_USB_DRIVERLIST
 				SNMP_DRIVERLIST NEONXML_DRIVERLIST
 				MACOSX_DRIVERLIST MODBUS_DRIVERLIST LINUX_I2C_DRIVERLIST
-				POWERMAN_DRIVERLIST IPMI_DRIVERLIST"
+				POWERMAN_DRIVERLIST IPMI_DRIVERLIST GPIO_DRIVERLIST"
 
 			get_drvlist() (
 				dnl Note escaped brackets - "against" m4 parser
@@ -1324,6 +1333,11 @@ AC_ARG_WITH(drivers,
 										[AC_MSG_NOTICE([Requiring --with-ipmi=yes for driver "$DRV"])
 										with_ipmi=yes]
 									)],
+								[GPIO_DRIVERLIST], [
+									AS_IF([test -z "${with_gpio}"],
+										[AC_MSG_NOTICE([Requiring --with-gpio=yes for driver "$DRV"])
+										with_gpio=yes]
+									)],
 
 								[AC_MSG_WARN([Unhandled DRVLIST_NAME=$DRVLIST_NAME])]
 							)
@@ -1357,7 +1371,7 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, linux_i2c (on Linux), macosx-ups (on MacOS), cgi, dev, avahi, nut-scanner, pynut]),
+	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, gpio (currently on Linux released after ~2018), linux_i2c (on Linux), macosx-ups (on MacOS), cgi, dev, avahi, nut-scanner, pynut]),
 [
 	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
@@ -1373,6 +1387,15 @@ AC_ARG_WITH(all,
 		if test -z "${with_ipmi}"; then with_ipmi="${withval}"; fi
 
 		dnl Platform-dependent snowflakes that are required or auto:
+		if test -z "${with_gpio}"; then
+			dnl NOTE: Currently we only support a Linux libgpiod
+			dnl backend for GPIO; eventually there could be more.
+			with_gpio="${withval}"
+			case ${target_os} in
+				linux*) ;;
+				*) test x"${withval}" = xno || with_gpio="auto" ;;
+			esac
+		fi
 		if test -z "${with_linux_i2c}"; then
 			with_linux_i2c="${withval}"
 			case ${target_os} in
@@ -1477,6 +1500,9 @@ NUT_CHECK_LIBPOWERMAN
 
 NUT_ARG_WITH([modbus], [build and install modbus drivers], [auto])
 NUT_CHECK_LIBMODBUS
+
+NUT_ARG_WITH([gpio], [build and install GPIO driver], [auto])
+NUT_CHECK_LIBGPIO
 
 NUT_ARG_WITH([avahi], [build and install Avahi support], [auto])
 NUT_CHECK_LIBAVAHI
@@ -1725,6 +1751,20 @@ dnl and AM_CONDITIONALs (see below)...
 AM_CONDITIONAL(WITH_FREEIPMI, test "${nut_with_freeipmi}" = "yes")
 dnl AM_CONDITIONAL(WITH_OPENIPMI, test "${nut_with_openipmi}" = "yes")
 
+dnl ----------------------------------------------------------------------
+dnl Check for with-gpio
+
+if test "${nut_with_gpio}" = "yes" -a "${nut_have_gpio}" != "yes"; then
+   AC_MSG_ERROR([No supported GPIO library was found, required for GPIO driver])
+fi
+
+dnl ${nut_with_gpio}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_gpio}" != "no"; then
+   nut_with_gpio="${nut_have_gpio}"
+fi
+
+NUT_REPORT_FEATURE([build GPIO driver], [${nut_with_gpio}], [${nut_gpio_lib}],
+					[WITH_GPIO], [Define to enable GPIO support])
 
 dnl ----------------------------------------------------------------------
 dnl The Mac OS X meta-driver looks at IOKit Power Sources keys managed by
@@ -3769,6 +3809,8 @@ AC_SUBST(LIBMODBUS_CFLAGS)
 AC_SUBST(LIBMODBUS_LIBS)
 AC_SUBST(LIBIPMI_CFLAGS)
 AC_SUBST(LIBIPMI_LIBS)
+AC_SUBST(LIBGPIO_CFLAGS)
+AC_SUBST(LIBGPIO_LIBS)
 AC_SUBST(LIBI2C_LIBS)
 AC_SUBST(DOC_BUILD_LIST)
 AC_SUBST(DOC_CHECK_LIST)

@@ -56,9 +56,34 @@ nodist_getvaluetest_SOURCES = hidparser.c
 # Pull the right include path for chosen libusb version:
 getvaluetest_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
 getvaluetest_LDADD = $(top_builddir)/common/libcommon.la
+else
+EXTRA_DIST += getvaluetest.c hidparser.c
 endif
 
+if WITH_GPIO
+TESTS += gpiotest
+
+# NOTE: Not using "$<" due to a legacy Sun/illumos dmake bug with resolver
+# of dynamic vars, see e.g. https://man.omnios.org/man1/make#BUGS
+generic_gpio_libgpiod.c: $(top_srcdir)/drivers/generic_gpio_libgpiod.c
+	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/generic_gpio_libgpiod.c" "$@"
+
+generic_gpio_common.c: $(top_srcdir)/drivers/generic_gpio_common.c
+	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/generic_gpio_common.c" "$@"
+
+gpiotest_SOURCES = generic_gpio_utest.c generic_gpio_liblocal.c
+nodist_gpiotest_SOURCES = generic_gpio_libgpiod.c generic_gpio_common.c
+gpiotest_LDADD = $(top_builddir)/drivers/libdummy_mockdrv.la
+gpiotest_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
+else
+EXTRA_DIST += generic_gpio_utest.c generic_gpio_liblocal.c
+endif
+
+CLEANFILES += generic_gpio_libgpiod.c generic_gpio_common.c
+EXTRA_DIST += generic_gpio_utest.h generic_gpio_test.txt
+
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
+$(top_builddir)/drivers/libdummy_mockdrv.la \
 $(top_builddir)/common/libcommon.la: dummy
 	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
