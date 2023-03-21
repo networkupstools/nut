@@ -273,7 +273,8 @@ static void forkexec(char *const argv[], const ups_t *ups)
 	int	ret;
 
 	if (nut_foreground_passthrough == 1 && upscount == 1) {
-		upsdebugx(1, "Starting the only driver with explicitly requested foregrounding mode, not forking");
+		upsdebugx(1, "Starting the only driver with explicitly "
+			"requested foregrounding mode, not forking");
 	} else {
 		pid_t	pid;
 
@@ -297,7 +298,9 @@ static void forkexec(char *const argv[], const ups_t *ups)
 				 * but without further forking on their side - so
 				 * not waiting for them to complete start-ups.
 				 */
-				upsdebugx(1, "Starting driver with explicitly requested foregrounding mode: will not wait for it to fork and detach, continuing..");
+				upsdebugx(1, "Starting driver with explicitly "
+					"requested foregrounding mode: will not "
+					"wait for it to fork and detach, continuing...");
 				return;
 			}
 
@@ -305,7 +308,10 @@ static void forkexec(char *const argv[], const ups_t *ups)
 			 && nut_debug_level > 0
 			 && nut_debug_level_passthrough > 0
 			) {
-				upsdebugx(2, "Starting driver with debug but without explicit backgrounding: will not wait for it to fork and detach, continuing...");
+				upsdebugx(2, "Starting driver with debug but "
+					"without explicit backgrounding: "
+					"will not wait for it to fork and "
+					"detach, continuing...");
 				return;
 			}
 
@@ -843,11 +849,14 @@ int main(int argc, char **argv)
 		/* Note: for a single started driver, we just
 		 * exec() it and should not even get here
 		 */
-		upsdebugx(1, "upsdrvctl was asked for explicit foregrounding - not exiting now (driver startup was completed)");
+		upsdebugx(1, "upsdrvctl was asked for explicit foregrounding - "
+			"not exiting now (driver startup was completed)");
 		while (1) {
 			/* FIXME: Add signal handler to exit(0) when getting
 			 * a Ctrl+C, SIGTERM etc., and to command the launched
-			 * driver(s) to stop.
+			 * driver(s) to stop (need to remember the PIDs). Also
+			 * track if any child has stopped (error, exit, signal...)
+			 * to kill others and exit - with error if applicable.
 			 */
 			sleep(1);
 		}
