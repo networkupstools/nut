@@ -337,6 +337,7 @@ static void show_usage()
 	printf("  -N, --disp_nut_conf: Display result in the ups.conf format\n");
 	printf("  -P, --disp_parsable: Display result in a parsable format\n");
 	printf("\nMiscellaneous options:\n");
+	printf("  -h, --help: display this help text\n");
 	printf("  -V, --version: Display NUT version\n");
 	printf("  -a, --available: Display available bus that can be scanned\n");
 	printf("  -q, --quiet: Display only scan result. No information on currently scanned bus is displayed.\n");

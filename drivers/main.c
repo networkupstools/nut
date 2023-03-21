@@ -56,7 +56,10 @@ int	do_synchronous = -1;
 /* for detecting -a values that don't match anything */
 static	int	upsname_found = 0;
 
-static vartab_t	*vartab_h = NULL;
+# ifndef DRIVERS_MAIN_WITHOUT_MAIN
+static
+# endif /* DRIVERS_MAIN_WITHOUT_MAIN */
+vartab_t	*vartab_h = NULL;
 
 /* variables possibly set by the global part of ups.conf
  * user and group may be set globally or per-driver
@@ -68,6 +71,7 @@ static int	user_from_cmdline = 0, group_from_cmdline = 0;
 /* signal handling */
 int	exit_flag = 0;
 
+#ifndef DRIVERS_MAIN_WITHOUT_MAIN
 /* should this driver instance go to background (default)
  * or stay foregrounded (default if -D/-d options are set on
  * command line)?
@@ -78,6 +82,7 @@ int	exit_flag = 0;
  *  1 User required to background even if with -D or dump_mode
  */
 static int background_flag = -1;
+#endif /* DRIVERS_MAIN_WITHOUT_MAIN */
 
 /* Users can pass a -D[...] option to enable debugging.
  * For the service tracing purposes, also the ups.conf
@@ -89,9 +94,11 @@ static int background_flag = -1;
 static int nut_debug_level_global = -1;
 static int nut_debug_level_driver = -1;
 
+#ifndef DRIVERS_MAIN_WITHOUT_MAIN
 /* everything else */
 static char	*pidfn = NULL;
 static int	dump_data = 0; /* Store the update_count requested */
+#endif /* DRIVERS_MAIN_WITHOUT_MAIN */
 
 /* print the driver banner */
 void upsdrv_banner (void)
@@ -116,6 +123,7 @@ void upsdrv_banner (void)
 	}
 }
 
+#ifndef DRIVERS_MAIN_WITHOUT_MAIN
 /* power down the attached load immediately */
 static void forceshutdown(void)
 	__attribute__((noreturn));
@@ -182,9 +190,13 @@ static void help_msg(void)
 
 	upsdrv_help();
 }
+#endif /* DRIVERS_MAIN_WITHOUT_MAIN */
 
 /* store these in dstate as driver.(parameter|flag) */
-static void dparam_setinfo(const char *var, const char *val)
+# ifndef DRIVERS_MAIN_WITHOUT_MAIN
+static
+# endif /* DRIVERS_MAIN_WITHOUT_MAIN */
+void dparam_setinfo(const char *var, const char *val)
 {
 	char	vtmp[SMALLBUF];
 
@@ -202,7 +214,10 @@ static void dparam_setinfo(const char *var, const char *val)
 }
 
 /* cram var [= <val>] data into storage */
-static void storeval(const char *var, char *val)
+# ifndef DRIVERS_MAIN_WITHOUT_MAIN
+static
+# endif /* DRIVERS_MAIN_WITHOUT_MAIN */
+void storeval(const char *var, char *val)
 {
 	vartab_t	*tmp, *last;
 
@@ -566,6 +581,7 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 	storeval(var, val);
 }
 
+#ifndef DRIVERS_MAIN_WITHOUT_MAIN
 /* split -x foo=bar into 'foo' and 'bar' */
 static void splitxarg(char *inbuf)
 {
@@ -614,8 +630,12 @@ static void listxarg(void)
 		tmp = tmp->next;
 	}
 }
+#endif /* DRIVERS_MAIN_WITHOUT_MAIN */
 
-static void vartab_free(void)
+# ifndef DRIVERS_MAIN_WITHOUT_MAIN
+static
+# endif /* DRIVERS_MAIN_WITHOUT_MAIN */
+void vartab_free(void)
 {
 	vartab_t	*tmp, *next;
 
@@ -633,6 +653,7 @@ static void vartab_free(void)
 	}
 }
 
+#ifndef DRIVERS_MAIN_WITHOUT_MAIN
 static void exit_upsdrv_cleanup(void)
 {
 	dstate_setinfo("driver.state", "cleanup.upsdrv");
@@ -667,6 +688,7 @@ static void exit_cleanup(void)
 	}
 #endif
 }
+#endif /* DRIVERS_MAIN_WITHOUT_MAIN */
 
 void set_exit_flag(int sig)
 {
@@ -674,7 +696,10 @@ void set_exit_flag(int sig)
 }
 
 #ifndef WIN32
-static void setup_signals(void)
+# ifndef DRIVERS_MAIN_WITHOUT_MAIN
+static
+# endif /* DRIVERS_MAIN_WITHOUT_MAIN */
+void setup_signals(void)
 {
 	struct sigaction	sa;
 
@@ -697,8 +722,12 @@ static void setup_signals(void)
 	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGPIPE, &sa, NULL);
 }
-#endif
+#endif /* WIN32*/
 
+/* This source file is used in some unit tests to mock realistic driver
+ * behavior - using a production driver skeleton, but their own main().
+ */
+#ifndef DRIVERS_MAIN_WITHOUT_MAIN
 int main(int argc, char **argv)
 {
 	struct	passwd	*new_uid = NULL;
@@ -749,6 +778,10 @@ int main(int argc, char **argv)
 	while ((i = getopt(argc, argv, "+a:s:kFBDd:hx:Lqr:u:g:Vi:")) != -1) {
 		switch (i) {
 			case 'a':
+				if (upsname)
+					fatalx(EXIT_FAILURE, "Error: options '-a id' and '-s id' "
+						"are mutually exclusive and single-use only.");
+
 				upsname = optarg;
 
 				read_upsconf();
@@ -758,6 +791,10 @@ int main(int argc, char **argv)
 						optarg);
 				break;
 			case 's':
+				if (upsname)
+					fatalx(EXIT_FAILURE, "Error: options '-a id' and '-s id' "
+						"are mutually exclusive and single-use only.");
+
 				upsname = optarg;
 				upsname_found = 1;
 				break;
@@ -863,9 +900,10 @@ int main(int argc, char **argv)
 	 * or issue tracker, as well as viewed locally, it can help to know the
 	 * build options involved when troubleshooting (especially when needed
 	 * to walk through building a PR branch with candidate fix for an issue).
+	 * Reference code for such message is in common/common.c prints to log
+	 * and/or syslog when any debug level is enabled.
 	 */
-	upsdebugx(1, "Network UPS Tools version %s configured with flags: %s",
-		UPS_VERSION, CONFIG_FLAGS);
+	nut_report_config_flags();
 
 	argc -= optind;
 	argv += optind;
@@ -1228,3 +1266,4 @@ int main(int argc, char **argv)
 
 	exit(EXIT_SUCCESS);
 }
+#endif /* DRIVERS_MAIN_WITHOUT_MAIN */

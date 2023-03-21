@@ -157,6 +157,7 @@ metadata about recently published package revisions:
 
 # NOTE: Some older Debian-like distributions, could ship "libcrypto-dev"
 # and/or "openssl-dev" instead of "libssl-dev" by its modern name
+# and may lack a libgpiod2 + libgpiod-dev altogether
 :; apt-get install \
     libcppunit-dev \
     libssl-dev libnss3-dev \
@@ -164,6 +165,7 @@ metadata about recently published package revisions:
     libusb-dev libusb-1.0-0-dev \
     libi2c-dev \
     libmodbus-dev \
+    libgpiod-dev \
     libsnmp-dev \
     libpowerman0-dev \
     libfreeipmi-dev libipmimonitoring-dev \
@@ -350,6 +352,7 @@ drivers in distro packaging of NUT. Resolution and doc PRs are welcome.
 #?# is python-augeas needed? exists at least...
 #?# no (lib)i2c-devel ...
 #?# no (lib)ipmimonitoring-devel ... would "freeipmi-ipmidetectd" cut it at least for run-time?
+#?# no (lib)gpio(d)-devel - starts with CentOS 8 (or extra repositories for later minor releases of CentOS 7)
 
 # Some NUT code related to lua may be currently limited to lua-5.1
 # or possibly 5.2; the former is default in CentOS 7 releases...
@@ -423,6 +426,8 @@ Install tools and prerequisites for NUT:
     net-snmp \
     freeipmi \
     avahi
+
+#?# no (lib)gpio(d)
 
 :; pacman -S --needed \
     lua51

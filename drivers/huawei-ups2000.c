@@ -51,7 +51,7 @@
 #include "timehead.h"   /* fallback gmtime_r() variants if needed (e.g. some WIN32) */
 
 #define DRIVER_NAME	"NUT Huawei UPS2000 (1kVA-3kVA) RS-232 Modbus driver"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_VERSION	"0.04"
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define MODBUS_SLAVE_ID 1
@@ -225,12 +225,15 @@ void upsdrv_initups(void)
 		fatalx(EXIT_FAILURE, "Unable to create the libmodbus context");
 
 #if LIBMODBUS_VERSION_CHECK(3, 1, 2)
-	/* It can take as slow as 1 sec. for the UPS to respond. */
-	modbus_set_response_timeout(modbus_ctx, 1, 0);
+	/*
+	 * Although it rarely occurs, it can take as slow as 2 sec. for the
+	 * UPS to respond a read and finish transmitting the message.
+	 */
+	modbus_set_response_timeout(modbus_ctx, 2, 0);
 #else
 	{
 		struct timeval timeout;
-		timeout.tv_sec = 1;
+		timeout.tv_sec = 2;
 		timeout.tv_usec = 0;
 		modbus_set_response_timeout(modbus_ctx, &timeout);
 	}
@@ -1945,6 +1948,16 @@ static int ups2000_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *des
 				 "Please file a bug report!", addr);
 
 	for (i = 0; i < 3; i++) {
+		/*
+		 * If the previous read failed with a timeout, often there
+		 * are still unprocessed bytes in the serial buffer and they
+		 * would be mixed with the new data, creating invalid messages,
+		 * making all subsequent reads to fail as well.
+		 *
+		 * Flush read buffer first to avoid it.
+		 */
+		modbus_flush(ctx);
+
 		r = modbus_read_registers(ctx, addr, nb, dest);
 
 		/* generic retry for modbus read failures. */

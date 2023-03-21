@@ -2175,6 +2175,7 @@ static void help(const char *arg_progname)
 	printf("  -D		raise debugging level (and stay foreground by default)\n");
 	printf("  -F		stay foregrounded even if no debugging is enabled\n");
 	printf("  -B		stay backgrounded even if debugging is bumped\n");
+	printf("  -V		display the version of this software\n");
 	printf("  -h		display this help\n");
 	printf("  -K		checks POWERDOWNFLAG, sets exit code to 0 if set\n");
 	printf("  -p		always run privileged (disable privileged parent)\n");

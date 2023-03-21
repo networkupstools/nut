@@ -57,6 +57,10 @@ static void usage(const char *prog)
 	printf("  -c         - lists each client connected on <ups>, one per line.\n");
 	printf("  <ups>      - upsd server, <upsname>[@<hostname>[:<port>]] form\n");
 
+	printf("\nCommon arguments:\n");
+	printf("  -V         - display the version of this software\n");
+	printf("  -h         - display this help text\n");
+
 	nut_report_config_flags();
 }
 
