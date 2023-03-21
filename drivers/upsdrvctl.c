@@ -508,7 +508,8 @@ static void start_driver(const ups_t *ups)
 		) {
 			upsdebugx(1, "WARNING: Requested a debugging level "
 				"but not explicitly a backgrounding mode - "
-				"driver may never try to fork away");
+				"driver may never try to fork away; however "
+				"the upsdrvctl tool will fork it and not wait.");
 		}
 	}
 
@@ -661,9 +662,15 @@ static void send_all_drivers(void (*command)(const ups_t *))
 		    )
 		) {
 			upslogx(LOG_WARNING,
-				"Starting \"all\" drivers but requested the "
-				"foreground mode (or debug without backgrounding)! "
-				"This request may never loop past the first driver!");
+				"Starting \"all\" drivers but requested the %s!"
+				"This request will not wait for driver(s) to complete "
+				"their initialization%s.",
+				(nut_foreground_passthrough == 1
+					? "foreground mode"
+					: "debug mode without backgrounding"),
+				(nut_foreground_passthrough == 1
+					? ", but upsdrvctl tool will stay foregrounded" : "")
+			);
 		}
 
 		while (ups) {
