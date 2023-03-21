@@ -46,6 +46,7 @@ typedef struct {
 }	ups_t;
 
 static ups_t	*upstable = NULL;
+static int	upscount = 0;
 
 static int	maxsdorder = 0, testmode = 0, exec_error = 0;
 
@@ -271,7 +272,9 @@ static void forkexec(char *const argv[], const ups_t *ups)
 #ifndef WIN32
 	int	ret;
 
-	if (nut_foreground_passthrough != 1) {
+	if (nut_foreground_passthrough == 1 && upscount == 1) {
+		upsdebugx(1, "Starting the only driver with explicitly requested foregrounding mode, not forking");
+	} else {
 		pid_t	pid;
 
 		pid = fork();
@@ -286,6 +289,15 @@ static void forkexec(char *const argv[], const ups_t *ups)
 			/* Handle "parallel" drivers startup */
 			if (waitfordrivers == 0) {
 				upsdebugx(2, "'nowait' set, continuing...");
+				return;
+			}
+
+			if (nut_foreground_passthrough == 1 && upscount > 1) {
+				/* Let upsdrvctl fork to run its numerous children
+				 * but without further forking on their side - so
+				 * not waiting for them to complete start-ups.
+				 */
+				upsdebugx(1, "Starting driver with explicitly requested foregrounding mode: will not wait for it to fork and detach, continuing..");
 				return;
 			}
 
@@ -793,10 +805,24 @@ int main(int argc, char **argv)
 
 	read_upsconf();
 
-	if (argc == 1)
+	if (argc == 1) {
+		ups_t	*tmp = upstable;
+		upscount = 0;
+
+		while (tmp) {
+			tmp = tmp->next;
+			upscount++;
+		}
+
+		upsdebugx(1, "upsdrvctl commanding all drivers (%d found): %s",
+			upscount, argv[0]);
 		send_all_drivers(command);
-	else
+	} else {
+		upscount = 1;
+		upsdebugx(1, "upsdrvctl commanding one driver (%s): %s",
+			argv[1], argv[0]);
 		send_one_driver(command, argv[1]);
+	}
 
 	if (exec_error)
 		exit(EXIT_FAILURE);
