@@ -692,6 +692,8 @@ static void exit_cleanup(void)
 {
 	ups_t	*tmp, *next;
 
+	upsdebugx(1, "Completed the job of upsdrvctl tool, cleaning up and exiting now");
+
 	tmp = upstable;
 
 	while (tmp) {
