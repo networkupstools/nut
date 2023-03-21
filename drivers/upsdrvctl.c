@@ -977,12 +977,34 @@ int main(int argc, char **argv)
 		 */
 		upsdebugx(1, "upsdrvctl was asked for explicit foregrounding - "
 			"not exiting now (driver startup was completed)");
+
+		/* raise exit_flag upon SIGTERM, Ctrl+C, etc. */
 		setup_signals();
 		while (!exit_flag) {
-			/* FIXME: track if any child has stopped (due to
+			/* Track if any child process has stopped (due to
 			 * an error, normal exit, signal...) to kill others
 			 * and exit the tool - with error if applicable.
 			 */
+			ups_t	*tmp = upstable, *next;
+			while (tmp) {
+				next = tmp->next;
+				if (tmp->pid != -1) {
+					if (waitpid(tmp->pid, NULL, WNOHANG) == tmp->pid) {
+						exit_flag = -1;
+						tmp->pid = -1;
+					}
+				}
+				tmp = next;
+			}
+			if (exit_flag == -1) {
+				fatalx(EXIT_FAILURE, "At least one tracked driver running "
+					"in foreground mode has exited, stopping upsdrvctl "
+					"(and other tracked drivers) so the bundle can be "
+					"restarted by system properly");
+				/* NOTE: Users really should run one driver per instance,
+				 * wrapped in services where available */
+			}
+
 			sleep(1);
 		}
 	}
