@@ -480,22 +480,22 @@ static void forkexec(char *const argv[], const ups_t *ups)
 	fatal_with_errno(EXIT_FAILURE, "execv");
 #else
 	BOOL	ret;
-	DWORD res;
-	DWORD exit_code = 0;
+	DWORD	res;
+	DWORD	exit_code = 0;
 	char	commandline[SMALLBUF];
-	STARTUPINFO StartupInfo;
-	PROCESS_INFORMATION ProcessInformation;
-	int 	i = 1;
+	STARTUPINFO	StartupInfo;
+	PROCESS_INFORMATION	ProcessInformation;
+	int	i = 1;
 
 	memset(&StartupInfo,0,sizeof(STARTUPINFO));
 
 	/* the command line is made of the driver name followed by args */
 	snprintf(commandline,sizeof(commandline),"%s", ups->driver);
-	while( argv[i] != NULL ) {
+	while (argv[i] != NULL) {
 		snprintfcat(commandline, sizeof(commandline), " %s", argv[i]);
 		i++;
 	}
-	
+
 	ret = CreateProcess(
 			argv[0],
 			commandline,
@@ -509,17 +509,17 @@ static void forkexec(char *const argv[], const ups_t *ups)
 			&ProcessInformation
 			);
 
-	if( ret == 0 ) {
+	if (ret == 0) {
 		fatal_with_errno(EXIT_FAILURE, "execv");
 	}
-	
+
 	/* Wait a bit then look at driver process.
 	 Unlike under Linux, Windows spwan drivers directly. If the driver is alive, all is OK.
 	 An optimization can probably be implemented to prevent waiting so much time when all is OK.
 	 */
 	res = WaitForSingleObject(ProcessInformation.hProcess,
 			(ups->maxstartdelay!=-1?ups->maxstartdelay:maxstartdelay)*1000);
-	
+
 	if (res != WAIT_TIMEOUT) {
 		GetExitCodeProcess( ProcessInformation.hProcess, &exit_code );
 		upslogx(LOG_WARNING, "Driver failed to start (exit status=%d)", ret);
@@ -530,7 +530,7 @@ static void forkexec(char *const argv[], const ups_t *ups)
 		int *pupid = (int *)&(ups->pid);
 		*pupid = 0;	/* Here, just a flag (not "-1" has a meaning) */
 	}
-	
+
 	return;
 #endif
 }
