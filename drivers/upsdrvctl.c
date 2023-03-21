@@ -315,7 +315,7 @@ static void stop_driver(const ups_t *ups)
 	exec_error++;
 }
 
-void set_exit_flag(const int sig)
+static void set_exit_flag(const int sig)
 {
 	exit_flag = sig;
 }
@@ -739,7 +739,7 @@ static void shutdown_driver(const ups_t *ups)
 	}
 }
 
-static void send_one_driver(void (*command)(const ups_t *), const char *upsname)
+static void send_one_driver(void (*command_func)(const ups_t *), const char *upsname)
 {
 	ups_t	*ups = upstable;
 
@@ -748,7 +748,7 @@ static void send_one_driver(void (*command)(const ups_t *), const char *upsname)
 
 	while (ups) {
 		if (!strcmp(ups->upsname, upsname)) {
-			command(ups);
+			command_func(ups);
 			return;
 		}
 
@@ -759,7 +759,7 @@ static void send_one_driver(void (*command)(const ups_t *), const char *upsname)
 }
 
 /* walk UPS table and send command to all UPSes according to sdorder */
-static void send_all_drivers(void (*command)(const ups_t *))
+static void send_all_drivers(void (*command_func)(const ups_t *))
 {
 	ups_t	*ups;
 	int	i;
@@ -767,11 +767,11 @@ static void send_all_drivers(void (*command)(const ups_t *))
 	if (!upstable)
 		fatalx(EXIT_FAILURE, "Error: no UPS definitions found in ups.conf");
 
-	if (command != &shutdown_driver) {
+	if (command_func != &shutdown_driver) {
 		ups = upstable;
 
 		/* Only warn when relevant - got more than one device to start */
-		if (command == &start_driver
+		if (command_func == &start_driver
 		&&  ups->next
 		&&  ( (nut_foreground_passthrough == 1)
 		      || (nut_foreground_passthrough != 0
@@ -792,7 +792,7 @@ static void send_all_drivers(void (*command)(const ups_t *))
 		}
 
 		while (ups) {
-			command(ups);
+			command_func(ups);
 
 			ups = ups->next;
 		}
@@ -806,7 +806,7 @@ static void send_all_drivers(void (*command)(const ups_t *))
 
 		while (ups) {
 			if (ups->sdorder == i)
-				command(ups);
+				command_func(ups);
 
 			ups = ups->next;
 		}
