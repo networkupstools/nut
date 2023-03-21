@@ -42,6 +42,11 @@ typedef struct {
 	char	*port;
 	int	sdorder;
 	int	maxstartdelay;
+#ifndef WIN32
+	pid_t	pid;
+#else
+	int	pid;	/* for WIN32 used just as a flag that this UPS was started by this tool in this run */
+#endif
 	void	*next;
 }	ups_t;
 
@@ -71,6 +76,12 @@ static char	*pt_root = NULL, *pt_user = NULL;
 	/* flag to pass nut_debug_level to launched drivers (as their -D... args) */
 static int	nut_debug_level_passthrough = 0;
 static int	nut_foreground_passthrough = -1;
+
+/* Keep track of requested operation (function pointer) */
+static void	(*command)(const ups_t *) = NULL;
+
+/* signal handling */
+static int	exit_flag = 0;
 
 void do_upsconf_args(char *upsname, char *var, char *val)
 {
@@ -138,6 +149,7 @@ void do_upsconf_args(char *upsname, char *var, char *val)
 	tmp->upsname = xstrdup(upsname);
 	tmp->driver = NULL;
 	tmp->port = NULL;
+	tmp->pid = -1;
 	tmp->next = NULL;
 	tmp->sdorder = 0;
 	tmp->maxstartdelay = -1;	/* use global value by default */
@@ -163,26 +175,34 @@ static void stop_driver(const ups_t *ups)
 	upsdebugx(1, "Stopping UPS: %s", ups->upsname);
 
 #ifndef WIN32
-	struct stat	fs;
-	snprintf(pidfn, sizeof(pidfn), "%s/%s-%s.pid", altpidpath(),
-		ups->driver, ups->upsname);
-	ret = stat(pidfn, &fs);
-
-	if ((ret != 0) && (ups->port != NULL)) {
-		upslog_with_errno(LOG_ERR, "Can't open %s", pidfn);
+	if (ups->pid == -1) {
+		struct stat	fs;
 		snprintf(pidfn, sizeof(pidfn), "%s/%s-%s.pid", altpidpath(),
-			ups->driver, xbasename(ups->port));
+			ups->driver, ups->upsname);
 		ret = stat(pidfn, &fs);
-	}
 
-	if (ret != 0) {
-		upslog_with_errno(LOG_ERR, "Can't open %s either", pidfn);
-		exec_error++;
-		return;
-	}
+		if ((ret != 0) && (ups->port != NULL)) {
+			upslog_with_errno(LOG_ERR, "Can't open %s", pidfn);
+			snprintf(pidfn, sizeof(pidfn), "%s/%s-%s.pid", altpidpath(),
+				ups->driver, xbasename(ups->port));
+			ret = stat(pidfn, &fs);
+		}
 
+		if (ret != 0) {
+			upslog_with_errno(LOG_ERR, "Can't open %s either", pidfn);
+			exec_error++;
+			return;
+		}
+	} else {
+		/* We started the driver in this run of upsdrvctl
+		 * tool, stayed foregrounded, and now are exiting.
+		 * NOTE: Not a filename here, but using same variable
+		 * name makes the code below simpler to maintain.
+		 */
+		snprintf(pidfn, sizeof(pidfn), "PID %" PRIdMAX, (intmax_t)ups->pid);
+	}
 #else
-	snprintf(pidfn, sizeof(pidfn), "%s-%s",ups->driver, ups->upsname);
+	snprintf(pidfn, sizeof(pidfn), "%s-%s", ups->driver, ups->upsname);
 #endif
 
 	upsdebugx(2, "Sending signal to %s", pidfn);
@@ -191,7 +211,15 @@ static void stop_driver(const ups_t *ups)
 		return;
 
 #ifndef WIN32
-	ret = sendsignalfn(pidfn, SIGTERM);
+	if (ups->pid == -1) {
+		ret = sendsignalfn(pidfn, SIGTERM);
+	} else {
+		ret = sendsignalpid(ups->pid, SIGTERM);
+		/* reap zombie if this child died */
+		if (waitpid(ups->pid, NULL, WNOHANG) == ups->pid) {
+			return;
+		}
+	}
 #else
 	ret = sendsignal(pidfn, COMMAND_STOP);
 #endif
@@ -199,7 +227,15 @@ static void stop_driver(const ups_t *ups)
 	if (ret < 0) {
 #ifndef WIN32
 		upsdebugx(2, "SIGTERM to %s failed, retrying with SIGKILL", pidfn);
-		ret = sendsignalfn(pidfn, SIGKILL);
+		if (ups->pid == -1) {
+			ret = sendsignalfn(pidfn, SIGKILL);
+		} else {
+			ret = sendsignalpid(ups->pid, SIGKILL);
+			/* reap zombie if this child died */
+			if (waitpid(ups->pid, NULL, WNOHANG) == ups->pid) {
+				return;
+			}
+		}
 #else
 		upsdebugx(2, "Stopping %s failed, retrying again", pidfn);
 		ret = sendsignal(pidfn, COMMAND_STOP);
@@ -212,7 +248,20 @@ static void stop_driver(const ups_t *ups)
 	}
 
 	for (i = 0; i < 5 ; i++) {
-		if (sendsignalfn(pidfn, 0) != 0) {
+#ifndef WIN32
+		if (ups->pid == -1) {
+			ret = sendsignalfn(pidfn, 0);
+		} else {
+			/* reap zombie if this child died */
+			if (waitpid(ups->pid, NULL, WNOHANG) == ups->pid) {
+					return;
+			}
+			ret = sendsignalpid(ups->pid, 0);
+		}
+#else
+		ret = sendsignalfn(pidfn, 0);
+#endif
+		if (ret != 0) {
 			upsdebugx(2, "Sending signal to %s failed, driver is finally down or wrongly owned", pidfn);
 			return;
 		}
@@ -221,18 +270,41 @@ static void stop_driver(const ups_t *ups)
 
 #ifndef WIN32
 	upslog_with_errno(LOG_ERR, "Stopping %s failed, retrying harder", pidfn);
-	ret = sendsignalfn(pidfn, SIGKILL);
+	if (ups->pid == -1) {
+		ret = sendsignalfn(pidfn, SIGKILL);
+	} else {
+		/* reap zombie if this child died */
+		if (waitpid(ups->pid, NULL, WNOHANG) == ups->pid) {
+			return;
+		}
+		ret = sendsignalpid(ups->pid, SIGKILL);
+	}
 #else
 	upslog_with_errno(LOG_ERR, "Stopping %s failed, retrying again", pidfn);
 	ret = sendsignal(pidfn, COMMAND_STOP);
 #endif
 	if (ret == 0) {
 		for (i = 0; i < 5 ; i++) {
-			if (sendsignalfn(pidfn, 0) != 0) {
+#ifndef WIN32
+			if (ups->pid == -1) {
+				ret = sendsignalfn(pidfn, 0);
+			} else {
+				/* reap zombie if this child died */
+				if (waitpid(ups->pid, NULL, WNOHANG) == ups->pid) {
+					return;
+				}
+				ret = sendsignalpid(ups->pid, 0);
+			}
+#else
+			ret = sendsignalfn(pidfn, 0);
+#endif
+			if (ret != 0) {
 				upsdebugx(2, "Sending signal to %s failed, driver is finally down or wrongly owned", pidfn);
 				// While a TERMinated driver cleans up,
 				// a stuck and KILLed one does not, so:
-				unlink(pidfn);
+				if (ups->pid == -1) {
+					unlink(pidfn);
+				}
 				return;
 			}
 			sleep(1);
@@ -241,6 +313,38 @@ static void stop_driver(const ups_t *ups)
 
 	upslog_with_errno(LOG_ERR, "Stopping %s failed", pidfn);
 	exec_error++;
+}
+
+void set_exit_flag(const int sig)
+{
+	exit_flag = sig;
+}
+
+static void setup_signals(void)
+{
+#ifndef WIN32
+	/* Keep in sync with signal handling in drivers/main.c */
+	struct sigaction	sa;
+
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	sa.sa_handler = set_exit_flag;
+
+	sigaction(SIGTERM, &sa, NULL);
+	sigaction(SIGINT, &sa, NULL);
+	sigaction(SIGQUIT, &sa, NULL);
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#endif
+	sa.sa_handler = SIG_IGN;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic pop
+#endif
+	sigaction(SIGHUP, &sa, NULL);
+	sigaction(SIGPIPE, &sa, NULL);
+#endif	/* WIN32 */
 }
 
 #ifndef WIN32
@@ -286,6 +390,10 @@ static void forkexec(char *const argv[], const ups_t *ups)
 		if (pid != 0) {			/* parent */
 			int	wstat;
 			struct sigaction	sa;
+
+			/* work around const for this one... */
+			int *pupid = (int *)&(ups->pid);
+			*pupid = pid;
 
 			/* Handle "parallel" drivers startup */
 			if (waitfordrivers == 0) {
@@ -417,6 +525,10 @@ static void forkexec(char *const argv[], const ups_t *ups)
 		upslogx(LOG_WARNING, "Driver failed to start (exit status=%d)", ret);
 		exec_error++;
 		return;
+	} else {
+		/* work around const for this one... */
+		int *pupid = (int *)&(ups->pid);
+		*pupid = 0;	/* Here, just a flag (not "-1" has a meaning) */
 	}
 	
 	return;
@@ -709,6 +821,21 @@ static void exit_cleanup(void)
 
 	tmp = upstable;
 
+	if (command == &start_driver
+	&&  upscount > 0
+	&&  nut_foreground_passthrough == 1
+	) {
+		/* First stop the drivers, if any are running */
+		while (tmp) {
+			next = tmp->next;
+			if (tmp->pid != -1) {
+				stop_driver(tmp);
+			}
+			tmp = next;
+		}
+	}
+
+	tmp = upstable;
 	while (tmp) {
 		next = tmp->next;
 
@@ -727,7 +854,6 @@ int main(int argc, char **argv)
 {
 	int	i;
 	char	*prog;
-	void	(*command)(const ups_t *) = NULL;
 
 	printf("Network UPS Tools - UPS driver controller %s\n",
 		UPS_VERSION);
@@ -851,12 +977,11 @@ int main(int argc, char **argv)
 		 */
 		upsdebugx(1, "upsdrvctl was asked for explicit foregrounding - "
 			"not exiting now (driver startup was completed)");
-		while (1) {
-			/* FIXME: Add signal handler to exit(0) when getting
-			 * a Ctrl+C, SIGTERM etc., and to command the launched
-			 * driver(s) to stop (need to remember the PIDs). Also
-			 * track if any child has stopped (error, exit, signal...)
-			 * to kill others and exit - with error if applicable.
+		setup_signals();
+		while (!exit_flag) {
+			/* FIXME: track if any child has stopped (due to
+			 * an error, normal exit, signal...) to kill others
+			 * and exit the tool - with error if applicable.
 			 */
 			sleep(1);
 		}
