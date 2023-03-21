@@ -981,6 +981,7 @@ int main(int argc, char **argv)
 		/* raise exit_flag upon SIGTERM, Ctrl+C, etc. */
 		setup_signals();
 		while (!exit_flag) {
+#ifndef WIN32
 			/* Track if any child process has stopped (due to
 			 * an error, normal exit, signal...) to kill others
 			 * and exit the tool - with error if applicable.
@@ -996,6 +997,7 @@ int main(int argc, char **argv)
 				}
 				tmp = next;
 			}
+
 			if (exit_flag == -1) {
 				fatalx(EXIT_FAILURE, "At least one tracked driver running "
 					"in foreground mode has exited, stopping upsdrvctl "
@@ -1004,7 +1006,7 @@ int main(int argc, char **argv)
 				/* NOTE: Users really should run one driver per instance,
 				 * wrapped in services where available */
 			}
-
+#endif	/* WIN32 */
 			sleep(1);
 		}
 	}
