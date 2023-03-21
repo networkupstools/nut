@@ -270,72 +270,83 @@ static void forkexec(char *const argv[], const ups_t *ups)
 {
 #ifndef WIN32
 	int	ret;
-	pid_t	pid;
 
-	pid = fork();
+	if (nut_foreground_passthrough != 1) {
+		pid_t	pid;
 
-	if (pid < 0)
-		fatal_with_errno(EXIT_FAILURE, "fork");
+		pid = fork();
 
-	if (pid != 0) {			/* parent */
-		int	wstat;
-		struct sigaction	sa;
+		if (pid < 0)
+			fatal_with_errno(EXIT_FAILURE, "fork");
 
-		/* Handle "parallel" drivers startup */
-		if (waitfordrivers == 0) {
-			upsdebugx(2, "'nowait' set, continuing...");
+		if (pid != 0) {			/* parent */
+			int	wstat;
+			struct sigaction	sa;
+
+			/* Handle "parallel" drivers startup */
+			if (waitfordrivers == 0) {
+				upsdebugx(2, "'nowait' set, continuing...");
+				return;
+			}
+
+			if (nut_foreground_passthrough != 0
+			 && nut_debug_level > 0
+			 && nut_debug_level_passthrough > 0
+			) {
+				upsdebugx(2, "Starting driver with debug but without explicit backgrounding: will not wait for it to fork and detach, continuing...");
+				return;
+			}
+
+			sigemptyset(&sa.sa_mask);
+			sa.sa_flags = 0;
+			sa.sa_handler = waitpid_timeout;
+			sigaction(SIGALRM, &sa, NULL);
+
+			/* Use the local maxstartdelay, if available */
+			if (ups->maxstartdelay != -1) {
+				if (ups->maxstartdelay >= 0)
+					alarm((unsigned int)ups->maxstartdelay);
+			} else { /* Otherwise, use the global (or default) value */
+				if (maxstartdelay >= 0)
+					alarm((unsigned int)maxstartdelay);
+			}
+
+			ret = waitpid(pid, &wstat, 0);
+
+			alarm(0);
+
+			if (ret == -1) {
+				upslogx(LOG_WARNING, "Startup timer elapsed, continuing...");
+				exec_error++;
+				return;
+			}
+
+			if (WIFEXITED(wstat) == 0) {
+				upslogx(LOG_WARNING, "Driver exited abnormally");
+				exec_error++;
+				return;
+			}
+
+			if (WEXITSTATUS(wstat) != 0) {
+				upslogx(LOG_WARNING, "Driver failed to start"
+				" (exit status=%d)", WEXITSTATUS(wstat));
+				exec_error++;
+				return;
+			}
+
+			/* the rest only work when WIFEXITED is nonzero */
+
+			if (WIFSIGNALED(wstat)) {
+				upslog_with_errno(LOG_WARNING, "Driver died after signal %d",
+					WTERMSIG(wstat));
+				exec_error++;
+			}
+
 			return;
 		}
-
-		sigemptyset(&sa.sa_mask);
-		sa.sa_flags = 0;
-		sa.sa_handler = waitpid_timeout;
-		sigaction(SIGALRM, &sa, NULL);
-
-		/* Use the local maxstartdelay, if available */
-		if (ups->maxstartdelay != -1) {
-			if (ups->maxstartdelay >= 0)
-				alarm((unsigned int)ups->maxstartdelay);
-		} else { /* Otherwise, use the global (or default) value */
-			if (maxstartdelay >= 0)
-				alarm((unsigned int)maxstartdelay);
-		}
-
-		ret = waitpid(pid, &wstat, 0);
-
-		alarm(0);
-
-		if (ret == -1) {
-			upslogx(LOG_WARNING, "Startup timer elapsed, continuing...");
-			exec_error++;
-			return;
-		}
-
-		if (WIFEXITED(wstat) == 0) {
-			upslogx(LOG_WARNING, "Driver exited abnormally");
-			exec_error++;
-			return;
-		}
-
-		if (WEXITSTATUS(wstat) != 0) {
-			upslogx(LOG_WARNING, "Driver failed to start"
-			" (exit status=%d)", WEXITSTATUS(wstat));
-			exec_error++;
-			return;
-		}
-
-		/* the rest only work when WIFEXITED is nonzero */
-
-		if (WIFSIGNALED(wstat)) {
-			upslog_with_errno(LOG_WARNING, "Driver died after signal %d",
-				WTERMSIG(wstat));
-			exec_error++;
-		}
-
-		return;
 	}
 
-	/* child */
+	/* child or foreground mode (no fork) */
 
 	ret = execv(argv[0], argv);
 
