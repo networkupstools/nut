@@ -829,5 +829,22 @@ int main(int argc, char **argv)
 	if (exec_error)
 		exit(EXIT_FAILURE);
 
+	if (command == &start_driver
+	&&  upscount > 0
+	&&  nut_foreground_passthrough == 1
+	) {
+		/* Note: for a single started driver, we just
+		 * exec() it and should not even get here
+		 */
+		upsdebugx(1, "upsdrvctl was asked for explicit foregrounding - not exiting now (driver startup was completed)");
+		while (1) {
+			/* FIXME: Add signal handler to exit(0) when getting
+			 * a Ctrl+C, SIGTERM etc., and to command the launched
+			 * driver(s) to stop.
+			 */
+			sleep(1);
+		}
+	}
+
 	exit(EXIT_SUCCESS);
 }
