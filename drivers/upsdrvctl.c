@@ -322,6 +322,8 @@ static void set_exit_flag(const int sig)
 
 static void setup_signals(void)
 {
+	set_exit_flag(0);
+
 #ifndef WIN32
 	/* Keep in sync with signal handling in drivers/main.c */
 	struct sigaction	sa;
