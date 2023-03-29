@@ -137,6 +137,8 @@ https://github.com/networkupstools/nut/milestone/8
    * Fixed the long standing "Warning: excessive poll failures" issue, that
      was tied to non-existent OIDs, not well handled in some parts of the
      driver [#1716]
+   * `baytech-mib.c` subdriver: fixed `baytech_outlet_status_info[]` set
+     of valid outlet status values [#1871]
 
  - The `bestfortress` driver shutdown handling was fixed to use a non-trivial
    default timeout [#1820]
