@@ -194,12 +194,12 @@ std::string SystemException::err()
  * https://lgtm.com/rules/2165180572/ like:
  *   NutException& operator=(NutException& rhs) = default;
  */
-NutException::~NutException() {}
-SystemException::~SystemException() {}
-IOException::~IOException() {}
-UnknownHostException::~UnknownHostException() {}
-NotConnectedException::~NotConnectedException() {}
-TimeoutException::~TimeoutException() {}
+NutException::~NutException() noexcept {}
+SystemException::~SystemException() noexcept {}
+IOException::~IOException() noexcept {}
+UnknownHostException::~UnknownHostException() noexcept {}
+NotConnectedException::~NotConnectedException() noexcept {}
+TimeoutException::~TimeoutException() noexcept {}
 
 
 namespace internal
