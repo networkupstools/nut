@@ -33,7 +33,6 @@ Standards-Version: 3.9.5
 Homepage: http://www.networkupstools.org/
 Vcs-Browser: http://anonscm.debian.org/gitweb/?p=collab-maint/nut.git;a=summary
 Vcs-Git: git://anonscm.debian.org/collab-maint/nut.git
-X-Python-Version: >= 2.5
 XS-Testsuite: autopkgtest
 
 Package: nut
@@ -328,7 +327,7 @@ Description: network UPS tools - development files for stub
  .
  This package provides the development files for the new client library stub.
 
-Package: python-nut
+Package: python3-nut
 Section: python
 Architecture: all
 Depends: ${python3:Depends}, ${misc:Depends}

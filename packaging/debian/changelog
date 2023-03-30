@@ -1,8 +1,16 @@
+nut (2.8.0-2) UNRELEASED; urgency=high
+
+  * d/control:
+    * remove X-Python-Version (obsolete)
+    * switch pynut to python3 (rename package and update depends)
+
+ -- Arnaud Quette <ArnaudQuette@eaton.com> Thu, 30 Mar 2023 12:02:15 +0200
+
 nut (2.8.0-1) UNRELEASED; urgency=high
 
   * Upstream update
 
- -- Arnaud Quette <ArnaudQuette@eaton.com> Wed Apr 27 11:50:06 2022 +0200
+ -- Arnaud Quette <ArnaudQuette@eaton.com> Wed, 27 Apr 2022 11:50:06 +0200
 
 nut (2.7.4-14) UNRELEASED; urgency=high
 
