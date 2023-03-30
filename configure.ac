@@ -3258,8 +3258,17 @@ CPLUSPLUS_DECL='
 #if __cplusplus < 201103L
   #error This library needs at least a C++11 compliant compiler
 #endif
+
+/* Make sure it supports modern syntax */
+#include <string>
+#include <map>
 '
-CPLUSPLUS_MAIN='printf("%ld\n", __cplusplus);'
+CPLUSPLUS_MAIN='
+printf("%ld\n", __cplusplus);
+/* Make sure it supports modern syntax */
+std::map<std::string, std::string> map;
+map.emplace("key", "value");
+'
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
     [AC_MSG_RESULT([yes, out of the box])
