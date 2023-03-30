@@ -116,13 +116,35 @@ further options for each "template" by invoking its help action, e.g.:
     -n jenkins-debian10-mips -t debian -- \
     -r buster -a mips
 ------
-** ...or for EOLed distros, use the archive, e.g.:
+** ...or for EOLed distros, use the Debian Archive server.
+*** Install the container with Debian Archive as the mirror like this:
 +
 ------
 :; MIRROR="http://archive.debian.org/debian-archive/debian/" \
    lxc-create -P /srv/libvirt/rootfs \
     -n jenkins-debian8-s390x -t debian -- \
     -r jessie -a s390x
+------
+*** Note you may have to add trust to their (now expired) GPG keys for
+    packaging to verify signatures made at the time the key was valid,
+    by un-symlinking (if appropriate) the debootstrap script such as
+    `/usr/share/debootstrap/scripts/jessie`, commenting away the
+    `keyring /usr/share/keyrings/debian-archive-keyring.gpg` line and
+    setting `keyring /usr/share/keyrings/debian-archive-removed-keys.gpg`
+    instead. You may further have to edit `/usr/share/debootstrap/functions`
+    and/or `/usr/share/lxc/templates/lxc-debian` to honor that setting (the
+    `releasekeyring` was hard-coded in version I had installed), e.g. in the
+    latter file ensure such logic as below, and re-run the installation:
++
+------
+...
+    # If debian-archive-keyring isn't installed, fetch GPG keys directly
+    releasekeyring="`grep -E '^keyring ' "/usr/share/debootstrap/scripts/$release" | sed -e 's,^keyring ,,' -e 's,[ #].*$,,'`" 2>/dev/null
+    if [ -z $releasekeyring ]; then
+        releasekeyring=/usr/share/keyrings/debian-archive-keyring.gpg
+    fi
+    if [ ! -f $releasekeyring ]; then
+...
 ------
 ** ...Alternatively, other distributions can be used (as supported by your
    LXC scripts, typically in `/usr/share/debootstrap/scripts`), e.g. Ubuntu:

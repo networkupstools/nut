@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3114 utf-8
+personal_ws-1.1 en 3116 utf-8
 AAS
 ABI
 ACFAIL
@@ -2113,6 +2113,7 @@ keyclick
 keygen
 keyout
 keyring
+keyrings
 keyserver
 killall
 killpower
@@ -2609,6 +2610,7 @@ refactoring
 referencenominal
 regex
 regtype
+releasekeyring
 relicensing
 repo
 reposurgeon
