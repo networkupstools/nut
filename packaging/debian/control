@@ -331,7 +331,7 @@ Description: network UPS tools - development files for stub
 Package: python-nut
 Section: python
 Architecture: all
-Depends: ${python:Depends}, ${misc:Depends}
+Depends: ${python3:Depends}, ${misc:Depends}
 Description: network UPS tools - Python bindings for NUT server
  Network UPS Tools (NUT) is a client/server monitoring system that
  allows computers to share uninterruptible power supply (UPS) and
@@ -343,7 +343,7 @@ Description: network UPS tools - Python bindings for NUT server
 
 Package: nut-monitor
 Architecture: all
-Depends: ${python:Depends},
+Depends: ${python3:Depends},
          ${misc:Depends},
          python-gobject,
          python-gtk2,
