@@ -96,6 +96,9 @@ further options for each "template" by invoking its help action, e.g.:
 ------
 ======
 
+Initial container installation (for various guest OSes)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 * Install containers like this:
 +
 ------
@@ -280,6 +283,9 @@ package integrity (seems too tied into thinking that host OS is Arch)...
 +
 It seems that pre-fetching the package databases with `pacman -Sy` on
 the host was also important.
+
+Initial container-related setup
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * Add the "name,IP" line for this container to `/etc/lxc/dnsmasq-hosts.conf`
   on the host, e.g.:
