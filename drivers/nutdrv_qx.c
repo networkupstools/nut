@@ -38,7 +38,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.33"
+#define DRIVER_VERSION	"0.34"
 
 #include "config.h"
 #include "main.h"
@@ -3631,6 +3631,7 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 	if (mode == QX_WALKMODE_FULL_UPDATE) {
 		batt.runt.act = -1;
 		batt.chrg.act = -1;
+		battery_voltage_reports_one_pack_considered = 0;
 	}
 
 	/* Clear data from previous_item */
