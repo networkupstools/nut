@@ -595,7 +595,7 @@ AS_IF([test "$ac_cv_header_sys_time_h" = yes],
          and <time.h>.  This macro is deemed obsolete by autotools.])
     ], [])
 
-AC_CHECK_FUNCS(flock lockf fcvt fcvtl abs_val abs)
+AC_CHECK_FUNCS(flock lockf fcvt fcvtl dup dup2 abs_val abs)
 
 AC_CHECK_HEADER([float.h],
     [AC_DEFINE([HAVE_FLOAT_H], [1],
