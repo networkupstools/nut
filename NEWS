@@ -209,6 +209,11 @@ https://github.com/networkupstools/nut/milestone/8
  - upslog: Added support for logging multiple devices with one call to the
    program [#1604]
 
+ - Documentation to integrate NUT USB driver startup with `usb_resetter` script
+   has been contributed to `scripts/usb_resetter` (the script itself is tracked
+   externally on GitHub), along with a configuration example for Linux+systemd
+   [#1887]
+
  - Some fixes applied to Solaris/illumos packaging and SMF service support
    [#1554, #1564]
 
