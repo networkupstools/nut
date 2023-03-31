@@ -2586,6 +2586,7 @@ then
         *-m64*) CC="$CC -m64" ;;
     esac
 fi
+m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 LT_INIT
 AC_SUBST([LIBTOOL_DEPS])
 GCC="$SAVED_GCC"
