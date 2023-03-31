@@ -86,8 +86,8 @@ dnl Default to `configure --enable-silent-rules` or `make V=1` for details?
 dnl This feature seems to require automake-1.13 or newer (1.11+ by other info)
 dnl On very old systems can comment it away with little loss (then automake-1.10
 dnl is known to suffice):
-ifdef(`AM_SILENT_RULES', `AM_SILENT_RULES([yes])')
-dnl, `AC_MSG_NOTICE([Silent Rules feature not defined in this automake version, skipped])' )
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])],
+	[AC_MSG_NOTICE([Silent Rules feature not defined in this automake version, skipped])])
 
 dnl we need Autoconf 2.61 or better to enable features of Posix that are extensions to C
 dnl (and actually 2.64 or better for m4/ax_check_compile_flag.m4 when it is sourced)
