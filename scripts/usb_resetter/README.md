@@ -33,11 +33,18 @@ We'll need to reset the hub it's attached to.
 
 The command for doing so is:
 ```
-usb_reset.py --reset-hub --device 0665:5161
+usb_resetter --reset-hub --device 0665:5161
 ```
 
 Bear in mind that this will reset other devices connected to the same hub. While this isn't a problem for a keyboard / mouse, it might be for a USB storage device.  
+On some hardware, each USB plug gets it's own hub. On others, two or more USB plus share one hub.
 A good practice would be to isolate the USB UPS on a hub without any other device in order to not interfere with other hardware, or associate it on a hub where a non critical device is already plugged.
+
+Getting the hub your device is attached to can be done with:
+```
+usb_resetter --list-hubs --device 0665:5161
+```
+
 
 The easiest way to integrate with nut-driver is to modify the systemd service file with the following line:
 ```
