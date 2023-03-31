@@ -16,6 +16,7 @@ Makefile
 Makefile.in
 ## Parent directory only
 /aclocal.m4
+/ar-lib
 /autom4te.cache/
 /ChangeLog
 /config.guess
