@@ -108,7 +108,7 @@ versioned package by default of the current release (e.g. "libusb-0.1-4"),
 while names of both the library and development packages for libusb-1.0
 must be determined with:
 ------
-:; apt-cache search 'libusb.*1\.0.*
+:; apt-cache search 'libusb.*1\.0.*'
 ------
 yielding e.g. "libusb-1.0-0-dev" (string name was seen with different
 actual package source versions on both Debian 8 "Jessie" and
@@ -121,15 +121,18 @@ metadata about recently published package revisions:
 ------
 :; apt-get update
 
-# NOTE: Older Debian-like distributions may lack a "libtool-bin"
 :; apt-get install \
     ccache time \
     git python perl curl \
-    make autoconf automake libltdl-dev libtool-bin libtool \
+    make autoconf automake libltdl-dev libtool \
     valgrind \
     cppcheck \
     pkg-config \
     gcc g++ clang
+
+# NOTE: Older Debian-like distributions may lack a "libtool-bin"
+:; apt-get install \
+    libtool-bin
 
 # NOTE: For python, you may eventually have to specify a variant like this
 # (numbers depending on default or additional packages of your distro):
@@ -165,12 +168,16 @@ metadata about recently published package revisions:
     libusb-dev libusb-1.0-0-dev \
     libi2c-dev \
     libmodbus-dev \
-    libgpiod-dev \
     libsnmp-dev \
     libpowerman0-dev \
     libfreeipmi-dev libipmimonitoring-dev \
     libavahi-common-dev libavahi-core-dev libavahi-client-dev
 # For libneon, see below
+
+# NOTE: Older Debian-like distributions may lack a "libgpiod-dev"
+# Others above are present as far back as Debian 7 at least
+:; apt-get install \
+    libgpiod-dev
 
 :; apt-get install \
     lua5.1-dev

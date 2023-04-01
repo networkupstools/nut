@@ -57,6 +57,8 @@ This may be set in ups.conf with "user" in the global section.
 
 *-D*::
 Raise the debug level.  Use this multiple times for additional details.
+Note that this does not preclude the `upsdrvctl` tool from exiting after
+its job is done (however an explicit *-F* option does).
 
 *-d*::
 Pass the selected debug level from `upsdrvctl` to launched drivers.
@@ -65,9 +67,10 @@ in foreground mode; you can specify *-B* additionally to avoid that.
 
 *-F*::
 Driver will run in the foreground (not fork away from the `upsdrvctl`
-process), regardless of debugging settings. This may be counterproductive
-if you start "everything" (do not specify an *ups* argument) as the loop
-would never proceed beyond the first device in the list, so `upsdrvctl`
+process), regardless of debugging settings. It would also keep the tool
+program itself foregrounded with driver daemons running as its children
+(in case of a single driver startup, it would not even fork). It would
+also not wait for drivers to complete initialization, so `upsdrvctl`
 will warn about such situations.
 
 *-B*::

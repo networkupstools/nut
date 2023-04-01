@@ -42,10 +42,16 @@ typedef struct {
 	char	*port;
 	int	sdorder;
 	int	maxstartdelay;
+#ifndef WIN32
+	pid_t	pid;
+#else
+	int	pid;	/* for WIN32 used just as a flag that this UPS was started by this tool in this run */
+#endif
 	void	*next;
 }	ups_t;
 
 static ups_t	*upstable = NULL;
+static int	upscount = 0;
 
 static int	maxsdorder = 0, testmode = 0, exec_error = 0;
 
@@ -70,6 +76,12 @@ static char	*pt_root = NULL, *pt_user = NULL;
 	/* flag to pass nut_debug_level to launched drivers (as their -D... args) */
 static int	nut_debug_level_passthrough = 0;
 static int	nut_foreground_passthrough = -1;
+
+/* Keep track of requested operation (function pointer) */
+static void	(*command)(const ups_t *) = NULL;
+
+/* signal handling */
+static int	exit_flag = 0;
 
 void do_upsconf_args(char *upsname, char *var, char *val)
 {
@@ -137,6 +149,7 @@ void do_upsconf_args(char *upsname, char *var, char *val)
 	tmp->upsname = xstrdup(upsname);
 	tmp->driver = NULL;
 	tmp->port = NULL;
+	tmp->pid = -1;
 	tmp->next = NULL;
 	tmp->sdorder = 0;
 	tmp->maxstartdelay = -1;	/* use global value by default */
@@ -162,26 +175,34 @@ static void stop_driver(const ups_t *ups)
 	upsdebugx(1, "Stopping UPS: %s", ups->upsname);
 
 #ifndef WIN32
-	struct stat	fs;
-	snprintf(pidfn, sizeof(pidfn), "%s/%s-%s.pid", altpidpath(),
-		ups->driver, ups->upsname);
-	ret = stat(pidfn, &fs);
-
-	if ((ret != 0) && (ups->port != NULL)) {
-		upslog_with_errno(LOG_ERR, "Can't open %s", pidfn);
+	if (ups->pid == -1) {
+		struct stat	fs;
 		snprintf(pidfn, sizeof(pidfn), "%s/%s-%s.pid", altpidpath(),
-			ups->driver, xbasename(ups->port));
+			ups->driver, ups->upsname);
 		ret = stat(pidfn, &fs);
-	}
 
-	if (ret != 0) {
-		upslog_with_errno(LOG_ERR, "Can't open %s either", pidfn);
-		exec_error++;
-		return;
-	}
+		if ((ret != 0) && (ups->port != NULL)) {
+			upslog_with_errno(LOG_ERR, "Can't open %s", pidfn);
+			snprintf(pidfn, sizeof(pidfn), "%s/%s-%s.pid", altpidpath(),
+				ups->driver, xbasename(ups->port));
+			ret = stat(pidfn, &fs);
+		}
 
+		if (ret != 0) {
+			upslog_with_errno(LOG_ERR, "Can't open %s either", pidfn);
+			exec_error++;
+			return;
+		}
+	} else {
+		/* We started the driver in this run of upsdrvctl
+		 * tool, stayed foregrounded, and now are exiting.
+		 * NOTE: Not a filename here, but using same variable
+		 * name makes the code below simpler to maintain.
+		 */
+		snprintf(pidfn, sizeof(pidfn), "PID %" PRIdMAX, (intmax_t)ups->pid);
+	}
 #else
-	snprintf(pidfn, sizeof(pidfn), "%s-%s",ups->driver, ups->upsname);
+	snprintf(pidfn, sizeof(pidfn), "%s-%s", ups->driver, ups->upsname);
 #endif
 
 	upsdebugx(2, "Sending signal to %s", pidfn);
@@ -190,7 +211,15 @@ static void stop_driver(const ups_t *ups)
 		return;
 
 #ifndef WIN32
-	ret = sendsignalfn(pidfn, SIGTERM);
+	if (ups->pid == -1) {
+		ret = sendsignalfn(pidfn, SIGTERM);
+	} else {
+		ret = sendsignalpid(ups->pid, SIGTERM);
+		/* reap zombie if this child died */
+		if (waitpid(ups->pid, NULL, WNOHANG) == ups->pid) {
+			return;
+		}
+	}
 #else
 	ret = sendsignal(pidfn, COMMAND_STOP);
 #endif
@@ -198,7 +227,15 @@ static void stop_driver(const ups_t *ups)
 	if (ret < 0) {
 #ifndef WIN32
 		upsdebugx(2, "SIGTERM to %s failed, retrying with SIGKILL", pidfn);
-		ret = sendsignalfn(pidfn, SIGKILL);
+		if (ups->pid == -1) {
+			ret = sendsignalfn(pidfn, SIGKILL);
+		} else {
+			ret = sendsignalpid(ups->pid, SIGKILL);
+			/* reap zombie if this child died */
+			if (waitpid(ups->pid, NULL, WNOHANG) == ups->pid) {
+				return;
+			}
+		}
 #else
 		upsdebugx(2, "Stopping %s failed, retrying again", pidfn);
 		ret = sendsignal(pidfn, COMMAND_STOP);
@@ -211,7 +248,20 @@ static void stop_driver(const ups_t *ups)
 	}
 
 	for (i = 0; i < 5 ; i++) {
-		if (sendsignalfn(pidfn, 0) != 0) {
+#ifndef WIN32
+		if (ups->pid == -1) {
+			ret = sendsignalfn(pidfn, 0);
+		} else {
+			/* reap zombie if this child died */
+			if (waitpid(ups->pid, NULL, WNOHANG) == ups->pid) {
+					return;
+			}
+			ret = sendsignalpid(ups->pid, 0);
+		}
+#else
+		ret = sendsignalfn(pidfn, 0);
+#endif
+		if (ret != 0) {
 			upsdebugx(2, "Sending signal to %s failed, driver is finally down or wrongly owned", pidfn);
 			return;
 		}
@@ -220,18 +270,41 @@ static void stop_driver(const ups_t *ups)
 
 #ifndef WIN32
 	upslog_with_errno(LOG_ERR, "Stopping %s failed, retrying harder", pidfn);
-	ret = sendsignalfn(pidfn, SIGKILL);
+	if (ups->pid == -1) {
+		ret = sendsignalfn(pidfn, SIGKILL);
+	} else {
+		/* reap zombie if this child died */
+		if (waitpid(ups->pid, NULL, WNOHANG) == ups->pid) {
+			return;
+		}
+		ret = sendsignalpid(ups->pid, SIGKILL);
+	}
 #else
 	upslog_with_errno(LOG_ERR, "Stopping %s failed, retrying again", pidfn);
 	ret = sendsignal(pidfn, COMMAND_STOP);
 #endif
 	if (ret == 0) {
 		for (i = 0; i < 5 ; i++) {
-			if (sendsignalfn(pidfn, 0) != 0) {
+#ifndef WIN32
+			if (ups->pid == -1) {
+				ret = sendsignalfn(pidfn, 0);
+			} else {
+				/* reap zombie if this child died */
+				if (waitpid(ups->pid, NULL, WNOHANG) == ups->pid) {
+					return;
+				}
+				ret = sendsignalpid(ups->pid, 0);
+			}
+#else
+			ret = sendsignalfn(pidfn, 0);
+#endif
+			if (ret != 0) {
 				upsdebugx(2, "Sending signal to %s failed, driver is finally down or wrongly owned", pidfn);
 				// While a TERMinated driver cleans up,
 				// a stuck and KILLed one does not, so:
-				unlink(pidfn);
+				if (ups->pid == -1) {
+					unlink(pidfn);
+				}
 				return;
 			}
 			sleep(1);
@@ -240,6 +313,40 @@ static void stop_driver(const ups_t *ups)
 
 	upslog_with_errno(LOG_ERR, "Stopping %s failed", pidfn);
 	exec_error++;
+}
+
+static void set_exit_flag(const int sig)
+{
+	exit_flag = sig;
+}
+
+static void setup_signals(void)
+{
+	set_exit_flag(0);
+
+#ifndef WIN32
+	/* Keep in sync with signal handling in drivers/main.c */
+	struct sigaction	sa;
+
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	sa.sa_handler = set_exit_flag;
+
+	sigaction(SIGTERM, &sa, NULL);
+	sigaction(SIGINT, &sa, NULL);
+	sigaction(SIGQUIT, &sa, NULL);
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#endif
+	sa.sa_handler = SIG_IGN;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic pop
+#endif
+	sigaction(SIGHUP, &sa, NULL);
+	sigaction(SIGPIPE, &sa, NULL);
+#endif	/* WIN32 */
 }
 
 #ifndef WIN32
@@ -270,72 +377,104 @@ static void forkexec(char *const argv[], const ups_t *ups)
 {
 #ifndef WIN32
 	int	ret;
-	pid_t	pid;
 
-	pid = fork();
+	if (nut_foreground_passthrough == 1 && upscount == 1) {
+		upsdebugx(1, "Starting the only driver with explicitly "
+			"requested foregrounding mode, not forking");
+	} else {
+		pid_t	pid;
 
-	if (pid < 0)
-		fatal_with_errno(EXIT_FAILURE, "fork");
+		pid = fork();
 
-	if (pid != 0) {			/* parent */
-		int	wstat;
-		struct sigaction	sa;
+		if (pid < 0)
+			fatal_with_errno(EXIT_FAILURE, "fork");
 
-		/* Handle "parallel" drivers startup */
-		if (waitfordrivers == 0) {
-			upsdebugx(2, "'nowait' set, continuing...");
+		if (pid != 0) {			/* parent */
+			int	wstat;
+			struct sigaction	sa;
+
+			/* work around const for this one... */
+			int *pupid = (int *)&(ups->pid);
+			*pupid = pid;
+
+			/* Handle "parallel" drivers startup */
+			if (waitfordrivers == 0) {
+				upsdebugx(2, "'nowait' set, continuing...");
+				return;
+			}
+
+			if (nut_foreground_passthrough == 1 && upscount > 1) {
+				/* Let upsdrvctl fork to run its numerous children
+				 * but without further forking on their side - so
+				 * not waiting for them to complete start-ups.
+				 */
+				upsdebugx(1, "Starting driver with explicitly "
+					"requested foregrounding mode: will not "
+					"wait for it to fork and detach, continuing...");
+				return;
+			}
+
+			if (nut_foreground_passthrough != 0
+			 && nut_debug_level > 0
+			 && nut_debug_level_passthrough > 0
+			) {
+				upsdebugx(2, "Starting driver with debug but "
+					"without explicit backgrounding: "
+					"will not wait for it to fork and "
+					"detach, continuing...");
+				return;
+			}
+
+			sigemptyset(&sa.sa_mask);
+			sa.sa_flags = 0;
+			sa.sa_handler = waitpid_timeout;
+			sigaction(SIGALRM, &sa, NULL);
+
+			/* Use the local maxstartdelay, if available */
+			if (ups->maxstartdelay != -1) {
+				if (ups->maxstartdelay >= 0)
+					alarm((unsigned int)ups->maxstartdelay);
+			} else { /* Otherwise, use the global (or default) value */
+				if (maxstartdelay >= 0)
+					alarm((unsigned int)maxstartdelay);
+			}
+
+			ret = waitpid(pid, &wstat, 0);
+
+			alarm(0);
+
+			if (ret == -1) {
+				upslogx(LOG_WARNING, "Startup timer elapsed, continuing...");
+				exec_error++;
+				return;
+			}
+
+			if (WIFEXITED(wstat) == 0) {
+				upslogx(LOG_WARNING, "Driver exited abnormally");
+				exec_error++;
+				return;
+			}
+
+			if (WEXITSTATUS(wstat) != 0) {
+				upslogx(LOG_WARNING, "Driver failed to start"
+				" (exit status=%d)", WEXITSTATUS(wstat));
+				exec_error++;
+				return;
+			}
+
+			/* the rest only work when WIFEXITED is nonzero */
+
+			if (WIFSIGNALED(wstat)) {
+				upslog_with_errno(LOG_WARNING, "Driver died after signal %d",
+					WTERMSIG(wstat));
+				exec_error++;
+			}
+
 			return;
 		}
-
-		sigemptyset(&sa.sa_mask);
-		sa.sa_flags = 0;
-		sa.sa_handler = waitpid_timeout;
-		sigaction(SIGALRM, &sa, NULL);
-
-		/* Use the local maxstartdelay, if available */
-		if (ups->maxstartdelay != -1) {
-			if (ups->maxstartdelay >= 0)
-				alarm((unsigned int)ups->maxstartdelay);
-		} else { /* Otherwise, use the global (or default) value */
-			if (maxstartdelay >= 0)
-				alarm((unsigned int)maxstartdelay);
-		}
-
-		ret = waitpid(pid, &wstat, 0);
-
-		alarm(0);
-
-		if (ret == -1) {
-			upslogx(LOG_WARNING, "Startup timer elapsed, continuing...");
-			exec_error++;
-			return;
-		}
-
-		if (WIFEXITED(wstat) == 0) {
-			upslogx(LOG_WARNING, "Driver exited abnormally");
-			exec_error++;
-			return;
-		}
-
-		if (WEXITSTATUS(wstat) != 0) {
-			upslogx(LOG_WARNING, "Driver failed to start"
-			" (exit status=%d)", WEXITSTATUS(wstat));
-			exec_error++;
-			return;
-		}
-
-		/* the rest only work when WIFEXITED is nonzero */
-
-		if (WIFSIGNALED(wstat)) {
-			upslog_with_errno(LOG_WARNING, "Driver died after signal %d",
-				WTERMSIG(wstat));
-			exec_error++;
-		}
-
-		return;
 	}
 
-	/* child */
+	/* child or foreground mode (no fork) */
 
 	ret = execv(argv[0], argv);
 
@@ -343,22 +482,22 @@ static void forkexec(char *const argv[], const ups_t *ups)
 	fatal_with_errno(EXIT_FAILURE, "execv");
 #else
 	BOOL	ret;
-	DWORD res;
-	DWORD exit_code = 0;
+	DWORD	res;
+	DWORD	exit_code = 0;
 	char	commandline[SMALLBUF];
-	STARTUPINFO StartupInfo;
-	PROCESS_INFORMATION ProcessInformation;
-	int 	i = 1;
+	STARTUPINFO	StartupInfo;
+	PROCESS_INFORMATION	ProcessInformation;
+	int	i = 1;
 
 	memset(&StartupInfo,0,sizeof(STARTUPINFO));
 
 	/* the command line is made of the driver name followed by args */
 	snprintf(commandline,sizeof(commandline),"%s", ups->driver);
-	while( argv[i] != NULL ) {
+	while (argv[i] != NULL) {
 		snprintfcat(commandline, sizeof(commandline), " %s", argv[i]);
 		i++;
 	}
-	
+
 	ret = CreateProcess(
 			argv[0],
 			commandline,
@@ -372,24 +511,28 @@ static void forkexec(char *const argv[], const ups_t *ups)
 			&ProcessInformation
 			);
 
-	if( ret == 0 ) {
+	if (ret == 0) {
 		fatal_with_errno(EXIT_FAILURE, "execv");
 	}
-	
+
 	/* Wait a bit then look at driver process.
 	 Unlike under Linux, Windows spwan drivers directly. If the driver is alive, all is OK.
 	 An optimization can probably be implemented to prevent waiting so much time when all is OK.
 	 */
 	res = WaitForSingleObject(ProcessInformation.hProcess,
 			(ups->maxstartdelay!=-1?ups->maxstartdelay:maxstartdelay)*1000);
-	
+
 	if (res != WAIT_TIMEOUT) {
 		GetExitCodeProcess( ProcessInformation.hProcess, &exit_code );
 		upslogx(LOG_WARNING, "Driver failed to start (exit status=%d)", ret);
 		exec_error++;
 		return;
+	} else {
+		/* work around const for this one... */
+		int *pupid = (int *)&(ups->pid);
+		*pupid = 0;	/* Here, just a flag (not "-1" has a meaning) */
 	}
-	
+
 	return;
 #endif
 }
@@ -485,7 +628,8 @@ static void start_driver(const ups_t *ups)
 		) {
 			upsdebugx(1, "WARNING: Requested a debugging level "
 				"but not explicitly a backgrounding mode - "
-				"driver may never try to fork away");
+				"driver may never try to fork away; however "
+				"the upsdrvctl tool will fork it and not wait.");
 		}
 	}
 
@@ -597,7 +741,7 @@ static void shutdown_driver(const ups_t *ups)
 	}
 }
 
-static void send_one_driver(void (*command)(const ups_t *), const char *upsname)
+static void send_one_driver(void (*command_func)(const ups_t *), const char *upsname)
 {
 	ups_t	*ups = upstable;
 
@@ -606,7 +750,7 @@ static void send_one_driver(void (*command)(const ups_t *), const char *upsname)
 
 	while (ups) {
 		if (!strcmp(ups->upsname, upsname)) {
-			command(ups);
+			command_func(ups);
 			return;
 		}
 
@@ -617,7 +761,7 @@ static void send_one_driver(void (*command)(const ups_t *), const char *upsname)
 }
 
 /* walk UPS table and send command to all UPSes according to sdorder */
-static void send_all_drivers(void (*command)(const ups_t *))
+static void send_all_drivers(void (*command_func)(const ups_t *))
 {
 	ups_t	*ups;
 	int	i;
@@ -625,11 +769,11 @@ static void send_all_drivers(void (*command)(const ups_t *))
 	if (!upstable)
 		fatalx(EXIT_FAILURE, "Error: no UPS definitions found in ups.conf");
 
-	if (command != &shutdown_driver) {
+	if (command_func != &shutdown_driver) {
 		ups = upstable;
 
 		/* Only warn when relevant - got more than one device to start */
-		if (command == &start_driver
+		if (command_func == &start_driver
 		&&  ups->next
 		&&  ( (nut_foreground_passthrough == 1)
 		      || (nut_foreground_passthrough != 0
@@ -638,13 +782,19 @@ static void send_all_drivers(void (*command)(const ups_t *))
 		    )
 		) {
 			upslogx(LOG_WARNING,
-				"Starting \"all\" drivers but requested the "
-				"foreground mode (or debug without backgrounding)! "
-				"This request may never loop past the first driver!");
+				"Starting \"all\" drivers but requested the %s!"
+				"This request will not wait for driver(s) to complete "
+				"their initialization%s.",
+				(nut_foreground_passthrough == 1
+					? "foreground mode"
+					: "debug mode without backgrounding"),
+				(nut_foreground_passthrough == 1
+					? ", but upsdrvctl tool will stay foregrounded" : "")
+			);
 		}
 
 		while (ups) {
-			command(ups);
+			command_func(ups);
 
 			ups = ups->next;
 		}
@@ -658,7 +808,7 @@ static void send_all_drivers(void (*command)(const ups_t *))
 
 		while (ups) {
 			if (ups->sdorder == i)
-				command(ups);
+				command_func(ups);
 
 			ups = ups->next;
 		}
@@ -669,8 +819,25 @@ static void exit_cleanup(void)
 {
 	ups_t	*tmp, *next;
 
+	upsdebugx(1, "Completed the job of upsdrvctl tool, cleaning up and exiting now");
+
 	tmp = upstable;
 
+	if (command == &start_driver
+	&&  upscount > 0
+	&&  nut_foreground_passthrough == 1
+	) {
+		/* First stop the drivers, if any are running */
+		while (tmp) {
+			next = tmp->next;
+			if (tmp->pid != -1) {
+				stop_driver(tmp);
+			}
+			tmp = next;
+		}
+	}
+
+	tmp = upstable;
 	while (tmp) {
 		next = tmp->next;
 
@@ -689,7 +856,6 @@ int main(int argc, char **argv)
 {
 	int	i;
 	char	*prog;
-	void	(*command)(const ups_t *) = NULL;
 
 	printf("Network UPS Tools - UPS driver controller %s\n",
 		UPS_VERSION);
@@ -782,13 +948,70 @@ int main(int argc, char **argv)
 
 	read_upsconf();
 
-	if (argc == 1)
+	if (argc == 1) {
+		ups_t	*tmp = upstable;
+		upscount = 0;
+
+		while (tmp) {
+			tmp = tmp->next;
+			upscount++;
+		}
+
+		upsdebugx(1, "upsdrvctl commanding all drivers (%d found): %s",
+			upscount, argv[0]);
 		send_all_drivers(command);
-	else
+	} else {
+		upscount = 1;
+		upsdebugx(1, "upsdrvctl commanding one driver (%s): %s",
+			argv[1], argv[0]);
 		send_one_driver(command, argv[1]);
+	}
 
 	if (exec_error)
 		exit(EXIT_FAILURE);
+
+	if (command == &start_driver
+	&&  upscount > 0
+	&&  nut_foreground_passthrough == 1
+	) {
+		/* Note: for a single started driver, we just
+		 * exec() it and should not even get here
+		 */
+		upsdebugx(1, "upsdrvctl was asked for explicit foregrounding - "
+			"not exiting now (driver startup was completed)");
+
+		/* raise exit_flag upon SIGTERM, Ctrl+C, etc. */
+		setup_signals();
+		while (!exit_flag) {
+#ifndef WIN32
+			/* Track if any child process has stopped (due to
+			 * an error, normal exit, signal...) to kill others
+			 * and exit the tool - with error if applicable.
+			 */
+			ups_t	*tmp = upstable, *next;
+			while (tmp) {
+				next = tmp->next;
+				if (tmp->pid != -1) {
+					if (waitpid(tmp->pid, NULL, WNOHANG) == tmp->pid) {
+						exit_flag = -1;
+						tmp->pid = -1;
+					}
+				}
+				tmp = next;
+			}
+
+			if (exit_flag == -1) {
+				fatalx(EXIT_FAILURE, "At least one tracked driver running "
+					"in foreground mode has exited, stopping upsdrvctl "
+					"(and other tracked drivers) so the bundle can be "
+					"restarted by system properly");
+				/* NOTE: Users really should run one driver per instance,
+				 * wrapped in services where available */
+			}
+#endif	/* WIN32 */
+			sleep(1);
+		}
+	}
 
 	exit(EXIT_SUCCESS);
 }
