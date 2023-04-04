@@ -54,6 +54,11 @@ static usb_device_id_t salicru_usb_device_table[] = {
   /* https://www.salicru.com/sps-850-adv-t.html */
 	{ USB_DEVICE(SALICRU_VENDORID, 0x0302), NULL },
 
+
+  /* Salicru SPS 3000 ADV RT2 */
+  /* https://www.salicru.com/sps-3000-adv-rt2.html */
+  { USB_DEVICE(SALICRU_VENDORID, 0x0101), NULL },
+
 	/* Terminating entry */
 	{ 0, 0, NULL }
 };
