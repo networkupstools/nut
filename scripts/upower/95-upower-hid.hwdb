@@ -190,6 +190,7 @@ usb:v2E51pFFFF*
  UPOWER_VENDOR=Ever
 
 # Salicru
+usb:v2E66p0101*
 usb:v2E66p0201*
 usb:v2E66p0202*
 usb:v2E66p0203*

@@ -33,7 +33,7 @@
 #include "main.h"	/* for getval() */
 #include "usb-common.h"
 
-#define SALICRU_HID_VERSION	"Salicru HID 0.3"
+#define SALICRU_HID_VERSION	"Salicru HID 0.4"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* Salicru */
@@ -41,6 +41,10 @@
 
 /* USB IDs device table */
 static usb_device_id_t salicru_usb_device_table[] = {
+	/* Salicru SPS 3000 ADV RT2 */
+	/* https://www.salicru.com/sps-3000-adv-rt2.html */
+	{ USB_DEVICE(SALICRU_VENDORID, 0x0101), NULL },
+
 	/* TWINPRO3/TWINRT3 (SLC-1500-TWIN PRO3) per https://github.com/networkupstools/nut/issues/1142 */
 	/* SLC TWIN PRO2<=3KVA per https://github.com/networkupstools/nut/issues/450 */
 	{ USB_DEVICE(SALICRU_VENDORID, 0x0201), NULL },
@@ -50,8 +54,9 @@ static usb_device_id_t salicru_usb_device_table[] = {
 	/* Salicru SPS 850 HOME per https://github.com/networkupstools/nut/pull/1199 */
 	/* https://www.salicru.com/sps-home.html */
 	{ USB_DEVICE(SALICRU_VENDORID, 0x0300), NULL },
-  /* Salicru SPS 850 ADV T, see https://github.com/networkupstools/nut/issues/1416 */
-  /* https://www.salicru.com/sps-850-adv-t.html */
+
+	/* Salicru SPS 850 ADV T, see https://github.com/networkupstools/nut/issues/1416 */
+	/* https://www.salicru.com/sps-850-adv-t.html */
 	{ USB_DEVICE(SALICRU_VENDORID, 0x0302), NULL },
 
 	/* Terminating entry */
