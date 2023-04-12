@@ -9,18 +9,20 @@ being a "Cypress Semiconductor USB to Serial" or "INNO TECH USB to Serial"
 Most of them use `blazer_usb` or `nutdrv_qx` driver, and sometimes the
 driver can't start because it can't communicate with the UPS.
 
-NOTE: It is believed that in some cases the chip on UPS side can go into a
-sort of power-saving mode after some quiet time, so increasing the NUT driver
-polling frequency may help avoid that particular situation.
+NOTE: It is believed that in some cases the chip on UPS side can go into
+a sort of power-saving mode after some quiet time, so increasing the NUT
+driver polling frequency may help avoid that particular situation.
 
-Unplugging and plugging the USB port usually fixes this, but that's not convenient.
+Unplugging and plugging the USB port usually fixes this, but that's not
+convenient.
 
-That's where `usb_resetter` comes in handy (see https://github.com/netinvent/usb_resetter
-project page for more info). You would need a Python environment to run it, and it
-is limited to Linux platforms as of this writing.
+That's where `usb_resetter` comes in handy (see the
+https://github.com/netinvent/usb_resetter project page for more info).
+You would need a Python environment to run the script, and it is limited
+to Linux platforms as of this writing.
 
-Grab a copy via `pip` with `pip install usb_resetter`, or make a plain install
-directly from GitHub with e.g.:
+Grab a copy via `pip` with `pip install usb_resetter`, or make a plain
+install directly from GitHub with e.g.:
 ````
 :; curl -o /usr/local/bin/usb_resetter -L \
     https://raw.githubusercontent.com/netinvent/usb_resetter/main/usb_resetter/usb_resetter.py \
@@ -79,11 +81,13 @@ for all the drivers you have, managed as one bundle.
 With current NUT releases (2.8.0+), a `nut-driver@.service` template is used
 to run each driver in a dedicated instance, declared manually or often by the
 `nut-driver-enumerator` script or service (tracking `ups.conf` sections).
-The added call to `usb_resetter` can then be a systemd drop-in file for that
-particular device named like `/etc/systemd/system/nut-driver@myups.service.d/dropin.conf`,
+The added call to `usb_resetter` can then be a systemd drop-in file
+tailored for that particular device and named like
+`/etc/systemd/system/nut-driver@myups.service.d/dropin.conf`,
 so it does not impact others (unless they use the same USB hub).
 
-This way, every time the nut-driver service is reloaded, the USB UPS is reset.
+This way, every time the nut-driver service is restarted, the USB UPS link
+is reset.
 
 NOTE: In author's testing, there were no additional delays required after
 the `usb_resetter` before starting the driver. Generally however, keep in
