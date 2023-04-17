@@ -833,21 +833,36 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 	/* don't let the user shoot themselves in the foot
 	 * reload should not allow changes here, but would report
 	 */
-	if (!strcmp(var, "driver") && testval_reloadable(var, progname, val, 0) > 0) {
-		/* Accomodate for libtool wrapped developer iterations
-		 * running e.g. `drivers/.libs/lt-dummy-ups` filenames
+	if (!strcmp(var, "driver")) {
+		int do_handle;
+
+		upsdebugx(5, "%s: this is a 'driver' setting, may we proceed?", __func__);
+		do_handle = testval_reloadable(var, progname, val, 0);
+
+		if (do_handle == -1) {
+			upsdebugx(5, "%s: 'driver' setting already applied with this value", __func__);
+			return;
+		}
+
+		/* Acceptable progname is only set once during start-up
+		 * val is from ups.conf
 		 */
-		size_t tmplen = strlen("lt-");
-		if (strncmp("lt-", progname, tmplen) == 0
-		&&  strcmp(val, progname + tmplen) == 0) {
-			/* debug level may be not initialized yet, and situation
-			 * should not happen in end-user builds, so ok to yell: */
-			upsdebugx(0, "Seems this driver binary %s is a libtool "
-				"wrapped build for driver %s", progname, val);
-			/* progname points to xbasename(argv[0]) in-place;
-			 * roll the pointer forward a bit, we know we can:
+		if (!reload_flag || do_handle > 0) {
+			/* Accomodate for libtool wrapped developer iterations
+			 * running e.g. `drivers/.libs/lt-dummy-ups` filenames
 			 */
-			progname = progname + tmplen;
+			size_t tmplen = strlen("lt-");
+			if (strncmp("lt-", progname, tmplen) == 0
+			&&  strcmp(val, progname + tmplen) == 0) {
+				/* debug level may be not initialized yet, and situation
+				 * should not happen in end-user builds, so ok to yell: */
+				upsdebugx(0, "Seems this driver binary %s is a libtool "
+					"wrapped build for driver %s", progname, val);
+				/* progname points to xbasename(argv[0]) in-place;
+				 * roll the pointer forward a bit, we know we can:
+				 */
+				progname = progname + tmplen;
+			}
 		}
 
 		if (strcmp(val, progname) != 0) {
