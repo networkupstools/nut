@@ -3224,9 +3224,9 @@ AS_IF([test -x "$SYSTEMD_ANALYZE_PROGRAM"], [
 	AC_MSG_CHECKING([if your systemd version supports Type=notify])
 	myFILE="`mktemp systemd-analyze-XXXXXX.service`"
 	cat > "$myFILE" << EOF
-[Unit]
+@<:@Unit@:>@
 Description=temp
-[Service]
+@<:@Service@:>@
 ExecStart=/bin/true
 Type=notify
 EOF
@@ -3242,9 +3242,9 @@ AS_IF([test -x "$SYSTEMD_ANALYZE_PROGRAM"], [
 	AC_MSG_CHECKING([if your systemd version supports Type=notify-reload])
 	myFILE="`mktemp systemd-analyze-XXXXXX.service`"
 	cat > "$myFILE" << EOF
-[Unit]
+@<:@Unit@:>@
 Description=temp
-[Service]
+@<:@Service@:>@
 ExecStart=/bin/true
 Type=notify-reload
 EOF
