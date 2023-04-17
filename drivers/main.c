@@ -95,6 +95,7 @@ static int background_flag = -1;
  * value less than that would not have effect, can only
  * have more).
  */
+static int nut_debug_level_args = -1;
 static int nut_debug_level_global = -1;
 static int nut_debug_level_driver = -1;
 
@@ -820,11 +821,41 @@ static void assign_debug_level(void) {
 
 	if (nut_debug_level_global >= 0 && nut_debug_level_driver >= 0) {
 		nut_debug_level_upsconf = nut_debug_level_driver;
+		if (reload_flag) {
+			upslogx(LOG_INFO,
+				"Applying debug_min=%d from ups.conf"
+				" driver section (overriding global)",
+				nut_debug_level_upsconf);
+		}
 	} else {
-		if (nut_debug_level_global >= 0) nut_debug_level_upsconf = nut_debug_level_global;
-		if (nut_debug_level_driver >= 0) nut_debug_level_upsconf = nut_debug_level_driver;
+		if (nut_debug_level_global >= 0) {
+			nut_debug_level_upsconf = nut_debug_level_global;
+			if (reload_flag) upslogx(LOG_INFO,
+				"Applying debug_min=%d from ups.conf"
+				" global section",
+				nut_debug_level_upsconf);
+		}
+		if (nut_debug_level_driver >= 0) {
+			nut_debug_level_upsconf = nut_debug_level_driver;
+			if (reload_flag) upslogx(LOG_INFO,
+				"Applying debug_min=%d from ups.conf"
+				" driver section",
+				nut_debug_level_upsconf);
+		}
 	}
 
+	if (reload_flag && nut_debug_level_upsconf == -1) {
+		/* DEBUG_MIN is absent or commented-away in ups.conf */
+		upslogx(LOG_INFO,
+			"Applying debug level %d from "
+			"original command line arguments",
+			nut_debug_level_args);
+	}
+
+	/* at minimum, the verbosity we started with - via CLI arguments;
+	 * maybe a greater debug_min is set in current config file
+	 */
+	nut_debug_level = nut_debug_level_args;
 	if (nut_debug_level_upsconf > nut_debug_level)
 		nut_debug_level = nut_debug_level_upsconf;
 
@@ -996,6 +1027,9 @@ int main(int argc, char **argv)
 	int	i, do_forceshutdown = 0;
 	int	update_count = 0;
 
+	/* init verbosity from default in common.c (0 probably) */
+	nut_debug_level_args = nut_debug_level;
+
 	dstate_setinfo("driver.state", "init.starting");
 
 	atexit(exit_cleanup);
@@ -1067,7 +1101,9 @@ int main(int argc, char **argv)
 				background_flag = 1;
 				break;
 			case 'D':
+				/* bump right here, may impact reporting of other CLI args */
 				nut_debug_level++;
+				nut_debug_level_args++;
 				break;
 			case 'd':
 				dump_data = atoi(optarg);
