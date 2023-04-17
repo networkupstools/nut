@@ -3216,6 +3216,27 @@ AS_CASE(["${nut_with_libsystemd}"],
 	])
 AC_MSG_RESULT(${with_libsystemd})
 
+AC_PATH_PROG([SYSTEMD_ANALYZE_PROGRAM], [systemd-analyze], [/usr/bin/systemd-analyze])
+
+dnl Relevant since 2023: https://github.com/systemd/systemd/pull/25916
+SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY_RELOAD=no
+AS_IF([test -x "$SYSTEMD_ANALYZE_PROGRAM"], [
+	AC_MSG_CHECKING([if your systemd version supports Type=notify-reload])
+	myFILE="`mktemp systemd-analyze-XXXXXX.service`"
+	cat > "$myFILE" << EOF
+[Unit]
+Description=temp
+[Service]
+ExecStart=/bin/true
+Type=notify-reload
+EOF
+	if "$SYSTEMD_ANALYZE_PROGRAM" verify "$myFILE" ; then
+		SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY_RELOAD=yes
+	fi
+	rm -f "$myFILE"
+	AC_MSG_RESULT([${SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY_RELOAD}])
+	])
+
 AS_IF([test x"${with_libsystemd}" = xyes], [
 	dnl Built with sd_notify support
 	dnl Note: `upsd -FF` both runs without forking and leaves a PID file, as
@@ -3226,6 +3247,9 @@ AS_IF([test x"${with_libsystemd}" = xyes], [
 	SYSTEMD_DAEMON_TYPE_UPSMON="notify"
 	SYSTEMD_DAEMON_ARGS_DRIVER=""
 	SYSTEMD_DAEMON_TYPE_DRIVER="notify"
+	AS_IF([test x"${SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY_RELOAD}" = xyes], [
+		AM_COND_IF([HAVE_CLOCK_GETTIME], [AM_COND_IF([HAVE_CLOCK_MONOTONIC], [SYSTEMD_DAEMON_TYPE_DRIVER="notify-reload"])])
+		])
 	dnl Calling shell, upsdrvctl, driver, and then it forks... ugh!
 	dnl https://github.com/systemd/systemd/issues/25961
 	dnl FIXME: if NotifyAccess=cgroup appears, use it (consult SYSTEMD_VERSION)
