@@ -869,7 +869,8 @@ AS_IF([test x"${ac_cv_func_clock_gettime}" = xyes],
      AC_DEFINE([HAVE_CLOCK_MONOTONIC], 1, [defined if standard library has, and C standard allows, the CLOCK_MONOTONIC macro or token])],
     [AC_MSG_WARN([Optional C library routine clock_gettime not found; will not be used in notifications])]
     )
-dnl Currently these two are the same for us:
+dnl Currently these two are the same for us; note also fallback support for
+dnl older autoconf in SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY_RELOAD way below:
 AM_CONDITIONAL([HAVE_CLOCK_GETTIME], [test x"${ac_cv_func_clock_gettime}" = "xyes"])
 AM_CONDITIONAL([HAVE_CLOCK_MONOTONIC], [test x"${ac_cv_func_clock_gettime}" = "xyes"])
 
@@ -3270,7 +3271,10 @@ AS_IF([test x"${with_libsystemd}" = xyes && test x"${SYSTEMD_SUPPORTS_DAEMON_TYP
 	SYSTEMD_DAEMON_ARGS_DRIVER=""
 	SYSTEMD_DAEMON_TYPE_DRIVER="notify"
 	AS_IF([test x"${SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY_RELOAD}" = xyes], [
-		AM_COND_IF([HAVE_CLOCK_GETTIME], [AM_COND_IF([HAVE_CLOCK_MONOTONIC], [SYSTEMD_DAEMON_TYPE_DRIVER="notify-reload"])])
+		dnl Macro supported since aclocal-1.11:
+		m4_ifdef([AM_COND_IF],
+		[AM_COND_IF([HAVE_CLOCK_GETTIME], [AM_COND_IF([HAVE_CLOCK_MONOTONIC], [SYSTEMD_DAEMON_TYPE_DRIVER="notify-reload"])])],
+		[AS_IF([test x"${ac_cv_func_clock_gettime}" = "xyes"], [SYSTEMD_DAEMON_TYPE_DRIVER="notify-reload"])])
 		])
 	dnl Calling shell, upsdrvctl, driver, and then it forks... ugh!
 	dnl https://github.com/systemd/systemd/issues/25961
