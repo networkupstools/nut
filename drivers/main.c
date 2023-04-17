@@ -512,6 +512,8 @@ void addvar(int vartype, const char *name, const char *desc)
 /* handle -x / ups.conf config details that are for this part of the code */
 static int main_arg(char *var, char *val)
 {
+	int do_handle = -2;
+
 	/* flags for main */
 
 	upsdebugx(3, "%s: var='%s' val='%s'",
@@ -548,42 +550,48 @@ static int main_arg(char *var, char *val)
 
 	/* variables for main: port */
 
-	if (!strcmp(var, "port") && testinfo_reloadable(var, "driver.parameter.port", val, 0) > 0) {
-		device_path = xstrdup(val);
-		device_name = xbasename(device_path);
-		dstate_setinfo("driver.parameter.port", "%s", val);
+	if (!strcmp(var, "port")) {
+		if (testinfo_reloadable(var, "driver.parameter.port", val, 0) > 0) {
+			device_path = xstrdup(val);
+			device_name = xbasename(device_path);
+			dstate_setinfo("driver.parameter.port", "%s", val);
+		}
 		return 1;	/* handled */
 	}
 
 	/* user specified at the driver level overrides that on global level
 	 * or the built-in default
 	 */
-	if (!strcmp(var, "user") && testval_reloadable(var, user, val, 0) > 0) {
-		if (user_from_cmdline) {
-			upsdebugx(0, "User '%s' specified in driver section "
-				"was ignored due to '%s' specified on command line",
-				val, user);
-		} else {
-			upsdebugx(1, "Overriding previously specified user '%s' "
-				"with '%s' specified for driver section",
-				user, val);
-			free(user);
-			user = xstrdup(val);
+	if (!strcmp(var, "user")) {
+		if (testval_reloadable(var, user, val, 0) > 0) {
+			if (user_from_cmdline) {
+				upsdebugx(0, "User '%s' specified in driver section "
+					"was ignored due to '%s' specified on command line",
+					val, user);
+			} else {
+				upsdebugx(1, "Overriding previously specified user '%s' "
+					"with '%s' specified for driver section",
+					user, val);
+				free(user);
+				user = xstrdup(val);
+			}
 		}
 		return 1;	/* handled */
 	}
 
-	if (!strcmp(var, "group") && testval_reloadable(var, group, val, 0) > 0) {
-		if (group_from_cmdline) {
-			upsdebugx(0, "Group '%s' specified in driver section "
-				"was ignored due to '%s' specified on command line",
-				val, group);
-		} else {
-			upsdebugx(1, "Overriding previously specified group '%s' "
-				"with '%s' specified for driver section",
-				group, val);
-			free(group);
-			group = xstrdup(val);
+	if (!strcmp(var, "group")) {
+		if (testval_reloadable(var, group, val, 0) > 0) {
+			if (group_from_cmdline) {
+				upsdebugx(0, "Group '%s' specified in driver section "
+					"was ignored due to '%s' specified on command line",
+					val, group);
+			} else {
+				upsdebugx(1, "Overriding previously specified group '%s' "
+					"with '%s' specified for driver section",
+					group, val);
+				free(group);
+				group = xstrdup(val);
+			}
 		}
 		return 1;	/* handled */
 	}
@@ -601,7 +609,6 @@ static int main_arg(char *var, char *val)
 	 * be noticed by the reload operation currently, however.
 	 */
 	if (!strcmp(var, "pollinterval")) {
-		int do_handle = 1;
 		char buf[SMALLBUF];
 
 		/* log a message if value changed; skip if no good buf */
@@ -636,16 +643,16 @@ static int main_arg(char *var, char *val)
 	 * and the other to take hold. Both disappearing would not
 	 * be noticed by the reload operation currently, however.
 	 */
-	if (!strcmp(var, "synchronous")
-	&& testval_reloadable(var, ((do_synchronous==1)?"yes":((do_synchronous==0)?"no":"auto")), val, 1) > 0
-	) {
-		if (!strcmp(val, "yes"))
-			do_synchronous=1;
-		else
-		if (!strcmp(val, "auto"))
-			do_synchronous=-1;
-		else
-			do_synchronous=0;
+	if (!strcmp(var, "synchronous")) {
+		if (testval_reloadable(var, ((do_synchronous==1)?"yes":((do_synchronous==0)?"no":"auto")), val, 1) > 0) {
+			if (!strcmp(val, "yes"))
+				do_synchronous=1;
+			else
+			if (!strcmp(val, "auto"))
+				do_synchronous=-1;
+			else
+				do_synchronous=0;
+		}
 
 		return 1;	/* handled */
 	}
@@ -660,7 +667,10 @@ static int main_arg(char *var, char *val)
 
 	/* Allow each driver to specify its minimal debugging level -
 	 * admins can set more with command-line args, but can't set
-	 * less without changing config. Should help debug of services. */
+	 * less without changing config. Should help debug of services.
+	 * Note: during reload_flag==1 handling this is reset to -1, to
+	 * catch commented-away settings, so not checking previous value.
+	 */
 	if (!strcmp(var, "debug_min")) {
 		int lvl = -1; // typeof common/common.c: int nut_debug_level
 		if ( str_to_int (val, &lvl, 10) && lvl >= 0 ) {
@@ -677,6 +687,7 @@ static int main_arg(char *var, char *val)
 static void do_global_args(const char *var, const char *val)
 {
 	char buf[SMALLBUF];
+	int do_handle = 1;
 
 	upsdebugx(3, "%s: var='%s' val='%s'",
 		__func__,
@@ -685,8 +696,6 @@ static void do_global_args(const char *var, const char *val)
 
 	/* Allow to reload this, why not */
 	if (!strcmp(var, "pollinterval")) {
-		int do_handle = 1;
-
 		/* log a message if value changed; skip if no good buf */
 		if (snprintf(buf, sizeof(buf), "%" PRIdMAX, (intmax_t)poll_interval)) {
 			if ((do_handle = testval_reloadable(var, buf, val, 1)) == 0) {
@@ -714,37 +723,49 @@ static void do_global_args(const char *var, const char *val)
 	 * warning if it did change (so driver restart is needed to apply)
 	 */
 
-	if (!strcmp(var, "chroot") && testval_reloadable(var, chroot_path, val, 0) > 0) {
-		free(chroot_path);
-		chroot_path = xstrdup(val);
+	if (!strcmp(var, "chroot")) {
+		if (testval_reloadable(var, chroot_path, val, 0) > 0) {
+			free(chroot_path);
+			chroot_path = xstrdup(val);
+		}
+
+		return;
 	}
 
-	if (!strcmp(var, "user") && testval_reloadable(var, user, val, 0) > 0) {
-		if (user_from_cmdline) {
-			upsdebugx(0, "User specified in global section '%s' "
-				"was ignored due to '%s' specified on command line",
-				val, user);
-		} else {
-			upsdebugx(1, "Overriding previously specified user '%s' "
-				"with '%s' specified in global section",
-				user, val);
-			free(user);
-			user = xstrdup(val);
+	if (!strcmp(var, "user")) {
+		if (testval_reloadable(var, user, val, 0) > 0) {
+			if (user_from_cmdline) {
+				upsdebugx(0, "User specified in global section '%s' "
+					"was ignored due to '%s' specified on command line",
+					val, user);
+			} else {
+				upsdebugx(1, "Overriding previously specified user '%s' "
+					"with '%s' specified in global section",
+					user, val);
+				free(user);
+				user = xstrdup(val);
+			}
 		}
+
+		return;
 	}
 
-	if (!strcmp(var, "group") && testval_reloadable(var, group, val, 0) > 0) {
-		if (group_from_cmdline) {
-			upsdebugx(0, "Group specified in global section '%s' "
-				"was ignored due to '%s' specified on command line",
-				val, group);
-		} else {
-			upsdebugx(1, "Overriding previously specified group '%s' "
-				"with '%s' specified in global section",
-				group, val);
-			free(group);
-			group = xstrdup(val);
+	if (!strcmp(var, "group")) {
+		if (testval_reloadable(var, group, val, 0) > 0) {
+			if (group_from_cmdline) {
+				upsdebugx(0, "Group specified in global section '%s' "
+					"was ignored due to '%s' specified on command line",
+					val, group);
+			} else {
+				upsdebugx(1, "Overriding previously specified group '%s' "
+					"with '%s' specified in global section",
+					group, val);
+				free(group);
+				group = xstrdup(val);
+			}
 		}
+
+		return;
 	}
 
 	/* Allow to reload this, why not
@@ -755,21 +776,26 @@ static void do_global_args(const char *var, const char *val)
 	 * and the other to take hold. Both disappearing would not
 	 * be noticed by the reload operation currently, however.
 	 */
-	if (!strcmp(var, "synchronous")
-	&& testval_reloadable(var, ((do_synchronous==1)?"yes":((do_synchronous==0)?"no":"auto")), val, 1) > 0
-	) {
-		if (!strcmp(val, "yes"))
-			do_synchronous=1;
-		else
-		if (!strcmp(val, "auto"))
-			do_synchronous=-1;
-		else
-			do_synchronous=0;
+	if (!strcmp(var, "synchronous")) {
+		if (testval_reloadable(var, ((do_synchronous==1)?"yes":((do_synchronous==0)?"no":"auto")), val, 1) > 0) {
+			if (!strcmp(val, "yes"))
+				do_synchronous=1;
+			else
+			if (!strcmp(val, "auto"))
+				do_synchronous=-1;
+			else
+				do_synchronous=0;
+		}
+
+		return;
 	}
 
 	/* Allow to specify its minimal debugging level for all drivers -
 	 * admins can set more with command-line args, but can't set
-	 * less without changing config. Should help debug of services. */
+	 * less without changing config. Should help debug of services.
+	 * Note: during reload_flag==1 handling this is reset to -1, to
+	 * catch commented-away settings, so not checking previous value.
+	 */
 	if (!strcmp(var, "debug_min")) {
 		int lvl = -1; // typeof common/common.c: int nut_debug_level
 		if ( str_to_int (val, &lvl, 10) && lvl >= 0 ) {
@@ -777,6 +803,8 @@ static void do_global_args(const char *var, const char *val)
 		} else {
 			upslogx(LOG_INFO, "WARNING : Invalid debug_min value found in ups.conf global settings");
 		}
+
+		return;
 	}
 
 	/* unrecognized */
