@@ -1309,14 +1309,19 @@ int main(int argc, char **argv)
 	 * or not just dumping data (for discovery) */
 	/* This avoids case where ie /var is unmounted already */
 #ifndef WIN32
-	if ((!do_forceshutdown) && (!dump_data) && (chdir(dflt_statepath())))
-		fatal_with_errno(EXIT_FAILURE, "Can't chdir to %s", dflt_statepath());
+	if ((!do_forceshutdown) && (!dump_data)) {
+		if (chdir(dflt_statepath()))
+			fatal_with_errno(EXIT_FAILURE, "Can't chdir to %s", dflt_statepath());
 
-	/* Setup signals to communicate with driver once backgrounded. */
+		/* Setup signals to communicate with driver which is destined for a long run. */
+		setup_signals();
+	}
+
+	/* Setup PID file to receive signals to communicate with this driver
+	 * instance once backgrounded, and to stop a competing older instance.
+	 */
 	if ((background_flag != 0) && (!do_forceshutdown)) {
 		char	buffer[SMALLBUF];
-
-		setup_signals();
 
 		snprintf(buffer, sizeof(buffer), "%s/%s-%s.pid", altpidpath(), progname, upsname);
 
