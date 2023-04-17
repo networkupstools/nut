@@ -1617,12 +1617,36 @@ int main(int argc, char **argv)
 		}
 
 		if (reload_flag && !exit_flag) {
+			upslogx(LOG_INFO, "Handling requested live reload of NUT driver configuration");
 			dstate_setinfo("driver.state", "reloading");
 			upsnotify(NOTIFY_STATE_RELOADING, NULL);
-			/* TODO: Call actual config reloading activity */
+
+			/* If commented away or deleted in config, debug_min
+			 * should "disappear" for us (a CLI argument, if any,
+			 * would still be honoured); if it is (re-)defined in
+			 * config, then it gets considered.
+			 */
+			nut_debug_level_global = -1;
+			nut_debug_level_driver = -1;
+
+			/* Call actual config reloading activity */
+			read_upsconf();
+			/* TODO: Callbacks in drivers to re-parse configs?
+			 * Currently this reloadability relies on either
+			 * explicit reload_flag aware code called from the
+			 * read_upsconf() method, or on drivers continuously
+			 * reading dstate_getinfo() and not caching once
+			 * their C variables.
+			 */
+
+			/* Re-mix currently known debug verbosity desires */
+			assign_debug_level();
+
+			/* Wrap it up */
 			reload_flag = 0;
 			dstate_setinfo("driver.state", "quiet");
 			upsnotify(NOTIFY_STATE_READY, NULL);
+			upslogx(LOG_INFO, "Completed requested live reload of NUT driver configuration");
 		}
 	}
 
