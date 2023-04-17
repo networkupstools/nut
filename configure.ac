@@ -3230,7 +3230,9 @@ Description=temp
 ExecStart=/bin/true
 Type=notify
 EOF
-	if "$SYSTEMD_ANALYZE_PROGRAM" verify "$myFILE" 2>/dev/null >/dev/null ; then
+	if myOUT="`"$SYSTEMD_ANALYZE_PROGRAM" verify "$myFILE" 2>&1`" \
+	&& ! (echo "$myOUT" | grep "Failed to parse service type, ignoring") \
+	; then
 		SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY=yes
 	fi
 	rm -f "$myFILE"
@@ -3248,7 +3250,9 @@ Description=temp
 ExecStart=/bin/true
 Type=notify-reload
 EOF
-	if "$SYSTEMD_ANALYZE_PROGRAM" verify "$myFILE" 2>/dev/null >/dev/null ; then
+	if myOUT="`"$SYSTEMD_ANALYZE_PROGRAM" verify "$myFILE" 2>&1`" \
+	&& ! (echo "$myOUT" | grep "Failed to parse service type, ignoring") \
+	; then
 		SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY_RELOAD=yes
 	fi
 	rm -f "$myFILE"
