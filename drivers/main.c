@@ -470,13 +470,20 @@ static int main_arg(char *var, char *val)
 		var ? var : "<null>", /* null should not happen... but... */
 		val ? val : "<null>");
 
-	if (!strcmp(var, "nolock")) {
+	/* !reload_flag quietly forbids changing this flag on the fly, as
+	 * it would have no effect anyway without a (serial) reconnection
+	 */
+	if (!strcmp(var, "nolock") && !reload_flag) {
 		do_lock_port = 0;
 		dstate_setinfo("driver.flag.nolock", "enabled");
 		return 1;	/* handled */
 	}
 
-	if (!strcmp(var, "ignorelb")) {
+	/* FIXME: this one we could potentially reload, but need to figure
+	 * out that the flag line was commented away or deleted -- there is
+	 * no setting value to flip in configs here
+	 */
+	if (!strcmp(var, "ignorelb") && !reload_flag) {
 		dstate_setinfo("driver.flag.ignorelb", "enabled");
 		return 1;	/* handled */
 	}
@@ -485,9 +492,14 @@ static int main_arg(char *var, char *val)
 	if (!val)
 		return 0;	/* unhandled, pass it through to the driver */
 
+	/* In checks below, testinfo_reloadable(..., 0) should forbid
+	 * re-population of the setting with a new value, but emit a
+	 * warning if it did change (so driver restart is needed to apply)
+	 */
+
 	/* variables for main: port */
 
-	if (!strcmp(var, "port")) {
+	if (!strcmp(var, "port") && testinfo_reloadable(var, "driver.parameter.port", val, 0) > 0) {
 		device_path = xstrdup(val);
 		device_name = xbasename(device_path);
 		dstate_setinfo("driver.parameter.port", "%s", val);
@@ -497,7 +509,7 @@ static int main_arg(char *var, char *val)
 	/* user specified at the driver level overrides that on global level
 	 * or the built-in default
 	 */
-	if (!strcmp(var, "user")) {
+	if (!strcmp(var, "user") && testval_reloadable(var, user, val, 0) > 0) {
 		if (user_from_cmdline) {
 			upsdebugx(0, "User '%s' specified in driver section "
 				"was ignored due to '%s' specified on command line",
@@ -512,7 +524,7 @@ static int main_arg(char *var, char *val)
 		return 1;	/* handled */
 	}
 
-	if (!strcmp(var, "group")) {
+	if (!strcmp(var, "group") && testval_reloadable(var, group, val, 0) > 0) {
 		if (group_from_cmdline) {
 			upsdebugx(0, "Group '%s' specified in driver section "
 				"was ignored due to '%s' specified on command line",
@@ -532,20 +544,52 @@ static int main_arg(char *var, char *val)
 		return 1;	/* handled */
 	}
 
-	/* allow per-driver overrides of the global setting */
+	/* Allow per-driver overrides of the global setting
+	 * and allow to reload this, why not.
+	 * Note: having both global+driver section definitions may
+	 * cause noise, but it allows either to be commented away
+	 * and the other to take hold. Both disappearing would not
+	 * be noticed by the reload operation currently, however.
+	 */
 	if (!strcmp(var, "pollinterval")) {
-		int ipv = atoi(val);
-		if (ipv > 0) {
-			poll_interval = (time_t)ipv;
-		} else {
-			fatalx(EXIT_FAILURE, "Error: UPS [%s]: invalid pollinterval: %d",
-				confupsname, ipv);
+		int do_handle = 1;
+		char buf[SMALLBUF];
+
+		/* log a message if value changed; skip if no good buf */
+		if (snprintf(buf, sizeof(buf), "%" PRIdMAX, (intmax_t)poll_interval)) {
+			if ((do_handle = testval_reloadable(var, buf, val, 1)) == 0) {
+				/* Should not happen, but... */
+				fatalx(EXIT_FAILURE, "Error: failed to check "
+					"testval_reloadable() for pollinterval: "
+					"old %s vs. new %s", buf, NUT_STRARG(val));
+			}
 		}
+
+		if (do_handle > 0) {
+			int ipv = atoi(val);
+			if (ipv > 0) {
+				poll_interval = (time_t)ipv;
+			} else {
+				fatalx(EXIT_FAILURE, "Error: UPS [%s]: invalid pollinterval: %d",
+					NUT_STRARG(upsname), ipv);
+			}
+		}	/* else: no-op */
+
 		return 1;	/* handled */
 	}
 
-	/* allow per-driver overrides of the global setting */
-	if (!strcmp(var, "synchronous") {
+	/* Allow per-driver overrides of the global setting
+	 * and allow to reload this, why not.
+	 * Note: this may cause "spurious" redefinitions of the
+	 * "no" setting which is the fallback for random values.
+	 * Also note that global+driver section definitions may
+	 * cause noise, but it allows either to be commented away
+	 * and the other to take hold. Both disappearing would not
+	 * be noticed by the reload operation currently, however.
+	 */
+	if (!strcmp(var, "synchronous")
+	&& testval_reloadable(var, ((do_synchronous==1)?"yes":((do_synchronous==0)?"no":"auto")), val, 1) > 0
+	) {
 		if (!strcmp(val, "yes"))
 			do_synchronous=1;
 		else
@@ -583,27 +627,50 @@ static int main_arg(char *var, char *val)
 
 static void do_global_args(const char *var, const char *val)
 {
+	char buf[SMALLBUF];
+
 	upsdebugx(3, "%s: var='%s' val='%s'",
 		__func__,
 		var ? var : "<null>", /* null should not happen... but... */
 		val ? val : "<null>");
 
+	/* Allow to reload this, why not */
 	if (!strcmp(var, "pollinterval")) {
-		int ipv = atoi(val);
-		if (ipv > 0) {
-			poll_interval = (time_t)ipv;
-		} else {
-			fatalx(EXIT_FAILURE, "Error: invalid pollinterval: %d", ipv);
+		int do_handle = 1;
+
+		/* log a message if value changed; skip if no good buf */
+		if (snprintf(buf, sizeof(buf), "%" PRIdMAX, (intmax_t)poll_interval)) {
+			if ((do_handle = testval_reloadable(var, buf, val, 1)) == 0) {
+				/* Should not happen, but... */
+				fatalx(EXIT_FAILURE, "Error: failed to check "
+					"testval_reloadable() for pollinterval: "
+					"old %s vs. new %s", buf, val);
+			}
 		}
+
+		if (do_handle > 0) {
+			int ipv = atoi(val);
+			if (ipv > 0) {
+				poll_interval = (time_t)ipv;
+			} else {
+				fatalx(EXIT_FAILURE, "Error: invalid pollinterval: %d", ipv);
+			}
+		}	/* else: no-op */
+
 		return;
 	}
 
-	if (!strcmp(var, "chroot")) {
+	/* In checks below, testinfo_reloadable(..., 0) should forbid
+	 * re-population of the setting with a new value, but emit a
+	 * warning if it did change (so driver restart is needed to apply)
+	 */
+
+	if (!strcmp(var, "chroot") && testval_reloadable(var, chroot_path, val, 0) > 0) {
 		free(chroot_path);
 		chroot_path = xstrdup(val);
 	}
 
-	if (!strcmp(var, "user")) {
+	if (!strcmp(var, "user") && testval_reloadable(var, user, val, 0) > 0) {
 		if (user_from_cmdline) {
 			upsdebugx(0, "User specified in global section '%s' "
 				"was ignored due to '%s' specified on command line",
@@ -617,7 +684,7 @@ static void do_global_args(const char *var, const char *val)
 		}
 	}
 
-	if (!strcmp(var, "group")) {
+	if (!strcmp(var, "group") && testval_reloadable(var, group, val, 0) > 0) {
 		if (group_from_cmdline) {
 			upsdebugx(0, "Group specified in global section '%s' "
 				"was ignored due to '%s' specified on command line",
@@ -631,7 +698,17 @@ static void do_global_args(const char *var, const char *val)
 		}
 	}
 
-	if (!strcmp(var, "synchronous")) {
+	/* Allow to reload this, why not
+	 * Note: this may cause "spurious" redefinitions of the
+	 * "no" setting which is the fallback for random values.
+	 * Also note that global+driver section definitions may
+	 * cause noise, but it allows either to be commented away
+	 * and the other to take hold. Both disappearing would not
+	 * be noticed by the reload operation currently, however.
+	 */
+	if (!strcmp(var, "synchronous")
+	&& testval_reloadable(var, ((do_synchronous==1)?"yes":((do_synchronous==0)?"no":"auto")), val, 1) > 0
+	) {
 		if (!strcmp(val, "yes"))
 			do_synchronous=1;
 		else
@@ -677,17 +754,29 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 
 	/* flags (no =) now get passed to the driver-level stuff */
 	if (!val) {
-
 		/* also store this, but it's a bit different */
 		snprintf(tmp, sizeof(tmp), "driver.flag.%s", var);
-		dstate_setinfo(tmp, "enabled");
 
-		storeval(var, NULL);
+		/* allow reloading if defined and permitted via addvar()
+		 * or not defined there (FIXME?)
+		 */
+		if (testvar_reloadable(var, NULL, VAR_FLAG) > 0) {
+			dstate_setinfo(tmp, "enabled");
+			storeval(var, NULL);
+		}
+
 		return;
 	}
 
-	/* don't let the user shoot themselves in the foot */
-	if (!strcmp(var, "driver")) {
+	/* In checks below, testval_reloadable(..., 0) should forbid
+	 * re-population of the setting with a new value, but emit a
+	 * warning if it did change (so driver restart is needed to apply)
+	 */
+
+	/* don't let the user shoot themselves in the foot
+	 * reload should not allow changes here, but would report
+	 */
+	if (!strcmp(var, "driver") && testval_reloadable(var, progname, val, 0) > 0) {
 		/* Accomodate for libtool wrapped developer iterations
 		 * running e.g. `drivers/.libs/lt-dummy-ups` filenames
 		 */
@@ -712,7 +801,13 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 	}
 
 	/* everything else must be for the driver */
-	storeval(var, val);
+
+	/* allow reloading if defined and permitted via addvar()
+	 * or not defined there (FIXME?)
+	 */
+	if (testvar_reloadable(var, val, VAR_VALUE) > 0) {
+		storeval(var, val);
+	}
 }
 
 #ifndef DRIVERS_MAIN_WITHOUT_MAIN
