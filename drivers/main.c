@@ -299,8 +299,8 @@ int testvar(const char *var)
 	return 0;	/* not found */
 }
 
-/* callback from driver - create the table for -x/conf entries */
-void addvar(int vartype, const char *name, const char *desc)
+/* implement callback from driver - create the table for -x/conf entries */
+static void do_addvar(int vartype, const char *name, const char *desc, int reloadable)
 {
 	vartab_t	*tmp, *last;
 
@@ -318,12 +318,25 @@ void addvar(int vartype, const char *name, const char *desc)
 	tmp->val = NULL;
 	tmp->desc = xstrdup(desc);
 	tmp->found = 0;
+	tmp->reloadable = reloadable;
 	tmp->next = NULL;
 
 	if (last)
 		last->next = tmp;
 	else
 		vartab_h = tmp;
+}
+
+/* public callback from driver - create the table for -x/conf entries for reloadable values */
+void addvar_reloadable(int vartype, const char *name, const char *desc)
+{
+	do_addvar(vartype, name, desc, 1);
+}
+
+/* public callback from driver - create the table for -x/conf entries for set-once values */
+void addvar(int vartype, const char *name, const char *desc)
+{
+	do_addvar(vartype, name, desc, 0);
 }
 
 /* handle -x / ups.conf config details that are for this part of the code */

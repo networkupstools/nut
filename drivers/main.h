@@ -45,6 +45,7 @@ typedef struct vartab_s {
 	char	*val;		/* right side of = 			 */
 	char	*desc;		/* 40 character description for -h text	 */
 	int	found;		/* set once encountered, for testvar()	 */
+	int	reloadable;	/* driver reload may redefine this value */
 	struct vartab_s	*next;
 } vartab_t;
 
@@ -56,6 +57,7 @@ typedef struct vartab_s {
 
 /* callback from driver - create the table for future -x entries */
 void addvar(int vartype, const char *name, const char *desc);
+void addvar_reloadable(int vartype, const char *name, const char *desc);
 
 /* subdriver description structure */
 typedef struct upsdrv_info_s {
