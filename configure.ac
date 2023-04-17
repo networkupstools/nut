@@ -839,10 +839,39 @@ if (p == NULL || *p != '\0') return 1])],
         [ac_cv_func_strptime=yes], [ac_cv_func_strptime=no]
     )])
 AS_IF([test x"${ac_cv_func_strptime}" = xyes],
-    [AC_DEFINE([HAVE_STRPTIME], 1, [defined if standard library has, and C standard allows, the strptime(s1,s2) method])],
+    [AC_DEFINE([HAVE_STRPTIME], 1, [defined if standard library has, and C standard allows, the strptime(s1,s2,tm) method])],
     [AC_MSG_WARN([Optional C library routine strptime not found; a fallback implementation will be built in])]
     )
 AM_CONDITIONAL([HAVE_STRPTIME], [test x"${ac_cv_func_strptime}" = "xyes"])
+
+AC_CACHE_CHECK([for clock_gettime(CLOCK_MONOTONIC,ts)],
+    [ac_cv_func_clock_gettime],
+    [AX_RUN_OR_LINK_IFELSE(
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL
+#ifdef TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
+],
+            [struct timespec monoclock_ts;
+int got_monoclock = clock_gettime(CLOCK_MONOTONIC, &monoclock_ts);
+if (ts.tv_sec < 0 || ts.tv_nsec < 0) return 1])],
+        [ac_cv_func_clock_gettime=yes], [ac_cv_func_clock_gettime=no]
+    )])
+AS_IF([test x"${ac_cv_func_clock_gettime}" = xyes],
+    [AC_DEFINE([HAVE_CLOCK_GETTIME], 1, [defined if standard library has, and C standard allows, the clock_gettime(clkid,ts) method])
+     AC_DEFINE([HAVE_CLOCK_MONOTONIC], 1, [defined if standard library has, and C standard allows, the CLOCK_MONOTONIC macro or token])],
+    [AC_MSG_WARN([Optional C library routine clock_gettime not found; will not be used in notifications])]
+    )
+dnl Currently these two are the same for us:
+AM_CONDITIONAL([HAVE_CLOCK_GETTIME], [test x"${ac_cv_func_clock_gettime}" = "xyes"])
+AM_CONDITIONAL([HAVE_CLOCK_MONOTONIC], [test x"${ac_cv_func_clock_gettime}" = "xyes"])
 
 AC_CACHE_CHECK([for strnlen(s1,s2,tm)],
     [ac_cv_func_strnlen],
