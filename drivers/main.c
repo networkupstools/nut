@@ -319,10 +319,18 @@ int testvar_reloadable(const char *var, const char *val, int vartype)
 	 * away before a reload on the fly). Might load new config info into a
 	 * separate list and then compare missing points?..
 	 */
+	upsdebugx(6, "%s: searching for var=%s, vartype=%d, reload_flag=%d",
+		__func__, NUT_STRARG(var), vartype, reload_flag);
 
 	while (tmp) {
 		if (!strcasecmp(tmp->var, var)) {
 			/* variable name is known */
+			upsdebugx(6, "%s: found var=%s, val='%s' => '%s', vartype=%d => %d, found=%d, reloadable=%d, reload_flag=%d",
+				__func__, NUT_STRARG(var),
+				NUT_STRARG(tmp->val), NUT_STRARG(val),
+				tmp->vartype, vartype,
+				tmp->found, tmp->reloadable, reload_flag);
+
 			if (val && tmp->val) {
 				/* a value is already known by name
 				 * and bitmask for VAR_FLAG/VAR_VALUE matches
@@ -394,6 +402,10 @@ int testvar_reloadable(const char *var, const char *val, int vartype)
  */
 int testval_reloadable(const char *var, const char *oldval, const char *newval, int reloadable)
 {
+	upsdebugx(6, "%s: var=%s, oldval=%s, newval=%s, reloadable=%d, reload_flag=%d",
+		__func__, NUT_STRARG(var), NUT_STRARG(oldval), NUT_STRARG(newval),
+		reloadable, reload_flag);
+
 	/* Nothing saved yet? Okay to store new value! */
 	if (!oldval)
 		return 1;
@@ -438,6 +450,10 @@ int testval_reloadable(const char *var, const char *oldval, const char *newval, 
  */
 int testinfo_reloadable(const char *var, const char *infoname, const char *newval, int reloadable)
 {
+	upsdebugx(6, "%s: var=%s, infoname=%s, newval=%s, reloadable=%d, reload_flag=%d",
+		__func__, NUT_STRARG(var), NUT_STRARG(infoname), NUT_STRARG(newval),
+		reloadable, reload_flag);
+
 	/* Keep legacy behavior: not reloading, trust the initial config */
 	if (!reload_flag || !infoname)
 		return 1;
@@ -770,8 +786,12 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 {
 	char	tmp[SMALLBUF];
 
+	upsdebugx(5, "%s: confupsname=%s, var=%s, val=%s",
+		__func__, NUT_STRARG(confupsname), NUT_STRARG(var), NUT_STRARG(val));
+
 	/* handle global declarations */
 	if (!confupsname) {
+		upsdebugx(5, "%s: call do_global_args()", __func__);
 		do_global_args(var, val);
 		return;
 	}
@@ -782,11 +802,15 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 
 	upsname_found = 1;
 
+	upsdebugx(5, "%s: call main_arg()", __func__);
 	if (main_arg(var, val))
 		return;
+	upsdebugx(5, "%s: not a main_arg()", __func__);
 
 	/* flags (no =) now get passed to the driver-level stuff */
 	if (!val) {
+		upsdebugx(5, "%s: process as flag", __func__);
+
 		/* also store this, but it's a bit different */
 		snprintf(tmp, sizeof(tmp), "driver.flag.%s", var);
 
@@ -838,6 +862,7 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 	/* allow reloading if defined and permitted via addvar()
 	 * or not defined there (FIXME?)
 	 */
+	upsdebugx(5, "%s: process as value", __func__);
 	if (testvar_reloadable(var, val, VAR_VALUE) > 0) {
 		storeval(var, val);
 	}
