@@ -70,6 +70,10 @@ static int	user_from_cmdline = 0, group_from_cmdline = 0;
 
 /* signal handling */
 int	exit_flag = 0;
+/* reload_flag is 0 most of the time (including initial config reading),
+ * and is briefly 1 when a reload signal is received and is being handled
+ */
+static int	reload_flag = 0;
 
 #ifndef DRIVERS_MAIN_WITHOUT_MAIN
 /* should this driver instance go to background (default)
@@ -297,6 +301,117 @@ int testvar(const char *var)
 	}
 
 	return 0;	/* not found */
+}
+
+/* See if <var> can be (re-)loaded now: either is reloadable by definition,
+ * or no value has been given to it yet. Returns "-1" if nothing needs to
+ * be done and that is not a failure (e.g. value not modified so we do not
+ * care if we may change it or not).
+ */
+static int testvar_reloadable(const char *var, const char *val, int vartype)
+{
+	vartab_t	*tmp = vartab_h;
+
+	while (tmp) {
+		if (!strcasecmp(tmp->var, var)) {
+			/* variable name is known */
+			if (val && tmp->val) {
+				/* a value is already known */
+				if (vartype == tmp->vartype && !strcasecmp(tmp->val, val)) {
+					if (reload_flag) {
+						upsdebugx(1, "%s: setting '%s' "
+							"exists and is unmodified",
+							__func__, var);
+					}
+					return -1;	/* no-op for caller */
+				} else {
+					/* warn loudly if we are reloading and
+					 * can not change this modified value */
+					upsdebugx((reload_flag ? (tmp->reloadable ? 1 : 0) : 1),
+						"%s: setting '%s' exists and differs: "
+						"new type bitmask %d vs. %d, "
+						"new value '%s' vs. '%s'",
+						__func__, var,
+						vartype, tmp->vartype,
+						val, tmp->val);
+					return (
+						(!reload_flag)	/* For initial config reads, legacy code trusted what it saw */
+						|| tmp->reloadable	/* set in addvar*() */
+					);
+				}
+			}
+
+			/* okay to redefine if not yet defined, or if reload is allowed,
+			 * or if initially loading the configs
+			 */
+			return (
+				(!reload_flag)
+				|| ((!tmp->found) || tmp->reloadable)
+			);
+		}
+		tmp = tmp->next;
+	}
+
+	return 1;	/* not found, may (re)load the definition */
+}
+
+/* Similar to testvar_reloadable() above which is for addvar*() defined
+ * entries, but for less streamlined stuff defined right here in main.c.
+ * See if value (probably saved in dstate) can be (re-)loaded now: either
+ * it is reloadable by parameter definition, or no value has been saved
+ * into it yet (<oldval> is NULL).
+ * Returns "-1" if nothing needs to be done and that is not a failure
+ * (e.g. value not modified so we do not care if we may change it or not).
+ */
+static int testval_reloadable(const char *var, const char *oldval, const char *newval, int reloadable)
+{
+	/* Nothing saved yet? Okay to store new value! */
+	if (!oldval)
+		return 1;
+
+	/* Should not happen? Or... (commented-away etc.) */
+	if (!newval) {
+		upslogx(LOG_WARNING, "%s: new setting for '%s' is NULL", __func__, var);
+		return ((!reload_flag) || reloadable);
+	}
+
+	/* a value is already known, another is desired */
+	if (!strcasecmp(oldval, newval)) {
+		if (reload_flag) {
+			upsdebugx(1, "%s: setting '%s' "
+				"exists and is unmodified",
+				__func__, var);
+		}
+		return -1;	/* no-op for caller */
+	} else {
+		/* warn loudly if we are reloading and
+		 * can not change this modified value */
+		upsdebugx((reload_flag ? (reloadable ? 1 : 0) : 1),
+			"%s: setting '%s' exists and differs: "
+			"new value '%s' vs. '%s'",
+			__func__, var,
+			newval, oldval);
+		/* For initial config reads, legacy code trusted what it saw */
+		return ((!reload_flag) || reloadable);
+	}
+}
+
+/* Similar to testvar_reloadable() above which is for addvar*() defined
+ * entries, but for less streamlined stuff defined right here in main.c.
+ * See if <arg> (by name saved in dstate) can be (re-)loaded now: either
+ * it is reloadable by parameter definition, or no value has been saved
+ * into it yet (<oldval> is NULL).
+ * Returns "-1" if nothing needs to be done and that is not a failure
+ * (e.g. value not modified so we do not care if we may change it or not).
+ */
+static int testarg_reloadable(const char *var, const char *arg, const char *newval, int reloadable)
+{
+	/* Keep legacy behavior: not reloading, trust the initial config */
+	if (!reload_flag || !arg)
+		return 1;
+
+	/* Only if reloading, suffer the overhead of lookups: */
+	return testval_reloadable(var, dstate_getinfo(arg), newval, reloadable);
 }
 
 /* implement callback from driver - create the table for -x/conf entries */
@@ -709,6 +824,13 @@ void set_exit_flag(int sig)
 }
 
 #ifndef WIN32
+/* TODO: Equivalent for WIN32 - see SIGCMD_RELOAD in upd and upsmon */
+static void set_reload_flag(int sig)
+{
+	NUT_UNUSED_VARIABLE(sig);
+	reload_flag = 1;
+}
+
 # ifndef DRIVERS_MAIN_WITHOUT_MAIN
 static
 # endif /* DRIVERS_MAIN_WITHOUT_MAIN */
@@ -719,11 +841,13 @@ void setup_signals(void)
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = 0;
 
+	/* handle shutdown signals */
 	sa.sa_handler = set_exit_flag;
 	sigaction(SIGTERM, &sa, NULL);
 	sigaction(SIGINT, &sa, NULL);
 	sigaction(SIGQUIT, &sa, NULL);
 
+	/* basic signal setup to ignore SIGPIPE */
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wstrict-prototypes"
@@ -732,8 +856,11 @@ void setup_signals(void)
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
 # pragma GCC diagnostic pop
 #endif
-	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGPIPE, &sa, NULL);
+
+	/* handle reloading */
+	sa.sa_handler = set_reload_flag;
+	sigaction(SIGHUP, &sa, NULL);
 }
 #endif /* WIN32*/
 
@@ -1267,6 +1394,15 @@ int main(int argc, char **argv)
 			while (!dstate_poll_fds(timeout, extrafd) && !exit_flag) {
 				/* repeat until time is up or extrafd has data */
 			}
+		}
+
+		if (reload_flag && !exit_flag) {
+			dstate_setinfo("driver.state", "reloading");
+			upsnotify(NOTIFY_STATE_RELOADING, NULL);
+			/* TODO: Call actual config reloading activity */
+			reload_flag = 0;
+			dstate_setinfo("driver.state", "quiet");
+			upsnotify(NOTIFY_STATE_READY, NULL);
 		}
 	}
 
