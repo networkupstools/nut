@@ -1045,6 +1045,7 @@ static void exit_cleanup(void)
 
 void set_exit_flag(int sig)
 {
+	upsdebugx(1, "%s: raising exit flag due to signal %d", __func__, sig);
 	exit_flag = sig;
 }
 
@@ -1052,7 +1053,7 @@ void set_exit_flag(int sig)
 /* TODO: Equivalent for WIN32 - see SIGCMD_RELOAD in upd and upsmon */
 static void set_reload_flag(int sig)
 {
-	NUT_UNUSED_VARIABLE(sig);
+	upsdebugx(1, "%s: raising reload flag due to signal %d", __func__, sig);
 	reload_flag = 1;
 }
 
