@@ -51,7 +51,7 @@ ExecStop=/bin/sh -c 'NUTDEV="`@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --get-de
 StartLimitInterval=0
 Restart=always
 # Protract the "hold-off" interval, so if the device connection is
-# lost, the driver does not reapidly restart and fail too many times,
+# lost, the driver does not rapidly restart and fail too many times,
 # and then systemd would keep the unit failed without further retries.
 # Notably, this helps start "dummy-ups" drivers retranslating local
 # devices (so getting a chicken-and-egg problem for driver-upsd-driver
