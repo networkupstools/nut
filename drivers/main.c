@@ -313,18 +313,43 @@ int testvar_reloadable(const char *var, const char *val, int vartype)
 {
 	vartab_t	*tmp = vartab_h;
 
+	/* FIXME: handle VAR_FLAG typed (bitmask) values specially somehow?
+	 * Either we set the flag at some point (because its name is mentioned)
+	 * or we do not (initially set - no way so far to know it got commented
+	 * away before a reload on the fly). Might load new config info into a
+	 * separate list and then compare missing points?..
+	 */
+
 	while (tmp) {
 		if (!strcasecmp(tmp->var, var)) {
 			/* variable name is known */
 			if (val && tmp->val) {
-				/* a value is already known */
-				if (vartype == tmp->vartype && !strcasecmp(tmp->val, val)) {
-					if (reload_flag) {
-						upsdebugx(1, "%s: setting '%s' "
-							"exists and is unmodified",
-							__func__, var);
+				/* a value is already known by name
+				 * and bitmask for VAR_FLAG/VAR_VALUE matches
+				 */
+				if (vartype && tmp->vartype) {
+					if ((tmp->vartype & VAR_FLAG) && val == NULL) {
+						if (reload_flag) {
+							upsdebugx(1, "%s: setting '%s' "
+								"exists and is a flag; "
+								"new value was not specified",
+								__func__, var);
+						}
+
+						/* by default: apply flags initially, ignore later */
+						return (
+							(!reload_flag)	/* For initial config reads, legacy code trusted what it saw */
+							|| tmp->reloadable	/* set in addvar*() */
+						);
 					}
-					return -1;	/* no-op for caller */
+					if (!strcasecmp(tmp->val, val)) {
+						if (reload_flag) {
+							upsdebugx(1, "%s: setting '%s' "
+								"exists and is unmodified",
+								__func__, var);
+						}
+						return -1;	/* no-op for caller */
+					}
 				} else {
 					/* warn loudly if we are reloading and
 					 * can not change this modified value */
@@ -417,7 +442,14 @@ int testinfo_reloadable(const char *var, const char *infoname, const char *newva
 	if (!reload_flag || !infoname)
 		return 1;
 
-	/* Only if reloading, suffer the overhead of lookups: */
+	/* Suffer the overhead of lookups only if reloading */
+
+	/* FIXME: handle "driver.flag.*" prefixed values specially somehow?
+	 * Either we set the flag at some point (because its name is mentioned)
+	 * or we do not (initially set - no way so far to know it got commented
+	 * away before a reload on the fly). Might load new config info into a
+	 * separate list and then compare missing points?..
+	 */
 	return testval_reloadable(var, dstate_getinfo(infoname), newval, reloadable);
 }
 
