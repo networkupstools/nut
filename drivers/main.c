@@ -533,7 +533,19 @@ static int main_arg(char *var, char *val)
 	}
 
 	/* allow per-driver overrides of the global setting */
-	if (!strcmp(var, "synchronous")) {
+	if (!strcmp(var, "pollinterval")) {
+		int ipv = atoi(val);
+		if (ipv > 0) {
+			poll_interval = (time_t)ipv;
+		} else {
+			fatalx(EXIT_FAILURE, "Error: UPS [%s]: invalid pollinterval: %d",
+				confupsname, ipv);
+		}
+		return 1;	/* handled */
+	}
+
+	/* allow per-driver overrides of the global setting */
+	if (!strcmp(var, "synchronous") {
 		if (!strcmp(val, "yes"))
 			do_synchronous=1;
 		else
@@ -695,18 +707,6 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 		if (strcmp(val, progname) != 0) {
 			fatalx(EXIT_FAILURE, "Error: UPS [%s] is for driver %s, but I'm %s!\n",
 				confupsname, val, progname);
-		}
-		return;
-	}
-
-	/* allow per-driver overrides of the global setting */
-	if (!strcmp(var, "pollinterval")) {
-		int ipv = atoi(val);
-		if (ipv > 0) {
-			poll_interval = (time_t)ipv;
-		} else {
-			fatalx(EXIT_FAILURE, "Error: UPS [%s]: invalid pollinterval: %d",
-				confupsname, ipv);
 		}
 		return;
 	}
