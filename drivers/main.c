@@ -330,10 +330,13 @@ int testvar_reloadable(const char *var, const char *val, int vartype)
 					upsdebugx((reload_flag ? (tmp->reloadable ? 1 : 0) : 1),
 						"%s: setting '%s' exists and differs: "
 						"new type bitmask %d vs. %d, "
-						"new value '%s' vs. '%s'",
+						"new value '%s' vs. '%s'%s",
 						__func__, var,
 						vartype, tmp->vartype,
-						val, tmp->val);
+						val, tmp->val,
+						((!reload_flag || tmp->reloadable) ? "" :
+							" (driver restart is needed to apply)")
+						);
 					return (
 						(!reload_flag)	/* For initial config reads, legacy code trusted what it saw */
 						|| tmp->reloadable	/* set in addvar*() */
@@ -388,9 +391,12 @@ int testval_reloadable(const char *var, const char *oldval, const char *newval, 
 		 * can not change this modified value */
 		upsdebugx((reload_flag ? (reloadable ? 1 : 0) : 1),
 			"%s: setting '%s' exists and differs: "
-			"new value '%s' vs. '%s'",
+			"new value '%s' vs. '%s'%s",
 			__func__, var,
-			newval, oldval);
+			newval, oldval,
+			((!reload_flag || reloadable) ? "" :
+				" (driver restart is needed to apply)")
+			);
 		/* For initial config reads, legacy code trusted what it saw */
 		return ((!reload_flag) || reloadable);
 	}
