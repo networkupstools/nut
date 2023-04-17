@@ -308,7 +308,7 @@ int testvar(const char *var)
  * be done and that is not a failure (e.g. value not modified so we do not
  * care if we may change it or not).
  */
-static int testvar_reloadable(const char *var, const char *val, int vartype)
+int testvar_reloadable(const char *var, const char *val, int vartype)
 {
 	vartab_t	*tmp = vartab_h;
 
@@ -363,7 +363,7 @@ static int testvar_reloadable(const char *var, const char *val, int vartype)
  * Returns "-1" if nothing needs to be done and that is not a failure
  * (e.g. value not modified so we do not care if we may change it or not).
  */
-static int testval_reloadable(const char *var, const char *oldval, const char *newval, int reloadable)
+int testval_reloadable(const char *var, const char *oldval, const char *newval, int reloadable)
 {
 	/* Nothing saved yet? Okay to store new value! */
 	if (!oldval)
@@ -398,20 +398,20 @@ static int testval_reloadable(const char *var, const char *oldval, const char *n
 
 /* Similar to testvar_reloadable() above which is for addvar*() defined
  * entries, but for less streamlined stuff defined right here in main.c.
- * See if <arg> (by name saved in dstate) can be (re-)loaded now: either
- * it is reloadable by parameter definition, or no value has been saved
- * into it yet (<oldval> is NULL).
+ * See if <var> (by <arg> name saved in dstate) can be (re-)loaded now:
+ * either it is reloadable by parameter definition, or no value has been
+ * saved into it yet (<oldval> is NULL).
  * Returns "-1" if nothing needs to be done and that is not a failure
  * (e.g. value not modified so we do not care if we may change it or not).
  */
-static int testarg_reloadable(const char *var, const char *arg, const char *newval, int reloadable)
+int testinfo_reloadable(const char *var, const char *infoname, const char *newval, int reloadable)
 {
 	/* Keep legacy behavior: not reloading, trust the initial config */
-	if (!reload_flag || !arg)
+	if (!reload_flag || !infoname)
 		return 1;
 
 	/* Only if reloading, suffer the overhead of lookups: */
-	return testval_reloadable(var, dstate_getinfo(arg), newval, reloadable);
+	return testval_reloadable(var, dstate_getinfo(infoname), newval, reloadable);
 }
 
 /* implement callback from driver - create the table for -x/conf entries */
