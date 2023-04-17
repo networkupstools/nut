@@ -920,12 +920,13 @@ static void assign_debug_level(void) {
 	int nut_debug_level_upsconf = -1;
 
 	if (nut_debug_level_global >= 0 && nut_debug_level_driver >= 0) {
+		/* Use nearest-defined fit */
 		nut_debug_level_upsconf = nut_debug_level_driver;
 		if (reload_flag) {
 			upslogx(LOG_INFO,
 				"Applying debug_min=%d from ups.conf"
-				" driver section (overriding global)",
-				nut_debug_level_upsconf);
+				" driver section (overriding global %d)",
+				nut_debug_level_upsconf, nut_debug_level_global);
 		}
 	} else {
 		if (nut_debug_level_global >= 0) {
@@ -944,8 +945,9 @@ static void assign_debug_level(void) {
 		}
 	}
 
-	if (reload_flag && nut_debug_level_upsconf == -1) {
-		/* DEBUG_MIN is absent or commented-away in ups.conf */
+	if (reload_flag && nut_debug_level_upsconf <= nut_debug_level_args) {
+		/* DEBUG_MIN is absent or commented-away in ups.conf,
+		 * or is smaller than te CLI arg '-D' count */
 		upslogx(LOG_INFO,
 			"Applying debug level %d from "
 			"original command line arguments",
