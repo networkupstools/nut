@@ -810,6 +810,27 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 	}
 }
 
+static void assign_debug_level(void) {
+	/* CLI debug level can not be smaller than debug_min specified
+	 * in ups.conf, and value specified for a driver config section
+	 * overrides the global one. Note that non-zero debug_min does
+	 * not impact foreground running mode.
+	 */
+	int nut_debug_level_upsconf = -1;
+
+	if (nut_debug_level_global >= 0 && nut_debug_level_driver >= 0) {
+		nut_debug_level_upsconf = nut_debug_level_driver;
+	} else {
+		if (nut_debug_level_global >= 0) nut_debug_level_upsconf = nut_debug_level_global;
+		if (nut_debug_level_driver >= 0) nut_debug_level_upsconf = nut_debug_level_driver;
+	}
+
+	if (nut_debug_level_upsconf > nut_debug_level)
+		nut_debug_level = nut_debug_level_upsconf;
+
+	upsdebugx(1, "debug level is '%d'", nut_debug_level);
+}
+
 #ifndef DRIVERS_MAIN_WITHOUT_MAIN
 /* split -x foo=bar into 'foo' and 'bar' */
 static void splitxarg(char *inbuf)
@@ -1166,23 +1187,7 @@ int main(int argc, char **argv)
 			"Try -h for help.");
 	}
 
-	/* CLI debug level can not be smaller than debug_min specified
-	 * in ups.conf, and value specified for a driver config section
-	 * overrides the global one. Note that non-zero debug_min does
-	 * not impact foreground running mode.
-	 */
-	{
-		int nut_debug_level_upsconf = -1 ;
-		if ( nut_debug_level_global >= 0 && nut_debug_level_driver >= 0 ) {
-			nut_debug_level_upsconf = nut_debug_level_driver;
-		} else {
-			if ( nut_debug_level_global >= 0 ) nut_debug_level_upsconf = nut_debug_level_global;
-			if ( nut_debug_level_driver >= 0 ) nut_debug_level_upsconf = nut_debug_level_driver;
-		}
-		if ( nut_debug_level_upsconf > nut_debug_level )
-			nut_debug_level = nut_debug_level_upsconf;
-	}
-	upsdebugx(1, "debug level is '%d'", nut_debug_level);
+	assign_debug_level();
 
 	new_uid = get_user_pwent(user);
 
