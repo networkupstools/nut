@@ -71,7 +71,11 @@ static int	user_from_cmdline = 0, group_from_cmdline = 0;
 /* signal handling */
 int	exit_flag = 0;
 /* reload_flag is 0 most of the time (including initial config reading),
- * and is briefly 1 when a reload signal is received and is being handled
+ * and is briefly 1 when a reload signal is received and is being handled,
+ * or 2 if the reload attempt is allowed to exit the current driver (e.g.
+ * changed some ups.conf settings that can not be re-applied on the fly)
+ * assuming it gets restarted by external framework (systemd) or caller
+ * (like NUT driver CLI `-c reload-or-restart` handling), if needed.
  */
 static int	reload_flag = 0;
 
@@ -371,6 +375,13 @@ int testvar_reloadable(const char *var, const char *val, int vartype)
 						((!reload_flag || tmp->reloadable) ? "" :
 							" (driver restart is needed to apply)")
 						);
+					/* FIXME: Define a special EXIT_RELOAD or something,
+					 * for "not quite a failure"? Or close connections
+					 * and re-exec() this driver from scratch (and so to
+					 * keep MAINPID for systemd et al)?
+					 */
+					if (reload_flag == 2 && !tmp->reloadable)
+						fatalx(EXIT_SUCCESS, "NUT driver reload-or-restart: setting %s was changed and requires a driver restart", var);
 					return (
 						(!reload_flag)	/* For initial config reads, legacy code trusted what it saw */
 						|| tmp->reloadable	/* set in addvar*() */
@@ -435,6 +446,13 @@ int testval_reloadable(const char *var, const char *oldval, const char *newval, 
 			((!reload_flag || reloadable) ? "" :
 				" (driver restart is needed to apply)")
 			);
+		/* FIXME: Define a special EXIT_RELOAD or something,
+		 * for "not quite a failure"? Or close connections
+		 * and re-exec() this driver from scratch (and so to
+		 * keep MAINPID for systemd et al)?
+		 */
+		if (reload_flag == 2 && !reloadable)
+			fatalx(EXIT_SUCCESS, "NUT driver reload-or-restart: setting %s was changed and requires a driver restart", var);
 		/* For initial config reads, legacy code trusted what it saw */
 		return ((!reload_flag) || reloadable);
 	}
@@ -668,7 +686,7 @@ static int main_arg(char *var, char *val)
 	/* Allow each driver to specify its minimal debugging level -
 	 * admins can set more with command-line args, but can't set
 	 * less without changing config. Should help debug of services.
-	 * Note: during reload_flag==1 handling this is reset to -1, to
+	 * Note: during reload_flag!=0 handling this is reset to -1, to
 	 * catch commented-away settings, so not checking previous value.
 	 */
 	if (!strcmp(var, "debug_min")) {
@@ -793,7 +811,7 @@ static void do_global_args(const char *var, const char *val)
 	/* Allow to specify its minimal debugging level for all drivers -
 	 * admins can set more with command-line args, but can't set
 	 * less without changing config. Should help debug of services.
-	 * Note: during reload_flag==1 handling this is reset to -1, to
+	 * Note: during reload_flag!=0 handling this is reset to -1, to
 	 * catch commented-away settings, so not checking previous value.
 	 */
 	if (!strcmp(var, "debug_min")) {
@@ -1084,7 +1102,16 @@ void set_exit_flag(int sig)
 static void set_reload_flag(int sig)
 {
 	upsdebugx(1, "%s: raising reload flag due to signal %d", __func__, sig);
-	reload_flag = 1;
+	switch (sig) {
+		case SIGUSR1:
+			/* reload-or-restart (this driver instance may die) */
+			reload_flag = 2;
+			break;
+
+		default:
+			/* reload what we can, log what needs a restart so skipped */
+			reload_flag = 1;
+	}
 }
 
 # ifndef DRIVERS_MAIN_WITHOUT_MAIN
@@ -1117,6 +1144,7 @@ void setup_signals(void)
 	/* handle reloading */
 	sa.sa_handler = set_reload_flag;
 	sigaction(SIGHUP, &sa, NULL);
+	sigaction(SIGUSR1, &sa, NULL);
 }
 #endif /* WIN32*/
 
