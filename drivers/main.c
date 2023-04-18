@@ -99,7 +99,9 @@ static int background_flag = -1;
  * value less than that would not have effect, can only
  * have more).
  */
+#ifndef DRIVERS_MAIN_WITHOUT_MAIN
 static int nut_debug_level_args = -1;
+#endif
 static int nut_debug_level_global = -1;
 static int nut_debug_level_driver = -1;
 
