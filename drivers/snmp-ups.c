@@ -2442,6 +2442,12 @@ static int guesstimate_template_count(snmp_info_t *su_info_p)
 
 	upsdebugx(1, "%s(%s)", __func__, OID_template);
 
+	/* Test if OID is indexed: caution for infinite loop */
+	if (strchr(OID_template, '%') == NULL) {
+		upslogx(LOG_WARNING, "Warning: infinite loop detected with object not indexed (OID = %s)", OID_template);
+		return 0;
+	}
+
 	/* Determine if OID index starts from 0 or 1? */
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
