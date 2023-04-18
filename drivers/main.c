@@ -1189,6 +1189,16 @@ static void set_reload_flag(int sig)
 	}
 }
 
+static void handle_dstate_dump(int sig) {
+	/* no set_dump_flag() here, make it instant */
+	upsdebugx(1, "%s: starting driver state dump for [%s] due to signal %d",
+		__func__, upsname, sig);
+	/* FIXME: upslogx() instead of printf() when backgrounded, if STDOUT got closed? */
+	dstate_dump();
+	upsdebugx(1, "%s: finished driver state dump for [%s]",
+		__func__, upsname);
+}
+
 # ifndef DRIVERS_MAIN_WITHOUT_MAIN
 static
 # endif /* DRIVERS_MAIN_WITHOUT_MAIN */
@@ -1220,6 +1230,10 @@ void setup_signals(void)
 	sa.sa_handler = set_reload_flag;
 	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGUSR1, &sa, NULL);
+
+	/* handle run-time data dump (may be limited to non-backgrounding lifetimes) */
+	sa.sa_handler = handle_dstate_dump;
+	sigaction(SIGUSR2, &sa, NULL);
 }
 #endif /* WIN32*/
 
