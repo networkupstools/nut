@@ -659,7 +659,7 @@ const char *xbasename(const char *file)
 	return p + 1;
 }
 
-#if HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC
+#if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_CLOCK_MONOTONIC) && HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC
 /* From https://github.com/systemd/systemd/blob/main/src/basic/time-util.c
  * and  https://github.com/systemd/systemd/blob/main/src/basic/time-util.h
  */
@@ -703,7 +703,7 @@ static nsec_t timespec_load_nsec(const struct timespec *ts) {
 
 	return (nsec_t) ts->tv_sec * NSEC_PER_SEC + (nsec_t) ts->tv_nsec;
 }
-#endif
+#endif	/* HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC */
 
 /* Send (daemon) state-change notifications to an
  * external service management framework such as systemd
@@ -716,14 +716,14 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 	char	msgbuf[LARGEBUF];
 	size_t	msglen = 0;
 
-#if HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC
+#if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_CLOCK_MONOTONIC) && HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC
 	/* In current systemd, this is only used for RELOADING/READY after
 	 * a reload action for Type=notify-reload; for more details see
 	 * https://github.com/systemd/systemd/blob/main/src/core/service.c#L2618
 	 */
 	struct timespec monoclock_ts;
 	int got_monoclock = clock_gettime(CLOCK_MONOTONIC, &monoclock_ts);
-#endif
+#endif	/* HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC */
 
 	/* Prepare the message (if any) as a string */
 	msgbuf[0] = '\0';
@@ -777,7 +777,7 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 #  ifdef HAVE_SD_NOTIFY
 		char monoclock_str[SMALLBUF];
 		monoclock_str[0] = '\0';
-#if HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC
+#   if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_CLOCK_MONOTONIC) && HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC
 		if (got_monoclock == 0) {
 			usec_t monots = timespec_load(&monoclock_ts);
 			ret = snprintf(monoclock_str + 1, sizeof(monoclock_str) - 1, "MONOTONIC_USEC=%" PRI_USEC, monots);
@@ -790,7 +790,7 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 				monoclock_str[0] = '\n';
 			}
 		}
-#endif
+#   endif	/* HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC */
 
 #   if ! DEBUG_SYSTEMD_WATCHDOG
 		if (state != NOTIFY_STATE_WATCHDOG || !upsnotify_reported_watchdog_systemd)
