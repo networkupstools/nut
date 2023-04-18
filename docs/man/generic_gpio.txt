@@ -82,7 +82,7 @@ Here is an example of GPIO driver configuration in *ups.conf* file:
 [CyberPower12v]
   driver = GENERIC_GPIO
   port = gpiochip0
-  description = "Modem and DNS server UPS"
+  desc = "Modem and DNS server UPS"
   mfr = CyberPower
   model = "CyberShield CSN27U12V"
   rules = "OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6;"
