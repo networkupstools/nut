@@ -460,9 +460,6 @@ void upsdrv_initinfo(void)
 	if(testvar("model")) {
 		dstate_setinfo("device.model", "%s", getval("model"));
 	}
-	if(testvar("description")) {
-		dstate_setinfo("device.description", "%s", getval("description"));
-	}
 }
 
 void upsdrv_updateinfo(void)
@@ -492,11 +489,9 @@ void upsdrv_help(void)
 /* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {
-	addvar(VAR_SENSITIVE, "mfr", "UPS manufacturer");
-	addvar(VAR_SENSITIVE, "model", "UPS model");
+	addvar(VAR_VALUE, "mfr", "Override UPS manufacturer name");
+	addvar(VAR_VALUE, "model", "Override UPS model name");
 	addvar(VAR_VALUE, "rules", "Line rules to produce status strings");
-	addvar(VAR_SENSITIVE, "description", "Device description");
-	addvar(VAR_SENSITIVE, "desc", "Device description");
 }
 
 void upsdrv_initups(void)
