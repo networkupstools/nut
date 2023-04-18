@@ -539,12 +539,16 @@ static int main_arg(char *var, char *val)
 		var ? var : "<null>", /* null should not happen... but... */
 		val ? val : "<null>");
 
-	/* !reload_flag quietly forbids changing this flag on the fly, as
+	/* !reload_flag simply forbids changing this flag on the fly, as
 	 * it would have no effect anyway without a (serial) reconnection
 	 */
-	if (!strcmp(var, "nolock") && !reload_flag) {
-		do_lock_port = 0;
-		dstate_setinfo("driver.flag.nolock", "enabled");
+	if (!strcmp(var, "nolock")) {
+		if (reload_flag) {
+			upsdebugx(6, "%s: SKIP: flag var='%s' can not be reloaded", __func__, var);
+		} else {
+			do_lock_port = 0;
+			dstate_setinfo("driver.flag.nolock", "enabled");
+		}
 		return 1;	/* handled */
 	}
 
@@ -552,8 +556,12 @@ static int main_arg(char *var, char *val)
 	 * out that the flag line was commented away or deleted -- there is
 	 * no setting value to flip in configs here
 	 */
-	if (!strcmp(var, "ignorelb") && !reload_flag) {
-		dstate_setinfo("driver.flag.ignorelb", "enabled");
+	if (!strcmp(var, "ignorelb")) {
+		if (reload_flag) {
+			upsdebugx(6, "%s: SKIP: flag var='%s' currently can not be reloaded", __func__, var);
+		} else {
+			dstate_setinfo("driver.flag.ignorelb", "enabled");
+		}
 		return 1;	/* handled */
 	}
 
