@@ -340,7 +340,7 @@ int testvar_reloadable(const char *var, const char *val, int vartype)
 				/* a value is already known by name
 				 * and bitmask for VAR_FLAG/VAR_VALUE matches
 				 */
-				if (vartype && tmp->vartype) {
+				if ((vartype & tmp->vartype) && !strcasecmp(tmp->val, val)) {
 					if ((tmp->vartype & VAR_FLAG) && val == NULL) {
 						if (reload_flag) {
 							upsdebugx(1, "%s: setting '%s' "
@@ -356,15 +356,15 @@ int testvar_reloadable(const char *var, const char *val, int vartype)
 						);
 						goto finish;
 					}
-					if (!strcasecmp(tmp->val, val)) {
-						if (reload_flag) {
-							upsdebugx(1, "%s: setting '%s' "
-								"exists and is unmodified",
-								__func__, var);
-						}
-						verdict = -1;	/* no-op for caller */
-						goto finish;
+
+					if (reload_flag) {
+						upsdebugx(1, "%s: setting '%s' "
+							"exists and is unmodified",
+							__func__, var);
 					}
+
+					verdict = -1;	/* no-op for caller */
+					goto finish;
 				} else {
 					/* warn loudly if we are reloading and
 					 * can not change this modified value */
