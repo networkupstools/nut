@@ -221,6 +221,11 @@ void storeval(const char *var, char *val)
 {
 	vartab_t	*tmp, *last;
 
+	/* NOTE: (FIXME?) The override and default mechanisms here
+	 * effectively bypass both VAR_SENSITIVE protections and
+	 * the constraint of having previously defined the name by
+	 * addvar() in a driver codebase.
+	 */
 	if (!strncasecmp(var, "override.", 9)) {
 		dstate_setinfo(var+9, "%s", val);
 		dstate_setflags(var+9, ST_FLAG_IMMUTABLE);
@@ -251,8 +256,13 @@ void storeval(const char *var, char *val)
 				tmp->val = xstrdup(val);
 
 			/* don't keep things like SNMP community strings */
-			if ((tmp->vartype & VAR_SENSITIVE) == 0)
+			if ((tmp->vartype & VAR_SENSITIVE) == 0) {
 				dparam_setinfo(var, val);
+			} else {
+				upsdebugx(4, "%s: skip dparam_setinfo() "
+					"for sensitive variable '%s'",
+					__func__, var);
+			}
 
 			tmp->found = 1;
 			return;
