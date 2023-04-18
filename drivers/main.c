@@ -316,6 +316,7 @@ int testvar(const char *var)
 int testvar_reloadable(const char *var, const char *val, int vartype)
 {
 	vartab_t	*tmp = vartab_h;
+	int	verdict = -2;
 
 	/* FIXME: handle VAR_FLAG typed (bitmask) values specially somehow?
 	 * Either we set the flag at some point (because its name is mentioned)
@@ -349,10 +350,11 @@ int testvar_reloadable(const char *var, const char *val, int vartype)
 						}
 
 						/* by default: apply flags initially, ignore later */
-						return (
+						verdict = (
 							(!reload_flag)	/* For initial config reads, legacy code trusted what it saw */
 							|| tmp->reloadable	/* set in addvar*() */
 						);
+						goto finish;
 					}
 					if (!strcasecmp(tmp->val, val)) {
 						if (reload_flag) {
@@ -360,7 +362,8 @@ int testvar_reloadable(const char *var, const char *val, int vartype)
 								"exists and is unmodified",
 								__func__, var);
 						}
-						return -1;	/* no-op for caller */
+						verdict = -1;	/* no-op for caller */
+						goto finish;
 					}
 				} else {
 					/* warn loudly if we are reloading and
@@ -382,25 +385,32 @@ int testvar_reloadable(const char *var, const char *val, int vartype)
 					 */
 					if (reload_flag == 2 && !tmp->reloadable)
 						fatalx(EXIT_SUCCESS, "NUT driver reload-or-restart: setting %s was changed and requires a driver restart", var);
-					return (
+					verdict = (
 						(!reload_flag)	/* For initial config reads, legacy code trusted what it saw */
 						|| tmp->reloadable	/* set in addvar*() */
 					);
+					goto finish;
 				}
 			}
 
 			/* okay to redefine if not yet defined, or if reload is allowed,
 			 * or if initially loading the configs
 			 */
-			return (
+			verdict = (
 				(!reload_flag)
 				|| ((!tmp->found) || tmp->reloadable)
 			);
+			goto finish;
 		}
 		tmp = tmp->next;
 	}
 
-	return 1;	/* not found, may (re)load the definition */
+	verdict = 1;	/* not found, may (re)load the definition */
+
+finish:
+	upsdebugx(6, "%s: verdict for (re)loading var=%s value: %d",
+		__func__, NUT_STRARG(var), verdict);
+	return verdict;
 }
 
 /* Similar to testvar_reloadable() above which is for addvar*() defined
@@ -413,18 +423,23 @@ int testvar_reloadable(const char *var, const char *val, int vartype)
  */
 int testval_reloadable(const char *var, const char *oldval, const char *newval, int reloadable)
 {
+	int	verdict = -2;
+
 	upsdebugx(6, "%s: var=%s, oldval=%s, newval=%s, reloadable=%d, reload_flag=%d",
 		__func__, NUT_STRARG(var), NUT_STRARG(oldval), NUT_STRARG(newval),
 		reloadable, reload_flag);
 
 	/* Nothing saved yet? Okay to store new value! */
-	if (!oldval)
-		return 1;
+	if (!oldval) {
+		verdict = 1;
+		goto finish;
+	}
 
 	/* Should not happen? Or... (commented-away etc.) */
 	if (!newval) {
 		upslogx(LOG_WARNING, "%s: new setting for '%s' is NULL", __func__, var);
-		return ((!reload_flag) || reloadable);
+		verdict = ((!reload_flag) || reloadable);
+		goto finish;
 	}
 
 	/* a value is already known, another is desired */
@@ -434,7 +449,8 @@ int testval_reloadable(const char *var, const char *oldval, const char *newval, 
 				"exists and is unmodified",
 				__func__, var);
 		}
-		return -1;	/* no-op for caller */
+		verdict = -1;	/* no-op for caller */
+		goto finish;
 	} else {
 		/* warn loudly if we are reloading and
 		 * can not change this modified value */
@@ -454,8 +470,14 @@ int testval_reloadable(const char *var, const char *oldval, const char *newval, 
 		if (reload_flag == 2 && !reloadable)
 			fatalx(EXIT_SUCCESS, "NUT driver reload-or-restart: setting %s was changed and requires a driver restart", var);
 		/* For initial config reads, legacy code trusted what it saw */
-		return ((!reload_flag) || reloadable);
+		verdict = ((!reload_flag) || reloadable);
+		goto finish;
 	}
+
+finish:
+	upsdebugx(6, "%s: verdict for (re)loading var=%s value: %d",
+		__func__, NUT_STRARG(var), verdict);
+	return verdict;
 }
 
 /* Similar to testvar_reloadable() above which is for addvar*() defined
@@ -468,13 +490,17 @@ int testval_reloadable(const char *var, const char *oldval, const char *newval, 
  */
 int testinfo_reloadable(const char *var, const char *infoname, const char *newval, int reloadable)
 {
+	int	verdict = -2;
+
 	upsdebugx(6, "%s: var=%s, infoname=%s, newval=%s, reloadable=%d, reload_flag=%d",
 		__func__, NUT_STRARG(var), NUT_STRARG(infoname), NUT_STRARG(newval),
 		reloadable, reload_flag);
 
 	/* Keep legacy behavior: not reloading, trust the initial config */
-	if (!reload_flag || !infoname)
-		return 1;
+	if (!reload_flag || !infoname) {
+		verdict = 1;
+		goto finish;
+	}
 
 	/* Suffer the overhead of lookups only if reloading */
 
@@ -484,7 +510,12 @@ int testinfo_reloadable(const char *var, const char *infoname, const char *newva
 	 * away before a reload on the fly). Might load new config info into a
 	 * separate list and then compare missing points?..
 	 */
-	return testval_reloadable(var, dstate_getinfo(infoname), newval, reloadable);
+	verdict = testval_reloadable(var, dstate_getinfo(infoname), newval, reloadable);
+
+finish:
+	upsdebugx(6, "%s: verdict for (re)loading var=%s value: %d",
+		__func__, NUT_STRARG(var), verdict);
+	return verdict;
 }
 
 /* implement callback from driver - create the table for -x/conf entries */
