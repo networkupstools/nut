@@ -1879,6 +1879,8 @@ int main(int argc, char **argv)
 #ifndef WIN32
 	if (chdir(statepath)) {
 		fatal_with_errno(EXIT_FAILURE, "Can't chdir to %s", statepath);
+	} else {
+		upsdebugx(1, "chdired into statepath %s for driver sockets", statepath);
 	}
 #endif
 
