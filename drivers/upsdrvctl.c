@@ -1237,12 +1237,12 @@ int main(int argc, char **argv)
 		/* raise exit_flag upon SIGTERM, Ctrl+C, etc. */
 		setup_signals();
 		while (!exit_flag) {
+			ups_t	*tmp = upstable, *next;
 #ifndef WIN32
 			/* Track if any child process has stopped (due to
 			 * an error, normal exit, signal...) to kill others
 			 * and exit the tool - with error if applicable.
 			 */
-			ups_t	*tmp = upstable, *next;
 			while (tmp) {
 				next = tmp->next;
 				if (tmp->pid != -1) {
