@@ -19,6 +19,7 @@
 */
 
 #include "common.h"
+#include "timehead.h"
 
 #include <ctype.h>
 #ifndef WIN32
@@ -658,6 +659,52 @@ const char *xbasename(const char *file)
 	return p + 1;
 }
 
+#if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_CLOCK_MONOTONIC) && HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC
+/* From https://github.com/systemd/systemd/blob/main/src/basic/time-util.c
+ * and  https://github.com/systemd/systemd/blob/main/src/basic/time-util.h
+ */
+typedef uint64_t usec_t;
+typedef uint64_t nsec_t;
+#define PRI_NSEC PRIu64
+#define PRI_USEC PRIu64
+
+#define USEC_INFINITY ((usec_t) UINT64_MAX)
+#define NSEC_INFINITY ((nsec_t) UINT64_MAX)
+
+#define MSEC_PER_SEC  1000ULL
+#define USEC_PER_SEC  ((usec_t) 1000000ULL)
+#define USEC_PER_MSEC ((usec_t) 1000ULL)
+#define NSEC_PER_SEC  ((nsec_t) 1000000000ULL)
+#define NSEC_PER_MSEC ((nsec_t) 1000000ULL)
+#define NSEC_PER_USEC ((nsec_t) 1000ULL)
+
+static usec_t timespec_load(const struct timespec *ts) {
+	assert(ts);
+
+	if (ts->tv_sec < 0 || ts->tv_nsec < 0)
+		return USEC_INFINITY;
+
+	if ((usec_t) ts->tv_sec > (UINT64_MAX - (ts->tv_nsec / NSEC_PER_USEC)) / USEC_PER_SEC)
+		return USEC_INFINITY;
+
+	return
+		(usec_t) ts->tv_sec * USEC_PER_SEC +
+		(usec_t) ts->tv_nsec / NSEC_PER_USEC;
+}
+
+static nsec_t timespec_load_nsec(const struct timespec *ts) {
+	assert(ts);
+
+	if (ts->tv_sec < 0 || ts->tv_nsec < 0)
+		return NSEC_INFINITY;
+
+	if ((nsec_t) ts->tv_sec >= (UINT64_MAX - ts->tv_nsec) / NSEC_PER_SEC)
+		return NSEC_INFINITY;
+
+	return (nsec_t) ts->tv_sec * NSEC_PER_SEC + (nsec_t) ts->tv_nsec;
+}
+#endif	/* HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC */
+
 /* Send (daemon) state-change notifications to an
  * external service management framework such as systemd
  */
@@ -668,6 +715,15 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 	char	buf[LARGEBUF];
 	char	msgbuf[LARGEBUF];
 	size_t	msglen = 0;
+
+#if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_CLOCK_MONOTONIC) && HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC
+	/* In current systemd, this is only used for RELOADING/READY after
+	 * a reload action for Type=notify-reload; for more details see
+	 * https://github.com/systemd/systemd/blob/main/src/core/service.c#L2618
+	 */
+	struct timespec monoclock_ts;
+	int got_monoclock = clock_gettime(CLOCK_MONOTONIC, &monoclock_ts);
+#endif	/* HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC */
 
 	/* Prepare the message (if any) as a string */
 	msgbuf[0] = '\0';
@@ -719,6 +775,22 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 		upsnotify_reported_disabled_systemd = 1;
 	} else {
 #  ifdef HAVE_SD_NOTIFY
+		char monoclock_str[SMALLBUF];
+		monoclock_str[0] = '\0';
+#   if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_CLOCK_MONOTONIC) && HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC
+		if (got_monoclock == 0) {
+			usec_t monots = timespec_load(&monoclock_ts);
+			ret = snprintf(monoclock_str + 1, sizeof(monoclock_str) - 1, "MONOTONIC_USEC=%" PRI_USEC, monots);
+			if ((ret < 0) || (ret >= (int) sizeof(monoclock_str) - 1)) {
+				syslog(LOG_WARNING,
+					"%s (%s:%d): snprintf needed more than %" PRIuSIZE " bytes: %d",
+					__func__, __FILE__, __LINE__, sizeof(monoclock_str), ret);
+				msglen = 0;
+			} else {
+				monoclock_str[0] = '\n';
+			}
+		}
+#   endif	/* HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC */
 
 #   if ! DEBUG_SYSTEMD_WATCHDOG
 		if (state != NOTIFY_STATE_WATCHDOG || !upsnotify_reported_watchdog_systemd)
@@ -741,8 +813,9 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 		switch (state) {
 			case NOTIFY_STATE_READY:
 				ret = snprintf(buf + msglen, sizeof(buf) - msglen,
-					"%sREADY=1",
-					msglen ? "\n" : "");
+					"%sREADY=1%s",
+					msglen ? "\n" : "",
+					monoclock_str);
 				break;
 
 			case NOTIFY_STATE_READY_WITH_PID:
@@ -751,9 +824,10 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 					if (snprintf(pidbuf, sizeof(pidbuf), "%lu", (unsigned long) getpid())) {
 						ret = snprintf(buf + msglen, sizeof(buf) - msglen,
 							"%sREADY=1\n"
-							"MAINPID=%s",
+							"MAINPID=%s%s",
 							msglen ? "\n" : "",
-							pidbuf);
+							pidbuf,
+							monoclock_str);
 						upsdebugx(6, "%s: notifying systemd about MAINPID=%s",
 							__func__, pidbuf);
 						/* https://github.com/systemd/systemd/issues/25961
@@ -768,8 +842,9 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 							"plain NOTIFY_STATE_READY",
 							__func__);
 						ret = snprintf(buf + msglen, sizeof(buf) - msglen,
-							"%sREADY=1",
-							msglen ? "\n" : "");
+							"%sREADY=1%s",
+							msglen ? "\n" : "",
+							monoclock_str);
 						/* TODO: Maybe revise/drop this tweak if
 						 * loggers other than systemd are used: */
 						state = NOTIFY_STATE_READY;
@@ -778,9 +853,10 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 				break;
 
 			case NOTIFY_STATE_RELOADING:
-				ret = snprintf(buf + msglen, sizeof(buf) - msglen, "%s%s",
+				ret = snprintf(buf + msglen, sizeof(buf) - msglen, "%s%s%s",
 					msglen ? "\n" : "",
-					"RELOADING=1");
+					"RELOADING=1",
+					monoclock_str);
 				break;
 
 			case NOTIFY_STATE_STOPPING:

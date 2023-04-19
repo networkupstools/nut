@@ -230,8 +230,15 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 
 	/* STATEPATH <dir> */
 	if (!strcmp(arg[0], "STATEPATH")) {
+		const char *sp = getenv("NUT_STATEPATH");
+		if (sp) {
+			upslogx(LOG_WARNING,
+				"Ignoring STATEPATH='%s' from configuration file, "
+				"in favor of NUT_STATEPATH='%s' environment variable",
+				NUT_STRARG(arg[1]), NUT_STRARG(sp));
+		}
 		free(statepath);
-		statepath = xstrdup(arg[1]);
+		statepath = xstrdup(sp ? sp : arg[1]);
 		return 1;
 	}
 

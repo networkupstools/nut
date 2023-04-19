@@ -70,6 +70,14 @@ static int	user_from_cmdline = 0, group_from_cmdline = 0;
 
 /* signal handling */
 int	exit_flag = 0;
+/* reload_flag is 0 most of the time (including initial config reading),
+ * and is briefly 1 when a reload signal is received and is being handled,
+ * or 2 if the reload attempt is allowed to exit the current driver (e.g.
+ * changed some ups.conf settings that can not be re-applied on the fly)
+ * assuming it gets restarted by external framework (systemd) or caller
+ * (like NUT driver CLI `-c reload-or-restart` handling), if needed.
+ */
+static int	reload_flag = 0;
 
 #ifndef DRIVERS_MAIN_WITHOUT_MAIN
 /* should this driver instance go to background (default)
@@ -91,6 +99,9 @@ static int background_flag = -1;
  * value less than that would not have effect, can only
  * have more).
  */
+#ifndef DRIVERS_MAIN_WITHOUT_MAIN
+static int nut_debug_level_args = -1;
+#endif
 static int nut_debug_level_global = -1;
 static int nut_debug_level_driver = -1;
 
@@ -299,8 +310,218 @@ int testvar(const char *var)
 	return 0;	/* not found */
 }
 
-/* callback from driver - create the table for -x/conf entries */
-void addvar(int vartype, const char *name, const char *desc)
+/* See if <var> can be (re-)loaded now: either is reloadable by definition,
+ * or no value has been given to it yet. Returns "-1" if nothing needs to
+ * be done and that is not a failure (e.g. value not modified so we do not
+ * care if we may change it or not).
+ */
+int testvar_reloadable(const char *var, const char *val, int vartype)
+{
+	vartab_t	*tmp = vartab_h;
+	int	verdict = -2;
+
+	/* FIXME: handle VAR_FLAG typed (bitmask) values specially somehow?
+	 * Either we set the flag at some point (because its name is mentioned)
+	 * or we do not (initially set - no way so far to know it got commented
+	 * away before a reload on the fly). Might load new config info into a
+	 * separate list and then compare missing points?..
+	 */
+	upsdebugx(6, "%s: searching for var=%s, vartype=%d, reload_flag=%d",
+		__func__, NUT_STRARG(var), vartype, reload_flag);
+
+	while (tmp) {
+		if (!strcasecmp(tmp->var, var)) {
+			/* variable name is known */
+			upsdebugx(6, "%s: found var=%s, val='%s' => '%s', vartype=%d => %d, found=%d, reloadable=%d, reload_flag=%d",
+				__func__, NUT_STRARG(var),
+				NUT_STRARG(tmp->val), NUT_STRARG(val),
+				tmp->vartype, vartype,
+				tmp->found, tmp->reloadable, reload_flag);
+
+			if (val && tmp->val) {
+				/* a value is already known by name
+				 * and bitmask for VAR_FLAG/VAR_VALUE matches
+				 */
+				if ((vartype & tmp->vartype) && !strcasecmp(tmp->val, val)) {
+					if ((tmp->vartype & VAR_FLAG) && val == NULL) {
+						if (reload_flag) {
+							upsdebugx(1, "%s: setting '%s' "
+								"exists and is a flag; "
+								"new value was not specified",
+								__func__, var);
+						}
+
+						/* by default: apply flags initially, ignore later */
+						verdict = (
+							(!reload_flag)	/* For initial config reads, legacy code trusted what it saw */
+							|| tmp->reloadable	/* set in addvar*() */
+						);
+						goto finish;
+					}
+
+					if (reload_flag) {
+						upsdebugx(1, "%s: setting '%s' "
+							"exists and is unmodified",
+							__func__, var);
+					}
+
+					verdict = -1;	/* no-op for caller */
+					goto finish;
+				} else {
+					/* warn loudly if we are reloading and
+					 * can not change this modified value */
+					upsdebugx((reload_flag ? (tmp->reloadable ? 1 : 0) : 1),
+						"%s: setting '%s' exists and differs: "
+						"new type bitmask %d vs. %d, "
+						"new value '%s' vs. '%s'%s",
+						__func__, var,
+						vartype, tmp->vartype,
+						val, tmp->val,
+						((!reload_flag || tmp->reloadable) ? "" :
+							" (driver restart is needed to apply)")
+						);
+					/* FIXME: Define a special EXIT_RELOAD or something,
+					 * for "not quite a failure"? Or close connections
+					 * and re-exec() this driver from scratch (and so to
+					 * keep MAINPID for systemd et al)?
+					 */
+					if (reload_flag == 2 && !tmp->reloadable)
+						fatalx(EXIT_SUCCESS, "NUT driver reload-or-restart: setting %s was changed and requires a driver restart", var);
+					verdict = (
+						(!reload_flag)	/* For initial config reads, legacy code trusted what it saw */
+						|| tmp->reloadable	/* set in addvar*() */
+					);
+					goto finish;
+				}
+			}
+
+			/* okay to redefine if not yet defined, or if reload is allowed,
+			 * or if initially loading the configs
+			 */
+			verdict = (
+				(!reload_flag)
+				|| ((!tmp->found) || tmp->reloadable)
+			);
+			goto finish;
+		}
+		tmp = tmp->next;
+	}
+
+	verdict = 1;	/* not found, may (re)load the definition */
+
+finish:
+	upsdebugx(6, "%s: verdict for (re)loading var=%s value: %d",
+		__func__, NUT_STRARG(var), verdict);
+	return verdict;
+}
+
+/* Similar to testvar_reloadable() above which is for addvar*() defined
+ * entries, but for less streamlined stuff defined right here in main.c.
+ * See if value (probably saved in dstate) can be (re-)loaded now: either
+ * it is reloadable by parameter definition, or no value has been saved
+ * into it yet (<oldval> is NULL).
+ * Returns "-1" if nothing needs to be done and that is not a failure
+ * (e.g. value not modified so we do not care if we may change it or not).
+ */
+int testval_reloadable(const char *var, const char *oldval, const char *newval, int reloadable)
+{
+	int	verdict = -2;
+
+	upsdebugx(6, "%s: var=%s, oldval=%s, newval=%s, reloadable=%d, reload_flag=%d",
+		__func__, NUT_STRARG(var), NUT_STRARG(oldval), NUT_STRARG(newval),
+		reloadable, reload_flag);
+
+	/* Nothing saved yet? Okay to store new value! */
+	if (!oldval) {
+		verdict = 1;
+		goto finish;
+	}
+
+	/* Should not happen? Or... (commented-away etc.) */
+	if (!newval) {
+		upslogx(LOG_WARNING, "%s: new setting for '%s' is NULL", __func__, var);
+		verdict = ((!reload_flag) || reloadable);
+		goto finish;
+	}
+
+	/* a value is already known, another is desired */
+	if (!strcasecmp(oldval, newval)) {
+		if (reload_flag) {
+			upsdebugx(1, "%s: setting '%s' "
+				"exists and is unmodified",
+				__func__, var);
+		}
+		verdict = -1;	/* no-op for caller */
+		goto finish;
+	} else {
+		/* warn loudly if we are reloading and
+		 * can not change this modified value */
+		upsdebugx((reload_flag ? (reloadable ? 1 : 0) : 1),
+			"%s: setting '%s' exists and differs: "
+			"new value '%s' vs. '%s'%s",
+			__func__, var,
+			newval, oldval,
+			((!reload_flag || reloadable) ? "" :
+				" (driver restart is needed to apply)")
+			);
+		/* FIXME: Define a special EXIT_RELOAD or something,
+		 * for "not quite a failure"? Or close connections
+		 * and re-exec() this driver from scratch (and so to
+		 * keep MAINPID for systemd et al)?
+		 */
+		if (reload_flag == 2 && !reloadable)
+			fatalx(EXIT_SUCCESS, "NUT driver reload-or-restart: setting %s was changed and requires a driver restart", var);
+		/* For initial config reads, legacy code trusted what it saw */
+		verdict = ((!reload_flag) || reloadable);
+		goto finish;
+	}
+
+finish:
+	upsdebugx(6, "%s: verdict for (re)loading var=%s value: %d",
+		__func__, NUT_STRARG(var), verdict);
+	return verdict;
+}
+
+/* Similar to testvar_reloadable() above which is for addvar*() defined
+ * entries, but for less streamlined stuff defined right here in main.c.
+ * See if <var> (by <arg> name saved in dstate) can be (re-)loaded now:
+ * either it is reloadable by parameter definition, or no value has been
+ * saved into it yet (<oldval> is NULL).
+ * Returns "-1" if nothing needs to be done and that is not a failure
+ * (e.g. value not modified so we do not care if we may change it or not).
+ */
+int testinfo_reloadable(const char *var, const char *infoname, const char *newval, int reloadable)
+{
+	int	verdict = -2;
+
+	upsdebugx(6, "%s: var=%s, infoname=%s, newval=%s, reloadable=%d, reload_flag=%d",
+		__func__, NUT_STRARG(var), NUT_STRARG(infoname), NUT_STRARG(newval),
+		reloadable, reload_flag);
+
+	/* Keep legacy behavior: not reloading, trust the initial config */
+	if (!reload_flag || !infoname) {
+		verdict = 1;
+		goto finish;
+	}
+
+	/* Suffer the overhead of lookups only if reloading */
+
+	/* FIXME: handle "driver.flag.*" prefixed values specially somehow?
+	 * Either we set the flag at some point (because its name is mentioned)
+	 * or we do not (initially set - no way so far to know it got commented
+	 * away before a reload on the fly). Might load new config info into a
+	 * separate list and then compare missing points?..
+	 */
+	verdict = testval_reloadable(var, dstate_getinfo(infoname), newval, reloadable);
+
+finish:
+	upsdebugx(6, "%s: verdict for (re)loading var=%s value: %d",
+		__func__, NUT_STRARG(var), verdict);
+	return verdict;
+}
+
+/* implement callback from driver - create the table for -x/conf entries */
+static void do_addvar(int vartype, const char *name, const char *desc, int reloadable)
 {
 	vartab_t	*tmp, *last;
 
@@ -318,6 +539,7 @@ void addvar(int vartype, const char *name, const char *desc)
 	tmp->val = NULL;
 	tmp->desc = xstrdup(desc);
 	tmp->found = 0;
+	tmp->reloadable = reloadable;
 	tmp->next = NULL;
 
 	if (last)
@@ -326,9 +548,23 @@ void addvar(int vartype, const char *name, const char *desc)
 		vartab_h = tmp;
 }
 
+/* public callback from driver - create the table for -x/conf entries for reloadable values */
+void addvar_reloadable(int vartype, const char *name, const char *desc)
+{
+	do_addvar(vartype, name, desc, 1);
+}
+
+/* public callback from driver - create the table for -x/conf entries for set-once values */
+void addvar(int vartype, const char *name, const char *desc)
+{
+	do_addvar(vartype, name, desc, 0);
+}
+
 /* handle -x / ups.conf config details that are for this part of the code */
 static int main_arg(char *var, char *val)
 {
+	int do_handle = -2;
+
 	/* flags for main */
 
 	upsdebugx(3, "%s: var='%s' val='%s'",
@@ -336,14 +572,29 @@ static int main_arg(char *var, char *val)
 		var ? var : "<null>", /* null should not happen... but... */
 		val ? val : "<null>");
 
+	/* !reload_flag simply forbids changing this flag on the fly, as
+	 * it would have no effect anyway without a (serial) reconnection
+	 */
 	if (!strcmp(var, "nolock")) {
-		do_lock_port = 0;
-		dstate_setinfo("driver.flag.nolock", "enabled");
+		if (reload_flag) {
+			upsdebugx(6, "%s: SKIP: flag var='%s' can not be reloaded", __func__, var);
+		} else {
+			do_lock_port = 0;
+			dstate_setinfo("driver.flag.nolock", "enabled");
+		}
 		return 1;	/* handled */
 	}
 
+	/* FIXME: this one we could potentially reload, but need to figure
+	 * out that the flag line was commented away or deleted -- there is
+	 * no setting value to flip in configs here
+	 */
 	if (!strcmp(var, "ignorelb")) {
-		dstate_setinfo("driver.flag.ignorelb", "enabled");
+		if (reload_flag) {
+			upsdebugx(6, "%s: SKIP: flag var='%s' currently can not be reloaded", __func__, var);
+		} else {
+			dstate_setinfo("driver.flag.ignorelb", "enabled");
+		}
 		return 1;	/* handled */
 	}
 
@@ -351,12 +602,19 @@ static int main_arg(char *var, char *val)
 	if (!val)
 		return 0;	/* unhandled, pass it through to the driver */
 
+	/* In checks below, testinfo_reloadable(..., 0) should forbid
+	 * re-population of the setting with a new value, but emit a
+	 * warning if it did change (so driver restart is needed to apply)
+	 */
+
 	/* variables for main: port */
 
 	if (!strcmp(var, "port")) {
-		device_path = xstrdup(val);
-		device_name = xbasename(device_path);
-		dstate_setinfo("driver.parameter.port", "%s", val);
+		if (testinfo_reloadable(var, "driver.parameter.port", val, 0) > 0) {
+			device_path = xstrdup(val);
+			device_name = xbasename(device_path);
+			dstate_setinfo("driver.parameter.port", "%s", val);
+		}
 		return 1;	/* handled */
 	}
 
@@ -364,31 +622,35 @@ static int main_arg(char *var, char *val)
 	 * or the built-in default
 	 */
 	if (!strcmp(var, "user")) {
-		if (user_from_cmdline) {
-			upsdebugx(0, "User '%s' specified in driver section "
-				"was ignored due to '%s' specified on command line",
-				val, user);
-		} else {
-			upsdebugx(1, "Overriding previously specified user '%s' "
-				"with '%s' specified for driver section",
-				user, val);
-			free(user);
-			user = xstrdup(val);
+		if (testval_reloadable(var, user, val, 0) > 0) {
+			if (user_from_cmdline) {
+				upsdebugx(0, "User '%s' specified in driver section "
+					"was ignored due to '%s' specified on command line",
+					val, user);
+			} else {
+				upsdebugx(1, "Overriding previously specified user '%s' "
+					"with '%s' specified for driver section",
+					user, val);
+				free(user);
+				user = xstrdup(val);
+			}
 		}
 		return 1;	/* handled */
 	}
 
 	if (!strcmp(var, "group")) {
-		if (group_from_cmdline) {
-			upsdebugx(0, "Group '%s' specified in driver section "
-				"was ignored due to '%s' specified on command line",
-				val, group);
-		} else {
-			upsdebugx(1, "Overriding previously specified group '%s' "
-				"with '%s' specified for driver section",
-				group, val);
-			free(group);
-			group = xstrdup(val);
+		if (testval_reloadable(var, group, val, 0) > 0) {
+			if (group_from_cmdline) {
+				upsdebugx(0, "Group '%s' specified in driver section "
+					"was ignored due to '%s' specified on command line",
+					val, group);
+			} else {
+				upsdebugx(1, "Overriding previously specified group '%s' "
+					"with '%s' specified for driver section",
+					group, val);
+				free(group);
+				group = xstrdup(val);
+			}
 		}
 		return 1;	/* handled */
 	}
@@ -398,15 +660,58 @@ static int main_arg(char *var, char *val)
 		return 1;	/* handled */
 	}
 
-	/* allow per-driver overrides of the global setting */
+	/* Allow per-driver overrides of the global setting
+	 * and allow to reload this, why not.
+	 * Note: having both global+driver section definitions may
+	 * cause noise, but it allows either to be commented away
+	 * and the other to take hold. Both disappearing would not
+	 * be noticed by the reload operation currently, however.
+	 */
+	if (!strcmp(var, "pollinterval")) {
+		char buf[SMALLBUF];
+
+		/* log a message if value changed; skip if no good buf */
+		if (snprintf(buf, sizeof(buf), "%" PRIdMAX, (intmax_t)poll_interval)) {
+			if ((do_handle = testval_reloadable(var, buf, val, 1)) == 0) {
+				/* Should not happen, but... */
+				fatalx(EXIT_FAILURE, "Error: failed to check "
+					"testval_reloadable() for pollinterval: "
+					"old %s vs. new %s", buf, NUT_STRARG(val));
+			}
+		}
+
+		if (do_handle > 0) {
+			int ipv = atoi(val);
+			if (ipv > 0) {
+				poll_interval = (time_t)ipv;
+			} else {
+				fatalx(EXIT_FAILURE, "Error: UPS [%s]: invalid pollinterval: %d",
+					NUT_STRARG(upsname), ipv);
+			}
+		}	/* else: no-op */
+
+		return 1;	/* handled */
+	}
+
+	/* Allow per-driver overrides of the global setting
+	 * and allow to reload this, why not.
+	 * Note: this may cause "spurious" redefinitions of the
+	 * "no" setting which is the fallback for random values.
+	 * Also note that global+driver section definitions may
+	 * cause noise, but it allows either to be commented away
+	 * and the other to take hold. Both disappearing would not
+	 * be noticed by the reload operation currently, however.
+	 */
 	if (!strcmp(var, "synchronous")) {
-		if (!strcmp(val, "yes"))
-			do_synchronous=1;
-		else
-		if (!strcmp(val, "auto"))
-			do_synchronous=-1;
-		else
-			do_synchronous=0;
+		if (testval_reloadable(var, ((do_synchronous==1)?"yes":((do_synchronous==0)?"no":"auto")), val, 1) > 0) {
+			if (!strcmp(val, "yes"))
+				do_synchronous=1;
+			else
+			if (!strcmp(val, "auto"))
+				do_synchronous=-1;
+			else
+				do_synchronous=0;
+		}
 
 		return 1;	/* handled */
 	}
@@ -421,7 +726,10 @@ static int main_arg(char *var, char *val)
 
 	/* Allow each driver to specify its minimal debugging level -
 	 * admins can set more with command-line args, but can't set
-	 * less without changing config. Should help debug of services. */
+	 * less without changing config. Should help debug of services.
+	 * Note: during reload_flag!=0 handling this is reset to -1, to
+	 * catch commented-away settings, so not checking previous value.
+	 */
 	if (!strcmp(var, "debug_min")) {
 		int lvl = -1; // typeof common/common.c: int nut_debug_level
 		if ( str_to_int (val, &lvl, 10) && lvl >= 0 ) {
@@ -437,67 +745,116 @@ static int main_arg(char *var, char *val)
 
 static void do_global_args(const char *var, const char *val)
 {
+	char buf[SMALLBUF];
+	int do_handle = 1;
+
 	upsdebugx(3, "%s: var='%s' val='%s'",
 		__func__,
 		var ? var : "<null>", /* null should not happen... but... */
 		val ? val : "<null>");
 
+	/* Allow to reload this, why not */
 	if (!strcmp(var, "pollinterval")) {
-		int ipv = atoi(val);
-		if (ipv > 0) {
-			poll_interval = (time_t)ipv;
-		} else {
-			fatalx(EXIT_FAILURE, "Error: invalid pollinterval: %d", ipv);
+		/* log a message if value changed; skip if no good buf */
+		if (snprintf(buf, sizeof(buf), "%" PRIdMAX, (intmax_t)poll_interval)) {
+			if ((do_handle = testval_reloadable(var, buf, val, 1)) == 0) {
+				/* Should not happen, but... */
+				fatalx(EXIT_FAILURE, "Error: failed to check "
+					"testval_reloadable() for pollinterval: "
+					"old %s vs. new %s", buf, val);
+			}
 		}
+
+		if (do_handle > 0) {
+			int ipv = atoi(val);
+			if (ipv > 0) {
+				poll_interval = (time_t)ipv;
+			} else {
+				fatalx(EXIT_FAILURE, "Error: invalid pollinterval: %d", ipv);
+			}
+		}	/* else: no-op */
+
 		return;
 	}
 
+	/* In checks below, testinfo_reloadable(..., 0) should forbid
+	 * re-population of the setting with a new value, but emit a
+	 * warning if it did change (so driver restart is needed to apply)
+	 */
+
 	if (!strcmp(var, "chroot")) {
-		free(chroot_path);
-		chroot_path = xstrdup(val);
+		if (testval_reloadable(var, chroot_path, val, 0) > 0) {
+			free(chroot_path);
+			chroot_path = xstrdup(val);
+		}
+
+		return;
 	}
 
 	if (!strcmp(var, "user")) {
-		if (user_from_cmdline) {
-			upsdebugx(0, "User specified in global section '%s' "
-				"was ignored due to '%s' specified on command line",
-				val, user);
-		} else {
-			upsdebugx(1, "Overriding previously specified user '%s' "
-				"with '%s' specified in global section",
-				user, val);
-			free(user);
-			user = xstrdup(val);
+		if (testval_reloadable(var, user, val, 0) > 0) {
+			if (user_from_cmdline) {
+				upsdebugx(0, "User specified in global section '%s' "
+					"was ignored due to '%s' specified on command line",
+					val, user);
+			} else {
+				upsdebugx(1, "Overriding previously specified user '%s' "
+					"with '%s' specified in global section",
+					user, val);
+				free(user);
+				user = xstrdup(val);
+			}
 		}
+
+		return;
 	}
 
 	if (!strcmp(var, "group")) {
-		if (group_from_cmdline) {
-			upsdebugx(0, "Group specified in global section '%s' "
-				"was ignored due to '%s' specified on command line",
-				val, group);
-		} else {
-			upsdebugx(1, "Overriding previously specified group '%s' "
-				"with '%s' specified in global section",
-				group, val);
-			free(group);
-			group = xstrdup(val);
+		if (testval_reloadable(var, group, val, 0) > 0) {
+			if (group_from_cmdline) {
+				upsdebugx(0, "Group specified in global section '%s' "
+					"was ignored due to '%s' specified on command line",
+					val, group);
+			} else {
+				upsdebugx(1, "Overriding previously specified group '%s' "
+					"with '%s' specified in global section",
+					group, val);
+				free(group);
+				group = xstrdup(val);
+			}
 		}
+
+		return;
 	}
 
+	/* Allow to reload this, why not
+	 * Note: this may cause "spurious" redefinitions of the
+	 * "no" setting which is the fallback for random values.
+	 * Also note that global+driver section definitions may
+	 * cause noise, but it allows either to be commented away
+	 * and the other to take hold. Both disappearing would not
+	 * be noticed by the reload operation currently, however.
+	 */
 	if (!strcmp(var, "synchronous")) {
-		if (!strcmp(val, "yes"))
-			do_synchronous=1;
-		else
-		if (!strcmp(val, "auto"))
-			do_synchronous=-1;
-		else
-			do_synchronous=0;
+		if (testval_reloadable(var, ((do_synchronous==1)?"yes":((do_synchronous==0)?"no":"auto")), val, 1) > 0) {
+			if (!strcmp(val, "yes"))
+				do_synchronous=1;
+			else
+			if (!strcmp(val, "auto"))
+				do_synchronous=-1;
+			else
+				do_synchronous=0;
+		}
+
+		return;
 	}
 
 	/* Allow to specify its minimal debugging level for all drivers -
 	 * admins can set more with command-line args, but can't set
-	 * less without changing config. Should help debug of services. */
+	 * less without changing config. Should help debug of services.
+	 * Note: during reload_flag!=0 handling this is reset to -1, to
+	 * catch commented-away settings, so not checking previous value.
+	 */
 	if (!strcmp(var, "debug_min")) {
 		int lvl = -1; // typeof common/common.c: int nut_debug_level
 		if ( str_to_int (val, &lvl, 10) && lvl >= 0 ) {
@@ -505,6 +862,8 @@ static void do_global_args(const char *var, const char *val)
 		} else {
 			upslogx(LOG_INFO, "WARNING : Invalid debug_min value found in ups.conf global settings");
 		}
+
+		return;
 	}
 
 	/* unrecognized */
@@ -514,8 +873,12 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 {
 	char	tmp[SMALLBUF];
 
+	upsdebugx(5, "%s: confupsname=%s, var=%s, val=%s",
+		__func__, NUT_STRARG(confupsname), NUT_STRARG(var), NUT_STRARG(val));
+
 	/* handle global declarations */
 	if (!confupsname) {
+		upsdebugx(5, "%s: call do_global_args()", __func__);
 		do_global_args(var, val);
 		return;
 	}
@@ -526,36 +889,67 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 
 	upsname_found = 1;
 
+	upsdebugx(5, "%s: call main_arg()", __func__);
 	if (main_arg(var, val))
 		return;
+	upsdebugx(5, "%s: not a main_arg()", __func__);
 
 	/* flags (no =) now get passed to the driver-level stuff */
 	if (!val) {
+		upsdebugx(5, "%s: process as flag", __func__);
 
 		/* also store this, but it's a bit different */
 		snprintf(tmp, sizeof(tmp), "driver.flag.%s", var);
-		dstate_setinfo(tmp, "enabled");
 
-		storeval(var, NULL);
+		/* allow reloading if defined and permitted via addvar()
+		 * or not defined there (FIXME?)
+		 */
+		if (testvar_reloadable(var, NULL, VAR_FLAG) > 0) {
+			dstate_setinfo(tmp, "enabled");
+			storeval(var, NULL);
+		}
+
 		return;
 	}
 
-	/* don't let the user shoot themselves in the foot */
+	/* In checks below, testval_reloadable(..., 0) should forbid
+	 * re-population of the setting with a new value, but emit a
+	 * warning if it did change (so driver restart is needed to apply)
+	 */
+
+	/* don't let the user shoot themselves in the foot
+	 * reload should not allow changes here, but would report
+	 */
 	if (!strcmp(var, "driver")) {
-		/* Accomodate for libtool wrapped developer iterations
-		 * running e.g. `drivers/.libs/lt-dummy-ups` filenames
+		int do_handle;
+
+		upsdebugx(5, "%s: this is a 'driver' setting, may we proceed?", __func__);
+		do_handle = testval_reloadable(var, progname, val, 0);
+
+		if (do_handle == -1) {
+			upsdebugx(5, "%s: 'driver' setting already applied with this value", __func__);
+			return;
+		}
+
+		/* Acceptable progname is only set once during start-up
+		 * val is from ups.conf
 		 */
-		size_t tmplen = strlen("lt-");
-		if (strncmp("lt-", progname, tmplen) == 0
-		&&  strcmp(val, progname + tmplen) == 0) {
-			/* debug level may be not initialized yet, and situation
-			 * should not happen in end-user builds, so ok to yell: */
-			upsdebugx(0, "Seems this driver binary %s is a libtool "
-				"wrapped build for driver %s", progname, val);
-			/* progname points to xbasename(argv[0]) in-place;
-			 * roll the pointer forward a bit, we know we can:
+		if (!reload_flag || do_handle > 0) {
+			/* Accomodate for libtool wrapped developer iterations
+			 * running e.g. `drivers/.libs/lt-dummy-ups` filenames
 			 */
-			progname = progname + tmplen;
+			size_t tmplen = strlen("lt-");
+			if (strncmp("lt-", progname, tmplen) == 0
+			&&  strcmp(val, progname + tmplen) == 0) {
+				/* debug level may be not initialized yet, and situation
+				 * should not happen in end-user builds, so ok to yell: */
+				upsdebugx(0, "Seems this driver binary %s is a libtool "
+					"wrapped build for driver %s", progname, val);
+				/* progname points to xbasename(argv[0]) in-place;
+				 * roll the pointer forward a bit, we know we can:
+				 */
+				progname = progname + tmplen;
+			}
 		}
 
 		if (strcmp(val, progname) != 0) {
@@ -565,23 +959,107 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 		return;
 	}
 
-	/* allow per-driver overrides of the global setting */
-	if (!strcmp(var, "pollinterval")) {
-		int ipv = atoi(val);
-		if (ipv > 0) {
-			poll_interval = (time_t)ipv;
-		} else {
-			fatalx(EXIT_FAILURE, "Error: UPS [%s]: invalid pollinterval: %d",
-				confupsname, ipv);
-		}
-		return;
-	}
-
 	/* everything else must be for the driver */
-	storeval(var, val);
+
+	/* allow reloading if defined and permitted via addvar()
+	 * or not defined there (FIXME?)
+	 */
+	upsdebugx(5, "%s: process as value", __func__);
+	if (testvar_reloadable(var, val, VAR_VALUE) > 0) {
+		storeval(var, val);
+	}
 }
 
 #ifndef DRIVERS_MAIN_WITHOUT_MAIN
+static void assign_debug_level(void) {
+	/* CLI debug level can not be smaller than debug_min specified
+	 * in ups.conf, and value specified for a driver config section
+	 * overrides the global one. Note that non-zero debug_min does
+	 * not impact foreground running mode.
+	 */
+	int nut_debug_level_upsconf = -1;
+
+	if (nut_debug_level_global >= 0 && nut_debug_level_driver >= 0) {
+		/* Use nearest-defined fit */
+		nut_debug_level_upsconf = nut_debug_level_driver;
+		if (reload_flag) {
+			upslogx(LOG_INFO,
+				"Applying debug_min=%d from ups.conf"
+				" driver section (overriding global %d)",
+				nut_debug_level_upsconf, nut_debug_level_global);
+		}
+	} else {
+		if (nut_debug_level_global >= 0) {
+			nut_debug_level_upsconf = nut_debug_level_global;
+			if (reload_flag) upslogx(LOG_INFO,
+				"Applying debug_min=%d from ups.conf"
+				" global section",
+				nut_debug_level_upsconf);
+		}
+		if (nut_debug_level_driver >= 0) {
+			nut_debug_level_upsconf = nut_debug_level_driver;
+			if (reload_flag) upslogx(LOG_INFO,
+				"Applying debug_min=%d from ups.conf"
+				" driver section",
+				nut_debug_level_upsconf);
+		}
+	}
+
+	if (reload_flag && nut_debug_level_upsconf <= nut_debug_level_args) {
+		/* DEBUG_MIN is absent or commented-away in ups.conf,
+		 * or is smaller than te CLI arg '-D' count */
+		upslogx(LOG_INFO,
+			"Applying debug level %d from "
+			"original command line arguments",
+			nut_debug_level_args);
+	}
+
+	/* at minimum, the verbosity we started with - via CLI arguments;
+	 * maybe a greater debug_min is set in current config file
+	 */
+	nut_debug_level = nut_debug_level_args;
+	if (nut_debug_level_upsconf > nut_debug_level)
+		nut_debug_level = nut_debug_level_upsconf;
+
+	upsdebugx(1, "debug level is '%d'", nut_debug_level);
+}
+
+static void handle_reload_flag(void) {
+	if (!reload_flag || exit_flag)
+		return;
+
+	upslogx(LOG_INFO, "Handling requested live reload of NUT driver configuration");
+	dstate_setinfo("driver.state", "reloading");
+	upsnotify(NOTIFY_STATE_RELOADING, NULL);
+
+	/* If commented away or deleted in config, debug_min
+	 * should "disappear" for us (a CLI argument, if any,
+	 * would still be honoured); if it is (re-)defined in
+	 * config, then it gets considered.
+	 */
+	nut_debug_level_global = -1;
+	nut_debug_level_driver = -1;
+
+	/* Call actual config reloading activity */
+	read_upsconf();
+	/* TODO: Callbacks in drivers to re-parse configs?
+	 * Currently this reloadability relies on either
+	 * explicit reload_flag aware code called from the
+	 * read_upsconf() method, or on drivers continuously
+	 * reading dstate_getinfo() and not caching once
+	 * their C variables.
+	 */
+
+	/* Re-mix currently known debug verbosity desires */
+	assign_debug_level();
+
+	/* Wrap it up */
+	reload_flag = 0;
+	dstate_setinfo("driver.state", "quiet");
+	upsnotify(NOTIFY_STATE_READY, NULL);
+	upslogx(LOG_INFO, "Completed requested live reload of NUT driver configuration");
+}
+
 /* split -x foo=bar into 'foo' and 'bar' */
 static void splitxarg(char *inbuf)
 {
@@ -692,10 +1170,37 @@ static void exit_cleanup(void)
 
 void set_exit_flag(int sig)
 {
+	upsdebugx(1, "%s: raising exit flag due to signal %d", __func__, sig);
 	exit_flag = sig;
 }
 
 #ifndef WIN32
+/* TODO: Equivalent for WIN32 - see SIGCMD_RELOAD in upd and upsmon */
+static void set_reload_flag(int sig)
+{
+	upsdebugx(1, "%s: raising reload flag due to signal %d", __func__, sig);
+	switch (sig) {
+		case SIGUSR1:
+			/* reload-or-restart (this driver instance may die) */
+			reload_flag = 2;
+			break;
+
+		default:
+			/* reload what we can, log what needs a restart so skipped */
+			reload_flag = 1;
+	}
+}
+
+static void handle_dstate_dump(int sig) {
+	/* no set_dump_flag() here, make it instant */
+	upsdebugx(1, "%s: starting driver state dump for [%s] due to signal %d",
+		__func__, upsname, sig);
+	/* FIXME: upslogx() instead of printf() when backgrounded, if STDOUT got closed? */
+	dstate_dump();
+	upsdebugx(1, "%s: finished driver state dump for [%s]",
+		__func__, upsname);
+}
+
 # ifndef DRIVERS_MAIN_WITHOUT_MAIN
 static
 # endif /* DRIVERS_MAIN_WITHOUT_MAIN */
@@ -706,11 +1211,13 @@ void setup_signals(void)
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = 0;
 
+	/* handle shutdown signals */
 	sa.sa_handler = set_exit_flag;
 	sigaction(SIGTERM, &sa, NULL);
 	sigaction(SIGINT, &sa, NULL);
 	sigaction(SIGQUIT, &sa, NULL);
 
+	/* basic signal setup to ignore SIGPIPE */
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wstrict-prototypes"
@@ -719,8 +1226,16 @@ void setup_signals(void)
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
 # pragma GCC diagnostic pop
 #endif
-	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGPIPE, &sa, NULL);
+
+	/* handle reloading */
+	sa.sa_handler = set_reload_flag;
+	sigaction(SIGHUP, &sa, NULL);
+	sigaction(SIGUSR1, &sa, NULL);
+
+	/* handle run-time data dump (may be limited to non-backgrounding lifetimes) */
+	sa.sa_handler = handle_dstate_dump;
+	sigaction(SIGUSR2, &sa, NULL);
 }
 #endif /* WIN32*/
 
@@ -733,6 +1248,9 @@ int main(int argc, char **argv)
 	struct	passwd	*new_uid = NULL;
 	int	i, do_forceshutdown = 0;
 	int	update_count = 0;
+
+	/* init verbosity from default in common.c (0 probably) */
+	nut_debug_level_args = nut_debug_level;
 
 	dstate_setinfo("driver.state", "init.starting");
 
@@ -805,7 +1323,9 @@ int main(int argc, char **argv)
 				background_flag = 1;
 				break;
 			case 'D':
+				/* bump right here, may impact reporting of other CLI args */
 				nut_debug_level++;
+				nut_debug_level_args++;
 				break;
 			case 'd':
 				dump_data = atoi(optarg);
@@ -925,23 +1445,7 @@ int main(int argc, char **argv)
 			"Try -h for help.");
 	}
 
-	/* CLI debug level can not be smaller than debug_min specified
-	 * in ups.conf, and value specified for a driver config section
-	 * overrides the global one. Note that non-zero debug_min does
-	 * not impact foreground running mode.
-	 */
-	{
-		int nut_debug_level_upsconf = -1 ;
-		if ( nut_debug_level_global >= 0 && nut_debug_level_driver >= 0 ) {
-			nut_debug_level_upsconf = nut_debug_level_driver;
-		} else {
-			if ( nut_debug_level_global >= 0 ) nut_debug_level_upsconf = nut_debug_level_global;
-			if ( nut_debug_level_driver >= 0 ) nut_debug_level_upsconf = nut_debug_level_driver;
-		}
-		if ( nut_debug_level_upsconf > nut_debug_level )
-			nut_debug_level = nut_debug_level_upsconf;
-	}
-	upsdebugx(1, "debug level is '%d'", nut_debug_level);
+	assign_debug_level();
 
 	new_uid = get_user_pwent(user);
 
@@ -954,14 +1458,19 @@ int main(int argc, char **argv)
 	 * or not just dumping data (for discovery) */
 	/* This avoids case where ie /var is unmounted already */
 #ifndef WIN32
-	if ((!do_forceshutdown) && (!dump_data) && (chdir(dflt_statepath())))
-		fatal_with_errno(EXIT_FAILURE, "Can't chdir to %s", dflt_statepath());
+	if ((!do_forceshutdown) && (!dump_data)) {
+		if (chdir(dflt_statepath()))
+			fatal_with_errno(EXIT_FAILURE, "Can't chdir to %s", dflt_statepath());
 
-	/* Setup signals to communicate with driver once backgrounded. */
+		/* Setup signals to communicate with driver which is destined for a long run. */
+		setup_signals();
+	}
+
+	/* Setup PID file to receive signals to communicate with this driver
+	 * instance once backgrounded, and to stop a competing older instance.
+	 */
 	if ((background_flag != 0) && (!do_forceshutdown)) {
 		char	buffer[SMALLBUF];
-
-		setup_signals();
 
 		snprintf(buffer, sizeof(buffer), "%s/%s-%s.pid", altpidpath(), progname, upsname);
 
@@ -1253,8 +1762,11 @@ int main(int argc, char **argv)
 		else {
 			while (!dstate_poll_fds(timeout, extrafd) && !exit_flag) {
 				/* repeat until time is up or extrafd has data */
+				handle_reload_flag();
 			}
 		}
+
+		handle_reload_flag();
 	}
 
 	/* if we get here, the exit flag was set by a signal handler */

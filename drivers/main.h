@@ -45,6 +45,7 @@ typedef struct vartab_s {
 	char	*val;		/* right side of = 			 */
 	char	*desc;		/* 40 character description for -h text	 */
 	int	found;		/* set once encountered, for testvar()	 */
+	int	reloadable;	/* driver reload may redefine this value */
 	struct vartab_s	*next;
 } vartab_t;
 
@@ -56,6 +57,31 @@ typedef struct vartab_s {
 
 /* callback from driver - create the table for future -x entries */
 void addvar(int vartype, const char *name, const char *desc);
+void addvar_reloadable(int vartype, const char *name, const char *desc);
+
+/* Several helpers for driver configuration reloading follow:
+ * * testval_reloadable() checks if we are currently reloading (or initially
+ *   loading) the configuration, and if strings oldval==newval or not,
+ *   e.g. for values saved straight into driver source code variables;
+ * * testinfo_reloadable() checks this for a name saved as dstate_setinfo();
+ * * testvar_reloadable() checks in vartab_t list as maintained by addvar().
+ *
+ * All these methods check if value can be (re-)loaded now:
+ * * either it is reloadable by argument or vartab_t definition,
+ * * or no value has been saved into it yet (e.g. <oldval> is NULL),
+ * * or we are handling initial loading and keep legacy behavior of trusting
+ *   the inputs (e.g. some values may be defined as defaults in global section
+ *   and tuned in a driver section).
+ *
+ * Return values:
+ * * -1 -- if nothing needs to be done and that is not a failure
+ *   (e.g. value not modified so we do not care if we may change it or not);
+ * * 0 -- if can not modify this value (but it did change in config);
+ * * 1 -- if we can and should apply a new (maybe initial) value.
+ */
+int testvar_reloadable(const char *var, const char *val, int vartype);
+int testval_reloadable(const char *var, const char *oldval, const char *newval, int reloadable);
+int testinfo_reloadable(const char *var, const char *infoname, const char *newval, int reloadable);
 
 /* subdriver description structure */
 typedef struct upsdrv_info_s {

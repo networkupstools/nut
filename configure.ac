@@ -839,10 +839,40 @@ if (p == NULL || *p != '\0') return 1])],
         [ac_cv_func_strptime=yes], [ac_cv_func_strptime=no]
     )])
 AS_IF([test x"${ac_cv_func_strptime}" = xyes],
-    [AC_DEFINE([HAVE_STRPTIME], 1, [defined if standard library has, and C standard allows, the strptime(s1,s2) method])],
+    [AC_DEFINE([HAVE_STRPTIME], 1, [defined if standard library has, and C standard allows, the strptime(s1,s2,tm) method])],
     [AC_MSG_WARN([Optional C library routine strptime not found; a fallback implementation will be built in])]
     )
 AM_CONDITIONAL([HAVE_STRPTIME], [test x"${ac_cv_func_strptime}" = "xyes"])
+
+AC_CACHE_CHECK([for clock_gettime(CLOCK_MONOTONIC,ts)],
+    [ac_cv_func_clock_gettime],
+    [AX_RUN_OR_LINK_IFELSE(
+        [AC_LANG_PROGRAM([$CODE_STRINGINCL
+#ifdef TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
+],
+            [struct timespec monoclock_ts;
+int got_monoclock = clock_gettime(CLOCK_MONOTONIC, &monoclock_ts);
+if (ts.tv_sec < 0 || ts.tv_nsec < 0) return 1])],
+        [ac_cv_func_clock_gettime=yes], [ac_cv_func_clock_gettime=no]
+    )])
+AS_IF([test x"${ac_cv_func_clock_gettime}" = xyes],
+    [AC_DEFINE([HAVE_CLOCK_GETTIME], 1, [defined if standard library has, and C standard allows, the clock_gettime(clkid,ts) method])
+     AC_DEFINE([HAVE_CLOCK_MONOTONIC], 1, [defined if standard library has, and C standard allows, the CLOCK_MONOTONIC macro or token])],
+    [AC_MSG_WARN([Optional C library routine clock_gettime not found; will not be used in notifications])]
+    )
+dnl Currently these two are the same for us; note also fallback support for
+dnl older autoconf in SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY_RELOAD way below:
+AM_CONDITIONAL([HAVE_CLOCK_GETTIME], [test x"${ac_cv_func_clock_gettime}" = "xyes"])
+AM_CONDITIONAL([HAVE_CLOCK_MONOTONIC], [test x"${ac_cv_func_clock_gettime}" = "xyes"])
 
 AC_CACHE_CHECK([for strnlen(s1,s2,tm)],
     [ac_cv_func_strnlen],
@@ -3187,7 +3217,50 @@ AS_CASE(["${nut_with_libsystemd}"],
 	])
 AC_MSG_RESULT(${with_libsystemd})
 
-AS_IF([test x"${with_libsystemd}" = xyes], [
+AC_PATH_PROG([SYSTEMD_ANALYZE_PROGRAM], [systemd-analyze], [/usr/bin/systemd-analyze])
+
+dnl Relevant since 2023: https://github.com/systemd/systemd/pull/25916
+SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY=no
+AS_IF([test -x "$SYSTEMD_ANALYZE_PROGRAM"], [
+	AC_MSG_CHECKING([if your systemd version supports Type=notify])
+	myFILE="`mktemp systemd-analyze-XXXXXX.service`"
+	cat > "$myFILE" << EOF
+@<:@Unit@:>@
+Description=temp
+@<:@Service@:>@
+ExecStart=/bin/true
+Type=notify
+EOF
+	if myOUT="`"$SYSTEMD_ANALYZE_PROGRAM" verify "$myFILE" 2>&1`" \
+	&& ! (echo "$myOUT" | grep "Failed to parse service type, ignoring") \
+	; then
+		SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY=yes
+	fi
+	rm -f "$myFILE"
+	AC_MSG_RESULT([${SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY}])
+	])
+
+SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY_RELOAD=no
+AS_IF([test -x "$SYSTEMD_ANALYZE_PROGRAM"], [
+	AC_MSG_CHECKING([if your systemd version supports Type=notify-reload])
+	myFILE="`mktemp systemd-analyze-XXXXXX.service`"
+	cat > "$myFILE" << EOF
+@<:@Unit@:>@
+Description=temp
+@<:@Service@:>@
+ExecStart=/bin/true
+Type=notify-reload
+EOF
+	if myOUT="`"$SYSTEMD_ANALYZE_PROGRAM" verify "$myFILE" 2>&1`" \
+	&& ! (echo "$myOUT" | grep "Failed to parse service type, ignoring") \
+	; then
+		SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY_RELOAD=yes
+	fi
+	rm -f "$myFILE"
+	AC_MSG_RESULT([${SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY_RELOAD}])
+	])
+
+AS_IF([test x"${with_libsystemd}" = xyes && test x"${SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY}" = xyes], [
 	dnl Built with sd_notify support
 	dnl Note: `upsd -FF` both runs without forking and leaves a PID file, as
 	dnl needed for `upsd -c reload` in legacy scripts and old habits to work:
@@ -3197,6 +3270,12 @@ AS_IF([test x"${with_libsystemd}" = xyes], [
 	SYSTEMD_DAEMON_TYPE_UPSMON="notify"
 	SYSTEMD_DAEMON_ARGS_DRIVER=""
 	SYSTEMD_DAEMON_TYPE_DRIVER="notify"
+	AS_IF([test x"${SYSTEMD_SUPPORTS_DAEMON_TYPE_NOTIFY_RELOAD}" = xyes], [
+		dnl Macro supported since aclocal-1.11:
+		m4_ifdef([AM_COND_IF],
+		[AM_COND_IF([HAVE_CLOCK_GETTIME], [AM_COND_IF([HAVE_CLOCK_MONOTONIC], [SYSTEMD_DAEMON_TYPE_DRIVER="notify-reload"])])],
+		[AS_IF([test x"${ac_cv_func_clock_gettime}" = "xyes"], [SYSTEMD_DAEMON_TYPE_DRIVER="notify-reload"])])
+		])
 	dnl Calling shell, upsdrvctl, driver, and then it forks... ugh!
 	dnl https://github.com/systemd/systemd/issues/25961
 	dnl FIXME: if NotifyAccess=cgroup appears, use it (consult SYSTEMD_VERSION)
