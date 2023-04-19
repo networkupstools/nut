@@ -1225,26 +1225,28 @@ void set_exit_flag(int sig)
 /* TODO: Equivalent for WIN32 - see SIGCMD_RELOAD in upd and upsmon */
 static void set_reload_flag(int sig)
 {
-	upsdebugx(1, "%s: raising reload flag due to signal %d", __func__, sig);
 	switch (sig) {
-		case SIGCMD_RELOAD_OR_EXIT:
+		case SIGCMD_RELOAD_OR_EXIT:	/* SIGUSR1 */
 			/* reload-or-exit (this driver instance may die) */
 			reload_flag = 2;
 			break;
 
 #ifdef SIGCMD_RELOAD_OR_RESTART
-		case SIGCMD_RELOAD_OR_RESTART:
+		case SIGCMD_RELOAD_OR_RESTART:	/* SIGUSR2 */
 			/* reload-or-restart (this driver instance may recycle itself) */
 			/* FIXME: Not implemented yet */
 			reload_flag = 3;
 			break;
 #endif
 
-		case SIGCMD_RELOAD:
+		case SIGCMD_RELOAD:	/* SIGHUP */
 		default:
 			/* reload what we can, log what needs a restart so skipped */
 			reload_flag = 1;
 	}
+
+	upsdebugx(1, "%s: raising reload flag due to signal %d => reload_flag=%d",
+		__func__, sig, reload_flag);
 }
 
 static void handle_dstate_dump(int sig) {
