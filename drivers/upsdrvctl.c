@@ -1206,11 +1206,15 @@ int main(int argc, char **argv)
 		upsdebugx(1, "upsdrvctl commanding all drivers (%d found): %s",
 			upscount, (pt_cmd ? pt_cmd : NUT_STRARG(argv[lastarg])));
 		send_all_drivers(command);
-	} else {
+	} else
+	if (argc == (lastarg + 1)) {
 		upscount = 1;
 		upsdebugx(1, "upsdrvctl commanding one driver (%s): %s",
 			argv[lastarg], (pt_cmd ? pt_cmd : NUT_STRARG(argv[lastarg - 1])));
 		send_one_driver(command, argv[lastarg]);
+	} else {
+		fatalx(EXIT_FAILURE, "Error: extra arguments left on command line\n"
+			"(common options should be before a command and UPS name)");
 	}
 
 	if (exec_error)
