@@ -83,8 +83,10 @@ static void	(*command)(const ups_t *) = NULL;
 
 /* signal handling */
 int	exit_flag = 0;
+#ifndef WIN32
 static int	reload_flag = 0;
 static time_t	last_dangerous_reload = 0;
+#endif
 #ifndef WIN32
 static int	signal_flag = 0;
 #else
@@ -174,6 +176,8 @@ void do_upsconf_args(char *arg_upsname, char *var, char *val)
 		upstable = tmp;
 }
 
+#ifndef WIN32
+/* TODO: implement WIN32 */
 /* handle generally signalling the UPS */
 static void signal_driver_cmd(const ups_t *ups,
 #ifndef WIN32
@@ -257,6 +261,7 @@ static void signal_driver_cmd(const ups_t *ups,
 static void signal_driver(const ups_t *ups) {
 	signal_driver_cmd(ups, signal_flag);
 }
+#endif	/* WIN32 */
 
 /* handle sending the signal */
 static void stop_driver(const ups_t *ups)
@@ -439,6 +444,9 @@ static void reset_signal_flag(void)
 #endif
 }
 
+#ifndef WIN32
+/* TODO: Equivalent for WIN32 - see SIGCMD_RELOAD in upd and upsmon */
+
 static void set_reload_flag(const
 #ifndef WIN32
 	int
@@ -474,6 +482,7 @@ static void set_reload_flag(const
 		__func__, sig, strsignal(sig), reload_flag);
 #endif
 }
+#endif
 
 static void setup_signals(void)
 {
