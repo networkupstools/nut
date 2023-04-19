@@ -409,7 +409,13 @@ int testvar_reloadable(const char *var, const char *val, int vartype)
 					 * keep MAINPID for systemd et al)?
 					 */
 					if (reload_flag == 2 && !tmp->reloadable)
-						fatalx(EXIT_SUCCESS, "NUT driver reload-or-exit: setting %s was changed and requires a driver restart", var);
+						fatalx(
+#ifndef WIN32
+							(128 + SIGCMD_RELOAD_OR_EXIT)
+#else
+							EXIT_SUCCESS
+#endif
+							, "NUT driver reload-or-exit: setting %s was changed and requires a driver restart", var);
 					verdict = (
 						(!reload_flag)	/* For initial config reads, legacy code trusted what it saw */
 						|| tmp->reloadable	/* set in addvar*() */
@@ -493,7 +499,13 @@ int testval_reloadable(const char *var, const char *oldval, const char *newval, 
 		 * keep MAINPID for systemd et al)?
 		 */
 		if (reload_flag == 2 && !reloadable)
-			fatalx(EXIT_SUCCESS, "NUT driver reload-or-exit: setting %s was changed and requires a driver restart", var);
+			fatalx(
+#ifndef WIN32
+				(128 + SIGCMD_RELOAD_OR_EXIT)
+#else
+				EXIT_SUCCESS
+#endif
+				, "NUT driver reload-or-exit: setting %s was changed and requires a driver restart", var);
 		/* For initial config reads, legacy code trusted what it saw */
 		verdict = ((!reload_flag) || reloadable);
 		goto finish;
