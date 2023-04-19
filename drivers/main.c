@@ -79,6 +79,30 @@ int	exit_flag = 0;
  */
 static int	reload_flag = 0;
 
+#ifndef WIN32
+# define SIGCMD_RELOAD           	SIGHUP
+# define SIGCMD_RELOAD_OR_EXIT   	SIGUSR1
+/* // FIXME: Implement this self-recycling:
+# define SIGCMD_RELOAD_OR_RESTART	SIGUSR2
+*/
+
+/* This is commonly defined on systems we know; file bugs/PRs for
+ * relevant systems where it is not present (SIGWINCH might be an
+ * option there, though terminal resizes might cause braindumps).
+ * Their packaging may want to add a patch for this bit (and docs).
+ */
+# if (defined SIGURG)
+#  define SIGCMD_DATA_DUMP        	SIGURG
+# else
+#  if (defined SIGWINCH)
+#   define SIGCMD_DATA_DUMP        	SIGWINCH
+#  else
+#   pragma warn "This OS lacks SIGURG and SIGWINCH, will not handle SIGCMD_DATA_DUMP"
+#  endif
+# endif
+/* FIXME: handle WIN32 builds too */
+#endif
+
 #ifndef DRIVERS_MAIN_WITHOUT_MAIN
 /* should this driver instance go to background (default)
  * or stay foregrounded (default if -D/-d options are set on
@@ -386,7 +410,7 @@ int testvar_reloadable(const char *var, const char *val, int vartype)
 					 * keep MAINPID for systemd et al)?
 					 */
 					if (reload_flag == 2 && !tmp->reloadable)
-						fatalx(EXIT_SUCCESS, "NUT driver reload-or-restart: setting %s was changed and requires a driver restart", var);
+						fatalx(EXIT_SUCCESS, "NUT driver reload-or-exit: setting %s was changed and requires a driver restart", var);
 					verdict = (
 						(!reload_flag)	/* For initial config reads, legacy code trusted what it saw */
 						|| tmp->reloadable	/* set in addvar*() */
@@ -470,7 +494,7 @@ int testval_reloadable(const char *var, const char *oldval, const char *newval, 
 		 * keep MAINPID for systemd et al)?
 		 */
 		if (reload_flag == 2 && !reloadable)
-			fatalx(EXIT_SUCCESS, "NUT driver reload-or-restart: setting %s was changed and requires a driver restart", var);
+			fatalx(EXIT_SUCCESS, "NUT driver reload-or-exit: setting %s was changed and requires a driver restart", var);
 		/* For initial config reads, legacy code trusted what it saw */
 		verdict = ((!reload_flag) || reloadable);
 		goto finish;
@@ -1180,11 +1204,20 @@ static void set_reload_flag(int sig)
 {
 	upsdebugx(1, "%s: raising reload flag due to signal %d", __func__, sig);
 	switch (sig) {
-		case SIGUSR1:
-			/* reload-or-restart (this driver instance may die) */
+		case SIGCMD_RELOAD_OR_EXIT:
+			/* reload-or-exit (this driver instance may die) */
 			reload_flag = 2;
 			break;
 
+#ifdef SIGCMD_RELOAD_OR_RESTART
+		case SIGCMD_RELOAD_OR_RESTART:
+			/* reload-or-restart (this driver instance may recycle itself) */
+			/* FIXME: Not implemented yet */
+			reload_flag = 3;
+			break;
+#endif
+
+		case SIGCMD_RELOAD:
 		default:
 			/* reload what we can, log what needs a restart so skipped */
 			reload_flag = 1;
@@ -1230,12 +1263,18 @@ void setup_signals(void)
 
 	/* handle reloading */
 	sa.sa_handler = set_reload_flag;
-	sigaction(SIGHUP, &sa, NULL);
-	sigaction(SIGUSR1, &sa, NULL);
+	sigaction(SIGCMD_RELOAD, &sa, NULL);	/* SIGHUP */
+	sigaction(SIGCMD_RELOAD_OR_EXIT, &sa, NULL);	/* SIGUSR1 */
+# ifdef SIGCMD_RELOAD_OR_RESTART
+/* FIXME: Want SIGCMD_RELOAD_OR_RESTART implemented */
+	sigaction(SIGCMD_RELOAD_OR_RESTART, &sa, NULL);	/* SIGUSR2 */
+# endif
 
+# ifdef SIGCMD_DATA_DUMP
 	/* handle run-time data dump (may be limited to non-backgrounding lifetimes) */
 	sa.sa_handler = handle_dstate_dump;
-	sigaction(SIGUSR2, &sa, NULL);
+	sigaction(SIGCMD_DATA_DUMP, &sa, NULL);	/* SIGURG or SIGWINCH something else on obscure systems */
+# endif
 }
 #endif /* WIN32*/
 
