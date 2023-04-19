@@ -1245,8 +1245,8 @@ static void set_reload_flag(int sig)
 			reload_flag = 1;
 	}
 
-	upsdebugx(1, "%s: raising reload flag due to signal %d => reload_flag=%d",
-		__func__, sig, reload_flag);
+	upsdebugx(1, "%s: raising reload flag due to signal %d (%s) => reload_flag=%d",
+		__func__, sig, strsignal(sig), reload_flag);
 }
 
 static void handle_dstate_dump(int sig) {
@@ -1443,6 +1443,9 @@ int main(int argc, char **argv)
 					fatalx(EXIT_FAILURE,
 						"Error: unknown argument to option -%c. Try -h for help.", i);
 				}
+				upsdebugx(1, "Will send signal %d (%s) for command '%s' "
+					"to already-running driver %s-%s (if any) and exit",
+					cmd, strsignal(cmd), optarg, progname, upsname);
 				break;
 			/* NOTE for FIXME above: PID-signalling is non-WIN32-only for us */
 			case 'P':
