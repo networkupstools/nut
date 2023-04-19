@@ -378,7 +378,7 @@ static void forkexec(char *const argv[], const ups_t *ups)
 #ifndef WIN32
 	int	ret;
 
-	if (nut_foreground_passthrough == 1 && upscount == 1) {
+	if (nut_foreground_passthrough > 0 && upscount == 1) {
 		upsdebugx(1, "Starting the only driver with explicitly "
 			"requested foregrounding mode, not forking");
 	} else {
@@ -403,7 +403,7 @@ static void forkexec(char *const argv[], const ups_t *ups)
 				return;
 			}
 
-			if (nut_foreground_passthrough == 1 && upscount > 1) {
+			if (nut_foreground_passthrough > 0 && upscount > 1) {
 				/* Let upsdrvctl fork to run its numerous children
 				 * but without further forking on their side - so
 				 * not waiting for them to complete start-ups.
@@ -618,19 +618,25 @@ static void start_driver(const ups_t *ups)
 	/* Default: -1, FG/BG depends on debugging level */
 	/* send_all_drivers() also warns if got many drivers to handle
 	 * and foreground mode - it won't loop really */
-	if (nut_foreground_passthrough == 0) {
-		argv[arg++] = (char *)"-B";		/* FIXME: cast away const */
-	} else if (nut_foreground_passthrough == 1) {
-		argv[arg++] = (char *)"-F";		/* FIXME: cast away const */
-	} else {
-		if (nut_debug_level_passthrough > 0
-		&&  nut_debug_level > 0
-		) {
-			upsdebugx(1, "WARNING: Requested a debugging level "
-				"but not explicitly a backgrounding mode - "
-				"driver may never try to fork away; however "
-				"the upsdrvctl tool will fork it and not wait.");
-		}
+	switch (nut_foreground_passthrough) {
+		case 0:
+			argv[arg++] = (char *)"-B";		/* FIXME: cast away const */
+			break;
+		case 1:
+			argv[arg++] = (char *)"-F";		/* FIXME: cast away const */
+			break;
+		case 2:
+			argv[arg++] = (char *)"-FF";		/* FIXME: cast away const */
+			break;
+		default:
+			if (nut_debug_level_passthrough > 0
+			&&  nut_debug_level > 0
+			) {
+				upsdebugx(1, "WARNING: Requested a debugging level "
+					"but not explicitly a backgrounding mode - "
+					"driver may never try to fork away; however "
+					"the upsdrvctl tool will fork it and not wait.");
+			}
 	}
 
 	argv[arg++] = (char *)"-a";		/* FIXME: cast away const */
@@ -691,6 +697,7 @@ static void help(const char *progname)
 	printf("  -D			raise debugging level\n");
 	printf("  -d			pass debugging level from upsdrvctl to driver\n");
 	printf("  -F			driver stays foregrounded even if no debugging is enabled\n");
+	printf("  -FF			driver stays foregrounded and still saves the PID file\n");
 	printf("  -B			driver(s) stay backgrounded even if debugging is bumped\n");
 	printf("  start			start all UPS drivers in ups.conf\n");
 	printf("  start	<ups>		only start driver for UPS <ups>\n");
@@ -775,7 +782,7 @@ static void send_all_drivers(void (*command_func)(const ups_t *))
 		/* Only warn when relevant - got more than one device to start */
 		if (command_func == &start_driver
 		&&  ups->next
-		&&  ( (nut_foreground_passthrough == 1)
+		&&  ( (nut_foreground_passthrough > 0)
 		      || (nut_foreground_passthrough != 0
 		          && nut_debug_level > 0
 		          && nut_debug_level_passthrough > 0)
@@ -785,10 +792,10 @@ static void send_all_drivers(void (*command_func)(const ups_t *))
 				"Starting \"all\" drivers but requested the %s!"
 				"This request will not wait for driver(s) to complete "
 				"their initialization%s.",
-				(nut_foreground_passthrough == 1
+				(nut_foreground_passthrough > 0
 					? "foreground mode"
 					: "debug mode without backgrounding"),
-				(nut_foreground_passthrough == 1
+				(nut_foreground_passthrough > 0
 					? ", but upsdrvctl tool will stay foregrounded" : "")
 			);
 		}
@@ -825,7 +832,7 @@ static void exit_cleanup(void)
 
 	if (command == &start_driver
 	&&  upscount > 0
-	&&  nut_foreground_passthrough == 1
+	&&  nut_foreground_passthrough > 0
 	) {
 		/* First stop the drivers, if any are running */
 		while (tmp) {
@@ -887,7 +894,12 @@ int main(int argc, char **argv)
 				break;
 
 			case 'F':
-				nut_foreground_passthrough = 1;
+				if (nut_foreground_passthrough > 0) {
+					/* specified twice to save PID file anyway */
+					nut_foreground_passthrough = 2;
+				} else {
+					nut_foreground_passthrough = 1;
+				}
 				break;
 
 			case 'B':
@@ -972,7 +984,7 @@ int main(int argc, char **argv)
 
 	if (command == &start_driver
 	&&  upscount > 0
-	&&  nut_foreground_passthrough == 1
+	&&  nut_foreground_passthrough > 0
 	) {
 		/* Note: for a single started driver, we just
 		 * exec() it and should not even get here

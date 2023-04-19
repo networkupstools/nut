@@ -72,6 +72,8 @@ program itself foregrounded with driver daemons running as its children
 (in case of a single driver startup, it would not even fork). It would
 also not wait for drivers to complete initialization, so `upsdrvctl`
 will warn about such situations.
+Specify twice (`-FF` or `-F -F`) to save the driver PID file even in
+this mode (not saved by default when staying in foreground).
 
 *-B*::
 Drivers will run in the background, regardless of debugging settings,
