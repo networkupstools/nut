@@ -2453,12 +2453,15 @@ int main(int argc, char *argv[])
 	while ((i = getopt(argc, argv, "+DFBhic:P:f:pu:VK46")) != -1) {
 		switch (i) {
 			case 'c':
-				if (!strncmp(optarg, "fsd", strlen(optarg)))
+				if (!strncmp(optarg, "fsd", strlen(optarg))) {
 					cmd = SIGCMD_FSD;
-				if (!strncmp(optarg, "stop", strlen(optarg)))
+				} else
+				if (!strncmp(optarg, "stop", strlen(optarg))) {
 					cmd = SIGCMD_STOP;
-				if (!strncmp(optarg, "reload", strlen(optarg)))
+				} else
+				if (!strncmp(optarg, "reload", strlen(optarg))) {
 					cmd = SIGCMD_RELOAD;
+				}
 
 				/* bad command name given */
 				if (cmd == 0)
