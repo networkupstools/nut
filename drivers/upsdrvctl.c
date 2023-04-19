@@ -35,6 +35,7 @@
 #include "upsconf.h"
 #include "attribute.h"
 #include "nut_stdint.h"
+#include "main.h"
 
 typedef struct {
 	char	*upsname;
@@ -70,8 +71,8 @@ static int	retrydelay = 5;
 	/* Directory where driver executables live */
 static char	*driverpath = NULL;
 
-	/* passthrough to the drivers: chroot path and new user name */
-static char	*pt_root = NULL, *pt_user = NULL;
+	/* passthrough to the drivers: chroot path and new user name; signal/command */
+static char	*pt_root = NULL, *pt_user = NULL, *pt_cmd = NULL;
 
 	/* flag to pass nut_debug_level to launched drivers (as their -D... args) */
 static int	nut_debug_level_passthrough = 0;
@@ -81,7 +82,13 @@ static int	nut_foreground_passthrough = -1;
 static void	(*command)(const ups_t *) = NULL;
 
 /* signal handling */
-static int	exit_flag = 0;
+int	exit_flag = 0;
+static int	reload_flag = 0;
+#ifndef WIN32
+static int	signal_flag = 0;
+#else
+static char	*signal_flag = NULL;
+#endif
 
 void do_upsconf_args(char *upsname, char *var, char *val)
 {
@@ -164,6 +171,90 @@ void do_upsconf_args(char *upsname, char *var, char *val)
 		last->next = tmp;
 	else
 		upstable = tmp;
+}
+
+/* handle generally signalling the UPS */
+static void signal_driver_cmd(const ups_t *ups,
+#ifndef WIN32
+	int cmd
+#else
+	const char *cmd
+#endif
+)
+{
+	char	pidfn[SMALLBUF];
+	int	ret;
+
+#ifndef WIN32
+	upsdebugx(1, "Signalling UPS [%s]: %d (%s)",
+		ups->upsname, cmd, strsignal(cmd));
+#else
+	upsdebugx(1, "Signalling UPS [%s]: %s",
+		ups->upsname, cmd);
+#endif
+
+#ifndef WIN32
+	if (ups->pid == -1) {
+		struct stat	fs;
+		snprintf(pidfn, sizeof(pidfn), "%s/%s-%s.pid", altpidpath(),
+			ups->driver, ups->upsname);
+		ret = stat(pidfn, &fs);
+
+		if ((ret != 0) && (ups->port != NULL)) {
+			upslog_with_errno(LOG_ERR, "Can't open %s", pidfn);
+			snprintf(pidfn, sizeof(pidfn), "%s/%s-%s.pid", altpidpath(),
+				ups->driver, xbasename(ups->port));
+			ret = stat(pidfn, &fs);
+		}
+
+		if (ret != 0) {
+			upslog_with_errno(LOG_ERR, "Can't open %s either", pidfn);
+			exec_error++;
+			return;
+		}
+	} else {
+		/* We started the driver in this run of upsdrvctl
+		 * tool, stayed foregrounded, and now are singnalling
+		 * the driver(s) tracked by this process.
+		 * NOTE: Not a filename here, but using same variable
+		 * name makes the code below simpler to maintain.
+		 */
+		snprintf(pidfn, sizeof(pidfn), "PID %" PRIdMAX, (intmax_t)ups->pid);
+	}
+#else
+	snprintf(pidfn, sizeof(pidfn), "%s-%s", ups->driver, ups->upsname);
+#endif
+
+	upsdebugx(2, "Sending signal to %s", pidfn);
+
+	if (testmode)
+		return;
+
+#ifndef WIN32
+	if (ups->pid == -1) {
+		ret = sendsignalfn(pidfn, cmd);
+	} else {
+		ret = sendsignalpid(ups->pid, cmd);
+		/* reap zombie if this child died */
+		if (waitpid(ups->pid, NULL, WNOHANG) == ups->pid) {
+			upslog_with_errno(LOG_WARNING,
+				"Child process %s exited; signal return code is %d",
+				pidfn, ret);
+		}
+	}
+#else
+	ret = sendsignal(pidfn, cmd);
+#endif
+
+	if (ret < 0) {
+		upslog_with_errno(LOG_ERR, "Signalling %s failed: %d", pidfn, ret);
+		exec_error++;
+	}
+}
+
+/* handle generally signalling the UPS with recently raised signal */
+static void signal_driver(const ups_t *ups) {
+	signal_driver_cmd(ups, signal_flag);
 }
 
 /* handle sending the signal */
@@ -315,14 +406,66 @@ static void stop_driver(const ups_t *ups)
 	exec_error++;
 }
 
-static void set_exit_flag(const int sig)
+void set_exit_flag(const int sig)
 {
 	exit_flag = sig;
+}
+
+static void set_signal_flag(const
+#ifndef WIN32
+	int
+#else
+	char *
+#endif
+	sig
+) {
+	signal_flag = sig;
+}
+
+static void set_reload_flag(const
+#ifndef WIN32
+	int
+#else
+	char *
+#endif
+	sig
+) {
+	set_signal_flag(sig);
+#ifndef WIN32
+/* TODO: Equivalent for WIN32 - see SIGCMD_RELOAD in upd and upsmon */
+	switch (sig) {
+		case SIGCMD_RELOAD_OR_EXIT:     /* SIGUSR1 */
+			/* reload-or-exit (this driver instance may die) */
+			reload_flag = 2;
+			break;
+
+# ifdef SIGCMD_RELOAD_OR_RESTART
+		case SIGCMD_RELOAD_OR_RESTART:  /* SIGUSR2 */
+			/* reload-or-restart (this driver instance may recycle itself) */
+			/* FIXME: Not implemented yet */
+			reload_flag = 3;
+			break;
+# endif
+
+		case SIGCMD_RELOAD:     /* SIGHUP */
+		default:
+			/* reload what we can, log what needs a restart so skipped */
+			reload_flag = 1;
+	}
+
+	upsdebugx(1, "%s: raising reload flag due to signal %d (%s) => reload_flag=%d",
+		__func__, sig, strsignal(sig), reload_flag);
+#endif
 }
 
 static void setup_signals(void)
 {
 	set_exit_flag(0);
+#ifndef WIN32
+	set_signal_flag(0);
+#else
+	set_signal_flag(NULL);
+#endif
 
 #ifndef WIN32
 	/* Keep in sync with signal handling in drivers/main.c */
@@ -344,8 +487,22 @@ static void setup_signals(void)
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
 # pragma GCC diagnostic pop
 #endif
-	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGPIPE, &sa, NULL);
+
+	/* handle reloading */
+	sa.sa_handler = set_reload_flag;
+	sigaction(SIGCMD_RELOAD, &sa, NULL);    /* SIGHUP */
+	sigaction(SIGCMD_RELOAD_OR_EXIT, &sa, NULL);    /* SIGUSR1 */
+# ifdef SIGCMD_RELOAD_OR_RESTART
+/* FIXME: Want SIGCMD_RELOAD_OR_RESTART implemented */
+	sigaction(SIGCMD_RELOAD_OR_RESTART, &sa, NULL); /* SIGUSR2 */
+# endif
+
+# ifdef SIGCMD_DATA_DUMP
+	/* handle run-time data dump (may be limited to non-backgrounding lifetimes) */
+	sa.sa_handler = set_signal_flag;
+	sigaction(SIGCMD_DATA_DUMP, &sa, NULL); /* SIGURG or SIGWINCH something else on obscure systems */
+# endif
 #endif	/* WIN32 */
 }
 
@@ -689,7 +846,11 @@ static void help(const char *progname)
 {
 	printf("Starts and stops UPS drivers via ups.conf.\n\n");
 	printf("usage: %s [OPTIONS] (start | stop | shutdown) [<ups>]\n\n", progname);
+#ifndef WIN32
+	printf("usage: %s [OPTIONS] -c <command> [<ups>]\n\n", progname);
+#endif
 
+	printf("Common options:\n");
 	printf("  -h			display this help\n");
 	printf("  -r <path>		drivers will chroot to <path>\n");
 	printf("  -t			testing mode - prints actions without doing them\n");
@@ -699,6 +860,28 @@ static void help(const char *progname)
 	printf("  -F			driver stays foregrounded even if no debugging is enabled\n");
 	printf("  -FF			driver stays foregrounded and still saves the PID file\n");
 	printf("  -B			driver(s) stay backgrounded even if debugging is bumped\n");
+
+#ifndef WIN32
+/* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
+	printf("Signalling a running driver:\n");
+	printf("  -c <command>		send <command> via signal to running driver(s)\n");
+	printf("              		supported commands:\n");
+	printf("              		- data-dump: if the driver still has STDOUT attached (maybe\n");
+	printf("              		  to log), dump its currently collected information there\n");
+	printf("              		- reload: re-read configuration files, ignoring changed\n");
+	printf("              		  values which require a driver restart (can not be changed\n");
+	printf("              		  on the fly)\n");
+# ifdef SIGCMD_RELOAD_OR_RESTART
+	printf("              		- reload-or-restart: re-read configuration files (close the\n");
+	printf("              		  old driver instance device connection if needed, and have\n");
+	printf("              		  it effectively restart)\n");
+# endif
+	printf("              		- reload-or-exit: re-read configuration files (exit the old\n");
+	printf("              		  driver instance if needed, so an external caller like the\n");
+	printf("              		  systemd or SMF frameworks would start another copy)\n");
+#endif /* WIN32 */
+
+	printf("Driver life cycle options:\n");
 	printf("  start			start all UPS drivers in ups.conf\n");
 	printf("  start	<ups>		only start driver for UPS <ups>\n");
 	printf("  stop			stop all UPS drivers in ups.conf\n");
@@ -861,14 +1044,18 @@ static void exit_cleanup(void)
 
 int main(int argc, char **argv)
 {
-	int	i;
+	int	i, lastarg = 0;
 	char	*prog;
 
 	printf("Network UPS Tools - UPS driver controller %s\n",
 		UPS_VERSION);
 
 	prog = argv[0];
-	while ((i = getopt(argc, argv, "+htu:r:DdFBV")) != -1) {
+	while ((i = getopt(argc, argv, "+htu:r:DdFBV"
+#ifndef WIN32
+		"c:"
+#endif
+)) != -1) {
 		switch(i) {
 			case 'r':
 				pt_root = optarg;
@@ -906,6 +1093,48 @@ int main(int argc, char **argv)
 				nut_foreground_passthrough = 0;
 				break;
 
+#ifndef WIN32
+/* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
+			case 'c':
+				if (command || pt_cmd) {
+					help(prog);
+					fatalx(EXIT_FAILURE,
+						"Error: only one command per run can be "
+						"sent with option -%c. Try -h for help.", i);
+				}
+				command = &signal_driver;
+
+				if (!strncmp(optarg, "dump", strlen(optarg))) {
+					signal_flag = SIGCMD_DATA_DUMP;
+				} else
+				if (!strncmp(optarg, "data-dump", strlen(optarg))) {
+					signal_flag = SIGCMD_DATA_DUMP;
+				} else
+				if (!strncmp(optarg, "reload", strlen(optarg))) {
+					signal_flag = SIGCMD_RELOAD;
+				} else
+# ifdef SIGCMD_RELOAD_OR_RESTART
+				if (!strncmp(optarg, "reload-or-restart", strlen(optarg))) {
+					signal_flag = SIGCMD_RELOAD_OR_RESTART;
+				} else
+# endif
+				if (!strncmp(optarg, "reload-or-exit", strlen(optarg))) {
+					signal_flag = SIGCMD_RELOAD_OR_EXIT;
+				}
+
+				/* bad command given */
+				if (signal_flag == 0) {
+					help(prog);
+					fatalx(EXIT_FAILURE,
+						"Error: unknown argument to option -%c. Try -h for help.", i);
+				}
+
+				pt_cmd = optarg;
+				upsdebugx(1, "Will send signal %d (%s) for command '%s' "
+					"to already-running driver (if any) and exit",
+					signal_flag, strsignal(signal_flag), optarg);
+				break;
+#endif	/* WIN32 */
 			case 'h':
 			default:
 				help(prog);
@@ -915,11 +1144,12 @@ int main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
-	if (argc < 1)
+	/* We expect maybe command (if not signalling above) and maybe UPS name */
+	if (!command && argc < 1)
 		help(prog);
 
 	if (testmode) {
-		printf("*** Testing mode: not calling exec/kill\n");
+		printf("*** Testing mode: not calling exec/kill/signal\n");
 
 		if (nut_debug_level < 2)
 			nut_debug_level = 2;
@@ -938,14 +1168,18 @@ int main(int argc, char **argv)
 			"pass its current debug level to the launched driver, and '-B' keeps it backgrounded.\n");
 	}
 
-	if (!strcmp(argv[0], "start"))
-		command = &start_driver;
-
-	if (!strcmp(argv[0], "stop"))
-		command = &stop_driver;
-
-	if (!strcmp(argv[0], "shutdown"))
-		command = &shutdown_driver;
+	if (!command) {
+		if (!strcmp(argv[0], "start")) {
+			command = &start_driver;
+		} else
+		if (!strcmp(argv[0], "stop")) {
+			command = &stop_driver;
+		} else
+		if (!strcmp(argv[0], "shutdown")) {
+			command = &shutdown_driver;
+		}
+		lastarg = 1;
+	}
 
 	if (!command)
 		fatalx(EXIT_FAILURE, "Error: unrecognized command [%s]", argv[0]);
@@ -960,7 +1194,7 @@ int main(int argc, char **argv)
 
 	read_upsconf();
 
-	if (argc == 1) {
+	if (argc == lastarg) {
 		ups_t	*tmp = upstable;
 		upscount = 0;
 
@@ -970,13 +1204,13 @@ int main(int argc, char **argv)
 		}
 
 		upsdebugx(1, "upsdrvctl commanding all drivers (%d found): %s",
-			upscount, argv[0]);
+			upscount, (pt_cmd ? pt_cmd : NUT_STRARG(argv[lastarg])));
 		send_all_drivers(command);
 	} else {
 		upscount = 1;
 		upsdebugx(1, "upsdrvctl commanding one driver (%s): %s",
-			argv[1], argv[0]);
-		send_one_driver(command, argv[1]);
+			argv[lastarg], (pt_cmd ? pt_cmd : NUT_STRARG(argv[lastarg - 1])));
+		send_one_driver(command, argv[lastarg]);
 	}
 
 	if (exec_error)
