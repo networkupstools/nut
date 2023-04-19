@@ -2442,9 +2442,9 @@ static int guesstimate_template_count(snmp_info_t *su_info_p)
 
 	upsdebugx(1, "%s(%s)", __func__, OID_template);
 
-	/* Test if OID is indexed: caution for infinite loop */
+	/* Test if OID is indexed: safeguard for infinite loop */
 	if (strchr(OID_template, '%') == NULL) {
-		upslogx(LOG_WARNING, "Warning: infinite loop detected with object not indexed (OID = %s)", OID_template);
+		upsdebugx(3, "Warning: non-indexed object, discarding (OID = %s)", OID_template);
 		return 0;
 	}
 
