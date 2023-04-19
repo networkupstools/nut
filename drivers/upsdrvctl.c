@@ -1264,6 +1264,19 @@ int main(int argc, char **argv)
 				 * wrapped in services where available */
 			}
 #endif	/* WIN32 */
+
+			if (signal_flag) {
+				upsdebugx(1, "upsdrvctl: handling signal: starting");
+				tmp = upstable;
+				while (tmp) {
+					next = tmp->next;
+					signal_driver(tmp);
+					tmp = next;
+				}
+				reset_signal_flag();
+				upsdebugx(1, "upsdrvctl: handling signal: finished");
+			}
+
 			sleep(1);
 		}
 	}
