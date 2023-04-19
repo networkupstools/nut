@@ -1928,17 +1928,19 @@ int main(int argc, char **argv)
 	if (dstate_getinfo("ups.serial") != NULL)
 		dstate_setinfo("device.serial", "%s", dstate_getinfo("ups.serial"));
 
-	if (!foreground != 0) {
-		background();
-		/* We had saved a PID before backgrounding, but
-		 * it changes when backgrounding - so save again
-		 */
-		writepid(pidfn);
-	} else {
-		/* Keep the initial PID; don't care about "!dump_data" here
+	switch (foreground) {
+		case 0:
+			background();
+			/* We had saved a PID before backgrounding, but
+			 * it changes when backgrounding - so save again
+			 */
+			writepid(pidfn);
+			break;
+
+		/* >0: Keep the initial PID; don't care about "!dump_data" here
 		 * currently: let users figure out their mess (or neat hacks)
 		 */
-		if (foreground == 2) {
+		case 2:
 			if (!pidfn) {
 				char	pidfnbuf[SMALLBUF];
 				snprintf(pidfnbuf, sizeof(pidfnbuf), "%s/%s-%s.pid", altpidpath(), progname, upsname);
@@ -1946,9 +1948,10 @@ int main(int argc, char **argv)
 			}
 			upslogx(LOG_WARNING, "Running as foreground process, but saving a PID file anyway");
 			writepid(pidfn);
-		} else {
+			break;
+
+		default:
 			upslogx(LOG_WARNING, "Running as foreground process, not saving a PID file");
-		}
 	}
 
 	dstate_setinfo("driver.state", "quiet");
