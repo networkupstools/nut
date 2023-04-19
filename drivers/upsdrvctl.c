@@ -1244,8 +1244,8 @@ int main(int argc, char **argv)
 		/* raise exit_flag upon SIGTERM, Ctrl+C, etc. */
 		setup_signals();
 		while (!exit_flag) {
-			ups_t	*tmp = upstable, *next;
 #ifndef WIN32
+			ups_t	*tmp = upstable, *next;
 			/* Track if any child process has stopped (due to
 			 * an error, normal exit, signal...) to kill others
 			 * and exit the tool - with error if applicable.
@@ -1264,9 +1264,9 @@ int main(int argc, char **argv)
 							elapsed = difftime(now, last_dangerous_reload);
 							if (elapsed < 60
 							 || (es - 128) == SIGCMD_RELOAD_OR_EXIT
-#ifdef SIGCMD_RELOAD_OR_RESTART
+# ifdef SIGCMD_RELOAD_OR_RESTART
 							 || (es - 128) == SIGCMD_RELOAD_OR_RESTART
-#endif
+# endif
 							) {
 								/* Arbitrary but generous time to handle
 								 * a reload including driver loop lag */
@@ -1302,14 +1302,13 @@ int main(int argc, char **argv)
 				/* NOTE: Users really should run one driver per instance,
 				 * wrapped in services where available */
 			}
-#endif	/* WIN32 */
 
 			if (signal_flag) {
 				upsdebugx(1, "upsdrvctl: handling signal: starting");
 				if (signal_flag == SIGCMD_RELOAD_OR_EXIT
-#ifdef SIGCMD_RELOAD_OR_RESTART
+# ifdef SIGCMD_RELOAD_OR_RESTART
 				 || signal_flag == SIGCMD_RELOAD_OR_RESTART
-#endif
+# endif
 				) time(&last_dangerous_reload);
 
 				tmp = upstable;
@@ -1321,6 +1320,7 @@ int main(int argc, char **argv)
 				reset_signal_flag();
 				upsdebugx(1, "upsdrvctl: handling signal: finished");
 			}
+#endif	/* WIN32 */
 
 			sleep(1);
 		}
