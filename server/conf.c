@@ -231,7 +231,8 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 	/* STATEPATH <dir> */
 	if (!strcmp(arg[0], "STATEPATH")) {
 		const char *sp = getenv("NUT_STATEPATH");
-		if (sp) {
+		if (sp && strcmp(sp, arg[1])) {
+			/* Only warn if the two strings are not equal */
 			upslogx(LOG_WARNING,
 				"Ignoring STATEPATH='%s' from configuration file, "
 				"in favor of NUT_STATEPATH='%s' environment variable",
