@@ -1470,9 +1470,9 @@ int main(int argc, char **argv)
 	 * instance once backgrounded, and to stop a competing older instance.
 	 */
 	if ((background_flag != 0) && (!do_forceshutdown)) {
-		char	buffer[SMALLBUF];
+		char	pidfnbuf[SMALLBUF];
 
-		snprintf(buffer, sizeof(buffer), "%s/%s-%s.pid", altpidpath(), progname, upsname);
+		snprintf(pidfnbuf, sizeof(pidfnbuf), "%s/%s-%s.pid", altpidpath(), progname, upsname);
 
 		/* Try to prevent that driver is started multiple times. If a PID file */
 		/* already exists, send a TERM signal to the process and try if it goes */
@@ -1480,14 +1480,14 @@ int main(int argc, char **argv)
 		for (i = 0; i < 3; i++) {
 			struct stat	st;
 
-			if (stat(buffer, &st) != 0) {
+			if (stat(pidfnbuf, &st) != 0) {
 				/* PID file not found */
 				break;
 			}
 
-			upslogx(LOG_WARNING, "Duplicate driver instance detected (PID file %s exists)! Terminating other driver!", buffer);
+			upslogx(LOG_WARNING, "Duplicate driver instance detected (PID file %s exists)! Terminating other driver!", pidfnbuf);
 
-			if (sendsignalfn(buffer, SIGTERM) != 0) {
+			if (sendsignalfn(pidfnbuf, SIGTERM) != 0) {
 				/* Can't send signal to PID, assume invalid file */
 				break;
 			}
@@ -1498,11 +1498,11 @@ int main(int argc, char **argv)
 
 		if (i > 0) {
 			struct stat	st;
-			if (stat(buffer, &st) == 0) {
-				upslogx(LOG_WARNING, "Duplicate driver instance is still alive (PID file %s exists) after several termination attempts! Killing other driver!", buffer);
-				if (sendsignalfn(buffer, SIGKILL) == 0) {
+			if (stat(pidfnbuf, &st) == 0) {
+				upslogx(LOG_WARNING, "Duplicate driver instance is still alive (PID file %s exists) after several termination attempts! Killing other driver!", pidfnbuf);
+				if (sendsignalfn(pidfnbuf, SIGKILL) == 0) {
 					sleep(5);
-					if (sendsignalfn(buffer, 0) == 0) {
+					if (sendsignalfn(pidfnbuf, 0) == 0) {
 						upslogx(LOG_WARNING, "Duplicate driver instance is still alive (could signal the process)");
 						/* TODO: Should we writepid() below in this case?
 						 * Or if driver init fails, restore the old content
@@ -1520,7 +1520,7 @@ int main(int argc, char **argv)
 
 		/* Only write pid if we're not just dumping data, for discovery */
 		if (!dump_data) {
-			pidfn = xstrdup(buffer);
+			pidfn = xstrdup(pidfnbuf);
 			writepid(pidfn);	/* before backgrounding */
 		}
 	}
