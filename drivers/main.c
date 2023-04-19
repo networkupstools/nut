@@ -1305,8 +1305,8 @@ int main(int argc, char **argv)
 	int	cmd = 0;
 	pid_t	oldpid = -1;
 #else
-/* FIXME: handle WIN32 builds too */
-/*	const char * cmd = NULL; */
+/* FIXME: *actually* handle WIN32 builds too */
+	const char * cmd = NULL;
 #endif
 
 	/* init verbosity from default in common.c (0 probably) */
