@@ -1428,14 +1428,17 @@ int main(int argc, char **argv)
 #ifndef WIN32
 /* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
 			case 'c':
-				if (!strncmp(optarg, "reload", strlen(optarg)))
+				if (!strncmp(optarg, "reload", strlen(optarg))) {
 					cmd = SIGCMD_RELOAD;
+				} else
 # ifdef SIGCMD_RELOAD_OR_RESTART
-				if (!strncmp(optarg, "reload-or-restart", strlen(optarg)))
+				if (!strncmp(optarg, "reload-or-restart", strlen(optarg))) {
 					cmd = SIGCMD_RELOAD_OR_RESTART;
+				} else
 # endif
-				if (!strncmp(optarg, "reload-or-exit", strlen(optarg)))
+				if (!strncmp(optarg, "reload-or-exit", strlen(optarg))) {
 					cmd = SIGCMD_RELOAD_OR_EXIT;
+				}
 
 				/* bad command given */
 				if (cmd == 0) {
