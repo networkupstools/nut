@@ -91,12 +91,12 @@ static int	signal_flag = 0;
 static char	*signal_flag = NULL;
 #endif
 
-void do_upsconf_args(char *upsname, char *var, char *val)
+void do_upsconf_args(char *arg_upsname, char *var, char *val)
 {
 	ups_t	*tmp, *last;
 
 	/* handle global declarations */
-	if (!upsname) {
+	if (!arg_upsname) {
 		if (!strcmp(var, "maxstartdelay"))
 			maxstartdelay = atoi(val);
 
@@ -130,7 +130,7 @@ void do_upsconf_args(char *upsname, char *var, char *val)
 	while (tmp) {
 		last = tmp;
 
-		if (!strcmp(tmp->upsname, upsname)) {
+		if (!strcmp(tmp->upsname, arg_upsname)) {
 			if (!strcmp(var, "driver"))
 				tmp->driver = xstrdup(val);
 
@@ -154,7 +154,7 @@ void do_upsconf_args(char *upsname, char *var, char *val)
 	}
 
 	tmp = xmalloc(sizeof(ups_t));
-	tmp->upsname = xstrdup(upsname);
+	tmp->upsname = xstrdup(arg_upsname);
 	tmp->driver = NULL;
 	tmp->port = NULL;
 	tmp->pid = -1;
@@ -848,12 +848,12 @@ static void start_driver(const ups_t *ups)
 static void help(const char *progname)
 	__attribute__((noreturn));
 
-static void help(const char *progname)
+static void help(const char *arg_progname)
 {
 	printf("Starts and stops UPS drivers via ups.conf.\n\n");
-	printf("usage: %s [OPTIONS] (start | stop | shutdown) [<ups>]\n\n", progname);
+	printf("usage: %s [OPTIONS] (start | stop | shutdown) [<ups>]\n\n", arg_progname);
 #ifndef WIN32
-	printf("usage: %s [OPTIONS] -c <command> [<ups>]\n\n", progname);
+	printf("usage: %s [OPTIONS] -c <command> [<ups>]\n\n", arg_progname);
 #endif
 
 	printf("Common options:\n");
@@ -937,7 +937,7 @@ static void shutdown_driver(const ups_t *ups)
 	}
 }
 
-static void send_one_driver(void (*command_func)(const ups_t *), const char *upsname)
+static void send_one_driver(void (*command_func)(const ups_t *), const char *arg_upsname)
 {
 	ups_t	*ups = upstable;
 
@@ -945,7 +945,7 @@ static void send_one_driver(void (*command_func)(const ups_t *), const char *ups
 		fatalx(EXIT_FAILURE, "Error: no UPS definitions found in ups.conf!\n");
 
 	while (ups) {
-		if (!strcmp(ups->upsname, upsname)) {
+		if (!strcmp(ups->upsname, arg_upsname)) {
 			command_func(ups);
 			return;
 		}
@@ -953,7 +953,7 @@ static void send_one_driver(void (*command_func)(const ups_t *), const char *ups
 		ups = ups->next;
 	}
 
-	fatalx(EXIT_FAILURE, "UPS %s not found in ups.conf", upsname);
+	fatalx(EXIT_FAILURE, "UPS %s not found in ups.conf", arg_upsname);
 }
 
 /* walk UPS table and send command to all UPSes according to sdorder */
