@@ -1103,7 +1103,6 @@ int main(int argc, char **argv)
 /* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
 			case 'c':
 				if (command || pt_cmd) {
-					help(prog);
 					fatalx(EXIT_FAILURE,
 						"Error: only one command per run can be "
 						"sent with option -%c. Try -h for help.", i);
@@ -1130,7 +1129,6 @@ int main(int argc, char **argv)
 
 				/* bad command given */
 				if (signal_flag == 0) {
-					help(prog);
 					fatalx(EXIT_FAILURE,
 						"Error: unknown argument to option -%c. Try -h for help.", i);
 				}
