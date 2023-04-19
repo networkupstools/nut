@@ -276,11 +276,14 @@ https://github.com/networkupstools/nut/milestone/8
    currently limited to `SIGHUP` handling and with a goal of changing
    `debug_min` setting for a running driver. As currently implemented,
    would not fully benefit the drivers on systems managed by real-time
-   `nut-driver-enumerator` (it needs to be taught to play well) [#1903]
+   `nut-driver-enumerator` (it needs to be taught to play well), but
+   should be reasonably supported with `upsdrvctl`. Relevant CLI options
+   for `-c CMD` handing were added to drivers and `upsdrvctl` [#1903]
 
- - Drivers should now accept `SIGUSR1` to dump their current state information
-   (to `stdout` of the driver process, may be disconnected when background
-   mode is used) and move on -- this can help with troubleshooting [#1907]
+ - Drivers should now accept `SIGURG` (or `SIGWINCH` on systems that lack
+   the former) to dump their current state information and move on.
+   Such report goes to `stdout` of the driver process (may be disconnected
+   when background mode is used) -- this can help with troubleshooting [#1907]
 
  - Recipes and `main.c` code were enhanced to produce a `libdummy_mockdrv.la`
    helper library during build (not intended to be installed nor distributed),
