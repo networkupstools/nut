@@ -1563,8 +1563,8 @@ int main(int argc, char **argv)
 			"Error: specifying '-a id' or '-s id' is now mandatory. Try -h for help.");
 	}
 
-	/* we need to get the port from somewhere */
-	if (!device_path) {
+	/* we need to get the port from somewhere, unless we are just sending a signal and exiting */
+	if (!device_path && !cmd) {
 		fatalx(EXIT_FAILURE,
 			"Error: you must specify a port name in ups.conf or in '-x port=...' argument.\n"
 			"Try -h for help.");
