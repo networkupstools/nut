@@ -1051,7 +1051,7 @@ static void handle_reload_flag(void) {
 	if (!reload_flag || exit_flag)
 		return;
 
-	upslogx(LOG_INFO, "Handling requested live reload of NUT driver configuration");
+	upslogx(LOG_INFO, "Handling requested live reload of NUT driver configuration for [%s]", upsname);
 	dstate_setinfo("driver.state", "reloading");
 	upsnotify(NOTIFY_STATE_RELOADING, NULL);
 
@@ -1080,7 +1080,7 @@ static void handle_reload_flag(void) {
 	reload_flag = 0;
 	dstate_setinfo("driver.state", "quiet");
 	upsnotify(NOTIFY_STATE_READY, NULL);
-	upslogx(LOG_INFO, "Completed requested live reload of NUT driver configuration");
+	upslogx(LOG_INFO, "Completed requested live reload of NUT driver configuration for [%s]", upsname);
 }
 
 /* split -x foo=bar into 'foo' and 'bar' */
