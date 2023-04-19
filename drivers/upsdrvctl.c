@@ -420,7 +420,14 @@ static void set_signal_flag(const
 #endif
 	sig
 ) {
-	signal_flag = sig;
+	/* non-const, so some casting trickery */
+	signal_flag = (
+#ifndef WIN32
+		int
+#else
+		char *
+#endif
+		)sig;
 }
 
 static void reset_signal_flag(void)
