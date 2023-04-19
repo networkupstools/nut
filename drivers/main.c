@@ -104,16 +104,20 @@ static int	reload_flag = 0;
 #endif
 
 #ifndef DRIVERS_MAIN_WITHOUT_MAIN
-/* should this driver instance go to background (default)
+/* Should this driver instance go to background (default)
  * or stay foregrounded (default if -D/-d options are set on
- * command line)?
- * Value is tri-state:
- * -1 (default) Background the driver process
- *  0 User required to not background explicitly,
+ * command line)? Note that debug_min in ups.conf allows for
+ * verbosity while backgrounded by default.
+ * Value is multi-state (FIXME: enum?):
+ *  -1 (default) Decide based on debug verbosity or dump_mode
+ *  0 User required to background even if with -D or dump_mode,
+ *    or did not require foregrounding/dumping/debug on CLI
+ *  1 User required to not background explicitly,
  *    or passed -D (or -d) and current value was -1
- *  1 User required to background even if with -D or dump_mode
+ *  2 User required to not background explicitly,
+ *    and yet to write the PID file, with -FF option
  */
-static int background_flag = -1;
+static int foreground = -1;
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
 
 /* Users can pass a -D[...] option to enable debugging.
@@ -197,6 +201,7 @@ static void help_msg(void)
 	printf("  -D             - raise debugging level (and stay foreground by default)\n");
 	printf("  -d <count>     - dump data to stdout after 'count' updates loop and exit\n");
 	printf("  -F             - stay foregrounded even if no debugging is enabled\n");
+	printf("  -FF            - stay foregrounded and still save the PID file\n");
 	printf("  -B             - stay backgrounded even if debugging is bumped\n");
 	printf("  -q             - raise log level threshold\n");
 	printf("  -h             - display this help\n");
@@ -1386,10 +1391,15 @@ int main(int argc, char **argv)
 				upsname_found = 1;
 				break;
 			case 'F':
-				background_flag = 0;
+				if (foreground > 0) {
+					/* specified twice to save PID file anyway */
+					foreground = 2;
+				} else {
+					foreground = 1;
+				}
 				break;
 			case 'B':
-				background_flag = 1;
+				foreground = 0;
 				break;
 			case 'D':
 				/* bump right here, may impact reporting of other CLI args */
@@ -1495,20 +1505,26 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (nut_debug_level > 0 || dump_data) {
-		if ( background_flag < 0 ) {
+	if (foreground < 0) {
+		/* Guess a default */
+		/* Note: only care about CLI-requested debug verbosity here */
+		if (nut_debug_level > 0 || dump_data) {
 			/* Only flop from default - stay foreground with debug on */
-			background_flag = 0;
+			foreground = 1;
 		} else {
-			upsdebugx (0,
-				"Debug level is %d, dump data count is %s, "
-				"but backgrounding mode requested as %s",
-				nut_debug_level,
-				dump_data ? "on" : "off",
-				background_flag ? "on" : "off"
-				);
+			/* Legacy default - stay background and quiet */
+			foreground = 0;
 		}
-	} /* else: default remains `background_flag==-1` where nonzero is true */
+	} else {
+		/* Follow explicit user -F/-B request */
+		upsdebugx (0,
+			"Debug level is %d, dump data count is %s, "
+			"but backgrounding mode requested as %s",
+			nut_debug_level,
+			dump_data ? "on" : "off",
+			foreground ? "off" : "on"
+			);
+	}
 
 	/* Since debug mode dumps from drivers are often posted to mailing list
 	 * or issue tracker, as well as viewed locally, it can help to know the
@@ -1564,7 +1580,7 @@ int main(int argc, char **argv)
 	 * instance once backgrounded, and to stop a competing older instance.
 	 * Or to send it a signal deliberately.
 	 */
-	if (cmd || ((background_flag != 0) && (!do_forceshutdown))) {
+	if (cmd || ((foreground == 0) && (!do_forceshutdown))) {
 		char	pidfnbuf[SMALLBUF];
 
 		snprintf(pidfnbuf, sizeof(pidfnbuf), "%s/%s-%s.pid", altpidpath(), progname, upsname);
@@ -1909,9 +1925,27 @@ int main(int argc, char **argv)
 	if (dstate_getinfo("ups.serial") != NULL)
 		dstate_setinfo("device.serial", "%s", dstate_getinfo("ups.serial"));
 
-	if (background_flag != 0) {
+	if (!foreground != 0) {
 		background();
-		writepid(pidfn);	/* PID changes when backgrounding */
+		/* We had saved a PID before backgrounding, but
+		 * it changes when backgrounding - so save again
+		 */
+		writepid(pidfn);
+	} else {
+		/* Keep the initial PID; don't care about "!dump_data" here
+		 * currently: let users figure out their mess (or neat hacks)
+		 */
+		if (foreground == 2) {
+			if (!pidfn) {
+				char	pidfnbuf[SMALLBUF];
+				snprintf(pidfnbuf, sizeof(pidfnbuf), "%s/%s-%s.pid", altpidpath(), progname, upsname);
+				pidfn = xstrdup(pidfnbuf);
+			}
+			upslogx(LOG_WARNING, "Running as foreground process, but saving a PID file anyway");
+			writepid(pidfn);
+		} else {
+			upslogx(LOG_WARNING, "Running as foreground process, not saving a PID file");
+		}
 	}
 
 	dstate_setinfo("driver.state", "quiet");

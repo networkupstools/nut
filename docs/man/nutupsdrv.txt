@@ -107,10 +107,12 @@ are:
 Send the command signal above using specified PID number, rather than
 consulting the PID file.  This can help define service units which start
 each NUT driver as a foreground process so it does not create a PID file.
+See also `-FF` option as an alternative.
 
 *-F*::
 Enforce running the driver as a foreground process, regardless of debugging
 or data-dumping settings.
+Specify twice (`-FF` or `-F -F`) to save the PID file even in this mode.
 
 *-B*::
 Enforce running the driver as a background process, regardless of debugging
