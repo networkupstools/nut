@@ -422,6 +422,15 @@ static void set_signal_flag(const
 	signal_flag = sig;
 }
 
+static void reset_signal_flag(void)
+{
+#ifndef WIN32
+	set_signal_flag(0);
+#else
+	set_signal_flag(NULL);
+#endif
+}
+
 static void set_reload_flag(const
 #ifndef WIN32
 	int
@@ -461,11 +470,7 @@ static void set_reload_flag(const
 static void setup_signals(void)
 {
 	set_exit_flag(0);
-#ifndef WIN32
-	set_signal_flag(0);
-#else
-	set_signal_flag(NULL);
-#endif
+	reset_signal_flag();
 
 #ifndef WIN32
 	/* Keep in sync with signal handling in drivers/main.c */
