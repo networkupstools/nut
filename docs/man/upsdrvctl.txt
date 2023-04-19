@@ -13,6 +13,8 @@ SYNOPSIS
 
 *upsdrvctl* ['OPTIONS'] {start | stop | shutdown} ['ups']
 
+*upsdrvctl* ['OPTIONS'] -c COMMAND ['ups']
+
 DESCRIPTION
 -----------
 
@@ -82,10 +84,16 @@ as set by *-D* and passed-through by *-d* options.
 COMMANDS
 --------
 
-upsdrvctl supports three commands - start, stop and shutdown.  They take
-an optional argument which is a UPS name from linkman:ups.conf[5].
-Without that argument, they operate on every UPS that is currently
-configured.
+upsdrvctl supports three commands - start, stop and shutdown.
+It also supports passing requests to running drivers using
+`-c COMMAND` syntax, similar to that in some other daemons.
+
+They all can take an optional argument which is a UPS name from
+linkman:ups.conf[5].  Without that argument, they operate on every
+UPS that is currently configured.
+
+NOTE: `upsdrvctl` can not manage devices not listed in `ups.conf`
+(such as test drivers started with `-s TMP` option).
 
 *start*::
 Start the UPS driver(s). In case of failure, further attempts may be executed
@@ -109,6 +117,29 @@ to lose power.
 NOTE: refer to linkman:ups.conf[5] for using the *nowait* parameter.
 It can be overridden by `NUT_IGNORE_NOWAIT` environment variable
 (e.g. used to work around certain issues with systemd otherwise).
+
+*-c* 'command'::
+Send 'command' to the background process as a signal.  Valid commands
+are:
+
+        *dump*;;   tell the driver(s) to dump currently known state
+                   information to their `stdout` (if attached anywhere)
+        *reload*;; reread configuration files, ignoring modified settings
+                   which can not be applied "on the fly"
+        *reload-or-exit*;; reread configuration files, exiting the old
+                   driver process if it encounters modified settings
+                   which can not be applied "on the fly" (so caller like
+                   systemd can launch another copy of the driver)
+/////////
+        *reload-or-restart*;; reread configuration files, causing the
+                   old driver process to close the device connection
+                   and re-exec itself if it encounters modified settings
+                   which can not be applied "on the fly" (may fail for
+                   critical changes like run-time user/group accounts)
+/////////
+
+If the `upsdrvctl` was launched to remain in memory and manage NUT driver
+processes, it can receive supported signals and pass them to those drivers.
 
 ENVIRONMENT VARIABLES
 ---------------------
