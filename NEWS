@@ -276,7 +276,9 @@ https://github.com/networkupstools/nut/milestone/8
    currently limited to `SIGHUP` handling and with a goal of changing
    `debug_min` setting for a running driver. As currently implemented,
    would not fully benefit the drivers on systems managed by real-time
-   `nut-driver-enumerator` (it needs to be taught to play well), but
+   `nut-driver-enumerator` (it does not track what exactly changed), but
+   it is possible to change/add/remove `debug_min` in the global section
+   and the drivers get only reloaded and not restarted. Reload signals
    should be reasonably supported with `upsdrvctl`. Relevant CLI options
    for `-c CMD` handing were added to drivers and `upsdrvctl` [#1903]
 
