@@ -84,6 +84,7 @@ static void	(*command)(const ups_t *) = NULL;
 /* signal handling */
 int	exit_flag = 0;
 static int	reload_flag = 0;
+static time_t	last_dangerous_reload = 0;
 #ifndef WIN32
 static int	signal_flag = 0;
 #else
@@ -1247,9 +1248,42 @@ int main(int argc, char **argv)
 			while (tmp) {
 				next = tmp->next;
 				if (tmp->pid != -1) {
-					if (waitpid(tmp->pid, NULL, WNOHANG) == tmp->pid) {
-						exit_flag = -1;
-						tmp->pid = -1;
+					int	status;
+					if (waitpid(tmp->pid, &status, WNOHANG) == tmp->pid) {
+						if (WIFEXITED(status)) {
+							int	es = WEXITSTATUS(status);
+							time_t	now;
+							double	elapsed;
+
+							time(&now);
+							elapsed = difftime(now, last_dangerous_reload);
+							if (elapsed < 60
+							 || (es - 128) == SIGCMD_RELOAD_OR_EXIT
+#ifdef SIGCMD_RELOAD_OR_RESTART
+							 || (es - 128) == SIGCMD_RELOAD_OR_RESTART
+#endif
+							) {
+								/* Arbitrary but generous time to handle
+								 * a reload including driver loop lag */
+								upsdebugx(1, "Driver [%s] for [%s] exited "
+									"soon after reload-or-exit or "
+									"similar signal, restarting it",
+									tmp->driver, tmp->upsname);
+								tmp->pid = -1;
+								start_driver(tmp);
+							} else {
+								/* Quit without excuses, recycle myself */
+								upsdebugx(1, "Driver [%s] for [%s] exited "
+									"inexplicably with code %d, aborting",
+									tmp->driver, tmp->upsname, es);
+								if (last_dangerous_reload)
+									upsdebugx(1, "Last 'dangerous' signal "
+										"was processed %f sec ago",
+										elapsed);
+								exit_flag = -1;
+								tmp->pid = -1;
+							}
+						}
 					}
 				}
 				tmp = next;
@@ -1267,6 +1301,12 @@ int main(int argc, char **argv)
 
 			if (signal_flag) {
 				upsdebugx(1, "upsdrvctl: handling signal: starting");
+				if (signal_flag == SIGCMD_RELOAD_OR_EXIT
+#ifdef SIGCMD_RELOAD_OR_RESTART
+				 || signal_flag == SIGCMD_RELOAD_OR_RESTART
+#endif
+				) time(&last_dangerous_reload);
+
 				tmp = upstable;
 				while (tmp) {
 					next = tmp->next;
