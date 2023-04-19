@@ -1428,6 +1428,13 @@ int main(int argc, char **argv)
 #ifndef WIN32
 /* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
 			case 'c':
+				if (cmd != 0) {
+					help_msg();
+					fatalx(EXIT_FAILURE,
+						"Error: only one command per run can be "
+						"sent with option -%c. Try -h for help.", i);
+				}
+
 				if (!strncmp(optarg, "reload", strlen(optarg))) {
 					cmd = SIGCMD_RELOAD;
 				} else
