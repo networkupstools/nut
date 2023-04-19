@@ -201,6 +201,24 @@ static void help_msg(void)
 	printf("  -q             - raise log level threshold\n");
 	printf("  -h             - display this help\n");
 	printf("  -k             - force shutdown\n");
+# ifndef WIN32
+/* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
+	printf("  -c <command>   - send <command> via signal to background process\n");
+	printf("                   Supported commands:\n");
+	printf("                   - reload: re-read configuration files, ignoring changed\n");
+	printf("                     values which require a driver restart (can not be changed\n");
+	printf("                     on the fly)\n");
+#  ifdef SIGCMD_RELOAD_OR_RESTART
+	printf("                   - reload-or-restart: re-read configuration files (close the\n");
+	printf("                     old driver instance device connection if needed, and have\n");
+	printf("                     it effectively restart)\n");
+#  endif
+	printf("                   - reload-or-exit: re-read configuration files (exit the old\n");
+	printf("                     driver instance if needed, so an external caller like the\n");
+	printf("                     systemd or SMF frameworks would start another copy)\n");
+	/* NOTE for FIXME above: PID-signalling is non-WIN32-only for us */
+	printf("  -P <pid>       - send the signal above to specified PID (bypassing PID file)\n");
+# endif	/* WIN32 */
 	printf("  -i <int>       - poll interval\n");
 	printf("  -r <dir>       - chroot to <dir>\n");
 	printf("  -u <user>      - switch to <user> (if started as root)\n");
@@ -1288,6 +1306,14 @@ int main(int argc, char **argv)
 	int	i, do_forceshutdown = 0;
 	int	update_count = 0;
 
+#ifndef WIN32
+	int	cmd = 0;
+	pid_t	oldpid = -1;
+#else
+/* FIXME: handle WIN32 builds too */
+/*	const char * cmd = NULL; */
+#endif
+
 	/* init verbosity from default in common.c (0 probably) */
 	nut_debug_level_args = nut_debug_level;
 
@@ -1332,7 +1358,11 @@ int main(int argc, char **argv)
 	/* build the driver's extra (-x) variable table */
 	upsdrv_makevartable();
 
-	while ((i = getopt(argc, argv, "+a:s:kFBDd:hx:Lqr:u:g:Vi:")) != -1) {
+	while ((i = getopt(argc, argv, "+a:s:kFBDd:hx:Lqr:u:g:Vi:"
+#ifndef WIN32
+		"c:P:"
+#endif
+	)) != -1) {
 		switch (i) {
 			case 'a':
 				if (upsname)
@@ -1383,6 +1413,31 @@ int main(int argc, char **argv)
 				do_lock_port = 0;
 				do_forceshutdown = 1;
 				break;
+#ifndef WIN32
+/* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
+			case 'c':
+				if (!strncmp(optarg, "reload", strlen(optarg)))
+					cmd = SIGCMD_RELOAD;
+# ifdef SIGCMD_RELOAD_OR_RESTART
+				if (!strncmp(optarg, "reload-or-restart", strlen(optarg)))
+					cmd = SIGCMD_RELOAD_OR_RESTART;
+# endif
+				if (!strncmp(optarg, "reload-or-exit", strlen(optarg)))
+					cmd = SIGCMD_RELOAD_OR_EXIT;
+
+				/* bad command given */
+				if (cmd == 0) {
+					help_msg();
+					fatalx(EXIT_FAILURE,
+						"Error: unknown argument to option -%c. Try -h for help.", i);
+				}
+				break;
+			/* NOTE for FIXME above: PID-signalling is non-WIN32-only for us */
+			case 'P':
+				if ((oldpid = parsepid(optarg)) < 0)
+					help_msg();
+				break;
+#endif	/* WIN32 */
 			case 'L':
 				listxarg();
 				exit(EXIT_SUCCESS);
@@ -1507,11 +1562,99 @@ int main(int argc, char **argv)
 
 	/* Setup PID file to receive signals to communicate with this driver
 	 * instance once backgrounded, and to stop a competing older instance.
+	 * Or to send it a signal deliberately.
 	 */
-	if ((background_flag != 0) && (!do_forceshutdown)) {
+	if (cmd || ((background_flag != 0) && (!do_forceshutdown))) {
 		char	pidfnbuf[SMALLBUF];
 
 		snprintf(pidfnbuf, sizeof(pidfnbuf), "%s/%s-%s.pid", altpidpath(), progname, upsname);
+
+		if (cmd) {
+			int cmdret = -1;
+			/* Send a signal to older copy of the driver, if any */
+			if (oldpid < 0) {
+				cmdret = sendsignalfn(pidfnbuf, cmd);
+			} else {
+				cmdret = sendsignalpid(oldpid, cmd);
+			}
+
+			switch (cmdret) {
+			case 0:
+				upsdebugx(1, "Signaled old daemon OK");
+				break;
+
+			case -3:
+			case -2:
+				/* if starting new daemon, no competition running -
+				 *    maybe OK (or failed to detect it => problem)
+				 * if signaling old daemon - certainly have a problem
+				 */
+				upslogx(LOG_WARNING, "Could not %s PID file '%s' "
+					"to see if previous driver instance is "
+					"already running!",
+					(cmdret == -3 ? "find" : "parse"),
+					pidfnbuf);
+				break;
+
+			case -1:
+			case 1: /* WIN32 */
+			default:
+				/* if cmd was nontrivial - speak up below, else be quiet */
+				upsdebugx(1, "Just failed to send signal, no daemon was running");
+				break;
+			}
+
+		/* We were signalling a daemon, successfully or not - exit now...
+		 * Modulo the possibility of a "reload-or-something" where we
+		 * effectively terminate the old driver and start a new one due
+		 * to configuration changes that were not reloadable. Such mode
+		 * is not implemented currently.
+		 */
+		if (cmdret != 0) {
+			/* sendsignal*() above might have logged more details
+			 * for troubleshooting, e.g. about lack of PID file
+			 */
+			upslogx(LOG_NOTICE, "Failed to signal the currently running daemon (if any)");
+# ifdef HAVE_SYSTEMD
+			switch (cmd) {
+				case SIGCMD_RELOAD:
+					upslogx(LOG_NOTICE, "Try something like "
+						"'systemctl reload nut-driver@%s.service'%s",
+						upsname,
+						(oldpid < 0 ? " or add '-P $PID' argument" : ""));
+					break;
+
+				case SIGCMD_RELOAD_OR_EXIT:
+#  ifdef SIGCMD_RELOAD_OR_RESTART
+				case SIGCMD_RELOAD_OR_RESTART:
+#  endif
+					upslogx(LOG_NOTICE, "Try something like "
+						"'systemctl reload-or-restart "
+						"nut-driver@%s.service'%s",
+						upsname,
+						(oldpid < 0 ? " or add '-P $PID' argument" : ""));
+					break;
+
+				default:
+					upslogx(LOG_NOTICE, "Try something like "
+						"'systemctl <command> nut-driver@%s.service'%s",
+						upsname,
+						(oldpid < 0 ? " or add '-P $PID' argument" : ""));
+					break;
+				}
+				/* ... or edit nut-server.service locally to start `upsd -FF`
+				 * and so save the PID file for ability to manage the daemon
+				 * beside the service framework, possibly confusing things...
+				 */
+# else	/* not HAVE_SYSTEMD */
+				if (oldpid < 0) {
+					upslogx(LOG_NOTICE, "Try to add '-P $PID' argument");
+				}
+# endif	/* HAVE_SYSTEMD */
+			}
+
+			exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
+		}
 
 		/* Try to prevent that driver is started multiple times. If a PID file */
 		/* already exists, send a TERM signal to the process and try if it goes */
@@ -1563,10 +1706,16 @@ int main(int argc, char **argv)
 			writepid(pidfn);	/* before backgrounding */
 		}
 	}
-#else
+#else	/* WIN32 */
 	char	name[SMALLBUF];
 
 	snprintf(name,sizeof(name), "%s-%s",progname,upsname);
+
+	if (cmd) {
+/* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
+/* Should not really get here since cmd would remain 0 until WIN32 support is implemented */
+		fatalx(EXIT_FAILURE, "Signal support not implemented for this platform");
+	}
 
 	mutex = CreateMutex(NULL,TRUE,name);
 	if(mutex == NULL ) {
@@ -1598,7 +1747,7 @@ int main(int argc, char **argv)
 			fatalx(EXIT_FAILURE, "Can not terminate the previous driver.\n");
 		}
 	}
-#endif
+#endif	/* WIN32 */
 
 	/* clear out callback handler data */
 	memset(&upsh, '\0', sizeof(upsh));
