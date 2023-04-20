@@ -571,11 +571,19 @@ int main_instcmd(const char *cmdname, const char *extra) {
 		cmdname, extra, NUT_STRARG(upsname));
 
 	if (!strcmp(cmdname, "driver.killpower")) {
-		upslogx(LOG_WARNING, "Requesting UPS [%s] to power off, "
-			"as/if handled by its driver by default (may exit), "
-			"due to socket protocol request", NUT_STRARG(upsname));
-		upsdrv_shutdown();
-		return STAT_INSTCMD_HANDLED;
+		if (!strcmp("1", dstate_getinfo("driver.flag.allow_killpower"))) {
+			upslogx(LOG_WARNING, "Requesting UPS [%s] to power off, "
+				"as/if handled by its driver by default (may exit), "
+				"due to socket protocol request", NUT_STRARG(upsname));
+			upsdrv_shutdown();
+			return STAT_INSTCMD_HANDLED;
+		} else {
+			upslogx(LOG_WARNING, "Got socket protocol request for UPS [%s] "
+				"to power off, but driver.flag.allow_killpower does not"
+				"permit this - request was currently ignored!",
+				NUT_STRARG(upsname));
+			return STAT_INSTCMD_INVALID;
+		}
 	}
 
 	/* By default, the driver-specific values are
@@ -607,6 +615,26 @@ int main_setvar(const char *varname, const char *val) {
 		} else {
 			goto invalid;
 		}
+	}
+
+	if (!strcmp(varname, "driver.flag.allow_killpower")) {
+		int num = 0;
+		if (str_to_int(val, &num, 10)) {
+			if (num <= 0) {
+				num = 0;
+			} else	num = 1;
+		} else {
+			/* support certain strings */
+			if (!strncmp(val, "enable", 6)	/* "enabled" matches too */
+			 || !strcmp(val, "true")
+			 || !strcmp(val, "yes")
+			 || !strcmp(val, "on")
+			) num = 1;
+		}
+
+		upsdebugx(1, "%s: Setting %s=%d", __func__, varname, num);
+		dstate_setinfo("driver.flag.allow_killpower", "%d", num);
+		return STAT_SET_HANDLED;
 	}
 
 	/* By default, the driver-specific values are
@@ -656,6 +684,16 @@ static int main_arg(char *var, char *val)
 			upsdebugx(6, "%s: SKIP: flag var='%s' currently can not be reloaded", __func__, var);
 		} else {
 			dstate_setinfo("driver.flag.ignorelb", "enabled");
+		}
+		return 1;	/* handled */
+	}
+
+	if (!strcmp(var, "allow_killpower")) {
+		if (reload_flag) {
+			upsdebugx(6, "%s: SKIP: flag var='%s' currently can not be reloaded "
+				"(but may be changed by protocol SETVAR)", __func__, var);
+		} else {
+			dstate_setinfo("driver.flag.allow_killpower", "1");
 		}
 		return 1;	/* handled */
 	}
@@ -1800,6 +1838,8 @@ int main(int argc, char **argv)
 		writepid(pidfn);	/* PID changes when backgrounding */
 	}
 
+	dstate_setinfo("driver.flag.allow_killpower", "0");
+	dstate_setflags("driver.flag.allow_killpower", ST_FLAG_RW | ST_FLAG_NUMBER);
 	dstate_addcmd("driver.killpower");
 
 	dstate_setinfo("driver.state", "quiet");

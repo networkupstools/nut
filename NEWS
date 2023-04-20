@@ -287,7 +287,9 @@ https://github.com/networkupstools/nut/milestone/8
 :; upsrw -s driver.debug=-1 remoteUPS@1.2.3.4
 ------
 +
-and a `driver.killpower` instant command [#1917]
+and a `driver.killpower` instant command (for safety, must be unlocked by
+   `driver.flag.allow_killpower` protocol setting or `allow_killpower`
+   configuration flag) [#1917]
 
  - Implemented basic support for `ups.conf` reloading in NUT drivers,
    currently limited to `SIGHUP` handling and with a goal of changing
