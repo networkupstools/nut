@@ -751,6 +751,10 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 
 			/* The command was handled, status is a separate consideration */
 			return 1;
+		} else if (ret == STAT_INSTCMD_INVALID) {
+			/* The command was acknowledged by shared handler, but not
+			 * valid in current circumstances - do not pass to driver */
+			return 1;
 		} /* else try other handler(s) */
 
 		/* try the driver-provided handler if present */
@@ -799,6 +803,10 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 				send_tracking(conn, setid, ret);
 
 			/* The command was handled, status is a separate consideration */
+			return 1;
+		} else if (ret == STAT_SET_INVALID) {
+			/* The command was acknowledged by shared handler, but not
+			 * valid in current circumstances - do not pass to driver */
 			return 1;
 		} /* else try other handler(s) */
 
