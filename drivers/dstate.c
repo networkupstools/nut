@@ -270,6 +270,8 @@ static void send_to_all(const char *fmt, ...)
 
 	for (conn = connhead; conn; conn = cnext) {
 		cnext = conn->next;
+		if (conn->nobroadcast)
+			continue;
 
 #ifndef WIN32
 		ret = write(conn->fd, buf, buflen);
@@ -566,6 +568,7 @@ static void sock_connect(TYPE_FD sock)
 		NULL, &(conn->read_overlapped));
 #endif
 
+	conn->nobroadcast = 0;
 	pconf_init(&conn->ctx, NULL);
 
 	if (connhead) {
@@ -712,6 +715,44 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 
 	if (!strcasecmp(arg[0], "PING")) {
 		send_to_one(conn, "PONG\n");
+		return 1;
+	}
+
+	if (!strcasecmp(arg[0], "NOBROADCAST")) {
+		char buf[SMALLBUF];
+		conn->nobroadcast = 1;
+		snprintf(buf, sizeof(buf),
+#ifndef WIN32
+			"socket %d"
+#else
+			"handle %p"
+#endif
+			, conn->fd);
+		upsdebugx(1, "%s: %s requested NOBROADCAST mode",
+			__func__, buf);
+		return 1;
+	}
+
+	/* BROADCAST <0|1> */
+	if (!strcasecmp(arg[0], "BROADCAST")) {
+		int i;
+		char buf[SMALLBUF];
+		conn->nobroadcast = 0;
+		if (numarg > 1 && str_to_int(arg[1], &i, 10)) {
+			if (i < 1)
+				conn->nobroadcast = 1;
+		}
+		snprintf(buf, sizeof(buf),
+#ifndef WIN32
+			"socket %d"
+#else
+			"handle %p"
+#endif
+			, conn->fd);
+		upsdebugx(1,
+			"%s: %s requested %sBROADCAST mode",
+			__func__, buf,
+			conn->nobroadcast ? "NO" : "");
 		return 1;
 	}
 

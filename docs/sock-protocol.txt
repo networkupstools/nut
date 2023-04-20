@@ -14,6 +14,11 @@ In terms of communications, each driver is a server on the Unix socket
 a client which knows where to find such sockets, how they are named,
 and connects to all of them to send commands and receive data updates.
 
+During development, it is possible to use tools like `socat` to connect
+to the socket (you may want to enable `NOBROADCAST` mode soon), e.g.
+
+	socat - UNIX-CONNECT:/var/state/ups/dummy-ups-UPS1
+
 Formatting
 ----------
 
@@ -236,6 +241,22 @@ result, the same parsing happens either way.
 The server can tell when it has a full copy of the data by waiting for
 DUMPDONE.  That special response from the driver is sent once the entire
 set has been transmitted.
+
+NOBROADCAST
+~~~~~~~~~~~
+
+This connection does not want to receive broadcast messages (implemented
+by `send_to_all()` method in `dstate.c`). Default is to receive everything.
+
+BROADCAST (NUM)
+~~~~~~~~~~~~~~~
+
+This connection specified whether it wants to receive broadcast messages
+(implemented by `send_to_all()` method in `dstate.c`), and by default
+enables that -- unless disabled by providing an optional zero or negative
+numeric argument. Note that initial default is to receive everything, so
+this command may be useful for connections that disabled broadcasts at
+some point.
 
 Design notes
 ------------

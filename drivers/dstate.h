@@ -53,6 +53,7 @@ typedef struct conn_s {
 	PCONF_CTX_t	ctx;
 	struct conn_s	*prev;
 	struct conn_s	*next;
+	int	nobroadcast;	/* connections can request to ignore send_to_all() updates */
 } conn_t;
 
 	extern	struct	ups_handler	upsh;

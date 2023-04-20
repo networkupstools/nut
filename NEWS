@@ -272,6 +272,11 @@ https://github.com/networkupstools/nut/milestone/8
    `nut-server.service` as `upsd.service`, and `nut-monitor.service` as
    `upsmon.service` (so simple `systemctl reload upsd` can work) [#1777]
 
+ - Extended driver-server socket protocol with `BROADCAST (num)` keyword,
+   and a `NOBROADCAST` as a shortcut for `BROADCAST 0`. This allows clients
+   to toggle whether they want to receive `send_to_all()` updates from a
+   driver, or only answers to requests they send [#1914]
+
  - Numerous daemons (`upsd`, `upsmon`, drivers, `upsdrvctl`, `upssched`)
    which accepted `-D` option for debug setting previously, now can also
    honour a `NUT_DEBUG_LEVEL=NUM` environment variable if no `-D` arguments
