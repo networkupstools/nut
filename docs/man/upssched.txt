@@ -108,6 +108,9 @@ ENVIRONMENT VARIABLES
 were provided on command line, but does not request that the daemon
 runs in foreground mode.
 
+*UPSNAME* and *NOTIFYTYPE* are required, as detailed above. They are
+set by `upsmon` when it calls `upssched` as its choice of `NOTIFYCMD`.
+
 FILES
 -----
 
