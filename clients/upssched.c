@@ -1355,7 +1355,7 @@ static void help(const char *arg_progname)
 	printf("Practical behavior is managed by UPSNAME and NOTIFYTYPE envvars\n");
 
 	printf("\nUsage: %s [OPTIONS]\n\n", arg_progname);
-	printf("  -D		raise debugging level (and stay foreground by default)\n");
+	printf("  -D		raise debugging level\n");
 	printf("  -V		display the version of this software\n");
 	printf("  -h		display this help\n");
 
