@@ -9,6 +9,11 @@ out changes to their local storage immediately, without any sort of
 prompting from the server.  As a result, the server must always check on
 any driver sockets for activity.
 
+In terms of communications, each driver is a server on the Unix socket
+(or Windows named pipe) which it creates, and the data server `upsd` is
+a client which knows where to find such sockets, how they are named,
+and connects to all of them to send commands and receive data updates.
+
 Formatting
 ----------
 
@@ -22,6 +27,9 @@ together on its way to the other end.
 
 Commands used by the drivers
 ----------------------------
+
+These commands (or semantically responses to server commands in some cases)
+can be sent by drivers to the data server over the socket protocol.
 
 SETINFO
 ~~~~~~~
@@ -161,6 +169,10 @@ strings, as per docs/net-protocol.txt GET TRACKING.
 Commands sent by the server
 ---------------------------
 
+The data server `upsd` (or technically any client that connects to a Unix
+socket or Windows named pipe provided by each NUT driver) can send the
+following commands to the driver:
+
 PING
 ~~~~
 
@@ -174,6 +186,12 @@ be the only communications they have with the server on a normal basis.
 If a driver does not respond with the PONG within a few seconds at the
 most, it should be treated as dead/unavailable.  Data stored in the
 server must not be passed on to the clients when this happens.
+
+NOTE: For the `upsd` data server, the MAXAGE setting in upsd.conf controls
+how long since the last message from the driver it is considered stale.
+At 1/3 of this time the server sends a `PING` command to the driver, so
+there is some time for a `PONG` to arrive and reset the timer (any other
+message would serve that goal as well).
 
 INSTCMD
 ~~~~~~~
@@ -262,4 +280,4 @@ Re-establishing communications
 If the server loses its connection to the driver and later reconnects,
 it must flush any local storage and start again with DUMPALL.  The
 driver may have changed the internal state considerably during that
-time, and anything other approach could leave old elements behind.
+time, and any other approach could leave old elements behind.
