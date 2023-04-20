@@ -33,12 +33,12 @@ void set_exit_flag(int sig);
 /* handle instant commands common for all drivers
  * (returns STAT_INSTCMD_* state values per enum in upshandler.h)
  */
-int main_instcmd(const char *cmdname, const char *extra);
+int main_instcmd(const char *cmdname, const char *extra, conn_t *conn);
 
 /* handle setting variables common for all drivers
  * (returns STAT_SET_* state values per enum in upshandler.h)
  */
-int main_setvar(const char *varname, const char *val);
+int main_setvar(const char *varname, const char *val, conn_t *conn);
 
 /* main calls this driver function - it needs to call addvar */
 void upsdrv_makevartable(void);

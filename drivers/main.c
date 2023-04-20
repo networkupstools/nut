@@ -566,9 +566,21 @@ void addvar(int vartype, const char *name, const char *desc)
 }
 
 /* handle instant commands common for all drivers */
-int main_instcmd(const char *cmdname, const char *extra) {
-	upsdebugx(2, "entering main_instcmd(%s, %s) for [%s]",
-		cmdname, extra, NUT_STRARG(upsname));
+int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
+	char buf[SMALLBUF];
+	if (conn)
+		snprintf(buf, sizeof(buf),
+#ifndef WIN32
+			"socket %d"
+#else
+			"handle %p"
+#endif
+			, conn->fd);
+	else
+		snprintf(buf, sizeof(buf), "(null)");
+
+	upsdebugx(2, "entering main_instcmd(%s, %s) for [%s] on %s",
+		cmdname, extra, NUT_STRARG(upsname), buf);
 
 	if (!strcmp(cmdname, "driver.killpower")) {
 		if (!strcmp("1", dstate_getinfo("driver.flag.allow_killpower"))) {
@@ -595,9 +607,21 @@ int main_instcmd(const char *cmdname, const char *extra) {
 }
 
 /* handle setting variables common for all drivers */
-int main_setvar(const char *varname, const char *val) {
-	upsdebugx(2, "entering main_setvar(%s, %s) for [%s]",
-		varname, val, NUT_STRARG(upsname));
+int main_setvar(const char *varname, const char *val, conn_t *conn) {
+	char buf[SMALLBUF];
+	if (conn)
+		snprintf(buf, sizeof(buf),
+#ifndef WIN32
+			"socket %d"
+#else
+			"handle %p"
+#endif
+			, conn->fd);
+	else
+		snprintf(buf, sizeof(buf), "(null)");
+
+	upsdebugx(2, "entering main_setvar(%s, %s) for [%s] on %s",
+		varname, val, NUT_STRARG(upsname), buf);
 
 	if (!strcmp(varname, "driver.debug")) {
 		int num;

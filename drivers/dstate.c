@@ -784,7 +784,7 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 			upsdebugx(3, "%s: TRACKING = %s", __func__, cmdid);
 
 		/* try the handler shared by all drivers first */
-		ret = main_instcmd(arg[1], arg[2]);
+		ret = main_instcmd(arg[1], arg[2], conn);
 		if (ret == STAT_INSTCMD_HANDLED) {
 			/* send back execution result */
 			if (cmdid)
@@ -837,7 +837,7 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 		}
 
 		/* try the handler shared by all drivers first */
-		ret = main_setvar(arg[1], arg[2]);
+		ret = main_setvar(arg[1], arg[2], conn);
 		if (ret == STAT_SET_HANDLED) {
 			/* send back execution result */
 			if (setid)
