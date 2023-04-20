@@ -562,21 +562,27 @@ void addvar(int vartype, const char *name, const char *desc)
 
 /* handle instant commands common for all drivers */
 int main_instcmd(const char *cmdname, const char *extra) {
-	NUT_UNUSED_VARIABLE(cmdname);
-	NUT_UNUSED_VARIABLE(extra);
+	upsdebugx(2, "entering main_instcmd(%s, %s) for [%s]",
+		cmdname, extra, NUT_STRARG(upsname));
 
 	/* By default, the driver-specific values are
 	 * unknown to shared standard handler */
+	upsdebugx(2, "shared %s() does not handle command %s, "
+		"proceeding to driver-specific handler",
+		__func__, cmdname);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
 /* handle setting variables common for all drivers */
 int main_setvar(const char *varname, const char *val) {
-	NUT_UNUSED_VARIABLE(varname);
-	NUT_UNUSED_VARIABLE(val);
+	upsdebugx(2, "entering main_setvar(%s, %s) for [%s]",
+		varname, val, NUT_STRARG(upsname));
 
 	/* By default, the driver-specific values are
 	 * unknown to shared standard handler */
+	upsdebugx(2, "shared %s() does not handle variable %s, "
+		"proceeding to driver-specific handler",
+		__func__, varname);
 	return STAT_SET_UNKNOWN;
 }
 
