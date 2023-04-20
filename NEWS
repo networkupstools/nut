@@ -272,6 +272,12 @@ https://github.com/networkupstools/nut/milestone/8
    `nut-server.service` as `upsd.service`, and `nut-monitor.service` as
    `upsmon.service` (so simple `systemctl reload upsd` can work) [#1777]
 
+ - Numerous daemons (`upsd`, `upsmon`, drivers, `upsdrvctl`, `upssched`)
+   which accepted `-D` option for debug setting previously, now can also
+   honour a `NUT_DEBUG_LEVEL=NUM` environment variable if no `-D` arguments
+   were provided. Unlike those arguments, the environment variable does
+   not enforce that daemons run in foreground mode by default [#1915]
+
  - Implemented generic support for INSTCMD and SETVAR use-cases shared by
    all drivers, and in particular to see and change active debug verbosity
    using the driver-server and server-client protocol (at higher priority

@@ -150,6 +150,10 @@ linkman:ups.conf[5].
 ENVIRONMENT VARIABLES
 ---------------------
 
+*NUT_DEBUG_LEVEL* sets default debug verbosity if no *-D* arguments
+were provided on command line, but does not request that the daemon
+runs in foreground mode.
+
 *NUT_CONFPATH* is the path name of the directory that contains
 `upsd.conf` and other configuration files.  If this variable is not set,
 *upsd* uses a built-in default, which is often `/usr/local/ups/etc`.

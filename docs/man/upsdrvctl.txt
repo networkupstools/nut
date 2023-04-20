@@ -111,6 +111,10 @@ It can be overridden by `NUT_IGNORE_NOWAIT` environment variable
 ENVIRONMENT VARIABLES
 ---------------------
 
+*NUT_DEBUG_LEVEL* sets default debug verbosity if no *-D* arguments
+were provided on command line, but does not request that the daemon
+runs in foreground mode.
+
 *NUT_CONFPATH* is the path name of the directory that contains
 `upsd.conf` and other configuration files.  If this variable is not set,
 *upsdrvctl* the driver use a built-in default, which is often

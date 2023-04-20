@@ -481,6 +481,13 @@ those values, you *must* stop upsmon and start it back up.  upsmon
 will warn you in the syslog if you make changes to either of those
 values during a reload.
 
+ENVIRONMENT VARIABLES
+---------------------
+
+*NUT_DEBUG_LEVEL* sets default debug verbosity if no *-D* arguments
+were provided on command line, but does not request that the daemon
+runs in foreground mode.
+
 FILES
 -----
 

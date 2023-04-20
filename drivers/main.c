@@ -1528,6 +1528,19 @@ int main(int argc, char **argv)
 		}
 	} /* else: default remains `background_flag==-1` where nonzero is true */
 
+	{ /* scoping */
+		char *s = getenv("NUT_DEBUG_LEVEL");
+		int l;
+		if (s && str_to_int(s, &l, 10)) {
+			if (l > 0 && nut_debug_level_args < 1) {
+				upslogx(LOG_INFO, "Defaulting debug verbosity to NUT_DEBUG_LEVEL=%d "
+					"since none was requested by command-line options", l);
+				nut_debug_level = l;
+				nut_debug_level_args = l;
+			}	/* else follow -D settings */
+		}	/* else nothing to bother about */
+	}
+
 	/* Since debug mode dumps from drivers are often posted to mailing list
 	 * or issue tracker, as well as viewed locally, it can help to know the
 	 * build options involved when troubleshooting (especially when needed
