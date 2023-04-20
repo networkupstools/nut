@@ -1415,6 +1415,9 @@ int main(int argc, char **argv)
 	}
 
 	/* see if this matches anything in the config file */
+	/* This is actually the processing loop:
+	 * checkconf -> conf_arg -> parse_at -> sendcmd -> daemon if needed
+	 */
 	checkconf();
 
 	exit(EXIT_SUCCESS);
