@@ -115,6 +115,7 @@ static int	dump_data = 0; /* Store the update_count requested */
 
 /* pre-declare some private methods used */
 static void assign_debug_level(void);
+static void set_reload_flag(int sig);
 
 /* print the driver banner */
 void upsdrv_banner (void)
@@ -596,6 +597,20 @@ int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 				NUT_STRARG(upsname));
 			return STAT_INSTCMD_INVALID;
 		}
+	}
+
+	if (!strcmp(cmdname, "driver.reload")) {
+		set_reload_flag(1);
+		/* TODO: sync mode to track that reload finished, and how?
+		 * Especially to know if there were values we can not change
+		 * on the fly, so caller may want to restart the driver itself.
+		 */
+		return STAT_INSTCMD_HANDLED;
+	}
+
+	if (!strcmp(cmdname, "driver.reload-or-exit")) {
+		set_reload_flag(SIGUSR1);
+		return STAT_INSTCMD_HANDLED;
 	}
 
 	/* By default, the driver-specific values are
