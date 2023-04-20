@@ -97,19 +97,24 @@ static int background_flag = -1;
  * can define a debug_min value in the global or device
  * section, to set the minimal debug level (CLI provided
  * value less than that would not have effect, can only
- * have more).
+ * have more). Finally, it can also be set over socket
+ * protocol, taking precedence over other inputs.
  */
 #ifndef DRIVERS_MAIN_WITHOUT_MAIN
 static int nut_debug_level_args = -1;
 #endif
 static int nut_debug_level_global = -1;
 static int nut_debug_level_driver = -1;
+static int nut_debug_level_protocol = -1;
 
 #ifndef DRIVERS_MAIN_WITHOUT_MAIN
 /* everything else */
 static char	*pidfn = NULL;
 static int	dump_data = 0; /* Store the update_count requested */
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
+
+/* pre-declare some private methods used */
+static void assign_debug_level(void);
 
 /* print the driver banner */
 void upsdrv_banner (void)
@@ -578,12 +583,35 @@ int main_setvar(const char *varname, const char *val) {
 	upsdebugx(2, "entering main_setvar(%s, %s) for [%s]",
 		varname, val, NUT_STRARG(upsname));
 
+	if (!strcmp(varname, "driver.debug")) {
+		int num;
+		if (str_to_int(val, &num, 10)) {
+			if (num < 0) {
+				upsdebugx(nut_debug_level > 0 ? 1 : 0,
+					"NOTE: Will fall back to CLI/DriverConfig/GlobalConfig debug verbosity preference now");
+				num = -1;
+			}
+			if (nut_debug_level > 0 && num == 0)
+				upsdebugx(1, "NOTE: Will disable verbose debug now, due to socket protocol request");
+			nut_debug_level_protocol = num;
+			assign_debug_level();
+			return STAT_SET_HANDLED;
+		} else {
+			goto invalid;
+		}
+	}
+
 	/* By default, the driver-specific values are
 	 * unknown to shared standard handler */
 	upsdebugx(2, "shared %s() does not handle variable %s, "
 		"proceeding to driver-specific handler",
 		__func__, varname);
 	return STAT_SET_UNKNOWN;
+
+invalid:
+	upsdebugx(1, "Error: UPS [%s]: invalid %s value: %s",
+		NUT_STRARG(upsname), varname, val);
+	return STAT_SET_INVALID;
 }
 
 /* handle -x / ups.conf config details that are for this part of the code */
@@ -1005,6 +1033,15 @@ static void assign_debug_level(void) {
 	 */
 	int nut_debug_level_upsconf = -1;
 
+	if (nut_debug_level_protocol >= 0) {
+		upslogx(LOG_INFO,
+			"Applying debug level %d received during run-time "
+			"via socket protocol, ignoring other settings",
+			nut_debug_level_protocol);
+		nut_debug_level = nut_debug_level_protocol;
+		goto finish;
+	}
+
 	if (nut_debug_level_global >= 0 && nut_debug_level_driver >= 0) {
 		/* Use nearest-defined fit */
 		nut_debug_level_upsconf = nut_debug_level_driver;
@@ -1047,7 +1084,10 @@ static void assign_debug_level(void) {
 	if (nut_debug_level_upsconf > nut_debug_level)
 		nut_debug_level = nut_debug_level_upsconf;
 
+finish:
 	upsdebugx(1, "debug level is '%d'", nut_debug_level);
+	dstate_setinfo("driver.debug", "%d", nut_debug_level);
+	dstate_setflags("driver.debug", ST_FLAG_RW | ST_FLAG_NUMBER);
 }
 
 static void handle_reload_flag(void) {

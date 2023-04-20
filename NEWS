@@ -272,6 +272,21 @@ https://github.com/networkupstools/nut/milestone/8
    `nut-server.service` as `upsd.service`, and `nut-monitor.service` as
    `upsmon.service` (so simple `systemctl reload upsd` can work) [#1777]
 
+ - Implemented generic support for INSTCMD and SETVAR use-cases shared by
+   all drivers, and in particular to see and change active debug verbosity
+   using the driver-server and server-client protocol (at higher priority
+   than CLI or config file choices) per [#1285], e.g.
+------
+# Set verbosity level 6:
+:; upsrw -s driver.debug=6 UPS
+
+# Set verbosity level 0 to disable the noise (even if debug_min is set):
+:; upsrw -s driver.debug=0 UPS1@localhost
+
+# Un-set the protocol override, honour CLI or config-file settings again:
+:; upsrw -s driver.debug=-1 remoteUPS@1.2.3.4
+------
+
  - Implemented basic support for `ups.conf` reloading in NUT drivers,
    currently limited to `SIGHUP` handling and with a goal of changing
    `debug_min` setting for a running driver. As currently implemented,
