@@ -570,6 +570,14 @@ int main_instcmd(const char *cmdname, const char *extra) {
 	upsdebugx(2, "entering main_instcmd(%s, %s) for [%s]",
 		cmdname, extra, NUT_STRARG(upsname));
 
+	if (!strcmp(cmdname, "driver.killpower")) {
+		upslogx(LOG_WARNING, "Requesting UPS [%s] to power off, "
+			"as/if handled by its driver by default (may exit), "
+			"due to socket protocol request", NUT_STRARG(upsname));
+		upsdrv_shutdown();
+		return STAT_INSTCMD_HANDLED;
+	}
+
 	/* By default, the driver-specific values are
 	 * unknown to shared standard handler */
 	upsdebugx(2, "shared %s() does not handle command %s, "
@@ -1791,6 +1799,8 @@ int main(int argc, char **argv)
 		background();
 		writepid(pidfn);	/* PID changes when backgrounding */
 	}
+
+	dstate_addcmd("driver.killpower");
 
 	dstate_setinfo("driver.state", "quiet");
 	if (dump_data) {

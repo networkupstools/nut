@@ -286,6 +286,8 @@ https://github.com/networkupstools/nut/milestone/8
 # Un-set the protocol override, honour CLI or config-file settings again:
 :; upsrw -s driver.debug=-1 remoteUPS@1.2.3.4
 ------
++
+and a `driver.killpower` instant command [#1917]
 
  - Implemented basic support for `ups.conf` reloading in NUT drivers,
    currently limited to `SIGHUP` handling and with a goal of changing
