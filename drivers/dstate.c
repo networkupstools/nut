@@ -742,7 +742,18 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 		if (cmdid)
 			upsdebugx(3, "%s: TRACKING = %s", __func__, cmdid);
 
-		/* try the new handler first if present */
+		/* try the handler shared by all drivers first */
+		ret = main_instcmd(arg[1], arg[2]);
+		if (ret == STAT_INSTCMD_HANDLED) {
+			/* send back execution result */
+			if (cmdid)
+				send_tracking(conn, cmdid, ret);
+
+			/* The command was handled, status is a separate consideration */
+			return 1;
+		} /* else try other handler(s) */
+
+		/* try the driver-provided handler if present */
 		if (upsh.instcmd) {
 			ret = upsh.instcmd(cmdname, cmdparam);
 
@@ -753,6 +764,7 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 			/* The command was handled, status is a separate consideration */
 			return 1;
 		}
+
 		upslogx(LOG_NOTICE, "Got INSTCMD, but driver lacks a handler");
 		return 1;
 	}
@@ -779,7 +791,18 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 			upsdebugx(3, "%s: TRACKING = %s", __func__, setid);
 		}
 
-		/* try the new handler first if present */
+		/* try the handler shared by all drivers first */
+		ret = main_setvar(arg[1], arg[2]);
+		if (ret == STAT_SET_HANDLED) {
+			/* send back execution result */
+			if (setid)
+				send_tracking(conn, setid, ret);
+
+			/* The command was handled, status is a separate consideration */
+			return 1;
+		} /* else try other handler(s) */
+
+		/* try the driver-provided handler if present */
 		if (upsh.setvar) {
 			ret = upsh.setvar(arg[1], arg[2]);
 

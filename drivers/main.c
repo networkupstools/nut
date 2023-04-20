@@ -560,6 +560,26 @@ void addvar(int vartype, const char *name, const char *desc)
 	do_addvar(vartype, name, desc, 0);
 }
 
+/* handle instant commands common for all drivers */
+int main_instcmd(const char *cmdname, const char *extra) {
+	NUT_UNUSED_VARIABLE(cmdname);
+	NUT_UNUSED_VARIABLE(extra);
+
+	/* By default, the driver-specific values are
+	 * unknown to shared standard handler */
+	return STAT_INSTCMD_UNKNOWN;
+}
+
+/* handle setting variables common for all drivers */
+int main_setvar(const char *varname, const char *val) {
+	NUT_UNUSED_VARIABLE(varname);
+	NUT_UNUSED_VARIABLE(val);
+
+	/* By default, the driver-specific values are
+	 * unknown to shared standard handler */
+	return STAT_SET_UNKNOWN;
+}
+
 /* handle -x / ups.conf config details that are for this part of the code */
 static int main_arg(char *var, char *val)
 {

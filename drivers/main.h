@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "upsconf.h"
+#include "upshandler.h"
 #include "dstate.h"
 #include "extstate.h"
 #ifdef WIN32
@@ -28,6 +29,16 @@ void upsdrv_cleanup(void);	/* free any resources before shutdown */
 void set_exit_flag(int sig);
 
 /* --- details for the variable/value sharing --- */
+
+/* handle instant commands common for all drivers
+ * (returns STAT_INSTCMD_* state values per enum in upshandler.h)
+ */
+int main_instcmd(const char *cmdname, const char *extra);
+
+/* handle setting variables common for all drivers
+ * (returns STAT_SET_* state values per enum in upshandler.h)
+ */
+int main_setvar(const char *varname, const char *val);
 
 /* main calls this driver function - it needs to call addvar */
 void upsdrv_makevartable(void);
