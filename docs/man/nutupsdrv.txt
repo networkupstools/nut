@@ -185,12 +185,13 @@ were provided on command line, but does not request that the daemon
 runs in foreground mode.
 
 *NUT_CONFPATH* is the path name of the directory that contains
-`upsd.conf` and other configuration files.  If this variable is not set,
-*upsd* uses a built-in default, which is often `/usr/local/ups/etc`.
+`ups.conf` and other configuration files.  If this variable is not set,
+drivers use a built-in default, which is often `/usr/local/ups/etc`.
 
 *NUT_STATEPATH* is the path name of the directory in which
-*upsd* keeps state information.  If this variable is not set,
-*upsd* uses a built-in default, which is often `/var/state/ups`.
+*upsd* and drivers keep shared state information.  If this variable
+is not set, *upsd* and drivers use a built-in default, which is often
+`/var/state/ups`.
 The *STATEPATH* directive in linkman:upsd.conf[5] overrides this variable.
 
 *NUT_ALTPIDPATH* is the path name of the directory in which

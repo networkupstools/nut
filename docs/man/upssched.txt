@@ -111,6 +111,10 @@ runs in foreground mode.
 *UPSNAME* and *NOTIFYTYPE* are required, as detailed above. They are
 set by `upsmon` when it calls `upssched` as its choice of `NOTIFYCMD`.
 
+*NUT_CONFPATH* is the path name of the directory that contains
+`upssched.conf` and other configuration files.  If this variable is not set,
+*upssched* uses a built-in default, which is often `/usr/local/ups/etc`.
+
 FILES
 -----
 

@@ -116,9 +116,14 @@ were provided on command line, but does not request that the daemon
 runs in foreground mode.
 
 *NUT_CONFPATH* is the path name of the directory that contains
-`upsd.conf` and other configuration files.  If this variable is not set,
-*upsdrvctl* the driver use a built-in default, which is often
+`ups.conf` and other configuration files.  If this variable is not set,
+*upsdrvctl* (and the drivers) use a built-in default, which is often
 `/usr/local/ups/etc`.
+
+*NUT_ALTPIDPATH* is the path name of the directory in which
+*upsd* and drivers store .pid files.  If this variable is not set,
+*upsd* and drivers use either *NUT_STATEPATH* if set, or ALTPIDPATH if set,
+or otherwise the built-in default *STATEPATH*.
 
 DIAGNOSTICS
 -----------
