@@ -19,6 +19,12 @@ to the socket (you may want to enable `NOBROADCAST` mode soon), e.g.
 
 	socat - UNIX-CONNECT:/var/state/ups/dummy-ups-UPS1
 
+For more insight, NUT provides an optional tool of its own (not built
+by default), the `sockdebug`:
+
+	(cd server && make sockdebug) && \
+	./server/sockdebug /var/state/ups/dummy-ups-UPS1
+
 Formatting
 ----------
 
