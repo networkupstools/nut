@@ -721,13 +721,11 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 	if (!strcasecmp(arg[0], "NOBROADCAST")) {
 		char buf[SMALLBUF];
 		conn->nobroadcast = 1;
-		snprintf(buf, sizeof(buf),
 #ifndef WIN32
-			"socket %d"
+		snprintf(buf, sizeof(buf), "socket %d", conn->fd);
 #else
-			"handle %p"
+		snprintf(buf, sizeof(buf), "handle %p", conn->fd);
 #endif
-			, conn->fd);
 		upsdebugx(1, "%s: %s requested NOBROADCAST mode",
 			__func__, buf);
 		return 1;
@@ -742,13 +740,11 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 			if (i < 1)
 				conn->nobroadcast = 1;
 		}
-		snprintf(buf, sizeof(buf),
 #ifndef WIN32
-			"socket %d"
+		snprintf(buf, sizeof(buf), "socket %d", conn->fd);
 #else
-			"handle %p"
+		snprintf(buf, sizeof(buf), "handle %p", conn->fd);
 #endif
-			, conn->fd);
 		upsdebugx(1,
 			"%s: %s requested %sBROADCAST mode",
 			__func__, buf,
