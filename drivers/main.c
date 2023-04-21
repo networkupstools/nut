@@ -115,7 +115,10 @@ static int	dump_data = 0; /* Store the update_count requested */
 
 /* pre-declare some private methods used */
 static void assign_debug_level(void);
+#ifndef WIN32
+/* TODO: Equivalent for WIN32 - see SIGCMD_RELOAD in upd and upsmon */
 static void set_reload_flag(int sig);
+#endif
 
 /* print the driver banner */
 void upsdrv_banner (void)
@@ -599,6 +602,8 @@ int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 		}
 	}
 
+#ifndef WIN32
+/* TODO: Equivalent for WIN32 - see SIGCMD_RELOAD in upd and upsmon */
 	if (!strcmp(cmdname, "driver.reload")) {
 		set_reload_flag(1);
 		/* TODO: sync mode to track that reload finished, and how?
@@ -612,6 +617,7 @@ int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 		set_reload_flag(SIGUSR1);
 		return STAT_INSTCMD_HANDLED;
 	}
+#endif
 
 	/* By default, the driver-specific values are
 	 * unknown to shared standard handler */
