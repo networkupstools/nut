@@ -124,7 +124,9 @@ int main(int argc, char **argv)
 	const char	*prog = xbasename(argv[0]);
 	int	ret, sockfd;
 
-	if (argc != 2) {
+	if (argc != 2
+	|| (argc > 1 && (!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help")))
+	) {
 		fprintf(stderr, "usage: %s <socket name>\n", prog);
 		fprintf(stderr, "       %s /var/state/ups/apcsmart-ttyS1.newsock\n",
 			argv[0]);

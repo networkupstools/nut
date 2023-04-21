@@ -131,7 +131,9 @@ int main(int argc, char **argv)
 	HANDLE pipefd;	
 	HANDLE thread[2];
 
-	if (argc != 2) {
+	if (argc != 2
+	|| (argc > 1 && (!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help")))
+	) {
 		fprintf(stderr, "usage: %s <pipe name>\n", prog);
 		fprintf(stderr, "       %s apcsmart-com1\n",
 			argv[0]);
