@@ -34,6 +34,7 @@ static void pipe_arg(int numarg, char **arg)
 		printf("[%s] ", arg[i]);
 
 	printf("\n");
+	fflush(stdout);
 }
 
 static HANDLE pipe_connect(const char *pipefn)
@@ -143,6 +144,7 @@ int main(int argc, char **argv)
 	pipefd = pipe_connect(argv[1]);
 
 	printf("connected: fd %d\n", pipefd);
+	fflush(stdout);
 
 	thread[0] = CreateThread(
 					NULL,	/* security */
