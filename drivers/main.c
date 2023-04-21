@@ -1115,7 +1115,6 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 	}
 }
 
-#ifndef DRIVERS_MAIN_WITHOUT_MAIN
 static void assign_debug_level(void) {
 	/* CLI debug level can not be smaller than debug_min specified
 	 * in ups.conf, and value specified for a driver config section
@@ -1181,6 +1180,7 @@ finish:
 	dstate_setflags("driver.debug", ST_FLAG_RW | ST_FLAG_NUMBER);
 }
 
+#ifndef DRIVERS_MAIN_WITHOUT_MAIN
 static void handle_reload_flag(void) {
 	if (!reload_flag || exit_flag)
 		return;
