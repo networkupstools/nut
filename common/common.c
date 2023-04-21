@@ -1109,7 +1109,7 @@ void nut_report_config_flags(void)
 		now.tv_sec -= 1;
 	}
 
-	if (xbit_test(upslog_flags, UPSLOG_STDERR))
+	if (xbit_test(upslog_flags, UPSLOG_STDERR)) {
 		fprintf(stderr, "%4.0f.%06ld\t[D1] Network UPS Tools version %s%s%s%s%s%s%s %s%s\n",
 			difftime(now.tv_sec, upslog_start.tv_sec),
 			(long)(now.tv_usec - upslog_start.tv_usec),
@@ -1123,6 +1123,10 @@ void nut_report_config_flags(void)
 			(config_flags && *config_flags != '\0' ? "configured with flags: " : "configured all by default guesswork"),
 			(config_flags && *config_flags != '\0' ? config_flags : "")
 		);
+#ifdef WIN32
+		fflush(stderr);
+#endif
+	}
 
 	/* NOTE: May be ignored or truncated by receiver if that syslog server
 	 * (and/or OS sender) does not accept messages of such length */
@@ -1212,8 +1216,12 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 			(long)(now.tv_usec - upslog_start.tv_usec));
 	}
 
-	if (xbit_test(upslog_flags, UPSLOG_STDERR))
+	if (xbit_test(upslog_flags, UPSLOG_STDERR)) {
 		fprintf(stderr, "%s\n", buf);
+#ifdef WIN32
+		fflush(stderr);
+#endif
+	}
 	if (xbit_test(upslog_flags, UPSLOG_SYSLOG))
 		syslog(priority, "%s", buf);
 }
