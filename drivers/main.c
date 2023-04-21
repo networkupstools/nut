@@ -684,7 +684,7 @@ int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 #ifndef WIN32
 /* TODO: Equivalent for WIN32 - see SIGCMD_RELOAD in upd and upsmon */
 	if (!strcmp(cmdname, "driver.reload")) {
-		set_reload_flag(1);
+		set_reload_flag(SIGCMD_RELOAD);
 		/* TODO: sync mode to track that reload finished, and how?
 		 * Especially to know if there were values we can not change
 		 * on the fly, so caller may want to restart the driver itself.
@@ -693,14 +693,14 @@ int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 	}
 
 	if (!strcmp(cmdname, "driver.reload-or-exit")) {
-		set_reload_flag(SIGUSR1);
+		set_reload_flag(SIGCMD_RELOAD_OR_EXIT);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 # ifndef DRIVERS_MAIN_WITHOUT_MAIN
 	if (!strcmp(cmdname, "driver.reload-or-error")) {
 		/* sync-capable handling */
-		set_reload_flag(1);
+		set_reload_flag(SIGCMD_RELOAD);
 		/* Returns a result code from INSTCMD enum values */
 		return handle_reload_flag();
 	}
