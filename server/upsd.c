@@ -1640,10 +1640,12 @@ int main(int argc, char **argv)
 				exit(EXIT_SUCCESS);
 
 			case 'c':
-				if (!strncmp(optarg, "reload", strlen(optarg)))
+				if (!strncmp(optarg, "reload", strlen(optarg))) {
 					cmd = SIGCMD_RELOAD;
-				if (!strncmp(optarg, "stop", strlen(optarg)))
+				} else
+				if (!strncmp(optarg, "stop", strlen(optarg))) {
 					cmd = SIGCMD_STOP;
+				}
 
 				/* bad command given */
 				if (cmd == 0)

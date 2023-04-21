@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3121 utf-8
+personal_ws-1.1 en 3123 utf-8
 AAS
 ABI
 ACFAIL
@@ -1084,7 +1084,9 @@ SIGKILL
 SIGPIPE
 SIGPWR
 SIGTERM
+SIGURG
 SIGUSR
+SIGWINCH
 SKOFFn
 SKONn
 SKP

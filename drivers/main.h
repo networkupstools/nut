@@ -128,4 +128,28 @@ void vartab_free(void);
 void setup_signals(void);
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
 
+#ifndef WIN32
+# define SIGCMD_RELOAD                  SIGHUP
+# define SIGCMD_RELOAD_OR_EXIT          SIGUSR1
+/* // FIXME: Implement this self-recycling in drivers (keeping the PID):
+# define SIGCMD_RELOAD_OR_RESTART       SIGUSR2
+*/
+
+/* This is commonly defined on systems we know; file bugs/PRs for
+ * relevant systems where it is not present (SIGWINCH might be an
+ * option there, though terminal resizes might cause braindumps).
+ * Their packaging may want to add a patch for this bit (and docs).
+ */
+# if (defined SIGURG)
+#  define SIGCMD_DATA_DUMP              SIGURG
+# else
+#  if (defined SIGWINCH)
+#   define SIGCMD_DATA_DUMP             SIGWINCH
+#  else
+#   pragma warn "This OS lacks SIGURG and SIGWINCH, will not handle SIGCMD_DATA_DUMP"
+#  endif
+# endif
+/* FIXME: handle WIN32 builds too */
+#endif	/* WIN32 */
+
 #endif /* NUT_MAIN_H_SEEN */
