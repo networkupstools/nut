@@ -697,6 +697,13 @@ int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 		return STAT_INSTCMD_HANDLED;
 	}
 
+# ifdef SIGCMD_RELOAD_OR_RESTART
+	if (!strcmp(cmdname, "driver.reload-or-restart")) {
+		set_reload_flag(SIGCMD_RELOAD_OR_RESTART);
+		return STAT_INSTCMD_HANDLED;
+	}
+# endif
+
 # ifndef DRIVERS_MAIN_WITHOUT_MAIN
 	if (!strcmp(cmdname, "driver.reload-or-error")) {
 		/* sync-capable handling */
@@ -2207,6 +2214,9 @@ int main(int argc, char **argv)
 	dstate_addcmd("driver.reload-or-exit");
 # ifndef DRIVERS_MAIN_WITHOUT_MAIN
 	dstate_addcmd("driver.reload-or-error");
+# endif
+# ifdef SIGCMD_RELOAD_OR_RESTART
+	dstate_addcmd("driver.reload-or-restart");
 # endif
 #endif
 
