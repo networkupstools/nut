@@ -104,9 +104,7 @@ static int foreground = -1;
  * have more). Finally, it can also be set over socket
  * protocol, taking precedence over other inputs.
  */
-#ifndef DRIVERS_MAIN_WITHOUT_MAIN
 static int nut_debug_level_args = -1;
-#endif
 static int nut_debug_level_global = -1;
 static int nut_debug_level_driver = -1;
 static int nut_debug_level_protocol = -1;
