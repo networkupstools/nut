@@ -159,7 +159,10 @@ int main(int argc, char **argv)
 		if (FD_ISSET(fileno(stdin), &rfds)) {
 			char	buf[SMALLBUF];
 
-			fgets(buf, sizeof(buf), stdin);
+			if (!fgets(buf, sizeof(buf), stdin)) {
+				perror("fgets from stdin");
+				exit(EXIT_FAILURE);
+			}
 
 			ret = write(sockfd, buf, strlen(buf));
 
