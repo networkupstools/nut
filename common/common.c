@@ -1197,26 +1197,29 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 #endif
 	}
 
-	if (nut_debug_level > 0) {
+	/* Note: nowadays debug level can be changed during run-time,
+	 * so mark the starting point whenever we first try to log */
+	if (upslog_start.tv_sec == 0) {
 		struct timeval		now;
-
 		gettimeofday(&now, NULL);
-
-		if (upslog_start.tv_sec == 0) {
-			upslog_start = now;
-		}
-
-		if (upslog_start.tv_usec > now.tv_usec) {
-			now.tv_usec += 1000000;
-			now.tv_sec -= 1;
-		}
-
-		fprintf(stderr, "%4.0f.%06ld\t",
-			difftime(now.tv_sec, upslog_start.tv_sec),
-			(long)(now.tv_usec - upslog_start.tv_usec));
+		upslog_start = now;
 	}
 
 	if (xbit_test(upslog_flags, UPSLOG_STDERR)) {
+		if (nut_debug_level > 0) {
+			struct timeval		now;
+
+			gettimeofday(&now, NULL);
+
+			if (upslog_start.tv_usec > now.tv_usec) {
+				now.tv_usec += 1000000;
+				now.tv_sec -= 1;
+			}
+
+			fprintf(stderr, "%4.0f.%06ld\t",
+				difftime(now.tv_sec, upslog_start.tv_sec),
+				(long)(now.tv_usec - upslog_start.tv_usec));
+		}
 		fprintf(stderr, "%s\n", buf);
 #ifdef WIN32
 		fflush(stderr);
