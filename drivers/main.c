@@ -120,7 +120,14 @@ static void assign_debug_level(void);
 #ifndef WIN32
 /* TODO: Equivalent for WIN32 - see SIGCMD_RELOAD in upd and upsmon */
 static void set_reload_flag(int sig);
+# ifndef DRIVERS_MAIN_WITHOUT_MAIN
+/* Returns a result code from INSTCMD enum values */
+static int handle_reload_flag(void);
+# endif
 #endif
+
+/* Set in do_ups_confargs() for consumers like handle_reload_flag() */
+static int reload_requires_restart = -1;
 
 /* print the driver banner */
 void upsdrv_banner (void)
@@ -423,10 +430,20 @@ int testvar_reloadable(const char *var, const char *val, int vartype)
 							EXIT_SUCCESS
 #endif
 							, "NUT driver reload-or-exit: setting %s was changed and requires a driver restart", var);
+
 					verdict = (
 						(!reload_flag)	/* For initial config reads, legacy code trusted what it saw */
 						|| tmp->reloadable	/* set in addvar*() */
 					);
+
+					/* handle reload-or-error reports */
+					if (verdict == 0) {
+						if (reload_requires_restart < 1)
+							reload_requires_restart = 1;
+						else
+							reload_requires_restart++;
+					}
+
 					goto finish;
 				}
 			}
@@ -446,6 +463,17 @@ int testvar_reloadable(const char *var, const char *val, int vartype)
 	verdict = 1;	/* not found, may (re)load the definition */
 
 finish:
+	switch (verdict) {
+		case -1:	/* no-op for caller, same value remains */
+		case  1:	/* value may be (re-)applied */
+			if (reload_requires_restart < 0)
+				reload_requires_restart = 0;
+			break;
+
+		case  0:	/* value may not be (re-)applied, but it may not have been required */
+			break;
+	}
+
 	upsdebugx(6, "%s: verdict for (re)loading var=%s value: %d",
 		__func__, NUT_STRARG(var), verdict);
 	return verdict;
@@ -515,10 +543,30 @@ int testval_reloadable(const char *var, const char *oldval, const char *newval, 
 				, "NUT driver reload-or-exit: setting %s was changed and requires a driver restart", var);
 		/* For initial config reads, legacy code trusted what it saw */
 		verdict = ((!reload_flag) || reloadable);
+
+		/* handle reload-or-error reports */
+		if (verdict == 0) {
+			if (reload_requires_restart < 1)
+				reload_requires_restart = 1;
+			else
+				reload_requires_restart++;
+		}
+
 		goto finish;
 	}
 
 finish:
+	switch (verdict) {
+		case -1:	/* no-op for caller, same value remains */
+		case  1:	/* value may be (re-)applied */
+			if (reload_requires_restart < 0)
+				reload_requires_restart = 0;
+			break;
+
+		case  0:	/* value may not be (re-)applied, but it may not have been required */
+			break;
+	}
+
 	upsdebugx(6, "%s: verdict for (re)loading var=%s value: %d",
 		__func__, NUT_STRARG(var), verdict);
 	return verdict;
@@ -648,6 +696,15 @@ int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 		set_reload_flag(SIGUSR1);
 		return STAT_INSTCMD_HANDLED;
 	}
+
+# ifndef DRIVERS_MAIN_WITHOUT_MAIN
+	if (!strcmp(cmdname, "driver.reload-or-error")) {
+		/* sync-capable handling */
+		set_reload_flag(1);
+		/* Returns a result code from INSTCMD enum values */
+		return handle_reload_flag();
+	}
+# endif
 #endif
 
 	/* By default, the driver-specific values are
@@ -1210,9 +1267,12 @@ finish:
 }
 
 #ifndef DRIVERS_MAIN_WITHOUT_MAIN
-static void handle_reload_flag(void) {
+/* Returns a result code from INSTCMD enum values */
+static int handle_reload_flag(void) {
+	int ret;
+
 	if (!reload_flag || exit_flag)
-		return;
+		return STAT_INSTCMD_INVALID;
 
 	upslogx(LOG_INFO, "Handling requested live reload of NUT driver configuration for [%s]", upsname);
 	dstate_setinfo("driver.state", "reloading");
@@ -1226,8 +1286,25 @@ static void handle_reload_flag(void) {
 	nut_debug_level_global = -1;
 	nut_debug_level_driver = -1;
 
-	/* Call actual config reloading activity */
+	/* Call actual config reloading activity, which
+	 * eventually calls back do_upsconf_args() from
+	 * this program.
+	 */
+	reload_requires_restart = -1;
 	read_upsconf();
+
+	upsdebugx(1, "%s: read_upsconf() for [%s] completed, restart-required verdict was: %d",
+		__func__, upsname, reload_requires_restart);
+
+	/* handle reload-or-error reports */
+	if (reload_requires_restart < 1) {
+		/* -1 unchanged, 0 nobody complained and everyone confirmed */
+		ret = STAT_INSTCMD_HANDLED;
+	} else {
+		/* 1+ entries required a restart */
+		ret = STAT_INSTCMD_INVALID;
+	};
+
 	/* TODO: Callbacks in drivers to re-parse configs?
 	 * Currently this reloadability relies on either
 	 * explicit reload_flag aware code called from the
@@ -1243,7 +1320,9 @@ static void handle_reload_flag(void) {
 	reload_flag = 0;
 	dstate_setinfo("driver.state", "quiet");
 	upsnotify(NOTIFY_STATE_READY, NULL);
-	upslogx(LOG_INFO, "Completed requested live reload of NUT driver configuration for [%s]", upsname);
+	upslogx(LOG_INFO, "Completed requested live reload of NUT driver configuration for [%s]: %d", upsname, ret);
+
+	return ret;
 }
 
 /* split -x foo=bar into 'foo' and 'bar' */
@@ -2126,6 +2205,9 @@ int main(int argc, char **argv)
 /* TODO: Equivalent for WIN32 - see SIGCMD_RELOAD in upd and upsmon */
 	dstate_addcmd("driver.reload");
 	dstate_addcmd("driver.reload-or-exit");
+# ifndef DRIVERS_MAIN_WITHOUT_MAIN
+	dstate_addcmd("driver.reload-or-error");
+# endif
 #endif
 
 	dstate_setinfo("driver.state", "quiet");
