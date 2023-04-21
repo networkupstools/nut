@@ -608,13 +608,11 @@ void addvar(int vartype, const char *name, const char *desc)
 int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 	char buf[SMALLBUF];
 	if (conn)
-		snprintf(buf, sizeof(buf),
 #ifndef WIN32
-			"socket %d"
+		snprintf(buf, sizeof(buf), "socket %d", conn->fd);
 #else
-			"handle %p"
+		snprintf(buf, sizeof(buf), "handle %p", conn->fd);
 #endif
-			, conn->fd);
 	else
 		snprintf(buf, sizeof(buf), "(null)");
 
@@ -666,13 +664,11 @@ int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 int main_setvar(const char *varname, const char *val, conn_t *conn) {
 	char buf[SMALLBUF];
 	if (conn)
-		snprintf(buf, sizeof(buf),
 #ifndef WIN32
-			"socket %d"
+		snprintf(buf, sizeof(buf), "socket %d", conn->fd);
 #else
-			"handle %p"
+		snprintf(buf, sizeof(buf), "handle %p", conn->fd);
 #endif
-			, conn->fd);
 	else
 		snprintf(buf, sizeof(buf), "(null)");
 
