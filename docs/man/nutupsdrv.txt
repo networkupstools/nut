@@ -102,6 +102,13 @@ are:
 	           driver process if it encounters modified settings
 	           which can not be applied "on the fly" (so caller like
 	           systemd can launch another copy of the driver)
+/////////
+	*reload-or-restart*;; reread configuration files, causing the
+	           old driver process to close the device connection
+	           and re-exec itself if it encounters modified settings
+	           which can not be applied "on the fly" (may fail for
+	           critical changes like run-time user/group accounts)
+/////////
 
 *-P* 'pid'::
 Send the command signal above using specified PID number, rather than
