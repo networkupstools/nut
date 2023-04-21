@@ -28,6 +28,7 @@
 
 #include "common.h"
 #include "parseconf.h"
+#include "nut_stdint.h"
 
 	PCONF_CTX_t	sock_ctx;
 
