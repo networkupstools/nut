@@ -99,11 +99,13 @@
 	     automated at the moment. Eventually maybe nut-driver-enumerator
 	     would detect and handle this, for example, or some other solution.
 	     See https://github.com/networkupstools/nut/issues/1903
+	     * SIGHUP: simple reload (ignore values we can not change on the fly)
+	     * SIGUSR1: reload-or-exit (let systemd resuscitate the service then)
 	-->
 		<exec_method
 		type='method'
 		name='refresh'
-		exec=':kill -HUP'
+		exec=':kill -USR1'
 		timeout_seconds='60' />
 
 		<property_group name='startd' type='framework'>

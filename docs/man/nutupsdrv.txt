@@ -92,9 +92,27 @@ Raise log level threshold.  Use this multiple times to log more details.
 +
 The debugging comment above also applies here.
 
+*-c* 'command'::
+Send 'command' to the background process as a signal.  Valid commands
+are:
+
+	*reload*;; reread configuration files, ignoring modified settings
+	           which can not be applied "on the fly"
+	*reload-or-exit*;; reread configuration files, exiting the old
+	           driver process if it encounters modified settings
+	           which can not be applied "on the fly" (so caller like
+	           systemd can launch another copy of the driver)
+
+*-P* 'pid'::
+Send the command signal above using specified PID number, rather than
+consulting the PID file.  This can help define service units which start
+each NUT driver as a foreground process so it does not create a PID file.
+See also `-FF` option as an alternative.
+
 *-F*::
 Enforce running the driver as a foreground process, regardless of debugging
 or data-dumping settings.
+Specify twice (`-FF` or `-F -F`) to save the PID file even in this mode.
 
 *-B*::
 Enforce running the driver as a background process, regardless of debugging

@@ -808,6 +808,9 @@ systemd_restart_drv() {
     echo "Restarting NUT driver instance '$1' to make sure it knows new configuration..."
 
     # Full restart, e.g. in case we changed the user= in configs
+    # however let "reload" try, in case we changed something that
+    # can be updated "on the fly", like the "debug_min" setting.
+    $TIMEOUT_CMD $TIMEOUT_ARGS /bin/systemctl reload-or-restart "nut-driver@$1" || \
     $TIMEOUT_CMD $TIMEOUT_ARGS /bin/systemctl restart "nut-driver@$1"
 }
 
