@@ -781,16 +781,17 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 
 		/* try the handler shared by all drivers first */
 		ret = main_instcmd(arg[1], arg[2], conn);
-		if (ret == STAT_INSTCMD_HANDLED) {
-			/* send back execution result */
+		if (ret != STAT_INSTCMD_UNKNOWN) {
+			/* The command was acknowledged by shared handler, and
+			 * either handled successfully, or failed, or was not
+			 * valid in current circumstances - in any case, we do
+			 * not pass to driver-provided logic. */
+
+			/* send back execution result if requested */
 			if (cmdid)
 				send_tracking(conn, cmdid, ret);
 
 			/* The command was handled, status is a separate consideration */
-			return 1;
-		} else if (ret == STAT_INSTCMD_INVALID) {
-			/* The command was acknowledged by shared handler, but not
-			 * valid in current circumstances - do not pass to driver */
 			return 1;
 		} /* else try other handler(s) */
 
@@ -798,7 +799,7 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 		if (upsh.instcmd) {
 			ret = upsh.instcmd(cmdname, cmdparam);
 
-			/* send back execution result */
+			/* send back execution result if requested */
 			if (cmdid)
 				send_tracking(conn, cmdid, ret);
 
@@ -834,16 +835,17 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 
 		/* try the handler shared by all drivers first */
 		ret = main_setvar(arg[1], arg[2], conn);
-		if (ret == STAT_SET_HANDLED) {
-			/* send back execution result */
+		if (ret != STAT_SET_UNKNOWN) {
+			/* The command was acknowledged by shared handler, and
+			 * either handled successfully, or failed, or was not
+			 * valid in current circumstances - in any case, we do
+			 * not pass to driver-provided logic. */
+
+			/* send back execution result if requested */
 			if (setid)
 				send_tracking(conn, setid, ret);
 
 			/* The command was handled, status is a separate consideration */
-			return 1;
-		} else if (ret == STAT_SET_INVALID) {
-			/* The command was acknowledged by shared handler, but not
-			 * valid in current circumstances - do not pass to driver */
 			return 1;
 		} /* else try other handler(s) */
 
@@ -851,7 +853,7 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 		if (upsh.setvar) {
 			ret = upsh.setvar(arg[1], arg[2]);
 
-			/* send back execution result */
+			/* send back execution result if requested */
 			if (setid)
 				send_tracking(conn, setid, ret);
 
