@@ -2122,6 +2122,12 @@ int main(int argc, char **argv)
 	dstate_setflags("driver.flag.allow_killpower", ST_FLAG_RW | ST_FLAG_NUMBER);
 	dstate_addcmd("driver.killpower");
 
+#ifndef WIN32
+/* TODO: Equivalent for WIN32 - see SIGCMD_RELOAD in upd and upsmon */
+	dstate_addcmd("driver.reload");
+	dstate_addcmd("driver.reload-or-exit");
+#endif
+
 	dstate_setinfo("driver.state", "quiet");
 	if (dump_data) {
 		upsdebugx(1, "Driver initialization completed, beginning data dump (%d loops)", dump_data);
