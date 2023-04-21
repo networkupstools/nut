@@ -130,6 +130,8 @@ void setup_signals(void);
 
 #ifndef WIN32
 # define SIGCMD_RELOAD                  SIGHUP
+/* not a signal, so negative; relies on socket protocol */
+# define SIGCMD_RELOAD_OR_ERROR         -SIGCMD_RELOAD
 # define SIGCMD_RELOAD_OR_EXIT          SIGUSR1
 /* // FIXME: Implement this self-recycling in drivers (keeping the PID):
 # define SIGCMD_RELOAD_OR_RESTART       SIGUSR2

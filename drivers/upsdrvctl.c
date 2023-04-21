@@ -36,6 +36,7 @@
 #include "attribute.h"
 #include "nut_stdint.h"
 #include "main.h"
+#include "upsdrvquery.h"
 
 typedef struct {
 	char	*upsname;
@@ -190,6 +191,35 @@ static void signal_driver_cmd(const ups_t *ups,
 	char	pidfn[SMALLBUF];
 	int	ret;
 
+	if (cmd == SIGCMD_RELOAD_OR_ERROR) {
+		/* not a signal, use socket protocol => statefn */
+		char buf[LARGEBUF];
+
+		if (testmode)
+			return;
+
+		/* Post the query and wait for reply */
+		ret = upsdrvquery_oneshot(ups->driver, ups->upsname,
+			"INSTCMD driver.reload-or-error\n",
+			buf, sizeof(buf));
+		if (ret < 0) {
+			goto socket_error;
+		} else {
+			upslogx(LOG_INFO, "Request to reload-or-error returned code %d", ret);
+			if (ret != STAT_INSTCMD_HANDLED)
+				exec_error++;
+			/* TODO: Propagate "ret" to caller, eventually CLI exit-code? */
+		}
+
+		return;
+
+socket_error:
+		upslog_with_errno(LOG_ERR, "Socket dialog with the other driver instance");
+		exec_error++;
+		return;
+	}
+
+	/* Real signals */
 #ifndef WIN32
 	upsdebugx(1, "Signalling UPS [%s]: %d (%s)",
 		ups->upsname, cmd, strsignal(cmd));
@@ -473,6 +503,7 @@ static void set_reload_flag(const
 # endif
 
 		case SIGCMD_RELOAD:     /* SIGHUP */
+		case SIGCMD_RELOAD_OR_ERROR:	/* Not even a signal, but a socket protocol action */
 		default:
 			/* reload what we can, log what needs a restart so skipped */
 			reload_flag = 1;
@@ -893,6 +924,11 @@ static void help(const char *arg_progname)
 	printf("              		- reload: re-read configuration files, ignoring changed\n");
 	printf("              		  values which require a driver restart (can not be changed\n");
 	printf("              		  on the fly)\n");
+	printf("              		- reload-or-error: re-read configuration files, ignoring but\n");
+	printf("              		  counting changed values which require a driver restart (can\n");
+	printf("              		  not be changed on the fly), and return a success/fail code\n");
+	printf("              		  based on that count, so the caller can decide the fate of\n");
+	printf("              		  the currently running driver instance\n");
 # ifdef SIGCMD_RELOAD_OR_RESTART
 	printf("              		- reload-or-restart: re-read configuration files (close the\n");
 	printf("              		  old driver instance device connection if needed, and have\n");
@@ -1133,6 +1169,9 @@ int main(int argc, char **argv)
 				} else
 				if (!strncmp(optarg, "reload", strlen(optarg))) {
 					signal_flag = SIGCMD_RELOAD;
+				} else
+				if (!strncmp(optarg, "reload-or-error", strlen(optarg))) {
+					signal_flag = SIGCMD_RELOAD_OR_ERROR;
 				} else
 # ifdef SIGCMD_RELOAD_OR_RESTART
 				if (!strncmp(optarg, "reload-or-restart", strlen(optarg))) {

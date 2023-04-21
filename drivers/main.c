@@ -26,6 +26,7 @@
 #include "nut_stdint.h"
 #include "dstate.h"
 #include "attribute.h"
+#include "upsdrvquery.h"
 
 #ifndef WIN32
 # include <grp.h>
@@ -203,6 +204,11 @@ static void help_msg(void)
 	printf("                   - reload: re-read configuration files, ignoring changed\n");
 	printf("                     values which require a driver restart (can not be changed\n");
 	printf("                     on the fly)\n");
+	printf("                   - reload-or-error: re-read configuration files, ignoring but\n");
+	printf("                     counting changed values which require a driver restart (can\n");
+	printf("                     not be changed on the fly), and return a success/fail code\n");
+	printf("                     based on that count, so the caller can decide the fate of\n");
+	printf("                     the currently running driver instance\n");
 #  ifdef SIGCMD_RELOAD_OR_RESTART
 	printf("                   - reload-or-restart: re-read configuration files (close the\n");
 	printf("                     old driver instance device connection if needed, and have\n");
@@ -707,7 +713,7 @@ int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 # ifndef DRIVERS_MAIN_WITHOUT_MAIN
 	if (!strcmp(cmdname, "driver.reload-or-error")) {
 		/* sync-capable handling */
-		set_reload_flag(SIGCMD_RELOAD);
+		set_reload_flag(SIGCMD_RELOAD_OR_ERROR);
 		/* Returns a result code from INSTCMD enum values */
 		return handle_reload_flag();
 	}
@@ -1465,6 +1471,7 @@ static void set_reload_flag(int sig)
 #endif
 
 		case SIGCMD_RELOAD:	/* SIGHUP */
+		case SIGCMD_RELOAD_OR_ERROR:	/* Not even a signal, but a socket protocol action */
 		default:
 			/* reload what we can, log what needs a restart so skipped */
 			reload_flag = 1;
@@ -1663,6 +1670,9 @@ int main(int argc, char **argv)
 				if (!strncmp(optarg, "reload", strlen(optarg))) {
 					cmd = SIGCMD_RELOAD;
 				} else
+				if (!strncmp(optarg, "reload-or-error", strlen(optarg))) {
+					cmd = SIGCMD_RELOAD_OR_ERROR;
+				} else
 # ifdef SIGCMD_RELOAD_OR_RESTART
 				if (!strncmp(optarg, "reload-or-restart", strlen(optarg))) {
 					cmd = SIGCMD_RELOAD_OR_RESTART;
@@ -1829,6 +1839,28 @@ int main(int argc, char **argv)
 		setup_signals();
 	}
 
+	/* Handle reload-or-error over socket protocol with
+	 * the running older driver instance */
+	if (cmd == SIGCMD_RELOAD_OR_ERROR) {	/* Not a signal, but a socket protocol action */
+		int	cmdret = -1;
+		char	buf[LARGEBUF];
+
+		/* Post the query and wait for reply */
+		cmdret = upsdrvquery_oneshot(progname, upsname,
+			"INSTCMD driver.reload-or-error\n",
+			buf, sizeof(buf));
+
+		if (cmdret < 0) {
+			upslog_with_errno(LOG_ERR, "Socket dialog with the other driver instance");
+		} else {
+			/* TODO: handle buf reply contents */
+			upslogx(LOG_INFO, "Request to reload-or-error returned code %d", cmdret);
+		}
+
+		/* exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE); */
+		exit((cmdret < 0) ? 255 : cmdret);
+	}
+
 	/* Setup PID file to receive signals to communicate with this driver
 	 * instance once backgrounded, and to stop a competing older instance.
 	 * Or to send it a signal deliberately.
@@ -1838,7 +1870,7 @@ int main(int argc, char **argv)
 
 		snprintf(pidfnbuf, sizeof(pidfnbuf), "%s/%s-%s.pid", altpidpath(), progname, upsname);
 
-		if (cmd) {
+		if (cmd) {	/* Signals */
 			int cmdret = -1;
 			/* Send a signal to older copy of the driver, if any */
 			if (oldpid < 0) {
