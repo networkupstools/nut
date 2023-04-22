@@ -10,7 +10,7 @@ $(top_builddir)/clients/libupsclient.la: dummy
 # (libtool version of the static lib, in order to access LTLIBOBJS)
 #FIXME: SERLIBS is only useful for LDADD_DRIVERS_SERIAL not for LDADD_COMMON
 LDADD_COMMON = $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la
-LDADD_DRIVERS = libdummy.la $(LDADD_COMMON)
+LDADD_DRIVERS = libdummy.la libdummy_upsdrvquery.la $(LDADD_COMMON)
 LDADD_DRIVERS_SERIAL = libdummy_serial.la $(LDADD_DRIVERS) $(SERLIBS)
 
 # most targets are serial drivers, so make this the default
@@ -119,7 +119,7 @@ sbin_PROGRAMS = upsdrvctl
 
 # upsdrvctl: the all-singing all-dancing driver control program
 upsdrvctl_SOURCES = upsdrvctl.c
-upsdrvctl_LDADD = $(LDADD_COMMON)
+upsdrvctl_LDADD = $(LDADD_COMMON) libdummy_upsdrvquery.la
 
 # serial drivers: all of them use standard LDADD and CFLAGS
 al175_SOURCES = al175.c
@@ -352,6 +352,7 @@ dist_noinst_HEADERS = apc-mib.h apc-iem-mib.h apc-hid.h arduino-hid.h baytech-mi
  nutdrv_qx_mecer.h nutdrv_qx_ablerex.h  \
  nutdrv_qx_megatec.h nutdrv_qx_megatec-old.h nutdrv_qx_mustek.h nutdrv_qx_q1.h nutdrv_qx_hunnox.h	\
  nutdrv_qx_voltronic.h nutdrv_qx_voltronic-qs.h nutdrv_qx_voltronic-qs-hex.h nutdrv_qx_zinto.h \
+ upsdrvquery.h \
  xppc-mib.h huawei-mib.h eaton-ats16-nmc-mib.h eaton-ats16-nm2-mib.h apc-ats-mib.h raritan-px2-mib.h eaton-ats30-mib.h \
  apc-pdu-mib.h apc-epdu-mib.h ever-hid.h eaton-pdu-genesis2-mib.h eaton-pdu-marlin-mib.h eaton-pdu-marlin-helpers.h \
  eaton-pdu-pulizzi-mib.h eaton-pdu-revelation-mib.h emerson-avocent-pdu-mib.h eaton-ups-pwnm2-mib.h eaton-ups-pxg-mib.h legrand-hid.h \
@@ -363,11 +364,13 @@ dist_noinst_HEADERS = apc-mib.h apc-iem-mib.h apc-hid.h arduino-hid.h baytech-mi
 # because per-object CFLAGS can only be specified for libraries, not
 # for object files. This library is used during the build process,
 # and is not meant to be installed.
-EXTRA_LTLIBRARIES = libdummy.la libdummy_serial.la
+EXTRA_LTLIBRARIES = libdummy.la libdummy_serial.la libdummy_upsdrvquery.la
 libdummy_la_SOURCES = main.c dstate.c
 libdummy_la_LDFLAGS = -no-undefined -static
 libdummy_serial_la_SOURCES = serial.c
 libdummy_serial_la_LDFLAGS = -no-undefined -static
+libdummy_upsdrvquery_la_SOURCES = upsdrvquery.c
+libdummy_upsdrvquery_la_LDFLAGS = -no-undefined -static
 
 # The libdummy_mockdrv.la is used for unit-tests to mock a driver
 # with near-production codebase but without its standard main().
