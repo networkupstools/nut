@@ -25,16 +25,26 @@
 #include "common.h"	/* TYPE_FD etc. */
 #include "timehead.h"
 
-TYPE_FD upsdrvquery_connect(const char *sockfn);
-TYPE_FD upsdrvquery_connect_drvname_upsname(const char *drvname, const char *upsname);
-void upsdrvquery_close(TYPE_FD sockfd);
+typedef struct udq_pipe_conn_s {
+	TYPE_FD		sockfd;
+#ifdef WIN32
+	OVERLAPPED	overlapped;
+#endif	/* WIN32 */
+	char		buf[LARGEBUF];
+	char		sockfn[LARGEBUF];
+} udq_pipe_conn_t;
 
-ssize_t upsdrvquery_read_timeout(TYPE_FD sockfd, struct timeval tv, char *buf, const size_t bufsz);
-ssize_t upsdrvquery_write(TYPE_FD sockfd, const char *buf);
+udq_pipe_conn_t *upsdrvquery_connect(const char *sockfn);
+udq_pipe_conn_t *upsdrvquery_connect_drvname_upsname(const char *drvname, const char *upsname);
+void upsdrvquery_close(udq_pipe_conn_t *conn);
 
-ssize_t upsdrvquery_prepare(TYPE_FD sockfd, struct timeval tv);
-ssize_t upsdrvquery_request(TYPE_FD sockfd, struct timeval tv, const char *query, char *buf, const size_t bufsz);
+ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv);
+ssize_t upsdrvquery_write(udq_pipe_conn_t *conn, const char *buf);
 
+ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv);
+ssize_t upsdrvquery_request(udq_pipe_conn_t *conn, struct timeval tv, const char *query);
+
+/* if buf != NULL, last reply is copied there */
 ssize_t upsdrvquery_oneshot(const char *drvname, const char *upsname, const char *query, char *buf, const size_t bufsz);
 
 #endif	/* NUT_UPSDRVQUERY_H_SEEN */
