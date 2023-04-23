@@ -990,8 +990,21 @@ nut_driver_enumerator_main() {
 
     if [ -n "$NEW_CHECKSUM" ]; then
         for UPSS in $NEW_CHECKSUM ; do
-            echo "Dropping old ${SERVICE_FRAMEWORK} service instance ${UPSS} whose section in config file has changed..." >&2
-            $hook_unregisterInstance "$UPSS"
+            CURR_DRV="`upsconf_getDriver "$UPSS"`" || CURR_DRV=""
+            DO_UNREGISTER=yes
+            if [ -n "$CURR_DRV" ] ; then
+                # If reload is handled and does not complain,
+                # we are OK to proceed without re-defining
+                # and restarting the driver service instance.
+                "@DRVPATH@/$CURR_DRV" -a "$UPSS" -c reload-or-error >/dev/null 2>/dev/null \
+                && DO_UNREGISTER=no
+            fi
+            if [ "$DO_UNREGISTER" = yes ] ; then
+                echo "Dropping old ${SERVICE_FRAMEWORK} service instance ${UPSS} whose section in config file has changed..." >&2
+                $hook_unregisterInstance "$UPSS"
+            else
+                echo "Keeping ${SERVICE_FRAMEWORK} service instance ${UPSS} whose section in config file has changed: live reload sufficed" >&2
+            fi
         done
         upslist_readSvcs "after updating for new config section checksums"
     fi
