@@ -225,7 +225,11 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 		if (res != FALSE || bytesRead != 0)
 			break;
 
-		upsdebugx(6, "%s: pipe read error", __func__);
+		if (tv.tv_sec < 1 && tv.tv_usec < 1) {
+			upsdebugx(5, "%s: pipe read error (no incoming data), proceeding now", __func__);
+			break;
+		}
+		upsdebugx(6, "%s: pipe read error, waiting for data", __func__);
 
 		/* Throttle down a bit */
 		time(&presleep);
