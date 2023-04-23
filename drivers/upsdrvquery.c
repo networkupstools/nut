@@ -128,7 +128,7 @@ udq_pipe_conn_t *upsdrvquery_connect(const char *sockfn) {
 	ReadFile(conn->sockfd, conn->buf,
 		sizeof(conn->buf) - 1, /* -1 to be sure to have a trailing 0 */
 		NULL, &conn->overlapped);
-
+	conn->newread = 0;
 #endif  /* WIN32 */
 
 	/* Just for fun: stash the name */
@@ -176,6 +176,7 @@ void upsdrvquery_close(udq_pipe_conn_t *conn) {
 		}
 		CloseHandle(conn->sockfd);
 	}
+	conn->newread = 0;
 #endif  /* WIN32 */
 
 	conn->sockfd = ERROR_FD;
@@ -220,10 +221,20 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 	BOOL    res = FALSE;
 	time_t	start, now, presleep;
 
+	/* Is GetLastError() required to move on if pipe has more data?
+	 *   if (GetLastError() == ERROR_IO_PENDING) {
+	 */
+	if (conn->newread) {
+		upsdebugx(6, "%s: Restart async read", __func__);
+		memset(conn->buf, 0, sizeof(conn->buf));
+		ReadFile(conn->sockfd, conn->buf, sizeof(conn->buf) - 1, NULL, &(conn->overlapped));
+		conn->newread = 0;
+	}
+
 	time(&start);
-	while (res == FALSE && bytesRead == 0) {
+	while (res == FALSE /*&& bytesRead == 0*/) {
 		res = GetOverlappedResult(conn->sockfd, &conn->overlapped, &bytesRead, FALSE);
-		if (res != FALSE || bytesRead != 0)
+		if (res != FALSE /*|| bytesRead != 0*/)
 			break;
 
 		if (tv.tv_sec < 1 && tv.tv_usec < 1) {

@@ -29,6 +29,7 @@ typedef struct udq_pipe_conn_s {
 	TYPE_FD		sockfd;
 #ifdef WIN32
 	OVERLAPPED	overlapped;
+	int		newread;	/* Set to 1 to start a new ReadFile, forget old buf */
 #endif	/* WIN32 */
 	char		buf[LARGEBUF];
 	char		sockfn[LARGEBUF];
