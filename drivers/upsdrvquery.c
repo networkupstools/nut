@@ -451,10 +451,16 @@ ssize_t upsdrvquery_oneshot(
 
 	/* This depends on driver looping delay, polling frequency,
 	 * being blocked on other commands, etc. Number so far is
-	 * arbitrary and optimistic. Causes a long initial silence
-	 * to flush incoming buffers after NOBROADCAST.
+	 * arbitrary and optimistic. A non-zero setting causes a
+	 * long initial silence to flush incoming buffers after
+         * the NOBROADCAST. In practice, we do not expect messages
+         * from dstate::send_to_all() to be a nuisance, since we
+         * have just connected and posted the NOBROADCAST so there
+         * is little chance that something appears in that short
+         * time. Also now we know to ignore replies that are not
+         *   TRACKING <id of our query>
 	 */
-	tv.tv_sec = 5;
+	tv.tv_sec = 0;
 	tv.tv_usec = 0;
 
 	/* Here we have a fragile simplistic parser that
@@ -466,6 +472,8 @@ ssize_t upsdrvquery_oneshot(
 		goto finish;
 	}
 
+	tv.tv_sec = 5;
+	tv.tv_usec = 0;
 	if ((ret = upsdrvquery_request(conn, tv, query)) < 0) {
 		ret = -1;
 		goto finish;
