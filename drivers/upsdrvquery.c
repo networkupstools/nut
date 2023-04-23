@@ -124,6 +124,7 @@ udq_pipe_conn_t *upsdrvquery_connect(const char *sockfn) {
 	/* Start a read IO so we could wait on the event associated with it
 	 * Requires the persistent buffer for the connection
 	 */
+	upsdebugx(6, "%s: Queue initial async read", __func__);
 	ReadFile(conn->sockfd, conn->buf,
 		sizeof(conn->buf) - 1, /* -1 to be sure to have a trailing 0 */
 		NULL, &conn->overlapped);
@@ -321,12 +322,15 @@ ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 	if (upsdrvquery_write(conn, "NOBROADCAST\n") < 0)
 		goto socket_error;
 
-	if (tv.tv_sec < 1 && tv.tv_usec < 1)
+	if (tv.tv_sec < 1 && tv.tv_usec < 1) {
+		upsdebugx(5, "%s: proclaiming readiness for tracked commands without flush of server messages", __func__);
 		return 1;
+	}
 
 	/* flush incoming, if any */
 	time(&start);
 
+	upsdebugx(5, "%s: waiting for a while to flush server messages", __func__);
 	while (1) {
 		upsdrvquery_read_timeout(conn, tv);
 		time(&now);
@@ -353,6 +357,7 @@ ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 	}
 */
 
+	upsdebugx(5, "%s: ready for tracked commands", __func__);
 	return 1;
 
 socket_error:
