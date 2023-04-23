@@ -13,6 +13,9 @@ set -e
 SCRIPTDIR="`dirname "$0"`"
 SCRIPTDIR="`cd "$SCRIPTDIR" && pwd`"
 
+SCRIPT_PATH="${SCRIPTDIR}/`basename $0`"
+SCRIPT_ARGS=("$@")
+
 # Quick hijack for interactive development like this:
 #   BUILD_TYPE=fightwarn-clang ./ci_build.sh
 # or to quickly hit the first-found errors in a larger matrix
@@ -1295,6 +1298,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # include all needed pre-generated files to rely less on OS facilities.
     if [ -s Makefile ]; then
         # Let initial clean-up be at default verbosity
+
+        # Handle Ctrl+C with helpful suggestions:
+        trap 'echo "!!! If clean-up looped remaking the configure script for maintainer-clean, try to:"; echo "    rm -f Makefile configure ; $0 $SCRIPT_ARGS"' 2
+
         echo "=== Starting initial clean-up (from old build products)"
         case "$MAKE_FLAGS $MAKE_FLAGS_CLEAN" in
         *V=0*)
@@ -1307,6 +1314,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         || ${MAKE} distclean $MAKE_FLAGS_CLEAN -k \
         || true
         echo "=== Finished initial clean-up"
+
+        trap - 2
     fi
 
     # Just prepare `configure` script; we run it at different points
