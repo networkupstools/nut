@@ -1263,7 +1263,7 @@ int main(int argc, char **argv)
 
 	atexit(exit_cleanup);
 
-	read_upsconf();
+	read_upsconf(1);
 
 	if (argc == lastarg) {
 		ups_t	*tmp = upstable;

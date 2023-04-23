@@ -1312,7 +1312,12 @@ static int handle_reload_flag(void) {
 	 * this program.
 	 */
 	reload_requires_restart = -1;
-	read_upsconf();
+	/* 0 - Do not abort drivers started with '-s TMP_UPS_NAME' */
+	if (read_upsconf(0) < 0) {
+		upsdebugx(1, "%s: read_upsconf() failed fundamentally; "
+			"is this driver running via ups.conf at all?",
+			__func__);
+	}
 
 	upsdebugx(1, "%s: read_upsconf() for [%s] completed, restart-required verdict was: %d",
 		__func__, upsname, reload_requires_restart);
@@ -1638,7 +1643,7 @@ int main(int argc, char **argv)
 
 				upsname = optarg;
 
-				read_upsconf();
+				read_upsconf(1);
 
 				if (!upsname_found)
 					fatalx(EXIT_FAILURE, "Error: Section %s not found in ups.conf",

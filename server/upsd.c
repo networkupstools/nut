@@ -1903,7 +1903,7 @@ int main(int argc, char **argv)
 	check_perms(statepath);
 
 	/* handle ups.conf */
-	read_upsconf();
+	read_upsconf(1);	/* 1 = may abort upon fundamental errors */
 	upsconf_add(0);		/* 0 = initial */
 	poll_reload();
 
