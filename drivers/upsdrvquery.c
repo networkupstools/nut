@@ -77,7 +77,7 @@ TYPE_FD upsdrvquery_connect(const char *sockfn) {
 		return ERROR_FD;
 	}
 #else
-	result = WaitNamedPipe(pipename, NMPWAIT_USE_DEFAULT_WAIT);
+	BOOL	result = WaitNamedPipe(sockfn, NMPWAIT_USE_DEFAULT_WAIT);
 
 	if (result == FALSE) {
 		upslog_with_errno(LOG_ERR, "WaitNamedPipe : %d\n", GetLastError());
@@ -85,7 +85,7 @@ TYPE_FD upsdrvquery_connect(const char *sockfn) {
 	}
 
 	sockfd = CreateFile(
-			pipename,       // pipe name
+			sockfn,         // pipe name
 			GENERIC_READ |  // read and write access
 			GENERIC_WRITE,
 			0,              // no sharing
@@ -170,8 +170,8 @@ ssize_t upsdrvquery_read_timeout(TYPE_FD sockfd, struct timeval tv, char *buf, c
 	/* Start a read IO so we could wait on the event associated with it */
 	ReadFile(sockfd, buf,
 		bufsz - 1, /*-1 to be sure to have a trailling 0 */
-		NULL, read_overlapped);
-	GetOverlappedResult(sockfd, read_overlapped, &bytesRead, FALSE);
+		NULL, &read_overlapped);
+	GetOverlappedResult(sockfd, &read_overlapped, &bytesRead, FALSE);
 
 	ret = (ssize_t)bytesRead;
 #endif  /* WIN32 */
