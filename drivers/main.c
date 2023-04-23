@@ -118,13 +118,17 @@ static int	dump_data = 0; /* Store the update_count requested */
 
 /* pre-declare some private methods used */
 static void assign_debug_level(void);
-#ifndef WIN32
 /* TODO: Equivalent for WIN32 - see SIGCMD_RELOAD in upd and upsmon */
-static void set_reload_flag(int sig);
-# ifndef DRIVERS_MAIN_WITHOUT_MAIN
+static void set_reload_flag(
+#ifndef WIN32
+	int
+#else
+	char *
+#endif
+	sig);
+#ifndef DRIVERS_MAIN_WITHOUT_MAIN
 /* Returns a result code from INSTCMD enum values */
 static int handle_reload_flag(void);
-# endif
 #endif
 
 /* Set in do_ups_confargs() for consumers like handle_reload_flag() */
@@ -197,18 +201,22 @@ static void help_msg(void)
 	printf("  -q             - raise log level threshold\n");
 	printf("  -h             - display this help\n");
 	printf("  -k             - force shutdown\n");
-# ifndef WIN32
-/* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
 	printf("  -c <command>   - send <command> via signal to background process\n");
 	printf("                   Supported commands:\n");
+# ifndef WIN32
+/* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
 	printf("                   - reload: re-read configuration files, ignoring changed\n");
 	printf("                     values which require a driver restart (can not be changed\n");
 	printf("                     on the fly)\n");
+# endif	/* WIN32 */
+/* Note: this one is beside signal-sending (goes via socket protocol): */
 	printf("                   - reload-or-error: re-read configuration files, ignoring but\n");
 	printf("                     counting changed values which require a driver restart (can\n");
 	printf("                     not be changed on the fly), and return a success/fail code\n");
 	printf("                     based on that count, so the caller can decide the fate of\n");
 	printf("                     the currently running driver instance\n");
+# ifndef WIN32
+/* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
 #  ifdef SIGCMD_RELOAD_OR_RESTART
 	printf("                   - reload-or-restart: re-read configuration files (close the\n");
 	printf("                     old driver instance device connection if needed, and have\n");
@@ -709,15 +717,15 @@ int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 		return STAT_INSTCMD_HANDLED;
 	}
 # endif
+#endif  /* WIN32 */
 
-# ifndef DRIVERS_MAIN_WITHOUT_MAIN
+#ifndef DRIVERS_MAIN_WITHOUT_MAIN
 	if (!strcmp(cmdname, "driver.reload-or-error")) {
 		/* sync-capable handling */
 		set_reload_flag(SIGCMD_RELOAD_OR_ERROR);
 		/* Returns a result code from INSTCMD enum values */
 		return handle_reload_flag();
 	}
-# endif
 #endif
 
 	/* By default, the driver-specific values are
@@ -1452,10 +1460,16 @@ void set_exit_flag(int sig)
 	exit_flag = sig;
 }
 
+static void set_reload_flag(
+#ifndef WIN32
+	int
+#else
+	char *
+#endif
+	sig)
+{
 #ifndef WIN32
 /* TODO: Equivalent for WIN32 - see SIGCMD_RELOAD in upd and upsmon */
-static void set_reload_flag(int sig)
-{
 	switch (sig) {
 		case SIGCMD_RELOAD_OR_EXIT:	/* SIGUSR1 */
 			/* reload-or-exit (this driver instance may die) */
@@ -1479,8 +1493,22 @@ static void set_reload_flag(int sig)
 
 	upsdebugx(1, "%s: raising reload flag due to signal %d (%s) => reload_flag=%d",
 		__func__, sig, strsignal(sig), reload_flag);
+#else
+	if (sig && !strcmp(sig, SIGCMD_RELOAD_OR_ERROR)) {
+		/* reload what we can, log what needs a restart so skipped */
+		reload_flag = 1;
+	} else {
+		/* non-fatal reload as a fallback */
+		reload_flag = 1;
+        }
+
+	upsdebugx(1, "%s: raising reload flag due to command %s => reload_flag=%d",
+		__func__, sig, reload_flag);
+#endif  /* WIN32 */
 }
 
+#ifndef WIN32
+/* TODO: Equivalent for WIN32 - see SIGCMD_RELOAD in upd and upsmon */
 static void handle_dstate_dump(int sig) {
 	/* no set_dump_flag() here, make it instant */
 	upsdebugx(1, "%s: starting driver state dump for [%s] due to signal %d",
@@ -1597,9 +1625,9 @@ int main(int argc, char **argv)
 	/* build the driver's extra (-x) variable table */
 	upsdrv_makevartable();
 
-	while ((i = getopt(argc, argv, "+a:s:kFBDd:hx:Lqr:u:g:Vi:"
+	while ((i = getopt(argc, argv, "+a:s:kFBDd:hx:Lqr:u:g:Vi:c:"
 #ifndef WIN32
-		"c:P:"
+		"P:"
 #endif
 	)) != -1) {
 		switch (i) {
@@ -1657,21 +1685,22 @@ int main(int argc, char **argv)
 				do_lock_port = 0;
 				do_forceshutdown = 1;
 				break;
-#ifndef WIN32
 /* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
 			case 'c':
-				if (cmd != 0) {
+				if (cmd) {
 					help_msg();
 					fatalx(EXIT_FAILURE,
 						"Error: only one command per run can be "
 						"sent with option -%c. Try -h for help.", i);
 				}
 
-				if (!strncmp(optarg, "reload", strlen(optarg))) {
-					cmd = SIGCMD_RELOAD;
-				} else
 				if (!strncmp(optarg, "reload-or-error", strlen(optarg))) {
 					cmd = SIGCMD_RELOAD_OR_ERROR;
+				}
+#ifndef WIN32
+				else
+				if (!strncmp(optarg, "reload", strlen(optarg))) {
+					cmd = SIGCMD_RELOAD;
 				} else
 # ifdef SIGCMD_RELOAD_OR_RESTART
 				if (!strncmp(optarg, "reload-or-restart", strlen(optarg))) {
@@ -1681,17 +1710,26 @@ int main(int argc, char **argv)
 				if (!strncmp(optarg, "reload-or-exit", strlen(optarg))) {
 					cmd = SIGCMD_RELOAD_OR_EXIT;
 				}
+#endif	/* WIN32 */
 
 				/* bad command given */
-				if (cmd == 0) {
+				if (!cmd) {
 					help_msg();
 					fatalx(EXIT_FAILURE,
 						"Error: unknown argument to option -%c. Try -h for help.", i);
 				}
+#ifndef WIN32
 				upsdebugx(1, "Will send signal %d (%s) for command '%s' "
 					"to already-running driver %s-%s (if any) and exit",
 					cmd, strsignal(cmd), optarg, progname, upsname);
+#else
+				upsdebugx(1, "Will send request '%s' for command '%s' "
+					"to already-running driver %s-%s (if any) and exit",
+					cmd, optarg, progname, upsname);
+#endif	/* WIN32 */
 				break;
+
+#ifndef WIN32
 			/* NOTE for FIXME above: PID-signalling is non-WIN32-only for us */
 			case 'P':
 				if ((oldpid = parsepid(optarg)) < 0)
@@ -1838,10 +1876,16 @@ int main(int argc, char **argv)
 		/* Setup signals to communicate with driver which is destined for a long run. */
 		setup_signals();
 	}
+#endif  /* WIN32 */
 
 	/* Handle reload-or-error over socket protocol with
 	 * the running older driver instance */
-	if (cmd == SIGCMD_RELOAD_OR_ERROR) {	/* Not a signal, but a socket protocol action */
+#ifndef WIN32
+	if (cmd == SIGCMD_RELOAD_OR_ERROR)
+#else
+	if (cmd && !strcmp(cmd, SIGCMD_RELOAD_OR_ERROR))
+#endif  /* WIN32 */
+	{	/* Not a signal, but a socket protocol action */
 		int	cmdret = -1;
 		char	buf[LARGEBUF];
 
@@ -1861,6 +1905,7 @@ int main(int argc, char **argv)
 		exit((cmdret < 0) ? 255 : cmdret);
 	}
 
+#ifndef WIN32
 	/* Setup PID file to receive signals to communicate with this driver
 	 * instance once backgrounded, and to stop a competing older instance.
 	 * Or to send it a signal deliberately.

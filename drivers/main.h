@@ -151,7 +151,9 @@ void setup_signals(void);
 #   pragma warn "This OS lacks SIGURG and SIGWINCH, will not handle SIGCMD_DATA_DUMP"
 #  endif
 # endif
-/* FIXME: handle WIN32 builds too */
+#else
+/* FIXME: handle WIN32 builds for other signals too */
+# define SIGCMD_RELOAD_OR_ERROR         "driver.reload-or-error"
 #endif	/* WIN32 */
 
 #endif /* NUT_MAIN_H_SEEN */
