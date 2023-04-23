@@ -256,7 +256,7 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 			sleep(1);
 
 		time(&now);
-		if (difftime(now, start) > tv.tv_sec) {
+		if (difftime(now, start) > tv.tv_sec + 0.001 * tv.tv_usec) {
 			upsdebugx(5, "%s: pipe read error, timeout exceeded", __func__);
 			break;
 		}
@@ -330,9 +330,14 @@ ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 	while (1) {
 		upsdrvquery_read_timeout(conn, tv);
 		time(&now);
-		if (difftime(now, start) > tv.tv_sec)
+		if (difftime(now, start) > tv.tv_sec + 0.001 * tv.tv_usec)
 			break;
-		tv.tv_sec -= difftime(now, start);
+		/* Diminishing timeouts for read() */
+		tv.tv_usec -= difftime(now, start);
+		while (tv.tv_usec < 0) {
+                    tv.tv_sec--;
+                    tv.tv_usec = 1000 - tv.tv_usec;
+		}
 	}
 
 	/* Check that we can have a civilized dialog --
