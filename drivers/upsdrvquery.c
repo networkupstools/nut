@@ -317,6 +317,9 @@ ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 	if (upsdrvquery_write(conn, "NOBROADCAST\n") < 0)
 		goto socket_error;
 
+	if (tv.tv_sec < 1 && tv.tv_usec < 1)
+		return 1;
+
 	/* flush incoming, if any */
 	time(&start);
 
