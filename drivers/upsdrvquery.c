@@ -411,6 +411,7 @@ ssize_t upsdrvquery_request(
 	char	qbuf[LARGEBUF];
 	size_t	qlen;
 	char	tracking_id[UUID4_LEN];
+	time_t	start, now;
 
 	if (snprintf(qbuf, sizeof(qbuf), "%s", query) < 0)
 		goto socket_error;
@@ -430,27 +431,51 @@ ssize_t upsdrvquery_request(
 	if (upsdrvquery_write(conn, qbuf) < 0)
 		goto socket_error;
 
-	if (upsdrvquery_read_timeout(conn, tv) < 1)
-		goto socket_error;
-
-	if (!strncmp(conn->buf, "TRACKING ", 9)
-	&&  !strncmp(conn->buf + 9, tracking_id, UUID4_LEN - 1)
-	) {
-		int	ret;
-		size_t	offset = 9 + UUID4_LEN;
-		if (sscanf(conn->buf + offset, " %d", &ret) < 1) {
-			upsdebugx(5, "%s: sscanf failed at offset %" PRIuSIZE " (char '%c')",
-				__func__, offset, conn->buf[offset]);
+	time(&start);
+	while (1) {
+		char *buf;
+		if (upsdrvquery_read_timeout(conn, tv) < 1)
 			goto socket_error;
+
+#if WIN32
+		/* Allow a new read to happen later */
+		conn->newread = 1;
+#endif
+
+		buf = conn->buf;
+		while (buf && *buf) {
+			if (!strncmp(buf, "TRACKING ", 9)
+			&&  !strncmp(buf + 9, tracking_id, UUID4_LEN - 1)
+			) {
+				int	ret;
+				size_t	offset = 9 + UUID4_LEN;
+				if (sscanf(buf + offset, " %d", &ret) < 1) {
+					upsdebugx(5, "%s: sscanf failed at offset %" PRIuSIZE " (char '%c')",
+						__func__, offset, buf[offset]);
+					goto socket_error;
+				}
+				upsdebugx(5, "%s: parsed out command status: %d",
+					__func__, ret);
+				return ret;
+			} else {
+				upsdebugx(5, "%s: response did not have expected format",
+					__func__);
+				/* Maybe a rogue send-to-all? */
+			}
+			buf = strchr(buf, '\n');
+			if (buf) {
+				upsdebugx(5, "%s: trying next line of multi-line response: %s",
+					__func__, buf);
+				buf++;	/* skip EOL char */
+			}
 		}
-		upsdebugx(5, "%s: parsed out command status: %d",
-			__func__, ret);
-		return ret;
-	} else {
-		upsdebugx(5, "%s: response did not have expected format",
-			__func__);
-		/* Maybe a rogue send-to-all? */
-		return -1;
+
+		time(&now);
+		if (difftime(now, start) > tv.tv_sec + 0.001 * tv.tv_usec) {
+			upsdebugx(5, "%s: timed out waiting for expected response",
+				__func__);
+			return -1;
+		}
 	}
 
 socket_error:
