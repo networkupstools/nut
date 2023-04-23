@@ -128,12 +128,22 @@ void upsdrvquery_close(TYPE_FD sockfd) {
 #ifndef WIN32
 	close(sockfd);
 #else
+	if (DisconnectNamedPipe(sockfd) == 0) {
+		upslogx(LOG_ERR,
+			"DisconnectNamedPipe error : %d",
+			(int)GetLastError());
+	}
 	CloseHandle(sockfd);
 #endif  /* WIN32 */
 }
 
 ssize_t upsdrvquery_read_timeout(TYPE_FD sockfd, struct timeval tv, char *buf, const size_t bufsz) {
 	ssize_t	ret;
+
+	if (INVALID_FD(sockfd)) {
+		upslog_with_errno(LOG_ERR, "socket not initialized");
+		return -1;
+	}
 
 #ifndef WIN32
 	fd_set	rfds;
@@ -166,17 +176,32 @@ ssize_t upsdrvquery_read_timeout(TYPE_FD sockfd, struct timeval tv, char *buf, c
 	NUT_UNUSED_VARIABLE(tv);
 
 	memset(buf, 0, bufsz);
+	memset(&read_overlapped, 0, sizeof(read_overlapped));
+
+	read_overlapped.hEvent = CreateEvent(
+		NULL,  /* Security */
+		FALSE, /* auto-reset */
+		FALSE, /* initial state = non signaled */
+		NULL   /* no name */
+	);
+
+	if (read_overlapped.hEvent == NULL) {
+		upslogx(LOG_ERR, "Can't create event for reading event log");
+		return -1;
+	}
 
 	/* Start a read IO so we could wait on the event associated with it */
 	ReadFile(sockfd, buf,
-		bufsz - 1, /*-1 to be sure to have a trailling 0 */
+		bufsz - 1, /* -1 to be sure to have a trailing 0 */
 		NULL, &read_overlapped);
-	GetOverlappedResult(sockfd, &read_overlapped, &bytesRead, FALSE);
+	if (FALSE == GetOverlappedResult(sockfd, &read_overlapped, &bytesRead, FALSE))
+		upsdebugx(6, "%s: pipe read error", __func__);
 
 	ret = (ssize_t)bytesRead;
 #endif  /* WIN32 */
 
-	upsdebugx(5, "%s: received %" PRIiMAX " bytes from driver socket: %s",
+	upsdebugx(ret > 0 ? 5 : 6,
+		"%s: received %" PRIiMAX " bytes from driver socket: %s",
 		__func__, (intmax_t)ret, (ret > 0 ? buf : "<null>"));
 	return ret;
 }
@@ -185,6 +210,11 @@ ssize_t upsdrvquery_write(TYPE_FD sockfd, const char *buf) {
 	size_t	buflen = strlen(buf);
 
 	upsdebugx(5, "%s: write to driver socket: %s", __func__, buf);
+
+	if (INVALID_FD(sockfd)) {
+		upslog_with_errno(LOG_ERR, "socket not initialized");
+		return -1;
+	}
 
 #ifndef WIN32
 	int ret = write(sockfd, buf, buflen);
