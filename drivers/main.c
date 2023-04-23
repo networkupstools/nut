@@ -1310,7 +1310,7 @@ static int handle_reload_flag(void) {
 	} else {
 		/* 1+ entries required a restart */
 		ret = STAT_INSTCMD_INVALID;
-	};
+	}
 
 	/* TODO: Callbacks in drivers to re-parse configs?
 	 * Currently this reloadability relies on either
