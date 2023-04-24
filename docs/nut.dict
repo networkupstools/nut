@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3124 utf-8
+personal_ws-1.1 en 3127 utf-8
 AAS
 ABI
 ACFAIL
@@ -341,6 +341,7 @@ Erikson
 Eriksson
 Evgeny
 Exar
+ExecCGI
 FD
 FEMEA
 FFF
@@ -1038,6 +1039,7 @@ Rene
 René
 Repotec's
 Repoteck
+RequireAny
 Richthof
 Rickard
 Ridgway
@@ -1142,6 +1144,7 @@ Schmier
 Schoch
 Schonefeld
 Schroder
+ScriptAlias
 Sekury
 Selinger
 SendEnv
