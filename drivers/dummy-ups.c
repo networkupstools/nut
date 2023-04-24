@@ -227,29 +227,40 @@ void upsdrv_updateinfo(void)
 				struct stat	fs;
 				char fn[SMALLBUF];
 
-				if (device_path[0] == '/')
+				if (device_path[0] == '/'
+#ifdef WIN32
+				||  device_path[1] == ':'	/* "C:\..." */
+#endif
+				)
 					snprintf(fn, sizeof(fn), "%s", device_path);
-				else
+				else if (device_path[0] == '.')	{
+					/* "./" or "../" e.g. via CLI */
+					getcwd(fn, sizeof(fn));
+					snprintf(fn + strlen(fn), sizeof(fn) - strlen(fn), "/%s", device_path);
+				} else
 					snprintf(fn, sizeof(fn), "%s/%s", confpath(), device_path);
 
 				/* Determine if file modification timestamp has changed
 				 * since last use (so we would want to re-read it) */
 #ifndef WIN32
 				/* Either successful stat is OK to fill the "fs" struct */
-				if (0 != fstat (upsfd, &fs) && 0 != stat (fn, &fs)) {
+				if (0 != fstat (upsfd, &fs) && 0 != stat (fn, &fs))
 #else
 				/* Consider GetFileAttributesEx() for WIN32_FILE_ATTRIBUTE_DATA?
 				 *   https://stackoverflow.com/questions/8991192/check-the-file-size-without-opening-file-in-c/8991228#8991228
 				 */
-				if (0 != stat (fn, &fs)) {
+				if (0 != stat (fn, &fs))
 #endif
+				{
 					upsdebugx(2, "Can't open %s currently", fn);
 					/* retry ASAP until we get a file */
 					memset(&datafile_stat, 0, sizeof(struct stat));
 					next_update = 1;
 				} else {
 					if (datafile_stat.st_mtime != fs.st_mtime) {
-						upsdebugx(2, "upsdrv_updateinfo: input file was already read once to the end, but changed later - re-reading");
+						upsdebugx(2,
+							"upsdrv_updateinfo: input file was already read once "
+							"to the end, but changed later - re-reading: %s", fn);
 						/* updated file => retry ASAP */
 						next_update = 1;
 						datafile_stat = fs;
@@ -461,22 +472,33 @@ void upsdrv_initups(void)
 #endif
 		}
 
-		if (device_path[0] == '/')
+		if (device_path[0] == '/'
+#ifdef WIN32
+		||  device_path[1] == ':'	/* "C:\..." */
+#endif
+		)
 			snprintf(fn, sizeof(fn), "%s", device_path);
-		else
+		else if (device_path[0] == '.')	{
+			/* "./" or "../" e.g. via CLI */
+			getcwd(fn, sizeof(fn));
+			snprintf(fn + strlen(fn), sizeof(fn) - strlen(fn), "/%s", device_path);
+		} else
 			snprintf(fn, sizeof(fn), "%s/%s", confpath(), device_path);
 
 		/* Update file modification timestamp (and other data) */
 #ifndef WIN32
 		/* Either successful stat is OK to fill the "datafile_stat" struct */
-		if (0 != fstat (upsfd, &datafile_stat) && 0 != stat (device_path, &datafile_stat)) {
+		if (0 != fstat (upsfd, &datafile_stat) && 0 != stat (device_path, &datafile_stat))
 #else
 		/* Consider GetFileAttributesEx() for WIN32_FILE_ATTRIBUTE_DATA?
 		 *   https://stackoverflow.com/questions/8991192/check-the-file-size-without-opening-file-in-c/8991228#8991228
 		 */
-		if (0 != stat (device_path, &datafile_stat)) {
+		if (0 != stat (device_path, &datafile_stat))
 #endif
-			upsdebugx(2, "Can't open %s currently", device_path);
+		{
+			upsdebugx(2, "Can't open %s (%s) currently", device_path, fn);
+		} else {
+			upsdebugx(2, "Located %s for device simulation data: %s", device_path, fn);
 		}
 	}
 }
@@ -693,9 +715,17 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 	{
 		ctx = (PCONF_CTX_t *)xmalloc(sizeof(PCONF_CTX_t));
 
-		if (device_path[0] == '/')
+		if (device_path[0] == '/'
+#ifdef WIN32
+		||  device_path[1] == ':'	/* "C:\..." */
+#endif
+		)
 			snprintf(fn, sizeof(fn), "%s", device_path);
-		else
+		else if (device_path[0] == '.')	{
+			/* "./" or "../" e.g. via CLI */
+			getcwd(fn, sizeof(fn));
+			snprintf(fn + strlen(fn), sizeof(fn) - strlen(fn), "/%s", device_path);
+		} else
 			snprintf(fn, sizeof(fn), "%s/%s", confpath(), device_path);
 
 		pconf_init(ctx, upsconf_err);
