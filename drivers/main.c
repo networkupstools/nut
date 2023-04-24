@@ -1894,6 +1894,44 @@ int main(int argc, char **argv)
 	}
 #endif  /* WIN32 */
 
+	if (do_forceshutdown) {
+		/* First try to handle this over socket protocol
+		 * with the running older driver instance (if any);
+		 * if this does not succeed, fall through to legacy
+		 * approach (kill sibling if needed, recapture device,
+		 * command it...)
+		 */
+		int	cmdret = -1;
+
+		/* Post the query and wait for reply */
+		cmdret = upsdrvquery_oneshot(progname, upsname,
+			"SET driver.flag.allow_killpower 1\n",
+			NULL, 0);
+
+		if (cmdret >= 0) {
+			cmdret = upsdrvquery_oneshot(progname, upsname,
+				"INSTCMD driver.killpower\n",
+				NULL, 0);
+
+			if (cmdret < 0) {
+				upsdebugx(1, "Socket dialog with the other driver instance: %s", strerror(errno));
+			} else {
+				upslogx(LOG_INFO, "Request to killpower via running driver returned code %d", cmdret);
+				if (cmdret == 0)
+					/* Note: many drivers would abort with
+                                         * "shutdown not supported" at this
+                                         * point... we would too, but later
+                                         * and at a higher time/processing cost.
+                                         */
+					exit (EXIT_SUCCESS);
+				/* else fall through to legacy handling */
+			}
+		} else {
+			upsdebugx(1, "Socket dialog with the other driver instance: %s",
+				strerror(errno));
+		}
+	}
+
 	/* Handle reload-or-error over socket protocol with
 	 * the running older driver instance */
 #ifndef WIN32
