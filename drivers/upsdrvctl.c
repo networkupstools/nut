@@ -198,6 +198,7 @@ static void signal_driver_cmd(const ups_t *ups,
 	{
 		/* not a signal, use socket protocol */
 		char buf[LARGEBUF];
+		struct timeval	tv;
 
 		upsdebugx(1, "Signalling UPS [%s]: %s",
 			ups->upsname, "driver.reload-or-error");
@@ -206,9 +207,12 @@ static void signal_driver_cmd(const ups_t *ups,
 			return;
 
 		/* Post the query and wait for reply */
+		/* FIXME: coordinate with pollfreq? */
+		tv.tv_sec = 15;
+		tv.tv_usec = 0;
 		ret = upsdrvquery_oneshot(ups->driver, ups->upsname,
 			"INSTCMD driver.reload-or-error\n",
-			buf, sizeof(buf));
+			buf, sizeof(buf), &tv);
 		if (ret < 0) {
 			goto socket_error;
 		} else {
