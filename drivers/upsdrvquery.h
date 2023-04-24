@@ -46,6 +46,6 @@ ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv);
 ssize_t upsdrvquery_request(udq_pipe_conn_t *conn, struct timeval tv, const char *query);
 
 /* if buf != NULL, last reply is copied there */
-ssize_t upsdrvquery_oneshot(const char *drvname, const char *upsname, const char *query, char *buf, const size_t bufsz);
+ssize_t upsdrvquery_oneshot(const char *drvname, const char *upsname, const char *query, char *buf, const size_t bufsz, struct timeval *tv);
 
 #endif	/* NUT_UPSDRVQUERY_H_SEEN */

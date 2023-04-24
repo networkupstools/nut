@@ -507,7 +507,8 @@ socket_error:
 ssize_t upsdrvquery_oneshot(
 	const char *drvname, const char *upsname,
 	const char *query,
-	char *buf, const size_t bufsz
+	char *buf, const size_t bufsz,
+	struct timeval *ptv
 ) {
 	struct timeval	tv;
 	ssize_t ret;
@@ -539,8 +540,13 @@ ssize_t upsdrvquery_oneshot(
 		goto finish;
 	}
 
-	tv.tv_sec = 5;
-	tv.tv_usec = 0;
+	if (ptv) {
+		tv.tv_sec = ptv->tv_sec;
+		tv.tv_usec = ptv->tv_usec;
+	} else {
+		tv.tv_sec = 5;
+		tv.tv_usec = 0;
+	}
 	if ((ret = upsdrvquery_request(conn, tv, query)) < 0) {
 		ret = -1;
 		goto finish;
