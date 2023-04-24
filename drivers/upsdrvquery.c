@@ -431,6 +431,20 @@ ssize_t upsdrvquery_request(
 	if (upsdrvquery_write(conn, qbuf) < 0)
 		goto socket_error;
 
+	if (tv.tv_sec < 1 && tv.tv_usec < 1) {
+		upsdebugx(1, "%s: will wait indefinitely for response to %s",
+			__func__, query);
+	} else {
+		while (tv.tv_usec >= 1000) {
+			tv.tv_usec -= 1000;
+			tv.tv_sec++;
+		}
+		upsdebugx(5, "%s: will wait up to %" PRIiMAX
+                        ".%03" PRIiMAX " sec for response to %s",
+			__func__, (intmax_t)tv.tv_sec,
+			(intmax_t)tv.tv_usec, query);
+	}
+
 	time(&start);
 	while (1) {
 		char *buf;
@@ -471,6 +485,13 @@ ssize_t upsdrvquery_request(
 		}
 
 		time(&now);
+		if (tv.tv_sec < 1 && tv.tv_usec < 1) {
+			if ( ((long)(difftime(now, start))) % 60 == 0 )
+				upsdebugx(5, "%s: waiting indefinitely for response to %s", __func__, query);
+			sleep(1);
+			continue;
+		}
+
 		if (difftime(now, start) > tv.tv_sec + 0.001 * tv.tv_usec) {
 			upsdebugx(5, "%s: timed out waiting for expected response",
 				__func__);
