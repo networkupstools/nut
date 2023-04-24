@@ -134,12 +134,10 @@ void upsdrv_initinfo(void)
 }
 
 void upsdrv_shutdown(void)
-	__attribute__((noreturn));
-
-void upsdrv_shutdown(void)
 {
 	/* FIXME: shutdown all outlets? */
-	fatalx(EXIT_FAILURE, "shutdown not supported");
+	upslogx(LOG_ERR, "shutdown not supported");
+	set_exit_flag(-1);
 
 	/* OL: this must power cycle the load if possible */
 	/* OB: the load must remain off until the power returns */

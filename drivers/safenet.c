@@ -434,7 +434,9 @@ void upsdrv_shutdown(void)
 			continue;
 		}
 
-		fatalx(EXIT_FAILURE, "SafeNet protocol compatible UPS not found on %s", device_path);
+		upslogx(LOG_ERR, "SafeNet protocol compatible UPS not found on %s", device_path);
+		set_exit_flag(-1);
+		return;
 	}
 
 	/*

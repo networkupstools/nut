@@ -336,9 +336,13 @@ void upsdrv_shutdown(void)
 	switch (rval) {
 		case STAT_INSTCMD_FAILED:
 		case STAT_INSTCMD_INVALID:
-			fatalx(EXIT_FAILURE, "shutdown failed");
+			upslogx(LOG_ERR, "shutdown failed");
+			set_exit_flag(-1);
+			return;
 		case STAT_INSTCMD_UNKNOWN:
-			fatalx(EXIT_FAILURE, "shutdown not supported");
+			upslogx(LOG_ERR, "shutdown not supported");
+			set_exit_flag(-1);
+			return;
 		default:
 			break;
 	}

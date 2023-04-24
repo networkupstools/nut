@@ -168,7 +168,9 @@ static void forceshutdown(void)
 
 	/* the driver must not block in this function */
 	upsdrv_shutdown();
-	exit(EXIT_SUCCESS);
+
+	/* the driver always exits here, to not block probable ongoing shutdown */
+	exit(exit_flag == -1 ? EXIT_FAILURE : EXIT_SUCCESS);
 }
 
 /* this function only prints the usage message; it does not call exit() */
@@ -1461,7 +1463,16 @@ static void exit_cleanup(void)
 
 void set_exit_flag(int sig)
 {
-	upsdebugx(1, "%s: raising exit flag due to signal %d", __func__, sig);
+	switch (exit_flag) {
+		case -2:
+			upsdebugx(1, "%s: raising exit flag due to programmatic abort: EXIT_SUCCESS", __func__);
+			break;
+		case -1:
+			upsdebugx(1, "%s: raising exit flag due to programmatic abort: EXIT_FAILURE", __func__);
+			break;
+		default:
+			upsdebugx(1, "%s: raising exit flag due to signal %d", __func__, sig);
+	}
 	exit_flag = sig;
 }
 
@@ -2352,6 +2363,6 @@ int main(int argc, char **argv)
 		upsnotify(NOTIFY_STATE_STOPPING, "Signal %d: exiting", exit_flag);
 	}
 
-	exit(EXIT_SUCCESS);
+	exit(exit_flag == -1 ? EXIT_FAILURE : EXIT_SUCCESS);
 }
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
