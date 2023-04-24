@@ -159,6 +159,13 @@ fails.  If the UPS does not shut down the load, then the user is
 vulnerable to a race if the power comes back on during the shutdown
 process.
 
+This method should not directly `exit()` the driver program (neither
+should it call `fatalx()` nor `fatal_with_errno()` methods).  It can
+`upslogx(LOG_ERR, ...)` or `upslog_with_errno(LOG_ERR, ...)`, and then
+`set_exit_flag(N)` if required (`-1` for `EXIT_FAILURE` and `-2` for
+`EXIT_SUCCESS` which would be handled in the standard driver loop or
+`forceshutdown()` method of `main.c`).
+
 Data types
 ----------
 
