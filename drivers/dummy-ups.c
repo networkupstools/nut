@@ -235,8 +235,10 @@ void upsdrv_updateinfo(void)
 					snprintf(fn, sizeof(fn), "%s", device_path);
 				else if (device_path[0] == '.')	{
 					/* "./" or "../" e.g. via CLI */
-					getcwd(fn, sizeof(fn));
-					snprintf(fn + strlen(fn), sizeof(fn) - strlen(fn), "/%s", device_path);
+					if (getcwd(fn, sizeof(fn))) {
+						snprintf(fn + strlen(fn), sizeof(fn) - strlen(fn), "/%s", device_path);
+					} else
+						snprintf(fn, sizeof(fn), "%s", device_path);
 				} else
 					snprintf(fn, sizeof(fn), "%s/%s", confpath(), device_path);
 
@@ -480,8 +482,10 @@ void upsdrv_initups(void)
 			snprintf(fn, sizeof(fn), "%s", device_path);
 		else if (device_path[0] == '.')	{
 			/* "./" or "../" e.g. via CLI */
-			getcwd(fn, sizeof(fn));
-			snprintf(fn + strlen(fn), sizeof(fn) - strlen(fn), "/%s", device_path);
+			if (getcwd(fn, sizeof(fn))) {
+				snprintf(fn + strlen(fn), sizeof(fn) - strlen(fn), "/%s", device_path);
+			} else
+				snprintf(fn, sizeof(fn), "%s", device_path);
 		} else
 			snprintf(fn, sizeof(fn), "%s/%s", confpath(), device_path);
 
@@ -723,8 +727,10 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 			snprintf(fn, sizeof(fn), "%s", device_path);
 		else if (device_path[0] == '.')	{
 			/* "./" or "../" e.g. via CLI */
-			getcwd(fn, sizeof(fn));
-			snprintf(fn + strlen(fn), sizeof(fn) - strlen(fn), "/%s", device_path);
+			if (getcwd(fn, sizeof(fn))) {
+				snprintf(fn + strlen(fn), sizeof(fn) - strlen(fn), "/%s", device_path);
+			} else
+				snprintf(fn, sizeof(fn), "%s", device_path);
 		} else
 			snprintf(fn, sizeof(fn), "%s/%s", confpath(), device_path);
 
