@@ -30,8 +30,6 @@
 #include "parseconf.h"
 #include "upshandler.h"
 
-#include "main.h"	/* for set_exit_flag() */
-
 #ifdef WIN32
 # include "wincompat.h"
 #endif
@@ -53,7 +51,10 @@ typedef struct conn_s {
 	PCONF_CTX_t	ctx;
 	struct conn_s	*prev;
 	struct conn_s	*next;
+	int	nobroadcast;	/* connections can request to ignore send_to_all() updates */
 } conn_t;
+
+#include "main.h"	/* for set_exit_flag(); uses conn_t itself */
 
 	extern	struct	ups_handler	upsh;
 

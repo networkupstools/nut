@@ -593,7 +593,7 @@ void conf_reload(void)
 	}
 
 	/* reload from ups.conf */
-	read_upsconf();
+	read_upsconf(1);		/* 1 = may abort upon fundamental errors */
 	upsconf_add(1);			/* 1 = reloading */
 
 	/* now reread upsd.conf */

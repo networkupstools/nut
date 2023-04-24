@@ -479,6 +479,11 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* replace with a proper shutdown function */
+/*
+	upslogx(LOG_ERR, "shutdown not supported");
+	set_exit_flag(-1);
+ */
 }
 
 

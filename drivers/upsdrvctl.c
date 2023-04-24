@@ -36,6 +36,7 @@
 #include "attribute.h"
 #include "nut_stdint.h"
 #include "main.h"
+#include "upsdrvquery.h"
 
 typedef struct {
 	char	*upsname;
@@ -176,9 +177,6 @@ void do_upsconf_args(char *arg_upsname, char *var, char *val)
 		upstable = tmp;
 }
 
-#ifndef WIN32
-/* TODO: implement WIN32 */
-/* handle generally signalling the UPS */
 static void signal_driver_cmd(const ups_t *ups,
 #ifndef WIN32
 	int cmd
@@ -187,9 +185,51 @@ static void signal_driver_cmd(const ups_t *ups,
 #endif
 )
 {
+#ifndef WIN32
 	char	pidfn[SMALLBUF];
+#endif
 	int	ret;
 
+#ifndef WIN32
+	if (cmd == SIGCMD_RELOAD_OR_ERROR)
+#else
+	if (cmd && !strcmp(cmd, SIGCMD_RELOAD_OR_ERROR))
+#endif
+	{
+		/* not a signal, use socket protocol */
+		char buf[LARGEBUF];
+
+		upsdebugx(1, "Signalling UPS [%s]: %s",
+			ups->upsname, "driver.reload-or-error");
+
+		if (testmode)
+			return;
+
+		/* Post the query and wait for reply */
+		ret = upsdrvquery_oneshot(ups->driver, ups->upsname,
+			"INSTCMD driver.reload-or-error\n",
+			buf, sizeof(buf));
+		if (ret < 0) {
+			goto socket_error;
+		} else {
+			upslogx(LOG_INFO, "Request to reload-or-error returned code %d", ret);
+			if (ret != STAT_INSTCMD_HANDLED)
+				exec_error++;
+			/* TODO: Propagate "ret" to caller, eventually CLI exit-code? */
+		}
+
+		return;
+
+socket_error:
+		upslog_with_errno(LOG_ERR, "Socket dialog with the other driver instance");
+		exec_error++;
+		return;
+	}
+
+#ifndef WIN32
+/* TODO: implement WIN32 */
+/* handle generally signalling the UPS */
+	/* Real signals */
 #ifndef WIN32
 	upsdebugx(1, "Signalling UPS [%s]: %d (%s)",
 		ups->upsname, cmd, strsignal(cmd));
@@ -255,13 +295,13 @@ static void signal_driver_cmd(const ups_t *ups,
 		upslog_with_errno(LOG_ERR, "Signalling %s failed: %d", pidfn, ret);
 		exec_error++;
 	}
+#endif	/* WIN32 */
 }
 
 /* handle generally signalling the UPS with recently raised signal */
 static void signal_driver(const ups_t *ups) {
 	signal_driver_cmd(ups, signal_flag);
 }
-#endif	/* WIN32 */
 
 /* handle sending the signal */
 static void stop_driver(const ups_t *ups)
@@ -446,7 +486,6 @@ static void reset_signal_flag(void)
 
 #ifndef WIN32
 /* TODO: Equivalent for WIN32 - see SIGCMD_RELOAD in upd and upsmon */
-
 static void set_reload_flag(const
 #ifndef WIN32
 	int
@@ -456,8 +495,6 @@ static void set_reload_flag(const
 	sig
 ) {
 	set_signal_flag(sig);
-#ifndef WIN32
-/* TODO: Equivalent for WIN32 - see SIGCMD_RELOAD in upd and upsmon */
 	switch (sig) {
 		case SIGCMD_RELOAD_OR_EXIT:     /* SIGUSR1 */
 			/* reload-or-exit (this driver instance may die) */
@@ -473,6 +510,7 @@ static void set_reload_flag(const
 # endif
 
 		case SIGCMD_RELOAD:     /* SIGHUP */
+		case SIGCMD_RELOAD_OR_ERROR:	/* Not even a signal, but a socket protocol action */
 		default:
 			/* reload what we can, log what needs a restart so skipped */
 			reload_flag = 1;
@@ -480,7 +518,6 @@ static void set_reload_flag(const
 
 	upsdebugx(1, "%s: raising reload flag due to signal %d (%s) => reload_flag=%d",
 		__func__, sig, strsignal(sig), reload_flag);
-#endif
 }
 #endif
 
@@ -868,9 +905,7 @@ static void help(const char *arg_progname)
 {
 	printf("Starts and stops UPS drivers via ups.conf.\n\n");
 	printf("usage: %s [OPTIONS] (start | stop | shutdown) [<ups>]\n\n", arg_progname);
-#ifndef WIN32
 	printf("usage: %s [OPTIONS] -c <command> [<ups>]\n\n", arg_progname);
-#endif
 
 	printf("Common options:\n");
 	printf("  -h			display this help\n");
@@ -883,16 +918,24 @@ static void help(const char *arg_progname)
 	printf("  -FF			driver stays foregrounded and still saves the PID file\n");
 	printf("  -B			driver(s) stay backgrounded even if debugging is bumped\n");
 
-#ifndef WIN32
-/* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
 	printf("Signalling a running driver:\n");
 	printf("  -c <command>		send <command> via signal to running driver(s)\n");
 	printf("              		supported commands:\n");
+#ifndef WIN32
+/* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
 	printf("              		- data-dump: if the driver still has STDOUT attached (maybe\n");
 	printf("              		  to log), dump its currently collected information there\n");
 	printf("              		- reload: re-read configuration files, ignoring changed\n");
 	printf("              		  values which require a driver restart (can not be changed\n");
 	printf("              		  on the fly)\n");
+#endif /* WIN32 */
+	printf("              		- reload-or-error: re-read configuration files, ignoring but\n");
+	printf("              		  counting changed values which require a driver restart (can\n");
+	printf("              		  not be changed on the fly), and return a success/fail code\n");
+	printf("              		  based on that count, so the caller can decide the fate of\n");
+	printf("              		  the currently running driver instance\n");
+#ifndef WIN32
+/* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
 # ifdef SIGCMD_RELOAD_OR_RESTART
 	printf("              		- reload-or-restart: re-read configuration files (close the\n");
 	printf("              		  old driver instance device connection if needed, and have\n");
@@ -1073,11 +1116,7 @@ int main(int argc, char **argv)
 		UPS_VERSION);
 
 	prog = argv[0];
-	while ((i = getopt(argc, argv, "+htu:r:DdFBV"
-#ifndef WIN32
-		"c:"
-#endif
-)) != -1) {
+	while ((i = getopt(argc, argv, "+htu:r:DdFBVc:")) != -1) {
 		switch(i) {
 			case 'r':
 				pt_root = optarg;
@@ -1115,8 +1154,6 @@ int main(int argc, char **argv)
 				nut_foreground_passthrough = 0;
 				break;
 
-#ifndef WIN32
-/* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
 			case 'c':
 				if (command || pt_cmd) {
 					fatalx(EXIT_FAILURE,
@@ -1125,6 +1162,12 @@ int main(int argc, char **argv)
 				}
 				command = &signal_driver;
 
+				if (!strncmp(optarg, "reload-or-error", strlen(optarg))) {
+					signal_flag = SIGCMD_RELOAD_OR_ERROR;
+				}
+#ifndef WIN32
+/* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
+				else
 				if (!strncmp(optarg, "dump", strlen(optarg))) {
 					signal_flag = SIGCMD_DATA_DUMP;
 				} else
@@ -1142,23 +1185,41 @@ int main(int argc, char **argv)
 				if (!strncmp(optarg, "reload-or-exit", strlen(optarg))) {
 					signal_flag = SIGCMD_RELOAD_OR_EXIT;
 				}
+#endif	/* WIN32 */
 
 				/* bad command given */
-				if (signal_flag == 0) {
+				if (!signal_flag) {
 					fatalx(EXIT_FAILURE,
 						"Error: unknown argument to option -%c. Try -h for help.", i);
 				}
 
 				pt_cmd = optarg;
+#ifndef WIN32
 				upsdebugx(1, "Will send signal %d (%s) for command '%s' "
 					"to already-running driver (if any) and exit",
 					signal_flag, strsignal(signal_flag), optarg);
-				break;
+#else
+				upsdebugx(1, "Will send request '%s' for command '%s' "
+					"to already-running driver (if any) and exit",
+					signal_flag, optarg);
 #endif	/* WIN32 */
+				break;
 			case 'h':
 			default:
 				help(prog);
 		}
+	}
+
+	{ /* scoping */
+		char *s = getenv("NUT_DEBUG_LEVEL");
+		int l;
+		if (s && str_to_int(s, &l, 10)) {
+			if (l > 0 && nut_debug_level < 1) {
+				upslogx(LOG_INFO, "Defaulting debug verbosity to NUT_DEBUG_LEVEL=%d "
+					"since none was requested by command-line options", l);
+				nut_debug_level = l;
+			}	/* else follow -D settings */
+		}	/* else nothing to bother about */
 	}
 
 	argc -= optind;
@@ -1212,7 +1273,7 @@ int main(int argc, char **argv)
 
 	atexit(exit_cleanup);
 
-	read_upsconf();
+	read_upsconf(1);
 
 	if (argc == lastarg) {
 		ups_t	*tmp = upstable;

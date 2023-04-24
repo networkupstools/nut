@@ -370,7 +370,8 @@ void upsdrv_shutdown(void)
 		return;
 	}
 
-	fatalx(EXIT_FAILURE, "Shutdown failed!");
+	upslogx(LOG_ERR, "Shutdown failed!");
+	set_exit_flag(-1);
 }
 
 void upsdrv_help(void)

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3121 utf-8
+personal_ws-1.1 en 3123 utf-8
 AAS
 ABI
 ACFAIL
@@ -738,6 +738,7 @@ NNNNNNNN
 NNNNNNNNNN
 NNNNNNNNNNNNNNNNNNN
 NOAUTH
+NOBROADCAST
 NOCOMM
 NOCOMMWARNTIME
 NOCONF
@@ -2742,6 +2743,7 @@ snmpwalk
 snprintf
 snprintfcat
 snr
+socat
 sockdebug
 socomec
 solaris

@@ -2528,6 +2528,19 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	{ /* scoping */
+		char *s = getenv("NUT_DEBUG_LEVEL");
+		int l;
+		if (s && str_to_int(s, &l, 10)) {
+			if (l > 0 && nut_debug_level_args < 1) {
+				upslogx(LOG_INFO, "Defaulting debug verbosity to NUT_DEBUG_LEVEL=%d "
+					"since none was requested by command-line options", l);
+				nut_debug_level = l;
+				nut_debug_level_args = l;
+			}	/* else follow -D settings */
+		}	/* else nothing to bother about */
+	}
+
 	/* Note: "cmd" may be non-trivial to command that instance by
 	 * explicit PID number or lookup in PID file (error if absent).
 	 * Otherwise, we are being asked to start and "cmd" is 0/NULL -

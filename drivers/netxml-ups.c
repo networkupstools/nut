@@ -451,8 +451,10 @@ void upsdrv_shutdown(void) {
 	if (NULL != resp)
 		object_query_destroy(resp);
 
-	if (STAT_SET_HANDLED != status)
-		fatalx(EXIT_FAILURE, "Shutdown failed: %d", status);
+	if (STAT_SET_HANDLED != status) {
+		upslogx(LOG_ERR, "Shutdown failed: %d", status);
+		set_exit_flag(-1);
+	}
 }
 
 static int instcmd(const char *cmdname, const char *extra)

@@ -197,6 +197,13 @@ set this to -1.
 +
 The default value for this parameter is 0.
 
+*allow_killpower*::
+Optional.  This allows you to request `driver.killpower` instant command,
+to immediately call the driver-specific default implementation of
+`upsdrv_shutdown()` method, for same effect as when a NUT driver is
+started with `-k` command-line flag.  This option can be toggled with
+linkman:upsrw[8] as `driver.flag.allow_killpower` during run-time.
+
 *desc*::
 
 Optional.  This allows you to set a brief description that upsd will provide

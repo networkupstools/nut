@@ -26,6 +26,7 @@
 #include "nut_stdint.h"
 #include "dstate.h"
 #include "attribute.h"
+#include "upsdrvquery.h"
 
 #ifndef WIN32
 # include <grp.h>
@@ -101,19 +102,37 @@ static int foreground = -1;
  * can define a debug_min value in the global or device
  * section, to set the minimal debug level (CLI provided
  * value less than that would not have effect, can only
- * have more).
+ * have more). Finally, it can also be set over socket
+ * protocol, taking precedence over other inputs.
  */
-#ifndef DRIVERS_MAIN_WITHOUT_MAIN
 static int nut_debug_level_args = -1;
-#endif
 static int nut_debug_level_global = -1;
 static int nut_debug_level_driver = -1;
+static int nut_debug_level_protocol = -1;
 
 #ifndef DRIVERS_MAIN_WITHOUT_MAIN
 /* everything else */
 static char	*pidfn = NULL;
 static int	dump_data = 0; /* Store the update_count requested */
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
+
+/* pre-declare some private methods used */
+static void assign_debug_level(void);
+/* TODO: Equivalent for WIN32 - see SIGCMD_RELOAD in upd and upsmon */
+static void set_reload_flag(
+#ifndef WIN32
+	int
+#else
+	char *
+#endif
+	sig);
+#ifndef DRIVERS_MAIN_WITHOUT_MAIN
+/* Returns a result code from INSTCMD enum values */
+static int handle_reload_flag(void);
+#endif
+
+/* Set in do_ups_confargs() for consumers like handle_reload_flag() */
+static int reload_requires_restart = -1;
 
 /* print the driver banner */
 void upsdrv_banner (void)
@@ -149,7 +168,9 @@ static void forceshutdown(void)
 
 	/* the driver must not block in this function */
 	upsdrv_shutdown();
-	exit(EXIT_SUCCESS);
+
+	/* the driver always exits here, to not block probable ongoing shutdown */
+	exit(exit_flag == -1 ? EXIT_FAILURE : EXIT_SUCCESS);
 }
 
 /* this function only prints the usage message; it does not call exit() */
@@ -182,13 +203,22 @@ static void help_msg(void)
 	printf("  -q             - raise log level threshold\n");
 	printf("  -h             - display this help\n");
 	printf("  -k             - force shutdown\n");
-# ifndef WIN32
-/* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
 	printf("  -c <command>   - send <command> via signal to background process\n");
 	printf("                   Supported commands:\n");
+# ifndef WIN32
+/* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
 	printf("                   - reload: re-read configuration files, ignoring changed\n");
 	printf("                     values which require a driver restart (can not be changed\n");
 	printf("                     on the fly)\n");
+# endif	/* WIN32 */
+/* Note: this one is beside signal-sending (goes via socket protocol): */
+	printf("                   - reload-or-error: re-read configuration files, ignoring but\n");
+	printf("                     counting changed values which require a driver restart (can\n");
+	printf("                     not be changed on the fly), and return a success/fail code\n");
+	printf("                     based on that count, so the caller can decide the fate of\n");
+	printf("                     the currently running driver instance\n");
+# ifndef WIN32
+/* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
 #  ifdef SIGCMD_RELOAD_OR_RESTART
 	printf("                   - reload-or-restart: re-read configuration files (close the\n");
 	printf("                     old driver instance device connection if needed, and have\n");
@@ -416,10 +446,20 @@ int testvar_reloadable(const char *var, const char *val, int vartype)
 							EXIT_SUCCESS
 #endif
 							, "NUT driver reload-or-exit: setting %s was changed and requires a driver restart", var);
+
 					verdict = (
 						(!reload_flag)	/* For initial config reads, legacy code trusted what it saw */
 						|| tmp->reloadable	/* set in addvar*() */
 					);
+
+					/* handle reload-or-error reports */
+					if (verdict == 0) {
+						if (reload_requires_restart < 1)
+							reload_requires_restart = 1;
+						else
+							reload_requires_restart++;
+					}
+
 					goto finish;
 				}
 			}
@@ -439,6 +479,17 @@ int testvar_reloadable(const char *var, const char *val, int vartype)
 	verdict = 1;	/* not found, may (re)load the definition */
 
 finish:
+	switch (verdict) {
+		case -1:	/* no-op for caller, same value remains */
+		case  1:	/* value may be (re-)applied */
+			if (reload_requires_restart < 0)
+				reload_requires_restart = 0;
+			break;
+
+		case  0:	/* value may not be (re-)applied, but it may not have been required */
+			break;
+	}
+
 	upsdebugx(6, "%s: verdict for (re)loading var=%s value: %d",
 		__func__, NUT_STRARG(var), verdict);
 	return verdict;
@@ -508,10 +559,30 @@ int testval_reloadable(const char *var, const char *oldval, const char *newval, 
 				, "NUT driver reload-or-exit: setting %s was changed and requires a driver restart", var);
 		/* For initial config reads, legacy code trusted what it saw */
 		verdict = ((!reload_flag) || reloadable);
+
+		/* handle reload-or-error reports */
+		if (verdict == 0) {
+			if (reload_requires_restart < 1)
+				reload_requires_restart = 1;
+			else
+				reload_requires_restart++;
+		}
+
 		goto finish;
 	}
 
 finish:
+	switch (verdict) {
+		case -1:	/* no-op for caller, same value remains */
+		case  1:	/* value may be (re-)applied */
+			if (reload_requires_restart < 0)
+				reload_requires_restart = 0;
+			break;
+
+		case  0:	/* value may not be (re-)applied, but it may not have been required */
+			break;
+	}
+
 	upsdebugx(6, "%s: verdict for (re)loading var=%s value: %d",
 		__func__, NUT_STRARG(var), verdict);
 	return verdict;
@@ -595,6 +666,144 @@ void addvar(int vartype, const char *name, const char *desc)
 	do_addvar(vartype, name, desc, 0);
 }
 
+/* handle instant commands common for all drivers */
+int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
+	char buf[SMALLBUF];
+	if (conn)
+#ifndef WIN32
+		snprintf(buf, sizeof(buf), "socket %d", conn->fd);
+#else
+		snprintf(buf, sizeof(buf), "handle %p", conn->fd);
+#endif
+	else
+		snprintf(buf, sizeof(buf), "(null)");
+
+	upsdebugx(2, "entering main_instcmd(%s, %s) for [%s] on %s",
+		cmdname, extra, NUT_STRARG(upsname), buf);
+
+	if (!strcmp(cmdname, "driver.killpower")) {
+		if (!strcmp("1", dstate_getinfo("driver.flag.allow_killpower"))) {
+			upslogx(LOG_WARNING, "Requesting UPS [%s] to power off, "
+				"as/if handled by its driver by default (may exit), "
+				"due to socket protocol request", NUT_STRARG(upsname));
+			upsdrv_shutdown();
+			return STAT_INSTCMD_HANDLED;
+		} else {
+			upslogx(LOG_WARNING, "Got socket protocol request for UPS [%s] "
+				"to power off, but driver.flag.allow_killpower does not"
+				"permit this - request was currently ignored!",
+				NUT_STRARG(upsname));
+			return STAT_INSTCMD_INVALID;
+		}
+	}
+
+#ifndef WIN32
+/* TODO: Equivalent for WIN32 - see SIGCMD_RELOAD in upd and upsmon */
+	if (!strcmp(cmdname, "driver.reload")) {
+		set_reload_flag(SIGCMD_RELOAD);
+		/* TODO: sync mode to track that reload finished, and how?
+		 * Especially to know if there were values we can not change
+		 * on the fly, so caller may want to restart the driver itself.
+		 */
+		return STAT_INSTCMD_HANDLED;
+	}
+
+	if (!strcmp(cmdname, "driver.reload-or-exit")) {
+		set_reload_flag(SIGCMD_RELOAD_OR_EXIT);
+		return STAT_INSTCMD_HANDLED;
+	}
+
+# ifdef SIGCMD_RELOAD_OR_RESTART
+	if (!strcmp(cmdname, "driver.reload-or-restart")) {
+		set_reload_flag(SIGCMD_RELOAD_OR_RESTART);
+		return STAT_INSTCMD_HANDLED;
+	}
+# endif
+#endif  /* WIN32 */
+
+#ifndef DRIVERS_MAIN_WITHOUT_MAIN
+	if (!strcmp(cmdname, "driver.reload-or-error")) {
+		/* sync-capable handling */
+		set_reload_flag(SIGCMD_RELOAD_OR_ERROR);
+		/* Returns a result code from INSTCMD enum values */
+		return handle_reload_flag();
+	}
+#endif
+
+	/* By default, the driver-specific values are
+	 * unknown to shared standard handler */
+	upsdebugx(2, "shared %s() does not handle command %s, "
+		"proceeding to driver-specific handler",
+		__func__, cmdname);
+	return STAT_INSTCMD_UNKNOWN;
+}
+
+/* handle setting variables common for all drivers */
+int main_setvar(const char *varname, const char *val, conn_t *conn) {
+	char buf[SMALLBUF];
+	if (conn)
+#ifndef WIN32
+		snprintf(buf, sizeof(buf), "socket %d", conn->fd);
+#else
+		snprintf(buf, sizeof(buf), "handle %p", conn->fd);
+#endif
+	else
+		snprintf(buf, sizeof(buf), "(null)");
+
+	upsdebugx(2, "entering main_setvar(%s, %s) for [%s] on %s",
+		varname, val, NUT_STRARG(upsname), buf);
+
+	if (!strcmp(varname, "driver.debug")) {
+		int num;
+		if (str_to_int(val, &num, 10)) {
+			if (num < 0) {
+				upsdebugx(nut_debug_level > 0 ? 1 : 0,
+					"NOTE: Will fall back to CLI/DriverConfig/GlobalConfig debug verbosity preference now");
+				num = -1;
+			}
+			if (nut_debug_level > 0 && num == 0)
+				upsdebugx(1, "NOTE: Will disable verbose debug now, due to socket protocol request");
+			nut_debug_level_protocol = num;
+			assign_debug_level();
+			return STAT_SET_HANDLED;
+		} else {
+			goto invalid;
+		}
+	}
+
+	if (!strcmp(varname, "driver.flag.allow_killpower")) {
+		int num = 0;
+		if (str_to_int(val, &num, 10)) {
+			if (num <= 0) {
+				num = 0;
+			} else	num = 1;
+		} else {
+			/* support certain strings */
+			if (!strncmp(val, "enable", 6)	/* "enabled" matches too */
+			 || !strcmp(val, "true")
+			 || !strcmp(val, "yes")
+			 || !strcmp(val, "on")
+			) num = 1;
+		}
+
+		upsdebugx(1, "%s: Setting %s=%d", __func__, varname, num);
+		dstate_setinfo("driver.flag.allow_killpower", "%d", num);
+		return STAT_SET_HANDLED;
+	}
+
+	/* By default, the driver-specific values are
+	 * unknown to shared standard handler */
+	upsdebugx(2, "shared %s() does not handle variable %s, "
+		"proceeding to driver-specific handler",
+		__func__, varname);
+	return STAT_SET_UNKNOWN;
+
+invalid:
+	upsdebugx(1, "Error: UPS [%s]: invalid %s value: %s",
+		NUT_STRARG(upsname), varname, val);
+	return STAT_SET_INVALID;
+}
+
 /* handle -x / ups.conf config details that are for this part of the code */
 static int main_arg(char *var, char *val)
 {
@@ -629,6 +838,16 @@ static int main_arg(char *var, char *val)
 			upsdebugx(6, "%s: SKIP: flag var='%s' currently can not be reloaded", __func__, var);
 		} else {
 			dstate_setinfo("driver.flag.ignorelb", "enabled");
+		}
+		return 1;	/* handled */
+	}
+
+	if (!strcmp(var, "allow_killpower")) {
+		if (reload_flag) {
+			upsdebugx(6, "%s: SKIP: flag var='%s' currently can not be reloaded "
+				"(but may be changed by protocol SETVAR)", __func__, var);
+		} else {
+			dstate_setinfo("driver.flag.allow_killpower", "1");
 		}
 		return 1;	/* handled */
 	}
@@ -1005,7 +1224,6 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 	}
 }
 
-#ifndef DRIVERS_MAIN_WITHOUT_MAIN
 static void assign_debug_level(void) {
 	/* CLI debug level can not be smaller than debug_min specified
 	 * in ups.conf, and value specified for a driver config section
@@ -1013,6 +1231,15 @@ static void assign_debug_level(void) {
 	 * not impact foreground running mode.
 	 */
 	int nut_debug_level_upsconf = -1;
+
+	if (nut_debug_level_protocol >= 0) {
+		upslogx(LOG_INFO,
+			"Applying debug level %d received during run-time "
+			"via socket protocol, ignoring other settings",
+			nut_debug_level_protocol);
+		nut_debug_level = nut_debug_level_protocol;
+		goto finish;
+	}
 
 	if (nut_debug_level_global >= 0 && nut_debug_level_driver >= 0) {
 		/* Use nearest-defined fit */
@@ -1056,12 +1283,19 @@ static void assign_debug_level(void) {
 	if (nut_debug_level_upsconf > nut_debug_level)
 		nut_debug_level = nut_debug_level_upsconf;
 
+finish:
 	upsdebugx(1, "debug level is '%d'", nut_debug_level);
+	dstate_setinfo("driver.debug", "%d", nut_debug_level);
+	dstate_setflags("driver.debug", ST_FLAG_RW | ST_FLAG_NUMBER);
 }
 
-static void handle_reload_flag(void) {
+#ifndef DRIVERS_MAIN_WITHOUT_MAIN
+/* Returns a result code from INSTCMD enum values */
+static int handle_reload_flag(void) {
+	int ret;
+
 	if (!reload_flag || exit_flag)
-		return;
+		return STAT_INSTCMD_INVALID;
 
 	upslogx(LOG_INFO, "Handling requested live reload of NUT driver configuration for [%s]", upsname);
 	dstate_setinfo("driver.state", "reloading");
@@ -1075,8 +1309,30 @@ static void handle_reload_flag(void) {
 	nut_debug_level_global = -1;
 	nut_debug_level_driver = -1;
 
-	/* Call actual config reloading activity */
-	read_upsconf();
+	/* Call actual config reloading activity, which
+	 * eventually calls back do_upsconf_args() from
+	 * this program.
+	 */
+	reload_requires_restart = -1;
+	/* 0 - Do not abort drivers started with '-s TMP_UPS_NAME' */
+	if (read_upsconf(0) < 0) {
+		upsdebugx(1, "%s: read_upsconf() failed fundamentally; "
+			"is this driver running via ups.conf at all?",
+			__func__);
+	}
+
+	upsdebugx(1, "%s: read_upsconf() for [%s] completed, restart-required verdict was: %d",
+		__func__, upsname, reload_requires_restart);
+
+	/* handle reload-or-error reports */
+	if (reload_requires_restart < 1) {
+		/* -1 unchanged, 0 nobody complained and everyone confirmed */
+		ret = STAT_INSTCMD_HANDLED;
+	} else {
+		/* 1+ entries required a restart */
+		ret = STAT_INSTCMD_INVALID;
+	}
+
 	/* TODO: Callbacks in drivers to re-parse configs?
 	 * Currently this reloadability relies on either
 	 * explicit reload_flag aware code called from the
@@ -1092,7 +1348,9 @@ static void handle_reload_flag(void) {
 	reload_flag = 0;
 	dstate_setinfo("driver.state", "quiet");
 	upsnotify(NOTIFY_STATE_READY, NULL);
-	upslogx(LOG_INFO, "Completed requested live reload of NUT driver configuration for [%s]", upsname);
+	upslogx(LOG_INFO, "Completed requested live reload of NUT driver configuration for [%s]: %d", upsname, ret);
+
+	return ret;
 }
 
 /* split -x foo=bar into 'foo' and 'bar' */
@@ -1205,14 +1463,29 @@ static void exit_cleanup(void)
 
 void set_exit_flag(int sig)
 {
-	upsdebugx(1, "%s: raising exit flag due to signal %d", __func__, sig);
+	switch (exit_flag) {
+		case -2:
+			upsdebugx(1, "%s: raising exit flag due to programmatic abort: EXIT_SUCCESS", __func__);
+			break;
+		case -1:
+			upsdebugx(1, "%s: raising exit flag due to programmatic abort: EXIT_FAILURE", __func__);
+			break;
+		default:
+			upsdebugx(1, "%s: raising exit flag due to signal %d", __func__, sig);
+	}
 	exit_flag = sig;
 }
 
+static void set_reload_flag(
+#ifndef WIN32
+	int
+#else
+	char *
+#endif
+	sig)
+{
 #ifndef WIN32
 /* TODO: Equivalent for WIN32 - see SIGCMD_RELOAD in upd and upsmon */
-static void set_reload_flag(int sig)
-{
 	switch (sig) {
 		case SIGCMD_RELOAD_OR_EXIT:	/* SIGUSR1 */
 			/* reload-or-exit (this driver instance may die) */
@@ -1228,6 +1501,7 @@ static void set_reload_flag(int sig)
 #endif
 
 		case SIGCMD_RELOAD:	/* SIGHUP */
+		case SIGCMD_RELOAD_OR_ERROR:	/* Not even a signal, but a socket protocol action */
 		default:
 			/* reload what we can, log what needs a restart so skipped */
 			reload_flag = 1;
@@ -1235,8 +1509,22 @@ static void set_reload_flag(int sig)
 
 	upsdebugx(1, "%s: raising reload flag due to signal %d (%s) => reload_flag=%d",
 		__func__, sig, strsignal(sig), reload_flag);
+#else
+	if (sig && !strcmp(sig, SIGCMD_RELOAD_OR_ERROR)) {
+		/* reload what we can, log what needs a restart so skipped */
+		reload_flag = 1;
+	} else {
+		/* non-fatal reload as a fallback */
+		reload_flag = 1;
+        }
+
+	upsdebugx(1, "%s: raising reload flag due to command %s => reload_flag=%d",
+		__func__, sig, reload_flag);
+#endif  /* WIN32 */
 }
 
+#ifndef WIN32
+/* TODO: Equivalent for WIN32 - see SIGCMD_RELOAD in upd and upsmon */
 static void handle_dstate_dump(int sig) {
 	/* no set_dump_flag() here, make it instant */
 	upsdebugx(1, "%s: starting driver state dump for [%s] due to signal %d",
@@ -1353,9 +1641,9 @@ int main(int argc, char **argv)
 	/* build the driver's extra (-x) variable table */
 	upsdrv_makevartable();
 
-	while ((i = getopt(argc, argv, "+a:s:kFBDd:hx:Lqr:u:g:Vi:"
+	while ((i = getopt(argc, argv, "+a:s:kFBDd:hx:Lqr:u:g:Vi:c:"
 #ifndef WIN32
-		"c:P:"
+		"P:"
 #endif
 	)) != -1) {
 		switch (i) {
@@ -1366,7 +1654,7 @@ int main(int argc, char **argv)
 
 				upsname = optarg;
 
-				read_upsconf();
+				read_upsconf(1);
 
 				if (!upsname_found)
 					fatalx(EXIT_FAILURE, "Error: Section %s not found in ups.conf",
@@ -1413,16 +1701,20 @@ int main(int argc, char **argv)
 				do_lock_port = 0;
 				do_forceshutdown = 1;
 				break;
-#ifndef WIN32
 /* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
 			case 'c':
-				if (cmd != 0) {
+				if (cmd) {
 					help_msg();
 					fatalx(EXIT_FAILURE,
 						"Error: only one command per run can be "
 						"sent with option -%c. Try -h for help.", i);
 				}
 
+				if (!strncmp(optarg, "reload-or-error", strlen(optarg))) {
+					cmd = SIGCMD_RELOAD_OR_ERROR;
+				}
+#ifndef WIN32
+				else
 				if (!strncmp(optarg, "reload", strlen(optarg))) {
 					cmd = SIGCMD_RELOAD;
 				} else
@@ -1434,17 +1726,26 @@ int main(int argc, char **argv)
 				if (!strncmp(optarg, "reload-or-exit", strlen(optarg))) {
 					cmd = SIGCMD_RELOAD_OR_EXIT;
 				}
+#endif	/* WIN32 */
 
 				/* bad command given */
-				if (cmd == 0) {
+				if (!cmd) {
 					help_msg();
 					fatalx(EXIT_FAILURE,
 						"Error: unknown argument to option -%c. Try -h for help.", i);
 				}
+#ifndef WIN32
 				upsdebugx(1, "Will send signal %d (%s) for command '%s' "
 					"to already-running driver %s-%s (if any) and exit",
 					cmd, strsignal(cmd), optarg, progname, upsname);
+#else
+				upsdebugx(1, "Will send request '%s' for command '%s' "
+					"to already-running driver %s-%s (if any) and exit",
+					cmd, optarg, progname, upsname);
+#endif	/* WIN32 */
 				break;
+
+#ifndef WIN32
 			/* NOTE for FIXME above: PID-signalling is non-WIN32-only for us */
 			case 'P':
 				if ((oldpid = parsepid(optarg)) < 0)
@@ -1529,6 +1830,19 @@ int main(int argc, char **argv)
 			);
 	}
 
+	{ /* scoping */
+		char *s = getenv("NUT_DEBUG_LEVEL");
+		int l;
+		if (s && str_to_int(s, &l, 10)) {
+			if (l > 0 && nut_debug_level_args < 1) {
+				upslogx(LOG_INFO, "Defaulting debug verbosity to NUT_DEBUG_LEVEL=%d "
+					"since none was requested by command-line options", l);
+				nut_debug_level = l;
+				nut_debug_level_args = l;
+			}	/* else follow -D settings */
+		}	/* else nothing to bother about */
+	}
+
 	/* Since debug mode dumps from drivers are often posted to mailing list
 	 * or issue tracker, as well as viewed locally, it can help to know the
 	 * build options involved when troubleshooting (especially when needed
@@ -1578,7 +1892,74 @@ int main(int argc, char **argv)
 		/* Setup signals to communicate with driver which is destined for a long run. */
 		setup_signals();
 	}
+#endif  /* WIN32 */
 
+	if (do_forceshutdown) {
+		/* First try to handle this over socket protocol
+		 * with the running older driver instance (if any);
+		 * if this does not succeed, fall through to legacy
+		 * approach (kill sibling if needed, recapture device,
+		 * command it...)
+		 */
+		int	cmdret = -1;
+
+		/* Post the query and wait for reply */
+		cmdret = upsdrvquery_oneshot(progname, upsname,
+			"SET driver.flag.allow_killpower 1\n",
+			NULL, 0);
+
+		if (cmdret >= 0) {
+			cmdret = upsdrvquery_oneshot(progname, upsname,
+				"INSTCMD driver.killpower\n",
+				NULL, 0);
+
+			if (cmdret < 0) {
+				upsdebugx(1, "Socket dialog with the other driver instance: %s", strerror(errno));
+			} else {
+				upslogx(LOG_INFO, "Request to killpower via running driver returned code %d", cmdret);
+				if (cmdret == 0)
+					/* Note: many drivers would abort with
+                                         * "shutdown not supported" at this
+                                         * point... we would too, but later
+                                         * and at a higher time/processing cost.
+                                         */
+					exit (EXIT_SUCCESS);
+				/* else fall through to legacy handling */
+			}
+		} else {
+			upsdebugx(1, "Socket dialog with the other driver instance: %s",
+				strerror(errno));
+		}
+	}
+
+	/* Handle reload-or-error over socket protocol with
+	 * the running older driver instance */
+#ifndef WIN32
+	if (cmd == SIGCMD_RELOAD_OR_ERROR)
+#else
+	if (cmd && !strcmp(cmd, SIGCMD_RELOAD_OR_ERROR))
+#endif  /* WIN32 */
+	{	/* Not a signal, but a socket protocol action */
+		int	cmdret = -1;
+		char	buf[LARGEBUF];
+
+		/* Post the query and wait for reply */
+		cmdret = upsdrvquery_oneshot(progname, upsname,
+			"INSTCMD driver.reload-or-error\n",
+			buf, sizeof(buf));
+
+		if (cmdret < 0) {
+			upslog_with_errno(LOG_ERR, "Socket dialog with the other driver instance");
+		} else {
+			/* TODO: handle buf reply contents */
+			upslogx(LOG_INFO, "Request to reload-or-error returned code %d", cmdret);
+		}
+
+		/* exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE); */
+		exit((cmdret < 0) ? 255 : cmdret);
+	}
+
+#ifndef WIN32
 	/* Setup PID file to receive signals to communicate with this driver
 	 * instance once backgrounded, and to stop a competing older instance.
 	 * Or to send it a signal deliberately.
@@ -1588,7 +1969,7 @@ int main(int argc, char **argv)
 
 		snprintf(pidfnbuf, sizeof(pidfnbuf), "%s/%s-%s.pid", altpidpath(), progname, upsname);
 
-		if (cmd) {
+		if (cmd) {	/* Signals */
 			int cmdret = -1;
 			/* Send a signal to older copy of the driver, if any */
 			if (oldpid < 0) {
@@ -1954,6 +2335,22 @@ int main(int argc, char **argv)
 			upslogx(LOG_WARNING, "Running as foreground process, not saving a PID file");
 	}
 
+	dstate_setinfo("driver.flag.allow_killpower", "0");
+	dstate_setflags("driver.flag.allow_killpower", ST_FLAG_RW | ST_FLAG_NUMBER);
+	dstate_addcmd("driver.killpower");
+
+#ifndef WIN32
+/* TODO: Equivalent for WIN32 - see SIGCMD_RELOAD in upd and upsmon */
+	dstate_addcmd("driver.reload");
+	dstate_addcmd("driver.reload-or-exit");
+# ifndef DRIVERS_MAIN_WITHOUT_MAIN
+	dstate_addcmd("driver.reload-or-error");
+# endif
+# ifdef SIGCMD_RELOAD_OR_RESTART
+	dstate_addcmd("driver.reload-or-restart");
+# endif
+#endif
+
 	dstate_setinfo("driver.state", "quiet");
 	if (dump_data) {
 		upsdebugx(1, "Driver initialization completed, beginning data dump (%d loops)", dump_data);
@@ -2004,6 +2401,6 @@ int main(int argc, char **argv)
 		upsnotify(NOTIFY_STATE_STOPPING, "Signal %d: exiting", exit_flag);
 	}
 
-	exit(EXIT_SUCCESS);
+	exit(exit_flag == -1 ? EXIT_FAILURE : EXIT_SUCCESS);
 }
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */

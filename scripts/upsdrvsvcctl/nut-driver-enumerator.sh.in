@@ -667,14 +667,14 @@ smf_setSavedMD5() {
     /usr/sbin/svcadm refresh "${TARGET_FMRI}" || return
 }
 smf_restart_upsd() {
-    echo "Restarting NUT data server to make sure it knows new configuration..."
+    echo "Reloading or restarting NUT data server to make sure it knows new configuration..."
     /usr/sbin/svcadm enable "nut-server" 2>/dev/null
     /usr/sbin/svcadm clear "nut-server" 2>/dev/null
     /usr/sbin/svcadm refresh "nut-server" || \
     /usr/sbin/svcadm restart "nut-server"
 }
 smf_restart_drv() {
-    echo "Restarting NUT driver instance '$1' to make sure it knows new configuration..."
+    echo "Reloading or restarting NUT driver instance '$1' to make sure it knows new configuration..."
     /usr/sbin/svcadm enable "nut-driver:$1" 2>/dev/null
     /usr/sbin/svcadm clear "nut-driver:$1" 2>/dev/null
     /usr/sbin/svcadm refresh "nut-driver:$1" || \
@@ -789,7 +789,7 @@ systemd_restart_upsd() {
         *) return 0 ;;
     esac
 
-    echo "Restarting NUT data server to make sure it knows new configuration..."
+    echo "Reloading or restarting NUT data server to make sure it knows new configuration..."
     # Note: reload is a better way to go about this, so the
     # data service is not interrupted by re-initialization
     # of the daemon. But systemd/systemctl sometimes stalls...
@@ -805,7 +805,7 @@ systemd_restart_drv() {
         *) return 0 ;;
     esac
 
-    echo "Restarting NUT driver instance '$1' to make sure it knows new configuration..."
+    echo "Reloading or restarting NUT driver instance '$1' to make sure it knows new configuration..."
 
     # Full restart, e.g. in case we changed the user= in configs
     # however let "reload" try, in case we changed something that
@@ -990,8 +990,21 @@ nut_driver_enumerator_main() {
 
     if [ -n "$NEW_CHECKSUM" ]; then
         for UPSS in $NEW_CHECKSUM ; do
-            echo "Dropping old ${SERVICE_FRAMEWORK} service instance ${UPSS} whose section in config file has changed..." >&2
-            $hook_unregisterInstance "$UPSS"
+            CURR_DRV="`upsconf_getDriver "$UPSS"`" || CURR_DRV=""
+            DO_UNREGISTER=yes
+            if [ -n "$CURR_DRV" ] ; then
+                # If reload is handled and does not complain,
+                # we are OK to proceed without re-defining
+                # and restarting the driver service instance.
+                "@DRVPATH@/$CURR_DRV" -a "$UPSS" -c reload-or-error >/dev/null 2>/dev/null \
+                && DO_UNREGISTER=no
+            fi
+            if [ "$DO_UNREGISTER" = yes ] ; then
+                echo "Dropping old ${SERVICE_FRAMEWORK} service instance ${UPSS} whose section in config file has changed..." >&2
+                $hook_unregisterInstance "$UPSS"
+            else
+                echo "Keeping ${SERVICE_FRAMEWORK} service instance ${UPSS} whose section in config file has changed: live reload sufficed" >&2
+            fi
         done
         upslist_readSvcs "after updating for new config section checksums"
     fi

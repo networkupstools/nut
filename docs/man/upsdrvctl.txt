@@ -126,6 +126,11 @@ are:
                    information to their `stdout` (if attached anywhere)
         *reload*;; reread configuration files, ignoring modified settings
                    which can not be applied "on the fly"
+        *reload-or-error*;; reread configuration files, ignoring but counting
+                   changed values which require a driver restart (can not be
+                   changed on the fly), and return a success/fail code based
+                   on that count, so the caller can decide the fate of the
+                   currently running driver instance
         *reload-or-exit*;; reread configuration files, exiting the old
                    driver process if it encounters modified settings
                    which can not be applied "on the fly" (so caller like
@@ -144,10 +149,19 @@ processes, it can receive supported signals and pass them to those drivers.
 ENVIRONMENT VARIABLES
 ---------------------
 
+*NUT_DEBUG_LEVEL* sets default debug verbosity if no *-D* arguments
+were provided on command line, but does not request that the daemon
+runs in foreground mode.
+
 *NUT_CONFPATH* is the path name of the directory that contains
-`upsd.conf` and other configuration files.  If this variable is not set,
-*upsdrvctl* the driver use a built-in default, which is often
+`ups.conf` and other configuration files.  If this variable is not set,
+*upsdrvctl* (and the drivers) use a built-in default, which is often
 `/usr/local/ups/etc`.
+
+*NUT_ALTPIDPATH* is the path name of the directory in which
+*upsd* and drivers store .pid files.  If this variable is not set,
+*upsd* and drivers use either *NUT_STATEPATH* if set, or ALTPIDPATH if set,
+or otherwise the built-in default *STATEPATH*.
 
 DIAGNOSTICS
 -----------
