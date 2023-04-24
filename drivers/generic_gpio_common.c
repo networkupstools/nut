@@ -173,13 +173,12 @@ void get_ups_rules(struct gpioups_t *upsfdlocal, unsigned char *rulesString) {
 	int	i, j, k;
 	int	tranformationDelta;
 
-	upsdebugx(LOG_DEBUG, "rules = [%s]", rulesString);
+	upsdebugx(4, "rules = [%s]", rulesString);
 	/* state machine to process rules definition */
 	while((lexType=get_rule_lex(rulesString, &startPos, &endPos)) > 0 && lexStatus >= 0) {
 		memset(lexBuff, 0, sizeof(lexBuff));
 		strncpy(lexBuff, (char *)(rulesString+startPos), endPos-startPos);
-		upsdebugx(
-			LOG_DEBUG,
+		upsdebugx(4,
 			"rules start %d, end %d, lexType %d, lex [%s]",
 			startPos,
 			endPos,
@@ -256,17 +255,15 @@ void get_ups_rules(struct gpioups_t *upsfdlocal, unsigned char *rulesString) {
 		fatalx(LOG_ERR, "Line processing rule error at position %d", startPos);
 
 	/* debug printout for extracted rules */
-	upsdebugx(LOG_DEBUG, "rules count [%d]", upsfdlocal->rulesCount);
+	upsdebugx(4, "rules count [%d]", upsfdlocal->rulesCount);
 	for(i = 0; i < upsfdlocal->rulesCount; i++) {
-		upsdebugx(
-			LOG_DEBUG,
+		upsdebugx(4,
 			"rule state name [%s], subcount %d",
 			upsfdlocal->rules[i]->stateName,
 			upsfdlocal->rules[i]->subCount
 		);
 		for(j = 0; j<upsfdlocal->rules[i]->subCount; j++) {
-			upsdebugx(
-				LOG_DEBUG,
+			upsdebugx(4,
 				"[%s] substate %d [%d]",
 				upsfdlocal->rules[i]->stateName,
 				j,
@@ -299,9 +296,9 @@ void get_ups_rules(struct gpioups_t *upsfdlocal, unsigned char *rulesString) {
 		}
 	}
 
-	upsdebugx(LOG_DEBUG, "UPS line count = %d", upsfdlocal->upsLinesCount);
+	upsdebugx(4, "UPS line count = %d", upsfdlocal->upsLinesCount);
 	for(i = 0; i < upsfdlocal->upsLinesCount; i++) {
-		upsdebugx(LOG_DEBUG, "UPS line%d number %d", i, upsfdlocal->upsLines[i]);
+		upsdebugx(4, "UPS line%d number %d", i, upsfdlocal->upsLines[i]);
 	}
 
 	/* transform lines to indexes for easier state calculation */
@@ -324,17 +321,15 @@ void get_ups_rules(struct gpioups_t *upsfdlocal, unsigned char *rulesString) {
 	}
 
 	/* debug printout of transformed lines numbers */
-	upsdebugx(LOG_DEBUG, "rules count [%d] translated", upsfdlocal->rulesCount);
+	upsdebugx(4, "rules count [%d] translated", upsfdlocal->rulesCount);
 	for(i = 0; i < upsfdlocal->rulesCount; i++) {
-		upsdebugx(
-			LOG_DEBUG,
+		upsdebugx(4,
 			"rule state name [%s], subcount %d translated",
 			upsfdlocal->rules[i]->stateName,
 			upsfdlocal->rules[i]->subCount
 		);
 		for(j = 0; j < upsfdlocal->rules[i]->subCount; j++) {
-			upsdebugx(
-				LOG_DEBUG,
+			upsdebugx(4,
 				"[%s] substate %d [%d]",
 				upsfdlocal->rules[i]->stateName, j,
 				upsfdlocal->rules[i]->cRules[j]
@@ -460,9 +455,6 @@ void upsdrv_initinfo(void)
 	if(testvar("model")) {
 		dstate_setinfo("device.model", "%s", getval("model"));
 	}
-	if(testvar("description")) {
-		dstate_setinfo("device.description", "%s", getval("description"));
-	}
 }
 
 void upsdrv_updateinfo(void)
@@ -491,11 +483,9 @@ void upsdrv_help(void)
 /* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {
-	addvar(VAR_SENSITIVE, "mfr", "UPS manufacturer");
-	addvar(VAR_SENSITIVE, "model", "UPS model");
+	addvar(VAR_VALUE, "mfr", "Override UPS manufacturer name");
+	addvar(VAR_VALUE, "model", "Override UPS model name");
 	addvar(VAR_VALUE, "rules", "Line rules to produce status strings");
-	addvar(VAR_SENSITIVE, "description", "Device description");
-	addvar(VAR_SENSITIVE, "desc", "Device description");
 }
 
 void upsdrv_initups(void)
