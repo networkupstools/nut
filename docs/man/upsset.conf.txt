@@ -32,7 +32,7 @@ secure it.
 
 On Apache, you can use the .htaccess file or put the directives in your
 httpd.conf.  It looks something like this, assuming the .htaccess
-method:
+method for older Apache releases:
 
 	<Files upsset.cgi>
 	deny from all
@@ -41,6 +41,19 @@ method:
 
 You will probably have to set "AllowOverride Limit" for this directory
 in your server-level configuration file as well.
+
+Modern Apache enjoys a more detailed syntax, like this:
+
+	ScriptAlias /upsstats.cgi /usr/share/nut/cgi/upsstats.cgi
+	ScriptAlias /upsset.cgi /usr/share/nut/cgi/upsset.cgi
+	<Directory "/usr/share/nut/cgi">
+	      Options +Includes +ExecCGI
+	      AllowOverride Limit
+	      <RequireAny>
+	          Require local
+	          Require ip aa.bb.cc.dd/nn
+	      </RequireAny>
+	</Directory>
 
 If this doesn't make sense, then stop reading and leave this program
 alone.  It's not something you absolutely need to have anyway.
