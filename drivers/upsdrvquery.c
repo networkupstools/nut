@@ -437,7 +437,7 @@ ssize_t upsdrvquery_request(
 		if (upsdrvquery_read_timeout(conn, tv) < 1)
 			goto socket_error;
 
-#if WIN32
+#ifdef WIN32
 		/* Allow a new read to happen later */
 		conn->newread = 1;
 #endif
