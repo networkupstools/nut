@@ -1007,6 +1007,7 @@ static void send_one_driver(void (*command_func)(const ups_t *), const char *arg
 	if (!ups)
 		fatalx(EXIT_FAILURE, "Error: no UPS definitions found in ups.conf!\n");
 
+	exec_error = 0;
 	while (ups) {
 		if (!strcmp(ups->upsname, arg_upsname)) {
 			command_func(ups);
@@ -1028,6 +1029,7 @@ static void send_all_drivers(void (*command_func)(const ups_t *))
 	if (!upstable)
 		fatalx(EXIT_FAILURE, "Error: no UPS definitions found in ups.conf");
 
+	exec_error = 0;
 	if (command_func != &shutdown_driver) {
 		ups = upstable;
 
