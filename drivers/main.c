@@ -1912,16 +1912,23 @@ int main(int argc, char **argv)
 		 * command it...)
 		 */
 		int	cmdret = -1;
+		struct timeval	tv;
 
 		/* Post the query and wait for reply */
+		/* FIXME: coordinate with pollfreq? */
+		tv.tv_sec = 15;
+		tv.tv_usec = 0;
 		cmdret = upsdrvquery_oneshot(progname, upsname,
 			"SET driver.flag.allow_killpower 1\n",
-			NULL, 0);
+			NULL, 0, &tv);
 
 		if (cmdret >= 0) {
+			/* FIXME: somehow mark drivers expected to loop infinitely? */
+			tv.tv_sec = -1;
+			tv.tv_usec = -1;
 			cmdret = upsdrvquery_oneshot(progname, upsname,
 				"INSTCMD driver.killpower\n",
-				NULL, 0);
+				NULL, 0, &tv);
 
 			if (cmdret < 0) {
 				upsdebugx(1, "Socket dialog with the other driver instance: %s", strerror(errno));
@@ -1952,11 +1959,15 @@ int main(int argc, char **argv)
 	{	/* Not a signal, but a socket protocol action */
 		int	cmdret = -1;
 		char	buf[LARGEBUF];
+		struct timeval	tv;
 
 		/* Post the query and wait for reply */
+		/* FIXME: coordinate with pollfreq? */
+		tv.tv_sec = 15;
+		tv.tv_usec = 0;
 		cmdret = upsdrvquery_oneshot(progname, upsname,
 			"INSTCMD driver.reload-or-error\n",
-			buf, sizeof(buf));
+			buf, sizeof(buf), &tv);
 
 		if (cmdret < 0) {
 			upslog_with_errno(LOG_ERR, "Socket dialog with the other driver instance");
