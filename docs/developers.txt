@@ -453,6 +453,28 @@ tracing include:
 * Apache NetBeans 17 on Windows with MSYS2 support (as MinGW toolkit);
 * Visual Studio Code (VSCode) on Windows with MSYS2 support.
 
+IDE notes on Windows
+~~~~~~~~~~~~~~~~~~~~
+
+When working in a native Windows environment with
+link:https://www.msys2.org/[MSYS2] (providing MinGW x64 among other things),
+make sure it is in the `PATH`: Control Panel => "Edit the system environment
+variables" => "Environment variables..." (button) => Edit or create New "Path"
+setting => Make sure `C:\msys64\mingw64\bin` is there (assuming you installed
+MSYS2 into `C:\msys64` by default). Restart the IDE (if already running) for
+it to acknowledge the system configuration change.
+
+Otherwise, NetBeans for example claims there is no shell for it to run `make`,
+and fails to start the built programs due to lack of DLL files it linked
+against (such as `libssl` for networked part of the codebase).
+
+You might still have to fiddle with DLL files built in other directories of
+the NUT project, when preparing to debug certain programs, e.g. for `dummy-ups`
+you may need to:
+````
+:; cp ./clients/.libs/libupsclient-6.dll ./drivers/.libs/
+````
+
 ////////
 TODO: Expand on adding include and library paths to NetBeans on Windows.
 Plugins: unpack200 from JDK11 or older to install NB8.2 repo C/C++ plugins.

@@ -42,15 +42,13 @@ upsdrv_info_t upsdrv_info = {
 #define	ML_ONBATTERY	0x55
 
 void upsdrv_shutdown(void)
-	__attribute__((noreturn));
-
-void upsdrv_shutdown(void)
 {
 	/* XXX: replace with a proper shutdown function (raise DTR) */
 
 	/* worse yet: stock cables don't support shutdown at all */
 
-	fatalx(EXIT_FAILURE, "shutdown not supported");
+	upslogx(LOG_ERR, "shutdown not supported");
+	set_exit_flag(-1);
 }
 
 void upsdrv_initinfo(void)

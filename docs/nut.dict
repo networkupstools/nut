@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3116 utf-8
+personal_ws-1.1 en 3127 utf-8
 AAS
 ABI
 ACFAIL
@@ -341,6 +341,7 @@ Erikson
 Eriksson
 Evgeny
 Exar
+ExecCGI
 FD
 FEMEA
 FFF
@@ -738,6 +739,7 @@ NNNNNNNN
 NNNNNNNNNN
 NNNNNNNNNNNNNNNNNNN
 NOAUTH
+NOBROADCAST
 NOCOMM
 NOCOMMWARNTIME
 NOCONF
@@ -1037,6 +1039,7 @@ Rene
 René
 Repotec's
 Repoteck
+RequireAny
 Richthof
 Rickard
 Ridgway
@@ -1083,7 +1086,9 @@ SIGKILL
 SIGPIPE
 SIGPWR
 SIGTERM
+SIGURG
 SIGUSR
+SIGWINCH
 SKOFFn
 SKONn
 SKP
@@ -1139,6 +1144,7 @@ Schmier
 Schoch
 Schonefeld
 Schroder
+ScriptAlias
 Sekury
 Selinger
 SendEnv
@@ -1907,6 +1913,7 @@ firmwares
 flts
 fmt
 footnoteref
+forceshutdown
 forcessl
 formatconfig
 formatparam
@@ -2105,6 +2112,8 @@ jpg
 jpgraph
 jre
 json
+jumboinfo
+jumbotron
 kVA
 kadets
 kaminski
@@ -2616,6 +2625,7 @@ repo
 reposurgeon
 repotec
 req
+resetter
 resistive
 resolv
 resync
@@ -2737,6 +2747,7 @@ snmpwalk
 snprintf
 snprintfcat
 snr
+socat
 sockdebug
 socomec
 solaris

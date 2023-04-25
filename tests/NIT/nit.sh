@@ -545,7 +545,7 @@ PASSED=0
 
 testcase_upsd_no_configs_at_all() {
     log_separator
-    log_info "Test UPSD without configs at all"
+    log_info "[testcase_upsd_no_configs_at_all] Test UPSD without configs at all"
     upsd -F
     if [ "$?" = 0 ]; then
         log_error "upsd should fail without configs"
@@ -559,7 +559,7 @@ testcase_upsd_no_configs_at_all() {
 
 testcase_upsd_no_configs_driver_file() {
     log_separator
-    log_info "Test UPSD without driver config file"
+    log_info "[testcase_upsd_no_configs_driver_file] Test UPSD without driver config file"
     generatecfg_upsd_trivial
     upsd -F
     if [ "$?" = 0 ]; then
@@ -574,7 +574,7 @@ testcase_upsd_no_configs_driver_file() {
 
 testcase_upsd_no_configs_in_driver_file() {
     log_separator
-    log_info "Test UPSD without drivers defined in config file"
+    log_info "[testcase_upsd_no_configs_in_driver_file] Test UPSD without drivers defined in config file"
     generatecfg_upsd_trivial
     generatecfg_ups_trivial
     upsd -F
@@ -590,7 +590,7 @@ testcase_upsd_no_configs_in_driver_file() {
 
 testcase_upsd_allow_no_device() {
     log_separator
-    log_info "Test UPSD allowed to run without driver configs"
+    log_info "[testcase_upsd_allow_no_device] Test UPSD allowed to run without driver configs"
     generatecfg_upsd_nodev
     generatecfg_upsdusers_trivial
     generatecfg_ups_trivial
@@ -745,7 +745,7 @@ sandbox_start_drivers() {
 
 testcase_sandbox_start_upsd_alone() {
     log_separator
-    log_info "Test starting UPSD but not a driver before it"
+    log_info "[testcase_sandbox_start_upsd_alone] Test starting UPSD but not a driver before it"
     sandbox_start_upsd
 
     EXPECTED_UPSLIST='dummy'
@@ -789,6 +789,7 @@ UPS2"
 
 testcase_sandbox_start_upsd_after_drivers() {
     # Historically this is a fallback from testcase_sandbox_start_drivers_after_upsd
+    log_info "[testcase_sandbox_start_upsd_after_drivers] Test starting UPSD after drivers"
     kill -15 $PID_UPSD 2>/dev/null
     wait $PID_UPSD
 
@@ -828,7 +829,7 @@ testcase_sandbox_start_drivers_after_upsd() {
     testcase_sandbox_start_upsd_alone
     sandbox_start_drivers
 
-    log_info "Query driver state from UPSD by UPSC after driver startup"
+    log_info "[testcase_sandbox_start_drivers_after_upsd] Query driver state from UPSD by UPSC after driver startup"
     COUNTDOWN=60
     while [ "$COUNTDOWN" -gt 0 ]; do
         # For query errors or known wait, keep looping
@@ -875,6 +876,7 @@ testcase_sandbox_start_drivers_after_upsd() {
 }
 
 testcase_sandbox_upsc_query_model() {
+    loginfo "[testcase_sandbox_upsc_query_model] Query model from dummy device"
     runcmd upsc dummy@localhost:$NUT_PORT device.model || die "upsd does not respond on port ${NUT_PORT} ($?): $CMDOUT"
     if [ x"$CMDOUT" != x"Dummy UPS" ] ; then
         log_error "got this reply for upsc query when 'Dummy UPS' was expected: $CMDOUT"
@@ -886,7 +888,7 @@ testcase_sandbox_upsc_query_model() {
 }
 
 testcase_sandbox_upsc_query_bogus() {
-    log_info "Query driver state from UPSD by UPSC for bogus info"
+    log_info "[testcase_sandbox_upsc_query_bogus] Query driver state from UPSD by UPSC for bogus info"
     runcmd upsc dummy@localhost:$NUT_PORT ups.bogus.value && {
         log_error "upsc was supposed to answer with error exit code: $CMDOUT"
         FAILED="`expr $FAILED + 1`"
@@ -904,7 +906,7 @@ testcase_sandbox_upsc_query_bogus() {
 
 testcase_sandbox_upsc_query_timer() {
     log_separator
-    log_info "Test that dummy-ups TIMER action changes the reported state"
+    log_info "[testcase_sandbox_upsc_query_timer] Test that dummy-ups TIMER action changes the reported state"
     # Driver is set up to flip ups.status every 5 sec, so check every 3
     # TODO: Any need to convert to runcmd()?
     OUT1="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "upsd does not respond on port ${NUT_PORT} ($?): $OUT1" ; sleep 3
@@ -946,7 +948,7 @@ isTestablePython() {
 testcase_sandbox_python_without_credentials() {
     isTestablePython || return 0
     log_separator
-    log_info "Call Python module test suite: PyNUT (NUT Python bindings) without login credentials"
+    log_info "[testcase_sandbox_python_without_credentials] Call Python module test suite: PyNUT (NUT Python bindings) without login credentials"
     if ( unset NUT_USER || true
          unset NUT_PASS || true
         "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
@@ -967,7 +969,7 @@ testcase_sandbox_python_with_credentials() {
     # but the dummy data does not currently let issue the commands and
     # setvars tested from python script.
     log_separator
-    log_info "Call Python module test suite: PyNUT (NUT Python bindings) with login credentials"
+    log_info "[testcase_sandbox_python_with_credentials] Call Python module test suite: PyNUT (NUT Python bindings) with login credentials"
     if (
         NUT_USER='admin'
         NUT_PASS="${TESTPASS_ADMIN}"
@@ -987,7 +989,7 @@ testcase_sandbox_python_with_upsmon_credentials() {
     isTestablePython || return 0
 
     log_separator
-    log_info "Call Python module test suite: PyNUT (NUT Python bindings) with upsmon role login credentials"
+    log_info "[testcase_sandbox_python_with_upsmon_credentials] Call Python module test suite: PyNUT (NUT Python bindings) with upsmon role login credentials"
     if (
         NUT_USER='dummy-admin'
         NUT_PASS="${TESTPASS_UPSMON_PRIMARY}"
@@ -1027,7 +1029,7 @@ testcase_sandbox_cppnit_without_creds() {
     isTestableCppNIT || return 0
 
     log_separator
-    log_info "Call libnutclient test suite: cppnit without login credentials"
+    log_info "[testcase_sandbox_cppnit_without_creds] Call libnutclient test suite: cppnit without login credentials"
     if ( unset NUT_USER || true
          unset NUT_PASS || true
         "${TOP_BUILDDIR}/tests/cppnit"
@@ -1045,7 +1047,7 @@ testcase_sandbox_cppnit_simple_admin() {
     isTestableCppNIT || return 0
 
     log_separator
-    log_info "Call libnutclient test suite: cppnit with login credentials: simple admin"
+    log_info "[testcase_sandbox_cppnit_simple_admin] Call libnutclient test suite: cppnit with login credentials: simple admin"
     if (
         NUT_USER='admin'
         NUT_PASS="${TESTPASS_ADMIN}"
@@ -1073,7 +1075,7 @@ testcase_sandbox_cppnit_upsmon_primary() {
     isTestableCppNIT || return 0
 
     log_separator
-    log_info "Call libnutclient test suite: cppnit with login credentials: upsmon-primary"
+    log_info "[testcase_sandbox_cppnit_upsmon_primary] Call libnutclient test suite: cppnit with login credentials: upsmon-primary"
     if (
         NUT_USER='dummy-admin'
         NUT_PASS="${TESTPASS_UPSMON_PRIMARY}"
@@ -1095,7 +1097,7 @@ testcase_sandbox_cppnit_upsmon_master() {
     isTestableCppNIT || return 0
 
     log_separator
-    log_info "Call libnutclient test suite: cppnit with login credentials: upsmon-master"
+    log_info "[testcase_sandbox_cppnit_upsmon_master] Call libnutclient test suite: cppnit with login credentials: upsmon-master"
     if (
         NUT_USER='dummy-admin-m'
         NUT_PASS="${TESTPASS_UPSMON_PRIMARY}"
@@ -1139,7 +1141,7 @@ testcase_sandbox_nutscanner_list() {
     isTestableNutScanner || return 0
 
     log_separator
-    log_info "Call libupsclient test suite: nut-scanner on localhost:${NUT_PORT}"
+    log_info "[testcase_sandbox_nutscanner_list] Call libupsclient test suite: nut-scanner on localhost:${NUT_PORT}"
     log_info "Preparing LD_LIBRARY_PATH='${LD_LIBRARY_PATH_CLIENT}'"
 
     # Note: for some reason `LD_LIBRARY_PATH=... runcmd ...` loses it :\

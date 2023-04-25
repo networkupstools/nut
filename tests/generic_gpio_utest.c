@@ -287,12 +287,11 @@ int main(int argc, char **argv) {
 						addvar(VAR_VALUE, "rules", "");
 						storeval("rules", rules);
 					}
-					addvar(VAR_SENSITIVE, "mfr", MFR);
+					addvar(VAR_VALUE, "mfr", MFR);
 					storeval("mfr", MFR);
-					addvar(VAR_SENSITIVE, "model", MODEL);
+					addvar(VAR_VALUE, "model", MODEL);
 					storeval("model", MODEL);
-					addvar(VAR_SENSITIVE, "description", DESCRIPTION);
-					storeval("description", DESCRIPTION);
+					dstate_setinfo("device.description", DESCRIPTION);
 					upsdrv_initups();
 					if(!strcmp(subType, "initinfo")) {
 						upsdrv_makevartable();

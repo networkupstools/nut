@@ -290,20 +290,15 @@ static unsigned int OPTImodels[]	= {0,0,0,575,0,0,0,0,0,0,0,0,0,0,0,0};
  */
 
 static void shutdown_halt(void)
-	__attribute__((noreturn));
-
-static void shutdown_halt(void)
 {
 	ser_send_char (upsfd, (unsigned char)SHUTDOWN);
 	if (types[type].shutdown_arguments.minutesShouldBeUsed != 'n')
 		ser_send_char (upsfd, types[type].shutdown_arguments.delay[0]);
 	ser_send_char (upsfd, types[type].shutdown_arguments.delay[1]);
 	upslogx(LOG_INFO, "Shutdown (stayoff) initiated.");
-	exit (0);
-}
 
-static void shutdown_ret(void)
-	__attribute__((noreturn));
+	set_exit_flag(-2);	/* EXIT_SUCCESS */
+}
 
 static void shutdown_ret(void)
 {
@@ -314,7 +309,7 @@ static void shutdown_ret(void)
 	ser_send_char (upsfd, types[type].shutdown_arguments.delay[1]);
 	upslogx(LOG_INFO, "Shutdown (return) initiated.");
 
-	exit (0);
+	set_exit_flag(-2);	/* EXIT_SUCCESS */
 }
 
 /* registered instant commands */
@@ -844,9 +839,6 @@ void upsdrv_updateinfo(void)
 }
 
 /* shutdown UPS */
-void upsdrv_shutdown(void)
-	__attribute__((noreturn));
-
 void upsdrv_shutdown(void)
 {
 	/* power down the attached load immediately */

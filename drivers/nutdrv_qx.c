@@ -2572,9 +2572,6 @@ int	setvar(const char *varname, const char *val)
 
 /* Try to shutdown the UPS */
 void	upsdrv_shutdown(void)
-	__attribute__((noreturn));
-
-void	upsdrv_shutdown(void)
 {
 	int		retry;
 	item_t		*item;
@@ -2588,8 +2585,11 @@ void	upsdrv_shutdown(void)
 	item = find_nut_info("ups.delay.start", 0, QX_FLAG_SKIP);
 
 	/* Don't know what happened */
-	if (!item)
-		fatalx(EXIT_FAILURE, "Unable to set start delay");
+	if (!item) {
+		upslogx(LOG_ERR, "Unable to set start delay");
+		set_exit_flag(-1);
+		return;
+	}
 
 	/* Set the default value */
 	dstate_setinfo(item->info_type, "%s", item->dfl);
@@ -2601,15 +2601,20 @@ void	upsdrv_shutdown(void)
 	val = getval(QX_VAR_ONDELAY);
 
 	if (val && setvar(item->info_type, val) != STAT_SET_HANDLED) {
-		fatalx(EXIT_FAILURE, "Start delay '%s' out of range", val);
+		upslogx(LOG_ERR, "Start delay '%s' out of range", val);
+		set_exit_flag(-1);
+		return;
 	}
 
 	/* Shutdown delay */
 	item = find_nut_info("ups.delay.shutdown", 0, QX_FLAG_SKIP);
 
 	/* Don't know what happened */
-	if (!item)
-		fatalx(EXIT_FAILURE, "Unable to set shutdown delay");
+	if (!item) {
+		upslogx(LOG_ERR, "Unable to set shutdown delay");
+		set_exit_flag(-1);
+		return;
+	}
 
 	/* Set the default value */
 	dstate_setinfo(item->info_type, "%s", item->dfl);
@@ -2621,7 +2626,9 @@ void	upsdrv_shutdown(void)
 	val = getval(QX_VAR_OFFDELAY);
 
 	if (val && setvar(item->info_type, val) != STAT_SET_HANDLED) {
-		fatalx(EXIT_FAILURE, "Shutdown delay '%s' out of range", val);
+		upslogx(LOG_ERR, "Shutdown delay '%s' out of range", val);
+		set_exit_flag(-1);
+		return;
 	}
 
 	/* Stop pending shutdowns */
@@ -2660,11 +2667,14 @@ void	upsdrv_shutdown(void)
 
 		}
 
-		fatalx(EXIT_SUCCESS, "Shutting down in %s seconds",
+		upslogx(LOG_ERR, "Shutting down in %s seconds",
 			dstate_getinfo("ups.delay.shutdown"));
+		set_exit_flag(-2);	/* EXIT_SUCCESS */
+		return;
 	}
 
-	fatalx(EXIT_FAILURE, "Shutdown failed!");
+	upslogx(LOG_ERR, "Shutdown failed!");
+	set_exit_flag(-1);
 }
 
 #ifdef QX_USB

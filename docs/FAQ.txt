@@ -262,6 +262,8 @@ warnings; try a value like 25 or 30.
 
 == Why do the client programs say 'Driver not connected' when I try to run them?
 
+*Answer 1*
+
 This means that upsd can't connect to the driver for some reason.
 Your ups.conf entry might be wrong, or the driver might not be
 running.  Maybe your state path is not configured properly.
@@ -278,6 +280,15 @@ you might wrap your NUT drivers into individual services instances
 with 'upsdrvsvcctl resync' and then manage those with commands like
 'upsdrvsvcctl stop' and 'upsdrvsvcctl start' (note that on other
 systems this tool may be not pre-installed via packaging).
+
+*Answer 2*
+
+Some USB UPS devices have unreliable USB to serial interfaces.
+In that case, it's advised to unplug / plug the device and try again.
+If that resolves the issue, you should consider resetting the USB hub the device
+is attached to before starting the nut driver, using usb_resetter script from 
+https://github.com/netinvent/usb_resetter
+See scripts/usb_resetter for more information.
 
 == Why don't the pathnames in your documentation match the package I installed?
 
