@@ -366,7 +366,7 @@ ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 		while (buf && *buf) {
 			if (!strncmp(buf, "PONG\n", 5)) {
 				upsdebugx(5, "%s: got expected PONG", __func__);
-				break;
+				goto finish;
 			}
 			buf = strchr(buf, '\n');
 			if (buf) {
@@ -399,6 +399,7 @@ ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 	}
 */
 
+finish:
 	upsdebugx(5, "%s: ready for tracked commands", __func__);
 	return 1;
 
