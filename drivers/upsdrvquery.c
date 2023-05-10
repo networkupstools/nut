@@ -559,7 +559,7 @@ ssize_t upsdrvquery_oneshot(
 	 * time. Also now we know to ignore replies that are not
 	 *   TRACKING <id of our query>
 	 */
-	tv.tv_sec = 0;
+	tv.tv_sec = 1;
 	tv.tv_usec = 0;
 
 	/* Here we have a fragile simplistic parser that
