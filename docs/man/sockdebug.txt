@@ -10,17 +10,13 @@ with a NUT driver using the socket protocol
 SYNOPSIS
 --------
 
-POSIX system builds:
-*sockdebug* statefilepath
+*sockdebug* socketname
 
-For example:
-	sockdebug /var/state/ups/dummy-ups-UPS1
-
-WIN32 builds:
-*sockdebug* pipename
-
-For example:
+For example (WIN32 and POSIX builds):
 	sockdebug.exe dummy-ups-UPS1
+
+For example (POSIX-compliant systems using an alternate state path):
+	sockdebug /var/state/ups/dummy-ups-UPS1
 
 DESCRIPTION
 -----------
@@ -49,11 +45,12 @@ OPTIONS
 *libupsclient-config* accepts the following options:
 
 *socketname*::
-Either a full path (in POSIX builds) or the base name of device socket/pipe,
-comprised of a `drivername-devicename` tuple, e.g. `dummy-ups-UPS1` for a
-`dummy-ups` driver instance handling an `UPS1` device configuration (which
-in turn may originate in the `ups.conf` file or be dynamically constructed
-for tests by calling the driver program with a `-s TMP` option).
+Either a full path (in POSIX builds) or the base name of device socket/pipe
+(on all platforms), comprised of a `drivername-devicename` tuple, e.g. some
+`dummy-ups-UPS1` for a `dummy-ups` driver instance handling an `UPS1` device
+configuration (which in turn may originate in the `ups.conf` file or be
+dynamically constructed for tests by calling the driver program with a
+`-s TMP` CLI option).
 
 AUTHORS
 -------
