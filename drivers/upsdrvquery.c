@@ -350,8 +350,8 @@ ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 		/* Diminishing timeouts for read() */
 		tv.tv_usec -= difftime(now, start);
 		while (tv.tv_usec < 0) {
-                    tv.tv_sec--;
-                    tv.tv_usec = 1000 - tv.tv_usec;
+			tv.tv_sec--;
+			tv.tv_usec = 1000 - tv.tv_usec;
 		}
 	}
 
@@ -440,7 +440,7 @@ ssize_t upsdrvquery_request(
 			tv.tv_sec++;
 		}
 		upsdebugx(5, "%s: will wait up to %" PRIiMAX
-                        ".%03" PRIiMAX " sec for response to %s",
+			".%03" PRIiMAX " sec for response to %s",
 			__func__, (intmax_t)tv.tv_sec,
 			(intmax_t)tv.tv_usec, query);
 	}
@@ -521,12 +521,12 @@ ssize_t upsdrvquery_oneshot(
 	 * being blocked on other commands, etc. Number so far is
 	 * arbitrary and optimistic. A non-zero setting causes a
 	 * long initial silence to flush incoming buffers after
-         * the NOBROADCAST. In practice, we do not expect messages
-         * from dstate::send_to_all() to be a nuisance, since we
-         * have just connected and posted the NOBROADCAST so there
-         * is little chance that something appears in that short
-         * time. Also now we know to ignore replies that are not
-         *   TRACKING <id of our query>
+	 * the NOBROADCAST. In practice, we do not expect messages
+	 * from dstate::send_to_all() to be a nuisance, since we
+	 * have just connected and posted the NOBROADCAST so there
+	 * is little chance that something appears in that short
+	 * time. Also now we know to ignore replies that are not
+	 *   TRACKING <id of our query>
 	 */
 	tv.tv_sec = 0;
 	tv.tv_usec = 0;
