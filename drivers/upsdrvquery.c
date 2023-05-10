@@ -341,12 +341,43 @@ ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 	/* flush incoming, if any */
 	time(&start);
 
+	if (upsdrvquery_write(conn, "PING\n") < 0)
+		goto socket_error;
+
 	upsdebugx(5, "%s: waiting for a while to flush server messages", __func__);
 	while (1) {
+		char *buf;
 		upsdrvquery_read_timeout(conn, tv);
 		time(&now);
-		if (difftime(now, start) > tv.tv_sec + 0.001 * tv.tv_usec)
+		if (difftime(now, start) > tv.tv_sec + 0.001 * tv.tv_usec) {
+			upsdebugx(5, "%s: requested timeout expired", __func__);
 			break;
+		}
+
+		/* Await a PONG for quick confirmation of achieved quietness
+		 * (should only happen after the driver handled NOBROADCAST)
+		 */
+#ifdef WIN32
+		/* Allow a new read to happen later */
+		conn->newread = 1;
+#endif
+
+		buf = conn->buf;
+		while (buf && *buf) {
+			if (!strncmp(buf, "PONG\n", 5)) {
+				upsdebugx(5, "%s: got expected PONG", __func__);
+				break;
+			}
+			buf = strchr(buf, '\n');
+			if (buf) {
+/*
+				upsdebugx(5, "%s: trying next line of multi-line response: %s",
+					__func__, buf);
+*/
+				buf++;	/* skip EOL char */
+			}
+		}
+
 		/* Diminishing timeouts for read() */
 		tv.tv_usec -= difftime(now, start);
 		while (tv.tv_usec < 0) {
