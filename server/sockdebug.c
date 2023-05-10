@@ -1,6 +1,8 @@
 /* sockdebug.c - Network UPS Tools driver-server socket debugger
+                 Source variant for POSIX-compliant builds of NUT
 
    Copyright (C) 2003  Russell Kroll <rkroll@exploits.org>
+   Copyright (C) 2023  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -63,6 +65,12 @@ static int socket_connect(const char *sockfn)
 	}
 
 	ret = connect(fd, (struct sockaddr *) &sa, sizeof(sa));
+
+	if (ret < 0 && !strchr(sockfn, '/')) {
+		snprintf(sa.sun_path, sizeof(sa.sun_path), "%s/%s",
+			dflt_statepath(), sockfn);
+		ret = connect(fd, (struct sockaddr *) &sa, sizeof(sa));
+	}
 
 	if (ret < 0) {
 		perror("connect");
@@ -128,8 +136,11 @@ int main(int argc, char **argv)
 	|| (argc > 1 && (!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help")))
 	) {
 		fprintf(stderr, "usage: %s <socket name>\n", prog);
-		fprintf(stderr, "       %s /var/state/ups/apcsmart-ttyS1.newsock\n",
+		fprintf(stderr, "       %s /var/state/ups/apcsmart-ttyS1\n",
 			argv[0]);
+		fprintf(stderr, "  or   %s apcsmart-ttyS1\n",
+			argv[0]);
+		fprintf(stderr, "  for socket files placed in the standard location\n");
 		exit(EXIT_SUCCESS);
 	}
 
