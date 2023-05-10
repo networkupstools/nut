@@ -65,6 +65,10 @@ Changes from 2.8.0 to 2.8.1
   the packaging recipes may use NUT source-code facilities and package just
   symlinks as relevant for each distro separately [#1462, #1504]
 
+- Added support for `make sockdebug` for easier developer access to the tool;
+  also if `configure --with-dev` is in effect, it would now be installed to
+  the configured `libexec` location. A man page was also added. [#1936]
+
 - NUT software-only drivers (dummy-ups, clone, clone-outlet) separated from
   serial drivers in respective Makefile and configure script options - this
   may impact packaging decisions on some distributions going forward [#1446]

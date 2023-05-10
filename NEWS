@@ -277,6 +277,10 @@ https://github.com/networkupstools/nut/milestone/8
    to toggle whether they want to receive `send_to_all()` updates from a
    driver, or only answers to requests they send [#1914]
 
+ - Added support for `make sockdebug` for easier developer access to the tool;
+   also if `configure --with-dev` is in effect, it would now be installed to
+   the configured `libexec` location. A man page was also added. [#1936]
+
  - Numerous daemons (`upsd`, `upsmon`, drivers, `upsdrvctl`, `upssched`)
    which accepted `-D` option for debug setting previously, now can also
    honour a `NUT_DEBUG_LEVEL=NUM` environment variable if no `-D` arguments
