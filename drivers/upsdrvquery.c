@@ -250,17 +250,17 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 		time(&now);
 		if (difftime(now, presleep) < 0.1) {
 			/* https://stackoverflow.com/a/17283549 */
-			HANDLE timer; 
-			LARGE_INTEGER ft; 
+			HANDLE timer;
+			LARGE_INTEGER ft;
 
 			/* SetWaitableTimer() uses 100 nanosecond intervals,
 			 * and a negative value indicates relative time: */
 			ft.QuadPart = -(10*100); /* 100 usec */
 
-			timer = CreateWaitableTimer(NULL, TRUE, NULL); 
-			SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0); 
-			WaitForSingleObject(timer, INFINITE); 
-			CloseHandle(timer); 
+			timer = CreateWaitableTimer(NULL, TRUE, NULL);
+			SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0);
+			WaitForSingleObject(timer, INFINITE);
+			CloseHandle(timer);
 		}
 
 		time(&now);
