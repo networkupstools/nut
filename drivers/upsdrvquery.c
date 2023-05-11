@@ -243,9 +243,9 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 		}
 		upsdebugx(6, "%s: pipe read error, waiting for data", __func__);
 
-		/* Throttle down a bit */
+		/* Throttle down a bit, 0.1 sec (10^5 * 10^-6) should do it conveniently */
 		gettimeofday(&presleep, NULL);
-		usleep(100); /* obsoleted in win32, so follow up below */
+		usleep(100000); /* obsoleted in win32, so follow up below */
 
 		gettimeofday(&now, NULL);
 		upsdebugx(7, "%s: presleep=%ld.%06ld now=%ld.%06ld diff=%4.0f.%06ld (%f)",
@@ -264,7 +264,7 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 
 			/* SetWaitableTimer() uses 100 nanosecond intervals,
 			 * and a negative value indicates relative time: */
-			ft.QuadPart = -(10*100); /* 100 usec */
+			ft.QuadPart = -(10*100000); /* 100 msec */
 
 			timer = CreateWaitableTimer(NULL, TRUE, NULL);
 			SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0);
