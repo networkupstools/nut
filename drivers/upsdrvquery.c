@@ -405,7 +405,11 @@ ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 		tv.tv_usec -= difftimeval(now, start);
 		while (tv.tv_usec < 0) {
 			tv.tv_sec--;
-			tv.tv_usec = 1000000 - tv.tv_usec;
+			tv.tv_usec = 1000000 + tv.tv_usec;	// Note it is negative
+		}
+		if (tv.tv_sec <= 0 && tv.tv_usec <= 0) {
+			upsdebugx(5, "%s: requested timeout expired", __func__);
+			break;
 		}
 	}
 
