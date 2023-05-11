@@ -20,15 +20,12 @@ to the socket (you may want to enable `NOBROADCAST` mode soon), e.g.
 	socat - UNIX-CONNECT:/var/state/ups/dummy-ups-UPS1
 
 For more insight, NUT provides an optional tool of its own (not built
-by default), the `sockdebug`:
+by default): the `sockdebug` which is built when `configure --with-dev`
+is in effect, or can be requested from the root directory of the build
+workspace:
 
-	# POSIX
-	(cd server && make sockdebug) && \
-	./server/sockdebug /var/state/ups/dummy-ups-UPS1
-
-	# WIN32
-	(cd server && make sockdebug.exe) && \
-	./server/sockdebug.exe dummy-ups-UPS1
+	make sockdebug && \
+	./server/sockdebug dummy-ups-UPS1
 
 Formatting
 ----------

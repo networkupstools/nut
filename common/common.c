@@ -659,6 +659,36 @@ const char *xbasename(const char *file)
 	return p + 1;
 }
 
+/* Based on https://www.gnu.org/software/libc/manual/html_node/Calculating-Elapsed-Time.html
+ * modified for a syntax similar to difftime()
+ */
+double difftimeval(struct timeval x, struct timeval y)
+{
+	struct timeval	result;
+	double	d;
+
+	/* Perform the carry for the later subtraction by updating y. */
+	if (x.tv_usec < y.tv_usec) {
+		intmax_t nsec = (y.tv_usec - x.tv_usec) / 1000000 + 1;
+		y.tv_usec -= 1000000 * nsec;
+		y.tv_sec += nsec;
+	}
+
+	if (x.tv_usec - y.tv_usec > 1000000) {
+		intmax_t nsec = (x.tv_usec - y.tv_usec) / 1000000;
+		y.tv_usec += 1000000 * nsec;
+		y.tv_sec -= nsec;
+	}
+
+	/* Compute the time remaining to wait.
+	 * tv_usec is certainly positive. */
+	result.tv_sec = x.tv_sec - y.tv_sec;
+	result.tv_usec = x.tv_usec - y.tv_usec;
+
+	d = 0.000001 * result.tv_usec + result.tv_sec;
+	return d;
+}
+
 #if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_CLOCK_MONOTONIC) && HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC
 /* From https://github.com/systemd/systemd/blob/main/src/basic/time-util.c
  * and  https://github.com/systemd/systemd/blob/main/src/basic/time-util.h

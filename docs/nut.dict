@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3127 utf-8
+personal_ws-1.1 en 3133 utf-8
 AAS
 ABI
 ACFAIL
@@ -1775,6 +1775,7 @@ devctl
 devd
 devel
 deviceGetClients
+devicename
 devscan
 dfl
 dhcp
@@ -2322,6 +2323,7 @@ mozilla
 msec
 msi
 msvcrt
+msys
 multi
 multicommands
 multilib
@@ -2506,6 +2508,7 @@ pigz
 pijuice
 pinout
 pinouts
+pipename
 pkg
 pkgconf
 pkgconfig
@@ -2749,6 +2752,7 @@ snprintfcat
 snr
 socat
 sockdebug
+socketname
 socomec
 solaris
 solis
@@ -2774,6 +2778,7 @@ stan
 startIP
 startdelay
 startup
+statefilepath
 statepath
 stayoff
 stderr
@@ -2935,6 +2940,7 @@ unconfigured
 undefine
 undervoltage
 unescaped
+unicast
 uninstall
 uninterruptible
 uniq

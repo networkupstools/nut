@@ -212,6 +212,9 @@ cppcheck:
 	@echo "CPPCHECK analysis not available since 'cppcheck' was not found."
 endif !HAVE_CPPCHECK
 
+sockdebug:
+	cd $(builddir)/server && $(MAKE) $(AM_MAKEFLAGS) sockdebug$(EXEEXT)
+
 # ----------------------------------------------------------------------
 # Automatically generate the ChangeLog from Git logs:
 MAINTAINERCLEANFILES += ChangeLog
