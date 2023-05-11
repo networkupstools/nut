@@ -280,6 +280,8 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 			(long)(now.tv_usec - presleep.tv_usec),
 			difftimeval(now, presleep)
 			);
+
+		/* If nothing was honored, doze off for a whole second */
 		if (difftimeval(now, presleep) < 0.05)
 			sleep(1);
 
@@ -291,7 +293,8 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 			(long)(now.tv_usec - presleep.tv_usec),
 			difftimeval(now, presleep)
 			);
-		if (difftimeval(now, start) > tv.tv_sec + 0.000001 * tv.tv_usec) {
+
+		if (difftimeval(now, start) > (tv.tv_sec + 0.000001 * tv.tv_usec)) {
 			upsdebugx(5, "%s: pipe read error, timeout exceeded", __func__);
 			break;
 		}
@@ -372,7 +375,7 @@ ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 		char *buf;
 		upsdrvquery_read_timeout(conn, tv);
 		gettimeofday(&now, NULL);
-		if (difftimeval(now, start) > tv.tv_sec + 0.000001 * tv.tv_usec) {
+		if (difftimeval(now, start) > (tv.tv_sec + 0.000001 * tv.tv_usec)) {
 			upsdebugx(5, "%s: requested timeout expired", __func__);
 			break;
 		}
@@ -551,7 +554,7 @@ ssize_t upsdrvquery_request(
 			continue;
 		}
 
-		if (difftimeval(now, start) > tv.tv_sec + 0.000001 * tv.tv_usec) {
+		if (difftimeval(now, start) > (tv.tv_sec + 0.000001 * tv.tv_usec)) {
 			upsdebugx(5, "%s: timed out waiting for expected response",
 				__func__);
 			return -1;
