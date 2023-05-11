@@ -241,13 +241,16 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 			upsdebugx(5, "%s: pipe read error (no incoming data), proceeding now", __func__);
 			break;
 		}
-		upsdebugx(6, "%s: pipe read error, waiting for data", __func__);
+		upsdebugx(6, "%s: pipe read error, still waiting for data", __func__);
 
 		/* Throttle down a bit, 0.1 sec (10^5 * 10^-6) should do it conveniently */
 		gettimeofday(&presleep, NULL);
 		usleep(100000); /* obsoleted in win32, so follow up below */
 
 		gettimeofday(&now, NULL);
+		/* NOTE: This code may report a "diff=1.-894714 (0.105286)"
+		 * which looks bogus, but for troubleshooting we don't care
+		 */
 		upsdebugx(7, "%s: presleep=%ld.%06ld now=%ld.%06ld diff=%4.0f.%06ld (%f)",
 			__func__, presleep.tv_sec, presleep.tv_usec,
 			now.tv_sec, now.tv_usec,
@@ -270,29 +273,30 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 			SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0);
 			WaitForSingleObject(timer, INFINITE);
 			CloseHandle(timer);
+
+			gettimeofday(&now, NULL);
+			upsdebugx(7, "%s: presleep=%ld.%06ld now=%ld.%06ld diff=%4.0f.%06ld (%f)",
+				__func__, presleep.tv_sec, presleep.tv_usec,
+				now.tv_sec, now.tv_usec,
+				difftime(now.tv_sec, presleep.tv_sec),
+				(long)(now.tv_usec - presleep.tv_usec),
+				difftimeval(now, presleep)
+				);
 		}
 
-		gettimeofday(&now, NULL);
-		upsdebugx(7, "%s: presleep=%ld.%06ld now=%ld.%06ld diff=%4.0f.%06ld (%f)",
-			__func__, presleep.tv_sec, presleep.tv_usec,
-			now.tv_sec, now.tv_usec,
-			difftime(now.tv_sec, presleep.tv_sec),
-			(long)(now.tv_usec - presleep.tv_usec),
-			difftimeval(now, presleep)
-			);
-
 		/* If nothing was honored, doze off for a whole second */
-		if (difftimeval(now, presleep) < 0.05)
+		if (difftimeval(now, presleep) < 0.05) {
 			sleep(1);
 
-		gettimeofday(&now, NULL);
-		upsdebugx(7, "%s: presleep=%ld.%06ld now=%ld.%06ld diff=%4.0f.%06ld (%f)",
-			__func__, presleep.tv_sec, presleep.tv_usec,
-			now.tv_sec, now.tv_usec,
-			difftime(now.tv_sec, presleep.tv_sec),
-			(long)(now.tv_usec - presleep.tv_usec),
-			difftimeval(now, presleep)
-			);
+			gettimeofday(&now, NULL);
+			upsdebugx(7, "%s: presleep=%ld.%06ld now=%ld.%06ld diff=%4.0f.%06ld (%f)",
+				__func__, presleep.tv_sec, presleep.tv_usec,
+				now.tv_sec, now.tv_usec,
+				difftime(now.tv_sec, presleep.tv_sec),
+				(long)(now.tv_usec - presleep.tv_usec),
+				difftimeval(now, presleep)
+				);
+		}
 
 		if (difftimeval(now, start) > (tv.tv_sec + 0.000001 * tv.tv_usec)) {
 			upsdebugx(5, "%s: pipe read error, timeout exceeded", __func__);
