@@ -218,7 +218,7 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 	return -1;
 */
 	DWORD	bytesRead = 0;
-	BOOL    res = FALSE;
+	BOOL	res = FALSE;
 	time_t	start, now, presleep;
 
 	/* Is GetLastError() required to move on if pipe has more data?
@@ -543,8 +543,8 @@ ssize_t upsdrvquery_oneshot(
 	struct timeval *ptv
 ) {
 	struct timeval	tv;
-	ssize_t ret;
-	udq_pipe_conn_t *conn = upsdrvquery_connect_drvname_upsname(drvname, upsname);
+	ssize_t	ret;
+	udq_pipe_conn_t	*conn = upsdrvquery_connect_drvname_upsname(drvname, upsname);
 
 	if (!conn || INVALID_FD(conn->sockfd))
 		return -1;
