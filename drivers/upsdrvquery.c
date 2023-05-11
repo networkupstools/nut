@@ -269,7 +269,7 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 			sleep(1);
 
 		time(&now);
-		if (difftime(now, start) > tv.tv_sec + 0.001 * tv.tv_usec) {
+		if (difftime(now, start) > tv.tv_sec + 0.000001 * tv.tv_usec) {
 			upsdebugx(5, "%s: pipe read error, timeout exceeded", __func__);
 			break;
 		}
@@ -350,7 +350,7 @@ ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 		char *buf;
 		upsdrvquery_read_timeout(conn, tv);
 		time(&now);
-		if (difftime(now, start) > tv.tv_sec + 0.001 * tv.tv_usec) {
+		if (difftime(now, start) > tv.tv_sec + 0.000001 * tv.tv_usec) {
 			upsdebugx(5, "%s: requested timeout expired", __func__);
 			break;
 		}
@@ -383,7 +383,7 @@ ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 		tv.tv_usec -= difftime(now, start);
 		while (tv.tv_usec < 0) {
 			tv.tv_sec--;
-			tv.tv_usec = 1000 - tv.tv_usec;
+			tv.tv_usec = 1000000 - tv.tv_usec;
 		}
 	}
 
@@ -468,12 +468,12 @@ ssize_t upsdrvquery_request(
 		upsdebugx(1, "%s: will wait indefinitely for response to %s",
 			__func__, query);
 	} else {
-		while (tv.tv_usec >= 1000) {
-			tv.tv_usec -= 1000;
+		while (tv.tv_usec >= 1000000) {
+			tv.tv_usec -= 1000000;
 			tv.tv_sec++;
 		}
 		upsdebugx(5, "%s: will wait up to %" PRIiMAX
-			".%03" PRIiMAX " sec for response to %s",
+			".%06" PRIiMAX " sec for response to %s",
 			__func__, (intmax_t)tv.tv_sec,
 			(intmax_t)tv.tv_usec, query);
 	}
@@ -525,7 +525,7 @@ ssize_t upsdrvquery_request(
 			continue;
 		}
 
-		if (difftime(now, start) > tv.tv_sec + 0.001 * tv.tv_usec) {
+		if (difftime(now, start) > tv.tv_sec + 0.000001 * tv.tv_usec) {
 			upsdebugx(5, "%s: timed out waiting for expected response",
 				__func__);
 			return -1;
