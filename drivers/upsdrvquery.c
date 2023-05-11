@@ -248,11 +248,12 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 		usleep(100); /* obsoleted in win32, so follow up below */
 
 		gettimeofday(&now, NULL);
-		upsdebugx(6, "%s: presleep=%ld.%06ld now=%ld.%06ld diff=%4.0f.%06ld",
+		upsdebugx(7, "%s: presleep=%ld.%06ld now=%ld.%06ld diff=%4.0f.%06ld (%f)",
 			__func__, presleep.tv_sec, presleep.tv_usec,
 			now.tv_sec, now.tv_usec,
 			difftime(now.tv_sec, presleep.tv_sec),
-			(long)(now.tv_usec - presleep.tv_usec)
+			(long)(now.tv_usec - presleep.tv_usec),
+			difftimeval(now, presleep)
 			);
 
 		/* accept shorter delays, Windows does not guarantee a minimum sleep it seems */
@@ -272,10 +273,24 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 		}
 
 		gettimeofday(&now, NULL);
+		upsdebugx(7, "%s: presleep=%ld.%06ld now=%ld.%06ld diff=%4.0f.%06ld (%f)",
+			__func__, presleep.tv_sec, presleep.tv_usec,
+			now.tv_sec, now.tv_usec,
+			difftime(now.tv_sec, presleep.tv_sec),
+			(long)(now.tv_usec - presleep.tv_usec),
+			difftimeval(now, presleep)
+			);
 		if (difftimeval(now, presleep) < 0.05)
 			sleep(1);
 
 		gettimeofday(&now, NULL);
+		upsdebugx(7, "%s: presleep=%ld.%06ld now=%ld.%06ld diff=%4.0f.%06ld (%f)",
+			__func__, presleep.tv_sec, presleep.tv_usec,
+			now.tv_sec, now.tv_usec,
+			difftime(now.tv_sec, presleep.tv_sec),
+			(long)(now.tv_usec - presleep.tv_usec),
+			difftimeval(now, presleep)
+			);
 		if (difftimeval(now, start) > tv.tv_sec + 0.000001 * tv.tv_usec) {
 			upsdebugx(5, "%s: pipe read error, timeout exceeded", __func__);
 			break;
