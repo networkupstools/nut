@@ -248,7 +248,8 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 		usleep(100); /* obsoleted in win32, so follow up below */
 
 		time(&now);
-		if (difftime(now, presleep) < 0.1) {
+		/* accept shorter delays, Windows does not guarantee a minimum sleep it seems */
+		if (difftime(now, presleep) < 0.05) {
 			/* https://stackoverflow.com/a/17283549 */
 			HANDLE timer;
 			LARGE_INTEGER ft;
@@ -264,7 +265,7 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 		}
 
 		time(&now);
-		if (difftime(now, presleep) < 0.1)
+		if (difftime(now, presleep) < 0.05)
 			sleep(1);
 
 		time(&now);
