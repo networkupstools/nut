@@ -32,7 +32,7 @@
 #include "parseconf.h"
 #include "nut_stdint.h"
 
-	PCONF_CTX_t	sock_ctx;
+static PCONF_CTX_t	sock_ctx;
 
 static void sock_arg(size_t numarg, char **arg)
 {
@@ -186,6 +186,20 @@ int main(int argc, char **argv)
 		}
 	}
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
 	/* NOTREACHED */
 	exit(EXIT_FAILURE);
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+# pragma GCC diagnostic pop
+#endif
 }
