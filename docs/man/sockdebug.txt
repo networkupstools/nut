@@ -13,9 +13,11 @@ SYNOPSIS
 *sockdebug* socketname
 
 For example (WIN32 and POSIX builds):
+
 	sockdebug.exe dummy-ups-UPS1
 
 For example (POSIX-compliant systems using an alternate state path):
+
 	sockdebug /var/state/ups/dummy-ups-UPS1
 
 DESCRIPTION
@@ -51,6 +53,13 @@ Either a full path (in POSIX builds) or the base name of device socket/pipe
 configuration (which in turn may originate in the `ups.conf` file or be
 dynamically constructed for tests by calling the driver program with a
 `-s TMP` CLI option).
+
+On POSIX systems, if this argument only represents a base name and not a
+full path to the Unix socket file, the tool should first look for the file
+in the current directory, and then fall back to configured (built-in) state
+path or the value of `NUT_STATEPATH` environment variable, if set; e.g.:
+
+	NUT_STATEPATH=/tmp ./server/sockdebug dummy-ups-UPS1
 
 AUTHORS
 -------
