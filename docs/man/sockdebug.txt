@@ -44,7 +44,7 @@ For more details see the `docs/sock-protocol.txt` file in NUT sources.
 OPTIONS
 -------
 
-*libupsclient-config* accepts the following options:
+*sockdebug* accepts (and requires) the following option:
 
 *socketname*::
 Either a full path (in POSIX builds) or the base name of device socket/pipe
@@ -53,18 +53,24 @@ Either a full path (in POSIX builds) or the base name of device socket/pipe
 configuration (which in turn may originate in the `ups.conf` file or be
 dynamically constructed for tests by calling the driver program with a
 `-s TMP` CLI option).
-
++
 On POSIX systems, if this argument only represents a base name and not a
 full path to the Unix socket file, the tool should first look for the file
 in the current directory, and then fall back to configured (built-in) state
 path or the value of `NUT_STATEPATH` environment variable, if set; e.g.:
-
++
+------
 	NUT_STATEPATH=/tmp ./server/sockdebug dummy-ups-UPS1
+------
 
 AUTHORS
 -------
 
 This manual page was written by Jim Klimov <jimklimov+nut@gmail.com>.
+
+The program was originally written by
+Russell Kroll <rkroll@exploits.org> (POSIX version), and by
+Frederic Bohe <fredericbohe@eaton.com> (Windows version).
 
 SEE ALSO
 --------
