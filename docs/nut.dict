@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3133 utf-8
+personal_ws-1.1 en 3173 utf-8
 AAS
 ABI
 ACFAIL
@@ -188,6 +188,7 @@ CPAN
 CPE
 CPM
 CPP
+CPPDBG
 CPPFLAGS
 CPUs
 CRC
@@ -233,6 +234,7 @@ Cuvellard
 Cyber
 CyberPower
 CyberShield
+CygWin
 Cygwin
 DATACABLE
 DATAPATH
@@ -256,6 +258,7 @@ DF
 DHEA
 DIGYS
 DISCHRG
+DLLs
 DMF
 DN
 DNS
@@ -319,6 +322,7 @@ ETIME
 EUROCASE
 EXtreme
 Economou
+EditorConfig
 Edlman
 Edmundsson
 Edscott
@@ -592,6 +596,7 @@ LINEV
 LISTINSTCMD
 LISTRW
 LISTVARS
+LLDB
 LLNC
 LOADPCT
 LOCKFN
@@ -642,6 +647,7 @@ MEC
 MEGATAEC
 MH
 MIBs
+MIMode
 MINLINEV
 MINSUPPLIES
 MINTIMEL
@@ -958,6 +964,7 @@ PresentStatus
 Priv
 Procomm
 ProductID
+Progra
 Proxmox
 Prynych
 Pulizzi
@@ -1366,6 +1373,7 @@ WTU
 Waldie
 WantedBy
 WatchdogSec
+WebFreak
 Werror
 Wextra
 WhizBang
@@ -1433,6 +1441,7 @@ adb
 addcmd
 addenum
 addinfo
+additionalSOLibSearchPath
 addr
 addrange
 addvars
@@ -1493,6 +1502,7 @@ armhf
 asapm
 ascii
 asciidoc
+asciidoctor
 asem
 aspell
 ast
@@ -1610,6 +1620,7 @@ busybox
 bv
 bypassvolts
 byv
+cStandard
 cablepower
 calloc
 cb
@@ -1689,9 +1700,11 @@ colspan
 command's
 commandlen
 compat
+compilerPath
 conf
 config
 configs
+configurationProvider
 configureaz
 configureaza
 confpath
@@ -1709,7 +1722,9 @@ cout
 coverity
 cp
 cpp
+cppStandard
 cppcheck
+cppdbg
 cppnit
 cppunit
 cpqpower
@@ -1734,6 +1749,7 @@ cua
 cuaa
 customizations
 cvt
+cwd
 cx
 cyberpower
 d'un
@@ -1884,6 +1900,7 @@ executables
 executeCommand
 execve
 extendedhistory
+externalConsole
 extradata
 fabula
 facto
@@ -1937,8 +1954,11 @@ gcpp
 gd
 gd's
 gdb
+gdbinit
 gdlib
+gdwarf
 ge
+gedit
 genericsups
 genericups
 genesisII
@@ -2038,6 +2058,7 @@ ie
 ietf
 ifdef
 ifndef
+ignoreFailures
 ignorelb
 ignoreoff
 ignoresab
@@ -2046,6 +2067,7 @@ illumos
 im
 img
 imv
+includePath
 includedir
 inductor
 infos
@@ -2066,6 +2088,8 @@ installcheck
 installurl
 instcmd
 instcmds
+intel
+intelliSenseMode
 intercharacter
 internet
 interoperability
@@ -2095,6 +2119,7 @@ ipmimonitoring
 ipmipsu
 ippon
 ipv
+isDefault
 isbmex
 ish
 iso
@@ -2203,6 +2228,7 @@ listDeviceClients
 listdef
 littleguy
 lk
+lldb
 lm
 ln
 loadPercentage
@@ -2248,6 +2274,7 @@ mailx
 maintainer's
 maintainership
 maj
+makefile
 makevartable
 mandir
 manpage
@@ -2281,6 +2308,7 @@ mge
 mgeups
 mgexml
 mgmt
+miDebuggerPath
 mib
 mibs
 microcontroller
@@ -2435,6 +2463,7 @@ offtimedays
 oftd
 oids
 ok
+okhlybov
 oksh
 ol
 oldmac
@@ -2473,6 +2502,7 @@ outliers
 pF
 pacman
 pacstrap
+parallelized
 param
 paramkeywords
 parsable
@@ -2516,6 +2546,7 @@ pkgin
 plaintext
 plugin
 plugnplay
+pluma
 pmset
 pmu
 png
@@ -2551,6 +2582,7 @@ ppro
 pragma
 pragmas
 pre
+preLaunchTask
 prepend
 prepended
 preprocess
@@ -2563,6 +2595,7 @@ prgshut
 printf
 privPassword
 privProtocol
+problemMatcher
 probu
 proc
 productid
@@ -2708,6 +2741,7 @@ setpci
 setpoint
 setq
 setuid
+setupCommands
 setvar
 setvar's
 sfr
@@ -2785,6 +2819,8 @@ stderr
 stdlib
 stdout
 stdupsv
+stopAtConnect
+stopAtEntry
 stopIP
 str
 strace
@@ -2807,6 +2843,7 @@ stylesheet
 stylesheets
 su
 subcommand
+subdir
 subdirectories
 subdirectory
 subdriver
@@ -2855,6 +2892,7 @@ tabledef
 tagname
 tapswitchdelay
 tapswitchphase
+targetArchitecture
 tbody
 tcflush
 tcgetattr
@@ -3060,6 +3098,7 @@ vo
 vod
 voltronic
 von
+vscode
 wDescriptorLength
 waitbeforereconnect
 wakeup
@@ -3080,6 +3119,7 @@ wmnut
 wordformat
 workflow
 workspace
+workspaceFolder
 workspaces
 writability
 writeinfo
