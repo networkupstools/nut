@@ -656,15 +656,129 @@ unless CygWin is installed.
   in some situations. Finally, select your "Gdb Init File" if you have one,
   e.g. `C:\Users\abuild\.gdbinit`.
 
+Microsoft VS Code
+^^^^^^^^^^^^^^^^^
+
+With this IDE you can benefit from numerous Extensions from its Marketplace,
+the ones found useful for NUT development and debugging include:
+
+* AsciiDoc (by asciidoctor)
+* EditorConfig for VS Code (by EditorConfig)
+* C/C++ (by Microsoft)
+* C/C++ Extension pack (by Microsoft)
+* Makefile tool (by Microsoft)
+* MSYS2/Cygwin/MinGW/Clang support (by okhlybov)
+* Native Debug (GDB, LLDB ... Debugger support; by WebFreak)
+
+Configurations are tracked locally in JSON files where you would need to add
+some entries. Examples below highlight the needed keys and values; your files
+may have others:
+
+* `.vscode/launch.json` (can create one via Run/Add Configuration... menu
+  defines ways to launch the debug session for a program:
++
+------
+{
+    "configurations": [
+        {
+            "name": "CPPDBG GDB usbhid-ups",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "C:\\Users\\abuild\\Desktop\\nut\\drivers\\.libs\\usbhid-ups.exe",
+            "additionalSOLibSearchPath": "C:\\Users\\abuild\\Desktop\\nut\\.inst\\mingw64\\bin",
+            "stopAtConnect": true,
+            "args": ["-s", "ups", "-DDDDDD", "-d1", "-x", "port=auto"],
+            "stopAtEntry": false,
+            "cwd": "C:\\Users\\abuild\\Desktop\\nut",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "C:\\msys64\\mingw64\\bin\\gdb.exe",
+            "targetArchitecture": "x64",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "make usbhid-ups"
+        },
+        {
+            // Alternately with LLDB (clang), the rest looks like above:
+            "name": "CPPDBG LLDB usbhid-ups",
+            "MIMode": "lldb",
+            "miDebuggerPath": "C:\\msys64\\usr\\bin\\lldb.exe",
+        },
+        ...
+    ]
+}
+------
+
+* `.vscode/tasks.json` defines other tasks, such as the `preLaunchTask`
+  mentioned above (assuming you have configured the build externally in
+  the MinGW x64 terminal session):
++
+------
+{
+    "tasks": [
+        {
+            "type": "shell",
+            "label": "make usbhid-ups",
+            "command": "C:\\msys64\\usr\\bin\\make usbhid-ups",
+            "options": {
+                "cwd": "${workspaceFolder}/drivers"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        ...
+    ]
+}
+------
+
+* `.vscode/c_cpp_properties.json` defines general compiler settings, e.g.:
++
+------
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "C:\\msys64\\mingw64\\include\\libusb-1.0",
+                "C:\\msys64\\mingw64\\include",
+                "C:\\msys64\\usr\\include"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "compilerPath": "C:\\msys64\\mingw64\\bin\\gcc.exe",
+            "cStandard": "c99",
+            "cppStandard": "c++11",
+            "intelliSenseMode": "windows-gcc-x64",
+            "configurationProvider": "ms-vscode.makefile-tools"
+        }
+    ],
+    "version": 4
+}
+------
+
+
 ////////
-TODO: Expand on adding include and library paths to NetBeans on Windows.
-Plugins: unpack200 from JDK11 or older to install NB8.2 repo C/C++ plugins.
-
-TODO: Expand on tools.json and launcher.json in VSCode on Windows
-
-TODO: Expand on envvars settings for MSYS to be callable on Windows
-(e.g. avoid NetBeans claims of missing shell).
-
+TODO:
 Make note of settings (and Run as Administrator) to use symlinks in MinGW x64.
 Check if required for sane (iterative re-)builds? ;)
 ////////
