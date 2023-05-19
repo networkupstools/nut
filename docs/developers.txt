@@ -508,6 +508,17 @@ testing you may need to:
 :; cp ./clients/.libs/libupsclient-6.dll ./drivers/.libs/
 ````
 
+To ensure builds with debug symbols, you may add `CFLAGS` and `CXXFLAGS` set
+to `-g3 -gdwarf-2` or similar to `configure` options, or if that confuses
+the cross-build (it tends to assume those values are part of GCC path),
+you may have to hack them into your local copy of `configure.ac`, after the
+`AM_INIT_AUTOMAKE([subdir-objects])` line:
+````
+CFLAGS="$CFLAGS -g3 -gdwarf-2"
+CXXFLAGS="$CXXFLAGS -g3 -gdwarf-2"
+````
+...and re-run the `./autogen.sh` script.
+
 GDB on Windows
 ^^^^^^^^^^^^^^
 
@@ -604,8 +615,6 @@ bash -c "rm -f configure Makefile; ./autogen.sh &&
     ./configure CC='${IDE_CC}' CXX='${IDE_CXX}'
         --with-all=auto --with-docs=skip"
 ------
-+
-And possibly throw in `CFLAGS` and `CXXFLAGS` set to `-g3 -gdwarf-2` or similar.
 +
 In some cases, NOT specifying the `CC`, `CXX` and the flags actually succeeds
 while passing their options fails the configuration ("Compiler can not create
