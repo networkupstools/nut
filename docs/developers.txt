@@ -466,15 +466,23 @@ link:https://www.msys2.org/[MSYS2] (providing MinGW x64 among other things),
 you may need to ensure certain environment variables are set before you start
 the IDE (shortcuts and wrappers that start your console apply them via shell).
 
-Also note that if you set them system-wide for your user profile (or wrap the
-IDE start-up by a script to set them), it may compromise your ability to use
-other MSYS2 profiles and/or other builds of these toolkits (packaged by e.g.
-Git for Windows or PERL for Windows) generally, or in the same IDE session,
-respectively. You may want to do this in a dedicated user account.
+WARNING: If you set such environment variables system-wide for your user
+profile (or wrap the IDE start-up by a script to set them), it may compromise
+your ability to use *other* MSYS2 profiles and/or other builds of these
+toolkits (packaged by e.g. Git for Windows or PERL for Windows projects)
+generally, or in the same IDE session, respectively.
+You may want to do this in a dedicated user account!
 
 Examples below assume you installed MSYS2 into `C:\msys64` (by default) and
 are using the "MinGW X64" profile for GCC builds (nuances may differ for
-32-bit, CLANG, UCRT and other profile variants):
+32-bit, CLANG, UCRT and other profile variants).
+
+Also keep in mind that not all dependencies and tools involved in a
+fully-fledged NUT build are easily available or usable on Windows (e.g.
+the spell checker). See the link:config-prereqs.txt[] for better detailed
+package lists for different operating systems including Windows, and feel
+welcome to post pull requests with suggestions about new tool-chains that
+might fare better than those already tried and documented.
 
 * Make sure its tools are in the `PATH`:
 +
@@ -504,19 +512,19 @@ networked part of the codebase).
 You might still have to fiddle with DLL files built in other directories of
 the NUT project, when preparing to debug certain programs, e.g. for `dummy-ups`
 testing you may need to:
-````
+------
 :; cp ./clients/.libs/libupsclient-6.dll ./drivers/.libs/
-````
+------
 
 To ensure builds with debug symbols, you may add `CFLAGS` and `CXXFLAGS` set
 to `-g3 -gdwarf-2` or similar to `configure` options, or if that confuses
 the cross-build (it tends to assume those values are part of GCC path),
 you may have to hack them into your local copy of `configure.ac`, after the
 `AM_INIT_AUTOMAKE([subdir-objects])` line:
-````
+------
 CFLAGS="$CFLAGS -g3 -gdwarf-2"
 CXXFLAGS="$CXXFLAGS -g3 -gdwarf-2"
-````
+------
 ...and re-run the `./autogen.sh` script.
 
 GDB on Windows
@@ -540,9 +548,9 @@ If installing newer link:https://netbeans.apache.org/[Apache NetBeans]
 releases you may need to enable the use of "NetBeans 8.2 Plugin Portal"
 (check under Tools/Plugins/Settings) and install the "C/C++" plugin only
 available there at the moment. In turn, that older build of a plugin package
-may require that your system provides the `unpack200` tool which was shipped
-with JDK11 or older (you may have to install that just to get the tool, or
-copy its binary from another system).
+may require that your system provides the `unpack200(.exe)` tool which
+was shipped with JDK11 or older (you may have to install that just to
+get the tool, or copy its binary from another system).
 
 Under Tools/Options menu open the C/C++ tab and further its Build Tools sub-tab.
 
@@ -555,28 +563,36 @@ a build running on a server or embedded system.
 Make sure you have a MinGW Tool Collection for the "localhost" build host with
 such settings as:
 
-| Family                  | GNU MinGW                                 |
-| Encoding                | UTF-8                                     |
-| Base Directory          | `C:\msys64\mingw64\bin`                   |
-| C Compiler              | `C:\msys64\mingw64\bin\gcc.exe`           |
-| C++ Compiler            | `C:\msys64\mingw64\bin\g++.exe`           |
-| Assembler               | `C:\msys64\mingw64\bin\as.exe`            |
-| Make Command            | `C:\msys64\usr\bin\make.exe`              |
-| Debugger Command        | `C:\msys64\mingw64\bin\gdb.exe`           |
+|===
+| Option name             | Sample value
+
+| Family                  | GNU MinGW
+| Encoding                | UTF-8
+| Base Directory          | `C:\msys64\mingw64\bin`
+| C Compiler              | `C:\msys64\mingw64\bin\gcc.exe`
+| C++ Compiler            | `C:\msys64\mingw64\bin\g++.exe`
+| Assembler               | `C:\msys64\mingw64\bin\as.exe`
+| Make Command            | `C:\msys64\usr\bin\make.exe`
+| Debugger Command        | `C:\msys64\mingw64\bin\gdb.exe`
+|===
 
 In the Code Assistance sub-tab check that there are toolkit-specific and
 general include paths, e.g. both C and C++ Compiler settings might involve:
 
-| `C:\msys64\mingw64\lib\gcc\x86_64-w64-mingw32\12.2.0\include`       |
-| `C:\msys64\mingw64\include`                                         |
-| `C:\msys64\mingw64\lib\gcc\x86_64-w64-mingw32\12.2.0\include-fixed` |
-| `C:\msys64\mingw64\x86_64-w64-mingw32\include`                      |
+|===
+| `C:\msys64\mingw64\lib\gcc\x86_64-w64-mingw32\12.2.0\include`
+| `C:\msys64\mingw64\include`
+| `C:\msys64\mingw64\lib\gcc\x86_64-w64-mingw32\12.2.0\include-fixed`
+| `C:\msys64\mingw64\x86_64-w64-mingw32\include`
+|===
 
 On top of that, C++ Compiler settings may include:
 
-| `C:\msys64\mingw64\include\12.2.0`                                  |
-| `C:\msys64\mingw64\include\12.2.0\x86_64-w64-mingw32`               |
-| `C:\msys64\mingw64\include\12.2.0\backward`                         |
+|===
+| `C:\msys64\mingw64\include\12.2.0`
+| `C:\msys64\mingw64\include\12.2.0\x86_64-w64-mingw32`
+| `C:\msys64\mingw64\include\12.2.0\backward`
+|===
 
 In the "Other" sub-tab, set default standards to C99 and C++11 to match common
 NUT codebase expectations.
@@ -621,7 +637,7 @@ while passing their options fails the configuration ("Compiler can not create
 executables" etc.) probably due to path resolution issues between the native
 and MinGW environments.
 +
-In practice, you may have an easier time using NUT `./ci_build.sh` helper or
+NOTE: In practice, you may have an easier time using NUT `./ci_build.sh` helper or
 running a more specific `./autogen.sh && ./configure ...` spell similar to
 the above example or customized otherwise, in the MinGW x64 console window
 to actually configure a NUT source code setup, than to maintain one via the IDE.
