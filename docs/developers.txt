@@ -455,6 +455,10 @@ tracing include:
 * Apache NetBeans 17 on Windows with MSYS2 support (as MinGW toolkit);
 * Visual Studio Code (VSCode) on Windows with MSYS2 support.
 
+Some supporting maintenance and development is doable with IntelliJ IDEA,
+making some things easier to do than with a simple Notepad, but it does
+not handle C/C++ development as such.
+
 IDE notes on Windows
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -792,6 +796,25 @@ may have others:
 }
 ------
 
+
+IntelliJ IDEA
+^^^^^^^^^^^^^
+
+It is worth mentioning IntelliJ IDEA as another free (as of Community Edition)
+and popular IDE, however it is of limited use for NUT development.
+
+Its ecosystem does feature a good AsciiDoc plugin, Python and of course the
+Java/Groovy support, so is helpful for maintenance of NUT documentation,
+helper scripts and CI recipes.
+
+It lacks however C/C++ language support (allegedly a different product in the
+IntelliJ portfolio is dedicated to that), so for the core NUT project sources
+it is just a fancy text editor (with `.editorconfig` support) without syntax
+highlighting or codebase cross-reference aids, build/run/debug support, etc.
+
+Still, it is possible to run builds and tests in embedded or external terminal
+session -- so it is not worse than editing with legacy tools, and navigation
+or code-base-wide search is arguably easier.
 
 ////////
 TODO:
