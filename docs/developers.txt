@@ -804,7 +804,7 @@ It is worth mentioning IntelliJ IDEA as another free (as of Community Edition)
 and popular IDE, however it is of limited use for NUT development.
 
 Its ecosystem does feature a good AsciiDoc plugin, Python and of course the
-Java/Groovy support, so is helpful for maintenance of NUT documentation,
+Java/Groovy support, so IDEA is helpful for maintenance of NUT documentation,
 helper scripts and CI recipes.
 
 It lacks however C/C++ language support (allegedly a different product in the
