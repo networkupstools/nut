@@ -24,6 +24,7 @@ ifndef::website[]
 - link:../solaris-usb.html[Notes on NUT monitoring of USB devices in Solaris and related operating systems]
 endif::website[]
 - link:https://github.com/networkupstools/ConfigExamples/releases/latest[NUT Configuration Examples] book maintained by Roger Price
+- link:https://github.com/networkupstools/nut/wiki[NUT GitHub Wiki]
 
 Developer Documentation
 -----------------------
