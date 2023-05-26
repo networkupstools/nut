@@ -510,8 +510,8 @@ Open Environment variables window as above, and
 
 Otherwise, NetBeans for example claims there is no shell for it to run `make`
 or open Terminal pane windows, and fails to start the built programs due to
-lack of DLL files it linked against (such as `libssl` usually needed for any
-networked part of the codebase).
+lack of DLL files they were linked against (such as `libssl` usually needed
+for any networked part of the codebase).
 
 You might still have to fiddle with DLL files built in other directories of
 the NUT project, when preparing to debug certain programs, e.g. for `dummy-ups`
@@ -548,13 +548,14 @@ fun with ensuring that DLLs are found to start them -- see the notes above.
 NetBeans on Windows
 ^^^^^^^^^^^^^^^^^^^
 
-If installing newer link:https://netbeans.apache.org/[Apache NetBeans]
-releases you may need to enable the use of "NetBeans 8.2 Plugin Portal"
-(check under Tools/Plugins/Settings) and install the "C/C++" plugin only
-available there at the moment. In turn, that older build of a plugin package
-may require that your system provides the `unpack200(.exe)` tool which
-was shipped with JDK11 or older (you may have to install that just to
-get the tool, or copy its binary from another system).
+When you install newer link:https://netbeans.apache.org/[Apache NetBeans]
+releases (14, 17 as of this writing), you may need to enable the use of
+"NetBeans 8.2 Plugin Portal" (check under Tools/Plugins/Settings) and
+install the "C/C++" plugin only available there at the moment.
+In turn, that older build of a plugin package may require that your system
+provides the `unpack200(.exe)` tool which was shipped with JDK11 or older
+(you may have to install that just to get the tool, or copy its binary from
+another system).
 
 Under Tools/Options menu open the C/C++ tab and further its Build Tools sub-tab.
 
