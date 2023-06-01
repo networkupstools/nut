@@ -40,6 +40,20 @@ https://github.com/networkupstools/nut/milestone/8
    https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml?search=3493
    (even though this RFC is not formally an Internet Standard)
 
+ - Published a new maintainer GPG key to sign tags and release artifacts,
+   and possibly git commits as well, as part of solution for issue #1410.
+   You can pull it from common OpenPGP servers with the following command:
++
+----
+:; gpg --recv-key DE0184DA7043DCF7
+gpg: key DE0184DA7043DCF7: public key "Jim Klimov (Doing FOSS
+         since last millennium) <jimklimov@gmail.com>" imported
+gpg: Total number processed: 1
+gpg:               imported: 1
+----
++
+as part of https://github.com/networkupstools/nut/issues/1410 solution.
+
  - Bug fixes for fallout possible due to "fightwarn" effort and other
    evolution in NUT v2.8.0 release:
    * The `upsdebugx()` and similar methods were converted to macros in #685
