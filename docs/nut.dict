@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3173 utf-8
+personal_ws-1.1 en 3176 utf-8
 AAS
 ABI
 ACFAIL
@@ -239,6 +239,7 @@ Cygwin
 DATACABLE
 DATAPATH
 DCE
+DCF
 DDD
 DDDDD
 DDDDDD
@@ -517,6 +518,7 @@ Infosec
 Innova
 Integrators
 IntelCC
+IntelliJ
 InvCDly
 InvCPol
 InvMin
@@ -834,6 +836,7 @@ OnTmDays
 OneAC
 OpenBSD
 OpenIndiana
+OpenPGP
 OpenSSL
 OpenSolaris
 OpenSource

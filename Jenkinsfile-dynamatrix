@@ -261,7 +261,7 @@ set | sort -n """
             }
         }
 
-        infra.withEnvOptional(dynacfgPipeline.defaultTools) {
+        withEnvOptional(dynacfgPipeline.defaultTools) {
             unstashCleanSrc(dynacfgPipeline.stashnameSrc)
             buildMatrixCellCI(dynacfgPipeline, dsbcClone, stageNameClone)
             //buildMatrixCellCI(dynacfgPipeline, dsbc, stageName)
@@ -289,7 +289,7 @@ set | sort -n """
             }
         }
 
-        infra.withEnvOptional(dynacfgPipeline.defaultTools) {
+        withEnvOptional(dynacfgPipeline.defaultTools) {
             unstashCleanSrc(dynacfgPipeline.stashnameSrc)
             def dynacfgPipeline_ciBuild = dynacfgPipeline.clone()
             dynacfgPipeline_ciBuild.buildSystem = 'ci_build.sh'
