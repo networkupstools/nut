@@ -352,6 +352,11 @@ and a `driver.killpower` instant command (for safety, must be unlocked by
  - The `COPYING` file was updated with licenses and attribution for certain
    source code files and blocks coming from the Internet originally [#1758]
 
+ - The `tools/gitlog2changelog.py.in` script was revised, in particular to
+   generate the `ChangeLog` file more consistently with different versions
+   of Python interpreter, and without breaking the long file paths in the
+   resulting mark-up text [#1945, #1955]
+
 ---------------------------------------------------------------------------
 Release notes for NUT 2.8.0 - what's new since 2.7.4:
 

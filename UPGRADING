@@ -112,6 +112,14 @@ Changes from 2.8.0 to 2.8.1
   were renamed: `pw` is now `eaton_pw_nm2`, and `pxgx_ups` is `eaton_pxg_ups`
   [#1715]
 
+- The `tools/gitlog2changelog.py.in` script was revised, in particular to
+  generate the `ChangeLog` file more consistently with different versions
+  of Python interpreter, and without breaking the long file paths in the
+  resulting mark-up text. Due to this, a copy of this file distributed with
+  NUT release archives is expected to considerably differ on first glance
+  from its earlier released versions (not just adding lines for the new
+  release, but changing lines in the older releases too) [#1945, #1955]
+
 Changes from 2.7.4 to 2.8.0
 ---------------------------
 
