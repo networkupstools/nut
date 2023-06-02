@@ -69,7 +69,8 @@ messageNL = False
 files = ""
 prevAuthorLine = ""
 
-wrapper = TextWrapper(initial_indent="\t", subsequent_indent="\t  ")
+# See also: https://github.com/python/cpython/blob/main/Lib/textwrap.py
+wrapper = TextWrapper(initial_indent="\t", subsequent_indent="\t  ", break_on_hyphens=False, break_long_words=False)
 
 # The main part of the loop
 for line in fin:
