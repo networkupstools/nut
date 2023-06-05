@@ -207,7 +207,6 @@ what it can do.
 
 	dstate_setflags("input.transfer.high", ST_FLAG_RW);
 
-[[_status_data]]
 Status data
 ~~~~~~~~~~~
 
