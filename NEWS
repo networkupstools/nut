@@ -357,6 +357,10 @@ and a `driver.killpower` instant command (for safety, must be unlocked by
    of Python interpreter, and without breaking the long file paths in the
    resulting mark-up text [#1945, #1955]
 
+ - The "NUT client for VMware ESXi" project (by René Garcia) got its build
+   recipes published on GitHub at https://github.com/rgc2000/NutClient-ESXi
+   [#1961]
+
 ---------------------------------------------------------------------------
 Release notes for NUT 2.8.0 - what's new since 2.7.4:
 
