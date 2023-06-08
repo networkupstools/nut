@@ -186,7 +186,7 @@ Virtualization packages
 VMware
 ~~~~~~
 
-- NUT client for VMware ESXi (several versions of both, offsite, René Garcia).
+- NUT client for VMware ESXi (several versions of both; offsite, by René Garcia).
   Since the hypervisor manager environment lacks access to hardware ports, this
   package only includes the `upsmon` client integration, and a NUT server must
   run in a VM with passed-through ports.
