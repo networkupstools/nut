@@ -186,7 +186,25 @@ Virtualization packages
 VMware
 ~~~~~~
 
-- NUT client 2.7.4 for ESXi 5.0, 5.1, 5.5 and 6.0 (offsite, René Garcia)
+- NUT client for VMware ESXi (several versions of both, offsite, René Garcia).
+  Since the hypervisor manager environment lacks access to hardware ports, this
+  package only includes the `upsmon` client integration, and a NUT server must
+  run in a VM with passed-through ports.
++
+  See link:https://github.com/networkupstools/nut/wiki/NUT-and-VMware-(ESXi)[NUT
+  and VMware (ESXi) page on NUT Wiki] for more community-contributed details.
++
+  Note that the VIB package versioning is independent of NUT or VMware versions,
+  they are however mentioned in downloadable file names. As of this writing,
+  there are builds spanning VMware ESXi 5.0-8.0 and NUT 2.7.4-2.8.0:
 
-  * link:http://rene.margar.fr/2012/05/client-nut-pour-esxi-5-0/[blog entry (French)]
-  * link:http://rene.margar.fr/downloads/NutClient-ESXi500-1.4.0.tar.gz[VIB package (v1.4.0)]
+  * link:https://github.com/rgc2000/NutClient-ESXi[GitHub repository with build recipes],
+    including link:https://github.com/rgc2000/NutClient-ESXi/releases[binary releases]
+  * link:https://rene.margar.fr/2012/05/client-nut-pour-esxi-5-0/[Original blog entry (French)]
+    * link:https://rene.margar.fr/2012/05/client-nut-pour-esxi-5-0/comment-page-22/#comment-13325[Historic
+      details of the recipe evolution]
+  * link:https://rene.margar.fr/downloads/NutClient-ESXi500-1.4.0.tar.gz[VIB package
+    (in fact automatically redirects to latest build)]
+
+WARNING: This module is provided "as is" and is not approved by VMware,
+you may lose VMware support if you install it. Use it at your own risks.
