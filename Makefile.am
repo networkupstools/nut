@@ -95,7 +95,7 @@ DISTCLEANFILES += include/config.h.in~
 MAINTAINERCLEANFILES = INSTALL
 MAINTAINERCLEANFILES += aclocal.m4 config.guess config.sub
 MAINTAINERCLEANFILES += configure
-MAINTAINERCLEANFILES += depcomp install-sh ltmain.sh test-driver
+MAINTAINERCLEANFILES += depcomp install-sh ltmain.sh test-driver ar-lib
 MAINTAINERCLEANFILES += m4/libtool.m4 m4/ltoptions.m4 m4/ltsugar.m4 m4/ltversion.m4 m4/lt~obsolete.m4
 MAINTAINERCLEANFILES += Makefile.in .dirstamp include/config.h.in
 
@@ -211,6 +211,9 @@ else !HAVE_CPPCHECK
 cppcheck:
 	@echo "CPPCHECK analysis not available since 'cppcheck' was not found."
 endif !HAVE_CPPCHECK
+
+sockdebug:
+	cd $(builddir)/server && $(MAKE) $(AM_MAKEFLAGS) sockdebug$(EXEEXT)
 
 # ----------------------------------------------------------------------
 # Automatically generate the ChangeLog from Git logs:

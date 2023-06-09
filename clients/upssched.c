@@ -762,19 +762,51 @@ static void start_daemon(TYPE_FD lockfd)
 
 	/* child */
 
-	close(0);
-	close(1);
-	close(2);
+	/* make fds 0-2 (typically) point somewhere defined */
+#ifdef HAVE_DUP2
+	/* system can close (if needed) and (re-)open a specific FD number */
+	if (1) { /* scoping */
+		TYPE_FD devnull = open("/dev/null", O_RDWR);
+		if (devnull < 0)
+			fatal_with_errno(EXIT_FAILURE, "open /dev/null");
 
-	/* make fds 0-2 point somewhere defined */
-	if (open("/dev/null", O_RDWR) != 0)
-		fatal_with_errno(EXIT_FAILURE, "open /dev/null");
+		if (dup2(devnull, STDIN_FILENO) != STDIN_FILENO)
+			fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDIN");
+		if (dup2(devnull, STDOUT_FILENO) != STDOUT_FILENO)
+			fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDOUT");
+		if (dup2(devnull, STDERR_FILENO) != STDERR_FILENO)
+			fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDERR");
 
-	if (dup(0) == -1)
-		fatal_with_errno(EXIT_FAILURE, "dup");
+		close(devnull);
+	}
+#else
+# ifdef HAVE_DUP
+	/* opportunistically duplicate to the "lowest-available" FD number */
+	close(STDIN_FILENO);
+	if (open("/dev/null", O_RDWR) != STDIN_FILENO)
+		fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDIN");
 
-	if (dup(0) == -1)
-		fatal_with_errno(EXIT_FAILURE, "dup");
+	close(STDOUT_FILENO);
+	if (dup(STDIN_FILENO) != STDOUT_FILENO)
+		fatal_with_errno(EXIT_FAILURE, "dup /dev/null as STDOUT");
+
+	close(STDERR_FILENO);
+	if (dup(STDIN_FILENO) != STDERR_FILENO)
+		fatal_with_errno(EXIT_FAILURE, "dup /dev/null as STDERR");
+# else
+	close(STDIN_FILENO);
+	if (open("/dev/null", O_RDWR) != STDIN_FILENO)
+		fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDIN");
+
+	close(STDOUT_FILENO);
+	if (open("/dev/null", O_RDWR) != STDOUT_FILENO)
+		fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDOUT");
+
+	close(STDERR_FILENO);
+	if (open("/dev/null", O_RDWR) != STDERR_FILENO)
+		fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDERR");
+# endif
+#endif
 
 	pipefd = open_sock();
 
@@ -1355,7 +1387,7 @@ static void help(const char *arg_progname)
 	printf("Practical behavior is managed by UPSNAME and NOTIFYTYPE envvars\n");
 
 	printf("\nUsage: %s [OPTIONS]\n\n", arg_progname);
-	printf("  -D		raise debugging level (and stay foreground by default)\n");
+	printf("  -D		raise debugging level\n");
 	printf("  -V		display the version of this software\n");
 	printf("  -h		display this help\n");
 
@@ -1389,6 +1421,18 @@ int main(int argc, char **argv)
 		}
 	}
 
+	{ /* scoping */
+		char *s = getenv("NUT_DEBUG_LEVEL");
+		int l;
+		if (s && str_to_int(s, &l, 10)) {
+			if (l > 0 && nut_debug_level < 1) {
+				upslogx(LOG_INFO, "Defaulting debug verbosity to NUT_DEBUG_LEVEL=%d "
+					"since none was requested by command-line options", l);
+				nut_debug_level = l;
+			}	/* else follow -D settings */
+		}	/* else nothing to bother about */
+	}
+
 	/* normally we don't have stderr, so get this going to syslog early */
 	open_syslog(prog);
 	syslogbit_set();
@@ -1403,6 +1447,9 @@ int main(int argc, char **argv)
 	}
 
 	/* see if this matches anything in the config file */
+	/* This is actually the processing loop:
+	 * checkconf -> conf_arg -> parse_at -> sendcmd -> daemon if needed
+	 */
 	checkconf();
 
 	exit(EXIT_SUCCESS);

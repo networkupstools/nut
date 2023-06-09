@@ -65,6 +65,7 @@ Developer manual pages
 - linkman:libupsclient-config[1]
 - linkman:nut-recorder[8]
 - linkman:skel[8]
+- linkman:sockdebug[8]
 
 [[devclient]]
 Client library

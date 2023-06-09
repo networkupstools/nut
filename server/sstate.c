@@ -201,6 +201,7 @@ TYPE_FD sstate_connect(upstype_t *ups)
 	ssize_t	ret;
 	struct sockaddr_un	sa;
 
+	upsdebugx(2, "%s: preparing UNIX socket %s", __func__, NUT_STRARG(ups->fn));
 	check_unix_socket_filename(ups->fn);
 
 	memset(&sa, '\0', sizeof(sa));
@@ -219,6 +220,8 @@ TYPE_FD sstate_connect(upstype_t *ups)
 	if (ret < 0) {
 		time_t	now;
 
+		upsdebugx(2, "%s: failed to connect() UNIX socket %s (%s)",
+			__func__, NUT_STRARG(ups->fn), sa.sun_path);
 		close(fd);
 
 		/* rate-limit complaints - don't spam the syslog */
@@ -263,11 +266,14 @@ TYPE_FD sstate_connect(upstype_t *ups)
 	const char	*dumpcmd = "DUMPALL\n";
 	BOOL  result = FALSE;
 
+	upsdebugx(2, "%s: preparing Windows pipe %s", __func__, NUT_STRARG(ups->fn));
 	snprintf(pipename, sizeof(pipename), "\\\\.\\pipe\\%s", ups->fn);
 
 	result = WaitNamedPipe(pipename,NMPWAIT_USE_DEFAULT_WAIT);
 
 	if (result == FALSE) {
+		upsdebugx(2, "%s: failed to WaitNamedPipe(%s)",
+			__func__, pipename);
 		return ERROR_FD;
 	}
 

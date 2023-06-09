@@ -71,7 +71,7 @@ static void reserve_lines_libgpiod(struct gpioups_t *gpioupsfd, int inner);
  */
 static void reserve_lines_libgpiod(struct gpioups_t *gpioupsfdlocal, int inner) {
 	struct libgpiod_data_t *libgpiod_data = (struct libgpiod_data_t *)(gpioupsfdlocal->lib_data);
-	upsdebugx(LOG_DEBUG, "reserve_lines_libgpiod runOptions 0x%x, inner %d", gpioupsfdlocal->runOptions, inner);
+	upsdebugx(5, "reserve_lines_libgpiod runOptions 0x%x, inner %d", gpioupsfdlocal->runOptions, inner);
 
 	if(((gpioupsfdlocal->runOptions&ROPT_REQRES) != 0) == inner) {
 		struct gpiod_line_request_config config;
@@ -79,10 +79,10 @@ static void reserve_lines_libgpiod(struct gpioups_t *gpioupsfdlocal, int inner) 
 		config.consumer=upsdrv_info.name;
 		if(gpioupsfdlocal->runOptions&ROPT_EVMODE) {
 			config.request_type = GPIOD_LINE_REQUEST_EVENT_BOTH_EDGES;
-			upsdebugx(LOG_DEBUG, "reserve_lines_libgpiod GPIOD_LINE_REQUEST_EVENT_BOTH_EDGES");
+			upsdebugx(5, "reserve_lines_libgpiod GPIOD_LINE_REQUEST_EVENT_BOTH_EDGES");
 		} else {
 			config.request_type = GPIOD_LINE_REQUEST_DIRECTION_INPUT;
-			upsdebugx(LOG_DEBUG, "reserve_lines_libgpiod GPIOD_LINE_REQUEST_DIRECTION_INPUT");
+			upsdebugx(5, "reserve_lines_libgpiod GPIOD_LINE_REQUEST_DIRECTION_INPUT");
 		}
 		config.flags = 0;	/*	GPIOD_LINE_REQUEST_FLAG_OPEN_DRAIN;	*/
 		gpioRc = gpiod_line_request_bulk(&libgpiod_data->gpioLines, &config, NULL);
@@ -91,8 +91,7 @@ static void reserve_lines_libgpiod(struct gpioups_t *gpioupsfdlocal, int inner) 
 				LOG_ERR,
 				"GPIO gpiod_line_request_bulk call failed, check for other applications that may have reserved GPIO lines"
 			);
-		upsdebugx(
-			LOG_DEBUG,
+		upsdebugx(5,
 			"GPIO gpiod_line_request_bulk with type %d return code %d",
 			config.request_type,
 			gpioRc
@@ -143,7 +142,7 @@ void gpio_open(struct gpioups_t *gpioupsfdlocal) {
 				"GPIO line reservation (gpiod_chip_get_lines call) failed with code %d, check for possible issue in rules parameter",
 				gpioRc
 			);
-		upsdebugx(LOG_DEBUG, "GPIO gpiod_chip_get_lines return code %d", gpioRc);
+		upsdebugx(5, "GPIO gpiod_chip_get_lines return code %d", gpioRc);
 		reserve_lines_libgpiod(gpioupsfdlocal, 0);
 	}
 }
@@ -177,8 +176,7 @@ void gpio_get_lines_states(struct gpioups_t *gpioupsfdlocal) {
 		struct timespec timeoutLong = {1,0};
 		struct gpiod_line_event event;
 		int monRes;
-		upsdebugx(
-			LOG_DEBUG,
+		upsdebugx(5,
 			"gpio_get_lines_states_libgpiod initial %d, timeout %ld",
 			gpioupsfdlocal->initial,
 			timeoutLong.tv_sec
@@ -188,8 +186,7 @@ void gpio_get_lines_states(struct gpioups_t *gpioupsfdlocal) {
 		} else {
 			gpioupsfdlocal->initial = 1;
 		}
-		upsdebugx(
-			LOG_DEBUG,
+		upsdebugx(5,
 			"gpio_get_lines_states_libgpiod initial %d, timeout %ld",
 			gpioupsfdlocal->initial,
 			timeoutLong.tv_sec
@@ -200,8 +197,7 @@ void gpio_get_lines_states(struct gpioups_t *gpioupsfdlocal) {
 			&timeoutLong,
 			&libgpiod_data->gpioEventLines
 		);
-		upsdebugx(
-			LOG_DEBUG,
+		upsdebugx(5,
 			"gpiod_line_event_wait_bulk completed with %d return code and timeout %ld s",
 			monRes,
 			timeoutLong.tv_sec
@@ -217,8 +213,7 @@ void gpio_get_lines_states(struct gpioups_t *gpioupsfdlocal) {
 				int eventRc=gpiod_line_event_read(eLine, &event);
 				unsigned int lineOffset = gpiod_line_offset(eLine);
 				event.event_type=0;
-				upsdebugx(
-					LOG_DEBUG,
+				upsdebugx(5,
 					"Event read return code %d and event type %d for line %d",
 					eventRc,
 					event.event_type,
@@ -238,15 +233,13 @@ void gpio_get_lines_states(struct gpioups_t *gpioupsfdlocal) {
 	if (gpioRc < 0)
 		fatal_with_errno(LOG_ERR, "GPIO line status read call failed");
 
-	upsdebugx(
-		LOG_DEBUG,
+	upsdebugx(5,
 		"GPIO gpiod_line_get_value_bulk completed with %d return code, status values:",
 		gpioRc
 	);
 
 	for(i=0; i < gpioupsfdlocal->upsLinesCount; i++) {
-		upsdebugx(
-			LOG_DEBUG,
+		upsdebugx(5,
 			"Line%d state = %d",
 			i,
 			gpioupsfdlocal->upsLinesStates[i]

@@ -190,6 +190,7 @@ SRC_DEV_PAGES = \
 	nutscan_init.txt \
 	nutscan_get_serial_ports_list.txt \
 	libupsclient-config.txt \
+	sockdebug.txt \
 	skel.txt
 
 if WITH_MANS
@@ -314,10 +315,14 @@ upscli_sendline_timeout.3: upscli_sendline.3
 
 MAN1_DEV_PAGES = \
 	libupsclient-config.1
+
+MAN8_DEV_PAGES = \
+	sockdebug.8
 endif
 
 if WITH_DEV
 man3_MANS = $(MAN3_DEV_PAGES)
+man8_MANS += $(MAN8_DEV_PAGES)
 
 if !WITH_PKG_CONFIG
 man1_MANS = $(MAN1_DEV_PAGES)
@@ -371,6 +376,7 @@ HTML_DEV_MANS = \
 	nutscan_get_serial_ports_list.html \
 	nutscan_init.html \
 	libupsclient-config.html \
+	sockdebug.html \
 	skel.html
 
 
@@ -693,6 +699,7 @@ MAN_MANS += \
 	$(MAN8_CGI_PAGES) \
 	$(MAN1_DEV_PAGES) \
 	$(MAN3_DEV_PAGES) \
+	$(MAN8_DEV_PAGES) \
 	$(MAN_SERIAL_PAGES) \
 	$(MAN_SNMP_PAGES) \
 	$(MAN_USB_LIBUSB_PAGES) \

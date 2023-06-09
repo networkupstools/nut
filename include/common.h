@@ -91,6 +91,19 @@ extern "C" {
 /* *INDENT-ON* */
 #endif
 
+/* POSIX requires these, and most but not all systems use same
+ * magical numbers for the file descriptors... yep, not all do!
+ */
+#ifndef STDIN_FILENO
+# define STDIN_FILENO  0	/* standard input file descriptor */
+#endif
+#ifndef STDOUT_FILENO
+# define STDOUT_FILENO 1	/* standard output file descriptor */
+#endif
+#ifndef STDERR_FILENO
+# define STDERR_FILENO 2	/* standard error file descriptor */
+#endif
+
 /* porting stuff for WIN32, used by serial and SHUT codebases */
 #ifndef WIN32
 /* Just match three macro groups defined for WIN32 */
@@ -393,6 +406,9 @@ char * getfullpath(char * relative_path);
 #define PATH_SBIN "\\..\\sbin"
 #define PATH_LIB "\\..\\lib"
 #endif /* WIN32*/
+
+/* Return a difference of two timevals as a floating-point number */
+double difftimeval(struct timeval x, struct timeval y);
 
 #ifndef HAVE_USLEEP
 /* int __cdecl usleep(unsigned int useconds); */

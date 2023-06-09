@@ -270,6 +270,8 @@ static void send_to_all(const char *fmt, ...)
 
 	for (conn = connhead; conn; conn = cnext) {
 		cnext = conn->next;
+		if (conn->nobroadcast)
+			continue;
 
 #ifndef WIN32
 		ret = write(conn->fd, buf, buflen);
@@ -566,6 +568,7 @@ static void sock_connect(TYPE_FD sock)
 		NULL, &(conn->read_overlapped));
 #endif
 
+	conn->nobroadcast = 0;
 	pconf_init(&conn->ctx, NULL);
 
 	if (connhead) {
@@ -715,6 +718,40 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 		return 1;
 	}
 
+	if (!strcasecmp(arg[0], "NOBROADCAST")) {
+		char buf[SMALLBUF];
+		conn->nobroadcast = 1;
+#ifndef WIN32
+		snprintf(buf, sizeof(buf), "socket %d", conn->fd);
+#else
+		snprintf(buf, sizeof(buf), "handle %p", conn->fd);
+#endif
+		upsdebugx(1, "%s: %s requested NOBROADCAST mode",
+			__func__, buf);
+		return 1;
+	}
+
+	/* BROADCAST <0|1> */
+	if (!strcasecmp(arg[0], "BROADCAST")) {
+		int i;
+		char buf[SMALLBUF];
+		conn->nobroadcast = 0;
+		if (numarg > 1 && str_to_int(arg[1], &i, 10)) {
+			if (i < 1)
+				conn->nobroadcast = 1;
+		}
+#ifndef WIN32
+		snprintf(buf, sizeof(buf), "socket %d", conn->fd);
+#else
+		snprintf(buf, sizeof(buf), "handle %p", conn->fd);
+#endif
+		upsdebugx(1,
+			"%s: %s requested %sBROADCAST mode",
+			__func__, buf,
+			conn->nobroadcast ? "NO" : "");
+		return 1;
+	}
+
 	if (numarg < 2) {
 		return 0;
 	}
@@ -742,17 +779,34 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 		if (cmdid)
 			upsdebugx(3, "%s: TRACKING = %s", __func__, cmdid);
 
-		/* try the new handler first if present */
+		/* try the handler shared by all drivers first */
+		ret = main_instcmd(arg[1], arg[2], conn);
+		if (ret != STAT_INSTCMD_UNKNOWN) {
+			/* The command was acknowledged by shared handler, and
+			 * either handled successfully, or failed, or was not
+			 * valid in current circumstances - in any case, we do
+			 * not pass to driver-provided logic. */
+
+			/* send back execution result if requested */
+			if (cmdid)
+				send_tracking(conn, cmdid, ret);
+
+			/* The command was handled, status is a separate consideration */
+			return 1;
+		} /* else try other handler(s) */
+
+		/* try the driver-provided handler if present */
 		if (upsh.instcmd) {
 			ret = upsh.instcmd(cmdname, cmdparam);
 
-			/* send back execution result */
+			/* send back execution result if requested */
 			if (cmdid)
 				send_tracking(conn, cmdid, ret);
 
 			/* The command was handled, status is a separate consideration */
 			return 1;
 		}
+
 		upslogx(LOG_NOTICE, "Got INSTCMD, but driver lacks a handler");
 		return 1;
 	}
@@ -779,11 +833,27 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 			upsdebugx(3, "%s: TRACKING = %s", __func__, setid);
 		}
 
-		/* try the new handler first if present */
+		/* try the handler shared by all drivers first */
+		ret = main_setvar(arg[1], arg[2], conn);
+		if (ret != STAT_SET_UNKNOWN) {
+			/* The command was acknowledged by shared handler, and
+			 * either handled successfully, or failed, or was not
+			 * valid in current circumstances - in any case, we do
+			 * not pass to driver-provided logic. */
+
+			/* send back execution result if requested */
+			if (setid)
+				send_tracking(conn, setid, ret);
+
+			/* The command was handled, status is a separate consideration */
+			return 1;
+		} /* else try other handler(s) */
+
+		/* try the driver-provided handler if present */
 		if (upsh.setvar) {
 			ret = upsh.setvar(arg[1], arg[2]);
 
-			/* send back execution result */
+			/* send back execution result if requested */
 			if (setid)
 				send_tracking(conn, setid, ret);
 

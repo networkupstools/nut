@@ -1801,8 +1801,10 @@ void upsdrv_shutdown(void)
 	int r;
 
 	r = instcmd("shutdown.reboot", "");
-	if (r != STAT_INSTCMD_HANDLED)
-		fatalx(EXIT_FAILURE, "upsdrv_shutdown failed!");
+	if (r != STAT_INSTCMD_HANDLED) {
+		upslogx(LOG_ERR, "upsdrv_shutdown failed!");
+		set_exit_flag(-1);
+	}
 }
 
 

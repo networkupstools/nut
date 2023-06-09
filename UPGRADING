@@ -65,6 +65,10 @@ Changes from 2.8.0 to 2.8.1
   the packaging recipes may use NUT source-code facilities and package just
   symlinks as relevant for each distro separately [#1462, #1504]
 
+- Added support for `make sockdebug` for easier developer access to the tool;
+  also if `configure --with-dev` is in effect, it would now be installed to
+  the configured `libexec` location. A man page was also added. [#1936]
+
 - NUT software-only drivers (dummy-ups, clone, clone-outlet) separated from
   serial drivers in respective Makefile and configure script options - this
   may impact packaging decisions on some distributions going forward [#1446]
@@ -107,6 +111,14 @@ Changes from 2.8.0 to 2.8.1
 - snmp-ups: some subdrivers (addressed using the driver parameter `mibs`)
   were renamed: `pw` is now `eaton_pw_nm2`, and `pxgx_ups` is `eaton_pxg_ups`
   [#1715]
+
+- The `tools/gitlog2changelog.py.in` script was revised, in particular to
+  generate the `ChangeLog` file more consistently with different versions
+  of Python interpreter, and without breaking the long file paths in the
+  resulting mark-up text. Due to this, a copy of this file distributed with
+  NUT release archives is expected to considerably differ on first glance
+  from its earlier released versions (not just adding lines for the new
+  release, but changing lines in the older releases too) [#1945, #1955]
 
 Changes from 2.7.4 to 2.8.0
 ---------------------------

@@ -15,6 +15,14 @@ if [ -z "${LC_ALL-}" ] ; then
 	export LC_ALL
 fi
 
+VERBOSE_FLAG=""
+if [ x"${DEBUG-}" = xtrue ] || [ x"${CI_DEBUG-}" = xtrue ] || [ x"$1" = x-v ] ; then
+	DEBUG=true
+	VERBOSE_FLAG="-v"
+	echo "NUT script $0 will call the tools with higher debug verbosity"
+else
+	DEBUG=false
+fi
 
 if [ -n "${PYTHON-}" ] ; then
 	# May be a name/path of binary, or one with args - check both
@@ -27,7 +35,9 @@ if [ -n "${PYTHON-}" ] ; then
 		# Do not die just here, we may not need the interpreter
 	}
 else
+	$DEBUG && echo "=== Picking usable Python version..."
 	PYTHON=""
+	# FIXME: Use something like TAB-completion to find every name on PATH?
 	for P in python python3 python2 \
 		python-3.10 python3.10 \
 		python-3.9 python3.9 \
@@ -36,11 +46,15 @@ else
 		python-3.4 python3.4 \
 		python-2.7 python2.7 \
 	; do
-		if (command -v "$P" >/dev/null) && $P -c "import re,glob,codecs" ; then
+		if (command -v "$P" >/dev/null) && $P $VERBOSE_FLAG -c "import re,glob,codecs" ; then
+			$DEBUG && echo "=== Picked usable Python version: $P"
 			PYTHON="$P"
 			break
 		fi
 	done
+	if $DEBUG && [ -z "$PYTHON" ] ; then
+		echo "=== Did not pick any usable Python version"
+	fi
 fi
 
 rm -f *.in.AUTOGEN_WITHOUT || true
@@ -48,12 +62,12 @@ rm -f *.in.AUTOGEN_WITHOUT || true
 # re-generate files needed by configure, and created otherwise at 'dist' time
 if [ ! -f scripts/augeas/nutupsconf.aug.in ]
 then
-	if [ -n "${PYTHON-}" ] && $PYTHON -c "import re,glob,codecs"; then
+	if [ -n "${PYTHON-}" ] && $PYTHON $VERBOSE_FLAG -c "import re,glob,codecs"; then
 		echo "Regenerating Augeas ups.conf lens with '$PYTHON'..."
 		(   # That script is templated; assume @PYTHON@ is the only
 		    # road-bump there
 		    cd scripts/augeas \
-		    && $PYTHON ./gen-nutupsconf-aug.py.in
+		    && $PYTHON $VERBOSE_FLAG ./gen-nutupsconf-aug.py.in
 		) || exit 1
 	else
 		echo "----------------------------------------------------------------------"
@@ -83,9 +97,17 @@ if [ ! -f scripts/udev/nut-usbups.rules.in -o \
      ! -f tools/nut-scanner/nutscan-usb.h ]
 then
 	if perl -e 1; then
+		VERBOSE_FLAG_PERL=""
+		if $DEBUG ; then
+			if perl -d:Devel::Trace -e 1 >/dev/null 2>/dev/null ; then
+				VERBOSE_FLAG_PERL="-d:Devel::Trace"
+			else
+				echo "=== Can not trace perl, try sudo cpan install 'Devel::Trace'"
+			fi
+		fi
 		echo "Regenerating the USB helper files..."
 		cd tools && {
-			./nut-usbinfo.pl || exit 1
+			perl $VERBOSE_FLAG_PERL ./nut-usbinfo.pl || exit 1
 			cd ..
 		}
 	else
@@ -105,7 +127,9 @@ then
 fi
 
 if [ ! -f scripts/systemd/nut-common-tmpfiles.conf.in ]; then
-	echo '# autoconf requires this file exists before generating configure script; it will be overwritten by configure during a build' > scripts/systemd/nut-common-tmpfiles.conf.in
+	( echo '# autoconf requires this file exists before generating configure script;'
+	  echo '# it will be overwritten by running configure during an actual build'
+	) > scripts/systemd/nut-common-tmpfiles.conf.in
 fi
 
 # now we can safely call autoreconf
@@ -124,7 +148,17 @@ if ( command -v dos2unix ) 2>/dev/null >/dev/null ; then
 fi >&2
 
 echo "Calling autoreconf..."
-autoreconf -iv && [ -s configure ] && [ -x configure ] \
+AUTOTOOL_RES=0
+if $DEBUG ; then
+	autoreconf -iv --warnings=all -d || AUTOTOOL_RES=$?
+else
+	# This tool's own verbosity is rather compact (whom it called)
+	# and not too useful for actual troubleshooting, while not too
+	# noisy to just disable.
+	autoreconf -iv || AUTOTOOL_RES=$?
+fi
+
+[ "$AUTOTOOL_RES" = 0 ] && [ -s configure ] && [ -x configure ] \
 || { cat << EOF
 FAILED: did not generate an executable configure script!
 
@@ -132,6 +166,10 @@ FAILED: did not generate an executable configure script!
 # scripts, and need you to explicitly say which version you want, e.g.
 #    export AUTOCONF_VERSION=2.65 AUTOMAKE_VERSION=1.13
 # If you get issues with AC_DISABLE_STATIC make sure you have libtool.
+# If it complains about "too few" or "excess" "arguments to builtin ifdef",
+# check the configure.ac line it refers to and un-comment (or comment away)
+# the third argument for AM_SILENT_RULES check, or comment away the whole
+# "ifdef" block if your autotools still would not grok it.
 EOF
 	exit 1
 } >&2
@@ -162,7 +200,7 @@ fi
 
 # NOTE: Unquoted, may be multi-token
 $CONFIG_SHELL -n configure 2>/dev/null >/dev/null \
-|| { echo "FAILED: configure script did not pass shell interpreter syntax checks with $CONFIG_SHELL" >&2 ;
+|| { echo "FAILED: configure script did not pass shell interpreter syntax checks with $CONFIG_SHELL" >&2
 	echo "NOTE: If you are using an older OS release, try executing the script with" >&2
 	echo "a more functional shell implementation (dtksh, bash, dash...)" >&2
 	echo "You can re-run this script with a CONFIG_SHELL in environment" >&2

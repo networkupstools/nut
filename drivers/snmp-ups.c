@@ -370,7 +370,8 @@ void upsdrv_shutdown(void)
 		return;
 	}
 
-	fatalx(EXIT_FAILURE, "Shutdown failed!");
+	upslogx(LOG_ERR, "Shutdown failed!");
+	set_exit_flag(-1);
 }
 
 void upsdrv_help(void)
@@ -2441,6 +2442,12 @@ static int guesstimate_template_count(snmp_info_t *su_info_p)
 	const char *OID_template = su_info_p->OID;
 
 	upsdebugx(1, "%s(%s)", __func__, OID_template);
+
+	/* Test if OID is indexed: safeguard for infinite loop */
+	if (strchr(OID_template, '%') == NULL) {
+		upsdebugx(3, "Warning: non-indexed object, discarding (OID = %s)", OID_template);
+		return 0;
+	}
 
 	/* Determine if OID index starts from 0 or 1? */
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
