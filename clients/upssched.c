@@ -49,6 +49,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <poll.h>
 #else
 #include "wincompat.h"
 #include <winsock2.h>
@@ -679,7 +680,12 @@ static int sock_read(conn_t *conn)
 	for (i = 0; i < US_MAX_READ; i++) {
 
 #ifndef WIN32
+		errno = 0;
 		ret = read(conn->fd, &ch, 1);
+
+		if (ret > 0)
+			upsdebugx(6, "read() from fd %d returned %" PRIiSIZE " (bytes): '%c'; errno=%d: %s",
+				conn->fd, ret, ch, errno, strerror(errno));
 
 		if (ret < 1) {
 
@@ -689,9 +695,37 @@ static int sock_read(conn_t *conn)
 
 			/* O_NDELAY with zero bytes means nothing to read but
 			 * since read() follows a successful select() with
-			 * ready file descriptor, ret shouldn't be 0. */
-			if (ret == 0)
+			 * ready file descriptor, ret shouldn't be 0.
+			 * This may also mean that the counterpart has exited
+			 * and the file descriptor should be reaped.
+			 */
+			if (ret == 0) {
+				struct pollfd pfd;
+				pfd.fd = conn->fd;
+				pfd.events = 0;
+				pfd.revents = 0;
+				/* Note: we check errno twice, since it could
+				 * have been set by read() above or by one
+				 * of the probing routines below
+				 */
+				if (errno
+				|| (fcntl(conn->fd, F_GETFD) < 0)
+				|| (poll(&pfd, 1, 0) <= 0)
+				||  errno
+				) {
+					upsdebugx(4, "read() from fd %d returned 0; errno=%d: %s",
+						conn->fd, errno, strerror(errno));
+					return -1;	/* connection closed, probably */
+				}
+				if (i == (US_MAX_READ - 1)) {
+					upsdebugx(4, "read() from fd %d returned 0 "
+						"too many times in a row, aborting "
+						"sock_read(); errno=%d: %s",
+						conn->fd, errno, strerror(errno));
+					return -1;	/* connection closed, probably */
+				}
 				continue;
+			}
 
 			/* some other problem */
 			return -1;	/* error */
@@ -732,6 +766,9 @@ static int sock_read(conn_t *conn)
 
 		return 1;	/* we did some work */
 	}
+
+	upsdebugx(6, "sock_read() from fd %d returned nothing; errno=%d: %s",
+		conn->fd, errno, strerror(errno));
 
 	return 0;	/* fell out without parsing anything */
 }
