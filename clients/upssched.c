@@ -170,6 +170,7 @@ static void checktimers(void)
 		sleep(15);
 #endif
 
+		upsdebugx(1, "Timer queue empty, closing pipe and exiting upssched daemon");
 		unlink(pipefn);
 		exit(EXIT_SUCCESS);
 	}
@@ -1444,7 +1445,7 @@ int main(int argc, char **argv)
 	notify_type = getenv("NOTIFYTYPE");
 
 	if ((!upsname) || (!notify_type)) {
-		printf("Error: UPSNAME and NOTIFYTYPE must be set.\n");
+		printf("Error: environment variables UPSNAME and NOTIFYTYPE must be set.\n");
 		printf("This program should only be run from upsmon.\n");
 		exit(EXIT_FAILURE);
 	}
@@ -1456,5 +1457,6 @@ int main(int argc, char **argv)
 	 */
 	checkconf();
 
+	upsdebugx(1, "Exiting upssched (CLI process)");
 	exit(EXIT_SUCCESS);
 }
