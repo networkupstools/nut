@@ -775,8 +775,13 @@ static void start_daemon(TYPE_FD lockfd)
 			fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDIN");
 		if (dup2(devnull, STDOUT_FILENO) != STDOUT_FILENO)
 			fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDOUT");
-		if (dup2(devnull, STDERR_FILENO) != STDERR_FILENO)
-			fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDERR");
+
+		if (nut_debug_level) {
+			upsdebugx(1, "Keeping stderr open due to debug verbosity %d", nut_debug_level);
+		} else {
+			if (dup2(devnull, STDERR_FILENO) != STDERR_FILENO)
+				fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDERR");
+		}
 
 		close(devnull);
 	}
@@ -791,9 +796,13 @@ static void start_daemon(TYPE_FD lockfd)
 	if (dup(STDIN_FILENO) != STDOUT_FILENO)
 		fatal_with_errno(EXIT_FAILURE, "dup /dev/null as STDOUT");
 
-	close(STDERR_FILENO);
-	if (dup(STDIN_FILENO) != STDERR_FILENO)
-		fatal_with_errno(EXIT_FAILURE, "dup /dev/null as STDERR");
+	if (nut_debug_level) {
+		upsdebugx(1, "Keeping stderr open due to debug verbosity %d", nut_debug_level);
+	} else {
+		close(STDERR_FILENO);
+		if (dup(STDIN_FILENO) != STDERR_FILENO)
+			fatal_with_errno(EXIT_FAILURE, "dup /dev/null as STDERR");
+	}
 # else
 	close(STDIN_FILENO);
 	if (open("/dev/null", O_RDWR) != STDIN_FILENO)
@@ -803,9 +812,13 @@ static void start_daemon(TYPE_FD lockfd)
 	if (open("/dev/null", O_RDWR) != STDOUT_FILENO)
 		fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDOUT");
 
-	close(STDERR_FILENO);
-	if (open("/dev/null", O_RDWR) != STDERR_FILENO)
-		fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDERR");
+	if (nut_debug_level) {
+		upsdebugx(1, "Keeping stderr open due to debug verbosity %d", nut_debug_level);
+	} else {
+		close(STDERR_FILENO);
+		if (open("/dev/null", O_RDWR) != STDERR_FILENO)
+			fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDERR");
+	}
 # endif
 #endif
 
