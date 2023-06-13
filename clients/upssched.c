@@ -620,7 +620,7 @@ static TYPE_FD conn_add(TYPE_FD sockfd)
 	else
 		connhead = conn;
 
-	upsdebugx(3, "new connection on fd %p", acc);
+	upsdebugx(3, "new connection on handle %p", acc);
 
 	pconf_init(&conn->ctx, NULL);
 #endif
@@ -687,7 +687,7 @@ static int sock_read(conn_t *conn)
 				return 0;
 
 			/* O_NDELAY with zero bytes means nothing to read but
-			 * since read() follows a succesful select() with
+			 * since read() follows a successful select() with
 			 * ready file descriptor, ret shouldn't be 0. */
 			if (ret == 0)
 				continue;
@@ -821,6 +821,8 @@ static void start_daemon(TYPE_FD lockfd)
 	close(lockfd);
 
 	/* now watch for activity */
+	upsdebugx(2, "Timer daemon waiting for connections on pipefd %d",
+		pipefd);
 
 	for (;;) {
 		/* wait at most 1s so we can check our timers regularly */
@@ -842,7 +844,6 @@ static void start_daemon(TYPE_FD lockfd)
 		ret = select(maxfd + 1, &rfds, NULL, NULL, &tv);
 
 		if (ret > 0) {
-
 			if (FD_ISSET(pipefd, &rfds))
 				conn_add(pipefd);
 
@@ -853,6 +854,7 @@ static void start_daemon(TYPE_FD lockfd)
 
 				if (FD_ISSET(tmp->fd, &rfds)) {
 					if (sock_read(tmp) < 0) {
+						upsdebugx(3, "closing connection on fd %d", tmp->fd);
 						close(tmp->fd);
 						conn_del(tmp);
 					}
@@ -937,6 +939,7 @@ static void start_daemon(TYPE_FD lockfd)
 			else {
 				if( tmp != NULL) {
 					if (sock_read(tmp) < 0) {
+						upsdebugx(3, "closing connection on handle %p", tmp->fd);
 						CloseHandle(tmp->fd);
 						conn_del(tmp);
 					}
@@ -1449,6 +1452,7 @@ int main(int argc, char **argv)
 	/* see if this matches anything in the config file */
 	/* This is actually the processing loop:
 	 * checkconf -> conf_arg -> parse_at -> sendcmd -> daemon if needed
+	 *  -> start_daemon -> conn_add(pipefd) or sock_read(conn)
 	 */
 	checkconf();
 
