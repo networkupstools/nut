@@ -876,6 +876,11 @@ static void start_daemon(TYPE_FD lockfd)
 		pipefd);
 
 	for (;;) {
+		int	zero_reads = 0, total_reads = 0;
+		struct timeval	start, now;
+
+		gettimeofday(&start, NULL);
+
 		/* wait at most 1s so we can check our timers regularly */
 		tv.tv_sec = 1;
 		tv.tv_usec = 0;
@@ -904,11 +909,15 @@ static void start_daemon(TYPE_FD lockfd)
 				tmpnext = tmp->next;
 
 				if (FD_ISSET(tmp->fd, &rfds)) {
-					if (sock_read(tmp) < 0) {
+					total_reads++;
+					ret = sock_read(tmp);
+					if (ret < 0) {
 						upsdebugx(3, "closing connection on fd %d", tmp->fd);
 						close(tmp->fd);
 						conn_del(tmp);
 					}
+					if (ret == 0)
+						zero_reads++;
 				}
 
 				tmp = tmpnext;
@@ -916,6 +925,30 @@ static void start_daemon(TYPE_FD lockfd)
 		}
 
 		checktimers();
+
+		/* upsdebugx(6, "zero_reads=%d total_reads=%d", zero_reads, total_reads); */
+		if (zero_reads && zero_reads == total_reads) {
+			/* Catch run-away loops - that is, consider
+			 * throttling the cycle as to not hog CPU:
+			 * did select() spend its second to reply,
+			 * or had something to say immediately?
+			 * Note that while select() may have changed
+			 * "tv" to deduct the time waited, our further
+			 * processing loops could eat some more time.
+			 * So we just check the difference of "start"
+			 * and "now". If we did spend a substantial
+			 * part of the second, do not delay further.
+			 */
+			double d;
+			gettimeofday(&now, NULL);
+			d = difftimeval(now, start);
+			upsdebugx(6, "difftimeval() => %f sec", d);
+			if (d > 0 && d < 0.2) {
+				d = (1.0 - d) * 1000000.0;
+				upsdebugx(5, "Enforcing a throttling sleep: %f usec", d);
+				usleep(d);
+			}
+		}
 	}
 
 #else /* WIN32 */
