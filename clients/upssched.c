@@ -677,8 +677,12 @@ static int sock_read(conn_t *conn)
 	ssize_t	ret;
 	char	ch;
 
+	upsdebugx(6, "Starting sock_read()");
 	for (i = 0; i < US_MAX_READ; i++) {
-
+		/* NOTE: This does not imply that each command line must
+		 * fit in the US_MAX_READ length limit - at worst we would
+		 * "return 0", and continue with pconf_char() next round.
+		 */
 #ifndef WIN32
 		errno = 0;
 		ret = read(conn->fd, &ch, 1);
@@ -690,8 +694,10 @@ static int sock_read(conn_t *conn)
 		if (ret < 1) {
 
 			/* short read = no parsing, come back later */
-			if ((ret == -1) && (errno == EAGAIN))
+			if ((ret == -1) && (errno == EAGAIN)) {
+				upsdebugx(6, "Ending sock_read(): short read");
 				return 0;
+			}
 
 			/* O_NDELAY with zero bytes means nothing to read but
 			 * since read() follows a successful select() with
@@ -728,6 +734,7 @@ static int sock_read(conn_t *conn)
 			}
 
 			/* some other problem */
+			upsdebugx(6, "Ending sock_read(): some other problem");
 			return -1;	/* error */
 		}
 #else
@@ -755,10 +762,14 @@ static int sock_read(conn_t *conn)
 			upslogx(LOG_NOTICE, "Parse error on sock: %s",
 				conn->ctx.errmsg);
 
+			upsdebugx(6, "Ending sock_read(): parse error");
 			return 0;	/* nothing parsed */
 		}
 
 		/* try to use it, and complain about unknown commands */
+		upsdebugx(3, "Ending sock_read() on a good note: try to use command:");
+		for (size_t numarg = 0; numarg < conn->ctx.numargs; numarg++)
+			upsdebugx(3, "\targ %" PRIuSIZE ": %s", numarg, conn->ctx.arglist[numarg]);
 		if (!sock_arg(conn)) {
 			log_unknown(conn->ctx.numargs, conn->ctx.arglist);
 			send_to_one(conn, "ERR UNKNOWN\n");
@@ -767,7 +778,9 @@ static int sock_read(conn_t *conn)
 		return 1;	/* we did some work */
 	}
 
-	upsdebugx(6, "sock_read() from fd %d returned nothing; errno=%d: %s",
+	upsdebugx(6, "sock_read() from fd %d returned nothing "
+		"(maybe still collecting the command line); "
+		"errno=%d: %s",
 		conn->fd, errno, strerror(errno));
 
 	return 0;	/* fell out without parsing anything */
