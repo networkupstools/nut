@@ -18,7 +18,15 @@ as used in commands and messages between the Attachment Daemon (the `upsd`
 in case of NUT implementation of the standard) and the clients.
 ====
 
-This document defines the standard names of NUT commands and variables.
+This document defines the standard names of NUT commands and variables
+(not to be confused with <<_status_data,device status data>> described in
+ifdef::website[]
+another chapter).
+endif::website[]
+ifndef::website[]
+the `docs/new-drivers.txt` in NUT source codebase).
+endif::website[]
+
 Developers should use the names recorded here, with dstate functions and
 data mappings provided in NUT drivers for interactions with power devices.
 
