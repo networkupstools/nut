@@ -300,6 +300,12 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
    honour a `NUT_DEBUG_LEVEL=NUM` environment variable if no `-D` arguments
    were provided. Unlike those arguments, the environment variable does
    not enforce that daemons run in foreground mode by default [#1915]
+   * Note that unlike some other NUT daemons, `upssched` with enabled
+     debug does not stop reporting on `stderr`! [#1965]
+
+ - A bug in `upssched` was discovered and fixed, where it ran a tight loop
+   stressing the CPU; it was presumably introduced between NUT v2.7.4 and
+   v2.8.0 releases [#1964, #1965]
 
  - Implemented generic support for INSTCMD and SETVAR use-cases shared by
    all drivers, and in particular to see and change active debug verbosity
