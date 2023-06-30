@@ -36,7 +36,8 @@ link:https://www.networkupstools.org/source/nut-old-key.gpg[NUT old maintainer's
 
 	$ gpg --verify nut-X.Y.Z.tar.gz.sig
 
-- You should see a message mentioning a "Good signature", like:
+- You should see a message mentioning a "Good signature", with formatting which
+  depends on your gpg version, like:
 
 	gpg: Signature made Wed Apr 15 15:55:30 2015 CEST using RSA key ID 55CA5976
 	gpg: Good signature from "Arnaud Quette ..."
