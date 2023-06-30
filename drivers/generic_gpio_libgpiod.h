@@ -20,15 +20,15 @@
  *
  */
 
-#ifndef GENERIC_GPIO_LIBGPIOD_H
-#define GENERIC_GPIO_LIBGPIOD_H
+#ifndef GENERIC_GPIO_LIBGPIOD_H_SEEN
+#define GENERIC_GPIO_LIBGPIOD_H_SEEN
 
 #include <gpiod.h>
 
 typedef struct libgpiod_data_t {
-    struct gpiod_chip *gpioChipHandle;      /* libgpiod chip handle when opened */
-    struct gpiod_line_bulk gpioLines;       /* libgpiod lines to monitor */
-    struct gpiod_line_bulk gpioEventLines;  /* libgpiod lines for event monitoring */
+	struct gpiod_chip	*gpioChipHandle;	/* libgpiod chip handle when opened */
+	struct gpiod_line_bulk	gpioLines;	/* libgpiod lines to monitor */
+	struct gpiod_line_bulk	gpioEventLines;	/* libgpiod lines for event monitoring */
 } libgpiod_data;
 
-#endif	/* GENERIC_GPIO_LIBGPIOD_H */
+#endif	/* GENERIC_GPIO_LIBGPIOD_H_SEEN */
