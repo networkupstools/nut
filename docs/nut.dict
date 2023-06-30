@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3176 utf-8
+personal_ws-1.1 en 3179 utf-8
 AAS
 ABI
 ACFAIL
@@ -2147,6 +2147,7 @@ kVA
 kadets
 kaminski
 kde
+keychain
 keyclick
 keygen
 keyout
@@ -2928,6 +2929,7 @@ tios
 tmp
 tmpfiles
 tmpfs
+tmpring
 toolchain
 toolkits
 topbot
@@ -2970,6 +2972,7 @@ udev
 udevadm
 ufw
 ugen
+uid
 uint
 ukUNV
 ul

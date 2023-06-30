@@ -24,13 +24,27 @@ following steps:
 
 - Retrieve the link:https://www.networkupstools.org/download.html[NUT source code]
   (nut-X.Y.Z.tar.gz) and the matching signature (nut-X.Y.Z.tar.gz.sig)
-- Retrieve the link:https://www.networkupstools.org/source/nut-key.gpg[NUT maintainer's signature]:
+- Retrieve the link:https://www.networkupstools.org/source/nut-key.gpg[NUT
+maintainer's signature keyring]:
 
 	$ gpg --fetch-keys https://www.networkupstools.org/source/nut-key.gpg
 
-NOTE: As of NUT 2.7.3, a new release key is used. In order to verify a previous
-release, please use
-link:https://www.networkupstools.org/source/nut-old-key.gpg[NUT old maintainer's signature]
+NOTE: As of NUT 2.8.0, a new release key is used, but the `nut-key.gpg` should
+be cumulative with older chain key files (includes them). You can view the key
+list in a downloaded copy of the URL above with:
++
+	$ gpg --with-colons --import-options import-show --dry-run --import < nut-key.gpg
++
+and as of this writing, it should contain two key sets for various identities
+of "Arnaud Quette" and one set of "Jim Klimov".
+
+Just in case, the previous key file used since NUT 2.7.3 release is stored as
+link:https://www.networkupstools.org/source/nut-key-2.7.3.gpg[NUT
+old maintainer's signature for 2.7.3-2.7.4 releases]
+
+In order to verify an even older release, please use
+link:https://www.networkupstools.org/source/nut-old-key.gpg[NUT
+old maintainer's signature since 2002 until 2.7.3 release]
 
 - Launch the GPG checking using the following command:
 
@@ -39,12 +53,21 @@ link:https://www.networkupstools.org/source/nut-old-key.gpg[NUT old maintainer's
 - You should see a message mentioning a "Good signature", with formatting which
   depends on your gpg version, like:
 
+	gpg: Signature made Thu Jun  1 00:10:16 2023 CEST
+	...
+	gpg: Good signature from "Jim Klimov ..."
+	...
+	Primary key fingerprint: B834 59F7 76B9 0224 988F  36C0 DE01 84DA 7043 DCF7
+	...
+
+NOTE: the previously used maintainer's signatures would output (with markup of
+older gpg tools here):
++
 	gpg: Signature made Wed Apr 15 15:55:30 2015 CEST using RSA key ID 55CA5976
 	gpg: Good signature from "Arnaud Quette ..."
 	...
-
-NOTE: the previously used maintainer's signature would output:
 +
+or:
 	gpg: Signature made Thu Jul  5 16:15:05 2007 CEST using DSA key ID 204DDF1B
 	gpg: Good signature from "Arnaud Quette ..."
 	...
