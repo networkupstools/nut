@@ -72,6 +72,43 @@ or:
 	gpg: Good signature from "Arnaud Quette ..."
 	...
 
+////////
+Maintainer notes for posterity:
+
+* See https://github.com/networkupstools/nut/issues/1963 and
+  https://github.com/networkupstools/nut/issues/1410 for recent
+  forays into this area.
+
+* Repo is https://github.com/networkupstools/nut-source-archive.git
+
+* Keys in the file can be viewed with:
+----
+:; gpg --with-colons --import-options import-show --dry-run --import < nut-key.gpg
+----
+
+* Old keys as well as a new maintainer key can be imported first into
+  a temporary keyring (existing target file and a slash in its path
+  name argument are allegedly important):
+----
+:; rm -f tmpring.gpg ; touch tmpring.gpg
+:; gpg --no-default-keyring --keyring ./tmpring.gpg --import nut-key.gpg
+:; gpg --no-default-keyring --keyring ./tmpring.gpg --import nut-old-key.gpg
+:; gpg --no-default-keyring --keyring ./tmpring.gpg --import nut-key-2.7.3.gpg
+:; gpg --no-default-keyring --keyring ./tmpring.gpg --import ~/.gnupg/HEXCODEMYNEWKEYDATA.pub
+----
+
+** Note that whenever the key owner edits the primary key data, e.g. to add or
+   remove "uid" entries with e-mail aliases, or sub-keys dedicated for specific
+   purposes, the `~/.gnupg/HEXCODEMYNEWKEYDATA.pub` is changed and should be
+   re-published to OpenPGP servers, to nut-website, to GitHub account, etc.
+
+* This (binary) keychain can be exported into ASCII-armor format, and also
+  update the keychain file used by default:
+----
+:; gpg --no-default-keyring --keyring ./tmpring.gpg --export -a > nut-key.gpg
+----
+////////
+
 System level privileges and ownership
 -------------------------------------
 
