@@ -34,7 +34,7 @@
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello USB driver"
-#define DRIVER_VERSION	"0.08"
+#define DRIVER_VERSION	"0.09"
 
 #define DEFAULT_OFFDELAY   5  /*!< seconds (max 0xFF) */
 #define DEFAULT_BOOTDELAY  5  /*!< seconds (max 0xFF) */

@@ -25,7 +25,7 @@
 #include <gpiod.h>
 
 #define DRIVER_NAME	"GPIO UPS driver"
-#define DRIVER_VERSION	"1.00"
+#define DRIVER_VERSION	"1.01"
 
 typedef struct libgpiod_data_t {
     struct gpiod_chip *gpioChipHandle;      /* libgpiod chip handle when opened */

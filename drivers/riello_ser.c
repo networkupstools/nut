@@ -46,7 +46,7 @@
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello serial driver"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.08"
 
 #define DEFAULT_OFFDELAY   5
 #define DEFAULT_BOOTDELAY  5

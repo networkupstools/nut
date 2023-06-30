@@ -38,8 +38,6 @@
  *
  */
 
-#define DRIVER_VERSION	"0.32"
-
 #include "config.h"
 #include "main.h"
 #include "attribute.h"
@@ -58,6 +56,8 @@
 #else
 	#define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
+
+#define DRIVER_VERSION	"0.33"
 
 #ifdef QX_SERIAL
 	#include "serial.h"
