@@ -1,5 +1,3 @@
-#ifndef GENERIC_GPIO_LIBGPIOD_H
-#define GENERIC_GPIO_LIBGPIOD_H
 /*  generic_gpio_libgpiod.h - gpiod based NUT driver definitions for GPIO attached UPS devices
  *
  *  Copyright (C)
@@ -22,10 +20,10 @@
  *
  */
 
-#include <gpiod.h>
+#ifndef GENERIC_GPIO_LIBGPIOD_H
+#define GENERIC_GPIO_LIBGPIOD_H
 
-#define DRIVER_NAME	"GPIO UPS driver"
-#define DRIVER_VERSION	"1.01"
+#include <gpiod.h>
 
 typedef struct libgpiod_data_t {
     struct gpiod_chip *gpioChipHandle;      /* libgpiod chip handle when opened */
