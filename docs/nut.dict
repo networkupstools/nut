@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3185 utf-8
+personal_ws-1.1 en 3189 utf-8
 AAS
 ABI
 ACFAIL
@@ -976,6 +976,7 @@ PwrOut
 PyGTK
 PyNUT
 PyNUTClient
+PyQt
 QBDR
 QBT
 QBV
@@ -1710,6 +1711,7 @@ compat
 compilerPath
 conf
 config
+configparser
 configs
 configurationProvider
 configureaz
@@ -1983,6 +1985,7 @@ getconf
 getent
 getenv
 getopt
+gettext
 getvar
 gitcache
 github
@@ -2358,6 +2361,7 @@ monuser
 morbo
 mozilla
 msec
+msgfmt
 msi
 msvcrt
 msys

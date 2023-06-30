@@ -24,6 +24,10 @@ PYTHON3_SITE_PACKAGES = @PYTHON3_SITE_PACKAGES@
 
 BINDIR = @BINDIR@
 
+if HAVE_MSGFMT
+MSGFMT = @MSGFMT@
+endif HAVE_MSGFMT
+
 NUT_MONITOR_PY2GTK2 = \
 	app/ui/gui-1.3.glade \
 	app/nut-monitor-py2gtk2.desktop
@@ -71,7 +75,7 @@ PYNUT_COMMON = \
 	module/README
 
 # Note: we both distribute and install the generated *.mo translation files
-# so they are listed above and not in NUT_MONITOR_COMMON_GENERATED
+# so they are listed above and not in NUT_MONITOR_COMMON_TEMPLATE
 NUT_MONITOR_COMMON_TEMPLATE = \
 	app/locale/NUT-Monitor.pot \
 	app/locale/fr/fr.po \
@@ -112,6 +116,17 @@ if WITH_NUT_MONITOR
 nutmonitordir = $(nut_with_nut_monitor_dir)
 nobase_nutmonitor_DATA = $(NUT_MONITOR_DISPATCHER_NOEXEC) $(NUT_MONITOR_COMMON)
 nobase_nutmonitor_SCRIPTS = $(NUT_MONITOR_DISPATCHER_SCRIPT)
+
+if HAVE_MSGFMT
+app/locale/fr/LC_MESSAGES/NUT-Monitor.mo: app/locale/fr/fr.po
+	$(MSGFMT) -c "$<" -o "$@"
+
+app/locale/it/LC_MESSAGES/NUT-Monitor.mo: app/locale/it/it.po
+	$(MSGFMT) -c "$<" -o "$@"
+
+app/locale/ru/LC_MESSAGES/NUT-Monitor.mo: app/locale/ru/ru.po
+	$(MSGFMT) -c "$<" -o "$@"
+endif HAVE_MSGFMT
 
 if WITH_NUT_MONITOR_PY2GTK2
 nobase_nutmonitor_DATA += $(NUT_MONITOR_PY2GTK2)
