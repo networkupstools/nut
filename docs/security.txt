@@ -109,6 +109,44 @@ Maintainer notes for posterity:
 ----
 ////////
 
+How to verify the NUT source code checksum
+------------------------------------------
+
+As a weaker but simpler alternative to verifying a *signature*, you can verify
+just the accompanying checksums of the source archive file. This is useful
+primarily to check against bit-rot in original storage or in transit. As far
+as disclaimers go: ideally, you should cover all provided algorithms -- e.g.
+MD5 and SHA256 -- to minimize the chance that intentional malicious tampering
+on the wire goes undetected. A myriad tools can check that on various platforms;
+some examples follow:
+
+	# Example original checksum to compare with, from NUT website:
+	$ cat nut-2.8.0.tar.gz.sha256
+	c3e5a708da797b7c70b653d37b1206a000fcb503b85519fe4cdf6353f792bfe5  nut-2.8.0.tar.gz
+	
+	# Generate checksum of downloaded archive with perl (a NUT build dependency
+	# generally, though you may have to install Digest::SHA module from CPAN):
+	$ perl -MDigest::SHA=sha256_hex -le "print sha256_hex <>" nut-2.8.0.tar.gz
+	c3e5a708da797b7c70b653d37b1206a000fcb503b85519fe4cdf6353f792bfe5
+	
+	# Generate checksum of downloaded archive with openssl (another optional
+	# NUT build dependency):
+	$ openssl sha256 nut-2.8.0.tar.gz
+	SHA256(nut-2.8.0.tar.gz)= c3e5a708da797b7c70b653d37b1206a000fcb503b85519fe4cdf6353f792bfe5
+	
+	# Generate checksum of downloaded archive with coreutils:
+	$ sha256sum nut-2.8.0.tar.gz
+	c3e5a708da797b7c70b653d37b1206a000fcb503b85519fe4cdf6353f792bfe5  nut-2.8.0.tar.gz
+	
+	# Auto-check downloaded checksum against downloaded archive with coreutils:
+	$ sha256sum -c nut-2.8.0.tar.gz.sha256
+	nut-2.8.0.tar.gz: OK
+	
+	# Generate checksum of downloaded archive with GPG:
+	$ gpg --print-md SHA256 nut-2.8.0.tar.gz
+	nut-2.8.0.tar.gz: C3E5A708 DA797B7C 70B653D3 7B1206A0
+	                  00FCB503 B85519FE 4CDF6353 F792BFE5
+
 System level privileges and ownership
 -------------------------------------
 
