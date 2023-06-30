@@ -7,7 +7,7 @@
  * device support from such legacy drivers over time.
  *
  * A document describing the protocol implemented by this driver can be
- * found online at "http://www.networkupstools.org/protocols/megatec.html".
+ * found online at "https://www.networkupstools.org/protocols/megatec.html".
  *
  * Copyright (C) 2003-2009  Arjen de Korte <adkorte-guest@alioth.debian.org>
  * Copyright (C) 2011-2012  Arnaud Quette <arnaud.quette@free.fr>

@@ -732,7 +732,7 @@ server: Internal server information
 |===============================================================================
 | Name           | Description        | Example value
 | server.info    | Server information | Network UPS Tools upsd vX.Y.Z -
-                                        http://www.networkupstools.org/
+                                        https://www.networkupstools.org/
 | server.version | Server version     | X.Y.Z
 |===============================================================================
 

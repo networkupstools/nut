@@ -451,7 +451,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 	/* FIXME:
 	 * - Voltage is only measured per phase, as mV!
 	 *   so input.voltage == input.L1.voltage for both single and 3phase
-	 * - As per NUT namespace (http://www.networkupstools.org/docs/developer-guide.chunked/apas01.html#_valid_contexts)
+	 * - As per NUT namespace (https://www.networkupstools.org/docs/developer-guide.chunked/apas01.html#_valid_contexts)
 	 *   Voltage has to be expressed either phase-phase or phase-neutral
 	 *   This is depending on OID inputVoltageMeasType
 	 *   INTEGER {singlePhase (1),phase1toN (2),phase2toN (3),phase3toN (4),phase1to2 (5),phase2to3 (6),phase3to1 (7)

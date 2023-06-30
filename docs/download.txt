@@ -23,14 +23,14 @@ to do so.
 Stable tree: {tree_version}
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- link:http://www.networkupstools.org/source/{tree_version}/nut-{revision}.tar.gz[nut-{revision}.tar.gz]
-- link:http://www.networkupstools.org/source/{tree_version}/nut-{revision}.tar.gz.sig[PGP/GPG signature]
-- link:http://www.networkupstools.org/source/{tree_version}/nut-{revision}.tar.gz.sha256[SHA-256 sum]
-- link:http://www.networkupstools.org/source/{tree_version}/nut-{revision}.tar.gz.md5[MD5 sum]
-- link:http://www.networkupstools.org/source/{tree_version}/new-{revision}.txt[Release notes]
-- link:http://www.networkupstools.org/source/{tree_version}/ChangeLog[ChangeLog]
+- link:https://www.networkupstools.org/source/{tree_version}/nut-{revision}.tar.gz[nut-{revision}.tar.gz]
+- link:https://www.networkupstools.org/source/{tree_version}/nut-{revision}.tar.gz.sig[PGP/GPG signature]
+- link:https://www.networkupstools.org/source/{tree_version}/nut-{revision}.tar.gz.sha256[SHA-256 sum]
+- link:https://www.networkupstools.org/source/{tree_version}/nut-{revision}.tar.gz.md5[MD5 sum]
+- link:https://www.networkupstools.org/source/{tree_version}/new-{revision}.txt[Release notes]
+- link:https://www.networkupstools.org/source/{tree_version}/ChangeLog[ChangeLog]
 
-You can also browse the link:http://www.networkupstools.org/source/{tree_version}/[stable source directory].
+You can also browse the link:https://www.networkupstools.org/source/{tree_version}/[stable source directory].
 
 Development tree:
 ~~~~~~~~~~~~~~~~~
@@ -107,7 +107,7 @@ latest *[tarball]* link towards the top of the page, and be sure to check the
 Older versions
 ~~~~~~~~~~~~~~
 
-link:http://www.networkupstools.org/source/[Browse source directory]
+link:https://www.networkupstools.org/source/[Browse source directory]
 
 
 Binary packages
@@ -165,7 +165,7 @@ link:https://github.com/networkupstools/nut/wiki/Links-to-distribution-packaging
 
 - Windows (complete port, Beta):
 
-    * link:http://www.networkupstools.org/package/windows/NUT-Installer-2.6.5-6.msi[Windows MSI installer 2.6.5-6]
+    * link:https://www.networkupstools.org/package/windows/NUT-Installer-2.6.5-6.msi[Windows MSI installer 2.6.5-6]
 
 
 Java packages
@@ -175,10 +175,10 @@ Java packages
   link:https://github.com/networkupstools/jNut[GitHub repository].
 
 - NUT Java support (client side, Beta)
-  link:http://www.networkupstools.org/package/java/jNut-0.2-SNAPSHOT.tar.gz[jNUT 0.2-SNAPSHOT]
+  link:https://www.networkupstools.org/package/java/jNut-0.2-SNAPSHOT.tar.gz[jNUT 0.2-SNAPSHOT]
 
 - NUT Java Web support (client side using REST, Beta)
-  link:http://www.networkupstools.org/package/java/jNutWebAPI-0.2-SNAPSHOT-src.tar.gz[jNutWebAPI 0.2-SNAPSHOT (sources)]
+  link:https://www.networkupstools.org/package/java/jNutWebAPI-0.2-SNAPSHOT-src.tar.gz[jNutWebAPI 0.2-SNAPSHOT (sources)]
 
 Virtualization packages
 -----------------------

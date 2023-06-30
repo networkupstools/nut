@@ -2082,7 +2082,7 @@ void upsdrv_help(void)
 	printf(
 		"\nFor detailed information, please refer to:\n"
 		  " - apcsmart(8)\n"
-		  " - http://www.networkupstools.org/docs/man/apcsmart.html\n"
+		  " - https://www.networkupstools.org/docs/man/apcsmart.html\n"
 	      );
 }
 

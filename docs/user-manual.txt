@@ -147,7 +147,7 @@ include::nut-names.txt[]
 Appendix D: Hardware Compatibility List
 =======================================
 
-Refer to the link:http://www.networkupstools.org/stable-hcl.html[online HCL].
+Refer to the link:https://www.networkupstools.org/stable-hcl.html[online HCL].
 
 
 Appendix E: Documentation

@@ -34,7 +34,7 @@
          <string>&lt;h1&gt;NUT-Monitor 1.3.1&lt;/h1&gt;
 &lt;p&gt;GUI to manage devices connected a NUT server.&lt;/p&gt;
 &lt;p&gt;For more information about NUT (Network UPS Tools) please visit the author's website.&lt;/p&gt;
-&lt;p style=&quot;margin-bottom: 1.5em&quot;&gt;http://www.networkupstools.org&lt;/p&gt;
+&lt;p style=&quot;margin-bottom: 1.5em&quot;&gt;https://www.networkupstools.org&lt;/p&gt;
 &lt;p style=&quot; font-size:8pt;&quot;&gt;Copyright (c) 2010 David Goncalves&lt;/p&gt;
 &lt;p&gt;&lt;a href=&quot;http://www.lestat.st/informatique/projets/nut-monitor-en&quot;&gt;http://www.lestat.st&lt;/a&gt;&lt;/p&gt;</string>
         </property>

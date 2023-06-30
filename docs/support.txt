@@ -145,4 +145,4 @@ To report new Devices Dumps Library entries, posting an issue is okay, but
 posting a link:https://github.com/networkupstools/nut-ddl/pulls[pull request]
 is a lot better -- easier for maintainers to review and merge any time.
 For some more detailed instructions about useful DDL reports, please see
-link:https://networkupstools.org/ddl/#_file_naming_convention[NUT DDL page].
+link:https://www.networkupstools.org/ddl/#_file_naming_convention[NUT DDL page].

@@ -1091,7 +1091,7 @@ Release notes for NUT 2.6.5 - what's new since 2.6.4:
    not executed (report and patch from Oliver Schonefeld)
 
  - Website hosting: free NUT from Eaton website hosting
-   NUT website (http://www.networkupstools.org) is no longer hosted by Eaton.
+   NUT website (https://www.networkupstools.org) is no longer hosted by Eaton.
    Arnaud Quette (NUT project leader) has taken over NUT hosting on his own,
    to give NUT back some independence.
    This effort is also part of a logic to stop crediting Eaton for
@@ -1236,7 +1236,7 @@ Release notes for NUT 2.6.4 - what's new since 2.6.3:
  - Provide an Uncomplicated Firewall (UFW) profile (nut.ufw.profile)
 
  - Riello protocols have been officially published in NUT protocols library:
-   http://www.networkupstools.org/ups-protocols.html#_riello
+   https://www.networkupstools.org/ups-protocols.html#_riello
 
  - Duplicate instances of upsd / upsmon are now detected upon startup
 

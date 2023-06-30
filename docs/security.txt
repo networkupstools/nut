@@ -22,15 +22,15 @@ How to verify the NUT source code signature
 In order to verify the NUT source code signature for releases, perform the
 following steps:
 
-- Retrieve the link:http://www.networkupstools.org/download.html[NUT source code]
+- Retrieve the link:https://www.networkupstools.org/download.html[NUT source code]
   (nut-X.Y.Z.tar.gz) and the matching signature (nut-X.Y.Z.tar.gz.sig)
-- Retrieve the link:http://www.networkupstools.org/source/nut-key.gpg[NUT maintainer's signature]:
+- Retrieve the link:https://www.networkupstools.org/source/nut-key.gpg[NUT maintainer's signature]:
 
-	$ gpg --fetch-keys http://www.networkupstools.org/source/nut-key.gpg
+	$ gpg --fetch-keys https://www.networkupstools.org/source/nut-key.gpg
 
 NOTE: As of NUT 2.7.3, a new release key is used. In order to verify a previous
 release, please use
-link:http://www.networkupstools.org/source/nut-old-key.gpg[NUT old maintainer's signature]
+link:https://www.networkupstools.org/source/nut-old-key.gpg[NUT old maintainer's signature]
 
 - Launch the GPG checking using the following command:
 

@@ -92,4 +92,4 @@ linkman:nutdrv_qx[8] (`fuji` subdriver)
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

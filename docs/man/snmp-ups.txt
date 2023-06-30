@@ -232,9 +232,9 @@ linkman:nutupsdrv[8]
 NUT SNMP Protocols Library
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Available at: http://www.networkupstools.org/ups-protocols.html#_snmp
+Available at: https://www.networkupstools.org/ups-protocols.html#_snmp
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

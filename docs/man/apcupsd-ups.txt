@@ -111,5 +111,5 @@ linkman:nutupsdrv[8]
 Internet Resources:
 ~~~~~~~~~~~~~~~~~~~
 
-* The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
 * The apcupsd home page: http://www.apcupsd.org/

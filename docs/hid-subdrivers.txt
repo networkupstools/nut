@@ -324,7 +324,7 @@ Typical troubleshooting of suspected firmware/protocol issues goes like this:
   the first step above, and run it through HIDRDD
 * Look at the HIDRDD output, with reference to any documents related to your
   device and the USB/HID power devices class available in NUT documentation,
-  e.g. at https://networkupstools.org/ups-protocols.html
+  e.g. at https://www.networkupstools.org/ups-protocols.html
 * Especially look for inconsistencies in the USB HID report descriptors (RD):
   * between the min/max (logical and physical) values,
   * the sizes of the report fields they apply to,
