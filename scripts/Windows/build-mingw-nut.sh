@@ -38,7 +38,7 @@ stable)
 # Stable version (download the latest stable archive)
 	VER_OPT_SHORT="`echo "$VER_OPT" | awk -F. '{print $1"."$2}'`"
 	if [ ! -s nut-$VER_OPT.tar.gz ] ; then
-		wget http://www.networkupstools.org/source/$VER_OPT_SHORT/nut-$VER_OPT.tar.gz
+		wget https://www.networkupstools.org/source/$VER_OPT_SHORT/nut-$VER_OPT.tar.gz
 	fi
 	rm -rf nut-$VER_OPT
 	tar -xzf nut-$VER_OPT.tar.gz

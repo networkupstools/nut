@@ -43,7 +43,7 @@ ifndef::website[]
 - link:ups-protocols.html[UPS protocols library]
 - link:../man/index.html#Developer_man[Developer manual pages]
 - link:nut-qa.html[NUT Quality Assurance]
-- link:http://www.networkupstools.org/ddl/index.html[Devices Dumps Library (DDL)]: Provides simulation data to the linkman:dummy-ups[8] driver
+- link:https://www.networkupstools.org/ddl/index.html[Devices Dumps Library (DDL)]: Provides simulation data to the linkman:dummy-ups[8] driver
 endif::website[]
 
 Data dumps for the DDL

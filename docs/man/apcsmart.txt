@@ -94,7 +94,7 @@ definition described below.
 If your 940-xx24X cable is broken or missing, use this diagram to build
 a clone:
 
-http://www.networkupstools.org/cables.html#_940_0024c_clone
+https://www.networkupstools.org/cables.html#_940_0024c_clone
 
 NOTE:  The "xx" is either "00" for a short cable, or the number of feet
 of a longer cable.  The "X" is a letter representing the minor revision
@@ -409,6 +409,6 @@ linkman:solis[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
 
 // vim: tw=80 ai si ts=8 sts=4 sw=4 et :

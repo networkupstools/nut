@@ -5,7 +5,7 @@ NUT provides many features, and is always improving.
 Thus this list may lag behind the current code.
 
 Features frequently appear during the development cycles, so be sure to look at
-the link:http://www.networkupstools.org/download.html[release notes and change logs]
+the link:https://www.networkupstools.org/download.html[release notes and change logs]
 to see the latest additions.
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -141,7 +141,7 @@ wandered off, one can be built rather easily with some connectors and
 cable -- there's no fancy wiring or resistors.
 
 See this URL for a handy diagram:
-http://www.networkupstools.org/cables/940-0024C.jpg
+https://www.networkupstools.org/cables/940-0024C.jpg
 
 There is also a text version of that diagram in the docs/cables
 directory of the NUT source distribution.  Either one should allow
@@ -581,7 +581,7 @@ There are several driver to support USB models.
 Refer to the 'driver-name' (8) man page for more information.
 
 You can also consult the Hardware Compatibility List (HCL) and filter on USB:
-http://www.networkupstools.org/stable-hcl.html?connection=USB
+https://www.networkupstools.org/stable-hcl.html?connection=USB
 
 == My USB UPS has a bogus Vendor ID 0x0001 and Product ID 0x0000, what driver supports it?
 
@@ -736,7 +736,7 @@ Or a variation like...
 == I can't run this because there's no package for it.  Why isn't this in a package yet?
 
 Sorry, can't help you there.  All official releases are source code
-and are posted on http://www.networkupstools.org/ along with PGP
+and are posted on https://www.networkupstools.org/ along with PGP
 signatures for verification.
 
 This means all packages have been built by a third party.  If you

@@ -62,7 +62,7 @@ upsdrv_info_t upsdrv_info = {
    "It works even with a pl2303 usb-serial converter."                          "\n" \
    "**********************************************************"                 "\n"
 
-/* See http://www.networkupstools.org/protocols/optiups.html and the end of this
+/* See https://www.networkupstools.org/protocols/optiups.html and the end of this
  * file for more information on the cable and the OPTI-UPS serial protocol used on
  * at least the older OPTI UPS models (420E, 820ES).
  */

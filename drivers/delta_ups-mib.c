@@ -6,7 +6,7 @@
  *  Note: this subdriver was initially generated as a "stub" by the
  *  gen-snmp-subdriver.sh script. It must be customized!
  *
- *  MIB reference: http://www.networkupstools.org/ups-protocols/snmp/DeltaUPSv4.mib
+ *  MIB reference: https://www.networkupstools.org/ups-protocols/snmp/DeltaUPSv4.mib
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by

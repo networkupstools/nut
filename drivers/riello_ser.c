@@ -2,8 +2,8 @@
  * riello_ser.c: support for Riello serial protocol based UPSes
  *
  * A document describing the protocol implemented by this driver can be
- * found online at "https://networkupstools.org/protocols/riello/PSGPSER-0104.pdf"
- * and "https://networkupstools.org/protocols/riello/PSSENTR-0100.pdf".
+ * found online at "https://www.networkupstools.org/protocols/riello/PSGPSER-0104.pdf"
+ * and "https://www.networkupstools.org/protocols/riello/PSSENTR-0100.pdf".
  *
  * Copyright (C) 2012 - Elio Parisi <e.parisi@riello-ups.com>
  *

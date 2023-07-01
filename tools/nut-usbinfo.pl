@@ -116,7 +116,7 @@ sub gen_usb_files
 	my $out_devd = do {local *OUT_DEVD};
 	open $out_devd, ">$output_devd" || die "error $output_devd : $!";
 	print $out_devd '# This file is generated and installed by the Network UPS Tools package.'."\n";
-	print $out_devd "# Homepage: http://www.networkupstools.org/\n\n";
+	print $out_devd "# Homepage: https://www.networkupstools.org/\n\n";
 
 	# UPower file header
 	my $outUPower = do {local *OUT_UPOWER};

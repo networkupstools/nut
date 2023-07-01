@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3176 utf-8
+personal_ws-1.1 en 3185 utf-8
 AAS
 ABI
 ACFAIL
@@ -645,6 +645,7 @@ MAXPARMAKES
 MBATTCHG
 MCOL
 MCU
+MDigest
 MEC
 MEGATAEC
 MH
@@ -1586,6 +1587,7 @@ bestfort
 bestfortress
 bestuferrups
 bestups
+bfe
 bigbox
 bigone
 bigserver
@@ -1633,6 +1635,7 @@ cblimit
 ccache
 cd
 cdc
+cdf
 centos
 cerr
 certfile
@@ -1662,6 +1665,7 @@ chargermode
 chargetime
 charset
 checksum
+checksums
 chgrp
 chipset
 chkconfig
@@ -1911,6 +1915,7 @@ fallthrough
 fatalx
 faultsensitivity
 fc
+fcb
 fcntl
 fd
 fds
@@ -2147,6 +2152,7 @@ kVA
 kadets
 kaminski
 kde
+keychain
 keyclick
 keygen
 keyout
@@ -2750,6 +2756,7 @@ setvar's
 sfr
 sgml
 sgs
+sha
 shm
 shutdownArguments
 shutdowndebounce
@@ -2928,6 +2935,7 @@ tios
 tmp
 tmpfiles
 tmpfs
+tmpring
 toolchain
 toolkits
 topbot
@@ -2970,6 +2978,7 @@ udev
 udevadm
 ufw
 ugen
+uid
 uint
 ukUNV
 ul

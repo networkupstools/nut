@@ -8,7 +8,7 @@
 # FIXME:
 #  - check if a previous report exists, and increase report number
 #  - we currently use the .dev format ; but also consider the NDS format
-#     http://www.networkupstools.org/ddl/
+#     https://www.networkupstools.org/ddl/
 ################################################################################
 
 strUsage="Usage: $0 <device_name>"
