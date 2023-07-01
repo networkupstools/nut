@@ -39,7 +39,7 @@ typedef unsigned long int nfds_t;
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"apcupsd network client UPS driver"
-#define DRIVER_VERSION	"0.6"
+#define DRIVER_VERSION	"0.70"
 
 #define POLL_INTERVAL_MIN 10
 

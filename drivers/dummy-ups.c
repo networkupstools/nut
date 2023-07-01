@@ -47,7 +47,7 @@
 #include "dummy-ups.h"
 
 #define DRIVER_NAME	"Device simulation and repeater driver"
-#define DRIVER_VERSION	"0.15"
+#define DRIVER_VERSION	"0.16"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info =

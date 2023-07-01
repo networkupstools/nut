@@ -35,6 +35,9 @@
 #include "apcsmart.h"
 #include "apcsmart_tabs.h"
 
+#define DRIVER_NAME	"APC Smart protocol driver"
+#define DRIVER_VERSION	"3.30"
+
 #ifdef WIN32
 # ifndef ECANCELED
 #  define ECANCELED ERROR_CANCELLED

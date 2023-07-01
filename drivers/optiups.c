@@ -28,7 +28,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Opti-UPS driver"
-#define DRIVER_VERSION "1.02"
+#define DRIVER_VERSION "1.03"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {

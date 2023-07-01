@@ -27,7 +27,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME "NUT Generic Modbus driver"
-#define DRIVER_VERSION  "0.03"
+#define DRIVER_VERSION  "0.04"
 
 /* variables */
 static modbus_t *mbctx = NULL;                             /* modbus memory context */
