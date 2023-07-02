@@ -120,15 +120,15 @@ nobase_nutmonitor_SCRIPTS = $(NUT_MONITOR_DISPATCHER_SCRIPT)
 if HAVE_MSGFMT
 # Note lack of "$<" below - it is a non-portable GNU Make extension
 app/locale/fr/LC_MESSAGES/NUT-Monitor.mo: app/locale/fr/fr.po
-	@$(MKDIR_P) "$(builddir)/$(@D)"
+	@$(MKDIR_P) "$(builddir)/app/locale/fr/LC_MESSAGES"
 	$(MSGFMT) -o "$@" "$^"
 
 app/locale/it/LC_MESSAGES/NUT-Monitor.mo: app/locale/it/it.po
-	@$(MKDIR_P) "$(builddir)/$(@D)"
+	@$(MKDIR_P) "$(builddir)/app/locale/it/LC_MESSAGES"
 	$(MSGFMT) -o "$@" "$^"
 
 app/locale/ru/LC_MESSAGES/NUT-Monitor.mo: app/locale/ru/ru.po
-	@$(MKDIR_P) "$(builddir)/$(@D)"
+	@$(MKDIR_P) "$(builddir)/app/locale/ru/LC_MESSAGES"
 	$(MSGFMT) -o "$@" "$^"
 endif HAVE_MSGFMT
 
