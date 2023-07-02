@@ -118,14 +118,15 @@ nobase_nutmonitor_DATA = $(NUT_MONITOR_DISPATCHER_NOEXEC) $(NUT_MONITOR_COMMON)
 nobase_nutmonitor_SCRIPTS = $(NUT_MONITOR_DISPATCHER_SCRIPT)
 
 if HAVE_MSGFMT
+# Note lack of "$<" below - it is a non-portable GNU Make extension
 app/locale/fr/LC_MESSAGES/NUT-Monitor.mo: app/locale/fr/fr.po
-	$(MSGFMT) -c "$<" -o "$@"
+	$(MSGFMT) -o "$@" "$^"
 
 app/locale/it/LC_MESSAGES/NUT-Monitor.mo: app/locale/it/it.po
-	$(MSGFMT) -c "$<" -o "$@"
+	$(MSGFMT) -o "$@" "$^"
 
 app/locale/ru/LC_MESSAGES/NUT-Monitor.mo: app/locale/ru/ru.po
-	$(MSGFMT) -c "$<" -o "$@"
+	$(MSGFMT) -o "$@" "$^"
 endif HAVE_MSGFMT
 
 if WITH_NUT_MONITOR_PY2GTK2
