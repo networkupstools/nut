@@ -123,23 +123,23 @@ if HAVE_MSGFMT
 # "spurious" changes that do not benefit (otherwise unmodified) contents; see:
 #   https://github.com/sphinx-doc/sphinx/pull/3490
 #   https://github.com/sphinx-doc/sphinx/issues/3443
+ACT_MSGFMT = { \
+	$(MSGFMT) -o "$${OUTFILE}.tmp" "$${SRCFILE}" && \
+	$(GREP) -v -E "^POT-Creation-Date: " < "$${OUTFILE}.tmp" > "$${OUTFILE}" && \
+	rm -f "$${OUTFILE}.tmp" ; \
+}
+
 app/locale/fr/LC_MESSAGES/NUT-Monitor.mo: app/locale/fr/fr.po
 	@$(MKDIR_P) "$(builddir)/app/locale/fr/LC_MESSAGES"
-	$(MSGFMT) -o "$@.tmp" "$^"
-	$(GREP) -v -E "^POT-Creation-Date: " < "$@.tmp" > "$@"
-	rm -f "$@.tmp"
+	SRCFILE="$^"; OUTFILE="$@"; $(ACT_MSGFMT)
 
 app/locale/it/LC_MESSAGES/NUT-Monitor.mo: app/locale/it/it.po
 	@$(MKDIR_P) "$(builddir)/app/locale/it/LC_MESSAGES"
-	$(MSGFMT) -o "$@.tmp" "$^"
-	$(GREP) -v -E "^POT-Creation-Date: " < "$@.tmp" > "$@"
-	rm -f "$@.tmp"
+	SRCFILE="$^"; OUTFILE="$@"; $(ACT_MSGFMT)
 
 app/locale/ru/LC_MESSAGES/NUT-Monitor.mo: app/locale/ru/ru.po
 	@$(MKDIR_P) "$(builddir)/app/locale/ru/LC_MESSAGES"
-	$(MSGFMT) -o "$@.tmp" "$^"
-	$(GREP) -v -E "^POT-Creation-Date: " < "$@.tmp" > "$@"
-	rm -f "$@.tmp"
+	SRCFILE="$^"; OUTFILE="$@"; $(ACT_MSGFMT)
 endif HAVE_MSGFMT
 
 if WITH_NUT_MONITOR_PY2GTK2
