@@ -149,7 +149,7 @@ metadata about recently published package revisions:
 # To install the Python NUT-Monitor app, you may need some modules:
 #   :; apt-get install pip
 # For Python3:
-#   :; pip install PyQt5 configparser
+#   :; python3 -m pip install PyQt5 configparser
 
 # For spell-checking, highly recommended if you would propose pull requests:
 :; apt-get install \
