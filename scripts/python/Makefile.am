@@ -123,10 +123,11 @@ if HAVE_MSGFMT
 # "spurious" changes that do not benefit (otherwise unmodified) contents; see:
 #   https://github.com/sphinx-doc/sphinx/pull/3490
 #   https://github.com/sphinx-doc/sphinx/issues/3443
+# Note that OUTFILE may be in builddir (not necessarily same as srcdir)
 ACT_MSGFMT = { \
-	$(MSGFMT) -o "$${OUTFILE}.tmp" "$${SRCFILE}" && \
-	$(GREP) -v -E "^POT-Creation-Date: " < "$${OUTFILE}.tmp" > "$${OUTFILE}" && \
-	rm -f "$${OUTFILE}.tmp" ; \
+	$(GREP) -v -E '^.?POT-Creation-Date: ' < "$${SRCFILE}" > "$${OUTFILE}.tmpsrc" && \
+	$(MSGFMT) -o "$${OUTFILE}" "$${OUTFILE}.tmpsrc" && \
+	rm -f "$${OUTFILE}.tmpsrc" ; \
 }
 
 app/locale/fr/LC_MESSAGES/NUT-Monitor.mo: app/locale/fr/fr.po
