@@ -24,10 +24,6 @@ PYTHON3_SITE_PACKAGES = @PYTHON3_SITE_PACKAGES@
 
 BINDIR = @BINDIR@
 
-if HAVE_MSGFMT
-MSGFMT = @MSGFMT@
-endif HAVE_MSGFMT
-
 NUT_MONITOR_PY2GTK2 = \
 	app/ui/gui-1.3.glade \
 	app/nut-monitor-py2gtk2.desktop
