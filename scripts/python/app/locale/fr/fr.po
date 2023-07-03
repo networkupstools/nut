@@ -5,7 +5,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: NUT Monitor\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2013-10-14 22:47+0200\n"
 "PO-Revision-Date: 2013-10-14 22:50+0200\n"

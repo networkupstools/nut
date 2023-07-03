@@ -24,6 +24,10 @@ PYTHON3_SITE_PACKAGES = @PYTHON3_SITE_PACKAGES@
 
 BINDIR = @BINDIR@
 
+if HAVE_MSGFMT
+MSGFMT = @MSGFMT@
+endif HAVE_MSGFMT
+
 NUT_MONITOR_PY2GTK2 = \
 	app/ui/gui-1.3.glade \
 	app/nut-monitor-py2gtk2.desktop
@@ -71,7 +75,7 @@ PYNUT_COMMON = \
 	module/README
 
 # Note: we both distribute and install the generated *.mo translation files
-# so they are listed above and not in NUT_MONITOR_COMMON_GENERATED
+# so they are listed above and not in NUT_MONITOR_COMMON_TEMPLATE
 NUT_MONITOR_COMMON_TEMPLATE = \
 	app/locale/NUT-Monitor.pot \
 	app/locale/fr/fr.po \
@@ -112,6 +116,32 @@ if WITH_NUT_MONITOR
 nutmonitordir = $(nut_with_nut_monitor_dir)
 nobase_nutmonitor_DATA = $(NUT_MONITOR_DISPATCHER_NOEXEC) $(NUT_MONITOR_COMMON)
 nobase_nutmonitor_SCRIPTS = $(NUT_MONITOR_DISPATCHER_SCRIPT)
+
+if HAVE_MSGFMT
+# Note lack of "$<" below - it is a non-portable GNU Make extension
+# The POT-Creation-Date: is removed by current python gettext builder to avoid
+# "spurious" changes that do not benefit (otherwise unmodified) contents; see:
+#   https://github.com/sphinx-doc/sphinx/pull/3490
+#   https://github.com/sphinx-doc/sphinx/issues/3443
+# Note that OUTFILE may be in builddir (not necessarily same as srcdir)
+ACT_MSGFMT = { \
+	$(GREP) -v -E '^.?POT-Creation-Date: ' < "$${SRCFILE}" > "$${OUTFILE}.tmpsrc" && \
+	$(MSGFMT) -o "$${OUTFILE}" "$${OUTFILE}.tmpsrc" && \
+	rm -f "$${OUTFILE}.tmpsrc" ; \
+}
+
+app/locale/fr/LC_MESSAGES/NUT-Monitor.mo: app/locale/fr/fr.po
+	@$(MKDIR_P) "$(builddir)/app/locale/fr/LC_MESSAGES"
+	SRCFILE="$^"; OUTFILE="$@"; $(ACT_MSGFMT)
+
+app/locale/it/LC_MESSAGES/NUT-Monitor.mo: app/locale/it/it.po
+	@$(MKDIR_P) "$(builddir)/app/locale/it/LC_MESSAGES"
+	SRCFILE="$^"; OUTFILE="$@"; $(ACT_MSGFMT)
+
+app/locale/ru/LC_MESSAGES/NUT-Monitor.mo: app/locale/ru/ru.po
+	@$(MKDIR_P) "$(builddir)/app/locale/ru/LC_MESSAGES"
+	SRCFILE="$^"; OUTFILE="$@"; $(ACT_MSGFMT)
+endif HAVE_MSGFMT
 
 if WITH_NUT_MONITOR_PY2GTK2
 nobase_nutmonitor_DATA += $(NUT_MONITOR_PY2GTK2)

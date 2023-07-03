@@ -1558,6 +1558,12 @@ dnl installing these features or not.
 dnl Note: more for tests than other reasons, there is also an option
 dnl value to "force" the installation.
 
+dnl The gettext "msgfmt" tool (or equivalent) can be used to maintain
+dnl human-language text translations. Currently this is used specifically
+dnl in the Python NUT-Monitor app sources (*.po => *.mo conversions).
+AC_PATH_PROGS([MSGFMT], [msgfmt], [none])
+AM_CONDITIONAL([HAVE_MSGFMT], [test "x${MSGFMT}" != "xnone"])
+
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-serial
 

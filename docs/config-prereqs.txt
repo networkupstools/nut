@@ -141,6 +141,15 @@ metadata about recently published package revisions:
 #   :; apt-get install python3 python3.9
 # You can find a list of what is (pre-)installed with:
 #   :; dpkg -l | grep -Ei 'perl|python'
+#
+# For localization maintenance (currently in Python NUT-Monitor app),
+# provide an `msgfmt` implementation, e.g.:
+#   :; apt-get install gettext
+#
+# To install the Python NUT-Monitor app, you may need some modules:
+#   :; apt-get install pip
+# For Python3:
+#   :; python3 -m pip install PyQt5 configparser
 
 # For spell-checking, highly recommended if you would propose pull requests:
 :; apt-get install \
