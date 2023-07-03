@@ -29,14 +29,17 @@ maintainer's signature keyring]:
 
 	$ gpg --fetch-keys https://www.networkupstools.org/source/nut-key.gpg
 
-NOTE: As of NUT 2.8.0, a new release key is used, but the `nut-key.gpg` should
+[NOTE]
+======
+As of NUT 2.8.0, a new release key is used, but the `nut-key.gpg` should
 be cumulative with older chain key files (includes them). You can view the key
 list in a downloaded copy of the URL above with:
-+
+
 	$ gpg --with-colons --import-options import-show --dry-run --import < nut-key.gpg
-+
-and as of this writing, it should contain two key sets for various identities
+
+...and as of this writing, it should contain two key sets for various identities
 of "Arnaud Quette" and one set of "Jim Klimov".
+======
 
 Just in case, the previous key file used since NUT 2.7.3 release is stored as
 link:https://www.networkupstools.org/source/nut-key-2.7.3.gpg[NUT
@@ -60,17 +63,21 @@ old maintainer's signature since 2002 until 2.7.3 release]
 	Primary key fingerprint: B834 59F7 76B9 0224 988F  36C0 DE01 84DA 7043 DCF7
 	...
 
-NOTE: the previously used maintainer's signatures would output (with markup of
+[NOTE]
+======
+The previously used maintainer's signatures would output (with markup of
 older gpg tools here):
-+
+
 	gpg: Signature made Wed Apr 15 15:55:30 2015 CEST using RSA key ID 55CA5976
 	gpg: Good signature from "Arnaud Quette ..."
 	...
-+
+
 or:
+
 	gpg: Signature made Thu Jul  5 16:15:05 2007 CEST using DSA key ID 204DDF1B
 	gpg: Good signature from "Arnaud Quette ..."
 	...
+======
 
 ////////
 Maintainer notes for posterity:
@@ -123,25 +130,25 @@ some examples follow:
 	# Example original checksum to compare with, from NUT website:
 	$ cat nut-2.8.0.tar.gz.sha256
 	c3e5a708da797b7c70b653d37b1206a000fcb503b85519fe4cdf6353f792bfe5  nut-2.8.0.tar.gz
-	
+
 	# Generate checksum of downloaded archive with perl (a NUT build dependency
 	# generally, though you may have to install Digest::SHA module from CPAN):
 	$ perl -MDigest::SHA=sha256_hex -le "print sha256_hex <>" nut-2.8.0.tar.gz
 	c3e5a708da797b7c70b653d37b1206a000fcb503b85519fe4cdf6353f792bfe5
-	
+
 	# Generate checksum of downloaded archive with openssl (another optional
 	# NUT build dependency):
 	$ openssl sha256 nut-2.8.0.tar.gz
 	SHA256(nut-2.8.0.tar.gz)= c3e5a708da797b7c70b653d37b1206a000fcb503b85519fe4cdf6353f792bfe5
-	
+
 	# Generate checksum of downloaded archive with coreutils:
 	$ sha256sum nut-2.8.0.tar.gz
 	c3e5a708da797b7c70b653d37b1206a000fcb503b85519fe4cdf6353f792bfe5  nut-2.8.0.tar.gz
-	
+
 	# Auto-check downloaded checksum against downloaded archive with coreutils:
 	$ sha256sum -c nut-2.8.0.tar.gz.sha256
 	nut-2.8.0.tar.gz: OK
-	
+
 	# Generate checksum of downloaded archive with GPG:
 	$ gpg --print-md SHA256 nut-2.8.0.tar.gz
 	nut-2.8.0.tar.gz: C3E5A708 DA797B7C 70B653D3 7B1206A0
