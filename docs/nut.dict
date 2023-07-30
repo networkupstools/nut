@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3193 utf-8
+personal_ws-1.1 en 3195 utf-8
 AAS
 ABI
 ACFAIL
@@ -1613,6 +1613,7 @@ bsv
 bt
 bti
 btnG
+btn
 btt
 buckboosthyst
 buckvolts
@@ -2650,6 +2651,7 @@ rackmount
 raritan
 ratedva
 ratedwatts
+raquo
 rb
 rcctl
 readline
