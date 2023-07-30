@@ -18,7 +18,7 @@ More and more appliances manufacturers are bundling NUT...
 Multiple manufacturer and device support
 ----------------------------------------
 
-- Monitors many UPS, PDU, ATS, PSU and SCD models from more than 140
+- Monitors many UPS, PDU, ATS, PSU and SCD models from more than 170
 manufacturers with a unified interface
 (link:stable-hcl.html[Hardware Compatibility List]).
 
