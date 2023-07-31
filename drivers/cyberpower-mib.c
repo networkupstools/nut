@@ -24,11 +24,16 @@
 
 #include "cyberpower-mib.h"
 
-#define CYBERPOWER_MIB_VERSION		"0.52"
+#define CYBERPOWER_MIB_VERSION		"0.53"
 #define CYBERPOWER_OID_MODEL_NAME	".1.3.6.1.4.1.3808.1.1.1.1.1.1.0"
 
 /* CPS-MIB::ups */
 #define CYBERPOWER_SYSOID			".1.3.6.1.4.1.3808.1.1.1"
+
+/* Per https://github.com/networkupstools/nut/issues/1997
+ * some CPS devices offer the shorter vendor OID as sysOID
+ */
+#define CYBERPOWER_SYSOID2			".1.3.6.1.4.1.3808"
 
 /* https://www.cyberpowersystems.com/products/software/mib-files/ */
 /* Per CPS MIB 2.9 upsBaseOutputStatus OBJECT-TYPE: */
@@ -177,3 +182,6 @@ static snmp_info_t cyberpower_mib[] = {
 
 mib2nut_info_t	cyberpower = { "cyberpower", CYBERPOWER_MIB_VERSION, NULL,
 	CYBERPOWER_OID_MODEL_NAME, cyberpower_mib, CYBERPOWER_SYSOID, NULL };
+
+mib2nut_info_t	cyberpower2 = { "cyberpower", CYBERPOWER_MIB_VERSION, NULL,
+	CYBERPOWER_OID_MODEL_NAME, cyberpower_mib, CYBERPOWER_SYSOID2, NULL };

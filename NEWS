@@ -153,6 +153,8 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
      driver [#1716]
    * `baytech-mib.c` subdriver: fixed `baytech_outlet_status_info[]` set
      of valid outlet status values [#1871]
+   * `cyberpower-mib.c` subdriver: support devices which report the shorter
+     Vendor OID as their sysOID, e.g. "CyberPower PowerPanel Personal" [#1997]
 
  - The `bestfortress` driver shutdown handling was fixed to use a non-trivial
    default timeout [#1820]
