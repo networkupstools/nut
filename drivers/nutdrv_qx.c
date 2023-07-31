@@ -1838,14 +1838,20 @@ static int	armac_command(const char *cmd, char *buf, size_t buflen)
 			tmpbuf[0], tmpbuf[1], tmpbuf[2], tmpbuf[3], tmpbuf[4], tmpbuf[5],
 			tmpbuf[1], tmpbuf[2], tmpbuf[3], tmpbuf[4], tmpbuf[5]);
 
+		/* This includes status/length byte on R/3000I/PF1 */
 		bytes_available = (unsigned char)tmpbuf[0] & 0x0f;
 		if (bytes_available == 0) {
 			/* End of transfer */
 			break;
 		}
 
-		memcpy(buf + bufpos, tmpbuf + 1, bytes_available);
-		bufpos += bytes_available;
+		memcpy(buf + bufpos, tmpbuf + 1, bytes_available - 1);
+		bufpos += bytes_available - 1;
+
+		if (tmpbuf[bytes_available - 1] == 0x0d) {
+			/* End of line is an end of the message as well */
+			break;
+		}
 
 		if (bytes_available <= 2) {
 			/* Slow down, let the UPS buffer more bytes */
