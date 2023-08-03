@@ -615,6 +615,9 @@ refer to this change set (too long in the making) as NUT 2.7.5.
  - the powerpanel driver now also supports CyberPower OR1500LCDRTXL2U with
    serial cable [PR #538]
 
+ - apcupsd-ups:
+   * improvement for `POLL_INTERVAL_MIN` from PR #797 was buggy [#2007]
+
  - powercom driver: implement `nobt` config parameter to skip battery check
    on initialization/startup [PR #1256]
 
