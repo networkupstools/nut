@@ -667,17 +667,19 @@ double difftimeval(struct timeval x, struct timeval y)
 	struct timeval	result;
 	double	d;
 
+	/* Code below assumes that tv_sec is signed (time_t),
+	 * but tv_usec is not necessarily */
 	/* Perform the carry for the later subtraction by updating y. */
 	if (x.tv_usec < y.tv_usec) {
-		intmax_t nsec = (y.tv_usec - x.tv_usec) / 1000000 + 1;
-		y.tv_usec -= 1000000 * nsec;
-		y.tv_sec += nsec;
+		intmax_t numsec = (y.tv_usec - x.tv_usec) / 1000000 + 1;
+		y.tv_usec -= 1000000 * numsec;
+		y.tv_sec += numsec;
 	}
 
 	if (x.tv_usec - y.tv_usec > 1000000) {
-		intmax_t nsec = (x.tv_usec - y.tv_usec) / 1000000;
-		y.tv_usec += 1000000 * nsec;
-		y.tv_sec -= nsec;
+		intmax_t numsec = (x.tv_usec - y.tv_usec) / 1000000;
+		y.tv_usec += 1000000 * numsec;
+		y.tv_sec -= numsec;
 	}
 
 	/* Compute the time remaining to wait.
