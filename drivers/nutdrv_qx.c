@@ -1797,7 +1797,7 @@ static int	armac_command(const char *cmd, char *buf, size_t buflen)
 			// Timeout - buffer is clean.
 			break;
 		}
-		upsdebugx(4, "armac cleanup ret i=%ld ret=%d ctrl=%02hhx", i, ret, tmpbuf[0]);
+		upsdebugx(4, "armac cleanup ret i=%" PRIuSIZE " ret=%d ctrl=%02hhx", i, ret, tmpbuf[0]);
 	}
 
 	/* Send command to the UPS in 3-byte chunks. Most fit 1 chunk, except for eg.
