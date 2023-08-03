@@ -311,6 +311,7 @@ int state_setinfo(st_tree_t **nptr, const char *var, const char *val)
 	(*nptr)->var = xstrdup(var);
 	(*nptr)->raw = xstrdup(val);
 	(*nptr)->rawsize = strlen(val) + 1;
+	st_tree_node_refresh_timestamp(*nptr);
 
 	val_escape(*nptr);
 
