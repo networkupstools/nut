@@ -1400,6 +1400,20 @@ int dstate_delinfo(const char *var)
 	return ret;
 }
 
+int dstate_delinfo_olderthan(const char *var, const st_tree_timespec_t *cutoff)
+{
+	int	ret;
+
+	ret = state_delinfo_olderthan(&dtree_root, var, cutoff);
+
+	/* update listeners */
+	if (ret == 1) {
+		send_to_all("DELINFO %s\n", var);
+	}
+
+	return ret;
+}
+
 int dstate_delenum(const char *var, const char *val)
 {
 	int	ret;
