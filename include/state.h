@@ -81,6 +81,7 @@ void state_infofree(st_tree_t *node);
 void state_cmdfree(cmdlist_t *list);
 int state_delcmd(cmdlist_t **list, const char *cmd);
 int state_delinfo(st_tree_t **root, const char *var);
+int state_delinfo_olderthan(st_tree_t **root, const char *var, const st_tree_timespec_t *cutoff);
 int state_delenum(st_tree_t *root, const char *var, const char *val);
 int state_delrange(st_tree_t *root, const char *var, const int min, const int max);
 st_tree_t *state_tree_find(st_tree_t *node, const char *var);

@@ -223,6 +223,46 @@ int state_delinfo(st_tree_t **nptr, const char *var)
 	return 0;	/* not found */
 }
 
+int state_delinfo_olderthan(st_tree_t **nptr, const char *var, const st_tree_timespec_t *cutoff)
+{
+	while (*nptr) {
+
+		st_tree_t	*node = *nptr;
+
+		if (strcasecmp(node->var, var) > 0) {
+			nptr = &node->left;
+			continue;
+		}
+
+		if (strcasecmp(node->var, var) < 0) {
+			nptr = &node->right;
+			continue;
+		}
+
+		if (node->flags & ST_FLAG_IMMUTABLE) {
+			upsdebugx(6, "%s: not deleting immutable variable [%s]", __func__, var);
+			return 0;
+		}
+
+		if (st_tree_node_compare_timestamp(node, cutoff) >= 0) {
+			upsdebugx(6, "%s: not deleting recently updated variable [%s]", __func__, var);
+			return 0;
+		}
+
+		/* whatever is on the left, hang it off current right */
+		st_tree_node_add(&node->right, node->left);
+
+		/* now point the parent at the old right child */
+		*nptr = node->right;
+
+		st_tree_node_free(node);
+
+		return 1;
+	}
+
+	return 0;	/* not found */
+}
+
 int state_setinfo(st_tree_t **nptr, const char *var, const char *val)
 {
 	while (*nptr) {
