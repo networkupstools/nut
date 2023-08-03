@@ -788,22 +788,22 @@ Release notes for NUT 2.7.4 - what's new since 2.7.3:
      input, output, outlet and outlet.group)
 
  - support for new devices:
-   AEG PROTECT B / NAS
-   APC ATS AP7724 (should be supported)
-   Asium P700
-   Eaton ATS
-   Eaton 5E 1100iUSB
-   Eaton E Series DX UPS 1-20 kVA
-   Eaton Powerware 9125-5000g
-   Electrys UPS 2500
-   Fideltronic INIGO Viper 1200
-   Legrand Keor Multiplug
-   LYONN CTB-800V
-   Micropower LCD 1000
-   NHS Laser Senoidal 5000VA
-   Sweex model P220
-   TS Shara
-   Various APCUPSD-controlled APC devices
+   * AEG PROTECT B / NAS
+   * APC ATS AP7724 (should be supported)
+   * Asium P700
+   * Eaton ATS
+   * Eaton 5E 1100iUSB
+   * Eaton E Series DX UPS 1-20 kVA
+   * Eaton Powerware 9125-5000g
+   * Electrys UPS 2500
+   * Fideltronic INIGO Viper 1200
+   * Legrand Keor Multiplug
+   * LYONN CTB-800V
+   * Micropower LCD 1000
+   * NHS Laser Senoidal 5000VA
+   * Sweex model P220
+   * TS Shara
+   * Various APCUPSD-controlled APC devices
 
  - snmp-ups:
    * Improve automatic detection algorithm
