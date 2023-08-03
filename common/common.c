@@ -735,6 +735,35 @@ static nsec_t timespec_load_nsec(const struct timespec *ts) {
 
 	return (nsec_t) ts->tv_sec * NSEC_PER_SEC + (nsec_t) ts->tv_nsec;
 }
+
+double difftimespec(struct timespec x, struct timespec y)
+{
+	struct timespec	result;
+	double	d;
+
+	/* Code below assumes that tv_sec is signed (time_t),
+	 * but tv_nsec is not necessarily */
+	/* Perform the carry for the later subtraction by updating y. */
+	if (x.tv_nsec < y.tv_nsec) {
+		intmax_t numsec = (y.tv_nsec - x.tv_nsec) / 1000000000L + 1;
+		y.tv_nsec -= 1000000000L * numsec;
+		y.tv_sec += numsec;
+	}
+
+	if (x.tv_nsec - y.tv_nsec > 1000000) {
+		intmax_t numsec = (x.tv_nsec - y.tv_nsec) / 1000000000L;
+		y.tv_nsec += 1000000000L * numsec;
+		y.tv_sec -= numsec;
+	}
+
+	/* Compute the time remaining to wait.
+	 * tv_nsec is certainly positive. */
+	result.tv_sec = x.tv_sec - y.tv_sec;
+	result.tv_nsec = x.tv_nsec - y.tv_nsec;
+
+	d = 0.000000001 * result.tv_nsec + result.tv_sec;
+	return d;
+}
 #endif	/* HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC */
 
 /* Send (daemon) state-change notifications to an
