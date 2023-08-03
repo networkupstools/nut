@@ -39,7 +39,7 @@ typedef unsigned long int nfds_t;
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"apcupsd network client UPS driver"
-#define DRIVER_VERSION	"0.70"
+#define DRIVER_VERSION	"0.71"
 
 #define POLL_INTERVAL_MIN 10
 
@@ -331,7 +331,7 @@ void upsdrv_initinfo(void)
 	if(getdata())fatalx(EXIT_FAILURE,"can't communicate with apcupsd!");
 	else dstate_dataok();
 
-	poll_interval = (poll_interval > POLL_INTERVAL_MIN) ? POLL_INTERVAL_MIN : poll_interval;
+	poll_interval = (poll_interval < POLL_INTERVAL_MIN) ? POLL_INTERVAL_MIN : poll_interval;
 }
 
 void upsdrv_updateinfo(void)
@@ -339,7 +339,7 @@ void upsdrv_updateinfo(void)
 	if(getdata())upslogx(LOG_ERR,"can't communicate with apcupsd!");
 	else dstate_dataok();
 
-	poll_interval = (poll_interval > POLL_INTERVAL_MIN) ? POLL_INTERVAL_MIN : poll_interval;
+	poll_interval = (poll_interval < POLL_INTERVAL_MIN) ? POLL_INTERVAL_MIN : poll_interval;
 }
 
 void upsdrv_shutdown(void)
