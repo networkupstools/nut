@@ -174,6 +174,7 @@ static int getdata(void)
 	char *data;
 	struct pollfd p;
 	char bfr[1024];
+	st_tree_timespec_t start;
 	int ret = -1;
 #ifndef WIN32
 	int fd_flags;
@@ -186,9 +187,7 @@ static int getdata(void)
 	HANDLE event = NULL;
 #endif
 
-	for(x=0;nut_data[x].info_type;x++)
-		if(!(nut_data[x].drv_flags & DU_FLAG_INIT) && !(nut_data[x].drv_flags & DU_FLAG_PRESERVE))
-			dstate_delinfo(nut_data[x].info_type);
+	state_get_timestamp((st_tree_timespec_t *)&start);
 
 	if (INVALID_FD_SOCK( p.fd = socket(AF_INET, SOCK_STREAM, 0) ))
 	{
@@ -318,6 +317,12 @@ getdata_return:
 	if (event != NULL)
 		CloseHandle(event);
 #endif
+
+	/* Remove any unprotected entries not refreshed in this run */
+	for(x=0;nut_data[x].info_type;x++)
+		if(!(nut_data[x].drv_flags & DU_FLAG_INIT) && !(nut_data[x].drv_flags & DU_FLAG_PRESERVE))
+			dstate_delinfo_olderthan(nut_data[x].info_type, &start);
+
 	return ret;
 }
 
