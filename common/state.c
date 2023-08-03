@@ -35,6 +35,8 @@
 #include "state.h"
 #include "parseconf.h"
 
+/* internal helpers */
+
 static void val_escape(st_tree_t *node)
 {
 	char	etmp[ST_MAX_VALUE_LEN];
@@ -128,6 +130,60 @@ static void st_tree_node_add(st_tree_t **nptr, st_tree_t *sptr)
 	*nptr = sptr;
 }
 
+static int st_tree_node_refresh_timestamp(const st_tree_t *node)
+{
+	if (!node)
+		return -1;
+
+	return state_get_timestamp((st_tree_timespec_t *)&node->lastset);
+}
+
+/* interface */
+
+/* As underlying system methods:
+ * return 0 on success, -1 and errno on error
+ */
+int state_get_timestamp(st_tree_timespec_t *now)
+{
+	if (!now)
+		return -1;
+
+#if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_CLOCK_MONOTONIC) && HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC
+	return clock_gettime(CLOCK_MONOTONIC, now);
+#else
+	return gettimeofday(now, NULL);
+#endif
+}
+
+/* Returns -1 if the node->lastset is "older" than cutoff,
+ * 0 if it is equal, or +1 if it is newer.
+ * Returns -2 or -3 if node or cutoff are null.
+ */
+int st_tree_node_compare_timestamp(
+	const st_tree_t *node,
+	const st_tree_timespec_t *cutoff
+) {
+	double d;
+
+	if (!node)
+		return -2;
+
+	if (!cutoff)
+		return -3;
+
+#if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_CLOCK_MONOTONIC) && HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC
+	d = difftimespec(node->lastset, *cutoff);
+#else
+	d = difftimeval(node->lastset, *cutoff);
+#endif
+
+	if (d < 0)
+		return -1;
+	if (d > 0)
+		return 1;
+	return 0;
+}
+
 /* remove a variable from a tree
  * except for variables with ST_FLAG_IMMUTABLE
  * (for override.* to survive) per issue #737
@@ -167,8 +223,6 @@ int state_delinfo(st_tree_t **nptr, const char *var)
 	return 0;	/* not found */
 }
 
-/* interface */
-
 int state_setinfo(st_tree_t **nptr, const char *var, const char *val)
 {
 	while (*nptr) {
@@ -184,6 +238,9 @@ int state_setinfo(st_tree_t **nptr, const char *var, const char *val)
 			nptr = &node->right;
 			continue;
 		}
+
+		/* refresh even if "skip-writing" same info value */
+		st_tree_node_refresh_timestamp(node);
 
 		/* updating an existing entry */
 		if (!strcasecmp(node->raw, val)) {
@@ -261,6 +318,7 @@ int state_addenum(st_tree_t *root, const char *var, const char *val)
 	/* smooth over any oddities in the enum value */
 	pconf_encode(val, enc, sizeof(enc));
 
+	st_tree_node_refresh_timestamp(sttmp);
 	return st_tree_enum_add(&sttmp->enum_list, enc);
 }
 
@@ -309,6 +367,7 @@ int state_addrange(st_tree_t *root, const char *var, const int min, const int ma
 		return 0;	/* failed */
 	}
 
+	st_tree_node_refresh_timestamp(sttmp);
 	return st_tree_range_add(&sttmp->range_list, min, max);
 }
 
@@ -326,6 +385,7 @@ int state_setaux(st_tree_t *root, const char *var, const char *auxs)
 		return -1;	/* failed */
 	}
 
+	st_tree_node_refresh_timestamp(sttmp);
 	aux = strtol(auxs, (char **) NULL, 10);
 
 	/* silently ignore matches */
@@ -422,6 +482,7 @@ void state_setflags(st_tree_t *root, const char *var, size_t numflags, char **fl
 		return;
 	}
 
+	st_tree_node_refresh_timestamp(sttmp);
 	sttmp->flags = 0;
 
 	for (i = 0; i < numflags; i++) {
@@ -562,6 +623,7 @@ int state_delenum(st_tree_t *root, const char *var, const char *val)
 		return 0;
 	}
 
+	st_tree_node_refresh_timestamp(sttmp);
 	return st_tree_del_enum(&sttmp->enum_list, val);
 }
 
@@ -599,6 +661,7 @@ int state_delrange(st_tree_t *root, const char *var, const int min, const int ma
 		return 0;
 	}
 
+	st_tree_node_refresh_timestamp(sttmp);
 	return st_tree_del_range(&sttmp->range_list, min, max);
 }
 
