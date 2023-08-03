@@ -617,6 +617,8 @@ refer to this change set (too long in the making) as NUT 2.7.5.
 
  - apcupsd-ups:
    * improvement for `POLL_INTERVAL_MIN` from PR #797 was buggy [#2007]
+   * fix to clean obsoleted readings (if any) AFTER getting new info from an
+     `apcupsd` daemon, to avoid the gap when NUT driver knows nothing [#2007]
 
  - powercom driver: implement `nobt` config parameter to skip battery check
    on initialization/startup [PR #1256]
