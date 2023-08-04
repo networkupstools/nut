@@ -13,6 +13,9 @@
 /nutlogtest
 /nutlogtest.log
 /nutlogtest.trs
+/nuttimetest
+/nuttimetest.log
+/nuttimetest.trs
 /getvaluetest
 /getvaluetest.log
 /getvaluetest.trs
