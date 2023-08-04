@@ -861,7 +861,7 @@ AC_CACHE_CHECK([for clock_gettime(CLOCK_MONOTONIC,ts)],
 ],
             [struct timespec monoclock_ts;
 int got_monoclock = clock_gettime(CLOCK_MONOTONIC, &monoclock_ts);
-if (ts.tv_sec < 0 || ts.tv_nsec < 0) return 1])],
+if (monoclock_ts.tv_sec < 0 || monoclock_ts.tv_nsec < 0) return 1])],
         [ac_cv_func_clock_gettime=yes], [ac_cv_func_clock_gettime=no]
     )])
 AS_IF([test x"${ac_cv_func_clock_gettime}" = xyes],
