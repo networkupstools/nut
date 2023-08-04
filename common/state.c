@@ -253,6 +253,7 @@ int state_delinfo_olderthan(st_tree_t **nptr, const char *var, const st_tree_tim
 			upsdebugx(6, "%s: not deleting recently updated variable [%s]", __func__, var);
 			return 0;
 		}
+		upsdebugx(6, "%s: deleting variable [%s] last updated too long ago", __func__, var);
 
 		/* whatever is on the left, hang it off current right */
 		st_tree_node_add(&node->right, node->left);
