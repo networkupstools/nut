@@ -1868,7 +1868,7 @@ static int	armac_command(const char *cmd, char *buf, size_t buflen)
 			break;
 		}
 
-		if (bytes_available > READ_SIZE - 1) {
+		if (bytes_available > (size_t)(READ_SIZE - 1)) {
 			/* Single interrupt transfer has 1 control + 5 data bytes */
 			bytes_available = READ_SIZE - 1;
 		}
