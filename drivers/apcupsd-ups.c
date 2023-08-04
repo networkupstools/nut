@@ -189,7 +189,7 @@ static int getdata(void)
 
 	state_get_timestamp((st_tree_timespec_t *)&start);
 
-	if (INVALID_FD_SOCK( p.fd = socket(AF_INET, SOCK_STREAM, 0) ))
+	if (INVALID_FD_SOCK( (p.fd = socket(AF_INET, SOCK_STREAM, 0)) ))
 	{
 		upsdebugx(1,"socket error");
 		/* return -1; */
