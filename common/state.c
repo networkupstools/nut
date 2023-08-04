@@ -171,6 +171,11 @@ int st_tree_node_compare_timestamp(
 	if (!cutoff)
 		return -3;
 
+	/* Like in difftime(), the first arg is "finish" and
+	 * the second arg is "start" of a time range (below),
+	 * so if the diff is negative, then "lastset" happened
+	 * before "cutoff":
+	 */
 #if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_CLOCK_MONOTONIC) && HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC
 	d = difftimespec(node->lastset, *cutoff);
 #else
