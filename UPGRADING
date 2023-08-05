@@ -65,6 +65,12 @@ Changes from 2.8.0 to 2.8.1
   the packaging recipes may use NUT source-code facilities and package just
   symlinks as relevant for each distro separately [#1462, #1504]
 
+- The `upsd.conf` listing of `LISTEN` addresses was previously inverted
+  (the last listed address was applied first), which was counter-intuitive
+  and fixed for this release. If user configurations somehow relied on this
+  order (e.g. to prioritize IPv6 vs IPv4 listeners), configuration changes
+  may be needed. [#2012]
+
 - Added support for `make sockdebug` for easier developer access to the tool;
   also if `configure --with-dev` is in effect, it would now be installed to
   the configured `libexec` location. A man page was also added. [#1936]

@@ -278,6 +278,10 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
    * added support for `NUT_QUIET_INIT_SSL` environment variable to hide
      the infamous "Init SSL without certificate database" warning [#1662]
 
+ - The `upsd.conf` listing of `LISTEN` addresses was previously inverted
+   (the last listed address was applied first), which was counter-intuitive
+   and fixed for this release [#2012]
+
  - sstate (server state, e.g. upsd) should now "PING" drivers also if they
    last reported themselves as "stale" (and might later crash) so their
    connections would be terminated if really no longer active [#1626]

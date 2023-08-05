@@ -237,9 +237,15 @@ void listen_add(const char *addr, const char *port)
 	server->addr = xstrdup(addr);
 	server->port = xstrdup(port);
 	server->sock_fd = ERROR_FD_SOCK;
-	server->next = firstaddr;
+	server->next = NULL;
 
-	firstaddr = server;
+	if (firstaddr) {
+		stype_t	*tmp;
+		for (tmp = firstaddr; tmp->next; tmp = tmp->next);
+		tmp->next = server;
+	} else {
+		firstaddr = server;
+	}
 
 	upsdebugx(3, "listen_add: added %s:%s", server->addr, server->port);
 }
