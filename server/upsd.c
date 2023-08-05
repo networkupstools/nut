@@ -312,6 +312,20 @@ static void setuptcp(stype_t *server)
 			continue;
 		}
 
+		if (ai->ai_next) {
+			char ipaddrbuf[SMALLBUF];
+			const char *ipaddr;
+			snprintf(ipaddrbuf, sizeof(ipaddrbuf), " as ");
+			ipaddr = inet_ntop(ai->ai_family, ai->ai_addr,
+				ipaddrbuf + strlen(ipaddrbuf),
+				sizeof(ipaddrbuf));
+			upslogx(LOG_WARNING,
+				"setuptcp: bound to %s%s but there seem to be "
+				"further (ignored) addresses resolved for this name",
+				server->addr,
+				ipaddr == NULL ? "" : ipaddrbuf);
+		}
+
 		server->sock_fd = sock_fd;
 		break;
 	}
