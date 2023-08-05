@@ -282,6 +282,11 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
    (the last listed address was applied first), which was counter-intuitive
    and fixed for this release [#2012]
 
+ - The `upsd` configured to listen on IPv6 addresses should handle only
+   IPv6 (and not IPv4-mappings) to avoid surprises and insecurity; it
+   would warn if a hostname resolves to several addresses (and would only
+   listen on the first hit, as before in such cases) [#2012]
+
  - sstate (server state, e.g. upsd) should now "PING" drivers also if they
    last reported themselves as "stale" (and might later crash) so their
    connections would be terminated if really no longer active [#1626]

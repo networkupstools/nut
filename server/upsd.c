@@ -303,6 +303,17 @@ static void setuptcp(stype_t *server)
 			fatal_with_errno(EXIT_FAILURE, "setuptcp: setsockopt");
 		}
 
+		/* Ordinarily we request that IPv6 listeners handle only IPv6.
+		 * TOTHINK: Does any platform need `#ifdef IPV6_V6ONLY` given
+		 * that we apparently already have AF_INET6 OS support everywhere?
+		 */
+		if (ai->ai_family == AF_INET6) {
+			if (setsockopt(sock_fd, IPPROTO_IPV6, IPV6_V6ONLY, (void *)&one, sizeof(one)) != 0) {
+				upsdebug_with_errno(3, "setuptcp: setsockopt IPV6_V6ONLY");
+				/* ack, ignore */
+			}
+		}
+
 		if (bind(sock_fd, ai->ai_addr, ai->ai_addrlen) < 0) {
 			upsdebug_with_errno(3, "setuptcp: bind");
 			close(sock_fd);

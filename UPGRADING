@@ -71,6 +71,14 @@ Changes from 2.8.0 to 2.8.1
   order (e.g. to prioritize IPv6 vs IPv4 listeners), configuration changes
   may be needed. [#2012]
 
+- The `upsd` configured to listen on IPv6 addresses should handle only
+  IPv6 (and not IPv4-mappings like it might have done before) to avoid
+  surprises and insecurity -- if user configurations somehow relied on
+  this dual support, configuration changes may be needed to specify both
+  desired IP addresses. Note that the daemon logs would warn if a hostname
+  resolves to several addresses (and would only listen on the first hit,
+  as it did before in such cases) [#2012]
+
 - Added support for `make sockdebug` for easier developer access to the tool;
   also if `configure --with-dev` is in effect, it would now be installed to
   the configured `libexec` location. A man page was also added. [#1936]
