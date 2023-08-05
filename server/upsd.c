@@ -694,13 +694,16 @@ void server_load(void)
 {
 	stype_t	*server;
 
-	/* default behaviour if no LISTEN addres has been specified */
+	/* default behaviour if no LISTEN address has been specified */
 	if (!firstaddr) {
+		/* Note: default opt_af==AF_UNSPEC so not constrained to only one protocol */
 		if (opt_af != AF_INET) {
+			upsdebugx(1, "%s: No LISTEN configuration provided, will try IPv6 localhost", __func__);
 			listen_add("::1", string_const(PORT));
 		}
 
 		if (opt_af != AF_INET6) {
+			upsdebugx(1, "%s: No LISTEN configuration provided, will try IPv4 localhost", __func__);
 			listen_add("127.0.0.1", string_const(PORT));
 		}
 	}
