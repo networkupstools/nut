@@ -1759,10 +1759,10 @@ static void	*ablerex_subdriver_fun(USBDevice_t *device)
  * Richcomm Technologies, Inc. Dec 27 2005 ver 1.1." Maybe other Richcomm UPSes
  * would work with this - better than with the richcomm_usb driver.
  */
+#define ARMAC_READ_SIZE 6
 static int	armac_command(const char *cmd, char *buf, size_t buflen)
 {
-	const int READ_SIZE = 6;
-	char tmpbuf[READ_SIZE];
+	char tmpbuf[ARMAC_READ_SIZE];
 	int ret = 0;
 	size_t i, bufpos;
 	const size_t cmdlen = strlen(cmd);
@@ -1792,8 +1792,8 @@ static int	armac_command(const char *cmd, char *buf, size_t buflen)
 	/* Cleanup buffer before sending a new command */
 	for (i = 0; i < 10; i++) {
 		ret = usb_interrupt_read(udev, 0x81,
-			(usb_ctrl_charbuf)tmpbuf, READ_SIZE, 100);
-		if (ret != READ_SIZE) {
+			(usb_ctrl_charbuf)tmpbuf, ARMAC_READ_SIZE, 100);
+		if (ret != ARMAC_READ_SIZE) {
 			// Timeout - buffer is clean.
 			break;
 		}
@@ -1827,17 +1827,17 @@ static int	armac_command(const char *cmd, char *buf, size_t buflen)
 	memset(buf, 0, buflen);
 
 	bufpos = 0;
-	while (bufpos + READ_SIZE < buflen) {
+	while (bufpos + ARMAC_READ_SIZE < buflen) {
 		size_t bytes_available;
 
 		/* Read data in 6-byte chunks */
 		ret = usb_interrupt_read(udev, 0x81,
-			(usb_ctrl_charbuf)tmpbuf, READ_SIZE, 1000);
+			(usb_ctrl_charbuf)tmpbuf, ARMAC_READ_SIZE, 1000);
 
 		/* Any errors here mean that we are unable to read a reply
 		 * (which will happen after successfully writing a command
 		 * to the UPS) */
-		if (ret != READ_SIZE) {
+		if (ret != ARMAC_READ_SIZE) {
 			/* NOTE: If end condition is invalid for particular UPS we might make one
 			 * request more and get this error. If bufpos > (say) 10 this could be ignored
 			 * and the reply correctly read. */
@@ -1868,9 +1868,9 @@ static int	armac_command(const char *cmd, char *buf, size_t buflen)
 			break;
 		}
 
-		if (bytes_available > (size_t)(READ_SIZE - 1)) {
+		if (bytes_available > ARMAC_READ_SIZE - 1) {
 			/* Single interrupt transfer has 1 control + 5 data bytes */
-			bytes_available = READ_SIZE - 1;
+			bytes_available = ARMAC_READ_SIZE - 1;
 		}
 
 		/* Copy bytes into the final buffer while detecting end of line - \r */
