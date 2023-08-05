@@ -75,10 +75,10 @@ static info_lkp_t cyberpower_battrepl_status[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
-static info_lkp_t cyberpower_ups_status[] = {
-	{ 1, "", NULL, NULL },          /* Normal */
-	{ 2, "OH", NULL, NULL },        /* Overheat */
-	{ 3, "HW", NULL, NULL },        /* Hardware Fault */
+static info_lkp_t cyberpower_ups_alarm_info[] = {
+	{ 1, "", NULL, NULL },                       /* Normal */
+	{ 2, "Temperature too high!", NULL, NULL },  /* Overheat */
+	{ 3, "Internal UPS fault!", NULL, NULL },    /* Hardware Fault */
 	{ 0, NULL, NULL, NULL }
 };
 
@@ -132,12 +132,13 @@ static snmp_info_t cyberpower_mib[] = {
 		SU_FLAG_OK | SU_STATUS_CAL, &cyberpower_cal_status[0] },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.3808.1.1.1.2.2.5.0", "",
 		SU_FLAG_OK | SU_STATUS_RB, &cyberpower_battrepl_status[0] },
-	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.3808.1.1.1.10.1.0", "",
-		SU_FLAG_OK, &cyberpower_ups_status[0] },
 	{ "ups.load", 0, 1.0, ".1.3.6.1.4.1.3808.1.1.1.4.2.3.0", "",
 		0, NULL },
 
 	{ "ups.temperature", 0, 1, ".1.3.6.1.4.1.3808.1.1.1.10.2.0", "", SU_FLAG_OK, NULL },
+
+	{ "ups.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.3808.1.1.1.10.1.0", "",
+		SU_FLAG_OK, &cyberpower_ups_alarm_info[0] },
 
 	/* Battery runtime is expressed in seconds */
 	{ "battery.runtime", 0, 1.0, ".1.3.6.1.4.1.3808.1.1.1.2.2.4.0", "",
