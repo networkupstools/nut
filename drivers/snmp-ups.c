@@ -104,6 +104,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&bestpower,			/* This struct comes from : bestpower-mib.c */
 	&compaq,			/* This struct comes from : compaq-mib.c */
 	&cyberpower,		/* This struct comes from : cyberpower-mib.c */
+	&cyberpower2,		/* This struct comes from : cyberpower-mib.c */
 	&delta_ups,			/* This struct comes from : delta_ups-mib.c */
 	&eaton_ats16_nmc,		/* This struct comes from : eaton-ats16-nmc-mib.c */
 	&eaton_ats16_nm2,	/* This struct comes from : eaton-ats16-nm2-mib.c */
@@ -173,7 +174,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION	"1.29"
+#define DRIVER_VERSION	"1.30"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {

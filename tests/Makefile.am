@@ -40,6 +40,10 @@ else
 TESTS += nutlogtest
 endif
 
+TESTS += nuttimetest
+nuttimetest_SOURCES = nuttimetest.c
+nuttimetest_LDADD = $(top_builddir)/common/libcommon.la
+
 # Separate the .deps of other dirs from this one
 LINKED_SOURCE_FILES = hidparser.c
 

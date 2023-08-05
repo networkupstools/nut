@@ -28,3 +28,9 @@
  To the best of our knowledge, conditions of the 2/3-clause BSD, MIT, curl and
  CC BY-SA licenses allow redistribution and reuse of the codebase in projects
  made available under GPL license terms, as long as attribution is provided.
+
+ NUT contributors are encouraged to "sign off" their git commits as a conscious
+ act done under Developer's Certificate of Origin. See the copy of "LICENSE-DCO"
+ in the root of this distribution, but please note that it is not a "license" on
+ its own - rather a proclamation that work was done and submitted according to
+ applicable open-source licenses.

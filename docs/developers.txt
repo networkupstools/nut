@@ -1300,6 +1300,43 @@ You may notice that some older commits have `[[SVN:####]]` tags and Fossil-ID
 footers. These were lifted from the old SVN commit messages using reposurgeon,
 and should *not* be used as a guide for future commits.
 
+Commit sign-off
+---------------
+
+Please also note that since 2023 we explicitly ask for contributions to be
+"Signed Off" according to "Developer Certificate of Origin" as represented
+in the `LICENSE-DCO` file in the root of NUT source tree (verbatim copy of
+Version 1.1 of DCO published at https://developercertificate.org/ web site).
+This is exactly the same one created and used by the Linux kernel developers.
+
+This is a developer's certification that he or she has the right to submit
+the patch for inclusion into the project. Simply submitting a contribution
+implies this agreement, however, please include a "Signed-off-by" tag in
+every patch (this tag is a conventional way to confirm that you agree to
+the DCO). In other words, this tag certifies that committer has the rights
+to submit this work under the same license as the project and agrees to the
+terms of a Developer Certificate of Origin.
+
+Note that while git commit hook tricks are available to automatically sign
+off all commits, these signatures are intended to be a conscious (legally
+meaningful) act -- hence they are not automated in git core with an easy
+configuration option.
+
+For more details see:
+
+* https://github.com/networkupstools/nut/issues/1994
+* https://stackoverflow.com/questions/1962094/what-is-the-sign-off-feature-in-git-for
+* https://stackoverflow.com/questions/15015894/git-add-signed-off-by-line-using-format-signoff-not-working
+
+You are also encouraged to set up a PGP key, make its public part known, and
+use it to sign your git commits (in addition to the `Signed-Off-By` tag) by
+also passing a `-S` option or calling `git config commit.gpgsign true` once.
+Numerous public articles can walk you through this ordeal, including:
+
+* https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits
+* https://docs.github.com/en/authentication/managing-commit-signature-verification/telling-git-about-your-signing-key
+* https://www.kernel.org/doc/html/v4.19/process/maintainer-pgp-guide.html
+
 Repository etiquette and quality assurance
 ------------------------------------------
 
@@ -1350,11 +1387,11 @@ Here is an example workflow:
 	# Hack away
 
 	git add changed-file.c
-	git commit
+	git commit -s
 
 	# Fix a typo in a file or commit message:
 
-	git commit -a --amend
+	git commit -s -a --amend
 
 	# Someone committed something to the central repository. Fetch it.
 

@@ -75,6 +75,7 @@ void dstate_delflags(const char *var, const int delflags);
 void dstate_setaux(const char *var, long aux);
 const char *dstate_getinfo(const char *var);
 void dstate_addcmd(const char *cmdname);
+int dstate_delinfo_olderthan(const char *var, const st_tree_timespec_t *cutoff);
 int dstate_delinfo(const char *var);
 int dstate_delenum(const char *var, const char *val);
 int dstate_delrange(const char *var, const int min, const int max);

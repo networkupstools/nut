@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3189 utf-8
+personal_ws-1.1 en 3196 utf-8
 AAS
 ABI
 ACFAIL
@@ -240,6 +240,7 @@ DATACABLE
 DATAPATH
 DCE
 DCF
+DCO
 DDD
 DDDDD
 DDDDDD
@@ -432,6 +433,7 @@ Gomes
 Goncalves
 Gordeev
 Gough
+Grafana
 Grafenthal
 Gtec
 GuardEnd
@@ -1612,6 +1614,7 @@ bsv
 bt
 bti
 btnG
+btn
 btt
 buckboosthyst
 buckvolts
@@ -1999,6 +2002,7 @@ google
 goto
 gotos
 gpg
+gpgsign
 gpio
 gpiochip
 graphviz
@@ -2068,6 +2072,7 @@ idm
 ie
 ietf
 ifdef
+ifeval
 ifndef
 ignoreFailures
 ignorelb
@@ -2647,6 +2652,7 @@ rackmount
 raritan
 ratedva
 ratedwatts
+raquo
 rb
 rcctl
 readline
@@ -3123,6 +3129,7 @@ wchar
 webNUT
 webnut
 webserver
+websitelayout
 wf
 wget
 whitespace
