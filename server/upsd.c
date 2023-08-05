@@ -267,6 +267,8 @@ static void stype_free(stype_t *server)
 /* create a listening socket for tcp connections */
 static void setuptcp(stype_t *server)
 {
+	/* Well, currently it is more a request than requirement... */
+	static int	require_IPV6_V6ONLY = 1;
 #ifdef WIN32
 	WSADATA WSAdata;
 	WSAStartup(2,&WSAdata);
@@ -275,7 +277,168 @@ static void setuptcp(stype_t *server)
 	struct addrinfo		hints, *res, *ai;
 	int	v = 0, one = 1;
 
+	if (VALID_FD_SOCK(server->sock_fd)) {
+		/* Alredy bound, e.g. thanks to 'LISTEN *' handling and injection
+		 * into the list we loop over */
+		upsdebugx(6, "setuptcp: SKIP bind to %s port %s: entry already initialized",
+			server->addr, server->port);
+		return;
+	}
+
 	upsdebugx(3, "setuptcp: try to bind to %s port %s", server->addr, server->port);
+
+	/* Special handling for `LISTEN * <port>` directive with literal asterisk:
+	 * on systems with RFC-3493 (no relation!) support for "IPv4-mapped addresses"
+	 * it suffices to LISTEN on "::" (aka "::0" or "0:0:0:0:0:0:0:0") and also
+	 * get an IPv4 any-address listener. More so, they would conflict and
+	 * listening on one such socket precludes listening on the other. On other
+	 * systems (or with disabled mapping so IPv6 means IPv6 only) we need both.
+	 * So we jump through some hoops:
+	 * * Try to get IPv4 any-address, just to know if it is available right now;
+	 * * Free it and try to get IPv6 any-address, and try to get again that
+	 *   IPv4 any-address (IFF it was available before but is not available now -
+	 *   not a problem).
+	 * * Remember the entries used, to release later.
+	 * For more details see https://github.com/networkupstools/nut/issues/2012
+	 */
+	if (!strcmp(server->addr, "*")) {
+		stype_t	*serverAnyV4 = NULL, *serverAnyV6 = NULL;
+		int	canhaveAnyV4 = 0;
+		int	canhaveAnyV6 = 0;
+
+		/* For this use-case, we allow IPv6 to handle IPv4 if it can */
+		int	old_require_IPV6_V6ONLY = require_IPV6_V6ONLY;
+		require_IPV6_V6ONLY = (opt_af == AF_INET6);
+
+		/* Note: default opt_af==AF_UNSPEC so not constrained to only one protocol */
+		if (opt_af != AF_INET6) {
+			/* Not constrained to IPv6 */
+			upsdebugx(1, "%s: handling 'LISTEN * %s' with IPv4 any-address support",
+				__func__, server->port);
+			serverAnyV4 = xcalloc(1, sizeof(*serverAnyV4));
+			serverAnyV4->addr = xstrdup("0.0.0.0");
+			serverAnyV4->port = xstrdup(server->port);
+			serverAnyV4->sock_fd = ERROR_FD_SOCK;
+			serverAnyV4->next = NULL;
+		}
+
+		if (opt_af != AF_INET) {
+			/* Not constrained to IPv4 */
+			upsdebugx(1, "%s: handling 'LISTEN * %s' with IPv6 any-address support",
+				__func__, server->port);
+			serverAnyV6 = xcalloc(1, sizeof(*serverAnyV6));
+			serverAnyV6->addr = xstrdup("::0");
+			serverAnyV6->port = xstrdup(server->port);
+			serverAnyV6->sock_fd = ERROR_FD_SOCK;
+			serverAnyV6->next = NULL;
+		}
+
+		if (serverAnyV4) {
+			/* First pass to just check if we CAN have this listener now */
+			setuptcp(serverAnyV4);
+			if (serverAnyV6) {
+				if (VALID_FD_SOCK(serverAnyV4->sock_fd)) {
+					upsdebugx(3,
+						"%s: Could bind to %s:%s trying to handle a 'LISTEN *' directive"
+						"; will release it for now to try IPv6",
+						__func__, serverAnyV4->addr, serverAnyV4->port);
+					canhaveAnyV4 = 1;
+					close(serverAnyV4->sock_fd);
+					serverAnyV4->sock_fd = ERROR_FD_SOCK;
+					/* Let the system know about the change: */
+					/* usleep(100); */
+				} else {
+					upsdebugx(3,
+						"%s: Could not bind to %s:%s trying to handle a 'LISTEN *' directive",
+						__func__, serverAnyV4->addr, serverAnyV4->port);
+				}
+			}	/* else: just keep it, all done */
+		}
+
+		if (serverAnyV6) {
+			setuptcp(serverAnyV6);
+			if (VALID_FD_SOCK(serverAnyV6->sock_fd)) {
+				canhaveAnyV6 = 1;
+			} else {
+				upsdebugx(3,
+					"%s: Could not bind to %s:%s trying to handle a 'LISTEN *' directive",
+					__func__, serverAnyV6->addr, serverAnyV6->port);
+			}
+
+			if (serverAnyV4 && canhaveAnyV4) {
+				/* Second pass to get this listener if we can (no IPv4-mapped IPv6
+				 * support was in force on this platform or its configuration) */
+				upsdebugx(3, "%s: try taking IPv4 'ANY' again "
+					"(if dual-stack IPv6 'ANY' did not grab it)", __func__);
+				setuptcp(serverAnyV4);
+				if (INVALID_FD_SOCK(serverAnyV4->sock_fd)) {
+					upsdebugx(3,
+						"%s: Could not bind to IPv4 %s:%s after trying to bind to IPv6: "
+						"assuming dual-stack support on this system",
+						__func__, serverAnyV4->addr, serverAnyV4->port);
+					canhaveAnyV4 = 0;
+				}
+			}
+		}
+
+		if (!canhaveAnyV4 && !canhaveAnyV6) {
+			fatalx(EXIT_FAILURE,
+				"Handling of 'LISTEN * %s' directive failed to bind to 'ANY' address",
+				server->port);
+		}
+
+		/* Finalize our findings and reset to normal operation
+		 * Note that at least one of these addresses is usable
+		 * and we keep it (and replace original "server" entry
+		 * keeping its place in the list).
+		 */
+		free(server->addr);
+		free(server->port);
+		if (canhaveAnyV4) {
+			upsdebugx(3, "%s: remembering IPv4 'ANY' instead of 'LISTEN *'", __func__);
+			server->addr = serverAnyV4->addr;
+			server->port = serverAnyV4->port;
+			server->sock_fd = serverAnyV4->sock_fd;
+			/* ...and keep whatever server->next there was */
+
+			/* Free the ghost, all needed info was relocated */
+			free(serverAnyV4);
+		} else {
+			if (serverAnyV4) {
+				/* Free any contents there were too */
+				stype_free(serverAnyV4);
+			}
+		}
+		serverAnyV4 = NULL;
+
+		if (canhaveAnyV6) {
+			if (canhaveAnyV4) {
+				/* "server" already populated by excerpts from V4, attach to it */
+				upsdebugx(3, "%s: also remembering IPv6 'ANY' instead of 'LISTEN *'", __func__);
+				serverAnyV6->next = server->next;
+				server->next = serverAnyV6;
+			} else {
+				/* Only retain V6 info */
+				upsdebugx(3, "%s: remembering IPv6 'ANY' instead of 'LISTEN *'", __func__);
+				server->addr = serverAnyV6->addr;
+				server->port = serverAnyV6->port;
+				server->sock_fd = serverAnyV6->sock_fd;
+				/* ...and keep whatever server->next there was */
+
+				/* Free the ghost, all needed info was relocated */
+				free(serverAnyV6);
+			}
+		} else {
+			if (serverAnyV6) {
+				/* Free any contents there were too */
+				stype_free(serverAnyV6);
+			}
+		}
+		serverAnyV6 = NULL;
+
+		require_IPV6_V6ONLY = old_require_IPV6_V6ONLY;
+		return;
+	}
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_flags		= AI_PASSIVE;
@@ -303,11 +466,17 @@ static void setuptcp(stype_t *server)
 			fatal_with_errno(EXIT_FAILURE, "setuptcp: setsockopt");
 		}
 
-		/* Ordinarily we request that IPv6 listeners handle only IPv6.
+		/* Ordinarily we request that IPv6 listeners handle only IPv6
+		 * (except when we handle `LISTEN *` as detailed above).
+		 * Note we specifically try to ensure this when CLI requires
+		 * IPv6-only behavior (even if we want "any" addr for `LISTEN *`).
 		 * TOTHINK: Does any platform need `#ifdef IPV6_V6ONLY` given
 		 * that we apparently already have AF_INET6 OS support everywhere?
+		 * TOTHINK: Do we want to setsockopt() to explicitly allow dual-stack
+		 * (perhaps counteracting OS default or customized configuration)
+		 * when handling `LISTEN *` use-cases?
 		 */
-		if (ai->ai_family == AF_INET6) {
+		if (ai->ai_family == AF_INET6 && (require_IPV6_V6ONLY || (opt_af == AF_INET6))) {
 			if (setsockopt(sock_fd, IPPROTO_IPV6, IPV6_V6ONLY, (void *)&one, sizeof(one)) != 0) {
 				upsdebug_with_errno(3, "setuptcp: setsockopt IPV6_V6ONLY");
 				/* ack, ignore */

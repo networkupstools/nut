@@ -70,8 +70,12 @@ Multiple LISTEN addresses may be specified.  The default is to bind to
 compiled in).
 +
 To listen on all available interfaces, you may also use '0.0.0.0' for IPv4 and
-and '::' for IPv6.
-
+and '::' for IPv6. As a special case, `LISTEN * <port>` (with an asterisk)
+would try to listen on both IPv4 (`0.0.0.0`) and IPv6 (`::0`) wild-card IP
+addresses, subject to `upsd` command-line arguments or OS/kernel configuration.
+If the system supports "dual-stack" mode (IPv4-mapped IPv6) per RFC-3493
+then there would be one listening socket for both address types.
++
 	LISTEN 127.0.0.1
 	LISTEN 192.168.50.1
 	LISTEN myhostname.mydomain
@@ -80,6 +84,12 @@ and '::' for IPv6.
 +
 This parameter will only be read at startup.  You'll need to restart
 (rather than reload) upsd to apply any changes made here.
++
+Please note that older NUT releases could have been using the "dual-stack"
+mode, if provided by the system. Current versions (since NUT v2.8.1 release)
+try to restrict their listening sockets to only support IPv6 addresses and
+so avoid IPv4-mapped mode, except when handling the special `LISTEN * <port>`
+directive.
 
 "MAXCONN 'connections'"::
 

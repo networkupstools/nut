@@ -287,6 +287,12 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
    would warn if a hostname resolves to several addresses (and would only
    listen on the first hit, as before in such cases) [#2012]
 
+ - A definitive behavior for `LISTEN *` directives became specified, to try
+   handling both IPv4 and IPv6 "any" address (subject to `upsd` CLI options
+   to only choose one, and to OS abilities); this use-case may be practically
+   implemented as a single IPv6 socket on systems with enabled "dual-stack"
+   support or as two separate listening sockets [#2012]
+
  - sstate (server state, e.g. upsd) should now "PING" drivers also if they
    last reported themselves as "stale" (and might later crash) so their
    connections would be terminated if really no longer active [#1626]

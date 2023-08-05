@@ -64,6 +64,12 @@
 # Note that it is not true for Windows platforms. You shouldn't use IPv6 in
 # your configuration files unless you have IPv6 installed.
 #
+# As a special case, `LISTEN * <port>` (with an asterisk) would try
+# to listen on "ANY" IP address for both IPv4 (0.0.0.0) and IPv6 (::0),
+# subject to `upsd` command-line arguments or OS/kernel configuration.
+# If the system supports "dual-stack" mode (IPv4-mapped IPv6) per RFC-3493
+# then there would be one listening socket for both address types.
+#
 # One or more LISTEN statements give the IP address (or name that
 # resolves to such an address) for upsd to listen on, optionally with
 # a port number.
@@ -74,6 +80,12 @@
 #
 # This will only be read at startup of upsd.  If you make changes here,
 # you'll need to restart upsd, as reload will have no effect.
+#
+# Please note that older NUT releases could have been using the "dual-stack"
+# mode, if provided by the system. Current versions (since NUT v2.8.1 release)
+# try to restrict their listening sockets to only support IPv6 addresses and
+# so avoid IPv4-mapped mode, except when handling the special `LISTEN * <port>`
+# directive.
 
 # =======================================================================
 # MAXCONN <connections>
