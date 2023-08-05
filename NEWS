@@ -89,6 +89,11 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
    of recent codebase solves their practical issues. For "quick tests", a
    shortcut operation `./ci_build.sh inplace` was added [#1714]
 
+ - State tree structure and methods (including "dstate" wrapper for common
+   driver internals) was enhanced with time-stamping of last modification
+   (setting, changing, deleting the value or some fields in an entry):
+   this allows to detect stale information in a centralized fashion [#2010]
+
  - We lacked log information about changes of chroot jail (uncommon) and
    of UID/GID (everywhere), which makes troubleshooting harder (e.g. lack
    of access to config files or USB device nodes). Now we have it [#1694]
@@ -115,6 +120,11 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
      replacement date) [#1644]
 
  - powercom driver should now try harder to refresh data from device [#356]
+
+ - apcupsd-ups:
+   * improvement for `POLL_INTERVAL_MIN` from PR #797 was buggy [#2007]
+   * fix to clean obsoleted readings (if any) AFTER getting new info from an
+     `apcupsd` daemon, to avoid the gap when NUT driver knows nothing [#2007]
 
  - NUT for Windows:
    * Ability to build NUT for Windows, last tackled with a branch based on
@@ -788,22 +798,22 @@ Release notes for NUT 2.7.4 - what's new since 2.7.3:
      input, output, outlet and outlet.group)
 
  - support for new devices:
-   AEG PROTECT B / NAS
-   APC ATS AP7724 (should be supported)
-   Asium P700
-   Eaton ATS
-   Eaton 5E 1100iUSB
-   Eaton E Series DX UPS 1-20 kVA
-   Eaton Powerware 9125-5000g
-   Electrys UPS 2500
-   Fideltronic INIGO Viper 1200
-   Legrand Keor Multiplug
-   LYONN CTB-800V
-   Micropower LCD 1000
-   NHS Laser Senoidal 5000VA
-   Sweex model P220
-   TS Shara
-   Various APCUPSD-controlled APC devices
+   * AEG PROTECT B / NAS
+   * APC ATS AP7724 (should be supported)
+   * Asium P700
+   * Eaton ATS
+   * Eaton 5E 1100iUSB
+   * Eaton E Series DX UPS 1-20 kVA
+   * Eaton Powerware 9125-5000g
+   * Electrys UPS 2500
+   * Fideltronic INIGO Viper 1200
+   * Legrand Keor Multiplug
+   * LYONN CTB-800V
+   * Micropower LCD 1000
+   * NHS Laser Senoidal 5000VA
+   * Sweex model P220
+   * TS Shara
+   * Various APCUPSD-controlled APC devices
 
  - snmp-ups:
    * Improve automatic detection algorithm

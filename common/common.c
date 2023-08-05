@@ -667,17 +667,19 @@ double difftimeval(struct timeval x, struct timeval y)
 	struct timeval	result;
 	double	d;
 
+	/* Code below assumes that tv_sec is signed (time_t),
+	 * but tv_usec is not necessarily */
 	/* Perform the carry for the later subtraction by updating y. */
 	if (x.tv_usec < y.tv_usec) {
-		intmax_t nsec = (y.tv_usec - x.tv_usec) / 1000000 + 1;
-		y.tv_usec -= 1000000 * nsec;
-		y.tv_sec += nsec;
+		intmax_t numsec = (y.tv_usec - x.tv_usec) / 1000000 + 1;
+		y.tv_usec -= 1000000 * numsec;
+		y.tv_sec += numsec;
 	}
 
 	if (x.tv_usec - y.tv_usec > 1000000) {
-		intmax_t nsec = (x.tv_usec - y.tv_usec) / 1000000;
-		y.tv_usec += 1000000 * nsec;
-		y.tv_sec -= nsec;
+		intmax_t numsec = (x.tv_usec - y.tv_usec) / 1000000;
+		y.tv_usec += 1000000 * numsec;
+		y.tv_sec -= numsec;
 	}
 
 	/* Compute the time remaining to wait.
@@ -708,6 +710,8 @@ typedef uint64_t nsec_t;
 #define NSEC_PER_MSEC ((nsec_t) 1000000ULL)
 #define NSEC_PER_USEC ((nsec_t) 1000ULL)
 
+# if defined(WITH_LIBSYSTEMD) && (WITH_LIBSYSTEMD) && !(defined(WITHOUT_LIBSYSTEMD) && (WITHOUT_LIBSYSTEMD)) && defined(HAVE_SD_NOTIFY) && (HAVE_SD_NOTIFY)
+/* Limited to upsnotify() use-cases below, currently */
 static usec_t timespec_load(const struct timespec *ts) {
 	assert(ts);
 
@@ -722,6 +726,8 @@ static usec_t timespec_load(const struct timespec *ts) {
 		(usec_t) ts->tv_nsec / NSEC_PER_USEC;
 }
 
+/* Not used, currently -- maybe later */
+/*
 static nsec_t timespec_load_nsec(const struct timespec *ts) {
 	assert(ts);
 
@@ -732,6 +738,37 @@ static nsec_t timespec_load_nsec(const struct timespec *ts) {
 		return NSEC_INFINITY;
 
 	return (nsec_t) ts->tv_sec * NSEC_PER_SEC + (nsec_t) ts->tv_nsec;
+}
+*/
+# endif	/* WITH_LIBSYSTEMD && HAVE_SD_NOTIFY && !WITHOUT_LIBSYSTEMD */
+
+double difftimespec(struct timespec x, struct timespec y)
+{
+	struct timespec	result;
+	double	d;
+
+	/* Code below assumes that tv_sec is signed (time_t),
+	 * but tv_nsec is not necessarily */
+	/* Perform the carry for the later subtraction by updating y. */
+	if (x.tv_nsec < y.tv_nsec) {
+		intmax_t numsec = (y.tv_nsec - x.tv_nsec) / 1000000000L + 1;
+		y.tv_nsec -= 1000000000L * numsec;
+		y.tv_sec += numsec;
+	}
+
+	if (x.tv_nsec - y.tv_nsec > 1000000) {
+		intmax_t numsec = (x.tv_nsec - y.tv_nsec) / 1000000000L;
+		y.tv_nsec += 1000000000L * numsec;
+		y.tv_sec -= numsec;
+	}
+
+	/* Compute the time remaining to wait.
+	 * tv_nsec is certainly positive. */
+	result.tv_sec = x.tv_sec - y.tv_sec;
+	result.tv_nsec = x.tv_nsec - y.tv_nsec;
+
+	d = 0.000000001 * result.tv_nsec + result.tv_sec;
+	return d;
 }
 #endif	/* HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC */
 
@@ -746,14 +783,18 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 	char	msgbuf[LARGEBUF];
 	size_t	msglen = 0;
 
-#if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_CLOCK_MONOTONIC) && HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC
+#if defined(WITH_LIBSYSTEMD) && (WITH_LIBSYSTEMD) && !(defined(WITHOUT_LIBSYSTEMD) && (WITHOUT_LIBSYSTEMD))
+# ifdef HAVE_SD_NOTIFY
+#  if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_CLOCK_MONOTONIC) && HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC
 	/* In current systemd, this is only used for RELOADING/READY after
 	 * a reload action for Type=notify-reload; for more details see
 	 * https://github.com/systemd/systemd/blob/main/src/core/service.c#L2618
 	 */
 	struct timespec monoclock_ts;
 	int got_monoclock = clock_gettime(CLOCK_MONOTONIC, &monoclock_ts);
-#endif	/* HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC */
+#  endif	/* HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC */
+# endif	/* HAVE_SD_NOTIFY */
+#endif	/* WITH_LIBSYSTEMD */
 
 	/* Prepare the message (if any) as a string */
 	msgbuf[0] = '\0';
