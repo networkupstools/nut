@@ -62,7 +62,7 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
      too low. As issue #1455 and PR #1495 found, in two cases the called
      commands did "meaningfully" modify data -- so without debug logs the
      program misbehaved. A known regression for `upscode2` driver; might
-     be or not be a problem with `upsd` driver in NUT v2.8.0 release,
+     be or not be a problem with `upsd` server in NUT v2.8.0 release,
      fixed for NUT v2.8.1.
    * A table in `cyberpower-mib` (for `snmp-ups` driver) sources was
      arranged in NUT v2.8.0 release in a way that precluded the driver
