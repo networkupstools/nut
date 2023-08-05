@@ -250,6 +250,20 @@ void listen_add(const char *addr, const char *port)
 	upsdebugx(3, "listen_add: added %s:%s", server->addr, server->port);
 }
 
+/* Close the connection if needed and free the allocated memory.
+ * WARNING: it is up to the caller to rewrite the "next" pointer
+ * in whoever points to this server instance (if needed)! */
+static void stype_free(stype_t *server)
+{
+	if (VALID_FD_SOCK(server->sock_fd)) {
+		close(server->sock_fd);
+	}
+
+	free(server->addr);
+	free(server->port);
+	free(server);
+}
+
 /* create a listening socket for tcp connections */
 static void setuptcp(stype_t *server)
 {
@@ -739,14 +753,7 @@ void server_free(void)
 	/* cleanup server fds */
 	for (server = firstaddr; server; server = snext) {
 		snext = server->next;
-
-		if (VALID_FD_SOCK(server->sock_fd)) {
-			close(server->sock_fd);
-		}
-
-		free(server->addr);
-		free(server->port);
-		free(server);
+		stype_free(server);
 	}
 
 	firstaddr = NULL;
