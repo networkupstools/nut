@@ -1875,7 +1875,28 @@ static int	armac_command(const char *cmd, char *buf, size_t buflen)
 
 		/* Copy bytes into the final buffer while detecting end of line - \r */
 		for (i = 0; i < bytes_available; i++) {
+			if (tmpbuf[i + 1] == 0x00 && bufpos == 0) {
+				/* Happens when a manually turned off UPS is connected to the USB */
+				upsdebugx(3, "null byte read - is UPS off?");
+				return 0;
+			}
+
+			/* Vultech V2000 seems to use 0x00 within status bits. This might mean "unsupported".
+			 * or something else completely. */
+			if (tmpbuf[i + 1] == 0x00) {
+				if (bufpos >= 38) {
+					upsdebugx(3, "found null byte in status bits at %" PRIuSIZE " byte, assuming 0.", bufpos);
+					buf[bufpos++] = '0';
+					continue;
+				} else {
+					upsdebugx(3, "found null byte in data stream - interrupting read.");
+					/* Break through two loops */
+					goto end_of_message;
+				}
+			}
+
 			buf[bufpos++] = tmpbuf[i + 1];
+
 			if (tmpbuf[i + 1] == 0x0d) {
 				if (i + 1 != bytes_available) {
 					upsdebugx(3, "trailing bytes in serial transmission found: %" PRIuSIZE "  copied out of %" PRIuSIZE,
@@ -1884,11 +1905,6 @@ static int	armac_command(const char *cmd, char *buf, size_t buflen)
 				}
 				/* Break through two loops */
 				goto end_of_message;
-			}
-			if (tmpbuf[i + 1] == 0x00) {
-				/* Happens when a manually turned off UPS is connected to the USB */
-				upsdebugx(3, "null byte read - is UPS off?");
-				return 0;
 			}
 		}
 
