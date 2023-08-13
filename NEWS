@@ -100,7 +100,8 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
    * the `voltronic_qs_protocol` should now accept both "V" (as before)
      and newly "H" dialects, which otherwise seem interchangeable [#1623]
    * the `armac` subdriver was enhanced to support devices with a different
-     response pattern than previously expected per initial contribution [#1978]
+     response pattern than previously expected per initial contribution.
+     It was tested to work with Vultech V2000 and Armac PF1 series. [#1978]
 
  - usbhid-ups updates:
    * cps-hid subdriver now applies same report descriptor fixing logic to
