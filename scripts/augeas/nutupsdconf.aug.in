@@ -57,8 +57,8 @@ let upsd_certfile = [ opt_spc . key "CERTFILE" . sep_spc . store path . eol ]
  * LISTEN interface port
  *    Multiple lines each with one LISTEN address (or host name) and an optional
  *    port may be specified. The default is to bind to IPv4 and IPv6 "localhost"
- *    addresses (subject to CLI options `-4` or `-6` constraining IP version or
- *    OS kernel/configuration support), if no LISTEN addresses are specified.
+ *    addresses (subject to CLI options `-4` or `-6` constraining IP version,
+ *    or system configuration or support), if no LISTEN addresses are specified.
  *    LISTEN 127.0.0.1
  *    LISTEN 192.168.50.1
  *    LISTEN ::1

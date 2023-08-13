@@ -284,14 +284,17 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
 
  - The `upsd` configured to listen on IPv6 addresses should handle only
    IPv6 (and not IPv4-mappings) to avoid surprises and insecurity; it
-   would warn if a hostname resolves to several addresses (and would only
+   will now warn if a host name resolves to several addresses (and will only
    listen on the first hit, as before in such cases) [#2012]
 
  - A definitive behavior for `LISTEN *` directives became specified, to try
    handling both IPv4 and IPv6 "any" address (subject to `upsd` CLI options
-   to only choose one, and to OS abilities); this use-case may be practically
-   implemented as a single IPv6 socket on systems with enabled "dual-stack"
-   support or as two separate listening sockets [#2012]
+   to only choose one, and to OS abilities). When both address families are
+   enabled, the `upsd` data server will first try to open an IPv6 socket
+   asking for disabled IPv4-mapped IPv6 address support (if the OS honors
+   that), and then an IPv4 socket (which may fail if the IPv6 socket already
+   covers it anyway); in other words, you can end up with one or two separate
+   listening sockets [#2012]
 
  - sstate (server state, e.g. upsd) should now "PING" drivers also if they
    last reported themselves as "stale" (and might later crash) so their
