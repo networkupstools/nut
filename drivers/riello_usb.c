@@ -4,7 +4,7 @@
  * A document describing the protocol implemented by this driver can be
  * found online at:
  *
- *   https://networkupstools.org/protocols/riello/PSGPSER-0104.pdf
+ *   https://www.networkupstools.org/protocols/riello/PSGPSER-0104.pdf
  *
  * Copyright (C) 2012 - Elio Parisi <e.parisi@riello-ups.com>
  * Copyright (C) 2016   Eaton
@@ -34,7 +34,7 @@
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello USB driver"
-#define DRIVER_VERSION	"0.08"
+#define DRIVER_VERSION	"0.09"
 
 #define DEFAULT_OFFDELAY   5  /*!< seconds (max 0xFF) */
 #define DEFAULT_BOOTDELAY  5  /*!< seconds (max 0xFF) */

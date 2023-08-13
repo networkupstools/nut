@@ -176,7 +176,7 @@ The acceptable range is +60..599940+ seconds.
 The acceptable range is +12..5940+ seconds.
 
 *pins_shutdown_mode =* 'value'::
-Set http://www.networkupstools.org/protocols/sola.html#_shutdown_set_command[shutdown mode functionality of Pin 1 and Pin 7] on the UPS DB9 communication port (Per Best Power's EPS-0059) to 'value' [+0..6+].
+Set https://www.networkupstools.org/protocols/sola.html#_shutdown_set_command[shutdown mode functionality of Pin 1 and Pin 7] on the UPS DB9 communication port (Per Best Power's EPS-0059) to 'value' [+0..6+].
 
 
 MASTERGUARD PROTOCOL
@@ -820,5 +820,5 @@ linkman:upsrw[8]
 Internet Resources:
 ~~~~~~~~~~~~~~~~~~~
 
-* The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
-* The NUT HCL: http://www.networkupstools.org/stable-hcl.html
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
+* The NUT HCL: https://www.networkupstools.org/stable-hcl.html

@@ -22,31 +22,137 @@ How to verify the NUT source code signature
 In order to verify the NUT source code signature for releases, perform the
 following steps:
 
-- Retrieve the link:http://www.networkupstools.org/download.html[NUT source code]
+- Retrieve the link:https://www.networkupstools.org/download.html[NUT source code]
   (nut-X.Y.Z.tar.gz) and the matching signature (nut-X.Y.Z.tar.gz.sig)
-- Retrieve the link:http://www.networkupstools.org/source/nut-key.gpg[NUT maintainer's signature]:
+- Retrieve the link:https://www.networkupstools.org/source/nut-key.gpg[NUT
+maintainer's signature keyring]:
 
-	$ gpg --fetch-keys http://www.networkupstools.org/source/nut-key.gpg
+	$ gpg --fetch-keys https://www.networkupstools.org/source/nut-key.gpg
 
-NOTE: As of NUT 2.7.3, a new release key is used. In order to verify a previous
-release, please use
-link:http://www.networkupstools.org/source/nut-old-key.gpg[NUT old maintainer's signature]
+[NOTE]
+======
+As of NUT 2.8.0, a new release key is used, but the `nut-key.gpg` should
+be cumulative with older chain key files (includes them). You can view the key
+list in a downloaded copy of the URL above with:
+
+	$ gpg --with-colons --import-options import-show --dry-run --import < nut-key.gpg
+
+...and as of this writing, it should contain two key sets for various identities
+of "Arnaud Quette" and one set of "Jim Klimov".
+======
+
+Just in case, the previous key file used since NUT 2.7.3 release is stored as
+link:https://www.networkupstools.org/source/nut-key-2.7.3.gpg[NUT
+old maintainer's signature for 2.7.3-2.7.4 releases]
+
+In order to verify an even older release, please use
+link:https://www.networkupstools.org/source/nut-old-key.gpg[NUT
+old maintainer's signature since 2002 until 2.7.3 release]
 
 - Launch the GPG checking using the following command:
 
 	$ gpg --verify nut-X.Y.Z.tar.gz.sig
 
-- You should see a message mentioning a "Good signature", like:
+- You should see a message mentioning a "Good signature", with formatting which
+  depends on your gpg version, like:
+
+	gpg: Signature made Thu Jun  1 00:10:16 2023 CEST
+	...
+	gpg: Good signature from "Jim Klimov ..."
+	...
+	Primary key fingerprint: B834 59F7 76B9 0224 988F  36C0 DE01 84DA 7043 DCF7
+	...
+
+[NOTE]
+======
+The previously used maintainer's signatures would output (with markup of
+older gpg tools here):
 
 	gpg: Signature made Wed Apr 15 15:55:30 2015 CEST using RSA key ID 55CA5976
 	gpg: Good signature from "Arnaud Quette ..."
 	...
 
-NOTE: the previously used maintainer's signature would output:
-+
+or:
+
 	gpg: Signature made Thu Jul  5 16:15:05 2007 CEST using DSA key ID 204DDF1B
 	gpg: Good signature from "Arnaud Quette ..."
 	...
+======
+
+////////
+Maintainer notes for posterity:
+
+* See https://github.com/networkupstools/nut/issues/1963 and
+  https://github.com/networkupstools/nut/issues/1410 for recent
+  forays into this area.
+
+* Repo is https://github.com/networkupstools/nut-source-archive.git
+
+* Keys in the file can be viewed with:
+----
+:; gpg --with-colons --import-options import-show --dry-run --import < nut-key.gpg
+----
+
+* Old keys as well as a new maintainer key can be imported first into
+  a temporary keyring (existing target file and a slash in its path
+  name argument are allegedly important):
+----
+:; rm -f tmpring.gpg ; touch tmpring.gpg
+:; gpg --no-default-keyring --keyring ./tmpring.gpg --import nut-key.gpg
+:; gpg --no-default-keyring --keyring ./tmpring.gpg --import nut-old-key.gpg
+:; gpg --no-default-keyring --keyring ./tmpring.gpg --import nut-key-2.7.3.gpg
+:; gpg --no-default-keyring --keyring ./tmpring.gpg --import ~/.gnupg/HEXCODEMYNEWKEYDATA.pub
+----
+
+** Note that whenever the key owner edits the primary key data, e.g. to add or
+   remove "uid" entries with e-mail aliases, or sub-keys dedicated for specific
+   purposes, the `~/.gnupg/HEXCODEMYNEWKEYDATA.pub` is changed and should be
+   re-published to OpenPGP servers, to nut-website, to GitHub account, etc.
+
+* This (binary) keychain can be exported into ASCII-armor format, and also
+  update the keychain file used by default:
+----
+:; gpg --no-default-keyring --keyring ./tmpring.gpg --export -a > nut-key.gpg
+----
+////////
+
+How to verify the NUT source code checksum
+------------------------------------------
+
+As a weaker but simpler alternative to verifying a *signature*, you can verify
+just the accompanying checksums of the source archive file. This is useful
+primarily to check against bit-rot in original storage or in transit. As far
+as disclaimers go: ideally, you should cover all provided algorithms -- e.g.
+MD5 and SHA256 -- to minimize the chance that intentional malicious tampering
+on the wire goes undetected. A myriad tools can check that on various platforms;
+some examples follow:
+
+	# Example original checksum to compare with, from NUT website:
+	$ cat nut-2.8.0.tar.gz.sha256
+	c3e5a708da797b7c70b653d37b1206a000fcb503b85519fe4cdf6353f792bfe5  nut-2.8.0.tar.gz
+
+	# Generate checksum of downloaded archive with perl (a NUT build dependency
+	# generally, though you may have to install Digest::SHA module from CPAN):
+	$ perl -MDigest::SHA=sha256_hex -le "print sha256_hex <>" nut-2.8.0.tar.gz
+	c3e5a708da797b7c70b653d37b1206a000fcb503b85519fe4cdf6353f792bfe5
+
+	# Generate checksum of downloaded archive with openssl (another optional
+	# NUT build dependency):
+	$ openssl sha256 nut-2.8.0.tar.gz
+	SHA256(nut-2.8.0.tar.gz)= c3e5a708da797b7c70b653d37b1206a000fcb503b85519fe4cdf6353f792bfe5
+
+	# Generate checksum of downloaded archive with coreutils:
+	$ sha256sum nut-2.8.0.tar.gz
+	c3e5a708da797b7c70b653d37b1206a000fcb503b85519fe4cdf6353f792bfe5  nut-2.8.0.tar.gz
+
+	# Auto-check downloaded checksum against downloaded archive with coreutils:
+	$ sha256sum -c nut-2.8.0.tar.gz.sha256
+	nut-2.8.0.tar.gz: OK
+
+	# Generate checksum of downloaded archive with GPG:
+	$ gpg --print-md SHA256 nut-2.8.0.tar.gz
+	nut-2.8.0.tar.gz: C3E5A708 DA797B7C 70B653D3 7B1206A0
+	                  00FCB503 B85519FE 4CDF6353 F792BFE5
 
 System level privileges and ownership
 -------------------------------------

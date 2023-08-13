@@ -47,6 +47,9 @@ within this string are:
 %PID%;; insert the pid of upslog
 
 %VAR varname%;; insert the value of variable varname
+(see NUT developer documentation chapter "Variables" on-line or in
+the `docs/nut-names.txt` file in sources of the NUT version you have
+installed for more details)
 
 The default format string is:
 
@@ -132,4 +135,4 @@ linkman:upsrw[8], linkman:upsmon[8], linkman:upssched[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

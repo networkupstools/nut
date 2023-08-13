@@ -876,7 +876,7 @@ testcase_sandbox_start_drivers_after_upsd() {
 }
 
 testcase_sandbox_upsc_query_model() {
-    loginfo "[testcase_sandbox_upsc_query_model] Query model from dummy device"
+    log_info "[testcase_sandbox_upsc_query_model] Query model from dummy device"
     runcmd upsc dummy@localhost:$NUT_PORT device.model || die "upsd does not respond on port ${NUT_PORT} ($?): $CMDOUT"
     if [ x"$CMDOUT" != x"Dummy UPS" ] ; then
         log_error "got this reply for upsc query when 'Dummy UPS' was expected: $CMDOUT"

@@ -82,6 +82,9 @@ SANDBOX (to be completed and pushed)
 
 * update version to <incremented version> (ex: 2.7.3) in nut/configure.ac
 * create a GPG-signed tag v<incremented version> (ex: v2.7.3)
+** try to avoid adding signed tags later (ex. v2.8.0-signed) to avoid the
+   mess in GitHub release URLs (or do amend that post-factum), for more
+   details see e.g. https://github.com/networkupstools/nut/issues/1971
 * `make dist`
 * maybe update nut/configure.ac version to <incremented version>.1 (ex: 2.7.3.1)
 * push commits and tag

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3127 utf-8
+personal_ws-1.1 en 3196 utf-8
 AAS
 ABI
 ACFAIL
@@ -188,6 +188,7 @@ CPAN
 CPE
 CPM
 CPP
+CPPDBG
 CPPFLAGS
 CPUs
 CRC
@@ -233,10 +234,13 @@ Cuvellard
 Cyber
 CyberPower
 CyberShield
+CygWin
 Cygwin
 DATACABLE
 DATAPATH
 DCE
+DCF
+DCO
 DDD
 DDDDD
 DDDDDD
@@ -256,6 +260,7 @@ DF
 DHEA
 DIGYS
 DISCHRG
+DLLs
 DMF
 DN
 DNS
@@ -319,6 +324,7 @@ ETIME
 EUROCASE
 EXtreme
 Economou
+EditorConfig
 Edlman
 Edmundsson
 Edscott
@@ -427,6 +433,7 @@ Gomes
 Goncalves
 Gordeev
 Gough
+Grafana
 Grafenthal
 Gtec
 GuardEnd
@@ -513,6 +520,7 @@ Infosec
 Innova
 Integrators
 IntelCC
+IntelliJ
 InvCDly
 InvCPol
 InvMin
@@ -592,6 +600,7 @@ LINEV
 LISTINSTCMD
 LISTRW
 LISTVARS
+LLDB
 LLNC
 LOADPCT
 LOCKFN
@@ -638,10 +647,12 @@ MAXPARMAKES
 MBATTCHG
 MCOL
 MCU
+MDigest
 MEC
 MEGATAEC
 MH
 MIBs
+MIMode
 MINLINEV
 MINSUPPLIES
 MINTIMEL
@@ -828,6 +839,7 @@ OnTmDays
 OneAC
 OpenBSD
 OpenIndiana
+OpenPGP
 OpenSSL
 OpenSolaris
 OpenSource
@@ -958,6 +970,7 @@ PresentStatus
 Priv
 Procomm
 ProductID
+Progra
 Proxmox
 Prynych
 Pulizzi
@@ -965,6 +978,7 @@ PwrOut
 PyGTK
 PyNUT
 PyNUTClient
+PyQt
 QBDR
 QBT
 QBV
@@ -1366,6 +1380,7 @@ WTU
 Waldie
 WantedBy
 WatchdogSec
+WebFreak
 Werror
 Wextra
 WhizBang
@@ -1433,6 +1448,7 @@ adb
 addcmd
 addenum
 addinfo
+additionalSOLibSearchPath
 addr
 addrange
 addvars
@@ -1493,6 +1509,7 @@ armhf
 asapm
 ascii
 asciidoc
+asciidoctor
 asem
 aspell
 ast
@@ -1573,6 +1590,7 @@ bestfort
 bestfortress
 bestuferrups
 bestups
+bfe
 bigbox
 bigone
 bigserver
@@ -1596,6 +1614,7 @@ bsv
 bt
 bti
 btnG
+btn
 btt
 buckboosthyst
 buckvolts
@@ -1610,6 +1629,7 @@ busybox
 bv
 bypassvolts
 byv
+cStandard
 cablepower
 calloc
 cb
@@ -1619,6 +1639,7 @@ cblimit
 ccache
 cd
 cdc
+cdf
 centos
 cerr
 certfile
@@ -1648,6 +1669,7 @@ chargermode
 chargetime
 charset
 checksum
+checksums
 chgrp
 chipset
 chkconfig
@@ -1689,9 +1711,12 @@ colspan
 command's
 commandlen
 compat
+compilerPath
 conf
 config
+configparser
 configs
+configurationProvider
 configureaz
 configureaza
 confpath
@@ -1709,7 +1734,9 @@ cout
 coverity
 cp
 cpp
+cppStandard
 cppcheck
+cppdbg
 cppnit
 cppunit
 cpqpower
@@ -1734,6 +1761,7 @@ cua
 cuaa
 customizations
 cvt
+cwd
 cx
 cyberpower
 d'un
@@ -1775,6 +1803,7 @@ devctl
 devd
 devel
 deviceGetClients
+devicename
 devscan
 dfl
 dhcp
@@ -1883,6 +1912,7 @@ executables
 executeCommand
 execve
 extendedhistory
+externalConsole
 extradata
 fabula
 facto
@@ -1890,6 +1920,7 @@ fallthrough
 fatalx
 faultsensitivity
 fc
+fcb
 fcntl
 fd
 fds
@@ -1936,8 +1967,11 @@ gcpp
 gd
 gd's
 gdb
+gdbinit
 gdlib
+gdwarf
 ge
+gedit
 genericsups
 genericups
 genesisII
@@ -1954,6 +1988,7 @@ getconf
 getent
 getenv
 getopt
+gettext
 getvar
 gitcache
 github
@@ -1967,6 +2002,7 @@ google
 goto
 gotos
 gpg
+gpgsign
 gpio
 gpiochip
 graphviz
@@ -2036,7 +2072,9 @@ idm
 ie
 ietf
 ifdef
+ifeval
 ifndef
+ignoreFailures
 ignorelb
 ignoreoff
 ignoresab
@@ -2045,6 +2083,7 @@ illumos
 im
 img
 imv
+includePath
 includedir
 inductor
 infos
@@ -2065,6 +2104,8 @@ installcheck
 installurl
 instcmd
 instcmds
+intel
+intelliSenseMode
 intercharacter
 internet
 interoperability
@@ -2094,6 +2135,7 @@ ipmimonitoring
 ipmipsu
 ippon
 ipv
+isDefault
 isbmex
 ish
 iso
@@ -2118,6 +2160,7 @@ kVA
 kadets
 kaminski
 kde
+keychain
 keyclick
 keygen
 keyout
@@ -2202,6 +2245,7 @@ listDeviceClients
 listdef
 littleguy
 lk
+lldb
 lm
 ln
 loadPercentage
@@ -2247,6 +2291,7 @@ mailx
 maintainer's
 maintainership
 maj
+makefile
 makevartable
 mandir
 manpage
@@ -2280,6 +2325,7 @@ mge
 mgeups
 mgexml
 mgmt
+miDebuggerPath
 mib
 mibs
 microcontroller
@@ -2320,8 +2366,10 @@ monuser
 morbo
 mozilla
 msec
+msgfmt
 msi
 msvcrt
+msys
 multi
 multicommands
 multilib
@@ -2433,6 +2481,7 @@ offtimedays
 oftd
 oids
 ok
+okhlybov
 oksh
 ol
 oldmac
@@ -2471,6 +2520,7 @@ outliers
 pF
 pacman
 pacstrap
+parallelized
 param
 paramkeywords
 parsable
@@ -2506,6 +2556,7 @@ pigz
 pijuice
 pinout
 pinouts
+pipename
 pkg
 pkgconf
 pkgconfig
@@ -2513,6 +2564,7 @@ pkgin
 plaintext
 plugin
 plugnplay
+pluma
 pmset
 pmu
 png
@@ -2548,6 +2600,7 @@ ppro
 pragma
 pragmas
 pre
+preLaunchTask
 prepend
 prepended
 preprocess
@@ -2560,6 +2613,7 @@ prgshut
 printf
 privPassword
 privProtocol
+problemMatcher
 probu
 proc
 productid
@@ -2598,6 +2652,7 @@ rackmount
 raritan
 ratedva
 ratedwatts
+raquo
 rb
 rcctl
 readline
@@ -2705,11 +2760,13 @@ setpci
 setpoint
 setq
 setuid
+setupCommands
 setvar
 setvar's
 sfr
 sgml
 sgs
+sha
 shm
 shutdownArguments
 shutdowndebounce
@@ -2749,6 +2806,7 @@ snprintfcat
 snr
 socat
 sockdebug
+socketname
 socomec
 solaris
 solis
@@ -2774,12 +2832,15 @@ stan
 startIP
 startdelay
 startup
+statefilepath
 statepath
 stayoff
 stderr
 stdlib
 stdout
 stdupsv
+stopAtConnect
+stopAtEntry
 stopIP
 str
 strace
@@ -2802,6 +2863,7 @@ stylesheet
 stylesheets
 su
 subcommand
+subdir
 subdirectories
 subdirectory
 subdriver
@@ -2850,6 +2912,7 @@ tabledef
 tagname
 tapswitchdelay
 tapswitchphase
+targetArchitecture
 tbody
 tcflush
 tcgetattr
@@ -2882,6 +2945,7 @@ tios
 tmp
 tmpfiles
 tmpfs
+tmpring
 toolchain
 toolkits
 topbot
@@ -2924,6 +2988,7 @@ udev
 udevadm
 ufw
 ugen
+uid
 uint
 ukUNV
 ul
@@ -2935,6 +3000,7 @@ unconfigured
 undefine
 undervoltage
 unescaped
+unicast
 uninstall
 uninterruptible
 uniq
@@ -3054,6 +3120,7 @@ vo
 vod
 voltronic
 von
+vscode
 wDescriptorLength
 waitbeforereconnect
 wakeup
@@ -3062,6 +3129,7 @@ wchar
 webNUT
 webnut
 webserver
+websitelayout
 wf
 wget
 whitespace
@@ -3074,6 +3142,7 @@ wmnut
 wordformat
 workflow
 workspace
+workspaceFolder
 workspaces
 writability
 writeinfo

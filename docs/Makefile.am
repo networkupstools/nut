@@ -274,7 +274,7 @@ if HAVE_ASPELL
 SPELLCHECK_SRC = $(ALL_TXT_SRC) ../README ../INSTALL.nut ../UPGRADING  ../NEWS \
 	../TODO ../scripts/ufw/README ../scripts/augeas/README ../lib/README \
 	../tools/nut-scanner/README \
-	../AUTHORS ../COPYING ../LICENSE-GPL2 ../LICENSE-GPL3
+	../AUTHORS ../COPYING ../LICENSE-GPL2 ../LICENSE-GPL3 ../LICENSE-DCO
 
 # Directory SPELLCHECK_SRC files are relative to. Overriden by other Makefiles.
 SPELLCHECK_DIR = $(srcdir)

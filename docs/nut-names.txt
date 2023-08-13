@@ -18,7 +18,15 @@ as used in commands and messages between the Attachment Daemon (the `upsd`
 in case of NUT implementation of the standard) and the clients.
 ====
 
-This document defines the standard names of NUT commands and variables.
+This document defines the standard names of NUT commands and variables
+(not to be confused with <<_status_data,device status data>> described in
+ifdef::website[]
+another chapter).
+endif::website[]
+ifndef::website[]
+the `docs/new-drivers.txt` in NUT source codebase).
+endif::website[]
+
 Developers should use the names recorded here, with dstate functions and
 data mappings provided in NUT drivers for interactions with power devices.
 
@@ -116,7 +124,7 @@ ups: General unit information
 [options="header"]
 |===============================================================================
 | Name                  | Description                  | Example value
-| ups.status            | UPS status                   | linkdoc:developer-guide[OL,_status_data]
+| ups.status            | UPS status                   | <<_status_data,OL>>
 | ups.alarm             | UPS alarms                   | OVERHEAT
 | ups.time              | Internal UPS clock time
                           (opaque string)              | 12:34
@@ -724,7 +732,7 @@ server: Internal server information
 |===============================================================================
 | Name           | Description        | Example value
 | server.info    | Server information | Network UPS Tools upsd vX.Y.Z -
-                                        http://www.networkupstools.org/
+                                        https://www.networkupstools.org/
 | server.version | Server version     | X.Y.Z
 |===============================================================================
 

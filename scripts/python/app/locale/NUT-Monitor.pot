@@ -358,7 +358,7 @@ msgid ""
 "For more information about NUT (Network UPS Tools)\n"
 "please visit the author's website.\n"
 "\n"
-"http://www.networkupstools.org\n"
+"https://www.networkupstools.org\n"
 msgstr ""
 
 #: gui-1.3.glade.h:37

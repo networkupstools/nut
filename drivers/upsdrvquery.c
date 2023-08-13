@@ -218,8 +218,8 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 	return -1;
 */
 	DWORD	bytesRead = 0;
-	BOOL    res = FALSE;
-	time_t	start, now, presleep;
+	BOOL	res = FALSE;
+	struct timeval	start, now, presleep;
 
 	/* Is GetLastError() required to move on if pipe has more data?
 	 *   if (GetLastError() == ERROR_IO_PENDING) {
@@ -231,7 +231,7 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 		conn->newread = 0;
 	}
 
-	time(&start);
+	gettimeofday(&start, NULL);
 	while (res == FALSE /*&& bytesRead == 0*/) {
 		res = GetOverlappedResult(conn->sockfd, &conn->overlapped, &bytesRead, FALSE);
 		if (res != FALSE /*|| bytesRead != 0*/)
@@ -241,34 +241,64 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 			upsdebugx(5, "%s: pipe read error (no incoming data), proceeding now", __func__);
 			break;
 		}
-		upsdebugx(6, "%s: pipe read error, waiting for data", __func__);
+		upsdebugx(6, "%s: pipe read error, still waiting for data", __func__);
 
-		/* Throttle down a bit */
-		time(&presleep);
-		usleep(100); /* obsoleted in win32, so follow up below */
+		/* Throttle down a bit, 0.1 sec (10^5 * 10^-6) should do it conveniently */
+		gettimeofday(&presleep, NULL);
+		usleep(100000); /* obsoleted in win32, so follow up below */
 
-		time(&now);
-		if (difftime(now, presleep) < 0.1) {
+		gettimeofday(&now, NULL);
+		/* NOTE: This code may report a "diff=1.-894714 (0.105286)"
+		 * which looks bogus, but for troubleshooting we don't care
+		 */
+		upsdebugx(7, "%s: presleep=%ld.%06ld now=%ld.%06ld diff=%4.0f.%06ld (%f)",
+			__func__, presleep.tv_sec, presleep.tv_usec,
+			now.tv_sec, now.tv_usec,
+			difftime(now.tv_sec, presleep.tv_sec),
+			(long)(now.tv_usec - presleep.tv_usec),
+			difftimeval(now, presleep)
+			);
+
+		/* accept shorter delays, Windows does not guarantee a minimum sleep it seems */
+		if (difftimeval(now, presleep) < 0.05) {
 			/* https://stackoverflow.com/a/17283549 */
-			HANDLE timer; 
-			LARGE_INTEGER ft; 
+			HANDLE timer;
+			LARGE_INTEGER ft;
 
 			/* SetWaitableTimer() uses 100 nanosecond intervals,
 			 * and a negative value indicates relative time: */
-			ft.QuadPart = -(10*100); /* 100 usec */
+			ft.QuadPart = -(10*100000); /* 100 msec */
 
-			timer = CreateWaitableTimer(NULL, TRUE, NULL); 
-			SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0); 
-			WaitForSingleObject(timer, INFINITE); 
-			CloseHandle(timer); 
+			timer = CreateWaitableTimer(NULL, TRUE, NULL);
+			SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0);
+			WaitForSingleObject(timer, INFINITE);
+			CloseHandle(timer);
+
+			gettimeofday(&now, NULL);
+			upsdebugx(7, "%s: presleep=%ld.%06ld now=%ld.%06ld diff=%4.0f.%06ld (%f)",
+				__func__, presleep.tv_sec, presleep.tv_usec,
+				now.tv_sec, now.tv_usec,
+				difftime(now.tv_sec, presleep.tv_sec),
+				(long)(now.tv_usec - presleep.tv_usec),
+				difftimeval(now, presleep)
+				);
 		}
 
-		time(&now);
-		if (difftime(now, presleep) < 0.1)
+		/* If nothing was honored, doze off for a whole second */
+		if (difftimeval(now, presleep) < 0.05) {
 			sleep(1);
 
-		time(&now);
-		if (difftime(now, start) > tv.tv_sec + 0.001 * tv.tv_usec) {
+			gettimeofday(&now, NULL);
+			upsdebugx(7, "%s: presleep=%ld.%06ld now=%ld.%06ld diff=%4.0f.%06ld (%f)",
+				__func__, presleep.tv_sec, presleep.tv_usec,
+				now.tv_sec, now.tv_usec,
+				difftime(now.tv_sec, presleep.tv_sec),
+				(long)(now.tv_usec - presleep.tv_usec),
+				difftimeval(now, presleep)
+				);
+		}
+
+		if (difftimeval(now, start) > (tv.tv_sec + 0.000001 * tv.tv_usec)) {
 			upsdebugx(5, "%s: pipe read error, timeout exceeded", __func__);
 			break;
 		}
@@ -327,7 +357,7 @@ socket_error:
 }
 
 ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
-	time_t	start, now;
+	struct timeval	start, now;
 
 	/* Avoid noise */
 	if (upsdrvquery_write(conn, "NOBROADCAST\n") < 0)
@@ -339,19 +369,54 @@ ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 	}
 
 	/* flush incoming, if any */
-	time(&start);
+	gettimeofday(&start, NULL);
+
+	if (upsdrvquery_write(conn, "PING\n") < 0)
+		goto socket_error;
 
 	upsdebugx(5, "%s: waiting for a while to flush server messages", __func__);
 	while (1) {
+		char *buf;
 		upsdrvquery_read_timeout(conn, tv);
-		time(&now);
-		if (difftime(now, start) > tv.tv_sec + 0.001 * tv.tv_usec)
+		gettimeofday(&now, NULL);
+		if (difftimeval(now, start) > (tv.tv_sec + 0.000001 * tv.tv_usec)) {
+			upsdebugx(5, "%s: requested timeout expired", __func__);
 			break;
+		}
+
+		/* Await a PONG for quick confirmation of achieved quietness
+		 * (should only happen after the driver handled NOBROADCAST)
+		 */
+#ifdef WIN32
+		/* Allow a new read to happen later */
+		conn->newread = 1;
+#endif
+
+		buf = conn->buf;
+		while (buf && *buf) {
+			if (!strncmp(buf, "PONG\n", 5)) {
+				upsdebugx(5, "%s: got expected PONG", __func__);
+				goto finish;
+			}
+			buf = strchr(buf, '\n');
+			if (buf) {
+/*
+				upsdebugx(5, "%s: trying next line of multi-line response: %s",
+					__func__, buf);
+*/
+				buf++;	/* skip EOL char */
+			}
+		}
+
 		/* Diminishing timeouts for read() */
-		tv.tv_usec -= difftime(now, start);
+		tv.tv_usec -= difftimeval(now, start);
 		while (tv.tv_usec < 0) {
-                    tv.tv_sec--;
-                    tv.tv_usec = 1000 - tv.tv_usec;
+			tv.tv_sec--;
+			tv.tv_usec = 1000000 + tv.tv_usec;	// Note it is negative
+		}
+		if (tv.tv_sec <= 0 && tv.tv_usec <= 0) {
+			upsdebugx(5, "%s: requested timeout expired", __func__);
+			break;
 		}
 	}
 
@@ -368,6 +433,7 @@ ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 	}
 */
 
+finish:
 	upsdebugx(5, "%s: ready for tracked commands", __func__);
 	return 1;
 
@@ -411,7 +477,7 @@ ssize_t upsdrvquery_request(
 	char	qbuf[LARGEBUF];
 	size_t	qlen;
 	char	tracking_id[UUID4_LEN];
-	time_t	start, now;
+	struct timeval	start, now;
 
 	if (snprintf(qbuf, sizeof(qbuf), "%s", query) < 0)
 		goto socket_error;
@@ -435,17 +501,17 @@ ssize_t upsdrvquery_request(
 		upsdebugx(1, "%s: will wait indefinitely for response to %s",
 			__func__, query);
 	} else {
-		while (tv.tv_usec >= 1000) {
-			tv.tv_usec -= 1000;
+		while (tv.tv_usec >= 1000000) {
+			tv.tv_usec -= 1000000;
 			tv.tv_sec++;
 		}
 		upsdebugx(5, "%s: will wait up to %" PRIiMAX
-                        ".%03" PRIiMAX " sec for response to %s",
+			".%06" PRIiMAX " sec for response to %s",
 			__func__, (intmax_t)tv.tv_sec,
 			(intmax_t)tv.tv_usec, query);
 	}
 
-	time(&start);
+	gettimeofday(&start, NULL);
 	while (1) {
 		char *buf;
 		if (upsdrvquery_read_timeout(conn, tv) < 1)
@@ -484,15 +550,15 @@ ssize_t upsdrvquery_request(
 			}
 		}
 
-		time(&now);
+		gettimeofday(&now, NULL);
 		if (tv.tv_sec < 1 && tv.tv_usec < 1) {
-			if ( ((long)(difftime(now, start))) % 60 == 0 )
+			if ( ((long)(difftimeval(now, start))) % 60 == 0 )
 				upsdebugx(5, "%s: waiting indefinitely for response to %s", __func__, query);
 			sleep(1);
 			continue;
 		}
 
-		if (difftime(now, start) > tv.tv_sec + 0.001 * tv.tv_usec) {
+		if (difftimeval(now, start) > (tv.tv_sec + 0.000001 * tv.tv_usec)) {
 			upsdebugx(5, "%s: timed out waiting for expected response",
 				__func__);
 			return -1;
@@ -511,8 +577,8 @@ ssize_t upsdrvquery_oneshot(
 	struct timeval *ptv
 ) {
 	struct timeval	tv;
-	ssize_t ret;
-	udq_pipe_conn_t *conn = upsdrvquery_connect_drvname_upsname(drvname, upsname);
+	ssize_t	ret;
+	udq_pipe_conn_t	*conn = upsdrvquery_connect_drvname_upsname(drvname, upsname);
 
 	if (!conn || INVALID_FD(conn->sockfd))
 		return -1;
@@ -521,14 +587,14 @@ ssize_t upsdrvquery_oneshot(
 	 * being blocked on other commands, etc. Number so far is
 	 * arbitrary and optimistic. A non-zero setting causes a
 	 * long initial silence to flush incoming buffers after
-         * the NOBROADCAST. In practice, we do not expect messages
-         * from dstate::send_to_all() to be a nuisance, since we
-         * have just connected and posted the NOBROADCAST so there
-         * is little chance that something appears in that short
-         * time. Also now we know to ignore replies that are not
-         *   TRACKING <id of our query>
+	 * the NOBROADCAST. In practice, we do not expect messages
+	 * from dstate::send_to_all() to be a nuisance, since we
+	 * have just connected and posted the NOBROADCAST so there
+	 * is little chance that something appears in that short
+	 * time. Also now we know to ignore replies that are not
+	 *   TRACKING <id of our query>
 	 */
-	tv.tv_sec = 0;
+	tv.tv_sec = 3;
 	tv.tv_usec = 0;
 
 	/* Here we have a fragile simplistic parser that

@@ -49,6 +49,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <poll.h>
 #else
 #include "wincompat.h"
 #include <winsock2.h>
@@ -170,6 +171,7 @@ static void checktimers(void)
 		sleep(15);
 #endif
 
+		upsdebugx(1, "Timer queue empty, closing pipe and exiting upssched daemon");
 		unlink(pipefn);
 		exit(EXIT_SUCCESS);
 	}
@@ -620,7 +622,7 @@ static TYPE_FD conn_add(TYPE_FD sockfd)
 	else
 		connhead = conn;
 
-	upsdebugx(3, "new connection on fd %p", acc);
+	upsdebugx(3, "new connection on handle %p", acc);
 
 	pconf_init(&conn->ctx, NULL);
 #endif
@@ -675,24 +677,64 @@ static int sock_read(conn_t *conn)
 	ssize_t	ret;
 	char	ch;
 
+	upsdebugx(6, "Starting sock_read()");
 	for (i = 0; i < US_MAX_READ; i++) {
-
+		/* NOTE: This does not imply that each command line must
+		 * fit in the US_MAX_READ length limit - at worst we would
+		 * "return 0", and continue with pconf_char() next round.
+		 */
 #ifndef WIN32
+		errno = 0;
 		ret = read(conn->fd, &ch, 1);
+
+		if (ret > 0)
+			upsdebugx(6, "read() from fd %d returned %" PRIiSIZE " (bytes): '%c'; errno=%d: %s",
+				conn->fd, ret, ch, errno, strerror(errno));
 
 		if (ret < 1) {
 
 			/* short read = no parsing, come back later */
-			if ((ret == -1) && (errno == EAGAIN))
+			if ((ret == -1) && (errno == EAGAIN)) {
+				upsdebugx(6, "Ending sock_read(): short read");
 				return 0;
+			}
 
 			/* O_NDELAY with zero bytes means nothing to read but
-			 * since read() follows a succesful select() with
-			 * ready file descriptor, ret shouldn't be 0. */
-			if (ret == 0)
+			 * since read() follows a successful select() with
+			 * ready file descriptor, ret shouldn't be 0.
+			 * This may also mean that the counterpart has exited
+			 * and the file descriptor should be reaped.
+			 */
+			if (ret == 0) {
+				struct pollfd pfd;
+				pfd.fd = conn->fd;
+				pfd.events = 0;
+				pfd.revents = 0;
+				/* Note: we check errno twice, since it could
+				 * have been set by read() above or by one
+				 * of the probing routines below
+				 */
+				if (errno
+				|| (fcntl(conn->fd, F_GETFD) < 0)
+				|| (poll(&pfd, 1, 0) <= 0)
+				||  errno
+				) {
+					upsdebugx(4, "read() from fd %d returned 0; errno=%d: %s",
+						conn->fd, errno, strerror(errno));
+					return -1;	/* connection closed, probably */
+				}
+				if (i == (US_MAX_READ - 1)) {
+					upsdebugx(4, "read() from fd %d returned 0 "
+						"too many times in a row, aborting "
+						"sock_read(); errno=%d: %s",
+						conn->fd, errno, strerror(errno));
+					return -1;	/* connection closed, probably */
+				}
 				continue;
+			}
 
 			/* some other problem */
+			upsdebugx(6, "Ending sock_read(): some other problem");
 			return -1;	/* error */
 		}
 #else
@@ -720,10 +762,14 @@ static int sock_read(conn_t *conn)
 			upslogx(LOG_NOTICE, "Parse error on sock: %s",
 				conn->ctx.errmsg);
 
+			upsdebugx(6, "Ending sock_read(): parse error");
 			return 0;	/* nothing parsed */
 		}
 
 		/* try to use it, and complain about unknown commands */
+		upsdebugx(3, "Ending sock_read() on a good note: try to use command:");
+		for (size_t numarg = 0; numarg < conn->ctx.numargs; numarg++)
+			upsdebugx(3, "\targ %" PRIuSIZE ": %s", numarg, conn->ctx.arglist[numarg]);
 		if (!sock_arg(conn)) {
 			log_unknown(conn->ctx.numargs, conn->ctx.arglist);
 			send_to_one(conn, "ERR UNKNOWN\n");
@@ -731,6 +777,11 @@ static int sock_read(conn_t *conn)
 
 		return 1;	/* we did some work */
 	}
+
+	upsdebugx(6, "sock_read() from fd %d returned nothing "
+		"(maybe still collecting the command line); "
+		"errno=%d: %s",
+		conn->fd, errno, strerror(errno));
 
 	return 0;	/* fell out without parsing anything */
 }
@@ -762,19 +813,64 @@ static void start_daemon(TYPE_FD lockfd)
 
 	/* child */
 
-	close(0);
-	close(1);
-	close(2);
+	/* make fds 0-2 (typically) point somewhere defined */
+#ifdef HAVE_DUP2
+	/* system can close (if needed) and (re-)open a specific FD number */
+	if (1) { /* scoping */
+		TYPE_FD devnull = open("/dev/null", O_RDWR);
+		if (devnull < 0)
+			fatal_with_errno(EXIT_FAILURE, "open /dev/null");
 
-	/* make fds 0-2 point somewhere defined */
-	if (open("/dev/null", O_RDWR) != 0)
-		fatal_with_errno(EXIT_FAILURE, "open /dev/null");
+		if (dup2(devnull, STDIN_FILENO) != STDIN_FILENO)
+			fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDIN");
+		if (dup2(devnull, STDOUT_FILENO) != STDOUT_FILENO)
+			fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDOUT");
 
-	if (dup(0) == -1)
-		fatal_with_errno(EXIT_FAILURE, "dup");
+		if (nut_debug_level) {
+			upsdebugx(1, "Keeping stderr open due to debug verbosity %d", nut_debug_level);
+		} else {
+			if (dup2(devnull, STDERR_FILENO) != STDERR_FILENO)
+				fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDERR");
+		}
 
-	if (dup(0) == -1)
-		fatal_with_errno(EXIT_FAILURE, "dup");
+		close(devnull);
+	}
+#else
+# ifdef HAVE_DUP
+	/* opportunistically duplicate to the "lowest-available" FD number */
+	close(STDIN_FILENO);
+	if (open("/dev/null", O_RDWR) != STDIN_FILENO)
+		fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDIN");
+
+	close(STDOUT_FILENO);
+	if (dup(STDIN_FILENO) != STDOUT_FILENO)
+		fatal_with_errno(EXIT_FAILURE, "dup /dev/null as STDOUT");
+
+	if (nut_debug_level) {
+		upsdebugx(1, "Keeping stderr open due to debug verbosity %d", nut_debug_level);
+	} else {
+		close(STDERR_FILENO);
+		if (dup(STDIN_FILENO) != STDERR_FILENO)
+			fatal_with_errno(EXIT_FAILURE, "dup /dev/null as STDERR");
+	}
+# else
+	close(STDIN_FILENO);
+	if (open("/dev/null", O_RDWR) != STDIN_FILENO)
+		fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDIN");
+
+	close(STDOUT_FILENO);
+	if (open("/dev/null", O_RDWR) != STDOUT_FILENO)
+		fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDOUT");
+
+	if (nut_debug_level) {
+		upsdebugx(1, "Keeping stderr open due to debug verbosity %d", nut_debug_level);
+	} else {
+		close(STDERR_FILENO);
+		if (open("/dev/null", O_RDWR) != STDERR_FILENO)
+			fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDERR");
+	}
+# endif
+#endif
 
 	pipefd = open_sock();
 
@@ -789,8 +885,15 @@ static void start_daemon(TYPE_FD lockfd)
 	close(lockfd);
 
 	/* now watch for activity */
+	upsdebugx(2, "Timer daemon waiting for connections on pipefd %d",
+		pipefd);
 
 	for (;;) {
+		int	zero_reads = 0, total_reads = 0;
+		struct timeval	start, now;
+
+		gettimeofday(&start, NULL);
+
 		/* wait at most 1s so we can check our timers regularly */
 		tv.tv_sec = 1;
 		tv.tv_usec = 0;
@@ -810,7 +913,6 @@ static void start_daemon(TYPE_FD lockfd)
 		ret = select(maxfd + 1, &rfds, NULL, NULL, &tv);
 
 		if (ret > 0) {
-
 			if (FD_ISSET(pipefd, &rfds))
 				conn_add(pipefd);
 
@@ -820,10 +922,15 @@ static void start_daemon(TYPE_FD lockfd)
 				tmpnext = tmp->next;
 
 				if (FD_ISSET(tmp->fd, &rfds)) {
-					if (sock_read(tmp) < 0) {
+					total_reads++;
+					ret = sock_read(tmp);
+					if (ret < 0) {
+						upsdebugx(3, "closing connection on fd %d", tmp->fd);
 						close(tmp->fd);
 						conn_del(tmp);
 					}
+					if (ret == 0)
+						zero_reads++;
 				}
 
 				tmp = tmpnext;
@@ -831,6 +938,30 @@ static void start_daemon(TYPE_FD lockfd)
 		}
 
 		checktimers();
+
+		/* upsdebugx(6, "zero_reads=%d total_reads=%d", zero_reads, total_reads); */
+		if (zero_reads && zero_reads == total_reads) {
+			/* Catch run-away loops - that is, consider
+			 * throttling the cycle as to not hog CPU:
+			 * did select() spend its second to reply,
+			 * or had something to say immediately?
+			 * Note that while select() may have changed
+			 * "tv" to deduct the time waited, our further
+			 * processing loops could eat some more time.
+			 * So we just check the difference of "start"
+			 * and "now". If we did spend a substantial
+			 * part of the second, do not delay further.
+			 */
+			double d;
+			gettimeofday(&now, NULL);
+			d = difftimeval(now, start);
+			upsdebugx(6, "difftimeval() => %f sec", d);
+			if (d > 0 && d < 0.2) {
+				d = (1.0 - d) * 1000000.0;
+				upsdebugx(5, "Enforcing a throttling sleep: %f usec", d);
+				usleep(d);
+			}
+		}
 	}
 
 #else /* WIN32 */
@@ -905,6 +1036,7 @@ static void start_daemon(TYPE_FD lockfd)
 			else {
 				if( tmp != NULL) {
 					if (sock_read(tmp) < 0) {
+						upsdebugx(3, "closing connection on handle %p", tmp->fd);
 						CloseHandle(tmp->fd);
 						conn_del(tmp);
 					}
@@ -1355,7 +1487,7 @@ static void help(const char *arg_progname)
 	printf("Practical behavior is managed by UPSNAME and NOTIFYTYPE envvars\n");
 
 	printf("\nUsage: %s [OPTIONS]\n\n", arg_progname);
-	printf("  -D		raise debugging level\n");
+	printf("  -D		raise debugging level (NOTE: keeps reporting when daemonized)\n");
 	printf("  -V		display the version of this software\n");
 	printf("  -h		display this help\n");
 
@@ -1409,7 +1541,7 @@ int main(int argc, char **argv)
 	notify_type = getenv("NOTIFYTYPE");
 
 	if ((!upsname) || (!notify_type)) {
-		printf("Error: UPSNAME and NOTIFYTYPE must be set.\n");
+		printf("Error: environment variables UPSNAME and NOTIFYTYPE must be set.\n");
 		printf("This program should only be run from upsmon.\n");
 		exit(EXIT_FAILURE);
 	}
@@ -1417,8 +1549,10 @@ int main(int argc, char **argv)
 	/* see if this matches anything in the config file */
 	/* This is actually the processing loop:
 	 * checkconf -> conf_arg -> parse_at -> sendcmd -> daemon if needed
+	 *  -> start_daemon -> conn_add(pipefd) or sock_read(conn)
 	 */
 	checkconf();
 
+	upsdebugx(1, "Exiting upssched (CLI process)");
 	exit(EXIT_SUCCESS);
 }

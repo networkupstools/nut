@@ -12,7 +12,7 @@ dnl primarily for better messaging in the script itself.
 dnl If the NUT codebase in this workspace is being developed and rebuilt
 dnl without reconfiguration, detailed version in the binaries will differ.
 (command -v git >/dev/null 2>/dev/null) \
-&& NUT_SOURCE_GITREV="`git describe --tags 2>/dev/null | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,'`" \
+&& NUT_SOURCE_GITREV="`(git describe --tags --match 'v[0-9]*.[0-9]*.[0-9]' --exclude '*-signed' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' 2>/dev/null || git describe --tags --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' --exclude '*Windows*' --exclude '*IPM*' 2>/dev/null ) | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,'`" \
 || NUT_SOURCE_GITREV=""
 
 dnl Note: except for experiments, do not pass this into config.h - use
@@ -863,7 +863,7 @@ AC_CACHE_CHECK([for clock_gettime(CLOCK_MONOTONIC,ts)],
 ],
             [struct timespec monoclock_ts;
 int got_monoclock = clock_gettime(CLOCK_MONOTONIC, &monoclock_ts);
-if (ts.tv_sec < 0 || ts.tv_nsec < 0) return 1])],
+if (monoclock_ts.tv_sec < 0 || monoclock_ts.tv_nsec < 0) return 1])],
         [ac_cv_func_clock_gettime=yes], [ac_cv_func_clock_gettime=no]
     )])
 AS_IF([test x"${ac_cv_func_clock_gettime}" = xyes],
@@ -1559,6 +1559,12 @@ dnl anyway by running this configure script. The question is about
 dnl installing these features or not.
 dnl Note: more for tests than other reasons, there is also an option
 dnl value to "force" the installation.
+
+dnl The gettext "msgfmt" tool (or equivalent) can be used to maintain
+dnl human-language text translations. Currently this is used specifically
+dnl in the Python NUT-Monitor app sources (*.po => *.mo conversions).
+AC_PATH_PROGS([MSGFMT], [msgfmt], [none])
+AM_CONDITIONAL([HAVE_MSGFMT], [test "x${MSGFMT}" != "xnone"])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-serial

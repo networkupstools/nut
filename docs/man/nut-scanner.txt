@@ -126,6 +126,7 @@ SNMP V3 OPTIONS
 *-l* | *--secLevel* 'security level'::
 Set the 'security level' used for SNMPv3 messages.
 Allowed values are: noAuthNoPriv, authNoPriv and authPriv.
+This parameter is mandatory if you use non-trivial authentication.
 
 *-u* | *--secName* 'security name'::
 Set the 'security name' used for authenticated SNMPv3 messages.
@@ -253,4 +254,4 @@ linkman:ups.conf[5]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

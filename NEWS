@@ -40,6 +40,20 @@ https://github.com/networkupstools/nut/milestone/8
    https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml?search=3493
    (even though this RFC is not formally an Internet Standard)
 
+ - Published a new maintainer GPG key to sign tags and release artifacts,
+   and possibly git commits as well, as part of solution for issue #1410.
+   You can pull it from common OpenPGP servers with the following command:
++
+----
+:; gpg --recv-key DE0184DA7043DCF7
+gpg: key DE0184DA7043DCF7: public key "Jim Klimov (Doing FOSS
+         since last millennium) <jimklimov@gmail.com>" imported
+gpg: Total number processed: 1
+gpg:               imported: 1
+----
++
+as part of https://github.com/networkupstools/nut/issues/1410 solution.
+
  - Bug fixes for fallout possible due to "fightwarn" effort and other
    evolution in NUT v2.8.0 release:
    * The `upsdebugx()` and similar methods were converted to macros in #685
@@ -75,6 +89,11 @@ https://github.com/networkupstools/nut/milestone/8
    of recent codebase solves their practical issues. For "quick tests", a
    shortcut operation `./ci_build.sh inplace` was added [#1714]
 
+ - State tree structure and methods (including "dstate" wrapper for common
+   driver internals) was enhanced with time-stamping of last modification
+   (setting, changing, deleting the value or some fields in an entry):
+   this allows to detect stale information in a centralized fashion [#2010]
+
  - We lacked log information about changes of chroot jail (uncommon) and
    of UID/GID (everywhere), which makes troubleshooting harder (e.g. lack
    of access to config files or USB device nodes). Now we have it [#1694]
@@ -107,6 +126,11 @@ https://github.com/networkupstools/nut/milestone/8
      replacement date) [#1644]
 
  - powercom driver should now try harder to refresh data from device [#356]
+
+ - apcupsd-ups:
+   * improvement for `POLL_INTERVAL_MIN` from PR #797 was buggy [#2007]
+   * fix to clean obsoleted readings (if any) AFTER getting new info from an
+     `apcupsd` daemon, to avoid the gap when NUT driver knows nothing [#2007]
 
  - NUT for Windows:
    * Ability to build NUT for Windows, last tackled with a branch based on
@@ -145,6 +169,8 @@ https://github.com/networkupstools/nut/milestone/8
      driver [#1716]
    * `baytech-mib.c` subdriver: fixed `baytech_outlet_status_info[]` set
      of valid outlet status values [#1871]
+   * `cyberpower-mib.c` subdriver: support devices which report the shorter
+     Vendor OID as their sysOID, e.g. "CyberPower PowerPanel Personal" [#1997]
 
  - The `bestfortress` driver shutdown handling was fixed to use a non-trivial
    default timeout [#1820]
@@ -283,11 +309,21 @@ https://github.com/networkupstools/nut/milestone/8
    to toggle whether they want to receive `send_to_all()` updates from a
    driver, or only answers to requests they send [#1914]
 
+ - Added support for `make sockdebug` for easier developer access to the tool;
+   also if `configure --with-dev` is in effect, it would now be installed to
+   the configured `libexec` location. A man page was also added. [#1936]
+
  - Numerous daemons (`upsd`, `upsmon`, drivers, `upsdrvctl`, `upssched`)
    which accepted `-D` option for debug setting previously, now can also
    honour a `NUT_DEBUG_LEVEL=NUM` environment variable if no `-D` arguments
    were provided. Unlike those arguments, the environment variable does
    not enforce that daemons run in foreground mode by default [#1915]
+   * Note that unlike some other NUT daemons, `upssched` with enabled
+     debug does not stop reporting on `stderr`! [#1965]
+
+ - A bug in `upssched` was discovered and fixed, where it ran a tight loop
+   stressing the CPU; it was presumably introduced between NUT v2.7.4 and
+   v2.8.0 releases [#1964, #1965]
 
  - Implemented generic support for INSTCMD and SETVAR use-cases shared by
    all drivers, and in particular to see and change active debug verbosity
@@ -339,6 +375,15 @@ and a `driver.killpower` instant command (for safety, must be unlocked by
 
  - The `COPYING` file was updated with licenses and attribution for certain
    source code files and blocks coming from the Internet originally [#1758]
+
+ - The `tools/gitlog2changelog.py.in` script was revised, in particular to
+   generate the `ChangeLog` file more consistently with different versions
+   of Python interpreter, and without breaking the long file paths in the
+   resulting mark-up text [#1945, #1955]
+
+ - The "NUT client for VMware ESXi" project (by René Garcia) got its build
+   recipes published on GitHub at https://github.com/rgc2000/NutClient-ESXi
+   [#1961]
 
 ---------------------------------------------------------------------------
 Release notes for NUT 2.8.0 - what's new since 2.7.4:
@@ -759,22 +804,22 @@ Release notes for NUT 2.7.4 - what's new since 2.7.3:
      input, output, outlet and outlet.group)
 
  - support for new devices:
-   AEG PROTECT B / NAS
-   APC ATS AP7724 (should be supported)
-   Asium P700
-   Eaton ATS
-   Eaton 5E 1100iUSB
-   Eaton E Series DX UPS 1-20 kVA
-   Eaton Powerware 9125-5000g
-   Electrys UPS 2500
-   Fideltronic INIGO Viper 1200
-   Legrand Keor Multiplug
-   LYONN CTB-800V
-   Micropower LCD 1000
-   NHS Laser Senoidal 5000VA
-   Sweex model P220
-   TS Shara
-   Various APCUPSD-controlled APC devices
+   * AEG PROTECT B / NAS
+   * APC ATS AP7724 (should be supported)
+   * Asium P700
+   * Eaton ATS
+   * Eaton 5E 1100iUSB
+   * Eaton E Series DX UPS 1-20 kVA
+   * Eaton Powerware 9125-5000g
+   * Electrys UPS 2500
+   * Fideltronic INIGO Viper 1200
+   * Legrand Keor Multiplug
+   * LYONN CTB-800V
+   * Micropower LCD 1000
+   * NHS Laser Senoidal 5000VA
+   * Sweex model P220
+   * TS Shara
+   * Various APCUPSD-controlled APC devices
 
  - snmp-ups:
    * Improve automatic detection algorithm
@@ -1064,7 +1109,7 @@ Release notes for NUT 2.6.5 - what's new since 2.6.4:
    not executed (report and patch from Oliver Schonefeld)
 
  - Website hosting: free NUT from Eaton website hosting
-   NUT website (http://www.networkupstools.org) is no longer hosted by Eaton.
+   NUT website (https://www.networkupstools.org) is no longer hosted by Eaton.
    Arnaud Quette (NUT project leader) has taken over NUT hosting on his own,
    to give NUT back some independence.
    This effort is also part of a logic to stop crediting Eaton for
@@ -1209,7 +1254,7 @@ Release notes for NUT 2.6.4 - what's new since 2.6.3:
  - Provide an Uncomplicated Firewall (UFW) profile (nut.ufw.profile)
 
  - Riello protocols have been officially published in NUT protocols library:
-   http://www.networkupstools.org/ups-protocols.html#_riello
+   https://www.networkupstools.org/ups-protocols.html#_riello
 
  - Duplicate instances of upsd / upsmon are now detected upon startup
 

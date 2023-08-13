@@ -35,6 +35,9 @@
 #include "apcsmart.h"
 #include "apcsmart_tabs.h"
 
+#define DRIVER_NAME	"APC Smart protocol driver"
+#define DRIVER_VERSION	"3.30"
+
 #ifdef WIN32
 # ifndef ECANCELED
 #  define ECANCELED ERROR_CANCELLED
@@ -2082,7 +2085,7 @@ void upsdrv_help(void)
 	printf(
 		"\nFor detailed information, please refer to:\n"
 		  " - apcsmart(8)\n"
-		  " - http://www.networkupstools.org/docs/man/apcsmart.html\n"
+		  " - https://www.networkupstools.org/docs/man/apcsmart.html\n"
 	      );
 }
 

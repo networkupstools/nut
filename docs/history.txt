@@ -350,7 +350,7 @@ attached to exploits.org is not going to work.
 
 The solution was to register a new domain and set up mirrors. There are two
 initial web servers, with more on the way. The main project URL has changed
-from `http://www.exploits.org/nut/` to http://www.networkupstools.org.
+from `http://www.exploits.org/nut/` to https://www.networkupstools.org.
 The actual content is hosted on various mirrors which are updated regularly
 with rsync, so the days of dribbling bits through my DSL should be over.
 

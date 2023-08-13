@@ -407,6 +407,12 @@ char * getfullpath(char * relative_path);
 #define PATH_LIB "\\..\\lib"
 #endif /* WIN32*/
 
+/* Return a difference of two timevals as a floating-point number */
+double difftimeval(struct timeval x, struct timeval y);
+#if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_CLOCK_MONOTONIC) && HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC
+double difftimespec(struct timespec x, struct timespec y);
+#endif
+
 #ifndef HAVE_USLEEP
 /* int __cdecl usleep(unsigned int useconds); */
 /* Note: if we'd need to define an useconds_t for obscure systems,
