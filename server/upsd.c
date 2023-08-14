@@ -267,8 +267,6 @@ static void stype_free(stype_t *server)
 /* create a listening socket for tcp connections */
 static void setuptcp(stype_t *server)
 {
-	/* Well, currently it is more a request than requirement... */
-	static int	require_IPV6_V6ONLY = 1;
 #ifdef WIN32
 	WSADATA WSAdata;
 	WSAStartup(2,&WSAdata);
@@ -305,10 +303,6 @@ static void setuptcp(stype_t *server)
 		stype_t	*serverAnyV4 = NULL, *serverAnyV6 = NULL;
 		int	canhaveAnyV4 = 0;
 		int	canhaveAnyV6 = 0;
-
-		/* For this use-case, we allow IPv6 to handle IPv4 if it can */
-		int	old_require_IPV6_V6ONLY = require_IPV6_V6ONLY;
-		require_IPV6_V6ONLY = (opt_af == AF_INET6);
 
 		/* Note: default opt_af==AF_UNSPEC so not constrained to only one protocol */
 		if (opt_af != AF_INET6) {
@@ -436,7 +430,6 @@ static void setuptcp(stype_t *server)
 		}
 		serverAnyV6 = NULL;
 
-		require_IPV6_V6ONLY = old_require_IPV6_V6ONLY;
 		return;
 	}
 
@@ -467,16 +460,11 @@ static void setuptcp(stype_t *server)
 		}
 
 		/* Ordinarily we request that IPv6 listeners handle only IPv6
-		 * (except when we handle `LISTEN *` as detailed above).
-		 * Note we specifically try to ensure this when CLI requires
-		 * IPv6-only behavior (even if we want "any" addr for `LISTEN *`).
+		 * and not IPv4 mapped addresses - if the OS would honour that.
 		 * TOTHINK: Does any platform need `#ifdef IPV6_V6ONLY` given
 		 * that we apparently already have AF_INET6 OS support everywhere?
-		 * TOTHINK: Do we want to setsockopt() to explicitly allow dual-stack
-		 * (perhaps counteracting OS default or customized configuration)
-		 * when handling `LISTEN *` use-cases?
 		 */
-		if (ai->ai_family == AF_INET6 && (require_IPV6_V6ONLY || (opt_af == AF_INET6))) {
+		if (ai->ai_family == AF_INET6) {
 			if (setsockopt(sock_fd, IPPROTO_IPV6, IPV6_V6ONLY, (void *)&one, sizeof(one)) != 0) {
 				upsdebug_with_errno(3, "setuptcp: setsockopt IPV6_V6ONLY");
 				/* ack, ignore */
