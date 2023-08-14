@@ -285,19 +285,23 @@ static void setuptcp(stype_t *server)
 
 	upsdebugx(3, "setuptcp: try to bind to %s port %s", server->addr, server->port);
 
-	/* Special handling for `LISTEN * <port>` directive with literal asterisk:
-	 * on systems with RFC-3493 (no relation!) support for "IPv4-mapped addresses"
-	 * it suffices to LISTEN on "::" (aka "::0" or "0:0:0:0:0:0:0:0") and also
-	 * get an IPv4 any-address listener. More so, they would conflict and
-	 * listening on one such socket precludes listening on the other. On other
-	 * systems (or with disabled mapping so IPv6 means IPv6 only) we need both.
-	 * So we jump through some hoops:
-	 * * Try to get IPv4 any-address, just to know if it is available right now;
-	 * * Free it and try to get IPv6 any-address, and try to get again that
-	 *   IPv4 any-address (IFF it was available before but is not available now -
-	 *   not a problem).
-	 * * Remember the entries used, to release later.
-	 * For more details see https://github.com/networkupstools/nut/issues/2012
+	/* Special handling note for `LISTEN * <port>` directive with the
+	 * literal asterisk on systems with RFC-3493 (no relation!) support
+	 * for "IPv4-mapped addresses": it is possible (and technically
+	 * suffices) to LISTEN on "::" (aka "::0" or "0:0:0:0:0:0:0:0") and
+	 * also get an IPv4 any-address listener automatically. More so,
+	 * they would conflict and listening on one such socket precludes
+	 * listening on the other. On other systems (or with disabled
+	 * mapping so IPv6 really means "IPv6 only") we need both sockets.
+	 * NUT asks the system for "IPv6 only" mode when listening on any
+	 * sort of IPv6 addresses; it is however up to the system to implement
+	 * that ability and comply with our request.
+	 * Here we jump through some hoops:
+	 * * Try to get IPv6 any-address (unless constrained by CLI to IPv4);
+	 * * Try to get IPv4 any-address (unless constrained by CLI to IPv6),
+	 *   log information for the sysadmin that it might conflict with the
+	 *   IPv6 listener (IFF we have just opened one);
+	 * * Remember the one or two linked-list entries used, to release later.
 	 */
 	if (!strcmp(server->addr, "*")) {
 		stype_t	*serverAnyV4 = NULL, *serverAnyV6 = NULL;
