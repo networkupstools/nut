@@ -165,6 +165,7 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
      of valid outlet status values [#1871]
    * `cyberpower-mib.c` subdriver: support devices which report the shorter
      Vendor OID as their sysOID, e.g. "CyberPower PowerPanel Personal" [#1997]
+     and support more data points including hardware status alarms [#1982]
 
  - The `bestfortress` driver shutdown handling was fixed to use a non-trivial
    default timeout [#1820]
