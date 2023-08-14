@@ -339,8 +339,6 @@ static void setuptcp(stype_t *server)
 					canhaveAnyV4 = 1;
 					close(serverAnyV4->sock_fd);
 					serverAnyV4->sock_fd = ERROR_FD_SOCK;
-					/* Let the system know about the change: */
-					/* usleep(100); */
 				} else {
 					upsdebugx(3,
 						"%s: Could not bind to %s:%s trying to handle a 'LISTEN *' directive",
