@@ -349,7 +349,7 @@ static void setuptcp(stype_t *server)
 			 */
 			upsdebugx(3, "%s: try taking IPv4 'ANY'%s",
 				__func__,
-				serverAnyV6 ? " (if dual-stack IPv6 'ANY' did not grab it)" : "");
+				canhaveAnyV6 ? " (if dual-stack IPv6 'ANY' did not grab it)" : "");
 			setuptcp(serverAnyV4);
 			if (VALID_FD_SOCK(serverAnyV4->sock_fd)) {
 				canhaveAnyV4 = 1;
@@ -357,7 +357,7 @@ static void setuptcp(stype_t *server)
 				upsdebugx(3,
 					"%s: Could not bind to IPv4 %s:%s%s",
 					__func__, serverAnyV4->addr, serverAnyV4->port,
-					serverAnyV6 ? (" after trying to bind to IPv6: "
+					canhaveAnyV6 ? (" after trying to bind to IPv6: "
 						"assuming dual-stack support on this "
 						"system could not be disabled") : "");
 			}
