@@ -294,7 +294,7 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
    asking for disabled IPv4-mapped IPv6 address support (if the OS honors
    that), and then an IPv4 socket (which may fail if the IPv6 socket already
    covers it anyway); in other words, you can end up with one or two separate
-   listening sockets [#2012]
+   listening sockets. [#2012]
 
  - sstate (server state, e.g. upsd) should now "PING" drivers also if they
    last reported themselves as "stale" (and might later crash) so their

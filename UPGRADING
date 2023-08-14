@@ -77,7 +77,7 @@ Changes from 2.8.0 to 2.8.1
   this dual support, configuration changes may be needed to specify both
   desired IP addresses. Note that the daemon logs will now warn if a
   host name resolves to several addresses (and will only listen on the
-  first hit, as it did before in such cases) [#2012]
+  first hit, as it did before in such cases). [#2012]
 
 - A definitive behavior for `LISTEN *` directives became specified, to try
   handling both IPv4 and IPv6 "any" address (subject to `upsd` CLI options
