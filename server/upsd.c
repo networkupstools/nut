@@ -301,8 +301,7 @@ static void setuptcp(stype_t *server)
 	 */
 	if (!strcmp(server->addr, "*")) {
 		stype_t	*serverAnyV4 = NULL, *serverAnyV6 = NULL;
-		int	canhaveAnyV4 = 0;
-		int	canhaveAnyV6 = 0;
+		int	canhaveAnyV4 = 0, canhaveAnyV6 = 0;
 
 		/* Note: default opt_af==AF_UNSPEC so not constrained to only one protocol */
 		if (opt_af != AF_INET6) {
@@ -327,26 +326,6 @@ static void setuptcp(stype_t *server)
 			serverAnyV6->next = NULL;
 		}
 
-		if (serverAnyV4) {
-			/* First pass to just check if we CAN have this listener now */
-			setuptcp(serverAnyV4);
-			if (serverAnyV6) {
-				if (VALID_FD_SOCK(serverAnyV4->sock_fd)) {
-					upsdebugx(3,
-						"%s: Could bind to %s:%s trying to handle a 'LISTEN *' directive"
-						"; will release it for now to try IPv6",
-						__func__, serverAnyV4->addr, serverAnyV4->port);
-					canhaveAnyV4 = 1;
-					close(serverAnyV4->sock_fd);
-					serverAnyV4->sock_fd = ERROR_FD_SOCK;
-				} else {
-					upsdebugx(3,
-						"%s: Could not bind to %s:%s trying to handle a 'LISTEN *' directive",
-						__func__, serverAnyV4->addr, serverAnyV4->port);
-				}
-			}	/* else: just keep it, all done */
-		}
-
 		if (serverAnyV6) {
 			setuptcp(serverAnyV6);
 			if (VALID_FD_SOCK(serverAnyV6->sock_fd)) {
@@ -356,20 +335,27 @@ static void setuptcp(stype_t *server)
 					"%s: Could not bind to %s:%s trying to handle a 'LISTEN *' directive",
 					__func__, serverAnyV6->addr, serverAnyV6->port);
 			}
+		}
 
-			if (serverAnyV4 && canhaveAnyV4) {
-				/* Second pass to get this listener if we can (no IPv4-mapped IPv6
-				 * support was in force on this platform or its configuration) */
-				upsdebugx(3, "%s: try taking IPv4 'ANY' again "
-					"(if dual-stack IPv6 'ANY' did not grab it)", __func__);
-				setuptcp(serverAnyV4);
-				if (INVALID_FD_SOCK(serverAnyV4->sock_fd)) {
-					upsdebugx(3,
-						"%s: Could not bind to IPv4 %s:%s after trying to bind to IPv6: "
-						"assuming dual-stack support on this system",
-						__func__, serverAnyV4->addr, serverAnyV4->port);
-					canhaveAnyV4 = 0;
-				}
+		if (serverAnyV4) {
+			/* Try to get this listener if we can (no IPv4-mapped
+			 * IPv6 support was in force on this platform or its
+			 * configuration in some way that setsockopt(IPV6_V6ONLY)
+			 * failed to cancel).
+			 */
+			upsdebugx(3, "%s: try taking IPv4 'ANY'%s",
+				__func__,
+				serverAnyV6 ? " (if dual-stack IPv6 'ANY' did not grab it)" : "");
+			setuptcp(serverAnyV4);
+			if (VALID_FD_SOCK(serverAnyV4->sock_fd)) {
+				canhaveAnyV4 = 1;
+			} else {
+				upsdebugx(3,
+					"%s: Could not bind to IPv4 %s:%s%s",
+					__func__, serverAnyV4->addr, serverAnyV4->port,
+					serverAnyV6 ? (" after trying to bind to IPv6: "
+						"assuming dual-stack support on this "
+						"system could not be disabled") : "");
 			}
 		}
 
