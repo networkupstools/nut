@@ -66,12 +66,18 @@ compiled into the code.  This overrides any value you may have set with
 upsd will listen on port 3493 for this interface.
 +
 Multiple LISTEN addresses may be specified.  The default is to bind to
-127.0.0.1 if no LISTEN addresses are specified (and ::1 if IPv6 support is
-compiled in).
+`127.0.0.1` if no LISTEN addresses are specified (and also `::1` if IPv6
+support is compiled in).
 +
-To listen on all available interfaces, you may also use '0.0.0.0' for IPv4 and
-and '::' for IPv6.
-
+To listen on all available interfaces and configured IP addresses of your
+system, you may also use `::` for IPv6 and `0.0.0.0` for IPv4, respectively.
+As a special case, a single `LISTEN * <port>` directive (with an asterisk) will
+try to listen on both IPv6 (`::0`) and IPv4 (`0.0.0.0`) wild-card IP addresses,
+subject to `upsd` command-line arguments or system configuration.
+Note that if the system supports IPv4-mapped IPv6 addressing per RFC-3493,
+and does not allow to disable this mode, then there may be one listening
+socket to handle both address families.
++
 	LISTEN 127.0.0.1
 	LISTEN 192.168.50.1
 	LISTEN myhostname.mydomain
@@ -80,6 +86,12 @@ and '::' for IPv6.
 +
 This parameter will only be read at startup.  You'll need to restart
 (rather than reload) upsd to apply any changes made here.
++
+Please note that older NUT releases could have been using the IPv4-mapped
+IPv6 addressing (sometimes also known as "dual-stack") mode, if provided
+by the system. Current versions (since NUT v2.8.1 release) explicitly try
+to restrict their listening sockets to only support one address family on
+each socket, and so avoid IPv4-mapped mode where possible.
 
 "MAXCONN 'connections'"::
 
