@@ -25,7 +25,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"APC Smart protocol driver"
-#define DRIVER_VERSION	"2.30"
+#define DRIVER_VERSION	"2.31"
 
 static upsdrv_info_t table_info = {
 	"APC command table",
@@ -373,32 +373,37 @@ static void do_capabilities(void)
 
 		/* check for idiocy */
 		if (ptr >= endtemp) {
-
 			/* if we expected this, just ignore it */
 			if (quirk_capability_overflow)
 				return;
 
 			fatalx(EXIT_FAILURE,
 				"Capability string has overflowed\n"
-				"Please report this error\n"
+				"Please report this error with device details\n"
 				"ERROR: capability overflow!"
 				);
 		}
 
+		entptr = &ptr[4];
 		cmd = ptr[0];
 		loc = ptr[1];
+
 		if (ptr[2] < 48 || ptr[3] < 48) {
-			upsdebugx(0,
-				"%s: nument (%d) or entlen (%d) out of range",
-				__func__, (ptr[2] - 48), (ptr[3] - 48));
-			fatalx(EXIT_FAILURE,
-				"nument or entlen out of range\n"
-				"Please report this error\n"
-				"ERROR: capability overflow!");
+			upsdebugx(3,
+				"%s: SKIP: nument (%d) or entlen (%d) "
+				"out of range for cmd %d at loc %d",
+				__func__, (ptr[2] - 48), (ptr[3] - 48),
+				cmd, loc);
+
+			/* just ignore it as we did for ages (the
+			 * rest of loop cycle would be no-op anyway)
+			 */
+			ptr = entptr;
+			continue;
 		}
+
 		nument = (size_t)ptr[2] - 48;
 		entlen = (size_t)ptr[3] - 48;
-		entptr = &ptr[4];
 
 		vt = vartab_lookup_char(cmd);
 		valid = vt && ((loc == upsloc) || (loc == '4'));

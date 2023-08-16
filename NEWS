@@ -82,6 +82,8 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
      and would not wait for one driver to complete initialization before
      starting another in case of mass-management loop to start all drivers
      (without specifying the single device) [#1759, #1806, #1875]
+   * The `apcsmart` and `apcsmart-old` handled invalid data too zealously
+     and aborted instead of skipping over it, like they did before [#2015]
 
  - New `configure --enable-inplace-runtime` option should set default values
    for `--sysconfdir`, `--with-user` and `--with-group` options to match an
