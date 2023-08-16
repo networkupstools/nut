@@ -964,7 +964,7 @@ Armac Subdriver
 ~~~~~~~~~~~~~~~
 
 Armac subdriver is based on reverse engineering of Power Manager II software by
-Richcomm Technologies writen in 2005 that is still (as of 2023) being
+Richcomm Technologies written in 2005 that is still (as of 2023) being
 distributed as a valid software for freshly sold UPS of various manufacturers.
 It uses commands as defined for Megatec protocol - but has a different
 communication mechanism.
@@ -974,7 +974,7 @@ It uses two types of USB interrupt transfers:
 - 6 byte chunk to read a reply (multiple transfers).
 
 Transfers are similar to those of the richcomm nut driver, but the transferred
-data is not short binary commands. Instead, serial text data is overlayed in
+data is not short binary commands. Instead, serial text data is overlaid in
 these transfers in a way that creates a badly made USB serial interface.  UPS
 reply looks similar to this:
 
