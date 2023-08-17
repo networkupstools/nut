@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3196 utf-8
+personal_ws-1.1 en 3198 utf-8
 AAS
 ABI
 ACFAIL
@@ -449,6 +449,7 @@ HFILE
 HIDIOCINITREPORT
 HIDRDD
 HITRANS
+HL
 HMAC
 HNX
 HOMEBREW
@@ -1365,6 +1366,7 @@ Viewsonic
 Viktor
 VirCIO
 Vout
+Vultech
 Václav
 WALKMODE
 WARNFATAL
@@ -1613,8 +1615,8 @@ bsd
 bsv
 bt
 bti
-btnG
 btn
+btnG
 btt
 buckboosthyst
 buckvolts
@@ -2649,10 +2651,10 @@ qx's
 qxflags
 rD
 rackmount
+raquo
 raritan
 ratedva
 ratedwatts
-raquo
 rb
 rcctl
 readline
