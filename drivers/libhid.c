@@ -694,7 +694,9 @@ int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventsize)
 	HIDData_t	*pData;
 
 	/* needs libusb-0.1.8 to work => use ifdef and autoconf */
-	r = interrupt_size ? interrupt_size : sizeof(buf);
+	r = (interrupt_size > 0 && interrupt_size < sizeof(buf))
+		? interrupt_size : sizeof(buf);
+
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
 # pragma GCC diagnostic push
 #endif
