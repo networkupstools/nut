@@ -43,7 +43,7 @@
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
 
 #define SHUT_DRIVER_NAME	"SHUT communication driver"
-#define SHUT_DRIVER_VERSION	"0.86"
+#define SHUT_DRIVER_VERSION	"0.87"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -556,8 +556,7 @@ static int libshut_open(
 	}
 
 	/* USB_LE16_TO_CPU(desc->wDescriptorLength); */
-	desc->wDescriptorLength = (uint16_t)(buf[7]);
-	desc->wDescriptorLength |= (((uint16_t)buf[8]) << 8);
+	desc->wDescriptorLength = (0x00FF & (uint8_t)buf[7]) | ((0x00FF & (uint8_t)buf[8]) << 8);
 	upsdebugx(2, "HID descriptor retrieved (Reportlen = %u)", desc->wDescriptorLength);
 
 /*
