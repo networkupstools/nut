@@ -820,7 +820,7 @@ void upsdrv_makevartable(void)
 
 #else
 	addvar(VAR_VALUE, "notification",
-		"Set notification type, (ignored, only for backward compatibility)");
+		"Set notification type (ignored, only for backward compatibility)");
 #endif
 }
 
