@@ -394,6 +394,10 @@ static int libshut_open(
 	 * version is at index 1 (in which case, bcdDevice == 0x0202) */
 	usb_ctrl_descindex	hid_desc_index = 0;
 
+	if (!arg_device_path) {
+		fatalx(EXIT_FAILURE, "%s: arg_device_path=null", __func__);
+	}
+
 	upsdebugx(2, "libshut_open: using port %s", arg_device_path);
 
 	/* If device is still open, close it */
