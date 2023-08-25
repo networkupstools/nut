@@ -1014,11 +1014,6 @@ void upsdrv_initups(void)
 	int ret;
 	char *val;
 
-	upsdebugx(2, "Initializing an USB-connected UPS with library %s " \
-		"(NUT subdriver name='%s' ver='%s')",
-		dstate_getinfo("driver.version.usb"),
-		comm_driver->name, comm_driver->version );
-
 #if (defined SHUT_MODE) && SHUT_MODE
 	/*!
 	 * SHUT is a serial protocol, so it needs
@@ -1031,6 +1026,12 @@ void upsdrv_initups(void)
 	char *regex_array[7];
 
 	upsdebugx(1, "upsdrv_initups (non-SHUT)...");
+
+	upsdebugx(2, "Initializing an USB-connected UPS with library %s " \
+		"(NUT subdriver name='%s' ver='%s')",
+		dstate_getinfo("driver.version.usb"),
+		comm_driver->name, comm_driver->version );
+
 	warn_if_bad_usb_port_filename(device_path);
 
 	subdriver_matcher = &subdriver_matcher_struct;
