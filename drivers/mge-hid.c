@@ -65,7 +65,7 @@
 /* IBM */
 #define IBM_VENDORID 0x04b3
 
-#ifndef SHUT_MODE
+#if !((defined SHUT_MODE) && SHUT_MODE)
 #include "usb-common.h"
 
 /* USB IDs device table */
@@ -98,7 +98,7 @@ static usb_device_id_t mge_usb_device_table[] = {
 	/* Terminating entry */
 	{ 0, 0, NULL }
 };
-#endif
+#endif	/* !SHUT_MODE => USB */
 
 typedef enum {
 	MGE_DEFAULT_OFFLINE = 0,
@@ -169,12 +169,12 @@ static char		mge_scratch_buf[20];
  * float mode is not important from the software's perspective, it's there to
  * help determine if the charger is advancing correctly.
  * So in float mode, the charger is charging the battery, so by definition you
- * can assert the CHRG flag in NUT when in “float” mode or “charge” mode.
- * When in “rest” mode the charger is not delivering anything to the battery,
+ * can assert the CHRG flag in NUT when in "float" mode or "charge" mode.
+ * When in "rest" mode the charger is not delivering anything to the battery,
  * but it will when the ABM cycle(28 days) ends, or a battery discharge occurs
- * and utility returns.  This is when the ABM status should be “resting”.
+ * and utility returns.  This is when the ABM status should be "resting".
  * If a battery failure is detected that disables the charger, it should be
- * reporting “off” in the ABM charger status.
+ * reporting "off" in the ABM charger status.
  * Of course when delivering load power from the battery, the ABM status is
  * discharging.
  */
@@ -1271,6 +1271,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, online_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[3].PresentStatus.Used", NULL, NULL, 0, mge_onbatt_info },
 #if 0
+	/* NOTE: see entry with eaton_converter_online_info below now */
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.Used", NULL, NULL, 0, online_info },
 #endif
 	/* These 2 ones are used when ABM is disabled */
@@ -1298,6 +1299,7 @@ static hid_info_t mge_hid2nut[] =
 	 * and must hence be after "UPS.PowerSummary.PresentStatus.Good" */
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.Used", NULL, NULL, 0, eaton_converter_online_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[2].PresentStatus.Used", NULL, NULL, 0, bypass_auto_info }, /* Automatic bypass */
+	/* NOTE: entry [3] is above as mge_onbatt_info */
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[4].PresentStatus.Used", NULL, NULL, 0, bypass_manual_info }, /* Manual bypass */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.FanFailure", NULL, NULL, 0, fanfail_info },
 	{ "BOOL", 0, 0, "UPS.BatterySystem.Battery.PresentStatus.Present", NULL, NULL, 0, nobattery_info },
@@ -1572,7 +1574,10 @@ static const char *mge_format_serial(HIDDevice_t *hd) {
  * the device is supported by this subdriver, else 0. */
 static int mge_claim(HIDDevice_t *hd) {
 
-#ifndef SHUT_MODE
+#if (defined SHUT_MODE) && SHUT_MODE
+	NUT_UNUSED_VARIABLE(hd);
+	return 1;
+#else	/* !SHUT_MODE => USB */
 	int status = is_usb_device_supported(mge_usb_device_table, hd);
 
 	switch (status) {
@@ -1639,10 +1644,7 @@ static int mge_claim(HIDDevice_t *hd) {
 	default:
 		return 0;
 	}
-#else
-	NUT_UNUSED_VARIABLE(hd);
-	return 1;
-#endif
+#endif	/* SHUT_MODE / USB */
 }
 
 subdriver_t mge_subdriver = {

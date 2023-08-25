@@ -45,7 +45,7 @@
 /* include all known subdrivers */
 #include "mge-hid.h"
 
-#ifndef SHUT_MODE
+#if !((defined SHUT_MODE) && SHUT_MODE)
 	/* explore stub goes first, others alphabetically */
 	#include "explore-hid.h"
 	#include "apc-hid.h"
@@ -62,15 +62,16 @@
 	#include "powervar-hid.h"
 	#include "salicru-hid.h"
 	#include "tripplite-hid.h"
-#endif
+#endif	/* !SHUT_MODE => USB */
 
 /* Reference list of available subdrivers */
 static subdriver_t *subdriver_list[] = {
-#ifndef SHUT_MODE
+#if !((defined SHUT_MODE) && SHUT_MODE)
 	&explore_subdriver,
-#endif
+#endif	/* !SHUT_MODE => USB */
+	/* mge-hid.c supports both SHUT and USB */
 	&mge_subdriver,
-#ifndef SHUT_MODE
+#if !((defined SHUT_MODE) && SHUT_MODE)
 	&apc_subdriver,
 	&arduino_subdriver,
 	&belkin_subdriver,
@@ -85,7 +86,7 @@ static subdriver_t *subdriver_list[] = {
 	&powervar_subdriver,
 	&salicru_subdriver,
 	&tripplite_subdriver,
-#endif
+#endif	/* !SHUT_MODE => USB */
 	NULL
 };
 
@@ -97,11 +98,11 @@ upsdrv_info_t upsdrv_info = {
 	"Arjen de Korte <adkorte-guest@alioth.debian.org>\n" \
 	"John Stamp <kinsayder@hotmail.com>",
 	/*FIXME: link the subdrivers? do the same as for the mibs! */
-#ifndef SHUT_MODE
+#if !((defined SHUT_MODE) && SHUT_MODE)
 	DRV_STABLE,
-#else
+#else	/* SHUT_MODE */
 	DRV_EXPERIMENTAL,
-#endif
+#endif	/* SHUT_MODE / USB */
 	{ &comm_upsdrv_info, NULL }
 };
 
@@ -119,10 +120,10 @@ static subdriver_t *subdriver = NULL;
 static HIDDevice_t *hd = NULL;
 static HIDDevice_t curDevice = { 0x0000, 0x0000, NULL, NULL, NULL, NULL, 0, NULL };
 static HIDDeviceMatcher_t *subdriver_matcher = NULL;
-#ifndef SHUT_MODE
+#if !((defined SHUT_MODE) && SHUT_MODE)
 static HIDDeviceMatcher_t *exact_matcher = NULL;
 static HIDDeviceMatcher_t *regex_matcher = NULL;
-#endif
+#endif	/* !SHUT_MODE => USB */
 static int pollfreq = DEFAULT_POLLFREQ;
 static unsigned ups_status = 0;
 static bool_t data_has_changed = FALSE; /* for SEMI_STATIC data polling */
@@ -531,7 +532,7 @@ info_lkp_t kelvin_celsius_conversion[] = {
  * as SHUT is only supported by MGE UPS SYSTEMS units
  */
 
-#ifndef SHUT_MODE
+#if !((defined SHUT_MODE) && SHUT_MODE)
 static int match_function_subdriver(HIDDevice_t *d, void *privdata) {
 	int i;
 	NUT_UNUSED_VARIABLE(privdata);
@@ -555,7 +556,7 @@ static HIDDeviceMatcher_t subdriver_matcher_struct = {
 	NULL,
 	NULL
 };
-#endif
+#endif	/* !SHUT_MODE => USB */
 
 /* ---------------------------------------------
  * driver functions implementations
@@ -803,7 +804,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_FLAG, "disable_fix_report_desc",
 		"Set to disable fix-ups for broken USB encoding, etc. which we apply by default on certain vendors/products");
 
-#ifndef SHUT_MODE
+#if !((defined SHUT_MODE) && SHUT_MODE)
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
 	nut_usb_addvars();
 
@@ -818,10 +819,10 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, HU_VAR_WAITBEFORERECONNECT,
 		"Seconds to wait before trying to reconnect");
 
-#else
+#else	/* SHUT_MODE */
 	addvar(VAR_VALUE, "notification",
-		"Set notification type, (ignored, only for backward compatibility)");
-#endif
+		"Set notification type (ignored, only for backward compatibility)");
+#endif	/* SHUT_MODE / USB */
 }
 
 #define	MAX_EVENT_NUM	32
@@ -1013,12 +1014,7 @@ void upsdrv_initups(void)
 	int ret;
 	char *val;
 
-	upsdebugx(2, "Initializing an USB-connected UPS with library %s " \
-		"(NUT subdriver name='%s' ver='%s')",
-		dstate_getinfo("driver.version.usb"),
-		comm_driver->name, comm_driver->version );
-
-#ifdef SHUT_MODE
+#if (defined SHUT_MODE) && SHUT_MODE
 	/*!
 	 * SHUT is a serial protocol, so it needs
 	 * only the device path
@@ -1026,10 +1022,16 @@ void upsdrv_initups(void)
 	upsdebugx(1, "upsdrv_initups (SHUT)...");
 
 	subdriver_matcher = device_path;
-#else
+#else	/* !SHUT_MODE => USB */
 	char *regex_array[7];
 
 	upsdebugx(1, "upsdrv_initups (non-SHUT)...");
+
+	upsdebugx(2, "Initializing an USB-connected UPS with library %s " \
+		"(NUT subdriver name='%s' ver='%s')",
+		dstate_getinfo("driver.version.usb"),
+		comm_driver->name, comm_driver->version );
+
 	warn_if_bad_usb_port_filename(device_path);
 
 	subdriver_matcher = &subdriver_matcher_struct;
@@ -1076,7 +1078,7 @@ void upsdrv_initups(void)
 
 	/* link the matchers */
 	subdriver_matcher->next = regex_matcher;
-#endif /* SHUT_MODE */
+#endif /* SHUT_MODE / USB */
 
 	/* Search for the first supported UPS matching the
 	   regular expression (USB) or device_path (SHUT) */
@@ -1166,7 +1168,7 @@ void upsdrv_cleanup(void)
 	comm_driver->close_dev(udev);
 	Free_ReportDesc(pDesc);
 	free_report_buffer(reportbuf);
-#ifndef SHUT_MODE
+#if !((defined SHUT_MODE) && SHUT_MODE)
 	USBFreeExactMatcher(exact_matcher);
 	USBFreeRegexMatcher(regex_matcher);
 
@@ -1175,7 +1177,7 @@ void upsdrv_cleanup(void)
 	free(curDevice.Serial);
 	free(curDevice.Bus);
 	free(curDevice.Device);
-#endif
+#endif	/* !SHUT_MODE => USB */
 }
 
 /**********************************************************************
@@ -1232,9 +1234,9 @@ static int callback(
 {
 	int i;
 	const char *mfr = NULL, *model = NULL, *serial = NULL;
-#ifndef SHUT_MODE
+#if !((defined SHUT_MODE) && SHUT_MODE)
 	int ret;
-#endif
+#endif	/* !SHUT_MODE => USB */
 	upsdebugx(2, "Report Descriptor size = %" PRI_NUT_USB_CTRL_CHARBUFSIZE, rdlen);
 
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
@@ -1297,7 +1299,7 @@ static int callback(
 	}
 	HIDDumpTree(udev, arghd, subdriver->utab);
 
-#ifndef SHUT_MODE
+#if !((defined SHUT_MODE) && SHUT_MODE)
 	/* create a new matcher for later matching */
 	USBFreeExactMatcher(exact_matcher);
 	ret = USBNewExactMatcher(&exact_matcher, hd);
@@ -1307,7 +1309,7 @@ static int callback(
 	}
 
 	regex_matcher->next = exact_matcher;
-#endif /* SHUT_MODE */
+#endif	/* !SHUT_MODE => USB */
 
 	/* apply subdriver specific formatting */
 	mfr = subdriver->format_mfr(hd);
@@ -1373,11 +1375,11 @@ static bool_t hid_ups_walk(walkmode_t mode)
 	double		value;
 	int		retcode;
 
-#ifndef SHUT_MODE
+#if !((defined SHUT_MODE) && SHUT_MODE)
 	/* extract the VendorId for further testing */
 	int vendorID = curDevice.VendorID;
 	int productID = curDevice.ProductID;
-#endif
+#endif	/* !SHUT_MODE => USB */
 
 	/* 3 modes: HU_WALKMODE_INIT, HU_WALKMODE_QUICK_UPDATE
 	 * and HU_WALKMODE_FULL_UPDATE */
@@ -1385,13 +1387,14 @@ static bool_t hid_ups_walk(walkmode_t mode)
 	/* Device data walk ----------------------------- */
 	for (item = subdriver->hid2nut; item->info_type != NULL; item++) {
 
-#ifdef SHUT_MODE
+#if (defined SHUT_MODE) && SHUT_MODE
 		/* Check if we are asked to stop (reactivity++) in SHUT mode.
 		 * In USB mode, looping through this takes well under a second,
 		 * so any effort to improve reactivity here is wasted. */
 		if (exit_flag != 0)
 			return TRUE;
-#endif
+#endif	/* SHUT_MODE */
+
 		/* filter data according to mode */
 		switch (mode)
 		{
@@ -1485,14 +1488,14 @@ static bool_t hid_ups_walk(walkmode_t mode)
 # pragma GCC diagnostic pop
 #endif
 
-#ifndef SHUT_MODE
+#if !((defined SHUT_MODE) && SHUT_MODE)
 		/* skip report 0x54 for Tripplite SU3000LCD2UHV due to firmware bug */
 		if ((vendorID == 0x09ae) && (productID == 0x1330)) {
 			if (item->hiddata && (item->hiddata->ReportID == 0x54)) {
 				continue;
 			}
 		}
-#endif
+#endif	/* !SHUT_MODE => USB */
 
 		retcode = HIDGetDataValue(udev, item->hiddata, &value, poll_interval);
 
