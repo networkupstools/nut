@@ -65,7 +65,7 @@
 /* IBM */
 #define IBM_VENDORID 0x04b3
 
-#ifndef SHUT_MODE
+#if !((defined SHUT_MODE) && SHUT_MODE)
 #include "usb-common.h"
 
 /* USB IDs device table */
@@ -98,7 +98,7 @@ static usb_device_id_t mge_usb_device_table[] = {
 	/* Terminating entry */
 	{ 0, 0, NULL }
 };
-#endif
+#endif	/* !SHUT_MODE => USB */
 
 typedef enum {
 	MGE_DEFAULT_OFFLINE = 0,
@@ -1574,7 +1574,10 @@ static const char *mge_format_serial(HIDDevice_t *hd) {
  * the device is supported by this subdriver, else 0. */
 static int mge_claim(HIDDevice_t *hd) {
 
-#ifndef SHUT_MODE
+#if (defined SHUT_MODE) && SHUT_MODE
+	NUT_UNUSED_VARIABLE(hd);
+	return 1;
+#else	/* !SHUT_MODE => USB */
 	int status = is_usb_device_supported(mge_usb_device_table, hd);
 
 	switch (status) {
@@ -1641,10 +1644,7 @@ static int mge_claim(HIDDevice_t *hd) {
 	default:
 		return 0;
 	}
-#else
-	NUT_UNUSED_VARIABLE(hd);
-	return 1;
-#endif
+#endif	/* SHUT_MODE / USB */
 }
 
 subdriver_t mge_subdriver = {

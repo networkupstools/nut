@@ -37,21 +37,21 @@
 
 #include "timehead.h"
 
-#ifdef SHUT_MODE
+#if (defined SHUT_MODE) && SHUT_MODE
 	#include "libshut.h"
 	typedef SHUTDevice_t                   HIDDevice_t;
 	typedef char                           HIDDeviceMatcher_t;
 	typedef usb_dev_handle                 hid_dev_handle_t;
 	typedef shut_communication_subdriver_t communication_subdriver_t;
 	#define HID_DEV_HANDLE_CLOSED          (hid_dev_handle_t)(ERROR_FD_SER)
-#else
+#else	/* !SHUT_MODE => USB */
 	#include "nut_libusb.h" /* includes usb-common.h */
 	typedef USBDevice_t                   HIDDevice_t;
 	typedef USBDeviceMatcher_t            HIDDeviceMatcher_t;
 	typedef usb_dev_handle *              hid_dev_handle_t;
 	typedef usb_communication_subdriver_t communication_subdriver_t;
 	#define HID_DEV_HANDLE_CLOSED          (hid_dev_handle_t)(NULL)
-#endif
+#endif	/* SHUT_MODE / USB */
 
 /* use explicit booleans */
 #ifndef FALSE

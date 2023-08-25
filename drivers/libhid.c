@@ -46,13 +46,13 @@
 #include "nut_stdint.h"
 
 /* Communication layers and drivers (USB and MGE SHUT) */
-#ifdef SHUT_MODE
+#if (defined SHUT_MODE) && SHUT_MODE
 	#include "libshut.h"
 	communication_subdriver_t *comm_driver = &shut_subdriver;
-#else
+#else	/* !SHUT_MODE => USB */
 	#include "nut_libusb.h"
 	communication_subdriver_t *comm_driver = &usb_subdriver;
-#endif
+#endif	/* SHUT_MODE / USB */
 
 /* support functions */
 static double logical_to_physical(HIDData_t *Data, long logical);
@@ -405,13 +405,13 @@ static struct {
 void HIDDumpTree(hid_dev_handle_t udev, HIDDevice_t *hd, usage_tables_t *utab)
 {
 	size_t	i;
-#ifdef SHUT_MODE
+#if (defined SHUT_MODE) && SHUT_MODE
 	NUT_UNUSED_VARIABLE(hd);
-#else
+#else	/* !SHUT_MODE => USB */
 	/* extract the VendorId for further testing */
 	int vendorID = hd->VendorID;
 	int productID = hd->ProductID;
-#endif
+#endif	/* SHUT_MODE / USB */
 
 	/* Do not go further if we already know nothing will be displayed.
 	 * Some reports take a while before they timeout, so if these are
@@ -430,11 +430,11 @@ void HIDDumpTree(hid_dev_handle_t udev, HIDDevice_t *hd, usage_tables_t *utab)
 		HIDData_t	*pData = &pDesc->item[i];
 
 		/* skip reports 254/255 for Eaton / MGE / Dell due to special handling needs */
-#ifdef SHUT_MODE
+#if (defined SHUT_MODE) && SHUT_MODE
 		if ((pData->ReportID == 254) || (pData->ReportID == 255)) {
 			continue;
 		}
-#else
+#else	/* !SHUT_MODE => USB */
 		if ((vendorID == 0x0463) || (vendorID == 0x047c)) {
 			if ((pData->ReportID == 254) || (pData->ReportID == 255)) {
 				continue;
@@ -447,7 +447,7 @@ void HIDDumpTree(hid_dev_handle_t udev, HIDDevice_t *hd, usage_tables_t *utab)
 				continue;
 			}
 		}
-#endif
+#endif	/* SHUT_MODE / USB */
 
 		/* Get data value */
 		if (HIDGetDataValue(udev, pData, &value, MAX_TS) == 1) {
