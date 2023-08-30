@@ -85,6 +85,7 @@
 "APC"	"ups"	"1"	"Back-UPS"	"940-0023A cable"	"genericups upstype=9"
 "APC"	"ups"	"1"	"Back-UPS Office"	"940-0119A cable"	"genericups upstype=12"
 "APC"	"ups"	"1"	"Back-UPS RS 500"	"custom non-USB cable"	"genericups upstype=20"
+"APC"	"ups"	"3"	"Smart-UPS 3000"	""	"snmp-ups"
 "APC"	"ups"	"3"	"Smart-UPS RT XL"	"AP9618 SNMP monitoring card"	"snmp-ups"
 "APC"	"ups"	"3"	"(various)"	"AP9618 SNMP monitoring card"	"snmp-ups"
 "APC"	"ups"	"3"	"(various)"	"AP9630 SNMP monitoring card"	"snmp-ups privProtocol=AES"
