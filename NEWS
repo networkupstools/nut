@@ -66,8 +66,9 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
      fixed for NUT v2.8.1.
    * A table in `cyberpower-mib` (for `snmp-ups` driver) sources was
      arranged in NUT v2.8.0 release in a way that precluded the driver
-     logic from looking at all of its entries. Regression fixed for NUT
-     v2.8.1 [#1432]
+     logic from looking at all of its entries. Also a fix for instant
+     command definitions had in fact broken them due to other development.
+     Regressions fixed for NUT v2.8.1 [#1432, #2029]
    * A change for file-change detection in `dummy-ups` driver for NUT
      v2.8.0 release misfired on some platforms. Regression fixed for NUT
      v2.8.1 [#1420]
