@@ -1039,8 +1039,8 @@
 "Repotec"	"ups"	"1"	"RPT-800A"	""	"genericups upstype=13"
 "Repotec"	"ups"	"1"	"RPT-162A"	""	"genericups upstype=13"
 
-"Riello"	"ups"	"3"	"Riello Sentinel SDL 6000-7"	"Netman Plus 102 SNMP Card"	"snmp-ups"
-"Riello"	"ups"	"3"	"Riello Sentinel Dual SDH 1000-7"	"Netman Plus 102 SNMP Card"	"snmp-ups"
+"Riello"	"ups"	"3"	"Sentinel SDL 6000-7"	"Netman Plus 102 SNMP Card"	"snmp-ups"
+"Riello"	"ups"	"3"	"Sentinel Dual SDH 1000-7"	"Netman Plus 102 SNMP Card"	"snmp-ups"
 "Riello"	"ups"	"4"	"IDG 400/600/800/1200/1600"	"USB"	"riello_usb"
 "Riello"	"ups"	"4"	"IPG 600/800"	"USB"	"riello_usb"
 "Riello"	"ups"	"5"	"WPG 400/600/800"	"USB"	"riello_usb"
