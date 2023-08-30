@@ -455,6 +455,10 @@
 "Forza Power Technologies"	"ups"	"2"	"FX-1500LCD"	"USB"	"blazer_usb"
 
 "FSP"	"ups"	"2"	"EP650"	"USB"	"blazer_usb"
+"FSP"	"ups"	"2"	"Fortron UPS Champ 1000 VA Tower"	"USB"	"blazer_usb"
+"FSP"	"ups"	"2"	"Fortron UPS Champ 1000 VA Tower"	"USB"	"nutdrv_qx"
+"FSP"	"ups"	"2"	"Fortron UPS Champ 2000 VA Tower"	"USB"	"blazer_usb"
+"FSP"	"ups"	"2"	"Fortron UPS Champ 3000 VA Tower"	"USB"	"blazer_usb"
 
 "Gamatronic"	"ups"	"5"	"All models with alarm interface"	""	"genericups upstype=22"
 "Gamatronic"	"ups"	"2"	"G-SmartCompact 2000"	""	"blazer_ser"
@@ -1360,4 +1364,3 @@
 
 "WTI"	"pdu"	"1"	"RPS-10"	"10 outlets"	"powerman-pdu (experimental)"
 "WTI"	"pdu"	"1"	"NPS"	"8 outlets"	"powerman-pdu (experimental)"
-
