@@ -1334,6 +1334,8 @@
 "UPSonic"	"ups"	"1"	"Power Guardian"	""	"genericups upstype=7"
 "UPSonic"	"ups"	"2"	"PrOffice 650"	"USB"	"blazer_usb"
 "UPSonic"	"ups"	"2"	"DS-800"	"USB"	"blazer_usb"
+"UPSonic"	"ups"	"2"	"IRT-3K 2U"	"USB"	"megatec_usb"	# Worked in NUT 2.4.3
+"UPSonic"	"ups"	"2"	"IRT-3K 2U"	"USB"	"nutdrv_qx"	# Should work since 2.8.0; protocol broken vs. strict checks in 2.7.4; https://github.com/networkupstools/nut/issues/441#issuecomment-1288238345
 
 "V7"	"ups"	"2"	"UPS1RM2U1500-1E"	"USB"	"blazer_usb"	# http://www.v7world.com/uk/ups-1500va-rack-mount-2u-eu.html https://github.com/networkupstools/nut/issues/716
 
