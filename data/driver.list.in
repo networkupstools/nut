@@ -963,6 +963,7 @@
 "Powercool"	"ups"	"1"	"350VA to 1600VA"	"USB"	"nutdrv_atcl_usb"
 "Powercool"	"ups"	"2"	"650VA"	"USB"	"nutdrv_qx port=auto vendorid=0001 productid=0000 product=MEC0003 protocol=hunnox langid_fix=0x0409 novendor noscanlangid"	# https://github.com/networkupstools/nut/pull/638 caveats at https://github.com/networkupstools/nut/issues/537
 "Powercool"	"ups"	"2"	"650VA"	"USB"	"nutdrv_qx port=auto vendorid=0001 productid=0000 bus=001 product=MEC0003 protocol=hunnox langid_fix=0x0409 novendor norating noscanlangid"	# https://github.com/networkupstools/nut/pull/638 caveats at https://github.com/networkupstools/nut/issues/537
+"Powercool"	"ups"	"2"	"1200VA"	"USB"	"nutdrv_qx port=auto vendorid=0001 productid=0000 product=MEC0003 protocol=hunnox subdriver=hunnox langid_fix=0x0409 novendor norating noscanlangid"	# https://github.com/networkupstools/nut/pull/1539
 "Powercool"	"ups"	"2"	"1500VA"	"USB"	"nutdrv_qx port=auto vendorid=0001 productid=0000 product=MEC0003 protocol=hunnox langid_fix=0x0409 novendor noscanlangid"	# https://github.com/networkupstools/nut/pull/638 caveats at https://github.com/networkupstools/nut/issues/537 - e.g. battery percentage is not being returned
 "Powercool"	"ups"	"2"	"2000VA"	"USB"	"nutdrv_qx port=auto vendorid=0001 productid=0000 product=MEC0003 protocol=hunnox langid_fix=0x0409 novendor noscanlangid"	# https://github.com/networkupstools/nut/pull/638 caveats at https://github.com/networkupstools/nut/issues/537
 
