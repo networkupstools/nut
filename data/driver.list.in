@@ -556,6 +556,8 @@
 "Ippon"	"ups"	"2"	"Back Comfo Pro II 650/850/1050"	"USB"	"blazer_usb (experimental)"
 "Ippon"	"ups"	"2"	"Smart Power Pro 1000/1400/2000"	""	"blazer_ser"
 "Ippon"	"ups"	"2"	"Smart Power Pro 1000/1400/2000"	"USB"	"blazer_usb (experimental)"
+"Ippon"	"ups"	"2"	"Smart Power Pro II 1200/1600/2200"	"USB"	"usbhid-ups"
+"Ippon"	"ups"	"2"	"Smart Power Pro II Euro 1200/1600/2200"	"USB"	"usbhid-ups"
 "Ippon"	"ups"	"2"	"Smart Winner 750/1000/1500/2000/3000"	""	"blazer_ser"
 "Ippon"	"ups"	"2"	"Smart Winner 750/1000/1500/2000/3000"	"USB"	"blazer_usb (experimental)"
 "Ippon"	"ups"	"2"	"(various)"	""	"blazer_ser"
