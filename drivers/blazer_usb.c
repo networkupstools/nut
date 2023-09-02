@@ -37,7 +37,7 @@
 #endif
 
 #define DRIVER_NAME	"Megatec/Q1 protocol USB driver"
-#define DRIVER_VERSION	"0.15"
+#define DRIVER_VERSION	"0.16"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
