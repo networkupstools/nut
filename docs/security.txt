@@ -234,6 +234,13 @@ compiled in).
 	   LISTEN ::1
 	   LISTEN 2001:0db8:1234:08d3:1319:8a2e:0370:7344
 
+As a special case, `LISTEN * <port>` (with an asterisk) will try to
+listen on "ANY" IP address for both IPv6 (`::0`) and IPv4 (`0.0.0.0`),
+subject to `upsd` command-line arguments, or system configuration or support.
+Note that if the system supports IPv4-mapped IPv6 addressing per RFC-3493,
+and does not allow to disable this mode, then there may be one listening
+socket to handle both address families.
+
 This parameter will only be read at startup.  You'll need to restart (rather
 than reload) `upsd` to apply any changes made here.
 

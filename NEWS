@@ -62,12 +62,13 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
      too low. As issue #1455 and PR #1495 found, in two cases the called
      commands did "meaningfully" modify data -- so without debug logs the
      program misbehaved. A known regression for `upscode2` driver; might
-     be or not be a problem with `upsd` driver in NUT v2.8.0 release,
+     be or not be a problem with `upsd` server in NUT v2.8.0 release,
      fixed for NUT v2.8.1.
    * A table in `cyberpower-mib` (for `snmp-ups` driver) sources was
      arranged in NUT v2.8.0 release in a way that precluded the driver
-     logic from looking at all of its entries. Regression fixed for NUT
-     v2.8.1 [#1432]
+     logic from looking at all of its entries. Also a fix for instant
+     command definitions had in fact broken them due to other development.
+     Regressions fixed for NUT v2.8.1 [#1432, #2029]
    * A change for file-change detection in `dummy-ups` driver for NUT
      v2.8.0 release misfired on some platforms. Regression fixed for NUT
      v2.8.1 [#1420]
@@ -82,6 +83,11 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
      and would not wait for one driver to complete initialization before
      starting another in case of mass-management loop to start all drivers
      (without specifying the single device) [#1759, #1806, #1875]
+   * The `apcsmart` and `apcsmart-old` handled invalid data too zealously
+     and aborted instead of skipping over it, like they did before [#2015]
+   * Something about compile-time macros or other warnings-related refactoring
+     seems to have confused the MGE SHUT (Serial HID UPS Transfer) driver
+     support [#2022]
 
  - New `configure --enable-inplace-runtime` option should set default values
    for `--sysconfdir`, `--with-user` and `--with-group` options to match an
@@ -107,6 +113,9 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
      cell, not for the whole assembly [#1279]
    * the `voltronic_qs_protocol` should now accept both "V" (as before)
      and newly "H" dialects, which otherwise seem interchangeable [#1623]
+   * the `armac` subdriver was enhanced to support devices with a different
+     response pattern than previously expected per initial contribution.
+     It was tested to work with Vultech V2000 and Armac PF1 series. [#1978]
 
  - nutdrv_qx and blazer updates:
    * extended default ranges for max battery voltage when guessing [#1279]
@@ -171,6 +180,7 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
      of valid outlet status values [#1871]
    * `cyberpower-mib.c` subdriver: support devices which report the shorter
      Vendor OID as their sysOID, e.g. "CyberPower PowerPanel Personal" [#1997]
+     and support more data points including hardware status alarms [#1982]
 
  - The `bestfortress` driver shutdown handling was fixed to use a non-trivial
    default timeout [#1820]
@@ -283,6 +293,24 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
  - upsclient C library:
    * added support for `NUT_QUIET_INIT_SSL` environment variable to hide
      the infamous "Init SSL without certificate database" warning [#1662]
+
+ - The `upsd.conf` listing of `LISTEN` addresses was previously inverted
+   (the last listed address was applied first), which was counter-intuitive
+   and fixed for this release [#2012]
+
+ - The `upsd` configured to listen on IPv6 addresses should handle only
+   IPv6 (and not IPv4-mappings) to avoid surprises and insecurity; it
+   will now warn if a host name resolves to several addresses (and will only
+   listen on the first hit, as before in such cases) [#2012]
+
+ - A definitive behavior for `LISTEN *` directives became specified, to try
+   handling both IPv4 and IPv6 "any" address (subject to `upsd` CLI options
+   to only choose one, and to OS abilities). When both address families are
+   enabled, the `upsd` data server will first try to open an IPv6 socket
+   asking for disabled IPv4-mapped IPv6 address support (if the OS honors
+   that), and then an IPv4 socket (which may fail if the IPv6 socket already
+   covers it anyway); in other words, you can end up with one or two separate
+   listening sockets. [#2012]
 
  - sstate (server state, e.g. upsd) should now "PING" drivers also if they
    last reported themselves as "stale" (and might later crash) so their

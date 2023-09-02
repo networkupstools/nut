@@ -36,7 +36,7 @@
 #include "apcsmart_tabs.h"
 
 #define DRIVER_NAME	"APC Smart protocol driver"
-#define DRIVER_VERSION	"3.30"
+#define DRIVER_VERSION	"3.31"
 
 #ifdef WIN32
 # ifndef ECANCELED
@@ -1024,25 +1024,31 @@ static void apc_getcaps(int qco)
 			/* if we expected this, just ignore it */
 			if (qco)
 				return;
-			fatalx(EXIT_FAILURE, "capability string has overflowed, please report this error !");
+			fatalx(EXIT_FAILURE,
+				"capability string has overflowed, "
+				"please report this error with device details!");
 		}
 
+		entptr = &ptr[4];
 		cmd = ptr[0];
 		loc = ptr[1];
 
 		if (ptr[2] < 48 || ptr[3] < 48) {
-			upsdebugx(0,
-				"%s: nument (%d) or entlen (%d) out of range",
-				__func__, (ptr[2] - 48), (ptr[3] - 48));
-			fatalx(EXIT_FAILURE,
-				"nument or entlen out of range\n"
-				"Please report this error\n"
-				"ERROR: capability overflow!");
+			upsdebugx(3,
+				"%s: SKIP: nument (%d) or entlen (%d) "
+				"out of range for cmd %d at loc %d",
+				__func__, (ptr[2] - 48), (ptr[3] - 48),
+				cmd, loc);
+
+			/* just ignore it as we did for ages (the
+			 * rest of loop cycle would be no-op anyway)
+			 */
+			ptr = entptr;
+			continue;
 		}
 
 		nument = (size_t)ptr[2] - 48;
 		entlen = (size_t)ptr[3] - 48;
-		entptr = &ptr[4];
 
 		vt = vt_lookup_char(cmd);
 		valid = vt && ((loc == upsloc) || (loc == '4')) && !(vt->flags & APC_PACK);

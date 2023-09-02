@@ -1836,11 +1836,12 @@ static void	*ablerex_subdriver_fun(USBDevice_t *device)
  * Richcomm Technologies, Inc. Dec 27 2005 ver 1.1." Maybe other Richcomm UPSes
  * would work with this - better than with the richcomm_usb driver.
  */
+#define ARMAC_READ_SIZE 6
 static int	armac_command(const char *cmd, char *buf, size_t buflen)
 {
-	char	tmpbuf[6];
-	int	ret = 0;
-	size_t	i, bufpos;
+	char tmpbuf[ARMAC_READ_SIZE];
+	int ret = 0;
+	size_t i, bufpos;
 	const size_t cmdlen = strlen(cmd);
 
 	/* UPS ignores (doesn't echo back) unsupported commands which makes
@@ -1865,6 +1866,17 @@ static int	armac_command(const char *cmd, char *buf, size_t buflen)
 	}
 	upsdebugx(4, "armac command %.*s", (int)strcspn(cmd, "\r"), cmd);
 
+	/* Cleanup buffer before sending a new command */
+	for (i = 0; i < 10; i++) {
+		ret = usb_interrupt_read(udev, 0x81,
+			(usb_ctrl_charbuf)tmpbuf, ARMAC_READ_SIZE, 100);
+		if (ret != ARMAC_READ_SIZE) {
+			// Timeout - buffer is clean.
+			break;
+		}
+		upsdebugx(4, "armac cleanup ret i=%" PRIuSIZE " ret=%d ctrl=%02hhx", i, ret, tmpbuf[0]);
+	}
+
 	/* Send command to the UPS in 3-byte chunks. Most fit 1 chunk, except for eg.
 	 * parameterized tests. */
 	for (i = 0; i < cmdlen;) {
@@ -1887,21 +1899,25 @@ static int	armac_command(const char *cmd, char *buf, size_t buflen)
 		return ret;
 	}
 
+	/* Wait for response to buffer */
+	usleep(2000);
 	memset(buf, 0, buflen);
 
 	bufpos = 0;
-	while (bufpos + 6 < buflen) {
+	while (bufpos + ARMAC_READ_SIZE < buflen) {
 		size_t bytes_available;
 
 		/* Read data in 6-byte chunks */
-		ret = usb_interrupt_read(udev,
-			0x81,
-			(usb_ctrl_charbuf)tmpbuf, 6, 1000);
+		ret = usb_interrupt_read(udev, 0x81,
+			(usb_ctrl_charbuf)tmpbuf, ARMAC_READ_SIZE, 1000);
 
 		/* Any errors here mean that we are unable to read a reply
 		 * (which will happen after successfully writing a command
 		 * to the UPS) */
-		if (ret != 6) {
+		if (ret != ARMAC_READ_SIZE) {
+			/* NOTE: If end condition is invalid for particular UPS we might make one
+			 * request more and get this error. If bufpos > (say) 10 this could be ignored
+			 * and the reply correctly read. */
 			upsdebugx(1,
 				"interrupt read error: %s (%d)",
 				ret ? nut_usb_strerror(ret) : "timeout",
@@ -1915,20 +1931,66 @@ static int	armac_command(const char *cmd, char *buf, size_t buflen)
 			tmpbuf[0], tmpbuf[1], tmpbuf[2], tmpbuf[3], tmpbuf[4], tmpbuf[5],
 			tmpbuf[1], tmpbuf[2], tmpbuf[3], tmpbuf[4], tmpbuf[5]);
 
+		/*
+		 * On most tested devices (including R/2000I/PSW) this was equal to the number of
+		 * bytes returned in the buffer, but on some newer UPS (R/3000I/PF1) it was 1 more
+		 * (1 control + 5 bytes transferred and bytes_available equal to 6 instead of 5).
+		 *
+		 * Current assumption is that this is number of bytes available on the UPS side
+		 * with up to 5 (ret - 1) transferred.
+		 */
 		bytes_available = (unsigned char)tmpbuf[0] & 0x0f;
 		if (bytes_available == 0) {
 			/* End of transfer */
 			break;
 		}
 
-		memcpy(buf + bufpos, tmpbuf + 1, bytes_available);
-		bufpos += bytes_available;
+		if (bytes_available > ARMAC_READ_SIZE - 1) {
+			/* Single interrupt transfer has 1 control + 5 data bytes */
+			bytes_available = ARMAC_READ_SIZE - 1;
+		}
+
+		/* Copy bytes into the final buffer while detecting end of line - \r */
+		for (i = 0; i < bytes_available; i++) {
+			if (tmpbuf[i + 1] == 0x00 && bufpos == 0) {
+				/* Happens when a manually turned off UPS is connected to the USB */
+				upsdebugx(3, "null byte read - is UPS off?");
+				return 0;
+			}
+
+			/* Vultech V2000 seems to use 0x00 within status bits. This might mean "unsupported".
+			 * or something else completely. */
+			if (tmpbuf[i + 1] == 0x00) {
+				if (bufpos >= 38) {
+					upsdebugx(3, "found null byte in status bits at %" PRIuSIZE " byte, assuming 0.", bufpos);
+					buf[bufpos++] = '0';
+					continue;
+				} else {
+					upsdebugx(3, "found null byte in data stream - interrupting read.");
+					/* Break through two loops */
+					goto end_of_message;
+				}
+			}
+
+			buf[bufpos++] = tmpbuf[i + 1];
+
+			if (tmpbuf[i + 1] == 0x0d) {
+				if (i + 1 != bytes_available) {
+					upsdebugx(3, "trailing bytes in serial transmission found: %" PRIuSIZE "  copied out of %" PRIuSIZE,
+						i + 1, bytes_available
+					);
+				}
+				/* Break through two loops */
+				goto end_of_message;
+			}
+		}
 
 		if (bytes_available <= 2) {
 			/* Slow down, let the UPS buffer more bytes */
-			usleep(15000);
+			usleep(10000);
 		}
 	}
+end_of_message:
 
 	if (bufpos + 6 >= buflen) {
 		upsdebugx(2, "Protocol error, too much data read.");

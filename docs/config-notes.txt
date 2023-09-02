@@ -295,6 +295,13 @@ want `upsd` to listen on for connections, optionally with a port number.
 	LISTEN 127.0.0.1 3493
 	LISTEN ::1 3493
 
+As a special case, `LISTEN * <port>` (with an asterisk) will try to
+listen on "ANY" IP address for both and IPv6 (`::0`) and IPv4 (`0.0.0.0`),
+subject to `upsd` command-line arguments, or system configuration or support.
+Note that if the system supports IPv4-mapped IPv6 addressing per RFC-3493,
+and does not allow to disable this mode, then there may be one listening
+socket to handle both address families.
+
 NOTE: Refer to the NUT user manual <<NUT_Security,security chapter>> for
 information on how to access and secure upsd clients connections.
 

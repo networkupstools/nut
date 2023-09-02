@@ -43,7 +43,7 @@
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
 
 #define SHUT_DRIVER_NAME	"SHUT communication driver"
-#define SHUT_DRIVER_VERSION	"0.86"
+#define SHUT_DRIVER_VERSION	"0.87"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -394,6 +394,10 @@ static int libshut_open(
 	 * version is at index 1 (in which case, bcdDevice == 0x0202) */
 	usb_ctrl_descindex	hid_desc_index = 0;
 
+	if (!arg_device_path) {
+		fatalx(EXIT_FAILURE, "%s: arg_device_path=null", __func__);
+	}
+
 	upsdebugx(2, "libshut_open: using port %s", arg_device_path);
 
 	/* If device is still open, close it */
@@ -463,11 +467,13 @@ static int libshut_open(
 	free(curDevice->Product);
 	free(curDevice->Serial);
 	free(curDevice->Bus);
+	free(curDevice->Device);
 	memset(curDevice, '\0', sizeof(*curDevice));
 
 	curDevice->VendorID = dev_descriptor->idVendor;
 	curDevice->ProductID = dev_descriptor->idProduct;
 	curDevice->Bus = strdup("serial");
+	curDevice->Device = strdup(arg_device_path);
 	curDevice->bcdDevice = dev_descriptor->bcdDevice;
 	curDevice->Vendor = strdup("Eaton");
 	if (dev_descriptor->iManufacturer) {
@@ -508,6 +514,7 @@ static int libshut_open(
 	upsdebugx(2, "- Product: %s", curDevice->Product);
 	upsdebugx(2, "- Serial Number: %s", curDevice->Serial);
 	upsdebugx(2, "- Bus: %s", curDevice->Bus);
+	upsdebugx(2, "- Device: %s", curDevice->Device ? curDevice->Device : "unknown");
 	upsdebugx(2, "- Device release number: %04x", curDevice->bcdDevice);
 	upsdebugx(2, "Device matches");
 
@@ -549,8 +556,7 @@ static int libshut_open(
 	}
 
 	/* USB_LE16_TO_CPU(desc->wDescriptorLength); */
-	desc->wDescriptorLength = (uint16_t)(buf[7]);
-	desc->wDescriptorLength |= (((uint16_t)buf[8]) << 8);
+	desc->wDescriptorLength = (0x00FF & (uint8_t)buf[7]) | ((0x00FF & (uint8_t)buf[8]) << 8);
 	upsdebugx(2, "HID descriptor retrieved (Reportlen = %u)", desc->wDescriptorLength);
 
 /*

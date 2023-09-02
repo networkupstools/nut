@@ -1122,7 +1122,7 @@ NUT_TYPE_SOCKLEN_T
 NUT_CHECK_SOCKETLIB
 NUT_FUNC_GETNAMEINFO_ARGTYPES
 
-AC_CACHE_CHECK([for inet_ntop()],
+AC_CACHE_CHECK([for inet_ntop() with IPv4 and IPv6 support],
     [ac_cv_func_inet_ntop],
     [AC_LANG_PUSH([C])
     dnl e.g. add "-lws2_32" for mingw builds
@@ -1150,7 +1150,8 @@ AC_CACHE_CHECK([for inet_ntop()],
 ]],
             [[/* const char* inet_ntop(int af, const void* src, char* dst, size_t cnt); */
 char buf[128];
-printf("%s", inet_ntop(AF_INET, "1.2.3.4", buf, 10))
+printf("%s", inet_ntop(AF_INET, "1.2.3.4", buf, 10));
+printf("%s", inet_ntop(AF_INET6, "::1", buf, 10))
 /* autoconf adds ";return 0;" */
 ]])],
         [ac_cv_func_inet_ntop=yes], [ac_cv_func_inet_ntop=no]
