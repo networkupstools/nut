@@ -345,9 +345,14 @@ static void	qx_initbattery(void)
 		/* Per https://www.csb-battery.com.tw/english/01_product/02_detail.php?fid=17&pid=113
 		 * a nominally 12V battery can have "float charging voltage"
 		 * at 13.5-13.8V and an "equalization charging voltage" (e.g.
-		 * to desulphurize) at 14-15V:
+		 * to desulphurize) at 14-15V. Note that per nut-names.txt,
+		 * the "battery.voltage.high" is the practical 100% charge
+		 * value (so equal or a bit less than actual battery.voltage
+		 * reported by the device, when the situation is healthy);
+		 * it is not the voltage that the battery CAN reach on the
+		 * brink of boiling out:
 		 */
-		batt.volt.high = 150 * batt.volt.nom / 120;
+		batt.volt.high = 130 * batt.volt.nom / 120;
 
 		/* Publish these data too */
 		dstate_setinfo("battery.voltage.low", "%.2f", batt.volt.low);
