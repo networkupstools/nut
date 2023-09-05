@@ -153,6 +153,7 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
  - snmp-ups updates:
    * Fixed detection for device agents which wrongly return the sysOID value
      as a string instead of an OID [#1710]
+   * Clearer messages about skipping MIBs during driver initialization [#2037]
    * IETF MIB mapping updated for data points where negative readings
      are invalid [#1558]
    * Added SNMP subdriver "apc-epdu-mib" for APC easy PDU support [#1674]
