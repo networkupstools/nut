@@ -616,6 +616,13 @@ void upsdrv_initups(void)
 
 	/* FIXME: first test if the device is reachable to avoid timeouts! */
 
+	/* FIXME: with the argument called "mibs" (plural) it could make
+	 * sense to actually support a list of MIBs to try to get info
+	 * from, in order of preference, e.g. both a vendor MIB and the
+	 * IETF MIB for missing data points. Or even several vendor MIBs
+	 * for devices from companies with a long heritage.
+	 */
+
 	/* Load the SNMP to NUT translation data */
 	load_mib2nut(mibs);
 
