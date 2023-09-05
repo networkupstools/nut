@@ -165,7 +165,7 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
      SNMP v3 to get both read and write rights [#1713]
    * Fixed processing loop for large SNMPv2/SNMPv3 responses where one item
      in the middle has a type error [#1682]
-   * Better manage the slight nuances (especially in ups.status) between
+   * Better manage the slight nuances (especially in `ups.status`) between
      Eaton UPSs, and rename mibs from `pw` to `eaton_pw_nm2`, and from
      `pxgx_ups` to `eaton_pxg_ups` [#1715]
    * Fixed the long standing "Warning: excessive poll failures" issue, that
