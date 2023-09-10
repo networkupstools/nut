@@ -139,7 +139,7 @@ check-man all-man man-man all-html html-man:
 man:
 	cd $(top_builddir)/docs/man/ && $(MAKE) -f Makefile all
 
-CLEANFILES = *.xml *.html *.pdf *-spellchecked docbook-xsl.css
+CLEANFILES = *.xml *.html *.pdf *-spellchecked docbook-xsl.css docinfo.xml.in.tmp
 
 # Dirs to clean
 clean-local:
