@@ -95,7 +95,7 @@ This structure tracks several description information about the driver:
               - DRV_COMPLETE: this is the gold level! It implies that 100 % of
               the protocol is implemented, and a full QA pass.
  * *subdrv_info*: array of upsdrv_info_t for sub driver(s) information. For
-   example, this is used by usbhid-ups.
+              example, this is used by usbhid-ups.
 
 This information is currently used for the startup banner printing and tests.
 

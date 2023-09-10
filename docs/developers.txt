@@ -171,6 +171,9 @@ To ease and automate the build scenarios which were deemed important for
 quality assurance and non-regression checks of NUT, several solutions
 were introduced over time.
 
+Build automation tools and scripts
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 ci_build.sh
 ^^^^^^^^^^^
 
@@ -353,6 +356,27 @@ it would follow similar semantics.
 Some further details about the NUT CI farm workers are available in
 link:config-prereqs.txt[config-prereqs.txt] and
 link:ci-farm-lxc-setup.txt[ci-farm-lxc-setup.txt] documents.
+
+AppVeyor CI
+^^^^^^^^^^^
+
+Primarily used for building NUT for Windows on Windows instances provided
+in the cloud -- and so ensure non-regression as well as downloadable archives
+with binary installation prototype area, intended for enthusiastic testing
+(proper packaging to follow). NUT for Windows build-ability was re-introduced
+soon after NUT 2.8.0 release.
+
+This relies on a few prerequisite packages and a common NUT configuration,
+as coded in the `appveyor.yml` file in the NUT codebase.
+
+CircleCI
+^^^^^^^^
+
+Primarily used for building NUT for MacOS on instances provided in the cloud,
+and so ensure non-regression across several Xcode releases.
+
+This relies on a few prerequisite packages and a common NUT configuration,
+as coded in the `.circleci/config.yml` file in the NUT codebase.
 
 Travis CI
 ^^^^^^^^^
