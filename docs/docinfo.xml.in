@@ -13,9 +13,79 @@
   <!-- 'Real' revision history (news on top) -->
   <!-- AUTOINSERT LOCATION -->
   <revision>
+    <revnumber>2.8.0</revnumber>
+    <date>2022-04-26</date>
+    <authorinitials>JK</authorinitials>
+    <revremark></revremark>
+  </revision>
+
+  <revision>
+    <revnumber>2.7.4</revnumber>
+    <date>2016-03-09</date>
+    <authorinitials>AQ</authorinitials>
+    <revremark></revremark>
+  </revision>
+
+  <revision>
+    <revnumber>2.7.3</revnumber>
+    <date>2015-04-22</date>
+    <authorinitials>AQ</authorinitials>
+    <revremark></revremark>
+  </revision>
+
+  <revision>
+    <revnumber>2.7.2</revnumber>
+    <date>2014-04-17</date>
+    <authorinitials>AQ</authorinitials>
+    <revremark></revremark>
+  </revision>
+
+  <revision>
+    <revnumber>2.7.1</revnumber>
+    <date>2013-11-19</date>
+    <authorinitials>CL</authorinitials>
+    <revremark></revremark>
+  </revision>
+
+  <revision>
+    <revnumber>2.6.5</revnumber>
+    <date>2012-08-08</date>
+    <authorinitials>AQ</authorinitials>
+    <revremark></revremark>
+  </revision>
+
+  <revision>
+    <revnumber>2.6.4</revnumber>
+    <date>2012-05-31</date>
+    <authorinitials>AQ</authorinitials>
+    <revremark></revremark>
+  </revision>
+
+  <revision>
+    <revnumber>2.6.3</revnumber>
+    <date>2012-01-04</date>
+    <authorinitials>AQ</authorinitials>
+    <revremark></revremark>
+  </revision>
+
+  <revision>
+    <revnumber>2.6.2</revnumber>
+    <date>2011-09-15</date>
+    <authorinitials>AQ</authorinitials>
+    <revremark></revremark>
+  </revision>
+
+  <revision>
+    <revnumber>2.6.1</revnumber>
+    <date>2011-06-01</date>
+    <authorinitials>AQ</authorinitials>
+    <revremark></revremark>
+  </revision>
+
+  <revision>
     <revnumber>2.6.0</revnumber>
     <date>2011-01-14</date>
-    <authorinitials></authorinitials>
+    <authorinitials>AQ</authorinitials>
     <revremark>
       First release of AsciiDoc documentation for Network UPS Tools (NUT).
     </revremark>
