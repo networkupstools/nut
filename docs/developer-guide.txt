@@ -2,8 +2,8 @@
 
 Network UPS Tools Developer Guide
 _________________________________
-:Author: Russell_Kroll,_Arnaud_Quette,_Charles_Lepple_and_Peter_Selinger
-:Author Initials: RK, AQ, CL & PS
+:Author: Russell_Kroll,_Arnaud_Quette,_Charles_Lepple,_Peter_Selinger,_Jim_Klimov_and_NUT_project_community_contributors
+:Author Initials: RK, AQ, CL, PS & JK
 
 Introduction
 ============
