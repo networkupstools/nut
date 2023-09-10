@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3198 utf-8
+personal_ws-1.1 en 3208 utf-8
 AAS
 ABI
 ACFAIL
@@ -852,6 +852,7 @@ Opti
 OptiUPS
 Orvaldi
 Orzechowski
+OutletSystem
 OutputOverload
 OvrLds
 PBT
@@ -1020,6 +1021,7 @@ REPLBATT
 REQSSL
 RESPIN
 RETPCT
+REXX
 RK
 RMCARD
 RMXL
@@ -1308,6 +1310,10 @@ UPSDESC
 UPSHOST
 UPSIMAGEPATH
 UPSLC
+UPSOutletSystemOutletDelayBeforeReboot
+UPSOutletSystemOutletDelayBeforeShutdown
+UPSOutletSystemOutletDelayBeforeStartup
+UPSOutletSystemOutletSwitchable
 UPSSTATSPATH
 UPSTEMP
 UPScode
@@ -1927,6 +1933,7 @@ fcntl
 fd
 fds
 fe
+featureReport
 fenton
 fentonups
 fffdddxxx
@@ -2679,6 +2686,7 @@ regtype
 releasekeyring
 relicensing
 repo
+reportId
 reposurgeon
 repotec
 req
@@ -2690,6 +2698,8 @@ ret
 retrydelay
 revdate
 revnumber
+rex
+rexx
 rf
 rfc
 rh
