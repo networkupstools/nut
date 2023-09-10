@@ -2,7 +2,7 @@
 
   <!-- Current release of NUT (to be left on top) -->
   <revision>
-    <revnumber>@PACKAGE_VERSION@</revnumber>
+    <revnumber>@PACKAGE_VERSION@ @NUT_SOURCE_GITREV@</revnumber>
     <date>@now@</date>
     <authorinitials></authorinitials>
     <revremark>

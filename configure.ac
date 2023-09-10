@@ -10,7 +10,8 @@ dnl See docs/maintainer-guide.txt about releases - updating the version
 dnl above is a small part of the consistent ritual!
 
 dnl Note: this refers to GITREV at the time of configure script running
-dnl primarily for better messaging in the script itself.
+dnl primarily for better messaging in the script itself (also to render
+dnl the PDF documentation revision history via docs/docinfo.xml.in).
 dnl If the NUT codebase in this workspace is being developed and rebuilt
 dnl without reconfiguration, detailed version in the binaries will differ
 dnl (that one comes from the NUT_VERSION_MACRO from nut_version.h file).
@@ -3890,6 +3891,7 @@ AC_SUBST(OS_NAME)
 AC_SUBST(TREE_VERSION)
 AC_SUBST(NUT_NETVERSION)
 AC_SUBST(FORCE_NUT_VERSION)
+AC_SUBST(NUT_SOURCE_GITREV)
 AC_SUBST(LIBSSL_CFLAGS)
 AC_SUBST(LIBSSL_LIBS)
 AC_SUBST(LIBSSL_REQUIRES)
