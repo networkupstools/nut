@@ -1,12 +1,12 @@
 <revhistory>
 
-  <!-- Current release of NUT (to be left on top)-->
+  <!-- Current release of NUT (to be left on top) -->
   <revision>
     <revnumber>@PACKAGE_VERSION@</revnumber>
     <date>@now@</date>
     <authorinitials></authorinitials>
     <revremark>
-      Current release of Network UPS Tools (NUT).
+      Current release snapshot of Network UPS Tools (NUT).
     </revremark>
   </revision>
 
