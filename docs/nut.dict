@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3208 utf-8
+personal_ws-1.1 en 3211 utf-8
 AAS
 ABI
 ACFAIL
@@ -1503,6 +1503,7 @@ apcsmart
 apctest
 apcupsd
 aphel
+appveyor
 ar
 archlinux
 arduino
@@ -3194,6 +3195,8 @@ xu
 xxxAP
 xxxx
 xxxxAP
+yaml
+yml
 youruid
 yyy
 zaac
