@@ -19,6 +19,7 @@ Makefile.in
 /ar-lib
 /autom4te.cache/
 /ChangeLog
+/ChangeLog.adoc
 /config.guess
 /config.log
 /config.status

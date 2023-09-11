@@ -46,7 +46,7 @@ CABLES_IMAGES = images/cables/73-0724.png images/cables/940-0024C.jpg \
 ALL_TXT_SRC = nut-names.txt daisychain.txt \
  $(USER_MANUAL_DEPS) $(DEVELOPER_GUIDE_DEPS) \
  $(CABLES_DEPS) FAQ.txt nut-qa.txt packager-guide.txt snmp.txt \
- solaris-usb.txt
+ release-notes.txt ChangeLog.txt solaris-usb.txt
 
 NUT_SPELL_DICT = nut.dict
 EXTRA_DIST += $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
@@ -57,6 +57,7 @@ ASCIIDOC_HTML_SINGLE = user-manual.html \
 	developer-guide.html \
 	packager-guide.html \
 	release-notes.html \
+	ChangeLog.html \
 	solaris-usb.html \
 	cables.html \
 	FAQ.html
@@ -65,6 +66,7 @@ ASCIIDOC_HTML_CHUNKED = user-manual.chunked \
 	developer-guide.chunked \
 	packager-guide.chunked \
 	release-notes.chunked \
+	ChangeLog.chunked \
 	solaris-usb.chunked \
 	cables.chunked \
 	FAQ.chunked
@@ -73,6 +75,7 @@ ASCIIDOC_PDF = user-manual.pdf \
 	developer-guide.pdf \
 	packager-guide.pdf \
 	release-notes.pdf \
+	ChangeLog.pdf \
 	solaris-usb.pdf \
 	cables.pdf \
 	FAQ.pdf
@@ -143,7 +146,7 @@ man:
 	cd $(top_builddir)/docs/man/ && $(MAKE) -f Makefile all
 
 CLEANFILES = *.xml *.html *.pdf *-spellchecked docbook-xsl.css docinfo.xml.in.tmp
-CLEANFILES += ../INSTALL.nut ../UPGRADING ../NEWS
+CLEANFILES += ../INSTALL.nut ../UPGRADING ../NEWS ../ChangeLog.adoc
 CLEANFILES += ../*.adoc-parsed *.adoc-parsed
 
 # Dirs to clean
@@ -158,9 +161,9 @@ clean-local:
 # before rendering into HTML/PDF.
 # Work around some documents that have originally included
 # the asciidoc markup (use double-hash to avoid conversion).
+
 DOCBUILD_FILTER_GITHUB_LINKS = { \
-    echo "  DOC-ASCIIDOC-GITHUB-LINKS    Parsing GitHub link patterns $< => $@"; \
-    cat "$<" | $(SED) \
+    $(SED) \
         -e 's%\(link:https*://github.com/networkupstools/[a-zA-Z0-9./-]*/[1-9][0-9]*/*\[[^]]*\)\#\([1-9][0-9]*\)%\1\#\#\2%g' \
         -e 's%\(issue\) *\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/nut/issues/\2[\1 \#\#\2]\3%g' \
         -e 's%\(PR\|pull request\) *\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/nut/pull/\2[\1 \#\#\2]\3%g' \
@@ -169,13 +172,34 @@ DOCBUILD_FILTER_GITHUB_LINKS = { \
         -e 's%\(PR\|pull request\) *networkupstools/\([^ ][^ ]*\)\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/\2/pull/\3[\1 \2\#\#\3]\4%g' \
         -e 's%\([[ ,]\)networkupstools/\([^ ][^ ]*\)\#\([1-9][0-9]*\)\([^0-9]\|$$\)%\1link:https://github.com/networkupstools/\2/issues/\3[\2\#\#\3]\4%g' \
         -e 's%\#\(\#[1-9][0-9]*\)%\1%g' \
-    > "$@" \
+; }
+
+DOCBUILD_CONVERT_GITHUB_LINKS = { \
+    echo "  DOC-ASCIIDOC-GITHUB-LINKS    Parsing GitHub link patterns $< => $@"; \
+    cat "$<" | $(DOCBUILD_FILTER_GITHUB_LINKS) > "$@.tmp" \
+    && mv -f "$@.tmp" "$@" \
 ; }
 
 .adoc.adoc-parsed:
-	@$(DOCBUILD_FILTER_GITHUB_LINKS)
+	@$(DOCBUILD_CONVERT_GITHUB_LINKS)
 
+../ChangeLog:
+	@cd $(top_builddir) && $(MAKE) $(AM_FLAGS) ChangeLog
 
+../ChangeLog.adoc: ../ChangeLog
+	@echo "  DOC-ASCIIDOC	$< => $@" \
+	 && printf "ifdef::txt[]\n== Very detailed Change Log\nendif::txt[]\n\n" > "$@.tmp" \
+	 && TABCHAR="`printf '\t'`" \
+	 && $(SED) \
+	        -e 's,^\([0-9a-zA-Z]\),=== \1,' \
+	        -e 's,/[+],/\\\\\+,g' \
+	        -e 's,[+][+],\\\+\\\+,g' \
+	        -e 's,^\([ '"$${TABCHAR}"'][^+]*\)\([^+/\]\)[+],\1\2\\\+,g' \
+	        -e 's,^\([ '"$${TABCHAR}"'].*\)\([~|^]\),\1\\\2,g' \
+	        -e 's,\[\[\([^]]*\)\]\],[\1],g' \
+	        -e 's,^\(\s\s*\)\([0-9]\),\1{empty}\2,g' \
+	   < "$<" >> "$@.tmp" \
+	 && mv -f "$@.tmp" "$@"
 
 # Add other directory deps (not for local EXTRA_DIST) and generated contents
 FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS) $(SHARED_DEPS) ../README \
@@ -189,7 +213,8 @@ FULL_DEVELOPER_GUIDE_DEPS = $(DEVELOPER_GUIDE_DEPS) $(SHARED_DEPS) \
 user-manual.html user-manual.chunked user-manual.pdf: $(FULL_USER_MANUAL_DEPS)
 developer-guide.html developer-guide.chunked developer-guide.pdf: $(FULL_DEVELOPER_GUIDE_DEPS)
 packager-guide.html packager-guide.chunked packager-guide.pdf: packager-guide.txt asciidoc.conf
-release-notes.html release-notes.chunked release-notes.pdf: ../NEWS asciidoc.conf
+release-notes.html release-notes.chunked release-notes.pdf: release-notes.txt ../NEWS.adoc-parsed asciidoc.conf
+ChangeLog.html ChangeLog.chunked ChangeLog.pdf: ChangeLog.txt ../ChangeLog.adoc-parsed asciidoc.conf
 solaris-usb.html solaris-usb.chunked solaris-usb.pdf: solaris-usb.txt asciidoc.conf
 
 # Note: without the "-v", asciidoc (circa 8.6.2) sometimes hangs when
@@ -206,6 +231,8 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) \
     --attribute=badges \
     --attribute=external_title \
     --attribute=tree_version="@TREE_VERSION@" \
+    --attribute=srcdir="$(abs_srcdir)" \
+    --attribute=builddir="$(abs_builddir)" \
     -a toc -a numbered --destination-dir=$${A2X_OUTDIR}
 # NOTE: a2x newer than 8.6.8 says "--destination-dir" is only valid for HTML.
 # As of version 8.6.9 it lies, and the argument is required for our distcheck

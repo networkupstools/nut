@@ -1,6 +1,6 @@
 ifdef::txt[]
-Release notes (detailed NUT project news)
-=========================================
+NUT Release Notes
+=================
 endif::txt[]
 
 If you're upgrading from an earlier version, see the linkdoc:UPGRADING.adoc[] file.
