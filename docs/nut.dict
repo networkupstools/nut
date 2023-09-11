@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3211 utf-8
+personal_ws-1.1 en 3213 utf-8
 AAS
 ABI
 ACFAIL
@@ -172,6 +172,7 @@ CERTREQUEST
 CERTVERIF
 CEST
 CHRG
+CL
 CLANGVER
 CLI
 CLOCAL
@@ -533,6 +534,7 @@ Ioannou
 JAWAN
 JBUS
 JBus
+JK
 JKL
 JRE
 JSON
