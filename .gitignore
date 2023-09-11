@@ -38,6 +38,7 @@ Makefile.in
 /depcomp
 /INSTALL
 /INSTALL.nut
+/NEWS
 /TODO
 /UPGRADING
 /install-sh
