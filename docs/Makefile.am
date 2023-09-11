@@ -51,7 +51,7 @@ ALL_TXT_SRC = nut-names.txt daisychain.txt \
 NUT_SPELL_DICT = nut.dict
 EXTRA_DIST += $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
  $(CABLES_IMAGES) $(NUT_SPELL_DICT) \
- common.xsl xhtml.xsl chunked.xsl asciidoc.txt
+ docinfo.xml common.xsl xhtml.xsl chunked.xsl asciidoc.txt
 
 ASCIIDOC_HTML_SINGLE = user-manual.html \
 	developer-guide.html \
@@ -227,6 +227,7 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) \
     --xsltproc-opts="--stringparam nut.localdate \"`TZ=UTC date +%Y-%m-%d`\"" \
     --xsltproc-opts="--stringparam nut.localtime \"`TZ=UTC date +%H:%M:%S`\"" \
     --xsltproc-opts="--stringparam nut.nutversion \"@PACKAGE_VERSION@\"" \
+    --attribute=docinfodir="$(builddir)" \
     --attribute=iconsdir="$(srcdir)/images" \
     --attribute=badges \
     --attribute=external_title \
