@@ -48,6 +48,11 @@ https://github.com/networkupstools/nut/milestone/8
    https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml?search=3493
    (even though this RFC is not formally an Internet Standard)
 
+ - NUT documentation files were rearranged, renaming some to `*.adoc` pattern
+   to facilitate automatic rendering in GitHub and IDE GUIs, and adding recipe
+   support for GitHub issue/PR links. This `NEWS` file is now proper asciidoc
+   rendered into `release-notes.pdf` (and HTML versions) [issue #1953, PR #2048]
+
  - Published a new maintainer GPG key to sign tags and release artifacts,
    and possibly git commits as well, as part of solution for issue #1410.
    You can pull it from common OpenPGP servers with the following command:
