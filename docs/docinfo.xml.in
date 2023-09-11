@@ -16,70 +16,94 @@
     <revnumber>2.8.0</revnumber>
     <date>2022-04-26</date>
     <authorinitials>JK</authorinitials>
-    <revremark></revremark>
+    <revremark>
+        See also: link:https://raw.githubusercontent.com/networkupstools/nut/v2.8.0/NEWS[NEWS file for the NUT v2.8.0 release]
+    </revremark>
   </revision>
 
   <revision>
     <revnumber>2.7.4</revnumber>
     <date>2016-03-09</date>
     <authorinitials>AQ</authorinitials>
-    <revremark></revremark>
+    <revremark>
+        See also: link:https://raw.githubusercontent.com/networkupstools/nut/v2.7.4/NEWS[NEWS file for the NUT v2.7.4 release]
+    </revremark>
   </revision>
 
   <revision>
     <revnumber>2.7.3</revnumber>
     <date>2015-04-22</date>
     <authorinitials>AQ</authorinitials>
-    <revremark></revremark>
+    <revremark>
+        See also: link:https://raw.githubusercontent.com/networkupstools/nut/v2.7.3/NEWS[NEWS file for the NUT v2.7.3 release]
+    </revremark>
   </revision>
 
   <revision>
     <revnumber>2.7.2</revnumber>
     <date>2014-04-17</date>
     <authorinitials>AQ</authorinitials>
-    <revremark></revremark>
+    <revremark>
+        See also: link:https://raw.githubusercontent.com/networkupstools/nut/v2.7.2/NEWS[NEWS file for the NUT v2.7.2 release]
+    </revremark>
   </revision>
 
   <revision>
     <revnumber>2.7.1</revnumber>
     <date>2013-11-19</date>
     <authorinitials>CL</authorinitials>
-    <revremark></revremark>
+    <revremark>
+        See also: link:https://raw.githubusercontent.com/networkupstools/nut/v2.7.1/NEWS[NEWS file for the NUT v2.7.1 release]
+    </revremark>
   </revision>
 
   <revision>
     <revnumber>2.6.5</revnumber>
     <date>2012-08-08</date>
     <authorinitials>AQ</authorinitials>
-    <revremark></revremark>
+    <revremark>
+        See also: link:https://raw.githubusercontent.com/networkupstools/nut/v2.6.5/NEWS[NEWS file for the NUT v2.6.5 release]
+    </revremark>
   </revision>
 
   <revision>
     <revnumber>2.6.4</revnumber>
     <date>2012-05-31</date>
     <authorinitials>AQ</authorinitials>
-    <revremark></revremark>
+    <revremark>
+        See also: link:https://raw.githubusercontent.com/networkupstools/nut/v2.6.4/NEWS[NEWS file for the NUT v2.6.4 release]
+    </revremark>
   </revision>
 
   <revision>
     <revnumber>2.6.3</revnumber>
     <date>2012-01-04</date>
     <authorinitials>AQ</authorinitials>
-    <revremark></revremark>
+    <revremark>
+        See also: link:https://raw.githubusercontent.com/networkupstools/nut/v2.6.3/NEWS[NEWS file for the NUT v2.6.3 release]
+    </revremark>
   </revision>
 
   <revision>
     <revnumber>2.6.2</revnumber>
     <date>2011-09-15</date>
     <authorinitials>AQ</authorinitials>
-    <revremark></revremark>
+    <revremark>
+        Introduced `nut-scanner` tool and `nut-ipmipsu` driver,
+        and a new `apcsmart` implementation.
+        See also: link:https://raw.githubusercontent.com/networkupstools/nut/v2.6.2/NEWS[NEWS file for the NUT v2.6.2 release]
+    </revremark>
   </revision>
 
   <revision>
     <revnumber>2.6.1</revnumber>
     <date>2011-06-01</date>
     <authorinitials>AQ</authorinitials>
-    <revremark></revremark>
+    <revremark>
+        Introduced `default.*` and `override.*` optional settings in `ups.conf`.
+        Introduced an `ups.efficiency` report and `outlet.0` special handling.
+        See also: link:https://raw.githubusercontent.com/networkupstools/nut/v2.6.1/NEWS[NEWS file for the NUT v2.6.1 release]
+    </revremark>
   </revision>
 
   <revision>
@@ -87,7 +111,8 @@
     <date>2011-01-14</date>
     <authorinitials>AQ</authorinitials>
     <revremark>
-      First release of AsciiDoc documentation for Network UPS Tools (NUT).
+        First release of AsciiDoc documentation for Network UPS Tools (NUT).
+        See also: link:https://raw.githubusercontent.com/networkupstools/nut/v2.6.0/NEWS[NEWS file for the NUT v2.6.0 release]
     </revremark>
   </revision>
 
