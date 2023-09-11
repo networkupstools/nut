@@ -20,7 +20,7 @@ libtool: $(LIBTOOL_DEPS)
 	$(SHELL) ./config.status libtool
 
 # COPYING is included automatically.
-EXTRA_DIST = INSTALL.nut.adoc LICENSE-GPL2 LICENSE-GPL3 MAINTAINERS UPGRADING.adoc TODO.adoc
+EXTRA_DIST = INSTALL.nut.adoc LICENSE-GPL2 LICENSE-GPL3 MAINTAINERS UPGRADING.adoc TODO.adoc NEWS.adoc
 
 # Tarballs created by `make dist` include the `configure.ac` and `m4/*` sources
 # but lack NUT magic logic to recreate the `configure` script if someone would
@@ -133,6 +133,7 @@ spellcheck spellcheck-interactive:
 # such as PDF generators, so it should only be called at developer's
 # discretion, choice and risk. The "check-man" targets covers source
 # texts, man pages and HTML rendering of man pages, as enabled by tools.
+INSTALL.nut UPGRADING NEWS \
 doc spellcheck-sortdict \
 all-docs check-docs \
 man all-man man-man check-man man-html all-html:
