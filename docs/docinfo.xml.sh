@@ -24,7 +24,7 @@ generate_tags() {
 
         NUT_RELEASER="`git log -1 --pretty=format:'%cn' "${RELTAG}" | tr -d 'a-z '`"
         # Beware to not use "|" in formatting below! Used for sed magic later.
-        git log -1 --pretty=tformat:'  <revision>%n    <revnumber>@NUT_RELEASE@</revnumber>%n    <date>%cs</date>%n    <authorinitials>@NUT_RELEASER@</authorinitials>%n    <revremark></revremark>%n  </revision>%n' \
+        git log -1 --pretty=tformat:'  <revision>%n    <revnumber>@NUT_RELEASE@</revnumber>%n    <date>%cs</date>%n    <authorinitials>@NUT_RELEASER@</authorinitials>%n    <revremark>%n        See also: link:https://raw.githubusercontent.com/networkupstools/nut/'"${RELTAG}"'/NEWS[NEWS file for the NUT '"${RELTAG}"' release]%n    </revremark>%n  </revision>%n' \
             "${RELTAG}" \
         | sed \
             -e 's,@NUT_RELEASE@,'"${NUT_RELEASE}"',' \
