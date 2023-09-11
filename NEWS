@@ -314,6 +314,10 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
  - Clarified documentation in codebase according to end-user feedback [#1721,
    #1750 and others over time]
 
+ - upssched: let `UPSNAME@localhost` specification strings copied from
+   upsmon config "just work" (previously only exact UPSNAME matches were
+   supported) [#1858]
+
  - Several fixes for `upsmon` behavior [#1761, #1680...], including new
    ability to configure default POWERDOWNFLAG location -- packagers are
    encouraged to pick optimal location for their distributions (which
