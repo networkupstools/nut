@@ -11,7 +11,7 @@ control history for "live" codebase.
 
 
 PLANNED: Release notes for NUT 2.8.3 - what's new since 2.8.2
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------------------
 
 https://github.com/networkupstools/nut/milestone/9
 
@@ -21,7 +21,7 @@ https://github.com/networkupstools/nut/milestone/9
 
 
 PLANNED: Release notes for NUT 2.8.2 - what's new since 2.8.1
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------------------
 
 https://github.com/networkupstools/nut/milestone/10
 
@@ -38,7 +38,7 @@ https://github.com/networkupstools/nut/milestone/10
 
 
 PLANNED: Release notes for NUT 2.8.1 - what's new since 2.8.0
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------------------
 
 https://github.com/networkupstools/nut/milestone/8
 
@@ -418,7 +418,7 @@ and a `driver.killpower` instant command (for safety, must be unlocked by
 
 
 Release notes for NUT 2.8.0 - what's new since 2.7.4
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------------
 
 NOTE: Earlier discussions (mailing list threads, GitHub issues, etc.) could
 refer to this change set (too long in the making) as NUT 2.7.5.
@@ -824,7 +824,7 @@ refer to this change set (too long in the making) as NUT 2.7.5.
 
 
 Release notes for NUT 2.7.4 - what's new since 2.7.3
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------------
 
  - New class of device supported: ATS - Automatic Transfer Switch are now
    supported in NUT. Eaton ATS are supported, and APC ones should be too. Users
@@ -941,8 +941,9 @@ Release notes for NUT 2.7.4 - what's new since 2.7.3
  - As usual, more bugfixes, cleanup and improvements, on both source code
    and documentation.
 
----------------------------------------------------------------------------
-Release notes for NUT 2.7.3 - what's new since 2.7.2:
+
+Release notes for NUT 2.7.3 - what's new since 2.7.2
+----------------------------------------------------
 
  - reverted POWERDOWNFLAG to /etc/killpower as in 2.6.5 (packagers may want to
    put this in another filesystem, though)
@@ -1013,7 +1014,7 @@ Release notes for NUT 2.7.3 - what's new since 2.7.2:
 
 
 Release notes for NUT 2.7.2 - what's new since 2.7.1
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------------
 
  - This release is the second interim release of the 2.7 testing series.
 
@@ -1059,7 +1060,7 @@ Release notes for NUT 2.7.2 - what's new since 2.7.1
 
 
 Release notes for NUT 2.7.1 - what's new since 2.6.5
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------------
 
 NOTE: There was no public NUT 2.7.0 release.
 
@@ -1139,7 +1140,7 @@ NOTE: There was no public NUT 2.7.0 release.
 
 
 Release notes for NUT 2.6.5 - what's new since 2.6.4
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------------
 
  - This release fixes an important regression in upssched:
    any upssched.conf command that takes a second argument resulted in
@@ -1189,7 +1190,7 @@ Release notes for NUT 2.6.5 - what's new since 2.6.4
 
 
 Release notes for NUT 2.6.4 - what's new since 2.6.3
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------------
 
  - This release Fix an important vulnerability in upsd
    (CVE-2012-2944: upsd can be remotely crashed)
@@ -1309,7 +1310,7 @@ Release notes for NUT 2.6.4 - what's new since 2.6.3
 
 
 Release notes for NUT 2.6.3 - what's new since 2.6.2
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------------
 
  - nut-scanner is now more portable, and provides more coherent option names.
    IPMI support has also been added, to discover local power supplies.
@@ -1361,7 +1362,7 @@ Release notes for NUT 2.6.3 - what's new since 2.6.2
 
 
 Release notes for NUT 2.6.2 - what's new since 2.6.1
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------------
 
  - NUT can now monitor power supply units (PSU) in servers, through IPMI, using
    the new experimental 'nut-ipmipsu' driver. Users are encouraged to test it,
@@ -1435,7 +1436,7 @@ Release notes for NUT 2.6.2 - what's new since 2.6.1
 
 
 Release notes for NUT 2.6.1 - what's new since 2.6.0
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------------
 
  - the various recent USB regressions have been definitely fixed.
 
@@ -1481,7 +1482,7 @@ Release notes for NUT 2.6.1 - what's new since 2.6.0
 
 
 Release notes for NUT 2.6.0 - what's new since 2.4.3
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------------
 
 NOTE: Per original semantic versioning, there were no public NUT 2.5.x releases.
 
@@ -1545,13 +1546,13 @@ NOTE: Per original semantic versioning, there were no public NUT 2.5.x releases.
 
 
 Release notes for NUT 2.4.3 - what's new since 2.4.2
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------------
 
  - this is a bugfix release that only solves the regression on IPv6 activation.
 
 
 Release notes for NUT 2.4.2 - what's new since 2.4.1
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------------
 
  - the general USB support has been vastly improved, including many bug
    fixes, better OS support, new features and devices.
@@ -1590,7 +1591,7 @@ Release notes for NUT 2.4.2 - what's new since 2.4.1
 
 
 Release notes for NUT 2.4.1 - what's new since 2.4.0
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------------
 
  - the microdowell driver has appeared to support various MicroDowell Enterprise
    units (see the "new devices" list below).
@@ -1607,7 +1608,7 @@ Release notes for NUT 2.4.1 - what's new since 2.4.0
 
 
 Release notes for NUT 2.4.0 - what's new since 2.2.2
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------------
 
 NOTE: Per original semantic versioning, there were no public NUT 2.3.x releases.
 
@@ -1661,7 +1662,7 @@ NOTE: Per original semantic versioning, there were no public NUT 2.3.x releases.
 
 
 Release notes for NUT 2.2.2 - what's new since 2.2.1
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------------
 
  - support for new devices: APC BACK-UPS XS LCD, Atlantis Land,
    Mustek Powermust Office 650, Oneac XAU models, Powerware PW5115 and
@@ -1698,7 +1699,7 @@ Release notes for NUT 2.2.2 - what's new since 2.2.1
 
 
 Release notes for NUT 2.2.1 - what's new since 2.2.0
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------------
 
  - support for new devices: all MGE Office Protection Systems units,
    Advice TopGuard 2000, Belkin F6H375-USB, Dynamix UPS1700D, Effekta RM2000MH,
@@ -1721,7 +1722,7 @@ Release notes for NUT 2.2.1 - what's new since 2.2.0
 
 
 Release notes for NUT 2.2.0 - what's new since 2.0.5
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------------
 
 NOTE: Per original semantic versioning, there were no public NUT 2.1.x releases.
 
@@ -1766,7 +1767,7 @@ NOTE: Per original semantic versioning, there were no public NUT 2.1.x releases.
 
 
 Release notes for NUT 2.0.5 - what's new since 2.0.4
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------------
 
  This release is a backport of the development version.  Many changes
  have already been backported previously.  Thus it is more a
@@ -1802,7 +1803,7 @@ Release notes for NUT 2.0.5 - what's new since 2.0.4
 
 
 Release notes for NUT 2.0.4 - what's new since 2.0.3
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------------
 
  - The newhidups critical bug (segmentation fault) has been fixed. It has
    also received some more care, like bugfixes and new models support and
@@ -1844,7 +1845,7 @@ Release notes for NUT 2.0.4 - what's new since 2.0.3
 
 
 Release notes for NUT 2.0.3 - what's new since 2.0.2
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------------
 
  - The recent and major newhidups changes have been backported from the
    Development tree. It now:
@@ -1903,7 +1904,7 @@ Release notes for NUT 2.0.3 - what's new since 2.0.2
 
 
 Release notes for NUT 2.0.2 - what's new since 2.0.1
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------------
 
  - the newhidups USB driver has been improved a lot and is no more
    experimental. It also now has a basic APC support, which will
@@ -1960,7 +1961,7 @@ Release notes for NUT 2.0.2 - what's new since 2.0.1
 
 
 Release notes for NUT 2.0.1 - what's new since 2.0.0
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------------
 
  - The bestuferrups driver has been forked into the new bestfcom driver
    which has better handling of the inverter status alarm messages and
@@ -2063,7 +2064,7 @@ Release notes for NUT 2.0.1 - what's new since 2.0.0
 
 
 Release notes for NUT 2.0.0 - what's new since 1.4.x
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------------
 
  - The new naming scheme for variables and commands (introduced in 1.4)
    is now mandatory.  The 1.4 tree supported both the old (STATUS) and
@@ -2188,7 +2189,7 @@ Release notes for NUT 2.0.0 - what's new since 1.4.x
 
 
 Release notes for NUT 1.4.0 - what's new since 1.2.x
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------------
 
  - The drivers and upsd now communicate over Unix domain sockets instead
    of state files, shared memory, or state files with mmap.  This change
@@ -2423,7 +2424,7 @@ Release notes for NUT 1.4.0 - what's new since 1.2.x
 
 
 Release notes for NUT 1.2.2 - what's new since 1.2.1
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------------
 
  - The snmp-ups driver has been upgraded and expanded.  It now supports
    multiple MIBs, meaning it can handle RFC 1628, APCC, and MGE
@@ -2512,13 +2513,13 @@ Release notes for NUT 1.2.2 - what's new since 1.2.1
 
 
 Release notes for NUT 1.2.1 - what's new since 1.2.0
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------------
 
  - The sms driver is back, with support for Microlink Manager III
    hardware. [Marcio Gomes]
 
- - Fideltronik Ares Series hardware is now supported as genericups type
-   19.  [Tomek Orzechowski and Arkadiusz Mikiewicz]
+ - Fideltronik Ares Series hardware is now supported as genericups
+   type 19.  [Tomek Orzechowski and Arkadiusz Mikiewicz]
 
  - The drivers no longer silently drop instant commands or set commands
    from upsd that happen to get fragmented in transit.
@@ -2538,7 +2539,7 @@ Release notes for NUT 1.2.1 - what's new since 1.2.0
 
 
 Historic releases
-~~~~~~~~~~~~~~~~~
+-----------------
 
 More ancient history is not covered in detail here.
 

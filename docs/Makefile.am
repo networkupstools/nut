@@ -144,6 +144,7 @@ man:
 
 CLEANFILES = *.xml *.html *.pdf *-spellchecked docbook-xsl.css docinfo.xml.in.tmp
 CLEANFILES += ../INSTALL.nut ../UPGRADING ../NEWS
+CLEANFILES += ../*.adoc-parsed *.adoc-parsed
 
 # Dirs to clean
 clean-local:
@@ -171,18 +172,14 @@ DOCBUILD_FILTER_GITHUB_LINKS = { \
     > "$@" \
 ; }
 
-../INSTALL.nut: ../INSTALL.nut.adoc
+.adoc.adoc-parsed:
 	@$(DOCBUILD_FILTER_GITHUB_LINKS)
 
-../UPGRADING: ../UPGRADING.adoc
-	@$(DOCBUILD_FILTER_GITHUB_LINKS)
 
-../NEWS: ../NEWS.adoc
-	@$(DOCBUILD_FILTER_GITHUB_LINKS)
 
 # Add other directory deps (not for local EXTRA_DIST) and generated contents
 FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS) $(SHARED_DEPS) ../README \
-	../INSTALL.nut ../UPGRADING \
+	../INSTALL.nut.adoc-parsed ../UPGRADING.adoc-parsed \
 	../TODO.adoc ../scripts/ufw/README.adoc
 FULL_DEVELOPER_GUIDE_DEPS = $(DEVELOPER_GUIDE_DEPS) $(SHARED_DEPS) \
 	../scripts/augeas/README.adoc ../TODO.adoc \

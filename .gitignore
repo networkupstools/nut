@@ -45,6 +45,7 @@ Makefile.in
 /missing
 /test-driver
 *-spellchecked
+*.adoc-parsed
 /cppcheck*.xml
 /.ci*.log
 /.ci*.log.*
