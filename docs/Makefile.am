@@ -146,8 +146,8 @@ man:
 	cd $(top_builddir)/docs/man/ && $(MAKE) -f Makefile all
 
 CLEANFILES = *.xml *.html *.pdf *-spellchecked docbook-xsl.css docinfo.xml.in.tmp
-CLEANFILES += ../INSTALL.nut ../UPGRADING ../NEWS ../ChangeLog.adoc
-CLEANFILES += ../*.adoc-parsed *.adoc-parsed
+CLEANFILES += $(top_builddir)/INSTALL.nut $(top_builddir)/UPGRADING $(top_builddir)/NEWS $(top_builddir)/ChangeLog.adoc
+CLEANFILES += $(top_builddir)/*.adoc-parsed *.adoc-parsed
 
 # Dirs to clean
 clean-local:
@@ -183,10 +183,10 @@ DOCBUILD_CONVERT_GITHUB_LINKS = { \
 .adoc.adoc-parsed:
 	@$(DOCBUILD_CONVERT_GITHUB_LINKS)
 
-../ChangeLog:
-	@cd $(top_builddir) && $(MAKE) $(AM_FLAGS) ChangeLog
+$(top_builddir)/ChangeLog:
+	@cd $(top_builddir) && $(MAKE) $(AM_FLAGS) $(@F)
 
-../ChangeLog.adoc: ../ChangeLog
+$(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	@echo "  DOC-ASCIIDOC	$< => $@" \
 	 && printf "ifdef::txt[]\n== Very detailed Change Log\nendif::txt[]\n\n" > "$@.tmp" \
 	 && TABCHAR="`printf '\t'`" \
@@ -203,7 +203,7 @@ DOCBUILD_CONVERT_GITHUB_LINKS = { \
 
 # Add other directory deps (not for local EXTRA_DIST) and generated contents
 FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS) $(SHARED_DEPS) ../README \
-	../INSTALL.nut.adoc-parsed ../UPGRADING.adoc-parsed \
+	$(top_builddir)/INSTALL.nut.adoc-parsed $(top_builddir)/UPGRADING.adoc-parsed \
 	../TODO.adoc ../scripts/ufw/README.adoc
 FULL_DEVELOPER_GUIDE_DEPS = $(DEVELOPER_GUIDE_DEPS) $(SHARED_DEPS) \
 	../scripts/augeas/README.adoc ../TODO.adoc \
@@ -213,8 +213,8 @@ FULL_DEVELOPER_GUIDE_DEPS = $(DEVELOPER_GUIDE_DEPS) $(SHARED_DEPS) \
 user-manual.html user-manual.chunked user-manual.pdf: $(FULL_USER_MANUAL_DEPS)
 developer-guide.html developer-guide.chunked developer-guide.pdf: $(FULL_DEVELOPER_GUIDE_DEPS)
 packager-guide.html packager-guide.chunked packager-guide.pdf: packager-guide.txt asciidoc.conf
-release-notes.html release-notes.chunked release-notes.pdf: release-notes.txt ../NEWS.adoc-parsed asciidoc.conf
-ChangeLog.html ChangeLog.chunked ChangeLog.pdf: ChangeLog.txt ../ChangeLog.adoc-parsed asciidoc.conf
+release-notes.html release-notes.chunked release-notes.pdf: release-notes.txt $(top_builddir)/NEWS.adoc-parsed asciidoc.conf
+ChangeLog.html ChangeLog.chunked ChangeLog.pdf: ChangeLog.txt $(top_builddir)/ChangeLog.adoc-parsed asciidoc.conf
 solaris-usb.html solaris-usb.chunked solaris-usb.pdf: solaris-usb.txt asciidoc.conf
 
 # Note: without the "-v", asciidoc (circa 8.6.2) sometimes hangs when
