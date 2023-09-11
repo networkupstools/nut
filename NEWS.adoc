@@ -3,7 +3,7 @@ NUT Release Notes
 =================
 endif::txt[]
 
-If you're upgrading from an earlier version, see the linkdoc:UPGRADING.adoc[] file.
+If you're upgrading from an earlier version, see the link:UPGRADING.adoc[] file.
 
 For a complete and more detailed list of changes, please refer to the
 ChangeLog file (generated for release archives), or to the Git version
@@ -2543,4 +2543,4 @@ Historic releases
 
 More ancient history is not covered in detail here.
 
-You can see linkdoc:docs/history.txt[] for more details.
+You can see link:docs/history.txt[] for more details.
