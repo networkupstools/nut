@@ -140,6 +140,7 @@ man:
 	cd $(top_builddir)/docs/man/ && $(MAKE) -f Makefile all
 
 CLEANFILES = *.xml *.html *.pdf *-spellchecked docbook-xsl.css docinfo.xml.in.tmp
+CLEANFILES += ../INSTALL.nut ../UPGRADING
 
 # Dirs to clean
 clean-local:
@@ -148,10 +149,17 @@ clean-local:
 ### TODO: automatic dependency generation
 # Add other directory deps (not for local EXTRA_DIST) and generated contents
 FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS) $(SHARED_DEPS) ../README \
-	../INSTALL.nut ../UPGRADING ../TODO ../scripts/ufw/README
+	../INSTALL.nut ../UPGRADING \
+	../TODO.adoc ../scripts/ufw/README.adoc
 FULL_DEVELOPER_GUIDE_DEPS = $(DEVELOPER_GUIDE_DEPS) $(SHARED_DEPS) \
-	../scripts/augeas/README ../TODO ../lib/README \
-	../tools/nut-scanner/README
+	../scripts/augeas/README.adoc ../TODO.adoc \
+	../lib/README.adoc \
+	../tools/nut-scanner/README.adoc
+
+../INSTALL.nut: ../INSTALL.nut.adoc
+../UPGRADING: ../UPGRADING.adoc
+	@echo "  DOC-ASCIIDOC    $< => $@"
+	@cat "$<" > "$@"
 
 user-manual.html user-manual.chunked user-manual.pdf: $(FULL_USER_MANUAL_DEPS)
 developer-guide.html developer-guide.chunked developer-guide.pdf: $(FULL_DEVELOPER_GUIDE_DEPS)
@@ -271,9 +279,11 @@ if HAVE_ASPELL
 # its spelling (or errors in that) are not fixable and thus irrelevant.
 # Similarly for the ../INSTALL file that is prepared by autoconf and not
 # tracked as a source file by NUT Git repository.
-SPELLCHECK_SRC = $(ALL_TXT_SRC) ../README ../INSTALL.nut ../UPGRADING  ../NEWS \
-	../TODO ../scripts/ufw/README ../scripts/augeas/README ../lib/README \
-	../tools/nut-scanner/README \
+SPELLCHECK_SRC = $(ALL_TXT_SRC) ../README ../NEWS \
+	../INSTALL.nut.adoc ../UPGRADING.adoc \
+	../TODO.adoc ../scripts/ufw/README.adoc \
+	../scripts/augeas/README.adoc ../lib/README.adoc \
+	../tools/nut-scanner/README.adoc \
 	../AUTHORS ../COPYING ../LICENSE-GPL2 ../LICENSE-GPL3 ../LICENSE-DCO
 
 # Directory SPELLCHECK_SRC files are relative to. Overriden by other Makefiles.

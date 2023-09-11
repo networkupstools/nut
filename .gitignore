@@ -36,6 +36,9 @@ Makefile.in
 /cscope.*
 /depcomp
 /INSTALL
+/INSTALL.nut
+/TODO
+/UPGRADING
 /install-sh
 /libtool
 /ltmain.sh

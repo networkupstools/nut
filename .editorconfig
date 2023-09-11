@@ -52,7 +52,7 @@ line_comment = dnl
 max_line_length = 76
 line_comment = #
 
-[*.txt{,.in},AUTHORS,COPYING,INSTALL.nut,MAINTAINERS,NEWS,README,TODO,UPGRADING]
+[*.txt{,.in},*.adoc{,.in},AUTHORS,COPYING,INSTALL.nut,MAINTAINERS,NEWS,README,TODO,UPGRADING]
 max_line_length = 76
 indent_style = space
 indent_size = 4

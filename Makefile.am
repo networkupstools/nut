@@ -20,7 +20,7 @@ libtool: $(LIBTOOL_DEPS)
 	$(SHELL) ./config.status libtool
 
 # COPYING is included automatically.
-EXTRA_DIST = INSTALL.nut LICENSE-GPL2 LICENSE-GPL3 MAINTAINERS UPGRADING
+EXTRA_DIST = INSTALL.nut.adoc LICENSE-GPL2 LICENSE-GPL3 MAINTAINERS UPGRADING.adoc TODO.adoc
 
 # Tarballs created by `make dist` include the `configure.ac` and `m4/*` sources
 # but lack NUT magic logic to recreate the `configure` script if someone would

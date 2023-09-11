@@ -81,7 +81,7 @@ include::download.txt[]
 
 [[_installation_instructions]]
 
-include::../INSTALL.nut[]
+include::../INSTALL.nut.adoc[]
 
 
 [[Configuration_notes]]
