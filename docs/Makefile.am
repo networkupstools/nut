@@ -146,7 +146,34 @@ CLEANFILES += ../INSTALL.nut ../UPGRADING
 clean-local:
 	$(AM_V_at)rm -rf *.chunked *.bak tmp
 
-### TODO: automatic dependency generation
+### TODO: general automatic dependency generation
+
+# Prepare text files (currently a manually tracked list)
+# with known presence of GitHub links to convert them from
+# short <hash><number> notation into asciidoc link markup
+# before rendering into HTML/PDF.
+# Work around some documents that have originally included
+# the asciidoc markup (use double-hash to avoid conversion).
+DOCBUILD_FILTER_GITHUB_LINKS = { \
+    echo "  DOC-ASCIIDOC-GITHUB-LINKS    Parsing GitHub link patterns $< => $@"; \
+    cat "$<" | $(SED) \
+        -e 's%\(link:https*://github.com/networkupstools/[a-zA-Z0-9./-]*/[1-9][0-9]*/*\[[^]]*\)\#\([1-9][0-9]*\)%\1\#\#\2%g' \
+        -e 's%\(issue\) *\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/nut/issues/\2[\1 \#\#\2]\3%g' \
+        -e 's%\(PR\|pull request\) *\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/nut/pull/\2[\1 \#\#\2]\3%g' \
+        -e 's%\([[ ,]\)\#\([1-9][0-9]*\)\([^0-9]\|$$\)%\1link:https://github.com/networkupstools/nut/issues/\2[\#\#\2]\3%g' \
+        -e 's%\(issue\) networkupstools/\([^ ][^ ]*\)\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/\2/issues/\3[\1 \2\#\#\3]\4%g' \
+        -e 's%\(PR\|pull request\) *networkupstools/\([^ ][^ ]*\)\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/\2/pull/\3[\1 \2\#\#\3]\4%g' \
+        -e 's%\([[ ,]\)networkupstools/\([^ ][^ ]*\)\#\([1-9][0-9]*\)\([^0-9]\|$$\)%\1link:https://github.com/networkupstools/\2/issues/\3[\2\#\#\3]\4%g' \
+        -e 's%\#\(\#[1-9][0-9]*\)%\1%g' \
+    > "$@" \
+; }
+
+../INSTALL.nut: ../INSTALL.nut.adoc
+	@$(DOCBUILD_FILTER_GITHUB_LINKS)
+
+../UPGRADING: ../UPGRADING.adoc
+	@$(DOCBUILD_FILTER_GITHUB_LINKS)
+
 # Add other directory deps (not for local EXTRA_DIST) and generated contents
 FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS) $(SHARED_DEPS) ../README \
 	../INSTALL.nut ../UPGRADING \
@@ -155,11 +182,6 @@ FULL_DEVELOPER_GUIDE_DEPS = $(DEVELOPER_GUIDE_DEPS) $(SHARED_DEPS) \
 	../scripts/augeas/README.adoc ../TODO.adoc \
 	../lib/README.adoc \
 	../tools/nut-scanner/README.adoc
-
-../INSTALL.nut: ../INSTALL.nut.adoc
-../UPGRADING: ../UPGRADING.adoc
-	@echo "  DOC-ASCIIDOC    $< => $@"
-	@cat "$<" > "$@"
 
 user-manual.html user-manual.chunked user-manual.pdf: $(FULL_USER_MANUAL_DEPS)
 developer-guide.html developer-guide.chunked developer-guide.pdf: $(FULL_DEVELOPER_GUIDE_DEPS)
