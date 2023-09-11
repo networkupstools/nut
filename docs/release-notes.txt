@@ -12,8 +12,12 @@ The primary goal of the Network UPS Tools (NUT) project is to provide support
 for Power Devices, such as Uninterruptible Power Supplies, Power Distribution
 Units and Solar Controllers.
 
-This document does not intend to detail the change log: it is very large and
-complicated to render properly, so is served by another document artifact.
+This document intends to report high-level changes delivered by NUT project
+releases, as well as practical nuances for packagers and end-users who would
+be upgrading their NUT deployments.
+
+It DOES NOT intend to detail the change log: it is very large and complicated
+to render properly, so is better served by another document artifact.
 
 If you wish to discover how everything came together, have a look at the
 <<Project_History,Project History>>.
@@ -24,6 +28,13 @@ NUT Release Notes (and other feature details)
 =============================================
 
 include::{builddir}/../NEWS.adoc-parsed[]
+
+
+[[NUT_Upgrading_Notes]]
+NUT Upgrading Notes
+===================
+
+include::{builddir}/../UPGRADING.adoc-parsed[]
 
 
 [[Project_History]]

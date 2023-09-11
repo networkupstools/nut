@@ -5,6 +5,9 @@ endif::txt[]
 
 If you're upgrading from an earlier version, see the link:UPGRADING.adoc[] file.
 
+Please note that web and source document links, product and service names
+listed in historic entries of past releases may no longer be relevant.
+
 For a complete and more detailed list of changes, please refer to the
 ChangeLog file (generated for release archives), or to the Git version
 control history for "live" codebase.
