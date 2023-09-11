@@ -13,6 +13,10 @@ explicitly for items not supported on your platform, so you do not miss
 out on new NUT features as they come with new releases. Some may require
 that you update your build environment with new third-party dependencies,
 so a broken build of a new NUT release would let you know how to act.
++
+This is a good time to point out that for stricter packaging systems, it may
+be beneficial to add `--enable-option-checking=fatal` to the `./configure`
+command line, in order to quickly pick up any other removed option flags.
 
 Changes from 2.8.0 to 2.8.1
 ---------------------------
