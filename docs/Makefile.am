@@ -184,10 +184,24 @@ DOCBUILD_CONVERT_GITHUB_LINKS = { \
 	@$(DOCBUILD_CONVERT_GITHUB_LINKS)
 
 $(top_builddir)/ChangeLog:
-	@cd $(top_builddir) && $(MAKE) $(AM_FLAGS) $(@F)
+	@echo "  DOC-CHANGELOG-GENERATE	$@" \
+	 && cd $(top_builddir) && $(MAKE) $(AM_FLAGS) $(@F)
 
+# BSD Make dislikes the path resolution here and does not always
+# populate "$<", but it has a "$?" for "list of dependencies that
+# are newer than the target". For more details see
+# https://man.freebsd.org/cgi/man.cgi
 $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
-	@echo "  DOC-ASCIIDOC	$< => $@" \
+	@INPUT="$<"; \
+	 test -n "$${INPUT}" || INPUT="$?" ; \
+	 test -n "$${INPUT}" && test -n "$@" && test -s "$${INPUT}" \
+	 || { \
+	     MSG="FAILED to resolve input or output filename with this make implementation, or input was not generated!"; \
+	     echo "  DOC-CHANGELOG-ASCIIDOC	SKIP: $${MSG}" >&2; \
+	     test -n "$@" && echo "$${MSG}" > "$@" ; \
+	     exit ; \
+	 } ; \
+	 echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@" \
 	 && printf "ifdef::txt[]\n== Very detailed Change Log\nendif::txt[]\n\n" > "$@.tmp" \
 	 && TABCHAR="`printf '\t'`" \
 	 && $(SED) \
@@ -198,7 +212,7 @@ $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	        -e 's,^\([ '"$${TABCHAR}"'].*\)\([~|^]\),\1\\\2,g' \
 	        -e 's,\[\[\([^]]*\)\]\],[\1],g' \
 	        -e 's,^\(\s\s*\)\([0-9]\),\1{empty}\2,g' \
-	   < "$<" >> "$@.tmp" \
+	   < "$${INPUT}" >> "$@.tmp" \
 	 && mv -f "$@.tmp" "$@"
 
 # Add other directory deps (not for local EXTRA_DIST) and generated contents
