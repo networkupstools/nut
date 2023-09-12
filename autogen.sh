@@ -147,6 +147,10 @@ if ( command -v dos2unix ) 2>/dev/null >/dev/null ; then
 	fi
 fi >&2
 
+# Required by autoconf for non-"foreign" projects;
+# is tracked as a NEWS.adoc for us however.
+[ -f NEWS ] || { echo "See NEWS.adoc for actual contents" > NEWS; }
+
 echo "Calling autoreconf..."
 AUTOTOOL_RES=0
 if $DEBUG ; then

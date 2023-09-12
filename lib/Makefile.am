@@ -1,4 +1,5 @@
 # Network UPS Tools: lib
+EXTRA_DIST = README.adoc
 
 if WITH_DEV
 if WITH_PKG_CONFIG
@@ -8,5 +9,5 @@ else
 endif
 endif
 
-CLEANFILES = *-spellchecked
+CLEANFILES = *-spellchecked README
 MAINTAINERCLEANFILES = Makefile.in .dirstamp

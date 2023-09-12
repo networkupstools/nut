@@ -265,7 +265,7 @@ You should use this to restrict network access.
 
 [[UFW]]
 
-include::../scripts/ufw/README[]
+include::../scripts/ufw/README.adoc[]
 
 [[TCP_Wrappers]]
 TCP Wrappers
