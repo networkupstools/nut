@@ -48,6 +48,7 @@ Makefile.in
 /test-driver
 *-spellchecked
 *.adoc-parsed
+*.adoc*.tmp
 /cppcheck*.xml
 /.ci*.log
 /.ci*.log.*
