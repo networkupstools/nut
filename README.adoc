@@ -506,23 +506,25 @@ The version numbers work like this: if the middle number is odd, it's a
 development tree, otherwise it is the stable tree.
 
 The past stable trees were 1.0, 1.2, 1.4, 2.0, 2.2 and 2.4, with the
-latest stable tree designated 2.6.  The development trees were 1.1, 1.3,
-1.5, 2.1 and 2.3.  As of the 2.4 release, there is no real development
-branch anymore since the code is available through a revision control
-system (namely Subversion) and snapshots.  Since 2.7 line of releases,
-sources are tracked in Git revision control system, with the project
-ecosystem being hosted on GitHub, and improvements or other contributions
-merged through common pull request approach and custom NUT CI testing
-on multiple platforms.
+latest such stable tree designated 2.6.  The development trees were 1.1,
+1.3, 1.5, 2.1 and 2.3.  Since the 2.4 release, there is no real separate
+development branch anymore since the code is available through a revision
+control system (namely, Git -- or actually Subversion back then) and its
+snapshots become published releases.
+
+Since 2.7 line of releases, sources are tracked in Git revision control
+system, with the project ecosystem being hosted on GitHub, and any code
+improvements or other contributions merged through common pull request
+approach and custom NUT CI testing on multiple platforms.
 
 Major release jumps are mostly due to large changes to the features
 list.  There have also been a number of architectural changes which
 may not be noticeable to most users, but which can impact developers.
 
-
 Backwards and Forwards Compatibility
 ------------------------------------
 
+<<<<<<< HEAD:README
 The old network code spans a range from about 0.41.1 when TCP support
 was introduced up to the recent 1.4 series.  It used variable names
 like STATUS, UTILITY, and LOADPCT.  Many of these names go back to the
@@ -569,6 +571,11 @@ to write support for the new variables and command names.  Client
 software can easily support both versions as long as they like.  If upsd
 returns 'ERR UNKNOWN-COMMAND' to a GET request, you need to use REQ.
 
+=======
+The network protocol for the current version of NUT should be
+backwards-compatible all the way back to version 1.4. A newer client should
+fail gracefully when querying an older server.
+>>>>>>> clepple/rename_readme:README.adoc
 
 Support / Help / etc.
 ---------------------
