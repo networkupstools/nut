@@ -146,7 +146,7 @@ man:
 	cd $(top_builddir)/docs/man/ && $(MAKE) -f Makefile all
 
 CLEANFILES = *.xml *.html *.pdf *-spellchecked docbook-xsl.css docinfo.xml.in.tmp
-CLEANFILES += $(top_builddir)/INSTALL.nut $(top_builddir)/UPGRADING $(top_builddir)/NEWS $(top_builddir)/ChangeLog.adoc
+CLEANFILES += $(top_builddir)/INSTALL.nut $(top_builddir)/UPGRADING $(top_builddir)/NEWS $(top_builddir)/ChangeLog.adoc $(top_builddir)/README
 CLEANFILES += $(top_builddir)/*.adoc-parsed *.adoc-parsed
 
 # Dirs to clean

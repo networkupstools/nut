@@ -146,7 +146,7 @@ all-docs check-docs \
 man all-man man-man check-man man-html all-html:
 	cd $(builddir)/docs && $(MAKE) $@
 
-INSTALL.nut UPGRADING NEWS:
+INSTALL.nut UPGRADING NEWS README:
 	cd $(builddir)/docs && $(MAKE) ../$(@F).adoc-parsed && cp -f ../$(@F).adoc-parsed ../$(@F)
 
 # Workarounds for https://github.com/github/markup/issues/1095
