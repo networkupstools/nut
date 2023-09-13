@@ -39,6 +39,7 @@ Makefile.in
 /INSTALL
 /INSTALL.nut
 /NEWS
+/README
 /TODO
 /UPGRADING
 /install-sh

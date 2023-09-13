@@ -216,8 +216,10 @@ $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	 && mv -f "$@.tmp" "$@"
 
 # Add other directory deps (not for local EXTRA_DIST) and generated contents
-FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS) $(SHARED_DEPS) ../README \
-	$(top_builddir)/INSTALL.nut.adoc-parsed $(top_builddir)/UPGRADING.adoc-parsed \
+FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS) $(SHARED_DEPS) \
+	$(top_builddir)/README.adoc-parsed \
+	$(top_builddir)/INSTALL.nut.adoc-parsed \
+	$(top_builddir)/UPGRADING.adoc-parsed \
 	../TODO.adoc ../scripts/ufw/README.adoc
 FULL_DEVELOPER_GUIDE_DEPS = $(DEVELOPER_GUIDE_DEPS) $(SHARED_DEPS) \
 	../scripts/augeas/README.adoc ../TODO.adoc \
@@ -347,7 +349,8 @@ if HAVE_ASPELL
 # its spelling (or errors in that) are not fixable and thus irrelevant.
 # Similarly for the ../INSTALL file that is prepared by autoconf and not
 # tracked as a source file by NUT Git repository.
-SPELLCHECK_SRC = $(ALL_TXT_SRC) ../README ../NEWS.adoc \
+SPELLCHECK_SRC = $(ALL_TXT_SRC) \
+	../README.adoc ../NEWS.adoc \
 	../INSTALL.nut.adoc ../UPGRADING.adoc \
 	../TODO.adoc ../scripts/ufw/README.adoc \
 	../scripts/augeas/README.adoc ../lib/README.adoc \

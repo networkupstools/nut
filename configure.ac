@@ -84,7 +84,7 @@ NUT_CHECK_OS
 NUT_STASH_WARNINGS
 AC_CONFIG_HEADERS([include/config.h])
 AC_PREFIX_DEFAULT(/usr/local/ups)
-AM_INIT_AUTOMAKE([subdir-objects])
+AM_INIT_AUTOMAKE([subdir-objects foreign])
 
 dnl Default to `configure --enable-silent-rules` or `make V=1` for details?
 dnl This feature seems to require automake-1.13 or newer (1.11+ by other info)

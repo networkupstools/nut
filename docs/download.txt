@@ -12,7 +12,7 @@ You should always use PGP/GPG to verify the signatures before using any source c
 
 You can use the
 ifdef::website[]
-link:docs/user-manual.chunked/ar01s10.html#verifySourceSig[following procedure]
+link:docs/user-manual.chunked/NUT_Security.html#verifySourceSig[following procedure]
 endif::website[]
 ifndef::website[]
 <<verifySourceSig,following procedure>>.

@@ -19,8 +19,16 @@ LIBTOOL_DEPS = @LIBTOOL_DEPS@
 libtool: $(LIBTOOL_DEPS)
 	$(SHELL) ./config.status libtool
 
-# COPYING is included automatically.
-EXTRA_DIST = INSTALL.nut.adoc LICENSE-GPL2 LICENSE-GPL3 MAINTAINERS UPGRADING.adoc TODO.adoc NEWS.adoc
+# COPYING and other autotools-standard files are included automatically
+# by automake. Note that the INSTALL file is (re-)imposed by autotools
+# runs and is essentially a manual on configure script general usage, so
+# NUT's actual installation notes have had to use a different filename.
+EXTRA_DIST = LICENSE-GPL2 LICENSE-GPL3 MAINTAINERS
+
+# Since the renaming of documentation to `*.adoc` extension to help IDE
+# and GitHub UIs to render the source files in a pretty fashion, we need
+# to list them:
+EXTRA_DIST += INSTALL.nut.adoc UPGRADING.adoc TODO.adoc NEWS.adoc README.adoc
 
 # Tarballs created by `make dist` include the `configure.ac` and `m4/*` sources
 # but lack NUT magic logic to recreate the `configure` script if someone would
