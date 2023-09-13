@@ -7,12 +7,12 @@ Network UPS Tools Overview
 //GH_MARKUP_1095//ifndef::top_srcdir[]
 //GH_MARKUP_1095//include::docs/asciidoc-vars.conf[]
 //GH_MARKUP_1095//endif::top_srcdir[]
-//GH_MARKUP_1095_INCLUDE_BEGIN//146694cff (2023-09-13) docs/asciidoc-vars.conf: prepare for GH_MARKUP_1095 workarounds
+//GH_MARKUP_1095_INCLUDE_BEGIN//234b70422 (2023-09-13) docs/asciidoc-vars.conf: finish the file with newline
 // NOTE: The big block of comments and definitions below comes from
 // NUT::docs/asciidoc-vars.conf and is included into top-level document
-// sources by maintenance recipes directly, due to current limitations
-// of the GitHub asciidoc renderer. Hopefully it can be dropped after
-// this issue is resolved on their side:
+// sources by maintenance recipes directly (`make maintainer-asciidocs`),
+// due to current limitations of the GitHub Web UI asciidoc renderer.
+// Hopefully it can be dropped after this issue is resolved on their side:
 // * https://github.com/github/markup/issues/1095
 //
 // This file should be included into NUT documentation sources to consistently
