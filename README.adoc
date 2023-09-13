@@ -7,7 +7,9 @@ Network UPS Tools Overview
 //GH_MARKUP_1095//ifndef::top_srcdir[]
 //GH_MARKUP_1095//include::docs/asciidoc-vars.conf[]
 //GH_MARKUP_1095//endif::top_srcdir[]
-//GH_MARKUP_1095_INCLUDE_BEGIN//36f4f0334 (2023-09-13) docs/asciidoc-vars.conf: update maintenance and reasoning comments
+//GH_MARKUP_1095_INCLUDE_BEGIN//7c5e90132 (2023-09-13) docs/asciidoc-vars.conf: fence against re-definitions of website-url and (top_)(src|build)dir attributes
+ifndef::asciidoc-vars-nut-included[]
+:asciidoc-vars-nut-included:	true
 // NOTE: The big block of comments and definitions below comes from
 // NUT::docs/asciidoc-vars.conf and is included into top-level document
 // sources by maintenance recipes directly (`make maintainer-asciidocs`),
@@ -74,11 +76,26 @@ Network UPS Tools Overview
 // so it does not become a series of empty paragraphs in the rendered
 // documents!
 //
+ifndef::website-url[]
 :website-url:	https://www.networkupstools.org/
+endif::website-url[]
+//
+ifndef::srcdir[]
 :srcdir:
+endif::srcdir[]
+//
+ifndef::builddir[]
 :builddir:
+endif::builddir[]
+//
+ifndef::top_srcdir[]
 :top_srcdir:
+endif::top_srcdir[]
+//
+ifndef::top_builddir[]
 :top_builddir:
+endif::top_builddir[]
+//
 //
 // Address links on GitHub vs docs
 // (note: 'env-github' attribute is set on GitHub)
@@ -137,6 +154,7 @@ ifdef::env-github[]
 :lm-c:		(
 :lm-e:		)]
 endif::env-github[]
+endif::asciidoc-vars-nut-included[]
 //
 //GH_MARKUP_1095_INCLUDE_END//
 
