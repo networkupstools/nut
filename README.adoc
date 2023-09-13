@@ -43,7 +43,7 @@ Network UPS Tools Overview
 // Optional attributes set by callers:
 // * `website` is used as a boolean toggle in our recipes for nut-website
 //   vs. offline documentation renditions
-// * `env-github` is used as a boolean toggle, set by GitHub WebUI renderer
+// * `env-github` is used as a boolean toggle, set by GitHub Web-UI renderer
 // * `(top_)srcdir` and `(top_)builddir` can be set by `Makefile.am`
 //   calling the `a2x` tool, since some of the files with the asciidoc
 //   mark-up are only generated or post-processed during build and

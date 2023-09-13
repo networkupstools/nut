@@ -354,7 +354,10 @@ if HAVE_ASPELL
 # its spelling (or errors in that) are not fixable and thus irrelevant.
 # Similarly for the ../INSTALL file that is prepared by autoconf and not
 # tracked as a source file by NUT Git repository.
+# Note that `docs/asciidoc-vars.conf` is included into docs and so impacts
+# their resulting spellcheck verdicts.
 SPELLCHECK_SRC = $(ALL_TXT_SRC) \
+	asciidoc-vars.conf \
 	../README.adoc ../NEWS.adoc \
 	../INSTALL.nut.adoc ../UPGRADING.adoc \
 	../TODO.adoc ../scripts/ufw/README.adoc \
