@@ -80,6 +80,7 @@ __pycache__/
 .gdb_history
 /nbproject
 /.idea
+/.vscode
 /*.iml
 
 # Coredumps
