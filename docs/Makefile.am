@@ -237,6 +237,9 @@ solaris-usb.html solaris-usb.chunked solaris-usb.pdf: solaris-usb.txt asciidoc.c
 # generating the chunked HTML. In this case, export the environment
 # variable ASCIIDOC_VERBOSE to "-v", ie:
 #   $ ASCIIDOC_VERBOSE=-v make
+# Note: `(top_)srcdir` and `(top_)builddir` must end with a path
+# separator, or be empty -- so in all cases letting the resulting
+# string resolve meaningfully in the filesystem during docs build.
 A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) \
     --attribute=icons \
     --xsltproc-opts="--nonet" \
@@ -248,8 +251,10 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) \
     --attribute=badges \
     --attribute=external_title \
     --attribute=tree_version="@TREE_VERSION@" \
-    --attribute=srcdir="$(abs_srcdir)" \
-    --attribute=builddir="$(abs_builddir)" \
+    --attribute=srcdir="$(abs_srcdir)/" \
+    --attribute=builddir="$(abs_builddir)/" \
+    --attribute=top_srcdir="$(abs_top_srcdir)/" \
+    --attribute=top_builddir="$(abs_top_builddir)/" \
     -a toc -a numbered --destination-dir=$${A2X_OUTDIR}
 # NOTE: a2x newer than 8.6.8 says "--destination-dir" is only valid for HTML.
 # As of version 8.6.9 it lies, and the argument is required for our distcheck
