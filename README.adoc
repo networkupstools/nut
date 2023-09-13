@@ -124,7 +124,8 @@ ifdef::env-github[]
 :lm-c:		(
 :lm-e:		)]
 endif::env-github[]
-////GH_MARKUP_1095_INCLUDE_END//
+//
+//GH_MARKUP_1095_INCLUDE_END//
 
 Description
 -----------
