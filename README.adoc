@@ -376,12 +376,8 @@ Power distribution unit management
 NUT also provides an advanced support for power distribution units.
 
 You should read the
-{xref}Outlets_PDU_notes{x-s}[NUT outlets management and PDU notes]
+{xref}outlet_management{x-s}[NUT outlets management and PDU notes]
 chapter to learn more about when to use this feature.
-
-////////
-<<outlet_management,NUT outlets management and PDU notes>>
-////////
 
 Network Server
 --------------
@@ -659,7 +655,7 @@ backwards-compatible all the way back to version 1.4. A newer client should
 fail gracefully when querying an older server.
 
 If you need more details about cross-compatibility of older NUT releases
-(1.x vs. 2.x), please see the {xref}history{x-s}[Project history] chapter.
+(1.x vs. 2.x), please see the {xref}Project_History{x-s}[Project history] chapter.
 
 Support / Help / etc.
 ---------------------
