@@ -149,6 +149,59 @@ man all-man man-man check-man man-html all-html:
 INSTALL.nut UPGRADING NEWS:
 	cd $(builddir)/docs && $(MAKE) ../$(@F).adoc-parsed && cp -f ../$(@F).adoc-parsed ../$(@F)
 
+# Workarounds for https://github.com/github/markup/issues/1095
+# require direct definition of our attributes in each source
+# document, in order for GitHub Web-UI to render them nicely
+# (unfortunately, asciidoc configs and includes are not handled
+# at this time). Hopefully this will go away at some point.
+# The following rule updates definitions in source asciidoc files
+# between GH_MARKUP_1095_INCLUDE_BEGIN/END tags with contents of
+# current docs/asciidoc-vars.conf file. It is intended to be used
+# by maintainers (or brave contributors who would dare edit those
+# definitions), to apply them into the committed document sources.
+# Not bothering about with "make dist" constraints etc. - changes
+# the contents of srcdir directly and intentionally.
+maintainer-asciidocs:
+	@USEDREV="`git log -1 --oneline --pretty=format:'%h (%cs) %s' docs/asciidoc-vars.conf`" || exit ; \
+	 USEDREV_NOSUBJ="`git log -1 --oneline --pretty=format:'%h (%cs)' docs/asciidoc-vars.conf`" || exit ; \
+	 echo "$@: Updating asciidoc text sources with docs/asciidoc-vars.conf as of commit: $${USEDREV}"; \
+	 echo "//GH_MARKUP_1095_INCLUDE_BEGIN//$${USEDREV}" > docs/asciidoc-vars.conf.lastrev.tmp || exit ; \
+	 find . -name '*.adoc' -or -name '*.txt' | ( \
+	  FILES=""; \
+	  while read F ; do \
+	    grep -E '^//+GH_MARKUP_1095_INCLUDE_(BEGIN|END)' "$$F" >/dev/null \
+	    || { echo "$@: SKIP: no GH_MARKUP_1095_INCLUDE_* tags: $$F"; continue ; } ; \
+	    rm -f "$${F}"*.tmp || exit ; \
+	    EXT="1.tmp"; \
+	    while IFS='' read LINE ; do \
+	        case "$${LINE}" in \
+	            "//GH_MARKUP_1095_INCLUDE_BEGIN"*) EXT="2.tmp" ; continue ;; \
+	            "//GH_MARKUP_1095_INCLUDE_END"*|"////GH_MARKUP_1095_INCLUDE_END"*) EXT="3.tmp" ; continue ;; \
+	        esac ; \
+	        printf '%s\n' "$${LINE}" >> "$${F}.$${EXT}" || exit ; \
+	    done < "$$F" || { echo "$@: FAILED injection for $${F}" >&2; exit 1; } ; \
+	    if test -s "$${F}.2.tmp" && test -z "`diff "$${F}.2.tmp" docs/asciidoc-vars.conf | tr -d '\n'`" ; then \
+	        rm -f "$${F}"*.tmp ; \
+	        echo "$@: SKIP: no changes: $$F"; continue ; \
+	    fi; \
+	    cat "$${F}.1.tmp" docs/asciidoc-vars.conf.lastrev.tmp docs/asciidoc-vars.conf > "$${F}.tmp" \
+	    && echo '//GH_MARKUP_1095_INCLUDE_END//' >> "$${F}.tmp" \
+	    && cat "$${F}.3.tmp" >> "$${F}.tmp" \
+	    && mv -f "$${F}.tmp" "$${F}" \
+	    || { echo "$@: FAILED injection for $${F}" >&2; exit 1; } ; \
+	    echo "$@: UPDATED: $$F"; \
+	    FILES="$${FILES} $${F}"; \
+	    rm -f "$${F}"*.tmp ; \
+	  done; \
+	  rm -f docs/asciidoc-vars.conf.lastrev.tmp; \
+	  if test -z "$${FILES}" ; then \
+	    echo "$@: OVERALL-SKIP: No text files found with GH_MARKUP_1095_INCLUDE_ tags, or obsoleted docs/asciidoc-vars.conf contents";\
+	  else \
+	    echo "$@: OVERALL-UPDATED: You may now want to:"; \
+	    echo "    git add -p $${FILES} && git commit -sm 'Update NUT documentation sources with current docs/asciidoc-vars.conf: $${USEDREV_NOSUBJ}'"; \
+	  fi; \
+	 )
+
 check-NIT check-NIT-devel:
 	cd $(builddir)/tests/NIT && $(MAKE) $@
 

@@ -50,6 +50,7 @@ Makefile.in
 *-spellchecked
 *.adoc-parsed
 *.adoc*.tmp
+*.txt*.tmp
 /cppcheck*.xml
 /.ci*.log
 /.ci*.log.*
