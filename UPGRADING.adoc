@@ -238,7 +238,7 @@ Changes from 2.7.4 to 2.8.0
   with your platform.
 
 - dummy-ups can now specify `mode` as a driver argument, and separates the
-  notion of `dummy-once` (new default for `*.dev` files that do not change)
+  notion of `dummy-once` (new default for `\*.dev` files that do not change)
   vs. `dummy-loop` (legacy default for `*.seq` and others) [issue #1385]
 
   * Note this can break third-party test scripts which expected `*.dev`
@@ -575,7 +575,7 @@ has been gone for a long time, and the target was ambiguous.
 used newapc, make sure you delete the old binary and fix your
 ups.conf.  Otherwise, you may run the old driver from 1.4.
 
-
-*** File trimmed here on changes from 1.2.2 to 1.4.0 ***
+File trimmed here on changes from 1.2.2 to 1.4.0
+------------------------------------------------
 
 For information before this point, start with version 2.4.1 and work back.
