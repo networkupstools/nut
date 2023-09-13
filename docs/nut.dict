@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3198 utf-8
+personal_ws-1.1 en 3215 utf-8
 AAS
 ABI
 ACFAIL
@@ -172,6 +172,7 @@ CERTREQUEST
 CERTVERIF
 CEST
 CHRG
+CL
 CLANGVER
 CLI
 CLOCAL
@@ -509,6 +510,7 @@ INVOLT
 IPAR
 IPBX
 IPC
+IPM
 IPs
 IPv
 IRC
@@ -533,6 +535,7 @@ Ioannou
 JAWAN
 JBUS
 JBus
+JK
 JKL
 JRE
 JSON
@@ -852,6 +855,7 @@ Opti
 OptiUPS
 Orvaldi
 Orzechowski
+OutletSystem
 OutputOverload
 OvrLds
 PBT
@@ -1020,6 +1024,7 @@ REPLBATT
 REQSSL
 RESPIN
 RETPCT
+REXX
 RK
 RMCARD
 RMXL
@@ -1308,6 +1313,10 @@ UPSDESC
 UPSHOST
 UPSIMAGEPATH
 UPSLC
+UPSOutletSystemOutletDelayBeforeReboot
+UPSOutletSystemOutletDelayBeforeShutdown
+UPSOutletSystemOutletDelayBeforeStartup
+UPSOutletSystemOutletSwitchable
 UPSSTATSPATH
 UPSTEMP
 UPScode
@@ -1459,6 +1468,7 @@ adkorte
 adm
 admin's
 adminbox
+adoc
 advorder
 ae
 aec
@@ -1497,6 +1507,7 @@ apcsmart
 apctest
 apcupsd
 aphel
+appveyor
 ar
 archlinux
 arduino
@@ -1927,6 +1938,7 @@ fcntl
 fd
 fds
 fe
+featureReport
 fenton
 fentonups
 fffdddxxx
@@ -2679,6 +2691,7 @@ regtype
 releasekeyring
 relicensing
 repo
+reportId
 reposurgeon
 repotec
 req
@@ -2690,6 +2703,8 @@ ret
 retrydelay
 revdate
 revnumber
+rex
+rexx
 rf
 rfc
 rh
@@ -3184,6 +3199,8 @@ xu
 xxxAP
 xxxx
 xxxxAP
+yaml
+yml
 youruid
 yyy
 zaac

@@ -8,6 +8,7 @@ NUT_SCANNER_DEPS = $(NUT_SCANNER_DEPS_H) $(NUT_SCANNER_DEPS_C)
 
 BUILT_SOURCES = $(NUT_SCANNER_DEPS)
 CLEANFILES = $(BUILT_SOURCES)
+EXTRA_DIST = README.adoc
 
 # Make sure we have the freshest files (no-op if built earlier and then
 # no driver sources and other dependencies were edited by a developer)
@@ -143,7 +144,7 @@ endif
 
 dummy:
 
-CLEANFILES += *-spellchecked
+CLEANFILES += *-spellchecked README
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,

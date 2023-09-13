@@ -24,7 +24,7 @@
 
 #include "cyberpower-mib.h"
 
-#define CYBERPOWER_MIB_VERSION		"0.54"
+#define CYBERPOWER_MIB_VERSION		"0.55"
 #define CYBERPOWER_OID_MODEL_NAME	".1.3.6.1.4.1.3808.1.1.1.1.1.1.0"
 
 /* CPS-MIB::ups */
@@ -200,8 +200,15 @@ static snmp_info_t cyberpower_mib[] = {
 	{ "load.on", 0, 1, ".1.3.6.1.4.1.3808.1.1.1.6.2.6.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
 	/* upsAdvanceControlUpsOff */
 	{ "shutdown.stayoff", 0, 1, ".1.3.6.1.4.1.3808.1.1.1.6.2.6.0", "3", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	/* upsBaseControlConserveBattery */
+#if 0
+	/* upsBaseControlConserveBattery - note that this command
+	 * is not suitable here because it puts ups to sleep only
+	 * in battery mode. If power is restored during the shutdown
+	 * process, the command is not executed by ups hardware. */
 	{ "shutdown.return", 0, 1, ".1.3.6.1.4.1.3808.1.1.1.6.1.1.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+#endif
+	/* upsAdvanceControlUpsSleep */
+	{ "shutdown.return", 0, 1, ".1.3.6.1.4.1.3808.1.1.1.6.2.3.0", "3", SU_TYPE_CMD | SU_FLAG_OK, NULL },
 	/* upsAdvanceControlSimulatePowerFail */
 	{ "test.failure.start", 0, 1, ".1.3.6.1.4.1.3808.1.1.1.6.2.4.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
 	/* upsAdvanceTestIndicators */

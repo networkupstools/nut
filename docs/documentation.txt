@@ -32,6 +32,8 @@ Developer Documentation
 ifdef::website[]
 - NUT Developer Guide (link:docs/developer-guide.chunked/index.html[online]) (link:docs/developer-guide.pdf[PDF])
 - NUT Packager Guide (link:docs/packager-guide.chunked/index.html[online]) (link:docs/packager-guide.pdf[PDF])
+- NUT Release Notes (link:docs/release-notes.chunked/index.html[online]) (link:docs/release-notes.pdf[PDF])
+- NUT Change Log (link:docs/ChangeLog.chunked/index.html[online]) (link:docs/ChangeLog.pdf[PDF])
 - link:ups-protocols.html[UPS protocols library]
 - link:docs/man/index.html#Developer_man[Developer manual pages]
 - link:nut-qa.html[NUT Quality Assurance]
@@ -40,6 +42,8 @@ endif::website[]
 ifndef::website[]
 - linkdoc:developer-guide[NUT Developer Guide]
 - linkdoc:packager-guide[NUT Packager Guide]
+- linkdoc:release-notes[NUT Release Notes]
+- linkdoc:ChangeLog[NUT Change Log]
 - link:ups-protocols.html[UPS protocols library]
 - link:../man/index.html#Developer_man[Developer manual pages]
 - link:nut-qa.html[NUT Quality Assurance]

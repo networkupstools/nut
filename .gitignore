@@ -19,6 +19,7 @@ Makefile.in
 /ar-lib
 /autom4te.cache/
 /ChangeLog
+/ChangeLog.adoc
 /config.guess
 /config.log
 /config.status
@@ -36,12 +37,18 @@ Makefile.in
 /cscope.*
 /depcomp
 /INSTALL
+/INSTALL.nut
+/NEWS
+/TODO
+/UPGRADING
 /install-sh
 /libtool
 /ltmain.sh
 /missing
 /test-driver
 *-spellchecked
+*.adoc-parsed
+*.adoc*.tmp
 /cppcheck*.xml
 /.ci*.log
 /.ci*.log.*

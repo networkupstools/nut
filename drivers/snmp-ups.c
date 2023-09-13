@@ -616,6 +616,13 @@ void upsdrv_initups(void)
 
 	/* FIXME: first test if the device is reachable to avoid timeouts! */
 
+	/* FIXME: with the argument called "mibs" (plural) it could make
+	 * sense to actually support a list of MIBs to try to get info
+	 * from, in order of preference, e.g. both a vendor MIB and the
+	 * IETF MIB for missing data points. Or even several vendor MIBs
+	 * for devices from companies with a long heritage.
+	 */
+
 	/* Load the SNMP to NUT translation data */
 	load_mib2nut(mibs);
 
@@ -2035,9 +2042,10 @@ bool_t load_mib2nut(const char *mib)
 				__func__, i, mib2nut[i]->mib_name);
 			if (!mibIsAuto && strcmp(mib, mib2nut[i]->mib_name)) {
 				/* "mib" is neither "auto" nor the name in mapping table */
-				upsdebugx(2, "%s: skip the \"%s\" entry which "
-					"is neither \"auto\" nor a valid name in the mapping table",
-					__func__, mib);
+				upsdebugx(2, "%s: skip the \"%s\" entry from "
+					"the mapping table which is not \"%s\" "
+					"(and which in turn is not \"auto\")",
+					__func__, mib2nut[i]->mib_name, mib);
 				continue;
 			}
 			upsdebugx(2, "%s: trying classic sysOID matching method with '%s' mib",
@@ -2107,7 +2115,9 @@ bool_t load_mib2nut(const char *mib)
 			/* String not seen during mib2nut[] walk -
 			 * and if we had no hits, we walked it all
 			 */
-			fatalx(EXIT_FAILURE, "Unknown 'mibs' value: %s", mib);
+			fatalx(EXIT_FAILURE, "Unknown 'mibs' value "
+				"which is neither \"auto\" nor a valid "
+				"name in the mapping table: %s", mib);
 		}
 	} else {
 		fatalx(EXIT_FAILURE, "No supported device detected at [%s] (host %s)",

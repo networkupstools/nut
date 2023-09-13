@@ -132,7 +132,7 @@ static double blazer_load(const char *ptr, char **endptr)
 
 /*
  * The battery voltage will quickly return to at least the nominal value after
- * discharging them. For overlapping battery.voltage.low/high ranges therefor
+ * discharging them. For overlapping battery.voltage.low/high ranges therefore
  * choose the one with the highest multiplier.
  */
 static double blazer_packs(const char *ptr, char **endptr)

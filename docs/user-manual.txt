@@ -81,7 +81,7 @@ include::download.txt[]
 
 [[_installation_instructions]]
 
-include::../INSTALL.nut[]
+include::{builddir}/../INSTALL.nut.adoc-parsed[]
 
 
 [[Configuration_notes]]
@@ -185,7 +185,7 @@ include::configure.txt[]
 Appendix I: Upgrading notes
 ===========================
 
-include::../UPGRADING[]
+include::{builddir}/../UPGRADING.adoc-parsed[]
 
 
 [[Project_History]]
