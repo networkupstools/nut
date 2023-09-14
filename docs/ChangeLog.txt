@@ -18,4 +18,4 @@ Very detailed Change Log
 This document intends to detail the change log for relatively recent work
 (roughly since the source code was tracked in Git).
 
-include::{builddir}/../ChangeLog.adoc-parsed[]
+include::{builddir}../ChangeLog.adoc-parsed[]

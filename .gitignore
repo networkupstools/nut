@@ -39,6 +39,7 @@ Makefile.in
 /INSTALL
 /INSTALL.nut
 /NEWS
+/README
 /TODO
 /UPGRADING
 /install-sh
@@ -49,6 +50,7 @@ Makefile.in
 *-spellchecked
 *.adoc-parsed
 *.adoc*.tmp
+*.txt*.tmp
 /cppcheck*.xml
 /.ci*.log
 /.ci*.log.*
@@ -78,6 +80,7 @@ __pycache__/
 .gdb_history
 /nbproject
 /.idea
+/.vscode
 /*.iml
 
 # Coredumps

@@ -88,12 +88,12 @@ Refer to the
 ifdef::website[]
 link:docs/developer-guide.chunked/index.html[NUT Developer Guide]
 for more information, and the chapter on how to
-link:docs/developer-guide.chunked/ar01s03.html#_submitting_patches[submit patches].
+link:docs/developer-guide.chunked/developers.html#_submitting_patches[submit patches].
 endif::website[]
 ifndef::website[]
 linkdoc:developer-guide[NUT Developer Guide]
 for more information, and the chapter on how to
-link:../developer-guide.chunked/ar01s03.html#_submitting_patches[submit patches].
+link:../developer-guide.chunked/developers.html#_submitting_patches[submit patches].
 endif::website[]
 
 Note that the currently preferable way for ultimate submission of improvements

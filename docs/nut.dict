@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3215 utf-8
+personal_ws-1.1 en 3222 utf-8
 AAS
 ABI
 ACFAIL
@@ -1522,6 +1522,7 @@ armhf
 asapm
 ascii
 asciidoc
+asciidocs
 asciidoctor
 asem
 aspell
@@ -2253,6 +2254,7 @@ lifecycle
 linesensitivity
 linevoltage
 linkdoc
+linksingledoc
 linux
 lipo
 listDeviceClients
@@ -2283,6 +2285,7 @@ lowruntime
 lowvoltsout
 lposix
 lr
+lsd
 lsusb
 lt
 ltdl
@@ -2690,6 +2693,8 @@ regex
 regtype
 releasekeyring
 relicensing
+renderer
+renderers
 repo
 reportId
 reposurgeon
@@ -3079,6 +3084,7 @@ upsuser
 upswired
 uptime
 urb
+url
 urpmi
 usb
 usbconfig
@@ -3193,6 +3199,7 @@ xpg
 xr
 xrealloc
 xsl
+xsl's
 xsltproc
 xstrdup
 xu

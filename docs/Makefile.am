@@ -146,7 +146,7 @@ man:
 	cd $(top_builddir)/docs/man/ && $(MAKE) -f Makefile all
 
 CLEANFILES = *.xml *.html *.pdf *-spellchecked docbook-xsl.css docinfo.xml.in.tmp
-CLEANFILES += $(top_builddir)/INSTALL.nut $(top_builddir)/UPGRADING $(top_builddir)/NEWS $(top_builddir)/ChangeLog.adoc
+CLEANFILES += $(top_builddir)/INSTALL.nut $(top_builddir)/UPGRADING $(top_builddir)/NEWS $(top_builddir)/ChangeLog.adoc $(top_builddir)/README
 CLEANFILES += $(top_builddir)/*.adoc-parsed *.adoc-parsed
 
 # Dirs to clean
@@ -216,8 +216,10 @@ $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	 && mv -f "$@.tmp" "$@"
 
 # Add other directory deps (not for local EXTRA_DIST) and generated contents
-FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS) $(SHARED_DEPS) ../README \
-	$(top_builddir)/INSTALL.nut.adoc-parsed $(top_builddir)/UPGRADING.adoc-parsed \
+FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS) $(SHARED_DEPS) \
+	$(top_builddir)/README.adoc-parsed \
+	$(top_builddir)/INSTALL.nut.adoc-parsed \
+	$(top_builddir)/UPGRADING.adoc-parsed \
 	../TODO.adoc ../scripts/ufw/README.adoc
 FULL_DEVELOPER_GUIDE_DEPS = $(DEVELOPER_GUIDE_DEPS) $(SHARED_DEPS) \
 	../scripts/augeas/README.adoc ../TODO.adoc \
@@ -235,6 +237,9 @@ solaris-usb.html solaris-usb.chunked solaris-usb.pdf: solaris-usb.txt asciidoc.c
 # generating the chunked HTML. In this case, export the environment
 # variable ASCIIDOC_VERBOSE to "-v", ie:
 #   $ ASCIIDOC_VERBOSE=-v make
+# Note: `(top_)srcdir` and `(top_)builddir` must end with a path
+# separator, or be empty -- so in all cases letting the resulting
+# string resolve meaningfully in the filesystem during docs build.
 A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) \
     --attribute=icons \
     --xsltproc-opts="--nonet" \
@@ -246,8 +251,10 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) \
     --attribute=badges \
     --attribute=external_title \
     --attribute=tree_version="@TREE_VERSION@" \
-    --attribute=srcdir="$(abs_srcdir)" \
-    --attribute=builddir="$(abs_builddir)" \
+    --attribute=srcdir="$(abs_srcdir)/" \
+    --attribute=builddir="$(abs_builddir)/" \
+    --attribute=top_srcdir="$(abs_top_srcdir)/" \
+    --attribute=top_builddir="$(abs_top_builddir)/" \
     -a toc -a numbered --destination-dir=$${A2X_OUTDIR}
 # NOTE: a2x newer than 8.6.8 says "--destination-dir" is only valid for HTML.
 # As of version 8.6.9 it lies, and the argument is required for our distcheck
@@ -347,7 +354,11 @@ if HAVE_ASPELL
 # its spelling (or errors in that) are not fixable and thus irrelevant.
 # Similarly for the ../INSTALL file that is prepared by autoconf and not
 # tracked as a source file by NUT Git repository.
-SPELLCHECK_SRC = $(ALL_TXT_SRC) ../README ../NEWS.adoc \
+# Note that `docs/asciidoc-vars.conf` is included into docs and so impacts
+# their resulting spellcheck verdicts.
+SPELLCHECK_SRC = $(ALL_TXT_SRC) \
+	asciidoc-vars.conf \
+	../README.adoc ../NEWS.adoc \
 	../INSTALL.nut.adoc ../UPGRADING.adoc \
 	../TODO.adoc ../scripts/ufw/README.adoc \
 	../scripts/augeas/README.adoc ../lib/README.adoc \

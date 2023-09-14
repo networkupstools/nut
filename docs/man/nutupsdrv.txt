@@ -262,12 +262,12 @@ CGI programs:
 Driver control:
 ~~~~~~~~~~~~~~~
 
-include::{builddir}/linkman-drivertool-names.txt[]
+include::{builddir}linkman-drivertool-names.txt[]
 
 Drivers:
 ~~~~~~~~
 
-include::{builddir}/linkman-driver-names.txt[]
+include::{builddir}linkman-driver-names.txt[]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

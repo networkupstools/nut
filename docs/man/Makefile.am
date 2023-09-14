@@ -961,6 +961,9 @@ DOCBUILD_END = { \
 ### resolves include paths relative to the main document, so while we
 ### see the relative builddir as "." in the makefile, for included
 ### data it would mean the source directory where the .txt resides.
+### Note: `(top_)srcdir` and `(top_)builddir` must end with a path
+### separator, or be empty -- so in all cases letting the resulting
+### string resolve meaningfully in the filesystem during docs build.
 .txt.html:
 	@A2X_OUTDIR="tmp/man-html.$(@F).$$$$" ; \
 	 echo "  DOC-MAN-HTML Generating $@"; \
@@ -969,8 +972,10 @@ DOCBUILD_END = { \
 		--attribute localdate="`TZ=UTC date +%Y-%m-%d`" \
 		--attribute localtime="`TZ=UTC date +%H:%M:%S`" \
 		--attribute nutversion="@PACKAGE_VERSION@" \
-		--attribute srcdir="$(abs_srcdir)" \
-		--attribute builddir="$(abs_builddir)" \
+		--attribute srcdir="$(abs_srcdir)/" \
+		--attribute builddir="$(abs_builddir)/" \
+		--attribute top_srcdir="$(abs_top_srcdir)/" \
+		--attribute top_builddir="$(abs_top_builddir)/" \
 		-o "$${A2X_OUTDIR}/$(@F)" $< || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
@@ -981,8 +986,10 @@ A2X_MANPAGE_OPTS = --doctype manpage --format manpage $${A2X_VERBOSE} \
 	--attribute mansource="Network UPS Tools" \
 	--attribute manversion="@PACKAGE_VERSION@" \
 	--attribute manmanual="NUT Manual" \
-	--attribute srcdir="$(abs_srcdir)" \
-	--attribute builddir="$(abs_builddir)" \
+	--attribute srcdir="$(abs_srcdir)/" \
+	--attribute builddir="$(abs_builddir)/" \
+	--attribute top_srcdir="$(abs_top_srcdir)/" \
+	--attribute top_builddir="$(abs_top_builddir)/" \
 	--destination-dir="$${A2X_OUTDIR}"
 
 .txt.1:

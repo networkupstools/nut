@@ -1427,8 +1427,13 @@ Here is an example workflow:
 	git push username my-new-feature
 ------------------------------------------------------------------------------
 
-If you are new to Git, but are familiar with SVN, the
-link:http://git-scm.com/course/svn.html[following link] may be of use.
+If you are new to Git, but are familiar with SVN, some of the following links
+may be of use:
+
+* link:https://web.archive.org/web/20191224210950/https://git-scm.com/course/svn.html[Git - SVN Crash Course (archived)]
+* link:https://git-scm.com/book/en/v2/Git-and-Other-Systems-Migrating-to-Git[Git and Other Systems - Migrating to Git]
+* link:https://www.git-tower.com/learn/git/ebook/en/command-line/appendix/from-subversion-to-git[Switching from Subversion to Git]
+* link:https://www.atlassian.com/git/tutorials/migrating-overview[Migrate from SVN to Git]
 
 [[building]]
 Building the Code

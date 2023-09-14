@@ -54,7 +54,16 @@ https://github.com/networkupstools/nut/milestone/8
  - NUT documentation files were rearranged, renaming some to `*.adoc` pattern
    to facilitate automatic rendering in GitHub and IDE GUIs, and adding recipe
    support for GitHub issue/PR links. This `NEWS` file is now proper asciidoc
-   rendered into `release-notes.pdf` (and HTML versions) [issue #1953, PR #2048]
+   rendered into `release-notes.pdf` (and HTML versions). [issue #1953, PR #2048]
+   Internally, the documents would use a new way to define cross-linking to
+   other pages and their chapters, to facilitate different renderers (including
+   GitHub UI), and file names created for "chunked HTML" documentation format
+   will no longer have the "chapter number, section number" format which is
+   not easy to maintain over time with independent builds of documentation
+   in NUT and the actual and historic snapshots for nut-website for example.
+   Chapter/Section names will be adapted to produce "chunked HTML" file names
+   instead. Documentation links rendered in GitHub UI should point to the HTML
+   pages served by a current iteration of the NUT website. [PR #226, PR #669]
 
  - Published a new maintainer GPG key to sign tags and release artifacts,
    and possibly git commits as well, as part of solution for issue #1410.

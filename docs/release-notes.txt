@@ -27,14 +27,14 @@ If you wish to discover how everything came together, have a look at the
 NUT Release Notes (and other feature details)
 =============================================
 
-include::{builddir}/../NEWS.adoc-parsed[]
+include::{builddir}../NEWS.adoc-parsed[]
 
 
 [[NUT_Upgrading_Notes]]
 NUT Upgrading Notes
 ===================
 
-include::{builddir}/../UPGRADING.adoc-parsed[]
+include::{builddir}../UPGRADING.adoc-parsed[]
 
 
 [[Project_History]]
