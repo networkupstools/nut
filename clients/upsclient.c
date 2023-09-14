@@ -1618,10 +1618,27 @@ int upscli_splitname(const char *buf, char **upsname, char **hostname, uint16_t 
 
 	s = strchr(tmp, '@');
 
+	/* someone passed a "@hostname" string? */
+	if (s == tmp) {
+		fprintf(stderr, "upscli_splitname: got empty upsname string\n");
+		return -1;
+	}
+
 	if ((*upsname = xstrdup(strtok_r(tmp, "@", &last))) == NULL) {
 		fprintf(stderr, "upscli_splitname: xstrdup failed\n");
 		return -1;
 	}
+
+	/* someone passed a "@hostname" string (take two)? */
+	if (!**upsname) {
+		fprintf(stderr, "upscli_splitname: got empty upsname string\n");
+		return -1;
+	}
+
+	/*
+	fprintf(stderr, "upscli_splitname3: got buf='%s', tmp='%s', upsname='%s', possible hostname:port='%s'\n",
+		NUT_STRARG(buf), NUT_STRARG(tmp), NUT_STRARG(*upsname), NUT_STRARG((s ? s+1 : s)));
+	*/
 
 	/* only a upsname is specified, fill in defaults */
 	if (s == NULL) {
@@ -1632,6 +1649,12 @@ int upscli_splitname(const char *buf, char **upsname, char **hostname, uint16_t 
 
 		*port = PORT;
 		return 0;
+	}
+
+	/* someone passed a "upsname@" string? */
+	if (!(*(s+1))) {
+		fprintf(stderr, "upscli_splitname: got the @ separator and then an empty hostname[:port] string\n");
+		return -1;
 	}
 
 	return upscli_splitaddr(s+1, hostname, port);
