@@ -133,11 +133,17 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
    for auto-detection [#1448, #1684]
 
  - nutdrv_qx updates:
+   * a `battery_voltage_reports_one_pack` driver option was added for devices
+     which "natively" report a `battery.voltage` for a single battery pack or
+     cell, not for the whole assembly [#1279]
    * the `voltronic_qs_protocol` should now accept both "V" (as before)
      and newly "H" dialects, which otherwise seem interchangeable [#1623]
    * the `armac` subdriver was enhanced to support devices with a different
      response pattern than previously expected per initial contribution.
      It was tested to work with Vultech V2000 and Armac PF1 series. [#1978]
+
+ - nutdrv_qx and blazer updates:
+   * extended default ranges for max battery voltage when guessing [#1279]
 
  - usbhid-ups updates:
    * cps-hid subdriver now applies same report descriptor fixing logic to

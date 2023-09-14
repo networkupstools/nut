@@ -57,7 +57,7 @@
 	#define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.33"
+#define DRIVER_VERSION	"0.35"
 
 #ifdef QX_SERIAL
 	#include "serial.h"
@@ -221,6 +221,39 @@ static struct {
 } load = { 0, 0.1, 1 };
 
 static time_t	battery_lastpoll = 0;
+static int	battery_voltage_reports_one_pack = 0, battery_voltage_reports_one_pack_considered = 0;
+
+/* Optionally multiply device-provided "battery.voltage" reading by
+ * the "battery.packs" (reading or common override setting) to end up
+ * with the dstate value representing the voltage of battery assembly,
+ * not that of a single cell/pack (different devices report different
+ * physically meaningful values for that reading).
+ * This shared method can be referenced from subdriver mapping tables.
+ */
+int qx_multiply_battvolt(item_t *item, char *value, const size_t valuelen) {
+	float s = 0;
+
+	/* Adjusted here or not, this method was called at all
+	 * and other code should not multiply again! */
+	battery_voltage_reports_one_pack_considered = 1;
+	if (!battery_voltage_reports_one_pack || batt.packs < 2) {
+		/* (We assume by default that) this device already reports
+		 * the sum-total voltage for the battery assembly - so just
+		 * pass it on unmodified.
+		 * Or we can't reasonably use a "batt.packs" anyway.
+		 */
+		snprintf(value, valuelen, "%s", item->value);
+		return 0;
+	}
+
+	if (sscanf(item->value, "%f", &s) != 1) {
+		upsdebugx(2, "unparsable ss.ss %s", item->value);
+		return -1;
+	}
+
+	snprintf(value, valuelen, "%.2f", s * batt.packs);
+	return 0;
+}
 
 /* Fill batt.volt.act and guesstimate the battery charge
  * if it isn't already available. */
@@ -233,7 +266,10 @@ static int	qx_battery(void)
 		return -1;
 	}
 
-	batt.volt.act = batt.packs * strtod(val, NULL);
+	batt.volt.act = strtod(val, NULL);
+	if (!battery_voltage_reports_one_pack_considered) {
+		batt.volt.act *= batt.packs;
+	}
 
 	if (d_equal(batt.chrg.act, -1) && batt.volt.low > 0 && batt.volt.high > batt.volt.low) {
 
@@ -275,52 +311,95 @@ static int	qx_load(void)
 	return 0;
 }
 
-/* Guesstimation: init */
+/* Init known (readings, configs) and guessed (if needed) battery related values */
 static void	qx_initbattery(void)
 {
+	const char	*val;
+	int batt_packs_known = 0;
+
+	val = dstate_getinfo("battery.voltage.high");
+	if (val) {
+		batt.volt.high = strtod(val, NULL);
+	}
+
+	val = dstate_getinfo("battery.voltage.low");
+	if (val) {
+		batt.volt.low = strtod(val, NULL);
+	}
+
+	val = dstate_getinfo("battery.voltage.nominal");
+	if (val) {
+		batt.volt.nom = strtod(val, NULL);
+	}
+
+	/* If no values are available for both battery.voltage.{low,high}
+	 * either from the UPS or provided by the user in ups.conf,
+	 * but nominal battery.voltage.nom is known,
+	 * try to guesstimate them, but announce it! */
+	if ( (!d_equal(batt.volt.nom, -1)) && (d_equal(batt.volt.low, -1) || d_equal(batt.volt.high, -1))) {
+
+		upslogx(LOG_INFO, "No values for battery high/low voltages");
+
+		/* Basic formula, which should cover most cases */
+		batt.volt.low = 104 * batt.volt.nom / 120;
+		/* Per https://www.csb-battery.com.tw/english/01_product/02_detail.php?fid=17&pid=113
+		 * a nominally 12V battery can have "float charging voltage"
+		 * at 13.5-13.8V and an "equalization charging voltage" (e.g.
+		 * to desulphurize) at 14-15V. Note that per nut-names.txt,
+		 * the "battery.voltage.high" is the practical 100% charge
+		 * value (so equal or a bit less than actual battery.voltage
+		 * reported by the device, when the situation is healthy);
+		 * it is not the voltage that the battery CAN reach on the
+		 * brink of boiling out:
+		 */
+		batt.volt.high = 130 * batt.volt.nom / 120;
+
+		/* Publish these data too */
+		dstate_setinfo("battery.voltage.low", "%.2f", batt.volt.low);
+		dstate_setinfo("battery.voltage.high", "%.2f", batt.volt.high);
+
+		upslogx(LOG_INFO, "Using 'guesstimation' (low: %f, high: %f)!",
+			batt.volt.low, batt.volt.high);
+
+	}
+
+	val = dstate_getinfo("battery.packs");
+	if (val && (strspn(val, "0123456789 .") == strlen(val))) {
+		batt.packs = strtod(val, NULL);
+		batt_packs_known = 1;
+	}
+
+	val = getval("battery_voltage_reports_one_pack");
+	if (val) {
+		battery_voltage_reports_one_pack = 1;
+		/* If we already have a battery.voltage reading from the device,
+		 * it is not yet "adjusted" to consider the multiplication for
+		 * packs (if known; if not - the guesswork and call below for
+		 * qx_battery() should take care of it). Note that it is only
+		 * a few lines above that we might have learned the user-set
+		 * amount of battery packs and that they know the device only
+		 * reports a single pack voltage in the protocol.
+		 * Even if the qx_multiply_battvolt() method was called before
+		 * and set the battery_voltage_reports_one_pack_considered flag,
+		 * it is not too relevant until now *for maths*. However it is
+		 * important to know that the mapping table for this subdriver
+		 * does reference the adjustment method at all (which it would
+		 * encounter and set the flag while querying battery.voltage
+		 * from device and having a non-NULL reading now).
+		 */
+		if (battery_voltage_reports_one_pack_considered) {
+			val = dstate_getinfo("battery.voltage");
+			if (val && batt_packs_known && batt.packs > 1) {
+				batt.volt.act = strtod(val, NULL) * batt.packs;
+				dstate_setinfo("battery.voltage", "%.2f", batt.volt.act);
+			}
+		}
+	}
+
+	/* Guesstimation: init values if not provided by device/overrides */
 	if (!dstate_getinfo("battery.charge") || !dstate_getinfo("battery.runtime")) {
 
-		const char	*val;
-
-		val = dstate_getinfo("battery.voltage.high");
-		if (val) {
-			batt.volt.high = strtod(val, NULL);
-		}
-
-		val = dstate_getinfo("battery.voltage.low");
-		if (val) {
-			batt.volt.low = strtod(val, NULL);
-		}
-
-		val = dstate_getinfo("battery.voltage.nominal");
-		if (val) {
-			batt.volt.nom = strtod(val, NULL);
-		}
-
-		/* If no values are available for both battery.voltage.{low,high}
-		 * either from the UPS or provided by the user in ups.conf,
-		 * try to guesstimate them, but announce it! */
-		if ( (!d_equal(batt.volt.nom, -1)) && (d_equal(batt.volt.low, -1) || d_equal(batt.volt.high, -1))) {
-
-			upslogx(LOG_INFO, "No values for battery high/low voltages");
-
-			/* Basic formula, which should cover most cases */
-			batt.volt.low = 104 * batt.volt.nom / 120;
-			batt.volt.high = 130 * batt.volt.nom / 120;
-
-			/* Publish these data too */
-			dstate_setinfo("battery.voltage.low", "%.2f", batt.volt.low);
-			dstate_setinfo("battery.voltage.high", "%.2f", batt.volt.high);
-
-			upslogx(LOG_INFO, "Using 'guesstimation' (low: %f, high: %f)!",
-				batt.volt.low, batt.volt.high);
-
-		}
-
-		val = dstate_getinfo("battery.packs");
-		if (val && (strspn(val, "0123456789 .") == strlen(val))) {
-			batt.packs = strtod(val, NULL);
-		} else {
+		if (!batt_packs_known) {
 
 			/* qx_battery -> batt.volt.act */
 			if (!qx_battery() && (!d_equal(batt.volt.nom, -1))) {
@@ -334,7 +413,7 @@ static void	qx_initbattery(void)
 				 * therefore choose the one with the highest multiplier. */
 				for (i = 0; packs[i] > 0; i++) {
 
-					if (packs[i] * batt.volt.act > 1.2 * batt.volt.nom) {
+					if (packs[i] * batt.volt.act > 1.25 * batt.volt.nom) {
 						continue;
 					}
 
@@ -346,6 +425,9 @@ static void	qx_initbattery(void)
 					}
 
 					batt.packs = packs[i];
+					upslogx(LOG_INFO,
+						"Autodetected %.0f as number of battery packs [%.0f/%.2f]",
+						batt.packs, batt.volt.nom, batt.volt.act);
 					break;
 
 				}
@@ -2740,6 +2822,11 @@ void	upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "idleload",
 		"Minimum load to be used for runtime calculation");
 
+	addvar(VAR_FLAG, "battery_voltage_reports_one_pack",
+		"If your device natively reports battery.voltage of a single cell/pack, "
+		"multiply that into voltage of the whole battery assembly. "
+		"You may need an override.battery.packs=N setting also.");
+
 #ifdef QX_USB
 	addvar(VAR_VALUE, "subdriver", "Serial-over-USB subdriver selection");
 
@@ -3621,6 +3708,7 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 	if (mode == QX_WALKMODE_FULL_UPDATE) {
 		batt.runt.act = -1;
 		batt.chrg.act = -1;
+		battery_voltage_reports_one_pack_considered = 0;
 	}
 
 	/* Clear data from previous_item */
@@ -3853,7 +3941,10 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 				 * https://github.com/networkupstools/nut/pull/1027
 				 */
 
-				batt.volt.act = batt.packs * strtod(val, NULL);
+				batt.volt.act = strtod(val, NULL);
+				if (!battery_voltage_reports_one_pack_considered) {
+					batt.volt.act *= batt.packs;
+				}
 
 				if (batt.volt.act > 0 && batt.volt.low > 0 && batt.volt.high > batt.volt.low) {
 
