@@ -114,6 +114,10 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
      seems to have confused the MGE SHUT (Serial HID UPS Transfer) driver
      support [#2022]
 
+ - An issue was identified which could cause `libupsclient` parser of device
+   and host names to crash upon bad inputs (e.g. poorly resolved environment
+   variables in scripts). Now it should fail more gracefully [#2052]
+
  - New `configure --enable-inplace-runtime` option should set default values
    for `--sysconfdir`, `--with-user` and `--with-group` options to match an
    existing NUT deployment -- for users who are trying if a custom build
