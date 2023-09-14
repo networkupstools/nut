@@ -643,11 +643,21 @@ int sendsignal(const char *progname, const char * sig)
 
 const char *xbasename(const char *file)
 {
+	const char *p;
+#ifdef WIN32
+	const char *r;
+#endif
+
+	if (file == NULL) {
+		upsdebugx(1, "%s: got null input", __func__);
+		return NULL;
+	}
+
 #ifndef WIN32
-	const char *p = strrchr(file, '/');
+	p = strrchr(file, '/');
 #else
-	const char *p = strrchr(file, '\\');
-	const char *r = strrchr(file, '/');
+	p = strrchr(file, '\\');
+	r = strrchr(file, '/');
 	/* if not found, try '/' */
 	if( r > p ) {
 		p = r;
@@ -1729,7 +1739,14 @@ void *xcalloc(size_t number, size_t size)
 
 void *xrealloc(void *ptr, size_t size)
 {
-	void *p = realloc(ptr, size);
+	void *p;
+
+	if (ptr == NULL) {
+		upsdebugx(1, "%s: got null input", __func__);
+		return NULL;
+	}
+
+	p = realloc(ptr, size);
 
 	if (p == NULL)
 		fatal_with_errno(EXIT_FAILURE, "%s", oom_msg);
@@ -1738,7 +1755,14 @@ void *xrealloc(void *ptr, size_t size)
 
 char *xstrdup(const char *string)
 {
-	char *p = strdup(string);
+	char *p;
+
+	if (string == NULL) {
+		upsdebugx(1, "%s: got null input", __func__);
+		return NULL;
+	}
+
+	p = strdup(string);
 
 	if (p == NULL)
 		fatal_with_errno(EXIT_FAILURE, "%s", oom_msg);
