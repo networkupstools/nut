@@ -287,6 +287,9 @@ static int libusb_open(usb_dev_handle **udevp,
 			free(curDevice->Serial);
 			free(curDevice->Bus);
 			free(curDevice->Device);
+#ifdef WITH_USB_BUSPORT
+			free(curDevice->BusPort);
+#endif
 			memset(curDevice, '\0', sizeof(*curDevice));
 
 			/* Keep the list of items in sync with those matched by
@@ -297,6 +300,18 @@ static int libusb_open(usb_dev_handle **udevp,
 			curDevice->Bus = xstrdup(bus->dirname);
 			curDevice->Device = xstrdup(dev->filename);
 			curDevice->bcdDevice = dev->descriptor.bcdDevice;
+
+			upsdebugx(2, "dev->filename: %s", dev->filename);
+			upsdebugx(2, "bus->dirname: %s", bus->dirname);
+
+#ifdef WITH_USB_BUSPORT
+			curDevice->BusPort = (char *)malloc(4);
+			if (curDevice->BusPort == NULL) {
+				fatal_with_errno(EXIT_FAILURE, "Out of memory");
+			}
+			// always zero
+			sprintf(curDevice->BusPort, "%03d", 0);
+#endif
 
 			if (dev->descriptor.iManufacturer) {
 				retries = MAX_RETRY;
@@ -347,6 +362,9 @@ static int libusb_open(usb_dev_handle **udevp,
 			upsdebugx(2, "- Serial Number: %s", curDevice->Serial ? curDevice->Serial : "unknown");
 			upsdebugx(2, "- Bus: %s", curDevice->Bus ? curDevice->Bus : "unknown");
 			upsdebugx(2, "- Device: %s", curDevice->Device ? curDevice->Device : "unknown");
+#ifdef WITH_USB_BUSPORT
+			upsdebugx(2, "- Port: %s", curDevice->BusPort ? curDevice->BusPort : "unknown");
+#endif
 			upsdebugx(2, "- Device release number: %04x", curDevice->bcdDevice);
 
 			/* FIXME: extend to Eaton OEMs (HP, IBM, ...) */

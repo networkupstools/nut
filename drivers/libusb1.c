@@ -66,6 +66,9 @@ void nut_usb_addvars(void)
 
 	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
 	addvar(VAR_VALUE, "device", "Regular expression to match USB device name");
+#ifdef WITH_USB_BUSPORT
+	addvar(VAR_VALUE, "busport", "Regular expression to match USB bus port name");
+#endif
 
 	/* Warning: this feature is inherently non-deterministic!
 	 * If you only care to know that at least one of your no-name UPSes is online,
@@ -163,6 +166,9 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 	const struct libusb_interface_descriptor *if_desc;
 	libusb_device_handle *udev;
 	uint8_t bus_num, device_addr;
+#ifdef WITH_USB_BUSPORT
+	uint8_t bus_port;
+#endif
 	int ret, res;
 	unsigned char buf[20];
 	const unsigned char *p;
@@ -237,6 +243,9 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		free(curDevice->Serial);
 		free(curDevice->Bus);
 		free(curDevice->Device);
+#ifdef WITH_USB_BUSPORT
+		free(curDevice->BusPort);
+#endif
 		memset(curDevice, '\0', sizeof(*curDevice));
 
 		/* Keep the list of items in sync with those matched by
@@ -277,6 +286,22 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 					__func__, device_addr);
 			}
 		}
+
+#ifdef WITH_USB_BUSPORT
+
+		bus_port = libusb_get_port_number(device);
+		curDevice->BusPort = (char *)malloc(4);
+		if (curDevice->BusPort == NULL) {
+			libusb_free_device_list(devlist, 1);
+			fatal_with_errno(EXIT_FAILURE, "Out of memory");
+		}
+		if (bus_port > 0) {
+			sprintf(curDevice->BusPort, "%03d", bus_port);
+		} else {
+			upsdebugx(1, "%s: invalid libusb bus number %i",
+				__func__, bus_port);
+		}
+#endif
 
 		curDevice->VendorID = dev_desc.idVendor;
 		curDevice->ProductID = dev_desc.idProduct;
@@ -342,6 +367,9 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		upsdebugx(2, "- Product: %s", curDevice->Product ? curDevice->Product : "unknown");
 		upsdebugx(2, "- Serial Number: %s", curDevice->Serial ? curDevice->Serial : "unknown");
 		upsdebugx(2, "- Bus: %s", curDevice->Bus ? curDevice->Bus : "unknown");
+#ifdef WITH_USB_BUSPORT
+		upsdebugx(2, "- Bus Port: %s", curDevice->BusPort ? curDevice->BusPort : "unknown");
+#endif
 		upsdebugx(2, "- Device: %s", curDevice->Device ? curDevice->Device : "unknown");
 		upsdebugx(2, "- Device release number: %04x", curDevice->bcdDevice);
 
