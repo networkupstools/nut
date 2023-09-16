@@ -309,7 +309,7 @@ static int match_regex_hex(regex_t *preg, int n)
 
 /* private data type: hold a set of compiled regular expressions. */
 typedef struct regex_matcher_data_s {
-	regex_t	*regex[8];
+	regex_t	*regex[USBMATCHER_REGEXP_ARRAY_LIMIT];
 } regex_matcher_data_t;
 
 /* private callback function for regex matches */
@@ -475,7 +475,7 @@ void USBFreeRegexMatcher(USBDeviceMatcher_t *matcher)
 
 	data = (regex_matcher_data_t *)matcher->privdata;
 
-	for (i = 0; i < 8; i++) {
+	for (i = 0; i < USBMATCHER_REGEXP_ARRAY_LIMIT; i++) {
 		if (!data->regex[i]) {
 			continue;
 		}
