@@ -1738,7 +1738,14 @@ void *xrealloc(void *ptr, size_t size)
 
 char *xstrdup(const char *string)
 {
-	char *p = strdup(string);
+	char *p;
+
+	if (string == NULL) {
+		upsdebugx(1, "%s: got null input", __func__);
+		return NULL;
+	}
+
+	p = strdup(string);
 
 	if (p == NULL)
 		fatal_with_errno(EXIT_FAILURE, "%s", oom_msg);
