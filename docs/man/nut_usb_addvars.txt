@@ -65,7 +65,8 @@ Select a UPS on a specific USB device or group of devices. The argument is
 a regular expression that must match the device name where the UPS is
 connected (e.g. `device="001"` or `device="00[1-2]"`) as seen on Linux
 in `/sys/bus/usb/devices` or *lsusb(8)*; including leading zeroes.
-Note that device numbers are not guaranteed by the OS to be stable across
++
+NOTE: device numbers are not guaranteed by the OS to be stable across
 re-boots or device re-plugging.
 
 *busport =* 'regex'::
