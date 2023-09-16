@@ -3110,7 +3110,7 @@ void	upsdrv_initups(void)
 
 	warn_if_bad_usb_port_filename(device_path);
 
-	#ifndef TESTING
+# ifndef TESTING
 		int	ret, langid;
 		char	tbuf[255];	/* Some devices choke on size > 255 */
 		char	*regex_array[USBMATCHER_REGEXP_ARRAY_LIMIT];
@@ -3124,9 +3124,9 @@ void	upsdrv_initups(void)
 		regex_array[4] = getval("serial");
 		regex_array[5] = getval("bus");
 		regex_array[6] = getval("device");
-#ifdef WITH_USB_BUSPORT
+#  ifdef WITH_USB_BUSPORT
 		regex_array[7] = getval("busport");
-#endif
+#  endif
 
 		/* Check for language ID workaround (#1) */
 		if (getval("langid_fix")) {
@@ -3242,11 +3242,11 @@ void	upsdrv_initups(void)
 			}
 		}
 
-	#endif	/* TESTING */
+# endif	/* TESTING */
 
-	#ifdef QX_SERIAL
+# ifdef QX_SERIAL
 	}	/* is_usb */
-	#endif	/* QX_SERIAL */
+# endif	/* QX_SERIAL */
 
 #endif	/* QX_USB */
 
@@ -3266,23 +3266,22 @@ void	upsdrv_cleanup(void)
 
 #ifndef TESTING
 
-#ifdef QX_SERIAL
+# ifdef QX_SERIAL
 
-	#ifdef QX_USB
+#  ifdef QX_USB
 	if (!is_usb) {
-	#endif	/* QX_USB */
+#  endif	/* QX_USB */
 
 		ser_set_dtr(upsfd, 0);
 		ser_close(upsfd, device_path);
 
-	#ifdef QX_USB
+#  ifdef QX_USB
 	} else {	/* is_usb */
-	#endif	/* QX_USB */
+#  endif	/* QX_USB */
 
-#endif	/* QX_SERIAL */
+# endif	/* QX_SERIAL */
 
-#ifdef QX_USB
-
+# ifdef QX_USB
 		usb->close_dev(udev);
 		USBFreeExactMatcher(reopen_matcher);
 		USBFreeRegexMatcher(regex_matcher);
@@ -3295,11 +3294,11 @@ void	upsdrv_cleanup(void)
 #endif
 		free(usbdevice.Device);
 
-	#ifdef QX_SERIAL
+#  ifdef QX_SERIAL
 	}	/* is_usb */
-	#endif	/* QX_SERIAL */
+#  endif	/* QX_SERIAL */
 
-#endif	/* QX_USB */
+# endif	/* QX_USB */
 
 #endif	/* TESTING */
 

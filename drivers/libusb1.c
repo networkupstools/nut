@@ -288,7 +288,6 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		}
 
 #ifdef WITH_USB_BUSPORT
-
 		bus_port = libusb_get_port_number(device);
 		curDevice->BusPort = (char *)malloc(4);
 		if (curDevice->BusPort == NULL) {

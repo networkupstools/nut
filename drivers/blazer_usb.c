@@ -609,9 +609,9 @@ void upsdrv_initups(void)
 	regex_array[4] = getval("serial");
 	regex_array[5] = getval("bus");
 	regex_array[6] = getval("device");
-#ifdef WITH_USB_BUSPORT
+# ifdef WITH_USB_BUSPORT
 	regex_array[7] = getval("busport");
-#endif
+# endif
 
 	/* check for language ID workaround (#1) */
 	if (getval("langid_fix")) {
@@ -727,9 +727,9 @@ void upsdrv_cleanup(void)
 	free(usbdevice.Product);
 	free(usbdevice.Serial);
 	free(usbdevice.Bus);
-#ifdef WITH_USB_BUSPORT
-	free(usbdevice.BusPort);
-#endif
 	free(usbdevice.Device);
+# ifdef WITH_USB_BUSPORT
+	free(usbdevice.BusPort);
+# endif
 #endif	/* TESTING */
 }
