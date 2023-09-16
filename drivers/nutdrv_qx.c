@@ -57,7 +57,7 @@
 	#define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.35"
+#define DRIVER_VERSION	"0.36"
 
 #ifdef QX_SERIAL
 	#include "serial.h"
@@ -3016,6 +3016,9 @@ void	upsdrv_initups(void)
 		getval("serial") ||
 		getval("bus") ||
 		getval("langid_fix")
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+		|| getval("busport")
+#endif
 	) {
 		/* USB */
 		is_usb = 1;
@@ -3107,10 +3110,10 @@ void	upsdrv_initups(void)
 
 	warn_if_bad_usb_port_filename(device_path);
 
-	#ifndef TESTING
+# ifndef TESTING
 		int	ret, langid;
 		char	tbuf[255];	/* Some devices choke on size > 255 */
-		char	*regex_array[7];
+		char	*regex_array[USBMATCHER_REGEXP_ARRAY_LIMIT];
 
 		char	*subdrv = getval("subdriver");
 
@@ -3121,6 +3124,13 @@ void	upsdrv_initups(void)
 		regex_array[4] = getval("serial");
 		regex_array[5] = getval("bus");
 		regex_array[6] = getval("device");
+#  if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+		regex_array[7] = getval("busport");
+#  else
+		if (getval("busport")) {
+			upslogx(LOG_WARNING, "\"busport\" is configured for the device, but is not actually handled by current build combination of NUT and libusb (ignored)");
+		}
+#  endif
 
 		/* Check for language ID workaround (#1) */
 		if (getval("langid_fix")) {
@@ -3236,11 +3246,11 @@ void	upsdrv_initups(void)
 			}
 		}
 
-	#endif	/* TESTING */
+# endif	/* TESTING */
 
-	#ifdef QX_SERIAL
+# ifdef QX_SERIAL
 	}	/* is_usb */
-	#endif	/* QX_SERIAL */
+# endif	/* QX_SERIAL */
 
 #endif	/* QX_USB */
 
@@ -3260,23 +3270,22 @@ void	upsdrv_cleanup(void)
 
 #ifndef TESTING
 
-#ifdef QX_SERIAL
+# ifdef QX_SERIAL
 
-	#ifdef QX_USB
+#  ifdef QX_USB
 	if (!is_usb) {
-	#endif	/* QX_USB */
+#  endif	/* QX_USB */
 
 		ser_set_dtr(upsfd, 0);
 		ser_close(upsfd, device_path);
 
-	#ifdef QX_USB
+#  ifdef QX_USB
 	} else {	/* is_usb */
-	#endif	/* QX_USB */
+#  endif	/* QX_USB */
 
-#endif	/* QX_SERIAL */
+# endif	/* QX_SERIAL */
 
-#ifdef QX_USB
-
+# ifdef QX_USB
 		usb->close_dev(udev);
 		USBFreeExactMatcher(reopen_matcher);
 		USBFreeRegexMatcher(regex_matcher);
@@ -3285,12 +3294,15 @@ void	upsdrv_cleanup(void)
 		free(usbdevice.Serial);
 		free(usbdevice.Bus);
 		free(usbdevice.Device);
+#  if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+		free(usbdevice.BusPort);
+#  endif
 
-	#ifdef QX_SERIAL
+#  ifdef QX_SERIAL
 	}	/* is_usb */
-	#endif	/* QX_SERIAL */
+#  endif	/* QX_SERIAL */
 
-#endif	/* QX_USB */
+# endif	/* QX_USB */
 
 #endif	/* TESTING */
 

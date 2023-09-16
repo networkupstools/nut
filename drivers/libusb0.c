@@ -37,7 +37,7 @@
 #endif
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 0.1)"
-#define USB_DRIVER_VERSION	"0.44"
+#define USB_DRIVER_VERSION	"0.45"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -76,6 +76,11 @@ void nut_usb_addvars(void)
 
 	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
 	addvar(VAR_VALUE, "device", "Regular expression to match USB device name");
+	/* Not supported by libusb0, but let's not crash config
+	 * parsing on unknown keywords due to such nuances! :) */
+	addvar(VAR_VALUE, "busport", "Regular expression to match USB bus port name"
+		" (tolerated but ignored in this build)"
+	);
 
 	/* Warning: this feature is inherently non-deterministic!
 	 * If you only care to know that at least one of your no-name UPSes is online,
@@ -287,6 +292,9 @@ static int libusb_open(usb_dev_handle **udevp,
 			free(curDevice->Serial);
 			free(curDevice->Bus);
 			free(curDevice->Device);
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+			free(curDevice->BusPort);
+#endif
 			memset(curDevice, '\0', sizeof(*curDevice));
 
 			/* Keep the list of items in sync with those matched by
@@ -297,6 +305,15 @@ static int libusb_open(usb_dev_handle **udevp,
 			curDevice->Bus = xstrdup(bus->dirname);
 			curDevice->Device = xstrdup(dev->filename);
 			curDevice->bcdDevice = dev->descriptor.bcdDevice;
+
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+			curDevice->BusPort = (char *)malloc(4);
+			if (curDevice->BusPort == NULL) {
+				fatal_with_errno(EXIT_FAILURE, "Out of memory");
+			}
+			upsdebugx(2, "%s: NOTE: BusPort is always zero with libusb0", __func__);
+			sprintf(curDevice->BusPort, "%03d", 0);
+#endif
 
 			if (dev->descriptor.iManufacturer) {
 				retries = MAX_RETRY;
@@ -347,6 +364,9 @@ static int libusb_open(usb_dev_handle **udevp,
 			upsdebugx(2, "- Serial Number: %s", curDevice->Serial ? curDevice->Serial : "unknown");
 			upsdebugx(2, "- Bus: %s", curDevice->Bus ? curDevice->Bus : "unknown");
 			upsdebugx(2, "- Device: %s", curDevice->Device ? curDevice->Device : "unknown");
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+			upsdebugx(2, "- Bus Port: %s", curDevice->BusPort ? curDevice->BusPort : "unknown");
+#endif
 			upsdebugx(2, "- Device release number: %04x", curDevice->bcdDevice);
 
 			/* FIXME: extend to Eaton OEMs (HP, IBM, ...) */

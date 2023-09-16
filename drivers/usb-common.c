@@ -119,6 +119,15 @@ static int match_function_exact(USBDevice_t *hd, void *privdata)
 		return 0;
 	}
 #endif
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+  #ifdef DEBUG_EXACT_MATCH_BUSPORT
+	if (strcmp_null(hd->BusPort, data->BusPort) != 0) {
+		upsdebugx(2, "%s: failed match of %s: %s != %s",
+		    __func__, "BusPort", hd->BusPort, data->BusPort);
+		return 0;
+	}
+  #endif
+#endif
 #ifdef DEBUG_EXACT_MATCH_DEVICE
 	if (strcmp_null(hd->Device, data->Device) != 0) {
 		upsdebugx(2, "%s: failed match of %s: %s != %s",
@@ -300,7 +309,7 @@ static int match_regex_hex(regex_t *preg, int n)
 
 /* private data type: hold a set of compiled regular expressions. */
 typedef struct regex_matcher_data_s {
-	regex_t	*regex[7];
+	regex_t	*regex[USBMATCHER_REGEXP_ARRAY_LIMIT];
 } regex_matcher_data_t;
 
 /* private callback function for regex matches */
@@ -390,6 +399,19 @@ static int match_function_regex(USBDevice_t *hd, void *privdata)
 		    __func__, "Device", hd->Device);
 		return r;
 	}
+
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	r = match_regex(data->regex[7], hd->BusPort);
+	if (r != 1) {
+/*
+		upsdebugx(2, "%s: failed match of %s: %s !~ %s",
+		    __func__, "Device", hd->Device, data->regex[6]);
+*/
+		upsdebugx(2, "%s: failed match of %s: %s",
+		    __func__, "Bus Port", hd->BusPort);
+		return r;
+	}
+#endif
 	return 1;
 }
 
@@ -426,7 +448,7 @@ int USBNewRegexMatcher(USBDeviceMatcher_t **matcher, char **regex, int cflags)
 	m->privdata = (void *)data;
 	m->next = NULL;
 
-	for (i=0; i<7; i++) {
+	for (i=0; i < USBMATCHER_REGEXP_ARRAY_LIMIT; i++) {
 		r = compile_regex(&data->regex[i], regex[i], cflags);
 		if (r == -2) {
 			r = i+1;
@@ -453,7 +475,7 @@ void USBFreeRegexMatcher(USBDeviceMatcher_t *matcher)
 
 	data = (regex_matcher_data_t *)matcher->privdata;
 
-	for (i = 0; i < 7; i++) {
+	for (i = 0; i < USBMATCHER_REGEXP_ARRAY_LIMIT; i++) {
 		if (!data->regex[i]) {
 			continue;
 		}

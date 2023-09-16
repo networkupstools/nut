@@ -43,7 +43,7 @@
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
 
 #define SHUT_DRIVER_NAME	"SHUT communication driver"
-#define SHUT_DRIVER_VERSION	"0.87"
+#define SHUT_DRIVER_VERSION	"0.88"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -468,20 +468,35 @@ static int libshut_open(
 	free(curDevice->Serial);
 	free(curDevice->Bus);
 	free(curDevice->Device);
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	free(curDevice->BusPort);
+#endif
 	memset(curDevice, '\0', sizeof(*curDevice));
 
 	curDevice->VendorID = dev_descriptor->idVendor;
 	curDevice->ProductID = dev_descriptor->idProduct;
 	curDevice->Bus = strdup("serial");
 	curDevice->Device = strdup(arg_device_path);
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	curDevice->BusPort = (char *)malloc(4);
+	if (curDevice->BusPort == NULL) {
+		fatal_with_errno(EXIT_FAILURE, "Out of memory");
+	}
+	upsdebugx(2, "%s: NOTE: BusPort is always zero with libshut", __func__);
+	sprintf(curDevice->BusPort, "%03d", 0);
+#endif
+
 	curDevice->bcdDevice = dev_descriptor->bcdDevice;
-	curDevice->Vendor = strdup("Eaton");
+	curDevice->Vendor = NULL;
 	if (dev_descriptor->iManufacturer) {
 		ret = shut_get_string_simple(*arg_upsfd, dev_descriptor->iManufacturer,
 			string, MAX_STRING_SIZE);
 		if (ret > 0) {
 			curDevice->Vendor = strdup(string);
 		}
+	}
+	if (curDevice->Vendor == NULL) {
+		curDevice->Vendor = strdup("Eaton");
 	}
 
 	/* ensure iProduct retrieval */
@@ -514,6 +529,9 @@ static int libshut_open(
 	upsdebugx(2, "- Product: %s", curDevice->Product);
 	upsdebugx(2, "- Serial Number: %s", curDevice->Serial);
 	upsdebugx(2, "- Bus: %s", curDevice->Bus);
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	upsdebugx(2, "- Bus Port: %s", curDevice->BusPort ? curDevice->BusPort : "unknown");
+#endif
 	upsdebugx(2, "- Device: %s", curDevice->Device ? curDevice->Device : "unknown");
 	upsdebugx(2, "- Device release number: %04x", curDevice->bcdDevice);
 	upsdebugx(2, "Device matches");

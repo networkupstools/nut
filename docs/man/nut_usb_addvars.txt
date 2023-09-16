@@ -56,17 +56,29 @@ Examples:
 
 Select a UPS on a specific USB bus or group of buses. The argument is
 a regular expression that must match the bus name where the UPS is
-connected (e.g. `bus="002"` or `bus="00[2-3]"`) as seen in
-`/proc/bus/usb/devices` or *lsusb(8)*; including leading zeroes.
+connected (e.g. `bus="002"` or `bus="00[2-3]"`) as seen on Linux in
+`/sys/bus/usb/devices` or *lsusb(8)*; including leading zeroes.
 
 *device =* 'regex'::
 
 Select a UPS on a specific USB device or group of devices. The argument is
 a regular expression that must match the device name where the UPS is
-connected (e.g. `device="001"` or `device="00[1-2]"`) as seen in
-`/proc/bus/usb/devices` or *lsusb(8)*; including leading zeroes.
-Note that device numbers are not guaranteed by the OS to be stable across
+connected (e.g. `device="001"` or `device="00[1-2]"`) as seen on Linux
+in `/sys/bus/usb/devices` or *lsusb(8)*; including leading zeroes.
++
+NOTE: device numbers are not guaranteed by the OS to be stable across
 re-boots or device re-plugging.
+
+*busport =* 'regex'::
+
+If supported by the hardware, OS and libusb on the particular deployment,
+this option should allow to specify physical port numbers on an USB hub,
+rather than logical `device` enumeration values, and in turn -- this should
+be less volatile across reboots or re-plugging.
++
+NOTE: this option is not practically supported by some NUT builds
+(it should be ignored with a warning then), and not by all systems
+that NUT can run on.
 
 *allow_duplicates*::
 
