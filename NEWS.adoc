@@ -233,6 +233,11 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
    of all USB drivers using these options to include the same description
    [#1766]
 
+ - Added a "busport" USB matching option (if supported by the hardware, OS and
+   libusb on the particular deployment, it should allow to specify physical
+   port numbers on an USB hub, rather than logical "device" enumeration values,
+   and in turn -- this should be less volatile across reboots etc.) [#2043]
+
  - Added an `allow_duplicates` flag for common USB matching options which
    may help monitor several related no-name devices (although without knowing
    reliably which one is which... better than nothing) [#1756]
