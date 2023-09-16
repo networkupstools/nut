@@ -1056,6 +1056,10 @@ void upsdrv_initups(void)
 	regex_array[6] = getval("device");
 #ifdef WITH_USB_BUSPORT
 	regex_array[7] = getval("busport");
+#else
+	if (getval("busport")) {
+		upslogx(LOG_WARNING, "\"busport\" is configured for the device, but is not actually handled by current build combination of NUT and libusb (ignored)");
+	}
 #endif
 
 	ret = USBNewRegexMatcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
