@@ -306,9 +306,6 @@ static int libusb_open(usb_dev_handle **udevp,
 			curDevice->Device = xstrdup(dev->filename);
 			curDevice->bcdDevice = dev->descriptor.bcdDevice;
 
-			upsdebugx(2, "dev->filename: %s", dev->filename);
-			upsdebugx(2, "bus->dirname: %s", bus->dirname);
-
 #ifdef WITH_USB_BUSPORT
 			curDevice->BusPort = (char *)malloc(4);
 			if (curDevice->BusPort == NULL) {
@@ -368,7 +365,7 @@ static int libusb_open(usb_dev_handle **udevp,
 			upsdebugx(2, "- Bus: %s", curDevice->Bus ? curDevice->Bus : "unknown");
 			upsdebugx(2, "- Device: %s", curDevice->Device ? curDevice->Device : "unknown");
 #ifdef WITH_USB_BUSPORT
-			upsdebugx(2, "- Port: %s", curDevice->BusPort ? curDevice->BusPort : "unknown");
+			upsdebugx(2, "- Bus Port: %s", curDevice->BusPort ? curDevice->BusPort : "unknown");
 #endif
 			upsdebugx(2, "- Device release number: %04x", curDevice->bcdDevice);
 
