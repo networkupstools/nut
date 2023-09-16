@@ -490,7 +490,7 @@ upsconf_getDriverMedia() {
                     printf '%s\n%s\n' "$CURR_DRV" "usb" ; return ;;
                 /dev/*)
                     # See drivers/nutdrv_qx.c :: upsdrv_initups() for a list
-                    if [ -n "`upsconf_getValue "$1" 'subdriver' 'vendorid' 'productid' 'vendor' 'product' 'serial' 'bus' 'langid_fix'`" ] \
+                    if [ -n "`upsconf_getValue "$1" 'subdriver' 'vendorid' 'productid' 'vendor' 'product' 'serial' 'bus' 'busport' 'langid_fix'`" ] \
                     ; then
                         printf '%s\n%s\n' "$CURR_DRV" "usb" ; return
                     else
