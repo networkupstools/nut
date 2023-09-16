@@ -448,7 +448,7 @@ int USBNewRegexMatcher(USBDeviceMatcher_t **matcher, char **regex, int cflags)
 	m->privdata = (void *)data;
 	m->next = NULL;
 
-	for (i=0; i<REGEXP_ARRAY_LIMIT; i++) {
+	for (i=0; i < USBMATCHER_REGEXP_ARRAY_LIMIT; i++) {
 		r = compile_regex(&data->regex[i], regex[i], cflags);
 		if (r == -2) {
 			r = i+1;

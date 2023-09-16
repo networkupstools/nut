@@ -461,9 +461,9 @@
 /* USB standard timeout [ms] */
 #define USB_TIMEOUT 5000
 #ifdef WITH_USB_BUSPORT
-#define REGEXP_ARRAY_LIMIT	8
+# define USBMATCHER_REGEXP_ARRAY_LIMIT	8
 #else
-#define REGEXP_ARRAY_LIMIT	7
+# define USBMATCHER_REGEXP_ARRAY_LIMIT	7
 #endif
 
 /*!

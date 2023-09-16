@@ -851,7 +851,7 @@ void upsdrv_initups(void)
 	};
 
 	int	ret;
-	char	*regex_array[REGEXP_ARRAY_LIMIT];
+	char	*regex_array[USBMATCHER_REGEXP_ARRAY_LIMIT];
 
 	char	*subdrv = getval("subdriver");
 

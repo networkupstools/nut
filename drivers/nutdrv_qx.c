@@ -3113,7 +3113,7 @@ void	upsdrv_initups(void)
 	#ifndef TESTING
 		int	ret, langid;
 		char	tbuf[255];	/* Some devices choke on size > 255 */
-		char	*regex_array[REGEXP_ARRAY_LIMIT];
+		char	*regex_array[USBMATCHER_REGEXP_ARRAY_LIMIT];
 
 		char	*subdrv = getval("subdriver");
 

@@ -1568,7 +1568,7 @@ void upsdrv_makevartable(void)
  */
 void upsdrv_initups(void)
 {
-	char *regex_array[REGEXP_ARRAY_LIMIT];
+	char *regex_array[USBMATCHER_REGEXP_ARRAY_LIMIT];
 	char *value;
 	int r;
 

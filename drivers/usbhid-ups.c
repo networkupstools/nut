@@ -1023,7 +1023,7 @@ void upsdrv_initups(void)
 
 	subdriver_matcher = device_path;
 #else	/* !SHUT_MODE => USB */
-	char *regex_array[REGEXP_ARRAY_LIMIT];
+	char *regex_array[USBMATCHER_REGEXP_ARRAY_LIMIT];
 
 	upsdebugx(1, "upsdrv_initups (non-SHUT)...");
 
