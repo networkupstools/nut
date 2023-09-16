@@ -118,7 +118,11 @@ static subdriver_t *subdriver = NULL;
 
 /* Global vars */
 static HIDDevice_t *hd = NULL;
-static HIDDevice_t curDevice = { 0x0000, 0x0000, NULL, NULL, NULL, NULL, 0, NULL };
+static HIDDevice_t curDevice = { 0x0000, 0x0000, NULL, NULL, NULL, NULL, 0, NULL
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	, NULL
+#endif
+};
 static HIDDeviceMatcher_t *subdriver_matcher = NULL;
 #if !((defined SHUT_MODE) && SHUT_MODE)
 static HIDDeviceMatcher_t *exact_matcher = NULL;
