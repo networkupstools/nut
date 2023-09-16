@@ -68,6 +68,10 @@ void nut_usb_addvars(void)
 	addvar(VAR_VALUE, "device", "Regular expression to match USB device name");
 	addvar(VAR_VALUE, "busport", "Regular expression to match USB bus port name"
 #ifndef WITH_USB_BUSPORT
+		/* Not supported by this version of libusb1,
+		 * but let's not crash config parsing on
+		 * unknown keywords due to such nuances! :)
+		 */
 		" (tolerated but ignored in this build)"
 #endif
 	);

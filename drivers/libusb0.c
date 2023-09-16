@@ -76,6 +76,11 @@ void nut_usb_addvars(void)
 
 	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
 	addvar(VAR_VALUE, "device", "Regular expression to match USB device name");
+	/* Not supported by libusb0, but let's not crash config
+	 * parsing on unknown keywords due to such nuances! :) */
+	addvar(VAR_VALUE, "busport", "Regular expression to match USB bus port name"
+		" (tolerated but ignored in this build)"
+	);
 
 	/* Warning: this feature is inherently non-deterministic!
 	 * If you only care to know that at least one of your no-name UPSes is online,
