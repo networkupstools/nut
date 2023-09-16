@@ -351,6 +351,15 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
    remains mounted at least read-only late in shutdown) and a new optional
    POLLFAIL_LOG_THROTTLE_MAX setting [#529, #506]
 
+ - Also `upsmon` should now recognize `OFF` and `BYPASS` flags in `ups.status`
+   and report that these states begin or end. The `OFF` state usually means
+   than an administrative action happened to power off the load, but the UPS
+   device is still alive and communicating (USB, SNMP, etc.); corresponding
+   `MONITOR`'ed amount of power sources are considered not being "fed" for
+   the power value calculation purposes. The `BYPASS` state is now treated
+   similarly to `ONBATT`: currently this UPS "feeds" its load, but if later
+   communications fail, it is considered dead. [#2044]
+
  - Extended Linux systemd support with optional notifications about daemon
    state (READY, RELOADING, STOPPING) and watchdog keep-alive messages [#1590]
 
