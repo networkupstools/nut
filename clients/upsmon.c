@@ -586,6 +586,7 @@ static void ups_on_batt(utype_t *ups)
 	do_notify(ups, NOTIFY_ONBATT);
 	setflag(&ups->status, ST_ONBATT);
 	clearflag(&ups->status, ST_ONLINE);
+	clearflag(&ups->status, ST_OFF);
 }
 
 static void ups_on_line(utype_t *ups)
@@ -607,6 +608,7 @@ static void ups_on_line(utype_t *ups)
 
 	setflag(&ups->status, ST_ONLINE);
 	clearflag(&ups->status, ST_ONBATT);
+	clearflag(&ups->status, ST_OFF);
 }
 
 /* create the flag file if necessary */
@@ -987,7 +989,7 @@ static void recalc(void)
 		/* crit = (FSD) || (OB & LB) > HOSTSYNC seconds */
 		if (is_ups_critical(ups))
 			upsdebugx(1, "Critical UPS: %s", ups->sys);
-		else
+		else if (!flag_isset(ups->status, ST_OFF))
 			val_ol += ups->pv;
 
 		ups = ups->next;
@@ -1927,7 +1929,11 @@ static void parse_status(utype_t *ups, char *status)
 			upsreplbatt(ups);
 		if (!strcasecmp(statword, "CAL"))
 			ups_cal(ups);
-
+		if (!strcasecmp(statword, "OFF")) {
+			setflag(&ups->status, ST_OFF);
+			clearflag(&ups->status, ST_ONLINE);
+			clearflag(&ups->status, ST_ONBATT);
+		}
 		/* do it last to override any possible OL */
 		if (!strcasecmp(statword, "FSD"))
 			ups_fsd(ups);

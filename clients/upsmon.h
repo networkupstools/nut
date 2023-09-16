@@ -31,6 +31,7 @@
 #define ST_LOGIN       (1 << 5)       /* we are logged into this UPS              */
 #define ST_CLICONNECTED (1 << 6)      /* upscli_connect returned OK               */
 #define ST_CAL         (1 << 7)       /* UPS calibration in progress (CAL)        */
+#define ST_OFF         (1 << 8)       /* UPS is off or on sleep (OFF)             */
 
 /* required contents of flag file */
 #define SDMAGIC "upsmon-shutdown-file"
