@@ -309,7 +309,7 @@ static int libusb_open(usb_dev_handle **udevp,
 			if (curDevice->BusPort == NULL) {
 				fatal_with_errno(EXIT_FAILURE, "Out of memory");
 			}
-			// always zero
+			upsdebugx(2, "%s: NOTE: BusPort is always zero with libusb0", __func__);
 			sprintf(curDevice->BusPort, "%03d", 0);
 #endif
 
