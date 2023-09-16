@@ -1658,8 +1658,8 @@ void upsdrv_cleanup(void)
 	free(curDevice.Product);
 	free(curDevice.Serial);
 	free(curDevice.Bus);
+	free(curDevice.Device);
 #ifdef WITH_USB_BUSPORT
 	free(curDevice.BusPort);
 #endif
-	free(curDevice.Device);
 }

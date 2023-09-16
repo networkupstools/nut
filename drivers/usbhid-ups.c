@@ -28,7 +28,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.50"
+#define DRIVER_VERSION	"0.51"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
@@ -1183,10 +1183,10 @@ void upsdrv_cleanup(void)
 	free(curDevice.Product);
 	free(curDevice.Serial);
 	free(curDevice.Bus);
-#ifdef WITH_USB_BUSPORT
-	free(curDevice.BusPort);
-#endif
 	free(curDevice.Device);
+# ifdef WITH_USB_BUSPORT
+	free(curDevice.BusPort);
+# endif
 #endif	/* !SHUT_MODE => USB */
 }
 

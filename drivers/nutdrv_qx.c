@@ -57,7 +57,7 @@
 	#define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.35"
+#define DRIVER_VERSION	"0.36"
 
 #ifdef QX_SERIAL
 	#include "serial.h"
@@ -3293,10 +3293,10 @@ void	upsdrv_cleanup(void)
 		free(usbdevice.Product);
 		free(usbdevice.Serial);
 		free(usbdevice.Bus);
-#ifdef WITH_USB_BUSPORT
-		free(usbdevice.BusPort);
-#endif
 		free(usbdevice.Device);
+#  ifdef WITH_USB_BUSPORT
+		free(usbdevice.BusPort);
+#  endif
 
 #  ifdef QX_SERIAL
 	}	/* is_usb */
