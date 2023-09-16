@@ -468,7 +468,7 @@ static int libshut_open(
 	free(curDevice->Serial);
 	free(curDevice->Bus);
 	free(curDevice->Device);
-#ifdef WITH_USB_BUSPORT
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
 	free(curDevice->BusPort);
 #endif
 	memset(curDevice, '\0', sizeof(*curDevice));
@@ -477,7 +477,7 @@ static int libshut_open(
 	curDevice->ProductID = dev_descriptor->idProduct;
 	curDevice->Bus = strdup("serial");
 	curDevice->Device = strdup(arg_device_path);
-#ifdef WITH_USB_BUSPORT
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
 	curDevice->BusPort = (char *)malloc(4);
 	if (curDevice->BusPort == NULL) {
 		fatal_with_errno(EXIT_FAILURE, "Out of memory");
@@ -529,7 +529,7 @@ static int libshut_open(
 	upsdebugx(2, "- Product: %s", curDevice->Product);
 	upsdebugx(2, "- Serial Number: %s", curDevice->Serial);
 	upsdebugx(2, "- Bus: %s", curDevice->Bus);
-#ifdef WITH_USB_BUSPORT
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
 	upsdebugx(2, "- Bus Port: %s", curDevice->BusPort ? curDevice->BusPort : "unknown");
 #endif
 	upsdebugx(2, "- Device: %s", curDevice->Device ? curDevice->Device : "unknown");

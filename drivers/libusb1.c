@@ -67,7 +67,7 @@ void nut_usb_addvars(void)
 	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
 	addvar(VAR_VALUE, "device", "Regular expression to match USB device name");
 	addvar(VAR_VALUE, "busport", "Regular expression to match USB bus port name"
-#ifndef WITH_USB_BUSPORT
+#if (!defined WITH_USB_BUSPORT) || (!WITH_USB_BUSPORT)
 		/* Not supported by this version of libusb1,
 		 * but let's not crash config parsing on
 		 * unknown keywords due to such nuances! :)
@@ -172,7 +172,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 	const struct libusb_interface_descriptor *if_desc;
 	libusb_device_handle *udev;
 	uint8_t bus_num, device_addr;
-#ifdef WITH_USB_BUSPORT
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
 	uint8_t bus_port;
 #endif
 	int ret, res;
@@ -249,7 +249,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		free(curDevice->Serial);
 		free(curDevice->Bus);
 		free(curDevice->Device);
-#ifdef WITH_USB_BUSPORT
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
 		free(curDevice->BusPort);
 #endif
 		memset(curDevice, '\0', sizeof(*curDevice));
@@ -293,7 +293,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			}
 		}
 
-#ifdef WITH_USB_BUSPORT
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
 		bus_port = libusb_get_port_number(device);
 		curDevice->BusPort = (char *)malloc(4);
 		if (curDevice->BusPort == NULL) {
@@ -372,7 +372,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		upsdebugx(2, "- Product: %s", curDevice->Product ? curDevice->Product : "unknown");
 		upsdebugx(2, "- Serial Number: %s", curDevice->Serial ? curDevice->Serial : "unknown");
 		upsdebugx(2, "- Bus: %s", curDevice->Bus ? curDevice->Bus : "unknown");
-#ifdef WITH_USB_BUSPORT
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
 		upsdebugx(2, "- Bus Port: %s", curDevice->BusPort ? curDevice->BusPort : "unknown");
 #endif
 		upsdebugx(2, "- Device: %s", curDevice->Device ? curDevice->Device : "unknown");

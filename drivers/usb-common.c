@@ -119,7 +119,7 @@ static int match_function_exact(USBDevice_t *hd, void *privdata)
 		return 0;
 	}
 #endif
-#ifdef WITH_USB_BUSPORT
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
   #ifdef DEBUG_EXACT_MATCH_BUSPORT
 	if (strcmp_null(hd->BusPort, data->BusPort) != 0) {
 		upsdebugx(2, "%s: failed match of %s: %s != %s",
@@ -400,7 +400,7 @@ static int match_function_regex(USBDevice_t *hd, void *privdata)
 		return r;
 	}
 
-#ifdef WITH_USB_BUSPORT
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
 	r = match_regex(data->regex[7], hd->BusPort);
 	if (r != 1) {
 /*

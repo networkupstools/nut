@@ -460,7 +460,7 @@
 
 /* USB standard timeout [ms] */
 #define USB_TIMEOUT 5000
-#ifdef WITH_USB_BUSPORT
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
 # define USBMATCHER_REGEXP_ARRAY_LIMIT	8
 #else
 # define USBMATCHER_REGEXP_ARRAY_LIMIT	7
@@ -487,7 +487,7 @@ typedef struct USBDevice_s {
 	char		*Bus;      /*!< Bus name, e.g. "003"  */
 	uint16_t	bcdDevice; /*!< Device release number */
 	char		*Device;   /*!< Device name on the bus, e.g. "001"  */
-#ifdef WITH_USB_BUSPORT
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
 	char		*BusPort;  /*!< Port name, e.g. "001"  */
 #endif
 } USBDevice_t;

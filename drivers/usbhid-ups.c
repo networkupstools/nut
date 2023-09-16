@@ -1054,7 +1054,7 @@ void upsdrv_initups(void)
 	regex_array[4] = getval("serial");
 	regex_array[5] = getval("bus");
 	regex_array[6] = getval("device");
-#ifdef WITH_USB_BUSPORT
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
 	regex_array[7] = getval("busport");
 #else
 	if (getval("busport")) {
@@ -1184,7 +1184,7 @@ void upsdrv_cleanup(void)
 	free(curDevice.Serial);
 	free(curDevice.Bus);
 	free(curDevice.Device);
-# ifdef WITH_USB_BUSPORT
+# if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
 	free(curDevice.BusPort);
 # endif
 #endif	/* !SHUT_MODE => USB */

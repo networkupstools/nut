@@ -292,7 +292,7 @@ static int libusb_open(usb_dev_handle **udevp,
 			free(curDevice->Serial);
 			free(curDevice->Bus);
 			free(curDevice->Device);
-#ifdef WITH_USB_BUSPORT
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
 			free(curDevice->BusPort);
 #endif
 			memset(curDevice, '\0', sizeof(*curDevice));
@@ -306,7 +306,7 @@ static int libusb_open(usb_dev_handle **udevp,
 			curDevice->Device = xstrdup(dev->filename);
 			curDevice->bcdDevice = dev->descriptor.bcdDevice;
 
-#ifdef WITH_USB_BUSPORT
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
 			curDevice->BusPort = (char *)malloc(4);
 			if (curDevice->BusPort == NULL) {
 				fatal_with_errno(EXIT_FAILURE, "Out of memory");
@@ -364,7 +364,7 @@ static int libusb_open(usb_dev_handle **udevp,
 			upsdebugx(2, "- Serial Number: %s", curDevice->Serial ? curDevice->Serial : "unknown");
 			upsdebugx(2, "- Bus: %s", curDevice->Bus ? curDevice->Bus : "unknown");
 			upsdebugx(2, "- Device: %s", curDevice->Device ? curDevice->Device : "unknown");
-#ifdef WITH_USB_BUSPORT
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
 			upsdebugx(2, "- Bus Port: %s", curDevice->BusPort ? curDevice->BusPort : "unknown");
 #endif
 			upsdebugx(2, "- Device release number: %04x", curDevice->bcdDevice);
