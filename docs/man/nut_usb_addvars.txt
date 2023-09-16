@@ -68,6 +68,17 @@ in `/sys/bus/usb/devices` or *lsusb(8)*; including leading zeroes.
 Note that device numbers are not guaranteed by the OS to be stable across
 re-boots or device re-plugging.
 
+*busport =* 'regex'::
+
+If supported by the hardware, OS and libusb on the particular deployment,
+this option should allow to specify physical port numbers on an USB hub,
+rather than logical `device` enumeration values, and in turn -- this should
+be less volatile across reboots or re-plugging.
++
+NOTE: this option is not practically supported by some NUT builds
+(it should be ignored with a warning then), and not by all systems
+that NUT can run on.
+
 *allow_duplicates*::
 
 If you have several UPS devices which may not be uniquely identified by
