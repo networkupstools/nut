@@ -43,7 +43,7 @@
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
 
 #define SHUT_DRIVER_NAME	"SHUT communication driver"
-#define SHUT_DRIVER_VERSION	"0.87"
+#define SHUT_DRIVER_VERSION	"0.88"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -487,13 +487,16 @@ static int libshut_open(
 #endif
 
 	curDevice->bcdDevice = dev_descriptor->bcdDevice;
-	curDevice->Vendor = strdup("Eaton");
+	curDevice->Vendor = NULL;
 	if (dev_descriptor->iManufacturer) {
 		ret = shut_get_string_simple(*arg_upsfd, dev_descriptor->iManufacturer,
 			string, MAX_STRING_SIZE);
 		if (ret > 0) {
 			curDevice->Vendor = strdup(string);
 		}
+	}
+	if (curDevice->Vendor == NULL) {
+		curDevice->Vendor = strdup("Eaton");
 	}
 
 	/* ensure iProduct retrieval */
