@@ -66,9 +66,11 @@ void nut_usb_addvars(void)
 
 	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
 	addvar(VAR_VALUE, "device", "Regular expression to match USB device name");
-#ifdef WITH_USB_BUSPORT
-	addvar(VAR_VALUE, "busport", "Regular expression to match USB bus port name");
+	addvar(VAR_VALUE, "busport", "Regular expression to match USB bus port name"
+#ifndef WITH_USB_BUSPORT
+		" (tolerated but ignored in this build)"
 #endif
+	);
 
 	/* Warning: this feature is inherently non-deterministic!
 	 * If you only care to know that at least one of your no-name UPSes is online,
