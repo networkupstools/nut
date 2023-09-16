@@ -286,6 +286,7 @@ if test -z "${nut_have_libusb_seen}"; then
 		nut_have_libusb=no
 	fi
 
+	nut_with_usb_busport=no
 	AS_IF([test "${nut_have_libusb}" = "yes"], [
 		dnl ----------------------------------------------------------------------
 		dnl additional USB-related checks
@@ -318,11 +319,26 @@ if test -z "${nut_have_libusb_seen}"; then
 				]
 		)
 
+		dnl AC_MSG_CHECKING([for libusb bus port support])
+		dnl Per https://github.com/networkupstools/nut/issues/2043#issuecomment-1721856494 :
+		dnl #if defined(LIBUSB_API_VERSION) && (LIBUSB_API_VERSION >= 0x01000102)
+		dnl DEFINE WITH_USB_BUSPORT
+		dnl #endif
+		AC_CHECK_FUNCS(libusb_get_port_number, [nut_with_usb_busport=yes])
+
 		dnl # With USB we can match desired devices by regex;
 		dnl # and currently have no other use for the library:
 		AC_SEARCH_LIBS(regcomp, regex)
 	])
 	AC_LANG_POP([C])
+
+	AS_IF([test x"${nut_with_usb_busport}" = xyes], [
+		AC_DEFINE(WITH_USB_BUSPORT, 1,
+			[Define to 1 for libusb versions where we can support "busport" USB matching value.])
+	], [
+		AC_DEFINE(WITH_USB_BUSPORT, 0,
+			[Define to 1 for libusb versions where we can support "busport" USB matching value.])
+	])
 
 	AS_IF([test "${nut_have_libusb}" = "yes"], [
 		LIBUSB_CFLAGS="${CFLAGS}"

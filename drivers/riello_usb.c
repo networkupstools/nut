@@ -34,7 +34,7 @@
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello USB driver"
-#define DRIVER_VERSION	"0.09"
+#define DRIVER_VERSION	"0.10"
 
 #define DEFAULT_OFFDELAY   5  /*!< seconds (max 0xFF) */
 #define DEFAULT_BOOTDELAY  5  /*!< seconds (max 0xFF) */
@@ -851,7 +851,7 @@ void upsdrv_initups(void)
 	};
 
 	int	ret;
-	char	*regex_array[7];
+	char	*regex_array[USBMATCHER_REGEXP_ARRAY_LIMIT];
 
 	char	*subdrv = getval("subdriver");
 
@@ -864,6 +864,13 @@ void upsdrv_initups(void)
 	regex_array[4] = getval("serial");
 	regex_array[5] = getval("bus");
 	regex_array[6] = getval("device");
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	regex_array[7] = getval("busport");
+#else
+	if (getval("busport")) {
+		upslogx(LOG_WARNING, "\"busport\" is configured for the device, but is not actually handled by current build combination of NUT and libusb (ignored)");
+	}
+#endif
 
 	/* pick up the subdriver name if set explicitly */
 	if (subdrv) {
@@ -1233,4 +1240,7 @@ void upsdrv_cleanup(void)
 	free(usbdevice.Serial);
 	free(usbdevice.Bus);
 	free(usbdevice.Device);
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	free(usbdevice.BusPort);
+#endif
 }

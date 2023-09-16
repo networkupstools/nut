@@ -28,7 +28,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.50"
+#define DRIVER_VERSION	"0.51"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
@@ -118,7 +118,11 @@ static subdriver_t *subdriver = NULL;
 
 /* Global vars */
 static HIDDevice_t *hd = NULL;
-static HIDDevice_t curDevice = { 0x0000, 0x0000, NULL, NULL, NULL, NULL, 0, NULL };
+static HIDDevice_t curDevice = { 0x0000, 0x0000, NULL, NULL, NULL, NULL, 0, NULL
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	, NULL
+#endif
+};
 static HIDDeviceMatcher_t *subdriver_matcher = NULL;
 #if !((defined SHUT_MODE) && SHUT_MODE)
 static HIDDeviceMatcher_t *exact_matcher = NULL;
@@ -1023,7 +1027,7 @@ void upsdrv_initups(void)
 
 	subdriver_matcher = device_path;
 #else	/* !SHUT_MODE => USB */
-	char *regex_array[7];
+	char *regex_array[USBMATCHER_REGEXP_ARRAY_LIMIT];
 
 	upsdebugx(1, "upsdrv_initups (non-SHUT)...");
 
@@ -1054,6 +1058,13 @@ void upsdrv_initups(void)
 	regex_array[4] = getval("serial");
 	regex_array[5] = getval("bus");
 	regex_array[6] = getval("device");
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	regex_array[7] = getval("busport");
+#else
+	if (getval("busport")) {
+		upslogx(LOG_WARNING, "\"busport\" is configured for the device, but is not actually handled by current build combination of NUT and libusb (ignored)");
+	}
+#endif
 
 	ret = USBNewRegexMatcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
 	switch(ret)
@@ -1177,6 +1188,9 @@ void upsdrv_cleanup(void)
 	free(curDevice.Serial);
 	free(curDevice.Bus);
 	free(curDevice.Device);
+# if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	free(curDevice.BusPort);
+# endif
 #endif	/* !SHUT_MODE => USB */
 }
 
