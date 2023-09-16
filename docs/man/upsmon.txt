@@ -157,6 +157,25 @@ The UPS needs to have its battery replaced.
 *NOCOMM*::
 The UPS can't be contacted for monitoring.
 
+*NOPARENT*::
+`upsmon` parent process died - shutdown impossible.
+
+*CAL*::
+UPS calibration in progress.
+
+*OFF*::
+UPS administratively OFF or asleep.
+
+*NOTOFF*::
+UPS no longer administratively OFF or asleep.
+
+*BYPASS*::
+UPS on bypass (powered, not protecting).
+
+*NOTBYPASS*::
+UPS no longer on bypass.
+
+
 NOTIFY COMMAND
 --------------
 

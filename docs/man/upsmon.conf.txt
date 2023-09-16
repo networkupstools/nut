@@ -238,6 +238,18 @@ REPLBATT;; The UPS battery is bad and needs to be replaced
 
 NOCOMM;; A UPS is unavailable (can't be contacted for monitoring)
 
+NOPARENT;; `upsmon` parent process died - shutdown impossible
+
+CAL;; UPS calibration in progress
+
+OFF;; UPS administratively OFF or asleep
+
+NOTOFF;; UPS no longer administratively OFF or asleep
+
+BYPASS;; UPS on bypass (powered, not protecting)
+
+NOTBYPASS;; UPS no longer on bypass
+
 *NOTIFYFLAG* 'type' 'flag'[+'flag']...::
 
 By default, upsmon sends walls global messages to all logged in users)

@@ -280,6 +280,11 @@ POWERDOWNFLAG "@POWERDOWNFLAG@"
 # NOTIFYMSG REPLBATT	"UPS %s battery needs to be replaced"
 # NOTIFYMSG NOCOMM	"UPS %s is unavailable"
 # NOTIFYMSG NOPARENT	"upsmon parent process died - shutdown impossible"
+# NOTIFYMSG CAL		"UPS %s: calibration in progress"
+# NOTIFYMSG OFF		"UPS %s: administratively OFF or asleep"
+# NOTIFYMSG NOTOFF	"UPS %s: no longer administratively OFF or asleep"
+# NOTIFYMSG BYPASS	"UPS %s: on bypass (powered, not protecting)"
+# NOTIFYMSG NOTBYPASS	"UPS %s: no longer on bypass"
 #
 # Note that %s is replaced with the identifier of the UPS in question.
 #
