@@ -631,6 +631,20 @@ static subdriver_t *match_function_subdriver_name(int fatal_mismatch) {
 
 found:
 	upsdebugx(2, "%s: found a match: %s", __func__, info->name);
+	if (!getval("vendorid") || !getval("productid")) {
+		if (fatal_mismatch) {
+			fatalx(EXIT_FAILURE,
+				"When specifying a subdriver, "
+				"'vendorid' and 'productid' "
+				"are mandatory.");
+		} else {
+			upslogx(LOG_WARNING,
+				"When specifying a subdriver, "
+				"'vendorid' and 'productid' "
+				"are highly recommended.");
+		}
+	}
+
 	return info;
 }
 
