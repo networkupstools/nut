@@ -193,13 +193,17 @@ if test ! -d "${auglensdir}"; then
    fi
 fi
 
-LIBREGEX_LIBS=''
+dnl ### NUT_CHECK_LIBREGEX ### Detect below as part of libusb etc.
+dnl ### LIBREGEX_LIBS=''
 dnl Disable Hotplug, DevD and udev support on Windows
 dnl (useful when cross-compiling)
 case "${target_os}" in
     *mingw* )
-        dnl TODO: Actually detect it? See also nut_check_libusb.m4 for same.
-        LIBREGEX_LIBS='-lregex'
+        dnl TODO: Actually detect it? See also nut_check_libregex.m4 for same.
+        dnl Here we assumed from practice that it is available...
+        dnl ### if test x"${LIBREGEX_LIBS}" = x ; then
+        dnl ###     LIBREGEX_LIBS='-lregex'
+        dnl ### fi
         hotplugdir=''
         udevdir=''
         devddir=''
@@ -1522,6 +1526,7 @@ dnl These checks are performed unconditionally, even if the corresponding
 dnl --with-* options are not given. This is because we cannot predict
 dnl what will be in the --with-drivers argument.
 
+NUT_CHECK_LIBREGEX
 NUT_ARG_WITH([usb], [build and install USB drivers, optionally require build with specified version of libusb library and API: (auto|libusb-0.1|libusb-1.0)], [auto])
 nut_usb_lib=""
 NUT_CHECK_LIBUSB

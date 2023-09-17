@@ -124,6 +124,7 @@ upsdrvctl_LDADD = $(LDADD_COMMON) libdummy_upsdrvquery.la
 # serial drivers: all of them use standard LDADD and CFLAGS
 al175_SOURCES = al175.c
 apcsmart_SOURCES = apcsmart.c apcsmart_tabs.c
+apcsmart_CFLAGS = $(LIBREGEX_CFLAGS)
 apcsmart_LDADD = $(LDADD) $(LIBREGEX_LIBS)
 apcsmart_old_SOURCES = apcsmart-old.c
 bcmxcp_SOURCES = bcmxcp.c bcmxcp_ser.c

@@ -14,6 +14,9 @@ if test -z "${nut_have_libusb_seen}"; then
 	nut_have_libusb_seen=yes
 	NUT_CHECK_PKGCONFIG
 
+	dnl Our USB matching relies on regex abilities
+	NUT_CHECK_LIBREGEX
+
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"
 	LIBS_ORIG="${LIBS}"
@@ -325,10 +328,6 @@ if test -z "${nut_have_libusb_seen}"; then
 		dnl DEFINE WITH_USB_BUSPORT
 		dnl #endif
 		AC_CHECK_FUNCS(libusb_get_port_number, [nut_with_usb_busport=yes])
-
-		dnl # With USB we can match desired devices by regex;
-		dnl # and currently have no other use for the library:
-		AC_SEARCH_LIBS(regcomp, regex)
 	])
 	AC_LANG_POP([C])
 
