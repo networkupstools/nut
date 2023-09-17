@@ -76,6 +76,14 @@ libcommonclient_la_LIBADD = libparseconf.la @LTLIBOBJS@ @NETLIBS@
 libcommon_la_CFLAGS = $(AM_CFLAGS)
 libcommonclient_la_CFLAGS = $(AM_CFLAGS)
 
+if HAVE_LIBREGEX
+  libcommon_la_CFLAGS += $(LIBREGEX_CFLAGS)
+  libcommon_la_LIBADD += $(LIBREGEX_LIBS)
+
+  libcommonclient_la_CFLAGS += $(LIBREGEX_CFLAGS)
+  libcommonclient_la_LIBADD += $(LIBREGEX_LIBS)
+endif
+
 # Did the user request, and build env support, tighter integration with
 # libsystemd methods such as sd_notify()?
 if WITH_LIBSYSTEMD
