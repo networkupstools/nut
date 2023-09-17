@@ -534,6 +534,7 @@ info_lkp_t kelvin_celsius_conversion[] = {
 
 static subdriver_t *match_function_subdriver_name(int fatal_mismatch) {
 	char	*subdrv = getval("subdriver");
+	subdriver_t	*info = NULL;
 
 	/* Pick up the subdriver name if set explicitly */
 	if (subdrv) {
@@ -556,7 +557,8 @@ static subdriver_t *match_function_subdriver_name(int fatal_mismatch) {
 		 */
 		for (i=0; subdriver_list[i] != NULL; i++) {
 			if (strcmp_null(subdrv, subdriver_list[i]->name) == 0) {
-				return subdriver_list[i];
+				info = subdriver_list[i];
+				goto found;
 			}
 		}
 
@@ -570,7 +572,8 @@ static subdriver_t *match_function_subdriver_name(int fatal_mismatch) {
 				res = match_regex(regex_ptr, subdriver_list[i]->name);
 				if (res == 1) {
 					free(regex_ptr);
-					return subdriver_list[i];
+					info = subdriver_list[i];
+					goto found;
 				}
 			}
 		}
@@ -596,7 +599,8 @@ static subdriver_t *match_function_subdriver_name(int fatal_mismatch) {
 					res = match_regex(regex_ptr, subdriver_list[i]->name);
 					if (res == 1) {
 						free(regex_ptr);
-						return subdriver_list[i];
+						info = subdriver_list[i];
+						goto found;
 					}
 				}
 			}
@@ -624,6 +628,10 @@ static subdriver_t *match_function_subdriver_name(int fatal_mismatch) {
 	/* No match (and non-fatal mismatch mode), or no
 	 * "subdriver" was specified in configuration */
 	return NULL;
+
+found:
+	upsdebugx(2, "%s: found a match: %s", __func__, info->name);
+	return info;
 }
 
 /*!
