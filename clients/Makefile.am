@@ -12,8 +12,9 @@ $(top_builddir)/common/libcommonclient.la \
 $(top_builddir)/common/libparseconf.la: dummy
 	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
-# by default, link programs in this directory with libcommon.a
-LDADD = $(top_builddir)/common/libcommon.la libupsclient.la $(NETLIBS)
+# by default, link programs in this directory with
+# the more compact libcommonclient.a bundle
+LDADD = $(top_builddir)/common/libcommonclient.la libupsclient.la $(NETLIBS)
 if WITH_SSL
   LDADD += $(LIBSSL_LIBS)
 endif
