@@ -1592,11 +1592,13 @@ void alarm_set(const char *buf)
 		 * Note: LARGEBUF was the original limit mismatched vs alarm_buf
 		 * size before PR #986.
 		 */
-		char alarm_tmp[LARGEBUF];
+		char	alarm_tmp[LARGEBUF];
+		int	ibuflen;
+		size_t	buflen;
+
 		memset(alarm_tmp, 0, sizeof(alarm_tmp));
 		/* A bit of complexity to keep both (int)snprintf(...) and (size_t)sizeof(...) happy */
-		int ibuflen = snprintf(alarm_tmp, sizeof(alarm_tmp), "%s", buf);
-		size_t buflen;
+		ibuflen = snprintf(alarm_tmp, sizeof(alarm_tmp), "%s", buf);
 		if (ibuflen < 0) {
 			alarm_tmp[0] = 'N';
 			alarm_tmp[1] = '/';
@@ -1632,10 +1634,12 @@ void alarm_set(const char *buf)
 		upslogx(LOG_ERR, "%s: error setting alarm_buf to: %s%s",
 			__func__, alarm_tmp, ( (buflen < sizeof(alarm_tmp)) ? "" : "...<truncated>" ) );
 	} else if ((size_t)ret > sizeof(alarm_buf)) {
-		char alarm_tmp[LARGEBUF];
+		char	alarm_tmp[LARGEBUF];
+		int	ibuflen;
+		size_t	buflen;
+
 		memset(alarm_tmp, 0, sizeof(alarm_tmp));
-		int ibuflen = snprintf(alarm_tmp, sizeof(alarm_tmp), "%s", buf);
-		size_t buflen;
+		ibuflen = snprintf(alarm_tmp, sizeof(alarm_tmp), "%s", buf);
 		if (ibuflen < 0) {
 			alarm_tmp[0] = 'N';
 			alarm_tmp[1] = '/';
@@ -1932,9 +1936,11 @@ static int dstate_tree_dump(const st_tree_t *node)
 /* Public interface */
 void dstate_dump(void)
 {
+	const st_tree_t *node;
+
 	upsdebugx(3, "Entering %s", __func__);
 
-	const st_tree_t *node = (const st_tree_t *)dstate_getroot();
+	node = (const st_tree_t *)dstate_getroot();
 
 	dstate_tree_dump(node);
 }

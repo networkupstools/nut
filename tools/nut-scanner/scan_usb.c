@@ -246,7 +246,7 @@ static char* is_usb_device_supported(usb_device_id_t *usb_device_id_list,
 }
 
 /* return NULL if error */
-nutscan_device_t * nutscan_scan_usb()
+nutscan_device_t * nutscan_scan_usb(void)
 {
 	int ret;
 	char string[256];
@@ -289,6 +289,9 @@ nutscan_device_t * nutscan_scan_usb()
 	 * available in libusb (and hoping the OS and HW honour it).
 	 */
 	char *bus_port = NULL;
+	ssize_t devcount = 0;
+	struct libusb_device_descriptor dev_desc;
+	int i;
 #else  /* => WITH_LIBUSB_0_1 */
 	struct usb_device *dev;
 	struct usb_bus *bus;
@@ -316,10 +319,6 @@ nutscan_device_t * nutscan_scan_usb()
 #endif /* WITH_LIBUSB_1_0 */
 
 #if WITH_LIBUSB_1_0
-	ssize_t devcount = 0;
-	struct libusb_device_descriptor dev_desc;
-	int i;
-
 	devcount = (*nut_usb_get_device_list)(NULL, &devlist);
 	if (devcount <= 0) {
 		(*nut_usb_exit)(NULL);
@@ -624,7 +623,7 @@ nutscan_device_t * nutscan_scan_usb()
 #else /* not WITH_USB */
 
 /* stub function */
-nutscan_device_t * nutscan_scan_usb()
+nutscan_device_t * nutscan_scan_usb(void)
 {
 	return NULL;
 }

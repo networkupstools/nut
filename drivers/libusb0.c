@@ -215,12 +215,13 @@ static int libusb_open(usb_dev_handle **udevp,
 	usb_ctrl_char	rdbuf[MAX_REPORT_SIZE];
 	usb_ctrl_charbufsize		rdlen;
 
+	struct usb_bus *busses;
+
 	/* libusb base init */
 	usb_init();
 	usb_find_busses();
 	usb_find_devices();
 
-	struct usb_bus *busses;
 #ifdef WIN32
 	busses = usb_get_busses();
 #else

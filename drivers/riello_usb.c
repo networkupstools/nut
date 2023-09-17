@@ -81,7 +81,7 @@ static void ussleep(useconds_t usec)
 	usleep(usec);
 }
 
-static int cypress_setfeatures()
+static int cypress_setfeatures(void)
 {
 	int ret;
 
@@ -434,7 +434,7 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 	return ret;
 }
 
-static int get_ups_nominal()
+static int get_ups_nominal(void)
 {
 
 	uint8_t length;
@@ -467,7 +467,7 @@ static int get_ups_nominal()
 	return 0;
 }
 
-static int get_ups_status()
+static int get_ups_status(void)
 {
 	uint8_t numread, length;
 	int recv;
@@ -506,7 +506,7 @@ static int get_ups_status()
 	return 0;
 }
 
-static int get_ups_extended()
+static int get_ups_extended(void)
 {
 	uint8_t length;
 	int recv;
@@ -539,7 +539,7 @@ static int get_ups_extended()
 }
 
 /* Not static, exposed via header. Not used though, currently... */
-int get_ups_statuscode()
+int get_ups_statuscode(void)
 {
 	uint8_t length;
 	int recv;
@@ -795,7 +795,7 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 	return STAT_INSTCMD_UNKNOWN;
 }
 
-static int start_ups_comm()
+static int start_ups_comm(void)
 {
 	uint16_t length;
 	int recv;

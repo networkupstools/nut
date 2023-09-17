@@ -108,6 +108,8 @@ void do_upsconf_args(char *confupsname, char *var, char *val) {
 
 void nutscan_init(void)
 {
+	char *libname = NULL;
+
 #ifdef HAVE_PTHREAD
 /* TOTHINK: Should semaphores to limit thread count
  * and the more naive but portable methods be an
@@ -148,8 +150,6 @@ void nutscan_init(void)
 	pthread_mutex_init(&threadcount_mutex, NULL);
 # endif
 #endif	/* HAVE_PTHREAD */
-
-	char *libname = NULL;
 
 #ifdef WITH_USB
  #if WITH_LIBUSB_1_0

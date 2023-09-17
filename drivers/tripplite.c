@@ -612,9 +612,10 @@ void upsdrv_makevartable(void)
 
 void upsdrv_initups(void)
 {
+	char	*val;
+
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
-	char *val;
 
 	if ((val = getval("offdelay"))) {
 		int ipv = atoi(val);

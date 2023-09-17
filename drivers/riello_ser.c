@@ -207,7 +207,7 @@ static void riello_serialcomm(uint8_t* arg_bufIn, uint8_t typedev)
 	}
 }
 
-static int get_ups_nominal()
+static int get_ups_nominal(void)
 {
 	uint8_t length;
 
@@ -240,7 +240,7 @@ static int get_ups_nominal()
 	return 0;
 }
 
-static int get_ups_status()
+static int get_ups_status(void)
 {
 	uint8_t numread, length;
 
@@ -280,7 +280,7 @@ static int get_ups_status()
 	return 0;
 }
 
-static int get_ups_extended()
+static int get_ups_extended(void)
 {
 	uint8_t length;
 
@@ -314,7 +314,7 @@ static int get_ups_extended()
 }
 
 /* Not static, exposed via header. Not used though, currently... */
-int get_ups_statuscode()
+int get_ups_statuscode(void)
 {
 	uint8_t length;
 
@@ -347,7 +347,7 @@ int get_ups_statuscode()
 	return 0;
 }
 
-static int get_ups_sentr()
+static int get_ups_sentr(void)
 {
 	uint8_t length;
 
@@ -679,7 +679,7 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 	return STAT_INSTCMD_UNKNOWN;
 }
 
-static int start_ups_comm()
+static int start_ups_comm(void)
 {
 	uint8_t length;
 

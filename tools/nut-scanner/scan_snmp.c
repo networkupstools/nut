@@ -567,6 +567,7 @@ static struct snmp_pdu * scan_snmp_get_oid(char* oid_str, void* handle)
 		return NULL;
 	}
 
+	upsdebugx(3, "%s: collected index: %i", __func__, index);
 	return response;
 }
 
@@ -1004,6 +1005,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
                                      useconds_t usec_timeout, nutscan_snmp_t * sec)
 {
 	bool_t pass = TRUE; /* Track that we may spawn a scanning thread */
+	nutscan_device_t * result;
 	nutscan_snmp_t * tmp_sec;
 	nutscan_ip_iter_t ip;
 	char * ip_str = NULL;
@@ -1166,13 +1168,14 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 
 #ifdef HAVE_PTHREAD
 			if (pthread_create(&thread, NULL, try_SysOID, (void*)tmp_sec) == 0) {
+				nutscan_thread_t	*new_thread_array;
 # ifdef HAVE_PTHREAD_TRYJOIN
 				pthread_mutex_lock(&threadcount_mutex);
 				curr_threads++;
 # endif /* HAVE_PTHREAD_TRYJOIN */
 
 				thread_count++;
-				nutscan_thread_t *new_thread_array = realloc(thread_array,
+				new_thread_array = realloc(thread_array,
 					thread_count * sizeof(nutscan_thread_t));
 				if (new_thread_array == NULL) {
 					upsdebugx(1, "%s: Failed to realloc thread array", __func__);
@@ -1281,7 +1284,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 # endif /* HAVE_SEMAPHORE */
 #endif /* HAVE_PTHREAD */
 
-	nutscan_device_t * result = nutscan_rewind_device(dev_ret);
+	result = nutscan_rewind_device(dev_ret);
 	dev_ret = NULL;
 	return result;
 }

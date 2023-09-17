@@ -1039,6 +1039,7 @@ static int	krauler_command(const char *cmd, char *buf, size_t buflen)
 			upsdebugx(1, "received %d (%d)", ret, buf[0]);
 
 			if (langid_fix != -1) {
+				unsigned int	di, si, size;
 				/* Limit this check, at least for now */
 				/* Invalid receive size - message corrupted */
 				if (ret != buf[0]) {
@@ -1049,7 +1050,7 @@ static int	krauler_command(const char *cmd, char *buf, size_t buflen)
 				/* Simple unicode -> ASCII inplace conversion
 				 * FIXME: this code is at least shared with mge-shut/libshut
 				 * Create a common function? */
-				unsigned int	di, si, size = (unsigned int)buf[0];
+				size = (unsigned int)buf[0];
 				for (di = 0, si = 2; si < size; si += 2) {
 
 					if (di >= (buflen - 1))
@@ -1344,6 +1345,8 @@ static int	hunnox_command(const char *cmd, char *buf, size_t buflen)
 
 /*	if (hunnox_patch) { */
 		if (langid_fix != -1) {
+			unsigned int	di, si, size;
+
 			/* Limit this check, at least for now */
 			/* Invalid receive size - message corrupted */
 			if (ret != buf[0]) {
@@ -1354,7 +1357,7 @@ static int	hunnox_command(const char *cmd, char *buf, size_t buflen)
 			/* Simple unicode -> ASCII inplace conversion
 			 * FIXME: this code is at least shared with mge-shut/libshut
 			 * Create a common function? */
-			unsigned int	di, si, size = (unsigned int)buf[0];
+			size = (unsigned int)buf[0];
 			for (di = 0, si = 2; si < size; si += 2) {
 				if (di >= (buflen - 1))
 					break;
@@ -1666,7 +1669,7 @@ static int	snr_command(const char *cmd, char *buf, size_t buflen)
 		}
 
 		for (retry = 0; retry < 10; retry++) {
-
+			unsigned int	di, si, size;
 			int	ret;
 
 			ret = usb_get_string(udev,
@@ -1683,16 +1686,15 @@ static int	snr_command(const char *cmd, char *buf, size_t buflen)
 			/* This may serve in the future */
 			upsdebugx(1, "received %d (%d)", ret, buf[0]);
 
-
 			if (ret != buf[0]) {
 				upsdebugx(1, "size mismatch: %d / %d", ret, buf[0]);
 				continue;
 			}
 
 			/* Simple unicode -> ASCII inplace conversion
-				* FIXME: this code is at least shared with mge-shut/libshut
-				* Create a common function? */
-			unsigned int	di, si, size = (unsigned int)buf[0];
+			 * FIXME: this code is at least shared with mge-shut/libshut
+			 * Create a common function? */
+			size = (unsigned int)buf[0];
 			for (di = 0, si = 2; si < size; si += 2) {
 
 				if (di >= (buflen - 1))
@@ -1739,9 +1741,10 @@ static int	snr_command(const char *cmd, char *buf, size_t buflen)
 
 static int ablerex_command(const char *cmd, char *buf, size_t buflen)
 {
-	int iii;
+	int	iii;
 	int	len;
-	int idx;
+	int	idx;
+	int	retry;
 	char	tmp[64];
 	char	tmpryy[64];
 
@@ -1752,8 +1755,6 @@ static int ablerex_command(const char *cmd, char *buf, size_t buflen)
 			__func__, buflen);
 		buflen = (INT_MAX - 1);
 	}
-
-	int	retry;
 
 	for (retry = 0; retry < 3; retry++) {
 		int	ret;
@@ -2772,8 +2773,9 @@ void	upsdrv_help(void)
 {
 #ifdef QX_USB
 	#ifndef TESTING
-	printf("\nAcceptable values for 'subdriver' via -x or ups.conf in this driver: ");
 	size_t i;
+
+	printf("\nAcceptable values for 'subdriver' via -x or ups.conf in this driver: ");
 
 	for (i = 0; usbsubdriver[i].name != NULL; i++) {
 		if (i>0)
@@ -3001,6 +3003,15 @@ void	upsdrv_initinfo(void)
 /* Open the port and the like and choose the subdriver */
 void	upsdrv_initups(void)
 {
+#ifdef QX_USB
+# ifndef TESTING
+	int	ret, langid;
+	char	tbuf[255];	/* Some devices choke on size > 255 */
+	char	*regex_array[USBMATCHER_REGEXP_ARRAY_LIMIT];
+	char	*subdrv;
+# endif
+#endif
+
 	upsdebugx(1, "%s...", __func__);
 
 #if defined(QX_SERIAL) && defined(QX_USB)
@@ -3034,6 +3045,8 @@ void	upsdrv_initups(void)
 
 	#ifdef QX_USB
 	if (!is_usb) {
+	#else
+	{ /* scoping */
 	#endif	/* QX_USB */
 
 	#ifndef TESTING
@@ -3101,6 +3114,8 @@ void	upsdrv_initups(void)
 
 	#ifdef QX_USB
 	} else {	/* is_usb */
+	#else
+	} /* end of scoping */
 	#endif	/* QX_USB */
 
 #endif	/* QX_SERIAL */
@@ -3108,14 +3123,10 @@ void	upsdrv_initups(void)
 /* USB */
 #ifdef QX_USB
 
-	warn_if_bad_usb_port_filename(device_path);
+		warn_if_bad_usb_port_filename(device_path);
 
 # ifndef TESTING
-		int	ret, langid;
-		char	tbuf[255];	/* Some devices choke on size > 255 */
-		char	*regex_array[USBMATCHER_REGEXP_ARRAY_LIMIT];
-
-		char	*subdrv = getval("subdriver");
+		subdrv = getval("subdriver");
 
 		regex_array[0] = getval("vendorid");
 		regex_array[1] = getval("productid");
@@ -3315,6 +3326,10 @@ void	upsdrv_cleanup(void)
  * Returns < 0 on error, 0 on timeout and the number of bytes read on success. */
 static ssize_t	qx_command(const char *cmd, char *buf, size_t buflen)
 {
+#ifndef TESTING
+	ssize_t	ret = -1;
+#endif
+
 /* NOTE: Could not find in which ifdef-ed codepath, but clang complained
  * about unused parameters here. Reference them just in case...
  */
@@ -3323,8 +3338,6 @@ static ssize_t	qx_command(const char *cmd, char *buf, size_t buflen)
 	NUT_UNUSED_VARIABLE(buflen);
 
 #ifndef TESTING
-
-	ssize_t	ret = -1;
 
 # ifdef QX_USB
 
@@ -3920,7 +3933,7 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 	) {
 
 		if (getval("runtimecal")) {
-
+			const char	*val;
 			time_t	battery_now;
 
 			time(&battery_now);
@@ -3943,7 +3956,7 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 
 			}
 
-			const char	*val = dstate_getinfo("battery.voltage");
+			val = dstate_getinfo("battery.voltage");
 
 			if (!val) {
 				upsdebugx(2, "%s: unable to get battery.voltage", __func__);

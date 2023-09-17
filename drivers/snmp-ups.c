@@ -593,10 +593,11 @@ void upsdrv_initups(void)
 	/* Retrieve user's parameters */
 	mibs = testvar(SU_VAR_MIBS) ? getval(SU_VAR_MIBS) : "auto";
 	if (!strcmp(mibs, "--list")) {
+		int i;
+
 		printf("The 'mibs' argument is '%s', so just listing the mappings this driver knows,\n"
 		       "and for 'mibs=auto' these mappings will be tried in the following order until\n"
 		       "the first one matches your device\n\n", mibs);
-		int i;
 		printf("%7s\t%-23s\t%-7s\t%-31s\t%-s\n",
 			"NUMBER", "MAPPING NAME", "VERSION",
 			"ENTRY POINT OID", "AUTO CHECK OID");
@@ -1122,6 +1123,8 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 	current_name_len = name_len;
 
 	while( nb_iteration < max_iteration ) {
+		struct snmp_pdu	**new_ret_array;
+
 		/* Going to a shorter OID means we are outside our sub-tree */
 		if( current_name_len < name_len ) {
 			break;
@@ -1204,7 +1207,7 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 
 		nb_iteration++;
 		/* +1 is for the terminating NULL */
-		struct snmp_pdu ** new_ret_array = realloc(
+		new_ret_array = realloc(
 			ret_array,
 			sizeof(struct snmp_pdu*) * ((size_t)nb_iteration+1)
 			);
@@ -1261,21 +1264,24 @@ static bool_t decode_str(struct snmp_pdu *pdu, char *buf, size_t buf_len, info_l
 	switch (pdu->variables->type) {
 	case ASN_OCTET_STR:
 	case ASN_OPAQUE:
-		len = pdu->variables->val_len > buf_len - 1 ?
-			buf_len - 1 : pdu->variables->val_len;
-		/* Test for hexadecimal values */
-		int hex = 0, x;
-		unsigned char *cp;
-		for(cp = pdu->variables->val.string, x = 0; x < (int)pdu->variables->val_len; x++, cp++) {
-			if (!(isprint((size_t)*cp) || isspace((size_t)*cp))) {
-				hex = 1;
+		{ /* scoping */
+			/* Test for hexadecimal values */
+			int hex = 0, x;
+			unsigned char *cp;
+
+			len = pdu->variables->val_len > buf_len - 1 ?
+				buf_len - 1 : pdu->variables->val_len;
+			for(cp = pdu->variables->val.string, x = 0; x < (int)pdu->variables->val_len; x++, cp++) {
+				if (!(isprint((size_t)*cp) || isspace((size_t)*cp))) {
+					hex = 1;
+				}
 			}
-		}
-		if (hex)
-			snprint_hexstring(buf, buf_len, pdu->variables->val.string, pdu->variables->val_len);
-		else {
-			memcpy(buf, pdu->variables->val.string, len);
-			buf[len] = '\0';
+			if (hex)
+				snprint_hexstring(buf, buf_len, pdu->variables->val.string, pdu->variables->val_len);
+			else {
+				memcpy(buf, pdu->variables->val.string, len);
+				buf[len] = '\0';
+			}
 		}
 		break;
 	case ASN_INTEGER:
@@ -1320,9 +1326,10 @@ static bool_t decode_str(struct snmp_pdu *pdu, char *buf, size_t buf_len, info_l
 		upsdebugx(2, "Received an OID value: %s", tmp_buf);
 		/* Try to get the value of the pointed OID */
 		if (nut_snmp_get_str(tmp_buf, buf, buf_len, oid2info) == FALSE) {
+			char	*oid_leaf;
 			upsdebugx(3, "Failed to retrieve OID value, using fallback");
 			/* Otherwise return the last part of the returned OID (ex: 1.2.3 => 3) */
-			char *oid_leaf = strrchr(tmp_buf, '.');
+			oid_leaf = strrchr(tmp_buf, '.');
 			snprintf(buf, buf_len, "%s", oid_leaf+1);
 			upsdebugx(3, "Fallback value: %s", buf);
 		}
@@ -1441,9 +1448,10 @@ bool_t nut_snmp_get_int(const char *OID, long *pval)
 		upsdebugx(2, "Received an OID value: %s", tmp_buf);
 		/* Try to get the value of the pointed OID */
 		if (nut_snmp_get_int(tmp_buf, &value) == FALSE) {
+			char	*oid_leaf;
 			upsdebugx(3, "Failed to retrieve OID value, using fallback");
 			/* Otherwise return the last part of the returned OID (ex: 1.2.3 => 3) */
-			char *oid_leaf = strrchr(tmp_buf, '.');
+			oid_leaf = strrchr(tmp_buf, '.');
 			value = strtol(oid_leaf+1, NULL, 0);
 			upsdebugx(3, "Fallback value: %ld", value);
 		}
@@ -1795,8 +1803,9 @@ void su_alarm_set(snmp_info_t *su_info_p, long value)
 		 * start of path */
 		if (info_type[0] == 'L') {
 			/* Extract phase number */
-			item_number = atoi(info_type+1);
 			char alarm_info_value_more[SU_LARGEBUF + 32]; /* can sprintf() SU_LARGEBUF plus markup into here */
+
+			item_number = atoi(info_type+1);
 
 			upsdebugx(2, "%s: appending phase L%i", __func__, item_number);
 
@@ -1837,7 +1846,7 @@ snmp_info_t *su_find_info(const char *type)
 
 /* Counter match the sysOID using {device,ups}.model OID
  * Return TRUE if this OID can be retrieved, FALSE otherwise */
-static bool_t match_model_OID()
+static bool_t match_model_OID(void)
 {
 	bool_t retCode = FALSE;
 	snmp_info_t *su_info_p, *cur_info_p;
@@ -1899,7 +1908,7 @@ static bool_t match_model_OID()
 
 /* Try to find the MIB using sysOID matching.
  * Return a pointer to a mib2nut definition if found, NULL otherwise */
-static mib2nut_info_t *match_sysoid()
+static mib2nut_info_t *match_sysoid(void)
 {
 	char sysOID_buf[LARGEBUF];
 	oid device_sysOID[MAX_OID_LEN];
@@ -2147,14 +2156,16 @@ long su_find_valinfo(info_lkp_t *oid2info, const char* value)
 	return -1;
 }
 
-/* String reformating function */
+/* String reformatting function */
 const char *su_find_strval(info_lkp_t *oid2info, void *value)
 {
 #if WITH_SNMP_LKP_FUN
 	/* First test if we have a generic lookup function */
 	if ( (oid2info != NULL) && (oid2info->fun_vp2s != NULL) ) {
+		const char	*retvalue;
+
 		upsdebugx(2, "%s: using generic lookup function (string reformatting)", __func__);
-		const char * retvalue = oid2info->fun_vp2s(value);
+		retvalue = oid2info->fun_vp2s(value);
 		upsdebugx(2, "%s: got value '%s'", __func__, retvalue);
 		return retvalue;
 	}
@@ -2175,8 +2186,10 @@ const char *su_find_infoval(info_lkp_t *oid2info, void *raw_value)
 #if WITH_SNMP_LKP_FUN
 	/* First test if we have a generic lookup function */
 	if ( (oid2info != NULL) && (oid2info->fun_vp2s != NULL) ) {
+		const char	*retvalue;
+
 		upsdebugx(2, "%s: using generic lookup function", __func__);
-		const char * retvalue = oid2info->fun_vp2s(raw_value);
+		retvalue = oid2info->fun_vp2s(raw_value);
 		upsdebugx(2, "%s: got value '%s'", __func__, retvalue);
 		return retvalue;
 	}
@@ -2338,12 +2351,14 @@ static void free_info(snmp_info_t *su_info_p)
  * the MIB, based on a test using a template OID */
 static int base_snmp_template_index(const snmp_info_t *su_info_p)
 {
+	int	base_index = -1;
+	char	test_OID[SU_INFOSIZE];
+	snmp_info_flags_t	template_type;
+
 	if (!su_info_p)
 		return -1;
 
-	int base_index = -1;
-	char test_OID[SU_INFOSIZE];
-	snmp_info_flags_t template_type = get_template_type(su_info_p->info_type);
+	template_type = get_template_type(su_info_p->info_type);
 
 	upsdebugx(3, "%s: OID template = %s", __func__,
 		(su_info_p->OID ? su_info_p->OID : "<null>") );
@@ -2863,7 +2878,7 @@ bool_t get_and_process_data(int mode, snmp_info_t *su_info_p)
  * Determine the number of device(s) and if daisychain support has to be enabled
  * Set the values of devices_count (internal) and "device.count" (public)
  * Return TRUE if daisychain support is enabled, FALSE otherwise */
-bool_t daisychain_init()
+bool_t daisychain_init(void)
 {
 	snmp_info_t *su_info_p = NULL;
 
@@ -3132,7 +3147,10 @@ static int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su
 bool_t snmp_ups_walk(int mode)
 {
 	long *walked_input_phases, *walked_output_phases, *walked_bypass_phases;
-	static unsigned long iterations = 0;
+#ifdef COUNT_ITERATIONS
+	/* Experimental workaround for stale info */
+	static unsigned long	iterations = 0;
+#endif
 	snmp_info_t *su_info_p;
 	bool_t status = FALSE;
 
@@ -3291,11 +3309,13 @@ bool_t snmp_ups_walk(int mode)
 				continue;
 			}
 
+#ifdef COUNT_ITERATIONS
 			/* check stale elements only on each PN_STALE_RETRY iteration. */
-	/*		if ((su_info_p->flags & SU_FLAG_STALE) &&
+	 		if ((su_info_p->flags & SU_FLAG_STALE) &&
 					(iterations % SU_STALE_RETRY) != 0)
 				continue;
-	*/
+#endif
+
 			/* Filter 1-phase Vs 3-phase according to {input,output,bypass}.phase.
 			 * Non matching items are disabled, and flags are cleared at init
 			 * time */
@@ -3366,7 +3386,11 @@ bool_t snmp_ups_walk(int mode)
 			device_alarm_init();
 		}
 	}
+
+#ifdef COUNT_ITERATIONS
 	iterations++;
+#endif
+
 	return status;
 }
 
@@ -3640,6 +3664,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 		status = nut_snmp_get_str(su_info_p->OID, buf,
 			sizeof(buf), su_info_p->oid2info);
 		if (status == TRUE) {
+			const char *fmt_buf;
 			if (quirk_symmetra_threephase) {
 				if (!strcasecmp(su_info_p->info_type, "input.transfer.low")
 				 || !strcasecmp(su_info_p->info_type, "input.transfer.high")) {
@@ -3649,8 +3674,8 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 					snprintf(buf, sizeof(buf), "%.2f", tmp_dvalue);
 				}
 			}
-			/* Check if there is a string reformating function */
-			const char *fmt_buf = NULL;
+			/* Check if there is a string reformatting function */
+			fmt_buf = NULL;
 			if ((fmt_buf = su_find_strval(su_info_p->oid2info, buf)) != NULL) {
 				snprintf(buf, sizeof(buf), "%s", fmt_buf);
 			}
@@ -3724,7 +3749,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 	snmp_info_t *su_info_p = NULL;
 	bool_t status;
 	int retval = STAT_SET_FAILED;
-	int cmd_offset = 0;
+	int cmd_offset = 0;	/* FIXME: Does not seem to be actually used! */
 	long value = -1;
 	/* normal (default), outlet, or outlet group variable */
 	snmp_info_flags_t vartype = 0;
@@ -3846,13 +3871,14 @@ static int su_setOID(int mode, const char *varname, const char *val)
 		}
 	} else {
 		/* is indeed an outlet.* or device.x.outlet.* */
-		snmp_info_t *tmp_info_p;
+		snmp_info_t	*tmp_info_p;
 		/* Point the outlet or outlet group number in the string */
-		const char *item_number_ptr = NULL;
+		const char	*item_number_ptr = NULL;
+		char	*item_varname;
 		/* Store the target outlet or group number */
-		int item_number = extract_template_number_from_snmp_info_t(tmp_varname);
+		int	item_number = extract_template_number_from_snmp_info_t(tmp_varname);
 		/* Store the total number of outlets or outlet groups */
-		int total_items = -1;
+		int	total_items = -1;
 
 		/* Check if it is outlet / outlet.group */
 		vartype = get_template_type(tmp_varname);
@@ -3878,7 +3904,7 @@ static int su_setOID(int mode, const char *varname, const char *val)
 			return STAT_SET_INVALID;
 		}
 		/* find back the item template */
-		char *item_varname = (char *)xmalloc(SU_INFOSIZE);
+		item_varname = (char *)xmalloc(SU_INFOSIZE);
 		snprintf(item_varname, SU_INFOSIZE, "%s.%s%s",
 				(vartype == SU_OUTLET)?"outlet":"outlet.group",
 				"%i", strchr(item_number_ptr++, '.'));
@@ -3916,8 +3942,8 @@ static int su_setOID(int mode, const char *varname, const char *val)
 				/* Workaround buggy Eaton Pulizzi implementation
 				 * which have different offsets index for data & commands! */
 				if (su_info_p->flags & SU_CMD_OFFSET) {
-					upsdebugx(3, "Adding command offset");
 					cmd_offset++;
+					upsdebugx(3, "Adding command offset, now: %i", cmd_offset);
 				}
 			}
 

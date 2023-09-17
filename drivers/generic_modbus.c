@@ -707,7 +707,7 @@ int get_signal_state(devstate_t state)
 }
 
 /* get driver configuration parameters */
-void get_config_vars()
+void get_config_vars(void)
 {
 	int i; /* local index */
 

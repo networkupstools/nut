@@ -995,6 +995,7 @@ static void poll_reload(void)
 {
 #ifndef WIN32
 	long	ret;
+	size_t	maxalloc;
 
 	ret = sysconf(_SC_OPEN_MAX);
 
@@ -1012,7 +1013,7 @@ static void poll_reload(void)
 	}
 
 	/* How many items can we stuff into the array? */
-	size_t maxalloc = SIZE_MAX / sizeof(void *);
+	maxalloc = SIZE_MAX / sizeof(void *);
 	if ((uintmax_t)maxalloc < (uintmax_t)maxconn) {
 		fatalx(EXIT_FAILURE,
 			"You requested %" PRIdMAX " as maximum number of connections, but we can only allocate %" PRIuSIZE ".\n"

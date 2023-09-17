@@ -914,7 +914,7 @@ void riello_parse_sentr(uint8_t* buffer, TRielloData* data)
 		data->StatusCode[2] |= 0x01;
 }
 
-void riello_init_serial()
+void riello_init_serial(void)
 {
 	wait_packet = 1;
 	buf_ptr_length = 0;

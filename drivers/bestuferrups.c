@@ -420,7 +420,7 @@ static void setup_serial(void)
 }
 
 
-void upsdrv_initups ()
+void upsdrv_initups (void)
 {
 	char	temp[256], fcstring[512];
 

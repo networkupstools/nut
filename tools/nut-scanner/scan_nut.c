@@ -440,13 +440,14 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 
 #ifdef HAVE_PTHREAD
 			if (pthread_create(&thread, NULL, list_nut_devices, (void*)nut_arg) == 0) {
+				nutscan_thread_t	*new_thread_array;
 # ifdef HAVE_PTHREAD_TRYJOIN
 				pthread_mutex_lock(&threadcount_mutex);
 				curr_threads++;
 # endif /* HAVE_PTHREAD_TRYJOIN */
 
 				thread_count++;
-				nutscan_thread_t *new_thread_array = realloc(thread_array,
+				new_thread_array = realloc(thread_array,
 					thread_count * sizeof(nutscan_thread_t));
 				if (new_thread_array == NULL) {
 					upsdebugx(1, "%s: Failed to realloc thread array", __func__);

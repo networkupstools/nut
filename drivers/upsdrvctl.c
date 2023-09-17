@@ -527,13 +527,15 @@ static void set_reload_flag(const
 
 static void setup_signals(void)
 {
+#ifndef WIN32
+	struct sigaction	sa;
+#endif
+
 	set_exit_flag(0);
 	reset_signal_flag();
 
 #ifndef WIN32
 	/* Keep in sync with signal handling in drivers/main.c */
-	struct sigaction	sa;
-
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = 0;
 	sa.sa_handler = set_exit_flag;

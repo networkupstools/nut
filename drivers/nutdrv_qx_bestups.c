@@ -357,12 +357,14 @@ static int	bestups_preprocess_id_answer(item_t *item, const int len)
 /* *SETVAR(/NONUT)* Preprocess setvars */
 static int	bestups_process_setvar(item_t *item, char *value, const size_t valuelen)
 {
+	double	val;
+
 	if (!strlen(value)) {
 		upsdebugx(2, "%s: value not given for %s", __func__, item->info_type);
 		return -1;
 	}
 
-	double	val = strtod(value, NULL);
+	val = strtod(value, NULL);
 
 	if (!strcasecmp(item->info_type, "pins_shutdown_mode")) {
 

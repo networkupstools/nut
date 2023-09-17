@@ -322,9 +322,10 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 	/* Detecting IPv4 vs IPv6 */
 	if (getaddrinfo(first_ip, NULL, &hints, &res) != 0) {
 		/*Try IPv6 detection */
+		int ret;
+
 		ip.type = IPv6;
 		hints.ai_family = AF_INET6;
-		int ret;
 		if ((ret = getaddrinfo(first_ip, NULL, &hints, &res)) != 0) {
 			free(first_ip);
 			return 0;

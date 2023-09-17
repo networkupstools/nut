@@ -380,7 +380,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "ups.type", ST_FLAG_STRING, SU_INFOSIZE,
 		NULL,
 		"pdu", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-	 /* FIXME: needs a date reformating callback
+	 /* FIXME: needs a date reformatting callback
 	 *   2011-8-29,16:27:25.0,+1:0
 	 *   Hex-STRING: 07 DB 08 1D 10 0C 36 00 2B 01 00 00
 	 * { "ups.date", ST_FLAG_STRING, SU_INFOSIZE,

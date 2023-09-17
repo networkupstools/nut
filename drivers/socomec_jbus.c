@@ -53,11 +53,11 @@ upsdrv_info_t upsdrv_info = {
 
 void upsdrv_initinfo(void)
 {
-	upsdebugx(2, "upsdrv_initinfo");
-
 	uint16_t tab_reg[12];
 	int r;
 	
+	upsdebugx(2, "upsdrv_initinfo");
+
 	dstate_setinfo("device.mfr", "socomec jbus");
 	dstate_setinfo("device.model", "Socomec Generic");
 
@@ -117,11 +117,11 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
-	upsdebugx(2, "upsdrv_updateinfo");
-
 	uint16_t tab_reg[64];
 	int r;
 	
+	upsdebugx(2, "upsdrv_updateinfo");
+
 	status_init();
 
 	/* ups configuration */

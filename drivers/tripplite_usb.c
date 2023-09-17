@@ -173,19 +173,19 @@ static int subdriver_match_func(USBDevice_t *arghd, void *privdata)
 
 	switch (is_usb_device_supported(tripplite_usb_device_table, arghd))
 	{
-	case SUPPORTED:
-		return 1;
-
-	case POSSIBLY_SUPPORTED:
-		/* by default, reject, unless the productid option is given */
-		if (getval("productid")) {
+		case SUPPORTED:
 			return 1;
-		}
-		return 0;
 
-	case NOT_SUPPORTED:
-	default:
-		return 0;
+		case POSSIBLY_SUPPORTED:
+			/* by default, reject, unless the productid option is given */
+			if (getval("productid")) {
+				return 1;
+			}
+			return 0;
+
+		case NOT_SUPPORTED:
+		default:
+			return 0;
 	}
 }
 
@@ -207,58 +207,58 @@ static enum tl_model_t {
 /*! Are the values encoded in ASCII or binary?
  * TODO: Add 3004?
  */
-static int is_binary_protocol()
+static int is_binary_protocol(void)
 {
 	switch(tl_model) {
-	case TRIPP_LITE_SMART_3005:
-		return 1;
-	case TRIPP_LITE_SMARTPRO:
-	case TRIPP_LITE_SMART_0004:
-	case TRIPP_LITE_OMNIVS:
-	case TRIPP_LITE_OMNIVS_2001:
-	case TRIPP_LITE_UNKNOWN:
+		case TRIPP_LITE_SMART_3005:
+			return 1;
+		case TRIPP_LITE_SMARTPRO:
+		case TRIPP_LITE_SMART_0004:
+		case TRIPP_LITE_OMNIVS:
+		case TRIPP_LITE_OMNIVS_2001:
+		case TRIPP_LITE_UNKNOWN:
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wcovered-switch-default"
 #endif
-	/* All enum cases defined as of the time of coding
-	 * have been covered above. Handle later definitions,
-	 * memory corruptions and buggy inputs below...
-	 */
-	default:
+		/* All enum cases defined as of the time of coding
+		 * have been covered above. Handle later definitions,
+		 * memory corruptions and buggy inputs below...
+		 */
+		default:
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
 # pragma GCC diagnostic pop
 #endif
-		return 0;
+			return 0;
 	}
 }
 
 /*! Is this the "SMART" family of protocols?
  * TODO: Add 3004?
  */
-static int is_smart_protocol()
+static int is_smart_protocol(void)
 {
 	switch(tl_model) {
-	case TRIPP_LITE_SMARTPRO:
-	case TRIPP_LITE_SMART_0004:
-	case TRIPP_LITE_SMART_3005:
-		return 1;
-	case TRIPP_LITE_OMNIVS:
-	case TRIPP_LITE_OMNIVS_2001:
-	case TRIPP_LITE_UNKNOWN:
+		case TRIPP_LITE_SMARTPRO:
+		case TRIPP_LITE_SMART_0004:
+		case TRIPP_LITE_SMART_3005:
+			return 1;
+		case TRIPP_LITE_OMNIVS:
+		case TRIPP_LITE_OMNIVS_2001:
+		case TRIPP_LITE_UNKNOWN:
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wcovered-switch-default"
 #endif
-	/* All enum cases defined as of the time of coding
-	 * have been covered above. Handle later definitions,
-	 * memory corruptions and buggy inputs below...
-	 */
-	default:
+		/* All enum cases defined as of the time of coding
+		 * have been covered above. Handle later definitions,
+		 * memory corruptions and buggy inputs below...
+		 */
+		default:
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
 # pragma GCC diagnostic pop
 #endif
-		return 0;
+			return 0;
 	}
 }
 
@@ -595,11 +595,11 @@ static void usb_comm_fail(int res, const char *msg)
  */
 static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *reply, size_t reply_len)
 {
-	NUT_UNUSED_VARIABLE(reply_len);
 	unsigned char buffer_out[8];
 	unsigned char csum = 0;
 	int ret = 0, send_try, recv_try=0, done = 0;
 	size_t i = 0;
+	NUT_UNUSED_VARIABLE(reply_len);
 
 	upsdebugx(3, "send_cmd(msg_len=%u, type='%c')", (unsigned)msg_len, msg[0]);
 

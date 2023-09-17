@@ -413,16 +413,18 @@ static void scan_received_pack(void) {
 				OutVoltage = RecPack[1] * a *  TENSAO_SAIDA_F1_MI[configRelay] + TENSAO_SAIDA_F2_MI[configRelay];
 			}
 		} else {
+			double	RealPower, potVA1, potVA2, potLin, potRe;
+
 			OutCurrent = (float)(corrente_saida_F1_MR * RecPack[5] + corrente_saida_F2_MR);
 			OutVoltage = RecPack[1] * TENSAO_SAIDA_F1_MR[configRelay] + TENSAO_SAIDA_F2_MR[configRelay];
 			AppPower = OutCurrent * OutVoltage;
 
-			double RealPower = (RecPack[7] + RecPack[8] * 256);
+			RealPower = (RecPack[7] + RecPack[8] * 256);
 
-			double potVA1 = 5.968 * AppPower - 284.36;
-			double potVA2 = 7.149 * AppPower - 567.18;
-			double potLin = 0.1664 * RealPower + 49.182;
-			double potRe = 0.1519 * RealPower + 32.644;
+			potVA1 = 5.968 * AppPower - 284.36;
+			potVA2 = 7.149 * AppPower - 567.18;
+			potLin = 0.1664 * RealPower + 49.182;
+			potRe = 0.1519 * RealPower + 32.644;
 			if (fabs(potVA1 - RealPower) < fabs(potVA2 - RealPower))
 				RealPower = potLin;
 			else

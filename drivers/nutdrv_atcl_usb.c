@@ -258,6 +258,17 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 {
 	int ret = 0;
 	uint8_t iManufacturer = 0, iProduct = 0, iSerialNumber = 0;
+#if WITH_LIBUSB_1_0
+	libusb_device **devlist;
+	ssize_t devcount = 0;
+	libusb_device_handle *handle;
+	struct libusb_device_descriptor dev_desc;
+	uint8_t bus_num;
+	/* TODO: consider device_addr */
+	int i;
+#else  /* => WITH_LIBUSB_0_1 */
+	struct usb_bus	*bus;
+#endif
 
 	/* libusb base init */
 #if WITH_LIBUSB_1_0
@@ -279,14 +290,6 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 #endif
 
 #if WITH_LIBUSB_1_0
-	libusb_device **devlist;
-	ssize_t devcount = 0;
-	libusb_device_handle *handle;
-	struct libusb_device_descriptor dev_desc;
-	uint8_t bus_num;
-	/* TODO: consider device_addr */
-	int i;
-
 	devcount = libusb_get_device_list(NULL, &devlist);
 	if (devcount <= 0)
 		fatal_with_errno(EXIT_FAILURE, "No USB device found");
@@ -299,7 +302,6 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 		ret = libusb_open(dev, &handle);
 		*handlep = handle;
 #else  /* => WITH_LIBUSB_0_1 */
-	struct usb_bus	*bus;
 	for (bus = usb_busses; bus; bus = bus->next) {
 
 		struct usb_device	*dev;
