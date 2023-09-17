@@ -561,10 +561,79 @@ static void ups_is_gone(utype_t *ups)
 
 	/* now only complain if we haven't lately */
 	if ((now - ups->lastncwarn) > nocommwarntime) {
-
 		/* NOCOMM indicates a persistent condition */
 		do_notify(ups, NOTIFY_NOCOMM);
 		ups->lastncwarn = now;
+	}
+}
+
+static void ups_is_off(utype_t *ups)
+{
+	if (flag_isset(ups->status, ST_OFF)) { 	/* no change */
+		upsdebugx(4, "%s: %s (no change)", __func__, ups->sys);
+		return;
+	}
+
+	sleepval = pollfreqalert;	/* bump up polling frequency */
+
+	ups->linestate = 0;
+
+	upsdebugx(3, "%s: %s (first time)", __func__, ups->sys);
+
+	/* must have changed from !OFF to OFF, so notify */
+
+	do_notify(ups, NOTIFY_OFF);
+	setflag(&ups->status, ST_OFF);
+	clearflag(&ups->status, ST_ONLINE);
+}
+
+static void ups_is_notoff(utype_t *ups)
+{
+	/* Called when OFF is NOT among known states */
+	if (flag_isset(ups->status, ST_OFF)) {	/* actual change */
+		do_notify(ups, NOTIFY_NOTOFF);
+		clearflag(&ups->status, ST_OFF);
+
+		if (!flag_isset(ups->status, ST_ONBATT)) {
+			sleepval = pollfreq;
+			ups->linestate = 1;
+			setflag(&ups->status, ST_ONLINE);
+		}
+	}
+}
+
+static void ups_is_bypass(utype_t *ups)
+{
+	if (flag_isset(ups->status, ST_BYPASS)) { 	/* no change */
+		upsdebugx(4, "%s: %s (no change)", __func__, ups->sys);
+		return;
+	}
+
+	sleepval = pollfreqalert;	/* bump up polling frequency */
+
+	ups->linestate = 0;	/* if we lose comms, consider it AWOL */
+
+	upsdebugx(3, "%s: %s (first time)", __func__, ups->sys);
+
+	/* must have changed from !BYPASS to BYPASS, so notify */
+
+	do_notify(ups, NOTIFY_BYPASS);
+	setflag(&ups->status, ST_BYPASS);
+	clearflag(&ups->status, ST_ONLINE);
+}
+
+static void ups_is_notbypass(utype_t *ups)
+{
+	/* Called when BYPASS is NOT among known states */
+	if (flag_isset(ups->status, ST_BYPASS)) {	/* actual change */
+		do_notify(ups, NOTIFY_NOTBYPASS);
+		clearflag(&ups->status, ST_BYPASS);
+
+		if (!flag_isset(ups->status, ST_ONBATT)) {
+			sleepval = pollfreq;
+			ups->linestate = 1;
+			setflag(&ups->status, ST_ONLINE);
+		}
 	}
 }
 
@@ -586,6 +655,7 @@ static void ups_on_batt(utype_t *ups)
 	do_notify(ups, NOTIFY_ONBATT);
 	setflag(&ups->status, ST_ONBATT);
 	clearflag(&ups->status, ST_ONLINE);
+	clearflag(&ups->status, ST_OFF);
 }
 
 static void ups_on_line(utype_t *ups)
@@ -607,6 +677,7 @@ static void ups_on_line(utype_t *ups)
 
 	setflag(&ups->status, ST_ONLINE);
 	clearflag(&ups->status, ST_ONBATT);
+	clearflag(&ups->status, ST_OFF);
 }
 
 /* create the flag file if necessary */
@@ -987,7 +1058,7 @@ static void recalc(void)
 		/* crit = (FSD) || (OB & LB) > HOSTSYNC seconds */
 		if (is_ups_critical(ups))
 			upsdebugx(1, "Critical UPS: %s", ups->sys);
-		else
+		else if (!flag_isset(ups->status, ST_OFF))
 			val_ol += ups->pv;
 
 		ups = ups->next;
@@ -1906,6 +1977,10 @@ static void parse_status(utype_t *ups, char *status)
 		clearflag(&ups->status, ST_LOWBATT);
 	if (!strstr(status, "FSD"))
 		clearflag(&ups->status, ST_FSD);
+	if (!strstr(status, "OFF"))
+		ups_is_notoff(ups);
+	if (!strstr(status, "BYPASS"))
+		ups_is_notbypass(ups);
 
 	statword = status;
 
@@ -1927,7 +2002,10 @@ static void parse_status(utype_t *ups, char *status)
 			upsreplbatt(ups);
 		if (!strcasecmp(statword, "CAL"))
 			ups_cal(ups);
-
+		if (!strcasecmp(statword, "OFF"))
+			ups_is_off(ups);
+		if (!strcasecmp(statword, "BYPASS"))
+			ups_is_bypass(ups);
 		/* do it last to override any possible OL */
 		if (!strcasecmp(statword, "FSD"))
 			ups_fsd(ups);
