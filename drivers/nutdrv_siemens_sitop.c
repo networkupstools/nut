@@ -98,7 +98,7 @@ static void rm_buffer_head(unsigned int n) {
 /* parse incoming data from the UPS.
  * return true if something new was received.
  */
-static int check_for_new_data() {
+static int check_for_new_data(void) {
 	int new_data_received = 0;
 	int done = 0;
 	ssize_t num_received;

@@ -28,7 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static int check_difftime()
+static int check_difftime(void)
 {
 	time_t tv1, tv2;
 	double d1, d2;
@@ -64,7 +64,7 @@ static int check_difftime()
 	return res;
 }
 
-static int check_difftimeval()
+static int check_difftimeval(void)
 {
 	struct timeval tv1, tv2;
 	double d1, d2;
@@ -101,7 +101,7 @@ static int check_difftimeval()
 	return res;
 }
 
-static int check_difftimespec()
+static int check_difftimespec(void)
 {
 	int res = 0;
 #if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_CLOCK_MONOTONIC) && HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC

@@ -329,6 +329,7 @@ static void HandshakeCallback(PRFileDesc *fd, UPSCONN_t *client_data)
 int upscli_init(int certverify, const char *certpath,
 					const char *certname, const char *certpasswd)
 {
+	const char *quiet_init_ssl;
 #ifdef WITH_OPENSSL
 	long ret;
 	int ssl_mode = SSL_VERIFY_NONE;
@@ -343,7 +344,7 @@ int upscli_init(int certverify, const char *certpath,
 	NUT_UNUSED_VARIABLE(certpasswd);
 #endif /* WITH_OPENSSL | WITH_NSS */
 
-	const char *quiet_init_ssl = getenv("NUT_QUIET_INIT_SSL");
+	quiet_init_ssl = getenv("NUT_QUIET_INIT_SSL");
 	if (quiet_init_ssl != NULL) {
 		if (*quiet_init_ssl == '\0'
 			|| (strncmp(quiet_init_ssl, "true", 4)
@@ -678,8 +679,9 @@ static ssize_t net_read(UPSCONN_t *ups, char *buf, size_t buflen, const time_t t
 		 * 32-bit builds)... Not likely to exceed in 64-bit builds,
 		 * but smaller systems with 16-bits might be endangered :)
 		 */
+		int iret;
 		assert(buflen <= INT_MAX);
-		int iret = SSL_read(ups->ssl, buf, (int)buflen);
+		iret = SSL_read(ups->ssl, buf, (int)buflen);
 		assert(iret <= SSIZE_MAX);
 		ret = (ssize_t)iret;
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
@@ -762,8 +764,9 @@ static ssize_t net_write(UPSCONN_t *ups, const char *buf, size_t buflen, const t
 		 * 32-bit builds)... Not likely to exceed in 64-bit builds,
 		 * but smaller systems with 16-bits might be endangered :)
 		 */
+		int iret;
 		assert(buflen <= INT_MAX);
-		int iret = SSL_write(ups->ssl, buf, (int)buflen);
+		iret = SSL_write(ups->ssl, buf, (int)buflen);
 		assert(iret <= SSIZE_MAX);
 		ret = (ssize_t)iret;
 #elif defined(WITH_NSS) /* WITH_OPENSSL */

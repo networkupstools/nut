@@ -270,7 +270,7 @@ ssize_t command_write_sequence(unsigned char *command, size_t command_length, un
 	return bytes_read;
 }
 
-void upsdrv_comm_good()
+void upsdrv_comm_good(void)
 {
 	ser_comm_good();
 }

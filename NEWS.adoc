@@ -113,6 +113,8 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
    * Something about compile-time macros or other warnings-related refactoring
      seems to have confused the MGE SHUT (Serial HID UPS Transfer) driver
      support [#2022]
+   * Some warnings were not detected by the tools or build scenarios used
+     earlier, and only got addressed now
 
  - An issue was identified which could cause `libupsclient` parser of device
    and host names to crash upon bad inputs (e.g. poorly resolved environment

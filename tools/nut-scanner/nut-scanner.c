@@ -173,7 +173,7 @@ static void * run_eaton_serial(void *arg)
 
 #endif /* HAVE_PTHREAD */
 
-static void show_usage()
+static void show_usage(void)
 {
 /* NOTE: This code uses `nutscan_avail_*` global vars from nutscan-init.c */
 	puts("nut-scanner : utility for detection of available power devices.\n");
@@ -362,6 +362,11 @@ int main(int argc, char *argv[])
 	int quiet = 0; /* The debugging level for certain upsdebugx() progress messages; 0 = print always, quiet==1 is to require at least one -D */
 	void (*display_func)(nutscan_device_t * device);
 	int ret_code = EXIT_SUCCESS;
+#ifdef HAVE_PTHREAD
+# ifdef HAVE_SEMAPHORE
+	sem_t	*current_sem;
+# endif
+#endif
 #if (defined HAVE_PTHREAD) && ( (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE) ) && (defined HAVE_SYS_RESOURCE_H)
 	struct rlimit nofile_limit;
 
@@ -694,7 +699,7 @@ display_help:
 	/* FIXME: Currently sem_init already done on nutscan-init for lib need.
 	   We need to destroy it before re-init. We currently can't change "sem value"
 	   on lib (need to be thread safe). */
-	sem_t *current_sem = nutscan_semaphore();
+	current_sem = nutscan_semaphore();
 	sem_destroy(current_sem);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
 #pragma GCC diagnostic push

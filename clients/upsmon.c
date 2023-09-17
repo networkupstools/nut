@@ -1253,6 +1253,7 @@ static void addups(int reloading, const char *sys, const char *pvs,
 {
 	unsigned int	pv;
 	utype_t	*tmp, *last;
+	long	lpv;
 
 	/* the username is now required - no more host-based auth */
 
@@ -1262,7 +1263,7 @@ static void addups(int reloading, const char *sys, const char *pvs,
 		return;
 	}
 
-	long lpv = strtol(pvs, (char **) NULL, 10);
+	lpv = strtol(pvs, (char **) NULL, 10);
 
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push

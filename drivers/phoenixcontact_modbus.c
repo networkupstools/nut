@@ -57,11 +57,11 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
+	uint16_t tab_reg[64];
+
 	errcount = 0;
 
 	upsdebugx(2, "upsdrv_updateinfo");
-
-	uint16_t tab_reg[64];
 
 	mrir(modbus_ctx, 29697, 3, tab_reg);
 

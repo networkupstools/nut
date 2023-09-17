@@ -559,9 +559,9 @@ int main(int argc, char **argv)
 			monhost_ups_anchor = monhost_ups_current;
 			monhost_ups_current->next = NULL;
 			monhost_ups_current->monhost = monhost;
-			monhost_len=1;
+			monhost_len = 1;
 		} else {
-			fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system>");
+			fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system> or -m <ups,logfile>");
 		}
 
 		if (logfn)
@@ -573,6 +573,10 @@ int main(int argc, char **argv)
 	/* shouldn't happen */
 	if (!logformat)
 		fatalx(EXIT_FAILURE, "No format defined - but this should be impossible");
+
+	/* shouldn't happen */
+	if (!monhost_len)
+		fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system> or -m <ups,logfile>");
 
 	for (monhost_ups_current = monhost_ups_anchor;
 	     monhost_ups_current != NULL;

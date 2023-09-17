@@ -389,7 +389,7 @@ unsigned char calc_checksum(const unsigned char *buf)
 	return c;
 }
 
-void init_command_map()
+void init_command_map(void)
 {
 	int i = 0;
 
@@ -442,7 +442,7 @@ void init_command_map()
 	}
 }
 
-void init_meter_map()
+void init_meter_map(void)
 {
 	/* Clean entire map */
 	memset(&bcmxcp_meter_map, 0, sizeof(BCMXCP_METER_MAP_ENTRY_t) * BCMXCP_METER_MAP_MAX);
@@ -519,7 +519,7 @@ void init_meter_map()
 	bcmxcp_meter_map[BCMXCP_METER_MAP_LINE_EVENT_COUNTER].nut_entity = "input.quality";
 }
 
-void init_alarm_map()
+void init_alarm_map(void)
 {
 	/* Clean entire map */
 	memset(&bcmxcp_alarm_map, 0, sizeof(BCMXCP_ALARM_MAP_ENTRY_t) * BCMXCP_ALARM_MAP_MAX);

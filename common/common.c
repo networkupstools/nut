@@ -78,7 +78,7 @@ const char *UPS_VERSION = NUT_VERSION_MACRO;
 #include <sys/types.h>
 #include <limits.h>
 #include <stdlib.h>
-pid_t get_max_pid_t()
+pid_t get_max_pid_t(void)
 {
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
 #pragma GCC diagnostic push
@@ -1948,9 +1948,10 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 #if !HAVE_DECL_REALPATH
 		struct stat	st;
 #endif
+		int compres;
 
 		upsdebugx(5,"Comparing lib %s with dirpath entry %s", base_libname, dirp->d_name);
-		int compres = strncmp(dirp->d_name, base_libname, base_libname_length);
+		compres = strncmp(dirp->d_name, base_libname, base_libname_length);
 		if (compres == 0
 		&&  dirp->d_name[base_libname_length] == '\0' /* avoid "*.dll.a" etc. */
 		) {

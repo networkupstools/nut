@@ -1537,9 +1537,9 @@ subdriver_t mge_xml_subdriver = {
 };
 
 const char *vname_nut2mge_xml(const char *name) {
-	assert(NULL != name);
-
 	size_t i = 0;
+
+	assert(NULL != name);
 
 	for (; i < sizeof(mge_xml2nut) / sizeof(xml_info_t); ++i) {
 		xml_info_t *info = mge_xml2nut + i;
@@ -1553,9 +1553,9 @@ const char *vname_nut2mge_xml(const char *name) {
 }
 
 const char *vname_mge_xml2nut(const char *name) {
-	assert(NULL != name);
-
 	size_t i = 0;
+
+	assert(NULL != name);
 
 	for (; i < sizeof(mge_xml2nut) / sizeof(xml_info_t); ++i) {
 		xml_info_t *info = mge_xml2nut + i;
@@ -1569,9 +1569,9 @@ const char *vname_mge_xml2nut(const char *name) {
 }
 
 char *vvalue_mge_xml2nut(const char *name, const char *value, size_t len) {
-	assert(NULL != name);
-
 	size_t i = 0;
+
+	assert(NULL != name);
 
 	for (; i < sizeof(mge_xml2nut) / sizeof(xml_info_t); ++i) {
 		xml_info_t *info = mge_xml2nut + i;

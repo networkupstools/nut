@@ -451,14 +451,16 @@ HIDData_t *FindObject_with_ID_Node(HIDDesc_t *pDesc_arg, uint8_t ReportID, HIDNo
 	size_t	i;
 
 	for (i = 0; i < pDesc_arg->nitems; i++) {
-		HIDData_t *pData = &pDesc_arg->item[i];
+		HIDData_t	*pData = &pDesc_arg->item[i];
+		HIDPath_t	*pPath;
+		uint8_t	size;
 
 		if (pData->ReportID != ReportID) {
 			continue;
 		}
 
-		HIDPath_t * pPath = &pData->Path;
-		uint8_t size = pPath->Size;
+		pPath = &pData->Path;
+		size = pPath->Size;
 		if (size == 0 || pPath->Node[size-1] != Node) {
 			continue;
 		}
