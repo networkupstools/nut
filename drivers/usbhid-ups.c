@@ -538,6 +538,7 @@ static subdriver_t *match_function_subdriver_name(int fatal_mismatch) {
 	/* Pick up the subdriver name if set explicitly */
 	if (subdrv) {
 		int	res, i, flag_HAVE_LIBREGEX = 0;
+		size_t	len;
 #if (defined HAVE_LIBREGEX && HAVE_LIBREGEX)
 		regex_t	*regex_ptr = NULL;
 		flag_HAVE_LIBREGEX = 1;
@@ -560,7 +561,9 @@ static subdriver_t *match_function_subdriver_name(int fatal_mismatch) {
 		}
 
 #if (defined HAVE_LIBREGEX && HAVE_LIBREGEX)
-		/* Then try a case-insensitive regex like "tripplite" */
+		/* Then try a case-insensitive regex like "tripplite.*"
+		 * if so provided by caller */
+		upsdebugx(2, "%s: retry matching by regex 'as is'", __func__);
 		res = compile_regex(&regex_ptr, subdrv, REG_ICASE | REG_EXTENDED);
 		if (res == 0 && regex_ptr != NULL) {
 			for (i=0; subdriver_list[i] != NULL; i++) {
@@ -572,8 +575,38 @@ static subdriver_t *match_function_subdriver_name(int fatal_mismatch) {
 			}
 		}
 
-		if (regex_ptr)
+		if (regex_ptr) {
 			free(regex_ptr);
+			regex_ptr = NULL;
+		}
+
+		/* Then try a case-insensitive regex like "tripplite.*"
+		 * with automatically added ".*" */
+		len = strlen(subdrv);
+		if (
+			(len < 3 || (subdrv[len-2] != '.' && subdrv[len-1] != '*'))
+			&& len < (LARGEBUF-3)
+		) {
+			char	buf[LARGEBUF];
+			upsdebugx(2, "%s: retry matching by regex with added '.*'", __func__);
+			snprintf(buf, sizeof(buf), "%s.*", subdrv);
+			res = compile_regex(&regex_ptr, buf, REG_ICASE | REG_EXTENDED);
+			if (res == 0 && regex_ptr != NULL) {
+				for (i=0; subdriver_list[i] != NULL; i++) {
+					res = match_regex(regex_ptr, subdriver_list[i]->name);
+					if (res == 1) {
+						free(regex_ptr);
+						return subdriver_list[i];
+					}
+				}
+			}
+
+			if (regex_ptr) {
+				free(regex_ptr);
+				regex_ptr = NULL;
+			}
+		}
+
 #endif	/* HAVE_LIBREGEX */
 
 		if (fatal_mismatch) {
