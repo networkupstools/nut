@@ -152,6 +152,11 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
    * extended default ranges for max battery voltage when guessing [#1279]
 
  - usbhid-ups updates:
+   * added support for `subdriver` configuration option, to select the
+     USB HID subdriver for the device manually where automatic match
+     does not suffice (e.g. new devices for which no `vendorid`/`productid`
+     pair was built into any driver, or for different-capability devices
+     with same interface chips, notably "phoenixtec/liebert" and "mge") [#1369]
    * cps-hid subdriver now applies same report descriptor fixing logic to
      devices with ProductID 0x0601 as done earlier for 0x0501, to get the
      correct output voltage data [#1497]

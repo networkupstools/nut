@@ -28,16 +28,17 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.51"
+#define DRIVER_VERSION	"0.52"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
-#include "main.h"
+#include "main.h"	/* Must be first, includes "config.h" */
 #include "nut_stdint.h"
 #include "libhid.h"
 #include "usbhid-ups.h"
 #include "hidparser.h"
 #include "hidtypes.h"
+#include "common.h"
 #ifdef WIN32
 #include "wincompat.h"
 #endif
@@ -531,6 +532,67 @@ info_lkp_t kelvin_celsius_conversion[] = {
 	{ 0, NULL, kelvin_celsius_conversion_fun, NULL }
 };
 
+static subdriver_t *match_function_subdriver_name(int fatal_mismatch) {
+	char	*subdrv = getval("subdriver");
+
+	/* Pick up the subdriver name if set explicitly */
+	if (subdrv) {
+		int	res, i, flag_HAVE_LIBREGEX = 0;
+#if (defined HAVE_LIBREGEX && HAVE_LIBREGEX)
+		regex_t	*regex_ptr = NULL;
+		flag_HAVE_LIBREGEX = 1;
+#endif
+
+		upsdebugx(2,
+			"%s: matching a subdriver by explicit "
+			"name%s: '%s'...",
+			__func__,
+			flag_HAVE_LIBREGEX ?	"/regex" : "",
+			subdrv);
+
+		/* First try exact match for strings like "TrippLite HID 0.85"
+		 * Not likely to hit (due to versions etc.), but worth a try :)
+		 */
+		for (i=0; subdriver_list[i] != NULL; i++) {
+			if (strcmp_null(subdrv, subdriver_list[i]->name) == 0) {
+				return subdriver_list[i];
+			}
+		}
+
+#if (defined HAVE_LIBREGEX && HAVE_LIBREGEX)
+		/* Then try a case-insensitive regex like "tripplite" */
+		res = compile_regex(&regex_ptr, subdrv, REG_ICASE | REG_EXTENDED);
+		if (res == 0 && regex_ptr != NULL) {
+			for (i=0; subdriver_list[i] != NULL; i++) {
+				res = match_regex(regex_ptr, subdriver_list[i]->name);
+				if (res == 1) {
+					free(regex_ptr);
+					return subdriver_list[i];
+				}
+			}
+		}
+
+		if (regex_ptr)
+			free(regex_ptr);
+#endif	/* HAVE_LIBREGEX */
+
+		if (fatal_mismatch) {
+			fatalx(EXIT_FAILURE,
+				"Configuration requested subdriver '%s' but none matched",
+				subdrv);
+		} else {
+			upslogx(LOG_WARNING,
+				"Configuration requested subdriver '%s' but none matched; "
+				"will try USB matching by other fields",
+				subdrv);
+		}
+	}
+
+	/* No match (and non-fatal mismatch mode), or no
+	 * "subdriver" was specified in configuration */
+	return NULL;
+}
+
 /*!
  * subdriver matcher: only useful for USB mode
  * as SHUT is only supported by MGE UPS SYSTEMS units
@@ -538,8 +600,13 @@ info_lkp_t kelvin_celsius_conversion[] = {
 
 #if !((defined SHUT_MODE) && SHUT_MODE)
 static int match_function_subdriver(HIDDevice_t *d, void *privdata) {
-	int i;
+	int	i;
 	NUT_UNUSED_VARIABLE(privdata);
+
+	if (match_function_subdriver_name(1)) {
+		/* This driver can handle this device. Guessing so... */
+		return 1;
+	}
 
 	upsdebugx(2, "%s (non-SHUT mode): matching a device...", __func__);
 
@@ -809,6 +876,8 @@ void upsdrv_makevartable(void)
 		"Set to disable fix-ups for broken USB encoding, etc. which we apply by default on certain vendors/products");
 
 #if !((defined SHUT_MODE) && SHUT_MODE)
+	addvar(VAR_VALUE, "subdriver", "Explicit USB HID subdriver selection");
+
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
 	nut_usb_addvars();
 
@@ -1294,13 +1363,17 @@ static int callback(
 	}
 
 	/* select the subdriver for this device */
-	for (i=0; subdriver_list[i] != NULL; i++) {
-		if (subdriver_list[i]->claim(hd)) {
-			break;
+	subdriver = match_function_subdriver_name(0);
+	if (!subdriver) {
+		for (i=0; subdriver_list[i] != NULL; i++) {
+			if (subdriver_list[i]->claim(hd)) {
+				break;
+			}
 		}
+
+		subdriver = subdriver_list[i];
 	}
 
-	subdriver = subdriver_list[i];
 	if (!subdriver) {
 		upsdebugx(1, "Manufacturer not supported!");
 		return 0;
