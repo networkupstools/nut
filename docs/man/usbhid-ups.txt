@@ -65,6 +65,9 @@ NOTE: this option first checks for exact matches to subdriver identification
 strings, such as `"TrippLite HID 0.85"` (which are prone to bit-rot), and if
 there was no exact match -- retries with a case-insensitive extended regular
 expression.
++
+NOTE: When using this option, it is mandatory to also specify the *vendorid*
+and *productid* matching parameters.
 
 *offdelay*='num'::
 Set the timer before the UPS is turned off after the kill power command is

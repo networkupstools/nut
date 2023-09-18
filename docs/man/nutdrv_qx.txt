@@ -348,7 +348,12 @@ include::nut_usb_addvars.txt[]
 *subdriver =* 'string'::
 Select a serial-over-USB subdriver to use.
 You have a choice between *cypress*, *fabula*, *fuji*, *hunnox*, *ippon*, *krauler*, *phoenix*, *phoenixtec*, *sgs*, *snr*,  *armac* and *ablerex*.
-When using this option, it is mandatory to also specify the *vendorid* and *productid*.
++
+Run the driver program with the `--help` option to see the exact list of
+`subdriver` values it would currently recognize.
++
+NOTE: When using this option, it is mandatory to also specify the *vendorid*
+and *productid* matching parameters.
 
 *langid_fix =* 'value'::
 Apply the language ID workaround to the *krauler* subdriver.
