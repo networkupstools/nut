@@ -1297,6 +1297,19 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # This matches the use-case of distro-building from release tarballs that
     # include all needed pre-generated files to rely less on OS facilities.
     if [ -s Makefile ]; then
+        if [ -n "`find "${SCRIPTDIR}" -name configure.ac -newer "${CI_BUILDDIR}"/configure`" ] \
+        || [ -n "`find "${SCRIPTDIR}" -name '*.m4' -newer "${CI_BUILDDIR}"/configure`" ] \
+        || [ -n "`find "${SCRIPTDIR}" -name Makefile.am -newer "${CI_BUILDDIR}"/Makefile`" ] \
+        || [ -n "`find "${SCRIPTDIR}" -name Makefile.in -newer "${CI_BUILDDIR}"/Makefile`" ] \
+        || [ -n "`find "${SCRIPTDIR}" -name Makefile.am -newer "${CI_BUILDDIR}"/Makefile.in`" ] \
+        ; then
+            # Avoid reconfiguring for the sake of distclean
+            echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because recipes changed"
+            rm -f "${CI_BUILDDIR}"/Makefile "${CI_BUILDDIR}"/configure
+        fi
+    fi
+
+    if [ -s Makefile ]; then
         # Let initial clean-up be at default verbosity
 
         # Handle Ctrl+C with helpful suggestions:
@@ -1891,6 +1904,19 @@ bindings)
     fi
 
     cd "${SCRIPTDIR}"
+    if [ -s Makefile ]; then
+        if [ -n "`find "${SCRIPTDIR}" -name configure.ac -newer "${CI_BUILDDIR}"/configure`" ] \
+        || [ -n "`find "${SCRIPTDIR}" -name '*.m4' -newer "${CI_BUILDDIR}"/configure`" ] \
+        || [ -n "`find "${SCRIPTDIR}" -name Makefile.am -newer "${CI_BUILDDIR}"/Makefile`" ] \
+        || [ -n "`find "${SCRIPTDIR}" -name Makefile.in -newer "${CI_BUILDDIR}"/Makefile`" ] \
+        || [ -n "`find "${SCRIPTDIR}" -name Makefile.am -newer "${CI_BUILDDIR}"/Makefile.in`" ] \
+        ; then
+            # Avoid reconfiguring for the sake of distclean
+            echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because recipes changed"
+            rm -f "${CI_BUILDDIR}"/Makefile "${CI_BUILDDIR}"/configure
+        fi
+    fi
+
     if [ -s Makefile ]; then
         # Help developers debug:
         # Let initial clean-up be at default verbosity
