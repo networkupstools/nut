@@ -156,6 +156,8 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
      devices with ProductID 0x0601 as done earlier for 0x0501, to get the
      correct output voltage data [#1497]
    * apc-hid subdriver now also supports ProductID 0x0004 [#1429]
+   * ever-hid subdriver reported a `powerfactor` without a namespace (bug
+     in 2.8.0 release), fixed to `outlet.powerfactor`
    * the `usbhid-ups` driver should now reconnect if `libusb` returned a
      memory allocation error [#1422] (seen as "Can't retrieve Report 0a:
      Resource temporarily unavailable"), which can cause practical problems
