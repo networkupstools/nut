@@ -39,6 +39,7 @@
  */
 
 #include "config.h"
+#include <ctype.h>
 #include "main.h"
 #include "attribute.h"
 #include "nut_float.h"
@@ -2771,20 +2772,45 @@ void	upsdrv_shutdown(void)
 
 void	upsdrv_help(void)
 {
-#ifdef QX_USB
-	#ifndef TESTING
+#ifndef TESTING
 	size_t i;
 
+# ifdef QX_USB
+	/* Subdrivers have special SOMETHING_command() handling and
+	 * are listed in usbsubdriver[] array (just above in this
+	 * source file).
+	 */
 	printf("\nAcceptable values for 'subdriver' via -x or ups.conf in this driver: ");
-
 	for (i = 0; usbsubdriver[i].name != NULL; i++) {
 		if (i>0)
 			printf(", ");
 		printf("%s", usbsubdriver[i].name);
 	}
 	printf("\n\n");
-	#endif
-#endif
+# endif	/* QX_USB*/
+
+	/* Protocols are the first token from "name" field in
+	 * subdriver_t instances in files like nutdrv_qx_mecer.c
+	 */
+	printf("\nAcceptable values for 'protocol' via -x or ups.conf in this driver: ");
+	for (i = 0; subdriver_list[i] != NULL; i++) {
+		char	subdrv_name[SMALLBUF], *p;
+
+		/* Get rid of subdriver version */
+		snprintf(subdrv_name, sizeof(subdrv_name), "%.*s",
+			(int)strcspn(subdriver_list[i]->name, " "),
+			subdriver_list[i]->name);
+
+		/* lowercase the (ASCII) string */
+		for (p = subdrv_name; *p; ++p)
+			*p = tolower(*p);
+
+		if (i>0)
+			printf(", ");
+		printf("%s", subdrv_name);
+	}
+	printf("\n\n");
+#endif	/* TESTING */
 
 	printf("Read The Fine Manual ('man 8 nutdrv_qx')\n");
 }

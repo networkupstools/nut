@@ -64,6 +64,9 @@ If you set stayoff in linkman:ups.conf[5] when FSD arises the UPS will call a *s
 Skip autodetection of the protocol to use and only use the one specified.
 Supported values: 'bestups', 'hunnox', 'masterguard', 'mecer', 'megatec', 'megatec/old', 'mustek', 'q1', 'voltronic', 'voltronic-qs', 'voltronic-qs-hex' and 'zinto'.
 +
+Run the driver program with the `--help` option to see the exact list of
+`protocol` values it would currently recognize.
++
 Note that if you end up using the 'q1' protocol, you may want to give a try to the 'mecer', 'megatec' and 'zinto' ones setting the <<old-blazer-protocols-options,*novendor*/*norating* flags>> (only one, or both).
 
 *pollfreq =* 'num'::
