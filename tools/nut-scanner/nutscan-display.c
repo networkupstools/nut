@@ -322,7 +322,6 @@ next:
 				"with %" PRIuSIZE " copies of '%c' (0x%02X) "
 				"reported in some devices: %s\n",
 				j, entry->key[0], entry->key[0], entry->val);
-			continue;
 		}
 
 		/* Duplicates (maybe same device, maybe not) */
@@ -334,7 +333,6 @@ next:
 				"likely a vendor bug if reported by same driver "
 				"for many devices): %s\n",
 				entry->key, entry->val);
-			continue;
 		}
 	}
 
