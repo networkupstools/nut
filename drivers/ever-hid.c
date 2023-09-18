@@ -33,7 +33,7 @@
 #include "main.h"	/* for getval() */
 #include "usb-common.h"
 
-#define EVER_HID_VERSION	"Ever HID 0.1"
+#define EVER_HID_VERSION	"Ever HID 0.10"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* Ever */
@@ -533,7 +533,7 @@ static hid_info_t ever_hid2nut[] = {
   /* WAS: "experimental.inverter_info.battery_temperature" */
   { "battery.temperature", 0, 0, "UPS.EVER1.EVER43", NULL, "%s", 0, kelvin_celsius_conversion },
   /* WAS: "experimental.ups_info.output_powerfactor" */
-  { "powerfactor", 0, 0, "UPS.EVER1.EVER44", NULL, "%.0f", 0, NULL },
+  { "output.powerfactor", 0, 0, "UPS.EVER1.EVER44", NULL, "%.0f", 0, NULL },
 
   /* experimental: Should these be HU_TYPE_CMD entries?
    * Or are they really settings? */
