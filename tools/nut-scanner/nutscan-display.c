@@ -294,7 +294,7 @@ next:
 		goto exit;
 	}
 
-	/* Now look for red flags in the map */
+	/* Now look for red flags in the map (key=sernum, val=device(s)) */
 	/* FIXME: Weed out special chars to avoid breaking comment-line markup?
 	 * Thinking of ASCII control codes < 32 including CR/LF, and codes 128+... */
 	for (i = 0; i < count; i++) {
@@ -306,6 +306,13 @@ next:
 			printf("\n# WARNING: %s \"serial\" reported in some devices: %s\n",
 				entry->key, entry->val);
 			continue;
+		}
+
+		j = strlen(entry->key);
+		if (j > 0 && (entry->key[j-1] == '\t' || entry->key[j-1] == ' ')) {
+			printf("\n# WARNING: trailing blank space in \"serial\" "
+				"value \"%s\" reported in device configuration(s): %s",
+				entry->key, entry->val);
 		}
 
 		/* All chars in "serial" are same (zero, space, etc.) */
