@@ -61,6 +61,9 @@ by device attributes alone does not suffice (e.g. new devices for which no
 support is anticipated, or for different-capability devices with same
 interface chips, notably "phoenixtec/liebert" and "mge").
 +
+Run the driver program with the `--help` option to see the exact list of
+`subdriver` values it would currently recognize.
++
 NOTE: this option first checks for exact matches to subdriver identification
 strings, such as `"TrippLite HID 0.85"` (which are prone to bit-rot), and if
 there was no exact match -- retries with a case-insensitive extended regular

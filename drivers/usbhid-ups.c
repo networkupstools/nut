@@ -893,7 +893,19 @@ void upsdrv_shutdown(void)
 
 void upsdrv_help(void)
 {
-	/* FIXME: to be completed */
+	size_t i;
+	printf("\nAcceptable values for 'subdriver' via -x or ups.conf "
+		"in this driver (exact names here, case-insensitive "
+		"sub-strings may be used, as well as regular expressions): ");
+
+	for (i = 0; subdriver_list[i] != NULL; i++) {
+		if (i>0)
+			printf(", ");
+		printf("\"%s\"", subdriver_list[i]->name);
+	}
+	printf("\n\n");
+
+	printf("Read The Fine Manual ('man 8 usbhid-ups')\n");
 }
 
 void upsdrv_makevartable(void)
