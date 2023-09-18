@@ -80,6 +80,41 @@ if test -z "${nut_have_asciidoc_seen}"; then
 	AC_PATH_PROGS([ASPELL], [aspell])
 	AM_CONDITIONAL([HAVE_ASPELL], [test -n "$ASPELL"])
 
+	dnl Some builds of aspell (e.g. in mingw) claim they do not know mode "tex"
+	dnl even though they can list it as a built-in filter and files exist.
+	dnl It seems that specifying the path helps in those cases.
+	ASPELL_FILTER_PATH="none"
+	if test -n "${ASPELL}" ; then
+		dnl # e.g.: @(#) International Ispell Version 3.1.20 (but really Aspell 0.60.8)
+		AC_MSG_CHECKING([for aspell version])
+		ASPELL_VERSION="`LANG=C LC_ALL=C ${ASPELL} --version 2>/dev/null | sed -e 's,^.*@<:@Aa@:>@spell \(@<:@0-9.@:>@*\),\1,' -e 's,@<:@^0-9.@:>@.*,,'`" || ASPELL_VERSION="none"
+		AC_MSG_RESULT([${ASPELL_VERSION}])
+
+		ASPELL_VERSION_MINMAJ="`echo "${ASPELL_VERSION}" | sed 's,\.@<:@0-9@:>@@<:@0-9@:>@*$,,'`"
+
+		AC_MSG_CHECKING([for aspell filtering resources directory])
+		ASPELL_BINDIR="`dirname "$ASPELL"`"
+		if test -d "${ASPELL_BINDIR}/../lib" ; then
+			if test x"${ASPELL_VERSION}" != x"none" && test -d "${ASPELL_BINDIR}/../lib/aspell-${ASPELL_VERSION}" ; then
+				ASPELL_FILTER_PATH="`cd "${ASPELL_BINDIR}/../lib/aspell-${ASPELL_VERSION}" && pwd`" \
+				|| ASPELL_FILTER_PATH="${ASPELL_BINDIR}/../lib/aspell-${ASPELL_VERSION}"
+			else
+				if test x"${ASPELL_VERSION_MINMAJ}" != x"none" && test -d "${ASPELL_BINDIR}/../lib/aspell-${ASPELL_VERSION_MINMAJ}" ; then
+					ASPELL_FILTER_PATH="`cd "${ASPELL_BINDIR}/../lib/aspell-${ASPELL_VERSION_MINMAJ}" && pwd`" \
+					|| ASPELL_FILTER_PATH="${ASPELL_BINDIR}/../lib/aspell-${ASPELL_VERSION_MINMAJ}"
+				else
+					if test -d "${ASPELL_BINDIR}/../lib/aspell" ; then
+						ASPELL_FILTER_PATH="`cd "${ASPELL_BINDIR}/../lib/aspell" && pwd`" \
+						|| ASPELL_FILTER_PATH="${ASPELL_BINDIR}/../lib/aspell"
+					fi
+				fi
+			fi
+		fi
+		AC_MSG_RESULT([${ASPELL_FILTER_PATH}])
+	fi
+	AM_CONDITIONAL([HAVE_ASPELL_FILTER_PATH], [test -d "$ASPELL_FILTER_PATH"])
+	AC_SUBST(ASPELL_FILTER_PATH)
+
 	dnl Note that a common "nut_have_asciidoc" variable is in fact a flag
 	dnl that we have several tools needed for the documentation generation
 	dnl TODO? Rename the script variable and makefile flags to reflect this?

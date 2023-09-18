@@ -48,6 +48,7 @@ ALL_TXT_SRC = nut-names.txt daisychain.txt \
  $(CABLES_DEPS) FAQ.txt nut-qa.txt packager-guide.txt snmp.txt \
  release-notes.txt ChangeLog.txt solaris-usb.txt
 
+ASPELL_FILTER_PATH = @ASPELL_FILTER_PATH@
 NUT_SPELL_DICT = nut.dict
 EXTRA_DIST += $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
  $(CABLES_IMAGES) $(NUT_SPELL_DICT) \
@@ -385,6 +386,13 @@ SPELLCHECK_ENV_DEBUG = no
 ASPELL_NUT_COMMON_ARGS = -p $(abs_srcdir)/$(NUT_SPELL_DICT)
 ASPELL_NUT_COMMON_ARGS += -d en --lang=en --ignore-accents
 ASPELL_NUT_COMMON_ARGS += --encoding=utf-8
+# Note: If there is a need to use filter path (e.g. in mingw/msys2 builds),
+# it must be before --mode=tex (-t) option!
+ASPELL_NUT_TEXMODE_ARGS =
+if HAVE_ASPELL_FILTER_PATH
+ASPELL_NUT_TEXMODE_ARGS += --filter-path="$(ASPELL_FILTER_PATH)"
+endif HAVE_ASPELL_FILTER_PATH
+ASPELL_NUT_TEXMODE_ARGS += -t
 ASPELL_ENV_LANG = en.UTF-8
 ASPELL_OUT_NOTERRORS = (^[ \t]*[\*\@]|^$$)
 
@@ -402,7 +410,7 @@ $(SPELLCHECK_DIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_DIR)/$(SPELLC
 	@LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	 rm -f "$@" || true ; \
 	 echo "  ASPELL   Spell checking on $(SPELLCHECK_DIR)/$(SPELLCHECK_SRC_ONE)"; \
-	 OUT="`(sed 's,^\(.*\)$$, \1,' | $(ASPELL) -a -t $(ASPELL_NUT_COMMON_ARGS) 2>&1) < "$(SPELLCHECK_DIR)/$(SPELLCHECK_SRC_ONE)"`" \
+	 OUT="`(sed 's,^\(.*\)$$, \1,' | $(ASPELL) -a $(ASPELL_NUT_TEXMODE_ARGS) $(ASPELL_NUT_COMMON_ARGS) 2>&1) < "$(SPELLCHECK_DIR)/$(SPELLCHECK_SRC_ONE)"`" \
 		&& { if test -n "$$OUT" ; then OUT="`echo "$$OUT" | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' `" ; fi; \
 		     test -z "$$OUT" ; } \
 		|| { RES=$$? ; \
@@ -419,7 +427,7 @@ spellcheck:
 		LANG=$(ASPELL_ENV_LANG); LC_ALL=$(ASPELL_ENV_LANG); export LANG; export LC_ALL; \
 		$(ASPELL) --help || true; \
 		dpkg -l |grep -i aspell || true ; \
-		echo "ASPELL automatic execution line is : ( sed 's,^\(.*\)$$, \1,' < docfile.txt | $(ASPELL) -a -t $(ASPELL_NUT_COMMON_ARGS) | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' )" ; \
+		echo "ASPELL automatic execution line is : ( sed 's,^\(.*\)$$, \1,' < docfile.txt | $(ASPELL) -a $(ASPELL_NUT_TEXMODE_ARGS) $(ASPELL_NUT_COMMON_ARGS) | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' )" ; \
 		echo "ASPELL proceeding to spellchecking job..."; \
 	 else true; fi
 	@FAILED="" ; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
