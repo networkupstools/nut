@@ -324,9 +324,9 @@ next:
 				j, entry->key[0], entry->key[0], entry->val);
 		}
 
-		/* Duplicates (maybe same device, maybe not) */
+		/* Duplicates (maybe same device, maybe not) - see if val has a ',' */
 		for (j = 0; entry->val[j] != '\0' && entry->val[j] != ','; j++);
-		if (j > 0 && entry->key[j] != '\0') {
+		if (j > 0 && entry->val[j] != '\0') {
 			printf("\n# WARNING: same \"serial\" value \"%s\" "
 				"reported in several device configurations "
 				"(maybe okay if multiple drivers for same device, "
