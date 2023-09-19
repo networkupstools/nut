@@ -2315,6 +2315,7 @@ dnl unless desired).
 NUT_ARG_ENABLE([cppcheck], [Run a cppcheck on the codebase among checks], [no])
 NUT_CHECK_CPPCHECK
 
+AC_MSG_CHECKING(whether to run cppcheck among default make check target)
 case "${nut_enable_cppcheck}" in
 	yes) if test "${nut_have_cppcheck}" = "no" ; then
 	        AC_MSG_ERROR([Requested to --enable-cppcheck but did not find a good one])
@@ -2323,12 +2324,13 @@ case "${nut_enable_cppcheck}" in
 	     ;;
 	no)  WITH_CPPCHECK=no ;;
 	auto) if test "${nut_have_cppcheck}" = "yes" ; then
-	        WITH_CPPCHECK=no
+	        WITH_CPPCHECK=yes
 	    else
 	        WITH_CPPCHECK=no
 	    fi
 	    ;;
 esac
+AC_MSG_RESULT([${WITH_CPPCHECK}])
 
 AM_CONDITIONAL(WITH_CPPCHECK, test "${WITH_CPPCHECK}" = "yes")
 
