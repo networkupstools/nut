@@ -538,9 +538,10 @@ static subdriver_t *match_function_subdriver_name(int fatal_mismatch) {
 
 	/* Pick up the subdriver name if set explicitly */
 	if (subdrv) {
-		int	res, i, flag_HAVE_LIBREGEX = 0;
-		size_t	len;
+		int	i, flag_HAVE_LIBREGEX = 0;
 #if (defined HAVE_LIBREGEX && HAVE_LIBREGEX)
+		int	res;
+		size_t	len;
 		regex_t	*regex_ptr = NULL;
 		flag_HAVE_LIBREGEX = 1;
 #endif
@@ -610,7 +611,6 @@ static subdriver_t *match_function_subdriver_name(int fatal_mismatch) {
 				regex_ptr = NULL;
 			}
 		}
-
 #endif	/* HAVE_LIBREGEX */
 
 		if (fatal_mismatch) {
