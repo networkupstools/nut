@@ -84,6 +84,9 @@ if test -z "${nut_have_asciidoc_seen}"; then
 	dnl even though they can list it as a built-in filter and files exist.
 	dnl It seems that specifying the path helps in those cases.
 	ASPELL_FILTER_PATH="none"
+	dnl Location of "tex.amf" may be shifted, especially if binary filters
+	dnl are involved (happens in some platform packages but not others).
+	ASPELL_FILTER_TEX_PATH="none"
 	if test -n "${ASPELL}" ; then
 		dnl # e.g.: @(#) International Ispell Version 3.1.20 (but really Aspell 0.60.8)
 		AC_MSG_CHECKING([for aspell version])
@@ -111,9 +114,20 @@ if test -z "${nut_have_asciidoc_seen}"; then
 			fi
 		fi
 		AC_MSG_RESULT([${ASPELL_FILTER_PATH}])
+
+		AC_MSG_CHECKING([for aspell "tex" filtering resources directory])
+		if test -d "${ASPELL_FILTER_PATH}" ; then
+			ASPELL_FILTER_TEX_PATH="`find "${ASPELL_FILTER_PATH}" -name "tex.amf"`" \
+			&& ASPELL_FILTER_TEX_PATH="`dirname "${ASPELL_FILTER_TEX_PATH}"`" \
+			&& test -d "${ASPELL_FILTER_TEX_PATH}" \
+			|| ASPELL_FILTER_TEX_PATH="none"
+		fi
+		AC_MSG_RESULT([${ASPELL_FILTER_TEX_PATH}])
 	fi
 	AM_CONDITIONAL([HAVE_ASPELL_FILTER_PATH], [test -d "$ASPELL_FILTER_PATH"])
 	AC_SUBST(ASPELL_FILTER_PATH)
+	AM_CONDITIONAL([HAVE_ASPELL_FILTER_TEX_PATH], [test -d "$ASPELL_FILTER_TEX_PATH"])
+	AC_SUBST(ASPELL_FILTER_TEX_PATH)
 
 	dnl Note that a common "nut_have_asciidoc" variable is in fact a flag
 	dnl that we have several tools needed for the documentation generation

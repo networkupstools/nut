@@ -389,9 +389,9 @@ ASPELL_NUT_COMMON_ARGS += --encoding=utf-8
 # Note: If there is a need to use filter path (e.g. in mingw/msys2 builds),
 # it must be before --mode=tex (-t) option!
 ASPELL_NUT_TEXMODE_ARGS =
-if HAVE_ASPELL_FILTER_PATH
-ASPELL_NUT_TEXMODE_ARGS += --filter-path="$(ASPELL_FILTER_PATH)"
-endif HAVE_ASPELL_FILTER_PATH
+if HAVE_ASPELL_FILTER_TEX_PATH
+ASPELL_NUT_TEXMODE_ARGS += --filter-path="$(ASPELL_FILTER_TEX_PATH)"
+endif HAVE_ASPELL_FILTER_TEX_PATH
 ASPELL_NUT_TEXMODE_ARGS += -t
 ASPELL_ENV_LANG = en.UTF-8
 ASPELL_OUT_NOTERRORS = (^[ \t]*[\*\@]|^$$)
