@@ -2356,13 +2356,37 @@ AC_ARG_ENABLE([check-NIT],
 AM_CONDITIONAL(WITH_CHECK_NIT, test "${nut_enable_check_NIT}" = "yes")
 
 dnl ----------------------------------------------------------------------
+dnl checks related to --enable-spellcheck
+
+NUT_CHECK_ASPELL
+NUT_ARG_ENABLE([spellcheck], [Run spellcheck among default checks], [auto])
+
+AC_MSG_CHECKING(whether to run spellcheck among default make check target)
+case "${nut_enable_spellcheck}" in
+	yes) if test "${nut_have_aspell}" = "no" ; then
+	        AC_MSG_ERROR([Requested to --enable-spellcheck but did not find a good one])
+	     fi
+	     WITH_SPELLCHECK=yes
+	     ;;
+	no)  WITH_SPELLCHECK=no ;;
+	auto) if test "${nut_have_aspell}" = "yes" ; then
+	        WITH_SPELLCHECK=yes
+	    else
+	        WITH_SPELLCHECK=no
+	    fi
+	    ;;
+esac
+AC_MSG_RESULT([${WITH_SPELLCHECK}])
+
+AM_CONDITIONAL(WITH_SPELLCHECK, test "${WITH_SPELLCHECK}" = "yes")
+
+dnl ----------------------------------------------------------------------
 dnl checks related to --with-doc
 
 dnl Always check for AsciiDoc prerequisites, since even if --with-doc
 dnl is set to 'no', we may still want to build some doc targets manually
 dnl (so enable the Makefile recipes for those targets if tools are available)
 NUT_CHECK_ASCIIDOC
-NUT_CHECK_ASPELL
 
 NUT_REPORT_FEATURE([build and install documentation], [${nut_with_doc}], [],
 					[WITH_ASCIIDOC], [Define to enable Asciidoc support])

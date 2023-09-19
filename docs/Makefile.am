@@ -421,7 +421,7 @@ $(SPELLCHECK_DIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_DIR)/$(SPELLC
 		     exit $$RES; } ; \
 	 touch "$@"
 
-spellcheck: 
+spellcheck:
 	@if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
 		echo "ASPELL DEBUG : information about the setup follows:"; \
 		LANG=$(ASPELL_ENV_LANG); LC_ALL=$(ASPELL_ENV_LANG); export LANG; export LC_ALL; \
@@ -497,6 +497,11 @@ spellcheck-interactive:
 	 echo "to review changes (please DO NOT REMOVE LINES that aspell chose to drop,"; \
 	 echo "because other systems might not know these words in their system dictionaries)"; \
 	 echo "------------------------------------------------------------------------"
+
+if WITH_SPELLCHECK
+check-local: spellcheck
+endif WITH_SPELLCHECK
+
 else !HAVE_ASPELL
 # This rule woulf probably just fail; normally with no ASPELL there are no callers for it
 */*-spellchecked *-spellchecked: Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)

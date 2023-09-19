@@ -29,7 +29,12 @@ Changes from 2.8.0 to 2.8.1
 - NUT documentation recipes were revised, so many of the text source files
   were renamed to `*.adoc` pattern. Newly, a `release-notes.pdf` and HTML
   equivalents are generated. Packages which deliver documentation may need
-  to update the lists of files to ship. [#1953]
+  to update the lists of files to ship. [#1953] Developers may be impacted
+  by new `configure --enable-spellcheck` toggle (should add spelling checks
+  to `make check` by default, if tools are available) to facilitate quicker
+  acceptance of contributions. Packaging systems may now want to explicitly
+  disable it, if it blocks package building (pull requests to update the
+  `docs/nut.dict` are a better and welcome solution). [#2067]
 
 - Several improvements regarding simultaneous support of USB devices that
   were previously deemed "identical" and so NUT driver instances did not
