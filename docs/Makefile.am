@@ -52,7 +52,7 @@ ASPELL_FILTER_PATH = @ASPELL_FILTER_PATH@
 NUT_SPELL_DICT = nut.dict
 EXTRA_DIST += $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
  $(CABLES_IMAGES) $(NUT_SPELL_DICT) \
- docinfo.xml common.xsl xhtml.xsl chunked.xsl asciidoc.txt
+ docinfo.xml common.xsl xhtml.xsl chunked.xsl asciidoc.txt asciidoc-vars.conf
 
 ASCIIDOC_HTML_SINGLE = user-manual.html \
 	developer-guide.html \
