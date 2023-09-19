@@ -85,6 +85,10 @@
 #include "proto.h"
 #include "str.h"
 
+#if (defined HAVE_LIBREGEX && HAVE_LIBREGEX)
+# include <regex.h>
+#endif
+
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 extern "C" {
@@ -337,6 +341,42 @@ void *xmalloc(size_t size);
 void *xcalloc(size_t number, size_t size);
 void *xrealloc(void *ptr, size_t size);
 char *xstrdup(const char *string);
+
+/**** REGEX helper methods ****/
+
+/* helper function: version of strcmp that tolerates NULL
+ * pointers. NULL is considered to come before all other strings
+ * alphabetically.
+ */
+int strcmp_null(const char *s1, const char *s2);
+
+#if (defined HAVE_LIBREGEX && HAVE_LIBREGEX)
+/* Helper function for compiling a regular expression. On success,
+ * store the compiled regular expression (or NULL) in *compiled, and
+ * return 0. On error with errno set, return -1. If the supplied
+ * regular expression is unparseable, return -2 (an error message can
+ * then be retrieved with regerror(3)). Note that *compiled will be an
+ * allocated value, and must be freed with regfree(), then free(), see
+ * regex(3). As a special case, if regex==NULL, then set
+ * *compiled=NULL (regular expression NULL is intended to match
+ * anything).
+ */
+int compile_regex(regex_t **compiled, const char *regex, const int cflags);
+
+/* Helper function for regular expression matching. Check if the
+ * entire string str (minus any initial and trailing whitespace)
+ * matches the compiled regular expression preg. Return 1 if it
+ * matches, 0 if not. Return -1 on error with errno set. Special
+ * cases: if preg==NULL, it matches everything (no contraint).  If
+ * str==NULL, then it is treated as "".
+ */
+int match_regex(const regex_t *preg, const char *str);
+
+/* Helper function, similar to match_regex, but the argument being
+ * matched is a (hexadecimal) number, rather than a string. It is
+ * converted to a 4-digit hexadecimal string. */
+int match_regex_hex(const regex_t *preg, const int n);
+#endif	/* HAVE_LIBREGEX */
 
 /* Note: different method signatures instead of TYPE_FD_SER due to "const" */
 #ifndef WIN32

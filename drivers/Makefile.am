@@ -38,6 +38,9 @@ endif
 if WITH_MODBUS
   AM_CFLAGS += $(LIBMODBUS_CFLAGS)
 endif
+if HAVE_LIBREGEX
+  AM_CFLAGS += $(LIBREGEX_CFLAGS)
+endif
 
 NUTSW_DRIVERLIST = dummy-ups clone clone-outlet apcupsd-ups skel
 SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\

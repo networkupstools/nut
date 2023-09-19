@@ -294,7 +294,7 @@ next:
 		goto exit;
 	}
 
-	/* Now look for red flags in the map */
+	/* Now look for red flags in the map (key=sernum, val=device(s)) */
 	/* FIXME: Weed out special chars to avoid breaking comment-line markup?
 	 * Thinking of ASCII control codes < 32 including CR/LF, and codes 128+... */
 	for (i = 0; i < count; i++) {
@@ -308,6 +308,13 @@ next:
 			continue;
 		}
 
+		j = strlen(entry->key);
+		if (j > 0 && (entry->key[j-1] == '\t' || entry->key[j-1] == ' ')) {
+			printf("\n# WARNING: trailing blank space in \"serial\" "
+				"value \"%s\" reported in device configuration(s): %s",
+				entry->key, entry->val);
+		}
+
 		/* All chars in "serial" are same (zero, space, etc.) */
 		for (j = 0; entry->key[j] != '\0' && entry->key[j] == entry->key[0]; j++);
 		if (j > 0 && entry->key[j] == '\0') {
@@ -315,19 +322,17 @@ next:
 				"with %" PRIuSIZE " copies of '%c' (0x%02X) "
 				"reported in some devices: %s\n",
 				j, entry->key[0], entry->key[0], entry->val);
-			continue;
 		}
 
-		/* Duplicates (maybe same device, maybe not) */
+		/* Duplicates (maybe same device, maybe not) - see if val has a ',' */
 		for (j = 0; entry->val[j] != '\0' && entry->val[j] != ','; j++);
-		if (j > 0 && entry->key[j] != '\0') {
+		if (j > 0 && entry->val[j] != '\0') {
 			printf("\n# WARNING: same \"serial\" value \"%s\" "
 				"reported in several device configurations "
 				"(maybe okay if multiple drivers for same device, "
 				"likely a vendor bug if reported by same driver "
 				"for many devices): %s\n",
 				entry->key, entry->val);
-			continue;
 		}
 	}
 

@@ -2126,3 +2126,109 @@ void set_close_on_exec(int fd) {
 # endif
 #endif
 }
+
+/**** REGEX helper methods ****/
+
+int strcmp_null(const char *s1, const char *s2)
+{
+	if (s1 == NULL && s2 == NULL) {
+		return 0;
+	}
+
+	if (s1 == NULL) {
+		return -1;
+	}
+
+	if (s2 == NULL) {
+		return 1;
+	}
+
+	return strcmp(s1, s2);
+}
+
+#if (defined HAVE_LIBREGEX && HAVE_LIBREGEX)
+int compile_regex(regex_t **compiled, const char *regex, const int cflags)
+{
+	int	r;
+	regex_t	*preg;
+
+	if (regex == NULL) {
+		*compiled = NULL;
+		return 0;
+	}
+
+	preg = malloc(sizeof(*preg));
+	if (!preg) {
+		return -1;
+	}
+
+	r = regcomp(preg, regex, cflags);
+	if (r) {
+		free(preg);
+		return -2;
+	}
+
+	*compiled = preg;
+
+	return 0;
+}
+
+int match_regex(const regex_t *preg, const char *str)
+{
+	int	r;
+	size_t	len = 0;
+	char	*string;
+	regmatch_t	match;
+
+	if (!preg) {
+		return 1;
+	}
+
+	if (!str) {
+		string = xstrdup("");
+	} else {
+		/* skip leading whitespace */
+		for (len = 0; len < strlen(str); len++) {
+
+			if (!strchr(" \t\n", str[len])) {
+				break;
+			}
+		}
+
+		string = xstrdup(str+len);
+
+		/* skip trailing whitespace */
+		for (len = strlen(string); len > 0; len--) {
+
+			if (!strchr(" \t\n", string[len-1])) {
+				break;
+			}
+		}
+
+		string[len] = '\0';
+	}
+
+	/* test the regular expression */
+	r = regexec(preg, string, 1, &match, 0);
+	free(string);
+	if (r) {
+		return 0;
+	}
+
+	/* check that the match is the entire string */
+	if ((match.rm_so != 0) || (match.rm_eo != (int)len)) {
+		return 0;
+	}
+
+	return 1;
+}
+
+int match_regex_hex(const regex_t *preg, const int n)
+{
+	char	buf[10];
+
+	snprintf(buf, sizeof(buf), "%04x", n);
+
+	return match_regex(preg, buf);
+}
+#endif	/* HAVE_LIBREGEX */

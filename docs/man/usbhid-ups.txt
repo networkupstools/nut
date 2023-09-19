@@ -54,6 +54,24 @@ This driver also supports the following optional settings:
 
 include::nut_usb_addvars.txt[]
 
+*subdriver*='regex'::
+Select the USB HID subdriver for the device manually, where automatic match
+by device attributes alone does not suffice (e.g. new devices for which no
+`vendorid`/`productid` pair was built into any driver -- but common USB HID
+support is anticipated, or for different-capability devices with same
+interface chips, notably "phoenixtec/liebert" and "mge").
++
+Run the driver program with the `--help` option to see the exact list of
+`subdriver` values it would currently recognize.
++
+NOTE: this option first checks for exact matches to subdriver identification
+strings, such as `"TrippLite HID 0.85"` (which are prone to bit-rot), and if
+there was no exact match -- retries with a case-insensitive extended regular
+expression.
++
+NOTE: When using this option, it is mandatory to also specify the *vendorid*
+and *productid* matching parameters.
+
 *offdelay*='num'::
 Set the timer before the UPS is turned off after the kill power command is
 sent (via the *-k* switch).
