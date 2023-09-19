@@ -2315,6 +2315,7 @@ dnl unless desired).
 NUT_ARG_ENABLE([cppcheck], [Run a cppcheck on the codebase among checks], [no])
 NUT_CHECK_CPPCHECK
 
+AC_MSG_CHECKING(whether to run cppcheck among default make check target)
 case "${nut_enable_cppcheck}" in
 	yes) if test "${nut_have_cppcheck}" = "no" ; then
 	        AC_MSG_ERROR([Requested to --enable-cppcheck but did not find a good one])
@@ -2323,12 +2324,13 @@ case "${nut_enable_cppcheck}" in
 	     ;;
 	no)  WITH_CPPCHECK=no ;;
 	auto) if test "${nut_have_cppcheck}" = "yes" ; then
-	        WITH_CPPCHECK=no
+	        WITH_CPPCHECK=yes
 	    else
 	        WITH_CPPCHECK=no
 	    fi
 	    ;;
 esac
+AC_MSG_RESULT([${WITH_CPPCHECK}])
 
 AM_CONDITIONAL(WITH_CPPCHECK, test "${WITH_CPPCHECK}" = "yes")
 
@@ -2354,6 +2356,31 @@ AC_ARG_ENABLE([check-NIT],
 ])
 
 AM_CONDITIONAL(WITH_CHECK_NIT, test "${nut_enable_check_NIT}" = "yes")
+
+dnl ----------------------------------------------------------------------
+dnl checks related to --enable-spellcheck
+
+NUT_CHECK_ASPELL
+NUT_ARG_ENABLE([spellcheck], [Run spellcheck among default checks], [auto])
+
+AC_MSG_CHECKING(whether to run spellcheck among default make check target)
+case "${nut_enable_spellcheck}" in
+	yes) if test "${nut_have_aspell}" = "no" ; then
+	        AC_MSG_ERROR([Requested to --enable-spellcheck but did not find a good one])
+	     fi
+	     WITH_SPELLCHECK=yes
+	     ;;
+	no)  WITH_SPELLCHECK=no ;;
+	auto) if test "${nut_have_aspell}" = "yes" ; then
+	        WITH_SPELLCHECK=yes
+	    else
+	        WITH_SPELLCHECK=no
+	    fi
+	    ;;
+esac
+AC_MSG_RESULT([${WITH_SPELLCHECK}])
+
+AM_CONDITIONAL(WITH_SPELLCHECK, test "${WITH_SPELLCHECK}" = "yes")
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-doc

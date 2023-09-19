@@ -76,10 +76,6 @@ if test -z "${nut_have_asciidoc_seen}"; then
 	AC_PATH_PROGS([SOURCE_HIGHLIGHT], [source-highlight])
 	AM_CONDITIONAL([HAVE_SOURCE_HIGHLIGHT], [test -n "$SOURCE_HIGHLIGHT"])
 
-	dnl check for spell checking deps
-	AC_PATH_PROGS([ASPELL], [aspell])
-	AM_CONDITIONAL([HAVE_ASPELL], [test -n "$ASPELL"])
-
 	dnl Note that a common "nut_have_asciidoc" variable is in fact a flag
 	dnl that we have several tools needed for the documentation generation
 	dnl TODO? Rename the script variable and makefile flags to reflect this?

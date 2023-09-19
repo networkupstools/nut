@@ -65,6 +65,10 @@ https://github.com/networkupstools/nut/milestone/8
    instead. Documentation links rendered in GitHub UI should point to the HTML
    pages served by a current iteration of the NUT website. [PR #226, PR #669]
 
+ - A new `configure --enable-spellcheck` toggle should add spelling checks
+   to `make check` (by default, if tools are available) to facilitate quicker
+   acceptance of contributions. [#2067]
+
  - Published a new maintainer GPG key to sign tags and release artifacts,
    and possibly git commits as well, as part of solution for issue #1410.
    You can pull it from common OpenPGP servers with the following command:

@@ -400,6 +400,13 @@ build further projects against NUT (such as wmNUT client and many others).
 Options for developers
 ~~~~~~~~~~~~~~~~~~~~~~
 
+	--enable-spellcheck (default: auto)
+
+Activate recipes for documentation source file spelling checks with `aspell`
+tool. Default behavior depends on availability of the tool, so if present --
+it would run for `make check` by default, to facilitate quicker acceptance
+of contributions.
+
 	--enable-check-NIT (default: no)
 
 Add `make check-NIT` to default activity of `make check` to run the
