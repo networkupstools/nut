@@ -118,6 +118,7 @@ if test -z "${nut_have_asciidoc_seen}"; then
 		AC_MSG_CHECKING([for aspell "tex" filtering resources directory])
 		if test -d "${ASPELL_FILTER_PATH}" ; then
 			ASPELL_FILTER_TEX_PATH="`find "${ASPELL_FILTER_PATH}" -name "tex.amf"`" \
+			&& test x"${ASPELL_FILTER_TEX_PATH}" != x \
 			&& ASPELL_FILTER_TEX_PATH="`dirname "${ASPELL_FILTER_TEX_PATH}"`" \
 			&& test -d "${ASPELL_FILTER_TEX_PATH}" \
 			|| ASPELL_FILTER_TEX_PATH="none"
