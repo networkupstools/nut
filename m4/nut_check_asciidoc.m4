@@ -83,7 +83,8 @@ if test -z "${nut_have_asciidoc_seen}"; then
 	dnl Some builds of aspell (e.g. in mingw) claim they do not know mode "tex"
 	dnl even though they can list it as a built-in filter and files exist.
 	dnl It seems that specifying the path helps in those cases.
-	ASPELL_FILTER_PATH="none"
+	ASPELL_FILTER_LIB_PATH="none"
+	ASPELL_FILTER_SHARE_PATH="none"
 	dnl Location of "tex.amf" may be shifted, especially if binary filters
 	dnl are involved (happens in some platform packages but not others).
 	ASPELL_FILTER_TEX_PATH="none"
@@ -95,38 +96,72 @@ if test -z "${nut_have_asciidoc_seen}"; then
 
 		ASPELL_VERSION_MINMAJ="`echo "${ASPELL_VERSION}" | sed 's,\.@<:@0-9@:>@@<:@0-9@:>@*$,,'`"
 
-		AC_MSG_CHECKING([for aspell filtering resources directory])
+		AC_MSG_CHECKING([for aspell "lib" filtering resources directory])
 		ASPELL_BINDIR="`dirname "$ASPELL"`"
 		if test -d "${ASPELL_BINDIR}/../lib" ; then
 			if test x"${ASPELL_VERSION}" != x"none" && test -d "${ASPELL_BINDIR}/../lib/aspell-${ASPELL_VERSION}" ; then
-				ASPELL_FILTER_PATH="`cd "${ASPELL_BINDIR}/../lib/aspell-${ASPELL_VERSION}" && pwd`" \
-				|| ASPELL_FILTER_PATH="${ASPELL_BINDIR}/../lib/aspell-${ASPELL_VERSION}"
+				ASPELL_FILTER_LIB_PATH="`cd "${ASPELL_BINDIR}/../lib/aspell-${ASPELL_VERSION}" && pwd`" \
+				|| ASPELL_FILTER_LIB_PATH="${ASPELL_BINDIR}/../lib/aspell-${ASPELL_VERSION}"
 			else
 				if test x"${ASPELL_VERSION_MINMAJ}" != x"none" && test -d "${ASPELL_BINDIR}/../lib/aspell-${ASPELL_VERSION_MINMAJ}" ; then
-					ASPELL_FILTER_PATH="`cd "${ASPELL_BINDIR}/../lib/aspell-${ASPELL_VERSION_MINMAJ}" && pwd`" \
-					|| ASPELL_FILTER_PATH="${ASPELL_BINDIR}/../lib/aspell-${ASPELL_VERSION_MINMAJ}"
+					ASPELL_FILTER_LIB_PATH="`cd "${ASPELL_BINDIR}/../lib/aspell-${ASPELL_VERSION_MINMAJ}" && pwd`" \
+					|| ASPELL_FILTER_LIB_PATH="${ASPELL_BINDIR}/../lib/aspell-${ASPELL_VERSION_MINMAJ}"
 				else
 					if test -d "${ASPELL_BINDIR}/../lib/aspell" ; then
-						ASPELL_FILTER_PATH="`cd "${ASPELL_BINDIR}/../lib/aspell" && pwd`" \
-						|| ASPELL_FILTER_PATH="${ASPELL_BINDIR}/../lib/aspell"
+						ASPELL_FILTER_LIB_PATH="`cd "${ASPELL_BINDIR}/../lib/aspell" && pwd`" \
+						|| ASPELL_FILTER_LIB_PATH="${ASPELL_BINDIR}/../lib/aspell"
 					fi
 				fi
 			fi
 		fi
-		AC_MSG_RESULT([${ASPELL_FILTER_PATH}])
+		AC_MSG_RESULT([${ASPELL_FILTER_LIB_PATH}])
+
+		AC_MSG_CHECKING([for aspell "share" filtering resources directory])
+		ASPELL_BINDIR="`dirname "$ASPELL"`"
+		if test -d "${ASPELL_BINDIR}/../share" ; then
+			if test x"${ASPELL_VERSION}" != x"none" && test -d "${ASPELL_BINDIR}/../share/aspell-${ASPELL_VERSION}" ; then
+				ASPELL_FILTER_SHARE_PATH="`cd "${ASPELL_BINDIR}/../share/aspell-${ASPELL_VERSION}" && pwd`" \
+				|| ASPELL_FILTER_SHARE_PATH="${ASPELL_BINDIR}/../share/aspell-${ASPELL_VERSION}"
+			else
+				if test x"${ASPELL_VERSION_MINMAJ}" != x"none" && test -d "${ASPELL_BINDIR}/../share/aspell-${ASPELL_VERSION_MINMAJ}" ; then
+					ASPELL_FILTER_SHARE_PATH="`cd "${ASPELL_BINDIR}/../share/aspell-${ASPELL_VERSION_MINMAJ}" && pwd`" \
+					|| ASPELL_FILTER_SHARE_PATH="${ASPELL_BINDIR}/../share/aspell-${ASPELL_VERSION_MINMAJ}"
+				else
+					if test -d "${ASPELL_BINDIR}/../share/aspell" ; then
+						ASPELL_FILTER_SHARE_PATH="`cd "${ASPELL_BINDIR}/../share/aspell" && pwd`" \
+						|| ASPELL_FILTER_SHARE_PATH="${ASPELL_BINDIR}/../share/aspell"
+					fi
+				fi
+			fi
+		fi
+		AC_MSG_RESULT([${ASPELL_FILTER_SHARE_PATH}])
 
 		AC_MSG_CHECKING([for aspell "tex" filtering resources directory])
-		if test -d "${ASPELL_FILTER_PATH}" ; then
-			ASPELL_FILTER_TEX_PATH="`find "${ASPELL_FILTER_PATH}" -name "tex.amf"`" \
+		dnl # May be in a platform-dependent subdir (e.g. Debian Linux)
+		dnl # or not (e.g. MinGW/MSYS2, OpenIndiana):
+		if test -d "${ASPELL_FILTER_LIB_PATH}" ; then
+			ASPELL_FILTER_TEX_PATH="`find "${ASPELL_FILTER_LIB_PATH}" -name "tex.amf"`" \
 			&& test x"${ASPELL_FILTER_TEX_PATH}" != x \
 			&& ASPELL_FILTER_TEX_PATH="`dirname "${ASPELL_FILTER_TEX_PATH}"`" \
 			&& test -d "${ASPELL_FILTER_TEX_PATH}" \
 			|| ASPELL_FILTER_TEX_PATH="none"
 		fi
+		dnl # Fallback (e.g. on FreeBSD):
+		if test x"${ASPELL_FILTER_TEX_PATH}" = xnone \
+		&& test -d "${ASPELL_FILTER_SHARE_PATH}" ; then
+			ASPELL_FILTER_TEX_PATH="`find "${ASPELL_FILTER_SHARE_PATH}" -name "tex.amf"`" \
+			&& test x"${ASPELL_FILTER_TEX_PATH}" != x \
+			&& ASPELL_FILTER_TEX_PATH="`dirname "${ASPELL_FILTER_TEX_PATH}"`" \
+			&& test -d "${ASPELL_FILTER_TEX_PATH}" \
+			|| ASPELL_FILTER_TEX_PATH="none"
+		fi
+
 		AC_MSG_RESULT([${ASPELL_FILTER_TEX_PATH}])
 	fi
-	AM_CONDITIONAL([HAVE_ASPELL_FILTER_PATH], [test -d "$ASPELL_FILTER_PATH"])
-	AC_SUBST(ASPELL_FILTER_PATH)
+	AM_CONDITIONAL([HAVE_ASPELL_FILTER_LIB_PATH], [test -d "$ASPELL_FILTER_LIB_PATH"])
+	AC_SUBST(ASPELL_FILTER_LIB_PATH)
+	AM_CONDITIONAL([HAVE_ASPELL_FILTER_SHARE_PATH], [test -d "$ASPELL_FILTER_SHARE_PATH"])
+	AC_SUBST(ASPELL_FILTER_SHARE_PATH)
 	AM_CONDITIONAL([HAVE_ASPELL_FILTER_TEX_PATH], [test -d "$ASPELL_FILTER_TEX_PATH"])
 	AC_SUBST(ASPELL_FILTER_TEX_PATH)
 
