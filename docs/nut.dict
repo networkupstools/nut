@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3231 utf-8
+personal_ws-1.1 en 3232 utf-8
 AAS
 ABI
 ACFAIL
@@ -1396,6 +1396,7 @@ WantedBy
 WatchdogSec
 WebFreak
 Werror
+Weverything
 Wextra
 WhizBang
 Wikipedia

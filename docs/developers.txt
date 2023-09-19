@@ -101,12 +101,18 @@ Portability
 Avoid things that will break on other systems.  All the world is not an
 x86 Linux box.
 
+C comments
+~~~~~~~~~~
+
 There are still older systems out there that don't do C++ style comments.
 
 --------------------------------------
 /* Comments look like this. */
 // Not like this.
 --------------------------------------
+
+Variable declarations go on top
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Newer versions of gcc allow you to declare a variable inside a function
 after code, somewhat like the way C++ operates, like this:
@@ -123,8 +129,28 @@ function do_stuff(void)
 -------------------------------------------------------------------------------
 
 While this will compile and run on these newer versions, it will fail
-miserably for anyone on an older system.  That means you must not use
-it.  `gcc` only warns about this with `-pedantic` flag.
+miserably for anyone on an older system.  That means you must not use it.
+
+Note that `gcc` only warns about this with `-pedantic` flag, and `clang`
+with a `-Weverything` (possibly `-Wextra`) flag, which can be enabled by
+developers with `configure --enable-warnings=...` option values (and made
+fatal with `configure --enable-Werror`), to ensure non-regression of code
+quality.  It was reported that `clang-16` with such options does complain
+about non-portability to older C language revisions even if explicitly
+building for a newer revision.
+
+Please note that for the purposes of legacy-compatible variable declarations
+(on top of their scopes), a `NUT_UNUSED_VARIABLE(varname)` counts as code and
+should be used just below the declarations.  Initial assignments to variables
+(also as return values of methods) may generally happen as part of their
+declarations.
+
+You can use scoping (e.g. `do { ... } while (0);`) where it makes sense
+to constrain visibility of temporary variables, such as in `switch/case`
+blocks.
+
+Variable declaration in loop block syntax
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Another feature that does not work on some compilers (e.g. conforming
 to "ANSI C"/C89/C90 standard) is initial variable declaration inside a
@@ -139,6 +165,9 @@ function do_stuff(void)
 	for (int i = 10; i < 15; ++i) { ... }
 }
 --------------------------------------------------------------------------------
+
+Other hints
+~~~~~~~~~~~
 
 TIP: At this point NUT is expected to work correctly when built with a
 C99 (or rather GNU99 on many systems) or newer standard.
@@ -980,6 +1009,10 @@ In NUT codebase we prefer to mark un-used variables explicitly in the
 body of the function (or an `#ifdef` branch of its code) using the
 `NUT_UNUSED_VARIABLE(varname)` as a routine call inside a function
 body, referring to the macro defined in `common.h`.
+
+Please note that for the purposes of legacy-compatible variable declarations
+(on top of their scopes), `NUT_UNUSED_VARIABLE(varname)` counts as code and
+should happen below the declarations.
 
 To display in a rough example:
 
