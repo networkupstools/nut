@@ -1071,16 +1071,16 @@ endif !HAVE_ASCIIDOC
 
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension:
 #%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
-#	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC_ONE="$<" SPELLCHECK_DIR="$(srcdir)" $@
+#	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
 # NOTE: Portable suffix rules do not allow prerequisites, so we shim them here
 # by a wildcard target in case the make implementation can put the two together.
 *.txt-spellchecked: Makefile.am $(abs_top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 .txt.txt-spellchecked:
-	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC_ONE="$<" SPELLCHECK_DIR="$(srcdir)" $@
+	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
 spellcheck spellcheck-interactive spellcheck-sortdict:
-	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SRC_ALL_PAGES)" SPELLCHECK_DIR="$(srcdir)" $@
+	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SRC_ALL_PAGES)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 

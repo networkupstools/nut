@@ -367,7 +367,8 @@ SPELLCHECK_SRC = $(ALL_TXT_SRC) \
 	../AUTHORS ../COPYING ../LICENSE-GPL2 ../LICENSE-GPL3 ../LICENSE-DCO
 
 # Directory SPELLCHECK_SRC files are relative to. Overriden by other Makefiles.
-SPELLCHECK_DIR = $(srcdir)
+SPELLCHECK_SRCDIR = $(srcdir)
+SPELLCHECK_BUILDDIR = $(builddir)
 
 # Note: de-facto our documentation is beyond ASCII (at least in names of
 # international committers). The grep tests below look if the aspell output
@@ -406,11 +407,11 @@ ASPELL_OUT_NOTERRORS = (^[ \t]*[\*\@]|^$$)
 #*-spellchecked */*-spellchecked: $(@:-spellchecked=) $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 # NOTE: This portable  rule RELIES on just one SPELLCHECK_SRC defined
 # at a time, with an outer Makefile caller ensuring the looping:
-$(SPELLCHECK_DIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_DIR)/$(SPELLCHECK_SRC_ONE) $(abs_top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+$(SPELLCHECK_BUILDDIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE) $(abs_top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 	@LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	 rm -f "$@" || true ; \
-	 echo "  ASPELL   Spell checking on $(SPELLCHECK_DIR)/$(SPELLCHECK_SRC_ONE)"; \
-	 OUT="`(sed 's,^\(.*\)$$, \1,' | $(ASPELL) -a $(ASPELL_NUT_TEXMODE_ARGS) $(ASPELL_NUT_COMMON_ARGS) 2>&1) < "$(SPELLCHECK_DIR)/$(SPELLCHECK_SRC_ONE)"`" \
+	 echo "  ASPELL   Spell checking on $(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE)"; \
+	 OUT="`(sed 's,^\(.*\)$$, \1,' | $(ASPELL) -a $(ASPELL_NUT_TEXMODE_ARGS) $(ASPELL_NUT_COMMON_ARGS) 2>&1) < "$(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE)"`" \
 		&& { if test -n "$$OUT" ; then OUT="`echo "$$OUT" | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' `" ; fi; \
 		     test -z "$$OUT" ; } \
 		|| { RES=$$? ; \
@@ -433,10 +434,10 @@ spellcheck:
 	@FAILED="" ; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	 for docsrc in $(SPELLCHECK_SRC); do \
 		if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
-			echo "ASPELL MAKEFILE DEBUG: Will see from `pwd` if '$(SPELLCHECK_DIR)/$${docsrc}-spellchecked' is up to date" >&2; \
+			echo "ASPELL MAKEFILE DEBUG: Will see from `pwd` if '$(SPELLCHECK_SRCDIR)/$${docsrc}-spellchecked' is up to date" >&2; \
 		else true ; fi ; \
-		$(MAKE) -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC_ONE="$${docsrc}" SPELLCHECK_DIR="$(SPELLCHECK_DIR)" "$(SPELLCHECK_DIR)/$${docsrc}-spellchecked" \
-		|| FAILED="$$FAILED $(SPELLCHECK_DIR)/$$docsrc"; \
+		$(MAKE) -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC_ONE="$${docsrc}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" \
+		|| FAILED="$$FAILED $(SPELLCHECK_SRCDIR)/$$docsrc"; \
 	 done ; \
 	 if test -n "$$FAILED" ; then \
 		echo "=====================================================================" ; \
@@ -482,9 +483,9 @@ DISTCLEANFILES = $(NUT_SPELL_DICT).bak-pre-sorting .$(NUT_SPELL_DICT).sorted $(N
 
 spellcheck-interactive: 
 	@FAILED="" ; for docsrc in $(SPELLCHECK_SRC); do \
-		echo "Spell checking on $(SPELLCHECK_DIR)/$$docsrc"; \
-		LANG=$(ASPELL_ENV_LANG) LC_ALL=$(ASPELL_ENV_LANG) $(ASPELL) check $(ASPELL_NUT_COMMON_ARGS) $(SPELLCHECK_DIR)/$$docsrc || \
-			FAILED="$$FAILED $(SPELLCHECK_DIR)/$$docsrc"; \
+		echo "Spell checking on $(SPELLCHECK_SRCDIR)/$$docsrc"; \
+		LANG=$(ASPELL_ENV_LANG) LC_ALL=$(ASPELL_ENV_LANG) $(ASPELL) check $(ASPELL_NUT_COMMON_ARGS) $(SPELLCHECK_SRCDIR)/$$docsrc || \
+			FAILED="$$FAILED $(SPELLCHECK_SRCDIR)/$$docsrc"; \
 	done ; \
 	if test -n "$$FAILED" ; then \
 		echo "FAILED interactive spellcheck for the following sources (relative to `pwd`): $$FAILED" >&2 ; \
