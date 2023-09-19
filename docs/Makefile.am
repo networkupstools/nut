@@ -188,13 +188,13 @@ $(top_builddir)/ChangeLog:
 	@echo "  DOC-CHANGELOG-GENERATE	$@" \
 	 && cd $(top_builddir) && $(MAKE) $(AM_FLAGS) $(@F)
 
-# BSD Make dislikes the path resolution here and does not always
-# populate "$<", but it has a "$?" for "list of dependencies that
-# are newer than the target". For more details see
-# https://man.freebsd.org/cgi/man.cgi
+# BSD Make dislikes the path resolution here and does not always populate "$<"
+# (and claims why: "Using $< in a non-suffix rule context is a GNUmake idiom"),
+# but it has a "$?" for "list of dependencies that are newer than the target".
+# For more details see https://man.freebsd.org/cgi/man.cgi
 $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
-	@INPUT="$<"; \
-	 test -n "$${INPUT}" || INPUT="$?" ; \
+	@INPUT="$?"; \
+	 test -n "$${INPUT}" || INPUT="$$(top_builddir)/ChangeLog" ; \
 	 test -n "$${INPUT}" && test -n "$@" && test -s "$${INPUT}" \
 	 || { \
 	     MSG="FAILED to resolve input or output filename with this make implementation, or input was not generated!"; \
