@@ -74,7 +74,8 @@ re-boots or device re-plugging.
 If supported by the hardware, OS and libusb on the particular deployment,
 this option should allow to specify physical port numbers on an USB hub,
 rather than logical `device` enumeration values, and in turn -- this should
-be less volatile across reboots or re-plugging.
+be less volatile across reboots or re-plugging. The value may be seen in
+the USB topology output of `lsusb -tv` on systems with that tool, for example.
 +
 NOTE: this option is not practically supported by some NUT builds
 (it should be ignored with a warning then), and not by all systems
