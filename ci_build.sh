@@ -1080,12 +1080,14 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     case "$BUILD_TYPE" in
         "default-nodoc")
             CONFIG_OPTS+=("--with-doc=no")
+            CONFIG_OPTS+=("--disable-spellcheck")
             DO_DISTCHECK=no
             ;;
         "default-spellcheck"|"default-shellcheck")
             CONFIG_OPTS+=("--with-all=no")
             CONFIG_OPTS+=("--with-libltdl=no")
             CONFIG_OPTS+=("--with-doc=man=skip")
+            CONFIG_OPTS+=("--enable-spellcheck")
             #TBD# CONFIG_OPTS+=("--with-shellcheck=yes")
             DO_DISTCHECK=no
             ;;
@@ -1139,6 +1141,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 
             # Do not build the docs as we are interested in binary code
             CONFIG_OPTS+=("--with-doc=skip")
+            CONFIG_OPTS+=("--disable-spellcheck")
             # Enable as many binaries to build as current worker setup allows
             CONFIG_OPTS+=("--with-all=auto")
 
@@ -1164,6 +1167,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         "default-alldrv")
             # Do not build the docs and make possible a distcheck below
             CONFIG_OPTS+=("--with-doc=skip")
+            CONFIG_OPTS+=("--disable-spellcheck")
             if [ "${CANBUILD_DRIVERS_ALL-}" = no ]; then
                 echo "WARNING: Build agent says it can't build 'all' driver types; will ask for what we can build" >&2
                 if [ "$DO_DISTCHECK" != no ]; then
@@ -1190,6 +1194,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         "default"|"default-tgt:"*|*)
             # Do not build the docs and tell distcheck it is okay
             CONFIG_OPTS+=("--with-doc=skip")
+            CONFIG_OPTS+=("--disable-spellcheck")
             ;;
     esac
     # NOTE: The case "$BUILD_TYPE" above was about setting CONFIG_OPTS.
