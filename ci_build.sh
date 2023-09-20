@@ -446,6 +446,18 @@ if [ -z "${PKG_CONFIG-}" ]; then
     PKG_CONFIG="pkg-config"
 fi
 
+# It seems sometimes we get blanks from CI
+if [ -z "`echo "${MAKE-}" | tr -d ' '`" ] ; then
+    if (command -v gmake) >/dev/null 2>/dev/null ; then
+        # GNU make processes quiet mode better, which helps with this use-case
+        MAKE=gmake
+    else
+        # Use system default, there should be one
+        MAKE=make
+    fi
+    export MAKE
+fi
+
 # Would hold full path to the CONFIGURE_SCRIPT="${SCRIPTDIR}/${CONFIGURE_SCRIPT_FILENAME}"
 CONFIGURE_SCRIPT=""
 autogen_get_CONFIGURE_SCRIPT() {
@@ -726,16 +738,6 @@ fi
 if [ "$1" = spellcheck -o "$1" = spellcheck-interactive ] && [ -z "$BUILD_TYPE" ] ; then
     # Note: this is a little hack to reduce typing
     # and scrolling in (docs) developer iterations.
-    if [ -z "${MAKE-}" ] ; then
-        if (command -v gmake) >/dev/null 2>/dev/null ; then
-            # GNU make processes quiet mode better, which helps with this use-case
-            MAKE=gmake
-        else
-            # Use system default, there should be one
-            MAKE=make
-        fi
-        export MAKE
-    fi
     case "$CI_OS_NAME" in
         windows-msys2)
             # https://github.com/msys2/MSYS2-packages/issues/2088
