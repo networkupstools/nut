@@ -164,7 +164,19 @@ case "${CI_BUILDDIR-}" in
         ;;
 esac
 
-[ -n "$MAKE" ] || [ "$1" = spellcheck -o "$1" = spellcheck-interactive ] || MAKE=make
+#[ -n "$MAKE" ] || [ "$1" = spellcheck -o "$1" = spellcheck-interactive ] || MAKE=make
+# It seems sometimes we get blanks from CI
+if [ -z "`echo "${MAKE-}" | tr -d ' '`" ] ; then
+    if (command -v gmake) >/dev/null 2>/dev/null ; then
+        # GNU make processes quiet mode better, which helps with spellcheck use-case
+        MAKE=gmake
+    else
+        # Use system default, there should be one
+        MAKE=make
+    fi
+    export MAKE
+fi
+
 [ -n "$GGREP" ] || GGREP=grep
 
 [ -n "$MAKE_FLAGS_QUIET" ] || MAKE_FLAGS_QUIET="VERBOSE=0 V=0 -s"
@@ -444,18 +456,6 @@ if [ -z "${PKG_CONFIG-}" ]; then
     # below in this script
     # DO NOT "export" it here so configure script can find one for the build
     PKG_CONFIG="pkg-config"
-fi
-
-# It seems sometimes we get blanks from CI
-if [ -z "`echo "${MAKE-}" | tr -d ' '`" ] ; then
-    if (command -v gmake) >/dev/null 2>/dev/null ; then
-        # GNU make processes quiet mode better, which helps with this use-case
-        MAKE=gmake
-    else
-        # Use system default, there should be one
-        MAKE=make
-    fi
-    export MAKE
 fi
 
 # Would hold full path to the CONFIGURE_SCRIPT="${SCRIPTDIR}/${CONFIGURE_SCRIPT_FILENAME}"
