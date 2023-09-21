@@ -164,7 +164,20 @@ case "${CI_BUILDDIR-}" in
         ;;
 esac
 
-[ -n "$MAKE" ] || [ "$1" = spellcheck -o "$1" = spellcheck-interactive ] || MAKE=make
+# Just in case we get blanks from CI - consider them as not-set:
+if [ -z "`echo "${MAKE-}" | tr -d ' '`" ] ; then
+    if [ "$1" = spellcheck -o "$1" = spellcheck-interactive ] \
+    && (command -v gmake) >/dev/null 2>/dev/null \
+    ; then
+        # GNU make processes quiet mode better, which helps with spellcheck use-case
+        MAKE=gmake
+    else
+        # Use system default, there should be one (or fail eventually if not)
+        MAKE=make
+    fi
+    export MAKE
+fi
+
 [ -n "$GGREP" ] || GGREP=grep
 
 [ -n "$MAKE_FLAGS_QUIET" ] || MAKE_FLAGS_QUIET="VERBOSE=0 V=0 -s"
@@ -726,16 +739,6 @@ fi
 if [ "$1" = spellcheck -o "$1" = spellcheck-interactive ] && [ -z "$BUILD_TYPE" ] ; then
     # Note: this is a little hack to reduce typing
     # and scrolling in (docs) developer iterations.
-    if [ -z "${MAKE-}" ] ; then
-        if (command -v gmake) >/dev/null 2>/dev/null ; then
-            # GNU make processes quiet mode better, which helps with this use-case
-            MAKE=gmake
-        else
-            # Use system default, there should be one
-            MAKE=make
-        fi
-        export MAKE
-    fi
     case "$CI_OS_NAME" in
         windows-msys2)
             # https://github.com/msys2/MSYS2-packages/issues/2088
@@ -1078,12 +1081,14 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     case "$BUILD_TYPE" in
         "default-nodoc")
             CONFIG_OPTS+=("--with-doc=no")
+            CONFIG_OPTS+=("--disable-spellcheck")
             DO_DISTCHECK=no
             ;;
         "default-spellcheck"|"default-shellcheck")
             CONFIG_OPTS+=("--with-all=no")
             CONFIG_OPTS+=("--with-libltdl=no")
             CONFIG_OPTS+=("--with-doc=man=skip")
+            CONFIG_OPTS+=("--enable-spellcheck")
             #TBD# CONFIG_OPTS+=("--with-shellcheck=yes")
             DO_DISTCHECK=no
             ;;
@@ -1137,6 +1142,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 
             # Do not build the docs as we are interested in binary code
             CONFIG_OPTS+=("--with-doc=skip")
+            CONFIG_OPTS+=("--disable-spellcheck")
             # Enable as many binaries to build as current worker setup allows
             CONFIG_OPTS+=("--with-all=auto")
 
@@ -1162,6 +1168,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         "default-alldrv")
             # Do not build the docs and make possible a distcheck below
             CONFIG_OPTS+=("--with-doc=skip")
+            CONFIG_OPTS+=("--disable-spellcheck")
             if [ "${CANBUILD_DRIVERS_ALL-}" = no ]; then
                 echo "WARNING: Build agent says it can't build 'all' driver types; will ask for what we can build" >&2
                 if [ "$DO_DISTCHECK" != no ]; then
@@ -1188,6 +1195,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         "default"|"default-tgt:"*|*)
             # Do not build the docs and tell distcheck it is okay
             CONFIG_OPTS+=("--with-doc=skip")
+            CONFIG_OPTS+=("--disable-spellcheck")
             ;;
     esac
     # NOTE: The case "$BUILD_TYPE" above was about setting CONFIG_OPTS.
