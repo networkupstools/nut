@@ -164,14 +164,15 @@ case "${CI_BUILDDIR-}" in
         ;;
 esac
 
-#[ -n "$MAKE" ] || [ "$1" = spellcheck -o "$1" = spellcheck-interactive ] || MAKE=make
-# It seems sometimes we get blanks from CI
+# Just in case we get blanks from CI - consider them as not-set:
 if [ -z "`echo "${MAKE-}" | tr -d ' '`" ] ; then
-    if (command -v gmake) >/dev/null 2>/dev/null ; then
+    if [ "$1" = spellcheck -o "$1" = spellcheck-interactive ] \
+    && (command -v gmake) >/dev/null 2>/dev/null \
+    ; then
         # GNU make processes quiet mode better, which helps with spellcheck use-case
         MAKE=gmake
     else
-        # Use system default, there should be one
+        # Use system default, there should be one (or fail eventually if not)
         MAKE=make
     fi
     export MAKE
