@@ -61,6 +61,31 @@ parse the value for that variable as it may vary greatly from one UPS
 (or similar device) to the next.  These strings are best handled directly
 by the user.
 
+Structured naming
+-----------------
+
+All standard NUT names of variables and commands are structured, with
+a certain domain-specific prefix and purpose-specific suffix parts.
+NUT tools provide and interpret them as dot-separated strings (although
+third-party tools might restructure them by cutting and pasting at the
+dot separation location, e.g. to represent as a JSON data tree or as
+data model classes for specific programming languages).
+
+If you would be making a parser of this information, please do also note
+that in some *but not all* cases there is a defined data point for some
+reading or command at the "root level" of what evolved to be a collection
+of further structured related information (and there are no guarantees
+for future evolution in this regard), for example:
+
+* an `input.voltage` reports the momentary voltage level value and
+  there is a `input.voltage.maximum` for a certain related detail;
+* conversely, there are several items like `input.transfer.reason`
+  but there is no actual `input.transfer` report.
+
+There may be more layers than two (e.g. `input.voltage.low.warning`),
+and in certain cases detailed below there may be a variable component
+in the practical values (e.g. the `n` in `ambient.n.temperature.alarm`
+variable or `outlet.n.load.off` command names).
 
 Time and Date format
 --------------------
@@ -357,6 +382,10 @@ Valid CONTEXTs
 
 Valid SPECs
 ^^^^^^^^^^^
+
+NOTE: For cursory readers -- the following couple of tables lists just the
+short `SPEC` component of the larger `DOMAIN.CONTEXT.SPEC` naming scheme
+for phase-aware values, as discussed in other sections of this chapter.
 
 Valid with/without context (i.e. per phase or aggregated/averaged)
 
