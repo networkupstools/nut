@@ -1855,8 +1855,8 @@ ssize_t select_write(serial_handler_t *fd, const void *buf, const size_t buflen,
 static const char * search_paths[] = {
 	/* Use the library path (and bitness) provided during ./configure first */
 	LIBDIR,
-	"/usr"LIBDIR,
-	"/usr/local"LIBDIR,
+	"/usr"LIBDIR,		/* Note: this can lead to bogus strings like */
+	"/usr/local"LIBDIR,	/* "/usr/usr/lib" which would be ignored quickly */
 #ifdef BUILD_64
 	/* Fall back to explicit preference of 64-bit paths as named on some OSes */
 	"/usr/lib/64",
