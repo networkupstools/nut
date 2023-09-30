@@ -2083,30 +2083,37 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 static char * get_libname_in_pathset(const char* base_libname, size_t base_libname_length, char* pathset, int *counter)
 {
 	/* Note: this method iterates specified pathset,
-	 * so increments the counter by reference */
+	 * so it increments the counter by reference.
+	 * A copy of original pathset is used, because
+	 * strtok() tends to modify its input! */
 	char *libname_path = NULL;
 	char *onedir = NULL;
+	char* pathset_tmp;
 
 	if (!pathset || *pathset == '\0')
 		return NULL;
 
 	/* First call to tokenization passes the string, others pass NULL */
-	while (NULL != (onedir = strtok( (onedir ? NULL : pathset), ":" ))) {
+	pathset_tmp = xstrdup(pathset);
+	while (NULL != (onedir = strtok( (onedir ? NULL : pathset_tmp), ":" ))) {
 		libname_path = get_libname_in_dir(base_libname, base_libname_length, onedir, *counter++);
 		if (libname_path != NULL)
 			break;
 	}
+	free(pathset_tmp);
 
 #ifdef WIN32
 	/* Note: with mingw, the ":" separator above might have been resolvable */
+	pathset_tmp = xstrdup(pathset);
 	if (!libname_path) {
 		onedir = NULL; /* probably is NULL already, but better ensure this */
-		while (NULL != (onedir = strtok( (onedir ? NULL : pathset), ";" ))) {
+		while (NULL != (onedir = strtok( (onedir ? NULL : pathset_tmp), ";" ))) {
 			libname_path = get_libname_in_dir(base_libname, base_libname_length, onedir, *counter++);
 			if (libname_path != NULL)
 				break;
 		}
 	}
+	free(pathset_tmp);
 #endif  /* WIN32 */
 
 	return libname_path;
