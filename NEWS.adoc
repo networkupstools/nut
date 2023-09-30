@@ -275,6 +275,10 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
    this variable unless troubleshooting, although other systems rely on it)
    [#805]
 
+ - The `nut-scanner` usage and debug printouts now include the loadable library
+   search paths, to help troubleshooting especially in multi-platform builds
+   [#317]
+
  - The nut-scanner program was updated to fall back to loading unresolved
    library filenames, hoping that `lt_dlopen()` implementation on the current
    platform would find library files better [#805]

@@ -217,6 +217,10 @@ static void show_usage(void)
 	printf("  -T, --thread <max number of threads>: Limit the amount of scanning threads running simultaneously (not implemented in this build: no pthread support)");
 #endif
 
+	printf("\nNote: many scanning options depend on further loadable libraries.\n");
+	/* Note: if debug is enabled, this is prefixed with timestamps */
+	upsdebugx_report_search_paths(0);
+
 	printf("\nNetwork specific options:\n");
 	printf("  -t, --timeout <timeout in seconds>: network operation timeout (default %d).\n", DEFAULT_NETWORK_TIMEOUT);
 	printf("  -s, --start_ip <IP address>: First IP address to scan.\n");
