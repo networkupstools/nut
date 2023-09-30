@@ -1914,16 +1914,57 @@ static const char * search_paths[] = {
 
 void upsdebugx_report_search_paths(int level) {
 	size_t	index;
+	char	*s, *varname;
 
 	if (nut_debug_level < level)
 		return;
 
-
 	upsdebugx(level, "Run-time loadable library search paths used by this build of NUT:");
+
+	/* NOTE: Reporting order follows get_libname(), and
+	 * while some values are individual paths, others can
+	 * be "pathsets" (e.g. coming envvars) with certain
+	 * platform-dependent separator characters. */
+#ifdef BUILD_64
+	varname = "LD_LIBRARY_PATH_64";
+#else
+	varname = "LD_LIBRARY_PATH_32";
+#endif
+
+	if (((s = getenv(varname)) != NULL) && strlen(s) > 0) {
+		upsdebugx(level, "\tVia %s:\t%s", varname, s);
+	}
+
+	varname = "LD_LIBRARY_PATH";
+	if (((s = getenv(varname)) != NULL) && strlen(s) > 0) {
+		upsdebugx(level, "\tVia %s:\t%s", varname, s);
+	}
+
 	for (index = 0; search_paths[index] != NULL; index++)
 	{
-		upsdebugx(level, "\t%s", search_paths[index]);
+		upsdebugx(level, "\tBuilt-in:\t%s", search_paths[index]);
 	}
+
+#ifdef WIN32
+	if (((s = getfullpath(NULL)) != NULL) && strlen(s) > 0) {
+		upsdebugx(level, "\tWindows near EXE:\t%s", s);
+	}
+
+# ifdef PATH_LIB
+	if (((s = getfullpath(PATH_LIB)) != NULL) && strlen(s) > 0) {
+		upsdebugx(level, "\tWindows PATH_LIB (%s):\t%s", PATH_LIB, s);
+	}
+# endif
+
+	if (((s = getfullpath("/../lib")) != NULL) && strlen(s) > 0) {
+		upsdebugx(level, "\tWindows \"lib\" dir near EXE:\t%s", s);
+	}
+
+	varname = "PATH";
+	if (((s = getenv(varname)) != NULL) && strlen(s) > 0) {
+		upsdebugx(level, "\tWindows via %s:\t%s", varname, s);
+	}
+#endif
 }
 
 static char * get_libname_in_dir(const char* base_libname, size_t base_libname_length, const char* dirname, int index) {
@@ -2056,6 +2097,8 @@ static char * get_libname_in_pathset(const char* base_libname, size_t base_libna
 
 char * get_libname(const char* base_libname)
 {
+	/* NOTE: Keep changes to practical search order
+	 * synced to upsdebugx_report_search_paths() */
 	int index = 0, counter = 0;
 	char *libname_path = NULL;
 	size_t base_libname_length = strlen(base_libname);
