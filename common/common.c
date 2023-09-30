@@ -1287,11 +1287,15 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 				now.tv_sec -= 1;
 			}
 
-			fprintf(stderr, "%4.0f.%06ld\t",
+			/* Print all in one shot, to better avoid
+			 * mixed lines in parallel threads */
+			fprintf(stderr, "%4.0f.%06ld\t%s\n",
 				difftime(now.tv_sec, upslog_start.tv_sec),
-				(long)(now.tv_usec - upslog_start.tv_usec));
+				(long)(now.tv_usec - upslog_start.tv_usec),
+				buf);
+		} else {
+			fprintf(stderr, "%s\n", buf);
 		}
-		fprintf(stderr, "%s\n", buf);
 #ifdef WIN32
 		fflush(stderr);
 #endif
