@@ -2008,11 +2008,10 @@ static void nut_free_search_paths(void) {
 	}
 
 	if (search_paths != search_paths_builtin) {
-		/* TODO: if nut_prepare_search_paths() is later
-		 * extended to track not only built-in strings,
-		 * change that to use an array of xstrdup()'ed
-		 * strings, and free() those dupes here.
-		 */
+		size_t i;
+		for (i = 0; search_paths[i] != NULL; i++) {
+			free((char *)search_paths[i]);
+		}
 		free(search_paths);
 		search_paths = search_paths_builtin;
 	}
@@ -2046,41 +2045,62 @@ void nut_prepare_search_paths(void) {
 	/* FIXME: here "count_builtin" means size of filtered_search_paths[]
 	 * and may later be more, if we would consider other data sources */
 	for (i = 0; search_paths_builtin[i] != NULL && count_filtered < count_builtin; i++) {
-		/* NOTE: not xstrdup()ing here now, remember to check
-		 * nut_free_search_paths() if it later would be */
 		int dupe = 0;
-		if ((dp = opendir(search_paths_builtin[i])) == NULL) {
+		const char *dirname = search_paths_builtin[i];
+
+		if ((dp = opendir(dirname)) == NULL) {
 			upsdebugx(5, "%s: SKIP "
 				"unreachable directory #%" PRIuSIZE " : %s",
-				__func__, index++, search_paths_builtin[i]);
+				__func__, index++, dirname);
 			continue;
 		}
 		index++;
 
+#if HAVE_DECL_REALPATH
+		/* allocates the buffer we free() later */
+		dirname = (const char *)realpath(dirname, NULL);
+#endif
+
 		/* Revise for duplicates */
 		/* Note: (count_filtered == 0) means first existing dir seen, no hassle */
 		for (j = 0; j < count_filtered; j++) {
-			if (!strcmp(filtered_search_paths[j], search_paths_builtin[i])) {
+			if (!strcmp(filtered_search_paths[j], dirname)) {
+#if HAVE_DECL_REALPATH
+				if (strcmp(search_paths_builtin[i], dirname)) {
+					/* They differ, highlight it */
+					upsdebugx(5, "%s: SKIP "
+						"duplicate directory #%" PRIuSIZE " : %s (%s)",
+						__func__, index, dirname,
+						search_paths_builtin[i]);
+				} else
+#endif
 				upsdebugx(5, "%s: SKIP "
 					"duplicate directory #%" PRIuSIZE " : %s",
-					__func__, index, search_paths_builtin[i]);
+					__func__, index, dirname);
+
 				dupe = 1;
+#if HAVE_DECL_REALPATH
+				free((char *)dirname);
+#endif
 				break;
 			}
 		}
 
 		if (!dupe) {
-			upsdebugx(5, "%s: ADD "
-				"existing unique directory #%" PRIuSIZE " : %s",
-				__func__, count_filtered, search_paths_builtin[i]);
-			filtered_search_paths[count_filtered] = search_paths_builtin[i];
-			count_filtered++;
+			upsdebugx(5, "%s: ADD[#%" PRIuSIZE "] "
+				"existing unique directory: %s",
+				__func__, count_filtered, dirname);
+#if !HAVE_DECL_REALPATH
+			dirname = (const char *)xstrdup(dirname);
+#endif
+			filtered_search_paths[count_filtered++] = dirname;
 		}
 	}
 
 	/* If we mangled this before, forget the old result: */
 	nut_free_search_paths();
 
+	/* Better safe than sorry: */
 	filtered_search_paths[count_filtered] = NULL;
 	search_paths = filtered_search_paths;
 
