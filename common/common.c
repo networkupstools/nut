@@ -1861,6 +1861,19 @@ static const char * search_paths[] = {
 	LIBDIR,
 	"/usr"LIBDIR,		/* Note: this can lead to bogus strings like */
 	"/usr/local"LIBDIR,	/* "/usr/usr/lib" which would be ignored quickly */
+/* TOTHINK: Should AUTOTOOLS_* specs also be highly preferred?
+ * Currently they are listed after the "legacy" hard-coded paths...
+ */
+#ifdef MULTIARCH_TARGET_ALIAS
+# ifdef BUILD_64
+	"/usr/lib/64/" MULTIARCH_TARGET_ALIAS,
+	"/usr/lib64/" MULTIARCH_TARGET_ALIAS,
+	"/lib/64/" MULTIARCH_TARGET_ALIAS,
+	"/lib64/" MULTIARCH_TARGET_ALIAS,
+# endif	/* MULTIARCH_TARGET_ALIAS && BUILD_64 */
+	"/usr/lib/" MULTIARCH_TARGET_ALIAS,
+	"/lib/" MULTIARCH_TARGET_ALIAS,
+#endif	/* MULTIARCH_TARGET_ALIAS */
 #ifdef BUILD_64
 	/* Fall back to explicit preference of 64-bit paths as named on some OSes */
 	"/usr/lib/64",
