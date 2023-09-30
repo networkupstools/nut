@@ -1217,7 +1217,7 @@ void nut_report_config_flags(void)
 
 static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 {
-	int	ret;
+	int	ret, errno_orig = errno;
 	char	buf[LARGEBUF];
 
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
@@ -1234,6 +1234,8 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 #pragma clang diagnostic ignored "-Wformat-nonliteral"
 #pragma clang diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: errors here can reset errno,
+	 * so errno_orig is stashed beforehand */
 	ret = vsnprintf(buf, sizeof(buf), fmt, va);
 #ifdef __clang__
 #pragma clang diagnostic pop
@@ -1247,11 +1249,14 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 			LARGEBUF);
 
 	if (use_strerror) {
-		snprintfcat(buf, sizeof(buf), ": %s", strerror(errno));
-
 #ifdef WIN32
 		LPVOID WinBuf;
 		DWORD WinErr = GetLastError();
+#endif
+
+		snprintfcat(buf, sizeof(buf), ": %s", strerror(errno_orig));
+
+#ifdef WIN32
 		FormatMessage(
 				FORMAT_MESSAGE_MAX_WIDTH_MASK |
 				FORMAT_MESSAGE_ALLOCATE_BUFFER |
