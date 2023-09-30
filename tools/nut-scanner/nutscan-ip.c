@@ -269,6 +269,7 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 	nutscan_ip_iter_t ip;
 	int mask_val;
 	int mask_byte;
+	int ret;
 	uint32_t mask_bit; /* 32-bit IPv4 address bitmask */
 	char host[SMALLBUF];
 	struct addrinfo hints;
@@ -319,14 +320,17 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 	hints.ai_family = AF_INET;
 
 	ip.type = IPv4;
-	/* Detecting IPv4 vs IPv6 */
-	if (getaddrinfo(first_ip, NULL, &hints, &res) != 0) {
-		/*Try IPv6 detection */
-		int ret;
+	if ((ret = getaddrinfo(first_ip, NULL, &hints, &res)) != 0) {
+		/* EAI_ADDRFAMILY? */
+		upsdebugx(5, "%s: getaddrinfo() failed for AF_INET (IPv4): %d",
+			__func__, ret);
 
+		/* Try IPv6 detection */
 		ip.type = IPv6;
 		hints.ai_family = AF_INET6;
 		if ((ret = getaddrinfo(first_ip, NULL, &hints, &res)) != 0) {
+			upsdebugx(5, "%s: getaddrinfo() failed for AF_INET6 (IPv6): %d",
+				__func__, ret);
 			free(first_ip);
 			return 0;
 		}
