@@ -211,7 +211,8 @@ sub gen_usb_files
 			print $out_devd "};\n";
 
 			# UPower device entry (only for USB/HID devices!)
-			if ($vendor{$vendorId}{$productId}{"driver"} eq "usbhid-ups")
+			if ($vendor{$vendorId}{$productId}{"driver"} eq "usbhid-ups" ||
+				$vendor{$vendorId}{$productId}{"driver"} eq "apc_modbus")
 			{
 				if (!$upowerVendorHasDevices) {
 					if ($vendorName{$vendorId}) {

@@ -14,6 +14,12 @@
 # if you want to hide at the bottom, that's fine by me.  Just clarify
 # your preference when submitting changes to this file.
 
+N: Axel Gembe
+E: axel@gembe.net
+W: http://axel.gembe.net/
+D: Added APC Modbus support
+P: rsa4096/43109AAC 11E6 515C B8A4 26C6 07C1  36A4 1CB3 AA21 4310 9AAC
+
 N: Stephen Brown
 E: steve@datalimbo.net
 W: http://www.datalimbo.net/
