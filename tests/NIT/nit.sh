@@ -1150,6 +1150,7 @@ testcase_sandbox_nutscanner_list() {
 
     # NOTE: Currently mask mode is IPv4 only
     runcmd "${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner" -m 127.0.0.1/32 -O -p "${NUT_PORT}" \
+    && test -n "$CMDOUT" \
     || runcmd "${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner" -s localhost -O -p "${NUT_PORT}"
 
     LD_LIBRARY_PATH="${LD_LIBRARY_PATH_ORIG}"
