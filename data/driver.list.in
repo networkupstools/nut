@@ -1096,8 +1096,8 @@
 "Riello"	"ups"	"3"	"(various)"	"Netman Plus 101 SNMP Box"	"snmp-ups"
 "Riello"	"ups"	"3"	"(various)"	"Netman Plus 102 SNMP Card"	"snmp-ups"
 "Riello"	"ups"	"3"	"(various)"	"Netman Plus 202 SNMP Card"	"snmp-ups"
-"Riello"	"ups"	"3"	"(various)"	"Netman 204 SNMP Card"	"snmp-ups"
-"Riello"	"ups"	"3"	"(various)"	"Netman 208 SNMP Card"	"snmp-ups"
+"Riello"	"ups"	"3"	"(various)"	"Netman 204 SNMP Card"	"snmp-ups"	# Note: in https://github.com/networkupstools/nut/issues/1878 submitted not as "Netman Plus", clarification requested
+"Riello"	"ups"	"3"	"(various)"	"Netman 208 SNMP Card"	"snmp-ups"	# Note: in https://github.com/networkupstools/nut/issues/1878 submitted not as "Netman Plus", clarification requested
 
 "Rocketfish"	"ups"	"3"	"RF-1000VA / RF-1025VA"	"USB"	"usbhid-ups"
 
