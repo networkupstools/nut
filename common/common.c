@@ -1218,7 +1218,11 @@ void nut_report_config_flags(void)
 static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 {
 	int	ret, errno_orig = errno;
-	char	buf[LARGEBUF];
+	size_t	bufsize = LARGEBUF;
+	char	*buf = xcalloc(sizeof(char), bufsize);
+
+	/* Be pedantic about our limitations */
+	bufsize *= sizeof(char);
 
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
@@ -1236,7 +1240,69 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 #endif
 	/* Note: errors here can reset errno,
 	 * so errno_orig is stashed beforehand */
-	ret = vsnprintf(buf, sizeof(buf), fmt, va);
+	do {
+		ret = vsnprintf(buf, bufsize, fmt, va);
+
+		if ((ret < 0) || ((uintmax_t)ret >= (uintmax_t)bufsize)) {
+			/* Try to adjust bufsize until we can print the
+			 * whole message. Note that standards only require
+			 * up to 4095 bytes to be manageable in printf-like
+			 * methods:
+			 *   The number of characters that can be produced
+			 *   by any single conversion shall be at least 4095.
+			 *   C17dr § 7.21.6.1 15
+			 * In general, vsnprintf() is not specified to set
+			 * errno on any condition (or to not implement a
+			 * larger limit). Select implementations may do so
+			 * though.
+			 * Based on https://stackoverflow.com/a/72981237/4715872
+			 */
+			if (bufsize < SIZE_MAX/2) {
+				size_t	newbufsize = bufsize*2;
+				if (ret > 0) {
+					/* Be generous, we snprintfcat() some
+					 * suffixes, prefix a timestamp, etc. */
+					if (((uintmax_t)ret) > (SIZE_MAX - LARGEBUF)) {
+						goto vupslog_too_long;
+					}
+					newbufsize = ret + LARGEBUF;
+				} /* else: errno, e.g. ERANGE printing:
+				   *  "...(34 => Result too large)" */
+				if (nut_debug_level > 0) {
+					fprintf(stderr, "WARNING: vupslog: "
+						"vsnprintf needed more than %"
+						PRIuSIZE " bytes: %d (%d => %s),"
+						" extending to %" PRIuSIZE "\n",
+						bufsize, ret,
+						errno, strerror(errno),
+						newbufsize);
+				}
+				bufsize = newbufsize;
+				buf = xrealloc(buf, bufsize);
+				continue;
+			}
+		} else {
+			/* All fits well now; majority of use-cases should
+			 * have nailed this on first try (envvar prints of
+			 * longer fully-qualified PATHs, compilation settings
+			 * reports etc. may need more). Even a LARGEBUF may
+			 * still overflow some older syslog buffers and would
+			 * be truncated there. At least stderr would see as
+			 * complete a picture as we can give it.
+			 */
+			break;
+		}
+
+		/* Arbitrary limit, gotta stop somewhere */
+		if (bufsize > LARGEBUF * 64) {
+vupslog_too_long:
+			syslog(LOG_WARNING, "vupslog: vsnprintf needed "
+				"more than %" PRIuSIZE " bytes; logged "
+				"output can be truncated",
+				bufsize);
+			break;
+		}
+	} while(1);
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
@@ -1244,17 +1310,13 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 #pragma GCC diagnostic pop
 #endif
 
-	if ((ret < 0) || (ret >= (int) sizeof(buf)))
-		syslog(LOG_WARNING, "vupslog: vsnprintf needed more than %d bytes",
-			LARGEBUF);
-
 	if (use_strerror) {
 #ifdef WIN32
 		LPVOID WinBuf;
 		DWORD WinErr = GetLastError();
 #endif
 
-		snprintfcat(buf, sizeof(buf), ": %s", strerror(errno_orig));
+		snprintfcat(buf, bufsize, ": %s", strerror(errno_orig));
 
 #ifdef WIN32
 		FormatMessage(
@@ -1268,7 +1330,7 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 				(LPTSTR) &WinBuf,
 				0, NULL );
 
-		snprintfcat(buf, sizeof(buf), " [%s]", (char *)WinBuf);
+		snprintfcat(buf, bufsize, " [%s]", (char *)WinBuf);
 		LocalFree(WinBuf);
 #endif
 	}
@@ -1307,6 +1369,7 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 	}
 	if (xbit_test(upslog_flags, UPSLOG_SYSLOG))
 		syslog(priority, "%s", buf);
+	free(buf);
 }
 
 
