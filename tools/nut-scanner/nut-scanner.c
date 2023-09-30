@@ -214,7 +214,7 @@ static void show_usage(void)
 #if (defined HAVE_PTHREAD) && (defined HAVE_PTHREAD_TRYJOIN)
 	printf("  -T, --thread <max number of threads>: Limit the amount of scanning threads running simultaneously (default: %" PRIuSIZE ").\n", max_threads);
 #else
-	printf("  -T, --thread <max number of threads>: Limit the amount of scanning threads running simultaneously (not implemented in this build: no pthread support)");
+	printf("  -T, --thread <max number of threads>: Limit the amount of scanning threads running simultaneously (not implemented in this build: no pthread support)\n");
 #endif
 
 	printf("\nNote: many scanning options depend on further loadable libraries.\n");
