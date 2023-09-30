@@ -219,7 +219,7 @@ static void show_usage(void)
 
 	printf("\nNote: many scanning options depend on further loadable libraries.\n");
 	/* Note: if debug is enabled, this is prefixed with timestamps */
-	upsdebugx_report_search_paths(0);
+	upsdebugx_report_search_paths(0, 0);
 
 	printf("\nNetwork specific options:\n");
 	printf("  -t, --timeout <timeout in seconds>: network operation timeout (default %d).\n", DEFAULT_NETWORK_TIMEOUT);

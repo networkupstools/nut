@@ -281,8 +281,9 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
    and receivers such as logging systems, may still impose limits of their own.
 
  - The `nut-scanner` usage and debug printouts now include the loadable library
-   search paths, to help troubleshooting especially in multi-platform builds
-   [#317]
+   search paths, to help troubleshooting especially in multi-platform builds;
+   pre-filtering of the built-in paths was introduced (to walk only existing
+   and unique directory names) [#317]
 
  - The nut-scanner program was updated to fall back to loading unresolved
    library filenames, hoping that `lt_dlopen()` implementation on the current

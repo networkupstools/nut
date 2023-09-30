@@ -1924,7 +1924,7 @@ ssize_t select_write(serial_handler_t *fd, const void *buf, const size_t buflen,
  * linked against certain OS-provided libraries for accessing this or that
  * communications media and/or vendor protocol.
  */
-static const char * search_paths[] = {
+static const char * search_paths_builtin[] = {
 	/* Use the library path (and bitness) provided during ./configure first */
 	LIBDIR,
 	"/usr"LIBDIR,		/* Note: this can lead to bogus strings like */
@@ -1997,9 +1997,106 @@ static const char * search_paths[] = {
 	NULL
 };
 
-void upsdebugx_report_search_paths(int level) {
+static const char ** search_paths = search_paths_builtin;
+
+/* free this when a NUT program ends (common library is unloaded)
+ * IFF it is not the built-in version. */
+static void nut_free_search_paths(void) {
+	if (search_paths == NULL) {
+		search_paths = search_paths_builtin;
+		return;
+	}
+
+	if (search_paths != search_paths_builtin) {
+		/* TODO: if nut_prepare_search_paths() is later
+		 * extended to track not only built-in strings,
+		 * change that to use an array of xstrdup()'ed
+		 * strings, and free() those dupes here.
+		 */
+		free(search_paths);
+		search_paths = search_paths_builtin;
+	}
+}
+
+void nut_prepare_search_paths(void) {
+	/* Produce the search_paths[] with minimal confusion allowing
+	 * for faster walks and fewer logs in NUT applications:
+	 * * only existing paths
+	 * * discard lower-priority duplicates if a path is already listed
+	 *
+	 * NOTE: Currently this only trims info from search_paths_builtin[]
+	 * but might later supplant iterations in the get_libname(),
+	 * get_libname_in_pathset() and upsdebugx_report_search_paths()
+	 * methods. Surely would make their code easier, but at a cost of
+	 * probably losing detailed logging of where something came from...
+	 */
+	static int atexit_hooked = 0;
+	size_t	count_builtin = 0, count_filtered = 0, i, j, index = 0;
+	const char ** filtered_search_paths;
+	DIR *dp;
+
+	/* As a starting point, allow at least as many items as before */
+	/* TODO: somehow extend (xrealloc?) if we mix other paths later */
+	for (i = 0; search_paths_builtin[i] != NULL; i++) {}
+	count_builtin = i + 1;	/* +1 for the NULL */
+
+	/* Bytes inside should all be zeroed... */
+	filtered_search_paths = xcalloc(sizeof(const char *), count_builtin);
+
+	/* FIXME: here "count_builtin" means size of filtered_search_paths[]
+	 * and may later be more, if we would consider other data sources */
+	for (i = 0; search_paths_builtin[i] != NULL && count_filtered < count_builtin; i++) {
+		/* NOTE: not xstrdup()ing here now, remember to check
+		 * nut_free_search_paths() if it later would be */
+		int dupe = 0;
+		if ((dp = opendir(search_paths_builtin[i])) == NULL) {
+			upsdebugx(5, "%s: SKIP "
+				"unreachable directory #%" PRIuSIZE " : %s",
+				__func__, index++, search_paths_builtin[i]);
+			continue;
+		}
+		index++;
+
+		/* Revise for duplicates */
+		/* Note: (count_filtered == 0) means first existing dir seen, no hassle */
+		for (j = 0; j < count_filtered; j++) {
+			if (!strcmp(filtered_search_paths[j], search_paths_builtin[i])) {
+				upsdebugx(5, "%s: SKIP "
+					"duplicate directory #%" PRIuSIZE " : %s",
+					__func__, index, search_paths_builtin[i]);
+				dupe = 1;
+				break;
+			}
+		}
+
+		if (!dupe) {
+			upsdebugx(5, "%s: ADD "
+				"existing unique directory #%" PRIuSIZE " : %s",
+				__func__, count_filtered, search_paths_builtin[i]);
+			filtered_search_paths[count_filtered] = search_paths_builtin[i];
+			count_filtered++;
+		}
+	}
+
+	/* If we mangled this before, forget the old result: */
+	nut_free_search_paths();
+
+	filtered_search_paths[count_filtered] = NULL;
+	search_paths = filtered_search_paths;
+
+	if (!atexit_hooked) {
+		atexit(nut_free_search_paths);
+		atexit_hooked = 1;
+	}
+}
+
+void upsdebugx_report_search_paths(int level, int report_search_paths_builtin) {
 	size_t	index;
 	char	*s, *varname;
+	const char ** reported_search_paths = (
+		report_search_paths_builtin
+		? search_paths_builtin
+		: search_paths);
 
 	if (nut_debug_level < level)
 		return;
@@ -2025,9 +2122,14 @@ void upsdebugx_report_search_paths(int level) {
 		upsdebugx(level, "\tVia %s:\t%s", varname, s);
 	}
 
-	for (index = 0; search_paths[index] != NULL; index++)
+	for (index = 0; reported_search_paths[index] != NULL; index++)
 	{
-		upsdebugx(level, "\tBuilt-in:\t%s", search_paths[index]);
+		if (index == 0) {
+			upsdebugx(level, "\tNOTE: Reporting %s built-in paths:",
+				(report_search_paths_builtin ? "raw"
+				 : "filtered (existing unique)"));
+		}
+		upsdebugx(level, "\tBuilt-in:\t%s", reported_search_paths[index]);
 	}
 
 #ifdef WIN32
