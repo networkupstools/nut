@@ -1912,6 +1912,20 @@ static const char * search_paths[] = {
 	NULL
 };
 
+void upsdebugx_report_search_paths(int level) {
+	size_t	index;
+
+	if (nut_debug_level < level)
+		return;
+
+
+	upsdebugx(level, "Run-time loadable library search paths used by this build of NUT:");
+	for (index = 0; search_paths[index] != NULL; index++)
+	{
+		upsdebugx(level, "\t%s", search_paths[index]);
+	}
+}
+
 static char * get_libname_in_dir(const char* base_libname, size_t base_libname_length, const char* dirname, int index) {
 	/* Implementation detail for get_libname() below.
 	 * Returns pointer to allocated copy of the buffer
