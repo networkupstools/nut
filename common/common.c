@@ -2096,7 +2096,7 @@ static char * get_libname_in_pathset(const char* base_libname, size_t base_libna
 	/* First call to tokenization passes the string, others pass NULL */
 	pathset_tmp = xstrdup(pathset);
 	while (NULL != (onedir = strtok( (onedir ? NULL : pathset_tmp), ":" ))) {
-		libname_path = get_libname_in_dir(base_libname, base_libname_length, onedir, *counter++);
+		libname_path = get_libname_in_dir(base_libname, base_libname_length, onedir, (*counter)++);
 		if (libname_path != NULL)
 			break;
 	}
@@ -2108,7 +2108,7 @@ static char * get_libname_in_pathset(const char* base_libname, size_t base_libna
 	if (!libname_path) {
 		onedir = NULL; /* probably is NULL already, but better ensure this */
 		while (NULL != (onedir = strtok( (onedir ? NULL : pathset_tmp), ";" ))) {
-			libname_path = get_libname_in_dir(base_libname, base_libname_length, onedir, *counter++);
+			libname_path = get_libname_in_dir(base_libname, base_libname_length, onedir, (*counter)++);
 			if (libname_path != NULL)
 				break;
 		}
