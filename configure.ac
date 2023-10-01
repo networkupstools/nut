@@ -3860,6 +3860,14 @@ if test -n "${target_cpu}" -a -n "${target_os}" ; then
 	NUT_REPORT_TARGET(AUTOTOOLS_TARGET_SHORT_ALIAS, "${target_cpu}-${target_os}", [host OS short spec we built for])
 fi
 
+AC_MSG_CHECKING([whether compiler suggests a MULTIARCH value])
+dnl Recent GCC generally supports this call, although it often returns empty
+dnl Some versions of CLANG also have it, others reject the unknown CLI switch
+compiler_multiarch="`${CC} -print-multiarch 2>/dev/null`" || compiler_multiarch=""
+if test -n "${compiler_multiarch}" ; then
+	NUT_REPORT_TARGET(MULTIARCH_TARGET_ALIAS, "${compiler_multiarch}", [host multiarch spec we build for (as suggested by compiler being used)])
+fi
+
 dnl ----------------------------------------------------------------------
 dnl Check the user and group to run as last, so we can use the paths configured
 dnl above as data sources for default values if building an in-place replacement

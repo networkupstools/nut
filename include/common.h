@@ -334,6 +334,11 @@ void fatalx(int status, const char *fmt, ...)
  */
 void nut_report_config_flags(void);
 
+/* Report search paths used by ltdl-augmented code to discover and
+ * load shared binary object files at run-time (nut-scanner, DMF...) */
+void upsdebugx_report_search_paths(int level, int report_search_paths_builtin);
+void nut_prepare_search_paths(void);
+
 extern int nut_debug_level;
 extern int nut_log_level;
 

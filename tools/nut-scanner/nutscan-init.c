@@ -110,6 +110,12 @@ void nutscan_init(void)
 {
 	char *libname = NULL;
 
+	/* Optional filter to not walk things twice */
+	nut_prepare_search_paths();
+
+	/* Report library paths we would search, at given debug verbosity level */
+	upsdebugx_report_search_paths(1, 1);
+
 #ifdef HAVE_PTHREAD
 /* TOTHINK: Should semaphores to limit thread count
  * and the more naive but portable methods be an

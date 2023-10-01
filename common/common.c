@@ -1217,8 +1217,12 @@ void nut_report_config_flags(void)
 
 static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 {
-	int	ret;
-	char	buf[LARGEBUF];
+	int	ret, errno_orig = errno;
+	size_t	bufsize = LARGEBUF;
+	char	*buf = xcalloc(sizeof(char), bufsize);
+
+	/* Be pedantic about our limitations */
+	bufsize *= sizeof(char);
 
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
@@ -1234,7 +1238,71 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 #pragma clang diagnostic ignored "-Wformat-nonliteral"
 #pragma clang diagnostic ignored "-Wformat-security"
 #endif
-	ret = vsnprintf(buf, sizeof(buf), fmt, va);
+	/* Note: errors here can reset errno,
+	 * so errno_orig is stashed beforehand */
+	do {
+		ret = vsnprintf(buf, bufsize, fmt, va);
+
+		if ((ret < 0) || ((uintmax_t)ret >= (uintmax_t)bufsize)) {
+			/* Try to adjust bufsize until we can print the
+			 * whole message. Note that standards only require
+			 * up to 4095 bytes to be manageable in printf-like
+			 * methods:
+			 *   The number of characters that can be produced
+			 *   by any single conversion shall be at least 4095.
+			 *   C17dr § 7.21.6.1 15
+			 * In general, vsnprintf() is not specified to set
+			 * errno on any condition (or to not implement a
+			 * larger limit). Select implementations may do so
+			 * though.
+			 * Based on https://stackoverflow.com/a/72981237/4715872
+			 */
+			if (bufsize < SIZE_MAX/2) {
+				size_t	newbufsize = bufsize*2;
+				if (ret > 0) {
+					/* Be generous, we snprintfcat() some
+					 * suffixes, prefix a timestamp, etc. */
+					if (((uintmax_t)ret) > (SIZE_MAX - LARGEBUF)) {
+						goto vupslog_too_long;
+					}
+					newbufsize = ret + LARGEBUF;
+				} /* else: errno, e.g. ERANGE printing:
+				   *  "...(34 => Result too large)" */
+				if (nut_debug_level > 0) {
+					fprintf(stderr, "WARNING: vupslog: "
+						"vsnprintf needed more than %"
+						PRIuSIZE " bytes: %d (%d => %s),"
+						" extending to %" PRIuSIZE "\n",
+						bufsize, ret,
+						errno, strerror(errno),
+						newbufsize);
+				}
+				bufsize = newbufsize;
+				buf = xrealloc(buf, bufsize);
+				continue;
+			}
+		} else {
+			/* All fits well now; majority of use-cases should
+			 * have nailed this on first try (envvar prints of
+			 * longer fully-qualified PATHs, compilation settings
+			 * reports etc. may need more). Even a LARGEBUF may
+			 * still overflow some older syslog buffers and would
+			 * be truncated there. At least stderr would see as
+			 * complete a picture as we can give it.
+			 */
+			break;
+		}
+
+		/* Arbitrary limit, gotta stop somewhere */
+		if (bufsize > LARGEBUF * 64) {
+vupslog_too_long:
+			syslog(LOG_WARNING, "vupslog: vsnprintf needed "
+				"more than %" PRIuSIZE " bytes; logged "
+				"output can be truncated",
+				bufsize);
+			break;
+		}
+	} while(1);
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
@@ -1242,16 +1310,15 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 #pragma GCC diagnostic pop
 #endif
 
-	if ((ret < 0) || (ret >= (int) sizeof(buf)))
-		syslog(LOG_WARNING, "vupslog: vsnprintf needed more than %d bytes",
-			LARGEBUF);
-
 	if (use_strerror) {
-		snprintfcat(buf, sizeof(buf), ": %s", strerror(errno));
-
 #ifdef WIN32
 		LPVOID WinBuf;
 		DWORD WinErr = GetLastError();
+#endif
+
+		snprintfcat(buf, bufsize, ": %s", strerror(errno_orig));
+
+#ifdef WIN32
 		FormatMessage(
 				FORMAT_MESSAGE_MAX_WIDTH_MASK |
 				FORMAT_MESSAGE_ALLOCATE_BUFFER |
@@ -1263,7 +1330,7 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 				(LPTSTR) &WinBuf,
 				0, NULL );
 
-		snprintfcat(buf, sizeof(buf), " [%s]", (char *)WinBuf);
+		snprintfcat(buf, bufsize, " [%s]", (char *)WinBuf);
 		LocalFree(WinBuf);
 #endif
 	}
@@ -1287,17 +1354,22 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 				now.tv_sec -= 1;
 			}
 
-			fprintf(stderr, "%4.0f.%06ld\t",
+			/* Print all in one shot, to better avoid
+			 * mixed lines in parallel threads */
+			fprintf(stderr, "%4.0f.%06ld\t%s\n",
 				difftime(now.tv_sec, upslog_start.tv_sec),
-				(long)(now.tv_usec - upslog_start.tv_usec));
+				(long)(now.tv_usec - upslog_start.tv_usec),
+				buf);
+		} else {
+			fprintf(stderr, "%s\n", buf);
 		}
-		fprintf(stderr, "%s\n", buf);
 #ifdef WIN32
 		fflush(stderr);
 #endif
 	}
 	if (xbit_test(upslog_flags, UPSLOG_SYSLOG))
 		syslog(priority, "%s", buf);
+	free(buf);
 }
 
 
@@ -1852,11 +1924,24 @@ ssize_t select_write(serial_handler_t *fd, const void *buf, const size_t buflen,
  * linked against certain OS-provided libraries for accessing this or that
  * communications media and/or vendor protocol.
  */
-static const char * search_paths[] = {
+static const char * search_paths_builtin[] = {
 	/* Use the library path (and bitness) provided during ./configure first */
 	LIBDIR,
-	"/usr"LIBDIR,
-	"/usr/local"LIBDIR,
+	"/usr"LIBDIR,		/* Note: this can lead to bogus strings like */
+	"/usr/local"LIBDIR,	/* "/usr/usr/lib" which would be ignored quickly */
+/* TOTHINK: Should AUTOTOOLS_* specs also be highly preferred?
+ * Currently they are listed after the "legacy" hard-coded paths...
+ */
+#ifdef MULTIARCH_TARGET_ALIAS
+# ifdef BUILD_64
+	"/usr/lib/64/" MULTIARCH_TARGET_ALIAS,
+	"/usr/lib64/" MULTIARCH_TARGET_ALIAS,
+	"/lib/64/" MULTIARCH_TARGET_ALIAS,
+	"/lib64/" MULTIARCH_TARGET_ALIAS,
+# endif	/* MULTIARCH_TARGET_ALIAS && BUILD_64 */
+	"/usr/lib/" MULTIARCH_TARGET_ALIAS,
+	"/lib/" MULTIARCH_TARGET_ALIAS,
+#endif	/* MULTIARCH_TARGET_ALIAS */
 #ifdef BUILD_64
 	/* Fall back to explicit preference of 64-bit paths as named on some OSes */
 	"/usr/lib/64",
@@ -1911,6 +1996,183 @@ static const char * search_paths[] = {
 #endif
 	NULL
 };
+
+static const char ** search_paths = search_paths_builtin;
+
+/* free this when a NUT program ends (common library is unloaded)
+ * IFF it is not the built-in version. */
+static void nut_free_search_paths(void) {
+	if (search_paths == NULL) {
+		search_paths = search_paths_builtin;
+		return;
+	}
+
+	if (search_paths != search_paths_builtin) {
+		size_t i;
+		for (i = 0; search_paths[i] != NULL; i++) {
+			free((char *)search_paths[i]);
+		}
+		free(search_paths);
+		search_paths = search_paths_builtin;
+	}
+}
+
+void nut_prepare_search_paths(void) {
+	/* Produce the search_paths[] with minimal confusion allowing
+	 * for faster walks and fewer logs in NUT applications:
+	 * * only existing paths
+	 * * discard lower-priority duplicates if a path is already listed
+	 *
+	 * NOTE: Currently this only trims info from search_paths_builtin[]
+	 * but might later supplant iterations in the get_libname(),
+	 * get_libname_in_pathset() and upsdebugx_report_search_paths()
+	 * methods. Surely would make their code easier, but at a cost of
+	 * probably losing detailed logging of where something came from...
+	 */
+	static int atexit_hooked = 0;
+	size_t	count_builtin = 0, count_filtered = 0, i, j, index = 0;
+	const char ** filtered_search_paths;
+	DIR *dp;
+
+	/* As a starting point, allow at least as many items as before */
+	/* TODO: somehow extend (xrealloc?) if we mix other paths later */
+	for (i = 0; search_paths_builtin[i] != NULL; i++) {}
+	count_builtin = i + 1;	/* +1 for the NULL */
+
+	/* Bytes inside should all be zeroed... */
+	filtered_search_paths = xcalloc(sizeof(const char *), count_builtin);
+
+	/* FIXME: here "count_builtin" means size of filtered_search_paths[]
+	 * and may later be more, if we would consider other data sources */
+	for (i = 0; search_paths_builtin[i] != NULL && count_filtered < count_builtin; i++) {
+		int dupe = 0;
+		const char *dirname = search_paths_builtin[i];
+
+		if ((dp = opendir(dirname)) == NULL) {
+			upsdebugx(5, "%s: SKIP "
+				"unreachable directory #%" PRIuSIZE " : %s",
+				__func__, index++, dirname);
+			continue;
+		}
+		index++;
+
+#if HAVE_DECL_REALPATH
+		/* allocates the buffer we free() later */
+		dirname = (const char *)realpath(dirname, NULL);
+#endif
+
+		/* Revise for duplicates */
+		/* Note: (count_filtered == 0) means first existing dir seen, no hassle */
+		for (j = 0; j < count_filtered; j++) {
+			if (!strcmp(filtered_search_paths[j], dirname)) {
+#if HAVE_DECL_REALPATH
+				if (strcmp(search_paths_builtin[i], dirname)) {
+					/* They differ, highlight it */
+					upsdebugx(5, "%s: SKIP "
+						"duplicate directory #%" PRIuSIZE " : %s (%s)",
+						__func__, index, dirname,
+						search_paths_builtin[i]);
+				} else
+#endif
+				upsdebugx(5, "%s: SKIP "
+					"duplicate directory #%" PRIuSIZE " : %s",
+					__func__, index, dirname);
+
+				dupe = 1;
+#if HAVE_DECL_REALPATH
+				free((char *)dirname);
+#endif
+				break;
+			}
+		}
+
+		if (!dupe) {
+			upsdebugx(5, "%s: ADD[#%" PRIuSIZE "] "
+				"existing unique directory: %s",
+				__func__, count_filtered, dirname);
+#if !HAVE_DECL_REALPATH
+			dirname = (const char *)xstrdup(dirname);
+#endif
+			filtered_search_paths[count_filtered++] = dirname;
+		}
+	}
+
+	/* If we mangled this before, forget the old result: */
+	nut_free_search_paths();
+
+	/* Better safe than sorry: */
+	filtered_search_paths[count_filtered] = NULL;
+	search_paths = filtered_search_paths;
+
+	if (!atexit_hooked) {
+		atexit(nut_free_search_paths);
+		atexit_hooked = 1;
+	}
+}
+
+void upsdebugx_report_search_paths(int level, int report_search_paths_builtin) {
+	size_t	index;
+	char	*s, *varname;
+	const char ** reported_search_paths = (
+		report_search_paths_builtin
+		? search_paths_builtin
+		: search_paths);
+
+	if (nut_debug_level < level)
+		return;
+
+	upsdebugx(level, "Run-time loadable library search paths used by this build of NUT:");
+
+	/* NOTE: Reporting order follows get_libname(), and
+	 * while some values are individual paths, others can
+	 * be "pathsets" (e.g. coming envvars) with certain
+	 * platform-dependent separator characters. */
+#ifdef BUILD_64
+	varname = "LD_LIBRARY_PATH_64";
+#else
+	varname = "LD_LIBRARY_PATH_32";
+#endif
+
+	if (((s = getenv(varname)) != NULL) && strlen(s) > 0) {
+		upsdebugx(level, "\tVia %s:\t%s", varname, s);
+	}
+
+	varname = "LD_LIBRARY_PATH";
+	if (((s = getenv(varname)) != NULL) && strlen(s) > 0) {
+		upsdebugx(level, "\tVia %s:\t%s", varname, s);
+	}
+
+	for (index = 0; reported_search_paths[index] != NULL; index++)
+	{
+		if (index == 0) {
+			upsdebugx(level, "\tNOTE: Reporting %s built-in paths:",
+				(report_search_paths_builtin ? "raw"
+				 : "filtered (existing unique)"));
+		}
+		upsdebugx(level, "\tBuilt-in:\t%s", reported_search_paths[index]);
+	}
+
+#ifdef WIN32
+	if (((s = getfullpath(NULL)) != NULL) && strlen(s) > 0) {
+		upsdebugx(level, "\tWindows near EXE:\t%s", s);
+	}
+
+# ifdef PATH_LIB
+	if (((s = getfullpath(PATH_LIB)) != NULL) && strlen(s) > 0) {
+		upsdebugx(level, "\tWindows PATH_LIB (%s):\t%s", PATH_LIB, s);
+	}
+# endif
+
+	if (((s = getfullpath("/../lib")) != NULL) && strlen(s) > 0) {
+		upsdebugx(level, "\tWindows \"lib\" dir near EXE:\t%s", s);
+	}
+
+	varname = "PATH";
+	if (((s = getenv(varname)) != NULL) && strlen(s) > 0) {
+		upsdebugx(level, "\tWindows via %s:\t%s", varname, s);
+	}
+#endif
+}
 
 static char * get_libname_in_dir(const char* base_libname, size_t base_libname_length, const char* dirname, int index) {
 	/* Implementation detail for get_libname() below.
@@ -2011,30 +2273,37 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 static char * get_libname_in_pathset(const char* base_libname, size_t base_libname_length, char* pathset, int *counter)
 {
 	/* Note: this method iterates specified pathset,
-	 * so increments the counter by reference */
+	 * so it increments the counter by reference.
+	 * A copy of original pathset is used, because
+	 * strtok() tends to modify its input! */
 	char *libname_path = NULL;
 	char *onedir = NULL;
+	char* pathset_tmp;
 
 	if (!pathset || *pathset == '\0')
 		return NULL;
 
 	/* First call to tokenization passes the string, others pass NULL */
-	while (NULL != (onedir = strtok( (onedir ? NULL : pathset), ":" ))) {
-		libname_path = get_libname_in_dir(base_libname, base_libname_length, onedir, *counter++);
+	pathset_tmp = xstrdup(pathset);
+	while (NULL != (onedir = strtok( (onedir ? NULL : pathset_tmp), ":" ))) {
+		libname_path = get_libname_in_dir(base_libname, base_libname_length, onedir, (*counter)++);
 		if (libname_path != NULL)
 			break;
 	}
+	free(pathset_tmp);
 
 #ifdef WIN32
 	/* Note: with mingw, the ":" separator above might have been resolvable */
+	pathset_tmp = xstrdup(pathset);
 	if (!libname_path) {
 		onedir = NULL; /* probably is NULL already, but better ensure this */
-		while (NULL != (onedir = strtok( (onedir ? NULL : pathset), ";" ))) {
-			libname_path = get_libname_in_dir(base_libname, base_libname_length, onedir, *counter++);
+		while (NULL != (onedir = strtok( (onedir ? NULL : pathset_tmp), ";" ))) {
+			libname_path = get_libname_in_dir(base_libname, base_libname_length, onedir, (*counter)++);
 			if (libname_path != NULL)
 				break;
 		}
 	}
+	free(pathset_tmp);
 #endif  /* WIN32 */
 
 	return libname_path;
@@ -2042,6 +2311,8 @@ static char * get_libname_in_pathset(const char* base_libname, size_t base_libna
 
 char * get_libname(const char* base_libname)
 {
+	/* NOTE: Keep changes to practical search order
+	 * synced to upsdebugx_report_search_paths() */
 	int index = 0, counter = 0;
 	char *libname_path = NULL;
 	size_t base_libname_length = strlen(base_libname);

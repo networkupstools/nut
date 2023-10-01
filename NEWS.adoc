@@ -275,6 +275,16 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
    this variable unless troubleshooting, although other systems rely on it)
    [#805]
 
+ - Debug information tracing methods like `upsdebugx()` should now be less
+   limited in the sizes of messages that they can print, such as path names
+   that may be quite long. Note that the OS methods manipulating the strings,
+   and receivers such as logging systems, may still impose limits of their own.
+
+ - The `nut-scanner` usage and debug printouts now include the loadable library
+   search paths, to help troubleshooting especially in multi-platform builds;
+   pre-filtering of the built-in paths was introduced (to walk only existing
+   and unique directory names) [#317]
+
  - The nut-scanner program was updated to fall back to loading unresolved
    library filenames, hoping that `lt_dlopen()` implementation on the current
    platform would find library files better [#805]
