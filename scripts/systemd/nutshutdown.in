@@ -28,7 +28,14 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-[ -x "@SBINDIR@/upsmon" ] && [ -x "@SBINDIR@/upsdrvctl" ] || exit
+POWEROFF_QUIET="`/bin/sed -ne 's#^ *POWEROFF_QUIET= *\(.*\)$#\1#p' @CONFPATH@/nut.conf`" \
+&& [ x"${POWEROFF_QUIET-}" = xtrue ] \
+|| POWEROFF_QUIET="false"
+
+[ -x "@SBINDIR@/upsmon" ] && [ -x "@SBINDIR@/upsdrvctl" ] || {
+    $POWEROFF_QUIET || echo "$0: SKIP: could not locate '@SBINDIR@/upsmon' and/or '@SBINDIR@/upsdrvctl'" >&2
+    exit 1
+}
 
 if @SBINDIR@/upsmon -K >/dev/null 2>&1; then
     # The argument may be anything compatible with /bin/sleep
@@ -36,6 +43,7 @@ if @SBINDIR@/upsmon -K >/dev/null 2>&1; then
     # so not necessarily a non-negative integer)
     wait_delay="`/bin/sed -ne 's#^ *POWEROFF_WAIT= *\(.*\)$#\1#p' @CONFPATH@/nut.conf`" || wait_delay=""
 
+    $POWEROFF_QUIET || echo "$0: Commanding UPSes (if any) to shutdown" >&2
     @SBINDIR@/upsdrvctl shutdown
 
     if [ -n "$wait_delay" ] ; then
@@ -45,11 +53,20 @@ if @SBINDIR@/upsmon -K >/dev/null 2>&1; then
         # Sleep "long enough" to drain the battery if the UPS is
         # in fact on battery, or reboot if it became alive, so
         # this computer is not in limbo forever.
+        $POWEROFF_QUIET || echo "$0: Power-race avoidance: sleeping $wait_delay" >&2
+
         /bin/sleep $wait_delay
+
+        $POWEROFF_QUIET || echo "$0: Power-race avoidance: sleep finished, rebooting..." >&2
+
         # We need to pass --force twice here to bypass systemd
         # and execute the reboot directly ourself.
         /bin/systemctl reboot --force --force
+    else
+        $POWEROFF_QUIET || echo "$0: Power-race avoidance: POWEROFF_WAIT is not configured at this time, proceeding to shutdown" >&2
     fi
+else
+    $POWEROFF_QUIET || echo "$0: SKIP: Not in FSD (killpower) mode at this time" >&2
 fi
 
 exit 0

@@ -87,9 +87,16 @@ unavailable.  On the other hand, it should not be so long that the
 system remains offline for an unreasonable amount of time if line
 power has returned.  See sleep(1) for compatible time syntax.
 If you specify the time in seconds, use the "s" suffix.
-
++
 WARNING: this workaround might be dangerous under some circumstances.
 Please read http://bugs.debian.org/358696 for more details.
+
+*POWEROFF_QUIET*::
+Optional, defaults to `false`.  This setting controls if the NUT shutdown
+integration scripts or service units would emit messages about their activity
+(or lack thereof).  By default they may be verbose, to aid in post-mortem
+troubleshooting via logs or console captures.  Set to `true` to avoid that
+trove of information, if you consider it noise.
 
 EXAMPLE
 -------

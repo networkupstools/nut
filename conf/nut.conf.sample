@@ -69,3 +69,10 @@ MODE=none
 # down, but also try to avoid the "Power race". Caveats emptor, see NUT FAQ and
 # other docs for details.
 #POWEROFF_WAIT=3600
+
+# The optional 'POWEROFF_QUIET' setting controls if the NUT shutdown integration
+# scripts or service units would emit messages about their activity (or lack
+# thereof). By default they may be verbose, to aid post-mortem troubleshooting
+# via logs or console captures.
+# Set to `true` to avoid that trove of information, if you consider it noise.
+#POWEROFF_QUIET=true
