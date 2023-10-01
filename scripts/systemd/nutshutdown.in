@@ -1,8 +1,33 @@
 #!/bin/sh
 
-# This script requires both nut-server (drivers)
-# and nut-client (upsmon) to be present locally
-# and on mounted filesystems
+# Network UPS Tools (NUT) systemd-shutdown integration handler.
+#
+# NOTE: This script requires both nut-server package (or more specifically,
+# the drivers for your device, which may be in further packages grouped
+# by media/protocol and third-party dependencies), nut-client (upsmon),
+# and their configuration files to be present locally and on still-mounted
+# filesystems (may be read-only).
+#
+# Copyright (C) 2011-2023 by NUT contirbutors
+# Michal Hlavinka, Arnaud Quette, Jim Klimov et al.
+#
+# See https://networkupstools.org/
+# and https://github.com/networkupstools/nut/
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
 [ -x "@SBINDIR@/upsmon" ] && [ -x "@SBINDIR@/upsdrvctl" ] || exit
 
 if @SBINDIR@/upsmon -K >/dev/null 2>&1; then
