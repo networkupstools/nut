@@ -13,6 +13,9 @@
 #  by systemd on Linux (no guaranteed expansion of variables).
 #  You MUST NOT use spaces around the equal sign!
 #
+# See also: `man nut.conf` (usually in Manual pages Section 5,
+#           for Configuration files)
+#
 ##############################################################################
 # General section
 ##############################################################################
