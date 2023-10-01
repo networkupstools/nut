@@ -9,7 +9,7 @@
 # filesystems (may be read-only).
 #
 # Copyright (C) 2011-2023 by NUT contirbutors
-# Michal Hlavinka, Arnaud Quette, Jim Klimov et al.
+# Michal Hlavinka, Laurent Bigonville, Arnaud Quette, Jim Klimov et al.
 #
 # See https://networkupstools.org/
 # and https://github.com/networkupstools/nut/
