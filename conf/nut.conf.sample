@@ -12,6 +12,8 @@
 #  (so there is no guaranteed `export VAR=VAL` syntax) and additionally
 #  by systemd on Linux (no guaranteed expansion of variables).
 #  You MUST NOT use spaces around the equal sign!
+#  Practical support for this file and its settings currently varies between
+#  various OS packages and NUT sample scripts, but should converge over time.
 #
 # See also: `man nut.conf` (usually in Manual pages Section 5,
 #           for Configuration files)
