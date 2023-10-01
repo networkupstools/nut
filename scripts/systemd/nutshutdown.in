@@ -31,18 +31,25 @@
 [ -x "@SBINDIR@/upsmon" ] && [ -x "@SBINDIR@/upsdrvctl" ] || exit
 
 if @SBINDIR@/upsmon -K >/dev/null 2>&1; then
-  # The argument may be anything compatible with sleep
-  # (not necessarily a non-negative integer)
-  wait_delay="`/bin/sed -ne 's#^ *POWEROFF_WAIT= *\(.*\)$#\1#p' @CONFPATH@/nut.conf`" || wait_delay=""
+    # The argument may be anything compatible with /bin/sleep
+    # (on OSes with systemd - assuming GNU coreutils or compatible,
+    # so not necessarily a non-negative integer)
+    wait_delay="`/bin/sed -ne 's#^ *POWEROFF_WAIT= *\(.*\)$#\1#p' @CONFPATH@/nut.conf`" || wait_delay=""
 
-  @SBINDIR@/upsdrvctl shutdown
+    @SBINDIR@/upsdrvctl shutdown
 
-  if [ -n "$wait_delay" ] ; then
-    /bin/sleep $wait_delay
-    # We need to pass --force twice here to bypass systemd and execute the
-    # reboot directly ourself.
-    /bin/systemctl reboot --force --force
-  fi
+    if [ -n "$wait_delay" ] ; then
+        # Avoid the power-race condition (if wall power returned
+        # while we were shutting down, so some UPSes would not
+        # shutdown and/or powercycle the load as commanded above).
+        # Sleep "long enough" to drain the battery if the UPS is
+        # in fact on battery, or reboot if it became alive, so
+        # this computer is not in limbo forever.
+        /bin/sleep $wait_delay
+        # We need to pass --force twice here to bypass systemd
+        # and execute the reboot directly ourself.
+        /bin/systemctl reboot --force --force
+    fi
 fi
 
 exit 0
