@@ -43,8 +43,29 @@
 
 MODE=none
 
-# Uncomment this to allow starting the service even if ups.conf has no device
-# sections at the moment. This environment variable overrides the built-in
-# "false" and an optional same-named default flag that can be set in upsd.conf:
+# Uncomment this to allow starting the service even if `ups.conf` has no device
+# sections configured at the moment. This environment variable overrides the
+# built-in "false" flag in `upsd`, and an optional same-named default flag that
+# can be set in `upsd.conf`. If you want a data server always running, even if
+# it initially has nothing to serve (may be live-reloaded later, when devices
+# become configured), this option is for you.
 #ALLOW_NO_DEVICE=true
 #export ALLOW_NO_DEVICE
+
+# The optional 'UPSD_OPTIONS' allow to set upsd specific command-line options.
+# It is ignored when 'MODE' above indicates that no upsd should be running.
+# It may be redundant in comparison to options which can be set in `upsd.conf`.
+#UPSD_OPTIONS=
+
+# The optional 'UPSMON_OPTIONS' allow to set upsmon specific command-line options.
+# It is ignored when 'MODE' above indicates that no upsmon should be running.
+# It may be redundant in comparison to options which can be set in `upsmon.conf`.
+#UPSMON_OPTIONS=
+
+# If the optional 'POWEROFF_WAIT' is configured (to a value that can be handled
+# by `/bin/sleep` on the current system - typically an integer with the number
+# of seconds for a delay, but not always limited to that syntax), and the current
+# system which manages one or more UPS devices would not only command it to shut
+# down, but also try to avoid the "Power race". Caveats emptor, see NUT FAQ and
+# other docs for details.
+#POWEROFF_WAIT=3600
