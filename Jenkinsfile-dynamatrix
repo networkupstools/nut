@@ -55,7 +55,7 @@ import org.nut.dynamatrix.*;
         dynacfgPipeline.disableSlowBuildCIBuild_QEMU = false
     }
 
-    dynacfgPipeline.traceBuildShell_configureEnvvars = false// true 
+    dynacfgPipeline.traceBuildShell_configureEnvvars = false// true
     dynacfgPipeline.traceBuildShell = false //true
 
     dynacfgPipeline.failFast = //true //
@@ -98,7 +98,7 @@ import org.nut.dynamatrix.*;
         //'stageNameFunc': null,
         //'dynamatrixAxesLabels': [~/^OS_.+/, 'MAKE'],
         'dynamatrixAxesLabels': ['OS_FAMILY', 'OS_DISTRO', 'MAKE'],
-        'single': '( \${MAKE} shellcheck )',
+        'single': '( if [ x"\${MAKE-}" = x ]; then echo "WARNING: MAKE is somehow unset, defaulting!" >&2; MAKE=make; fi; \${MAKE} shellcheck )',
         'multi': '(cd tests && SERVICE_FRAMEWORK="selftest" SHELL_PROGS="$SHELL_PROGS" ./nut-driver-enumerator-test.sh )',
         'multiLabel': 'SHELL_PROGS',
         'skipShells': [ 'zsh', 'tcsh', 'csh' ]
@@ -233,7 +233,10 @@ import org.nut.dynamatrix.*;
     if (!dynacfgPipeline.containsKey('buildPhases')) {
         dynacfgPipeline.buildPhases = [:]
     }
-    dynacfgPipeline.buildPhases['distcheck'] = """( eval \${CONFIG_ENVVARS} time \${MAKE} \${MAKE_OPTS} distcheck DISTCHECK_FLAGS="\${CONFIG_OPTS}" )"""
+
+	// Imported from jenkins-dynamatrix JSL vars/autotools.groovy:
+	// a workaround for the cases of curiously missing MAKE envvar...
+	dynacfgPipeline.buildPhases['distcheck'] = """( if [ x"\${MAKE-}" = x ]; then echo "WARNING: MAKE is somehow unset, defaulting!" >&2; MAKE=make; fi; eval \${CONFIG_ENVVARS} time \${MAKE} \${MAKE_OPTS} distcheck DISTCHECK_FLAGS="\${CONFIG_OPTS}" )"""
 
     // Note: shellcheck/spellcheck/... require autotools currently
     // or need to be redefined with respective BUILD_TYPE
