@@ -28,8 +28,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-POWEROFF_QUIET="`/bin/sed -ne 's#^ *POWEROFF_QUIET= *\(.*\)$#\1#p' @CONFPATH@/nut.conf`" \
-&& [ x"${POWEROFF_QUIET-}" = xtrue ] \
+if [ -s "@CONFPATH@/nut.conf" ]; then
+    . "@CONFPATH@/nut.conf" || true
+fi
+
+[ x"${POWEROFF_QUIET-}" = xtrue ] \
 || POWEROFF_QUIET="false"
 
 [ -x "@SBINDIR@/upsmon" ] || {
@@ -43,26 +46,24 @@ POWEROFF_QUIET="`/bin/sed -ne 's#^ *POWEROFF_QUIET= *\(.*\)$#\1#p' @CONFPATH@/nu
 }
 
 if @SBINDIR@/upsmon -K >/dev/null 2>&1; then
-    # The argument may be anything compatible with /bin/sleep
-    # (on OSes with systemd - assuming GNU coreutils or compatible,
-    # so not necessarily a non-negative integer)
-    wait_delay="`/bin/sed -ne 's#^ *POWEROFF_WAIT= *\(.*\)$#\1#p' @CONFPATH@/nut.conf`" || wait_delay=""
-
     if [ -x "@SBINDIR@/upsdrvctl" ] ; then
         $POWEROFF_QUIET || echo "$0: Commanding UPSes (if any) to shutdown" >&2
         @SBINDIR@/upsdrvctl shutdown || echo "$0: Something failed about UPS shutdown commands" >&2
     fi
 
-    if [ -n "$wait_delay" ] ; then
+    if [ -n "$POWEROFF_WAIT" ] ; then
         # Avoid the power-race condition (if wall power returned
         # while we were shutting down, so some UPSes would not
         # shutdown and/or powercycle the load as commanded above).
         # Sleep "long enough" to drain the battery if the UPS is
         # in fact on battery, or reboot if it became alive, so
         # this computer is not in limbo forever.
-        $POWEROFF_QUIET || echo "$0: Power-race avoidance: sleeping $wait_delay" >&2
+        $POWEROFF_QUIET || echo "$0: Power-race avoidance: sleeping $POWEROFF_WAIT" >&2
 
-        /bin/sleep $wait_delay
+        # The argument may be anything compatible with /bin/sleep
+        # (on OSes with systemd - assuming GNU coreutils or compatible,
+        # so not necessarily a non-negative integer)
+        /bin/sleep $POWEROFF_WAIT
 
         $POWEROFF_QUIET || echo "$0: Power-race avoidance: sleep finished, rebooting..." >&2
 
