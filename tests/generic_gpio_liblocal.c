@@ -75,17 +75,18 @@ void setNextLinesReadToFail(void) {
 int gpiod_line_get_value_bulk(struct gpiod_line_bulk *bulk,
 			      int *values)
 {
+	int	pinPos = 1;
 	NUT_UNUSED_VARIABLE(bulk);
+
 	if(errReqFor_line_get_value_bulk) {
 		errReqFor_line_get_value_bulk=0;
 		errno = EPERM;
 		return -1;
 	}
-	int pinPos=1;
-		for(unsigned int i=0; i<num_lines; i++) {
-			values[i]=(gStatus&pinPos)!=0;
-			pinPos=pinPos<<1;
-		}
+	for(unsigned int i=0; i<num_lines; i++) {
+		values[i]=(gStatus&pinPos)!=0;
+		pinPos=pinPos<<1;
+	}
 
 	gStatus++;
 	return 0;

@@ -133,12 +133,13 @@ void exit(int code)
 }
 
 int main(int argc, char **argv) {
-	test_with_exit=0;
 	int jmp_result;
 	char rules[128];
 	char testType[128];
 	char testDescFileNameBuf[LARGEBUF];
 	char *testDescFileName="generic_gpio_test.txt";
+
+	test_with_exit=0;
 
 	if(argc==2) {
 		testDescFileName=argv[1];
@@ -183,8 +184,8 @@ int main(int argc, char **argv) {
 		fEof=fscanf(testData, "%s", rules);
 		if(fEof!=EOF) {
 			if(!strcmp(testType, "rules")) {
-				jmp_result = setjmp(env_buffer);
 				struct gpioups_t *upsfdtest=xcalloc(sizeof(*upsfdtest),1);
+				jmp_result = setjmp(env_buffer);
 				if(jmp_result) {	/* test case  exiting */
 					generic_gpio_close(upsfdtest);
 					printf("%s %s test rule %d [%s]\n", pass_fail[get_test_status(upsfdtest, 1)], testType, i, rules);
@@ -226,6 +227,11 @@ int main(int argc, char **argv) {
 				char chargeLow[256];
 				char charge[256];
 				struct gpioups_t *upsfdtest=xcalloc(sizeof(*upsfdtest),1);
+				int failed = 0;
+				const char *currUpsStatus=NULL;
+				const char *currChargerStatus=NULL;
+				const char *currCharge=NULL;
+
 				get_ups_rules(upsfdtest, (unsigned char *)rules);
 				upsfdtest->upsLinesStates=xcalloc(sizeof(int),upsfdtest->upsLinesCount);
 				for(int j=0; j<upsfdtest->upsLinesCount; j++) {
@@ -238,10 +244,6 @@ int main(int argc, char **argv) {
 				if(strcmp(chargeLow, "."))
 					dstate_setinfo("battery.charge.low", "%s", chargeLow);
 				jmp_result = setjmp(env_buffer);
-				int failed=0;
-				const char *currUpsStatus=NULL;
-				const char *currChargerStatus=NULL;
-				const char *currCharge=NULL;
 				if(jmp_result) {
 					failed=1;
 					generic_gpio_close(upsfdtest);
@@ -270,13 +272,13 @@ int main(int argc, char **argv) {
 			}
 			if(!strcmp(testType, "library")) {
 				char chipNameLocal[NUT_GPIO_CHIPNAMEBUF];
-				int expecting_failure;
+				int expecting_failure, failed;
 				char subType[NUT_GPIO_SUBTYPEBUF];
 				fEof=fscanf(testData, "%d", &expecting_failure);
 				fEof=fscanf(testData, "%s", chipNameLocal);
 				fEof=fscanf(testData, "%s", subType);
 				jmp_result = setjmp(env_buffer);
-				int failed=expecting_failure;
+				failed = expecting_failure;
 				if(jmp_result) {	/* test case  exiting */
 					if(expecting_failure) failed=0;
 					upsdrv_cleanup();
