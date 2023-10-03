@@ -570,7 +570,7 @@ void upsdrv_updateinfo(void)
 
 	if (ups.timer.shutdown >= 0) {
 
-		ups.timer.shutdown -= difftime(now, last_poll);
+		ups.timer.shutdown -= (suseconds_t)(difftime(now, last_poll));
 
 		if (ups.timer.shutdown < 0) {
 			const char	*val;
@@ -589,7 +589,7 @@ void upsdrv_updateinfo(void)
 	} else if (ups.timer.start >= 0) {
 
 		if (online) {
-			ups.timer.start -= difftime(now, last_poll);
+			ups.timer.start -= (suseconds_t)(difftime(now, last_poll));
 		} else {
 			ups.timer.start = ondelay;
 		}
