@@ -130,7 +130,7 @@ void upsdrv_initinfo(void)
 
 					/* Set max length for strings, if needed */
 					if (item->info_flags & ST_FLAG_STRING)
-						dstate_setaux(item->info_type, item->info_len);
+						dstate_setaux(item->info_type, (long)item->info_len);
 				}
 			}
 
@@ -578,7 +578,7 @@ static int setvar(const char *varname, const char *val)
 
 			/* Set max length for strings, if needed */
 			if (item->info_flags & ST_FLAG_STRING)
-				dstate_setaux(item->info_type, item->info_len);
+				dstate_setaux(item->info_type, (long)item->info_len);
 		}
 		else
 		{
