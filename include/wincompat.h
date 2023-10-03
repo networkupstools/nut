@@ -99,6 +99,10 @@ const char* inet_ntop(int af, const void* src, char* dst, size_t cnt);
 # endif
 #endif
 
+#if ! HAVE_INET_PTON
+int inet_pton(int af, const char *src, void *dst);
+#endif
+
 /* from the MSDN getaddrinfo documentation : */
 #define EAI_AGAIN	WSATRY_AGAIN
 #define EAI_BADFLAGS	WSAEINVAL
