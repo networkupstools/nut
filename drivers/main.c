@@ -1945,10 +1945,10 @@ int main(int argc, char **argv)
 				upslogx(LOG_INFO, "Request to killpower via running driver returned code %d", cmdret);
 				if (cmdret == 0)
 					/* Note: many drivers would abort with
-                                         * "shutdown not supported" at this
-                                         * point... we would too, but later
-                                         * and at a higher time/processing cost.
-                                         */
+					 * "shutdown not supported" at this
+					 * point... we would too, but later
+					 * and at a higher time/processing cost.
+					 */
 					exit (EXIT_SUCCESS);
 				/* else fall through to legacy handling */
 			}
