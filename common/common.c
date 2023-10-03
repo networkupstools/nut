@@ -687,7 +687,7 @@ double difftimeval(struct timeval x, struct timeval y)
 	result.tv_sec = x.tv_sec - y.tv_sec;
 	result.tv_usec = x.tv_usec - y.tv_usec;
 
-	d = 0.000001 * result.tv_usec + result.tv_sec;
+	d = 0.000001 * (double)(result.tv_usec) + (double)(result.tv_sec);
 	return d;
 }
 
@@ -718,7 +718,7 @@ static usec_t timespec_load(const struct timespec *ts) {
 	if (ts->tv_sec < 0 || ts->tv_nsec < 0)
 		return USEC_INFINITY;
 
-	if ((usec_t) ts->tv_sec > (UINT64_MAX - (ts->tv_nsec / NSEC_PER_USEC)) / USEC_PER_SEC)
+	if ((usec_t) ts->tv_sec > (UINT64_MAX - ((uint64_t)(ts->tv_nsec) / NSEC_PER_USEC)) / USEC_PER_SEC)
 		return USEC_INFINITY;
 
 	return
@@ -767,7 +767,7 @@ double difftimespec(struct timespec x, struct timespec y)
 	result.tv_sec = x.tv_sec - y.tv_sec;
 	result.tv_nsec = x.tv_nsec - y.tv_nsec;
 
-	d = 0.000000001 * result.tv_nsec + result.tv_sec;
+	d = 0.000000001 * (double)(result.tv_nsec) + (double)(result.tv_sec);
 	return d;
 }
 #endif	/* HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC */
@@ -1265,7 +1265,7 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 					if (((uintmax_t)ret) > (SIZE_MAX - LARGEBUF)) {
 						goto vupslog_too_long;
 					}
-					newbufsize = ret + LARGEBUF;
+					newbufsize = (size_t)ret + LARGEBUF;
 				} /* else: errno, e.g. ERANGE printing:
 				   *  "...(34 => Result too large)" */
 				if (nut_debug_level > 0) {
