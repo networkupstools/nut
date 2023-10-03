@@ -87,7 +87,11 @@ SUFFIXES = .txt .html .pdf -spellchecked
 all: doc
 
 # This list is defined by configure script choices and options:
-check-local: @DOC_CHECK_LIST@
+CHECK_LOCAL_TARGETS = @DOC_CHECK_LIST@
+if WITH_SPELLCHECK
+CHECK_LOCAL_TARGETS += spellcheck
+endif WITH_SPELLCHECK
+check-local: $(CHECK_LOCAL_TARGETS)
 
 # This list is defined by configure script choices and options:
 doc: @DOC_BUILD_LIST@
@@ -498,10 +502,6 @@ spellcheck-interactive:
 	 echo "to review changes (please DO NOT REMOVE LINES that aspell chose to drop,"; \
 	 echo "because other systems might not know these words in their system dictionaries)"; \
 	 echo "------------------------------------------------------------------------"
-
-if WITH_SPELLCHECK
-check-local: spellcheck
-endif WITH_SPELLCHECK
 
 else !HAVE_ASPELL
 # This rule woulf probably just fail; normally with no ASPELL there are no callers for it
