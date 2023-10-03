@@ -24,6 +24,7 @@
 #include "main.h"
 #include "dstate.h"
 #include "attribute.h"
+#include "nut_stdint.h"
 #include "generic_gpio_utest.h"
 
 #include <stdio.h>
@@ -177,22 +178,41 @@ int main(int argc, char **argv) {
 	cases_failed=0;
 	fEof = 1;
 	for(unsigned int i=0; fEof!=EOF; i++) {
+		char fmt[16];
 		do {
 			fEof=fscanf(testData, "%s", rules);
 		} while(strcmp("*", rules));
 		fEof=fscanf(testData, "%s", testType);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+		/* To avoid safety warnings, must provide a limit
+		 * here (bufsize - 1), and use fixed format strings
+		 * because scanf() does not support asterisk for
+		 * width specifier; have to create it on the fly.
+		 */
+		snprintf(fmt, sizeof(fmt), "%%%" PRIuSIZE "s", sizeof(rules)-1);
 		fEof=fscanf(testData, "%s", rules);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 		if(fEof!=EOF) {
 			if(!strcmp(testType, "rules")) {
 				struct gpioups_t *upsfdtest=xcalloc(sizeof(*upsfdtest),1);
 				jmp_result = setjmp(env_buffer);
 				if(jmp_result) {	/* test case  exiting */
 					generic_gpio_close(upsfdtest);
-					printf("%s %s test rule %d [%s]\n", pass_fail[get_test_status(upsfdtest, 1)], testType, i, rules);
+					printf("%s %s test rule %u [%s]\n", pass_fail[get_test_status(upsfdtest, 1)], testType, i, rules);
 				} else { /* run test case */
 					get_ups_rules(upsfdtest, (unsigned char *)rules);
 					generic_gpio_close(upsfdtest);
-					printf("%s %s test rule %d [%s]\n", pass_fail[get_test_status(upsfdtest, 0)], testType, i, rules);
+					printf("%s %s test rule %u [%s]\n", pass_fail[get_test_status(upsfdtest, 0)], testType, i, rules);
 				}
 			}
 			if(!strcmp(testType, "states")) {
@@ -208,10 +228,10 @@ int main(int argc, char **argv) {
 					fEof=fscanf(testData, "%d", &expectedStateValue);
 					calculatedStateValue=calc_rule_states(upsfdtest->upsLinesStates, upsfdtest->rules[j]->cRules, upsfdtest->rules[j]->subCount, 0);
 					if(expectedStateValue==calculatedStateValue) {
-						printf("%s %s test rule %d [%s]\n", pass_fail[0], testType, i, rules);
+						printf("%s %s test rule %u [%s]\n", pass_fail[0], testType, i, rules);
 						cases_passed++;
 					} else {
-						printf("%s %s test rule %d [%s] %s", pass_fail[1], testType, i, rules, upsfdtest->rules[j]->stateName);
+						printf("%s %s test rule %u [%s] %s", pass_fail[1], testType, i, rules, upsfdtest->rules[j]->stateName);
 						for(int k=0; k<upsfdtest->upsLinesCount; k++) {
 							printf(" %d", upsfdtest->upsLinesStates[k]);
 						}
@@ -259,7 +279,7 @@ int main(int argc, char **argv) {
 					if(!strcmp(chargeLow,".") && !strcmp(charge,".") && currCharge!=NULL) failed=1;
 					generic_gpio_close(upsfdtest);
 				}
-				printf("%s %s test rule %d [%s] ([%s] %s %s (%s)) ([%s] %s %s)\n",
+				printf("%s %s test rule %u [%s] ([%s] %s %s (%s)) ([%s] %s %s)\n",
 					pass_fail[failed], testType, i, rules,
 					upsStatus, chargeStatus, charge, chargeLow,
 					currUpsStatus, currChargerStatus, currCharge);
@@ -275,8 +295,27 @@ int main(int argc, char **argv) {
 				int expecting_failure, failed;
 				char subType[NUT_GPIO_SUBTYPEBUF];
 				fEof=fscanf(testData, "%d", &expecting_failure);
-				fEof=fscanf(testData, "%s", chipNameLocal);
-				fEof=fscanf(testData, "%s", subType);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+				/* To avoid safety warnings, must provide a limit
+				 * here (bufsize - 1), and use fixed format strings
+				 * because scanf() does not support asterisk for
+				 * width specifier; have to create it on the fly.
+				 */
+				snprintf(fmt, sizeof(fmt), "%%%us", NUT_GPIO_CHIPNAMEBUF-1);
+				fEof=fscanf(testData, fmt, chipNameLocal);
+				snprintf(fmt, sizeof(fmt), "%%%us", NUT_GPIO_SUBTYPEBUF-1);
+				fEof=fscanf(testData, fmt, subType);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
 				jmp_result = setjmp(env_buffer);
 				failed = expecting_failure;
 				if(jmp_result) {	/* test case  exiting */
@@ -315,7 +354,7 @@ int main(int argc, char **argv) {
 					}
 					upsdrv_cleanup();
 				}
-				printf("%s %s %s test rule %d [%s] %s %d\n",
+				printf("%s %s %s test rule %u [%s] %s %d\n",
 					pass_fail[failed], testType, subType, i, rules, chipNameLocal, expecting_failure);
 				if(!failed) {
 					cases_passed++;
