@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3238 utf-8
+personal_ws-1.1 en 3241 utf-8
 AAS
 ABI
 ACFAIL
@@ -671,6 +671,7 @@ MONITORed
 MOXA
 MPSU
 MQ
+MQTT
 MSI
 MSII
 MSIII
@@ -735,6 +736,7 @@ Mozilla
 Msg
 MultiLink
 Multiplug
+Munin
 MyCompany
 MyPasSw
 MySQL
@@ -2394,6 +2396,7 @@ monslave
 monuser
 morbo
 mozilla
+mqtt
 msec
 msg
 msgfmt
