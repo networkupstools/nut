@@ -2276,19 +2276,27 @@ int main(int argc, char **argv)
 			} else {
 				struct stat statbuf;
 				mode_t mode;
-				if (chown(sockname, -1, grp->gr_gid)) {
-					upsdebugx(1, "WARNING: chown failed: %s",
+
+				if (stat(sockname, &statbuf)) {
+					upsdebugx(1, "WARNING: stat for chown failed: %s",
 						strerror(errno)
 					);
 					allOk = 0;
+				} else {
+					/* Here we do a portable chgrp() essentially: */
+					if (chown(sockname, statbuf.st_uid, grp->gr_gid)) {
+						upsdebugx(1, "WARNING: chown failed: %s",
+							strerror(errno)
+						);
+						allOk = 0;
+					}
 				}
 
+				/* Refresh file info */
 				if (stat(sockname, &statbuf)) {
 					/* Logically we'd fail chown above if file
-					 * does not exist or is not accessible, but
-					 * practically we only need stat for chmod
-					 */
-					upsdebugx(1, "WARNING: stat failed: %s",
+					 * does not exist or is not accessible */
+					upsdebugx(1, "WARNING: stat for chmod failed: %s",
 						strerror(errno)
 					);
 					allOk = 0;
