@@ -959,7 +959,7 @@ static void start_daemon(TYPE_FD lockfd)
 			if (d > 0 && d < 0.2) {
 				d = (1.0 - d) * 1000000.0;
 				upsdebugx(5, "Enforcing a throttling sleep: %f usec", d);
-				usleep(d);
+				usleep((useconds_t)d);
 			}
 		}
 	}
