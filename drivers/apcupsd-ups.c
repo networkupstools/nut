@@ -31,7 +31,22 @@
 # include <poll.h> /* nfds_t */
 #else
 typedef unsigned long int nfds_t;
-#endif
+
+# ifndef POLLRDNORM
+#  define POLLRDNORM	0x0100
+# endif
+# ifndef POLLRDBAND
+#  define POLLRDBAND	0x0200
+# endif
+# ifndef POLLIN
+#  define POLLIN	(POLLRDNORM | POLLRDBAND)
+# endif
+typedef struct pollfd {
+  SOCKET fd;
+  short  events;
+  short  revents;
+};
+#endif	/* !HAVE_POLL_H */
 
 #include "main.h"
 #include "apcupsd-ups.h"
