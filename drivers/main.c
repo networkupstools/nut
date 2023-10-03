@@ -1920,7 +1920,7 @@ int main(int argc, char **argv)
 		 * approach (kill sibling if needed, recapture device,
 		 * command it...)
 		 */
-		int	cmdret = -1;
+		ssize_t	cmdret = -1;
 		struct timeval	tv;
 
 		/* Post the query and wait for reply */
@@ -1942,7 +1942,7 @@ int main(int argc, char **argv)
 			if (cmdret < 0) {
 				upsdebugx(1, "Socket dialog with the other driver instance: %s", strerror(errno));
 			} else {
-				upslogx(LOG_INFO, "Request to killpower via running driver returned code %d", cmdret);
+				upslogx(LOG_INFO, "Request to killpower via running driver returned code %" PRIiSIZE, cmdret);
 				if (cmdret == 0)
 					/* Note: many drivers would abort with
 					 * "shutdown not supported" at this
@@ -1966,7 +1966,7 @@ int main(int argc, char **argv)
 	if (cmd && !strcmp(cmd, SIGCMD_RELOAD_OR_ERROR))
 #endif  /* WIN32 */
 	{	/* Not a signal, but a socket protocol action */
-		int	cmdret = -1;
+		ssize_t	cmdret = -1;
 		char	buf[LARGEBUF];
 		struct timeval	tv;
 
@@ -1982,11 +1982,11 @@ int main(int argc, char **argv)
 			upslog_with_errno(LOG_ERR, "Socket dialog with the other driver instance");
 		} else {
 			/* TODO: handle buf reply contents */
-			upslogx(LOG_INFO, "Request to reload-or-error returned code %d", cmdret);
+			upslogx(LOG_INFO, "Request to reload-or-error returned code %" PRIiSIZE, cmdret);
 		}
 
 		/* exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE); */
-		exit((cmdret < 0) ? 255 : cmdret);
+		exit(((cmdret < 0) || (((uintmax_t)cmdret) > ((uintmax_t)INT_MAX))) ? 255 : (int)cmdret);
 	}
 
 #ifndef WIN32
