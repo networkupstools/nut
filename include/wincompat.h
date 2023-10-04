@@ -95,7 +95,7 @@ int sktclose(int fh);
  */
 const char* inet_ntop(int af, const void* src, char* dst, int cnt);
 # else
-const char* inet_ntop(int af, const void* src, char* dst, size_t cnt);
+const char* inet_ntop(int af, const void* src, char* dst, size_t /* socklen_t */ cnt);
 # endif
 #endif
 
