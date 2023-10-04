@@ -1273,7 +1273,7 @@ AC_ARG_WITH(drivers,
 				SPACE="`printf "$LB"' \t'"$RB"`"
 				SPACES="${SPACE}*"
 				sed -e "s/${SPACES}""$LB"'+'"$RB"'*='"${SPACES}/=/" \
-				    -e "s/^${SPACES}//" < drivers/Makefile.am \
+				    -e "s/^${SPACES}//" < "$srcdir/drivers/Makefile.am" \
 				| {
 					C=false; V=false
 					while read LINE ; do
