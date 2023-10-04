@@ -832,14 +832,14 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 	NUT_UNUSED_VARIABLE(buf);
 	NUT_UNUSED_VARIABLE(msglen);
 	if (!upsnotify_reported_disabled_systemd)
-		upsdebugx(6, "%s: notify about state %i with libsystemd: "
+		upsdebugx(0, "%s: notify about state %i with libsystemd: "
 		"skipped for libcommonclient build, "
 		"will not spam more about it", __func__, state);
 	upsnotify_reported_disabled_systemd = 1;
 # else
 	if (!getenv("NOTIFY_SOCKET")) {
 		if (!upsnotify_reported_disabled_systemd)
-			upsdebugx(6, "%s: notify about state %i with libsystemd: "
+			upsdebugx(0, "%s: notify about state %i with libsystemd: "
 				"was requested, but not running as a service unit now, "
 				"will not spam more about it",
 				__func__, state);
@@ -1110,7 +1110,7 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 	) {
 		if (ret == -127) {
 			if (!upsnotify_reported_disabled_notech)
-				upsdebugx(6, "%s: failed to notify about state %i: no notification tech defined, will not spam more about it", __func__, state);
+				upsdebugx(0, "%s: failed to notify about state %i: no notification tech defined, will not spam more about it", __func__, state);
 			upsnotify_reported_disabled_notech = 1;
 		} else {
 			upsdebugx(6, "%s: failed to notify about state %i", __func__, state);
@@ -1120,7 +1120,7 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 #if defined(WITH_LIBSYSTEMD) && (WITH_LIBSYSTEMD)
 # if ! DEBUG_SYSTEMD_WATCHDOG
 	if (state == NOTIFY_STATE_WATCHDOG && !upsnotify_reported_watchdog_systemd) {
-		upsdebugx(6, "%s: logged the systemd watchdog situation once, will not spam more about it", __func__);
+		upsdebugx(0, "%s: logged the systemd watchdog situation once, will not spam more about it", __func__);
 		upsnotify_reported_watchdog_systemd = 1;
 	}
 # endif
