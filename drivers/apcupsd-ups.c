@@ -41,11 +41,14 @@ typedef unsigned long int nfds_t;
 # ifndef POLLIN
 #  define POLLIN	(POLLRDNORM | POLLRDBAND)
 # endif
+# if ! HAVE_STRUCT_POLLFD
 typedef struct pollfd {
   SOCKET fd;
   short  events;
   short  revents;
-};
+} pollfd_t;
+#  define HAVE_STRUCT_POLLFD 1
+# endif
 #endif	/* !HAVE_POLL_H */
 
 #include "main.h"
