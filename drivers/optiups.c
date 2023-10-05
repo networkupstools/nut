@@ -487,16 +487,18 @@ void upsdrv_updateinfo(void)
 	else if ( optimodel == OPTIMODEL_PS ) {
 		optifill( _pollv_ps, sizeof(_pollv_ps)/sizeof(_pollv_ps[0]) );
 
+		short inV, outV, fV;
+
 		r = optiquery( "NV" );
-		short inV = atoi ( _buf );
+		str_to_short ( _buf, &inV, 10 );
 		r = optiquery( "OV" );
-		short outV = atoi ( _buf );
+		str_to_short ( _buf, &outV, 10 );
 
 		r = optiquery( "FV" );
 		if ( r >= 1 )
 		{
-			short f = atoi ( _buf );
-			if ( f > 180 )
+			str_to_short ( _buf, &fV, 10 );
+			if ( fV > 180 )
 			{
 				inV = inV * 2;
 				outV = outV * 2;
