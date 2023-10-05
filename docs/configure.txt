@@ -631,6 +631,17 @@ configuration, this can include the `libupsclient`, `libnutclient`,
 `libnutclientsub`, `libnutscan` and their pkg-config metadata (see
 `--with-pkgconfig-dir` option). The default is `<exec_prefix>/lib`.
 
+	--libexecdir=PATH
+
+Sets the installation path for "executable libraries" -- helper scripts
+or programs that are not intended for direct and regular use by people,
+and rather are implementation details of services.  Depending on the
+build configuration, this can include the `nut-driver-enumerator.sh`,
+`sockdebug`, and others. The default is `<exec_prefix>/libexec`.
+
+Package distributions may want to use this option to customize this path
+to include the package name, e.g. set it to `<exec_prefix>/libexec/nut`.
+
 	--with-pkgconfig-dir=PATH
 
 Where to install pkg-config `*.pc` files. This option only has an

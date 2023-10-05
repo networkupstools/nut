@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3241 utf-8
+personal_ws-1.1 en 3243 utf-8
 AAS
 ABI
 ACFAIL
@@ -2224,6 +2224,7 @@ libcurl
 libdir
 libdummy
 libexec
+libexecdir
 libfreeipmi
 libgd
 libgpgme
@@ -2395,6 +2396,7 @@ monpasswd
 monslave
 monuser
 morbo
+mortem
 mozilla
 mqtt
 msec
