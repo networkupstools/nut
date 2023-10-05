@@ -12,12 +12,19 @@ $(top_builddir)/common/libcommonclient.la \
 $(top_builddir)/common/libparseconf.la: dummy
 	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
+LDADD_FULL = $(top_builddir)/common/libcommon.la libupsclient.la $(NETLIBS)
+if WITH_SSL
+  LDADD_FULL += $(LIBSSL_LIBS)
+endif
+
+LDADD_CLIENT = $(top_builddir)/common/libcommonclient.la libupsclient.la $(NETLIBS)
+if WITH_SSL
+  LDADD_CLIENT += $(LIBSSL_LIBS)
+endif
+
 # by default, link programs in this directory with
 # the more compact libcommonclient.a bundle
-LDADD = $(top_builddir)/common/libcommonclient.la libupsclient.la $(NETLIBS)
-if WITH_SSL
-  LDADD += $(LIBSSL_LIBS)
-endif
+LDADD = $(LDADD_CLIENT)
 
 # Avoid per-target CFLAGS, because this will prevent re-use of object
 # files. In any case, CFLAGS are only -I options, so there is no harm,
@@ -62,12 +69,13 @@ upscmd_SOURCES = upscmd.c upsclient.h
 upsrw_SOURCES = upsrw.c upsclient.h
 upslog_SOURCES = upslog.c upsclient.h upslog.h
 upsmon_SOURCES = upsmon.c upsmon.h upsclient.h
+upsmon_LDADD = $(LDADD_FULL)
 if HAVE_WINDOWS_SOCKETS
 message_SOURCES = message.c
 endif
 
 upssched_SOURCES = upssched.c upssched.h
-upssched_LDADD = $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la $(NETLIBS)
+upssched_LDADD = $(top_builddir)/common/libcommonclient.la $(top_builddir)/common/libparseconf.la $(NETLIBS)
 
 upsimage_cgi_SOURCES = upsimage.c upsclient.h upsimagearg.h cgilib.c cgilib.h
 upsimage_cgi_LDADD = $(LDADD) $(LIBGD_LDFLAGS)
