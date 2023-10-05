@@ -488,22 +488,22 @@ void upsdrv_updateinfo(void)
 		optifill( _pollv_ps, sizeof(_pollv_ps)/sizeof(_pollv_ps[0]) );
 
 		r = optiquery( "NV" );
-		float inV = strtol ( _buf, NULL, 10);
+		short inV = atoi ( _buf );
 		r = optiquery( "OV" );
-		float outV = strtol ( _buf, NULL, 10);
+		short outV = atoi ( _buf );
 
 		r = optiquery( "FV" );
 		if ( r >= 1 )
 		{
-			float f = strtol ( _buf, NULL, 10 );
+			short f = atoi ( _buf );
 			if ( f > 180 )
 			{
 				inV = inV * 2;
 				outV = outV * 2;
 			}
 		}
-		dstate_setinfo( "input.voltage", "%.1f", inV );
-		dstate_setinfo( "output.voltage", "%.1f", outV );
+		dstate_setinfo( "input.voltage", "%d", inV );
+		dstate_setinfo( "output.voltage", "%d", outV );
 	}
 	else
 		optifill( _pollv, sizeof(_pollv)/sizeof(_pollv[0]) );
