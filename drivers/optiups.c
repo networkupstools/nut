@@ -485,9 +485,9 @@ void upsdrv_updateinfo(void)
 	if ( optimodel == OPTIMODEL_ZINTO )
 		optifill( _pollv_zinto, sizeof(_pollv_zinto)/sizeof(_pollv_zinto[0]) );
 	else if ( optimodel == OPTIMODEL_PS ) {
-		optifill( _pollv_ps, sizeof(_pollv_ps)/sizeof(_pollv_ps[0]) );
-
 		short inV, outV, fV;
+
+		optifill( _pollv_ps, sizeof(_pollv_ps)/sizeof(_pollv_ps[0]) );
 
 		r = optiquery( "NV" );
 		str_to_short ( _buf, &inV, 10 );
