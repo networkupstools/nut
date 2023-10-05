@@ -1273,7 +1273,7 @@ AC_ARG_WITH(drivers,
 				SPACE="`printf "$LB"' \t'"$RB"`"
 				SPACES="${SPACE}*"
 				sed -e "s/${SPACES}""$LB"'+'"$RB"'*='"${SPACES}/=/" \
-				    -e "s/^${SPACES}//" < drivers/Makefile.am \
+				    -e "s/^${SPACES}//" < "$srcdir/drivers/Makefile.am" \
 				| {
 					C=false; V=false
 					while read LINE ; do
@@ -4352,6 +4352,11 @@ dnl by "root:${RUN_AS_GROUP}" with 77x permissions. Is it safer?..
 AS_IF([test -n "$systemdtmpfilesdir"],
     [mkdir -p "${TOP_BUILDDIR}"/scripts/systemd
      cat > "${TOP_BUILDDIR}"/scripts/systemd/nut-common-tmpfiles.conf.in << EOF
+# Network UPS Tools (NUT) systemd integration
+# Distributed under the terms of GPLv2+
+# See https://networkupstools.org/
+# and https://github.com/networkupstools/nut/
+
 # See also: https://github.com/networkupstools/nut/wiki/Technicalities:-Work-with-PID-and-state-file-paths#pidpath-altpidpath-statepath
 # State file (e.g. upsd to driver pipes) and PID file location for NUT:
 d @STATEPATH@ 0770 @RUN_AS_USER@ @RUN_AS_GROUP@ - -
