@@ -55,8 +55,12 @@ import org.nut.dynamatrix.*;
         dynacfgPipeline.disableSlowBuildCIBuild_QEMU = false
     }
 
-    dynacfgPipeline.traceBuildShell_configureEnvvars = false// true
-    dynacfgPipeline.traceBuildShell = false //true
+    dynacfgPipeline.traceBuildShell_configureEnvvars = false // true
+    dynacfgPipeline.traceBuildShell = false // true
+	if ( env?.BRANCH_NAME ==~ /.*fightwarn.*/ ) {
+		dynacfgPipeline.traceBuildShell_configureEnvvars = true // false
+		dynacfgPipeline.traceBuildShell = true // false
+	}
 
     dynacfgPipeline.failFast = //true //
         false
