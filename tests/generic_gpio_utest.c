@@ -179,10 +179,6 @@ int main(int argc, char **argv) {
 	fEof = 1;
 	for(unsigned int i=0; fEof!=EOF; i++) {
 		char fmt[16];
-		do {
-			fEof=fscanf(testData, "%s", rules);
-		} while(strcmp("*", rules));
-		fEof=fscanf(testData, "%s", testType);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
 #endif
@@ -198,7 +194,13 @@ int main(int argc, char **argv) {
 		 * width specifier; have to create it on the fly.
 		 */
 		snprintf(fmt, sizeof(fmt), "%%%" PRIuSIZE "s", sizeof(rules)-1);
-		fEof=fscanf(testData, "%s", rules);
+		do {
+			fEof=fscanf(testData, fmt, rules);
+		} while(strcmp("*", rules));
+		snprintf(fmt, sizeof(fmt), "%%%" PRIuSIZE "s", sizeof(testType)-1);
+		fEof=fscanf(testData, fmt, testType);
+		snprintf(fmt, sizeof(fmt), "%%%" PRIuSIZE "s", sizeof(rules)-1);
+		fEof=fscanf(testData, fmt, rules);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
