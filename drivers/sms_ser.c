@@ -51,7 +51,7 @@ upsdrv_info_t upsdrv_info = {
     DRV_BETA,
     {NULL}};
 
-void sms_parse_features(uint8_t *rawvalues, SmsData *results) {
+static void sms_parse_features(uint8_t *rawvalues, SmsData *results) {
     char tbattery[6];
     char frequency[4];
 
@@ -76,7 +76,7 @@ void sms_parse_features(uint8_t *rawvalues, SmsData *results) {
     results->frequency = atoi(frequency);
 }
 
-void sms_parse_information(uint8_t *rawvalues, SmsData *results) {
+static void sms_parse_information(uint8_t *rawvalues, SmsData *results) {
     /* Count from 1 to ignore first char and remove 2 from BUFFER_SIZE
      *  to compensate the start and ignore '\r' from end. */
     memset(results->model, 0, sizeof(results->model));
