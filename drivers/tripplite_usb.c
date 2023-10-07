@@ -136,7 +136,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME	"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.34"
+#define DRIVER_VERSION	"0.35"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -331,7 +331,7 @@ static int reconnect_ups(void)
 	upsdebugx(2, "= device has been disconnected, try to reconnect =");
 	upsdebugx(2, "==================================================");
 
-	ret = comm_driver->open_dev(&udev, &curDevice, reopen_matcher, NULL);
+	ret = comm_driver->open_dev(&udev, &curDevice, reopen_matcher, match_ups_id);
 	if (ret < 1) {
 		upslogx(LOG_INFO, "Reconnecting to UPS failed; will retry later...");
 		dstate_datastale();
@@ -1560,12 +1560,39 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "rebootdelay", msg);
 #endif
 }
+//init matching by ups.id since some tripplite devices don't pass a serial identifier
+static int match_ups_id(void) {
+    char u_msg[] = "U";
+    unsigned char u_value[9];
+    long unit_id = -1;
+    ssize_t ret;
+    char *config_ups_id = getval("upsid");
+
+    ret = send_cmd((const unsigned char*)u_msg, sizeof(u_msg), u_value, sizeof(u_value)-1);
+    if (ret <= 0) {
+        upslogx(LOG_INFO, "Unit ID not retrieved (not available on all models)");
+    } else {
+        unit_id = (long)((unsigned)(u_value[1]) << 8) | (unsigned)(u_value[2]);
+    }
+
+    if (unit_id >= 0 && strcmp(config_ups_id, (const char*)unit_id) == 0) {
+        dstate_setinfo("ups.id", "%ld", unit_id);
+        dstate_setflags("ups.id", ST_FLAG_RW | ST_FLAG_STRING);
+        dstate_setaux("ups.id", 5);
+        upslogx(LOG_DEBUG, "Unit ID: %ld", unit_id);
+        return 1; // Match found
+    } else {
+        return 0; // No match
+    }
+}
 
 /*!@brief Initialize UPS and variables from ups.conf
  *
  * @todo Allow binding based on firmware version (which seems to vary wildly
  * from unit to unit)
  */
+
+
 void upsdrv_initups(void)
 {
 	char *regex_array[USBMATCHER_REGEXP_ARRAY_LIMIT];
@@ -1582,8 +1609,9 @@ void upsdrv_initups(void)
 	regex_array[4] = getval("serial"); /* probably won't see this */
 	regex_array[5] = getval("bus");
 	regex_array[6] = getval("device");
+	regex_array[7] = getval("upsid");  /* this is a unique number that is settable with upsrw */
 #if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
-	regex_array[7] = getval("busport");
+	regex_array[8] = getval("busport");
 #endif
 
 	r = USBNewRegexMatcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
@@ -1598,7 +1626,7 @@ void upsdrv_initups(void)
 
 	/* Search for the first supported UPS matching the regular
 	 * expression */
-	r = comm_driver->open_dev(&udev, &curDevice, regex_matcher, NULL);
+	r = comm_driver->open_dev(&udev, &curDevice, regex_matcher, match_ups_id);
 	if (r < 1) {
 		fatalx(EXIT_FAILURE, "No matching USB/HID UPS found");
 	}
@@ -1648,6 +1676,8 @@ void upsdrv_initups(void)
 		bootdelay = atoi(getval("rebootdelay"));
 #endif
 }
+
+
 
 void upsdrv_cleanup(void)
 {
