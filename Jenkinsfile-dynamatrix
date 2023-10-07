@@ -253,7 +253,8 @@ import org.nut.dynamatrix.*;
         def dsbcClone = dsbc.clone()
 
         stage('Investigate envvars (Autotools DEBUG)') {
-            echo "Running default custom build for '${stageNameClone}' ==> ${dsbcClone.toString()}"
+            echo "Running default custom build for '${stageNameClone}' ==> ${dsbcClone.toString()}" +
+                (dynacfgPipeline?.configureEnvvars ? "" : " (note: has no dynacfgPipeline.configureEnvvars)")
             // Trick about endianness via ELF binary header picked up from https://serverfault.com/a/749469/490516
             sh label: 'Inspect initial envvars', script: """ hostname; date -u; uname -a
 echo "LONG_BIT:`getconf LONG_BIT` WORD_BIT:`getconf WORD_BIT`" || true
@@ -282,7 +283,8 @@ set | sort -n """
         def dsbcClone = dsbc.clone()
 
         stage('Investigate envvars (CI_Build DEBUG)') {
-            echo "Running default custom build for '${stageNameClone}' ==> ${dsbcClone.toString()}"
+            echo "Running default custom build for '${stageNameClone}' ==> ${dsbcClone.toString()}" +
+                (dynacfgPipeline?.configureEnvvars ? "" : " (note: has no dynacfgPipeline.configureEnvvars)")
             // Trick about endianness via ELF binary header picked up from https://serverfault.com/a/749469/490516
             sh label: 'Inspect initial envvars', script: """ hostname; date -u; uname -a
 echo "LONG_BIT:`getconf LONG_BIT` WORD_BIT:`getconf WORD_BIT`" || true
