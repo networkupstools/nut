@@ -27,6 +27,7 @@
 #include "sms_ser.h"
 #include "main.h"
 #include "serial.h"
+#include "nut_stdint.h"
 
 #define ENDCHAR '\r'
 
@@ -173,7 +174,7 @@ static int get_ups_nominal() {
         return -1;
     }
 
-    upsdebugx(3, "Get nominal Ok: received byte %lu", ret);
+    upsdebugx(3, "Get nominal Ok: received byte %" PRIiSIZE, ret);
 
     if (bufIn[0] == '=' || bufIn[0] == '<' || bufIn[0] == '>') {
         sms_parse_results(&bufIn[0], &DeviceData);
@@ -205,7 +206,7 @@ static int get_ups_information() {
         return -1;
     }
 
-    upsdebugx(3, "Get information Ok: received byte %lu", ret);
+    upsdebugx(3, "Get information Ok: received byte %" PRIiSIZE, ret);
 
     if (bufIn[0] == ';' || bufIn[0] == ':') {
         sms_parse_information(&bufIn[0], &DeviceData);
@@ -237,7 +238,7 @@ static int get_ups_features() {
         return -1;
     }
 
-    upsdebugx(LOG_DEBUG, "Get features Ok: received byte %lu", ret);
+    upsdebugx(LOG_DEBUG, "Get features Ok: received byte %" PRIiSIZE, ret);
 
     if (bufIn[0] == ';' || bufIn[0] == ':') {
         sms_parse_features(&bufIn[0], &DeviceData);
