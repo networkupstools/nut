@@ -284,7 +284,9 @@ int main(int argc, char **argv) {
 				printf("%s %s test rule %u [%s] ([%s] %s %s (%s)) ([%s] %s %s)\n",
 					pass_fail[failed], testType, i, rules,
 					upsStatus, chargeStatus, charge, chargeLow,
-					currUpsStatus, currChargerStatus, currCharge);
+					NUT_STRARG(currUpsStatus),
+					NUT_STRARG(currChargerStatus),
+					NUT_STRARG(currCharge));
 				if(!failed) {
 					cases_passed++;
 				} else {
