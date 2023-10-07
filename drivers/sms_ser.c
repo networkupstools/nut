@@ -27,7 +27,6 @@
 #include "sms_ser.h"
 #include "main.h"
 #include "serial.h"
-#include "nut_stdint.h"
 
 #define ENDCHAR '\r'
 
@@ -39,7 +38,7 @@
 #define RESULT_SIZE 18
 #define HUMAN_VALUES 7
 
-static unsigned int bootdelay = DEFAULT_BOOTDELAY;
+static uint16_t bootdelay = DEFAULT_BOOTDELAY;
 static uint8_t bufOut[BUFFER_SIZE];
 static uint8_t bufIn[BUFFER_SIZE];
 static SmsData DeviceData;
@@ -313,7 +312,15 @@ static int sms_instcmd(const char *cmdname, const char *extra) {
     }
 
     if (!strcasecmp(cmdname, "shutdown.reboot")) {
-        long delay = extra ? strtol(extra, NULL, bootdelay) : bootdelay;
+        uint16_t delay = bootdelay;
+        if (extra) {
+            long ldelay = strtol(extra, NULL, bootdelay);
+            if (ldelay >= 0 && (intmax_t)ldelay < (intmax_t)UINT16_MAX) {
+                delay = (uint16_t)ldelay;
+            } else {
+                upsdebugx(3, "tried to set up extra shutdown.reboot delay ut it was out of range, keeping default");
+            }
+        }
         length = sms_prepare_shutdown_nsec(&bufOut[0], delay);
 
         if (ser_send_buf(upsfd, bufOut, length) == 0) {
