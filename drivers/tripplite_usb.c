@@ -136,7 +136,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME	"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.34"
+#define DRIVER_VERSION	"0.35"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -1560,12 +1560,39 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "rebootdelay", msg);
 #endif
 }
+//init matching by ups.id since some tripplite devices don't pass a serial identifier
+static int match_ups_id(USBDevice_t *hd) {
+    char u_msg[] = "U";
+    unsigned char u_value[9];
+    long unit_id = -1;
+    ssize_t ret;
+    char *config_ups_id = getval("upsid");
+
+    ret = send_cmd(u_msg, sizeof(u_msg), u_value, sizeof(u_value)-1);
+    if (ret <= 0) {
+        upslogx(LOG_INFO, "Unit ID not retrieved (not available on all models)");
+    } else {
+        unit_id = (long)((unsigned)(u_value[1]) << 8) | (unsigned)(u_value[2]);
+    }
+
+    if (unit_id >= 0 && strcmp(config_ups_id, unit_id) == 0) {
+        dstate_setinfo("ups.id", "%ld", unit_id);
+        dstate_setflags("ups.id", ST_FLAG_RW | ST_FLAG_STRING);
+        dstate_setaux("ups.id", 5);
+        upslogx(LOG_DEBUG, "Unit ID: %ld", unit_id);
+        return 1; // Match found
+    } else {
+        return 0; // No match
+    }
+}
 
 /*!@brief Initialize UPS and variables from ups.conf
  *
  * @todo Allow binding based on firmware version (which seems to vary wildly
  * from unit to unit)
  */
+
+
 void upsdrv_initups(void)
 {
 	char *regex_array[USBMATCHER_REGEXP_ARRAY_LIMIT];
@@ -1650,30 +1677,7 @@ void upsdrv_initups(void)
 #endif
 }
 
-int match_ups_id(USBDevice_t *hd) {
-    char u_msg[] = "U";
-    unsigned char u_value[9];
-    long unit_id = -1;
-    ssize_t ret;
-    char *config_ups_id = getval("upsid");
 
-    ret = send_cmd(u_msg, sizeof(u_msg), u_value, sizeof(u_value)-1);
-    if (ret <= 0) {
-        upslogx(LOG_INFO, "Unit ID not retrieved (not available on all models)");
-    } else {
-        unit_id = (long)((unsigned)(u_value[1]) << 8) | (unsigned)(u_value[2]);
-    }
-
-    if (unit_id >= 0 && strcmp(config_ups_id, unit_id) == 0) {
-        dstate_setinfo("ups.id", "%ld", unit_id);
-        dstate_setflags("ups.id", ST_FLAG_RW | ST_FLAG_STRING);
-        dstate_setaux("ups.id", 5);
-        upslogx(LOG_DEBUG, "Unit ID: %ld", unit_id);
-        return 1; // Match found
-    } else {
-        return 0; // No match
-    }
-}
 
 void upsdrv_cleanup(void)
 {
