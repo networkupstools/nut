@@ -403,16 +403,26 @@ ASPELL_OUT_NOTERRORS = (^[ \t]*[\*\@]|^$$)
 
 # WARNING: The percent wildcard is a GNU extension; otherwise we need
 # a ".txt.txt-spellchecked" type of rule and files like "README" all
-# renamed to *.txt, or lots of rules for files without the extensions
+# renamed to *.txt, or lots of rules for files without the extensions.
+# Maybe this will get simplified with renaming to *.adoc though ;)
+#
 # Other Makefiles have a relatively simple life, dealing with just a
 # few texts and name/extension patterns in their directories.
 #?#.txt.txt-spellchecked: Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 #%-spellchecked: % Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 #*-spellchecked */*-spellchecked: $(@:-spellchecked=) $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
-# NOTE: This portable  rule RELIES on just one SPELLCHECK_SRC defined
+#
+# NOTE: For some reason, at least GNU make insists on bogus calls:
+#   update target 'asciidoc-vars.conf' due to: asciidoc-vars.conf-spellchecked
+# when we e.g. `make dist` after a `make spellcheck` and ended up
+# with removed and touched (emptied) file, only this one so far.
+#
+# NOTE: This portable rule RELIES on just one SPELLCHECK_SRC defined
 # at a time, with an outer Makefile caller ensuring the looping:
 $(SPELLCHECK_BUILDDIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE) $(abs_top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 	@LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
+	 if test x"$(SPELLCHECK_SRC_ONE)" = x ; then echo "SKIP: Bogus spellcheck call for empty target filename (with make target $@)" >&2 ; exit 0; fi; \
+	 case "$@" in *-spellchecked) ;; *) echo "SKIP: Bogus spellcheck call for non '*-spellchecked' target filename (with make target $@)" >&2 ; exit 0;; esac; \
 	 rm -f "$@" || true ; \
 	 echo "  ASPELL   Spell checking on $(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE)"; \
 	 OUT="`(sed 's,^\(.*\)$$, \1,' | $(ASPELL) -a $(ASPELL_NUT_TEXMODE_ARGS) $(ASPELL_NUT_COMMON_ARGS) 2>&1) < "$(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE)"`" \
