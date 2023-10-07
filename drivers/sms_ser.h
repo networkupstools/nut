@@ -54,11 +54,14 @@ typedef struct {
     float outputHz;          /* output.frequency */
     float batterylevel;      /* battery.charge (batterylevel < 100 ? battery.charger.status = charging if onacpower/discharging if onbattery : resting)
                               * battery.voltage = (voltageBattery * batterylevel) / 100)
-							  */
+                              */
     float temperatureC;      /* ups.temperature */
 } SmsData;
 
+void sms_parse_features(uint8_t *rawvalues, SmsData *results);
+void sms_parse_information(uint8_t *rawvalues, SmsData *results);
 void sms_parse_results(uint8_t* rawvalues, SmsData* results);
+
 uint8_t sms_prepare_get_status(uint8_t* buffer);
 uint8_t sms_prepare_get_information(uint8_t* buffer);
 uint8_t sms_prepare_get_features(uint8_t* buffer);
