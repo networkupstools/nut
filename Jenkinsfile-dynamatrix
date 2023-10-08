@@ -57,10 +57,14 @@ import org.nut.dynamatrix.*;
 
     dynacfgPipeline.traceBuildShell_configureEnvvars = false // true
     dynacfgPipeline.traceBuildShell = false // true
-	if ( env?.BRANCH_NAME ==~ /.*fightwarn.*/ ) {
-		dynacfgPipeline.traceBuildShell_configureEnvvars = true // false
-		dynacfgPipeline.traceBuildShell = true // false
-	}
+
+    //if (false) // <<< (Un-)comment away in select runs/branches
+    //if (true)  // <<< (Un-)comment away in select runs/branches
+    if ( env?.BRANCH_NAME ==~ /.*fightwarn-verbose.*/ )
+    {
+        dynacfgPipeline.traceBuildShell_configureEnvvars = true // false
+        dynacfgPipeline.traceBuildShell = true // false
+    }
 
     dynacfgPipeline.failFast = //true //
         false
@@ -1272,14 +1276,15 @@ def stageNameFunc_ShellcheckCustom(DynamatrixSingleBuildConfig dsbc) {
 
 ///////////////////////////////////////////////////////////////////////////
 
-    // Hacky big switch for a max debug option
-    if (true)
-    if (false)
-    {
+// Hacky big switch for a max debug option
+//if (true)  // <<< (Un-)comment away in select runs/branches
+//if (false) // <<< (Un-)comment away in select runs/branches
+if ( env?.BRANCH_NAME ==~ /.*verbose.*/ )
+{
     dynamatrixGlobalState.enableDebugTrace = true
     dynamatrixGlobalState.enableDebugErrors = true
     dynamatrixGlobalState.enableDebugMilestones = true
     dynamatrixGlobalState.enableDebugMilestonesDetails = true
-    }
+}
 
 dynamatrixPipeline(dynacfgBase, dynacfgPipeline)
