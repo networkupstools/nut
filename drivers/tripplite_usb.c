@@ -282,6 +282,8 @@ static int is_smart_protocol(void)
 #define MAX_VOLT 13.4          /*!< Max battery voltage (100%) */
 #define MIN_VOLT 11.0          /*!< Min battery voltage (10%) */
 
+#define DEFAULT_UPSID 65535
+
 static USBDevice_t *hd = NULL;
 static USBDevice_t curDevice;
 static USBDeviceMatcher_t *reopen_matcher = NULL;
@@ -1579,7 +1581,7 @@ void upsdrv_makevartable(void)
 		DEFAULT_OFFDELAY);
 	addvar(VAR_VALUE, "offdelay", msg);
 
-	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
+	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X, upsid=X */
 	nut_usb_addvars();
 
 	snprintf(msg, sizeof msg, "Minimum battery voltage, corresponding to 10%% charge (default=%.1f)",
@@ -1589,6 +1591,9 @@ void upsdrv_makevartable(void)
 	snprintf(msg, sizeof msg, "Maximum battery voltage, corresponding to 100%% charge (default=%.1f)",
 		MAX_VOLT);
 	addvar(VAR_VALUE, "battery_max", msg);
+
+	snprintf(msg, sizeof msg, "UPS ID (Unit ID) (default=%d)", DEFAULT_UPSID);
+    addvar(VAR_VALUE, "upsid", msg);
 
 #if 0
 	snprintf(msg, sizeof msg, "Set start delay, in seconds (default=%d).",
