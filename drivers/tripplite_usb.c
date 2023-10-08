@@ -317,7 +317,11 @@ static unsigned int offdelay = DEFAULT_OFFDELAY;
 // Function declaration for send_cmd
 static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *reply, size_t reply_len);
 
-// driver matching by ups.id since serial number isn't exposed on devices 
+/* Driver matching by ups.id since serial number isn't exposed on some Tripplite models.
+   Ups.id is the same as Unit Id, and it is a user configurable value between 1-65535.
+   Default Unit Id is 65535. May be set with upsrw, and it persists after powerloss as well.
+   To match by ups id, (upsid='your ups id') must be defined inside the ups.conf
+*/ 
 int match_by_unitid() 
 {
     char *value = getval("upsid");
@@ -325,12 +329,11 @@ int match_by_unitid()
     ssize_t ret;
     unsigned char u_msg[] = "U";
     unsigned char u_value[9];
-
+	// Read ups id from the ups.conf
     if (value != NULL) {
         config_unit_id = atoi(value);
     }
-
-    // Read the ups id from the device
+    // Read ups id from the device
     if (tl_model != TRIPP_LITE_OMNIVS && tl_model != TRIPP_LITE_SMART_0004) {
         /* Unit ID might not be supported by all models: */
         ret = send_cmd(u_msg, sizeof(u_msg), u_value, sizeof(u_value) - 1);
@@ -341,7 +344,7 @@ int match_by_unitid()
         }
     }
 
-    // Check if they match
+    // Check if the ups ids match
     if (config_unit_id == unit_id) {
         return 1;
     } else {
