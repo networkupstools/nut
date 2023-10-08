@@ -315,10 +315,11 @@ static unsigned int offdelay = DEFAULT_OFFDELAY;
 /* static unsigned int bootdelay = DEFAULT_BOOTDELAY; */
 
 // Function declaration for send_cmd
-static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *reply, size_t reply_len)
+static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *reply, size_t reply_len);
 
 // driver matching by ups.id since serial number isn't exposed on devices 
-int match_by_unitid() {
+int match_by_unitid() 
+{
     char *value = getval("upsid");
     int config_unit_id;
     ssize_t ret;
