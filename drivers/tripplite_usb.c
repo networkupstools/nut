@@ -314,11 +314,16 @@ static long battery_voltage_nominal = 12,
 static unsigned int offdelay = DEFAULT_OFFDELAY;
 /* static unsigned int bootdelay = DEFAULT_BOOTDELAY; */
 
-// driver matching by ups.id since serial number isn't exposed on devices 
+// Function declaration for send_cmd
+static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *reply, size_t reply_len)
 
+// driver matching by ups.id since serial number isn't exposed on devices 
 int match_by_unitid() {
     char *value = getval("upsid");
     int config_unit_id;
+    ssize_t ret;
+    unsigned char u_msg[] = "U";
+    unsigned char u_value[9];
 
     if (value != NULL) {
         config_unit_id = atoi(value);
@@ -623,7 +628,7 @@ static void usb_comm_fail(int res, const char *msg)
  * @return number of chars in reply, excluding terminating NUL
  * @return 0 if command was not accepted
  */
-static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *reply, size_t reply_len)
+
 {
 	unsigned char buffer_out[8];
 	unsigned char csum = 0;
