@@ -152,7 +152,7 @@ SMART1500RM2U units, you would have to find which USB bus and device number
 each unit is on (via lsusb(8)).
 
 Some of the SMART*2U models have a configurable Unit ID number, and you can now use the `upsid` 
-configuration option to uniquely specify which UPS a given driver instance should control. 
+config argument to uniquely specify which UPS a given driver instance should control. 
 This allows for precise identification of UPS devices when multiple devices are connected.
 To retrieve or set the upsid use the linkman:upsrw[8] utility.
 
