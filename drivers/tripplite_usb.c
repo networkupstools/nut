@@ -136,7 +136,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME	"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.34"
+#define DRIVER_VERSION	"0.35"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -314,9 +314,39 @@ static long battery_voltage_nominal = 12,
 static unsigned int offdelay = DEFAULT_OFFDELAY;
 /* static unsigned int bootdelay = DEFAULT_BOOTDELAY; */
 
+// driver matching by ups.id since serial number isn't exposed on devices 
+
+int match_by_unitid() {
+    char *value = getval("upsid");
+    int config_unit_id;
+
+    if (value != NULL) {
+        config_unit_id = atoi(value);
+    }
+
+    // Read the ups id from the device
+    if (tl_model != TRIPP_LITE_OMNIVS && tl_model != TRIPP_LITE_SMART_0004) {
+        /* Unit ID might not be supported by all models: */
+        ret = send_cmd(u_msg, sizeof(u_msg), u_value, sizeof(u_value) - 1);
+        if (ret <= 0) {
+            upslogx(LOG_INFO, "Unit ID not retrieved (not available on all models)");
+        } else {
+            unit_id = (int)((unsigned)(u_value[1]) << 8) | (unsigned)(u_value[2]);
+        }
+    }
+
+    // Check if they match
+    if (config_unit_id == unit_id) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
 /*!@brief Try to reconnect once.
  * @return 1 if reconnection was successful.
  */
+
 static int reconnect_ups(void)
 {
 	int ret;
@@ -331,7 +361,7 @@ static int reconnect_ups(void)
 	upsdebugx(2, "= device has been disconnected, try to reconnect =");
 	upsdebugx(2, "==================================================");
 
-	ret = comm_driver->open_dev(&udev, &curDevice, reopen_matcher, NULL);
+	ret = comm_driver->open_dev(&udev, &curDevice, reopen_matcher, match_by_unitid);
 	if (ret < 1) {
 		upslogx(LOG_INFO, "Reconnecting to UPS failed; will retry later...");
 		dstate_datastale();
@@ -1598,7 +1628,7 @@ void upsdrv_initups(void)
 
 	/* Search for the first supported UPS matching the regular
 	 * expression */
-	r = comm_driver->open_dev(&udev, &curDevice, regex_matcher, NULL);
+	r = comm_driver->open_dev(&udev, &curDevice, regex_matcher, match_by_unitid);
 	if (r < 1) {
 		fatalx(EXIT_FAILURE, "No matching USB/HID UPS found");
 	}
