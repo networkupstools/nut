@@ -1592,6 +1592,7 @@ void upsdrv_makevartable(void)
 		MAX_VOLT);
 	addvar(VAR_VALUE, "battery_max", msg);
 
+	// allow -x upsid=X
 	snprintf(msg, sizeof msg, "UPS ID (Unit ID) (default=%d)", DEFAULT_UPSID);
     addvar(VAR_VALUE, "upsid", msg);
 
