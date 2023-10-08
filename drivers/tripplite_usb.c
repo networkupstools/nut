@@ -1581,7 +1581,7 @@ void upsdrv_makevartable(void)
 		DEFAULT_OFFDELAY);
 	addvar(VAR_VALUE, "offdelay", msg);
 
-	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X, upsid=X */
+	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
 	nut_usb_addvars();
 
 	snprintf(msg, sizeof msg, "Minimum battery voltage, corresponding to 10%% charge (default=%.1f)",
