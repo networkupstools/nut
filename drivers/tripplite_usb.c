@@ -629,7 +629,7 @@ static void usb_comm_fail(int res, const char *msg)
  * @return number of chars in reply, excluding terminating NUL
  * @return 0 if command was not accepted
  */
-
+static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *reply, size_t reply_len)
 {
 	unsigned char buffer_out[8];
 	unsigned char csum = 0;
