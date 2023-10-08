@@ -2257,6 +2257,12 @@ int main(int argc, char **argv)
 		) {
 #ifndef WIN32
 			int allOk = 1;
+			/* Use file descriptor, not name, to first check and then manipulate permissions:
+			 *   https://cwe.mitre.org/data/definitions/367.html
+			 *   https://wiki.sei.cmu.edu/confluence/display/c/FIO01-C.+Be+careful+using+functions+that+use+file+names+for+identification
+			 */
+			TYPE_FD fd = ERROR_FD;
+
 			/* Tune group access permission to the pipe,
 			 * so that upsd can access it (using the
 			 * specified or retained default group):
@@ -2273,18 +2279,28 @@ int main(int argc, char **argv)
 					group, strerror(errno)
 				);
 				allOk = 0;
+				goto sockname_ownership_finished;
 			} else {
 				struct stat statbuf;
 				mode_t mode;
 
-				if (stat(sockname, &statbuf)) {
+				if (INVALID_FD((fd = open(sockname, O_RDWR | O_APPEND)))) {
+					upsdebugx(1, "WARNING: opening socket file for stat/chown failed: %s",
+						strerror(errno)
+					);
+					allOk = 0;
+					/* Can not proceed with ops below */
+					goto sockname_ownership_finished;
+				}
+
+				if (fstat(fd, &statbuf)) {
 					upsdebugx(1, "WARNING: stat for chown failed: %s",
 						strerror(errno)
 					);
 					allOk = 0;
 				} else {
 					/* Here we do a portable chgrp() essentially: */
-					if (chown(sockname, statbuf.st_uid, grp->gr_gid)) {
+					if (fchown(fd, statbuf.st_uid, grp->gr_gid)) {
 						upsdebugx(1, "WARNING: chown failed: %s",
 							strerror(errno)
 						);
@@ -2293,7 +2309,7 @@ int main(int argc, char **argv)
 				}
 
 				/* Refresh file info */
-				if (stat(sockname, &statbuf)) {
+				if (fstat(fd, &statbuf)) {
 					/* Logically we'd fail chown above if file
 					 * does not exist or is not accessible */
 					upsdebugx(1, "WARNING: stat for chmod failed: %s",
@@ -2305,13 +2321,19 @@ int main(int argc, char **argv)
 					mode = statbuf.st_mode;
 					mode |= S_IWGRP;
 					mode |= S_IRGRP;
-					if (chmod(sockname, mode)) {
+					if (fchmod(fd, mode)) {
 						upsdebugx(1, "WARNING: chmod failed: %s",
 							strerror(errno)
 						);
 						allOk = 0;
 					}
 				}
+			}
+
+sockname_ownership_finished:
+			if (VALID_FD(fd)) {
+				close(fd);
+				fd = ERROR_FD;
 			}
 
 			if (allOk) {
