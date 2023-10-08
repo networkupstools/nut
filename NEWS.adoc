@@ -228,6 +228,14 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
  - The `bestfortress` driver shutdown handling was fixed to use a non-trivial
    default timeout [#1820]
 
+ - The `optiups` driver only gave accurate voltage information with 120VAC
+   models and assumed a 12V battery when calculating capacity. There is
+   a protocol command that gives a (fixed) voltage which correlates with
+   the voltage selection DIP switches on the back of the UPS, taking into
+   account whether it is a 120 or 240VAC model. Likewise, now the battery
+   capacity fix is applied globally, based on whether or not the battery
+   voltage is greater than 20V. [#2089]
+
  - GPIO drivers [#1855]:
    * Added a new category of drivers, using GPIO interface to locally connected
      devices (currently limited to 2018+ Linux libgpiod, but its architecture
