@@ -249,10 +249,15 @@ int main(int argc, char **argv) {
 				char chargeLow[256];
 				char charge[256];
 				struct gpioups_t *upsfdtest=xcalloc(sizeof(*upsfdtest),1);
-				int failed = 0;
-				const char *currUpsStatus=NULL;
-				const char *currChargerStatus=NULL;
-				const char *currCharge=NULL;
+
+				/* "volatile" trickery to avoid the likes of:
+				 *    error: variable 'failed' might be clobbered by 'longjmp' or 'vfork' [-Werror=clobbered]
+				 * due to presence of setjmp().
+				 */
+				int volatile failed = 0;
+				const char * volatile currUpsStatus = NULL;
+				const char * volatile currChargerStatus = NULL;
+				const char * volatile currCharge = NULL;
 
 				get_ups_rules(upsfdtest, (unsigned char *)rules);
 				upsfdtest->upsLinesStates=xcalloc(sizeof(int),upsfdtest->upsLinesCount);
