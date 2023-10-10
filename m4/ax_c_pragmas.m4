@@ -674,6 +674,33 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
     AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wcast-align" (outside functions)])
   ])
 
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wcast-function-type-strict"],
+    [ax_cv__pragma__gcc__diags_ignored_cast_function_type_strict],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[void func(void) {
+#pragma GCC diagnostic ignored "-Wcast-function-type-strict"
+}
+]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_cast_function_type_strict=yes],
+      [ax_cv__pragma__gcc__diags_ignored_cast_function_type_strict=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_cast_function_type_strict" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wcast-function-type-strict"])
+  ])
+
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wcast-function-type-strict" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_cast_function_type_strict_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wcast-function-type-strict"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_cast_function_type_strict_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_cast_function_type_strict_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_cast_function_type_strict_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wcast-function-type-strict" (outside functions)])
+  ])
+
   AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wstrict-prototypes"],
     [ax_cv__pragma__gcc__diags_ignored_strict_prototypes],
     [AC_COMPILE_IFELSE(
