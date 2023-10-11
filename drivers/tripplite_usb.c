@@ -360,7 +360,6 @@ int match_by_unitid(usb_dev_handle *udev, USBDevice_t *hd, usb_ctrl_charbuf rdbu
 /*!@brief Try to reconnect once.
  * @return 1 if reconnection was successful.
  */
-
 static int reconnect_ups(void)
 {
 	int ret;
