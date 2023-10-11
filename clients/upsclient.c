@@ -909,6 +909,10 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 		return -1;
 	}
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type-strict"
+#endif
 	if (verifycert) {
 		status = SSL_AuthCertificateHook(ups->ssl,
 			(SSLAuthCertificate)AuthCertificate, CERT_GetDefaultCertDB());
@@ -938,6 +942,9 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 		nss_error("upscli_sslinit / SSL_HandshakeCallback");
 		return -1;
 	}
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT)
+#pragma GCC diagnostic pop
+#endif
 
 	cert = upscli_find_host_cert(ups->host);
 	if (cert != NULL && cert->certname != NULL) {

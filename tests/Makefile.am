@@ -24,9 +24,9 @@ nutlogtest_LDADD = $(top_builddir)/common/libcommon.la
 
 if REQUIRE_NUT_STRARG
 check_SCRIPTS += nutlogtest-nofail.sh
-CLEANFILES += nutlogtest-nofail.sh nutlogtest
+CLEANFILES += nutlogtest-nofail.sh nutlogtest$(EXEEXT) nutlogtest
 
-nutlogtest-nofail.sh: nutlogtest
+nutlogtest-nofail.sh: nutlogtest$(EXEEXT)
 	@echo '#!/bin/sh' > $@
 	@echo 'echo "WARNING: Your C library requires workarounds to print NULL values!" >&2' >> $@
 	@echo 'echo "If nutlogtest below, or generally some NUT program, crashes with" >&2' >> $@
@@ -37,7 +37,7 @@ nutlogtest-nofail.sh: nutlogtest
 
 # NOTE: Keep the line above empty!
 else
-TESTS += nutlogtest
+TESTS += nutlogtest$(EXEEXT)
 endif
 
 TESTS += nuttimetest

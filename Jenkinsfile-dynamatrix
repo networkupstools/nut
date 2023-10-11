@@ -55,8 +55,16 @@ import org.nut.dynamatrix.*;
         dynacfgPipeline.disableSlowBuildCIBuild_QEMU = false
     }
 
-    dynacfgPipeline.traceBuildShell_configureEnvvars = false// true 
-    dynacfgPipeline.traceBuildShell = false //true
+    dynacfgPipeline.traceBuildShell_configureEnvvars = false // true
+    dynacfgPipeline.traceBuildShell = false // true
+
+    //if (false) // <<< (Un-)comment away in select runs/branches
+    //if (true)  // <<< (Un-)comment away in select runs/branches
+    if ( env?.BRANCH_NAME ==~ /.*fightwarn-verbose.*/ )
+    {
+        dynacfgPipeline.traceBuildShell_configureEnvvars = true // false
+        dynacfgPipeline.traceBuildShell = true // false
+    }
 
     dynacfgPipeline.failFast = //true //
         false
@@ -98,7 +106,7 @@ import org.nut.dynamatrix.*;
         //'stageNameFunc': null,
         //'dynamatrixAxesLabels': [~/^OS_.+/, 'MAKE'],
         'dynamatrixAxesLabels': ['OS_FAMILY', 'OS_DISTRO', 'MAKE'],
-        'single': '( \${MAKE} shellcheck )',
+        'single': '( if [ x"\${MAKE-}" = x ]; then echo "WARNING: MAKE is somehow unset, defaulting!" >&2; MAKE=make; fi; \${MAKE} shellcheck )',
         'multi': '(cd tests && SERVICE_FRAMEWORK="selftest" SHELL_PROGS="$SHELL_PROGS" ./nut-driver-enumerator-test.sh )',
         'multiLabel': 'SHELL_PROGS',
         'skipShells': [ 'zsh', 'tcsh', 'csh' ]
@@ -233,7 +241,10 @@ import org.nut.dynamatrix.*;
     if (!dynacfgPipeline.containsKey('buildPhases')) {
         dynacfgPipeline.buildPhases = [:]
     }
-    dynacfgPipeline.buildPhases['distcheck'] = """( eval \${CONFIG_ENVVARS} time \${MAKE} \${MAKE_OPTS} distcheck DISTCHECK_FLAGS="\${CONFIG_OPTS}" )"""
+
+    // Imported from jenkins-dynamatrix JSL vars/autotools.groovy:
+    // a workaround for the cases of curiously missing MAKE envvar...
+    dynacfgPipeline.buildPhases['distcheck'] = """( if [ x"\${MAKE-}" = x ]; then echo "WARNING: MAKE is somehow unset, defaulting!" >&2; MAKE=make; fi; eval \${CONFIG_ENVVARS} time \${MAKE} \${MAKE_OPTS} distcheck DISTCHECK_FLAGS="\${CONFIG_OPTS}" )"""
 
     // Note: shellcheck/spellcheck/... require autotools currently
     // or need to be redefined with respective BUILD_TYPE
@@ -246,7 +257,8 @@ import org.nut.dynamatrix.*;
         def dsbcClone = dsbc.clone()
 
         stage('Investigate envvars (Autotools DEBUG)') {
-            echo "Running default custom build for '${stageNameClone}' ==> ${dsbcClone.toString()}"
+            echo "Running default custom build for '${stageNameClone}' ==> ${dsbcClone.toString()}" +
+                (dynacfgPipeline?.configureEnvvars ? "" : " (note: has no dynacfgPipeline.configureEnvvars)")
             // Trick about endianness via ELF binary header picked up from https://serverfault.com/a/749469/490516
             sh label: 'Inspect initial envvars', script: """ hostname; date -u; uname -a
 echo "LONG_BIT:`getconf LONG_BIT` WORD_BIT:`getconf WORD_BIT`" || true
@@ -275,7 +287,8 @@ set | sort -n """
         def dsbcClone = dsbc.clone()
 
         stage('Investigate envvars (CI_Build DEBUG)') {
-            echo "Running default custom build for '${stageNameClone}' ==> ${dsbcClone.toString()}"
+            echo "Running default custom build for '${stageNameClone}' ==> ${dsbcClone.toString()}" +
+                (dynacfgPipeline?.configureEnvvars ? "" : " (note: has no dynacfgPipeline.configureEnvvars)")
             // Trick about endianness via ELF binary header picked up from https://serverfault.com/a/749469/490516
             sh label: 'Inspect initial envvars', script: """ hostname; date -u; uname -a
 echo "LONG_BIT:`getconf LONG_BIT` WORD_BIT:`getconf WORD_BIT`" || true
@@ -1263,14 +1276,15 @@ def stageNameFunc_ShellcheckCustom(DynamatrixSingleBuildConfig dsbc) {
 
 ///////////////////////////////////////////////////////////////////////////
 
-    // Hacky big switch for a max debug option
-    if (true)
-    if (false)
-    {
+// Hacky big switch for a max debug option
+//if (true)  // <<< (Un-)comment away in select runs/branches
+//if (false) // <<< (Un-)comment away in select runs/branches
+if ( env?.BRANCH_NAME ==~ /.*verbose.*/ )
+{
     dynamatrixGlobalState.enableDebugTrace = true
     dynamatrixGlobalState.enableDebugErrors = true
     dynamatrixGlobalState.enableDebugMilestones = true
     dynamatrixGlobalState.enableDebugMilestonesDetails = true
-    }
+}
 
 dynamatrixPipeline(dynacfgBase, dynacfgPipeline)

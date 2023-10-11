@@ -356,6 +356,10 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 		return;
 	}
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type-strict"
+#endif
 	/* Note cast to SSLAuthCertificate to prevent warning due to
 	 * bad function prototype in NSS.
 	 */
@@ -386,6 +390,9 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 		nss_error("net_starttls / SSL_ConfigSecureServer");
 		return;
 	}
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT)
+#pragma GCC diagnostic pop
+#endif
 
 	status = SSL_ResetHandshake(client->ssl, PR_TRUE);
 	if (status != SECSuccess) {

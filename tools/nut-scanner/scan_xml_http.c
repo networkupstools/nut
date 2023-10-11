@@ -44,6 +44,9 @@
    on Windows 2000 and older versions */
 #include <ws2tcpip.h>
 #include <wspiapi.h>
+# if ! HAVE_INET_PTON
+#  include "wincompat.h"	/* fallback inet_ntop where needed */
+# endif
 #endif
 
 #include <string.h>

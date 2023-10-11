@@ -324,7 +324,7 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 ssize_t upsdrvquery_write(udq_pipe_conn_t *conn, const char *buf) {
 	size_t	buflen = strlen(buf);
 #ifndef WIN32
-	int	ret;
+	ssize_t	ret;
 #else
 	DWORD	bytesWritten = 0;
 	BOOL	result = FALSE;
@@ -384,7 +384,7 @@ ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 		char *buf;
 		upsdrvquery_read_timeout(conn, tv);
 		gettimeofday(&now, NULL);
-		if (difftimeval(now, start) > (tv.tv_sec + 0.000001 * tv.tv_usec)) {
+		if (difftimeval(now, start) > ((double)(tv.tv_sec) + 0.000001 * (double)(tv.tv_usec))) {
 			upsdebugx(5, "%s: requested timeout expired", __func__);
 			break;
 		}
@@ -414,7 +414,7 @@ ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 		}
 
 		/* Diminishing timeouts for read() */
-		tv.tv_usec -= difftimeval(now, start);
+		tv.tv_usec -= (suseconds_t)(difftimeval(now, start));
 		while (tv.tv_usec < 0) {
 			tv.tv_sec--;
 			tv.tv_usec = 1000000 + tv.tv_usec;	// Note it is negative
@@ -563,7 +563,7 @@ ssize_t upsdrvquery_request(
 			continue;
 		}
 
-		if (difftimeval(now, start) > (tv.tv_sec + 0.000001 * tv.tv_usec)) {
+		if (difftimeval(now, start) > ((double)(tv.tv_sec) + 0.000001 * (double)(tv.tv_usec))) {
 			upsdebugx(5, "%s: timed out waiting for expected response",
 				__func__);
 			return -1;
