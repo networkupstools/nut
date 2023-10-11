@@ -10,6 +10,7 @@
    Copyright (C) 2004  Nicholas J. Kain <nicholas@kain.us>
    Copyright (C) 2005-2008, 2014  Charles Lepple <clepple+nut@gmail.com>
    Copyright (C) 2016  Eaton
+   Copyright (C) 2023 Eliran Sapir <e@vcboy.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -145,7 +146,8 @@ upsdrv_info_t	upsdrv_info = {
 	"Charles Lepple <clepple+nut@gmail.com>\n" \
 	"Russell Kroll <rkroll@exploits.org>\n" \
 	"Rickard E. (Rik) Faith <faith@alephnull.com>\n" \
-	"Nicholas J. Kain <nicholas@kain.us>",
+	"Nicholas J. Kain <nicholas@kain.us>\n",
+	"Eliran Sapir <e@vcboy.com>",
 	DRV_EXPERIMENTAL,
 	{ NULL }
 };
@@ -324,10 +326,11 @@ static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *rep
    Default Unit Id is 65535. May be set with upsrw, and it persists after powerloss as well.
    To match by ups id, (upsid='your ups id') must be defined inside the ups.conf
 */ 
-int match_by_unitid() 
+int match_by_unitid(usb_dev_handle *udev, USBDevice_t *hd, usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen);
+int match_by_unitid(usb_dev_handle *udev, USBDevice_t *hd, usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen)
 {
     char *value = getval("upsid");
-    int config_unit_id;
+    int config_unit_id = 0;
     ssize_t ret;
     unsigned char u_msg[] = "U";
     unsigned char u_value[9];
