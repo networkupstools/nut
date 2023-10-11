@@ -330,7 +330,11 @@ int match_by_unitid(usb_dev_handle *udev, USBDevice_t *hd, usb_ctrl_charbuf rdbu
 int match_by_unitid(usb_dev_handle *udev, USBDevice_t *hd, usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen)
 {
     char *value = getval("upsid");
-    int config_unit_id = 0;
+    NUT_UNUSED_VARIABLE(udev);
+    NUT_UNUSED_VARIABLE(hd);
+    NUT_UNUSED_VARIABLE(rdbuf);
+    NUT_UNUSED_VARIABLE(rdlen);
+	int config_unit_id = 0;
     ssize_t ret;
     unsigned char u_msg[] = "U";
     unsigned char u_value[9];
