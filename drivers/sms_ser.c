@@ -152,7 +152,7 @@ void sms_parse_results(uint8_t *rawvalues, SmsData *results) {
     results->onbattery = ((byte & (mask << 7)) != 0) ? true : false;
 }
 
-static int get_ups_nominal() {
+static int get_ups_nominal(void) {
     uint8_t length;
     ssize_t ret;
 
@@ -184,7 +184,7 @@ static int get_ups_nominal() {
     return -1;
 }
 
-static int get_ups_information() {
+static int get_ups_information(void) {
     uint8_t length;
     ssize_t ret;
 
@@ -216,7 +216,7 @@ static int get_ups_information() {
     return -1;
 }
 
-static int get_ups_features() {
+static int get_ups_features(void) {
     uint8_t length;
     ssize_t ret;
 
