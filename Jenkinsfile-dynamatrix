@@ -12,7 +12,10 @@ def buildCommit = '86a32237c7df45c5aba640746f7afc4de09505a1'
 
 // See https://github.com/networkupstools/jenkins-dynamatrix/ for the lib
 // Agent setup evolves at https://ci.networkupstools.org/computer/
-@Library('jenkins-dynamatrix') _
+// NOTE: The "${BRANCH_NAME}" below IS NOT A VARIABLE!
+//       Special notation per custom plugin build including changes from
+//       https://github.com/jenkinsci/pipeline-groovy-lib-plugin/pull/19/
+@Library('jenkins-dynamatrix@${BRANCH_NAME}') _
 import org.nut.dynamatrix.dynamatrixGlobalState;
 import org.nut.dynamatrix.*;
 
