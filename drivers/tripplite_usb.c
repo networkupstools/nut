@@ -10,6 +10,7 @@
    Copyright (C) 2004  Nicholas J. Kain <nicholas@kain.us>
    Copyright (C) 2005-2008, 2014  Charles Lepple <clepple+nut@gmail.com>
    Copyright (C) 2016  Eaton
+   Copyright (C) 2023 Eliran Sapir <e@vcboy.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -136,7 +137,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME	"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.34"
+#define DRIVER_VERSION	"0.35"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -145,7 +146,8 @@ upsdrv_info_t	upsdrv_info = {
 	"Charles Lepple <clepple+nut@gmail.com>\n" \
 	"Russell Kroll <rkroll@exploits.org>\n" \
 	"Rickard E. (Rik) Faith <faith@alephnull.com>\n" \
-	"Nicholas J. Kain <nicholas@kain.us>",
+	"Nicholas J. Kain <nicholas@kain.us>\n", \
+	"Eliran Sapir <e@vcboy.com>",
 	DRV_EXPERIMENTAL,
 	{ NULL }
 };
@@ -282,6 +284,8 @@ static int is_smart_protocol(void)
 #define MAX_VOLT 13.4          /*!< Max battery voltage (100%) */
 #define MIN_VOLT 11.0          /*!< Min battery voltage (10%) */
 
+#define DEFAULT_UPSID 65535
+
 static USBDevice_t *hd = NULL;
 static USBDevice_t curDevice;
 static USBDeviceMatcher_t *reopen_matcher = NULL;
@@ -314,6 +318,49 @@ static long battery_voltage_nominal = 12,
 static unsigned int offdelay = DEFAULT_OFFDELAY;
 /* static unsigned int bootdelay = DEFAULT_BOOTDELAY; */
 
+// Function declaration for send_cmd
+static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *reply, size_t reply_len);
+
+/* Driver matching by ups.id since serial number isn't exposed on some Tripplite models.
+   Ups.id is the same as Unit Id, and it is a user configurable value between 1-65535.
+   Default Unit Id is 65535. May be set with upsrw, and it persists after powerloss as well.
+   To match by ups id, (upsid='your ups id') must be defined inside the ups.conf
+*/ 
+int match_by_unitid(usb_dev_handle *udev, USBDevice_t *hd, usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen);
+int match_by_unitid(usb_dev_handle *udev, USBDevice_t *hd, usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen)
+{
+    NUT_UNUSED_VARIABLE(udev);
+    NUT_UNUSED_VARIABLE(hd);
+    NUT_UNUSED_VARIABLE(rdbuf);
+    NUT_UNUSED_VARIABLE(rdlen);
+	char *value = getval("upsid");
+	int config_unit_id = 0;
+    ssize_t ret;
+    unsigned char u_msg[] = "U";
+    unsigned char u_value[9];
+	// Read ups id from the ups.conf
+    if (value != NULL) {
+        config_unit_id = atoi(value);
+    }
+    // Read ups id from the device
+    if (tl_model != TRIPP_LITE_OMNIVS && tl_model != TRIPP_LITE_SMART_0004) {
+        /* Unit ID might not be supported by all models: */
+        ret = send_cmd(u_msg, sizeof(u_msg), u_value, sizeof(u_value) - 1);
+        if (ret <= 0) {
+            upslogx(LOG_INFO, "Unit ID not retrieved (not available on all models)");
+        } else {
+            unit_id = (int)((unsigned)(u_value[1]) << 8) | (unsigned)(u_value[2]);
+        }
+    }
+
+    // Check if the ups ids match
+    if (config_unit_id == unit_id) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
 /*!@brief Try to reconnect once.
  * @return 1 if reconnection was successful.
  */
@@ -331,7 +378,7 @@ static int reconnect_ups(void)
 	upsdebugx(2, "= device has been disconnected, try to reconnect =");
 	upsdebugx(2, "==================================================");
 
-	ret = comm_driver->open_dev(&udev, &curDevice, reopen_matcher, NULL);
+	ret = comm_driver->open_dev(&udev, &curDevice, reopen_matcher, match_by_unitid);
 	if (ret < 1) {
 		upslogx(LOG_INFO, "Reconnecting to UPS failed; will retry later...");
 		dstate_datastale();
@@ -1551,6 +1598,10 @@ void upsdrv_makevartable(void)
 		MAX_VOLT);
 	addvar(VAR_VALUE, "battery_max", msg);
 
+	// allow -x upsid=X
+	snprintf(msg, sizeof msg, "UPS ID (Unit ID) (default=%d)", DEFAULT_UPSID);
+    addvar(VAR_VALUE, "upsid", msg);
+
 #if 0
 	snprintf(msg, sizeof msg, "Set start delay, in seconds (default=%d).",
 		DEFAULT_STARTDELAY);
@@ -1598,7 +1649,7 @@ void upsdrv_initups(void)
 
 	/* Search for the first supported UPS matching the regular
 	 * expression */
-	r = comm_driver->open_dev(&udev, &curDevice, regex_matcher, NULL);
+	r = comm_driver->open_dev(&udev, &curDevice, regex_matcher, match_by_unitid);
 	if (r < 1) {
 		fatalx(EXIT_FAILURE, "No matching USB/HID UPS found");
 	}
