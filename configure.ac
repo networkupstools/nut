@@ -1171,8 +1171,100 @@ AS_IF([test x"${ac_cv_func_inet_ntop}" = xyes],
     [AC_DEFINE([HAVE_INET_NTOP], 1, [defined if system has the inet_ntop() method])],
     [AC_MSG_WARN([Required C library routine inet_ntop() not found])
      AS_CASE([${target_os}],
-	     [*mingw*], [AC_MSG_WARN([Windows antivirus might block this test])]
-	     )
+         [*mingw*], [AC_MSG_WARN([Windows antivirus might block this test])]
+         )
+    ]
+    )
+
+AC_CACHE_CHECK([for inet_pton() with IPv4 and IPv6 support],
+    [ac_cv_func_inet_pton],
+    [AC_LANG_PUSH([C])
+    dnl e.g. add "-lws2_32" for mingw builds
+    dnl the NETLIBS are set by NUT_CHECK_SOCKETLIB above
+    SAVED_LIBS="$LIBS"
+    LIBS="$LIBS $NETLIBS"
+    AX_RUN_OR_LINK_IFELSE(
+        [AC_LANG_PROGRAM([[
+#if HAVE_WINDOWS_H
+# undef inline
+# ifndef WIN32_LEAN_AND_MEAN
+#  define WIN32_LEAN_AND_MEAN
+# endif
+# include <windows.h>
+# if HAVE_WINSOCK2_H
+#  include <winsock2.h>
+# endif
+# if HAVE_WS2TCPIP_H
+#  include <ws2tcpip.h>
+# endif
+#else
+# include <arpa/inet.h>
+#endif
+#include <stdio.h>
+]],
+            [[/* int inet_pton(int af, const char *src, char *dst); */
+struct in_addr  ipv4;
+struct in6_addr ipv6;
+printf("%i", inet_pton(AF_INET, "1.2.3.4", &ipv4));
+printf("%i", inet_pton(AF_INET6, "::1", &ipv6))
+/* autoconf adds ";return 0;" */
+]])],
+        [ac_cv_func_inet_pton=yes], [ac_cv_func_inet_pton=no]
+    )
+    AC_LANG_POP([C])
+    LIBS="$SAVED_LIBS"
+])
+AS_IF([test x"${ac_cv_func_inet_pton}" = xyes],
+    [AC_DEFINE([HAVE_INET_PTON], 1, [defined if system has the inet_pton() method])],
+    [AC_MSG_WARN([Required C library routine inet_pton() not found])
+     AS_CASE([${target_os}],
+         [*mingw*], [AC_MSG_WARN([Windows antivirus might block this test])]
+         )
+    ]
+    )
+
+AC_CACHE_CHECK([for struct pollfd],
+    [ac_cv_struct_pollfd],
+    [AC_LANG_PUSH([C])
+    dnl e.g. add "-lws2_32" for mingw builds
+    dnl the NETLIBS are set by NUT_CHECK_SOCKETLIB above
+    SAVED_LIBS="$LIBS"
+    LIBS="$LIBS $NETLIBS"
+    AX_RUN_OR_LINK_IFELSE(
+        [AC_LANG_PROGRAM([[
+#if HAVE_WINDOWS_H
+# undef inline
+# ifndef WIN32_LEAN_AND_MEAN
+#  define WIN32_LEAN_AND_MEAN
+# endif
+# include <windows.h>
+# if HAVE_WINSOCK2_H
+#  include <winsock2.h>
+# endif
+# if HAVE_WS2TCPIP_H
+#  include <ws2tcpip.h>
+# endif
+#else
+# include <poll.h>
+#endif
+#include <stdio.h>
+]],
+            [[
+struct pollfd  pfd;
+pfd.fd = 0;
+/* autoconf adds ";return 0;" */
+]])],
+        [ac_cv_struct_pollfd=yes], [ac_cv_struct_pollfd=no]
+    )
+    AC_LANG_POP([C])
+    LIBS="$SAVED_LIBS"
+])
+AS_IF([test x"${ac_cv_struct_pollfd}" = xyes],
+    [AC_DEFINE([HAVE_STRUCT_POLLFD], 1, [defined if system has the struct pollfd type])],
+    [AC_MSG_WARN([Required C library type struct pollfd not found])
+     AS_CASE([${target_os}],
+         [*mingw*], [AC_MSG_WARN([Windows antivirus might block this test])]
+         )
     ]
     )
 

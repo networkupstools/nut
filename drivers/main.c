@@ -1920,7 +1920,7 @@ int main(int argc, char **argv)
 		 * approach (kill sibling if needed, recapture device,
 		 * command it...)
 		 */
-		int	cmdret = -1;
+		ssize_t	cmdret = -1;
 		struct timeval	tv;
 
 		/* Post the query and wait for reply */
@@ -1942,13 +1942,13 @@ int main(int argc, char **argv)
 			if (cmdret < 0) {
 				upsdebugx(1, "Socket dialog with the other driver instance: %s", strerror(errno));
 			} else {
-				upslogx(LOG_INFO, "Request to killpower via running driver returned code %d", cmdret);
+				upslogx(LOG_INFO, "Request to killpower via running driver returned code %" PRIiSIZE, cmdret);
 				if (cmdret == 0)
 					/* Note: many drivers would abort with
-                                         * "shutdown not supported" at this
-                                         * point... we would too, but later
-                                         * and at a higher time/processing cost.
-                                         */
+					 * "shutdown not supported" at this
+					 * point... we would too, but later
+					 * and at a higher time/processing cost.
+					 */
 					exit (EXIT_SUCCESS);
 				/* else fall through to legacy handling */
 			}
@@ -1966,7 +1966,7 @@ int main(int argc, char **argv)
 	if (cmd && !strcmp(cmd, SIGCMD_RELOAD_OR_ERROR))
 #endif  /* WIN32 */
 	{	/* Not a signal, but a socket protocol action */
-		int	cmdret = -1;
+		ssize_t	cmdret = -1;
 		char	buf[LARGEBUF];
 		struct timeval	tv;
 
@@ -1982,11 +1982,11 @@ int main(int argc, char **argv)
 			upslog_with_errno(LOG_ERR, "Socket dialog with the other driver instance");
 		} else {
 			/* TODO: handle buf reply contents */
-			upslogx(LOG_INFO, "Request to reload-or-error returned code %d", cmdret);
+			upslogx(LOG_INFO, "Request to reload-or-error returned code %" PRIiSIZE, cmdret);
 		}
 
 		/* exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE); */
-		exit((cmdret < 0) ? 255 : cmdret);
+		exit(((cmdret < 0) || (((uintmax_t)cmdret) > ((uintmax_t)INT_MAX))) ? 255 : (int)cmdret);
 	}
 
 #ifndef WIN32
@@ -2257,6 +2257,12 @@ int main(int argc, char **argv)
 		) {
 #ifndef WIN32
 			int allOk = 1;
+			/* Use file descriptor, not name, to first check and then manipulate permissions:
+			 *   https://cwe.mitre.org/data/definitions/367.html
+			 *   https://wiki.sei.cmu.edu/confluence/display/c/FIO01-C.+Be+careful+using+functions+that+use+file+names+for+identification
+			 */
+			TYPE_FD fd = ERROR_FD;
+
 			/* Tune group access permission to the pipe,
 			 * so that upsd can access it (using the
 			 * specified or retained default group):
@@ -2273,22 +2279,40 @@ int main(int argc, char **argv)
 					group, strerror(errno)
 				);
 				allOk = 0;
+				goto sockname_ownership_finished;
 			} else {
 				struct stat statbuf;
 				mode_t mode;
-				if (chown(sockname, -1, grp->gr_gid)) {
-					upsdebugx(1, "WARNING: chown failed: %s",
+
+				if (INVALID_FD((fd = open(sockname, O_RDWR | O_APPEND)))) {
+					upsdebugx(1, "WARNING: opening socket file for stat/chown failed: %s",
 						strerror(errno)
 					);
 					allOk = 0;
+					/* Can not proceed with ops below */
+					goto sockname_ownership_finished;
 				}
 
-				if (stat(sockname, &statbuf)) {
+				if (fstat(fd, &statbuf)) {
+					upsdebugx(1, "WARNING: stat for chown failed: %s",
+						strerror(errno)
+					);
+					allOk = 0;
+				} else {
+					/* Here we do a portable chgrp() essentially: */
+					if (fchown(fd, statbuf.st_uid, grp->gr_gid)) {
+						upsdebugx(1, "WARNING: chown failed: %s",
+							strerror(errno)
+						);
+						allOk = 0;
+					}
+				}
+
+				/* Refresh file info */
+				if (fstat(fd, &statbuf)) {
 					/* Logically we'd fail chown above if file
-					 * does not exist or is not accessible, but
-					 * practically we only need stat for chmod
-					 */
-					upsdebugx(1, "WARNING: stat failed: %s",
+					 * does not exist or is not accessible */
+					upsdebugx(1, "WARNING: stat for chmod failed: %s",
 						strerror(errno)
 					);
 					allOk = 0;
@@ -2297,13 +2321,19 @@ int main(int argc, char **argv)
 					mode = statbuf.st_mode;
 					mode |= S_IWGRP;
 					mode |= S_IRGRP;
-					if (chmod(sockname, mode)) {
+					if (fchmod(fd, mode)) {
 						upsdebugx(1, "WARNING: chmod failed: %s",
 							strerror(errno)
 						);
 						allOk = 0;
 					}
 				}
+			}
+
+sockname_ownership_finished:
+			if (VALID_FD(fd)) {
+				close(fd);
+				fd = ERROR_FD;
 			}
 
 			if (allOk) {
