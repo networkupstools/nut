@@ -146,7 +146,7 @@ upsdrv_info_t	upsdrv_info = {
 	"Charles Lepple <clepple+nut@gmail.com>\n" \
 	"Russell Kroll <rkroll@exploits.org>\n" \
 	"Rickard E. (Rik) Faith <faith@alephnull.com>\n" \
-	"Nicholas J. Kain <nicholas@kain.us>\n",
+	"Nicholas J. Kain <nicholas@kain.us>\n", \
 	"Eliran Sapir <e@vcboy.com>",
 	DRV_EXPERIMENTAL,
 	{ NULL }
