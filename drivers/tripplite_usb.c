@@ -146,7 +146,7 @@ upsdrv_info_t	upsdrv_info = {
 	"Charles Lepple <clepple+nut@gmail.com>\n" \
 	"Russell Kroll <rkroll@exploits.org>\n" \
 	"Rickard E. (Rik) Faith <faith@alephnull.com>\n" \
-	"Nicholas J. Kain <nicholas@kain.us>\n", \
+	"Nicholas J. Kain <nicholas@kain.us>\n" \
 	"Eliran Sapir <e@vcboy.com>",
 	DRV_EXPERIMENTAL,
 	{ NULL }
@@ -329,36 +329,39 @@ static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *rep
 int match_by_unitid(usb_dev_handle *udev, USBDevice_t *hd, usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen);
 int match_by_unitid(usb_dev_handle *udev, USBDevice_t *hd, usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen)
 {
-    char *value = getval("upsid");
-    NUT_UNUSED_VARIABLE(udev);
-    NUT_UNUSED_VARIABLE(hd);
-    NUT_UNUSED_VARIABLE(rdbuf);
-    NUT_UNUSED_VARIABLE(rdlen);
+	char *value = getval("upsid");
 	int config_unit_id = 0;
-    ssize_t ret;
-    unsigned char u_msg[] = "U";
-    unsigned char u_value[9];
-	// Read ups id from the ups.conf
-    if (value != NULL) {
-        config_unit_id = atoi(value);
-    }
-    // Read ups id from the device
-    if (tl_model != TRIPP_LITE_OMNIVS && tl_model != TRIPP_LITE_SMART_0004) {
-        /* Unit ID might not be supported by all models: */
-        ret = send_cmd(u_msg, sizeof(u_msg), u_value, sizeof(u_value) - 1);
-        if (ret <= 0) {
-            upslogx(LOG_INFO, "Unit ID not retrieved (not available on all models)");
-        } else {
-            unit_id = (int)((unsigned)(u_value[1]) << 8) | (unsigned)(u_value[2]);
-        }
-    }
+	ssize_t ret;
+	unsigned char u_msg[] = "U";
+	unsigned char u_value[9];
 
-    // Check if the ups ids match
-    if (config_unit_id == unit_id) {
-        return 1;
-    } else {
-        return 0;
-    }
+	NUT_UNUSED_VARIABLE(udev);
+	NUT_UNUSED_VARIABLE(hd);
+	NUT_UNUSED_VARIABLE(rdbuf);
+	NUT_UNUSED_VARIABLE(rdlen);
+
+	/* Read ups id from the ups.conf */
+	if (value != NULL) {
+		config_unit_id = atoi(value);
+	}
+
+	/* Read ups id from the device */
+	if (tl_model != TRIPP_LITE_OMNIVS && tl_model != TRIPP_LITE_SMART_0004) {
+		/* Unit ID might not be supported by all models: */
+		ret = send_cmd(u_msg, sizeof(u_msg), u_value, sizeof(u_value) - 1);
+		if (ret <= 0) {
+			upslogx(LOG_INFO, "Unit ID not retrieved (not available on all models)");
+		} else {
+			unit_id = (int)((unsigned)(u_value[1]) << 8) | (unsigned)(u_value[2]);
+		}
+	}
+
+	/* Check if the ups ids match */
+	if (config_unit_id == unit_id) {
+		return 1;
+	} else {
+		return 0;
+	}
 }
 
 /*!@brief Try to reconnect once.
