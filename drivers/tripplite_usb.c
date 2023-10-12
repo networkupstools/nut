@@ -326,8 +326,8 @@ static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *rep
    Default Unit Id is 65535. May be set with upsrw, and it persists after powerloss as well.
    To match by ups id, (upsid='your ups id') must be defined inside the ups.conf
 */ 
-int match_by_unitid(usb_dev_handle *udev, USBDevice_t *hd, usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen);
-int match_by_unitid(usb_dev_handle *udev, USBDevice_t *hd, usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen)
+int match_by_unitid(usb_dev_handle *argudev, USBDevice_t *arghd, usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen);
+int match_by_unitid(usb_dev_handle *argudev, USBDevice_t *arghd, usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen)
 {
 	char *value = getval("upsid");
 	int config_unit_id = 0;
@@ -335,8 +335,8 @@ int match_by_unitid(usb_dev_handle *udev, USBDevice_t *hd, usb_ctrl_charbuf rdbu
 	unsigned char u_msg[] = "U";
 	unsigned char u_value[9];
 
-	NUT_UNUSED_VARIABLE(udev);
-	NUT_UNUSED_VARIABLE(hd);
+	NUT_UNUSED_VARIABLE(argudev);
+	NUT_UNUSED_VARIABLE(arghd);
 	NUT_UNUSED_VARIABLE(rdbuf);
 	NUT_UNUSED_VARIABLE(rdlen);
 
