@@ -181,6 +181,9 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
 
  - powercom driver should now try harder to refresh data from device [#356]
 
+ - tripplite_usb driver now supports configuration of `upsid` to match the
+   specific device (not all firmware/hardware models support this) [#2075]
+
  - apcupsd-ups:
    * improvement for `POLL_INTERVAL_MIN` from PR #797 was buggy [#2007]
    * fix to clean obsoleted readings (if any) AFTER getting new info from an
