@@ -13,15 +13,22 @@ SYNOPSIS
 
 *sms_ser* -a 'UPS_NAME' ['OPTIONS']
 
-NOTE: This man page only documents the hardware-specific features of the
-sms_ser driver.  For information about the core driver, see
-linkman:nutupsdrv[8] and on doc/sms-brazil-protocol.txt.
+NOTE: This man page only documents the hardware-specific features
+of the sms_ser driver.  For information about the core driver, see
+linkman:nutupsdrv[8], and for the technical background check in
+doc/sms-brazil-protocol.txt.
+
+NOTE: Given the proximity of this protocol to Megatec Qx family,
+this driver may later become part of `nutdrv_qx` collection.
+
 
 SUPPORTED HARDWARE
 ------------------
 
-sms_ser supports only the sms 1phase SMS Product, get from `monofasico.xml` file.
-Other SMS protocols for another products are not supported.
+sms_ser supports only the "sms 1phase" SMS Product, as described in
+the `monofasico.xml` file delivered with the device.
+
+Other SMS protocols for their other products are not supported.
 
 
 AUTHOR
