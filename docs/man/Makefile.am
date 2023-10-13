@@ -425,6 +425,7 @@ SRC_SERIAL_PAGES = \
 	powerpanel.txt	\
 	rhino.txt		\
 	riello_ser.txt	\
+	sms_ser.txt \
 	safenet.txt	\
 	solis.txt		\
 	tripplite.txt	\
@@ -470,6 +471,7 @@ MAN_SERIAL_PAGES = \
 	powerpanel.8	\
 	rhino.8		\
 	riello_ser.8	\
+	sms_ser.8 \
 	safenet.8	\
 	solis.8		\
 	tripplite.8	\
@@ -518,6 +520,7 @@ HTML_SERIAL_MANS = \
 	powerpanel.html	\
 	rhino.html		\
 	riello_ser.html	\
+	sms_ser.html \
 	safenet.html	\
 	solis.html		\
 	tripplite.html	\

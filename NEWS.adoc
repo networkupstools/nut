@@ -155,6 +155,9 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
  - nutdrv_qx and blazer updates:
    * extended default ranges for max battery voltage when guessing [#1279]
 
+ - sms_ser, a driver for SMS Brazil UPS Protocol 1Phase, was introduced.
+   NOTE: it may later become a subdriver under nutdrv_qx. [#2090]
+
  - usbhid-ups updates:
    * added support for `subdriver` configuration option, to select the
      USB HID subdriver for the device manually where automatic match

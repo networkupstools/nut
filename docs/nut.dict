@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3243 utf-8
+personal_ws-1.1 en 3246 utf-8
 AAS
 ABI
 ACFAIL
@@ -126,6 +126,7 @@ BattTstFail
 BatteryA
 BatteryB
 BaudRt
+Baulé
 BayTech
 BeepTone
 Belkin's
@@ -1633,6 +1634,7 @@ boostvoolts
 bootable
 bp
 br
+brazil
 bsd
 bsv
 bt
@@ -2393,6 +2395,7 @@ modbus
 modelname
 modprobe
 monmaster
+monofasico
 monpasswd
 monslave
 monuser
