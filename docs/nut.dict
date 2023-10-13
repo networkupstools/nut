@@ -1319,6 +1319,7 @@ UPS's
 UPSCONN
 UPSDESC
 UPSHOST
+upsid
 UPSIMAGEPATH
 UPSLC
 UPSOutletSystemOutletDelayBeforeReboot
