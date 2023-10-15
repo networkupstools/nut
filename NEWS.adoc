@@ -406,8 +406,8 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
    similarly to `ONBATT`: currently this UPS "feeds" its load, but if later
    communications fail, it is considered dead. This may have unintended
    consequences for devices (or NUT drivers) that do not report these modes
-   correctly, e.g. an APC calibration routine seems to start with a few
-   seconds of "OFF" state, so the reported status is only considered as a
+   correctly (e.g. an APC calibration routine seems to start with a few
+   seconds of "OFF" state), so the reported status is only considered as a
    loss of feed if it persists for more than `OFFDURATION` seconds. [#2044,
    #2104]
 
