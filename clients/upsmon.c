@@ -67,6 +67,23 @@ static	unsigned int	pollfreq = 5, pollfreqalert = 5;
 	 */
 static	int	pollfail_log_throttle_max = -1;
 
+	/* We support "administrative OFF" for power devices which can
+	 * be managed to turn off their load while the UPS or ePDU remains
+	 * accessible for monitoring and management. This toggle allows
+	 * to delay propagation of such state into a known loss of a feed
+	 * (possibly triggering FSD on MONITOR'ing clients that are in fact
+	 * still alive - e.g. with multiple power sources), because when
+	 * some devices begin battery calibration, they report "OFF" for
+	 * a few seconds and only then they report "CAL" after switching
+	 * all the power relays (causing false-positives for FSD trigger).
+	 * A negative value means to disable decreasing the power-source
+	 * counter in such cases, and a zero makes the effect immediate.
+	 * NOTE: so far we support the device reporting an "OFF" state
+	 * which usually means completely un-powering the load; TODO was
+	 * logged for adding similar support for just some outlets/groups.
+	 */
+static	int	offdurationtime = 30;
+
 	/* secondary hosts are given 15 sec by default to logout from upsd */
 static	int	hostsync = 15;
 
@@ -569,14 +586,42 @@ static void ups_is_gone(utype_t *ups)
 
 static void ups_is_off(utype_t *ups)
 {
-	if (flag_isset(ups->status, ST_OFF)) { 	/* no change */
+	time_t	now;
+
+	time(&now);
+
+	if (flag_isset(ups->status, ST_OFF)) {	/* no change */
 		upsdebugx(4, "%s: %s (no change)", __func__, ups->sys);
+		if (ups->offsince < 1) {
+			/* Should not happen, but just in case */
+			ups->offsince = now;
+		} else {
+			if (offdurationtime > 0 && (now - ups->offsince) > offdurationtime) {
+				/* This should be a rare but urgent situation
+				 * that warrants an extra notification? */
+				upslogx(LOG_WARNING, "%s: %s is in state OFF for %d sec, "
+					"assuming the line is not fed "
+					"(if it is calibrating etc., check "
+					"the upsmon 'OFFDURATION' option)",
+					__func__, ups->sys, (int)(now - ups->offsince));
+				ups->linestate = 0;
+			}
+		}
 		return;
 	}
 
 	sleepval = pollfreqalert;	/* bump up polling frequency */
 
-	ups->linestate = 0;
+	ups->offsince = now;
+	if (offdurationtime == 0) {
+		/* This should be a rare but urgent situation
+		 * that warrants an extra notification? */
+		upslogx(LOG_WARNING, "%s: %s is in state OFF, assuming the line is not fed (if it is calibrating etc., check the upsmon 'OFFDURATION' option)", __func__, ups->sys);
+		ups->linestate = 0;
+	} else
+	if (offdurationtime < 0) {
+		upsdebugx(1, "%s: %s is in state OFF, but we are not assuming the line is not fed (due to upsmon 'OFFDURATION' option)", __func__, ups->sys);
+	}
 
 	upsdebugx(3, "%s: %s (first time)", __func__, ups->sys);
 
@@ -590,6 +635,7 @@ static void ups_is_off(utype_t *ups)
 static void ups_is_notoff(utype_t *ups)
 {
 	/* Called when OFF is NOT among known states */
+	ups->offsince = 0;
 	if (flag_isset(ups->status, ST_OFF)) {	/* actual change */
 		do_notify(ups, NOTIFY_NOTOFF);
 		clearflag(&ups->status, ST_OFF);
@@ -1535,6 +1581,12 @@ static int parse_conf_arg(size_t numargs, char **arg)
 		} else {
 			pollfail_log_throttle_max = ipollfail_log_throttle_max;
 		}
+		return 1;
+	}
+
+	/* OFFDURATION <num> */
+	if (!strcmp(arg[0], "OFFDURATION")) {
+		offdurationtime = atoi(arg[1]);
 		return 1;
 	}
 

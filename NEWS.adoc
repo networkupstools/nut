@@ -404,7 +404,12 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
    `MONITOR`'ed amount of power sources are considered not being "fed" for
    the power value calculation purposes. The `BYPASS` state is now treated
    similarly to `ONBATT`: currently this UPS "feeds" its load, but if later
-   communications fail, it is considered dead. [#2044]
+   communications fail, it is considered dead. This may have unintended
+   consequences for devices (or NUT drivers) that do not report these modes
+   correctly, e.g. an APC calibration routine seems to start with a few
+   seconds of "OFF" state, so the reported status is only considered as a
+   loss of feed if it persists for more than `OFFDURATION` seconds. [#2044,
+   #2104]
 
  - Extended Linux systemd support with optional notifications about daemon
    state (READY, RELOADING, STOPPING) and watchdog keep-alive messages [#1590]

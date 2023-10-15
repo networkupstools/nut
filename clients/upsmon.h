@@ -73,6 +73,9 @@ typedef struct {
 	time_t  lastnoncrit;		/* time of last non-crit poll	*/
 	time_t	lastrbwarn;		/* time of last REPLBATT warning*/
 	time_t	lastncwarn;		/* time of last NOCOMM warning	*/
+
+	time_t	offsince;		/* time of recent entry into OFF state	*/
+
 	void	*next;
 }	utype_t;
 

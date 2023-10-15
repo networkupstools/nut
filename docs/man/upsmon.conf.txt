@@ -318,6 +318,27 @@ Refer to the section:
 [[UPS_shutdown]] "Configuring automatic shutdowns for low battery events",
 or refer to the online version.
 
+*OFFDURATION* 'seconds'::
+
+NUT supports an "administrative OFF" for power devices which can be managed to
+turn off their application workload, while the UPS or ePDU remains accessible
+for monitoring and management. This toggle allows to delay propagation of such
+state into a known loss of a feed (possibly triggering FSD on `upsmon` clients
+which `MONITOR` the device and are in fact still alive -- e.g. with multiple
+power sources or because they as the load are not really turned off), because
+when some devices begin battery calibration, they report "OFF" for a few seconds
+and only then they might report "CAL" after switching all the power relays --
+thus causing false-positives for `upsmon` FSD trigger.
++
+A negative value means to disable decreasing the counter of working power
+supplies in such cases, and a zero makes the effect of detected "OFF" state
+immediate. Built-in default value is 30 (seconds), to put an "OFF" state into
+effect (decrease known-fed supplies count) if it persists for this many seconds.
++
+NOTE: so far we support the device reporting an "OFF" state which usually
+means completely un-powering the load; a bug-tracker issue was logged to
+design similar support for just some manageable outlets or outlet groups.
+
 *RBWARNTIME* 'seconds'::
 
 When a UPS says that it needs to have its battery replaced, upsmon will
