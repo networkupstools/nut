@@ -1038,9 +1038,52 @@ static int is_ups_critical(utype_t *ups)
 	if (flag_isset(ups->status, ST_FSD))
 		return 1;
 
+	if (ups->commstate == 0) {
+		if (flag_isset(ups->status, ST_CAL)) {
+			upslogx(LOG_WARNING,
+				"UPS [%s] was last known to be calibrating "
+				"and currently is not communicating, assuming dead",
+				ups->sys);
+			return 1;
+		}
+
+		if (flag_isset(ups->status, ST_BYPASS)) {
+			upslogx(LOG_WARNING,
+				"UPS [%s] was last known to be on BYPASS "
+				"and currently is not communicating, assuming dead",
+				ups->sys);
+			return 1;
+		}
+
+		if (flag_isset(ups->status, ST_OFF) && offdurationtime >= 0) {
+			upslogx(LOG_WARNING,
+				"UPS [%s] was last known to be (administratively) OFF "
+				"and currently is not communicating, assuming dead",
+				ups->sys);
+			return 1;
+		}
+
+		if (ups->linestate == 0) {
+			upslogx(LOG_WARNING,
+				"UPS [%s] was last known to be not fully online "
+				"and currently is not communicating, assuming dead",
+				ups->sys);
+			return 1;
+		}
+	}
+
+	/* administratively OFF (long enough, see OFFDURATION) */
+	if (flag_isset(ups->status, ST_OFF) && offdurationtime >= 0 && ups->linestate == 0) {
+		upslogx(LOG_WARNING,
+			"UPS [%s] is reported as (administratively) OFF",
+			ups->sys);
+		return 1;
+	}
+
 	/* not OB or not LB = not critical yet */
-	if ((!flag_isset(ups->status, ST_ONBATT)) ||
-		(!flag_isset(ups->status, ST_LOWBATT)))
+	if ((!flag_isset(ups->status, ST_ONBATT))
+	|| (!flag_isset(ups->status, ST_LOWBATT))
+	)
 		return 0;
 
 	/* must be OB+LB now */
@@ -1102,10 +1145,10 @@ static void recalc(void)
 		 * this means a UPS we've never heard from is assumed OL     *
 		 * whether this is really the best thing to do is undecided  */
 
-		/* crit = (FSD) || (OB & LB) > HOSTSYNC seconds */
+		/* crit = (FSD) || (OB & LB) > HOSTSYNC seconds || (OFF || BYPASS) && nocomms */
 		if (is_ups_critical(ups))
 			upsdebugx(1, "Critical UPS: %s", ups->sys);
-		else if (!flag_isset(ups->status, ST_OFF))
+		else
 			val_ol += ups->pv;
 
 		ups = ups->next;
