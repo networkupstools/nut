@@ -1070,8 +1070,9 @@ static int is_ups_critical(utype_t *ups)
 
 	/* give the primary up to HOSTSYNC seconds before shutting down */
 	if ((now - ups->lastnoncrit) > hostsync) {
-		upslogx(LOG_WARNING, "Giving up on the primary for UPS [%s]",
-			ups->sys);
+		upslogx(LOG_WARNING, "Giving up on the primary for UPS [%s] "
+			"after %d sec since last comms",
+			ups->sys, (int)(now - ups->lastnoncrit));
 		return 1;
 	}
 
