@@ -1856,6 +1856,15 @@ static void ups_status_set(void)
 		dstate_delinfo("input.transfer.reason");
 	}
 
+	/* Report calibration mode first, because it looks like OFF or OB
+	 * for many implementations (literally, it is a temporary OB state
+	 * managed by the UPS hardware to become OL later... if it guesses
+	 * correctly when to do so), and may cause false alarms for us to
+	 * raise FSD urgently. So we first let upsmon know it is just a drill.
+	 */
+	if (ups_status & STATUS(CALIB)) {
+		status_set("CAL");		/* calibration */
+	}
 
 	if (!(ups_status & STATUS(ONLINE))) {
 		status_set("OB");		/* on battery */
@@ -1906,9 +1915,6 @@ static void ups_status_set(void)
 	}
 	if (ups_status & STATUS(OFF)) {
 		status_set("OFF");		/* ups is off */
-	}
-	if (ups_status & STATUS(CALIB)) {
-		status_set("CAL");		/* calibration */
 	}
 }
 
