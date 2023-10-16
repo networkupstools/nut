@@ -19,7 +19,8 @@ AC_DEFUN([AX_RUN_OR_LINK_IFELSE],
 	myCFLAGS="$CFLAGS"
 	myCXXFLAGS="$CXXFLAGS"
 	CFLAGS="$myCFLAGS -Werror -Werror=implicit-function-declaration $4"
-	CXXFLAGS="$myCXXFLAGS -Werror -Werror=implicit-function-declaration $5"
+	dnl # cc1plus: error: '-Werror=' argument '-Werror=implicit-function-declaration' is not valid for C++ [-Werror]
+	CXXFLAGS="$myCXXFLAGS -Werror $5"
 	AC_RUN_IFELSE([$1], [$2], [$3],
 		[
 		AC_MSG_WARN([Current build is a cross-build, so not running test binaries, just linking them])
