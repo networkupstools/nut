@@ -178,6 +178,8 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
    * powercom-hid subdriver: fixed `UPS.Battery.ManufacturerDate` to map
      to `battery.mfr.date` (not `battery.date` which is the maintenance
      replacement date) [#1644]
+   * added `onlinedischarge_calibration` option for UPSes that report
+     `OL+DISCHRG` when they are in calibration mode [#2104]
 
  - powercom driver should now try harder to refresh data from device [#356]
 
