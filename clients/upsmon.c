@@ -164,6 +164,16 @@ static int flag_isset(int num, int flag)
 	return ((num & flag) == flag);
 }
 
+static int try_restore_pollfreq(utype_t *ups) {
+	/* Use relaxed pollfreq if we are not in a hardware
+	 * power state that is prone to UPS disappearance */
+	if (!flag_isset(ups->status, ST_ONBATT | ST_OFF | ST_BYPASS | ST_CAL)) {
+		sleepval = pollfreq;
+		return 1;
+	}
+	return 0;
+}
+
 static void wall(const char *text)
 {
 #ifndef WIN32
@@ -638,11 +648,7 @@ static void ups_is_notoff(utype_t *ups)
 	if (flag_isset(ups->status, ST_OFF)) {	/* actual change */
 		do_notify(ups, NOTIFY_NOTOFF);
 		clearflag(&ups->status, ST_OFF);
-
-		if (!flag_isset(ups->status, ST_ONBATT)) {
-			sleepval = pollfreq;
-			setflag(&ups->status, ST_ONLINE);
-		}
+		try_restore_pollfreq(ups);
 	}
 }
 
@@ -672,11 +678,7 @@ static void ups_is_notbypass(utype_t *ups)
 	if (flag_isset(ups->status, ST_BYPASS)) {	/* actual change */
 		do_notify(ups, NOTIFY_NOTBYPASS);
 		clearflag(&ups->status, ST_BYPASS);
-
-		if (!flag_isset(ups->status, ST_ONBATT)) {
-			sleepval = pollfreq;
-			setflag(&ups->status, ST_ONLINE);
-		}
+		try_restore_pollfreq(ups);
 	}
 }
 
@@ -702,12 +704,12 @@ static void ups_on_batt(utype_t *ups)
 
 static void ups_on_line(utype_t *ups)
 {
+	try_restore_pollfreq(ups);
+
 	if (flag_isset(ups->status, ST_ONLINE)) { 	/* no change */
 		upsdebugx(4, "%s: %s (no change)", __func__, ups->sys);
 		return;
 	}
-
-	sleepval = pollfreq;
 
 	upsdebugx(3, "%s: %s (first time)", __func__, ups->sys);
 
