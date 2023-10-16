@@ -963,6 +963,10 @@ fi
 ])
 
 AC_DEFUN([AX_C_PRINTF_STRING_NULL], [
+dnl The following code crashes on some libc implementations (e.g. Solaris 8)
+dnl TODO: We may need to update NUT codebase to use NUT_STRARG() macro more
+dnl often and consistently, or find a way to tweak upsdebugx() etc. varargs.
+
 if test -z "${nut_have_ax_c_printf_string_null_seen}"; then
   nut_have_ax_c_printf_string_null_seen="yes"
   AC_REQUIRE([AX_RUN_OR_LINK_IFELSE])dnl
@@ -992,22 +996,35 @@ char *s = NULL;
 int res = snprintf(buf, sizeof(buf), "%s", s);
 buf[sizeof(buf)-1] = '\0';
 if (res < 0) {
-    fprintf(stderr, "FAILED to snprintf() a NULL string argument\n");
+    fprintf(stderr, "FAILED to snprintf() a variable NULL string argument\n");
     return 1;
 }
 if (buf[0] == '\0') {
-    fprintf(stderr, "RETURNED empty string from snprintf() with a NULL string argument\n");
+    fprintf(stderr, "RETURNED empty string from snprintf() with a variable NULL string argument\n");
     return 0;
 }
 if (strstr(buf, "null") == NULL) {
-    fprintf(stderr, "RETURNED some string from snprintf() with a NULL string argument: '%s'\n", buf);
+    fprintf(stderr, "RETURNED some string from snprintf() with a variable NULL string argument: '%s'\n", buf);
     return 0;
 }
-fprintf(stderr, "SUCCESS: RETURNED a string that contains something like 'null' from snprintf() with a NULL string argument: '%s'\n", buf);
+fprintf(stderr, "SUCCESS: RETURNED a string that contains something like 'null' from snprintf() with a variable NULL string argument: '%s'\n", buf);
+
+res = printf("%s", NULL);
+if (res < 0) {
+    fprintf(stderr, "FAILED to printf() an explicit NULL string argument (to stdout)\n");
+    return 1;
+}
 return 0;
             ]])],
-        [ax_cv__printf_string_null=yes],
-        [ax_cv__printf_string_null=no],
+        [ax_cv__printf_string_null=yes
+         AM_CONDITIONAL([REQUIRE_NUT_STRARG], [false])
+        ],
+        [ax_cv__printf_string_null=no
+         AC_DEFINE([REQUIRE_NUT_STRARG], [1],
+            [Define to 1 if your libc requires workarounds to print NULL values.])
+         AC_MSG_WARN([Your C library requires workarounds to print NULL values; if something crashes with a segmentation fault (especially during verbose debug) - that may be why])
+         AM_CONDITIONAL([REQUIRE_NUT_STRARG], [true])
+        ],
         [${myWARN_CFLAGS}]
     )]
   )
