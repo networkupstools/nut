@@ -1205,8 +1205,8 @@ AC_CACHE_CHECK([for inet_pton() with IPv4 and IPv6 support],
             [[/* int inet_pton(int af, const char *src, char *dst); */
 struct in_addr  ipv4;
 struct in6_addr ipv6;
-printf("%i", inet_pton(AF_INET, "1.2.3.4", &ipv4));
-printf("%i", inet_pton(AF_INET6, "::1", &ipv6))
+printf("%i ", inet_pton(AF_INET, "1.2.3.4", &ipv4));
+printf("%i ", inet_pton(AF_INET6, "::1", &ipv6))
 /* autoconf adds ";return 0;" */
 ]])],
         [ac_cv_func_inet_pton=yes], [ac_cv_func_inet_pton=no]
