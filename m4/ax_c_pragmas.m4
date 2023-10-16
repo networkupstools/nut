@@ -1017,13 +1017,8 @@ if (res < 0) {
 return 0;
             ]])],
         [ax_cv__printf_string_null=yes
-         AM_CONDITIONAL([REQUIRE_NUT_STRARG], [false])
         ],
         [ax_cv__printf_string_null=no
-         AC_DEFINE([REQUIRE_NUT_STRARG], [1],
-            [Define to 1 if your libc requires workarounds to print NULL values.])
-         AC_MSG_WARN([Your C library requires workarounds to print NULL values; if something crashes with a segmentation fault (especially during verbose debug) - that may be why])
-         AM_CONDITIONAL([REQUIRE_NUT_STRARG], [true])
         ],
         [${myWARN_CFLAGS}]
     )]
@@ -1031,7 +1026,14 @@ return 0;
   unset myWARN_CFLAGS
 
   AS_IF([test "$ax_cv__printf_string_null" = "yes"],[
-    AC_DEFINE([HAVE_PRINTF_STRING_NULL], 1, [define if your libc can printf("%s", NULL) sanely])
+    AM_CONDITIONAL([REQUIRE_NUT_STRARG], [false])
+    AC_DEFINE([REQUIRE_NUT_STRARG], [0],
+      [Define to 0 if your libc can printf("%s", NULL) sanely, or to 1 if your libc requires workarounds to print NULL values.])
+  ],[
+    AM_CONDITIONAL([REQUIRE_NUT_STRARG], [true])
+    AC_DEFINE([REQUIRE_NUT_STRARG], [1],
+      [Define to 0 if your libc can printf("%s", NULL) sanely, or to 1 if your libc requires workarounds to print NULL values.])
+    AC_MSG_WARN([Your C library requires workarounds to print NULL values; if something crashes with a segmentation fault (especially during verbose debug) - that may be why])
   ])
 
   AC_LANG_POP([C])
