@@ -967,6 +967,13 @@ if test -z "${nut_have_ax_c_printf_string_null_seen}"; then
   nut_have_ax_c_printf_string_null_seen="yes"
   AC_REQUIRE([AX_RUN_OR_LINK_IFELSE])dnl
 
+  dnl Here we do not care if the compiler formally complains about
+  dnl undefined behavior of printf("%s", NULL) as long as it works
+  dnl in practice (compiler or libc implement a sane fallback):
+  myWARN_CFLAGS=""
+  AS_IF([test "${GCC}" = "yes" || test "${CLANGCC}" = "yes"],
+    [myWARN_CFLAGS="-Wno-format-truncation -Wno-format-overflow"])
+
   dnl ### To be sure, bolt the language
   AC_LANG_PUSH([C])
 
@@ -979,6 +986,9 @@ if test -z "${nut_have_ax_c_printf_string_null_seen}"; then
 ], [[
 char buf[128];
 char *s = NULL;
+/* The following line may issue pedantic static analysis warnings (ignored);
+ * it may also crash (segfault) during a run on some systems - hence the test.
+ */
 int res = snprintf(buf, sizeof(buf), "%s", s);
 buf[sizeof(buf)-1] = '\0';
 if (res < 0) {
@@ -997,9 +1007,11 @@ fprintf(stderr, "SUCCESS: RETURNED a string that contains something like 'null' 
 return 0;
             ]])],
         [ax_cv__printf_string_null=yes],
-        [ax_cv__printf_string_null=no]
+        [ax_cv__printf_string_null=no],
+        [${myWARN_CFLAGS}]
     )]
   )
+  unset myWARN_CFLAGS
 
   AS_IF([test "$ax_cv__printf_string_null" = "yes"],[
     AC_DEFINE([HAVE_PRINTF_STRING_NULL], 1, [define if your libc can printf("%s", NULL) sanely])
