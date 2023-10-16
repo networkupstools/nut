@@ -62,6 +62,10 @@ typedef struct {
 	/* handle suppression of COMMOK and ONLINE at startup */
 	int	commstate;		/* these start at -1, and only	*/
 	int	linestate;		/* fire on a 0->1 transition	*/
+	int	offstate;		/* fire on a 0->1 transition, may	*/
+					/* be delayed vs. seeing OFF state	*/
+	int	bypassstate;		/* fire on a 0->1 transition;	*/
+					/* delays not implemented now	*/
 
 	/* see detailed comment for pollfail_log_throttle_max in upsmon.c
 	 * about handling of poll failure log throttling (syslog storage I/O)

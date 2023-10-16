@@ -604,7 +604,7 @@ static void ups_is_off(utype_t *ups)
 					"(if it is calibrating etc., check "
 					"the upsmon 'OFFDURATION' option)",
 					__func__, ups->sys, (int)(now - ups->offsince));
-				ups->linestate = 0;
+				ups->offstate = 1;
 			}
 		}
 		return;
@@ -617,7 +617,7 @@ static void ups_is_off(utype_t *ups)
 		/* This should be a rare but urgent situation
 		 * that warrants an extra notification? */
 		upslogx(LOG_WARNING, "%s: %s is in state OFF, assuming the line is not fed (if it is calibrating etc., check the upsmon 'OFFDURATION' option)", __func__, ups->sys);
-		ups->linestate = 0;
+		ups->offstate = 1;
 	} else
 	if (offdurationtime < 0) {
 		upsdebugx(1, "%s: %s is in state OFF, but we are not assuming the line is not fed (due to upsmon 'OFFDURATION' option)", __func__, ups->sys);
@@ -626,23 +626,21 @@ static void ups_is_off(utype_t *ups)
 	upsdebugx(3, "%s: %s (first time)", __func__, ups->sys);
 
 	/* must have changed from !OFF to OFF, so notify */
-
 	do_notify(ups, NOTIFY_OFF);
 	setflag(&ups->status, ST_OFF);
-	clearflag(&ups->status, ST_ONLINE);
 }
 
 static void ups_is_notoff(utype_t *ups)
 {
 	/* Called when OFF is NOT among known states */
 	ups->offsince = 0;
+	ups->offstate = 0;
 	if (flag_isset(ups->status, ST_OFF)) {	/* actual change */
 		do_notify(ups, NOTIFY_NOTOFF);
 		clearflag(&ups->status, ST_OFF);
 
 		if (!flag_isset(ups->status, ST_ONBATT)) {
 			sleepval = pollfreq;
-			ups->linestate = 1;
 			setflag(&ups->status, ST_ONLINE);
 		}
 	}
@@ -657,7 +655,7 @@ static void ups_is_bypass(utype_t *ups)
 
 	sleepval = pollfreqalert;	/* bump up polling frequency */
 
-	ups->linestate = 0;	/* if we lose comms, consider it AWOL */
+	ups->bypassstate = 1;	/* if we lose comms, consider it AWOL */
 
 	upsdebugx(3, "%s: %s (first time)", __func__, ups->sys);
 
@@ -665,19 +663,18 @@ static void ups_is_bypass(utype_t *ups)
 
 	do_notify(ups, NOTIFY_BYPASS);
 	setflag(&ups->status, ST_BYPASS);
-	clearflag(&ups->status, ST_ONLINE);
 }
 
 static void ups_is_notbypass(utype_t *ups)
 {
 	/* Called when BYPASS is NOT among known states */
+	ups->bypassstate = 0;
 	if (flag_isset(ups->status, ST_BYPASS)) {	/* actual change */
 		do_notify(ups, NOTIFY_NOTBYPASS);
 		clearflag(&ups->status, ST_BYPASS);
 
 		if (!flag_isset(ups->status, ST_ONBATT)) {
 			sleepval = pollfreq;
-			ups->linestate = 1;
 			setflag(&ups->status, ST_ONLINE);
 		}
 	}
@@ -701,7 +698,6 @@ static void ups_on_batt(utype_t *ups)
 	do_notify(ups, NOTIFY_ONBATT);
 	setflag(&ups->status, ST_ONBATT);
 	clearflag(&ups->status, ST_ONLINE);
-	clearflag(&ups->status, ST_OFF);
 }
 
 static void ups_on_line(utype_t *ups)
@@ -723,7 +719,6 @@ static void ups_on_line(utype_t *ups)
 
 	setflag(&ups->status, ST_ONLINE);
 	clearflag(&ups->status, ST_ONBATT);
-	clearflag(&ups->status, ST_OFF);
 }
 
 /* create the flag file if necessary */
@@ -1047,7 +1042,8 @@ static int is_ups_critical(utype_t *ups)
 			return 1;
 		}
 
-		if (flag_isset(ups->status, ST_BYPASS)) {
+		if (ups->bypassstate == 1
+		|| flag_isset(ups->status, ST_BYPASS)) {
 			upslogx(LOG_WARNING,
 				"UPS [%s] was last known to be on BYPASS "
 				"and currently is not communicating, assuming dead",
@@ -1055,7 +1051,8 @@ static int is_ups_critical(utype_t *ups)
 			return 1;
 		}
 
-		if (flag_isset(ups->status, ST_OFF) && offdurationtime >= 0) {
+		if (ups->offstate == 1
+		|| (offdurationtime >= 0 && flag_isset(ups->status, ST_OFF))) {
 			upslogx(LOG_WARNING,
 				"UPS [%s] was last known to be (administratively) OFF "
 				"and currently is not communicating, assuming dead",
@@ -1073,7 +1070,8 @@ static int is_ups_critical(utype_t *ups)
 	}
 
 	/* administratively OFF (long enough, see OFFDURATION) */
-	if (flag_isset(ups->status, ST_OFF) && offdurationtime >= 0 && ups->linestate == 0) {
+	if (flag_isset(ups->status, ST_OFF) && offdurationtime >= 0
+	&& (ups->linestate == 0 || ups->offstate == 1)) {
 		upslogx(LOG_WARNING,
 			"UPS [%s] is reported as (administratively) OFF",
 			ups->sys);
