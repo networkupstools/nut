@@ -3,6 +3,10 @@ dnl but it provides the fourth argument to customize the handling.
 dnl In our case, we would fall back to trying just to link then -
 dnl the result would not be as relevant regarding run-time behavior
 dnl of the code, but at least we would know that API and ABI are ok.
+dnl Here the fourth and fifth arguments can be used to pass custom
+dnl CFLAGS and CXXFLAGS options (e.g. warnings to cover or ignore),
+dnl respectively. For the test to succeed, the build/link must pass
+dnl without warnings.
 
 dnl Per original /usr/share/autoconf/autoconf/general.m4 which makes
 dnl a similar wrapper:
@@ -14,8 +18,8 @@ AC_DEFUN([AX_RUN_OR_LINK_IFELSE],
 [
 	myCFLAGS="$CFLAGS"
 	myCXXFLAGS="$CXXFLAGS"
-	CFLAGS="$myCFLAGS -Werror -Werror=implicit-function-declaration"
-	CXXFLAGS="$myCXXFLAGS -Werror -Werror=implicit-function-declaration"
+	CFLAGS="$myCFLAGS -Werror -Werror=implicit-function-declaration $4"
+	CXXFLAGS="$myCXXFLAGS -Werror -Werror=implicit-function-declaration $5"
 	AC_RUN_IFELSE([$1], [$2], [$3],
 		[
 		AC_MSG_WARN([Current build is a cross-build, so not running test binaries, just linking them])
