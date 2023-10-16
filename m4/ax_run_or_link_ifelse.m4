@@ -18,9 +18,16 @@ AC_DEFUN([AX_RUN_OR_LINK_IFELSE],
 [
 	myCFLAGS="$CFLAGS"
 	myCXXFLAGS="$CXXFLAGS"
-	CFLAGS="$myCFLAGS -Werror -Werror=implicit-function-declaration $4"
-	dnl # cc1plus: error: '-Werror=' argument '-Werror=implicit-function-declaration' is not valid for C++ [-Werror]
-	CXXFLAGS="$myCXXFLAGS -Werror $5"
+	AS_IF([test "${GCC}" = "yes" || test "${CLANGCC}" = "yes"], [
+		CFLAGS="$myCFLAGS -Werror -Werror=implicit-function-declaration $4"
+		dnl # cc1plus: error: '-Werror=' argument '-Werror=implicit-function-declaration' is not valid for C++ [-Werror]
+		CXXFLAGS="$myCXXFLAGS -Werror $5"
+	], [
+		dnl # Don't know what to complain about for unknown compilers
+		dnl # FIXME: Presume here they have at least a "-Werror" option
+		CFLAGS="$myCFLAGS -Werror $4"
+		CXXFLAGS="$myCXXFLAGS -Werror $5"
+	])
 	AC_RUN_IFELSE([$1], [$2], [$3],
 		[
 		AC_MSG_WARN([Current build is a cross-build, so not running test binaries, just linking them])
