@@ -30,7 +30,7 @@ nutlogtest-nofail.sh: nutlogtest$(EXEEXT)
 	@echo '#!/bin/sh' > $@
 	@echo 'echo "WARNING: Your C library requires workarounds to print NULL values!" >&2' >> $@
 	@echo 'echo "If nutlogtest below, or generally some NUT program, crashes with" >&2' >> $@
-	@echo 'echo "a segmentation fault (especially with verbose debug) - that may be why" >&2' >> $@
+	@echo 'echo "a segmentation fault (especially during verbose debug) - that may be why" >&2' >> $@
 	@echo 'SCRIPT_DIR="`dirname "$$0"`"' >> $@
 	@echo '"$${SCRIPT_DIR}/nutlogtest" "$$@" || echo "nutlogtest FAILED but it was expected"' >> $@
 	@chmod +x $@

@@ -1024,28 +1024,6 @@ AC_CHECK_FUNCS(vsnprintf snprintf, [], [
 	AC_TYPE_LONG_LONG_INT
 ])
 
-AC_MSG_CHECKING([whether printf allows null string args])
-AC_LANG_PUSH([C])
-dnl The following code crashes on some libc implementations (e.g. Solaris 8)
-dnl TODO: We may need to update NUT codebase to use NUT_STRARG() macro more
-dnl often and consistently, or find a way to tweak upsdebugx() etc. varargs
-AX_RUN_OR_LINK_IFELSE([AC_LANG_PROGRAM(
-    [#include <stdlib.h>],
-    [printf("%s", NULL)]
-)],
-    [
-     AC_MSG_RESULT([ok])
-     AM_CONDITIONAL([REQUIRE_NUT_STRARG], [false])
-    ],
-    [AC_MSG_RESULT([no])
-     AC_DEFINE([REQUIRE_NUT_STRARG], [1],
-        [Define to 1 if your libc requires workarounds to print NULL values.])
-     AC_MSG_WARN([Your C library requires workarounds to print NULL values; if something crashes with a segmentation fault (especially with verbose debug) - that may be why])
-     AM_CONDITIONAL([REQUIRE_NUT_STRARG], [true])
-    ]
-)
-AC_LANG_POP([C])
-
 
 AC_REPLACE_FUNCS(setenv strerror atexit)
 
@@ -1205,8 +1183,8 @@ AC_CACHE_CHECK([for inet_pton() with IPv4 and IPv6 support],
             [[/* int inet_pton(int af, const char *src, char *dst); */
 struct in_addr  ipv4;
 struct in6_addr ipv6;
-printf("%i", inet_pton(AF_INET, "1.2.3.4", &ipv4));
-printf("%i", inet_pton(AF_INET6, "::1", &ipv6))
+printf("%i ", inet_pton(AF_INET, "1.2.3.4", &ipv4));
+printf("%i ", inet_pton(AF_INET6, "::1", &ipv6))
 /* autoconf adds ";return 0;" */
 ]])],
         [ac_cv_func_inet_pton=yes], [ac_cv_func_inet_pton=no]
