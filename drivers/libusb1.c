@@ -268,6 +268,8 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		} else {
 			upsdebugx(1, "%s: invalid libusb bus number %i",
 				__func__, bus_num);
+			free(curDevice->Bus);
+			curDevice->Bus = NULL;
 		}
 
 		device_addr = libusb_get_device_address(device);
@@ -290,6 +292,8 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			} else {
 				upsdebugx(1, "%s: invalid libusb device address %" PRIu8,
 					__func__, device_addr);
+				free(curDevice->Device);
+				curDevice->Device = NULL;
 			}
 		}
 
@@ -305,6 +309,8 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		} else {
 			upsdebugx(1, "%s: invalid libusb bus number %i",
 				__func__, bus_port);
+			free(curDevice->BusPort);
+			curDevice->BusPort = NULL;
 		}
 #endif
 
