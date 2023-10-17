@@ -116,6 +116,16 @@ For most devices this combination means calibration or similar maintenance;
 however some UPS models (e.g. CyberPower UT series) emit `OL+DISCHRG` when
 wall power is lost -- and need this option to handle shutdowns.
 
+*onlinedischarge_calibration*::
+If this flag is set, the driver will treat `OL+DISCHRG` status as calibration.
+Some UPS models (e.g. APC were seen to do so) report `OL+DISCHRG` when they
+are in calibration mode. This usually happens after a few seconds reporting
+an `OFF` state as well, while the hardware is switching to on-battery mode.
++
+NOTE: If it takes so long on your device that a shutdown gets issued, you may
+want to look at `upsmon` option `OFFDURATION` used to filter out temporary
+values of "administrative OFF" as not a loss of a feed for the powered load.
+
 *disable_fix_report_desc*::
 Set to disable fix-ups for broken USB encoding, etc. which we apply by default
 on certain models (vendors/products) which were reported as not following the

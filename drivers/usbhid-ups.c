@@ -148,6 +148,13 @@ hid_dev_handle_t udev = HID_DEV_HANDLE_CLOSED;
  */
 static int onlinedischarge = 0;
 
+/**
+ * Some UPS models (e.g. APC were seen to do so) report OL & DISCHRG when they
+ * are in calibration mode. This usually happens after a few seconds reporting
+ * an "OFF" state as well, while the hardware is switching to on-battery mode.
+ */
+static int onlinedischarge_calibration = 0;
+
 /* support functions */
 static hid_info_t *find_nut_info(const char *varname);
 static hid_info_t *find_hid_info(const HIDData_t *hiddata);
@@ -939,6 +946,9 @@ void upsdrv_makevartable(void)
 	addvar(VAR_FLAG, "onlinedischarge",
 		"Set to treat discharging while online as being offline");
 
+	addvar(VAR_FLAG, "onlinedischarge_calibration",
+		"Set to treat discharging while online as doing calibration");
+
 	addvar(VAR_FLAG, "disable_fix_report_desc",
 		"Set to disable fix-ups for broken USB encoding, etc. which we apply by default on certain vendors/products");
 
@@ -1247,6 +1257,10 @@ void upsdrv_initups(void)
 	/* Activate Cyberpower tweaks */
 	if (testvar("onlinedischarge")) {
 		onlinedischarge = 1;
+	}
+
+	if (testvar("onlinedischarge_calibration")) {
+		onlinedischarge_calibration = 1;
 	}
 
 	if (testvar("disable_fix_report_desc")) {
@@ -1856,28 +1870,47 @@ static void ups_status_set(void)
 		dstate_delinfo("input.transfer.reason");
 	}
 
+	/* Report calibration mode first, because it looks like OFF or OB
+	 * for many implementations (literally, it is a temporary OB state
+	 * managed by the UPS hardware to become OL later... if it guesses
+	 * correctly when to do so), and may cause false alarms for us to
+	 * raise FSD urgently. So we first let upsmon know it is just a drill.
+	 */
+	if (ups_status & STATUS(CALIB)) {
+		status_set("CAL");		/* calibration */
+	}
 
 	if (!(ups_status & STATUS(ONLINE))) {
 		status_set("OB");		/* on battery */
 	} else if ((ups_status & STATUS(DISCHRG))) {
-			/* if online */
+		/* if online but discharging */
+		if (onlinedischarge_calibration) {
+			/* if we treat OL+DISCHRG as calibrating */
+			status_set("CAL");	/* calibration */
+		}
+
 		if (onlinedischarge) {
 			/* if we treat OL+DISCHRG as being offline */
 			status_set("OB");	/* on battery */
-		} else {
+		}
+
+		if (!onlinedischarge && !onlinedischarge_calibration) {
 			if (!(ups_status & STATUS(CALIB))) {
 				/* if in OL+DISCHRG unknowingly, warn user */
 				upslogx(LOG_WARNING, "%s: seems that UPS [%s] is in OL+DISCHRG state now. "
-				"Is it calibrating or do you perhaps want to set 'onlinedischarge' option? "
-				"Some UPS models (e.g. CyberPower UT series) emit OL+DISCHRG when offline.",
+				"Is it calibrating (perhaps you want to set 'onlinedischarge_calibration' option)? "
+				"Note that some UPS models (e.g. CyberPower UT series) emit OL+DISCHRG when "
+				"in fact offline/on-battery (perhaps you want to set 'onlinedischarge' option).",
 				__func__, upsname);
 			}
 			/* if we're calibrating */
 			status_set("OL");	/* on line */
 		}
 	} else if ((ups_status & STATUS(ONLINE))) {
+		/* if simply online */
 		status_set("OL");
 	}
+
 	if ((ups_status & STATUS(DISCHRG)) &&
 		!(ups_status & STATUS(DEPLETED))) {
 		status_set("DISCHRG");		/* discharging */
@@ -1906,9 +1939,6 @@ static void ups_status_set(void)
 	}
 	if (ups_status & STATUS(OFF)) {
 		status_set("OFF");		/* ups is off */
-	}
-	if (ups_status & STATUS(CALIB)) {
-		status_set("CAL");		/* calibration */
 	}
 }
 

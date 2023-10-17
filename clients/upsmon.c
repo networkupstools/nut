@@ -67,6 +67,23 @@ static	unsigned int	pollfreq = 5, pollfreqalert = 5;
 	 */
 static	int	pollfail_log_throttle_max = -1;
 
+	/* We support "administrative OFF" for power devices which can
+	 * be managed to turn off their load while the UPS or ePDU remains
+	 * accessible for monitoring and management. This toggle allows
+	 * to delay propagation of such state into a known loss of a feed
+	 * (possibly triggering FSD on MONITOR'ing clients that are in fact
+	 * still alive - e.g. with multiple power sources), because when
+	 * some devices begin battery calibration, they report "OFF" for
+	 * a few seconds and only then they report "CAL" after switching
+	 * all the power relays (causing false-positives for FSD trigger).
+	 * A negative value means to disable decreasing the power-source
+	 * counter in such cases, and a zero makes the effect immediate.
+	 * NOTE: so far we support the device reporting an "OFF" state
+	 * which usually means completely un-powering the load; TODO was
+	 * logged for adding similar support for just some outlets/groups.
+	 */
+static	int	offdurationtime = 30;
+
 	/* secondary hosts are given 15 sec by default to logout from upsd */
 static	int	hostsync = 15;
 
@@ -145,6 +162,16 @@ static void clearflag(int *val, int flag)
 static int flag_isset(int num, int flag)
 {
 	return ((num & flag) == flag);
+}
+
+static int try_restore_pollfreq(utype_t *ups) {
+	/* Use relaxed pollfreq if we are not in a hardware
+	 * power state that is prone to UPS disappearance */
+	if (!flag_isset(ups->status, ST_ONBATT | ST_OFF | ST_BYPASS | ST_CAL)) {
+		sleepval = pollfreq;
+		return 1;
+	}
+	return 0;
 }
 
 static void wall(const char *text)
@@ -569,36 +596,59 @@ static void ups_is_gone(utype_t *ups)
 
 static void ups_is_off(utype_t *ups)
 {
-	if (flag_isset(ups->status, ST_OFF)) { 	/* no change */
+	time_t	now;
+
+	time(&now);
+
+	if (flag_isset(ups->status, ST_OFF)) {	/* no change */
 		upsdebugx(4, "%s: %s (no change)", __func__, ups->sys);
+		if (ups->offsince < 1) {
+			/* Should not happen, but just in case */
+			ups->offsince = now;
+		} else {
+			if (offdurationtime > 0 && (now - ups->offsince) > offdurationtime) {
+				/* This should be a rare but urgent situation
+				 * that warrants an extra notification? */
+				upslogx(LOG_WARNING, "%s: %s is in state OFF for %d sec, "
+					"assuming the line is not fed "
+					"(if it is calibrating etc., check "
+					"the upsmon 'OFFDURATION' option)",
+					__func__, ups->sys, (int)(now - ups->offsince));
+				ups->offstate = 1;
+			}
+		}
 		return;
 	}
 
 	sleepval = pollfreqalert;	/* bump up polling frequency */
 
-	ups->linestate = 0;
+	ups->offsince = now;
+	if (offdurationtime == 0) {
+		/* This should be a rare but urgent situation
+		 * that warrants an extra notification? */
+		upslogx(LOG_WARNING, "%s: %s is in state OFF, assuming the line is not fed (if it is calibrating etc., check the upsmon 'OFFDURATION' option)", __func__, ups->sys);
+		ups->offstate = 1;
+	} else
+	if (offdurationtime < 0) {
+		upsdebugx(1, "%s: %s is in state OFF, but we are not assuming the line is not fed (due to upsmon 'OFFDURATION' option)", __func__, ups->sys);
+	}
 
 	upsdebugx(3, "%s: %s (first time)", __func__, ups->sys);
 
 	/* must have changed from !OFF to OFF, so notify */
-
 	do_notify(ups, NOTIFY_OFF);
 	setflag(&ups->status, ST_OFF);
-	clearflag(&ups->status, ST_ONLINE);
 }
 
 static void ups_is_notoff(utype_t *ups)
 {
 	/* Called when OFF is NOT among known states */
+	ups->offsince = 0;
+	ups->offstate = 0;
 	if (flag_isset(ups->status, ST_OFF)) {	/* actual change */
 		do_notify(ups, NOTIFY_NOTOFF);
 		clearflag(&ups->status, ST_OFF);
-
-		if (!flag_isset(ups->status, ST_ONBATT)) {
-			sleepval = pollfreq;
-			ups->linestate = 1;
-			setflag(&ups->status, ST_ONLINE);
-		}
+		try_restore_pollfreq(ups);
 	}
 }
 
@@ -611,7 +661,7 @@ static void ups_is_bypass(utype_t *ups)
 
 	sleepval = pollfreqalert;	/* bump up polling frequency */
 
-	ups->linestate = 0;	/* if we lose comms, consider it AWOL */
+	ups->bypassstate = 1;	/* if we lose comms, consider it AWOL */
 
 	upsdebugx(3, "%s: %s (first time)", __func__, ups->sys);
 
@@ -619,21 +669,16 @@ static void ups_is_bypass(utype_t *ups)
 
 	do_notify(ups, NOTIFY_BYPASS);
 	setflag(&ups->status, ST_BYPASS);
-	clearflag(&ups->status, ST_ONLINE);
 }
 
 static void ups_is_notbypass(utype_t *ups)
 {
 	/* Called when BYPASS is NOT among known states */
+	ups->bypassstate = 0;
 	if (flag_isset(ups->status, ST_BYPASS)) {	/* actual change */
 		do_notify(ups, NOTIFY_NOTBYPASS);
 		clearflag(&ups->status, ST_BYPASS);
-
-		if (!flag_isset(ups->status, ST_ONBATT)) {
-			sleepval = pollfreq;
-			ups->linestate = 1;
-			setflag(&ups->status, ST_ONLINE);
-		}
+		try_restore_pollfreq(ups);
 	}
 }
 
@@ -655,17 +700,16 @@ static void ups_on_batt(utype_t *ups)
 	do_notify(ups, NOTIFY_ONBATT);
 	setflag(&ups->status, ST_ONBATT);
 	clearflag(&ups->status, ST_ONLINE);
-	clearflag(&ups->status, ST_OFF);
 }
 
 static void ups_on_line(utype_t *ups)
 {
+	try_restore_pollfreq(ups);
+
 	if (flag_isset(ups->status, ST_ONLINE)) { 	/* no change */
 		upsdebugx(4, "%s: %s (no change)", __func__, ups->sys);
 		return;
 	}
-
-	sleepval = pollfreq;
 
 	upsdebugx(3, "%s: %s (first time)", __func__, ups->sys);
 
@@ -677,7 +721,6 @@ static void ups_on_line(utype_t *ups)
 
 	setflag(&ups->status, ST_ONLINE);
 	clearflag(&ups->status, ST_ONBATT);
-	clearflag(&ups->status, ST_OFF);
 }
 
 /* create the flag file if necessary */
@@ -992,9 +1035,55 @@ static int is_ups_critical(utype_t *ups)
 	if (flag_isset(ups->status, ST_FSD))
 		return 1;
 
+	if (ups->commstate == 0) {
+		if (flag_isset(ups->status, ST_CAL)) {
+			upslogx(LOG_WARNING,
+				"UPS [%s] was last known to be calibrating "
+				"and currently is not communicating, assuming dead",
+				ups->sys);
+			return 1;
+		}
+
+		if (ups->bypassstate == 1
+		|| flag_isset(ups->status, ST_BYPASS)) {
+			upslogx(LOG_WARNING,
+				"UPS [%s] was last known to be on BYPASS "
+				"and currently is not communicating, assuming dead",
+				ups->sys);
+			return 1;
+		}
+
+		if (ups->offstate == 1
+		|| (offdurationtime >= 0 && flag_isset(ups->status, ST_OFF))) {
+			upslogx(LOG_WARNING,
+				"UPS [%s] was last known to be (administratively) OFF "
+				"and currently is not communicating, assuming dead",
+				ups->sys);
+			return 1;
+		}
+
+		if (ups->linestate == 0) {
+			upslogx(LOG_WARNING,
+				"UPS [%s] was last known to be not fully online "
+				"and currently is not communicating, assuming dead",
+				ups->sys);
+			return 1;
+		}
+	}
+
+	/* administratively OFF (long enough, see OFFDURATION) */
+	if (flag_isset(ups->status, ST_OFF) && offdurationtime >= 0
+	&& (ups->linestate == 0 || ups->offstate == 1)) {
+		upslogx(LOG_WARNING,
+			"UPS [%s] is reported as (administratively) OFF",
+			ups->sys);
+		return 1;
+	}
+
 	/* not OB or not LB = not critical yet */
-	if ((!flag_isset(ups->status, ST_ONBATT)) ||
-		(!flag_isset(ups->status, ST_LOWBATT)))
+	if ((!flag_isset(ups->status, ST_ONBATT))
+	|| (!flag_isset(ups->status, ST_LOWBATT))
+	)
 		return 0;
 
 	/* must be OB+LB now */
@@ -1024,8 +1113,9 @@ static int is_ups_critical(utype_t *ups)
 
 	/* give the primary up to HOSTSYNC seconds before shutting down */
 	if ((now - ups->lastnoncrit) > hostsync) {
-		upslogx(LOG_WARNING, "Giving up on the primary for UPS [%s]",
-			ups->sys);
+		upslogx(LOG_WARNING, "Giving up on the primary for UPS [%s] "
+			"after %d sec since last comms",
+			ups->sys, (int)(now - ups->lastnoncrit));
 		return 1;
 	}
 
@@ -1055,10 +1145,10 @@ static void recalc(void)
 		 * this means a UPS we've never heard from is assumed OL     *
 		 * whether this is really the best thing to do is undecided  */
 
-		/* crit = (FSD) || (OB & LB) > HOSTSYNC seconds */
+		/* crit = (FSD) || (OB & LB) > HOSTSYNC seconds || (OFF || BYPASS) && nocomms */
 		if (is_ups_critical(ups))
 			upsdebugx(1, "Critical UPS: %s", ups->sys);
-		else if (!flag_isset(ups->status, ST_OFF))
+		else
 			val_ol += ups->pv;
 
 		ups = ups->next;
@@ -1535,6 +1625,12 @@ static int parse_conf_arg(size_t numargs, char **arg)
 		} else {
 			pollfail_log_throttle_max = ipollfail_log_throttle_max;
 		}
+		return 1;
+	}
+
+	/* OFFDURATION <num> */
+	if (!strcmp(arg[0], "OFFDURATION")) {
+		offdurationtime = atoi(arg[1]);
 		return 1;
 	}
 
