@@ -304,6 +304,9 @@ sub find_usbdevs
 				}
 			}
 
+			$VendorID=lc($VendorID);
+			$ProductID=lc($ProductID);
+
 			# store data (to be optimized)
 			# and don't overwrite actual vendor names with empty values
 			if( (!$vendorName{$VendorID}) or (($vendorName{$VendorID} eq "") and ($VendorName ne "")) )
