@@ -505,12 +505,12 @@ void upsdrv_initups(void)
 		 * every time so callers can modify the data without
 		 * complications.
 		 */
-		if ( (INVALID_FD(upsfd) || 0 != fstat (upsfd, &datafile_stat)) && 0 != stat (device_path, &datafile_stat))
+		if ( (INVALID_FD(upsfd) || 0 != fstat (upsfd, &datafile_stat)) && 0 != stat (fn, &datafile_stat))
 #else
 		/* Consider GetFileAttributesEx() for WIN32_FILE_ATTRIBUTE_DATA?
 		 *   https://stackoverflow.com/questions/8991192/check-the-file-size-without-opening-file-in-c/8991228#8991228
 		 */
-		if (0 != stat (device_path, &datafile_stat))
+		if (0 != stat (fn, &datafile_stat))
 #endif
 		{
 			upsdebugx(2, "%s: Can't stat %s (%s) currently", __func__, device_path, fn);
