@@ -741,6 +741,7 @@ sandbox_start_drivers() {
     if shouldDebug ; then
         (ps -ef || ps -xawwu) 2>/dev/null | grep -E '(ups|nut|dummy|'"`basename "$0"`"')' | grep -vE '(ssh|startups|grep)' || true
     fi
+    log_info "Starting dummy-ups driver(s) for sandbox - finished"
 }
 
 testcase_sandbox_start_upsd_alone() {
@@ -757,34 +758,46 @@ UPS2"
         EXPECTED_UPSLIST="`echo "$EXPECTED_UPSLIST" | tr -d '\r'`"
     fi
 
-    log_info "Query listing from UPSD by UPSC (driver not running yet)"
-    runcmd upsc -l localhost:$NUT_PORT || die "upsd does not respond on port ${NUT_PORT} ($?): $CMDOUT"
+    log_info "[testcase_sandbox_start_upsd_alone] Query listing from UPSD by UPSC (driver not running yet)"
+    res_testcase_sandbox_start_upsd_alone=0
+    runcmd upsc -l localhost:$NUT_PORT || die "[testcase_sandbox_start_upsd_alone] upsd does not respond on port ${NUT_PORT} ($?): $CMDOUT"
     # For windows runners (printf can do wonders, so strip CR if any):
     if [ x"${TOP_SRCDIR}" != x ]; then
         CMDOUT="`echo "$CMDOUT" | tr -d '\r'`"
     fi
     if [ x"$CMDOUT" != x"$EXPECTED_UPSLIST" ] ; then
-        log_error "got this reply for upsc listing when '$EXPECTED_UPSLIST' was expected: '$CMDOUT'"
+        log_error "[testcase_sandbox_start_upsd_alone] got this reply for upsc listing when '$EXPECTED_UPSLIST' was expected: '$CMDOUT'"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_start_upsd_alone"
+        res_testcase_sandbox_start_upsd_alone=1
     else
         PASSED="`expr $PASSED + 1`"
     fi
 
-    log_info "Query driver state from UPSD by UPSC (driver not running yet)"
+    log_info "[testcase_sandbox_start_upsd_alone] Query driver state from UPSD by UPSC (driver not running yet)"
     runcmd upsc dummy@localhost:$NUT_PORT && {
         log_error "upsc was supposed to answer with error exit code: $CMDOUT"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_start_upsd_alone"
+        res_testcase_sandbox_start_upsd_alone=1
     }
     # Note: avoid exact matching for stderr, because it can have Init SSL messages etc.
     if echo "$CMDERR" | grep 'Error: Driver not connected' >/dev/null ; then
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "got some other reply for upsc query when 'Error: Driver not connected' was expected on stderr: '$CMDOUT'"
+        log_error "[testcase_sandbox_start_upsd_alone] got some other reply for upsc query when 'Error: Driver not connected' was expected on stderr: '$CMDOUT'"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_start_upsd_alone"
+        res_testcase_sandbox_start_upsd_alone=1
     fi
+
+    if [ "$res_testcase_sandbox_start_upsd_alone" = 0 ]; then
+        log_info "[testcase_sandbox_start_upsd_alone] PASSED: got just the failures expected for data server alone (driver not running yet)"
+    else
+        log_error "[testcase_sandbox_start_upsd_alone] got some unexpected failures, see above"
+    fi
+
+    return $res_testcase_sandbox_start_upsd_alone
 }
 
 testcase_sandbox_start_upsd_after_drivers() {
@@ -795,33 +808,35 @@ testcase_sandbox_start_upsd_after_drivers() {
 
     upsd -F &
     PID_UPSD="$!"
-    log_debug "Tried to start UPSD as PID $PID_UPSD"
+    log_debug "[testcase_sandbox_start_upsd_after_drivers] Tried to start UPSD as PID $PID_UPSD"
 
     sandbox_start_drivers
     sandbox_start_upsd
 
     sleep 5
 
-    COUNTDOWN=60
+    COUNTDOWN=90
     while [ "$COUNTDOWN" -gt 0 ]; do
         # For query errors or known wait, keep looping
         runcmd upsc dummy@localhost:$NUT_PORT \
         && case "$CMDOUT" in
-            "ups.status: WAIT") ;;
+            *"ups.status: WAIT"*) ;;
             *) log_info "Got output:" ; echo "$CMDOUT" ; break ;;
         esac
         sleep 1
         COUNTDOWN="`expr $COUNTDOWN - 1`"
     done
 
-    if [ "$COUNTDOWN" -le 50 ] ; then
-        log_warn "Had to wait a few retries for the dummy driver to connect"
+    if [ "$COUNTDOWN" -le 88 ] ; then
+        log_warn "[testcase_sandbox_start_upsd_after_drivers] Had to wait a few retries for the dummy driver to connect"
     fi
 
     if [ "$COUNTDOWN" -le 1 ] ; then
         report_NUT_PORT
-        die "upsd does not respond on port ${NUT_PORT} ($?)"
+        die "[testcase_sandbox_start_upsd_after_drivers] upsd does not respond on port ${NUT_PORT} ($?)"
     fi
+
+    log_info "[testcase_sandbox_start_upsd_after_drivers] PASSED: upsd responds on port ${NUT_PORT}"
 }
 
 testcase_sandbox_start_drivers_after_upsd() {
@@ -843,69 +858,71 @@ testcase_sandbox_start_drivers_after_upsd() {
         runcmd upsc dummy@localhost:$NUT_PORT \
         && case "$CMDOUT" in
             *"ups.status: WAIT"*) ;;
-            *) log_info "Got output:" ; echo "$CMDOUT" ; break ;;
+            *) log_info "[testcase_sandbox_start_drivers_after_upsd] Got output:" ; echo "$CMDOUT" ; break ;;
         esac
         sleep 1
         COUNTDOWN="`expr $COUNTDOWN - 1`"
     done
 
-    if [ "$COUNTDOWN" -le 58 ] ; then
-        log_warn "Had to wait a few retries for the dummy driver to connect"
+    if [ "$COUNTDOWN" -le 88 ] ; then
+        log_warn "[testcase_sandbox_start_drivers_after_upsd] Had to wait a few retries for the dummy driver to connect"
     fi
 
     if [ "$COUNTDOWN" -le 1 ] ; then
         # Should not get to this, except on very laggy systems maybe
-        log_error "Query failed, retrying with UPSD started after drivers"
+        log_error "[testcase_sandbox_start_drivers_after_upsd] Query failed, retrying with UPSD started after drivers"
         testcase_sandbox_start_upsd_after_drivers
     fi
 
     if [ x"${TOP_SRCDIR}" != x ]; then
-        log_info "Wait for dummy UPSes with larger data sets to initialize"
+        log_info "[testcase_sandbox_start_drivers_after_upsd] Wait for dummy UPSes with larger data sets to initialize"
         for U in UPS1 UPS2 ; do
-            COUNTDOWN=60
+            COUNTDOWN=90
             # TODO: Convert to runcmd()?
             OUT=""
             while [ x"$OUT" = x"ups.status: WAIT" ] ; do
                 OUT="`upsc $U@localhost:$NUT_PORT ups.status`" || break
-                [ x"$OUT" = x"ups.status: WAIT" ] || { log_info "Got output:"; echo "$OUT"; break; }
+                [ x"$OUT" = x"ups.status: WAIT" ] || { log_info "[testcase_sandbox_start_drivers_after_upsd] Got output:"; echo "$OUT"; break; }
                 sleep 1
                 COUNTDOWN="`expr $COUNTDOWN - 1`"
                 # Systemic error, e.g. could not create socket file?
-                [ "$COUNTDOWN" -lt 1 ] && die "Dummy driver did not start or respond in time"
+                [ "$COUNTDOWN" -lt 1 ] && die "[testcase_sandbox_start_drivers_after_upsd] Dummy driver did not start or respond in time"
             done
-            if [ "$COUNTDOWN" -le 58 ] ; then
-                log_warn "Had to wait a few retries for the $U driver to connect"
+            if [ "$COUNTDOWN" -le 88 ] ; then
+                log_warn "[testcase_sandbox_start_drivers_after_upsd] Had to wait a few retries for the $U driver to connect"
             fi
         done
     fi
 
-    log_info "Expected drivers are now responding via UPSD"
+    log_info "[testcase_sandbox_start_drivers_after_upsd] PASSED: Expected drivers are now responding via UPSD"
 }
 
 testcase_sandbox_upsc_query_model() {
     log_info "[testcase_sandbox_upsc_query_model] Query model from dummy device"
-    runcmd upsc dummy@localhost:$NUT_PORT device.model || die "upsd does not respond on port ${NUT_PORT} ($?): $CMDOUT"
+    runcmd upsc dummy@localhost:$NUT_PORT device.model || die "[testcase_sandbox_upsc_query_model] upsd does not respond on port ${NUT_PORT} ($?): $CMDOUT"
     if [ x"$CMDOUT" != x"Dummy UPS" ] ; then
-        log_error "got this reply for upsc query when 'Dummy UPS' was expected: $CMDOUT"
+        log_error "[testcase_sandbox_upsc_query_model] got this reply for upsc query when 'Dummy UPS' was expected: $CMDOUT"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_model"
     else
         PASSED="`expr $PASSED + 1`"
+        log_info "[testcase_sandbox_upsc_query_model] PASSED: got expected model from dummy device: $CMDOUT"
     fi
 }
 
 testcase_sandbox_upsc_query_bogus() {
     log_info "[testcase_sandbox_upsc_query_bogus] Query driver state from UPSD by UPSC for bogus info"
     runcmd upsc dummy@localhost:$NUT_PORT ups.bogus.value && {
-        log_error "upsc was supposed to answer with error exit code: $CMDOUT"
+        log_error "[testcase_sandbox_upsc_query_bogus] upsc was supposed to answer with error exit code: $CMDOUT"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_bogus"
     }
     # Note: avoid exact matching for stderr, because it can have Init SSL messages etc.
     if echo "$CMDERR" | grep 'Error: Variable not supported by UPS' >/dev/null ; then
         PASSED="`expr $PASSED + 1`"
+        log_info "[testcase_sandbox_upsc_query_bogus] PASSED: got expected reply to bogus query: '$CMDERR'"
     else
-        log_error "got some other reply for upsc query when 'Error: Variable not supported by UPS' was expected on stderr: '$CMDOUT'"
+        log_error "[testcase_sandbox_upsc_query_bogus] got some other reply for upsc query when 'Error: Variable not supported by UPS' was expected on stderr: '$CMDERR'"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_bogus"
     fi
@@ -916,23 +933,23 @@ testcase_sandbox_upsc_query_timer() {
     log_info "[testcase_sandbox_upsc_query_timer] Test that dummy-ups TIMER action changes the reported state"
     # Driver is set up to flip ups.status every 5 sec, so check every 3
     # TODO: Any need to convert to runcmd()?
-    OUT1="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "upsd does not respond on port ${NUT_PORT} ($?): $OUT1" ; sleep 3
-    OUT2="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "upsd does not respond on port ${NUT_PORT} ($?): $OUT2"
+    OUT1="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT1" ; sleep 3
+    OUT2="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT2"
     OUT3=""
     OUT4=""
     if [ x"$OUT1" = x"$OUT2" ]; then
         sleep 3
-        OUT3="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "upsd does not respond on port ${NUT_PORT} ($?): $OUT3"
+        OUT3="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT3"
         if [ x"$OUT2" = x"$OUT3" ]; then
             sleep 3
-            OUT4="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "upsd does not respond on port ${NUT_PORT} ($?): $OUT4"
+            OUT4="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT4"
         fi
     fi
     if echo "$OUT1$OUT2$OUT3$OUT4" | grep "OB" && echo "$OUT1$OUT2$OUT3$OUT4" | grep "OL" ; then
-        log_info "OK, ups.status flips over time"
+        log_info "[testcase_sandbox_upsc_query_timer] PASSED: ups.status flips over time"
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "ups.status did not flip over time"
+        log_error "[testcase_sandbox_upsc_query_timer] ups.status did not flip over time"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_timer"
     fi
@@ -960,10 +977,10 @@ testcase_sandbox_python_without_credentials() {
          unset NUT_PASS || true
         "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
     ) ; then
-        log_info "OK, PyNUT did not complain"
+        log_info "[testcase_sandbox_python_without_credentials] PASSED: PyNUT did not complain"
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "PyNUT complained, check above"
+        log_error "[testcase_sandbox_python_without_credentials] PyNUT complained, check above"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_python_without_credentials"
     fi
@@ -983,10 +1000,10 @@ testcase_sandbox_python_with_credentials() {
         export NUT_USER NUT_PASS
         "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
     ) ; then
-        log_info "OK, PyNUT did not complain"
+        log_info "[testcase_sandbox_python_with_credentials] PASSED: PyNUT did not complain"
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "PyNUT complained, check above"
+        log_error "[testcase_sandbox_python_with_credentials] PyNUT complained, check above"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_python_with_credentials"
     fi
@@ -1003,10 +1020,10 @@ testcase_sandbox_python_with_upsmon_credentials() {
         export NUT_USER NUT_PASS
         "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
     ) ; then
-        log_info "OK, PyNUT did not complain"
+        log_info "[testcase_sandbox_python_with_upsmon_credentials] PASSED: PyNUT did not complain"
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "PyNUT complained, check above"
+        log_error "[testcase_sandbox_python_with_upsmon_credentials] PyNUT complained, check above"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_python_with_upsmon_credentials"
     fi
@@ -1041,10 +1058,10 @@ testcase_sandbox_cppnit_without_creds() {
          unset NUT_PASS || true
         "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
-        log_info "OK, cppnit did not complain"
+        log_info "[testcase_sandbox_cppnit_without_creds] PASSED: cppnit did not complain"
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "cppnit complained, check above"
+        log_error "[testcase_sandbox_cppnit_without_creds] cppnit complained, check above"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_cppnit_without_creds"
     fi
@@ -1069,10 +1086,10 @@ testcase_sandbox_cppnit_simple_admin() {
         export NUT_USER NUT_PASS NUT_SETVAR_DEVICE
         "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
-        log_info "OK, cppnit did not complain"
+        log_info "[testcase_sandbox_cppnit_simple_admin] PASSED: cppnit did not complain"
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "cppnit complained, check above"
+        log_error "[testcase_sandbox_cppnit_simple_admin] cppnit complained, check above"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_cppnit_simple_admin"
     fi
@@ -1091,10 +1108,10 @@ testcase_sandbox_cppnit_upsmon_primary() {
         export NUT_USER NUT_PASS NUT_PRIMARY_DEVICE
         "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
-        log_info "OK, cppnit did not complain"
+        log_info "[testcase_sandbox_cppnit_upsmon_primary] PASSED: cppnit did not complain"
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "cppnit complained, check above"
+        log_error "[testcase_sandbox_cppnit_upsmon_primary] cppnit complained, check above"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_cppnit_upsmon_primary"
     fi
@@ -1113,10 +1130,10 @@ testcase_sandbox_cppnit_upsmon_master() {
         export NUT_USER NUT_PASS NUT_PRIMARY_DEVICE
         "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
-        log_info "OK, cppnit did not complain"
+        log_info "[testcase_sandbox_cppnit_upsmon_master] PASSED: cppnit did not complain"
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "cppnit complained, check above"
+        log_error "[testcase_sandbox_cppnit_upsmon_master] cppnit complained, check above"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_cppnit_upsmon_master"
     fi
@@ -1149,7 +1166,7 @@ testcase_sandbox_nutscanner_list() {
 
     log_separator
     log_info "[testcase_sandbox_nutscanner_list] Call libupsclient test suite: nut-scanner on localhost:${NUT_PORT}"
-    log_info "Preparing LD_LIBRARY_PATH='${LD_LIBRARY_PATH_CLIENT}'"
+    log_info "[testcase_sandbox_nutscanner_list] Preparing LD_LIBRARY_PATH='${LD_LIBRARY_PATH_CLIENT}'"
 
     # Note: for some reason `LD_LIBRARY_PATH=... runcmd ...` loses it :\
     LD_LIBRARY_PATH="${LD_LIBRARY_PATH_CLIENT}"
@@ -1173,14 +1190,14 @@ testcase_sandbox_nutscanner_list() {
         || return
 
         if [ "${NUT_PORT}" = 3493 ] || [ x"$NUT_PORT" = x ]; then
-            echo "Note: not testing for suffixed port number" >&2
+            echo "[testcase_sandbox_nutscanner_list] Note: not testing for suffixed port number" >&2
         else
             echo "$CMDOUT" | grep -E 'dummy@.*'":${NUT_PORT}" \
             || return
         fi
 
         if [ x"${TOP_SRCDIR}" = x ]; then
-            echo "Note: only testing one dummy device" >&2
+            echo "[testcase_sandbox_nutscanner_list] Note: only testing one dummy device" >&2
         else
             echo "$CMDOUT" | grep -E '^\[nutdev2\]$' \
             && echo "$CMDOUT" | grep 'port = "UPS1@' \
@@ -1189,13 +1206,13 @@ testcase_sandbox_nutscanner_list() {
             || return
         fi
     ) ; then
-        log_info "OK, nut-scanner found all expected devices"
+        log_info "[testcase_sandbox_nutscanner_list] PASSED: nut-scanner found all expected devices"
         PASSED="`expr $PASSED + 1`"
     else
         if ( echo "$CMDERR" | grep -E "Cannot load NUT library.*libupsclient.*found.*NUT search disabled" ) ; then
-            log_warn "SKIP: ${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner: $CMDERR"
+            log_warn "[testcase_sandbox_nutscanner_list] SKIP: ${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner: $CMDERR"
         else
-            log_error "nut-scanner complained or did not return all expected data, check above"
+            log_error "[testcase_sandbox_nutscanner_list] nut-scanner complained or did not return all expected data, check above"
             FAILED="`expr $FAILED + 1`"
             FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_nutscanner_list"
         fi
