@@ -171,7 +171,7 @@ fi
 # Cache needed bits of ups.conf to speed up later parsing. Note that these
 # data are needed for most operations, and populated by upslist_readFile()
 UPSCONF_DATA=""
-# Subset of normalized data above that only has sections, drivers and ports
+# Subset of normalized data above that only has sections, drivers and ports (SDP)
 UPSCONF_DATA_SDP=""
 
 # List of configured UPSes in the config-file
