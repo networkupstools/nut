@@ -9,7 +9,7 @@
 #       is to just pick out some strings relevant for tracking config changes.
 #
 # Copyright (C) 2016-2020 Eaton
-# Copyright (C) 2020-2022 Jim Klimov <jimklimov+nut@gmail.com>
+# Copyright (C) 2020-2023 Jim Klimov <jimklimov+nut@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -479,8 +479,18 @@ upsconf_getDriverMedia() {
     # particular system's physics, both serial and network media may need USB).
     CURR_DRV="`upsconf_getDriver "$1"`" || return $?
     case "$CURR_DRV" in
-        *netxml*|*snmp*|*ipmi*|*powerman*|*-mib*|*avahi*|*apcupsd*)
+        *netxml*|*snmp*|*ipmi*|*powerman*|*-mib*|*avahi*)
             printf '%s\n%s\n' "$CURR_DRV" "network" ; return ;;
+        *apcupsd-ups*)
+            # Relay from a nearby apcupsd network server into NUT ecosystem:
+            CURR_PORT="`upsconf_getPort "$1"`" || CURR_PORT=""
+            case "$CURR_PORT" in
+                *localhost*|*127.0.0.1*|*::1*)
+                    printf '%s\n%s\n' "$CURR_DRV" "network-localhost" ; return ;;
+                *)
+                    printf '%s\n%s\n' "$CURR_DRV" "network" ; return ;;
+            esac
+            ;;
         *usb*)
             printf '%s\n%s\n' "$CURR_DRV" "usb" ; return ;;
         nutdrv_qx) # May be direct serial or USB
