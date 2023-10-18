@@ -491,6 +491,33 @@ upsconf_getDriverMedia() {
                     printf '%s\n%s\n' "$CURR_DRV" "network" ; return ;;
             esac
             ;;
+        *apc_modbus*)
+            CURR_PORT="`upsconf_getPort "$1"`" || CURR_PORT=""
+            CURR_PORTTYPE="`upsconf_getValue "$1" 'porttype'`" || CURR_PORTTYPE=""
+            case "$CURR_PORTTYPE" in
+                *usb*)
+                    printf '%s\n%s\n' "$CURR_DRV" "usb" ; return ;;
+                *serial*)
+                    printf '%s\n%s\n' "$CURR_DRV" "serial" ; return ;;
+                *)  # default depends on driver build (against libmodbus
+                    # version with or without support for usb)
+                    # TOTHINK: Check for presence of config values like
+                    # vendorid (USB) or baud (Serial)? They are optional
+                    # with reasonable defaults anyway...
+                    case "$CURR_PORT" in
+                        *auto*)
+                            printf '%s\n%s\n' "$CURR_DRV" "usb" ; return ;;
+                        /*)
+                            printf '%s\n%s\n' "$CURR_DRV" "serial" ; return ;;
+                        *localhost*|*127.0.0.1*|*::1*)
+                            printf '%s\n%s\n' "$CURR_DRV" "network-localhost" ; return ;;
+                        *)
+                            printf '%s\n%s\n' "$CURR_DRV" "network" ; return ;;
+                    esac
+                    # returns are above, but just in case - have a fallback:
+                    printf '%s\n%s\n' "$CURR_DRV" "" ; return ;;
+            esac
+            ;;
         *usb*)
             printf '%s\n%s\n' "$CURR_DRV" "usb" ; return ;;
         nutdrv_qx) # May be direct serial or USB
