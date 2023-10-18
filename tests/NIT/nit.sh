@@ -34,6 +34,9 @@ export TZ LANG LC_ALL
 NUT_QUIET_INIT_SSL="true"
 export NUT_QUIET_INIT_SSL
 
+NUT_DEBUG_PID="true"
+export NUT_DEBUG_PID
+
 log_separator() {
     echo "" >&2
     echo "================================" >&2
