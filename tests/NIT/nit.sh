@@ -551,11 +551,11 @@ testcase_upsd_no_configs_at_all() {
     log_info "[testcase_upsd_no_configs_at_all] Test UPSD without configs at all"
     upsd -F
     if [ "$?" = 0 ]; then
-        log_error "upsd should fail without configs"
+        log_error "[testcase_upsd_no_configs_at_all] upsd should fail without configs"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_no_configs_at_all"
     else
-        log_info "OK, upsd failed to start in wrong conditions"
+        log_info "[testcase_upsd_no_configs_at_all] PASSED: upsd failed to start in wrong conditions"
         PASSED="`expr $PASSED + 1`"
     fi
 }
@@ -566,11 +566,11 @@ testcase_upsd_no_configs_driver_file() {
     generatecfg_upsd_trivial
     upsd -F
     if [ "$?" = 0 ]; then
-        log_error "upsd should fail without driver config file"
+        log_error "[testcase_upsd_no_configs_driver_file] upsd should fail without driver config file"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_no_configs_driver_file"
     else
-        log_info "OK, upsd failed to start in wrong conditions"
+        log_info "[testcase_upsd_no_configs_driver_file] PASSED: upsd failed to start in wrong conditions"
         PASSED="`expr $PASSED + 1`"
     fi
 }
@@ -582,11 +582,11 @@ testcase_upsd_no_configs_in_driver_file() {
     generatecfg_ups_trivial
     upsd -F
     if [ "$?" = 0 ]; then
-        log_error "upsd should fail without drivers defined in config file"
+        log_error "[testcase_upsd_no_configs_in_driver_file] upsd should fail without drivers defined in config file"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_no_configs_in_driver_file"
     else
-        log_info "OK, upsd failed to start in wrong conditions"
+        log_info "[testcase_upsd_no_configs_in_driver_file] PASSED: upsd failed to start in wrong conditions"
         PASSED="`expr $PASSED + 1`"
     fi
 }
@@ -602,7 +602,7 @@ testcase_upsd_allow_no_device() {
     fi
     upsd -F &
     PID_UPSD="$!"
-    log_debug "Tried to start UPSD as PID $PID_UPSD"
+    log_debug "[testcase_upsd_allow_no_device] Tried to start UPSD as PID $PID_UPSD"
     sleep 2
 
     COUNTDOWN=60
@@ -616,57 +616,65 @@ testcase_upsd_allow_no_device() {
 
     if [ "$COUNTDOWN" -le 50 ] ; then
         # Should not get to this, except on very laggy systems maybe
-        log_warn "Had to wait a few retries for the UPSD process to appear"
+        log_warn "[testcase_upsd_allow_no_device] Had to wait a few retries for the UPSD process to appear"
     fi
 
+    res_testcase_upsd_allow_no_device=0
     if [ "$COUNTDOWN" -gt 0 ] \
     && isPidAlive "$PID_UPSD" \
     ; then
-        log_info "OK, upsd is running"
+        log_info "[testcase_upsd_allow_no_device] OK, upsd is running"
         PASSED="`expr $PASSED + 1`"
 
         log_separator
-        log_info "Query listing from UPSD by UPSC (no devices configured yet) to test that UPSD responds to UPSC"
+        log_info "[testcase_upsd_allow_no_device] Query listing from UPSD by UPSC (no devices configured yet) to test that UPSD responds to UPSC"
         if runcmd upsc -l localhost:$NUT_PORT ; then
             :
         else
             # Note: avoid exact matching for stderr, because it can have Init SSL messages etc.
             if echo "$CMDERR" | grep "Error: Server disconnected" >/dev/null ; then
-                log_warn "Retry once to rule out laggy systems"
+                log_warn "[testcase_upsd_allow_no_device] Retry once to rule out laggy systems"
                 sleep 3
                 runcmd upsc -l localhost:$NUT_PORT
             fi
             if echo "$CMDERR" | grep "Error: Server disconnected" >/dev/null ; then
-                log_warn "Retry once more to rule out very laggy systems"
+                log_warn "[testcase_upsd_allow_no_device] Retry once more to rule out very laggy systems"
                 sleep 15
                 runcmd upsc -l localhost:$NUT_PORT
             fi
-            [ "$CMDRES" = 0 ] || die "upsd does not respond on port ${NUT_PORT} ($?): $CMDOUT"
+            [ "$CMDRES" = 0 ] || die "[testcase_upsd_allow_no_device] upsd does not respond on port ${NUT_PORT} ($?): $CMDOUT"
         fi
         if [ -n "$CMDOUT" ] ; then
-            log_error "got reply for upsc listing when none was expected: $CMDOUT"
+            log_error "[testcase_upsd_allow_no_device] got reply for upsc listing when none was expected: $CMDOUT"
             FAILED="`expr $FAILED + 1`"
             FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_allow_no_device"
+            res_testcase_upsd_allow_no_device=1
         else
-            log_info "OK, empty response as expected"
+            log_info "[testcase_upsd_allow_no_device] OK, empty response as expected"
             PASSED="`expr $PASSED + 1`"
         fi
     else
-        log_error "upsd was expected to be running although no devices are defined; is ups.conf populated?"
+        log_error "[testcase_upsd_allow_no_device] upsd was expected to be running although no devices are defined; is ups.conf populated?"
         ls -la "$NUT_CONFPATH/" || true
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_allow_no_device"
+        res_testcase_upsd_allow_no_device=1
         report_NUT_PORT
-
-        UPSD_RES=0
-        kill -15 $PID_UPSD
-        wait $PID_UPSD || UPSD_RES=$?
-        log_error "upsd exit-code was: $UPSD_RES"
-        return $UPSD_RES
     fi
 
+    log_info "[testcase_upsd_allow_no_device] stopping upsd: $PID_UPSD"
+    UPSD_RES=0
     kill -15 $PID_UPSD
-    wait $PID_UPSD
+    wait $PID_UPSD || UPSD_RES=$?
+    if [ "$res_testcase_upsd_allow_no_device" = 0 ] ; then
+        log_info "[testcase_upsd_allow_no_device] upsd exit-code was: $UPSD_RES"
+    else
+        log_error "[testcase_upsd_allow_no_device] upsd exit-code was: $UPSD_RES"
+    fi
+    if [ "$UPSD_RES" != 0 ]; then
+        return $UPSD_RES
+    fi
+    return $res_testcase_upsd_allow_no_device
 }
 
 testgroup_upsd_invalid_configs() {
