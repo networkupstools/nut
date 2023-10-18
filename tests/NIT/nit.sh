@@ -727,13 +727,16 @@ sandbox_start_drivers() {
     #upsdrvctl -F start dummy &
     dummy-ups -a dummy -F &
     PID_DUMMYUPS="$!"
+    log_debug "Tried to start dummy-ups driver for 'dummy' as PID $PID_DUMMYUPS"
 
     if [ x"${TOP_SRCDIR}" != x ]; then
         dummy-ups -a UPS1 -F &
         PID_DUMMYUPS1="$!"
+        log_debug "Tried to start dummy-ups driver for 'UPS1' as PID $PID_DUMMYUPS1"
 
         dummy-ups -a UPS2 -F &
         PID_DUMMYUPS2="$!"
+        log_debug "Tried to start dummy-ups driver for 'UPS2' as PID $PID_DUMMYUPS2"
     fi
 
     sleep 5
