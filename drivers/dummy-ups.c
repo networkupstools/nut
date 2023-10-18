@@ -479,16 +479,18 @@ void upsdrv_initups(void)
 #ifdef WIN32
 		||  device_path[1] == ':'	/* "C:\..." */
 #endif
-		)
+		) {
 			snprintf(fn, sizeof(fn), "%s", device_path);
-		else if (device_path[0] == '.')	{
+		} else if (device_path[0] == '.')	{
 			/* "./" or "../" e.g. via CLI */
 			if (getcwd(fn, sizeof(fn))) {
 				snprintf(fn + strlen(fn), sizeof(fn) - strlen(fn), "/%s", device_path);
-			} else
+			} else {
 				snprintf(fn, sizeof(fn), "%s", device_path);
-		} else
+			}
+		} else {
 			snprintf(fn, sizeof(fn), "%s/%s", confpath(), device_path);
+		}
 
 		/* Update file modification timestamp (and other data) */
 #ifndef WIN32
