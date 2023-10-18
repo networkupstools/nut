@@ -728,8 +728,30 @@ dnl# 	[], [AC_MSG_WARN([Required C library routine not found; try adding __EXTEN
 dnl These appear with CFLAGS="-std=c99 -D_POSIX_C_SOURCE=200112L":
 dnl# Methods below currently do not cause build errors for C99+ modes so are
 dnl# not tested as thoroughly as those further below:
-AC_CHECK_FUNCS(strtok_r fileno localtime_r localtime_s gmtime_r gmtime_s sigemptyset sigaction,
+AC_CHECK_FUNCS(strtok_r fileno sigemptyset sigaction,
 	[], [AC_MSG_WARN([Required C library routine not found; try adding -D_POSIX_C_SOURCE=200112L])])
+
+dnl For these we have a fallback implementation via the other,
+dnl if at least one is available, so initial check is quiet.
+dnl This typically pops up in POSIX vs. Windows builds:
+AC_CHECK_FUNCS(localtime_r localtime_s gmtime_r gmtime_s,
+	[], [])
+
+AC_MSG_CHECKING([for at least one gmtime implementation])
+AS_IF([test x"${ac_cv_func_gmtime_s}-${ac_cv_func_gmtime_r}" = "xno-no"], [
+	AC_MSG_RESULT([no])
+	AC_MSG_WARN([Required C library routine gmtime_s nor gmtime_r was not found; try adding -D_POSIX_C_SOURCE=200112L])
+	],[
+	AC_MSG_RESULT([yes])
+	])
+
+AC_MSG_CHECKING([for at least one localtime implementation])
+AS_IF([test x"${ac_cv_func_localtime_s}-${ac_cv_func_localtime_r}" = "xno-no"], [
+	AC_MSG_RESULT([no])
+	AC_MSG_WARN([Required C library routine localtime_s nor localtime_r was not found; try adding -D_POSIX_C_SOURCE=200112L])
+	],[
+	AC_MSG_RESULT([yes])
+	])
 
 AC_LANG_PUSH([C])
 
