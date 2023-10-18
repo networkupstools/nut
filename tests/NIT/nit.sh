@@ -739,7 +739,7 @@ sandbox_start_drivers() {
     sleep 5
 
     if shouldDebug ; then
-        (ps -ef || ps -xawwu) 2>/dev/null | grep -E '(ups|nut|dummy)' || true
+        (ps -ef || ps -xawwu) 2>/dev/null | grep -E '(ups|nut|dummy|'"`basename "$0"`"')' | grep -vE '(ssh|startups|grep)' || true
     fi
 }
 
