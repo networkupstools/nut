@@ -98,7 +98,7 @@ static struct stat	datafile_stat;
 
 static int setvar(const char *varname, const char *val);
 static int instcmd(const char *cmdname, const char *extra);
-static int parse_data_file(TYPE_FD upsfd);
+static int parse_data_file(TYPE_FD arg_upsfd);
 static dummy_info_t *find_info(const char *varname);
 static int is_valid_data(const char* varname);
 static int is_valid_value(const char* varname, const char *value);
