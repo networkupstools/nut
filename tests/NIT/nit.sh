@@ -945,9 +945,9 @@ testcase_sandbox_upsc_query_bogus() {
     # Note: avoid exact matching for stderr, because it can have Init SSL messages etc.
     if echo "$CMDERR" | grep 'Error: Variable not supported by UPS' >/dev/null ; then
         PASSED="`expr $PASSED + 1`"
-        log_info "[testcase_sandbox_upsc_query_bogus] PASSED: got expected reply to bogus query: '$CMDERR'"
+        log_info "[testcase_sandbox_upsc_query_bogus] PASSED: got expected reply to bogus query"
     else
-        log_error "[testcase_sandbox_upsc_query_bogus] got some other reply for upsc query when 'Error: Variable not supported by UPS' was expected on stderr: '$CMDERR'"
+        log_error "[testcase_sandbox_upsc_query_bogus] got some other reply for upsc query when 'Error: Variable not supported by UPS' was expected on stderr: stderr:'$CMDERR' / stdout:'$CMDOUT'"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_bogus"
     fi
