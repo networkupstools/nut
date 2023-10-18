@@ -837,10 +837,12 @@ testcase_sandbox_start_drivers_after_upsd() {
     # so tightly near a minute until we have sturdy replies.
     COUNTDOWN=90
     while [ "$COUNTDOWN" -gt 0 ]; do
-        # For query errors or known wait, keep looping
+        # For query errors or known wait, keep looping. May get:
+        #   driver.state: updateinfo
+        #   ups.status: WAIT
         runcmd upsc dummy@localhost:$NUT_PORT \
         && case "$CMDOUT" in
-            "ups.status: WAIT") ;;
+            *"ups.status: WAIT"*) ;;
             *) log_info "Got output:" ; echo "$CMDOUT" ; break ;;
         esac
         sleep 1
