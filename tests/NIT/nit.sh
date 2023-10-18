@@ -744,7 +744,18 @@ sandbox_start_drivers() {
     if shouldDebug ; then
         (ps -ef || ps -xawwu) 2>/dev/null | grep -E '(ups|nut|dummy|'"`basename "$0"`"')' | grep -vE '(ssh|startups|grep)' || true
     fi
-    log_info "Starting dummy-ups driver(s) for sandbox - finished"
+
+    if isPidAlive "$PID_DUMMYUPS" \
+    && { [ x"${TOP_SRCDIR}" != x ] && isPidAlive "$PID_DUMMYUPS1" && isPidAlive "$PID_DUMMYUPS2" \
+         || [ x"${TOP_SRCDIR}" = x ] ; } \
+    ; then
+        # All drivers expected for this environment are already running
+        log_info "Starting dummy-ups driver(s) for sandbox - all expected processes are running"
+        return 0
+    else
+        log_error "Starting dummy-ups driver(s) for sandbox - finished, but something seems to not be running"
+        return 1
+    fi
 }
 
 testcase_sandbox_start_upsd_alone() {
