@@ -245,8 +245,13 @@ void upsdrv_updateinfo(void)
 				/* Determine if file modification timestamp has changed
 				 * since last use (so we would want to re-read it) */
 #ifndef WIN32
-				/* Either successful stat is OK to fill the "fs" struct */
-				if (0 != fstat (upsfd, &fs) && 0 != stat (fn, &fs))
+				/* Either successful stat (zero return) is OK to
+				 * fill the "fs" struct. Note that currently
+				 * "upsfd" is a no-op for files, they are re-opened
+				 * and re-parsed every time so callers can modify
+				 * the data without complications.
+				 */
+				if ( (INVALID_FD(upsfd) || 0 != fstat (upsfd, &fs)) && 0 != stat (fn, &fs))
 #else
 				/* Consider GetFileAttributesEx() for WIN32_FILE_ATTRIBUTE_DATA?
 				 *   https://stackoverflow.com/questions/8991192/check-the-file-size-without-opening-file-in-c/8991228#8991228
@@ -494,8 +499,13 @@ void upsdrv_initups(void)
 
 		/* Update file modification timestamp (and other data) */
 #ifndef WIN32
-		/* Either successful stat is OK to fill the "datafile_stat" struct */
-		if (0 != fstat (upsfd, &datafile_stat) && 0 != stat (device_path, &datafile_stat))
+		/* Either successful stat (zero return) is OK to fill the
+		 * "datafile_stat" struct. Note that currently "upsfd" is
+		 * a no-op for files, they are re-opened and re-parsed
+		 * every time so callers can modify the data without
+		 * complications.
+		 */
+		if ( (INVALID_FD(upsfd) || 0 != fstat (upsfd, &datafile_stat)) && 0 != stat (device_path, &datafile_stat))
 #else
 		/* Consider GetFileAttributesEx() for WIN32_FILE_ATTRIBUTE_DATA?
 		 *   https://stackoverflow.com/questions/8991192/check-the-file-size-without-opening-file-in-c/8991228#8991228
