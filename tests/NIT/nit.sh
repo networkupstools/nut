@@ -1205,6 +1205,10 @@ testcase_sandbox_nutscanner_list() {
     LD_LIBRARY_PATH="${LD_LIBRARY_PATH_ORIG}"
     export LD_LIBRARY_PATH
 
+    log_info "[testcase_sandbox_nutscanner_list] findings from nut-scanner:"
+    echo "$CMDOUT"
+    log_info "[testcase_sandbox_nutscanner_list] inspecting these findings from nut-scanner..."
+
     # Note: the reported "driver" string is not too helpful as a "nutclient".
     # In practice this could be a "dummy-ups" repeater or "clone" driver,
     # or some of the config elements needed for upsmon (lacking creds/role)
@@ -1215,22 +1219,40 @@ testcase_sandbox_nutscanner_list() {
         || return
 
         if [ "${NUT_PORT}" = 3493 ] || [ x"$NUT_PORT" = x ]; then
-            echo "[testcase_sandbox_nutscanner_list] Note: not testing for suffixed port number" >&2
+            log_info "[testcase_sandbox_nutscanner_list] Note: not testing for suffixed port number" >&2
         else
             echo "$CMDOUT" | grep -E 'dummy@.*'":${NUT_PORT}" \
-            || return
+            || {
+                log_error "[testcase_sandbox_nutscanner_list] dummy@... not found" >&2
+                return 1
+            }
         fi
 
         if [ x"${TOP_SRCDIR}" = x ]; then
-            echo "[testcase_sandbox_nutscanner_list] Note: only testing one dummy device" >&2
+            log_info "[testcase_sandbox_nutscanner_list] Note: only testing one dummy device" >&2
         else
             echo "$CMDOUT" | grep -E '^\[nutdev2\]$' \
             && echo "$CMDOUT" | grep 'port = "UPS1@' \
             && echo "$CMDOUT" | grep -E '^\[nutdev3\]$' \
             && echo "$CMDOUT" | grep 'port = "UPS2@' \
-            || return
+            || {
+                log_error "[testcase_sandbox_nutscanner_list] something about UPS1/UPS2 not found" >&2
+                return 1
+            }
         fi
-    ) ; then
+
+        if [ x"${TOP_SRCDIR}" = x ]; then
+            PORTS_WANT=1
+        else
+            PORTS_WANT=3
+        fi
+        PORTS_SEEN="`echo "$CMDOUT" | grep -Ec 'port *='`"
+
+        if [ "$PORTS_WANT" != "$PORTS_SEEN" ]; then
+            log_error "[testcase_sandbox_nutscanner_list] Too many 'port=' lines: want $PORTS_WANT != seen $PORTS_SEEN" >&2
+            return 1
+        fi
+    ) >/dev/null ; then
         log_info "[testcase_sandbox_nutscanner_list] PASSED: nut-scanner found all expected devices"
         PASSED="`expr $PASSED + 1`"
     else
