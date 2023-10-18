@@ -254,15 +254,16 @@ void upsdrv_updateinfo(void)
 				if (0 != stat (fn, &fs))
 #endif
 				{
-					upsdebugx(2, "Can't open %s currently", fn);
+					upsdebugx(2, "%s: MODE_DUMMY_ONCE: Can't stat %s currently", __func__, fn);
 					/* retry ASAP until we get a file */
 					memset(&datafile_stat, 0, sizeof(struct stat));
 					next_update = 1;
 				} else {
 					if (datafile_stat.st_mtime != fs.st_mtime) {
 						upsdebugx(2,
-							"upsdrv_updateinfo: input file was already read once "
-							"to the end, but changed later - re-reading: %s", fn);
+							"%s: MODE_DUMMY_ONCE: input file was already read once "
+							"to the end, but changed later - re-reading: %s",
+							__func__, fn);
 						/* updated file => retry ASAP */
 						next_update = 1;
 						datafile_stat = fs;
@@ -271,7 +272,7 @@ void upsdrv_updateinfo(void)
 			}
 
 			if (ctx == NULL && next_update == -1) {
-				upsdebugx(2, "upsdrv_updateinfo: NO-OP: input file was already read once to the end");
+				upsdebugx(2, "%s: MODE_DUMMY_ONCE: NO-OP: input file was already read once to the end", __func__);
 				dstate_dataok();
 			} else {
 				/* initial parsing interrupted by e.g. TIMER line */
@@ -500,7 +501,7 @@ void upsdrv_initups(void)
 		if (0 != stat (device_path, &datafile_stat))
 #endif
 		{
-			upsdebugx(2, "Can't open %s (%s) currently", device_path, fn);
+			upsdebugx(2, "%s: Can't stat %s (%s) currently", __func__, device_path, fn);
 		} else {
 			upsdebugx(2, "Located %s for device simulation data: %s", device_path, fn);
 		}
