@@ -657,7 +657,7 @@ static dummy_info_t *find_info(const char *varname)
 			return item;
 	}
 
-	upsdebugx(2, "find_info: unknown variable: %s\n", varname);
+	upsdebugx(2, "find_info: unknown variable: %s", varname);
 
 	return NULL;
 }
