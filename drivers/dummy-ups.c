@@ -207,6 +207,36 @@ void upsdrv_initinfo(void)
 	dstate_addcmd("load.off");
 }
 
+static int prepare_filepath(char *fn, size_t buflen)
+{
+	/* Note: device_path is a global variable,
+	 * the "port=..." value parsed in main.c */
+	if (device_path[0] == '/'
+#ifdef WIN32
+	||  device_path[1] == ':'	/* "C:\..." */
+#endif
+	) {
+		/* absolute path */
+		return snprintf(fn, buflen, "%s", device_path);
+	} else if (device_path[0] == '.') {
+		/* "./" or "../" e.g. via CLI, relative to current working
+		 * directory of the driver process... at this moment */
+		if (getcwd(fn, buflen)) {
+			return snprintf(fn + strlen(fn), buflen - strlen(fn), "/%s", device_path);
+		} else {
+			return snprintf(fn, buflen, "%s", device_path);
+		}
+	} else {
+		/* assumed to be a filename in NUT config file path
+		 * (possibly under, with direct use of dirname without dots)
+		 * Note that we do not fiddle with file-path separator,
+		 * modern Windows (at least via MinGW/MSYS2) supports
+		 * the POSIX slash.
+		 */
+		return snprintf(fn, buflen, "%s/%s", confpath(), device_path);
+	}
+}
+
 void upsdrv_updateinfo(void)
 {
 	upsdebugx(1, "upsdrv_updateinfo...");
@@ -227,20 +257,7 @@ void upsdrv_updateinfo(void)
 				struct stat	fs;
 				char fn[SMALLBUF];
 
-				if (device_path[0] == '/'
-#ifdef WIN32
-				||  device_path[1] == ':'	/* "C:\..." */
-#endif
-				)
-					snprintf(fn, sizeof(fn), "%s", device_path);
-				else if (device_path[0] == '.')	{
-					/* "./" or "../" e.g. via CLI */
-					if (getcwd(fn, sizeof(fn))) {
-						snprintf(fn + strlen(fn), sizeof(fn) - strlen(fn), "/%s", device_path);
-					} else
-						snprintf(fn, sizeof(fn), "%s", device_path);
-				} else
-					snprintf(fn, sizeof(fn), "%s/%s", confpath(), device_path);
+				prepare_filepath(fn, sizeof(fn));
 
 				/* Determine if file modification timestamp has changed
 				 * since last use (so we would want to re-read it) */
@@ -480,22 +497,7 @@ void upsdrv_initups(void)
 #endif
 		}
 
-		if (device_path[0] == '/'
-#ifdef WIN32
-		||  device_path[1] == ':'	/* "C:\..." */
-#endif
-		) {
-			snprintf(fn, sizeof(fn), "%s", device_path);
-		} else if (device_path[0] == '.')	{
-			/* "./" or "../" e.g. via CLI */
-			if (getcwd(fn, sizeof(fn))) {
-				snprintf(fn + strlen(fn), sizeof(fn) - strlen(fn), "/%s", device_path);
-			} else {
-				snprintf(fn, sizeof(fn), "%s", device_path);
-			}
-		} else {
-			snprintf(fn, sizeof(fn), "%s/%s", confpath(), device_path);
-		}
+		prepare_filepath(fn, sizeof(fn));
 
 		/* Update file modification timestamp (and other data) */
 #ifndef WIN32
@@ -732,21 +734,7 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 	{
 		ctx = (PCONF_CTX_t *)xmalloc(sizeof(PCONF_CTX_t));
 
-		if (device_path[0] == '/'
-#ifdef WIN32
-		||  device_path[1] == ':'	/* "C:\..." */
-#endif
-		)
-			snprintf(fn, sizeof(fn), "%s", device_path);
-		else if (device_path[0] == '.')	{
-			/* "./" or "../" e.g. via CLI */
-			if (getcwd(fn, sizeof(fn))) {
-				snprintf(fn + strlen(fn), sizeof(fn) - strlen(fn), "/%s", device_path);
-			} else
-				snprintf(fn, sizeof(fn), "%s", device_path);
-		} else
-			snprintf(fn, sizeof(fn), "%s/%s", confpath(), device_path);
-
+		prepare_filepath(fn, sizeof(fn));
 		pconf_init(ctx, upsconf_err);
 
 		if (!pconf_file_begin(ctx, fn))
