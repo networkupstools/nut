@@ -1256,6 +1256,7 @@ testgroup_sandbox() {
     testcases_sandbox_cppnit
     testcases_sandbox_nutscanner
 
+    log_separator
     sandbox_forget_configs
 }
 
@@ -1263,6 +1264,8 @@ testgroup_sandbox_python() {
     # Arrange for quick test iterations
     testcase_sandbox_start_drivers_after_upsd
     testcases_sandbox_python
+
+    log_separator
     sandbox_forget_configs
 }
 
@@ -1270,6 +1273,8 @@ testgroup_sandbox_cppnit() {
     # Arrange for quick test iterations
     testcase_sandbox_start_drivers_after_upsd
     testcases_sandbox_cppnit
+
+    log_separator
     sandbox_forget_configs
 }
 
@@ -1277,6 +1282,8 @@ testgroup_sandbox_cppnit_simple_admin() {
     # Arrange for quick test iterations
     testcase_sandbox_start_drivers_after_upsd
     testcase_sandbox_cppnit_simple_admin
+
+    log_separator
     sandbox_forget_configs
 }
 
@@ -1284,6 +1291,8 @@ testgroup_sandbox_nutscanner() {
     # Arrange for quick test iterations
     testcase_sandbox_start_drivers_after_upsd
     testcases_sandbox_nutscanner
+
+    log_separator
     sandbox_forget_configs
 }
 
