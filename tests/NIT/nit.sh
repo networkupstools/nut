@@ -830,7 +830,12 @@ testcase_sandbox_start_drivers_after_upsd() {
     sandbox_start_drivers
 
     log_info "[testcase_sandbox_start_drivers_after_upsd] Query driver state from UPSD by UPSC after driver startup"
-    COUNTDOWN=60
+    # Timing issues: upsd starts, we wait 10 sec, drivers start and init,
+    # at 20 sec upsd does not see them yet, at 30 sec the sockets connect
+    # but info does not come yet => may be "driver stale", finally at
+    # 40+(drv)/50+(upsd) sec a DUMPALL is processed (regular 30-sec loop?) -
+    # so tightly near a minute until we have sturdy replies.
+    COUNTDOWN=90
     while [ "$COUNTDOWN" -gt 0 ]; do
         # For query errors or known wait, keep looping
         runcmd upsc dummy@localhost:$NUT_PORT \
