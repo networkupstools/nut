@@ -128,6 +128,11 @@ Changes from 2.8.0 to 2.8.1
   and exposed in `libnutscan.so` builds in particular - API version for the
   public library was bumped [#317]
 
+- A `NUT_DEBUG_PID` envvar (presence) support was added to add current
+  process ID to tags with debug-level identifiers. This may be useful
+  when many NUT daemons write to the same console or log file, such as
+  in containers/plugins for Home Assistant, storage appliances, etc. [#2118]
+
 - `configure` script, reference init-script and packaging templates updated
   to eradicate `@PIDPATH@/nut` ambiguity in favor of `@ALTPIDPATH@` for the
   unprivileged processes vs. `@PIDPATH@` for those running as root [#1719]

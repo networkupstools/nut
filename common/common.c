@@ -1519,6 +1519,7 @@ void s_upsdebug_with_errno(int level, const char *fmt, ...)
 {
 	va_list va;
 	char fmt2[LARGEBUF];
+	static int NUT_DEBUG_PID = -1;
 
 	/* Note: Thanks to macro wrapping, we do not quite need this
 	 * test now, but we still need the "level" value to report
@@ -1534,7 +1535,18 @@ void s_upsdebug_with_errno(int level, const char *fmt, ...)
  * can help limit this debug stream quicker, than experimentally picking ;) */
 	if (level > 0) {
 		int ret;
-		ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);
+
+		if (NUT_DEBUG_PID < 0) {
+			NUT_DEBUG_PID = (getenv("NUT_DEBUG_PID") != NULL);
+		}
+
+		if (NUT_DEBUG_PID) {
+			/* Note that we re-request PID every time as it can
+			 * change during the run-time (forking etc.) */
+			ret = snprintf(fmt2, sizeof(fmt2), "[D%d:%" PRIiMAX "] %s", level, (intmax_t)getpid(), fmt);
+		} else {
+			ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);
+		}
 		if ((ret < 0) || (ret >= (int) sizeof(fmt2))) {
 			syslog(LOG_WARNING, "upsdebug_with_errno: snprintf needed more than %d bytes",
 				LARGEBUF);
@@ -1564,6 +1576,7 @@ void s_upsdebugx(int level, const char *fmt, ...)
 {
 	va_list va;
 	char fmt2[LARGEBUF];
+	static int NUT_DEBUG_PID = -1;
 
 	if (nut_debug_level < level)
 		return;
@@ -1571,7 +1584,19 @@ void s_upsdebugx(int level, const char *fmt, ...)
 /* See comments above in upsdebug_with_errno() - they apply here too. */
 	if (level > 0) {
 		int ret;
-		ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);
+
+		if (NUT_DEBUG_PID < 0) {
+			NUT_DEBUG_PID = (getenv("NUT_DEBUG_PID") != NULL);
+		}
+
+		if (NUT_DEBUG_PID) {
+			/* Note that we re-request PID every time as it can
+			 * change during the run-time (forking etc.) */
+			ret = snprintf(fmt2, sizeof(fmt2), "[D%d:%" PRIiMAX "] %s", level, (intmax_t)getpid(), fmt);
+		} else {
+			ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);
+		}
+
 		if ((ret < 0) || (ret >= (int) sizeof(fmt2))) {
 			syslog(LOG_WARNING, "upsdebugx: snprintf needed more than %d bytes",
 				LARGEBUF);

@@ -139,6 +139,10 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
    of UID/GID (everywhere), which makes troubleshooting harder (e.g. lack
    of access to config files or USB device nodes). Now we have it [#1694]
 
+ - A `NUT_DEBUG_PID` envvar (presence) support was added to add current
+   process ID to tags with debug-level identifiers. This may be useful
+   when many NUT daemons write to the same console or log file. [#2118]
+
  - huawei-ups2000 is now known to support more devices, noted in docs and
    for auto-detection [#1448, #1684]
 
