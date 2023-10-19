@@ -53,6 +53,7 @@ Makefile.in
 *.adoc*.tmp
 *.txt*.tmp
 /cppcheck*.xml
+/.ci*.txt*
 /.ci*.log
 /.ci*.log.*
 .dirstamp
