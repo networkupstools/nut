@@ -195,6 +195,28 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
    * fix to clean obsoleted readings (if any) AFTER getting new info from an
      `apcupsd` daemon, to avoid the gap when NUT driver knows nothing [#2007]
 
+ - apc_modbus driver was introduced, to cover the feature gap between existing
+   NUT drivers for APC hardware and the actual USB-connected devices (or their
+   firmwares) released since roughly 2010, which deprecated standard USB HID
+   support in favor of Modbus-based protocol which is used across the board
+   (also with their network management cards). The new driver can monitor APC
+   UPS devices over TCP and Serial connections, as well as USB with a patched
+   libmodbus (check https://github.com/EchterAgo/libmodbus/commits/rtu_usb
+   for now, PR pending). [#139, #2063]
+   * For a decade until this driver got introduced, people were advised to
+     use apcupsd project as the actual program which talks to a device, and
+     NUT apcupsd-ups driver to relay information back and forth. This was a
+     limited solution due to lack of command and variable setting support,
+     as well as relaying of just some readings (just whatever apcupsd exposes,
+     further constrained by what our driver knows to re-translate), with
+     little leverage for NUT to tap into everything the device has to offer.
+     There were also issues on some systems due to packaging (e.g. marking
+     NUT and apcupsd as competing implementations of the same features) which
+     required clumsy workarounds to get both installed and running. Finally,
+     there is a small matter of long-term viability of that approach: last
+     commits to apcupsd sources were in 2017 (with last release 3.14.14 in
+     May 2016): https://sourceforge.net/p/apcupsd/svn/HEAD/tree/
+
  - NUT for Windows:
    * Ability to build NUT for Windows, last tackled with a branch based on
      NUT v2.6.5 a decade ago, has been revived with the 2.8.x era codebase [#5].
