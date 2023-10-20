@@ -666,7 +666,8 @@ SRC_MODBUS_PAGES = phoenixcontact_modbus.txt \
 	generic_modbus.txt \
 	huawei-ups2000.txt \
 	socomec_jbus.txt   \
-	adelsystem_cbi.txt
+	adelsystem_cbi.txt \
+	apc_modbus.txt
 
 if ! SOME_DRIVERS
 if WITH_MANS
@@ -674,7 +675,8 @@ MAN_MODBUS_PAGES = phoenixcontact_modbus.8 \
 	generic_modbus.8 \
 	huawei-ups2000.8 \
 	socomec_jbus.8   \
-	adelsystem_cbi.8
+	adelsystem_cbi.8 \
+	apc_modbus.8
 endif WITH_MANS
 
 if WITH_MODBUS
@@ -685,7 +687,8 @@ HTML_MODBUS_MANS = phoenixcontact_modbus.html \
 	generic_modbus.html \
 	huawei-ups2000.html \
 	socomec_jbus.html   \
-	adelsystem_cbi.html
+	adelsystem_cbi.html \
+	apc_modbus.html
 endif ! SOME_DRIVERS
 
 # (--with-linux_i2c)
