@@ -1288,6 +1288,14 @@ if ( env?.BRANCH_NAME ==~ /.*verbose.*/ )
     dynamatrixGlobalState.enableDebugErrors = true
     dynamatrixGlobalState.enableDebugMilestones = true
     dynamatrixGlobalState.enableDebugMilestonesDetails = true
+    dynamatrixGlobalState.enableDebugTraceGithubStatusHighlights = true
+}
+
+if (true)  // <<< (Un-)comment away in select runs/branches
+//if (false) // <<< (Un-)comment away in select runs/branches
+//if ( env?.BRANCH_NAME ==~ /.*fightwarn.*/ )
+{
+    dynamatrixGlobalState.enableDebugTraceGithubStatusHighlights = true
 }
 
 dynamatrixPipeline(dynacfgBase, dynacfgPipeline)
