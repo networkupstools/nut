@@ -27,7 +27,7 @@
 #include <string.h>
 
 #define DRIVER_NAME	"ISBMEX UPS driver"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.08"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -357,8 +357,11 @@ void upsdrv_shutdown(void)
 	/*
 	 * here try to do the pin 9 trick, if it does not
 	 * work, else:*/
-/*	fatalx(EXIT_FAILURE, "Shutdown only supported with the Generic Driver, type 6 and special cable");  */
-	/*fatalx(EXIT_FAILURE, "shutdown not supported");*/
+/*
+	upslogx(LOG_ERR, "Shutdown only supported with the Generic Driver, type 6 and special cable");
+	//upslogx(LOG_ERR, "shutdown not supported");
+	set_exit_flag(-1);
+*/
 	int i;
 	for(i=0;i<=5;i++)
 	{

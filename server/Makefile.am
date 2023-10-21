@@ -38,11 +38,17 @@ else !HAVE_WINDOWS
   sockdebug_SOURCES = sockdebug.c
 endif !HAVE_WINDOWS
 
+if WITH_DEV
+# Have it installed properly
+libexec_PROGRAMS = sockdebug
+endif
+
 dummy:
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
 # the root Makefile.am takes care of that!
-#clean-local:
-#	rm -rf $(builddir)/.deps
+clean-local:
+	$(AM_V_at)rm -rf $(EXTRA_PROGRAMS)
+#	$(AM_V_at)rm -rf $(builddir)/.deps

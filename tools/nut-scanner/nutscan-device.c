@@ -37,7 +37,7 @@ const char * nutscan_device_type_strings[TYPE_END - 1] = {
 	"serial",
 };
 
-nutscan_device_t * nutscan_new_device()
+nutscan_device_t * nutscan_new_device(void)
 {
 	nutscan_device_t * device;
 

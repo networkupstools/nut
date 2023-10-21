@@ -36,8 +36,10 @@ but more testers are needed.
 Currently, it has been tested on the following models.
 
 * UPS2000-A-1KTTS (firmware: UPS2000A, V2R1C1SPC40, P1.0-D1.0)
+* UPS2000-A-1KTTS (firmware: UPS2000A, V2R1C1SPC50, P1.0-D1.0)
 * UPS2000-A-2KTTS (firmware: UPS2000A, V2R1C1SPC50, P1.0-D1.0)
 * UPS2000-G-1KRTS (firmware: UPS2000A, V2R1C1SPC40, P1.0-D1.0)
+* UPS2000-G-1KRTS (firmware: UPS2000G, V2R1C1SPC50, P1.0-D1.0)
 * UPS2000-G-3KRTS (firmware: UPS2000A, V2R1C1SPC40, P1.0-D1.0)
 * UPS2000-G-3KRTS (firmware: UPS2000G, V2R1C1SPC50, P1.0-D1.0)
 
@@ -393,7 +395,7 @@ linkman:nutupsdrv[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-* The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
 * Huawei UPS2000-A (1 kVA-3 kVA) User Manual:
   https://support.huawei.com/enterprise/en/doc/EDOC1000084260
 * Huawei UPS2000 (1 kVA-3 kVA) Modbus Protocol Development Guide:

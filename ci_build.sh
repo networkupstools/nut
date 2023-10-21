@@ -13,6 +13,9 @@ set -e
 SCRIPTDIR="`dirname "$0"`"
 SCRIPTDIR="`cd "$SCRIPTDIR" && pwd`"
 
+SCRIPT_PATH="${SCRIPTDIR}/`basename $0`"
+SCRIPT_ARGS=("$@")
+
 # Quick hijack for interactive development like this:
 #   BUILD_TYPE=fightwarn-clang ./ci_build.sh
 # or to quickly hit the first-found errors in a larger matrix
@@ -161,11 +164,25 @@ case "${CI_BUILDDIR-}" in
         ;;
 esac
 
-[ -n "$MAKE" ] || [ "$1" = spellcheck ] || MAKE=make
+# Just in case we get blanks from CI - consider them as not-set:
+if [ -z "`echo "${MAKE-}" | tr -d ' '`" ] ; then
+    if [ "$1" = spellcheck -o "$1" = spellcheck-interactive ] \
+    && (command -v gmake) >/dev/null 2>/dev/null \
+    ; then
+        # GNU make processes quiet mode better, which helps with spellcheck use-case
+        MAKE=gmake
+    else
+        # Use system default, there should be one (or fail eventually if not)
+        MAKE=make
+    fi
+    export MAKE
+fi
+
 [ -n "$GGREP" ] || GGREP=grep
 
 [ -n "$MAKE_FLAGS_QUIET" ] || MAKE_FLAGS_QUIET="VERBOSE=0 V=0 -s"
-[ -n "$MAKE_FLAGS_VERBOSE" ] || MAKE_FLAGS_VERBOSE="VERBOSE=1 -s"
+[ -n "$MAKE_FLAGS_VERBOSE" ] || MAKE_FLAGS_VERBOSE="VERBOSE=1 V=1 -s"
+[ -n "$MAKE_FLAGS_CLEAN" ] || MAKE_FLAGS_CLEAN="${MAKE_FLAGS_QUIET}"
 
 # This is where many symlinks like "gcc -> ../bin/ccache" reside
 # (note: a "-" value requests to NOT use a CI_CCACHE_SYMLINKDIR;
@@ -202,6 +219,18 @@ else
         echo "INFO: Empty CI_CCACHE_SYMLINKDIR was explicitly requested" >&2
         CI_CCACHE_SYMLINKDIR=""
     fi
+fi
+
+if [ -z "$TMPDIR" ]; then
+    echo "WARNING: TMPDIR not set, trying to guess"
+    if [ -d /tmp -a -w /tmp ] ; then
+        TMPDIR=/tmp
+        export TMPDIR
+    fi
+fi
+
+if [ -z "$TMPDIR" ]; then
+    echo "WARNING: TMPDIR still not set, some tools (notably clang) can fail"
 fi
 
 # For two-phase builds (quick parallel make first, sequential retry if failed)
@@ -523,6 +552,7 @@ configure_nut() {
 
 build_to_only_catch_errors_target() {
     if [ $# = 0 ]; then
+        # Re-enter with an arg list
         build_to_only_catch_errors_target all ; return $?
     fi
 
@@ -545,9 +575,8 @@ build_to_only_catch_errors_target() {
     return 0
 }
 
-build_to_only_catch_errors() {
-    build_to_only_catch_errors_target all || return $?
-
+build_to_only_catch_errors_check() {
+    # Specifically run (an optional) "make check"
     if [ "${CI_SKIP_CHECK}" = true ] ; then
         echo "`date`: SKIP: not starting a '$MAKE check' for quick sanity test of the products built with the current compiler and standards, because caller requested CI_SKIP_CHECK=true; plain build has just succeeded however"
         return 0
@@ -561,6 +590,12 @@ build_to_only_catch_errors() {
     return 0
 }
 
+build_to_only_catch_errors() {
+    build_to_only_catch_errors_target all || return $?
+    build_to_only_catch_errors_check || return $?
+    return 0
+}
+
 ccache_stats() {
     local WHEN="$1"
     [ -n "$WHEN" ] || WHEN="some time around the"
@@ -568,6 +603,12 @@ ccache_stats() {
         if [ -d "$CCACHE_DIR" ]; then
             echo "CCache stats $WHEN build:"
             ccache -s || true
+            # Some ccache versions support compression stats
+            # This may take time on slower systems however
+            # (and/or with larger cache contents) => off by default
+            if [ x"${CI_CCACHE_STATS_COMPRESSION-}" = xtrue ]; then
+                ccache -x 2>/dev/null || true
+            fi
         else
             echo "WARNING: CCache stats $WHEN build: tool is enabled, but CCACHE_DIR='$CCACHE_DIR' was not found now" >&2
         fi
@@ -614,7 +655,7 @@ check_gitignore() {
     if [ -n "`git status $GIT_ARGS -s "${FILE_GLOB}" | grep -E -v '^.. \.ci.*\.log.*' | grep -E "^.. ${FILE_REGEX}"`" ] \
     && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ] \
     ; then
-        echo "FATAL: There are changes in $FILE_DESCR files listed above - tracked sources should be updated in the PR (even if generated - not all builders can do so), and build products should be added to a .gitignore file, everything made should be cleaned and no tracked files should be removed!" >&2
+        echo "FATAL: There are changes in $FILE_DESCR files listed above - tracked sources should be updated in the PR (even if generated - not all builders can do so), and build products should be added to a .gitignore file, everything made should be cleaned and no tracked files should be removed! You can 'export CI_REQUIRE_GOOD_GITIGNORE=false' if appropriate." >&2
         if [ "$GIT_DIFF_SHOW" = true ]; then
             PAGER=cat git diff -- "${FILE_GLOB}" || true
         fi
@@ -652,10 +693,17 @@ optional_maintainer_clean_check() {
         [ -z "$CI_TIME" ] || echo "`date`: Starting maintainer-clean check of currently tested project..."
 
         # Note: currently Makefile.am has just a dummy "distcleancheck" rule
-        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS maintainer-clean || return
+        case "$MAKE_FLAGS $DISTCHECK_FLAGS $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN" in
+        *V=0*)
+            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN maintainer-clean > /dev/null || return
+            ;;
+        *)
+            $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN maintainer-clean || return
+        esac
 
         GIT_ARGS="--ignored" check_gitignore "maintainer-clean" || return
     fi
+
     return 0
 }
 
@@ -676,26 +724,21 @@ optional_dist_clean_check() {
         [ -z "$CI_TIME" ] || echo "`date`: Starting dist-clean check of currently tested project..."
 
         # Note: currently Makefile.am has just a dummy "distcleancheck" rule
-        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS distclean || return
+        $CI_TIME $MAKE DISTCHECK_FLAGS="$DISTCHECK_FLAGS" $PARMAKE_FLAGS $MAKE_FLAGS_CLEAN distclean || return
 
         check_gitignore "distclean" || return
     fi
     return 0
 }
 
-if [ "$1" = spellcheck ] && [ -z "$BUILD_TYPE" ] ; then
+if [ "$1" = inplace ] && [ -z "$BUILD_TYPE" ] ; then
+    shift
+    BUILD_TYPE="inplace"
+fi
+
+if [ "$1" = spellcheck -o "$1" = spellcheck-interactive ] && [ -z "$BUILD_TYPE" ] ; then
     # Note: this is a little hack to reduce typing
     # and scrolling in (docs) developer iterations.
-    if [ -z "${MAKE-}" ] ; then
-        if (command -v gmake) >/dev/null 2>/dev/null ; then
-            # GNU make processes quiet mode better, which helps with this use-case
-            MAKE=gmake
-        else
-            # Use system default, there should be one
-            MAKE=make
-        fi
-        export MAKE
-    fi
     case "$CI_OS_NAME" in
         windows-msys2)
             # https://github.com/msys2/MSYS2-packages/issues/2088
@@ -717,8 +760,12 @@ if [ "$1" = spellcheck ] && [ -z "$BUILD_TYPE" ] ; then
     esac >&2
     if [ -s Makefile ] && [ -s docs/Makefile ]; then
         echo "Processing quick and quiet spellcheck with already existing recipe files, will only report errors if any ..."
-        build_to_only_catch_errors_target spellcheck ; exit
+        build_to_only_catch_errors_target $1 ; exit
     else
+        # TODO: Actually do it (default-spellcheck-interactive)?
+        if [ "$1" = spellcheck-interactive ] ; then
+            echo "Only CI-building 'spellcheck', please do the interactive part manually if needed" >&2
+        fi
         BUILD_TYPE="default-spellcheck"
         shift
     fi
@@ -727,7 +774,7 @@ fi
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 
 echo "Build host settings:"
-set | grep -E '^(CI_.*|OS_*|CANBUILD_.*|NODE_LABELS|MAKE|C.*FLAGS|LDFLAGS|ARCH.*|BITS.*|CC|CXX|CPP|DO_.*|BUILD_.*)=' || true
+set | grep -E '^(PATH|.*CCACHE.*|CI_.*|OS_.*|CANBUILD_.*|NODE_LABELS|MAKE|C.*FLAGS|LDFLAGS|ARCH.*|BITS.*|CC|CXX|CPP|DO_.*|BUILD_.*)=' || true
 uname -a
 echo "LONG_BIT:`getconf LONG_BIT` WORD_BIT:`getconf WORD_BIT`" || true
 if command -v xxd >/dev/null ; then xxd -c 1 -l 6 | tail -1; else if command -v od >/dev/null; then od -N 1 -j 5 -b | head -1 ; else hexdump -s 5 -n 1 -C | head -1; fi; fi < /bin/ls 2>/dev/null | awk '($2 == 1){print "Endianness: LE"}; ($2 == 2){print "Endianness: BE"}' || true
@@ -774,7 +821,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     else
         if [ -n "${CI_CCACHE_SYMLINKDIR}" ]; then
             # Tell ccache the PATH without itself in it, to avoid loops processing
-                PATH="`echo "$PATH" | sed -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?$,,' -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?$,,'`"
+            PATH="`echo "$PATH" | sed -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?$,,' -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?$,,'`"
         fi
         CCACHE_PATH="$PATH"
         CCACHE_DIR="${HOME}/.ccache"
@@ -963,17 +1010,22 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         CONFIG_OPTS+=("PKG_CONFIG_PATH=${DEFAULT_PKG_CONFIG_PATH}")
     fi
 
+    CONFIG_OPTS+=("--enable-keep_nut_report_feature")
     CONFIG_OPTS+=("--prefix=${BUILD_PREFIX}")
     CONFIG_OPTS+=("--sysconfdir=${BUILD_PREFIX}/etc/nut")
     CONFIG_OPTS+=("--with-udev-dir=${BUILD_PREFIX}/etc/udev")
     CONFIG_OPTS+=("--with-devd-dir=${BUILD_PREFIX}/etc/devd")
     CONFIG_OPTS+=("--with-hotplug-dir=${BUILD_PREFIX}/etc/hotplug")
 
+    if [ x"${INPLACE_RUNTIME-}" = xtrue ]; then
+        CONFIG_OPTS+=("--enable-inplace-runtime")
+    fi
+
     # TODO: Consider `--enable-maintainer-mode` to add recipes that
     # would quickly regenerate Makefile(.in) if you edit Makefile.am
     # TODO: Resolve port-collision reliably (for multi-executor agents)
     # and enable the test for CI runs. Bonus for making it quieter.
-    if [ "${CANBUILD_NIT_TESTS-}" != yes ] ; then
+    if [ "${CANBUILD_NIT_TESTS-}" != no ] ; then
         CONFIG_OPTS+=("--enable-check-NIT")
     else
         echo "WARNING: Build agent does not say it can reliably 'make check-NIT'" >&2
@@ -1029,12 +1081,14 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     case "$BUILD_TYPE" in
         "default-nodoc")
             CONFIG_OPTS+=("--with-doc=no")
+            CONFIG_OPTS+=("--disable-spellcheck")
             DO_DISTCHECK=no
             ;;
         "default-spellcheck"|"default-shellcheck")
             CONFIG_OPTS+=("--with-all=no")
             CONFIG_OPTS+=("--with-libltdl=no")
             CONFIG_OPTS+=("--with-doc=man=skip")
+            CONFIG_OPTS+=("--enable-spellcheck")
             #TBD# CONFIG_OPTS+=("--with-shellcheck=yes")
             DO_DISTCHECK=no
             ;;
@@ -1088,6 +1142,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 
             # Do not build the docs as we are interested in binary code
             CONFIG_OPTS+=("--with-doc=skip")
+            CONFIG_OPTS+=("--disable-spellcheck")
             # Enable as many binaries to build as current worker setup allows
             CONFIG_OPTS+=("--with-all=auto")
 
@@ -1113,6 +1168,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         "default-alldrv")
             # Do not build the docs and make possible a distcheck below
             CONFIG_OPTS+=("--with-doc=skip")
+            CONFIG_OPTS+=("--disable-spellcheck")
             if [ "${CANBUILD_DRIVERS_ALL-}" = no ]; then
                 echo "WARNING: Build agent says it can't build 'all' driver types; will ask for what we can build" >&2
                 if [ "$DO_DISTCHECK" != no ]; then
@@ -1139,6 +1195,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         "default"|"default-tgt:"*|*)
             # Do not build the docs and tell distcheck it is okay
             CONFIG_OPTS+=("--with-doc=skip")
+            CONFIG_OPTS+=("--disable-spellcheck")
             ;;
     esac
     # NOTE: The case "$BUILD_TYPE" above was about setting CONFIG_OPTS.
@@ -1248,10 +1305,38 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # This matches the use-case of distro-building from release tarballs that
     # include all needed pre-generated files to rely less on OS facilities.
     if [ -s Makefile ]; then
+        if [ -n "`find "${SCRIPTDIR}" -name configure.ac -newer "${CI_BUILDDIR}"/configure`" ] \
+        || [ -n "`find "${SCRIPTDIR}" -name '*.m4' -newer "${CI_BUILDDIR}"/configure`" ] \
+        || [ -n "`find "${SCRIPTDIR}" -name Makefile.am -newer "${CI_BUILDDIR}"/Makefile`" ] \
+        || [ -n "`find "${SCRIPTDIR}" -name Makefile.in -newer "${CI_BUILDDIR}"/Makefile`" ] \
+        || [ -n "`find "${SCRIPTDIR}" -name Makefile.am -newer "${CI_BUILDDIR}"/Makefile.in`" ] \
+        ; then
+            # Avoid reconfiguring for the sake of distclean
+            echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because recipes changed"
+            rm -f "${CI_BUILDDIR}"/Makefile "${CI_BUILDDIR}"/configure
+        fi
+    fi
+
+    if [ -s Makefile ]; then
         # Let initial clean-up be at default verbosity
+
+        # Handle Ctrl+C with helpful suggestions:
+        trap 'echo "!!! If clean-up looped remaking the configure script for maintainer-clean, try to:"; echo "    rm -f Makefile configure ; $0 $SCRIPT_ARGS"' 2
+
         echo "=== Starting initial clean-up (from old build products)"
-        ${MAKE} maintainer-clean -k || ${MAKE} distclean -k || true
+        case "$MAKE_FLAGS $MAKE_FLAGS_CLEAN" in
+        *V=0*)
+            ${MAKE} maintainer-clean $MAKE_FLAGS_CLEAN -k > /dev/null \
+            || ${MAKE} maintainer-clean $MAKE_FLAGS_CLEAN -k
+            ;;
+        *)
+            ${MAKE} maintainer-clean $MAKE_FLAGS_CLEAN -k
+        esac \
+        || ${MAKE} distclean $MAKE_FLAGS_CLEAN -k \
+        || true
         echo "=== Finished initial clean-up"
+
+        trap - 2
     fi
 
     # Just prepare `configure` script; we run it at different points
@@ -1456,9 +1541,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 # would just re-evaluate `configure` to update the
                 # Makefile to remove it and other generated data.
                 #echo "=== Clean the sandbox, $BUILDSTODO build variants remaining..."
-                #$MAKE distclean -k || true
+                #$MAKE distclean $MAKE_FLAGS_CLEAN -k || true
 
-                echo "=== Starting NUT_SSL_VARIANT='$NUT_SSL_VARIANT', $BUILDSTODO build variants remaining..."
+                echo "=== Starting 'NUT_SSL_VARIANT=$NUT_SSL_VARIANT', $BUILDSTODO build variants remaining..."
                 case "$NUT_SSL_VARIANT" in
                     ""|auto|default)
                         # Quietly build one scenario, whatever we can (or not)
@@ -1473,7 +1558,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         )
                         ;;
                     *)
-                        echo "=== Building with NUT_SSL_VARIANT='${NUT_SSL_VARIANT}' ..."
+                        echo "=== Building with 'NUT_SSL_VARIANT=${NUT_SSL_VARIANT}' ..."
                         ( CONFIG_OPTS+=("--with-${NUT_SSL_VARIANT}")
                           configure_nut
                         )
@@ -1490,13 +1575,29 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     continue
                 }
 
-                echo "=== Configured NUT_SSL_VARIANT='$NUT_SSL_VARIANT', $BUILDSTODO build variants (including this one) remaining to complete; trying to build..."
+                echo "=== Configured 'NUT_SSL_VARIANT=$NUT_SSL_VARIANT', $BUILDSTODO build variants (including this one) remaining to complete; trying to build..."
                 cd "${CI_BUILDDIR}"
-                build_to_only_catch_errors && {
+                # Use default target e.g. "all":
+                build_to_only_catch_errors_target && {
                     SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
                 } || {
                     RES_ALLERRORS=$?
                     FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[build]"
+                    # Help find end of build (before cleanup noise) in logs:
+                    echo "=== FAILED 'NUT_SSL_VARIANT=${NUT_SSL_VARIANT}' build"
+                    if [ "$CI_FAILFAST" = true ]; then
+                        echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
+                        break
+                    fi
+                }
+
+                build_to_only_catch_errors_check && {
+                    SUCCEEDED="${SUCCEEDED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[check]"
+                } || {
+                    RES_ALLERRORS=$?
+                    FAILED="${FAILED} NUT_SSL_VARIANT=${NUT_SSL_VARIANT}[check]"
+                    # Help find end of build (before cleanup noise) in logs:
+                    echo "=== FAILED 'NUT_SSL_VARIANT=${NUT_SSL_VARIANT}' check"
                     if [ "$CI_FAILFAST" = true ]; then
                         echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
                         break
@@ -1539,7 +1640,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     echo "=== Completed sandbox cleanup-check after NUT_SSL_VARIANT=${NUT_SSL_VARIANT}, $BUILDSTODO build variants remaining"
                 else
                     if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" != no ]; then
-                        $MAKE distclean -k || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
+                        $MAKE distclean $MAKE_FLAGS_CLEAN -k \
+                        || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
                         echo "=== Completed sandbox cleanup after NUT_SSL_VARIANT=${NUT_SSL_VARIANT}, $BUILDSTODO build variants remaining"
                     else
                         echo "=== SKIPPED sandbox cleanup because DO_CLEAN_CHECK=$DO_CLEAN_CHECK and $BUILDSTODO build variants remaining"
@@ -1563,7 +1665,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
              || [ "$CI_FAILFAST" = "true" -a "$RES_ALLERRORS" = 0 ] \
             ) && \
             for NUT_USB_VARIANT in $NUT_USB_VARIANTS ; do
-                echo "=== Starting NUT_USB_VARIANT='$NUT_USB_VARIANT', $BUILDSTODO build variants remaining..."
+                echo "=== Starting 'NUT_USB_VARIANT=$NUT_USB_VARIANT', $BUILDSTODO build variants remaining..."
                 case "$NUT_USB_VARIANT" in
                     ""|auto|default)
                         # Quietly build one scenario, whatever we can (or not)
@@ -1590,7 +1692,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         )
                         ;;
                     libusb-*)
-                        echo "=== Building with NUT_USB_VARIANT='${NUT_USB_VARIANT}' ..."
+                        echo "=== Building with 'NUT_USB_VARIANT=${NUT_USB_VARIANT}' ..."
                         ( if [ "$NUT_SSL_VARIANTS" != "auto" ] ; then
                               CONFIG_OPTS+=("--without-all")
                               CONFIG_OPTS+=("--without-ssl")
@@ -1601,7 +1703,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         )
                         ;;
                     *)
-                        echo "=== Building with NUT_USB_VARIANT='${NUT_USB_VARIANT}' ..."
+                        echo "=== Building with 'NUT_USB_VARIANT=${NUT_USB_VARIANT}' ..."
                         ( if [ "$NUT_SSL_VARIANTS" != "auto" ] ; then
                               CONFIG_OPTS+=("--without-all")
                               CONFIG_OPTS+=("--without-ssl")
@@ -1623,13 +1725,29 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     continue
                 }
 
-                echo "=== Configured NUT_USB_VARIANT='$NUT_USB_VARIANT', $BUILDSTODO build variants (including this one) remaining to complete; trying to build..."
+                echo "=== Configured 'NUT_USB_VARIANT=$NUT_USB_VARIANT', $BUILDSTODO build variants (including this one) remaining to complete; trying to build..."
                 cd "${CI_BUILDDIR}"
-                build_to_only_catch_errors && {
+                # Use default target e.g. "all":
+                build_to_only_catch_errors_target && {
                     SUCCEEDED="${SUCCEEDED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[build]"
                 } || {
                     RES_ALLERRORS=$?
                     FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[build]"
+                    # Help find end of build (before cleanup noise) in logs:
+                    echo "=== FAILED 'NUT_USB_VARIANT=${NUT_USB_VARIANT}' build"
+                    if [ "$CI_FAILFAST" = true ]; then
+                        echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
+                        break
+                    fi
+                }
+
+                build_to_only_catch_errors_check && {
+                    SUCCEEDED="${SUCCEEDED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[check]"
+                } || {
+                    RES_ALLERRORS=$?
+                    FAILED="${FAILED} NUT_USB_VARIANT=${NUT_USB_VARIANT}[check]"
+                    # Help find end of build (before cleanup noise) in logs:
+                    echo "=== FAILED 'NUT_USB_VARIANT=${NUT_USB_VARIANT}' check"
                     if [ "$CI_FAILFAST" = true ]; then
                         echo "===== Aborting because CI_FAILFAST=$CI_FAILFAST" >&2
                         break
@@ -1670,7 +1788,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     echo "=== Completed sandbox cleanup-check after NUT_USB_VARIANT=${NUT_USB_VARIANT}, $BUILDSTODO build variants remaining"
                 else
                     if [ "$BUILDSTODO" -gt 0 ] && [ "${DO_CLEAN_CHECK-}" != no ]; then
-                        $MAKE distclean -k || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
+                        $MAKE distclean $MAKE_FLAGS_CLEAN -k \
+                        || echo "WARNING: 'make distclean' FAILED: $? ... proceeding" >&2
                         echo "=== Completed sandbox cleanup after NUT_USB_VARIANT=${NUT_USB_VARIANT}, $BUILDSTODO build variants remaining"
                     else
                         echo "=== SKIPPED sandbox cleanup because DO_CLEAN_CHECK=$DO_CLEAN_CHECK and $BUILDSTODO build variants remaining"
@@ -1727,6 +1846,21 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # fail due to them:
     check_gitignore "all" || exit
 
+    if test -s "${SCRIPTDIR}/install-sh" \
+    && grep -w MKDIRPROG "${SCRIPTDIR}/install-sh" >/dev/null \
+    ; then
+         if grep -v '#' "${SCRIPTDIR}/install-sh" | grep -E '\$mkdirprog.*-p' >/dev/null \
+        ; then
+            true
+        else
+            if [ -z "${MKDIRPROG-}" ] ; then
+                echo "`date`: WARNING: setting MKDIRPROG to work around possible deficiencies of install-sh"
+                MKDIRPROG="mkdir -p"
+                export MKDIRPROG
+            fi
+        fi
+    fi
+
     [ -z "$CI_TIME" ] || echo "`date`: Trying to install the currently tested project into the custom DESTDIR..."
     $CI_TIME $MAKE $MAKE_FLAGS_VERBOSE DESTDIR="$INST_PREFIX" install
     [ -n "$CI_TIME" ] && echo "`date`: listing files installed into the custom DESTDIR..." && \
@@ -1758,7 +1892,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 bindings)
     pushd "./bindings/${BINDING}" && ./ci_build.sh
     ;;
-"")
+""|inplace)
     echo "ERROR: No BUILD_TYPE was specified, doing a minimal default ritual without any required options" >&2
     if [ -n "${BUILD_WARNOPT}${BUILD_WARNFATAL}" ]; then
         echo "WARNING: BUILD_WARNOPT and BUILD_WARNFATAL settings are ignored in this mode" >&2
@@ -1779,6 +1913,20 @@ bindings)
 
     cd "${SCRIPTDIR}"
     if [ -s Makefile ]; then
+        if [ -n "`find "${SCRIPTDIR}" -name configure.ac -newer "${CI_BUILDDIR}"/configure`" ] \
+        || [ -n "`find "${SCRIPTDIR}" -name '*.m4' -newer "${CI_BUILDDIR}"/configure`" ] \
+        || [ -n "`find "${SCRIPTDIR}" -name Makefile.am -newer "${CI_BUILDDIR}"/Makefile`" ] \
+        || [ -n "`find "${SCRIPTDIR}" -name Makefile.in -newer "${CI_BUILDDIR}"/Makefile`" ] \
+        || [ -n "`find "${SCRIPTDIR}" -name Makefile.am -newer "${CI_BUILDDIR}"/Makefile.in`" ] \
+        ; then
+            # Avoid reconfiguring for the sake of distclean
+            echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because recipes changed"
+            rm -f "${CI_BUILDDIR}"/Makefile "${CI_BUILDDIR}"/configure
+        fi
+    fi
+
+    if [ -s Makefile ]; then
+        # Help developers debug:
         # Let initial clean-up be at default verbosity
         echo "=== Starting initial clean-up (from old build products)"
         ${MAKE} realclean -k || true
@@ -1792,12 +1940,24 @@ bindings)
     # Below we aim for really fast iterations of C/C++ development so
     # enable whatever is auto-detectable (except docs), and highlight
     # any warnings if we can.
-    ${CONFIGURE_SCRIPT} --enable-Wcolor \
+    CONFIG_OPTS=(--enable-Wcolor \
+        --enable-keep_nut_report_feature \
         --with-all=auto --with-cgi=auto --with-serial=auto \
         --with-dev=auto --with-doc=skip \
         --with-nut_monitor=auto --with-pynut=auto \
         --disable-force-nut-version-header \
-        --enable-check-NIT --enable-maintainer-mode
+        --enable-check-NIT --enable-maintainer-mode)
+
+    # Not default for parameter-less build, to prevent "make check-NIT"
+    # from somehow interfering with the running daemons.
+    if [ x"${INPLACE_RUNTIME-}" = xtrue ] || [ x"${BUILD_TYPE-}" = xinplace ] ; then
+        CONFIG_OPTS+=("--enable-inplace-runtime")
+    else
+        # Help developers debug:
+        CONFIG_OPTS+=("--disable-silent-rules")
+    fi
+
+    ${CONFIGURE_SCRIPT} "${CONFIG_OPTS[@]}"
 
     # NOTE: Currently parallel builds are expected to succeed (as far
     # as recipes are concerned), and the builds without a BUILD_TYPE
@@ -1814,6 +1974,10 @@ bindings)
             echo "(or some other valid DESTDIR) to co-bundle dependency FOSS DLL files there." >&2
             ;;
     esac
+
+    if [ -s config.nut_report_feature.log ]; then
+        cat config.nut_report_feature.log
+    fi
     ;;
 
 # These mingw modes below are currently experimental and not too integrated
@@ -1825,6 +1989,20 @@ bindings)
 # on any other supported platform (more details in docs/config-prereqs.txt).
 cross-windows-mingw*)
     echo "INFO: When using build-mingw-nut.sh consider 'export INSTALL_WIN_BUNDLE=true' to use mainstream DLL co-bundling recipe" >&2
+
+    if [ "$HAVE_CCACHE" = yes ] \
+    && [ -n "${CI_CCACHE_SYMLINKDIR}" ] \
+    && [ -d "${CI_CCACHE_SYMLINKDIR}" ] \
+    ; then
+        PATH="`echo "$PATH" | sed -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?$,,' -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?$,,'`"
+        CCACHE_PATH="$PATH"
+        CCACHE_DIR="${HOME}/.ccache"
+        if (command -v ccache || which ccache) && ls -la "${CI_CCACHE_SYMLINKDIR}" && mkdir -p "${CCACHE_DIR}"/ ; then
+            echo "INFO: Using ccache via PATH preferring tool names in ${CI_CCACHE_SYMLINKDIR}" >&2
+            PATH="${CI_CCACHE_SYMLINKDIR}:$PATH"
+            export CCACHE_PATH CCACHE_DIR PATH
+        fi
+    fi
 
     ./autogen.sh || exit
     cd scripts/Windows || exit
@@ -1853,6 +2031,7 @@ cross-windows-mingw*)
 
     SOURCEMODE="out-of-tree" \
     MAKEFLAGS="$PARMAKE_FLAGS" \
+    KEEP_NUT_REPORT_FEATURE="true" \
     ./build-mingw-nut.sh $cmd
     ;;
 

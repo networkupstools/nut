@@ -1,0 +1,82 @@
+# EditorConfig is awesome: https://EditorConfig.org
+# https://github.com/editorconfig/editorconfig/wiki/EditorConfig-Properties
+
+# top-most EditorConfig file
+root = true
+
+[*]
+charset = utf-8
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+max_line_length = 80
+
+indent_style = tab
+tab_width = 4
+#indent_style = space
+#indent_size = 4
+
+# Platform-dependent, except for certain interpreters
+# whose sources must use LF, see .gitattributes
+###end_of_line = lf
+
+#ij_formatter_enabled = false
+
+[.editorconfig]
+trim_trailing_whitespace = false
+
+[*.{bat,cmd,ps1}]
+end_of_line = crlf
+
+[*.{am,hwdb,service,target,path}{,.in}]
+end_of_line = lf
+line_comment = #
+
+[*.sh{,.in}]
+end_of_line = lf
+line_comment = #
+
+# Borrowed from https://github.com/armbian/build/blob/master/.editorconfig
+shell_variant = bash
+binary_next_line = false
+switch_case_indent = true
+space_redirects = true
+keep_padding = false
+function_next_line = false
+
+[*.{m4,ac}{,.in}]
+end_of_line = lf
+line_comment = dnl 
+
+[*.{conf,sample}{,.in}]
+max_line_length = 76
+line_comment = #
+
+[*.txt{,.in},*.adoc{,.in},AUTHORS,COPYING,INSTALL.nut,MAINTAINERS,NEWS,README,TODO,UPGRADING]
+max_line_length = 76
+indent_style = space
+indent_size = 4
+
+# Assumes asciidoc comments:
+block_comment_start = ////////
+block_comment_end = ////////
+
+[*.{yaml,yml,json}{,.in}]
+indent_style = space
+indent_size = 4
+
+################################################################
+# Primary concern: C/C++ style
+# See also docs/developers.txt => Code Style chapter
+
+[*.{c,h,cpp}{,.in}]
+spaces_around_operators = true
+spaces_around_brackets = none
+
+# Plus one TAB:
+continuation_indent_size = 1
+
+indent_brace_style = K&R
+
+block_comment_start = /*
+block_comment_end = */

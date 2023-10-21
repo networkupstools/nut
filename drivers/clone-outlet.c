@@ -29,7 +29,7 @@
 #endif
 
 #define DRIVER_NAME	"clone outlet UPS Driver"
-#define DRIVER_VERSION	"0.02"
+#define DRIVER_VERSION	"0.03"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -479,6 +479,11 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* replace with a proper shutdown function */
+/*
+	upslogx(LOG_ERR, "shutdown not supported");
+	set_exit_flag(-1);
+ */
 }
 
 

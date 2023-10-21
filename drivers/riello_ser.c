@@ -2,8 +2,8 @@
  * riello_ser.c: support for Riello serial protocol based UPSes
  *
  * A document describing the protocol implemented by this driver can be
- * found online at "https://networkupstools.org/protocols/riello/PSGPSER-0104.pdf"
- * and "https://networkupstools.org/protocols/riello/PSSENTR-0100.pdf".
+ * found online at "https://www.networkupstools.org/protocols/riello/PSGPSER-0104.pdf"
+ * and "https://www.networkupstools.org/protocols/riello/PSSENTR-0100.pdf".
  *
  * Copyright (C) 2012 - Elio Parisi <e.parisi@riello-ups.com>
  *
@@ -27,7 +27,6 @@
 #include "config.h" /* must be the first header */
 
 #include <string.h>
-#include <stdint.h>
 
 #ifdef WIN32
 # include "wincompat.h"
@@ -47,7 +46,7 @@
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello serial driver"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.08"
 
 #define DEFAULT_OFFDELAY   5
 #define DEFAULT_BOOTDELAY  5
@@ -208,7 +207,7 @@ static void riello_serialcomm(uint8_t* arg_bufIn, uint8_t typedev)
 	}
 }
 
-static int get_ups_nominal()
+static int get_ups_nominal(void)
 {
 	uint8_t length;
 
@@ -241,7 +240,7 @@ static int get_ups_nominal()
 	return 0;
 }
 
-static int get_ups_status()
+static int get_ups_status(void)
 {
 	uint8_t numread, length;
 
@@ -281,7 +280,7 @@ static int get_ups_status()
 	return 0;
 }
 
-static int get_ups_extended()
+static int get_ups_extended(void)
 {
 	uint8_t length;
 
@@ -315,7 +314,7 @@ static int get_ups_extended()
 }
 
 /* Not static, exposed via header. Not used though, currently... */
-int get_ups_statuscode()
+int get_ups_statuscode(void)
 {
 	uint8_t length;
 
@@ -348,7 +347,7 @@ int get_ups_statuscode()
 	return 0;
 }
 
-static int get_ups_sentr()
+static int get_ups_sentr(void)
 {
 	uint8_t length;
 
@@ -680,7 +679,7 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 	return STAT_INSTCMD_UNKNOWN;
 }
 
-static int start_ups_comm()
+static int start_ups_comm(void)
 {
 	uint8_t length;
 
@@ -968,9 +967,6 @@ void upsdrv_updateinfo(void)
 }
 
 void upsdrv_shutdown(void)
-	__attribute__((noreturn));
-
-void upsdrv_shutdown(void)
 {
 	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
 	int	retry;
@@ -999,10 +995,13 @@ void upsdrv_shutdown(void)
 			continue;
 		}
 
-		fatalx(EXIT_SUCCESS, "Shutting down");
+		upslogx(LOG_ERR, "Shutting down");
+		set_exit_flag(-2);	/* EXIT_SUCCESS */
+		return;
 	}
 
-	fatalx(EXIT_FAILURE, "Shutdown failed!");
+	upslogx(LOG_ERR, "Shutdown failed!");
+	set_exit_flag(-1);
 }
 
 

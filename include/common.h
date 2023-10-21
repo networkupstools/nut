@@ -85,10 +85,27 @@
 #include "proto.h"
 #include "str.h"
 
+#if (defined HAVE_LIBREGEX && HAVE_LIBREGEX)
+# include <regex.h>
+#endif
+
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 extern "C" {
 /* *INDENT-ON* */
+#endif
+
+/* POSIX requires these, and most but not all systems use same
+ * magical numbers for the file descriptors... yep, not all do!
+ */
+#ifndef STDIN_FILENO
+# define STDIN_FILENO  0	/* standard input file descriptor */
+#endif
+#ifndef STDOUT_FILENO
+# define STDOUT_FILENO 1	/* standard output file descriptor */
+#endif
+#ifndef STDERR_FILENO
+# define STDERR_FILENO 2	/* standard error file descriptor */
 #endif
 
 /* porting stuff for WIN32, used by serial and SHUT codebases */
@@ -245,6 +262,23 @@ const char * altpidpath(void);
 /* Die with a standard message if socket filename is too long */
 void check_unix_socket_filename(const char *fn);
 
+/* Send (daemon) state-change notifications to an
+ * external service management framework such as systemd.
+ * State types below are initially loosely modeled after
+ *   https://www.freedesktop.org/software/systemd/man/sd_notify.html
+ */
+typedef enum eupsnotify_state {
+	NOTIFY_STATE_READY = 1,
+	NOTIFY_STATE_READY_WITH_PID,
+	NOTIFY_STATE_RELOADING,
+	NOTIFY_STATE_STOPPING,
+	NOTIFY_STATE_STATUS,	/* Send a text message per "fmt" below */
+	NOTIFY_STATE_WATCHDOG	/* Ping the framework that we are still alive */
+} upsnotify_state_t;
+/* Note: here fmt may be null, then the STATUS message would not be sent/added */
+int upsnotify(upsnotify_state_t state, const char *fmt, ...)
+	__attribute__ ((__format__ (__printf__, 2, 3)));
+
 /* upslog*() messages are sent to syslog always;
  * their life after that is out of NUT's control */
 void upslog_with_errno(int priority, const char *fmt, ...)
@@ -295,6 +329,16 @@ void fatal_with_errno(int status, const char *fmt, ...)
 void fatalx(int status, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3))) __attribute__((noreturn));
 
+/* Report CONFIG_FLAGS used for this build of NUT similarly to how
+ * upsdebugx(1, ...) would do it, but not limiting the string length
+ */
+void nut_report_config_flags(void);
+
+/* Report search paths used by ltdl-augmented code to discover and
+ * load shared binary object files at run-time (nut-scanner, DMF...) */
+void upsdebugx_report_search_paths(int level, int report_search_paths_builtin);
+void nut_prepare_search_paths(void);
+
 extern int nut_debug_level;
 extern int nut_log_level;
 
@@ -302,6 +346,42 @@ void *xmalloc(size_t size);
 void *xcalloc(size_t number, size_t size);
 void *xrealloc(void *ptr, size_t size);
 char *xstrdup(const char *string);
+
+/**** REGEX helper methods ****/
+
+/* helper function: version of strcmp that tolerates NULL
+ * pointers. NULL is considered to come before all other strings
+ * alphabetically.
+ */
+int strcmp_null(const char *s1, const char *s2);
+
+#if (defined HAVE_LIBREGEX && HAVE_LIBREGEX)
+/* Helper function for compiling a regular expression. On success,
+ * store the compiled regular expression (or NULL) in *compiled, and
+ * return 0. On error with errno set, return -1. If the supplied
+ * regular expression is unparseable, return -2 (an error message can
+ * then be retrieved with regerror(3)). Note that *compiled will be an
+ * allocated value, and must be freed with regfree(), then free(), see
+ * regex(3). As a special case, if regex==NULL, then set
+ * *compiled=NULL (regular expression NULL is intended to match
+ * anything).
+ */
+int compile_regex(regex_t **compiled, const char *regex, const int cflags);
+
+/* Helper function for regular expression matching. Check if the
+ * entire string str (minus any initial and trailing whitespace)
+ * matches the compiled regular expression preg. Return 1 if it
+ * matches, 0 if not. Return -1 on error with errno set. Special
+ * cases: if preg==NULL, it matches everything (no contraint).  If
+ * str==NULL, then it is treated as "".
+ */
+int match_regex(const regex_t *preg, const char *str);
+
+/* Helper function, similar to match_regex, but the argument being
+ * matched is a (hexadecimal) number, rather than a string. It is
+ * converted to a 4-digit hexadecimal string. */
+int match_regex_hex(const regex_t *preg, const int n);
+#endif	/* HAVE_LIBREGEX */
 
 /* Note: different method signatures instead of TYPE_FD_SER due to "const" */
 #ifndef WIN32
@@ -372,6 +452,12 @@ char * getfullpath(char * relative_path);
 #define PATH_LIB "\\..\\lib"
 #endif /* WIN32*/
 
+/* Return a difference of two timevals as a floating-point number */
+double difftimeval(struct timeval x, struct timeval y);
+#if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_CLOCK_MONOTONIC) && HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC
+double difftimespec(struct timespec x, struct timespec y);
+#endif
+
 #ifndef HAVE_USLEEP
 /* int __cdecl usleep(unsigned int useconds); */
 /* Note: if we'd need to define an useconds_t for obscure systems,
@@ -379,6 +465,10 @@ char * getfullpath(char * relative_path);
  * so probably unsigned long int */
 int __cdecl usleep(useconds_t useconds);
 #endif /* HAVE_USLEEP */
+
+#ifndef HAVE_STRNLEN
+size_t strnlen(const char *s, size_t maxlen);
+#endif
 
 /* Not all platforms support the flag; this method abstracts
  * its use (or not) to simplify calls in the actual codebase */

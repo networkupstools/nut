@@ -3,7 +3,7 @@
 # an auxiliary script to produce a "stub" snmp-ups subdriver from
 # SNMP data from a real agent or from dump files
 #
-# Version: 0.14
+# Version: 0.15
 #
 # See also: docs/snmp-subdrivers.txt
 #
@@ -256,6 +256,11 @@ generate_C() {
 	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
 	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
 	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
+
+/* Please revise values discovered by data walk for mappings to
+ * docs/nut-names.txt and group the rest under the ifdef below:
+ */
+#if WITH_UNMAPPED_DATA_POINTS
 EOF
 
 	# extract OID string paths, one by one
@@ -279,6 +284,7 @@ EOF
 
 	# append footer (TABs not stripped):
 	cat >> "$CFILE" <<EOF
+#endif	/* if WITH_UNMAPPED_DATA_POINTS */
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }

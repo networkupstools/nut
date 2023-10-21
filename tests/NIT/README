@@ -13,5 +13,6 @@ See also
 link:https://git.launchpad.net/ubuntu/+source/nut/tree/debian/tests/test-nut.py[The NUT testing script]
 available in the
 link:https://code.edge.launchpad.net/qa-regression-testing[Ubuntu QA Regression Testing suite]
+and link:https://salsa.debian.org/debian/nut/-/tree/debian/debian/tests[Debian packaging recipe]
 doing a similar job with NUT installed from packages and configuring
 it via files in standard path names.

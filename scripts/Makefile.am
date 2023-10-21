@@ -12,15 +12,13 @@ EXTRA_DIST = README \
     perl/Nut.pm \
     RedHat/halt.patch \
     RedHat/README \
-    RedHat/ups \
-    RedHat/upsd \
+    RedHat/ups.in \
     RedHat/upsd.in \
-    RedHat/upsmon \
     RedHat/upsmon.in \
     Solaris8/S99upsmon \
     subdriver/gen-usbhid-subdriver.sh \
     subdriver/gen-snmp-subdriver.sh \
-    ufw/README \
+    upower/95-upower-hid.hwdb \
     upower/95-upower-hid.rules \
     Windows/halt.c \
     Windows/Makefile

@@ -56,7 +56,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Siemens SITOP UPS500 series driver"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_VERSION	"0.04"
 
 #define RX_BUFFER_SIZE 100
 
@@ -98,7 +98,7 @@ static void rm_buffer_head(unsigned int n) {
 /* parse incoming data from the UPS.
  * return true if something new was received.
  */
-static int check_for_new_data() {
+static int check_for_new_data(void) {
 	int new_data_received = 0;
 	int done = 0;
 	ssize_t num_received;

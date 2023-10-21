@@ -385,13 +385,18 @@ void upsdrv_cleanup(void)
 
 void upsdrv_reconnect(void)
 {
+	dstate_setinfo("driver.state", "reconnect.trying");
+
 	upsdebugx(4, "==================================================");
 	upsdebugx(4, "= device has been disconnected, try to reconnect =");
 	upsdebugx(4, "==================================================");
 
 	nutusb_close(upsdev, "USB");
 	upsdev = NULL;
+
 	upsdrv_initups();
+
+	dstate_setinfo("driver.state", "quiet");
 }
 
 /* USB functions */
@@ -418,7 +423,8 @@ static usb_dev_handle *open_powerware_usb(void)
 	ssize_t devcount = 0;
 	libusb_device_handle *udev;
 	struct libusb_device_descriptor dev_desc;
-	uint8_t bus;
+	uint8_t bus_num;
+	/* TODO: consider device_addr */
 	int i;
 
 	devcount = libusb_get_device_list(NULL, &devlist);
@@ -436,13 +442,13 @@ static usb_dev_handle *open_powerware_usb(void)
 
 		curDevice.VendorID = dev_desc.idVendor;
 		curDevice.ProductID = dev_desc.idProduct;
-		bus = libusb_get_bus_number(device);
+		bus_num = libusb_get_bus_number(device);
 		curDevice.Bus = (char *)malloc(4);
 		if (curDevice.Bus == NULL) {
 			libusb_free_device_list(devlist, 1);
 			fatal_with_errno(EXIT_FAILURE, "Out of memory");
 		}
-		sprintf(curDevice.Bus, "%03d", bus);
+		sprintf(curDevice.Bus, "%03d", bus_num);
 
 		/* FIXME: we should also retrieve
 		 * dev->descriptor.iManufacturer

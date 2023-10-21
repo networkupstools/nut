@@ -125,8 +125,8 @@
 #include "serial.h"
 #include "nut_stdint.h"
 
-#define DRIVER_NAME		"Tripp Lite SmartOnline driver"
-#define DRIVER_VERSION	"0.06"
+#define DRIVER_NAME	"Tripp Lite SmartOnline driver"
+#define DRIVER_VERSION	"0.07"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -252,6 +252,7 @@ static ssize_t do_command(char type, const char *command, const char *parameters
 	upsdebugx(3, "do_command: %" PRIiSIZE " byted read [%s]", ret, buffer);
 
 	if (!strcmp(buffer, "~00D")) {
+		int	c;
 
 		ret = ser_get_buf_len(upsfd, (unsigned char *)buffer, 3, 3, 0);
 		if (ret < 0) {
@@ -266,7 +267,7 @@ static ssize_t do_command(char type, const char *command, const char *parameters
 		buffer[ret] = '\0';
 		upsdebugx(3, "do_command: %" PRIiSIZE " bytes read [%s]", ret, buffer);
 
-		int c = atoi(buffer);
+		c = atoi(buffer);
 		if (c < 0) {
 			upsdebugx(3, "do_command: response not expected to be a negative count!");
 			return -1;

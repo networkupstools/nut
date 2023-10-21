@@ -27,7 +27,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME "NUT Generic Modbus driver"
-#define DRIVER_VERSION  "0.03"
+#define DRIVER_VERSION  "0.04"
 
 /* variables */
 static modbus_t *mbctx = NULL;                             /* modbus memory context */
@@ -336,9 +336,13 @@ void upsdrv_shutdown(void)
 	switch (rval) {
 		case STAT_INSTCMD_FAILED:
 		case STAT_INSTCMD_INVALID:
-			fatalx(EXIT_FAILURE, "shutdown failed");
+			upslogx(LOG_ERR, "shutdown failed");
+			set_exit_flag(-1);
+			return;
 		case STAT_INSTCMD_UNKNOWN:
-			fatalx(EXIT_FAILURE, "shutdown not supported");
+			upslogx(LOG_ERR, "shutdown not supported");
+			set_exit_flag(-1);
+			return;
 		default:
 			break;
 	}
@@ -703,7 +707,7 @@ int get_signal_state(devstate_t state)
 }
 
 /* get driver configuration parameters */
-void get_config_vars()
+void get_config_vars(void)
 {
 	int i; /* local index */
 
@@ -1038,6 +1042,7 @@ void modbus_reconnect(void)
 	int rval;
 
 	upsdebugx(2, "modbus_reconnect, trying to reconnect to modbus server");
+	dstate_setinfo("driver.state", "reconnect.trying");
 
 	/* clear current modbus context */
 	modbus_close(mbctx);
@@ -1097,4 +1102,6 @@ void modbus_reconnect(void)
 	}
 /* #elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval) // some un-castable type in fields */
 #endif /* NUT_MODBUS_TIMEOUT_ARG_* */
+
+	dstate_setinfo("driver.state", "quiet");
 }

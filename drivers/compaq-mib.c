@@ -30,7 +30,7 @@
 
 #include "compaq-mib.h"
 
-#define CPQPOWER_MIB_VERSION	"1.66"
+#define CPQPOWER_MIB_VERSION	"1.67"
 
 #define DEFAULT_ONDELAY		"30"
 #define DEFAULT_OFFDELAY	"20"
@@ -192,11 +192,11 @@ static snmp_info_t cpqpower_mib[] = {
 	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_FIRMREV, "", 0, NULL },
 	{ "ups.firmware.aux", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_AGENTREV, "", 0, NULL },
 	{ "ups.load", 0, 1.0, CPQPOWER_OID_LOAD_LEVEL, "", 0, NULL },
-	{ "ups.realpower", 0, 1.0, CPQPOWER_OID_OUT_POWER, "", SU_OUTPUT_1, NULL },
-	{ "ups.realpower", 0, 1.0, ".1.3.6.1.4.1.232.165.3.9.3.0", "", SU_OUTPUT_1, NULL },
-	{ "ups.L1.realpower", 0, 0.1, CPQPOWER_OID_OUT_POWER ".1", "", SU_OUTPUT_3, NULL },
-	{ "ups.L2.realpower", 0, 0.1, CPQPOWER_OID_OUT_POWER ".2", "", SU_OUTPUT_3, NULL },
-	{ "ups.L3.realpower", 0, 0.1, CPQPOWER_OID_OUT_POWER ".3", "", SU_OUTPUT_3, NULL },
+	{ "ups.realpower.nominal", 0, 1.0, ".1.3.6.1.4.1.232.165.3.9.3.0", "", SU_OUTPUT_1, NULL },
+	{ "ups.realpower", 0, 1.0, CPQPOWER_OID_OUT_POWER ".1", "", SU_OUTPUT_1, NULL },
+	{ "ups.L1.realpower", 0, 1.0, CPQPOWER_OID_OUT_POWER ".1", "", SU_OUTPUT_3, NULL },
+	{ "ups.L2.realpower", 0, 1.0, CPQPOWER_OID_OUT_POWER ".2", "", SU_OUTPUT_3, NULL },
+	{ "ups.L3.realpower", 0, 1.0, CPQPOWER_OID_OUT_POWER ".3", "", SU_OUTPUT_3, NULL },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_POWER_STATUS, "OFF", SU_STATUS_PWR, cpqpower_pwr_info },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_BATT_STATUS, "", SU_STATUS_PWR, cpqpower_battery_abm_status },
 	/* The next two lines are no longer supported by MIB ver. 1.76 (Github issue 118)
@@ -240,44 +240,35 @@ static snmp_info_t cpqpower_mib[] = {
 
 	/* Input page */
 	{ "input.phases", 0, 1.0, CPQPOWER_OID_IN_LINES, "", 0, NULL },
-/*	{ "input.phase", 0, 1.0, CPQPOWER_OID_IN_PHASE, "", SU_OUTPUT_1, NULL }, */
 	{ "input.frequency", 0, 0.1, CPQPOWER_OID_IN_FREQ , "", 0, NULL },
-	{ "input.voltage", 0, 1.0, CPQPOWER_OID_IN_VOLTAGE, "", SU_OUTPUT_1, NULL },
-	{ "input.voltage", 0, 1.0, ".1.3.6.1.4.1.232.165.3.3.4.1.2.1", "", SU_OUTPUT_1, NULL },
-	{ "input.voltage.nominal", ST_FLAG_RW | ST_FLAG_STRING, 3, ".1.3.6.1.4.1.232.165.3.9.2.0", "", SU_OUTPUT_1, NULL },
+	{ "input.voltage.nominal", 0, 1.0, ".1.3.6.1.4.1.232.165.3.9.2.0", "", 0, NULL },
+	{ "input.voltage", 0, 1.0, CPQPOWER_OID_IN_VOLTAGE ".1", "", SU_OUTPUT_1, NULL },
 	{ "input.L1-N.voltage", 0, 1.0, CPQPOWER_OID_IN_VOLTAGE ".1", "", SU_INPUT_3, NULL },
 	{ "input.L2-N.voltage", 0, 1.0, CPQPOWER_OID_IN_VOLTAGE ".2", "", SU_INPUT_3, NULL },
 	{ "input.L3-N.voltage", 0, 1.0, CPQPOWER_OID_IN_VOLTAGE ".3", "", SU_INPUT_3, NULL },
-	{ "input.current", 0, 0.1, CPQPOWER_OID_IN_CURRENT, "", SU_OUTPUT_1, NULL },
-	{ "input.current", 0, 0.1, ".1.3.6.1.4.1.232.165.3.3.4.1.3.1", "", SU_OUTPUT_1, NULL },
-
-	{ "input.L1.current", 0, 0.1, CPQPOWER_OID_IN_CURRENT ".1", "", SU_INPUT_3, NULL },
-	{ "input.L2.current", 0, 0.1, CPQPOWER_OID_IN_CURRENT ".2", "", SU_INPUT_3, NULL },
-	{ "input.L3.current", 0, 0.1, CPQPOWER_OID_IN_CURRENT ".3", "", SU_INPUT_3, NULL },
-	{ "input.realpower", 0, 0.1, CPQPOWER_OID_IN_POWER, "", SU_OUTPUT_1, NULL },
-	{ "input.L1.realpower", 0, 0.1, CPQPOWER_OID_IN_POWER ".1", "", SU_INPUT_3, NULL },
-	{ "input.L2.realpower", 0, 0.1, CPQPOWER_OID_IN_POWER ".2", "", SU_INPUT_3, NULL },
-	{ "input.L3.realpower", 0, 0.1, CPQPOWER_OID_IN_POWER ".3", "", SU_INPUT_3, NULL },
+	{ "input.current", 0, 1.0, CPQPOWER_OID_IN_CURRENT ".1", "", SU_OUTPUT_1, NULL },
+	{ "input.L1.current", 0, 1.0, CPQPOWER_OID_IN_CURRENT ".1", "", SU_INPUT_3, NULL },
+	{ "input.L2.current", 0, 1.0, CPQPOWER_OID_IN_CURRENT ".2", "", SU_INPUT_3, NULL },
+	{ "input.L3.current", 0, 1.0, CPQPOWER_OID_IN_CURRENT ".3", "", SU_INPUT_3, NULL },
+	{ "input.realpower", 0, 1.0, CPQPOWER_OID_IN_POWER ".1", "", SU_OUTPUT_1, NULL },
+	{ "input.L1.realpower", 0, 1.0, CPQPOWER_OID_IN_POWER ".1", "", SU_INPUT_3, NULL },
+	{ "input.L2.realpower", 0, 1.0, CPQPOWER_OID_IN_POWER ".2", "", SU_INPUT_3, NULL },
+	{ "input.L3.realpower", 0, 1.0, CPQPOWER_OID_IN_POWER ".3", "", SU_INPUT_3, NULL },
 	{ "input.quality", 0, 1.0, CPQPOWER_OID_IN_LINEBADS, "", 0, NULL },
 
 	/* Output page */
 	{ "output.phases", 0, 1.0, CPQPOWER_OID_OUT_LINES, "", 0, NULL },
-/*	{ "output.phase", 0, 1.0, CPQPOWER_OID_OUT_PHASE, "", SU_OUTPUT_1, NULL }, */
+	{ "output.frequency.nominal", 0, 0.1, ".1.3.6.1.4.1.232.165.3.9.4.0", "", 0, NULL },
 	{ "output.frequency", 0, 0.1, CPQPOWER_OID_OUT_FREQUENCY, "", 0, NULL },
-	/* FIXME: handle multiplier (0.1 there) */
-	{ "output.frequency.nominal", ST_FLAG_RW | ST_FLAG_STRING, 3, ".1.3.6.1.4.1.232.165.3.9.4.0", "", SU_OUTPUT_1, NULL },
-	{ "output.voltage", 0, 1.0, CPQPOWER_OID_OUT_VOLTAGE, "", SU_OUTPUT_1, NULL },
-	{ "output.voltage", 0, 1.0, ".1.3.6.1.4.1.232.165.3.4.4.1.2.1", "", SU_OUTPUT_1, NULL },
-	{ "output.voltage.nominal", ST_FLAG_RW | ST_FLAG_STRING, 3, ".1.3.6.1.4.1.232.165.3.9.1.0", "", SU_OUTPUT_1, NULL },
+	{ "output.voltage.nominal", 0, 1.0, ".1.3.6.1.4.1.232.165.3.9.1.0", "", 0, NULL },
+	{ "output.voltage", 0, 1.0, CPQPOWER_OID_OUT_VOLTAGE ".1", "", SU_OUTPUT_1, NULL },
 	{ "output.L1-N.voltage", 0, 1.0, CPQPOWER_OID_OUT_VOLTAGE ".1", "", SU_OUTPUT_3, NULL },
 	{ "output.L2-N.voltage", 0, 1.0, CPQPOWER_OID_OUT_VOLTAGE ".2", "", SU_OUTPUT_3, NULL },
 	{ "output.L3-N.voltage", 0, 1.0, CPQPOWER_OID_OUT_VOLTAGE ".3", "", SU_OUTPUT_3, NULL },
-	{ "output.current", 0, 0.1, CPQPOWER_OID_OUT_CURRENT, "", SU_OUTPUT_1, NULL },
-	{ "output.current", 0, 0.1, ".1.3.6.1.4.1.232.165.3.4.4.1.3.1", "", SU_OUTPUT_1, NULL },
-	/* { "output.realpower", 0, 1.0, ".1.3.6.1.4.1.232.165.3.4.4.1.4", "", SU_OUTPUT_1, NULL }, */
-	{ "output.L1.current", 0, 0.1, CPQPOWER_OID_OUT_CURRENT ".1", "", SU_OUTPUT_3, NULL },
-	{ "output.L2.current", 0, 0.1, CPQPOWER_OID_OUT_CURRENT ".2", "", SU_OUTPUT_3, NULL },
-	{ "output.L3.current", 0, 0.1, CPQPOWER_OID_OUT_CURRENT ".3", "", SU_OUTPUT_3, NULL },
+	{ "output.current", 0, 1.0, CPQPOWER_OID_OUT_CURRENT ".1", "", SU_OUTPUT_1, NULL },
+	{ "output.L1.current", 0, 1.0, CPQPOWER_OID_OUT_CURRENT ".1", "", SU_OUTPUT_3, NULL },
+	{ "output.L2.current", 0, 1.0, CPQPOWER_OID_OUT_CURRENT ".2", "", SU_OUTPUT_3, NULL },
+	{ "output.L3.current", 0, 1.0, CPQPOWER_OID_OUT_CURRENT ".3", "", SU_OUTPUT_3, NULL },
 
 	/* FIXME: what to map with these?
 	 * Name/OID: upsConfigLowOutputVoltageLimit.0; Value (Integer): 160
@@ -291,10 +282,12 @@ static snmp_info_t cpqpower_mib[] = {
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	{ "outlet.count", 0, 1, ".1.3.6.1.4.1.232.165.3.10.1.0", "0", 0, NULL }, /* upsNumReceptacles */
 
-/*	{ "outlet.current", 0, 0.001, AR_OID_UNIT_CURRENT ".0", NULL, 0, NULL, NULL },
+/*
+	{ "outlet.current", 0, 0.001, AR_OID_UNIT_CURRENT ".0", NULL, 0, NULL, NULL },
 	{ "outlet.voltage", 0, 0.001, AR_OID_UNIT_VOLTAGE ".0", NULL, 0, NULL, NULL },
 	{ "outlet.realpower", 0, 1.0, AR_OID_UNIT_ACTIVEPOWER ".0", NULL, 0, NULL, NULL },
-	{ "outlet.power", 0, 1.0, AR_OID_UNIT_APPARENTPOWER ".0", NULL, 0, NULL, NULL }, */
+	{ "outlet.power", 0, 1.0, AR_OID_UNIT_APPARENTPOWER ".0", NULL, 0, NULL, NULL },
+*/
 
 	/* outlet template definition */
 	/* FIXME always true? */

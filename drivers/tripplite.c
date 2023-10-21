@@ -117,7 +117,7 @@
 #include <ctype.h>
 
 #define DRIVER_NAME	"Tripp-Lite SmartUPS driver"
-#define DRIVER_VERSION	"0.93"
+#define DRIVER_VERSION	"0.94"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -612,9 +612,10 @@ void upsdrv_makevartable(void)
 
 void upsdrv_initups(void)
 {
+	char	*val;
+
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
-	char *val;
 
 	if ((val = getval("offdelay"))) {
 		int ipv = atoi(val);

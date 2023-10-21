@@ -1,0 +1,44 @@
+:titles.underlines: "__","==","--","~~","^^"
+
+Network UPS Tools Release Notes
+_______________________________
+:Author: Russell_Kroll,_Arnaud_Quette,_Arjen_de_Korte,_Charles_Lepple_and_Jim_Klimov
+:Author Initials: RK, AQ, ADK, CL & JK
+
+Introduction
+============
+
+The primary goal of the Network UPS Tools (NUT) project is to provide support
+for Power Devices, such as Uninterruptible Power Supplies, Power Distribution
+Units and Solar Controllers.
+
+This document intends to report high-level changes delivered by NUT project
+releases, as well as practical nuances for packagers and end-users who would
+be upgrading their NUT deployments.
+
+It DOES NOT intend to detail the change log: it is very large and complicated
+to render properly, so is better served by another document artifact.
+
+If you wish to discover how everything came together, have a look at the
+<<Project_History,Project History>>.
+
+
+[[NUT_Release_Notes]]
+NUT Release Notes (and other feature details)
+=============================================
+
+include::{builddir}../NEWS.adoc-parsed[]
+
+
+[[NUT_Upgrading_Notes]]
+NUT Upgrading Notes
+===================
+
+include::{builddir}../UPGRADING.adoc-parsed[]
+
+
+[[Project_History]]
+Project history
+===============
+
+include::history.txt[]

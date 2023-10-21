@@ -36,6 +36,10 @@ int	num_ups = 0;
  * than that would not have effect, can only have more).
  */
 int	nut_debug_level_global = -1;
+/* Debug level specified via command line - we revert to
+ * it when reloading if there was no DEBUG_MIN in upsd.conf
+ */
+int nut_debug_level_args = 0;
 
 /* add another UPS for monitoring from ups.conf */
 static void ups_create(const char *fn, const char *name, const char *desc)
@@ -226,8 +230,16 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 
 	/* STATEPATH <dir> */
 	if (!strcmp(arg[0], "STATEPATH")) {
+		const char *sp = getenv("NUT_STATEPATH");
+		if (sp && strcmp(sp, arg[1])) {
+			/* Only warn if the two strings are not equal */
+			upslogx(LOG_WARNING,
+				"Ignoring STATEPATH='%s' from configuration file, "
+				"in favor of NUT_STATEPATH='%s' environment variable",
+				NUT_STRARG(arg[1]), NUT_STRARG(sp));
+		}
 		free(statepath);
-		statepath = xstrdup(arg[1]);
+		statepath = xstrdup(sp ? sp : arg[1]);
 		return 1;
 	}
 
@@ -390,6 +402,13 @@ void load_upsdconf(int reloading)
 				"Applying debug_min=%d from upsd.conf",
 				nut_debug_level_global);
 			nut_debug_level = nut_debug_level_global;
+		} else {
+			/* DEBUG_MIN is absent or commented-away in ups.conf */
+			upslogx(LOG_INFO,
+				"Applying debug level %d from "
+				"original command line arguments",
+				nut_debug_level_args);
+			nut_debug_level = nut_debug_level_args;
 		}
 	}
 
@@ -574,7 +593,7 @@ void conf_reload(void)
 	}
 
 	/* reload from ups.conf */
-	read_upsconf();
+	read_upsconf(1);		/* 1 = may abort upon fundamental errors */
 	upsconf_add(1);			/* 1 = reloading */
 
 	/* now reread upsd.conf */

@@ -31,7 +31,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Generic contact-closure UPS driver"
-#define DRIVER_VERSION	"1.38"
+#define DRIVER_VERSION	"1.39"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -313,27 +313,34 @@ void upsdrv_shutdown(void)
 	int	flags, ret;
 
 	if (upstype == -1) {
-		fatalx(EXIT_FAILURE, "No upstype set - see help text / man page!");
+		upslogx(LOG_ERR, "No upstype set - see help text / man page!");
+		set_exit_flag(-1);
+	        return;
 	}
 
 	flags = upstab[upstype].line_sd;
 
 	if (flags == -1) {
-		fatalx(EXIT_FAILURE, "No shutdown command defined for this model!");
+		upslogx(LOG_ERR, "No shutdown command defined for this model!");
+		set_exit_flag(-1);
+	        return;
 	}
 
 	if (flags == TIOCM_ST) {
 
 #ifndef WIN32
 #ifndef HAVE_TCSENDBREAK
-		fatalx(EXIT_FAILURE, "Need to send a BREAK, but don't have tcsendbreak!");
+		upslogx(LOG_ERR, "Need to send a BREAK, but don't have tcsendbreak!");
+		set_exit_flag(-1);
+	        return;
 #endif
 #endif
 
 		ret = tcsendbreak(upsfd, 4901);
 
 		if (ret != 0) {
-			fatal_with_errno(EXIT_FAILURE, "tcsendbreak");
+			upslog_with_errno(LOG_ERR, "tcsendbreak");
+			set_exit_flag(-1);
 		}
 
 		return;
@@ -346,7 +353,9 @@ void upsdrv_shutdown(void)
 #endif
 
 	if (ret != 0) {
-		fatal_with_errno(EXIT_FAILURE, "ioctl TIOCMSET");
+		upslog_with_errno(LOG_ERR, "ioctl TIOCMSET");
+		set_exit_flag(-1);
+	        return;
 	}
 
 	if (getval("sdtime")) {

@@ -27,7 +27,7 @@
 #ifndef ADELSYSTEM_CBI_H
 #define ADELSYSTEM_CBI_H
 
-#include <stdint.h>
+#include "nut_stdint.h"
 
 /* UPS device details */
 #define DEVICE_MFR	"ADELSYSTEM"

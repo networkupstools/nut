@@ -50,4 +50,4 @@ linkman:tripplite[8], linkman:tripplite_usb[8], linkman:usbhid-ups[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

@@ -31,7 +31,7 @@
 #include <modbus.h>
 
 #define DRIVER_NAME	"Socomec jbus driver"
-#define DRIVER_VERSION	"0.06"
+#define DRIVER_VERSION	"0.07"
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define MODBUS_SLAVE_ID 1
@@ -53,11 +53,11 @@ upsdrv_info_t upsdrv_info = {
 
 void upsdrv_initinfo(void)
 {
-	upsdebugx(2, "upsdrv_initinfo");
-
 	uint16_t tab_reg[12];
 	int r;
 	
+	upsdebugx(2, "upsdrv_initinfo");
+
 	dstate_setinfo("device.mfr", "socomec jbus");
 	dstate_setinfo("device.model", "Socomec Generic");
 
@@ -117,11 +117,11 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
-	upsdebugx(2, "upsdrv_updateinfo");
-
 	uint16_t tab_reg[64];
 	int r;
 	
+	upsdebugx(2, "upsdrv_updateinfo");
+
 	status_init();
 
 	/* ups configuration */
@@ -427,11 +427,10 @@ void upsdrv_updateinfo(void)
 }
 
 void upsdrv_shutdown(void)
-	__attribute__((noreturn));
-
-void upsdrv_shutdown(void)
 {
-	fatalx(EXIT_FAILURE, "shutdown not supported");
+	/* replace with a proper shutdown function */
+	upslogx(LOG_ERR, "shutdown not supported");
+	set_exit_flag(-1);
 }
 
 void upsdrv_help(void)

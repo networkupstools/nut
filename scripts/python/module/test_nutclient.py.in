@@ -34,6 +34,10 @@ if __name__ == "__main__" :
     result = nut.GetUPSVars( "dummy" )
     print( "\033[01;33m%s\033[0m\n" % result )
 
+    print( 80*"-" + "\nTesting 'CheckUPSAvailable' :")
+    result = nut.CheckUPSAvailable( "dummy" )
+    print( "\033[01;33m%s\033[0m\n" % result )
+
     print( 80*"-" + "\nTesting 'GetUPSCommands' :")
     result = nut.GetUPSCommands( "dummy" )
     print( "\033[01;33m%s\033[0m\n" % result )

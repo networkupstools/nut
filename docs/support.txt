@@ -88,12 +88,12 @@ Refer to the
 ifdef::website[]
 link:docs/developer-guide.chunked/index.html[NUT Developer Guide]
 for more information, and the chapter on how to
-link:docs/developer-guide.chunked/ar01s03.html#_submitting_patches[submit patches].
+link:docs/developer-guide.chunked/developers.html#_submitting_patches[submit patches].
 endif::website[]
 ifndef::website[]
 linkdoc:developer-guide[NUT Developer Guide]
 for more information, and the chapter on how to
-link:../developer-guide.chunked/ar01s03.html#_submitting_patches[submit patches].
+link:../developer-guide.chunked/developers.html#_submitting_patches[submit patches].
 endif::website[]
 
 Note that the currently preferable way for ultimate submission of improvements
@@ -145,4 +145,4 @@ To report new Devices Dumps Library entries, posting an issue is okay, but
 posting a link:https://github.com/networkupstools/nut-ddl/pulls[pull request]
 is a lot better -- easier for maintainers to review and merge any time.
 For some more detailed instructions about useful DDL reports, please see
-link:https://networkupstools.org/ddl/#_file_naming_convention[NUT DDL page].
+link:https://www.networkupstools.org/ddl/#_file_naming_convention[NUT DDL page].

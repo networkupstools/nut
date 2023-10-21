@@ -8,6 +8,14 @@
 *.am text eol=lf
 *.hwdb text eol=lf
 
+# Aspell claims issues finding `utf-8\r` sometimes (from heading line of
+# the dictionary file), with messages like this:
+#   .cset" could not be opened for reading or does not exist.lib/aspell/utf-8
+# which tends to happen in mixed-OS development environments. Tracer shows it:
+#   read(3, "personal_ws-1.1 en 3225 utf-8\r\nA"..., 4096) = 4096
+#   access("/usr/lib/aspell/utf-8\r.cset", F_OK) = -1 ENOENT (No such file or directory)
+/docs/nut.dict text eol=lf
+
 # Some files are binary always:
 *.png bin
 *.ico bin

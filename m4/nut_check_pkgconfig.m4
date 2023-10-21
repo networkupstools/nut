@@ -27,7 +27,7 @@ AS_IF([test -z "${nut_have_pkg_config_seen}"], [
 		AC_PATH_PROG(dummy_PKG_CONFIG, pkg-config)
 
 		AC_ARG_WITH(pkg-config,
-			AS_HELP_STRING([@<:@--with-pkg-config=/path/to/gdlib-config@:>@],
+			AS_HELP_STRING([--with-pkg-config=/path/to/pkg-config],
 				[path to program that reports development package configuration]),
 		[
 			case "${withval}" in

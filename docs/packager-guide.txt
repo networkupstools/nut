@@ -178,6 +178,7 @@ FIXME: make a dependency graph
 - <<pkg-nut-ipmi,nut-ipmi>>
 - <<pkg-nut-modbus,nut-modbus>>
 
+- <<pkg-nut-gpio,nut-gpio>> (currently platform-dependent)
 - <<pkg-nut-linux-i2c,nut-linux-i2c>> (platform-dependent)
 - <<pkg-nut-macosx-ups,nut-macosx-ups>> (platform-dependent)
 
@@ -292,6 +293,14 @@ nut-ipmi
 nut-modbus
 ^^^^^^^^^^
 - Desc:
+- Files:
+- Size:
+- Deps:
+
+[[pkg-nut-gpio]]
+nut-gpio
+^^^^^^^^
+- Desc: (currently platform-dependent)
 - Files:
 - Size:
 - Deps:

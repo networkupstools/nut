@@ -91,6 +91,11 @@ let upsmon_notify_type = "ONLINE"
 			| "REPLBATT"
 			| "NOCOMM"
 			| "NOPARENT"
+			| "CAL"
+			| "OFF"
+			| "NOTOFF"
+			| "BYPASS"
+			| "NOTBYPASS"
 
 let upsmon_notify = [ del_spc . key "NOTIFYMSG" . sep_spc
                          . [ label "type" . store upsmon_notify_type . sep_spc ]

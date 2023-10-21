@@ -27,6 +27,7 @@
 #
 # This user should not have write access to upsmon.conf.
 #
+# (Unprivileged) OS account to run as:
 # RUN_AS_USER @RUN_AS_USER@
 
 # --------------------------------------------------------------------------
@@ -66,10 +67,10 @@
 # changes for a given UPS without shutting down when it goes critical.
 #
 # <username> and <password> must match an entry in that system's
-# upsd.users.  If your username is "upsmon" and your password is
+# upsd.users.  If your NUT username is "monuser" and your password is
 # "blah", the upsd.users would look like this:
 #
-#	[upsmon]
+#	[monuser]
 #		password  = blah
 #		upsmon primary 	# (or secondary)
 #
@@ -113,8 +114,8 @@
 # Examples:
 #
 # MONITOR myups@bigserver 1 upswired blah primary
-# MONITOR su700@server.example.com 1 upsmon secretpass secondary
-# MONITOR myups@localhost 1 upsmon pass primary	# (or secondary)
+# MONITOR su700@server.example.com 1 monuser secretpass secondary
+# MONITOR myups@localhost 1 monuser pass primary	# (or secondary)
 
 # --------------------------------------------------------------------------
 # MINSUPPLIES <num>
@@ -257,8 +258,10 @@ DEADTIME 15
 #
 # For Windows setup use something like:
 # POWERDOWNFLAG "C:\\killpower"
-
-POWERDOWNFLAG /etc/killpower
+#
+# For Unix/Linux systems the legacy default is:
+# POWERDOWNFLAG /etc/killpower
+POWERDOWNFLAG "@POWERDOWNFLAG@"
 
 # --------------------------------------------------------------------------
 # NOTIFYMSG - change messages sent by upsmon when certain events occur
@@ -277,6 +280,11 @@ POWERDOWNFLAG /etc/killpower
 # NOTIFYMSG REPLBATT	"UPS %s battery needs to be replaced"
 # NOTIFYMSG NOCOMM	"UPS %s is unavailable"
 # NOTIFYMSG NOPARENT	"upsmon parent process died - shutdown impossible"
+# NOTIFYMSG CAL		"UPS %s: calibration in progress"
+# NOTIFYMSG OFF		"UPS %s: administratively OFF or asleep"
+# NOTIFYMSG NOTOFF	"UPS %s: no longer administratively OFF or asleep"
+# NOTIFYMSG BYPASS	"UPS %s: on bypass (powered, not protecting)"
+# NOTIFYMSG NOTBYPASS	"UPS %s: no longer on bypass"
 #
 # Note that %s is replaced with the identifier of the UPS in question.
 #
@@ -324,6 +332,25 @@ POWERDOWNFLAG /etc/killpower
 # If you use IGNORE, don't use any other flags on the same line.
 
 # --------------------------------------------------------------------------
+# OFFDURATION - put "OFF" state into effect if it persists for this many seconds
+#
+# NUT supports an "administrative OFF" for power devices which can be managed to
+# turn off their application workload, while the UPS or ePDU remains accessible
+# for monitoring and management. This toggle allows to delay propagation of such
+# state into a known loss of a feed (possibly triggering FSD on `upsmon` clients
+# which `MONITOR` the device and are in fact still alive -- e.g. with multiple
+# power sources or because they as the load are not really turned off), because
+# when some devices begin battery calibration, they report "OFF" for a few seconds
+# and only then they might report "CAL" after switching all the power relays --
+# thus causing false-positives for `upsmon` FSD trigger.
+#
+# A negative value means to disable decreasing the counter of working power
+# supplies in such cases, and a zero makes the effect of detected "OFF" state
+# immediate. Built-in default value is 30 (seconds).
+
+OFFDURATION 30
+
+# --------------------------------------------------------------------------
 # RBWARNTIME - replace battery warning time in seconds
 #
 # upsmon will normally warn you about a battery that needs to be replaced
@@ -344,6 +371,20 @@ RBWARNTIME 43200
 # change the interval with this directive.
 
 NOCOMMWARNTIME 300
+
+# --------------------------------------------------------------------------
+# POLLFAIL_LOG_THROTTLE_MAX - device poll failure logging throttle
+#
+# upsmon normally reports polling failures for each device that are in place
+# for each POLLFREQ loop (e.g. "Data stale" or "Driver not connected") to
+# system log as configured.  If your devices are expected to be AWOL for an
+# extended timeframe, you can use this throttle to reduce the stress on
+# syslog traffic and storage, by posting these messages only once in every
+# several loop cycles, and when the error condition has changed or cleared.
+# A negative value means standard behavior, and a zero value means to never
+# repeat the message (log only on start and end/change of the failure state).
+#
+#POLLFAIL_LOG_THROTTLE_MAX 100
 
 # --------------------------------------------------------------------------
 # FINALDELAY - last sleep interval before shutting down the system

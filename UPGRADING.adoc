@@ -3,21 +3,60 @@ Upgrading notes
 ===============
 endif::txt[]
 
-This file lists changes that affect users who installed older versions 
+This file lists changes that affect users who installed older versions
 of this software.  When upgrading from an older version, be sure to
 check this file to see if you need to make changes to your system.
 
-NOTE: For packaging (OS distribution or in-house) it is recommended to
+[NOTE]
+======
+For packaging (OS distribution or in-house) it is recommended to
 primarily `./configure --with-all` and then excise `--without-something`
 explicitly for items not supported on your platform, so you do not miss
 out on new NUT features as they come with new releases. Some may require
 that you update your build environment with new third-party dependencies,
 so a broken build of a new NUT release would let you know how to act.
 
+This is a good time to point out that for stricter packaging systems, it may
+be beneficial to add `--enable-option-checking=fatal` to the `./configure`
+command line, in order to quickly pick up any other removed option flags.
+======
+
 Changes from 2.8.0 to 2.8.1
 ---------------------------
 
 - PLANNED: Keep track of any further API clean-up?
+
+- NUT documentation recipes were revised, so many of the text source files
+  were renamed to `*.adoc` pattern. Newly, a `release-notes.pdf` and HTML
+  equivalents are generated. Packages which deliver documentation may need
+  to update the lists of files to ship. [#1953] Developers may be impacted
+  by new `configure --enable-spellcheck` toggle (should add spelling checks
+  to `make check` by default, if tools are available) to facilitate quicker
+  acceptance of contributions. Packaging systems may now want to explicitly
+  disable it, if it blocks package building (pull requests to update the
+  `docs/nut.dict` are a better and welcome solution). [#2067]
+
+- Several improvements regarding simultaneous support of USB devices that
+  were previously deemed "identical" and so NUT driver instances did not
+  start for all of them:
+
+  * Some more drivers should now use the common USB device matching logic
+    and the 7 `ups.conf` options for that [#1763], and man pages were
+    updated to reflect that [#1766];
+
+  * The `nut-scanner` tool should suggest these options in its generated
+    device configuration [#1790]: hopefully these would now suffice for
+    sufficiently unique combinations;
+
+  * The `nut-scanner` tool should also suggest sanity-check violations
+    as comments in its generated device configuration [#1810], e.g. bogus
+    or duplicate serial number values;
+
+  * The common USB matching logic was updated with an `allow_duplicates`
+    flag (caveat emptor!) which may help monitor several related no-name
+    devices on systems that do not discern "bus" and "device" values
+    (although without knowing reliably which one is which... sometimes it
+    is better than nothing) [#1756].
 
 - Work on NUT for Windows branch led to situation-specific definitions of
   what in POSIX code was all "file descriptors" (an `int` type). Now such
@@ -43,15 +82,93 @@ Changes from 2.8.0 to 2.8.1
   the packaging recipes may use NUT source-code facilities and package just
   symlinks as relevant for each distro separately [#1462, #1504]
 
+- The `upsd.conf` listing of `LISTEN` addresses was previously inverted
+  (the last listed address was applied first), which was counter-intuitive
+  and fixed for this release. If user configurations somehow relied on this
+  order (e.g. to prioritize IPv6 vs IPv4 listeners), configuration changes
+  may be needed. [#2012]
+
+- The `upsd` configured to listen on IPv6 addresses should handle only
+  IPv6 (and not IPv4-mappings like it might have done before) to avoid
+  surprises and insecurity -- if user configurations somehow relied on
+  this dual support, configuration changes may be needed to specify both
+  desired IP addresses. Note that the daemon logs will now warn if a
+  host name resolves to several addresses (and will only listen on the
+  first hit, as it did before in such cases). [#2012]
+
+- A definitive behavior for `LISTEN *` directives became specified, to try
+  handling both IPv4 and IPv6 "any" address (subject to `upsd` CLI options
+  to only choose one, and to OS abilities). This use-case may be practically
+  implemented as a single IPv6 socket on systems with enabled and required
+  IPv4-mapped IPv6 address support, or as two separate listening sockets -
+  logged messages to this effect (e.g. inability to listen on IPv4 after
+  opening IPv6) are expected on some platforms. End-users may also want to
+  reconfigure their `upsd.conf` files to remove some now-redundant `LISTEN`
+  lines. [#2012]
+
+- Added support for `make sockdebug` for easier developer access to the tool;
+  also if `configure --with-dev` is in effect, it would now be installed to
+  the configured `libexec` location. A man page was also added. [#1936]
+
 - NUT software-only drivers (dummy-ups, clone, clone-outlet) separated from
   serial drivers in respective Makefile and configure script options - this
   may impact packaging decisions on some distributions going forward [#1446]
 
-- an explicit `configure --with-nut-scanner` toggle was added, specifically
+- GPIO category of drivers was added (`--with-gpio` configure script option) -
+  this may impact packaging decisions on some (currently Linux released 2018+)
+  distributions going forward [#1855]
+
+- An explicit `configure --with-nut-scanner` toggle was added, specifically
   so that build environments requesting `--with-all` but lacking `libltdl`
   would abort and require the packager either to install the dependency
   or explicitly forfeit building the tool (some distro packages missed it
   quietly in the past) [#1560]
+
+- An `upsdebugx_report_search_paths()` method in NUT common code was added,
+  and exposed in `libnutscan.so` builds in particular - API version for the
+  public library was bumped [#317]
+
+- A `NUT_DEBUG_PID` envvar (presence) support was added to add current
+  process ID to tags with debug-level identifiers. This may be useful
+  when many NUT daemons write to the same console or log file, such as
+  in containers/plugins for Home Assistant, storage appliances, etc. [#2118]
+
+- `configure` script, reference init-script and packaging templates updated
+  to eradicate `@PIDPATH@/nut` ambiguity in favor of `@ALTPIDPATH@` for the
+  unprivileged processes vs. `@PIDPATH@` for those running as root [#1719]
+
+- The "layman report" of NUT configuration options displayed after the run
+  of `configure` script can now be retained and installed by using the
+  `--enable-keep_nut_report_feature` option; packagers are welcome to make
+  use of this, to better keep track of their deliveries [#1826, #1708]
+
+- Renamed generated nut-common.tmpfiles(.in) => nut-common-tmpfiles.conf(.in)
+  to install a /usr/lib/systemd-tmpfiles/*.conf pattern [#1755]
+
+  * If earlier NUT v2.8.0 package recipes for your Linux distribution dealt
+    with this file, you may have to adjust its name for newer releases.
+
+  * Several other issues have been fixed related to this file and its content,
+    including #1030, #1037, #1117 and #1712
+
+- Extended Linux systemd support with optional notifications about daemon
+  state (READY, RELOADING, STOPPING) and watchdog keep-alive messages.
+  Note that `WatchdogSec=` values are currently NOT pre-set into systemd
+  unit file templates provided by NUT, this is an exercise for end-users
+  based on sizing of their deployments and performance of monitoring station
+  [#1590, #1777]
+
+- snmp-ups: some subdrivers (addressed using the driver parameter `mibs`)
+  were renamed: `pw` is now `eaton_pw_nm2`, and `pxgx_ups` is `eaton_pxg_ups`
+  [#1715]
+
+- The `tools/gitlog2changelog.py.in` script was revised, in particular to
+  generate the `ChangeLog` file more consistently with different versions
+  of Python interpreter, and without breaking the long file paths in the
+  resulting mark-up text. Due to this, a copy of this file distributed with
+  NUT release archives is expected to considerably differ on first glance
+  from its earlier released versions (not just adding lines for the new
+  release, but changing lines in the older releases too) [#1945, #1955]
 
 Changes from 2.7.4 to 2.8.0
 ---------------------------
@@ -135,7 +252,7 @@ Changes from 2.7.4 to 2.8.0
   with your platform.
 
 - dummy-ups can now specify `mode` as a driver argument, and separates the
-  notion of `dummy-once` (new default for `*.dev` files that do not change)
+  notion of `dummy-once` (new default for `\*.dev` files that do not change)
   vs. `dummy-loop` (legacy default for `*.seq` and others) [issue #1385]
 
   * Note this can break third-party test scripts which expected `*.dev`
@@ -469,10 +586,10 @@ which makes it work with upsclient.
 has been gone for a long time, and the target was ambiguous.
 
 - The newapc driver has been renamed to apcsmart.  If you previously
-used newapc, make sure you delete the old binary and fix your 
+used newapc, make sure you delete the old binary and fix your
 ups.conf.  Otherwise, you may run the old driver from 1.4.
 
-
-*** File trimmed here on changes from 1.2.2 to 1.4.0 ***
+File trimmed here on changes from 1.2.2 to 1.4.0
+------------------------------------------------
 
 For information before this point, start with version 2.4.1 and work back.

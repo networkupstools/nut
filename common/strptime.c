@@ -45,7 +45,11 @@ __RCSID("$NetBSD: strptime.c,v 1.36 2012/03/13 21:13:48 christos Exp $");
 #include <locale.h>
 #include <string.h>
 #include <time.h>
-#include <stdint.h>
+#if defined HAVE_STDINT_H
+# include <stdint.h>
+#else
+# include "nut_stdint.h"
+#endif
 /*
 #include <tzfile.h>
 #include "private.h"

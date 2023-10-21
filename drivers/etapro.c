@@ -55,7 +55,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"ETA PRO driver"
-#define DRIVER_VERSION	"0.05"
+#define DRIVER_VERSION	"0.06"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {

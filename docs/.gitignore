@@ -23,3 +23,5 @@ nut.dict.sorted
 /*.bak
 /*.bak-*
 /tmp/
+docinfo.xml.in.tmp
+/asciidoc-vars.conf.lastrev.tmp

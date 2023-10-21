@@ -24,7 +24,7 @@
 #include "baytech-mib.h"
 
 /* NOTE: last badly versioned release was "4032" but should be "X.Y[Z]"! */
-#define BAYTECH_MIB_VERSION	"0.4034"
+#define BAYTECH_MIB_VERSION	"0.4035"
 
 /* Baytech MIB */
 #define BAYTECH_OID_MIB			".1.3.6.1.4.1.4779"
@@ -34,7 +34,11 @@ static info_lkp_t baytech_outlet_status_info[] = {
 	{ -1, "error", NULL, NULL },
 	{ 0, "off", NULL, NULL },
 	{ 1, "on", NULL, NULL },
-	{ 2, "cycling", NULL, NULL }, /* transitional status */
+	{ 2, "cycling", NULL, NULL }, /* transitional status, "reboot" in MIB comments */
+	{ 3, "lockon", NULL, NULL },
+	{ 4, "lockoff", NULL, NULL },
+	{ 5, "unlock", NULL, NULL },
+	{ 6, "unknown", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 

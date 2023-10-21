@@ -7,7 +7,7 @@
  * device support from such legacy drivers over time.
  *
  * A document describing the protocol implemented by this driver can be
- * found online at "http://www.networkupstools.org/protocols/megatec.html".
+ * found online at "https://www.networkupstools.org/protocols/megatec.html".
  *
  * Copyright (C) 2008 - Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
@@ -31,7 +31,7 @@
 #include "blazer.h"
 
 #define DRIVER_NAME	"Megatec/Q1 protocol serial driver"
-#define DRIVER_VERSION	"1.58"
+#define DRIVER_VERSION	"1.60"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {

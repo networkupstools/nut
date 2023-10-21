@@ -40,7 +40,7 @@ functions documentation referenced in the same file.
 
 Clients like upsc are provided as examples of how to retrieve data using the
 upsclient functions.
-link:http://www.networkupstools.org/projects.html[Other programs] not included
+link:https://www.networkupstools.org/projects.html[Other programs] not included
 in this package may also use this library, such as wmnut.
 
 High level library: libnutclient
