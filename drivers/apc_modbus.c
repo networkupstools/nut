@@ -271,7 +271,7 @@ static int _apc_modbus_double_to_nut(const apc_modbus_value_t *value, char *outp
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
-	if (res < 0 || (size_t)res > output_len) {
+	if (res < 0 || (size_t)res >= output_len) {
 		return 0;
 	}
 
@@ -314,7 +314,7 @@ static int _apc_modbus_power_to_nut(const apc_modbus_value_t *value, char *outpu
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
-	if (res < 0 || (size_t)res > output_len) {
+	if (res < 0 || (size_t)res >= output_len) {
 		return 0;
 	}
 
@@ -325,6 +325,8 @@ static apc_modbus_converter_t _apc_modbus_power_conversion = { _apc_modbus_power
 
 static int _apc_modbus_voltage_to_nut(const apc_modbus_value_t *value, char *output, size_t output_len)
 {
+	int res;
+
 	if (value == NULL || output == NULL || output_len == 0) {
 		/* Invalid parameters */
 		return 0;
@@ -336,7 +338,10 @@ static int _apc_modbus_voltage_to_nut(const apc_modbus_value_t *value, char *out
 
 	if (value->data.uint_value == 0xffff) {
 		/* Not applicable */
-		strncpy(output, "NA", output_len);
+		res = snprintf(output, output_len, "NA");
+		if (res < 0 || (size_t)res >= output_len) {
+			return 0;
+		}
 		return 1;
 	}
 
@@ -348,6 +353,7 @@ static apc_modbus_converter_t _apc_modbus_voltage_conversion = { _apc_modbus_vol
 static int _apc_modbus_efficiency_to_nut(const apc_modbus_value_t *value, char *output, size_t output_len)
 {
 	char *cause;
+	int res;
 
 	if (value == NULL || output == NULL || output_len == 0) {
 		/* Invalid parameters */
@@ -387,7 +393,10 @@ static int _apc_modbus_efficiency_to_nut(const apc_modbus_value_t *value, char *
 		return _apc_modbus_double_to_nut(value, output, output_len);
 	}
 
-	strncpy(output, cause, output_len);
+	res = snprintf(output, output_len, "%s", cause);
+	if (res < 0 || (size_t)res >= output_len) {
+		return 0;
+	}
 
 	return 1;
 }
@@ -397,6 +406,7 @@ static apc_modbus_converter_t _apc_modbus_efficiency_conversion = { _apc_modbus_
 static int _apc_modbus_status_change_cause_to_nut(const apc_modbus_value_t *value, char *output, size_t output_len)
 {
 	char *cause;
+	int res;
 
 	if (value == NULL || output == NULL || output_len == 0) {
 		/* Invalid parameters */
@@ -506,7 +516,10 @@ static int _apc_modbus_status_change_cause_to_nut(const apc_modbus_value_t *valu
 		break;
 	}
 
-	strncpy(output, cause, output_len);
+	res = snprintf(output, output_len, "%s", cause);
+	if (res < 0 || (size_t)res >= output_len) {
+		return 0;
+	}
 
 	return 1;
 }
@@ -1014,6 +1027,7 @@ static void _apc_modbus_usb_lib_to_nut(const modbus_usb_device_t *device, USBDev
 	/* This makes a USBDevice_t from modbus_usb_device_t so we can use our matchers */
 
 	static char bus_buf[4], device_buf[4], bus_port_buf[4];
+	int res;
 
 	assert(device != NULL);
 	assert(out != NULL);
@@ -1027,14 +1041,23 @@ static void _apc_modbus_usb_lib_to_nut(const modbus_usb_device_t *device, USBDev
 	out->Serial = device->serial_str;
 	out->bcdDevice = device->bcd_device;
 
-	snprintf(bus_buf, sizeof(bus_buf), "%03u", device->bus);
+	res = snprintf(bus_buf, sizeof(bus_buf), "%03u", device->bus);
+	if (res < 0 || (size_t)res >= sizeof(bus_buf)) {
+		fatalx(EXIT_FAILURE, "failed to convert USB bus to string");
+	}
 	out->Bus = bus_buf;
 
-	snprintf(device_buf, sizeof(device_buf), "%03u", device->device_address);
+	res = snprintf(device_buf, sizeof(device_buf), "%03u", device->device_address);
+	if (res < 0 || (size_t)res >= sizeof(device_buf)) {
+		fatalx(EXIT_FAILURE, "failed to convert USB device address to string");
+	}
 	out->Device = device_buf;
 
 #if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
-	snprintf(bus_port_buf, sizeof(bus_port_buf), "%03u", device->bus_port);
+	res = snprintf(bus_port_buf, sizeof(bus_port_buf), "%03u", device->bus_port);
+	if (res < 0 || (size_t)res >= sizeof(bus_port_buf)) {
+		fatalx(EXIT_FAILURE, "failed to convert USB bus port to string");
+	}
 	out->BusPort = bus_port_buf;
 #endif
 }
@@ -1118,7 +1141,7 @@ usb_callback_exit:
 static int _apc_modbus_parse_host_port(const char *input, char *host, size_t host_buf_size, char *port, size_t port_buf_size, const uint16_t default_port) {
 	const char *start = input;
 	const char *end = input;
-	int port_int;
+	int port_int, r;
 	size_t host_size, port_size;
 
 	if (*start == '[') {
@@ -1134,21 +1157,30 @@ static int _apc_modbus_parse_host_port(const char *input, char *host, size_t hos
 
 	if (!end) {
 		/* Port is missing, use the default port */
-		strncpy(host, start, host_buf_size);
-		snprintf(port, port_buf_size, "%u", default_port);
-		return 0;
+		r = snprintf(host, host_buf_size, "%s", start);
+		if (r < 0 || (size_t)r >= host_buf_size) {
+			upslogx(LOG_ERR, "%s: Buffer size too small or encoding error", __func__);
+			return 0;
+		}
+		r = snprintf(port, port_buf_size, "%u", default_port);
+		if (r < 0 || (size_t)r >= port_buf_size) {
+			upslogx(LOG_ERR, "%s: Buffer size too small or encoding error", __func__);
+			return 0;
+		}
+		return 1;
 	}
 
-	host_size = (size_t)(end - start);
-	port_size = strlen(end + 1);
+	/* +1 for zero termination */
+	host_size = (size_t)(end - start) + 1;
+	port_size = strlen(end + 1) + 1;
 
-	if (host_size >= host_buf_size || port_size >= port_buf_size) {
+	if (host_size > host_buf_size || port_size > port_buf_size) {
 		upslogx(LOG_ERR, "%s: Buffer size too small", __func__);
 		return 0;
 	}
 
-	strncpy(host, start, host_size);
-	strncpy(port, end + 1, port_size);
+	snprintf(host, host_size, "%s", start);
+	snprintf(port, port_size, "%s", end + 1);
 
 	port_int = atoi(port);
 	if (port_int < 0 || port_int > 65535) {
