@@ -368,7 +368,7 @@ void upsdrv_initinfo(void)
 		optimodel = OPTIMODEL_PS;
 	}
 
-	optifill( _initv, sizeof(_initv)/sizeof(_initv[0]) );
+	optifill( _initv, SIZEOF_ARRAY(_initv) );
 
 	/* Parse out model into longer string -- is this really USEFUL??? */
 	r = optiquery( "IO" );
@@ -483,11 +483,11 @@ void upsdrv_updateinfo(void)
 
 	/* read some easy settings */
 	if ( optimodel == OPTIMODEL_ZINTO )
-		optifill( _pollv_zinto, sizeof(_pollv_zinto)/sizeof(_pollv_zinto[0]) );
+		optifill( _pollv_zinto, SIZEOF_ARRAY(_pollv_zinto) );
 	else if ( optimodel == OPTIMODEL_PS ) {
 		short inV, outV, fV;
 
-		optifill( _pollv_ps, sizeof(_pollv_ps)/sizeof(_pollv_ps[0]) );
+		optifill( _pollv_ps, SIZEOF_ARRAY(_pollv_ps) );
 
 		r = optiquery( "NV" );
 		str_to_short ( _buf, &inV, 10 );
@@ -508,7 +508,7 @@ void upsdrv_updateinfo(void)
 		dstate_setinfo( "output.voltage", "%d", outV );
 	}
 	else
-		optifill( _pollv, sizeof(_pollv)/sizeof(_pollv[0]) );
+		optifill( _pollv, SIZEOF_ARRAY(_pollv) );
 
 	/* Battery voltage is harder */
 	r = optiquery( "BV" );

@@ -424,7 +424,7 @@ static int get_sensitivity(void) {
 
 	if (do_command(POLL, VOLTAGE_SENSITIVITY, "", response) <= 0)
 		return 0;
-	for (i = 0; i < sizeof(sensitivity) / sizeof(sensitivity[0]); i++) {
+	for (i = 0; i < SIZEOF_ARRAY(sensitivity); i++) {
 		if (sensitivity[i].code == atoi(response)) {
 			dstate_setinfo("input.sensitivity", "%s",
 			               sensitivity[i].name);
@@ -439,7 +439,7 @@ static void set_sensitivity(const char *val) {
 	char parm[20];
 	unsigned int i;
 
-	for (i = 0; i < sizeof(sensitivity) / sizeof(sensitivity[0]); i++) {
+	for (i = 0; i < SIZEOF_ARRAY(sensitivity); i++) {
 		if (!strcasecmp(val, sensitivity[i].name)) {
 			snprintf(parm, sizeof(parm), "%u", i);
 			do_command(SET, VOLTAGE_SENSITIVITY, parm, NULL);
@@ -660,8 +660,7 @@ void upsdrv_initinfo(void)
 	}
 	if (get_sensitivity()) {
 		dstate_setflags("input.sensitivity", ST_FLAG_RW);
-		for (i = 0; i < sizeof(sensitivity) / sizeof(sensitivity[0]);
-		     i++)
+		for (i = 0; i < SIZEOF_ARRAY(sensitivity); i++)
 			dstate_addenum("input.sensitivity", "%s",
 			               sensitivity[i].name);
 	}
@@ -811,8 +810,7 @@ void upsdrv_updateinfo(void)
 		size_t	trsize;
 
 		r = atoi(response);
-		trsize = sizeof(test_result_names) /
-			sizeof(test_result_names[0]);
+		trsize = SIZEOF_ARRAY(test_result_names);
 
 		if ((r < 0) || (r >= (int) trsize))
 			r = 0;

@@ -260,7 +260,7 @@ static void apc_ser_diff(struct termios *tioset, struct termios *tioget)
 
 	/* clear status flags so that they don't affect our binary compare */
 #if defined(PENDIN) || defined(FLUSHO)
-	for (i = 0; i < sizeof(tio)/sizeof(tio[0]); i++) {
+	for (i = 0; i < SIZEOF_ARRAY(tio); i++) {
 #ifdef PENDIN
 		tio[i]->c_lflag &= ~(unsigned int)PENDIN;
 #endif
@@ -283,7 +283,7 @@ static void apc_ser_diff(struct termios *tioset, struct termios *tioget)
 	 * rate of 2400.
 	 */
 
-	for (i = 0; i < sizeof(tio)/sizeof(tio[0]); i++) {
+	for (i = 0; i < SIZEOF_ARRAY(tio); i++) {
 		upsdebugx(1, "tc%cetattr(): gfmt1:cflag=%x:iflag=%x:lflag=%x:oflag=%x:", dir[i],
 				(unsigned int) tio[i]->c_cflag, (unsigned int) tio[i]->c_iflag,
 				(unsigned int) tio[i]->c_lflag, (unsigned int) tio[i]->c_oflag);
