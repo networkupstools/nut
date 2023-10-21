@@ -1253,6 +1253,7 @@ void upsdrv_initups(void)
 		for (i = 0; i < sizeof(regex_array) / sizeof(regex_array[0]); i++) {
 			if (regex_array[i] != NULL) {
 				has_nonzero_regex = 1;
+				break;
 			}
 		}
 
