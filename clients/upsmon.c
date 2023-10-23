@@ -1224,7 +1224,6 @@ static void drop_connection(utype_t *ups)
 	upsdebugx(2, "Dropping connection to UPS [%s]", ups->sys);
 
 	ups->commstate = 0;
-	ups->linestate = 0;
 
 	/* forget poll-failure logging throttling */
 	ups->pollfail_log_throttle_count = -1;
