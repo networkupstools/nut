@@ -1221,7 +1221,7 @@ static void ups_fsd(utype_t *ups)
 /* cleanly close the connection to a given UPS */
 static void drop_connection(utype_t *ups)
 {
-	upsdebugx(2, "Dropping connection to UPS [%s]", ups->sys);
+	upsdebugx(2, "Dropping connection to UPS [%s], last seen in linestate %d", ups->sys, ups->linestate);
 
 	ups->commstate = 0;
 
