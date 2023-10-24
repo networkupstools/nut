@@ -24,7 +24,7 @@
 #include "apcsmart-old.h"
 #include "nut_stdint.h"
 
-#define DRIVER_NAME	"APC Smart protocol driver"
+#define DRIVER_NAME	"APC Smart protocol driver (old)"
 #define DRIVER_VERSION	"2.32"
 
 static upsdrv_info_t table_info = {
