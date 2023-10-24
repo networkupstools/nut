@@ -1224,7 +1224,16 @@ static void drop_connection(utype_t *ups)
 	if (ups->linestate == 1 && flag_isset(ups->status, ST_ONLINE))
 		upsdebugx(2, "Dropping connection to UPS [%s], last seen as fully online.", ups->sys);
 	else
-		upsdebugx(2, "Dropping connection to UPS [%s], last seen as not fully online.", ups->sys);
+		upsdebugx(2, "Dropping connection to UPS [%s], last seen as not fully online (might be considered critical later).", ups->sys);
+
+	if(ups->offstate == 1 || flag_isset(ups->status, ST_OFF))
+		upsdebugx(2, "Disconnected UPS [%s] was last seen in status OFF, this UPS might be considered critical later.", ups->sys);
+
+	if(ups->bypassstate == 1 || flag_isset(ups->status, ST_BYPASS))
+		upsdebugx(2, "Disconnected UPS [%s] was last seen in status BYPASS, this UPS might be considered critical later.", ups->sys);
+
+	if(flag_isset(ups->status, ST_CAL))
+		upsdebugx(2, "Disconnected UPS [%s] was last seen in status CAL, this UPS might be considered critical later.", ups->sys);
 
 	ups->commstate = 0;
 
