@@ -1221,7 +1221,10 @@ static void ups_fsd(utype_t *ups)
 /* cleanly close the connection to a given UPS */
 static void drop_connection(utype_t *ups)
 {
-	upsdebugx(2, "Dropping connection to UPS [%s], last seen in linestate %d", ups->sys, ups->linestate);
+	if (ups->linestate == 1 && flag_isset(ups->status, ST_ONLINE))
+		upsdebugx(2, "Dropping connection to UPS [%s], last seen as fully online.", ups->sys);
+	else
+		upsdebugx(2, "Dropping connection to UPS [%s], last seen as not fully online.", ups->sys);
 
 	ups->commstate = 0;
 
