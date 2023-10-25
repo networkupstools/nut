@@ -156,7 +156,7 @@ void upsdrv_initinfo(void)
 			ups = xmalloc(sizeof(*ups));
 			if (upscli_connect(ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0)
 			{
-				fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
+				upslogx(LOG_ERR, "Error: %s", upscli_strerror(ups));
 			}
 			else
 			{
@@ -169,7 +169,7 @@ void upsdrv_initinfo(void)
 				{
 					fatalx(EXIT_FAILURE, "Error: upsd is too old to support this query");
 				}
-				fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
+				upslogx(LOG_ERR, "Error: %s", upscli_strerror(ups));
 			}
 			/* FIXME: commands and settable variable! */
 			break;
