@@ -36,7 +36,7 @@
 #include "apcsmart_tabs.h"
 
 #define DRIVER_NAME	"APC Smart protocol driver"
-#define DRIVER_VERSION	"3.31"
+#define DRIVER_VERSION	"3.32"
 
 #ifdef WIN32
 # ifndef ECANCELED
@@ -1040,15 +1040,20 @@ static void apc_getcaps(int qco)
 				__func__, (ptr[2] - 48), (ptr[3] - 48),
 				cmd, loc);
 
-			/* just ignore it as we did for ages (the
-			 * rest of loop cycle would be no-op anyway)
+			/* just ignore it as we did for ages see e.g. v2.7.4
+			 * (note the next loop cycle was and still would be
+			 * no-op anyway, if "nument <= 0").
 			 */
-			ptr = entptr;
-			continue;
-		}
+			nument = 0;
+			entlen = 0;
 
-		nument = (size_t)ptr[2] - 48;
-		entlen = (size_t)ptr[3] - 48;
+			/* NOT a full skip: Gotta handle "vt" to act like before */
+			/*ptr = entptr;*/
+			/*continue;*/
+		} else {
+			nument = (size_t)ptr[2] - 48;
+			entlen = (size_t)ptr[3] - 48;
+		}
 
 		vt = vt_lookup_char(cmd);
 		valid = vt && ((loc == upsloc) || (loc == '4')) && !(vt->flags & APC_PACK);
