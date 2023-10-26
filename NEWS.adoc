@@ -221,7 +221,7 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
     * added an `repeater_disable_strict_start` option to disable the driver
       exiting upon encountering any kind of error at startup (as repeater).
       This option should allow for collective `upsdrvctl` startup despite
-      individual target UPS to be repeated or `upsd` not having come up yet.
+      individual target UPS to be repeated or `upsd` not having come up yet. [#2132]
 
  - NUT for Windows:
    * Ability to build NUT for Windows, last tackled with a branch based on
