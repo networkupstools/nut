@@ -48,7 +48,7 @@
 #include "dummy-ups.h"
 
 #define DRIVER_NAME	"Device simulation and repeater driver"
-#define DRIVER_VERSION	"0.17"
+#define DRIVER_VERSION	"0.18"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info =
@@ -111,6 +111,9 @@ static char		*client_upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
 static uint16_t	port;
 
+/* repeater mode parameters */
+static int repeater_disable_strict_start = 0;
+
 /* Driver functions */
 
 void upsdrv_initinfo(void)
@@ -156,7 +159,17 @@ void upsdrv_initinfo(void)
 			ups = xmalloc(sizeof(*ups));
 			if (upscli_connect(ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0)
 			{
-				upslogx(LOG_ERR, "Error: %s", upscli_strerror(ups));
+				if(repeater_disable_strict_start == 1)
+				{
+					upslogx(LOG_WARNING, "Warning: %s", upscli_strerror(ups));
+				}
+				else
+				{
+					fatalx(EXIT_FAILURE, "Error: %s. "
+					"Any errors encountered starting the repeater mode result in driver termination, "
+					"perhaps you want to set the 'repeater_disable_strict_start' option?"
+					, upscli_strerror(ups));
+				}
 			}
 			else
 			{
@@ -169,7 +182,18 @@ void upsdrv_initinfo(void)
 				{
 					fatalx(EXIT_FAILURE, "Error: upsd is too old to support this query");
 				}
-				upslogx(LOG_ERR, "Error: %s", upscli_strerror(ups));
+
+				if(repeater_disable_strict_start == 1)
+				{
+					upslogx(LOG_WARNING, "Warning: %s", upscli_strerror(ups));
+				}
+				else
+				{
+					fatalx(EXIT_FAILURE, "Error: %s. "
+					"Any errors encountered starting the repeater mode result in driver termination, "
+					"perhaps you want to set the 'repeater_disable_strict_start' option?"
+					, upscli_strerror(ups));
+				}
 			}
 			/* FIXME: commands and settable variable! */
 			break;
@@ -387,6 +411,7 @@ void upsdrv_help(void)
 void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE,	"mode",	"Specify mode instead of guessing it from port value (dummy = dummy-loop, dummy-once, repeater)"); /* meta */
+	addvar(VAR_FLAG,    "repeater_disable_strict_start", "Do not terminate the driver encountering errors when starting the repeater mode");
 }
 
 void upsdrv_initups(void)
@@ -520,6 +545,10 @@ void upsdrv_initups(void)
 		} else {
 			upsdebugx(2, "Located %s for device simulation data: %s", device_path, fn);
 		}
+	}
+	if (testvar("repeater_disable_strict_start"))
+	{
+		repeater_disable_strict_start = 1;
 	}
 }
 

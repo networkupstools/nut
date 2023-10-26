@@ -174,7 +174,7 @@ second), independently of (and/or in addition to) any `TIMER` keywords.
 Repeater Mode
 ~~~~~~~~~~~~~
 
-In this context, `port` in the `ups.conf` block is the name of a remote UPS,
+In this context, `port` in the `ups.conf` block is the name of the target UPS,
 using the NUT format, i.e.:
 
 	<upsname>@<hostname>[:<port>]
@@ -194,6 +194,11 @@ Note that to avoid CPU overload with an infinite loop, the driver "sleeps" a
 bit between data-requesting cycles (currently this delay is hardcoded to one
 second), so propagation of data updates available to a remote `upsd` may lag
 by this much.
+
+Beware that any error encountered at repeater mode startup (e.g. when not all
+target UPS to be repeated or `upsd` instances are connectable yet) will cause
+*dummy-ups* driver to terminate prematurely. This behaviour can be changed by
+setting the `repeater_disable_strict_start` flag, making such errors non-fatal.
 
 INTERACTION
 -----------
