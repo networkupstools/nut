@@ -217,11 +217,14 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
      commits to apcupsd sources were in 2017 (with last release 3.14.14 in
      May 2016): https://sourceforge.net/p/apcupsd/svn/HEAD/tree/
 
-  - dummy-ups:
-    * added an `repeater_disable_strict_start` option to disable the driver
+ - dummy-ups:
+    * Added an `repeater_disable_strict_start` option to disable the driver
       exiting upon encountering any kind of error at startup (as repeater).
       This option should allow for collective `upsdrvctl` startup despite
-      individual target UPS to be repeated or `upsd` not having come up yet. [#2132]
+      individual target UPS to be repeated or `upsd` not having come up yet.
+      [#2132]
+    * Revised detection of file path (for "dummy" mode) which misfired under
+      some conditions, and unified several implementations. [#2118]
 
  - NUT for Windows:
    * Ability to build NUT for Windows, last tackled with a branch based on
