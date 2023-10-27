@@ -112,6 +112,7 @@ static	char	*certpasswd = NULL;
 static	int	certverify = 0;		/* don't verify by default */
 static	int	forcessl = 0;		/* don't require ssl by default */
 
+static	int	shutdownexit = 1;	/* by default doshutdown() exits */
 static	int	userfsd = 0, pipefd[2];
 	/* Should we run "all in one" (e.g. as root) or split
 	 * into two upsmon processes for some more security? */
@@ -811,7 +812,14 @@ static void doshutdown(void)
 				shutdowncmd);
 	}
 
-	exit(EXIT_SUCCESS);
+	if (shutdownexit) {
+		upsdebugx(1,
+			"Exiting upsmon after initiating shutdown, by default");
+		exit(EXIT_SUCCESS);
+	} else {
+		upslogx(LOG_WARNING,
+			"Configured to not exit upsmon after initiating shutdown");
+	}
 }
 
 /* set forced shutdown flag so other upsmons know what's going on here */
@@ -1578,6 +1586,28 @@ static int parse_conf_arg(size_t numargs, char **arg)
 
 		free(shutdowncmd);
 		shutdowncmd = xstrdup(arg[1]);
+		return 1;
+	}
+
+	/* SHUTDOWNEXIT <boolean> */
+	if (!strcmp(arg[0], "SHUTDOWNEXIT")) {
+		if (!strcmp(arg[1], "1")
+		|| !strcasecmp(arg[1], "on")
+		|| !strcasecmp(arg[1], "yes")
+		|| !strcasecmp(arg[1], "true")) {
+			shutdownexit = 1;
+		} else
+		if (!strcmp(arg[1], "0")
+		|| !strcasecmp(arg[1], "off")
+		|| !strcasecmp(arg[1], "no")
+		|| !strcasecmp(arg[1], "false")) {
+			shutdownexit = 0;
+		} else {
+			upslogx(LOG_WARNING,
+				"SHUTDOWNEXIT value not recognized, "
+				"defaulting to 'yes'");
+			shutdownexit = 1;
+		}
 		return 1;
 	}
 

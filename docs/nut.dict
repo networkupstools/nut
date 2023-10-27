@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3255 utf-8
+personal_ws-1.1 en 3257 utf-8
 AAC
 AAS
 ABI
@@ -1111,6 +1111,7 @@ SG
 SGI
 SHA
 SHUTDOWNCMD
+SHUTDOWNEXIT
 SIG
 SIGHUP
 SIGINT
@@ -1324,7 +1325,6 @@ UPS's
 UPSCONN
 UPSDESC
 UPSHOST
-upsid
 UPSIMAGEPATH
 UPSLC
 UPSOutletSystemOutletDelayBeforeReboot
@@ -3096,6 +3096,7 @@ upsfetch
 upsgone
 upsh
 upshandler
+upsid
 upsidentmodel
 upsimage
 upsload

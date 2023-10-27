@@ -428,25 +428,33 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
  - Clarified documentation in codebase according to end-user feedback [#1721,
    #1750 and others over time]
 
- - Several fixes for `upsmon` behavior [#1761, #1680...], including new
-   ability to configure default POWERDOWNFLAG location -- packagers are
-   encouraged to pick optimal location for their distributions (which
-   remains mounted at least read-only late in shutdown) and a new optional
-   POLLFAIL_LOG_THROTTLE_MAX setting [#529, #506]
-
- - Also `upsmon` should now recognize `OFF` and `BYPASS` flags in `ups.status`
-   and report that these states begin or end. The `OFF` state usually means
-   than an administrative action happened to power off the load, but the UPS
-   device is still alive and communicating (USB, SNMP, etc.); corresponding
-   `MONITOR`'ed amount of power sources are considered not being "fed" for
-   the power value calculation purposes. The `BYPASS` state is now treated
-   similarly to `ONBATT`: currently this UPS "feeds" its load, but if later
-   communications fail, it is considered dead. This may have unintended
-   consequences for devices (or NUT drivers) that do not report these modes
-   correctly (e.g. an APC calibration routine seems to start with a few
-   seconds of "OFF" state), so the reported status is only considered as a
-   loss of feed if it persists for more than `OFFDURATION` seconds. [#2044,
-   #2104]
+ - upsmon client changes include:
+   * Several fixes for `upsmon` behavior [#1761, #1680...], including new
+     ability to configure default POWERDOWNFLAG location -- packagers are
+     encouraged to pick optimal location for their distributions (which
+     remains mounted at least read-only late in shutdown) and a new optional
+     POLLFAIL_LOG_THROTTLE_MAX setting [#529, #506]
+   * Also `upsmon` should now recognize `OFF` and `BYPASS` flags in `ups.status`
+     and report that these states begin or end. The `OFF` state usually means
+     than an administrative action happened to power off the load, but the UPS
+     device is still alive and communicating (USB, SNMP, etc.); corresponding
+     `MONITOR`'ed amount of power sources are considered not being "fed" for
+     the power value calculation purposes. The `BYPASS` state is now treated
+     similarly to `ONBATT`: currently this UPS "feeds" its load, but if later
+     communications fail, it is considered dead. This may have unintended
+     consequences for devices (or NUT drivers) that do not report these modes
+     correctly (e.g. an APC calibration routine seems to start with a few
+     seconds of "OFF" state), so the reported status is only considered as a
+     loss of feed if it persists for more than `OFFDURATION` seconds. [#2044,
+     #2104]
+   * Introduced `SHUTDOWNEXIT no` configuration toggle for systems which
+     require a long time to stop their workload such as virtual machines.
+     Since the disconnection of a "secondary" client is treated by the
+     "primary" system as permission to proceed with its own shutdown and
+     power-off for the UPS, the original (now merely default) behavior to
+     call `SHUTDOWNCMD` and exit could be counter-productive. [#2133]
+   * Note there were other changes detailed below which impacted several NUT
+     programs, including `upsmon`.
 
  - Extended Linux systemd support with optional notifications about daemon
    state (READY, RELOADING, STOPPING) and watchdog keep-alive messages [#1590]
