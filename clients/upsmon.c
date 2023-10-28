@@ -112,7 +112,7 @@ static	char	*certpasswd = NULL;
 static	int	certverify = 0;		/* don't verify by default */
 static	int	forcessl = 0;		/* don't require ssl by default */
 
-static	int	shutdownexit = 1;	/* by default doshutdown() exits */
+static	int	shutdownexitdelay = 0;	/* by default doshutdown() exits immediately */
 static	int	userfsd = 0, pipefd[2];
 	/* Should we run "all in one" (e.g. as root) or split
 	 * into two upsmon processes for some more security? */
@@ -809,14 +809,29 @@ static void doshutdown(void)
 				shutdowncmd);
 	}
 
-	if (shutdownexit) {
+	if (shutdownexitdelay == 0) {
 		upsdebugx(1,
-			"Exiting upsmon after initiating shutdown, by default");
-		exit(EXIT_SUCCESS);
+			"Exiting upsmon immediately "
+			"after initiating shutdown, by default");
+	} else
+	if (shutdownexitdelay < 0) {
+		upslogx(LOG_WARNING,
+			"Configured to not exit upsmon "
+			"after initiating shutdown");
+		/* Technically, here we sleep until SIGTERM or poweroff */
+		do {
+			sleep(1);
+		} while (!exit_flag);
 	} else {
 		upslogx(LOG_WARNING,
-			"Configured to not exit upsmon after initiating shutdown");
+			"Configured to only exit upsmon %d sec "
+			"after initiating shutdown", shutdownexitdelay);
+		do {
+			sleep(1);
+			shutdownexitdelay--;
+		} while (!exit_flag && shutdownexitdelay);
 	}
+	exit(EXIT_SUCCESS);
 }
 
 /* set forced shutdown flag so other upsmons know what's going on here */
@@ -1586,24 +1601,24 @@ static int parse_conf_arg(size_t numargs, char **arg)
 		return 1;
 	}
 
-	/* SHUTDOWNEXIT <boolean> */
+	/* SHUTDOWNEXIT <boolean|number> */
 	if (!strcmp(arg[0], "SHUTDOWNEXIT")) {
-		if (!strcmp(arg[1], "1")
-		|| !strcasecmp(arg[1], "on")
-		|| !strcasecmp(arg[1], "yes")
-		|| !strcasecmp(arg[1], "true")) {
-			shutdownexit = 1;
+		if (!strcasecmp(arg[1], "on")
+		||  !strcasecmp(arg[1], "yes")
+		||  !strcasecmp(arg[1], "true")) {
+			shutdownexitdelay = 0;
 		} else
-		if (!strcmp(arg[1], "0")
-		|| !strcasecmp(arg[1], "off")
-		|| !strcasecmp(arg[1], "no")
-		|| !strcasecmp(arg[1], "false")) {
-			shutdownexit = 0;
+		if (!strcasecmp(arg[1], "off")
+		||  !strcasecmp(arg[1], "no")
+		||  !strcasecmp(arg[1], "false")) {
+			shutdownexitdelay = -1;
 		} else {
-			upslogx(LOG_WARNING,
-				"SHUTDOWNEXIT value not recognized, "
-				"defaulting to 'yes'");
-			shutdownexit = 1;
+			if (!str_to_int(arg[1], &shutdownexitdelay, 10)) {
+				upslogx(LOG_WARNING,
+					"SHUTDOWNEXIT value not recognized, "
+					"defaulting to 'yes'");
+				shutdownexitdelay = 0;
+			}
 		}
 		return 1;
 	}

@@ -384,7 +384,7 @@ together, i.e.:
 
 	SHUTDOWNCMD "/sbin/shutdown -h +0"
 
-*SHUTDOWNEXIT* 'boolean'::
+*SHUTDOWNEXIT* 'boolean|number'::
 
 After initiating shutdown, should this upsmon daemon itself exit?
 By doing so NUT secondary systems can tell the NUT primary that
@@ -408,6 +408,11 @@ ways to trigger shutdowns earlier on these systems, e.g. by setting up
 `upssched` integration, or `dummy-ups` driver with overrides for stricter
 `battery.charge` or `battery.runtime` triggers than used by the rest of
 your servers.
++
+This option supports Boolean-style strings (yes/on/true or no/off/false)
+or numbers to define a delay (in seconds) between calling `SHUTDOWNCMD`
+and exiting the daemon. Zero means immediate exit (default), negative
+values mean never exiting on its own accord.
 
 *CERTPATH* 'certificate file or database'::
 

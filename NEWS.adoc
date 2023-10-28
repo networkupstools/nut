@@ -452,7 +452,8 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
      Since the disconnection of a "secondary" client is treated by the
      "primary" system as permission to proceed with its own shutdown and
      power-off for the UPS, the original (now merely default) behavior to
-     call `SHUTDOWNCMD` and exit could be counter-productive. [#2133]
+     call `SHUTDOWNCMD` and immediately exit could be counter-productive.
+     An optional delay can also be introduced. [#2133]
    * Note there were other changes detailed below which impacted several NUT
      programs, including `upsmon`.
 
