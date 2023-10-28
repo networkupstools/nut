@@ -606,7 +606,7 @@ static void forkexec(char *const argv[], const ups_t *ups)
 		upsdebugx(1, "Starting the only driver with explicitly "
 			"requested foregrounding mode, not forking");
 	} else {
-		pid_t	pid;
+		pid_t	pid, waitret;
 
 		pid = fork();
 
@@ -665,11 +665,11 @@ static void forkexec(char *const argv[], const ups_t *ups)
 					alarm((unsigned int)maxstartdelay);
 			}
 
-			ret = waitpid(pid, &wstat, 0);
+			waitret = waitpid(pid, &wstat, 0);
 
 			alarm(0);
 
-			if (ret == -1) {
+			if (waitret == -1) {
 				upslogx(LOG_WARNING, "Startup timer elapsed, continuing...");
 				exec_timeout++;
 				*puexectimeout = 1;
