@@ -384,6 +384,36 @@ together, i.e.:
 
 	SHUTDOWNCMD "/sbin/shutdown -h +0"
 
+*SHUTDOWNEXIT* 'boolean|number'::
+
+After initiating shutdown, should this upsmon daemon itself exit?
+By doing so NUT secondary systems can tell the NUT primary that
+it can proceed with its own shutdown and eventually tell the UPS
+to cut power for the load. ("Yes" by default)
++
+Some "secondary" systems with workloads that take considerable time
+to stop (e.g. virtual machines or large databases) can benefit from
+reporting (by virtue of logging off the data server) that they are
+ready for the "primary" system to begin its own shutdown and eventually
+to tell the UPS to cut the power - not as soon as they have triggered
+their own shutdown, but at a later point (e.g. when the upsmon service
+is stopped AFTER the heavier workloads).
++
+Note that the actual ability to complete such shutdown depends on the
+remaining battery run-time at the moment when UPS power state becomes
+considered critical and the shutdowns begin. You may also have to tune
+`HOSTSYNC` on the NUT primary to be long enough for those secondaries to
+stop their services. In practice, it may be worthwhile to investigate
+ways to trigger shutdowns earlier on these systems, e.g. by setting up
+`upssched` integration, or `dummy-ups` driver with overrides for stricter
+`battery.charge` or `battery.runtime` triggers than used by the rest of
+your servers.
++
+This option supports Boolean-style strings (yes/on/true or no/off/false)
+or numbers to define a delay (in seconds) between calling `SHUTDOWNCMD`
+and exiting the daemon. Zero means immediate exit (default), negative
+values mean never exiting on its own accord.
+
 *CERTPATH* 'certificate file or database'::
 
 When compiled with SSL support, you can enter the certificate path here.
