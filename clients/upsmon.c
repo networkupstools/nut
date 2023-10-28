@@ -744,6 +744,9 @@ static void set_pdflag(void)
 
 /* the actual shutdown procedure */
 static void doshutdown(void)
+	__attribute__((noreturn));
+
+static void doshutdown(void)
 {
 	upsnotify(NOTIFY_STATE_STOPPING, "Executing automatic power-fail shutdown");
 
