@@ -682,14 +682,14 @@ static void forkexec(char *const argv[], const ups_t *ups)
 				return;
 			}
 
+			/* the rest only work when WIFEXITED is nonzero */
+
 			if (WEXITSTATUS(wstat) != 0) {
 				upslogx(LOG_WARNING, "Driver failed to start"
 				" (exit status=%d)", WEXITSTATUS(wstat));
 				exec_error++;
 				return;
 			}
-
-			/* the rest only work when WIFEXITED is nonzero */
 
 			if (WIFSIGNALED(wstat)) {
 				upslog_with_errno(LOG_WARNING, "Driver died after signal %d",
@@ -716,10 +716,10 @@ static void forkexec(char *const argv[], const ups_t *ups)
 	PROCESS_INFORMATION	ProcessInformation;
 	int	i = 1;
 
-	memset(&StartupInfo,0,sizeof(STARTUPINFO));
+	memset(&StartupInfo, 0, sizeof(STARTUPINFO));
 
 	/* the command line is made of the driver name followed by args */
-	snprintf(commandline,sizeof(commandline),"%s", ups->driver);
+	snprintf(commandline, sizeof(commandline), "%s", ups->driver);
 	while (argv[i] != NULL) {
 		snprintfcat(commandline, sizeof(commandline), " %s", argv[i]);
 		i++;
@@ -743,8 +743,8 @@ static void forkexec(char *const argv[], const ups_t *ups)
 	}
 
 	/* Wait a bit then look at driver process.
-	 Unlike under Linux, Windows spwan drivers directly. If the driver is alive, all is OK.
-	 An optimization can probably be implemented to prevent waiting so much time when all is OK.
+	 * Unlike under Linux, Windows spawn drivers directly. If the driver is alive, all is OK.
+	 * An optimization can probably be implemented to prevent waiting so much time when all is OK.
 	 */
 	res = WaitForSingleObject(ProcessInformation.hProcess,
 			(ups->maxstartdelay!=-1?ups->maxstartdelay:maxstartdelay)*1000);
