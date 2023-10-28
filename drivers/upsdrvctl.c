@@ -44,6 +44,7 @@ typedef struct {
 	char	*port;
 	int	sdorder;
 	int	maxstartdelay;
+	int	exceeded_timeout;
 #ifndef WIN32
 	pid_t	pid;
 #else
@@ -55,7 +56,7 @@ typedef struct {
 static ups_t	*upstable = NULL;
 static int	upscount = 0;
 
-static int	maxsdorder = 0, testmode = 0, exec_error = 0;
+static int	maxsdorder = 0, testmode = 0, exec_error = 0, exec_timeout = 0;
 
 	/* Should we wait for driver (1) or "parallelize" drivers start (0) */
 static int	waitfordrivers = 1;
@@ -164,6 +165,7 @@ void do_upsconf_args(char *arg_upsname, char *var, char *val)
 	tmp->next = NULL;
 	tmp->sdorder = 0;
 	tmp->maxstartdelay = -1;	/* use global value by default */
+	tmp->exceeded_timeout = 0;
 
 	if (!strcmp(var, "driver"))
 		tmp->driver = xstrdup(val);
@@ -617,7 +619,9 @@ static void forkexec(char *const argv[], const ups_t *ups)
 
 			/* work around const for this one... */
 			int *pupid = (int *)&(ups->pid);
+			int *puexectimeout = (int *)&(ups->exceeded_timeout);
 			*pupid = pid;
+			*puexectimeout = 0;
 
 			/* Handle "parallel" drivers startup */
 			if (waitfordrivers == 0) {
@@ -667,7 +671,8 @@ static void forkexec(char *const argv[], const ups_t *ups)
 
 			if (ret == -1) {
 				upslogx(LOG_WARNING, "Startup timer elapsed, continuing...");
-				exec_error++;
+				exec_timeout++;
+				*puexectimeout = 1;
 				return;
 			}
 
@@ -752,7 +757,9 @@ static void forkexec(char *const argv[], const ups_t *ups)
 	} else {
 		/* work around const for this one... */
 		int *pupid = (int *)&(ups->pid);
-		*pupid = 0;	/* Here, just a flag (not "-1" has a meaning) */
+		int *puexectimeout = (int *)&(ups->exceeded_timeout);
+		*pupid = 0;	/* For WIN32, just a flag (not "-1" has a meaning) */
+		*puexectimeout = 1;
 	}
 
 	return;
@@ -764,7 +771,7 @@ static void start_driver(const ups_t *ups)
 	char	*argv[10];
 	char	dfn[SMALLBUF], dbg[SMALLBUF];
 	int	ret, arg = 0;
-	int	initial_exec_error = exec_error, drv_maxretry = maxretry;
+	int	initial_exec_error = exec_error, initial_exec_timeout = exec_timeout, drv_maxretry = maxretry;
 	struct stat	fs;
 
 	upsdebugx(1, "Starting UPS: %s", ups->upsname);
@@ -881,6 +888,7 @@ static void start_driver(const ups_t *ups)
 
 	while (drv_maxretry > 0) {
 		int cur_exec_error = exec_error;
+		int cur_exec_timeout = exec_timeout;
 
 		upsdebugx(2, "%i remaining attempts", drv_maxretry);
 		debugcmdline(2, "exec: ", argv);
@@ -891,9 +899,10 @@ static void start_driver(const ups_t *ups)
 		}
 
 		/* driver command succeeded */
-		if (cur_exec_error == exec_error) {
+		if (cur_exec_error == exec_error && cur_exec_timeout == exec_timeout) {
 			drv_maxretry = 0;
 			exec_error = initial_exec_error;
+			exec_timeout = initial_exec_timeout;
 		}
 		else {
 		/* otherwise, retry if still needed */
@@ -1010,6 +1019,7 @@ static void send_one_driver(void (*command_func)(const ups_t *), const char *arg
 		fatalx(EXIT_FAILURE, "Error: no UPS definitions found in ups.conf!\n");
 
 	exec_error = 0;
+	exec_timeout = 0;
 	while (ups) {
 		if (!strcmp(ups->upsname, arg_upsname)) {
 			command_func(ups);
@@ -1032,6 +1042,7 @@ static void send_all_drivers(void (*command_func)(const ups_t *))
 		fatalx(EXIT_FAILURE, "Error: no UPS definitions found in ups.conf");
 
 	exec_error = 0;
+	exec_timeout = 0;
 	if (command_func != &shutdown_driver) {
 		ups = upstable;
 
@@ -1304,6 +1315,75 @@ int main(int argc, char **argv)
 	} else {
 		fatalx(EXIT_FAILURE, "Error: extra arguments left on command line\n"
 			"(common options should be before a command and UPS name)");
+	}
+
+	/* Note that the numeric value here is not precise (it reflects
+	 * the number of "timeouts" which grows with amount of drivers
+	 * and retries. Below we re-check each driver to convert the
+	 * value into some amount of known failures (or succeses). */
+	if (exec_timeout) {
+#ifndef WIN32
+		ups_t	*tmp = upstable;
+		while (tmp) {
+			if (tmp->exceeded_timeout && tmp->pid) {
+				/* reap zombie if this child died, and
+				 * get info if we know how it went (or
+				 * still goes) */
+				int wstat;
+				pid_t waitret = waitpid(tmp->pid, &wstat, WNOHANG);
+
+				if (waitret == tmp->pid) {
+					upsdebugx(1,
+						"Driver [%s] PID %" PRIdMAX " initially exceeded "
+						"maxstartdelay but has finished by now",
+						tmp->upsname, (intmax_t)tmp->pid);
+					tmp->exceeded_timeout = 0;
+				} else
+				if (waitret == -1) {
+					upslogx(LOG_WARNING,
+						"Driver [%s] PID %" PRIdMAX " initially exceeded "
+						"maxstartdelay and is still starting",
+						tmp->upsname, (intmax_t)tmp->pid);
+					/* TOTHINK: Should this "timeout" cause an error
+					 * exit code, if this is the only problem?
+					 * Maybe as a special case - if this is the only
+					 * driver (dedicated starter) vs. start-all?
+					 *     if (argc != (lastarg + 1)) ...
+					 * or  if (upscount == 1) ...
+					 */
+					exec_error++;
+				} else
+				if (WIFEXITED(wstat) == 0) {
+					upslogx(LOG_WARNING,
+						"Driver [%s] PID %" PRIdMAX " initially exceeded "
+						"maxstartdelay and has exited abnormally by now",
+						tmp->upsname, (intmax_t)tmp->pid);
+					exec_error++;
+				} else
+				/* the rest only work when WIFEXITED is nonzero */
+				if (WEXITSTATUS(wstat) != 0) {
+					upslogx(LOG_WARNING,
+						"Driver [%s] PID %" PRIdMAX " initially exceeded "
+						"maxstartdelay and has failed to start by now "
+						"(exit status=%d)",
+						tmp->upsname, (intmax_t)tmp->pid, WEXITSTATUS(wstat));
+					exec_error++;
+				} else
+				if (WIFSIGNALED(wstat)) {
+					upslog_with_errno(LOG_WARNING,
+						"Driver [%s] PID %" PRIdMAX " initially exceeded "
+						"maxstartdelay and has died after signal %d by now",
+						tmp->upsname, (intmax_t)tmp->pid, WTERMSIG(wstat));
+					exec_error++;
+				}
+			}
+
+			tmp = tmp->next;
+		}
+#else	/* WIN32 */
+		/* TOTHINK: Is there something we can do on the platform? */
+		exec_error++;
+#endif	/* WIN32 */
 	}
 
 	if (exec_error)
