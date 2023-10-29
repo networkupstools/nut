@@ -52,6 +52,7 @@ static int upsnotify_reported_disabled_systemd = 0;
 #endif
 /* Similarly for only reporting once if the notification subsystem is not built-in */
 static int upsnotify_reported_disabled_notech = 0;
+static int upsnotify_report_verbosity = -1;
 
 /* the reason we define UPS_VERSION as a static string, rather than a
 	macro, is to make dependency tracking easier (only common.o depends
@@ -796,6 +797,34 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 # endif	/* HAVE_SD_NOTIFY */
 #endif	/* WITH_LIBSYSTEMD */
 
+	/* Were we asked to be quiet on the console? */
+	if (upsnotify_report_verbosity < 0) {
+		char *quiet_init = getenv("NUT_QUIET_INIT_UPSNOTIFY");
+		if (quiet_init == NULL) {
+			/* No envvar, default is to inform once on the console */
+			upsnotify_report_verbosity = 0;
+		} else {
+			/* Envvar is set, does it tell us to be quiet?
+			 * NOTE: Empty also means "yes" */
+			if (*quiet_init == '\0'
+				|| (strcasecmp(quiet_init, "true")
+				&&  strcasecmp(quiet_init, "yes")
+				&&  strcasecmp(quiet_init, "on")
+				&&  strcasecmp(quiet_init, "1") )
+			) {
+				upsdebugx(1,
+					"NUT_QUIET_INIT_UPSNOTIFY='%s' value "
+					"was not recognized, ignored",
+					quiet_init);
+				upsnotify_report_verbosity = 0;
+			} else {
+				/* Avoid the verbose message below
+				 * (only seen with non-zero debug) */
+				upsnotify_report_verbosity = 1;
+			}
+		}
+	}
+
 	/* Prepare the message (if any) as a string */
 	msgbuf[0] = '\0';
 	if (fmt) {
@@ -832,14 +861,16 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 	NUT_UNUSED_VARIABLE(buf);
 	NUT_UNUSED_VARIABLE(msglen);
 	if (!upsnotify_reported_disabled_systemd)
-		upsdebugx(0, "%s: notify about state %i with libsystemd: "
-		"skipped for libcommonclient build, "
-		"will not spam more about it", __func__, state);
+		upsdebugx(upsnotify_report_verbosity,
+			"%s: notify about state %i with libsystemd: "
+			"skipped for libcommonclient build, "
+			"will not spam more about it", __func__, state);
 	upsnotify_reported_disabled_systemd = 1;
 # else
 	if (!getenv("NOTIFY_SOCKET")) {
 		if (!upsnotify_reported_disabled_systemd)
-			upsdebugx(0, "%s: notify about state %i with libsystemd: "
+			upsdebugx(upsnotify_report_verbosity,
+				"%s: notify about state %i with libsystemd: "
 				"was requested, but not running as a service unit now, "
 				"will not spam more about it",
 				__func__, state);
@@ -1110,17 +1141,25 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 	) {
 		if (ret == -127) {
 			if (!upsnotify_reported_disabled_notech)
-				upsdebugx(0, "%s: failed to notify about state %i: no notification tech defined, will not spam more about it", __func__, state);
+				upsdebugx(upsnotify_report_verbosity,
+					"%s: failed to notify about state %i: "
+					"no notification tech defined, "
+					"will not spam more about it",
+					__func__, state);
 			upsnotify_reported_disabled_notech = 1;
 		} else {
-			upsdebugx(6, "%s: failed to notify about state %i", __func__, state);
+			upsdebugx(6,
+				"%s: failed to notify about state %i",
+				__func__, state);
 		}
 	}
 
 #if defined(WITH_LIBSYSTEMD) && (WITH_LIBSYSTEMD)
 # if ! DEBUG_SYSTEMD_WATCHDOG
 	if (state == NOTIFY_STATE_WATCHDOG && !upsnotify_reported_watchdog_systemd) {
-		upsdebugx(0, "%s: logged the systemd watchdog situation once, will not spam more about it", __func__);
+		upsdebugx(upsnotify_report_verbosity,
+			"%s: logged the systemd watchdog situation once, "
+			"will not spam more about it", __func__);
 		upsnotify_reported_watchdog_systemd = 1;
 	}
 # endif

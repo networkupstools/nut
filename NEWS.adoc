@@ -459,6 +459,13 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
 
  - Extended Linux systemd support with optional notifications about daemon
    state (READY, RELOADING, STOPPING) and watchdog keep-alive messages [#1590]
+   * Normally *inability* to send such notifications (e.g. lack of systemd
+     or similar framework on the particular platform) would be reported once
+     per daemon uptime on its console log, to help troubleshooting situations
+     where such lack of notifications can cause automated service restarts.
+     These messages can be hidden by setting `NUT_QUIET_INIT_UPSNOTIFY=true`
+     environment variable in init-scripts on platforms where such frameworks
+     are not expected. [#2136]
 
  - Extended Linux systemd units with aliases named after the daemons:
    `nut-server.service` as `upsd.service`, and `nut-monitor.service` as
