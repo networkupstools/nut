@@ -705,7 +705,8 @@ static void forkexec(char *const argv[], const ups_t *ups)
 
 	ret = execv(argv[0], argv);
 
-	/* shouldn't get here */
+	/* shouldn't get here normally */
+	upsdebugx(1, "%s: execv returned %d", __func__, ret);
 	fatal_with_errno(EXIT_FAILURE, "execv");
 #else
 	BOOL	ret;
