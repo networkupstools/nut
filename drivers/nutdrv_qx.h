@@ -179,6 +179,9 @@ unsigned int	qx_status(void);
 	/* Edit the current status: it takes one of the NUT status (all but OB are supported, simply set it as not OL), eventually preceded with an exclamation mark to clear it from the status (e.g. !OL). */
 void	update_status(const char *nutvalue);
 
+	/* Let subdrivers reference this: for devices that report "battery.voltage" of a single cell/pack, optionally multiply that into representing the whole assembly */
+int qx_multiply_battvolt(item_t *item, char *value, const size_t valuelen);
+
 /* Data for processing status values */
 #define	STATUS(x)	((unsigned int)1U<<x)
 

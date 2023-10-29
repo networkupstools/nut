@@ -159,6 +159,9 @@ static int	reload_flag = 0, exit_flag = 0;
 /* Ref: RFC 4122 https://tools.ietf.org/html/rfc4122#section-4.1.2 */
 #define UUID4_BYTESIZE 16
 
+#ifdef HAVE_SYSTEMD
+# define SERVICE_UNIT_NAME "nut-server.service"
+#endif
 
 static const char *inet_ntopW (struct sockaddr_storage *s)
 {
@@ -234,11 +237,31 @@ void listen_add(const char *addr, const char *port)
 	server->addr = xstrdup(addr);
 	server->port = xstrdup(port);
 	server->sock_fd = ERROR_FD_SOCK;
-	server->next = firstaddr;
+	server->next = NULL;
 
-	firstaddr = server;
+	if (firstaddr) {
+		stype_t	*tmp;
+		for (tmp = firstaddr; tmp->next; tmp = tmp->next);
+		tmp->next = server;
+	} else {
+		firstaddr = server;
+	}
 
 	upsdebugx(3, "listen_add: added %s:%s", server->addr, server->port);
+}
+
+/* Close the connection if needed and free the allocated memory.
+ * WARNING: it is up to the caller to rewrite the "next" pointer
+ * in whoever points to this server instance (if needed)! */
+static void stype_free(stype_t *server)
+{
+	if (VALID_FD_SOCK(server->sock_fd)) {
+		close(server->sock_fd);
+	}
+
+	free(server->addr);
+	free(server->port);
+	free(server);
 }
 
 /* create a listening socket for tcp connections */
@@ -252,7 +275,151 @@ static void setuptcp(stype_t *server)
 	struct addrinfo		hints, *res, *ai;
 	int	v = 0, one = 1;
 
+	if (VALID_FD_SOCK(server->sock_fd)) {
+		/* Alredy bound, e.g. thanks to 'LISTEN *' handling and injection
+		 * into the list we loop over */
+		upsdebugx(6, "setuptcp: SKIP bind to %s port %s: entry already initialized",
+			server->addr, server->port);
+		return;
+	}
+
 	upsdebugx(3, "setuptcp: try to bind to %s port %s", server->addr, server->port);
+
+	/* Special handling note for `LISTEN * <port>` directive with the
+	 * literal asterisk on systems with RFC-3493 (no relation!) support
+	 * for "IPv4-mapped addresses": it is possible (and technically
+	 * suffices) to LISTEN on "::" (aka "::0" or "0:0:0:0:0:0:0:0") and
+	 * also get an IPv4 any-address listener automatically. More so,
+	 * they would conflict and listening on one such socket precludes
+	 * listening on the other. On other systems (or with disabled
+	 * mapping so IPv6 really means "IPv6 only") we need both sockets.
+	 * NUT asks the system for "IPv6 only" mode when listening on any
+	 * sort of IPv6 addresses; it is however up to the system to implement
+	 * that ability and comply with our request.
+	 * Here we jump through some hoops:
+	 * * Try to get IPv6 any-address (unless constrained by CLI to IPv4);
+	 * * Try to get IPv4 any-address (unless constrained by CLI to IPv6),
+	 *   log information for the sysadmin that it might conflict with the
+	 *   IPv6 listener (IFF we have just opened one);
+	 * * Remember the one or two linked-list entries used, to release later.
+	 */
+	if (!strcmp(server->addr, "*")) {
+		stype_t	*serverAnyV4 = NULL, *serverAnyV6 = NULL;
+		int	canhaveAnyV4 = 0, canhaveAnyV6 = 0;
+
+		/* Note: default opt_af==AF_UNSPEC so not constrained to only one protocol */
+		if (opt_af != AF_INET6) {
+			/* Not constrained to IPv6 */
+			upsdebugx(1, "%s: handling 'LISTEN * %s' with IPv4 any-address support",
+				__func__, server->port);
+			serverAnyV4 = xcalloc(1, sizeof(*serverAnyV4));
+			serverAnyV4->addr = xstrdup("0.0.0.0");
+			serverAnyV4->port = xstrdup(server->port);
+			serverAnyV4->sock_fd = ERROR_FD_SOCK;
+			serverAnyV4->next = NULL;
+		}
+
+		if (opt_af != AF_INET) {
+			/* Not constrained to IPv4 */
+			upsdebugx(1, "%s: handling 'LISTEN * %s' with IPv6 any-address support",
+				__func__, server->port);
+			serverAnyV6 = xcalloc(1, sizeof(*serverAnyV6));
+			serverAnyV6->addr = xstrdup("::0");
+			serverAnyV6->port = xstrdup(server->port);
+			serverAnyV6->sock_fd = ERROR_FD_SOCK;
+			serverAnyV6->next = NULL;
+		}
+
+		if (serverAnyV6) {
+			setuptcp(serverAnyV6);
+			if (VALID_FD_SOCK(serverAnyV6->sock_fd)) {
+				canhaveAnyV6 = 1;
+			} else {
+				upsdebugx(3,
+					"%s: Could not bind to %s:%s trying to handle a 'LISTEN *' directive",
+					__func__, serverAnyV6->addr, serverAnyV6->port);
+			}
+		}
+
+		if (serverAnyV4) {
+			/* Try to get this listener if we can (no IPv4-mapped
+			 * IPv6 support was in force on this platform or its
+			 * configuration in some way that setsockopt(IPV6_V6ONLY)
+			 * failed to cancel).
+			 */
+			upsdebugx(3, "%s: try taking IPv4 'ANY'%s",
+				__func__,
+				canhaveAnyV6 ? " (if dual-stack IPv6 'ANY' did not grab it)" : "");
+			setuptcp(serverAnyV4);
+			if (VALID_FD_SOCK(serverAnyV4->sock_fd)) {
+				canhaveAnyV4 = 1;
+			} else {
+				upsdebugx(3,
+					"%s: Could not bind to IPv4 %s:%s%s",
+					__func__, serverAnyV4->addr, serverAnyV4->port,
+					canhaveAnyV6 ? (" after trying to bind to IPv6: "
+						"assuming dual-stack support on this "
+						"system could not be disabled") : "");
+			}
+		}
+
+		if (!canhaveAnyV4 && !canhaveAnyV6) {
+			fatalx(EXIT_FAILURE,
+				"Handling of 'LISTEN * %s' directive failed to bind to 'ANY' address",
+				server->port);
+		}
+
+		/* Finalize our findings and reset to normal operation
+		 * Note that at least one of these addresses is usable
+		 * and we keep it (and replace original "server" entry
+		 * keeping its place in the list).
+		 */
+		free(server->addr);
+		free(server->port);
+		if (canhaveAnyV4) {
+			upsdebugx(3, "%s: remembering IPv4 'ANY' instead of 'LISTEN *'", __func__);
+			server->addr = serverAnyV4->addr;
+			server->port = serverAnyV4->port;
+			server->sock_fd = serverAnyV4->sock_fd;
+			/* ...and keep whatever server->next there was */
+
+			/* Free the ghost, all needed info was relocated */
+			free(serverAnyV4);
+		} else {
+			if (serverAnyV4) {
+				/* Free any contents there were too */
+				stype_free(serverAnyV4);
+			}
+		}
+		serverAnyV4 = NULL;
+
+		if (canhaveAnyV6) {
+			if (canhaveAnyV4) {
+				/* "server" already populated by excerpts from V4, attach to it */
+				upsdebugx(3, "%s: also remembering IPv6 'ANY' instead of 'LISTEN *'", __func__);
+				serverAnyV6->next = server->next;
+				server->next = serverAnyV6;
+			} else {
+				/* Only retain V6 info */
+				upsdebugx(3, "%s: remembering IPv6 'ANY' instead of 'LISTEN *'", __func__);
+				server->addr = serverAnyV6->addr;
+				server->port = serverAnyV6->port;
+				server->sock_fd = serverAnyV6->sock_fd;
+				/* ...and keep whatever server->next there was */
+
+				/* Free the ghost, all needed info was relocated */
+				free(serverAnyV6);
+			}
+		} else {
+			if (serverAnyV6) {
+				/* Free any contents there were too */
+				stype_free(serverAnyV6);
+			}
+		}
+		serverAnyV6 = NULL;
+
+		return;
+	}
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_flags		= AI_PASSIVE;
@@ -280,6 +447,18 @@ static void setuptcp(stype_t *server)
 			fatal_with_errno(EXIT_FAILURE, "setuptcp: setsockopt");
 		}
 
+		/* Ordinarily we request that IPv6 listeners handle only IPv6
+		 * and not IPv4 mapped addresses - if the OS would honour that.
+		 * TOTHINK: Does any platform need `#ifdef IPV6_V6ONLY` given
+		 * that we apparently already have AF_INET6 OS support everywhere?
+		 */
+		if (ai->ai_family == AF_INET6) {
+			if (setsockopt(sock_fd, IPPROTO_IPV6, IPV6_V6ONLY, (void *)&one, sizeof(one)) != 0) {
+				upsdebug_with_errno(3, "setuptcp: setsockopt IPV6_V6ONLY");
+				/* ack, ignore */
+			}
+		}
+
 		if (bind(sock_fd, ai->ai_addr, ai->ai_addrlen) < 0) {
 			upsdebug_with_errno(3, "setuptcp: bind");
 			close(sock_fd);
@@ -301,6 +480,20 @@ static void setuptcp(stype_t *server)
 			upsdebug_with_errno(3, "setuptcp: listen");
 			close(sock_fd);
 			continue;
+		}
+
+		if (ai->ai_next) {
+			char ipaddrbuf[SMALLBUF];
+			const char *ipaddr;
+			snprintf(ipaddrbuf, sizeof(ipaddrbuf), " as ");
+			ipaddr = inet_ntop(ai->ai_family, ai->ai_addr,
+				ipaddrbuf + strlen(ipaddrbuf),
+				sizeof(ipaddrbuf));
+			upslogx(LOG_WARNING,
+				"setuptcp: bound to %s%s but there seem to be "
+				"further (ignored) addresses resolved for this name",
+				server->addr,
+				ipaddr == NULL ? "" : ipaddrbuf);
 		}
 
 		server->sock_fd = sock_fd;
@@ -685,13 +878,16 @@ void server_load(void)
 {
 	stype_t	*server;
 
-	/* default behaviour if no LISTEN addres has been specified */
+	/* default behaviour if no LISTEN address has been specified */
 	if (!firstaddr) {
+		/* Note: default opt_af==AF_UNSPEC so not constrained to only one protocol */
 		if (opt_af != AF_INET) {
+			upsdebugx(1, "%s: No LISTEN configuration provided, will try IPv6 localhost", __func__);
 			listen_add("::1", string_const(PORT));
 		}
 
 		if (opt_af != AF_INET6) {
+			upsdebugx(1, "%s: No LISTEN configuration provided, will try IPv4 localhost", __func__);
 			listen_add("127.0.0.1", string_const(PORT));
 		}
 	}
@@ -713,14 +909,7 @@ void server_free(void)
 	/* cleanup server fds */
 	for (server = firstaddr; server; server = snext) {
 		snext = server->next;
-
-		if (VALID_FD_SOCK(server->sock_fd)) {
-			close(server->sock_fd);
-		}
-
-		free(server->addr);
-		free(server->port);
-		free(server);
+		stype_free(server);
 	}
 
 	firstaddr = NULL;
@@ -806,6 +995,7 @@ static void poll_reload(void)
 {
 #ifndef WIN32
 	long	ret;
+	size_t	maxalloc;
 
 	ret = sysconf(_SC_OPEN_MAX);
 
@@ -823,7 +1013,7 @@ static void poll_reload(void)
 	}
 
 	/* How many items can we stuff into the array? */
-	size_t maxalloc = SIZE_MAX / sizeof(void *);
+	maxalloc = SIZE_MAX / sizeof(void *);
 	if ((uintmax_t)maxalloc < (uintmax_t)maxconn) {
 		fatalx(EXIT_FAILURE,
 			"You requested %" PRIdMAX " as maximum number of connections, but we can only allocate %" PRIuSIZE ".\n"
@@ -1080,12 +1270,16 @@ static void mainloop(void)
 	stype_t		*server;
 	time_t	now;
 
+	upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
+
 	time(&now);
 
 	if (reload_flag) {
+		upsnotify(NOTIFY_STATE_RELOADING, NULL);
 		conf_reload();
 		poll_reload();
 		reload_flag = 0;
+		upsnotify(NOTIFY_STATE_READY, NULL);
 	}
 
 	/* cleanup instcmd/setvar status tracking entries if needed */
@@ -1492,13 +1686,15 @@ static void help(const char *arg_progname)
 	printf("  -F		stay foregrounded even if no debugging is enabled\n");
 	printf("  -FF		stay foregrounded and still save the PID file\n");
 	printf("  -B		stay backgrounded even if debugging is bumped\n");
-	printf("  -h		display this help\n");
+	printf("  -h		display this help text\n");
+	printf("  -V		display the version of this software\n");
 	printf("  -r <dir>	chroots to <dir>\n");
 	printf("  -q		raise log level threshold\n");
 	printf("  -u <user>	switch to <user> (if started as root)\n");
-	printf("  -V		display the version of this software\n");
 	printf("  -4		IPv4 only\n");
 	printf("  -6		IPv6 only\n");
+
+	nut_report_config_flags();
 
 	exit(EXIT_SUCCESS);
 }
@@ -1625,14 +1821,18 @@ int main(int argc, char **argv)
 				break;
 
 			case 'V':
-				/* do nothing - we already printed the banner */
+				/* Note - we already printed the banner for program name */
+				nut_report_config_flags();
+
 				exit(EXIT_SUCCESS);
 
 			case 'c':
-				if (!strncmp(optarg, "reload", strlen(optarg)))
+				if (!strncmp(optarg, "reload", strlen(optarg))) {
 					cmd = SIGCMD_RELOAD;
-				if (!strncmp(optarg, "stop", strlen(optarg)))
+				} else
+				if (!strncmp(optarg, "stop", strlen(optarg))) {
 					cmd = SIGCMD_STOP;
+				}
 
 				/* bad command given */
 				if (cmd == 0)
@@ -1648,6 +1848,7 @@ int main(int argc, char **argv)
 
 			case 'D':
 				nut_debug_level++;
+				nut_debug_level_args++;
 				break;
 			case 'F':
 				if (foreground > 0) {
@@ -1683,53 +1884,79 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (cmd) {
-#ifndef WIN32
-		if (oldpid < 0) {
-			cmdret = sendsignalfn(pidfn, cmd);
-		} else {
-			cmdret = sendsignalpid(oldpid, cmd);
-		}
-#else
-		cmdret = sendsignal(UPSD_PIPE_NAME, cmd);
-#endif
-		exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
+	{ /* scoping */
+		char *s = getenv("NUT_DEBUG_LEVEL");
+		int l;
+		if (s && str_to_int(s, &l, 10)) {
+			if (l > 0 && nut_debug_level_args < 1) {
+				upslogx(LOG_INFO, "Defaulting debug verbosity to NUT_DEBUG_LEVEL=%d "
+					"since none was requested by command-line options", l);
+				nut_debug_level = l;
+				nut_debug_level_args = l;
+			}	/* else follow -D settings */
+		}	/* else nothing to bother about */
 	}
 
-	/* otherwise, we are being asked to start.
-	 * so check if a previous instance is running by sending signal '0'
-	 * (Ie 'kill <pid> 0') */
+	/* Note: "cmd" may be non-trivial to command that instance by
+	 * explicit PID number or lookup in PID file (error if absent).
+	 * Otherwise, we are being asked to start and "cmd" is 0/NULL -
+	 * for probing whether a competing older instance of this program
+	 * is running (error if it is).
+	 */
 #ifndef WIN32
+	/* If cmd == 0 we are starting and check if a previous instance
+	 * is running by sending signal '0' (i.e. 'kill <pid> 0' equivalent)
+	 */
+
 	if (oldpid < 0) {
-		cmdret = sendsignalfn(pidfn, 0);
+		cmdret = sendsignalfn(pidfn, cmd);
 	} else {
-		cmdret = sendsignalpid(oldpid, 0);
+		cmdret = sendsignalpid(oldpid, cmd);
 	}
-#else
-	mutex = CreateMutex(NULL,TRUE,UPSD_PIPE_NAME);
-	if (mutex == NULL) {
-		if (GetLastError() != ERROR_ACCESS_DENIED) {
-			fatalx(EXIT_FAILURE, "Can not create mutex %s : %d.\n",UPSD_PIPE_NAME,(int)GetLastError());
+#else	/* if WIN32 */
+	if (cmd) {
+		/* Command the running daemon, it should be there */
+		cmdret = sendsignal(UPSD_PIPE_NAME, cmd);
+	} else {
+		/* Starting new daemon, check for competition */
+		mutex = CreateMutex(NULL, TRUE, UPSD_PIPE_NAME);
+		if (mutex == NULL) {
+			if (GetLastError() != ERROR_ACCESS_DENIED) {
+				fatalx(EXIT_FAILURE,
+					"Can not create mutex %s : %d.\n",
+					UPSD_PIPE_NAME, (int)GetLastError());
+			}
+		}
+
+		cmdret = -1; /* unknown, maybe ok */
+		if (GetLastError() == ERROR_ALREADY_EXISTS
+		||  GetLastError() == ERROR_ACCESS_DENIED
+		) {
+			cmdret = 0; /* known conflict */
 		}
 	}
-
-	cmdret = -1; /* unknown, maybe ok */
-	if (GetLastError() == ERROR_ALREADY_EXISTS
-	||  GetLastError() == ERROR_ACCESS_DENIED)
-		cmdret = 0; /* known conflict */
-#endif
+#endif	/* WIN32 */
 
 	switch (cmdret) {
 	case 0:
-		printf("Fatal error: A previous upsd instance is already running!\n");
-		printf("Either stop the previous instance first, or use the 'reload' command.\n");
-		exit(EXIT_FAILURE);
+		if (cmd) {
+			upsdebugx(1, "Signaled old daemon OK");
+		} else {
+			printf("Fatal error: A previous upsd instance is already running!\n");
+			printf("Either stop the previous instance first, or use the 'reload' command.\n");
+			exit(EXIT_FAILURE);
+		}
+		break;
 
 	case -3:
 	case -2:
+		/* if starting new daemon, no competition running -
+		 *    maybe OK (or failed to detect it => problem)
+		 * if signaling old daemon - certainly have a problem
+		 */
 		upslogx(LOG_WARNING, "Could not %s PID file '%s' "
 			"to see if previous upsd instance is "
-			"already running!\n",
+			"already running!",
 			(cmdret == -3 ? "find" : "parse"),
 			pidfn);
 		break;
@@ -1737,8 +1964,50 @@ int main(int argc, char **argv)
 	case -1:
 	case 1:	/* WIN32 */
 	default:
-		/* Just failed to send signal, no competitor running */
+		/* if cmd was nontrivial - speak up below, else be quiet */
+		upsdebugx(1, "Just failed to send signal, no daemon was running");
 		break;
+	}
+
+	if (cmd) {
+		/* We were signalling a daemon, successfully or not - exit now... */
+		if (cmdret != 0) {
+			/* sendsignal*() above might have logged more details
+			 * for troubleshooting, e.g. about lack of PID file
+			 */
+			upslogx(LOG_NOTICE, "Failed to signal the currently running daemon (if any)");
+#ifndef WIN32
+# ifdef HAVE_SYSTEMD
+			switch (cmd) {
+			case SIGCMD_RELOAD:
+				upslogx(LOG_NOTICE, "Try 'systemctl reload %s'%s",
+					SERVICE_UNIT_NAME,
+					(oldpid < 0 ? " or add '-P $PID' argument" : ""));
+				break;
+			case SIGCMD_STOP:
+				upslogx(LOG_NOTICE, "Try 'systemctl stop %s'%s",
+					SERVICE_UNIT_NAME,
+					(oldpid < 0 ? " or add '-P $PID' argument" : ""));
+				break;
+			default:
+				upslogx(LOG_NOTICE, "Try 'systemctl <command> %s'%s",
+					SERVICE_UNIT_NAME,
+					(oldpid < 0 ? " or add '-P $PID' argument" : ""));
+				break;
+			}
+			/* ... or edit nut-server.service locally to start `upsd -FF`
+			 * and so save the PID file for ability to manage the daemon
+			 * beside the service framework, possibly confusing things...
+			 */
+# else
+			if (oldpid < 0) {
+				upslogx(LOG_NOTICE, "Try to add '-P $PID' argument");
+			}
+# endif
+#endif	/* not WIN32 */
+		}
+
+		exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
 	}
 
 	argc -= optind;
@@ -1812,6 +2081,8 @@ int main(int argc, char **argv)
 #ifndef WIN32
 	if (chdir(statepath)) {
 		fatal_with_errno(EXIT_FAILURE, "Can't chdir to %s", statepath);
+	} else {
+		upsdebugx(1, "chdired into statepath %s for driver sockets", statepath);
 	}
 #endif
 
@@ -1819,7 +2090,7 @@ int main(int argc, char **argv)
 	check_perms(statepath);
 
 	/* handle ups.conf */
-	read_upsconf();
+	read_upsconf(1);	/* 1 = may abort upon fundamental errors */
 	upsconf_add(0);		/* 0 = initial */
 	poll_reload();
 
@@ -1855,12 +2126,16 @@ int main(int argc, char **argv)
 	/* initialize SSL (keyfile must be readable by nut user) */
 	ssl_init();
 
+	upsnotify(NOTIFY_STATE_READY_WITH_PID, NULL);
+
 	while (!exit_flag) {
+		/* Note: mainloop() calls upsnotify(NOTIFY_STATE_WATCHDOG, NULL); */
 		mainloop();
 	}
 
-	ssl_cleanup();
-
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
+	upsnotify(NOTIFY_STATE_STOPPING, "Signal %d: exiting", exit_flag);
+
+	ssl_cleanup();
 	return EXIT_SUCCESS;
 }

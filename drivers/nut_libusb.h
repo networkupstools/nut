@@ -11,7 +11,7 @@
  *
  *      The logic of this file is ripped from mge-shut driver (also from
  *      Arnaud Quette), which is a "HID over serial link" UPS driver for
- *      Network UPS Tools <http://www.networkupstools.org/>
+ *      Network UPS Tools <https://www.networkupstools.org/>
  *
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License as published by

@@ -19,6 +19,7 @@
 */
 
 #include "common.h"
+#include "timehead.h"
 
 #include <ctype.h>
 #ifndef WIN32
@@ -32,9 +33,25 @@
 #endif
 
 #include <dirent.h>
-#if !HAVE_REALPATH
+#if !HAVE_DECL_REALPATH
 # include <sys/stat.h>
 #endif
+
+#ifdef WITH_LIBSYSTEMD
+# include <systemd/sd-daemon.h>
+/* upsnotify() debug-logs its reports; a watchdog ping is something we
+ * try to send often so report it just once (whether enabled or not) */
+static int upsnotify_reported_watchdog_systemd = 0;
+/* Similarly for only reporting once if the notification subsystem is disabled */
+static int upsnotify_reported_disabled_systemd = 0;
+# ifndef DEBUG_SYSTEMD_WATCHDOG
+/* Define this to 1 for lots of spam at debug level 6, and ignoring WATCHDOG_PID
+ * so trying to post reports anyway if WATCHDOG_USEC is valid */
+#  define DEBUG_SYSTEMD_WATCHDOG 0
+# endif
+#endif
+/* Similarly for only reporting once if the notification subsystem is not built-in */
+static int upsnotify_reported_disabled_notech = 0;
 
 /* the reason we define UPS_VERSION as a static string, rather than a
 	macro, is to make dependency tracking easier (only common.o depends
@@ -49,7 +66,7 @@ const char *UPS_VERSION = NUT_VERSION_MACRO;
 /* Know which bitness we were built for,
  * to adjust the search paths for get_libname() */
 #include "nut_stdint.h"
-#if UINTPTR_MAX == 0xffffffffffffffffULL
+#if defined(UINTPTR_MAX) && (UINTPTR_MAX + 0) == 0xffffffffffffffffULL
 # define BUILD_64   1
 #else
 # ifdef BUILD_64
@@ -61,7 +78,7 @@ const char *UPS_VERSION = NUT_VERSION_MACRO;
 #include <sys/types.h>
 #include <limits.h>
 #include <stdlib.h>
-pid_t get_max_pid_t()
+pid_t get_max_pid_t(void)
 {
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
 #pragma GCC diagnostic push
@@ -93,6 +110,8 @@ pid_t get_max_pid_t()
 	int	nut_debug_level = 0;
 	int	nut_log_level = 0;
 	static	int	upslog_flags = UPSLOG_STDERR;
+
+	static struct timeval	upslog_start = { 0, 0 };
 
 static void xbit_set(int *val, int flag)
 {
@@ -185,24 +204,62 @@ void background(void)
 	xbit_set(&upslog_flags, UPSLOG_SYSLOG);
 	xbit_clear(&upslog_flags, UPSLOG_STDERR);
 
-	close(0);
-	close(1);
-	close(2);
-
-	if (pid != 0)
-		_exit(EXIT_SUCCESS);		/* parent */
+	if (pid != 0) {
+		/* parent */
+		/* these are typically fds 0-2: */
+		close(STDIN_FILENO);
+		close(STDOUT_FILENO);
+		close(STDERR_FILENO);
+		_exit(EXIT_SUCCESS);
+	}
 
 	/* child */
 
-	/* make fds 0-2 point somewhere defined */
-	if (open("/dev/null", O_RDWR) != 0)
-		fatal_with_errno(EXIT_FAILURE, "open /dev/null");
+	/* make fds 0-2 (typically) point somewhere defined */
+#ifdef HAVE_DUP2
+	/* system can close (if needed) and (re-)open a specific FD number */
+	if (1) { /* scoping */
+		TYPE_FD devnull = open("/dev/null", O_RDWR);
+		if (devnull < 0)
+			fatal_with_errno(EXIT_FAILURE, "open /dev/null");
 
-	if (dup(0) == -1)
-		fatal_with_errno(EXIT_FAILURE, "dup");
+		if (dup2(devnull, STDIN_FILENO) != STDIN_FILENO)
+			fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDIN");
+		if (dup2(devnull, STDOUT_FILENO) != STDOUT_FILENO)
+			fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDOUT");
+		if (dup2(devnull, STDERR_FILENO) != STDERR_FILENO)
+			fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDERR");
 
-	if (dup(0) == -1)
-		fatal_with_errno(EXIT_FAILURE, "dup");
+		close(devnull);
+	}
+#else
+# ifdef HAVE_DUP
+	/* opportunistically duplicate to the "lowest-available" FD number */
+	close(STDIN_FILENO);
+	if (open("/dev/null", O_RDWR) != STDIN_FILENO)
+		fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDIN");
+
+	close(STDOUT_FILENO);
+	if (dup(STDIN_FILENO) != STDOUT_FILENO)
+		fatal_with_errno(EXIT_FAILURE, "dup /dev/null as STDOUT");
+
+	close(STDERR_FILENO);
+	if (dup(STDIN_FILENO) != STDERR_FILENO)
+		fatal_with_errno(EXIT_FAILURE, "dup /dev/null as STDERR");
+# else
+	close(STDIN_FILENO);
+	if (open("/dev/null", O_RDWR) != STDIN_FILENO)
+		fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDIN");
+
+	close(STDOUT_FILENO);
+	if (open("/dev/null", O_RDWR) != STDOUT_FILENO)
+		fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDOUT");
+
+	close(STDERR_FILENO);
+	if (open("/dev/null", O_RDWR) != STDERR_FILENO)
+		fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDERR");
+# endif
+#endif
 
 #ifdef HAVE_SETSID
 	setsid();		/* make a new session to dodge signals */
@@ -229,7 +286,7 @@ struct passwd *get_user_pwent(const char *name)
 	   some implementations of getpwnam() do not set errno when this
 	   happens. */
 	if (errno == 0)
-		fatalx(EXIT_FAILURE, "user %s not found", name);
+		fatalx(EXIT_FAILURE, "OS user %s not found", name);
 	else
 		fatal_with_errno(EXIT_FAILURE, "getpwnam(%s)", name);
 #else
@@ -268,10 +325,32 @@ void become_user(struct passwd *pw)
 {
 #ifndef WIN32
 	/* if we can't switch users, then don't even try */
-	if ((geteuid() != 0) && (getuid() != 0))
-		return;
+	intmax_t initial_uid = getuid();
+	intmax_t initial_euid = geteuid();
 
-	if (getuid() == 0)
+	if (!pw) {
+		upsdebugx(1, "Can not become_user(<null>), skipped");
+		return;
+	}
+
+	if ((initial_euid != 0) && (initial_uid != 0)) {
+		intmax_t initial_gid = getgid();
+		if (initial_euid == (intmax_t)pw->pw_uid
+		||   initial_uid == (intmax_t)pw->pw_uid
+		) {
+			upsdebugx(1, "No need to become_user(%s): "
+				"already UID=%jd GID=%jd",
+				pw->pw_name, initial_uid, initial_gid);
+		} else {
+			upsdebugx(1, "Can not become_user(%s): "
+				"not root initially, "
+				"remaining UID=%jd GID=%jd",
+				pw->pw_name, initial_uid, initial_gid);
+		}
+		return;
+	}
+
+	if (initial_uid == 0)
 		if (seteuid(0))
 			fatal_with_errno(EXIT_FAILURE, "getuid gave 0, but seteuid(0) failed");
 
@@ -283,8 +362,12 @@ void become_user(struct passwd *pw)
 
 	if (setuid(pw->pw_uid) == -1)
 		fatal_with_errno(EXIT_FAILURE, "setuid");
+
+	upsdebugx(1, "Succeeded to become_user(%s): now UID=%jd GID=%jd",
+		pw->pw_name, (intmax_t)getuid(), (intmax_t)getgid());
 #else
-	NUT_UNUSED_VARIABLE(pw);
+	upsdebugx(1, "Can not become_user(%s): not implemented on this platform",
+		pw ? pw->pw_name : "<null>");
 #endif
 }
 
@@ -298,11 +381,16 @@ void chroot_start(const char *path)
 	if (chroot(path))
 		fatal_with_errno(EXIT_FAILURE, "chroot(%s)", path);
 
+#else
+	upsdebugx(1, "Can not chroot into %s: not implemented on this platform", path);
 #endif
+
 	if (chdir("/"))
 		fatal_with_errno(EXIT_FAILURE, "chdir(/)");
 
+#ifndef WIN32
 	upsdebugx(1, "chrooted into %s", path);
+#endif
 }
 
 #ifdef WIN32
@@ -412,9 +500,15 @@ int sendsignalpid(pid_t pid, int sig)
 pid_t parsepid(const char *buf)
 {
 	pid_t	pid = -1;
+	intmax_t	_pid;
+
+	if (!buf) {
+		upsdebugx(6, "%s: called with NULL input", __func__);
+		return pid;
+	}
 
 	/* assuming 10 digits for a long */
-	intmax_t _pid = strtol(buf, (char **)NULL, 10);
+	_pid = strtol(buf, (char **)NULL, 10);
 	if (_pid <= get_max_pid_t()) {
 		pid = (pid_t)_pid;
 	} else {
@@ -565,10 +659,570 @@ const char *xbasename(const char *file)
 	return p + 1;
 }
 
+/* Based on https://www.gnu.org/software/libc/manual/html_node/Calculating-Elapsed-Time.html
+ * modified for a syntax similar to difftime()
+ */
+double difftimeval(struct timeval x, struct timeval y)
+{
+	struct timeval	result;
+	double	d;
+
+	/* Code below assumes that tv_sec is signed (time_t),
+	 * but tv_usec is not necessarily */
+	/* Perform the carry for the later subtraction by updating y. */
+	if (x.tv_usec < y.tv_usec) {
+		intmax_t numsec = (y.tv_usec - x.tv_usec) / 1000000 + 1;
+		y.tv_usec -= 1000000 * numsec;
+		y.tv_sec += numsec;
+	}
+
+	if (x.tv_usec - y.tv_usec > 1000000) {
+		intmax_t numsec = (x.tv_usec - y.tv_usec) / 1000000;
+		y.tv_usec += 1000000 * numsec;
+		y.tv_sec -= numsec;
+	}
+
+	/* Compute the time remaining to wait.
+	 * tv_usec is certainly positive. */
+	result.tv_sec = x.tv_sec - y.tv_sec;
+	result.tv_usec = x.tv_usec - y.tv_usec;
+
+	d = 0.000001 * (double)(result.tv_usec) + (double)(result.tv_sec);
+	return d;
+}
+
+#if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_CLOCK_MONOTONIC) && HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC
+/* From https://github.com/systemd/systemd/blob/main/src/basic/time-util.c
+ * and  https://github.com/systemd/systemd/blob/main/src/basic/time-util.h
+ */
+typedef uint64_t usec_t;
+typedef uint64_t nsec_t;
+#define PRI_NSEC PRIu64
+#define PRI_USEC PRIu64
+
+#define USEC_INFINITY ((usec_t) UINT64_MAX)
+#define NSEC_INFINITY ((nsec_t) UINT64_MAX)
+
+#define MSEC_PER_SEC  1000ULL
+#define USEC_PER_SEC  ((usec_t) 1000000ULL)
+#define USEC_PER_MSEC ((usec_t) 1000ULL)
+#define NSEC_PER_SEC  ((nsec_t) 1000000000ULL)
+#define NSEC_PER_MSEC ((nsec_t) 1000000ULL)
+#define NSEC_PER_USEC ((nsec_t) 1000ULL)
+
+# if defined(WITH_LIBSYSTEMD) && (WITH_LIBSYSTEMD) && !(defined(WITHOUT_LIBSYSTEMD) && (WITHOUT_LIBSYSTEMD)) && defined(HAVE_SD_NOTIFY) && (HAVE_SD_NOTIFY)
+/* Limited to upsnotify() use-cases below, currently */
+static usec_t timespec_load(const struct timespec *ts) {
+	assert(ts);
+
+	if (ts->tv_sec < 0 || ts->tv_nsec < 0)
+		return USEC_INFINITY;
+
+	if ((usec_t) ts->tv_sec > (UINT64_MAX - ((uint64_t)(ts->tv_nsec) / NSEC_PER_USEC)) / USEC_PER_SEC)
+		return USEC_INFINITY;
+
+	return
+		(usec_t) ts->tv_sec * USEC_PER_SEC +
+		(usec_t) ts->tv_nsec / NSEC_PER_USEC;
+}
+
+/* Not used, currently -- maybe later */
+/*
+static nsec_t timespec_load_nsec(const struct timespec *ts) {
+	assert(ts);
+
+	if (ts->tv_sec < 0 || ts->tv_nsec < 0)
+		return NSEC_INFINITY;
+
+	if ((nsec_t) ts->tv_sec >= (UINT64_MAX - ts->tv_nsec) / NSEC_PER_SEC)
+		return NSEC_INFINITY;
+
+	return (nsec_t) ts->tv_sec * NSEC_PER_SEC + (nsec_t) ts->tv_nsec;
+}
+*/
+# endif	/* WITH_LIBSYSTEMD && HAVE_SD_NOTIFY && !WITHOUT_LIBSYSTEMD */
+
+double difftimespec(struct timespec x, struct timespec y)
+{
+	struct timespec	result;
+	double	d;
+
+	/* Code below assumes that tv_sec is signed (time_t),
+	 * but tv_nsec is not necessarily */
+	/* Perform the carry for the later subtraction by updating y. */
+	if (x.tv_nsec < y.tv_nsec) {
+		intmax_t numsec = (y.tv_nsec - x.tv_nsec) / 1000000000L + 1;
+		y.tv_nsec -= 1000000000L * numsec;
+		y.tv_sec += numsec;
+	}
+
+	if (x.tv_nsec - y.tv_nsec > 1000000) {
+		intmax_t numsec = (x.tv_nsec - y.tv_nsec) / 1000000000L;
+		y.tv_nsec += 1000000000L * numsec;
+		y.tv_sec -= numsec;
+	}
+
+	/* Compute the time remaining to wait.
+	 * tv_nsec is certainly positive. */
+	result.tv_sec = x.tv_sec - y.tv_sec;
+	result.tv_nsec = x.tv_nsec - y.tv_nsec;
+
+	d = 0.000000001 * (double)(result.tv_nsec) + (double)(result.tv_sec);
+	return d;
+}
+#endif	/* HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC */
+
+/* Send (daemon) state-change notifications to an
+ * external service management framework such as systemd
+ */
+int upsnotify(upsnotify_state_t state, const char *fmt, ...)
+{
+	int ret = -127;
+	va_list va;
+	char	buf[LARGEBUF];
+	char	msgbuf[LARGEBUF];
+	size_t	msglen = 0;
+
+#if defined(WITH_LIBSYSTEMD) && (WITH_LIBSYSTEMD) && !(defined(WITHOUT_LIBSYSTEMD) && (WITHOUT_LIBSYSTEMD))
+# ifdef HAVE_SD_NOTIFY
+#  if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_CLOCK_MONOTONIC) && HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC
+	/* In current systemd, this is only used for RELOADING/READY after
+	 * a reload action for Type=notify-reload; for more details see
+	 * https://github.com/systemd/systemd/blob/main/src/core/service.c#L2618
+	 */
+	struct timespec monoclock_ts;
+	int got_monoclock = clock_gettime(CLOCK_MONOTONIC, &monoclock_ts);
+#  endif	/* HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC */
+# endif	/* HAVE_SD_NOTIFY */
+#endif	/* WITH_LIBSYSTEMD */
+
+	/* Prepare the message (if any) as a string */
+	msgbuf[0] = '\0';
+	if (fmt) {
+		va_start(va, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+		/* generic message... */
+		ret = vsnprintf(msgbuf, sizeof(msgbuf), fmt, va);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
+		va_end(va);
+
+		if ((ret < 0) || (ret >= (int) sizeof(msgbuf))) {
+			syslog(LOG_WARNING,
+				"%s (%s:%d): vsnprintf needed more than %" PRIuSIZE " bytes: %d",
+				__func__, __FILE__, __LINE__, sizeof(msgbuf), ret);
+		} else {
+			msglen = strlen(msgbuf);
+		}
+		/* Reset for actual notification processing below */
+		ret = -127;
+	}
+
+#if defined(WITH_LIBSYSTEMD) && (WITH_LIBSYSTEMD)
+# if defined(WITHOUT_LIBSYSTEMD) && (WITHOUT_LIBSYSTEMD)
+	NUT_UNUSED_VARIABLE(buf);
+	NUT_UNUSED_VARIABLE(msglen);
+	if (!upsnotify_reported_disabled_systemd)
+		upsdebugx(0, "%s: notify about state %i with libsystemd: "
+		"skipped for libcommonclient build, "
+		"will not spam more about it", __func__, state);
+	upsnotify_reported_disabled_systemd = 1;
+# else
+	if (!getenv("NOTIFY_SOCKET")) {
+		if (!upsnotify_reported_disabled_systemd)
+			upsdebugx(0, "%s: notify about state %i with libsystemd: "
+				"was requested, but not running as a service unit now, "
+				"will not spam more about it",
+				__func__, state);
+		upsnotify_reported_disabled_systemd = 1;
+	} else {
+#  ifdef HAVE_SD_NOTIFY
+		char monoclock_str[SMALLBUF];
+		monoclock_str[0] = '\0';
+#   if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_CLOCK_MONOTONIC) && HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC
+		if (got_monoclock == 0) {
+			usec_t monots = timespec_load(&monoclock_ts);
+			ret = snprintf(monoclock_str + 1, sizeof(monoclock_str) - 1, "MONOTONIC_USEC=%" PRI_USEC, monots);
+			if ((ret < 0) || (ret >= (int) sizeof(monoclock_str) - 1)) {
+				syslog(LOG_WARNING,
+					"%s (%s:%d): snprintf needed more than %" PRIuSIZE " bytes: %d",
+					__func__, __FILE__, __LINE__, sizeof(monoclock_str), ret);
+				msglen = 0;
+			} else {
+				monoclock_str[0] = '\n';
+			}
+		}
+#   endif	/* HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC */
+
+#   if ! DEBUG_SYSTEMD_WATCHDOG
+		if (state != NOTIFY_STATE_WATCHDOG || !upsnotify_reported_watchdog_systemd)
+#   endif
+			upsdebugx(6, "%s: notify about state %i with libsystemd: use sd_notify()", __func__, state);
+
+		/* https://www.freedesktop.org/software/systemd/man/sd_notify.html */
+		if (msglen) {
+			ret = snprintf(buf, sizeof(buf), "STATUS=%s", msgbuf);
+			if ((ret < 0) || (ret >= (int) sizeof(buf))) {
+				syslog(LOG_WARNING,
+					"%s (%s:%d): snprintf needed more than %" PRIuSIZE " bytes: %d",
+					__func__, __FILE__, __LINE__, sizeof(buf), ret);
+				msglen = 0;
+			} else {
+				msglen = (size_t)ret;
+			}
+		}
+
+		switch (state) {
+			case NOTIFY_STATE_READY:
+				ret = snprintf(buf + msglen, sizeof(buf) - msglen,
+					"%sREADY=1%s",
+					msglen ? "\n" : "",
+					monoclock_str);
+				break;
+
+			case NOTIFY_STATE_READY_WITH_PID:
+				if (1) { /* scoping */
+					char pidbuf[SMALLBUF];
+					if (snprintf(pidbuf, sizeof(pidbuf), "%lu", (unsigned long) getpid())) {
+						ret = snprintf(buf + msglen, sizeof(buf) - msglen,
+							"%sREADY=1\n"
+							"MAINPID=%s%s",
+							msglen ? "\n" : "",
+							pidbuf,
+							monoclock_str);
+						upsdebugx(6, "%s: notifying systemd about MAINPID=%s",
+							__func__, pidbuf);
+						/* https://github.com/systemd/systemd/issues/25961
+						 * Reset the WATCHDOG_PID so we know this is the
+						 * process we want to post pings from!
+						 */
+						unsetenv("WATCHDOG_PID");
+						setenv("WATCHDOG_PID", pidbuf, 1);
+					} else {
+						upsdebugx(6, "%s: NOT notifying systemd about MAINPID, "
+							"got an error stringifying it; processing as "
+							"plain NOTIFY_STATE_READY",
+							__func__);
+						ret = snprintf(buf + msglen, sizeof(buf) - msglen,
+							"%sREADY=1%s",
+							msglen ? "\n" : "",
+							monoclock_str);
+						/* TODO: Maybe revise/drop this tweak if
+						 * loggers other than systemd are used: */
+						state = NOTIFY_STATE_READY;
+					}
+				}
+				break;
+
+			case NOTIFY_STATE_RELOADING:
+				ret = snprintf(buf + msglen, sizeof(buf) - msglen, "%s%s%s",
+					msglen ? "\n" : "",
+					"RELOADING=1",
+					monoclock_str);
+				break;
+
+			case NOTIFY_STATE_STOPPING:
+				ret = snprintf(buf + msglen, sizeof(buf) - msglen, "%s%s",
+					msglen ? "\n" : "",
+					"STOPPING=1");
+				break;
+
+			case NOTIFY_STATE_STATUS:
+				/* Only send a text message per "fmt" */
+				if (!msglen) {
+					upsdebugx(6, "%s: failed to notify about status: none provided", __func__);
+					ret = -1;
+				} else {
+					ret = (int)msglen;
+				}
+				break;
+
+			case NOTIFY_STATE_WATCHDOG:
+				/* Ping the framework that we are still alive */
+				if (1) {	/* scoping */
+					int	postit = 0;
+
+#   ifdef HAVE_SD_WATCHDOG_ENABLED
+					uint64_t	to = 0;
+					postit = sd_watchdog_enabled(0, &to);
+
+					if (postit < 0) {
+#    if ! DEBUG_SYSTEMD_WATCHDOG
+						if (!upsnotify_reported_watchdog_systemd)
+#    endif
+							upsdebugx(6, "%s: sd_enabled_watchdog query failed: %s",
+								__func__, strerror(postit));
+					} else {
+#    if ! DEBUG_SYSTEMD_WATCHDOG
+						if (!upsnotify_reported_watchdog_systemd || postit > 0)
+#    else
+						if (postit > 0)
+#    endif
+							upsdebugx(6, "%s: sd_enabled_watchdog query returned: %d "
+								"(%" PRIu64 "msec remain)",
+								__func__, postit, to);
+					}
+#   endif
+
+					if (postit < 1) {
+						char *s = getenv("WATCHDOG_USEC");
+#    if ! DEBUG_SYSTEMD_WATCHDOG
+						if (!upsnotify_reported_watchdog_systemd)
+#    endif
+							upsdebugx(6, "%s: WATCHDOG_USEC=%s", __func__, s);
+						if (s && *s) {
+							long l = strtol(s, (char **)NULL, 10);
+							if (l > 0) {
+								pid_t wdpid = parsepid(getenv("WATCHDOG_PID"));
+								if (wdpid == (pid_t)-1 || wdpid == getpid()) {
+#    if ! DEBUG_SYSTEMD_WATCHDOG
+									if (!upsnotify_reported_watchdog_systemd)
+#    endif
+										upsdebugx(6, "%s: can post: WATCHDOG_PID=%li",
+											__func__, (long)wdpid);
+									postit = 1;
+								} else {
+#    if ! DEBUG_SYSTEMD_WATCHDOG
+									if (!upsnotify_reported_watchdog_systemd)
+#    endif
+										upsdebugx(6, "%s: watchdog is configured, "
+											"but not for this process: "
+											"WATCHDOG_PID=%li",
+											__func__, (long)wdpid);
+#    if DEBUG_SYSTEMD_WATCHDOG
+									/* Just try to post - at worst, systemd
+									 * NotifyAccess will prohibit the message.
+									 * The envvar simply helps child processes
+									 * know they should not spam the watchdog
+									 * handler (usually only MAINPID should):
+									 *   https://github.com/systemd/systemd/issues/25961#issuecomment-1373947907
+									 */
+									postit = 1;
+#    else
+									postit = 0;
+#    endif
+								}
+							}
+						}
+					}
+
+					if (postit > 0) {
+						ret = snprintf(buf + msglen, sizeof(buf) - msglen, "%s%s",
+							msglen ? "\n" : "",
+							"WATCHDOG=1");
+					} else if (postit == 0) {
+#    if ! DEBUG_SYSTEMD_WATCHDOG
+						if (!upsnotify_reported_watchdog_systemd)
+#    endif
+							upsdebugx(6, "%s: failed to tickle the watchdog: not enabled for this unit", __func__);
+						ret = -126;
+					}
+				}
+				break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+				/* All enum cases defined as of the time of coding
+				 * have been covered above. Handle later definitions,
+				 * memory corruptions and buggy inputs below...
+				 */
+			default:
+				if (!msglen) {
+					upsdebugx(6, "%s: unknown state and no status message provided", __func__);
+					ret = -1;
+				} else {
+					upsdebugx(6, "%s: unknown state but have a status message provided", __func__);
+					ret = (int)msglen;
+				}
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
+		}
+
+		if ((ret < 0) || (ret >= (int) sizeof(buf))) {
+			/* Refusal to send the watchdog ping is not an error to report */
+			if ( !(ret == -126 && (state == NOTIFY_STATE_WATCHDOG)) ) {
+				syslog(LOG_WARNING,
+					"%s (%s:%d): snprintf needed more than %" PRIuSIZE " bytes: %d",
+					__func__, __FILE__, __LINE__, sizeof(buf), ret);
+			}
+			ret = -1;
+		} else {
+			upsdebugx(6, "%s: posting sd_notify: %s", __func__, buf);
+			msglen = (size_t)ret;
+			ret = sd_notify(0, buf);
+			if (ret > 0 && state == NOTIFY_STATE_READY_WITH_PID) {
+				/* Usually we begin the main loop just after this
+				 * and post a watchdog message but systemd did not
+				 * yet prepare to handle us */
+				upsdebugx(6, "%s: wait for NOTIFY_STATE_READY_WITH_PID to be handled by systemd", __func__);
+#   ifdef HAVE_SD_NOTIFY_BARRIER
+				sd_notify_barrier(0, UINT64_MAX);
+#   else
+				usleep(3 * 1000000);
+#   endif
+			}
+		}
+
+#  else	/* not HAVE_SD_NOTIFY: */
+		/* FIXME: Try to fork and call systemd-notify helper program */
+		upsdebugx(6, "%s: notify about state %i with libsystemd: lacking sd_notify()", __func__, state);
+		ret = -127;
+#  endif	/* HAVE_SD_NOTIFY */
+	}
+# endif	/* if not WITHOUT_LIBSYSTEMD (explicit avoid) */
+#else	/* not WITH_LIBSYSTEMD */
+	NUT_UNUSED_VARIABLE(buf);
+	NUT_UNUSED_VARIABLE(msglen);
+#endif	/* WITH_LIBSYSTEMD */
+
+	if (ret < 0
+#if defined(WITH_LIBSYSTEMD) && (WITH_LIBSYSTEMD) && !(defined(WITHOUT_LIBSYSTEMD) && (WITHOUT_LIBSYSTEMD)) && (defined(HAVE_SD_NOTIFY) && HAVE_SD_NOTIFY)
+# if ! DEBUG_SYSTEMD_WATCHDOG
+	&& (!upsnotify_reported_watchdog_systemd || (state != NOTIFY_STATE_WATCHDOG))
+# endif
+#endif
+	) {
+		if (ret == -127) {
+			if (!upsnotify_reported_disabled_notech)
+				upsdebugx(0, "%s: failed to notify about state %i: no notification tech defined, will not spam more about it", __func__, state);
+			upsnotify_reported_disabled_notech = 1;
+		} else {
+			upsdebugx(6, "%s: failed to notify about state %i", __func__, state);
+		}
+	}
+
+#if defined(WITH_LIBSYSTEMD) && (WITH_LIBSYSTEMD)
+# if ! DEBUG_SYSTEMD_WATCHDOG
+	if (state == NOTIFY_STATE_WATCHDOG && !upsnotify_reported_watchdog_systemd) {
+		upsdebugx(0, "%s: logged the systemd watchdog situation once, will not spam more about it", __func__);
+		upsnotify_reported_watchdog_systemd = 1;
+	}
+# endif
+#endif
+
+	return ret;
+}
+
+void nut_report_config_flags(void)
+{
+	/* Roughly similar to upslogx() but without the buffer-size limits and
+	 * timestamp/debug-level prefixes. Only printed if debug (any) is on.
+	 * Depending on amount of configuration tunables involved by a particular
+	 * build of NUT, the string can be quite long (over 1KB).
+	 */
+	const char *acinit_ver = NULL;
+	/* Pass these as variables to avoid warning about never reaching one
+	 * of compiled codepaths: */
+	const char *compiler_ver = CC_VERSION;
+	const char *config_flags = CONFIG_FLAGS;
+	struct timeval		now;
+
+	if (nut_debug_level < 1)
+		return;
+
+	/* Only report git revision if NUT_VERSION_MACRO in nut_version.h aka
+	 * UPS_VERSION here is remarkably different from PACKAGE_VERSION from
+	 * configure.ac AC_INIT() -- which may be e.g. "2.8.0.1" although some
+	 * distros, especially embedders, tend to place their product IDs here).
+	 * The macro may be that fixed version or refer to git source revision,
+	 * as decided when generating nut_version.h (and if it was re-generated
+	 * in case of rebuilds while developers are locally iterating -- this
+	 * may be disabled for faster local iterations at a cost of a little lie).
+	 */
+	if (PACKAGE_VERSION && UPS_VERSION &&
+		(strlen(UPS_VERSION) < 12 || !strstr(UPS_VERSION, PACKAGE_VERSION))
+	) {
+		/* If UPS_VERSION is too short (so likely a static string
+		 * from configure.ac AC_INIT() -- although some distros,
+		 * especially embedders, tend to place their product IDs here),
+		 * or if PACKAGE_VERSION *is NOT* a substring of it: */
+		acinit_ver = PACKAGE_VERSION;
+	}
+
+	/* NOTE: If changing wording here, keep in sync with configure.ac logic
+	 * looking for CONFIG_FLAGS_DEPLOYED via "configured with flags:" string!
+	 */
+
+	gettimeofday(&now, NULL);
+
+	if (upslog_start.tv_sec == 0) {
+		upslog_start = now;
+	}
+
+	if (upslog_start.tv_usec > now.tv_usec) {
+		now.tv_usec += 1000000;
+		now.tv_sec -= 1;
+	}
+
+	if (xbit_test(upslog_flags, UPSLOG_STDERR)) {
+		fprintf(stderr, "%4.0f.%06ld\t[D1] Network UPS Tools version %s%s%s%s%s%s%s %s%s\n",
+			difftime(now.tv_sec, upslog_start.tv_sec),
+			(long)(now.tv_usec - upslog_start.tv_usec),
+			UPS_VERSION,
+			(acinit_ver ? " (release/snapshot of " : ""),
+			(acinit_ver ? acinit_ver : ""),
+			(acinit_ver ? ")" : ""),
+			(compiler_ver && *compiler_ver != '\0' ? " built with " : ""),
+			(compiler_ver && *compiler_ver != '\0' ? compiler_ver : ""),
+			(compiler_ver && *compiler_ver != '\0' ? " and" : ""),
+			(config_flags && *config_flags != '\0' ? "configured with flags: " : "configured all by default guesswork"),
+			(config_flags && *config_flags != '\0' ? config_flags : "")
+		);
+#ifdef WIN32
+		fflush(stderr);
+#endif
+	}
+
+	/* NOTE: May be ignored or truncated by receiver if that syslog server
+	 * (and/or OS sender) does not accept messages of such length */
+	if (xbit_test(upslog_flags, UPSLOG_SYSLOG))
+		syslog(LOG_DEBUG, "Network UPS Tools version %s%s%s%s%s%s%s %s%s",
+			UPS_VERSION,
+			(acinit_ver ? " (release/snapshot of " : ""),
+			(acinit_ver ? acinit_ver : ""),
+			(acinit_ver ? ")" : ""),
+			(compiler_ver && *compiler_ver != '\0' ? " built with " : ""),
+			(compiler_ver && *compiler_ver != '\0' ? compiler_ver : ""),
+			(compiler_ver && *compiler_ver != '\0' ? " and" : ""),
+			(config_flags && *config_flags != '\0' ? "configured with flags: " : "configured all by default guesswork"),
+			(config_flags && *config_flags != '\0' ? config_flags : "")
+		);
+}
+
 static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 {
-	int	ret;
-	char	buf[LARGEBUF];
+	int	ret, errno_orig = errno;
+	size_t	bufsize = LARGEBUF;
+	char	*buf = xcalloc(sizeof(char), bufsize);
+
+	/* Be pedantic about our limitations */
+	bufsize *= sizeof(char);
 
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
@@ -584,7 +1238,71 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 #pragma clang diagnostic ignored "-Wformat-nonliteral"
 #pragma clang diagnostic ignored "-Wformat-security"
 #endif
-	ret = vsnprintf(buf, sizeof(buf), fmt, va);
+	/* Note: errors here can reset errno,
+	 * so errno_orig is stashed beforehand */
+	do {
+		ret = vsnprintf(buf, bufsize, fmt, va);
+
+		if ((ret < 0) || ((uintmax_t)ret >= (uintmax_t)bufsize)) {
+			/* Try to adjust bufsize until we can print the
+			 * whole message. Note that standards only require
+			 * up to 4095 bytes to be manageable in printf-like
+			 * methods:
+			 *   The number of characters that can be produced
+			 *   by any single conversion shall be at least 4095.
+			 *   C17dr § 7.21.6.1 15
+			 * In general, vsnprintf() is not specified to set
+			 * errno on any condition (or to not implement a
+			 * larger limit). Select implementations may do so
+			 * though.
+			 * Based on https://stackoverflow.com/a/72981237/4715872
+			 */
+			if (bufsize < SIZE_MAX/2) {
+				size_t	newbufsize = bufsize*2;
+				if (ret > 0) {
+					/* Be generous, we snprintfcat() some
+					 * suffixes, prefix a timestamp, etc. */
+					if (((uintmax_t)ret) > (SIZE_MAX - LARGEBUF)) {
+						goto vupslog_too_long;
+					}
+					newbufsize = (size_t)ret + LARGEBUF;
+				} /* else: errno, e.g. ERANGE printing:
+				   *  "...(34 => Result too large)" */
+				if (nut_debug_level > 0) {
+					fprintf(stderr, "WARNING: vupslog: "
+						"vsnprintf needed more than %"
+						PRIuSIZE " bytes: %d (%d => %s),"
+						" extending to %" PRIuSIZE "\n",
+						bufsize, ret,
+						errno, strerror(errno),
+						newbufsize);
+				}
+				bufsize = newbufsize;
+				buf = xrealloc(buf, bufsize);
+				continue;
+			}
+		} else {
+			/* All fits well now; majority of use-cases should
+			 * have nailed this on first try (envvar prints of
+			 * longer fully-qualified PATHs, compilation settings
+			 * reports etc. may need more). Even a LARGEBUF may
+			 * still overflow some older syslog buffers and would
+			 * be truncated there. At least stderr would see as
+			 * complete a picture as we can give it.
+			 */
+			break;
+		}
+
+		/* Arbitrary limit, gotta stop somewhere */
+		if (bufsize > LARGEBUF * 64) {
+vupslog_too_long:
+			syslog(LOG_WARNING, "vupslog: vsnprintf needed "
+				"more than %" PRIuSIZE " bytes; logged "
+				"output can be truncated",
+				bufsize);
+			break;
+		}
+	} while(1);
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
@@ -592,16 +1310,15 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 #pragma GCC diagnostic pop
 #endif
 
-	if ((ret < 0) || (ret >= (int) sizeof(buf)))
-		syslog(LOG_WARNING, "vupslog: vsnprintf needed more than %d bytes",
-			LARGEBUF);
-
 	if (use_strerror) {
-		snprintfcat(buf, sizeof(buf), ": %s", strerror(errno));
-
 #ifdef WIN32
 		LPVOID WinBuf;
 		DWORD WinErr = GetLastError();
+#endif
+
+		snprintfcat(buf, bufsize, ": %s", strerror(errno_orig));
+
+#ifdef WIN32
 		FormatMessage(
 				FORMAT_MESSAGE_MAX_WIDTH_MASK |
 				FORMAT_MESSAGE_ALLOCATE_BUFFER |
@@ -613,33 +1330,46 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 				(LPTSTR) &WinBuf,
 				0, NULL );
 
-		snprintfcat(buf, sizeof(buf), " [%s]", (char *)WinBuf);
+		snprintfcat(buf, bufsize, " [%s]", (char *)WinBuf);
 		LocalFree(WinBuf);
 #endif
 	}
 
-	if (nut_debug_level > 0) {
-		static struct timeval	start = { 0, 0 };
+	/* Note: nowadays debug level can be changed during run-time,
+	 * so mark the starting point whenever we first try to log */
+	if (upslog_start.tv_sec == 0) {
 		struct timeval		now;
-
 		gettimeofday(&now, NULL);
-
-		if (start.tv_sec == 0) {
-			start = now;
-		}
-
-		if (start.tv_usec > now.tv_usec) {
-			now.tv_usec += 1000000;
-			now.tv_sec -= 1;
-		}
-
-		fprintf(stderr, "%4.0f.%06ld\t", difftime(now.tv_sec, start.tv_sec), (long)(now.tv_usec - start.tv_usec));
+		upslog_start = now;
 	}
 
-	if (xbit_test(upslog_flags, UPSLOG_STDERR))
-		fprintf(stderr, "%s\n", buf);
+	if (xbit_test(upslog_flags, UPSLOG_STDERR)) {
+		if (nut_debug_level > 0) {
+			struct timeval		now;
+
+			gettimeofday(&now, NULL);
+
+			if (upslog_start.tv_usec > now.tv_usec) {
+				now.tv_usec += 1000000;
+				now.tv_sec -= 1;
+			}
+
+			/* Print all in one shot, to better avoid
+			 * mixed lines in parallel threads */
+			fprintf(stderr, "%4.0f.%06ld\t%s\n",
+				difftime(now.tv_sec, upslog_start.tv_sec),
+				(long)(now.tv_usec - upslog_start.tv_usec),
+				buf);
+		} else {
+			fprintf(stderr, "%s\n", buf);
+		}
+#ifdef WIN32
+		fflush(stderr);
+#endif
+	}
 	if (xbit_test(upslog_flags, UPSLOG_SYSLOG))
 		syslog(priority, "%s", buf);
+	free(buf);
 }
 
 
@@ -789,6 +1519,7 @@ void s_upsdebug_with_errno(int level, const char *fmt, ...)
 {
 	va_list va;
 	char fmt2[LARGEBUF];
+	static int NUT_DEBUG_PID = -1;
 
 	/* Note: Thanks to macro wrapping, we do not quite need this
 	 * test now, but we still need the "level" value to report
@@ -804,7 +1535,18 @@ void s_upsdebug_with_errno(int level, const char *fmt, ...)
  * can help limit this debug stream quicker, than experimentally picking ;) */
 	if (level > 0) {
 		int ret;
-		ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);
+
+		if (NUT_DEBUG_PID < 0) {
+			NUT_DEBUG_PID = (getenv("NUT_DEBUG_PID") != NULL);
+		}
+
+		if (NUT_DEBUG_PID) {
+			/* Note that we re-request PID every time as it can
+			 * change during the run-time (forking etc.) */
+			ret = snprintf(fmt2, sizeof(fmt2), "[D%d:%" PRIiMAX "] %s", level, (intmax_t)getpid(), fmt);
+		} else {
+			ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);
+		}
 		if ((ret < 0) || (ret >= (int) sizeof(fmt2))) {
 			syslog(LOG_WARNING, "upsdebug_with_errno: snprintf needed more than %d bytes",
 				LARGEBUF);
@@ -834,6 +1576,7 @@ void s_upsdebugx(int level, const char *fmt, ...)
 {
 	va_list va;
 	char fmt2[LARGEBUF];
+	static int NUT_DEBUG_PID = -1;
 
 	if (nut_debug_level < level)
 		return;
@@ -841,7 +1584,19 @@ void s_upsdebugx(int level, const char *fmt, ...)
 /* See comments above in upsdebug_with_errno() - they apply here too. */
 	if (level > 0) {
 		int ret;
-		ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);
+
+		if (NUT_DEBUG_PID < 0) {
+			NUT_DEBUG_PID = (getenv("NUT_DEBUG_PID") != NULL);
+		}
+
+		if (NUT_DEBUG_PID) {
+			/* Note that we re-request PID every time as it can
+			 * change during the run-time (forking etc.) */
+			ret = snprintf(fmt2, sizeof(fmt2), "[D%d:%" PRIiMAX "] %s", level, (intmax_t)getpid(), fmt);
+		} else {
+			ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);
+		}
+
 		if ((ret < 0) || (ret >= (int) sizeof(fmt2))) {
 			syslog(LOG_WARNING, "upsdebugx: snprintf needed more than %d bytes",
 				LARGEBUF);
@@ -1080,7 +1835,14 @@ void *xrealloc(void *ptr, size_t size)
 
 char *xstrdup(const char *string)
 {
-	char *p = strdup(string);
+	char *p;
+
+	if (string == NULL) {
+		upsdebugx(1, "%s: got null input", __func__);
+		return NULL;
+	}
+
+	p = strdup(string);
 
 	if (p == NULL)
 		fatal_with_errno(EXIT_FAILURE, "%s", oom_msg);
@@ -1187,11 +1949,24 @@ ssize_t select_write(serial_handler_t *fd, const void *buf, const size_t buflen,
  * linked against certain OS-provided libraries for accessing this or that
  * communications media and/or vendor protocol.
  */
-static const char * search_paths[] = {
+static const char * search_paths_builtin[] = {
 	/* Use the library path (and bitness) provided during ./configure first */
 	LIBDIR,
-	"/usr"LIBDIR,
-	"/usr/local"LIBDIR,
+	"/usr"LIBDIR,		/* Note: this can lead to bogus strings like */
+	"/usr/local"LIBDIR,	/* "/usr/usr/lib" which would be ignored quickly */
+/* TOTHINK: Should AUTOTOOLS_* specs also be highly preferred?
+ * Currently they are listed after the "legacy" hard-coded paths...
+ */
+#ifdef MULTIARCH_TARGET_ALIAS
+# ifdef BUILD_64
+	"/usr/lib/64/" MULTIARCH_TARGET_ALIAS,
+	"/usr/lib64/" MULTIARCH_TARGET_ALIAS,
+	"/lib/64/" MULTIARCH_TARGET_ALIAS,
+	"/lib64/" MULTIARCH_TARGET_ALIAS,
+# endif	/* MULTIARCH_TARGET_ALIAS && BUILD_64 */
+	"/usr/lib/" MULTIARCH_TARGET_ALIAS,
+	"/lib/" MULTIARCH_TARGET_ALIAS,
+#endif	/* MULTIARCH_TARGET_ALIAS */
 #ifdef BUILD_64
 	/* Fall back to explicit preference of 64-bit paths as named on some OSes */
 	"/usr/lib/64",
@@ -1247,6 +2022,183 @@ static const char * search_paths[] = {
 	NULL
 };
 
+static const char ** search_paths = search_paths_builtin;
+
+/* free this when a NUT program ends (common library is unloaded)
+ * IFF it is not the built-in version. */
+static void nut_free_search_paths(void) {
+	if (search_paths == NULL) {
+		search_paths = search_paths_builtin;
+		return;
+	}
+
+	if (search_paths != search_paths_builtin) {
+		size_t i;
+		for (i = 0; search_paths[i] != NULL; i++) {
+			free((char *)search_paths[i]);
+		}
+		free(search_paths);
+		search_paths = search_paths_builtin;
+	}
+}
+
+void nut_prepare_search_paths(void) {
+	/* Produce the search_paths[] with minimal confusion allowing
+	 * for faster walks and fewer logs in NUT applications:
+	 * * only existing paths
+	 * * discard lower-priority duplicates if a path is already listed
+	 *
+	 * NOTE: Currently this only trims info from search_paths_builtin[]
+	 * but might later supplant iterations in the get_libname(),
+	 * get_libname_in_pathset() and upsdebugx_report_search_paths()
+	 * methods. Surely would make their code easier, but at a cost of
+	 * probably losing detailed logging of where something came from...
+	 */
+	static int atexit_hooked = 0;
+	size_t	count_builtin = 0, count_filtered = 0, i, j, index = 0;
+	const char ** filtered_search_paths;
+	DIR *dp;
+
+	/* As a starting point, allow at least as many items as before */
+	/* TODO: somehow extend (xrealloc?) if we mix other paths later */
+	for (i = 0; search_paths_builtin[i] != NULL; i++) {}
+	count_builtin = i + 1;	/* +1 for the NULL */
+
+	/* Bytes inside should all be zeroed... */
+	filtered_search_paths = xcalloc(sizeof(const char *), count_builtin);
+
+	/* FIXME: here "count_builtin" means size of filtered_search_paths[]
+	 * and may later be more, if we would consider other data sources */
+	for (i = 0; search_paths_builtin[i] != NULL && count_filtered < count_builtin; i++) {
+		int dupe = 0;
+		const char *dirname = search_paths_builtin[i];
+
+		if ((dp = opendir(dirname)) == NULL) {
+			upsdebugx(5, "%s: SKIP "
+				"unreachable directory #%" PRIuSIZE " : %s",
+				__func__, index++, dirname);
+			continue;
+		}
+		index++;
+
+#if HAVE_DECL_REALPATH
+		/* allocates the buffer we free() later */
+		dirname = (const char *)realpath(dirname, NULL);
+#endif
+
+		/* Revise for duplicates */
+		/* Note: (count_filtered == 0) means first existing dir seen, no hassle */
+		for (j = 0; j < count_filtered; j++) {
+			if (!strcmp(filtered_search_paths[j], dirname)) {
+#if HAVE_DECL_REALPATH
+				if (strcmp(search_paths_builtin[i], dirname)) {
+					/* They differ, highlight it */
+					upsdebugx(5, "%s: SKIP "
+						"duplicate directory #%" PRIuSIZE " : %s (%s)",
+						__func__, index, dirname,
+						search_paths_builtin[i]);
+				} else
+#endif
+				upsdebugx(5, "%s: SKIP "
+					"duplicate directory #%" PRIuSIZE " : %s",
+					__func__, index, dirname);
+
+				dupe = 1;
+#if HAVE_DECL_REALPATH
+				free((char *)dirname);
+#endif
+				break;
+			}
+		}
+
+		if (!dupe) {
+			upsdebugx(5, "%s: ADD[#%" PRIuSIZE "] "
+				"existing unique directory: %s",
+				__func__, count_filtered, dirname);
+#if !HAVE_DECL_REALPATH
+			dirname = (const char *)xstrdup(dirname);
+#endif
+			filtered_search_paths[count_filtered++] = dirname;
+		}
+	}
+
+	/* If we mangled this before, forget the old result: */
+	nut_free_search_paths();
+
+	/* Better safe than sorry: */
+	filtered_search_paths[count_filtered] = NULL;
+	search_paths = filtered_search_paths;
+
+	if (!atexit_hooked) {
+		atexit(nut_free_search_paths);
+		atexit_hooked = 1;
+	}
+}
+
+void upsdebugx_report_search_paths(int level, int report_search_paths_builtin) {
+	size_t	index;
+	char	*s, *varname;
+	const char ** reported_search_paths = (
+		report_search_paths_builtin
+		? search_paths_builtin
+		: search_paths);
+
+	if (nut_debug_level < level)
+		return;
+
+	upsdebugx(level, "Run-time loadable library search paths used by this build of NUT:");
+
+	/* NOTE: Reporting order follows get_libname(), and
+	 * while some values are individual paths, others can
+	 * be "pathsets" (e.g. coming envvars) with certain
+	 * platform-dependent separator characters. */
+#ifdef BUILD_64
+	varname = "LD_LIBRARY_PATH_64";
+#else
+	varname = "LD_LIBRARY_PATH_32";
+#endif
+
+	if (((s = getenv(varname)) != NULL) && strlen(s) > 0) {
+		upsdebugx(level, "\tVia %s:\t%s", varname, s);
+	}
+
+	varname = "LD_LIBRARY_PATH";
+	if (((s = getenv(varname)) != NULL) && strlen(s) > 0) {
+		upsdebugx(level, "\tVia %s:\t%s", varname, s);
+	}
+
+	for (index = 0; reported_search_paths[index] != NULL; index++)
+	{
+		if (index == 0) {
+			upsdebugx(level, "\tNOTE: Reporting %s built-in paths:",
+				(report_search_paths_builtin ? "raw"
+				 : "filtered (existing unique)"));
+		}
+		upsdebugx(level, "\tBuilt-in:\t%s", reported_search_paths[index]);
+	}
+
+#ifdef WIN32
+	if (((s = getfullpath(NULL)) != NULL) && strlen(s) > 0) {
+		upsdebugx(level, "\tWindows near EXE:\t%s", s);
+	}
+
+# ifdef PATH_LIB
+	if (((s = getfullpath(PATH_LIB)) != NULL) && strlen(s) > 0) {
+		upsdebugx(level, "\tWindows PATH_LIB (%s):\t%s", PATH_LIB, s);
+	}
+# endif
+
+	if (((s = getfullpath("/../lib")) != NULL) && strlen(s) > 0) {
+		upsdebugx(level, "\tWindows \"lib\" dir near EXE:\t%s", s);
+	}
+
+	varname = "PATH";
+	if (((s = getenv(varname)) != NULL) && strlen(s) > 0) {
+		upsdebugx(level, "\tWindows via %s:\t%s", varname, s);
+	}
+#endif
+}
+
 static char * get_libname_in_dir(const char* base_libname, size_t base_libname_length, const char* dirname, int index) {
 	/* Implementation detail for get_libname() below.
 	 * Returns pointer to allocated copy of the buffer
@@ -1280,17 +2232,18 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 	}
 	while ((dirp = readdir(dp)) != NULL)
 	{
-#if !HAVE_REALPATH
+#if !HAVE_DECL_REALPATH
 		struct stat	st;
 #endif
+		int compres;
 
 		upsdebugx(5,"Comparing lib %s with dirpath entry %s", base_libname, dirp->d_name);
-		int compres = strncmp(dirp->d_name, base_libname, base_libname_length);
+		compres = strncmp(dirp->d_name, base_libname, base_libname_length);
 		if (compres == 0
 		&&  dirp->d_name[base_libname_length] == '\0' /* avoid "*.dll.a" etc. */
 		) {
 			snprintf(current_test_path, LARGEBUF, "%s/%s", dirname, dirp->d_name);
-#if HAVE_REALPATH
+#if HAVE_DECL_REALPATH
 			libname_path = realpath(current_test_path, NULL);
 #else
 			/* Just check if candidate name is (points to?) valid file */
@@ -1327,7 +2280,7 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 				}
 			}
 # endif /* WIN32 */
-#endif  /* HAVE_REALPATH */
+#endif  /* HAVE_DECL_REALPATH */
 
 			upsdebugx(2,"Candidate path for lib %s is %s (realpath %s)",
 				base_libname, current_test_path,
@@ -1345,30 +2298,37 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 static char * get_libname_in_pathset(const char* base_libname, size_t base_libname_length, char* pathset, int *counter)
 {
 	/* Note: this method iterates specified pathset,
-	 * so increments the counter by reference */
+	 * so it increments the counter by reference.
+	 * A copy of original pathset is used, because
+	 * strtok() tends to modify its input! */
 	char *libname_path = NULL;
 	char *onedir = NULL;
+	char* pathset_tmp;
 
 	if (!pathset || *pathset == '\0')
 		return NULL;
 
 	/* First call to tokenization passes the string, others pass NULL */
-	while (NULL != (onedir = strtok( (onedir ? NULL : pathset), ":" ))) {
-		libname_path = get_libname_in_dir(base_libname, base_libname_length, onedir, *counter++);
+	pathset_tmp = xstrdup(pathset);
+	while (NULL != (onedir = strtok( (onedir ? NULL : pathset_tmp), ":" ))) {
+		libname_path = get_libname_in_dir(base_libname, base_libname_length, onedir, (*counter)++);
 		if (libname_path != NULL)
 			break;
 	}
+	free(pathset_tmp);
 
 #ifdef WIN32
 	/* Note: with mingw, the ":" separator above might have been resolvable */
+	pathset_tmp = xstrdup(pathset);
 	if (!libname_path) {
 		onedir = NULL; /* probably is NULL already, but better ensure this */
-		while (NULL != (onedir = strtok( (onedir ? NULL : pathset), ";" ))) {
-			libname_path = get_libname_in_dir(base_libname, base_libname_length, onedir, *counter++);
+		while (NULL != (onedir = strtok( (onedir ? NULL : pathset_tmp), ";" ))) {
+			libname_path = get_libname_in_dir(base_libname, base_libname_length, onedir, (*counter)++);
 			if (libname_path != NULL)
 				break;
 		}
 	}
+	free(pathset_tmp);
 #endif  /* WIN32 */
 
 	return libname_path;
@@ -1376,6 +2336,8 @@ static char * get_libname_in_pathset(const char* base_libname, size_t base_libna
 
 char * get_libname(const char* base_libname)
 {
+	/* NOTE: Keep changes to practical search order
+	 * synced to upsdebugx_report_search_paths() */
 	int index = 0, counter = 0;
 	char *libname_path = NULL;
 	size_t base_libname_length = strlen(base_libname);
@@ -1413,6 +2375,12 @@ char * get_libname(const char* base_libname)
 	/* TODO: Need a reliable cross-platform way to get the full path
 	 * of current executable -- possibly stash it when starting NUT
 	 * programs... consider some way for `nut-scanner` too */
+	if (!libname_path) {
+		/* First check near the EXE (if executing it from another
+		 * working directory) */
+		libname_path = get_libname_in_dir(base_libname, base_libname_length, getfullpath(NULL), counter++);
+	}
+
 # ifdef PATH_LIB
 	if (!libname_path) {
 		libname_path = get_libname_in_dir(base_libname, base_libname_length, getfullpath(PATH_LIB), counter++);
@@ -1421,7 +2389,7 @@ char * get_libname(const char* base_libname)
 
 	if (!libname_path) {
 		/* Resolve "lib" dir near the one with current executable ("bin" or "sbin") */
-		libname_path = get_libname_in_dir(base_libname, base_libname_length, getfullpath("../lib"), counter++);
+		libname_path = get_libname_in_dir(base_libname, base_libname_length, getfullpath("/../lib"), counter++);
 	}
 #endif  /* WIN32 so far */
 
@@ -1454,3 +2422,109 @@ void set_close_on_exec(int fd) {
 # endif
 #endif
 }
+
+/**** REGEX helper methods ****/
+
+int strcmp_null(const char *s1, const char *s2)
+{
+	if (s1 == NULL && s2 == NULL) {
+		return 0;
+	}
+
+	if (s1 == NULL) {
+		return -1;
+	}
+
+	if (s2 == NULL) {
+		return 1;
+	}
+
+	return strcmp(s1, s2);
+}
+
+#if (defined HAVE_LIBREGEX && HAVE_LIBREGEX)
+int compile_regex(regex_t **compiled, const char *regex, const int cflags)
+{
+	int	r;
+	regex_t	*preg;
+
+	if (regex == NULL) {
+		*compiled = NULL;
+		return 0;
+	}
+
+	preg = malloc(sizeof(*preg));
+	if (!preg) {
+		return -1;
+	}
+
+	r = regcomp(preg, regex, cflags);
+	if (r) {
+		free(preg);
+		return -2;
+	}
+
+	*compiled = preg;
+
+	return 0;
+}
+
+int match_regex(const regex_t *preg, const char *str)
+{
+	int	r;
+	size_t	len = 0;
+	char	*string;
+	regmatch_t	match;
+
+	if (!preg) {
+		return 1;
+	}
+
+	if (!str) {
+		string = xstrdup("");
+	} else {
+		/* skip leading whitespace */
+		for (len = 0; len < strlen(str); len++) {
+
+			if (!strchr(" \t\n", str[len])) {
+				break;
+			}
+		}
+
+		string = xstrdup(str+len);
+
+		/* skip trailing whitespace */
+		for (len = strlen(string); len > 0; len--) {
+
+			if (!strchr(" \t\n", string[len-1])) {
+				break;
+			}
+		}
+
+		string[len] = '\0';
+	}
+
+	/* test the regular expression */
+	r = regexec(preg, string, 1, &match, 0);
+	free(string);
+	if (r) {
+		return 0;
+	}
+
+	/* check that the match is the entire string */
+	if ((match.rm_so != 0) || (match.rm_eo != (int)len)) {
+		return 0;
+	}
+
+	return 1;
+}
+
+int match_regex_hex(const regex_t *preg, const int n)
+{
+	char	buf[10];
+
+	snprintf(buf, sizeof(buf), "%04x", n);
+
+	return match_regex(preg, buf);
+}
+#endif	/* HAVE_LIBREGEX */

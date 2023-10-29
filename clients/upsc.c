@@ -56,6 +56,12 @@ static void usage(const char *prog)
 	printf("\nThird form (lists clients connected to a device):\n");
 	printf("  -c         - lists each client connected on <ups>, one per line.\n");
 	printf("  <ups>      - upsd server, <upsname>[@<hostname>[:<port>]] form\n");
+
+	printf("\nCommon arguments:\n");
+	printf("  -V         - display the version of this software\n");
+	printf("  -h         - display this help text\n");
+
+	nut_report_config_flags();
 }
 
 static void printvar(const char *var)
@@ -232,6 +238,8 @@ int main(int argc, char **argv)
 			break;
 
 		case 'V':
+			nut_report_config_flags();
+
 			fatalx(EXIT_SUCCESS, "Network UPS Tools upscmd %s", UPS_VERSION);
 #ifndef HAVE___ATTRIBUTE__NORETURN
 			exit(EXIT_SUCCESS);	/* Should not get here in practice, but compiler is afraid we can fall through */

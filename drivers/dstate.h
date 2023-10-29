@@ -30,8 +30,6 @@
 #include "parseconf.h"
 #include "upshandler.h"
 
-#include "main.h"	/* for set_exit_flag() */
-
 #ifdef WIN32
 # include "wincompat.h"
 #endif
@@ -53,7 +51,10 @@ typedef struct conn_s {
 	PCONF_CTX_t	ctx;
 	struct conn_s	*prev;
 	struct conn_s	*next;
+	int	nobroadcast;	/* connections can request to ignore send_to_all() updates */
 } conn_t;
+
+#include "main.h"	/* for set_exit_flag(); uses conn_t itself */
 
 	extern	struct	ups_handler	upsh;
 
@@ -74,6 +75,7 @@ void dstate_delflags(const char *var, const int delflags);
 void dstate_setaux(const char *var, long aux);
 const char *dstate_getinfo(const char *var);
 void dstate_addcmd(const char *cmdname);
+int dstate_delinfo_olderthan(const char *var, const st_tree_timespec_t *cutoff);
 int dstate_delinfo(const char *var);
 int dstate_delenum(const char *var, const char *val);
 int dstate_delrange(const char *var, const int min, const int max);

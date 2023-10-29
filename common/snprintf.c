@@ -607,7 +607,7 @@ static LDOUBLE abs_val (LDOUBLE value)
  * FIXME: They are blindly expected (assumed?) to be available on Windows,
  * maybe better trust configure script macros on this?
  */
-#  ifndef HAVE_POW10
+#  if ! HAVE_DECL_POW10
 static LDOUBLE pow10 (int exp)
 {
   LDOUBLE result = 1;
@@ -620,9 +620,9 @@ static LDOUBLE pow10 (int exp)
 
   return result;
 }
-#  endif /* HAVE_POW10 */
+#  endif /* HAVE_DECL_POW10 */
 
-#  ifndef HAVE_ROUND
+#  if ! HAVE_DECL_ROUND
 static long round (LDOUBLE value)
 {
   long intpart;
@@ -634,7 +634,7 @@ static long round (LDOUBLE value)
 
   return intpart;
 }
-#  endif /* HAVE_ROUND */
+#  endif /* HAVE_DECL_ROUND */
 # endif /* HAVE_FCVT */
 #endif /* WIN32 */
 

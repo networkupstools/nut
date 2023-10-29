@@ -25,7 +25,7 @@
 #include "attribute.h"
 
 #define DRIVER_NAME	"IVT Solar Controller driver"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_VERSION	"0.04"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -182,9 +182,6 @@ void upsdrv_updateinfo(void)
 }
 
 void upsdrv_shutdown(void)
-	__attribute__((noreturn));
-
-void upsdrv_shutdown(void)
 {
 	while (1) {
 
@@ -196,7 +193,10 @@ void upsdrv_shutdown(void)
 			continue;
 		}
 
-		fatalx(EXIT_SUCCESS, "Power is back!");
+		/* Hmmm, why was this an exit-case before? fatalx(EXIT_SUCCESS...) */
+		upslogx(LOG_ERR, "Power is back!");
+		set_exit_flag(-2);	/* EXIT_SUCCESS */
+		return;
 	}
 }
 

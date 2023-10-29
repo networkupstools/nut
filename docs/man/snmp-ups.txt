@@ -34,12 +34,12 @@ as well as any others supporting the APC POWERNET MIB
 *netvision*::
 Socomec Sicon UPS with Netvision Web/SNMP management card/external box
 
-*pw*::
+*eaton_pw_nm2*::
 Powerware devices with ConnectUPS SNMP cards, as well as UPSes with
-Eaton Gigabit Network Cards (Network-M2)
+Eaton Gigabit Network Cards (Network-M2) (renamed from pw)
 
-*pxgx_ups*::
-Eaton devices with Power Xpert Gateway UPS Card
+*eaton_pxg_ups*::
+Eaton devices with Power Xpert Gateway UPS Card (renamed from pxgx_ups)
 
 *aphel_genesisII*::
 Eaton Powerware ePDU Monitored
@@ -136,6 +136,7 @@ equipment which has strangeness in the three-phase power reporting.
 *secLevel*='value'::
 Set the securityLevel used for SNMPv3 messages (default=noAuthNoPriv,
 allowed: authNoPriv,authPriv)
+This parameter is mandatory if you use non-trivial authentication.
 
 *secName*='value'::
 Set the securityName used for authenticated SNMPv3 messages (no default)
@@ -231,9 +232,9 @@ linkman:nutupsdrv[8]
 NUT SNMP Protocols Library
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Available at: http://www.networkupstools.org/ups-protocols.html#_snmp
+Available at: https://www.networkupstools.org/ups-protocols.html#_snmp
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

@@ -53,6 +53,7 @@ static void usage(const char *prog)
 	printf("Demo program to set variables within UPS hardware.\n");
 	printf("\n");
 	printf("  -h            display this help text\n");
+	printf("  -V            display the version of this software\n");
 	printf("  -s <variable>	specify variable to be changed\n");
 	printf("		use -s VAR=VALUE to avoid prompting for value\n");
 	printf("  -l            show all possible read/write variables.\n");
@@ -65,6 +66,8 @@ static void usage(const char *prog)
 	printf("  <ups>         UPS identifier - <upsname>[@<hostname>[:<port>]]\n");
 	printf("\n");
 	printf("Call without -s to show all possible read/write variables (same as -l).\n");
+
+	nut_report_config_flags();
 }
 
 static void clean_exit(void)
@@ -666,6 +669,7 @@ int main(int argc, char **argv)
 			break;
 		case 'V':
 			printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
+			nut_report_config_flags();
 			exit(EXIT_SUCCESS);
 		case 'h':
 		default:

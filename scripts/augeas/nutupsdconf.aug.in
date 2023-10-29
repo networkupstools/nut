@@ -55,8 +55,14 @@ let upsd_certfile = [ opt_spc . key "CERTFILE" . sep_spc . store path . eol ]
  * ALLOW_NO_DEVICE Boolean
  * STATEPATH path
  * LISTEN interface port
- *    Multiple LISTEN addresses may be specified. The default is to bind to 0.0.0.0 if no LISTEN addresses are specified.
- *    LISTEN 127.0.0.1 LISTEN 192.168.50.1 LISTEN ::1 LISTEN 2001:0db8:1234:08d3:1319:8a2e:0370:7344
+ *    Multiple lines each with one LISTEN address (or host name) and an optional
+ *    port may be specified. The default is to bind to IPv4 and IPv6 "localhost"
+ *    addresses (subject to CLI options `-4` or `-6` constraining IP version,
+ *    or system configuration or support), if no LISTEN addresses are specified.
+ *    LISTEN 127.0.0.1
+ *    LISTEN 192.168.50.1
+ *    LISTEN ::1
+ *    LISTEN 2001:0db8:1234:08d3:1319:8a2e:0370:7344
  *
  *************************************************************************)
 let upsd_other  =  upsd_maxage | upsd_trackingdelay | upsd_allow_no_device | upsd_statepath | upsd_listen_list | upsd_maxconn | upsd_certfile

@@ -7,7 +7,7 @@
  * device support from such legacy drivers over time.
  *
  * A document describing the protocol implemented by this driver can be
- * found online at http://www.networkupstools.org/ups-protocols/megatec.html
+ * found online at https://www.networkupstools.org/ups-protocols/megatec.html
  *
  * Copyright (C)
  *   2008,2009 - Arjen de Korte <adkorte-guest@alioth.debian.org>
@@ -132,7 +132,7 @@ static double blazer_load(const char *ptr, char **endptr)
 
 /*
  * The battery voltage will quickly return to at least the nominal value after
- * discharging them. For overlapping battery.voltage.low/high ranges therefor
+ * discharging them. For overlapping battery.voltage.low/high ranges therefore
  * choose the one with the highest multiplier.
  */
 static double blazer_packs(const char *ptr, char **endptr)
@@ -150,7 +150,7 @@ static double blazer_packs(const char *ptr, char **endptr)
 
 	for (i = 0; packs[i] > 0; i++) {
 
-		if (packs[i] * batt.volt.act > 1.2 * batt.volt.nom) {
+		if (packs[i] * batt.volt.act > 1.25 * batt.volt.nom) {
 			continue;
 		}
 
@@ -850,9 +850,6 @@ void upsdrv_updateinfo(void)
 }
 
 void upsdrv_shutdown(void)
-	__attribute__((noreturn));
-
-void upsdrv_shutdown(void)
 {
 	int	retry;
 
@@ -878,9 +875,11 @@ void upsdrv_shutdown(void)
 			continue;
 		}
 
-		fatalx(EXIT_SUCCESS, "Shutting down in %ld seconds", offdelay);
-
+		upslogx(LOG_ERR, "Shutting down in %ld seconds", offdelay);
+		set_exit_flag(-2);	/* EXIT_SUCCESS */
+		return;
 	}
 
-	fatalx(EXIT_FAILURE, "Shutdown failed!");
+	upslogx(LOG_ERR, "Shutdown failed!");
+	set_exit_flag(-1);
 }

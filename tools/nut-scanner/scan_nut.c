@@ -33,8 +33,8 @@
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
 
-static int (*nut_upscli_splitaddr)(const char *buf, char **hostname, int *port);
-static int (*nut_upscli_tryconnect)(UPSCONN_t *ups, const char *host, int port,
+static int (*nut_upscli_splitaddr)(const char *buf, char **hostname, uint16_t *port);
+static int (*nut_upscli_tryconnect)(UPSCONN_t *ups, const char *host, uint16_t port,
 					int flags, struct timeval * timeout);
 static int (*nut_upscli_list_start)(UPSCONN_t *ups, size_t numq,
 					const char **query);
@@ -137,7 +137,7 @@ static void * list_nut_devices(void * arg)
 	struct scan_nut_arg * nut_arg = (struct scan_nut_arg*)arg;
 	char *target_hostname = nut_arg->hostname;
 	struct timeval tv;
-	int port;
+	uint16_t port;
 	size_t numq, numa;
 	const char *query[4];
 	char **answer;
@@ -190,14 +190,27 @@ static void * list_nut_devices(void * arg)
 		 * - for upsmon.conf or ups.conf (using dummy-ups)? */
 		dev = nutscan_new_device();
 		dev->type = TYPE_NUT;
+		/* NOTE: There is no driver by such name, in practice it could
+		 * be a dummy-ups relay, a clone driver, or part of upsmon config */
 		dev->driver = strdup("nutclient");
 		/* +1+1 is for '@' character and terminating 0 */
 		buf_size = strlen(answer[1]) + strlen(hostname) + 1 + 1;
+		if (port != PORT) {
+			/* colon and up to 5 digits */
+			buf_size += 6;
+		}
+
 		dev->port = malloc(buf_size);
 
 		if (dev->port) {
-			snprintf(dev->port, buf_size, "%s@%s", answer[1],
-					hostname);
+			if (port != PORT) {
+				snprintf(dev->port, buf_size, "%s@%s:%" PRIu16,
+					answer[1], hostname, port);
+			} else {
+				/* Standard port, not suffixed */
+				snprintf(dev->port, buf_size, "%s@%s",
+					answer[1], hostname);
+			}
 #ifdef HAVE_PTHREAD
 			pthread_mutex_lock(&dev_mutex);
 #endif
@@ -427,13 +440,14 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 
 #ifdef HAVE_PTHREAD
 			if (pthread_create(&thread, NULL, list_nut_devices, (void*)nut_arg) == 0) {
+				nutscan_thread_t	*new_thread_array;
 # ifdef HAVE_PTHREAD_TRYJOIN
 				pthread_mutex_lock(&threadcount_mutex);
 				curr_threads++;
 # endif /* HAVE_PTHREAD_TRYJOIN */
 
 				thread_count++;
-				nutscan_thread_t *new_thread_array = realloc(thread_array,
+				new_thread_array = realloc(thread_array,
 					thread_count * sizeof(nutscan_thread_t));
 				if (new_thread_array == NULL) {
 					upsdebugx(1, "%s: Failed to realloc thread array", __func__);

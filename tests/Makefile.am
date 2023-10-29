@@ -6,13 +6,14 @@ all: $(TESTS)
 
 EXTRA_DIST = nut-driver-enumerator-test.sh nut-driver-enumerator-test--ups.conf
 
-TESTS = nutlogtest
+TESTS =
 CLEANFILES = *.trs *.log
 
 AM_CFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/drivers
 AM_CXXFLAGS = -I$(top_srcdir)/include
 
 check_PROGRAMS = $(TESTS)
+check_SCRIPTS =
 
 # NUT Integration Testing suite
 check-NIT check-NIT-devel:
@@ -20,6 +21,28 @@ check-NIT check-NIT-devel:
 
 nutlogtest_SOURCES = nutlogtest.c
 nutlogtest_LDADD = $(top_builddir)/common/libcommon.la
+
+if REQUIRE_NUT_STRARG
+check_SCRIPTS += nutlogtest-nofail.sh
+CLEANFILES += nutlogtest-nofail.sh nutlogtest$(EXEEXT) nutlogtest
+
+nutlogtest-nofail.sh: nutlogtest$(EXEEXT)
+	@echo '#!/bin/sh' > $@
+	@echo 'echo "WARNING: Your C library requires workarounds to print NULL values!" >&2' >> $@
+	@echo 'echo "If nutlogtest below, or generally some NUT program, crashes with" >&2' >> $@
+	@echo 'echo "a segmentation fault (especially during verbose debug) - that may be why" >&2' >> $@
+	@echo 'SCRIPT_DIR="`dirname "$$0"`"' >> $@
+	@echo '"$${SCRIPT_DIR}/nutlogtest" "$$@" || echo "nutlogtest FAILED but it was expected"' >> $@
+	@chmod +x $@
+
+# NOTE: Keep the line above empty!
+else
+TESTS += nutlogtest$(EXEEXT)
+endif
+
+TESTS += nuttimetest
+nuttimetest_SOURCES = nuttimetest.c
+nuttimetest_LDADD = $(top_builddir)/common/libcommon.la
 
 # Separate the .deps of other dirs from this one
 LINKED_SOURCE_FILES = hidparser.c
@@ -37,9 +60,34 @@ nodist_getvaluetest_SOURCES = hidparser.c
 # Pull the right include path for chosen libusb version:
 getvaluetest_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
 getvaluetest_LDADD = $(top_builddir)/common/libcommon.la
+else
+EXTRA_DIST += getvaluetest.c hidparser.c
 endif
 
+if WITH_GPIO
+TESTS += gpiotest
+
+# NOTE: Not using "$<" due to a legacy Sun/illumos dmake bug with resolver
+# of dynamic vars, see e.g. https://man.omnios.org/man1/make#BUGS
+generic_gpio_libgpiod.c: $(top_srcdir)/drivers/generic_gpio_libgpiod.c
+	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/generic_gpio_libgpiod.c" "$@"
+
+generic_gpio_common.c: $(top_srcdir)/drivers/generic_gpio_common.c
+	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/generic_gpio_common.c" "$@"
+
+gpiotest_SOURCES = generic_gpio_utest.c generic_gpio_liblocal.c
+nodist_gpiotest_SOURCES = generic_gpio_libgpiod.c generic_gpio_common.c
+gpiotest_LDADD = $(top_builddir)/drivers/libdummy_mockdrv.la
+gpiotest_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
+else
+EXTRA_DIST += generic_gpio_utest.c generic_gpio_liblocal.c
+endif
+
+CLEANFILES += generic_gpio_libgpiod.c generic_gpio_common.c
+EXTRA_DIST += generic_gpio_utest.h generic_gpio_test.txt
+
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
+$(top_builddir)/drivers/libdummy_mockdrv.la \
 $(top_builddir)/common/libcommon.la: dummy
 	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
@@ -114,4 +162,4 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
 # the root Makefile.am takes care of that!
 #clean-local:
-#	rm -rf $(builddir)/.deps
+#	$(AM_V_at)rm -rf $(builddir)/.deps

@@ -65,7 +65,7 @@ static void sock_fail(const char *fn)
 static void sock_fail(const char *fn)
 {
 	int	sockerr;
-	struct passwd	*user;
+	struct passwd	*pwuser;
 
 	/* save this so it doesn't get overwritten */
 	sockerr = errno;
@@ -75,9 +75,9 @@ static void sock_fail(const char *fn)
 	printf("\nFatal error: unable to create listener socket\n\n");
 	printf("bind %s failed: %s\n", fn, strerror(sockerr));
 
-	user = getpwuid(getuid());
+	pwuser = getpwuid(getuid());
 
-	if (!user) {
+	if (!pwuser) {
 		fatal_with_errno(EXIT_FAILURE, "getpwuid");
 	}
 
@@ -86,7 +86,7 @@ static void sock_fail(const char *fn)
 	{
 	case EACCES:
 		printf("\nCurrent user: %s (UID %d)\n\n",
-			user->pw_name, (int)user->pw_uid);
+			pwuser->pw_name, (int)pwuser->pw_uid);
 
 		printf("Things to try:\n\n");
 		printf(" - set different owners or permissions on %s\n\n",
@@ -270,6 +270,8 @@ static void send_to_all(const char *fmt, ...)
 
 	for (conn = connhead; conn; conn = cnext) {
 		cnext = conn->next;
+		if (conn->nobroadcast)
+			continue;
 
 #ifndef WIN32
 		ret = write(conn->fd, buf, buflen);
@@ -566,6 +568,7 @@ static void sock_connect(TYPE_FD sock)
 		NULL, &(conn->read_overlapped));
 #endif
 
+	conn->nobroadcast = 0;
 	pconf_init(&conn->ctx, NULL);
 
 	if (connhead) {
@@ -715,6 +718,40 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 		return 1;
 	}
 
+	if (!strcasecmp(arg[0], "NOBROADCAST")) {
+		char buf[SMALLBUF];
+		conn->nobroadcast = 1;
+#ifndef WIN32
+		snprintf(buf, sizeof(buf), "socket %d", conn->fd);
+#else
+		snprintf(buf, sizeof(buf), "handle %p", conn->fd);
+#endif
+		upsdebugx(1, "%s: %s requested NOBROADCAST mode",
+			__func__, buf);
+		return 1;
+	}
+
+	/* BROADCAST <0|1> */
+	if (!strcasecmp(arg[0], "BROADCAST")) {
+		int i;
+		char buf[SMALLBUF];
+		conn->nobroadcast = 0;
+		if (numarg > 1 && str_to_int(arg[1], &i, 10)) {
+			if (i < 1)
+				conn->nobroadcast = 1;
+		}
+#ifndef WIN32
+		snprintf(buf, sizeof(buf), "socket %d", conn->fd);
+#else
+		snprintf(buf, sizeof(buf), "handle %p", conn->fd);
+#endif
+		upsdebugx(1,
+			"%s: %s requested %sBROADCAST mode",
+			__func__, buf,
+			conn->nobroadcast ? "NO" : "");
+		return 1;
+	}
+
 	if (numarg < 2) {
 		return 0;
 	}
@@ -742,17 +779,34 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 		if (cmdid)
 			upsdebugx(3, "%s: TRACKING = %s", __func__, cmdid);
 
-		/* try the new handler first if present */
+		/* try the handler shared by all drivers first */
+		ret = main_instcmd(arg[1], arg[2], conn);
+		if (ret != STAT_INSTCMD_UNKNOWN) {
+			/* The command was acknowledged by shared handler, and
+			 * either handled successfully, or failed, or was not
+			 * valid in current circumstances - in any case, we do
+			 * not pass to driver-provided logic. */
+
+			/* send back execution result if requested */
+			if (cmdid)
+				send_tracking(conn, cmdid, ret);
+
+			/* The command was handled, status is a separate consideration */
+			return 1;
+		} /* else try other handler(s) */
+
+		/* try the driver-provided handler if present */
 		if (upsh.instcmd) {
 			ret = upsh.instcmd(cmdname, cmdparam);
 
-			/* send back execution result */
+			/* send back execution result if requested */
 			if (cmdid)
 				send_tracking(conn, cmdid, ret);
 
 			/* The command was handled, status is a separate consideration */
 			return 1;
 		}
+
 		upslogx(LOG_NOTICE, "Got INSTCMD, but driver lacks a handler");
 		return 1;
 	}
@@ -779,11 +833,27 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 			upsdebugx(3, "%s: TRACKING = %s", __func__, setid);
 		}
 
-		/* try the new handler first if present */
+		/* try the handler shared by all drivers first */
+		ret = main_setvar(arg[1], arg[2], conn);
+		if (ret != STAT_SET_UNKNOWN) {
+			/* The command was acknowledged by shared handler, and
+			 * either handled successfully, or failed, or was not
+			 * valid in current circumstances - in any case, we do
+			 * not pass to driver-provided logic. */
+
+			/* send back execution result if requested */
+			if (setid)
+				send_tracking(conn, setid, ret);
+
+			/* The command was handled, status is a separate consideration */
+			return 1;
+		} /* else try other handler(s) */
+
+		/* try the driver-provided handler if present */
 		if (upsh.setvar) {
 			ret = upsh.setvar(arg[1], arg[2]);
 
-			/* send back execution result */
+			/* send back execution result if requested */
 			if (setid)
 				send_tracking(conn, setid, ret);
 
@@ -1330,6 +1400,20 @@ int dstate_delinfo(const char *var)
 	return ret;
 }
 
+int dstate_delinfo_olderthan(const char *var, const st_tree_timespec_t *cutoff)
+{
+	int	ret;
+
+	ret = state_delinfo_olderthan(&dtree_root, var, cutoff);
+
+	/* update listeners */
+	if (ret == 1) {
+		send_to_all("DELINFO %s\n", var);
+	}
+
+	return ret;
+}
+
 int dstate_delenum(const char *var, const char *val)
 {
 	int	ret;
@@ -1508,11 +1592,13 @@ void alarm_set(const char *buf)
 		 * Note: LARGEBUF was the original limit mismatched vs alarm_buf
 		 * size before PR #986.
 		 */
-		char alarm_tmp[LARGEBUF];
+		char	alarm_tmp[LARGEBUF];
+		int	ibuflen;
+		size_t	buflen;
+
 		memset(alarm_tmp, 0, sizeof(alarm_tmp));
 		/* A bit of complexity to keep both (int)snprintf(...) and (size_t)sizeof(...) happy */
-		int ibuflen = snprintf(alarm_tmp, sizeof(alarm_tmp), "%s", buf);
-		size_t buflen;
+		ibuflen = snprintf(alarm_tmp, sizeof(alarm_tmp), "%s", buf);
 		if (ibuflen < 0) {
 			alarm_tmp[0] = 'N';
 			alarm_tmp[1] = '/';
@@ -1548,10 +1634,12 @@ void alarm_set(const char *buf)
 		upslogx(LOG_ERR, "%s: error setting alarm_buf to: %s%s",
 			__func__, alarm_tmp, ( (buflen < sizeof(alarm_tmp)) ? "" : "...<truncated>" ) );
 	} else if ((size_t)ret > sizeof(alarm_buf)) {
-		char alarm_tmp[LARGEBUF];
+		char	alarm_tmp[LARGEBUF];
+		int	ibuflen;
+		size_t	buflen;
+
 		memset(alarm_tmp, 0, sizeof(alarm_tmp));
-		int ibuflen = snprintf(alarm_tmp, sizeof(alarm_tmp), "%s", buf);
-		size_t buflen;
+		ibuflen = snprintf(alarm_tmp, sizeof(alarm_tmp), "%s", buf);
 		if (ibuflen < 0) {
 			alarm_tmp[0] = 'N';
 			alarm_tmp[1] = '/';
@@ -1848,9 +1936,11 @@ static int dstate_tree_dump(const st_tree_t *node)
 /* Public interface */
 void dstate_dump(void)
 {
+	const st_tree_t *node;
+
 	upsdebugx(3, "Entering %s", __func__);
 
-	const st_tree_t *node = (const st_tree_t *)dstate_getroot();
+	node = (const st_tree_t *)dstate_getroot();
 
 	dstate_tree_dump(node);
 }

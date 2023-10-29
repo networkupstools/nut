@@ -50,13 +50,13 @@ CGI programs
 Driver control:
 ~~~~~~~~~~~~~~~
 
-include::{builddir}/linkman-drivertool-names.txt[]
+include::{builddir}linkman-drivertool-names.txt[]
 
 Drivers:
 ~~~~~~~~
 
 - linkman:nutupsdrv[8]
-include::{builddir}/linkman-driver-names.txt[]
+include::{builddir}linkman-driver-names.txt[]
 
 [[Developer_man]]
 Developer manual pages
@@ -65,6 +65,7 @@ Developer manual pages
 - linkman:libupsclient-config[1]
 - linkman:nut-recorder[8]
 - linkman:skel[8]
+- linkman:sockdebug[8]
 
 [[devclient]]
 Client library

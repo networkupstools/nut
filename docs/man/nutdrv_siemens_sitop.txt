@@ -16,7 +16,8 @@ linkman:nutupsdrv[8].
 SUPPORTED HARDWARE
 ------------------
 
-*nutdrv_siemens_sitop* supports Siemens UPS models from the SITOP UPS500 series.
+*nutdrv_siemens_sitop* supports Siemens UPS models from the SITOP UPS500
+series.
 Some models have a serial port, others have a USB port.
 The models with USB port actually contain a serial-over-USB chip,
 so as far as this driver is concerned, all models are serial models.
@@ -94,9 +95,10 @@ POLLING
 The UPS does not have a special 'get status' command. Instead, it continuously
 sends out status update messages (tens of messages per second).
 Every *pollinterval*, these messages are read from the serial port buffer.
-In order to react quickly on status changes from the UPS, and to prevent the serial buffer
-from overflowing, *pollinterval* should be set to a relatively low value. The recommended
-value is 1 (second).
+
+In order to react quickly on status changes from the UPS, and to prevent
+the serial buffer from overflowing, *pollinterval* should be set to a
+relatively low value. The recommended value is 1 (second).
 
 EXTRA ARGUMENTS
 ---------------
@@ -105,10 +107,10 @@ This driver supports the following optional settings:
 
 *max_polls_without_data*='num'::
 The serial port is polled periodically for new data (see *Polling*).
-If there is no valid new data after 'num' polls, it is assumed that communication
-with the UPS is lost.
-The default value is 2. Lower values may cause spurious 'Data stale' messages,
-especially at startup.
+If there is no valid new data after 'num' polls, it is assumed that
+communication with the UPS is lost.
+The default value is 2. Lower values may cause spurious 'Data stale'
+messages, especially at startup.
 
 INSTANT COMMANDS
 ----------------
@@ -198,4 +200,4 @@ linkman:nutupsdrv[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

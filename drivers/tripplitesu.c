@@ -125,8 +125,8 @@
 #include "serial.h"
 #include "nut_stdint.h"
 
-#define DRIVER_NAME		"Tripp Lite SmartOnline driver"
-#define DRIVER_VERSION	"0.06"
+#define DRIVER_NAME	"Tripp Lite SmartOnline driver"
+#define DRIVER_VERSION	"0.07"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -252,6 +252,7 @@ static ssize_t do_command(char type, const char *command, const char *parameters
 	upsdebugx(3, "do_command: %" PRIiSIZE " byted read [%s]", ret, buffer);
 
 	if (!strcmp(buffer, "~00D")) {
+		int	c;
 
 		ret = ser_get_buf_len(upsfd, (unsigned char *)buffer, 3, 3, 0);
 		if (ret < 0) {
@@ -266,7 +267,7 @@ static ssize_t do_command(char type, const char *command, const char *parameters
 		buffer[ret] = '\0';
 		upsdebugx(3, "do_command: %" PRIiSIZE " bytes read [%s]", ret, buffer);
 
-		int c = atoi(buffer);
+		c = atoi(buffer);
 		if (c < 0) {
 			upsdebugx(3, "do_command: response not expected to be a negative count!");
 			return -1;
@@ -423,7 +424,7 @@ static int get_sensitivity(void) {
 
 	if (do_command(POLL, VOLTAGE_SENSITIVITY, "", response) <= 0)
 		return 0;
-	for (i = 0; i < sizeof(sensitivity) / sizeof(sensitivity[0]); i++) {
+	for (i = 0; i < SIZEOF_ARRAY(sensitivity); i++) {
 		if (sensitivity[i].code == atoi(response)) {
 			dstate_setinfo("input.sensitivity", "%s",
 			               sensitivity[i].name);
@@ -438,7 +439,7 @@ static void set_sensitivity(const char *val) {
 	char parm[20];
 	unsigned int i;
 
-	for (i = 0; i < sizeof(sensitivity) / sizeof(sensitivity[0]); i++) {
+	for (i = 0; i < SIZEOF_ARRAY(sensitivity); i++) {
 		if (!strcasecmp(val, sensitivity[i].name)) {
 			snprintf(parm, sizeof(parm), "%u", i);
 			do_command(SET, VOLTAGE_SENSITIVITY, parm, NULL);
@@ -659,8 +660,7 @@ void upsdrv_initinfo(void)
 	}
 	if (get_sensitivity()) {
 		dstate_setflags("input.sensitivity", ST_FLAG_RW);
-		for (i = 0; i < sizeof(sensitivity) / sizeof(sensitivity[0]);
-		     i++)
+		for (i = 0; i < SIZEOF_ARRAY(sensitivity); i++)
 			dstate_addenum("input.sensitivity", "%s",
 			               sensitivity[i].name);
 	}
@@ -810,8 +810,7 @@ void upsdrv_updateinfo(void)
 		size_t	trsize;
 
 		r = atoi(response);
-		trsize = sizeof(test_result_names) /
-			sizeof(test_result_names[0]);
+		trsize = SIZEOF_ARRAY(test_result_names);
 
 		if ((r < 0) || (r >= (int) trsize))
 			r = 0;

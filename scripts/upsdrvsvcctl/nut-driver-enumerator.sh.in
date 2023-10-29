@@ -13,7 +13,7 @@
 #       is to just pick out some strings relevant for tracking config changes.
 #
 # Copyright (C) 2016-2020 Eaton
-# Copyright (C) 2020-2022 Jim Klimov <jimklimov+nut@gmail.com>
+# Copyright (C) 2020-2023 Jim Klimov <jimklimov+nut@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -175,7 +175,7 @@ fi
 # Cache needed bits of ups.conf to speed up later parsing. Note that these
 # data are needed for most operations, and populated by upslist_readFile()
 UPSCONF_DATA=""
-# Subset of normalized data above that only has sections, drivers and ports
+# Subset of normalized data above that only has sections, drivers and ports (SDP)
 UPSCONF_DATA_SDP=""
 
 # List of configured UPSes in the config-file
@@ -539,8 +539,45 @@ upsconf_getDriverMedia() {
     # particular system's physics, both serial and network media may need USB).
     CURR_DRV="`upsconf_getDriver "$1"`" || return $?
     case "$CURR_DRV" in
-        *netxml*|*snmp*|*ipmi*|*powerman*|*-mib*|*avahi*|*apcupsd*)
+        *netxml*|*snmp*|*ipmi*|*powerman*|*-mib*|*avahi*)
             printf '%s\n%s\n' "$CURR_DRV" "network" ; return ;;
+        *apcupsd-ups*)
+            # Relay from a nearby apcupsd network server into NUT ecosystem:
+            CURR_PORT="`upsconf_getPort "$1"`" || CURR_PORT=""
+            case "$CURR_PORT" in
+                *localhost*|*127.0.0.1*|*::1*)
+                    printf '%s\n%s\n' "$CURR_DRV" "network-localhost" ; return ;;
+                *)
+                    printf '%s\n%s\n' "$CURR_DRV" "network" ; return ;;
+            esac
+            ;;
+        *apc_modbus*)
+            CURR_PORT="`upsconf_getPort "$1"`" || CURR_PORT=""
+            CURR_PORTTYPE="`upsconf_getValue "$1" 'porttype'`" || CURR_PORTTYPE=""
+            case "$CURR_PORTTYPE" in
+                *usb*)
+                    printf '%s\n%s\n' "$CURR_DRV" "usb" ; return ;;
+                *serial*)
+                    printf '%s\n%s\n' "$CURR_DRV" "serial" ; return ;;
+                *)  # default depends on driver build (against libmodbus
+                    # version with or without support for usb)
+                    # TOTHINK: Check for presence of config values like
+                    # vendorid (USB) or baud (Serial)? They are optional
+                    # with reasonable defaults anyway...
+                    case "$CURR_PORT" in
+                        *auto*)
+                            printf '%s\n%s\n' "$CURR_DRV" "usb" ; return ;;
+                        /*)
+                            printf '%s\n%s\n' "$CURR_DRV" "serial" ; return ;;
+                        *localhost*|*127.0.0.1*|*::1*)
+                            printf '%s\n%s\n' "$CURR_DRV" "network-localhost" ; return ;;
+                        *)
+                            printf '%s\n%s\n' "$CURR_DRV" "network" ; return ;;
+                    esac
+                    # returns are above, but just in case - have a fallback:
+                    printf '%s\n%s\n' "$CURR_DRV" "" ; return ;;
+            esac
+            ;;
         *usb*)
             printf '%s\n%s\n' "$CURR_DRV" "usb" ; return ;;
         nutdrv_qx) # May be direct serial or USB
@@ -550,7 +587,7 @@ upsconf_getDriverMedia() {
                     printf '%s\n%s\n' "$CURR_DRV" "usb" ; return ;;
                 /dev/*)
                     # See drivers/nutdrv_qx.c :: upsdrv_initups() for a list
-                    if [ -n "`upsconf_getValue "$1" 'subdriver' 'vendorid' 'productid' 'vendor' 'product' 'serial' 'bus' 'langid_fix'`" ] \
+                    if [ -n "`upsconf_getValue "$1" 'subdriver' 'vendorid' 'productid' 'vendor' 'product' 'serial' 'bus' 'busport' 'langid_fix'`" ] \
                     ; then
                         printf '%s\n%s\n' "$CURR_DRV" "usb" ; return
                     else
@@ -791,14 +828,14 @@ smf_setSavedDeviceName() {
     smf_setSavedUniq "nut-driver:$1" "nut-driver-enumerator-generated-devicename" "DEVICE" astring "$2"
 }
 smf_restart_upsd() {
-    echo "Restarting NUT data server to make sure it knows new configuration..."
+    echo "Reloading or restarting NUT data server to make sure it knows new configuration..."
     /usr/sbin/svcadm enable "nut-server" 2>/dev/null
     /usr/sbin/svcadm clear "nut-server" 2>/dev/null
     /usr/sbin/svcadm refresh "nut-server" || \
     /usr/sbin/svcadm restart "nut-server"
 }
 smf_restart_drv() {
-    echo "Restarting NUT driver instance '$1' to make sure it knows new configuration..."
+    echo "Reloading or restarting NUT driver instance '$1' to make sure it knows new configuration..."
     /usr/sbin/svcadm enable "nut-driver:$1" 2>/dev/null
     /usr/sbin/svcadm clear "nut-driver:$1" 2>/dev/null
     /usr/sbin/svcadm refresh "nut-driver:$1" || \
@@ -951,7 +988,7 @@ systemd_restart_upsd() {
         *) return 0 ;;
     esac
 
-    echo "Restarting NUT data server to make sure it knows new configuration..."
+    echo "Reloading or restarting NUT data server to make sure it knows new configuration..."
     # Note: reload is a better way to go about this, so the
     # data service is not interrupted by re-initialization
     # of the daemon. But systemd/systemctl sometimes stalls...
@@ -967,9 +1004,12 @@ systemd_restart_drv() {
         *) return 0 ;;
     esac
 
-    echo "Restarting NUT driver instance '$1' to make sure it knows new configuration..."
+    echo "Reloading or restarting NUT driver instance '$1' to make sure it knows new configuration..."
 
     # Full restart, e.g. in case we changed the user= in configs
+    # however let "reload" try, in case we changed something that
+    # can be updated "on the fly", like the "debug_min" setting.
+    $TIMEOUT_CMD $TIMEOUT_ARGS /bin/systemctl reload-or-restart "nut-driver@$1" || \
     $TIMEOUT_CMD $TIMEOUT_ARGS /bin/systemctl restart "nut-driver@$1"
 }
 
@@ -995,7 +1035,7 @@ upslist_normalizeFile_filter() {
         -e 's,=\"\([^\ '"$TABCHAR"']*\)\"$,=\1,' \
         -e 's,^\(\[[^]'"$TABCHAR"'\ ]*\]\)['"$TABCHAR"'\ ]*\(#.*\)*$,\1,' \
     | grep -E -v '^$' \
-    | grep -E '([\[\=]|^[^ '"$TABCHAR"']*$|^[^ '"$TABCHAR"']*[ '"$TABCHAR"']*\#.*$)'
+    | grep -E '([\[\=]|^[^ '"$TABCHAR"']*$|^[^ '"$TABCHAR"']*[ '"$TABCHAR"']*#.*$)'
 }
 
 upslist_normalizeFile() {
@@ -1172,8 +1212,21 @@ nut_driver_enumerator_main() {
 
     if [ "${#NEW_CHECKSUM}" != 0 ]; then
         for UPSS in $NEW_CHECKSUM ; do
-            echo "Dropping old ${SERVICE_FRAMEWORK} service instance ${UPSS} whose section in config file has changed..." >&2
-            $hook_unregisterInstance "$UPSS"
+            CURR_DRV="`upsconf_getDriver "$UPSS"`" || CURR_DRV=""
+            DO_UNREGISTER=yes
+            if [ -n "$CURR_DRV" ] ; then
+                # If reload is handled and does not complain,
+                # we are OK to proceed without re-defining
+                # and restarting the driver service instance.
+                "@DRVPATH@/$CURR_DRV" -a "$UPSS" -c reload-or-error >/dev/null 2>/dev/null \
+                && DO_UNREGISTER=no
+            fi
+            if [ "$DO_UNREGISTER" = yes ] ; then
+                echo "Dropping old ${SERVICE_FRAMEWORK} service instance ${UPSS} whose section in config file has changed..." >&2
+                $hook_unregisterInstance "$UPSS"
+            else
+                echo "Keeping ${SERVICE_FRAMEWORK} service instance ${UPSS} whose section in config file has changed: live reload sufficed" >&2
+            fi
         done
         upslist_readSvcs "after updating for new config section checksums"
     fi

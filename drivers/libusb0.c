@@ -10,7 +10,7 @@
  *
  *      The logic of this file is ripped from mge-shut driver (also from
  *      Arnaud Quette), which is a "HID over serial link" UPS driver for
- *      Network UPS Tools <http://www.networkupstools.org/>
+ *      Network UPS Tools <https://www.networkupstools.org/>
  *
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@
 #endif
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 0.1)"
-#define USB_DRIVER_VERSION	"0.43"
+#define USB_DRIVER_VERSION	"0.45"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -76,6 +76,22 @@ void nut_usb_addvars(void)
 
 	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
 	addvar(VAR_VALUE, "device", "Regular expression to match USB device name");
+	/* Not supported by libusb0, but let's not crash config
+	 * parsing on unknown keywords due to such nuances! :) */
+	addvar(VAR_VALUE, "busport", "Regular expression to match USB bus port name"
+		" (tolerated but ignored in this build)"
+	);
+
+	/* Warning: this feature is inherently non-deterministic!
+	 * If you only care to know that at least one of your no-name UPSes is online,
+	 * this option can help. If you must really know which one, it will not!
+	 */
+	addvar(VAR_FLAG, "allow_duplicates",
+		"If you have several UPS devices which may not be uniquely "
+		"identified by options above, allow each driver instance with this "
+		"option to take the first match if available, or try another "
+		"(association of driver to device may vary between runs)");
+
 	addvar(VAR_VALUE, "usb_set_altinterface", "Force redundant call to usb_set_altinterface() (value=bAlternateSetting; default=0)");
 
 	dstate_setinfo("driver.version.usb", "libusb-0.1 (or compat)");
@@ -199,12 +215,13 @@ static int libusb_open(usb_dev_handle **udevp,
 	usb_ctrl_char	rdbuf[MAX_REPORT_SIZE];
 	usb_ctrl_charbufsize		rdlen;
 
+	struct usb_bus *busses;
+
 	/* libusb base init */
 	usb_init();
 	usb_find_busses();
 	usb_find_devices();
 
-	struct usb_bus *busses;
 #ifdef WIN32
 	busses = usb_get_busses();
 #else
@@ -276,13 +293,28 @@ static int libusb_open(usb_dev_handle **udevp,
 			free(curDevice->Serial);
 			free(curDevice->Bus);
 			free(curDevice->Device);
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+			free(curDevice->BusPort);
+#endif
 			memset(curDevice, '\0', sizeof(*curDevice));
 
+			/* Keep the list of items in sync with those matched by
+			 * drivers/libusb1.c and tools/nut-scanner/scan_usb.c:
+			 */
 			curDevice->VendorID = dev->descriptor.idVendor;
 			curDevice->ProductID = dev->descriptor.idProduct;
 			curDevice->Bus = xstrdup(bus->dirname);
 			curDevice->Device = xstrdup(dev->filename);
 			curDevice->bcdDevice = dev->descriptor.bcdDevice;
+
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+			curDevice->BusPort = (char *)malloc(4);
+			if (curDevice->BusPort == NULL) {
+				fatal_with_errno(EXIT_FAILURE, "Out of memory");
+			}
+			upsdebugx(2, "%s: NOTE: BusPort is always zero with libusb0", __func__);
+			sprintf(curDevice->BusPort, "%03d", 0);
+#endif
 
 			if (dev->descriptor.iManufacturer) {
 				retries = MAX_RETRY;
@@ -333,6 +365,9 @@ static int libusb_open(usb_dev_handle **udevp,
 			upsdebugx(2, "- Serial Number: %s", curDevice->Serial ? curDevice->Serial : "unknown");
 			upsdebugx(2, "- Bus: %s", curDevice->Bus ? curDevice->Bus : "unknown");
 			upsdebugx(2, "- Device: %s", curDevice->Device ? curDevice->Device : "unknown");
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+			upsdebugx(2, "- Bus Port: %s", curDevice->BusPort ? curDevice->BusPort : "unknown");
+#endif
 			upsdebugx(2, "- Device release number: %04x", curDevice->bcdDevice);
 
 			/* FIXME: extend to Eaton OEMs (HP, IBM, ...) */
@@ -363,6 +398,9 @@ static int libusb_open(usb_dev_handle **udevp,
 					goto next_device;
 				}
 			}
+
+			/* If we got here, none of the matchers said
+			 * that the device is not what we want. */
 			upsdebugx(2, "Device matches");
 
 			/* Now we have matched the device we wanted. Claim it. */
@@ -375,10 +413,15 @@ static int libusb_open(usb_dev_handle **udevp,
 #ifdef WIN32
 			usb_set_configuration(udev, 1);
 #endif
-			while (usb_claim_interface(udev, usb_subdriver.hid_rep_index) < 0) {
 
+			while ((ret = usb_claim_interface(udev, usb_subdriver.hid_rep_index)) < 0) {
 				upsdebugx(2, "failed to claim USB device: %s",
 					usb_strerror());
+
+				if (ret == LIBUSB_ERROR_BUSY && testvar("allow_duplicates")) {
+					upsdebugx(2, "Configured to allow_duplicates so looking for another similar device");
+					goto next_device;
+				}
 
 				if (usb_detach_kernel_driver_np(udev, usb_subdriver.hid_rep_index) < 0) {
 					upsdebugx(2, "failed to detach kernel driver from USB device: %s",
@@ -399,7 +442,12 @@ static int libusb_open(usb_dev_handle **udevp,
 					usb_strerror());
 			}
 #else
-			if (usb_claim_interface(udev, usb_subdriver.hid_rep_index) < 0) {
+			if ((ret = usb_claim_interface(udev, usb_subdriver.hid_rep_index)) < 0) {
+				if (ret == LIBUSB_ERROR_BUSY && testvar("allow_duplicates")) {
+					upsdebugx(2, "Configured to allow_duplicates so looking for another similar device");
+					goto next_device;
+				}
+
 				fatalx(EXIT_FAILURE,
 					"Can't claim USB device [%04x:%04x]@%d/%d: %s",
 					curDevice->VendorID, curDevice->ProductID,
@@ -439,9 +487,9 @@ static int libusb_open(usb_dev_handle **udevp,
 				upsdebugx(2, "Unable to get HID descriptor (%s)",
 					usb_strerror());
 			} else if (res < 9) {
-				upsdebugx(2, "HID descriptor too short (expected %d, got %d)", 8, res);
+				upsdebugx(2, "HID descriptor too short (expected %d, got %d)", 9, res);
 			} else {
-
+				upsdebugx(2, "Retrieved HID descriptor (expected %d, got %d)", 9, res);
 				upsdebug_hex(3, "HID descriptor, method 1", buf, 9);
 
 				rdlen1 = ((uint8_t)buf[7]) | (((uint8_t)buf[8]) << 8);
@@ -539,9 +587,23 @@ static int libusb_open(usb_dev_handle **udevp,
 
 			if (res < rdlen)
 			{
+#ifndef WIN32
 				upsdebugx(2, "Warning: report descriptor too short "
 					"(expected %" PRI_NUT_USB_CTRL_CHARBUFSIZE
 					", got %d)", rdlen, res);
+#else
+				/* https://github.com/networkupstools/nut/issues/1690#issuecomment-1455206002 */
+				upsdebugx(0, "Warning: report descriptor too short "
+					"(expected %" PRI_NUT_USB_CTRL_CHARBUFSIZE
+					", got %d)", rdlen, res);
+				upsdebugx(0, "Please check your Windows Device Manager: "
+					"perhaps the UPS was recognized by default OS\n"
+					"driver such as HID UPS Battery (hidbatt.sys, "
+					"hidusb.sys or similar). It could have been\n"
+					"\"restored\" by Windows Update. You can try "
+					"https://zadig.akeo.ie/ to handle it with\n"
+					"either WinUSB, libusb0.sys or libusbK.sys.");
+#endif	/* WIN32 */
 				rdlen = res; /* correct rdlen if necessary */
 			}
 

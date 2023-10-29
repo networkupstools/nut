@@ -4,7 +4,7 @@
  * A document describing the protocol implemented by this driver can be
  * found online at:
  *
- *   https://networkupstools.org/protocols/riello/PSGPSER-0104.pdf
+ *   https://www.networkupstools.org/protocols/riello/PSGPSER-0104.pdf
  *
  * Copyright (C) 2012 - Elio Parisi <e.parisi@riello-ups.com>
  * Copyright (C) 2016   Eaton
@@ -28,15 +28,13 @@
 
 #include "config.h" /* must be the first header */
 
-#include <stdint.h>
-
 #include "main.h"
 #include "nut_libusb.h"
 #include "usb-common.h"
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello USB driver"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.10"
 
 #define DEFAULT_OFFDELAY   5  /*!< seconds (max 0xFF) */
 #define DEFAULT_BOOTDELAY  5  /*!< seconds (max 0xFF) */
@@ -83,7 +81,7 @@ static void ussleep(useconds_t usec)
 	usleep(usec);
 }
 
-static int cypress_setfeatures()
+static int cypress_setfeatures(void)
 {
 	int ret;
 
@@ -350,13 +348,17 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 	int ret;
 
 	if (udev == NULL) {
+		dstate_setinfo("driver.state", "reconnect.trying");
+
 		ret = usb->open_dev(&udev, &usbdevice, reopen_matcher, &driver_callback);
 
 		upsdebugx (3, "riello_command err udev NULL : %d ", ret);
 		if (ret < 0)
 			return ret;
 
+		dstate_setinfo("driver.state", "reconnect.updateinfo");
 		upsdrv_initinfo();	/* reconnect usb cable */
+		dstate_setinfo("driver.state", "quiet");
 	}
 
 	ret = (*subdriver_command)(cmd, buf, length, buflen);
@@ -406,6 +408,7 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 	case LIBUSB_ERROR_NOT_FOUND:		/* No such file or directory */
 	fallthrough_case_reconnect:
 		/* Uh oh, got to reconnect! */
+		dstate_setinfo("driver.state", "reconnect.trying");
 		usb->close_dev(udev);
 		udev = NULL;
 		break;
@@ -431,7 +434,7 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 	return ret;
 }
 
-static int get_ups_nominal()
+static int get_ups_nominal(void)
 {
 
 	uint8_t length;
@@ -464,7 +467,7 @@ static int get_ups_nominal()
 	return 0;
 }
 
-static int get_ups_status()
+static int get_ups_status(void)
 {
 	uint8_t numread, length;
 	int recv;
@@ -503,7 +506,7 @@ static int get_ups_status()
 	return 0;
 }
 
-static int get_ups_extended()
+static int get_ups_extended(void)
 {
 	uint8_t length;
 	int recv;
@@ -536,7 +539,7 @@ static int get_ups_extended()
 }
 
 /* Not static, exposed via header. Not used though, currently... */
-int get_ups_statuscode()
+int get_ups_statuscode(void)
 {
 	uint8_t length;
 	int recv;
@@ -792,7 +795,7 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 	return STAT_INSTCMD_UNKNOWN;
 }
 
-static int start_ups_comm()
+static int start_ups_comm(void)
 {
 	uint16_t length;
 	int recv;
@@ -833,7 +836,8 @@ void upsdrv_help(void)
 
 void upsdrv_makevartable(void)
 {
-
+	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
+	nut_usb_addvars();
 }
 
 void upsdrv_initups(void)
@@ -847,7 +851,7 @@ void upsdrv_initups(void)
 	};
 
 	int	ret;
-	char	*regex_array[7];
+	char	*regex_array[USBMATCHER_REGEXP_ARRAY_LIMIT];
 
 	char	*subdrv = getval("subdriver");
 
@@ -860,6 +864,13 @@ void upsdrv_initups(void)
 	regex_array[4] = getval("serial");
 	regex_array[5] = getval("bus");
 	regex_array[6] = getval("device");
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	regex_array[7] = getval("busport");
+#else
+	if (getval("busport")) {
+		upslogx(LOG_WARNING, "\"busport\" is configured for the device, but is not actually handled by current build combination of NUT and libusb (ignored)");
+	}
+#endif
 
 	/* pick up the subdriver name if set explicitly */
 	if (subdrv) {
@@ -1004,9 +1015,6 @@ void upsdrv_initinfo(void)
 }
 
 void upsdrv_shutdown(void)
-	__attribute__((noreturn));
-
-void upsdrv_shutdown(void)
 {
 	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
 	int retry;
@@ -1034,10 +1042,13 @@ void upsdrv_shutdown(void)
 			continue;
 		}
 
-		fatalx(EXIT_SUCCESS, "Shutting down");
+		upslogx(LOG_ERR, "Shutting down");
+		set_exit_flag(-2);	/* EXIT_SUCCESS */
+		return;
 	}
 
-	fatalx(EXIT_FAILURE, "Shutdown failed!");
+	upslogx(LOG_ERR, "Shutdown failed!");
+	set_exit_flag(-1);
 }
 
 void upsdrv_updateinfo(void)
@@ -1229,4 +1240,7 @@ void upsdrv_cleanup(void)
 	free(usbdevice.Serial);
 	free(usbdevice.Bus);
 	free(usbdevice.Device);
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	free(usbdevice.BusPort);
+#endif
 }

@@ -306,6 +306,13 @@ want `upsd` to listen on for connections, optionally with a port number.
 	LISTEN 127.0.0.1 3493
 	LISTEN ::1 3493
 
+As a special case, `LISTEN * <port>` (with an asterisk) will try to
+listen on "ANY" IP address for both and IPv6 (`::0`) and IPv4 (`0.0.0.0`),
+subject to `upsd` command-line arguments, or system configuration or support.
+Note that if the system supports IPv4-mapped IPv6 addressing per RFC-3493,
+and does not allow to disable this mode, then there may be one listening
+socket to handle both address families.
+
 NOTE: Refer to the NUT user manual <<NUT_Security,security chapter>> for
 information on how to access and secure upsd clients connections.
 
@@ -596,7 +603,8 @@ Reloading the data server
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Reload `upsd`.  Depending on your configuration, you may be able to
-do this without stopping the `upsd` daemon process:
+do this without stopping the `upsd` daemon process (if it had saved
+a PID file earlier):
 
 	upsd -c reload
 
@@ -607,7 +615,14 @@ If that doesn't work (check the syslog), just restart it:
 
 For systems with integrated service management (Linux systemd,
 illumos/Solaris SMF) their corresponding `reload` or `refresh`
-service actions should handle this as well.
+service actions should handle this as well. Note that such integration
+generally forgoes saving of PID files, so `upsd -c <cmd>` would not work.
+If your workflow requires to manage these daemons beside the OS provided
+framework, you can customize it to start `upsd -FF` and save the PID file.
+
+NUT releases after 2.8.0 define aliases for these units, so if your Linux
+distribution uses NUT-provided unit definitions, `systemctl reload upsd`
+may also work.
 
 NOTE: If you want to make reloading work later, see the entry in the
 link:FAQ.html[FAQ] about starting `upsd` as a different user.

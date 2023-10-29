@@ -29,7 +29,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Best UPS driver"
-#define DRIVER_VERSION	"1.07"
+#define DRIVER_VERSION	"1.08"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {

@@ -6,7 +6,7 @@
 #include "nut_stdint.h"
 
 #define SUBDRIVER_NAME    "RS-232 communication subdriver"
-#define SUBDRIVER_VERSION "0.21"
+#define SUBDRIVER_VERSION "0.22"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -270,7 +270,7 @@ ssize_t command_write_sequence(unsigned char *command, size_t command_length, un
 	return bytes_read;
 }
 
-void upsdrv_comm_good()
+void upsdrv_comm_good(void)
 {
 	ser_comm_good();
 }

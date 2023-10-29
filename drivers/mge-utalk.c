@@ -69,7 +69,7 @@
 /* --------------------------------------------------------------- */
 
 #define DRIVER_NAME	"MGE UPS SYSTEMS/U-Talk driver"
-#define DRIVER_VERSION	"0.94"
+#define DRIVER_VERSION	"0.95"
 
 
 /* driver description structure */
@@ -956,7 +956,9 @@ static ssize_t mge_command(char *reply, size_t replylen, const char *fmt, ...)
 	bytes_rcvd = ser_get_line(upsfd, reply, replylen,
 		MGE_REPLY_ENDCHAR, MGE_REPLY_IGNCHAR, 3, 0);
 
-	upsdebugx(4, "mge_command: received %" PRIiSIZE " byte(s)", bytes_rcvd);
+	upsdebugx(4, "mge_command: sent %" PRIiSIZE
+		", received %" PRIiSIZE " byte(s)",
+		bytes_sent, bytes_rcvd);
 
 	return bytes_rcvd;
 }

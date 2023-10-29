@@ -51,7 +51,7 @@
 #include "timehead.h"   /* fallback gmtime_r() variants if needed (e.g. some WIN32) */
 
 #define DRIVER_NAME	"NUT Huawei UPS2000 (1kVA-3kVA) RS-232 Modbus driver"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_VERSION	"0.05"
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define MODBUS_SLAVE_ID 1
@@ -225,12 +225,15 @@ void upsdrv_initups(void)
 		fatalx(EXIT_FAILURE, "Unable to create the libmodbus context");
 
 #if LIBMODBUS_VERSION_CHECK(3, 1, 2)
-	/* It can take as slow as 1 sec. for the UPS to respond. */
-	modbus_set_response_timeout(modbus_ctx, 1, 0);
+	/*
+	 * Although it rarely occurs, it can take as slow as 2 sec. for the
+	 * UPS to respond a read and finish transmitting the message.
+	 */
+	modbus_set_response_timeout(modbus_ctx, 2, 0);
 #else
 	{
 		struct timeval timeout;
-		timeout.tv_sec = 1;
+		timeout.tv_sec = 2;
 		timeout.tv_usec = 0;
 		modbus_set_response_timeout(modbus_ctx, &timeout);
 	}
@@ -1798,8 +1801,10 @@ void upsdrv_shutdown(void)
 	int r;
 
 	r = instcmd("shutdown.reboot", "");
-	if (r != STAT_INSTCMD_HANDLED)
-		fatalx(EXIT_FAILURE, "upsdrv_shutdown failed!");
+	if (r != STAT_INSTCMD_HANDLED) {
+		upslogx(LOG_ERR, "upsdrv_shutdown failed!");
+		set_exit_flag(-1);
+	}
 }
 
 
@@ -1945,10 +1950,22 @@ static int ups2000_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *des
 				 "Please file a bug report!", addr);
 
 	for (i = 0; i < 3; i++) {
+		/*
+		 * If the previous read failed with a timeout, often there
+		 * are still unprocessed bytes in the serial buffer and they
+		 * would be mixed with the new data, creating invalid messages,
+		 * making all subsequent reads to fail as well.
+		 *
+		 * Flush read buffer first to avoid it.
+		 */
+		modbus_flush(ctx);
+
 		r = modbus_read_registers(ctx, addr, nb, dest);
 
 		/* generic retry for modbus read failures. */
 		if (retry_status == RETRY_ENABLE && r != nb) {
+			upslogx(LOG_WARNING, "modbus_read_registers() failed (%d, errno %d): %s",
+				r, errno, modbus_strerror(errno));
 			upslogx(LOG_WARNING, "Register %04d has a read failure. Retrying...", addr);
 			sleep(1);
 			continue;
@@ -1974,7 +1991,9 @@ static int ups2000_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *des
 	}
 
 	/* Give up */
-	upslogx(LOG_WARNING, "Register %04d has a fatal read failure.", addr);
+	upslogx(LOG_ERR, "modbus_read_registers() failed (%d, errno %d): %s",
+		r, errno, modbus_strerror(errno));
+	upslogx(LOG_ERR, "Register %04d has a fatal read failure.", addr);
 	retry_status = RETRY_DISABLE_TEMPORARY;
 	return r;
 }
@@ -1994,6 +2013,8 @@ static int ups2000_write_registers(modbus_t *ctx, int addr, int nb, uint16_t *sr
 
 		/* generic retry for modbus write failures. */
 		if (retry_status == RETRY_ENABLE && r != nb) {
+			upslogx(LOG_WARNING, "modbus_write_registers() failed (%d, errno %d): %s",
+				r, errno, modbus_strerror(errno));
 			upslogx(LOG_WARNING, "Register %04d has a write failure. Retrying...", addr);
 			sleep(1);
 			continue;
@@ -2005,7 +2026,9 @@ static int ups2000_write_registers(modbus_t *ctx, int addr, int nb, uint16_t *sr
 	}
 
 	/* Give up */
-	upslogx(LOG_WARNING, "Register %04d has a fatal write failure.", addr);
+	upslogx(LOG_ERR, "modbus_write_registers() failed (%d, errno %d): %s",
+		r, errno, modbus_strerror(errno));
+	upslogx(LOG_ERR, "Register %04d has a fatal write failure.", addr);
 	retry_status = RETRY_DISABLE_TEMPORARY;
 	return r;
 }

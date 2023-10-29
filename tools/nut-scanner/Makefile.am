@@ -8,6 +8,7 @@ NUT_SCANNER_DEPS = $(NUT_SCANNER_DEPS_H) $(NUT_SCANNER_DEPS_C)
 
 BUILT_SOURCES = $(NUT_SCANNER_DEPS)
 CLEANFILES = $(BUILT_SOURCES)
+EXTRA_DIST = README.adoc
 
 # Make sure we have the freshest files (no-op if built earlier and then
 # no driver sources and other dependencies were edited by a developer)
@@ -15,6 +16,7 @@ $(NUT_SCANNER_DEPS): dummy
 	@cd .. && $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
+$(top_builddir)/common/libcommonclient.la \
 $(top_builddir)/common/libcommon.la: dummy
 	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
@@ -58,6 +60,10 @@ if WITH_LIBLTDL
 libnutscan_la_LIBADD += $(LIBLTDL_LIBS)
 endif
 libnutscan_la_LIBADD += $(top_builddir)/common/libcommonclient.la
+if HAVE_SEMAPHORE_LIBS
+# Are additional libraries needed for semaphore support?
+libnutscan_la_LIBADD += $(SEMLIBS)
+endif
 
 # FIXME: From old ages onward, SERLIBS are added here and not in LIBADD... why?
 libnutscan_la_LDFLAGS = $(SERLIBS)
@@ -74,7 +80,7 @@ endif
 # object .so names would differ)
 #
 # libnutscan version information
-libnutscan_la_LDFLAGS += -version-info 2:0:0
+libnutscan_la_LDFLAGS += -version-info 2:2:0
 
 # libnutscan exported symbols regex
 # WARNING: Since the library includes parts of libcommon (as much as needed
@@ -85,7 +91,7 @@ libnutscan_la_LDFLAGS += -version-info 2:0:0
 # copies of "nut_debug_level" making fun of our debug-logging attempts.
 # One solution to tackle if needed for those cases would be to make some
 # dynamic/shared libnutcommon (etc.)
-libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebugx|max_threads|curr_threads)'
+libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebugx|max_threads|curr_threads|nut_report_config_flags|upsdebugx_report_search_paths|nut_prepare_search_paths)'
 libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include \
 			$(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
 
@@ -139,10 +145,10 @@ endif
 
 dummy:
 
-CLEANFILES += *-spellchecked
+CLEANFILES += *-spellchecked README
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
 # the root Makefile.am takes care of that!
 #clean-local:
-#	rm -rf $(builddir)/.deps
+#	$(AM_V_at)rm -rf $(builddir)/.deps

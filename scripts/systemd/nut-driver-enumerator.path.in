@@ -1,3 +1,10 @@
+# Trigger restart of nut-driver-enumerator.service whenever ups.conf is edited
+# Network UPS Tools (NUT) systemd integration
+# Copyright (C) 2011-2023 by NUT contirbutors
+# Distributed under the terms of GPLv2+
+# See https://networkupstools.org/
+# and https://github.com/networkupstools/nut/
+
 [Unit]
 Description=Network UPS Tools - Trigger restart of nut-driver-enumerator.service whenever ups.conf is edited
 Conflicts=nut-driver-enumerator-daemon.service nut-driver-enumerator-daemon-activator.path nut-driver-enumerator-daemon-activator.service

@@ -28,7 +28,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Opti-UPS driver"
-#define DRIVER_VERSION "1.02"
+#define DRIVER_VERSION "1.04"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -62,7 +62,7 @@ upsdrv_info_t upsdrv_info = {
    "It works even with a pl2303 usb-serial converter."                          "\n" \
    "**********************************************************"                 "\n"
 
-/* See http://www.networkupstools.org/protocols/optiups.html and the end of this
+/* See https://www.networkupstools.org/protocols/optiups.html and the end of this
  * file for more information on the cable and the OPTI-UPS serial protocol used on
  * at least the older OPTI UPS models (420E, 820ES).
  */
@@ -83,7 +83,8 @@ static char _buf[256];
 static int optimodel = 0;
 enum {
 	OPTIMODEL_DEFAULT = 0,
-	OPTIMODEL_ZINTO = 1
+	OPTIMODEL_ZINTO = 1,
+	OPTIMODEL_PS = 2
 };
 
 
@@ -120,6 +121,19 @@ static ezfill_t _pollv_zinto[] = {
 	{ "OV", "output.voltage", 2.0 },
 	{ "OF", "output.frequency", 0.1 },
 	{ "NF", "input.frequency", 0.1 },
+	{ "BT", "ups.temperature", 0 },
+};
+
+/* When on a 220-2400V mains supply, the NV and OV commands return 115V values. FV
+ * returns a value that matches the DIP switch settings for 120/240V models, so
+ * it can be used to scale the valus from NV and OV.
+ *
+ * I suspect this will be the case for other Opti-UPS models, but as I can only
+ * test with a PS-1440RM at 230V the change is only applied to PowerSeries models.
+ */
+static ezfill_t _pollv_ps[] = {
+ 	{ "OL", "ups.load", 1.0 },
+ 	{ "FF", "input.frequency", 0.1 },
 	{ "BT", "ups.temperature", 0 },
 };
 
@@ -347,7 +361,14 @@ void upsdrv_initinfo(void)
 		optiquery( "ON" );
 	}
 
-	optifill( _initv, sizeof(_initv)/sizeof(_initv[0]) );
+	/* Autodetect an Opti-UPS PS series */
+	r = optiquery( "IO" );
+	if ( r > 0 && !strncasecmp(_buf, "PS-", 3) )
+	{
+		optimodel = OPTIMODEL_PS;
+	}
+
+	optifill( _initv, SIZEOF_ARRAY(_initv) );
 
 	/* Parse out model into longer string -- is this really USEFUL??? */
 	r = optiquery( "IO" );
@@ -462,9 +483,32 @@ void upsdrv_updateinfo(void)
 
 	/* read some easy settings */
 	if ( optimodel == OPTIMODEL_ZINTO )
-		optifill( _pollv_zinto, sizeof(_pollv_zinto)/sizeof(_pollv_zinto[0]) );
+		optifill( _pollv_zinto, SIZEOF_ARRAY(_pollv_zinto) );
+	else if ( optimodel == OPTIMODEL_PS ) {
+		short inV, outV, fV;
+
+		optifill( _pollv_ps, SIZEOF_ARRAY(_pollv_ps) );
+
+		r = optiquery( "NV" );
+		str_to_short ( _buf, &inV, 10 );
+		r = optiquery( "OV" );
+		str_to_short ( _buf, &outV, 10 );
+
+		r = optiquery( "FV" );
+		if ( r >= 1 )
+		{
+			str_to_short ( _buf, &fV, 10 );
+			if ( fV > 180 )
+			{
+				inV = inV * 2;
+				outV = outV * 2;
+			}
+		}
+		dstate_setinfo( "input.voltage", "%d", inV );
+		dstate_setinfo( "output.voltage", "%d", outV );
+	}
 	else
-		optifill( _pollv, sizeof(_pollv)/sizeof(_pollv[0]) );
+		optifill( _pollv, SIZEOF_ARRAY(_pollv) );
 
 	/* Battery voltage is harder */
 	r = optiquery( "BV" );
@@ -475,8 +519,16 @@ void upsdrv_updateinfo(void)
 		float p, v = strtol( _buf, NULL, 10 ) / 10.0;
 		dstate_setinfo("battery.voltage", "%.1f", v );
 
-		/* battery voltage range: 10.4 - 13.0 VDC */
-		p = ((v  - 10.4) / 2.6) * 100.0;
+		if (v > 20)
+		{
+			/* battery voltage range: 20.8 - 26.0 VDC */
+			p = ((v  - 20.8) / 5.2) * 100.0;
+		}
+		else
+		{
+			/* battery voltage range: 10.4 - 13.0 VDC */
+			p = ((v  - 10.4) / 2.6) * 100.0;
+		}
 		if ( p > 100.0 )
 			p = 100.0;
 		dstate_setinfo("battery.charge", "%.1f", p );

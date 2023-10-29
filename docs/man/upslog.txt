@@ -47,6 +47,9 @@ within this string are:
 %PID%;; insert the pid of upslog
 
 %VAR varname%;; insert the value of variable varname
+(see NUT developer documentation chapter "Variables" on-line or in
+the `docs/nut-names.txt` file in sources of the NUT version you have
+installed for more details)
 
 The default format string is:
 
@@ -88,8 +91,8 @@ ups and logfile separated by commas. An example would be:
 If started as root, upslog will *setuid*(2) to the user id
 associated with 'username' for security.
 +
-If 'username' is not defined, it will use the value that was compiled into the
-program.  This defaults to "nobody", which is less than ideal.
+If 'username' is not defined, it will use the value that was compiled into
+the program.  This defaults to "nobody", which is less than ideal.
 
 SERVICE DELAYS
 --------------
@@ -132,4 +135,4 @@ linkman:upsrw[8], linkman:upsmon[8], linkman:upssched[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

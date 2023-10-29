@@ -32,12 +32,12 @@
 # On a system called "doghouse", the line in your upsmon.conf to monitor
 # and manage it would look something like this:
 #
-#   MONITOR snoopy@doghouse 1 upsmonuser mypassword primary
+#   MONITOR snoopy@doghouse 1 monuser mypassword primary
 #
 # It might look like this if monitoring in "secondary" mode (without any
 # ability to directly manage the UPS) from a different system:
 #
-#   MONITOR snoopy@doghouse 1 upsmonuser mypassword secondary
+#   MONITOR snoopy@doghouse 1 monuser mypassword secondary
 #
 # Configuration directives
 # ------------------------
@@ -88,6 +88,16 @@ maxretry = 3
 #                upsdrvctl will wait for the driver to finish starting.
 #                This keeps your system from getting stuck due to a
 #                broken driver or UPS.
+#                Note that after this time upsdrvctl would just move
+#                along with its business (whether retrying the same
+#                driver if `maxretry>1`, or trying another driver if
+#                starting them all, or just eventually exit); however,
+#                each such most recently started "stuck" driver process
+#                may be further initializing in the background, and
+#                might even succeed eventually.
+#                They would not be actively killed by upsdrvctl after
+#                this timeout expires.
+#
 #                The default is 45 seconds.
 #
 #   debug_min: OPTIONAL.  Specify a minimum debug level for all driver daemons

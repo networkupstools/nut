@@ -25,7 +25,7 @@
 #include "nutdrv_qx.h"
 #include "nutdrv_qx_voltronic.h"
 
-#define VOLTRONIC_VERSION "Voltronic 0.06"
+#define VOLTRONIC_VERSION "Voltronic 0.08"
 
 /* Support functions */
 static int	voltronic_claim(void);
@@ -1076,7 +1076,7 @@ static item_t	voltronic_qx2nut[] = {
 	{ "ups.load",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	29,	31,	"%.0f",	0,	NULL,	NULL,	NULL },
 /*	{ "unknown.1",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	33,	37,	"%.1f",	0,	NULL,	NULL,	NULL },	*//* Unknown */
 /*	{ "unknown.2",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	39,	43,	"%.1f",	0,	NULL,	NULL,	NULL },	*//* Unknown */
-	{ "battery.voltage",	0,	NULL,	"QGS\r",	"",	76,	'(',	"",	45,	49,	"%.2f",	0,	NULL,	NULL,	NULL },
+	{ "battery.voltage",	0,	NULL,	"QGS\r",	"",	76,	'(',	"",	45,	49,	"%.2f",	0,	NULL,	NULL,	qx_multiply_battvolt },
 /*	{ "unknown.3",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	51,	55,	"%.1f",	0,	NULL,	NULL,	NULL },	*//* Unknown */
 	{ "ups.temperature",	0,	NULL,	"QGS\r",	"",	76,	'(',	"",	57,	61,	"%.1f",	0,	NULL,	NULL,	NULL },
 	{ "ups.type",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	63,	64,	"%s",	QX_FLAG_SEMI_STATIC,	NULL,	NULL,	voltronic_status },
@@ -1130,7 +1130,7 @@ static item_t	voltronic_qx2nut[] = {
 	 *    0         1         2
 	 */
 
-	{ "battery.voltage",	0,		NULL,			"QBV\r",	"",	21,	'(',	"",	1,	5,	"%.2f",	0,	NULL,	NULL,	NULL },
+	{ "battery.voltage",	0,		NULL,			"QBV\r",	"",	21,	'(',	"",	1,	5,	"%.2f",	0,	NULL,	NULL,	qx_multiply_battvolt },
 	{ "battery_number",	ST_FLAG_RW,	voltronic_r_batt_numb,	"QBV\r",	"",	21,	'(',	"",	7,	9,	"%d",	QX_FLAG_SEMI_STATIC | QX_FLAG_RANGE | QX_FLAG_NONUT,	NULL,	NULL,	voltronic_batt_numb },	/* Number of batteries that make a pack */
 	{ "battery.packs",	ST_FLAG_RW,	voltronic_r_batt_packs,	"QBV\r",	"",	21,	'(',	"",	10,	11,	"%.0f",	QX_FLAG_SEMI_STATIC | QX_FLAG_RANGE,	NULL,	NULL,	NULL },	/* Number of battery packs in parallel */
 	{ "battery.charge",	0,		NULL,			"QBV\r",	"",	21,	'(',	"",	13,	15,	"%.0f",	0,	NULL,	NULL,	NULL },

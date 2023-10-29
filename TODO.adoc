@@ -18,7 +18,7 @@ the excellent link:https://asciidoc.org/[AsciiDoc].
 2.8
 ^^^
 
-This branch will focus on configuration and user interface improvements. 
+This branch will focus on configuration and user interface improvements.
 
 3.0
 ^^^

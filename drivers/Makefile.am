@@ -10,11 +10,12 @@ $(top_builddir)/clients/libupsclient.la: dummy
 # (libtool version of the static lib, in order to access LTLIBOBJS)
 #FIXME: SERLIBS is only useful for LDADD_DRIVERS_SERIAL not for LDADD_COMMON
 LDADD_COMMON = $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la
-LDADD_DRIVERS = libdummy.la $(LDADD_COMMON)
+LDADD_DRIVERS = libdummy.la libdummy_upsdrvquery.la $(LDADD_COMMON)
 LDADD_DRIVERS_SERIAL = libdummy_serial.la $(LDADD_DRIVERS) $(SERLIBS)
 
 # most targets are serial drivers, so make this the default
 LDADD = $(LDADD_DRIVERS_SERIAL)
+
 # Avoid per-target CFLAGS, because this will prevent re-use of object
 # files. In any case, CFLAGS are only -I options, so there is no harm,
 # but only add them if we really use the target.
@@ -31,8 +32,14 @@ endif
 if WITH_IPMI
   AM_CFLAGS += $(LIBIPMI_CFLAGS)
 endif
+if WITH_GPIO
+  AM_CFLAGS += $(LIBGPIO_CFLAGS)
+endif
 if WITH_MODBUS
   AM_CFLAGS += $(LIBMODBUS_CFLAGS)
+endif
+if HAVE_LIBREGEX
+  AM_CFLAGS += $(LIBREGEX_CFLAGS)
 endif
 
 NUTSW_DRIVERLIST = dummy-ups clone clone-outlet apcupsd-ups skel
@@ -41,7 +48,7 @@ SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
  gamatronic genericups isbmex liebert liebert-esp2 masterguard metasys	\
  mge-utalk microdowell microsol-apc mge-shut oneac optiups powercom rhino 	\
  safenet nutdrv_siemens-sitop solis tripplite tripplitesu upscode2 victronups powerpanel \
- blazer_ser ivtscd apcsmart apcsmart-old riello_ser
+ blazer_ser ivtscd apcsmart apcsmart-old riello_ser sms_ser
 SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
  blazer_usb richcomm_usb riello_usb \
@@ -51,16 +58,18 @@ SERIAL_USB_DRIVERLIST = \
 	nutdrv_qx
 NEONXML_DRIVERLIST = netxml-ups
 MACOSX_DRIVERLIST = macosx-ups
-MODBUS_DRIVERLIST = phoenixcontact_modbus generic_modbus huawei-ups2000 socomec_jbus adelsystem_cbi
+MODBUS_DRIVERLIST = phoenixcontact_modbus generic_modbus huawei-ups2000 socomec_jbus adelsystem_cbi apc_modbus
 LINUX_I2C_DRIVERLIST = asem pijuice
 POWERMAN_DRIVERLIST = powerman-pdu
 IPMI_DRIVERLIST = nut-ipmipsu
+GPIO_DRIVERLIST = generic_gpio_libgpiod
 
 # distribute all drivers, even ones that are not built by default
 EXTRA_PROGRAMS  = $(SERIAL_DRIVERLIST) $(USB_DRIVERLIST) $(SERIAL_USB_DRIVERLIST)
 EXTRA_PROGRAMS += $(SNMP_DRIVERLIST) $(NEONXML_DRIVERLIST) $(MACOSX_DRIVERLIST)
 EXTRA_PROGRAMS += $(LINUX_I2C_DRIVERLIST)
 EXTRA_PROGRAMS += $(NUTSW_DRIVERLIST)
+EXTRA_PROGRAMS += $(GPIO_DRIVERLIST)
 
 # construct the list of drivers to build
 if SOME_DRIVERS
@@ -89,6 +98,9 @@ endif
 if WITH_IPMI
    driverexec_PROGRAMS += $(IPMI_DRIVERLIST)
 endif
+if WITH_GPIO
+   driverexec_PROGRAMS += $(GPIO_DRIVERLIST)
+endif
 if WITH_MACOSX
    driverexec_PROGRAMS += $(MACOSX_DRIVERLIST)
 endif
@@ -110,7 +122,7 @@ sbin_PROGRAMS = upsdrvctl
 
 # upsdrvctl: the all-singing all-dancing driver control program
 upsdrvctl_SOURCES = upsdrvctl.c
-upsdrvctl_LDADD = $(LDADD_COMMON)
+upsdrvctl_LDADD = $(LDADD_COMMON) libdummy_upsdrvquery.la
 
 # serial drivers: all of them use standard LDADD and CFLAGS
 al175_SOURCES = al175.c
@@ -163,6 +175,8 @@ upscode2_LDADD = $(LDADD) -lm
 victronups_SOURCES = victronups.c
 riello_ser_SOURCES = riello.c riello_ser.c
 riello_ser_LDADD = $(LDADD) -lm
+sms_ser_SOURCES = sms_ser.c
+sms_ser_LDADD = $(LDADD) -lm
 
 # non-serial drivers: these use custom LDADD and/or CFLAGS
 
@@ -215,7 +229,7 @@ blazer_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 nutdrv_atcl_usb_SOURCES = nutdrv_atcl_usb.c usb-common.c
 nutdrv_atcl_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
 
-richcomm_usb_SOURCES = richcomm_usb.c usb-common.c
+richcomm_usb_SOURCES = richcomm_usb.c $(LIBUSB_IMPL) usb-common.c
 richcomm_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
 
 riello_usb_SOURCES = riello.c riello_usb.c $(LIBUSB_IMPL) usb-common.c
@@ -236,14 +250,14 @@ snmp_ups_SOURCES = snmp-ups.c snmp-ups-helpers.c \
  compaq-mib.c cyberpower-mib.c \
  delta_ups-mib.c \
  eaton-pdu-genesis2-mib.c eaton-pdu-marlin-mib.c eaton-pdu-marlin-helpers.c \
- eaton-pdu-pulizzi-mib.c eaton-pdu-revelation-mib.c \
+ eaton-pdu-pulizzi-mib.c eaton-pdu-revelation-mib.c eaton-pdu-nlogic-mib.c \
  eaton-ats16-nmc-mib.c eaton-ats16-nm2-mib.c apc-ats-mib.c eaton-ats30-mib.c \
+ eaton-ups-pwnm2-mib.c eaton-ups-pxg-mib.c \
  emerson-avocent-pdu-mib.c \
- hpe-pdu-mib.c huawei-mib.c \
+ hpe-pdu-mib.c hpe-pdu3-cis-mib.c huawei-mib.c \
  ietf-mib.c \
  mge-mib.c \
  netvision-mib.c \
- powerware-mib.c \
  raritan-pdu-mib.c raritan-px2-mib.c \
  xppc-mib.c
 snmp_ups_CFLAGS = $(AM_CFLAGS)
@@ -280,6 +294,8 @@ generic_modbus_SOURCES = generic_modbus.c
 generic_modbus_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
 adelsystem_cbi_SOURCES = adelsystem_cbi.c
 adelsystem_cbi_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
+apc_modbus_SOURCES = apc_modbus.c $(LIBUSB_IMPL) hidparser.c usb-common.c
+apc_modbus_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS) $(LIBUSB_LIBS)
 
 # Huawei UPS2000 driver
 # (this is both a Modbus and a serial driver)
@@ -292,10 +308,14 @@ socomec_jbus_SOURCES = socomec_jbus.c
 socomec_jbus_LDADD = $(LDADD_DRIVERS_SERIAL) $(LIBMODBUS_LIBS)
 
 # Linux I2C drivers
-asem_LDADD = $(LDADD_DRIVERS)
+asem_LDADD = $(LDADD_DRIVERS) $(LIBI2C_LIBS)
 asem_SOURCES = asem.c
-pijuice_LDADD = $(LDADD_DRIVERS)
+pijuice_LDADD = $(LDADD_DRIVERS) $(LIBI2C_LIBS)
 pijuice_SOURCES = pijuice.c
+
+# GPIO drivers
+generic_gpio_libgpiod_SOURCES = generic_gpio_common.c generic_gpio_libgpiod.c
+generic_gpio_libgpiod_LDADD = $(LDADD_DRIVERS) $(LIBGPIO_LIBS)
 
 # nutdrv_qx USB/Serial
 nutdrv_qx_SOURCES = nutdrv_qx.c
@@ -326,11 +346,12 @@ nutdrv_qx_SOURCES += $(NUTDRV_QX_SUBDRIVERS)
 dist_noinst_HEADERS = apc-mib.h apc-iem-mib.h apc-hid.h arduino-hid.h baytech-mib.h bcmxcp.h bcmxcp_ser.h	\
  bcmxcp_io.h belkin.h belkin-hid.h bestpower-mib.h blazer.h cps-hid.h dstate.h	\
  dummy-ups.h explore-hid.h gamatronic.h genericups.h	\
+ generic_gpio_common.h generic_gpio_libgpiod.h	\
  hidparser.h hidtypes.h ietf-mib.h libhid.h libshut.h nut_libusb.h liebert-hid.h	\
  main.h mge-hid.h mge-mib.h mge-utalk.h		\
  mge-xml.h microdowell.h microsol-apc.h microsol-common.h netvision-mib.h netxml-ups.h nut-ipmi.h oneac.h		\
- powercom.h powerpanel.h powerp-bin.h powerp-txt.h powerware-mib.h raritan-pdu-mib.h	\
- safenet.h serial.h snmp-ups.h solis.h tripplite.h tripplite-hid.h 			\
+ powercom.h powerpanel.h powerp-bin.h powerp-txt.h raritan-pdu-mib.h	\
+ safenet.h serial.h sms_ser.h snmp-ups.h solis.h tripplite.h tripplite-hid.h 			\
  upshandler.h usb-common.h usbhid-ups.h powercom-hid.h compaq-mib.h idowell-hid.h \
  apcsmart.h apcsmart_tabs.h apcsmart-old.h apcupsd-ups.h cyberpower-mib.h riello.h openups-hid.h \
  delta_ups-mib.h nutdrv_qx.h nutdrv_qx_bestups.h nutdrv_qx_blazer-common.h	\
@@ -338,10 +359,11 @@ dist_noinst_HEADERS = apc-mib.h apc-iem-mib.h apc-hid.h arduino-hid.h baytech-mi
  nutdrv_qx_mecer.h nutdrv_qx_ablerex.h  \
  nutdrv_qx_megatec.h nutdrv_qx_megatec-old.h nutdrv_qx_mustek.h nutdrv_qx_q1.h nutdrv_qx_hunnox.h	\
  nutdrv_qx_voltronic.h nutdrv_qx_voltronic-qs.h nutdrv_qx_voltronic-qs-hex.h nutdrv_qx_zinto.h \
+ upsdrvquery.h \
  xppc-mib.h huawei-mib.h eaton-ats16-nmc-mib.h eaton-ats16-nm2-mib.h apc-ats-mib.h raritan-px2-mib.h eaton-ats30-mib.h \
  apc-pdu-mib.h apc-epdu-mib.h ever-hid.h eaton-pdu-genesis2-mib.h eaton-pdu-marlin-mib.h eaton-pdu-marlin-helpers.h \
- eaton-pdu-pulizzi-mib.h eaton-pdu-revelation-mib.h emerson-avocent-pdu-mib.h legrand-hid.h \
- hpe-pdu-mib.h powervar-hid.h delta_ups-hid.h generic_modbus.h salicru-hid.h adelsystem_cbi.h
+ eaton-pdu-pulizzi-mib.h eaton-pdu-revelation-mib.h emerson-avocent-pdu-mib.h eaton-ups-pwnm2-mib.h eaton-ups-pxg-mib.h legrand-hid.h \
+ hpe-pdu-mib.h hpe-pdu3-cis-mib.h powervar-hid.h delta_ups-hid.h generic_modbus.h salicru-hid.h adelsystem_cbi.h eaton-pdu-nlogic-mib.h
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,
@@ -349,11 +371,21 @@ dist_noinst_HEADERS = apc-mib.h apc-iem-mib.h apc-hid.h arduino-hid.h baytech-mi
 # because per-object CFLAGS can only be specified for libraries, not
 # for object files. This library is used during the build process,
 # and is not meant to be installed.
-EXTRA_LTLIBRARIES = libdummy.la libdummy_serial.la
+EXTRA_LTLIBRARIES = libdummy.la libdummy_serial.la libdummy_upsdrvquery.la
 libdummy_la_SOURCES = main.c dstate.c
 libdummy_la_LDFLAGS = -no-undefined -static
 libdummy_serial_la_SOURCES = serial.c
 libdummy_serial_la_LDFLAGS = -no-undefined -static
+libdummy_upsdrvquery_la_SOURCES = upsdrvquery.c
+libdummy_upsdrvquery_la_LDFLAGS = -no-undefined -static
+
+# The libdummy_mockdrv.la is used for unit-tests to mock a driver
+# with near-production codebase but without its standard main().
+# Otherwise, also not meant to be installed.
+EXTRA_LTLIBRARIES += libdummy_mockdrv.la
+libdummy_mockdrv_la_SOURCES = main.c dstate.c
+libdummy_mockdrv_la_CFLAGS = $(AM_CFLAGS) -DDRIVERS_MAIN_WITHOUT_MAIN=1
+libdummy_mockdrv_la_LDFLAGS = -static $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la
 
 dummy:
 
@@ -363,4 +395,4 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
 # the root Makefile.am takes care of that!
 #clean-local:
-#	rm -rf $(builddir)/.deps
+#	$(AM_V_at)rm -rf $(builddir)/.deps

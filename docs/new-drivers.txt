@@ -95,7 +95,7 @@ This structure tracks several description information about the driver:
               - DRV_COMPLETE: this is the gold level! It implies that 100 % of
               the protocol is implemented, and a full QA pass.
  * *subdrv_info*: array of upsdrv_info_t for sub driver(s) information. For
-   example, this is used by usbhid-ups.
+              example, this is used by usbhid-ups.
 
 This information is currently used for the startup banner printing and tests.
 
@@ -158,6 +158,13 @@ You should attempt the UPS shutdown command even if the UPS detection
 fails.  If the UPS does not shut down the load, then the user is
 vulnerable to a race if the power comes back on during the shutdown
 process.
+
+This method should not directly `exit()` the driver program (neither
+should it call `fatalx()` nor `fatal_with_errno()` methods).  It can
+`upslogx(LOG_ERR, ...)` or `upslog_with_errno(LOG_ERR, ...)`, and then
+`set_exit_flag(N)` if required (`-1` for `EXIT_FAILURE` and `-2` for
+`EXIT_SUCCESS` which would be handled in the standard driver loop or
+`forceshutdown()` method of `main.c`).
 
 Data types
 ----------

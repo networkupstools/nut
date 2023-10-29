@@ -31,7 +31,7 @@
 #endif
 
 #define DRIVER_NAME	"Clone UPS driver"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_VERSION	"0.04"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -570,7 +570,7 @@ void upsdrv_updateinfo(void)
 
 	if (ups.timer.shutdown >= 0) {
 
-		ups.timer.shutdown -= difftime(now, last_poll);
+		ups.timer.shutdown -= (suseconds_t)(difftime(now, last_poll));
 
 		if (ups.timer.shutdown < 0) {
 			const char	*val;
@@ -589,7 +589,7 @@ void upsdrv_updateinfo(void)
 	} else if (ups.timer.start >= 0) {
 
 		if (online) {
-			ups.timer.start -= difftime(now, last_poll);
+			ups.timer.start -= (suseconds_t)(difftime(now, last_poll));
 		} else {
 			ups.timer.start = ondelay;
 		}
@@ -629,11 +629,10 @@ void upsdrv_updateinfo(void)
 
 
 void upsdrv_shutdown(void)
-	__attribute__((noreturn));
-
-void upsdrv_shutdown(void)
 {
-	fatalx(EXIT_FAILURE, "shutdown not supported");
+	/* replace with a proper shutdown function */
+	upslogx(LOG_ERR, "shutdown not supported");
+	set_exit_flag(-1);
 }
 
 

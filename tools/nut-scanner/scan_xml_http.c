@@ -44,6 +44,9 @@
    on Windows 2000 and older versions */
 #include <ws2tcpip.h>
 #include <wspiapi.h>
+# if ! HAVE_INET_PTON
+#  include "wincompat.h"	/* fallback inet_ntop where needed */
+# endif
 #endif
 
 #include <string.h>
@@ -53,7 +56,6 @@
 #include <ltdl.h>
 
 /* dynamic link library stuff */
-static char * libname = "libneon"; /* Note: this is for info messages, not the SONAME */
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
 
@@ -137,7 +139,9 @@ int nutscan_load_neon_library(const char *libname_path)
 
 	return 1;
 err:
-	fprintf(stderr, "Cannot load XML library (%s) : %s. XML search disabled.\n", libname, dl_error);
+	fprintf(stderr,
+		"Cannot load XML library (%s) : %s. XML search disabled.\n",
+		libname_path, dl_error);
 	dl_handle = (void *)1;
 	lt_dlexit();
 	return 0;
@@ -188,7 +192,6 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 	int sockopt_on = 1;
 	struct sockaddr_in sockAddress_udp;
 	socklen_t sockAddressLength = sizeof(sockAddress_udp);
-	memset(&sockAddress_udp, 0, sizeof(sockAddress_udp));
 	fd_set fds;
 	struct timeval timeout;
 	int ret;
@@ -196,14 +199,18 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 	char string[SMALLBUF];
 	ssize_t recv_size;
 	int i;
-
+	nutscan_device_t * nut_dev = NULL;
 #ifdef WIN32
 	WSADATA WSAdata;
+#endif
+
+	memset(&sockAddress_udp, 0, sizeof(sockAddress_udp));
+
+#ifdef WIN32
 	WSAStartup(2,&WSAdata);
 	atexit((void(*)(void))WSACleanup);
 #endif
 
-	nutscan_device_t * nut_dev = NULL;
 	if (sec != NULL) {
 /*		if (sec->port_http > 0 && sec->port_http <= 65534)
  *			port_http = sec->port_http; */
@@ -276,6 +283,9 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 			while ((ret = select(peerSocket + 1, &fds, NULL, NULL,
 						&timeout))
 			) {
+				ne_xml_parser	*parser;
+				int	parserFailed;
+
 				retNum ++;
 				upsdebugx(5, "nutscan_scan_xml_http_generic() : request to %s, "
 					"loop #%d/%d, response #%d",
@@ -333,12 +343,12 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 					string, port_udp);
 				nut_dev->type = TYPE_XML;
 				/* Try to read device type */
-				ne_xml_parser *parser = (*nut_ne_xml_create)();
+				parser = (*nut_ne_xml_create)();
 				(*nut_ne_xml_push_handler)(parser, startelm_cb,
 							NULL, NULL, nut_dev);
 				/* recv_size is a ssize_t, so in range of size_t */
 				(*nut_ne_xml_parse)(parser, buf, (size_t)recv_size);
-				int parserFailed = (*nut_ne_xml_failed)(parser); /* 0 = ok, nonzero = fail */
+				parserFailed = (*nut_ne_xml_failed)(parser); /* 0 = ok, nonzero = fail */
 				(*nut_ne_xml_destroy)(parser);
 
 				if (parserFailed == 0) {
@@ -573,13 +583,14 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 
 #ifdef HAVE_PTHREAD
 					if (pthread_create(&thread, NULL, nutscan_scan_xml_http_generic, (void *)tmp_sec) == 0) {
+						nutscan_thread_t	*new_thread_array;
 # ifdef HAVE_PTHREAD_TRYJOIN
 						pthread_mutex_lock(&threadcount_mutex);
 						curr_threads++;
 # endif /* HAVE_PTHREAD_TRYJOIN */
 
 						thread_count++;
-						nutscan_thread_t *new_thread_array = realloc(thread_array,
+						new_thread_array = realloc(thread_array,
 							thread_count*sizeof(nutscan_thread_t));
 						if (new_thread_array == NULL) {
 							upsdebugx(1, "%s: Failed to realloc thread array", __func__);

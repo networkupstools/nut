@@ -1,7 +1,7 @@
 /*
  *  Copyright (C) 2011 - 2012  Arnaud Quette <arnaud.quette@free.fr>
  *  Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
- *  Copyright (C) 2016 - 2021 Jim Klimov <EvgenyKlimov@eaton.com>
+ *  Copyright (C) 2016 - 2023 Jim Klimov <EvgenyKlimov@eaton.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -61,7 +61,7 @@
 
 #define ERR_BAD_OPTION	(-1)
 
-static const char optstring[] = "?ht:T:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:NPqIVaD";
+static const char optstring[] = "?ht:T:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:QNPqIVaD";
 
 #ifdef HAVE_GETOPT_LONG
 static const struct option longopts[] = {
@@ -90,6 +90,7 @@ static const struct option longopts[] = {
 	{ "oldnut_scan", no_argument, NULL, 'O' },
 	{ "avahi_scan", no_argument, NULL, 'A' },
 	{ "ipmi_scan", no_argument, NULL, 'I' },
+	{ "disp_nut_conf_with_sanity_check", no_argument, NULL, 'Q' },
 	{ "disp_nut_conf", no_argument, NULL, 'N' },
 	{ "disp_parsable", no_argument, NULL, 'P' },
 	{ "quiet", no_argument, NULL, 'q' },
@@ -172,10 +173,13 @@ static void * run_eaton_serial(void *arg)
 
 #endif /* HAVE_PTHREAD */
 
-static void show_usage()
+static void show_usage(void)
 {
 /* NOTE: This code uses `nutscan_avail_*` global vars from nutscan-init.c */
 	puts("nut-scanner : utility for detection of available power devices.\n");
+
+	nut_report_config_flags();
+
 	puts("OPTIONS:");
 	printf("  -C, --complete_scan: Scan all available devices except serial ports (default).\n");
 	if (nutscan_avail_usb) {
@@ -210,8 +214,12 @@ static void show_usage()
 #if (defined HAVE_PTHREAD) && (defined HAVE_PTHREAD_TRYJOIN)
 	printf("  -T, --thread <max number of threads>: Limit the amount of scanning threads running simultaneously (default: %" PRIuSIZE ").\n", max_threads);
 #else
-	printf("  -T, --thread <max number of threads>: Limit the amount of scanning threads running simultaneously (not implemented in this build: no pthread support)");
+	printf("  -T, --thread <max number of threads>: Limit the amount of scanning threads running simultaneously (not implemented in this build: no pthread support)\n");
 #endif
+
+	printf("\nNote: many scanning options depend on further loadable libraries.\n");
+	/* Note: if debug is enabled, this is prefixed with timestamps */
+	upsdebugx_report_search_paths(0, 0);
 
 	printf("\nNetwork specific options:\n");
 	printf("  -t, --timeout <timeout in seconds>: network operation timeout (default %d).\n", DEFAULT_NETWORK_TIMEOUT);
@@ -329,9 +337,11 @@ static void show_usage()
 	printf("\nNUT specific options:\n");
 	printf("  -p, --port <port number>: Port number of remote NUT upsd\n");
 	printf("\ndisplay specific options:\n");
+	printf("  -Q, --disp_nut_conf_with_sanity_check: Display result in the ups.conf format with sanity-check warnings as comments (default)\n");
 	printf("  -N, --disp_nut_conf: Display result in the ups.conf format\n");
 	printf("  -P, --disp_parsable: Display result in a parsable format\n");
 	printf("\nMiscellaneous options:\n");
+	printf("  -h, --help: display this help text\n");
 	printf("  -V, --version: Display NUT version\n");
 	printf("  -a, --available: Display available bus that can be scanned\n");
 	printf("  -q, --quiet: Display only scan result. No information on currently scanned bus is displayed.\n");
@@ -356,6 +366,11 @@ int main(int argc, char *argv[])
 	int quiet = 0; /* The debugging level for certain upsdebugx() progress messages; 0 = print always, quiet==1 is to require at least one -D */
 	void (*display_func)(nutscan_device_t * device);
 	int ret_code = EXIT_SUCCESS;
+#ifdef HAVE_PTHREAD
+# ifdef HAVE_SEMAPHORE
+	sem_t	*current_sem;
+# endif
+#endif
 #if (defined HAVE_PTHREAD) && ( (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE) ) && (defined HAVE_SYS_RESOURCE_H)
 	struct rlimit nofile_limit;
 
@@ -413,7 +428,8 @@ int main(int argc, char *argv[])
 
 	nutscan_init();
 
-	display_func = nutscan_display_ups_conf;
+	/* Default, see -Q/-N/-P below */
+	display_func = nutscan_display_ups_conf_with_sanity_check;
 
 	/* Parse command line options -- Second loop: everything else */
 	/* Restore error messages... */
@@ -631,6 +647,9 @@ int main(int argc, char *argv[])
 				}
 				allow_ipmi = 1;
 				break;
+			case 'Q':
+				display_func = nutscan_display_ups_conf_with_sanity_check;
+				break;
 			case 'N':
 				display_func = nutscan_display_ups_conf;
 				break;
@@ -642,6 +661,7 @@ int main(int argc, char *argv[])
 				break;
 			case 'V':
 				printf("Network UPS Tools - %s\n", NUT_VERSION_MACRO);
+				nut_report_config_flags();
 				exit(EXIT_SUCCESS);
 			case 'a':
 				printf("OLDNUT\n");
@@ -683,7 +703,7 @@ display_help:
 	/* FIXME: Currently sem_init already done on nutscan-init for lib need.
 	   We need to destroy it before re-init. We currently can't change "sem value"
 	   on lib (need to be thread safe). */
-	sem_t *current_sem = nutscan_semaphore();
+	current_sem = nutscan_semaphore();
 	sem_destroy(current_sem);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
 #pragma GCC diagnostic push

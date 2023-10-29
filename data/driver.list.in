@@ -79,11 +79,24 @@
 "APC"	"ups"	"3"	"Back-UPS XS 1000M (Back-UPS Pro 1000, Model BX1000M)"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/139
 "APC"	"ups"	"3"	"SMC2200BI-BR"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/557
 "APC"	"ups"	"3"	"Smart-UPS (USB)"	"USB"	"usbhid-ups"
+"APC"	"ups"	"3"	"Smart-UPS 750 (SMT750I, USB)"	"USB"	"usbhid-ups"
+"APC"	"ups"	"3"	"Smart-UPS 1500 (SMT1500I, USB)"	"USB"	"usbhid-ups"
+"APC"	"ups"	"3"	"Smart-UPS X 750 (SMX750I, USB)"	"USB"	"usbhid-ups"
+"APC"	"ups"	"3"	"Smart-UPS X 1500 (SMX1500I, USB)"	"USB"	"usbhid-ups"
+"APC"	"ups"	"3"	"SMC2200BI-BR"	"USB"	"apc_modbus"	# https://github.com/networkupstools/nut/issues/557
+"APC"	"ups"	"3"	"Smart-UPS (USB)"	"USB"	"apc_modbus"
+"APC"	"ups"	"3"	"Smart-UPS 750 (SMT750I, USB)"	"USB"	"apc_modbus"
+"APC"	"ups"	"3"	"Smart-UPS 1500 (SMT1500I, USB)"	"USB"	"apc_modbus"
+"APC"	"ups"	"3"	"Smart-UPS X 750 (SMX750I, USB)"	"USB"	"apc_modbus"
+"APC"	"ups"	"3"	"Smart-UPS X 1500 (SMX1500I, USB)"	"USB"	"apc_modbus"
+"APC"	"ups"	"3"	"CS500"	"USB"	"usbhid-ups (limited data available)"	# https://github.com/networkupstools/nut/issues/1776#issuecomment-1377784584
 "APC"	"ups"	"1"	"Back-UPS"	"940-0095A/C cables"	"genericups upstype=1"
 "APC"	"ups"	"1"	"Back-UPS"	"940-0020B/C cables"	"genericups upstype=2"
 "APC"	"ups"	"1"	"Back-UPS"	"940-0023A cable"	"genericups upstype=9"
 "APC"	"ups"	"1"	"Back-UPS Office"	"940-0119A cable"	"genericups upstype=12"
 "APC"	"ups"	"1"	"Back-UPS RS 500"	"custom non-USB cable"	"genericups upstype=20"
+"APC"	"ups"	"3"	"Smart-UPS SUA 1000"	""	"snmp-ups"
+"APC"	"ups"	"3"	"Smart-UPS 3000"	""	"snmp-ups"
 "APC"	"ups"	"3"	"Smart-UPS RT XL"	"AP9618 SNMP monitoring card"	"snmp-ups"
 "APC"	"ups"	"3"	"(various)"	"AP9618 SNMP monitoring card"	"snmp-ups"
 "APC"	"ups"	"3"	"(various)"	"AP9630 SNMP monitoring card"	"snmp-ups privProtocol=AES"
@@ -114,7 +127,7 @@
 "ARTronic"	"ups"	"2"	"ARTon Platinium Combo 3.1 10/15/20 kVA"	"USB"	"blazer_usb"
 "ARTronic"	"ups"	"2"	"ARTon Platinium RT 1/2/3/6/10 kVA"	"USB"	"blazer_usb"
 
-"Armac"	"ups"	"2"	"R/2000I/PSW"	"(USB ID 0925:1234)" "nutdrv_qx"
+"Armac"	"ups"	"2"	"R/2000I/PSW and PF1 series"	"(USB ID 0925:1234)" "nutdrv_qx"
 
 "ASEM SPA"	"ups"	"5"	"PB1300 UPS"	"i2c"	"asem"
 
@@ -231,6 +244,7 @@
 "Cyber Power Systems"	"ups"	"3"	"CP1350AVRLCD"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"3"	"CP1500AVRLCD"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"3"	"CP850PFCLCD"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/605
+"Cyber Power Systems"	"ups"	"3"	"CP1350PFCLCD"	"USB"	"usbhid-ups"	# https://alioth-lists.debian.net/pipermail/nut-upsuser/2023-October/013441.html 
 "Cyber Power Systems"	"ups"	"3"	"CP1500PFCLCD"	"USB"	"usbhid-ups"	# https://www.cyberpowersystems.com/product/ups/cp1500pfclcd/ https://github.com/networkupstools/nut/issues/520
 "Cyber Power Systems"	"ups"	"3"	"CPJ500"	"USB"	"usbhid-ups"	# https://www.cyberpower.com/jp/ja/product/sku/cpj500#downloads https://github.com/networkupstools/nut/issues/1403
 "Cyber Power Systems"	"ups"	"3"	"CP900AVR"	"USB"	"usbhid-ups"
@@ -376,6 +390,7 @@
 "Eaton"	"pdu"	"5"	"ePDU Managed"	""	"snmp-ups"
 "Eaton"	"pdu"	"5"	"ePDU Switched"	""	"snmp-ups"
 "Eaton"	"pdu"	"5"	"ePDU Monitored"	""	"snmp-ups or netxml-ups"
+"Eaton"	"ups"	"5"	"ePDU EMSV0001" "nLogic rebranded"	"snmp-ups"
 "Eaton"	"ups"	"5"	"Powerware 3105"	"USB"	"bcmxcp_usb"	# http://powerquality.eaton.com/Products-services/Backup-Power-UPS/3105-eol.aspx
 "Eaton"	"ups"	"5"	"Powerware 9125"	"USB card"	"bcmxcp_usb"
 "Eaton"	"ups"	"5"	"Powerware 9130"	""	"bcmxcp or usbhid-ups"
@@ -452,6 +467,10 @@
 "Forza Power Technologies"	"ups"	"2"	"FX-1500LCD"	"USB"	"blazer_usb"
 
 "FSP"	"ups"	"2"	"EP650"	"USB"	"blazer_usb"
+"FSP"	"ups"	"2"	"Fortron UPS Champ 1000 VA Tower"	"USB"	"blazer_usb"
+"FSP"	"ups"	"2"	"Fortron UPS Champ 1000 VA Tower"	"USB"	"nutdrv_qx"
+"FSP"	"ups"	"2"	"Fortron UPS Champ 2000 VA Tower"	"USB"	"blazer_usb"
+"FSP"	"ups"	"2"	"Fortron UPS Champ 3000 VA Tower"	"USB"	"blazer_usb"
 
 "Gamatronic"	"ups"	"5"	"All models with alarm interface"	""	"genericups upstype=22"
 "Gamatronic"	"ups"	"2"	"G-SmartCompact 2000"	""	"blazer_ser"
@@ -505,6 +524,7 @@
 "HP"	"pdu"	"1"	"HP3488 Switch/Control Unit"	""	"powerman-pdu (experimental)"
 
 "HPE"	"pdu"	"5"	"Various (SNMP mode)"	""	"snmp-ups"
+"HPE"	"pdu"	"5"	"G2 Metered & Switched PDU"	""	"snmp-ups"
 
 "Huawei"	"ups"	"4"	"UPS5000-E"	""	"snmp-ups"
 "Huawei"	"ups"	"3"	"UPS2000-G and UPS2000-A series"	"MODBUS (USB with Linux 5.12+, or Serial RS-232)"	"huawei-ups2000"	# https://github.com/networkupstools/nut/issues/1066 https://github.com/networkupstools/nut/pull/1198 https://github.com/networkupstools/nut/pull/954 https://github.com/networkupstools/nut/issues/1017
@@ -548,6 +568,8 @@
 "Ippon"	"ups"	"2"	"Back Comfo Pro II 650/850/1050"	"USB"	"blazer_usb (experimental)"
 "Ippon"	"ups"	"2"	"Smart Power Pro 1000/1400/2000"	""	"blazer_ser"
 "Ippon"	"ups"	"2"	"Smart Power Pro 1000/1400/2000"	"USB"	"blazer_usb (experimental)"
+"Ippon"	"ups"	"2"	"Smart Power Pro II 1200/1600/2200"	"USB"	"usbhid-ups"
+"Ippon"	"ups"	"2"	"Smart Power Pro II Euro 1200/1600/2200"	"USB"	"usbhid-ups"
 "Ippon"	"ups"	"2"	"Smart Winner 750/1000/1500/2000/3000"	""	"blazer_ser"
 "Ippon"	"ups"	"2"	"Smart Winner 750/1000/1500/2000/3000"	"USB"	"blazer_usb (experimental)"
 "Ippon"	"ups"	"2"	"(various)"	""	"blazer_ser"
@@ -912,6 +934,7 @@
 "Opti-UPS"	"ups"	"1"	"PowerES"	"420E"	"optiups"
 "Opti-UPS"	"ups"	"1"	"VS 575C"	"type=OPTI"	"powercom"
 "Opti-UPS"	"ups"	"1"	"Power Series"	"PS1500E"	"blazer_usb"
+"Opti-UPS"	"ups"	"1"	"Power Series"	"PS1440RM"	"optiups"
 
 "Orvaldi Power Protection"	"ups"	"2"	"various"	"not 400 or 600"	"blazer_ser"
 "Orvaldi Power Protection"	"ups"	"2"	"750 / 900SP"	"USB"	"blazer_usb"
@@ -953,6 +976,7 @@
 "Powercool"	"ups"	"1"	"350VA to 1600VA"	"USB"	"nutdrv_atcl_usb"
 "Powercool"	"ups"	"2"	"650VA"	"USB"	"nutdrv_qx port=auto vendorid=0001 productid=0000 product=MEC0003 protocol=hunnox langid_fix=0x0409 novendor noscanlangid"	# https://github.com/networkupstools/nut/pull/638 caveats at https://github.com/networkupstools/nut/issues/537
 "Powercool"	"ups"	"2"	"650VA"	"USB"	"nutdrv_qx port=auto vendorid=0001 productid=0000 bus=001 product=MEC0003 protocol=hunnox langid_fix=0x0409 novendor norating noscanlangid"	# https://github.com/networkupstools/nut/pull/638 caveats at https://github.com/networkupstools/nut/issues/537
+"Powercool"	"ups"	"2"	"1200VA"	"USB"	"nutdrv_qx port=auto vendorid=0001 productid=0000 product=MEC0003 protocol=hunnox subdriver=hunnox langid_fix=0x0409 novendor norating noscanlangid"	# https://github.com/networkupstools/nut/pull/1539
 "Powercool"	"ups"	"2"	"1500VA"	"USB"	"nutdrv_qx port=auto vendorid=0001 productid=0000 product=MEC0003 protocol=hunnox langid_fix=0x0409 novendor noscanlangid"	# https://github.com/networkupstools/nut/pull/638 caveats at https://github.com/networkupstools/nut/issues/537 - e.g. battery percentage is not being returned
 "Powercool"	"ups"	"2"	"2000VA"	"USB"	"nutdrv_qx port=auto vendorid=0001 productid=0000 product=MEC0003 protocol=hunnox langid_fix=0x0409 novendor noscanlangid"	# https://github.com/networkupstools/nut/pull/638 caveats at https://github.com/networkupstools/nut/issues/537
 
@@ -1031,8 +1055,8 @@
 "Repotec"	"ups"	"1"	"RPT-800A"	""	"genericups upstype=13"
 "Repotec"	"ups"	"1"	"RPT-162A"	""	"genericups upstype=13"
 
-"Riello"	"ups"	"3"	"Riello Sentinel SDL 6000-7"	"Netman Plus 102 SNMP Card"	"snmp-ups"
-"Riello"	"ups"	"3"	"Riello Sentinel Dual SDH 1000-7"	"Netman Plus 102 SNMP Card"	"snmp-ups"
+"Riello"	"ups"	"3"	"Sentinel SDL 6000-7"	"Netman Plus 102 SNMP Card"	"snmp-ups"
+"Riello"	"ups"	"3"	"Sentinel Dual SDH 1000-7"	"Netman Plus 102 SNMP Card"	"snmp-ups"
 "Riello"	"ups"	"4"	"IDG 400/600/800/1200/1600"	"USB"	"riello_usb"
 "Riello"	"ups"	"4"	"IPG 600/800"	"USB"	"riello_usb"
 "Riello"	"ups"	"5"	"WPG 400/600/800"	"USB"	"riello_usb"
@@ -1042,33 +1066,48 @@
 "Riello"	"ups"	"5"	"DVR 500/800/1100"	"USB"	"riello_usb"
 "Riello"	"ups"	"5"	"DVD 1500/2200/3000"	"USB"	"riello_usb"
 "Riello"	"ups"	"5"	"VST 800/1100/1500/2000"	"USB"	"riello_usb"
+"Riello"	"ups"	"5"	"VSR 800/1100"	"USB"	"riello_usb"
 "Riello"	"ups"	"5"	"VSD 1100/1500/2200/3000"	"USB"	"riello_usb"
 "Riello"	"ups"	"5"	"SEP 700/1000/1500/2200/3000"	"USB"	"riello_usb"
 "Riello"	"ups"	"5"	"SDH 1000/1500/2200/3000"	"USB"	"riello_usb"
 "Riello"	"ups"	"5"	"SDL 3300/4000/5000/6000/6500/8000/10000"	"USB"	"riello_usb"
+"Riello"	"ups"	"5"	"SDU 4000/5000/6000/8000/10000"	"USB"	"riello_usb"
 "Riello"	"ups"	"5"	"SPW"	"USB"	"riello_usb"
 "Riello"	"ups"	"5"	"SPT"	"USB"	"riello_usb"
+"Riello"	"ups"	"5"	"STW 5000/6000/8000/10000"	"USB"	"riello_usb"
+"Riello"	"ups"	"5"	"S3M"	"USB"	"riello_usb"
+"Riello"	"ups"	"5"	"S3T"	"USB"	"riello_usb"
+
 "Riello"	"ups"	"5"	"NDG 800/1000/1500/2000"	""	"riello_ser"
 "Riello"	"ups"	"5"	"DVT 500/800/1100/1500/2000"	""	"riello_ser"
 "Riello"	"ups"	"5"	"DVR 500/800/1100"	""	"riello_ser"
 "Riello"	"ups"	"5"	"DVD 1500/2200/3000"	""	"riello_ser"
 "Riello"	"ups"	"5"	"VST 800/1100/1500/2000"	""	"riello_ser"
+"Riello"	"ups"	"5"	"VSR 800/1100"	""	"riello_ser"
 "Riello"	"ups"	"5"	"VSD 1100/1500/2200/3000"	""	"riello_ser"
 "Riello"	"ups"	"5"	"SEP 700/1000/1500/2200/3000"	""	"riello_ser"
 "Riello"	"ups"	"5"	"SDH 1000/1500/2200/3000"	""	"riello_ser"
 "Riello"	"ups"	"5"	"SDL 3300/4000/5000/6000/6500/8000/10000"	""	"riello_ser"
+"Riello"	"ups"	"5"	"SDU 4000/5000/6000/8000/10000"	""	"riello_ser"
 "Riello"	"ups"	"5"	"SPW"	""	"riello_ser"
 "Riello"	"ups"	"5"	"SPT"	""	"riello_ser"
+"Riello"	"ups"	"5"	"STW 5000/6000/8000/10000"	""	"riello_ser"
+"Riello"	"ups"	"5"	"S3M"	""	"riello_ser"
+"Riello"	"ups"	"5"	"S3T"	""	"riello_ser"
 "Riello"	"ups"	"5"	"MCT"	""	"riello_ser"
 "Riello"	"ups"	"5"	"MST"	""	"riello_ser"
 "Riello"	"ups"	"5"	"MCM"	""	"riello_ser"
 "Riello"	"ups"	"5"	"MCT"	""	"riello_ser"
+"Riello"	"ups"	"5"	"MHE"	""	"riello_ser"
 "Riello"	"ups"	"5"	"MHT"	""	"riello_ser"
 "Riello"	"ups"	"5"	"MPT"	""	"riello_ser"
 "Riello"	"ups"	"5"	"MPM"	""	"riello_ser"
+"Riello"	"ups"	"5"	"NXE"	""	"riello_ser"
 "Riello"	"ups"	"3"	"(various)"	"Netman Plus 101 SNMP Box"	"snmp-ups"
 "Riello"	"ups"	"3"	"(various)"	"Netman Plus 102 SNMP Card"	"snmp-ups"
 "Riello"	"ups"	"3"	"(various)"	"Netman Plus 202 SNMP Card"	"snmp-ups"
+"Riello"	"ups"	"3"	"(various)"	"Netman 204 SNMP Card"	"snmp-ups"	# Note: in https://github.com/networkupstools/nut/issues/1878 submitted not as "Netman Plus", clarification requested
+"Riello"	"ups"	"3"	"(various)"	"Netman 208 SNMP Card"	"snmp-ups"	# Note: in https://github.com/networkupstools/nut/issues/1878 submitted not as "Netman Plus", clarification requested
 
 "Rocketfish"	"ups"	"3"	"RF-1000VA / RF-1025VA"	"USB"	"usbhid-ups"
 
@@ -1082,6 +1121,7 @@
 "Salicru"	"ups"	"3"	"SLC TWINPRO3"	"usb"	"usbhid-ups (experimental)"
 "Salicru"	"ups"	"3"	"SLC TWIN RT3"	"usb"	"usbhid-ups (experimental)"
 "Salicru"	"ups"	"3"	"SPS 850 ADV T"	"usb"	"usbhid-ups (experimental)" # https://www.salicru.com/sps-850-adv-t.html https://github.com/networkupstools/nut/issues/1416
+"Salicru"	"ups"	"3"	"SPS 3000 ADV RT2"	"usb"	"usbhid-ups (experimental)" # https://www.salicru.com/sps-3000-adv-rt2.html
 
 "Santak"	"ups"	"2"	"Castle C*K"	"Serial"	"blazer_ser"	# https://github.com/networkupstools/nut/issues/1039
 "Santak"	"ups"	"2"	"MT*-PRO"	"Serial"	"blazer_ser"	# https://github.com/networkupstools/nut/issues/1039
@@ -1293,6 +1333,8 @@
 
 "TS Shara"	"ups"	"4"	"(various)"	""	"nutdrv_qx"
 
+"UltraMax"	"ups"	"2"	"1000SC"	"USB"	"nutdrv_qx"	# https://github.com/networkupstools/nut/issues/1634
+
 "UNITEK"	"ups"	"2"	"ALPHA 500 IC"	""	"blazer_ser"
 "UNITEK"	"ups"	"2"	"Alpha 1000is"	""	"blazer_ser"
 "UNITEK"	"ups"	"2"	"Alpha 500"	""	"blazer_ser"
@@ -1308,6 +1350,8 @@
 "UPSonic"	"ups"	"1"	"Power Guardian"	""	"genericups upstype=7"
 "UPSonic"	"ups"	"2"	"PrOffice 650"	"USB"	"blazer_usb"
 "UPSonic"	"ups"	"2"	"DS-800"	"USB"	"blazer_usb"
+"UPSonic"	"ups"	"2"	"IRT-3K 2U"	"USB"	"megatec_usb"	# Worked in NUT 2.4.3
+"UPSonic"	"ups"	"2"	"IRT-3K 2U"	"USB"	"nutdrv_qx"	# Should work since 2.8.0; protocol broken vs. strict checks in 2.7.4; https://github.com/networkupstools/nut/issues/441#issuecomment-1288238345
 
 "V7"	"ups"	"2"	"UPS1RM2U1500-1E"	"USB"	"blazer_usb"	# http://www.v7world.com/uk/ups-1500va-rack-mount-2u-eu.html https://github.com/networkupstools/nut/issues/716
 
@@ -1355,4 +1399,3 @@
 
 "WTI"	"pdu"	"1"	"RPS-10"	"10 outlets"	"powerman-pdu (experimental)"
 "WTI"	"pdu"	"1"	"NPS"	"8 outlets"	"powerman-pdu (experimental)"
-

@@ -87,7 +87,19 @@ RELOADING
 
 upsd can reload its configuration files without shutting down the process
 if you send it a SIGHUP or start it again with `-c reload`.  This only works
-if the background process is able to read those files.
+if the background process is able to read those files, and if the daemon did
+save a PID file when it started.
+
+[NOTE]
+======
+Service instances wrapped by systemd or SMF might not save them by default --
+use respective `reload`/`refresh` framework actions instead then), e.g.
+`systemctl reload nut-server`
+
+NUT releases after 2.8.0 define aliases for these units, so if your Linux
+distribution uses NUT-provided unit definitions, `systemctl reload upsd`
+may also work.
+======
 
 If you think that upsd can't reload, check your syslog for error messages.
 If it's complaining about not being able to read the files, then you need
@@ -138,6 +150,10 @@ linkman:ups.conf[5].
 ENVIRONMENT VARIABLES
 ---------------------
 
+*NUT_DEBUG_LEVEL* sets default debug verbosity if no *-D* arguments
+were provided on command line, but does not request that the daemon
+runs in foreground mode.
+
 *NUT_CONFPATH* is the path name of the directory that contains
 `upsd.conf` and other configuration files.  If this variable is not set,
 *upsd* uses a built-in default, which is often `/usr/local/ups/etc`.
@@ -174,15 +190,15 @@ CGI programs:
 Driver control:
 ~~~~~~~~~~~~~~~
 
-include::{builddir}/linkman-drivertool-names.txt[]
+include::{builddir}linkman-drivertool-names.txt[]
 
 Drivers:
 ~~~~~~~~
 
 - linkman:nutupsdrv[8]
-include::{builddir}/linkman-driver-names.txt[]
+include::{builddir}linkman-driver-names.txt[]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

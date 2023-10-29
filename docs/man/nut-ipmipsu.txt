@@ -70,8 +70,10 @@ This driver will report various information related to a PSU, including:
  - status of the PSU:
 
    * 'OL' means that the PSU is present and providing power,
-   * 'OFF' means that the PSU is present but not providing power (power cable removed),
-   * 'stale' (no data) means that the PSU is not present (ie physically removed).
+   * 'OFF' means that the PSU is present but not providing power
+     (power cable removed),
+   * 'stale' (no data) means that the PSU is not present (i.e.
+     physically removed).
 
 Here is an example output for a Dell r610 server:
 
@@ -114,5 +116,5 @@ linkman:nutupsdrv[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-* The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
 * GNU FreeIPMI home page: http://www.gnu.org/software/freeipmi/

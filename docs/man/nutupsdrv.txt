@@ -92,9 +92,39 @@ Raise log level threshold.  Use this multiple times to log more details.
 +
 The debugging comment above also applies here.
 
+*-c* 'command'::
+Send 'command' to the background process as a signal.  Valid commands
+are:
+
+	*reload*;; reread configuration files, ignoring modified settings
+	           which can not be applied "on the fly"
+	*reload-or-error*;; reread configuration files, ignoring but counting
+	           changed values which require a driver restart (can not be
+	           changed on the fly), and return a success/fail code based
+	           on that count, so the caller can decide the fate of the
+	           currently running driver instance
+	*reload-or-exit*;; reread configuration files, exiting the old
+	           driver process if it encounters modified settings
+	           which can not be applied "on the fly" (so caller like
+	           systemd can launch another copy of the driver)
+/////////
+	*reload-or-restart*;; reread configuration files, causing the
+	           old driver process to close the device connection
+	           and re-exec itself if it encounters modified settings
+	           which can not be applied "on the fly" (may fail for
+	           critical changes like run-time user/group accounts)
+/////////
+
+*-P* 'pid'::
+Send the command signal above using specified PID number, rather than
+consulting the PID file.  This can help define service units which start
+each NUT driver as a foreground process so it does not create a PID file.
+See also `-FF` option as an alternative.
+
 *-F*::
 Enforce running the driver as a foreground process, regardless of debugging
 or data-dumping settings.
+Specify twice (`-FF` or `-F -F`) to save the PID file even in this mode.
 
 *-B*::
 Enforce running the driver as a background process, regardless of debugging
@@ -180,13 +210,18 @@ to start and where the hardware is attached.
 ENVIRONMENT VARIABLES
 ---------------------
 
+*NUT_DEBUG_LEVEL* sets default debug verbosity if no *-D* arguments
+were provided on command line, but does not request that the daemon
+runs in foreground mode.
+
 *NUT_CONFPATH* is the path name of the directory that contains
-`upsd.conf` and other configuration files.  If this variable is not set,
-*upsd* uses a built-in default, which is often `/usr/local/ups/etc`.
+`ups.conf` and other configuration files.  If this variable is not set,
+drivers use a built-in default, which is often `/usr/local/ups/etc`.
 
 *NUT_STATEPATH* is the path name of the directory in which
-*upsd* keeps state information.  If this variable is not set,
-*upsd* uses a built-in default, which is often `/var/state/ups`.
+*upsd* and drivers keep shared state information.  If this variable
+is not set, *upsd* and drivers use a built-in default, which is often
+`/var/state/ups`.
 The *STATEPATH* directive in linkman:upsd.conf[5] overrides this variable.
 
 *NUT_ALTPIDPATH* is the path name of the directory in which
@@ -227,14 +262,14 @@ CGI programs:
 Driver control:
 ~~~~~~~~~~~~~~~
 
-include::{builddir}/linkman-drivertool-names.txt[]
+include::{builddir}linkman-drivertool-names.txt[]
 
 Drivers:
 ~~~~~~~~
 
-include::{builddir}/linkman-driver-names.txt[]
+include::{builddir}linkman-driver-names.txt[]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

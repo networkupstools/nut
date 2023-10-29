@@ -106,7 +106,7 @@ static snmp_info_t apc_epdu_mib[] = {
 	/* ePDUOutletStatusState.%i = INTEGER: off(1) */
 	{ "outlet.%i.switchable", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.318.1.1.30.6.1.1.4.%i", "yes",  SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK | SU_OUTLET, &apc_epdu_sw_outlet_switchability_info[0] },
 
-#if 0 /* keep following scan for future development */
+#if WITH_UNMAPPED_DATA_POINTS /* keep following scan for future development */
 	/* iso.3.6.1.4.1.318.1.1.30.1.0 = INTEGER: 1 */
 	{ "unmapped.iso", 0, 1, ".1.3.6.1.4.1.318.1.1.30.1.0", NULL, SU_FLAG_OK, NULL },
 	/* iso.3.6.1.4.1.318.1.1.30.2.1.1.1.1 = INTEGER: 1 */

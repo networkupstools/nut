@@ -29,7 +29,7 @@
 #include "IOKit/ps/IOPSKeys.h"
 
 #define DRIVER_NAME	"Mac OS X UPS meta-driver"
-#define DRIVER_VERSION	"1.3"
+#define DRIVER_VERSION	"1.40"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -263,9 +263,6 @@ void upsdrv_updateinfo(void)
 }
 
 void upsdrv_shutdown(void)
-	__attribute__((noreturn));
-
-void upsdrv_shutdown(void)
 {
 	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
 
@@ -275,7 +272,8 @@ void upsdrv_shutdown(void)
 	/* NOTE: Mac OS X already has shutdown routines - this driver is more
 	   for monitoring and notification purposes. Still, there is a key that
 	   might be useful to set in SystemConfiguration land. */
-	fatalx(EXIT_FAILURE, "shutdown not supported");
+	upslogx(LOG_ERR, "shutdown not supported");
+	set_exit_flag(-1);
 
 	/* you may have to check the line status since the commands
 	   for toggling power are frequently different for OL vs. OB */

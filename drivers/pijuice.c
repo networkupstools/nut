@@ -20,7 +20,7 @@
 #include "main.h"
 
 #include <sys/ioctl.h>
-#include <stdint.h>
+#include "nut_stdint.h"
 
 /*
  * Linux I2C userland is a bit of a mess until distros refresh to
@@ -218,7 +218,7 @@ static inline __u8* i2c_smbus_read_i2c_block_data(int file, __u8 command, __u8 l
 #define NOMINAL_BATTERY_VOLTAGE             4.18
 
 #define DRIVER_NAME                         "PiJuice UPS driver"
-#define DRIVER_VERSION                      "0.10"
+#define DRIVER_VERSION                      "0.11"
 
 static uint8_t i2c_address    = 0x14;
 static uint8_t shutdown_delay = 30;
@@ -305,7 +305,7 @@ static inline int open_i2c_bus(char *path, uint8_t addr)
 	return file;
 }
 
-static void get_charge_level_hi_res()
+static void get_charge_level_hi_res(void)
 {
 	uint8_t cmd = CHARGE_LEVEL_HI_RES_CMD;
 	uint16_t data;
@@ -334,11 +334,10 @@ static void get_charge_level_hi_res()
 	dstate_setinfo( "battery.charge", "%02.1f", battery_charge_level );
 }
 
-static void get_status()
+static void get_status(void)
 {
-	uint8_t cmd = STATUS_CMD;
-	uint8_t data;
-	char status_buf[ST_MAX_VALUE_LEN];
+	uint8_t	cmd = STATUS_CMD, data, batteryStatus, powerInput, powerInput5vIo;
+	char	status_buf[ST_MAX_VALUE_LEN];
 
 	upsdebugx( 3, __func__ );
 
@@ -346,7 +345,7 @@ static void get_status()
 
 	I2C_READ_BYTE( upsfd, cmd, __func__ )
 
-	uint8_t batteryStatus = data >> 2 & 0x03;
+	batteryStatus = data >> 2 & 0x03;
 	switch( batteryStatus )
 	{
 		case BATT_NORMAL:
@@ -373,7 +372,7 @@ static void get_status()
 			upsdebugx( 1, "battery.status: UNKNOWN" );
 	}
 
-	uint8_t powerInput = data >> 4 & 0x03;
+	powerInput = data >> 4 & 0x03;
 	switch( powerInput )
 	{
 		case POWER_NOT_PRESENT:
@@ -392,7 +391,7 @@ static void get_status()
 			upsdebugx( 1, "Power Input: UNKNOWN" );
 	}
 
-	uint8_t powerInput5vIo = data >> 6 & 0x03;
+	powerInput5vIo = data >> 6 & 0x03;
 	switch( powerInput5vIo )
 	{
 		case POWER_NOT_PRESENT :
@@ -535,7 +534,7 @@ static void get_status()
 	}
 }
 
-static void get_battery_temperature()
+static void get_battery_temperature(void)
 {
 	uint8_t cmd = BATTERY_TEMPERATURE_CMD;
 	int16_t data;
@@ -548,7 +547,7 @@ static void get_battery_temperature()
 	dstate_setinfo( "battery.temperature", "%d", data );
 }
 
-static void get_battery_voltage()
+static void get_battery_voltage(void)
 {
 	uint8_t cmd = BATTERY_VOLTAGE_CMD;
 	int16_t data;
@@ -561,7 +560,7 @@ static void get_battery_voltage()
 	dstate_setinfo( "battery.voltage", "%0.3f", data / 1000.0 );
 }
 
-static void get_battery_current()
+static void get_battery_current(void)
 {
 	uint8_t cmd = BATTERY_CURRENT_CMD;
 	int16_t data;
@@ -583,7 +582,7 @@ static void get_battery_current()
 	dstate_setinfo( "battery.current", "%0.3f", data / 1000.0 );
 }
 
-static void get_io_voltage()
+static void get_io_voltage(void)
 {
 	uint8_t cmd = IO_VOLTAGE_CMD;
 	int16_t data;
@@ -596,7 +595,7 @@ static void get_io_voltage()
 	dstate_setinfo( "input.voltage", "%.3f", data / 1000.0 );
 }
 
-static void get_io_current()
+static void get_io_current(void)
 {
 	uint8_t cmd = IO_CURRENT_CMD;
 	int16_t data;
@@ -618,7 +617,7 @@ static void get_io_current()
 	dstate_setinfo( "input.current", "%.3f", data / 1000.0 );
 }
 
-static void get_firmware_version()
+static void get_firmware_version(void)
 {
 	uint8_t cmd = FIRMWARE_VERSION_CMD;
 	uint16_t data;
@@ -640,7 +639,7 @@ static void get_firmware_version()
 	dstate_setinfo( "ups.firmware", "%d.%d", major, minor );
 }
 
-static void get_battery_profile()
+static void get_battery_profile(void)
 {
 	uint8_t cmd = BATTERY_PROFILE_CMD;
 	__u8 block[I2C_SMBUS_BLOCK_MAX];
@@ -653,7 +652,7 @@ static void get_battery_profile()
 	dstate_setinfo( "battery.capacity", "%0.3f", ( block[1] << 8 | block[0] ) / 1000.0 );
 }
 
-static void get_battery_profile_ext()
+static void get_battery_profile_ext(void)
 {
 	uint8_t cmd = BATTERY_EXT_PROFILE_CMD;
 	__u8 block[I2C_SMBUS_BLOCK_MAX];
@@ -678,7 +677,7 @@ static void get_battery_profile_ext()
 	}
 }
 
-static void get_power_off()
+static void get_power_off(void)
 {
 	uint8_t cmd = POWER_OFF_CMD;
 	uint8_t data;
@@ -697,7 +696,7 @@ static void get_power_off()
 	}
 }
 
-static void set_power_off()
+static void set_power_off(void)
 {
 	uint8_t cmd = POWER_OFF_CMD;
 
@@ -729,7 +728,7 @@ static void set_power_off()
 	I2C_WRITE_BYTE( upsfd, cmd, shutdown_delay, __func__ )
 }
 
-static void get_time()
+static void get_time(void)
 {
 	uint8_t cmd = RTC_TIME_CMD;
 	__u8 block[I2C_SMBUS_BLOCK_MAX];
@@ -755,7 +754,7 @@ static void get_time()
 	dstate_setinfo( "ups.date", "%04d-%02d-%02d", year, month, day );
 }
 
-static void get_i2c_address()
+static void get_i2c_address(void)
 {
 	uint8_t cmd = I2C_ADDRESS_CMD;
 	uint8_t data;

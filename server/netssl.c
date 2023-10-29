@@ -356,6 +356,10 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 		return;
 	}
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type-strict"
+#endif
 	/* Note cast to SSLAuthCertificate to prevent warning due to
 	 * bad function prototype in NSS.
 	 */
@@ -386,6 +390,9 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 		nss_error("net_starttls / SSL_ConfigSecureServer");
 		return;
 	}
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT)
+#pragma GCC diagnostic pop
+#endif
 
 	status = SSL_ResetHandshake(client->ssl, PR_TRUE);
 	if (status != SECSuccess) {
@@ -639,6 +646,9 @@ void ssl_init(void)
 ssize_t ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 {
 	ssize_t	ret = -1;
+#ifdef WITH_OPENSSL
+	int	iret;
+#endif
 
 	if (!client->ssl_connected) {
 		return -1;
@@ -651,7 +661,7 @@ ssize_t ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 	 * but smaller systems with 16-bits might be endangered :)
 	 */
 	assert(buflen <= INT_MAX);
-	int iret = SSL_read(client->ssl, buf, (int)buflen);
+	iret = SSL_read(client->ssl, buf, (int)buflen);
 	assert(iret <= SSIZE_MAX);
 	ret = (ssize_t)iret;
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
@@ -672,6 +682,9 @@ ssize_t ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 ssize_t ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
 {
 	ssize_t	ret = -1;
+#ifdef WITH_OPENSSL
+	int	iret;
+#endif
 
 	if (!client->ssl_connected) {
 		return -1;
@@ -684,7 +697,7 @@ ssize_t ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
 	 * but smaller systems with 16-bits might be endangered :)
 	 */
 	assert(buflen <= INT_MAX);
-	int iret = SSL_write(client->ssl, buf, (int)buflen);
+	iret = SSL_write(client->ssl, buf, (int)buflen);
 	assert(iret <= SSIZE_MAX);
 	ret = (ssize_t)iret;
 #elif defined(WITH_NSS) /* WITH_OPENSSL */

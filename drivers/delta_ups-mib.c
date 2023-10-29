@@ -6,7 +6,7 @@
  *  Note: this subdriver was initially generated as a "stub" by the
  *  gen-snmp-subdriver.sh script. It must be customized!
  *
- *  MIB reference: http://www.networkupstools.org/ups-protocols/snmp/DeltaUPSv4.mib
+ *  MIB reference: https://www.networkupstools.org/ups-protocols/snmp/DeltaUPSv4.mib
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -129,7 +129,7 @@ static snmp_info_t delta_ups_mib[] = {
 	 * Mostly the first field (string) is to be changed
 	 * Check docs/nut-names.txt for the right variable names
 	 */
-#if 0
+#if WITH_UNMAPPED_DATA_POINTS
 	/* dupsIdentName.0 = "" */
 	{ "unmapped.dupsIdentName", 0, 1, ".1.3.6.1.4.1.2254.2.4.1.5.0", NULL, SU_FLAG_OK, NULL },
 	/* dupsAttachedDevices.0 = "" */
@@ -356,7 +356,7 @@ static snmp_info_t delta_ups_mib[] = {
 	{ "unmapped.dupsAlarmEnvRelay3", 0, 1, ".1.3.6.1.4.1.2254.2.4.10.13.0", NULL, SU_FLAG_OK, NULL },
 	/* dupsAlarmEnvRelay4.0 = INTEGER: off(0) */
 	{ "unmapped.dupsAlarmEnvRelay4", 0, 1, ".1.3.6.1.4.1.2254.2.4.10.14.0", NULL, SU_FLAG_OK, NULL },
-#endif /* #if 0 */
+#endif	/* #if WITH_UNMAPPED_DATA_POINTS */
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
