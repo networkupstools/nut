@@ -1125,6 +1125,8 @@ static void exit_cleanup(void)
 	}
 
 	free(driverpath);
+
+	upsdebugx(1, "Completed the job of upsdrvctl tool, clean-up finished, exiting now");
 }
 
 int main(int argc, char **argv)
@@ -1325,6 +1327,9 @@ int main(int argc, char **argv)
 	if (exec_timeout) {
 #ifndef WIN32
 		ups_t	*tmp = upstable;
+#endif
+		upsdebugx(1, "upsdrvctl: got some timeouts with preceding operations, revising them now");
+#ifndef WIN32
 		while (tmp) {
 			if (tmp->exceeded_timeout && tmp->pid) {
 				/* reap zombie if this child died, and
@@ -1402,8 +1407,10 @@ int main(int argc, char **argv)
 #endif	/* WIN32 */
 	}
 
-	if (exec_error)
+	if (exec_error) {
+		upsdebugx(1, "upsdrvctl: got some errors with preceding operations, exiting with failure now");
 		exit(EXIT_FAILURE);
+	}
 
 	if (command == &start_driver
 	&&  upscount > 0
@@ -1412,7 +1419,7 @@ int main(int argc, char **argv)
 		/* Note: for a single started driver, we just
 		 * exec() it and should not even get here
 		 */
-		upsdebugx(1, "upsdrvctl was asked for explicit foregrounding - "
+		upsdebugx(1, "upsdrvctl: was asked for explicit foregrounding - "
 			"not exiting now (driver startup was completed)");
 
 		/* raise exit_flag upon SIGTERM, Ctrl+C, etc. */
@@ -1500,5 +1507,6 @@ int main(int argc, char **argv)
 		}
 	}
 
+	upsdebugx(1, "upsdrvctl: successfully finished");
 	exit(EXIT_SUCCESS);
 }
