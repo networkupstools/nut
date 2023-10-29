@@ -32,6 +32,9 @@ if [ -n "$NUT_SBINDIR" -a -d "$NUT_SBINDIR" ]; then
   PATH="$NUT_SBINDIR:$PATH"
 fi
 
+NUT_QUIET_INIT_UPSNOTIFY=true
+export NUT_QUIET_INIT_UPSNOTIFY
+
 # See how we are called.
 case "$1" in
   start)
