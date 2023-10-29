@@ -21,6 +21,10 @@ CONFIG="@CONFPATH@/nut.conf"
 NUTUSER="@RUN_AS_USER@"
 NUTGROUP="@RUN_AS_GROUP@"
 
+# We anticipate some tighter integration with SMF later:
+#NUT_QUIET_INIT_UPSNOTIFY=true
+#export NUT_QUIET_INIT_UPSNOTIFY
+
 if [ -f "$CONFIG" ] ; then
 	. "$CONFIG"
 fi

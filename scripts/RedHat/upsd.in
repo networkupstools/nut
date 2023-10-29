@@ -53,6 +53,9 @@ fi
 # if there are no config file, bail out
 [ -f "$UPSDCONF" ] && [ -f "$UPSCONF" ] || exit 0
 
+NUT_QUIET_INIT_UPSNOTIFY=true
+export NUT_QUIET_INIT_UPSNOTIFY
+
 runcmd() {
    echo -n "$1 "
    shift
