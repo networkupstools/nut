@@ -1347,7 +1347,8 @@ int main(int argc, char **argv)
 						tmp->upsname, (intmax_t)tmp->pid);
 					tmp->exceeded_timeout = 0;
 				} else
-				if (waitret == -1) {
+				if (waitret == 0) {
+					/* Special behavior for WNOHANG */
 					upslogx(LOG_WARNING,
 						"Driver [%s] PID %" PRIdMAX " initially exceeded "
 						"maxstartdelay and is still starting",
@@ -1359,6 +1360,13 @@ int main(int argc, char **argv)
 					 *     if (argc != (lastarg + 1)) ...
 					 * or  if (upscount == 1) ...
 					 */
+					exec_error++;
+				} else
+				if (waitret == -1) {
+					upslog_with_errno(LOG_WARNING,
+						"Driver [%s] PID %" PRIdMAX " initially exceeded "
+						"maxstartdelay and we got an error asking it again",
+						tmp->upsname, (intmax_t)tmp->pid);
 					exec_error++;
 				} else
 				if (WIFEXITED(wstat) == 0) {
