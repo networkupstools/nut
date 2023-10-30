@@ -1341,9 +1341,9 @@ int main(int argc, char **argv)
 				upsdebugx(1,
 					"Driver [%s] PID %" PRIdMAX " initially exceeded "
 					"maxstartdelay but now waitpid() returns %" PRIdMAX
-					" and status bits %Xd",
+					" and status bits 0x%.*X",
 					tmp->upsname, (intmax_t)tmp->pid,
-					(intmax_t)waitret, wstat);
+					(intmax_t)waitret, (int)(2*sizeof(wstat)), wstat);
 
 				if (waitret == tmp->pid) {
 					upsdebugx(1,
