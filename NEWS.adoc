@@ -114,6 +114,7 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
      (without specifying the single device) [#1759, #1806, #1875]
    * The `apcsmart` and `apcsmart-old` handled invalid data too zealously
      and aborted instead of skipping over it, like they did before [#2015]
+   * A bit maths optimization in `riello_ser` and `riello_usb` misfired [#2137]
    * Something about compile-time macros or other warnings-related refactoring
      seems to have confused the MGE SHUT (Serial HID UPS Transfer) driver
      support [#2022]
