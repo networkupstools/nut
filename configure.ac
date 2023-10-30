@@ -4541,6 +4541,7 @@ AC_CONFIG_FILES([
  scripts/ufw/Makefile
  scripts/ufw/nut.ufw.profile
  scripts/Windows/Makefile
+ scripts/Windows/Installer/NUT-Installer.xml
  scripts/Makefile
  server/Makefile
  tools/Makefile
