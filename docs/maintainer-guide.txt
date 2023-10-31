@@ -82,7 +82,8 @@ process.
 SANDBOX (to be completed and pushed)
 
 * clean up "in-development" bits from files, e.g.:
-** TODO etc. referring planned future in the `NEWS` and `UPDATING` files
+** TODO etc. referring planned future in the `NEWS.adoc` and `UPDATING.adoc`
+   files
 ** comment away the top-most (auto-resolved) NUT version and build date
    in `docs/docinfo.xml.in` -- DO NOT add (or at least commit) an entry
    for the actual fixed release version and date just yet
@@ -92,11 +93,11 @@ SANDBOX (to be completed and pushed)
 ** commit this change (to add a revert-commit after the release tag)
 
 * bump the release identification:
-** add an entry in `docs/docinfo.xml` for the actual fixed release version
+** add an entry in `docs/docinfo.xml.in` for the actual fixed release version
    and date
-** update version to <incremented version> (ex: 2.7.3) in nut/configure.ac
-** revise the `NEWS` and `UPDATING` files
-** generate/revise Changelog if needed
+** update version to <incremented version> (ex: 2.7.3) in `configure.ac`
+** revise the `NEWS.adoc` and `UPDATING.adoc` files
+** generate/revise `Changelog` file if needed
 
 * create a GPG-signed tag v<incremented version> (ex: v2.7.3)
 ** try to avoid adding signed tags later (ex. v2.8.0-signed) to avoid the
