@@ -24,8 +24,6 @@ command line, in order to quickly pick up any other removed option flags.
 Changes from 2.8.0 to 2.8.1
 ---------------------------
 
-- PLANNED: Keep track of any further API clean-up?
-
 - NUT documentation recipes were revised, so many of the text source files
   were renamed to `*.adoc` pattern. Newly, a `release-notes.pdf` and HTML
   equivalents are generated. Packages which deliver documentation may need
