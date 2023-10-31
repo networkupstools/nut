@@ -13,10 +13,14 @@ SCRIPTDIR="`cd "$SCRIPTDIR" && pwd`"
 DLLLDD_SOURCED=true . "${SCRIPTDIR}/dllldd.sh"
 
 # default to update source then build
-WINDIR="$(pwd)"
-TOP_DIR="$WINDIR/../.."
-BUILD_DIR="$WINDIR/nut_build"
-INSTALL_DIR="$WINDIR/nut_install"
+
+# These paths are somewhat related:
+[ -n "${WINDIR-}" ] || WINDIR="$(pwd)"
+[ -n "${TOP_DIR-}" ] || TOP_DIR="$WINDIR/../.."
+
+# These may be located elsewhere:
+[ -n "${BUILD_DIR-}" ] || BUILD_DIR="$WINDIR/nut_build"
+[ -n "${INSTALL_DIR-}" ] || INSTALL_DIR="$WINDIR/nut_install"
 
 # This should match the tarball and directory name,
 # if a stable version is used:
