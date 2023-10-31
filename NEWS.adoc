@@ -233,7 +233,8 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
      It is known that at this time some features are not complete, for more
      details see https://github.com/orgs/networkupstools/projects/2/views/1
    * Cross-builds of NUT for Windows using Linux and MinGW (and many custom
-     built dependency packages, as documented in link:scripts/Windows/README[])
+     built dependency packages, as documented in the
+     link:scripts/Windows/README.adoc[scripts/Windows/README.adoc file])
      are now regularly tested on NUT CI farm with moderate integration via
      custom build script `scripts/Windows/build-mingw-nut.sh` [#1489]
    * Semi-native NUT for Windows builds with MSYS2/MinGW x64 environment are

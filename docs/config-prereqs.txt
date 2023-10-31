@@ -1191,7 +1191,7 @@ antivirus completely or exempt at least the NUT build area from protection.
 Windows with mingw
 ------------------
 
-See `scripts/Windows/README` for original recommendations for the effort,
+See `scripts/Windows/README.adoc` for original recommendations for the effort,
 including possibilities of cross-builds with mingw available in Linux.
 
 Unfortunately these did not work for me at the time of testing, yielding
@@ -1209,7 +1209,7 @@ and redirect on SourceForge. You can download and unpack 7z archives from
 https://sourceforge.net/projects/mingw-w64/files/mingw-w64/mingw-w64-release/
 into e.g. `C:\Progra~1\mingw-w64\x86_64-8.1.0-release-posix-seh-rt_v6-rev0`
 location on your Windows system. Then for building further NUT dependencies
-see `scripts/Windows/README`.
+see `scripts/Windows/README.adoc`.
 
 Windows with MSYS2
 ------------------
@@ -1344,7 +1344,7 @@ involved is very important.
 
 Notable packages *not found* in the repo:
 
-* snmp (net-snmp, ucd-snmp) -- instructions in `scripts/Windows/README`
+* snmp (net-snmp, ucd-snmp) -- instructions in `scripts/Windows/README.adoc`
   document now covers building it from source in MSYS2 MinGW x64 environment,
   essentially same as for Linux cross builds with proper `ARCH` and `PREFIX`
 * libregex (C version, direct NUT `configure` script support was added by

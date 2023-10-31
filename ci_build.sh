@@ -1982,9 +1982,9 @@ bindings)
 
 # These mingw modes below are currently experimental and not too integrated
 # with this script per se; it is intended to run for NUT CI farm on prepared
-# Linux+mingw worker nodes (see scripts/Windows/README) in an uniform manner,
-# using mostly default settings (warnings in particular) and some hardcoded
-# in that script (ARCH, CFLAGS, ...).
+# Linux+mingw worker nodes (see scripts/Windows/README.adoc) in an uniform
+# manner, using mostly default settings (warnings in particular) and some
+# values hardcoded in that script (ARCH, CFLAGS, ...).
 # Note that semi-native builds with e.g. MSYS2 on Windows should "just work" as
 # on any other supported platform (more details in docs/config-prereqs.txt).
 cross-windows-mingw*)
