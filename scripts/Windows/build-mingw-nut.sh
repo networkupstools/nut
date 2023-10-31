@@ -1,4 +1,7 @@
 #!/bin/bash
+
+# NOTE: bash syntax (non-POSIX script) is used below!
+#
 # script to cross compile NUT for Windows from Linux using MinGW-w64
 # http://mingw-w64.sourceforge.net/
 
@@ -10,10 +13,10 @@ SCRIPTDIR="`cd "$SCRIPTDIR" && pwd`"
 DLLLDD_SOURCED=true . "${SCRIPTDIR}/dllldd.sh"
 
 # default to update source then build
-WINDIR=$(pwd)
-TOP_DIR=$WINDIR/../..
-BUILD_DIR=$WINDIR/nut_build
-INSTALL_DIR=$WINDIR/nut_install
+WINDIR="$(pwd)"
+TOP_DIR="$WINDIR/../.."
+BUILD_DIR="$WINDIR/nut_build"
+INSTALL_DIR="$WINDIR/nut_install"
 
 # This should match the tarball and directory name,
 # if a stable version is used:
@@ -30,19 +33,19 @@ fi
 
 [ -n "$SOURCEMODE" ] || SOURCEMODE="out-of-tree"
 
-rm -rf $BUILD_DIR $INSTALL_DIR
+rm -rf "$BUILD_DIR" "$INSTALL_DIR"
 CONFIGURE_SCRIPT="./configure"
 case "$SOURCEMODE" in
 stable)
 # FIXME
 # Stable version (download the latest stable archive)
 	VER_OPT_SHORT="`echo "$VER_OPT" | awk -F. '{print $1"."$2}'`"
-	if [ ! -s nut-$VER_OPT.tar.gz ] ; then
-		wget https://www.networkupstools.org/source/$VER_OPT_SHORT/nut-$VER_OPT.tar.gz
+	if [ ! -s "nut-$VER_OPT.tar.gz" ] ; then
+		wget "https://www.networkupstools.org/source/$VER_OPT_SHORT/nut-$VER_OPT.tar.gz"
 	fi
-	rm -rf nut-$VER_OPT
-	tar -xzf nut-$VER_OPT.tar.gz
-	mv nut-$VER_OPT $BUILD_DIR
+	rm -rf "nut-$VER_OPT"
+	tar -xzf "nut-$VER_OPT.tar.gz"
+	mv "nut-$VER_OPT" "$BUILD_DIR"
 	;;
 dist)
 	# In-place version (no download)
@@ -52,8 +55,8 @@ dist)
 	make dist
 	SRC_ARCHIVE=$(ls -1 nut-?.?.?*.tar.gz | sort -n | tail -1)
 	cd scripts/Windows
-	tar -xzf ../../$SRC_ARCHIVE
-	mv nut-?.?.?* $BUILD_DIR
+	tar -xzf "../../$SRC_ARCHIVE"
+	mv nut-?.?.?* "$BUILD_DIR"
 	;;
 out-of-tree)
 	CONFIGURE_SCRIPT="../../../configure"
@@ -65,11 +68,11 @@ out-of-tree)
 		make distclean
 	fi
 	cd scripts/Windows
-	mkdir -p $BUILD_DIR
+	mkdir -p "$BUILD_DIR"
 	;;
 esac
 
-cd $BUILD_DIR || exit
+cd "$BUILD_DIR" || exit
 
 if [ -z "$INSTALL_WIN_BUNDLE" ]; then
 	echo "NOTE: You might want to export INSTALL_WIN_BUNDLE=true to use main NUT Makefile"
@@ -111,7 +114,7 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 	# location is passed to `make install` as DESTDIR below.
 	$CONFIGURE_SCRIPT $HOST_FLAG $BUILD_FLAG --prefix=/ \
 	    $KEEP_NUT_REPORT_FEATURE_FLAG \
-	    PKG_CONFIG_PATH=${ARCH_PREFIX}/lib/pkgconfig \
+	    PKG_CONFIG_PATH="${ARCH_PREFIX}/lib/pkgconfig" \
 	    --without-pkg-config --with-all=auto \
 	    --without-systemdsystemunitdir \
 	    --with-pynut=app \
@@ -144,25 +147,25 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 		# (maybe even do "cp -pf" if some system dislikes "ln"); also
 		# on a modern Windows one could go to their installed "sbin" to
 		#   mklink .\libupsclient-3.dll ..\bin\libupsclient-3.dll
-		(cd $INSTALL_DIR/bin && ln libupsclient*.dll ../sbin/)
-		(cd $INSTALL_DIR/cgi-bin && ln ../bin/libupsclient*.dll ./) \
+		(cd "$INSTALL_DIR/bin" && ln libupsclient*.dll ../sbin/)
+		(cd "$INSTALL_DIR/cgi-bin" && ln ../bin/libupsclient*.dll ./) \
 		|| echo "FAILED to process optional cgi-bin directory; was NUT CGI enabled?" >&2
 
 		# Cover dependencies for nut-scanner (not pre-linked)
 		# Note: lib*snmp*.dll not listed below, it is
 		# statically linked into binaries that use it
-		(cd $INSTALL_DIR/bin && cp -pf ${ARCH_PREFIX}/bin/{libgnurx,libusb,libltdl}*.dll .) || true
-		(cd $INSTALL_DIR/bin && cp -pf ${ARCH_PREFIX}/lib/libwinpthread*.dll .) || true
+		(cd "$INSTALL_DIR/bin" && cp -pf "${ARCH_PREFIX}/bin"/{libgnurx,libusb,libltdl}*.dll .) || true
+		(cd "$INSTALL_DIR/bin" && cp -pf "${ARCH_PREFIX}/lib"/libwinpthread*.dll .) || true
 
 		# Steam-roll over all executables/libs we have here and copy
 		# over resolved dependencies from the cross-build environment:
-		(cd $INSTALL_DIR && { dllldddir . | while read D ; do cp -pf "$D" ./bin/ ; done ; } ) || true
+		(cd "$INSTALL_DIR" && { dllldddir . | while read D ; do cp -pf "$D" ./bin/ ; done ; } ) || true
 
 		# Hardlink libraries for sbin (alternative: all bins in one dir):
-		(cd $INSTALL_DIR/sbin && { DESTDIR="$INSTALL_DIR" dllldddir . | while read D ; do ln -f ../bin/"`basename "$D"`" ./ ; done ; } ) || true
+		(cd "$INSTALL_DIR/sbin" && { DESTDIR="$INSTALL_DIR" dllldddir . | while read D ; do ln -f ../bin/"`basename "$D"`" ./ ; done ; } ) || true
 
 		# Hardlink libraries for cgi-bin if present:
-		(cd $INSTALL_DIR/cgi-bin && { DESTDIR="$INSTALL_DIR" dllldddir . | while read D ; do ln -f ../bin/"`basename "$D"`" ./ ; done ; } ) \
+		(cd "$INSTALL_DIR/cgi-bin" && { DESTDIR="$INSTALL_DIR" dllldddir . | while read D ; do ln -f ../bin/"`basename "$D"`" ./ ; done ; } ) \
 		|| echo "FAILED to process optional cgi-bin directory; was NUT CGI enabled?" >&2
 	fi
 
