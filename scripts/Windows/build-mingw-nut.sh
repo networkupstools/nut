@@ -145,7 +145,8 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 		# on a modern Windows one could go to their installed "sbin" to
 		#   mklink .\libupsclient-3.dll ..\bin\libupsclient-3.dll
 		(cd $INSTALL_DIR/bin && ln libupsclient*.dll ../sbin/)
-		(cd $INSTALL_DIR/bin && ln libupsclient*.dll ../cgi-bin/) || true
+		(cd $INSTALL_DIR/cgi-bin && ln ../bin/libupsclient*.dll ./) \
+		|| echo "FAILED to process optional cgi-bin directory; was NUT CGI enabled?" >&2
 
 		# Cover dependencies for nut-scanner (not pre-linked)
 		# Note: lib*snmp*.dll not listed below, it is
@@ -161,7 +162,8 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 		(cd $INSTALL_DIR/sbin && { DESTDIR="$INSTALL_DIR" dllldddir . | while read D ; do ln -f ../bin/"`basename "$D"`" ./ ; done ; } ) || true
 
 		# Hardlink libraries for cgi-bin if present:
-		(cd $INSTALL_DIR/cgi-bin && { DESTDIR="$INSTALL_DIR" dllldddir . | while read D ; do ln -f ../bin/"`basename "$D"`" ./ ; done ; } ) || true
+		(cd $INSTALL_DIR/cgi-bin && { DESTDIR="$INSTALL_DIR" dllldddir . | while read D ; do ln -f ../bin/"`basename "$D"`" ./ ; done ; } ) \
+		|| echo "FAILED to process optional cgi-bin directory; was NUT CGI enabled?" >&2
 	fi
 
 	echo "$0: install phase complete ($?)" >&2
