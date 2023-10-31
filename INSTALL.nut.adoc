@@ -633,8 +633,8 @@ It should currently be possible to build the codebase in native Windows
 with MSYS2/MinGW and cross-building from Linux with mingw (preferably
 in a Debian/Ubuntu container). Refer to
 link:config-prereqs.txt[Prerequisites for building NUT on different OSes]
-and link:scripts/Windows/README[scripts/Windows/README file] for respective
-build environment preparation instructions.
+and link:scripts/Windows/README.adoc[scripts/Windows/README.adoc file]
+for respective build environment preparation instructions.
 
 Note that to use NUT for Windows, non-system dependency DLL files must
 be located in same directory as each EXE file that uses them. This can be
@@ -679,7 +679,7 @@ Building for Windows
 
 For suggestions about setting up the NUT build environment variants
 for Windows, please see link:docs/config-prereqs.txt and/or
-link:scripts/Windows/README files. Note this is rather experimental
+link:scripts/Windows/README.adoc files. Note this is rather experimental
 at this point.
 
 

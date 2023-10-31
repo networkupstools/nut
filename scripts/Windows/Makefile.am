@@ -5,7 +5,7 @@ AM_CFLAGS = -I$(top_srcdir)/include
 ../include/nut_version.h: FORCE
 	(cd ../include/ && $(MAKE) $(AM_MAKEFLAGS) nut_version.h)
 
-EXTRA_DIST = winevent.mc build-mingw-nut.sh README
+EXTRA_DIST = winevent.mc build-mingw-nut.sh README.adoc
 
 FORCE:
 

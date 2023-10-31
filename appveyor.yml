@@ -55,7 +55,7 @@ install:
 before_build:
   - cmd: |
       REM Ensure we have a net-snmp to build against
-      REM Adapted from scripts/Windows/README document.
+      REM Adapted from scripts/Windows/README.adoc document.
       REM Here we hope to build it once, then use the
       REM stashed version across Appveyor rebuilds.
       REM Preserve the current working directory:
