@@ -495,6 +495,117 @@ required:
     jre11-openjdk-headless
 ------
 
+Slackware Linux 15
+~~~~~~~~~~~~~~~~~~
+
+Another long-term presence in the Linux landscape, and sometimes the baseline
+for appliances, the Slackware project recently hit release 15 in 2002, averaging
+two years per major release.
+
+It can be installed e.g. in a VM, using ISO images from the project site; see:
+
+* http://www.slackware.com/ => http://www.slackware.com/getslack/ =>
+  https://mirrors.slackware.com/slackware/slackware-iso/slackware64-15.0-iso/
+* https://slackware.nl/slackware/slackware64-current-iso/
+
+You would have to first log in as `root` and run `cgdisk` to define partitioning
+for your virtual HDD, such as the common `/boot`, `swap` and `/` Linux layout,
+and run `setup` to install "everything".
+
+Note that "out of the box" Slackware does not currently on networked package
+repositories and calculated dependency trees, so one has to know exactly what
+they want installed.
+
+Third-party projects for package managers are also available, e.g.
+link:https://slackpkg.org/documentation.html[`slackpkg`] => see also
+https://docs.slackware.com/slackware:slackpkg and
+https://slackpkg.org/stable/ :
+----
+:; wget https://slackpkg.org/stable/slackpkg-15.0.10-noarch-1.txz && \
+   installpkg slackpkg-15.0.10-noarch-1.txz
+----
+
+Uncomment a mirror from `/etc/slackpkg/mirrors` according to your location
+and other preferences (or use the top-listed default), and begin with:
+----
+:; slackpkg update
+----
+
+Note that packages may be only installed or reinstalled/upgraded as separate
+explicit operations, so the procedure to bring your system into needed shape
+is a bit cumbersome (and each command may by default be interactive with a
+choice menu), e.g.:
+----
+:; for P in \
+    bash mc vim sudo \
+   ; do slackpkg info "$P" || slackpkg install $P || break ; done
+----
+
+For procedures below, this is automated via `root` profile to become a
+`slackpkg-install` command:
+----
+:; grep "slackpkg-install" ~/.profile || {
+    echo 'slackpkg-install() { for P in "$@" ; do echo "=== $P:"; slackpkg info "$P" || slackpkg install "$P" || break ; done; }' >> ~/.profile
+   }
+:; . ~/.profile
+----
+
+If something has a hiccup, it suggests to look for the right name, e.g.:
+----
+:; slackpkg search python
+----
+
+For NUT dependencies and build tools:
+----
+:; slackpkg update
+
+# Baseline toolkits:
+# Note there is no cppcheck, cppunit, valgrind...
+# Note clang compiler tools are part of llvm package
+:; slackpkg-install \
+    ccache time \
+    git python3 perl curl \
+    make autoconf automake libtool binutils \
+    pkg-config \
+    gcc llvm
+
+# For spell-checking, highly recommended if you would propose pull requests:
+:; slackpkg-install aspell{,-en}
+
+# Note There is no direct "asciidoc" nor "a2x", just the competing project
+# "rubygem-asciidoctor" that NUT currently has no recipes for, so you can
+# not compile man/html/pdf docs here.
+
+# More on Python (for NUT-Monitor UI):
+:; slackpkg-install \
+    python-pip qt5 gettext-tools gettext
+
+# For CGI graph generation - massive packages (X11):
+:; slackpkg-install \
+    gd
+
+# General dependencies:
+:; slackpkg-install \
+    openssl openssl-solibs mozilla-nss \
+    libusb \
+    net-snmp \
+    neon
+
+# Shells:
+:; slackpkg-install \
+    bash dash ksh93
+----
+
+The situation is a bit murky regarding Java support (e.g. to make this
+environment into a fully fledged Jenkins worker). There is a project
+somewhat co-bundled as a side dish, which delivers repackaged Java 8
+(too old for newest Jenkins core, plugin and remoting). It might be
+possible to use SSH Agent tapping into Slackware from nearby machines,
+however.
+
+* http://www.slackware.com/~alien/slackbuilds/openjdk/pkg64/
+* https://slackbuilds.org/repository/15.0/development/jdk/
+
 FreeBSD 12.2
 ~~~~~~~~~~~~
 

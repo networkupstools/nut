@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3258 utf-8
+personal_ws-1.1 en 3265 utf-8
 AAC
 AAS
 ABI
@@ -1692,6 +1692,7 @@ cfg
 cfgadm
 cflag
 cflags
+cgdisk
 cgi
 cgipath
 cgroup
@@ -2139,6 +2140,7 @@ inline
 innotech
 inplace
 installcheck
+installpkg
 installurl
 instcmd
 instcmds
@@ -2286,6 +2288,7 @@ listdef
 littleguy
 lk
 lldb
+llvm
 lm
 ln
 loadPercentage
@@ -2723,6 +2726,7 @@ regex
 regtype
 releasekeyring
 relicensing
+remoting
 renderer
 renderers
 repo
@@ -2762,6 +2766,7 @@ rqt
 rsa
 rsync
 rts
+rubygem
 runlevel
 runtime
 runtimecal
@@ -2841,6 +2846,7 @@ sitop
 sizeof
 ske
 skel
+slackpkg
 slaveid
 slavesync
 slewrate
@@ -2863,6 +2869,7 @@ sockdebug
 socketname
 socomec
 solaris
+solibs
 solis
 somepass
 something's
