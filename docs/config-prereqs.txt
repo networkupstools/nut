@@ -632,6 +632,11 @@ like this:
 :; installpkg ./www.slackware.com/~alien/slackbuilds/asciidoc/pkg/asciidoc-8.1.0-noarch-2.tgz
 ----
 
+Upon community members' recommendations, Sotirov's SlackPack is also considered
+a reputable repository: https://sotirov-bg.net/slackpack/ and should cover most
+if not all of the dependencies required for NUT building (including PowerMan,
+IPMI etc.)
+
 FreeBSD 12.2
 ~~~~~~~~~~~~
 
