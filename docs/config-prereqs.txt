@@ -531,7 +531,7 @@ and other preferences (or use the top-listed default), and begin with:
 :; slackpkg update
 ----
 
-Note that packages may be only installed or reinstalled/upgraded as separate
+Note that packages may be only installed or re-installed/upgraded as separate
 explicit operations, so the procedure to bring your system into needed shape
 is a bit cumbersome (and each command may by default be interactive with a
 choice menu), e.g.:
