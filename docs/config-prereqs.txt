@@ -596,15 +596,41 @@ For NUT dependencies and build tools:
     bash dash ksh93
 ----
 
-The situation is a bit murky regarding Java support (e.g. to make this
-environment into a fully fledged Jenkins worker). There is a project
-somewhat co-bundled as a side dish, which delivers repackaged Java 8
-(too old for newest Jenkins core, plugin and remoting). It might be
-possible to use SSH Agent tapping into Slackware from nearby machines,
-however.
+Some more packages are available on the side, including Java (useful
+e.g. to make this environment into a fully fledged Jenkins worker).
+Other common NUT dependencies absent from primary Slackware repositories
+can be found and downloaded (seek `*.txz` package files, although a few
+are named `*.tgz`) from here, and passed to `installpkg`:
 
-* http://www.slackware.com/~alien/slackbuilds/openjdk/pkg64/
+* http://www.slackware.com/~alien/slackbuilds/openjdk11/
+* http://www.slackware.com/~alien/slackbuilds/asciidoc/
+* http://www.slackware.com/~alien/slackbuilds/cppunit/
+* http://www.slackware.com/~alien/slackbuilds/lua/ (5.1 currently) and
+  http://www.slackware.com/~alien/slackbuilds/lua53/ -- note that LUA is not
+  needed for the current NUT code base, but may become needed after import
+  of features from forks
+
+...and even the environment for Windows cross-builds, ancient compilers
+and modern toolkits to cover all bases:
+
+* http://www.slackware.com/~alien/slackbuilds/MinGW-w64/
+* http://www.slackware.com/~alien/slackbuilds/docker/
+* http://www.slackware.com/~alien/slackbuilds/gcc34/
+* http://www.slackware.com/~alien/slackbuilds/gcc5/
+
+FWIW, another "more official" but older Java package seems to be at:
+
+* http://www.slackware.com/~alien/slackbuilds/openjdk/
 * https://slackbuilds.org/repository/15.0/development/jdk/
+
+An example routine to install the latest instance of a package could be
+like this:
+----
+:; wget -m -l1 http://www.slackware.com/~alien/slackbuilds/asciidoc/pkg/ && \
+    find . -name '*.t?z'
+
+:; installpkg ./www.slackware.com/~alien/slackbuilds/asciidoc/pkg/asciidoc-8.1.0-noarch-2.tgz
+----
 
 FreeBSD 12.2
 ~~~~~~~~~~~~
