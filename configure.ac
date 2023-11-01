@@ -2786,10 +2786,12 @@ fi
 
 AM_CONDITIONAL([HAVE_MINGW_RESGEN], [test "${nut_have_mingw_resgen}" = "yes"])
 
-dnl Also define a generic AM_CONDITIONAL for general Windows compilation
-dnl Do we at least have the header file(s) we require for the platform
+dnl Also define a generic automake condition for general Windows compilation:
+dnl do we at least have the header file(s) we require for the platform
 dnl (more files may be optional e.g. for different generations of networking)
-AM_COND_IF([HAVE_WINDOWS_H],
+dnl Could just use ..._COND_IF([HAVE_WINDOWS_H],... but it is not present in
+dnl some older versions of autotools. (Note autoconf expands in comments too).
+AS_IF([test "x$nut_cv_header_windows_h" = xyes],
 	[AM_CONDITIONAL([HAVE_WINDOWS], [test "${nut_have_mingw_resgen}" = "yes"])],
 	[AM_CONDITIONAL([HAVE_WINDOWS], [false])]
 	)
