@@ -7,6 +7,8 @@ AM_CFLAGS = -I$(top_srcdir)/include
 
 EXTRA_DIST = winevent.mc build-mingw-nut.sh README.adoc
 
+bin_PROGRAMS =
+
 FORCE:
 
 if HAVE_MINGW_RESGEN
@@ -19,12 +21,17 @@ winevent.o: winevent.rc winevent.h
 
 wininit.$(OBJEXT): winevent.h
 
-bin_PROGRAMS = nut halt
+# Some binutils packages (e.g. on Slackware 15) include windres and windmc
+# tools, even though they do not deliver the rest of files such as windows.h
+# that would be needed for actual builds targeting Windows.
+if HAVE_WINDOWS
+bin_PROGRAMS += nut halt
 
 nut_SOURCES = wininit.c
 nut_LDADD = ../../common/libcommon.la winevent.o
 
 halt_SOURCES = halt.c
+endif HAVE_WINDOWS
 
 CLEANFILES = winevent.rc winevent.o winevent.h
 
