@@ -13,8 +13,9 @@ FORCE:
 
 if HAVE_MINGW_RESGEN
 
+# Avoid "Using $< in a non-suffix rule context is a GNUmake idiom" by $?
 winevent.rc winevent.h: winevent.mc
-	$(WINDMC) $<
+	$(WINDMC) $?
 
 winevent.o: winevent.rc winevent.h
 	$(WINDRES) winevent.rc winevent.o
