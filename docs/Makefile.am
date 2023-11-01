@@ -179,6 +179,7 @@ DOCBUILD_FILTER_GITHUB_LINKS = { \
         -e 's%\#\(\#[1-9][0-9]*\)%\1%g' \
 ; }
 
+# The $< is okay here, it is used in a suffix rule below
 DOCBUILD_CONVERT_GITHUB_LINKS = { \
     echo "  DOC-ASCIIDOC-GITHUB-LINKS    Parsing GitHub link patterns $< => $@"; \
     cat "$<" | $(DOCBUILD_FILTER_GITHUB_LINKS) > "$@.tmp" \
@@ -482,14 +483,14 @@ spellcheck-sortdict: $(abs_builddir)/$(NUT_SPELL_DICT).sorted
 $(abs_builddir)/$(NUT_SPELL_DICT).sorted: $(abs_srcdir)/$(NUT_SPELL_DICT)
 	@cp -pf $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting
 	@LANG=$(ASPELL_ENV_LANG); LC_ALL=$(ASPELL_ENV_LANG); export LANG; export LC_ALL; ( \
-	    WORDLIST="`tail -n +2 < "$<" | sort | uniq`"; \
+	    WORDLIST="`tail -n +2 < "$?" | sort | uniq`"; \
 	    WORDCOUNT="`echo "$$WORDLIST" | wc -l`"; \
-	    head -1 < "$<" | while read P L C E ; do echo "$$P $$L $$WORDCOUNT $$E"; break; done ; \
+	    head -1 < "$?" | while read P L C E ; do echo "$$P $$L $$WORDCOUNT $$E"; break; done ; \
 	    echo "$$WORDLIST"; \
 	 ) > "$@"
 	@cp -f "$@" "$(abs_builddir)/$(NUT_SPELL_DICT)"
 	@if [ "$(abs_builddir)" != "$(abs_srcdir)" ] ; then \
-	    cp -f "$@" "$<" || true ; \
+	    cp -f "$@" "$?" || true ; \
 	    cp -f "$(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting" "$(abs_srcdir)/" || true ; \
 	 fi
 
