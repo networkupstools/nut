@@ -6,10 +6,14 @@ NAME
 
 powercom - UPS driver for serial Powercom/Trust/Advice UPS equipment
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the hardware-specific features of the
+*powercom* -h
+
+*powercom* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 powercom driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 

@@ -41,7 +41,7 @@ AC_DEFUN([NUT_CHECK_HEADER_WINDOWS], [
         nut_cv_header_windows_h="yes"
       ],[
         nut_cv_header_windows_h="no"
-	CFLAGS="$SAVED_CFLAGS"
+        CFLAGS="$SAVED_CFLAGS"
       ])
     ])
     AC_LANG_POP([C])
@@ -52,6 +52,7 @@ AC_DEFUN([NUT_CHECK_HEADER_WINDOWS], [
         [Define to 1 if you have the windows.h header file.])
       ;;
   esac
+  AM_CONDITIONAL(HAVE_WINDOWS_H, test "x$nut_cv_header_windows_h" = xyes)
 ])
 
 
@@ -124,6 +125,7 @@ AC_DEFUN([NUT_CHECK_HEADER_WINSOCK], [
         [Define to 1 if you have the winsock.h header file.])
       ;;
   esac
+  AM_CONDITIONAL(HAVE_WINSOCK_H, test "x$nut_cv_header_winsock_h" = xyes)
 ])
 
 
@@ -163,6 +165,7 @@ AC_DEFUN([NUT_CHECK_HEADER_WINSOCK2], [
         [Define to 1 if you have the winsock2.h header file.])
       ;;
   esac
+  AM_CONDITIONAL(HAVE_WINSOCK2_H, test "x$nut_cv_header_winsock2_h" = xyes)
 ])
 
 
@@ -203,4 +206,5 @@ AC_DEFUN([NUT_CHECK_HEADER_WS2TCPIP], [
         [Define to 1 if you have the ws2tcpip.h header file.])
       ;;
   esac
+  AM_CONDITIONAL(HAVE_WS2TCPIP_H, test "x$nut_cv_header_ws2tcpip_h" = xyes)
 ])

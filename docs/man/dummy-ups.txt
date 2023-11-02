@@ -6,10 +6,14 @@ NAME
 
 dummy-ups - Driver for multi-purpose UPS emulation
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the specific features of the
+*dummy-ups* -h
+
+*dummy-ups* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the specific features of the
 *dummy-ups* driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 

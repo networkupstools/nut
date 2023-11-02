@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3258 utf-8
+personal_ws-1.1 en 3273 utf-8
 AAC
 AAS
 ABI
@@ -377,6 +377,7 @@ FTS
 FTTx
 FTUPS
 FV
+FWIW
 Faber
 Fabio
 Fabrice
@@ -449,6 +450,7 @@ GuideBook
 Guillen
 HB
 HC
+HDD
 HEADs
 HEHn
 HELn
@@ -1202,6 +1204,7 @@ Silvino
 Sinline
 Sistem
 Sistemas
+SlackPack
 Slackware
 SmartBoost
 SmartCell
@@ -1219,6 +1222,7 @@ Solaris
 Soltec
 Soltys
 SomeVendor
+Sotirov's
 SourceForge
 Soyntec
 Spanier
@@ -1692,6 +1696,7 @@ cfg
 cfgadm
 cflag
 cflags
+cgdisk
 cgi
 cgipath
 cgroup
@@ -1844,6 +1849,7 @@ dfl
 dhcp
 dialout
 difftool
+diffutils
 dipsw
 dir
 disassembly
@@ -2139,6 +2145,7 @@ inline
 innotech
 inplace
 installcheck
+installpkg
 installurl
 instcmd
 instcmds
@@ -2280,12 +2287,14 @@ linevoltage
 linkdoc
 linksingledoc
 linux
+linuxdoc
 lipo
 listDeviceClients
 listdef
 littleguy
 lk
 lldb
+llvm
 lm
 ln
 loadPercentage
@@ -2723,6 +2732,7 @@ regex
 regtype
 releasekeyring
 relicensing
+remoting
 renderer
 renderers
 repo
@@ -2762,6 +2772,7 @@ rqt
 rsa
 rsync
 rts
+rubygem
 runlevel
 runtime
 runtimecal
@@ -2841,6 +2852,7 @@ sitop
 sizeof
 ske
 skel
+slackpkg
 slaveid
 slavesync
 slewrate
@@ -2863,6 +2875,7 @@ sockdebug
 socketname
 socomec
 solaris
+solibs
 solis
 somepass
 something's
@@ -2988,6 +3001,7 @@ testtime
 testuser
 textproc
 tgcware
+tgz
 th
 timeframe
 timehead
@@ -3029,6 +3043,7 @@ tw
 tx
 txg
 txt
+txz
 typedef
 uA
 uD

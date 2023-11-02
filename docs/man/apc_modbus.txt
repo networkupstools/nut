@@ -6,6 +6,13 @@ NAME
 
 apc_modbus - Driver for APC Smart-UPS Modbus protocol
 
+SYNOPSIS
+--------
+
+*apc_modbus* -h
+
+*apc_modbus* -a 'UPS_NAME' ['OPTIONS']
+
 SUPPORTED HARDWARE
 ------------------
 

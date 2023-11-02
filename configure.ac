@@ -2556,11 +2556,13 @@ dnl to detect if we can build the wanted documentation format and yet
 dnl not fail if we have no tools to generate it (so add to SKIP list).
 
 	html-single*)
-		AC_MSG_CHECKING([if asciidoc version can build ${nut_doc_build_target_base} (minimum required ${ASCIIDOC_MIN_VERSION})])
+		AC_MSG_CHECKING([if asciidoc and a2x versions can build ${nut_doc_build_target_base} (minimum required asciidoc-${ASCIIDOC_MIN_VERSION} a2x-${A2X_MIN_VERSION})])
 		can_build_doc_html_single=no
 		AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [${ASCIIDOC_MIN_VERSION}], [
-			( cd "$DOCTESTDIR" && ${A2X} --attribute=xhtml11_format --format=xhtml --xsl-file="${abs_srcdir}"/docs/xhtml.xsl --destination-dir=. "${abs_srcdir}"/docs/asciidoc.txt && test -s asciidoc.html ) && can_build_doc_html_single=yes
-			rm -f "$DOCTESTDIR"/asciidoc*.htm*
+			AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [${A2X_MIN_VERSION}], [
+				( cd "$DOCTESTDIR" && ${A2X} --attribute=xhtml11_format --format=xhtml --xsl-file="${abs_srcdir}"/docs/xhtml.xsl --destination-dir=. "${abs_srcdir}"/docs/asciidoc.txt && test -s asciidoc.html ) && can_build_doc_html_single=yes
+				rm -f "$DOCTESTDIR"/asciidoc*.htm*
+			], [])
 		], [])
 		if test "${can_build_doc_html_single}" = yes ; then
 			AC_MSG_RESULT(yes)
@@ -2577,11 +2579,13 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 		;;
 
 	html-chunked*)
-		AC_MSG_CHECKING([if a2x version can build ${nut_doc_build_target_base} (minimum required ${ASCIIDOC_MIN_VERSION})])
+		AC_MSG_CHECKING([if asciidoc and a2x versions can build ${nut_doc_build_target_base} (minimum required asciidoc-${ASCIIDOC_MIN_VERSION} a2x-${A2X_MIN_VERSION})])
 		can_build_doc_html_chunked=no
-		AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [${ASCIIDOC_MIN_VERSION}], [
-			( cd "$DOCTESTDIR" && ${A2X} --attribute=chunked_format --format=chunked --xsl-file="${abs_srcdir}"/docs/chunked.xsl --destination-dir=. "${abs_srcdir}"/docs/FAQ.txt && test -s FAQ.chunked/index.html ) && can_build_doc_html_chunked=yes
-			rm -rf "${DOCTESTDIR}"/FAQ*.chunked*
+		AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [${ASCIIDOC_MIN_VERSION}], [
+			AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [${A2X_MIN_VERSION}], [
+				( cd "$DOCTESTDIR" && ${A2X} --attribute=chunked_format --format=chunked --xsl-file="${abs_srcdir}"/docs/chunked.xsl --destination-dir=. "${abs_srcdir}"/docs/FAQ.txt && test -s FAQ.chunked/index.html ) && can_build_doc_html_chunked=yes
+				rm -rf "${DOCTESTDIR}"/FAQ*.chunked*
+			], [])
 		], [])
 		if test "${can_build_doc_html_chunked}" = yes ; then
 			AC_MSG_RESULT(yes)
@@ -2785,8 +2789,16 @@ if test "x$WINDMC" != "xnone" -a "x$WINDRES" != "xnone" ; then
 fi
 
 AM_CONDITIONAL([HAVE_MINGW_RESGEN], [test "${nut_have_mingw_resgen}" = "yes"])
-dnl Also define a generic AM_CONDITIONAL for general Windows compilation
-AM_CONDITIONAL([HAVE_WINDOWS], [test "${nut_have_mingw_resgen}" = "yes"])
+
+dnl Also define a generic automake condition for general Windows compilation:
+dnl do we at least have the header file(s) we require for the platform
+dnl (more files may be optional e.g. for different generations of networking)
+dnl Could just use ..._COND_IF([HAVE_WINDOWS_H],... but it is not present in
+dnl some older versions of autotools. (Note autoconf expands in comments too).
+AS_IF([test "x$nut_cv_header_windows_h" = xyes],
+	[AM_CONDITIONAL([HAVE_WINDOWS], [test "${nut_have_mingw_resgen}" = "yes"])],
+	[AM_CONDITIONAL([HAVE_WINDOWS], [false])]
+	)
 
 dnl ----------------------------------------------------------------------
 
