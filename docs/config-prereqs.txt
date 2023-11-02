@@ -499,7 +499,7 @@ Slackware Linux 15
 ~~~~~~~~~~~~~~~~~~
 
 Another long-term presence in the Linux landscape, and sometimes the baseline
-for appliances, the Slackware project recently hit release 15 in 2002, averaging
+for appliances, the Slackware project recently hit release 15 in 2022, averaging
 two years per major release.
 
 It can be installed e.g. in a VM, using ISO images from the project site; see:
@@ -611,8 +611,9 @@ are named `*.tgz`) from here, and passed to `installpkg`:
 * http://www.slackware.com/~alien/slackbuilds/openjdk11/
 * http://www.slackware.com/~alien/slackbuilds/asciidoc/
 * http://www.slackware.com/~alien/slackbuilds/cppunit/
-* http://www.slackware.com/~alien/slackbuilds/lua/ (5.1 currently) and
-  http://www.slackware.com/~alien/slackbuilds/lua53/ -- note that LUA is not
+* http://www.slackware.com/~alien/slackbuilds/lua/ (5.1 in "stable") and
+  http://www.slackware.com/~alien/slackbuilds/lua53/ (5.4 in "current"
+  as of Slackware 15.1 candidate in the works) -- note that LUA is not
   needed for the current NUT code base, but may become needed after import
   of features from forks
 
@@ -642,6 +643,16 @@ Upon community members' recommendations, Sotirov's SlackPack is also considered
 a reputable repository: https://sotirov-bg.net/slackpack/ and should cover most
 if not all of the dependencies required for NUT building (including PowerMan,
 IPMI etc.)
+
+NOTE: If setting up a CI farm agent with builds in RAM disk, keep in mind that
+default mount options for `/dev/shm` preclude script execution. Either set up
+the agent in a non-standard fashion (to use another work area), or if this is
+a dedicated machine -- relax the mount options in `/etc/fstab`. Here is an
+example with `noexec` which we *must avoid* for such use-case:
+----
+:; mount | grep /dev/shm
+tmpfs on /dev/shm type tmpfs (rw,nosuid,nodev,noexec,relatime,inode64)
+----
 
 FreeBSD 12.2
 ~~~~~~~~~~~~

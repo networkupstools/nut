@@ -410,6 +410,21 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
     LIBDIR="${conftemp}"
 
     AS_CASE(["${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS}"],
+        [*--libexecdir=*], [
+            for F in ${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS} ; do
+                case "$F" in
+                    "--libexecdir="*) libexecdir="`echo "$F" | ( IFS='=' read K V ; echo "$V" )`" ;;
+                esac
+            done
+        ]
+    )
+
+    conftemp="${libexecdir}"
+    eval conftemp=\"${conftemp}\"
+    eval conftemp=\"${conftemp}\"
+    LIBEXECDIR="${conftemp}"
+
+    AS_CASE(["${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS}"],
         [*--with-pkgconfig-dir=*], [
             for F in ${CONFIG_FLAGS_DEPLOYED} ${CONFIG_FLAGS} ; do
                 case "$F" in
