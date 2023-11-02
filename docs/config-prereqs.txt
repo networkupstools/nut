@@ -644,6 +644,16 @@ a reputable repository: https://sotirov-bg.net/slackpack/ and should cover most
 if not all of the dependencies required for NUT building (including PowerMan,
 IPMI etc.)
 
+NOTE: If setting up a CI farm agent with builds in RAM disk, keep in mind that
+default mount options for `/dev/shm` preclude script execution. Either set up
+the agent in a non-standard fashion (to use another work area), or if this is
+a dedicated machine -- relax the mount options in `/etc/fstab`. Here is an
+example with `noexec` which we *must avoid* for such use-case:
+----
+:; mount | grep /dev/shm
+tmpfs on /dev/shm type tmpfs (rw,nosuid,nodev,noexec,relatime,inode64)
+----
+
 FreeBSD 12.2
 ~~~~~~~~~~~~
 

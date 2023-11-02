@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3273 utf-8
+personal_ws-1.1 en 3279 utf-8
 AAC
 AAS
 ABI
@@ -2001,6 +2001,7 @@ frontends
 fs
 fsd
 fsr
+fstab
 ftdi
 fuji
 fullload
@@ -2143,6 +2144,7 @@ initscripts
 initups
 inline
 innotech
+inode
 inplace
 installcheck
 installpkg
@@ -2484,7 +2486,9 @@ nnn
 noAuthNoPriv
 nobody's
 nobt
+nodev
 nodtk
+noexec
 noflag
 nogroup
 nohang
@@ -2501,6 +2505,7 @@ noout
 norating
 noro
 noscanlangid
+nosuid
 notAfter
 notifyme
 notifytype
@@ -2730,6 +2735,7 @@ refactoring
 referencenominal
 regex
 regtype
+relatime
 releasekeyring
 relicensing
 remoting
