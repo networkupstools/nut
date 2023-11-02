@@ -499,7 +499,7 @@ Slackware Linux 15
 ~~~~~~~~~~~~~~~~~~
 
 Another long-term presence in the Linux landscape, and sometimes the baseline
-for appliances, the Slackware project recently hit release 15 in 2002, averaging
+for appliances, the Slackware project recently hit release 15 in 2022, averaging
 two years per major release.
 
 It can be installed e.g. in a VM, using ISO images from the project site; see:
@@ -611,8 +611,9 @@ are named `*.tgz`) from here, and passed to `installpkg`:
 * http://www.slackware.com/~alien/slackbuilds/openjdk11/
 * http://www.slackware.com/~alien/slackbuilds/asciidoc/
 * http://www.slackware.com/~alien/slackbuilds/cppunit/
-* http://www.slackware.com/~alien/slackbuilds/lua/ (5.1 currently) and
-  http://www.slackware.com/~alien/slackbuilds/lua53/ -- note that LUA is not
+* http://www.slackware.com/~alien/slackbuilds/lua/ (5.1 in "stable") and
+  http://www.slackware.com/~alien/slackbuilds/lua53/ (5.4 in "current"
+  as of Slackware 15.1 candidate in the works) -- note that LUA is not
   needed for the current NUT code base, but may become needed after import
   of features from forks
 
