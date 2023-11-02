@@ -564,6 +564,7 @@ For NUT dependencies and build tools:
 # Note clang compiler tools are part of llvm package
 :; slackpkg-install \
     ccache time \
+    coreutils diffutils \
     git python3 perl curl \
     make autoconf automake libtool binutils \
     pkg-config \

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3271 utf-8
+personal_ws-1.1 en 3272 utf-8
 AAC
 AAS
 ABI
@@ -1849,6 +1849,7 @@ dfl
 dhcp
 dialout
 difftool
+diffutils
 dipsw
 dir
 disassembly
