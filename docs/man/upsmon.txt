@@ -414,7 +414,7 @@ load and don't want some systems to be powered off while others remain
 running if the "wall power" returns at the wrong moment as usual, the "FSD"
 flag can not be removed from the data server unless its daemon is restarted.
 If we do take the first step in critical mode, then we normally intend to go
-all the way -- shut down all the servers gracefully, and power down the UPS.
+all the way -- shut down all the servers gracefully, and power down the UPS.
 
 Keep in mind that some UPS devices and corresponding drivers would also latch
 or otherwise resurface the "FSD" state again even if "wall power" is available,
