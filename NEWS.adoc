@@ -400,6 +400,8 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
  - nutclient C++ library:
    * added `listDeviceClients()` and `deviceGetClients(dev)` to `Client`
      classes, and `Device::getClients()` to match PyNUT capabilities [#549]
+   * published artifacts may include a `libnutclientstub` which is an
+     implementation of a NUT TCP client in C++ with in-memory data store.
 
  - upsclient C library:
    * added support for `NUT_QUIET_INIT_SSL` environment variable to hide
