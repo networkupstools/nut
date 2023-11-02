@@ -2556,11 +2556,13 @@ dnl to detect if we can build the wanted documentation format and yet
 dnl not fail if we have no tools to generate it (so add to SKIP list).
 
 	html-single*)
-		AC_MSG_CHECKING([if asciidoc version can build ${nut_doc_build_target_base} (minimum required ${ASCIIDOC_MIN_VERSION})])
+		AC_MSG_CHECKING([if asciidoc and a2x versions can build ${nut_doc_build_target_base} (minimum required asciidoc-${ASCIIDOC_MIN_VERSION} a2x-${A2X_MIN_VERSION})])
 		can_build_doc_html_single=no
 		AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [${ASCIIDOC_MIN_VERSION}], [
-			( cd "$DOCTESTDIR" && ${A2X} --attribute=xhtml11_format --format=xhtml --xsl-file="${abs_srcdir}"/docs/xhtml.xsl --destination-dir=. "${abs_srcdir}"/docs/asciidoc.txt && test -s asciidoc.html ) && can_build_doc_html_single=yes
-			rm -f "$DOCTESTDIR"/asciidoc*.htm*
+			AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [${A2X_MIN_VERSION}], [
+				( cd "$DOCTESTDIR" && ${A2X} --attribute=xhtml11_format --format=xhtml --xsl-file="${abs_srcdir}"/docs/xhtml.xsl --destination-dir=. "${abs_srcdir}"/docs/asciidoc.txt && test -s asciidoc.html ) && can_build_doc_html_single=yes
+				rm -f "$DOCTESTDIR"/asciidoc*.htm*
+			], [])
 		], [])
 		if test "${can_build_doc_html_single}" = yes ; then
 			AC_MSG_RESULT(yes)
@@ -2577,11 +2579,13 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 		;;
 
 	html-chunked*)
-		AC_MSG_CHECKING([if a2x version can build ${nut_doc_build_target_base} (minimum required ${ASCIIDOC_MIN_VERSION})])
+		AC_MSG_CHECKING([if asciidoc and a2x versions can build ${nut_doc_build_target_base} (minimum required asciidoc-${ASCIIDOC_MIN_VERSION} a2x-${A2X_MIN_VERSION})])
 		can_build_doc_html_chunked=no
-		AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [${ASCIIDOC_MIN_VERSION}], [
-			( cd "$DOCTESTDIR" && ${A2X} --attribute=chunked_format --format=chunked --xsl-file="${abs_srcdir}"/docs/chunked.xsl --destination-dir=. "${abs_srcdir}"/docs/FAQ.txt && test -s FAQ.chunked/index.html ) && can_build_doc_html_chunked=yes
-			rm -rf "${DOCTESTDIR}"/FAQ*.chunked*
+		AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [${ASCIIDOC_MIN_VERSION}], [
+			AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [${A2X_MIN_VERSION}], [
+				( cd "$DOCTESTDIR" && ${A2X} --attribute=chunked_format --format=chunked --xsl-file="${abs_srcdir}"/docs/chunked.xsl --destination-dir=. "${abs_srcdir}"/docs/FAQ.txt && test -s FAQ.chunked/index.html ) && can_build_doc_html_chunked=yes
+				rm -rf "${DOCTESTDIR}"/FAQ*.chunked*
+			], [])
 		], [])
 		if test "${can_build_doc_html_chunked}" = yes ; then
 			AC_MSG_RESULT(yes)
