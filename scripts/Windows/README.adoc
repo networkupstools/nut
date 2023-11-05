@@ -728,7 +728,7 @@ BUILD_TYPE=cross-windows-mingw-64 ./ci_build.sh
 * an existing source tarball (can be fetched from NUT website):
 
 	:; export SOURCEMODE=stable
-	### Optionally: export VER_OPT=2.8.0
+	### Optionally: export VER_OPT=2.8.1
 	:; cd scripts/Windows/
 	:; ./build-mingw-nut.sh
 

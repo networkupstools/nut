@@ -40,8 +40,8 @@ https://github.com/networkupstools/nut/milestone/10
  - (expected) Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0
 
 
-PLANNED: Release notes for NUT 2.8.1 - what's new since 2.8.0
--------------------------------------------------------------
+Release notes for NUT 2.8.1 - what's new since 2.8.0
+----------------------------------------------------
 
 https://github.com/networkupstools/nut/milestone/8
 
@@ -114,6 +114,7 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
      (without specifying the single device) [#1759, #1806, #1875]
    * The `apcsmart` and `apcsmart-old` handled invalid data too zealously
      and aborted instead of skipping over it, like they did before [#2015]
+   * A bit maths optimization in `riello_ser` and `riello_usb` misfired [#2137]
    * Something about compile-time macros or other warnings-related refactoring
      seems to have confused the MGE SHUT (Serial HID UPS Transfer) driver
      support [#2022]
@@ -232,7 +233,8 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
      It is known that at this time some features are not complete, for more
      details see https://github.com/orgs/networkupstools/projects/2/views/1
    * Cross-builds of NUT for Windows using Linux and MinGW (and many custom
-     built dependency packages, as documented in link:scripts/Windows/README[])
+     built dependency packages, as documented in the
+     link:scripts/Windows/README.adoc[scripts/Windows/README.adoc file])
      are now regularly tested on NUT CI farm with moderate integration via
      custom build script `scripts/Windows/build-mingw-nut.sh` [#1489]
    * Semi-native NUT for Windows builds with MSYS2/MinGW x64 environment are
@@ -398,6 +400,8 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
  - nutclient C++ library:
    * added `listDeviceClients()` and `deviceGetClients(dev)` to `Client`
      classes, and `Device::getClients()` to match PyNUT capabilities [#549]
+   * published artifacts may include a `libnutclientstub` which is an
+     implementation of a NUT TCP client in C++ with in-memory data store.
 
  - upsclient C library:
    * added support for `NUT_QUIET_INIT_SSL` environment variable to hide
@@ -459,6 +463,13 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
 
  - Extended Linux systemd support with optional notifications about daemon
    state (READY, RELOADING, STOPPING) and watchdog keep-alive messages [#1590]
+   * Normally *inability* to send such notifications (e.g. lack of systemd
+     or similar framework on the particular platform) would be reported once
+     per daemon uptime on its console log, to help troubleshooting situations
+     where such lack of notifications can cause automated service restarts.
+     These messages can be hidden by setting `NUT_QUIET_INIT_UPSNOTIFY=true`
+     environment variable in init-scripts on platforms where such frameworks
+     are not expected. [#2136]
 
  - Extended Linux systemd units with aliases named after the daemons:
    `nut-server.service` as `upsd.service`, and `nut-monitor.service` as

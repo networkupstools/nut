@@ -240,7 +240,7 @@ int main(int argc, char **argv)
 		case 'V':
 			nut_report_config_flags();
 
-			fatalx(EXIT_SUCCESS, "Network UPS Tools upscmd %s", UPS_VERSION);
+			fatalx(EXIT_SUCCESS, "Network UPS Tools upsc %s", UPS_VERSION);
 #ifndef HAVE___ATTRIBUTE__NORETURN
 			exit(EXIT_SUCCESS);	/* Should not get here in practice, but compiler is afraid we can fall through */
 #endif

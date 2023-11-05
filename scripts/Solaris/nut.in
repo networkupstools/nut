@@ -7,6 +7,10 @@ NUT_SBIN_DIR="${NUT_DIR}/sbin"
 NUT_LIB_DIR="${NUT_DIR}/lib"
 CONFIG="@CONFPATH@/nut.conf"
 
+# We anticipate some tighter integration with SMF later:
+#NUT_QUIET_INIT_UPSNOTIFY=true
+#export NUT_QUIET_INIT_UPSNOTIFY
+
 if [ -f "$CONFIG" ] ; then
 	. "$CONFIG"
 fi

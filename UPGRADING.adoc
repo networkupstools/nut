@@ -21,10 +21,14 @@ be beneficial to add `--enable-option-checking=fatal` to the `./configure`
 command line, in order to quickly pick up any other removed option flags.
 ======
 
-Changes from 2.8.0 to 2.8.1
+Changes from 2.8.1 to 2.8.2
 ---------------------------
 
 - PLANNED: Keep track of any further API clean-up?
+
+
+Changes from 2.8.0 to 2.8.1
+---------------------------
 
 - NUT documentation recipes were revised, so many of the text source files
   were renamed to `*.adoc` pattern. Newly, a `release-notes.pdf` and HTML
@@ -128,10 +132,26 @@ Changes from 2.8.0 to 2.8.1
   and exposed in `libnutscan.so` builds in particular - API version for the
   public library was bumped [#317]
 
-- A `NUT_DEBUG_PID` envvar (presence) support was added to add current
-  process ID to tags with debug-level identifiers. This may be useful
-  when many NUT daemons write to the same console or log file, such as
-  in containers/plugins for Home Assistant, storage appliances, etc. [#2118]
+- Some environment variable support was added to NUT programs, primarily
+  aimed at wrappers such as init scripts and service unit definitions,
+  allowing to tweak what (and whether) they write into debug traces, and
+  so "make noise" or "bring invaluable insights" to logs or terminal:
+  * A `NUT_DEBUG_LEVEL=NUM` envvar allows to temporarily boost debugging
+    of many daemons (`upsd`, `upsmon`, drivers, `upsdrvctl`, `upssched`)
+    without changes to configuration files or scripted command lines. [#1915]
+  * A `NUT_DEBUG_PID` envvar (presence) support was added to add current
+    process ID to tags with debug-level identifiers. This may be useful
+    when many NUT daemons write to the same console or log file, such as
+    in containers/plugins for Home Assistant, storage appliances, etc. [#2118]
+  * A `NUT_QUIET_INIT_SSL` envvar (presence or "true" value) prevents
+    `libupsclient` consumers (notoriously `upsc`) from reporting whether
+    they have initialized SSL support. [#1662]
+  * A `NUT_QUIET_INIT_UPSNOTIFY` envvar (presence or "true" value)
+    prevents daemons which can notify service management frameworks (such
+    as systemd) about passing their lifecycle milestones, to not report
+    loudly if they could not do so (e.g. running on a system without a
+    framework, or misconfigured so they could not report and the OS would
+    restart the false-positively "unresponsive" service). [#2136]
 
 - `configure` script, reference init-script and packaging templates updated
   to eradicate `@PIDPATH@/nut` ambiguity in favor of `@ALTPIDPATH@` for the

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3258 utf-8
+personal_ws-1.1 en 3281 utf-8
 AAC
 AAS
 ABI
@@ -377,6 +377,7 @@ FTS
 FTTx
 FTUPS
 FV
+FWIW
 Faber
 Fabio
 Fabrice
@@ -449,6 +450,7 @@ GuideBook
 Guillen
 HB
 HC
+HDD
 HEADs
 HEHn
 HELn
@@ -1202,6 +1204,7 @@ Silvino
 Sinline
 Sistem
 Sistemas
+SlackPack
 Slackware
 SmartBoost
 SmartCell
@@ -1219,6 +1222,7 @@ Solaris
 Soltec
 Soltys
 SomeVendor
+Sotirov's
 SourceForge
 Soyntec
 Spanier
@@ -1327,6 +1331,7 @@ UPSDESC
 UPSHOST
 UPSIMAGEPATH
 UPSLC
+UPSNOTIFY
 UPSOutletSystemOutletDelayBeforeReboot
 UPSOutletSystemOutletDelayBeforeShutdown
 UPSOutletSystemOutletDelayBeforeStartup
@@ -1691,6 +1696,7 @@ cfg
 cfgadm
 cflag
 cflags
+cgdisk
 cgi
 cgipath
 cgroup
@@ -1844,6 +1850,7 @@ dfl
 dhcp
 dialout
 difftool
+diffutils
 dipsw
 dir
 disassembly
@@ -1995,6 +2002,7 @@ frontends
 fs
 fsd
 fsr
+fstab
 ftdi
 fuji
 fullload
@@ -2137,8 +2145,10 @@ initscripts
 initups
 inline
 innotech
+inode
 inplace
 installcheck
+installpkg
 installurl
 instcmd
 instcmds
@@ -2248,6 +2258,7 @@ libneon
 libnss
 libnut
 libnutclient
+libnutclientstub
 libnutclientsub
 libnutconfig
 libnutscan
@@ -2280,12 +2291,14 @@ linevoltage
 linkdoc
 linksingledoc
 linux
+linuxdoc
 lipo
 listDeviceClients
 listdef
 littleguy
 lk
 lldb
+llvm
 lm
 ln
 loadPercentage
@@ -2475,7 +2488,9 @@ nnn
 noAuthNoPriv
 nobody's
 nobt
+nodev
 nodtk
+noexec
 noflag
 nogroup
 nohang
@@ -2492,6 +2507,7 @@ noout
 norating
 noro
 noscanlangid
+nosuid
 notAfter
 notifyme
 notifytype
@@ -2721,8 +2737,10 @@ refactoring
 referencenominal
 regex
 regtype
+relatime
 releasekeyring
 relicensing
+remoting
 renderer
 renderers
 repo
@@ -2762,6 +2780,7 @@ rqt
 rsa
 rsync
 rts
+rubygem
 runlevel
 runtime
 runtimecal
@@ -2841,6 +2860,7 @@ sitop
 sizeof
 ske
 skel
+slackpkg
 slaveid
 slavesync
 slewrate
@@ -2863,6 +2883,7 @@ sockdebug
 socketname
 socomec
 solaris
+solibs
 solis
 somepass
 something's
@@ -2988,6 +3009,7 @@ testtime
 testuser
 textproc
 tgcware
+tgz
 th
 timeframe
 timehead
@@ -3029,6 +3051,7 @@ tw
 tx
 txg
 txt
+txz
 typedef
 uA
 uD
