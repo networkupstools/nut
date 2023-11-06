@@ -37,6 +37,7 @@
                          * and for libusb headers and 0.1/1.0 mapping */
 
 /* Used in drivers/libusb*.c sources: */
+#define LIBUSB_DEFAULT_CONF_INDEX       0
 #define LIBUSB_DEFAULT_INTERFACE        0
 #define LIBUSB_DEFAULT_DESC_INDEX       0
 #define LIBUSB_DEFAULT_HID_EP_IN        1
@@ -72,6 +73,15 @@ typedef struct usb_communication_subdriver_s {
 	int (*get_interrupt)(usb_dev_handle *sdev,
 		usb_ctrl_charbuf buf, usb_ctrl_charbufsize bufsize,
 		usb_ctrl_timeout_msec timeout);
+
+	/* Nearly all devices use a single configuration descriptor, index 0.
+	 * But, it is possible for a device have more than one, check bNumConfigration
+	 * on the device descriptor for the total.
+	 *
+	 * In USB, the descriptor heirarchy is
+	 * device -> configuration(s) -> interface(s) -> endpoint(s)
+	 */
+	usb_ctrl_cfgindex usb_config_index;		/* index of the device config we use. Almost always 0; see comments above */
 
 	/* Used for Powervar UPS or similar cases to make sure
 	 * we use the right interface in the Composite device.
