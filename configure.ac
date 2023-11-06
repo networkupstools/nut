@@ -4259,6 +4259,13 @@ dnl #    versions care less about this situation).
 dnl # -Wno-disabled-macro-expansion -- some system definitions of strncmp()
 dnl #    and other routines are in fact recursive macros. The -Weverything
 dnl #    mode of clang(-3.4) disables their handling, unless told otherwise.
+dnl # -Wno-incompatible-function-pointer-types-strict -- some system definitions
+dnl #    of methods for signals are not compatible with even those systems'
+dnl #    definitions of default signals, e.g. void vs. int arguments:
+dnl #        #define SIG_IGN (void (*)())1
+dnl #        extern void (*signal(int, void (*)(int)))(int);
+dnl #    (NUT signal handler methods do have the int signal number)
+dnl #    This is currently quiesced for clang-17; better solutions are welcome.
 AS_CASE(["${nut_enable_warnings}"],
     [all], [
         CFLAGS="${CFLAGS} -Wall"
@@ -4269,7 +4276,7 @@ AS_CASE(["${nut_enable_warnings}"],
         CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
         ],
     [clang-medium], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-conversion -Wno-incompatible-pointer-types-discards-qualifiers"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-conversion -Wno-incompatible-pointer-types-discards-qualifiers -Wno-incompatible-function-pointer-types-strict"
         CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
         ],
     [clang-minimal], [
