@@ -435,8 +435,9 @@ static int libusb_open(usb_dev_handle **udevp,
 				}
 
 				fatalx(EXIT_FAILURE,
-					"Can't claim USB device [%04x:%04x]@%d/%d: %s",
+					"Can't claim USB device [%04x:%04x]@%d/%d/%d: %s",
 					curDevice->VendorID, curDevice->ProductID,
+					usb_subdriver.usb_config_index,
 					usb_subdriver.hid_rep_index,
 					usb_subdriver.hid_desc_index,
 					usb_strerror());
@@ -449,8 +450,9 @@ static int libusb_open(usb_dev_handle **udevp,
 				}
 
 				fatalx(EXIT_FAILURE,
-					"Can't claim USB device [%04x:%04x]@%d/%d: %s",
+					"Can't claim USB device [%04x:%04x]@%d/%d/%d: %s",
 					curDevice->VendorID, curDevice->ProductID,
+					usb_subdriver.usb_config_index,
 					usb_subdriver.hid_rep_index,
 					usb_subdriver.hid_desc_index,
 					usb_strerror());
@@ -508,10 +510,7 @@ static int libusb_open(usb_dev_handle **udevp,
 
 			/* Note: on some broken UPS's (e.g. Tripp Lite Smart1000LCD),
 				only this second method gives the correct result */
-
-			/* for now, we always assume configuration 0, interface 0,
-			   altsetting 0, as above. */
-			iface = &dev->config[0].interface[usb_subdriver.hid_rep_index].altsetting[0];
+			iface = &dev->config[usb_subdriver.usb_config_index].interface[usb_subdriver.hid_rep_index].altsetting[0];
 			for (i=0; i<iface->extralen; i+=iface->extra[i]) {
 				upsdebugx(4, "i=%d, extra[i]=%02x, extra[i+1]=%02x", i,
 					iface->extra[i], iface->extra[i+1]);
@@ -904,6 +903,7 @@ usb_communication_subdriver_t usb_subdriver = {
 	libusb_set_report,
 	libusb_get_string,
 	libusb_get_interrupt,
+	LIBUSB_DEFAULT_CONF_INDEX,
 	LIBUSB_DEFAULT_INTERFACE,
 	LIBUSB_DEFAULT_DESC_INDEX,
 	LIBUSB_DEFAULT_HID_EP_IN,
