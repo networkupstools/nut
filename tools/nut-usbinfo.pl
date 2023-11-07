@@ -194,13 +194,13 @@ sub gen_usb_files
 			print $outHotplug "         0x00            0x00            0x00            0x00               0x00               0x00000000\n";
 
 			# udev device entry
-			print $outUdev "# ".$vendor{$vendorId}{$productId}{"comment"}.' - '.$vendor{$vendorId}{$productId}{"driver"}."\n";
+			print $outUdev "# ".$vendor{$vendorId}{$productId}{"comment"}.' - '.$vendor{$vendorId}{$productId}{"drivers"}."\n";
 			print $outUdev "ATTR{idVendor}==\"".removeHexPrefix($vendorId);
 			print $outUdev "\", ATTR{idProduct}==\"".removeHexPrefix($productId)."\",";
 			print $outUdev ' MODE="664", GROUP="@RUN_AS_GROUP@"'."\n";
 
 			# devd device entry
-			print $out_devd "# ".$vendor{$vendorId}{$productId}{"comment"}.' - '.$vendor{$vendorId}{$productId}{"driver"}."\n";
+			print $out_devd "# ".$vendor{$vendorId}{$productId}{"comment"}.' - '.$vendor{$vendorId}{$productId}{"drivers"}."\n";
 			print $out_devd "notify 100 {\n\tmatch \"system\"\t\t\"USB\";\n";
 			print $out_devd "\tmatch \"subsystem\"\t\"DEVICE\";\n";
 			print $out_devd "\tmatch \"type\"\t\t\"ATTACH\";\n";
@@ -224,7 +224,16 @@ sub gen_usb_files
 			}
 
 			# Device scanner entry
-			print $outDevScanner "\t{ ".$vendorId.', '.$productId.", \"".$vendor{$vendorId}{$productId}{"driver"}."\" },\n";
+			print $outDevScanner "\t{ ".$vendorId.', '.$productId.", \"".$vendor{$vendorId}{$productId}{"driver"}."\" },";
+			if (index($vendor{$vendorId}{$productId}{"drivers"}, " ") != -1) {
+				my $otherDrivers = $vendor{$vendorId}{$productId}{"drivers"};
+				$otherDrivers =~ s/$vendor{$vendorId}{$productId}{"driver"}//;
+				$otherDrivers =~ s/  / /;
+				$otherDrivers =~ s/^ //;
+				$otherDrivers =~ s/ $//;
+				print $outDevScanner "\t# also: ".$otherDrivers;
+			}
+			print $outDevScanner "\n";
 		}
 
 		if ($upowerVendorHasDevices) {
@@ -327,11 +336,41 @@ sub find_usbdevs
 			else {
 				die "Unknown driver type: $nameFile";
 			}
-			if ($vendor{$VendorID}{$ProductID}{"driver"} && $ENV{"DEBUG"}) {
-				print STDERR "nut-usbinfo.pl: VendorID=$VendorID ProductID=$ProductID " .
-					"was already related to driver '" .
-					$vendor{$VendorID}{$ProductID}{"driver"} .
-					"' and changing to '$driver'\n";
+			if ($vendor{$VendorID}{$ProductID}{"driver"}) {
+				if ($driver ne $vendor{$VendorID}{$ProductID}{"driver"} && $ENV{"DEBUG"}) {
+					print STDERR "nut-usbinfo.pl: VendorID=$VendorID ProductID=$ProductID " .
+						"was already related to driver '" .
+						$vendor{$VendorID}{$ProductID}{"driver"} .
+						"' and changing to '$driver' as latest hit\n";
+				}
+
+				# \Q \E magic is only since perl 5.16 so preferring index instead:
+				if ($ENV{"DEBUG"}) {
+					print STDERR "nut-usbinfo.pl: checking " .
+						"list='" . $vendor{$VendorID}{$ProductID}{"drivers"} . "'" .
+						" l1=" . (index($vendor{$VendorID}{$ProductID}{"drivers"}, " " . $driver . " ")) .
+						" l2=" . (index($vendor{$VendorID}{$ProductID}{"drivers"}, $driver . " ")) .
+						" l3=" . (index($vendor{$VendorID}{$ProductID}{"drivers"}, " " . $driver)) .
+						" l4=" . (length($vendor{$VendorID}{$ProductID}{"drivers"}) - length($driver) - 1) .
+						"\n";
+				}
+
+				if (index($vendor{$VendorID}{$ProductID}{"drivers"}, " " . $driver . " ") > -1
+				||  index($vendor{$VendorID}{$ProductID}{"drivers"}, $driver . " ") == 0
+				||  (index($vendor{$VendorID}{$ProductID}{"drivers"}, " " . $driver) == length($vendor{$VendorID}{$ProductID}{"drivers"}) - length($driver) - 1
+				     && index($vendor{$VendorID}{$ProductID}{"drivers"}, " " . $driver) > -1)
+				) {
+					if ($ENV{"DEBUG"}) {
+						print STDERR "nut-usbinfo.pl: driver '$driver' was already listed for VendorID=$VendorID ProductID=$ProductID\n";
+					}
+				} else {
+					$vendor{$VendorID}{$ProductID}{"drivers"} .= " " . $driver;
+					if ($ENV{"DEBUG"}) {
+						print STDERR "nut-usbinfo.pl: added '$driver' to list for VendorID=$VendorID ProductID=$ProductID, now: " . $vendor{$VendorID}{$ProductID}{"drivers"} . "\n";
+					}
+				}
+			} else {
+				$vendor{$VendorID}{$ProductID}{"drivers"} = $driver;
 			}
 			$vendor{$VendorID}{$ProductID}{"driver"}=$driver;
 		}
