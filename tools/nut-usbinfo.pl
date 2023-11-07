@@ -328,6 +328,7 @@ sub find_usbdevs
 			$vendor{$VendorID}{$ProductID}{"comment"}=$lastComment;
 			# process the driver name
 			my $driver=$nameFile;
+			my $preferDriver=1;
 			if($nameFile=~/(.+)-hid\.c/) {
 				$driver="usbhid-ups";
 			}
@@ -339,11 +340,30 @@ sub find_usbdevs
 				die "Unknown driver type: $nameFile";
 			}
 			if ($vendor{$VendorID}{$ProductID}{"driver"}) {
-				if ($driver ne $vendor{$VendorID}{$ProductID}{"driver"} && $ENV{"DEBUG"}) {
-					print STDERR "nut-usbinfo.pl: VendorID=$VendorID ProductID=$ProductID " .
-						"was already related to driver '" .
-						$vendor{$VendorID}{$ProductID}{"driver"} .
-						"' and changing to '$driver' as latest hit\n";
+				if ($driver ne $vendor{$VendorID}{$ProductID}{"driver"}) {
+					# FIXME: Prefer apc_modbus to usbhid-ups in builds
+					# with libmodbus versions which support USB
+					if ($vendor{$VendorID}{$ProductID}{"driver"} eq "usbhid-ups"
+					||  $vendor{$VendorID}{$ProductID}{"driver"} eq "nutdrv_qx"
+					|| (index($vendor{$VendorID}{$ProductID}{"driver"}, "blazer_") == 0 && $driver ne "nutdrv_qx")
+					) {
+						# This newly seen driver is not as cool
+						# as the one we already saw earlier.
+						$preferDriver = 0;
+					}
+				}
+				if ($ENV{"DEBUG"}) {
+					if ($preferDriver) {
+						print STDERR "nut-usbinfo.pl: VendorID=$VendorID ProductID=$ProductID " .
+							"was already related to driver '" .
+							$vendor{$VendorID}{$ProductID}{"driver"} .
+							"' and changing to '$driver' as latest hit\n";
+					} else {
+						print STDERR "nut-usbinfo.pl: VendorID=$VendorID ProductID=$ProductID " .
+							"was already related to driver '" .
+							$vendor{$VendorID}{$ProductID}{"driver"} .
+							"' and now also to '$driver'; keeping original as more preferred\n";
+					}
 				}
 
 				# \Q \E magic is only since perl 5.16 so preferring index instead:
@@ -372,9 +392,13 @@ sub find_usbdevs
 					}
 				}
 			} else {
+				# First hit
 				$vendor{$VendorID}{$ProductID}{"drivers"} = $driver;
 			}
-			$vendor{$VendorID}{$ProductID}{"driver"}=$driver;
+
+			if ($preferDriver) {
+				$vendor{$VendorID}{$ProductID}{"driver"} = $driver;
+			}
 		}
 	}
 }
