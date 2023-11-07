@@ -1836,6 +1836,94 @@ static void	*ablerex_subdriver_fun(USBDevice_t *device)
 	return NULL;
 }
 
+static struct {
+	bool_t	initialized;
+	bool_t	ok;
+	uint8_t	in_endpoint_address;
+	uint8_t in_bmAttributes;
+	uint16_t in_wMaxPacketSize;
+	uint8_t	out_endpoint_address;
+	uint8_t out_bmAttributes;
+	uint16_t out_wMaxPacketSize;
+} armac_endpoint_cache = { .initialized = FALSE, .ok = FALSE };
+
+static void load_armac_endpoint_cache(void)
+{
+#if WITH_LIBUSB_1_0
+	int ret;
+	struct libusb_device *dev;
+	struct libusb_config_descriptor *config_descriptor;
+	bool_t found_in = FALSE;
+	bool_t found_out = FALSE;
+#endif /* WITH_LIBUSB_1_0 */
+
+	if (armac_endpoint_cache.initialized) {
+		return;
+	}
+
+	armac_endpoint_cache.initialized = TRUE;
+	armac_endpoint_cache.ok = FALSE;
+
+#if WITH_LIBUSB_1_0
+	dev = libusb_get_device(udev);
+	if (!dev) {
+		upsdebugx(4, "load_armac_endpoint_cache: unable to libusb_get_device");
+		return;
+	}
+
+	ret = libusb_get_active_config_descriptor(dev, &config_descriptor);
+	if (ret) {
+		upsdebugx(4, "load_armac_endpoint_cache: libusb_get_active_config_descriptor error=%d", ret);
+		libusb_free_config_descriptor(config_descriptor);
+		return;
+	}
+
+	if (config_descriptor->bNumInterfaces != 1) {
+		upsdebugx(4, "load_armac_endpoint_cache: unexpected config_descriptor->bNumInterfaces=%d", config_descriptor->bNumInterfaces);
+		libusb_free_config_descriptor(config_descriptor);
+		return;
+	}
+
+	const struct libusb_interface *interface = &config_descriptor->interface[0];
+	if (interface->num_altsetting != 1) {
+		upsdebugx(4, "load_armac_endpoint_cache: unexpected interface->num_altsetting=%d", interface->num_altsetting);
+		libusb_free_config_descriptor(config_descriptor);
+		return;
+	}
+
+	const struct libusb_interface_descriptor *interface_descriptor = &interface->altsetting[0];
+	if (interface_descriptor->bNumEndpoints != 2) {
+		upsdebugx(4, "load_armac_endpoint_cache: unexpected interface_descriptor->bNumEndpoints=%d", interface_descriptor->bNumEndpoints);
+		libusb_free_config_descriptor(config_descriptor);
+		return;
+	}
+
+	for (uint8_t i = 0; i < interface_descriptor->bNumEndpoints; i++) {
+		const struct libusb_endpoint_descriptor *endpoint = &interface_descriptor->endpoint[i];
+
+		if (endpoint->bEndpointAddress & LIBUSB_ENDPOINT_IN) {
+			found_in = TRUE;
+			armac_endpoint_cache.in_endpoint_address = endpoint->bEndpointAddress;
+			armac_endpoint_cache.in_bmAttributes = endpoint->bmAttributes;
+			armac_endpoint_cache.in_wMaxPacketSize = endpoint->wMaxPacketSize;
+		} else {
+			found_out = TRUE;
+			armac_endpoint_cache.out_endpoint_address = endpoint->bEndpointAddress;
+			armac_endpoint_cache.out_bmAttributes = endpoint->bmAttributes;
+			armac_endpoint_cache.out_wMaxPacketSize = endpoint->wMaxPacketSize;
+		}
+	}
+
+	if (found_in || found_out) {
+		armac_endpoint_cache.ok = TRUE;
+
+		upsdebugx(4, "load_armac_endpoint_cache: in_endpoint_address=%02x, in_bmAttributes=%02d, out_endpoint_address=%02d, out_bmAttributes=%02d", armac_endpoint_cache.in_endpoint_address, armac_endpoint_cache.in_bmAttributes, armac_endpoint_cache.out_endpoint_address, armac_endpoint_cache.out_bmAttributes);
+	}
+
+	libusb_free_config_descriptor(config_descriptor);
+#endif /* WITH_LIBUSB_1_0 */
+}
+
 /* Armac communication subdriver
  *
  * This reproduces a communication protocol used by an old PowerManagerII
@@ -1843,13 +1931,20 @@ static void	*ablerex_subdriver_fun(USBDevice_t *device)
  * Richcomm Technologies, Inc. Dec 27 2005 ver 1.1." Maybe other Richcomm UPSes
  * would work with this - better than with the richcomm_usb driver.
  */
-#define ARMAC_READ_SIZE 6
+#define ARMAC_READ_SIZE_FOR_CONTROL 6
+#define ARMAC_READ_SIZE_FOR_INTERRUPT 64
 static int	armac_command(const char *cmd, char *buf, size_t buflen)
 {
-	char tmpbuf[ARMAC_READ_SIZE];
+	char tmpbuf[ARMAC_READ_SIZE_FOR_INTERRUPT];
 	int ret = 0;
 	size_t i, bufpos;
 	const size_t cmdlen = strlen(cmd);
+	bool_t use_interrupt = FALSE;
+	int read_size = ARMAC_READ_SIZE_FOR_CONTROL;
+
+	if (!armac_endpoint_cache.initialized) {
+		load_armac_endpoint_cache();
+	}
 
 	/* UPS ignores (doesn't echo back) unsupported commands which makes
 	 * the initialization long. List commands tested to be unsupported:
@@ -1873,29 +1968,51 @@ static int	armac_command(const char *cmd, char *buf, size_t buflen)
 	}
 	upsdebugx(4, "armac command %.*s", (int)strcspn(cmd, "\r"), cmd);
 
-	/* Cleanup buffer before sending a new command */
-	for (i = 0; i < 10; i++) {
-		ret = usb_interrupt_read(udev, 0x81,
-			(usb_ctrl_charbuf)tmpbuf, ARMAC_READ_SIZE, 100);
-		if (ret != ARMAC_READ_SIZE) {
-			// Timeout - buffer is clean.
-			break;
-		}
-		upsdebugx(4, "armac cleanup ret i=%" PRIuSIZE " ret=%d ctrl=%02hhx", i, ret, tmpbuf[0]);
-	}
+#if WITH_LIBUSB_1_0
+	/* Be conservative and do not break old Armac Upses*/
+	use_interrupt = armac_endpoint_cache.ok
+		&& armac_endpoint_cache.in_endpoint_address == 0x82
+		&& armac_endpoint_cache.in_bmAttributes & LIBUSB_TRANSFER_TYPE_INTERRUPT
+		&& armac_endpoint_cache.out_endpoint_address == 0x02
+		&& armac_endpoint_cache.out_bmAttributes & LIBUSB_TRANSFER_TYPE_INTERRUPT
+		&& armac_endpoint_cache.in_wMaxPacketSize == 64;
+#endif /* WITH_LIBUSB_1_0 */
 
-	/* Send command to the UPS in 3-byte chunks. Most fit 1 chunk, except for eg.
-	 * parameterized tests. */
-	for (i = 0; i < cmdlen;) {
-		const size_t bytes_to_send = (cmdlen <= (i + 3)) ? (cmdlen - i) : 3;
+	if (use_interrupt && cmdlen + 1 < armac_endpoint_cache.in_wMaxPacketSize) {
 		memset(tmpbuf, 0, sizeof(tmpbuf));
-		tmpbuf[0] = 0xa0 + bytes_to_send;
-		memcpy(tmpbuf + 1, cmd + i, bytes_to_send);
-		ret = usb_control_msg(udev,
-			USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
-			0x09, 0x200, 0,
-			(usb_ctrl_charbuf)tmpbuf, 4, 5000);
-		i += bytes_to_send;
+		tmpbuf[0] = 0xa0 + cmdlen;
+		memcpy(tmpbuf + 1, cmd, cmdlen);
+
+		ret = usb_interrupt_write(udev,
+			armac_endpoint_cache.out_endpoint_address,
+			(usb_ctrl_charbuf)tmpbuf, cmdlen + 1, 5000);
+
+		read_size = ARMAC_READ_SIZE_FOR_INTERRUPT;
+	} else {
+		/* Cleanup buffer before sending a new command */
+		for (i = 0; i < 10; i++) {
+			ret = usb_interrupt_read(udev, 0x81,
+				(usb_ctrl_charbuf)tmpbuf, ARMAC_READ_SIZE_FOR_CONTROL, 100);
+			if (ret != ARMAC_READ_SIZE_FOR_CONTROL) {
+				// Timeout - buffer is clean.
+				break;
+			}
+			upsdebugx(4, "armac cleanup ret i=%" PRIuSIZE " ret=%d ctrl=%02hhx", i, ret, tmpbuf[0]);
+		}
+
+		/* Send command to the UPS in 3-byte chunks. Most fit 1 chunk, except for eg.
+		* parameterized tests. */
+		for (i = 0; i < cmdlen;) {
+			const size_t bytes_to_send = (cmdlen <= (i + 3)) ? (cmdlen - i) : 3;
+			memset(tmpbuf, 0, sizeof(tmpbuf));
+			tmpbuf[0] = 0xa0 + bytes_to_send;
+			memcpy(tmpbuf + 1, cmd + i, bytes_to_send);
+			ret = usb_control_msg(udev,
+				USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+				0x09, 0x200, 0,
+				(usb_ctrl_charbuf)tmpbuf, 4, 5000);
+			i += bytes_to_send;
+		}
 	}
 
 	if (ret <= 0) {
@@ -1911,17 +2028,17 @@ static int	armac_command(const char *cmd, char *buf, size_t buflen)
 	memset(buf, 0, buflen);
 
 	bufpos = 0;
-	while (bufpos + ARMAC_READ_SIZE < buflen) {
+	while (bufpos + read_size + 1 < buflen) {
 		size_t bytes_available;
 
 		/* Read data in 6-byte chunks */
-		ret = usb_interrupt_read(udev, 0x81,
-			(usb_ctrl_charbuf)tmpbuf, ARMAC_READ_SIZE, 1000);
+		ret = usb_interrupt_read(udev, use_interrupt ? armac_endpoint_cache.in_endpoint_address : 0x81,
+			(usb_ctrl_charbuf)tmpbuf, read_size, 1000);
 
 		/* Any errors here mean that we are unable to read a reply
 		 * (which will happen after successfully writing a command
 		 * to the UPS) */
-		if (ret != ARMAC_READ_SIZE) {
+		if (ret != read_size) {
 			/* NOTE: If end condition is invalid for particular UPS we might make one
 			 * request more and get this error. If bufpos > (say) 10 this could be ignored
 			 * and the reply correctly read. */
@@ -1946,15 +2063,15 @@ static int	armac_command(const char *cmd, char *buf, size_t buflen)
 		 * Current assumption is that this is number of bytes available on the UPS side
 		 * with up to 5 (ret - 1) transferred.
 		 */
-		bytes_available = (unsigned char)tmpbuf[0] & 0x0f;
+		bytes_available = (unsigned char)tmpbuf[0] & 0x3f;
 		if (bytes_available == 0) {
 			/* End of transfer */
 			break;
 		}
 
-		if (bytes_available > ARMAC_READ_SIZE - 1) {
+		if (bytes_available > (unsigned)read_size - 1) {
 			/* Single interrupt transfer has 1 control + 5 data bytes */
-			bytes_available = ARMAC_READ_SIZE - 1;
+			bytes_available = read_size - 1;
 		}
 
 		/* Copy bytes into the final buffer while detecting end of line - \r */
