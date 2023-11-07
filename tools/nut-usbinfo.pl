@@ -161,7 +161,7 @@ sub gen_usb_files
 	print $outDevScanner " typedef usb_dev_handle libusb_device_handle;\n";
 	print $outDevScanner "#endif\n";
 	# vid, pid, driver
-	print $outDevScanner "typedef struct {\n\tuint16_t\tvendorID;\n\tuint16_t\tproductID;\n\tchar*\tdriver_name;\n} usb_device_id_t;\n\n";
+	print $outDevScanner "typedef struct {\n\tuint16_t\tvendorID;\n\tuint16_t\tproductID;\n\tchar*\tdriver_name;\n\tchar*\talt_driver_names;\n} usb_device_id_t;\n\n";
 	print $outDevScanner "/* USB IDs device table */\nstatic usb_device_id_t usb_device_table[] = {\n\n";
 
 	# generate the file in alphabetical order (first for VendorID, then for ProductID)
@@ -224,16 +224,18 @@ sub gen_usb_files
 			}
 
 			# Device scanner entry
-			print $outDevScanner "\t{ ".$vendorId.', '.$productId.", \"".$vendor{$vendorId}{$productId}{"driver"}."\" },";
+			print $outDevScanner "\t{ ".$vendorId.', '.$productId.", \"".$vendor{$vendorId}{$productId}{"driver"}."\", ";
 			if (index($vendor{$vendorId}{$productId}{"drivers"}, " ") != -1) {
 				my $otherDrivers = $vendor{$vendorId}{$productId}{"drivers"};
 				$otherDrivers =~ s/$vendor{$vendorId}{$productId}{"driver"}//;
 				$otherDrivers =~ s/  / /;
 				$otherDrivers =~ s/^ //;
 				$otherDrivers =~ s/ $//;
-				print $outDevScanner "\t# also: ".$otherDrivers;
+				print $outDevScanner "\"".$otherDrivers."\"";
+			} else {
+				print $outDevScanner "NULL";
 			}
-			print $outDevScanner "\n";
+			print $outDevScanner " },\n";
 		}
 
 		if ($upowerVendorHasDevices) {
@@ -248,7 +250,7 @@ sub gen_usb_files
 	print $outUdev "\n".'LABEL="nut-usbups_rules_end"'."\n";
 
 	# Device scanner footer
-	print $outDevScanner "\n\t/* Terminating entry */\n\t{ 0, 0, NULL }\n};\n#endif /* DEVSCAN_USB_H */\n\n";
+	print $outDevScanner "\n\t/* Terminating entry */\n\t{ 0, 0, NULL, NULL }\n};\n#endif /* DEVSCAN_USB_H */\n\n";
 }
 
 sub find_usbdevs
