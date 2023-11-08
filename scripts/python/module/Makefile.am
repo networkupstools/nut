@@ -30,7 +30,8 @@ upload publish:
 		x*)  echo "  PYPI  ...testing"; $(MAKE) $(AM_FLAGS) upload-testpypi ;; \
 	 esac
 
-.pypi-src: test_nutclient.py.in PyNUT.py.in setup.py.in Makefile
+# README.txt is also a part of module standard expectations
+.pypi-src: test_nutclient.py.in PyNUT.py.in setup.py.in README.adoc Makefile
 	@echo "  PYPI  Generate PyPI module source"
 	@rm -rf src "$@"
 	@mkdir src
@@ -48,7 +49,8 @@ upload publish:
 		fi ; \
 		sed -e "s,[@]PYTHON[@],@PYTHON@," < "$(srcdir)/$${B}.in" > "src/$${B}" || exit ; \
 		if test -x "$(srcdir)/$${B}.in" ; then chmod +x "src/$${B}"; fi ; \
-	 done
+	 done ; \
+	 cp -pf "$(srcdir)/README.adoc" src/README.txt || exit
 	@touch "$@"
 
 .pypi-tools-dist:

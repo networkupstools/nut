@@ -49,6 +49,7 @@ jobs:
         cd scripts/python/module ;
         mkdir src ;
         for F in *.py.in ; do sed -e "s,@PYTHON@,$(command -v python)," < "$F" > "src/`basename "$F" .in`" ; done ;
+        cp README.adoc src/README.txt ;
         chmod +x src/test*.py ;
         python setup.py sdist bdist_wheel
     - name: Publish master distribution 📦 to Test PyPI
