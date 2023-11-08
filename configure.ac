@@ -20,7 +20,7 @@ dnl (that one comes from the NUT_VERSION_MACRO from nut_version.h file).
 || NUT_SOURCE_GITREV=""
 
 dnl Gitrev-based build identifier which can be used for e.g. PyPI uploads:
-NUT_SOURCE_GITREV_NUMERIC="`echo "${NUT_SOURCE_GITREV}" | sed -e 's/^v//' -e 's/-g.*$//'`"
+NUT_SOURCE_GITREV_NUMERIC="`echo "${NUT_SOURCE_GITREV}" | sed -e 's/^v//' -e 's/-g.*$//' -e 's/-/./g'`"
 
 dnl Note: except for experiments, do not pass this into config.h - use
 dnl the NUT_VERSION_MACRO from nut_version.h instead. Developers may

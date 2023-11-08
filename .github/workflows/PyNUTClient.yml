@@ -36,7 +36,7 @@ jobs:
             && test -n "${TAG_NAME}"
             || TAG_NAME="2.8.1-`TZ=UTC date +%s`" ;
         fi ;
-        TAG_NAME="$(echo "$TAG_NAME" | sed -e 's/^v//' -e 's/-g.*$//')" ;
+        TAG_NAME="$(echo "$TAG_NAME" | sed -e 's/^v//' -e 's/-g.*$//' -e 's/-/./g')" ;
         echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
     - name: Update version in setup.py
       run: >-
