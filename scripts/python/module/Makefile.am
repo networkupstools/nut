@@ -8,15 +8,17 @@ all: src
 NUT_SOURCE_GITREV_NUMERIC = @NUT_SOURCE_GITREV_NUMERIC@
 PYTHON = @PYTHON@
 
+GENERATED_DIST = dist build *.egg-info
+
+$(GENERATED_DIST): .pypi-dist
+
 clean-local:
-	rm -rf src dist build *.egg-info
+	rm -rf src $(GENERATED_DIST)
 	rm -f .pypi-src .pypi-dist
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp .pypi-tools*
 
 src: .pypi-src
-
-dist: .pypi-dist
 
 upload publish:
 	case x"$(NUT_SOURCE_GITREV_NUMERIC)" in \
@@ -60,7 +62,7 @@ upload publish:
 
 # Using pypa/setuptools
 .pypi-dist: .pypi-tools-dist .pypi-src
-	rm -rf dist build "$@"
+	rm -rf $(GENERATED_DIST) "$@"
 	$(PYTHON) setup.py sdist bdist_wheel
 	touch "$@"
 
