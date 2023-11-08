@@ -3,6 +3,8 @@
 # The usual autotools stuff including clean-up is in parent dir
 # (to allow easier mixing of the module and app, if/when desired)
 
+# Non-maintainers can at most generate the source layout for python setuptools
+# (having only shell scripting as a prerequisite suffices for that)
 all: src
 
 NUT_SOURCE_GITREV_NUMERIC = @NUT_SOURCE_GITREV_NUMERIC@
@@ -20,16 +22,19 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp .pypi-tools*
 
 src: .pypi-src
 
+# Tagged releases should only have three blocks of digits separated by dots
 upload publish:
-	case x"$(NUT_SOURCE_GITREV_NUMERIC)" in \
-		v{0,1,2,3,4,5,6,7,8,9}*) $(MAKE) $(AM_FLAGS) upload-pypi ;; \
-		*) $(MAKE) $(AM_FLAGS) upload-testpypi ;; \
-	esac
+	@echo "  PYPI  Checking upload type for module version '$(NUT_SOURCE_GITREV_NUMERIC)'" ; \
+	 case x"`echo "$(NUT_SOURCE_GITREV_NUMERIC)" | tr -d '[0-9]'`" in \
+		x..) echo "  PYPI  ...release"; $(MAKE) $(AM_FLAGS) upload-pypi ;; \
+		x*)  echo "  PYPI  ...testing"; $(MAKE) $(AM_FLAGS) upload-testpypi ;; \
+	 esac
 
 .pypi-src: test_nutclient.py.in PyNUT.py.in setup.py.in Makefile
-	rm -rf src "$@"
-	mkdir src
-	for S in "$(srcdir)"/*.py.in ; do \
+	@echo "  PYPI  Generate PyPI module source"
+	@rm -rf src "$@"
+	@mkdir src
+	@for S in "$(srcdir)"/*.py.in ; do \
 		B="`basename "$${S}" .in`" ; \
 		if test x"$${B}" = xsetup.py ; then \
 			if ! test -s "$${B}" ; then \
@@ -43,34 +48,39 @@ upload publish:
 		fi ; \
 		sed -e "s,[@]PYTHON[@],@PYTHON@," < "$(srcdir)/$${B}.in" > "src/$${B}" || exit ; \
 		if test -x "$(srcdir)/$${B}.in" ; then chmod +x "src/$${B}"; fi ; \
-	done
-	touch "$@"
+	 done
+	@touch "$@"
 
 .pypi-tools-dist:
-	test -n "$(PYTHON)" && command -v $(PYTHON)
-	$(PYTHON) -m pip install wheel
-	touch "$@"
+	@echo "  PYPI  Prepare PyPI tools to generate a distribution"
+	@test -n "$(PYTHON)" && command -v $(PYTHON)
+	@$(PYTHON) -m pip install wheel
+	@touch "$@"
 
 # Install via OS packaging or pip?
 # https://twine.readthedocs.io/en/stable/
 .pypi-tools-upload:
-	test -n "$(PYTHON)" && command -v $(PYTHON)
-	$(PYTHON) -m pip install twine
-	command -v twine
-	test -s $(HOME)/.pypirc
-	touch "$@"
+	@echo "  PYPI  Prepare PyPI tools and resources to upload a distribution"
+	@test -n "$(PYTHON)" && command -v $(PYTHON)
+	@$(PYTHON) -m pip install twine
+	@command -v twine
+	@test -s $(HOME)/.pypirc
+	@touch "$@"
 
 # Using pypa/setuptools
 .pypi-dist: .pypi-tools-dist .pypi-src
-	rm -rf $(GENERATED_DIST) "$@"
-	$(PYTHON) setup.py sdist bdist_wheel
-	touch "$@"
+	@echo "  PYPI  Generate PyPI module distribution"
+	@rm -rf $(GENERATED_DIST) "$@"
+	@$(PYTHON) setup.py sdist bdist_wheel
+	@touch "$@"
 
 # These need $HOME/.pypirc prepared with credentials (API tokens) from
 # https://pypi.org/manage/account/ and https://test.pypi.org/manage/account/
 # TODO: .asc/.sig files for releases?
 upload-pypi: .pypi-dist .pypi-tools-upload
-	twine upload dist/*
+	@echo "  PYPI  Upload PyPI module distribution to production/release PyPI repository"
+	@twine upload dist/*
 
 upload-testpypi: .pypi-dist .pypi-tools-upload
-	twine upload -r testpypi dist/*
+	@echo "  PYPI  Upload PyPI module distribution to testing/staging PyPI repository"
+	@twine upload -r testpypi dist/*
