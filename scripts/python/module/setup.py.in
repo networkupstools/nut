@@ -15,7 +15,7 @@ with codecs.open(os.path.join(here, "README.adoc"), encoding="utf-8") as fh:
 
 setup(
     name="PyNUTClient",
-    version='@NUT_SOURCE_GITREV@',
+    version='@NUT_SOURCE_GITREV_NUMERIC@',
     author="The Network UPS Tools project",
     author_email="jimklimov+nut@gmail.com",
     description="Python client bindings for NUT",

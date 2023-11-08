@@ -5,7 +5,7 @@
 
 all: src
 
-NUT_SOURCE_GITREV = @NUT_SOURCE_GITREV@
+NUT_SOURCE_GITREV_NUMERIC = @NUT_SOURCE_GITREV_NUMERIC@
 PYTHON = @PYTHON@
 
 clean-local:
@@ -19,7 +19,7 @@ src: .pypi-src
 dist: .pypi-dist
 
 upload publish:
-	case x"$(NUT_SOURCE_GITREV)" in \
+	case x"$(NUT_SOURCE_GITREV_NUMERIC)" in \
 		v{0,1,2,3,4,5,6,7,8,9}*) $(MAKE) $(AM_FLAGS) upload-pypi ;; \
 		*) $(MAKE) $(AM_FLAGS) upload-testpypi ;; \
 	esac
@@ -31,7 +31,7 @@ upload publish:
 		B="`basename "$${S}" .in`" ; \
 		if test x"$${B}" = xsetup.py ; then \
 			if ! test -s "$${B}" ; then \
-				sed -e "s/[@]NUT_SOURCE_GITREV[@]/$(NUT_SOURCE_GITREV)/" < "$(srcdir)/$${B}.in" > "$${B}" || exit ; \
+				sed -e "s/[@]NUT_SOURCE_GITREV_NUMERIC[@]/$(NUT_SOURCE_GITREV_NUMERIC)/" < "$(srcdir)/$${B}.in" > "$${B}" || exit ; \
 			fi ; \
 			continue; \
 		fi; \

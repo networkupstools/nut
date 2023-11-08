@@ -19,6 +19,9 @@ dnl (that one comes from the NUT_VERSION_MACRO from nut_version.h file).
 && NUT_SOURCE_GITREV="`(git describe --tags --match 'v[0-9]*.[0-9]*.[0-9]' --exclude '*-signed' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' 2>/dev/null || git describe --tags --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' --exclude '*Windows*' --exclude '*IPM*' 2>/dev/null ) | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,'`" \
 || NUT_SOURCE_GITREV=""
 
+dnl Gitrev-based build identifier which can be used for e.g. PyPI uploads:
+NUT_SOURCE_GITREV_NUMERIC="`echo "${NUT_SOURCE_GITREV}" | sed -e 's/^v//' -e 's/-g.*$//'`"
+
 dnl Note: except for experiments, do not pass this into config.h - use
 dnl the NUT_VERSION_MACRO from nut_version.h instead. Developers may
 dnl want to disable their "force-nut-version-header" configure option
@@ -4051,6 +4054,7 @@ AC_SUBST(TREE_VERSION)
 AC_SUBST(NUT_NETVERSION)
 AC_SUBST(FORCE_NUT_VERSION)
 AC_SUBST(NUT_SOURCE_GITREV)
+AC_SUBST(NUT_SOURCE_GITREV_NUMERIC)
 AC_SUBST(LIBSSL_CFLAGS)
 AC_SUBST(LIBSSL_LIBS)
 AC_SUBST(LIBSSL_REQUIRES)

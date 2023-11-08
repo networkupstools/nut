@@ -27,16 +27,21 @@ jobs:
         pip install wheel
     - name: Extract tag name
       id: tag
+      # Note: this is all a single shell line in the end,
+      # so we need semicolons between commands!
       run: >-
         TAG_NAME="$(echo $GITHUB_REF | cut -d / -f 3)" ;
         if [ x"$TAG_NAME" = xmaster ]; then
-            TAG_NAME="$(git describe --tags --match 'v[0-9]*.[0-9]*.[0-9]' --exclude '*-signed' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' 2>/dev/null || git describe --tags --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' --exclude '*Windows*' --exclude '*IPM*' 2>/dev/null ) | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,')" || TAG_NAME=master ;
+            TAG_NAME="$(git describe --tags --match 'v[0-9]*.[0-9]*.[0-9]' --exclude '*-signed' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' 2>/dev/null || git describe --tags --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' --exclude '*Windows*' --exclude '*IPM*' 2>/dev/null ) | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,')"
+            && test -n "${TAG_NAME}"
+            || TAG_NAME="2.8.1-`TZ=UTC date +%s`" ;
         fi ;
+        TAG_NAME="$(echo "$TAG_NAME" | sed -e 's/^v//' -e 's/-g.*$//')" ;
         echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
     - name: Update version in setup.py
       run: >-
         if [ ! -s scripts/python/module/setup.py ] ; then
-            sed -e "s/@NUT_SOURCE_GITREV@/${{ steps.tag.outputs.TAG_NAME }}/g" < scripts/python/module/setup.py.in > scripts/python/module/setup.py ;
+            sed -e "s/@NUT_SOURCE_GITREV_NUMERIC@/${{ steps.tag.outputs.TAG_NAME }}/g" < scripts/python/module/setup.py.in > scripts/python/module/setup.py ;
         fi
     - name: Build a binary wheel
       run: >-
