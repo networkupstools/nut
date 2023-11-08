@@ -30,10 +30,11 @@ jobs:
         sed -e "s/{{VERSION_PLACEHOLDER}}/${{ steps.tag.outputs.TAG_NAME }}/g" -i scripts/python/module/setup.py
     - name: Build a binary wheel
       run: >-
-        cd scripts/python/module
-        mkdir src
-        for F in *.py.in ; do sed -e "s,@PYTHON@,$(command -v python)," < "$F" > "src/`basename "$F" .in`" ; done
-        chmod +x src/test*.py
+        set -e ;
+        cd scripts/python/module ;
+        mkdir src ;
+        for F in *.py.in ; do sed -e "s,@PYTHON@,$(command -v python)," < "$F" > "src/`basename "$F" .in`" ; done ;
+        chmod +x src/test*.py ;
         python setup.py sdist bdist_wheel
     - name: Publish distribution 📦 to PyPI
       uses: pypa/gh-action-pypi-publish@master
