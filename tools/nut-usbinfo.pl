@@ -161,7 +161,7 @@ sub gen_usb_files
 	print $outDevScanner " typedef usb_dev_handle libusb_device_handle;\n";
 	print $outDevScanner "#endif\n";
 	# vid, pid, driver
-	print $outDevScanner "typedef struct {\n\tuint16_t\tvendorID;\n\tuint16_t\tproductID;\n\tchar*\tdriver_name;\n} usb_device_id_t;\n\n";
+	print $outDevScanner "typedef struct {\n\tuint16_t\tvendorID;\n\tuint16_t\tproductID;\n\tchar*\tdriver_name;\n\tchar*\talt_driver_names;\n} usb_device_id_t;\n\n";
 	print $outDevScanner "/* USB IDs device table */\nstatic usb_device_id_t usb_device_table[] = {\n\n";
 
 	# generate the file in alphabetical order (first for VendorID, then for ProductID)
@@ -194,13 +194,13 @@ sub gen_usb_files
 			print $outHotplug "         0x00            0x00            0x00            0x00               0x00               0x00000000\n";
 
 			# udev device entry
-			print $outUdev "# ".$vendor{$vendorId}{$productId}{"comment"}.' - '.$vendor{$vendorId}{$productId}{"driver"}."\n";
+			print $outUdev "# ".$vendor{$vendorId}{$productId}{"comment"}.' - '.$vendor{$vendorId}{$productId}{"drivers"}."\n";
 			print $outUdev "ATTR{idVendor}==\"".removeHexPrefix($vendorId);
 			print $outUdev "\", ATTR{idProduct}==\"".removeHexPrefix($productId)."\",";
 			print $outUdev ' MODE="664", GROUP="@RUN_AS_GROUP@"'."\n";
 
 			# devd device entry
-			print $out_devd "# ".$vendor{$vendorId}{$productId}{"comment"}.' - '.$vendor{$vendorId}{$productId}{"driver"}."\n";
+			print $out_devd "# ".$vendor{$vendorId}{$productId}{"comment"}.' - '.$vendor{$vendorId}{$productId}{"drivers"}."\n";
 			print $out_devd "notify 100 {\n\tmatch \"system\"\t\t\"USB\";\n";
 			print $out_devd "\tmatch \"subsystem\"\t\"DEVICE\";\n";
 			print $out_devd "\tmatch \"type\"\t\t\"ATTACH\";\n";
@@ -224,7 +224,18 @@ sub gen_usb_files
 			}
 
 			# Device scanner entry
-			print $outDevScanner "\t{ ".$vendorId.', '.$productId.", \"".$vendor{$vendorId}{$productId}{"driver"}."\" },\n";
+			print $outDevScanner "\t{ ".$vendorId.', '.$productId.", \"".$vendor{$vendorId}{$productId}{"driver"}."\", ";
+			if (index($vendor{$vendorId}{$productId}{"drivers"}, " ") != -1) {
+				my $otherDrivers = $vendor{$vendorId}{$productId}{"drivers"};
+				$otherDrivers =~ s/$vendor{$vendorId}{$productId}{"driver"}//;
+				$otherDrivers =~ s/  / /;
+				$otherDrivers =~ s/^ //;
+				$otherDrivers =~ s/ $//;
+				print $outDevScanner "\"".$otherDrivers."\"";
+			} else {
+				print $outDevScanner "NULL";
+			}
+			print $outDevScanner " },\n";
 		}
 
 		if ($upowerVendorHasDevices) {
@@ -239,7 +250,7 @@ sub gen_usb_files
 	print $outUdev "\n".'LABEL="nut-usbups_rules_end"'."\n";
 
 	# Device scanner footer
-	print $outDevScanner "\n\t/* Terminating entry */\n\t{ 0, 0, NULL }\n};\n#endif /* DEVSCAN_USB_H */\n\n";
+	print $outDevScanner "\n\t/* Terminating entry */\n\t{ 0, 0, NULL, NULL }\n};\n#endif /* DEVSCAN_USB_H */\n\n";
 }
 
 sub find_usbdevs
@@ -317,6 +328,7 @@ sub find_usbdevs
 			$vendor{$VendorID}{$ProductID}{"comment"}=$lastComment;
 			# process the driver name
 			my $driver=$nameFile;
+			my $preferDriver=1;
 			if($nameFile=~/(.+)-hid\.c/) {
 				$driver="usbhid-ups";
 			}
@@ -327,13 +339,66 @@ sub find_usbdevs
 			else {
 				die "Unknown driver type: $nameFile";
 			}
-			if ($vendor{$VendorID}{$ProductID}{"driver"} && $ENV{"DEBUG"}) {
-				print STDERR "nut-usbinfo.pl: VendorID=$VendorID ProductID=$ProductID " .
-					"was already related to driver '" .
-					$vendor{$VendorID}{$ProductID}{"driver"} .
-					"' and changing to '$driver'\n";
+			if ($vendor{$VendorID}{$ProductID}{"driver"}) {
+				if ($driver ne $vendor{$VendorID}{$ProductID}{"driver"}) {
+					# FIXME: Prefer apc_modbus to usbhid-ups in builds
+					# with libmodbus versions which support USB
+					if ($vendor{$VendorID}{$ProductID}{"driver"} eq "usbhid-ups"
+					||  $vendor{$VendorID}{$ProductID}{"driver"} eq "nutdrv_qx"
+					|| (index($vendor{$VendorID}{$ProductID}{"driver"}, "blazer_") == 0 && $driver ne "nutdrv_qx")
+					) {
+						# This newly seen driver is not as cool
+						# as the one we already saw earlier.
+						$preferDriver = 0;
+					}
+				}
+				if ($ENV{"DEBUG"}) {
+					if ($preferDriver) {
+						print STDERR "nut-usbinfo.pl: VendorID=$VendorID ProductID=$ProductID " .
+							"was already related to driver '" .
+							$vendor{$VendorID}{$ProductID}{"driver"} .
+							"' and changing to '$driver' as latest hit\n";
+					} else {
+						print STDERR "nut-usbinfo.pl: VendorID=$VendorID ProductID=$ProductID " .
+							"was already related to driver '" .
+							$vendor{$VendorID}{$ProductID}{"driver"} .
+							"' and now also to '$driver'; keeping original as more preferred\n";
+					}
+				}
+
+				# \Q \E magic is only since perl 5.16 so preferring index instead:
+				if ($ENV{"DEBUG"}) {
+					print STDERR "nut-usbinfo.pl: checking " .
+						"list='" . $vendor{$VendorID}{$ProductID}{"drivers"} . "'" .
+						" l1=" . (index($vendor{$VendorID}{$ProductID}{"drivers"}, " " . $driver . " ")) .
+						" l2=" . (index($vendor{$VendorID}{$ProductID}{"drivers"}, $driver . " ")) .
+						" l3=" . (index($vendor{$VendorID}{$ProductID}{"drivers"}, " " . $driver)) .
+						" l4=" . (length($vendor{$VendorID}{$ProductID}{"drivers"}) - length($driver) - 1) .
+						"\n";
+				}
+
+				if (index($vendor{$VendorID}{$ProductID}{"drivers"}, " " . $driver . " ") > -1
+				||  index($vendor{$VendorID}{$ProductID}{"drivers"}, $driver . " ") == 0
+				||  (index($vendor{$VendorID}{$ProductID}{"drivers"}, " " . $driver) == length($vendor{$VendorID}{$ProductID}{"drivers"}) - length($driver) - 1
+				     && index($vendor{$VendorID}{$ProductID}{"drivers"}, " " . $driver) > -1)
+				) {
+					if ($ENV{"DEBUG"}) {
+						print STDERR "nut-usbinfo.pl: driver '$driver' was already listed for VendorID=$VendorID ProductID=$ProductID\n";
+					}
+				} else {
+					$vendor{$VendorID}{$ProductID}{"drivers"} .= " " . $driver;
+					if ($ENV{"DEBUG"}) {
+						print STDERR "nut-usbinfo.pl: added '$driver' to list for VendorID=$VendorID ProductID=$ProductID, now: " . $vendor{$VendorID}{$ProductID}{"drivers"} . "\n";
+					}
+				}
+			} else {
+				# First hit
+				$vendor{$VendorID}{$ProductID}{"drivers"} = $driver;
 			}
-			$vendor{$VendorID}{$ProductID}{"driver"}=$driver;
+
+			if ($preferDriver) {
+				$vendor{$VendorID}{$ProductID}{"driver"} = $driver;
+			}
 		}
 	}
 }

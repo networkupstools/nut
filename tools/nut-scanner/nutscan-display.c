@@ -71,9 +71,16 @@ void nutscan_display_ups_conf(nutscan_device_t * device)
 
 	/* Display each device */
 	do {
-		printf("[nutdev%i]\n\tdriver = \"%s\"\n\tport = \"%s\"\n",
-				nutdev_num, current_dev->driver,
-				current_dev->port);
+		printf("[nutdev%i]\n\tdriver = \"%s\"",
+			nutdev_num, current_dev->driver);
+
+		if (current_dev->alt_driver_names) {
+			printf("\t# alternately: %s",
+				current_dev->alt_driver_names);
+		}
+
+		printf("\n\tport = \"%s\"\n",
+			current_dev->port);
 
 		opt = current_dev->opt;
 

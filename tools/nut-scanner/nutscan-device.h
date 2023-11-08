@@ -64,6 +64,7 @@ typedef struct nutscan_options {
 typedef struct nutscan_device {
 	nutscan_device_type_t	type;
 	char *		driver;
+	char *		alt_driver_names;
 	char *		port;
 	nutscan_options_t     * opt;
 	struct nutscan_device * prev;
