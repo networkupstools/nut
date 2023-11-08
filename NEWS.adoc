@@ -50,6 +50,10 @@ https://github.com/networkupstools/nut/milestone/10
      support implemented for USB connected drivers. Library API version
      bumped to 2.3.0 accordingly.
 
+ - NUT CI improvements:
+   * Added publishing recipes for PyNUT client bindings for NUT, so it ends
+     up in the link:https://pypi.org/project/PyNUTClient[PyPI repository].
+     [#2158]
 
 Release notes for NUT 2.8.1 - what's new since 2.8.0
 ----------------------------------------------------
@@ -1857,7 +1861,7 @@ NOTE: Per original semantic versioning, there were no public NUT 2.3.x releases.
  - NUT now embeds Python client support through the PyNUTClient module and the
    NUT-Monitor application. Both are from David Goncalves, and are still
    available from http://www.lestat.st.
-   For more information, refer to link:scripts/python/README[].
+   For more information, refer to link:scripts/python/README.adoc[].
 
  - the dummy-ups driver now supports a "repeater" mode. This allows it to act as
    a NUT client, and to forward data. This can be useful for supervision and

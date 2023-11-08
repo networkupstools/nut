@@ -1,0 +1,43 @@
+name: Publish PyNUT client bindings for NUT 🐍 distributions 📦 to PyPI
+# based on https://medium.com/@VersuS_/automate-pypi-releases-with-github-actions-4c5a9cfe947d
+
+on:
+  push:
+    tags:
+     - '*'
+    branches:
+     - 'master'
+
+jobs:
+  build-n-publish:
+    name: Build and publish Python 🐍 distributions 📦 to PyPI
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@master
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.10'
+    - name: Install pypa/setuptools
+      run: >-
+        python -m
+        pip install wheel
+    - name: Extract tag name
+      id: tag
+      run: echo ::set-output name=TAG_NAME::$(echo $GITHUB_REF | cut -d / -f 3)
+    - name: Update version in setup.py
+      run: >-
+        sed -e "s/{{VERSION_PLACEHOLDER}}/${{ steps.tag.outputs.TAG_NAME }}/g" -i scripts/python/module/setup.py
+    - name: Build a binary wheel
+      run: >-
+        cd scripts/python/module
+        mkdir src
+        for F in *.py.in ; do
+            sed -e "s,@PYTHON@,$(command -v python)," < "$F" > "src/`basename "$F" .in`"
+        done
+        chmod +x src/test*.py
+        python setup.py sdist bdist_wheel
+    - name: Publish distribution 📦 to PyPI
+      uses: pypa/gh-action-pypi-publish@master
+      with:
+        password: ${{ secrets.PYPI_API_TOKEN }}
