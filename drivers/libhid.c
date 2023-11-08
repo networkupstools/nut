@@ -233,6 +233,7 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 		(usb_ctrl_charbufsize)r);
 
 	if (ret <= 0) {
+		errno = -ret;
 		return -1;
 	}
 	r = (size_t)ret;
