@@ -48,13 +48,13 @@ NUT_MONITOR_PY3QT5_GENERATED_SCRIPT = \
 	app/NUT-Monitor-py3qt5
 
 NUT_MONITOR_COMMON = \
-	README \
+	README.adoc \
 	app/nut-monitor.appdata.xml \
 	app/icons/48x48/nut-monitor.png \
 	app/icons/64x64/nut-monitor.png \
 	app/icons/256x256/nut-monitor.png \
 	app/icons/scalable/nut-monitor.svg \
-	app/README \
+	app/README.adoc \
 	app/screenshots/nut-monitor-1.png \
 	app/screenshots/nut-monitor-2.png \
 	app/screenshots/nut-monitor-3.png \
@@ -68,7 +68,7 @@ NUT_MONITOR_COMMON = \
 	app/locale/ru/LC_MESSAGES/NUT-Monitor.mo
 
 PYNUT_COMMON = \
-	module/README
+	module/README.adoc
 
 # Note: we both distribute and install the generated *.mo translation files
 # so they are listed above and not in NUT_MONITOR_COMMON_TEMPLATE
