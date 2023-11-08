@@ -32,8 +32,8 @@ jobs:
       run: >-
         cd scripts/python/module
         mkdir src
-        for F in *.py.in ; do
-            sed -e "s,@PYTHON@,$(command -v python)," < "$F" > "src/`basename "$F" .in`"
+        for F in *.py.in ; do \
+            sed -e "s,@PYTHON@,$(command -v python)," < "$F" > "src/`basename "$F" .in`" ; \
         done
         chmod +x src/test*.py
         python setup.py sdist bdist_wheel
