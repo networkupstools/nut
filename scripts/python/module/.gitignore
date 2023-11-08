@@ -1,3 +1,7 @@
 /PyNUT.py
 /test_nutclient.py
 /setup.py
+/PyNUTClient.egg-info
+/build
+/dist
+/src

@@ -1,5 +1,7 @@
 # Network UPS Tools: scripts/python
 
+SUBDIRS = module
+
 # Recognize settings from configure.ac (for make install handling)
 nut_with_nut_monitor = @nut_with_nut_monitor@
 nut_with_nut_monitor_dir = @nut_with_nut_monitor_dir@

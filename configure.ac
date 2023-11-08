@@ -4554,6 +4554,7 @@ AC_CONFIG_FILES([
  scripts/hotplug/libhidups
  scripts/HP-UX/nut.psf
  scripts/python/Makefile
+ scripts/python/module/Makefile
  scripts/python/module/PyNUT.py
  scripts/python/module/setup.py
  scripts/upsdrvsvcctl/Makefile
