@@ -8,6 +8,9 @@ on:
     branches:
      - 'master'
 
+permissions:
+  id-token: write
+
 jobs:
   build-n-publish:
     name: Build and publish Python 🐍 distributions 📦 to PyPI
