@@ -4555,6 +4555,7 @@ AC_CONFIG_FILES([
  scripts/HP-UX/nut.psf
  scripts/python/Makefile
  scripts/python/module/PyNUT.py
+ scripts/python/module/setup.py
  scripts/upsdrvsvcctl/Makefile
  scripts/systemd/Makefile
  scripts/systemd/nut-common-tmpfiles.conf

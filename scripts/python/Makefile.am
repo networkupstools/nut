@@ -79,10 +79,12 @@ NUT_MONITOR_COMMON_TEMPLATE = \
 	app/locale/ru/ru.po
 
 PYNUT_TEMPLATE = \
+	module/setup.py.in \
 	module/PyNUT.py.in \
 	module/test_nutclient.py.in
 
 PYNUT_GENERATED_NOEXEC = \
+	module/setup.py \
 	module/PyNUT.py
 
 PYNUT_GENERATED_SCRIPT = \
@@ -192,4 +194,4 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 clean-local:
 	$(AM_V_at)rm -rf *.pyc __pycache__ */*.pyc */__pycache__ */*/*.pyc */*/__pycache__
-	$(AM_V_at)rm -f NUT-Monitor
+	$(AM_V_at)rm -f NUT-Monitor module/setup.py
