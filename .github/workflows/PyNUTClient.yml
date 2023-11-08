@@ -37,6 +37,6 @@ jobs:
         chmod +x src/test*.py ;
         python setup.py sdist bdist_wheel
     - name: Publish distribution 📦 to PyPI
-      uses: pypa/gh-action-pypi-publish@v1
+      uses: pypa/gh-action-pypi-publish@v1.8.10
       with:
         password: ${{ secrets.PYPI_API_TOKEN }}
