@@ -114,6 +114,7 @@ MAINTAINER SANDBOX (to be completed and pushed)
 * bump the release identification:
 ** add an entry in `docs/docinfo.xml.in` for the actual fixed release version
    and date
+** revise `.github/workflows/PyNUTClient.yml` for fallback `TAG_NAME` naming
 ** revise `appveyor.yml` for branch naming
 ** revise `scripts/Windows/build-mingw-nut.sh` for fallback value of `VER_OPT`
 ** update version to <incremented version> (ex: 2.8.0) in `configure.ac`
