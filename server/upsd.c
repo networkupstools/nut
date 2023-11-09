@@ -884,7 +884,15 @@ static void client_readline(nut_ctype_t *client)
 void server_load(void)
 {
 	stype_t	*server;
-	size_t	listenersTotal = 0, listenersValid = 0;
+	size_t	listenersTotal = 0, listenersValid = 0,
+		listenersLocalhostName = 0,
+		listenersLocalhostName6 = 0,
+		listenersLocalhostIPv4 = 0,
+		listenersLocalhostIPv6 = 0,
+		listenersValidLocalhostName = 0,
+		listenersValidLocalhostName6 = 0,
+		listenersValidLocalhostIPv4 = 0,
+		listenersValidLocalhostIPv6 = 0;
 
 	/* default behaviour if no LISTEN address has been specified */
 	if (!firstaddr) {
@@ -912,11 +920,50 @@ void server_load(void)
 		if (VALID_FD_SOCK(server->sock_fd)) {
 			listenersValid++;
 		}
+
+		if (!strcmp(server->addr, "localhost")) {
+			listenersLocalhostName++;
+			if (VALID_FD_SOCK(server->sock_fd)) {
+				listenersValidLocalhostName++;
+			}
+		}
+
+		if (!strcmp(server->addr, "localhost6")) {
+			listenersLocalhostName6++;
+			if (VALID_FD_SOCK(server->sock_fd)) {
+				listenersValidLocalhostName6++;
+			}
+		}
+
+		if (!strcmp(server->addr, "127.0.0.1")) {
+			listenersLocalhostIPv4++;
+			if (VALID_FD_SOCK(server->sock_fd)) {
+				listenersValidLocalhostIPv4++;
+			}
+		}
+
+		if (!strcmp(server->addr, "::1")) {
+			listenersLocalhostIPv6++;
+			if (VALID_FD_SOCK(server->sock_fd)) {
+				listenersValidLocalhostIPv6++;
+			}
+		}
 	}
 
 	upsdebugx(1, "%s: tried to set up %" PRIuSIZE
 		" listening sockets, succeeded with %" PRIuSIZE,
 		__func__, listenersTotal, listenersValid);
+	upsdebugx(3, "%s: ...of those related to localhost: "
+		"by name: %" PRIuSIZE " tried, %" PRIuSIZE " succeeded; "
+		"by name(6): %" PRIuSIZE " tried, %" PRIuSIZE " succeeded; "
+		"by IPv4 addr: %" PRIuSIZE " tried, %" PRIuSIZE " succeeded; "
+		"by IPv6 addr: %" PRIuSIZE " tried, %" PRIuSIZE " succeeded",
+		__func__,
+		listenersLocalhostName, listenersValidLocalhostName,
+		listenersLocalhostName6, listenersValidLocalhostName6,
+		listenersLocalhostIPv4, listenersValidLocalhostIPv4,
+		listenersLocalhostIPv6, listenersValidLocalhostIPv6
+		);
 
 	/* check if we have at least 1 valid LISTEN interface */
 	if (!listenersValid) {
