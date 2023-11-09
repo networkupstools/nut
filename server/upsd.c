@@ -1007,6 +1007,8 @@ void server_load(void)
 			__func__);
 		return;
 	}
+
+	fatalx(EXIT_FAILURE, "some listening interfaces were not available");
 }
 
 void server_free(void)
