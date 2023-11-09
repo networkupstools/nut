@@ -55,38 +55,55 @@ upload publish:
 	 echo "from . import PyNUT" > src/__init__.py || exit
 	@touch "$@"
 
-.pypi-tools-dist:
-	@echo "  PYPI  Prepare PyPI tools to generate a distribution"
+.pypi-tools-python:
+	@echo "  PYPI  Checking that PYTHON variable is defined and usable: $(PYTHON)"
 	@test -n "$(PYTHON)" && command -v $(PYTHON)
+	@touch "$@"
+
+.pypi-tools-dist-wheel: .pypi-tools-python
+	@echo "  PYPI  Prepare PyPI tools to generate a distribution (wheel)"
 	@$(PYTHON) -m pip install wheel
+	@touch "$@"
+
+.pypi-tools-dist-build: .pypi-tools-python
+	@echo "  PYPI  Prepare PyPI tools to generate a distribution (build)"
+	@$(PYTHON) -m pip install build
 	@touch "$@"
 
 # Install via OS packaging or pip?
 # https://twine.readthedocs.io/en/stable/
-.pypi-tools-upload:
-	@echo "  PYPI  Prepare PyPI tools and resources to upload a distribution"
-	@test -n "$(PYTHON)" && command -v $(PYTHON)
+.pypi-tools-upload: .pypi-tools-python
+	@echo "  PYPI  Prepare PyPI tools and resources to upload a distribution (twine)"
 	@$(PYTHON) -m pip install twine
 	@command -v twine
 	@test -s $(HOME)/.pypirc
 	@touch "$@"
 
 # Using pypa/setuptools
-.pypi-dist:
-	@$(MAKE) $(AM_FLAGS) .pypi-dist-obsolete || \
-	 $(MAKE) $(AM_FLAGS) .pypi-dist-pip
+.pypi-dist: .pypi-src
+	@$(MAKE) $(AM_FLAGS) .pypi-dist-pip-build || \
+	 $(MAKE) $(AM_FLAGS) .pypi-dist-obsolete || \
+	 $(MAKE) $(AM_FLAGS) .pypi-dist-pip-wheel
+	@touch "$@"
+
+# The most modern approach as of 2023
+.pypi-dist-pip-build: .pypi-tools-dist-build .pypi-src
+	@echo "  PYPI  Generate PyPI module distribution (using 'build' module)"
+	@rm -rf $(GENERATED_DIST) "$@"
+	@$(PYTHON) -m build --skip-dependency-check --no-isolation
+	@touch "$@"
 
 # Using "setup.py" directly causes warnings about its deprecation
 # While "pip" distribution generator also uses it internally,
 # it "knows what it's doing" and goes quietly about its work :)
 # Does not support "sdis" though. Oh well.
-.pypi-dist-pip: .pypi-tools-dist .pypi-src
+.pypi-dist-pip-wheel: .pypi-tools-dist-wheel .pypi-src
 	@echo "  PYPI  Generate PyPI module distribution (using 'pip wheel')"
 	@rm -rf $(GENERATED_DIST) "$@"
 	@$(PYTHON) -m pip wheel --no-deps -w dist .
 	@touch "$@"
 
-.pypi-dist-obsolete: .pypi-tools-dist .pypi-src
+.pypi-dist-obsolete: .pypi-tools-dist-wheel .pypi-src
 	@echo "  PYPI  Generate PyPI module distribution (using setup.py directly)"
 	@rm -rf $(GENERATED_DIST) "$@"
 	@$(PYTHON) setup.py sdist bdist_wheel

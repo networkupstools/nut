@@ -24,7 +24,7 @@ jobs:
     - name: Install pypa/setuptools
       run: >-
         python -m
-        pip install wheel
+        pip install wheel build
     - name: Extract tag name
       id: tag
       # Note: this is all a single shell line in the end,
@@ -51,8 +51,9 @@ jobs:
         for F in *.py.in ; do sed -e "s,@PYTHON@,$(command -v python)," < "$F" > "src/`basename "$F" .in`" ; done ;
         cp README.adoc README.txt ;
         chmod +x src/test*.py ;
-        python setup.py sdist bdist_wheel
-        || python -m pip wheel . -w dist --no-deps ;
+        python -m build --skip-dependency-check --no-isolation
+        || { rm -rf build dist *egg* ; python setup.py sdist bdist_wheel ; }
+        || { rm -rf build dist *egg* ; python -m pip wheel . -w dist --no-deps ; }
     - name: Publish master distribution 📦 to Test PyPI
       if: ${{ !startsWith(github.ref, 'refs/tags') }}
       uses: pypa/gh-action-pypi-publish@v1.8.10
