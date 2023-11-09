@@ -49,9 +49,11 @@ jobs:
         cd scripts/python/module ;
         mkdir src ;
         for F in *.py.in ; do sed -e "s,@PYTHON@,$(command -v python)," < "$F" > "src/`basename "$F" .in`" ; done ;
-        cp README.adoc src/README.txt ;
+        cp README.adoc README.txt ;
         chmod +x src/test*.py ;
-        python setup.py sdist bdist_wheel
+        python -m
+        pip wheel . -w dist --no-deps ;
+        #python setup.py sdist bdist_wheel
     - name: Publish master distribution 📦 to Test PyPI
       if: ${{ !startsWith(github.ref, 'refs/tags') }}
       uses: pypa/gh-action-pypi-publish@v1.8.10
