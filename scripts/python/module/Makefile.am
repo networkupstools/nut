@@ -72,7 +72,19 @@ upload publish:
 	@touch "$@"
 
 # Using pypa/setuptools
-.pypi-dist: .pypi-tools-dist .pypi-src
+.pypi-dist: .pypi-dist-pip
+
+# Using "setup.py" directly causes warnings about its deprecation
+# While "pip" distribution generator also uses it internally,
+# it "knows what it's doing" and goes quietly about its work :)
+# Does not support "sdis" though. Oh well.
+.pypi-dist-pip: .pypi-tools-dist .pypi-src
+	@echo "  PYPI  Generate PyPI module distribution"
+	@rm -rf $(GENERATED_DIST) "$@"
+	@$(PYTHON) -m pip wheel --no-deps -w dist .
+	@touch "$@"
+
+.pypi-dist-obsolete: .pypi-tools-dist .pypi-src
 	@echo "  PYPI  Generate PyPI module distribution"
 	@rm -rf $(GENERATED_DIST) "$@"
 	@$(PYTHON) setup.py sdist bdist_wheel
