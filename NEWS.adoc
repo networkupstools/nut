@@ -55,6 +55,9 @@ https://github.com/networkupstools/nut/milestone/10
      up in the link:https://pypi.org/project/PyNUTClient[PyPI repository].
      [#2158]
 
+ - powerpanel text driver now handles status responses in any format and should
+   support most devices
+
 Release notes for NUT 2.8.1 - what's new since 2.8.0
 ----------------------------------------------------
 
