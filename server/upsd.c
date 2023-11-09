@@ -884,6 +884,7 @@ static void client_readline(nut_ctype_t *client)
 void server_load(void)
 {
 	stype_t	*server;
+	size_t	listenersTotal = 0, listenersValid = 0;
 
 	/* default behaviour if no LISTEN address has been specified */
 	if (!firstaddr) {
@@ -903,8 +904,22 @@ void server_load(void)
 		setuptcp(server);
 	}
 
+	/* Account separately from setuptcp() because it can edit the list,
+	 * e.g. when handling `LISTEN *` lines.
+	 */
+	for (server = firstaddr; server; server = server->next) {
+		listenersTotal++;
+		if (VALID_FD_SOCK(server->sock_fd)) {
+			listenersValid++;
+		}
+	}
+
+	upsdebugx(1, "%s: tried to set up %" PRIuSIZE
+		" listening sockets, succeeded with %" PRIuSIZE,
+		__func__, listenersTotal, listenersValid);
+
 	/* check if we have at least 1 valid LISTEN interface */
-	if (INVALID_FD_SOCK(firstaddr->sock_fd)) {
+	if (!listenersValid) {
 		fatalx(EXIT_FAILURE, "no listening interface available");
 	}
 }
