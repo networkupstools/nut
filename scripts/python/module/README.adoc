@@ -1,19 +1,20 @@
 Introduction
 ============
 
-The project was originally started in 2008 David Goncalves <david@lestat.st>
-at https://www.lestat.st/informatique/projets/pynut and was soon added
-to the main NUT codebase and evolved there.
-
 The PyNUT module provides an abstraction class `PyNUTClient` written in
 Python, which allows to connect to a NUT (Network UPS Tools) server and
 execute different commands without an application developer needing to
-know the NUT communication protocol.
+know the NUT communication protocol. It also includes a small self-test
+application as a consumer of the module.
 
-That class was born from another project the original author had -- a
-graphical application to monitor and manage the UPSes connected to a
-NUT server. It is now known as `NUT-Monitor` and is also provided along
-with NT sources.
+The project was originally started in 2008 by David Goncalves <david@lestat.st>
+at https://www.lestat.st/informatique/projets/pynut and was soon added to
+the main NUT codebase and further evolved there.
+
+The `PyNUTClient` class was born from another project the original author
+had -- a graphical application to monitor and manage the UPSes connected
+to a NUT server. It is now known as `NUT-Monitor` and is also provided
+along with NUT sources.
 
 With that GUI application being written in Python too, it was decided
 to split the project in two parts (the PyNUT class + GUI application,
