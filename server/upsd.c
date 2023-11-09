@@ -276,7 +276,7 @@ static void setuptcp(stype_t *server)
 	int	v = 0, one = 1;
 
 	if (VALID_FD_SOCK(server->sock_fd)) {
-		/* Alredy bound, e.g. thanks to 'LISTEN *' handling and injection
+		/* Already bound, e.g. thanks to 'LISTEN *' handling and injection
 		 * into the list we loop over */
 		upsdebugx(6, "setuptcp: SKIP bind to %s port %s: entry already initialized",
 			server->addr, server->port);
@@ -284,6 +284,13 @@ static void setuptcp(stype_t *server)
 	}
 
 	upsdebugx(3, "setuptcp: try to bind to %s port %s", server->addr, server->port);
+	if (!strcmp(server->addr, "localhost")) {
+		/* Warn about possible surprises with IPv4 vs. IPv6 */
+		upsdebugx(1,
+			"setuptcp: WARNING: requested to LISTEN on 'localhost' "
+			"by name - will use the first system-resolved "
+			"IP address for that");
+	}
 
 	/* Special handling note for `LISTEN * <port>` directive with the
 	 * literal asterisk on systems with RFC-3493 (no relation!) support
