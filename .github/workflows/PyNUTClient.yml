@@ -32,8 +32,8 @@ jobs:
       run: >-
         TAG_NAME="$(echo $GITHUB_REF | cut -d / -f 3)" ;
         if [ x"$TAG_NAME" = xmaster ]; then
-            TAG_NAME="$(git describe --tags --match 'v[0-9]*.[0-9]*.[0-9]' --exclude '*-signed' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' 2>/dev/null || git describe --tags --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' --exclude '*Windows*' --exclude '*IPM*' 2>/dev/null ) | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,')"
-            && test -n "${TAG_NAME}"
+            TAG_NAME="$(git describe --tags --match 'v[0-9]*.[0-9]*.[0-9]' --exclude '*-signed' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' 2>/dev/null || git describe --tags --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' --exclude '*Windows*' --exclude '*IPM*' 2>/dev/null ) | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,')" \
+            && test -n "${TAG_NAME}" \
             || TAG_NAME="2.8.1-`TZ=UTC date +%s`" ;
         fi ;
         TAG_NAME="$(echo "$TAG_NAME" | sed -e 's/^v//' -e 's/-g.*$//' -e 's/-/./g')" ;
@@ -51,8 +51,8 @@ jobs:
         for F in *.py.in ; do sed -e "s,@PYTHON@,$(command -v python)," < "$F" > "src/`basename "$F" .in`" ; done ;
         cp README.adoc README.txt ;
         chmod +x src/test*.py ;
-        python -m build --skip-dependency-check --no-isolation
-        || { rm -rf build dist *egg* ; python setup.py sdist bdist_wheel ; }
+        python -m build --skip-dependency-check --no-isolation \
+        || { rm -rf build dist *egg* ; python setup.py sdist bdist_wheel ; } \
         || { rm -rf build dist *egg* ; python -m pip wheel . -w dist --no-deps ; }
     - name: Publish master distribution 📦 to Test PyPI
       if: ${{ !startsWith(github.ref, 'refs/tags') }}
