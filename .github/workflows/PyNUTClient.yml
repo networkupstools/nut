@@ -43,7 +43,7 @@ jobs:
         if [ ! -s scripts/python/module/setup.py ] ; then
             sed -e "s/@NUT_SOURCE_GITREV_NUMERIC@/${{ steps.tag.outputs.TAG_NAME }}/g" < scripts/python/module/setup.py.in > scripts/python/module/setup.py ;
         fi
-    - name: Build a binary wheel
+    - name: Prepare source layout
       run: >-
         set -e ;
         cd scripts/python/module ;
@@ -51,9 +51,13 @@ jobs:
         for F in *.py.in ; do sed -e "s,@PYTHON@,$(command -v python)," < "$F" > "src/`basename "$F" .in`" ; done ;
         cp README.adoc README.txt ;
         chmod +x src/test*.py ;
+    - name: Build a binary wheel
+      run: >-
+        cd scripts/python/module ;
         python -m build --skip-dependency-check --no-isolation
         || { rm -rf build dist *egg* ; python setup.py sdist bdist_wheel ; }
-        || { rm -rf build dist *egg* ; python -m pip wheel . -w dist --no-deps ; }
+        || { rm -rf build dist *egg* ; python -m pip wheel . -w dist --no-deps ; } ;
+        find . -ls
     - name: Publish master distribution 📦 to Test PyPI
       if: ${{ !startsWith(github.ref, 'refs/tags') }}
       uses: pypa/gh-action-pypi-publish@v1.8.10
