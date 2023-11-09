@@ -885,6 +885,7 @@ void server_load(void)
 {
 	stype_t	*server;
 	size_t	listenersTotal = 0, listenersValid = 0,
+		listenersTotalLocalhost = 0, listenersValidLocalhost = 0,
 		listenersLocalhostName = 0,
 		listenersLocalhostName6 = 0,
 		listenersLocalhostIPv4 = 0,
@@ -923,29 +924,37 @@ void server_load(void)
 
 		if (!strcmp(server->addr, "localhost")) {
 			listenersLocalhostName++;
+			listenersTotalLocalhost++;
 			if (VALID_FD_SOCK(server->sock_fd)) {
 				listenersValidLocalhostName++;
+				listenersValidLocalhost++;
 			}
 		}
 
 		if (!strcmp(server->addr, "localhost6")) {
 			listenersLocalhostName6++;
+			listenersTotalLocalhost++;
 			if (VALID_FD_SOCK(server->sock_fd)) {
 				listenersValidLocalhostName6++;
+				listenersValidLocalhost++;
 			}
 		}
 
 		if (!strcmp(server->addr, "127.0.0.1")) {
 			listenersLocalhostIPv4++;
+			listenersTotalLocalhost++;
 			if (VALID_FD_SOCK(server->sock_fd)) {
 				listenersValidLocalhostIPv4++;
+				listenersValidLocalhost++;
 			}
 		}
 
 		if (!strcmp(server->addr, "::1")) {
 			listenersLocalhostIPv6++;
+			listenersTotalLocalhost++;
 			if (VALID_FD_SOCK(server->sock_fd)) {
 				listenersValidLocalhostIPv6++;
+				listenersValidLocalhost++;
 			}
 		}
 	}
@@ -954,11 +963,13 @@ void server_load(void)
 		" listening sockets, succeeded with %" PRIuSIZE,
 		__func__, listenersTotal, listenersValid);
 	upsdebugx(3, "%s: ...of those related to localhost: "
-		"by name: %" PRIuSIZE " tried, %" PRIuSIZE " succeeded; "
-		"by name(6): %" PRIuSIZE " tried, %" PRIuSIZE " succeeded; "
-		"by IPv4 addr: %" PRIuSIZE " tried, %" PRIuSIZE " succeeded; "
-		"by IPv6 addr: %" PRIuSIZE " tried, %" PRIuSIZE " succeeded",
+		"overall: %" PRIuSIZE " tried, %" PRIuSIZE " succeeded; "
+		"by name: %" PRIuSIZE "T/%" PRIuSIZE "S; "
+		"by name(6): %" PRIuSIZE "T/%" PRIuSIZE "S; "
+		"by IPv4 addr: %" PRIuSIZE "T/%" PRIuSIZE "S; "
+		"by IPv6 addr: %" PRIuSIZE "T/%" PRIuSIZE "S",
 		__func__,
+		listenersTotalLocalhost, listenersValidLocalhost,
 		listenersLocalhostName, listenersValidLocalhostName,
 		listenersLocalhostName6, listenersValidLocalhostName6,
 		listenersLocalhostIPv4, listenersValidLocalhostIPv4,
@@ -968,6 +979,33 @@ void server_load(void)
 	/* check if we have at least 1 valid LISTEN interface */
 	if (!listenersValid) {
 		fatalx(EXIT_FAILURE, "no listening interface available");
+	}
+
+	/* is everything requested - handled okay? */
+	if (listenersTotal == listenersValid)
+		return;
+
+	/* check for edge cases we can let slide */
+	if ( (listenersTotal - listenersValid) ==
+	     (listenersTotalLocalhost - listenersValidLocalhost)
+	) {
+		/* Note that we can also get into this situation
+		 * when "dual-stack" IPv6 listener also handles
+		 * IPv4 connections, and precludes successful
+		 * setup of the IPv4 listener later.
+		 *
+		 * FIXME? Can we get into this situation the other
+		 * way around - an IPv4 listener precluding the
+		 * IPv6 one, so end-user actually lacks one of the
+		 * requested connection types?
+		 */
+		upsdebugx(1, "%s: discrepancy corresponds to "
+			"addresses related to localhost; assuming "
+			"that it was attempted under several names "
+			"which resolved to same IP:PORT socket specs "
+			"(so only the first one of each succeeded)",
+			__func__);
+		return;
 	}
 }
 
