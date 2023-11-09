@@ -11,11 +11,12 @@ NUT_SOURCE_GITREV_NUMERIC = @NUT_SOURCE_GITREV_NUMERIC@
 PYTHON = @PYTHON@
 
 GENERATED_DIST = dist build *.egg-info
+GENERATED_SRC  = src README.txt
 
 $(GENERATED_DIST): .pypi-dist
 
 clean-local:
-	rm -rf src $(GENERATED_DIST)
+	rm -rf $(GENERATED_SRC) $(GENERATED_DIST)
 	rm -f .pypi-src .pypi-dist
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp .pypi-tools*
@@ -33,7 +34,7 @@ upload publish:
 # README.txt is also a part of module standard expectations
 .pypi-src: test_nutclient.py.in PyNUT.py.in setup.py.in README.adoc Makefile
 	@echo "  PYPI  Generate PyPI module source"
-	@rm -rf src "$@"
+	@rm -rf $(GENERATED_SRC) "$@"
 	@mkdir src
 	@for S in "$(srcdir)"/*.py.in ; do \
 		B="`basename "$${S}" .in`" ; \
@@ -50,7 +51,8 @@ upload publish:
 		sed -e "s,[@]PYTHON[@],@PYTHON@," < "$(srcdir)/$${B}.in" > "src/$${B}" || exit ; \
 		if test -x "$(srcdir)/$${B}.in" ; then chmod +x "src/$${B}"; fi ; \
 	 done ; \
-	 cp -pf "$(srcdir)/README.adoc" src/README.txt || exit
+	 cp -pf "$(srcdir)/README.adoc" README.txt || exit ; \
+	 echo "from . import PyNUT" > src/__init__.py || exit
 	@touch "$@"
 
 .pypi-tools-dist:
