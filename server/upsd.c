@@ -85,6 +85,12 @@ int	tracking_delay = 3600;
  */
 int allow_no_device = 0;
 
+/*
+ * Preloaded to ALLOW_NOT_ALL_LISTENERS from upsd.conf or environment variable
+ * (with higher prio for envvar); defaults to disabled for legacy compat.
+ */
+int allow_not_all_listeners = 0;
+
 /* preloaded to {OPEN_MAX} in main, can be overridden via upsd.conf */
 nfds_t	maxconn = 0;
 
@@ -1008,7 +1014,20 @@ void server_load(void)
 		return;
 	}
 
-	fatalx(EXIT_FAILURE, "some listening interfaces were not available");
+	if (allow_not_all_listeners) {
+		upslogx(LOG_WARNING,
+			"WARNING: some listening interfaces were "
+			"not available, but the ALLOW_NOT_ALL_LISTENERS "
+			"setting is active");
+	} else {
+		upsdebugx(0,
+			"Reconcile available NUT server IP addresses "
+			"and LISTEN configuration, or consider the "
+			"ALLOW_NOT_ALL_LISTENERS setting!");
+		fatalx(EXIT_FAILURE,
+			"Fatal error: some listening interfaces were "
+			"not available");
+	}
 }
 
 void server_free(void)
@@ -2179,6 +2198,30 @@ int main(int argc, char **argv)
 			 * configured yet - tell the clients so, properly.
 			 */
 			allow_no_device = 0;
+		}
+	}
+	} /* scope */
+
+	{ /* scope */
+	/* As documented above, the ALLOW_NOT_ALL_LISTENERS can be provided via
+	 * envvars and then has higher priority than an upsd.conf setting
+	 */
+	const char *envvar = getenv("ALLOW_NOT_ALL_LISTENERS");
+	if ( envvar != NULL) {
+		if ( (!strncasecmp("TRUE", envvar, 4)) || (!strncasecmp("YES", envvar, 3)) || (!strncasecmp("ON", envvar, 2)) || (!strncasecmp("1", envvar, 1)) ) {
+			/* Admins of this server expressed a desire to serve
+			 * NUT protocol if at least one configured listener
+			 * works (some may be missing and clients using those
+			 * addresses would not be served!)
+			 */
+			allow_not_all_listeners = 1;
+		} else if ( (!strncasecmp("FALSE", envvar, 5)) || (!strncasecmp("NO", envvar, 2)) || (!strncasecmp("OFF", envvar, 3)) || (!strncasecmp("0", envvar, 1)) ) {
+			/* Admins of this server expressed a desire to serve
+			 * NUT protocol only if all configured listeners work
+			 * (default for least surprise - admins must address
+			 * any configuration inconsistencies!)
+			 */
+			allow_not_all_listeners = 0;
 		}
 	}
 	} /* scope */

@@ -48,6 +48,26 @@ unless the calling environment sets a same-named variable to enforce a value
 for the current run. One way this can happen is somebody un-commenting it in
 the 'nut.conf' file used by init-scripts and service unit method scripts.
 
+"ALLOW_NOT_ALL_LISTENERS 'Boolean'"::
+
+Normally upsd requires that all `LISTEN` directives can be honoured at the
+moment the daemon starts. If your LAN IP address (or host name) used in one
+of the `LISTEN` directives may be not always accessible, and for some reason
+do not want to just `LISTEN *` on the wildcard interface, but e.g. you still
+want to use `upsmon` on `localhost`, this option can help. Note you would
+have to restart `upsd` to pick up the `LISTEN`ed IP address if it appears
+later.
++
+Boolean values 'true', 'yes', 'on' and '1' mean that the server would not
+refuse to start if it can listen on at least one interface.
++
+Boolean values 'false', 'no', 'off' and '0' mean that the server should
+refuse to start if it can not LISTEN on each and every (non-localhost)
+interface found in upsd.conf. This is the default, unless the calling
+environment sets a same-named variable to enforce a value for the current run.
+One way this can happen is somebody un-commenting it in the 'nut.conf' file
+used by init-scripts and service unit method scripts.
+
 "STATEPATH 'path'"::
 
 Tell upsd to look for the driver state sockets in 'path' rather
