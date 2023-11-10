@@ -90,12 +90,19 @@ fi
 #    grep -i '">' tools/nut-usbinfo.pl
 # * List the names involved:
 #    grep -E 'output.*=' tools/nut-usbinfo.pl
+# Also check that the last re-generation is newer than the sources involved
+# (stay on top of CI rebuilds, development, Git branch switching...)
+# Someone please tell me why GNU `find dir -newer X -name Y -o -name Z` does
+# not filter away layer by layer, but rather finds the names Z and beyond
+# (same for the other way around)? Anyway, dumbed down for the most trivial
+# `find` implementations out there...
 if [ ! -f scripts/udev/nut-usbups.rules.in -o \
      ! -f scripts/hotplug/libhid.usermap -o \
      ! -f scripts/upower/95-upower-hid.hwdb -o \
      ! -f scripts/devd/nut-usb.conf.in -o \
-     ! -f tools/nut-scanner/nutscan-usb.h ]
-then
+     ! -f tools/nut-scanner/nutscan-usb.h ] \
+|| [ -n "`find drivers -newer scripts/hotplug/libhid.usermap | grep -E '(-hid|nutdrv_qx|usb.*)\.c'`" ] \
+; then
 	if perl -e 1; then
 		VERBOSE_FLAG_PERL=""
 		if $DEBUG ; then
