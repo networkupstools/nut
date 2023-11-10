@@ -106,6 +106,7 @@ if [ ! -f scripts/udev/nut-usbups.rules.in -o \
      ! -f scripts/devd/nut-usb.conf.in -o \
      ! -f tools/nut-scanner/nutscan-usb.h ] \
 || [ -n "`find drivers -newer scripts/hotplug/libhid.usermap | grep -E '(-hid|nutdrv_qx|usb.*)\.c'`" ] \
+|| [ -n "`find drivers -not -newer tools/nut-usbinfo.pl | grep -E '(-hid|nutdrv_qx|usb.*)\.c'`" ] \
 ; then
 	if perl -e 1; then
 		VERBOSE_FLAG_PERL=""
