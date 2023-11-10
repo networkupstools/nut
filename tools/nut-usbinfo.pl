@@ -3,7 +3,7 @@
 #   Copyright (C) 2008 - 2012 dloic (loic.dardant AT gmail DOT com)
 #   Copyright (C) 2008 - 2015 Arnaud Quette <arnaud.quette@free.fr>
 #   Copyright (C) 2013 - 2014 Charles Lepple <clepple+nut@gmail.com>
-#   Copyright (C) 2014 - 2022 Jim Klimov <jimklimov+nut@gmail.com>
+#   Copyright (C) 2014 - 2023 Jim Klimov <jimklimov+nut@gmail.com>
 #
 #   Based on the usbdevice.pl script, made for the Ubuntu Media Center
 #   for the final use of the LIRC project.
@@ -132,7 +132,9 @@ sub gen_usb_files
 	# Device scanner header
 	my $outDevScanner = do {local *OUT_DEV_SCANNER};
 	open $outDevScanner, ">$outputDevScanner" || die "error $outputDevScanner : $!";
-	print $outDevScanner '/* nutscan-usb'.$GPL_header."\n */\n\n";
+	print $outDevScanner "/* nutscan-usb.h - header with USB identifiers known to NUT drivers\n";
+	print $outDevScanner " * This file was automatically generated during NUT build by 'tools/nut-usbinfo.pl'\n *";
+	print $outDevScanner $GPL_header."\n */\n\n";
 	print $outDevScanner "#ifndef DEVSCAN_USB_H\n#define DEVSCAN_USB_H\n\n";
 	print $outDevScanner "#include \"nut_stdint.h\"\t/* for uint16_t etc. */\n\n";
 	print $outDevScanner "#include <limits.h>\t/* for PATH_MAX in usb.h etc. */\n\n";
