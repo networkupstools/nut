@@ -86,7 +86,6 @@ PYNUT_TEMPLATE = \
 	module/test_nutclient.py.in
 
 PYNUT_GENERATED_NOEXEC = \
-	module/setup.py \
 	module/PyNUT.py
 
 PYNUT_GENERATED_SCRIPT = \
