@@ -39,6 +39,10 @@ else
 	PYTHON=""
 	# FIXME: Use something like TAB-completion to find every name on PATH?
 	for P in python python3 python2 \
+		python-3.14 python3.14 \
+		python-3.13 python3.13 \
+		python-3.12 python3.12 \
+		python-3.11 python3.11 \
 		python-3.10 python3.10 \
 		python-3.9 python3.9 \
 		python-3.7 python3.7 \
