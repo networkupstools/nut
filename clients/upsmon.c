@@ -1676,6 +1676,8 @@ static void parse_status(utype_t *ups, char *status)
 		clearflag(&ups->status, ST_LOWBATT);
 	if (!strstr(status, "FSD"))
 		clearflag(&ups->status, ST_FSD);
+	if (!strstr(status, "CAL"))
+		clearflag(&ups->status, ST_CAL);
 
 	statword = status;
 
