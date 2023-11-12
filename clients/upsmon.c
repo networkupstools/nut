@@ -1211,7 +1211,7 @@ static void upsreplbatt(utype_t *ups)
 	}
 }
 
-static void ups_cal(utype_t *ups)
+static void ups_is_cal(utype_t *ups)
 {
 	if (flag_isset(ups->status, ST_CAL)) { 	/* no change */
 		upsdebugx(4, "%s: %s (no change)", __func__, ups->sys);
@@ -1224,6 +1224,16 @@ static void ups_cal(utype_t *ups)
 
 	do_notify(ups, NOTIFY_CAL);
 	setflag(&ups->status, ST_CAL);
+}
+
+static void ups_is_notcal(utype_t *ups)
+{
+	/* Called when CAL is NOT among known states */
+	if (flag_isset(ups->status, ST_CAL)) {	/* actual change */
+		do_notify(ups, NOTIFY_NOTCAL);
+		clearflag(&ups->status, ST_CAL);
+		try_restore_pollfreq(ups);
+	}
 }
 
 static void ups_fsd(utype_t *ups)
@@ -2130,8 +2140,10 @@ static void parse_status(utype_t *ups, char *status)
 		clearflag(&ups->status, ST_LOWBATT);
 	if (!strstr(status, "FSD"))
 		clearflag(&ups->status, ST_FSD);
+
+	/* similar to above - clear these flags and send notifications */
 	if (!strstr(status, "CAL"))
-		clearflag(&ups->status, ST_CAL);
+		ups_is_notcal(ups);
 	if (!strstr(status, "OFF"))
 		ups_is_notoff(ups);
 	if (!strstr(status, "BYPASS"))
@@ -2156,7 +2168,7 @@ static void parse_status(utype_t *ups, char *status)
 		if (!strcasecmp(statword, "RB"))
 			upsreplbatt(ups);
 		if (!strcasecmp(statword, "CAL"))
-			ups_cal(ups);
+			ups_is_cal(ups);
 		if (!strcasecmp(statword, "OFF"))
 			ups_is_off(ups);
 		if (!strcasecmp(statword, "BYPASS"))
