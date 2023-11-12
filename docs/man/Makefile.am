@@ -17,8 +17,8 @@
 #   files from source tree
 
 # Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
-EGREP = egrep
-#EGREP = grep -E
+#EGREP = egrep
+EGREP = grep -E
 
 # Base configuration and client manpages, always installed
 SRC_CONF_PAGES = \
@@ -37,7 +37,7 @@ MAN_CONF_PAGES = \
 	upsd.users.5 \
 	upsmon.conf.5 \
 	upssched.conf.5
-endif
+endif WITH_MANS
 
 man5_MANS = $(MAN_CONF_PAGES)
 
@@ -81,7 +81,7 @@ MAN_CLIENT_PAGES = \
 	upsmon.8 \
 	upsrw.8 \
 	upssched.8
-endif
+endif WITH_MANS
 
 man8_MANS = $(MAN_CLIENT_PAGES)
 
@@ -102,7 +102,7 @@ SRC_TOOL_PAGES = nut-scanner.txt nut-recorder.txt
 
 if WITH_MANS
 MAN_TOOL_PAGES = nut-scanner.8 nut-recorder.8
-endif
+endif WITH_MANS
 
 man8_MANS += $(MAN_TOOL_PAGES)
 
@@ -127,12 +127,12 @@ MAN8_CGI_PAGES = \
 	upsset.cgi.8 \
 	upsstats.cgi.8 \
 	upsimage.cgi.8
-endif
+endif WITH_MANS
 
 if WITH_CGI
 man5_MANS += $(MAN5_CGI_PAGES)
 man8_MANS += $(MAN8_CGI_PAGES)
-endif
+endif WITH_CGI
 
 HTML_CGI_MANS = \
 	hosts.conf.html \
@@ -177,6 +177,9 @@ SRC_DEV_PAGES = \
 	nutscan_scan_avahi.txt \
 	nutscan_scan_ipmi.txt \
 	nutscan_scan_eaton_serial.txt \
+	nutscan_display_sanity_check.txt \
+	nutscan_display_sanity_check_serial.txt \
+	nutscan_display_ups_conf_with_sanity_check.txt \
 	nutscan_display_ups_conf.txt \
 	nutscan_display_parsable.txt \
 	nutscan_cidr_to_ip.txt \
@@ -187,6 +190,7 @@ SRC_DEV_PAGES = \
 	nutscan_init.txt \
 	nutscan_get_serial_ports_list.txt \
 	libupsclient-config.txt \
+	sockdebug.txt \
 	skel.txt
 
 if WITH_MANS
@@ -290,6 +294,9 @@ MAN3_DEV_PAGES = \
 	nutscan_scan_avahi.3 \
 	nutscan_scan_ipmi.3 \
 	nutscan_scan_eaton_serial.3 \
+	nutscan_display_sanity_check.3 \
+	nutscan_display_sanity_check_serial.3 \
+	nutscan_display_ups_conf_with_sanity_check.3 \
 	nutscan_display_ups_conf.3 \
 	nutscan_display_parsable.3 \
 	nutscan_cidr_to_ip.3 \
@@ -308,16 +315,20 @@ upscli_sendline_timeout.3: upscli_sendline.3
 
 MAN1_DEV_PAGES = \
 	libupsclient-config.1
-endif
+
+MAN8_DEV_PAGES = \
+	sockdebug.8
+endif WITH_MANS
 
 if WITH_DEV
 man3_MANS = $(MAN3_DEV_PAGES)
+man8_MANS += $(MAN8_DEV_PAGES)
 
 if !WITH_PKG_CONFIG
 man1_MANS = $(MAN1_DEV_PAGES)
-endif
-# WITH_DEV
-endif
+endif !WITH_PKG_CONFIG
+
+endif WITH_DEV
 
 HTML_DEV_MANS = \
 	upsclient.html \
@@ -352,6 +363,9 @@ HTML_DEV_MANS = \
 	nutscan_scan_avahi.html \
 	nutscan_scan_ipmi.html \
 	nutscan_scan_eaton_serial.html \
+	nutscan_display_sanity_check.html \
+	nutscan_display_sanity_check_serial.html \
+	nutscan_display_ups_conf_with_sanity_check.html \
 	nutscan_display_ups_conf.html \
 	nutscan_display_parsable.html \
 	nutscan_cidr_to_ip.html \
@@ -362,16 +376,17 @@ HTML_DEV_MANS = \
 	nutscan_get_serial_ports_list.html \
 	nutscan_init.html \
 	libupsclient-config.html \
+	sockdebug.html \
 	skel.html
 
 
 # Drivers related manpages
 
-# (--with-drivers=...)
+# If (--with-drivers=...) then we only build specific documents, however
+# still do track (and EXTRA_DIST, and spellcheck) all available sources.
 if SOME_DRIVERS
 man8_MANS += $(DRIVER_MAN_LIST)
-
-else
+endif
 
 # (--with-serial)
 SRC_SERIAL_PAGES = \
@@ -410,6 +425,7 @@ SRC_SERIAL_PAGES = \
 	powerpanel.txt	\
 	rhino.txt		\
 	riello_ser.txt	\
+	sms_ser.txt \
 	safenet.txt	\
 	solis.txt		\
 	tripplite.txt	\
@@ -418,6 +434,7 @@ SRC_SERIAL_PAGES = \
 	victronups.txt	\
 	apcupsd-ups.txt
 
+if ! SOME_DRIVERS
 if WITH_MANS
 MAN_SERIAL_PAGES = \
 	al175.8	\
@@ -454,6 +471,7 @@ MAN_SERIAL_PAGES = \
 	powerpanel.8	\
 	rhino.8		\
 	riello_ser.8	\
+	sms_ser.8 \
 	safenet.8	\
 	solis.8		\
 	tripplite.8	\
@@ -461,11 +479,11 @@ MAN_SERIAL_PAGES = \
 	upscode2.8	\
 	victronups.8	\
 	apcupsd-ups.8
-endif
+endif WITH_MANS
 
 if WITH_SERIAL
 man8_MANS +=  $(MAN_SERIAL_PAGES)
-endif
+endif WITH_SERIAL
 
 HTML_SERIAL_MANS = \
 	al175.html	\
@@ -502,6 +520,7 @@ HTML_SERIAL_MANS = \
 	powerpanel.html	\
 	rhino.html		\
 	riello_ser.html	\
+	sms_ser.html \
 	safenet.html	\
 	solis.html		\
 	tripplite.html	\
@@ -509,18 +528,21 @@ HTML_SERIAL_MANS = \
 	upscode2.html	\
 	victronups.html	\
 	apcupsd-ups.html
+endif ! SOME_DRIVERS
 
 # (--with-snmp)
 SRC_SNMP_PAGES = snmp-ups.txt
+if ! SOME_DRIVERS
 if WITH_MANS
 MAN_SNMP_PAGES = snmp-ups.8
-endif
+endif WITH_MANS
 
 if WITH_SNMP
 man8_MANS += $(MAN_SNMP_PAGES)
-endif
+endif WITH_SNMP
 
 HTML_SNMP_MANS = snmp-ups.html
+endif ! SOME_DRIVERS
 
 # (--with-usb)
 SRC_USB_LIBUSB_PAGES = \
@@ -528,11 +550,14 @@ SRC_USB_LIBUSB_PAGES = \
 	blazer-common.txt	\
 	blazer_usb.txt	\
 	nutdrv_atcl_usb.txt \
+	nut_usb_addvars.txt \
 	richcomm_usb.txt \
 	riello_usb.txt	\
 	tripplite_usb.txt \
 	usbhid-ups.txt
 
+if ! SOME_DRIVERS
+# NOTE: nut_usb_addvars and blazer-common are not standalone man pages
 if WITH_MANS
 MAN_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.8 \
@@ -542,11 +567,11 @@ MAN_USB_LIBUSB_PAGES = \
 	riello_usb.8	\
 	tripplite_usb.8 \
 	usbhid-ups.8
-endif
+endif WITH_MANS
 
 if WITH_USB
 man8_MANS += $(MAN_USB_LIBUSB_PAGES)
-endif
+endif WITH_USB
 
 HTML_USB_LIBUSB_MANS = \
 	bcmxcp_usb.html \
@@ -556,110 +581,143 @@ HTML_USB_LIBUSB_MANS = \
 	riello_usb.html	\
 	tripplite_usb.html \
 	usbhid-ups.html
+endif ! SOME_DRIVERS
 
 # (--with-serial / --with-usb)
 SRC_SERIAL_USB_PAGES = \
 	nutdrv_qx.txt
 
+if ! SOME_DRIVERS
 if WITH_MANS
 MAN_SERIAL_USB_PAGES = \
 	nutdrv_qx.8
-endif
+endif WITH_MANS
 
 if WITH_SERIAL
 man8_MANS += $(MAN_SERIAL_USB_PAGES)
-else
+else !WITH_SERIAL
 if WITH_USB
 man8_MANS += $(MAN_SERIAL_USB_PAGES)
-endif
-endif
+endif WITH_USB
+endif !WITH_SERIAL
 
 HTML_SERIAL_USB_MANS = \
 	nutdrv_qx.html
+endif ! SOME_DRIVERS
 
 # (--with-neon)
 SRC_NETXML_PAGES = netxml-ups.txt
+if ! SOME_DRIVERS
 if WITH_MANS
 MAN_NETXML_PAGES = netxml-ups.8
-endif
+endif WITH_MANS
 
 if WITH_NEON
 man8_MANS += $(MAN_NETXML_PAGES)
-endif
+endif WITH_NEON
 
 HTML_NETXML_MANS = netxml-ups.html
+endif ! SOME_DRIVERS
 
 # (--with-powerman)
 SRC_POWERMAN_PAGES = powerman-pdu.txt
+if ! SOME_DRIVERS
 if WITH_MANS
 MAN_POWERMAN_PAGES = powerman-pdu.8
-endif
+endif WITH_MANS
 
 if WITH_LIBPOWERMAN
 man8_MANS += $(MAN_POWERMAN_PAGES)
-endif
+endif WITH_LIBPOWERMAN
 
 HTML_POWERMAN_MANS = powerman-pdu.html
+endif ! SOME_DRIVERS
 
 # (--with-ipmi)
 SRC_IPMIPSU_PAGES = nut-ipmipsu.txt
+if ! SOME_DRIVERS
 if WITH_MANS
 MAN_IPMIPSU_PAGES = nut-ipmipsu.8
-endif
+endif WITH_MANS
 
 if WITH_IPMI
 man8_MANS += $(MAN_IPMIPSU_PAGES)
-endif
+endif WITH_IPMI
 
 HTML_IPMIPSU_MANS = nut-ipmipsu.html
+endif ! SOME_DRIVERS
 
+# (--with-macosx_ups)
 SRC_MACOSX_PAGES = macosx-ups.txt
+if ! SOME_DRIVERS
 if WITH_MANS
 MAN_MACOSX_PAGES = macosx-ups.8
-endif
+endif WITH_MANS
 
 if WITH_MACOSX
 man8_MANS += $(MAN_MACOSX_PAGES)
-endif
+endif WITH_MACOSX
 
 HTML_MACOSX_MANS = macosx-ups.html
+endif ! SOME_DRIVERS
 
+# (--with-modbus)
 SRC_MODBUS_PAGES = phoenixcontact_modbus.txt \
 	generic_modbus.txt \
 	huawei-ups2000.txt \
 	socomec_jbus.txt   \
-	adelsystem_cbi.txt
+	adelsystem_cbi.txt \
+	apc_modbus.txt
+
+if ! SOME_DRIVERS
 if WITH_MANS
 MAN_MODBUS_PAGES = phoenixcontact_modbus.8 \
 	generic_modbus.8 \
 	huawei-ups2000.8 \
 	socomec_jbus.8   \
-	adelsystem_cbi.8
-endif
+	adelsystem_cbi.8 \
+	apc_modbus.8
+endif WITH_MANS
 
 if WITH_MODBUS
 man8_MANS += $(MAN_MODBUS_PAGES)
-endif
+endif WITH_MODBUS
 
 HTML_MODBUS_MANS = phoenixcontact_modbus.html \
 	generic_modbus.html \
 	huawei-ups2000.html \
 	socomec_jbus.html   \
-	adelsystem_cbi.html
+	adelsystem_cbi.html \
+	apc_modbus.html
+endif ! SOME_DRIVERS
 
+# (--with-linux_i2c)
 SRC_LINUX_I2C_PAGES = asem.txt pijuice.txt
+if ! SOME_DRIVERS
 if WITH_MANS
 MAN_LINUX_I2C_PAGES = asem.8 pijuice.8
-endif
+endif WITH_MANS
 
 if WITH_LINUX_I2C
 man8_MANS += $(MAN_LINUX_I2C_PAGES)
-endif
+endif WITH_LINUX_I2C
 
 HTML_LINUX_I2C_MANS = asem.html pijuice.html
+endif ! SOME_DRIVERS
 
-# SOME_DRIVERS
-endif
+# (--with-gpio)
+SRC_GPIO_PAGES = generic_gpio.txt
+if ! SOME_DRIVERS
+if WITH_MANS
+MAN_GPIO_PAGES = generic_gpio.8
+endif WITH_MANS
+
+if WITH_GPIO
+man8_MANS += $(MAN_GPIO_PAGES)
+endif WITH_GPIO
+
+HTML_GPIO_MANS = generic_gpio.html
+endif ! SOME_DRIVERS
 
 MAN_MANS =
 if WITH_MANS
@@ -671,6 +729,7 @@ MAN_MANS += \
 	$(MAN8_CGI_PAGES) \
 	$(MAN1_DEV_PAGES) \
 	$(MAN3_DEV_PAGES) \
+	$(MAN8_DEV_PAGES) \
 	$(MAN_SERIAL_PAGES) \
 	$(MAN_SNMP_PAGES) \
 	$(MAN_USB_LIBUSB_PAGES) \
@@ -680,8 +739,9 @@ MAN_MANS += \
 	$(MAN_IPMIPSU_PAGES) \
 	$(MAN_MACOSX_PAGES) \
 	$(MAN_MODBUS_PAGES) \
-	$(MAN_LINUX_I2C_PAGES)
-endif
+	$(MAN_LINUX_I2C_PAGES) \
+	$(MAN_GPIO_PAGES)
+endif WITH_MANS
 
 SRC_DRIVERS_PAGES = \
 	$(SRC_SERIAL_PAGES) \
@@ -693,7 +753,16 @@ SRC_DRIVERS_PAGES = \
 	$(SRC_IPMIPSU_PAGES) \
 	$(SRC_MACOSX_PAGES) \
 	$(SRC_MODBUS_PAGES) \
-	$(SRC_LINUX_I2C_PAGES)
+	$(SRC_LINUX_I2C_PAGES) \
+	$(SRC_GPIO_PAGES)
+
+if SOME_DRIVERS
+# (Legacy note) The list above probably came up empty in this case, so make sure
+# that the drivers requested by configure script are documented in the build;
+# notably in the linkman-driver-names.txt file.
+SRC_DRIVERS_PAGES += \
+	$(DRIVER_MAN_LIST_PAGES)
+endif
 
 # distribute everything, even those not installed by default
 # Note that 'dist' target requires AsciiDoc!
@@ -717,8 +786,8 @@ if ! SKIP_MANS
 EXTRA_DIST += dist
 dist:
 	@echo "ERROR: Manpage building was disabled by configure script, and these pages are required for our proper 'make dist'" >&2 ; false
-endif
-endif
+endif ! SKIP_MANS
+endif ! WITH_MANS
 
 # For builds done from dist'ed sources, there may be a conflict of timestamps
 # between original *.txt files and pre-built manpages etc. leading to skipping
@@ -743,7 +812,8 @@ HTML_MANS = \
 	$(HTML_IPMIPSU_MANS) \
 	$(HTML_MACOSX_MANS) \
 	$(HTML_MODBUS_MANS) \
-	$(HTML_LINUX_I2C_MANS)
+	$(HTML_LINUX_I2C_MANS) \
+	$(HTML_GPIO_MANS)
 
 # Note: target documents, except nutupsdrv.txt itself, start the
 # list of drivers with `- linkman:nutupsdrv[8]` entry
@@ -764,6 +834,7 @@ linkman-driver-names.txt:
 	    | sort -n | uniq \
 	    | sed 's,^\(.*\)\.txt$$,- linkman:\1[8],' ; \
 	 ) > "$@"
+	@if test ! -s "$@" ; then echo "- No NUT drivers were built" > "$@" ; fi
 
 linkman-drivertool-names.txt:
 	@if test x"$(srcdir)" != x"$(builddir)" ; then \
@@ -777,6 +848,7 @@ linkman-drivertool-names.txt:
 	    | sort -n | uniq \
 	    | sed 's,^\(.*\)\.txt$$,- linkman:\1[8],' ; \
 	 ) > "$@"
+	@if test ! -s "$@" ; then echo "- No NUT driver tools were built" > "$@" ; fi
 
 # Dependencies are about particular filenames, since over time
 # we might have several use-cases for LINKMAN_INCLUDE_GENERATED:
@@ -880,7 +952,7 @@ DOCBUILD_BEGIN = { \
     if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
         rm -rf "./$${A2X_OUTDIR}" || true ; \
         test -d "$@" && rm -rf "$@" || true ; \
-        mkdir -p "./$${A2X_OUTDIR}" || exit ; \
+        $(MKDIR_P) "./$${A2X_OUTDIR}" || exit ; \
         for F in $(LINKMAN_INCLUDE_GENERATED) ; do \
             if [ -s "./$$F" ] ; then ln -f -s "../../$$F" "./$${A2X_OUTDIR}/" ; else \
             if [ -s "$(abs_srcdir)/$$F" ] ; then ln -f -s "$(abs_srcdir)/$$F" "./$${A2X_OUTDIR}/" ; fi ; fi ; \
@@ -919,6 +991,9 @@ DOCBUILD_END = { \
 ### resolves include paths relative to the main document, so while we
 ### see the relative builddir as "." in the makefile, for included
 ### data it would mean the source directory where the .txt resides.
+### Note: `(top_)srcdir` and `(top_)builddir` must end with a path
+### separator, or be empty -- so in all cases letting the resulting
+### string resolve meaningfully in the filesystem during docs build.
 .txt.html:
 	@A2X_OUTDIR="tmp/man-html.$(@F).$$$$" ; \
 	 echo "  DOC-MAN-HTML Generating $@"; \
@@ -927,8 +1002,10 @@ DOCBUILD_END = { \
 		--attribute localdate="`TZ=UTC date +%Y-%m-%d`" \
 		--attribute localtime="`TZ=UTC date +%H:%M:%S`" \
 		--attribute nutversion="@PACKAGE_VERSION@" \
-		--attribute srcdir="$(abs_srcdir)" \
-		--attribute builddir="$(abs_builddir)" \
+		--attribute srcdir="$(abs_srcdir)/" \
+		--attribute builddir="$(abs_builddir)/" \
+		--attribute top_srcdir="$(abs_top_srcdir)/" \
+		--attribute top_builddir="$(abs_top_builddir)/" \
 		-o "$${A2X_OUTDIR}/$(@F)" $< || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
@@ -939,8 +1016,10 @@ A2X_MANPAGE_OPTS = --doctype manpage --format manpage $${A2X_VERBOSE} \
 	--attribute mansource="Network UPS Tools" \
 	--attribute manversion="@PACKAGE_VERSION@" \
 	--attribute manmanual="NUT Manual" \
-	--attribute srcdir="$(abs_srcdir)" \
-	--attribute builddir="$(abs_builddir)" \
+	--attribute srcdir="$(abs_srcdir)/" \
+	--attribute builddir="$(abs_builddir)/" \
+	--attribute top_srcdir="$(abs_top_srcdir)/" \
+	--attribute top_builddir="$(abs_top_builddir)/" \
 	--destination-dir="$${A2X_OUTDIR}"
 
 .txt.1:
@@ -1022,18 +1101,18 @@ endif !HAVE_ASCIIDOC
 
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension:
 #%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
-#	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC_ONE="$<" SPELLCHECK_DIR="$(srcdir)" $@
+#	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
 # NOTE: Portable suffix rules do not allow prerequisites, so we shim them here
 # by a wildcard target in case the make implementation can put the two together.
 *.txt-spellchecked: Makefile.am $(abs_top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 .txt.txt-spellchecked:
-	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC_ONE="$<" SPELLCHECK_DIR="$(srcdir)" $@
+	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
 spellcheck spellcheck-interactive spellcheck-sortdict:
-	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SRC_ALL_PAGES)" SPELLCHECK_DIR="$(srcdir)" $@
+	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SRC_ALL_PAGES)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 clean-local:
-	rm -rf tmp
+	$(AM_V_at)rm -rf tmp

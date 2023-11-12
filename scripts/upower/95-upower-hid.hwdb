@@ -70,6 +70,7 @@ usb:v050Dp1100*
 usb:v051Dp0000*
 usb:v051Dp0002*
 usb:v051Dp0003*
+usb:v051Dp0004*
  UPOWER_BATTERY_TYPE=ups
  UPOWER_VENDOR=APC
 
@@ -81,6 +82,7 @@ usb:v0592p0004*
 # Delta UPS
 usb:v05DDp041B*
 usb:v05DDpA011*
+usb:v05DDpA0A0*
  UPOWER_BATTERY_TYPE=ups
  UPOWER_VENDOR=Delta UPS
 
@@ -188,10 +190,12 @@ usb:v2E51pFFFF*
  UPOWER_VENDOR=Ever
 
 # Salicru
+usb:v2E66p0101*
 usb:v2E66p0201*
 usb:v2E66p0202*
 usb:v2E66p0203*
 usb:v2E66p0300*
+usb:v2E66p0302*
  UPOWER_BATTERY_TYPE=ups
  UPOWER_VENDOR=Salicru
 

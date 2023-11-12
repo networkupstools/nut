@@ -27,6 +27,7 @@
 #
 # This user should not have write access to upsmon.conf.
 #
+# (Unprivileged) OS account to run as:
 # RUN_AS_USER @RUN_AS_USER@
 
 # --------------------------------------------------------------------------
@@ -66,10 +67,10 @@
 # changes for a given UPS without shutting down when it goes critical.
 #
 # <username> and <password> must match an entry in that system's
-# upsd.users.  If your username is "upsmon" and your password is
+# upsd.users.  If your NUT username is "monuser" and your password is
 # "blah", the upsd.users would look like this:
 #
-#	[upsmon]
+#	[monuser]
 #		password  = blah
 #		upsmon primary 	# (or secondary)
 #
@@ -113,8 +114,8 @@
 # Examples:
 #
 # MONITOR myups@bigserver 1 upswired blah primary
-# MONITOR su700@server.example.com 1 upsmon secretpass secondary
-# MONITOR myups@localhost 1 upsmon pass primary	# (or secondary)
+# MONITOR su700@server.example.com 1 monuser secretpass secondary
+# MONITOR myups@localhost 1 monuser pass primary	# (or secondary)
 
 # --------------------------------------------------------------------------
 # MINSUPPLIES <num>
@@ -148,8 +149,48 @@ MINSUPPLIES 1
 # off, consider setting the SHUTDOWNCMD temporarily to do something benign -
 # such as posting a message with 'logger' or 'wall' or 'mailx'. Do be careful
 # to plug the UPS back into the wall in a timely fashion.
+#
+# For Windows setup use something like:
+# SHUTDOWNCMD "C:\\WINDOWS\\system32\\shutdown.exe -s -t 0"
+# If you have command line using space character you have to add double quote to them, like this:
+# SHUTDOWNCMD "\"C:\\Program Files\\some command.bat\" -first_arg -second_arg"
+# Or use the old DOS 8.3 file name, like this:
+# SHUTDOWNCMD "C:\\PROGRA~1\\SOMECO~1.bat -first_arg -second_arg"
 
 SHUTDOWNCMD "/sbin/shutdown -h +0"
+
+# --------------------------------------------------------------------------
+# SHUTDOWNEXIT <boolean|num>
+#
+# After initiating shutdown, should this upsmon daemon itself exit?
+# By doing so NUT secondary systems can tell the NUT primary that
+# it can proceed with its own shutdown and eventually tell the UPS
+# to cut power for the load. ("Yes" by default)
+#
+# Some "secondary" systems with workloads that take considerable time
+# to stop (e.g. virtual machines or large databases) can benefit from
+# reporting (by virtue of logging off the data server) that they are
+# ready for the "primary" system to begin its own shutdown and eventually
+# to tell the UPS to cut the power - not as soon as they have triggered
+# their own shutdown, but at a later point (e.g. when the upsmon service
+# is stopped AFTER the heavier workloads).
+#
+# Note that the actual ability to complete such shutdown depends on the
+# remaining battery run-time at the moment when UPS power state becomes
+# considered critical and the shutdowns begin. You may also have to tune
+# HOSTSYNC on the NUT primary to be long enough for those secondaries to
+# stop their services. In practice, it may be worthwhile to investigate
+# ways to trigger shutdowns earlier on these systems, e.g. by setting up
+# `upssched` integration, or `dummy-ups` driver with overrides for stricter
+# `battery.charge` or `battery.runtime` triggers than used by the rest of
+# your servers.
+#
+# This option supports Boolean-style strings (yes/on/true or no/off/false)
+# or numbers to define a delay (in seconds) between calling SHUTDOWNCMD
+# and exiting the daemon. Zero means immediate exit (default), negative
+# values mean never exiting on its own accord.
+#
+#SHUTDOWNEXIT yes
 
 # --------------------------------------------------------------------------
 # NOTIFYCMD <command>
@@ -247,8 +288,13 @@ DEADTIME 15
 # Refer to the section:
 # [[UPS_shutdown]] "Configuring automatic shutdowns for low battery events"
 # or refer to the online version.
-
-POWERDOWNFLAG /etc/killpower
+#
+# For Windows setup use something like:
+# POWERDOWNFLAG "C:\\killpower"
+#
+# For Unix/Linux systems the legacy default is:
+# POWERDOWNFLAG /etc/killpower
+POWERDOWNFLAG "@POWERDOWNFLAG@"
 
 # --------------------------------------------------------------------------
 # NOTIFYMSG - change messages sent by upsmon when certain events occur
@@ -267,6 +313,11 @@ POWERDOWNFLAG /etc/killpower
 # NOTIFYMSG REPLBATT	"UPS %s battery needs to be replaced"
 # NOTIFYMSG NOCOMM	"UPS %s is unavailable"
 # NOTIFYMSG NOPARENT	"upsmon parent process died - shutdown impossible"
+# NOTIFYMSG CAL		"UPS %s: calibration in progress"
+# NOTIFYMSG OFF		"UPS %s: administratively OFF or asleep"
+# NOTIFYMSG NOTOFF	"UPS %s: no longer administratively OFF or asleep"
+# NOTIFYMSG BYPASS	"UPS %s: on bypass (powered, not protecting)"
+# NOTIFYMSG NOTBYPASS	"UPS %s: no longer on bypass"
 #
 # Note that %s is replaced with the identifier of the UPS in question.
 #
@@ -287,7 +338,9 @@ POWERDOWNFLAG /etc/killpower
 # NOTIFYFLAG - change behavior of upsmon when NOTIFY events occur
 #
 # By default, upsmon sends walls (global messages to all logged in users)
-# and writes to the syslog when things happen.  You can change this.
+# and writes to the syslog when things happen.
+# Except for Windows where upsmon only writes to the syslog by default.
+# You can change this.
 #
 # NOTIFYFLAG <notify type> <flag>[+<flag>][+<flag>] ...
 #
@@ -312,6 +365,25 @@ POWERDOWNFLAG /etc/killpower
 # If you use IGNORE, don't use any other flags on the same line.
 
 # --------------------------------------------------------------------------
+# OFFDURATION - put "OFF" state into effect if it persists for this many seconds
+#
+# NUT supports an "administrative OFF" for power devices which can be managed to
+# turn off their application workload, while the UPS or ePDU remains accessible
+# for monitoring and management. This toggle allows to delay propagation of such
+# state into a known loss of a feed (possibly triggering FSD on `upsmon` clients
+# which `MONITOR` the device and are in fact still alive -- e.g. with multiple
+# power sources or because they as the load are not really turned off), because
+# when some devices begin battery calibration, they report "OFF" for a few seconds
+# and only then they might report "CAL" after switching all the power relays --
+# thus causing false-positives for `upsmon` FSD trigger.
+#
+# A negative value means to disable decreasing the counter of working power
+# supplies in such cases, and a zero makes the effect of detected "OFF" state
+# immediate. Built-in default value is 30 (seconds).
+
+OFFDURATION 30
+
+# --------------------------------------------------------------------------
 # RBWARNTIME - replace battery warning time in seconds
 #
 # upsmon will normally warn you about a battery that needs to be replaced
@@ -332,6 +404,20 @@ RBWARNTIME 43200
 # change the interval with this directive.
 
 NOCOMMWARNTIME 300
+
+# --------------------------------------------------------------------------
+# POLLFAIL_LOG_THROTTLE_MAX - device poll failure logging throttle
+#
+# upsmon normally reports polling failures for each device that are in place
+# for each POLLFREQ loop (e.g. "Data stale" or "Driver not connected") to
+# system log as configured.  If your devices are expected to be AWOL for an
+# extended timeframe, you can use this throttle to reduce the stress on
+# syslog traffic and storage, by posting these messages only once in every
+# several loop cycles, and when the error condition has changed or cleared.
+# A negative value means standard behavior, and a zero value means to never
+# repeat the message (log only on start and end/change of the failure state).
+#
+#POLLFAIL_LOG_THROTTLE_MAX 100
 
 # --------------------------------------------------------------------------
 # FINALDELAY - last sleep interval before shutting down the system

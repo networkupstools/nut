@@ -2,61 +2,90 @@ dnl detect if current compiler is clang or gcc (or...)
 
 AC_DEFUN([NUT_COMPILER_FAMILY],
 [
+  CC_VERSION_FULL="`LANG=C LC_ALL=C $CC --version 2>&1`"   || CC_VERSION_FULL=""
+  CXX_VERSION_FULL="`LANG=C LC_ALL=C $CXX --version 2>&1`" || CXX_VERSION_FULL=""
+  CPP_VERSION_FULL="`LANG=C LC_ALL=C $CPP --version 2>&1`" || CPP_VERSION_FULL=""
+  CC_VERSION=""
+  CXX_VERSION=""
+  CPP_VERSION=""
+
   AC_CACHE_CHECK([if CC compiler family is GCC],
     [nut_cv_GCC],
-    [AS_IF([test -n "$CC"],
-        [AS_IF([$CC --version 2>&1 | grep 'Free Software Foundation' > /dev/null],
+    [AS_IF([test -n "$CC" && test -n "$CC_VERSION_FULL"],
+        [AS_IF([echo "${CC_VERSION_FULL}" | grep 'Free Software Foundation' > /dev/null],
             [nut_cv_GCC=yes],[nut_cv_GCC=no])],
         [AC_MSG_ERROR([CC is not set])]
     )])
 
   AC_CACHE_CHECK([if CXX compiler family is GCC],
     [nut_cv_GXX],
-    [AS_IF([test -n "$CXX"],
-        [AS_IF([$CXX --version 2>&1 | grep 'Free Software Foundation' > /dev/null],
+    [AS_IF([test -n "$CXX" && test -n "$CXX_VERSION_FULL"],
+        [AS_IF([echo "${CXX_VERSION_FULL}" | grep 'Free Software Foundation' > /dev/null],
             [nut_cv_GXX=yes],[nut_cv_GXX=no])],
         [AC_MSG_ERROR([CXX is not set])]
     )])
 
   AC_CACHE_CHECK([if CPP preprocessor family is GCC],
     [nut_cv_GPP],
-    [AS_IF([test -n "$CPP"],
-        [AS_IF([$CPP --version 2>&1 | grep 'Free Software Foundation' > /dev/null],
+    [AS_IF([test -n "$CPP" && test -n "$CPP_VERSION_FULL"],
+        [AS_IF([echo "${CPP_VERSION_FULL}" | grep 'Free Software Foundation' > /dev/null],
             [nut_cv_GPP=yes],[nut_cv_GPP=no])],
         [AC_MSG_ERROR([CPP is not set])]
     )])
 
-  AS_IF([test "x$GCC" = "x" && test "$nut_cv_GCC" = yes],   [GCC=yes])
-  AS_IF([test "x$GXX" = "x" && test "$nut_cv_GXX" = yes],   [GXX=yes])
-  AS_IF([test "x$GPP" = "x" && test "$nut_cv_GPP" = yes],   [GPP=yes])
+  AS_IF([test "x$GCC" = "x" && test "$nut_cv_GCC" = yes],   [GCC=yes
+    CC_VERSION="`echo "${CC_VERSION_FULL}" | grep -i gcc | head -1`" \
+    && test -n "${CC_VERSION}" || CC_VERSION=""
+    ])
+  AS_IF([test "x$GXX" = "x" && test "$nut_cv_GXX" = yes],   [GXX=yes
+    CXX_VERSION="`echo "${CXX_VERSION_FULL}" | grep -i -E 'g++|gcc' | head -1`" \
+    && test -n "${CXX_VERSION}" || CXX_VERSION=""
+    ])
+  AS_IF([test "x$GPP" = "x" && test "$nut_cv_GPP" = yes],   [GPP=yes
+    CPP_VERSION="`echo "${CPP_VERSION_FULL}" | grep -i -E 'cpp|gcc' | head -1`" \
+    && test -n "${CPP_VERSION}" || CPP_VERSION=""
+    ])
 
   AC_CACHE_CHECK([if CC compiler family is clang],
     [nut_cv_CLANGCC],
-    [AS_IF([test -n "$CC"],
-        [AS_IF([$CC --version 2>&1 | grep -E '(clang version|Apple LLVM version .*clang-)' > /dev/null],
+    [AS_IF([test -n "$CC" && test -n "$CC_VERSION_FULL"],
+        [AS_IF([echo "${CC_VERSION_FULL}" | grep -E '(clang version|Apple LLVM version .*clang-)' > /dev/null],
             [nut_cv_CLANGCC=yes],[nut_cv_CLANGCC=no])],
         [AC_MSG_ERROR([CC is not set])]
     )])
 
   AC_CACHE_CHECK([if CXX compiler family is clang],
     [nut_cv_CLANGXX],
-    [AS_IF([test -n "$CXX"],
-        [AS_IF([$CXX --version 2>&1 | grep -E '(clang version|Apple LLVM version .*clang-)' > /dev/null],
+    [AS_IF([test -n "$CXX" && test -n "$CXX_VERSION_FULL"],
+        [AS_IF([echo "${CXX_VERSION_FULL}" | grep -E '(clang version|Apple LLVM version .*clang-)' > /dev/null],
             [nut_cv_CLANGXX=yes],[nut_cv_CLANGXX=no])],
         [AC_MSG_ERROR([CXX is not set])]
     )])
 
   AC_CACHE_CHECK([if CPP preprocessor family is clang],
     [nut_cv_CLANGPP],
-    [AS_IF([test -n "$CPP"],
-        [AS_IF([$CPP --version 2>&1 | grep -E '(clang version|Apple LLVM version .*clang-)' > /dev/null],
+    [AS_IF([test -n "$CPP" && test -n "$CPP_VERSION_FULL"],
+        [AS_IF([echo "${CPP_VERSION_FULL}" | grep -E '(clang version|Apple LLVM version .*clang-)' > /dev/null],
             [nut_cv_CLANGPP=yes],[nut_cv_CLANGPP=no])],
         [AC_MSG_ERROR([CPP is not set])]
     )])
 
-  AS_IF([test "x$CLANGCC" = "x" && test "$nut_cv_CLANGCC" = yes],   [CLANGCC=yes])
-  AS_IF([test "x$CLANGXX" = "x" && test "$nut_cv_CLANGXX" = yes],   [CLANGXX=yes])
-  AS_IF([test "x$CLANGPP" = "x" && test "$nut_cv_CLANGPP" = yes],   [CLANGPP=yes])
+  AS_IF([test "x$CLANGCC" = "x" && test "$nut_cv_CLANGCC" = yes],   [CLANGCC=yes
+    CC_VERSION="`echo "${CC_VERSION_FULL}" | grep -v "Dir:" | tr '\n' ';' | sed -e 's, *;,;,g' -e 's,;$,,' -e 's,;,; ,g'`" \
+    && test -n "${CC_VERSION}" || CC_VERSION=""
+    ])
+  AS_IF([test "x$CLANGXX" = "x" && test "$nut_cv_CLANGXX" = yes],   [CLANGXX=yes
+    CXX_VERSION="`echo "${CXX_VERSION_FULL}" | grep -v "Dir:" | tr '\n' ';' | sed -e 's, *;,;,g' -e 's,;$,,' -e 's,;,; ,g'`" \
+    && test -n "${CXX_VERSION}" || CXX_VERSION=""
+    ])
+  AS_IF([test "x$CLANGPP" = "x" && test "$nut_cv_CLANGPP" = yes],   [CLANGPP=yes
+    CPP_VERSION="`echo "${CPP_VERSION_FULL}" | grep -v "Dir:" | tr '\n' ';' | sed -e 's, *;,;,g' -e 's,;$,,' -e 's,;,; ,g'`" \
+    && test -n "${CPP_VERSION}" || CPP_VERSION=""
+    ])
+
+  AS_IF([test "x$CC_VERSION" = x],  [CC_VERSION="`echo "${CC_VERSION_FULL}" | head -1`"])
+  AS_IF([test "x$CXX_VERSION" = x], [CXX_VERSION="`echo "${CXX_VERSION_FULL}" | head -1`"])
+  AS_IF([test "x$CPP_VERSION" = x], [CPP_VERSION="`echo "${CPP_VERSION_FULL}" | head -1`"])
 ])
 
 AC_DEFUN([NUT_CHECK_COMPILE_FLAG],
@@ -149,19 +178,21 @@ dnl # confuse the compiler assumptions - along with its provided headers)...
 dnl # ideally; in practice however cppunit, net-snmp and some system include
 dnl # files do cause grief to picky compiler settings (more so from third
 dnl # party packages shipped via /usr/local/... namespace):
-    AS_IF([test "x$CLANGCC" = xyes -o "x$GCC" = xyes], [
-dnl #        CFLAGS="-isystem /usr/include $CFLAGS"
-        AS_IF([test -d /usr/local/include],
-            [CFLAGS="-isystem /usr/local/include $CFLAGS"])
-        AS_IF([test -d /usr/pkg/include],
-            [CFLAGS="-isystem /usr/pkg/include $CFLAGS"])
-    ])
-    AS_IF([test "x$CLANGXX" = xyes -o "x$GXX" = xyes], [
-dnl #        CXXFLAGS="-isystem /usr/include $CXXFLAGS"
-        AS_IF([test -d /usr/local/include],
-            [CXXFLAGS="-isystem /usr/local/include $CXXFLAGS"])
-        AS_IF([test -d /usr/pkg/include],
-            [CXXFLAGS="-isystem /usr/pkg/include $CXXFLAGS"])
+    AS_IF([test "x$cross_compiling" != xyes], [
+        AS_IF([test "x$CLANGCC" = xyes -o "x$GCC" = xyes], [
+dnl #            CFLAGS="-isystem /usr/include $CFLAGS"
+            AS_IF([test -d /usr/local/include],
+                [CFLAGS="-isystem /usr/local/include $CFLAGS"])
+            AS_IF([test -d /usr/pkg/include],
+                [CFLAGS="-isystem /usr/pkg/include $CFLAGS"])
+        ])
+        AS_IF([test "x$CLANGXX" = xyes -o "x$GXX" = xyes], [
+dnl #           CXXFLAGS="-isystem /usr/include $CXXFLAGS"
+            AS_IF([test -d /usr/local/include],
+                [CXXFLAGS="-isystem /usr/local/include $CXXFLAGS"])
+            AS_IF([test -d /usr/pkg/include],
+                [CXXFLAGS="-isystem /usr/pkg/include $CXXFLAGS"])
+        ])
     ])
 
 dnl # Default to avoid noisy warnings on older compilers

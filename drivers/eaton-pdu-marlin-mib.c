@@ -380,7 +380,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "ups.type", ST_FLAG_STRING, SU_INFOSIZE,
 		NULL,
 		"pdu", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-	 /* FIXME: needs a date reformating callback
+	 /* FIXME: needs a date reformatting callback
 	 *   2011-8-29,16:27:25.0,+1:0
 	 *   Hex-STRING: 07 DB 08 1D 10 0C 36 00 2B 01 00 00
 	 * { "ups.date", ST_FLAG_STRING, SU_INFOSIZE,
@@ -451,7 +451,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 	/* FIXME:
 	 * - Voltage is only measured per phase, as mV!
 	 *   so input.voltage == input.L1.voltage for both single and 3phase
-	 * - As per NUT namespace (http://www.networkupstools.org/docs/developer-guide.chunked/apas01.html#_valid_contexts)
+	 * - As per NUT namespace (https://www.networkupstools.org/docs/developer-guide.chunked/apas01.html#_valid_contexts)
 	 *   Voltage has to be expressed either phase-phase or phase-neutral
 	 *   This is depending on OID inputVoltageMeasType
 	 *   INTEGER {singlePhase (1),phase1toN (2),phase2toN (3),phase3toN (4),phase1to2 (5),phase2to3 (6),phase3to1 (7)
@@ -706,10 +706,11 @@ static snmp_info_t eaton_marlin_mib[] = {
 	 * inputFeedName.0.1 = Value (OctetString): Feed A
 	 */
 	/* FIXME: SU_FLAG_SEMI_STATIC or SU_FLAG_SETTING => refreshed from time to time or upon call to setvar */
-/*	{ "input.%i.feed.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE,
- *		".1.3.6.1.4.1.534.6.6.7.3.1.1.10.%i.%i",
- *		NULL, SU_FLAG_SEMI_STATIC | SU_FLAG_OK | SU_TYPE_DAISY_1, NULL },
- */
+/*
+	{ "input.%i.feed.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE,
+		".1.3.6.1.4.1.534.6.6.7.3.1.1.10.%i.%i",
+		NULL, SU_FLAG_SEMI_STATIC | SU_FLAG_OK | SU_TYPE_DAISY_1, NULL },
+*/
 	{ "input.feed.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.3.1.1.10.%i.1",
 		NULL, SU_FLAG_SEMI_STATIC | SU_FLAG_OK | SU_TYPE_DAISY_1, NULL },
@@ -717,10 +718,11 @@ static snmp_info_t eaton_marlin_mib[] = {
 	 * inputFeedColor.0.1 = Gauge32: 0   (black)
 	 */
 	/* FIXME: RFC on key name is needed when backporting to NUT upstream */
-/*	{ "input.%i.feed.color", 0, 1,
- *		".1.3.6.1.4.1.534.6.6.7.3.1.1.9.%i.%i",
- *		NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_TYPE_DAISY_1, NULL },
- */
+/*
+	{ "input.%i.feed.color", 0, 1,
+		".1.3.6.1.4.1.534.6.6.7.3.1.1.9.%i.%i",
+		NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_TYPE_DAISY_1, NULL },
+*/
 	{ "input.feed.color", 0, 1,
 		".1.3.6.1.4.1.534.6.6.7.3.1.1.9.%i.1",
 		NULL, SU_FLAG_SEMI_STATIC | SU_FLAG_OK | SU_TYPE_DAISY_1, NULL },

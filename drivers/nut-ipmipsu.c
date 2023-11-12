@@ -27,7 +27,7 @@
 #include "nut-ipmi.h"
 
 #define DRIVER_NAME	"IPMI PSU driver"
-#define DRIVER_VERSION	"0.31"
+#define DRIVER_VERSION	"0.32"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -144,11 +144,10 @@ void upsdrv_updateinfo(void)
 }
 
 void upsdrv_shutdown(void)
-	__attribute__((noreturn));
-
-void upsdrv_shutdown(void)
 {
-	fatalx(EXIT_FAILURE, "shutdown not supported");
+	/* replace with a proper shutdown function */
+	upslogx(LOG_ERR, "shutdown not supported");
+	set_exit_flag(-1);
 }
 
 /*

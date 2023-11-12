@@ -24,6 +24,7 @@ The `nutscan_device_t` contains the following variables:
 
 	nutscan_device_type_t   type;
 	char *          driver;
+	char *          alt_driver_names;
 	char *          port;
 	nutscan_options_t       opt;
 	struct nutscan_device * prev;
@@ -38,6 +39,12 @@ associated 'value'. Copies of 'option_name' and 'value' are stored
 in the device, so the caller can safely free both of the original
 strings used as arguments.
 
+Such options and their values may be further sanity-checked and reported
+as warnings by *nutscan_display_sanity_check()* dispatcher and its related
+methods which implement the logic of particular checks. This is used for
+example when generating 'ups.conf' file content suggestions with
+*nutscan_display_ups_conf_with_sanity_check()* method.
+
 NOTES
 -----
 
@@ -49,6 +56,9 @@ SEE ALSO
 linkman:nutscan_scan_usb[3], linkman:nutscan_scan_xml_http_range[3],
 linkman:nutscan_scan_nut[3], linkman:nutscan_scan_avahi[3],
 linkman:nutscan_scan_ipmi[3], linkman:nutscan_scan_snmp[3],
+linkman:nutscan_display_sanity_check[3],
+linkman:nutscan_display_sanity_check_serial[3],
+linkman:nutscan_display_ups_conf_with_sanity_check[3],
 linkman:nutscan_display_ups_conf[3], linkman:nutscan_display_parsable[3],
 linkman:nutscan_new_device[3], linkman:nutscan_free_device[3],
 linkman:nutscan_add_device_to_device[3]

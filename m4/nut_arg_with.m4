@@ -5,8 +5,8 @@ dnl https://www.gnu.org/software/autoconf/manual/autoconf-2.66/html_node/Externa
 AC_DEFUN([NUT_ARG_WITH],
 [  AC_ARG_WITH($1,
       AS_HELP_STRING([--with-$1], [$2 ($3)]),
-      [nut_with_$1="${withval}"],
-      [nut_with_$1="$3"]
+      [[nut_with_]m4_translit($1, [-], [_])="${withval}"],
+      [[nut_with_]m4_translit($1, [-], [_])="$3"]
    )
 ])
 
@@ -15,7 +15,7 @@ dnl https://www.gnu.org/software/autoconf/manual/autoconf-2.66/html_node/Package
 AC_DEFUN([NUT_ARG_ENABLE],
 [  AC_ARG_ENABLE($1,
       AS_HELP_STRING([--enable-$1], [$2 ($3)]),
-      [nut_enable_$1="${enableval}"],
-      [nut_enable_$1="$3"]
+      [[nut_enable_]m4_translit($1, [-], [_])="${enableval}"],
+      [[nut_enable_]m4_translit($1, [-], [_])="$3"]
    )
 ])

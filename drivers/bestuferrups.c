@@ -33,7 +33,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Best Ferrups Series ME/RE/MD driver"
-#define DRIVER_VERSION	"0.04"
+#define DRIVER_VERSION	"0.05"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -420,7 +420,7 @@ static void setup_serial(void)
 }
 
 
-void upsdrv_initups ()
+void upsdrv_initups (void)
 {
 	char	temp[256], fcstring[512];
 

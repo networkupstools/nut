@@ -67,7 +67,7 @@
 #endif
 
 #define DRIVER_NAME	"ASEM"
-#define DRIVER_VERSION	"0.11"
+#define DRIVER_VERSION	"0.12"
 
 /* Valid on ASEM PB1300 UPS */
 #define BQ2060_ADDRESS	0x0B
@@ -325,9 +325,6 @@ void upsdrv_updateinfo(void)
 }
 
 void upsdrv_shutdown(void)
-	__attribute__((noreturn));
-
-void upsdrv_shutdown(void)
 {
 	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
 
@@ -335,7 +332,8 @@ void upsdrv_shutdown(void)
 	   it doesn't respond at first if possible */
 
 	/* replace with a proper shutdown function */
-	fatalx(EXIT_FAILURE, "shutdown not supported");
+	upslogx(LOG_ERR, "shutdown not supported");
+	set_exit_flag(-1);
 
 	/* you may have to check the line status since the commands
 	   for toggling power are frequently different for OL vs. OB */

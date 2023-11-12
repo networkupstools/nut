@@ -2,8 +2,8 @@
 
 Network UPS Tools Developer Guide
 _________________________________
-:Author: Russell_Kroll,_Arnaud_Quette,_Charles_Lepple_and_Peter_Selinger
-:Author Initials: RK, AQ, CL & PS
+:Author: Russell_Kroll,_Arnaud_Quette,_Charles_Lepple,_Peter_Selinger,_Jim_Klimov_and_NUT_project_community_contributors
+:Author Initials: RK, AQ, CL, PS & JK
 
 Introduction
 ============
@@ -38,12 +38,12 @@ include::sock-protocol.txt[]
 
 [[augeas]]
 
-include::../scripts/augeas/README[]
+include::../scripts/augeas/README.adoc[]
 
 
 [[devscan]]
 
-include::../tools/nut-scanner/README[]
+include::../tools/nut-scanner/README.adoc[]
 
 
 [[new-clients]]
@@ -151,7 +151,7 @@ include::macros.txt[]
 
 [[roadmap]]
 
-include::../TODO[]
+include::../TODO.adoc[]
 
 
 [[nut-names]]
@@ -170,4 +170,4 @@ include::daisychain.txt[]
 Appendix C: NUT libraries complementary information
 ===================================================
 
-include::../lib/README[]
+include::../lib/README.adoc[]

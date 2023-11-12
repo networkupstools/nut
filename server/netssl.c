@@ -24,8 +24,12 @@
 */
 
 #include <sys/types.h>
+#ifndef WIN32
 #include <netinet/in.h>
 #include <sys/socket.h>
+#else
+#include "wincompat.h"
+#endif
 
 #include "upsd.h"
 #include "neterr.h"
@@ -136,7 +140,7 @@ static int ssl_error(SSL *ssl, ssize_t ret)
 	int	e;
 
 	if (ret >= INT_MAX) {
-		upslogx(LOG_ERR, "ssl_error() ret=%zd would not fit in an int", ret);
+		upslogx(LOG_ERR, "ssl_error() ret=%" PRIiSIZE " would not fit in an int", ret);
 		return -1;
 	}
 	e = SSL_get_error(ssl, (int)ret);
@@ -144,23 +148,23 @@ static int ssl_error(SSL *ssl, ssize_t ret)
 	switch (e)
 	{
 	case SSL_ERROR_WANT_READ:
-		upsdebugx(1, "ssl_error() ret=%zd SSL_ERROR_WANT_READ", ret);
+		upsdebugx(1, "ssl_error() ret=%" PRIiSIZE " SSL_ERROR_WANT_READ", ret);
 		break;
 
 	case SSL_ERROR_WANT_WRITE:
-		upsdebugx(1, "ssl_error() ret=%zd SSL_ERROR_WANT_WRITE", ret);
+		upsdebugx(1, "ssl_error() ret=%" PRIiSIZE " SSL_ERROR_WANT_WRITE", ret);
 		break;
 
 	case SSL_ERROR_SYSCALL:
 		if (ret == 0 && ERR_peek_error() == 0) {
 			upsdebugx(1, "ssl_error() EOF from client");
 		} else {
-			upsdebugx(1, "ssl_error() ret=%zd SSL_ERROR_SYSCALL", ret);
+			upsdebugx(1, "ssl_error() ret=%" PRIiSIZE " SSL_ERROR_SYSCALL", ret);
 		}
 		break;
 
 	default:
-		upsdebugx(1, "ssl_error() ret=%zd SSL_ERROR %d", ret, e);
+		upsdebugx(1, "ssl_error() ret=%" PRIiSIZE " SSL_ERROR %d", ret, e);
 		ssl_debug();
 	}
 
@@ -323,6 +327,7 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 		upslog_with_errno(LOG_ERR, "SSL_accept do not accept handshake.");
 		ssl_error(client->ssl, ret);
 		break;
+
 	case -1:
 		upslog_with_errno(LOG_ERR, "Unknown return value from SSL_accept");
 		ssl_error(client->ssl, ret);
@@ -332,59 +337,66 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 
 	socket = PR_ImportTCPSocket(client->sock_fd);
-	if (socket == NULL){
-		upslogx(LOG_ERR, "Can not inialize SSL connection");
+	if (socket == NULL) {
+		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / PR_ImportTCPSocket");
 		return;
 	}
 
 	client->ssl = SSL_ImportFD(NULL, socket);
-	if (client->ssl == NULL){
-		upslogx(LOG_ERR, "Can not inialize SSL connection");
+	if (client->ssl == NULL) {
+		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / SSL_ImportFD");
 		return;
 	}
 
-	if (SSL_SetPKCS11PinArg(client->ssl, client) == -1){
-		upslogx(LOG_ERR, "Can not inialize SSL connection");
+	if (SSL_SetPKCS11PinArg(client->ssl, client) == -1) {
+		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / SSL_SetPKCS11PinArg");
 		return;
 	}
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type-strict"
+#endif
 	/* Note cast to SSLAuthCertificate to prevent warning due to
 	 * bad function prototype in NSS.
 	 */
 	status = SSL_AuthCertificateHook(client->ssl, (SSLAuthCertificate)AuthCertificate, CERT_GetDefaultCertDB());
 	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not inialize SSL connection");
+		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / SSL_AuthCertificateHook");
 		return;
 	}
 
 	status = SSL_BadCertHook(client->ssl, (SSLBadCertHandler)BadCertHandler, client);
 	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not inialize SSL connection");
+		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / SSL_BadCertHook");
 		return;
 	}
 
 	status = SSL_HandshakeCallback(client->ssl, (SSLHandshakeCallback)HandshakeCallback, client);
 	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not inialize SSL connection");
+		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / SSL_HandshakeCallback");
 		return;
 	}
 
 	status = SSL_ConfigSecureServer(client->ssl, cert, privKey, NSS_FindCertKEAType(cert));
 	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not inialize SSL connection");
+		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / SSL_ConfigSecureServer");
 		return;
 	}
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT)
+#pragma GCC diagnostic pop
+#endif
 
 	status = SSL_ResetHandshake(client->ssl, PR_TRUE);
 	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not inialize SSL connection");
+		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / SSL_ResetHandshake");
 		return;
 	}
@@ -634,6 +646,9 @@ void ssl_init(void)
 ssize_t ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 {
 	ssize_t	ret = -1;
+#ifdef WITH_OPENSSL
+	int	iret;
+#endif
 
 	if (!client->ssl_connected) {
 		return -1;
@@ -646,7 +661,7 @@ ssize_t ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 	 * but smaller systems with 16-bits might be endangered :)
 	 */
 	assert(buflen <= INT_MAX);
-	int iret = SSL_read(client->ssl, buf, (int)buflen);
+	iret = SSL_read(client->ssl, buf, (int)buflen);
 	assert(iret <= SSIZE_MAX);
 	ret = (ssize_t)iret;
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
@@ -667,6 +682,9 @@ ssize_t ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 ssize_t ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
 {
 	ssize_t	ret = -1;
+#ifdef WITH_OPENSSL
+	int	iret;
+#endif
 
 	if (!client->ssl_connected) {
 		return -1;
@@ -679,7 +697,7 @@ ssize_t ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
 	 * but smaller systems with 16-bits might be endangered :)
 	 */
 	assert(buflen <= INT_MAX);
-	int iret = SSL_write(client->ssl, buf, (int)buflen);
+	iret = SSL_write(client->ssl, buf, (int)buflen);
 	assert(iret <= SSIZE_MAX);
 	ret = (ssize_t)iret;
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
@@ -689,7 +707,7 @@ ssize_t ssl_write(nut_ctype_t *client, const char *buf, size_t buflen)
 	ret = PR_Write(client->ssl, buf, (PRInt32)buflen);
 #endif /* WITH_OPENSSL | WITH_NSS */
 
-	upsdebugx(5, "ssl_write ret=%zd", ret);
+	upsdebugx(5, "ssl_write ret=%" PRIiSIZE, ret);
 
 	return ret;
 }

@@ -121,7 +121,7 @@ static const unsigned int therm_tbl[] =
 	(unsigned int)0x3CC
 };
 
-static const unsigned int therm_tbl_size = sizeof(therm_tbl)/sizeof(therm_tbl[0]);
+static const unsigned int therm_tbl_size = SIZEOF_ARRAY(therm_tbl);
 
 static const char *openups_charging_fun(double value);
 static const char *openups_discharging_fun(double value);

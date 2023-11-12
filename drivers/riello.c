@@ -4,8 +4,8 @@
  * Documents describing the protocol implemented by this driver can be
  * found online at:
  *
- *   http://www.networkupstools.org/ups-protocols/riello/PSGPSER-0104.pdf
- *   http://www.networkupstools.org/ups-protocols/riello/PSSENTR-0100.pdf
+ *   https://www.networkupstools.org/protocols/riello/PSGPSER-0104.pdf
+ *   https://www.networkupstools.org/protocols/riello/PSSENTR-0100.pdf
  *
  * Copyright (C) 2012 - Elio Parisi <e.parisi@riello-ups.com>
  *
@@ -27,7 +27,6 @@
  */
 
 #include <string.h>
-#include <stdint.h>
 
 #include "main.h"
 #include "riello.h"
@@ -68,14 +67,12 @@ uint16_t riello_calc_CRC(uint8_t type, uint8_t *buff, uint16_t size, uint8_t che
 				size--;
 				CRC_Word = 0x554D;
 				while(size--) {
-					pom  = (CRC_Word ^ *buff) & 0x00ff;
-					pom  = (pom ^ (pom << 4)) & 0x00ff;
-					/* Thanks to &0xff above, pom is at most 255 --
-					 * so shifted by 8 bits is still uint16_t range
+					pom = (CRC_Word ^ *buff) & 0x00ff;
+					pom = (pom ^ (pom << 4)) & 0x00ff;
+					/* Thanks to &0x00ff above, pom is at most 255 --
+					 * so shifted by 8 bits is still uint16_t range:
 					 */
-					pom  = (uint16_t)(pom << 8);
-					pom ^= (pom << 3);
-					pom ^= (pom >> 4);
+					pom = (pom << 8) ^ (pom << 3) ^ (pom >> 4);
 					CRC_Word = (CRC_Word >> 8) ^ pom;
 					buff++;
 				}
@@ -915,7 +912,7 @@ void riello_parse_sentr(uint8_t* buffer, TRielloData* data)
 		data->StatusCode[2] |= 0x01;
 }
 
-void riello_init_serial()
+void riello_init_serial(void)
 {
 	wait_packet = 1;
 	buf_ptr_length = 0;

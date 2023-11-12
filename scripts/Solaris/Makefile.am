@@ -29,8 +29,12 @@ sbin_SCRIPTS = ../upsdrvsvcctl/upsdrvsvcctl
 SOLARIS_CHECK_TARGETS += check-local-solaris-smf
 endif
 
+if WITH_SOLARIS_INIT
 solarisinitscriptdir = @datadir@/solaris-init
-solarisinitscript_SCRIPTS = nut
+solarisinitscript_SCRIPTS = nut reset-ups-usb-solaris.sh.sample
+endif
+
+EXTRA_DIST += reset-ups-usb-solaris.sh.sample
 
 SOLARIS_PACKAGE_TARGETS =
 
@@ -54,7 +58,7 @@ SOLARIS_PACKAGE_SVR4_INSTALLSCRIPTS = preinstall postinstall preremove postremov
 SOLARIS_PACKAGE_SVR4_INSTALLDATA = pkginfo
 package-solaris-svr4: $(SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLDATA)
 	if test -n "@auglensdir@" && test -d "$(DESTDIR)@auglensdir@" ; then \
-		mkdir -p "$(DESTDIR)@datadir@/augeas-lenses" && \
+		$(MKDIR_P) "$(DESTDIR)@datadir@/augeas-lenses" && \
 		cd "$(DESTDIR)@auglensdir@" && \
 		( cp -prf ./ "$(DESTDIR)@datadir@/augeas-lenses/" || cp -rf ./ "$(DESTDIR)@datadir@/augeas-lenses/" ) ; fi
 	cd $(PROTOTYPE_DIR) && find . -print | pkgproto > prototype1

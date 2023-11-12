@@ -14,6 +14,9 @@ if test -z "${nut_have_libusb_seen}"; then
 	nut_have_libusb_seen=yes
 	NUT_CHECK_PKGCONFIG
 
+	dnl Our USB matching relies on regex abilities
+	NUT_CHECK_LIBREGEX
+
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"
 	LIBS_ORIG="${LIBS}"
@@ -79,6 +82,18 @@ if test -z "${nut_have_libusb_seen}"; then
 	AS_IF([test x"${LIBUSB_1_0_VERSION}" != xnone],
 		[LIBUSB_VERSION="${LIBUSB_1_0_VERSION}"
 		 nut_usb_lib="(libusb-1.0)"
+		 dnl ...except on Windows, where we support libusb-0.1(-compat)
+		 dnl better so far (allow manual specification though, to let
+		 dnl someone finally develop the on-par support):
+		 AS_IF([test x"${LIBUSB_0_1_VERSION}" != xnone], [
+			AS_CASE(["${target_os}"],
+				[*mingw*], [
+					AC_MSG_NOTICE([mingw builds prefer libusb-0.1(-compat) if available])
+					LIBUSB_VERSION="${LIBUSB_0_1_VERSION}"
+					nut_usb_lib="(libusb-0.1)"
+					])
+				]
+			)
 		],
 		[AS_IF([test x"${LIBUSB_0_1_VERSION}" != xnone],
 			[LIBUSB_VERSION="${LIBUSB_0_1_VERSION}"
@@ -222,15 +237,39 @@ if test -z "${nut_have_libusb_seen}"; then
 			fi
 		else
 			dnl libusb 0.1, or missing pkg-config :
-			AC_CHECK_HEADERS(usb.h, [nut_have_libusb=yes], [nut_have_libusb=no], [AC_INCLUDES_DEFAULT])
+			AC_CHECK_HEADERS(usb.h, [nut_have_libusb=yes], [
+				nut_have_libusb=no
+				dnl Per https://sourceforge.net/projects/libusb-win32/files/libusb-win32-releases/1.2.6.0/
+				dnl this project (used among alternatives in MSYS2/MinGW builds)
+				dnl uses a different include filename to avoid conflict with
+				dnl a WDK header:
+				AS_CASE(["${target_os}"],
+					[*mingw*], [
+						AC_MSG_NOTICE([try alternate header name for mingw builds with libusb-win32])
+						AC_CHECK_HEADERS(lusb0_usb.h, [
+							nut_usb_lib="(libusb-0.1)"
+							nut_have_libusb=yes
+						], [], [AC_INCLUDES_DEFAULT])
+					])
+				],
+				[AC_INCLUDES_DEFAULT])
 			AC_CHECK_FUNCS(usb_init, [], [
 				dnl Some systems may just have libusb in their standard
 				dnl paths, but not the pkg-config or libusb-config data
-				AS_IF([test "${nut_have_libusb}" = "yes" && test "$LIBUSB_VERSION" = "none" && test -z "$LIBS"],
+				AS_IF([test "${nut_have_libusb}" = "yes" && test "$LIBUSB_VERSION" = "none" && test -z "$LIBS" -o x"$LIBS" = x"-lusb" ],
 					[AC_MSG_CHECKING([if libusb is just present in path])
 					 LIBS="-L/usr/lib -L/usr/local/lib -lusb"
+					 dnl TODO: Detect bitness for trying /mingw32 or /usr/$ARCH as well?
+					 dnl This currently caters to mingw-w64-x86_64-libusb-win32 of MSYS2:
+					 AS_CASE(["${target_os}"],
+						[*mingw*], [LIBS="-L/mingw64/lib $LIBS"])
 					 unset ac_cv_func_usb_init || true
-					 AC_CHECK_FUNCS(usb_init, [], [nut_have_libusb=no])
+					 AC_CHECK_FUNCS(usb_init, [], [
+						AC_MSG_CHECKING([if libusb0 is just present in path])
+						LIBS="$LIBS"0
+						unset ac_cv_func_usb_init || true
+						AC_CHECK_FUNCS(usb_init, [nut_usb_lib="(libusb-0.1)"], [nut_have_libusb=no])
+						])
 					 AC_MSG_RESULT([${nut_have_libusb}])
 					], [nut_have_libusb=no]
 				)]
@@ -250,6 +289,7 @@ if test -z "${nut_have_libusb_seen}"; then
 		nut_have_libusb=no
 	fi
 
+	nut_with_usb_busport=no
 	AS_IF([test "${nut_have_libusb}" = "yes"], [
 		dnl ----------------------------------------------------------------------
 		dnl additional USB-related checks
@@ -281,8 +321,23 @@ if test -z "${nut_have_libusb_seen}"; then
 				CFLAGS="${CFLAGS} -lpthread"
 				]
 		)
+
+		dnl AC_MSG_CHECKING([for libusb bus port support])
+		dnl Per https://github.com/networkupstools/nut/issues/2043#issuecomment-1721856494 :
+		dnl #if defined(LIBUSB_API_VERSION) && (LIBUSB_API_VERSION >= 0x01000102)
+		dnl DEFINE WITH_USB_BUSPORT
+		dnl #endif
+		AC_CHECK_FUNCS(libusb_get_port_number, [nut_with_usb_busport=yes])
 	])
 	AC_LANG_POP([C])
+
+	AS_IF([test x"${nut_with_usb_busport}" = xyes], [
+		AC_DEFINE(WITH_USB_BUSPORT, 1,
+			[Define to 1 for libusb versions where we can support "busport" USB matching value.])
+	], [
+		AC_DEFINE(WITH_USB_BUSPORT, 0,
+			[Define to 1 for libusb versions where we can support "busport" USB matching value.])
+	])
 
 	AS_IF([test "${nut_have_libusb}" = "yes"], [
 		LIBUSB_CFLAGS="${CFLAGS}"

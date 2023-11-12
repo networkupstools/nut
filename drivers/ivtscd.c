@@ -21,10 +21,11 @@
 #include "config.h"
 #include "main.h"
 #include "serial.h"
+#include "nut_stdint.h"
 #include "attribute.h"
 
 #define DRIVER_NAME	"IVT Solar Controller driver"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_VERSION	"0.04"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -115,7 +116,7 @@ static ssize_t ivt_status(void)
 	ret = sscanf(reply, "R:%f;%f;%f;%f;%f;%f;%f;", &battery.voltage.act, &battery.current.act, &battery.temperature,
 					&battery.voltage.min, &battery.voltage.max, &battery.current.min, &battery.current.max);
 
-	upsdebugx(3, "Parsed %zd parameters from reply", ret);
+	upsdebugx(3, "Parsed %" PRIiSIZE " parameters from reply", ret);
 	return ret;
 }
 
@@ -181,9 +182,6 @@ void upsdrv_updateinfo(void)
 }
 
 void upsdrv_shutdown(void)
-	__attribute__((noreturn));
-
-void upsdrv_shutdown(void)
 {
 	while (1) {
 
@@ -195,7 +193,10 @@ void upsdrv_shutdown(void)
 			continue;
 		}
 
-		fatalx(EXIT_SUCCESS, "Power is back!");
+		/* Hmmm, why was this an exit-case before? fatalx(EXIT_SUCCESS...) */
+		upslogx(LOG_ERR, "Power is back!");
+		set_exit_flag(-2);	/* EXIT_SUCCESS */
+		return;
 	}
 }
 

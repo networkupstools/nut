@@ -30,7 +30,7 @@
 #include <timehead.h>
 
 #define DRIVER_NAME "NUT ADELSYSTEM DC-UPS CB/CBI driver"
-#define DRIVER_VERSION "0.01"
+#define DRIVER_VERSION "0.02"
 
 /* variables */
 static modbus_t *mbctx = NULL;							/* modbus memory context */
@@ -38,7 +38,7 @@ static devstate_t *dstate = NULL;						/* device state context */
 static int errcnt = 0;									/* modbus access error counter */
 static char *device_mfr = DEVICE_MFR;					/* device manufacturer */
 static char *device_model = DEVICE_MODEL;				/* device model */
-static char *device_type = DEVICE_TYPE;					/* device model */
+static char *device_type = DEVICE_TYPE_STRING;				/* device type (e.g. UPS, PDU...) */
 static int ser_baud_rate = BAUD_RATE;					/* serial port baud rate */
 static char ser_parity = PARITY;						/* serial port parity */
 static int ser_data_bit = DATA_BIT;						/* serial port data bit */
@@ -657,25 +657,25 @@ int register_read(modbus_t *mb, int addr, regtype_t type, void *data)
 	int rval = -1;
 
 	/* register bit masks */
-	uint mask8 = 0x00FF;
-	uint mask16 = 0xFFFF;
+	uint16_t mask8 = 0x00FF;
+	uint16_t mask16 = 0xFFFF;
 
 	switch (type) {
 		case COIL:
 			rval = modbus_read_bits(mb, addr, 1, (uint8_t *)data);
-			*(uint *)data = *(uint *)data & mask8;
+			*(uint16_t *)data = *(uint16_t *)data & mask8;
 			break;
 		case INPUT_B:
 			rval = modbus_read_input_bits(mb, addr, 1, (uint8_t *)data);
-			*(uint *)data = *(uint *)data & mask8;
+			*(uint16_t *)data = *(uint16_t *)data & mask8;
 			break;
 		case INPUT_R:
 			rval = modbus_read_input_registers(mb, addr, 1, (uint16_t *)data);
-			*(uint *)data = *(uint *)data & mask16;
+			*(uint16_t *)data = *(uint16_t *)data & mask16;
 			break;
 		case HOLDING:
 			rval = modbus_read_registers(mb, addr, 1, (uint16_t *)data);
-			*(uint *)data = *(uint *)data & mask16;
+			*(uint16_t *)data = *(uint16_t *)data & mask16;
 			break;
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
@@ -723,7 +723,7 @@ int register_read(modbus_t *mb, int addr, regtype_t type, void *data)
 			modbus_reconnect();
 		}
 	}
-	upsdebugx(3, "register addr: 0x%x, register type: %d read: %d",addr, type, *(uint *)data);
+	upsdebugx(3, "register addr: 0x%x, register type: %d read: %u",addr, type, *(unsigned int *)data);
 	return rval;
 }
 
@@ -733,16 +733,16 @@ int register_write(modbus_t *mb, int addr, regtype_t type, void *data)
 	int rval = -1;
 
 	/* register bit masks */
-	uint mask8 = 0x00FF;
-	uint mask16 = 0xFFFF;
+	uint16_t mask8 = 0x00FF;
+	uint16_t mask16 = 0xFFFF;
 
 	switch (type) {
 		case COIL:
-			*(uint *)data = *(uint *)data & mask8;
+			*(uint16_t *)data = *(uint16_t *)data & mask8;
 			rval = modbus_write_bit(mb, addr, *(uint8_t *)data);
 			break;
 		case HOLDING:
-			*(uint *)data = *(uint *)data & mask16;
+			*(uint16_t *)data = *(uint16_t *)data & mask16;
 			rval = modbus_write_register(mb, addr, *(uint16_t *)data);
 			break;
 
@@ -780,7 +780,7 @@ int register_write(modbus_t *mb, int addr, regtype_t type, void *data)
 			modbus_reconnect();
 		}
 	}
-	upsdebugx(3, "register addr: 0x%x, register type: %d read: %d",addr, type, *(uint *)data);
+	upsdebugx(3, "register addr: 0x%x, register type: %d read: %u",addr, type, *(unsigned int *)data);
 	return rval;
 }
 
@@ -847,9 +847,9 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 	int n;
 	int rval;						/* return value */
 	static char *ptr = NULL;		/* temporary pointer */
-	uint reg_val;					/* register value */
+	unsigned int reg_val;					/* register value */
 #if READALL_REGS == 0
-	uint num;						/* register number */
+	unsigned int num;						/* register number */
 	regtype_t rtype;				/* register type */
 	int addr;						/* register address */
 #endif
@@ -900,13 +900,16 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 		case LVDC:					/* "output.voltage" */
 		case LCUR:					/* "output.current" */
 			if (reg_val != 0) {
+				char	*fval_s;
+				double	fval;
+
 				state->reg.val.ui16 = reg_val;
-				double fval = reg_val / 1000.00; /* convert mV to V, mA to A */
+				fval = reg_val / 1000.00; /* convert mV to V, mA to A */
 				n = snprintf(NULL, 0, "%.2f", fval);
 				if (ptr != NULL) {
 					free(ptr);
 				}
-				char *fval_s = (char *)xmalloc(sizeof(char) * (n + 1));
+				fval_s = (char *)xmalloc(sizeof(char) * (n + 1));
 				ptr = fval_s;
 				sprintf(fval_s, "%.2f", fval);
 				state->reg.strval = fval_s;
@@ -921,12 +924,14 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 		case BCEF:
 		case VAC:					/* "input.voltage" */
 			if (reg_val != 0) {
+				char	*reg_val_s;
+
 				state->reg.val.ui16 = reg_val;
 				n = snprintf(NULL, 0, "%d", reg_val);
 				if (ptr != NULL) {
 					free(ptr);
 				}
-				char *reg_val_s = (char *)xmalloc(sizeof(char) * (n + 1));
+				reg_val_s = (char *)xmalloc(sizeof(char) * (n + 1));
 				ptr = reg_val_s;
 				sprintf(reg_val_s, "%d", reg_val);
 				state->reg.strval = reg_val_s;
@@ -938,13 +943,16 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 			break;
 		case BSOC:					/* "battery.charge" */
 			if (reg_val != 0) {
+				double	fval;
+				char	*fval_s;
+
 				state->reg.val.ui16 = reg_val;
-				double fval = (double )reg_val * regs[BSOC].scale;
+				fval = (double )reg_val * regs[BSOC].scale;
 				n = snprintf(NULL, 0, "%.2f", fval);
 				if (ptr != NULL) {
 					free(ptr);
 				}
-				char *fval_s = (char *)xmalloc(sizeof(char) * (n + 1));
+				fval_s = (char *)xmalloc(sizeof(char) * (n + 1));
 				ptr = fval_s;
 				sprintf(fval_s, "%.2f", fval);
 				state->reg.strval = fval_s;
@@ -956,16 +964,21 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 			break;
 		case BTMP:					/* "battery.temperature" */
 		case OTMP:					/* "ups.temperature" */
-			state->reg.val.ui16 = reg_val;
-			double fval = reg_val - 273.15;
-			n = snprintf(NULL, 0, "%.2f", fval);
-			char *fval_s = (char *)xmalloc(sizeof(char) * (n + 1));
-			if (ptr != NULL) {
-				free(ptr);
+			{ /* scoping */
+				double	fval;
+				char	*fval_s;
+
+				state->reg.val.ui16 = reg_val;
+				fval = reg_val - 273.15;
+				n = snprintf(NULL, 0, "%.2f", fval);
+				fval_s = (char *)xmalloc(sizeof(char) * (n + 1));
+				if (ptr != NULL) {
+					free(ptr);
+				}
+				ptr = fval_s;
+				sprintf(fval_s, "%.2f", fval);
+				state->reg.strval = fval_s;
 			}
-			ptr = fval_s;
-			sprintf(fval_s, "%.2f", fval);
-			state->reg.strval = fval_s;
 			upsdebugx(3, "get_dev_state: variable: %s", state->reg.strval);
 			break;
 		case PMNG:					/* "ups.status" & "battery.charge" */
@@ -1155,15 +1168,18 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 		 * memory corruptions and buggy inputs below...
 		 */
 		default:
-			state->reg.val.ui16 = reg_val;
-			n = snprintf(NULL, 0, "%d", reg_val);
-			if (ptr != NULL) {
-				free(ptr);
+			{ /* scoping */
+				char	*reg_val_s;
+				state->reg.val.ui16 = reg_val;
+				n = snprintf(NULL, 0, "%d", reg_val);
+				if (ptr != NULL) {
+					free(ptr);
+				}
+				reg_val_s = (char *)xmalloc(sizeof(char) * (n + 1));
+				ptr = reg_val_s;
+				sprintf(reg_val_s, "%d", reg_val);
+				state->reg.strval = reg_val_s;
 			}
-			char *reg_val_s = (char *)xmalloc(sizeof(char) * (n + 1));
-			ptr = reg_val_s;
-			sprintf(reg_val_s, "%d", reg_val);
-			state->reg.strval = reg_val_s;
 			break;
 #ifdef __clang__
 # pragma clang diagnostic pop
@@ -1281,6 +1297,7 @@ void modbus_reconnect(void)
 	int rval;
 
 	upsdebugx(1, "modbus_reconnect, trying to reconnect to modbus server");
+	dstate_setinfo("driver.state", "reconnect.trying");
 
 	/* clear current modbus context */
 	modbus_close(mbctx);
@@ -1340,5 +1357,7 @@ void modbus_reconnect(void)
 	}
 /* #elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval) // some un-castable type in fields */
 #endif /* NUT_MODBUS_TIMEOUT_ARG_* */
+
+	dstate_setinfo("driver.state", "quiet");
 }
 

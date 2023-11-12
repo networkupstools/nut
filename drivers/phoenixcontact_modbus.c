@@ -24,7 +24,7 @@
 #include <modbus.h>
 
 #define DRIVER_NAME	"NUT PhoenixContact Modbus driver"
-#define DRIVER_VERSION	"0.02"
+#define DRIVER_VERSION	"0.03"
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define MODBUS_SLAVE_ID 192
@@ -57,11 +57,11 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
+	uint16_t tab_reg[64];
+
 	errcount = 0;
 
 	upsdebugx(2, "upsdrv_updateinfo");
-
-	uint16_t tab_reg[64];
 
 	mrir(modbus_ctx, 29697, 3, tab_reg);
 
@@ -132,11 +132,10 @@ void upsdrv_updateinfo(void)
 }
 
 void upsdrv_shutdown(void)
-	__attribute__((noreturn));
-
-void upsdrv_shutdown(void)
 {
-	fatalx(EXIT_FAILURE, "shutdown not supported");
+	/* replace with a proper shutdown function */
+	upslogx(LOG_ERR, "shutdown not supported");
+	set_exit_flag(-1);
 }
 
 void upsdrv_help(void)

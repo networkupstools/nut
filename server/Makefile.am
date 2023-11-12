@@ -9,19 +9,7 @@ $(top_builddir)/common/libparseconf.la: dummy
 # files. In any case, CFLAGS are only -I options, so there is no harm,
 # but only add them if we really use the target.
 AM_CFLAGS = -I$(top_srcdir)/include
-if WITH_WRAP
-  AM_CFLAGS += $(LIBWRAP_CFLAGS)
-endif
-if WITH_SSL
-  AM_CFLAGS += $(LIBSSL_CFLAGS)
-endif
 LDADD = $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la $(NETLIBS)
-if WITH_WRAP
-   LDADD += $(LIBWRAP_LIBS)
-endif
-if WITH_SSL
-   LDADD += $(LIBSSL_LIBS)
-endif
 
 sbin_PROGRAMS = upsd
 EXTRA_PROGRAMS = sockdebug
@@ -31,8 +19,29 @@ upsd_SOURCES = upsd.c user.c conf.c netssl.c sstate.c desc.c		\
  conf.h nut_ctype.h desc.h netcmds.h neterr.h netget.h netinstcmd.h		\
  netlist.h netmisc.h netset.h netuser.h netssl.h sstate.h stype.h upsd.h   \
  upstype.h user-data.h user.h
+upsd_CFLAGS = $(AM_CFLAGS)
+upsd_LDADD = $(LDADD)
 
-sockdebug_SOURCES = sockdebug.c
+if WITH_WRAP
+  upsd_CFLAGS += $(LIBWRAP_CFLAGS)
+  upsd_LDADD += $(LIBWRAP_LIBS)
+endif
+if WITH_SSL
+  upsd_CFLAGS += $(LIBSSL_CFLAGS)
+  upsd_LDADD += $(LIBSSL_LIBS)
+endif
+
+# Developer, troubleshooting, or odd automation aid tool:
+if HAVE_WINDOWS
+  sockdebug_SOURCES = pipedebug.c
+else !HAVE_WINDOWS
+  sockdebug_SOURCES = sockdebug.c
+endif !HAVE_WINDOWS
+
+if WITH_DEV
+# Have it installed properly
+libexec_PROGRAMS = sockdebug
+endif
 
 dummy:
 
@@ -40,5 +49,6 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
 # the root Makefile.am takes care of that!
-#clean-local:
-#	rm -rf $(builddir)/.deps
+clean-local:
+	$(AM_V_at)rm -rf $(EXTRA_PROGRAMS)
+#	$(AM_V_at)rm -rf $(builddir)/.deps

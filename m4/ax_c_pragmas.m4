@@ -674,6 +674,33 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
     AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wcast-align" (outside functions)])
   ])
 
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wcast-function-type-strict"],
+    [ax_cv__pragma__gcc__diags_ignored_cast_function_type_strict],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[void func(void) {
+#pragma GCC diagnostic ignored "-Wcast-function-type-strict"
+}
+]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_cast_function_type_strict=yes],
+      [ax_cv__pragma__gcc__diags_ignored_cast_function_type_strict=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_cast_function_type_strict" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wcast-function-type-strict"])
+  ])
+
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wcast-function-type-strict" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_cast_function_type_strict_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wcast-function-type-strict"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_cast_function_type_strict_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_cast_function_type_strict_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_cast_function_type_strict_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wcast-function-type-strict" (outside functions)])
+  ])
+
   AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wstrict-prototypes"],
     [ax_cv__pragma__gcc__diags_ignored_strict_prototypes],
     [AC_COMPILE_IFELSE(
@@ -936,46 +963,77 @@ fi
 ])
 
 AC_DEFUN([AX_C_PRINTF_STRING_NULL], [
+dnl The following code crashes on some libc implementations (e.g. Solaris 8)
+dnl TODO: We may need to update NUT codebase to use NUT_STRARG() macro more
+dnl often and consistently, or find a way to tweak upsdebugx() etc. varargs.
+
 if test -z "${nut_have_ax_c_printf_string_null_seen}"; then
   nut_have_ax_c_printf_string_null_seen="yes"
   AC_REQUIRE([AX_RUN_OR_LINK_IFELSE])dnl
 
+  dnl Here we do not care if the compiler formally complains about
+  dnl undefined behavior of printf("%s", NULL) as long as it works
+  dnl in practice (compiler or libc implement a sane fallback):
+  myWARN_CFLAGS=""
+  AS_IF([test "${GCC}" = "yes" || test "${CLANGCC}" = "yes"],
+    [myWARN_CFLAGS="-Wno-format-truncation -Wno-format-overflow"])
+
   dnl ### To be sure, bolt the language
   AC_LANG_PUSH([C])
 
-  AC_CACHE_CHECK([for practical support to pritnf("%s", NULL)],
+  AC_CACHE_CHECK([for practical support to printf("%s", NULL)],
     [ax_cv__printf_string_null],
     [AX_RUN_OR_LINK_IFELSE(
         [AC_LANG_PROGRAM([dnl
 #include <stdio.h>
-#include <strings.h>
-], [dnl
+#include <string.h>
+], [[
 char buf[128];
 char *s = NULL;
+/* The following line may issue pedantic static analysis warnings (ignored);
+ * it may also crash (segfault) during a run on some systems - hence the test.
+ */
 int res = snprintf(buf, sizeof(buf), "%s", s);
 buf[sizeof(buf)-1] = '\0';
 if (res < 0) {
-    printf(stderr, "FAILED to snprintf() a NULL string argument");
-    exit 1;
+    fprintf(stderr, "FAILED to snprintf() a variable NULL string argument\n");
+    return 1;
 }
-if (buf[0] == '\0')
-    printf(stderr, "RETURNED empty string from snprintf() with a NULL string argument");
-    exit 0;
+if (buf[0] == '\0') {
+    fprintf(stderr, "RETURNED empty string from snprintf() with a variable NULL string argument\n");
+    return 0;
 }
-if (strcasestr(buf, 'null') == NULL)
-    printf(stderr, "RETURNED some string from snprintf() with a NULL string argument: '%s'", buf);
-    exit 0;
+if (strstr(buf, "null") == NULL) {
+    fprintf(stderr, "RETURNED some string from snprintf() with a variable NULL string argument: '%s'\n", buf);
+    return 0;
 }
-printf(stderr, "SUCCESS: RETURNED a string that contains something like 'null' from snprintf() with a NULL string argument: '%s'", buf);
-exit 0;
-            ])],
-        [ax_cv__printf_string_null=yes],
-        [ax_cv__printf_string_null=no]
+fprintf(stderr, "SUCCESS: RETURNED a string that contains something like 'null' from snprintf() with a variable NULL string argument: '%s'\n", buf);
+
+res = printf("%s", NULL);
+if (res < 0) {
+    fprintf(stderr, "FAILED to printf() an explicit NULL string argument (to stdout)\n");
+    return 1;
+}
+return 0;
+            ]])],
+        [ax_cv__printf_string_null=yes
+        ],
+        [ax_cv__printf_string_null=no
+        ],
+        [${myWARN_CFLAGS}]
     )]
   )
+  unset myWARN_CFLAGS
 
   AS_IF([test "$ax_cv__printf_string_null" = "yes"],[
-    AC_DEFINE([HAVE_PRINTF_STRING_NULL], 1, [define if your libc can printf("%s", NULL) sanely])
+    AM_CONDITIONAL([REQUIRE_NUT_STRARG], [false])
+    AC_DEFINE([REQUIRE_NUT_STRARG], [0],
+      [Define to 0 if your libc can printf("%s", NULL) sanely, or to 1 if your libc requires workarounds to print NULL values.])
+  ],[
+    AM_CONDITIONAL([REQUIRE_NUT_STRARG], [true])
+    AC_DEFINE([REQUIRE_NUT_STRARG], [1],
+      [Define to 0 if your libc can printf("%s", NULL) sanely, or to 1 if your libc requires workarounds to print NULL values.])
+    AC_MSG_WARN([Your C library requires workarounds to print NULL values; if something crashes with a segmentation fault (especially during verbose debug) - that may be why])
   ])
 
   AC_LANG_POP([C])

@@ -6,10 +6,14 @@ NAME
 
 apcupsd-ups - Driver for apcupsd client access
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the specific features of the
+*apcupsd-ups* -h
+
+*apcupsd-ups* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the specific features of the
 *apcupsd-ups* driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
@@ -91,10 +95,11 @@ if you notice a mismatch in units).
 LIMITATIONS
 -----------
 
-Access to *apcupsd* is strictly read only: no commands can be issued. This
-stems from the design of *apcupsd*, where the settings are changed in
-*apctest*. In order to run *apctest*, *apcupsd* must be stopped (and *apcupsd*
-exposes the UPS to the network).
+Access to *apcupsd* is strictly read only: no commands can be issued.
+This stems from the design of *apcupsd*, where the settings are changed
+in *apctest*. In order to run *apctest*, *apcupsd* must be stopped
+(and it is *apcupsd* exposes the UPS to the network and to this NUT
+driver as its client).
 
 AUTHOR
 ------
@@ -110,5 +115,5 @@ linkman:nutupsdrv[8]
 Internet Resources:
 ~~~~~~~~~~~~~~~~~~~
 
-* The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
 * The apcupsd home page: http://www.apcupsd.org/

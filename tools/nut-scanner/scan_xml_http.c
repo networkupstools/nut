@@ -27,22 +27,35 @@
 
 #include "common.h"
 #include "nut-scan.h"
+#include "nut_stdint.h"
 
 #ifdef WITH_NEON
+#ifndef WIN32
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <sys/select.h>
+#define SOCK_OPT_CAST
+#else
+#define SOCK_OPT_CAST (char*)
+/* Those 2 files for support of getaddrinfo, getnameinfo and freeaddrinfo
+   on Windows 2000 and older versions */
+#include <ws2tcpip.h>
+#include <wspiapi.h>
+# if ! HAVE_INET_PTON
+#  include "wincompat.h"	/* fallback inet_ntop where needed */
+# endif
+#endif
+
 #include <string.h>
 #include <stdio.h>
-#include <sys/select.h>
 #include <errno.h>
 #include <ne_xml.h>
 #include <ltdl.h>
 
 /* dynamic link library stuff */
-static char * libname = "libneon"; /* Note: this is for info messages, not the SONAME */
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
 
@@ -126,7 +139,9 @@ int nutscan_load_neon_library(const char *libname_path)
 
 	return 1;
 err:
-	fprintf(stderr, "Cannot load XML library (%s) : %s. XML search disabled.\n", libname, dl_error);
+	fprintf(stderr,
+		"Cannot load XML library (%s) : %s. XML search disabled.\n",
+		libname_path, dl_error);
 	dl_handle = (void *)1;
 	lt_dlexit();
 	return 0;
@@ -177,7 +192,6 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 	int sockopt_on = 1;
 	struct sockaddr_in sockAddress_udp;
 	socklen_t sockAddressLength = sizeof(sockAddress_udp);
-	memset(&sockAddress_udp, 0, sizeof(sockAddress_udp));
 	fd_set fds;
 	struct timeval timeout;
 	int ret;
@@ -185,8 +199,18 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 	char string[SMALLBUF];
 	ssize_t recv_size;
 	int i;
-
 	nutscan_device_t * nut_dev = NULL;
+#ifdef WIN32
+	WSADATA WSAdata;
+#endif
+
+	memset(&sockAddress_udp, 0, sizeof(sockAddress_udp));
+
+#ifdef WIN32
+	WSAStartup(2,&WSAdata);
+	atexit((void(*)(void))WSACleanup);
+#endif
+
 	if (sec != NULL) {
 /*		if (sec->port_http > 0 && sec->port_http <= 65534)
  *			port_http = sec->port_http; */
@@ -218,15 +242,16 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 		if (ip == NULL) {
 			upsdebugx(2,
 				"nutscan_scan_xml_http_generic() : scanning connected network segment(s) "
-				"with a broadcast, attempt %d of %d with a timeout of %jd usec",
+				"with a broadcast, attempt %d of %d with a timeout of %" PRIdMAX " usec",
 				(i + 1), MAX_RETRIES, (uintmax_t)usec_timeout);
 			sockAddress_udp.sin_addr.s_addr = INADDR_BROADCAST;
-			setsockopt(peerSocket, SOL_SOCKET, SO_BROADCAST, &sockopt_on,
+			setsockopt(peerSocket, SOL_SOCKET, SO_BROADCAST,
+				SOCK_OPT_CAST &sockopt_on,
 				sizeof(sockopt_on));
 		} else {
 			upsdebugx(2,
 				"nutscan_scan_xml_http_generic() : scanning IP '%s' with a unicast, "
-				"attempt %d of %d with a timeout of %jd usec",
+				"attempt %d of %d with a timeout of %" PRIdMAX " usec",
 				ip, (i + 1), MAX_RETRIES, (uintmax_t)usec_timeout);
 			inet_pton(AF_INET, ip, &(sockAddress_udp.sin_addr));
 		}
@@ -258,6 +283,9 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 			while ((ret = select(peerSocket + 1, &fds, NULL, NULL,
 						&timeout))
 			) {
+				ne_xml_parser	*parser;
+				int	parserFailed;
+
 				retNum ++;
 				upsdebugx(5, "nutscan_scan_xml_http_generic() : request to %s, "
 					"loop #%d/%d, response #%d",
@@ -315,12 +343,12 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 					string, port_udp);
 				nut_dev->type = TYPE_XML;
 				/* Try to read device type */
-				ne_xml_parser *parser = (*nut_ne_xml_create)();
+				parser = (*nut_ne_xml_create)();
 				(*nut_ne_xml_push_handler)(parser, startelm_cb,
 							NULL, NULL, nut_dev);
 				/* recv_size is a ssize_t, so in range of size_t */
 				(*nut_ne_xml_parse)(parser, buf, (size_t)recv_size);
-				int parserFailed = (*nut_ne_xml_failed)(parser); /* 0 = ok, nonzero = fail */
+				parserFailed = (*nut_ne_xml_failed)(parser); /* 0 = ok, nonzero = fail */
 				(*nut_ne_xml_destroy)(parser);
 
 				if (parserFailed == 0) {
@@ -482,8 +510,8 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 		if (curr_threads >= max_threads
 		|| (curr_threads >= max_threads_scantype && max_threads_scantype > 0)
 		) {
-					upsdebugx(2, "%s: already running %zu scanning threads "
-						"(launched overall: %zu), "
+					upsdebugx(2, "%s: already running %" PRIuSIZE " scanning threads "
+						"(launched overall: %" PRIuSIZE "), "
 						"waiting until some would finish",
 						__func__, curr_threads, thread_count);
 			while (curr_threads >= max_threads
@@ -499,12 +527,12 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 							ret = pthread_tryjoin_np(thread_array[i].thread, NULL);
 							switch (ret) {
 								case ESRCH:     /* No thread with the ID thread could be found - already "joined"? */
-									upsdebugx(5, "%s: Was thread #%zu joined earlier?", __func__, i);
+									upsdebugx(5, "%s: Was thread #%" PRIuSIZE " joined earlier?", __func__, i);
 									break;
 								case 0:         /* thread exited */
 									if (curr_threads > 0) {
 										curr_threads --;
-										upsdebugx(4, "%s: Joined a finished thread #%zu", __func__, i);
+										upsdebugx(4, "%s: Joined a finished thread #%" PRIuSIZE, __func__, i);
 									} else {
 										/* threadcount_mutex fault? */
 										upsdebugx(0, "WARNING: %s: Accounting of thread count "
@@ -513,13 +541,13 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 									thread_array[i].active = FALSE;
 									break;
 								case EBUSY:     /* actively running */
-									upsdebugx(6, "%s: thread #%zu still busy (%i)",
+									upsdebugx(6, "%s: thread #%" PRIuSIZE " still busy (%i)",
 										__func__, i, ret);
 									break;
 								case EDEADLK:   /* Errors with thread interactions... bail out? */
 								case EINVAL:    /* Errors with thread interactions... bail out? */
 								default:        /* new pthreads abilities? */
-									upsdebugx(5, "%s: thread #%zu reported code %i",
+									upsdebugx(5, "%s: thread #%" PRIuSIZE " reported code %i",
 										__func__, i, ret);
 									break;
 							}
@@ -555,13 +583,14 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 
 #ifdef HAVE_PTHREAD
 					if (pthread_create(&thread, NULL, nutscan_scan_xml_http_generic, (void *)tmp_sec) == 0) {
+						nutscan_thread_t	*new_thread_array;
 # ifdef HAVE_PTHREAD_TRYJOIN
 						pthread_mutex_lock(&threadcount_mutex);
 						curr_threads++;
 # endif /* HAVE_PTHREAD_TRYJOIN */
 
 						thread_count++;
-						nutscan_thread_t *new_thread_array = realloc(thread_array,
+						new_thread_array = realloc(thread_array,
 							thread_count*sizeof(nutscan_thread_t));
 						if (new_thread_array == NULL) {
 							upsdebugx(1, "%s: Failed to realloc thread array", __func__);
@@ -597,7 +626,7 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 							if (!thread_array[i].active) {
 								/* Probably should not get here,
 								 * but handle it just in case */
-								upsdebugx(0, "WARNING: %s: Midway clean-up: did not expect thread %zu to be not active",
+								upsdebugx(0, "WARNING: %s: Midway clean-up: did not expect thread %" PRIuSIZE " to be not active",
 									__func__, i);
 								sem_post(semaphore);
 								if (max_threads_scantype > 0)
@@ -650,7 +679,7 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 					pthread_mutex_lock(&threadcount_mutex);
 					if (curr_threads > 0) {
 						curr_threads --;
-						upsdebugx(5, "%s: Clean-up: Joined a finished thread #%zu",
+						upsdebugx(5, "%s: Clean-up: Joined a finished thread #%" PRIuSIZE,
 							__func__, i);
 					} else {
 						upsdebugx(0, "WARNING: %s: Clean-up: Accounting of thread count "
@@ -702,8 +731,9 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 	return result;
 }
 
-#else /* WITH_NEON */
+#else /* not WITH_NEON */
 
+/* stub function */
 nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char * end_ip, useconds_t usec_timeout, nutscan_xml_t * sec)
 {
 	NUT_UNUSED_VARIABLE(start_ip);

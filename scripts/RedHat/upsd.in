@@ -2,6 +2,9 @@
 #
 # chkconfig: 2345 30 90
 #
+# 2022-01-04 Jim Klimov <jimklimov+nut@gmail.com>
+#  Updated .in template, double-quoted variable expansions
+#
 # 2003-01-31 Antonino Albanese <al.an@monkeysweb.net>
 #  Removed all old statements
 #  start programs as user nut
@@ -18,10 +21,10 @@
 # description: NUT upsd and its drivers directly monitor a ups and \
 #	make information from it available to other programs
 # processname: upsd
-# config: @sysconfdir@/upsd.conf
-# config: @sysconfdir@/ups.conf
+# config: @CONFPATH@/upsd.conf
+# config: @CONFPATH@/ups.conf
 
-PATH=/sbin:/bin:/usr/sbin:/usr/bin
+PATH="/sbin:/bin:/usr/sbin:/usr/bin"
 export PATH
 
 # Source function library.
@@ -29,18 +32,29 @@ export PATH
 
 # POWERDOWNFLAG *must* match that in upsmon.conf
 # Loading POWERDOWNFLAG from /etc/sysconfig/ups
-DRIVERPATH=@DRVPATH@
+DRIVERPATH="@DRVPATH@"
+NUT_SBINDIR="@SBINDIR@"
 if [ -f /etc/sysconfig/ups ]; then
   . /etc/sysconfig/ups
 else
-  POWERDOWNFLAG=/etc/killpower
-  NUTUSER=nutmon
+  POWERDOWNFLAG="@POWERDOWNFLAG@"
+  NUTUSER="@RUN_AS_USER@"
 fi
-UPSDCONF=@sysconfdir@/upsd.conf
-UPSCONF=@sysconfdir@/ups.conf
+UPSDCONF="@CONFPATH@/upsd.conf"
+UPSCONF="@CONFPATH@/ups.conf"
+
+if [ -n "$DRIVERPATH" -a -d "$DRIVERPATH" ]; then
+  PATH="$DRIVERPATH:$PATH"
+fi
+if [ -n "$NUT_SBINDIR" -a -d "$NUT_SBINDIR" ]; then
+  PATH="$NUT_SBINDIR:$PATH"
+fi
 
 # if there are no config file, bail out
-[ -f $UPSDCONF ] && [ -f $UPSCONF ] || exit 0
+[ -f "$UPSDCONF" ] && [ -f "$UPSCONF" ] || exit 0
+
+NUT_QUIET_INIT_UPSNOTIFY=true
+export NUT_QUIET_INIT_UPSNOTIFY
 
 runcmd() {
    echo -n "$1 "
@@ -58,13 +72,13 @@ case "$1" in
   start)
 	# new style drivers uses 'upsdrvctl'
 	echo -n "NUT Starting UPS model drivers: "
-	# starting ase nut user
-	daemon --user $NUTUSER `which upsdrvctl` start
+	# starting all drivers as nut user
+	daemon --user "$NUTUSER" "`which upsdrvctl`" start
 	echo
 	if [ $? -eq 0 ]; then
 		echo -n "NUT Starting UPS daemon: "
-		# starting ase nut user
-		daemon upsd -u $NUTUSER
+		# starting as nut user
+		daemon upsd -u "$NUTUSER"
 		echo
 		touch /var/lock/subsys/upsd
 	fi
@@ -107,4 +121,3 @@ case "$1" in
 	echo "Usage: upsd {start|stop|powerdown|restart|reload|status}"
 	exit 1
 esac
-

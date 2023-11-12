@@ -6,10 +6,14 @@ NAME
 
 tripplite - Driver for Tripp-Lite SmartPro UPS equipment
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the hardware-specific features of the
+*tripplite* -h
+
+*tripplite* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 tripplite driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
@@ -67,4 +71,4 @@ linkman:tripplitesu[8], linkman:tripplite_usb[8], linkman:usbhid-ups[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

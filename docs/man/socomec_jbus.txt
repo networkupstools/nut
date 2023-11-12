@@ -4,7 +4,7 @@ SOCOMEC_JBUS(8)
 NAME
 ----
 
-socomec_jbus - Driver for Socomec JBUS UPS with 
+socomec_jbus - Driver for Socomec JBUS UPS with
 RS-232 serial Modbus connection.
 
 SYNOPSIS
@@ -26,7 +26,7 @@ UPS with the following characteristics.
 
 1. Single phase and 3-phase UPS
 
-2. Connection: RS-232 
+2. Connection: RS-232
 
 These are typically provided with a Netvision WEB/SNMP management
 card / external box that would be better served by the linkman:snmp-ups[8]
@@ -39,10 +39,10 @@ Currently, it has only been tested on the following model.
 
 In theory, any Socomec JBUS model should work. It should be discovered
 as ``Unknown Socomec JBUS'' with a numeric id that I'll need to add it
-to the list of supported UPSs. 
+to the list of supported UPSs.
 
 Sadly, Socomec document only mentions DELPHYS MX and DELPHYS MX elite and
-I have the id of my own DIGYS, so chances are, your model will not be 
+I have the id of my own DIGYS, so chances are, your model will not be
 recognized but will probably mostly work. Please report successful
 or unsuccessful results to the bug tracker or the mailing list.
 Make sure to include the full model number of your UPS manually
@@ -54,8 +54,8 @@ CABLING
 -------
 
 The UPS has an RS-232 port which should be connected with a NULL-modem
-cable to a PC serial port. The UPS tested has a female DB9 connector, 
-so if you construct the cable yourself, make note of the connector type to 
+cable to a PC serial port. The UPS tested has a female DB9 connector,
+so if you construct the cable yourself, make note of the connector type to
 avoid using gender changers.
 
 RS-232 is supported on all operating systems, either via a built-in serial
@@ -87,7 +87,7 @@ A built-in serial port can be identified as `/dev/ttyS0` on Linux or one of
 INSTANT COMMANDS
 ----------------
 
-This driver does not (yet?) support sending commands to the UPS. 
+This driver does not (yet?) support sending commands to the UPS.
 
 VARIABLES
 ---------
@@ -160,7 +160,7 @@ linkman:nutupsdrv[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-* The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
 * Socomec JBUS/Modbus Reference Guide:
   https://www.socomec.com/files/live/sites/systemsite/files/GB-JBUS-MODBUS-for-Delphys-MP-and-Delphys-MX-operating-manual.pdf
 * libmodbus home page: http://libmodbus.org

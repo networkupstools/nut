@@ -23,10 +23,11 @@
 #include "main.h"
 #include "generic_modbus.h"
 #include <modbus.h>
-#include <timehead.h>
+#include "timehead.h"
+#include "nut_stdint.h"
 
 #define DRIVER_NAME "NUT Generic Modbus driver"
-#define DRIVER_VERSION  "0.03"
+#define DRIVER_VERSION  "0.04"
 
 /* variables */
 static modbus_t *mbctx = NULL;                             /* modbus memory context */
@@ -335,9 +336,13 @@ void upsdrv_shutdown(void)
 	switch (rval) {
 		case STAT_INSTCMD_FAILED:
 		case STAT_INSTCMD_INVALID:
-			fatalx(EXIT_FAILURE, "shutdown failed");
+			upslogx(LOG_ERR, "shutdown failed");
+			set_exit_flag(-1);
+			return;
 		case STAT_INSTCMD_UNKNOWN:
-			fatalx(EXIT_FAILURE, "shutdown not supported");
+			upslogx(LOG_ERR, "shutdown not supported");
+			set_exit_flag(-1);
+			return;
 		default:
 			break;
 	}
@@ -409,25 +414,25 @@ int register_read(modbus_t *mb, int addr, regtype_t type, void *data)
 	int rval = -1;
 
 	/* register bit masks */
-	uint mask8 = 0x000F;
-	uint mask16 = 0x00FF;
+	uint16_t mask8 = 0x000F;
+	uint16_t mask16 = 0x00FF;
 
 	switch (type) {
 		case COIL:
 			rval = modbus_read_bits(mb, addr, 1, (uint8_t *)data);
-			*(uint *)data = *(uint *)data & mask8;
+			*(uint16_t *)data = *(uint16_t *)data & mask8;
 			break;
 		case INPUT_B:
 			rval = modbus_read_input_bits(mb, addr, 1, (uint8_t *)data);
-			*(uint *)data = *(uint *)data & mask8;
+			*(uint16_t *)data = *(uint16_t *)data & mask8;
 			break;
 		case INPUT_R:
 			rval = modbus_read_input_registers(mb, addr, 1, (uint16_t *)data);
-			*(uint *)data = *(uint *)data & mask16;
+			*(uint16_t *)data = *(uint16_t *)data & mask16;
 			break;
 		case HOLDING:
 			rval = modbus_read_registers(mb, addr, 1, (uint16_t *)data);
-			*(uint *)data = *(uint *)data & mask16;
+			*(uint16_t *)data = *(uint16_t *)data & mask16;
 			break;
 
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
@@ -475,7 +480,7 @@ int register_read(modbus_t *mb, int addr, regtype_t type, void *data)
 			modbus_reconnect();
 		}
 	}
-	upsdebugx(3, "register addr: 0x%x, register type: %d read: %d",addr, type, *(uint *)data);
+	upsdebugx(3, "register addr: 0x%x, register type: %d read: %u",addr, type, *(unsigned int *)data);
 	return rval;
 }
 
@@ -485,16 +490,16 @@ int register_write(modbus_t *mb, int addr, regtype_t type, void *data)
 	int rval = -1;
 
 	/* register bit masks */
-	uint mask8 = 0x000F;
-	uint mask16 = 0x00FF;
+	uint16_t mask8 = 0x000F;
+	uint16_t mask16 = 0x00FF;
 
 	switch (type) {
 		case COIL:
-			*(uint *)data = *(uint *)data & mask8;
+			*(uint16_t *)data = *(uint16_t *)data & mask8;
 			rval = modbus_write_bit(mb, addr, *(uint8_t *)data);
 			break;
 		case HOLDING:
-			*(uint *)data = *(uint *)data & mask16;
+			*(uint16_t *)data = *(uint16_t *)data & mask16;
 			rval = modbus_write_register(mb, addr, *(uint16_t *)data);
 			break;
 
@@ -531,7 +536,7 @@ int register_write(modbus_t *mb, int addr, regtype_t type, void *data)
 			modbus_reconnect();
 		}
 	}
-	upsdebugx(3, "register addr: 0x%x, register type: %d read: %d",addr, type, *(uint *)data);
+	upsdebugx(3, "register addr: 0x%x, register type: %d read: %u",addr, type, *(unsigned int *)data);
 	return rval;
 }
 
@@ -702,7 +707,7 @@ int get_signal_state(devstate_t state)
 }
 
 /* get driver configuration parameters */
-void get_config_vars()
+void get_config_vars(void)
 {
 	int i; /* local index */
 
@@ -1037,6 +1042,7 @@ void modbus_reconnect(void)
 	int rval;
 
 	upsdebugx(2, "modbus_reconnect, trying to reconnect to modbus server");
+	dstate_setinfo("driver.state", "reconnect.trying");
 
 	/* clear current modbus context */
 	modbus_close(mbctx);
@@ -1096,4 +1102,6 @@ void modbus_reconnect(void)
 	}
 /* #elif (defined NUT_MODBUS_TIMEOUT_ARG_timeval) // some un-castable type in fields */
 #endif /* NUT_MODBUS_TIMEOUT_ARG_* */
+
+	dstate_setinfo("driver.state", "quiet");
 }

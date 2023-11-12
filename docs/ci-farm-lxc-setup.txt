@@ -96,6 +96,9 @@ further options for each "template" by invoking its help action, e.g.:
 ------
 ======
 
+Initial container installation (for various guest OSes)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 * Install containers like this:
 +
 ------
@@ -116,13 +119,35 @@ further options for each "template" by invoking its help action, e.g.:
     -n jenkins-debian10-mips -t debian -- \
     -r buster -a mips
 ------
-** ...or for EOLed distros, use the archive, e.g.:
+** ...or for EOLed distros, use the Debian Archive server.
+*** Install the container with Debian Archive as the mirror like this:
 +
 ------
 :; MIRROR="http://archive.debian.org/debian-archive/debian/" \
    lxc-create -P /srv/libvirt/rootfs \
     -n jenkins-debian8-s390x -t debian -- \
     -r jessie -a s390x
+------
+*** Note you may have to add trust to their (now expired) GPG keys for
+    packaging to verify signatures made at the time the key was valid,
+    by un-symlinking (if appropriate) the debootstrap script such as
+    `/usr/share/debootstrap/scripts/jessie`, commenting away the
+    `keyring /usr/share/keyrings/debian-archive-keyring.gpg` line and
+    setting `keyring /usr/share/keyrings/debian-archive-removed-keys.gpg`
+    instead. You may further have to edit `/usr/share/debootstrap/functions`
+    and/or `/usr/share/lxc/templates/lxc-debian` to honor that setting (the
+    `releasekeyring` was hard-coded in version I had installed), e.g. in the
+    latter file ensure such logic as below, and re-run the installation:
++
+------
+...
+    # If debian-archive-keyring isn't installed, fetch GPG keys directly
+    releasekeyring="`grep -E '^keyring ' "/usr/share/debootstrap/scripts/$release" | sed -e 's,^keyring ,,' -e 's,[ #].*$,,'`" 2>/dev/null
+    if [ -z $releasekeyring ]; then
+        releasekeyring=/usr/share/keyrings/debian-archive-keyring.gpg
+    fi
+    if [ ! -f $releasekeyring ]; then
+...
 ------
 ** ...Alternatively, other distributions can be used (as supported by your
    LXC scripts, typically in `/usr/share/debootstrap/scripts`), e.g. Ubuntu:
@@ -165,6 +190,102 @@ lxc.arch = x86_64
 Also note the container/system naming without underscore in "x86_64" --
    the deployed system discards the character when assigning its hostname.
    Using "amd64" is another reasonable choice here.
+** For Arch Linux you would need `pacman` tools on the host system, so see
+   https://wiki.archlinux.org/title/Install_Arch_Linux_from_existing_Linux#Using_pacman_from_the_host_system
+   for details.
+   On a Debian/Ubuntu host (assumed ready for NUT builds per
+   linkdoc:config-prereqs.txt) it would start like this:
++
+------
+:; apt-get update
+:; apt-get install meson ninja-build cmake
+
+# Some dependencies for pacman itself; note there are several libcurl builds;
+# pick another if your system constraints require you to:
+:; apt-get install libarchive-dev libcurl4-nss-dev gpg libgpgme-dev
+
+:; git clone https://gitlab.archlinux.org/pacman/pacman.git
+:; cd pacman
+
+# Iterate something like this until all needed dependencies fall
+# into line (note libdir for your host architecture):
+:; rm -rf build; mkdir build && meson build --libdir=/usr/lib/x86_64-linux-gnu
+
+:; ninja -C build
+# Depending on your asciidoc version, it may require that `--asciidoc-opts` are
+# passed as equation to a vale (not space-separated from it). Then apply this:
+#   diff --git a/doc/meson.build b/doc/meson.build
+#   -      '--asciidoc-opts', ' '.join(asciidoc_opts),
+#   +      '--asciidoc-opts='+' '.join(asciidoc_opts),
+# and re-run (meson and) ninja.
+
+# Finally when all succeeded:
+:; sudo ninja -C build install
+:; cd
+------
++
+You will also need `pacstrap` and Debian `arch-install-scripts` package
+does not deliver it. It is however simply achieved:
+------
+:; git clone https://github.com/archlinux/arch-install-scripts
+:; cd arch-install-scripts
+:; make && sudo make PREFIX=/usr install
+:; cd
+------
++
+It will also want an `/etc/pacman.d/mirrorlist` which you can populate for
+your geographic location from https://archlinux.org/mirrorlist/ service,
+or just fetch them all (don't forget to uncomment some `Server =` lines):
+------
+:; mkdir -p /etc/pacman.d/
+:; curl https://archlinux.org/mirrorlist/all/ > /etc/pacman.d/mirrorlist
+------
++
+And to reference it from your host `/etc/pacman.conf` by un-commenting the
+`[core]` section and `Include` instruction, as well as adding `[community]`
+and `[extra]` sections with same reference, e.g.:
+------
+[core]
+### SigLevel = Never
+SigLevel = PackageRequired
+Include = /etc/pacman.d/mirrorlist
+
+[extra]
+### SigLevel = Never
+SigLevel = PackageRequired
+Include = /etc/pacman.d/mirrorlist
+
+[community]
+### SigLevel = Never
+SigLevel = PackageRequired
+Include = /etc/pacman.d/mirrorlist
+------
++
+And just then you can proceed with LXC:
+------
+:; lxc-create -P /srv/libvirt/rootfs \
+    -n jenkins-archlinux-amd64 -t archlinux -- \
+    -a x86_64 -P openssh,sudo
+------
++
+In my case, it had problems with GPG keyring missing (using one in host
+system, as well as the package cache outside the container, it seems)
+so I had to run `pacman-key --init; pacman-key --refresh-keys` on the
+host itself. Even so, `lxc-create` complained about updating some keyring
+entries and I had to go one by one picking key servers (serving different
+metadata) like this:
+------
+:; pacman-key --keyserver keyserver.ubuntu.com --recv-key 6D1655C14CE1C13E
+------
++
+In the worst case, see `SigLevel = Never` for `pacman.conf` to not check
+package integrity (seems too tied into thinking that host OS is Arch)...
++
+It seems that pre-fetching the package databases with `pacman -Sy` on
+the host was also important.
+
+Initial container-related setup
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * Add the "name,IP" line for this container to `/etc/lxc/dnsmasq-hosts.conf`
   on the host, e.g.:
@@ -372,6 +493,32 @@ is usable in the chroot environment. This can be achieved with e.g.:
 
 TODO: Test and document a working NAT and firewall setup for this, to allow
 SSH access to the containers via dedicated TCP ports exposed on the host.
+
+Arch Linux containers
+^^^^^^^^^^^^^^^^^^^^^
+
+Arch Linux containers prepared by procedure above include only a minimal
+footprint, and if you missed the `-P pkg,list` argument, they can lack
+even an SSH server. Suggestions below assume this path to container:
+------
+:; ALTROOT=/srv/libvirt/rootfs/jenkins-archlinux-amd64/rootfs/
+------
+
+Let `pacman` know current package database:
+------
+:; grep 8.8.8.8 $ALTROOT/etc/resolv.conf || (echo 'nameserver 8.8.8.8' > $ALTROOT/etc/resolv.conf)
+:; chroot $ALTROOT pacman -Syu
+:; chroot $ALTROOT pacman -S openssh sudo
+:; chroot $ALTROOT systemctl enable sshd
+:; chroot $ALTROOT systemctl start sshd
+------
+
+This may require that you perform bind-mounts above, as well as "passthrough"
+the `/var/cache/pacman/pkg` from host to guest environment (in `virsh edit`,
+and bind-mount for `chroot` like for `/proc` et al above).
+
+It is possible that `virsh console` would serve you better than `chroot`.
+Note you may have to first `chroot` to set the `root` password anyhow.
 
 
 Troubleshooting

@@ -42,10 +42,15 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"network XML UPS"
-#define DRIVER_VERSION	"0.44"
+#define DRIVER_VERSION	"0.45"
 
 /** *_OBJECT query multi-part body boundary */
 #define FORM_POST_BOUNDARY "NUT-NETXML-UPS-OBJECTS"
+
+#ifdef WIN32 /* FIXME ?? skip alarm handling */
+#define HAVE_NE_SET_CONNECT_TIMEOUT  1
+#define HAVE_NE_SOCK_CONNECT_TIMEOUT 1
+#endif
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -278,7 +283,10 @@ void upsdrv_initinfo(void)
 		dstate_setinfo("driver.version.data", "%s", subdriver->version);
 
 		if (testvar("subscribe") && (netxml_alarm_subscribe(subdriver->subscribe) == NE_OK)) {
+/* TODO: port extrafd to Windows */
+#ifndef WIN32
 			extrafd = ne_sock_fd(sock);
+#endif
 			time(&lastheard);
 		}
 
@@ -314,7 +322,7 @@ void upsdrv_updateinfo(void)
 			/* alarm message received */
 
 			ne_xml_parser	*parser = ne_xml_create();
-			upsdebugx(2, "%s: ne_sock_read(%zd bytes) => %s", __func__, ret, buf);
+			upsdebugx(2, "%s: ne_sock_read(%" PRIiSIZE " bytes) => %s", __func__, ret, buf);
 			ne_xml_push_handler(parser, subdriver->startelm_cb, subdriver->cdata_cb, subdriver->endelm_cb, NULL);
 			ne_xml_parse(parser, buf, strlen(buf));
 			ne_xml_destroy(parser);
@@ -330,17 +338,23 @@ void upsdrv_updateinfo(void)
 
 			upslogx(LOG_ERR, "NSM connection with '%s' lost", uri.host);
 
-			upsdebugx(2, "%s: ne_sock_read(%zd) => %s", __func__, ret, ne_sock_error(sock));
+			upsdebugx(2, "%s: ne_sock_read(%" PRIiSIZE ") => %s", __func__, ret, ne_sock_error(sock));
 			ne_sock_close(sock);
 
 			if (netxml_alarm_subscribe(subdriver->subscribe) == NE_OK) {
+/* TODO: port extrafd to Windows */
+#ifndef WIN32
 				extrafd = ne_sock_fd(sock);
+#endif
 				time(&lastheard);
 				return;
 			}
 
 			dstate_datastale();
-			extrafd = -1;
+/* TODO: port extrafd to Windows */
+#ifndef WIN32
+			extrafd = ERROR_FD;
+#endif
 			return;
 		}
 	}
@@ -437,8 +451,10 @@ void upsdrv_shutdown(void) {
 	if (NULL != resp)
 		object_query_destroy(resp);
 
-	if (STAT_SET_HANDLED != status)
-		fatalx(EXIT_FAILURE, "Shutdown failed: %d", status);
+	if (STAT_SET_HANDLED != status) {
+		upslogx(LOG_ERR, "Shutdown failed: %d", status);
+		set_exit_flag(-1);
+	}
 }
 
 static int instcmd(const char *cmdname, const char *extra)
@@ -621,7 +637,11 @@ void upsdrv_initups(void)
 
 	/* if debug level is set, direct output to stderr */
 	if (!nut_debug_level) {
+#ifndef WIN32
 		fp = fopen("/dev/null", "w");
+#else
+		fp = fopen("nul", "w");
+#endif
 	} else {
 		fp = stderr;
 	}
@@ -912,9 +932,8 @@ static int netxml_dispatch_request(ne_request *request, ne_xml_parser *parser)
 /* Supply the 'login' and 'password' when authentication is required */
 static int netxml_authenticate(void *userdata, const char *realm, int attempt, char *username, char *password)
 {
-	NUT_UNUSED_VARIABLE(userdata);
-
 	char	*val;
+	NUT_UNUSED_VARIABLE(userdata);
 
 	upsdebugx(2, "%s: realm = [%s], attempt = %d", __func__, realm, attempt);
 
@@ -1020,7 +1039,7 @@ static void netxml_status_set(void)
 	if (STATUS_BIT(SHUTDOWNIMM)) {
 		status_set("FSD");		/* shutdown imminent */
 	}
-	if (STATUS_BIT(CAL)) {
+	if (STATUS_BIT(CALIB)) {
 		status_set("CAL");		/* calibrating */
 	}
 }
@@ -1196,13 +1215,14 @@ static object_entry_t *set_object_add(
 	const char     *name,
 	const char     *value)
 {
-	char *name_cpy;
-	char *value_cpy;
+	char	*name_cpy;
+	char	*value_cpy;
+	object_entry_t	*entry;
 
 	assert(NULL != name);
 	assert(NULL != value);
 
-	object_entry_t *entry = (object_entry_t *)calloc(1,
+	entry = (object_entry_t *)calloc(1,
 		sizeof(object_entry_t));
 
 	if (NULL == entry)
@@ -1277,13 +1297,15 @@ static object_query_status_t set_object_serialise_entries(ne_buffer *buff, objec
 
 
 static ne_buffer *set_object_serialise_raw(object_query_t *handle) {
+	ne_buffer	*buff;
+
 	assert(NULL != handle);
 
 	/* Sanity checks */
 	assert(SET_OBJECT_REQUEST == handle->type);
 
 	/* Create buffer */
-	ne_buffer *buff = ne_buffer_create();
+	buff = ne_buffer_create();
 
 	/* neon API ref. states that the function always succeeds */
 	assert(NULL != buff);
@@ -1296,7 +1318,8 @@ static ne_buffer *set_object_serialise_raw(object_query_t *handle) {
 
 
 static ne_buffer *set_object_serialise_form(object_query_t *handle) {
-	const char *vname = NULL;
+	const char	*vname = NULL;
+	ne_buffer	*buff;
 
 	assert(NULL != handle);
 
@@ -1304,7 +1327,7 @@ static ne_buffer *set_object_serialise_form(object_query_t *handle) {
 	assert(SET_OBJECT_REQUEST == handle->type);
 
 	/* Create buffer */
-	ne_buffer *buff = ne_buffer_create();
+	buff = ne_buffer_create();
 
 	/* neon API ref. states that the function always succeeds */
 	assert(NULL != buff);
@@ -1542,18 +1565,20 @@ static int set_object_raw_resp_end_element(
 
 
 static object_query_t *set_object_deserialise_raw(ne_buffer *buff) {
-	int ne_status;
+	int	ne_status;
+	object_query_t	*handle;
+	ne_xml_parser	*parser;
 
 	assert(NULL != buff);
 
 	/* Create SET_OBJECT query response */
-	object_query_t *handle = object_query_create(SET_OBJECT_RESPONSE, RAW_POST);
+	handle = object_query_create(SET_OBJECT_RESPONSE, RAW_POST);
 
 	if (NULL == handle)
 		return NULL;
 
 	/* Create XML parser */
-	ne_xml_parser *parser = ne_xml_create();
+	parser = ne_xml_create();
 
 	/* neon API ref. states that the function always succeeds */
 	assert(NULL != parser);
@@ -1612,7 +1637,8 @@ static int send_http_request(
 	assert(NULL != req);
 
 	do {  /* Pragmatic do ... while (0) loop allowing breaks on error */
-		const ne_status *req_st;
+		const ne_status	*req_st;
+		int	status;
 
 		/* Set Content-Type */
 		if (NULL != ct)
@@ -1625,7 +1651,7 @@ static int send_http_request(
 				req_body->data, req_body->used - 1);
 
 		/* Send request */
-		int status = ne_begin_request(req);
+		status = ne_begin_request(req);
 
 		if (NE_OK != status) {
 			break;

@@ -48,7 +48,7 @@ extern "C" {
 /* client structure */
 typedef struct nut_ctype_s {
 	char	*addr;
-	int	sock_fd;
+	TYPE_FD_SOCK	sock_fd;
 	time_t	last_heard;
 	char	*loginups;
 	char	*password;
@@ -71,6 +71,9 @@ typedef struct nut_ctype_s {
 	/* doubly linked list */
 	struct nut_ctype_s	*prev;
 	struct nut_ctype_s	*next;
+#ifdef WIN32
+	HANDLE Event;
+#endif
 } nut_ctype_t;
 
 #ifdef __cplusplus

@@ -7,11 +7,16 @@ NAME
 nutdrv_qx - Driver for Q* protocol serial and USB based UPS equipment
 
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the hardware-specific features of the *nutdrv_qx* driver.
-For information about the core driver, see linkman:nutupsdrv[8].
+*nutdrv_qx* -h
+
+*nutdrv_qx* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
+*nutdrv_qx* driver. For information about the core driver, see
+linkman:nutupsdrv[8].
 
 
 SUPPORTED HARDWARE
@@ -19,7 +24,7 @@ SUPPORTED HARDWARE
 
 The *nutdrv_qx* driver is known to work with various UPSes from
 'Armac', 'Blazer', 'Energy Sistem', 'Fenton Technologies', 'General Electric',
-'Hunnox', 'Masterguard', 'Mustek', 'Powercool', 'Voltronic Power'
+'Hunnox', 'Masterguard', 'Mustek', 'Powercool', 'Voltronic Power', 'SKE'
 (rebranded by many, many - have I said many? - others...
 
 Long story short: if your UPS came with a software called 'Viewpower',
@@ -64,6 +69,9 @@ If you set stayoff in linkman:ups.conf[5] when FSD arises the UPS will call a *s
 Skip autodetection of the protocol to use and only use the one specified.
 Supported values: 'bestups', 'hunnox', 'masterguard', 'mecer', 'megatec', 'megatec/old', 'mustek', 'q1', 'voltronic', 'voltronic-qs', 'voltronic-qs-hex' and 'zinto'.
 +
+Run the driver program with the `--help` option to see the exact list of
+`protocol` values it would currently recognize.
++
 Note that if you end up using the 'q1' protocol, you may want to give a try to the 'mecer', 'megatec' and 'zinto' ones setting the <<old-blazer-protocols-options,*novendor*/*norating* flags>> (only one, or both).
 
 *pollfreq =* 'num'::
@@ -77,20 +85,44 @@ If your UPS doesn't report either *battery.charge* or *battery.runtime* you may 
 
 *default.battery.voltage.high =* 'value'::
 Maximum battery voltage that is reached after about 12 to 24 hours charging.
-If you want the driver to report a guesstimated *battery.charge*, you need to specify this (see <<_battery_charge,BATTERY CHARGE>>).
+If you want the driver to report a guesstimated *battery.charge*, you need to specify this (see <<_battery_charge_guesstimation,BATTERY CHARGE GUESSTIMATION>>).
 
 *default.battery.voltage.low =* 'value'::
 Minimum battery voltage just before the UPS automatically shuts down.
-If you want the driver to report a guesstimated *battery.charge*, you need to specify this (see <<_battery_charge,BATTERY CHARGE>>).
+If you want the driver to report a guesstimated *battery.charge*, you need to specify this (see <<_battery_charge_guesstimation,BATTERY CHARGE GUESSTIMATION>>).
 
 *default.battery.voltage.nominal =* 'value'::
 *override.battery.voltage.nominal =* 'value'::
 Some devices show a wrong nominal battery voltage (or none at all), so you may need to override or set a default value.
 
 *override.battery.packs =* 'value'::
-Some devices report a part of the total battery voltage.
-For instance, if *battery.voltage.nominal* is 24 V, but it reports a *battery.voltage* of around 2 V, the number of *battery.packs* to correct this reading would be 12.
-The driver will attempt to detect this automatically, but if this fails somehow, you may want to override this value.
+Some devices "natively" report just a part of the total battery voltage
+(see also *battery_voltage_reports_one_pack* below).
++
+For instance, if *battery.voltage.nominal* is 24 V, but it reports
+a *battery.voltage* of around 2 V, the number of *battery.packs* to
+correct this reading would be 12.
++
+The driver will attempt to detect this number automatically, but if
+this fails somehow, you may want to override this value.
++
+Note that this is primarily useful for "guesstimation" of `battery.charge`
+and/or `battery.runtime` (with `runtimecal` setting), if those readings are
+not provided by the device directly.
+
+*battery_voltage_reports_one_pack*::
+Some devices "natively" report just report a part of the total battery voltage
+(see also *override.battery.packs* above, if that value is not reported by the
+device or properly guessed by the driver otherwise).
++
+If this flag is set, most of the subdrivers (except those which know about
+more  complicated device-specific nuances, currently: *ablerex*, *masterguard*
+and *voltronic-qs-hex*) adjust their ultimately reported *battery.voltage*
+value as a multiple of *battery.packs* and "native" *battery.voltage*).
++
+Note this is primarily useful for consistent diagnostics and graphing of the
+numbers, and should not impact the "guesstimation" of `battery.charge` and/or
+`battery.runtime` - so rather a cosmetic adjustment, than critical.
 
 *runtimecal =* 'value,value,value,value'::
 Parameter used in the (optional) runtime estimation.
@@ -152,7 +184,7 @@ The acceptable range is +60..599940+ seconds.
 The acceptable range is +12..5940+ seconds.
 
 *pins_shutdown_mode =* 'value'::
-Set http://www.networkupstools.org/protocols/sola.html#_shutdown_set_command[shutdown mode functionality of Pin 1 and Pin 7] on the UPS DB9 communication port (Per Best Power's EPS-0059) to 'value' [+0..6+].
+Set https://www.networkupstools.org/protocols/sola.html#_shutdown_set_command[shutdown mode functionality of Pin 1 and Pin 7] on the UPS DB9 communication port (Per Best Power's EPS-0059) to 'value' [+0..6+].
 
 
 MASTERGUARD PROTOCOL
@@ -319,37 +351,17 @@ If you find that your UPS isn't detected or the communication with the UPS is un
 USB INTERFACE ONLY
 ~~~~~~~~~~~~~~~~~~
 
-*port =* 'string'::
-You must set 'value' to *auto*.
-
-*vendorid =* 'regex'::
-*productid =* 'regex'::
-*vendor =* 'regex'::
-*product =* 'regex'::
-*serial =* 'regex'::
-Select a specific UPS, in case there is more than one connected via USB.
-Each option specifies an extended regular expression (see *regex(7)*) that must match the UPS's entire vendor/product/serial string (minus any surrounding whitespace), or the whole 4-digit hexadecimal code for vendorid and productid.
-Try *-DD* for finding out the strings to match.
-+
-Examples:
-
- - `-x vendor="Foo.Corporation.*"`
- - `-x vendorid=051d*` (APC)
- - `-x product=".*(Smart|Back)-?UPS.*"`
-
-*bus =* 'regex'::
-Select a UPS on a specific USB bus or group of buses.
-The argument is a regular expression that must match the bus name where the UPS is connected (e.g. +bus="002"+, +bus="00[2-3]"+).
-
-*device =* 'regex'::
-Select a UPS on a specific USB device or group of devices.
-The argument is a regular expression that must match the device name where the UPS is connected (e.g. +device="001"+, +device="00[1-2]"+).
-Note that device numbers are not guaranteed by the OS to be stable across re-boots or device re-plugging.
+include::nut_usb_addvars.txt[]
 
 *subdriver =* 'string'::
 Select a serial-over-USB subdriver to use.
 You have a choice between *cypress*, *fabula*, *fuji*, *hunnox*, *ippon*, *krauler*, *phoenix*, *phoenixtec*, *sgs*, *snr*,  *armac* and *ablerex*.
-When using this option, it is mandatory to also specify the *vendorid* and *productid*.
++
+Run the driver program with the `--help` option to see the exact list of
+`subdriver` values it would currently recognize.
++
+NOTE: When using this option, it is mandatory to also specify the *vendorid*
+and *productid* matching parameters.
 
 *langid_fix =* 'value'::
 Apply the language ID workaround to the *krauler* subdriver.
@@ -509,8 +521,8 @@ Put the UPS in ECO Mode.
 Take the UPS out of ECO Mode.
 
 
-BATTERY CHARGE
---------------
+BATTERY CHARGE GUESSTIMATION
+----------------------------
 
 Due to popular demand, this driver will report a guesstimated *battery.charge* and optionally *battery.runtime*, provided you specified a couple of the <<_extra_arguments,EXTRA ARGUMENTS>> listed above.
 
@@ -518,9 +530,9 @@ If you specify both *battery.voltage.high* and *battery.voltage.low* in linkman:
 This is not reliable under load, as this only gives reasonably accurate readings if you disconnect the load, let the battery rest for a couple of minutes and then measure the open cell voltage.
 This just isn't practical if the power went out and the UPS is providing power for your systems.
 
-                     battery.voltage - battery.voltage.low
-battery.charge =  ------------------------------------------ x 100 %
-                  battery.voltage.high - battery.voltage.low
+                         battery.voltage - battery.voltage.low
+    battery.charge =  ------------------------------------------ x 100 %
+                      battery.voltage.high - battery.voltage.low
 
 There is a way to get better readings without disconnecting the load but this requires one to keep track on how much (and how fast) current is going in and out of the battery.
 If you specified the *runtimecal*, the driver will attempt to do this.
@@ -578,7 +590,7 @@ Part of this, the following bestups options, in linkman:ups.conf[5], are no long
 
 *nombattvolt*::
 *battvoltmult*::
-See <<_battery_charge,BATTERY CHARGE>>.
+See <<_battery_charge_guesstimation,BATTERY CHARGE GUESSTIMATION>>.
 
 *ID*::
 Discarded.
@@ -821,5 +833,5 @@ linkman:upsrw[8]
 Internet Resources:
 ~~~~~~~~~~~~~~~~~~~
 
-* The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
-* The NUT HCL: http://www.networkupstools.org/stable-hcl.html
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
+* The NUT HCL: https://www.networkupstools.org/stable-hcl.html

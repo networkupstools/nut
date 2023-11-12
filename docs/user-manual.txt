@@ -15,7 +15,7 @@ Units and Solar Controllers.
 NUT provides many control and monitoring <<Features,features>>, with a uniform
 control and management interface.
 
-More than 140 different manufacturers, and several thousands of models are
+More than 170 different manufacturers, and several thousands of models are
 <<HCL,compatible>>.
 
 This software is the combined effort of many
@@ -33,7 +33,7 @@ If you wish to discover how everything came together, have a look at the
 
 [[Overview]]
 
-include::../README[]
+include::../README.adoc[]
 
 
 [[Features]]
@@ -81,7 +81,7 @@ include::download.txt[]
 
 [[_installation_instructions]]
 
-include::../INSTALL.nut[]
+include::{builddir}../INSTALL.nut.adoc-parsed[]
 
 
 [[Configuration_notes]]
@@ -147,7 +147,7 @@ include::nut-names.txt[]
 Appendix D: Hardware Compatibility List
 =======================================
 
-Refer to the link:http://www.networkupstools.org/stable-hcl.html[online HCL].
+Refer to the link:https://www.networkupstools.org/stable-hcl.html[online HCL].
 
 
 Appendix E: Documentation
@@ -185,7 +185,7 @@ include::configure.txt[]
 Appendix I: Upgrading notes
 ===========================
 
-include::../UPGRADING[]
+include::{builddir}../UPGRADING.adoc-parsed[]
 
 
 [[Project_History]]

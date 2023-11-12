@@ -23,12 +23,17 @@
 #include "config.h" /* must be the first header */
 
 #include <stdio.h>
+#ifndef WIN32
 #include <stdarg.h>
 #include <sys/stat.h>
 #include <pwd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#else
+#include <strings.h>
+#include "wincompat.h"
+#endif
 
 #include "common.h"
 #include "dstate.h"
@@ -37,8 +42,14 @@
 #include "attribute.h"
 #include "nut_stdint.h"
 
-	static int	sockfd = -1, stale = 1, alarm_active = 0, ignorelb = 0;
+	static TYPE_FD	sockfd = ERROR_FD;
+#ifndef WIN32
 	static char	*sockfn = NULL;
+#else
+	static OVERLAPPED connect_overlapped;
+	static char	*pipename = NULL;
+#endif
+	static int	stale = 1, alarm_active = 0, ignorelb = 0;
 	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[ST_MAX_VALUE_LEN];
 	static st_tree_t	*dtree_root = NULL;
 	static conn_t	*connhead = NULL;
@@ -46,6 +57,7 @@
 
 	struct ups_handler	upsh;
 
+#ifndef WIN32
 /* this may be a frequent stumbling point for new users, so be verbose here */
 static void sock_fail(const char *fn)
 	__attribute__((noreturn));
@@ -53,7 +65,7 @@ static void sock_fail(const char *fn)
 static void sock_fail(const char *fn)
 {
 	int	sockerr;
-	struct passwd	*user;
+	struct passwd	*pwuser;
 
 	/* save this so it doesn't get overwritten */
 	sockerr = errno;
@@ -63,9 +75,9 @@ static void sock_fail(const char *fn)
 	printf("\nFatal error: unable to create listener socket\n\n");
 	printf("bind %s failed: %s\n", fn, strerror(sockerr));
 
-	user = getpwuid(getuid());
+	pwuser = getpwuid(getuid());
 
-	if (!user) {
+	if (!pwuser) {
 		fatal_with_errno(EXIT_FAILURE, "getpwuid");
 	}
 
@@ -74,7 +86,7 @@ static void sock_fail(const char *fn)
 	{
 	case EACCES:
 		printf("\nCurrent user: %s (UID %d)\n\n",
-			user->pw_name, (int)user->pw_uid);
+			pwuser->pw_name, (int)pwuser->pw_uid);
 
 		printf("Things to try:\n\n");
 		printf(" - set different owners or permissions on %s\n\n",
@@ -103,17 +115,21 @@ static void sock_fail(const char *fn)
 	printf("\n");
 	fatalx(EXIT_FAILURE, "Exiting.");
 }
+#endif
 
-static int sock_open(const char *fn)
+static TYPE_FD sock_open(const char *fn)
 {
-	int	ret, fd;
+	TYPE_FD	fd;
+
+#ifndef WIN32
+	int	ret;
 	struct sockaddr_un	ssaddr;
 
 	check_unix_socket_filename(fn);
 
 	fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
-	if (fd < 0) {
+	if (INVALID_FD(fd)) {
 		fatal_with_errno(EXIT_FAILURE, "Can't create a unix domain socket");
 	}
 
@@ -146,12 +162,55 @@ static int sock_open(const char *fn)
 		fatal_with_errno(EXIT_FAILURE, "listen(%d, %d) failed", fd, DS_LISTEN_BACKLOG);
 	}
 
+#else /* WIN32 */
+
+	fd = CreateNamedPipe(
+			fn,			// pipe name
+			PIPE_ACCESS_DUPLEX |  // read/write access
+			FILE_FLAG_OVERLAPPED, // async IO
+			PIPE_TYPE_BYTE |
+			PIPE_READMODE_BYTE |
+			PIPE_WAIT,
+			PIPE_UNLIMITED_INSTANCES, // max. instances
+			ST_SOCK_BUF_LEN,	// output buffer size
+			ST_SOCK_BUF_LEN,	// input buffer size
+			0,			// client time-out
+			NULL);			// FIXME: default security attribute
+
+	if (INVALID_FD(fd)) {
+		fatal_with_errno(EXIT_FAILURE,
+			"Can't create a state socket (windows named pipe)");
+	}
+
+	/* Prepare an async wait on a connection on the pipe */
+	memset(&connect_overlapped,0,sizeof(connect_overlapped));
+	connect_overlapped.hEvent = CreateEvent(NULL, /*Security*/
+			FALSE, /* auto-reset*/
+			FALSE, /* inital state = non signaled*/
+			NULL /* no name*/);
+	if(connect_overlapped.hEvent == NULL ) {
+		fatal_with_errno(EXIT_FAILURE, "Can't create event");
+	}
+
+	/* Wait for a connection */
+	ConnectNamedPipe(fd,&connect_overlapped);
+#endif
+
 	return fd;
 }
 
 static void sock_disconnect(conn_t *conn)
 {
+#ifndef WIN32
 	close(conn->fd);
+#else
+	/* FIXME not sure if this is the right way to close a connection */
+	if( conn->read_overlapped.hEvent != INVALID_HANDLE_VALUE) {
+		CloseHandle(conn->read_overlapped.hEvent);
+		conn->read_overlapped.hEvent = INVALID_HANDLE_VALUE;
+	}
+	DisconnectNamedPipe(conn->fd);
+#endif
 
 	pconf_finish(&conn->ctx);
 
@@ -211,14 +270,38 @@ static void send_to_all(const char *fmt, ...)
 
 	for (conn = connhead; conn; conn = cnext) {
 		cnext = conn->next;
+		if (conn->nobroadcast)
+			continue;
 
+#ifndef WIN32
 		ret = write(conn->fd, buf, buflen);
+#else
+		DWORD bytesWritten = 0;
+		BOOL  result = FALSE;
+
+		result = WriteFile (conn->fd, buf, buflen, &bytesWritten, NULL);
+		if( result == 0 ) {
+			upsdebugx(2, "write failed on handle %p, disconnecting", conn->fd);
+			sock_disconnect(conn);
+			continue;
+		}
+		else  {
+			ret = (ssize_t)bytesWritten;
+		}
+#endif
 
 		if ((ret < 1) || (ret != (ssize_t)buflen)) {
-			upsdebugx(0, "WARNING: %s: write %zd bytes to "
-				"socket %d failed (ret=%zd), disconnecting: %s",
+#ifndef WIN32
+			upsdebugx(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
+				"socket %d failed (ret=%" PRIiSIZE "), disconnecting: %s",
+				__func__, buflen, (int)conn->fd, ret, strerror(errno));
+#else
+			upsdebugx(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
+				"handle %p failed (ret=%" PRIiSIZE "), disconnecting: %s",
 				__func__, buflen, conn->fd, ret, strerror(errno));
+#endif
 			upsdebugx(6, "failed write: %s", buf);
+
 			sock_disconnect(conn);
 
 			/* TOTHINK: Maybe fallback elsewhere in other cases? */
@@ -232,8 +315,8 @@ static void send_to_all(const char *fmt, ...)
 			dstate_setinfo("driver.parameter.synchronous", "%s",
 				(do_synchronous==1)?"yes":((do_synchronous==0)?"no":"auto"));
 		} else {
-			upsdebugx(6, "%s: write %zd bytes to socket %d succeeded "
-				"(ret=%zd): %s",
+			upsdebugx(6, "%s: write %" PRIiSIZE " bytes to socket %d succeeded "
+				"(ret=%" PRIiSIZE "): %s",
 				__func__, buflen, conn->fd, ret, buf);
 		}
 	}
@@ -245,6 +328,10 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	va_list	ap;
 	char	buf[ST_SOCK_BUF_LEN];
 	size_t	buflen;
+#ifdef WIN32
+	DWORD bytesWritten = 0;
+	BOOL  result = FALSE;
+#endif
 
 	va_start(ap, fmt);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
@@ -279,31 +366,66 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 		upsdebugx(5, "%s: %.*s", __func__, (int)(ret-1), buf);
 
 /*
-	upsdebugx(0, "%s: writing %zd bytes to socket %d: %s",
+	upsdebugx(0, "%s: writing %" PRIiSIZE " bytes to socket %d: %s",
 		__func__, buflen, conn->fd, buf);
 */
 
+#ifndef WIN32
 	ret = write(conn->fd, buf, buflen);
+#else
+	result = WriteFile (conn->fd, buf, buflen, &bytesWritten, NULL);
+	if( result == 0 ) {
+		ret = 0;
+	}
+	else  {
+		ret = (ssize_t)bytesWritten;
+	}
+#endif
 
 	if (ret < 0) {
 		/* Hacky bugfix: throttle down for upsd to read that */
+#ifndef WIN32
 		upsdebugx(1, "%s: had to throttle down to retry "
-			"writing %zd bytes to socket %d "
-			"(ret=%zd, errno=%d, strerror=%s): %s",
+			"writing %" PRIiSIZE " bytes to socket %d "
+			"(ret=%" PRIiSIZE ", errno=%d, strerror=%s): %s",
+			__func__, buflen, (int)conn->fd,
+			ret, errno, strerror(errno),
+			buf);
+#else
+		upsdebugx(1, "%s: had to throttle down to retry "
+			"writing %" PRIiSIZE " bytes to handle %p "
+			"(ret=%" PRIiSIZE ", errno=%d, strerror=%s): %s",
 			__func__, buflen, conn->fd,
 			ret, errno, strerror(errno),
 			buf);
+#endif
 		usleep(200);
+#ifndef WIN32
 		ret = write(conn->fd, buf, buflen);
+#else
+		result = WriteFile (conn->fd, buf, buflen, &bytesWritten, NULL);
+		if( result == 0 ) {
+			ret = 0;
+		}
+		else  {
+			ret = (ssize_t)bytesWritten;
+		}
+#endif
 		if (ret == (ssize_t)buflen) {
 			upsdebugx(1, "%s: throttling down helped", __func__);
 		}
 	}
 
 	if ((ret < 1) || (ret != (ssize_t)buflen)) {
-		upsdebugx(0, "WARNING: %s: write %zd bytes to "
-			"socket %d failed (ret=%zd), disconnecting: %s",
+#ifndef WIN32
+		upsdebugx(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
+			"socket %d failed (ret=%" PRIiSIZE "), disconnecting: %s",
+			__func__, buflen, (int)conn->fd, ret, strerror(errno));
+#else
+		upsdebugx(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
+			"handle %p failed (ret=%" PRIiSIZE "), disconnecting: %s",
 			__func__, buflen, conn->fd, ret, strerror(errno));
+#endif
 		upsdebugx(6, "failed write: %s", buf);
 		sock_disconnect(conn);
 
@@ -320,18 +442,28 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 
 		return 0;	/* failed */
 	} else {
-		upsdebugx(6, "%s: write %zd bytes to socket %d succeeded "
-			"(ret=%zd): %s",
+#ifndef WIN32
+		upsdebugx(6, "%s: write %" PRIiSIZE " bytes to socket %d succeeded "
+			"(ret=%" PRIiSIZE "): %s",
 			__func__, buflen, conn->fd, ret, buf);
+#else
+		upsdebugx(6, "%s: write %" PRIiSIZE " bytes to handle %p succeeded "
+			"(ret=%" PRIiSIZE "): %s",
+			__func__, buflen, conn->fd, ret, buf);
+#endif
 	}
 
 	return 1;	/* OK */
 }
 
-static void sock_connect(int sock)
+static void sock_connect(TYPE_FD sock)
 {
-	int	fd, ret;
 	conn_t	*conn;
+
+#ifndef WIN32
+	int	ret;
+	int	fd;
+
 	struct sockaddr_un sa;
 #if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED)
 	int	salen;
@@ -341,7 +473,7 @@ static void sock_connect(int sock)
 	salen = sizeof(sa);
 	fd = accept(sock, (struct sockaddr *) &sa, &salen);
 
-	if (fd < 0) {
+	if (INVALID_FD(fd)) {
 		upslog_with_errno(LOG_ERR, "accept on unix fd failed");
 		return;
 	}
@@ -378,6 +510,65 @@ static void sock_connect(int sock)
 	conn = xcalloc(1, sizeof(*conn));
 	conn->fd = fd;
 
+#else /* WIN32 */
+
+	/* We have detected a connection on the opened pipe.
+	 * So we start by saving its handle and creating
+	 * a new pipe for future connection */
+	conn = xcalloc(1, sizeof(*conn));
+	conn->fd = sock;
+
+	/* sockfd is the handle of the connection pending pipe */
+	sockfd = CreateNamedPipe(
+			pipename,			// pipe name
+			PIPE_ACCESS_DUPLEX |  // read/write access
+			FILE_FLAG_OVERLAPPED, // async IO
+			PIPE_TYPE_BYTE |
+			PIPE_READMODE_BYTE |
+			PIPE_WAIT,
+			PIPE_UNLIMITED_INSTANCES, // max. instances
+			ST_SOCK_BUF_LEN,	// output buffer size
+			ST_SOCK_BUF_LEN,	// input buffer size
+			0,			// client time-out
+			NULL);			// FIXME: default security attribute
+
+	if (INVALID_FD(sockfd)) {
+		fatal_with_errno(EXIT_FAILURE,
+			"Can't create a state socket (windows named pipe)");
+	}
+
+	/* Prepare a new async wait for a connection on the pipe */
+	CloseHandle(connect_overlapped.hEvent);
+	memset(&connect_overlapped,0,sizeof(connect_overlapped));
+	connect_overlapped.hEvent = CreateEvent(NULL, /*Security*/
+			FALSE, /* auto-reset*/
+			FALSE, /* inital state = non signaled*/
+			NULL /* no name*/);
+	if(connect_overlapped.hEvent == NULL ) {
+		fatal_with_errno(EXIT_FAILURE, "Can't create event");
+	}
+
+	/* Wait for a connection */
+	ConnectNamedPipe(sockfd,&connect_overlapped);
+
+	/* A new pipe waiting for new client connection has been created. We could manage the current connection now */
+	/* Start a read operation on the newly connected pipe so we could wait on the event associated to this IO */
+	memset(&conn->read_overlapped,0,sizeof(conn->read_overlapped));
+	memset(conn->buf,0,sizeof(conn->buf));
+	conn->read_overlapped.hEvent = CreateEvent(NULL, /*Security*/
+			FALSE, /* auto-reset*/
+			FALSE, /* inital state = non signaled*/
+			NULL /* no name*/);
+	if(conn->read_overlapped.hEvent == NULL ) {
+		fatal_with_errno(EXIT_FAILURE, "Can't create event");
+	}
+
+	ReadFile (conn->fd, conn->buf,
+		sizeof(conn->buf) - 1, /* -1 to be sure to have a trailling 0 */
+		NULL, &(conn->read_overlapped));
+#endif
+
+	conn->nobroadcast = 0;
 	pconf_init(&conn->ctx, NULL);
 
 	if (connhead) {
@@ -387,7 +578,12 @@ static void sock_connect(int sock)
 
 	connhead = conn;
 
+#ifndef WIN32
 	upsdebugx(3, "new connection on fd %d", fd);
+#else
+	upsdebugx(3, "new connection on handle %p", sock);
+#endif
+
 }
 
 static int st_tree_dump_conn(st_tree_t *node, conn_t *conn)
@@ -483,7 +679,11 @@ static void send_tracking(conn_t *conn, const char *id, int value)
 
 static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 {
-	upsdebugx(6, "Driver on %s is now handling %s with %zu args",
+#ifdef WIN32
+	char *sockfn = pipename;	/* Just for the report below; not a global var in WIN32 builds */
+#endif
+
+	upsdebugx(6, "Driver on %s is now handling %s with %" PRIuSIZE " args",
 		sockfn, numarg ? arg[0] : "<skipped: no command>", numarg);
 
 	if (numarg < 1) {
@@ -492,7 +692,7 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 
 	if (!strcasecmp(arg[0], "DUMPALL")) {
 
-		/* first thing: the staleness flag */
+		/* first thing: the staleness flag (see also below) */
 		if ((stale == 1) && !send_to_one(conn, "DATASTALE\n")) {
 			return 1;
 		}
@@ -515,6 +715,40 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 
 	if (!strcasecmp(arg[0], "PING")) {
 		send_to_one(conn, "PONG\n");
+		return 1;
+	}
+
+	if (!strcasecmp(arg[0], "NOBROADCAST")) {
+		char buf[SMALLBUF];
+		conn->nobroadcast = 1;
+#ifndef WIN32
+		snprintf(buf, sizeof(buf), "socket %d", conn->fd);
+#else
+		snprintf(buf, sizeof(buf), "handle %p", conn->fd);
+#endif
+		upsdebugx(1, "%s: %s requested NOBROADCAST mode",
+			__func__, buf);
+		return 1;
+	}
+
+	/* BROADCAST <0|1> */
+	if (!strcasecmp(arg[0], "BROADCAST")) {
+		int i;
+		char buf[SMALLBUF];
+		conn->nobroadcast = 0;
+		if (numarg > 1 && str_to_int(arg[1], &i, 10)) {
+			if (i < 1)
+				conn->nobroadcast = 1;
+		}
+#ifndef WIN32
+		snprintf(buf, sizeof(buf), "socket %d", conn->fd);
+#else
+		snprintf(buf, sizeof(buf), "handle %p", conn->fd);
+#endif
+		upsdebugx(1,
+			"%s: %s requested %sBROADCAST mode",
+			__func__, buf,
+			conn->nobroadcast ? "NO" : "");
 		return 1;
 	}
 
@@ -545,17 +779,34 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 		if (cmdid)
 			upsdebugx(3, "%s: TRACKING = %s", __func__, cmdid);
 
-		/* try the new handler first if present */
+		/* try the handler shared by all drivers first */
+		ret = main_instcmd(cmdname, cmdparam, conn);
+		if (ret != STAT_INSTCMD_UNKNOWN) {
+			/* The command was acknowledged by shared handler, and
+			 * either handled successfully, or failed, or was not
+			 * valid in current circumstances - in any case, we do
+			 * not pass to driver-provided logic. */
+
+			/* send back execution result if requested */
+			if (cmdid)
+				send_tracking(conn, cmdid, ret);
+
+			/* The command was handled, status is a separate consideration */
+			return 1;
+		} /* else try other handler(s) */
+
+		/* try the driver-provided handler if present */
 		if (upsh.instcmd) {
 			ret = upsh.instcmd(cmdname, cmdparam);
 
-			/* send back execution result */
+			/* send back execution result if requested */
 			if (cmdid)
 				send_tracking(conn, cmdid, ret);
 
 			/* The command was handled, status is a separate consideration */
 			return 1;
 		}
+
 		upslogx(LOG_NOTICE, "Got INSTCMD, but driver lacks a handler");
 		return 1;
 	}
@@ -582,11 +833,27 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 			upsdebugx(3, "%s: TRACKING = %s", __func__, setid);
 		}
 
-		/* try the new handler first if present */
+		/* try the handler shared by all drivers first */
+		ret = main_setvar(arg[1], arg[2], conn);
+		if (ret != STAT_SET_UNKNOWN) {
+			/* The command was acknowledged by shared handler, and
+			 * either handled successfully, or failed, or was not
+			 * valid in current circumstances - in any case, we do
+			 * not pass to driver-provided logic. */
+
+			/* send back execution result if requested */
+			if (setid)
+				send_tracking(conn, setid, ret);
+
+			/* The command was handled, status is a separate consideration */
+			return 1;
+		} /* else try other handler(s) */
+
+		/* try the driver-provided handler if present */
 		if (upsh.setvar) {
 			ret = upsh.setvar(arg[1], arg[2]);
 
-			/* send back execution result */
+			/* send back execution result if requested */
 			if (setid)
 				send_tracking(conn, setid, ret);
 
@@ -605,6 +872,8 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 static void sock_read(conn_t *conn)
 {
 	ssize_t	ret, i;
+
+#ifndef WIN32
 	char	buf[SMALLBUF];
 
 	ret = read(conn->fd, buf, sizeof(buf));
@@ -621,6 +890,24 @@ static void sock_read(conn_t *conn)
 			return;
 		}
 	}
+#else
+	char *buf = conn->buf;
+	DWORD bytesRead;
+	BOOL res;
+	res = GetOverlappedResult(conn->fd, &conn->read_overlapped, &bytesRead, FALSE);
+	if( res == 0 ) {
+		upslogx(LOG_INFO, "Read error : %d",(int)GetLastError());
+		sock_disconnect(conn);
+		return;
+	}
+	ret = bytesRead;
+
+	/* Special case for signals */
+	if (!strncmp(conn->buf, COMMAND_STOP, sizeof(COMMAND_STOP))) {
+		set_exit_flag(1);
+		return;
+	}
+#endif
 
 	for (i = 0; i < ret; i++) {
 
@@ -646,21 +933,33 @@ static void sock_read(conn_t *conn)
 			return;
 		}
 	}
+
+#ifdef WIN32
+	/* Restart async read */
+	memset(conn->buf,0,sizeof(conn->buf));
+	ReadFile(conn->fd,conn->buf,sizeof(conn->buf)-1,NULL,&(conn->read_overlapped)); /* -1 to be sure to have a trailling 0 */
+#endif
 }
 
 static void sock_close(void)
 {
 	conn_t	*conn, *cnext;
 
-	if (sockfd != -1) {
+	if (VALID_FD(sockfd)) {
+#ifndef WIN32
 		close(sockfd);
-		sockfd = -1;
 
 		if (sockfn) {
 			unlink(sockfn);
 			free(sockfn);
 			sockfn = NULL;
 		}
+#else
+		FlushFileBuffers(sockfd);
+		CloseHandle(sockfd);
+#endif
+
+		sockfd = ERROR_FD;
 	}
 
 	for (conn = connhead; conn; conn = cnext) {
@@ -678,6 +977,7 @@ char * dstate_init(const char *prog, const char *devname)
 {
 	char	sockname[SMALLBUF];
 
+#ifndef WIN32
 	/* do this here for now */
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
 # pragma GCC diagnostic push
@@ -693,33 +993,47 @@ char * dstate_init(const char *prog, const char *devname)
 	} else {
 		snprintf(sockname, sizeof(sockname), "%s/%s", dflt_statepath(), prog);
 	}
+#else
+	/* upsname (and so devname) is now mandatory so no need to test it */
+	snprintf(sockname, sizeof(sockname), "\\\\.\\pipe\\%s-%s", prog, devname);
+	pipename = xstrdup(sockname);
+#endif
 
 	sockfd = sock_open(sockname);
 
+#ifndef WIN32
 	upsdebugx(2, "dstate_init: sock %s open on fd %d", sockname, sockfd);
+#else
+	upsdebugx(2, "dstate_init: sock %s open on handle %p", sockname, sockfd);
+#endif
 
 	/* NOTE: Caller must free this string */
 	return xstrdup(sockname);
 }
 
 /* returns 1 if timeout expired or data is available on UPS fd, 0 otherwise */
-int dstate_poll_fds(struct timeval timeout, int extrafd)
+int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
 {
-	int	ret, maxfd, overrun = 0;
-	fd_set	rfds;
+	int	maxfd = 0; /* Unidiomatic use vs. "sockfd" below, which is "int" on non-WIN32 */
+	int	overrun = 0;
+	conn_t	*conn;
 	struct timeval	now;
-	conn_t	*conn, *cnext;
+
+#ifndef WIN32
+	int	ret;
+	fd_set	rfds;
+	conn_t	*cnext;
 
 	FD_ZERO(&rfds);
 	FD_SET(sockfd, &rfds);
 
 	maxfd = sockfd;
 
-	if (extrafd != -1) {
-		FD_SET(extrafd, &rfds);
+	if (VALID_FD(arg_extrafd)) {
+		FD_SET(arg_extrafd, &rfds);
 
-		if (extrafd > maxfd) {
-			maxfd = extrafd;
+		if (arg_extrafd > maxfd) {
+			maxfd = arg_extrafd;
 		}
 	}
 
@@ -782,12 +1096,100 @@ int dstate_poll_fds(struct timeval timeout, int extrafd)
 	}
 
 	/* tell the caller if that fd woke up */
-	if ((extrafd != -1) && (FD_ISSET(extrafd, &rfds))) {
+	if (VALID_FD(arg_extrafd) && (FD_ISSET(arg_extrafd, &rfds))) {
 		return 1;
 	}
 
+#else /* WIN32 */
+
+	DWORD	ret;
+	HANDLE	rfds[32];
+	DWORD	timeout_ms;
+
+	/* FIXME: Should such table (and limit) be used in reality? */
+	NUT_UNUSED_VARIABLE(arg_extrafd);
+/*
+	if (VALID_FD(arg_extrafd)) {
+		rfds[maxfd] = arg_extrafd;
+		maxfd++;
+	}
+*/
+
+	gettimeofday(&now, NULL);
+
+	/* number of microseconds should always be positive */
+	if (timeout.tv_usec < now.tv_usec) {
+		timeout.tv_sec -= 1;
+		timeout.tv_usec += 1000000;
+	}
+
+	if (timeout.tv_sec < now.tv_sec) {
+		timeout.tv_sec = 0;
+		timeout.tv_usec = 0;
+		overrun = 1;	/* no time left */
+	} else {
+		timeout.tv_sec -= now.tv_sec;
+		timeout.tv_usec -= now.tv_usec;
+	}
+
+	timeout_ms = (timeout.tv_sec * 1000) + (timeout.tv_usec / 1000);
+
+	/* Wait on the read IO of each connections */
+	for (conn = connhead; conn; conn = conn->next) {
+		rfds[maxfd] = conn->read_overlapped.hEvent;
+		maxfd++;
+	}
+	/* Add the connect event */
+	rfds[maxfd] = connect_overlapped.hEvent;
+	maxfd++;
+
+	ret = WaitForMultipleObjects(
+				maxfd,	/* number of objects in array */
+				rfds,	/* array of objects */
+				FALSE,	/* wait for any object */
+				timeout_ms); /* timeout in millisecond */
+
+	if (ret == WAIT_TIMEOUT) {
+		return 1;	/* timer expired */
+	}
+
+	if (ret == WAIT_FAILED) {
+		upslog_with_errno(LOG_ERR, "waitfor failed");
+		return overrun;
+	}
+
+	/* Retrieve the signaled connection */
+	for (conn = connhead; conn != NULL; conn = conn->next) {
+		if( conn->read_overlapped.hEvent == rfds[ret-WAIT_OBJECT_0]) {
+			break;
+		}
+	}
+
+	/* the connection event handle has been signaled */
+	if (rfds[ret] == connect_overlapped.hEvent) {
+		sock_connect(sockfd);
+	}
+	/* one of the read event handle has been signaled */
+	else {
+		if (conn != NULL) {
+			sock_read(conn);
+		}
+	}
+
+	/* tell the caller if that fd woke up */
+/*
+	if (VALID_FD(arg_extrafd) && (ret == arg_extrafd)) {
+		return 1;
+	}
+*/
+#endif
+
 	return overrun;
 }
+
+/******************************************************************
+ * COMMON
+ ******************************************************************/
 
 int dstate_setinfo(const char *var, const char *fmt, ...)
 {
@@ -998,6 +1400,20 @@ int dstate_delinfo(const char *var)
 	return ret;
 }
 
+int dstate_delinfo_olderthan(const char *var, const st_tree_timespec_t *cutoff)
+{
+	int	ret;
+
+	ret = state_delinfo_olderthan(&dtree_root, var, cutoff);
+
+	/* update listeners */
+	if (ret == 1) {
+		send_to_all("DELINFO %s\n", var);
+	}
+
+	return ret;
+}
+
 int dstate_delenum(const char *var, const char *val)
 {
 	int	ret;
@@ -1176,11 +1592,13 @@ void alarm_set(const char *buf)
 		 * Note: LARGEBUF was the original limit mismatched vs alarm_buf
 		 * size before PR #986.
 		 */
-		char alarm_tmp[LARGEBUF];
+		char	alarm_tmp[LARGEBUF];
+		int	ibuflen;
+		size_t	buflen;
+
 		memset(alarm_tmp, 0, sizeof(alarm_tmp));
 		/* A bit of complexity to keep both (int)snprintf(...) and (size_t)sizeof(...) happy */
-		int ibuflen = snprintf(alarm_tmp, sizeof(alarm_tmp), "%s", buf);
-		size_t buflen;
+		ibuflen = snprintf(alarm_tmp, sizeof(alarm_tmp), "%s", buf);
 		if (ibuflen < 0) {
 			alarm_tmp[0] = 'N';
 			alarm_tmp[1] = '/';
@@ -1216,10 +1634,12 @@ void alarm_set(const char *buf)
 		upslogx(LOG_ERR, "%s: error setting alarm_buf to: %s%s",
 			__func__, alarm_tmp, ( (buflen < sizeof(alarm_tmp)) ? "" : "...<truncated>" ) );
 	} else if ((size_t)ret > sizeof(alarm_buf)) {
-		char alarm_tmp[LARGEBUF];
+		char	alarm_tmp[LARGEBUF];
+		int	ibuflen;
+		size_t	buflen;
+
 		memset(alarm_tmp, 0, sizeof(alarm_tmp));
-		int ibuflen = snprintf(alarm_tmp, sizeof(alarm_tmp), "%s", buf);
-		size_t buflen;
+		ibuflen = snprintf(alarm_tmp, sizeof(alarm_tmp), "%s", buf);
 		if (ibuflen < 0) {
 			alarm_tmp[0] = 'N';
 			alarm_tmp[1] = '/';
@@ -1246,7 +1666,7 @@ void alarm_set(const char *buf)
 			}
 		}
 		upslogx(LOG_WARNING, "%s: result was truncated while setting or appending "
-			"alarm_buf (limited to %zu bytes), with message: %s%s",
+			"alarm_buf (limited to %" PRIuSIZE " bytes), with message: %s%s",
 			__func__, sizeof(alarm_buf), alarm_tmp,
 			( (buflen < sizeof(alarm_tmp)) ? "" : "...<also truncated>" ));
 	}
@@ -1516,9 +1936,11 @@ static int dstate_tree_dump(const st_tree_t *node)
 /* Public interface */
 void dstate_dump(void)
 {
+	const st_tree_t *node;
+
 	upsdebugx(3, "Entering %s", __func__);
 
-	const st_tree_t *node = (const st_tree_t *)dstate_getroot();
+	node = (const st_tree_t *)dstate_getroot();
 
 	dstate_tree_dump(node);
 }

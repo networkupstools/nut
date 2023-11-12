@@ -145,6 +145,8 @@ play around with this option.  Only use it when your systems are prepared
 to lose power.
 
 NOTE: refer to linkman:ups.conf[5] for using the *nowait* parameter.
+It can be overridden by `NUT_IGNORE_NOWAIT` environment variable
+(e.g. used to work around certain issues with systemd otherwise).
 
 ENVIRONMENT VARIABLES
 ---------------------
@@ -202,4 +204,4 @@ linkman:nut-driver-enumerator[8], linkman:ups.conf[5]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
