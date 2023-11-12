@@ -2,8 +2,12 @@ name: Publish PyNUT client bindings for NUT 🐍 distributions 📦 to PyPI
 # based on https://medium.com/@VersuS_/automate-pypi-releases-with-github-actions-4c5a9cfe947d
 # and https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/
 
+# NOTE: We may need to split this workflow into two files to do only
+# paths for master branch, and run always for (release) tags?
 on:
   push:
+    paths:
+     - 'scripts/python/module'
     tags:
      - '*'
     branches:
@@ -14,6 +18,7 @@ permissions:
 
 jobs:
   build-n-publish:
+    if: github.repository_owner == 'networkupstools'
     name: Build and publish Python 🐍 distributions 📦 to PyPI
     runs-on: ubuntu-latest
     steps:
