@@ -39,6 +39,8 @@ EXTRA_DIST = \
 	Installer/ImageFiles/emptyDir/man3/temp.txt	\
 	Installer/ImageFiles/emptyDir/run/temp.txt
 
+CLEANFILES = *-spellchecked */*-spellchecked
+
 bin_PROGRAMS =
 
 FORCE:
@@ -66,8 +68,27 @@ nut_LDADD = ../../common/libcommon.la winevent.o
 halt_SOURCES = halt.c
 endif HAVE_WINDOWS
 
-CLEANFILES = winevent.rc winevent.o winevent.h
+CLEANFILES += winevent.rc winevent.o winevent.h
 
 endif HAVE_MINGW_RESGEN
+
+SPELLCHECK_SRC = README.adoc DriverInstaller/README.adoc Installer/README.adoc
+
+# NOTE: Due to portability, we do not use a GNU percent-wildcard extension:
+#%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+#	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+# NOTE: Portable suffix rules do not allow prerequisites, so we shim them here
+# by a wildcard target in case the make implementation can put the two together.
+*-spellchecked: Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+
+.sample.sample-spellchecked:
+	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+.in.in-spellchecked:
+	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+spellcheck spellcheck-interactive spellcheck-sortdict:
+	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SPELLCHECK_SRC)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp

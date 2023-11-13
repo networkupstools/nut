@@ -135,6 +135,7 @@ spellcheck spellcheck-interactive:
 	(cd $(builddir)/conf && $(MAKE) -s $@) || RES=$$? ; \
 	(cd $(builddir)/data && $(MAKE) -s $@) || RES=$$? ; \
 	(cd $(builddir)/scripts/Solaris && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts/Windows && $(MAKE) -s $@) || RES=$$? ; \
 	exit $$RES
 
 # Note: the "all-docs" and "check-docs" targets may require tools not
