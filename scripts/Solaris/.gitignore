@@ -12,5 +12,6 @@
 /nut-driver-enumerator.xml
 /nut-monitor.xml
 /nut-server.xml
+/nut-usb-driver.p5m.include*
 /nut.xml
 /NUT*.local.gz

@@ -105,6 +105,7 @@ if [ ! -f scripts/udev/nut-usbups.rules.in -o \
      ! -f scripts/upower/95-upower-hid.hwdb -o \
      ! -f scripts/devd/nut-usb.conf.in -o \
      ! -f scripts/devd/nut-usb.quirks -o \
+     ! -f scripts/Solaris/nut-usb-driver.p5m.include.in -o \
      ! -f tools/nut-scanner/nutscan-usb.h ] \
 || [ -n "`find drivers -newer scripts/hotplug/libhid.usermap | grep -E '(-hid|nutdrv_qx|usb.*)\.c'`" ] \
 || [ -n "`find drivers -not -newer tools/nut-usbinfo.pl | grep -E '(-hid|nutdrv_qx|usb.*)\.c'`" ] \
@@ -132,6 +133,7 @@ if [ ! -f scripts/udev/nut-usbups.rules.in -o \
 			echo "Proceeding without NUT USB Info, be sure to not require it in configure script" >&2
 			touch scripts/udev/nut-usbups.rules.in scripts/udev/nut-usbups.rules.in.AUTOGEN_WITHOUT
 			touch scripts/devd/nut-usb.conf.in scripts/devd/nut-usb.conf.in.AUTOGEN_WITHOUT
+			touch scripts/Solaris/nut-usb-driver.p5m.include.in scripts/Solaris/nut-usb-driver.p5m.include.in.AUTOGEN_WITHOUT
 		else
 			echo "Aborting $0! To avoid this, please   export WITHOUT_NUT_USBINFO=true   and re-run" >&2
 			exit 1

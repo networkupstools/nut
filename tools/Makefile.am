@@ -44,6 +44,9 @@ GENERATED_USB_OS_FILES += $(top_builddir)/scripts/devd/nut-usb.conf.in
 # FreeBSD quirks output file
 GENERATED_USB_OS_FILES += $(top_builddir)/scripts/devd/nut-usb.quirks
 
+# Solaris/illumos IPS aka pkg(5) driver actions helper output file
+GENERATED_USB_OS_FILES += $(top_builddir)/scripts/Solaris/nut-usb-driver.p5m.include.in
+
 # UPower output file
 # Note: unlike others above, this one is currently tracked in Git
 GENERATED_USB_OS_FILES += $(top_builddir)/scripts/upower/95-upower-hid.hwdb

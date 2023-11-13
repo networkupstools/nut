@@ -4683,6 +4683,7 @@ m4_foreach_w([SCRIPTFILE], [
  scripts/augeas/nutupsconf.aug
  scripts/udev/nut-usbups.rules
  scripts/devd/nut-usb.conf
+ scripts/Solaris/nut-usb-driver.p5m.include
 ], [
 	AC_MSG_CHECKING([whether to generate SCRIPTFILE])
 	AS_IF([test -s SCRIPTFILE.in && ! test -f SCRIPTFILE.in.AUTOGEN_WITHOUT],
