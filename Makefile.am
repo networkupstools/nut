@@ -143,6 +143,7 @@ spellcheck spellcheck-interactive:
 	(cd $(builddir)/scripts/systemd && $(MAKE) -s $@) || RES=$$? ; \
 	(cd $(builddir)/scripts/udev && $(MAKE) -s $@) || RES=$$? ; \
 	(cd $(builddir)/scripts/upsdrvsvcctl && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/tests/NIT && $(MAKE) -s $@) || RES=$$? ; \
 	exit $$RES
 
 # Note: the "all-docs" and "check-docs" targets may require tools not
