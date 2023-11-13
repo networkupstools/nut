@@ -1,4 +1,4 @@
-# Network UPS Tools: script/Windows
+# Network UPS Tools: scripts/Windows
 
 AM_CFLAGS = -I$(top_srcdir)/include
 

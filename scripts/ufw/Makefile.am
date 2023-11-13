@@ -1,3 +1,5 @@
+# Network UPS Tools: scripts/ufw
+
 EXTRA_DIST = README.adoc nut.ufw.profile.in
 
 # Note: spellchecking is currently ensured by docs/Makefile.am

@@ -1,3 +1,4 @@
+# Network UPS Tools: scripts/udev
 
 if WITH_UDEV
  udevrulesdir = $(udevdir)/rules.d

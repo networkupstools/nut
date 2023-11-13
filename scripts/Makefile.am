@@ -1,3 +1,5 @@
+# Network UPS Tools: scripts (root)
+
 EXTRA_DIST = \
     README.adoc \
     avahi/nut.service.in \

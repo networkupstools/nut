@@ -1,3 +1,5 @@
+# Network UPS Tools: scripts/upsdrvsvcctl
+
 EXTRA_DIST = README
 
 if HAVE_SYSTEMD

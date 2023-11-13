@@ -1,3 +1,4 @@
+# Network UPS Tools: scripts/augeas
 
 EXTRA_DIST = gen-nutupsconf-aug.py.in nutupsconf.aug.tpl \
 	README.adoc tests/test_nut.aug

@@ -1,3 +1,5 @@
+# Network UPS Tools: scripts/hotplug
+
 EXTRA_DIST = README
 
 if WITH_HOTPLUG

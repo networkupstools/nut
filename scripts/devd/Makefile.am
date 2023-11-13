@@ -1,3 +1,4 @@
+# Network UPS Tools: scripts/devd
 
 if WITH_DEVD
  devdconfdir = $(devddir)

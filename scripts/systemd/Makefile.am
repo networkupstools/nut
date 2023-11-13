@@ -1,3 +1,5 @@
+# Network UPS Tools: scripts/systemd
+
 EXTRA_DIST = README.adoc
 
 if HAVE_SYSTEMD
