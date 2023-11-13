@@ -23,12 +23,14 @@ EXTRA_DIST = \
     subdriver/gen-snmp-subdriver.sh \
     upower/95-upower-hid.hwdb \
     upower/95-upower-hid.rules \
+    usb_resetter/README.adoc \
+    usb_resetter/nut-driver.service \
     Windows/halt.c \
     Windows/Makefile
 
 SUBDIRS = augeas devd hotplug python systemd udev ufw Solaris Windows upsdrvsvcctl
 
-SPELLCHECK_SRC = README.adoc
+SPELLCHECK_SRC = README.adoc usb_resetter/README.adoc
 
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension:
 #%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
@@ -47,6 +49,6 @@ SPELLCHECK_SRC = README.adoc
 spellcheck spellcheck-interactive spellcheck-sortdict:
 	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SPELLCHECK_SRC)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
-CLEANFILES = *-spellchecked
+CLEANFILES = *-spellchecked usb_resetter/*-spellchecked
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
