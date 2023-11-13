@@ -1,4 +1,4 @@
-EXTRA_DIST = makelocal.sh precheck.py.in preproto.pl.in README
+EXTRA_DIST = makelocal.sh precheck.py.in preproto.pl.in README.adoc
 PROTOTYPE_DIR = $(DESTDIR)@prefix@
 SOLARIS_CHECK_TARGETS =
 PYTHON = @PYTHON@
