@@ -134,6 +134,7 @@ spellcheck spellcheck-interactive:
 	(cd $(builddir)/docs/man && $(MAKE) -s $@) || RES=$$? ; \
 	(cd $(builddir)/conf && $(MAKE) -s $@) || RES=$$? ; \
 	(cd $(builddir)/data && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/data/html && $(MAKE) -s $@) || RES=$$? ; \
 	(cd $(builddir)/scripts && $(MAKE) -s $@) || RES=$$? ; \
 	(cd $(builddir)/scripts/Solaris && $(MAKE) -s $@) || RES=$$? ; \
 	(cd $(builddir)/scripts/Windows && $(MAKE) -s $@) || RES=$$? ; \
