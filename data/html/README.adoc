@@ -13,12 +13,13 @@ NUT HTML pages have been created as a central point
 that ease the access to the various CGI scripts
 providing the NUT web interface.
 
-It consists of three `.html` files:
-- `index.html`: defines the two container frames,
+It consists of three HTML files:
+
+* `index.html`: defines the two container frames,
   `topFrame` and `mainFrame`
-- `header.html`: contains the header including links
+* `header.html`: contains the header including links
   to NUT website, and `upsstats.cgi`/`upsset.cgi`
-- `bottom.html`: empty frame that will be replaced
+* `bottom.html`: empty frame that will be replaced
   with the content of `upsstats.cgi` or `upsset.cgi`.
 
 2) Integration

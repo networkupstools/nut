@@ -40,6 +40,7 @@ Found device 0665:5161 at /dev/bus/usb/001/002 Manufacturer=INNO TECH, Product=U
 ----
 
 The `usb_resetter` can work in three different ways:
+
 - Reset device itself
 - Reset the hub the device is attached to
 - Reset all USB controllers

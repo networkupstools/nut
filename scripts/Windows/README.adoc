@@ -98,6 +98,7 @@ or
 (it can help to open two terminals and copy one ARCH into each
   and then the lines below into both of them; be sure to use separate
   directory trees for the unpacked build workspaces)
+
 - for either-ARCH build environment further set:
 ------
 :; export HOST_FLAG="--host=$ARCH"
