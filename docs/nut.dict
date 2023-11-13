@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3367 utf-8
+personal_ws-1.1 en 3398 utf-8
 AAC
 AAS
 ABI
@@ -216,6 +216,7 @@ ChangeLog
 ChargdV
 Chatziathanassiou
 CheckUPS
+CheckUPSAvailable
 Checksum
 Chiou
 Chu
@@ -287,6 +288,7 @@ DWAKE
 DWITH
 DX
 Daniele
+Dashjr
 DataRoom
 Dbnc
 Ddtrace
@@ -296,6 +298,7 @@ DeltaUPSv
 DeviceID
 DeviceKit
 DeviceLogin
+DeviceLogout
 Dgtk
 Dharm
 DiSplay
@@ -420,6 +423,7 @@ GID
 GKrellM
 GND
 GNUmakefile
+GObject
 GPIO
 GPIOCHIP
 GPL
@@ -441,6 +445,10 @@ Gathman
 Gembe
 GenTestFail
 Gert
+GetRWVars
+GetUPSCommands
+GetUPSList
+GetUPSNames
 GetUPSVars
 Ghali
 Giese
@@ -947,6 +955,7 @@ PV
 PWLv
 PWR
 PXG
+PYTHONPATH
 PaaS
 Pac
 PackageRequired
@@ -1014,9 +1023,12 @@ Proxmox
 Prynych
 Pulizzi
 PwrOut
+PyDOC
 PyGTK
 PyNUT
 PyNUTClient
+PyNUTError
+PyPI
 PyQt
 QBDR
 QBT
@@ -1106,6 +1118,7 @@ Rodríguez
 Rouben
 Rozman
 Rucelf
+RunUPSCommand
 RuntimeWarning
 RxD
 RxHs
@@ -1212,12 +1225,15 @@ Sep
 Sequentializing
 SerialNumber
 Serv
+Serveur
+SetRWVar
 Shara
 ShareAlike
 Shaul
 ShdnDbnc
 ShdnDly
 ShdnPol
+ShutDown
 Shutdn
 Sibbald
 Sicon
@@ -1357,6 +1373,7 @@ UPSHOST
 UPSIMAGEPATH
 UPSLC
 UPSNOTIFY
+UPSName
 UPSOutletSystemOutletDelayBeforeReboot
 UPSOutletSystemOutletDelayBeforeShutdown
 UPSOutletSystemOutletDelayBeforeStartup
@@ -1466,6 +1483,7 @@ XSL
 XT
 XUPS
 XXXX
+XXXXXXXXXXXX
 XYZ
 Xfer
 XferDly
@@ -1620,7 +1638,10 @@ avahi
 avr
 awd
 awk
+b'some
+b'string
 bAlternateSetting
+bUps
 backend
 backends
 backgrounding
@@ -2200,6 +2221,7 @@ inlined
 innotech
 inode
 inplace
+installable
 installcheck
 installpkg
 installurl
@@ -2688,6 +2710,7 @@ pijuice
 pinout
 pinouts
 pipename
+pixmaps
 pkg
 pkgconf
 pkgconfig
@@ -2853,6 +2876,7 @@ rqt
 rsa
 rsync
 rts
+ru
 rubygem
 runlevel
 runtime
@@ -2960,6 +2984,7 @@ socomec
 solaris
 solibs
 solis
+somename
 somepass
 something's
 sp
@@ -2994,6 +3019,7 @@ stopAtEntry
 stopIP
 stopbits
 str
+strUps
 strace
 strarr
 strcasecmp
@@ -3037,6 +3063,7 @@ svcs
 svn
 sw
 symlink
+symlinked
 symlinking
 symlinks
 symmetrathreephase
@@ -3143,6 +3170,7 @@ udev
 udevadm
 ufw
 ugen
+ui
 uid
 uint
 ukUNV
@@ -3156,6 +3184,7 @@ undefine
 undervoltage
 unescaped
 unicast
+unicode
 uninstall
 uninterruptible
 uniq
@@ -3177,6 +3206,7 @@ upsIdent
 upsIdentModel
 upsMIB
 upsObjects
+upsadmin
 upsc
 upscli
 upsclient
@@ -3208,6 +3238,7 @@ upsmon's
 upsmonuser
 upsname
 upsonbatt
+upspass
 upspasswd
 upsrw
 upssched

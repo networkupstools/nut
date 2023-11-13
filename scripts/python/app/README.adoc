@@ -50,7 +50,7 @@ image::screenshots/nut-monitor-1.png[Example of device status overview]
 
 image::screenshots/nut-monitor-2.png[Example report of device variables]
 
-image::screenshots/nut-monitor-3.png[Example modification of a writeable variable]
+image::screenshots/nut-monitor-3.png[Example modification of a writable variable]
 
 Kudos
 -----
