@@ -3790,6 +3790,60 @@ else
 fi
 AM_CONDITIONAL(WITH_DEVD, test -n "${devddir}")
 
+dnl FreeBSD quirks support:
+
+freebsdquirksdir=""
+AC_MSG_CHECKING(whether to install FreeBSD site-local USB quirks file)
+AC_ARG_WITH(freebsd-quirks-dir,
+	AS_HELP_STRING([--with-freebsd-quirks-dir=PATH], [where to install nut-usb.quirks file (${datadir}; typically /usr/local/share/nut)]),
+[
+	case "${withval}" in
+	yes) dnl Typically /usr/local/share/nut
+		freebsdquirksdir="${datadir}"
+		;;
+	auto)
+		dnl Are we building for FreeBSD with such customizations?
+		if test -s /boot/loader.conf.local ; then
+			freebsdquirksdir="${datadir}"
+		fi
+		if test "${nut_with_usb}" = yes && ! test -s scripts/devd/nut-usb.quirks ; then
+			AC_MSG_WARN([freebsd-quirks-dir directory skipped because a non-trivial scripts/devd/nut-usb.quirks was not provided by autogen.sh or dist archive])
+			freebsdquirksdir=""
+		fi
+		;;
+	no)
+		freebsdquirksdir=""
+		;;
+	*)
+		freebsdquirksdir="${withval}"
+		;;
+	esac
+], [])
+if test -n "${freebsdquirksdir}"; then
+	AC_MSG_RESULT(using ${freebsdquirksdir})
+	NUT_REPORT_PATH_INTEGRATIONS([FreeBSD site-local USB quirks directory (add into /boot/loader.conf.local)], [${freebsdquirksdir}])
+else
+	AC_MSG_RESULT(no)
+fi
+
+if test -n "${freebsdquirksdir}" ; then
+	dnl Expand datadir or similar macros in this path
+	conftemp="${freebsdquirksdir}"
+	eval conftemp=\"${conftemp}\"
+	eval conftemp=\"${conftemp}\"
+	freebsdquirksdir="${conftemp}"
+
+	if test -z "${freebsdquirksdir}"; then
+		AC_MSG_ERROR([freebsd-quirks-dir requested but not found (resolved as empty)])
+	fi
+
+	if test "${nut_with_usb}" = yes && ! test -s scripts/devd/nut-usb.quirks ; then
+		AC_MSG_ERROR([freebsd-quirks-dir directory and USB driver support requested, but a non-trivial scripts/devd/nut-usb.quirks was not provided by autogen.sh or dist archive])
+	fi
+fi
+
+AM_CONDITIONAL(WITH_FREEBSD_QUIRKS_DIR, test -n "${freebsdquirksdir}")
+
 dnl
 
 dnl AIX system
@@ -4128,6 +4182,7 @@ AC_SUBST(WORDS_BIGENDIAN)
 AC_SUBST(cgiexecdir)
 AC_SUBST(devddir)
 AC_SUBST(driverexecdir)
+AC_SUBST(freebsdquirksdir)
 AC_SUBST(htmldir)
 AC_SUBST(pkgconfigdir)
 AC_SUBST(systemdsystemunitdir)

@@ -53,6 +53,9 @@ my $outputUdev="$TOP_BUILDDIR/scripts/udev/nut-usbups.rules.in";
 # BSD devd output file
 my $output_devd="$TOP_BUILDDIR/scripts/devd/nut-usb.conf.in";
 
+# FreeBSD/pfSense/... quirks output file
+my $output_freebsd_quirks="$TOP_BUILDDIR/scripts/devd/nut-usb.quirks";
+
 # UPower output file
 my $outputUPower="$TOP_BUILDDIR/scripts/upower/95-upower-hid.hwdb";
 
@@ -118,6 +121,14 @@ sub gen_usb_files
 	print $out_devd '# This file is generated and installed by the Network UPS Tools package.'."\n";
 	print $out_devd "# Homepage: https://www.networkupstools.org/\n\n";
 
+	my $out_freebsd_quirks = do {local *OUT_FREEBSD_QUIRKS};
+	open $out_freebsd_quirks, ">$output_freebsd_quirks" || die "error $output_freebsd_quirks : $!";
+	print $out_freebsd_quirks '# This file is generated and installed by the Network UPS Tools package.'."\n";
+	print $out_freebsd_quirks "# Homepage: https://www.networkupstools.org/\n";
+	print $out_freebsd_quirks "# Contents should be added to /boot/loader.conf.local (watch out for unique quirk numbers!)\n";
+	print $out_freebsd_quirks "# Inspired by 'Notes on USB quirks' under https://forum.netgate.com/topic/183961/nut-package-2-8-1-and-above\n";
+	print $out_freebsd_quirks "# and https://github.com/freebsd/freebsd-src/blob/main/sys/dev/usb/quirk/usb_quirk.c\n\n";
+
 	# UPower file header
 	my $outUPower = do {local *OUT_UPOWER};
 	open $outUPower, ">$outputUPower" || die "error $outputUPower : $!";
@@ -166,6 +177,7 @@ sub gen_usb_files
 	print $outDevScanner "typedef struct {\n\tuint16_t\tvendorID;\n\tuint16_t\tproductID;\n\tchar*\tdriver_name;\n\tchar*\talt_driver_names;\n} usb_device_id_t;\n\n";
 	print $outDevScanner "/* USB IDs device table */\nstatic usb_device_id_t usb_device_table[] = {\n\n";
 
+	my $entryNumber = 0;
 	# generate the file in alphabetical order (first for VendorID, then for ProductID)
 	foreach my $vendorId (sort { lc $a cmp lc $b } keys  %vendorName)
 	{
@@ -184,6 +196,10 @@ sub gen_usb_files
 			print $out_devd "\n# ".$vendorName{$vendorId}."\n";
 		}
 
+		# FreeBSD quirks vendor header
+		if ($vendorName{$vendorId}) {
+			print $out_freebsd_quirks "\n# ".$vendorName{$vendorId}."\n";
+		}
 
 		# UPower vendor header flag
 		my $upowerVendorHasDevices = 0;
@@ -207,10 +223,14 @@ sub gen_usb_files
 			print $out_devd "\tmatch \"subsystem\"\t\"DEVICE\";\n";
 			print $out_devd "\tmatch \"type\"\t\t\"ATTACH\";\n";
 			print $out_devd "\tmatch \"vendor\"\t\t\"$vendorId\";\n";
-			#
 			print $out_devd "\tmatch \"product\"\t\t\"$productId\";\n";
 			print $out_devd "\taction \"chgrp \@RUN_AS_GROUP\@ /dev/\$cdev; chmod g+rw /dev/\$cdev\";\n";
 			print $out_devd "};\n";
+
+			# FreeBSD quirks device entry
+			# e.g. hw.usb.quirk.1="0x051d 0x0003 0x0000 0xffff UQ_HID_IGNORE"
+			print $out_freebsd_quirks "# ".$vendor{$vendorId}{$productId}{"comment"}.' - '.$vendor{$vendorId}{$productId}{"drivers"}."\n";
+			print $out_freebsd_quirks "hw.usb.quirk." . $entryNumber . "=\"" . $vendorId . " " . $productId . " 0x0000 0xffff UQ_HID_IGNORE\"\n";
 
 			# UPower device entry (only for USB/HID devices!)
 			if ($vendor{$vendorId}{$productId}{"driver"} eq "usbhid-ups" ||
@@ -238,6 +258,8 @@ sub gen_usb_files
 				print $outDevScanner "NULL";
 			}
 			print $outDevScanner " },\n";
+
+			$entryNumber++;
 		}
 
 		if ($upowerVendorHasDevices) {
