@@ -96,10 +96,11 @@ typedef struct {
 #define NOTIFY_NOCOMM	8	/* UPS hasn't been contacted in a while	*/
 #define NOTIFY_NOPARENT	9	/* privileged parent process died       */
 #define NOTIFY_CAL		10	/* UPS is performing calibration        */
-#define NOTIFY_OFF	11	/* UPS is administratively OFF or asleep*/
-#define NOTIFY_NOTOFF	12	/* UPS is not anymore administratively OFF or asleep*/
-#define NOTIFY_BYPASS	13	/* UPS is administratively on bypass    */
-#define NOTIFY_NOTBYPASS	14	/* UPS is not anymore administratively on bypass    */
+#define NOTIFY_NOTCAL		11	/* UPS is performing calibration        */
+#define NOTIFY_OFF	12	/* UPS is administratively OFF or asleep*/
+#define NOTIFY_NOTOFF	13	/* UPS is not anymore administratively OFF or asleep*/
+#define NOTIFY_BYPASS	14	/* UPS is administratively on bypass    */
+#define NOTIFY_NOTBYPASS	15	/* UPS is not anymore administratively on bypass    */
 
 /* notify flag values */
 
@@ -140,6 +141,7 @@ static struct {
 	{ NOTIFY_NOCOMM,   "NOCOMM",   NULL, "UPS %s is unavailable", NOTIFY_DEFAULT },
 	{ NOTIFY_NOPARENT, "NOPARENT", NULL, "upsmon parent process died - shutdown impossible", NOTIFY_DEFAULT },
 	{ NOTIFY_CAL,      "CAL",      NULL, "UPS %s: calibration in progress", NOTIFY_DEFAULT },
+	{ NOTIFY_NOTCAL,   "NOTCAL",   NULL, "UPS %s: calibration finished", NOTIFY_DEFAULT },
 	{ NOTIFY_OFF,      "OFF",      NULL, "UPS %s: administratively OFF or asleep", NOTIFY_DEFAULT },
 	{ NOTIFY_NOTOFF,   "NOTOFF",   NULL, "UPS %s: no longer administratively OFF or asleep", NOTIFY_DEFAULT },
 	{ NOTIFY_BYPASS,   "BYPASS",   NULL, "UPS %s: on bypass (powered, not protecting)", NOTIFY_DEFAULT },
