@@ -202,7 +202,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 		}
 	}
 
-	/* ALLOW_NO_DEVICE <seconds> */
+	/* ALLOW_NO_DEVICE <bool> */
 	if (!strcmp(arg[0], "ALLOW_NO_DEVICE")) {
 		if (isdigit((size_t)arg[1][0])) {
 			allow_no_device = (atoi(arg[1]) != 0); /* non-zero arg is true here */
@@ -212,6 +212,19 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 			return 1;
 
 		upslogx(LOG_ERR, "ALLOW_NO_DEVICE has non numeric and non boolean value (%s)!", arg[1]);
+		return 0;
+	}
+
+	/* ALLOW_NOT_ALL_LISTENERS <bool> */
+	if (!strcmp(arg[0], "ALLOW_NOT_ALL_LISTENERS")) {
+		if (isdigit((size_t)arg[1][0])) {
+			allow_not_all_listeners = (atoi(arg[1]) != 0); /* non-zero arg is true here */
+			return 1;
+		}
+		if (parse_boolean(arg[1], &allow_not_all_listeners))
+			return 1;
+
+		upslogx(LOG_ERR, "ALLOW_NOT_ALL_LISTENERS has non numeric and non boolean value (%s)!", arg[1]);
 		return 0;
 	}
 

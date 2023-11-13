@@ -61,7 +61,13 @@ https://github.com/networkupstools/nut/milestone/10
      support implemented for USB connected drivers. Library API version
      bumped to 2.3.0 accordingly.
 
- - NUT CI improvements:
+ - upsd: Fixed conditions for "no listening interface available" diagnosis
+   to check how many listeners we succeeded with, not whether the first one
+   succeeded or not. If not all requested (non-localhost) listeners were
+   available, default to fail the daemon start-up attempt; support for an
+   `ALLOW_NOT_ALL_LISTENERS` setting was added to control this behavior. [#723]
+
+- NUT CI improvements:
    * Added publishing recipes for PyNUT client bindings for NUT, so it ends
      up in the link:https://pypi.org/project/PyNUTClient[PyPI repository].
      [#2158]
