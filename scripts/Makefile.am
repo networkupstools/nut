@@ -14,7 +14,7 @@ EXTRA_DIST = \
     misc/osd-notify \
     perl/Nut.pm \
     RedHat/halt.patch \
-    RedHat/README \
+    RedHat/README.adoc \
     RedHat/ups.in \
     RedHat/upsd.in \
     RedHat/upsmon.in \
@@ -30,7 +30,7 @@ EXTRA_DIST = \
 
 SUBDIRS = augeas devd hotplug python systemd udev ufw Solaris Windows upsdrvsvcctl
 
-SPELLCHECK_SRC = README.adoc usb_resetter/README.adoc
+SPELLCHECK_SRC = README.adoc RedHat/README.adoc usb_resetter/README.adoc
 
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension:
 #%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
@@ -49,6 +49,6 @@ SPELLCHECK_SRC = README.adoc usb_resetter/README.adoc
 spellcheck spellcheck-interactive spellcheck-sortdict:
 	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SPELLCHECK_SRC)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
-CLEANFILES = *-spellchecked usb_resetter/*-spellchecked
+CLEANFILES = *-spellchecked RedHat/*-spellchecked usb_resetter/*-spellchecked
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
