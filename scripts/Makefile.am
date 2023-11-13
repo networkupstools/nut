@@ -1,4 +1,5 @@
-EXTRA_DIST = README \
+EXTRA_DIST = \
+    README.adoc \
     avahi/nut.service.in \
     HP-UX/nut-drvctl \
     HP-UX/nut-drvctl.sh \
