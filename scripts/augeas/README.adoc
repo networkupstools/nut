@@ -12,12 +12,14 @@ In order to address this point, NUT now provides configuration tools and
 manipulation abstraction, to anybody who want to manipulate NUT configuration,
 through Augeas lenses and modules.
 
-From link:http://augeas.net[Augeas homepage]:
-
-> "Augeas is a configuration editing tool. It parses configuration files
-> in their native formats and transforms them into a tree. Configuration
-> changes are made by manipulating this tree and saving it back into
-> native config files."
+.From link:http://augeas.net[Augeas homepage]:
+[quote]
+____
+_Augeas is a configuration editing tool. It parses configuration files
+in their native formats and transforms them into a tree. Configuration
+changes are made by manipulating this tree and saving it back into
+native config files._
+____
 
 In other words, Augeas is the dreamed Registry, with all the advantages
 (such as a uniform interface and tools), and the added bonus of being
