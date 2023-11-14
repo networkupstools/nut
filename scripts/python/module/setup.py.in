@@ -18,6 +18,7 @@ setup(
     name =	"PyNUTClient",
     version =	'@NUT_SOURCE_GITREV_NUMERIC@',
     author =	"The Network UPS Tools project",
+    license_files = ('LICENSE-GPL3',),
     author_email =	"jimklimov+nut@gmail.com",
     description =	"Python client bindings for NUT",
     url =	"https://github.com/networkupstools/nut/tree/master/scripts/python/module",

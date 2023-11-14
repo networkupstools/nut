@@ -17,7 +17,7 @@ $(GENERATED_DIST): .pypi-dist
 
 clean-local:
 	rm -rf $(GENERATED_SRC) $(GENERATED_DIST)
-	rm -f .pypi-src .pypi-dist
+	rm -f .pypi-src .pypi-dist LICENSE-GPL3
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp .pypi-tools*
 
@@ -32,7 +32,7 @@ upload publish:
 	 esac
 
 # README.txt is also a part of module standard expectations
-.pypi-src: test_nutclient.py.in PyNUT.py.in setup.py.in README.adoc Makefile
+.pypi-src: test_nutclient.py.in PyNUT.py.in setup.py.in README.adoc Makefile $(top_srcdir)/LICENSE-GPL3
 	@echo "  PYPI  Generate PyPI module source"
 	@rm -rf $(GENERATED_SRC) "$@"
 	@mkdir src
@@ -52,6 +52,7 @@ upload publish:
 		if test -x "$(srcdir)/$${B}.in" ; then chmod +x "src/$${B}"; fi ; \
 	 done ; \
 	 cp -pf "$(srcdir)/README.adoc" README.txt || exit ; \
+	 cp -pf "$(top_srcdir)/LICENSE-GPL3" . || exit ; \
 	 echo "from . import PyNUT" > src/__init__.py || exit
 	@touch "$@"
 
