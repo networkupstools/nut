@@ -99,7 +99,7 @@ Although the original project was written in French, for the reasons of general
 distribution with NUT, all of its code is commented in English. While this file
 contains the description from https://www.lestat.st/informatique/projets/pynut
 the class `PyNUTClient` is compatible with the Python module PyDOC, so you can
-type `pydoc PyNUT` to obtain succint documentation on your current version of
+type `pydoc PyNUT` to obtain succinct documentation on your current version of
 the module.
 
 For more examples see the provided test script and the NUT-Monitor application
@@ -126,7 +126,7 @@ ver
 ~~~
 
 Sends the `VER` command to the NUT data server and returns its self-reported
-identification such as version, product or distribution it may be bunded with.
+identification such as version, product or distribution it may be bundied with.
 
 Note that the NUT client interactions should not rely on reported versions,
 but follow the protocol as defined.
@@ -168,7 +168,7 @@ evaluates the server response.
 -----
     import PyNUT
 
-    ups    = PyNUT.PyNUTClient( host='serveur', login='upsadmin', password='upspass' )
+    ups    = PyNUT.PyNUTClient( host='server', login='upsadmin', password='upspass' )
     result = ups.CheckUPSAvailable( ups='ups1' )
     print( result )
 
@@ -188,7 +188,7 @@ of "variable"-"current value" pairs.
 -----
     import PyNUT
 
-    ups    = PyNUT.PyNUTClient( host='serveur', login='upsadmin', password='upspass' )
+    ups    = PyNUT.PyNUTClient( host='server', login='upsadmin', password='upspass' )
     result = ups.GetRWVars( ups='ups1' )
     print( result )
 
@@ -213,7 +213,7 @@ pairs.
 -----
     import PyNUT
 
-    ups    = PyNUT.PyNUTClient( host='serveur', login='upsadmin', password='upspass' )
+    ups    = PyNUT.PyNUTClient( host='server', login='upsadmin', password='upspass' )
     result = ups.GetRWVars( ups='ups1' )
     print( result )
 
@@ -241,7 +241,7 @@ Returns the list of UPSes represented by the NUT server, as a dictionary of
 -----
     import PyNUT
 
-    ups    = PyNUT.PyNUTClient( host='serveur', login='upsadmin', password='upspass' )
+    ups    = PyNUT.PyNUTClient( host='server', login='upsadmin', password='upspass' )
     result = ups.GetUPSList()
     print( result )
 
@@ -265,7 +265,7 @@ methods.
 -----
     import PyNUT
 
-    ups    = PyNUT.PyNUTClient( host='serveur', login='upsadmin', password='upspass' )
+    ups    = PyNUT.PyNUTClient( host='Serveur', login='upsadmin', password='upspass' )
     result = ups.GetUPSNames()
     print( result )
 
@@ -283,7 +283,7 @@ of "variable"-"current value" pairs.
 -----
     import PyNUT
 
-    ups    = PyNUT.PyNUTClient( host='serveur', login='upsadmin', password='upspass' )
+    ups    = PyNUT.PyNUTClient( host='Serveur', login='upsadmin', password='upspass' )
     result = ups.GetUPSVars( ups='UPS1' )
     print( result )
 
@@ -356,7 +356,7 @@ in case of failure.
 -----
     import PyNUT
 
-    ups    = PyNUT.PyNUTClient( host='serveur', login='upsadmin', password='upspass' )
+    ups    = PyNUT.PyNUTClient( host='Serveur', login='upsadmin', password='upspass' )
     result = ups.RunUPSCommand( ups='UPS1', command='test.panel.start' )
     print( result )
 
@@ -381,7 +381,7 @@ in case of failure.
 -----
     import PyNUT
 
-    ups    = PyNUT.PyNUTClient( host='serveur', login='upsadmin', password='upspass' )
+    ups    = PyNUT.PyNUTClient( host='Serveur', login='upsadmin', password='upspass' )
     result = ups.SetRWVar( ups='UPS1', var='battery.date', value='06/17/08' )
     print( result )
 
