@@ -1,0 +1,23 @@
+NUT resources for systemd integration
+=====================================
+
+Overview
+--------
+
+This directory contains the NUT support files for `systemd`, the System and
+Service Manager used in many Linux distributions.
+
+These files are automatically installed, upon detection (at `configure` time)
+of a systemd enabled target system, or if corresponding configuration options
+were requested.
+
+This also uses the `nut-driver-enumerator.sh` (service and implementation
+method) and `upsdrvsvcctl` (tool) to manage NUT drivers as service instances
+located in `../upsdrvsvcctl/` source subdirectory.
+
+Credits
+-------
+
+* Contributed by Michal Hlavinka <mhlavink@redhat.com>
+* Updated 2016-2018 by Michal Hrusecky and Jim Klimov <EvgenyKlimov@eaton.com>
+* Maintained since 2020 by Jim Klimov <jimklimov+nut@gmail.com>

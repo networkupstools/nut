@@ -8,7 +8,7 @@ NUT is now also available for the Microsoft Windows platform.
 
 This methodology (and Windows support in general) are currently experimental,
 so pull requests are welcome to tie up some loose ends (add more prerequisites,
-test and fix programs, re-enable some code just commented away by ifdefs...)
+test and fix programs, re-enable some code just commented away by `ifdef`s...)
 
 NOTE: It is possible to prepare a Windows machine with tools and prerequisites
 for building NUT natively, as detailed in `docs/config-prereqs.txt` and easily
@@ -98,6 +98,7 @@ or
 (it can help to open two terminals and copy one ARCH into each
   and then the lines below into both of them; be sure to use separate
   directory trees for the unpacked build workspaces)
+
 - for either-ARCH build environment further set:
 ------
 :; export HOST_FLAG="--host=$ARCH"
@@ -549,7 +550,7 @@ NOTE: Ability to `make docs` here relies on presence of `xmlto` program.
 In NUT CI workers prepared according to `docs/config-prereqs.txt` this should
 be among dependencies for `asciidoc`; beware that with prerequisites it has
 quite a large installation footprint. Alternately check PR #69, or consult
-the makefiles for current `install` target definition to run its job without
+the Makefiles for current `install` target definition to run its job without
 `install-docs` part (example posted below).
 
 	#:; ( cd "$DLDIR" && git clone -b fix-mingw-cross https://github.com/jimklimov/neon neon-git )

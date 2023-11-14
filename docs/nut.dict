@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3284 utf-8
+personal_ws-1.1 en 3411 utf-8
 AAC
 AAS
 ABI
@@ -79,6 +79,7 @@ AsciiDoc
 Asium
 Ates
 AudibleAlarmControl
+AuthConfig
 AutoFrq
 AutoMsg
 AutoRst
@@ -174,6 +175,7 @@ CERTIDENT
 CERTREQUEST
 CERTVERIF
 CEST
+CHOST
 CHRG
 CL
 CLANGVER
@@ -215,6 +217,7 @@ ChangeLog
 ChargdV
 Chatziathanassiou
 CheckUPS
+CheckUPSAvailable
 Checksum
 Chiou
 Chu
@@ -264,6 +267,7 @@ DF
 DHEA
 DIGYS
 DISCHRG
+DLDIR
 DLLs
 DMF
 DN
@@ -271,26 +275,32 @@ DNS
 DOCTYPE
 DOMAINs
 DPC
+DPURIFY
 DRIVERLIST
 DS
 DSA
 DSHUTD
 DSL
 DTE
+DTrace
 DUMPALL
 DUMPDONE
 DWAKE
 DWITH
 DX
 Daniele
+Dashjr
 DataRoom
 Dbnc
+Ddtrace
 DeepTstFail
 Defensor
 DeltaUPSv
 DeviceID
 DeviceKit
 DeviceLogin
+DeviceLogout
+Dgtk
 Dharm
 DiSplay
 Diehl
@@ -298,11 +308,17 @@ Dietze
 Digitus
 Digys
 Dimitris
+Dinstalled
 Disassembly
+Dlibelf
 Dly
+Dman
 Dmitry
 DocBook
+DocumentRoot
 Doxygen
+DriverInstaller
+Dsystemtap
 Dynamix
 Dynex
 EAGAIN
@@ -354,6 +370,7 @@ Eriksson
 Evgeny
 Exar
 ExecCGI
+ExecStartPre
 FD
 FEMEA
 FFF
@@ -401,12 +418,15 @@ FreqSens
 Frolov
 FullLoad
 Fuß
+GC
 GCCVER
 GES
 GETADDRINFO
 GID
 GKrellM
 GND
+GNUmakefile
+GObject
 GPIO
 GPIOCHIP
 GPL
@@ -414,6 +434,7 @@ GPSER
 GRs
 GTK
 GUESSTIMATION
+GUID
 GUIs
 GWD
 GXE
@@ -427,6 +448,10 @@ Gathman
 Gembe
 GenTestFail
 Gert
+GetRWVars
+GetUPSCommands
+GetUPSList
+GetUPSNames
 GetUPSVars
 Ghali
 Giese
@@ -435,6 +460,7 @@ GitHub
 GitHub's
 Gnd
 Gnomovision
+GnuTLS
 Goebl
 Golang
 Gomes
@@ -490,6 +516,7 @@ Homebrew
 Homebridge
 Hoogervorst
 Hough
+Hrusecky
 Hunnox
 Hurd
 Håvard
@@ -527,6 +554,7 @@ ITEMP
 ITy
 IVT
 IZ
+ImageFiles
 Infosec
 Innova
 Integrators
@@ -557,6 +585,7 @@ Javadoc
 Javascript
 Jenkinsfile
 JoinControllers
+Jong
 Joon
 Jumpered
 KNutClient
@@ -596,6 +625,8 @@ LDADD
 LDFLAGS
 LDLC
 LDRIVER
+LDSHARED
+LDSHAREDLIBC
 LEDs
 LGTM
 LH
@@ -799,6 +830,7 @@ NaturalDocs
 Necedah
 NetBSD
 NetBeans
+NetInvent
 NetPro
 NetServer
 NetUps
@@ -816,6 +848,7 @@ NomVOut
 NotePad
 Novell
 NrLoBatt
+NuGet
 NutException
 Nxx
 OAH
@@ -867,6 +900,7 @@ Opengear's
 Opensource
 Opti
 OptiUPS
+Orsiris
 Orvaldi
 Orzechowski
 OutletSystem
@@ -901,6 +935,7 @@ POSIX
 POWERDOWNFLAG
 POWEREX
 POWERLINE
+PPA
 PPD
 PPDn
 PPDnnn
@@ -927,6 +962,7 @@ PV
 PWLv
 PWR
 PXG
+PYTHONPATH
 PaaS
 Pac
 PackageRequired
@@ -994,9 +1030,12 @@ Proxmox
 Prynych
 Pulizzi
 PwrOut
+PyDOC
 PyGTK
 PyNUT
 PyNUTClient
+PyNUTError
+PyPI
 PyQt
 QBDR
 QBT
@@ -1086,11 +1125,13 @@ Rodríguez
 Rouben
 Rozman
 Rucelf
+RunUPSCommand
 RuntimeWarning
 RxD
 RxHs
 Ryabov
 SAI
+SASU
 SCM
 SCO
 SCR
@@ -1146,6 +1187,7 @@ SOFF
 SOLA
 SOLA's
 SOMECO
+SOURCEMODE
 SOV
 SPARC
 SPC
@@ -1156,6 +1198,7 @@ SRC
 SSSS
 STARTTLS
 STB
+STDCALL
 STESTI
 STI
 STIME
@@ -1166,6 +1209,7 @@ SUNWugen
 SUNWusb
 SURTD
 SUSE
+SVR
 SX
 SXI
 SXL
@@ -1189,12 +1233,15 @@ Sep
 Sequentializing
 SerialNumber
 Serv
+Serveur
+SetRWVar
 Shara
 ShareAlike
 Shaul
 ShdnDbnc
 ShdnDly
 ShdnPol
+ShutDown
 Shutdn
 Sibbald
 Sicon
@@ -1299,6 +1346,7 @@ Tigra
 Tnn
 ToddGreenfield
 Tomek
+Toolset
 TopGuard
 Toth
 Traceback
@@ -1333,6 +1381,7 @@ UPSHOST
 UPSIMAGEPATH
 UPSLC
 UPSNOTIFY
+UPSName
 UPSOutletSystemOutletDelayBeforeReboot
 UPSOutletSystemOutletDelayBeforeShutdown
 UPSOutletSystemOutletDelayBeforeStartup
@@ -1403,10 +1452,13 @@ WARNOPT
 WCH
 WELI
 WHAD
+WIP
 WIPO
 WMNut
 WS
+WSDIR
 WSE
+WSL
 WTU
 Waldie
 WantedBy
@@ -1416,11 +1468,13 @@ Werror
 Weverything
 Wextra
 WhizBang
+WiX
 Wikipedia
 WinMerge
 WinNUT
 WinPower
 Wireshark
+Wl
 WordFmt
 Wrede
 XAU
@@ -1437,10 +1491,12 @@ XSL
 XT
 XUPS
 XXXX
+XXXXXXXXXXXX
 XYZ
 Xfer
 XferDly
 XfmrRes
+Xlinker
 Xpert
 Xups
 Xymon
@@ -1476,6 +1532,7 @@ acpi
 acquisited
 acvoltsin
 acvoltsout
+acx
 adb
 addcmd
 addenum
@@ -1528,8 +1585,10 @@ apcsmart
 apctest
 apcupsd
 aphel
+apinames
 appveyor
 ar
+architecting
 archlinux
 arduino
 arg
@@ -1573,6 +1632,7 @@ autogen
 automagically
 automake
 automessage
+autopoint
 autoreconf
 autorestart
 autosaving
@@ -1586,7 +1646,10 @@ avahi
 avr
 awd
 awk
+b'some
+b'string
 bAlternateSetting
+bUps
 backend
 backends
 backgrounding
@@ -1645,6 +1708,7 @@ bootable
 bp
 br
 brazil
+brotli
 bsd
 bsv
 bt
@@ -1660,6 +1724,7 @@ bugfix
 bugfixes
 buildbots
 builddir
+buildtype
 bullseye
 busport
 busybox
@@ -1806,6 +1871,7 @@ cx
 cyberpower
 d'un
 da
+daemonized
 daisychain
 daisychained
 databits
@@ -1819,6 +1885,7 @@ dayofweek
 dblatex
 dcd
 dcn
+ddk
 ddl
 de
 deUNV
@@ -1831,6 +1898,7 @@ decrypt
 dedb
 dedup
 deduplication
+defs
 defun
 dep
 dephasing
@@ -1874,6 +1942,7 @@ dockapp
 docs
 dod
 domxml
+dotnet
 downloadable
 dpkg
 dq
@@ -1917,6 +1986,7 @@ ei
 el
 emacs
 emptor
+emptyDir
 endchar
 enddate
 endian
@@ -1957,6 +2027,7 @@ executables
 executeCommand
 execve
 extendedhistory
+extern
 externalConsole
 extradata
 fabula
@@ -1989,14 +2060,18 @@ firewalling
 firmwares
 flts
 fmt
+fno
+fontconfig
 footnoteref
 forceshutdown
 forcessl
 formatconfig
 formatparam
+formatstring
 fp
 freebsd
 freeipmi
+freetype
 freqsensitivity
 frob
 frontends
@@ -2036,11 +2111,13 @@ getent
 getenv
 getopt
 gettext
+gettextize
 getvar
 gitcache
 github
 gitignore
 gitk
+gitlab
 gmail
 gmake
 gnuplot
@@ -2048,6 +2125,7 @@ gnutls
 google
 goto
 gotos
+gperf
 gpg
 gpgsign
 gpio
@@ -2109,7 +2187,9 @@ iUSB
 ib
 ibattery
 icd
+iconv
 icp
+icu
 idProduct
 idVendor
 ident
@@ -2145,14 +2225,17 @@ initinfo
 initscripts
 initups
 inline
+inlined
 innotech
 inode
 inplace
+installable
 installcheck
 installpkg
 installurl
 instcmd
 instcmds
+integrations
 intel
 intelliSenseMode
 intercharacter
@@ -2163,6 +2246,7 @@ interoperating
 interprocess
 interruptonly
 interruptsize
+intltool
 invcontdelay
 invcontpolarity
 inverter
@@ -2199,6 +2283,7 @@ jenkins
 jessie
 jimklimov
 journalctl
+jpeg
 jpg
 jpgraph
 jre
@@ -2252,10 +2337,14 @@ libgpiod
 libhid
 libhidups
 libi
+libiconv
+libintl
 libipmimonitoring
 libltdl
+liblzma
 libmodbus
 libneon
+libnetsnmp
 libnss
 libnut
 libnutclient
@@ -2279,9 +2368,12 @@ libusb's
 libusbugen
 libusbx
 libvirt
+libwdi
 libwrap
+libxml
 libxslt
 libxxx
+libz
 licensor
 licensors
 liebert
@@ -2302,6 +2394,7 @@ lldb
 llvm
 lm
 ln
+lnetsnmp
 loadPercentage
 localhost
 localtime
@@ -2323,6 +2416,7 @@ lowruntime
 lowvoltsout
 lposix
 lr
+lregex
 lsd
 lsusb
 lt
@@ -2331,6 +2425,7 @@ lu
 lua
 lv
 lvo
+lws
 lxc
 lxcbr
 lxccontainer
@@ -2343,6 +2438,7 @@ mS
 macaddr
 macosx
 mailx
+mainFrame
 maintainer's
 maintainership
 maj
@@ -2352,6 +2448,7 @@ mandir
 manpage
 manpages
 masterguard
+matcher
 maxacvi
 maxacvo
 maxd
@@ -2483,6 +2580,7 @@ nitram
 nl
 nlb
 nlogic
+nls
 nm
 nn
 nnn
@@ -2490,6 +2588,7 @@ noAuthNoPriv
 nobody's
 nobt
 nodev
+nodownload
 nodtk
 noexec
 noflag
@@ -2519,6 +2618,7 @@ nowarn
 np
 nss
 ntUPSd
+nuget
 num
 numOfBytesFromUPS
 numa
@@ -2598,6 +2698,7 @@ pathnames
 pbzip
 pc
 pconf
+pcre
 pcs
 pdf
 pdu
@@ -2621,6 +2722,7 @@ pijuice
 pinout
 pinouts
 pipename
+pixmaps
 pkg
 pkgconf
 pkgconfig
@@ -2640,6 +2742,7 @@ pollonly
 popa
 portname
 porttype
+posix
 powercom
 powerdev
 powerdown
@@ -2686,6 +2789,8 @@ prog
 prtconf
 ps
 psu
+pthread
+pthreads
 pts
 pty
 pulizzi
@@ -2701,6 +2806,7 @@ pycparser
 pydoc
 pygments
 pynut
+qDEB
 qa
 qemu
 qfs
@@ -2782,6 +2888,7 @@ rqt
 rsa
 rsync
 rts
+ru
 rubygem
 runlevel
 runtime
@@ -2796,6 +2903,7 @@ salicru
 sbin
 sbindir
 scd
+sched
 scm
 screenshot
 screenshots
@@ -2803,6 +2911,7 @@ scriptname
 sd
 sdb
 sddelay
+sdk
 sdl
 sdorder
 sdtime
@@ -2887,6 +2996,7 @@ socomec
 solaris
 solibs
 solis
+somename
 somepass
 something's
 sp
@@ -2921,6 +3031,7 @@ stopAtEntry
 stopIP
 stopbits
 str
+strUps
 strace
 strarr
 strcasecmp
@@ -2964,6 +3075,7 @@ svcs
 svn
 sw
 symlink
+symlinked
 symlinking
 symlinks
 symmetrathreephase
@@ -3027,6 +3139,8 @@ tmpfs
 tmpring
 toolchain
 toolkits
+toolset
+topFrame
 topbot
 tport
 transmitxhs
@@ -3069,6 +3183,7 @@ udev
 udevadm
 ufw
 ugen
+ui
 uid
 uint
 ukUNV
@@ -3082,11 +3197,13 @@ undefine
 undervoltage
 unescaped
 unicast
+unicode
 uninstall
 uninterruptible
 uniq
 unistd
 unitidentify
+unix
 unmapped
 unmounts
 unpowered
@@ -3102,6 +3219,7 @@ upsIdent
 upsIdentModel
 upsMIB
 upsObjects
+upsadmin
 upsc
 upscli
 upsclient
@@ -3133,6 +3251,7 @@ upsmon's
 upsmonuser
 upsname
 upsonbatt
+upspass
 upspasswd
 upsrw
 upssched
@@ -3211,6 +3330,7 @@ waitbeforereconnect
 wakeup
 wc
 wchar
+wdi
 webNUT
 webnut
 webserver
@@ -3220,8 +3340,10 @@ wget
 whitespace
 wiki
 wildcards
+wininit
 winnutclient
 winpthreads
+wix
 wmNUT
 wmnut
 wordformat
@@ -3254,10 +3376,13 @@ xfmrresistance
 xh
 xhci
 xhtml
+xjf
 xmalloc
 xml
 xmllint
+xmlto
 xpg
+xpm
 xr
 xrealloc
 xsl
@@ -3268,6 +3393,8 @@ xu
 xxxAP
 xxxx
 xxxxAP
+xz
+xzf
 yaml
 yml
 youruid

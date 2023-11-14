@@ -134,6 +134,17 @@ spellcheck spellcheck-interactive:
 	(cd $(builddir)/docs/man && $(MAKE) -s $@) || RES=$$? ; \
 	(cd $(builddir)/conf && $(MAKE) -s $@) || RES=$$? ; \
 	(cd $(builddir)/data && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/data/html && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts/Solaris && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts/Windows && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts/devd && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts/hotplug && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts/python && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts/systemd && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts/udev && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts/upsdrvsvcctl && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/tests/NIT && $(MAKE) -s $@) || RES=$$? ; \
 	exit $$RES
 
 # Note: the "all-docs" and "check-docs" targets may require tools not

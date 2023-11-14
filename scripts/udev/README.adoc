@@ -1,0 +1,49 @@
+Udev script for NUT USB and IPMI drivers
+========================================
+Arnaud Quette <aquette.dev@gmail.com>
+v1.0, 31 July 2014 (start date)
+
+This document introduces the Linux `udev` script for NUT USB drivers
+(`usbhid-ups`, `nutdrv_qx`, `bcmxcp_usb`, `tripplite_usb`, ...) and
+IPMI driver (`nut-ipmipsu`).
+
+These are needed on Linux systems running `udev` (recommended as of Linux
+kernel 2.6.3, and mandatory as of 2.6.14 and higher).
+
+This script ensures that the right privileges are set on the USB and IPMI
+device nodes to allow the NUT driver to operate (i.e. allowing the `nut`
+user to read AND write to the hardware device).
+
+Note that the old style `hotplug` files, available in the `scripts/hotplug`
+directory, are not needed anymore if your kernel supports `udev`.
+
+Installation
+------------
+
+For most users, these files will be automatically installed in `/etc/udev`
+(or `/lib/udev`) upon `make install`, if that directory exists and if the
+feature (USB and/or IPMI driver support) has been enabled at `configure` time.
+
+You can specify an alternate directory with:
+----
+:; ./configure --with-udev-dir=DIR
+----
+
+Manual installation
+-------------------
+
+To install them manually, copy the rules file(s) to `/etc/udev/rules.d`
+(or `/lib/udev/rules.d` on newer systems) using the following command(s):
+----
+:; cp -f nut-usbups.rules /etc/udev/rules.d/62-nut-usbups.rules
+:; cp -f nut-ipmipsu.rules /etc/udev/rules.d/52-nut-ipmipsu.rules
+----
+
+You will need to refresh the bus to avoid a reboot for these rules to be
+active. You can do so using:
+----
+:; udevadm trigger --subsystem-match=usb_device
+----
+
+For USB devices, you can then plug your UPS USB cord, or unplug/re-plug
+it to refresh the device permission, and start NUT.

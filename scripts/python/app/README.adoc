@@ -12,19 +12,22 @@ uses the python-pynut class (available at http://www.lestat.st), delivered
 as PyNUT in the NUT source tree.
 
 Refer to your OS packaging and/or install custom modules with `pip` (or `pip3`)
-to get required dependencies (GTK + GObject or QT5).
+to get required dependencies (GTK + GObject or Qt5).
 
 Path to PyNUT module
 --------------------
 
 For quick tests (e.g. during development), you can run the clients like this:
-````
+
+----
 :; PYTHONPATH=../module/ python2 ./NUT-Monitor-py2gtk2.in
-````
+----
+
 or:
-````
+
+----
 :; PYTHONPATH=../module/ python3 ./NUT-Monitor-py3qt5.in
-````
+----
 
 Localization
 ------------
@@ -50,7 +53,7 @@ image::screenshots/nut-monitor-1.png[Example of device status overview]
 
 image::screenshots/nut-monitor-2.png[Example report of device variables]
 
-image::screenshots/nut-monitor-3.png[Example modification of a writeable variable]
+image::screenshots/nut-monitor-3.png[Example modification of a writable variable]
 
 Kudos
 -----
@@ -58,7 +61,7 @@ Kudos
 NUT-Monitor and PyNUT (for Python 2 syntax) were originally authored
 by David Goncalves <david@lestat.st>
 
-NUT-Monitor was converted to Python 3 + QT5 by Luke Dashjr
+NUT-Monitor was converted to Python 3 + Qt5 by Luke Dashjr
 
 PyNUT was extended, and two variants of NUT-Monitor converged and wrapped
 for Python 2+3 dual support by Jim Klimov
