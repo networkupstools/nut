@@ -25,7 +25,7 @@ setup(
     long_description_content_type =	"text/plain",	# NOTE: No asciidoc so far, see https://packaging.python.org/en/latest/specifications/core-metadata/
     long_description =	long_description,
     packages =	find_packages(),
-    install_requires =	['telnetlib'],
+    # install_requires =	['telnetlib'],	# NOTE: telnetlib.py is part of Python core for tested 2.x and 3.x versions, not something 'pip' can download
     keywords =	['pypi', 'cicd', 'python'],
     classifiers = [
         "Development Status :: 5 - Production/Stable",
