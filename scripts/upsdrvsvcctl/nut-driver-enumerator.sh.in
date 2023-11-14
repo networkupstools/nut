@@ -406,7 +406,9 @@ $LINE"
 
 upsconf_getSection() {
     # Use the whole output of normalization parser
-    upslist_normalizeFile_once || return    # Propagate errors upwards
+    if [ x"${AVOID_REPARSE}" != xyes ] ; then
+        upslist_normalizeFile_once || return    # Propagate errors upwards
+    fi
     upsconf_getSection_content "$@" << EOF
 ${UPSCONF_DATA}
 EOF
@@ -418,7 +420,9 @@ upsconf_getSection_MD5() {
 
 upsconf_getSection_SDP() {
     # Use the section-driver-port subset
-    upslist_normalizeFile_once || return    # Propagate errors upwards
+    if [ x"${AVOID_REPARSE}" != xyes ] ; then
+        upslist_normalizeFile_once || return    # Propagate errors upwards
+    fi
     upsconf_getSection_content "$@" << EOF
 ${UPSCONF_DATA_SDP}
 EOF
@@ -1005,8 +1009,12 @@ nut_driver_enumerator_main() {
     upslist_readSvcs "before manipulations"
 
     # Test if global config has changed since last run
+    # Note that we have upslist_normalizeFile called from upslist_readFile
+    # just above, so even if it came empty (e.g. new NUT installation, no
+    # device sections yet) we do not want to spend time and log storage to
+    # parse again and complain again.
     RESTART_ALL=no
-    upssvcconf_checksum_unchanged "" || { echo "`date -u` : Detected changes in global section of '$UPSCONF', will restart all drivers"; RESTART_ALL=yes; }
+    AVOID_REPARSE=yes upssvcconf_checksum_unchanged "" || { echo "`date -u` : Detected changes in global section of '$UPSCONF', will restart all drivers"; RESTART_ALL=yes; }
 
     # Quickly exit if there's nothing to do (both lists empty or equal); note
     # the lists are pre-sorted. Otherwise a non-zero exit will be done below.
