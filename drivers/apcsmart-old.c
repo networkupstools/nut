@@ -25,7 +25,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"APC Smart protocol driver (old)"
-#define DRIVER_VERSION	"2.32"
+#define DRIVER_VERSION	"2.33"
 
 static upsdrv_info_t table_info = {
 	"APC command table",
@@ -1322,7 +1322,7 @@ static int setvar(const char *varname, const char *val)
 
 	if ((vt->flags & APC_RW) == 0) {
 		upslogx(LOG_WARNING, "setvar: [%s] is not writable", varname);
-		return STAT_SET_UNKNOWN;
+		return STAT_SET_INVALID;
 	}
 
 	if (vt->flags & APC_ENUM)
