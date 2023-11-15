@@ -15,18 +15,19 @@ with codecs.open(os.path.join(here, "README.txt"), encoding="utf-8") as fh:
     long_description = "\n" + fh.read()
 
 setup(
-    name="PyNUTClient",
-    version='@NUT_SOURCE_GITREV_NUMERIC@',
-    author="The Network UPS Tools project",
-    author_email="jimklimov+nut@gmail.com",
-    description="Python client bindings for NUT",
-    url = "https://github.com/networkupstools/nut/tree/master/scripts/python/module",
-    long_description_content_type="text/plain",	# NOTE: No asciidoc so far, see https://packaging.python.org/en/latest/specifications/core-metadata/
-    long_description=long_description,
-    packages=find_packages(),
-    install_requires=['telnetlib'],
-    keywords=['pypi', 'cicd', 'python'],
-    classifiers=[
+    name =	"PyNUTClient",
+    version =	'@NUT_SOURCE_GITREV_NUMERIC@',
+    author =	"The Network UPS Tools project",
+    license_files = ('LICENSE-GPL3',),
+    author_email =	"jimklimov+nut@gmail.com",
+    description =	"Python client bindings for NUT",
+    url =	"https://github.com/networkupstools/nut/tree/master/scripts/python/module",
+    long_description_content_type =	"text/plain",	# NOTE: No asciidoc so far, see https://packaging.python.org/en/latest/specifications/core-metadata/
+    long_description =	long_description,
+    packages =	find_packages(),
+    # install_requires =	['telnetlib'],	# NOTE: telnetlib.py is part of Python core for tested 2.x and 3.x versions, not something 'pip' can download
+    keywords =	['pypi', 'cicd', 'python'],
+    classifiers = [
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "Programming Language :: Python :: 2.6",
