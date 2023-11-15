@@ -406,7 +406,9 @@ $LINE"
 
 upsconf_getSection() {
     # Use the whole output of normalization parser
-    upslist_normalizeFile_once || return    # Propagate errors upwards
+    if [ x"${AVOID_REPARSE}" != xyes ] ; then
+        upslist_normalizeFile_once || return    # Propagate errors upwards
+    fi
     upsconf_getSection_content "$@" << EOF
 ${UPSCONF_DATA}
 EOF
@@ -418,7 +420,9 @@ upsconf_getSection_MD5() {
 
 upsconf_getSection_SDP() {
     # Use the section-driver-port subset
-    upslist_normalizeFile_once || return    # Propagate errors upwards
+    if [ x"${AVOID_REPARSE}" != xyes ] ; then
+        upslist_normalizeFile_once || return    # Propagate errors upwards
+    fi
     upsconf_getSection_content "$@" << EOF
 ${UPSCONF_DATA_SDP}
 EOF
@@ -1005,11 +1009,15 @@ nut_driver_enumerator_main() {
     upslist_readSvcs "before manipulations"
 
     # Test if global config has changed since last run
+    # Note that we have upslist_normalizeFile called from upslist_readFile
+    # just above, so even if it came empty (e.g. new NUT installation, no
+    # device sections yet) we do not want to spend time and log storage to
+    # parse again and complain again.
     RESTART_ALL=no
-    upssvcconf_checksum_unchanged "" || { echo "`date -u` : Detected changes in global section of '$UPSCONF', will restart all drivers"; RESTART_ALL=yes; }
+    AVOID_REPARSE=yes upssvcconf_checksum_unchanged "" || { echo "`date -u` : Detected changes in global section of '$UPSCONF', will restart all drivers"; RESTART_ALL=yes; }
 
-    # Quickly exit if there's nothing to do; note the lists are pre-sorted
-    # Otherwise a non-zero exit will be done below
+    # Quickly exit if there's nothing to do (both lists empty or equal); note
+    # the lists are pre-sorted. Otherwise a non-zero exit will be done below.
     # Note: We implement testing in detail whether section definitions were
     # changed since last run, as a first step before checking that name
     # lists are still equivalent, because we need to always have the result
@@ -1017,9 +1025,11 @@ nut_driver_enumerator_main() {
     # while the check for no new device section definitions is just boolean.
     # We can only exit quickly if both there are no changed sections and no
     # new or removed sections since last run.
-    NEW_CHECKSUM="`upslist_checksums_unchanged "$UPSLIST_FILE" "$UPSLIST_SVCS"`" \
-    && [ -z "$NEW_CHECKSUM" ] \
-    && upslist_equals "$UPSLIST_FILE" "$UPSLIST_SVCS" \
+    ( [ -z "$UPSLIST_FILE" -a -z "$UPSLIST_SVCS" ] || ( \
+        NEW_CHECKSUM="`upslist_checksums_unchanged "$UPSLIST_FILE" "$UPSLIST_SVCS"`" \
+        && [ -z "$NEW_CHECKSUM" ] \
+        && upslist_equals "$UPSLIST_FILE" "$UPSLIST_SVCS" \
+    ) ) \
     && if [ -z "$DAEMON_SLEEP" -o "${VERBOSE_LOOP}" = yes ] ; then \
         echo "`date -u` : OK: No changes to reconcile between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF'" ; \
        fi \
