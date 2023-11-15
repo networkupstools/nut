@@ -420,12 +420,43 @@ ASPELL_OUT_NOTERRORS = (^[ \t]*[\*\@]|^$$)
 #
 # NOTE: This portable rule RELIES on just one SPELLCHECK_SRC defined
 # at a time, with an outer Makefile caller ensuring the looping:
+
+SPELLCHECK_RECIPE_DEBUG_STREAM = /dev/null
+#SPELLCHECK_RECIPE_DEBUG_STREAM = &2
+
 $(SPELLCHECK_BUILDDIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE) $(abs_top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 	@LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	 if test x"$(SPELLCHECK_SRC_ONE)" = x ; then echo "SKIP: Bogus spellcheck call for empty target filename (with make target $@)" >&2 ; exit 0; fi; \
 	 case "$@" in *-spellchecked) ;; *) echo "SKIP: Bogus spellcheck call for non '*-spellchecked' target filename (with make target $@)" >&2 ; exit 0;; esac; \
 	 rm -f "$@" || true ; \
-	 echo "  ASPELL   Spell checking on $(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE)"; \
+	 REPORT_SRCDIR="$(SPELLCHECK_SRCDIR)"; \
+	 REPORT_SRC_ONE="$(SPELLCHECK_SRC_ONE)"; \
+	 REPORT_PREFIX="" ; \
+	 case "$(SPELLCHECK_SRC_ONE)" in \
+		/*) ;; \
+		*/*)	if [ x"$${REPORT_SRCDIR}" = x ] ; then \
+				echo EMPTY >$(SPELLCHECK_RECIPE_DEBUG_STREAM) ; \
+				REPORT_SRCDIR="`dirname "$(SPELLCHECK_SRC_ONE)"`"; \
+			else \
+				echo "APPEND: SPELLCHECK_SRCDIR='$(SPELLCHECK_SRCDIR)' SPELLCHECK_SRC_ONE='$(SPELLCHECK_SRC_ONE)' dirname='`dirname "$(SPELLCHECK_SRC_ONE)"`'" >$(SPELLCHECK_RECIPE_DEBUG_STREAM) ; \
+				REPORT_SRCDIR="$${REPORT_SRCDIR}/`dirname "$(SPELLCHECK_SRC_ONE)"`"; \
+			fi ; \
+			REPORT_SRC_ONE="`basename "$(SPELLCHECK_SRC_ONE)"`"; \
+			;; \
+		*) ;; \
+	 esac; \
+	 if [ x"$${REPORT_SRCDIR}" != x ] ; then \
+		tmpREPORT_PREFIX="NUT source root :: $${REPORT_SRCDIR} :: " ; \
+		REPORT_SRCDIR="`cd "$${REPORT_SRCDIR}" && { pwd >$(SPELLCHECK_RECIPE_DEBUG_STREAM) ; pwd | sed 's|^'"$(abs_top_srcdir)"'/*||' ; }`" \
+		|| { REPORT_SRCDIR="$(SPELLCHECK_SRCDIR)" ; REPORT_SRC_ONE="$(SPELLCHECK_SRC_ONE)" ; REPORT_PREFIX="" ; } ; \
+	 fi ; \
+	 echo "=== Got REPORT_SRCDIR='$${REPORT_SRCDIR}'" >$(SPELLCHECK_RECIPE_DEBUG_STREAM) ; \
+	 case "$${REPORT_SRCDIR}" in \
+		"") ;; \
+		*/) ;; \
+		*)  REPORT_SRCDIR="$${REPORT_SRCDIR}/" ;; \
+	 esac ; \
+	 echo "  ASPELL   Spell checking on $${REPORT_PREFIX}$${REPORT_SRCDIR}$${REPORT_SRC_ONE}"; \
 	 OUT="`(sed 's,^\(.*\)$$, \1,' | $(ASPELL) -a $(ASPELL_NUT_TEXMODE_ARGS) $(ASPELL_NUT_COMMON_ARGS) 2>&1) < "$(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE)"`" \
 		&& { if test -n "$$OUT" ; then OUT="`echo "$$OUT" | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' `" ; fi; \
 		     test -z "$$OUT" ; } \

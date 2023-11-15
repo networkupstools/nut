@@ -41,6 +41,9 @@ GENERATED_USB_OS_FILES += $(top_builddir)/scripts/udev/nut-usbups.rules.in
 # BSD devd output file
 GENERATED_USB_OS_FILES += $(top_builddir)/scripts/devd/nut-usb.conf.in
 
+# FreeBSD quirks output file
+GENERATED_USB_OS_FILES += $(top_builddir)/scripts/devd/nut-usb.quirks
+
 # UPower output file
 # Note: unlike others above, this one is currently tracked in Git
 GENERATED_USB_OS_FILES += $(top_builddir)/scripts/upower/95-upower-hid.hwdb
@@ -60,7 +63,7 @@ nut-scanner-deps-usb: $(GENERATED_USB_FILES)
 
 # The distributed nut-snmpinfo.py.in template is assumed to only differ from
 # a generated nut-snmpinfo.py by the @PYTHON@ shebang.
-$(GENERATED_SNMP_FILES): $(top_srcdir)/drivers/*-mib.c
+$(GENERATED_SNMP_FILES): $(top_srcdir)/drivers/*-mib.c $(top_srcdir)/tools/nut-snmpinfo.py.in
 	@if [ -n "$(PYTHON)" ] && [ x"no" != x"$(PYTHON)" ] && $(PYTHON) -c 1; then \
 		echo "Regenerating the SNMP helper files in SRC dir with '$(PYTHON)'."; \
 		TOP_SRCDIR="$(top_srcdir)" ; export TOP_SRCDIR; \
@@ -101,7 +104,7 @@ $(GENERATED_USB_OS_FILES): $(GENERATED_USB_FILES)
 	 fi
 	@touch "$@"
 
-$(GENERATED_USB_FILES): $(top_srcdir)/drivers/*-hid.c $(top_srcdir)/drivers/*usb*.c $(top_srcdir)/drivers/nutdrv_qx.c
+$(GENERATED_USB_FILES): $(top_srcdir)/drivers/*-hid.c $(top_srcdir)/drivers/*usb*.c $(top_srcdir)/drivers/nutdrv_qx.c $(top_srcdir)/tools/nut-usbinfo.pl
 	@if perl -e 1; then \
 		echo "Regenerating the USB helper files in SRC dir."; \
 		TOP_SRCDIR="$(top_srcdir)" ; export TOP_SRCDIR; \

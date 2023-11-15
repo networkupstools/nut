@@ -19,6 +19,9 @@ dnl (that one comes from the NUT_VERSION_MACRO from nut_version.h file).
 && NUT_SOURCE_GITREV="`(git describe --tags --match 'v[0-9]*.[0-9]*.[0-9]' --exclude '*-signed' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' 2>/dev/null || git describe --tags --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' --exclude '*Windows*' --exclude '*IPM*' 2>/dev/null ) | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,'`" \
 || NUT_SOURCE_GITREV=""
 
+dnl Gitrev-based build identifier which can be used for e.g. PyPI uploads:
+NUT_SOURCE_GITREV_NUMERIC="`echo "${NUT_SOURCE_GITREV}" | sed -e 's/^v//' -e 's/-g.*$//' -e 's/-/./g'`"
+
 dnl Note: except for experiments, do not pass this into config.h - use
 dnl the NUT_VERSION_MACRO from nut_version.h instead. Developers may
 dnl want to disable their "force-nut-version-header" configure option
@@ -3787,6 +3790,60 @@ else
 fi
 AM_CONDITIONAL(WITH_DEVD, test -n "${devddir}")
 
+dnl FreeBSD quirks support:
+
+freebsdquirksdir=""
+AC_MSG_CHECKING(whether to install FreeBSD site-local USB quirks file)
+AC_ARG_WITH(freebsd-quirks-dir,
+	AS_HELP_STRING([--with-freebsd-quirks-dir=PATH], [where to install nut-usb.quirks file (${datadir}; typically /usr/local/share/nut)]),
+[
+	case "${withval}" in
+	yes) dnl Typically /usr/local/share/nut
+		freebsdquirksdir="${datadir}"
+		;;
+	auto)
+		dnl Are we building for FreeBSD with such customizations?
+		if test -s /boot/loader.conf.local ; then
+			freebsdquirksdir="${datadir}"
+		fi
+		if test "${nut_with_usb}" = yes && ! test -s scripts/devd/nut-usb.quirks ; then
+			AC_MSG_WARN([freebsd-quirks-dir directory skipped because a non-trivial scripts/devd/nut-usb.quirks was not provided by autogen.sh or dist archive])
+			freebsdquirksdir=""
+		fi
+		;;
+	no)
+		freebsdquirksdir=""
+		;;
+	*)
+		freebsdquirksdir="${withval}"
+		;;
+	esac
+], [])
+if test -n "${freebsdquirksdir}"; then
+	AC_MSG_RESULT(using ${freebsdquirksdir})
+	NUT_REPORT_PATH_INTEGRATIONS([FreeBSD site-local USB quirks directory (add into /boot/loader.conf.local)], [${freebsdquirksdir}])
+else
+	AC_MSG_RESULT(no)
+fi
+
+if test -n "${freebsdquirksdir}" ; then
+	dnl Expand datadir or similar macros in this path
+	conftemp="${freebsdquirksdir}"
+	eval conftemp=\"${conftemp}\"
+	eval conftemp=\"${conftemp}\"
+	freebsdquirksdir="${conftemp}"
+
+	if test -z "${freebsdquirksdir}"; then
+		AC_MSG_ERROR([freebsd-quirks-dir requested but not found (resolved as empty)])
+	fi
+
+	if test "${nut_with_usb}" = yes && ! test -s scripts/devd/nut-usb.quirks ; then
+		AC_MSG_ERROR([freebsd-quirks-dir directory and USB driver support requested, but a non-trivial scripts/devd/nut-usb.quirks was not provided by autogen.sh or dist archive])
+	fi
+fi
+
+AM_CONDITIONAL(WITH_FREEBSD_QUIRKS_DIR, test -n "${freebsdquirksdir}")
+
 dnl
 
 dnl AIX system
@@ -4051,6 +4108,7 @@ AC_SUBST(TREE_VERSION)
 AC_SUBST(NUT_NETVERSION)
 AC_SUBST(FORCE_NUT_VERSION)
 AC_SUBST(NUT_SOURCE_GITREV)
+AC_SUBST(NUT_SOURCE_GITREV_NUMERIC)
 AC_SUBST(LIBSSL_CFLAGS)
 AC_SUBST(LIBSSL_LIBS)
 AC_SUBST(LIBSSL_REQUIRES)
@@ -4124,6 +4182,7 @@ AC_SUBST(WORDS_BIGENDIAN)
 AC_SUBST(cgiexecdir)
 AC_SUBST(devddir)
 AC_SUBST(driverexecdir)
+AC_SUBST(freebsdquirksdir)
 AC_SUBST(htmldir)
 AC_SUBST(pkgconfigdir)
 AC_SUBST(systemdsystemunitdir)
@@ -4259,6 +4318,13 @@ dnl #    versions care less about this situation).
 dnl # -Wno-disabled-macro-expansion -- some system definitions of strncmp()
 dnl #    and other routines are in fact recursive macros. The -Weverything
 dnl #    mode of clang(-3.4) disables their handling, unless told otherwise.
+dnl # -Wno-incompatible-function-pointer-types-strict -- some system definitions
+dnl #    of methods for signals are not compatible with even those systems'
+dnl #    definitions of default signals, e.g. void vs. int arguments:
+dnl #        #define SIG_IGN (void (*)())1
+dnl #        extern void (*signal(int, void (*)(int)))(int);
+dnl #    (NUT signal handler methods do have the int signal number)
+dnl #    This is currently quiesced for clang-17; better solutions are welcome.
 AS_CASE(["${nut_enable_warnings}"],
     [all], [
         CFLAGS="${CFLAGS} -Wall"
@@ -4269,7 +4335,7 @@ AS_CASE(["${nut_enable_warnings}"],
         CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
         ],
     [clang-medium], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-conversion -Wno-incompatible-pointer-types-discards-qualifiers"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-conversion -Wno-incompatible-pointer-types-discards-qualifiers -Wno-incompatible-function-pointer-types-strict"
         CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
         ],
     [clang-minimal], [
@@ -4547,7 +4613,9 @@ AC_CONFIG_FILES([
  scripts/hotplug/libhidups
  scripts/HP-UX/nut.psf
  scripts/python/Makefile
+ scripts/python/module/Makefile
  scripts/python/module/PyNUT.py
+ scripts/python/module/setup.py
  scripts/upsdrvsvcctl/Makefile
  scripts/systemd/Makefile
  scripts/systemd/nut-common-tmpfiles.conf

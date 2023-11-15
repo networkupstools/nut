@@ -23,6 +23,7 @@ The `nutscan_device_t` contains the following variables:
 
 	nutscan_device_type_t   type;
 	char *          driver;
+	char *          alt_driver_names;
 	char *          port;
 	nutscan_options_t       opt;
 	struct nutscan_device * prev;

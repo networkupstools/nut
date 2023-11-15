@@ -367,6 +367,16 @@ but still want the data server to run, respond and report zero devices
 (e.g. on an automatically managed monitoring deployment), you can enable
 the `ALLOW_NO_DEVICE true` option in the 'upsd.conf' file.
 
+NOTE: Normally `upsd` requires that at all `LISTEN` directives defined
+in the 'upsd.conf' file are honoured (except for mishaps possible with
+many names of `localhost`), and refuses to start otherwise. If you want
+to allow start-up in cases where at least one but possibly not all of
+the `LISTEN` directives were honoured, you can enable the
+`ALLOW_NOT_ALL_LISTENERS true` option in the 'upsd.conf' file.
+Note you would have to restart `upsd` to pick up the `LISTEN`ed IP address
+if it appears later, so probably configuring `LISTEN *` is a better choice
+in such cases.
+
 On operating systems with service management frameworks, the data server
 life-cycle is managed by `nut-server` service.
 

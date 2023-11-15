@@ -418,9 +418,10 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		 * that the device is not what we want. */
 		upsdebugx(2, "Device matches");
 
-		upsdebugx(2, "Reading first configuration descriptor");
+		upsdebugx(2, "Reading configuration descriptor %d of %d",
+			usb_subdriver.usb_config_index+1, dev_desc.bNumConfigurations);
 		ret = libusb_get_config_descriptor(device,
-			(uint8_t)usb_subdriver.hid_rep_index,
+			(uint8_t)usb_subdriver.usb_config_index,
 			&conf_desc);
 		/*ret = libusb_get_active_config_descriptor(device, &conf_desc);*/
 		if (ret < 0)
@@ -497,8 +498,9 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			libusb_free_config_descriptor(conf_desc);
 			libusb_free_device_list(devlist, 1);
 			fatalx(EXIT_FAILURE,
-				"Can't claim USB device [%04x:%04x]@%d/%d: %s",
+				"Can't claim USB device [%04x:%04x]@%d/%d/%d: %s",
 				curDevice->VendorID, curDevice->ProductID,
+				usb_subdriver.usb_config_index,
 				usb_subdriver.hid_rep_index,
 				usb_subdriver.hid_desc_index,
 				libusb_strerror((enum libusb_error)ret));
@@ -513,8 +515,9 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			libusb_free_config_descriptor(conf_desc);
 			libusb_free_device_list(devlist, 1);
 			fatalx(EXIT_FAILURE,
-				"Can't claim USB device [%04x:%04x]@%d/%d: %s",
+				"Can't claim USB device [%04x:%04x]@%d/%d/%d: %s",
 				curDevice->VendorID, curDevice->ProductID,
+				usb_subdriver.usb_config_index,
 				usb_subdriver.hid_rep_index,
 				usb_subdriver.hid_desc_index,
 				libusb_strerror((enum libusb_error)ret));
@@ -533,7 +536,10 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		}
 
 		if (!conf_desc) { /* ?? this should never happen */
-			upsdebugx(2, "  Couldn't retrieve descriptors");
+			upsdebugx(2, "  Couldn't retrieve config descriptor [%04x:%04x]@%d",
+				curDevice->VendorID, curDevice->ProductID,
+				usb_subdriver.usb_config_index
+			);
 			goto next_device;
 		}
 
@@ -1025,6 +1031,7 @@ usb_communication_subdriver_t usb_subdriver = {
 	nut_libusb_set_report,
 	nut_libusb_get_string,
 	nut_libusb_get_interrupt,
+	LIBUSB_DEFAULT_CONF_INDEX,
 	LIBUSB_DEFAULT_INTERFACE,
 	LIBUSB_DEFAULT_DESC_INDEX,
 	LIBUSB_DEFAULT_HID_EP_IN,

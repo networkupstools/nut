@@ -1440,6 +1440,7 @@ static void checkconf(void)
 {
 	char	fn[SMALLBUF];
 	PCONF_CTX_t	ctx;
+	int	numerrors = 0;
 
 	snprintf(fn, sizeof(fn), "%s/upssched.conf", confpath());
 
@@ -1454,6 +1455,7 @@ static void checkconf(void)
 		if (pconf_parse_error(&ctx)) {
 			upslogx(LOG_ERR, "Parse error: %s:%d: %s",
 				fn, ctx.linenum, ctx.errmsg);
+			numerrors++;
 			continue;
 		}
 
@@ -1471,8 +1473,17 @@ static void checkconf(void)
 				snprintfcat(errmsg, sizeof(errmsg), " %s",
 					ctx.arglist[i]);
 
+			numerrors++;
 			upslogx(LOG_WARNING, "%s", errmsg);
 		}
+	}
+
+
+	/* FIXME: Per legacy behavior, we silently went on.
+	 * Maybe should abort on unusable configs?
+	 */
+	if (numerrors) {
+		upslogx(LOG_ERR, "Encountered %d config errors, those entries were ignored", numerrors);
 	}
 
 	pconf_finish(&ctx);

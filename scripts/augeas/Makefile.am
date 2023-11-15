@@ -1,6 +1,11 @@
+# Network UPS Tools: scripts/augeas
 
 EXTRA_DIST = gen-nutupsconf-aug.py.in nutupsconf.aug.tpl \
 	README.adoc tests/test_nut.aug
+
+# Note: spellchecking is currently ensured by docs/Makefile.am
+# due to inclusion into docs/developer-guide.txt, and the heading
+# level may be also dictated by that.
 
 PYTHON = @PYTHON@
 

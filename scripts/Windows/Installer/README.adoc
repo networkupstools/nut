@@ -54,7 +54,7 @@ NUT for Windows uses the WiX Toolset to codify and implement the installer:
 * https://github.com/wixtoolset/
 * https://github.com/wixtoolset/wix/
 
-The toolset in turn reqires the .NET framework (and the related NuGet tool)
+The toolset in turn requires the .NET framework (and the related NuGet tool)
 which is available on Windows and Linux platforms, at least. In case of the
 latter (for cross-builds) note that many of the newer distribution releases
 should include dotnet packages in their repositories; for earlier releases
@@ -96,11 +96,11 @@ likely need deeper investigation and update to be useful. Findings so far:
   or older) and the XML file which describes the installer actions and
   the file/directory structures it would deliver.
   * It would be helpful to find how to generate the filesystem structure
-    (names, GUIDs, what else?) based on the prototype area prepared by
+    (names, `GUID`s, what else?) based on the prototype area prepared by
     `make install DESTDIR=...` during a NUT build. It does not have to
     be part of *every* build (e.g. we can want this separated by driver
     types to allow end-users to install just a subset of NUT, similar
-    to how this happends with multi-package approach on Unix/Linux) but
+    to how this happens with multi-package approach on Unix/Linux) but
     an automated process which makes maintenance easier would be great:
     let a human sort where different filenames are categorized, and let
     automation discover that some installed files are not mentioned or

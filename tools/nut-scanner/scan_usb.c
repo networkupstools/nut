@@ -230,7 +230,7 @@ err:
 /* end of dynamic link library stuff */
 
 static char* is_usb_device_supported(usb_device_id_t *usb_device_id_list,
-					int dev_VendorID, int dev_ProductID)
+					int dev_VendorID, int dev_ProductID, char **alt)
 {
 	usb_device_id_t *usbdev;
 
@@ -238,6 +238,8 @@ static char* is_usb_device_supported(usb_device_id_t *usb_device_id_list,
 		if ((usbdev->vendorID == dev_VendorID)
 		 && (usbdev->productID == dev_ProductID)
 		) {
+			if (alt)
+				*alt = usbdev->alt_driver_names;
 			return usbdev->driver_name;
 		}
 	}
@@ -256,6 +258,7 @@ nutscan_device_t * nutscan_scan_usb(void)
 	 * (drivers/usb-common.h).
 	 */
 	char *driver_name = NULL;
+	char *alt_driver_names = NULL;
 	char *serialnumber = NULL;
 	char *device_name = NULL;
 	char *vendor_name = NULL;
@@ -397,7 +400,7 @@ nutscan_device_t * nutscan_scan_usb(void)
 #endif
 			if ((driver_name =
 				is_usb_device_supported(usb_device_table,
-					VendorID, ProductID)) != NULL) {
+					VendorID, ProductID, &alt_driver_names)) != NULL) {
 
 				/* open the device */
 #if WITH_LIBUSB_1_0
@@ -532,6 +535,9 @@ nutscan_device_t * nutscan_scan_usb(void)
 				nut_dev->type = TYPE_USB;
 				if (driver_name) {
 					nut_dev->driver = strdup(driver_name);
+				}
+				if (alt_driver_names) {
+					nut_dev->alt_driver_names = strdup(alt_driver_names);
 				}
 				nut_dev->port = strdup("auto");
 

@@ -85,6 +85,12 @@ int	tracking_delay = 3600;
  */
 int allow_no_device = 0;
 
+/*
+ * Preloaded to ALLOW_NOT_ALL_LISTENERS from upsd.conf or environment variable
+ * (with higher prio for envvar); defaults to disabled for legacy compat.
+ */
+int allow_not_all_listeners = 0;
+
 /* preloaded to {OPEN_MAX} in main, can be overridden via upsd.conf */
 nfds_t	maxconn = 0;
 
@@ -276,7 +282,7 @@ static void setuptcp(stype_t *server)
 	int	v = 0, one = 1;
 
 	if (VALID_FD_SOCK(server->sock_fd)) {
-		/* Alredy bound, e.g. thanks to 'LISTEN *' handling and injection
+		/* Already bound, e.g. thanks to 'LISTEN *' handling and injection
 		 * into the list we loop over */
 		upsdebugx(6, "setuptcp: SKIP bind to %s port %s: entry already initialized",
 			server->addr, server->port);
@@ -284,6 +290,13 @@ static void setuptcp(stype_t *server)
 	}
 
 	upsdebugx(3, "setuptcp: try to bind to %s port %s", server->addr, server->port);
+	if (!strcmp(server->addr, "localhost")) {
+		/* Warn about possible surprises with IPv4 vs. IPv6 */
+		upsdebugx(1,
+			"setuptcp: WARNING: requested to LISTEN on 'localhost' "
+			"by name - will use the first system-resolved "
+			"IP address for that");
+	}
 
 	/* Special handling note for `LISTEN * <port>` directive with the
 	 * literal asterisk on systems with RFC-3493 (no relation!) support
@@ -877,6 +890,16 @@ static void client_readline(nut_ctype_t *client)
 void server_load(void)
 {
 	stype_t	*server;
+	size_t	listenersTotal = 0, listenersValid = 0,
+		listenersTotalLocalhost = 0, listenersValidLocalhost = 0,
+		listenersLocalhostName = 0,
+		listenersLocalhostName6 = 0,
+		listenersLocalhostIPv4 = 0,
+		listenersLocalhostIPv6 = 0,
+		listenersValidLocalhostName = 0,
+		listenersValidLocalhostName6 = 0,
+		listenersValidLocalhostIPv4 = 0,
+		listenersValidLocalhostIPv6 = 0;
 
 	/* default behaviour if no LISTEN address has been specified */
 	if (!firstaddr) {
@@ -896,9 +919,114 @@ void server_load(void)
 		setuptcp(server);
 	}
 
+	/* Account separately from setuptcp() because it can edit the list,
+	 * e.g. when handling `LISTEN *` lines.
+	 */
+	for (server = firstaddr; server; server = server->next) {
+		listenersTotal++;
+		if (VALID_FD_SOCK(server->sock_fd)) {
+			listenersValid++;
+		}
+
+		if (!strcmp(server->addr, "localhost")) {
+			listenersLocalhostName++;
+			listenersTotalLocalhost++;
+			if (VALID_FD_SOCK(server->sock_fd)) {
+				listenersValidLocalhostName++;
+				listenersValidLocalhost++;
+			}
+		}
+
+		if (!strcmp(server->addr, "localhost6")) {
+			listenersLocalhostName6++;
+			listenersTotalLocalhost++;
+			if (VALID_FD_SOCK(server->sock_fd)) {
+				listenersValidLocalhostName6++;
+				listenersValidLocalhost++;
+			}
+		}
+
+		if (!strcmp(server->addr, "127.0.0.1")) {
+			listenersLocalhostIPv4++;
+			listenersTotalLocalhost++;
+			if (VALID_FD_SOCK(server->sock_fd)) {
+				listenersValidLocalhostIPv4++;
+				listenersValidLocalhost++;
+			}
+		}
+
+		if (!strcmp(server->addr, "::1")) {
+			listenersLocalhostIPv6++;
+			listenersTotalLocalhost++;
+			if (VALID_FD_SOCK(server->sock_fd)) {
+				listenersValidLocalhostIPv6++;
+				listenersValidLocalhost++;
+			}
+		}
+	}
+
+	upsdebugx(1, "%s: tried to set up %" PRIuSIZE
+		" listening sockets, succeeded with %" PRIuSIZE,
+		__func__, listenersTotal, listenersValid);
+	upsdebugx(3, "%s: ...of those related to localhost: "
+		"overall: %" PRIuSIZE " tried, %" PRIuSIZE " succeeded; "
+		"by name: %" PRIuSIZE "T/%" PRIuSIZE "S; "
+		"by name(6): %" PRIuSIZE "T/%" PRIuSIZE "S; "
+		"by IPv4 addr: %" PRIuSIZE "T/%" PRIuSIZE "S; "
+		"by IPv6 addr: %" PRIuSIZE "T/%" PRIuSIZE "S",
+		__func__,
+		listenersTotalLocalhost, listenersValidLocalhost,
+		listenersLocalhostName, listenersValidLocalhostName,
+		listenersLocalhostName6, listenersValidLocalhostName6,
+		listenersLocalhostIPv4, listenersValidLocalhostIPv4,
+		listenersLocalhostIPv6, listenersValidLocalhostIPv6
+		);
+
 	/* check if we have at least 1 valid LISTEN interface */
-	if (INVALID_FD_SOCK(firstaddr->sock_fd)) {
+	if (!listenersValid) {
 		fatalx(EXIT_FAILURE, "no listening interface available");
+	}
+
+	/* is everything requested - handled okay? */
+	if (listenersTotal == listenersValid)
+		return;
+
+	/* check for edge cases we can let slide */
+	if ( (listenersTotal - listenersValid) ==
+	     (listenersTotalLocalhost - listenersValidLocalhost)
+	) {
+		/* Note that we can also get into this situation
+		 * when "dual-stack" IPv6 listener also handles
+		 * IPv4 connections, and precludes successful
+		 * setup of the IPv4 listener later.
+		 *
+		 * FIXME? Can we get into this situation the other
+		 * way around - an IPv4 listener precluding the
+		 * IPv6 one, so end-user actually lacks one of the
+		 * requested connection types?
+		 */
+		upsdebugx(1, "%s: discrepancy corresponds to "
+			"addresses related to localhost; assuming "
+			"that it was attempted under several names "
+			"which resolved to same IP:PORT socket specs "
+			"(so only the first one of each succeeded)",
+			__func__);
+		return;
+	}
+
+	if (allow_not_all_listeners) {
+		upslogx(LOG_WARNING,
+			"WARNING: some listening interfaces were "
+			"not available, but the ALLOW_NOT_ALL_LISTENERS "
+			"setting is active");
+	} else {
+		upsdebugx(0,
+			"Reconcile available NUT server IP addresses "
+			"and LISTEN configuration, or consider the "
+			"ALLOW_NOT_ALL_LISTENERS setting!");
+		fatalx(EXIT_FAILURE,
+			"Fatal error: some listening interfaces were "
+			"not available");
 	}
 }
 
@@ -2070,6 +2198,30 @@ int main(int argc, char **argv)
 			 * configured yet - tell the clients so, properly.
 			 */
 			allow_no_device = 0;
+		}
+	}
+	} /* scope */
+
+	{ /* scope */
+	/* As documented above, the ALLOW_NOT_ALL_LISTENERS can be provided via
+	 * envvars and then has higher priority than an upsd.conf setting
+	 */
+	const char *envvar = getenv("ALLOW_NOT_ALL_LISTENERS");
+	if ( envvar != NULL) {
+		if ( (!strncasecmp("TRUE", envvar, 4)) || (!strncasecmp("YES", envvar, 3)) || (!strncasecmp("ON", envvar, 2)) || (!strncasecmp("1", envvar, 1)) ) {
+			/* Admins of this server expressed a desire to serve
+			 * NUT protocol if at least one configured listener
+			 * works (some may be missing and clients using those
+			 * addresses would not be served!)
+			 */
+			allow_not_all_listeners = 1;
+		} else if ( (!strncasecmp("FALSE", envvar, 5)) || (!strncasecmp("NO", envvar, 2)) || (!strncasecmp("OFF", envvar, 3)) || (!strncasecmp("0", envvar, 1)) ) {
+			/* Admins of this server expressed a desire to serve
+			 * NUT protocol only if all configured listeners work
+			 * (default for least surprise - admins must address
+			 * any configuration inconsistencies!)
+			 */
+			allow_not_all_listeners = 0;
 		}
 	}
 	} /* scope */
