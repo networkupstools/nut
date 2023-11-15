@@ -8,6 +8,10 @@ if WITH_USB
 endif
 endif
 
+if WITH_FREEBSD_QUIRKS_DIR
+ freebsdquirks_DATA = nut-usb.quirks
+endif
+
 EXTRA_DIST = README.adoc
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
@@ -22,9 +26,10 @@ DISTCLEANFILES = nut-usb.conf
 # GENERATED_USB_OS_FILES):
 MAINTAINERCLEANFILES += nut-usb.conf.in
 MAINTAINERCLEANFILES += nut-usb.conf.in.AUTOGEN_WITHOUT
+MAINTAINERCLEANFILES += nut-usb.quirks
 
 # Part of dist tarball, regardless of use for current build:
-EXTRA_DIST += nut-usb.conf.in
+EXTRA_DIST += nut-usb.conf.in nut-usb.quirks
 
 SPELLCHECK_SRC = README.adoc
 
