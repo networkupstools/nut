@@ -359,6 +359,7 @@ void load_upsdconf(int reloading)
 {
 	char	fn[SMALLBUF];
 	PCONF_CTX_t	ctx;
+	int	numerrors = 0;
 
 	snprintf(fn, sizeof(fn), "%s/upsd.conf", confpath());
 
@@ -387,6 +388,7 @@ void load_upsdconf(int reloading)
 		if (pconf_parse_error(&ctx)) {
 			upslogx(LOG_ERR, "Parse error: %s:%d: %s",
 				fn, ctx.linenum, ctx.errmsg);
+			numerrors++;
 			continue;
 		}
 
@@ -404,6 +406,7 @@ void load_upsdconf(int reloading)
 				snprintfcat(errmsg, sizeof(errmsg), " %s",
 					ctx.arglist[i]);
 
+			numerrors++;
 			upslogx(LOG_WARNING, "%s", errmsg);
 		}
 
@@ -423,6 +426,13 @@ void load_upsdconf(int reloading)
 				nut_debug_level_args);
 			nut_debug_level = nut_debug_level_args;
 		}
+	}
+
+	/* FIXME: Per legacy behavior, we silently went on.
+	 * Maybe should abort on unusable configs?
+	 */
+	if (numerrors) {
+		upslogx(LOG_ERR, "Encountered %d config errors, those entries were ignored", numerrors);
 	}
 
 	pconf_finish(&ctx);

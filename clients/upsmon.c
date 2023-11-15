@@ -1847,6 +1847,7 @@ static void upsmon_err(const char *errmsg)
 static void loadconfig(void)
 {
 	PCONF_CTX_t	ctx;
+	int	numerrors = 0;
 
 	pconf_init(&ctx, upsmon_err);
 
@@ -1872,6 +1873,7 @@ static void loadconfig(void)
 		if (pconf_parse_error(&ctx)) {
 			upslogx(LOG_ERR, "Parse error: %s:%d: %s",
 				configfile, ctx.linenum, ctx.errmsg);
+			numerrors++;
 			continue;
 		}
 
@@ -1890,6 +1892,7 @@ static void loadconfig(void)
 				snprintfcat(errmsg, sizeof(errmsg), " %s",
 					ctx.arglist[i]);
 
+			numerrors++;
 			upslogx(LOG_WARNING, "%s", errmsg);
 		}
 	}
@@ -1914,6 +1917,13 @@ static void loadconfig(void)
 				"Applying pollfail_log_throttle_max=%d from upsmon.conf",
 				pollfail_log_throttle_max);
 		}
+	}
+
+	/* FIXME: Per legacy behavior, we silently went on.
+	 * Maybe should abort on unusable configs?
+	 */
+	if (numerrors) {
+		upslogx(LOG_ERR, "Encountered %d config errors, those entries were ignored", numerrors);
 	}
 
 	pconf_finish(&ctx);
