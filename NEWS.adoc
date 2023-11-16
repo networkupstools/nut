@@ -80,7 +80,7 @@ https://github.com/networkupstools/nut/milestone/10
    support most devices [#2156]
 
  - usbhid-ups driver:
-   * `arduino-hid` subdriver was enhanced from "initial barebones" experimental
+   * `arduino-hid` subdriver was enhanced from "initial bare bones" experimental
      set of mapped data points to support some 20 more mappings to make it more
      useful as an UPS driver, not just a controller developer sandbox. [#2188]
 
