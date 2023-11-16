@@ -19,9 +19,11 @@ GENERATED_PY   = test_nutclient.py PyNUT.py setup.py
 
 $(GENERATED_DIST): .pypi-dist
 
+# NOTE: We only clean .pypi-tools* in MAINTAINERCLEANFILES to avoid regular
+# re-detection of the probably unchanging environment!
 clean-local:
 	rm -rf $(GENERATED_SRC) $(GENERATED_DIST)
-	rm -f .pypi-src .pypi-dist
+	rm -f .pypi-src .pypi-dist*
 	rm -f $(GENERATED_PY)
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp .pypi-tools*
