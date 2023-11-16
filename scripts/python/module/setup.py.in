@@ -27,7 +27,7 @@ setup(
     packages   =	find_packages(),
     python_requires =	'>=2.6',
     # install_requires =	['telnetlib'],	# NOTE: telnetlib.py is part of Python core for tested 2.x and 3.x versions, not something 'pip' can download
-    keywords =	['pypi', 'cicd', 'python'],
+    keywords =	['pypi', 'cicd', 'python', 'nut', 'Network UPS Tools'],
     classifiers = [
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
