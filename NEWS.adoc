@@ -82,6 +82,11 @@ https://github.com/networkupstools/nut/milestone/10
  - powerpanel text driver now handles status responses in any format and should
    support most devices [#2156]
 
+ - usbhid-ups driver:
+   * `arduino-hid` subdriver was enhanced from "initial bare bones" experimental
+     set of mapped data points to support some 20 more mappings to make it more
+     useful as an UPS driver, not just a controller developer sandbox. [#2188]
+
 Release notes for NUT 2.8.1 - what's new since 2.8.0
 ----------------------------------------------------
 
