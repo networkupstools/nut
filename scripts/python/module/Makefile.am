@@ -55,7 +55,7 @@ upload publish:
 .pypi-src: test_nutclient.py.in PyNUT.py.in setup.py.in README.adoc Makefile $(top_srcdir)/LICENSE-GPL3
 	@echo "  PYPI  Generate PyPI module source"
 	@rm -rf $(GENERATED_SRC) "$@"
-	@mkdir -p PyNUTClient/src
+	@mkdir -p PyNUTClient
 	@for S in "$(srcdir)"/*.py.in ; do \
 		B="`basename "$${S}" .in`" ; \
 		if test x"$${B}" = xsetup.py ; then \
@@ -65,15 +65,15 @@ upload publish:
 			continue; \
 		fi; \
 		if test -s "$${B}" ; then \
-			cp -pf "$${B}" PyNUTClient/src/ || exit ; \
+			cp -pf "$${B}" PyNUTClient/ || exit ; \
 			continue; \
 		fi ; \
-		sed -e "s,[@]PYTHON[@],@PYTHON@," < "$(srcdir)/$${B}.in" > "PyNUTClient/src/$${B}" || exit ; \
-		if test -x "$(srcdir)/$${B}.in" ; then chmod +x "PyNUTClient/src/$${B}"; fi ; \
+		sed -e "s,[@]PYTHON[@],@PYTHON@," < "$(srcdir)/$${B}.in" > "PyNUTClient/$${B}" || exit ; \
+		if test -x "$(srcdir)/$${B}.in" ; then chmod +x "PyNUTClient/$${B}"; fi ; \
 	 done ; \
 	 cp -pf "$(srcdir)/README.adoc" README.txt || exit ; \
 	 cp -pf "$(top_srcdir)/LICENSE-GPL3" . || exit ; \
-	 echo "from . import PyNUT" > PyNUTClient/src/__init__.py || exit
+	 echo "from . import PyNUT" > PyNUTClient/__init__.py || exit
 	@touch "$@"
 
 .pypi-tools-python:
