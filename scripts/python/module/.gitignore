@@ -5,6 +5,7 @@
 /build
 /dist
 /src
+/.tox
 /README.txt
 /.pypi-*
 /LICENSE-GPL3
