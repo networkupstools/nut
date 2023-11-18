@@ -42,7 +42,7 @@ jobs:
         git --version >&2 || true ;
         TAG_NAME="$(echo $GITHUB_REF | cut -d / -f 3)" ;
         if [ x"$TAG_NAME" = xmaster ]; then
-            {  TAG_NAME="$(git describe --tags --match 'v[0-9]*.[0-9]*.[0-9]' --exclude '*-signed' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*')"
+            {  TAG_NAME="$(git describe --tags --match 'v[0-9]*.[0-9]*.[0-9]' --exclude '*-signed' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*')" \
             || TAG_NAME="$(git describe --tags --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' --exclude '*Windows*' --exclude '*IPM*')" ; } \
             && test -n "${TAG_NAME}" \
             || TAG_NAME="2.8.1-`TZ=UTC date +%s`" ;
