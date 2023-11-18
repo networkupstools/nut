@@ -7,6 +7,8 @@
 # (having only shell scripting as a prerequisite suffices for that)
 all: PyNUTClient
 
+EXTRA_DIST = tox.ini
+
 NUT_SOURCE_GITREV_NUMERIC = @NUT_SOURCE_GITREV_NUMERIC@
 PYTHON = @PYTHON@
 
@@ -25,6 +27,12 @@ clean-local:
 	rm -rf $(GENERATED_SRC) $(GENERATED_DIST)
 	rm -f .pypi-src .pypi-dist*
 	rm -f $(GENERATED_PY)
+
+# Python test envs take a while to populate, so maybe better not clean
+# them too enthusiastically. Can revise (move to "clean-local") later,
+# if this choice proves a problem.
+distclean-local:
+	rm -rf .tox
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp .pypi-tools*
 
