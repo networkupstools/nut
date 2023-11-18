@@ -19,6 +19,11 @@ GENERATED_SRC  = PyNUTClient README.txt LICENSE-GPL3
 # specifically PyNUTClient packaging - `make clean dist` should do it here:
 GENERATED_PY   = test_nutclient.py PyNUT.py setup.py
 
+# (Re-)generate files normally made by `configure` from .in templates
+# No touch-files here, intended for manual use in developer iterations
+py-in: $(GENERATED_PY)
+redist: clean py-in dist
+
 $(GENERATED_DIST): .pypi-dist
 
 # NOTE: We only clean .pypi-tools* in MAINTAINERCLEANFILES to avoid regular
