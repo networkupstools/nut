@@ -51,15 +51,11 @@ jobs:
       run: >-
         ${{ steps.pythoncmd.outputs.PYTHON }} -m
         pip install wheel build
-    - name: Update version in setup.py
-      run: >-
-        if [ ! -s scripts/python/module/setup.py ] ; then
-            sed -e "s/@NUT_SOURCE_GITREV_NUMERIC@/${{ steps.tag.outputs.TAG_NAME }}/g" < scripts/python/module/setup.py.in > scripts/python/module/setup.py ;
-        fi
     - name: Prepare source layout and Build a binary wheel
       run: >-
         set -e ;
         cd scripts/python/module ;
+        touch Makefile ;
         make -f Makefile.am clean-local dist NUT_SOURCE_GITREV_NUMERIC="${{ steps.tag.outputs.TAG_NAME }}" PYTHON="${{ steps.pythoncmd.outputs.PYTHON }}" top_srcdir="../../.." srcdir="." builddir="." ;
         find . -ls
     - name: Publish master distribution 📦 to Test PyPI
