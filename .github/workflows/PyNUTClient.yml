@@ -24,11 +24,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
-    - name: Fetch git tags
-      run: >-
-        set -x ;
-        git --version >&2 || true ;
-        git fetch --tags >&2
+      with:
+        fetch-depth: 0
+        fetch-tags: true
     - name: Set up Python 3.10
       uses: actions/setup-python@v3
       with:
