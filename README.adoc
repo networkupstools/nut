@@ -713,17 +713,19 @@ listed in the user manual {xref}Acknowledgements{x-s}[acknowledgements appendix]
 We would like to highlight some organizations which provide continuous
 support to the NUT project (and many other FOSS projects) on technological
 and organizational sides, such as helping keep the donations transparent,
-NUT CI farm afloat, and public resources visible:
+NUT CI farm afloat, and public resources visible. Thanks for keeping the
+clocks ticking, day and night:
 
 [frame="none",grid="none",cols="2"]
 |===
-| image:images/ci/GitHub-Mark-ea2971cee799.png[GitHub logo,140,140]
-| The link:https://github.com/networkupstools/[NetworkUPSTools organization
+| image:images/ci/GitHub-Mark-140pxW.png[GitHub logo]
+| The link:https://github.com/networkupstools/["NetworkUPSTools" organization
   on GitHub] arranges a lot of things, including source code hosting for NUT
   itself and several related projects, team management, projects, issue and
-  pull request discussions, sponsorship, some automated actions, and more...
+  pull request discussions, sponsorship, nut-website rendering and hosting,
+  some automated actions, and more...
 
-| image:images/ci/jenkins-nut-transparent-bg.png[Jenkins+NUT logo,140,105]
+| image:images/ci/jenkins-nut-transparent-bg-140pxW.png[Jenkins and NUT logo]
 | The link:https://www.jenkins.io/[Jenkins CI] project and its huge plugin
   ecosystem provides the technological foundation for the largest island of
   the self-hosted NUT CI farm. There is a fair amount of cross-pollination
@@ -753,7 +755,7 @@ NUT CI farm afloat, and public resources visible:
   NUT pipeline] allows us to test NUT CI builds on Windows (and publish
   preview tarballs with binaries).
 
-| image:images/ci/DO_Powered_by_Badge_blue.png[DigitalOcean logo,140,30]
+| image:images/ci/DO_Powered_by_Badge_blue_140pxW.png[DigitalOcean logo]
 | The link:https://www.digitalocean.com/[DigitalOcean] droplets allow us to host
   NUT CI farm build agents, and eventually re-house the Jenkins controller too.
 
@@ -761,7 +763,7 @@ NUT CI farm afloat, and public resources visible:
 | link:https://www.gandi.net/[Gandi.Net] took up the costs of NUT DNS hosting.
 
 | image:images/ci/OC_logo-watercolor-256.png[Open Collective
-  logo]image:images/ci/OC_logotype.png[Open Collective logo]
+  logo]&nbsp;image:images/ci/OC_logotype.png[Open Collective logo]
 | https://opencollective.com/networkupstools allows us to arrange monetary
   donations and spending, with public transparency of everything that happens.
 |===
