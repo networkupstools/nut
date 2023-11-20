@@ -2275,8 +2275,8 @@ int main(int argc, char **argv)
 
 			if (grp == NULL) {
 				upsdebugx(1, "WARNING: could not resolve "
-					"group name '%s': %s",
-					group, strerror(errno)
+					"group name '%s' (%i): %s",
+					group, errno, strerror(errno)
 				);
 				allOk = 0;
 				goto sockname_ownership_finished;
@@ -2285,8 +2285,8 @@ int main(int argc, char **argv)
 				mode_t mode;
 
 				if (INVALID_FD((fd = open(sockname, O_RDWR | O_APPEND)))) {
-					upsdebugx(1, "WARNING: opening socket file for stat/chown failed: %s",
-						strerror(errno)
+					upsdebugx(1, "WARNING: opening socket file for stat/chown failed (%i): %s",
+						errno, strerror(errno)
 					);
 					allOk = 0;
 					/* Can not proceed with ops below */
@@ -2294,15 +2294,15 @@ int main(int argc, char **argv)
 				}
 
 				if (fstat(fd, &statbuf)) {
-					upsdebugx(1, "WARNING: stat for chown failed: %s",
-						strerror(errno)
+					upsdebugx(1, "WARNING: stat for chown of socket file failed (%i): %s",
+						errno, strerror(errno)
 					);
 					allOk = 0;
 				} else {
 					/* Here we do a portable chgrp() essentially: */
 					if (fchown(fd, statbuf.st_uid, grp->gr_gid)) {
-						upsdebugx(1, "WARNING: chown failed: %s",
-							strerror(errno)
+						upsdebugx(1, "WARNING: chown of socket file failed (%i): %s",
+							errno, strerror(errno)
 						);
 						allOk = 0;
 					}
@@ -2312,8 +2312,8 @@ int main(int argc, char **argv)
 				if (fstat(fd, &statbuf)) {
 					/* Logically we'd fail chown above if file
 					 * does not exist or is not accessible */
-					upsdebugx(1, "WARNING: stat for chmod failed: %s",
-						strerror(errno)
+					upsdebugx(1, "WARNING: stat for chmod of socket file failed (%i): %s",
+						errno, strerror(errno)
 					);
 					allOk = 0;
 				} else {
@@ -2322,8 +2322,8 @@ int main(int argc, char **argv)
 					mode |= S_IWGRP;
 					mode |= S_IRGRP;
 					if (fchmod(fd, mode)) {
-						upsdebugx(1, "WARNING: chmod failed: %s",
-							strerror(errno)
+						upsdebugx(1, "WARNING: chmod of socket file failed (%i): %s",
+							errno, strerror(errno)
 						);
 						allOk = 0;
 					}
