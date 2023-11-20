@@ -7,6 +7,13 @@
 # (having only shell scripting as a prerequisite suffices for that)
 all: PyNUTClient
 
+check-local:
+	@echo "You may want to set up a NUT data server and run 'make tox' here: `pwd`"
+
+# NOT tying into "make check" because a lot of stars must align for this test:
+tox: dist .pypi-tools-tox
+	tox
+
 EXTRA_DIST = tox.ini
 
 NUT_SOURCE_GITREV_NUMERIC = @NUT_SOURCE_GITREV_NUMERIC@
@@ -89,6 +96,11 @@ upload publish:
 .pypi-tools-dist-build: .pypi-tools-python
 	@echo "  PYPI  Prepare PyPI tools to generate a distribution (build)"
 	@$(PYTHON) -m pip install build
+	@touch "$@"
+
+.pypi-tools-tox: .pypi-tools-python
+	@echo "  PYPI  Prepare Python multi-environment testing tools (tox)"
+	@$(PYTHON) -m pip install tox
 	@touch "$@"
 
 # Install via OS packaging or pip?
