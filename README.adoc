@@ -717,13 +717,13 @@ NUT CI farm afloat, and public resources visible:
 
 [frame="none",grid="none",cols="2"]
 |===
-| image:https://github.githubassets.com/assets/GitHub-Mark-ea2971cee799.png[GitHub logo]
+| image:images/ci/GitHub-Mark-ea2971cee799.png[GitHub logo,140,140]
 | The link:https://github.com/networkupstools/[NetworkUPSTools organization
   on GitHub] arranges a lot of things, including source code hosting for NUT
   itself and several related projects, team management, projects, issue and
   pull request discussions, sponsorship, some automated actions, and more...
 
-| image:images/ci/jenkins-nut-transparent-bg.png[Jenkins+NUT logo]
+| image:images/ci/jenkins-nut-transparent-bg.png[Jenkins+NUT logo,140]
 | The link:https://www.jenkins.io/[Jenkins CI] project and its huge plugin
   ecosystem provides the technological foundation for the largest island of
   the self-hosted NUT CI farm. There is a fair amount of cross-pollination
@@ -732,7 +732,7 @@ NUT CI farm afloat, and public resources visible:
   See more at link:https://stories.jenkins.io/user-story/jenkins-is-the-way-for-networkupstools/[Jenkins
   is the way to build multi-platform NUT] article.
 
-| image:images/ci/fosshost.org_Host_Light_309px.png[Fosshost logo]
+| image:images/ci/fosshost.org_Host_Light_38px.png[Fosshost logo]
 | Fosshost provided virtual machines where the multi-platform NUT CI farm with
   a jenkins-dynamatrix setup runs to arrange builds in numerous operating
   environments and a lot of toolkit versions and implementations. Some workers
@@ -743,24 +743,24 @@ NUT CI farm afloat, and public resources visible:
   of operating systems, compilers, script interpreters, tools and third-party
   dependencies.
 
-| image:https://d3r49iyjzglexf.cloudfront.net/trademark-logos-dc9765e9682f79d0370103a0aeaf156ab27583106b765502b21f90d7c18fd101.png[CircleCI logo]
+| image:images/ci/CircleCI_vertical_black_logo.svg[CircleCI logo]
 | The
   link:https://app.circleci.com/pipelines/github/networkupstools/nut/[CircleCI
   NUT pipeline] allows us to test NUT CI builds on MacOS.
 
-| image:https://ci.appveyor.com/assets/images/logo-2x.png[AppVeyor logo]
+| image:images/ci/AppVeyor_logo-2x.png[AppVeyor logo]
 | The link:https://ci.appveyor.com/project/nut-travis/nut/[AppVeyor
   NUT pipeline] allows us to test NUT CI builds on Windows (and publish
   preview tarballs with binaries).
 
-| image:https://opensource.nyc3.cdn.digitaloceanspaces.com/attribution/assets/PoweredByDO/DO_Powered_by_Badge_blue.svg[DigitalOcean logo]
+| image:images/ci/DO_Powered_by_Badge_blue.svg[DigitalOcean logo,140,30]
 | The link:https://www.digitalocean.com/[DigitalOcean] droplets allow us to host
   NUT CI farm build agents, and eventually re-house the Jenkins controller too.
 
-| image:https://www.networkupstools.org/images/gandi-ar21.svg[Gandi.Net logo]
+| image:images/ci/gandi-ar21.svg[Gandi.Net logo]
 | link:https://www.gandi.net/[Gandi.Net] took up the costs of NUT DNS hosting.
 
-| image:https://opencollective.com/static/images/logotype.svg[Open Collective logo]
+| image:images/ci/OC_logotype.svg[Open Collective logo]
 | https://opencollective.com/networkupstools allows us to arrange monetary
   donations and spending, with public transparency of everything that happens.
 |===
