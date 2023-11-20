@@ -709,3 +709,58 @@ Acknowledgements / Contributions
 
 The many people who have participated in creating and improving NUT are
 listed in the user manual {xref}Acknowledgements{x-s}[acknowledgements appendix].
+
+We would like to highlight some organizations which provide continuous
+support to the NUT project (and many other FOSS projects) on technological
+and organizational sides, such as helping keep the donations transparent,
+NUT CI farm afloat, and public resources visible:
+
+[frame="none",grid="none",cols="2"]
+|===
+| image:https://github.githubassets.com/assets/GitHub-Mark-ea2971cee799.png[GitHub logo]
+| The link:https://github.com/networkupstools/[NetworkUPSTools organization
+  on GitHub] arranges a lot of things, including source code hosting for NUT
+  itself and several related projects, team management, projects, issue and
+  pull request discussions, sponsorship, some automated actions, and more...
+
+| image:images/ci/jenkins-nut-transparent-bg.png[Jenkins+NUT logo]
+| The link:https://www.jenkins.io/[Jenkins CI] project and its huge plugin
+  ecosystem provides the technological foundation for the largest island of
+  the self-hosted NUT CI farm. There is a fair amount of cross-pollination
+  between the upstream project and development done for the NUT CI farm.
++
+  See more at link:https://stories.jenkins.io/user-story/jenkins-is-the-way-for-networkupstools/[Jenkins
+  is the way to build multi-platform NUT] article.
+
+| image:images/ci/fosshost.org_Host_Light_309px.png[Fosshost logo]
+| Fosshost provided virtual machines where the multi-platform NUT CI farm with
+  a jenkins-dynamatrix setup runs to arrange builds in numerous operating
+  environments and a lot of toolkit versions and implementations. Some workers
+  running on community members' machines also dial in to provide an example of
+  their platforms. Literally hundreds of NUT builds run for each iteration.
++
+  This allows us to ensure that NUT remains portable across two decades' worth
+  of operating systems, compilers, script interpreters, tools and third-party
+  dependencies.
+
+| image:https://d3r49iyjzglexf.cloudfront.net/trademark-logos-dc9765e9682f79d0370103a0aeaf156ab27583106b765502b21f90d7c18fd101.png[CircleCI logo]
+| The
+  link:https://app.circleci.com/pipelines/github/networkupstools/nut/[CircleCI
+  NUT pipeline] allows us to test NUT CI builds on MacOS.
+
+| image:https://ci.appveyor.com/assets/images/logo-2x.png[AppVeyor logo]
+| The link:https://ci.appveyor.com/project/nut-travis/nut/[AppVeyor
+  NUT pipeline] allows us to test NUT CI builds on Windows (and publish
+  preview tarballs with binaries).
+
+| image:https://opensource.nyc3.cdn.digitaloceanspaces.com/attribution/assets/PoweredByDO/DO_Powered_by_Badge_blue.svg[DigitalOcean logo]
+| The link:https://www.digitalocean.com/[DigitalOcean] droplets allow us to host
+  NUT CI farm build agents, and eventually re-house the Jenkins controller too.
+
+| image:https://www.networkupstools.org/images/gandi-ar21.svg[Gandi.Net logo]
+| link:https://www.gandi.net/[Gandi.Net] took up the costs of NUT DNS hosting.
+
+| image:https://opencollective.com/static/images/logotype.svg[Open Collective logo]
+| https://opencollective.com/networkupstools allows us to arrange monetary
+  donations and spending, with public transparency of everything that happens.
+|===
