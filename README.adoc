@@ -723,7 +723,7 @@ NUT CI farm afloat, and public resources visible:
   itself and several related projects, team management, projects, issue and
   pull request discussions, sponsorship, some automated actions, and more...
 
-| image:images/ci/jenkins-nut-transparent-bg.png[Jenkins+NUT logo,140]
+| image:images/ci/jenkins-nut-transparent-bg.png[Jenkins+NUT logo,140,105]
 | The link:https://www.jenkins.io/[Jenkins CI] project and its huge plugin
   ecosystem provides the technological foundation for the largest island of
   the self-hosted NUT CI farm. There is a fair amount of cross-pollination
@@ -743,24 +743,25 @@ NUT CI farm afloat, and public resources visible:
   of operating systems, compilers, script interpreters, tools and third-party
   dependencies.
 
-| image:images/ci/CircleCI_vertical_black_logo.svg[CircleCI logo]
+| image:images/ci/CircleCI_vertical_black_logo.png[CircleCI logo]
 | The
   link:https://app.circleci.com/pipelines/github/networkupstools/nut/[CircleCI
   NUT pipeline] allows us to test NUT CI builds on MacOS.
 
-| image:images/ci/AppVeyor_logo-2x.png[AppVeyor logo]
+| image:images/ci/AppVeyor_logo-ar21.png[AppVeyor logo]
 | The link:https://ci.appveyor.com/project/nut-travis/nut/[AppVeyor
   NUT pipeline] allows us to test NUT CI builds on Windows (and publish
   preview tarballs with binaries).
 
-| image:images/ci/DO_Powered_by_Badge_blue.svg[DigitalOcean logo,140,30]
+| image:images/ci/DO_Powered_by_Badge_blue.png[DigitalOcean logo,140,30]
 | The link:https://www.digitalocean.com/[DigitalOcean] droplets allow us to host
   NUT CI farm build agents, and eventually re-house the Jenkins controller too.
 
-| image:images/ci/gandi-ar21.svg[Gandi.Net logo]
+| image:images/ci/gandi-ar21.png[Gandi.Net logo]
 | link:https://www.gandi.net/[Gandi.Net] took up the costs of NUT DNS hosting.
 
-| image:images/ci/OC_logotype.svg[Open Collective logo]
+| image:images/ci/OC_logo-watercolor-256.png[Open Collective
+  logo]image:images/ci/OC_logotype.png[Open Collective logo]
 | https://opencollective.com/networkupstools allows us to arrange monetary
   donations and spending, with public transparency of everything that happens.
 |===
