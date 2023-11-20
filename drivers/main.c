@@ -2260,6 +2260,9 @@ int main(int argc, char **argv)
 			/* Use file descriptor, not name, to first check and then manipulate permissions:
 			 *   https://cwe.mitre.org/data/definitions/367.html
 			 *   https://wiki.sei.cmu.edu/confluence/display/c/FIO01-C.+Be+careful+using+functions+that+use+file+names+for+identification
+			 * Alas, Unix sockets on most systems can not be open()ed
+			 * so there is no file descriptor to manipulate.
+			 * Fall back to name-based "les secure" operations then.
 			 */
 			TYPE_FD fd = ERROR_FD;
 
@@ -2285,22 +2288,31 @@ int main(int argc, char **argv)
 				mode_t mode;
 
 				if (INVALID_FD((fd = open(sockname, O_RDWR | O_APPEND)))) {
-					upsdebugx(1, "WARNING: opening socket file for stat/chown failed (%i): %s",
+					upsdebugx(1, "WARNING: opening socket file for stat/chown failed "
+						"(%i), which is rather typical for Unix socket handling: %s",
 						errno, strerror(errno)
 					);
 					allOk = 0;
-					/* Can not proceed with ops below */
-					goto sockname_ownership_finished;
 				}
 
-				if (fstat(fd, &statbuf)) {
+				if ((VALID_FD(fd) && fstat(fd, &statbuf))
+				||  (INVALID_FD(fd) && stat(sockname, &statbuf))
+				) {
 					upsdebugx(1, "WARNING: stat for chown of socket file failed (%i): %s",
 						errno, strerror(errno)
 					);
 					allOk = 0;
+					if (INVALID_FD(fd)) {
+						/* Can not proceed with ops below */
+						goto sockname_ownership_finished;
+					}
 				} else {
+					/* Maybe open() and some stat() succeeed so far */
+					allOk = 1;
 					/* Here we do a portable chgrp() essentially: */
-					if (fchown(fd, statbuf.st_uid, grp->gr_gid)) {
+					if ((VALID_FD(fd) && fchown(fd, statbuf.st_uid, grp->gr_gid))
+					||  (INVALID_FD(fd) && chown(sockname, statbuf.st_uid, grp->gr_gid))
+					) {
 						upsdebugx(1, "WARNING: chown of socket file failed (%i): %s",
 							errno, strerror(errno)
 						);
@@ -2309,7 +2321,9 @@ int main(int argc, char **argv)
 				}
 
 				/* Refresh file info */
-				if (fstat(fd, &statbuf)) {
+				if ((VALID_FD(fd) && fstat(fd, &statbuf))
+				||  (INVALID_FD(fd) && stat(sockname, &statbuf))
+				) {
 					/* Logically we'd fail chown above if file
 					 * does not exist or is not accessible */
 					upsdebugx(1, "WARNING: stat for chmod of socket file failed (%i): %s",
@@ -2321,7 +2335,9 @@ int main(int argc, char **argv)
 					mode = statbuf.st_mode;
 					mode |= S_IWGRP;
 					mode |= S_IRGRP;
-					if (fchmod(fd, mode)) {
+					if ((VALID_FD(fd) && fchmod(fd, mode))
+					|| (INVALID_FD(fd) && chmod(sockname, mode))
+					) {
 						upsdebugx(1, "WARNING: chmod of socket file failed (%i): %s",
 							errno, strerror(errno)
 						);
@@ -2331,13 +2347,10 @@ int main(int argc, char **argv)
 			}
 
 sockname_ownership_finished:
-			if (VALID_FD(fd)) {
-				close(fd);
-				fd = ERROR_FD;
-			}
-
 			if (allOk) {
-				upsdebugx(1, "Group access for this driver successfully fixed");
+				upsdebugx(1, "Group access for this driver successfully fixed "
+					"(using file %s based methods)",
+					VALID_FD(fd) ? "descriptor" : "name");
 			} else {
 				upsdebugx(0, "WARNING: Needed to fix group access "
 					"to filesystem socket of this driver, but failed; "
@@ -2346,6 +2359,11 @@ sockname_ownership_finished:
 					"can fail to interact with the driver and represent "
 					"the device: %s",
 					sockname);
+			}
+
+			if (VALID_FD(fd)) {
+				close(fd);
+				fd = ERROR_FD;
 			}
 #else	/* not WIN32 */
 			upsdebugx(1, "Options for alternate user/group are not implemented on this platform");
