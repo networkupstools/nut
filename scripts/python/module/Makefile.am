@@ -14,7 +14,7 @@ check-local:
 tox: dist .pypi-tools-tox
 	tox
 
-EXTRA_DIST = tox.ini
+EXTRA_DIST = tox.ini MANIFEST.in
 
 NUT_SOURCE_GITREV_NUMERIC = @NUT_SOURCE_GITREV_NUMERIC@
 PYTHON = @PYTHON@
