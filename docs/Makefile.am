@@ -18,6 +18,39 @@ IMAGE_FILES = images/asciidoc.png \
 	images/bizarre.png \
 	images/old-cgi.png
 
+# Logos which pop up in README.adoc acknowledgements and maybe other places:
+IMAGE_LOGO_FILES = \
+	images/ci/AppVeyor_logo-2x.png \
+	images/ci/AppVeyor_logo-ar21.png \
+	images/ci/CircleCI_vertical_black_logo.png \
+	images/ci/DO_Powered_by_Badge_blue.png \
+	images/ci/DO_Powered_by_Badge_blue_140pxW.png \
+	images/ci/fosshost.org_Host_Dark_56px.png \
+	images/ci/fosshost.org_Host_Light_309px.png \
+	images/ci/fosshost.org_Host_Light_38px.png \
+	images/ci/gandi-ar21.png \
+	images/ci/gandi-ar21.svg \
+	images/ci/GitHub-Mark-140pxW.png \
+	images/ci/GitHub-Mark-ea2971cee799.png \
+	images/ci/OC_logotype.png \
+	images/ci/OC_logo-watercolor-256.png
+
+IMAGE_LOGO_FILES_JENKINS_NUT = \
+	images/ci/jenkins-nut-large-256px.png \
+	images/ci/jenkins-nut-large-squared.png \
+	images/ci/jenkins-nut-large.pdn \
+	images/ci/jenkins-nut-large.png \
+	images/ci/jenkins-nut-small-256px.png \
+	images/ci/jenkins-nut-small.pdn \
+	images/ci/jenkins-nut-small.png \
+	images/ci/jenkins-nut-squared.png \
+	images/ci/jenkins-nut-transparent-bg-140pxW.png \
+	images/ci/jenkins-nut-transparent-bg-40px.png \
+	images/ci/jenkins-nut-transparent-bg.png \
+	images/ci/jenkins-nut.css \
+	images/ci/jenkins-nut.png \
+	images/ci/jenkins-nut.txt
+
 # Only track here the local deps
 SHARED_DEPS = nut-names.txt daisychain.txt asciidoc.conf asciidoc.txt
 
@@ -51,7 +84,7 @@ ALL_TXT_SRC = nut-names.txt daisychain.txt \
 ASPELL_FILTER_PATH = @ASPELL_FILTER_PATH@
 NUT_SPELL_DICT = nut.dict
 EXTRA_DIST += $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
- $(CABLES_IMAGES) $(NUT_SPELL_DICT) \
+ $(IMAGE_LOGO_FILES) $(IMAGE_LOGO_FILES_JENKINS_NUT) $(CABLES_IMAGES) $(NUT_SPELL_DICT) \
  docinfo.xml common.xsl xhtml.xsl chunked.xsl asciidoc.txt asciidoc-vars.conf
 
 ASCIIDOC_HTML_SINGLE = user-manual.html \
