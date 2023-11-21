@@ -161,6 +161,13 @@ endif::asciidoc-vars-nut-included[]
 //
 //GH_MARKUP_1095_INCLUDE_END//
 
+
+NOTE: If you like how the NUT project helps protect your systems from power
+outages, please consider sponsoring or at least "starring" it on GitHub at
+https://github.com/networkupstools/nut/ -- these stars are among metrics
+which potential sponsors consider to help FOSS projects.
+
+
 Description
 -----------
 
