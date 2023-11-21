@@ -128,6 +128,9 @@ endif::env-github[]
 //
 // - on GitHub:
 ifdef::env-github[]
+//     In our normal builds, Makefile variables convey the needed paths
+//     (used relatively below as `image:images/ci/...png` etc.)
+:imagesdir:	docs
 //   * xref -> link
 //     syntax: {xref}<id>{x-s}[<caption>]
 //     In order for it to work, <id> can reference at most a section of

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3417 utf-8
+personal_ws-1.1 en 3418 utf-8
 AAC
 AAS
 ABI
@@ -2212,6 +2212,7 @@ ignoresab
 ignset
 illumos
 im
+imagesdir
 img
 imv
 includePath
