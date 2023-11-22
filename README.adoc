@@ -759,7 +759,7 @@ and organizational sides, such as helping keep the donations transparent,
 NUT CI farm afloat, and public resources visible. Thanks for keeping the
 clocks ticking, day and night:
 
-[frame="none",grid="none",cols="2"]
+[frame="none",grid="none",cols="1,2"]
 |===
 | image:images/ci/GitHub-Mark-140pxW.png[alt="GitHub logo",width="140",height="140",link="https://github.com/"]
 | The link:https://github.com/networkupstools/["NetworkUPSTools" organization
