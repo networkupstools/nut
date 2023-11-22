@@ -761,9 +761,20 @@ clocks ticking, day and night:
 
 ////////////
 FIXME: Use different (better-resolution) images for PDF rendering?
+
+NOTE: GitHub renderer (or CSS stack?) ignores style settings and squashes the
+logo column into a fixed-width monster with either our specified heights, or
+with teeny-tiny thumbnail magnitude images, so it is prettier to leave it as
+a "single-column table" by default. Grid/Frame settings are also ignored, but
+we can try our best anyway.
 ////////////
 
+ifndef::env-github[]
 [frame="none",grid="none",cols="^1,<2"]
+endif::env-github[]
+ifdef::env-github[]
+[frame="none",grid="none",cols="<1*"]
+endif::env-github[]
 |===
 | image:images/ci/GitHub-Mark-140pxW.png[alt="GitHub logo",width="140",height="140",link="https://github.com/"]
 | The link:https://github.com/networkupstools/["NetworkUPSTools" organization
