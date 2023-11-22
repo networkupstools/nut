@@ -27,7 +27,7 @@ setup(
     packages   =	find_packages(),
     #py_modules =	['PyNUT'],
     package_dir =	{'PyNUT': 'PyNUTClient'},
-    data_files =	[('', ['tox.ini'])],
+    #data_files =	[('', ['tox.ini'])],
     #scripts    =	['PyNUTClient/test_nutclient.py', 'PyNUTClient/__init__.py'],
     python_requires =	'>=2.6',
     # install_requires =	['telnetlib'],	# NOTE: telnetlib.py is part of Python core for tested 2.x and 3.x versions, not something 'pip' can download
