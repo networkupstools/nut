@@ -802,10 +802,13 @@ endif::env-github[]
 
 | image:images/ci/fosshost.org_Host_Light_38px.png[alt="Fosshost logo",width="112",height="38"]
 | Fosshost provided virtual machines where the multi-platform NUT CI farm with
-  a jenkins-dynamatrix setup runs to arrange builds in numerous operating
-  environments and a lot of toolkit versions and implementations. Some workers
-  running on community members' machines also dial in to provide an example of
-  their platforms. Literally hundreds of NUT builds run for each iteration.
+  a link:https://github.com/networkupstools/jenkins-dynamatrix/[jenkins-dynamatrix]
+  link:https://github.com/networkupstools/nut/blob/master/Jenkinsfile-dynamatrix[setup]
+  runs to arrange builds in numerous operating environments and a lot of toolkit
+  versions and implementations. Some workers running on NUT community members'
+  machines can also dial in to provide an example of their favourite platforms.
+  Literally hundreds of NUT builds run for each iteration, to make sure NUT can
+  always build and work everywhere.
 
   This allows us to ensure that NUT remains portable across two decades' worth
   of operating systems, compilers, script interpreters, tools and third-party
