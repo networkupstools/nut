@@ -1950,10 +1950,6 @@ static int	armac_command(const char *cmd, char *buf, size_t buflen)
 	bool_t use_interrupt = FALSE;
 	int read_size = ARMAC_READ_SIZE_FOR_CONTROL;
 
-	if (!armac_endpoint_cache.initialized) {
-		load_armac_endpoint_cache();
-	}
-
 	/* UPS ignores (doesn't echo back) unsupported commands which makes
 	 * the initialization long. List commands tested to be unsupported:
 	 */
@@ -1966,6 +1962,10 @@ static int	armac_command(const char *cmd, char *buf, size_t buflen)
 		NULL
 	};
 
+	if (!armac_endpoint_cache.initialized) {
+		load_armac_endpoint_cache();
+	}
+
 	for (i = 0; unsupported[i] != NULL; i++) {
 		if (strcmp(cmd, unsupported[i]) == 0) {
 			upsdebugx(2,
@@ -1977,7 +1977,7 @@ static int	armac_command(const char *cmd, char *buf, size_t buflen)
 	upsdebugx(4, "armac command %.*s", (int)strcspn(cmd, "\r"), cmd);
 
 #if WITH_LIBUSB_1_0
-	/* Be conservative and do not break old Armac Upses*/
+	/* Be conservative and do not break old Armac UPSes */
 	use_interrupt = armac_endpoint_cache.ok
 		&& armac_endpoint_cache.in_endpoint_address == 0x82
 		&& armac_endpoint_cache.in_bmAttributes & LIBUSB_TRANSFER_TYPE_INTERRUPT
@@ -2009,7 +2009,7 @@ static int	armac_command(const char *cmd, char *buf, size_t buflen)
 		}
 
 		/* Send command to the UPS in 3-byte chunks. Most fit 1 chunk, except for eg.
-		* parameterized tests. */
+		 * parameterized tests. */
 		for (i = 0; i < cmdlen;) {
 			const size_t bytes_to_send = (cmdlen <= (i + 3)) ? (cmdlen - i) : 3;
 			memset(tmpbuf, 0, sizeof(tmpbuf));
