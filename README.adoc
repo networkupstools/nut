@@ -208,11 +208,17 @@ where older releases did work before (including "abandonware" like the
 servers and OSes from the turn of millennium): if those boxes are still
 alive and in need of power protection, they should be able to get it.
 
-TIP: If you like how the NUT project helps protect your systems from power
+[TIP]
+=====
+If you like how the NUT project helps protect your systems from power
 outages, please consider sponsoring or at least "starring" it on GitHub at
 https://github.com/networkupstools/nut/ - these stars are among metrics
 which potential sponsors consider to help FOSS projects. Keeping the lights
 shining in such a large non-regression build matrix is a big undertaking!
+
+See <<acknowledgements-ci-ops,acknowledgements of organizations which help
+with NUT CI and other daily operations>> for an overview of the shared effort.
+=====
 
 As a FOSS project, for over a quarter of a century we welcome contributions
 of both core code (drivers and other features), build recipes and other
@@ -744,6 +750,8 @@ Acknowledgements / Contributions
 
 The many people who have participated in creating and improving NUT are
 listed in the user manual {xref}Acknowledgements{x-s}[acknowledgements appendix].
+
+[[acknowledgements-ci-ops]]
 
 We would like to highlight some organizations which provide continuous
 support to the NUT project (and many other FOSS projects) on technological
