@@ -798,9 +798,7 @@ clocks ticking, day and night:
 | image:images/ci/gandi-ar21.png[alt="Gandi.Net logo",width="120",height="60",link="https://www.gandi.net/"]
 | link:https://www.gandi.net/[Gandi.Net] took up the costs of NUT DNS hosting.
 
-| image:images/ci/OC_logo-watercolor-256.png[alt="Open Collective
-  logo",width="32",height="32",link="https://opencollective.com/"]&nbsp;image:images/ci/OC_logotype.png[alt="Open
-  Collective logo",width="137",height="23",link="https://opencollective.com/"]
+| image:images/ci/OC_logo_merged_140x26.png[alt="Open Collective logo",width="140",height="26",link="https://opencollective.com/"]
 | https://opencollective.com/networkupstools allows us to arrange monetary
   donations and spending, with public transparency of everything that happens.
 |===
