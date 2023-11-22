@@ -778,7 +778,7 @@ FIXME: Use different (better-resolution) images for PDF rendering?
   the link:https://ci.networkupstools.org/[self-hosted NUT CI farm].
   There is a fair amount of cross-pollination between the upstream project
   and community, and the development done originally for the NUT CI farm.
-+
+
   See more at link:https://stories.jenkins.io/user-story/jenkins-is-the-way-for-networkupstools/[Jenkins
   is the way to build multi-platform NUT] article.
 
@@ -788,7 +788,7 @@ FIXME: Use different (better-resolution) images for PDF rendering?
   environments and a lot of toolkit versions and implementations. Some workers
   running on community members' machines also dial in to provide an example of
   their platforms. Literally hundreds of NUT builds run for each iteration.
-+
+
   This allows us to ensure that NUT remains portable across two decades' worth
   of operating systems, compilers, script interpreters, tools and third-party
   dependencies.
