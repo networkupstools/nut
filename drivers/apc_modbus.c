@@ -746,7 +746,7 @@ static const time_t apc_date_start_offset = 946684800; /* 2000-01-01 00:00 */
 
 static int _apc_modbus_date_to_nut(const apc_modbus_value_t *value, char *output, size_t output_len)
 {
-	struct tm *tm_info;
+	struct tm tm_info;
 	time_t time_stamp;
 
 	if (value == NULL || output == NULL || output_len == 0) {
@@ -759,8 +759,8 @@ static int _apc_modbus_date_to_nut(const apc_modbus_value_t *value, char *output
 	}
 
 	time_stamp = ((int64_t)value->data.uint_value * 86400) + apc_date_start_offset;
-	tm_info = gmtime(&time_stamp);
-	strftime(output, output_len, "%Y-%m-%d", tm_info);
+	gmtime_r(&time_stamp, &tm_info);
+	strftime(output, output_len, "%Y-%m-%d", &tm_info);
 
 	return 1;
 }
@@ -781,7 +781,7 @@ static int _apc_modbus_date_from_nut(const char *value, uint16_t *output, size_t
         return 0;
     }
 
-	if ((epoch_time = mktime(&tm_struct)) == -1) {
+	if ((epoch_time = timegm(&tm_struct)) == -1) {
 		return 0;
 	}
 
