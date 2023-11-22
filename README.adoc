@@ -1,5 +1,5 @@
 Network UPS Tools Overview
-===========================
+==========================
 // NOTE: No blank line here, document-header include processing should kick in!
 //GH_MARKUP_1095//ifdef::top_srcdir[]
 //GH_MARKUP_1095//include::{top_srcdir}docs/asciidoc-vars.conf[]
