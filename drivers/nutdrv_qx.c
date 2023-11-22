@@ -1882,46 +1882,54 @@ static void load_armac_endpoint_cache(void)
 		upsdebugx(4, "load_armac_endpoint_cache: unexpected config_descriptor->bNumInterfaces=%d", config_descriptor->bNumInterfaces);
 		libusb_free_config_descriptor(config_descriptor);
 		return;
-	}
+	} else {
+		/* Here and below, the "else" is for C99-satisfying new variable scoping */
+		const struct libusb_interface *interface = &config_descriptor->interface[0];
 
-	const struct libusb_interface *interface = &config_descriptor->interface[0];
-	if (interface->num_altsetting != 1) {
-		upsdebugx(4, "load_armac_endpoint_cache: unexpected interface->num_altsetting=%d", interface->num_altsetting);
-		libusb_free_config_descriptor(config_descriptor);
-		return;
-	}
-
-	const struct libusb_interface_descriptor *interface_descriptor = &interface->altsetting[0];
-	if (interface_descriptor->bNumEndpoints != 2) {
-		upsdebugx(4, "load_armac_endpoint_cache: unexpected interface_descriptor->bNumEndpoints=%d", interface_descriptor->bNumEndpoints);
-		libusb_free_config_descriptor(config_descriptor);
-		return;
-	}
-
-	for (uint8_t i = 0; i < interface_descriptor->bNumEndpoints; i++) {
-		const struct libusb_endpoint_descriptor *endpoint = &interface_descriptor->endpoint[i];
-
-		if (endpoint->bEndpointAddress & LIBUSB_ENDPOINT_IN) {
-			found_in = TRUE;
-			armac_endpoint_cache.in_endpoint_address = endpoint->bEndpointAddress;
-			armac_endpoint_cache.in_bmAttributes = endpoint->bmAttributes;
-			armac_endpoint_cache.in_wMaxPacketSize = endpoint->wMaxPacketSize;
+		if (interface->num_altsetting != 1) {
+			upsdebugx(4, "load_armac_endpoint_cache: unexpected interface->num_altsetting=%d", interface->num_altsetting);
+			libusb_free_config_descriptor(config_descriptor);
+			return;
 		} else {
-			found_out = TRUE;
-			armac_endpoint_cache.out_endpoint_address = endpoint->bEndpointAddress;
-			armac_endpoint_cache.out_bmAttributes = endpoint->bmAttributes;
-			armac_endpoint_cache.out_wMaxPacketSize = endpoint->wMaxPacketSize;
+			uint8_t	i;
+			const struct libusb_interface_descriptor *interface_descriptor = &interface->altsetting[0];
+
+			if (interface_descriptor->bNumEndpoints != 2) {
+				upsdebugx(4, "load_armac_endpoint_cache: unexpected interface_descriptor->bNumEndpoints=%d", interface_descriptor->bNumEndpoints);
+				libusb_free_config_descriptor(config_descriptor);
+				return;
+			}
+		
+			for (i = 0; i < interface_descriptor->bNumEndpoints; i++) {
+				const struct libusb_endpoint_descriptor *endpoint = &interface_descriptor->endpoint[i];
+		
+				if (endpoint->bEndpointAddress & LIBUSB_ENDPOINT_IN) {
+					found_in = TRUE;
+					armac_endpoint_cache.in_endpoint_address = endpoint->bEndpointAddress;
+					armac_endpoint_cache.in_bmAttributes = endpoint->bmAttributes;
+					armac_endpoint_cache.in_wMaxPacketSize = endpoint->wMaxPacketSize;
+				} else {
+					found_out = TRUE;
+					armac_endpoint_cache.out_endpoint_address = endpoint->bEndpointAddress;
+					armac_endpoint_cache.out_bmAttributes = endpoint->bmAttributes;
+					armac_endpoint_cache.out_wMaxPacketSize = endpoint->wMaxPacketSize;
+				}
+			}
 		}
 	}
 
 	if (found_in || found_out) {
 		armac_endpoint_cache.ok = TRUE;
 
-		upsdebugx(4, "load_armac_endpoint_cache: in_endpoint_address=%02x, in_bmAttributes=%02d, out_endpoint_address=%02d, out_bmAttributes=%02d", armac_endpoint_cache.in_endpoint_address, armac_endpoint_cache.in_bmAttributes, armac_endpoint_cache.out_endpoint_address, armac_endpoint_cache.out_bmAttributes);
+		upsdebugx(4, "%s: in_endpoint_address=%02x, in_bmAttributes=%02d, out_endpoint_address=%02d, out_bmAttributes=%02d",
+			__func__, armac_endpoint_cache.in_endpoint_address, armac_endpoint_cache.in_bmAttributes,
+			armac_endpoint_cache.out_endpoint_address, armac_endpoint_cache.out_bmAttributes);
 	}
 
 	libusb_free_config_descriptor(config_descriptor);
-#endif /* WITH_LIBUSB_1_0 */
+#else	/* WITH_LIBUSB_1_0 */
+	upsdebugx(4, "%s: SKIP: not implemented for libusb-0.1 or serial connections", __func__);
+#endif	/* !WITH_LIBUSB_1_0 */
 }
 
 /* Armac communication subdriver
