@@ -1163,7 +1163,7 @@ static int _apc_modbus_setvar(const char *nut_varname, const char *str_value)
 	apc_modbus_register_t *apc_map = NULL, *apc_value = NULL;
 	uint16_t reg_value[16];
 
-	for (mi = 0; mi < SIZEOF_ARRAY(apc_modbus_register_maps); mi++) {
+	for (mi = 0; mi < SIZEOF_ARRAY(apc_modbus_register_maps) && apc_value == NULL; mi++) {
 		apc_map = apc_modbus_register_maps[mi];
 
 		for (i = 0; apc_map[i].nut_variable_name; i++) {
