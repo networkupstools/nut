@@ -162,12 +162,6 @@ endif::asciidoc-vars-nut-included[]
 //GH_MARKUP_1095_INCLUDE_END//
 
 
-NOTE: If you like how the NUT project helps protect your systems from power
-outages, please consider sponsoring or at least "starring" it on GitHub at
-https://github.com/networkupstools/nut/ -- these stars are among metrics
-which potential sponsors consider to help FOSS projects.
-
-
 Description
 -----------
 
@@ -195,6 +189,37 @@ when necessary.  The most important task is shutting down the operating
 system cleanly before the UPS runs out of power.  Other programs are
 also provided to log information regularly, monitor status through your
 web browser, and more.
+
+
+NUT and the ecosystem
+---------------------
+
+NUT comes pre-packaged for many operating systems and embedded in storage,
+automation or virtualization appliances, and is also often shipped as the
+software companion by several UPS vendors. Of course, it is quite normal
+and supported to build your own -- whether for an operating system which
+lacks it yet, or for an older distribution which lacks the current NUT
+version; whether to take advantage of new features or to troubleshoot a
+new UPS deployment with a debugger in hand.
+
+Given its core position at the heart of your systems' lifecycle, we make
+it a point to have current NUT building and running anywhere, especially
+where older releases did work before (including "abandonware" like the
+servers and OSes from the turn of millennium): if those boxes are still
+alive and in need of power protection, they should be able to get it.
+
+TIP: If you like how the NUT project helps protect your systems from power
+outages, please consider sponsoring or at least "starring" it on GitHub at
+https://github.com/networkupstools/nut/ - these stars are among metrics
+which potential sponsors consider to help FOSS projects. Keeping the lights
+shining in such a large non-regression build matrix is a big undertaking!
+
+As a FOSS project, for over a quarter of a century we welcome contributions
+of both core code (drivers and other features), build recipes and other
+integration elements to make it work on your favourite system, documentation
+revisions to make it more accessible to newcomers, as well as hardware vendor
+cooperation with first-hand driver and protocol submissions, and just about
+anything else you can think of.
 
 
 Installing
