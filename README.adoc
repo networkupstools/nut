@@ -763,15 +763,21 @@ clocks ticking, day and night:
 ////////////
 FIXME: Use different (better-resolution) images for PDF rendering?
 
+FIXME: PDF cells seem to align weirdly, like setting the bottom of the first
+line of text to be on the same level as bottom of the image, or similar to that.
+
 NOTE: GitHub renderer (or CSS stack?) ignores style settings and squashes the
 logo column into a fixed-width monster with either our specified heights, or
 with teeny-tiny thumbnail magnitude images, so it is prettier to leave it as
 a "single-column table" by default. Grid/Frame settings are also ignored, but
 we can try our best anyway.
+
+NOTE: The classic asciidoc/a2x renderer seems to not support link/url options,
+but at least does not complain about them either.
 ////////////
 
 ifndef::env-github[]
-[frame="none",grid="none",cols="^1,<2"]
+[frame="none",grid="none",cols="^.<1,<.<2"]
 endif::env-github[]
 ifdef::env-github[]
 [frame="none",grid="none",cols="<1*"]
