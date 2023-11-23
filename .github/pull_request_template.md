@@ -27,6 +27,8 @@
   of "real" changes in the other commits. Similarly for typo fixes in
   comments or text documents.
 
+- [ ] Please star NUT on GitHub, this helps with sponsorships! ;)
+
 ## Frequent "underwater rocks" for driver addition/update PRs
 
 - [ ] Revised existing driver families and added a sub-driver if applicable
