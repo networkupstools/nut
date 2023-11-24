@@ -73,6 +73,14 @@ static inline struct tm *gmtime_r( const time_t *timer, struct tm *buf ) {
 # endif
 #endif
 
+#ifndef HAVE_TIMEGM
+# ifdef HAVE__MKGMTIME
+#  define timegm(tm) _mkgmtime(tm)
+# else
+# error "No fallback implementation for timegm"
+# endif
+#endif
+
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 }
