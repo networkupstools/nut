@@ -49,6 +49,8 @@ https://github.com/networkupstools/nut/milestone/10
    * dstate machinery: a segmentation fault (null pointer dereference) was
      possible with `INSTCMD` processing of commands without parameters nor
      `TRACKING` identifier. [#2155]
+   * USB bus number detection for libusb-1.0 builds was overly zealous and
+     wrongly considered zero values as an error. [#2198]
    * `upsmon` recognition of `CAL` state could linger after the calibration
      activity was completed by the hardware, which led to mis-processing of
      shutdown triggers. Also, notification was added to report "finished
