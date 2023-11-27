@@ -101,7 +101,19 @@ if test -z "${nut_have_aspell_seen}"; then
 	AC_MSG_CHECKING([if aspell version can do our documentation spell checks (minimum required ${ASPELL_MIN_VERSION})])
 	AX_COMPARE_VERSION([${ASPELL_VERSION}], [ge], [${ASPELL_MIN_VERSION}], [
 		AC_MSG_RESULT(yes)
-		nut_have_aspell="yes"
+		AC_MSG_CHECKING([if detected aspell configuration works])
+		dnl Roughly following docs/Makefile.am setup for "make spellcheck":
+		ASPELL_NUT_TEXMODE_ARGS="-t"
+		AS_IF([test -d "$ASPELL_FILTER_TEX_PATH"], [ASPELL_NUT_TEXMODE_ARGS="--filter-path='${ASPELL_FILTER_TEX_PATH}' ${ASPELL_NUT_TEXMODE_ARGS}"])
+		res1="`echo test | ${ASPELL} ${ASPELL_NUT_TEXMODE_ARGS} -d en.UTF-8 | grep test`"
+		res2="`echo qwer | ${ASPELL} ${ASPELL_NUT_TEXMODE_ARGS} -d en.UTF-8 | grep qwer`"
+		AS_IF([test x"$res1" = x -a x"$res2" != x], [
+			AC_MSG_RESULT(yes)
+			nut_have_aspell="yes"
+		], [
+			AC_MSG_RESULT(no)
+			nut_have_aspell="no"
+		])
 	], [
 		AC_MSG_RESULT(no)
 		nut_have_aspell="no"
