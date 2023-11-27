@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3420 utf-8
+personal_ws-1.1 en 3421 utf-8
 AAC
 AAS
 ABI
@@ -296,6 +296,7 @@ Ddtrace
 DeepTstFail
 Defensor
 DeltaUPSv
+DesktopFileName
 DeviceID
 DeviceKit
 DeviceLogin
