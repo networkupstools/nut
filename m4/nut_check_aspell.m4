@@ -35,6 +35,13 @@ if test -z "${nut_have_aspell_seen}"; then
 
 		ASPELL_VERSION_MINMAJ="`echo "${ASPELL_VERSION}" | sed 's,\.@<:@0-9@:>@@<:@0-9@:>@*$,,'`"
 
+		dnl FIXME: Some systems have more complicated layouts, e.g.
+		dnl   /usr/lib/amd64/aspell-0.60/tex-filter.so
+		dnl   /usr/lib/aspell-0.60/tex-filter.so
+		dnl which require matching of the `aspell` binary architecture
+		dnl with the module. We currently avoid the hassle thanks to a
+		dnl fallback to built-in paths below if this initial guesswork
+		dnl failed. This may need some more-direct addressing later.
 		AC_MSG_CHECKING([for aspell "lib" filtering resources directory])
 		ASPELL_BINDIR="`dirname "$ASPELL"`"
 		if test -d "${ASPELL_BINDIR}/../lib" ; then
@@ -104,14 +111,37 @@ if test -z "${nut_have_aspell_seen}"; then
 		AC_MSG_CHECKING([if detected aspell configuration works])
 		dnl Roughly following docs/Makefile.am setup for "make spellcheck":
 		ASPELL_NUT_TEXMODE_ARGS="-t"
-		AS_IF([test -d "$ASPELL_FILTER_TEX_PATH"], [ASPELL_NUT_TEXMODE_ARGS="--filter-path='${ASPELL_FILTER_TEX_PATH}' ${ASPELL_NUT_TEXMODE_ARGS}"])
-		res1="`echo test | ${ASPELL} ${ASPELL_NUT_TEXMODE_ARGS} -d en.UTF-8 | grep test`"
-		res2="`echo qwer | ${ASPELL} ${ASPELL_NUT_TEXMODE_ARGS} -d en.UTF-8 | grep qwer`"
-		AS_IF([test x"$res1" = x -a x"$res2" != x], [
+		AS_IF([test -n "$ASPELL_FILTER_TEX_PATH" -a -d "$ASPELL_FILTER_TEX_PATH"], [ASPELL_NUT_TEXMODE_ARGS="--filter-path='${ASPELL_FILTER_TEX_PATH}' ${ASPELL_NUT_TEXMODE_ARGS}"])
+		ASPELL_NUT_COMMON_ARGS="-d en -a"
+		dnl Using "eval" to handle quotes, in case of funny paths
+		out0="`LANG=C; LC_ALL=C; export LANG; export LC_ALL; exec -- 2>&1; set -x; echo test | eval ${ASPELL} ${ASPELL_NUT_TEXMODE_ARGS} ${ASPELL_NUT_COMMON_ARGS}`"; res0=$?
+		AS_IF([test x"$res0" != x0], [
+			AC_MSG_NOTICE([FAILED CMD: ${ASPELL} ${ASPELL_NUT_TEXMODE_ARGS} ${ASPELL_NUT_COMMON_ARGS}])
+			AC_MSG_NOTICE([aspell result ($res0) and output: $out0])
+		])
+		AS_CASE([$out0],
+			[*ELFCLASS*|*"wrong ELF class"*], [
+				dnl Retry without the filter path, we must have caught a wrong one
+				dnl and *most* platforms do serve a trustworthy built-in after all:
+				AC_MSG_RESULT(no)
+				AC_MSG_CHECKING([if detected aspell configuration works with built-in paths (tweaked one finds wrong binary modules)])
+				ASPELL_NUT_TEXMODE_ARGS="-t"
+				out0="`LANG=C; LC_ALL=C; export LANG; export LC_ALL; exec -- 2>&1; set -x; echo test | eval ${ASPELL} ${ASPELL_NUT_TEXMODE_ARGS} ${ASPELL_NUT_COMMON_ARGS}`"; res0=$?
+				AS_IF([test x"$res0" = x0], [ASPELL_FILTER_TEX_PATH=""], [
+					AC_MSG_NOTICE([FAILED CMD: ${ASPELL} ${ASPELL_NUT_TEXMODE_ARGS} ${ASPELL_NUT_COMMON_ARGS}])
+					AC_MSG_NOTICE([aspell result ($res0) and output: $out0])
+				])
+			]
+		)
+		out1="`echo test | eval ${ASPELL} ${ASPELL_NUT_TEXMODE_ARGS} ${ASPELL_NUT_COMMON_ARGS} | grep test`"; res1=$?
+		out2="`echo qwer | eval ${ASPELL} ${ASPELL_NUT_TEXMODE_ARGS} ${ASPELL_NUT_COMMON_ARGS} | grep qwer`"; res2=$?
+		AS_IF([test x"$out1" = x -a x"$out2" != x], [
 			AC_MSG_RESULT(yes)
 			nut_have_aspell="yes"
 		], [
 			AC_MSG_RESULT(no)
+			AC_MSG_NOTICE([aspell result ($res1) for 'test' (should be empty): $out1])
+			AC_MSG_NOTICE([aspell result ($res2) for 'qwer' (should have suggestions): $out2])
 			nut_have_aspell="no"
 		])
 	], [
