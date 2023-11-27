@@ -29,6 +29,8 @@
 #
 # 2022-02-20 Luke Dashjr - Version 2.0
 #            Port to Python 3 with PyQt5.
+# 2023-11-27 Laurent Bigonville - Version 2.0.1
+#            Set the DesktopFileName
 
 
 import PyQt5.uic
@@ -80,6 +82,7 @@ class interface :
 
 
         self.__app = QApplication( argv )
+        self.__app.setDesktopFileName("nut-monitor-py3qt5")
 
         self.__ui_file = self.__find_res_file( 'ui', "window1.ui" )
 
