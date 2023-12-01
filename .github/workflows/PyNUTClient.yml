@@ -7,7 +7,8 @@ name: Publish PyNUT client bindings for NUT 🐍 distributions 📦 to PyPI
 on:
   push:
     paths:
-     - 'scripts/python/module'
+     - 'scripts/python/module/*'
+     - '.github/workflows/PyNUTClient.yml'
     tags:
      - '*'
     branches:
@@ -23,47 +24,43 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
+      with:
+        fetch-depth: 0
+        fetch-tags: true
     - name: Set up Python 3.10
       uses: actions/setup-python@v3
       with:
         python-version: '3.10'
-    - name: Install pypa/setuptools
+    - name: Extract python interpreter path name
+      id: pythoncmd
       run: >-
-        python -m
-        pip install wheel build
+        set -x ;
+        echo "PYTHON=$(command -v python)" >> $GITHUB_OUTPUT
     - name: Extract tag name
       id: tag
       # Note: this is all a single shell line in the end,
       # so we need semicolons between commands!
       run: >-
+        set -x ;
         TAG_NAME="$(echo $GITHUB_REF | cut -d / -f 3)" ;
         if [ x"$TAG_NAME" = xmaster ]; then
-            TAG_NAME="$(git describe --tags --match 'v[0-9]*.[0-9]*.[0-9]' --exclude '*-signed' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' 2>/dev/null || git describe --tags --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' --exclude '*Windows*' --exclude '*IPM*' 2>/dev/null ) | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,')" \
+            {  TAG_NAME="$(git describe --tags --match 'v[0-9]*.[0-9]*.[0-9]' --exclude '*-signed' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*')" \
+            || TAG_NAME="$(git describe --tags --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' --exclude '*Windows*' --exclude '*IPM*')" ; } \
             && test -n "${TAG_NAME}" \
             || TAG_NAME="2.8.1-`TZ=UTC date +%s`" ;
-        fi ;
-        TAG_NAME="$(echo "$TAG_NAME" | sed -e 's/^v//' -e 's/-g.*$//' -e 's/-/./g')" ;
+        fi >&2 ;
+        TAG_NAME="$(echo "$TAG_NAME" | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,' -e 's/^v//' -e 's/-g.*$//' -e 's/-/./g')" ;
         echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
-    - name: Update version in setup.py
+    - name: Install pypa/setuptools
       run: >-
-        if [ ! -s scripts/python/module/setup.py ] ; then
-            sed -e "s/@NUT_SOURCE_GITREV_NUMERIC@/${{ steps.tag.outputs.TAG_NAME }}/g" < scripts/python/module/setup.py.in > scripts/python/module/setup.py ;
-        fi
-    - name: Prepare source layout
+        ${{ steps.pythoncmd.outputs.PYTHON }} -m
+        pip install wheel build
+    - name: Prepare source layout and Build a binary wheel
       run: >-
         set -e ;
         cd scripts/python/module ;
-        mkdir src ;
-        for F in *.py.in ; do sed -e "s,@PYTHON@,$(command -v python)," < "$F" > "src/`basename "$F" .in`" ; done ;
-        cp README.adoc README.txt ;
-        cp ../../../LICENSE-GPL3 . ;
-        chmod +x src/test*.py ;
-    - name: Build a binary wheel
-      run: >-
-        cd scripts/python/module ;
-        python -m build --skip-dependency-check --no-isolation
-        || { rm -rf build dist *egg* ; python setup.py sdist bdist_wheel ; }
-        || { rm -rf build dist *egg* ; python -m pip wheel . -w dist --no-deps ; } ;
+        cp -f Makefile.am Makefile ;
+        make -f Makefile.am clean-local dist NUT_SOURCE_GITREV_NUMERIC="${{ steps.tag.outputs.TAG_NAME }}" PYTHON="${{ steps.pythoncmd.outputs.PYTHON }}" top_srcdir="../../.." srcdir="." builddir="." ;
         find . -ls
     - name: Publish master distribution 📦 to Test PyPI
       # https://github.com/pypa/gh-action-pypi-publish

@@ -20,3 +20,7 @@ The fosshost.org_Host_Dark_56px.png was downscaled from resources
 at https://fosshost.org/media/ to fit into the Jenkins dashboard
 banner and remain readable. Thanks to Fosshost for providing the
 machines involved in the new NUT CI farm!
+
+Logos of CI hosting companies and other organizations which help
+the NUT project in daily operations were downloaded in 2023 for
+the Acknowledgements chapter in the top-level `README.adoc`.
