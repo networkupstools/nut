@@ -1875,7 +1875,7 @@ static void loadconfig(void)
 			utype_t	*ups;
 
 			upslogx(LOG_INFO,
-				"Forgetting pollfail_log_throttle_max=%d and "
+				"Forgetting POLLFAIL_LOG_THROTTLE_MAX=%d and "
 				"resetting UPS error-state counters before "
 				"a configuration reload",
 				pollfail_log_throttle_max);
@@ -1938,7 +1938,7 @@ static void loadconfig(void)
 
 		if (pollfail_log_throttle_max >= 0) {
 			upslogx(LOG_INFO,
-				"Applying pollfail_log_throttle_max=%d from upsmon.conf",
+				"Applying POLLFAIL_LOG_THROTTLE_MAX %d from upsmon.conf",
 				pollfail_log_throttle_max);
 		}
 	}
