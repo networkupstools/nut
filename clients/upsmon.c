@@ -60,8 +60,8 @@ static	unsigned int	pollfreq = 5, pollfreqalert = 5;
 	 * will only be repeated every so many POLLFREQ loops.
 	 * If pollfail_log_throttle_max == 0, such error messages will
 	 * only be reported once when that situation starts, and ends.
-	 * By default it is logged every pollfreq (which can abuse syslog
-	 * and its storage).
+	 * By default (or for negative values) it is logged every pollfreq
+	 * loop cycle (which can abuse syslog and its storage).
 	 * To support this, each utype_t (UPS) structure tracks individual
 	 * pollfail_log_throttle_count and pollfail_log_throttle_state
 	 */
