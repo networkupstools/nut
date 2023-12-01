@@ -2308,9 +2308,10 @@ static void pollups(utype_t *ups)
 				upslogx(LOG_ERR, "Poll UPS [%s] failure state code "
 					"changed from %d to %d; "
 					"report below will only be repeated to syslog "
-					"every %d polling loop cycles:",
+					"every %d polling loop cycles (%d sec):",
 					ups->sys, ups->pollfail_log_throttle_state,
-					upserror, pollfail_log_throttle_max);
+					upserror, pollfail_log_throttle_max,
+					pollfail_log_throttle_max * pollfreq);
 			}
 
 			ups->pollfail_log_throttle_state = upserror;
