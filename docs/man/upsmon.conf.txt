@@ -171,9 +171,10 @@ system log as configured.  If your devices are expected to be AWOL for an
 extended timeframe, you can use this throttle to reduce the stress on
 syslog traffic and storage, by posting these messages only once in every
 several loop cycles, and when the error condition has changed or cleared.
-
-A negative value means standard behavior, and a zero value means to never
-repeat the message (log only on start and end/change of the failure state).
++
+A negative value means standard behavior (log on every loop), and a zero
+value means to never repeat the message (log only on start and end/change
+of the failure state).
 
 *NOTIFYCMD* 'command'::
 
