@@ -607,7 +607,7 @@
 "Legrand"	"ups"	"2"	"Keor Line RT"	"Serial"	"nutdrv_qx"
 "Legrand"	"ups"	"2"	"Keor Line RT"	"USB"	"nutdrv_qx"
 "Legrand"	"ups"	"2"	"Keor LP"	"Serial"	"nutdrv_qx"
-"Legrand"	"ups"	"2"	"Keor Multiplug"	"USB"	"nutdrv_qx"
+"Legrand"	"ups"	"2"	"Keor Multiplug"	"USB"	"nutdrv_qx"	# NOTE: As of 2023 reports, the "NEW Keor Multiplug" is not supported (also by older vendor SW)
 "Legrand"	"ups"	"2"	"Keor S"	"Serial"	"nutdrv_qx"
 "Legrand"	"ups"	"2"	"Keor S"	"USB"	"nutdrv_qx"
 "Legrand"	"ups"	"3"	"Keor PDU"	"USB"	"usbhid-ups"
