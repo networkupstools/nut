@@ -218,7 +218,8 @@ typedef struct async_notify_s {
 	int flags;
 	char *ntype;
 	char *upsname;
-	char *date; } async_notify_t;
+	char *date;
+} async_notify_t;
 
 static unsigned __stdcall async_notify(LPVOID param)
 {
