@@ -1924,7 +1924,7 @@ static void loadconfig(void)
 	if (reload_flag == 1) {
 		if (nut_debug_level_global > -1) {
 			upslogx(LOG_INFO,
-				"Applying debug_min=%d from upsmon.conf",
+				"Applying DEBUG_MIN %d from upsmon.conf",
 				nut_debug_level_global);
 			nut_debug_level = nut_debug_level_global;
 		} else {
