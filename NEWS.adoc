@@ -58,7 +58,8 @@ https://github.com/networkupstools/nut/milestone/10
    * `upsmon` support for `POLLFAIL_LOG_THROTTLE_MAX` did not neuter the
      applied setting when live-reloading configuration, so commenting it
      away in `upsmon.conf` did not have the effect of resetting the logging
-     frequency to default. [#2207]
+     frequency to default. It also did not reset the counters to certainly
+     follow the new configuration for existing faults. [#2207]
    * `upsmon` support for `POLLFAIL_LOG_THROTTLE_MAX` had an off-by-one error
      (e.g. reporting "Data stale" or "Driver not connected" every 30 sec with
      `POLLFAIL_LOG_THROTTLE_MAX 5` and `POLLFREQ 5` settings). [#2207]

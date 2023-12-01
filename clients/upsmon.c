@@ -1872,10 +1872,24 @@ static void loadconfig(void)
 		nut_debug_level_global = -1;
 
 		if (pollfail_log_throttle_max >= 0) {
+			utype_t	*ups;
+
 			upslogx(LOG_INFO,
-				"Forgetting pollfail_log_throttle_max=%d before configuration reload",
+				"Forgetting pollfail_log_throttle_max=%d and "
+				"resetting UPS error-state counters before "
+				"a configuration reload",
 				pollfail_log_throttle_max);
 			pollfail_log_throttle_max = -1;
+
+			/* forget poll-failure logging throttling, so that we
+			 * rediscover the error-states and the counts involved
+			 */
+			ups = firstups;
+			while (ups) {
+				ups->pollfail_log_throttle_count = -1;
+				ups->pollfail_log_throttle_state = UPSCLI_ERR_NONE;
+				ups = ups->next;
+			}
 		}
 	}
 
