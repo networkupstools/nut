@@ -55,6 +55,10 @@ https://github.com/networkupstools/nut/milestone/10
      activity was completed by the hardware, which led to mis-processing of
      shutdown triggers. Also, notification was added to report "finished
      calibration". [issue #2168, PR #2169]
+   * `upsmon` support for `POLLFAIL_LOG_THROTTLE_MAX` did not neuter the
+     applied setting when live-reloading configuration, so commenting it
+     away in `upsmon.conf` did not have the effect of resetting the logging
+     frequency to default. [#2207]
    * Drivers running with non-default user account (e.g. with `user=root`
      in their configuration) failed to apply group ownership and permissions
      to their Unix socket file for interaction with the local data server.

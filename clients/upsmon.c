@@ -3,6 +3,7 @@
    Copyright (C)
      1998  Russell Kroll <rkroll@exploits.org>
      2012  Arnaud Quette <arnaud.quette.free.fr>
+     2020-2023  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -1867,6 +1868,13 @@ static void loadconfig(void)
 		 * (or commented away) the debug_min
 		 * setting, detect that */
 		nut_debug_level_global = -1;
+
+		if (pollfail_log_throttle_max >= 0) {
+			upslogx(LOG_INFO,
+				"Forgetting pollfail_log_throttle_max=%d before configuration reload",
+				pollfail_log_throttle_max);
+			pollfail_log_throttle_max = -1;
+		}
 	}
 
 	while (pconf_file_next(&ctx)) {
