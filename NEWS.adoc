@@ -59,6 +59,9 @@ https://github.com/networkupstools/nut/milestone/10
      applied setting when live-reloading configuration, so commenting it
      away in `upsmon.conf` did not have the effect of resetting the logging
      frequency to default. [#2207]
+   * `upsmon` support for `POLLFAIL_LOG_THROTTLE_MAX` had an off-by-one error
+     (e.g. reporting "Data stale" or "Driver not connected" every 30 sec with
+     `POLLFAIL_LOG_THROTTLE_MAX 5` and `POLLFREQ 5` settings). [#2207]
    * Drivers running with non-default user account (e.g. with `user=root`
      in their configuration) failed to apply group ownership and permissions
      to their Unix socket file for interaction with the local data server.

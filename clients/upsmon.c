@@ -62,7 +62,8 @@ static	unsigned int	pollfreq = 5, pollfreqalert = 5;
 	 * If pollfail_log_throttle_max == 0, such error messages will
 	 * only be reported once when that situation starts, and ends.
 	 * By default (or for negative values) it is logged every pollfreq
-	 * loop cycle (which can abuse syslog and its storage).
+	 * loop cycle (which can abuse syslog and its storage), same as
+	 * if "max = 1".
 	 * To support this, each utype_t (UPS) structure tracks individual
 	 * pollfail_log_throttle_count and pollfail_log_throttle_state
 	 */
@@ -2267,9 +2268,11 @@ static void pollups(utype_t *ups)
 				 * failure state */
 				pollfail_log = 0;
 			} else {
-				/* Only log once for start, every MAX iterations,
-				 * and end of the same failure state */
-				if (ups->pollfail_log_throttle_count++ >= pollfail_log_throttle_max) {
+				/* here (pollfail_log_throttle_max > 0) :
+				 * only log once for start, every MAX iterations,
+				 * and end of the same failure state
+				 */
+				if (ups->pollfail_log_throttle_count++ >= (pollfail_log_throttle_max - 1)) {
 					/* ping... */
 					pollfail_log = 1;
 					ups->pollfail_log_throttle_count = 0;
