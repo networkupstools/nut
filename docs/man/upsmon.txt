@@ -163,6 +163,9 @@ The UPS can't be contacted for monitoring.
 *CAL*::
 UPS calibration in progress.
 
+*NOTCAL*::
+UPS calibration finished.
+
 *OFF*::
 UPS administratively OFF or asleep.
 
