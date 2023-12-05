@@ -110,6 +110,15 @@ https://github.com/networkupstools/nut/milestone/10
    * The `onlinedischarge` configuration flag name was too ambiguous and got
      deprecated (will be supported but no longer promoted by documentation),
      introducing `onlinedischarge_onbattery` as the meaningful alias. [#2213]
+   * Logged notifications about `OL+DISCHRG` state should now be throttled
+     (see the driver manual page for more details) [#2214]:
+     - If `battery.charge` is available, make the message when entering the
+       state and then only if the charge differs from that when we posted
+       the earlier message (e.g. really discharging);
+     - Also can throttle to a time frequency configurable by a new option
+       `onlinedischarge_log_throttle_sec`, by default 30 sec if `battery.charge`
+       is not reported by the device (should be frequent by default, in case
+       the UPS-reported state combination does reflect a bad power condition).
 
 Release notes for NUT 2.8.1 - what's new since 2.8.0
 ----------------------------------------------------

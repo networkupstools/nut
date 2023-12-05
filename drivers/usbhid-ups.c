@@ -157,6 +157,36 @@ static int onlinedischarge_onbattery = 0;
  */
 static int onlinedischarge_calibration = 0;
 
+/**
+ * If/when an UPS reports OL & DISCHRG and we do not use any other special
+ * settings (e.g. they do not match the actual device capabilities/behaviors),
+ * the driver logs messages about the unexpected situation - on every cycle
+ * if must be. This setting allows to throttle frequency of such messages.
+ * A value of 0 is small enough to log on every processing cycle (old noisy
+ * de-facto default before NUT v2.8.2 which this throttle alleviates).
+ * A value of -1 (any negative passed via configuration) disables repeated
+ * messages completely.
+ * Default (-2) below is not final: if this throttle variable is *not* set
+ * in the driver configuration section, and...
+ * - If the device reports a battery.charge, the driver would default to
+ *   only repeat reports about OL & DISCHRG when this charge changes from
+ *   what it was when the previous report was made, independent of time;
+ * - Otherwise 30 sec.
+ * If both the throttle is set and battery.charge is reported (and changes
+ * over time), then hitting either trigger allows the message to be logged.
+ */
+static int onlinedischarge_log_throttle_sec = -2;
+/**
+ * When did we last emit the message?
+ */
+static time_t onlinedischarge_log_throttle_timestamp = 0;
+/**
+ * Last known battery charge (rounded to whole percent units)
+ * as of when we last actually logged about OL & DISCHRG.
+ * Gets reset to -1 whenever this condition is not present.
+ */
+static int onlinedischarge_log_throttle_charge = -1;
+
 /* support functions */
 static hid_info_t *find_nut_info(const char *varname);
 static hid_info_t *find_hid_info(const HIDData_t *hiddata);
@@ -954,6 +984,9 @@ void upsdrv_makevartable(void)
 	addvar(VAR_FLAG, "onlinedischarge_calibration",
 		"Set to treat discharging while online as doing calibration");
 
+	addvar(VAR_VALUE, "onlinedischarge_log_throttle_sec",
+		"Set to throttle log messages about discharging while online (only so often)");
+	
 	addvar(VAR_FLAG, "disable_fix_report_desc",
 		"Set to disable fix-ups for broken USB encoding, etc. which we apply by default on certain vendors/products");
 
@@ -1259,13 +1292,33 @@ void upsdrv_initups(void)
 		interrupt_only = 1;
 	}
 
-	/* Activate Cyberpower tweaks */
+	/* Activate Cyberpower/APC tweaks */
 	if (testvar("onlinedischarge") || testvar("onlinedischarge_onbattery")) {
 		onlinedischarge_onbattery = 1;
 	}
 
 	if (testvar("onlinedischarge_calibration")) {
 		onlinedischarge_calibration = 1;
+	}
+
+	val = getval("onlinedischarge_log_throttle_sec");
+	if (val) {
+		int ipv = atoi(val);
+		if (ipv == 0 && strcmp("0", val)) {
+			onlinedischarge_log_throttle_sec = 30;
+			upslogx(LOG_WARNING,
+				"Warning: invalid value for "
+				"onlinedischarge_log_throttle_sec: %s, "
+				"defaulting to %d",
+				val, onlinedischarge_log_throttle_sec);
+		} else {
+			if (ipv < 0) {
+				/* Has a specific meaning: user said be quiet */
+				onlinedischarge_log_throttle_sec = -1;
+			} else {
+				onlinedischarge_log_throttle_sec = ipv;
+			}
+		}
 	}
 
 	if (testvar("disable_fix_report_desc")) {
@@ -1885,9 +1938,23 @@ static void ups_status_set(void)
 		status_set("CAL");		/* calibration */
 	}
 
+	if ((!(ups_status & STATUS(DISCHRG))) && (
+		onlinedischarge_log_throttle_timestamp != 0
+		|| onlinedischarge_log_throttle_charge != -1
+	)) {
+		upsdebugx(1,
+			"%s: seems that UPS [%s] was in OL+DISCHRG state, "
+			"but no longer is now.",
+			__func__, upsname);
+		onlinedischarge_log_throttle_timestamp = 0;
+		onlinedischarge_log_throttle_charge = -1;
+	}
+
 	if (!(ups_status & STATUS(ONLINE))) {
 		status_set("OB");		/* on battery */
 	} else if ((ups_status & STATUS(DISCHRG))) {
+		int	do_logmsg = 0, current_charge = 0;
+
 		/* if online but discharging */
 		if (onlinedischarge_calibration) {
 			/* if we treat OL+DISCHRG as calibrating */
@@ -1900,16 +1967,93 @@ static void ups_status_set(void)
 		}
 
 		if (!onlinedischarge_onbattery && !onlinedischarge_calibration) {
+			/* Some situation not managed by end-user's hints */
 			if (!(ups_status & STATUS(CALIB))) {
-				/* if in OL+DISCHRG unknowingly, warn user */
-				upslogx(LOG_WARNING, "%s: seems that UPS [%s] is in OL+DISCHRG state now. "
-				"Is it calibrating (perhaps you want to set 'onlinedischarge_calibration' option)? "
-				"Note that some UPS models (e.g. CyberPower UT series) emit OL+DISCHRG when "
-				"in fact offline/on-battery (perhaps you want to set 'onlinedischarge_onbattery' option).",
-				__func__, upsname);
+				/* if in OL+DISCHRG unknowingly, warn user,
+				 * unless we throttle it this time - see below */
+				do_logmsg = 1;
 			}
-			/* if we're calibrating */
+			/* if we're presumably calibrating */
 			status_set("OL");	/* on line */
+		}
+
+		if (do_logmsg) {
+			/* Any throttling to apply? */
+			const char *s;
+
+			/* First disable, then enable if OK for noise*/
+			do_logmsg = 0;
+
+			/* Time or not, did the charge change since last log? */
+			if ((s = dstate_getinfo("battery.charge"))) {
+				/* NOTE: "0" may mean a conversion error: */
+				current_charge = atoi(s);
+				if (current_charge != onlinedischarge_log_throttle_charge) {
+					/* Charge has changed */
+					do_logmsg = 1;
+				}
+			} else {
+				/* Should we default the time throttle? */
+				if (onlinedischarge_log_throttle_sec == -2) {
+					onlinedischarge_log_throttle_sec = 30;
+					/* Report once, so almost loud */
+					upsdebugx(1, "%s: seems battery.charge "
+						"is not served by this device "
+						"or subdriver; defaulting "
+						"onlinedischarge_log_throttle_sec "
+						"to %d",
+						__func__,
+						onlinedischarge_log_throttle_sec);
+				}
+			}
+
+			/* Do we track and honor time since last log? */
+			if (onlinedischarge_log_throttle_timestamp > 0
+			&&  onlinedischarge_log_throttle_sec >= 0
+			) {
+				time_t	now;
+				time(&now);
+
+				if ((now - onlinedischarge_log_throttle_timestamp)
+				    >= onlinedischarge_log_throttle_sec
+				) {
+					/* Enough time elapsed */
+					do_logmsg = 1;
+				}
+			}
+		}
+
+		if (do_logmsg) {
+			char	msg_charge[LARGEBUF];
+			msg_charge[0] = '\0';
+
+			/* Remember when we last logged this message */
+			time(&onlinedischarge_log_throttle_timestamp);
+
+			if (current_charge > 0
+			&&  current_charge != onlinedischarge_log_throttle_charge
+			) {
+				/* Charge has changed, report and remember this */
+				if (onlinedischarge_log_throttle_charge < 0) {
+					/* First sequential message like this */
+					snprintf(msg_charge, sizeof(msg_charge),
+						"Battery charge is currently %d. ",
+						current_charge);
+				} else {
+					snprintf(msg_charge, sizeof(msg_charge),
+						"Battery charge changed from %d to %d "
+						"since last such report. ",
+						onlinedischarge_log_throttle_charge,
+						current_charge);
+				}
+				onlinedischarge_log_throttle_charge = current_charge;
+			}
+
+			upslogx(LOG_WARNING, "%s: seems that UPS [%s] is in OL+DISCHRG state now. %s"
+			"Is it calibrating (perhaps you want to set 'onlinedischarge_calibration' option)? "
+			"Note that some UPS models (e.g. CyberPower UT series) emit OL+DISCHRG when "
+			"in fact offline/on-battery (perhaps you want to set 'onlinedischarge_onbattery' option).",
+			__func__, upsname, msg_charge);
 		}
 	} else if ((ups_status & STATUS(ONLINE))) {
 		/* if simply online */
