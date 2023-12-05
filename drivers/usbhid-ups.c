@@ -186,6 +186,14 @@ static time_t onlinedischarge_log_throttle_timestamp = 0;
  * Gets reset to -1 whenever this condition is not present.
  */
 static int onlinedischarge_log_throttle_charge = -1;
+/**
+ * If battery.charge is served and equals or exceeds this value,
+ * suppress logging about OL & DISCHRG if battery.charge varied
+ * since last logged message. Defaults to 100% as some devices
+ * only report this state combo when fully charged (probably
+ * they try to prolong battery life by not over-charging it).
+ */
+static int onlinedischarge_log_throttle_hovercharge = 100;
 
 /* support functions */
 static hid_info_t *find_nut_info(const char *varname);
@@ -986,6 +994,9 @@ void upsdrv_makevartable(void)
 
 	addvar(VAR_VALUE, "onlinedischarge_log_throttle_sec",
 		"Set to throttle log messages about discharging while online (only so often)");
+
+	addvar(VAR_VALUE, "onlinedischarge_log_throttle_hovercharge",
+		"Set to throttle log messages about discharging while online (only if battery.charge is under this value)");
 	
 	addvar(VAR_FLAG, "disable_fix_report_desc",
 		"Set to disable fix-ups for broken USB encoding, etc. which we apply by default on certain vendors/products");
@@ -1988,9 +1999,31 @@ static void ups_status_set(void)
 			if ((s = dstate_getinfo("battery.charge"))) {
 				/* NOTE: "0" may mean a conversion error: */
 				current_charge = atoi(s);
-				if (current_charge != onlinedischarge_log_throttle_charge) {
-					/* Charge has changed */
-					do_logmsg = 1;
+				if (current_charge > 0
+				&&  current_charge != onlinedischarge_log_throttle_charge
+				) {
+					/* Charge has changed, but is it
+					 * now low enough to worry? */
+					if (onlinedischarge_log_throttle_hovercharge
+					    < onlinedischarge_log_throttle_charge
+					) {
+						upsdebugx(3, "%s: current "
+							"battery.charge=%d is under "
+							"onlinedischarge_log_throttle_charge=%d",
+							__func__, current_charge,
+							onlinedischarge_log_throttle_charge);
+						do_logmsg = 1;
+					} else {
+						/* All seems OK, don't spam log
+						 * unless running at a really
+						 * high debug verbosity */
+						upsdebugx(5, "%s: current "
+							"battery.charge=%d "
+							"is okay compared to "
+							"onlinedischarge_log_throttle_charge=%d",
+							__func__, current_charge,
+							onlinedischarge_log_throttle_charge);
+					}
 				}
 			} else {
 				/* Should we default the time throttle? */

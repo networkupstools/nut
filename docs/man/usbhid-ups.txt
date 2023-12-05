@@ -152,6 +152,14 @@ emitted previously (e.g. when the battery is really discharging).
 If both this option is set, and `battery.charge` is correctly reported,
 either of these rules allow the notification to be logged.
 
+*onlinedischarge_log_throttle_hovercharge*='num'::
+See details in `onlinedischarge_log_throttle_sec` and `battery.charge` based
+log message throttling description above.  This option adds a concept of UPS
+"hovering" a battery charge at some level deemed safe for its chemistry, and
+not forcing it to be fully charged all the time.  As long as the current value
+of `battery.charge` remains at or above this threshold percentage (default 100),
+the `OL+DISCHRG` message logging is not triggered by variations of the charge.
+
 *disable_fix_report_desc*::
 Set to disable fix-ups for broken USB encoding, etc. which we apply by default
 on certain models (vendors/products) which were reported as not following the
