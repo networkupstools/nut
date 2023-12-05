@@ -145,8 +145,10 @@ hid_dev_handle_t udev = HID_DEV_HANDLE_CLOSED;
  * CyberPower UT series sometime need a bit of help deciding their online status.
  * This quirk is to enable the special handling of OL & DISCHRG at the same time
  * as being OB (on battery power/no mains power). Enabled by device config flag.
+ * NOTE: Also known by legacy alias "onlinedischarge", deprecated but tolerated
+ * since NUT v2.8.2.
  */
-static int onlinedischarge = 0;
+static int onlinedischarge_onbattery = 0;
 
 /**
  * Some UPS models (e.g. APC were seen to do so) report OL & DISCHRG when they
@@ -944,7 +946,10 @@ void upsdrv_makevartable(void)
 	addvar(VAR_FLAG, "pollonly", "Don't use interrupt pipe, only use polling");
 
 	addvar(VAR_FLAG, "onlinedischarge",
-		"Set to treat discharging while online as being offline");
+		"Set to treat discharging while online as being offline/on-battery (DEPRECATED, use onlinedischarge_onbattery)");
+
+	addvar(VAR_FLAG, "onlinedischarge_onbattery",
+		"Set to treat discharging while online as being offline/on-battery");
 
 	addvar(VAR_FLAG, "onlinedischarge_calibration",
 		"Set to treat discharging while online as doing calibration");
@@ -1255,8 +1260,8 @@ void upsdrv_initups(void)
 	}
 
 	/* Activate Cyberpower tweaks */
-	if (testvar("onlinedischarge")) {
-		onlinedischarge = 1;
+	if (testvar("onlinedischarge") || testvar("onlinedischarge_onbattery")) {
+		onlinedischarge_onbattery = 1;
 	}
 
 	if (testvar("onlinedischarge_calibration")) {
@@ -1889,18 +1894,18 @@ static void ups_status_set(void)
 			status_set("CAL");	/* calibration */
 		}
 
-		if (onlinedischarge) {
+		if (onlinedischarge_onbattery) {
 			/* if we treat OL+DISCHRG as being offline */
 			status_set("OB");	/* on battery */
 		}
 
-		if (!onlinedischarge && !onlinedischarge_calibration) {
+		if (!onlinedischarge_onbattery && !onlinedischarge_calibration) {
 			if (!(ups_status & STATUS(CALIB))) {
 				/* if in OL+DISCHRG unknowingly, warn user */
 				upslogx(LOG_WARNING, "%s: seems that UPS [%s] is in OL+DISCHRG state now. "
 				"Is it calibrating (perhaps you want to set 'onlinedischarge_calibration' option)? "
 				"Note that some UPS models (e.g. CyberPower UT series) emit OL+DISCHRG when "
-				"in fact offline/on-battery (perhaps you want to set 'onlinedischarge' option).",
+				"in fact offline/on-battery (perhaps you want to set 'onlinedischarge_onbattery' option).",
 				__func__, upsname);
 			}
 			/* if we're calibrating */

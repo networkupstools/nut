@@ -114,11 +114,16 @@ If this flag is set, the driver will not use Interrupt In transfers during the
 shorter "pollinterval" cycles (not recommended, but needed if these reports
 are broken on your UPS).
 
-*onlinedischarge*::
-If this flag is set, the driver will treat `OL+DISCHRG` status as offline.
+*onlinedischarge_battery*::
+If this flag is set, the driver will treat `OL+DISCHRG` status as
+offline/on-battery.
++
 For most devices this combination means calibration or similar maintenance;
 however some UPS models (e.g. CyberPower UT series) emit `OL+DISCHRG` when
 wall power is lost -- and need this option to handle shutdowns.
+
+*onlinedischarge*::
+DEPRECATED, old name for `onlinedischarge_battery` described above.
 
 *onlinedischarge_calibration*::
 If this flag is set, the driver will treat `OL+DISCHRG` status as calibration.

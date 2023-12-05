@@ -107,6 +107,9 @@ https://github.com/networkupstools/nut/milestone/10
    * `arduino-hid` subdriver was enhanced from "initial bare bones" experimental
      set of mapped data points to support some 20 more mappings to make it more
      useful as an UPS driver, not just a controller developer sandbox. [#2188]
+   * The `onlinedischarge` configuration flag name was too ambiguous and got
+     deprecated (will be supported but no longer promoted by documentation),
+     introducing `onlinedischarge_onbattery` as the meaningful alias. [#2213]
 
 Release notes for NUT 2.8.1 - what's new since 2.8.0
 ----------------------------------------------------
