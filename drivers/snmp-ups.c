@@ -42,6 +42,7 @@
 
 /* include all known mib2nut lookup tables */
 #include "apc-mib.h"
+#include "apcgalaxy5500-mib.h"
 #include "mge-mib.h"
 #include "netvision-mib.h"
 #include "eaton-pdu-genesis2-mib.h"
@@ -100,6 +101,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&apc_pdu_msp,		/* This struct comes from : apc-pdu-mib.c */
 	&apc_pdu_epdu,		/* This struct comes from : apc-epdu-mib.c */
 	&apc,				/* This struct comes from : apc-mib.c */
+	&apcgalaxy5500,				/* This struct comes from : apcgalaxy5500-mib.c */
 	&baytech,			/* This struct comes from : baytech-mib.c */
 	&bestpower,			/* This struct comes from : bestpower-mib.c */
 	&compaq,			/* This struct comes from : compaq-mib.c */
@@ -3504,19 +3506,25 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 
 	if (!strcasecmp(su_info_p->info_type, "ups.status")) {
 /* FIXME: daisychain status support! */
-		upsdebugx(2, "%s: requesting nut_snmp_get_int() for "
-			"ups.status, with%s daisy template originally",
-			__func__, (format_char!=NULL ? "" : "out"));
-		status = nut_snmp_get_int(su_info_p->OID, &value);
-		if (status == TRUE)
+		if(!(strcasecmp(su_info_p->OID, ".1.3.6.1.4.1.318.1.1.1.11.1.1.0")))
 		{
-			su_status_set(su_info_p, value);
-			upsdebugx(2, "=> value: %ld", value);
+			status = nut_snmp_get_str(su_info_p->OID, buf, sizeof(buf), su_info_p->oid2info);
+			char pwr_status = buf[1];
+			su_status_set(su_info_p, strtol(&pwr_status, NULL, 10));
+			if (status == TRUE)
+				upsdebugx(2, "=> value: %c", pwr_status);
+			else
+				upsdebugx(2, "=> Failed");
 		}
 		else
-			upsdebugx(2, "=> Failed");
-
-		free_info(tmp_info_p);
+		{
+			status = nut_snmp_get_int(su_info_p->OID, &value);
+			su_status_set(su_info_p, value);
+			if (status == TRUE)
+					upsdebugx(2, "=> value: %ld", value);
+			else
+					upsdebugx(2, "=> Failed");
+		}
 		return status;
 	}
 
