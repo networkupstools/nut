@@ -579,9 +579,11 @@ nutscan_device_t * nutscan_scan_usb(void)
 					"bus",
 					busname);
 
-				nutscan_add_option_to_device(nut_dev,
+				/* AQU note: disabled, since it may lead to instabilities and
+				   more issues than solutions! */
+				/* nutscan_add_option_to_device(nut_dev,
 					"device",
-					device_port);
+					device_port); */
 
 #if WITH_LIBUSB_1_0
 				if (bus_port) {
@@ -594,10 +596,13 @@ nutscan_device_t * nutscan_scan_usb(void)
 #endif	/* WITH_LIBUSB_1_0 */
 
 				/* Not currently matched by drivers, hence commented for now: */
-				sprintf(string, "%04X", bcdDevice);
+				/* AQU notes:
+				   * ups.conf formatted, will cause parsing issues with other formats
+				   * not useful field! */
+				/* sprintf(string, "%04X", bcdDevice);
 				nutscan_add_option_to_device(nut_dev,
 					"###NOTMATCHED-YET###bcdDevice",
-					string);
+					string); */
 
 				current_nut_dev = nutscan_add_device_to_device(
 					current_nut_dev,
