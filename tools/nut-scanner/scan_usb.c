@@ -281,7 +281,7 @@ nutscan_device_t * nutscan_scan_usb(void)
 	 */
 	char *device_port = NULL;
 	/* bcdDevice: aka "Device release number" - note we currently do not match by it */
-	uint16_t bcdDevice = 0;
+	/*uint16_t bcdDevice = 0;*/
 #if WITH_LIBUSB_1_0
 	libusb_device *dev;
 	libusb_device **devlist;
