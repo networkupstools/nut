@@ -171,6 +171,7 @@ sem_t * nutscan_semaphore(void);
 
 /* Display functions */
 void nutscan_display_ups_conf(nutscan_device_t * device);
+void nutscan_display_home_assistant_conf(nutscan_device_t * device);
 void nutscan_display_parsable(nutscan_device_t * device);
 
 /* Display sanity-check concerns for various fields etc. (if any) */

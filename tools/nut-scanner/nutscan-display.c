@@ -104,6 +104,66 @@ void nutscan_display_ups_conf(nutscan_device_t * device)
 	last_nutdev_num = nutdev_num;
 }
 
+void nutscan_display_home_assistant_conf(nutscan_device_t * device)
+{
+	nutscan_device_t * current_dev = device;
+	nutscan_options_t * opt;
+	static int nutdev_num = 1;
+
+	upsdebugx(2, "%s: %s", __func__, device
+		? (device->type < TYPE_END ? nutscan_device_type_string[device->type] : "<UNKNOWN>")
+		: "<NULL>");
+
+	if (device == NULL) {
+		return;
+	}
+
+	/* Find start of the list */
+	while (current_dev->prev != NULL) {
+		current_dev = current_dev->prev;
+	}
+
+	printf("devices:\n");
+
+	/* Display each device */
+	do {
+		printf("  - name: nutdev%i\n    driver: %s",
+			nutdev_num, current_dev->driver);
+
+		if (current_dev->alt_driver_names) {
+			printf("  # alternately: %s",
+				current_dev->alt_driver_names);
+		}
+
+		printf("\n    port: %s",
+			current_dev->port);
+
+		opt = current_dev->opt;
+
+		printf("\n    config:\n");
+		while (NULL != opt) {
+			if (opt->option != NULL) {
+				printf("    - %s", opt->option);
+				if (opt->value != NULL) {
+					printf(" = %s", opt->value);
+				}
+				printf("\n");
+			}
+			else {
+				printf(" []\n");
+			}
+			opt = opt->next;
+		}
+
+		nutdev_num++;
+
+		current_dev = current_dev->next;
+	}
+	while (current_dev != NULL);
+
+	last_nutdev_num = nutdev_num;
+}
+
 void nutscan_display_parsable(nutscan_device_t * device)
 {
 	nutscan_device_t * current_dev = device;

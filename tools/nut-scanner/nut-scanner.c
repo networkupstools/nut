@@ -61,7 +61,7 @@
 
 #define ERR_BAD_OPTION	(-1)
 
-static const char optstring[] = "?ht:T:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:QNPqIVaD";
+static const char optstring[] = "?ht:T:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:QNHPqIVaD";
 
 #ifdef HAVE_GETOPT_LONG
 static const struct option longopts[] = {
@@ -92,6 +92,7 @@ static const struct option longopts[] = {
 	{ "ipmi_scan", no_argument, NULL, 'I' },
 	{ "disp_nut_conf_with_sanity_check", no_argument, NULL, 'Q' },
 	{ "disp_nut_conf", no_argument, NULL, 'N' },
+	{ "disp_home_assistant_conf", no_argument, NULL, 'H' },
 	{ "disp_parsable", no_argument, NULL, 'P' },
 	{ "quiet", no_argument, NULL, 'q' },
 	{ "help", no_argument, NULL, 'h' },
@@ -339,6 +340,7 @@ static void show_usage(void)
 	printf("\ndisplay specific options:\n");
 	printf("  -Q, --disp_nut_conf_with_sanity_check: Display result in the ups.conf format with sanity-check warnings as comments (default)\n");
 	printf("  -N, --disp_nut_conf: Display result in the ups.conf format\n");
+	printf("  -H, --disp_home_assistant_conf: Display result in the Home Assistant format\n");
 	printf("  -P, --disp_parsable: Display result in a parsable format\n");
 	printf("\nMiscellaneous options:\n");
 	printf("  -h, --help: display this help text\n");
@@ -652,6 +654,9 @@ int main(int argc, char *argv[])
 				break;
 			case 'N':
 				display_func = nutscan_display_ups_conf;
+				break;
+			case 'H':
+				display_func = nutscan_display_home_assistant_conf;
 				break;
 			case 'P':
 				display_func = nutscan_display_parsable;

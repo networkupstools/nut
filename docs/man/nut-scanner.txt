@@ -44,6 +44,9 @@ as comments (default).
 *-N* | *--disp_nut_conf*::
 Display result in the 'ups.conf' format.
 
+*-H* | *--disp_home_assistant_conf*::
+Display result in the Home Assistant format.
+
 *-P* | *--disp_parsable*::
 Display result in a parsable format.
 
