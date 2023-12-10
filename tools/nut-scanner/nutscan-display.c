@@ -145,7 +145,7 @@ void nutscan_display_home_assistant_conf(nutscan_device_t * device)
 			if (opt->option != NULL) {
 				printf("    - %s", opt->option);
 				if (opt->value != NULL) {
-					printf(" = %s", opt->value);
+					printf(" = \"%s\"", opt->value);
 				}
 				printf("\n");
 			}
