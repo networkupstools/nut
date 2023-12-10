@@ -280,8 +280,12 @@ nutscan_device_t * nutscan_scan_usb(void)
 	 * In libusb0 API: "device filename"
 	 */
 	char *device_port = NULL;
+
+#ifdef WITH_BCD_DEVICE
 	/* bcdDevice: aka "Device release number" - note we currently do not match by it */
-	/*uint16_t bcdDevice = 0;*/
+	uint16_t bcdDevice = 0;
+#endif
+
 #if WITH_LIBUSB_1_0
 	libusb_device *dev;
 	libusb_device **devlist;
@@ -379,7 +383,9 @@ nutscan_device_t * nutscan_scan_usb(void)
 			}
 		}
 
+# ifdef WITH_BCD_DEVICE
 		bcdDevice = dev_desc.bcdDevice;
+# endif
 #else  /* => WITH_LIBUSB_0_1 */
 # ifndef WIN32
 	for (bus = (*nut_usb_busses); bus; bus = bus->next) {
@@ -396,7 +402,9 @@ nutscan_device_t * nutscan_scan_usb(void)
 			iSerialNumber = dev->descriptor.iSerialNumber;
 			busname = bus->dirname;
 			device_port = dev->filename;
+# ifdef WITH_BCD_DEVICE
 			bcdDevice = dev->descriptor.bcdDevice;
+# endif
 #endif
 			if ((driver_name =
 				is_usb_device_supported(usb_device_table,
@@ -595,14 +603,16 @@ nutscan_device_t * nutscan_scan_usb(void)
 				}
 #endif	/* WITH_LIBUSB_1_0 */
 
+#ifdef WITH_BCD_DEVICE
 				/* Not currently matched by drivers, hence commented for now: */
 				/* AQU notes:
-				   * ups.conf formatted, will cause parsing issues with other formats
-				   * not useful field! */
-				/* sprintf(string, "%04X", bcdDevice);
+				   * ups.conf formatted, will cause parsing issues with other formats,
+				   * and currently generally not a useful field! */
+				sprintf(string, "%04X", bcdDevice);
 				nutscan_add_option_to_device(nut_dev,
 					"###NOTMATCHED-YET###bcdDevice",
-					string); */
+					string);
+#endif
 
 				current_nut_dev = nutscan_add_device_to_device(
 					current_nut_dev,
