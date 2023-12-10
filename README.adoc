@@ -824,8 +824,8 @@ endif::env-github[]
   NUT pipeline] allows us to test NUT CI builds on Windows (and publish
   preview tarballs with binaries).
 
-| image:images/ci/DO_Powered_by_Badge_blue_140pxW.png[alt="DigitalOcean logo",width="140",height="29",link="https://www.digitalocean.com/"]
-| The link:https://www.digitalocean.com/[DigitalOcean] droplets allow us to host
+| image:images/ci/DO_Powered_by_Badge_blue_140pxW.png[alt="DigitalOcean logo",width="140",height="29",link="https://www.digitalocean.com/?refcode=d2fbf2b9e082&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge"]
+| The link:https://www.digitalocean.com/?refcode=d2fbf2b9e082&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge[DigitalOcean] droplets allow us to host
   NUT CI farm build agents, and eventually re-house the Jenkins controller too.
 
 | image:images/ci/gandi-ar21.png[alt="Gandi.Net logo",width="120",height="60",link="https://www.gandi.net/"]
