@@ -42,6 +42,8 @@
 
 #include <ltdl.h>
 
+#define SCAN_AVAHI_DRIVERNAME "dummy-ups"
+
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
@@ -268,7 +270,7 @@ static void update_device(const char * host_name, const char *ip, uint16_t port,
 			dev->type = TYPE_NUT;
 			/* NOTE: There is no driver by such name, in practice it could
 			 * be a dummy-ups relay, a clone driver, or part of upsmon config */
-			dev->driver = strdup("nutclient");
+			dev->driver = strdup(SCAN_AVAHI_DRIVERNAME);
 			if (proto == AVAHI_PROTO_INET) {
 				nutscan_add_option_to_device(dev, "desc", "IPv4");
 			}
@@ -324,7 +326,7 @@ static void update_device(const char * host_name, const char *ip, uint16_t port,
 		else {
 			dev = nutscan_new_device();
 			dev->type = TYPE_NUT;
-			dev->driver = strdup("nutclient");
+			dev->driver = strdup(SCAN_AVAHI_DRIVERNAME);
 			if (proto == AVAHI_PROTO_INET) {
 				nutscan_add_option_to_device(dev, "desc", "IPv4");
 			}
