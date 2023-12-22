@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2011 - 2023 Arnaud Quette (Design and part of implementation)
+ *  Copyright (C) 2011 - 2024 Arnaud Quette (Design and part of implementation)
  *  Copyright (C) 2011 - EATON
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -20,7 +20,7 @@
 /*! \file scan_avahi.c
     \brief detect NUT through Avahi mDNS / DNS-SD services
     \author Frederic Bohe <fredericbohe@eaton.com>
-    \author Arnaud Quette <arnaudquette@free.fr>
+	\author Arnaud Quette <arnaudquette@free.fr>
 */
 
 #include "common.h"

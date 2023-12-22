@@ -1,9 +1,9 @@
 /*
  *  Copyright (C)
  *    2011 - EATON
- *    2012 - Arnaud Quette <arnaud.quette@free.fr>
+ *    2012 - 2024 Arnaud Quette <arnaud.quette@free.fr>
  *    2016 - EATON - IP addressed XML scan
- *    2016-2021 - EATON - Various threads-related improvements
+ *    2016 - 2021 - EATON - Various threads-related improvements
  *    2023 - Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -154,6 +154,8 @@ nutscan_device_t * nutscan_scan_usb(void);
 nutscan_device_t * nutscan_scan_xml_http_range(const char *start_ip, const char *end_ip, useconds_t usec_timeout, nutscan_xml_t * sec);
 
 nutscan_device_t * nutscan_scan_nut(const char * startIP, const char * stopIP, const char * port, useconds_t usec_timeout);
+
+nutscan_device_t * nutscan_scan_nut_simulation();
 
 nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout);
 

@@ -67,6 +67,9 @@ interfaces to retrieve XML/HTTP capable devices. No IP required in this mode.
 *-O* | *--oldnut_scan*::
 Scan NUT devices (i.e. upsd daemon) on IP ranging from 'start IP' to 'end IP'.
 
+*-n* | *--nut_simulation_scan*::
+Scan NUT simulated devices (.dev files in $CONFPATH).
+
 *-A* | *--avahi_scan*::
 Scan NUT servers using Avahi request on the current network interfaces.
 No IP required.
