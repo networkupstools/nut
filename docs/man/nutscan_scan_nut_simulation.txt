@@ -23,11 +23,6 @@ directory.
 
 You MUST call linkman:nutscan_init[3] before using this function.
 
-A specific 'port' number may be passed, or NULL to use the default NUT port.
-
-This function waits up to 'usec_timeout' microseconds before considering
-an IP address does not respond to NUT queries.
-
 RETURN VALUE
 ------------
 
