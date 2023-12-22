@@ -906,6 +906,7 @@
 "Numeric"	"ups"	"2"	"Digital 800 plus"	"USB"	"nutdrv_qx or blazer_usb"
 
 "NUT"	"ups"	"5"	"all supported NUT devices, through remote upsd"	""	"dummy-ups"
+"NUT"	"ups"	"5"	"Simulated devices"	""	"dummy-ups"
 
 "Oneac"	"ups"	"1"	"ON400"	"advanced interface"	"oneac"
 "Oneac"	"ups"	"1"	"ON600"	"advanced interface"	"oneac"
