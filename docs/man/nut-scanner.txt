@@ -20,7 +20,8 @@ DESCRIPTION
 NUT-compatible devices it has found.
 
 *nut-scanner* can also display the detected devices in various formats,
-including ups.cconf, and ensures generated devices name unicity across buses.
+including ups.conf, and ensures that the generated devices name are unique
+across buses.
 
 INSTALLATION
 ------------
