@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2011 - 2024 Arnaud Quette (Design and part of implementation)
  *  Copyright (C) 2011 - EATON
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -19,6 +20,7 @@
 /*! \file nutscan-device.h
     \brief definition of a container describing a NUT discovered device
     \author Frederic Bohe <fredericbohe@eaton.com>
+	\author Arnaud Quette <arnaudquette@free.fr>
 */
 
 #ifndef SCAN_DEVICE
@@ -46,6 +48,7 @@ typedef enum nutscan_device_type {
 	TYPE_SNMP,
 	TYPE_XML,
 	TYPE_NUT,
+	TYPE_NUT_SIMULATION,
 	TYPE_IPMI,
 	TYPE_AVAHI,
 	TYPE_EATON_SERIAL,
