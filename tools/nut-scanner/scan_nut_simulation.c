@@ -54,8 +54,10 @@ nutscan_device_t * nutscan_scan_nut_simulation(void)
 
 	while ((dirp = readdir(dp)) != NULL)
 	{
-		upsdebugx(5,"Comparing file %s with simulation file extensions", dirp->d_name);
-		const char *ext = strrchr(dirp->d_name,'.');
+		const char *ext;
+
+		upsdebugx(5, "Comparing file %s with simulation file extensions", dirp->d_name);
+		ext = strrchr(dirp->d_name, '.');
 		if((!ext) || (ext == dirp->d_name))
 			continue;
 
