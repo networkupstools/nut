@@ -57,7 +57,7 @@ static int filter_ext(const struct dirent *dir)
 	return 0;
 }
 
-nutscan_device_t * nutscan_scan_nut_simulation()
+nutscan_device_t * nutscan_scan_nut_simulation(void)
 {
 	nutscan_device_t * dev = NULL;
 	struct dirent **namelist;
