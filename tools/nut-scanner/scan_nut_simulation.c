@@ -44,7 +44,18 @@ static int filter_ext(const struct dirent *dir)
 	if(!dir)
 		return 0;
 
+#if defined(DT_REG)
+	/* NOTE: dirent->d_type is not ubiquitous; here we take
+	 * existence of its standard values as presence of the
+	 * struct field too, rather than adding a configure test.
+	 * TODO: Else check with fopen()+fstat()...
+	 */
 	if(dir->d_type == DT_REG) { /* only deal with regular file */
+#else
+	upsdebugx(0,
+		"WARNING: checking all types of directory entries on this platform,\n"
+		"not constrained to regular files for NUT simulation data!");
+#endif
 		const char *ext = strrchr(dir->d_name,'.');
 		if((!ext) || (ext == dir->d_name))
 			return 0;
@@ -53,7 +64,9 @@ static int filter_ext(const struct dirent *dir)
 				return 1;
 			}
 		}
+#if defined(DT_REG)
 	}
+#endif
 	return 0;
 }
 
