@@ -69,7 +69,7 @@ nutscan_device_t * nutscan_scan_nut_simulation(void)
 
 	upsdebugx(1,"Scanning: %s", CONFPATH);
 
-	n = scandir(CONFPATH, &namelist, filter_ext, alphasort);
+	n = scandir(CONFPATH, &namelist, filter_ext, NULL);
 	if (n < 0) {
 		fatal_with_errno(EXIT_FAILURE, "Failed to scandir");
 		return NULL;
