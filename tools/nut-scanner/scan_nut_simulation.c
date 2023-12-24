@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2024 Arnaud Quette
+ *  Copyright (C) 2023-2024 Arnaud Quette
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,9 +25,6 @@
 #include "nut-scan.h"
 #include "nut_stdint.h"
 #include <dirent.h>
-#if !HAVE_DECL_REALPATH
-# include <sys/stat.h>
-#endif
 
 #define SCAN_NUT_SIMULATION_DRIVERNAME "dummy-ups"
 
@@ -38,28 +35,11 @@ static nutscan_device_t * dev_ret = NULL;
 static pthread_mutex_t dev_mutex;
 #endif
 
-/* return 1 when filter is ok (.dev or .seq) */
-static int filter_ext(const struct dirent *dir)
-{
-	if(!dir)
-		return 0;
-
-	const char *ext = strrchr(dir->d_name,'.');
-	if((!ext) || (ext == dir->d_name))
-		return 0;
-	else {
-		if ((strcmp(ext, ".dev") == 0) || (strcmp(ext, ".seq") == 0)) {
-			return 1;
-		}
-	}
-	return 0;
-}
-
 nutscan_device_t * nutscan_scan_nut_simulation(void)
 {
+	DIR *dp;
+	struct dirent *dirp;
 	nutscan_device_t * dev = NULL;
-	struct dirent **namelist;
-	int n;
 
 #if HAVE_PTHREAD
 	pthread_mutex_init(&dev_mutex, NULL);
@@ -67,19 +47,26 @@ nutscan_device_t * nutscan_scan_nut_simulation(void)
 
 	upsdebugx(1,"Scanning: %s", CONFPATH);
 
-	n = scandir(CONFPATH, &namelist, filter_ext, NULL);
-	if (n < 0) {
-		fatal_with_errno(EXIT_FAILURE, "Failed to scandir");
+	if ((dp = opendir(CONFPATH)) == NULL) {
+		fatal_with_errno(EXIT_FAILURE, "Failed to open %s", CONFPATH);
 		return NULL;
 	}
-	else {
-		while (n--) {
-			upsdebugx(1,"Found simulation file: %s", namelist[n]->d_name);
+
+	while ((dirp = readdir(dp)) != NULL)
+	{
+		upsdebugx(5,"Comparing file %s with simulation file extensions", dirp->d_name);
+		const char *ext = strrchr(dirp->d_name,'.');
+		if((!ext) || (ext == dirp->d_name))
+			continue;
+
+		/* Filter on '.dev' and '.seq' extensions' */
+		if ((strcmp(ext, ".dev") == 0) || (strcmp(ext, ".seq") == 0)) {
+			upsdebugx(1,"Found simulation file: %s", dirp->d_name);
 
 			dev = nutscan_new_device();
 			dev->type = TYPE_NUT_SIMULATION;
 			dev->driver = strdup(SCAN_NUT_SIMULATION_DRIVERNAME);
-			dev->port = strdup(namelist[n]->d_name);
+			dev->port = strdup(dirp->d_name);
 
 #ifdef HAVE_PTHREAD
 			pthread_mutex_lock(&dev_mutex);
@@ -88,10 +75,9 @@ nutscan_device_t * nutscan_scan_nut_simulation(void)
 #ifdef HAVE_PTHREAD
 			pthread_mutex_unlock(&dev_mutex);
 #endif
-			free(namelist[n]);
 		}
-		free(namelist);
 	}
+	closedir(dp);
 
 #if HAVE_PTHREAD
 	pthread_mutex_destroy(&dev_mutex);
