@@ -44,14 +44,12 @@ static int filter_ext(const struct dirent *dir)
 	if(!dir)
 		return 0;
 
-	if(dir->d_type == DT_REG) { /* only deal with regular file */
-		const char *ext = strrchr(dir->d_name,'.');
-		if((!ext) || (ext == dir->d_name))
-			return 0;
-		else {
-			if ((strcmp(ext, ".dev") == 0) || (strcmp(ext, ".seq") == 0)) {
-				return 1;
-			}
+	const char *ext = strrchr(dir->d_name,'.');
+	if((!ext) || (ext == dir->d_name))
+		return 0;
+	else {
+		if ((strcmp(ext, ".dev") == 0) || (strcmp(ext, ".seq") == 0)) {
+			return 1;
 		}
 	}
 	return 0;
