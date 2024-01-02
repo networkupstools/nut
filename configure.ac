@@ -4622,6 +4622,9 @@ AC_ARG_VAR(CCACHE_BASEDIR)
 AC_ARG_VAR(CCACHE_DIR)
 AC_ARG_VAR(CCACHE_PATH)
 
+PATH_DURING_CONFIGURE="$PATH"
+AC_SUBST(PATH_DURING_CONFIGURE)
+
 AC_MSG_NOTICE([Generating "data" files from templates, see below for executable scripts])
 AC_CONFIG_FILES([
  clients/Makefile
