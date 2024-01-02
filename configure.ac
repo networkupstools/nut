@@ -115,6 +115,19 @@ dnl Use "./configure --enable-maintainer-mode" to keep Makefile.in and Makefile
 dnl in sync after Git updates.
 AM_MAINTAINER_MODE
 
+dnl GNU and BSD make are okay with the syntax, but Sun make/dmake are not:
+AC_MSG_CHECKING([whether this make implementation supports export VAR=VAL syntax])
+nut_am_output="`printf 'export VAR=VAL\ntest:\n\t@echo "VAR=\$(VAR)"\n' | ${MAKE-make} -f - test`"
+nut_am_result="$?"
+AS_IF([test x"${nut_am_result}" = x0 -a x"${nut_am_output}" = x"VAR=VAL"], [
+	NUT_AM_MAKE_CAN_EXPORT=""
+	AC_MSG_RESULT(yes)
+], [
+	NUT_AM_MAKE_CAN_EXPORT="#ThisMakeCanNotExport# "
+	AC_MSG_RESULT(no: got '${nut_am_output}')
+])
+AC_SUBST(NUT_AM_MAKE_CAN_EXPORT)
+
 dnl Some systems have older autotools without direct macro support for PKG_CONF*
 NUT_CHECK_PKGCONFIG
 
@@ -4582,6 +4595,7 @@ dnl # NUT as the project and CPU architecture for resulting binaries;
 dnl # maybe we might use distro as well but some overlaps may be possible
 dnl # that result in same objects for different-looking build roots.
 dnl # Note this is enabled by default (explicit --without-... disables it).
+dnl # Has practical effect if NUT_AM_MAKE_CAN_EXPORT test is successful.
 AS_IF([test x"${CCACHE_NAMESPACE}" = x], [
 	CCACHE_NAMESPACE="nut"
 	dnl # Variables in this list are defined earlier in the script
@@ -4608,6 +4622,9 @@ AC_ARG_WITH(CCACHE_NAMESPACE,
 	esac
 ], [])
 NUT_REPORT_TARGET(CCACHE_NAMESPACE, "${CCACHE_NAMESPACE}", [ccache namespace tag (if ccache is used and new enough)])
+AS_IF([test x"$CCACHE_NAMESPACE" != x -a x"$NUT_AM_MAKE_CAN_EXPORT" != x], [
+	AC_MSG_WARN([CCACHE_NAMESPACE setting may have no effect: this make implementation seems to not support "export VAR=VAL" syntax])
+])
 
 dnl # Mark it as a "precious variable", for more details see
 dnl # https://www.gnu.org/software/autoconf/manual/autoconf-2.69/html_node/Setting-Output-Variables.html
