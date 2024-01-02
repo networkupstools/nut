@@ -1,3 +1,5 @@
+# Network UPS Tools: generators and other tools
+
 # SUBDIRS are explicitly a listing of all the directories that make
 # must recurse into BEFORE processing the current directory.
 #

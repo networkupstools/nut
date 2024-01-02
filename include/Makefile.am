@@ -1,3 +1,5 @@
+# Network UPS Tools: include
+
 dist_noinst_HEADERS = attribute.h common.h extstate.h proto.h			\
     state.h str.h timehead.h upsconf.h nut_float.h nut_stdint.h nut_platform.h	\
     wincompat.h

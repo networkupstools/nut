@@ -1,4 +1,4 @@
-# Network UPS Tools: man
+# Network UPS Tools: man pages
 #
 
 # Notes:

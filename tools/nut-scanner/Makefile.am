@@ -1,3 +1,5 @@
+# Network UPS Tools: nut-scanner
+
 # Generally, list headers and/or sources which are re-generated
 # for nut-scanner in the parent dir
 NUT_SCANNER_DEPS_H = nutscan-usb.h nutscan-snmp.h

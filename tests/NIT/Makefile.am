@@ -1,3 +1,5 @@
+# Network UPS Tools: NUT Integration Tests (NIT)
+
 EXTRA_DIST = nit.sh README.adoc
 
 if WITH_CHECK_NIT
