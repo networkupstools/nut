@@ -1,5 +1,14 @@
 # Network UPS Tools: nut-scanner
 
+# Export certain values for ccache which NUT ci_build.sh can customize,
+# to facilitate developer iteration re-runs of "make" later.
+# At least GNU and BSD make implementations are okay with this syntax.
+export CCACHE_NAMESPACE=@CCACHE_NAMESPACE@
+export CCACHE_BASEDIR=@CCACHE_BASEDIR@
+export CCACHE_DIR=@CCACHE_DIR@
+export CCACHE_PATH=@CCACHE_PATH@
+export PATH=@PATH_DURING_CONFIGURE@
+
 # Generally, list headers and/or sources which are re-generated
 # for nut-scanner in the parent dir
 NUT_SCANNER_DEPS_H = nutscan-usb.h nutscan-snmp.h

@@ -7,6 +7,15 @@ EXTRA_DIST =
 noinst_LTLIBRARIES = libparseconf.la libcommon.la libcommonclient.la
 libparseconf_la_SOURCES = parseconf.c
 
+# Export certain values for ccache which NUT ci_build.sh can customize,
+# to facilitate developer iteration re-runs of "make" later.
+# At least GNU and BSD make implementations are okay with this syntax.
+export CCACHE_NAMESPACE=@CCACHE_NAMESPACE@
+export CCACHE_BASEDIR=@CCACHE_BASEDIR@
+export CCACHE_DIR=@CCACHE_DIR@
+export CCACHE_PATH=@CCACHE_PATH@
+export PATH=@PATH_DURING_CONFIGURE@
+
 # do not hard depend on '../include/nut_version.h', since it blocks
 # 'dist', and is only required for actual build, in which case
 # BUILT_SOURCES (in ../include) will ensure nut_version.h will
