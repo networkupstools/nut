@@ -4608,7 +4608,19 @@ AC_ARG_WITH(CCACHE_NAMESPACE,
 	esac
 ], [])
 NUT_REPORT_TARGET(CCACHE_NAMESPACE, "${CCACHE_NAMESPACE}", [ccache namespace tag (if ccache is used and new enough)])
-AC_SUBST(CCACHE_NAMESPACE)
+
+dnl # Mark it as a "precious variable", for more details see
+dnl # https://www.gnu.org/software/autoconf/manual/autoconf-2.69/html_node/Setting-Output-Variables.html
+AC_ARG_VAR(CCACHE_NAMESPACE)
+
+dnl # Also list some other ccache options which ci_build.sh can fiddle with.
+dnl # While that script "exports" them so it can call both configuration and
+dnl # the build, their values may be unknown when a developer re-runs "make".
+dnl # Normally most of the options would persist under $CCACHE_DIR/ccache.conf
+dnl # and we would not pass them via envvars.
+AC_ARG_VAR(CCACHE_BASEDIR)
+AC_ARG_VAR(CCACHE_DIR)
+AC_ARG_VAR(CCACHE_PATH)
 
 AC_MSG_NOTICE([Generating "data" files from templates, see below for executable scripts])
 AC_CONFIG_FILES([
