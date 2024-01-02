@@ -4575,6 +4575,41 @@ EOF])
 ])
 AC_MSG_RESULT([done])
 
+dnl # ccache versions 4.5 and newer support namespacing of the objects
+dnl # to facilitate more targeted eviction with --evict-namespace and
+dnl # perhaps --evict-older-than options. Here we bolt a namespace with
+dnl # NUT as the project and CPU architecture for resulting binaries;
+dnl # maybe we might use distro as well but some overlaps may be possible
+dnl # that result in same objects for different-looking build roots.
+dnl # Note this is enabled by default (explicit --without-... disables it).
+AS_IF([test x"${CCACHE_NAMESPACE}" = x], [
+	CCACHE_NAMESPACE="nut"
+	dnl # Variables in this list are defined earlier in the script
+	for T in "${compiler_multiarch}" "${target_alias}" "${target}" "${target_cpu}-${target_os}" ; do
+		if test x"$T" != x -a x"$T" != x- ; then
+			CCACHE_NAMESPACE="${CCACHE_NAMESPACE}:${T}"
+			break
+		fi
+	done
+	unset T
+])
+AC_ARG_WITH(CCACHE_NAMESPACE,
+	AS_HELP_STRING([--with-CCACHE_NAMESPACE=namespace], [which ccache namespace to use for built binaries; typically nut:${autotools_target})]),
+[
+	case "${withval}" in
+	no)
+		CCACHE_NAMESPACE=""
+		;;
+	yes)	# Use user envvar or calculation above
+		;;
+	*)
+		CCACHE_NAMESPACE="${withval}"
+		;;
+	esac
+], [])
+NUT_REPORT_TARGET(CCACHE_NAMESPACE, "${CCACHE_NAMESPACE}", [ccache namespace tag (if ccache is used and new enough)])
+AC_SUBST(CCACHE_NAMESPACE)
+
 AC_MSG_NOTICE([Generating "data" files from templates, see below for executable scripts])
 AC_CONFIG_FILES([
  clients/Makefile
