@@ -117,7 +117,8 @@ AM_MAINTAINER_MODE
 
 dnl GNU and BSD make are okay with the syntax, but Sun make/dmake are not:
 AC_MSG_CHECKING([whether this make implementation supports export VAR=VAL syntax])
-nut_am_output="`printf 'export VAR=VAL\ntest:\n\t@echo "VAR=\$(VAR)"\n' | ${MAKE-make} -f - test`"
+dnl # using printf formatting for some funniner shells out there
+nut_am_output="`printf 'export VAR=VAL\ntest:\n\t@echo "VAR=%s%sVAR%s"\n' '\$' '(' ')' | ${MAKE-make} -f - test`"
 nut_am_result="$?"
 AS_IF([test x"${nut_am_result}" = x0 -a x"${nut_am_output}" = x"VAR=VAL"], [
 	NUT_AM_MAKE_CAN_EXPORT=""
