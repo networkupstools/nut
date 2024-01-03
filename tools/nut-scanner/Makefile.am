@@ -61,7 +61,7 @@ if WITH_NUT_SCANNER
  bin_PROGRAMS = nut-scanner
  lib_LTLIBRARIES = libnutscan.la
 endif
-libnutscan_la_SOURCES = scan_nut.c  scan_nut_simulation.c scan_ipmi.c \
+libnutscan_la_SOURCES = scan_nut.c scan_nut_simulation.c scan_ipmi.c \
 			nutscan-device.c nutscan-ip.c nutscan-display.c \
 			nutscan-init.c scan_usb.c scan_snmp.c scan_xml_http.c \
 			scan_avahi.c scan_eaton_serial.c nutscan-serial.c
@@ -91,7 +91,7 @@ endif
 # object .so names would differ)
 #
 # libnutscan version information
-libnutscan_la_LDFLAGS += -version-info 2:3:0
+libnutscan_la_LDFLAGS += -version-info 2:4:0
 
 # libnutscan exported symbols regex
 # WARNING: Since the library includes parts of libcommon (as much as needed

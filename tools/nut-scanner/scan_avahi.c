@@ -20,7 +20,7 @@
 /*! \file scan_avahi.c
     \brief detect NUT through Avahi mDNS / DNS-SD services
     \author Frederic Bohe <fredericbohe@eaton.com>
-	\author Arnaud Quette <arnaudquette@free.fr>
+    \author Arnaud Quette <arnaudquette@free.fr>
 */
 
 #include "common.h"
