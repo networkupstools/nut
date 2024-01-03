@@ -1,3 +1,5 @@
+# Network UPS Tools: scripts/python/module (PyNUTClient)
+
 # See also: .github/workflows/PyNUTClient.yml
 # Note: this Makefile is focused on PyPI publication
 # The usual autotools stuff including clean-up is in parent dir

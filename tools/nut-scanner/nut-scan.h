@@ -155,7 +155,7 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char *start_ip, const char 
 
 nutscan_device_t * nutscan_scan_nut(const char * startIP, const char * stopIP, const char * port, useconds_t usec_timeout);
 
-nutscan_device_t * nutscan_scan_nut_simulation();
+nutscan_device_t * nutscan_scan_nut_simulation(void);
 
 nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout);
 
