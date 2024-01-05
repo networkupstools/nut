@@ -29,7 +29,8 @@
 #include <string.h>
 #include <assert.h>
 
-const char * nutscan_device_type_strings[TYPE_END - 1] = {
+const char * nutscan_device_type_strings[TYPE_END] = {
+	"NONE", /* 0 */
 	"USB",
 	"SNMP",
 	"XML",
@@ -37,6 +38,19 @@ const char * nutscan_device_type_strings[TYPE_END - 1] = {
 	"NUT_SIMULATION",
 	"IPMI",
 	"Avahi",
+	"serial",
+};
+
+/* lower strings, used for device names */
+const char * nutscan_device_type_lstrings[TYPE_END] = {
+	"none", /* 0 */
+	"usb",
+	"snmp",
+	"xml",
+	"nut",
+	"simulation",
+	"ipmi",
+	"avahi",
 	"serial",
 };
 
