@@ -1215,9 +1215,12 @@ testcase_sandbox_nutscanner_list() {
     # Note: the reported "driver" string is not too helpful as a "nutclient".
     # In practice this could be a "dummy-ups" repeater or "clone" driver,
     # or some of the config elements needed for upsmon (lacking creds/role)
+    # Also note that before PR #2247 nut-scanner returned "nutdev<NUM>"
+    # section names, but now it returns "nutdev-<BUS><NUM>" to differentiate
+    # the scanned buses (serial, snmp, usb, etc.)
     if (
         test -n "$CMDOUT" \
-        && echo "$CMDOUT" | grep -E '^\[nutdev1\]$' \
+        && echo "$CMDOUT" | grep -E '^\[nutdev-nut1\]$' \
         && echo "$CMDOUT" | grep 'port = "dummy@' \
         || return
 
@@ -1234,9 +1237,9 @@ testcase_sandbox_nutscanner_list() {
         if [ x"${TOP_SRCDIR}" = x ]; then
             log_info "[testcase_sandbox_nutscanner_list] Note: only testing one dummy device" >&2
         else
-            echo "$CMDOUT" | grep -E '^\[nutdev2\]$' \
+            echo "$CMDOUT" | grep -E '^\[nutdev-nut2\]$' \
             && echo "$CMDOUT" | grep 'port = "UPS1@' \
-            && echo "$CMDOUT" | grep -E '^\[nutdev3\]$' \
+            && echo "$CMDOUT" | grep -E '^\[nutdev-nut3\]$' \
             && echo "$CMDOUT" | grep 'port = "UPS2@' \
             || {
                 log_error "[testcase_sandbox_nutscanner_list] something about UPS1/UPS2 not found" >&2

@@ -41,6 +41,8 @@ extern "C" {
  */
 #define nutscan_device_type_string(type) \
 	(assert(0 < (type) && (type) < TYPE_END), nutscan_device_type_strings[type - 1])
+#define nutscan_device_type_lstring(type) \
+	(assert(0 < (type) && (type) < TYPE_END), nutscan_device_type_lstrings[type - 1])
 
 typedef enum nutscan_device_type {
 	TYPE_NONE = 0,
@@ -56,7 +58,8 @@ typedef enum nutscan_device_type {
 } nutscan_device_type_t;
 
 /** Device type -> string mapping */
-extern const char * nutscan_device_type_strings[TYPE_END - 1];
+extern const char * nutscan_device_type_strings[TYPE_END];
+extern const char * nutscan_device_type_lstrings[TYPE_END];
 
 typedef struct nutscan_options {
 	char *		option;
