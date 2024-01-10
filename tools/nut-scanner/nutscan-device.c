@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2011 - 2024 Arnaud Quette (Design and part of implementation)
  *  Copyright (C) 2011 - EATON
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -19,6 +20,7 @@
 /*! \file nutscan-device.c
     \brief manipulation of a container describing a NUT device
     \author Frederic Bohe <fredericbohe@eaton.com>
+	\author Arnaud Quette <arnaudquette@free.fr>
 */
 #include "config.h"	/* must be the first header */
 
@@ -27,13 +29,28 @@
 #include <string.h>
 #include <assert.h>
 
-const char * nutscan_device_type_strings[TYPE_END - 1] = {
+const char * nutscan_device_type_strings[TYPE_END] = {
+	"NONE", /* 0 */
 	"USB",
 	"SNMP",
 	"XML",
 	"NUT",
+	"NUT_SIMULATION",
 	"IPMI",
 	"Avahi",
+	"serial",
+};
+
+/* lower strings, used for device names */
+const char * nutscan_device_type_lstrings[TYPE_END] = {
+	"none", /* 0 */
+	"usb",
+	"snmp",
+	"xml",
+	"nut",
+	"simulation",
+	"ipmi",
+	"avahi",
 	"serial",
 };
 

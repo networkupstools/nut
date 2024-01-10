@@ -88,6 +88,10 @@ https://github.com/networkupstools/nut/milestone/10
    * Added generation of FreeBSD/pfSense quirks for USB devices supported
      by NUT (may get installed to `$datadir` e.g. `/usr/local/share/nut`
      and need to be pasted into your `/boot/loader.conf.local`). [#2159]
+   * nut-scanner can now discover NUT simulated devices (.dev & .seq files)
+     located in your sysconfig directory
+   * nut-scanner now report 'dummy-ups' as driver when scanning NUT with
+     Old or Avahi method.
 
  - upsd: Fixed conditions for "no listening interface available" diagnosis
    to check how many listeners we succeeded with, not whether the first one

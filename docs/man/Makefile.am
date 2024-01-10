@@ -1,4 +1,4 @@
-# Network UPS Tools: man
+# Network UPS Tools: man pages
 #
 
 # Notes:
@@ -174,6 +174,7 @@ SRC_DEV_PAGES = \
 	nutscan_scan_usb.txt \
 	nutscan_scan_xml_http_range.txt \
 	nutscan_scan_nut.txt \
+	nutscan_scan_nut_simulation.txt \
 	nutscan_scan_avahi.txt \
 	nutscan_scan_ipmi.txt \
 	nutscan_scan_eaton_serial.txt \
@@ -291,6 +292,7 @@ MAN3_DEV_PAGES = \
 	nutscan_scan_usb.3 \
 	nutscan_scan_xml_http_range.3 \
 	nutscan_scan_nut.3 \
+	nutscan_scan_nut_simulation.3 \
 	nutscan_scan_avahi.3 \
 	nutscan_scan_ipmi.3 \
 	nutscan_scan_eaton_serial.3 \
@@ -360,6 +362,7 @@ HTML_DEV_MANS = \
 	nutscan_scan_usb.html \
 	nutscan_scan_xml_http_range.html \
 	nutscan_scan_nut.html \
+	nutscan_scan_nut_simulation.html \
 	nutscan_scan_avahi.html \
 	nutscan_scan_ipmi.html \
 	nutscan_scan_eaton_serial.html \
