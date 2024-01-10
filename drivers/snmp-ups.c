@@ -3509,7 +3509,8 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 		if(!(strcasecmp(su_info_p->OID, ".1.3.6.1.4.1.318.1.1.1.11.1.1.0")))
 		{
 			status = nut_snmp_get_str(su_info_p->OID, buf, sizeof(buf), su_info_p->oid2info);
-			char pwr_status = buf[1];
+			char pwr_status;
+			pwr_status = buf[1];
 			su_status_set(su_info_p, strtol(&pwr_status, NULL, 10));
 			if (status == TRUE)
 				upsdebugx(2, "=> value: %c", pwr_status);

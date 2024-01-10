@@ -24,16 +24,17 @@
  *
  * 
  * 	MODIFIED FOR MGE GALAXY 5500 UPS
+ *  BY Mateusz Jastrzebski <jasmati09@gmail.com>
  * 
  */
 
 #include "apcgalaxy5500-mib.h"
 
-#define APCC_MIB_VERSION	"1.0"
+#define APCC_G5500_MIB_VERSION	"1.0"
 
-#define APC_UPS_DEVICE_MODEL	".1.3.6.1.4.1.318.1.1.1.1.1.1.0"
+#define APC_G5500_UPS_DEVICE_MODEL	".1.3.6.1.4.1.318.1.1.1.1.1.1.0"
 /* FIXME: Find a better oid_auto_check vs sysOID for this one? */
-#define APC_UPS_SYSOID	APC_UPS_DEVICE_MODEL
+#define APC_G5500_UPS_SYSOID	APC_G5500_UPS_DEVICE_MODEL
 
 /* Other APC sysOID:
  *
@@ -66,39 +67,39 @@
 
 
 
-#define APCC_OID_BATT_STATUS	".1.3.6.1.4.1.318.1.1.1.2.1.1.0"
-/* Defines for APCC_OID_BATT_STATUS */
-static info_lkp_t apcc_batt_info[] = {
+#define APCC_G5500_OID_BATT_STATUS	".1.3.6.1.4.1.318.1.1.1.2.1.1.0"
+/* Defines for APCC_G5500_OID_BATT_STATUS */
+static info_lkp_t APCC_G5500_batt_info[] = {
 	{ 1, "", NULL, NULL },	/* unknown */
 	{ 2, "", NULL, NULL },	/* batteryNormal */
 	{ 3, "LB", NULL, NULL },	/* batteryLow */
 	{ 0, NULL, NULL, NULL }
 } ;
 
-#define APCC_OID_POWER_STATUS	".1.3.6.1.4.1.318.1.1.1.11.1.1.0"
-/* Defines for APCC_OID_POWER_STATUS */
-static info_lkp_t apcc_pwr_info[] = {
+#define APCC_G5500_OID_POWER_STATUS	".1.3.6.1.4.1.318.1.1.1.11.1.1.0"
+/* Defines for APCC_G5500_OID_POWER_STATUS */
+static info_lkp_t APCC_G5500_pwr_info[] = {
    { 0, "OL", NULL, NULL},
    { 1, "OB", NULL, NULL}
 } ;
 
-#define APCC_OID_CAL_RESULTS	".1.3.6.1.4.1.318.1.1.1.7.2.6.0"
-static info_lkp_t apcc_cal_info[] = {
+#define APCC_G5500_OID_CAL_RESULTS	".1.3.6.1.4.1.318.1.1.1.7.2.6.0"
+static info_lkp_t APCC_G5500_cal_info[] = {
     { 1, "", NULL, NULL },          /* Calibration Successful */
     { 2, "", NULL, NULL },          /* Calibration not done, battery capacity below 100% */
     { 3, "CAL", NULL, NULL },       /* Calibration in progress */
     { 0, NULL, NULL, NULL }
 };
 
-#define APCC_OID_NEEDREPLBATT	".1.3.6.1.4.1.318.1.1.1.2.2.4.0"
-static info_lkp_t apcc_battrepl_info[] = {
+#define APCC_G5500_OID_NEEDREPLBATT	".1.3.6.1.4.1.318.1.1.1.2.2.4.0"
+static info_lkp_t APCC_G5500_battrepl_info[] = {
     { 1, "", NULL, NULL },          /* No battery needs replacing */
     { 2, "RB", NULL, NULL },        /* Batteries need to be replaced */
     { 0, NULL, NULL, NULL }
 };
 
-#define APCC_OID_TESTDIAGRESULTS ".1.3.6.1.4.1.318.1.1.1.7.2.3.0"
-static info_lkp_t apcc_testdiag_results[] = {
+#define APCC_G5500_OID_TESTDIAGRESULTS ".1.3.6.1.4.1.318.1.1.1.7.2.3.0"
+static info_lkp_t APCC_G5500_testdiag_results[] = {
     { 1, "Ok", NULL, NULL },
     { 2, "Failed", NULL, NULL },
     { 3, "InvalidTest", NULL, NULL },
@@ -106,8 +107,8 @@ static info_lkp_t apcc_testdiag_results[] = {
     { 0, NULL, NULL, NULL }
 };
 
-#define APCC_OID_SENSITIVITY ".1.3.6.1.4.1.318.1.1.1.5.2.7.0"
-static info_lkp_t apcc_sensitivity_modes[] = {
+#define APCC_G5500_OID_SENSITIVITY ".1.3.6.1.4.1.318.1.1.1.5.2.7.0"
+static info_lkp_t APCC_G5500_sensitivity_modes[] = {
     { 1, "auto", NULL, NULL },
     { 2, "low", NULL, NULL },
     { 3, "medium", NULL, NULL },
@@ -115,8 +116,8 @@ static info_lkp_t apcc_sensitivity_modes[] = {
     { 0, NULL, NULL, NULL }
 };
 
-#define APCC_OID_TRANSFERREASON "1.3.6.1.4.1.318.1.1.1.3.2.5.0"
-static info_lkp_t apcc_transfer_reasons[] = {
+#define APCC_G5500_OID_TRANSFERREASON "1.3.6.1.4.1.318.1.1.1.3.2.5.0"
+static info_lkp_t APCC_G5500_transfer_reasons[] = {
     { 1, "noTransfer", NULL, NULL },
     { 2, "highLineVoltage", NULL, NULL },
     { 3, "brownout", NULL, NULL },
@@ -132,13 +133,13 @@ static info_lkp_t apcc_transfer_reasons[] = {
 /* --- */
 
 /* commands */
-#define APCC_OID_REBOOT			".1.3.6.1.4.1.318.1.1.1.6.2.2"
-#define APCC_REBOOT_DO			2
-#define APCC_REBOOT_GRACEFUL	3
+#define APCC_G5500_OID_REBOOT			".1.3.6.1.4.1.318.1.1.1.6.2.2"
+#define APCC_G5500_REBOOT_DO			2
+#define APCC_G5500_REBOOT_GRACEFUL	3
 #if 0	/* not used. */
-	#define APCC_OID_SLEEP		".1.3.6.1.4.1.318.1.1.1.6.2.3"
-	#define APCC_SLEEP_ON			"2"
-	#define APCC_SLEEP_GRACEFUL		"3"
+	#define APCC_G5500_OID_SLEEP		".1.3.6.1.4.1.318.1.1.1.6.2.3"
+	#define APCC_G5500_SLEEP_ON			"2"
+	#define APCC_G5500_SLEEP_GRACEFUL		"3"
 #endif
 
 
@@ -186,18 +187,18 @@ static snmp_info_t apcgalaxy5500_mib[] = {
 	{ "input.frequency", 0, 1, ".1.3.6.1.4.1.318.1.1.1.3.2.4.0", "", SU_FLAG_OK, NULL },
 	{ "input.transfer.low", ST_FLAG_STRING | ST_FLAG_RW, 3, ".1.3.6.1.4.1.318.1.1.1.5.2.3.0", "", SU_TYPE_INT | SU_FLAG_OK, NULL },
 	{ "input.transfer.high", ST_FLAG_STRING | ST_FLAG_RW, 3, ".1.3.6.1.4.1.318.1.1.1.5.2.2.0", "", SU_TYPE_INT | SU_FLAG_OK, NULL },
-	{ "input.transfer.reason", ST_FLAG_STRING, 1, APCC_OID_TRANSFERREASON, "", SU_TYPE_INT | SU_FLAG_OK, apcc_transfer_reasons },
-	{ "input.sensitivity", ST_FLAG_STRING | ST_FLAG_RW, 1, APCC_OID_SENSITIVITY, "", SU_TYPE_INT | SU_FLAG_OK, apcc_sensitivity_modes },
+	{ "input.transfer.reason", ST_FLAG_STRING, 1, APCC_G5500_OID_TRANSFERREASON, "", SU_TYPE_INT | SU_FLAG_OK, APCC_G5500_transfer_reasons },
+	{ "input.sensitivity", ST_FLAG_STRING | ST_FLAG_RW, 1, APCC_G5500_OID_SENSITIVITY, "", SU_TYPE_INT | SU_FLAG_OK, APCC_G5500_sensitivity_modes },
 	{ "ups.power", 0, 1, ".1.3.6.1.4.1.318.1.1.1.4.2.9.0", "", SU_FLAG_OK, NULL },
 	{ "ups.realpower", 0, 1, ".1.3.6.1.4.1.318.1.1.1.4.2.8.0", "", SU_FLAG_OK, NULL },
-	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, APCC_OID_POWER_STATUS, "OFF",
-		SU_FLAG_OK | SU_STATUS_PWR, apcc_pwr_info },
-	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, APCC_OID_BATT_STATUS, "",
-		SU_FLAG_OK | SU_STATUS_BATT, apcc_batt_info },
-	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, APCC_OID_CAL_RESULTS, "",
-		SU_FLAG_OK | SU_STATUS_CAL, apcc_cal_info },
-	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, APCC_OID_NEEDREPLBATT, "",
-		SU_FLAG_OK | SU_STATUS_RB, apcc_battrepl_info },
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, APCC_G5500_OID_POWER_STATUS, "OFF",
+		SU_FLAG_OK | SU_STATUS_PWR, APCC_G5500_pwr_info },
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, APCC_G5500_OID_BATT_STATUS, "",
+		SU_FLAG_OK | SU_STATUS_BATT, APCC_G5500_batt_info },
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, APCC_G5500_OID_CAL_RESULTS, "",
+		SU_FLAG_OK | SU_STATUS_CAL, APCC_G5500_cal_info },
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, APCC_G5500_OID_NEEDREPLBATT, "",
+		SU_FLAG_OK | SU_STATUS_RB, APCC_G5500_battrepl_info },
 	{ "ups.temperature", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.2.3.2.0", "", SU_FLAG_OK|SU_FLAG_UNIQUE, NULL },
 	{ "ups.temperature", 0, 1, ".1.3.6.1.4.1.318.1.1.1.2.2.2.0", "", SU_FLAG_OK, NULL },
 	{ "ups.load", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.4.3.3.0", "", SU_FLAG_OK|SU_FLAG_NEGINVALID|SU_FLAG_UNIQUE, NULL },
@@ -220,7 +221,7 @@ static snmp_info_t apcgalaxy5500_mib[] = {
 	{ "battery.packs.bad", 0, 1, ".1.3.6.1.4.1.318.1.1.1.2.2.6.0", "", SU_FLAG_OK, NULL },
 	{ "battery.date", ST_FLAG_STRING | ST_FLAG_RW, 8, ".1.3.6.1.4.1.318.1.1.1.2.1.3.0", "", SU_FLAG_OK | SU_FLAG_STATIC, NULL },
 	{ "ups.id", ST_FLAG_STRING | ST_FLAG_RW, 8, ".1.3.6.1.4.1.318.1.1.1.1.1.2.0", "", SU_FLAG_OK | SU_FLAG_STATIC, NULL },
-	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, APCC_OID_TESTDIAGRESULTS, "", SU_FLAG_OK, apcc_testdiag_results },
+	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, APCC_G5500_OID_TESTDIAGRESULTS, "", SU_FLAG_OK, APCC_G5500_testdiag_results },
 	{ "ups.test.date", ST_FLAG_STRING | ST_FLAG_RW, 8, ".1.3.6.1.4.1.318.1.1.1.7.2.4.0", "", SU_FLAG_OK | SU_FLAG_STATIC, NULL },
 	{ "output.voltage", 0, 0.1, ".1.3.6.1.4.1.318.1.1.1.4.3.1.0", "", SU_FLAG_OK | SU_FLAG_UNIQUE, NULL },
 	{ "output.voltage", 0, 1, ".1.3.6.1.4.1.318.1.1.1.4.2.1.0", "", SU_FLAG_OK, NULL },
@@ -279,7 +280,7 @@ static snmp_info_t apcgalaxy5500_mib[] = {
 	{ "load.on", 0, 1, ".1.3.6.1.4.1.318.1.1.1.6.2.6.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
 	{ "shutdown.stayoff", 0, 1, ".1.3.6.1.4.1.318.1.1.1.6.2.1.0", "3", SU_TYPE_CMD | SU_FLAG_OK, NULL },
 
-/*	{ CMD_SDRET, 0, APCC_REBOOT_GRACEFUL, APCC_OID_REBOOT, "", SU_TYPE_CMD | SU_FLAG_OK, NULL }, */
+/*	{ CMD_SDRET, 0, APCC_G5500_REBOOT_GRACEFUL, APCC_G5500_OID_REBOOT, "", SU_TYPE_CMD | SU_FLAG_OK, NULL }, */
 
 	{ "shutdown.return", 0, 1, ".1.3.6.1.4.1.318.1.1.1.6.1.1.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
 	{ "test.failure.start", 0, 1, ".1.3.6.1.4.1.318.1.1.1.6.2.4.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
@@ -295,9 +296,4 @@ static snmp_info_t apcgalaxy5500_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	apcgalaxy5500 = { "apcG5500", APCC_MIB_VERSION, APCC_OID_POWER_STATUS, APC_UPS_DEVICE_MODEL, apcgalaxy5500_mib, APC_UPS_SYSOID, NULL };
-
-
-/*
-vim:ts=4:sw=4:et:
-*/
+mib2nut_info_t	apcgalaxy5500 = { "apcG5500", APCC_G5500_MIB_VERSION, APCC_G5500_OID_POWER_STATUS, APC_G5500_UPS_DEVICE_MODEL, apcgalaxy5500_mib, APC_G5500_UPS_SYSOID, NULL };
