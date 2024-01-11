@@ -104,6 +104,12 @@ https://github.com/networkupstools/nut/milestone/10
      up in the link:https://pypi.org/project/PyNUTClient[PyPI repository].
      [#2158]
 
+ - main driver core codebase:
+   * Help users of drivers that can be built to support optionally USB and
+     other media (like `nutdrv_qx` built for serial-only support), and built
+     in fact without USB support but used for USB devices, with some more
+     information to make troubleshooting easier. [#2259]
+
  - powerpanel text driver now handles status responses in any format and should
    support most devices [#2156]
 
