@@ -351,6 +351,31 @@ void storeval(const char *var, char *val)
 	printf("Look in the man page or call this driver with -h for a list of\n");
 	printf("valid variable names and flags.\n");
 
+	if (!strcmp(progname, "nutdrv_qx")) {
+		/* First many entries are from nut_usb_addvars() implementations;
+		 * the latter two (about langid) are from nutdrv_qx.c
+		 */
+		if (!strcmp(var, "vendor")
+		||  !strcmp(var, "product")
+		||  !strcmp(var, "serial")
+		||  !strcmp(var, "vendorid")
+		||  !strcmp(var, "productid")
+		||  !strcmp(var, "bus")
+		||  !strcmp(var, "device")
+		||  !strcmp(var, "busport")
+		||  !strcmp(var, "usb_set_altinterface")
+		||  !strcmp(var, "allow_duplicates")
+		||  !strcmp(var, "langid_fix")
+		||  !strcmp(var, "noscanlangid")
+		) {
+			printf("\nNOTE: for driver '%s', options like '%s' are only available\n"
+				"if it was built with USB support. If you are running a custom build of NUT,\n"
+				"please check results of the `configure` checks, and consider an explicit\n"
+				"`--with-usb` option. Also make sure that both libusb library and headers\n"
+				"are installed in your build environment.\n\n", progname, var);
+		}
+	}
+
 	exit(EXIT_SUCCESS);
 }
 
