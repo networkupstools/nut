@@ -289,10 +289,11 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 	if (!scanopts) {
 		default_scanopts.report_bus = 1;
 		default_scanopts.report_busport = 1;
-		/* AQU note: disabled by default, since it may lead to instabilities and
-		   more issues than solutions! */
+		/* AQU note: disabled by default, since it may lead to instabilities
+		 * and give more issues than solutions! */
 		default_scanopts.report_device = 0;
-		/* Generally not useful at the moment, and coded for ups.conf output but not other formats. */
+		/* Generally not useful at the moment, and coded to be commented away
+		 * in formats that support it (e.g. ups.conf) or absent in others. */
 		default_scanopts.report_bcdDevice = 0;
 		scanopts = &default_scanopts;
 	}
@@ -590,37 +591,35 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 					vendor_name = NULL;
 				}
 
-				if (scanopts->report_bus) {
-					nutscan_add_option_to_device(nut_dev,
-						"bus",
-						busname);
-				}
+				nutscan_add_commented_option_to_device(nut_dev,
+					"bus",
+					busname,
+					scanopts->report_bus ? NULL : "");
 
-				if (scanopts->report_device) {
-					nutscan_add_option_to_device(nut_dev,
-						"device",
-						device_port);
-				}
+				nutscan_add_commented_option_to_device(nut_dev,
+					"device",
+					device_port,
+					scanopts->report_device ? NULL : "");
 
 #if WITH_LIBUSB_1_0
-				if (scanopts->report_busport && bus_port) {
-					nutscan_add_option_to_device(nut_dev,
+				if (bus_port) {
+					nutscan_add_commented_option_to_device(nut_dev,
 						"busport",
-						bus_port);
+						bus_port,
+						scanopts->report_busport ? NULL : "");
 					free(bus_port);
 					bus_port = NULL;
 				}
 #endif	/* WITH_LIBUSB_1_0 */
 
 				if (scanopts->report_bcdDevice) {
-					/* Not currently matched by drivers, hence commented for now: */
-					/* AQU notes:
-					   * ups.conf formatted, will cause parsing issues with other formats,
-					   * and currently generally not a useful field! */
+					/* Not currently matched by drivers, hence commented
+					 * for now even if requested via scanopts */
 					sprintf(string, "%04X", bcdDevice);
-					nutscan_add_option_to_device(nut_dev,
-						"###NOTMATCHED-YET###bcdDevice",
-						string);
+					nutscan_add_commented_option_to_device(nut_dev,
+						"bcdDevice",
+						string,
+						"NOTMATCHED-YET");
 				}
 
 				current_nut_dev = nutscan_add_device_to_device(
