@@ -1641,8 +1641,63 @@ int main(int argc, char **argv)
 	const char * cmd = NULL;
 #endif
 
+	const char optstring[] = "+a:s:kDFBd:hx:Lqr:u:g:Vi:c:"
+#ifndef WIN32
+		"P:"
+#endif
+		;
+
 	/* init verbosity from default in common.c (0 probably) */
 	nut_debug_level_args = nut_debug_level;
+
+	/* handle CLI-driven debug level in advance, to trace initialization if needed */
+	while ((i = getopt(argc, argv, optstring)) != -1) {
+		switch (i) {
+			case 'D':
+				/* bump right here, may impact reporting of other CLI args */
+				nut_debug_level++;
+				nut_debug_level_args++;
+				break;
+		}
+	}
+	/* Reset the index, read argv[1] next time (loop below)
+	 * https://pubs.opengroup.org/onlinepubs/9699919799/functions/getopt.html
+	 */
+	optind = 1;
+
+	if (foreground < 0) {
+		/* Guess a default */
+		/* Note: only care about CLI-requested debug verbosity here */
+		if (nut_debug_level > 0 || dump_data) {
+			/* Only flop from default - stay foreground with debug on */
+			foreground = 1;
+		} else {
+			/* Legacy default - stay background and quiet */
+			foreground = 0;
+		}
+	} else {
+		/* Follow explicit user -F/-B request */
+		upsdebugx (0,
+			"Debug level is %d, dump data count is %s, "
+			"but backgrounding mode requested as %s",
+			nut_debug_level,
+			dump_data ? "on" : "off",
+			foreground ? "off" : "on"
+			);
+	}
+
+	{ /* scoping */
+		char *s = getenv("NUT_DEBUG_LEVEL");
+		int l;
+		if (s && str_to_int(s, &l, 10)) {
+			if (l > 0 && nut_debug_level_args < 1) {
+				upslogx(LOG_INFO, "Defaulting debug verbosity to NUT_DEBUG_LEVEL=%d "
+					"since none was requested by command-line options", l);
+				nut_debug_level = l;
+				nut_debug_level_args = l;
+			}	/* else follow -D settings */
+		}	/* else nothing to bother about */
+	}
 
 	dstate_setinfo("driver.state", "init.starting");
 
@@ -1685,11 +1740,7 @@ int main(int argc, char **argv)
 	/* build the driver's extra (-x) variable table */
 	upsdrv_makevartable();
 
-	while ((i = getopt(argc, argv, "+a:s:kFBDd:hx:Lqr:u:g:Vi:c:"
-#ifndef WIN32
-		"P:"
-#endif
-	)) != -1) {
+	while ((i = getopt(argc, argv, optstring)) != -1) {
 		switch (i) {
 			case 'a':
 				if (upsname)
@@ -1724,9 +1775,7 @@ int main(int argc, char **argv)
 				foreground = 0;
 				break;
 			case 'D':
-				/* bump right here, may impact reporting of other CLI args */
-				nut_debug_level++;
-				nut_debug_level_args++;
+				/* Processed above */
 				break;
 			case 'd':
 				dump_data = atoi(optarg);
@@ -1851,40 +1900,6 @@ int main(int argc, char **argv)
 				fatalx(EXIT_FAILURE,
 					"Error: unknown option -%c. Try -h for help.", i);
 		}
-	}
-
-	if (foreground < 0) {
-		/* Guess a default */
-		/* Note: only care about CLI-requested debug verbosity here */
-		if (nut_debug_level > 0 || dump_data) {
-			/* Only flop from default - stay foreground with debug on */
-			foreground = 1;
-		} else {
-			/* Legacy default - stay background and quiet */
-			foreground = 0;
-		}
-	} else {
-		/* Follow explicit user -F/-B request */
-		upsdebugx (0,
-			"Debug level is %d, dump data count is %s, "
-			"but backgrounding mode requested as %s",
-			nut_debug_level,
-			dump_data ? "on" : "off",
-			foreground ? "off" : "on"
-			);
-	}
-
-	{ /* scoping */
-		char *s = getenv("NUT_DEBUG_LEVEL");
-		int l;
-		if (s && str_to_int(s, &l, 10)) {
-			if (l > 0 && nut_debug_level_args < 1) {
-				upslogx(LOG_INFO, "Defaulting debug verbosity to NUT_DEBUG_LEVEL=%d "
-					"since none was requested by command-line options", l);
-				nut_debug_level = l;
-				nut_debug_level_args = l;
-			}	/* else follow -D settings */
-		}	/* else nothing to bother about */
 	}
 
 	/* Since debug mode dumps from drivers are often posted to mailing list
