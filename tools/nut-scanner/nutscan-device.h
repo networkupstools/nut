@@ -64,6 +64,7 @@ extern const char * nutscan_device_type_lstrings[TYPE_END];
 typedef struct nutscan_options {
 	char *		option;
 	char *		value;
+	char *		comment_tag;	/* if not NULL, this option may be not shown in some output formats, or represented as a comment with this tag in others (and empty string may also be used) */
 	struct nutscan_options*	next;
 } nutscan_options_t;
 
@@ -79,6 +80,8 @@ typedef struct nutscan_device {
 
 nutscan_device_t * nutscan_new_device(void);
 void nutscan_free_device(nutscan_device_t * device);
+void nutscan_add_commented_option_to_device(nutscan_device_t * device, char * option, char * value, char * comment_tag);
+/* This method calls the one above, using a NULL comment_tag */
 void nutscan_add_option_to_device(nutscan_device_t * device, char * option, char * value);
 nutscan_device_t * nutscan_add_device_to_device(nutscan_device_t * first, nutscan_device_t * second);
 
