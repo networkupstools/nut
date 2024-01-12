@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3426 utf-8
+personal_ws-1.1 en 3427 utf-8
 AAC
 AAS
 ABI
@@ -2638,6 +2638,7 @@ numq
 nutclient
 nutclientmem
 nutdev
+nutdevN
 nutdrv
 nutmon
 nutscan

@@ -95,6 +95,8 @@ void nut_usb_addvars(void)
 	addvar(VAR_VALUE, "usb_set_altinterface", "Force redundant call to usb_set_altinterface() (value=bAlternateSetting; default=0)");
 
 	dstate_setinfo("driver.version.usb", "libusb-0.1 (or compat)");
+
+	upsdebugx(1, "Using USB implementation: %s", dstate_getinfo("driver.version.usb"));
 }
 
 /* From usbutils: workaround libusb (0.1) API goofs:

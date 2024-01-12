@@ -303,8 +303,16 @@ generic_modbus_SOURCES = generic_modbus.c
 generic_modbus_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
 adelsystem_cbi_SOURCES = adelsystem_cbi.c
 adelsystem_cbi_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
-apc_modbus_SOURCES = apc_modbus.c $(LIBUSB_IMPL) hidparser.c usb-common.c
-apc_modbus_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS) $(LIBUSB_LIBS)
+
+# APC Modbus driver (with support of modbus over different media)
+# Note that a version of libmodbus built with USB support is also needed
+# for USB connections. Legacy versions work for Serial and TCP links.
+apc_modbus_SOURCES = apc_modbus.c
+apc_modbus_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
+if WITH_USB
+  apc_modbus_SOURCES += $(LIBUSB_IMPL) hidparser.c usb-common.c
+  apc_modbus_LDADD += $(LIBUSB_LIBS)
+endif
 
 # Huawei UPS2000 driver
 # (this is both a Modbus and a serial driver)
