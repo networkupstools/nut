@@ -93,6 +93,8 @@ void nut_usb_addvars(void)
 #else  /* no LIBUSB_API_VERSION */
 	dstate_setinfo("driver.version.usb", "libusb-%u.%u.%u", v->major, v->minor, v->micro);
 #endif /* LIBUSB_API_VERSION */
+
+	upsdebugx(1, "Using USB implementation: %s", dstate_getinfo("driver.version.usb"));
 }
 
 /* invoke matcher against device */
