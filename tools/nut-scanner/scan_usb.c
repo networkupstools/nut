@@ -286,18 +286,6 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 
 	nutscan_usb_t	default_scanopts;
 
-	if (!scanopts) {
-		default_scanopts.report_bus = 1;
-		default_scanopts.report_busport = 1;
-		/* AQU note: disabled by default, since it may lead to instabilities
-		 * and give more issues than solutions! */
-		default_scanopts.report_device = 0;
-		/* Generally not useful at the moment, and coded to be commented away
-		 * in formats that support it (e.g. ups.conf) or absent in others. */
-		default_scanopts.report_bcdDevice = 0;
-		scanopts = &default_scanopts;
-	}
-
 #if WITH_LIBUSB_1_0
 	libusb_device *dev;
 	libusb_device **devlist;
@@ -322,6 +310,18 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 
 	if (!nutscan_avail_usb) {
 		return NULL;
+	}
+
+	if (!scanopts) {
+		default_scanopts.report_bus = 1;
+		default_scanopts.report_busport = 1;
+		/* AQU note: disabled by default, since it may lead to instabilities
+		 * and give more issues than solutions! */
+		default_scanopts.report_device = 0;
+		/* Generally not useful at the moment, and coded to be commented away
+		 * in formats that support it (e.g. ups.conf) or absent in others. */
+		default_scanopts.report_bcdDevice = 0;
+		scanopts = &default_scanopts;
 	}
 
 	/* libusb base init */
