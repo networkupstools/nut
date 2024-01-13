@@ -113,6 +113,17 @@ Here is an example to setup a device simulation:
 
 For more information, refer to linkman:dummy-ups[8] manual page.
 
+[[dev-simu-disco]]
+
+Simulated devices discovery
+---------------------------
+
+Any simulation file that is saved in the sysconfig directory can be
+automatically discovered and configured using nut-scanner:
++
+	$ nut-scanner -n
+	$ nut-scanner --nut_simulation_scan
++
 
 [[dev-recording]]
 

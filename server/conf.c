@@ -415,7 +415,7 @@ void load_upsdconf(int reloading)
 	if (reloading) {
 		if (nut_debug_level_global > -1) {
 			upslogx(LOG_INFO,
-				"Applying debug_min=%d from upsd.conf",
+				"Applying DEBUG_MIN %d from upsd.conf",
 				nut_debug_level_global);
 			nut_debug_level = nut_debug_level_global;
 		} else {
