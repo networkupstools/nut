@@ -389,7 +389,7 @@ HTML_DEV_MANS = \
 	skel.html
 
 nutscan_add_commented_option_to_device.html: nutscan_add_option_to_device.html
-	ln -s $< $@
+	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
 
 # Drivers related manpages
 
