@@ -112,7 +112,7 @@ static char * start_ip = NULL;
 static char * end_ip = NULL;
 static char * port = NULL;
 static char * serial_ports = NULL;
-static int link_detail_level = -1;
+static int cli_link_detail_level = -1;
 
 #ifdef HAVE_PTHREAD
 static pthread_t thread[TYPE_END];
@@ -685,8 +685,8 @@ int main(int argc, char *argv[])
 				}
 				allow_usb = 1;
 				/* NOTE: Starts as -1, so the first -U sets it to 0 (minimal detail) */
-				if (link_detail_level < 3)
-					link_detail_level++;
+				if (cli_link_detail_level < 3)
+					cli_link_detail_level++;
 				break;
 			case 'M':
 				if (!nutscan_avail_xml_http) {
@@ -825,13 +825,13 @@ display_help:
 	if (allow_usb && nutscan_avail_usb) {
 		upsdebugx(quiet, "Scanning USB bus.");
 #ifdef HAVE_PTHREAD
-		if (pthread_create(&thread[TYPE_USB], NULL, run_usb, &link_detail_level)) {
+		if (pthread_create(&thread[TYPE_USB], NULL, run_usb, &cli_link_detail_level)) {
 			upsdebugx(1, "pthread_create returned an error; disabling this scan mode");
 			nutscan_avail_usb = 0;
 		}
 #else
 		upsdebugx(1, "USB SCAN: no pthread support, starting nutscan_scan_usb...");
-		dev[TYPE_USB] = nutscan_scan_usb(&link_detail_level);
+		dev[TYPE_USB] = nutscan_scan_usb(&cli_link_detail_level);
 #endif /* HAVE_PTHREAD */
 	} else {
 		upsdebugx(1, "USB SCAN: not requested, SKIPPED");
