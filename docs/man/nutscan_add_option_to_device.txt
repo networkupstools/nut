@@ -4,23 +4,24 @@ NUTSCAN_ADD_OPTION_TO_DEVICE(3)
 NAME
 ----
 
-nutscan_add_option_to_device - Add enabled option data to the specified device.
+nutscan_add_option_to_device, nutscan_add_commented_option_to_device - Add
+option data to the specified device.
 
-nutscan_add_commented_option_to_device - Add option data to the specified device
-with an optional comment tag for options suggested but not currently enabled for
-actual use.
 
 SYNOPSIS
 --------
 
  #include <nut-scan.h>
 
+ /* Add enabled option data to the specified device. */
  void nutscan_add_option_to_device(
         nutscan_device_t * device,
         char * option_name,
         char * value);
 
- /* Since libnutscan version 2.5.0 */
+ /* Since libnutscan version 2.5.0:
+  * Add option data to the specified device with an optional comment tag
+  * for options suggested, but not currently enabled for actual use. */
  void nutscan_add_commented_option_to_device(
         nutscan_device_t * device,
         char * option_name,

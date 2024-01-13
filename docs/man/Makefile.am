@@ -305,6 +305,7 @@ MAN3_DEV_PAGES = \
 	nutscan_new_device.3 \
 	nutscan_free_device.3 \
 	nutscan_add_option_to_device.3 \
+	nutscan_add_commented_option_to_device.3 \
 	nutscan_add_device_to_device.3 \
 	nutscan_get_serial_ports_list.3 \
 	nutscan_init.3
@@ -313,6 +314,10 @@ upscli_readline_timeout.3: upscli_readline.3
 	touch $@
 
 upscli_sendline_timeout.3: upscli_sendline.3
+	touch $@
+
+# Alias page for one text describing two commands:
+nutscan_add_commented_option_to_device.3: nutscan_add_option_to_device.3
 	touch $@
 
 MAN1_DEV_PAGES = \
@@ -375,6 +380,7 @@ HTML_DEV_MANS = \
 	nutscan_new_device.html \
 	nutscan_free_device.html \
 	nutscan_add_option_to_device.html \
+	nutscan_add_commented_option_to_device.html \
 	nutscan_add_device_to_device.html \
 	nutscan_get_serial_ports_list.html \
 	nutscan_init.html \
@@ -382,6 +388,8 @@ HTML_DEV_MANS = \
 	sockdebug.html \
 	skel.html
 
+nutscan_add_commented_option_to_device.html: nutscan_add_option_to_device.html
+	ln -s $< $@
 
 # Drivers related manpages
 
@@ -890,7 +898,7 @@ check-html-man: $(HTML_MANS)
 	@FAILED=""; CHECKED=0; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	for F in $(HTML_MANS) ; do \
 	    CHECKED="`expr $$CHECKED + 1`"; \
-	    test -s "$$F" && { file "$$F" | $(EGREP) -i '(XML|HTML.*document)' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
+	    test -s "$$F" && { file "$$F" | $(EGREP) -i '(XML|HTML.*document|symbolic link)' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
 	done; if test -n "$$FAILED" ; then \
 	    echo "FAILED HTML-man sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
 	fi; echo "PASSED HTML-man sanity check (checked $$CHECKED files)"; exit 0
