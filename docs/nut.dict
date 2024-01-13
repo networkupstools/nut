@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3421 utf-8
+personal_ws-1.1 en 3424 utf-8
 AAC
 AAS
 ABI
@@ -2173,6 +2173,7 @@ hostnames
 hostsfile
 hotplug
 hotplugging
+hovercharge
 hpe
 href
 htaccess
@@ -2636,6 +2637,7 @@ numq
 nutclient
 nutclientmem
 nutdev
+nutdevN
 nutdrv
 nutmon
 nutscan
@@ -2661,6 +2663,7 @@ oldmge
 oldnut
 omnios
 onbatt
+onbattery
 onbattwarn
 onclick
 ondelay

@@ -19,6 +19,10 @@ DESCRIPTION
 *nut-scanner* scans available communication buses and displays any
 NUT-compatible devices it has found.
 
+*nut-scanner* can also display the detected devices in various formats,
+including ups.conf, and ensures that the generated devices name are unique
+across buses.
+
 INSTALLATION
 ------------
 
@@ -67,6 +71,9 @@ interfaces to retrieve XML/HTTP capable devices. No IP required in this mode.
 *-O* | *--oldnut_scan*::
 Scan NUT devices (i.e. upsd daemon) on IP ranging from 'start IP' to 'end IP'.
 
+*-n* | *--nut_simulation_scan*::
+Scan NUT simulated devices (.dev files in $CONFPATH).
+
 *-A* | *--avahi_scan*::
 Scan NUT servers using Avahi request on the current network interfaces.
 No IP required.
@@ -87,7 +94,6 @@ This option must be requested explicitly, even for a complete scan.
 ports using 'X-Y', where X and Y are characters referring to the port number.
 - a single port name.
 - a list of ports name, coma separated, like '/dev/ttyS1,/dev/ttyS4'.
-
 
 NETWORK OPTIONS
 ---------------
@@ -216,35 +222,65 @@ EXAMPLES
 
 To scan USB devices only:
 
-*nut-scanner -U*
+----
+:; nut-scanner -U
+
+[nutdev-usb1]
+        driver = "snmp-ups"
+        port = "192.168.0.42"
+----
 
 To scan SNMP v1 device with public community on address range 192.168.0.0
 to 192.168.0.255:
 
-*nut-scanner -S -s 192.168.0.0 -e 192.168.0.255*
+----
+:; nut-scanner -S -s 192.168.0.0 -e 192.168.0.255
+
+[nutdev-snmp1]
+        driver = "snmp-ups"
+        port = "192.168.0.42"
+----
 
 The same using CIDR notation:
 
-*nut-scanner -S -m 192.168.0.0/24*
+----
+:; nut-scanner -S -m 192.168.0.0/24
+
+[nutdev-snmp1]
+        driver = "snmp-ups"
+        port = "192.168.0.42"
+----
 
 To scan NUT servers with a timeout of 10 seconds on IP range 192.168.0.0
 to 192.168.0.127 using CIDR notation:
 
-*nut-scanner -O -t 10 -m 192.168.0.0/25*
+----
+:; nut-scanner -O -t 10 -m 192.168.0.0/25
+
+[nutdev-nut1]
+        driver = "dummy-ups"
+        port = "dummy-test@192.168.1.28"
+----
 
 To scan for power supplies, through IPMI (1.5 mode) over the network,
 on address range 192.168.0.0 to 192.168.0.255 using CIDR notation:
 
-*nut-scanner -I -m 192.168.0.0/24 -b username -B password*
+----
+:; nut-scanner -I -m 192.168.0.0/24 -b username -B password
+----
 
-To scan for Eaton serial devices on ports 0 and 1 (/dev/ttyS0,
-/dev/ttyUSB0, /dev/ttyS1 and /dev/ttyUSB1 on Linux):
+To scan for Eaton serial devices on ports 0 and 1 (`/dev/ttyS0`,
+`/dev/ttyUSB0`, `/dev/ttyS1` and `/dev/ttyUSB1` on Linux):
 
-*nut-scanner --eaton_serial 0-1*
+----
+:; nut-scanner --eaton_serial 0-1
+----
 
-To scan for Eaton serial devices on ports 1 and 2 (COM1 and COM2 on Windows):
+To scan for Eaton serial devices on ports 1 and 2 (`COM1` and `COM2` on Windows):
 
-*nut-scanner --eaton_serial 1-2*
+----
+:; nut-scanner --eaton_serial 1-2
+----
 
 SEE ALSO
 --------

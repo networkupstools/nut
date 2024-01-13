@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2011 - 2024 Arnaud Quette (Design and part of implementation)
  *  Copyright (C) 2011 - EATON
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -19,6 +20,7 @@
 /*! \file nutscan-device.h
     \brief definition of a container describing a NUT discovered device
     \author Frederic Bohe <fredericbohe@eaton.com>
+	\author Arnaud Quette <arnaudquette@free.fr>
 */
 
 #ifndef SCAN_DEVICE
@@ -39,6 +41,8 @@ extern "C" {
  */
 #define nutscan_device_type_string(type) \
 	(assert(0 < (type) && (type) < TYPE_END), nutscan_device_type_strings[type - 1])
+#define nutscan_device_type_lstring(type) \
+	(assert(0 < (type) && (type) < TYPE_END), nutscan_device_type_lstrings[type - 1])
 
 typedef enum nutscan_device_type {
 	TYPE_NONE = 0,
@@ -46,6 +50,7 @@ typedef enum nutscan_device_type {
 	TYPE_SNMP,
 	TYPE_XML,
 	TYPE_NUT,
+	TYPE_NUT_SIMULATION,
 	TYPE_IPMI,
 	TYPE_AVAHI,
 	TYPE_EATON_SERIAL,
@@ -53,7 +58,8 @@ typedef enum nutscan_device_type {
 } nutscan_device_type_t;
 
 /** Device type -> string mapping */
-extern const char * nutscan_device_type_strings[TYPE_END - 1];
+extern const char * nutscan_device_type_strings[TYPE_END];
+extern const char * nutscan_device_type_lstrings[TYPE_END];
 
 typedef struct nutscan_options {
 	char *		option;
