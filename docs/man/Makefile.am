@@ -380,13 +380,17 @@ HTML_DEV_MANS = \
 	nutscan_new_device.html \
 	nutscan_free_device.html \
 	nutscan_add_option_to_device.html \
-	nutscan_add_commented_option_to_device.html \
 	nutscan_add_device_to_device.html \
 	nutscan_get_serial_ports_list.html \
 	nutscan_init.html \
 	libupsclient-config.html \
 	sockdebug.html \
 	skel.html
+
+# Can't make this work on all make implementations at once, so disabled for now
+# Anyway it would be the same man-like page for several functions
+HTML_DEV_MANS_FICTION = \
+	nutscan_add_commented_option_to_device.html
 
 nutscan_add_commented_option_to_device.html: nutscan_add_option_to_device.html
 	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
