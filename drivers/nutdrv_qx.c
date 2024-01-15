@@ -2054,7 +2054,7 @@ static int	armac_command(const char *cmd, char *buf, size_t buflen)
 				"interrupt read error: %s (%d)",
 				ret ? nut_usb_strerror(ret) : "timeout",
 				ret);
-			return ret;
+			return ret < 0 ? ret : (int)bufpos;
 		}
 
 		upsdebugx(4,
