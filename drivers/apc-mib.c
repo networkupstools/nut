@@ -26,7 +26,7 @@
 
 #include "apc-mib.h"
 
-#define APCC_MIB_VERSION	"1.6"
+#define APCC_MIB_VERSION	"1.7"
 
 #define APC_UPS_DEVICE_MODEL	".1.3.6.1.4.1.318.1.1.1.1.1.1.0"
 /* FIXME: Find a better oid_auto_check vs sysOID for this one? */
@@ -67,6 +67,8 @@ static info_lkp_t apcc_batt_info[] = {
 	{ 1, "", NULL, NULL },	/* unknown */
 	{ 2, "", NULL, NULL },	/* batteryNormal */
 	{ 3, "LB", NULL, NULL },	/* batteryLow */
+	{ 4, "LB", NULL, NULL },	/* batteryInFaultCondition */
+	{ 5, "LB", NULL, NULL },	/* noBatteryPresent */
 	{ 0, NULL, NULL, NULL }
 } ;
 
@@ -85,6 +87,22 @@ static info_lkp_t apcc_pwr_info[] = {
     { 10, "BYPASS", NULL, NULL },   /* hardwareFailureBypass */
     { 11, "OFF", NULL, NULL },      /* sleepingUntilPowerReturn */
     { 12, "OL TRIM", NULL, NULL },     /* onSmartTrim */
+    { 13, "OL ECO", NULL, NULL },   /* ecoMode */
+    { 14, "OL", NULL, NULL },       /* hotStandby */
+    { 15, "OL", NULL, NULL },       /* onBatteryTest */
+    { 16, "BYPASS", NULL, NULL },   /* emergencyStaticBypass */
+    { 17, "BYPASS", NULL, NULL },   /* staticBypassStandby */
+    { 18, "", NULL, NULL },         /* powerSavingMode */
+    { 19, "OL", NULL, NULL },       /* spotMode */
+    { 20, "OL ECO", NULL, NULL },   /* eConversion */
+    { 21, "OL", NULL, NULL },       /* chargerSpotmode */
+    { 22, "OL", NULL, NULL },       /* inverterSpotmode */
+    { 23, "", NULL, NULL },         /* activeLoad */
+    { 24, "OL", NULL, NULL },       /* batteryDischargeSpotmode */
+    { 25, "OL", NULL, NULL },       /* inverterStandby */
+    { 26, "", NULL, NULL },         /* chargerOnly */
+    { 27, "", NULL, NULL },         /* distributedEnergyReserve */
+    { 28, "OL", NULL, NULL },       /* selfTest */
     { 0, NULL, NULL, NULL }
 } ;
 
@@ -93,6 +111,9 @@ static info_lkp_t apcc_cal_info[] = {
     { 1, "", NULL, NULL },          /* Calibration Successful */
     { 2, "", NULL, NULL },          /* Calibration not done, battery capacity below 100% */
     { 3, "CAL", NULL, NULL },       /* Calibration in progress */
+    { 4, "", NULL, NULL },          /* Calibration not done, refused */
+    { 5, "", NULL, NULL },          /* Calibration canceled by user or error */
+    { 6, "", NULL, NULL },          /* Calibration pending, about to start */
     { 0, NULL, NULL, NULL }
 };
 
