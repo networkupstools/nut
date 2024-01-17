@@ -2124,7 +2124,7 @@ static int	armac_command(const char *cmd, char *buf, size_t buflen)
 	}
 end_of_message:
 
-	if (bufpos + 6 >= buflen) {
+	if (bufpos + read_size >= buflen) {
 		upsdebugx(2, "Protocol error, too much data read.");
 		return -1;
 	}
