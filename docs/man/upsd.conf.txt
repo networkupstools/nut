@@ -144,6 +144,9 @@ Specify the path of the database directory.
 When compiled with SSL support with NSS backend, you can specify the
 certificate name to retrieve from database to authenticate itself and
 the password required to access certificate related private key.
++
+NOTE: Be sure to enclose "certificate name" in double-quotes if you
+are using a value with spaces in it.
 
 "CERTREQUEST 'certificate request level'"::
 

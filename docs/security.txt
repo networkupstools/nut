@@ -569,7 +569,7 @@ Edit the upsd.conf to tell where find the certificate database:
 Also tell which is the certificate to send to clients to authenticate itself
 and the password to decrypt private key associated to certificate:
 
-	CERTIDENT 'certificate name' 'database password'
+	CERTIDENT "certificate name" "database password"
 
 NOTE: Generally, the certificate name is the server domain name, but is not
 a hard rule. The certificate can be named as useful.
@@ -608,13 +608,13 @@ with the directive 'CERTHOST'.
 whether a SSL connection is mandatory, and if the server certificate must be
 validated.
 
-	CERTHOST 'hostname' 'certificate name' 'certverify' 'forcessl'
+	CERTHOST "hostname" "certificate name" "certverify" "forcessl"
 
 If the flag `forcessl` is set to `1`, and upsd answers that it can not
 connect with SSL, the connection closes.
 If the flag `certverify` is set to `1` and the connection is done in SSL,
 upsd's certificate is verified and its name must be the specified
-'certificate name'.
+`"certificate name"`.
 
 To prevent security leaks, you should set all `certverify` and `forcessl`
 flags to `1` (force SSL connection and validate all certificates for all
@@ -638,7 +638,7 @@ database configuring `CERTPATH` and `CERTIDENT` in upsmon.conf in the
 same way as upsd.
 
 	CERTPATH /usr/local/ups/etc/cert_db
-	CERTIDENT 'certificate name' 'database password'
+	CERTIDENT "certificate name" "database password"
 
 
 Restart upsd
