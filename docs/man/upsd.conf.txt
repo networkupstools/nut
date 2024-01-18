@@ -124,6 +124,7 @@ connections.  Only set this if you know exactly what you're doing.
 
 When compiled with SSL support with OpenSSL backend, you can enter the
 certificate file here.
++
 The certificates must be in PEM format and must be sorted starting with
 the subject's certificate (server certificate), followed by intermediate
 CA certificates (if applicable_ and the highest level (root) CA. It should
@@ -134,6 +135,7 @@ NUT user manual for more information on the SSL support in NUT.
 
 When compiled with SSL support with NSS backend, you can enter the
 certificate path here.
++
 Certificates are stored in a dedicated database (data split in 3 files).
 Specify the path of the database directory.
 
@@ -148,6 +150,7 @@ the password required to access certificate related private key.
 When compiled with SSL support with NSS backend and client certificate
 validation (disabled by default, see 'docs/security.txt'),
 you can specify if upsd requests or requires client's' certificates.
++
 Possible values are :
 - '0' to not request to clients to provide any certificate
 - '1' to require to all clients a certificate
@@ -158,6 +161,7 @@ Possible values are :
 Tell upsd to disable older/weak SSL/TLS protocols and ciphers.
 With relatively recent versions of OpenSSL or NSS it will be restricted
 to TLSv1.2 or better.
++
 Unless you have really ancient clients, you probably want to enable this.
 Currently disabled by default to ensure compatibility with existing setups.
 
