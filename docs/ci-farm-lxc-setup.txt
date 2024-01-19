@@ -51,6 +51,9 @@ NOTE: This claims a footprint of over a gigabyte of new packages when
     pairs, one per line (so one per container)
 *** `systemctl restart lxc-net` to apply config (is this needed after
     setup of containers too, to apply new items before booting them?)
+*** For troubleshooting, see `/var/lib/misc/dnsmasq.lxcbr0.leases`
+    (in some cases you may have to rename it away and reboot host to
+    fix IP address delegation)
 
 * Install qemu with its `/usr/bin/qemu-*-static` and registration in
   `/var/lib/binfmt`

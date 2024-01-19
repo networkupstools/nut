@@ -71,7 +71,8 @@ void nutscan_display_ups_conf(nutscan_device_t * device)
 
 	/* Display each device */
 	do {
-		printf("[nutdev%i]\n\tdriver = \"%s\"",
+		printf("[nutdev-%s%i]\n\tdriver = \"%s\"",
+			nutscan_device_type_lstrings[current_dev->type],
 			nutdev_num, current_dev->driver);
 
 		if (current_dev->alt_driver_names) {
@@ -86,7 +87,15 @@ void nutscan_display_ups_conf(nutscan_device_t * device)
 
 		while (NULL != opt) {
 			if (opt->option != NULL) {
-				printf("\t%s", opt->option);
+				printf("\t");
+				if (opt->comment_tag) {
+					if (opt->comment_tag[0] == '\0') {
+						printf("# ");
+					} else {
+						printf("###%s### ", opt->comment_tag);
+					}
+				}
+				printf("%s", opt->option);
 				if (opt->value != NULL) {
 					printf(" = \"%s\"", opt->value);
 				}
@@ -133,7 +142,7 @@ void nutscan_display_parsable(nutscan_device_t * device)
 		opt = current_dev->opt;
 
 		while (NULL != opt) {
-			if (opt->option != NULL) {
+			if (opt->option != NULL && opt->comment_tag == NULL) {
 				/* Do not separate by whitespace, in case someone already parses this */
 				printf(",%s", opt->option);
 				if (opt->value != NULL) {
@@ -142,6 +151,9 @@ void nutscan_display_parsable(nutscan_device_t * device)
 			}
 			opt = opt->next;
 		}
+
+		/* NOTE: Currently no handling for current_dev->alt_driver_names
+		 * here, since no driver options maps to this concept */
 
 		printf("\n");
 
@@ -214,7 +226,7 @@ void nutscan_display_sanity_check_serial(nutscan_device_t * device)
 	}
 
 	/* Process each device:
-	 * Build a map of "serial"=>"nutdevX[,...,nutdevZ]"
+	 * Build a map of "serial"=>"nutdev-serialX[,...,nutdev-serialZ]"
 	 * and warn if there are bogus "serial" keys or if
 	 * there are several nutdev's (a comma in value).
 	 */
@@ -256,7 +268,7 @@ void nutscan_display_sanity_check_serial(nutscan_device_t * device)
 					 * dynamic allocation, malloc data for larger "val".
 					 */
 					snprintfcat(entry->val, sizeof(entry->val),
-						",nutdev%i", nutdev_num);
+						",nutdev-serial%i", nutdev_num);
 				} else {
 					/* No hit => new key */
 					upsdebugx(3, "%s: new entry for serial '%s'",
@@ -280,7 +292,7 @@ void nutscan_display_sanity_check_serial(nutscan_device_t * device)
 					snprintf(entry->key, sizeof(entry->key),
 						"%s", keytmp);
 					snprintf(entry->val, sizeof(entry->val),
-						"nutdev%i", nutdev_num);
+						"nutdev-serial%i", nutdev_num);
 				}
 
 				/* Abort the opt-searching loop for this device */

@@ -1,3 +1,5 @@
+# Network UPS Tools: main docs
+
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 EXTRA_DIST =
 

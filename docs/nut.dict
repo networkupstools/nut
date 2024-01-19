@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3430 utf-8
+personal_ws-1.1 en 3436 utf-8
 AAC
 AAS
 ABI
@@ -1409,6 +1409,7 @@ USVs
 UTC
 UTalk
 UUU
+UUUU
 UX
 Ubuntu
 Ulf
@@ -2173,6 +2174,7 @@ hostnames
 hostsfile
 hotplug
 hotplugging
+hovercharge
 hpe
 href
 htaccess
@@ -2639,6 +2641,7 @@ numq
 nutclient
 nutclientmem
 nutdev
+nutdevN
 nutdrv
 nutmon
 nutscan
@@ -2665,6 +2668,7 @@ oldmge
 oldnut
 omnios
 onbatt
+onbattery
 onbattwarn
 onclick
 ondelay
@@ -2917,6 +2921,7 @@ safenet
 salicru
 sbin
 sbindir
+scanopts
 scd
 sched
 scm
@@ -3288,6 +3293,7 @@ usbhid
 usbif
 usbinfo
 usbmisc
+usbscan
 usbups
 usbus
 usd

@@ -114,11 +114,16 @@ If this flag is set, the driver will not use Interrupt In transfers during the
 shorter "pollinterval" cycles (not recommended, but needed if these reports
 are broken on your UPS).
 
-*onlinedischarge*::
-If this flag is set, the driver will treat `OL+DISCHRG` status as offline.
+*onlinedischarge_battery*::
+If this flag is set, the driver will treat `OL+DISCHRG` status as
+offline/on-battery.
++
 For most devices this combination means calibration or similar maintenance;
 however some UPS models (e.g. CyberPower UT series) emit `OL+DISCHRG` when
 wall power is lost -- and need this option to handle shutdowns.
+
+*onlinedischarge*::
+DEPRECATED, old name for `onlinedischarge_battery` described above.
 
 *onlinedischarge_calibration*::
 If this flag is set, the driver will treat `OL+DISCHRG` status as calibration.
@@ -129,6 +134,31 @@ an `OFF` state as well, while the hardware is switching to on-battery mode.
 NOTE: If it takes so long on your device that a shutdown gets issued, you may
 want to look at `upsmon` option `OFFDURATION` used to filter out temporary
 values of "administrative OFF" as not a loss of a feed for the powered load.
+
+*onlinedischarge_log_throttle_sec*='num'::
+Set the minimum frequency (in seconds) at which warnings would be emitted
+for an otherwise not handled `OL+DISCHRG` device status combination.
+Negative values disable sequentially repeated messages (when this state
+appears and persists).
++
+If the device does not report `battery.charge`, the default value is 30 seconds
+(fairly frequent, in case the UPS-reported state combination does reflect a
+bad power condition and so the situation is urgent).
++
+If it does report `battery.charge`, by default the repeated notifications
+would only be logged if this charge is different from when the message was
+emitted previously (e.g. when the battery is really discharging).
++
+If both this option is set, and `battery.charge` is correctly reported,
+either of these rules allow the notification to be logged.
+
+*onlinedischarge_log_throttle_hovercharge*='num'::
+See details in `onlinedischarge_log_throttle_sec` and `battery.charge` based
+log message throttling description above.  This option adds a concept of UPS
+"hovering" a battery charge at some level deemed safe for its chemistry, and
+not forcing it to be fully charged all the time.  As long as the current value
+of `battery.charge` remains at or above this threshold percentage (default 100),
+the `OL+DISCHRG` message logging is not triggered by variations of the charge.
 
 *disable_fix_report_desc*::
 Set to disable fix-ups for broken USB encoding, etc. which we apply by default
