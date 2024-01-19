@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2011 - 2024 Arnaud Quette (Design and part of implementation)
  *  Copyright (C) 2011 - EATON
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -19,6 +20,7 @@
 /*! \file scan_avahi.c
     \brief detect NUT through Avahi mDNS / DNS-SD services
     \author Frederic Bohe <fredericbohe@eaton.com>
+    \author Arnaud Quette <arnaudquette@free.fr>
 */
 
 #include "common.h"
@@ -39,6 +41,8 @@
 #include <avahi-common/error.h>
 
 #include <ltdl.h>
+
+#define SCAN_AVAHI_DRIVERNAME "dummy-ups"
 
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;
@@ -266,7 +270,7 @@ static void update_device(const char * host_name, const char *ip, uint16_t port,
 			dev->type = TYPE_NUT;
 			/* NOTE: There is no driver by such name, in practice it could
 			 * be a dummy-ups relay, a clone driver, or part of upsmon config */
-			dev->driver = strdup("nutclient");
+			dev->driver = strdup(SCAN_AVAHI_DRIVERNAME);
 			if (proto == AVAHI_PROTO_INET) {
 				nutscan_add_option_to_device(dev, "desc", "IPv4");
 			}
@@ -322,7 +326,7 @@ static void update_device(const char * host_name, const char *ip, uint16_t port,
 		else {
 			dev = nutscan_new_device();
 			dev->type = TYPE_NUT;
-			dev->driver = strdup("nutclient");
+			dev->driver = strdup(SCAN_AVAHI_DRIVERNAME);
 			if (proto == AVAHI_PROTO_INET) {
 				nutscan_add_option_to_device(dev, "desc", "IPv4");
 			}

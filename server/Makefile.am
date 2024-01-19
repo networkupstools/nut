@@ -1,5 +1,14 @@
 # Network UPS Tools: server
 
+# Export certain values for ccache which NUT ci_build.sh can customize,
+# to facilitate developer iteration re-runs of "make" later.
+# At least GNU and BSD make implementations are okay with this syntax.
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_NAMESPACE=@CCACHE_NAMESPACE@
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_BASEDIR=@CCACHE_BASEDIR@
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_DIR=@CCACHE_DIR@
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_PATH=@CCACHE_PATH@
+@NUT_AM_MAKE_CAN_EXPORT@export PATH=@PATH_DURING_CONFIGURE@
+
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/common/libcommon.la \
 $(top_builddir)/common/libparseconf.la: dummy

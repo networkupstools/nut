@@ -163,6 +163,9 @@ The UPS can't be contacted for monitoring.
 *CAL*::
 UPS calibration in progress.
 
+*NOTCAL*::
+UPS calibration finished.
+
 *OFF*::
 UPS administratively OFF or asleep.
 
@@ -475,9 +478,12 @@ system log as configured.  If your devices are expected to be AWOL for an
 extended timeframe, you can use POLLFAIL_LOG_THROTTLE_MAX to reduce the
 stress on syslog traffic and storage, by posting these messages only once
 in every several loop cycles, and when the error condition has changed or
-cleared. A negative value means standard behavior, and a zero value means
-to never repeat the message (log only on start and end/change of the failure
-state).
+cleared.  A negative value means standard behavior (log on every loop,
+effectively same as when `max=1`), and a zero value means to never repeat
+the message (log only on start and end/change of the failure state).
+
+Note that this throttle only applies to one latest-active error state per
+monitored device.
 
 RELOADING NUANCES
 -----------------
