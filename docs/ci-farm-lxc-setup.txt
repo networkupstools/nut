@@ -30,6 +30,8 @@ Common preparations
 # TODO: Where to find virt-top - present in some but not all releases?
 # Can fetch sources from https://packages.debian.org/sid/virt-top and follow
 # https://www.linuxfordevices.com/tutorials/debian/build-packages-from-source
+# Be sure to use 1.0.x versions, since 1.1.x uses a "better-optimized API"
+# which is not implemented by libvirt/LXC backend.
 ----
 +
 NOTE: This claims a footprint of over a gigabyte of new packages when
