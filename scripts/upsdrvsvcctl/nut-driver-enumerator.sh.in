@@ -13,7 +13,7 @@
 #       is to just pick out some strings relevant for tracking config changes.
 #
 # Copyright (C) 2016-2020 Eaton
-# Copyright (C) 2020-2023 Jim Klimov <jimklimov+nut@gmail.com>
+# Copyright (C) 2020-2024 Jim Klimov <jimklimov+nut@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -942,12 +942,12 @@ systemd_findSavedDeviceName() {
     # For empty "$1" returns a list of all recorded "SVC<TAB>DEVICE"
     if [ -z "$1" ]; then
         grep -H "Environment='DEVICE=" \
-            /etc/systemd/system/nut-driver@*.service.d/nut-driver-enumerator-generated-devicename.conf \
-        | sed 's|^/etc/systemd/system/\(nut-driver@[^/]*\.service\)\.d/.*DEVICE='"[\"']*\([^\"']*\)[\"']*"'$|\1\t\2|'
+            "${SYSTEMD_CONFPATH}"/nut-driver@*.service.d/nut-driver-enumerator-generated-devicename.conf \
+        | sed 's|^'"${SYSTEMD_CONFPATH}"'/\(nut-driver@[^/]*\.service\)\.d/.*DEVICE='"[\"']*\([^\"']*\)[\"']*"'$|\1\t\2|'
     else
         grep -E -H "Environment='DEVICE=($1|\"$1\")'" \
-            /etc/systemd/system/nut-driver@*.service.d/nut-driver-enumerator-generated-devicename.conf \
-        | sed 's|^/etc/systemd/system/\(nut-driver@[^/]*\.service\)\.d/.*$|\1|'
+            "${SYSTEMD_CONFPATH}"/nut-driver@*.service.d/nut-driver-enumerator-generated-devicename.conf \
+        | sed 's|^'"${SYSTEMD_CONFPATH}"'/\(nut-driver@[^/]*\.service\)\.d/.*$|\1|'
     fi
 }
 systemd_getSavedDeviceName() {
