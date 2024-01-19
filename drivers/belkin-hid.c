@@ -71,6 +71,8 @@ static usb_device_id_t belkin_usb_device_table[] = {
 	{ USB_DEVICE(LIEBERT_VENDORID, 0x0000), NULL },
 	/* Liebert PowerSure PSA UPS */
 	{ USB_DEVICE(LIEBERT_VENDORID, 0x0001), NULL },
+	/* Liebert PowerSure PST UPS */
+	{ USB_DEVICE(LIEBERT_VENDORID, 0x0002), NULL },
 	/* Liebert PowerSure PSI 1440 */
 	{ USB_DEVICE(LIEBERT_VENDORID, 0x0004), NULL },
 	/* Liebert GXT3 */
