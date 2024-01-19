@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3429 utf-8
+personal_ws-1.1 en 3430 utf-8
 AAC
 AAS
 ABI
@@ -784,6 +784,7 @@ NAK
 NAS
 NBF
 NConfigs
+NDE
 NETVER
 NETVERSION
 NFS
@@ -1878,6 +1879,7 @@ cx
 cyberpower
 d'un
 da
+daemonization
 daemonize
 daemonized
 daisychain

@@ -129,6 +129,16 @@ https://github.com/networkupstools/nut/milestone/10
      the `NUT_DEBUG_LEVEL` environment variable now check those earlier in
      their life-time, so that initialization routine can be debugged. [#2259]
 
+ - nut-driver-enumerator (NDE) service/script:
+   * The optional daemon mode (primarily useful for systems which monitor
+     a large and dynamic population of power devices) was enhanced with a
+     `--daemon-after` variant which parses the configuration once before
+     daemonization and this has a chance to fail while not forked off, as
+     well as to allow only completing the service unit initialization when
+     everything is actually ready to work (so further dependencies can start
+     at the proper time). [#682]
+   * Also applied other optimizations to the script implementation. [#682]
+
  - powerpanel text driver now handles status responses in any format and should
    support most devices [#2156]
 
