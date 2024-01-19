@@ -87,7 +87,15 @@ void nutscan_display_ups_conf(nutscan_device_t * device)
 
 		while (NULL != opt) {
 			if (opt->option != NULL) {
-				printf("\t%s", opt->option);
+				printf("\t");
+				if (opt->comment_tag) {
+					if (opt->comment_tag[0] == '\0') {
+						printf("# ");
+					} else {
+						printf("###%s### ", opt->comment_tag);
+					}
+				}
+				printf("%s", opt->option);
 				if (opt->value != NULL) {
 					printf(" = \"%s\"", opt->value);
 				}
@@ -134,7 +142,7 @@ void nutscan_display_parsable(nutscan_device_t * device)
 		opt = current_dev->opt;
 
 		while (NULL != opt) {
-			if (opt->option != NULL) {
+			if (opt->option != NULL && opt->comment_tag == NULL) {
 				/* Do not separate by whitespace, in case someone already parses this */
 				printf(",%s", opt->option);
 				if (opt->value != NULL) {
@@ -143,6 +151,9 @@ void nutscan_display_parsable(nutscan_device_t * device)
 			}
 			opt = opt->next;
 		}
+
+		/* NOTE: Currently no handling for current_dev->alt_driver_names
+		 * here, since no driver options maps to this concept */
 
 		printf("\n");
 

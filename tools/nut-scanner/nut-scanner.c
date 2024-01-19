@@ -112,15 +112,62 @@ static char * start_ip = NULL;
 static char * end_ip = NULL;
 static char * port = NULL;
 static char * serial_ports = NULL;
+static int cli_link_detail_level = -1;
 
 #ifdef HAVE_PTHREAD
 static pthread_t thread[TYPE_END];
 
 static void * run_usb(void *arg)
 {
-	NUT_UNUSED_VARIABLE(arg);
+	nutscan_usb_t scanopts, *scanopts_ptr = &scanopts;
 
-	dev[TYPE_USB] = nutscan_scan_usb();
+	if (!arg) {
+		/* null => use library defaults; should not happen here anyway */
+		scanopts_ptr = NULL;
+	} else {
+		/* 0: do not report bus/device/busport details
+		 * 1: report bus and busport, if available
+		 * 2: report bus/device/busport details
+		 * 3: like (2) and report bcdDevice (limited use and benefit)
+		 */
+		int link_detail_level = *((int*)arg);
+
+		switch (link_detail_level) {
+			case 0:
+				scanopts.report_bus = 0;
+				scanopts.report_busport = 0;
+				scanopts.report_device = 0;
+				scanopts.report_bcdDevice = 0;
+				break;
+
+			case 1:
+				scanopts.report_bus = 1;
+				scanopts.report_busport = 1;
+				scanopts.report_device = 0;
+				scanopts.report_bcdDevice = 0;
+				break;
+
+			case 2:
+				scanopts.report_bus = 1;
+				scanopts.report_busport = 1;
+				scanopts.report_device = 1;
+				scanopts.report_bcdDevice = 0;
+				break;
+
+			case 3:
+				scanopts.report_bus = 1;
+				scanopts.report_busport = 1;
+				scanopts.report_device = 1;
+				scanopts.report_bcdDevice = 1;
+				break;
+
+			default:
+				upsdebugx(1, "%s: using library default link_detail_level settings", __func__);
+				scanopts_ptr = NULL;
+		}
+	}
+
+	dev[TYPE_USB] = nutscan_scan_usb(scanopts_ptr);
 	return NULL;
 }
 
@@ -192,7 +239,8 @@ static void show_usage(void)
 	puts("OPTIONS:");
 	printf("  -C, --complete_scan: Scan all available devices except serial ports (default).\n");
 	if (nutscan_avail_usb) {
-		printf("  -U, --usb_scan: Scan USB devices.\n");
+		printf("  -U, --usb_scan: Scan USB devices. Specify twice or more to report different\n"
+			"                  detail levels of (change-prone) physical properties.\n");
 	} else {
 		printf("* Options for USB devices scan not enabled: library not detected.\n");
 	}
@@ -636,6 +684,9 @@ int main(int argc, char *argv[])
 					goto display_help;
 				}
 				allow_usb = 1;
+				/* NOTE: Starts as -1, so the first -U sets it to 0 (minimal detail) */
+				if (cli_link_detail_level < 3)
+					cli_link_detail_level++;
 				break;
 			case 'M':
 				if (!nutscan_avail_xml_http) {
@@ -774,13 +825,13 @@ display_help:
 	if (allow_usb && nutscan_avail_usb) {
 		upsdebugx(quiet, "Scanning USB bus.");
 #ifdef HAVE_PTHREAD
-		if (pthread_create(&thread[TYPE_USB], NULL, run_usb, NULL)) {
+		if (pthread_create(&thread[TYPE_USB], NULL, run_usb, &cli_link_detail_level)) {
 			upsdebugx(1, "pthread_create returned an error; disabling this scan mode");
 			nutscan_avail_usb = 0;
 		}
 #else
 		upsdebugx(1, "USB SCAN: no pthread support, starting nutscan_scan_usb...");
-		dev[TYPE_USB] = nutscan_scan_usb();
+		dev[TYPE_USB] = nutscan_scan_usb(&cli_link_detail_level);
 #endif /* HAVE_PTHREAD */
 	} else {
 		upsdebugx(1, "USB SCAN: not requested, SKIPPED");

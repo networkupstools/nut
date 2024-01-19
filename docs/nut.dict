@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3424 utf-8
+personal_ws-1.1 en 3427 utf-8
 AAC
 AAS
 ABI
@@ -1409,6 +1409,7 @@ USVs
 UTC
 UTalk
 UUU
+UUUU
 UX
 Ubuntu
 Ulf
@@ -2915,6 +2916,7 @@ safenet
 salicru
 sbin
 sbindir
+scanopts
 scd
 sched
 scm
@@ -3285,6 +3287,7 @@ usbhid
 usbif
 usbinfo
 usbmisc
+usbscan
 usbups
 usbus
 usd
