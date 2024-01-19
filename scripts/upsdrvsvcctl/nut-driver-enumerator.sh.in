@@ -447,16 +447,16 @@ upsconf_getSection_content() {
             *)  ;; # Fall through to add the line to contents of existing section
         esac
         if [ "$CURR_SECTION" = "$1" ]; then
-            if [ -n "$SECTION_CONTENT" ]; then
+            if [ "${#SECTION_CONTENT}" = 0 ]; then
+                SECTION_CONTENT="$LINE"
+            else
                 SECTION_CONTENT="$SECTION_CONTENT
 $LINE"
-            else
-                SECTION_CONTENT="$LINE"
             fi
         fi
     done
 
-    if [ -n "$SECTION_CONTENT" ]; then
+    if [ "${#SECTION_CONTENT}" != 0 ]; then
         echo "$SECTION_CONTENT"
     fi
 
