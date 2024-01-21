@@ -195,6 +195,7 @@ static void nss_error(const char* text)
 	char buffer[SMALLBUF];
 	PRErrorCode err_num = PR_GetError();
 	PRInt32 err_len = PR_GetErrorTextLength();
+
 	if (err_len > 0) {
 		if (err_len < SMALLBUF) {
 			PR_GetErrorText(buffer);
@@ -210,11 +211,12 @@ static void nss_error(const char* text)
 static int ssl_error(PRFileDesc *ssl, ssize_t ret)
 {
 	char buffer[256];
-	NUT_UNUSED_VARIABLE(ssl);
-	NUT_UNUSED_VARIABLE(ret);
 	PRErrorCode err_num = PR_GetError();
 	PRInt32 err_len = PR_GetErrorTextLength();
 	PRInt32 length;
+	NUT_UNUSED_VARIABLE(ssl);
+	NUT_UNUSED_VARIABLE(ret);
+
 	if (err_len > 0) {
 		if (err_len < SMALLBUF) {
 			length = PR_GetErrorText(buffer);
