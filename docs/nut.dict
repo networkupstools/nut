@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3427 utf-8
+personal_ws-1.1 en 3439 utf-8
 AAC
 AAS
 ABI
@@ -784,6 +784,7 @@ NAK
 NAS
 NBF
 NConfigs
+NDE
 NETVER
 NETVERSION
 NFS
@@ -1878,6 +1879,8 @@ cx
 cyberpower
 d'un
 da
+daemonization
+daemonize
 daemonized
 daisychain
 daisychained
@@ -2278,6 +2281,7 @@ ipmimonitoring
 ipmipsu
 ippon
 ipv
+ipxe
 isDefault
 isbmex
 ish
@@ -2318,6 +2322,7 @@ kr
 krauler
 ksh
 ktrace
+kvm
 labcd
 lan
 langid
@@ -2439,6 +2444,7 @@ lws
 lxc
 lxcbr
 lxccontainer
+lxcfs
 lxml
 lxyz
 lz
@@ -2647,6 +2653,7 @@ nutupsdrv
 nutvalue
 nvi
 nvo
+nwfilter
 odette
 odt
 offdelay
@@ -2693,6 +2700,7 @@ ostream
 otherprotocols
 otheruser
 outliers
+ovmf
 pF
 pacman
 pacstrap
@@ -3016,6 +3024,7 @@ somepass
 something's
 sp
 spanish
+sparc
 spectype
 spellcheck
 splitaddr
@@ -3304,6 +3313,7 @@ usleep
 usr
 utalk
 utf
+utils
 uu
 uucp
 vCPU
@@ -3334,6 +3344,8 @@ victronups
 vid
 vin
 virsh
+virt
+virtinst
 virtualization
 vivo
 vo

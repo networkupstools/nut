@@ -470,7 +470,8 @@ static int apply_for_primary(utype_t *ups)
 	return 0;
 }
 
-/* authenticate to upsd, plus do LOGIN and MASTER if applicable */
+/* authenticate to upsd, plus do LOGIN and apply for PRIMARY/MASTER privileges
+ * if applicable to this ups device MONITORing configuration */
 static int do_upsd_auth(utype_t *ups)
 {
 	char	buf[SMALLBUF];
