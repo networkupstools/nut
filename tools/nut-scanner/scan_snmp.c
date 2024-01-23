@@ -109,6 +109,19 @@
 
 #define SysOID ".1.3.6.1.2.1.1.2.0"
 
+/* use explicit booleans */
+#if !(defined HAVE_BOOL_T) || !HAVE_BOOL_T
+# ifndef FALSE
+typedef enum ebool { FALSE = 0, TRUE } bool_t;
+# else
+typedef int bool_t;
+# endif
+# ifdef HAVE_BOOL_T
+#  undef HAVE_BOOL_T
+# endif
+# define HAVE_BOOL_T 1
+#endif
+
 static nutscan_device_t * dev_ret = NULL;
 #ifdef HAVE_PTHREAD
 static pthread_mutex_t dev_mutex;

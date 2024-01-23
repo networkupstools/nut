@@ -156,10 +156,16 @@
 #define DEFAULT_SEMISTATICFREQ    10   /* in snmpwalk update cycles */
 
 /* use explicit booleans */
-#ifndef FALSE
-typedef enum ebool { FALSE, TRUE } bool_t;
-#else
+#if !(defined HAVE_BOOL_T) || !HAVE_BOOL_T
+# ifndef FALSE
+typedef enum ebool { FALSE = 0, TRUE } bool_t;
+# else
 typedef int bool_t;
+# endif
+# ifdef HAVE_BOOL_T
+#  undef HAVE_BOOL_T
+# endif
+# define HAVE_BOOL_T 1
 #endif
 
 /* Common SNMP data and lookup definitions */
