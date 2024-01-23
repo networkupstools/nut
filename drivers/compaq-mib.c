@@ -384,38 +384,38 @@ static info_lkp_t cpqpower_outlet_switchability_info[] = {
 static snmp_info_t cpqpower_mib[] = {
 
 	/* standard MIB items */
-	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
-	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
-	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
+	snmp_info_default("device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL),
+	snmp_info_default("device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL),
+	snmp_info_default("device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL),
 
 	/* UPS page */
 	/* info_type, info_flags, info_len, OID, dfl, flags, oid2info, setvar */
-	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_MFR_NAME, "HP/Compaq", SU_FLAG_STATIC, NULL },
-	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_MODEL_NAME, "SNMP UPS", SU_FLAG_STATIC, NULL },
+	snmp_info_default("ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_MFR_NAME, "HP/Compaq", SU_FLAG_STATIC, NULL),
+	snmp_info_default("ups.model", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_MODEL_NAME, "SNMP UPS", SU_FLAG_STATIC, NULL),
 	/* { "ups.model.aux", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_OEMCODE, "", SU_FLAG_STATIC, NULL },*/
-	{ "ups.serial", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.232.165.1.2.7.0", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
+	snmp_info_default("ups.serial", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.232.165.1.2.7.0", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL),
 	/* FIXME: split between firmware and firmware.aux ("00.01.0019;00.01.0004")
 	 * UPS Firmware Revision :	00.01.0004
 	 * Communication Board Firmware Revision :	00.01.0019 */
 	/* FIXME: the 2 "firmware" entries below should be SU_FLAG_SEMI_STATIC */
-	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_FIRMREV, "", 0, NULL },
-	{ "ups.firmware.aux", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_AGENTREV, "", 0, NULL },
-	{ "ups.load", 0, 1.0, CPQPOWER_OID_LOAD_LEVEL, "", 0, NULL },
-	{ "ups.realpower.nominal", 0, 1.0, ".1.3.6.1.4.1.232.165.3.9.3.0", "", SU_OUTPUT_1, NULL },
-	{ "ups.realpower", 0, 1.0, CPQPOWER_OID_OUT_POWER ".1", "", SU_OUTPUT_1, NULL },
-	{ "ups.L1.realpower", 0, 1.0, CPQPOWER_OID_OUT_POWER ".1", "", SU_OUTPUT_3, NULL },
-	{ "ups.L2.realpower", 0, 1.0, CPQPOWER_OID_OUT_POWER ".2", "", SU_OUTPUT_3, NULL },
-	{ "ups.L3.realpower", 0, 1.0, CPQPOWER_OID_OUT_POWER ".3", "", SU_OUTPUT_3, NULL },
-	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_POWER_STATUS, "OFF", SU_STATUS_PWR, cpqpower_pwr_info },
-	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_BATT_STATUS, "", SU_STATUS_PWR, cpqpower_battery_abm_status },
+	snmp_info_default("ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_FIRMREV, "", 0, NULL),
+	snmp_info_default("ups.firmware.aux", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_AGENTREV, "", 0, NULL),
+	snmp_info_default("ups.load", 0, 1.0, CPQPOWER_OID_LOAD_LEVEL, "", 0, NULL),
+	snmp_info_default("ups.realpower.nominal", 0, 1.0, ".1.3.6.1.4.1.232.165.3.9.3.0", "", SU_OUTPUT_1, NULL),
+	snmp_info_default("ups.realpower", 0, 1.0, CPQPOWER_OID_OUT_POWER ".1", "", SU_OUTPUT_1, NULL),
+	snmp_info_default("ups.L1.realpower", 0, 1.0, CPQPOWER_OID_OUT_POWER ".1", "", SU_OUTPUT_3, NULL),
+	snmp_info_default("ups.L2.realpower", 0, 1.0, CPQPOWER_OID_OUT_POWER ".2", "", SU_OUTPUT_3, NULL),
+	snmp_info_default("ups.L3.realpower", 0, 1.0, CPQPOWER_OID_OUT_POWER ".3", "", SU_OUTPUT_3, NULL),
+	snmp_info_default("ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_POWER_STATUS, "OFF", SU_STATUS_PWR, cpqpower_pwr_info),
+	snmp_info_default("ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_BATT_STATUS, "", SU_STATUS_PWR, cpqpower_battery_abm_status),
 	/* The next two lines are no longer supported by MIB ver. 1.76 (Github issue 118)
 	 * { "ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_ALARM_OB, "", SU_STATUS_BATT, cpqpower_alarm_ob },
 	 * { "ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_ALARM_LB, "", SU_STATUS_BATT, cpqpower_alarm_lb }, */
 	/* { "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_BATT_STATUS, "", SU_STATUS_BATT, ietf_batt_info }, */
 	/* FIXME: this should use either .1.3.6.1.4.1.232.165.3.11.1.0 (upsTopologyType)
 	 * or .1.3.6.1.4.1.232.165.3.11.2.0 (upsTopoMachineCode) */
-	{ "ups.type", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_POWER_STATUS, "", SU_STATUS_PWR, cpqpower_mode_info },
-	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_UPS_TEST_RES, "", 0, cpqpower_test_res_info },
+	snmp_info_default("ups.type", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_POWER_STATUS, "", SU_STATUS_PWR, cpqpower_mode_info),
+	snmp_info_default("ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_UPS_TEST_RES, "", 0, cpqpower_test_res_info),
 	/* FIXME: handle ups.date and ups.time
 	 * - OID: .1.3.6.1.4.1.232.165.3.9.5.0
 	 * - format MM/DD/YYYY HH:MM:SS */
@@ -429,55 +429,55 @@ static snmp_info_t cpqpower_mib[] = {
 	 * flywheel(7)
 	 * fuelcell(8) */
 
-	{ "ups.delay.shutdown", ST_FLAG_STRING | ST_FLAG_RW, 6, ".1.3.6.1.4.1.232.165.3.8.1.0", DEFAULT_OFFDELAY, SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-	{ "ups.delay.start", ST_FLAG_STRING | ST_FLAG_RW, 6, ".1.3.6.1.4.1.232.165.3.8.2.0", DEFAULT_ONDELAY, SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-	{ "ups.timer.shutdown", 0, 1, ".1.3.6.1.4.1.232.165.3.8.1.0", "", SU_FLAG_OK, NULL },
-	{ "ups.timer.start", 0, 1, ".1.3.6.1.4.1.232.165.3.8.2.0", "", SU_FLAG_OK, NULL },
+	snmp_info_default("ups.delay.shutdown", ST_FLAG_STRING | ST_FLAG_RW, 6, ".1.3.6.1.4.1.232.165.3.8.1.0", DEFAULT_OFFDELAY, SU_FLAG_ABSENT | SU_FLAG_OK, NULL),
+	snmp_info_default("ups.delay.start", ST_FLAG_STRING | ST_FLAG_RW, 6, ".1.3.6.1.4.1.232.165.3.8.2.0", DEFAULT_ONDELAY, SU_FLAG_ABSENT | SU_FLAG_OK, NULL),
+	snmp_info_default("ups.timer.shutdown", 0, 1, ".1.3.6.1.4.1.232.165.3.8.1.0", "", SU_FLAG_OK, NULL),
+	snmp_info_default("ups.timer.start", 0, 1, ".1.3.6.1.4.1.232.165.3.8.2.0", "", SU_FLAG_OK, NULL),
 
 	/* Ambient page */
-	{ "ambient.temperature", 0, 1.0, CPQPOWER_OID_AMBIENT_TEMP, "", 0, NULL },
-	{ "ambient.temperature.low", 0, 1.0, ".1.3.6.1.4.1.232.165.3.6.2.0", "", 0, NULL },
-	{ "ambient.temperature.high", 0, 1.0, ".1.3.6.1.4.1.232.165.3.6.3.0", "", 0, NULL },
+	snmp_info_default("ambient.temperature", 0, 1.0, CPQPOWER_OID_AMBIENT_TEMP, "", 0, NULL),
+	snmp_info_default("ambient.temperature.low", 0, 1.0, ".1.3.6.1.4.1.232.165.3.6.2.0", "", 0, NULL),
+	snmp_info_default("ambient.temperature.high", 0, 1.0, ".1.3.6.1.4.1.232.165.3.6.3.0", "", 0, NULL),
 
 	/* Battery page */
-	{ "battery.charge", 0, 1.0, CPQPOWER_OID_BATT_CHARGE, "", 0, NULL },
-	{ "battery.runtime", 0, 1.0, CPQPOWER_OID_BATT_RUNTIME, "", 0, NULL },
-	{ "battery.voltage", 0, 0.1, CPQPOWER_OID_BATT_VOLTAGE, "", 0, NULL },
-	{ "battery.current", 0, 0.1, CPQPOWER_OID_BATT_CURRENT, "", 0, NULL },
+	snmp_info_default("battery.charge", 0, 1.0, CPQPOWER_OID_BATT_CHARGE, "", 0, NULL),
+	snmp_info_default("battery.runtime", 0, 1.0, CPQPOWER_OID_BATT_RUNTIME, "", 0, NULL),
+	snmp_info_default("battery.voltage", 0, 0.1, CPQPOWER_OID_BATT_VOLTAGE, "", 0, NULL),
+	snmp_info_default("battery.current", 0, 0.1, CPQPOWER_OID_BATT_CURRENT, "", 0, NULL),
 	/* FIXME: need the new variable (for ABM)
-	{ "battery.status", 0, 0.1, ".1.3.6.1.4.1.232.165.3.2.5.0", "", 0, NULL }, */
+	snmp_info_default("battery.status", 0, 0.1, ".1.3.6.1.4.1.232.165.3.2.5.0", "", 0, NULL), */
 
 	/* Input page */
-	{ "input.phases", 0, 1.0, CPQPOWER_OID_IN_LINES, "", 0, NULL },
-	{ "input.frequency", 0, 0.1, CPQPOWER_OID_IN_FREQ , "", 0, NULL },
-	{ "input.voltage.nominal", 0, 1.0, ".1.3.6.1.4.1.232.165.3.9.2.0", "", 0, NULL },
-	{ "input.voltage", 0, 1.0, CPQPOWER_OID_IN_VOLTAGE ".1", "", SU_OUTPUT_1, NULL },
-	{ "input.L1-N.voltage", 0, 1.0, CPQPOWER_OID_IN_VOLTAGE ".1", "", SU_INPUT_3, NULL },
-	{ "input.L2-N.voltage", 0, 1.0, CPQPOWER_OID_IN_VOLTAGE ".2", "", SU_INPUT_3, NULL },
-	{ "input.L3-N.voltage", 0, 1.0, CPQPOWER_OID_IN_VOLTAGE ".3", "", SU_INPUT_3, NULL },
-	{ "input.current", 0, 1.0, CPQPOWER_OID_IN_CURRENT ".1", "", SU_OUTPUT_1, NULL },
-	{ "input.L1.current", 0, 1.0, CPQPOWER_OID_IN_CURRENT ".1", "", SU_INPUT_3, NULL },
-	{ "input.L2.current", 0, 1.0, CPQPOWER_OID_IN_CURRENT ".2", "", SU_INPUT_3, NULL },
-	{ "input.L3.current", 0, 1.0, CPQPOWER_OID_IN_CURRENT ".3", "", SU_INPUT_3, NULL },
-	{ "input.realpower", 0, 1.0, CPQPOWER_OID_IN_POWER ".1", "", SU_OUTPUT_1, NULL },
-	{ "input.L1.realpower", 0, 1.0, CPQPOWER_OID_IN_POWER ".1", "", SU_INPUT_3, NULL },
-	{ "input.L2.realpower", 0, 1.0, CPQPOWER_OID_IN_POWER ".2", "", SU_INPUT_3, NULL },
-	{ "input.L3.realpower", 0, 1.0, CPQPOWER_OID_IN_POWER ".3", "", SU_INPUT_3, NULL },
-	{ "input.quality", 0, 1.0, CPQPOWER_OID_IN_LINEBADS, "", 0, NULL },
+	snmp_info_default("input.phases", 0, 1.0, CPQPOWER_OID_IN_LINES, "", 0, NULL),
+	snmp_info_default("input.frequency", 0, 0.1, CPQPOWER_OID_IN_FREQ , "", 0, NULL),
+	snmp_info_default("input.voltage.nominal", 0, 1.0, ".1.3.6.1.4.1.232.165.3.9.2.0", "", 0, NULL),
+	snmp_info_default("input.voltage", 0, 1.0, CPQPOWER_OID_IN_VOLTAGE ".1", "", SU_OUTPUT_1, NULL),
+	snmp_info_default("input.L1-N.voltage", 0, 1.0, CPQPOWER_OID_IN_VOLTAGE ".1", "", SU_INPUT_3, NULL),
+	snmp_info_default("input.L2-N.voltage", 0, 1.0, CPQPOWER_OID_IN_VOLTAGE ".2", "", SU_INPUT_3, NULL),
+	snmp_info_default("input.L3-N.voltage", 0, 1.0, CPQPOWER_OID_IN_VOLTAGE ".3", "", SU_INPUT_3, NULL),
+	snmp_info_default("input.current", 0, 1.0, CPQPOWER_OID_IN_CURRENT ".1", "", SU_OUTPUT_1, NULL),
+	snmp_info_default("input.L1.current", 0, 1.0, CPQPOWER_OID_IN_CURRENT ".1", "", SU_INPUT_3, NULL),
+	snmp_info_default("input.L2.current", 0, 1.0, CPQPOWER_OID_IN_CURRENT ".2", "", SU_INPUT_3, NULL),
+	snmp_info_default("input.L3.current", 0, 1.0, CPQPOWER_OID_IN_CURRENT ".3", "", SU_INPUT_3, NULL),
+	snmp_info_default("input.realpower", 0, 1.0, CPQPOWER_OID_IN_POWER ".1", "", SU_OUTPUT_1, NULL),
+	snmp_info_default("input.L1.realpower", 0, 1.0, CPQPOWER_OID_IN_POWER ".1", "", SU_INPUT_3, NULL),
+	snmp_info_default("input.L2.realpower", 0, 1.0, CPQPOWER_OID_IN_POWER ".2", "", SU_INPUT_3, NULL),
+	snmp_info_default("input.L3.realpower", 0, 1.0, CPQPOWER_OID_IN_POWER ".3", "", SU_INPUT_3, NULL),
+	snmp_info_default("input.quality", 0, 1.0, CPQPOWER_OID_IN_LINEBADS, "", 0, NULL),
 
 	/* Output page */
-	{ "output.phases", 0, 1.0, CPQPOWER_OID_OUT_LINES, "", 0, NULL },
-	{ "output.frequency.nominal", 0, 0.1, ".1.3.6.1.4.1.232.165.3.9.4.0", "", 0, NULL },
-	{ "output.frequency", 0, 0.1, CPQPOWER_OID_OUT_FREQUENCY, "", 0, NULL },
-	{ "output.voltage.nominal", 0, 1.0, ".1.3.6.1.4.1.232.165.3.9.1.0", "", 0, NULL },
-	{ "output.voltage", 0, 1.0, CPQPOWER_OID_OUT_VOLTAGE ".1", "", SU_OUTPUT_1, NULL },
-	{ "output.L1-N.voltage", 0, 1.0, CPQPOWER_OID_OUT_VOLTAGE ".1", "", SU_OUTPUT_3, NULL },
-	{ "output.L2-N.voltage", 0, 1.0, CPQPOWER_OID_OUT_VOLTAGE ".2", "", SU_OUTPUT_3, NULL },
-	{ "output.L3-N.voltage", 0, 1.0, CPQPOWER_OID_OUT_VOLTAGE ".3", "", SU_OUTPUT_3, NULL },
-	{ "output.current", 0, 1.0, CPQPOWER_OID_OUT_CURRENT ".1", "", SU_OUTPUT_1, NULL },
-	{ "output.L1.current", 0, 1.0, CPQPOWER_OID_OUT_CURRENT ".1", "", SU_OUTPUT_3, NULL },
-	{ "output.L2.current", 0, 1.0, CPQPOWER_OID_OUT_CURRENT ".2", "", SU_OUTPUT_3, NULL },
-	{ "output.L3.current", 0, 1.0, CPQPOWER_OID_OUT_CURRENT ".3", "", SU_OUTPUT_3, NULL },
+	snmp_info_default("output.phases", 0, 1.0, CPQPOWER_OID_OUT_LINES, "", 0, NULL),
+	snmp_info_default("output.frequency.nominal", 0, 0.1, ".1.3.6.1.4.1.232.165.3.9.4.0", "", 0, NULL),
+	snmp_info_default("output.frequency", 0, 0.1, CPQPOWER_OID_OUT_FREQUENCY, "", 0, NULL),
+	snmp_info_default("output.voltage.nominal", 0, 1.0, ".1.3.6.1.4.1.232.165.3.9.1.0", "", 0, NULL),
+	snmp_info_default("output.voltage", 0, 1.0, CPQPOWER_OID_OUT_VOLTAGE ".1", "", SU_OUTPUT_1, NULL),
+	snmp_info_default("output.L1-N.voltage", 0, 1.0, CPQPOWER_OID_OUT_VOLTAGE ".1", "", SU_OUTPUT_3, NULL),
+	snmp_info_default("output.L2-N.voltage", 0, 1.0, CPQPOWER_OID_OUT_VOLTAGE ".2", "", SU_OUTPUT_3, NULL),
+	snmp_info_default("output.L3-N.voltage", 0, 1.0, CPQPOWER_OID_OUT_VOLTAGE ".3", "", SU_OUTPUT_3, NULL),
+	snmp_info_default("output.current", 0, 1.0, CPQPOWER_OID_OUT_CURRENT ".1", "", SU_OUTPUT_1, NULL),
+	snmp_info_default("output.L1.current", 0, 1.0, CPQPOWER_OID_OUT_CURRENT ".1", "", SU_OUTPUT_3, NULL),
+	snmp_info_default("output.L2.current", 0, 1.0, CPQPOWER_OID_OUT_CURRENT ".2", "", SU_OUTPUT_3, NULL),
+	snmp_info_default("output.L3.current", 0, 1.0, CPQPOWER_OID_OUT_CURRENT ".3", "", SU_OUTPUT_3, NULL),
 
 	/* FIXME: what to map with these?
 	 * Name/OID: upsConfigLowOutputVoltageLimit.0; Value (Integer): 160
@@ -486,24 +486,24 @@ static snmp_info_t cpqpower_mib[] = {
 	 * => input.transfer.high? */
 
 	/* Outlet page */
-	{ "outlet.id", 0, 1, NULL, "0", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-	{ "outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, NULL, "All outlets",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-	{ "outlet.count", 0, 1, ".1.3.6.1.4.1.232.165.3.10.1.0", "0", 0, NULL }, /* upsNumReceptacles */
+	snmp_info_default("outlet.id", 0, 1, NULL, "0", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL),
+	snmp_info_default("outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, NULL, "All outlets",
+		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL),
+	snmp_info_default("outlet.count", 0, 1, ".1.3.6.1.4.1.232.165.3.10.1.0", "0", 0, NULL), /* upsNumReceptacles */
 
 /*
-	{ "outlet.current", 0, 0.001, AR_OID_UNIT_CURRENT ".0", NULL, 0, NULL, NULL },
-	{ "outlet.voltage", 0, 0.001, AR_OID_UNIT_VOLTAGE ".0", NULL, 0, NULL, NULL },
-	{ "outlet.realpower", 0, 1.0, AR_OID_UNIT_ACTIVEPOWER ".0", NULL, 0, NULL, NULL },
-	{ "outlet.power", 0, 1.0, AR_OID_UNIT_APPARENTPOWER ".0", NULL, 0, NULL, NULL },
+	snmp_info_default("outlet.current", 0, 0.001, AR_OID_UNIT_CURRENT ".0", NULL, 0, NULL, NULL),
+	snmp_info_default("outlet.voltage", 0, 0.001, AR_OID_UNIT_VOLTAGE ".0", NULL, 0, NULL, NULL),
+	snmp_info_default("outlet.realpower", 0, 1.0, AR_OID_UNIT_ACTIVEPOWER ".0", NULL, 0, NULL, NULL),
+	snmp_info_default("outlet.power", 0, 1.0, AR_OID_UNIT_APPARENTPOWER ".0", NULL, 0, NULL, NULL),
 */
 
 	/* outlet template definition */
 	/* FIXME always true? */
-	{ "outlet.%i.switchable", ST_FLAG_STRING, 3, ".1.3.6.1.4.1.232.165.3.10.2.1.1.%i", "yes", SU_FLAG_STATIC | SU_OUTLET, &cpqpower_outlet_switchability_info[0] },
-	{ "outlet.%i.id", 0, 1, ".1.3.6.1.4.1.232.165.3.10.2.1.1.%i", "%i", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK | SU_OUTLET, NULL },
+	snmp_info_default("outlet.%i.switchable", ST_FLAG_STRING, 3, ".1.3.6.1.4.1.232.165.3.10.2.1.1.%i", "yes", SU_FLAG_STATIC | SU_OUTLET, &cpqpower_outlet_switchability_info[0]),
+	snmp_info_default("outlet.%i.id", 0, 1, ".1.3.6.1.4.1.232.165.3.10.2.1.1.%i", "%i", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK | SU_OUTLET, NULL),
 	/* { "outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, AR_OID_OUTLET_NAME ".%i", NULL, SU_OUTLET, NULL }, */
-	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.232.165.3.10.2.1.2.%i", NULL, SU_FLAG_OK | SU_OUTLET, &cpqpower_outlet_status_info[0] },
+	snmp_info_default("outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.232.165.3.10.2.1.2.%i", NULL, SU_FLAG_OK | SU_OUTLET, &cpqpower_outlet_status_info[0]),
 	/* FIXME: come up with a suitable varname!
 	 * - The delay after going On Battery until the Receptacle is automatically turned Off.
 	 * A value of -1 means that this Output should never be turned Off automatically, but must be turned Off only by command.
@@ -514,27 +514,27 @@ static snmp_info_t cpqpower_mib[] = {
 	 */
 	/* FIXME: also define .stop (as for 'shutdown.reboot')
 	 * and .delay */
-	{ "outlet.%i.load.off", 0, 1, ".1.3.6.1.4.1.232.165.3.10.2.1.3.%i", "0", SU_TYPE_CMD | SU_OUTLET, NULL },
-	{ "outlet.%i.load.on", 0, 1, ".1.3.6.1.4.1.232.165.3.10.2.1.4.%i", "0", SU_TYPE_CMD | SU_OUTLET, NULL },
+	snmp_info_default("outlet.%i.load.off", 0, 1, ".1.3.6.1.4.1.232.165.3.10.2.1.3.%i", "0", SU_TYPE_CMD | SU_OUTLET, NULL),
+	snmp_info_default("outlet.%i.load.on", 0, 1, ".1.3.6.1.4.1.232.165.3.10.2.1.4.%i", "0", SU_TYPE_CMD | SU_OUTLET, NULL),
 	/* FIXME: also define a .delay or map to "outlet.%i.delay.shutdown" */
-	{ "outlet.%i.load.cycle", 0, 1, ".1.3.6.1.4.1.232.165.3.10.2.1.7.%i", "0", SU_TYPE_CMD | SU_OUTLET, NULL },
+	snmp_info_default("outlet.%i.load.cycle", 0, 1, ".1.3.6.1.4.1.232.165.3.10.2.1.7.%i", "0", SU_TYPE_CMD | SU_OUTLET, NULL),
 
 	/* instant commands. */
 	/* We need to duplicate load.{on,off} Vs load.{on,off}.delay, since
 	 * "0" cancels the shutdown, so we put "1" (second) for immediate off! */
-	{ "load.off", 0, 1, ".1.3.6.1.4.1.232.165.3.8.1.0", "1", SU_TYPE_CMD, NULL },
-	{ "load.on", 0, 1, ".1.3.6.1.4.1.232.165.3.8.2.0", "1", SU_TYPE_CMD, NULL },
-	{ "shutdown.stop", 0, 1, ".1.3.6.1.4.1.232.165.3.8.1.0", "0", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	snmp_info_default("load.off", 0, 1, ".1.3.6.1.4.1.232.165.3.8.1.0", "1", SU_TYPE_CMD, NULL),
+	snmp_info_default("load.on", 0, 1, ".1.3.6.1.4.1.232.165.3.8.2.0", "1", SU_TYPE_CMD, NULL),
+	snmp_info_default("shutdown.stop", 0, 1, ".1.3.6.1.4.1.232.165.3.8.1.0", "0", SU_TYPE_CMD | SU_FLAG_OK, NULL),
 	/* FIXME: need ups.{timer,delay}.{start,shutdown} param counterparts! */
 
-	{ "load.off.delay", 0, 1, ".1.3.6.1.4.1.232.165.3.8.1.0", DEFAULT_OFFDELAY, SU_TYPE_CMD, NULL },
-	{ "load.on.delay", 0, 1, ".1.3.6.1.4.1.232.165.3.8.2.0", DEFAULT_ONDELAY, SU_TYPE_CMD, NULL },
-	/*	{ CMD_SHUTDOWN, 0, CPQPOWER_OFF_GRACEFUL, CPQPOWER_OID_OFF, "", 0, NULL }, */
-	{ "shutdown.reboot", 0, 1, ".1.3.6.1.4.1.232.165.3.8.6.0", "0", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "test.battery.start", 0, 1, ".1.3.6.1.4.1.232.165.3.7.1.0", CPQPOWER_START_TEST, SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	snmp_info_default("load.off.delay", 0, 1, ".1.3.6.1.4.1.232.165.3.8.1.0", DEFAULT_OFFDELAY, SU_TYPE_CMD, NULL),
+	snmp_info_default("load.on.delay", 0, 1, ".1.3.6.1.4.1.232.165.3.8.2.0", DEFAULT_ONDELAY, SU_TYPE_CMD, NULL),
+	/*	snmp_info_default(CMD_SHUTDOWN, 0, CPQPOWER_OFF_GRACEFUL, CPQPOWER_OID_OFF, "", 0, NULL), */
+	snmp_info_default("shutdown.reboot", 0, 1, ".1.3.6.1.4.1.232.165.3.8.6.0", "0", SU_TYPE_CMD | SU_FLAG_OK, NULL),
+	snmp_info_default("test.battery.start", 0, 1, ".1.3.6.1.4.1.232.165.3.7.1.0", CPQPOWER_START_TEST, SU_TYPE_CMD | SU_FLAG_OK, NULL),
 
 	/* end of structure. */
-	{ NULL, 0, 0, NULL, NULL, 0, NULL }
+	snmp_info_default(NULL, 0, 0, NULL, NULL, 0, NULL)
 };
 
 mib2nut_info_t	compaq = { "cpqpower", CPQPOWER_MIB_VERSION, NULL, CPQPOWER_OID_MFR_NAME, cpqpower_mib, CPQPOWER_SYSOID, NULL };
