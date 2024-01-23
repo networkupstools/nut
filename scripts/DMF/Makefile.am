@@ -463,8 +463,16 @@ DMFTESTS_COMMON_CFLAGS = \
 	-DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_builddir)/$(DMFSNMP_SUBDIR)\""
 
 # Some GCCisms... TODO: A configure flag variable like WITH_GCC
+# Note that _FORTIFY_SOURCE requires non-trivial optimization
+# to *BE* enabled (unlike the comments above about pre-processing
+# needed for pycparser to understand the original code); otherwise
+# a warning can appear (which is fatal when NUT is configured to
+# reject any warnings generally, or the line below is uncommented),
+# e.g.:
+#   /usr/include/features.h:397:4: error: #warning _FORTIFY_SOURCE
+#      requires compiling with optimization (-O) [-Werror=cpp]
 DMFTESTS_COMMON_CFLAGS += \
-	-ggdb -std=c99 -Wall -pedantic -Wc++-compat -D_FORTIFY_SOURCE=2 -fno-stack-check -fno-omit-frame-pointer -fstack-protector -ggdb3 -O0
+	-ggdb -std=c99 -Wall -pedantic -Wc++-compat -D_FORTIFY_SOURCE=2 -O2 -fno-stack-check -fno-omit-frame-pointer -fstack-protector -ggdb3
 
 # For fans of suicide on obscure platforms ;)
 #DMFTESTS_COMMON_CFLAGS += -Werror
