@@ -75,7 +75,7 @@ static info_lkp_t xpcc_power_info[] = {
 static snmp_info_t xppc_mib[] = {
 
 	/* Data format:
-	 * { info_type, info_flags, info_len, OID, dfl, flags, oid2info, setvar },
+	 * snmp_info_default(info_type, info_flags, info_len, OID, dfl, flags, oid2info, setvar),
 	 *
 	 *	info_type:	NUT INFO_ or CMD_ element name
 	 *	info_flags:	flags to set in addinfo
@@ -87,8 +87,8 @@ static snmp_info_t xppc_mib[] = {
 	 *	oid2info: lookup table between OID and NUT values
 	 *
 	 * Example:
-	 * { "input.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.2.1", "", SU_INPUT_1, NULL },
-	 * { "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.7.3.0", "", SU_FLAG_OK | SU_STATUS_BATT, xpcc_onbatt_info },
+	 * snmp_info_default("input.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.2.1", "", SU_INPUT_1, NULL),
+	 * snmp_info_default("ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.7.3.0", "", SU_FLAG_OK | SU_STATUS_BATT, xpcc_onbatt_info),
 	 *
 	 * To create a value lookup structure (as needed on the 2nd line), use the
 	 * following kind of declaration, outside of the present snmp_info_t[]:
@@ -100,34 +100,34 @@ static snmp_info_t xppc_mib[] = {
 	 */
 
 	/* standard MIB items */
-	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
-	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
-	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
+	snmp_info_default("device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL),
+	snmp_info_default("device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL),
+	snmp_info_default("device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL),
 
-	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "Tripp Lite / Phoenixtec",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
+	snmp_info_default("ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "Tripp Lite / Phoenixtec",
+		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL),
 
 	/* upsBaseIdentModel.0 = STRING: "Intelligent" */
-	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.935.1.1.1.1.1.1.0", "Generic Phoenixtec SNMP device", SU_FLAG_OK, NULL },
+	snmp_info_default("ups.model", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.935.1.1.1.1.1.1.0", "Generic Phoenixtec SNMP device", SU_FLAG_OK, NULL),
 	/* upsBaseBatteryStatus.0 = INTEGER: batteryNormal(2) */
-	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.935.1.1.1.2.1.1.0", "", SU_STATUS_BATT | SU_TYPE_INT | SU_FLAG_OK, xpcc_onbatt_info },
+	snmp_info_default("ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.935.1.1.1.2.1.1.0", "", SU_STATUS_BATT | SU_TYPE_INT | SU_FLAG_OK, xpcc_onbatt_info),
 	/* upsSmartBatteryCapacity.0 = INTEGER: 100 */
-	{ "battery.charge", 0, 1, ".1.3.6.1.4.1.935.1.1.1.2.2.1.0", NULL, SU_TYPE_INT | SU_FLAG_OK, NULL },
+	snmp_info_default("battery.charge", 0, 1, ".1.3.6.1.4.1.935.1.1.1.2.2.1.0", NULL, SU_TYPE_INT | SU_FLAG_OK, NULL),
 	/* upsSmartBatteryTemperature.0 = INTEGER: 260 */
-	{ "ups.temperature", 0, 0.1, ".1.3.6.1.4.1.935.1.1.1.2.2.3.0", NULL, SU_TYPE_INT | SU_FLAG_OK, NULL },
+	snmp_info_default("ups.temperature", 0, 0.1, ".1.3.6.1.4.1.935.1.1.1.2.2.3.0", NULL, SU_TYPE_INT | SU_FLAG_OK, NULL),
 	/* upsSmartInputLineVoltage.0 = INTEGER: 1998 */
-	{ "input.voltage", 0, 0.1, ".1.3.6.1.4.1.935.1.1.1.3.2.1.0", NULL, SU_TYPE_INT | SU_FLAG_OK, NULL },
+	snmp_info_default("input.voltage", 0, 0.1, ".1.3.6.1.4.1.935.1.1.1.3.2.1.0", NULL, SU_TYPE_INT | SU_FLAG_OK, NULL),
 	/* upsBaseOutputStatus.0 = INTEGER: onLine(2) */
-	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.935.1.1.1.4.1.1.0", "", SU_TYPE_INT | SU_STATUS_PWR, xpcc_power_info },
+	snmp_info_default("ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.935.1.1.1.4.1.1.0", "", SU_TYPE_INT | SU_STATUS_PWR, xpcc_power_info),
 	/* upsSmartOutputVoltage.0 = INTEGER: 2309 */
-	{ "output.voltage", 0, 0.1, ".1.3.6.1.4.1.935.1.1.1.4.2.1.0", NULL, SU_TYPE_INT | SU_FLAG_OK, NULL },
+	snmp_info_default("output.voltage", 0, 0.1, ".1.3.6.1.4.1.935.1.1.1.4.2.1.0", NULL, SU_TYPE_INT | SU_FLAG_OK, NULL),
 	/* upsSmartOutputFrequency.0 = INTEGER: 500 */
-	{ "output.frequency", 0, 0.1, ".1.3.6.1.4.1.935.1.1.1.4.2.2.0", NULL, SU_TYPE_INT | SU_FLAG_OK, NULL },
+	snmp_info_default("output.frequency", 0, 0.1, ".1.3.6.1.4.1.935.1.1.1.4.2.2.0", NULL, SU_TYPE_INT | SU_FLAG_OK, NULL),
 	/* upsSmartOutputLoad.0 = INTEGER: 7 */
-	{ "ups.load", 0, 1, ".1.3.6.1.4.1.935.1.1.1.4.2.3.0", NULL, SU_TYPE_INT | SU_FLAG_OK, NULL },
+	snmp_info_default("ups.load", 0, 1, ".1.3.6.1.4.1.935.1.1.1.4.2.3.0", NULL, SU_TYPE_INT | SU_FLAG_OK, NULL),
 
 	/* end of structure. */
-	{ NULL, 0, 0, NULL, NULL, 0, NULL }
+	snmp_info_default(NULL, 0, 0, NULL, NULL, 0, NULL)
 };
 
 mib2nut_info_t	xppc = { "xppc", XPPC_MIB_VERSION, NULL, NULL, xppc_mib, XPPC_SYSOID, NULL };
