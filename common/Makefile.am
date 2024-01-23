@@ -119,6 +119,7 @@ endif
 # note that LTLIBOBJS pulls in snprintf.c contents too
 noinst_LTLIBRARIES += libcommonstr.la
 libcommonstr_la_SOURCES = common.c str.c
+libcommonstr_la_CFLAGS = $(AM_CFLAGS) -DWITHOUT_LIBSYSTEMD=1
 libcommonstr_la_LIBADD = @LTLIBOBJS@
 
 if WITH_NEON
