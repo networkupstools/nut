@@ -225,6 +225,15 @@ typedef struct {
 #endif /* WITH_SNMP_LKP_FUN */
 } info_lkp_t;
 
+#if WITH_SNMP_LKP_FUN
+# define info_lkp_default(_1, _2)	{_1, _2, NULL, NULL, NULL, NULL}
+# define info_lkp_fun_vp2s(_1, _2, _3)	{_1, _2, _3, NULL, NULL, NULL}
+#else
+# define info_lkp_default(_1, _2)	{_1, _2}
+/* Ignore the function pointer where not supported */
+# define info_lkp_fun_vp2s(_1, _2, _3)	{_1, _2}
+#endif /* WITH_SNMP_LKP_FUN */
+
 /* Structure containing info about one item that can be requested
    from UPS and set in INFO.  If no interpreter functions is defined,
    use sprintf with given format string.  If unit is not NONE, values
@@ -263,6 +272,16 @@ typedef struct {
 # endif
 #endif
 } snmp_info_t;
+
+#if WITH_DMF_FUNCTIONS
+# if WITH_DMF_LUA
+#  define snmp_info_default(_1, _2, _3, _4, _5, _6, _7)	{_1, _2, _3, _4, _5, _6, _7, NULL, NULL, NULL}
+# else
+#  define snmp_info_default(_1, _2, _3, _4, _5, _6, _7)	{_1, _2, _3, _4, _5, _6, _7, NULL, NULL}
+# endif
+#else
+#  define snmp_info_default(_1, _2, _3, _4, _5, _6, _7)	{_1, _2, _3, _4, _5, _6, _7}
+#endif /* WITH_DMF_FUNCTIONS */
 
 /* "flags" bits 0..9 */
 #define SU_FLAG_OK			(1UL << 0)	/* show element to upsd -
