@@ -277,8 +277,10 @@ static info_lkp_t marlin_ambient_drycontacts_state_info[] = {
  */
 
 # if WITH_SNMP_LKP_FUN_DUMMY
-long marlin_device_count_fun(const char *daisy_dev_list)
-		{ return 1; }
+long marlin_device_count_fun(const char *daisy_dev_list) {
+	NUT_UNUSED_VARIABLE(daisy_dev_list);
+	return 1;
+}
 # endif /* WITH_SNMP_LKP_FUN_DUMMY */
 
 static info_lkp_t marlin_device_count_info[] = {
