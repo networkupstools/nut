@@ -211,8 +211,9 @@ typedef struct {
  * Currently the few cases using a "fun_vp2s" type of lookup function
  * get away by serving fallback static mapping tables that get into
  * generated DMF, while the "nuf_s2l", "fun_s2l" and "nuf_vp2s" types
- * are added for completeness but are not really handled and do not have
- * real consumers in the existing NUT codebase (static mib2nut tables in *-mib.c files).
+ * are added for completeness but are not really handled and do not
+ * have real consumers in the existing NUT codebase (static mib2nut
+ * tables in *-mib.c files).
  * Related to su_find_infoval() (long* => string), su_find_valinfo()
  * (string => long) and su_find_strval() (char* => string) routines
  * defined below.
