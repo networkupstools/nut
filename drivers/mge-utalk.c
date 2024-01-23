@@ -55,18 +55,21 @@
 #include "config.h" /* must be the first header */
 
 #include <ctype.h>
+#ifndef WIN32
 #include <sys/ioctl.h>
+#endif
 #include "timehead.h"
 #include "main.h"
 #include "serial.h"
 #include "mge-utalk.h"
+#include "nut_stdint.h"
 
 /* --------------------------------------------------------------- */
 /*                  Define "technical" constants                   */
 /* --------------------------------------------------------------- */
 
 #define DRIVER_NAME	"MGE UPS SYSTEMS/U-Talk driver"
-#define DRIVER_VERSION	"0.94"
+#define DRIVER_VERSION	"0.95"
 
 
 /* driver description structure */
@@ -164,17 +167,28 @@ void upsdrv_makevartable(void)
 void upsdrv_initups(void)
 {
 	char buf[BUFFLEN];
+#ifndef WIN32
 	int RTS = TIOCM_RTS;
+#endif
 
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
 
 	/* read command line/conf variable that affect comm. */
+#ifndef WIN32
 	if (testvar ("oldmac"))
 		RTS = ~TIOCM_RTS;
 
 	/* Init serial line */
 	ioctl(upsfd, TIOCMBIC, &RTS);
+#else
+	if (testvar ("oldmac")) {
+		EscapeCommFunction(((serial_handler_t *)upsfd)->handle,CLRRTS);
+	}
+	else {
+		EscapeCommFunction(((serial_handler_t *)upsfd)->handle,SETRTS);
+	}
+#endif
 	enable_ups_comm();
 
 	/* Try to set "Low Battery Level" (if supported and given) */
@@ -908,7 +922,7 @@ static ssize_t mge_command(char *reply, size_t replylen, const char *fmt, ...)
 
 	/* send command */
 	for (p = command; *p; p++) {
-		if ( isprint(*p & 0xFF) )
+		if ( isprint((unsigned char)*p & 0xFF) )
 			upsdebugx(4, "mge_command: sending [%c]", *p);
 		else
 			upsdebugx(4, "mge_command: sending [%02X]", *p);
@@ -922,7 +936,7 @@ static ssize_t mge_command(char *reply, size_t replylen, const char *fmt, ...)
 
 	/* send terminating string */
 	for (p = MGE_COMMAND_ENDCHAR; *p; p++) {
-		if ( isprint(*p & 0xFF) )
+		if ( isprint((unsigned char)*p & 0xFF) )
 			upsdebugx(4, "mge_command: sending [%c]", *p);
 		else
 			upsdebugx(4, "mge_command: sending [%02X]", *p);
@@ -942,7 +956,9 @@ static ssize_t mge_command(char *reply, size_t replylen, const char *fmt, ...)
 	bytes_rcvd = ser_get_line(upsfd, reply, replylen,
 		MGE_REPLY_ENDCHAR, MGE_REPLY_IGNCHAR, 3, 0);
 
-	upsdebugx(4, "mge_command: received %zd byte(s)", bytes_rcvd);
+	upsdebugx(4, "mge_command: sent %" PRIiSIZE
+		", received %" PRIiSIZE " byte(s)",
+		bytes_sent, bytes_rcvd);
 
 	return bytes_rcvd;
 }

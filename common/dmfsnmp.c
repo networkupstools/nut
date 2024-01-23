@@ -1415,6 +1415,10 @@ int
 mibdmf_xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
 {
 	NUT_UNUSED_VARIABLE(state);
+#if ! WITH_DMF_FUNCTIONS
+	NUT_UNUSED_VARIABLE(cdata);
+	NUT_UNUSED_VARIABLE(len);
+#endif
 
 	if(!userdata)
 		return ERR;

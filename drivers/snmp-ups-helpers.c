@@ -93,7 +93,6 @@ info_lkp_t su_convert_to_iso_date_info[] = {
 	}
 };
 
-
 /* Process temperature value according to 'temperature_unit' */
 const char *su_temperature_read_fun(void *raw_snmp_value)
 {

@@ -1,4 +1,6 @@
-EXTRA_DIST = makelocal.sh precheck.py.in preproto.pl.in README
+# Network UPS Tools: scripts/Solaris
+
+EXTRA_DIST = makelocal.sh precheck.py.in preproto.pl.in README.adoc
 PROTOTYPE_DIR = $(DESTDIR)@prefix@
 SOLARIS_CHECK_TARGETS =
 PYTHON = @PYTHON@
@@ -29,8 +31,12 @@ sbin_SCRIPTS = ../upsdrvsvcctl/upsdrvsvcctl
 SOLARIS_CHECK_TARGETS += check-local-solaris-smf
 endif
 
+if WITH_SOLARIS_INIT
 solarisinitscriptdir = @datadir@/solaris-init
-solarisinitscript_SCRIPTS = nut
+solarisinitscript_SCRIPTS = nut reset-ups-usb-solaris.sh.sample
+endif
+
+EXTRA_DIST += reset-ups-usb-solaris.sh.sample
 
 SOLARIS_PACKAGE_TARGETS =
 
@@ -54,7 +60,7 @@ SOLARIS_PACKAGE_SVR4_INSTALLSCRIPTS = preinstall postinstall preremove postremov
 SOLARIS_PACKAGE_SVR4_INSTALLDATA = pkginfo
 package-solaris-svr4: $(SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLDATA)
 	if test -n "@auglensdir@" && test -d "$(DESTDIR)@auglensdir@" ; then \
-		mkdir -p "$(DESTDIR)@datadir@/augeas-lenses" && \
+		$(MKDIR_P) "$(DESTDIR)@datadir@/augeas-lenses" && \
 		cd "$(DESTDIR)@auglensdir@" && \
 		( cp -prf ./ "$(DESTDIR)@datadir@/augeas-lenses/" || cp -rf ./ "$(DESTDIR)@datadir@/augeas-lenses/" ) ; fi
 	cd $(PROTOTYPE_DIR) && find . -print | pkgproto > prototype1
@@ -84,5 +90,26 @@ check-local-solaris-smf: $(SOLARIS_SMF_MANIFESTS)
 	    echo "  SVCCFG-VALIDATE  $$F"; \
 	    /usr/sbin/svccfg validate "$$F" || RES=$$? ; \
 	 done; exit $$RES
+
+SPELLCHECK_SRC = README.adoc
+
+# NOTE: Due to portability, we do not use a GNU percent-wildcard extension:
+#%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+#	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+# NOTE: Portable suffix rules do not allow prerequisites, so we shim them here
+# by a wildcard target in case the make implementation can put the two together.
+*-spellchecked: Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+
+.sample.sample-spellchecked:
+	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+.in.in-spellchecked:
+	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+spellcheck spellcheck-interactive spellcheck-sortdict:
+	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SPELLCHECK_SRC)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+CLEANFILES = *-spellchecked
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp

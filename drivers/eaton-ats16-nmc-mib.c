@@ -25,7 +25,7 @@
 
 #include "eaton-ats16-nmc-mib.h"
 
-#define EATON_ATS16_NMC_MIB_VERSION  "0.19"
+#define EATON_ATS16_NMC_MIB_VERSION  "0.21"
 
 #define EATON_ATS16_NMC_SYSOID  ".1.3.6.1.4.1.705.1"    /* legacy NMC */
 #define EATON_ATS16_NMC_MODEL   ".1.3.6.1.4.1.534.10.2.1.2.0"
@@ -233,6 +233,10 @@ static info_lkp_t eaton_ats16_nmc_ambient_drycontacts_info[] = {
 
 /* EATON_ATS_NMC Snmp2NUT lookup table */
 static snmp_info_t eaton_ats16_nmc_mib[] = {
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
 
 	/* Device collection */
 	{ "device.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "ats", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
@@ -315,6 +319,7 @@ static snmp_info_t eaton_ats16_nmc_mib[] = {
 	{ "ambient.humidity.low", ST_FLAG_RW, 1, ".1.3.6.1.4.1.534.10.2.5.7.0", NULL, SU_FLAG_OK, NULL },
 	/* ats2EnvRemoteHumidityUpperLimit.0 = INTEGER: 90 percent */
 	{ "ambient.humidity.high", ST_FLAG_RW, 1, ".1.3.6.1.4.1.534.10.2.5.8.0", NULL, SU_FLAG_OK, NULL },
+
 	/* Dry contacts on EMP001 TH module */
 	/* ats2ContactState.1 = INTEGER: open(1) */
 	{ "ambient.contacts.1.status", ST_FLAG_STRING, SU_INFOSIZE,
@@ -325,7 +330,7 @@ static snmp_info_t eaton_ats16_nmc_mib[] = {
 		".1.3.6.1.4.1.534.10.2.5.4.1.3.2",
 		NULL, SU_FLAG_OK, &eaton_ats16_nmc_ambient_drycontacts_info[0] },
 
-#if 0 /* FIXME: Remaining data to be processed */
+#if WITH_UNMAPPED_DATA_POINTS /* FIXME: Remaining data to be processed */
 	/* ats2InputStatusDephasing.0 = INTEGER: normal(1) */
 	{ "unmapped.ats2InputStatusDephasing", 0, 1, ".1.3.6.1.4.1.534.10.2.3.1.1.0", NULL, SU_FLAG_OK, NULL },
 	/* ats2InputStatusIndex.source1 = INTEGER: source1(1) */
@@ -397,7 +402,7 @@ static snmp_info_t eaton_ats16_nmc_mib[] = {
 	{ "unmapped.ats2ContactDescr", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.10.2.5.4.1.4.1", NULL, SU_FLAG_OK, NULL },
 	/* ats2ContactDescr.2 = STRING: Input #2 */
 	{ "unmapped.ats2ContactDescr", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.10.2.5.4.1.4.2", NULL, SU_FLAG_OK, NULL },
-#endif /* if 0 */
+#endif	/* if WITH_UNMAPPED_DATA_POINTS */
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };

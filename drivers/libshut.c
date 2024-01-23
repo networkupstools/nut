@@ -43,7 +43,7 @@
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
 
 #define SHUT_DRIVER_NAME	"SHUT communication driver"
-#define SHUT_DRIVER_VERSION	"0.86"
+#define SHUT_DRIVER_VERSION	"0.88"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -182,6 +182,7 @@ struct my_hid_descriptor {
 /*!
  * SHUT functions for HID marshalling
  */
+
 /* Expected evaluated types for the API after typedefs:
  * static int shut_get_descriptor(int upsfd, unsigned char type,
  *			   unsigned char index, void *buf, int size);
@@ -298,6 +299,7 @@ typedef union device_desc_data_t {
 #endif
 
 /* Low level SHUT (Serial HID UPS Transfer) routines  */
+
 /* Expected evaluated types for the API after typedefs:
 static void setline(int upsfd, int set);
 static int shut_synchronise(int upsfd);
@@ -334,7 +336,7 @@ static int shut_control_msg(
 
 /* Data portability */
 /* realign packet data according to Endianess */
-#define BYTESWAP(in) (((in & 0xFF) << 8) + ((in & 0xFF00) >> 8))
+#define BYTESWAP(in) ((((uint16_t)in & 0x00FF) << 8) + (((uint16_t)in & 0xFF00) >> 8))
 static void align_request(struct shut_ctrltransfer_s *ctrl)
 {
 #if (defined (WORDS_BIGENDIAN)) && (WORDS_BIGENDIAN)
@@ -360,6 +362,7 @@ static void align_request(struct shut_ctrltransfer_s *ctrl)
  * information. This callback should return a value > 0 if the device
  * is accepted, or < 1 if not.
  */
+
 /* Expected evaluated types for the API after typedefs:
  * static int libshut_open(int *arg_upsfd, SHUTDevice_t *curDevice, char *arg_device_path,
  *                  int (*callback)(int arg_upsfd, SHUTDevice_t *hd,
@@ -391,10 +394,14 @@ static int libshut_open(
 	 * version is at index 1 (in which case, bcdDevice == 0x0202) */
 	usb_ctrl_descindex	hid_desc_index = 0;
 
+	if (!arg_device_path) {
+		fatalx(EXIT_FAILURE, "%s: arg_device_path=null", __func__);
+	}
+
 	upsdebugx(2, "libshut_open: using port %s", arg_device_path);
 
 	/* If device is still open, close it */
-	if (*arg_upsfd > 0) {
+	if (VALID_FD_SER(*arg_upsfd)) {
 		ser_close(*arg_upsfd, arg_device_path);
 	}
 
@@ -460,19 +467,36 @@ static int libshut_open(
 	free(curDevice->Product);
 	free(curDevice->Serial);
 	free(curDevice->Bus);
+	free(curDevice->Device);
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	free(curDevice->BusPort);
+#endif
 	memset(curDevice, '\0', sizeof(*curDevice));
 
 	curDevice->VendorID = dev_descriptor->idVendor;
 	curDevice->ProductID = dev_descriptor->idProduct;
 	curDevice->Bus = strdup("serial");
+	curDevice->Device = strdup(arg_device_path);
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	curDevice->BusPort = (char *)malloc(4);
+	if (curDevice->BusPort == NULL) {
+		fatal_with_errno(EXIT_FAILURE, "Out of memory");
+	}
+	upsdebugx(2, "%s: NOTE: BusPort is always zero with libshut", __func__);
+	sprintf(curDevice->BusPort, "%03d", 0);
+#endif
+
 	curDevice->bcdDevice = dev_descriptor->bcdDevice;
-	curDevice->Vendor = strdup("Eaton");
+	curDevice->Vendor = NULL;
 	if (dev_descriptor->iManufacturer) {
 		ret = shut_get_string_simple(*arg_upsfd, dev_descriptor->iManufacturer,
 			string, MAX_STRING_SIZE);
 		if (ret > 0) {
 			curDevice->Vendor = strdup(string);
 		}
+	}
+	if (curDevice->Vendor == NULL) {
+		curDevice->Vendor = strdup("Eaton");
 	}
 
 	/* ensure iProduct retrieval */
@@ -505,6 +529,10 @@ static int libshut_open(
 	upsdebugx(2, "- Product: %s", curDevice->Product);
 	upsdebugx(2, "- Serial Number: %s", curDevice->Serial);
 	upsdebugx(2, "- Bus: %s", curDevice->Bus);
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	upsdebugx(2, "- Bus Port: %s", curDevice->BusPort ? curDevice->BusPort : "unknown");
+#endif
+	upsdebugx(2, "- Device: %s", curDevice->Device ? curDevice->Device : "unknown");
 	upsdebugx(2, "- Device release number: %04x", curDevice->bcdDevice);
 	upsdebugx(2, "Device matches");
 
@@ -546,8 +574,7 @@ static int libshut_open(
 	}
 
 	/* USB_LE16_TO_CPU(desc->wDescriptorLength); */
-	desc->wDescriptorLength = (uint16_t)(buf[7]);
-	desc->wDescriptorLength |= (((uint16_t)buf[8]) << 8);
+	desc->wDescriptorLength = (0x00FF & (uint8_t)buf[7]) | ((0x00FF & (uint8_t)buf[8]) << 8);
 	upsdebugx(2, "HID descriptor retrieved (Reportlen = %u)", desc->wDescriptorLength);
 
 /*
@@ -583,7 +610,7 @@ static int libshut_open(
 #endif
 		upsdebugx(2,
 			"HID descriptor too long %" PRI_NUT_USB_CTRL_CHARBUFSIZE
-			" (max %zu)",
+			" (max %" PRIuSIZE ")",
 			rdlen, sizeof(rdbuf));
 		return -1;
 	}
@@ -657,7 +684,7 @@ static int libshut_open(
  */
 static void libshut_close(usb_dev_handle arg_upsfd)
 {
-	if (arg_upsfd < 1) {
+	if (INVALID_FD_SER(arg_upsfd)) {
 		return;
 	}
 
@@ -677,7 +704,7 @@ static int libshut_get_report(
 	usb_ctrl_charbuf raw_buf,
 	usb_ctrl_charbufsize ReportSize)
 {
-	if (arg_upsfd < 1) {
+	if (INVALID_FD_SER(arg_upsfd)) {
 		return 0;
 	}
 
@@ -704,7 +731,7 @@ static int libshut_set_report(
 {
 	int ret;
 
-	if (arg_upsfd < 1) {
+	if (INVALID_FD_SER(arg_upsfd)) {
 		return 0;
 	}
 
@@ -742,7 +769,7 @@ static int libshut_get_string(
 {
 	int ret;
 
-	if (arg_upsfd < 1) {
+	if (INVALID_FD_SER(arg_upsfd)) {
 		return -1;
 	}
 
@@ -767,7 +794,7 @@ static int libshut_get_interrupt(
 {
 	int ret;
 
-	if (arg_upsfd < 1) {
+	if (INVALID_FD_SER(arg_upsfd)) {
 		return -1;
 	}
 
@@ -807,7 +834,7 @@ shut_communication_subdriver_t shut_subdriver = {
  */
 void setline(usb_dev_handle arg_upsfd, int set)
 {
-	if (arg_upsfd < 1) {
+	if (INVALID_FD_SER(arg_upsfd)) {
 		return;
 	}
 
@@ -893,7 +920,7 @@ static unsigned char shut_checksum(
 	unsigned char chk=0;
 
 	for(i=0; i<bufsize; i++)
-		chk^=buf[i];
+		chk ^= (unsigned char)buf[i];
 
 	upsdebugx (4, "shut_checksum: %02x", chk);
 	return chk;

@@ -22,11 +22,15 @@
 #include "common.h"
 #include "nut_platform.h"
 
+#ifndef WIN32
 #include <pwd.h>
 #include <netdb.h>
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#else
+#include "wincompat.h"
+#endif
 
 #include "nut_stdint.h"
 #include "upsclient.h"
@@ -50,6 +54,7 @@ static void usage(const char *prog)
 	printf("Administration program to initiate instant commands on UPS hardware.\n");
 	printf("\n");
 	printf("  -h		display this help text\n");
+	printf("  -V		display the version of this software\n");
 	printf("  -l <ups>	show available commands on UPS <ups>\n");
 	printf("  -u <username>	set username for command authentication\n");
 	printf("  -p <password>	set password for command authentication\n");
@@ -60,6 +65,8 @@ static void usage(const char *prog)
 	printf("  <ups>		UPS identifier - <upsname>[@<hostname>[:<port>]]\n");
 	printf("  <command>	Valid instant command - test.panel.start, etc.\n");
 	printf("  [<value>]	Additional data for command - number of seconds, etc.\n");
+
+	nut_report_config_flags();
 }
 
 static void print_cmd(char *cmdname)
@@ -113,7 +120,7 @@ static void listcmds(void)
 
 		/* CMD <upsname> <cmdname> */
 		if (numa < 3) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %zu args, need at least 3)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 3)", numa);
 		}
 
 		/* we must first read the entire list of commands,
@@ -197,9 +204,10 @@ static void do_cmd(char **argv, const int argc)
 #pragma GCC diagnostic ignored "-Wformat-truncation"
 #endif
 	/* From the check above, we know that we have exactly UUID4_LEN chars
-	 * (aka sizeof(tracking_id)) in the buf after "OK TRACKING " prefix.
+	 * (aka sizeof(tracking_id)) in the buf after "OK TRACKING " prefix,
+	 * plus the null-byte.
 	 */
-	assert (UUID4_LEN == snprintf(tracking_id, sizeof(tracking_id), "%s", buf + strlen("OK TRACKING ")));
+	assert (UUID4_LEN == 1 + snprintf(tracking_id, sizeof(tracking_id), "%s", buf + strlen("OK TRACKING ")));
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
 #pragma GCC diagnostic pop
 #endif
@@ -269,7 +277,8 @@ static void clean_exit(void)
 
 int main(int argc, char **argv)
 {
-	int	i, port;
+	int	i;
+	uint16_t	port;
 	ssize_t	ret;
 	int	have_un = 0, have_pw = 0, cmdlist = 0;
 	char	buf[SMALLBUF * 2], username[SMALLBUF], password[SMALLBUF];
@@ -303,6 +312,8 @@ int main(int argc, char **argv)
 			break;
 
 		case 'V':
+			nut_report_config_flags();
+
 			fatalx(EXIT_SUCCESS, "Network UPS Tools upscmd %s", UPS_VERSION);
 #ifndef HAVE___ATTRIBUTE__NORETURN
 			exit(EXIT_SUCCESS);	/* Should not get here in practice, but compiler is afraid we can fall through */

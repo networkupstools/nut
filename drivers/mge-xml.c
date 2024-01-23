@@ -35,7 +35,11 @@
 #include "mge-xml.h"
 #include "main.h" /* for testvar() */
 
-#define MGE_XML_VERSION		"MGEXML/0.32"
+#ifdef WIN32
+#include "wincompat.h"
+#endif
+
+#define MGE_XML_VERSION		"MGEXML/0.36"
 
 #define MGE_XML_INITUPS		"/"
 #define MGE_XML_INITINFO	"/mgeups/product.xml /product.xml /ws/product.xml"
@@ -544,7 +548,7 @@ static const char *mge_sensitivity_info(const char *arg_val)
 
 static const char *mge_test_result_info(const char *arg_val)
 {
-	STATUS_CLR(CAL);
+	STATUS_CLR(CALIB);
 	switch (atoi(arg_val))
 	{
 	case 1:
@@ -556,7 +560,7 @@ static const char *mge_test_result_info(const char *arg_val)
 	case 4:
 		return "aborted";
 	case 5:
-		STATUS_SET(CAL);
+		STATUS_SET(CALIB);
 		return "in progress";
 	case 6:
 		return "no test initiated";
@@ -577,7 +581,7 @@ static const char *mge_ambient_info(const char *arg_val)
 	}
 }
 
-static const char *mge_drycontact_info(const char *val)
+static const char *mge_drycontact_info(const char *arg_val)
 {
 	/* these values should theoretically be obtained through
 	 * Environment.Input[1].State[x].Description
@@ -585,7 +589,7 @@ static const char *mge_drycontact_info(const char *val)
 	 * <OBJECT name="Environment.Input[1].State[0].Description">open</OBJECT>
 	 * <OBJECT name="Environment.Input[1].State[1].Description">closed</OBJECT>
 	 */
-	switch (atoi(val))
+	switch (atoi(arg_val))
 	{
 	case 0:
 		return "opened";
@@ -595,8 +599,6 @@ static const char *mge_drycontact_info(const char *val)
 		return NULL;
 	}
 }
-
-
 
 static const char *mge_timer_shutdown(const char *delay_before_shutoff)
 {
@@ -1535,9 +1537,9 @@ subdriver_t mge_xml_subdriver = {
 };
 
 const char *vname_nut2mge_xml(const char *name) {
-	assert(NULL != name);
-
 	size_t i = 0;
+
+	assert(NULL != name);
 
 	for (; i < sizeof(mge_xml2nut) / sizeof(xml_info_t); ++i) {
 		xml_info_t *info = mge_xml2nut + i;
@@ -1551,9 +1553,9 @@ const char *vname_nut2mge_xml(const char *name) {
 }
 
 const char *vname_mge_xml2nut(const char *name) {
-	assert(NULL != name);
-
 	size_t i = 0;
+
+	assert(NULL != name);
 
 	for (; i < sizeof(mge_xml2nut) / sizeof(xml_info_t); ++i) {
 		xml_info_t *info = mge_xml2nut + i;
@@ -1567,9 +1569,9 @@ const char *vname_mge_xml2nut(const char *name) {
 }
 
 char *vvalue_mge_xml2nut(const char *name, const char *value, size_t len) {
-	assert(NULL != name);
-
 	size_t i = 0;
+
+	assert(NULL != name);
 
 	for (; i < sizeof(mge_xml2nut) / sizeof(xml_info_t); ++i) {
 		xml_info_t *info = mge_xml2nut + i;

@@ -33,10 +33,14 @@ extern "C" {
 
 void net_login(nut_ctype_t *client, size_t numarg, const char **arg);
 void net_logout(nut_ctype_t *client, size_t numarg, const char **arg);
-/* FIXME: Protocol update needed to handle master/primary alias
- * and probably an API bump also, to rename/alias the routine.
+
+/* NOTE: Since NUT 2.8.0 we handle master as alias for primary
+ * Header keyword kept for building older consumers, but
+ * the implementation will warn that it is deprecated.
  */
 void net_master(nut_ctype_t *client, size_t numarg, const char **arg);
+void net_primary(nut_ctype_t *client, size_t numarg, const char **arg);
+
 void net_username(nut_ctype_t *client, size_t numarg, const char **arg);
 void net_password(nut_ctype_t *client, size_t numarg, const char **arg);
 

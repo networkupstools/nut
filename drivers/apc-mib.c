@@ -26,7 +26,7 @@
 
 #include "apc-mib.h"
 
-#define APCC_MIB_VERSION	"1.5"
+#define APCC_MIB_VERSION	"1.60"
 
 #define APC_UPS_DEVICE_MODEL	".1.3.6.1.4.1.318.1.1.1.1.1.1.0"
 /* FIXME: Find a better oid_auto_check vs sysOID for this one? */
@@ -79,6 +79,16 @@ static info_lkp_t apcc_batt_info[] = {
 		, NULL, NULL, NULL, NULL
 #endif
 	},	/* batteryLow */
+	{ 4, "LB"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* batteryInFaultCondition */
+	{ 5, "LB"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* noBatteryPresent */
 	{ 0, NULL
 #if WITH_SNMP_LKP_FUN
 		, NULL, NULL, NULL, NULL
@@ -149,7 +159,87 @@ static info_lkp_t apcc_pwr_info[] = {
 		, NULL, NULL, NULL, NULL
 #endif
 	},     /* onSmartTrim */
-	{ 0, NULL
+    { 13, "OL ECO"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},   /* ecoMode */
+    { 14, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},       /* hotStandby */
+    { 15, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},       /* onBatteryTest */
+    { 16, "BYPASS"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},   /* emergencyStaticBypass */
+    { 17, "BYPASS"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},   /* staticBypassStandby */
+    { 18, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},         /* powerSavingMode */
+    { 19, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},       /* spotMode */
+    { 20, "OL ECO"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},   /* eConversion */
+    { 21, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},       /* chargerSpotmode */
+    { 22, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},       /* inverterSpotmode */
+    { 23, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},         /* activeLoad */
+    { 24, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},       /* batteryDischargeSpotmode */
+    { 25, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},       /* inverterStandby */
+    { 26, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},         /* chargerOnly */
+    { 27, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},         /* distributedEnergyReserve */
+    { 28, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},       /* selfTest */
+    { 0, NULL
 #if WITH_SNMP_LKP_FUN
 		, NULL, NULL, NULL, NULL
 #endif
@@ -158,22 +248,37 @@ static info_lkp_t apcc_pwr_info[] = {
 
 #define APCC_OID_CAL_RESULTS	".1.3.6.1.4.1.318.1.1.1.7.2.6.0"
 static info_lkp_t apcc_cal_info[] = {
-	{ 1, ""
+    { 1, ""
 #if WITH_SNMP_LKP_FUN
 		, NULL, NULL, NULL, NULL
 #endif
 	},          /* Calibration Successful */
-	{ 2, ""
+    { 2, ""
 #if WITH_SNMP_LKP_FUN
 		, NULL, NULL, NULL, NULL
 #endif
 	},          /* Calibration not done, battery capacity below 100% */
-	{ 3, "CAL"
+    { 3, "CAL"
 #if WITH_SNMP_LKP_FUN
 		, NULL, NULL, NULL, NULL
 #endif
 	},       /* Calibration in progress */
-	{ 0, NULL
+    { 4, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},          /* Calibration not done, refused */
+    { 5, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},          /* Calibration canceled by user or error */
+    { 6, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},          /* Calibration pending, about to start */
+    { 0, NULL
 #if WITH_SNMP_LKP_FUN
 		, NULL, NULL, NULL, NULL
 #endif
@@ -327,6 +432,10 @@ static info_lkp_t apcc_transfer_reasons[] = {
 
 static snmp_info_t apcc_mib[] = {
 
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
 	/* info elements. */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "APC",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
@@ -440,14 +549,16 @@ static snmp_info_t apcc_mib[] = {
 	{ "output.voltage.nominal", ST_FLAG_STRING | ST_FLAG_RW, 3, ".1.3.6.1.4.1.318.1.1.1.5.2.1.0", "", SU_TYPE_INT | SU_FLAG_OK, NULL },
 
 	/* Measure-UPS ambient variables */
-/* Environmental sensors (AP9612TH and others) */
+	/* Environmental sensors (AP9612TH and others) */
 	{ "ambient.temperature", 0, 1, ".1.3.6.1.4.1.318.1.1.2.1.1.0", "", SU_FLAG_OK, NULL },
 	{ "ambient.1.temperature.alarm.high", 0, 1, ".1.3.6.1.4.1.318.1.1.10.1.2.2.1.3.1", "", SU_FLAG_OK, NULL },
 	{ "ambient.1.temperature.alarm.low", 0, 1, ".1.3.6.1.4.1.318.1.1.10.1.2.2.1.4.1", "", SU_FLAG_OK, NULL },
 	{ "ambient.humidity", 0, 1, ".1.3.6.1.4.1.318.1.1.2.1.2.0", "", SU_FLAG_OK, NULL },
 	{ "ambient.1.humidity.alarm.high", 0, 1, ".1.3.6.1.4.1.318.1.1.10.1.2.2.1.6.1", "", SU_FLAG_OK, NULL },
 	{ "ambient.1.humidity.alarm.low", 0, 1, ".1.3.6.1.4.1.318.1.1.10.1.2.2.1.7.1", "", SU_FLAG_OK, NULL },
-/* IEM: integrated environment monitor probe */
+
+	/* IEM ambient variables */
+	/* IEM: integrated environment monitor probe */
 	{ "ambient.temperature", 0, 1, APCC_OID_IEM_TEMP, "", SU_FLAG_OK, NULL },
 	{ "ambient.humidity", 0, 1, APCC_OID_IEM_HUMID, "", SU_FLAG_OK, NULL },
 

@@ -21,7 +21,7 @@
 
 #include "huawei-mib.h"
 
-#define HUAWEI_MIB_VERSION  "0.3"
+#define HUAWEI_MIB_VERSION  "0.4"
 
 #define HUAWEI_SYSOID       ".1.3.6.1.4.1.8072.3.2.10"
 #define HUAWEI_UPSMIB       ".1.3.6.1.4.1.2011"
@@ -357,6 +357,11 @@ static snmp_info_t huawei_mib[] = {
 	 * };
 	 */
 
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
+
 	/* UPS page */
 
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "Huawei", SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
@@ -443,9 +448,9 @@ static snmp_info_t huawei_mib[] = {
 	{ "battery.charge", 0, 1, ".1.3.6.1.4.1.2011.6.174.1.6.100.1.3.1", NULL, SU_FLAG_OK, NULL },
 	{ "battery.runtime", 0, 1, ".1.3.6.1.4.1.2011.6.174.1.6.100.1.4.1", NULL, SU_FLAG_OK, NULL },
 
-
-	/* { "unmapped.hwUpsBattTest", 0, 1, ".1.3.6.1.4.1.2011.6.174.1.103.101.1.6.1", NULL, SU_FLAG_OK, NULL }, */
-
+#if WITH_UNMAPPED_DATA_POINTS
+	{ "unmapped.hwUpsBattTest", 0, 1, ".1.3.6.1.4.1.2011.6.174.1.103.101.1.6.1", NULL, SU_FLAG_OK, NULL },
+#endif	/* if WITH_UNMAPPED_DATA_POINTS */
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }

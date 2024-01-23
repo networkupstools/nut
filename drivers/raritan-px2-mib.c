@@ -23,7 +23,7 @@
 
 #include "raritan-px2-mib.h"
 
-#define RARITAN_PX2_MIB_VERSION  "0.3"
+#define RARITAN_PX2_MIB_VERSION  "0.4"
 
 #define RARITAN_PX2_MIB_SYSOID     ".1.3.6.1.4.1.13742.6"
 #define RARITAN_PX2_OID_MODEL_NAME ".1.3.6.1.4.1.13742.6.3.2.1.1.3.1"
@@ -179,6 +179,11 @@ static info_lkp_t raritanpx2_outlet_switchability_info[] = {
 /* PDU2-MIB Snmp2NUT lookup table */
 static snmp_info_t raritan_px2_mib[] = {
 
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
+
 	/* pduManufacturer.1 = STRING: Raritan */
 	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.6.3.2.1.1.2.1",
 		"Raritan", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
@@ -272,11 +277,12 @@ static snmp_info_t raritan_px2_mib[] = {
 	{ "outlet.%i.load.on",    0, 1, ".1.3.6.1.4.1.13742.6.4.1.2.1.2.1.%i", "1", SU_TYPE_CMD | SU_OUTLET, NULL },
 	{ "outlet.%i.load.cycle", 0, 1, ".1.3.6.1.4.1.13742.6.4.1.2.1.2.1.%i", "2", SU_TYPE_CMD | SU_OUTLET, NULL },
 
-#ifdef DEBUG
+#if WITH_UNMAPPED_DATA_POINTS || (defined DEBUG)
 	/* pduCount.0 = INTEGER: 1 */
 	/* FIXME: part of daisychain support, RFC device.count */
 	{ "device.count", 0, 1, ".1.3.6.1.4.1.13742.6.3.1.0", NULL, SU_FLAG_OK, NULL },
 
+#if WITH_UNMAPPED_DATA_POINTS
 	/* pduRatedVoltage.1 = STRING: 100-120V */
 	{ "unmapped.pduRatedVoltage", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.6.3.2.1.1.5.1", NULL, SU_FLAG_OK, NULL },
 	/* pduRatedCurrent.1 = STRING: 16A */
@@ -513,7 +519,7 @@ static snmp_info_t raritan_px2_mib[] = {
 	/* inletSensorStateChangeDelay.1.1.activeEnergy = Gauge32: 0 */
 	{ "unmapped.inletSensorStateChangeDelay", 0, 1, ".1.3.6.1.4.1.13742.6.3.3.4.1.14.1.1.8", NULL, SU_FLAG_OK, NULL },
 
-/* Inlet thresholds */
+	/* Inlet thresholds */
 	/* inletSensorLowerCriticalThreshold.1.1.rmsCurrent = Gauge32: 0 */
 	{ "unmapped.inletSensorLowerCriticalThreshold", 0, 1, ".1.3.6.1.4.1.13742.6.3.3.4.1.21.1.1.1", NULL, SU_FLAG_OK, NULL },
 	/* inletSensorLowerCriticalThreshold.1.1.rmsVoltage = Gauge32: 94 */
@@ -684,7 +690,8 @@ static snmp_info_t raritan_px2_mib[] = {
 	 * the rest is 18MB of verbose log and satellite data */
 
 	/* Note: All reliabilityXXX data were removed */
-#endif /* DEBUG */
+#endif /* WITH_UNMAPPED_DATA_POINTS */
+#endif /* DEBUG || WITH_UNMAPPED_DATA_POINTS */
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }

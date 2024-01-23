@@ -3,6 +3,7 @@ NUT.CONF(5)
 
 NAME
 ----
+
 nut.conf - UPS definitions for Network UPS Tools
 
 DESCRIPTION
@@ -53,6 +54,31 @@ netclient;; When only upsmon is required, possibly because
 there are other hosts that are more closely attached to the UPS,
 the MODE should be set to netclient.
 
+*ALLOW_NO_DEVICE*::
+Optional, defaults to `false`.  Set this to `true` to allow starting the `upsd`
+NUT data server service even if `ups.conf` has no device sections configured
+at the moment. This environment variable overrides the built-in "false" flag
+value in the `upsd` program, and an optional same-named default flag that
+can be set in `upsd.conf`.
++
+If you want a data server always running and responding on the network, even
+if it initially has nothing to serve (may be live-reloaded later, when devices
+become configured), this option is for you.
+
+*ALLOW_NOT_ALL_LISTENERS*::
+Optional, defaults to `false`.  Set this to `true` to allow starting the `upsd`
+NUT data server even if not all `LISTEN` directives can be honoured at the
+moment. This environment variable overrides the built-in "false" flag in the
+`upsd` program, and an optional same-named default flag that can be set in
+`upsd.conf`.
++
+If you want a data server always running, even if it would potentially not
+serve all clients on every uptime, this option is for you (note you would
+have to restart `upsd` to pick up the `LISTEN`ed IP address if it appears
+later).
++
+Probably configuring `LISTEN *` is a better choice in such cases.
+
 *UPSD_OPTIONS*::
 Optional.  Set upsd specific options. See linkman:upsd[8] for more
 details.  It is ignored when 'MODE' above indicates that no upsd
@@ -75,13 +101,21 @@ unavailable.  On the other hand, it should not be so long that the
 system remains offline for an unreasonable amount of time if line
 power has returned.  See sleep(1) for compatible time syntax.
 If you specify the time in seconds, use the "s" suffix.
-
++
 WARNING: this workaround might be dangerous under some circumstances.
 Please read http://bugs.debian.org/358696 for more details.
+
+*POWEROFF_QUIET*::
+Optional, defaults to `false`.  This setting controls if the NUT shutdown
+integration scripts or service units would emit messages about their activity
+(or lack thereof).  By default they may be verbose, to aid in post-mortem
+troubleshooting via logs or console captures.  Set to `true` to avoid that
+trove of information, if you consider it noise.
 
 EXAMPLE
 -------
 
+------
    # /etc/nut/nut.conf.  See nut.conf(5)
    
    MODE=none
@@ -91,12 +125,13 @@ EXAMPLE
    UPSMON_OPTIONS=""
    
    # POWEROFF_WAIT=15m
+------
 
 INTEGRATION
 -----------
 
 An init script, such as /etc/init.d/nut, is expected to source this
-file in order to determine which component(s) has to be started.
+file in order to determine which components have to be started.
 
 SEE ALSO
 --------
@@ -104,6 +139,7 @@ SEE ALSO
 linkman:ups.conf[5], linkman:upsd.conf[5], linkman:upsd.users[5],
 linkman:upsmon.conf[5]
 
-INTERNET RESOURCES
-------------------
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

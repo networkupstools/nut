@@ -6,6 +6,7 @@
  *  2008 - 2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
  *  2013 Charles Lepple <clepple+nut@gmail.com>
  *  2021 Francois Lacroix <xbgmsharp@gmail.com>
+ *  2022 Abel Gomez <abel@gomez.llana.me>
  *
  *  Note: this subdriver was initially generated as a "stub" by the
  *  gen-usbhid-subdriver script. It must be customized.
@@ -32,7 +33,7 @@
 #include "main.h"	/* for getval() */
 #include "usb-common.h"
 
-#define SALICRU_HID_VERSION	"Salicru HID 0.3"
+#define SALICRU_HID_VERSION	"Salicru HID 0.4"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* Salicru */
@@ -40,6 +41,10 @@
 
 /* USB IDs device table */
 static usb_device_id_t salicru_usb_device_table[] = {
+	/* Salicru SPS 3000 ADV RT2 */
+	/* https://www.salicru.com/sps-3000-adv-rt2.html */
+	{ USB_DEVICE(SALICRU_VENDORID, 0x0101), NULL },
+
 	/* TWINPRO3/TWINRT3 (SLC-1500-TWIN PRO3) per https://github.com/networkupstools/nut/issues/1142 */
 	/* SLC TWIN PRO2<=3KVA per https://github.com/networkupstools/nut/issues/450 */
 	{ USB_DEVICE(SALICRU_VENDORID, 0x0201), NULL },
@@ -49,6 +54,10 @@ static usb_device_id_t salicru_usb_device_table[] = {
 	/* Salicru SPS 850 HOME per https://github.com/networkupstools/nut/pull/1199 */
 	/* https://www.salicru.com/sps-home.html */
 	{ USB_DEVICE(SALICRU_VENDORID, 0x0300), NULL },
+
+	/* Salicru SPS 850 ADV T, see https://github.com/networkupstools/nut/issues/1416 */
+	/* https://www.salicru.com/sps-850-adv-t.html */
+	{ USB_DEVICE(SALICRU_VENDORID, 0x0302), NULL },
 
 	/* Terminating entry */
 	{ 0, 0, NULL }
@@ -86,7 +95,7 @@ static hid_info_t salicru_hid2nut[] = {
   { "experimental.ups.powersummary.fullchargecapacity", 0, 0, "UPS.PowerSummary.FullChargeCapacity", NULL, "%.0f", 0, NULL },
 #endif /* DEBUG */
 
-/* A few more unknow fields
+/* A few more unknown fields
    0.043266	[D1] Path: UPS.ff010004.ff010024.ff0100d0, Type: Feature, ReportID: 0x19, Offset: 0, Size: 8, Value: 0.1
    0.043766	[D1] Path: UPS.ff010004.ff010024.ff0100d1, Type: Feature, ReportID: 0x1a, Offset: 0, Size: 8, Value: 0
    0.044308	[D1] Path: UPS.ff01001d.ff010019.ff010020, Type: Feature, ReportID: 0x25, Offset: 0, Size: 1, Value: 0
@@ -203,6 +212,25 @@ static hid_info_t salicru_hid2nut[] = {
   { "beeper.disable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "1", HU_TYPE_CMD, NULL },
   { "beeper.mute", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "3", HU_TYPE_CMD, NULL },
 */
+
+  /* Salicru Twin Pro 2 Descriptors: Sensors */
+  { "ups.load", 0, 0, "UPS.PowerSummary.PercentLoad", NULL, "%.0f", 0, NULL },
+  { "ups.test.result", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "%s", 0, test_read_info },
+  { "ups.realpower.nominal", 0, 0, "UPS.Flow.[4].ConfigActivePower", NULL, "%.0f", 0, NULL },
+  { "ups.realpower", 0, 0, "UPS.PowerConverter.Output.ActivePower", NULL, "%.0f", 0, NULL },
+  { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Overload", NULL, NULL, 0, overload_info },
+  { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.OverTemperature", NULL, NULL, 0, overheat_info },
+  { "input.frequency", 0, 0, "UPS.PowerConverter.Input.[1].Frequency", NULL, "%.1f", 0, NULL },
+  { "input.voltage", 0, 0, "UPS.PowerConverter.Input.[1].Voltage", NULL, "%.1f", 0, NULL },
+  { "output.frequency", 0, 0, "UPS.PowerConverter.Output.Frequency", NULL, "%.1f", 0, NULL },
+  { "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", NULL, "%.1f", 0, NULL },
+  { "output.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%.0f", 0, NULL },
+  { "ups.test.result", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "%s", 0, test_read_info },
+
+  /* Salicru Twin Pro 2 Descriptors: Instant commands */
+  { "test.battery.start.quick", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "1", HU_TYPE_CMD, NULL },
+  { "test.battery.start.deep", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "2", HU_TYPE_CMD, NULL },
+  { "test.battery.stop", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "3", HU_TYPE_CMD, NULL },
 
   /* end of structure. */
   { NULL, 0, 0, NULL, NULL, NULL, 0, NULL }

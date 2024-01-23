@@ -28,7 +28,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Metasystem UPS driver"
-#define DRIVER_VERSION	"0.08"
+#define DRIVER_VERSION	"0.09"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -189,7 +189,7 @@ static int get_answer(unsigned char *data) {
 	/* Read STX byte */
 	res = ser_get_char(upsfd, my_buf, 1, 0);
 	if (res < 1) {
-		ser_comm_fail("Receive error (STX): %zd!!!\n", res);
+		ser_comm_fail("Receive error (STX): %" PRIiSIZE "!!!\n", res);
 		return -1;
 	}
 	if (my_buf[0] != 0x02) {
@@ -199,7 +199,7 @@ static int get_answer(unsigned char *data) {
 	/* Read data length byte */
 	res = ser_get_char(upsfd, my_buf, 1, 0);
 	if (res < 1) {
-		ser_comm_fail("Receive error (length): %zd!!!\n", res);
+		ser_comm_fail("Receive error (length): %" PRIiSIZE "!!!\n", res);
 		return -1;
 	}
 	packet_length = my_buf[0];
@@ -210,7 +210,7 @@ static int get_answer(unsigned char *data) {
 	/* Try to read all the remainig bytes (packet_length) */
 	res = ser_get_buf_len(upsfd, my_buf, packet_length, 1, 0);
 	if (res != packet_length) {
-		ser_comm_fail("Receive error (data): got %zd bytes instead of %d!!!\n", res, packet_length);
+		ser_comm_fail("Receive error (data): got %" PRIiSIZE " bytes instead of %d!!!\n", res, packet_length);
 		return -1;
 	}
 

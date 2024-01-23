@@ -24,7 +24,7 @@
 #include "baytech-mib.h"
 
 /* NOTE: last badly versioned release was "4032" but should be "X.Y[Z]"! */
-#define BAYTECH_MIB_VERSION	"0.4033"
+#define BAYTECH_MIB_VERSION	"0.4035"
 
 /* Baytech MIB */
 #define BAYTECH_OID_MIB			".1.3.6.1.4.1.4779"
@@ -50,16 +50,43 @@ static info_lkp_t baytech_outlet_status_info[] = {
 #if WITH_SNMP_LKP_FUN
 		, NULL, NULL, NULL, NULL
 #endif
-	}, /* transitional status */
+	}, /* transitional status, "reboot" in MIB comments */
+	{ 3, "lockon"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 4, "lockoff"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 5, "unlock"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 6, "unknown"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
 	{ 0, NULL
 #if WITH_SNMP_LKP_FUN
 		, NULL, NULL, NULL, NULL
 #endif
 	}
+
 };
 
 /* Snmp2NUT lookup table for BayTech MIBs */
 static snmp_info_t baytech_mib[] = {
+
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
+
 	/* Device page */
 	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "BayTech",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },

@@ -16,6 +16,7 @@ SYNOPSIS
 
 DESCRIPTION
 -----------
+
 The *upscli_add_host_cert()* function register a security rule associated
 to the 'hostname'. All connections to this host use this rule.
 
@@ -23,9 +24,9 @@ The rule is composed of the certificate name 'certname 'expected for
 the host, 'certverify' if the certificate must be validated for the host
 and 'forcessl' if a secured connection must be used to connect to the host.
 
-Note: This call only functions if upsclient has been compiled with NSS support.
-If instead it was compiled with OpenSSL support, this function contains an empty
-definition and will take no action when called.
+Note: This call only functions if upsclient has been compiled with NSS
+support. If instead it was compiled with OpenSSL support, this function
+contains an empty definition and will take no action when called.
 
 RETURN VALUE
 ------------
@@ -34,5 +35,6 @@ RETURN VALUE
 
 SEE ALSO
 --------
+
 linkman:upscli_init[3], linkman:upscli_connect[3], linkman:upscli_ssl[3],
 linkman:upscli_strerror[3], linkman:upscli_upserror[3]

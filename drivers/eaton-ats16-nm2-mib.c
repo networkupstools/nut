@@ -29,7 +29,7 @@
 #include "eaton-pdu-marlin-helpers.h"
 #endif
 
-#define EATON_ATS16_NM2_MIB_VERSION  "0.20"
+#define EATON_ATS16_NM2_MIB_VERSION  "0.22"
 
 #define EATON_ATS16_NM2_SYSOID  ".1.3.6.1.4.1.534.10.2" /* newer Network-M2 */
 #define EATON_ATS16_NM2_MODEL   ".1.3.6.1.4.1.534.10.2.1.2.0"
@@ -440,8 +440,46 @@ static info_lkp_t eaton_ats16_nm2_threshold_humidity_alarms_info[] = {
 	}
 };
 
+static info_lkp_t eaton_ats16_ambient_drycontacts_info[] = {
+	{ -1, "unknown"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 1, "opened"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "closed"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 3, "opened"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},   /* openWithNotice   */
+	{ 4, "closed"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}, /* closedWithNotice */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
+};
+
 /* EATON_ATS Snmp2NUT lookup table */
 static snmp_info_t eaton_ats16_nm2_mib[] = {
+
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
 
 	/* Device collection */
 	{ "device.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "ats", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
@@ -528,6 +566,16 @@ static snmp_info_t eaton_ats16_nm2_mib[] = {
 	/* ats2EnvRemoteHumidityUpperLimit.0 = INTEGER: 90 percent */
 	{ "ambient.humidity.high", ST_FLAG_RW, 1, ".1.3.6.1.4.1.534.10.2.5.8.0", NULL, SU_FLAG_OK, NULL },
 
+	/* Dry contacts on EMP001 TH module */
+	/* ats2ContactState.1 = INTEGER: open(1) */
+	{ "ambient.contacts.1.status", ST_FLAG_STRING, SU_INFOSIZE,
+		".1.3.6.1.4.1.534.10.2.5.4.1.3.1",
+		NULL, SU_FLAG_OK, &eaton_ats16_ambient_drycontacts_info[0] },
+	/* ats2ContactState.2 = INTEGER: open(1) */
+	{ "ambient.contacts.2.status", ST_FLAG_STRING, SU_INFOSIZE,
+		".1.3.6.1.4.1.534.10.2.5.4.1.3.2",
+		NULL, SU_FLAG_OK, &eaton_ats16_ambient_drycontacts_info[0] },
+
 	/* EMP002 (EATON EMP MIB) mapping, including daisychain support */
 	/* Warning: indexes start at '1' not '0'! */
 	/* sensorCount.0 */
@@ -602,7 +650,7 @@ static snmp_info_t eaton_ats16_nm2_mib[] = {
 	{ "ambient.%i.contacts.1.status", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.4.3.1.3.%i.1", "", SU_AMBIENT_TEMPLATE, &eaton_ats16_nm2_ambient_drycontacts_state_info[0] },
 	{ "ambient.%i.contacts.2.status", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.4.3.1.3.%i.2", "", SU_AMBIENT_TEMPLATE, &eaton_ats16_nm2_ambient_drycontacts_state_info[0] },
 
-#if 0 /* FIXME: Remaining data to be processed */
+#if WITH_UNMAPPED_DATA_POINTS /* FIXME: Remaining data to be processed */
 	/* ats2InputStatusDephasing.0 = INTEGER: normal(1) */
 	{ "unmapped.ats2InputStatusDephasing", 0, 1, ".1.3.6.1.4.1.534.10.2.3.1.1.0", NULL, SU_FLAG_OK, NULL },
 	/* ats2InputStatusIndex.source1 = INTEGER: source1(1) */
@@ -678,7 +726,7 @@ static snmp_info_t eaton_ats16_nm2_mib[] = {
 	{ "unmapped.ats2ContactDescr", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.10.2.5.4.1.4.1", NULL, SU_FLAG_OK, NULL },
 	/* ats2ContactDescr.2 = STRING: Input #2 */
 	{ "unmapped.ats2ContactDescr", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.10.2.5.4.1.4.2", NULL, SU_FLAG_OK, NULL },
-#endif /* if 0 */
+#endif	/* if WITH_UNMAPPED_DATA_POINTS */
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };

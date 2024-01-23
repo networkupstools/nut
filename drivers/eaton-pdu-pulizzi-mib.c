@@ -42,7 +42,7 @@
 
 /* Pulizzi Switched ePDU */
 
-#define EATON_PULIZZI_SW_MIB_VERSION	"0.4"
+#define EATON_PULIZZI_SW_MIB_VERSION	"0.5"
 
 #define PULIZZI_SW_OID_MIB			".1.3.6.1.4.1.20677.3.1.1"
 #define PULIZZI_SW_OID_MODEL_NAME		".1.3.6.1.4.1.20677.2.1.1.0"
@@ -91,6 +91,12 @@ static info_lkp_t pulizzi_sw_outlet_switchability_info[] = {
 
 /* Snmp2NUT lookup table for Eaton Pulizzi Switched ePDU MIB */
 static snmp_info_t eaton_pulizzi_switched_mib[] = {
+
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
+
 	/* Device page */
 	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON | Powerware",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
@@ -113,7 +119,7 @@ static snmp_info_t eaton_pulizzi_switched_mib[] = {
 		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 
 	/* Outlet page */
-	/* Note: outlet.count is deduced, with guestimate_outlet_count() */
+	/* Note: outlet.count is deduced, with guesstimate_outlet_count() */
 	{ "outlet.id", 0, 1, NULL, "0", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	{ "outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, NULL, "All outlets",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },

@@ -244,7 +244,9 @@ int nutscan_load_ipmi_library(const char *libname_path)
 
 	return 1;
 err:
-	fprintf(stderr, "Cannot load IPMI library (%s) : %s. IPMI search disabled.\n", libname_path, dl_error);
+	fprintf(stderr,
+		"Cannot load IPMI library (%s) : %s. IPMI search disabled.\n",
+		libname_path, dl_error);
 	dl_handle = (void *)1;
 	lt_dlexit();
 	return 0;
@@ -631,7 +633,9 @@ nutscan_device_t * nutscan_scan_ipmi(const char * start_ip, const char * stop_ip
 
 	return nutscan_rewind_device(current_nut_dev);
 }
-#else /* WITH_IPMI */
+
+#else /* not WITH_IPMI */
+
 /* stub function */
 nutscan_device_t *  nutscan_scan_ipmi(const char * startIP, const char * stopIP, nutscan_ipmi_t * sec)
 {
@@ -641,4 +645,5 @@ nutscan_device_t *  nutscan_scan_ipmi(const char * startIP, const char * stopIP,
 
 	return NULL;
 }
+
 #endif /* WITH_IPMI */

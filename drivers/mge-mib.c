@@ -374,8 +374,13 @@ static info_lkp_t mge_ambient_drycontacts_info[] = {
 /* Snmp2NUT lookup table */
 static snmp_info_t mge_mib[] = {
 
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
+
 	/* UPS page */
-	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "Eaton", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
+	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.1.1.0", "Generic SNMP UPS", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "ups.serial", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.1.7.0", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.1.4.0", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL },

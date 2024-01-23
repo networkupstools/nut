@@ -244,7 +244,7 @@ static snmp_info_t eaton_ats30_mib[] = {
 
 	/* atsStatus */
 	/* ========= */
-#if 0
+#if WITH_UNMAPPED_DATA_POINTS
 	/* NOTE: Unused OIDs are left as comments for potential future improvements */
 	/* enterprises.534.10.1.4.1.0 = INTEGER: 7 */
 	{ "unmapped.atsInputFlowIndicator", 0, 1, ".1.3.6.1.4.1.534.10.1.4.1.0", NULL, SU_FLAG_OK, NULL },
@@ -310,12 +310,12 @@ static snmp_info_t eaton_ats30_mib[] = {
 	{ "unmapped.enterprises", 0, 1, ".1.3.6.1.4.1.534.10.1.4.4.1.11.1", NULL, SU_FLAG_OK, NULL },
 	/* enterprises.534.10.1.4.4.1.11.2 = INTEGER: 1 */
 	{ "unmapped.enterprises", 0, 1, ".1.3.6.1.4.1.534.10.1.4.4.1.11.2", NULL, SU_FLAG_OK, NULL },
-#endif /* 0 */
+#endif	/* if WITH_UNMAPPED_DATA_POINTS */
 
 	/* enterprises.atsFailureIndicator = INTEGER: 0 */
 	{ "ups.status", 0, 1, ".1.3.6.1.4.1.534.10.1.4.5.0", NULL, SU_FLAG_OK, eaton_ats30_status_info },
 
-#if 0
+#if WITH_UNMAPPED_DATA_POINTS
 	/* enterprises.534.10.1.4.6.1.0 = INTEGER: 2 -- atsFailure start */
 	{ "unmapped.enterprises", 0, 1, ".1.3.6.1.4.1.534.10.1.4.6.1.0", NULL, SU_FLAG_OK, NULL },
 	/* enterprises.534.10.1.4.6.2.0 = INTEGER: 2 */
@@ -324,11 +324,11 @@ static snmp_info_t eaton_ats30_mib[] = {
 	{ "unmapped.enterprises", 0, 1, ".1.3.6.1.4.1.534.10.1.4.6.3.0", NULL, SU_FLAG_OK, NULL },
 	/* enterprises.534.10.1.4.6.4.0 = INTEGER: 2 */
 	{ "unmapped.enterprises", 0, 1, ".1.3.6.1.4.1.534.10.1.4.6.4.0", NULL, SU_FLAG_OK, NULL },
-#endif /* 0 */
+#endif	/* if WITH_UNMAPPED_DATA_POINTS */
 
 	/* atsLog */
 	/* ====== */
-#if 0
+#if WITH_UNMAPPED_DATA_POINTS
 	/* We are not interested in log */
 	/* enterprises.534.10.1.5.1.0 = INTEGER: 272 */
 	{ "unmapped.enterprises", 0, 1, ".1.3.6.1.4.1.534.10.1.5.1.0", NULL, SU_FLAG_OK, NULL },
@@ -412,11 +412,11 @@ static snmp_info_t eaton_ats30_mib[] = {
 	{ "unmapped.enterprises", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.10.1.5.2.1.4.9", NULL, SU_FLAG_OK, NULL },
 	/* enterprises.534.10.1.5.2.1.4.10 = STRING: "07:31:28 05/12/2016" */
 	{ "unmapped.enterprises", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.10.1.5.2.1.4.10", NULL, SU_FLAG_OK, NULL },
-#endif /* 0 */
+#endif	/* WITH_UNMAPPED_DATA_POINTS */
 
 	/* atsConfig */
 	/* ========= */
-#if 0
+#if WITH_UNMAPPED_DATA_POINTS
 	/* enterprises.534.10.1.6.1.1.0 = INTEGER: 538562409 */
 	{ "unmapped.enterprises", 0, 1, ".1.3.6.1.4.1.534.10.1.6.1.1.0", NULL, SU_FLAG_OK, NULL },
 	/* enterprises.534.10.1.6.1.2.0 = STRING: "01/24/2017" */
@@ -455,7 +455,7 @@ static snmp_info_t eaton_ats30_mib[] = {
 	{ "unmapped.atsConfigInputVoltageRating", 0, 1, ".1.3.6.1.4.1.534.10.1.6.3.0", NULL, SU_FLAG_OK, NULL },
 	/* enterprises.534.10.1.6.4.0 = INTEGER: 26 */
 	{ "unmapped.atsConfigRandomTime", 0, 1, ".1.3.6.1.4.1.534.10.1.6.4.0", NULL, SU_FLAG_OK, NULL },
-#endif /* 0 */
+#endif	/* if WITH_UNMAPPED_DATA_POINTS */
 
 	/* enterprises.534.10.1.6.5.0 = INTEGER: 1 */
 	{ "input.source.preferred", ST_FLAG_RW, 1, ".1.3.6.1.4.1.534.10.1.6.5.0", NULL, SU_FLAG_OK, NULL },
@@ -467,7 +467,7 @@ static snmp_info_t eaton_ats30_mib[] = {
 
 	/* atsUpgrade */
 	/* ========== */
-#if 0
+#if WITH_UNMAPPED_DATA_POINTS
 	/* We are not interested in atsUpgrade */
 	/* enterprises.534.10.1.7.1.0 = INTEGER: 1 */
 	/* { "unmapped.enterprises", 0, 1, ".1.3.6.1.4.1.534.10.1.7.1.0", NULL, SU_FLAG_OK, NULL }, */
@@ -475,7 +475,7 @@ static snmp_info_t eaton_ats30_mib[] = {
 	/* { "unmapped.enterprises", 0, 1, ".1.3.6.1.4.1.534.10.1.7.2.0", NULL, SU_FLAG_OK, NULL }, */
 	/* enterprises.534.10.1.7.3.0 = INTEGER: 0 */
 	/* { "unmapped.enterprises", 0, 1, ".1.3.6.1.4.1.534.10.1.7.3.0", NULL, SU_FLAG_OK, NULL }, */
-#endif /* 0 */
+#endif	/* if WITH_UNMAPPED_DATA_POINTS */
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }

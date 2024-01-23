@@ -23,7 +23,7 @@
 #include <libpowerman.h>	/* pm_err_t and other beasts */
 
 #define DRIVER_NAME	"Powerman PDU client driver"
-#define DRIVER_VERSION	"0.12"
+#define DRIVER_VERSION	"0.13"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -134,12 +134,10 @@ void upsdrv_initinfo(void)
 }
 
 void upsdrv_shutdown(void)
-	__attribute__((noreturn));
-
-void upsdrv_shutdown(void)
 {
 	/* FIXME: shutdown all outlets? */
-	fatalx(EXIT_FAILURE, "shutdown not supported");
+	upslogx(LOG_ERR, "shutdown not supported");
+	set_exit_flag(-1);
 
 	/* OL: this must power cycle the load if possible */
 	/* OB: the load must remain off until the power returns */
@@ -191,6 +189,8 @@ static int reconnect_ups(void)
 {
 	pm_err_t rv;
 
+	dstate_setinfo("driver.state", "reconnect.trying");
+
 	upsdebugx(4, "===================================================");
 	upsdebugx(4, "= connection lost with Powerman, try to reconnect =");
 	upsdebugx(4, "===================================================");
@@ -202,6 +202,7 @@ static int reconnect_ups(void)
 	if ((rv = pm_connect(device_path, NULL, &pm, 0)) != PM_ESUCCESS)
 		return 0;
 	else {
+		dstate_setinfo("driver.state", "quiet");
 		upsdebugx(4, "connection restored with Powerman");
 		return 1;
 	}

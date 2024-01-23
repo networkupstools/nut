@@ -3,16 +3,23 @@ EVERUPS(8)
 
 NAME
 ----
+
 everups - Driver for Ever UPS models
 
-NOTE
-----
-This man page only documents the hardware-specific features of the
+SYNOPSIS
+--------
+
+*everups* -h
+
+*everups* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 everups driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
+
 This driver should recognize the NET *-DPC and AP *-PRO models.
 
 EXTRA ARGUMENTS
@@ -30,6 +37,7 @@ don't sleep and force a reboot.
 
 AUTHOR
 ------
+
 Bartek Szady <bszx@bszxdomain.edu.eu.org>
 
 SEE ALSO
@@ -37,8 +45,10 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

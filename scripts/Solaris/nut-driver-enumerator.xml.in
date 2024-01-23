@@ -70,13 +70,13 @@
 			<exec_method
 			type='method'
 			name='start'
-			exec='@NUT_LIBEXECDIR@/nut-driver-enumerator.sh'
+			exec='REPORT_RESTART_42=no @NUT_LIBEXECDIR@/nut-driver-enumerator.sh'
 			timeout_seconds='0'/>
 
 			<exec_method
 			type='method'
 			name='refresh'
-			exec='@NUT_LIBEXECDIR@/nut-driver-enumerator.sh'
+			exec='REPORT_RESTART_42=no @NUT_LIBEXECDIR@/nut-driver-enumerator.sh'
 			timeout_seconds='0'/>
 
 <!-- a :KILL does not really apply to a transient service... -->
@@ -128,7 +128,7 @@
 			<exec_method
 			type='method'
 			name='start'
-			exec='@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --daemon-after'
+			exec='REPORT_RESTART_42=no @NUT_LIBEXECDIR@/nut-driver-enumerator.sh --daemon-after'
 			timeout_seconds='0'/>
 
 			<exec_method

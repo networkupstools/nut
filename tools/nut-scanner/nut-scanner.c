@@ -89,7 +89,7 @@
 #define ERR_BAD_OPTION	(-1)
 
 /* TODO : #if WITH_DMFMIB for options to set up path(s) to the DMFs to load */
-static const char optstring[] = "?ht:T:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:NPqIVaDzZ:";
+static const char optstring[] = "?ht:T:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:QnNPqIVaDzZ:";
 
 #ifdef HAVE_GETOPT_LONG
 static const struct option longopts[] = {
@@ -117,7 +117,9 @@ static const struct option longopts[] = {
 	{ "xml_scan", no_argument, NULL, 'M' },
 	{ "oldnut_scan", no_argument, NULL, 'O' },
 	{ "avahi_scan", no_argument, NULL, 'A' },
+	{ "nut_simulation_scan", no_argument, NULL, 'n' },
 	{ "ipmi_scan", no_argument, NULL, 'I' },
+	{ "disp_nut_conf_with_sanity_check", no_argument, NULL, 'Q' },
 	{ "disp_nut_conf", no_argument, NULL, 'N' },
 	{ "disp_parsable", no_argument, NULL, 'P' },
 	{ "quiet", no_argument, NULL, 'q' },
@@ -140,15 +142,62 @@ static char * start_ip = NULL;
 static char * end_ip = NULL;
 static char * port = NULL;
 static char * serial_ports = NULL;
+static int cli_link_detail_level = -1;
 
 #ifdef HAVE_PTHREAD
 static pthread_t thread[TYPE_END];
 
 static void * run_usb(void *arg)
 {
-	NUT_UNUSED_VARIABLE(arg);
+	nutscan_usb_t scanopts, *scanopts_ptr = &scanopts;
 
-	dev[TYPE_USB] = nutscan_scan_usb();
+	if (!arg) {
+		/* null => use library defaults; should not happen here anyway */
+		scanopts_ptr = NULL;
+	} else {
+		/* 0: do not report bus/device/busport details
+		 * 1: report bus and busport, if available
+		 * 2: report bus/device/busport details
+		 * 3: like (2) and report bcdDevice (limited use and benefit)
+		 */
+		int link_detail_level = *((int*)arg);
+
+		switch (link_detail_level) {
+			case 0:
+				scanopts.report_bus = 0;
+				scanopts.report_busport = 0;
+				scanopts.report_device = 0;
+				scanopts.report_bcdDevice = 0;
+				break;
+
+			case 1:
+				scanopts.report_bus = 1;
+				scanopts.report_busport = 1;
+				scanopts.report_device = 0;
+				scanopts.report_bcdDevice = 0;
+				break;
+
+			case 2:
+				scanopts.report_bus = 1;
+				scanopts.report_busport = 1;
+				scanopts.report_device = 1;
+				scanopts.report_bcdDevice = 0;
+				break;
+
+			case 3:
+				scanopts.report_bus = 1;
+				scanopts.report_busport = 1;
+				scanopts.report_device = 1;
+				scanopts.report_bcdDevice = 1;
+				break;
+
+			default:
+				upsdebugx(1, "%s: using library default link_detail_level settings", __func__);
+				scanopts_ptr = NULL;
+		}
+	}
+
+	dev[TYPE_USB] = nutscan_scan_usb(scanopts_ptr);
 	return NULL;
 }
 
@@ -173,6 +222,14 @@ static void * run_nut_old(void *arg)
 	NUT_UNUSED_VARIABLE(arg);
 
 	dev[TYPE_NUT] = nutscan_scan_nut(start_ip, end_ip, port, timeout);
+	return NULL;
+}
+
+static void * run_nut_simulation(void *arg)
+{
+	NUT_UNUSED_VARIABLE(arg);
+
+	dev[TYPE_NUT_SIMULATION] = nutscan_scan_nut_simulation();
 	return NULL;
 }
 
@@ -202,14 +259,18 @@ static void * run_eaton_serial(void *arg)
 
 #endif /* HAVE_PTHREAD */
 
-static void show_usage()
+static void show_usage(void)
 {
 /* NOTE: This code uses `nutscan_avail_*` global vars from nutscan-init.c */
 	puts("nut-scanner : utility for detection of available power devices.\n");
+
+	nut_report_config_flags();
+
 	puts("OPTIONS:");
 	printf("  -C, --complete_scan: Scan all available devices except serial ports (default).\n");
 	if (nutscan_avail_usb) {
-		printf("  -U, --usb_scan: Scan USB devices.\n");
+		printf("  -U, --usb_scan: Scan USB devices. Specify twice or more to report different\n"
+			"                  detail levels of (change-prone) physical properties.\n");
 	} else {
 		printf("* Options for USB devices scan not enabled: library not detected.\n");
 	}
@@ -242,6 +303,7 @@ static void show_usage()
 	} else {
 		printf("* Options for NUT devices (avahi method) scan not enabled: library not detected.\n");
 	}
+	printf("  -n, --nut_simulation_scan: Scan for NUT simulated devices (.dev files in $CONFPATH).\n");
 	if (nutscan_avail_ipmi) {
 		printf("  -I, --ipmi_scan: Scan IPMI devices.\n");
 	} else {
@@ -251,10 +313,14 @@ static void show_usage()
 	printf("  -E, --eaton_serial <serial ports list>: Scan serial Eaton devices (XCP, SHUT and Q1).\n");
 
 #if (defined HAVE_PTHREAD) && (defined HAVE_PTHREAD_TRYJOIN)
-	printf("  -T, --thread <max number of threads>: Limit the amount of scanning threads running simultaneously (default: %zu).\n", max_threads);
+	printf("  -T, --thread <max number of threads>: Limit the amount of scanning threads running simultaneously (default: %" PRIuSIZE ").\n", max_threads);
 #else
-	printf("  -T, --thread <max number of threads>: Limit the amount of scanning threads running simultaneously (not implemented in this build: no pthread support)");
+	printf("  -T, --thread <max number of threads>: Limit the amount of scanning threads running simultaneously (not implemented in this build: no pthread support)\n");
 #endif
+
+	printf("\nNote: many scanning options depend on further loadable libraries.\n");
+	/* Note: if debug is enabled, this is prefixed with timestamps */
+	upsdebugx_report_search_paths(0, 0);
 
 	printf("\nNetwork specific options:\n");
 	printf("  -t, --timeout <timeout in seconds>: network operation timeout (default %d).\n", DEFAULT_NETWORK_TIMEOUT);
@@ -372,9 +438,11 @@ static void show_usage()
 	printf("\nNUT specific options:\n");
 	printf("  -p, --port <port number>: Port number of remote NUT upsd\n");
 	printf("\ndisplay specific options:\n");
+	printf("  -Q, --disp_nut_conf_with_sanity_check: Display result in the ups.conf format with sanity-check warnings as comments (default)\n");
 	printf("  -N, --disp_nut_conf: Display result in the ups.conf format\n");
 	printf("  -P, --disp_parsable: Display result in a parsable format\n");
 	printf("\nMiscellaneous options:\n");
+	printf("  -h, --help: display this help text\n");
 	printf("  -V, --version: Display NUT version\n");
 	printf("  -a, --available: Display available bus that can be scanned\n");
 	printf("  -q, --quiet: Display only scan result. No information on currently scanned bus is displayed.\n");
@@ -393,12 +461,18 @@ int main(int argc, char *argv[])
 	int allow_snmp = 0;
 	int allow_xml = 0;
 	int allow_oldnut = 0;
+	int allow_nut_simulation = 0;
 	int allow_avahi = 0;
 	int allow_ipmi = 0;
 	int allow_eaton_serial = 0; /* MUST be requested explicitly! */
 	int quiet = 0; /* The debugging level for certain upsdebugx() progress messages; 0 = print always, quiet==1 is to require at least one -D */
 	void (*display_func)(nutscan_device_t * device);
 	int ret_code = EXIT_SUCCESS;
+#ifdef HAVE_PTHREAD
+# ifdef HAVE_SEMAPHORE
+	sem_t	*current_sem;
+# endif
+#endif
 #if (defined HAVE_PTHREAD) && ( (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE) ) && (defined HAVE_SYS_RESOURCE_H)
 	struct rlimit nofile_limit;
 
@@ -456,7 +530,8 @@ int main(int argc, char *argv[])
 
 	nutscan_init();
 
-	display_func = nutscan_display_ups_conf;
+	/* Default, see -Q/-N/-P below */
+	display_func = nutscan_display_ups_conf_with_sanity_check;
 
 	/* Parse command line options -- Second loop: everything else */
 	/* Restore error messages... */
@@ -633,10 +708,10 @@ int main(int argc, char *argv[])
 					&& (uintmax_t)val > (uintmax_t)(nofile_limit.rlim_cur - RESERVE_FD_COUNT)
 					) {
 						upsdebugx(1, "Detected soft limit for "
-							"file descriptor count is %ju",
+							"file descriptor count is %" PRIuMAX,
 							(uintmax_t)nofile_limit.rlim_cur);
 						upsdebugx(1, "Detected hard limit for "
-							"file descriptor count is %ju",
+							"file descriptor count is %" PRIuMAX,
 							(uintmax_t)nofile_limit.rlim_max);
 
 						max_threads = (size_t)nofile_limit.rlim_cur;
@@ -649,7 +724,7 @@ int main(int argc, char *argv[])
 							"thread count %s (%ld) exceeds the "
 							"current file descriptor count limit "
 							"(minus reservation), constraining "
-							"to %zu\n",
+							"to %" PRIuSIZE "\n",
 							optarg, val, max_threads);
 					} else
 # endif /* HAVE_SYS_RESOURCE_H */
@@ -658,7 +733,7 @@ int main(int argc, char *argv[])
 					fprintf(stderr,
 						"WARNING: Requested max scanning "
 						"thread count %s (%ld) is out of range, "
-						"using default %zu\n",
+						"using default %" PRIuSIZE "\n",
 						optarg, val, max_threads);
 				}
 #else
@@ -676,6 +751,9 @@ int main(int argc, char *argv[])
 					goto display_help;
 				}
 				allow_usb = 1;
+				/* NOTE: Starts as -1, so the first -U sets it to 0 (minimal detail) */
+				if (cli_link_detail_level < 3)
+					cli_link_detail_level++;
 				break;
 			case 'M':
 				if (!nutscan_avail_xml_http) {
@@ -692,11 +770,17 @@ int main(int argc, char *argv[])
 				}
 				allow_avahi = 1;
 				break;
+			case 'n':
+				allow_nut_simulation = 1;
+				break;
 			case 'I':
 				if (!nutscan_avail_ipmi) {
 					goto display_help;
 				}
 				allow_ipmi = 1;
+				break;
+			case 'Q':
+				display_func = nutscan_display_ups_conf_with_sanity_check;
 				break;
 			case 'N':
 				display_func = nutscan_display_ups_conf;
@@ -709,6 +793,7 @@ int main(int argc, char *argv[])
 				break;
 			case 'V':
 				printf("Network UPS Tools - %s\n", NUT_VERSION_MACRO);
+				nut_report_config_flags();
 				exit(EXIT_SUCCESS);
 			case 'a':
 				printf("OLDNUT\n");
@@ -753,7 +838,7 @@ display_help:
 	/* FIXME: Currently sem_init already done on nutscan-init for lib need.
 	   We need to destroy it before re-init. We currently can't change "sem value"
 	   on lib (need to be thread safe). */
-	sem_t *current_sem = nutscan_semaphore();
+	current_sem = nutscan_semaphore();
 	sem_destroy(current_sem);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
 #pragma GCC diagnostic push
@@ -787,7 +872,7 @@ display_help:
 		upsdebugx(1, "Extracted IP address range from CIDR net/mask: %s => %s", start_ip, end_ip);
 	}
 
-	if (!allow_usb && !allow_snmp && !allow_xml && !allow_oldnut &&
+	if (!allow_usb && !allow_snmp && !allow_xml && !allow_oldnut && !allow_nut_simulation &&
 		!allow_avahi && !allow_ipmi && !allow_eaton_serial
 	) {
 		allow_all = 1;
@@ -798,6 +883,7 @@ display_help:
 		allow_snmp = 1;
 		allow_xml = 1;
 		allow_oldnut = 1;
+		allow_nut_simulation = 1;
 		allow_avahi = 1;
 		allow_ipmi = 1;
 		/* BEWARE: allow_all does not include allow_eaton_serial! */
@@ -809,13 +895,13 @@ display_help:
 	if (allow_usb && nutscan_avail_usb) {
 		upsdebugx(quiet, "Scanning USB bus.");
 #ifdef HAVE_PTHREAD
-		if (pthread_create(&thread[TYPE_USB], NULL, run_usb, NULL)) {
+		if (pthread_create(&thread[TYPE_USB], NULL, run_usb, &cli_link_detail_level)) {
 			upsdebugx(1, "pthread_create returned an error; disabling this scan mode");
 			nutscan_avail_usb = 0;
 		}
 #else
 		upsdebugx(1, "USB SCAN: no pthread support, starting nutscan_scan_usb...");
-		dev[TYPE_USB] = nutscan_scan_usb();
+		dev[TYPE_USB] = nutscan_scan_usb(&cli_link_detail_level);
 #endif /* HAVE_PTHREAD */
 	} else {
 		upsdebugx(1, "USB SCAN: not requested, SKIPPED");
@@ -895,6 +981,22 @@ display_help:
 		upsdebugx(1, "NUT bus (old) SCAN: not requested, SKIPPED");
 	}
 
+	if (allow_nut_simulation && nutscan_avail_nut_simulation) {
+		upsdebugx(quiet, "Scanning NUT simulation devices.");
+#ifdef HAVE_PTHREAD
+		upsdebugx(1, "NUT simulation devices SCAN: starting pthread_create with run_nut_simulation...");
+		if (pthread_create(&thread[TYPE_NUT_SIMULATION], NULL, run_nut_simulation, NULL)) {
+			upsdebugx(1, "pthread_create returned an error; disabling this scan mode");
+			nutscan_avail_nut_simulation = 0;
+		}
+#else
+			upsdebugx(1, "NUT simulation devices SCAN: no pthread support, starting nutscan_scan_nut_simulation...");
+			dev[TYPE_NUT_SIMULATION] = nutscan_scan_nut_simulation(timeout);
+#endif /* HAVE_PTHREAD */
+	} else {
+		upsdebugx(1, "NUT simulation devices SCAN: not requested, SKIPPED");
+	}
+
 	if (allow_avahi && nutscan_avail_avahi) {
 		upsdebugx(quiet, "Scanning NUT bus (avahi method).");
 #ifdef HAVE_PTHREAD
@@ -961,6 +1063,10 @@ display_help:
 		upsdebugx(1, "NUT bus (old) SCAN: join back the pthread");
 		pthread_join(thread[TYPE_NUT], NULL);
 	}
+	if (allow_nut_simulation && nutscan_avail_nut_simulation && thread[TYPE_NUT_SIMULATION]) {
+		upsdebugx(1, "NUT simulation devices SCAN: join back the pthread");
+		pthread_join(thread[TYPE_NUT_SIMULATION], NULL);
+	}
 	if (allow_avahi && nutscan_avail_avahi && thread[TYPE_AVAHI]) {
 		upsdebugx(1, "NUT bus (avahi) SCAN: join back the pthread");
 		pthread_join(thread[TYPE_AVAHI], NULL);
@@ -996,6 +1102,11 @@ display_help:
 	display_func(dev[TYPE_NUT]);
 	upsdebugx(1, "SCANS DONE: free resources: NUT bus (old)");
 	nutscan_free_device(dev[TYPE_NUT]);
+
+	upsdebugx(1, "SCANS DONE: display results: NUT simulation devices");
+	display_func(dev[TYPE_NUT_SIMULATION]);
+	upsdebugx(1, "SCANS DONE: free resources: NUT simulation devices");
+	nutscan_free_device(dev[TYPE_NUT_SIMULATION]);
 
 	upsdebugx(1, "SCANS DONE: display results: NUT bus (avahi)");
 	display_func(dev[TYPE_AVAHI]);

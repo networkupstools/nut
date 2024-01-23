@@ -76,6 +76,8 @@
  *
  */
 
+#include "config.h" /* should be first */
+
 #include "common.h"
 
 #include <ctype.h>
@@ -89,6 +91,7 @@
 
 #include "parseconf.h"
 #include "attribute.h"
+#include "nut_stdint.h"
 
 /* possible states */
 
@@ -241,7 +244,7 @@ static int findwordstart(PCONF_CTX_t *ctx)
 		return STATE_FINDEOL;
 
 	/* space = not in a word yet, so loop back */
-	if (isspace(ctx->ch))
+	if (isspace((size_t)ctx->ch))
 		return STATE_FINDWORDSTART;
 
 	/* \ = literal = accept the next char blindly */
@@ -341,7 +344,7 @@ static int collect(PCONF_CTX_t *ctx)
 	}
 
 	/* space means the word is done */
-	if (isspace(ctx->ch)) {
+	if (isspace((size_t)ctx->ch)) {
 		endofword(ctx);
 
 		return STATE_FINDWORDSTART;
@@ -451,7 +454,7 @@ int pconf_file_begin(PCONF_CTX_t *ctx, const char *fn)
 	}
 
 	/* prevent fd leaking to child processes */
-	fcntl(fileno(ctx->f), F_SETFD, FD_CLOEXEC);
+	set_close_on_exec(fileno(ctx->f));
 
 	return 1;	/* OK */
 }

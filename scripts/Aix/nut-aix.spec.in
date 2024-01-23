@@ -17,8 +17,8 @@ Release: 1
 Group: Applications/System
 License: GPLv2+
 Buildroot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-Url: http://www.networkupstools.org/
-Source: http://www.networkupstools.org/source/@TREE_VERSION@/%{name}-%{version}.tar.gz
+Url: https://www.networkupstools.org/
+Source: https://www.networkupstools.org/source/@TREE_VERSION@/%{name}-%{version}.tar.gz
 Source1: nut.init
 #Source2: ups.sysconfig
 #Source3: nut-client.tmpfiles

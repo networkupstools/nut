@@ -329,7 +329,7 @@ static float libfreeipmi_get_voltage (uint8_t voltage_code)
 }
 
 /* Cleanup IPMI contexts */
-static void libfreeipmi_cleanup()
+static void libfreeipmi_cleanup(void)
 {
 	/* cleanup */
 	if (fru_ctx) {
@@ -847,7 +847,7 @@ Record ID, Sensor Name, Sensor Number, Sensor Type, Sensor State, Sensor Reading
 
 */
 
-int nut_ipmi_monitoring_init()
+int nut_ipmi_monitoring_init(void)
 {
 	int errnum;
 

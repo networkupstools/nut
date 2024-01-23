@@ -24,7 +24,7 @@
 
 #include "apc-ats-mib.h"
 
-#define APC_ATS_MIB_VERSION  "0.5"
+#define APC_ATS_MIB_VERSION  "0.6"
 
 #define APC_ATS_SYSOID       ".1.3.6.1.4.1.318.1.3.11"
 #define APC_ATS_OID_MODEL_NAME ".1.3.6.1.4.1.318.1.1.8.1.5.0"
@@ -119,6 +119,11 @@ static info_lkp_t apc_ats_outletgroups_status_info[] = {
 /* APC ATS Snmp2NUT lookup table */
 static snmp_info_t apc_ats_mib[] = {
 
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
+
 	/* Device collection */
 	{ "device.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "ats", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	/* ats2IdentManufacturer.0 = STRING: EATON */
@@ -199,7 +204,7 @@ static snmp_info_t apc_ats_mib[] = {
 	{ "outlet.group.%i.realpower", 0, 1, ".1.3.6.1.4.1.318.1.1.8.5.4.5.1.15.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET_GROUP, NULL },
 
 
-#if 0 /* FIXME: Remaining data to be processed */
+#if WITH_UNMAPPED_DATA_POINTS /* FIXME: Remaining data to be processed */
 	/* atsIdentDeviceRating.0 = INTEGER: 32 */
 	{ "unmapped.atsIdentDeviceRating", 0, 1, ".1.3.6.1.4.1.318.1.1.8.1.9.0", NULL, SU_FLAG_OK, NULL },
 	/* atsCalibrationNumInputs.0 = INTEGER: 2 */
@@ -499,7 +504,7 @@ static snmp_info_t apc_ats_mib[] = {
 	{ "unmapped.atsOutputBankMinPercentPower", 0, 1, ".1.3.6.1.4.1.318.1.1.8.5.4.5.1.20.2", NULL, SU_FLAG_OK, NULL },
 	/* atsOutputBankMinPercentPower.3 = INTEGER: -1 */
 	{ "unmapped.atsOutputBankMinPercentPower", 0, 1, ".1.3.6.1.4.1.318.1.1.8.5.4.5.1.20.3", NULL, SU_FLAG_OK, NULL },
-#endif /* 0 */
+#endif	/* if WITH_UNMAPPED_DATA_POINTS */
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }

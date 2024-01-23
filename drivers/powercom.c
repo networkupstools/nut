@@ -85,8 +85,8 @@
 #include "powercom.h"
 #include "math.h"
 
-#define DRIVER_NAME		"PowerCom protocol UPS driver"
-#define DRIVER_VERSION	"0.19"
+#define DRIVER_NAME	"PowerCom protocol UPS driver"
+#define DRIVER_VERSION	"0.21"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -290,20 +290,15 @@ static unsigned int OPTImodels[]	= {0,0,0,575,0,0,0,0,0,0,0,0,0,0,0,0};
  */
 
 static void shutdown_halt(void)
-	__attribute__((noreturn));
-
-static void shutdown_halt(void)
 {
 	ser_send_char (upsfd, (unsigned char)SHUTDOWN);
 	if (types[type].shutdown_arguments.minutesShouldBeUsed != 'n')
 		ser_send_char (upsfd, types[type].shutdown_arguments.delay[0]);
 	ser_send_char (upsfd, types[type].shutdown_arguments.delay[1]);
 	upslogx(LOG_INFO, "Shutdown (stayoff) initiated.");
-	exit (0);
-}
 
-static void shutdown_ret(void)
-	__attribute__((noreturn));
+	set_exit_flag(-2);	/* EXIT_SUCCESS */
+}
 
 static void shutdown_ret(void)
 {
@@ -314,7 +309,7 @@ static void shutdown_ret(void)
 	ser_send_char (upsfd, types[type].shutdown_arguments.delay[1]);
 	upslogx(LOG_INFO, "Shutdown (return) initiated.");
 
-	exit (0);
+	set_exit_flag(-2);	/* EXIT_SUCCESS */
 }
 
 /* registered instant commands */
@@ -407,11 +402,11 @@ static int ups_getinfo(void)
 			types[type].num_of_bytes_from_ups, 3, 0);
 
 		if (c != (ssize_t)types[type].num_of_bytes_from_ups) {
-			upslogx(LOG_NOTICE, "data receiving error (%zd instead of %d bytes)", c, types[type].num_of_bytes_from_ups);
+			upslogx(LOG_NOTICE, "data receiving error (%" PRIiSIZE " instead of %d bytes)", c, types[type].num_of_bytes_from_ups);
 			dstate_datastale();
 			return 0;
 		} else
-			upsdebugx(5, "Num of bytes received from UPS: %zd", c);
+			upsdebugx(5, "Num of bytes received from UPS: %" PRIiSIZE, c);
 	}
 
 	/* optional dump of raw data */
@@ -770,8 +765,12 @@ void upsdrv_updateinfo(void)
 {
 	char	val[32];
 
-	if (!ups_getinfo()){
-		return;
+	if (!ups_getinfo()) {
+		/* https://github.com/networkupstools/nut/issues/356 */
+		upsdebugx(1, "%s: failed to ups_getinfo() once, retrying for slower devices", __func__);
+		if (!ups_getinfo()) {
+			return;
+		}
 	}
 
 	/* input.frequency */
@@ -840,9 +839,6 @@ void upsdrv_updateinfo(void)
 }
 
 /* shutdown UPS */
-void upsdrv_shutdown(void)
-	__attribute__((noreturn));
-
 void upsdrv_shutdown(void)
 {
 	/* power down the attached load immediately */

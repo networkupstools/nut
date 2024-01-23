@@ -24,48 +24,78 @@
 
 #include "cyberpower-mib.h"
 
-#define CYBERPOWER_MIB_VERSION		"0.4"
+#define CYBERPOWER_MIB_VERSION		"0.55"
 #define CYBERPOWER_OID_MODEL_NAME	".1.3.6.1.4.1.3808.1.1.1.1.1.1.0"
 
 /* CPS-MIB::ups */
 #define CYBERPOWER_SYSOID			".1.3.6.1.4.1.3808.1.1.1"
 
+/* Per https://github.com/networkupstools/nut/issues/1997
+ * some CPS devices offer the shorter vendor OID as sysOID
+ */
+#define CYBERPOWER_SYSOID2			".1.3.6.1.4.1.3808"
+
+/* https://www.cyberpowersystems.com/products/software/mib-files/ */
+/* Per CPS MIB 2.9 upsBaseOutputStatus OBJECT-TYPE: */
 static info_lkp_t cyberpower_power_status[] = {
 	{ 2, "OL"
 #if WITH_SNMP_LKP_FUN
 		, NULL, NULL, NULL, NULL
 #endif
-	},
+	},	/* onLine */
 	{ 3, "OB"
 #if WITH_SNMP_LKP_FUN
 		, NULL, NULL, NULL, NULL
 #endif
-	},
+	},	/* onBattery */
 	{ 4, "OL BOOST"
 #if WITH_SNMP_LKP_FUN
 		, NULL, NULL, NULL, NULL
 #endif
-	},
+	},	/* onBoost */
 	{ 5, "OFF"
 #if WITH_SNMP_LKP_FUN
 		, NULL, NULL, NULL, NULL
 #endif
-	},
-	{ 7, "OL"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 1, "NULL"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
+	},	/* onSleep */
 	{ 6, "OFF"
 #if WITH_SNMP_LKP_FUN
 		, NULL, NULL, NULL, NULL
 #endif
-	},
+	},	/* off */
+	{ 7, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* rebooting */
+	{ 8, "OL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* onECO */
+	{ 9, "OL BYPASS"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* onBypass */
+	{ 10, "OL TRIM"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* onBuck */
+	{ 11, "OL OVER"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* onOverload */
+
+	/* Note: a "NULL" string must be last due to snmp-ups.c parser logic */
+	{ 1, "NULL"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	/* unknown */
+
 	{ 0, NULL
 #if WITH_SNMP_LKP_FUN
 		, NULL, NULL, NULL, NULL
@@ -137,8 +167,94 @@ static info_lkp_t cyberpower_battrepl_status[] = {
 	}
 };
 
+static info_lkp_t cyberpower_ups_alarm_info[] = {
+	{ 1, ""
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},                       /* Normal */
+	{ 2, "Temperature too high!"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},  /* Overheat */
+	{ 3, "Internal UPS fault!"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},    /* Hardware Fault */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
+};
+
+static info_lkp_t cyberpower_transfer_reasons[] = {
+	{ 1, "noTransfer"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 2, "highLineVoltage"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 3, "brownout"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 4, "selfTest"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
+};
+
+static info_lkp_t cyberpower_testdiag_results[] = {
+	{ 1, "Ok"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	
+	{ 2, "Failed"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},	
+	{ 3, "InvalidTest"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	
+	},	
+	{ 4, "TestInProgress"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	},
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+	}
+};
+
 /* Snmp2NUT lookup table for CyberPower MIB */
 static snmp_info_t cyberpower_mib[] = {
+
+	/* standard MIB items */
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
+
 	/* Device page */
 	{ "device.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "ups",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
@@ -147,6 +263,8 @@ static snmp_info_t cyberpower_mib[] = {
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, CYBERPOWER_OID_MODEL_NAME,
 		"CyberPower", SU_FLAG_STATIC, NULL },
+	{ "ups.id", ST_FLAG_STRING | ST_FLAG_RW, 8, ".1.3.6.1.4.1.3808.1.1.1.1.1.2.0",
+                "", SU_FLAG_OK | SU_FLAG_STATIC, NULL },
 
 	{ "ups.serial", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.3808.1.1.1.1.2.3.0",
 		"", SU_FLAG_STATIC, NULL },
@@ -165,6 +283,11 @@ static snmp_info_t cyberpower_mib[] = {
 		SU_FLAG_OK | SU_STATUS_RB, &cyberpower_battrepl_status[0] },
 	{ "ups.load", 0, 1.0, ".1.3.6.1.4.1.3808.1.1.1.4.2.3.0", "",
 		0, NULL },
+
+	{ "ups.temperature", 0, 1, ".1.3.6.1.4.1.3808.1.1.1.10.2.0", "", SU_FLAG_OK, NULL },
+
+	{ "ups.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.3808.1.1.1.10.1.0", "",
+		SU_FLAG_OK, &cyberpower_ups_alarm_info[0] },
 
 	/* Battery runtime is expressed in seconds */
 	{ "battery.runtime", 0, 1.0, ".1.3.6.1.4.1.3808.1.1.1.2.2.4.0", "",
@@ -189,11 +312,17 @@ static snmp_info_t cyberpower_mib[] = {
 		0, NULL },
 	{ "battery.temperature", 0, 1.0, ".1.3.6.1.4.1.3808.1.1.1.2.2.3.0", "",
 		0, NULL },
+	/* upsBaseBatteryLastReplaceDate */
+	{ "battery.date", ST_FLAG_STRING, 8, ".1.3.6.1.4.1.3808.1.1.1.2.1.3.0", "",
+		SU_FLAG_OK | SU_FLAG_SEMI_STATIC, NULL },
 
 	{ "input.voltage", 0, 0.1, ".1.3.6.1.4.1.3808.1.1.1.3.2.1.0", "",
 		0, NULL },
 	{ "input.frequency", 0, 0.1, ".1.3.6.1.4.1.3808.1.1.1.3.2.4.0", "",
 		0, NULL },
+	/* upsAdvanceInputLineFailCause */
+	{ "input.transfer.reason", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.3808.1.1.1.3.2.5.0", "",
+		SU_TYPE_INT | SU_FLAG_OK, &cyberpower_transfer_reasons[0] },
 
 	{ "output.voltage", 0, 0.1, ".1.3.6.1.4.1.3808.1.1.1.4.2.1.0", "",
 		0, NULL },
@@ -215,22 +344,36 @@ static snmp_info_t cyberpower_mib[] = {
 		SU_FLAG_OK | SU_TYPE_TIME, NULL },
 	/* instant commands. */
 	/* upsAdvanceControlUpsOff */
-	{ "load.off", 0, 2, ".1.3.6.1.4.1.3808.1.1.1.6.2.1.0", NULL, SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "load.off", 0, 1, ".1.3.6.1.4.1.3808.1.1.1.6.2.1.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
 	/* upsAdvanceControlTurnOnUPS */
-	{ "load.on", 0, 2, ".1.3.6.1.4.1.3808.1.1.1.6.2.6.0", NULL, SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "load.on", 0, 1, ".1.3.6.1.4.1.3808.1.1.1.6.2.6.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
 	/* upsAdvanceControlUpsOff */
-	{ "shutdown.stayoff", 0, 3, ".1.3.6.1.4.1.3808.1.1.1.6.2.6.0", NULL, SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "shutdown.stayoff", 0, 1, ".1.3.6.1.4.1.3808.1.1.1.6.2.6.0", "3", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+#if 0
+	/* upsBaseControlConserveBattery - note that this command
+	 * is not suitable here because it puts ups to sleep only
+	 * in battery mode. If power is restored during the shutdown
+	 * process, the command is not executed by ups hardware. */
+	{ "shutdown.return", 0, 1, ".1.3.6.1.4.1.3808.1.1.1.6.1.1.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+#endif
 	/* upsAdvanceControlUpsSleep */
-	{ "shutdown.return", 0, 3, ".1.3.6.1.4.1.3808.1.1.1.6.2.3.0", NULL, SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "shutdown.return", 0, 1, ".1.3.6.1.4.1.3808.1.1.1.6.2.3.0", "3", SU_TYPE_CMD | SU_FLAG_OK, NULL },
 	/* upsAdvanceControlSimulatePowerFail */
-	{ "test.failure.start", 0, 2, ".1.3.6.1.4.1.3808.1.1.1.6.2.4.0", NULL, SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "test.failure.start", 0, 1, ".1.3.6.1.4.1.3808.1.1.1.6.2.4.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
 	/* upsAdvanceTestIndicators */
-	{ "test.panel.start", 0, 2, ".1.3.6.1.4.1.3808.1.1.1.7.2.5.0", NULL, SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "test.panel.start", 0, 1, ".1.3.6.1.4.1.3808.1.1.1.7.2.5.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
 	/* upsAdvanceTestDiagnostics */
-	{ "test.battery.start", 0, 2, ".1.3.6.1.4.1.3808.1.1.1.7.2.2.0", NULL, SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "test.battery.start", 0, 1, ".1.3.6.1.4.1.3808.1.1.1.7.2.2.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
 	/* upsAdvanceTestRuntimeCalibration */
-	{ "calibrate.start", 0, 2, ".1.3.6.1.4.1.3808.1.1.1.7.2.6.0", NULL, SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "calibrate.stop", 0, 3, ".1.3.6.1.4.1.3808.1.1.1.7.2.6.0", NULL, SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "calibrate.start", 0, 1, ".1.3.6.1.4.1.3808.1.1.1.7.2.6.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "calibrate.stop", 0, 1, ".1.3.6.1.4.1.3808.1.1.1.7.2.6.0", "3", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+
+	/* upsAdvanceTestLastDiagnosticsDate */
+	{ "ups.test.date", ST_FLAG_STRING, 8, ".1.3.6.1.4.1.3808.1.1.1.7.2.4.0", "",
+		SU_FLAG_OK | SU_FLAG_SEMI_STATIC, NULL },
+	/* upsAdvanceTestDiagnosticsResults */
+	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.3808.1.1.1.7.2.3.0", "",
+		SU_FLAG_OK, &cyberpower_testdiag_results[0] },
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
@@ -238,3 +381,6 @@ static snmp_info_t cyberpower_mib[] = {
 
 mib2nut_info_t	cyberpower = { "cyberpower", CYBERPOWER_MIB_VERSION, NULL,
 	CYBERPOWER_OID_MODEL_NAME, cyberpower_mib, CYBERPOWER_SYSOID, NULL };
+
+mib2nut_info_t	cyberpower2 = { "cyberpower", CYBERPOWER_MIB_VERSION, NULL,
+	CYBERPOWER_OID_MODEL_NAME, cyberpower_mib, CYBERPOWER_SYSOID2, NULL };

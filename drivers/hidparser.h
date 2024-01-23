@@ -38,11 +38,11 @@ extern "C" {
 /* Include "usb-common.h" or "libshut.h" as appropriate, to define the 
  * usb_ctrl_* types used below according to the backend USB API version
  */
-#ifdef SHUT_MODE
+#if (defined SHUT_MODE) && SHUT_MODE
 # include "libshut.h"
-#else
+#else	/* !SHUT_MODE => USB */
 # include "usb-common.h"
-#endif
+#endif	/* SHUT_MODE / USB */
 
 /*
  * Parse_ReportDesc
@@ -63,6 +63,7 @@ HIDData_t *FindObject_with_Path(HIDDesc_t *pDesc_arg, HIDPath_t *Path, uint8_t T
 
 HIDData_t *FindObject_with_ID(HIDDesc_t *pDesc_arg, uint8_t ReportID, uint8_t Offset, uint8_t Type);
 
+HIDData_t *FindObject_with_ID_Node(HIDDesc_t *pDesc_arg, uint8_t ReportID, HIDNode_t Node);
 /*
  * GetValue
  * -------------------------------------------------------------------------- */

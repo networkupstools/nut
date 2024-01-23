@@ -3,14 +3,14 @@
 # an auxiliary script to produce a "stub" snmp-ups subdriver from
 # SNMP data from a real agent or from dump files
 #
-# Version: 0.12-dmf
+# Version: 0.15-dmf
 #
 # See also: docs/snmp-subdrivers.txt
 #
 # Copyright (C)
 # 2011 - 2012 Arnaud Quette <arnaud.quette@free.fr>
-# 2015 - 2019 Arnaud Quette <ArnaudQuette@Eaton.com>
-# 2011 Jim Klimov <jimklimov+nut@gmail.com>
+# 2015 - 2022 Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
+# 2011 - 2022 Jim Klimov <jimklimov+nut@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -92,30 +92,30 @@ DMF=0
 NAME=gen-snmp-subdriver
 TMPDIR="${TEMPDIR:-/tmp}"
 SYSOID_NUMBER=".1.3.6.1.2.1.1.2.0"
-DEBUG=`mktemp "$TMPDIR/$NAME-DEBUG.XXXXXX"`
-DFL_NUMWALKFILE=`mktemp "$TMPDIR/$NAME-NUMWALK.XXXXXX"`
-DFL_STRWALKFILE=`mktemp "$TMPDIR/$NAME-STRWALK.XXXXXX"`
-TMP_NUMWALKFILE=`mktemp "$TMPDIR/$NAME-TMP-NUMWALK.XXXXXX"`
-TMP_STRWALKFILE=`mktemp "$TMPDIR/$NAME-TMP-STRWALK.XXXXXX"`
+DEBUG="`mktemp "$TMPDIR/$NAME-DEBUG.XXXXXX"`"
+DFL_NUMWALKFILE="`mktemp "$TMPDIR/$NAME-NUMWALK.XXXXXX"`"
+DFL_STRWALKFILE="`mktemp "$TMPDIR/$NAME-STRWALK.XXXXXX"`"
+TMP_NUMWALKFILE="`mktemp "$TMPDIR/$NAME-TMP-NUMWALK.XXXXXX"`"
+TMP_STRWALKFILE="`mktemp "$TMPDIR/$NAME-TMP-STRWALK.XXXXXX"`"
 
 get_snmp_data() {
 	# 1) get the sysOID (points the mfr specif MIB), apart if there's an override
 	if [ -z "$SYSOID" ]
 	then
-		SYSOID=`snmpget -On -v1 -c $COMMUNITY -Ov $HOSTNAME $SYSOID_NUMBER | cut -d' ' -f2`
+		SYSOID="`snmpget -On -v1 -c "$COMMUNITY" -Ov "$HOSTNAME" "$SYSOID_NUMBER" | cut -d' ' -f2`"
 		echo "sysOID retrieved: ${SYSOID}"
 	else
 		echo "Using the provided sysOID override ($SYSOID)"
 	fi
-	DEVICE_SYSOID=$SYSOID
+	DEVICE_SYSOID="$SYSOID"
 
 	OID_COUNT=0
-	while (test $OID_COUNT -eq 0)
+	while (test "$OID_COUNT" -eq 0)
 	do
 		# 2) get the content of the mfr specif MIB
 		echo "Retrieving SNMP information. This may take some time"
-		snmpwalk -On -v1 -c $COMMUNITY $HOSTNAME $SYSOID 2>/dev/null 1> $DFL_NUMWALKFILE
-		snmpwalk -Os -v1 -m ALL -M$MIBS_DIRLIST -c $COMMUNITY $HOSTNAME $SYSOID 2>/dev/null 1> $DFL_STRWALKFILE
+		snmpwalk -On -v1 -c "$COMMUNITY" "$HOSTNAME" "$SYSOID" 2>/dev/null 1> "$DFL_NUMWALKFILE"
+		snmpwalk -Os -v1 -m ALL -M"$MIBS_DIRLIST" -c "$COMMUNITY" "$HOSTNAME" "$SYSOID" 2>/dev/null 1> "$DFL_STRWALKFILE"
 
 		# 3) test return value of the walk, and possibly ramp-up the path to get something.
 		# The sysOID mechanism only works if we're pointed somehow in the right direction
@@ -133,15 +133,18 @@ get_snmp_data() {
 }
 
 generate_C() {
-	# create file names
-	LDRIVER=`echo $DRIVER | tr A-Z a-z`
-	UDRIVER=`echo $DRIVER | tr a-z A-Z`
+	# create file names, lowercase
+	LDRIVER="`echo "$DRIVER" | tr A-Z a-z`"
+	UDRIVER="`echo "$DRIVER" | tr a-z A-Z`"
+	# keep dashes in name for files
 	CFILE="$LDRIVER-mib.c"
 	HFILE="$LDRIVER-mib.h"
-
-	#FIXME: LDRIVER & UDRIVER => replace - by _
+	# but replace with underscores for the structures and defines
+	LDRIVER="`echo "$LDRIVER" | tr - _`"
+	UDRIVER="`echo "$UDRIVER" | tr - _`"
 
 	# generate header file
+	# NOTE: with <<-EOF leading TABs are all stripped
 	echo "Creating $HFILE"
 	cat > "$HFILE" <<-EOF
 	/* ${HFILE} - subdriver to monitor ${DRIVER} SNMP devices with NUT
@@ -176,7 +179,8 @@ generate_C() {
 	EOF
 
 	# generate source file
-	# create header
+	# create heading boilerblate
+	# NOTE: with <<-EOF leading TABs are all stripped
 	echo "Creating $CFILE"
 	cat > "$CFILE" <<-EOF
 	/* ${CFILE} - subdriver to monitor ${DRIVER} SNMP devices with NUT
@@ -243,15 +247,31 @@ generate_C() {
 		 * 	{ 0, NULL }
 		 * };
 		 */
+
+		/* standard MIB items; if the vendor MIB contains better OIDs for
+		 * this (e.g. with daisy-chain support), consider adding those here
+		 */
 	EOF
+
+	# Same file, indented text (TABs not stripped):
+	cat >> "$CFILE" <<EOF
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
+
+/* Please revise values discovered by data walk for mappings to
+ * docs/nut-names.txt and group the rest under the ifdef below:
+ */
+#if WITH_UNMAPPED_DATA_POINTS
+EOF
 
 	# extract OID string paths, one by one
 	LINENB="0"
 	while IFS= read -r line; do
 		LINENB="`expr $LINENB + 1`"
 		FULL_STR_OID="$line"
-		STR_OID="`echo $line | cut -d'.' -f1`"
-		echo $line | grep STRING > /dev/null
+		STR_OID="`echo "$line" | cut -d'.' -f1`"
+		echo "$line" | grep STRING > /dev/null
 		if [ $? -eq 0 ]; then
 			ST_FLAG_TYPE="ST_FLAG_STRING"
 			SU_INFOSIZE="SU_INFOSIZE"
@@ -260,92 +280,97 @@ generate_C() {
 			SU_INFOSIZE="1"
 		fi
 		# get the matching numeric OID
-		NUM_OID="`sed -n ${LINENB}p ${NUMWALKFILE} | cut -d' ' -f1`"
+		NUM_OID="`sed -n "${LINENB}p" "${NUMWALKFILE}" | cut -d' ' -f1`"
 		printf "\t/* ${FULL_STR_OID} */\n\t{ \"unmapped.${STR_OID}\", ${ST_FLAG_TYPE}, ${SU_INFOSIZE}, \"${NUM_OID}\", NULL, SU_FLAG_OK, NULL },\n"
-	done < ${STRWALKFILE} >> ${CFILE}
+	done < "${STRWALKFILE}" >> "${CFILE}"
 
-	# append footer
-	cat >> "$CFILE" <<-EOF
+	# append footer (TABs not stripped):
+	cat >> "$CFILE" <<EOF
+#endif	/* if WITH_UNMAPPED_DATA_POINTS */
 
-		/* end of structure. */
-		{ NULL, 0, 0, NULL, NULL, 0, NULL }
-	};
+	/* end of structure. */
+	{ NULL, 0, 0, NULL, NULL, 0, NULL }
+};
 
-	mib2nut_info_t	${LDRIVER} = { "${LDRIVER}", ${UDRIVER}_MIB_VERSION, NULL, NULL, ${LDRIVER}_mib, ${UDRIVER}_DEVICE_SYSOID };
-	EOF
+mib2nut_info_t  ${LDRIVER} = { "${LDRIVER}", ${UDRIVER}_MIB_VERSION, NULL, NULL, ${LDRIVER}_mib, ${UDRIVER}_DEVICE_SYSOID };
+EOF
+
+	return
 }
 
 generate_DMF() {
 
 	# create file names
-	LDRIVER=`echo $DRIVER | tr A-Z a-z`
-	UDRIVER=`echo $DRIVER | tr a-z A-Z`
+	LDRIVER="`echo "$DRIVER" | tr A-Z a-z`"
+	UDRIVER="`echo "$DRIVER" | tr a-z A-Z`"
 	DMFFILE="$LDRIVER-mib.dmf"
 
-	#FIXME: LDRIVER & UDRIVER => replace - by _
+	# but replace with underscores for the structures and defines
+	LDRIVER="`echo "$LDRIVER" | tr - _`"
+	UDRIVER="`echo "$UDRIVER" | tr - _`"
 
 	# generate DMF file
 	echo "Creating $DMFFILE"
-	printf "<!-- ${DMFFILE} - Data Mapping File to monitor ${DRIVER} SNMP devices with NUT -->\n" > ${DMFFILE}
-	printf "<!-- this DMF was generated automatically. It must be customized! -->\n" >> ${DMFFILE}
-	printf "<?xml version=\"1.0\" ?>\n<nut>\n\t<snmp name=\"${LDRIVER}_mib\">\n" >> ${DMFFILE}
-	printf "\t\t<!-- Data format: -->\n" >> ${DMFFILE}
-	printf "\t\t<!-- To create a value lookup structure (as needed on the 2nd line of the example" >> ${DMFFILE}
-	printf "below), use the following kind of declaration:\n" >> ${DMFFILE}
-	printf "\t\t<lookup name=\"onbatt_info\">\n" >> ${DMFFILE}
-	printf "\t\t\t<lookup_info oid=\"1\" value=\"OB\"/>\n" >> ${DMFFILE}
-	printf "\t\t\t<lookup_info oid=\"2\" value=\"OL\"/>\n" >> ${DMFFILE}
-	printf "\t\t</lookup> -->\n\n" >> ${DMFFILE}
-	printf "\t\t<!-- To create a variable mapping entry, use the following kind of declaration:\n" >> ${DMFFILE}
-	printf "\t\t<snmp_info multiplier=\"...\" name=\"...\" oid=\"...\" power_status=\"...\" default=\"\" static=\"yes\" string=\"yes\"/>\n\n" >> ${DMFFILE}
-	printf "\t\tPossible attributes:\n" >> ${DMFFILE}
-	printf "\t\t* oid: numeric SNMP OID to get data from\n" >> ${DMFFILE}
-	printf "\t\t* multiplier: if present, multiply the value by this\n" >> ${DMFFILE}
-	printf "\t\t* power_status=\"yes\": if present and set to \"yes\", indicates power status element\n" >> ${DMFFILE}
-	printf "\t\t* battery_status=\"yes\": if present and set to \"yes\", indicates battery status element\n" >> ${DMFFILE}
-	printf "\t\t* calibration=\"yes\": if present and set to \"yes\", indicates calibration status element\n" >> ${DMFFILE}
-	printf "\t\t* replace_battery=\"yes\": if present and set to \"yes\", indicates replace battery status element\n" >> ${DMFFILE}
-	printf "\t\t* default: the default value, if we can't retrieve the OID value\n" >> ${DMFFILE}
-	printf "\t\t* static: retrieve info only once\n" >> ${DMFFILE}
-	printf "\t\t* string: the value of the OID is to be processed as a string\n" >> ${DMFFILE}
-	printf "\t\t* absent: data is absent in the device, use default value\n" >> ${DMFFILE}
-	printf "\t\t* positive: Invalid if negative value\n" >> ${DMFFILE}
-	printf "\t\t* unique: There can be only be one provider of this info, disable the other providers\n" >> ${DMFFILE}
-	printf "\t\t* input_1_phase: only processed if 1 input phase\n" >> ${DMFFILE}
-	printf "\t\t* input_3_phase: only processed if 3 input phase\n" >> ${DMFFILE}
-	printf "\t\t* output_1_phase: only processed if 1 output phase\n" >> ${DMFFILE}
-	printf "\t\t* output_3_phase: only processed if 3 output phase\n" >> ${DMFFILE}
-	printf "\t\t* bypass_1_phase: only processed if 1 bypass phase\n" >> ${DMFFILE}
-	printf "\t\t* bypass_1_phase: only processed if 3 bypass phase\n" >> ${DMFFILE}
-	printf "\t\t* outlet: outlet template definition\n" >> ${DMFFILE}
-	printf "\t\t* outlet_group: outlet group template definition\n" >> ${DMFFILE}
-	printf "\t\t* command: instant command definition\n" >> ${DMFFILE}
-	printf "\t\tExamples:\n" >> ${DMFFILE}
-	printf "\t\t<snmp_info multiplier=\"0.1\" name=\"input.voltage\" oid=\".1.3.6.1.4.1.705.1.6.2.1.2.1\" input_1_phase=\"yes\"/>\n" >> ${DMFFILE}
-	printf "\t\t<snmp_info multiplier=\"0.1\" name=\"ups.status\" oid=\".1.3.6.1.4.1.705.1.7.3.0\" string=\"yes\" battery_status=\"yes\" lookup=\"onbatt_info\"/>\n\t\t-->\n" >> ${DMFFILE}
+	printf "<!-- ${DMFFILE} - Data Mapping File to monitor ${DRIVER} SNMP devices with NUT -->\n" > "${DMFFILE}"
+	printf "<!-- this DMF was generated automatically. It must be customized! -->\n" >> "${DMFFILE}"
+	printf "<?xml version=\"1.0\" ?>\n<nut>\n\t<snmp name=\"${LDRIVER}_mib\">\n" >> "${DMFFILE}"
+	printf "\t\t<!-- Data format: -->\n" >> "${DMFFILE}"
+	printf "\t\t<!-- To create a value lookup structure (as needed on the 2nd line of the example" >> "${DMFFILE}"
+	printf "below), use the following kind of declaration:\n" >> "${DMFFILE}"
+	printf "\t\t<lookup name=\"onbatt_info\">\n" >> "${DMFFILE}"
+	printf "\t\t\t<lookup_info oid=\"1\" value=\"OB\"/>\n" >> "${DMFFILE}"
+	printf "\t\t\t<lookup_info oid=\"2\" value=\"OL\"/>\n" >> "${DMFFILE}"
+	printf "\t\t</lookup> -->\n\n" >> "${DMFFILE}"
+	printf "\t\t<!-- To create a variable mapping entry, use the following kind of declaration:\n" >> "${DMFFILE}"
+	printf "\t\t<snmp_info multiplier=\"...\" name=\"...\" oid=\"...\" power_status=\"...\" default=\"\" static=\"yes\" string=\"yes\"/>\n\n" >> "${DMFFILE}"
+	printf "\t\tPossible attributes:\n" >> "${DMFFILE}"
+	printf "\t\t* oid: numeric SNMP OID to get data from\n" >> "${DMFFILE}"
+	printf "\t\t* multiplier: if present, multiply the value by this\n" >> "${DMFFILE}"
+	printf "\t\t* power_status=\"yes\": if present and set to \"yes\", indicates power status element\n" >> "${DMFFILE}"
+	printf "\t\t* battery_status=\"yes\": if present and set to \"yes\", indicates battery status element\n" >> "${DMFFILE}"
+	printf "\t\t* calibration=\"yes\": if present and set to \"yes\", indicates calibration status element\n" >> "${DMFFILE}"
+	printf "\t\t* replace_battery=\"yes\": if present and set to \"yes\", indicates replace battery status element\n" >> "${DMFFILE}"
+	printf "\t\t* default: the default value, if we can't retrieve the OID value\n" >> "${DMFFILE}"
+	printf "\t\t* static: retrieve info only once\n" >> "${DMFFILE}"
+	printf "\t\t* string: the value of the OID is to be processed as a string\n" >> "${DMFFILE}"
+	printf "\t\t* absent: data is absent in the device, use default value\n" >> "${DMFFILE}"
+	printf "\t\t* positive: Invalid if negative value\n" >> "${DMFFILE}"
+	printf "\t\t* unique: There can be only be one provider of this info, disable the other providers\n" >> "${DMFFILE}"
+	printf "\t\t* input_1_phase: only processed if 1 input phase\n" >> "${DMFFILE}"
+	printf "\t\t* input_3_phase: only processed if 3 input phase\n" >> "${DMFFILE}"
+	printf "\t\t* output_1_phase: only processed if 1 output phase\n" >> "${DMFFILE}"
+	printf "\t\t* output_3_phase: only processed if 3 output phase\n" >> "${DMFFILE}"
+	printf "\t\t* bypass_1_phase: only processed if 1 bypass phase\n" >> "${DMFFILE}"
+	printf "\t\t* bypass_1_phase: only processed if 3 bypass phase\n" >> "${DMFFILE}"
+	printf "\t\t* outlet: outlet template definition\n" >> "${DMFFILE}"
+	printf "\t\t* outlet_group: outlet group template definition\n" >> "${DMFFILE}"
+	printf "\t\t* command: instant command definition\n" >> "${DMFFILE}"
+	printf "\t\tExamples:\n" >> "${DMFFILE}"
+	printf "\t\t<snmp_info multiplier=\"0.1\" name=\"input.voltage\" oid=\".1.3.6.1.4.1.705.1.6.2.1.2.1\" input_1_phase=\"yes\"/>\n" >> "${DMFFILE}"
+	printf "\t\t<snmp_info multiplier=\"0.1\" name=\"ups.status\" oid=\".1.3.6.1.4.1.705.1.7.3.0\" string=\"yes\" battery_status=\"yes\" lookup=\"onbatt_info\"/>\n\t\t-->\n" >> "${DMFFILE}"
 
-	printf "\n\t\t<!-- To create an alarm lookup structure (as needed in the mib2nut example" >> ${DMFFILE}
-	printf "below), use the following kind of declaration:\n" >> ${DMFFILE}
-	printf "\t\t<alarm name=\"pw_alarms\">\n" >> ${DMFFILE}
-	printf "\t\t\t<info_alarm alarm=\"...\" oid=\"...\" status=\"...\"/>\n" >> ${DMFFILE}
-	printf "\t\t</alarm>\n" >> ${DMFFILE}
-	printf "\t\tPossible attributes:\n" >> ${DMFFILE}
-	printf "\t\t* oid: numeric SNMP OID to match\n" >> ${DMFFILE}
-	printf "\t\t* alarm: if present, and different than \"None\", value to be published in *ups.alarm*\n" >> ${DMFFILE}
-	printf "\t\t* status: if present, and different than \"None\", value to be published in *ups.status*\n\n" >> ${DMFFILE}
-	printf "\t\tExamples:\n" >> ${DMFFILE}
-	printf "\t\t<alarm name=\"pw_alarms\">\n" >> ${DMFFILE}
-	printf "\t\t\t<info_alarm alarm=\"None\" oid=\"1.3.6.1.4.1.534.1.7.4\" status=\"LB\"/>\n" >> ${DMFFILE}
-	printf "\t\t\t<info_alarm alarm=\"Output overload!\" oid=\".1.3.6.1.4.1.534.1.7.7\" status=\"OVER\"/>\n" >> ${DMFFILE}
-	printf "\t\t\t<info_alarm alarm=\"Internal failure!\" oid=\".1.3.6.1.4.1.534.1.7.8\" status=\"None\"/>\n" >> ${DMFFILE}
-	printf "\t\t</alarm>\n\t\t-->\n" >> ${DMFFILE}
+	printf "\n\t\t<!-- To create an alarm lookup structure (as needed in the mib2nut example" >> "${DMFFILE}"
+	printf "below), use the following kind of declaration:\n" >> "${DMFFILE}"
+	printf "\t\t<alarm name=\"pw_alarms\">\n" >> "${DMFFILE}"
+	printf "\t\t\t<info_alarm alarm=\"...\" oid=\"...\" status=\"...\"/>\n" >> "${DMFFILE}"
+	printf "\t\t</alarm>\n" >> "${DMFFILE}"
+	printf "\t\tPossible attributes:\n" >> "${DMFFILE}"
+	printf "\t\t* oid: numeric SNMP OID to match\n" >> "${DMFFILE}"
+	printf "\t\t* alarm: if present, and different than \"None\", value to be published in *ups.alarm*\n" >> "${DMFFILE}"
+	printf "\t\t* status: if present, and different than \"None\", value to be published in *ups.status*\n\n" >> "${DMFFILE}"
+	printf "\t\tExamples:\n" >> "${DMFFILE}"
+	printf "\t\t<alarm name=\"pw_alarms\">\n" >> "${DMFFILE}"
+	printf "\t\t\t<info_alarm alarm=\"None\" oid=\"1.3.6.1.4.1.534.1.7.4\" status=\"LB\"/>\n" >> "${DMFFILE}"
+	printf "\t\t\t<info_alarm alarm=\"Output overload!\" oid=\".1.3.6.1.4.1.534.1.7.7\" status=\"OVER\"/>\n" >> "${DMFFILE}"
+	printf "\t\t\t<info_alarm alarm=\"Internal failure!\" oid=\".1.3.6.1.4.1.534.1.7.8\" status=\"None\"/>\n" >> "${DMFFILE}"
+	printf "\t\t</alarm>\n\t\t-->\n" >> "${DMFFILE}"
 	
 	# extract OID string paths, one by one
 	LINENB="0"
 	while IFS= read -r line; do
 		LINENB="`expr $LINENB + 1`"
 		FULL_STR_OID="$line"
-		STR_OID="`echo $line | cut -d'.' -f1`"
+		STR_OID="`echo "$line" | cut -d'.' -f1`"
 		echo $line | grep STRING > /dev/null
 		if [ $? -eq 0 ]; then
 			ST_FLAG_TYPE="ST_FLAG_STRING"
@@ -355,27 +380,27 @@ generate_DMF() {
 			SU_INFOSIZE="1"
 		fi
 		# get the matching numeric OID
-		NUM_OID="`sed -n ${LINENB}p ${NUMWALKFILE} | cut -d' ' -f1`"
+		NUM_OID="`sed -n "${LINENB}p" "${NUMWALKFILE}" | cut -d' ' -f1`"
 		printf "\t\t<!-- ${FULL_STR_OID} -->\n\t\t<snmp_info name=\"unmapped.${STR_OID}\", oid=\"${NUM_OID}\", default=\"\"/>\n"
-	done < ${STRWALKFILE} >> ${DMFFILE}
+	done < "${STRWALKFILE}" >> "${DMFFILE}"
 
 	# append footer
 	# FIXME: missing license field in mib2nut
 	printf "\t</snmp>\n\t<mib2nut auto_check=\"\" mib_name=\"${LDRIVER}_mib\" name=\"${LDRIVER}_mib\" oid=\"${DEVICE_SYSOID}\" snmp_info=\"${LDRIVER}_mib\" version=\"0.1\"/>\n" >> "$DMFFILE"
 
-	printf "\n\t<!-- Data format: -->\n" >> ${DMFFILE}
-	printf "\t<!-- To create a MIB mapping entry, use the following kind of declaration:\n" >> ${DMFFILE}
-	printf "\t<mib2nut alarms_info=\"...\" auto_check=\"...\" mib_name=\"...\" name=\"...\" oid=\".1.3.6.1.4.1.534.1\" snmp_info=\"...\" version=\"...\"/>" >> ${DMFFILE}
-	printf "\tPossible attributes:\n" >> ${DMFFILE}
-	printf "\t* oid: sysOID to match to use the present MIB\n" >> ${DMFFILE}
-	printf "\t* alarms_info: alarm lookup structure to use, to resolve status and alarms\n" >> ${DMFFILE}
-	printf "\t* auto_check: OID to counter check if the present MIB matches the device\n" >> ${DMFFILE}
-	printf "\t* mib_name: internal name of the DMF structure\n" >> ${DMFFILE}
-	printf "\t* name: friendly name of the DMF structure\n" >> ${DMFFILE}
-	printf "\t* snmp_info: snmp_info structure to use\n" >> ${DMFFILE}
-	printf "\t* version: version of the present mib2nut structure\n" >> ${DMFFILE}
-	printf "\tExamples:\n" >> ${DMFFILE}
-	printf "\t<mib2nut alarms_info=\"pw_alarms\" auto_check=\"1.3.6.1.4.1.534.1.1.2.0\" mib_name=\"pw\" name=\"powerware\" oid=\".1.3.6.1.4.1.534.1\" snmp_info=\"pw_mib\" version=\"0.88\"/>\n\t-->\n" >> ${DMFFILE}
+	printf "\n\t<!-- Data format: -->\n" >> "${DMFFILE}"
+	printf "\t<!-- To create a MIB mapping entry, use the following kind of declaration:\n" >> "${DMFFILE}"
+	printf "\t<mib2nut alarms_info=\"...\" auto_check=\"...\" mib_name=\"...\" name=\"...\" oid=\".1.3.6.1.4.1.534.1\" snmp_info=\"...\" version=\"...\"/>" >> "${DMFFILE}"
+	printf "\tPossible attributes:\n" >> "${DMFFILE}"
+	printf "\t* oid: sysOID to match to use the present MIB\n" >> "${DMFFILE}"
+	printf "\t* alarms_info: alarm lookup structure to use, to resolve status and alarms\n" >> "${DMFFILE}"
+	printf "\t* auto_check: OID to counter check if the present MIB matches the device\n" >> "${DMFFILE}"
+	printf "\t* mib_name: internal name of the DMF structure\n" >> "${DMFFILE}"
+	printf "\t* name: friendly name of the DMF structure\n" >> "${DMFFILE}"
+	printf "\t* snmp_info: snmp_info structure to use\n" >> "${DMFFILE}"
+	printf "\t* version: version of the present mib2nut structure\n" >> "${DMFFILE}"
+	printf "\tExamples:\n" >> "${DMFFILE}"
+	printf "\t<mib2nut alarms_info=\"pw_alarms\" auto_check=\"1.3.6.1.4.1.534.1.1.2.0\" mib_name=\"pw\" name=\"powerware\" oid=\".1.3.6.1.4.1.534.1\" snmp_info=\"pw_mib\" version=\"0.88\"/>\n\t-->\n" >> "${DMFFILE}"
 
 	printf "</nut>\n" >> "$DMFFILE"
 
@@ -430,8 +455,8 @@ if [ -z "$NUMWALKFILE" ]; then
 	# mode 1: directly get SNMP data from a real agent
 	echo "Mode 1 selected"
 	MODE=1
-	NUMWALKFILE=$DFL_NUMWALKFILE
-	STRWALKFILE=$DFL_STRWALKFILE
+	NUMWALKFILE="$DFL_NUMWALKFILE"
+	STRWALKFILE="$DFL_STRWALKFILE"
 
 	# check if Net SNMP is available
 	if [ -z "`command -v snmpget`" -o -z "`command -v snmpwalk`" ] && \
@@ -443,8 +468,8 @@ if [ -z "$NUMWALKFILE" ]; then
 	while [ -z "$HOSTNAME" ]; do
 		printf "\n\tPlease enter the SNMP host IP address or name.\n"
 		read -p "SNMP host IP name or address: " HOSTNAME < /dev/tty
-		if echo $HOSTNAME | egrep -q '[^a-zA-Z0-9]'; then
-			echo "Please use only letters and digits"
+		if echo "$HOSTNAME" | grep -E -q '[^a-zA-Z0-9.-]'; then
+			echo "Please use only letters, digits, dash and period character"
 			HOSTNAME=""
 		fi
 	done
@@ -459,9 +484,9 @@ else
 		# then use snmptranslate to get the string OIDs and generated the string SNMP walk
 		echo "Mode 3 selected"
 		MODE=3
-		RAWWALKFILE=$NUMWALKFILE
-		NUMWALKFILE=$DFL_NUMWALKFILE
-		STRWALKFILE=$DFL_STRWALKFILE
+		RAWWALKFILE="$NUMWALKFILE"
+		NUMWALKFILE="$DFL_NUMWALKFILE"
+		STRWALKFILE="$DFL_STRWALKFILE"
 
 		# check for actual file existence
 		if [ ! -f "$RAWWALKFILE" ]; then
@@ -470,7 +495,7 @@ else
 		fi
 		# Extract the sysOID
 		# Format is "1.3.6.1.2.1.1.2.0 = OID: 1.3.6.1.4.1.4555.1.1.1"
-		DEVICE_SYSOID=`grep 1.3.6.1.2.1.1.2.0 $RAWWALKFILE | cut -d' ' -f4`
+		DEVICE_SYSOID="`grep 1.3.6.1.2.1.1.2.0 "$RAWWALKFILE" | cut -d' ' -f4`"
 		if [ -n "$DEVICE_SYSOID" ]; then
 			echo "Found sysOID $DEVICE_SYSOID"
 		else
@@ -481,16 +506,19 @@ else
 		# Switch to the entry point, and extract the subtree
 		# Extract the numeric walk
 		echo -n "Extracting numeric SNMP walk..."
-		grep $DEVICE_SYSOID $RAWWALKFILE | egrep -v "1.3.6.1.2.1.1.2.0" 2>/dev/null 1> $NUMWALKFILE
+		grep "$DEVICE_SYSOID" "$RAWWALKFILE" | grep -E -v "1.3.6.1.2.1.1.2.0" 2>/dev/null 1> "$NUMWALKFILE"
 		echo " done"
 
 		# Create the string walk from a translation of the numeric one
 		echo -n "Converting string SNMP walk..."
 		while IFS=' = ' read NUM_OID OID_VALUE
 		do
-			STR_OID=`snmptranslate -Os  -m ALL -M+. $NUM_OID 2>/dev/null`
-			echo "$STR_OID = $OID_VALUE" >> $STRWALKFILE
-		done < $NUMWALKFILE
+			STR_OID="`snmptranslate -Os  -m ALL -M+. "$NUM_OID" 2>/dev/null`"
+			# Uncomment the below line to get debug logs
+			#echo "Got: $STR_OID = $OID_VALUE"
+			printf "."
+			echo "$STR_OID = $OID_VALUE" >> "$STRWALKFILE"
+		done < "$NUMWALKFILE"
 		echo " done"
 	else
 		# mode 2: get data from files
@@ -503,7 +531,7 @@ else
 Please enter the value of sysOID, as displayed by snmp-ups. For example '.1.3.6.1.4.1.2254.2.4'.
 You can get it using: snmpget -v1 -c XXX <host> $SYSOID_NUMBER"
 			read -p "Value of sysOID: " SYSOID < /dev/tty
-			if echo $SYSOID | egrep -q '[^0-9.]'; then
+			if echo "$SYSOID" | grep -E -q '[^0-9.]'; then
 				echo "Please use only the numeric form, with dots and digits"
 				SYSOID=""
 			fi
@@ -530,23 +558,23 @@ while [ -z "$DRIVER" ]; do
 Please enter a name for this driver. Use only letters and numbers. Use
 natural (upper- and lowercase) capitalization, e.g., 'Belkin', 'APC'."
 	read -p "Name of subdriver: " DRIVER < /dev/tty
-	if echo $DRIVER | egrep -q '[^a-zA-Z0-9]'; then
+	if echo "$DRIVER" | grep -E -q '[^a-zA-Z0-9]'; then
 		echo "Please use only letters and digits"
 		DRIVER=""
 	fi
 done
 
 # remove blank and "End of MIB" lines
-egrep -e "^[[:space:]]?$" -e "End of MIB" -v ${NUMWALKFILE} > ${TMP_NUMWALKFILE}
-egrep -e "^[[:space:]]?$" -e "End of MIB" -v ${STRWALKFILE} > ${TMP_STRWALKFILE}
-NUMWALKFILE=${TMP_NUMWALKFILE}
-STRWALKFILE=${TMP_STRWALKFILE}
+grep -E -e "^[[:space:]]?$" -e "End of MIB" -v "${NUMWALKFILE}" > "${TMP_NUMWALKFILE}"
+grep -E -e "^[[:space:]]?$" -e "End of MIB" -v "${STRWALKFILE}" > "${TMP_STRWALKFILE}"
+NUMWALKFILE="${TMP_NUMWALKFILE}"
+STRWALKFILE="${TMP_STRWALKFILE}"
 
 # FIXME: sanity checks (! -z contents -a same `wc -l`)
-NUM_OID_COUNT="`cat $NUMWALKFILE | wc -l`"
-STR_OID_COUNT="`cat $STRWALKFILE | wc -l`"
+NUM_OID_COUNT="`cat "$NUMWALKFILE" | wc -l`"
+STR_OID_COUNT="`cat "$STRWALKFILE" | wc -l`"
 
-echo "COUNT = $NUM_OID_COUNT / $NUM_OID_COUNT"
+echo "SNMP OIDs extracted = $NUM_OID_COUNT / $NUM_OID_COUNT"
 
 generate_C
 if [ "$DMF" -eq 1 ]; then

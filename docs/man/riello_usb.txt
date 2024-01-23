@@ -1,5 +1,5 @@
 RIELLO_USB(8)
-===========
+=============
 
 NAME
 ----
@@ -24,6 +24,10 @@ riello_usb supports all recent Riello UPS with USB.
 
 Older Riello UPS products are not supported.
 
+EXTRA ARGUMENTS
+---------------
+
+include::nut_usb_addvars.txt[]
 
 AUTHOR
 ------
@@ -35,8 +39,10 @@ SEE ALSO
 
 The core driver
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources
 ~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

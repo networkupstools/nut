@@ -1,0 +1,166 @@
+SOCOMEC_JBUS(8)
+===============
+
+NAME
+----
+
+socomec_jbus - Driver for Socomec JBUS UPS with
+RS-232 serial Modbus connection.
+
+SYNOPSIS
+--------
+
+*socomec_jbus* -h
+
+*socomec_jbus* -a 'DEVICE_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
+socomec_jbus driver.  For information about the core driver, see
+linkman:nutupsdrv[8].
+
+SUPPORTED HARDWARE
+------------------
+
+This driver supports Socomec JBUS series, online (double conversion)
+UPS with the following characteristics.
+
+1. Single phase and 3-phase UPS
+
+2. Connection: RS-232
+
+These are typically provided with a Netvision WEB/SNMP management
+card / external box that would be better served by the linkman:snmp-ups[8]
+driver. In case netvision isn't available, you can hook up the UPS directly
+via the serial port and use this driver.
+
+Currently, it has only been tested on the following model.
+
+* DIGYS 3/3 15kVA
+
+In theory, any Socomec JBUS model should work. It should be discovered
+as ``Unknown Socomec JBUS'' with a numeric id that I'll need to add it
+to the list of supported UPSs.
+
+Sadly, Socomec document only mentions DELPHYS MX and DELPHYS MX elite and
+I have the id of my own DIGYS, so chances are, your model will not be
+recognized but will probably mostly work. Please report successful
+or unsuccessful results to the bug tracker or the mailing list.
+Make sure to include the full model number of your UPS manually
+in your report.
+
+socomec_jbus uses the libmodbus project, for Modbus implementation.
+
+CABLING
+-------
+
+The UPS has an RS-232 port which should be connected with a NULL-modem
+cable to a PC serial port. The UPS tested has a female DB9 connector,
+so if you construct the cable yourself, make note of the connector type to
+avoid using gender changers.
+
+RS-232 is supported on all operating systems, either via a built-in serial
+port on your computer, or by using an external USB-to-RS-232 converter. If
+you plan to use an USB-to-RS-232 converter, make sure it's supported by your
+operating system.
+
+
+INSTALLATION
+------------
+
+This driver should be built by default if libmodbus and development headers
+are available. You can force the `configure` script to build it with the
+following arguments:
+
+    configure --with-serial=yes --with-modbus=yes
+
+You also need to give proper (R/W) permissions on the local serial device
+file to allow the NUT driver run-time user to access it. This may need
+additional setup for start-up scripting, udev or upower rules, to apply
+the rights on every boot -- especially if your device nodes are tracked
+by a virtual filesystem.
+
+For example, a USB-to-serial converter can be identified as `/dev/ttyACM0`
+or `/dev/ttyUSB0` on Linux, or `/dev/ttyU0` on FreeBSD (note the capital "U").
+A built-in serial port can be identified as `/dev/ttyS0` on Linux or one of
+`/dev/cua*` names on FreeBSD.
+
+INSTANT COMMANDS
+----------------
+
+This driver does not (yet?) support sending commands to the UPS.
+
+VARIABLES
+---------
+
+This driver does not support writable runtime variables (see linkman:upsrw[8]):
+for the same reasons.
+Both should be trivial to implement, but since I've already found one or two
+inconsistencies in the documentation, I'm withholding from trying them.
+
+KNOWN ISSUES AND BUGS
+---------------------
+
+Well, it is an alpha release at best, but so far appears to report the UPS
+status reliably. Mostly based on the work of Yifeng Li <tomli@tomli.me> on
+the huawei-ups2000 in that very same source tree.
+
+Read failure on some JBUS addresses
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The driver polls all documented JBUS addresses and it is quite possible
+that your UPS model does not support one of them (e.g. the Digys does not
+support address 0x1020 which should provide the current UPS status).
+This should be logged with LOG_ERR from modbus_read_input_registers()
+along with the address that produced the error.
+
+Data stale
+~~~~~~~~~~~
+
+Under certain circumstances, some registers can return invalid values
+and trigger a "data stale" error. Once a data stale error has occurred,
+you should see error messages similar to the example below in the system
+log.
+
+    socomec_jbus: modbus_read_input_registers(addr:XXXX, count:Z):
+        Illegal data address
+    upsd: Data for UPS [socomec] is stale - check driver
+    upsd: UPS [socomec] data is no longer stale
+
+So far all known problems have been fixed by the author, but an unknown one
+cannot be ruled out. If you have encountered "data stale" problems during
+normal uses, please file a bug report with full logs attached.
+
+Before troubleshooting or reporting a problem, it's important to check
+your *dmesg* log for USB connect and disconnect events to avoid wasting
+time on the NUT driver when the actual problem is USB. For example, if
+someone yanks the cable out of the USB port, or if a new USB device is
+plugged into a USB host/hub that is struggling to power its ports
+(common on single-board computers like Raspberry Pi), or if you have
+flaky cabling or EMI noise, the serial converter can get disconnected
+from USB, at least briefly. This creates a permanent data stale, the driver
+must be restarted (plugging the USB back won't fix it, since the driver
+is still using the nonexistent serial device). These USB problems usually
+have nothing to do with NUT. If it's the case, you should solve the
+underlying USB problem - check the cable, check the converter, try a
+powered USB hub, try a full-speed USB isolator, etc.
+
+AUTHOR
+------
+
+Thanos Chatziathanassiou <tchatzi@arx.net>
+
+SEE ALSO
+--------
+
+The core driver:
+~~~~~~~~~~~~~~~~
+
+linkman:nutupsdrv[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
+* Socomec JBUS/Modbus Reference Guide:
+  https://www.socomec.com/files/live/sites/systemsite/files/GB-JBUS-MODBUS-for-Delphys-MP-and-Delphys-MX-operating-manual.pdf
+* libmodbus home page: http://libmodbus.org
