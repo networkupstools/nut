@@ -293,10 +293,9 @@ for L in $NODE_LABELS ; do
         "NUT_BUILD_CAPS=cppunit"|"NUT_BUILD_CAPS=cppunit=yes")
             [ -n "$CANBUILD_CPPUNIT_TESTS" ] || CANBUILD_CPPUNIT_TESTS=yes ;;
 
-        # Currently we don't build --with-nutconf" by default, unless desired
-        # explicitly by developers' local workflow (or NUT CI farm recipes),
-        # that codebase needs some clean-up first... This should cover both
-        # the tool and the cppunit tests for it (if active per above).
+        # This should cover both the --with-nutconf tool setting
+        # and the cppunit tests for it (if active per above).
+        # By default we would nowadays guess (requires C++11).
         "NUT_BUILD_CAPS=nutconf=no")
             [ -n "$CANBUILD_NUTCONF" ] || CANBUILD_NUTCONF=no ;;
         "NUT_BUILD_CAPS=nutconf=no-gcc")
@@ -1078,8 +1077,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         CONFIG_OPTS+=("--enable-cppunit=no")
     fi
 
-    if [ -z "${CANBUILD_NUTCONF-}" ] \
-    || ( [ "${CANBUILD_NUTCONF-}" = "no-gcc" ] && [ "$COMPILER_FAMILY" = "GCC" ] ) \
+    if ( [ "${CANBUILD_NUTCONF-}" = "no-gcc" ] && [ "$COMPILER_FAMILY" = "GCC" ] ) \
     || ( [ "${CANBUILD_NUTCONF-}" = "no-clang" ] && [ "$COMPILER_FAMILY" = "CLANG" ] ) \
     ; then
         CANBUILD_NUTCONF=no
@@ -1089,8 +1087,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         echo "WARNING: Build agent says it can build nutconf, enabling the experimental feature" >&2
         CONFIG_OPTS+=("--with-nutconf=yes")
     elif [ "${CANBUILD_NUTCONF-}" = no ] ; then
-        echo "WARNING: Build agent says it can not build nutconf (or did not say anything), disabling the feature" >&2
+        echo "WARNING: Build agent says it can not build nutconf, disabling the feature" >&2
         CONFIG_OPTS+=("--with-nutconf=no")
+    fi
+
+    if [ -z "${CANBUILD_NUTCONF-}" ] ; then
+        CONFIG_OPTS+=("--with-nutconf=auto")
     fi
 
     if [ "${CANBUILD_VALGRIND_TESTS-}" = no ] ; then
