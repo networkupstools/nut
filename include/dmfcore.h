@@ -34,7 +34,7 @@
 #if WITH_NEON
 # include <ne_xml.h>
 #else
-#error "LibNEON is required to build DMF"
+# error "LibNEON is required to build DMF"
 #endif
 
 /*
@@ -43,11 +43,11 @@
  */
 
 #ifndef PATH_MAX_SIZE
-#ifdef PATH_MAX
-#define PATH_MAX_SIZE PATH_MAX
-#else
-#define PATH_MAX_SIZE 1024
-#endif
+# ifdef PATH_MAX
+#  define PATH_MAX_SIZE PATH_MAX
+# else
+#  define PATH_MAX_SIZE 1024
+# endif
 #endif
 
 typedef enum {
