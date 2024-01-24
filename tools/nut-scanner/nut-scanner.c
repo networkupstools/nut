@@ -57,6 +57,10 @@
 
 #include "nut-scan.h"
 
+#ifndef WITH_DMFMIB
+# define WITH_DMFMIB 0
+#endif
+
 #if WITH_DMFMIB
 # ifdef WANT_LIBNUTSCAN_SNMP_DMF
 #  undef WANT_LIBNUTSCAN_SNMP_DMF

@@ -64,7 +64,7 @@
  * it for another.
  */
 #ifndef WITH_DMFMIB
-#define WITH_DMFMIB 0
+# define WITH_DMFMIB 0
 #endif
 
 #ifdef WANT_DMF_FUNCTIONS
@@ -82,6 +82,13 @@
 #  undef WITH_DMF_FUNCTIONS
 # endif
 # define WITH_DMF_FUNCTIONS 0
+#else /* WITH_DMFMIB */
+# ifndef WITH_DMF_LUA
+#  define WITH_DMF_LUA 0
+# endif
+# ifndef WITH_DMF_FUNCTIONS
+#  define WITH_DMF_FUNCTIONS 0
+# endif
 #endif
 
 #if WITH_DMF_LUA

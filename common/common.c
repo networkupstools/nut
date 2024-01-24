@@ -59,7 +59,7 @@ static int upsnotify_report_verbosity = -1;
 	on nut_version_macro.h), and also to prevent all sources from
 	having to be recompiled each time the version changes (they only
 	need to be re-linked). */
-#if DMFREINDEXER_MAKECHECK
+#if defined DMFREINDEXER_MAKECHECK && DMFREINDEXER_MAKECHECK
 # define NUT_VERSION_MACRO "custom build"
 #else
 # include "nut_version.h"

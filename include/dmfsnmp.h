@@ -9,6 +9,7 @@
  * Copyright (C) 2016 Carlos Dominguez <CarlosDominguez@eaton.com>
  * Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
  * Copyright (C) 2016-2021 Jim Klimov <EvgenyKlimov@eaton.com>
+ * Copyright (C) 2024 Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -117,6 +118,10 @@
 # ifndef WITH_DMF_FUNCTIONS
 #  define WITH_DMF_FUNCTIONS WANT_DMF_FUNCTIONS
 # endif
+#endif
+
+#ifndef WITH_DMF_LUA
+# define WITH_DMF_LUA 0
 #endif
 
 #if WITH_DMF_LUA
