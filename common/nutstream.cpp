@@ -230,6 +230,14 @@ std::string NutFile::tmpName()
 	throw(std::runtime_error)
 #endif
 {
+	// Note: in many systems' implementations this claims a warning like:
+	//    the use of `tempnam' is dangerous, better use `mkstemp'
+	// or
+	//     These functions are deprecated because more secure versions
+	//     are available; see tmpnam_s, _wtmpnam_s.
+	// but it seems the alternatives are different for various platforms
+	// and so a replacement is not quite portable (stack of ifdef's?), per
+	// https://stackoverflow.com/questions/3299881/tmpnam-warning-saying-it-is-dangerous
 	char *tmp_name = ::tempnam(m_tmp_dir.c_str(), NULL);
 
 	if (NULL == tmp_name)
