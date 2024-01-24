@@ -560,7 +560,7 @@ protected:
 	 */
 	template <typename T>
 	static T range_cast(long long int number, long long int min, long long int max)
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 		throw(std::range_error)
 #endif
 	{

@@ -1137,7 +1137,7 @@ class NutConfOptions: public Options {
 	 *  Check that using the \ref valid flag.
 	 */
 	void reportInvalid() const
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 		throw(std::logic_error)
 #endif
 		;
@@ -1177,7 +1177,7 @@ class NutConfOptions: public Options {
 		std::string & passwd,
 		std::string & mode,
 		size_t        which = 0) const
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 			throw(std::range_error)
 #endif
 		;
@@ -1678,7 +1678,7 @@ NutConfOptions::~NutConfOptions() {
 
 
 void NutConfOptions::reportInvalid() const
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 	throw(std::logic_error)
 #endif
 {
@@ -1882,7 +1882,7 @@ void NutConfOptions::getMonitor(
 	std::string & passwd,
 	std::string & mode,
 	size_t        which) const
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 		throw(std::range_error)
 #endif
 {
