@@ -25,7 +25,7 @@
 
 #include "emerson-avocent-pdu-mib.h"
 
-#define EMERSON_AVOCENT_MIB_VERSION		"1.3"
+#define EMERSON_AVOCENT_MIB_VERSION		"1.30"
 #define EMERSON_AVOCENT_SYSOID			".1.3.6.1.4.1.10418.17.1.7"
 #define EMERSON_AVOCENT_OID_MODEL_NAME	".1.3.6.1.4.1.10418.17.2.1.2.0"
 
@@ -60,21 +60,21 @@
 #endif
 
 static info_lkp_t avocent_outlet_status_info[] = {
-	{ 1, "off", NULL, NULL },
-	{ 2, "on", NULL, NULL },
+	info_lkp_default(1, "off"),
+	info_lkp_default(2, "on"),
 /*
-	{ 3, "offLocked", NULL, NULL },
-	{ 4, "onLocked", NULL, NULL },
-	{ 5, "offCycle", NULL, NULL },
-	{ 6, "onPendingOff", NULL, NULL },
-	{ 7, "offPendingOn", NULL, NULL },
-	{ 8, "onPendingCycle", NULL, NULL },
-	{ 9, "notSet", NULL, NULL },
-	{ 10, "onFixed", NULL, NULL },
-	{ 11, "offShutdown", NULL, NULL },
-	{ 12, "tripped", NULL, NULL },
+	info_lkp_default(3, "offLocked"),
+	info_lkp_default(4, "onLocked"),
+	info_lkp_default(5, "offCycle"),
+	info_lkp_default(6, "onPendingOff"),
+	info_lkp_default(7, "offPendingOn"),
+	info_lkp_default(8, "onPendingCycle"),
+	info_lkp_default(9, "notSet"),
+	info_lkp_default(10, "onFixed"),
+	info_lkp_default(11, "offShutdown"),
+	info_lkp_default(12, "tripped"),
 */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_sentinel
 };
 
 static snmp_info_t emerson_avocent_pdu_mib[] = {

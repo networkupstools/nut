@@ -46,67 +46,67 @@
 /* #define DEBUG */
 
 static info_lkp_t ietf_battery_info[] = {
-	{ 1, ""   /* unknown */, NULL, NULL },
-	{ 2, ""   /* batteryNormal */, NULL, NULL },
-	{ 3, "LB" /* batteryLow */, NULL, NULL },
-	{ 4, "LB" /* batteryDepleted */, NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, ""),	/* unknown */
+	info_lkp_default(2, ""),	/* batteryNormal */
+	info_lkp_default(3, "LB"),	/* batteryLow */
+	info_lkp_default(4, "LB"),	/* batteryDepleted */
+	info_lkp_sentinel
 };
 
 static info_lkp_t ietf_power_source_info[] = {
-	{ 1, "" /* other */, NULL, NULL },
-	{ 2, "OFF" /* none */, NULL, NULL },
-	{ 3, "OL" /* normal */, NULL, NULL },
-	{ 4, "OL BYPASS" /* bypass */, NULL, NULL },
-	{ 5, "OB" /* battery */, NULL, NULL },
-	{ 6, "OL BOOST" /* booster */, NULL, NULL },
-	{ 7, "OL TRIM" /* reducer */, NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, ""),	/* other */
+	info_lkp_default(2, "OFF"),	/* none */
+	info_lkp_default(3, "OL"),	/* normal */
+	info_lkp_default(4, "OL BYPASS"),	/* bypass */
+	info_lkp_default(5, "OB"),	/* battery */
+	info_lkp_default(6, "OL BOOST"),	/* booster */
+	info_lkp_default(7, "OL TRIM"),	/* reducer */
+	info_lkp_sentinel
 };
 
 static info_lkp_t ietf_overload_info[] = {
-	{ 1, "OVER", NULL, NULL },	/* output overload */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "OVER"),	/* output overload */
+	info_lkp_sentinel
 };
 
 static info_lkp_t ietf_test_active_info[] = {
-	{ 1, "", NULL, NULL },	/* upsTestNoTestsInitiated */
-	{ 2, "", NULL, NULL },	/* upsTestAbortTestInProgress */
-	{ 3, "TEST", NULL, NULL },	/* upsTestGeneralSystemsTest */
-	{ 4, "TEST", NULL, NULL },	/* upsTestQuickBatteryTest */
-	{ 5, "CAL", NULL, NULL },	/* upsTestDeepBatteryCalibration */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, ""),	/* upsTestNoTestsInitiated */
+	info_lkp_default(2, ""),	/* upsTestAbortTestInProgress */
+	info_lkp_default(3, "TEST"),	/* upsTestGeneralSystemsTest */
+	info_lkp_default(4, "TEST"),	/* upsTestQuickBatteryTest */
+	info_lkp_default(5, "CAL"),	/* upsTestDeepBatteryCalibration */
+	info_lkp_sentinel
 };
 
 static info_lkp_t ietf_test_result_info[] = {
-	{ 1, "done and passed", NULL, NULL },
-	{ 2, "done and warning", NULL, NULL },
-	{ 3, "done and error", NULL, NULL },
-	{ 4, "aborted", NULL, NULL },
-	{ 5, "in progress", NULL, NULL },
-	{ 6, "no test initiated", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "done and passed"),
+	info_lkp_default(2, "done and warning"),
+	info_lkp_default(3, "done and error"),
+	info_lkp_default(4, "aborted"),
+	info_lkp_default(5, "in progress"),
+	info_lkp_default(6, "no test initiated"),
+	info_lkp_sentinel
 };
 
 #ifdef DEBUG
 static info_lkp_t ietf_shutdown_type_info[] = {
-	{ 1, "output", NULL, NULL },
-	{ 2, "system", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "output"),
+	info_lkp_default(2, "system"),
+	info_lkp_sentinel
 };
 #endif
 
 static info_lkp_t ietf_yes_no_info[] = {
-	{ 1, "yes", NULL, NULL },
-	{ 2, "no", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "yes"),
+	info_lkp_default(2, "no"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t ietf_beeper_status_info[] = {
-	{ 1, "disabled", NULL, NULL },
-	{ 2, "enabled", NULL, NULL },
-	{ 3, "muted", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "disabled"),
+	info_lkp_default(2, "enabled"),
+	info_lkp_default(3, "muted"),
+	info_lkp_sentinel
 };
 
 /* Snmp2NUT lookup table info_type, info_flags, info_len, OID, dfl, flags, oid2info, setvar */

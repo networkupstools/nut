@@ -64,96 +64,97 @@
 #define APCC_OID_BATT_STATUS	".1.3.6.1.4.1.318.1.1.1.2.1.1.0"
 /* Defines for APCC_OID_BATT_STATUS */
 static info_lkp_t apcc_batt_info[] = {
-	{ 1, "", NULL, NULL },	/* unknown */
-	{ 2, "", NULL, NULL },	/* batteryNormal */
-	{ 3, "LB", NULL, NULL },	/* batteryLow */
-	{ 4, "LB", NULL, NULL },	/* batteryInFaultCondition */
-	{ 5, "LB", NULL, NULL },	/* noBatteryPresent */
-	{ 0, NULL, NULL, NULL }
-} ;
+	info_lkp_default(1, ""),	/* unknown */
+	info_lkp_default(2, ""),	/* batteryNormal */
+	info_lkp_default(3, "LB"),	/* batteryLow */
+	info_lkp_default(4, "LB"),	/* batteryInFaultCondition */
+	info_lkp_default(5, "LB"),	/* noBatteryPresent */
+	info_lkp_sentinel
+};
 
 #define APCC_OID_POWER_STATUS	".1.3.6.1.4.1.318.1.1.1.4.1.1.0"
 /* Defines for APCC_OID_POWER_STATUS */
 static info_lkp_t apcc_pwr_info[] = {
-    { 1, "", NULL, NULL },          /* unknown  */
-    { 2, "OL", NULL, NULL },        /* onLine */
-    { 3, "OB", NULL, NULL },        /* onBattery */
-    { 4, "OL BOOST", NULL, NULL },     /* onSmartBoost */
-    { 5, "OFF", NULL, NULL },       /* timedSleeping */
-    { 6, "OFF", NULL, NULL },       /* softwareBypass  */
-    { 7, "OFF", NULL, NULL },       /* off */
-    { 8, "", NULL, NULL },          /* rebooting */
-    { 9, "BYPASS", NULL, NULL },    /* switchedBypass */
-    { 10, "BYPASS", NULL, NULL },   /* hardwareFailureBypass */
-    { 11, "OFF", NULL, NULL },      /* sleepingUntilPowerReturn */
-    { 12, "OL TRIM", NULL, NULL },     /* onSmartTrim */
-    { 13, "OL ECO", NULL, NULL },   /* ecoMode */
-    { 14, "OL", NULL, NULL },       /* hotStandby */
-    { 15, "OL", NULL, NULL },       /* onBatteryTest */
-    { 16, "BYPASS", NULL, NULL },   /* emergencyStaticBypass */
-    { 17, "BYPASS", NULL, NULL },   /* staticBypassStandby */
-    { 18, "", NULL, NULL },         /* powerSavingMode */
-    { 19, "OL", NULL, NULL },       /* spotMode */
-    { 20, "OL ECO", NULL, NULL },   /* eConversion */
-    { 21, "OL", NULL, NULL },       /* chargerSpotmode */
-    { 22, "OL", NULL, NULL },       /* inverterSpotmode */
-    { 23, "", NULL, NULL },         /* activeLoad */
-    { 24, "OL", NULL, NULL },       /* batteryDischargeSpotmode */
-    { 25, "OL", NULL, NULL },       /* inverterStandby */
-    { 26, "", NULL, NULL },         /* chargerOnly */
-    { 27, "", NULL, NULL },         /* distributedEnergyReserve */
-    { 28, "OL", NULL, NULL },       /* selfTest */
-    { 0, NULL, NULL, NULL }
+	info_lkp_default(1, ""),	/* unknown  */
+	info_lkp_default(2, "OL"),	/* onLine */
+	info_lkp_default(3, "OB"),	/* onBattery */
+	info_lkp_default(4, "OL BOOST"),	/* onSmartBoost */
+	info_lkp_default(5, "OFF"),	/* timedSleeping */
+	info_lkp_default(6, "OFF"),	/* softwareBypass  */
+	info_lkp_default(7, "OFF"),	/* off */
+	info_lkp_default(8, ""),	/* rebooting */
+	info_lkp_default(9, "BYPASS"),	/* switchedBypass */
+	info_lkp_default(10, "BYPASS"),	/* hardwareFailureBypass */
+	info_lkp_default(11, "OFF"),	/* sleepingUntilPowerReturn */
+	info_lkp_default(12, "OL TRIM"),	/* onSmartTrim */
+	info_lkp_default(13, "OL ECO"),	/* ecoMode */
+	info_lkp_default(14, "OL"),	/* hotStandby */
+	info_lkp_default(15, "OL"),	/* onBatteryTest */
+	info_lkp_default(16, "BYPASS"),	/* emergencyStaticBypass */
+	info_lkp_default(17, "BYPASS"),	/* staticBypassStandby */
+	info_lkp_default(18, ""),	/* powerSavingMode */
+	info_lkp_default(19, "OL"),	/* spotMode */
+	info_lkp_default(20, "OL ECO"),	/* eConversion */
+	info_lkp_default(21, "OL"),	/* chargerSpotmode */
+	info_lkp_default(22, "OL"),	/* inverterSpotmode */
+	info_lkp_default(23, ""),	/* activeLoad */
+	info_lkp_default(24, "OL"),	/* batteryDischargeSpotmode */
+	info_lkp_default(25, "OL"),	/* inverterStandby */
+	info_lkp_default(26, ""),	/* chargerOnly */
+	info_lkp_default(27, ""),	/* distributedEnergyReserve */
+	info_lkp_default(28, "OL"),	/* selfTest */
+	info_lkp_sentinel
 } ;
 
 #define APCC_OID_CAL_RESULTS	".1.3.6.1.4.1.318.1.1.1.7.2.6.0"
 static info_lkp_t apcc_cal_info[] = {
-    { 1, "", NULL, NULL },          /* Calibration Successful */
-    { 2, "", NULL, NULL },          /* Calibration not done, battery capacity below 100% */
-    { 3, "CAL", NULL, NULL },       /* Calibration in progress */
-    { 4, "", NULL, NULL },          /* Calibration not done, refused */
-    { 5, "", NULL, NULL },          /* Calibration canceled by user or error */
-    { 6, "", NULL, NULL },          /* Calibration pending, about to start */
-    { 0, NULL, NULL, NULL }
+	info_lkp_default(1, ""),	/* Calibration Successful */
+	info_lkp_default(2, ""),	/* Calibration not done, battery capacity below 100% */
+	info_lkp_default(3, "CAL"),	/* Calibration in progress */
+	info_lkp_default(4, ""),	/* Calibration not done, refused */
+	info_lkp_default(5, ""),	/* Calibration canceled by user or error */
+	info_lkp_default(6, ""),	/* Calibration pending, about to start */
+	info_lkp_sentinel
 };
 
 #define APCC_OID_NEEDREPLBATT	".1.3.6.1.4.1.318.1.1.1.2.2.4.0"
 static info_lkp_t apcc_battrepl_info[] = {
-    { 1, "", NULL, NULL },          /* No battery needs replacing */
-    { 2, "RB", NULL, NULL },        /* Batteries need to be replaced */
-    { 0, NULL, NULL, NULL }
+	info_lkp_default(1, ""),	/* No battery needs replacing */
+	info_lkp_default(2, "RB"),	/* Batteries need to be replaced */
+	info_lkp_sentinel
 };
 
 #define APCC_OID_TESTDIAGRESULTS ".1.3.6.1.4.1.318.1.1.1.7.2.3.0"
 static info_lkp_t apcc_testdiag_results[] = {
-    { 1, "Ok", NULL, NULL },
-    { 2, "Failed", NULL, NULL },
-    { 3, "InvalidTest", NULL, NULL },
-    { 4, "TestInProgress", NULL, NULL },
-    { 0, NULL, NULL, NULL }
+	info_lkp_default(1, "Ok"),
+	info_lkp_default(2, "Failed"),
+	info_lkp_default(3, "InvalidTest"),
+	info_lkp_default(4, "TestInProgress"),
+	info_lkp_sentinel
 };
 
 #define APCC_OID_SENSITIVITY ".1.3.6.1.4.1.318.1.1.1.5.2.7.0"
 static info_lkp_t apcc_sensitivity_modes[] = {
-    { 1, "auto", NULL, NULL },
-    { 2, "low", NULL, NULL },
-    { 3, "medium", NULL, NULL },
-    { 4, "high", NULL, NULL },
-    { 0, NULL, NULL, NULL }
+	info_lkp_default(1, "auto"),
+	info_lkp_default(2, "low"),
+	info_lkp_default(3, "medium"),
+	info_lkp_default(4, "high"),
+	info_lkp_sentinel
 };
 
 #define APCC_OID_TRANSFERREASON "1.3.6.1.4.1.318.1.1.1.3.2.5.0"
 static info_lkp_t apcc_transfer_reasons[] = {
-    { 1, "noTransfer", NULL, NULL },
-    { 2, "highLineVoltage", NULL, NULL },
-    { 3, "brownout", NULL, NULL },
-    { 4, "blackout", NULL, NULL },
-    { 5, "smallMomentarySag", NULL, NULL },
-    { 6, "deepMomentarySag", NULL, NULL },
-    { 7, "smallMomentarySpike", NULL, NULL },
-    { 8, "largeMomentarySpike", NULL, NULL },
-    { 9, "selfTest", NULL, NULL },
-    { 10, "rateOfVoltageChange", NULL, NULL }
+	info_lkp_default(1, "noTransfer"),
+	info_lkp_default(2, "highLineVoltage"),
+	info_lkp_default(3, "brownout"),
+	info_lkp_default(4, "blackout"),
+	info_lkp_default(5, "smallMomentarySag"),
+	info_lkp_default(6, "deepMomentarySag"),
+	info_lkp_default(7, "smallMomentarySpike"),
+	info_lkp_default(8, "largeMomentarySpike"),
+	info_lkp_default(9, "selfTest"),
+	info_lkp_default(10, "rateOfVoltageChange"),
+	info_lkp_sentinel
 };
 
 /* --- */

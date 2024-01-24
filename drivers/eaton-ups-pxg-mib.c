@@ -1,5 +1,7 @@
 /*  eaton-ups-pxg-mib.c - data to monitor Eaton / Powerware PXG UPS with NUT
  *  (using MIBs described in stdupsv1.mib and Xups.mib)
+ *  Previously known as powerware-mib.c for "pw" mapping,
+ *  later split into several subdrivers
  *
  *  Copyright (C)
  *       2005-2006 Olli Savia <ops@iki.fi>
@@ -95,59 +97,58 @@
 /* Default shutdown.return delay in seconds */
 #define DEFAULT_SHUTDOWNDELAY	0
 
-static info_lkp_t pw_alarm_ob[] = {
-	{ 1, "OB", NULL, NULL },
-	{ 2, "", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+static info_lkp_t eaton_pxg_alarm_ob[] = {
+	info_lkp_default(1, "OB"),
+	info_lkp_default(2, ""),
+	info_lkp_sentinel
 };
 
-static info_lkp_t pw_alarm_lb[] = {
-	{ 1, "LB", NULL, NULL },
-	{ 2, "", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+static info_lkp_t eaton_pxg_alarm_lb[] = {
+	info_lkp_default(1, "LB"),
+	info_lkp_default(2, ""),
+	info_lkp_sentinel
 };
 
-static info_lkp_t pw_pwr_info[] = {
-
-	{   0, "OFF"        /* off */, NULL, NULL },
-	{   1, "OL"         /* systemNormal */, NULL, NULL },
-	{   2, "OL"         /* systemNormalUPSRedundant */, NULL, NULL },
-	{   3, "OL"         /* systemNormalNotRedundant */, NULL, NULL },
-	{   4, "OB"         /* systemOnDCSource*/, NULL, NULL },
-	{   5, "OB LB"      /* systemOnDCSourceShutdownImminent */, NULL, NULL },
-	{   6, "OL"         /* systemNormalBypassNotAvailable */, NULL, NULL },
-	{   7, "OL"         /* systemNormalOnLine */, NULL, NULL },
-	{   8, "OL"         /* systemNormalEnergySaverSystem */, NULL, NULL },
-	{   9, "OL"         /* systemNormalVMMS */, NULL, NULL },
-	{  10, "OL"         /* systemNormalHRS */, NULL, NULL },
-	{  13, "OL OVER"    /* outputOverload */, NULL, NULL },
-	{  14, "OL TRIM"    /* systemNormalOnBuck */, NULL, NULL },
-	{  15, "OL BOOST"   /* systemNormalOnBoost */, NULL, NULL },
-	{  16, "BYPASS"     /* onBypass */, NULL, NULL },
-	{  17, "BYPASS"     /* onBypassStarting */, NULL, NULL },
-	{  18, "BYPASS"     /* onBypassReady */, NULL, NULL },
-	{  32, "BYPASS"     /* onMaintenanceBypass */, NULL, NULL },
-	{  33, "OL BYPASS"  /* onMBSUPSOnLine */, NULL, NULL },
-	{  34, "BYPASS"     /* onMBSUPSOnBypass */, NULL, NULL },
-	{  35, "OFF BYPASS" /* onMBSUPSOff */, NULL, NULL },
-	{  36, "OB BYPASS"  /* onMBSUPSOnBattery */, NULL, NULL },
-	{  37, "OL"         /* onMBSUPSOnLineESS */, NULL, NULL },
-	{  38, "OL"         /* onMBSUPSOnLineVMMS */, NULL, NULL },
-	{  39, "OL"         /* onMBSUPSOnLineHRS */, NULL, NULL },
-	{  40, "OL"         /* onMBSStarting */, NULL, NULL },
-	{  41, "OL"         /* onMBSReady */, NULL, NULL },
-	{  48, "OFF"        /* loadOff */, NULL, NULL },
-	{  49, "OFF"        /* loadOffStarting */, NULL, NULL },
-	{  50, "OFF"        /* loadOffReady */, NULL, NULL },
-	{  64, "OL"         /* supportingLoad */, NULL, NULL },
-	{  80, "OL"         /* systemNormalSP */, NULL, NULL },
-	{  81, "OL"         /* systemNormalEnergySaverSystemSP */, NULL, NULL },
-	{  96, "BYPASS"     /* systemOnBypassSP */, NULL, NULL },
-	{ 100, "BYPASS"     /* systemOnManualMaintenanceBypassSP (0x64) */, NULL, NULL },
-	{ 224, "OL OVER"    /* loadSegmentOverload (0x64) */, NULL, NULL },
-	{ 240, "OB"         /* systemOnDCSourceSP */, NULL, NULL },
-	{ 241, "OFF"        /* systemOffSP */, NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+static info_lkp_t eaton_pxg_pwr_info[] = {
+	info_lkp_default(0, "OFF"),	/* off */
+	info_lkp_default(1, "OL"),	/* systemNormal */
+	info_lkp_default(2, "OL"),	/* systemNormalUPSRedundant */
+	info_lkp_default(3, "OL"),	/* systemNormalNotRedundant */
+	info_lkp_default(4, "OB"),	/* systemOnDCSource*/
+	info_lkp_default(5, "OB LB"),	/* systemOnDCSourceShutdownImminent */
+	info_lkp_default(6, "OL"),	/* systemNormalBypassNotAvailable */
+	info_lkp_default(7, "OL"),	/* systemNormalOnLine */
+	info_lkp_default(8, "OL"),	/* systemNormalEnergySaverSystem */
+	info_lkp_default(9, "OL"),	/* systemNormalVMMS */
+	info_lkp_default(10, "OL"),	/* systemNormalHRS */
+	info_lkp_default(13, "OL OVER"),	/* outputOverload */
+	info_lkp_default(14, "OL TRIM"),	/* systemNormalOnBuck */
+	info_lkp_default(15, "OL BOOST"),	/* systemNormalOnBoost */
+	info_lkp_default(16, "BYPASS"),	/* onBypass */
+	info_lkp_default(17, "BYPASS"),	/* onBypassStarting */
+	info_lkp_default(18, "BYPASS"),	/* onBypassReady */
+	info_lkp_default(32, "BYPASS"),	/* onMaintenanceBypass */
+	info_lkp_default(33, "OL BYPASS"),	/* onMBSUPSOnLine */
+	info_lkp_default(34, "BYPASS"),	/* onMBSUPSOnBypass */
+	info_lkp_default(35, "OFF BYPASS"),	/* onMBSUPSOff */
+	info_lkp_default(36, "OB BYPASS"),	/* onMBSUPSOnBattery */
+	info_lkp_default(37, "OL"),	/* onMBSUPSOnLineESS */
+	info_lkp_default(38, "OL"),	/* onMBSUPSOnLineVMMS */
+	info_lkp_default(39, "OL"),	/* onMBSUPSOnLineHRS */
+	info_lkp_default(40, "OL"),	/* onMBSStarting */
+	info_lkp_default(41, "OL"),	/* onMBSReady */
+	info_lkp_default(48, "OFF"),	/* loadOff */
+	info_lkp_default(49, "OFF"),	/* loadOffStarting */
+	info_lkp_default(50, "OFF"),	/* loadOffReady */
+	info_lkp_default(64, "OL"),	/* supportingLoad */
+	info_lkp_default(80, "OL"),	/* systemNormalSP */
+	info_lkp_default(81, "OL"),	/* systemNormalEnergySaverSystemSP */
+	info_lkp_default(96, "BYPASS"),	/* systemOnBypassSP */
+	info_lkp_default(100, "BYPASS"),	/* systemOnManualMaintenanceBypassSP (0x64) */
+	info_lkp_default(224, "OL OVER"),	/* loadSegmentOverload (0x64) */
+	info_lkp_default(240, "OB"),	/* systemOnDCSourceSP */
+	info_lkp_default(241, "OFF"),	/* systemOffSP */
+	info_lkp_sentinel
 };
 
 /* FIXME: mapped to (experimental.)ups.type, but
@@ -164,113 +165,116 @@ static info_lkp_t pw_pwr_info[] = {
 #endif
 
 #if USE_PW_MODE_INFO
-static info_lkp_t pw_mode_info[] = {
-	{   1, "", NULL, NULL },
-	{   2, "", NULL, NULL },
-	{   3, "normal", NULL, NULL },
-	{   4, "", NULL, NULL },
-	{   5, "", NULL, NULL },
-	{   6, "", NULL, NULL },
-	{   7, "", NULL, NULL },
-	{   8, "parallel capacity", NULL, NULL },
-	{   9, "parallel redundancy", NULL, NULL },
-	{  10, "high efficiency", NULL, NULL },
+static info_lkp_t eaton_pxg_mode_info[] = {
+	info_lkp_default(1, ""),
+	info_lkp_default(2, ""),
+	info_lkp_default(3, "normal"),
+	info_lkp_default(4, ""),
+	info_lkp_default(5, ""),
+	info_lkp_default(6, ""),
+	info_lkp_default(7, ""),
+	info_lkp_default(8, "parallel capacity"),
+	info_lkp_default(9, "parallel redundancy"),
+	info_lkp_default(10, "high efficiency"),
+
 	/* Extended status values,
 	 * FIXME: check for source and completion */
-	{ 240, ""                /* battery (0xF0) */, NULL, NULL },
-	{ 100, ""                /* maintenanceBypass (0x64) */, NULL, NULL },
-	{  96, ""                /* Bypass (0x60) */, NULL, NULL },
-	{  81, "high efficiency" /* high efficiency (0x51) */, NULL, NULL },
-	{  80, "normal"          /* normal (0x50) */, NULL, NULL },
-	{  64, ""                /* UPS supporting load, normal degraded mode (0x40) */, NULL, NULL },
-	{  16, ""                /* none (0x10) */, NULL, NULL },
-	{   0, NULL, NULL, NULL }
+	info_lkp_default(240, ""),	/* battery (0xF0) */
+	info_lkp_default(100, ""),	/* maintenanceBypass (0x64) */
+	info_lkp_default(96, ""),	/* Bypass (0x60) */
+	info_lkp_default(81, "high efficiency"),	/* high efficiency (0x51) */
+	info_lkp_default(80, "normal"),	/* normal (0x50) */
+	info_lkp_default(64, ""),	/* UPS supporting load, normal degraded mode (0x40) */
+	info_lkp_default(16, ""),	/* none (0x10) */
+	info_lkp_sentinel
 };
 #endif /* USE_PW_MODE_INFO */
 
 /* FIXME: may be standardized
  * extracted from bcmxcp.c->BCMXCP_TOPOLOGY_*, Make some common definitions */
-static info_lkp_t pw_topology_info[] = {
-	{ 0x0000, "", NULL, NULL }, /* None; use the Table of Elements */
-	{ 0x0010, "Off-line switcher, Single Phase", NULL, NULL },
-	{ 0x0020, "Line-Interactive UPS, Single Phase", NULL, NULL },
-	{ 0x0021, "Line-Interactive UPS, Two Phase", NULL, NULL },
-	{ 0x0022, "Line-Interactive UPS, Three Phase", NULL, NULL },
-	{ 0x0030, "Dual AC Input, On-Line UPS, Single Phase", NULL, NULL },
-	{ 0x0031, "Dual AC Input, On-Line UPS, Two Phase", NULL, NULL },
-	{ 0x0032, "Dual AC Input, On-Line UPS, Three Phase", NULL, NULL },
-	{ 0x0040, "On-Line UPS, Single Phase", NULL, NULL },
-	{ 0x0041, "On-Line UPS, Two Phase", NULL, NULL },
-	{ 0x0042, "On-Line UPS, Three Phase", NULL, NULL },
-	{ 0x0050, "Parallel Redundant On-Line UPS, Single Phase", NULL, NULL },
-	{ 0x0051, "Parallel Redundant On-Line UPS, Two Phase", NULL, NULL },
-	{ 0x0052, "Parallel Redundant On-Line UPS, Three Phase", NULL, NULL },
-	{ 0x0060, "Parallel for Capacity On-Line UPS, Single Phase", NULL, NULL },
-	{ 0x0061, "Parallel for Capacity On-Line UPS, Two Phase", NULL, NULL },
-	{ 0x0062, "Parallel for Capacity On-Line UPS, Three Phase", NULL, NULL },
-	{ 0x0102, "System Bypass Module, Three Phase", NULL, NULL },
-	{ 0x0122, "Hot-Tie Cabinet, Three Phase", NULL, NULL },
-	{ 0x0200, "Outlet Controller, Single Phase", NULL, NULL },
-	{ 0x0222, "Dual AC Input Static Switch Module, 3 Phase", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+static info_lkp_t eaton_pxg_topology_info[] = {
+	info_lkp_default(0x0000, ""),	/* None; use the Table of Elements */
+	info_lkp_default(0x0010, "Off-line switcher, Single Phase"),
+	info_lkp_default(0x0020, "Line-Interactive UPS, Single Phase"),
+	info_lkp_default(0x0021, "Line-Interactive UPS, Two Phase"),
+	info_lkp_default(0x0022, "Line-Interactive UPS, Three Phase"),
+	info_lkp_default(0x0030, "Dual AC Input, On-Line UPS, Single Phase"),
+	info_lkp_default(0x0031, "Dual AC Input, On-Line UPS, Two Phase"),
+	info_lkp_default(0x0032, "Dual AC Input, On-Line UPS, Three Phase"),
+	info_lkp_default(0x0040, "On-Line UPS, Single Phase"),
+	info_lkp_default(0x0041, "On-Line UPS, Two Phase"),
+	info_lkp_default(0x0042, "On-Line UPS, Three Phase"),
+	info_lkp_default(0x0050, "Parallel Redundant On-Line UPS, Single Phase"),
+	info_lkp_default(0x0051, "Parallel Redundant On-Line UPS, Two Phase"),
+	info_lkp_default(0x0052, "Parallel Redundant On-Line UPS, Three Phase"),
+	info_lkp_default(0x0060, "Parallel for Capacity On-Line UPS, Single Phase"),
+	info_lkp_default(0x0061, "Parallel for Capacity On-Line UPS, Two Phase"),
+	info_lkp_default(0x0062, "Parallel for Capacity On-Line UPS, Three Phase"),
+	info_lkp_default(0x0102, "System Bypass Module, Three Phase"),
+	info_lkp_default(0x0122, "Hot-Tie Cabinet, Three Phase"),
+	info_lkp_default(0x0200, "Outlet Controller, Single Phase"),
+	info_lkp_default(0x0222, "Dual AC Input Static Switch Module, 3 Phase"),
+	info_lkp_sentinel
 };
 
 /* Legacy implementation */
-static info_lkp_t pw_battery_abm_status[] = {
-	{ 1, "CHRG", NULL, NULL },
-	{ 2, "DISCHRG", NULL, NULL },
-/*	{ 3, "Floating", NULL, NULL }, */
-/*	{ 4, "Resting", NULL, NULL }, */
-/*	{ 5, "Unknown", NULL, NULL }, */
-	{ 0, NULL, NULL, NULL }
+static info_lkp_t eaton_pxg_battery_abm_status[] = {
+	info_lkp_default(1, "CHRG"),
+	info_lkp_default(2, "DISCHRG"),
+/*
+	info_lkp_default(3, "Floating"),
+	info_lkp_default(4, "Resting"),
+	info_lkp_default(5, "Unknown"),
+*/
+	info_lkp_sentinel
 };
 
-static info_lkp_t pw_abm_status_info[] = {
-	{ 1, "charging", NULL, NULL },
-	{ 2, "discharging", NULL, NULL },
-	{ 3, "floating", NULL, NULL },
-	{ 4, "resting", NULL, NULL },
-	{ 5, "unknown", NULL, NULL },   /* Undefined - ABM is not activated */
-	{ 6, "disabled", NULL, NULL },  /* ABM Charger Disabled */
-	{ 0, NULL, NULL, NULL }
+static info_lkp_t eaton_pxg_abm_status_info[] = {
+	info_lkp_default(1, "charging"),
+	info_lkp_default(2, "discharging"),
+	info_lkp_default(3, "floating"),
+	info_lkp_default(4, "resting"),
+	info_lkp_default(5, "unknown"),	/* Undefined - ABM is not activated */
+	info_lkp_default(6, "disabled"),	/* ABM Charger Disabled */
+	info_lkp_sentinel
 };
 
-static info_lkp_t pw_batt_test_info[] = {
-	{ 1, "Unknown", NULL, NULL },
-	{ 2, "Done and passed", NULL, NULL },
-	{ 3, "Done and error", NULL, NULL },
-	{ 4, "In progress", NULL, NULL },
-	{ 5, "Not supported", NULL, NULL },
-	{ 6, "Inhibited", NULL, NULL },
-	{ 7, "Scheduled", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+static info_lkp_t eaton_pxg_batt_test_info[] = {
+	info_lkp_default(1, "Unknown"),
+	info_lkp_default(2, "Done and passed"),
+	info_lkp_default(3, "Done and error"),
+	info_lkp_default(4, "In progress"),
+	info_lkp_default(5, "Not supported"),
+	info_lkp_default(6, "Inhibited"),
+	info_lkp_default(7, "Scheduled"),
+	info_lkp_sentinel
 };
 
-static info_lkp_t pw_yes_no_info[] = {
-	{ 1, "yes", NULL, NULL },
-	{ 2, "no", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+static info_lkp_t eaton_pxg_yes_no_info[] = {
+	info_lkp_default(1, "yes"),
+	info_lkp_default(2, "no"),
+	info_lkp_sentinel
 };
 
-static info_lkp_t pw_outlet_status_info[] = {
-	{ 1, "on", NULL, NULL },
-	{ 2, "off", NULL, NULL },
-	{ 3, "on", NULL, NULL },  /* pendingOff, transitional status */
-	{ 4, "off", NULL, NULL }, /* pendingOn, transitional status */
-	/* { 5, "", NULL, NULL },  unknown */
-	/* { 6, "", NULL, NULL },  reserved */
-	{ 7, "off", NULL, NULL }, /* Failed in Closed position */
-	{ 8, "on", NULL, NULL },  /* Failed in Open position */
-	{ 0, NULL, NULL, NULL }
+static info_lkp_t eaton_pxg_outlet_status_info[] = {
+	info_lkp_default(1, "on"),
+	info_lkp_default(2, "off"),
+	info_lkp_default(3, "on"),	/* pendingOff, transitional status */
+	info_lkp_default(4, "off"),	/* pendingOn, transitional status */
+	/* info_lkp_default(5, ""),	//  unknown */
+	/* info_lkp_default(6, ""),	//  reserved */
+	info_lkp_default(7, "off"),	/* Failed in Closed position */
+	info_lkp_default(8, "on"),	/* Failed in Open position */
+	info_lkp_sentinel
 };
 
-static info_lkp_t pw_ambient_drycontacts_info[] = {
-	{ -1, "unknown", NULL, NULL },
-	{ 1, "opened", NULL, NULL },
-	{ 2, "closed", NULL, NULL },
-	{ 3, "opened", NULL, NULL }, /* openWithNotice   */
-	{ 4, "closed", NULL, NULL }, /* closedWithNotice */
-	{ 0, NULL, NULL, NULL }
+static info_lkp_t eaton_pxg_ambient_drycontacts_info[] = {
+	info_lkp_default(-1, "unknown"),
+	info_lkp_default(1, "opened"),
+	info_lkp_default(2, "closed"),
+	info_lkp_default(3, "opened"),	/* openWithNotice   */
+	info_lkp_default(4, "closed"),	/* closedWithNotice */
+	info_lkp_sentinel
 };
 
 #if WITH_SNMP_LKP_FUN
@@ -294,14 +298,14 @@ const char *su_temperature_read_fun(void *raw_snmp_value) {
 };
 # endif /* WITH_SNMP_LKP_FUN_DUMMY */
 
-static info_lkp_t pw_sensor_temperature_unit_info[] = {
-	{ 0, "dummy", eaton_sensor_temperature_unit_fun, NULL },
-	{ 0, NULL, NULL, NULL }
+static info_lkp_t eaton_pxg_sensor_temperature_unit_info[] = {
+	info_lkp_fun_vp2s(0, "dummy", eaton_sensor_temperature_unit_fun),
+	info_lkp_sentinel
 };
 
-static info_lkp_t pw_sensor_temperature_read_info[] = {
-	{ 0, "dummy", su_temperature_read_fun, NULL },
-	{ 0, NULL, NULL, NULL }
+static info_lkp_t eaton_pxg_sensor_temperature_read_info[] = {
+	info_lkp_fun_vp2s(0, "dummy", su_temperature_read_fun),
+	info_lkp_sentinel
 };
 
 #else /* if not WITH_SNMP_LKP_FUN: */
@@ -309,61 +313,61 @@ static info_lkp_t pw_sensor_temperature_read_info[] = {
 /* FIXME: For now, DMF codebase falls back to old implementation with static
  * lookup/mapping tables for this, which can easily go into the DMF XML file.
  */
-static info_lkp_t pw_sensor_temperature_unit_info[] = {
-	{ 0, "kelvin", NULL, NULL },
-	{ 1, "celsius", NULL, NULL },
-	{ 2, "fahrenheit", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+static info_lkp_t eaton_pxg_sensor_temperature_unit_info[] = {
+	info_lkp_default(0, "kelvin"),
+	info_lkp_default(1, "celsius"),
+	info_lkp_default(2, "fahrenheit"),
+	info_lkp_sentinel
 };
 
 #endif /* WITH_SNMP_LKP_FUN */
 
-static info_lkp_t pw_ambient_drycontacts_polarity_info[] = {
-	{ 0, "normal-opened", NULL, NULL },
-	{ 1, "normal-closed", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+static info_lkp_t eaton_pxg_ambient_drycontacts_polarity_info[] = {
+	info_lkp_default(0, "normal-opened"),
+	info_lkp_default(1, "normal-closed"),
+	info_lkp_sentinel
 };
 
-static info_lkp_t pw_ambient_drycontacts_state_info[] = {
-	{ 0, "inactive", NULL, NULL },
-	{ 1, "active", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+static info_lkp_t eaton_pxg_ambient_drycontacts_state_info[] = {
+	info_lkp_default(0, "inactive"),
+	info_lkp_default(1, "active"),
+	info_lkp_sentinel
 };
 
-static info_lkp_t pw_emp002_ambient_presence_info[] = {
-	{ 0, "unknown", NULL, NULL },
-	{ 2, "yes", NULL, NULL },     /* communicationOK */
-	{ 3, "no", NULL, NULL },      /* communicationLost */
-	{ 0, NULL, NULL, NULL }
+static info_lkp_t eaton_pxg_emp002_ambient_presence_info[] = {
+	info_lkp_default(0, "unknown"),
+	info_lkp_default(2, "yes"),	/* communicationOK */
+	info_lkp_default(3, "no"),	/* communicationLost */
+	info_lkp_sentinel
 };
 
 /* extracted from drivers/eaton-pdu-marlin-mib.c -> marlin_threshold_status_info */
-static info_lkp_t pw_threshold_status_info[] = {
-	{ 0, "good", NULL, NULL },          /* No threshold triggered */
-	{ 1, "warning-low", NULL, NULL },   /* Warning low threshold triggered */
-	{ 2, "critical-low", NULL, NULL },  /* Critical low threshold triggered */
-	{ 3, "warning-high", NULL, NULL },  /* Warning high threshold triggered */
-	{ 4, "critical-high", NULL, NULL }, /* Critical high threshold triggered */
-	{ 0, NULL, NULL, NULL }
+static info_lkp_t eaton_pxg_threshold_status_info[] = {
+	info_lkp_default(0, "good"),	/* No threshold triggered */
+	info_lkp_default(1, "warning-low"),	/* Warning low threshold triggered */
+	info_lkp_default(2, "critical-low"),	/* Critical low threshold triggered */
+	info_lkp_default(3, "warning-high"),	/* Warning high threshold triggered */
+	info_lkp_default(4, "critical-high"),	/* Critical high threshold triggered */
+	info_lkp_sentinel
 };
 
 /* extracted from drivers/eaton-pdu-marlin-mib.c -> marlin_threshold_xxx_alarms_info */
-static info_lkp_t pw_threshold_temperature_alarms_info[] = {
-	{ 0, "", NULL, NULL },                           /* No threshold triggered */
-	{ 1, "low temperature warning!", NULL, NULL },   /* Warning low threshold triggered */
-	{ 2, "low temperature critical!", NULL, NULL },  /* Critical low threshold triggered */
-	{ 3, "high temperature warning!", NULL, NULL },  /* Warning high threshold triggered */
-	{ 4, "high temperature critical!", NULL, NULL }, /* Critical high threshold triggered */
-	{ 0, NULL, NULL, NULL }
+static info_lkp_t eaton_pxg_threshold_temperature_alarms_info[] = {
+	info_lkp_default(0, ""),	/* No threshold triggered */
+	info_lkp_default(1, "low temperature warning!"),	/* Warning low threshold triggered */
+	info_lkp_default(2, "low temperature critical!"),	/* Critical low threshold triggered */
+	info_lkp_default(3, "high temperature warning!"),	/* Warning high threshold triggered */
+	info_lkp_default(4, "high temperature critical!"),	/* Critical high threshold triggered */
+	info_lkp_sentinel
 };
 
-static info_lkp_t pw_threshold_humidity_alarms_info[] = {
-	{ 0, "", NULL, NULL },                        /* No threshold triggered */
-	{ 1, "low humidity warning!", NULL, NULL },   /* Warning low threshold triggered */
-	{ 2, "low humidity critical!", NULL, NULL },  /* Critical low threshold triggered */
-	{ 3, "high humidity warning!", NULL, NULL },  /* Warning high threshold triggered */
-	{ 4, "high humidity critical!", NULL, NULL }, /* Critical high threshold triggered */
-	{ 0, NULL, NULL, NULL }
+static info_lkp_t eaton_pxg_threshold_humidity_alarms_info[] = {
+	info_lkp_default(0, ""),	/* No threshold triggered */
+	info_lkp_default(1, "low humidity warning!"),	/* Warning low threshold triggered */
+	info_lkp_default(2, "low humidity critical!"),	/* Critical low threshold triggered */
+	info_lkp_default(3, "high humidity warning!"),	/* Warning high threshold triggered */
+	info_lkp_default(4, "high humidity critical!"),	/* Critical high threshold triggered */
+	info_lkp_sentinel
 };
 
 /* Snmp2NUT lookup table */
@@ -822,6 +826,5 @@ static alarms_info_t eaton_pxg_alarms[] = {
 	/* end of structure. */
 	{ NULL, NULL, NULL }
 } ;
-
 
 mib2nut_info_t	eaton_pxg_ups = { "eaton_pxg_ups", EATON_PXG_MIB_VERSION, NULL, PW_OID_MODEL_NAME, eaton_pxg_mib, EATON_PXGX_SYSOID , eaton_pxg_alarms };

@@ -31,60 +31,60 @@
 #define EATON_ATS16_NMC_MODEL   ".1.3.6.1.4.1.534.10.2.1.2.0"
 
 static info_lkp_t eaton_ats16_nmc_source_info[] = {
-	{ 1, "init", NULL, NULL },
-	{ 2, "diagnosis", NULL, NULL },
-	{ 3, "off", NULL, NULL },
-	{ 4, "1", NULL, NULL },
-	{ 5, "2", NULL, NULL },
-	{ 6, "safe", NULL, NULL },
-	{ 7, "fault", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "init"),
+	info_lkp_default(2, "diagnosis"),
+	info_lkp_default(3, "off"),
+	info_lkp_default(4, "1"),
+	info_lkp_default(5, "2"),
+	info_lkp_default(6, "safe"),
+	info_lkp_default(7, "fault"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t eaton_ats16_nmc_sensitivity_info[] = {
-	{ 1, "normal", NULL, NULL },
-	{ 2, "high", NULL, NULL },
-	{ 3, "low", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "normal"),
+	info_lkp_default(2, "high"),
+	info_lkp_default(3, "low"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t eaton_ats16_nmc_input_frequency_status_info[] = {
-	{ 1, "good", NULL, NULL },          /* No threshold triggered */
-	{ 2, "out-of-range", NULL, NULL },  /* Frequency out of range triggered */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "good"),	/* No threshold triggered */
+	info_lkp_default(2, "out-of-range"),	/* Frequency out of range triggered */
+	info_lkp_sentinel
 };
 
 static info_lkp_t eaton_ats16_nmc_input_voltage_status_info[] = {
-	{ 1, "good", NULL, NULL },          /* No threshold triggered */
-	{ 2, "derated-range", NULL, NULL }, /* Voltage derated */
-	{ 3, "out-of-range", NULL, NULL },  /* Voltage out of range triggered */
-	{ 4, "unknown", NULL, NULL },       /* "missing" */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "good"),	/* No threshold triggered */
+	info_lkp_default(2, "derated-range"),	/* Voltage derated */
+	info_lkp_default(3, "out-of-range"),	/* Voltage out of range triggered */
+	info_lkp_default(4, "unknown"),	/* "missing" */
+	info_lkp_sentinel
 };
 
 static info_lkp_t eaton_ats16_nmc_test_result_info[] = {
-	{ 1, "done and passed", NULL, NULL },
-	{ 2, "done and warning", NULL, NULL },
-	{ 3, "done and error", NULL, NULL },
-	{ 4, "aborted", NULL, NULL },
-	{ 5, "in progress", NULL, NULL },
-	{ 6, "no test initiated", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "done and passed"),
+	info_lkp_default(2, "done and warning"),
+	info_lkp_default(3, "done and error"),
+	info_lkp_default(4, "aborted"),
+	info_lkp_default(5, "in progress"),
+	info_lkp_default(6, "no test initiated"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t eaton_ats16_nmc_output_status_info[] = {
-	{ 1, "OFF", NULL, NULL }, /* Output not powered */
-	{ 2, "OL", NULL, NULL },  /* Output powered */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "OFF"),	/* Output not powered */
+	info_lkp_default(2, "OL"),	/* Output powered */
+	info_lkp_sentinel
 };
 
-static info_lkp_t eaton_ats16_ambient_drycontacts_info[] = {
-	{ -1, "unknown", NULL, NULL },
-	{ 1, "opened", NULL, NULL },
-	{ 2, "closed", NULL, NULL },
-	{ 3, "opened", NULL, NULL },   /* openWithNotice   */
-	{ 4, "closed", NULL, NULL }, /* closedWithNotice */
-	{ 0, NULL, NULL, NULL }
+static info_lkp_t eaton_ats16_nmc_ambient_drycontacts_info[] = {
+	info_lkp_default(-1, "unknown"),
+	info_lkp_default(1, "opened"),
+	info_lkp_default(2, "closed"),
+	info_lkp_default(3, "opened"),	/* openWithNotice   */
+	info_lkp_default(4, "closed"),	/* closedWithNotice */
+	info_lkp_sentinel
 };
 
 /* EATON_ATS_NMC Snmp2NUT lookup table */
@@ -258,6 +258,7 @@ static snmp_info_t eaton_ats16_nmc_mib[] = {
 	/* ats2ContactDescr.2 = STRING: Input #2 */
 	{ "unmapped.ats2ContactDescr", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.10.2.5.4.1.4.2", NULL, SU_FLAG_OK, NULL },
 #endif	/* if WITH_UNMAPPED_DATA_POINTS */
+
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
@@ -271,5 +272,5 @@ static snmp_info_t eaton_ats16_nmc_mib[] = {
  *   done for all entries in the file. Hence the above comment line being
  *   after its belonging declaration! */
 
-/*mib2nut_info_t  eaton_ats16_nmc = { "eaton_ats16_nmc", EATON_ATS16_NMC_MIB_VERSION, NULL, EATON_ATS16_NMC_MODEL, EATON_ATS16_NMC_mib, EATON_ATS16_NMC_SYSOID, NULL }; */
+/*mib2nut_info_t  eaton_ats16_nmc = { "eaton_ats16_nmc", EATON_ATS16_NMC_MIB_VERSION, NULL, EATON_ATS16_NMC_MODEL, eaton_ats16_nmc_mib, EATON_ATS16_NMC_SYSOID, NULL }; */
 mib2nut_info_t	eaton_ats16_nmc = { "eaton_ats16_nmc", EATON_ATS16_NMC_MIB_VERSION, NULL, EATON_ATS16_NMC_MODEL, eaton_ats16_nmc_mib, EATON_ATS16_NMC_SYSOID, NULL };

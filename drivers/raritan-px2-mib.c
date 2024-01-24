@@ -23,7 +23,7 @@
 
 #include "raritan-px2-mib.h"
 
-#define RARITAN_PX2_MIB_VERSION  "0.4"
+#define RARITAN_PX2_MIB_VERSION  "0.40"
 
 #define RARITAN_PX2_MIB_SYSOID     ".1.3.6.1.4.1.13742.6"
 #define RARITAN_PX2_OID_MODEL_NAME ".1.3.6.1.4.1.13742.6.3.2.1.1.3.1"
@@ -31,37 +31,40 @@
 /* info elements */
 /* FIXME: triage between status and alarms, and make it compliant! */
 static info_lkp_t raritanpx2_outlet_status_info[] = {
-	{ -1, "unavailable", NULL, NULL },
-	{  0, "open", NULL, NULL },
-	{  1, "closed", NULL, NULL },
-	{  2, "belowLowerCritical", NULL, NULL },
-	{  3, "belowLowerWarning", NULL, NULL },
-	{  4, "normal", NULL, NULL },
-	{  5, "aboveUpperWarning", NULL, NULL },
-	{  6, "aboveUpperCritical", NULL, NULL },
-	{  7, "on", NULL, NULL },
-	{  8, "off", NULL, NULL },
-	{  9, "detected", NULL, NULL },
-	{ 10, "notDetected", NULL, NULL },
-	{ 11, "alarmed", NULL, NULL },
-	{ 12, "ok", NULL, NULL },
-	{ 13, "marginal", NULL, NULL },
-	{ 14, "fail", NULL, NULL },
-	{ 15, "yes", NULL, NULL },
-	{ 16, "no", NULL, NULL },
-	{ 17, "standby", NULL, NULL },
-	{ 18, "one", NULL, NULL },
-	{ 19, "two", NULL, NULL },
-	{ 20, "inSync", NULL, NULL },
-	{ 21, "outOfSync", NULL, NULL },
-	{ 0, "NULL", NULL, NULL }
+	info_lkp_default(-1, "unavailable"),
+	info_lkp_default(0, "open"),
+	info_lkp_default(1, "closed"),
+	info_lkp_default(2, "belowLowerCritical"),
+	info_lkp_default(3, "belowLowerWarning"),
+	info_lkp_default(4, "normal"),
+	info_lkp_default(5, "aboveUpperWarning"),
+	info_lkp_default(6, "aboveUpperCritical"),
+	info_lkp_default(7, "on"),
+	info_lkp_default(8, "off"),
+	info_lkp_default(9, "detected"),
+	info_lkp_default(10, "notDetected"),
+	info_lkp_default(11, "alarmed"),
+	info_lkp_default(12, "ok"),
+	info_lkp_default(13, "marginal"),
+	info_lkp_default(14, "fail"),
+	info_lkp_default(15, "yes"),
+	info_lkp_default(16, "no"),
+	info_lkp_default(17, "standby"),
+	info_lkp_default(18, "one"),
+	info_lkp_default(19, "two"),
+	info_lkp_default(20, "inSync"),
+	info_lkp_default(21, "outOfSync"),
+
+	/* FIXME? Is this one a legacy typo? */
+	info_lkp_default(0, "NULL"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t raritanpx2_outlet_switchability_info[] = {
-	{ -1, "yes", NULL, NULL },
-	{ 1, "yes", NULL, NULL },
-	{ 2, "no", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(-1, "yes"),
+	info_lkp_default(1, "yes"),
+	info_lkp_default(2, "no"),
+	info_lkp_sentinel
 };
 
 /* PDU2-MIB Snmp2NUT lookup table */

@@ -39,19 +39,19 @@
 /* UPS Battery */
 #define NETVISION_OID_BATTERYSTATUS		".1.3.6.1.4.1.4555.1.1.1.1.2.1.0"
 static info_lkp_t netvision_batt_info[] = {
-	{ 2, "", NULL, NULL },        /* battery normal      */
-	{ 3, "LB", NULL, NULL },      /* battery low         */
-	{ 4, "LB", NULL, NULL },      /* battery depleted    */
-	{ 5, "DISCHRG", NULL, NULL }, /* battery discharging */
-	{ 6, "RB", NULL, NULL },      /* battery failure     */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(2, ""),	/* battery normal      */
+	info_lkp_default(3, "LB"),	/* battery low         */
+	info_lkp_default(4, "LB"),	/* battery depleted    */
+	info_lkp_default(5, "DISCHRG"),	/* battery discharging */
+	info_lkp_default(6, "RB"),	/* battery failure     */
+	info_lkp_sentinel
 };
 
 /* Battery status: upsAlarmOnBattery */
 static info_lkp_t netvision_onbatt_info[] = {
-	{ 0, "OL", NULL, NULL },      /* Online      */
-	{ 1, "OB", NULL, NULL },      /* On battery  */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(0, "OL"),	/* Online      */
+	info_lkp_default(1, "OB"),	/* On battery  */
+	info_lkp_sentinel
 };
 
 #define NETVISION_OID_SECONDSONBATTERY		".1.3.6.1.4.1.4555.1.1.1.1.2.2.0"
@@ -101,16 +101,16 @@ static info_lkp_t netvision_onbatt_info[] = {
 #define NETVISION_OID_CONTROL_SHUTDOWN_DELAY ".1.3.6.1.4.1.4555.1.1.1.1.8.2"
 
 static info_lkp_t netvision_output_info[] = {
-	{ 1, "", NULL, NULL },          /* output source other   */
-	{ 2, "", NULL, NULL },          /* output source none    */
-	{ 3, "OL", NULL, NULL },        /* output source normal  */
-	{ 4, "OL BYPASS", NULL, NULL }, /* output source bypass  */
-	{ 5, "OB", NULL, NULL },        /* output source battery */
-	{ 6, "OL BOOST", NULL, NULL },  /* output source booster */
-	{ 7, "OL TRIM", NULL, NULL },   /* output source reducer */
-	{ 8, "OL", NULL, NULL },        /* output source standby */
-	{ 9, "", NULL, NULL },          /* output source ecomode */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, ""),	/* output source other   */
+	info_lkp_default(2, ""),	/* output source none    */
+	info_lkp_default(3, "OL"),	/* output source normal  */
+	info_lkp_default(4, "OL BYPASS"),	/* output source bypass  */
+	info_lkp_default(5, "OB"),	/* output source battery */
+	info_lkp_default(6, "OL BOOST"),	/* output source booster */
+	info_lkp_default(7, "OL TRIM"),	/* output source reducer */
+	info_lkp_default(8, "OL"),	/* output source standby */
+	info_lkp_default(9, ""),	/* output source ecomode */
+	info_lkp_sentinel
 };
 
 /* Snmp2NUT lookup table */

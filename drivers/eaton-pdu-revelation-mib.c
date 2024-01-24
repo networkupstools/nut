@@ -55,21 +55,21 @@
 #define AR_OID_OUTLET_STATUS			AR_BASE_OID ".1.2.2.1.3"
 
 static info_lkp_t revelation_outlet_status_info[] = {
-	{ -1, "error", NULL, NULL },
-	{ 0, "off", NULL, NULL },
-	{ 1, "on", NULL, NULL },
-	{ 2, "cycling", NULL, NULL }, /* transitional status */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(-1, "error"),
+	info_lkp_default(0, "off"),
+	info_lkp_default(1, "on"),
+	info_lkp_default(2, "cycling"),	/* transitional status */
+	info_lkp_sentinel
 };
 
 /* Ugly hack: having the matching OID present means that the outlet is
  * switchable. So, it should not require this value lookup */
 static info_lkp_t revelation_outlet_switchability_info[] = {
-	{ -1, "yes", NULL, NULL },
-	{ 0, "yes", NULL, NULL },
-	{ 1, "yes", NULL, NULL },
-	{ 2, "yes", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(-1, "yes"),
+	info_lkp_default(0, "yes"),
+	info_lkp_default(1, "yes"),
+	info_lkp_default(2, "yes"),
+	info_lkp_sentinel
 };
 
 #define DO_OFF		"0"

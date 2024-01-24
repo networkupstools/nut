@@ -84,87 +84,89 @@
 
 /* Not used, as no longer supported by MIB ver. 1.76 (Github issue 118)
 static info_lkp_t cpqpower_alarm_ob[] = {
-	{ 1, "OB", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "OB"),
+	info_lkp_sentinel
 };
 */
 
 /* Not used, as no longer supported by MIB ver. 1.76 (Github issue 118)
 static info_lkp_t cpqpower_alarm_lb[] = {
-	{ 1, "LB", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "LB"),
+	info_lkp_sentinel
 };
 */
 
 /* Defines for CPQPOWER_OID_POWER_STATUS (1) */
 static info_lkp_t cpqpower_pwr_info[] = {
-	{ 1, ""       /* other */, NULL, NULL },
-	{ 2, "OFF"    /* none */, NULL, NULL },
-	{ 3, "OL"     /* normal */, NULL, NULL },
-	{ 4, "OL BYPASS" /* bypass */, NULL, NULL },
-	{ 5, "OB"     /* battery */, NULL, NULL },
-	{ 6, "OL BOOST"  /* booster */, NULL, NULL },
-	{ 7, "OL TRIM"   /* reducer */, NULL, NULL },
-	{ 8, "OL"   /* parallelCapacity */, NULL, NULL },
-	{ 9, "OL"   /* parallelRedundant */, NULL, NULL },
-	{ 10, "OL" /* HighEfficiencyMode */, NULL, NULL },
-	{ 0, NULL, NULL, NULL }
-} ;
+	info_lkp_default(1, ""),       /* other */
+	info_lkp_default(2, "OFF"),    /* none */
+	info_lkp_default(3, "OL"),     /* normal */
+	info_lkp_default(4, "OL BYPASS"), /* bypass */
+	info_lkp_default(5, "OB"),     /* battery */
+	info_lkp_default(6, "OL BOOST"),  /* booster */
+	info_lkp_default(7, "OL TRIM"),   /* reducer */
+	info_lkp_default(8, "OL"),   /* parallelCapacity */
+	info_lkp_default(9, "OL"),   /* parallelRedundant */
+	info_lkp_default(10, "OL"), /* HighEfficiencyMode */
+	info_lkp_sentinel
+};
 
 static info_lkp_t cpqpower_mode_info[] = {
-	{ 1, "", NULL, NULL },
-	{ 2, "", NULL, NULL },
-	{ 3, "normal", NULL, NULL },
-	{ 4, "", NULL, NULL },
-	{ 5, "", NULL, NULL },
-	{ 6, "", NULL, NULL },
-	{ 7, "", NULL, NULL },
-	{ 8, "parallel capacity", NULL, NULL },
-	{ 9, "parallel redundancy", NULL, NULL },
-	{10, "high efficiency", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, ""),
+	info_lkp_default(2, ""),
+	info_lkp_default(3, "normal"),
+	info_lkp_default(4, ""),
+	info_lkp_default(5, ""),
+	info_lkp_default(6, ""),
+	info_lkp_default(7, ""),
+	info_lkp_default(8, "parallel capacity"),
+	info_lkp_default(9, "parallel redundancy"),
+	info_lkp_default(10, "high efficiency"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t cpqpower_battery_abm_status[] = {
-	{ 1, "CHRG", NULL, NULL },
-	{ 2, "DISCHRG", NULL, NULL },
-/*	{ 3, "Floating", NULL, NULL }, */
-/*	{ 4, "Resting", NULL, NULL }, */
-/*	{ 5, "Unknown", NULL, NULL }, */
-	{ 0, NULL, NULL, NULL }
-} ;
+	info_lkp_default(1, "CHRG"),
+	info_lkp_default(2, "DISCHRG"),
+/*
+	info_lkp_default(3, "Floating"),
+	info_lkp_default(4, "Resting"),
+	info_lkp_default(5, "Unknown"),
+*/
+	info_lkp_sentinel
+};
 
 /* Defines for CPQPOWER_OID_UPS_TEST_RES */
 static info_lkp_t cpqpower_test_res_info[] = {
-	{ 1, "Unknown", NULL, NULL },
-	{ 2, "Done and passed", NULL, NULL },
-	{ 3, "Done and error", NULL, NULL },
-	{ 4, "In progress", NULL, NULL },
-	{ 5, "Not supported", NULL, NULL },
-	{ 6, "Inhibited", NULL, NULL },
-	{ 7, "Scheduled", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
-} ;
+	info_lkp_default(1, "Unknown"),
+	info_lkp_default(2, "Done and passed"),
+	info_lkp_default(3, "Done and error"),
+	info_lkp_default(4, "In progress"),
+	info_lkp_default(5, "Not supported"),
+	info_lkp_default(6, "Inhibited"),
+	info_lkp_default(7, "Scheduled"),
+	info_lkp_sentinel
+};
 
 #define CPQPOWER_START_TEST		"1"
 
 static info_lkp_t cpqpower_outlet_status_info[] = {
-	{ 1, "on", NULL, NULL },
-	{ 2, "off", NULL, NULL },
-	{ 3, "pendingOff", NULL, NULL }, /* transitional status */
-	{ 4, "pendingOn", NULL, NULL }, /* transitional status */
-	{ 5, "unknown", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "on"),
+	info_lkp_default(2, "off"),
+	info_lkp_default(3, "pendingOff"),	/* transitional status */
+	info_lkp_default(4, "pendingOn"),	/* transitional status */
+	info_lkp_default(5, "unknown"),
+	info_lkp_sentinel
 };
 
 /* Ugly hack: having the matching OID present means that the outlet is
  * switchable. So, it should not require this value lookup */
 static info_lkp_t cpqpower_outlet_switchability_info[] = {
-	{ 1, "yes", NULL, NULL },
-	{ 2, "yes", NULL, NULL },
-	{ 3, "yes", NULL, NULL },
-	{ 4, "yes", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "yes"),
+	info_lkp_default(2, "yes"),
+	info_lkp_default(3, "yes"),
+	info_lkp_default(4, "yes"),
+	info_lkp_sentinel
 };
 
 #define CPQPOWER_OID_SD_AFTER_DELAY	 ".1.3.6.1.4.1.232.165.3.8.1.0"	/* UPS-MIB::upsControlOutputOffDelay */

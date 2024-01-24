@@ -38,64 +38,64 @@
 /* https://www.cyberpowersystems.com/products/software/mib-files/ */
 /* Per CPS MIB 2.9 upsBaseOutputStatus OBJECT-TYPE: */
 static info_lkp_t cyberpower_power_status[] = {
-	{ 2, "OL", NULL, NULL },	/* onLine */
-	{ 3, "OB", NULL, NULL },	/* onBattery */
-	{ 4, "OL BOOST", NULL, NULL },	/* onBoost */
-	{ 5, "OFF", NULL, NULL },	/* onSleep */
-	{ 6, "OFF", NULL, NULL },	/* off */
-	{ 7, "OL", NULL, NULL },	/* rebooting */
-	{ 8, "OL", NULL, NULL },	/* onECO */
-	{ 9, "OL BYPASS", NULL, NULL },	/* onBypass */
-	{ 10, "OL TRIM", NULL, NULL },	/* onBuck */
-	{ 11, "OL OVER", NULL, NULL },	/* onOverload */
+	info_lkp_default(2, "OL"),	/* onLine */
+	info_lkp_default(3, "OB"),	/* onBattery */
+	info_lkp_default(4, "OL BOOST"),	/* onBoost */
+	info_lkp_default(5, "OFF"),	/* onSleep */
+	info_lkp_default(6, "OFF"),	/* off */
+	info_lkp_default(7, "OL"),	/* rebooting */
+	info_lkp_default(8, "OL"),	/* onECO */
+	info_lkp_default(9, "OL BYPASS"),	/* onBypass */
+	info_lkp_default(10, "OL TRIM"),	/* onBuck */
+	info_lkp_default(11, "OL OVER"),	/* onOverload */
 
 	/* Note: a "NULL" string must be last due to snmp-ups.c parser logic */
-	{ 1, "NULL", NULL, NULL },	/* unknown */
+	info_lkp_default(1, "NULL"),	/* unknown */
 
-	{ 0, NULL, NULL, NULL }
-} ;
+	info_lkp_sentinel
+};
 
 static info_lkp_t cyberpower_battery_status[] = {
-	{ 1, "", NULL, NULL },	/* unknown */
-	{ 2, "", NULL, NULL },	/* batteryNormal */
-	{ 3, "LB", NULL, NULL },	/* batteryLow */
-	{ 0, NULL, NULL, NULL }
-} ;
+	info_lkp_default(1, ""),	/* unknown */
+	info_lkp_default(2, ""),	/* batteryNormal */
+	info_lkp_default(3, "LB"),	/* batteryLow */
+	info_lkp_sentinel
+};
 
 static info_lkp_t cyberpower_cal_status[] = {
-	{ 1, "", NULL, NULL },          /* Calibration Successful */
-	{ 2, "", NULL, NULL },          /* Calibration Invalid */
-	{ 3, "CAL", NULL, NULL },       /* Calibration in progress */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, ""),	/* Calibration Successful */
+	info_lkp_default(2, ""),	/* Calibration Invalid */
+	info_lkp_default(3, "CAL"),	/* Calibration in progress */
+	info_lkp_sentinel
 };
 
 static info_lkp_t cyberpower_battrepl_status[] = {
-	{ 1, "", NULL, NULL },          /* No battery needs replacing */
-	{ 2, "RB", NULL, NULL },        /* Batteries need to be replaced */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, ""),	/* No battery needs replacing */
+	info_lkp_default(2, "RB"),	/* Batteries need to be replaced */
+	info_lkp_sentinel
 };
 
 static info_lkp_t cyberpower_ups_alarm_info[] = {
-	{ 1, "", NULL, NULL },                       /* Normal */
-	{ 2, "Temperature too high!", NULL, NULL },  /* Overheat */
-	{ 3, "Internal UPS fault!", NULL, NULL },    /* Hardware Fault */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, ""),	/* Normal */
+	info_lkp_default(2, "Temperature too high!"),	/* Overheat */
+	info_lkp_default(3, "Internal UPS fault!"),	/* Hardware Fault */
+	info_lkp_sentinel
 };
 
 static info_lkp_t cyberpower_transfer_reasons[] = {
-	{ 1, "noTransfer", NULL, NULL },
-	{ 2, "highLineVoltage", NULL, NULL },
-	{ 3, "brownout", NULL, NULL },
-	{ 4, "selfTest", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "noTransfer"),
+	info_lkp_default(2, "highLineVoltage"),
+	info_lkp_default(3, "brownout"),
+	info_lkp_default(4, "selfTest"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t cyberpower_testdiag_results[] = {
-	{ 1, "Ok", NULL, NULL },
-	{ 2, "Failed", NULL, NULL },
-	{ 3, "InvalidTest", NULL, NULL },
-	{ 4, "TestInProgress", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "Ok"),
+	info_lkp_default(2, "Failed"),
+	info_lkp_default(3, "InvalidTest"),
+	info_lkp_default(4, "TestInProgress"),
+	info_lkp_sentinel
 };
 
 /* Snmp2NUT lookup table for CyberPower MIB */

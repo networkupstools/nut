@@ -21,60 +21,60 @@
 
 #include "hpe-pdu3-cis-mib.h"
 
-#define HPE_PDU3_CIS_MIB_VERSION  "0.1"
+#define HPE_PDU3_CIS_MIB_VERSION  "0.10"
 
 #define HPE_PDU3_CIS_SYSOID       ".1.3.6.1.4.1.232.165.11"
 #define HPE_PDU3_OID_MODEL_NAME	".1.3.6.1.4.1.232.165.11.1.2.1.3.1"
 
 static info_lkp_t hpe_cis_unit_switchability_info[] = {
-	{ 1, "yes", NULL, NULL },
-	{ 2, "no", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "yes"),
+	info_lkp_default(2, "no"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t hpe_cis_outlet_group_type_info[] = {
-	{ 2, "breaker1pole", NULL, NULL },
-	{ 3, "breaker2pole", NULL, NULL },
-	{ 4, "breaker3pole", NULL, NULL },
-	{ 5, "outlet-section", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(2, "breaker1pole"),
+	info_lkp_default(3, "breaker2pole"),
+	info_lkp_default(4, "breaker3pole"),
+	info_lkp_default(5, "outlet-section"),
+	info_lkp_sentinel
 };
 
 /* Note: same as marlin_outlet_type_info + i5-20R */
 /* and to eaton_nlogic_outlet_type_info - few entries */
 static info_lkp_t hpe_cis_outlet_type_info[] = {
-	{ 1, "iecC13", NULL, NULL },
-	{ 2, "iecC19", NULL, NULL },
-	{ 10, "uk", NULL, NULL },
-	{ 11, "french", NULL, NULL },
-	{ 12, "schuko", NULL, NULL },
-	{ 20, "nema515", NULL, NULL },
-	{ 21, "nema51520", NULL, NULL },
-	{ 22, "nema520", NULL, NULL },
-	{ 23, "nemaL520", NULL, NULL },
-	{ 24, "nemaL530", NULL, NULL },
-	{ 25, "nema615", NULL, NULL },
-	{ 26, "nema620", NULL, NULL },
-	{ 27, "nemaL620", NULL, NULL },
-	{ 28, "nemaL630", NULL, NULL },
-	{ 29, "nemaL715", NULL, NULL },
-	{ 30, "rf203p277", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "iecC13"),
+	info_lkp_default(2, "iecC19"),
+	info_lkp_default(10, "uk"),
+	info_lkp_default(11, "french"),
+	info_lkp_default(12, "schuko"),
+	info_lkp_default(20, "nema515"),
+	info_lkp_default(21, "nema51520"),
+	info_lkp_default(22, "nema520"),
+	info_lkp_default(23, "nemaL520"),
+	info_lkp_default(24, "nemaL530"),
+	info_lkp_default(25, "nema615"),
+	info_lkp_default(26, "nema620"),
+	info_lkp_default(27, "nemaL620"),
+	info_lkp_default(28, "nemaL630"),
+	info_lkp_default(29, "nemaL715"),
+	info_lkp_default(30, "rf203p277"),
+	info_lkp_sentinel
 };
 
 /* Same as eaton_nlogic_outlet_status_info */
 static info_lkp_t hpe_cis_outlet_status_info[] = {
-	{ 1, "off", NULL, NULL },
-	{ 2, "on", NULL, NULL },
-	{ 3, "pendingOff", NULL, NULL }, /* transitional status */
-	{ 4, "pendingOn", NULL, NULL },  /* transitional status */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "off"),
+	info_lkp_default(2, "on"),
+	info_lkp_default(3, "pendingOff"),	/* transitional status */
+	info_lkp_default(4, "pendingOn"),	/* transitional status */
+	info_lkp_sentinel
 };
 
 static info_lkp_t hpe_cis_outlet_switchability_info[] = {
-	{ 1, "yes", NULL, NULL }, /* switchable */
-	{ 2, "no", NULL, NULL },  /* notSwitchable */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "yes"),	/* switchable */
+	info_lkp_default(2, "no"),	/* notSwitchable */
+	info_lkp_sentinel
 };
 
 /* HPE_PDU_CIS Snmp2NUT lookup table */

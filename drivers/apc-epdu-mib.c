@@ -23,20 +23,20 @@
 
 #include "apc-epdu-mib.h"
 
-#define APC_EPDU_MIB_VERSION  "0.1"
+#define APC_EPDU_MIB_VERSION  "0.10"
 
 #define APC_EPDU_MIB_SYSOID   ".1.3.6.1.4.1.318.1.3.4.9"
 
 static info_lkp_t apc_epdu_sw_outlet_status_info[] = {
-	{ 1, "off", NULL, NULL },
-	{ 2, "on", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "off"),
+	info_lkp_default(2, "on"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t apc_epdu_sw_outlet_switchability_info[] = {
-	{ 1, "yes", NULL, NULL },
-	{ 2, "yes", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "yes"),
+	info_lkp_default(2, "yes"),
+	info_lkp_sentinel
 };
 
 /* POWERNET-MIB Snmp2NUT lookup table */

@@ -24,25 +24,25 @@
 
 #include "xppc-mib.h"
 
-#define XPPC_MIB_VERSION  "0.4"
+#define XPPC_MIB_VERSION  "0.40"
 
 #define XPPC_SYSOID       ".1.3.6.1.4.1.935"
 
 /* To create a value lookup structure (as needed on the 2nd line of the example
  * below), use the following kind of declaration, outside of the present snmp_info_t[]:
  * static info_lkp_t xpcc_onbatt_info[] = {
- * 	{ 1, "OB", NULL, NULL },
- * 	{ 2, "OL", NULL, NULL },
- * 	{ 0, NULL, NULL, NULL }
+ * 	info_lkp_default(1, "OB"),
+ * 	info_lkp_default(2, "OL"),
+ * 	info_lkp_sentinel
  * };
  */
 
 /* upsBaseBatteryStatus */
 static info_lkp_t xpcc_onbatt_info[] = {
-	{ 1, "", NULL, NULL },	/* unknown */
-	{ 2, "", NULL, NULL },	/* batteryNormal */
-	{ 3, "LB", NULL, NULL },	/* batteryLow */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, ""),	/* unknown */
+	info_lkp_default(2, ""),	/* batteryNormal */
+	info_lkp_default(3, "LB"),	/* batteryLow */
+	info_lkp_sentinel
 };
 
 /*
@@ -59,16 +59,16 @@ upsBaseOutputStatus OBJECT-TYPE
 			onBuck(9) }
 */
 static info_lkp_t xpcc_power_info[] = {
-	{ 1, "", NULL, NULL },	/* unknown */
-	{ 2, "OL", NULL, NULL },	/* onLine */
-	{ 3, "OB", NULL, NULL },	/* onBattery */
-	{ 4, "OL BOOST", NULL, NULL },	/* onBoost */
-	{ 5, "OFF", NULL, NULL },	/* sleeping */
-	{ 6, "BYPASS", NULL, NULL },	/* onBypass */
-	{ 7, "", NULL, NULL },	/* rebooting */
-	{ 8, "OFF", NULL, NULL },	/* standBy */
-	{ 9, "OL TRIM", NULL, NULL },	/* onBuck */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, ""),	/* unknown */
+	info_lkp_default(2, "OL"),	/* onLine */
+	info_lkp_default(3, "OB"),	/* onBattery */
+	info_lkp_default(4, "OL BOOST"),	/* onBoost */
+	info_lkp_default(5, "OFF"),	/* sleeping */
+	info_lkp_default(6, "BYPASS"),	/* onBypass */
+	info_lkp_default(7, ""),	/* rebooting */
+	info_lkp_default(8, "OFF"),	/* standBy */
+	info_lkp_default(9, "OL TRIM"),	/* onBuck */
+	info_lkp_sentinel
 };
 
 /* XPPC Snmp2NUT lookup table */
@@ -93,9 +93,9 @@ static snmp_info_t xppc_mib[] = {
 	 * To create a value lookup structure (as needed on the 2nd line), use the
 	 * following kind of declaration, outside of the present snmp_info_t[]:
 	 * static info_lkp_t xpcc_onbatt_info[] = {
-	 * 	{ 1, "OB" },
-	 * 	{ 2, "OL" },
-	 * 	{ 0, NULL }
+	 * 	info_lkp_default(1, "OB"),
+	 * 	info_lkp_default(2, "OL"),
+	 * 	info_lkp_sentinel
 	 * };
 	 */
 

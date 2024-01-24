@@ -25,7 +25,7 @@
 
 #include "raritan-pdu-mib.h"
 
-#define RARITAN_MIB_VERSION	"0.8"
+#define RARITAN_MIB_VERSION	"0.80"
 
 /* Raritan MIB
  * this one uses the same MIB as Eaton Revelation,
@@ -39,11 +39,11 @@
 #define DO_CYCLE	"2"
 
 static info_lkp_t raritan_pdu_outlet_status_info[] = {
-	{ -1, "error", NULL, NULL },
-	{ 0, "off", NULL, NULL },
-	{ 1, "on", NULL, NULL },
-	{ 2, "cycling", NULL, NULL }, /* transitional status */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(-1, "error"),
+	info_lkp_default(0, "off"),
+	info_lkp_default(1, "on"),
+	info_lkp_default(2, "cycling"),	/* transitional status */
+	info_lkp_sentinel
 };
 
 /* Snmp2NUT lookup table for Raritan MIB */

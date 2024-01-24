@@ -42,7 +42,7 @@
 
 /* Pulizzi Switched ePDU */
 
-#define EATON_PULIZZI_SW_MIB_VERSION	"0.5"
+#define EATON_PULIZZI_SW_MIB_VERSION	"0.50"
 
 #define PULIZZI_SW_OID_MIB			".1.3.6.1.4.1.20677.3.1.1"
 #define PULIZZI_SW_OID_MODEL_NAME		".1.3.6.1.4.1.20677.2.1.1.0"
@@ -53,16 +53,16 @@
 
 
 static info_lkp_t pulizzi_sw_outlet_status_info[] = {
-	{ 1, "on", NULL, NULL },
-	{ 2, "off", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "on"),
+	info_lkp_default(2, "off"),
+	info_lkp_sentinel
 };
 
 /* simply remap the above status to "yes" */
 static info_lkp_t pulizzi_sw_outlet_switchability_info[] = {
-	{ 1, "yes", NULL, NULL },
-	{ 2, "yes", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "yes"),
+	info_lkp_default(2, "yes"),
+	info_lkp_sentinel
 };
 
 /* Snmp2NUT lookup table for Eaton Pulizzi Switched ePDU MIB */
@@ -99,10 +99,10 @@ static snmp_info_t eaton_pulizzi_switched_mib[] = {
 	{ "outlet.id", 0, 1, NULL, "0", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	{ "outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, NULL, "All outlets",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-
 	{ "outlet.current", 0, 1.0, ".1.3.6.1.4.1.20677.2.8.6.4.2.0", NULL, 0, NULL },
 	{ "outlet.voltage", 0, 1.0, ".1.3.6.1.4.1.20677.2.8.6.4.1.0", NULL, 0, NULL },
 	{ "outlet.power", 0, 1.0, ".1.3.6.1.4.1.20677.2.8.6.4.3.0", NULL, 0, NULL },
+
 
 	/* outlet template definition
 	 * Notes:

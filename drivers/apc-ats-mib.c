@@ -24,36 +24,36 @@
 
 #include "apc-ats-mib.h"
 
-#define APC_ATS_MIB_VERSION  "0.6"
+#define APC_ATS_MIB_VERSION  "0.60"
 
 #define APC_ATS_SYSOID       ".1.3.6.1.4.1.318.1.3.11"
 #define APC_ATS_OID_MODEL_NAME ".1.3.6.1.4.1.318.1.1.8.1.5.0"
 
 static info_lkp_t apc_ats_sensitivity_info[] = {
-	{ 1, "high", NULL, NULL },
-	{ 2, "low", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "high"),
+	info_lkp_default(2, "low"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t apc_ats_output_status_info[] = {
-	{ 1, "OFF", NULL, NULL }, /* fail */
-	{ 2, "OL", NULL, NULL },  /* ok */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "OFF"),	/* fail */
+	info_lkp_default(2, "OL"),	/* ok */
+	info_lkp_sentinel
 };
 
 static info_lkp_t apc_ats_outletgroups_name_info[] = {
-	{ 1, "total", NULL, NULL },
-	{ 2, "bank1", NULL, NULL },
-	{ 3, "bank2", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "total"),
+	info_lkp_default(2, "bank1"),
+	info_lkp_default(3, "bank2"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t apc_ats_outletgroups_status_info[] = {
-	{ 1, "OL", NULL, NULL },   /* normal */
-	{ 2, "", NULL, NULL },     /* lowload */
-	{ 3, "", NULL, NULL },     /* nearoverload */
-	{ 4, "OVER", NULL, NULL }, /* overload */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "OL"),	/* normal */
+	info_lkp_default(2, ""),	/* lowload */
+	info_lkp_default(3, ""),	/* nearoverload */
+	info_lkp_default(4, "OVER"),	/* overload */
+	info_lkp_sentinel
 };
 
 /* APC ATS Snmp2NUT lookup table */

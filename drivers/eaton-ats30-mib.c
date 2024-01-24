@@ -30,20 +30,20 @@
 #define EATON_ATS30_MODEL        ".1.3.6.1.4.1.534.10.1.2.1.0"
 
 static info_lkp_t eaton_ats30_source_info[] = {
-	{ 1, "init", NULL, NULL },
-	{ 2, "diagnosis", NULL, NULL },
-	{ 3, "off", NULL, NULL },
-	{ 4, "1", NULL, NULL },
-	{ 5, "2", NULL, NULL },
-	{ 6, "safe", NULL, NULL },
-	{ 7, "fault", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "init"),
+	info_lkp_default(2, "diagnosis"),
+	info_lkp_default(3, "off"),
+	info_lkp_default(4, "1"),
+	info_lkp_default(5, "2"),
+	info_lkp_default(6, "safe"),
+	info_lkp_default(7, "fault"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t eaton_ats30_input_sensitivity[] = {
-	{ 1, "high", NULL, NULL },
-	{ 2, "low", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "high"),
+	info_lkp_default(2, "low"),
+	info_lkp_sentinel
 };
 
 /*
@@ -55,23 +55,23 @@ static info_lkp_t eaton_ats30_input_sensitivity[] = {
  * 4 atsFailureOverTemperature N/A
  */
 static info_lkp_t eaton_ats30_status_info[] = {
-	{ 0, "OL", NULL, NULL },
-	{ 1, "OL", NULL, NULL }, /* SwitchFault */
-	{ 2, "OFF", NULL, NULL }, /* NoOutput */
-	{ 3, "OFF", NULL, NULL }, /* SwitchFault + NoOutput */
-	{ 4, "OL OVER", NULL, NULL }, /* OutputOC */
-	{ 5, "OL OVER", NULL, NULL }, /* OutputOC + SwitchFault */
-	{ 6, "OFF OVER", NULL, NULL }, /* OutputOC + NoOutput */
-	{ 7, "OFF OVER", NULL, NULL }, /* OutputOC + SwitchFault + NoOutput */
-	{ 8, "OL", NULL, NULL }, /* OverTemperature */
-	{ 9, "OL", NULL, NULL }, /* OverTemperature + SwitchFault */
-	{ 10, "OFF", NULL, NULL }, /* OverTemperature + NoOutput */
-	{ 11, "OFF", NULL, NULL }, /* OverTemperature + SwitchFault + NoOutput */
-	{ 12, "OL OVER", NULL, NULL }, /* OverTemperature + OutputOC */
-	{ 13, "OL OVER", NULL, NULL }, /* OverTemperature + OutputOC + SwitchFault */
-	{ 14, "OFF OVER", NULL, NULL }, /* OverTemperature + OutputOC + NoOutput */
-	{ 15, "OFF OVER", NULL, NULL }, /* OverTemperature + OutputOC + SwitchFault + NoOutput */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(0, "OL"),
+	info_lkp_default(1, "OL"),	/* SwitchFault */
+	info_lkp_default(2, "OFF"),	/* NoOutput */
+	info_lkp_default(3, "OFF"),	/* SwitchFault + NoOutput */
+	info_lkp_default(4, "OL OVER"),	/* OutputOC */
+	info_lkp_default(5, "OL OVER"),	/* OutputOC + SwitchFault */
+	info_lkp_default(6, "OFF OVER"),	/* OutputOC + NoOutput */
+	info_lkp_default(7, "OFF OVER"),	/* OutputOC + SwitchFault + NoOutput */
+	info_lkp_default(8, "OL"),	/* OverTemperature */
+	info_lkp_default(9, "OL"),	/* OverTemperature + SwitchFault */
+	info_lkp_default(10, "OFF"),	/* OverTemperature + NoOutput */
+	info_lkp_default(11, "OFF"),	/* OverTemperature + SwitchFault + NoOutput */
+	info_lkp_default(12, "OL OVER"),	/* OverTemperature + OutputOC */
+	info_lkp_default(13, "OL OVER"),	/* OverTemperature + OutputOC + SwitchFault */
+	info_lkp_default(14, "OFF OVER"),	/* OverTemperature + OutputOC + NoOutput */
+	info_lkp_default(15, "OFF OVER"),	/* OverTemperature + OutputOC + SwitchFault + NoOutput */
+	info_lkp_sentinel
 };
 
 /* EATON_ATS30 Snmp2NUT lookup table */

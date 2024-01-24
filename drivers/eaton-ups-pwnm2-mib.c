@@ -1,10 +1,12 @@
 /*  eaton-ups-pwnm2-mib.c - data to monitor Powerware and Eaton NM2 UPS with NUT
  *  (using MIBs described in stdupsv1.mib and Xups.mib)
+ *  Previously known as powerware-mib.c for "pw" mapping,
+ *  later split into several subdrivers
  *
  *  Copyright (C)
  *       2005-2006 Olli Savia <ops@iki.fi>
  *       2005-2006 Niels Baggesen <niels@baggesen.net>
- *       2015-2022 Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
+ *       2015-2021 Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -97,34 +99,35 @@
 #define DEFAULT_SHUTDOWNDELAY	0
 
 static info_lkp_t pw_alarm_ob[] = {
-	{ 1, "OB", NULL, NULL },
-	{ 2, "", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "OB"),
+	info_lkp_default(2, ""),
+	info_lkp_sentinel
 };
 
 static info_lkp_t pw_alarm_lb[] = {
-	{ 1, "LB", NULL, NULL },
-	{ 2, "", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "LB"),
+	info_lkp_default(2, ""),
+	info_lkp_sentinel
 };
 
 static info_lkp_t pw_pwr_info[] = {
-	{   1, ""         /* other */, NULL, NULL },
-	{   2, "OFF"       /* none */, NULL, NULL },
-	{   3, "OL"        /* normal */, NULL, NULL },
-	{   4, "BYPASS"    /* bypass */, NULL, NULL },
-	{   5, "OB"        /* battery */, NULL, NULL },
-	{   6, "OL BOOST"  /* booster */, NULL, NULL },
-	{   7, "OL TRIM"   /* reducer */, NULL, NULL },
-	{   8, "OL"        /* parallel capacity */, NULL, NULL },
-	{   9, "OL"        /* parallel redundancy */, NULL, NULL },
-	{  10, "OL"        /* high efficiency */, NULL, NULL },
-	{  11, "BYPASS"    /* maintenanceBypass */, NULL, NULL },
-	{  11, "OL"        /* essMode */, NULL, NULL },
-	
-	{ 0, NULL, NULL, NULL }
-};             
+	info_lkp_default(1, ""),	/* other */
+	info_lkp_default(2, "OFF"),	/* none */
+	info_lkp_default(3, "OL"),	/* normal */
+	info_lkp_default(4, "BYPASS"),	/* bypass */
+	info_lkp_default(5, "OB"),	/* battery */
+	info_lkp_default(6, "OL BOOST"),	/* booster */
+	info_lkp_default(7, "OL TRIM"),	/* reducer */
+	info_lkp_default(8, "OL"),	/* parallel capacity */
+	info_lkp_default(9, "OL"),	/* parallel redundancy */
+	info_lkp_default(10, "OL"),	/* high efficiency */
 
+	info_lkp_default(11, "BYPASS"),	/* maintenanceBypass */
+	info_lkp_default(11, "OL"),	/* essMode */
+		/* FIXME: is "11" correct here or in the line above? */
+
+	info_lkp_sentinel
+};
 /* FIXME: mapped to (experimental.)ups.type, but
  * should be output.source or ups.mode (need RFC)
  * to complement the above ups.status
@@ -140,112 +143,115 @@ static info_lkp_t pw_pwr_info[] = {
 
 #if USE_PW_MODE_INFO
 static info_lkp_t pw_mode_info[] = {
-	{   1, "", NULL, NULL },
-	{   2, "", NULL, NULL },
-	{   3, "normal", NULL, NULL },
-	{   4, "", NULL, NULL },
-	{   5, "", NULL, NULL },
-	{   6, "", NULL, NULL },
-	{   7, "", NULL, NULL },
-	{   8, "parallel capacity", NULL, NULL },
-	{   9, "parallel redundancy", NULL, NULL },
-	{  10, "high efficiency", NULL, NULL },
+	info_lkp_default(1, ""),
+	info_lkp_default(2, ""),
+	info_lkp_default(3, "normal"),
+	info_lkp_default(4, ""),
+	info_lkp_default(5, ""),
+	info_lkp_default(6, ""),
+	info_lkp_default(7, ""),
+	info_lkp_default(8, "parallel capacity"),
+	info_lkp_default(9, "parallel redundancy"),
+	info_lkp_default(10, "high efficiency"),
+
 	/* Extended status values,
 	 * FIXME: check for source and completion */
-	{ 240, ""                /* battery (0xF0) */, NULL, NULL },
-	{ 100, ""                /* maintenanceBypass (0x64) */, NULL, NULL },
-	{  96, ""                /* Bypass (0x60) */, NULL, NULL },
-	{  81, "high efficiency" /* high efficiency (0x51) */, NULL, NULL },
-	{  80, "normal"          /* normal (0x50) */, NULL, NULL },
-	{  64, ""                /* UPS supporting load, normal degraded mode (0x40) */, NULL, NULL },
-	{  16, ""                /* none (0x10) */, NULL, NULL },
-	{   0, NULL, NULL, NULL }
+	info_lkp_default(240, ""),	/* battery (0xF0) */
+	info_lkp_default(100, ""),	/* maintenanceBypass (0x64) */
+	info_lkp_default(96, ""),	/* Bypass (0x60) */
+	info_lkp_default(81, "high efficiency"),	/* high efficiency (0x51) */
+	info_lkp_default(80, "normal"),	/* normal (0x50) */
+	info_lkp_default(64, ""),	/* UPS supporting load, normal degraded mode (0x40) */
+	info_lkp_default(16, ""),	/* none (0x10) */
+	info_lkp_sentinel
 };
 #endif /* USE_PW_MODE_INFO */
 
 /* FIXME: may be standardized
  * extracted from bcmxcp.c->BCMXCP_TOPOLOGY_*, Make some common definitions */
 static info_lkp_t pw_topology_info[] = {
-	{ 0x0000, "", NULL, NULL }, /* None; use the Table of Elements */
-	{ 0x0010, "Off-line switcher, Single Phase", NULL, NULL },
-	{ 0x0020, "Line-Interactive UPS, Single Phase", NULL, NULL },
-	{ 0x0021, "Line-Interactive UPS, Two Phase", NULL, NULL },
-	{ 0x0022, "Line-Interactive UPS, Three Phase", NULL, NULL },
-	{ 0x0030, "Dual AC Input, On-Line UPS, Single Phase", NULL, NULL },
-	{ 0x0031, "Dual AC Input, On-Line UPS, Two Phase", NULL, NULL },
-	{ 0x0032, "Dual AC Input, On-Line UPS, Three Phase", NULL, NULL },
-	{ 0x0040, "On-Line UPS, Single Phase", NULL, NULL },
-	{ 0x0041, "On-Line UPS, Two Phase", NULL, NULL },
-	{ 0x0042, "On-Line UPS, Three Phase", NULL, NULL },
-	{ 0x0050, "Parallel Redundant On-Line UPS, Single Phase", NULL, NULL },
-	{ 0x0051, "Parallel Redundant On-Line UPS, Two Phase", NULL, NULL },
-	{ 0x0052, "Parallel Redundant On-Line UPS, Three Phase", NULL, NULL },
-	{ 0x0060, "Parallel for Capacity On-Line UPS, Single Phase", NULL, NULL },
-	{ 0x0061, "Parallel for Capacity On-Line UPS, Two Phase", NULL, NULL },
-	{ 0x0062, "Parallel for Capacity On-Line UPS, Three Phase", NULL, NULL },
-	{ 0x0102, "System Bypass Module, Three Phase", NULL, NULL },
-	{ 0x0122, "Hot-Tie Cabinet, Three Phase", NULL, NULL },
-	{ 0x0200, "Outlet Controller, Single Phase", NULL, NULL },
-	{ 0x0222, "Dual AC Input Static Switch Module, 3 Phase", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(0x0000, ""),	/* None; use the Table of Elements */
+	info_lkp_default(0x0010, "Off-line switcher, Single Phase"),
+	info_lkp_default(0x0020, "Line-Interactive UPS, Single Phase"),
+	info_lkp_default(0x0021, "Line-Interactive UPS, Two Phase"),
+	info_lkp_default(0x0022, "Line-Interactive UPS, Three Phase"),
+	info_lkp_default(0x0030, "Dual AC Input, On-Line UPS, Single Phase"),
+	info_lkp_default(0x0031, "Dual AC Input, On-Line UPS, Two Phase"),
+	info_lkp_default(0x0032, "Dual AC Input, On-Line UPS, Three Phase"),
+	info_lkp_default(0x0040, "On-Line UPS, Single Phase"),
+	info_lkp_default(0x0041, "On-Line UPS, Two Phase"),
+	info_lkp_default(0x0042, "On-Line UPS, Three Phase"),
+	info_lkp_default(0x0050, "Parallel Redundant On-Line UPS, Single Phase"),
+	info_lkp_default(0x0051, "Parallel Redundant On-Line UPS, Two Phase"),
+	info_lkp_default(0x0052, "Parallel Redundant On-Line UPS, Three Phase"),
+	info_lkp_default(0x0060, "Parallel for Capacity On-Line UPS, Single Phase"),
+	info_lkp_default(0x0061, "Parallel for Capacity On-Line UPS, Two Phase"),
+	info_lkp_default(0x0062, "Parallel for Capacity On-Line UPS, Three Phase"),
+	info_lkp_default(0x0102, "System Bypass Module, Three Phase"),
+	info_lkp_default(0x0122, "Hot-Tie Cabinet, Three Phase"),
+	info_lkp_default(0x0200, "Outlet Controller, Single Phase"),
+	info_lkp_default(0x0222, "Dual AC Input Static Switch Module, 3 Phase"),
+	info_lkp_sentinel
 };
 
 /* Legacy implementation */
 static info_lkp_t pw_battery_abm_status[] = {
-	{ 1, "CHRG", NULL, NULL },
-	{ 2, "DISCHRG", NULL, NULL },
-/*	{ 3, "Floating", NULL, NULL }, */
-/*	{ 4, "Resting", NULL, NULL }, */
-/*	{ 5, "Unknown", NULL, NULL }, */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "CHRG"),
+	info_lkp_default(2, "DISCHRG"),
+/*
+	info_lkp_default(3, "Floating"),
+	info_lkp_default(4, "Resting"),
+	info_lkp_default(5, "Unknown"),
+*/
+	info_lkp_sentinel
 };
 
 static info_lkp_t pw_abm_status_info[] = {
-	{ 1, "charging", NULL, NULL },
-	{ 2, "discharging", NULL, NULL },
-	{ 3, "floating", NULL, NULL },
-	{ 4, "resting", NULL, NULL },
-	{ 5, "unknown", NULL, NULL },   /* Undefined - ABM is not activated */
-	{ 6, "disabled", NULL, NULL },  /* ABM Charger Disabled */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "charging"),
+	info_lkp_default(2, "discharging"),
+	info_lkp_default(3, "floating"),
+	info_lkp_default(4, "resting"),
+	info_lkp_default(5, "unknown"),	/* Undefined - ABM is not activated */
+	info_lkp_default(6, "disabled"),	/* ABM Charger Disabled */
+	info_lkp_sentinel
 };
 
 static info_lkp_t pw_batt_test_info[] = {
-	{ 1, "Unknown", NULL, NULL },
-	{ 2, "Done and passed", NULL, NULL },
-	{ 3, "Done and error", NULL, NULL },
-	{ 4, "In progress", NULL, NULL },
-	{ 5, "Not supported", NULL, NULL },
-	{ 6, "Inhibited", NULL, NULL },
-	{ 7, "Scheduled", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "Unknown"),
+	info_lkp_default(2, "Done and passed"),
+	info_lkp_default(3, "Done and error"),
+	info_lkp_default(4, "In progress"),
+	info_lkp_default(5, "Not supported"),
+	info_lkp_default(6, "Inhibited"),
+	info_lkp_default(7, "Scheduled"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t pw_yes_no_info[] = {
-	{ 1, "yes", NULL, NULL },
-	{ 2, "no", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "yes"),
+	info_lkp_default(2, "no"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t pw_outlet_status_info[] = {
-	{ 1, "on", NULL, NULL },
-	{ 2, "off", NULL, NULL },
-	{ 3, "on", NULL, NULL },  /* pendingOff, transitional status */
-	{ 4, "off", NULL, NULL }, /* pendingOn, transitional status */
-	/* { 5, "", NULL, NULL },  unknown */
-	/* { 6, "", NULL, NULL },  reserved */
-	{ 7, "off", NULL, NULL }, /* Failed in Closed position */
-	{ 8, "on", NULL, NULL },  /* Failed in Open position */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "on"),
+	info_lkp_default(2, "off"),
+	info_lkp_default(3, "on"),	/* pendingOff, transitional status */
+	info_lkp_default(4, "off"),	/* pendingOn, transitional status */
+	/* info_lkp_default(5, ""),	// unknown */
+	/* info_lkp_default(6, ""),	// reserved */
+	info_lkp_default(7, "off"),	/* Failed in Closed position */
+	info_lkp_default(8, "on"),	/* Failed in Open position */
+	info_lkp_sentinel
 };
 
 static info_lkp_t pw_ambient_drycontacts_info[] = {
-	{ -1, "unknown", NULL, NULL },
-	{ 1, "opened", NULL, NULL },
-	{ 2, "closed", NULL, NULL },
-	{ 3, "opened", NULL, NULL }, /* openWithNotice   */
-	{ 4, "closed", NULL, NULL }, /* closedWithNotice */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(-1, "unknown"),
+	info_lkp_default(1, "opened"),
+	info_lkp_default(2, "closed"),
+	info_lkp_default(3, "opened"),	/* openWithNotice   */
+	info_lkp_default(4, "closed"),	/* closedWithNotice */
+	info_lkp_sentinel
 };
 
 #if WITH_SNMP_LKP_FUN
@@ -270,13 +276,13 @@ const char *su_temperature_read_fun(void *raw_snmp_value) {
 # endif /* WITH_SNMP_LKP_FUN_DUMMY */
 
 static info_lkp_t pw_sensor_temperature_unit_info[] = {
-	{ 0, "dummy", eaton_sensor_temperature_unit_fun, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_fun_vp2s(0, "dummy", eaton_sensor_temperature_unit_fun),
+	info_lkp_sentinel
 };
 
 static info_lkp_t pw_sensor_temperature_read_info[] = {
-	{ 0, "dummy", su_temperature_read_fun, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_fun_vp2s(0, "dummy", su_temperature_read_fun),
+	info_lkp_sentinel
 };
 
 #else /* if not WITH_SNMP_LKP_FUN: */
@@ -285,60 +291,59 @@ static info_lkp_t pw_sensor_temperature_read_info[] = {
  * lookup/mapping tables for this, which can easily go into the DMF XML file.
  */
 static info_lkp_t pw_sensor_temperature_unit_info[] = {
-	{ 0, "kelvin", NULL, NULL },
-	{ 1, "celsius", NULL, NULL },
-	{ 2, "fahrenheit", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(0, "kelvin"),
+	info_lkp_default(1, "celsius"),
+	info_lkp_default(2, "fahrenheit"),
+	info_lkp_sentinel
 };
 
 #endif /* WITH_SNMP_LKP_FUN */
 
 static info_lkp_t pw_ambient_drycontacts_polarity_info[] = {
-	{ 0, "normal-opened", NULL, NULL },
-	{ 1, "normal-closed", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(0, "normal-opened"),
+	info_lkp_default(1, "normal-closed"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t pw_ambient_drycontacts_state_info[] = {
-	{ 0, "inactive", NULL, NULL },
-	{ 1, "active", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(0, "inactive"),
+	info_lkp_default(1, "active"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t pw_emp002_ambient_presence_info[] = {
-	{ 0, "unknown", NULL, NULL },
-	{ 2, "yes", NULL, NULL },     /* communicationOK */
-	{ 3, "no", NULL, NULL },      /* communicationLost */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(0, "unknown"),
+	info_lkp_default(2, "yes"),	/* communicationOK */
+	info_lkp_default(3, "no"),	/* communicationLost */
+	info_lkp_sentinel
 };
 
 /* extracted from drivers/eaton-pdu-marlin-mib.c -> marlin_threshold_status_info */
 static info_lkp_t pw_threshold_status_info[] = {
-	{ 0, "good", NULL, NULL },          /* No threshold triggered */
-	{ 1, "warning-low", NULL, NULL },   /* Warning low threshold triggered */
-	{ 2, "critical-low", NULL, NULL },  /* Critical low threshold triggered */
-	{ 3, "warning-high", NULL, NULL },  /* Warning high threshold triggered */
-	{ 4, "critical-high", NULL, NULL }, /* Critical high threshold triggered */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(0, "good"),	/* No threshold triggered */
+	info_lkp_default(1, "warning-low"),	/* Warning low threshold triggered */
+	info_lkp_default(2, "critical-low"),	/* Critical low threshold triggered */
+	info_lkp_default(3, "warning-high"),	/* Warning high threshold triggered */
+	info_lkp_default(4, "critical-high"),	/* Critical high threshold triggered */
+	info_lkp_sentinel
 };
 
 /* extracted from drivers/eaton-pdu-marlin-mib.c -> marlin_threshold_xxx_alarms_info */
 static info_lkp_t pw_threshold_temperature_alarms_info[] = {
-	{ 0, "", NULL, NULL },                           /* No threshold triggered */
-	{ 1, "low temperature warning!", NULL, NULL },   /* Warning low threshold triggered */
-	{ 2, "low temperature critical!", NULL, NULL },  /* Critical low threshold triggered */
-	{ 3, "high temperature warning!", NULL, NULL },  /* Warning high threshold triggered */
-	{ 4, "high temperature critical!", NULL, NULL }, /* Critical high threshold triggered */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(0, ""),	/* No threshold triggered */
+	info_lkp_default(1, "low temperature warning!"),	/* Warning low threshold triggered */
+	info_lkp_default(2, "low temperature critical!"),	/* Critical low threshold triggered */
+	info_lkp_default(3, "high temperature warning!"),	/* Warning high threshold triggered */
+	info_lkp_default(4, "high temperature critical!"),	/* Critical high threshold triggered */
+	info_lkp_sentinel
 };
-
 static info_lkp_t pw_threshold_humidity_alarms_info[] = {
-	{ 0, "", NULL, NULL },                        /* No threshold triggered */
-	{ 1, "low humidity warning!", NULL, NULL },   /* Warning low threshold triggered */
-	{ 2, "low humidity critical!", NULL, NULL },  /* Critical low threshold triggered */
-	{ 3, "high humidity warning!", NULL, NULL },  /* Warning high threshold triggered */
-	{ 4, "high humidity critical!", NULL, NULL }, /* Critical high threshold triggered */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(0, ""),	/* No threshold triggered */
+	info_lkp_default(1, "low humidity warning!"),	/* Warning low threshold triggered */
+	info_lkp_default(2, "low humidity critical!"),	/* Critical low threshold triggered */
+	info_lkp_default(3, "high humidity warning!"),	/* Warning high threshold triggered */
+	info_lkp_default(4, "high humidity critical!"),	/* Critical high threshold triggered */
+	info_lkp_sentinel
 };
 
 /* Snmp2NUT lookup table */
@@ -797,6 +802,5 @@ static alarms_info_t pw_alarms[] = {
 	/* end of structure. */
 	{ NULL, NULL, NULL }
 } ;
-
 
 mib2nut_info_t	eaton_pw_nm2 = { "eaton_pw_nm2", PW_MIB_VERSION, NULL, PW_OID_MODEL_NAME, pw_mib, POWERWARE_SYSOID , pw_alarms };

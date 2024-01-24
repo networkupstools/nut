@@ -38,105 +38,107 @@
 #define MGE_OID_MODEL_NAME	MGE_BASE_OID ".1.1.0"
 
 static info_lkp_t mge_lowbatt_info[] = {
-	{ 1, "LB", NULL, NULL },
-	{ 2, "", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "LB"),
+	info_lkp_default(2, ""),
+	info_lkp_sentinel
 };
 
 static info_lkp_t mge_onbatt_info[] = {
-	{ 1, "OB", NULL, NULL },
-	{ 2, "OL", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "OB"),
+	info_lkp_default(2, "OL"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t mge_bypass_info[] = {
-	{ 1, "BYPASS", NULL, NULL },
-	{ 2, "", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "BYPASS"),
+	info_lkp_default(2, ""),
+	info_lkp_sentinel
 };
 
 static info_lkp_t mge_boost_info[] = {
-	{ 1, "BOOST", NULL, NULL },
-	{ 2, "", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "BOOST"),
+	info_lkp_default(2, ""),
+	info_lkp_sentinel
 };
 
 static info_lkp_t mge_trim_info[] = {
-	{ 1, "TRIM", NULL, NULL },
-	{ 2, "", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "TRIM"),
+	info_lkp_default(2, ""),
+	info_lkp_sentinel
 };
 
 static info_lkp_t mge_overload_info[] = {
-	{ 1, "OVER", NULL, NULL },
-	{ 2, "", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "OVER"),
+	info_lkp_default(2, ""),
+	info_lkp_sentinel
 };
 
 
 static info_lkp_t mge_replacebatt_info[] = {
-	{ 1, "RB", NULL, NULL },
-	{ 2, "", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "RB"),
+	info_lkp_default(2, ""),
+	info_lkp_sentinel
 };
 
 static info_lkp_t mge_output_util_off_info[] = {
-	{ 1, "OFF", NULL, NULL },
-	{ 2, "", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "OFF"),
+	info_lkp_default(2, ""),
+	info_lkp_sentinel
 };
 
 static info_lkp_t mge_transfer_reason_info[] = {
-	{ 1, "", NULL, NULL },
-	{ 2, "input voltage out of range", NULL, NULL },
-	{ 3, "input frequency out of range", NULL, NULL },
-	{ 4, "utility off", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, ""),
+	info_lkp_default(2, "input voltage out of range"),
+	info_lkp_default(3, "input frequency out of range"),
+	info_lkp_default(4, "utility off"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t mge_test_result_info[] = {
-	{ 1, "done and passed", NULL, NULL },
-	{ 2, "done and warning", NULL, NULL },
-	{ 3, "done and error", NULL, NULL },
-	{ 4, "aborted", NULL, NULL },
-	{ 5, "in progress", NULL, NULL },
-	{ 6, "no test initiated", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "done and passed"),
+	info_lkp_default(2, "done and warning"),
+	info_lkp_default(3, "done and error"),
+	info_lkp_default(4, "aborted"),
+	info_lkp_default(5, "in progress"),
+	info_lkp_default(6, "no test initiated"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t mge_beeper_status_info[] = {
-	{ 1, "disabled", NULL, NULL },
-	{ 2, "enabled", NULL, NULL },
-	{ 3, "muted", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "disabled"),
+	info_lkp_default(2, "enabled"),
+	info_lkp_default(3, "muted"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t mge_yes_no_info[] = {
-	{ 1, "yes", NULL, NULL },
-	{ 2, "no", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(1, "yes"),
+	info_lkp_default(2, "no"),
+	info_lkp_sentinel
 };
 
 /* FIXME: the below may introduce status redundancy, that needs to be
  * addressed by the driver, as for usbhid-ups! */
 static info_lkp_t mge_power_source_info[] = {
-	{ 1, "" /* other */, NULL, NULL },
-	{ 2, "OFF" /* none */, NULL, NULL },
+	info_lkp_default(1, ""),	/* other */
+	info_lkp_default(2, "OFF"),	/* none */
+
 #if 0
-	{ 3, "OL" /* normal */, NULL, NULL },
+	info_lkp_default(3, "OL"),	/* normal */
 #endif
-	{ 4, "BYPASS" /* bypass */, NULL, NULL },
-	{ 5, "OB" /* battery */, NULL, NULL },
-	{ 6, "BOOST" /* booster */, NULL, NULL },
-	{ 7, "TRIM" /* reducer */, NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+
+	info_lkp_default(4, "BYPASS"),	/* bypass */
+	info_lkp_default(5, "OB"),	/* battery */
+	info_lkp_default(6, "BOOST"),	/* booster */
+	info_lkp_default(7, "TRIM"),	/* reducer */
+	info_lkp_sentinel
 };
 
 static info_lkp_t mge_ambient_drycontacts_info[] = {
-	{ -1, "unknown", NULL, NULL },
-	{ 1, "closed", NULL, NULL },
-	{ 2, "opened", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(-1, "unknown"),
+	info_lkp_default(1, "closed"),
+	info_lkp_default(2, "opened"),
+	info_lkp_sentinel
 };
 
 /* Parameters default values */
