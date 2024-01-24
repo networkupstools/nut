@@ -44,7 +44,7 @@ namespace nut
 /**
  *  \brief  Data stream interface
  *
- *  The intarface provides character-based streamed I/O.
+ *  The interface provides character-based streamed I/O.
  */
 class NutStream {
 	public:
@@ -53,7 +53,7 @@ class NutStream {
 	typedef enum {
 		NUTS_OK = 0,	/** Operation successful  */
 		NUTS_EOF,	/** End of stream reached */
-		NUTS_ERROR,	/** Error ocurred         */
+		NUTS_ERROR,	/** Error occurred        */
 	} status_t;
 
 	protected:
@@ -127,7 +127,7 @@ class NutStream {
 	 *  \brief  Put data to the stream end
 	 *
 	 *  The difference between \ref putString and this method
-	 *  is that it is able to serialise also data containing
+	 *  is that it is able to serialize also data containing
 	 *  null characters.
 	 *
 	 *  \param[in]  data  Data
@@ -270,7 +270,7 @@ class NutFile: public NutStream {
 	 *  \param[out]  err_code  Error code
 	 *  \param[out]  err_msg   Error message
 	 *
-	 *  \retval true  iff the file exists
+	 *  \retval true  IFF the file exists
 	 *  \retval false otherwise
 	 */
 	bool exists(int & err_code, std::string & err_msg) const
@@ -282,7 +282,7 @@ class NutFile: public NutStream {
 	/**
 	 *  \brief  Check whether file exists
 	 *
-	 *  \retval true  iff the file exists
+	 *  \retval true  IFF the file exists
 	 *  \retval false otherwise
 	 */
 	inline bool exists() const
@@ -299,7 +299,7 @@ class NutFile: public NutStream {
 	/**
 	 *  \brief  Check whether file exists (or throw exception)
 	 *
-	 *  \retval true  iff the file exists
+	 *  \retval true  IFF the file exists
 	 *  \retval false otherwise
 	 */
 	inline bool existsx() const
@@ -613,7 +613,7 @@ class NutSocket: public NutStream {
 		Address(): m_sock_addr(NULL), m_length(0) {}
 
 		/**
-		 *  \brief  Initialise UNIX socket address
+		 *  \brief  Initialize UNIX socket address
 		 *
 		 *  \param  addr  UNIX socket address
 		 *  \param  path  Pathname
@@ -621,7 +621,7 @@ class NutSocket: public NutStream {
 		static void init_unix(Address & addr, const std::string & path);
 
 		/**
-		 *  \brief  Initialise IPv4 address
+		 *  \brief  Initialize IPv4 address
 		 *
 		 *  \param  addr  IPv4 address
 		 *  \param  qb    Byte quadruplet (MSB is at index 0)
@@ -630,7 +630,7 @@ class NutSocket: public NutStream {
 		static void init_ipv4(Address & addr, const std::vector<unsigned char> & qb, uint16_t port);
 
 		/**
-		 *  \brief  Initialise IPv6 address
+		 *  \brief  Initialize IPv6 address
 		 *
 		 *  \param  addr  IPv6 address
 		 *  \param  hb    16 bytes of the address (MSB is at index 0)
@@ -667,8 +667,8 @@ class NutSocket: public NutStream {
 		 *  \brief  IPv4 address constructor
 		 *
 		 *  \param  msb   Most significant byte
-		 *  \param  msb2  2nd most significant byte
-		 *  \param  lsb2  2nd least significant byte
+		 *  \param  msb2  Second most significant byte
+		 *  \param  lsb2  Second least significant byte
 		 *  \param  lsb   Least significant byte
 		 *  \param  port  Port number
 		 */
@@ -682,8 +682,8 @@ class NutSocket: public NutStream {
 		 *  \brief  IP address constructor
 		 *
 		 *  Creates either IPv4 or IPv6 address (depending on
-		 *  how many bytes are provided bia the \c bytes argument).
-		 *  Throws an exception if the bytecount is invalid.
+		 *  how many bytes are provided via the \c bytes argument).
+		 *  Throws an exception if the byte-count is invalid.
 		 *
 		 *  \param  bytes 4 or 16 address bytes (MSB is at index 0)
 		 *  \param  port  Port number
@@ -708,7 +708,7 @@ class NutSocket: public NutStream {
 		 */
 		std::string str() const;
 
-		/** Stringifisation */
+		/** Stringification */
 		inline operator std::string() const {
 			return str();
 		}
@@ -807,7 +807,7 @@ class NutSocket: public NutStream {
 	/**
 	 *  \brief  Socket valid check
 	 *
-	 *  \retval true  if the socket is initialised
+	 *  \retval true  if the socket is initialized
 	 *  \retval false otherwise
 	 */
 	inline bool valid()

@@ -136,7 +136,7 @@ NutWriter::status_t NutConfConfigWriter::writeConfig(const NutConfiguration & co
 	status_t status;
 
 	// Mode
-	// TBD: How should I serialise an unknown mode?
+	// TBD: How should I serialize an unknown mode?
 	if (config.mode.set()) {
 		std::string mode_str;
 
@@ -199,7 +199,7 @@ struct NotifyFlagsStrings {
 	static const FlagStrings flag_str;
 
 	/**
-	 *  \brief  Initialise notify flag strings
+	 *  \brief  Initialize notify flag strings
 	 *
 	 *  \return Notify flag strings map
 	 */
@@ -236,14 +236,14 @@ const NotifyFlagsStrings::FlagStrings NotifyFlagsStrings::flag_str =
 
 
 /**
- *  \brief  upsmon notify flags serialiser
+ *  \brief  upsmon notify flags serializer
  *
  *  \param  type   Notification type
  *  \param  flags  Notification flags
  *
  *  \return NOTIFYFLAG directive string
  */
-static std::string serialiseNotifyFlags(UpsmonConfiguration::NotifyType type, unsigned short flags) {
+static std::string serializeNotifyFlags(UpsmonConfiguration::NotifyType type, unsigned short flags) {
 	static const NotifyFlagsStrings::FlagStrings::const_iterator ignore_str_iter =
 		NotifyFlagsStrings::flag_str.find(UpsmonConfiguration::NOTIFY_IGNORE);
 
@@ -282,14 +282,14 @@ static std::string serialiseNotifyFlags(UpsmonConfiguration::NotifyType type, un
 
 
 /**
- *  \brief  upsmon notify messages serialiser
+ *  \brief  upsmon notify messages serializer
  *
  *  \param  type   Notification type
  *  \param  msg    Notification message
  *
  *  \return NOTIFYMSG directive string
  */
-static std::string serialiseNotifyMessage(UpsmonConfiguration::NotifyType type, const std::string & msg) {
+static std::string serializeNotifyMessage(UpsmonConfiguration::NotifyType type, const std::string & msg) {
 	assert(type < UpsmonConfiguration::NOTIFY_TYPE_MAX);
 
 	std::string directive("NOTIFYMSG ");
@@ -321,7 +321,7 @@ inline static UpsmonConfiguration::NotifyType nextNotifyType(UpsmonConfiguration
 
 
 /**
- *  \brief  Notify type pre-incrementation
+ *  \brief  Notify type pre-increment
  *
  *  TBD: Should be in nutconf.h
  *
@@ -335,7 +335,7 @@ inline static UpsmonConfiguration::NotifyType operator ++(UpsmonConfiguration::N
 
 
 /**
- *  \brief  Notify type post-incrementation
+ *  \brief  Notify type post-increment
  *
  *  TBD: Should be in nutconf.h
  *
@@ -353,13 +353,13 @@ inline static UpsmonConfiguration::NotifyType operator ++(UpsmonConfiguration::N
 
 
 /**
- *  \brief  UPS monitor definition serialiser
+ *  \brief  UPS monitor definition serializer
  *
  *  \param  monitor  Monitor
  *
  *  \return Monitor config. directive
  */
-static std::string serialiseMonitor(const UpsmonConfiguration::Monitor & monitor) {
+static std::string serializeMonitor(const UpsmonConfiguration::Monitor & monitor) {
 	std::stringstream directive;
 
 	directive << "MONITOR ";
@@ -427,7 +427,7 @@ NutWriter::status_t UpsmonConfigWriter::writeConfig(const UpsmonConfiguration & 
 
 	for (; type < UpsmonConfiguration::NOTIFY_TYPE_MAX; ++type) {
 		if (config.notifyFlags[type].set()) {
-			std::string directive = serialiseNotifyFlags(type, config.notifyFlags[type]);
+			std::string directive = serializeNotifyFlags(type, config.notifyFlags[type]);
 
 			status_t status = writeDirective(directive);
 
@@ -441,7 +441,7 @@ NutWriter::status_t UpsmonConfigWriter::writeConfig(const UpsmonConfiguration & 
 
 	for (; type < UpsmonConfiguration::NOTIFY_TYPE_MAX; ++type) {
 		if (config.notifyMessages[type].set()) {
-			std::string directive = serialiseNotifyMessage(type, config.notifyMessages[type]);
+			std::string directive = serializeNotifyMessage(type, config.notifyMessages[type]);
 
 			status_t status = writeDirective(directive);
 
@@ -454,7 +454,7 @@ NutWriter::status_t UpsmonConfigWriter::writeConfig(const UpsmonConfiguration & 
 	std::list<UpsmonConfiguration::Monitor>::const_iterator mon_iter = config.monitors.begin();
 
 	for (; mon_iter != config.monitors.end(); ++mon_iter) {
-		std::string directive = serialiseMonitor(*mon_iter);
+		std::string directive = serializeMonitor(*mon_iter);
 
 		status_t status = writeDirective(directive);
 
@@ -467,13 +467,13 @@ NutWriter::status_t UpsmonConfigWriter::writeConfig(const UpsmonConfiguration & 
 
 
 /**
- *  \brief  upsd listen address serialiser
+ *  \brief  upsd listen address serializer
  *
  *  \param  address  Listen address
  *
- *  \return Serialised listen address
+ *  \return Serialized listen address
  */
-static std::string serialiseUpsdListenAddress(const UpsdConfiguration::Listen & address) {
+static std::string serializeUpsdListenAddress(const UpsdConfiguration::Listen & address) {
 	std::stringstream directive;
 
 	directive << "LISTEN " << address.address;
@@ -514,7 +514,7 @@ NutWriter::status_t UpsdConfigWriter::writeConfig(const UpsdConfiguration & conf
 	std::list<UpsdConfiguration::Listen>::const_iterator la_iter = config.listens.begin();
 
 	for (; la_iter != config.listens.end(); ++la_iter) {
-		std::string directive = serialiseUpsdListenAddress(*la_iter);
+		std::string directive = serializeUpsdListenAddress(*la_iter);
 
 		status_t status = writeDirective(directive);
 
@@ -554,7 +554,7 @@ NutWriter::status_t DefaultConfigWriter::writeDirective(const std::string & str)
  *
  *  \param  val  Value string
  *
- *  \return Value string ready for serialisation
+ *  \return Value string ready for serialization
  */
 static std::string encodeValue(const std::string & val) {
 	// Check the string for spaces and '='
@@ -644,7 +644,7 @@ NutWriter::status_t GenericConfigWriter::writeSection(const GenericConfigSection
 NutWriter::status_t GenericConfigWriter::writeConfig(const GenericConfiguration & config) {
 	// Write sections
 	// Note that lexicographic ordering places the global
-	// (i.e. empty-name) section as the 1st one
+	// (i.e. empty-name) section as the first one
 	GenericConfiguration::SectionMap::const_iterator section_iter = config.sections.begin();
 
 	for (; section_iter != config.sections.end(); ++section_iter) {
@@ -689,7 +689,7 @@ NutWriter::status_t UpsdUsersConfigWriter::writeSection(const GenericConfigSecti
 					upsmon_entry_separator);
 		}
 
-		// Standard entry serialisation
+		// Standard entry serialization
 		else {
 			status = writeSectionEntry(entry_iter->second);
 		}

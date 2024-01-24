@@ -64,7 +64,7 @@ class Usage {
 const char * Usage::s_text[] = {
 	"    -h  -help",
 	"    --help                              Display this help and exit",
-	"    --autoconfigure                     Perform autoconfiguration",
+	"    --autoconfigure                     Perform automatic configuration",
 	"    --is-configured                     Checks whether NUT is configured",
 	"    --local <directory>                 Sets configuration directory",
 	"    --system                            Sets configuration directory to " CONFPATH " (default)",
@@ -247,7 +247,7 @@ class Options {
 	 *  \param[out]  args   Option arguments
 	 *  \param[in]   order  Option order (1st by default)
 	 *
-	 *  \retval true  iff the option was specified on the command line
+	 *  \retval true  IFF the option was specified on the command line
 	 *  \retval false otherwise
 	 */
 	bool get(const Map & map, const std::string & opt, Arguments & args, size_t order = 0) const;
@@ -317,7 +317,7 @@ class Options {
 	 *
 	 *  \param  opt  Option
 	 *
-	 *  \retval true  iff the option was specified on the command line
+	 *  \retval true  IFF the option was specified on the command line
 	 *  \retval false otherwise
 	 */
 	inline bool existsSingle(const std::string & opt) const {
@@ -329,7 +329,7 @@ class Options {
 	 *
 	 *  \param  opt  Option
 	 *
-	 *  \retval true  iff the option was specified on the command line
+	 *  \retval true  IFF the option was specified on the command line
 	 *  \retval false otherwise
 	 */
 	inline bool existsDouble(const std::string & opt) const {
@@ -341,7 +341,7 @@ class Options {
 	 *
 	 *  \param  opt  Option
 	 *
-	 *  \retval true  iff the option was specified on the command line
+	 *  \retval true  IFF the option was specified on the command line
 	 *  \retval false otherwise
 	 */
 	inline bool exists(const std::string & opt) const {
@@ -355,7 +355,7 @@ class Options {
 	 *  \param[out]  args   Option arguments
 	 *  \param[in]   order  Option order (1st by default)
 	 *
-	 *  \retval true  iff the option was specified on the command line
+	 *  \retval true  IFF the option was specified on the command line
 	 *  \retval false otherwise
 	 */
 	inline bool getSingle(const std::string & opt, Arguments & args, size_t order = 0) const {
@@ -369,7 +369,7 @@ class Options {
 	 *  \param[out]  args  Option arguments
 	 *  \param[in]   order  Option order (1st by default)
 	 *
-	 *  \retval true  iff the option was specified on the command line
+	 *  \retval true  IFF the option was specified on the command line
 	 *  \retval false otherwise
 	 */
 	inline bool getDouble(const std::string & opt, Arguments & args, size_t order = 0) const {
@@ -520,7 +520,8 @@ Options::Options(char * const argv[], int argc): m_last(NULL) {
 		const std::string arg(argv[i]);
 
 		// Empty string is the current option argument, too
-		// '-' alone is also an option argument // (like stdout placeholder etc)
+		// '-' alone is also an option argument
+		// (like stdout placeholder etc)
 		if (arg.empty() || '-' != arg[0] || 1 == arg.size())
 			addArg(arg);
 
@@ -636,17 +637,17 @@ class NutScanner {
 
 	private:
 
-	/** NUT scanner initialisation/finalisation */
+	/** NUT scanner initialization/finalization */
 	struct InitFinal {
-		/** Initialisation */
+		/** Initialization */
 		InitFinal() { nutscan_init(); }
 
-		/** Finalisation */
+		/** Finalization */
 		~InitFinal() { nutscan_free(); }
 
 	};  // end of struct InitFinal
 
-	/** Initialiser / finaliser */
+	/** Initializer / finalizer */
 	static InitFinal s_init_final;
 
 	/**
@@ -656,7 +657,7 @@ class NutScanner {
 	 *
 	 *  \param  dev_list  nut-scan provided device list
 	 *
-	 *  \return Dvice info list
+	 *  \return Device info list
 	 */
 	static devices_t dev2list(nutscan_device_t * dev_list);
 
@@ -872,7 +873,7 @@ NutScanner::devices_t NutScanner::devicesIPMI(
 
 	::memset(&ipmi_attrs, 0, sizeof(ipmi_attrs));
 
-	// TBD: const casting is necessery
+	// TBD: const casting is necessary
 	// Shouldn't the nutscan_ipmi_t C-string items be constant?
 
 	if (!attrs.username.empty())
@@ -1189,7 +1190,7 @@ class NutConfOptions: public Options {
 	 *
 	 *  \param  mode  Mode argument
 	 *
-	 *  \retval  true  iff the mode is set correctly
+	 *  \retval  true  IFF the mode is set correctly
 	 *  \retval  false otherwise
 	 */
 	static bool checkMode(const std::string & mode);
@@ -1248,7 +1249,7 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 	static const std::string sDash("-");
 	static const std::string dDash("--");
 
-	// Specificate single-dashed options
+	// Specify single-dashed options
 	List list = stringsSingle();
 
 	for (List::const_iterator opt = list.begin(); opt != list.end(); ++opt) {
@@ -1263,7 +1264,7 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 		}
 	}
 
-	// Specificate double-dashed options
+	// Specify double-dashed options
 	list = stringsDouble();
 
 	for (List::const_iterator opt = list.begin(); opt != list.end(); ++opt) {
@@ -1633,7 +1634,7 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 		}
 	}
 
-	// Options are valid iff we know all of them
+	// Options are valid IFF we know all of them
 	// and there are no direct binary arguments
 	valid = m_unknown.empty() && m_errors.empty() && get().empty();
 
@@ -1726,7 +1727,7 @@ bool NutConfOptions::checkMode(const std::string & mode) {
  *  The template class is useful in situation where you need to
  *  create a dynamic object, process its attributes and automatically
  *  destroy it in case of error simply by leaving the scope
- *  (i.e. not having to warry about calling \c delete by hand).
+ *  (i.e. not having to worry about calling \c delete by hand).
  */
 template <typename T>
 class autodelete_ptr {
@@ -1966,7 +1967,7 @@ void store(nut::Serialisable * config, const std::string & file_name) {
  *
  *  \param  etc  Configuration directory
  *
- *  \retval true  iff nut.conf exists and MODE != none
+ *  \retval true  IFF nut.conf exists and MODE != none
  *  \retval false otherwise
  */
 bool isConfigured(const std::string & etc) {
@@ -2365,7 +2366,7 @@ void setNotifyMsgs(
 /**
  *  \brief  Set notify command in upsmon.conf
  *
- *  \param  cmd  otify command
+ *  \param  cmd  Notify command
  *  \param  etc  Configuration directory
  */
 void setNotifyCmd(const std::string & cmd, const std::string & etc)
@@ -3195,7 +3196,7 @@ int main(int argc, char * const argv[]) {
 	catch (...) {
 		std::cerr
 			<< "INTERNAL ERROR: exception of unknown origin caught" << std::endl
-			<< "Please issue a bugreport to nut-upsdev@lists.alioth.debian.org"
+			<< "Please issue a bug report to nut-upsdev@lists.alioth.debian.org"
 			<< std::endl;
 	}
 
