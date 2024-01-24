@@ -29,12 +29,20 @@
 
 namespace nut {
 
-pid_t Process::getPID() throw() {
+pid_t Process::getPID()
+#if (defined __cplusplus) && (__cplusplus < 201100)
+	throw()
+#endif
+{
 	return getpid();
 }
 
 
-pid_t Process::getPPID() throw() {
+pid_t Process::getPPID()
+#if (defined __cplusplus) && (__cplusplus < 201100)
+	throw()
+#endif
+{
 	return getppid();
 }
 
@@ -134,7 +142,7 @@ Process::Executor::Executor(const std::string & command) {
 
 
 int Process::Executor::operator () ()
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 	throw(std::runtime_error)
 #endif
 {
@@ -170,7 +178,7 @@ int Process::Executor::operator () ()
 
 
 int sigPipeWriteCmd(int fh, void * cmd, size_t cmd_size)
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 	throw(std::runtime_error)
 #endif
 {
@@ -192,7 +200,7 @@ int sigPipeWriteCmd(int fh, void * cmd, size_t cmd_size)
 
 
 int Signal::send(Signal::enum_t signame, pid_t pid)
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 	throw(std::logic_error)
 #endif
 {

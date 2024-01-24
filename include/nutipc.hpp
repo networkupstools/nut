@@ -55,10 +55,18 @@ class Process {
 	public:
 
 	/** Get current process ID */
-	static pid_t getPID() throw();
+	static pid_t getPID()
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+		;
 
 	/** Get parent process ID */
-	static pid_t getPPID() throw();
+	static pid_t getPPID()
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+		;
 
 	/**
 	 *  Process main routine functor prototype
@@ -100,7 +108,7 @@ class Process {
 		 *  \param  main  Child process main routine
 		 */
 		Child(M main)
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 			throw(std::runtime_error)
 #endif
 			;
@@ -119,7 +127,7 @@ class Process {
 		 *  \return Child process exit code
 		 */
 		int wait()
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 			throw(std::logic_error)
 #endif
 			;
@@ -193,7 +201,7 @@ class Process {
 
 		/** Execution of the binary */
 		int operator () ()
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 			throw(std::runtime_error)
 #endif
 			;
@@ -267,8 +275,8 @@ class Process {
 
 template <class M>
 Process::Child<M>::Child(M main)
-#if (defined __cplusplus) && (__cplusplus < 201700)
-throw(std::runtime_error)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+	throw(std::runtime_error)
 #endif
 	:
 	m_pid(0),
@@ -284,7 +292,7 @@ throw(std::runtime_error)
 
 template <class M>
 int Process::Child<M>::wait()
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 	throw(std::logic_error)
 #endif
 {
@@ -461,7 +469,7 @@ class Signal {
 		 *  \param  siglist  List of signals that shall be handled by the thread
 		 */
 		HandlerThread(const Signal::List & siglist)
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 			throw(std::logic_error, std::runtime_error)
 #endif
 			;
@@ -474,7 +482,7 @@ class Signal {
 		 *  Closes the communication pipe write end.
 		 */
 		void quit()
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 			throw(std::runtime_error)
 #endif
 			;
@@ -485,7 +493,7 @@ class Signal {
 		 *  Forces the signal handler thread termination (unless already down).
 		 */
 		~HandlerThread()
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 			throw(std::runtime_error)
 #endif
 			;
@@ -505,7 +513,7 @@ class Signal {
 	 *  \retval ESRCH if the process (group) identified doesn't exist
 	 */
 	static int send(enum_t signame, pid_t pid)
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 		throw(std::logic_error)
 #endif
 		;
@@ -629,7 +637,7 @@ void * Signal::HandlerThread<H>::main(void * comm_pipe_read_end) {
  *  \retval errno on error
  */
 int sigPipeWriteCmd(int fh, void * cmd, size_t cmd_size)
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 	throw(std::runtime_error)
 #endif
 	;
@@ -652,7 +660,7 @@ void Signal::HandlerThread<H>::signalNotifier(int signal) {
 
 template <class H>
 Signal::HandlerThread<H>::HandlerThread(const Signal::List & siglist)
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 	throw(std::logic_error, std::runtime_error)
 #endif
 {
@@ -711,7 +719,7 @@ Signal::HandlerThread<H>::HandlerThread(const Signal::List & siglist)
 
 template <class H>
 void Signal::HandlerThread<H>::quit()
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 	throw(std::runtime_error)
 #endif
 {
@@ -743,7 +751,7 @@ void Signal::HandlerThread<H>::quit()
 
 template <class H>
 Signal::HandlerThread<H>::~HandlerThread()
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 	throw(std::runtime_error)
 #endif
 {

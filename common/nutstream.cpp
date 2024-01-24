@@ -109,7 +109,11 @@ NutFile::NutFile(anonymous_t):
 }
 
 
-bool NutFile::exists(int & err_code, std::string & err_msg) const throw() {
+bool NutFile::exists(int & err_code, std::string & err_msg) const
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+{
 	struct stat info;
 
 	int status = ::stat(m_name.c_str(), &info);
@@ -124,7 +128,11 @@ bool NutFile::exists(int & err_code, std::string & err_msg) const throw() {
 }
 
 
-bool NutFile::open(access_t mode, int & err_code, std::string & err_msg) throw() {
+bool NutFile::open(access_t mode, int & err_code, std::string & err_msg)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+{
 	static const char *read_only        = "r";
 	static const char *write_only       = "w";
 	static const char *read_write       = "r+";
@@ -169,7 +177,11 @@ bool NutFile::open(access_t mode, int & err_code, std::string & err_msg) throw()
 }
 
 
-bool NutFile::close(int & err_code, std::string & err_msg) throw() {
+bool NutFile::close(int & err_code, std::string & err_msg)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+{
 	err_code = ::fclose(m_impl);
 
 	if (0 != err_code) {
@@ -184,7 +196,11 @@ bool NutFile::close(int & err_code, std::string & err_msg) throw() {
 }
 
 
-bool NutFile::remove(int & err_code, std::string & err_msg) throw() {
+bool NutFile::remove(int & err_code, std::string & err_msg)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+{
 	err_code = ::unlink(m_name.c_str());
 
 	if (0 != err_code) {
@@ -210,7 +226,7 @@ NutFile::NutFile(const std::string & name, access_t mode):
 
 
 std::string NutFile::tmpName()
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 	throw(std::runtime_error)
 #endif
 {
@@ -268,7 +284,11 @@ inline static NutStream::status_t fgetcWrapper(FILE * file, char & ch) {
 }
 
 
-NutStream::status_t NutFile::getChar(char & ch) throw() {
+NutStream::status_t NutFile::getChar(char & ch)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+{
 	if (m_current_ch_valid) {
 		ch = m_current_ch;
 
@@ -291,12 +311,20 @@ NutStream::status_t NutFile::getChar(char & ch) throw() {
 }
 
 
-void NutFile::readChar() throw() {
+void NutFile::readChar()
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+{
 	m_current_ch_valid = false;
 }
 
 
-NutStream::status_t NutFile::getString(std::string & str) throw() {
+NutStream::status_t NutFile::getString(std::string & str)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+{
 	if (m_current_ch_valid)
 		str += m_current_ch;
 
@@ -323,7 +351,11 @@ NutStream::status_t NutFile::getString(std::string & str) throw() {
 }
 
 
-NutStream::status_t NutFile::putChar(char ch) throw() {
+NutStream::status_t NutFile::putChar(char ch)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+{
 	int c;
 
 	if (NULL == m_impl)
@@ -335,7 +367,11 @@ NutStream::status_t NutFile::putChar(char ch) throw() {
 }
 
 
-NutStream::status_t NutFile::putString(const std::string & str) throw() {
+NutStream::status_t NutFile::putString(const std::string & str)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+{
 	int c;
 
 	if (NULL == m_impl)
@@ -347,7 +383,11 @@ NutStream::status_t NutFile::putString(const std::string & str) throw() {
 }
 
 
-NutStream::status_t NutFile::putData(const std::string & data) throw() {
+NutStream::status_t NutFile::putData(const std::string & data)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+{
 	// Unfortunately, C FILE interface doesn't have non C-string
 	// put function (i.e. function for raw data output with size specifier
 	for (size_t i = 0; i < data.size(); ++i) {
@@ -452,7 +492,7 @@ NutSocket::Address::Address(
 
 
 NutSocket::Address::Address(const std::vector<unsigned char> & bytes, uint16_t port)
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 	throw(std::logic_error)
 #endif
 {
@@ -619,7 +659,7 @@ bool NutSocket::accept(
 	const NutSocket & listen_sock,
 	int &             err_code,
 	std::string &     err_msg)
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 		throw(std::logic_error)
 #endif
 {
@@ -678,7 +718,11 @@ NutSocket::NutSocket(domain_t dom, type_t type, proto_t proto):
 }
 
 
-bool NutSocket::bind(const Address & addr, int & err_code, std::string & err_msg) throw() {
+bool NutSocket::bind(const Address & addr, int & err_code, std::string & err_msg)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+{
 	err_code = ::bind(m_impl, addr.m_sock_addr, addr.m_length);
 
 	if (0 == err_code)
@@ -691,7 +735,11 @@ bool NutSocket::bind(const Address & addr, int & err_code, std::string & err_msg
 }
 
 
-bool NutSocket::listen(int backlog, int & err_code, std::string & err_msg) throw() {
+bool NutSocket::listen(int backlog, int & err_code, std::string & err_msg)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+{
 	err_code = ::listen(m_impl, backlog);
 
 	if (0 == err_code)
@@ -704,7 +752,11 @@ bool NutSocket::listen(int backlog, int & err_code, std::string & err_msg) throw
 }
 
 
-bool NutSocket::connect(const Address & addr, int & err_code, std::string & err_msg) throw() {
+bool NutSocket::connect(const Address & addr, int & err_code, std::string & err_msg)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+{
 	err_code = ::connect(m_impl, addr.m_sock_addr, addr.m_length);
 
 	if (0 == err_code)
@@ -717,7 +769,11 @@ bool NutSocket::connect(const Address & addr, int & err_code, std::string & err_
 }
 
 
-bool NutSocket::close(int & err_code, std::string & err_msg) throw() {
+bool NutSocket::close(int & err_code, std::string & err_msg)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+{
 	err_code = ::close(m_impl);
 
 	if (0 == err_code) {
@@ -739,7 +795,11 @@ NutSocket::~NutSocket() {
 }
 
 
-NutStream::status_t NutSocket::getChar(char & ch) throw() {
+NutStream::status_t NutSocket::getChar(char & ch)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+{
 	if (m_current_ch_valid) {
 		ch = m_current_ch;
 
@@ -771,12 +831,20 @@ NutStream::status_t NutSocket::getChar(char & ch) throw() {
 }
 
 
-void NutSocket::readChar() throw() {
+void NutSocket::readChar()
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+{
 	m_current_ch_valid = false;
 }
 
 
-NutStream::status_t NutSocket::getString(std::string & str) throw() {
+NutStream::status_t NutSocket::getString(std::string & str)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+{
 	if (m_current_ch_valid)
 		str += m_current_ch;
 
@@ -798,7 +866,11 @@ NutStream::status_t NutSocket::getString(std::string & str) throw() {
 }
 
 
-NutStream::status_t NutSocket::putChar(char ch) throw() {
+NutStream::status_t NutSocket::putChar(char ch)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+{
 	ssize_t write_cnt = ::write(m_impl, &ch, 1);
 
 	if (1 == write_cnt)
@@ -812,7 +884,11 @@ NutStream::status_t NutSocket::putChar(char ch) throw() {
 }
 
 
-NutStream::status_t NutSocket::putString(const std::string & str) throw() {
+NutStream::status_t NutSocket::putString(const std::string & str)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+{
 	ssize_t str_len = str.size();
 
 	// Avoid the costly system call unless necessary
