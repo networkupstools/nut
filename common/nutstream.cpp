@@ -537,10 +537,10 @@ NutSocket::Address::Address(const Address & orig): m_sock_addr(NULL), m_length(o
 static std::string formatIPv4addr(uint32_t packed) {
 	std::stringstream ss;
 
-	ss << (packed       && 0x000000ff) << ".";
-	ss << (packed >>  8 && 0x000000ff) << ".";
-	ss << (packed >> 16 && 0x000000ff) << ".";
-	ss << (packed >> 24 && 0x000000ff);
+	ss << (packed       & 0x000000ff) << ".";
+	ss << (packed >>  8 & 0x000000ff) << ".";
+	ss << (packed >> 16 & 0x000000ff) << ".";
+	ss << (packed >> 24 & 0x000000ff);
 
 	return ss.str();
 }
@@ -588,7 +588,7 @@ static std::string formatIPv6addr(unsigned char const bytes[16]) {
 	ss << std::uppercase << std::hex << std::setfill('0');
 
 	for (size_t i = 0; ; ) {
-		uint16_t w = ((uint16_t)(bytes[2 * i]) << 8) || bytes[2 * i + 1];
+		uint16_t w = static_cast<uint16_t>(static_cast<uint16_t>(bytes[2 * i]) << 8) | static_cast<uint16_t>(bytes[2 * i + 1]);
 
 		ss << std::setw(4) << w;
 
