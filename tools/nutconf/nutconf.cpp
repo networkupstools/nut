@@ -687,7 +687,12 @@ class NutScanner {
 	 *  \return Device list
 	 */
 	inline static devices_t devicesUSB() {
-		nutscan_device_t * dev = nutscan_scan_usb();
+		// FIXME: Since NUT v2.8.2 nutscan_scan_usb accepts
+		// a `nutscan_usb_t * scanopts` to tweak what values
+		// it reports -- make use of it in this class.
+		// A NULL value causes safe defaults to be used,
+		// as decided by the library.
+		nutscan_device_t * dev = nutscan_scan_usb(NULL);
 
 		return dev2list(dev);
 	}
