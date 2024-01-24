@@ -228,10 +228,16 @@ typedef struct {
 #if WITH_SNMP_LKP_FUN
 # define info_lkp_default(_1, _2)	{_1, _2, NULL, NULL, NULL, NULL}
 # define info_lkp_fun_vp2s(_1, _2, _3)	{_1, _2, _3, NULL, NULL, NULL}
+# define info_lkp_nuf_s2l(_1, _2, _3)	{_1, _2, NULL, _3, NULL, NULL}
+# define info_lkp_fun_s2l(_1, _2, _3)	{_1, _2, NULL, NULL, _3, NULL}
+# define info_lkp_nuf_vp2s(_1, _2, _3)	{_1, _2, NULL, NULL, NULL, _3}
 #else
 # define info_lkp_default(_1, _2)	{_1, _2}
 /* Ignore the function pointer where not supported */
 # define info_lkp_fun_vp2s(_1, _2, _3)	{_1, _2}
+# define info_lkp_nuf_s2l(_1, _2, _3)	{_1, _2}
+# define info_lkp_fun_s2l(_1, _2, _3)	{_1, _2}
+# define info_lkp_nuf_vp2s(_1, _2, _3)	{_1, _2}
 #endif /* WITH_SNMP_LKP_FUN */
 #define info_lkp_sentinel	info_lkp_default(0, NULL)
 
