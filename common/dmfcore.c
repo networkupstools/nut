@@ -11,6 +11,7 @@
  * Copyright (C) 2016 Carlos Dominguez <CarlosDominguez@eaton.com>
  * Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
  * Copyright (C) 2016 - 2017 Jim Klimov <EvgenyKlimov@eaton.com>
+ * Copyright (C) 2024 Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -550,9 +551,9 @@ dmfcore_parse_dir (char *dir_name, dmfcore_parser_t *dcp)
 				char *file_path = (char *) calloc(PATH_MAX_SIZE, sizeof(char));
 				if (!file_path)
 				{
-					upslogx(LOG_ERR, "dmfcore_parse_dir(): calloc() failed");
+					upslogx(LOG_ERR, "dqmfcore_parse_dir(): calloc() failed");
 				} else {
-					sprintf(file_path, "%s/%s", dir_name, dir_ent[c]->d_name);
+					snprintf(file_path, PATH_MAX_SIZE, "%s/%s", dir_name, dir_ent[c]->d_name);
 					assert(file_path);
 					int res = dmfcore_parse_file(file_path, dcp);
 					upsdebugx (5, "dmfcore_parse_file (\"%s\", <%p>)=%d", file_path, (void*)dcp, res);
