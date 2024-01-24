@@ -1,21 +1,22 @@
-/* nutconf.cpp - configuration API
+/*
+    nutconf.cpp - configuration API
 
-   Copyright (C)
+    Copyright (C)
         2012	Emilien Kia <emilien.kia@gmail.com>
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
 #include "nutconf.h"
@@ -84,45 +85,45 @@ void NutParser::setOptions(unsigned int options, bool set)
 }
 
 char NutParser::get() {
-    if (_pos >= _buffer.size())
-        return 0;
-    else
-        return _buffer[_pos++];
+	if (_pos >= _buffer.size())
+		return 0;
+	else
+		return _buffer[_pos++];
 }
 
 char NutParser::peek() {
-    return _buffer[_pos];
+	return _buffer[_pos];
 }
 
 size_t NutParser::getPos()const {
-    return _pos;
+	return _pos;
 }
 
 void NutParser::setPos(size_t pos) {
-    _pos = pos;
+	_pos = pos;
 }
 
 char NutParser::charAt(size_t pos)const {
-    return _buffer[pos];
+	return _buffer[pos];
 }
 
 void NutParser::pushPos() {
-    _stack.push_back(_pos);
+	_stack.push_back(_pos);
 }
 
 size_t NutParser::popPos() {
-    size_t pos = _stack.back();
-    _stack.pop_back();
-    return pos;
+	size_t pos = _stack.back();
+	_stack.pop_back();
+	return pos;
 }
 
 void NutParser::rewind() {
-    _pos = popPos();
+	_pos = popPos();
 }
 
 void NutParser::back() {
-    if (_pos > 0)
-        --_pos;
+	if (_pos > 0)
+		--_pos;
 }
 
 /* Parse a string source for a CHARS and return its size if found or 0, if not.
@@ -132,33 +133,33 @@ void NutParser::back() {
  * TODO: accept "\t", "\s", "\r", "\n" ??
  */
 std::string NutParser::parseCHARS() {
-    bool escaped = false; // Is char escaped ?
-    std::string res; // Stored string
+	bool escaped = false; // Is char escaped ?
+	std::string res; // Stored string
 
-    pushPos();
+	pushPos();
 
-    for (char c = get(); c != 0 /*EOF*/; c = get()) {
-        if (escaped) {
-            if (isspace(c) || c == '\\' || c == '"' || c == '#') {
-                res += c;
-            } else {
-                /* WTF ??? */
-            }
-            escaped = false;
-        } else {
-            if (c == '\\') {
-                escaped = true;
-            } else if (isgraph(c) /*&& c != '\\'*/ && c != '"' && c != '#') {
-                res += c;
-            } else {
-                back();
-                break;
-            }
-        }
-    }
+	for (char c = get(); c != 0 /*EOF*/; c = get()) {
+		if (escaped) {
+			if (isspace(c) || c == '\\' || c == '"' || c == '#') {
+				res += c;
+			} else {
+				/* WTF ??? */
+			}
+			escaped = false;
+		} else {
+			if (c == '\\') {
+				escaped = true;
+			} else if (isgraph(c) /*&& c != '\\'*/ && c != '"' && c != '#') {
+				res += c;
+			} else {
+				back();
+				break;
+			}
+		}
+	}
 
-    popPos();
-    return res;
+	popPos();
+	return res;
 }
 
 /* Parse a string source for a STRCHARS and return its size if found or 0, if not.
@@ -168,33 +169,33 @@ std::string NutParser::parseCHARS() {
  * TODO: accept "\t", "\s", "\r", "\n" ??
  */
 std::string NutParser::parseSTRCHARS() {
-    bool escaped = false; // Is char escaped ?
-    std::string str; // Stored string
+	bool escaped = false; // Is char escaped ?
+	std::string str; // Stored string
 
-    pushPos();
+	pushPos();
 
-    for (char c = get(); c != 0 /*EOF*/; c = get()) {
-        if (escaped) {
-            if (isspace(c) || c == '\\' || c == '"') {
-                str += c;
-            } else {
-                /* WTF ??? */
-            }
-            escaped = false;
-        } else {
-            if (c == '\\') {
-                escaped = true;
-            } else if (isprint(c) && c != '\\' && c != '"') {
-                str += c;
-            } else {
-                back();
-                break;
-            }
-        }
-    }
+	for (char c = get(); c != 0 /*EOF*/; c = get()) {
+		if (escaped) {
+			if (isspace(c) || c == '\\' || c == '"') {
+				str += c;
+			} else {
+				/* WTF ??? */
+			}
+			escaped = false;
+		} else {
+			if (c == '\\') {
+				escaped = true;
+			} else if (isprint(c) && c != '\\' && c != '"') {
+				str += c;
+			} else {
+				back();
+				break;
+			}
+		}
+	}
 
-    popPos();
-    return str;
+	popPos();
+	return str;
 }
 
 /** Parse a string source for getting the next token, ignoring spaces.
@@ -202,179 +203,180 @@ std::string NutParser::parseSTRCHARS() {
  */
 NutParser::Token NutParser::parseToken() {
 
-    /** Lexical parsing machine state enumeration.*/
-    typedef enum {
-        LEXPARSING_STATE_DEFAULT,
-        LEXPARSING_STATE_QUOTED_STRING,
-        LEXPARSING_STATE_STRING,
-        LEXPARSING_STATE_COMMENT
-    } LEXPARSING_STATE_e;
-    LEXPARSING_STATE_e state = LEXPARSING_STATE_DEFAULT;
+	/** Lexical parsing machine state enumeration.*/
+	typedef enum {
+		LEXPARSING_STATE_DEFAULT,
+		LEXPARSING_STATE_QUOTED_STRING,
+		LEXPARSING_STATE_STRING,
+		LEXPARSING_STATE_COMMENT
+	} LEXPARSING_STATE_e;
+	LEXPARSING_STATE_e state = LEXPARSING_STATE_DEFAULT;
 
-    Token token;
-    bool escaped = false;
+	Token token;
+	bool escaped = false;
 
-    pushPos();
+	pushPos();
 
-    for (char c = get(); c != 0 /*EOF*/; c = get()) {
-        switch (state) {
-            case LEXPARSING_STATE_DEFAULT: /* Wait for a non-space char */
-            {
-                if (c == ' ' || c == '\t') {
-                    /* Space : do nothing */
-                } else if (c == '[') {
-                    token = Token(Token::TOKEN_BRACKET_OPEN, c);
-                    popPos();
-                    return token;
-                } else if (c == ']') {
-                    token = Token(Token::TOKEN_BRACKET_CLOSE, c);
-                    popPos();
-                    return token;
-                } else if (c == ':' && !hasOptions(OPTION_IGNORE_COLON)) {
-                    token = Token(Token::TOKEN_COLON, c);
-                    popPos();
-                    return token;
-                } else if (c == '=') {
-                    token = Token(Token::TOKEN_EQUAL, c);
-                    popPos();
-                    return token;
-                } else if (c == '\r' || c == '\n') {
-                    token = Token(Token::TOKEN_EOL, c);
-                    popPos();
-                    return token;
-                } else if (c == '#') {
-                    token.type = Token::TOKEN_COMMENT;
-                    state = LEXPARSING_STATE_COMMENT;
-                } else if (c == '"') {
-                    /* Begin of QUOTED STRING */
-                    token.type = Token::TOKEN_QUOTED_STRING;
-                    state = LEXPARSING_STATE_QUOTED_STRING;
-                } else if (c == '\\') {
-                    /* Begin of STRING with escape */
-                    token.type = Token::TOKEN_STRING;
-                    state = LEXPARSING_STATE_STRING;
-                    escaped = true;
-                } else if (isgraph(c)) {
-                    /* Begin of STRING */
-                    token.type = Token::TOKEN_STRING;
-                    state = LEXPARSING_STATE_STRING;
-                    token.str += c;
-                } else {
-                    rewind();
-                    return Token(Token::TOKEN_UNKNOWN);
-                }
-                break;
-            }
-            case LEXPARSING_STATE_QUOTED_STRING:
-            {
-                if (c == '"') {
-                    if (escaped) {
-                        escaped = false;
-                        token.str += '"';
-                    } else {
-                        popPos();
-                        return token;
-                    }
-                } else if (c == '\\') {
-                    if (escaped) {
-                        escaped = false;
-                        token.str += '\\';
-                    } else {
-                        escaped = true;
-                    }
-                } else if (c == ' ' || c == '\t' || isgraph(c)) {
-                    token.str += c;
-                } else if (c == '\r' || c == '\n') /* EOL */{
+	for (char c = get(); c != 0 /*EOF*/; c = get()) {
+		switch (state) {
+			case LEXPARSING_STATE_DEFAULT: /* Wait for a non-space char */
+			{
+				if (c == ' ' || c == '\t') {
+					/* Space : do nothing */
+				} else if (c == '[') {
+					token = Token(Token::TOKEN_BRACKET_OPEN, c);
+					popPos();
+					return token;
+				} else if (c == ']') {
+					token = Token(Token::TOKEN_BRACKET_CLOSE, c);
+					popPos();
+					return token;
+				} else if (c == ':' && !hasOptions(OPTION_IGNORE_COLON)) {
+					token = Token(Token::TOKEN_COLON, c);
+					popPos();
+					return token;
+				} else if (c == '=') {
+					token = Token(Token::TOKEN_EQUAL, c);
+					popPos();
+					return token;
+				} else if (c == '\r' || c == '\n') {
+					token = Token(Token::TOKEN_EOL, c);
+					popPos();
+					return token;
+				} else if (c == '#') {
+					token.type = Token::TOKEN_COMMENT;
+					state = LEXPARSING_STATE_COMMENT;
+				} else if (c == '"') {
+					/* Begin of QUOTED STRING */
+					token.type = Token::TOKEN_QUOTED_STRING;
+					state = LEXPARSING_STATE_QUOTED_STRING;
+				} else if (c == '\\') {
+					/* Begin of STRING with escape */
+					token.type = Token::TOKEN_STRING;
+					state = LEXPARSING_STATE_STRING;
+					escaped = true;
+				} else if (isgraph(c)) {
+					/* Begin of STRING */
+					token.type = Token::TOKEN_STRING;
+					state = LEXPARSING_STATE_STRING;
+					token.str += c;
+				} else {
+					rewind();
+					return Token(Token::TOKEN_UNKNOWN);
+				}
+				break;
+			}
+			case LEXPARSING_STATE_QUOTED_STRING:
+			{
+				if (c == '"') {
+					if (escaped) {
+						escaped = false;
+						token.str += '"';
+					} else {
+						popPos();
+						return token;
+					}
+				} else if (c == '\\') {
+					if (escaped) {
+						escaped = false;
+						token.str += '\\';
+					} else {
+						escaped = true;
+					}
+				} else if (c == ' ' || c == '\t' || isgraph(c)) {
+					token.str += c;
+				} else if (c == '\r' || c == '\n') /* EOL */{
 					/* WTF ? consider it as correct ? */
 					back();
-                    popPos();
-                    return token;					
-                } else if (c == 0) /* EOF */ {
-                    popPos();
-                    return token;
-                } else /* Bad character ?? */ {
-                    /* WTF ? Keep, Ignore ? */
-                }
-                /* TODO What about other escaped character ? */
-                break;
-            }
-            case LEXPARSING_STATE_STRING:
-            {
-                if (c == ' ' || c == '\t' || c == '"' || c == '#' || c == '[' || c == ']' ||
-					(c == ':' && !hasOptions(OPTION_IGNORE_COLON)) || 
-					c == '=') {
-                    if (escaped) {
-                        escaped = false;
-                        token.str += c;
-                    } else {
-                        back();
-                        popPos();
-                        return token;
-                    }
-                } else if (c == '\\') {
-                    if (escaped) {
-                        escaped = false;
-                        token.str += c;
-                    } else {
-                        escaped = true;
-                    }
-                } else if (c == '\r' || c == '\n') /* EOL */{
+					popPos();
+					return token;
+				} else if (c == 0) /* EOF */ {
+					popPos();
+					return token;
+				} else /* Bad character ?? */ {
+					/* WTF ? Keep, Ignore ? */
+				}
+				/* TODO What about other escaped character ? */
+				break;
+			}
+			case LEXPARSING_STATE_STRING:
+			{
+				if (c == ' ' || c == '\t' || c == '"' || c == '#' || c == '[' || c == ']'
+				||  (c == ':' && !hasOptions(OPTION_IGNORE_COLON))
+				||  c == '='
+				) {
+					if (escaped) {
+						escaped = false;
+						token.str += c;
+					} else {
+						back();
+						popPos();
+						return token;
+					}
+				} else if (c == '\\') {
+					if (escaped) {
+						escaped = false;
+						token.str += c;
+					} else {
+						escaped = true;
+					}
+				} else if (c == '\r' || c == '\n') /* EOL */{
 					back();
-                    popPos();
-                    return token;					
-                } else if (c == 0) /* EOF */ {
-                    popPos();
-                    return token;
-                }else if (isgraph(c)) {
-                    token.str += c;
-                } else /* Bad character ?? */ {
-                    /* WTF ? Keep, Ignore ? */
-                }
-                /* TODO What about escaped character ? */
-                break;
-            }
-            case LEXPARSING_STATE_COMMENT:
-            {
-                if (c == '\r' || c == '\n') {
-                    return token;
-                } else {
-                    token.str += c;
-                }
-                break;
-            }
-            default:
-                /* Must not occur. */
-                break;
-        }
-    }
-    popPos();
-    return token;
+					popPos();
+					return token;
+				} else if (c == 0) /* EOF */ {
+					popPos();
+					return token;
+				}else if (isgraph(c)) {
+					token.str += c;
+				} else /* Bad character ?? */ {
+					/* WTF ? Keep, Ignore ? */
+				}
+				/* TODO What about escaped character ? */
+				break;
+			}
+			case LEXPARSING_STATE_COMMENT:
+			{
+				if (c == '\r' || c == '\n') {
+					return token;
+				} else {
+					token.str += c;
+				}
+				break;
+			}
+			default:
+				/* Must not occur. */
+				break;
+		}
+	}
+	popPos();
+	return token;
 }
 
 std::list<NutParser::Token> NutParser::parseLine() {
-    std::list<NutParser::Token> res;
+	std::list<NutParser::Token> res;
 
-    while (true) {
-        NutParser::Token token = parseToken();
+	while (true) {
+		NutParser::Token token = parseToken();
 
-        switch (token.type) {
-            case Token::TOKEN_STRING:
-            case Token::TOKEN_QUOTED_STRING:
-            case Token::TOKEN_BRACKET_OPEN:
-            case Token::TOKEN_BRACKET_CLOSE:
-            case Token::TOKEN_EQUAL:
-            case Token::TOKEN_COLON:
-                res.push_back(token);
-                break;
-            case Token::TOKEN_COMMENT:
-                res.push_back(token);
-                // Do not break, should return (EOL)Token::TOKEN_COMMENT:
-            case Token::TOKEN_UNKNOWN:
-            case Token::TOKEN_NONE:
-            case Token::TOKEN_EOL:
-                return res;
-        }
-    }
+		switch (token.type) {
+			case Token::TOKEN_STRING:
+			case Token::TOKEN_QUOTED_STRING:
+			case Token::TOKEN_BRACKET_OPEN:
+			case Token::TOKEN_BRACKET_CLOSE:
+			case Token::TOKEN_EQUAL:
+			case Token::TOKEN_COLON:
+				res.push_back(token);
+				break;
+			case Token::TOKEN_COMMENT:
+				res.push_back(token);
+				// Do not break, should return (EOL)Token::TOKEN_COMMENT:
+			case Token::TOKEN_UNKNOWN:
+			case Token::TOKEN_NONE:
+			case Token::TOKEN_EOL:
+				return res;
+		}
+	}
 }
 
 //
@@ -390,208 +392,208 @@ NutParser(buffer, options) {
 }
 
 void NutConfigParser::parseConfig() {
-    onParseBegin();
+	onParseBegin();
 
-    enum ConfigParserState {
-        CPS_DEFAULT,
-        CPS_SECTION_OPENED,
-        CPS_SECTION_HAVE_NAME,
-        CPS_SECTION_CLOSED,
-        CPS_DIRECTIVE_HAVE_NAME,
-        CPS_DIRECTIVE_VALUES
-    } state = CPS_DEFAULT;
+	enum ConfigParserState {
+		CPS_DEFAULT,
+		CPS_SECTION_OPENED,
+		CPS_SECTION_HAVE_NAME,
+		CPS_SECTION_CLOSED,
+		CPS_DIRECTIVE_HAVE_NAME,
+		CPS_DIRECTIVE_VALUES
+	} state = CPS_DEFAULT;
 
-    Token tok;
-    std::string name;
-    std::list<std::string> values;
-    char sep;
-    while (tok = parseToken()) {
-        switch (state) {
-            case CPS_DEFAULT:
-                switch (tok.type) {
-                    case Token::TOKEN_COMMENT:
-                        onParseComment(tok.str);
-                        /* Clean and return to default */
-                        break;
-                    case Token::TOKEN_BRACKET_OPEN:
-                        state = CPS_SECTION_OPENED;
-                        break;
-                    case Token::TOKEN_STRING:
-                    case Token::TOKEN_QUOTED_STRING:
-                        name = tok.str;
-                        state = CPS_DIRECTIVE_HAVE_NAME;
-                        break;
-                    default:
-                        /* WTF ? */
-                        break;
-                }
-                break;
-            case CPS_SECTION_OPENED:
-                switch (tok.type) {
-                    case Token::TOKEN_STRING:
-                    case Token::TOKEN_QUOTED_STRING:
-                        /* Should occur ! */
-                        name = tok.str;
-                        state = CPS_SECTION_HAVE_NAME;
-                        break;
-                    case Token::TOKEN_BRACKET_CLOSE:
-                        /* Empty section name */
-                        state = CPS_SECTION_CLOSED;
-                        break;
-                    case Token::TOKEN_COMMENT:
-                        /* Lack of closing bracket !!! */
-                        onParseSectionName(name, tok.str);
-                        /* Clean and return to default */
-                        name.clear();
-                        state = CPS_DEFAULT;
-                        break;
-                    case Token::TOKEN_EOL:
-                        /* Lack of closing bracket !!! */
-                        onParseSectionName(name);
-                        /* Clean and return to default */
-                        name.clear();
-                        state = CPS_DEFAULT;
-                        break;
-                    default:
-                        /* WTF ? */
-                        break;
-                }
-                break;
-            case CPS_SECTION_HAVE_NAME:
-                switch (tok.type) {
-                    case Token::TOKEN_BRACKET_CLOSE:
-                        /* Must occur ! */
-                        state = CPS_SECTION_CLOSED;
-                        break;
-                    case Token::TOKEN_COMMENT:
-                        /* Lack of closing bracket !!! */
-                        onParseSectionName(name, tok.str);
-                        /* Clean and return to default */
-                        name.clear();
-                        state = CPS_DEFAULT;
-                        break;
-                    case Token::TOKEN_EOL:
-                        /* Lack of closing bracket !!! */
-                        onParseSectionName(name);
-                        /* Clean and return to default */
-                        name.clear();
-                        state = CPS_DEFAULT;
-                        break;
-                    default:
-                        /* WTF ? */
-                        break;
-                }
-                break;
-            case CPS_SECTION_CLOSED:
-                switch (tok.type) {
-                    case Token::TOKEN_COMMENT:
-                        /* Could occur ! */
-                        onParseSectionName(name, tok.str);
-                        /* Clean and return to default */
-                        name.clear();
-                        state = CPS_DEFAULT;
-                        break;
-                    case Token::TOKEN_EOL:
-                        /* Could occur ! */
-                        onParseSectionName(name);
-                        /* Clean and return to default */
-                        name.clear();
-                        state = CPS_DEFAULT;
-                        break;
-                    default:
-                        /* WTF ? */
-                        break;
-                }
-                break;
-            case CPS_DIRECTIVE_HAVE_NAME:
-                switch (tok.type) {
-                    case Token::TOKEN_COMMENT:
-                        /* Could occur ! */
-                        onParseDirective(name, 0, std::list<std::string > (), tok.str);
-                        /* Clean and return to default */
-                        name.clear();
-                        state = CPS_DEFAULT;
-                        break;
-                    case Token::TOKEN_EOL:
-                        /* Could occur ! */
-                        onParseDirective(name);
-                        /* Clean and return to default */
-                        name.clear();
-                        state = CPS_DEFAULT;
-                        break;
-                    case Token::TOKEN_COLON:
-                    case Token::TOKEN_EQUAL:
-                        /* Could occur ! */
-                        sep = tok.str[0];
-                        state = CPS_DIRECTIVE_VALUES;
-                        break;
-                    case Token::TOKEN_STRING:
-                    case Token::TOKEN_QUOTED_STRING:
-                        /* Could occur ! */
-                        values.push_back(tok.str);
-                        state = CPS_DIRECTIVE_VALUES;
-                        break;
-                    default:
-                        /* WTF ? */
-                        break;
-                }
-                break;
-            case CPS_DIRECTIVE_VALUES:
-                switch (tok.type) {
-                    case Token::TOKEN_COMMENT:
-                        /* Could occur ! */
-                        onParseDirective(name, sep, values, tok.str);
-                        /* Clean and return to default */
-                        name.clear();
-                        values.clear();
-                        sep = 0;
-                        state = CPS_DEFAULT;
-                        break;
-                    case Token::TOKEN_EOL:
-                        /* Could occur ! */
-                        onParseDirective(name, sep, values);
-                        /* Clean and return to default */
-                        name.clear();
-                        values.clear();
-                        sep = 0;
-                        state = CPS_DEFAULT;
-                        break;
-                    case Token::TOKEN_STRING:
-                    case Token::TOKEN_QUOTED_STRING:
-                        /* Could occur ! */
-                        values.push_back(tok.str);
-                        state = CPS_DIRECTIVE_VALUES;
-                        break;
-                    default:
-                        /* WTF ? */
-                        break;
-                }
-                break;
-        }
-    }
+	Token tok;
+	std::string name;
+	std::list<std::string> values;
+	char sep;
+	while (tok = parseToken()) {
+		switch (state) {
+			case CPS_DEFAULT:
+				switch (tok.type) {
+					case Token::TOKEN_COMMENT:
+						onParseComment(tok.str);
+						/* Clean and return to default */
+						break;
+					case Token::TOKEN_BRACKET_OPEN:
+						state = CPS_SECTION_OPENED;
+						break;
+					case Token::TOKEN_STRING:
+					case Token::TOKEN_QUOTED_STRING:
+						name = tok.str;
+						state = CPS_DIRECTIVE_HAVE_NAME;
+						break;
+					default:
+						/* WTF ? */
+						break;
+				}
+				break;
+			case CPS_SECTION_OPENED:
+				switch (tok.type) {
+					case Token::TOKEN_STRING:
+					case Token::TOKEN_QUOTED_STRING:
+						/* Should occur ! */
+						name = tok.str;
+						state = CPS_SECTION_HAVE_NAME;
+						break;
+					case Token::TOKEN_BRACKET_CLOSE:
+						/* Empty section name */
+						state = CPS_SECTION_CLOSED;
+						break;
+					case Token::TOKEN_COMMENT:
+						/* Lack of closing bracket !!! */
+						onParseSectionName(name, tok.str);
+						/* Clean and return to default */
+						name.clear();
+						state = CPS_DEFAULT;
+						break;
+					case Token::TOKEN_EOL:
+						/* Lack of closing bracket !!! */
+						onParseSectionName(name);
+						/* Clean and return to default */
+						name.clear();
+						state = CPS_DEFAULT;
+						break;
+					default:
+						/* WTF ? */
+						break;
+				}
+				break;
+			case CPS_SECTION_HAVE_NAME:
+				switch (tok.type) {
+					case Token::TOKEN_BRACKET_CLOSE:
+						/* Must occur ! */
+						state = CPS_SECTION_CLOSED;
+						break;
+					case Token::TOKEN_COMMENT:
+						/* Lack of closing bracket !!! */
+						onParseSectionName(name, tok.str);
+						/* Clean and return to default */
+						name.clear();
+						state = CPS_DEFAULT;
+						break;
+					case Token::TOKEN_EOL:
+						/* Lack of closing bracket !!! */
+						onParseSectionName(name);
+						/* Clean and return to default */
+						name.clear();
+						state = CPS_DEFAULT;
+						break;
+					default:
+						/* WTF ? */
+						break;
+				}
+				break;
+			case CPS_SECTION_CLOSED:
+				switch (tok.type) {
+					case Token::TOKEN_COMMENT:
+						/* Could occur ! */
+						onParseSectionName(name, tok.str);
+						/* Clean and return to default */
+						name.clear();
+						state = CPS_DEFAULT;
+						break;
+					case Token::TOKEN_EOL:
+						/* Could occur ! */
+						onParseSectionName(name);
+						/* Clean and return to default */
+						name.clear();
+						state = CPS_DEFAULT;
+						break;
+					default:
+						/* WTF ? */
+						break;
+				}
+				break;
+			case CPS_DIRECTIVE_HAVE_NAME:
+				switch (tok.type) {
+					case Token::TOKEN_COMMENT:
+						/* Could occur ! */
+						onParseDirective(name, 0, std::list<std::string > (), tok.str);
+						/* Clean and return to default */
+						name.clear();
+						state = CPS_DEFAULT;
+						break;
+					case Token::TOKEN_EOL:
+						/* Could occur ! */
+						onParseDirective(name);
+						/* Clean and return to default */
+						name.clear();
+						state = CPS_DEFAULT;
+						break;
+					case Token::TOKEN_COLON:
+					case Token::TOKEN_EQUAL:
+						/* Could occur ! */
+						sep = tok.str[0];
+						state = CPS_DIRECTIVE_VALUES;
+						break;
+					case Token::TOKEN_STRING:
+					case Token::TOKEN_QUOTED_STRING:
+						/* Could occur ! */
+						values.push_back(tok.str);
+						state = CPS_DIRECTIVE_VALUES;
+						break;
+					default:
+						/* WTF ? */
+						break;
+				}
+				break;
+			case CPS_DIRECTIVE_VALUES:
+				switch (tok.type) {
+					case Token::TOKEN_COMMENT:
+						/* Could occur ! */
+						onParseDirective(name, sep, values, tok.str);
+						/* Clean and return to default */
+						name.clear();
+						values.clear();
+						sep = 0;
+						state = CPS_DEFAULT;
+						break;
+					case Token::TOKEN_EOL:
+						/* Could occur ! */
+						onParseDirective(name, sep, values);
+						/* Clean and return to default */
+						name.clear();
+						values.clear();
+						sep = 0;
+						state = CPS_DEFAULT;
+						break;
+					case Token::TOKEN_STRING:
+					case Token::TOKEN_QUOTED_STRING:
+						/* Could occur ! */
+						values.push_back(tok.str);
+						state = CPS_DIRECTIVE_VALUES;
+						break;
+					default:
+						/* WTF ? */
+						break;
+				}
+				break;
+		}
+	}
 
 	switch(state)
 	{
-	case CPS_SECTION_OPENED:
-    case CPS_SECTION_HAVE_NAME:
-        /* Lack of closing bracket !!! */
-        onParseSectionName(name);
-		break;
-    case CPS_SECTION_CLOSED:
-        /* Could occur ! */
-        onParseSectionName(name);
-		break;
-    case CPS_DIRECTIVE_HAVE_NAME:
-        /* Could occur ! */
-        onParseDirective(name);
-		break;
-    case CPS_DIRECTIVE_VALUES:
-        /* Could occur ! */
-        onParseDirective(name, sep, values);
-		break;
+		case CPS_SECTION_OPENED:
+		case CPS_SECTION_HAVE_NAME:
+			/* Lack of closing bracket !!! */
+			onParseSectionName(name);
+			break;
+		case CPS_SECTION_CLOSED:
+			/* Could occur ! */
+			onParseSectionName(name);
+			break;
+		case CPS_DIRECTIVE_HAVE_NAME:
+			/* Could occur ! */
+			onParseDirective(name);
+			break;
+		case CPS_DIRECTIVE_VALUES:
+			/* Could occur ! */
+			onParseDirective(name, sep, values);
+			break;
 	}
 
-    onParseEnd();
+	onParseEnd();
 }
 
 
@@ -609,44 +611,44 @@ NutConfigParser(buffer) {
 }
 
 void DefaultConfigParser::onParseBegin() {
-    // Start with empty section (ie global one)
-    _section.clear();
+	// Start with empty section (ie global one)
+	_section.clear();
 }
 
 void DefaultConfigParser::onParseComment(const std::string& /*comment*/) {
-    // Comment are ignored for now
+	// Comment are ignored for now
 }
 
 void DefaultConfigParser::onParseSectionName(const std::string& sectionName, const std::string& /*comment*/) {
-    // Comment are ignored for now
+	// Comment are ignored for now
 
-    // Process current section.
-    if (!_section.empty()) {
-        onParseSection(_section);
-        _section.clear();
-    }
+	// Process current section.
+	if (!_section.empty()) {
+		onParseSection(_section);
+		_section.clear();
+	}
 
-    // Start a new section
-    _section.name = sectionName;
+	// Start a new section
+	_section.name = sectionName;
 }
 
 void DefaultConfigParser::onParseDirective(const std::string& directiveName, char /*sep*/, const ConfigParamList& values, const std::string& /*comment*/) {
-    // Comment are ignored for now
-    // Separator has no specific semantic in this context
+	// Comment are ignored for now
+	// Separator has no specific semantic in this context
 
-    // Save values
-    _section.entries[directiveName].name = directiveName;
-    _section.entries[directiveName].values = values;
+	// Save values
+	_section.entries[directiveName].name = directiveName;
+	_section.entries[directiveName].values = values;
 
 	// TODO Can probably be optimized.
 }
 
 void DefaultConfigParser::onParseEnd() {
-    // Process current (last) section
-    if (!_section.empty()) {
-        onParseSection(_section);
-        _section.clear();
-    }
+	// Process current (last) section
+	if (!_section.empty()) {
+		onParseSection(_section);
+		_section.clear();
+	}
 }
 
 
@@ -655,12 +657,12 @@ void DefaultConfigParser::onParseEnd() {
 //
 
 bool GenericConfigSection::empty()const {
-    return name.empty() && entries.empty();
+	return name.empty() && entries.empty();
 }
 
 void GenericConfigSection::clear() {
-    name.clear();
-    entries.clear();
+	name.clear();
+	entries.clear();
 }
 
 //
@@ -896,7 +898,7 @@ bool GenericConfiguration::str2bool(const std::string & str)
 {
 	if ("true" == str) return true;
 	if ("on"   == str) return true;
-	if ("1"    == str) return true;
+	if ("1"	== str) return true;
 	if ("yes"  == str) return true;
 	if ("ok"   == str) return true;
 
@@ -923,8 +925,8 @@ UpsmonConfiguration::UpsmonConfiguration()
 
 void UpsmonConfiguration::parseFromString(const std::string& str)
 {
-    UpsmonConfigParser parser(str);
-    parser.parseUpsmonConfig(this);
+	UpsmonConfigParser parser(str);
+	parser.parseUpsmonConfig(this);
 }
 
 UpsmonConfiguration::NotifyFlag UpsmonConfiguration::NotifyFlagFromString(const std::string& str)
@@ -1016,19 +1018,19 @@ void UpsmonConfigParser::parseUpsmonConfig(UpsmonConfiguration* config)
 
 void UpsmonConfigParser::onParseBegin()
 {
-    // Do nothing
+	// Do nothing
 }
 
 void UpsmonConfigParser::onParseComment(const std::string& /*comment*/)
 {
-    // Comment are ignored for now
+	// Comment are ignored for now
 }
 
 void UpsmonConfigParser::onParseSectionName(const std::string& /*sectionName*/, const std::string& /*comment*/)
 {
-    // There must not have sections in upsm.conf.
-    // Ignore it
-    // TODO Add error reporting ?
+	// There must not have sections in upsm.conf.
+	// Ignore it
+	// TODO Add error reporting ?
 }
 
 
@@ -1178,7 +1180,7 @@ void UpsmonConfigParser::onParseDirective(const std::string& directiveName, char
 
 void UpsmonConfigParser::onParseEnd()
 {
-    // Do nothing
+	// Do nothing
 }
 
 //
@@ -1192,8 +1194,8 @@ NutConfiguration::NutConfiguration():
 
 void NutConfiguration::parseFromString(const std::string& str)
 {
-    NutConfConfigParser parser(str);
-    parser.parseNutConfConfig(this);
+	NutConfConfigParser parser(str);
+	parser.parseNutConfConfig(this);
 }
 
 NutConfiguration::NutMode NutConfiguration::NutModeFromString(const std::string& str)
@@ -1263,24 +1265,24 @@ void NutConfConfigParser::parseNutConfConfig(NutConfiguration* config)
 
 void NutConfConfigParser::onParseBegin()
 {
-    // Do nothing
+	// Do nothing
 }
 
 void NutConfConfigParser::onParseComment(const std::string& /*comment*/)
 {
-    // Comment are ignored for now
+	// Comment are ignored for now
 }
 
 void NutConfConfigParser::onParseSectionName(const std::string& /*sectionName*/, const std::string& /*comment*/)
 {
-    // There must not have sections in upsm.conf.
-    // Ignore it
-    // TODO Add error reporting ?
+	// There must not have sections in upsm.conf.
+	// Ignore it
+	// TODO Add error reporting ?
 }
 
 void NutConfConfigParser::onParseDirective(const std::string& directiveName, char /*sep*/, const ConfigParamList& values, const std::string& /*comment*/)
 {
-    // Comment are ignored for now
+	// Comment are ignored for now
 	// NOTE: although sep must be '=', sep is not verified.
 	if(_config && directiveName=="MODE" && values.size()==1)
 	{
@@ -1297,7 +1299,7 @@ void NutConfConfigParser::onParseDirective(const std::string& directiveName, cha
 
 void NutConfConfigParser::onParseEnd()
 {
-    // Do nothing
+	// Do nothing
 }
 
 
@@ -1311,8 +1313,8 @@ UpsdConfiguration::UpsdConfiguration()
 
 void UpsdConfiguration::parseFromString(const std::string& str)
 {
-    UpsdConfigParser parser(str);
-    parser.parseUpsdConfig(this);
+	UpsdConfigParser parser(str);
+	parser.parseUpsdConfig(this);
 }
 
 
@@ -1364,19 +1366,19 @@ void UpsdConfigParser::parseUpsdConfig(UpsdConfiguration* config)
 
 void UpsdConfigParser::onParseBegin()
 {
-    // Do nothing
+	// Do nothing
 }
 
 void UpsdConfigParser::onParseComment(const std::string& comment)
 {
-    // Comment are ignored for now
+	// Comment are ignored for now
 }
 
 void UpsdConfigParser::onParseSectionName(const std::string& sectionName, const std::string& comment)
 {
-    // There must not have sections in upsm.conf.
-    // Ignore it
-    // TODO Add error reporting ?
+	// There must not have sections in upsm.conf.
+	// Ignore it
+	// TODO Add error reporting ?
 }
 
 void UpsdConfigParser::onParseDirective(const std::string& directiveName, char sep, const ConfigParamList& values, const std::string& comment)
@@ -1435,7 +1437,7 @@ void UpsdConfigParser::onParseDirective(const std::string& directiveName, char s
 
 void UpsdConfigParser::onParseEnd()
 {
-    // Do nothing
+	// Do nothing
 }
 
 
