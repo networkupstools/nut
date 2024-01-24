@@ -310,7 +310,7 @@ int Process::Child<M>::wait()
 
 	pid_t wpid = ::waitpid(m_pid, &m_exit_code, 0);
 
-	if (-1 == m_pid) {
+	if (-1 == wpid) {
 		int erno = errno;
 
 		std::stringstream e;
