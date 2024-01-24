@@ -215,7 +215,7 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 	snmp_info_default("outlet.%i.load.cycle", 0, 1, AR_OID_OUTLET_STATUS ".%i", DO_CYCLE, SU_TYPE_CMD | SU_OUTLET, NULL),
 
 	/* end of structure. */
-	snmp_info_default(NULL, 0, 0, NULL, NULL, 0, NULL)
+	snmp_info_sentinel
 };
 
 

@@ -580,7 +580,7 @@ static snmp_info_t apcc_mib[] = {
 	snmp_info_default("reset.input.minmax", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.1.1.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL),
 
 	/* end of structure. */
-	snmp_info_default(NULL, 0, 0, NULL, NULL, 0, NULL)
+	snmp_info_sentinel
 };
 
 mib2nut_info_t	apc = { "apcc", APCC_MIB_VERSION, APCC_OID_POWER_STATUS, APC_UPS_DEVICE_MODEL, apcc_mib, APC_UPS_SYSOID, NULL };

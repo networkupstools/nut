@@ -239,7 +239,7 @@ static snmp_info_t emerson_avocent_pdu_mib[] = {
 	snmp_info_default("outlet.%i.load.on", 0, 1, ".1.3.6.1.4.1.10418.17.2.5.5.1.6.1.%i.%i", "2", SU_TYPE_CMD | SU_OUTLET | SU_TYPE_DAISY_1, NULL),
 
 	/* end of structure. */
-	snmp_info_default(NULL, 0, 0, NULL, NULL, 0, NULL)
+	snmp_info_sentinel
 };
 
 mib2nut_info_t	emerson_avocent_pdu = { "emerson_avocent_pdu", EMERSON_AVOCENT_MIB_VERSION, NULL, EMERSON_AVOCENT_OID_MODEL_NAME, emerson_avocent_pdu_mib, EMERSON_AVOCENT_SYSOID, NULL };

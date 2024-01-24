@@ -246,7 +246,7 @@ static snmp_info_t apc_epdu_mib[] = {
 #endif
 
 	/* end of structure. */
-	snmp_info_default(NULL, 0, 0, NULL, NULL, 0, NULL)
+	snmp_info_sentinel
 };
 
 mib2nut_info_t  apc_pdu_epdu = { "apc", APC_EPDU_MIB_VERSION, NULL, NULL, apc_epdu_mib, APC_EPDU_MIB_SYSOID, NULL };

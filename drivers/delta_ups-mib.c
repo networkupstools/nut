@@ -433,7 +433,7 @@ static snmp_info_t delta_ups_mib[] = {
 #endif	/* #if WITH_UNMAPPED_DATA_POINTS */
 
 	/* end of structure. */
-	snmp_info_default(NULL, 0, 0, NULL, NULL, 0, NULL)
+	snmp_info_sentinel
 };
 
 mib2nut_info_t	delta_ups = { "delta_ups", DELTA_UPS_MIB_VERSION, NULL, NULL, delta_ups_mib, DELTA_UPS_SYSOID, NULL };

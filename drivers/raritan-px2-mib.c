@@ -694,7 +694,7 @@ static snmp_info_t raritan_px2_mib[] = {
 #endif /* DEBUG || WITH_UNMAPPED_DATA_POINTS */
 
 	/* end of structure. */
-	snmp_info_default(NULL, 0, 0, NULL, NULL, 0, NULL)
+	snmp_info_sentinel
 };
 
 mib2nut_info_t	raritan_px2 = { "raritan-px2", RARITAN_PX2_MIB_VERSION, NULL, RARITAN_PX2_OID_MODEL_NAME, raritan_px2_mib, RARITAN_PX2_MIB_SYSOID, NULL };

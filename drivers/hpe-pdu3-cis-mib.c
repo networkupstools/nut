@@ -1860,7 +1860,7 @@ static snmp_info_t hpe_pdu3_cis_mib[] = {
 #endif	/* WITH_UNMAPPED_DATA_POINTS */
 
 	/* end of structure. */
-	snmp_info_default(NULL, 0, 0, NULL, NULL, 0, NULL)
+	snmp_info_sentinel
 };
 
 mib2nut_info_t  hpe_pdu3_cis = { "hpe_pdu3_cis", HPE_PDU3_CIS_MIB_VERSION, NULL, HPE_PDU3_OID_MODEL_NAME, hpe_pdu3_cis_mib, HPE_PDU3_CIS_SYSOID, NULL };

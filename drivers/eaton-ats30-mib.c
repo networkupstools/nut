@@ -478,7 +478,7 @@ static snmp_info_t eaton_ats30_mib[] = {
 #endif	/* if WITH_UNMAPPED_DATA_POINTS */
 
 	/* end of structure. */
-	snmp_info_default(NULL, 0, 0, NULL, NULL, 0, NULL)
+	snmp_info_sentinel
 };
 
 mib2nut_info_t	eaton_ats30 = { "eaton_ats30", EATON_ATS30_MIB_VERSION, NULL, EATON_ATS30_MODEL, eaton_ats30_mib, EATON_ATS30_SYSOID, NULL };

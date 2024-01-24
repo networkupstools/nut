@@ -503,7 +503,7 @@ static snmp_info_t mge_mib[] = {
 	snmp_info_default("load.on.delay", 0, 1, "1.3.6.1.2.1.33.1.8.3.0", NULL, SU_TYPE_CMD, NULL),
 
 	/* end of structure. */
-	snmp_info_default(NULL, 0, 0, NULL, NULL, 0, NULL)
+	snmp_info_sentinel
 };
 
 mib2nut_info_t	mge = { "mge", MGE_MIB_VERSION, NULL, MGE_OID_MODEL_NAME, mge_mib, MGE_SYSOID, NULL };

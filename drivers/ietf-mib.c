@@ -440,7 +440,7 @@ static snmp_info_t ietf_mib[] = {
 	snmp_info_default("input.transfer.high", 0, 1.0, IETF_OID_UPS_MIB "9.10.0", "", 0, NULL), /* upsConfigHighVoltageTransferPoint */
 
 	/* end of structure. */
-	snmp_info_default(NULL, 0, 0, NULL, NULL, 0, NULL)
+	snmp_info_sentinel
 };
 
 /* FIXME: Rename the structure here (or even relocate to new file)

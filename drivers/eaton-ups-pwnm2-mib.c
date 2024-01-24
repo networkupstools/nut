@@ -1282,7 +1282,7 @@ static snmp_info_t pw_mib[] = {
 		0, NULL),
 
 	/* end of structure. */
-	snmp_info_default(NULL, 0, 0, NULL, NULL, 0, NULL)
+	snmp_info_sentinel
 } ;
 
 static alarms_info_t pw_alarms[] = {
