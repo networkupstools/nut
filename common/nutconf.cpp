@@ -392,6 +392,12 @@ NutParser(buffer, options) {
 }
 
 void NutConfigParser::parseConfig() {
+	parseConfig(nullptr);
+}
+
+void NutConfigParser::parseConfig(BaseConfiguration* config) {
+	NUT_UNUSED_VARIABLE(config);
+
 	onParseBegin();
 
 	enum ConfigParserState {

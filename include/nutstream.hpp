@@ -170,12 +170,12 @@ class NutMemory: public NutStream {
 	NutMemory(const std::string & str): m_impl(str), m_pos(0) {}
 
 	// NutStream interface implementation
-	status_t getChar(char & ch);
-	void     readChar();
-	status_t getString(std::string & str);
-	status_t putChar(char ch);
-	status_t putString(const std::string & str);
-	status_t putData(const std::string & data);
+	status_t getChar(char & ch) override;
+	void     readChar() override;
+	status_t getString(std::string & str) override;
+	status_t putChar(char ch) override;
+	status_t putString(const std::string & str) override;
+	status_t putData(const std::string & data) override;
 
 };  // end of class NutMemory
 
@@ -510,40 +510,40 @@ class NutFile: public NutStream {
 #if (defined __cplusplus) && (__cplusplus < 201100)
 		throw()
 #endif
-		;
+		override;
 
 	void     readChar()
 #if (defined __cplusplus) && (__cplusplus < 201100)
 		throw()
 #endif
-		;
+		override;
 
 	status_t getString(std::string & str)
 #if (defined __cplusplus) && (__cplusplus < 201100)
 		throw()
 #endif
-		;
+		override;
 
 	status_t putChar(char ch)
 #if (defined __cplusplus) && (__cplusplus < 201100)
 		throw()
 #endif
-		;
+		override;
 
 	status_t putString(const std::string & str)
 #if (defined __cplusplus) && (__cplusplus < 201100)
 		throw()
 #endif
-		;
+		override;
 
 	status_t putData(const std::string & data)
 #if (defined __cplusplus) && (__cplusplus < 201100)
 		throw()
 #endif
-		;
+		override;
 
 	/** Destructor (closes the file) */
-	~NutFile();
+	~NutFile() override;
 
 	private:
 
@@ -1097,34 +1097,39 @@ class NutSocket: public NutStream {
 #if (defined __cplusplus) && (__cplusplus < 201100)
 		throw()
 #endif
-		;
+		override;
+
 	void     readChar()
 #if (defined __cplusplus) && (__cplusplus < 201100)
 		throw()
 #endif
-		;
+		override;
+
 	status_t getString(std::string & str)
 #if (defined __cplusplus) && (__cplusplus < 201100)
 		throw()
 #endif
-		;
+		override;
+
 	status_t putChar(char ch)
 #if (defined __cplusplus) && (__cplusplus < 201100)
 		throw()
 #endif
-		;
+		override;
+
 	status_t putString(const std::string & str)
 #if (defined __cplusplus) && (__cplusplus < 201100)
 		throw()
 #endif
-		;
+		override;
 
-	inline status_t putData(const std::string & data) {
+
+	inline status_t putData(const std::string & data) override {
 		return putString(data);  // no difference on sockets
 	}
 
 	/** Destructor (closes socket if necessary) */
-	~NutSocket();
+	~NutSocket() override;
 
 	private:
 

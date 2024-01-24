@@ -80,8 +80,14 @@ class Process {
 
 		/** Formal constructor */
 		Main() {}
+		virtual ~Main() = default;
 
 		public:
+
+		/* Avoid implicit copy/move operator declarations */
+		Main(Main&&) = default;
+		Main& operator=(const Main&) = default;
+		//Main& operator=(Main&&) = default;
 
 		/** Routine */
 		virtual int operator () () = 0;
@@ -208,8 +214,7 @@ class Process {
 #if (defined __cplusplus) && (__cplusplus < 201100)
 			throw(std::runtime_error)
 #endif
-			;
-
+			override;
 	};  // end of class Executor
 
 	/**
