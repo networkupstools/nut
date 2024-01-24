@@ -128,6 +128,7 @@ static info_lkp_t pw_pwr_info[] = {
 
 	info_lkp_sentinel
 };
+
 /* FIXME: mapped to (experimental.)ups.type, but
  * should be output.source or ups.mode (need RFC)
  * to complement the above ups.status
@@ -337,6 +338,7 @@ static info_lkp_t pw_threshold_temperature_alarms_info[] = {
 	info_lkp_default(4, "high temperature critical!"),	/* Critical high threshold triggered */
 	info_lkp_sentinel
 };
+
 static info_lkp_t pw_threshold_humidity_alarms_info[] = {
 	info_lkp_default(0, ""),	/* No threshold triggered */
 	info_lkp_default(1, "low humidity warning!"),	/* Warning low threshold triggered */

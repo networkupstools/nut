@@ -118,7 +118,8 @@ static snmp_info_t raritan_mib[] = {
 	/* no counterpart found!
 	snmp_info_default("outlet.load.off", 0, 1, ".1.3.6.1.4.1.13742.1.2.2.1.3.0", DO_OFF, SU_TYPE_CMD, NULL),
 	snmp_info_default("outlet.load.on", 0, 1, ".1.3.6.1.4.1.13742.1.2.2.1.3.0", DO_ON, SU_TYPE_CMD, NULL),
-	snmp_info_default("outlet.load.cycle", 0, 1, ".1.3.6.1.4.1.13742.1.2.2.1.3.0", DO_CYCLE, SU_TYPE_CMD, NULL), */
+	snmp_info_default("outlet.load.cycle", 0, 1, ".1.3.6.1.4.1.13742.1.2.2.1.3.0", DO_CYCLE, SU_TYPE_CMD, NULL),
+	 */
 	snmp_info_default("outlet.%i.load.off", 0, 1, ".1.3.6.1.4.1.13742.1.2.2.1.3.%i", DO_OFF, SU_TYPE_CMD | SU_OUTLET, NULL),
 	snmp_info_default("outlet.%i.load.on", 0, 1, ".1.3.6.1.4.1.13742.1.2.2.1.3.%i", DO_ON, SU_TYPE_CMD | SU_OUTLET, NULL),
 	snmp_info_default("outlet.%i.load.cycle", 0, 1, ".1.3.6.1.4.1.13742.1.2.2.1.3.%i", DO_CYCLE, SU_TYPE_CMD | SU_OUTLET, NULL),

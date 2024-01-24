@@ -349,6 +349,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 		"0", SU_FLAG_STATIC | SU_FLAG_UNIQUE,
 		&marlin_device_count_info[0] /* devices_count */),
 #endif
+
 	/* Notes: this older/fallback definition is used to:
 	 * - estimate the number of devices, based on the below OID iteration capabilities
 	 * - determine the base index of the SNMP OID (ie 0 or 1) */
@@ -363,7 +364,6 @@ static snmp_info_t eaton_marlin_mib[] = {
 		"1", SU_FLAG_STATIC | SU_FLAG_UNIQUE,
 		NULL /* devices_count */),
 #endif
-
 
 	/* UPS collection */
 	snmp_info_default("ups.mfr", ST_FLAG_STRING, SU_INFOSIZE,

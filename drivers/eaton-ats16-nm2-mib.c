@@ -82,15 +82,6 @@ static info_lkp_t eaton_ats16_nm2_output_status_info[] = {
 	info_lkp_sentinel
 };
 
-static info_lkp_t eaton_ats16_ambient_drycontacts_info[] = {
-	info_lkp_default(-1, "unknown"),
-	info_lkp_default(1, "opened"),
-	info_lkp_default(2, "closed"),
-	info_lkp_default(3, "opened"),	/* openWithNotice   */
-	info_lkp_default(4, "closed"),	/* closedWithNotice */
-	info_lkp_sentinel
-};
-
 /* Note: all the below *emp002* info should be shared with marlin and powerware! */
 
 #if WITH_SNMP_LKP_FUN
@@ -115,13 +106,13 @@ const char *su_temperature_read_fun(void *raw_snmp_value) {
 # endif /* WITH_SNMP_LKP_FUN_DUMMY */
 
 static info_lkp_t eaton_ats16_nm2_sensor_temperature_unit_info[] = {
-	{ 0, "dummy", eaton_sensor_temperature_unit_fun, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_fun_vp2s(0, "dummy", eaton_sensor_temperature_unit_fun),
+	info_lkp_sentinel
 };
 
 static info_lkp_t eaton_ats16_nm2_sensor_temperature_read_info[] = {
-	{ 0, "dummy", su_temperature_read_fun, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_fun_vp2s(0, "dummy", su_temperature_read_fun),
+	info_lkp_sentinel
 };
 
 #else /* if not WITH_SNMP_LKP_FUN: */
@@ -130,60 +121,69 @@ static info_lkp_t eaton_ats16_nm2_sensor_temperature_read_info[] = {
  * lookup/mapping tables for this, which can easily go into the DMF XML file.
  */
 static info_lkp_t eaton_ats16_nm2_sensor_temperature_unit_info[] = {
-	{ 0, "kelvin", NULL, NULL },
-	{ 1, "celsius", NULL, NULL },
-	{ 2, "fahrenheit", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(0, "kelvin"),
+	info_lkp_default(1, "celsius"),
+	info_lkp_default(2, "fahrenheit"),
+	info_lkp_sentinel
 };
 
 #endif /* WITH_SNMP_LKP_FUN */
 
 static info_lkp_t eaton_ats16_nm2_ambient_drycontacts_polarity_info[] = {
-	{ 0, "normal-opened", NULL, NULL },
-	{ 1, "normal-closed", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(0, "normal-opened"),
+	info_lkp_default(1, "normal-closed"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t eaton_ats16_nm2_ambient_drycontacts_state_info[] = {
-	{ 0, "inactive", NULL, NULL },
-	{ 1, "active", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(0, "inactive"),
+	info_lkp_default(1, "active"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t eaton_ats16_nm2_emp002_ambient_presence_info[] = {
-	{ 0, "unknown", NULL, NULL },
-	{ 2, "yes", NULL, NULL },	/* communicationOK */
-	{ 3, "no", NULL, NULL },	/* communicationLost */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(0, "unknown"),
+	info_lkp_default(2, "yes"),	/* communicationOK */
+	info_lkp_default(3, "no"),	/* communicationLost */
+	info_lkp_sentinel
 };
 
 /* extracted from drivers/eaton-pdu-marlin-mib.c -> marlin_threshold_status_info */
 static info_lkp_t eaton_ats16_nm2_threshold_status_info[] = {
-	{ 0, "good", NULL, NULL },	/* No threshold triggered */
-	{ 1, "warning-low", NULL, NULL },	/* Warning low threshold triggered */
-	{ 2, "critical-low", NULL, NULL },	/* Critical low threshold triggered */
-	{ 3, "warning-high", NULL, NULL },	/* Warning high threshold triggered */
-	{ 4, "critical-high", NULL, NULL },	/* Critical high threshold triggered */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(0, "good"),	/* No threshold triggered */
+	info_lkp_default(1, "warning-low"),	/* Warning low threshold triggered */
+	info_lkp_default(2, "critical-low"),	/* Critical low threshold triggered */
+	info_lkp_default(3, "warning-high"),	/* Warning high threshold triggered */
+	info_lkp_default(4, "critical-high"),	/* Critical high threshold triggered */
+	info_lkp_sentinel
 };
 
 /* extracted from drivers/eaton-pdu-marlin-mib.c -> marlin_threshold_xxx_alarms_info */
 static info_lkp_t eaton_ats16_nm2_threshold_temperature_alarms_info[] = {
-	{ 0, "", NULL, NULL },	/* No threshold triggered */
-	{ 1, "low temperature warning!", NULL, NULL },	/* Warning low threshold triggered */
-	{ 2, "low temperature critical!", NULL, NULL },	/* Critical low threshold triggered */
-	{ 3, "high temperature warning!", NULL, NULL },	/* Warning high threshold triggered */
-	{ 4, "high temperature critical!", NULL, NULL },	/* Critical high threshold triggered */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(0, ""),	/* No threshold triggered */
+	info_lkp_default(1, "low temperature warning!"),	/* Warning low threshold triggered */
+	info_lkp_default(2, "low temperature critical!"),	/* Critical low threshold triggered */
+	info_lkp_default(3, "high temperature warning!"),	/* Warning high threshold triggered */
+	info_lkp_default(4, "high temperature critical!"),	/* Critical high threshold triggered */
+	info_lkp_sentinel
 };
 
 static info_lkp_t eaton_ats16_nm2_threshold_humidity_alarms_info[] = {
-	{ 0, "", NULL, NULL },	/* No threshold triggered */
-	{ 1, "low humidity warning!", NULL, NULL },	/* Warning low threshold triggered */
-	{ 2, "low humidity critical!", NULL, NULL },	/* Critical low threshold triggered */
-	{ 3, "high humidity warning!", NULL, NULL },	/* Warning high threshold triggered */
-	{ 4, "high humidity critical!", NULL, NULL },	/* Critical high threshold triggered */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(0, ""),	/* No threshold triggered */
+	info_lkp_default(1, "low humidity warning!"),	/* Warning low threshold triggered */
+	info_lkp_default(2, "low humidity critical!"),	/* Critical low threshold triggered */
+	info_lkp_default(3, "high humidity warning!"),	/* Warning high threshold triggered */
+	info_lkp_default(4, "high humidity critical!"),	/* Critical high threshold triggered */
+	info_lkp_sentinel
+};
+
+static info_lkp_t eaton_ats16_ambient_drycontacts_info[] = {
+	info_lkp_default(-1, "unknown"),
+	info_lkp_default(1, "opened"),
+	info_lkp_default(2, "closed"),
+	info_lkp_default(3, "opened"),	/* openWithNotice   */
+	info_lkp_default(4, "closed"),	/* closedWithNotice */
+	info_lkp_sentinel
 };
 
 /* EATON_ATS Snmp2NUT lookup table */

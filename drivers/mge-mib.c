@@ -73,7 +73,6 @@ static info_lkp_t mge_overload_info[] = {
 	info_lkp_sentinel
 };
 
-
 static info_lkp_t mge_replacebatt_info[] = {
 	info_lkp_default(1, "RB"),
 	info_lkp_default(2, ""),
