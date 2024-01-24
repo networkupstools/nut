@@ -1406,8 +1406,8 @@ mibdmf_xml_end_cb(void *userdata, int state, const char *nspace, const char *nam
 
 	}else if(strcmp(name,DMFTAG_FUNCTION) == 0)
 	{
-		alist_t *element = alist_get_last_element(list);
-		dmf_function_t *func =(dmf_function_t *) alist_get_last_element(element);
+		alist_t *sub_element = alist_get_last_element(list);
+		dmf_function_t *func =(dmf_function_t *) alist_get_last_element(sub_element);
 		func->code = strdup(function_text);
 		free(function_text);
 		function_text = NULL;
