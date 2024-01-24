@@ -215,9 +215,9 @@ generate_C() {
 	/* To create a value lookup structure (as needed on the 2nd line of the example
 	 * below), use the following kind of declaration, outside of the present snmp_info_t[]:
 	 * static info_lkp_t onbatt_info[] = {
-	 * 	{ 1, "OB" },
-	 * 	{ 2, "OL" },
-	 * 	{ 0, NULL }
+	 * 	info_lkp_default(1, "OB"),
+	 * 	info_lkp_default(2, "OL"),
+	 * 	info_lkp_default(0, NULL)
 	 * };
 	 */
 
@@ -242,9 +242,9 @@ generate_C() {
 		 * To create a value lookup structure (as needed on the 2nd line), use the
 		 * following kind of declaration, outside of the present snmp_info_t[]:
 		 * static info_lkp_t onbatt_info[] = {
-		 * 	{ 1, "OB" },
-		 * 	{ 2, "OL" },
-		 * 	{ 0, NULL }
+		 * 	info_lkp_default(1, "OB"),
+		 * 	info_lkp_default(2, "OL"),
+		 * 	info_lkp_default(0, NULL)
 		 * };
 		 */
 
