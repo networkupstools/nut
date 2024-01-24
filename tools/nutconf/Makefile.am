@@ -1,3 +1,5 @@
+# Network UPS Tools: NUT configuration tool
+
 all: $(bin_PROGRAMS)
 
 bin_PROGRAMS =
@@ -15,10 +17,9 @@ nutconf_LDADD = $(top_builddir)/common/libcommon.la \
 if WITH_LIBLTDL
 nutconf_CXXFLAGS += -DWITH_NUTSCANNER -I$(top_srcdir)/tools/nut-scanner
 nutconf_LDADD += $(top_builddir)/tools/nut-scanner/libnutscan.la
-endif
+endif WITH_LIBLTDL
 
-# End of WITH_NUTCONF
-endif
+endif WITH_NUTCONF
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/common/libcommon.la \
