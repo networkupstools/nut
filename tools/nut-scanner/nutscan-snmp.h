@@ -71,7 +71,7 @@ extern "C" {
 	extern char *dmfnutscan_snmp_dir;
 	extern mibdmf_parser_t *dmfnutscan_snmp_dmp;
 	/* Just reference this to NULLify when client quits and frees DMF stuff */
-	void uninit_snmp_device_table();
+	void uninit_snmp_device_table(void);
 #  endif /* DMF_SNMP_H already included */
 # endif /* LIBNUTSCAN_SNMP_DMF */
 #endif /* WANT_LIBNUTSCAN_SNMP_DMF */

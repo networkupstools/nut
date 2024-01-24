@@ -9,6 +9,7 @@
  * Copyright (C) 2016 Carlos Dominguez <CarlosDominguez@eaton.com>
  * Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
  * Copyright (C) 2016 Jim Klimov <EvgenyKlimov@eaton.com>
+ * Copyright (C) 2024 Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -92,7 +93,7 @@ typedef struct {
  * the format-specific parsed_data structure, and pass to dmfcore_parse*().
  */
 dmfcore_parser_t*
-	dmfcore_parser_new();
+	dmfcore_parser_new(void);
 
 /* Ensure at compile-time tat currently required fields are populated */
 dmfcore_parser_t*

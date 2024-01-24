@@ -253,7 +253,8 @@ err:
 #endif /* WITH_NEON */
 }
 
-void unload_neon_lib(){
+void unload_neon_lib(void)
+{
 #ifdef WITH_NEON
 	if (xml_uninitenc != NULL) {
 		upsdebugx(1, "unload_neon_lib(): calling xmlCleanupCharEncodingHandlers()");
@@ -281,7 +282,7 @@ void unload_neon_lib(){
  * the format-specific parsed_data structure, and pass to dmfcore_parse*().
  */
 dmfcore_parser_t*
-dmfcore_parser_new()
+dmfcore_parser_new(void)
 {
 	dmfcore_parser_t *self = (dmfcore_parser_t *) calloc (1, sizeof (dmfcore_parser_t));
 	assert (self);

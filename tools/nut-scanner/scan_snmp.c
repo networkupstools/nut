@@ -216,7 +216,7 @@ static oid *nut_usmHMAC384SHA512AuthProtocol;
 /* return 0 on error; visible externally */
 int nutscan_load_snmp_library(const char *libname_path);
 
-void uninit_snmp_device_table() {
+void uninit_snmp_device_table(void) {
 #if WITH_DMFMIB
 	if (snmp_device_table == snmp_device_table_dmf)
 		snmp_device_table = NULL;
@@ -229,15 +229,16 @@ void uninit_snmp_device_table() {
 }
 
 /* return 0 on error */
-int init_snmp_device_table()
+static
+int init_snmp_device_table(void)
 {
-	// A simple routine to load nutscan DMFs, safe to call several times
+	/* A simple routine to load nutscan DMFs, safe to call several times */
 	if (snmp_device_table != NULL)
 		return 1;
 
 #if WITH_DMFMIB
 	if (dmfnutscan_snmp_dir != NULL) {
-		// parse_dir, check success, assign var
+		/* parse_dir, check success, assign var */
 		upsdebugx(1, "init_snmp_device_table() trying to load DMF from %s",
 			dmfnutscan_snmp_dir);
 		dmfnutscan_snmp_dmp = mibdmf_parser_new();

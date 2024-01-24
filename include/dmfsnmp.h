@@ -264,7 +264,7 @@ typedef struct {
 
 /* Initialize the data for dmf.c */
 mibdmf_parser_t *
-	mibdmf_parser_new();
+	mibdmf_parser_new(void);
 
 /* Properly destroy the object hierarchy and NULLify the caller's pointer */
 void

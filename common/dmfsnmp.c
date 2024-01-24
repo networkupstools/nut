@@ -8,6 +8,7 @@
  * Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
  * Copyright (C) 2016 - 2021 Jim Klimov <EvgenyKlimov@eaton.com>
  * Copyright (C) 2019 Arnaud Quette <ArnaudQuette@Eaton.com>
+ * Copyright (C) 2024 Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -688,7 +689,7 @@ mibdmf_parser_new_list(mibdmf_parser_t *dmp)
 }
 
 mibdmf_parser_t *
-mibdmf_parser_new()
+mibdmf_parser_new(void)
 {
 	mibdmf_parser_t *self = (mibdmf_parser_t *) calloc (1, sizeof (mibdmf_parser_t));
 	assert (self);
