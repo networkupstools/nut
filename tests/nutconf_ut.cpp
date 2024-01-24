@@ -132,7 +132,7 @@ void NutConfigUnitTest::testUpsmonConfiguration() {
 	nut::UpsmonConfiguration config;
 
 	// Note: this file gets generated from a .in template
-	load(static_cast<nut::Serialisable *>(&config), ABS_BUILD_SRCDIR "/conf/upsmon.conf.sample");
+	load(static_cast<nut::Serialisable *>(&config), ABS_TOP_BUILDDIR "/conf/upsmon.conf.sample");
 
 	config.shutdownCmd   = "/sbin/shutdown -h +2 'System shutdown in 2 minutes!'";
 	config.powerDownFlag = "/run/nut/killpower";
@@ -197,7 +197,9 @@ void NutConfigUnitTest::testUpsConfiguration() {
 	config.setPort(my_ups, "/dev/ttyS0");
 	config.setDescription(my_ups, "Web server");
 
+	// Note: "maxretry = 3" comes from current ups.conf.sample non-comment lines
 	check(static_cast<nut::Serialisable *>(&config),
+		"maxretry = 3\n\n"
 		"[powerpal]\n"
 		"\tdesc = \"Web server\"\n"
 		"\tdriver = blazer_ser\n"
