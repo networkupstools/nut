@@ -1621,7 +1621,7 @@ is_sentinel__snmp_info_t(const snmp_info_t *pstruct)
 {
 	upsdebugx (5, "Entering is_sentinel__snmp_info_t()");
 	assert (pstruct);
-	return ( pstruct->info_type == NULL && pstruct->info_len == 0 && pstruct->OID == NULL
+	return ( pstruct->info_type == NULL && (int)(pstruct->info_len) == 0 && pstruct->OID == NULL
 	      && pstruct->dfl == NULL && pstruct->flags == 0 && pstruct->oid2info == NULL
 #if WITH_DMF_FUNCTIONS
 	      && pstruct->function_language == NULL
