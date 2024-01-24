@@ -116,7 +116,9 @@ static void (*xml_uninitenc)(void);
 /* Note: names for popular libneon implementations are hard-coded at this
  * time - and just one, so extra DLLs (if an OS requires several to load)
  * are not supported. (TODO: link this to LIBNEON_LIBS from configure) */
-int load_neon_lib(void){
+static
+int load_neon_lib(void)
+{
 #ifdef WITH_NEON
 # if WITH_LIBLTDL
 	char *neon_libname_path = get_libname("libneon.so");
@@ -253,6 +255,7 @@ err:
 #endif /* WITH_NEON */
 }
 
+static
 void unload_neon_lib(void)
 {
 #ifdef WITH_NEON
