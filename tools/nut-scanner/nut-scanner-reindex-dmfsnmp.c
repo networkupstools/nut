@@ -43,11 +43,11 @@
 #define XSD_DMFNUTSCAN_XMLNS    "http://www.networkupstools.org/dmf/snmp/nutscan"
 #endif
 
-const char optstring[] = "?hDVkKZ:";
+static const char optstring[] = "?hDVkKZ:";
 #define ERR_BAD_OPTION	(-1)
 
 #ifdef HAVE_GETOPT_LONG
-const struct option longopts[] = {
+static const struct option longopts[] = {
 	{ "help", no_argument, NULL, 'h' },
 	{ "nut_debug_level", no_argument, NULL, 'D' },
 	{ "version", no_argument, NULL, 'V' },
