@@ -1,22 +1,24 @@
-/* example - CppUnit unit test example
+/*
+    tests/nutconf.cpp - based on CppUnit unit test example
 
-   Copyright (C)
+    Copyright (C)
 	2012	Emilien Kia <emilienkia-guest@alioth.debian.org>
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
+
 #include <cppunit/extensions/HelperMacros.h>
 
 // Define to desactivate protection of parsing tool members:
@@ -301,7 +303,6 @@ void NutConfTest::testNutConfConfigParser()
 
 	CPPUNIT_ASSERT_MESSAGE("Cannot find a MODE", conf.mode.set());
 	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find a MODE=standalone", nut::NutConfiguration::MODE_STANDALONE, *conf.mode);
-	
 }
 
 void NutConfTest::testUpsdConfigParser()
@@ -340,7 +341,3 @@ void NutConfTest::testUpsdConfigParser()
 	}
 
 }
-
-
-
-
