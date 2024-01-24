@@ -84,6 +84,15 @@ int main(int argc, char *argv[])
 /* TODO: Usage (help), Command-line args */
 /* option to append just a few (new) files to existing (large) index */
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_BREAK
+#pragma GCC diagnostic ignored "-Wunreachable-code-break"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
 	while ((opt_ret = getopt_long(argc, argv, optstring, longopts, NULL)) != -1) {
 
 		switch(opt_ret) {
@@ -135,6 +144,9 @@ int main(int argc, char *argv[])
 				return ret_code;
 		}
 	}
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 
 	mibdmf_parser_t * dmp = mibdmf_parser_new();
 	if (!dmp) {
