@@ -591,6 +591,9 @@ void NutConfigParser::parseConfig() {
 			/* Could occur ! */
 			onParseDirective(name, sep, values);
 			break;
+		case CPS_DEFAULT:
+			/* TOTHINK: no-op? */
+			break;
 	}
 
 	onParseEnd();
