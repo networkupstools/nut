@@ -203,6 +203,7 @@ import org.nut.dynamatrix.*;
         dynamatrixGlobalState.branchDefaultStable = 'fightwarn'
     }
 
+/*
     if ( env?.BRANCH_NAME ==~ /^FTY.*$/ || env?.CHANGE_TARGET ==~ /^FTY.*$/ ) {
         // NOTE: Currently the 42ITy fork of NUT is not up to speed
         // regarding the codebase quality (generates lots of warnings)
@@ -210,6 +211,7 @@ import org.nut.dynamatrix.*;
         // we quickly bail out of its automated builds on NUT CI farm.
         dynacfgPipeline.failFast = true
     }
+*/
 
     if ( env?.BRANCH_NAME ==~ dynacfgPipeline.branchStableRegex ) {
         // For our main branches we want all builds in full,
