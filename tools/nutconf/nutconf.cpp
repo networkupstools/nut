@@ -16,8 +16,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/*! \file nutscan-display.c
-    \brief format and display scanned devices
+/*! \file nutconf.cpp
+    \brief NUT configuration tool
     \author Frederic Bohe <fredericbohe@eaton.com>
     \author Vaclav Krpec <vaclavkrpec@eaton.com>
 */
