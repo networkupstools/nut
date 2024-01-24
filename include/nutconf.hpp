@@ -66,6 +66,11 @@ public:
 	Settable(const Settable<Type>& val):_value(val._value), _set(val._set){}
 	Settable(const Type& val):_value(val), _set(true){}
 
+	/* Avoid implicit copy/move operator declarations */
+	Settable(Settable&&) = default;
+	Settable& operator=(const Settable&) = default;
+	Settable& operator=(Settable&&) = default;
+
 	bool set()const{return _set;}
 	void clear(){_set = false;}
 
@@ -154,6 +159,8 @@ public:
 	NutParser(const char* buffer = NULL, unsigned int options = OPTION_DEFAULT);
 	NutParser(const std::string& buffer, unsigned int options = OPTION_DEFAULT);
 
+	virtual ~NutParser() {}
+
 	/** Parsing configuration functions
 	 * \{ */
 	void setOptions(unsigned int options){_options = options;}
@@ -176,13 +183,18 @@ public:
 			TOKEN_EQUAL,
 			TOKEN_COLON,
 			TOKEN_EOL
-		}type;
+		} type;
 		std::string str;
 
 		Token():type(TOKEN_NONE),str(){}
 		Token(TokenType type, const std::string& str=""):type(type),str(str){}
 		Token(TokenType type, char c):type(type),str(1, c){}
 		Token(const Token& tok):type(tok.type),str(tok.str){}
+
+		/* Avoid implicit copy/move operator declarations */
+		Token(Token&&) = default;
+		Token& operator=(const Token&) = default;
+		Token& operator=(Token&&) = default;
 
 		bool is(TokenType type)const{return this->type==type;}
 
@@ -226,22 +238,6 @@ private:
 
 typedef std::list<std::string> ConfigParamList;
 
-class NutConfigParser : public NutParser
-{
-public:
-	virtual void parseConfig();
-
-protected:
-	NutConfigParser(const char* buffer = NULL, unsigned int options = OPTION_DEFAULT);
-	NutConfigParser(const std::string& buffer, unsigned int options = OPTION_DEFAULT);
-
-	virtual void onParseBegin()=0;
-	virtual void onParseComment(const std::string& comment)=0;
-	virtual void onParseSectionName(const std::string& sectionName, const std::string& comment = "")=0;
-	virtual void onParseDirective(const std::string& directiveName, char sep = 0, const ConfigParamList& values = ConfigParamList(), const std::string& comment = "")=0;
-	virtual void onParseEnd()=0;
-};
-
 struct GenericConfigSectionEntry
 {
 	std::string     name;
@@ -266,6 +262,34 @@ struct GenericConfigSection
 	void clear();
 };
 
+class BaseConfiguration
+{
+	friend class GenericConfigParser;
+public:
+	virtual ~BaseConfiguration() {}
+protected:
+	virtual void setGenericConfigSection(const GenericConfigSection& section) = 0;
+};
+
+class NutConfigParser : public NutParser
+{
+public:
+	virtual void parseConfig();
+
+	/* Declared for cleaner overrides; arg ignored in current class */
+	virtual void parseConfig(BaseConfiguration* config);
+
+protected:
+	NutConfigParser(const char* buffer = NULL, unsigned int options = OPTION_DEFAULT);
+	NutConfigParser(const std::string& buffer, unsigned int options = OPTION_DEFAULT);
+
+	virtual void onParseBegin()=0;
+	virtual void onParseComment(const std::string& comment)=0;
+	virtual void onParseSectionName(const std::string& sectionName, const std::string& comment = "")=0;
+	virtual void onParseDirective(const std::string& directiveName, char sep = 0, const ConfigParamList& values = ConfigParamList(), const std::string& comment = "")=0;
+	virtual void onParseEnd()=0;
+};
+
 class DefaultConfigParser : public NutConfigParser
 {
 public:
@@ -275,22 +299,15 @@ public:
 protected:
 	virtual void onParseSection(const GenericConfigSection& section)=0;
 
-	virtual void onParseBegin();
-	virtual void onParseComment(const std::string& comment);
-	virtual void onParseSectionName(const std::string& sectionName, const std::string& comment = "");
-	virtual void onParseDirective(const std::string& directiveName, char sep = 0, const ConfigParamList& values = ConfigParamList(), const std::string& comment = "");
-	virtual void onParseEnd();
+	virtual void onParseBegin() override;
+	virtual void onParseComment(const std::string& comment) override;
+	virtual void onParseSectionName(const std::string& sectionName, const std::string& comment = "") override;
+	virtual void onParseDirective(const std::string& directiveName, char sep = 0, const ConfigParamList& values = ConfigParamList(), const std::string& comment = "") override;
+	virtual void onParseEnd() override;
 
 	GenericConfigSection _section; ///> Currently parsed section
 };
 
-
-class BaseConfiguration
-{
-	friend class GenericConfigParser;
-protected:
-	virtual void setGenericConfigSection(const GenericConfigSection& section) = 0;
-};
 
 class GenericConfigParser : public DefaultConfigParser
 {
@@ -298,10 +315,10 @@ public:
 	GenericConfigParser(const char* buffer = NULL);
 	GenericConfigParser(const std::string& buffer);
 
-	virtual void parseConfig(BaseConfiguration* config);
+	virtual void parseConfig(BaseConfiguration* config) override;
 
 protected:
-	virtual void onParseSection(const GenericConfigSection& section);
+	virtual void onParseSection(const GenericConfigSection& section) override;
 
 	BaseConfiguration* _config;
 };
@@ -315,11 +332,13 @@ public:
 
 	GenericConfiguration(){}
 
+	virtual ~GenericConfiguration() override;
+
 	void parseFromString(const std::string& str);
 
 	/** Serialisable interface implementation \{ */
-	bool parseFrom(NutStream & istream);
-	bool writeTo(NutStream & ostream) const;
+	bool parseFrom(NutStream & istream) override;
+	bool writeTo(NutStream & ostream) const override;
 	/** \} */
 
 	// FIXME Let be public or set it as protected with public accessors ?
@@ -330,7 +349,7 @@ public:
 
 
 protected:
-	virtual void setGenericConfigSection(const GenericConfigSection& section);
+	virtual void setGenericConfigSection(const GenericConfigSection& section) override;
 
 	/**
 	 *  \brief  Configuration parameters getter
@@ -659,8 +678,8 @@ public:
 	std::list<Monitor> monitors;
 
 	/** Serialisable interface implementation \{ */
-	bool parseFrom(NutStream & istream);
-	bool writeTo(NutStream & ostream) const;
+	bool parseFrom(NutStream & istream) override;
+	bool writeTo(NutStream & ostream) const override;
 	/** \} */
 
 };  // end of class UpsmonConfiguration
@@ -675,11 +694,11 @@ public:
 
 	void parseUpsmonConfig(UpsmonConfiguration* config);
 protected:
-	virtual void onParseBegin();
-	virtual void onParseComment(const std::string& comment);
-	virtual void onParseSectionName(const std::string& sectionName, const std::string& comment = "");
-	virtual void onParseDirective(const std::string& directiveName, char sep = 0, const ConfigParamList& values = ConfigParamList(), const std::string& comment = "");
-	virtual void onParseEnd();
+	virtual void onParseBegin() override;
+	virtual void onParseComment(const std::string& comment) override;
+	virtual void onParseSectionName(const std::string& sectionName, const std::string& comment = "") override;
+	virtual void onParseDirective(const std::string& directiveName, char sep = 0, const ConfigParamList& values = ConfigParamList(), const std::string& comment = "") override;
+	virtual void onParseEnd() override;
 
 	UpsmonConfiguration* _config;
 };
@@ -706,8 +725,8 @@ public:
 	static NutMode NutModeFromString(const std::string& str);
 
 	/** Serialisable interface implementation \{ */
-	bool parseFrom(NutStream & istream);
-	bool writeTo(NutStream & ostream) const;
+	bool parseFrom(NutStream & istream) override;
+	bool writeTo(NutStream & ostream) const override;
 	/** \} */
 };
 
@@ -720,11 +739,11 @@ public:
 
 	void parseNutConfConfig(NutConfiguration* config);
 protected:
-	virtual void onParseBegin();
-	virtual void onParseComment(const std::string& comment);
-	virtual void onParseSectionName(const std::string& sectionName, const std::string& comment = "");
-	virtual void onParseDirective(const std::string& directiveName, char sep = 0, const ConfigParamList& values = ConfigParamList(), const std::string& comment = "");
-	virtual void onParseEnd();
+	virtual void onParseBegin() override;
+	virtual void onParseComment(const std::string& comment) override;
+	virtual void onParseSectionName(const std::string& sectionName, const std::string& comment = "") override;
+	virtual void onParseDirective(const std::string& directiveName, char sep = 0, const ConfigParamList& values = ConfigParamList(), const std::string& comment = "") override;
+	virtual void onParseEnd() override;
 
 	NutConfiguration* _config;
 };
@@ -752,8 +771,8 @@ public:
 	std::list<Listen> listens;
 
 	/** Serialisable interface implementation \{ */
-	bool parseFrom(NutStream & istream);
-	bool writeTo(NutStream & ostream) const;
+	bool parseFrom(NutStream & istream) override;
+	bool writeTo(NutStream & ostream) const override;
 	/** \} */
 };
 
@@ -768,11 +787,11 @@ public:
 
 	void parseUpsdConfig(UpsdConfiguration* config);
 protected:
-	virtual void onParseBegin();
-	virtual void onParseComment(const std::string& comment);
-	virtual void onParseSectionName(const std::string& sectionName, const std::string& comment = "");
-	virtual void onParseDirective(const std::string& directiveName, char sep = 0, const ConfigParamList& values = ConfigParamList(), const std::string& comment = "");
-	virtual void onParseEnd();
+	virtual void onParseBegin() override;
+	virtual void onParseComment(const std::string& comment) override;
+	virtual void onParseSectionName(const std::string& sectionName, const std::string& comment = "") override;
+	virtual void onParseDirective(const std::string& directiveName, char sep = 0, const ConfigParamList& values = ConfigParamList(), const std::string& comment = "") override;
+	virtual void onParseEnd() override;
 
 	UpsdConfiguration* _config;
 };
@@ -1102,8 +1121,8 @@ public:
 	/** \} */
 
 	/** Serialisable interface implementation overload \{ */
-	bool parseFrom(NutStream & istream);
-	bool writeTo(NutStream & ostream) const;
+	bool parseFrom(NutStream & istream) override;
+	bool writeTo(NutStream & ostream) const override;
 	/** \} */
 
 };  // end of class UpsdUsersConfiguration

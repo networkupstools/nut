@@ -191,13 +191,13 @@ class SectionlessConfigWriter: public NutConfigWriter {
 	public:
 
 	// Partial \ref NutConfigWriter interface implementation
-	status_t writeDirective(const std::string & str);
-	status_t writeComment(const std::string & str);
+	status_t writeDirective(const std::string & str) override;
+	status_t writeComment(const std::string & str) override;
 
 	private:
 
 	// Section name writing is forbidden (no sections)
-	status_t writeSectionName(const std::string & name);
+	status_t writeSectionName(const std::string & name) override;
 
 };  // end of class SectionlessConfigWriter
 
@@ -300,9 +300,9 @@ class DefaultConfigWriter: public NutConfigWriter {
 	public:
 
 	// \ref NutConfigWriter interface implementation
-	status_t writeComment(const std::string & str);
-	status_t writeSectionName(const std::string & name);
-	status_t writeDirective(const std::string & str);
+	status_t writeComment(const std::string & str) override;
+	status_t writeSectionName(const std::string & name) override;
+	status_t writeDirective(const std::string & str) override;
 
 	/**
 	 *  \brief  Write configuration section
@@ -360,7 +360,7 @@ class GenericConfigWriter: public DefaultConfigWriter {
 	GenericConfigWriter(NutStream & ostream): DefaultConfigWriter(ostream) {}
 
 	// Section serializer implementation
-	status_t writeSection(const GenericConfigSection & section);
+	status_t writeSection(const GenericConfigSection & section) override;
 
 	/**
 	 *  \brief  Base configuration serializer
@@ -393,7 +393,7 @@ class UpsdUsersConfigWriter: public GenericConfigWriter {
 	UpsdUsersConfigWriter(NutStream & ostream): GenericConfigWriter(ostream) {}
 
 	// Section serializer overload
-	status_t writeSection(const GenericConfigSection & section);
+	status_t writeSection(const GenericConfigSection & section) override;
 
 };  // end of class UpsdUsersConfigWriter
 
