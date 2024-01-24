@@ -25,7 +25,7 @@
 
 #include "raritan-pdu-mib.h"
 
-#define RARITAN_MIB_VERSION	"0.8"
+#define RARITAN_MIB_VERSION	"0.80"
 
 /* Raritan MIB
  * this one uses the same MIB as Eaton Revelation,
@@ -39,31 +39,11 @@
 #define DO_CYCLE	"2"
 
 static info_lkp_t raritan_pdu_outlet_status_info[] = {
-	{ -1, "error"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, "off"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 1, "on"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "cycling"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}, /* transitional status */
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(-1, "error"),
+	info_lkp_default(0, "off"),
+	info_lkp_default(1, "on"),
+	info_lkp_default(2, "cycling"),	/* transitional status */
+	info_lkp_sentinel
 };
 
 /* Snmp2NUT lookup table for Raritan MIB */
@@ -138,7 +118,8 @@ static snmp_info_t raritan_mib[] = {
 	/* no counterpart found!
 	snmp_info_default("outlet.load.off", 0, 1, ".1.3.6.1.4.1.13742.1.2.2.1.3.0", DO_OFF, SU_TYPE_CMD, NULL),
 	snmp_info_default("outlet.load.on", 0, 1, ".1.3.6.1.4.1.13742.1.2.2.1.3.0", DO_ON, SU_TYPE_CMD, NULL),
-	snmp_info_default("outlet.load.cycle", 0, 1, ".1.3.6.1.4.1.13742.1.2.2.1.3.0", DO_CYCLE, SU_TYPE_CMD, NULL), */
+	snmp_info_default("outlet.load.cycle", 0, 1, ".1.3.6.1.4.1.13742.1.2.2.1.3.0", DO_CYCLE, SU_TYPE_CMD, NULL),
+	 */
 	snmp_info_default("outlet.%i.load.off", 0, 1, ".1.3.6.1.4.1.13742.1.2.2.1.3.%i", DO_OFF, SU_TYPE_CMD | SU_OUTLET, NULL),
 	snmp_info_default("outlet.%i.load.on", 0, 1, ".1.3.6.1.4.1.13742.1.2.2.1.3.%i", DO_ON, SU_TYPE_CMD | SU_OUTLET, NULL),
 	snmp_info_default("outlet.%i.load.cycle", 0, 1, ".1.3.6.1.4.1.13742.1.2.2.1.3.%i", DO_CYCLE, SU_TYPE_CMD | SU_OUTLET, NULL),

@@ -24,96 +24,36 @@
 
 #include "apc-ats-mib.h"
 
-#define APC_ATS_MIB_VERSION  "0.6"
+#define APC_ATS_MIB_VERSION  "0.60"
 
 #define APC_ATS_SYSOID       ".1.3.6.1.4.1.318.1.3.11"
 #define APC_ATS_OID_MODEL_NAME ".1.3.6.1.4.1.318.1.1.8.1.5.0"
 
 static info_lkp_t apc_ats_sensitivity_info[] = {
-	{ 1, "high"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "low"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "high"),
+	info_lkp_default(2, "low"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t apc_ats_output_status_info[] = {
-	{ 1, "OFF"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}, /* fail */
-	{ 2, "OL"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},  /* ok */
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "OFF"),	/* fail */
+	info_lkp_default(2, "OL"),	/* ok */
+	info_lkp_sentinel
 };
 
 static info_lkp_t apc_ats_outletgroups_name_info[] = {
-	{ 1, "total"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "bank1"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 3, "bank2"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "total"),
+	info_lkp_default(2, "bank1"),
+	info_lkp_default(3, "bank2"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t apc_ats_outletgroups_status_info[] = {
-	{ 1, "OL"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},   /* normal */
-	{ 2, ""
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},     /* lowload */
-	{ 3, ""
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},     /* nearoverload */
-	{ 4, "OVER"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}, /* overload */
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "OL"),	/* normal */
+	info_lkp_default(2, ""),	/* lowload */
+	info_lkp_default(3, ""),	/* nearoverload */
+	info_lkp_default(4, "OVER"),	/* overload */
+	info_lkp_sentinel
 };
 
 /* APC ATS Snmp2NUT lookup table */

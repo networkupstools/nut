@@ -22,7 +22,7 @@
 
 #include "bestpower-mib.h"
 
-#define BESTPOWER_MIB_VERSION		"0.4"
+#define BESTPOWER_MIB_VERSION		"0.40"
 #define BESTPOWER_OID_MODEL_NAME	".1.3.6.1.4.1.2947.1.1.2.0"
 
 /*
@@ -35,22 +35,10 @@
 #define BESTPOWER_SYSOID	BESTPOWER_OID_MODEL_NAME
 
 static info_lkp_t bestpower_power_status[] = {
-	{ 1, "OL"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "OB"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
-} ;
+	info_lkp_default(1, "OL"),
+	info_lkp_default(2, "OB"),
+	info_lkp_sentinel
+};
 
 /* Snmp2NUT lookup table for Best Power MIB */
 static snmp_info_t bestpower_mib[] = {

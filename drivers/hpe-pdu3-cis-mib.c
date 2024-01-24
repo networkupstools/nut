@@ -27,186 +27,54 @@
 #define HPE_PDU3_OID_MODEL_NAME	".1.3.6.1.4.1.232.165.11.1.2.1.3.1"
 
 static info_lkp_t hpe_cis_unit_switchability_info[] = {
-	{ 1, "yes"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "no"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "yes"),
+	info_lkp_default(2, "no"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t hpe_cis_outlet_group_type_info[] = {
-	{ 2, "breaker1pole"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 3, "breaker2pole"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 4, "breaker3pole"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 5, "outlet-section"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(2, "breaker1pole"),
+	info_lkp_default(3, "breaker2pole"),
+	info_lkp_default(4, "breaker3pole"),
+	info_lkp_default(5, "outlet-section"),
+	info_lkp_sentinel
 };
 
 /* Note: same as marlin_outlet_type_info + i5-20R */
 /* and to eaton_nlogic_outlet_type_info - few entries */
 static info_lkp_t hpe_cis_outlet_type_info[] = {
-	{ 1, "iecC13"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "iecC19"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 10, "uk"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 11, "french"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 12, "schuko"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 20, "nema515"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 21, "nema51520"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 22, "nema520"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 23, "nemaL520"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 24, "nemaL530"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 25, "nema615"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 26, "nema620"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 27, "nemaL620"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 28, "nemaL630"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 29, "nemaL715"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 30, "rf203p277"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "iecC13"),
+	info_lkp_default(2, "iecC19"),
+	info_lkp_default(10, "uk"),
+	info_lkp_default(11, "french"),
+	info_lkp_default(12, "schuko"),
+	info_lkp_default(20, "nema515"),
+	info_lkp_default(21, "nema51520"),
+	info_lkp_default(22, "nema520"),
+	info_lkp_default(23, "nemaL520"),
+	info_lkp_default(24, "nemaL530"),
+	info_lkp_default(25, "nema615"),
+	info_lkp_default(26, "nema620"),
+	info_lkp_default(27, "nemaL620"),
+	info_lkp_default(28, "nemaL630"),
+	info_lkp_default(29, "nemaL715"),
+	info_lkp_default(30, "rf203p277"),
+	info_lkp_sentinel
 };
 
 /* Same as eaton_nlogic_outlet_status_info */
 static info_lkp_t hpe_cis_outlet_status_info[] = {
-	{ 1, "off"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "on"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 3, "pendingOff"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}, /* transitional status */
-	{ 4, "pendingOn"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},  /* transitional status */
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "off"),
+	info_lkp_default(2, "on"),
+	info_lkp_default(3, "pendingOff"),	/* transitional status */
+	info_lkp_default(4, "pendingOn"),	/* transitional status */
+	info_lkp_sentinel
 };
 
 static info_lkp_t hpe_cis_outlet_switchability_info[] = {
-	{ 1, "yes"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}, /* switchable */
-	{ 2, "no"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},  /* notSwitchable */
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "yes"),	/* switchable */
+	info_lkp_default(2, "no"),	/* notSwitchable */
+	info_lkp_sentinel
 };
 
 /* HPE_PDU_CIS Snmp2NUT lookup table */

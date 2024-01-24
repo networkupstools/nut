@@ -21,7 +21,7 @@
 
 #include "huawei-mib.h"
 
-#define HUAWEI_MIB_VERSION  "0.4"
+#define HUAWEI_MIB_VERSION  "0.40"
 
 #define HUAWEI_SYSOID       ".1.3.6.1.4.1.8072.3.2.10"
 #define HUAWEI_UPSMIB       ".1.3.6.1.4.1.2011"
@@ -30,260 +30,72 @@
 /* To create a value lookup structure (as needed on the 2nd line of the example
  * below), use the following kind of declaration, outside of the present snmp_info_t[]:
  * static info_lkp_t huawei_onbatt_info[] = {
- * 	{ 1, "OB"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
- * 	{ 2, "OL"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
- * 	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+ * 	info_lkp_default(1, "OB"),
+ * 	info_lkp_default(2, "OL"),
+ * 	info_lkp_default(0, NULL),
  * };
  */
 
 static info_lkp_t huawei_supplymethod_info[] = {
-	{ 1, ""
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},		/* no supply */
-	{ 2, "OL BYPASS"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 3, "OL"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 4, "OB"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 5, ""
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},		/* combined */
-	{ 6, "OL ECO"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 7, "OB ECO"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, ""),	/* no supply */
+	info_lkp_default(2, "OL BYPASS"),
+	info_lkp_default(3, "OL"),
+	info_lkp_default(4, "OB"),
+	info_lkp_default(5, ""),	/* combined */
+	info_lkp_default(6, "OL ECO"),
+	info_lkp_default(7, "OB ECO"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t huawei_battstate_info[] = {
-	{ 1, ""
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},		/* not connected */
-	{ 2, ""
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},		/* not charging or discharging */
-	{ 3, ""
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},		/* hibernation */
-	{ 4, ""
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},		/* float */
-	{ 5, "CHRG"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},		/* equalized charging */
-	{ 6, "DISCHRG"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, ""),	/* not connected */
+	info_lkp_default(2, ""),	/* not charging or discharging */
+	info_lkp_default(3, ""),	/* hibernation */
+	info_lkp_default(4, ""),	/* float */
+	info_lkp_default(5, "CHRG"),	/* equalized charging */
+	info_lkp_default(6, "DISCHRG"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t huawei_phase_info[] = {
-	{ 1, "1"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "3"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "1"),
+	info_lkp_default(2, "3"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t huawei_voltrating_info[] = {
-	{ 1, "200"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "208"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 3, "220"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 4, "380"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 5, "400"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 6, "415"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 7, "480"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 8, "600"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 9, "690"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "200"),
+	info_lkp_default(2, "208"),
+	info_lkp_default(3, "220"),
+	info_lkp_default(4, "380"),
+	info_lkp_default(5, "400"),
+	info_lkp_default(6, "415"),
+	info_lkp_default(7, "480"),
+	info_lkp_default(8, "600"),
+	info_lkp_default(9, "690"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t huawei_freqrating_info[] = {
-	{ 1, "50"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "60"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "50"),
+	info_lkp_default(2, "60"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t huawei_pwrrating_info[] = {
-	{ 1, "80000"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "100000"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 3, "120000"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 4, "160000"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 5, "200000"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 6, "30000"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 7, "40000"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 8, "60000"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 9, "2400000"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 10, "2500000"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 11, "2800000"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 12, "3000000"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "80000"),
+	info_lkp_default(2, "100000"),
+	info_lkp_default(3, "120000"),
+	info_lkp_default(4, "160000"),
+	info_lkp_default(5, "200000"),
+	info_lkp_default(6, "30000"),
+	info_lkp_default(7, "40000"),
+	info_lkp_default(8, "60000"),
+	info_lkp_default(9, "2400000"),
+	info_lkp_default(10, "2500000"),
+	info_lkp_default(11, "2800000"),
+	info_lkp_default(12, "3000000"),
+	info_lkp_sentinel
 };
 
 /* Note: This is currently identical to ietf_test_result_info from IETF MIB
@@ -291,41 +103,13 @@ static info_lkp_t huawei_pwrrating_info[] = {
  * b) avoid namespace conflicts, especially with DMF loader of named objects
  */
 static info_lkp_t huawei_test_result_info[] = {
-	{ 1, "done and passed"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "done and warning"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 3, "done and error"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 4, "aborted"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 5, "in progress"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 6, "no test initiated"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "done and passed"),
+	info_lkp_default(2, "done and warning"),
+	info_lkp_default(3, "done and error"),
+	info_lkp_default(4, "aborted"),
+	info_lkp_default(5, "in progress"),
+	info_lkp_default(6, "no test initiated"),
+	info_lkp_sentinel
 };
 
 
@@ -351,9 +135,9 @@ static snmp_info_t huawei_mib[] = {
 	 * To create a value lookup structure (as needed on the 2nd line), use the
 	 * following kind of declaration, outside of the present snmp_info_t[]:
 	 * static info_lkp_t huawei_onbatt_info[] = {
-	 * 	{ 1, "OB" },
-	 * 	{ 2, "OL" },
-	 * 	{ 0, NULL }
+	 * 	info_lkp_default(1, "OB"), },
+	 * 	info_lkp_default(2, "OL"), },
+	 * 	info_lkp_sentinel }
 	 * };
 	 */
 

@@ -46,219 +46,67 @@
 /* #define DEBUG */
 
 static info_lkp_t ietf_battery_info[] = {
-	{ 1, ""   /* unknown */
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, ""   /* batteryNormal */
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 3, "LB" /* batteryLow */
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 4, "LB" /* batteryDepleted */
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, ""),	/* unknown */
+	info_lkp_default(2, ""),	/* batteryNormal */
+	info_lkp_default(3, "LB"),	/* batteryLow */
+	info_lkp_default(4, "LB"),	/* batteryDepleted */
+	info_lkp_sentinel
 };
 
 static info_lkp_t ietf_power_source_info[] = {
-	{ 1, "" /* other */
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "OFF" /* none */
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 3, "OL" /* normal */
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 4, "OL BYPASS" /* bypass */
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 5, "OB" /* battery */
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 6, "OL BOOST" /* booster */
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 7, "OL TRIM" /* reducer */
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, ""),	/* other */
+	info_lkp_default(2, "OFF"),	/* none */
+	info_lkp_default(3, "OL"),	/* normal */
+	info_lkp_default(4, "OL BYPASS"),	/* bypass */
+	info_lkp_default(5, "OB"),	/* battery */
+	info_lkp_default(6, "OL BOOST"),	/* booster */
+	info_lkp_default(7, "OL TRIM"),	/* reducer */
+	info_lkp_sentinel
 };
 
 static info_lkp_t ietf_overload_info[] = {
-	{ 1, "OVER"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},	/* output overload */
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "OVER"),	/* output overload */
+	info_lkp_sentinel
 };
 
 static info_lkp_t ietf_test_active_info[] = {
-	{ 1, ""
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},	/* upsTestNoTestsInitiated */
-	{ 2, ""
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},	/* upsTestAbortTestInProgress */
-	{ 3, "TEST"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},	/* upsTestGeneralSystemsTest */
-	{ 4, "TEST"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},	/* upsTestQuickBatteryTest */
-	{ 5, "CAL"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},	/* upsTestDeepBatteryCalibration */
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, ""),	/* upsTestNoTestsInitiated */
+	info_lkp_default(2, ""),	/* upsTestAbortTestInProgress */
+	info_lkp_default(3, "TEST"),	/* upsTestGeneralSystemsTest */
+	info_lkp_default(4, "TEST"),	/* upsTestQuickBatteryTest */
+	info_lkp_default(5, "CAL"),	/* upsTestDeepBatteryCalibration */
+	info_lkp_sentinel
 };
 
 static info_lkp_t ietf_test_result_info[] = {
-	{ 1, "done and passed"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "done and warning"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 3, "done and error"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 4, "aborted"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 5, "in progress"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 6, "no test initiated"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "done and passed"),
+	info_lkp_default(2, "done and warning"),
+	info_lkp_default(3, "done and error"),
+	info_lkp_default(4, "aborted"),
+	info_lkp_default(5, "in progress"),
+	info_lkp_default(6, "no test initiated"),
+	info_lkp_sentinel
 };
 
 #ifdef DEBUG
 static info_lkp_t ietf_shutdown_type_info[] = {
-	{ 1, "output"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "system"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "output"),
+	info_lkp_default(2, "system"),
+	info_lkp_sentinel
 };
 #endif
 
 static info_lkp_t ietf_yes_no_info[] = {
-	{ 1, "yes"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "no"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "yes"),
+	info_lkp_default(2, "no"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t ietf_beeper_status_info[] = {
-	{ 1, "disabled"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "enabled"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 3, "muted"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "disabled"),
+	info_lkp_default(2, "enabled"),
+	info_lkp_default(3, "muted"),
+	info_lkp_sentinel
 };
 
 /* Snmp2NUT lookup table info_type, info_flags, info_len, OID, dfl, flags, oid2info, setvar */

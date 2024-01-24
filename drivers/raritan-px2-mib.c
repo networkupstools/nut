@@ -23,7 +23,7 @@
 
 #include "raritan-px2-mib.h"
 
-#define RARITAN_PX2_MIB_VERSION  "0.4"
+#define RARITAN_PX2_MIB_VERSION  "0.40"
 
 #define RARITAN_PX2_MIB_SYSOID     ".1.3.6.1.4.1.13742.6"
 #define RARITAN_PX2_OID_MODEL_NAME ".1.3.6.1.4.1.13742.6.3.2.1.1.3.1"
@@ -31,149 +31,40 @@
 /* info elements */
 /* FIXME: triage between status and alarms, and make it compliant! */
 static info_lkp_t raritanpx2_outlet_status_info[] = {
-	{ -1, "unavailable"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{  0, "open"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{  1, "closed"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{  2, "belowLowerCritical"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{  3, "belowLowerWarning"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{  4, "normal"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{  5, "aboveUpperWarning"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{  6, "aboveUpperCritical"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{  7, "on"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{  8, "off"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{  9, "detected"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 10, "notDetected"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 11, "alarmed"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 12, "ok"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 13, "marginal"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 14, "fail"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 15, "yes"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 16, "no"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 17, "standby"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 18, "one"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 19, "two"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 20, "inSync"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 21, "outOfSync"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, "NULL"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(-1, "unavailable"),
+	info_lkp_default(0, "open"),
+	info_lkp_default(1, "closed"),
+	info_lkp_default(2, "belowLowerCritical"),
+	info_lkp_default(3, "belowLowerWarning"),
+	info_lkp_default(4, "normal"),
+	info_lkp_default(5, "aboveUpperWarning"),
+	info_lkp_default(6, "aboveUpperCritical"),
+	info_lkp_default(7, "on"),
+	info_lkp_default(8, "off"),
+	info_lkp_default(9, "detected"),
+	info_lkp_default(10, "notDetected"),
+	info_lkp_default(11, "alarmed"),
+	info_lkp_default(12, "ok"),
+	info_lkp_default(13, "marginal"),
+	info_lkp_default(14, "fail"),
+	info_lkp_default(15, "yes"),
+	info_lkp_default(16, "no"),
+	info_lkp_default(17, "standby"),
+	info_lkp_default(18, "one"),
+	info_lkp_default(19, "two"),
+	info_lkp_default(20, "inSync"),
+	info_lkp_default(21, "outOfSync"),
+
+	/* FIXME? Is this one a legacy typo? */
+	info_lkp_default(0, "NULL"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t raritanpx2_outlet_switchability_info[] = {
-	{ -1, "yes"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 1, "yes"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "no"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(-1, "yes"),
+	info_lkp_default(1, "yes"),
+	info_lkp_default(2, "no"),
+	info_lkp_sentinel
 };
 
 /* PDU2-MIB Snmp2NUT lookup table */

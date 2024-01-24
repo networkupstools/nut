@@ -29,148 +29,40 @@
 #define EATON_PDU_NLOGIC_SYSOID       ".1.3.6.1.4.1.534.7.1"
 
 static info_lkp_t eaton_nlogic_unit_switchability_info[] = {
-	{ 1, "yes"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "no"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "yes"),
+	info_lkp_default(2, "no"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t eaton_nlogic_outlet_status_info[] = {
-	{ 1, "off"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "on"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 3, "pendingOff"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}, /* transitional status */
-	{ 4, "pendingOn"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},  /* transitional status */
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "off"),
+	info_lkp_default(2, "on"),
+	info_lkp_default(3, "pendingOff"),	/* transitional status */
+	info_lkp_default(4, "pendingOn"),	/* transitional status */
+	info_lkp_sentinel
 };
 
 /* Note: same as marlin_outlet_type_info + i5-20R */
 static info_lkp_t eaton_nlogic_outlet_type_info[] = {
-	{ 0, "unknown"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 1, "iecC13"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "iecC19"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 3, "i5-20R"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 10, "uk"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 11, "french"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 12, "schuko"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 20, "nema515"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 21, "nema51520"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 22, "nema520"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 23, "nemaL520"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 24, "nemaL530"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 25, "nema615"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 26, "nema620"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 27, "nemaL620"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 28, "nemaL630"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 29, "nemaL715"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 30, "rf203p277"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(0, "unknown"),
+	info_lkp_default(1, "iecC13"),
+	info_lkp_default(2, "iecC19"),
+	info_lkp_default(3, "i5-20R"),
+	info_lkp_default(10, "uk"),
+	info_lkp_default(11, "french"),
+	info_lkp_default(12, "schuko"),
+	info_lkp_default(20, "nema515"),
+	info_lkp_default(21, "nema51520"),
+	info_lkp_default(22, "nema520"),
+	info_lkp_default(23, "nemaL520"),
+	info_lkp_default(24, "nemaL530"),
+	info_lkp_default(25, "nema615"),
+	info_lkp_default(26, "nema620"),
+	info_lkp_default(27, "nemaL620"),
+	info_lkp_default(28, "nemaL630"),
+	info_lkp_default(29, "nemaL715"),
+	info_lkp_default(30, "rf203p277"),
+	info_lkp_sentinel
 };
 
 

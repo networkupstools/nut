@@ -41,564 +41,164 @@
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
 static info_lkp_t marlin_outlet_status_info[] = {
-	{ 0, "off"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 1, "on"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "pendingOff"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}, /* transitional status */
-	{ 3, "pendingOn"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},  /* transitional status */
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(0, "off"),
+	info_lkp_default(1, "on"),
+	info_lkp_default(2, "pendingOff"),	/* transitional status */
+	info_lkp_default(3, "pendingOn"),	/* transitional status */
+	info_lkp_sentinel
 };
 
 static info_lkp_t marlin_outletgroups_status_info[] = {
-	{ 0, "off"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 1, "on"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "rebooting"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}, /* transitional status */
-	{ 3, "mixed"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},     /* transitional status, not sure what it means! */
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(0, "off"),
+	info_lkp_default(1, "on"),
+	info_lkp_default(2, "rebooting"),	/* transitional status */
+	info_lkp_default(3, "mixed"),	/* transitional status, not sure what it means! */
+	info_lkp_sentinel
 };
 
 /* Ugly hack for older G2 ePDU:
  * having the matching OID present means that the outlet/unit is
  * switchable. So, it should not require this value lookup */
 static info_lkp_t g2_unit_outlet_switchability_info[] = {
-	{ -1, "yes"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, "yes"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(-1, "yes"),
+	info_lkp_default(0, "yes"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t marlin_outlet_switchability_info[] = {
-	{ 1, "yes"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}, /* switchable */
-	{ 2, "no"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}, /* notSwitchable */
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "yes"),	/* switchable */
+	info_lkp_default(2, "no"),	/* notSwitchable */
+	info_lkp_sentinel
 };
 
 /* Overall outlets switchability info for the unit.
  * This is refined per-outlet, depending on user configuration,
  * possibly disabling switchability of some outlets */
 static info_lkp_t marlin_unit_switchability_info[] = {
-	{ 0, "no"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},  /* unknown */
-	{ 1, "yes"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}, /* switched */
-	{ 2, "no"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},  /* advancedMonitored */
-	{ 3, "yes"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}, /* managed */
-	{ 4, "no"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},  /* monitored */
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(0, "no"),	/* unknown */
+	info_lkp_default(1, "yes"),	/* switched */
+	info_lkp_default(2, "no"),	/* advancedMonitored */
+	info_lkp_default(3, "yes"),	/* managed */
+	info_lkp_default(4, "no"),	/* monitored */
+	info_lkp_sentinel
 };
 
 /* The physical type of outlet */
 static info_lkp_t marlin_outlet_type_info[] = {
-	{ 0, "unknown"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 1, "iecC13"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "iecC19"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 10, "uk"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 11, "french"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 12, "schuko"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 20, "nema515"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 21, "nema51520"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 22, "nema520"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 23, "nemaL520"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 24, "nemaL530"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 25, "nema615"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 26, "nema620"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 27, "nemaL620"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 28, "nemaL630"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 29, "nemaL715"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 30, "rf203p277"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(0, "unknown"),
+	info_lkp_default(1, "iecC13"),
+	info_lkp_default(2, "iecC19"),
+	info_lkp_default(10, "uk"),
+	info_lkp_default(11, "french"),
+	info_lkp_default(12, "schuko"),
+	info_lkp_default(20, "nema515"),
+	info_lkp_default(21, "nema51520"),
+	info_lkp_default(22, "nema520"),
+	info_lkp_default(23, "nemaL520"),
+	info_lkp_default(24, "nemaL530"),
+	info_lkp_default(25, "nema615"),
+	info_lkp_default(26, "nema620"),
+	info_lkp_default(27, "nemaL620"),
+	info_lkp_default(28, "nemaL630"),
+	info_lkp_default(29, "nemaL715"),
+	info_lkp_default(30, "rf203p277"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t marlin_ambient_presence_info[] = {
-	{ -1, "unknown"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, "no"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},  /* disconnected */
-	{ 1, "yes"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}, /* connected */
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(-1, "unknown"),
+	info_lkp_default(0, "no"),	/* disconnected */
+	info_lkp_default(1, "yes"),	/* connected */
+	info_lkp_sentinel
 };
 
 static info_lkp_t marlin_emp002_ambient_presence_info[] = {
-	{ 0, "unknown"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "yes"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},     /* communicationOK */
-	{ 3, "no"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},      /* communicationLost */
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(0, "unknown"),
+	info_lkp_default(2, "yes"),	/* communicationOK */
+	info_lkp_default(3, "no"),	/* communicationLost */
+	info_lkp_sentinel
 };
 
 static info_lkp_t marlin_threshold_status_info[] = {
-	{ 0, "good"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},          /* No threshold triggered */
-	{ 1, "warning-low"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},   /* Warning low threshold triggered */
-	{ 2, "critical-low"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},  /* Critical low threshold triggered */
-	{ 3, "warning-high"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},  /* Warning high threshold triggered */
-	{ 4, "critical-high"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}, /* Critical high threshold triggered */
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(0, "good"),	/* No threshold triggered */
+	info_lkp_default(1, "warning-low"),	/* Warning low threshold triggered */
+	info_lkp_default(2, "critical-low"),	/* Critical low threshold triggered */
+	info_lkp_default(3, "warning-high"),	/* Warning high threshold triggered */
+	info_lkp_default(4, "critical-high"),	/* Critical high threshold triggered */
+	info_lkp_sentinel
 };
 
 static info_lkp_t marlin_threshold_frequency_status_info[] = {
-	{ 0, "good"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},          /* No threshold triggered */
-	{ 1, "out-of-range"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},  /* Frequency out of range triggered */
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(0, "good"),	/* No threshold triggered */
+	info_lkp_default(1, "out-of-range"),	/* Frequency out of range triggered */
+	info_lkp_sentinel
 };
 
 static info_lkp_t marlin_ambient_drycontacts_info[] = {
-	{ -1, "unknown"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, "open"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 1, "closed"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(-1, "unknown"),
+	info_lkp_default(0, "open"),
+	info_lkp_default(1, "closed"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t marlin_threshold_voltage_alarms_info[] = {
-	{ 0, ""
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},                       /* No threshold triggered */
-	{ 1, "low voltage warning!"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},   /* Warning low threshold triggered */
-	{ 2, "low voltage critical!"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},  /* Critical low threshold triggered */
-	{ 3, "high voltage warning!"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},  /* Warning high threshold triggered */
-	{ 4, "high voltage critical!"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}, /* Critical high threshold triggered */
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(0, ""),	/* No threshold triggered */
+	info_lkp_default(1, "low voltage warning!"),	/* Warning low threshold triggered */
+	info_lkp_default(2, "low voltage critical!"),	/* Critical low threshold triggered */
+	info_lkp_default(3, "high voltage warning!"),	/* Warning high threshold triggered */
+	info_lkp_default(4, "high voltage critical!"),	/* Critical high threshold triggered */
+	info_lkp_sentinel
 };
 
 static info_lkp_t marlin_threshold_current_alarms_info[] = {
-	{ 0, ""
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},                       /* No threshold triggered */
-	{ 1, "low current warning!"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},   /* Warning low threshold triggered */
-	{ 2, "low current critical!"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},  /* Critical low threshold triggered */
-	{ 3, "high current warning!"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},  /* Warning high threshold triggered */
-	{ 4, "high current critical!"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}, /* Critical high threshold triggered */
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(0, ""),	/* No threshold triggered */
+	info_lkp_default(1, "low current warning!"),	/* Warning low threshold triggered */
+	info_lkp_default(2, "low current critical!"),	/* Critical low threshold triggered */
+	info_lkp_default(3, "high current warning!"),	/* Warning high threshold triggered */
+	info_lkp_default(4, "high current critical!"),	/* Critical high threshold triggered */
+	info_lkp_sentinel
 };
 
 static info_lkp_t marlin_threshold_frequency_alarm_info[] = {
-	{ 0, ""
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},                         /* No threshold triggered */
-	{ 1, "frequency out of range!"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},  /* Frequency out of range triggered */
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(0, ""),	/* No threshold triggered */
+	info_lkp_default(1, "frequency out of range!"),	/* Frequency out of range triggered */
+	info_lkp_sentinel
 };
 
 static info_lkp_t marlin_threshold_temperature_alarms_info[] = {
-	{ 0, ""
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},                           /* No threshold triggered */
-	{ 1, "low temperature warning!"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},   /* Warning low threshold triggered */
-	{ 2, "low temperature critical!"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},  /* Critical low threshold triggered */
-	{ 3, "high temperature warning!"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},  /* Warning high threshold triggered */
-	{ 4, "high temperature critical!"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}, /* Critical high threshold triggered */
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(0, ""),	/* No threshold triggered */
+	info_lkp_default(1, "low temperature warning!"),	/* Warning low threshold triggered */
+	info_lkp_default(2, "low temperature critical!"),	/* Critical low threshold triggered */
+	info_lkp_default(3, "high temperature warning!"),	/* Warning high threshold triggered */
+	info_lkp_default(4, "high temperature critical!"),	/* Critical high threshold triggered */
+	info_lkp_sentinel
 };
 
 static info_lkp_t marlin_threshold_humidity_alarms_info[] = {
-	{ 0, ""
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},                        /* No threshold triggered */
-	{ 1, "low humidity warning!"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},   /* Warning low threshold triggered */
-	{ 2, "low humidity critical!"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},  /* Critical low threshold triggered */
-	{ 3, "high humidity warning!"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},  /* Warning high threshold triggered */
-	{ 4, "high humidity critical!"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}, /* Critical high threshold triggered */
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(0, ""),	/* No threshold triggered */
+	info_lkp_default(1, "low humidity warning!"),	/* Warning low threshold triggered */
+	info_lkp_default(2, "low humidity critical!"),	/* Critical low threshold triggered */
+	info_lkp_default(3, "high humidity warning!"),	/* Warning high threshold triggered */
+	info_lkp_default(4, "high humidity critical!"),	/* Critical high threshold triggered */
+	info_lkp_sentinel
 };
 
 static info_lkp_t marlin_outlet_group_type_info[] = {
-	{ 0, "unknown"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 1, "breaker1pole"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "breaker2pole"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 3, "breaker3pole"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 4, "outlet-section"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 5, "user-defined"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(0, "unknown"),
+	info_lkp_default(1, "breaker1pole"),
+	info_lkp_default(2, "breaker2pole"),
+	info_lkp_default(3, "breaker3pole"),
+	info_lkp_default(4, "outlet-section"),
+	info_lkp_default(5, "user-defined"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t marlin_input_type_info[] = {
-	{ 1, "1"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}, /* singlePhase     */
-	{ 2, "2"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}, /* splitPhase      */
-	{ 3, "3"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}, /* threePhaseDelta */
-	{ 4, "3"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}, /* threePhaseWye   */
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "1"),	/* singlePhase     */
+	info_lkp_default(2, "2"),	/* splitPhase      */
+	info_lkp_default(3, "3"),	/* threePhaseDelta */
+	info_lkp_default(4, "3"),	/* threePhaseWye   */
+	info_lkp_sentinel
 };
 
 /* /// From opensource/master:
@@ -641,65 +241,21 @@ static const char *marlin_outlet_group_phase_fun(void *raw_outlet_group_nb)
 }
 
 static info_lkp_t marlin_outlet_group_phase_info[] = {
-	{ 1, "dummy"
-#if WITH_SNMP_LKP_FUN
-		, marlin_outlet_group_phase_fun, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_fun_vp2s(1, "dummy"), marlin_outlet_group_phase_fun),
+	info_lkp_sentinel
 };
 */
 
 static info_lkp_t marlin_outlet_group_phase_info[] = {
-	{ 0, "unknown"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}, /* unknown     */
-	{ 1, "1"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},       /* singlePhase */
-	{ 2, "1-N"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},     /* phase1toN   */
-	{ 3, "2-N"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},     /* phase2toN   */
-	{ 4, "3-N"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},     /* phase3toN   */
-	{ 5, "1-2"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},     /* phase1to2   */
-	{ 6, "2-3"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},     /* phase2to3   */
-	{ 7, "3-1"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},     /* phase3to1   */
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(0, "unknown"),	/* unknown     */
+	info_lkp_default(1, "1"),	/* singlePhase */
+	info_lkp_default(2, "1-N"),	/* phase1toN   */
+	info_lkp_default(3, "2-N"),	/* phase2toN   */
+	info_lkp_default(4, "3-N"),	/* phase3toN   */
+	info_lkp_default(5, "1-2"),	/* phase1to2   */
+	info_lkp_default(6, "2-3"),	/* phase2to3   */
+	info_lkp_default(7, "3-1"),	/* phase3to1   */
+	info_lkp_sentinel
 };
 
 #if WITH_SNMP_LKP_FUN
@@ -721,32 +277,16 @@ const char *su_temperature_read_fun(void *raw_snmp_value) {
 	NUT_UNUSED_VARIABLE(raw_snmp_value);
 	return "dummy";
 }
-#endif // WITH_SNMP_LKP_FUN_DUMMY
+#endif /* WITH_SNMP_LKP_FUN_DUMMY */
 
 static info_lkp_t eaton_sensor_temperature_unit_info[] = {
-	{ 0, "dummy"
-#if WITH_SNMP_LKP_FUN
-		, eaton_sensor_temperature_unit_fun, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_fun_vp2s(0, "dummy", eaton_sensor_temperature_unit_fun),
+	info_lkp_sentinel
 };
 
 static info_lkp_t eaton_sensor_temperature_read_info[] = {
-	{ 0, "dummy"
-#if WITH_SNMP_LKP_FUN
-		, su_temperature_read_fun, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_fun_vp2s(0, "dummy", su_temperature_read_fun),
+	info_lkp_sentinel
 };
 
 #else // if not WITH_SNMP_LKP_FUN:
@@ -755,65 +295,25 @@ static info_lkp_t eaton_sensor_temperature_read_info[] = {
  * lookup/mapping tables for this, which can easily go into the DMF XML file.
  */
 static info_lkp_t eaton_sensor_temperature_unit_info[] = {
-	{ 0, "kelvin"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 1, "celsius"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "fahrenheit"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(0, "kelvin"),
+	info_lkp_default(1, "celsius"),
+	info_lkp_default(2, "fahrenheit"),
+	info_lkp_sentinel
 };
 
 #endif // WITH_SNMP_LKP_FUN
 
 /* Extracted from powerware-mib.c ; try to commonalize */
 static info_lkp_t marlin_ambient_drycontacts_polarity_info[] = {
-	{ 0, "normal-opened"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 1, "normal-closed"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(0, "normal-opened"),
+	info_lkp_default(1, "normal-closed"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t marlin_ambient_drycontacts_state_info[] = {
-	{ 0, "inactive"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 1, "active"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(0, "inactive"),
+	info_lkp_default(1, "active"),
+	info_lkp_sentinel
 };
 
 #if WITH_SNMP_LKP_FUN
@@ -829,16 +329,8 @@ long marlin_device_count_fun(const char *daisy_dev_list) {
 # endif /* WITH_SNMP_LKP_FUN_DUMMY */
 
 static info_lkp_t marlin_device_count_info[] = {
-	{ 1, "dummy"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, marlin_device_count_fun, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_fun_s2l(1, "dummy", marlin_device_count_fun),
+	info_lkp_sentinel
 };
 
 #else /* if not WITH_SNMP_LKP_FUN: */

@@ -25,119 +25,49 @@
 
 #include "delta_ups-mib.h"
 
-#define DELTA_UPS_MIB_VERSION  "0.5"
+#define DELTA_UPS_MIB_VERSION  "0.50"
 
 #define DELTA_UPS_SYSOID       ".1.3.6.1.4.1.2254.2.4"
 
 /* To create a value lookup structure (as needed on the 2nd line of the example
  * below), use the following kind of declaration, outside of the present snmp_info_t[]:
  * static info_lkp_t delta_onbatt_info[] = {
- * 	{ 1, "OB"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
- * 	{ 2, "OL"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
- * 	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+ * 	info_lkp_default(1, "OB"),
+ * 	info_lkp_default(2, "OL"),
+ * 	info_lkp_sentinel
  * };
  */
 
 static info_lkp_t delta_ups_upstype_info[] = {
-	{ 1, "on-line"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "off-line"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 3, "line-interactive"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 4, "3phase"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 5, "splite-phase"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "on-line"),
+	info_lkp_default(2, "off-line"),
+	info_lkp_default(3, "line-interactive"),
+	info_lkp_default(4, "3phase"),
+	info_lkp_default(5, "splite-phase"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t delta_ups_pwr_info[] = {
-	{ 0, "OL"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},        /* normal  */
-	{ 1, "OB"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},        /* battery  */
-	{ 2, "BYPASS"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},    /* bypass */
-	{ 3, "TRIM"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},      /* reducing */
-	{ 4, "BOOST"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},     /* boosting */
-	{ 5, "BYPASS"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},    /* manualBypass */
+	info_lkp_default(0, "OL"),	/* normal  */
+	info_lkp_default(1, "OB"),	/* battery  */
+	info_lkp_default(2, "BYPASS"),	/* bypass */
+	info_lkp_default(3, "TRIM"),	/* reducing */
+	info_lkp_default(4, "BOOST"),	/* boosting */
+	info_lkp_default(5, "BYPASS"),	/* manualBypass */
+
 /*
-	{ 6, "NULL"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-*/       /* other  */
-	{ 7, "OFF"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},      /* none */
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
-} ;
+	info_lkp_default(6, "NULL"),
+*/	/* other  */
+
+	info_lkp_default(7, "OFF"),	/* none */
+	info_lkp_sentinel
+};
 
 /* DELTA_UPS Snmp2NUT lookup table */
 static snmp_info_t delta_ups_mib[] = {
 
 	/* Data format:
-	 * { info_type, info_flags, info_len, OID, dfl, flags, oid2info, setvar },
+	 * snmp_info_default(info_type, info_flags, info_len, OID, dfl, flags, oid2info, setvar),
 	 *
 	 *	info_type:	NUT INFO_ or CMD_ element name
 	 *	info_flags:	flags to set in addinfo
@@ -149,15 +79,15 @@ static snmp_info_t delta_ups_mib[] = {
 	 *	oid2info: lookup table between OID and NUT values
 	 *
 	 * Example:
-	 * { "input.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.2.1", "", SU_INPUT_1, NULL },
-	 * { "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.7.3.0", "", SU_FLAG_OK | SU_STATUS_BATT, delta_ups_onbatt_info },
+	 * snmp_info_default("input.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.2.1", "", SU_INPUT_1, NULL),
+	 * snmp_info_default("ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.7.3.0", "", SU_FLAG_OK | SU_STATUS_BATT, delta_ups_onbatt_info),
 	 *
 	 * To create a value lookup structure (as needed on the 2nd line), use the
 	 * following kind of declaration, outside of the present snmp_info_t[]:
 	 * static info_lkp_t delta_ups_onbatt_info[] = {
-	 * 	{ 1, "OB" },
-	 * 	{ 2, "OL" },
-	 * 	{ 0, NULL }
+	 * 	info_lkp_default(1, "OB"),
+	 * 	info_lkp_default(2, "OL"),
+	 * 	info_lkp_sentinel
 	 * };
 	 */
 

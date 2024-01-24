@@ -23,7 +23,7 @@
 
 #include "apc-pdu-mib.h"
 
-#define APC_PDU_MIB_VERSION  "0.4"
+#define APC_PDU_MIB_VERSION  "0.40"
 
 #define APC_PDU_MIB_SYSOID_RPDU      ".1.3.6.1.4.1.318.1.3.4.4"
 #define APC_PDU_MIB_SYSOID_RPDU2     ".1.3.6.1.4.1.318.1.3.4.5"
@@ -32,39 +32,15 @@
 
 
 static info_lkp_t apc_pdu_sw_outlet_status_info[] = {
-	{ 1, "on"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "off"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "on"),
+	info_lkp_default(2, "off"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t apc_pdu_sw_outlet_switchability_info[] = {
-	{ 1, "yes"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "yes"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "yes"),
+	info_lkp_default(2, "yes"),
+	info_lkp_sentinel
 };
 
 /* POWERNET-MIB Snmp2NUT lookup table */

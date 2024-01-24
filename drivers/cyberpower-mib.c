@@ -38,213 +38,64 @@
 /* https://www.cyberpowersystems.com/products/software/mib-files/ */
 /* Per CPS MIB 2.9 upsBaseOutputStatus OBJECT-TYPE: */
 static info_lkp_t cyberpower_power_status[] = {
-	{ 2, "OL"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},	/* onLine */
-	{ 3, "OB"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},	/* onBattery */
-	{ 4, "OL BOOST"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},	/* onBoost */
-	{ 5, "OFF"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},	/* onSleep */
-	{ 6, "OFF"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},	/* off */
-	{ 7, "OL"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},	/* rebooting */
-	{ 8, "OL"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},	/* onECO */
-	{ 9, "OL BYPASS"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},	/* onBypass */
-	{ 10, "OL TRIM"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},	/* onBuck */
-	{ 11, "OL OVER"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},	/* onOverload */
+	info_lkp_default(2, "OL"),	/* onLine */
+	info_lkp_default(3, "OB"),	/* onBattery */
+	info_lkp_default(4, "OL BOOST"),	/* onBoost */
+	info_lkp_default(5, "OFF"),	/* onSleep */
+	info_lkp_default(6, "OFF"),	/* off */
+	info_lkp_default(7, "OL"),	/* rebooting */
+	info_lkp_default(8, "OL"),	/* onECO */
+	info_lkp_default(9, "OL BYPASS"),	/* onBypass */
+	info_lkp_default(10, "OL TRIM"),	/* onBuck */
+	info_lkp_default(11, "OL OVER"),	/* onOverload */
 
 	/* Note: a "NULL" string must be last due to snmp-ups.c parser logic */
-	{ 1, "NULL"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},	/* unknown */
+	info_lkp_default(1, "NULL"),	/* unknown */
 
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
-} ;
+	info_lkp_sentinel
+};
 
 static info_lkp_t cyberpower_battery_status[] = {
-	{ 1, ""
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},	/* unknown */
-	{ 2, ""
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},	/* batteryNormal */
-	{ 3, "LB"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},	/* batteryLow */
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
-} ;
+	info_lkp_default(1, ""),	/* unknown */
+	info_lkp_default(2, ""),	/* batteryNormal */
+	info_lkp_default(3, "LB"),	/* batteryLow */
+	info_lkp_sentinel
+};
 
 static info_lkp_t cyberpower_cal_status[] = {
-	{ 1, ""
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},          /* Calibration Successful */
-	{ 2, ""
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},          /* Calibration Invalid */
-	{ 3, "CAL"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},       /* Calibration in progress */
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, ""),	/* Calibration Successful */
+	info_lkp_default(2, ""),	/* Calibration Invalid */
+	info_lkp_default(3, "CAL"),	/* Calibration in progress */
+	info_lkp_sentinel
 };
 
 static info_lkp_t cyberpower_battrepl_status[] = {
-	{ 1, ""
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},          /* No battery needs replacing */
-	{ 2, "RB"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},        /* Batteries need to be replaced */
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, ""),	/* No battery needs replacing */
+	info_lkp_default(2, "RB"),	/* Batteries need to be replaced */
+	info_lkp_sentinel
 };
 
 static info_lkp_t cyberpower_ups_alarm_info[] = {
-	{ 1, ""
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},                       /* Normal */
-	{ 2, "Temperature too high!"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},  /* Overheat */
-	{ 3, "Internal UPS fault!"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},    /* Hardware Fault */
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, ""),	/* Normal */
+	info_lkp_default(2, "Temperature too high!"),	/* Overheat */
+	info_lkp_default(3, "Internal UPS fault!"),	/* Hardware Fault */
+	info_lkp_sentinel
 };
 
 static info_lkp_t cyberpower_transfer_reasons[] = {
-	{ 1, "noTransfer"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "highLineVoltage"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 3, "brownout"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 4, "selfTest"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "noTransfer"),
+	info_lkp_default(2, "highLineVoltage"),
+	info_lkp_default(3, "brownout"),
+	info_lkp_default(4, "selfTest"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t cyberpower_testdiag_results[] = {
-	{ 1, "Ok"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},	
-	{ 2, "Failed"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},	
-	{ 3, "InvalidTest"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	
-	},	
-	{ 4, "TestInProgress"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "Ok"),
+	info_lkp_default(2, "Failed"),
+	info_lkp_default(3, "InvalidTest"),
+	info_lkp_default(4, "TestInProgress"),
+	info_lkp_sentinel
 };
 
 /* Snmp2NUT lookup table for CyberPower MIB */

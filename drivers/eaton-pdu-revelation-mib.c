@@ -55,61 +55,21 @@
 #define AR_OID_OUTLET_STATUS			AR_BASE_OID ".1.2.2.1.3"
 
 static info_lkp_t revelation_outlet_status_info[] = {
-	{ -1, "error"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, "off"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 1, "on"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "cycling"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}, /* transitional status */
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(-1, "error"),
+	info_lkp_default(0, "off"),
+	info_lkp_default(1, "on"),
+	info_lkp_default(2, "cycling"),	/* transitional status */
+	info_lkp_sentinel
 };
 
 /* Ugly hack: having the matching OID present means that the outlet is
  * switchable. So, it should not require this value lookup */
 static info_lkp_t revelation_outlet_switchability_info[] = {
-	{ -1, "yes"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, "yes"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 1, "yes"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "yes"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(-1, "yes"),
+	info_lkp_default(0, "yes"),
+	info_lkp_default(1, "yes"),
+	info_lkp_default(2, "yes"),
+	info_lkp_sentinel
 };
 
 #define DO_OFF		"0"

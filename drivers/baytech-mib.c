@@ -31,51 +31,15 @@
 #define BAYTECH_OID_MODEL_NAME	".1.3.6.1.4.1.4779.1.3.5.2.1.24.1"
 
 static info_lkp_t baytech_outlet_status_info[] = {
-	{ -1, "error"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, "off"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 1, "on"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "cycling"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}, /* transitional status, "reboot" in MIB comments */
-	{ 3, "lockon"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 4, "lockoff"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 5, "unlock"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 6, "unknown"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(-1, "error"),
+	info_lkp_default(0, "off"),
+	info_lkp_default(1, "on"),
+	info_lkp_default(2, "cycling"),	/* transitional status, "reboot" in MIB comments */
+	info_lkp_default(3, "lockon"),
+	info_lkp_default(4, "lockoff"),
+	info_lkp_default(5, "unlock"),
+	info_lkp_default(6, "unknown"),
+	info_lkp_sentinel
 
 };
 

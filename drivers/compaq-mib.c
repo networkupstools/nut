@@ -84,296 +84,89 @@
 
 /* Not used, as no longer supported by MIB ver. 1.76 (Github issue 118)
 static info_lkp_t cpqpower_alarm_ob[] = {
-	{ 1, "OB"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "OB"),
+	info_lkp_sentinel
 };
 */
 
 /* Not used, as no longer supported by MIB ver. 1.76 (Github issue 118)
 static info_lkp_t cpqpower_alarm_lb[] = {
-	{ 1, "LB"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "LB"),
+	info_lkp_sentinel
 };
 */
 
 /* Defines for CPQPOWER_OID_POWER_STATUS (1) */
 static info_lkp_t cpqpower_pwr_info[] = {
-	{ 1, ""       /* other */
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "OFF"    /* none */
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 3, "OL"     /* normal */
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 4, "OL BYPASS" /* bypass */
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 5, "OB"     /* battery */
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 6, "OL BOOST"  /* booster */
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 7, "OL TRIM"   /* reducer */
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 8, "OL"   /* parallelCapacity */
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 9, "OL"   /* parallelRedundant */
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 10, "OL" /* HighEfficiencyMode */
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
-} ;
+	info_lkp_default(1, ""),       /* other */
+	info_lkp_default(2, "OFF"),    /* none */
+	info_lkp_default(3, "OL"),     /* normal */
+	info_lkp_default(4, "OL BYPASS"), /* bypass */
+	info_lkp_default(5, "OB"),     /* battery */
+	info_lkp_default(6, "OL BOOST"),  /* booster */
+	info_lkp_default(7, "OL TRIM"),   /* reducer */
+	info_lkp_default(8, "OL"),   /* parallelCapacity */
+	info_lkp_default(9, "OL"),   /* parallelRedundant */
+	info_lkp_default(10, "OL"), /* HighEfficiencyMode */
+	info_lkp_sentinel
+};
 
 static info_lkp_t cpqpower_mode_info[] = {
-	{ 1, ""
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, ""
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 3, "normal"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 4, ""
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 5, ""
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 6, ""
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 7, ""
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 8, "parallel capacity"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 9, "parallel redundancy"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{10, "high efficiency"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, ""),
+	info_lkp_default(2, ""),
+	info_lkp_default(3, "normal"),
+	info_lkp_default(4, ""),
+	info_lkp_default(5, ""),
+	info_lkp_default(6, ""),
+	info_lkp_default(7, ""),
+	info_lkp_default(8, "parallel capacity"),
+	info_lkp_default(9, "parallel redundancy"),
+	info_lkp_default(10, "high efficiency"),
+	info_lkp_sentinel
 };
 
 static info_lkp_t cpqpower_battery_abm_status[] = {
-	{ 1, "CHRG"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "DISCHRG"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
+	info_lkp_default(1, "CHRG"),
+	info_lkp_default(2, "DISCHRG"),
 /*
-	{ 3, "Floating"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
+	info_lkp_default(3, "Floating"),
+	info_lkp_default(4, "Resting"),
+	info_lkp_default(5, "Unknown"),
 */
-/*	{ 4, "Resting"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-*/
-/*
-	{ 5, "Unknown"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-*/
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
-} ;
+	info_lkp_sentinel
+};
 
 /* Defines for CPQPOWER_OID_UPS_TEST_RES */
 static info_lkp_t cpqpower_test_res_info[] = {
-	{ 1, "Unknown"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "Done and passed"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 3, "Done and error"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 4, "In progress"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 5, "Not supported"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 6, "Inhibited"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 7, "Scheduled"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
-} ;
+	info_lkp_default(1, "Unknown"),
+	info_lkp_default(2, "Done and passed"),
+	info_lkp_default(3, "Done and error"),
+	info_lkp_default(4, "In progress"),
+	info_lkp_default(5, "Not supported"),
+	info_lkp_default(6, "Inhibited"),
+	info_lkp_default(7, "Scheduled"),
+	info_lkp_sentinel
+};
 
 #define CPQPOWER_START_TEST		"1"
 
 static info_lkp_t cpqpower_outlet_status_info[] = {
-	{ 1, "on"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "off"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 3, "pendingOff"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}, /* transitional status */
-	{ 4, "pendingOn"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}, /* transitional status */
-	{ 5, "unknown"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "on"),
+	info_lkp_default(2, "off"),
+	info_lkp_default(3, "pendingOff"),	/* transitional status */
+	info_lkp_default(4, "pendingOn"),	/* transitional status */
+	info_lkp_default(5, "unknown"),
+	info_lkp_sentinel
 };
 
 /* Ugly hack: having the matching OID present means that the outlet is
  * switchable. So, it should not require this value lookup */
 static info_lkp_t cpqpower_outlet_switchability_info[] = {
-	{ 1, "yes"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 2, "yes"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 3, "yes"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 4, "yes"
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_default(1, "yes"),
+	info_lkp_default(2, "yes"),
+	info_lkp_default(3, "yes"),
+	info_lkp_default(4, "yes"),
+	info_lkp_sentinel
 };
 
 #define CPQPOWER_OID_SD_AFTER_DELAY	 ".1.3.6.1.4.1.232.165.3.8.1.0"	/* UPS-MIB::upsControlOutputOffDelay */
