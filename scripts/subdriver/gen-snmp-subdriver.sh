@@ -215,7 +215,7 @@ generate_C() {
 	 * static info_lkp_t onbatt_info[] = {
 	 * 	info_lkp_default(1, "OB"),
 	 * 	info_lkp_default(2, "OL"),
-	 * 	info_lkp_default(0, NULL)
+	 * 	info_lkp_sentinel
 	 * };
 	 */
 
@@ -242,7 +242,7 @@ generate_C() {
 		 * static info_lkp_t onbatt_info[] = {
 		 * 	info_lkp_default(1, "OB"),
 		 * 	info_lkp_default(2, "OL"),
-		 * 	info_lkp_default(0, NULL)
+		 * 	info_lkp_sentinel
 		 * };
 		 */
 
@@ -287,7 +287,7 @@ EOF
 #endif	/* if WITH_UNMAPPED_DATA_POINTS */
 
 	/* end of structure. */
-	snmp_info_default(NULL, 0, 0, NULL, NULL, 0, NULL)
+	snmp_info_sentinel
 };
 
 mib2nut_info_t  ${LDRIVER} = { "${LDRIVER}", ${UDRIVER}_MIB_VERSION, NULL, NULL, ${LDRIVER}_mib, ${UDRIVER}_DEVICE_SYSOID };

@@ -176,6 +176,7 @@ typedef struct {
 /* Ignore the function pointer where not supported */
 # define info_lkp_fun_vp2s(_1, _2, _3)	{_1, _2}
 #endif /* WITH_SNMP_LKP_FUN */
+#define info_lkp_sentinel	info_lkp_default(0, NULL)
 
 /* Structure containing info about one item that can be requested
    from UPS and set in INFO.  If no interpreter functions is defined,
@@ -218,6 +219,7 @@ typedef struct {
 #else
 #  define snmp_info_default(_1, _2, _3, _4, _5, _6, _7)	{_1, _2, _3, _4, _5, _6, _7}
 #endif /* WITH_DMF_FUNCTIONS */
+#define snmp_info_sentinel	snmp_info_default(NULL, 0, 0, NULL, NULL, 0, NULL)
 
 /* "flags" bits 0..9 */
 #define SU_FLAG_OK			(1UL << 0)	/* show element to upsd -
