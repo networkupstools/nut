@@ -47,8 +47,8 @@
 int input_phases, output_phases, bypass_phases;
 
 #if WITH_DMF_FUNCTIONS
-	int functions_aux = 0;
-	char *function_text = NULL;
+	static int functions_aux = 0;
+	static char *function_text = NULL;
 #endif
 
 /*DEBUGGING*/
@@ -1454,6 +1454,7 @@ mibdmf_xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
 	return OK;
 }
 
+static
 int
 mibdmf_parse_begin_cb(void *parsed_data)
 {
@@ -1472,6 +1473,7 @@ mibdmf_parse_begin_cb(void *parsed_data)
 	return OK;
 }
 
+static
 int
 mibdmf_parse_finish_cb(void *parsed_data, int result)
 {
