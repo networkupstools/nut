@@ -4451,6 +4451,10 @@ ABS_TOP_BUILDDIR="`cd "${TOP_BUILDDIR}" && pwd`" || AC_MSG_ERROR([Can not detect
 ABS_TOP_SRCDIR="`cd "${abs_srcdir}" && pwd`" || AC_MSG_ERROR([Can not detect ABS_TOP_SRCDIR])
 AM_CONDITIONAL([BUILDING_IN_TREE], [test "${ABS_TOP_BUILDDIR}" = "${ABS_TOP_SRCDIR}"])
 
+dnl Use these at best for tests (e.g. nutconf), not production code:
+AC_DEFINE_UNQUOTED([ABS_TOP_SRCDIR], ["${ABS_TOP_SRCDIR}"], [NUT source directory when the build was configured])
+AC_DEFINE_UNQUOTED([ABS_TOP_BUILDDIR], ["${ABS_TOP_BUILDDIR}"], [NUT build directory when the build was configured])
+
 AC_MSG_CHECKING([whether to customize ${TOP_BUILDDIR}/scripts/systemd/nut-common-tmpfiles.conf.in for this system])
 dnl TOTHINK: Some distributions make the directories below owned
 dnl by "root:${RUN_AS_GROUP}" with 77x permissions. Is it safer?..
