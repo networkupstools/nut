@@ -1782,10 +1782,14 @@ class autodelete_ptr {
 	private:
 
 	/** Copying is forbidden */
-	autodelete_ptr(const autodelete_ptr & orig) {}
+	autodelete_ptr(const autodelete_ptr & orig) {
+		NUT_UNUSED_VARIABLE(orig);
+	}
 
 	/** Assignment is forbidden */
-	autodelete_ptr & operator = (const autodelete_ptr & orig) {}
+	autodelete_ptr & operator = (const autodelete_ptr & orig) {
+		NUT_UNUSED_VARIABLE(orig);
+	}
 
 };  // end of template class autodelete_ptr
 

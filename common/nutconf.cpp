@@ -1372,6 +1372,7 @@ void UpsdConfigParser::onParseBegin()
 void UpsdConfigParser::onParseComment(const std::string& comment)
 {
 	// Comments are ignored for now
+	NUT_UNUSED_VARIABLE(comment);
 }
 
 void UpsdConfigParser::onParseSectionName(const std::string& sectionName, const std::string& comment)
@@ -1379,11 +1380,15 @@ void UpsdConfigParser::onParseSectionName(const std::string& sectionName, const 
 	// There must not be sections in upsd.conf.
 	// Ignore it
 	// TODO Add error reporting ?
+	NUT_UNUSED_VARIABLE(sectionName);
+	NUT_UNUSED_VARIABLE(comment);
 }
 
 void UpsdConfigParser::onParseDirective(const std::string& directiveName, char sep, const ConfigParamList& values, const std::string& comment)
 {
 	// NOTE: separators are always ignored
+	NUT_UNUSED_VARIABLE(sep);
+	NUT_UNUSED_VARIABLE(comment);
 
 	if(_config)
 	{

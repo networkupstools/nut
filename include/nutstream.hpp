@@ -37,6 +37,10 @@ extern "C" {
 #include <sys/socket.h>
 }
 
+/* See include/common.h for details behind this */
+#ifndef NUT_UNUSED_VARIABLE
+#define NUT_UNUSED_VARIABLE(x) (void)(x)
+#endif
 
 namespace nut
 {
@@ -552,6 +556,7 @@ class NutFile: public NutStream {
 	 *  \param  orig  Original file
 	 */
 	NutFile(const NutFile & orig) {
+		NUT_UNUSED_VARIABLE(orig);
 		throw std::logic_error("NOT IMPLEMENTED");
 	}
 
@@ -565,6 +570,7 @@ class NutFile: public NutStream {
 	 *  \param  rval  Right value
 	 */
 	NutFile & operator = (const NutFile & rval) {
+		NUT_UNUSED_VARIABLE(rval);
 		throw std::logic_error("NOT IMPLEMENTED");
 	}
 
@@ -1131,6 +1137,7 @@ class NutSocket: public NutStream {
 	 *  \param  orig  Original file
 	 */
 	NutSocket(const NutSocket & orig) {
+		NUT_UNUSED_VARIABLE(orig);
 		throw std::logic_error("NOT IMPLEMENTED");
 	}
 
@@ -1144,6 +1151,7 @@ class NutSocket: public NutStream {
 	 *  \param  rval  Right value
 	 */
 	NutSocket & operator = (const NutSocket & rval) {
+		NUT_UNUSED_VARIABLE(rval);
 		throw std::logic_error("NOT IMPLEMENTED");
 	}
 
