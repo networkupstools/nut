@@ -19,6 +19,8 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h"
+
 #include "nutstream.hpp"
 #include "nutconf.hpp"
 #include "nutwriter.hpp"
@@ -116,7 +118,7 @@ void NutConfigUnitTest::check(const nut::Serialisable * config, const std::strin
 void NutConfigUnitTest::testNutConfiguration() {
 	nut::NutConfiguration config;
 
-	load(static_cast<nut::Serialisable *>(&config), TOP_SRCDIR "/conf/nut.conf.sample");
+	load(static_cast<nut::Serialisable *>(&config), ABS_TOP_SRCDIR "/conf/nut.conf.sample");
 
 	config.mode = nut::NutConfiguration::MODE_STANDALONE;
 
@@ -129,7 +131,8 @@ void NutConfigUnitTest::testNutConfiguration() {
 void NutConfigUnitTest::testUpsmonConfiguration() {
 	nut::UpsmonConfiguration config;
 
-	load(static_cast<nut::Serialisable *>(&config), TOP_SRCDIR "/conf/upsmon.conf.sample");
+	// Note: this file gets generated from a .in template
+	load(static_cast<nut::Serialisable *>(&config), ABS_BUILD_SRCDIR "/conf/upsmon.conf.sample");
 
 	config.shutdownCmd   = "/sbin/shutdown -h +2 'System shutdown in 2 minutes!'";
 	config.powerDownFlag = "/run/nut/killpower";
@@ -154,7 +157,7 @@ void NutConfigUnitTest::testUpsmonConfiguration() {
 void NutConfigUnitTest::testUpsdConfiguration() {
 	nut::UpsdConfiguration config;
 
-	load(static_cast<nut::Serialisable *>(&config), TOP_SRCDIR "/conf/upsd.conf.sample");
+	load(static_cast<nut::Serialisable *>(&config), ABS_TOP_SRCDIR "/conf/upsd.conf.sample");
 
 	config.maxAge    = 15;
 	config.statePath = "/var/run/nut";
@@ -186,7 +189,7 @@ void NutConfigUnitTest::testUpsdConfiguration() {
 void NutConfigUnitTest::testUpsConfiguration() {
 	nut::UpsConfiguration config;
 
-	load(static_cast<nut::Serialisable *>(&config), TOP_SRCDIR "/conf/ups.conf.sample");
+	load(static_cast<nut::Serialisable *>(&config), ABS_TOP_SRCDIR "/conf/ups.conf.sample");
 
 	static const std::string my_ups("powerpal");
 
@@ -207,7 +210,7 @@ void NutConfigUnitTest::testUpsConfiguration() {
 void NutConfigUnitTest::testUpsdUsersConfiguration() {
 	nut::UpsdUsersConfiguration config;
 
-	load(static_cast<nut::Serialisable *>(&config), TOP_SRCDIR "/conf/upsd.users.sample");
+	load(static_cast<nut::Serialisable *>(&config), ABS_TOP_SRCDIR "/conf/upsd.users.sample");
 
 	config.setPassword("upsmon", "ytrewq");
 	config.setUpsmonMode(nut::UpsdUsersConfiguration::UPSMON_MASTER);
