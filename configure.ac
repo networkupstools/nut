@@ -1535,7 +1535,7 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, libxml2, ipmi, powerman, modbus, gpio (currently on Linux released after ~2018), linux_i2c (on Linux), macosx-ups (on MacOS), cgi, dev, avahi, nut-scanner, pynut, dmf, snmp_dmf]),
+	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, libxml2, ipmi, powerman, modbus, gpio (currently on Linux released after ~2018), linux_i2c (on Linux), macosx-ups (on MacOS), cgi, dev, avahi, nut-scanner, nutconf, pynut, dmf, snmp_dmf]),
 dnl ### Not forced:   lua, dmf_lua, snmp_dmf_lua
 [
 	if test -n "${withval}"; then
@@ -1586,6 +1586,7 @@ dnl		if test -z "${with_snmp_dmf_lua}"; then with_snmp_dmf_lua="${withval}"; fi
 		if test -z "${with_dev}"; then with_dev="${withval}"; fi
 		if test -z "${with_avahi}"; then with_avahi="${withval}"; fi
 		if test -z "${with_nut_scanner}"; then with_nut_scanner="${withval}"; fi
+		if test -z "${with_nutconf}"; then with_nutconf="${withval}"; fi
 
 		if test -n "${PYTHON}${PYTHON2}${PYTHON3}" -a x"${withval}" = xyes \
 		|| test x"${withval}" != xyes \
@@ -1615,11 +1616,7 @@ dnl they are listed near the top by "./configure --help"; however,
 dnl note that options with further investigation methods are listed
 dnl a bit below to be grouped with their additional with/enable help.
 
-dnl While the contribution is being absorbed into the NUT codebase,
-dnl we don't want the CI farm to build it by default and so block NUT
-dnl packaging. This toggle may be removed or switched to "yes" later.
-dnl Until then, also this is not activated by --with-all flag.
-NUT_ARG_WITH([nutconf], [build and install the nutconf tool (experimental, has compiler/coverage warnings)], [no])
+NUT_ARG_WITH([nutconf], [build and install the nutconf tool (experimental, has compiler/coverage warnings)], [auto])
 
 NUT_ARG_WITH([dev], [build and install the development files], [no])
 
@@ -2844,13 +2841,6 @@ NUT_REPORT_FEATURE([build and install the development files], [${nut_with_dev}],
 					[WITH_DEV], [Define to enable development files support])
 
 dnl ----------------------------------------------------------------------
-
-AM_CONDITIONAL(WITH_NUTCONF, test "${nut_with_nutconf}" = "yes")
-NUT_REPORT_FEATURE([build and install the nutconf tool (experimental, has compiler/coverage warnings)],
-					[${nut_with_nutconf}], [],
-					[WITH_NUTCONF], [Define to enable nutconf tool support])
-
-dnl ----------------------------------------------------------------------
 dnl checks related to MS Windows support (MingW)
 
 AC_CHECK_TOOL([WINDMC], [windmc], [none])
@@ -3688,6 +3678,24 @@ AC_MSG_RESULT(${have_cppunit})
 NUT_REPORT_FEATURE([build C++ tests with CPPUNIT], [${have_cppunit}], [],
 					[HAVE_CPPUNIT], [Define to enable CPPUNIT tests])
 AC_DEFINE_UNQUOTED(CPPUNIT_NUT_CXXFLAGS, $CPPUNIT_NUT_CXXFLAGS, [Compiler flags for cppunit tests])
+
+dnl ----------------------------------------------------------------------
+
+AC_MSG_CHECKING(whether we can and want to build nutconf configuration-management tool)
+
+AS_CASE(["${nut_with_nutconf}"],
+		["auto"], [AS_IF([test x"${have_cxx11}" = xyes], [nut_with_nutconf="yes"], [nut_with_nutconf="no"])],
+		["yes"], [AS_IF([test x"${have_cxx11}" = xyes], [], [AC_MSG_ERROR([explicit --with-nutconf=yes can not be satisfied: C++11 support not enabled])])],
+		["no"], [nut_with_nutconf=no]
+	)
+AC_MSG_RESULT(${nut_with_nutconf})
+
+AM_CONDITIONAL(WITH_NUTCONF, test "${nut_with_nutconf}" = "yes")
+NUT_REPORT_FEATURE([build and install the nutconf tool (experimental, may lack support for recent NUT options)],
+					[${nut_with_nutconf}], [],
+					[WITH_NUTCONF], [Define to enable nutconf tool support])
+
+dnl ----------------------------------------------------------------------
 
 AC_MSG_CHECKING(whether to install Augeas configuration-management lenses)
 AC_ARG_WITH(augeas-lenses-dir,
