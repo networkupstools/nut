@@ -406,7 +406,7 @@ void NutConfigParser::parseConfig() {
 	Token tok;
 	std::string name;
 	std::list<std::string> values;
-	char sep;
+	char sep = 0;
 	while (tok = parseToken()) {
 		switch (state) {
 			case CPS_DEFAULT:
