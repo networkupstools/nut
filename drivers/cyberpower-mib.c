@@ -227,7 +227,7 @@ static snmp_info_t cyberpower_mib[] = {
 		SU_FLAG_OK, &cyberpower_testdiag_results[0]),
 
 	/* end of structure. */
-	snmp_info_default(NULL, 0, 0, NULL, NULL, 0, NULL)
+	snmp_info_sentinel
 } ;
 
 mib2nut_info_t	cyberpower = { "cyberpower", CYBERPOWER_MIB_VERSION, NULL,

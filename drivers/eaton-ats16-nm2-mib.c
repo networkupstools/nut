@@ -264,8 +264,9 @@ static snmp_info_t eaton_ats16_nm2_mib[] = {
 	/* ats2ContactDescr.2 = STRING: Input #2 */
 	snmp_info_default("unmapped.ats2ContactDescr", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.10.2.5.4.1.4.2", NULL, SU_FLAG_OK, NULL),
 #endif	/* if WITH_UNMAPPED_DATA_POINTS */
+
 	/* end of structure. */
-	snmp_info_default(NULL, 0, 0, NULL, NULL, 0, NULL)
+	snmp_info_sentinel
 };
 
 /* Note: keep the legacy definition intact, to avoid breaking compatibility */

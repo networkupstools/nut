@@ -124,7 +124,7 @@ static snmp_info_t raritan_mib[] = {
 	snmp_info_default("outlet.%i.load.cycle", 0, 1, ".1.3.6.1.4.1.13742.1.2.2.1.3.%i", DO_CYCLE, SU_TYPE_CMD | SU_OUTLET, NULL),
 
 	/* end of structure. */
-	snmp_info_default(NULL, 0, 0, NULL, NULL, 0, NULL)
+	snmp_info_sentinel
 };
 
 mib2nut_info_t	raritan = { "raritan", RARITAN_MIB_VERSION, NULL, RARITAN_OID_MODEL_NAME, raritan_mib, RARITAN_SYSOID, NULL };

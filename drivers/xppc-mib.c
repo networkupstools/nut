@@ -127,7 +127,7 @@ static snmp_info_t xppc_mib[] = {
 	snmp_info_default("ups.load", 0, 1, ".1.3.6.1.4.1.935.1.1.1.4.2.3.0", NULL, SU_TYPE_INT | SU_FLAG_OK, NULL),
 
 	/* end of structure. */
-	snmp_info_default(NULL, 0, 0, NULL, NULL, 0, NULL)
+	snmp_info_sentinel
 };
 
 mib2nut_info_t	xppc = { "xppc", XPPC_MIB_VERSION, NULL, NULL, xppc_mib, XPPC_SYSOID, NULL };

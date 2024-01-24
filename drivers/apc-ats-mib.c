@@ -446,7 +446,7 @@ static snmp_info_t apc_ats_mib[] = {
 #endif	/* if WITH_UNMAPPED_DATA_POINTS */
 
 	/* end of structure. */
-	snmp_info_default(NULL, 0, 0, NULL, NULL, 0, NULL)
+	snmp_info_sentinel
 };
 
 mib2nut_info_t	apc_ats = { "apc_ats", APC_ATS_MIB_VERSION, NULL, APC_ATS_OID_MODEL_NAME, apc_ats_mib, APC_ATS_SYSOID, NULL };

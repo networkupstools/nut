@@ -84,7 +84,7 @@ static snmp_info_t bestpower_mib[] = {
 		0, NULL),
 
 	/* end of structure. */
-	snmp_info_default(NULL, 0, 0, NULL, NULL, 0, NULL)
+	snmp_info_sentinel
 } ;
 
 mib2nut_info_t	bestpower = { "bestpower", BESTPOWER_MIB_VERSION, NULL,

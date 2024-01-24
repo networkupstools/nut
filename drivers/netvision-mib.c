@@ -184,7 +184,7 @@ static snmp_info_t netvision_mib[] = {
 	snmp_info_default("battery.runtime", 0, 60, NETVISION_OID_BATT_RUNTIME_REMAINING, "", SU_FLAG_OK, NULL),
 
 	/* end of structure. */
-	snmp_info_default(NULL, 0, 0, NULL, NULL, 0, NULL)
+	snmp_info_sentinel
 };
 
 mib2nut_info_t	netvision = { "netvision", NETVISION_MIB_VERSION, NULL, NETVISION_OID_UPSIDENTMODEL, netvision_mib, NETVISION_SYSOID, NULL };

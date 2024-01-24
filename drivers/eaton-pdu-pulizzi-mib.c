@@ -133,7 +133,7 @@ static snmp_info_t eaton_pulizzi_switched_mib[] = {
 	snmp_info_default("outlet.%i.load.cycle", 0, 1, ".1.3.6.1.4.1.20677.2.6.2.%i.0", "3", SU_TYPE_CMD | SU_OUTLET | SU_CMD_OFFSET, NULL),
 
 	/* end of structure. */
-	snmp_info_default(NULL, 0, 0, NULL, NULL, 0, NULL)
+	snmp_info_sentinel
 };
 
 

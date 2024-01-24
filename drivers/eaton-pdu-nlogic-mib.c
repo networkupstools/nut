@@ -3384,10 +3384,10 @@ static snmp_info_t eaton_pdu_nlogic_mib[] = {
 	snmp_info_default("unmapped.pduOutletControlPowerOnState", 0, 1, ".1.3.6.1.4.1.534.7.1.5.2.1.5.1.47", NULL, SU_FLAG_OK, NULL),
 	/* pduOutletControlPowerOnState.1.48 = INTEGER: 0 */
 	snmp_info_default("unmapped.pduOutletControlPowerOnState", 0, 1, ".1.3.6.1.4.1.534.7.1.5.2.1.5.1.48", NULL, SU_FLAG_OK, NULL),
-
 #endif	/* if WITH_UNMAPPED_DATA_POINTS */
+
 	/* end of structure. */
-	snmp_info_default(NULL, 0, 0, NULL, NULL, 0, NULL)
+	snmp_info_sentinel
 };
 
 mib2nut_info_t	eaton_pdu_nlogic = { "eaton_pdu_nlogic", EATON_PDU_NLOGIC_MIB_VERSION, NULL, NULL, eaton_pdu_nlogic_mib, EATON_PDU_NLOGIC_SYSOID, NULL };

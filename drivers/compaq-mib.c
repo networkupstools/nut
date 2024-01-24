@@ -327,7 +327,7 @@ static snmp_info_t cpqpower_mib[] = {
 	snmp_info_default("test.battery.start", 0, 1, ".1.3.6.1.4.1.232.165.3.7.1.0", CPQPOWER_START_TEST, SU_TYPE_CMD | SU_FLAG_OK, NULL),
 
 	/* end of structure. */
-	snmp_info_default(NULL, 0, 0, NULL, NULL, 0, NULL)
+	snmp_info_sentinel
 };
 
 mib2nut_info_t	compaq = { "cpqpower", CPQPOWER_MIB_VERSION, NULL, CPQPOWER_OID_MFR_NAME, cpqpower_mib, CPQPOWER_SYSOID, NULL };
