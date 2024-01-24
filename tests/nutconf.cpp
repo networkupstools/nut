@@ -21,7 +21,7 @@
 
 #include <cppunit/extensions/HelperMacros.h>
 
-// Define to desactivate protection of parsing tool members:
+// Define to de-activate protection of parsing tool members:
 #define UNITEST_MODE 1
 
 #include "nutconf.h"

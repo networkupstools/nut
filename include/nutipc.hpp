@@ -347,9 +347,9 @@ class Signal {
 		CHILD  = SIGCHLD,    /** Child stopped or terminated       */
 		CONT   = SIGCONT,    /** Continue if stopped               */
 		STOP   = SIGSTOP,    /** Stop process (unmaskable)         */
-		TSTOP  = SIGTSTP,    /** Stop typed at tty                 */
-		TTYIN  = SIGTTIN,    /** tty input for background process  */
-		TTYOUT = SIGTTOU,    /** tty output for background process */
+		TSTOP  = SIGTSTP,    /** Stop typed at TTY                 */
+		TTYIN  = SIGTTIN,    /** TTY input for background process  */
+		TTYOUT = SIGTTOU,    /** TTY output for background process */
 		PROF   = SIGPROF,    /** Profiling timer expired           */
 		SYS    = SIGSYS,     /** Bad argument to routine           */
 		URG    = SIGURG,     /** Urgent condition on socket        */
@@ -436,10 +436,10 @@ class Signal {
 		 *  The function simply writes the signal number to the signal handler
 		 *  thread communication pipe (as parameter of the \ref SIGNAL command).
 		 *  The signal handling itself (whatever necessary) shall be done
-		 *  by the dedicated thread (to avoid possible re-entrancy issues).
+		 *  by the dedicated thread (to avoid possible re-entrance issues).
 		 *
 		 *  Note that \c ::write is required to be an async-signal-safe function by
-		 *  POSIX.1-2004; also note that up to \c PIPE_BUF bytes are written atomicaly
+		 *  POSIX.1-2004; also note that up to \c PIPE_BUF bytes are written atomically
 		 *  as required by IEEE Std 1003.1, 2004 Edition,\c PIPE_BUF being typically
 		 *  hundreds of bytes at least (POSIX requires 512B, Linux provides whole 4KiB
 		 *  page).
@@ -536,7 +536,7 @@ class Signal {
 };  // end of class Signal
 
 
-/** Initialisation of the communication pipes */
+/** Initialization of the communication pipes */
 template <class H>
 int Signal::HandlerThread<H>::s_comm_pipe[2] = { -1, -1 };
 
@@ -629,9 +629,9 @@ void * Signal::HandlerThread<H>::main(void * comm_pipe_read_end) {
 /**
  *  \brief  Write command to command pipe
  *
- *  \param  fh        Pipe writing end
+ *  \param  fh        Pipe writing end (file handle)
  *  \param  cmd       Command
- *  \param  cmd_size  Comand size
+ *  \param  cmd_size  Command size
  *
  *  \retval 0     on success
  *  \retval errno on error
@@ -653,7 +653,7 @@ void Signal::HandlerThread<H>::signalNotifier(int signal) {
 
 	// TBD: The return value is silently ignored.
 	// Either the write should've succeeded or the handling
-	// thread is already comming down...
+	// thread is already coming down...
 	sigPipeWriteCmd(s_comm_pipe[1], sig, sizeof(sig));
 }
 

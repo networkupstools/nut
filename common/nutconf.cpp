@@ -611,16 +611,16 @@ NutConfigParser(buffer) {
 }
 
 void DefaultConfigParser::onParseBegin() {
-	// Start with empty section (ie global one)
+	// Start with empty section (i.e. global one)
 	_section.clear();
 }
 
 void DefaultConfigParser::onParseComment(const std::string& /*comment*/) {
-	// Comment are ignored for now
+	// Comments are ignored for now
 }
 
 void DefaultConfigParser::onParseSectionName(const std::string& sectionName, const std::string& /*comment*/) {
-	// Comment are ignored for now
+	// Comments are ignored for now
 
 	// Process current section.
 	if (!_section.empty()) {
@@ -633,7 +633,7 @@ void DefaultConfigParser::onParseSectionName(const std::string& sectionName, con
 }
 
 void DefaultConfigParser::onParseDirective(const std::string& directiveName, char /*sep*/, const ConfigParamList& values, const std::string& /*comment*/) {
-	// Comment are ignored for now
+	// Comments are ignored for now
 	// Separator has no specific semantic in this context
 
 	// Save values
@@ -1023,12 +1023,12 @@ void UpsmonConfigParser::onParseBegin()
 
 void UpsmonConfigParser::onParseComment(const std::string& /*comment*/)
 {
-	// Comment are ignored for now
+	// Comments are ignored for now
 }
 
 void UpsmonConfigParser::onParseSectionName(const std::string& /*sectionName*/, const std::string& /*comment*/)
 {
-	// There must not have sections in upsm.conf.
+	// There must not be sections in upsmon.conf.
 	// Ignore it
 	// TODO Add error reporting ?
 }
@@ -1270,19 +1270,19 @@ void NutConfConfigParser::onParseBegin()
 
 void NutConfConfigParser::onParseComment(const std::string& /*comment*/)
 {
-	// Comment are ignored for now
+	// Comments are ignored for now
 }
 
 void NutConfConfigParser::onParseSectionName(const std::string& /*sectionName*/, const std::string& /*comment*/)
 {
-	// There must not have sections in upsm.conf.
+	// There must not be sections in nutconf.conf.
 	// Ignore it
 	// TODO Add error reporting ?
 }
 
 void NutConfConfigParser::onParseDirective(const std::string& directiveName, char /*sep*/, const ConfigParamList& values, const std::string& /*comment*/)
 {
-	// Comment are ignored for now
+	// Comments are ignored for now
 	// NOTE: although sep must be '=', sep is not verified.
 	if(_config && directiveName=="MODE" && values.size()==1)
 	{
@@ -1371,12 +1371,12 @@ void UpsdConfigParser::onParseBegin()
 
 void UpsdConfigParser::onParseComment(const std::string& comment)
 {
-	// Comment are ignored for now
+	// Comments are ignored for now
 }
 
 void UpsdConfigParser::onParseSectionName(const std::string& sectionName, const std::string& comment)
 {
-	// There must not have sections in upsm.conf.
+	// There must not be sections in upsd.conf.
 	// Ignore it
 	// TODO Add error reporting ?
 }

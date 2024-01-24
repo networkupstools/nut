@@ -19,13 +19,11 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-
 #include "nutstream.hpp"
 #include "nutconf.h"
 #include "nutwriter.hpp"
 
 #include <cppunit/extensions/HelperMacros.h>
-
 
 /**
  *  \brief  NUT configuration unit test
@@ -46,10 +44,10 @@ class NutConfigUnitTest: public CppUnit::TestFixture {
 	void load(nut::Serialisable * config, const std::string & file_name);
 
 	/**
-	 *  \brief  Check configuration serialisation contents
+	 *  \brief  Check configuration serialization contents
 	 *
 	 *  \param  config   Configuration object
-	 *  \param  content  Expected serialisation
+	 *  \param  content  Expected serialization
 	 */
 	void check(const nut::Serialisable * config, const std::string & content);
 
@@ -108,9 +106,9 @@ void NutConfigUnitTest::check(const nut::Serialisable * config, const std::strin
 
 	if (content != str) {
 		std::cerr << "--- expected ---" << std::endl << content << "--- end ---" << std::endl;
-		std::cerr << "--- serialised ---" << std::endl << str << "--- end ---" << std::endl;
+		std::cerr << "--- serialized ---" << std::endl << str << "--- end ---" << std::endl;
 
-		CPPUNIT_ASSERT_MESSAGE("Configuration serialisation check failed", 0);
+		CPPUNIT_ASSERT_MESSAGE("Configuration serialization check failed", 0);
 	}
 }
 

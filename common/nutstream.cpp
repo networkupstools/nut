@@ -584,7 +584,7 @@ static std::string formatIPv6addr(unsigned char const bytes[16]) {
 	}
 
 	// Standard form
-	// TODO: ommition of lengthy zero word strings
+	// TODO: ommition (REVIEW: omission?) of lengthy zero word strings
 	ss << std::uppercase << std::hex << std::setfill('0');
 
 	for (size_t i = 0; ; ) {
@@ -904,7 +904,7 @@ NutStream::status_t NutSocket::putString(const std::string & str)
 	// string might be written
 	// Review the code if async. I/O is supported (in which case
 	// the function shall have to implement the blocking using
-	// select/ poll/ epoll on its own (probably select for portability)
+	// select/poll/epoll on its own (probably select for portability)
 
 	assert(-1 == write_cnt);
 

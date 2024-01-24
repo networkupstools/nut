@@ -126,7 +126,7 @@ class NutWriter {
 
 
 /**
- *  \brief  NUT consfiguration writer interface
+ *  \brief  NUT configuration writer interface
  */
 class NutConfigWriter: public NutWriter {
 	protected:
@@ -173,9 +173,9 @@ class NutConfigWriter: public NutWriter {
 
 
 /**
- *  \brief  NUT section-less configuration writer specialisation
+ *  \brief  NUT section-less configuration writer specialization
  *
- *  Partial implementaton of \ref NutConfigWriter for section-less
+ *  Partial implementation of \ref NutConfigWriter for section-less
  *  configuration files.
  */
 class SectionlessConfigWriter: public NutConfigWriter {
@@ -203,7 +203,7 @@ class SectionlessConfigWriter: public NutConfigWriter {
 
 
 /**
- *  \brief  \c nut.conf configuration file serialiser
+ *  \brief  \c nut.conf configuration file serializer
  */
 class NutConfConfigWriter: public SectionlessConfigWriter {
 	public:
@@ -216,7 +216,7 @@ class NutConfConfigWriter: public SectionlessConfigWriter {
 	NutConfConfigWriter(NutStream & ostream): SectionlessConfigWriter(ostream) {}
 
 	/**
-	 *  \brief  Serialise configuration container
+	 *  \brief  Serialize configuration container
 	 *
 	 *  \param  config  Configuration
 	 *
@@ -229,7 +229,7 @@ class NutConfConfigWriter: public SectionlessConfigWriter {
 
 
 /**
- *  \brief  \c upsmon.conf configuration file serialiser
+ *  \brief  \c upsmon.conf configuration file serializer
  */
 class UpsmonConfigWriter: public SectionlessConfigWriter {
 	public:
@@ -242,7 +242,7 @@ class UpsmonConfigWriter: public SectionlessConfigWriter {
 	UpsmonConfigWriter(NutStream & ostream): SectionlessConfigWriter(ostream) {}
 
 	/**
-	 *  \brief  Serialise configuration container
+	 *  \brief  Serialize configuration container
 	 *
 	 *  \param  config  Configuration
 	 *
@@ -255,7 +255,7 @@ class UpsmonConfigWriter: public SectionlessConfigWriter {
 
 
 /**
- *  \brief  \c upsd.conf configuration file serialiser
+ *  \brief  \c upsd.conf configuration file serializer
  */
 class UpsdConfigWriter: public SectionlessConfigWriter {
 	public:
@@ -268,7 +268,7 @@ class UpsdConfigWriter: public SectionlessConfigWriter {
 	UpsdConfigWriter(NutStream & ostream): SectionlessConfigWriter(ostream) {}
 
 	/**
-	 *  \brief  Serialise configuration container
+	 *  \brief  Serialize configuration container
 	 *
 	 *  \param  config  Configuration
 	 *
@@ -307,7 +307,7 @@ class DefaultConfigWriter: public NutConfigWriter {
 	/**
 	 *  \brief  Write configuration section
 	 *
-	 *  Serialise generic configuration section.
+	 *  Serialize generic configuration section.
 	 *
 	 *  \param  section  Configuration section
 	 *
@@ -322,25 +322,25 @@ class DefaultConfigWriter: public NutConfigWriter {
 /**
  *  \brief  NUT generic configuration writer
  *
- *  Base configuration file serialiser.
+ *  Base configuration file serializer.
  *  Implements the \ref DefaultConfigWriter \c writeSection method
- *  and adds \c writeConfig routine for configuration file serialisation.
+ *  and adds \c writeConfig routine for configuration file serialization.
  */
 class GenericConfigWriter: public DefaultConfigWriter {
 	protected:
 
-	/** Default indentation of the key/ value pair in section entry */
+	/** Default indentation of the key/value pair in section entry */
 	static const std::string s_default_section_entry_indent;
 
-	/** Default separator of the key/ value pair in section entry */
+	/** Default separator of the key/value pair in section entry */
 	static const std::string s_default_section_entry_separator;
 
 	/**
-	 *  \brief  Section entry serialiser
+	 *  \brief  Section entry serializer
 	 *
 	 *  \param  entry   Section entry
 	 *  \param  indent  Indentation
-	 *  \param  kv_sep  Key/ value separator
+	 *  \param  kv_sep  Key/value separator
 	 *
 	 *  \retval NUTW_OK    on success
 	 *  \retval NUTW_ERROR otherwise
@@ -359,11 +359,11 @@ class GenericConfigWriter: public DefaultConfigWriter {
 	 */
 	GenericConfigWriter(NutStream & ostream): DefaultConfigWriter(ostream) {}
 
-	// Section serialiser implementation
+	// Section serializer implementation
 	status_t writeSection(const GenericConfigSection & section);
 
 	/**
-	 *  \brief  Base configuration serialiser
+	 *  \brief  Base configuration serializer
 	 *
 	 *  \param  config  Base configuration
 	 *
@@ -378,9 +378,9 @@ class GenericConfigWriter: public DefaultConfigWriter {
 /**
  *  \brief  NUT upsd.users configuration file writer
  *
- *  upsd.users configuration file serialiser.
- *  Overloads the generic section serialiser because of the upsmon section,
- *  which contains anomal upsmon (master|slave) directive.
+ *  upsd.users configuration file serializer.
+ *  Overloads the generic section serializer because of the upsmon section,
+ *  which contains an anomalous upsmon (master|slave) directive.
  */
 class UpsdUsersConfigWriter: public GenericConfigWriter {
 	public:
@@ -392,7 +392,7 @@ class UpsdUsersConfigWriter: public GenericConfigWriter {
 	 */
 	UpsdUsersConfigWriter(NutStream & ostream): GenericConfigWriter(ostream) {}
 
-	// Section serialiser overload
+	// Section serializer overload
 	status_t writeSection(const GenericConfigSection & section);
 
 };  // end of class UpsdUsersConfigWriter

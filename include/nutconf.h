@@ -94,8 +94,8 @@ public:
 /**
  *  \brief  Serialisable interface
  *
- *  Classes that implement this iface provide way to serialise
- *  and deserialise instances to/from streams.
+ *  Classes that implement this interface provide way to serialize
+ *  and deserialize instances to/from streams.
  */
 class Serialisable
 {
@@ -107,7 +107,7 @@ protected:
 public:
 
 	/**
-	 *  \brief  Deserialiser
+	 *  \brief  Deserializer
 	 *
 	 *  \param  istream  Input stream
 	 *
@@ -117,7 +117,7 @@ public:
 	virtual bool parseFrom(NutStream & istream) = 0;
 
 	/**
-	 *  \brief  Serialiser
+	 *  \brief  Serializer
 	 *
 	 *  \param  ostream  Output stream
 	 *
@@ -142,7 +142,7 @@ public:
 	{
 		OPTION_DEFAULT = 0,
 		/** Colon character is considered as string character and not as specific token.
-			Usefull for IPv6 addresses */
+			Useful for IPv6 addresses */
 		OPTION_IGNORE_COLON = 1
 	};
 
@@ -317,7 +317,7 @@ public:
 	bool writeTo(NutStream & ostream) const;
 	/** \} */
 
-	// FIXME Let me public or set it as protected with public accessors ?
+	// FIXME Let be public or set it as protected with public accessors ?
 	SectionMap sections;
 
 	const GenericConfigSection& operator[](const std::string& secname)const{return sections.find(secname)->second;}
@@ -556,7 +556,7 @@ protected:
 	 *  \param  min     Minimum
 	 *  \param  max     Maximum
 	 *
-	 *  \return \c number casted to target type
+	 *  \return \c number which was cast to target type
 	 */
 	template <typename T>
 	static T range_cast(long long int number, long long int min, long long int max)
@@ -588,17 +588,17 @@ protected:
 	 *
 	 *  \param  str  String
 	 *
-	 *  \retval true  iff the string expresses a known true value
+	 *  \retval true  IFF the string expresses a known true value
 	 *  \retval false otherwise
 	 */
 	static bool str2bool(const std::string & str);
 
 	/**
-	 *  \brief  Convert boolean value to string
+	 *  \brief  Convert Boolean value to string
 	 *
 	 *  \param  val  Boolean value
 	 *
-	 *  \return \c vla as string
+	 *  \return \c val as string
 	 */
 	static const std::string & bool2str(bool val);
 
