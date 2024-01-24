@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
 	if (!dmp) {
 		fatalx(EXIT_FAILURE, "=== DMF-Reindex: FATAL: Can not allocate the DMF parsing structures\n");
 		/* TODO: Can we pass this code to fatalx? */
-		return ENOMEM;
+		/*return ENOMEM;*/
 	}
 
 	upsdebugx(1, "=== DMF-Reindex: Loading DMF structures from directory '%s':\n\n", dir_name);
@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
 		/* TODO: Error-checking? Faults in some parses should be fatal or not? */
 		fatalx(EXIT_FAILURE, "=== DMF-Reindex: FATAL: Could not find or parse some files (return code %i)\n", result);
 		/* TODO: Can we pass this code to fatalx? */
-		return result;
+		/*return result;*/
 	}
 
 	/* Loop through discovered device_table and print it back as DMF markup */
@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
 	{
 		fatalx(EXIT_FAILURE, "=== DMF-Reindex: FATAL: Can not access the parsed device_table\n");
 		/* TODO: Can we pass this code to fatalx? */
-		return ENOMEM;
+		/*return ENOMEM;*/
 	}
 
 	/* Below we sprintf the index into a memory string, parse the result as
@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
 	if (!newdmf) {
 		fatalx(EXIT_FAILURE, "=== DMF-Reindex: FATAL: Can not allocate the buffer for parsed DMF\n");
 		/* TODO: Can we pass this code to fatalx? */
-		return ENOMEM;
+		/*return ENOMEM;*/
 	}
 	newdmf_len += snprintf(newdmf + newdmf_len, (newdmf_size - newdmf_len),
 		"<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
@@ -207,7 +207,7 @@ int main(int argc, char *argv[])
 			if (!newdmf) {
 				fatalx(EXIT_FAILURE, "=== DMF-Reindex: FATAL: Can not extend the buffer for parsed DMF\n");
 				/* TODO: Can we pass this code to fatalx? */
-				return ENOMEM;
+				/*return ENOMEM;*/
 			}
 			upsdebugx(2, "\nExtended the buffer to %zu bytes\n", newdmf_size);
 		}
@@ -240,7 +240,7 @@ int main(int argc, char *argv[])
 	if (!newdmp) {
 		fatalx(EXIT_FAILURE, "=== DMF-Reindex: FATAL: Can not allocate the DMF verification parsing structures\n\n");
 		/* TODO: Can we pass this code to fatalx? */
-		return ENOMEM;
+		/*return ENOMEM;*/
 	}
 
 	upsdebugx(1, "=== DMF-Reindex: Loading DMF structures from prepared string (verification)\n\n");
@@ -249,7 +249,7 @@ int main(int argc, char *argv[])
 	if (result != 0) {
 		fatalx(EXIT_FAILURE, "=== DMF-Reindex: The generated document FAILED syntax verification (return code %d)\n\n", ret_code);
 		/* TODO: Can we pass this code to fatalx? */
-		return ret_code;
+		/*return ret_code;*/
 	}
 
 	/* Loop through reparsed device_table and compare to original one */
@@ -259,7 +259,7 @@ int main(int argc, char *argv[])
 	{
 		fatalx(EXIT_FAILURE, "=== DMF-Reindex: FATAL: Can not access the reparsed device_table\n");
 		/* TODO: Can we pass this code to fatalx? */
-		return ENOMEM;
+		/*return ENOMEM;*/
 	}
 
 	size_t j = -1, k = -1;
@@ -307,7 +307,7 @@ int main(int argc, char *argv[])
 	{
 		fatalx(EXIT_FAILURE, "=== DMF-Reindex: The generated document FAILED content verification (%d issues)\n\n", result);
 		/* TODO: Can we pass this code to fatalx? */
-		return result;
+		/*return result;*/
 	}
 
 	upsdebugx(1, "=== DMF-Reindex: Checks succeeded - printing generated DMF to stdout...\n\n");
