@@ -24,7 +24,7 @@
 // Define to de-activate protection of parsing tool members:
 #define UNITEST_MODE 1
 
-#include "nutconf.h"
+#include "nutconf.hpp"
 using namespace nut;
 
 #include <string>

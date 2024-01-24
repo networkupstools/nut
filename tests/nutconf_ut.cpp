@@ -20,7 +20,7 @@
 */
 
 #include "nutstream.hpp"
-#include "nutconf.h"
+#include "nutconf.hpp"
 #include "nutwriter.hpp"
 
 #include <cppunit/extensions/HelperMacros.h>

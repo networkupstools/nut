@@ -1,5 +1,5 @@
 /*
-    nutconf.h - Nut configuration file manipulation API
+    nutconf.hpp - Nut configuration file manipulation API
 
     Copyright (C)
 	2012	Emilien Kia <emilien.kia@gmail.com>

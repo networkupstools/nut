@@ -25,7 +25,7 @@
 #ifdef __cplusplus
 
 #include "nutstream.hpp"
-#include "nutconf.h"
+#include "nutconf.hpp"
 
 #include <stdexcept>
 

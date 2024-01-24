@@ -305,7 +305,7 @@ static std::string serializeNotifyMessage(UpsmonConfiguration::NotifyType type, 
 /**
  *  \brief  Get notify type successor
  *
- *  TBD: Should be in nutconf.h
+ *  TBD: Should be in nutconf.hpp
  *
  *  \param  type  Notify type
  *
@@ -323,7 +323,7 @@ inline static UpsmonConfiguration::NotifyType nextNotifyType(UpsmonConfiguration
 /**
  *  \brief  Notify type pre-increment
  *
- *  TBD: Should be in nutconf.h
+ *  TBD: Should be in nutconf.hpp
  *
  *  \param[in,out]  type  Notify type
  *
@@ -337,7 +337,7 @@ inline static UpsmonConfiguration::NotifyType operator ++(UpsmonConfiguration::N
 /**
  *  \brief  Notify type post-increment
  *
- *  TBD: Should be in nutconf.h
+ *  TBD: Should be in nutconf.hpp
  *
  *  \param[in,out]  type  Notify type
  *
