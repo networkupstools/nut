@@ -23,7 +23,7 @@
 */
 
 #include "config.h"
-#include "nutconf.h"
+#include "nutconf.hpp"
 #include "nutstream.hpp"
 
 extern "C" {

@@ -1,6 +1,6 @@
 dist_noinst_HEADERS = attribute.h common.h extstate.h proto.h			\
     state.h str.h timehead.h upsconf.h nut_float.h nut_stdint.h nut_platform.h	\
- nutstream.hpp nutwriter.hpp nutipc.hpp nutconf.h	\
+    nutstream.hpp nutwriter.hpp nutipc.hpp nutconf.hpp \
     wincompat.h
 
 # Optionally deliverable as part of NUT public API:
