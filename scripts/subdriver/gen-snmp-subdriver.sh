@@ -3,7 +3,7 @@
 # an auxiliary script to produce a "stub" snmp-ups subdriver from
 # SNMP data from a real agent or from dump files
 #
-# Version: 0.15-dmf
+# Version: 0.16-dmf
 #
 # See also: docs/snmp-subdrivers.txt
 #
@@ -386,7 +386,7 @@ generate_DMF() {
 
 	# append footer
 	# FIXME: missing license field in mib2nut
-	printf "\t</snmp>\n\t<mib2nut auto_check=\"\" mib_name=\"${LDRIVER}_mib\" name=\"${LDRIVER}_mib\" oid=\"${DEVICE_SYSOID}\" snmp_info=\"${LDRIVER}_mib\" version=\"0.1\"/>\n" >> "$DMFFILE"
+	printf "\t</snmp>\n\t<mib2nut auto_check=\"\" mib_name=\"${LDRIVER}_mib\" name=\"${LDRIVER}_mib\" oid=\"${DEVICE_SYSOID}\" snmp_info=\"${LDRIVER}_mib\" version=\"0.01\"/>\n" >> "$DMFFILE"
 
 	printf "\n\t<!-- Data format: -->\n" >> "${DMFFILE}"
 	printf "\t<!-- To create a MIB mapping entry, use the following kind of declaration:\n" >> "${DMFFILE}"
