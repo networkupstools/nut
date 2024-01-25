@@ -64,6 +64,10 @@ int main(int argc, char *argv[])
 	int opt_ret;
 	int result = 0;
 	int ret_code = EXIT_SUCCESS;
+	mibdmf_parser_t *dmp = NULL, *newdmp = NULL;
+	snmp_device_id_t *devtab = NULL, *newdevtab = NULL;
+	size_t i, j, k, newdmf_len, newdmf_size;
+	char *newdmf = NULL;
 	int proceed_on_errors = 1; /* By default, do as much as we can */
 	char *dir_name = NULL; /* TODO: Make configurable the dir and/or list of files */
 	int dir_name_dynamic = 0;
@@ -148,7 +152,7 @@ int main(int argc, char *argv[])
 #pragma GCC diagnostic pop
 #endif
 
-	mibdmf_parser_t * dmp = mibdmf_parser_new();
+	dmp = mibdmf_parser_new();
 	if (!dmp) {
 		fatalx(EXIT_FAILURE, "=== DMF-Reindex: FATAL: Can not allocate the DMF parsing structures\n");
 		/* TODO: Can we pass this code to fatalx? */
@@ -169,7 +173,7 @@ int main(int argc, char *argv[])
 	/* Loop through discovered device_table and print it back as DMF markup */
 	upsdebugx(2, "=== DMF-Reindex: Print DMF subset for snmp_device_table[]...\n\n");
 
-	snmp_device_id_t *devtab = mibdmf_get_device_table(dmp);
+	devtab = mibdmf_get_device_table(dmp);
 	if (!devtab)
 	{
 		fatalx(EXIT_FAILURE, "=== DMF-Reindex: FATAL: Can not access the parsed device_table\n");
@@ -183,9 +187,9 @@ int main(int argc, char *argv[])
 	/* TODO: uniquify output, so that an old index that was read in does not
 	 * pollute the parsed results (at least not for completely same items as
 	 * already exist in the table)? What to do about partial hits ~ updates? */
-	size_t i;
-	size_t newdmf_len = 0, newdmf_size = 1024;
-	char *newdmf = (char*)calloc(newdmf_size, sizeof(char));
+	newdmf_len = 0;
+	newdmf_size = 1024;
+	newdmf = (char*)calloc(newdmf_size, sizeof(char));
 	if (!newdmf) {
 		fatalx(EXIT_FAILURE, "=== DMF-Reindex: FATAL: Can not allocate the buffer for parsed DMF\n");
 		/* TODO: Can we pass this code to fatalx? */
@@ -236,7 +240,7 @@ int main(int argc, char *argv[])
 	upsdebugx(2, "[LAST: num=%zu (lenafter=%zu)] ", i, newdmf_len);
 	upsdebugx(1, "\n=== DMF-Reindex: Indexed %zu entries...\n\n", i);
 
-	mibdmf_parser_t * newdmp = mibdmf_parser_new();
+	newdmp = mibdmf_parser_new();
 	if (!newdmp) {
 		fatalx(EXIT_FAILURE, "=== DMF-Reindex: FATAL: Can not allocate the DMF verification parsing structures\n\n");
 		/* TODO: Can we pass this code to fatalx? */
@@ -254,7 +258,7 @@ int main(int argc, char *argv[])
 
 	/* Loop through reparsed device_table and compare to original one */
 	upsdebugx(1, "=== DMF-Reindex: Verify reparsed content for snmp_device_table[]...\n\n");
-	snmp_device_id_t *newdevtab = mibdmf_get_device_table(newdmp);
+	newdevtab = mibdmf_get_device_table(newdmp);
 	if (!newdevtab)
 	{
 		fatalx(EXIT_FAILURE, "=== DMF-Reindex: FATAL: Can not access the reparsed device_table\n");
@@ -262,7 +266,8 @@ int main(int argc, char *argv[])
 		/*return ENOMEM;*/
 	}
 
-	size_t j = -1, k = -1;
+	j = -1;
+	k = -1;
 	result = 0;
 	/* Make sure that all values we've considered are present in re-parse */
 	for (k = 0; !is_sentinel__snmp_device_id_t(&(devtab[k])) ; k++)

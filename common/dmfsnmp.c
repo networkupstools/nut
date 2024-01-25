@@ -1276,15 +1276,18 @@ mibdmf_xml_dict_start_cb(void *userdata, int parent,
 		const char *nspace, const char *name,
 		const char **attrs)
 {
+	char *auxname;
+	mibdmf_parser_t *dmp;
+	alist_t *list;
 	NUT_UNUSED_VARIABLE(parent);
 	NUT_UNUSED_VARIABLE(nspace);
 
 	if(!userdata)
 		return ERR;
 
-	char *auxname = get_param_by_name("name",attrs);
-	mibdmf_parser_t *dmp = (mibdmf_parser_t*) userdata;
-	alist_t *list = *(mibdmf_get_aux_list_ptr(dmp));
+	auxname = get_param_by_name("name",attrs);
+	dmp = (mibdmf_parser_t*) userdata;
+	list = *(mibdmf_get_aux_list_ptr(dmp));
 
 	if(strcmp(name,DMFTAG_MIB2NUT) == 0)
 	{
@@ -1349,15 +1352,17 @@ mibdmf_xml_dict_start_cb(void *userdata, int parent,
 int
 mibdmf_xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 {
+	mibdmf_parser_t *dmp;
+	alist_t *list, *element;
 	NUT_UNUSED_VARIABLE(state);
 	NUT_UNUSED_VARIABLE(nspace);
 
 	if(!userdata)
 		return ERR;
 
-	mibdmf_parser_t *dmp = (mibdmf_parser_t*) userdata;
-	alist_t *list = *(mibdmf_get_aux_list_ptr(dmp));
-	alist_t *element = alist_get_last_element(list);
+	dmp = (mibdmf_parser_t*) userdata;
+	list = *(mibdmf_get_aux_list_ptr(dmp));
+	element = alist_get_last_element(list);
 
 	/* Currently, special handling in the DMF tag closure is for "mib2nut"
 	 * tags that are last in the file according to schema - so we know we
@@ -1367,13 +1372,14 @@ mibdmf_xml_end_cb(void *userdata, int state, const char *nspace, const char *nam
 	if(strcmp(name,DMFTAG_MIB2NUT) == 0)
 	{
 		int device_table_counter = mibdmf_get_device_table_counter(dmp);
+		snmp_device_id_t *device_table;
 
 		*mibdmf_get_device_table_ptr(dmp) = (snmp_device_id_t *) realloc(*mibdmf_get_device_table_ptr(dmp),
 			device_table_counter * sizeof(snmp_device_id_t));
 		*mibdmf_get_mib2nut_table_ptr(dmp) = (mib2nut_info_t **) realloc(*mibdmf_get_mib2nut_table_ptr(dmp),
 			device_table_counter * sizeof(mib2nut_info_t*));
 
-		snmp_device_id_t *device_table = mibdmf_get_device_table(dmp);
+		device_table = mibdmf_get_device_table(dmp);
 		assert (device_table);
 
 		/* Make sure the new last entry in the table is zeroed-out */
@@ -1507,11 +1513,14 @@ mibdmf_parse_finish_cb(void *parsed_data, int result)
 int
 mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 {
+	dmfcore_parser_t *dcp;
+	int result;
+
 	upsdebugx(1, "%s(%s)", __func__, file_name);
 	assert(file_name);
 	assert(dmp);
 
-	dmfcore_parser_t *dcp = dmfcore_parser_new_init(
+	dcp = dmfcore_parser_new_init(
 		(void*)dmp,
 		mibdmf_parse_begin_cb,
 		mibdmf_parse_finish_cb,
@@ -1521,7 +1530,7 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 	);
 	assert(dcp);
 
-	int result = dmfcore_parse_file(file_name, dcp);
+	result = dmfcore_parse_file(file_name, dcp);
 	free(dcp);
 	return result;
 }
@@ -1530,11 +1539,14 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 int
 mibdmf_parse_str (const char *dmf_string, mibdmf_parser_t *dmp)
 {
+	dmfcore_parser_t *dcp;
+	int result;
+
 	upsdebugx(1, "%s(string)", __func__);
 	assert(dmf_string);
 	assert(dmp);
 
-	dmfcore_parser_t *dcp = dmfcore_parser_new_init(
+	dcp = dmfcore_parser_new_init(
 		(void*)dmp,
 		mibdmf_parse_begin_cb,
 		mibdmf_parse_finish_cb,
@@ -1544,7 +1556,7 @@ mibdmf_parse_str (const char *dmf_string, mibdmf_parser_t *dmp)
 	);
 	assert(dcp);
 
-	int result = dmfcore_parse_str(dmf_string, dcp);
+	result = dmfcore_parse_str(dmf_string, dcp);
 	free(dcp);
 	return result;
 }
@@ -1554,11 +1566,14 @@ mibdmf_parse_str (const char *dmf_string, mibdmf_parser_t *dmp)
 int
 mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 {
+	dmfcore_parser_t *dcp;
+	int result;
+
 	upsdebugx(1, "%s(%s)", __func__, dir_name);
 	assert(dir_name);
 	assert(dmp);
 
-	dmfcore_parser_t *dcp = dmfcore_parser_new_init(
+	dcp = dmfcore_parser_new_init(
 		(void*)dmp,
 		mibdmf_parse_begin_cb,
 		mibdmf_parse_finish_cb,
@@ -1568,7 +1583,7 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 	);
 	assert(dcp);
 
-	int result = dmfcore_parse_dir(dir_name, dcp);
+	result = dmfcore_parse_dir(dir_name, dcp);
 	free(dcp);
 	return result;
 }
@@ -1576,6 +1591,8 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 bool
 dmf_streq (const char* x, const char* y)
 {
+	int cmp;
+
 	if (!x && !y)
 		return true;
 	if (!x || !y) {
@@ -1584,7 +1601,7 @@ dmf_streq (const char* x, const char* y)
 			y ? y : "<NULL>");
 		return false;
 		}
-	int cmp = strcmp (x, y);
+	cmp = strcmp (x, y);
 	if (cmp != 0) {
 		upsdebugx(2, "\nDEBUG: strEQ(): Strings not equal (%i):\n\t%s\n\t%s\n", cmp, x, y);
 	}
@@ -1594,6 +1611,8 @@ dmf_streq (const char* x, const char* y)
 bool
 dmf_strneq (const char* x, const char* y)
 {
+	int cmp;
+
 	if (!x && !y) {
 		upsdebugx(2, "\nDEBUG: strNEQ(): Both compared strings are NULL\n");
 		return false;
@@ -1601,7 +1620,7 @@ dmf_strneq (const char* x, const char* y)
 	if (!x || !y) {
 		return true;
 	}
-	int cmp = strcmp (x, y);
+	cmp = strcmp (x, y);
 	if (cmp == 0) {
 		upsdebugx(2, "\nDEBUG: strNEQ(): Strings are equal (%i):\n\t%s\n\t%s\n\n", cmp, x, y);
 	}

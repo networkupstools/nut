@@ -265,9 +265,11 @@ int init_snmp_device_table(void)
 		if (dmfnutscan_snmp_dmp == NULL) {
 			upsdebugx(1, "PROBLEM: Can not allocate the DMF parsing structures");
 		} else {
+			int device_table_counter;
+
 			mibdmf_parse_dir(dmfnutscan_snmp_dir, dmfnutscan_snmp_dmp);
 			snmp_device_table_dmf = mibdmf_get_device_table(dmfnutscan_snmp_dmp);
-			int device_table_counter = mibdmf_get_device_table_counter(dmfnutscan_snmp_dmp);
+			device_table_counter = mibdmf_get_device_table_counter(dmfnutscan_snmp_dmp);
 			if (snmp_device_table_dmf != NULL &&
 			    device_table_counter > 1)
 			{
@@ -611,6 +613,7 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 		size_t mib2nut_count_total = 0;
 		size_t mib2nut_count_useful = 0;
 		bool_t mib2nut_has_data = FALSE;
+		mib2nut_info_t **mib2nut;
 
 		/* DMF is loaded thus used, successfully (with at least a collection
 		 * of <mib2nut> tags - entries needed for supportability discovery).
@@ -624,7 +627,7 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 		 * or just an excerpt with lots of <mib2nut> tags for quicker load
 		 * during nut-scanning?)
 		 */
-		mib2nut_info_t **mib2nut = *(mibdmf_get_mib2nut_table_ptr)(dmfnutscan_snmp_dmp);
+		mib2nut = *(mibdmf_get_mib2nut_table_ptr)(dmfnutscan_snmp_dmp);
 		if (mib2nut == NULL) {
 			upsdebugx(4, "%s: WARNING: Could not access the mib2nut index table",
 				__func__);

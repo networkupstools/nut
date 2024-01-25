@@ -319,6 +319,7 @@ dmfcore_parse_file(char *file_name, dmfcore_parser_t *dcp)
 	char buffer[4096]; /* Align with common cluster/FSblock size nowadays */
 	FILE *f;
 	int result = 0;
+	ne_xml_parser *parser;
 #if WITH_LIBLTDL
 	int flag_libneon = 0;
 #endif /* WITH_LIBLTDL */
@@ -363,7 +364,7 @@ dmfcore_parse_file(char *file_name, dmfcore_parser_t *dcp)
 	}
 #endif /* WITH_LIBLTDL */
 
-	ne_xml_parser *parser = xml_create ();
+	parser = xml_create ();
 	xml_push_handler (parser, dcp->xml_dict_start_cb,
 		dcp->xml_cdata_cb
 		, dcp->xml_end_cb, dcp->parsed_data);
@@ -419,6 +420,7 @@ dmfcore_parse_str (const char *dmf_string, dmfcore_parser_t *dcp)
 {
 	int result = 0;
 	size_t len;
+	ne_xml_parser *parser;
 #if WITH_LIBLTDL
 	int flag_libneon = 0;
 #endif /* WITH_LIBLTDL */
@@ -462,7 +464,7 @@ dmfcore_parse_str (const char *dmf_string, dmfcore_parser_t *dcp)
 	}
 #endif /* WITH_LIBLTDL */
 
-	ne_xml_parser *parser = xml_create ();
+	parser = xml_create ();
 	xml_push_handler (parser, dcp->xml_dict_start_cb,
 		dcp->xml_cdata_cb
 		, dcp->xml_end_cb, dcp->parsed_data);
@@ -502,7 +504,7 @@ int
 dmfcore_parse_dir (char *dir_name, dmfcore_parser_t *dcp)
 {
 	struct dirent **dir_ent;
-	int i = 0, x = 0, result = 0, n = 0;
+	int i = 0, x = 0, result = 0, n = 0, c;
 #if WITH_LIBLTDL
 	int flag_libneon = 0;
 #endif /* WITH_LIBLTDL */
@@ -541,11 +543,12 @@ dmfcore_parse_dir (char *dir_name, dmfcore_parser_t *dcp)
 
 	upsdebugx(2, "Got %d entries to parse in directory %s", n, dir_name);
 
-	int c;
 	for (c = 0; c < n; c++)
 	{
+		size_t fname_len;
+
 		upsdebugx (5, "dmfcore_parse_dir(): dir_ent[%d]->d_name=%s", c, dir_ent[c]->d_name);
-		size_t fname_len = strlen(dir_ent[c]->d_name);
+		fname_len = strlen(dir_ent[c]->d_name);
 		if ( (fname_len > 4) &&
 		     (strstr(dir_ent[c]->d_name + fname_len - 4, ".dmf") ||
 		      strstr(dir_ent[c]->d_name + fname_len - 4, ".DMF") ) )
@@ -557,9 +560,11 @@ dmfcore_parse_dir (char *dir_name, dmfcore_parser_t *dcp)
 				{
 					upslogx(LOG_ERR, "dqmfcore_parse_dir(): calloc() failed");
 				} else {
+					int res;
+
 					snprintf(file_path, PATH_MAX_SIZE, "%s/%s", dir_name, dir_ent[c]->d_name);
 					assert(file_path);
-					int res = dmfcore_parse_file(file_path, dcp);
+					res = dmfcore_parse_file(file_path, dcp);
 					upsdebugx (5, "dmfcore_parse_file (\"%s\", <%p>)=%d", file_path, (void*)dcp, res);
 					if ( res != 0 )
 					{
