@@ -194,11 +194,11 @@ int sigPipeWriteCmd(int fh, void * cmd, size_t cmd_size)
 	do {
 		ssize_t written = ::write(fh, cmd_bytes, cmd_size);
 
-		if (-1 == written)
+		if (written < 0)
 			return errno;
 
 		cmd_bytes += written;
-		cmd_size  -= written;
+		cmd_size  -= static_cast<size_t>(written);
 
 	} while (cmd_size);
 
