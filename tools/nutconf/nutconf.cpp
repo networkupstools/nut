@@ -679,7 +679,7 @@ class NutScanner {
 	static devices_t devicesSNMP(
 		const std::string &    start_ip,
 		const std::string &    stop_ip,
-		long                   us_timeout,
+		useconds_t             us_timeout,
 		const SNMPAttributes & attrs);
 
 	/**
@@ -705,7 +705,7 @@ class NutScanner {
 	 *
 	 *  \return Device list
 	 */
-	inline static devices_t devicesXMLHTTP(long us_timeout) {
+	inline static devices_t devicesXMLHTTP(useconds_t us_timeout) {
 		nutscan_xml_t xml_sec;
 		nutscan_device_t * dev;
 
@@ -734,7 +734,7 @@ class NutScanner {
 		const std::string & start_ip,
 		const std::string & stop_ip,
 		const std::string & port,
-		long                us_timeout)
+		useconds_t          us_timeout)
 	{
 		nutscan_device_t * dev = ::nutscan_scan_nut(
 			start_ip.c_str(), stop_ip.c_str(), port.c_str(), us_timeout);
@@ -749,7 +749,7 @@ class NutScanner {
 	 *
 	 *  \return Device list
 	 */
-	inline static devices_t devicesAvahi(long us_timeout) {
+	inline static devices_t devicesAvahi(useconds_t us_timeout) {
 		nutscan_device_t * dev = ::nutscan_scan_avahi(us_timeout);
 
 		return dev2list(dev);
@@ -828,7 +828,7 @@ NutScanner::devices_t NutScanner::dev2list(nutscan_device_t * dev_list) {
 NutScanner::devices_t NutScanner::devicesSNMP(
 	const std::string &    start_ip,
 	const std::string &    stop_ip,
-	long                   us_timeout,
+	useconds_t             us_timeout,
 	const SNMPAttributes & attrs)
 {
 	nutscan_snmp_t snmp_attrs;
@@ -2661,7 +2661,7 @@ void scanSNMPdevices(const NutConfOptions & options) {
 		const std::string & stop_ip  = *arg++;
 
 		// TBD: where should we get the default?
-		long us_timeout = 1000000;
+		useconds_t us_timeout = 1000000;
 
 		NutScanner::SNMPAttributes attrs;
 
@@ -2776,7 +2776,7 @@ void scanNUTdevices(const NutConfOptions & options) {
 		const std::string & port     = *arg++;
 
 		// TBD: where should we get the default?
-		long us_timeout = 1000000;
+		useconds_t us_timeout = 1000000;
 
 		if (arg != args.end()) {
 			std::stringstream ss(*arg);
@@ -2806,7 +2806,7 @@ void scanXMLHTTPdevices(const NutConfOptions & options) {
 	assert(ok);
 
 	// TBD: where should we get the default?
-	long us_timeout = 1000000;
+	useconds_t us_timeout = 1000000;
 
 	if (!args.empty()) {
 		std::stringstream ss(args.front());
@@ -2834,7 +2834,7 @@ void scanAvahiDevices(const NutConfOptions & options) {
 	assert(ok);
 
 	// TBD: where should we get the default?
-	long us_timeout = 1000000;
+	useconds_t us_timeout = 1000000;
 
 	if (!args.empty()) {
 		std::stringstream ss(args.front());
