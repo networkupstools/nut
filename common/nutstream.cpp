@@ -869,13 +869,13 @@ NutStream::status_t NutSocket::getString(std::string & str)
 	for (;;) {
 		ssize_t read_cnt = ::read(m_impl, buffer, sizeof(buffer) / sizeof(buffer[0]));
 
-		if (-1 == read_cnt)
+		if (read_cnt < 0)
 			return NUTS_ERROR;
 
 		if (0 == read_cnt)
 			return NUTS_OK;
 
-		str.append(buffer, read_cnt);
+		str.append(buffer, static_cast<size_t>(read_cnt));
 	}
 }
 
@@ -903,7 +903,7 @@ NutStream::status_t NutSocket::putString(const std::string & str)
 		throw()
 #endif
 {
-	ssize_t str_len = str.size();
+	size_t str_len = str.size();
 
 	// Avoid the costly system call unless necessary
 	if (0 == str_len)
@@ -911,16 +911,16 @@ NutStream::status_t NutSocket::putString(const std::string & str)
 
 	ssize_t write_cnt = ::write(m_impl, str.data(), str_len);
 
-	if (write_cnt == str_len)
-		return NUTS_OK;
-
 	// TODO: Under certain circumstances, less than the whole
 	// string might be written
 	// Review the code if async. I/O is supported (in which case
 	// the function shall have to implement the blocking using
 	// select/poll/epoll on its own (probably select for portability)
 
-	assert(-1 == write_cnt);
+	assert(write_cnt > 0);
+
+	if (static_cast<size_t>(write_cnt) == str_len)
+		return NUTS_OK;
 
 	// TODO: At least logging of the error (errno), if not propagation
 
