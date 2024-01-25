@@ -442,7 +442,10 @@ void NutConfigParser::parseConfig(BaseConfiguration* config) {
 	std::string name;
 	std::list<std::string> values;
 	char sep = 0;
-	while (tok = parseToken()) {
+	while (1) {
+		tok = parseToken();
+		if (!tok)
+			break;
 		switch (state) {
 			case CPS_DEFAULT:
 				switch (tok.type) {
