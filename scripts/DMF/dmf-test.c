@@ -32,7 +32,7 @@
 /* For experiments in development of DMF+lookup function support,
  * uncomment this line; for currently stable codebase keep it off...
  */
-//#define WITH_SNMP_LKP_FUN 1
+/*#define WITH_SNMP_LKP_FUN 1*/
 
 #include "dmf.h"
 
@@ -49,7 +49,7 @@
 #undef PACKAGE_BUGREPORT
 #include "eaton-pdu-marlin-mib.c"
 
-// Replicate what drivers/main.c exports
+/* Replicate what drivers/main.c exports */
 int do_synchronous = 0;
 
 int
@@ -118,7 +118,7 @@ main ()
 
 #if WITH_DMF_FUNCTIONS
 #if WITH_DMF_LUA
-		// Array of pointers to singular instances of mib2nut_info_t
+		/* Array of pointers to singular instances of mib2nut_info_t */
 		mib2nut_info_t **mib2nut = *(mibdmf_get_mib2nut_table_ptr)(dmp);
 		if ( mib2nut == NULL ) {
 			upsdebugx(1,"FATAL: Could not access the mib2nut index table");

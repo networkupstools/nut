@@ -66,13 +66,14 @@
 #  undef WANT_LIBNUTSCAN_SNMP_DMF
 # endif
 
-// This chains to also include nutscan-snmp.h and the desired
-// variables need structures defined lower in the dmf.h file.
-// But there is protection in nutscan-snmp.h to only declare
-// those vars if dmf.h was already completely imported.
+/* This chains to also include nutscan-snmp.h and the desired
+ * variables need structures defined lower in the dmf.h file.
+ * But there is protection in nutscan-snmp.h to only declare
+ * those vars if dmf.h was already completely imported.
+ */
 # include "dmf.h"
 
-// Now we may "want" the variables from libnutscan with types from dmf.h
+/* Now we may "want" the variables from libnutscan with types from dmf.h */
 # define WANT_LIBNUTSCAN_SNMP_DMF 1
 # include "nutscan-snmp.h"
 #endif /* WITH_DMFMIB */

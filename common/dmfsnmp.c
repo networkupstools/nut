@@ -61,8 +61,10 @@ print_snmp_memory_struct(snmp_info_t *self)
 		" //   OID:  %s //   Default: %s",
 		self->info_type, self->info_len,
 		self->OID, self->dfl);
-//	if(self->setvar)
-//		upsdebugx(5, " //   Setvar: %d\n", *self->setvar);
+/*
+	if(self->setvar)
+		upsdebugx(5, " //   Setvar: %d\n", *self->setvar);
+*/
 
 	if (self->oid2info)
 	{
@@ -86,7 +88,7 @@ print_snmp_memory_struct(snmp_info_t *self)
 				self->oid2info[i].fun_s2l ? "defined" : "(null)");
 			upsdebugx(5, "  nuf_vp2s  ---> %s",
 				self->oid2info[i].nuf_vp2s ? "defined" : "(null)");
-#endif // WITH_SNMP_LKP_FUN
+#endif /* WITH_SNMP_LKP_FUN */
 			i++;
 		}
 	}
@@ -233,7 +235,7 @@ info_lkp_new (int oid, const char *value
 	, long (*nuf_s2l)(const char *nut_value)
 	, long (*fun_s2l)(const char *snmp_value)
 	, const char *(*nuf_vp2s)(void *raw_nut_value)
-#endif // WITH_SNMP_LKP_FUN
+#endif /* WITH_SNMP_LKP_FUN */
 )
 {
 	info_lkp_t *self = (info_lkp_t*) calloc (1, sizeof (info_lkp_t));
@@ -242,7 +244,7 @@ info_lkp_new (int oid, const char *value
 	if (value)
 		self->info_value = strdup (value);
 #if WITH_SNMP_LKP_FUN
-// consider WITH_DMF_FUNCTIONS too?
+	/* TOTHINK: consider WITH_DMF_FUNCTIONS too? */
 	if (fun_vp2s || nuf_s2l || fun_s2l || nuf_vp2s) {
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_PEDANTIC)
 # pragma GCC diagnostic push
@@ -267,7 +269,7 @@ info_lkp_new (int oid, const char *value
 	self->nuf_s2l = NULL;
 	self->fun_s2l = NULL;
 	self->nuf_vp2s = NULL;
-#endif // WITH_SNMP_LKP_FUN
+#endif /* WITH_SNMP_LKP_FUN */
 	return self;
 }
 
@@ -425,7 +427,7 @@ function_destroy (void **self_p){
 }
 #endif /* WITH_DMF_FUNCTIONS */
 
-/*Destroy full array of lookup elements*/
+/* Destroy full array of lookup elements */
 void
 info_lkp_destroy (void **self_p)
 {
@@ -437,8 +439,9 @@ info_lkp_destroy (void **self_p)
 			free ((char*)self->info_value);
 			self->info_value = NULL;
 		}
-// FIXME: When DMF support for lookup functions comes to fruition,
-// we may need to handle teardown of fun_vp2s/nuf_s2l/fun_s2l/nuf_vp2s here somehow.
+/* FIXME: When DMF support for lookup functions comes to fruition,
+ * we may need to handle teardown of fun_vp2s/nuf_s2l/fun_s2l/nuf_vp2s
+ * here somehow. */
 		free (self);
 		*self_p = NULL;
 	}
@@ -900,30 +903,31 @@ lookup_info_node_handler(alist_t *list, const char **attrs)
 			"oid='%s' value='%s' "
 			"fun_vp2s='%s' nuf_s2l='%s' fun_s2l='%s' nuf_vp2s='%s' functionset='%s'",
 			arg[0], arg[1], arg[2], arg[3], arg[4], arg[5], arg[6]);
-		// FIXME : set up fun and nuf pointers based on functionset, language,
-		// being linked against LUA / with DMF functions, etc. Maybe use some
-		// code built into NUT binaries as a fallback via special "language"
-		// or even "functionset" value?
+		/* FIXME : set up fun and nuf pointers based on functionset, language,
+		 * being linked against LUA / with DMF functions, etc. Maybe use some
+		 * code built into NUT binaries as a fallback via special "language"
+		 * or even "functionset" value? */
 	}
-#endif // WITH_SNMP_LKP_FUN
+#endif /* WITH_SNMP_LKP_FUN */
 
 	if(arg[0])
 		alist_append(element, ((info_lkp_t *(*) (int, const char *
 #if WITH_SNMP_LKP_FUN
-// FIXME: Now these settings end up as no-ops; later these should be
-// real pointers to a function, and if we get any strings from XML -
-// see WITH_DMF_FUNCTIONS for conversion. Note that these are not
-// really (char*) in info_lkp_t, as defined in array above...
+/* FIXME: Now these settings end up as no-ops; later these should be
+ * real pointers to a function, and if we get any strings from XML -
+ * see WITH_DMF_FUNCTIONS for conversion. Note that these are not
+ * really (char*) in info_lkp_t, as defined in array above...
+ */
 			, const char *(*)(void *raw_snmp_value)
 			, long (*)(const char *nut_value)
 			, long (*)(const char *snmp_value)
 			, const char *(*)(void *raw_nut_value)
-#endif // WITH_SNMP_LKP_FUN
+#endif /* WITH_SNMP_LKP_FUN */
 ))element->new_element)
 			(atoi(arg[0]), arg[1]
 #if WITH_SNMP_LKP_FUN
 			, fun_vp2s, nuf_s2l, fun_s2l, nuf_vp2s
-#endif // WITH_SNMP_LKP_FUN
+#endif /* WITH_SNMP_LKP_FUN */
 			));
 
 	for(i = 0; i < (INFO_LOOKUP_MAX_ATTRS + 1); i++)
@@ -937,7 +941,7 @@ void
 function_node_handler(alist_t *list, const char **attrs)
 {
 	alist_t *element = alist_get_last_element(list);
-	char *argname = NULL, *arglang = NULL; // = (char*) calloc (32, sizeof (char *));
+	char *argname = NULL, *arglang = NULL; /* = (char*) calloc (32, sizeof (char *)); */
 
 	argname = get_param_by_name(SNMP_NAME, attrs);
 	arglang = get_param_by_name("language", attrs);
@@ -1071,7 +1075,8 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 #endif
 				));
 	// End of arg[5] aka setvar
-	} else*/
+	} else
+*/
 		alist_append(element, ((snmp_info_t *(*)
 			(const char *, int, double, const char *,
 			 const char *, unsigned long, info_lkp_t * /*, int * */

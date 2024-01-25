@@ -254,7 +254,7 @@ int init_snmp_device_table(void)
 				snmp_device_table = snmp_device_table_dmf;
 				upsdebugx(1, "SUCCESS: Can use the SNMP device mapping parsed from "
 					"DMF library with %d definitions", device_table_counter-1);
-				// Note: caller should free these structures in the end, just like below
+				/* Note: caller should free these structures in the end, just like below */
 			} else {
 				upsdebugx(1, "PROBLEM: Can not access the SNMP device mapping "
 					"parsed from DMF library, or loaded an empty table");
@@ -638,12 +638,13 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 			__func__, mib2nut_count_total, mib2nut_count_useful);
 
 		if (mib && strcmp(mib, "eaton_epdu") == 0) {
-			// FIXME (WITH_SNMP_LKP_FUN): When support for lookup functions
-			// in DMF is fixed, this clause has to be amended back, too.
-			// Also note that currently this suggestion concerns just one
-			// mapping table (for Eaton Marlin ePDUs), and that developers
-			// or validators are not forbidden to configure any driver they
-			// want to explicitly -- this failsafe is just for nut-scanner.
+			/* FIXME (WITH_SNMP_LKP_FUN): When support for lookup functions
+			 * in DMF is fixed, this clause has to be amended back, too.
+			 * Also note that currently this suggestion concerns just one
+			 * mapping table (for Eaton Marlin ePDUs), and that developers
+			 * or validators are not forbidden to configure any driver they
+			 * want to explicitly -- this failsafe is just for nut-scanner.
+			 */
 			upslogx(1, "This device mapping uses lookup functions which is not yet supported by DMF driver");
 		} else {
 			dev->driver = strdup("snmp-ups-dmf");

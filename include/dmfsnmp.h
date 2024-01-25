@@ -378,7 +378,7 @@ info_lkp_t *
 	, long (*nuf_s2l)(const char *nut_value)
 	, long (*fun_s2l)(const char *snmp_value)
 	, const char *(*nuf_vp2s)(void *raw_nut_value)
-#endif // WITH_SNMP_LKP_FUN
+#endif /* WITH_SNMP_LKP_FUN */
 	);
 
 /* Destroy and NULLify the reference to alist_t, list of collections */
