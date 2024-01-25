@@ -29,10 +29,16 @@
 #include <dirent.h>
 #include <assert.h>
 
+#ifndef DEBUG
+# define DEBUG 0
+#endif
+
 /* For experiments in development of DMF+lookup function support,
  * uncomment this line; for currently stable codebase keep it off...
  */
-/*#define WITH_SNMP_LKP_FUN 1*/
+#if DEBUG
+# define WITH_SNMP_LKP_FUN 1
+#endif
 
 #include "dmf.h"
 
@@ -47,18 +53,32 @@
 #undef PACKAGE_STRING
 #undef PACKAGE_TARNAME
 #undef PACKAGE_BUGREPORT
+
+#include "eaton-pdu-marlin-helpers.h"
+#include "eaton-pdu-marlin-helpers.c"
+#include "snmp-ups-helpers.c"
 #include "eaton-pdu-marlin-mib.c"
 
 /* Replicate what drivers/main.c exports */
 int do_synchronous = 0;
 
 int
-main ()
+main (void)
 {
+	int	result, iterator = 0;
+	mibdmf_parser_t	*dmp = NULL;
+	alist_t	*element = NULL, **aux = NULL;
+#if DEBUG > 1
+	/* See below, currently a disabled code block */
+	mib2nut_info_t *m2n = NULL;
+#endif
+#if WITH_DMF_FUNCTIONS && WITH_DMF_LUA
+	mib2nut_info_t **mib2nut = NULL;
+#endif
+
 	nut_debug_level = 10;
 
-	int result;
-	mibdmf_parser_t * dmp = mibdmf_parser_new();
+	dmp = mibdmf_parser_new();
 	if (!dmp) {
 		fprintf(stderr,"FATAL: Can not allocate the DMF parsing structures\n");
 		return ENOMEM;
@@ -85,15 +105,19 @@ main ()
 		return result;
 	}
 
-	/*Debugging
-	 *mib2nut_info_t *m2n = get_mib2nut_table();
-	 *print_mib2nut_memory_struct(m2n + 6);
-	 *print_mib2nut_memory_struct(&pxgx_ups); */
-	alist_t **aux = mibdmf_get_initial_list_ptr(dmp);
-	alist_t *element;
-	int iterator = 0;
+#if DEBUG > 1
+	/* FIXME: Modernize to new API and changed static table names
+	 * (eaton_pxg_ups?), maybe update Makefile.am for symlinks etc. */
+	m2n = get_mib2nut_table(dmp);
+	print_mib2nut_memory_struct(m2n + 6);
+	print_mib2nut_memory_struct(&pxgx_ups);
+#endif
 
-	/* printf("=== DMF-Test: Loaded C structures (sample for 'eaton_epdu'):\n\n"); */
+	aux = mibdmf_get_initial_list_ptr(dmp);
+
+#if DEBUG
+	printf("=== DMF-Test: Loaded C structures (sample for 'eaton_epdu'):\n\n");
+#endif
 	if(aux){
 		while(!(element = alist_get_element_by_name(aux[iterator], "eaton_marlin"))&&(iterator < mibdmf_get_list_size(dmp)))
 			iterator++;
@@ -107,19 +131,17 @@ main ()
 			result = 1;
 		}
 
-		/* Aid debugging, uncomment and rebuild and re-run */
-                /*
+#if DEBUG
 		printf("\n\n");
 		printf("=== DMF-Test: Displaying original (non-DMF) C structures (sample for 'eaton_epdu'):\n\n");
 		print_mib2nut_memory_struct(&eaton_marlin);
 		printf("=== DMF-Test: End of original (non-DMF) C structures (sample for 'eaton_epdu'):\n\n");
-                 */
-		/* End debugging */
+#endif
 
 #if WITH_DMF_FUNCTIONS
 #if WITH_DMF_LUA
 		/* Array of pointers to singular instances of mib2nut_info_t */
-		mib2nut_info_t **mib2nut = *(mibdmf_get_mib2nut_table_ptr)(dmp);
+		mib2nut = *(mibdmf_get_mib2nut_table_ptr)(dmp);
 		if ( mib2nut == NULL ) {
 			upsdebugx(1,"FATAL: Could not access the mib2nut index table");
 			result = 1;
