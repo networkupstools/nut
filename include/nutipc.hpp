@@ -565,7 +565,7 @@ void * Signal::HandlerThread<H>::main(void * comm_pipe_read_end) {
 		// Note that direct blocking read could be also used;
 		// however, select allows timeout specification
 		// which might come handy...
-		int fdno = ::select(FD_SETSIZE, &rfds, NULL, NULL, NULL);
+		int fdno = ::select(FD_SETSIZE, &rfds, nullptr, nullptr, nullptr);
 
 		// TBD: Die or recover on error?
 		if (-1 == fdno) {
@@ -605,7 +605,7 @@ void * Signal::HandlerThread<H>::main(void * comm_pipe_read_end) {
 				::close(rfd);
 
 				// Terminate thread
-				pthread_exit(NULL);
+				::pthread_exit(nullptr);
 
 			case SIGNAL:
 				// Read signal number
@@ -688,7 +688,7 @@ Signal::HandlerThread<H>::HandlerThread(const Signal::List & siglist)
 	}
 
 	// Start the thread
-	int status = ::pthread_create(&m_impl, NULL, &main, s_comm_pipe);
+	int status = ::pthread_create(&m_impl, nullptr, &main, s_comm_pipe);
 
 	if (status) {
 		std::stringstream e;
@@ -712,7 +712,7 @@ Signal::HandlerThread<H>::HandlerThread(const Signal::List & siglist)
 		int signo = static_cast<int>(*sig);
 
 		// TBD: We might want to save the old handlers...
-		status = ::sigaction(signo, &action, NULL);
+		status = ::sigaction(signo, &action, nullptr);
 
 		if (status) {
 			std::stringstream e;
@@ -736,7 +736,7 @@ void Signal::HandlerThread<H>::quit()
 
 	sigPipeWriteCmd(s_comm_pipe[1], &quit, sizeof(quit));
 
-	int status = ::pthread_join(m_impl, NULL);
+	int status = ::pthread_join(m_impl, nullptr);
 
 	if (status) {
 		std::stringstream e;

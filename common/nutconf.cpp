@@ -680,30 +680,30 @@ void GenericConfigSection::clear() {
 
 GenericConfigParser::GenericConfigParser(const char* buffer):
 DefaultConfigParser(buffer),
-_config(NULL)
+_config(nullptr)
 {
 }
 
 GenericConfigParser::GenericConfigParser(const std::string& buffer):
 DefaultConfigParser(buffer),
-_config(NULL)
+_config(nullptr)
 {
 }
 
 void GenericConfigParser::parseConfig(BaseConfiguration* config)
 {
-	if(config!=NULL)
+	if(config!=nullptr)
 	{
 		_config = config;
 		NutConfigParser::parseConfig();
-		_config = NULL;
+		_config = nullptr;
 	}
 }
 
 
 void GenericConfigParser::onParseSection(const GenericConfigSection& section)
 {
-	if(_config!=NULL)
+	if(_config!=nullptr)
 	{
 		_config->setGenericConfigSection(section);
 	}
@@ -1017,11 +1017,11 @@ NutConfigParser(buffer)
 
 void UpsmonConfigParser::parseUpsmonConfig(UpsmonConfiguration* config)
 {
-	if(config!=NULL)
+	if(config!=nullptr)
 	{
 		_config = config;
 		NutConfigParser::parseConfig();
-		_config = NULL;
+		_config = nullptr;
 	}
 }
 
@@ -1264,11 +1264,11 @@ NutConfigParser(buffer)
 
 void NutConfConfigParser::parseNutConfConfig(NutConfiguration* config)
 {
-	if(config!=NULL)
+	if(config!=nullptr)
 	{
 		_config = config;
 		NutConfigParser::parseConfig();
-		_config = NULL;
+		_config = nullptr;
 	}
 }
 
@@ -1365,11 +1365,11 @@ NutConfigParser(buffer, NutParser::OPTION_IGNORE_COLON)
 
 void UpsdConfigParser::parseUpsdConfig(UpsdConfiguration* config)
 {
-	if(config!=NULL)
+	if(config!=nullptr)
 	{
 		_config = config;
 		NutConfigParser::parseConfig();
-		_config = NULL;
+		_config = nullptr;
 	}
 }
 

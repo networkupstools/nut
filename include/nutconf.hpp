@@ -156,7 +156,7 @@ public:
 		OPTION_IGNORE_COLON = 1
 	};
 
-	NutParser(const char* buffer = NULL, unsigned int options = OPTION_DEFAULT);
+	NutParser(const char* buffer = nullptr, unsigned int options = OPTION_DEFAULT);
 	NutParser(const std::string& buffer, unsigned int options = OPTION_DEFAULT);
 
 	virtual ~NutParser() {}
@@ -280,7 +280,7 @@ public:
 	virtual void parseConfig(BaseConfiguration* config);
 
 protected:
-	NutConfigParser(const char* buffer = NULL, unsigned int options = OPTION_DEFAULT);
+	NutConfigParser(const char* buffer = nullptr, unsigned int options = OPTION_DEFAULT);
 	NutConfigParser(const std::string& buffer, unsigned int options = OPTION_DEFAULT);
 
 	virtual void onParseBegin()=0;
@@ -293,7 +293,7 @@ protected:
 class DefaultConfigParser : public NutConfigParser
 {
 public:
-	DefaultConfigParser(const char* buffer = NULL);
+	DefaultConfigParser(const char* buffer = nullptr);
 	DefaultConfigParser(const std::string& buffer);
 
 protected:
@@ -312,7 +312,7 @@ protected:
 class GenericConfigParser : public DefaultConfigParser
 {
 public:
-	GenericConfigParser(const char* buffer = NULL);
+	GenericConfigParser(const char* buffer = nullptr);
 	GenericConfigParser(const std::string& buffer);
 
 	virtual void parseConfig(BaseConfiguration* config) override;
@@ -689,7 +689,7 @@ public:
 class UpsmonConfigParser : public NutConfigParser
 {
 public:
-	UpsmonConfigParser(const char* buffer = NULL);
+	UpsmonConfigParser(const char* buffer = nullptr);
 	UpsmonConfigParser(const std::string& buffer);
 
 	void parseUpsmonConfig(UpsmonConfiguration* config);
@@ -734,7 +734,7 @@ public:
 class NutConfConfigParser : public NutConfigParser
 {
 public:
-	NutConfConfigParser(const char* buffer = NULL);
+	NutConfConfigParser(const char* buffer = nullptr);
 	NutConfConfigParser(const std::string& buffer);
 
 	void parseNutConfConfig(NutConfiguration* config);
@@ -782,7 +782,7 @@ public:
 class UpsdConfigParser : public NutConfigParser
 {
 public:
-	UpsdConfigParser(const char* buffer = NULL);
+	UpsdConfigParser(const char* buffer = nullptr);
 	UpsdConfigParser(const std::string& buffer);
 
 	void parseUpsdConfig(UpsdConfiguration* config);

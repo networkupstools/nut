@@ -198,7 +198,7 @@ class Options {
 		doubleDash,  /**< Double-dash prefixed option */
 	} type_t;
 
-	/** Arguments of the last option processed (\c NULL means bin. args) */
+	/** Arguments of the last option processed (\c nullptr means bin. args) */
 	Arguments * m_last;
 
 	/** Binary arguments */
@@ -224,7 +224,7 @@ class Options {
 	 *  \param  arg  Argument
 	 */
 	inline void addArg(const std::string & arg) {
-		Arguments * args = NULL != m_last ? m_last : &m_args;
+		Arguments * args = nullptr != m_last ? m_last : &m_args;
 
 		args->push_back(arg);
 	}
@@ -515,7 +515,7 @@ void Options::dump(std::ostream & stream) const {
 }
 
 
-Options::Options(char * const argv[], int argc): m_last(NULL) {
+Options::Options(char * const argv[], int argc): m_last(nullptr) {
 	for (int i = 1; i < argc; ++i) {
 		const std::string arg(argv[i]);
 
@@ -532,7 +532,7 @@ Options::Options(char * const argv[], int argc): m_last(NULL) {
 		// "--" alone is valid as it means that what follows
 		// belongs to the binary ("empty" option arguments)
 		else if (2 == arg.size())
-			m_last = NULL;
+			m_last = nullptr;
 
 		// Double-dashed option
 		else if ('-' != arg[2])
@@ -691,9 +691,9 @@ class NutScanner {
 		// FIXME: Since NUT v2.8.2 nutscan_scan_usb accepts
 		// a `nutscan_usb_t * scanopts` to tweak what values
 		// it reports -- make use of it in this class.
-		// A NULL value causes safe defaults to be used,
+		// A nullptr value causes safe defaults to be used,
 		// as decided by the library.
-		nutscan_device_t * dev = nutscan_scan_usb(NULL);
+		nutscan_device_t * dev = ::nutscan_scan_usb(nullptr);
 
 		return dev2list(dev);
 	}
@@ -709,13 +709,13 @@ class NutScanner {
 		nutscan_xml_t xml_sec;
 		nutscan_device_t * dev;
 
-		memset(&xml_sec, 0, sizeof(xml_sec));
+		::memset(&xml_sec, 0, sizeof(xml_sec));
 		/* Set the default values for XML HTTP (run_xml()) */
 		xml_sec.port_http = 80;
 		xml_sec.port_udp = 4679;
 		xml_sec.usec_timeout = us_timeout;
-		xml_sec.peername = NULL;
-		dev = nutscan_scan_xml_http_range(NULL, NULL, us_timeout, &xml_sec);
+		xml_sec.peername = nullptr;
+		dev = ::nutscan_scan_xml_http_range(nullptr, nullptr, us_timeout, &xml_sec);
 
 		return dev2list(dev);
 	}
@@ -736,7 +736,7 @@ class NutScanner {
 		const std::string & port,
 		long                us_timeout)
 	{
-		nutscan_device_t * dev = nutscan_scan_nut(
+		nutscan_device_t * dev = ::nutscan_scan_nut(
 			start_ip.c_str(), stop_ip.c_str(), port.c_str(), us_timeout);
 
 		return dev2list(dev);
@@ -750,7 +750,7 @@ class NutScanner {
 	 *  \return Device list
 	 */
 	inline static devices_t devicesAvahi(long us_timeout) {
-		nutscan_device_t * dev = nutscan_scan_avahi(us_timeout);
+		nutscan_device_t * dev = ::nutscan_scan_avahi(us_timeout);
 
 		return dev2list(dev);
 	}
@@ -784,12 +784,12 @@ NutScanner::Device::options_t NutScanner::Device::createOptions(nutscan_options_
 	options_t options;
 
 	// Create options
-	for (; NULL != opt; opt = opt->next) {
-		assert(NULL != opt->option);
+	for (; nullptr != opt; opt = opt->next) {
+		assert(nullptr != opt->option);
 
 		options.insert(
 			options_t::value_type(opt->option,
-				NULL != opt->value ? opt->value : ""));
+				nullptr != opt->value ? opt->value : ""));
 	}
 
 	return options;
@@ -798,8 +798,8 @@ NutScanner::Device::options_t NutScanner::Device::createOptions(nutscan_options_
 
 NutScanner::Device::Device(nutscan_device_t * dev):
 	type(nutscan_device_type_string(dev->type)),
-	driver(NULL != dev->driver ? dev->driver : ""),
-	port(NULL != dev->port ? dev->port : ""),
+	driver(nullptr != dev->driver ? dev->driver : ""),
+	port(nullptr != dev->port ? dev->port : ""),
 	options(createOptions(dev->opt))
 {}
 
@@ -809,7 +809,7 @@ NutScanner::devices_t NutScanner::dev2list(nutscan_device_t * dev_list) {
 
 	nutscan_device_t * dev = dev_list;
 
-	for (; dev != NULL; dev = dev->next) {
+	for (; dev != nullptr; dev = dev->next) {
 		// Skip devices of type NONE
 		// TBD: This happens with the serial scan on an invalid device
 		// Should be fixed in libnutscan I think
@@ -819,7 +819,7 @@ NutScanner::devices_t NutScanner::dev2list(nutscan_device_t * dev_list) {
 		list.push_back(Device(dev));
 	}
 
-	nutscan_free_device(dev_list);
+	::nutscan_free_device(dev_list);
 
 	return list;
 }
@@ -862,7 +862,7 @@ NutScanner::devices_t NutScanner::devicesSNMP(
 	if (!attrs.peer_name.empty())
 		snmp_attrs.peername = const_cast<char *>(attrs.peer_name.c_str());
 
-	nutscan_device_t * dev = nutscan_scan_snmp(
+	nutscan_device_t * dev = ::nutscan_scan_snmp(
 		start_ip.c_str(), stop_ip.c_str(), us_timeout, &snmp_attrs);
 
 	return dev2list(dev);
@@ -897,7 +897,7 @@ NutScanner::devices_t NutScanner::devicesIPMI(
 	ipmi_attrs.workaround_flags = attrs.wa_flags;
 	ipmi_attrs.ipmi_version     = attrs.version;
 
-	nutscan_device_t * dev = nutscan_scan_ipmi(
+	nutscan_device_t * dev = ::nutscan_scan_ipmi(
 		start_ip.c_str(), stop_ip.c_str(), &ipmi_attrs);
 
 	return dev2list(dev);
@@ -920,7 +920,7 @@ NutScanner::devices_t NutScanner::devicesEatonSerial(const std::list<std::string
 		port_list += ' ';
 	}
 
-	nutscan_device_t * dev = nutscan_scan_eaton_serial(port_list.c_str());
+	nutscan_device_t * dev = ::nutscan_scan_eaton_serial(port_list.c_str());
 
 	return dev2list(dev);
 }
@@ -1678,7 +1678,7 @@ NutConfOptions::~NutConfOptions() {
 
 	for (; user != users.end(); ++user) {
 		delete *user;
-		*user = NULL;
+		*user = nullptr;
 	}
 }
 
@@ -1742,16 +1742,16 @@ class autodelete_ptr {
 
 	/** Cleanup */
 	inline void cleanup() {
-		if (NULL != m_impl)
+		if (nullptr != m_impl)
 			delete m_impl;
 
-		m_impl = NULL;
+		m_impl = nullptr;
 	}
 
 	public:
 
 	/** Constructor (unset) */
-	autodelete_ptr(): m_impl(NULL) {}
+	autodelete_ptr(): m_impl(nullptr) {}
 
 	/** Constructor */
 	autodelete_ptr(T * ptr): m_impl(ptr) {}
@@ -1775,7 +1775,7 @@ class autodelete_ptr {
 	inline T * give() {
 		T * ptr = m_impl;
 
-		m_impl = NULL;
+		m_impl = nullptr;
 
 		return ptr;
 	}
@@ -1833,13 +1833,13 @@ void NutConfOptions::addUser(const Options::Arguments & args) {
 	} while (0);  // end of pragmatic do ... while (0) loop
 
 	// Ordinary user
-	if (NULL == user) {
+	if (nullptr == user) {
 		user = new UserSpec;
 
 		user->name = name;
 	}
 
-	assert(NULL != user);
+	assert(nullptr != user);
 
 	// Set user attributes
 	bool errors = false;

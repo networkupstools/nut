@@ -60,7 +60,7 @@ static const std::string test_data(
  *  \retval false in case of failure
  */
 static bool readTestData(nut::NutStream * stream) {
-	assert(NULL != stream);
+	assert(nullptr != stream);
 
 	// Read characters from the stream
 	for (size_t pos = 0, iter = 0; ; ++iter) {
@@ -103,7 +103,7 @@ static bool readTestData(nut::NutStream * stream) {
  *  \retval false in case of failure
  */
 static bool writeTestData(nut::NutStream * stream) {
-	assert(NULL != stream);
+	assert(nullptr != stream);
 
 	size_t pivot = 0.5 * test_data.size();
 

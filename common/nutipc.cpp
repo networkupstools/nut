@@ -160,7 +160,7 @@ int Process::Executor::operator () ()
 		args_c_str[i] = (*arg).c_str();
 	}
 
-	args_c_str[i] = NULL;
+	args_c_str[i] = nullptr;
 
 	int status = ::execvp(bin_c_str, (char * const *)args_c_str);
 
