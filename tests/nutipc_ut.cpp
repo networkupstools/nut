@@ -114,12 +114,12 @@ void NutIPCUnitTest::testSignalSend() {
 
 	action.sa_handler = &testSignalHandler;
 
-	CPPUNIT_ASSERT(0 == ::sigaction((int)nut::Signal::USER1, &action, nullptr));
+	CPPUNIT_ASSERT(0 == ::sigaction(static_cast<int>(nut::Signal::USER1), &action, nullptr));
 
 	// Send signal directly
 	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER1, my_pid));
 
-	CPPUNIT_ASSERT((int)nut::Signal::USER1 == signal_caught);
+	CPPUNIT_ASSERT(static_cast<int>(nut::Signal::USER1) == signal_caught);
 
 	signal_caught = 0;
 
@@ -139,7 +139,7 @@ void NutIPCUnitTest::testSignalSend() {
 	// Send signal to process via the PIDfile
 	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER1, pid_file_name));
 
-	CPPUNIT_ASSERT((int)nut::Signal::USER1 == signal_caught);
+	CPPUNIT_ASSERT(static_cast<int>(nut::Signal::USER1) == signal_caught);
 
 	pid_file.removex();
 

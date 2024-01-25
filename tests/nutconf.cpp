@@ -84,7 +84,7 @@ void NutConfTest::testOptions()
 
     {
         NutParser parse("Bonjour monde!", NutParser::OPTION_IGNORE_COLON);
-		CPPUNIT_ASSERT_EQUAL_MESSAGE("Has bad parsing options", (unsigned int)NutParser::OPTION_IGNORE_COLON, parse.getOptions());
+		CPPUNIT_ASSERT_EQUAL_MESSAGE("Has bad parsing options", static_cast<unsigned int>(NutParser::OPTION_IGNORE_COLON), parse.getOptions());
 		CPPUNIT_ASSERT_MESSAGE("Has not OPTION_IGNORE_COLON parsing option", parse.hasOptions(NutParser::OPTION_IGNORE_COLON));
     }
 
@@ -284,7 +284,7 @@ void NutConfTest::testUpsmonConfigParser()
 
 	CPPUNIT_ASSERT_MESSAGE("Find a NOTIFYFLAG ONLINE", !conf.notifyFlags[nut::UpsmonConfiguration::NOTIFY_ONLINE].set());
 	CPPUNIT_ASSERT_MESSAGE("Cannot find a NOTIFYFLAG LOWBATT", conf.notifyFlags[nut::UpsmonConfiguration::NOTIFY_LOWBATT].set());
-	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find a NOTIFYFLAG LOWBATT SYSLOG+WALL", 3u, (unsigned int)conf.notifyFlags[nut::UpsmonConfiguration::NOTIFY_LOWBATT]);
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find a NOTIFYFLAG LOWBATT SYSLOG+WALL", 3u, static_cast<unsigned int>(conf.notifyFlags[nut::UpsmonConfiguration::NOTIFY_LOWBATT]));
 
 
 	CPPUNIT_ASSERT_MESSAGE("Find a NOTIFYMSG LOWBATT", !conf.notifyMessages[nut::UpsmonConfiguration::NOTIFY_LOWBATT].set());
