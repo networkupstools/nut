@@ -75,10 +75,11 @@
  * places the discovered information into a new entry under the "list" tree,
  * or into dynamically grown arrays "mib2nut_info_t *mib2nut_table" (snmp-ups)
  * and "snmp_device_id_t *device_table" (for nut-scanner), as appropriate.
- * References to these tables can be received with `get_mib2nut_table()` and
- * `get_device_table()` methods. You can also `get_device_table_counter()` to
- * look up the two tables' lengths (they were last `realloc()`ed to this size)
- * including the zeroed-out sentinel last entries, but historically the NUT
+ * References to these tables can be received with `mibdmf_get_mib2nut_table()`
+ * and `mibdmf_get_device_table()` methods. You can also utilize
+ * `mibdmf_get_device_table_counter()` to look up the two tables' lengths
+ * (they were last `realloc()`ed to this size) including the zeroed-out
+ * "sentinels" in their last entries, but historically the NUT table-parsing
  * way consisted of looking through the tables until hitting the sentinel
  * entry and so determining its size or otherwise end of loop - and this
  * remains the official and reliable manner of length determination (not
@@ -333,7 +334,7 @@ void
 	print_mib2nut_memory_struct (mib2nut_info_t *self);
 
 
-/* Helpers for string comparison (includng NULL consideration); */
+/* Helpers for string comparison (including NULL consideration); */
 bool
 	dmf_streq (const char* x, const char* y);
 
