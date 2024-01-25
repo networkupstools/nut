@@ -1890,7 +1890,7 @@ void NutConfOptions::getMonitor(
 	std::string & pwr_val,
 	std::string & user,
 	std::string & passwd,
-	std::string & mode,
+	std::string & mode_arg,
 	size_t        which) const
 #if (defined __cplusplus) && (__cplusplus < 201100)
 		throw(std::range_error)
@@ -1908,7 +1908,7 @@ void NutConfOptions::getMonitor(
 	pwr_val   = monitors[base_idx + 2];
 	user      = monitors[base_idx + 3];
 	passwd    = monitors[base_idx + 4];
-	mode      = monitors[base_idx + 5];
+	mode_arg  = monitors[base_idx + 5];
 }
 
 
