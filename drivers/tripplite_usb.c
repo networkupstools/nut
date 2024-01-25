@@ -137,7 +137,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME	"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.35"
+#define DRIVER_VERSION	"0.36"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -203,7 +203,8 @@ static enum tl_model_t {
 	TRIPP_LITE_OMNIVS_2001,
 	TRIPP_LITE_SMARTPRO,
 	TRIPP_LITE_SMART_0004,
-	TRIPP_LITE_SMART_3005
+	TRIPP_LITE_SMART_3005,
+	TRIPP_LITE_SMART_3017
 } tl_model = TRIPP_LITE_UNKNOWN;
 
 /*! Are the values encoded in ASCII or binary?
@@ -218,6 +219,7 @@ static int is_binary_protocol(void)
 		case TRIPP_LITE_SMART_0004:
 		case TRIPP_LITE_OMNIVS:
 		case TRIPP_LITE_OMNIVS_2001:
+		case TRIPP_LITE_SMART_3017:
 		case TRIPP_LITE_UNKNOWN:
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
 # pragma GCC diagnostic push
@@ -244,6 +246,7 @@ static int is_smart_protocol(void)
 		case TRIPP_LITE_SMARTPRO:
 		case TRIPP_LITE_SMART_0004:
 		case TRIPP_LITE_SMART_3005:
+		case TRIPP_LITE_SMART_3017:
 			return 1;
 		case TRIPP_LITE_OMNIVS:
 		case TRIPP_LITE_OMNIVS_2001:
@@ -518,6 +521,9 @@ static enum tl_model_t decode_protocol(unsigned int proto)
 		case 0x3005:
 			upslogx(3, "Using binary SMART protocol (%x)", proto);
 			return TRIPP_LITE_SMART_3005;
+		case 0x3017:
+			upslogx(3, "Using (mostly) ASCII SMART protocol (%x)", proto);
+			return TRIPP_LITE_SMART_3017;
 		default:
 			printf("Unknown protocol (%04x)", proto);
 			break;
@@ -542,31 +548,79 @@ static void decode_v(const unsigned char *value)
  	ivn = value[1];
 	lb = value[4];
 
-	switch(ivn) {
-		case '0': input_voltage_nominal =
-			  input_voltage_scaled  = 100;
-			  break;
+	if( is_smart_protocol() ) {
+		switch(ivn) {
+			case 0:
+			case '0': input_voltage_nominal =
+				  input_voltage_scaled  = 100;
+				  break;
 
-		case 2: /* protocol 3005 */
-		case '1': input_voltage_nominal =
-			  input_voltage_scaled  = 120;
-			  break;
+			case 1:
+			case '1': input_voltage_nominal =
+				  input_voltage_scaled  = 110;
+				  break;
 
-		case '2': input_voltage_nominal =
-			  input_voltage_scaled  = 230;
-			  break;
+			case 2: /* protocol 3005 */
+			case '2': input_voltage_nominal =
+				  input_voltage_scaled  = 120;
+				  break;
 
-		case '3': input_voltage_nominal = 208;
-			  input_voltage_scaled  = 230;
-			  break;
+			case 3:
+			case '3': input_voltage_nominal =
+				  input_voltage_scaled  = 127;
+				  break;
 
-		case 6: input_voltage_nominal =
-			  input_voltage_scaled  = 230;
-			  break;
+			case 4:
+			case '4': input_voltage_nominal =
+				  input_voltage_scaled  = 208;
+				  break;
 
-		default:
-			  upslogx(2, "Unknown input voltage range: 0x%02x", (unsigned int)ivn);
-			  break;
+			case 5:
+			case '5': input_voltage_nominal =
+				  input_voltage_scaled  = 220;
+				  break;
+
+			case 6:
+			case '6': input_voltage_nominal =
+				  input_voltage_scaled  = 230;
+				  break;
+
+			case 7:
+			case '7': input_voltage_nominal =
+				  input_voltage_scaled  = 240;
+				  break;
+
+			default:
+				  upslogx(2, "Unknown input voltage range: 0x%02x", (unsigned int)ivn);
+				  break;
+		}
+	} else {
+		/* Lots of odd cases here; maybe some of the SMART protocols got mixed in, too: */
+		switch(ivn) {
+			case '0': input_voltage_nominal =
+				  input_voltage_scaled  = 100;
+				  break;
+
+			case '1': input_voltage_nominal =
+				  input_voltage_scaled  = 120;
+				  break;
+
+			case '2': input_voltage_nominal =
+				  input_voltage_scaled  = 230;
+				  break;
+
+			case '3': input_voltage_nominal = 208;
+				  input_voltage_scaled  = 230;
+				  break;
+
+			case 6: input_voltage_nominal =
+				input_voltage_scaled  = 230;
+				break;
+
+			default:
+				upslogx(2, "Unknown input voltage range: 0x%02x", (unsigned int)ivn);
+				break;
+		}
 	}
 
 	if( (lb >= '0') && (lb <= '9') ) {
@@ -769,8 +823,12 @@ static int soft_shutdown(void)
 	int ret;
 	unsigned char buf[256], cmd_N[]="N\0x", cmd_G[] = "G";
 
+	/* TODO: find size/format of ASCII delay command */
+	if( !is_binary_protocol() ) {
+		upslogx(LOG_WARNING, "Other commands for this UPS are binary, but the format of the shutdown delay command has not been confirmed.");
+	} 
+
 	/* Already binary: */
-	/* FIXME: Assumes memory layout / endianness? */
 	cmd_N[2] = (unsigned char)(offdelay & 0x00FF);
 	cmd_N[1] = (unsigned char)(offdelay >> 8);
 	upsdebugx(3, "soft_shutdown(offdelay=%d): N", offdelay);
@@ -885,6 +943,7 @@ static int control_outlet(int outlet_id, int state)
 
 		case TRIPP_LITE_OMNIVS:
 		case TRIPP_LITE_OMNIVS_2001:
+		case TRIPP_LITE_SMART_3017:
 		case TRIPP_LITE_UNKNOWN:
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
 # pragma GCC diagnostic push
@@ -1534,6 +1593,7 @@ void upsdrv_updateinfo(void)
 				hex2d(l_value+1, 4)/240.0*input_voltage_scaled);
 			break;
 		case TRIPP_LITE_SMARTPRO:
+		case TRIPP_LITE_SMART_3017:
 			dstate_setinfo("ups.load", "%ld", hex2d(l_value+1, 2));
 			break;
 		case TRIPP_LITE_SMART_3005:
