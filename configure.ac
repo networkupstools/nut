@@ -4914,6 +4914,9 @@ dnl # -Wno-padded -- NSPR and NSS headers get to issue lots of that
 dnl # -Wno-c++98-compat-pedantic -Wno-c++98-compat -- our C++ code uses nullptr
 dnl #    as requested by newer linters, and C++98 does not. We require C++11
 dnl #    or newer anyway, and skip building C++ library and test otherwise.
+dnl # -Wno-exit-time-destructors -- "(static) const something" items would be
+dnl #    de-allocated en-masse when the program exits, not GC'ed at run-time.
+dnl #    Oh well...
 dnl # -Wno-fuse-ld-path -- not much in our control what recipes the autotools
 dnl #    on the build host generate... this tries to avoid failures due to:
 dnl #      clang-13: error: '-fuse-ld=' taking a path is deprecated.
@@ -4923,6 +4926,9 @@ dnl #    its own good. It detects use of pointer aritmetics as arrays are
 dnl #    walked, which is indeed potentially dangerous. And also is nearly
 dnl #    unavoidable in C (at least not without major rewrites of the world).
 dnl ### Special exclusion picks for clang-medium (same as hard, plus...):
+dnl # -Wno-global-constructors -- using "const something" out of method context
+dnl #    potentially impacts start-up time and may be prone to race conditions
+dnl #    (for non-trivial interconnected objects), better be re-architected.
 dnl # -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion
 dnl #    -- reduce noise due to floating-point literals like "3.14" being a C
 dnl #    double type (a "3.14f" literal is a C float) cast implicitly into
@@ -4960,11 +4966,11 @@ AS_CASE(["${nut_enable_warnings}"],
         ],
     [clang-hard], [
         CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
         ],
     [clang-medium], [
         CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-conversion -Wno-incompatible-pointer-types-discards-qualifiers -Wno-incompatible-function-pointer-types-strict"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-global-constructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
         ],
     [clang-minimal], [
         CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Wno-documentation"
