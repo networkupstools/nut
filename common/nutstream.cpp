@@ -41,6 +41,12 @@ extern "C" {
 
 namespace nut {
 
+/* Trivial implementation out of class declaration to avoid
+ * error: 'ClassName' has no out-of-line virtual method definitions; its vtable
+ *   will be emitted in every translation unit [-Werror,-Wweak-vtables]
+ */
+NutStream::~NutStream() {}
+
 NutStream::status_t NutMemory::getChar(char & ch) {
 	if (m_pos == m_impl.size())
 		return NUTS_EOF;

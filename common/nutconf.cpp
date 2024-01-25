@@ -33,6 +33,16 @@
 
 namespace nut {
 
+/* Trivial implementations out of class declaration to avoid
+ * error: 'ClassName' has no out-of-line virtual method definitions; its vtable
+ *   will be emitted in every translation unit [-Werror,-Wweak-vtables]
+ */
+Serialisable::~Serialisable() {}
+BaseConfiguration::~BaseConfiguration() {}
+GenericConfiguration::~GenericConfiguration() {}
+UpsConfiguration::~UpsConfiguration() {}
+NutParser::~NutParser() {}
+
 //
 // Tool functions
 //

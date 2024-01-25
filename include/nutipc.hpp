@@ -80,7 +80,7 @@ class Process {
 
 		/** Formal constructor */
 		Main() {}
-		virtual ~Main() = default;
+		virtual ~Main();
 
 		public:
 
@@ -391,7 +391,7 @@ class Signal {
 		virtual void operator () (enum_t signal) = 0;
 
 		/** Formal destructor */
-		virtual ~Handler() {}
+		virtual ~Handler();
 
 	};  // end of class Handler
 

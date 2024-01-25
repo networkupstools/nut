@@ -167,7 +167,7 @@ class NutConfigWriter: public NutWriter {
 	virtual status_t writeDirective(const std::string & str) = 0;
 
 	/** Virtual destructor */
-	virtual ~NutConfigWriter() {}
+	virtual ~NutConfigWriter();
 
 };  // end of class NutConfigWriter
 
@@ -225,6 +225,8 @@ class NutConfConfigWriter: public SectionlessConfigWriter {
 	 */
 	status_t writeConfig(const NutConfiguration & config);
 
+	/* Ensure an out-of-line method to avoid "weak-vtables" warning */
+	virtual ~NutConfConfigWriter() override;
 };  // end of class NutConfConfigWriter
 
 
@@ -251,6 +253,8 @@ class UpsmonConfigWriter: public SectionlessConfigWriter {
 	 */
 	status_t writeConfig(const UpsmonConfiguration & config);
 
+	/* Ensure an out-of-line method to avoid "weak-vtables" warning */
+	virtual ~UpsmonConfigWriter() override;
 };  // end of class UpsmonConfigWriter
 
 
@@ -277,6 +281,8 @@ class UpsdConfigWriter: public SectionlessConfigWriter {
 	 */
 	status_t writeConfig(const UpsdConfiguration & config);
 
+	/* Ensure an out-of-line method to avoid "weak-vtables" warning */
+	virtual ~UpsdConfigWriter() override;
 };  // end of class UpsdConfigWriter
 
 

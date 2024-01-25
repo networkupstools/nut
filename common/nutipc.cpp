@@ -29,6 +29,13 @@
 
 namespace nut {
 
+/* Trivial implementations out of class declaration to avoid
+ * error: 'ClassName' has no out-of-line virtual method definitions; its vtable
+ *   will be emitted in every translation unit [-Werror,-Wweak-vtables]
+ */
+Process::Main::~Main() {}
+Signal::Handler::~Handler() {}
+
 pid_t Process::getPID()
 #if (defined __cplusplus) && (__cplusplus < 201100)
 	throw()
