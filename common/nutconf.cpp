@@ -1158,7 +1158,7 @@ void UpsmonConfigParser::onParseDirective(const std::string& directiveName, char
 				std::string word;
 				monitor.upsname = (getline(system, word, '@'), word);
 				monitor.hostname = (getline(system, word), word);
-				monitor.port = (values.size() == 6 ? *StringToSettableNumber<unsigned int>(*it++) : 0u);
+				monitor.port = (values.size() == 6 ? *StringToSettableNumber<uint16_t>(*it++) : 0u);
 				monitor.powerValue = StringToSettableNumber<unsigned int>(*it++);
 				monitor.username = *it++;
 				monitor.password = *it++;
@@ -1529,7 +1529,7 @@ void UpsdConfigParser::onParseDirective(const std::string& directiveName, char s
 				listen.address = values.front();
 				if(values.size()==2)
 				{
-					listen.port = StringToSettableNumber<unsigned short>(*(++values.begin()));
+					listen.port = StringToSettableNumber<uint16_t>(*(++values.begin()));
 				}
 				_config->listens.push_back(listen);
 			}
