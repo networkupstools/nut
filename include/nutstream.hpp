@@ -555,7 +555,11 @@ class NutFile: public NutStream {
 	 *
 	 *  \param  orig  Original file
 	 */
-	NutFile(const NutFile & orig) {
+	NutFile(const NutFile & orig)
+#if (defined __cplusplus) && (__cplusplus >= 201100)
+	__attribute__((noreturn))
+#endif
+	{
 		NUT_UNUSED_VARIABLE(orig);
 		throw std::logic_error("NOT IMPLEMENTED");
 	}
@@ -569,7 +573,11 @@ class NutFile: public NutStream {
 	 *
 	 *  \param  rval  Right value
 	 */
-	NutFile & operator = (const NutFile & rval) {
+	NutFile & operator = (const NutFile & rval)
+#if (defined __cplusplus) && (__cplusplus >= 201100)
+	__attribute__((noreturn))
+#endif
+	{
 		NUT_UNUSED_VARIABLE(rval);
 		throw std::logic_error("NOT IMPLEMENTED");
 	}
@@ -1141,7 +1149,11 @@ class NutSocket: public NutStream {
 	 *
 	 *  \param  orig  Original file
 	 */
-	NutSocket(const NutSocket & orig) {
+	NutSocket(const NutSocket & orig)
+#if (defined __cplusplus) && (__cplusplus >= 201100)
+	__attribute__((noreturn))
+#endif
+	{
 		NUT_UNUSED_VARIABLE(orig);
 		throw std::logic_error("NOT IMPLEMENTED");
 	}
