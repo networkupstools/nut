@@ -66,6 +66,30 @@
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
+
+#ifndef WITH_DMFMIB
+# define WITH_DMFMIB 0
+#endif
+
+#if WITH_DMFMIB
+# ifdef WANT_LIBNUTSCAN_SNMP_DMF
+#  undef WANT_LIBNUTSCAN_SNMP_DMF
+# endif
+
+/* This chains to also include nutscan-snmp.h and the desired
+ * variables need structures defined lower in the dmf.h file.
+ * But there is protection in nutscan-snmp.h to only declare
+ * those vars if dmf.h was already completely imported.
+ */
+# include "dmf.h"
+
+/* Now we may "want" the variables from libnutscan with types from dmf.h */
+# define WANT_LIBNUTSCAN_SNMP_DMF 1
+# ifndef WANT_DEVSCAN_SNMP_DMF
+#  define WANT_DEVSCAN_SNMP_DMF 1
+# endif
+#endif /* WITH_DMFMIB */
+
 #include "nutscan-snmp.h"
 
 /* Cause the header to also declare the external reference to pre-generated
@@ -92,10 +116,6 @@
 #   pragma GCC diagnostic pop
 #  endif
 # endif
-#endif
-
-#if WITH_DMFMIB
-# include "dmf.h"
 #endif
 
 /* Address API change */
@@ -129,7 +149,7 @@ static pthread_mutex_t dev_mutex;
 static useconds_t g_usec_timeout ;
 
 /* Pointer to the array we ultimately use (builtin or dynamic) */
-snmp_device_id_t *snmp_device_table = NULL;
+static snmp_device_id_t *snmp_device_table = NULL;
 
 #if WITH_DMFMIB
 /* This would point to DMF data loaded to by this library, if loaded */
