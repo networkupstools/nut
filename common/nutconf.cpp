@@ -398,7 +398,8 @@ std::list<NutParser::Token> NutParser::parseLine() {
 				break;
 			case Token::TOKEN_COMMENT:
 				res.push_back(token);
-				// Do not break, should return (EOL)Token::TOKEN_COMMENT:
+				// Should return (EOL)Token::TOKEN_COMMENT:
+				return res;
 			case Token::TOKEN_UNKNOWN:
 			case Token::TOKEN_NONE:
 			case Token::TOKEN_EOL:
