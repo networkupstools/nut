@@ -154,7 +154,7 @@ static nut::Signal::List caught_signals;
 class TestSignalHandler: public nut::Signal::Handler {
 	public:
 
-	void operator () (nut::Signal::enum_t signal) {
+	void operator () (nut::Signal::enum_t signal) override {
 		caught_signals.push_back(signal);
 	}
 
