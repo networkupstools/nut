@@ -441,6 +441,18 @@ void NutConfigParser::parseConfig() {
 	std::string name;
 	std::list<std::string> values;
 	char sep = 0;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
 	while (1) {
 		tok = parseToken();
 		if (!tok)
@@ -460,6 +472,13 @@ void NutConfigParser::parseConfig() {
 						name = tok.str;
 						state = CPS_DIRECTIVE_HAVE_NAME;
 						break;
+
+					case Token::TOKEN_UNKNOWN:
+					case Token::TOKEN_NONE:
+					case Token::TOKEN_BRACKET_CLOSE:
+					case Token::TOKEN_EQUAL:
+					case Token::TOKEN_COLON:
+					case Token::TOKEN_EOL:
 					default:
 						/* WTF ? */
 						break;
@@ -491,6 +510,12 @@ void NutConfigParser::parseConfig() {
 						name.clear();
 						state = CPS_DEFAULT;
 						break;
+
+					case Token::TOKEN_UNKNOWN:
+					case Token::TOKEN_NONE:
+					case Token::TOKEN_BRACKET_OPEN:
+					case Token::TOKEN_EQUAL:
+					case Token::TOKEN_COLON:
 					default:
 						/* WTF ? */
 						break;
@@ -516,6 +541,14 @@ void NutConfigParser::parseConfig() {
 						name.clear();
 						state = CPS_DEFAULT;
 						break;
+
+					case Token::TOKEN_QUOTED_STRING:
+					case Token::TOKEN_BRACKET_OPEN:
+					case Token::TOKEN_COLON:
+					case Token::TOKEN_EQUAL:
+					case Token::TOKEN_UNKNOWN:
+					case Token::TOKEN_NONE:
+					case Token::TOKEN_STRING:
 					default:
 						/* WTF ? */
 						break;
@@ -537,6 +570,15 @@ void NutConfigParser::parseConfig() {
 						name.clear();
 						state = CPS_DEFAULT;
 						break;
+
+					case Token::TOKEN_QUOTED_STRING:
+					case Token::TOKEN_BRACKET_OPEN:
+					case Token::TOKEN_BRACKET_CLOSE:
+					case Token::TOKEN_UNKNOWN:
+					case Token::TOKEN_NONE:
+					case Token::TOKEN_STRING:
+					case Token::TOKEN_COLON:
+					case Token::TOKEN_EQUAL:
 					default:
 						/* WTF ? */
 						break;
@@ -570,6 +612,11 @@ void NutConfigParser::parseConfig() {
 						values.push_back(tok.str);
 						state = CPS_DIRECTIVE_VALUES;
 						break;
+
+					case Token::TOKEN_UNKNOWN:
+					case Token::TOKEN_NONE:
+					case Token::TOKEN_BRACKET_OPEN:
+					case Token::TOKEN_BRACKET_CLOSE:
 					default:
 						/* WTF ? */
 						break;
@@ -601,6 +648,13 @@ void NutConfigParser::parseConfig() {
 						values.push_back(tok.str);
 						state = CPS_DIRECTIVE_VALUES;
 						break;
+
+					case Token::TOKEN_UNKNOWN:
+					case Token::TOKEN_NONE:
+					case Token::TOKEN_BRACKET_OPEN:
+					case Token::TOKEN_BRACKET_CLOSE:
+					case Token::TOKEN_EQUAL:
+					case Token::TOKEN_COLON:
 					default:
 						/* WTF ? */
 						break;
@@ -632,6 +686,12 @@ void NutConfigParser::parseConfig() {
 			/* TOTHINK: no-op? */
 			break;
 	}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+# pragma GCC diagnostic pop
+#endif
 
 	onParseEnd();
 }
