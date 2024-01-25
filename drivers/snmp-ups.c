@@ -682,7 +682,7 @@ void upsdrv_initups(void)
 			tablength);
 		if (tablength<=1) {
 			fatalx(EXIT_FAILURE, "FATAL: Did not find any DMF library data");
-			return;
+			/*return;*/
 		}
 		if ( mib2nut != NULL ) {
 			upsdebugx(1,"mib2nut not NULL when expected to be...");
@@ -691,6 +691,7 @@ void upsdrv_initups(void)
 		mib2nut = *(mibdmf_get_mib2nut_table_ptr)(dmp);
 		if ( mib2nut == NULL ) {
 			upsdebugx(1,"FATAL: Could not access the mib2nut index table");
+			/* FIXME? Shouldn't this exit? */
 			return;
 		}
 	} // scope the table loop vars
