@@ -1925,7 +1925,7 @@ void NutConfOptions::getMonitor(
  *  \retval true  if the configuration file was sourced
  *  \retval false if the file doesn't exist
  */
-bool source(nut::Serialisable * config, const std::string & file_name) {
+static bool source(nut::Serialisable * config, const std::string & file_name) {
 	nut::NutFile file(file_name);
 
 	if (!file.exists())
@@ -1954,7 +1954,7 @@ bool source(nut::Serialisable * config, const std::string & file_name) {
  *  \param  config     Configuration object
  *  \param  file_name  File name
  */
-void store(nut::Serialisable * config, const std::string & file_name) {
+static void store(nut::Serialisable * config, const std::string & file_name) {
 	nut::NutFile file(file_name, nut::NutFile::WRITE_ONLY);
 
 	bool written_ok = config->writeTo(file);
@@ -1978,7 +1978,7 @@ void store(nut::Serialisable * config, const std::string & file_name) {
  *  \retval true  IFF nut.conf exists and MODE != none
  *  \retval false otherwise
  */
-bool isConfigured(const std::string & etc) {
+static bool isConfigured(const std::string & etc) {
 	nut::NutFile nut_conf_file(etc + "/nut.conf");
 
 	if (!nut_conf_file.exists())
@@ -2006,7 +2006,7 @@ bool isConfigured(const std::string & etc) {
  *
  *  \return Monitor configuration
  */
-nut::UpsmonConfiguration::Monitor monitor(
+static nut::UpsmonConfiguration::Monitor monitor(
 	size_t                 i,
 	const NutConfOptions & options)
 {
@@ -2065,7 +2065,7 @@ nut::UpsmonConfiguration::Monitor monitor(
  *
  *  \return NUT mode (as string)
  */
-std::string getMode(const std::string & etc) {
+static std::string getMode(const std::string & etc) {
 	std::string nut_conf_file(etc + "/nut.conf");
 
 	nut::NutConfiguration nut_conf;
@@ -2099,7 +2099,7 @@ std::string getMode(const std::string & etc) {
  *  \param  mode  Mode
  *  \param  etc   Configuration directory
  */
-void setMode(const std::string & mode, const std::string & etc) {
+static void setMode(const std::string & mode, const std::string & etc) {
 	std::string nut_conf_file(etc + "/nut.conf");
 
 	nut::NutConfiguration nut_conf;
@@ -2122,7 +2122,7 @@ void setMode(const std::string & mode, const std::string & etc) {
  *  \param  etc       Configuration directory
  *  \param  keep_ex   Keep existing entries (discard by default)
  */
-void setMonitors(
+static void setMonitors(
 	const std::list<nut::UpsmonConfiguration::Monitor> & monitors,
 	const std::string & etc, bool keep_ex = false)
 {
@@ -2159,7 +2159,7 @@ void setMonitors(
  *
  *  \return Listen address configuration
  */
-nut::UpsdConfiguration::Listen listenAddr(
+static nut::UpsdConfiguration::Listen listenAddr(
 	size_t                 i,
 	const NutConfOptions & options)
 {
@@ -2197,7 +2197,7 @@ nut::UpsdConfiguration::Listen listenAddr(
  *  \param  etc           Configuration directory
  *  \param  keep_ex       Keep existing entries (discard by default)
  */
-void setListenAddrs(
+static void setListenAddrs(
 	const std::list<nut::UpsdConfiguration::Listen> & listen_addrs,
 	const std::string & etc, bool keep_ex = false)
 {
@@ -2231,7 +2231,7 @@ void setListenAddrs(
  *  \param  etc      Configuration directory
  *  \param  keep_ex  Keep existing entries (discard by default)
  */
-void setDevices(
+static void setDevices(
 	const std::vector<NutConfOptions::DeviceSpec> & devices,
 	const std::string & etc, bool keep_ex = false)
 {
@@ -2281,7 +2281,7 @@ void setDevices(
  *  \param  flags  Notify flags specifications
  *  \param  etc    Configuration directory
  */
-void setNotifyFlags(
+static void setNotifyFlags(
 	const NutConfOptions::NotifyFlagsSpecs & flags,
 	const std::string & etc)
 {
@@ -2336,7 +2336,7 @@ void setNotifyFlags(
  *  \param  msgs  Notify messages specifications
  *  \param  etc   Configuration directory
  */
-void setNotifyMsgs(
+static void setNotifyMsgs(
 	const NutConfOptions::NotifyMsgSpecs & msgs,
 	const std::string & etc)
 {
@@ -2377,7 +2377,7 @@ void setNotifyMsgs(
  *  \param  cmd  Notify command
  *  \param  etc  Configuration directory
  */
-void setNotifyCmd(const std::string & cmd, const std::string & etc)
+static void setNotifyCmd(const std::string & cmd, const std::string & etc)
 {
 	std::string upsmon_conf_file(etc + "/upsmon.conf");
 
@@ -2399,7 +2399,7 @@ void setNotifyCmd(const std::string & cmd, const std::string & etc)
  *  \param  cmd  Shutdown command
  *  \param  etc  Configuration directory
  */
-void setShutdownCmd(const std::string & cmd, const std::string & etc)
+static void setShutdownCmd(const std::string & cmd, const std::string & etc)
 {
 	std::string upsmon_conf_file(etc + "/upsmon.conf");
 
@@ -2421,7 +2421,7 @@ void setShutdownCmd(const std::string & cmd, const std::string & etc)
  *  \param  min_supplies  Minimum of power supplies
  *  \param  etc           Configuration directory
  */
-void setMinSupplies(const std::string & min_supplies, const std::string & etc) {
+static void setMinSupplies(const std::string & min_supplies, const std::string & etc) {
 	std::string upsmon_conf_file(etc + "/upsmon.conf");
 
 	nut::UpsmonConfiguration upsmon_conf;
@@ -2454,7 +2454,7 @@ void setMinSupplies(const std::string & min_supplies, const std::string & etc) {
  *  \param  powerdown_flag  Powerdown flag file
  *  \param  etc             Configuration directory
  */
-void setPowerdownFlag(const std::string & powerdown_flag, const std::string & etc) {
+static void setPowerdownFlag(const std::string & powerdown_flag, const std::string & etc) {
 	std::string upsmon_conf_file(etc + "/upsmon.conf");
 
 	nut::UpsmonConfiguration upsmon_conf;
@@ -2476,7 +2476,7 @@ void setPowerdownFlag(const std::string & powerdown_flag, const std::string & et
  *  \param  etc      Configuration directory
  *  \param  keep_ex  Keep existing entries (discard by default)
  */
-void setUsers(
+static void setUsers(
 	const NutConfOptions::UserSpecs & users,
 	const std::string & etc, bool keep_ex = false)
 {
@@ -2566,7 +2566,7 @@ void setUsers(
  *  \param  devices  Device list
  *  \param  verbose  Verbosity level
  */
-void printDevicesInfo(const NutScanner::devices_t & devices, unsigned int verbose = 0) {
+static void printDevicesInfo(const NutScanner::devices_t & devices, unsigned int verbose = 0) {
 	NutScanner::devices_t::const_iterator dev_iter = devices.begin();
 
 	nut::GenericConfiguration devices_conf;
@@ -2643,7 +2643,7 @@ void printDevicesInfo(const NutScanner::devices_t & devices, unsigned int verbos
  *
  *  \param  options  Options
  */
-void scanSNMPdevices(const NutConfOptions & options) {
+static void scanSNMPdevices(const NutConfOptions & options) {
 	for (size_t i = 0; ; ++i) {
 		NutConfOptions::Arguments args;
 
@@ -2745,7 +2745,7 @@ void scanSNMPdevices(const NutConfOptions & options) {
  *
  *  \param  options  Options
  */
-void scanUSBdevices(const NutConfOptions & options) {
+static void scanUSBdevices(const NutConfOptions & options) {
 	NutScanner::devices_t devices = NutScanner::devicesUSB();
 
 	printDevicesInfo(devices, options.verbose);
@@ -2757,7 +2757,7 @@ void scanUSBdevices(const NutConfOptions & options) {
  *
  *  \param  options  Options
  */
-void scanNUTdevices(const NutConfOptions & options) {
+static void scanNUTdevices(const NutConfOptions & options) {
 	for (size_t i = 0; ; ++i) {
 		NutConfOptions::Arguments args;
 
@@ -2796,7 +2796,7 @@ void scanNUTdevices(const NutConfOptions & options) {
  *
  *  \param  options  Options
  */
-void scanXMLHTTPdevices(const NutConfOptions & options) {
+static void scanXMLHTTPdevices(const NutConfOptions & options) {
 	NutConfOptions::Arguments args;
 
 	bool ok = options.getDouble("scan-xml-http", args);
@@ -2824,7 +2824,7 @@ void scanXMLHTTPdevices(const NutConfOptions & options) {
  *
  *  \param  options  Options
  */
-void scanAvahiDevices(const NutConfOptions & options) {
+static void scanAvahiDevices(const NutConfOptions & options) {
 	NutConfOptions::Arguments args;
 
 	bool ok = options.getDouble("scan-avahi", args);
@@ -2852,7 +2852,7 @@ void scanAvahiDevices(const NutConfOptions & options) {
  *
  *  \param  options  Options
  */
-void scanIPMIdevices(const NutConfOptions & options) {
+static void scanIPMIdevices(const NutConfOptions & options) {
 	for (size_t i = 0; ; ++i) {
 		NutConfOptions::Arguments args;
 
@@ -3001,7 +3001,7 @@ void scanIPMIdevices(const NutConfOptions & options) {
  *
  *  \param  options  Options
  */
-void scanSerialDevices(const NutConfOptions & options) {
+static void scanSerialDevices(const NutConfOptions & options) {
 	NutConfOptions::Arguments args;
 
 	bool ok = options.getDouble("scan-serial", args);
@@ -3025,7 +3025,7 @@ void scanSerialDevices(const NutConfOptions & options) {
  *
  *  \return 0 always (exits on error)
  */
-int mainx(int argc, char * const argv[]) {
+static int mainx(int argc, char * const argv[]) {
 	// Get options
 	NutConfOptions options(argv, argc);
 
