@@ -81,8 +81,8 @@ class NutConfigUnitTest: public CppUnit::TestFixture {
 		testUpsdUsersConfiguration();
 	}
 
+	virtual ~NutConfigUnitTest() override;
 };  // end of class NutConfigUnitTest
-
 
 // Register the test suite
 CPPUNIT_TEST_SUITE_REGISTRATION(NutConfigUnitTest);
@@ -233,3 +233,9 @@ void NutConfigUnitTest::testUpsdUsersConfiguration() {
 		"\n"
 	);
 }
+
+// Implement out of class declaration to avoid
+//   error: 'SomeClass' has no out-of-line virtual method
+//   definitions; its vtable will be emitted in every translation unit
+//   [-Werror,-Wweak-vtables]
+NutConfigUnitTest::~NutConfigUnitTest() {}
