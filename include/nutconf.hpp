@@ -137,7 +137,7 @@ public:
 	virtual bool writeTo(NutStream & ostream) const = 0;
 
 	/** Destructor */
-	virtual ~Serialisable() {}
+	virtual ~Serialisable();
 
 };  // end of class Serialisable
 
@@ -159,7 +159,7 @@ public:
 	NutParser(const char* buffer = nullptr, unsigned int options = OPTION_DEFAULT);
 	NutParser(const std::string& buffer, unsigned int options = OPTION_DEFAULT);
 
-	virtual ~NutParser() {}
+	virtual ~NutParser();
 
 	/** Parsing configuration functions
 	 * \{ */
@@ -266,7 +266,7 @@ class BaseConfiguration
 {
 	friend class GenericConfigParser;
 public:
-	virtual ~BaseConfiguration() {}
+	virtual ~BaseConfiguration();
 protected:
 	virtual void setGenericConfigSection(const GenericConfigSection& section) = 0;
 };
@@ -1066,6 +1066,7 @@ public:
 
 	/** \} */
 
+	virtual ~UpsConfiguration() override;
 };  // end of class UpsConfiguration
 
 

@@ -142,7 +142,7 @@ class NutStream {
 	virtual status_t putData(const std::string & data) = 0;
 
 	/** Formal destructor */
-	virtual ~NutStream() {}
+	virtual ~NutStream();
 
 };  // end of class NutStream
 
