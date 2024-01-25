@@ -553,7 +553,7 @@ int Signal::HandlerThread<H>::s_comm_pipe[2] = { -1, -1 };
 
 template <class H>
 void * Signal::HandlerThread<H>::main(void * comm_pipe_read_end) {
-	int rfd = *(int *)comm_pipe_read_end;
+	int rfd = *(reinterpret_cast<int *>(comm_pipe_read_end));
 
 	H handler;
 
@@ -598,7 +598,7 @@ void * Signal::HandlerThread<H>::main(void * comm_pipe_read_end) {
 
 		assert(sizeof(word) == read_out);
 
-		command_t command = (command_t)word;
+		command_t command = static_cast<command_t>(word);
 
 		switch (command) {
 			case HT_QUIT:
@@ -624,7 +624,7 @@ void * Signal::HandlerThread<H>::main(void * comm_pipe_read_end) {
 
 				assert(sizeof(word) == read_out);
 
-				Signal::enum_t sig = (Signal::enum_t)word;
+				Signal::enum_t sig = static_cast<Signal::enum_t>(word);
 
 				// Handle signal
 				handler(sig);
@@ -656,7 +656,7 @@ int sigPipeWriteCmd(int fh, void * cmd, size_t cmd_size)
 template <class H>
 void Signal::HandlerThread<H>::signalNotifier(int signal) {
 	int sig[2] = {
-		(int)Signal::HandlerThread<H>::HT_SIGNAL,
+		static_cast<int>(Signal::HandlerThread<H>::HT_SIGNAL),
 	};
 
 	sig[1] = signal;
@@ -733,7 +733,7 @@ void Signal::HandlerThread<H>::quit()
 	throw(std::runtime_error)
 #endif
 {
-	static int quit = (int)Signal::HandlerThread<H>::HT_QUIT;
+	static int quit = static_cast<int>(Signal::HandlerThread<H>::HT_QUIT);
 
 	sigPipeWriteCmd(s_comm_pipe[1], &quit, sizeof(quit));
 
