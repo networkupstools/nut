@@ -669,7 +669,7 @@ public:
 
 	struct Monitor {
 		std::string upsname, hostname;
-		unsigned short port;
+		uint16_t port;
 		unsigned int powerValue;
 		std::string username, password;
 		bool isMaster;
@@ -761,7 +761,7 @@ public:
 	struct Listen
 	{
 		std::string address;
-		Settable<unsigned short> port;
+		Settable<uint16_t> port;
 
 		inline bool operator==(const Listen& listen)const
 		{
