@@ -105,7 +105,7 @@ static bool readTestData(nut::NutStream * stream) {
 static bool writeTestData(nut::NutStream * stream) {
 	assert(nullptr != stream);
 
-	size_t pivot = 0.5 * test_data.size();
+	size_t pivot = static_cast<size_t>(0.5 * static_cast<double>(test_data.size()));
 
 	// Write characters to the stream
 	for (size_t i = 0; i < pivot; ++i) {
