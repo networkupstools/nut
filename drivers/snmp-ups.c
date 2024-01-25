@@ -104,10 +104,10 @@
 
 #if WITH_DMFMIB
 /* Array of pointers to singular instances of mib2nut_info_t */
-mib2nut_info_t **mib2nut = NULL;
-mibdmf_parser_t *dmp = NULL;
-char *dmf_dir = NULL;
-char *dmf_file = NULL;
+static mib2nut_info_t **mib2nut = NULL;
+static mibdmf_parser_t *dmp = NULL;
+static char *dmf_dir = NULL;
+static char *dmf_file = NULL;
 #else /* not WITH_DMFMIB */
 
 # ifdef WITH_DMF_LUA
