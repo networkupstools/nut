@@ -174,7 +174,7 @@ int Process::Executor::operator () ()
 	// Upon successful execution, the execvp function never returns
 	// (since the process context is replaced, completely)
 
-	delete args_c_str;
+	delete[] args_c_str;
 
 	std::stringstream e;
 
