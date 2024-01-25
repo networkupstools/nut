@@ -253,7 +253,7 @@ const NotifyFlagsStrings::FlagStrings NotifyFlagsStrings::flag_str =
  *
  *  \return NOTIFYFLAG directive string
  */
-static std::string serializeNotifyFlags(UpsmonConfiguration::NotifyType type, unsigned short flags) {
+static std::string serializeNotifyFlags(UpsmonConfiguration::NotifyType type, unsigned int flags) {
 	static const NotifyFlagsStrings::FlagStrings::const_iterator ignore_str_iter =
 		NotifyFlagsStrings::flag_str.find(UpsmonConfiguration::NOTIFY_IGNORE);
 

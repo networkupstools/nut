@@ -2307,7 +2307,7 @@ void setNotifyFlags(
 			::exit(1);
 		}
 
-		nut::Settable<unsigned short> & sum =
+		nut::Settable<unsigned int> & sum =
 			upsmon_conf.notifyFlags[type];
 
 		// Clear current flags (unless we want to keep them)
@@ -2321,7 +2321,7 @@ void setNotifyFlags(
 			nut::UpsmonConfiguration::NotifyFlag flag =
 				nut::UpsmonConfiguration::NotifyFlagFromString(*spec);
 
-			sum |= (unsigned short)flag;
+			sum |= static_cast<unsigned int>(flag);
 		}
 	}
 
