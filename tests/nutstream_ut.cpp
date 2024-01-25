@@ -156,6 +156,7 @@ class NutStreamUnitTest: public CppUnit::TestFixture {
 		CPPUNIT_ASSERT(writeTestData(stream));
 	}
 
+	virtual ~NutStreamUnitTest() override;
 };  // end of class NutStreamUnitTest
 
 
@@ -174,7 +175,7 @@ class NutMemoryUnitTest: public NutStreamUnitTest {
 	inline void setUp() override {}
 	inline void tearDown() override {}
 
-	void test();
+	virtual void test();
 
 };  // end of class NutMemoryUnitTest
 
@@ -204,7 +205,7 @@ class NutFileUnitTest: public NutStreamUnitTest {
 	inline void setUp() override {}
 	inline void tearDown() override {}
 
-	void test();
+	virtual void test();
 
 };  // end of class NutFileUnitTest
 
@@ -266,7 +267,7 @@ class NutSocketUnitTest: public NutStreamUnitTest {
 	inline void setUp() override {}
 	inline void tearDown() override {}
 
-	void test();
+	virtual void test();
 
 };  // end of class NutSocketUnitTest
 
@@ -329,3 +330,9 @@ void NutSocketUnitTest::test() {
 CPPUNIT_TEST_SUITE_REGISTRATION(NutMemoryUnitTest);
 CPPUNIT_TEST_SUITE_REGISTRATION(NutFileUnitTest);
 CPPUNIT_TEST_SUITE_REGISTRATION(NutSocketUnitTest);
+
+// Implement out of class declaration to avoid
+//   error: 'SomeClass' has no out-of-line virtual method
+//   definitions; its vtable will be emitted in every translation unit
+//   [-Werror,-Wweak-vtables]
+NutStreamUnitTest::~NutStreamUnitTest() {}

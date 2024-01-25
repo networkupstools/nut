@@ -73,8 +73,8 @@ class NutIPCUnitTest: public CppUnit::TestFixture {
 		testSignalRecv();
 	}
 
+	virtual ~NutIPCUnitTest() override;
 };  // end of class NutIPCUnitTest
-
 
 // Register the test suite
 CPPUNIT_TEST_SUITE_REGISTRATION(NutIPCUnitTest);
@@ -158,6 +158,7 @@ class TestSignalHandler: public nut::Signal::Handler {
 		caught_signals.push_back(signal);
 	}
 
+	virtual ~TestSignalHandler() override;
 };  // end of class TestSignalHandler
 
 void NutIPCUnitTest::testSignalRecv() {
@@ -190,3 +191,10 @@ void NutIPCUnitTest::testSignalRecv() {
 
 	CPPUNIT_ASSERT(caught_signals.front() == nut::Signal::USER1);
 }
+
+// Implement out of class declaration to avoid
+//   error: 'SomeClass' has no out-of-line virtual method
+//   definitions; its vtable will be emitted in every translation unit
+//   [-Werror,-Wweak-vtables]
+TestSignalHandler::~TestSignalHandler() {}
+NutIPCUnitTest::~NutIPCUnitTest() {}
