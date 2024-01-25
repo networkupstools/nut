@@ -171,8 +171,8 @@ class NutMemoryUnitTest: public NutStreamUnitTest {
 
 	public:
 
-	inline void setUp() {}
-	inline void tearDown() {}
+	inline void setUp() override {}
+	inline void tearDown() override {}
 
 	void test();
 
@@ -201,8 +201,8 @@ class NutFileUnitTest: public NutStreamUnitTest {
 
 	public:
 
-	inline void setUp() {}
-	inline void tearDown() {}
+	inline void setUp() override {}
+	inline void tearDown() override {}
 
 	void test();
 
@@ -263,8 +263,8 @@ class NutSocketUnitTest: public NutStreamUnitTest {
 
 	public:
 
-	inline void setUp() {};
-	inline void tearDown() {}
+	inline void setUp() override {}
+	inline void tearDown() override {}
 
 	void test();
 

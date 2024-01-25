@@ -70,8 +70,8 @@ class NutConfigUnitTest: public CppUnit::TestFixture {
 
 	public:
 
-	inline void setUp() {}
-	inline void tearDown() {}
+	inline void setUp() override {}
+	inline void tearDown() override {}
 
 	inline void test() {
 		testNutConfiguration();
