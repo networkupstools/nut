@@ -248,7 +248,7 @@ class NutFile: public NutStream {
 	 */
 	NutFile(const std::string & name):
 		m_name(name),
-		m_impl(NULL),
+		m_impl(nullptr),
 		m_current_ch('\0'),
 		m_current_ch_valid(false) {}
 
@@ -616,7 +616,7 @@ class NutSocket: public NutStream {
 		 *
 		 *  Invalid address may be produced e.g. by failed DNS resolving.
 		 */
-		Address(): m_sock_addr(NULL), m_length(0) {}
+		Address(): m_sock_addr(nullptr), m_length(0) {}
 
 		/**
 		 *  \brief  Initialize UNIX socket address
@@ -657,7 +657,7 @@ class NutSocket: public NutStream {
 			throw()
 #endif
 		{
-			return NULL != m_sock_addr;
+			return nullptr != m_sock_addr;
 		}
 
 		/**

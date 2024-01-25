@@ -114,7 +114,7 @@ void NutIPCUnitTest::testSignalSend() {
 
 	action.sa_handler = &testSignalHandler;
 
-	CPPUNIT_ASSERT(0 == ::sigaction((int)nut::Signal::USER1, &action, NULL));
+	CPPUNIT_ASSERT(0 == ::sigaction((int)nut::Signal::USER1, &action, nullptr));
 
 	// Send signal directly
 	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER1, my_pid));

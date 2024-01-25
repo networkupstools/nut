@@ -92,13 +92,13 @@ const std::string NutFile::m_tmp_dir("/var/tmp");
 
 
 NutFile::NutFile(anonymous_t):
-	m_impl(NULL),
+	m_impl(nullptr),
 	m_current_ch('\0'),
 	m_current_ch_valid(false)
 {
 	m_impl = ::tmpfile();
 
-	if (NULL == m_impl) {
+	if (nullptr == m_impl) {
 		int err_code = errno;
 
 		std::stringstream e;
@@ -140,7 +140,7 @@ bool NutFile::open(access_t mode, int & err_code, std::string & err_msg)
 	static const char *append_only      = "a";
 	static const char *read_append      = "a+";
 
-	const char *mode_str = NULL;
+	const char *mode_str = nullptr;
 
 	switch (mode) {
 		case READ_ONLY:
@@ -163,11 +163,11 @@ bool NutFile::open(access_t mode, int & err_code, std::string & err_msg)
 			break;
 	}
 
-	assert(NULL != mode_str);
+	assert(nullptr != mode_str);
 
 	m_impl = ::fopen(m_name.c_str(), mode_str);
 
-	if (NULL != m_impl)
+	if (nullptr != m_impl)
 		return true;
 
 	err_code = errno;
@@ -190,7 +190,7 @@ bool NutFile::close(int & err_code, std::string & err_msg)
 		return false;
 	}
 
-	m_impl = NULL;
+	m_impl = nullptr;
 
 	return true;
 }
@@ -217,7 +217,7 @@ bool NutFile::remove(int & err_code, std::string & err_msg)
 
 NutFile::NutFile(const std::string & name, access_t mode):
 	m_name(name),
-	m_impl(NULL),
+	m_impl(nullptr),
 	m_current_ch('\0'),
 	m_current_ch_valid(false)
 {
@@ -238,9 +238,9 @@ std::string NutFile::tmpName()
 	// but it seems the alternatives are different for various platforms
 	// and so a replacement is not quite portable (stack of ifdef's?), per
 	// https://stackoverflow.com/questions/3299881/tmpnam-warning-saying-it-is-dangerous
-	char *tmp_name = ::tempnam(m_tmp_dir.c_str(), NULL);
+	char *tmp_name = ::tempnam(m_tmp_dir.c_str(), nullptr);
 
-	if (NULL == tmp_name)
+	if (nullptr == tmp_name)
 		throw std::runtime_error(
 			"Failed to create temporary file name");
 
@@ -254,7 +254,7 @@ std::string NutFile::tmpName()
 
 NutFile::NutFile(access_t mode):
 	m_name(tmpName()),
-	m_impl(NULL),
+	m_impl(nullptr),
 	m_current_ch('\0'),
 	m_current_ch_valid(false)
 {
@@ -273,7 +273,7 @@ NutFile::NutFile(access_t mode):
  *  \retval NUTS_ERROR on read error
  */
 inline static NutStream::status_t fgetcWrapper(FILE * file, char & ch) {
-	assert(NULL != file);
+	assert(nullptr != file);
 
 	errno = 0;
 
@@ -303,7 +303,7 @@ NutStream::status_t NutFile::getChar(char & ch)
 		return NUTS_OK;
 	}
 
-	if (NULL == m_impl)
+	if (nullptr == m_impl)
 		return NUTS_ERROR;
 
 	status_t status = fgetcWrapper(m_impl, ch);
@@ -338,7 +338,7 @@ NutStream::status_t NutFile::getString(std::string & str)
 
 	m_current_ch_valid = false;
 
-	if (NULL == m_impl)
+	if (nullptr == m_impl)
 		return NUTS_ERROR;
 
 	// Note that ::fgetc is used instead of ::fgets
@@ -366,7 +366,7 @@ NutStream::status_t NutFile::putChar(char ch)
 {
 	int c;
 
-	if (NULL == m_impl)
+	if (nullptr == m_impl)
 		return NUTS_ERROR;
 
 	c = ::fputc(static_cast<int>(ch), m_impl);
@@ -382,7 +382,7 @@ NutStream::status_t NutFile::putString(const std::string & str)
 {
 	int c;
 
-	if (NULL == m_impl)
+	if (nullptr == m_impl)
 		return NUTS_ERROR;
 
 	c = ::fputs(str.c_str(), m_impl);
@@ -410,7 +410,7 @@ NutStream::status_t NutFile::putData(const std::string & data)
 
 
 NutFile::~NutFile() {
-	if (NULL != m_impl)
+	if (nullptr != m_impl)
 		closex();
 }
 
@@ -418,7 +418,7 @@ NutFile::~NutFile() {
 void NutSocket::Address::init_unix(Address & addr, const std::string & path) {
 	struct sockaddr_un * un_addr = (struct sockaddr_un *)::malloc(sizeof(struct sockaddr_un));
 
-	if (NULL == un_addr)
+	if (nullptr == un_addr)
 		throw std::bad_alloc();
 
 	un_addr->sun_family = AF_UNIX;
@@ -442,7 +442,7 @@ void NutSocket::Address::init_ipv4(Address & addr, const std::vector<unsigned ch
 
 	struct sockaddr_in * in4_addr = (struct sockaddr_in *)::malloc(sizeof(struct sockaddr_in));
 
-	if (NULL == in4_addr)
+	if (nullptr == in4_addr)
 		throw std::bad_alloc();
 
 	packed_qb  = static_cast<uint32_t>(qb.at(0));
@@ -464,7 +464,7 @@ void NutSocket::Address::init_ipv6(Address & addr, const std::vector<unsigned ch
 
 	struct sockaddr_in6 * in6_addr = (struct sockaddr_in6 *)::malloc(sizeof(struct sockaddr_in6));
 
-	if (NULL == in6_addr)
+	if (nullptr == in6_addr)
 		throw std::bad_alloc();
 
 	in6_addr->sin6_family   = AF_INET6;
@@ -523,10 +523,10 @@ NutSocket::Address::Address(const std::vector<unsigned char> & bytes, uint16_t p
 }
 
 
-NutSocket::Address::Address(const Address & orig): m_sock_addr(NULL), m_length(orig.m_length) {
+NutSocket::Address::Address(const Address & orig): m_sock_addr(nullptr), m_length(orig.m_length) {
 	void * copy = ::malloc(m_length);
 
-	if (NULL == copy)
+	if (nullptr == copy)
 		throw std::bad_alloc();
 
 	::memcpy(copy, orig.m_sock_addr, m_length);
@@ -611,7 +611,7 @@ static std::string formatIPv6addr(unsigned char const bytes[16]) {
 
 
 std::string NutSocket::Address::str() const {
-	assert(NULL != m_sock_addr);
+	assert(nullptr != m_sock_addr);
 
 	sa_family_t family = m_sock_addr->sa_family;
 
