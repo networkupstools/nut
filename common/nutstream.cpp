@@ -422,7 +422,7 @@ NutFile::~NutFile() {
 
 
 void NutSocket::Address::init_unix(Address & addr, const std::string & path) {
-	struct sockaddr_un * un_addr = (struct sockaddr_un *)::malloc(sizeof(struct sockaddr_un));
+	struct sockaddr_un * un_addr = reinterpret_cast<struct sockaddr_un *>(::malloc(sizeof(struct sockaddr_un)));
 
 	if (nullptr == un_addr)
 		throw std::bad_alloc();
@@ -446,7 +446,7 @@ void NutSocket::Address::init_ipv4(Address & addr, const std::vector<unsigned ch
 
 	uint32_t packed_qb = 0;
 
-	struct sockaddr_in * in4_addr = (struct sockaddr_in *)::malloc(sizeof(struct sockaddr_in));
+	struct sockaddr_in * in4_addr = reinterpret_cast<struct sockaddr_in *>(::malloc(sizeof(struct sockaddr_in)));
 
 	if (nullptr == in4_addr)
 		throw std::bad_alloc();
@@ -468,7 +468,7 @@ void NutSocket::Address::init_ipv4(Address & addr, const std::vector<unsigned ch
 void NutSocket::Address::init_ipv6(Address & addr, const std::vector<unsigned char> & hb, uint16_t port) {
 	assert(16 == hb.size());
 
-	struct sockaddr_in6 * in6_addr = (struct sockaddr_in6 *)::malloc(sizeof(struct sockaddr_in6));
+	struct sockaddr_in6 * in6_addr = reinterpret_cast<struct sockaddr_in6 *>(::malloc(sizeof(struct sockaddr_in6)));
 
 	if (nullptr == in6_addr)
 		throw std::bad_alloc();

@@ -169,7 +169,7 @@ int Process::Executor::operator () ()
 
 	args_c_str[i] = nullptr;
 
-	int status = ::execvp(bin_c_str, (char * const *)args_c_str);
+	int status = ::execvp(bin_c_str, const_cast<char * const *>(args_c_str));
 
 	// Upon successful execution, the execvp function never returns
 	// (since the process context is replaced, completely)
@@ -211,7 +211,7 @@ int Signal::send(Signal::enum_t signame, pid_t pid)
 	throw(std::logic_error)
 #endif
 {
-	int sig = (int)signame;
+	int sig = static_cast<int>(signame);
 
 	int status = ::kill(pid, sig);
 

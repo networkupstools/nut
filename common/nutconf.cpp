@@ -1147,7 +1147,7 @@ void UpsmonConfigParser::onParseDirective(const std::string& directiveName, char
 				UpsmonConfiguration::NotifyType type = UpsmonConfiguration::NotifyTypeFromString(values.front());
 				if(type!=UpsmonConfiguration::NOTIFY_TYPE_MAX)
 				{
-					_config->notifyMessages[(unsigned int)type] = *(++values.begin());
+					_config->notifyMessages[static_cast<unsigned int>(type)] = *(++values.begin());
 				}
 			}
 		}
@@ -1165,7 +1165,7 @@ void UpsmonConfigParser::onParseDirective(const std::string& directiveName, char
 					{
 						flags |= UpsmonConfiguration::NotifyFlagFromString(word);
 					}
-					_config->notifyFlags[(unsigned int)type] = flags;
+					_config->notifyFlags[static_cast<unsigned int>(type)] = flags;
 				}
 			}
 		}
