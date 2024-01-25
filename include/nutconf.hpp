@@ -664,7 +664,7 @@ public:
 	static NotifyFlag NotifyFlagFromString(const std::string& str);
 	static NotifyType NotifyTypeFromString(const std::string& str);
 
-	Settable<unsigned short> notifyFlags[NOTIFY_TYPE_MAX];
+	Settable<unsigned int>   notifyFlags[NOTIFY_TYPE_MAX];
 	Settable<std::string>    notifyMessages[NOTIFY_TYPE_MAX];
 
 	struct Monitor {
