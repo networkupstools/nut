@@ -187,8 +187,8 @@ public:
 		std::string str;
 
 		Token():type(TOKEN_NONE),str(){}
-		Token(TokenType type, const std::string& str=""):type(type),str(str){}
-		Token(TokenType type, char c):type(type),str(1, c){}
+		Token(TokenType type_arg, const std::string& str_arg=""):type(type_arg),str(str_arg){}
+		Token(TokenType type_arg, char c):type(type_arg),str(1, c){}
 		Token(const Token& tok):type(tok.type),str(tok.str){}
 
 		/* Avoid implicit copy/move operator declarations */
@@ -196,7 +196,7 @@ public:
 		Token& operator=(const Token&) = default;
 		Token& operator=(Token&&) = default;
 
-		bool is(TokenType type)const{return this->type==type;}
+		bool is(TokenType type_arg)const{return this->type==type_arg;}
 
 		bool operator==(const Token& tok)const{return tok.type==type && tok.str==str;}
 
