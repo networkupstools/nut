@@ -353,6 +353,7 @@ inline static UpsmonConfiguration::NotifyType operator ++(UpsmonConfiguration::N
  *
  *  \return \c type
  */
+/* // CURRENTLY UNUSED
 inline static UpsmonConfiguration::NotifyType operator ++(UpsmonConfiguration::NotifyType & type, int) {
 	UpsmonConfiguration::NotifyType type_copy = type;
 
@@ -360,7 +361,7 @@ inline static UpsmonConfiguration::NotifyType operator ++(UpsmonConfiguration::N
 
 	return type_copy;
 }
-
+*/
 
 /**
  *  \brief  UPS monitor definition serializer
