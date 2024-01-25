@@ -411,8 +411,8 @@ class Signal {
 
 		/** Control commands */
 		typedef enum {
-			QUIT   = 0,  /**< Shutdown the thread */
-			SIGNAL = 1,  /**< Signal obtained     */
+			HT_QUIT   = 0,  /**< Shutdown the thread */
+			HT_SIGNAL = 1,  /**< Signal obtained     */
 		} command_t;
 
 		/** Communication pipe */
@@ -429,7 +429,8 @@ class Signal {
 		 *  It passes all signals to signal handler instance of \ref H
 		 *  Which must implement the \ref Signal::Handler interface.
 		 *  The handler is instantiated in scope of the routine.
-		 *  It closes the communication pipe read end in reaction to \ref QUIT command.
+		 *  It closes the communication pipe read end in reaction to
+		 *  \ref HT_QUIT command.
 		 *
 		 *  \param  comm_pipe_read_end  Communication pipe read end
 		 *
@@ -443,7 +444,7 @@ class Signal {
 		 *  The actual signal handler routine executed by the OS when the process
 		 *  obtains signal to be handled.
 		 *  The function simply writes the signal number to the signal handler
-		 *  thread communication pipe (as parameter of the \ref SIGNAL command).
+		 *  thread communication pipe (as parameter of the \ref HT_SIGNAL command).
 		 *  The signal handling itself (whatever necessary) shall be done
 		 *  by the dedicated thread (to avoid possible re-entrance issues).
 		 *
@@ -600,14 +601,14 @@ void * Signal::HandlerThread<H>::main(void * comm_pipe_read_end) {
 		command_t command = (command_t)word;
 
 		switch (command) {
-			case QUIT:
+			case HT_QUIT:
 				// Close comm. pipe read end
 				::close(rfd);
 
 				// Terminate thread
 				pthread_exit(NULL);
 
-			case SIGNAL:
+			case HT_SIGNAL:
 				// Read signal number
 				read_out = ::read(rfd, &word, sizeof(word));
 
@@ -655,7 +656,7 @@ int sigPipeWriteCmd(int fh, void * cmd, size_t cmd_size)
 template <class H>
 void Signal::HandlerThread<H>::signalNotifier(int signal) {
 	int sig[2] = {
-		(int)Signal::HandlerThread<H>::SIGNAL,
+		(int)Signal::HandlerThread<H>::HT_SIGNAL,
 	};
 
 	sig[1] = signal;
@@ -732,7 +733,7 @@ void Signal::HandlerThread<H>::quit()
 	throw(std::runtime_error)
 #endif
 {
-	static int quit = (int)Signal::HandlerThread<H>::QUIT;
+	static int quit = (int)Signal::HandlerThread<H>::HT_QUIT;
 
 	sigPipeWriteCmd(s_comm_pipe[1], &quit, sizeof(quit));
 
