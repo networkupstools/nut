@@ -548,7 +548,7 @@ static void decode_v(const unsigned char *value)
  	ivn = value[1];
 	lb = value[4];
 
-	if( is_smart_protocol() ) {
+	if( is_smart_protocol() && (tl_model != TRIPP_LITE_SMART_3017) ) {
 		switch(ivn) {
 			case 0:
 			case '0': input_voltage_nominal =
@@ -605,6 +605,7 @@ static void decode_v(const unsigned char *value)
 				  input_voltage_scaled  = 120;
 				  break;
 
+			/* UK SMX1200XLHG protocol 3017 confirmed: */
 			case '2': input_voltage_nominal =
 				  input_voltage_scaled  = 230;
 				  break;
@@ -621,6 +622,8 @@ static void decode_v(const unsigned char *value)
 				upslogx(2, "Unknown input voltage range: 0x%02x", (unsigned int)ivn);
 				break;
 		}
+		upslogx(2, "Regard the input voltage range with skepticism (nominal = %ld, scaled = %ld; V[0] = 0x%02x)",
+				input_voltage_nominal, input_voltage_scaled, (unsigned int)ivn);
 	}
 
 	if( (lb >= '0') && (lb <= '9') ) {
@@ -1530,7 +1533,7 @@ void upsdrv_updateinfo(void)
 			return;
 		}
 
-		if( tl_model == TRIPP_LITE_SMARTPRO ) {
+		if( (tl_model == TRIPP_LITE_SMARTPRO) || (tl_model == TRIPP_LITE_SMART_3017) ) {
 			freq = hex2d(t_value + 3, 3);
 			dstate_setinfo("input.frequency", "%.1f", freq / 10.0);
 
