@@ -216,13 +216,25 @@ class interface :
 
     def __find_icon_file( self ) :
         filename = 'nut-monitor.png'
+
         # TODO: Skip checking application directory if installed
         path = os.path.join( os.path.dirname( sys.argv[0] ), "icons", "256x256", filename )
         if os.path.exists(path):
             return path
+
+        # Normally icons should be installed to OS location by packaging:
+        path = QStandardPaths.locate(QStandardPaths.GenericDataLocation, os.path.join( "icons", "hicolor", "256x256", "apps", filename ) )
+        if os.path.exists(path):
+            return path
+
+        # Fall back to NUT-specific area where `make install` might put them,
+        # e.g. /usr/share/nut/nut-monitor/icons/... or some such, if not the
+        # same location as checked in first attempt above:
         path = QStandardPaths.locate(QStandardPaths.AppDataLocation, os.path.join( "icons", "hicolor", "256x256", "apps", filename ) )
         if os.path.exists(path):
             return path
+
+        # No banana!
         raise RuntimeError("Cannot find %s resource %s" % ('icon', filename))
 
     # Check if correct fields are filled to enable connection to the UPS
@@ -691,6 +703,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         if self.__current_ups.encode('ascii') not in srv_upses :
             self.gui_status_message( _("Device '%s' not found on server") % self.__current_ups )
             self.gui_status_notification( _("Device '%s' not found on server") % self.__current_ups, "warning.png" )
+            return
+
+        if not self.__ups_handler.CheckUPSAvailable( self.__current_ups ):
+            self.gui_status_message( _("UPS '{0}' is not reachable").format( self.__current_ups ) )
+            self.gui_status_notification( _("UPS '{0}' is not reachable").format( self.__current_ups ), "warning.png" )
             return
 
         self.__connected = True

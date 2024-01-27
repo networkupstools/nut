@@ -85,4 +85,4 @@ Internet resources:
 
 * Product home page: https://uk.pi-supply.com/products/pijuice-standard
 
-* The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

@@ -27,7 +27,7 @@
 #include <string.h>
 
 #define DRIVER_NAME	"ISBMEX UPS driver"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.08"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -148,10 +148,12 @@ void upsdrv_initinfo(void)
 }
 
 static const char *getpacket(int *we_know){
+#ifndef WIN32
 	fd_set readfds;
 	struct timeval tv;
-	int bytes_per_packet=0;
 	int ret;
+#endif
+	int bytes_per_packet=0;
 	static const char *packet_id=NULL;
 	static char buf[256];
 	const char *s;
@@ -160,35 +162,54 @@ static const char *getpacket(int *we_know){
 	bytes_per_packet=*we_know;
 	D(printf("getpacket with %d\n",bytes_per_packet);)
 
+#ifndef WIN32
 	FD_ZERO(&readfds);
 	FD_SET(upsfd,&readfds);
+
 	/* Wait up to 2 seconds. */
 	tv.tv_sec = 5;
 	tv.tv_usec = 0;
 
-	ret=select(upsfd+1, &readfds, NULL, NULL, &tv);
+	ret = select(upsfd+1, &readfds, NULL, NULL, &tv);
 	if (!ret) {
-		s="Nothing received from UPS. Check cable conexion";
+		s = "Nothing received from UPS. Check cable conexion";
 		upslogx(LOG_ERR, "%s", s);
 		D(printf("%s\n",s);)
 		return NULL;
 	}
 
-	r=read(upsfd,buf,255);
-	D(printf("%zd bytes read: ",r);)
+	r = read(upsfd,buf,255);
+#else
+	r = select_read(upsfd,buf,255,5,0);
+	if (r <= 0) {
+		s = "Nothing received from UPS. Check cable conexion";
+		upslogx(LOG_ERR, "%s", s);
+		D(printf("%s\n",s);)
+		return NULL;
+	}
+#endif
+	D(printf("%" PRIiSIZE " bytes read: ",r);)
+
 	buf[r]=0;
 	if (bytes_per_packet && r < bytes_per_packet){
 		ssize_t rr;
 		D(printf("short read...\n");)
 		usleep(500000);
+#ifndef WIN32
 		tv.tv_sec = 2;
 		tv.tv_usec = 0;
-		ret=select(upsfd+1,  &readfds, NULL, NULL, &tv);
+		ret = select(upsfd+1, &readfds, NULL, NULL, &tv);
 		if (!ret) return NULL;
 		/* Casting is okay since bytes_per_packet is small
 		 * and r is smaller, so 255-r is positive */
 		assert (r <= 255);
 		rr = read(upsfd, buf+r, (size_t)(255-r));
+#else
+		rr = select_read(upsfd,buf+r,255-r,2,0);
+		if (rr <= 0) {
+			return NULL;
+		}
+#endif
 		r += rr;
 		if (r < bytes_per_packet) return NULL;
 	}
@@ -336,8 +357,11 @@ void upsdrv_shutdown(void)
 	/*
 	 * here try to do the pin 9 trick, if it does not
 	 * work, else:*/
-/*	fatalx(EXIT_FAILURE, "Shutdown only supported with the Generic Driver, type 6 and special cable");  */
-	/*fatalx(EXIT_FAILURE, "shutdown not supported");*/
+/*
+	upslogx(LOG_ERR, "Shutdown only supported with the Generic Driver, type 6 and special cable");
+	//upslogx(LOG_ERR, "shutdown not supported");
+	set_exit_flag(-1);
+*/
 	int i;
 	for(i=0;i<=5;i++)
 	{

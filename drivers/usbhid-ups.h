@@ -134,7 +134,7 @@ typedef enum {
 	BYPASSAUTO,	/* on automatic bypass */
 	BYPASSMAN,	/* on manual/service bypass */
 	OFF,		/* ups is off */
-	CAL,		/* calibration */
+	CALIB,		/* calibration */
 	OVERHEAT,	/* overheat; Belkin, TrippLite */
 	COMMFAULT,	/* UPS fault; Belkin, TrippLite */
 	DEPLETED,	/* battery depleted; Belkin */
@@ -217,5 +217,7 @@ int setvar(const char *varname, const char *val);
 
 void possibly_supported(const char *mfr, HIDDevice_t *hd);
 
+/* by default we apply fix-ups for broken USB encoding, etc. */
+extern int disable_fix_report_desc;
 int fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *arg_pDesc);
 #endif /* USBHID_UPS_H */

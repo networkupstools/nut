@@ -157,6 +157,25 @@ The UPS needs to have its battery replaced.
 *NOCOMM*::
 The UPS can't be contacted for monitoring.
 
+*NOPARENT*::
+`upsmon` parent process died - shutdown impossible.
+
+*CAL*::
+UPS calibration in progress.
+
+*OFF*::
+UPS administratively OFF or asleep.
+
+*NOTOFF*::
+UPS no longer administratively OFF or asleep.
+
+*BYPASS*::
+UPS on bypass (powered, not protecting).
+
+*NOTBYPASS*::
+UPS no longer on bypass.
+
+
 NOTIFY COMMAND
 --------------
 
@@ -181,8 +200,9 @@ NOTIFY FLAGS
 ------------
 
 By default, all notify events (see above) generate a global message
-(wall) to all users, plus they are logged via the syslog.  You can change
-this with the NOTIFYFLAG directive in the configuration file:
+(wall) to all users, plus they are logged via the syslog.
+Except for Windows where upsmon only writes to the syslog by default.
+You can change this with the NOTIFYFLAG directive in the configuration file:
 
 +NOTIFYFLAG+ 'notifytype' 'flags'
 
@@ -389,6 +409,53 @@ by starting another copy of the program with `-c fsd` command line argument.
 This is useful when you want to initiate a shutdown before the critical
 stage through some external means, such as linkman:upssched[8].
 
+WARNING: Please note that by design, since we require power-cycling the
+load and don't want some systems to be powered off while others remain
+running if the "wall power" returns at the wrong moment as usual, the "FSD"
+flag can not be removed from the data server unless its daemon is restarted.
+If we do take the first step in critical mode, then we normally intend to go
+all the way -- shut down all the servers gracefully, and power down the UPS.
+
+Keep in mind that some UPS devices and corresponding drivers would also latch
+or otherwise resurface the "FSD" state again even if "wall power" is available,
+but the remaining battery charge is below a threshold configured as "safe" in
+the device (usually if you manually power on the UPS after a long power outage).
+This is by design of respective UPS vendors, since in such situation they
+can not guarantee that if a new power outage happens, their UPS would safely
+shut down your systems again. So it is deemed better and safer to stay dark
+until batteries become sufficiently charged.
+
+When it is time to shut down, upsmon creates POWERDOWNFLAG to
+communicate to the operating system that the UPS should be commanded
+off late in the shutdown sequence.  This file is removed if present
+when upsmon starts, so that the next normal shutdown does not cause
+the UPS to be turned off.  (The file can't in general be removed
+during shutdown because the filesystem might be read only.  If the
+file is in a RAM-backed filesystem, the it won't be present and the
+check to remove it won't fire.)
+
+SIMULATING POWER FAILURES
+-------------------------
+
+To test a synchronized shutdown without pulling the plug on your UPS(es),
+you need only set the forced shutdown (FSD) flag on them.  You can do this
+by calling upsmon again to set the flag, i.e.:
+
++upsmon -c fsd+
+
+After that, the primary and the secondary will do their usual shutdown
+sequence as if the battery had gone critical, while you can time how long
+it takes for them.  This is much easier on your UPS equipment, and it beats
+crawling under a desk to find the plug.
+
+Note you can also use a dummy SHUTDOWNCMD setting to just report that the
+systems would shut down at this point, without actually disrupting their work.
+
+WARNING: after such "dummy" experiments you may have to restart the NUT data
+server `upsd` to clear its "FSD" flag for the devices and clients involved,
+and make sure no files named by `POWERDOWNFLAG` option (e.g. `/etc/killpower`)
+remain on the `upsmon primary` systems under test.
+
 DEAD UPSES
 ----------
 
@@ -401,6 +468,16 @@ to the overall power value.
 upsmon will alert you to a UPS that can't be contacted for monitoring
 with a "NOCOMM" notifier by default every 300 seconds.  This can be
 changed with the NOCOMMWARNTIME setting.
+
+Also upsmon normally reports polling failures for each device that are in place
+for each POLLFREQ loop (e.g. "Data stale" or "Driver not connected") to
+system log as configured.  If your devices are expected to be AWOL for an
+extended timeframe, you can use POLLFAIL_LOG_THROTTLE_MAX to reduce the
+stress on syslog traffic and storage, by posting these messages only once
+in every several loop cycles, and when the error condition has changed or
+cleared. A negative value means standard behavior, and a zero value means
+to never repeat the message (log only on start and end/change of the failure
+state).
 
 RELOADING NUANCES
 -----------------
@@ -423,22 +500,16 @@ those values, you *must* stop upsmon and start it back up.  upsmon
 will warn you in the syslog if you make changes to either of those
 values during a reload.
 
-SIMULATING POWER FAILURES
--------------------------
+ENVIRONMENT VARIABLES
+---------------------
 
-To test a synchronized shutdown without pulling the plug on your UPS(es),
-you need only set the forced shutdown (FSD) flag on them.  You can do this
-by calling upsmon again to set the flag, i.e.:
+*NUT_DEBUG_LEVEL* sets default debug verbosity if no *-D* arguments
+were provided on command line, but does not request that the daemon
+runs in foreground mode.
 
-+upsmon -c fsd+
-
-After that, the primary and the secondary will do their usual shutdown
-sequence as if the battery had gone critical, while you can time how long
-it takes for them.  This is much easier on your UPS equipment, and it beats
-crawling under a desk to find the plug.
-
-Note you can also use a dummy SHUTDOWNCMD setting to just report that the
-systems would shut down at this point, without actually disrupting their work.
+*NUT_CONFPATH* is the path name of the directory that contains
+`upsmon.conf` and other configuration files.  If this variable is not set,
+*upsmon* uses a built-in default, which is often `/usr/local/ups/etc`.
 
 FILES
 -----
@@ -467,4 +538,4 @@ linkman:upsset.cgi[8], linkman:upsstats.cgi[8], linkman:upsimage.cgi[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

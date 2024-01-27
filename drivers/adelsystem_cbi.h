@@ -27,11 +27,11 @@
 #ifndef ADELSYSTEM_CBI_H
 #define ADELSYSTEM_CBI_H
 
-#include <stdint.h>
+#include "nut_stdint.h"
 
 /* UPS device details */
 #define DEVICE_MFR	"ADELSYSTEM"
-#define DEVICE_TYPE "DC-UPS"
+#define DEVICE_TYPE_STRING "DC-UPS"
 #define DEVICE_MODEL "CBI2801224A"
 
 /* serial access parameters */

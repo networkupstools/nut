@@ -2,6 +2,8 @@
 
 AM_CFLAGS = -I$(top_srcdir)/include
 AM_CXXFLAGS = -I$(top_srcdir)/include
+AM_LDFLAGS = -no-undefined
+EXTRA_DIST =
 
 noinst_LTLIBRARIES = libparseconf.la libcommon.la libcommonclient.la libnutconf.la
 libparseconf_la_SOURCES = parseconf.c
@@ -39,14 +41,68 @@ CLEANFILES = $(top_builddir)/common/common.c
 BUILT_SOURCES = common.c
 endif
 
+if HAVE_STRPTIME
+EXTRA_DIST += strptime.c
+else
+# fall back to NetBSD implem
+libcommon_la_SOURCES += strptime.c
+libcommonclient_la_SOURCES += strptime.c
+endif
+
+if HAVE_STRNLEN
+EXTRA_DIST += strnlen.c
+else
+# fall back to FreeBSD implem
+libcommon_la_SOURCES += strnlen.c
+libcommonclient_la_SOURCES += strnlen.c
+endif
+
+if HAVE_STRSEP
+EXTRA_DIST += strsep.c
+else
+# fall back to simple implem
+libcommon_la_SOURCES += strsep.c
+libcommonclient_la_SOURCES += strsep.c
+endif
+
+# TODO: libnutwincompat.la?
+if HAVE_WINDOWS
+libcommon_la_SOURCES += wincompat.c $(top_srcdir)/include/wincompat.h
+libcommonclient_la_SOURCES += wincompat.c $(top_srcdir)/include/wincompat.h
+endif
+
 # ensure inclusion of local implementation of missing systems functions
 # using LTLIBOBJS. Refer to configure.in/.ac -> AC_REPLACE_FUNCS
-libcommon_la_LIBADD = libparseconf.la @LTLIBOBJS@
-libcommonclient_la_LIBADD = libparseconf.la @LTLIBOBJS@
+libcommon_la_LIBADD = libparseconf.la @LTLIBOBJS@ @NETLIBS@
+libcommonclient_la_LIBADD = libparseconf.la @LTLIBOBJS@ @NETLIBS@
+
+libcommon_la_CFLAGS = $(AM_CFLAGS)
+libcommonclient_la_CFLAGS = $(AM_CFLAGS)
+
+if HAVE_LIBREGEX
+  libcommon_la_CFLAGS += $(LIBREGEX_CFLAGS)
+  libcommon_la_LIBADD += $(LIBREGEX_LIBS)
+
+  libcommonclient_la_CFLAGS += $(LIBREGEX_CFLAGS)
+  libcommonclient_la_LIBADD += $(LIBREGEX_LIBS)
+endif
+
+# Did the user request, and build env support, tighter integration with
+# libsystemd methods such as sd_notify()?
+if WITH_LIBSYSTEMD
+  libcommon_la_CFLAGS += $(LIBSYSTEMD_CFLAGS)
+  libcommon_la_LIBADD += $(LIBSYSTEMD_LIBS)
+
+# A typical client should not need this,
+# but just in case (and to simplify linking)...
+#  libcommonclient_la_CFLAGS += $(LIBSYSTEMD_CFLAGS)
+#  libcommonclient_la_LIBADD += $(LIBSYSTEMD_LIBS)
+  libcommonclient_la_CFLAGS += -DWITHOUT_LIBSYSTEMD=1
+endif
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
 # the root Makefile.am takes care of that!
 #clean-local:
-#	rm -rf $(builddir)/.deps
+#	$(AM_V_at)rm -rf $(builddir)/.deps

@@ -41,13 +41,14 @@
 #include "main.h"
 #include "serial.h"
 #include "oneac.h"
+#include "nut_stdint.h"
 
 /* Prototypes to allow setting pointer before function is defined */
 int setcmd(const char* varname, const char* setvalue);
 int instcmd(const char *cmdname, const char *extra);
 
 #define DRIVER_NAME	"Oneac EG/ON/OZ/OB UPS driver"
-#define DRIVER_VERSION	"0.81"
+#define DRIVER_VERSION	"0.82"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -89,7 +90,7 @@ static ssize_t OneacGetResponse (char* chBuff, const size_t BuffSize, int Expect
 			break;
 
 		upsdebugx (3,
-			"!OneacGetResponse retry (%zd, %d)...",
+			"!OneacGetResponse retry (%" PRIiSIZE ", %d)...",
 			return_val, Retries);
 
 	} while (--Retries > 0);

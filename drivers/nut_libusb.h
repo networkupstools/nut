@@ -11,7 +11,7 @@
  *
  *      The logic of this file is ripped from mge-shut driver (also from
  *      Arnaud Quette), which is a "HID over serial link" UPS driver for
- *      Network UPS Tools <http://www.networkupstools.org/>
+ *      Network UPS Tools <https://www.networkupstools.org/>
  *
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License as published by
@@ -52,13 +52,13 @@ typedef struct usb_communication_subdriver_s {
 	const char *name;				/* name of this subdriver		*/
 	const char *version;			/* version of this subdriver	*/
 
-	int (*open)(usb_dev_handle **sdevp,	/* try to open the next available	*/
+	int (*open_dev)(usb_dev_handle **sdevp,	/* try to open the next available	*/
 		USBDevice_t *curDevice,		/* device matching USBDeviceMatcher_t	*/
 		USBDeviceMatcher_t *matcher,
 		int (*callback)(usb_dev_handle *udev, USBDevice_t *hd,
 			usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen));
 
-	void (*close)(usb_dev_handle *sdev);
+	void (*close_dev)(usb_dev_handle *sdev);
 
 	int (*get_report)(usb_dev_handle *sdev, usb_ctrl_repindex ReportId,
 		usb_ctrl_charbuf raw_buf, usb_ctrl_charbufsize ReportSize);

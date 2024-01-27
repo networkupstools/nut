@@ -16,21 +16,40 @@ prefix="@prefix@"
 NUT_DIR="@prefix@"
 NUT_SBIN_DIR="$NUT_DIR/sbin"
 NUT_LIB_DIR="${NUT_DIR}/lib"
-NUT_RUN_DIR="@PIDPATH@/nut"
+
+NUT_RUN_DIR="`svcprop -p nut/NUT_RUN_DIR $SMF_FMRI`" \
+&& [ -n "$NUT_RUN_DIR" ] \
+|| NUT_RUN_DIR="@ALTPIDPATH@"
+
 CONFIG="@CONFPATH@/nut.conf"
-NUTUSER="@RUN_AS_USER@"
-NUTGROUP="@RUN_AS_GROUP@"
+
+NUTUSER="`svcprop -p nut/NUTUSER $SMF_FMRI`" \
+&& [ -n "$NUTUSER" ] \
+|| NUTUSER="@RUN_AS_USER@"
+
+NUTGROUP="`svcprop -p nut/NUTGROUP $SMF_FMRI`" \
+&& [ -n "$NUTGROUP" ] \
+|| NUTGROUP="@RUN_AS_GROUP@"
+
+# We anticipate some tighter integration with SMF later:
+#NUT_QUIET_INIT_UPSNOTIFY=true
+#export NUT_QUIET_INIT_UPSNOTIFY
 
 if [ -f "$CONFIG" ] ; then
 	. "$CONFIG"
 fi
 
-ups_start () {
+create_run_dir () {
 	# Default rights inspired by NUT scripts/Solaris/postinstall.in
+	#mkdir -p "@PIDPATH@" # (for privileged processes - not upsd)
 	mkdir -p "$NUT_RUN_DIR" && \
 	chown "root:$NUTGROUP" "$NUT_RUN_DIR" && \
 	chmod 770 "$NUT_RUN_DIR" \
 	|| exit $SMF_EXIT_ERR_FATAL
+}
+
+ups_start () {
+	create_run_dir
 
 	if [ "$MODE" = "none" ];then
 		echo "No NUT mode set, not starting anything" >&2
@@ -51,6 +70,11 @@ case "$1" in
 
 'refresh'|'reload')
 	LD_LIBRARY_PATH="${NUT_LIB_DIR}:$LD_LIBRARY_PATH" "${NUT_SBIN_DIR}/upsd" -c reload
+	;;
+
+"create_run_dir")
+	# Mostly provided for the sake of nut-driver service
+	create_run_dir
 	;;
 
 *)

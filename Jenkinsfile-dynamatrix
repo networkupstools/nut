@@ -12,7 +12,10 @@ def buildCommit = '86a32237c7df45c5aba640746f7afc4de09505a1'
 
 // See https://github.com/networkupstools/jenkins-dynamatrix/ for the lib
 // Agent setup evolves at https://ci.networkupstools.org/computer/
-@Library('jenkins-dynamatrix') _
+// NOTE: The "${BRANCH_NAME}" below IS NOT A VARIABLE!
+//       Special notation per custom plugin build including changes from
+//       https://github.com/jenkinsci/pipeline-groovy-lib-plugin/pull/19/
+@Library('jenkins-dynamatrix@${BRANCH_NAME}') _
 import org.nut.dynamatrix.dynamatrixGlobalState;
 import org.nut.dynamatrix.*;
 
@@ -55,8 +58,16 @@ import org.nut.dynamatrix.*;
         dynacfgPipeline.disableSlowBuildCIBuild_QEMU = false
     }
 
-    dynacfgPipeline.traceBuildShell_configureEnvvars = false// true 
-    dynacfgPipeline.traceBuildShell = false //true
+    dynacfgPipeline.traceBuildShell_configureEnvvars = false // true
+    dynacfgPipeline.traceBuildShell = false // true
+
+    //if (false) // <<< (Un-)comment away in select runs/branches
+    //if (true)  // <<< (Un-)comment away in select runs/branches
+    if ( env?.BRANCH_NAME ==~ /.*fightwarn-verbose.*/ )
+    {
+        dynacfgPipeline.traceBuildShell_configureEnvvars = true // false
+        dynacfgPipeline.traceBuildShell = true // false
+    }
 
     dynacfgPipeline.failFast = //true //
         false
@@ -98,7 +109,7 @@ import org.nut.dynamatrix.*;
         //'stageNameFunc': null,
         //'dynamatrixAxesLabels': [~/^OS_.+/, 'MAKE'],
         'dynamatrixAxesLabels': ['OS_FAMILY', 'OS_DISTRO', 'MAKE'],
-        'single': '( \${MAKE} shellcheck )',
+        'single': '( if [ x"\${MAKE-}" = x ]; then echo "WARNING: MAKE is somehow unset, defaulting!" >&2; MAKE=make; fi; \${MAKE} shellcheck )',
         'multi': '(cd tests && SERVICE_FRAMEWORK="selftest" SHELL_PROGS="$SHELL_PROGS" ./nut-driver-enumerator-test.sh )',
         'multiLabel': 'SHELL_PROGS',
         'skipShells': [ 'zsh', 'tcsh', 'csh' ]
@@ -152,8 +163,15 @@ import org.nut.dynamatrix.*;
     dynacfgPipeline.axisCombos_STRICT_C = [~/CSTDVARIANT=c/]
     dynacfgPipeline.axisCombos_GNU_C = [~/CSTDVARIANT=gnu/]
 
+    // Here we consider native-platform builds on a Windows box
+    // (possibly with need for "bat" instead of "sh" steps):
     dynacfgPipeline.axisCombos_WINDOWS = [~/OS_FAMILY=windows/]
     dynacfgPipeline.axisCombos_NOT_WINDOWS = [~/OS_FAMILY=(?!windows)/]
+
+    // TODO: some cross-build enviroments like Linux with mingw?
+    // Currently done as an explicit scenario below...
+    dynacfgPipeline.axisCombos_WINDOWS_CROSS = [~/OS_FAMILY=(mingw|mingw32|mingw64|msys2)/]
+    dynacfgPipeline.axisCombos_NOT_WINDOWS_CROSS = [~/OS_FAMILY=(?!(mingw|mingw32|mingw64|msys2))/]
 
     // At a minimum, we don't want to mess up our arches:
     dynacfgPipeline.excludeCombos_DEFAULT = [
@@ -226,19 +244,24 @@ import org.nut.dynamatrix.*;
     if (!dynacfgPipeline.containsKey('buildPhases')) {
         dynacfgPipeline.buildPhases = [:]
     }
-    dynacfgPipeline.buildPhases['distcheck'] = """( eval \${CONFIG_ENVVARS} time \${MAKE} \${MAKE_OPTS} distcheck DISTCHECK_FLAGS="\${CONFIG_OPTS}" )"""
+
+    // Imported from jenkins-dynamatrix JSL vars/autotools.groovy:
+    // a workaround for the cases of curiously missing MAKE envvar...
+    dynacfgPipeline.buildPhases['distcheck'] = """( if [ x"\${MAKE-}" = x ]; then echo "WARNING: MAKE is somehow unset, defaulting!" >&2; MAKE=make; fi; eval \${CONFIG_ENVVARS} time \${MAKE} \${MAKE_OPTS} distcheck DISTCHECK_FLAGS="\${CONFIG_OPTS}" )"""
 
     // Note: shellcheck/spellcheck/... require autotools currently
     // or need to be redefined with respective BUILD_TYPE
     //dynacfgPipeline.buildSystem = 'ci_build.sh'
 
     //dynacfgPipeline.slowBuildDefaultBody = { echo "Running default custom build" }
-    dynacfgPipeline.slowBuildDefaultBody_autotools = { delegate -> setDelegate(delegate)
+    dynacfgPipeline.slowBuildDefaultBody_autotools = { def delegate -> setDelegate(delegate)
+        // Be sure to have a fixed resolved String here ASAP:
+        String stageNameClone = "${stageName}"
         def dsbcClone = dsbc.clone()
-        def stageNameClone = "${stageName}"
 
         stage('Investigate envvars (Autotools DEBUG)') {
-            echo "Running default custom build for '${stageName}' ==> ${dsbc.toString()}"
+            echo "Running default custom build for '${stageNameClone}' ==> ${dsbcClone.toString()}" +
+                (dynacfgPipeline?.configureEnvvars ? "" : " (note: has no dynacfgPipeline.configureEnvvars)")
             // Trick about endianness via ELF binary header picked up from https://serverfault.com/a/749469/490516
             sh label: 'Inspect initial envvars', script: """ hostname; date -u; uname -a
 echo "LONG_BIT:`getconf LONG_BIT` WORD_BIT:`getconf WORD_BIT`" || true
@@ -254,19 +277,21 @@ set | sort -n """
             }
         }
 
-        infra.withEnvOptional(dynacfgPipeline.defaultTools) {
+        withEnvOptional(dynacfgPipeline.defaultTools) {
             unstashCleanSrc(dynacfgPipeline.stashnameSrc)
             buildMatrixCellCI(dynacfgPipeline, dsbcClone, stageNameClone)
             //buildMatrixCellCI(dynacfgPipeline, dsbc, stageName)
         }
     }
 
-    dynacfgPipeline.slowBuildDefaultBody_ci_build = { delegate -> setDelegate(delegate)
+    dynacfgPipeline.slowBuildDefaultBody_ci_build = { def delegate -> setDelegate(delegate)
+        // Be sure to have a fixed resolved String here ASAP:
+        String stageNameClone = "${stageName}"
         def dsbcClone = dsbc.clone()
-        def stageNameClone = "${stageName}"
 
         stage('Investigate envvars (CI_Build DEBUG)') {
-            echo "Running default custom build for '${stageName}' ==> ${dsbc.toString()}"
+            echo "Running default custom build for '${stageNameClone}' ==> ${dsbcClone.toString()}" +
+                (dynacfgPipeline?.configureEnvvars ? "" : " (note: has no dynacfgPipeline.configureEnvvars)")
             // Trick about endianness via ELF binary header picked up from https://serverfault.com/a/749469/490516
             sh label: 'Inspect initial envvars', script: """ hostname; date -u; uname -a
 echo "LONG_BIT:`getconf LONG_BIT` WORD_BIT:`getconf WORD_BIT`" || true
@@ -282,7 +307,7 @@ set | sort -n """
             }
         }
 
-        infra.withEnvOptional(dynacfgPipeline.defaultTools) {
+        withEnvOptional(dynacfgPipeline.defaultTools) {
             unstashCleanSrc(dynacfgPipeline.stashnameSrc)
             def dynacfgPipeline_ciBuild = dynacfgPipeline.clone()
             dynacfgPipeline_ciBuild.buildSystem = 'ci_build.sh'
@@ -314,7 +339,7 @@ set | sort -n """
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
          branchRegexTarget: ~/fightwarn/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: dynacfgBase.commonLabelExpr,
                 //defaultDynamatrixConfig: dynacfgBase.defaultDynamatrixConfig,
@@ -339,6 +364,7 @@ set | sort -n """
                 //dynamatrixAxesLabels: ['OS_FAMILY', 'OS_DISTRO', '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
                 //dynamatrixAxesLabels: [~/^OS/, '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_STRICT_C
+                    + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
             }, // getParStages
         //'bodyParStages': {}
@@ -351,7 +377,7 @@ set | sort -n """
          branchRegexTarget: ~/fightwarn/,
          // NOTE: For fightwarn, we want some schenarios that would always build to test
          //appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: dynacfgBase.commonLabelExpr,
                 //defaultDynamatrixConfig: dynacfgBase.defaultDynamatrixConfig,
@@ -382,6 +408,7 @@ set | sort -n """
                 //dynamatrixAxesLabels: ['OS_FAMILY', 'OS_DISTRO', '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
                 //dynamatrixAxesLabels: [~/^OS/, '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_STRICT_C
+                    + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
             }, // getParStages
         //'bodyParStages': {}
@@ -392,7 +419,7 @@ set | sort -n """
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 requiredNodelabels: [],
                 excludedNodelabels: [],
@@ -418,6 +445,7 @@ set | sort -n """
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
                     [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
+                    + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -428,7 +456,7 @@ set | sort -n """
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 requiredNodelabels: ["(NUT_BUILD_CAPS=valgrind=yes||NUT_BUILD_CAPS=valgrind)"],
                 excludedNodelabels: ["NUT_BUILD_CAPS=valgrind=no"],
@@ -453,6 +481,7 @@ set | sort -n """
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C
+                    + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -472,7 +501,7 @@ set | sort -n """
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
          branchRegexTarget: ~/fightwarn/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 dynamatrixAxesLabels: ['OS_FAMILY'], // + [ 'OS_DISTRO', 'MAKE'],
                 requiredNodelabels: ["(NUT_BUILD_CAPS=cppcheck||NUT_BUILD_CAPS=cppcheck=yes)"],
@@ -501,6 +530,7 @@ set | sort -n """
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C
+                    + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -515,7 +545,7 @@ set | sort -n """
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: "nut-builder:alldrv",
                 requiredNodelabels: ["(NUT_BUILD_CAPS=drivers:all||nut-builder:alldrv)"],
@@ -556,7 +586,7 @@ set | sort -n """
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: "nut-builder:alldrv",
                 requiredNodelabels: ["(NUT_BUILD_CAPS=drivers:all||nut-builder:alldrv)"],
@@ -581,6 +611,7 @@ set | sort -n """
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_STRICT_C
+                    + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -591,7 +622,7 @@ set | sort -n """
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*)$/,
          branchRegexTarget: ~/fightwarn/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: "nut-builder:alldrv",
                 requiredNodelabels: ["(NUT_BUILD_CAPS=drivers:all||nut-builder:alldrv)"],
@@ -618,6 +649,7 @@ set | sort -n """
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
                     [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
+                    + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -630,7 +662,7 @@ set | sort -n """
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_PY,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: "nut-builder:alldrv",
                 // TOTHINK: Should we also vary compilers here?
@@ -656,6 +688,7 @@ set | sort -n """
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesLabels': 'replace', 'commonLabelExpr': 'replace', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
                     [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
+                    + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -669,7 +702,7 @@ set | sort -n """
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_DOC,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: dynacfgBase.commonLabelExpr + " && doc-builder",
                 //commonLabelExpr: infra.labelDocumentationWorker(),
@@ -698,6 +731,7 @@ set | sort -n """
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesLabels': 'replace', 'commonLabelExpr': 'replace', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
                     [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
+                    + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -710,7 +744,7 @@ set | sort -n """
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_TXT,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: dynacfgBase.commonLabelExpr + " && doc-builder",
                 //commonLabelExpr: infra.labelDocumentationWorker(),
@@ -737,6 +771,7 @@ set | sort -n """
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesLabels': 'replace', 'commonLabelExpr': 'replace', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
                     [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
+                    + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -747,7 +782,7 @@ set | sort -n """
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 requiredNodelabels: [],
                 excludedNodelabels: [],
@@ -772,6 +807,7 @@ set | sort -n """
                 runAllowedFailure: true,
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C
+                    + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -786,7 +822,7 @@ set | sort -n """
          //branchRegexSource: ~/^(PR-.+|.*fightwarn.*)$/,
          //branchRegexTarget: ~/fightwarn.*/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 requiredNodelabels: [],
                 excludedNodelabels: [],
@@ -809,6 +845,7 @@ set | sort -n """
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
                     [dynacfgPipeline.axisCombos_COMPILER_NOT_GCC]
+                    + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -819,7 +856,7 @@ set | sort -n """
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*89.*)$/,
          branchRegexTarget: ~/fightwarn.*89.*/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 requiredNodelabels: [],
                 excludedNodelabels: [],
@@ -842,6 +879,7 @@ set | sort -n """
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
                     [dynacfgPipeline.axisCombos_COMPILER_GCC]
+                    + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -852,7 +890,7 @@ set | sort -n """
          //branchRegexSource: ~/^(PR-.+|fightwarn.*|.*qemu.*)$/,
          //branchRegexTarget: ~/^(master|main|stable|.*qemu.*)$/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: "qemu-" + dynacfgBase.commonLabelExpr,
                 commonLabelExpr: "qemu-nut-builder || ssh-qemu-nut-builder",
@@ -881,7 +919,8 @@ set | sort -n """
                 excludeCombos: [
                     [~/BITS=32/, ~/ARCH_BITS=64/], [~/BITS=64/, ~/ARCH_BITS=32/],
                     [~/CSTDVARIANT=c/],
-                    [~/OS_DISTRO=(openindiana|freebsd).*/, ~/CSTDVERSION_cxx=[12].+/, ~/COMPILER=GCC/]
+                    [~/OS_DISTRO=(openindiana|freebsd).*/, ~/CSTDVERSION_cxx=[12].+/, ~/COMPILER=GCC/],
+                    dynacfgPipeline.axisCombos_WINDOWS_CROSS
                     ]
                 ], body)
             }, // getParStages
@@ -893,7 +932,7 @@ set | sort -n """
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*)$/,
          branchRegexTarget: ~/fightwarn/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 requiredNodelabels: [],
                 excludedNodelabels: [],
@@ -920,6 +959,7 @@ set | sort -n """
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
                     [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
+                    + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                     //+ [ [~/COMPILER=GCC/, ~/CSTDVERSION_KEY=(?!89)/] ]
                 ], body)
             }, // getParStages
@@ -936,7 +976,7 @@ set | sort -n """
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*89.*)$/,
          branchRegexTarget: ~/fightwarn.*89.*/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 requiredNodelabels: [],
                 excludedNodelabels: [],
@@ -962,6 +1002,7 @@ set | sort -n """
                     [~/COMPILER=GCC/, ~/CSTDVERSION_KEY=(?!89)/]
                     ] +
                     [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
+                    + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -972,7 +1013,7 @@ set | sort -n """
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 requiredNodelabels: [],
                 excludedNodelabels: [],
@@ -1004,6 +1045,7 @@ set | sort -n """
                     [~/COMPILER=(?!GCC)/]
                     ] +
                     [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
+                    + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
             }, // getParStages
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
@@ -1014,7 +1056,7 @@ set | sort -n """
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*)$/,
          branchRegexTarget: ~/fightwarn/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 requiredNodelabels: [],
                 excludedNodelabels: [],
@@ -1038,6 +1080,7 @@ set | sort -n """
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT + [
                     dynacfgPipeline.axisCombos_GNU_C,
+                    dynacfgPipeline.axisCombos_WINDOWS_CROSS,
                     dynacfgPipeline.axisCombos_WINDOWS
                     ]
                 ], body)
@@ -1053,7 +1096,7 @@ set | sort -n """
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*)$/,
          branchRegexTarget: ~/fightwarn.*/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 requiredNodelabels: [],
                 excludedNodelabels: [],
@@ -1077,6 +1120,7 @@ set | sort -n """
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT + [
                     dynacfgPipeline.axisCombos_GNU_C,
+                    dynacfgPipeline.axisCombos_WINDOWS_CROSS,
                     dynacfgPipeline.axisCombos_WINDOWS
                     ] + [dynacfgPipeline.axisCombos_COMPILER_NOT_GCC]
                 ], body)
@@ -1089,7 +1133,7 @@ set | sort -n """
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*89.*)$/,
          branchRegexTarget: ~/fightwarn.*89.*/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 requiredNodelabels: [],
                 excludedNodelabels: [],
@@ -1113,6 +1157,7 @@ set | sort -n """
                 mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT + [
                     dynacfgPipeline.axisCombos_GNU_C,
+                    dynacfgPipeline.axisCombos_WINDOWS_CROSS,
                     dynacfgPipeline.axisCombos_WINDOWS
                     ] + [dynacfgPipeline.axisCombos_COMPILER_GCC]
                 ], body)
@@ -1120,12 +1165,12 @@ set | sort -n """
         'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
         ] // one slowBuild filter configuration
 
-        ,[name: 'Strict C and GNU standard builds on Windows platforms, without distcheck and docs (allowed to fail)',
+        ,[name: 'Strict C and GNU standard builds on native-Windows platforms, without distcheck and docs (allowed to fail)',
          disabled: dynacfgPipeline.disableSlowBuildCIBuildExperimental,
-         branchRegexSource: ~/^(PR-.+|.*fightwarn.*)$/,
-         branchRegexTarget: ~/fightwarn/,
+         branchRegexSource: ~/^(PR-.+|.*fightwarn.*|.*Windows.*)$/,
+         branchRegexTarget: ~/fightwarn|Windows-.*/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 requiredNodelabels: [],
                 excludedNodelabels: [],
@@ -1153,7 +1198,52 @@ set | sort -n """
                     dynacfgPipeline.axisCombos_ARCH32x64,
                     dynacfgPipeline.axisCombos_ARCH64x32,
                     dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD,
+                    dynacfgPipeline.axisCombos_WINDOWS_CROSS,
                     dynacfgPipeline.axisCombos_NOT_WINDOWS
+                    ]
+                ], body)
+            }, // getParStages
+        'bodyParStages': dynacfgPipeline.slowBuildDefaultBody_ci_build
+        ] // one slowBuild filter configuration
+
+        ,[name: 'Strict C and GNU standard builds on cross-Windows platforms (Linux+mingw), without distcheck and docs (allowed to fail)',
+         disabled: dynacfgPipeline.disableSlowBuildCIBuild,
+         //branchRegexSource: ~/^(PR-.+|.*fightwarn.*|.*Windows.*)$/,
+         //branchRegexTarget: ~/fightwarn|Windows-.*/,
+         appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
+         'getParStages': { def dynamatrix, Closure body ->
+            return dynamatrix.generateBuild([
+                commonLabelExpr: "cross-windows-nut-builder",
+                dynamatrixAxesLabels: ['OS_FAMILY', 'OS_DISTRO', 'ARCH${ARCH_BITS}', 'COMPILER'],
+                requiredNodelabels: ["NUT_BUILD_CAPS=cross-windows-mingw"],
+                excludedNodelabels: [],
+
+                dynamatrixAxesVirtualLabelsMap: [
+                    'BITS': [64, 32],
+                    'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '11'] ],
+                    'CSTDVARIANT': ['c', 'gnu'],
+                    ],
+                dynamatrixAxesCommonEnv: [
+                    ['LANG=C','LC_ALL=C','TZ=UTC',
+                     'BUILD_TYPE=cross-windows-mingw',
+                     // Note: warnings options are currently ignored in ci_build.sh
+                     // for this BUILD_TYPE (technically in build-mingw-nut.sh)
+                     'BUILD_WARNFATAL=yes','BUILD_WARNOPT=hard'
+                    ]
+                    ],
+                allowedFailure: [
+                    dynacfgPipeline.axisCombos_STRICT_C,
+                    //dynacfgPipeline.axisCombos_WINDOWS_CROSS,
+                    //[~/BUILD_WARNOPT=hard/]
+                    ],
+                runAllowedFailure: true,
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                excludeCombos: [
+                    dynacfgPipeline.axisCombos_ARCH32x64,
+                    dynacfgPipeline.axisCombos_ARCH64x32,
+                    dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD,
+                    dynacfgPipeline.axisCombos_WINDOWS,
+                    dynacfgPipeline.axisCombos_NOT_WINDOWS_CROSS
                     ]
                 ], body)
             }, // getParStages
@@ -1189,14 +1279,23 @@ def stageNameFunc_ShellcheckCustom(DynamatrixSingleBuildConfig dsbc) {
 
 ///////////////////////////////////////////////////////////////////////////
 
-    // Hacky big switch for a max debug option
-    if (true)
-    if (false)
-    {
+// Hacky big switch for a max debug option
+//if (true)  // <<< (Un-)comment away in select runs/branches
+//if (false) // <<< (Un-)comment away in select runs/branches
+if ( env?.BRANCH_NAME ==~ /.*verbose.*/ )
+{
     dynamatrixGlobalState.enableDebugTrace = true
     dynamatrixGlobalState.enableDebugErrors = true
     dynamatrixGlobalState.enableDebugMilestones = true
     dynamatrixGlobalState.enableDebugMilestonesDetails = true
-    }
+    dynamatrixGlobalState.enableDebugTraceGithubStatusHighlights = true
+}
+
+//if (true)  // <<< (Un-)comment away in select runs/branches
+//if (false) // <<< (Un-)comment away in select runs/branches
+if ( env?.BRANCH_NAME ==~ /.*fightwarn.*/ )
+{
+    dynamatrixGlobalState.enableDebugTraceGithubStatusHighlights = true
+}
 
 dynamatrixPipeline(dynacfgBase, dynacfgPipeline)

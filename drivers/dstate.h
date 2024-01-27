@@ -22,12 +22,17 @@
 #ifndef DSTATE_H_SEEN
 #define DSTATE_H_SEEN 1
 
+#include "common.h"
 #include "timehead.h"
 #include "state.h"
 #include "attribute.h"
 
 #include "parseconf.h"
 #include "upshandler.h"
+
+#ifdef WIN32
+# include "wincompat.h"
+#endif
 
 #define DS_LISTEN_BACKLOG 16
 #define DS_MAX_READ 256		/* don't read forever from upsd */
@@ -38,11 +43,18 @@
 
 /* track client connections */
 typedef struct conn_s {
-	int     fd;
+	TYPE_FD	fd;
+#ifdef WIN32
+	char    buf[LARGEBUF];
+	OVERLAPPED read_overlapped;
+#endif
 	PCONF_CTX_t	ctx;
 	struct conn_s	*prev;
 	struct conn_s	*next;
+	int	nobroadcast;	/* connections can request to ignore send_to_all() updates */
 } conn_t;
+
+#include "main.h"	/* for set_exit_flag(); uses conn_t itself */
 
 	extern	struct	ups_handler	upsh;
 
@@ -51,7 +63,7 @@ typedef struct conn_s {
 	extern	int	do_synchronous;
 
 char * dstate_init(const char *prog, const char *devname);
-int dstate_poll_fds(struct timeval timeout, int extrafd);
+int dstate_poll_fds(struct timeval timeout, TYPE_FD extrafd);
 int dstate_setinfo(const char *var, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
 int dstate_addenum(const char *var, const char *fmt, ...)
@@ -63,6 +75,7 @@ void dstate_delflags(const char *var, const int delflags);
 void dstate_setaux(const char *var, long aux);
 const char *dstate_getinfo(const char *var);
 void dstate_addcmd(const char *cmdname);
+int dstate_delinfo_olderthan(const char *var, const st_tree_timespec_t *cutoff);
 int dstate_delinfo(const char *var);
 int dstate_delenum(const char *var, const char *val);
 int dstate_delrange(const char *var, const int min, const int max);

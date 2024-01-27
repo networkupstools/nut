@@ -175,20 +175,29 @@ VARDESC outlet.2.autoswitch.charge.low "Remaining battery level to power off thi
 VARDESC outlet.2.delay.shutdown "Interval to wait before shutting down this outlet (seconds)"
 VARDESC outlet.2.delay.start "Interval to wait before restarting this outlet (seconds)"
 
+VARDESC device.part "Device Part Number"
+
+VARDESC server.info "Server information"
+VARDESC server.version "Server version"
+
 VARDESC driver.name "Driver name"
+VARDESC driver.debug "Current debug verbosity level of the driver program"
+# Note: normally a `drivername -k` call is used during shutdowns,
+# and at that time the daemon instance of the driver must be stopped:
+VARDESC driver.flag.allow_killpower "Safety flip-switch to allow the driver daemon to send UPS shutdown command (accessible via driver.killpower)"
 VARDESC driver.version "Driver version - NUT release"
 VARDESC driver.version.internal "Internal driver version"
 VARDESC driver.version.usb "USB library version"
-
-VARDESC device.part "Device Part Number"
 
 # FIXME: driver.parameter and driver.flag can have many possible members
 #
 # VARDESC driver.parameter.[[:alpha:]]+ "Driver parameter: <name>"
 # VARDESC driver.flag.[[:alpha:]]+ "Driver flag: <name>"
 
-VARDESC server.info "Server information"
-VARDESC server.version "Server version"
+CMDDESC driver.killpower "Tell the driver daemon to initiate UPS shutdown; should be unlocked with driver.flag.allow_killpower option or variable setting"
+CMDDESC driver.reload "Reload running driver configuration from the file system (only works for changes in some options)"
+CMDDESC driver.reload-or-error "Reload running driver configuration from the file system (only works for changes in some options); return an error if something changed and could not be applied live (so the caller can restart it with new options)"
+CMDDESC driver.reload-or-exit "Reload running driver configuration from the file system (only works for changes in some options); exit the running driver if something changed and could not be applied live (so service management framework can restart it with new options)"
 
 CMDDESC load.off "Turn off the load immediately"
 CMDDESC load.on "Turn on the load immediately"

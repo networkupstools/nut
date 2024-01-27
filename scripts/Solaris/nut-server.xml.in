@@ -2,14 +2,14 @@
 <!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
 <!--
 #
-# Copyright 2016-2017 Jim Klimov
+# Copyright 2016-2022 Jim Klimov
 # Service for the upsd daemon (and drivers, if available)
 #
 -->
 
 <service_bundle type='manifest' name='nut-server'>
 
-	<service name='system/power/nut-server' type='service' version='1'>
+	<service name='system/power/nut-server' type='service' version='2'>
 
 	<!--
 	  Configure a default instance for the service since it doesn't
@@ -125,6 +125,14 @@
 			-->
 			<propval name='ignore_error' type='astring'
 			 value='core,signal' />
+		</property_group>
+
+		<!-- Also used by nut-driver.xml to stay in sync regarding the rights -->
+		<property_group name='nut' type='application'>
+			<stability value='Evolving' />
+			<propval name='NUT_RUN_DIR' type='astring' value='@ALTPIDPATH@' />
+			<propval name='NUTUSER' type='astring' value='@RUN_AS_USER@' />
+			<propval name='NUTGROUP' type='astring' value='@RUN_AS_GROUP@' />
 		</property_group>
 
 	<!-- Really unstable - this service should be evolved! -->

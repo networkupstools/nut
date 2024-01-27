@@ -75,6 +75,8 @@ public:
 	virtual void devicePrimary(const std::string& dev) override;
 	virtual void deviceForcedShutdown(const std::string& dev) override;
 	virtual int deviceGetNumLogins(const std::string& dev) override;
+	virtual std::set<std::string> deviceGetClients(const std::string& dev) override;
+	virtual std::map<std::string, std::set<std::string>> listDeviceClients(void) override;
 
 	virtual TrackingResult getTrackingResult(const TrackingID& id) override;
 

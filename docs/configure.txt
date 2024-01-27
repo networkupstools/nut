@@ -3,9 +3,80 @@ Configure options
 =================
 endif::website[]
 
+[NOTE]
+======
+When building NUT from Git sources rather than the distribution tarballs,
+you would have to generate the `configure` script and some further needed
+files by running `./autogen.sh`. This in turn may require additional tools
+and other dependencies on your build environment (referenced just a bit
+below). For common developer iterations, porting to new platforms,
+or in-place testing, running the `./ci_build.sh` script can be a helpful
+one-stop solution.
++
+The NUT linkdoc:packager-guide[Packager Guide], which presents the best
+practices for installing and integrating NUT, is also a good reading.
++
+The link:config-prereqs.txt[Prerequisites for building NUT on different OSes]
+document suggests prerequisite packages with tools and dependencies
+available and needed to build and test as much as possible of NUT on
+numerous platforms, written from perspective of CI testing (if you
+are interested in getting updated drivers for a particular device,
+you might select a sub-set of those suggestions).
+======
+
 There are a few options reviewed below that can be given to `configure`
 script to tweak your compilations. See also `./configure --help` for a
 current and complete listing for the current version of the codebase.
+
+NUT tracks `configure` options used during build, so you can view them
+to produce a replacement by asking NUT programs for `--help` or for
+`--version` with debugging enabled (first), e.g.:
+
+----
+:; upsd -DV
+Network UPS Tools upsd 2.8.1
+Network UPS Tools version 2.8.1 configured with flags: --with-all=auto --with-doc=skip ...
+----
+
+A more industrial approach is to use `lib/libupsclient-config --config-flags`
+where supported.
+
+Keeping a report of NUT configuration
+-------------------------------------
+
+	--enable-keep_nut_report_feature
+
+If this option is enabled (not currently default), the report displayed
+by `configure` script will be kept in a file when the script ends, and
+installed into the data directory.
+
+In-place replacement defaults
+-----------------------------
+
+A common situation for NUT builds is to verify whether current version
+of the codebase (e.g. recent and not-yet-packaged release, or a Git branch)
+solves some issues of an existing deployment. Such tests are simplified
+if the new build of NUT plays by the same systems integration rules as
+the already deployed (e.g. package-delivered) version, specifically about
+filesystem access permissions and configuration file locations.
+
+	--enable-inplace-runtime
+
+Tries to detect and pre-set `configure` defaults for run-time settings
+(which you can still override if needed, but no longer *must* specify
+explicitly to be on same page as the existing setup), e.g.:
+
+* --sysconfdir
+* --with-user
+* --with-group
+
+If the installed NUT version supports reporting of `CONFIG_FLAGS` used
+during its build, the `configure` script will try to take those values
+into account when running in this mode.
+
+NOTE: This does not currently rely on the configuration report optionally
+installed by `--enable-keep_nut_report_feature` above, but might do so
+eventually.
 
 Driver selection
 ----------------
@@ -97,6 +168,17 @@ I2C bus drivers
 Build and install i2c drivers (default: auto-detect)
 
 Note that you need to install libi2c development package or files.
+
+GPIO bus drivers
+~~~~~~~~~~~~~~~~
+
+	--with-gpio
+
+Build and install GPIO drivers (default: auto-detect)
+
+Note that on Linux you need to install libgpiod library and development package
+or files. This seems to be present in distributions released after roughly 2018.
+Other platforms are not currently supported, but may be in the future.
 
 Modbus drivers
 ~~~~~~~~~~~~~~
@@ -197,6 +279,116 @@ Example valid formats of this flag:
 * `--with-doc=pdf,html-chunked`
 * `--with-doc=man=no,pdf=auto,html-single`
 
+Python support
+~~~~~~~~~~~~~~
+
+NUT includes a client binding `PyNUT` module, as well as an optional GUI
+application `NUT-Monitor` (not to be confused with `nut-monitor` service
+name for `upsmon` as delivered by some OS distribution packages). Both
+python 2.7 and several versions of python 3.x are supported and regularly
+tested by NUT CI farm builds; other versions may work or not.
+
+Also some of the source configuration (including activity in `autogen.sh`
+script and later in certain `Makefile`s during build) relies on presence
+of `python` (and `perl`) interpreters. If they are not available, e.g. on
+older operating systems, certain features are skipped -- but you may have
+to `export` special environment variables to signal to `autogen.sh` that
+this is an expected situation (it would suggest which, for your current
+NUT version).
+
+NOTE: For CI builds (or similar reproducible developer activity) performed
+with `ci_build.sh` -- since this is an area which impacts both `configure`
+script generation by the helper `autogen.sh` script and subsequently the
+choices made by the `configure` script itself, settings can be made by
+exporting the `PYTHON` environment variable which should evaluate to some
+way to call the correct interpreter (e.g. `python2.7`, `/usr/bin/env python`
+or `/usr/bin/python3`).
+
+The `configure` script does support equivalent options, whose defaults
+come from detection of certain program names by current `PATH` setting.
+Further use of these interpreter names and other paths during NUT build
+and installation is managed by Makefile variable expansion, as prepared
+by the `configure` script.
+
+Also note that it is not required to use the same `PYTHON` implementation
+for `autogen.sh` to do its job, and for the `configure` script option.
+
+As noted above, both python-2.x and python-3.x variants are supported.
+You can consult the `m4/nut_check_python.m4` file for detection methods used.
+If both interpreter generations are present, and a particular un-versioned
+`PYTHON` is not specified or detected, then selected/detected `PYTHON3` is
+chosen as the ultimate `PYTHON` value.
+
+For majority of uses in the build procedure and products, the generation
+of Python does not matter and the un-versioned `PYTHON` value is substituted
+into files as the script shebang, used to find the `site-packages` location,
+etc.
+
+One exception is generation of NUT-Monitor GUI application which has been
+separated for `NUT-Monitor-py2gtk2` and `NUT-Monitor-py3qt5` due to further
+backend platform technical differences -- these build products specifically
+use `PYTHON2` and `PYTHON3` substitutions. They may be co-installed on the
+same system. A dispatcher shell script `NUT-Monitor` is used to launch the
+preferred (newest) or the only existing implementation.
+
+Please note that by default NUT tries to make use of everything in your
+build environment, so if both Python generation are detected -- the binding
+module will be delivered into both, and two versions of NUT-Monitor GUI
+application will be installed.  If you want to avoid that behaviour on a
+build system with both interpreters present, you can explicitly specify
+to build e.g. `--without-python2 --with-python=/usr/bin/python-3.9`.
+
+The settings below may be of particular interest to non-distribution
+packaging efforts with their own dedicated directory trees:
+
+	--with-python=SHEBANG_PATH
+
+Specify a definitive version you want used for majority of the Python
+code (except version-dependent scripts, see above).
+
+The `SHEBANG_PATH` should be a full program pathname, optionally with
+one argument, e.g. `/usr/bin/python-3.9` or `/usr/bin/env python2`.
+
+Defaults (in order):
+* `python`, `python3` or `python2` program if present in `PATH` by such name,
+* or the newest of `PYTHON3` or `PYTHON2` values (specified or detected below).
+
+	--with-python2=SHEBANG_PATH
+	--with-python3=SHEBANG_PATH
+
+For version-dependent scripts (see above) or to default the newest Python
+version if not specified by `--with-python` option or detected otherwise,
+you can provide the preferred version and implementation of Python 2 or 3
+respectively.
+
+Conversely, if neither of these configure options were specified, but some
+`--with-python` program was specified or detected, and its report says it
+has Python major version 2 or 3, then the versioned interpreter string would
+point to that.
+
+	--with-nut_monitor
+
+Install the NUT-Monitor GUI application (depending on Python 2 or 3 version
+availability), and optional `desktop-file-install` integration).
+
+	--with-pynut
+
+Install the PyNUT module files for general consumption into "site-packages"
+location of the currently chosen Python interpreter(s): yes, no, auto.
+or dedicated as the required dependency of NUT-Monitor application (app).
+
+[WARNING]
+=========
+The module files are installed into a particular Python version's location
+such as `/usr/lib/python2.7/dist-packages` even if you specify a relaxed
+or un-versioned interpreter like `python2` (which would be used in scripts
+for the NUT-Monitor application and possible other consumers of the module).
+If the preferred Python version in the deployed system changes later (so the
+`python2` symlink for this example would point elsewhere) the module import
+would become not resolvable for such consumers, until it is installed into
+that other Python's "site-packages" location.
+=========
+
 Development files
 ~~~~~~~~~~~~~~~~~
 
@@ -207,6 +399,13 @@ build further projects against NUT (such as wmNUT client and many others).
 
 Options for developers
 ~~~~~~~~~~~~~~~~~~~~~~
+
+	--enable-spellcheck (default: auto)
+
+Activate recipes for documentation source file spelling checks with `aspell`
+tool. Default behavior depends on availability of the tool, so if present --
+it would run for `make check` by default, to facilitate quicker acceptance
+of contributions.
 
 	--enable-check-NIT (default: no)
 
@@ -224,6 +423,13 @@ ever-changing `Makefile.am` content after Git updates or editing.
 
 Activate recipes for static analysis with `cppcheck` tools (if available).
 
+	--with-unmapped-data-points (default: no)
+
+Build SNMP and USB-HID subdrivers with entries discovered by the scripts
+which generated them from data walks, but developers did not rename yet
+to NUT mappings conforming to `docs/nut-names.txt` standards. Production
+driver builds must not include any non-standard names.
+
 I want it all!
 ~~~~~~~~~~~~~~
 
@@ -236,9 +442,9 @@ library).
 Networking transport security
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    --with-ssl (default: auto-detect)
-    --with-nss (default: auto-detect)
-    --with-openssl (default: auto-detect)
+	--with-ssl (default: auto-detect)
+	--with-nss (default: auto-detect)
+	--with-openssl (default: auto-detect)
 
 Enable SSL support, using either Mozilla NSS or OpenSSL.
 
@@ -311,6 +517,8 @@ Daemon user accounts
 	--with-user=<username>
 	--with-group=<groupname>
 
+See also `--enable-inplace-runtime`.
+
 Programs started as `root` will `setuid()` to `<username>` for somewhat
 safer operation.  You can override this with `-u <otheruser>` in several
 programs, including `upsdrvctl` (and all drivers by extension), `upsd`,
@@ -371,7 +579,7 @@ default, it is the same as `<prefix>`.
 
 Changes the location where NUT's configuration files are stored.
 By default this path is `<prefix>/etc`.  Setting this to `/etc/nut` or
-`/etc/ups` might be useful.
+`/etc/ups` might be useful. See also `--enable-inplace-runtime`.
 
 The `NUT_CONFPATH` environment variable overrides this at run time.
 
@@ -422,6 +630,17 @@ Sets the installation path for libraries.  Depending on the build
 configuration, this can include the `libupsclient`, `libnutclient`,
 `libnutclientsub`, `libnutscan` and their pkg-config metadata (see
 `--with-pkgconfig-dir` option). The default is `<exec_prefix>/lib`.
+
+	--libexecdir=PATH
+
+Sets the installation path for "executable libraries" -- helper scripts
+or programs that are not intended for direct and regular use by people,
+and rather are implementation details of services.  Depending on the
+build configuration, this can include the `nut-driver-enumerator.sh`,
+`sockdebug`, and others. The default is `<exec_prefix>/libexec`.
+
+Package distributions may want to use this option to customize this path
+to include the package name, e.g. set it to `<exec_prefix>/libexec/nut`.
 
 	--with-pkgconfig-dir=PATH
 
@@ -508,6 +727,18 @@ Use `--with-systemdtmpfilesdir` to detect the settings using pkg-config.
 
 Use `--with-systemdtmpfilesdir=no` to disable this feature altogether.
 
+	--with-libsystemd=(auto|yes|no)
+	--with-libsystemd-includes=CFLAGS
+	--with-libsystemd-libs=LDFLAGS
+
+If the build system provides `libsystemd` headers, NUT binaries can be
+built with tighter integration to this service management framework.
+In this case NUT daemons (`upsd`, `upsmon`, `upslog` and drivers) would
+report their life-cycle milestones (`READY`, `RELOADING`, `STOPPING`) and
+support the watchdog reports (if enabled in their respective units by
+end-user -- not done by default since the numbers depends on monitoring
+system performance). Default: "auto" (integration enabled if detected).
+
 	--with-augeas-lenses-dir=PATH
 
 Where to install Augeas configuration-management lenses.
@@ -522,8 +753,9 @@ Directories used by NUT at run-time
 
 	--with-pidpath=PATH
 
-Changes the directory where pid files are stored.  By default this is
-`/var/run`.  Certain programs like `upsmon` will leave files here.
+Changes the directory where NUT pid files are stored for processes running
+as `root`.  By default this is `/var/run`.  Certain programs like `upsmon`
+will leave files here.
 
 	--with-altpidpath=PATH
 
@@ -540,6 +772,13 @@ to interact with the data server `upsd`. Default is `/var/state/ups`.
 
 The `NUT_STATEPATH` environment variable overrides this at run time.
 
+	--with-powerdownflag=FILEPATH
+
+Change the default location (full filename path) of the POWERDOWNFLAG
+created by `upsmon` (as `root`) to tell the late-shutdown integration
+that this machine should tell all UPSes for which it is a "primary" NUT
+server to cut power to the load. Default is `/etc/killpower` on POSIX
+systems and `"C:\\killpower"` (note the double backslashes) on Windows.
 
 Things the compiler might need to find
 --------------------------------------

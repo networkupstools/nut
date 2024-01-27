@@ -27,8 +27,8 @@
 #ifndef NUT_LIBSHUT_H_SEEN
 #define NUT_LIBSHUT_H_SEEN 1
 
-#include "main.h"	/* for subdrv_info_t */
-#include "nut_stdint.h"	/* for uint16_t, size_t, PRIsize etc. */
+#include "main.h"	/* for subdrv_info_t and TYPE_FD_SER via "common.h" */
+#include "nut_stdint.h"	/* for uint16_t, size_t, PRIuSIZE etc. */
 
 extern upsdrv_info_t comm_upsdrv_info;
 
@@ -41,7 +41,7 @@ extern upsdrv_info_t comm_upsdrv_info;
  * The MIN/MAX definitions here are primarily to generalize range-check
  * code (especially if anything is done outside the libraries).
  * FIXME: It may make sense to constrain the limits to lowest common
- * denominator that should fit alll of libusb-0.1, libusb-1.0 and libshut,
+ * denominator that should fit all of libusb-0.1, libusb-1.0 and libshut,
  * so that any build of the practical (driver) code knows to not exceed
  * any use-case.
  *
@@ -49,8 +49,10 @@ extern upsdrv_info_t comm_upsdrv_info;
  * my_hid_descriptor struct in libshut.c for practical fixed-size types.
  */
 
-/* Essentially the file descriptor type, "int" - as in ser_get_char() etc.: */
-typedef int usb_dev_handle;
+/* Essentially for SHUT codebase the usb_dev_handle is the file descriptor
+ * type, usually an "int" - as in ser_get_char() etc. on Unix-like platforms,
+ * but a complex structure which includes a HANDLE field in Win32 builds. */
+typedef TYPE_FD_SER usb_dev_handle;
 
 /* Originally "int" cast to "uint8_t" in shut_control_msg(),
  * and "unsigned char" in shut_get_descriptor() */
@@ -91,25 +93,30 @@ typedef unsigned char usb_ctrl_char;
 typedef size_t usb_ctrl_charbufsize;	/*typedef int usb_ctrl_charbufsize;*/
 #define USB_CTRL_CHARBUFSIZE_MIN	0
 #define USB_CTRL_CHARBUFSIZE_MAX	SIZE_MAX
-#define PRI_NUT_USB_CTRL_CHARBUFSIZE PRIsize
+#define PRI_NUT_USB_CTRL_CHARBUFSIZE PRIuSIZE
 
 typedef int usb_ctrl_timeout_msec;	/* in milliseconds */
 #define USB_CTRL_TIMEOUTMSEC_MIN	INT_MIN
 #define USB_CTRL_TIMEOUTMSEC_MAX	INT_MAX
 
 /* Same error-code definitions as in usb-common.h for libusb-0.1 API */
-#define ERROR_ACCESS		-EACCES
-#define ERROR_BUSY			-EBUSY
-#define ERROR_IO			-EIO
-#define ERROR_NO_DEVICE		-ENODEV
-#define ERROR_NOT_FOUND		-ENOENT
-#define ERROR_OVERFLOW		-EOVERFLOW
-#define ERROR_PIPE			-EPIPE
-#define ERROR_TIMEOUT		-ETIMEDOUT
+#define LIBUSB_ERROR_ACCESS		-EACCES
+#define LIBUSB_ERROR_BUSY			-EBUSY
+#define LIBUSB_ERROR_IO			-EIO
+#define LIBUSB_ERROR_NO_DEVICE		-ENODEV
+#define LIBUSB_ERROR_NOT_FOUND		-ENOENT
+#define LIBUSB_ERROR_OVERFLOW		-EOVERFLOW
+#define LIBUSB_ERROR_PIPE			-EPIPE
+#define LIBUSB_ERROR_TIMEOUT		-ETIMEDOUT
+#define LIBUSB_ERROR_NO_MEM		-ENOMEM
+#define LIBUSB_ERROR_INVALID_PARAM	-EINVAL
+#define LIBUSB_ERROR_INTERRUPTED	-EINTR
+#define LIBUSB_ERROR_NOT_SUPPORTED	-ENOSYS
+#define LIBUSB_ERROR_OTHER		-ERANGE
 
 /*!
  * SHUTDevice_t: Describe a SHUT device. This structure contains exactly
- * the 5 pieces of information by which a SHUT device identifies
+ * the 5 or more pieces of information by which a SHUT device identifies
  * itself, so it serves as a kind of "fingerprint" of the device. This
  * information must be matched exactly when reopening a device, and
  * therefore must not be "improved" or updated by a client
@@ -125,6 +132,9 @@ typedef struct SHUTDevice_s {
 	char*		Bus;       /*!< Bus name, e.g. "003"  */
 	uint16_t	bcdDevice; /*!< Device release number */
 	char		*Device;   /*!< Device name on the bus, e.g. "001"  */
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	char		*BusPort;  /*!< Port name, e.g. "001"  */
+#endif
 } SHUTDevice_t;
 
 /*!
@@ -134,13 +144,13 @@ typedef struct shut_communication_subdriver_s {
 	const char *name;				/* name of this subdriver		*/
 	const char *version;			/* version of this subdriver	*/
 
-	int (*open)(usb_dev_handle *upsfd,			/* try to open the next available	*/
+	int (*open_dev)(usb_dev_handle *upsfd,			/* try to open the next available	*/
 		SHUTDevice_t *curDevice,	/* device matching USBDeviceMatcher_t	*/
 		char *device_path,
 		int (*callback)(usb_dev_handle upsfd, SHUTDevice_t *hd,
 			usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen));
 
-	void (*close)(usb_dev_handle upsfd);
+	void (*close_dev)(usb_dev_handle upsfd);
 
 	int (*get_report)(usb_dev_handle upsfd, usb_ctrl_repindex ReportId,
 		usb_ctrl_charbuf raw_buf, usb_ctrl_charbufsize ReportSize);

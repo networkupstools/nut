@@ -1,0 +1,25 @@
+# Windows script files should be CR+LF always:
+*.bat text eol=crlf
+
+# Unix/Linux script files should be LF always:
+*.sh text eol=lf
+*.m4 text eol=lf
+*.ac text eol=lf
+*.am text eol=lf
+*.hwdb text eol=lf
+
+# Aspell claims issues finding `utf-8\r` sometimes (from heading line of
+# the dictionary file), with messages like this:
+#   .cset" could not be opened for reading or does not exist.lib/aspell/utf-8
+# which tends to happen in mixed-OS development environments. Tracer shows it:
+#   read(3, "personal_ws-1.1 en 3225 utf-8\r\nA"..., 4096) = 4096
+#   access("/usr/lib/aspell/utf-8\r.cset", F_OK) = -1 ENOENT (No such file or directory)
+/docs/nut.dict text eol=lf
+
+# Some files are binary always:
+*.png bin
+*.ico bin
+
+# The rest are assumed text sources with platform-dependent EOL being okay,
+# or we let Git guess otherwise:
+* text=auto

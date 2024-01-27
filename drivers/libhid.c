@@ -12,7 +12,7 @@
  *
  *      The logic of this file is ripped from mge-shut driver (also from
  *      Arnaud Quette), which is a "HID over serial link" UPS driver for
- *      Network UPS Tools <http://www.networkupstools.org/>
+ *      Network UPS Tools <https://www.networkupstools.org/>
  *
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License as published by
@@ -43,15 +43,16 @@
 #include "libhid.h"
 #include "hidparser.h"
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
+#include "nut_stdint.h"
 
 /* Communication layers and drivers (USB and MGE SHUT) */
-#ifdef SHUT_MODE
+#if (defined SHUT_MODE) && SHUT_MODE
 	#include "libshut.h"
 	communication_subdriver_t *comm_driver = &shut_subdriver;
-#else
+#else	/* !SHUT_MODE => USB */
 	#include "nut_libusb.h"
 	communication_subdriver_t *comm_driver = &usb_subdriver;
-#endif
+#endif	/* SHUT_MODE / USB */
 
 /* support functions */
 static double logical_to_physical(HIDData_t *Data, long logical);
@@ -198,8 +199,8 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 #endif
 	if ((uintmax_t)r > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX) {
 		upsdebugx(2,
-			"%s: suggested buffer size %zu exceeds "
-			"USB_CTRL_CHARBUFSIZE_MAX %ju; "
+			"%s: suggested buffer size %" PRIuSIZE " exceeds "
+			"USB_CTRL_CHARBUFSIZE_MAX %" PRIuMAX "; "
 			"report will be constrained",
 			__func__, r, (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX);
 		if ((uintmax_t)USB_CTRL_CHARBUFSIZE_MAX <= (uintmax_t)SIZE_MAX
@@ -239,7 +240,7 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 	if (rbuf->len[id] != r) {
 		/* e.g. if maxreportsize flag was set */
 		upsdebugx(2,
-			"%s: expected %zu bytes, but got %zu instead",
+			"%s: expected %" PRIuSIZE " bytes, but got %" PRIuSIZE " instead",
 			__func__, rbuf->len[id], r);
 		upsdebug_hex(3, "Report[err]",
 			(usb_ctrl_charbuf)rbuf->data[id], r);
@@ -311,8 +312,8 @@ static int set_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t
 #endif
 	if ((uintmax_t)r > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX) {
 		upsdebugx(2,
-			"%s: suggested buffer size %zu exceeds "
-			"USB_CTRL_CHARBUFSIZE_MAX %ju; "
+			"%s: suggested buffer size %" PRIuSIZE " exceeds "
+			"USB_CTRL_CHARBUFSIZE_MAX %" PRIuMAX "; "
 			"item setting will be constrained",
 			__func__, r, (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX);
 		if ((uintmax_t)USB_CTRL_CHARBUFSIZE_MAX <= (uintmax_t)SIZE_MAX
@@ -362,7 +363,7 @@ static int file_report_buffer(reportbuf_t *rbuf, unsigned char *buf, size_t bufl
 
 	if (rbuf->len[id] != buflen) {
 		upsdebugx(2,
-			"%s: expected %zu bytes, but got %zu instead",
+			"%s: expected %" PRIuSIZE " bytes, but got %" PRIuSIZE " instead",
 			__func__, rbuf->len[id], buflen);
 		upsdebug_hex(3, "Report[err]", buf, buflen);
 	} else {
@@ -404,13 +405,13 @@ static struct {
 void HIDDumpTree(hid_dev_handle_t udev, HIDDevice_t *hd, usage_tables_t *utab)
 {
 	size_t	i;
-#ifdef SHUT_MODE
+#if (defined SHUT_MODE) && SHUT_MODE
 	NUT_UNUSED_VARIABLE(hd);
-#else
+#else	/* !SHUT_MODE => USB */
 	/* extract the VendorId for further testing */
 	int vendorID = hd->VendorID;
 	int productID = hd->ProductID;
-#endif
+#endif	/* SHUT_MODE / USB */
 
 	/* Do not go further if we already know nothing will be displayed.
 	 * Some reports take a while before they timeout, so if these are
@@ -421,7 +422,7 @@ void HIDDumpTree(hid_dev_handle_t udev, HIDDevice_t *hd, usage_tables_t *utab)
 		return;
 	}
 
-	upsdebugx(1, "%zu HID objects found", pDesc->nitems);
+	upsdebugx(1, "%" PRIuSIZE " HID objects found", pDesc->nitems);
 
 	for (i = 0; i < pDesc->nitems; i++)
 	{
@@ -429,11 +430,11 @@ void HIDDumpTree(hid_dev_handle_t udev, HIDDevice_t *hd, usage_tables_t *utab)
 		HIDData_t	*pData = &pDesc->item[i];
 
 		/* skip reports 254/255 for Eaton / MGE / Dell due to special handling needs */
-#ifdef SHUT_MODE
+#if (defined SHUT_MODE) && SHUT_MODE
 		if ((pData->ReportID == 254) || (pData->ReportID == 255)) {
 			continue;
 		}
-#else
+#else	/* !SHUT_MODE => USB */
 		if ((vendorID == 0x0463) || (vendorID == 0x047c)) {
 			if ((pData->ReportID == 254) || (pData->ReportID == 255)) {
 				continue;
@@ -446,7 +447,7 @@ void HIDDumpTree(hid_dev_handle_t udev, HIDDevice_t *hd, usage_tables_t *utab)
 				continue;
 			}
 		}
-#endif
+#endif	/* SHUT_MODE / USB */
 
 		/* Get data value */
 		if (HIDGetDataValue(udev, pData, &value, MAX_TS) == 1) {
@@ -579,7 +580,7 @@ char *HIDGetIndexString(hid_dev_handle_t udev, const int Index, char *buf, size_
 	) {
 		upsdebugx(2,
 			"%s: requested index number is out of range, "
-			"expected %jd < %i < %ju",
+			"expected %" PRIdMAX " < %i < %" PRIuMAX,
 			__func__,
 			(intmax_t)USB_CTRL_STRINDEX_MIN,
 			Index,
@@ -590,8 +591,8 @@ char *HIDGetIndexString(hid_dev_handle_t udev, const int Index, char *buf, size_
 
 	if ((uintmax_t)buflen > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX) {
 		upsdebugx(2,
-			"%s: suggested buffer size %zu exceeds "
-			"USB_CTRL_CHARBUFSIZE_MAX %ju; "
+			"%s: suggested buffer size %" PRIuSIZE " exceeds "
+			"USB_CTRL_CHARBUFSIZE_MAX %" PRIuMAX "; "
 			"index string will be constrained",
 			__func__, buflen,
 			(uintmax_t)USB_CTRL_CHARBUFSIZE_MAX);
@@ -693,7 +694,9 @@ int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventsize)
 	HIDData_t	*pData;
 
 	/* needs libusb-0.1.8 to work => use ifdef and autoconf */
-	r = interrupt_size ? interrupt_size : sizeof(buf);
+	r = (interrupt_size > 0 && interrupt_size < sizeof(buf))
+		? interrupt_size : sizeof(buf);
+
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
 # pragma GCC diagnostic push
 #endif
@@ -722,8 +725,8 @@ int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventsize)
 	if ((uintmax_t)r > (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX) {
 		/* FIXME: Should we try here, or plain abort? */
 		upsdebugx(2,
-			"%s: suggested buffer size %zu exceeds "
-			"USB_CTRL_CHARBUFSIZE_MAX %ju; "
+			"%s: suggested buffer size %" PRIuSIZE " exceeds "
+			"USB_CTRL_CHARBUFSIZE_MAX %" PRIuMAX "; "
 			"report will be constrained",
 			__func__, r, (uintmax_t)USB_CTRL_CHARBUFSIZE_MAX);
 
@@ -818,6 +821,7 @@ static double logical_to_physical(HIDData_t *Data, long logical)
 	if ((Data->PhyMax <= Data->PhyMin) || (Data->LogMax <= Data->LogMin))
 	{
 		/* this should not really happen */
+		upsdebugx(5, "Max was not greater than Min, returning logical value as is");
 		return (double)logical;
 	}
 
@@ -856,6 +860,7 @@ static long physical_to_logical(HIDData_t *Data, double physical)
 	if ((Data->PhyMax <= Data->PhyMin) || (Data->LogMax <= Data->LogMin))
 	{
 		/* this should not really happen */
+		upsdebugx(5, "Max was not greater than Min, returning physical value as is");
 		return (long)physical;
 	}
 
@@ -938,7 +943,7 @@ static int string_to_path(const char *string, HIDPath_t *path, usage_tables_t *u
 			/* Note: currently per hidtypes.h, HIDNode_t == uint32_t */
 			if (l < 0 || (uintmax_t)l > (uintmax_t)UINT32_MAX) {
 				upsdebugx(5, "string_to_path: badvalue (pathcomp): "
-					"%ld negative or %ju too large",
+					"%ld negative or %" PRIuMAX " too large",
 					l, (uintmax_t)l);
 				goto badvalue;
 			}
@@ -952,7 +957,7 @@ static int string_to_path(const char *string, HIDPath_t *path, usage_tables_t *u
 			int l = atoi(token + 1); /* +1: skip the bracket */
 			if (l < 0 || (uintmax_t)l > (uintmax_t)UINT32_MAX) {
 				upsdebugx(5, "string_to_path: badvalue(indexed): "
-					"%d negative or %ju too large",
+					"%d negative or %" PRIuMAX " too large",
 					l, (uintmax_t)l);
 				goto badvalue;
 			}

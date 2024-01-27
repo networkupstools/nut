@@ -24,6 +24,8 @@
 #ifndef NUT_PROTO_H_SEEN
 #define NUT_PROTO_H_SEEN 1
 
+#include "config.h"
+
 #include "attribute.h"
 
 #ifdef __cplusplus

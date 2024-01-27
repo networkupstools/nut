@@ -72,6 +72,8 @@ if test -z "${nut_have_libmodbus_seen}"; then
 	AC_CHECK_FUNCS(modbus_set_byte_timeout, [], [nut_have_libmodbus=no])
 	AC_CHECK_FUNCS(modbus_set_response_timeout, [], [nut_have_libmodbus=no])
 
+	AC_CHECK_FUNCS(modbus_new_rtu_usb, [nut_have_libmodbus_usb=yes], [nut_have_libmodbus_usb=no])
+
 	dnl modbus_set_byte_timeout() and modbus_set_response_timeout()
 	dnl in 3.0.x and 3.1.x have different args (since ~2013): the
 	dnl older version used to accept timeout as a struct timeval
@@ -178,6 +180,10 @@ modbus_set_byte_timeout(ctx, to_sec, to_usec);])
 	AS_IF([test x"${nut_have_libmodbus}" = x"yes"],
 		[LIBMODBUS_CFLAGS="${CFLAGS}"
 		 LIBMODBUS_LIBS="${LIBS}"]
+	)
+
+	AS_IF([test x"${nut_have_libmodbus_usb}" = x"yes"],
+		[AC_DEFINE([NUT_MODBUS_HAS_USB], 1, [Define to use libmodbus USB backend])]
 	)
 
 	dnl restore original CFLAGS and LIBS

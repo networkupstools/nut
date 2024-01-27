@@ -3,14 +3,14 @@
 # an auxiliary script to produce a "stub" snmp-ups subdriver from
 # SNMP data from a real agent or from dump files
 #
-# Version: 0.13
+# Version: 0.15
 #
 # See also: docs/snmp-subdrivers.txt
 #
 # Copyright (C)
 # 2011 - 2012 Arnaud Quette <arnaud.quette@free.fr>
 # 2015 - 2022 Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
-# 2011 Jim Klimov <jimklimov+nut@gmail.com>
+# 2011 - 2022 Jim Klimov <jimklimov+nut@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -256,6 +256,11 @@ generate_C() {
 	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
 	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
 	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
+
+/* Please revise values discovered by data walk for mappings to
+ * docs/nut-names.txt and group the rest under the ifdef below:
+ */
+#if WITH_UNMAPPED_DATA_POINTS
 EOF
 
 	# extract OID string paths, one by one
@@ -279,6 +284,7 @@ EOF
 
 	# append footer (TABs not stripped):
 	cat >> "$CFILE" <<EOF
+#endif	/* if WITH_UNMAPPED_DATA_POINTS */
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
@@ -349,7 +355,7 @@ if [ -z "$NUMWALKFILE" ]; then
 	while [ -z "$HOSTNAME" ]; do
 		printf "\n\tPlease enter the SNMP host IP address or name.\n"
 		read -p "SNMP host IP name or address: " HOSTNAME < /dev/tty
-		if echo "$HOSTNAME" | egrep -q '[^a-zA-Z0-9.-]'; then
+		if echo "$HOSTNAME" | grep -E -q '[^a-zA-Z0-9.-]'; then
 			echo "Please use only letters, digits, dash and period character"
 			HOSTNAME=""
 		fi
@@ -387,7 +393,7 @@ else
 		# Switch to the entry point, and extract the subtree
 		# Extract the numeric walk
 		echo -n "Extracting numeric SNMP walk..."
-		grep "$DEVICE_SYSOID" "$RAWWALKFILE" | egrep -v "1.3.6.1.2.1.1.2.0" 2>/dev/null 1> "$NUMWALKFILE"
+		grep "$DEVICE_SYSOID" "$RAWWALKFILE" | grep -E -v "1.3.6.1.2.1.1.2.0" 2>/dev/null 1> "$NUMWALKFILE"
 		echo " done"
 
 		# Create the string walk from a translation of the numeric one
@@ -412,7 +418,7 @@ else
 Please enter the value of sysOID, as displayed by snmp-ups. For example '.1.3.6.1.4.1.2254.2.4'.
 You can get it using: snmpget -v1 -c XXX <host> $SYSOID_NUMBER"
 			read -p "Value of sysOID: " SYSOID < /dev/tty
-			if echo "$SYSOID" | egrep -q '[^0-9.]'; then
+			if echo "$SYSOID" | grep -E -q '[^0-9.]'; then
 				echo "Please use only the numeric form, with dots and digits"
 				SYSOID=""
 			fi
@@ -439,15 +445,15 @@ while [ -z "$DRIVER" ]; do
 Please enter a name for this driver. Use only letters and numbers. Use
 natural (upper- and lowercase) capitalization, e.g., 'Belkin', 'APC'."
 	read -p "Name of subdriver: " DRIVER < /dev/tty
-	if echo "$DRIVER" | egrep -q '[^a-zA-Z0-9]'; then
+	if echo "$DRIVER" | grep -E -q '[^a-zA-Z0-9]'; then
 		echo "Please use only letters and digits"
 		DRIVER=""
 	fi
 done
 
 # remove blank and "End of MIB" lines
-egrep -e "^[[:space:]]?$" -e "End of MIB" -v "${NUMWALKFILE}" > "${TMP_NUMWALKFILE}"
-egrep -e "^[[:space:]]?$" -e "End of MIB" -v "${STRWALKFILE}" > "${TMP_STRWALKFILE}"
+grep -E -e "^[[:space:]]?$" -e "End of MIB" -v "${NUMWALKFILE}" > "${TMP_NUMWALKFILE}"
+grep -E -e "^[[:space:]]?$" -e "End of MIB" -v "${STRWALKFILE}" > "${TMP_STRWALKFILE}"
 NUMWALKFILE="${TMP_NUMWALKFILE}"
 STRWALKFILE="${TMP_STRWALKFILE}"
 

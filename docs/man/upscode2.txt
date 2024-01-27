@@ -83,7 +83,7 @@ NOTES
 
 The Powerware UPS models that this driver has been tested against until now
 have not returned a value for 'battery.charge'. Therefore, the driver will
-guestimate a value based on the nominal battery min/max and the current
+guesstimate a value based on the nominal battery min/max and the current
 battery voltage.
 
 AUTHORS
@@ -103,4 +103,4 @@ linkman:nutupsdrv[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

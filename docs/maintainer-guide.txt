@@ -43,7 +43,7 @@ These are the general rules that apply to mailing list moderation:
     to store the file(s).
 
 - other (ie report or request requiring more than 1 mail): REJECT with a
-message explaining the reason. The following can serve as a base:
+  message explaining the reason. The following can serve as a base:
 
 	Dear XXX,
 	Your message to the nut-upsXXX mailing was rejected because you must
@@ -66,27 +66,124 @@ Release process
 
 New process:
 - we will only work on the trunk for the day to day bugfixing and
-standard modifications (what was mostly happening in Testing
-currently),
+  standard modifications (what was mostly happening in Testing
+  currently),
 - the trunk will be used to generate the testing releases (only using
-the tags, after a small freeze period),
+  the tags, after a small freeze period),
 - bigger changes, invasive modifications and cutting edge developments
-will have to be addressed in separate branches, until stabilization.
-When things are ok and validated to enter the trunk, merging these
-branches into the trunk can happen.
+  will have to be addressed in separate branches, until stabilization.
+  When things are ok and validated to enter the trunk, merging these
+  branches into the trunk can happen.
+
 I insist on the *validation* to enter the trunk, since some changes
 might have to wait for major releases, to match our current release
 process.
 
-SANDBOX (to be completed and pushed)
+MAINTAINER SANDBOX (to be completed and pushed)
 
-* update version to <incremented version> (ex: 2.7.3) in nut/configure.ac
-* create a GPG-signed tag v<incremented version> (ex: v2.7.3)
-* `make dist`
-* maybe update nut/configure.ac version to <incremented version>.1 (ex: 2.7.3.1)
+* be sure to proceed with the below steps on a system provisioned with all
+  possible build prerequisites for NUT, especially regarding documentation
+  and nut-website building and checking, and with maintainer GPG keys in
+  the chain
+
+* clean up "in-development" bits from files, e.g.:
+** TODO etc. referring planned future in the `NEWS.adoc` and `UPDATING.adoc`
+   files
+** comment away the top-most (auto-resolved) NUT version and build date
+   in `docs/docinfo.xml.in` -- DO NOT add (or at least commit) an entry
+   for the actual fixed release version and date just yet
+** NOTE: The `docs/docinfo.xml.sh` script can help update the list for
+   existing git tags, if some were skipped before. This can be used to
+   cheat a bit about adding the new entry (with a draft tag).
+** commit this change (to add a revert-commit after the release tag), e.g.:
+----
+:; git commit -sm 'NEWS.adoc, UPGRADING.adoc, docs/docinfo.xml.in: finalize text before NUT v2.8.0 release'
+----
+
+* revise the contents of `NEWS.adoc` and `UPDATING.adoc` files; verify that
+  any recent changes to drivers (including `main.c` and other major impact
+  from common code) and sub-drivers (`*-hid.c` for `usbhid-ups`, `*-mib.c`
+  for `snmp-ups`, `nutdrv_qx_*` etc.) have been reflected in bumps to their
+  `DRIVER_VERSION` or equivalen macros
+** ideally maintained during development, as features are getting merged for
+   community testing and future development baseline in the master branch
+* NOTE that the `ChangeLog` file is currently not tracked in SCM
+* update this document: `docs/maintainer-guide.txt` as it inevitably requires
+* commit these finishing touches
+
+* bump the release identification:
+** add an entry in `docs/docinfo.xml.in` for the actual fixed release version
+   and date
+** revise `appveyor.yml` for branch naming
+** revise `scripts/Windows/build-mingw-nut.sh` for fallback value of `VER_OPT`
+** update version to <incremented version> (ex: 2.8.0) in `configure.ac`
+** commit with a relevant release message, e.g.:
+----
+:; git commit -sm 'Update versions for release of NUT v2.8.0'
+----
+
+* last-minute update against possible master-branch changes (and be sure to
+  apply the release-version changes described above to your local copy of
+  the `master` branch, even if originally staged in another):
+----
+:; git fetch --all && git rebase upstream/master
+----
+* run the last-minute build to be sure the release is sane (no typos in any
+  recently changed document files, etc.) with `./ci_build.sh` or full ritual:
+----
+:; rm -f Makefile configure
+:; ./autogen.sh && \
+   ./configure --with-all --with-dev --with-doc --enable-spellcheck \
+      --enable-warnings --enable-Werror --enable-maintainer-mode && \
+   make -j 8 all && \
+   make -j 8 spellcheck && \
+   make -j 8 distcheck
+----
+* create a GPG-signed tag v<incremented version> (ex: v2.8.0):
+----
+:; git tag -sm 'Release NUT v2.8.0'
+----
+** try to avoid adding signed tags later (ex. v2.8.0-signed) to avoid the
+   mess in GitHub release URLs (or do amend that post-factum), for more
+   details see e.g. https://github.com/networkupstools/nut/issues/1971
+* don't forget to push not only the code, but also the tag:
+----
+:; git push upstream && git push --tags upstream
+----
+
+* `make dist` (if you did not `make distcheck` above or had some changes since
+  then) to store the source tarball, checksum and signature files
+
+* post-release update of the "in-development" codebase:
+** maybe update nut/configure.ac version to <incremented version>.1 (ex: 2.8.0.1)
+** `git revert` the commit which cleaned up "in-development" bits above
+** Possibly resolve relevant merge conflicts for the changed context
+
 * push commits and tag
-* update nut/ and ddl/ submodules in nut-website/ (this should update the website's version as well)
-* add download hashes for tarball
 
+* Update `nut-website`:
+** rendering should auto-update by NUT CI farm based on source changes,
+   but in case of urgency -- can be expedited with a prepared workstation
+   (see README of that project) or from the NUT CI farm agent directly
+** add an entry to `news.txt`
+** update `nut` and `ddl` submodules in nut-website/ to refer to latest info
+   as of current release (this should update the website's version as well).
+   NOTE: for `nut` submodule be sure to refer to the tagged commit, not to
+   the subsequent "in-development" codebase.
+** in `source` submodule add a copy of tarball, checksum and hash files for
+   download
+** `git tag` the website release
+** generate and publish a "historic" sub-site snapshot (currently manually)
+** update `nut` submodule to current commit ("in-development" codebase), and
+   the `historic/index.txt` to refer to the snapshot for reference (users of
+   specific-version packages)
+** generate and publish the usual website revision (by CI or manually)
+
+* check that the website renders properly
+
+* draft and publish a GitHub release based on the signed tag
+** attach the same copy of tarball, checksum and hash files as for nut-website
+
+* announce on mailing list, IRC, etc.
 
 //////////////////////////////////////////////////////////////////////////////
