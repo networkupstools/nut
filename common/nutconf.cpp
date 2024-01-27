@@ -420,13 +420,12 @@ NutConfigParser::NutConfigParser(const std::string& buffer, unsigned int options
 NutParser(buffer, options) {
 }
 
-void NutConfigParser::parseConfig() {
-	parseConfig(nullptr);
-}
-
 void NutConfigParser::parseConfig(BaseConfiguration* config) {
 	NUT_UNUSED_VARIABLE(config);
+	parseConfig();
+}
 
+void NutConfigParser::parseConfig() {
 	onParseBegin();
 
 	enum ConfigParserState {
