@@ -1,7 +1,5 @@
-/* nut-scanner.c: a tool to detect NUT supported devices
- * 
- *  Copyright (C)
- *    2011 - 2012  Arnaud Quette <arnaud.quette@free.fr>
+/*
+ *  Copyright (C) 2011 - 2012  Arnaud Quette <arnaud.quette@free.fr>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,6 +15,11 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
+
+/*! \file nut-scanner.c
+    \brief a tool to detect NUT supported devices
+    \author Arnaud Quette <arnaud.quette@free.fr>
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -531,26 +534,26 @@ display_help:
 	}
 
 #ifdef HAVE_PTHREAD
-	if( allow_usb && nutscan_avail_usb ) {
-		pthread_join(thread[TYPE_USB],NULL);
+	if( allow_usb && nutscan_avail_usb && thread[TYPE_USB]) {
+		pthread_join(thread[TYPE_USB], NULL);
 	}
-	if( allow_snmp && nutscan_avail_snmp ) {
-		pthread_join(thread[TYPE_SNMP],NULL);
+	if( allow_snmp && nutscan_avail_snmp && thread[TYPE_SNMP]) {
+		pthread_join(thread[TYPE_SNMP], NULL);
 	}
-	if( allow_xml && nutscan_avail_xml_http ) {
-		pthread_join(thread[TYPE_XML],NULL);
+	if( allow_xml && nutscan_avail_xml_http && thread[TYPE_XML]) {
+		pthread_join(thread[TYPE_XML], NULL);
 	}
-	if( allow_oldnut && nutscan_avail_nut ) {
-		pthread_join(thread[TYPE_NUT],NULL);
+	if( allow_oldnut && nutscan_avail_nut && thread[TYPE_NUT]) {
+		pthread_join(thread[TYPE_NUT], NULL);
 	}
-	if( allow_avahi && nutscan_avail_avahi ) {
-		pthread_join(thread[TYPE_AVAHI],NULL);
+	if( allow_avahi && nutscan_avail_avahi && thread[TYPE_AVAHI]) {
+		pthread_join(thread[TYPE_AVAHI], NULL);
 	}
-	if( allow_ipmi && nutscan_avail_ipmi ) {
-		pthread_join(thread[TYPE_IPMI],NULL);
+	if( allow_ipmi && nutscan_avail_ipmi && thread[TYPE_IPMI]) {
+		pthread_join(thread[TYPE_IPMI], NULL);
 	}
-	if (allow_eaton_serial) {
-		pthread_join(thread[TYPE_EATON_SERIAL],NULL);
+	if (allow_eaton_serial && thread[TYPE_EATON_SERIAL]) {
+		pthread_join(thread[TYPE_EATON_SERIAL], NULL);
 	}
 #endif /* HAVE_PTHREAD */
 

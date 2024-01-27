@@ -1,6 +1,5 @@
-/* scan_nut.c: detect remote NUT services
- * 
- *  Copyright (C) 2011 - Frederic Bohe <fredericbohe@eaton.com>
+/*
+ *  Copyright (C) 2011 - EATON
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,6 +16,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+/*! \file scan_nut.c
+    \brief detect remote NUT services
+    \author Frederic Bohe <fredericbohe@eaton.com>
+*/
+
 #include "common.h"
 #include "upsclient.h"
 #include "nut-scan.h"
@@ -26,7 +30,6 @@
 #include <ltdl.h>
 
 /* dynamic link library stuff */
-static char * libname = "libupsclient";
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
 
@@ -50,67 +53,71 @@ struct scan_nut_arg {
 };
 
 /* return 0 on error */
-int nutscan_load_upsclient_library()
+int nutscan_load_upsclient_library(const char *libname_path)
 {
+	if( dl_handle != NULL ) {
+			/* if previous init failed */
+			if( dl_handle == (void *)1 ) {
+					return 0;
+			}
+			/* init has already been done */
+			return 1;
+	}
 
-        if( dl_handle != NULL ) {
-                /* if previous init failed */
-                if( dl_handle == (void *)1 ) {
-                        return 0;
-                }
-                /* init has already been done */
-                return 1;
-        }
+	if (libname_path == NULL) {
+		fprintf(stderr, "NUT client library not found. NUT search disabled.\n");
+		return 0;
+	}
 
-        if( lt_dlinit() != 0 ) {
-                fprintf(stderr, "Error initializing lt_init\n");
-                return 0;
-        }
+	if( lt_dlinit() != 0 ) {
+			fprintf(stderr, "Error initializing lt_init\n");
+			return 0;
+	}
 
-        dl_handle = lt_dlopenext(libname);
-        if (!dl_handle) {
-                dl_error = lt_dlerror();
-                goto err;
-        }
+	dl_handle = lt_dlopen(libname_path);
+	if (!dl_handle) {
+			dl_error = lt_dlerror();
+			goto err;
+	}
 
-        lt_dlerror();      /* Clear any existing error */
+	lt_dlerror();      /* Clear any existing error */
 
-        *(void **) (&nut_upscli_splitaddr) = lt_dlsym(dl_handle,
-                                                        "upscli_splitaddr");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_upscli_splitaddr) = lt_dlsym(dl_handle,
+													"upscli_splitaddr");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+			goto err;
+	}
 
-        *(void **) (&nut_upscli_tryconnect) = lt_dlsym(dl_handle,
-							"upscli_tryconnect");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_upscli_tryconnect) = lt_dlsym(dl_handle,
+						"upscli_tryconnect");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+			goto err;
+	}
 
-        *(void **) (&nut_upscli_list_start) = lt_dlsym(dl_handle,
-							"upscli_list_start");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_upscli_list_start) = lt_dlsym(dl_handle,
+						"upscli_list_start");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+			goto err;
+	}
 
-        *(void **) (&nut_upscli_list_next) = lt_dlsym(dl_handle,
-							"upscli_list_next");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_upscli_list_next) = lt_dlsym(dl_handle,
+						"upscli_list_next");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+			goto err;
+	}
 
-        *(void **) (&nut_upscli_disconnect) = lt_dlsym(dl_handle,
-							"upscli_disconnect");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_upscli_disconnect) = lt_dlsym(dl_handle,
+						"upscli_disconnect");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+			goto err;
+	}
 
-        return 1;
+	return 1;
 err:
-        fprintf(stderr, "Cannot load NUT library (%s) : %s. NUT search disabled.\n", libname, dl_error);
-        dl_handle = (void *)1;
+	fprintf(stderr, "Cannot load NUT library (%s) : %s. NUT search disabled.\n", libname_path, dl_error);
+	dl_handle = (void *)1;
 	lt_dlexit();
-        return 0;
+	return 0;
 }
 
 /* FIXME: SSL support */

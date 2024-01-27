@@ -30,7 +30,7 @@
 
 #include "compaq-mib.h"
 
-#define CPQPOWER_MIB_VERSION	"1.5"
+#define CPQPOWER_MIB_VERSION	"1.6"
 
 #define DEFAULT_ONDELAY			30
 #define DEFAULT_OFFDELAY		20
@@ -83,15 +83,19 @@
 #define CPQPOWER_OID_ALARM_LB         ".1.3.6.1.4.1.232.165.3.7.4.0"     /* UPS-MIB::upsLowBattery */
 
 
+/* Not used, as no longer supported by MIB ver. 1.76 (Github issue 118)
 static info_lkp_t cpqpower_alarm_ob[] = {
 	{ 1, "OB" },
-	{ 0, "NULL" }
-} ;
+	{ 0, NULL }
+};
+*/
 
+/* Not used, as no longer supported by MIB ver. 1.76 (Github issue 118)
 static info_lkp_t cpqpower_alarm_lb[] = {
 	{ 1, "LB" },
-	{ 0, "NULL" }
-} ;
+	{ 0, NULL }
+};
+*/
 
 /* Defines for CPQPOWER_OID_POWER_STATUS (1) */
 static info_lkp_t cpqpower_pwr_info[] = {
@@ -105,7 +109,7 @@ static info_lkp_t cpqpower_pwr_info[] = {
 	{ 8, "OL"   /* parallelCapacity */ },
 	{ 9, "OL"   /* parallelRedundant */ },
 	{ 10, "OL" /* HighEfficiencyMode */ },
-	{ 0, "NULL" }
+	{ 0, NULL }
 } ;
 
 static info_lkp_t cpqpower_mode_info[] = {
@@ -119,7 +123,7 @@ static info_lkp_t cpqpower_mode_info[] = {
 	{ 8, "parallel capacity" },
 	{ 9, "parallel redundancy" },
 	{10, "high efficiency" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t cpqpower_battery_abm_status[] = {
@@ -128,7 +132,7 @@ static info_lkp_t cpqpower_battery_abm_status[] = {
 /*	{ 3, "Floating" }, */
 /*	{ 4, "Resting" }, */
 /*	{ 5, "Unknown" }, */
-	{ 0, "NULL" }
+	{ 0, NULL }
 } ;
 
 /* Defines for CPQPOWER_OID_UPS_TEST_RES */
@@ -140,7 +144,7 @@ static info_lkp_t cpqpower_test_res_info[] = {
 	{ 5, "Not supported" },
 	{ 6, "Inhibited" },
 	{ 7, "Scheduled" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 } ;
 
 #define CPQPOWER_START_TEST		1
@@ -188,9 +192,10 @@ static snmp_info_t cpqpower_mib[] = {
 	{ "ups.L3.realpower", 0, 0.1, CPQPOWER_OID_OUT_POWER ".3", "", SU_OUTPUT_3, NULL },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_POWER_STATUS, "OFF", SU_STATUS_PWR, cpqpower_pwr_info },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_BATT_STATUS, "", SU_STATUS_PWR, cpqpower_battery_abm_status },
-	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_ALARM_OB, "", SU_STATUS_BATT, cpqpower_alarm_ob },
-	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_ALARM_LB, "", SU_STATUS_BATT, cpqpower_alarm_lb },
-/*	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_BATT_STATUS, "", SU_STATUS_BATT, ietf_batt_info }, */
+	/* The next two lines are no longer supported by MIB ver. 1.76 (Github issue 118)
+	 * { "ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_ALARM_OB, "", SU_STATUS_BATT, cpqpower_alarm_ob },
+	 * { "ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_ALARM_LB, "", SU_STATUS_BATT, cpqpower_alarm_lb }, */
+	/* { "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_BATT_STATUS, "", SU_STATUS_BATT, ietf_batt_info }, */
 	/* FIXME: this should use either .1.3.6.1.4.1.232.165.3.11.1.0 (upsTopologyType)
 	 * or .1.3.6.1.4.1.232.165.3.11.2.0 (upsTopoMachineCode) */
 	{ "ups.type", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_POWER_STATUS, "", SU_STATUS_PWR, cpqpower_mode_info },
@@ -323,5 +328,5 @@ static snmp_info_t cpqpower_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	compaq = { "cpqpower", CPQPOWER_MIB_VERSION, "", CPQPOWER_OID_MFR_NAME, cpqpower_mib, CPQPOWER_SYSOID };
+mib2nut_info_t	compaq = { "cpqpower", CPQPOWER_MIB_VERSION, NULL, CPQPOWER_OID_MFR_NAME, cpqpower_mib, CPQPOWER_SYSOID };
 

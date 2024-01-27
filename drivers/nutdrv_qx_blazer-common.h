@@ -1,4 +1,4 @@
-/* nutdrv_qx_blazer-common.h - Common functions/settings for nutdrv_qx_{mecer,megatec,megatec-old,mustek,zinto}.{c,h}
+/* nutdrv_qx_blazer-common.h - Common functions/settings for nutdrv_qx_{mecer,megatec,megatec-old,mustek,q1,voltronic-qs,zinto}.{c,h}
  *
  * Copyright (C)
  *   2013 Daniele Pezzini <hyouko@gmail.com>
@@ -26,13 +26,16 @@
 
 /* Support functions */
 void	blazer_makevartable(void);
+void	blazer_makevartable_light(void);
 void	blazer_initups(item_t *qx2nut);
+void	blazer_initups_light(item_t *qx2nut);
 int	blazer_claim(void);
+int	blazer_claim_light(void);
 
 /* Preprocess functions */
-int	blazer_process_command(item_t *item, char *value, size_t valuelen);
-int	blazer_process_setvar(item_t *item, char *value, size_t valuelen);
-int	blazer_process_status_bits(item_t *item, char *value, size_t valuelen);
+int	blazer_process_command(item_t *item, char *value, const size_t valuelen);
+int	blazer_process_setvar(item_t *item, char *value, const size_t valuelen);
+int	blazer_process_status_bits(item_t *item, char *value, const size_t valuelen);
 
 /* Ranges */
 extern info_rw_t	blazer_r_ondelay[];

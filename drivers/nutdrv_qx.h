@@ -45,13 +45,17 @@
 #define DEFAULT_OFFDELAY	"30"	/* Delay before power off, in seconds */
 #define DEFAULT_POLLFREQ	30	/* Polling interval between full updates, in seconds; the driver will do quick polls in the meantime */
 
+#ifndef TRUE
 typedef enum { FALSE, TRUE } bool_t;
+#else
+typedef int bool_t;
+#endif
 
 /* Structure for rw vars */
 typedef struct {
-	char	value[SMALLBUF];			/* Value for enum/range, or length for ST_FLAG_STRING */
-	int	(*preprocess)(char *value, size_t len);	/* Optional function to preprocess range/enum value.
-							 * This function will be given value and its size_t and must return either 0 if value is supported or -1 if not supported. */
+	char	value[SMALLBUF];				/* Value for enum/range, or length for ST_FLAG_STRING */
+	int	(*preprocess)(char *value, const size_t len);	/* Optional function to preprocess range/enum value.
+								 * This function will be given value and its size_t and must return either 0 if value is supported or -1 if not supported. */
 } info_rw_t;
 
 /* Structure containing information about how to get/set data from/to the UPS and convert these to/from NUT standard */
@@ -67,7 +71,8 @@ typedef struct item_t {
 						 * If QX_FLAG_SETVAR is set the value given by the user will be checked against these infos. */
 	const char	*command;		/* Command sent to the UPS to get answer/to execute an instant command/to set a variable */
 
-	char		answer[SMALLBUF];	/* Answer from the UPS, filled at runtime */
+	char		answer[SMALLBUF];	/* Answer from the UPS, filled at runtime.
+						 * If you expect a nonvalid C string (e.g.: inner '\0's) or need to perform actions before the answer is used (and treated as a null-terminated string), you should set a preprocess_answer() function */
 	const int	answer_len;		/* Expected min length of the answer. Set it to 0 if there’s no minimum length to look after. */
 	const char	leading;		/* Expected leading character of the answer (optional) */
 
@@ -83,7 +88,19 @@ typedef struct item_t {
 
 	unsigned long	qxflags;		/* Driver's own flags */
 
-	int		(*preprocess)(struct item_t *item, char *value, size_t valuelen);	/* Function to preprocess the data from/to the UPS
+	int		(*preprocess_command)(struct item_t *item, char *command, const size_t commandlen);
+						/* Last chance to preprocess the command to be sent to the UPS (e.g. to add CRC, ...).
+						 * This function is given the currently processed item (item), the command to be sent to the UPS (command) and its size_t (commandlen).
+						 * Return -1 in case of errors, else 0.
+						 * command must be filled with the actual command to be sent to the UPS. */
+
+	int		(*preprocess_answer)(struct item_t *item, const int len);
+						/* Function to preprocess the answer we got from the UPS before we do anything else (e.g. for CRC, decoding, ...).
+						 * This function is given the currently processed item (item) with the answer we got from the UPS unmolested and already stored in item->answer and the length of that answer (len).
+						 * Return -1 in case of errors, else the length of the newly allocated item->answer (from now on, treated as a null-terminated string). */
+
+	int		(*preprocess)(struct item_t *item, char *value, const size_t valuelen);
+						/* Function to preprocess the data from/to the UPS
 						 * This function is given the currently processed item (item), a char array (value) and its size_t (valuelen).
 						 * Return -1 in case of errors, else 0.
 						 * If QX_FLAG_SETVAR/QX_FLAG_CMD -> process command before it is sent: value must be filled with the command to be sent to the UPS.
@@ -107,11 +124,17 @@ typedef struct item_t {
 
 #define MAXTRIES		3	/* Max number of retries */
 
+#ifdef TESTING
 /* Testing struct */
 typedef struct {
-	const char	*cmd;		/* Command to match */
-	const char	*answer;	/* Answer for that command */
+	const char	*cmd;			/* Command to match */
+	const char	answer[SMALLBUF];	/* Answer for that command.
+						 * Note: if 'answer' contains inner '\0's, in order to preserve them, 'answer_len' as well as an item_t->preprocess_answer() function must be set */
+	const int	answer_len;		/* Answer length:
+						 * - if set to -1 -> auto calculate answer length (treat 'answer' as a null-terminated string)
+						 * - otherwise -> use the provided length (if reasonable) and preserve inner '\0's (treat 'answer' as a sequence of bytes till the item_t->preprocess_answer() function gets called) */
 } testing_t;
+#endif	/* TESTING */
 
 /* Subdriver interface */
 typedef struct {
@@ -134,7 +157,11 @@ typedef struct {
 } subdriver_t;
 
 /* The following functions are exported for the benefit of subdrivers */
-	/* Execute an instant command. Return STAT_INSTCMD_INVALID if the command is invalid, STAT_INSTCMD_FAILED if it failed, STAT_INSTCMD_HANDLED on success. */
+	/* Execute an instant command. In detail:
+	 * - look up the given 'cmdname' in the qx2nut data structure (if not found, try to fallback to commonly known commands);
+	 * - if 'cmdname' is found, call its preprocess function, passing to it 'extradata', if any, otherwise its dfl value, if any;
+	 * - send the command to the device and check the reply.
+	 * Return STAT_INSTCMD_INVALID if the command is invalid, STAT_INSTCMD_FAILED if it failed, STAT_INSTCMD_HANDLED on success. */
 int	instcmd(const char *cmdname, const char *extradata);
 	/* Set r/w variable to a value after it has been checked against its info_rw structure. Return STAT_SET_HANDLED on success, otherwise STAT_SET_UNKNOWN. */
 int	setvar(const char *varname, const char *val);
@@ -142,9 +169,10 @@ int	setvar(const char *varname, const char *val);
 	 *  - 'flag': flags that have to be set in the item, i.e. if one of the flags is absent in the item it won't be returned
 	 *  - 'noflag': flags that have to be absent in the item, i.e. if at least one of the flags is set in the item it won't be returned */
 item_t	*find_nut_info(const char *varname, const unsigned long flag, const unsigned long noflag);
-	/* Send 'command' or, if it is NULL, send the command stored in the item to the UPS and process the reply. Return -1 on errors, 0 on success. */
+	/* Send 'command' (a null-terminated byte string) or, if it is NULL, send the command stored in the item to the UPS and process the reply, saving it in item->answer. Return -1 on errors, 0 on success. */
 int	qx_process(item_t *item, const char *command);
-	/* Process the value we got back from the UPS (set status bits and set the value of other parameters), calling its preprocess function, if any. Return -1 on failure, 0 for a status update and 1 in all other cases. */
+	/* Process the value we got back from the UPS (set status bits and set the value of other parameters), calling the item-specific preprocess function, if any, otherwise executing the standard preprocessing (including trimming if QX_FLAG_TRIM is set).
+	 * Return -1 on failure, 0 for a status update and 1 in all other cases. */
 int	ups_infoval_set(item_t *item);
 	/* Return the currently processed status so that it can be checked with one of the status_bit_t passed to the STATUS() macro. */
 int	qx_status(void);

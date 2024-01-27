@@ -334,7 +334,7 @@ int sendback(nut_ctype_t *client, const char *fmt, ...)
 		res = write(client->sock_fd, ans, len);
 	}
 
-	upsdebugx(2, "write: [destfd=%d] [len=%d] [%s]", client->sock_fd, len, rtrim(ans, '\n'));
+	upsdebugx(2, "write: [destfd=%d] [len=%d] [%s]", client->sock_fd, len, str_rtrim(ans, '\n'));
 
 	if (len != res) {
 		upslog_with_errno(LOG_NOTICE, "write() failed for %s", client->addr);
@@ -1004,9 +1004,6 @@ int main(int argc, char **argv)
 	/* start server */
 	server_load();
 
-	/* initialize SSL before we drop privileges (we may not be able to read the keyfile as non-root) */
-	ssl_init();
-
 	become_user(new_uid);
 
 	if (chdir(statepath)) {
@@ -1037,6 +1034,9 @@ int main(int argc, char **argv)
 	} else {
 		memset(pidfn, 0, sizeof(pidfn));
 	}
+
+	/* initialize SSL (keyfile must be readable by nut user) */
+	ssl_init();
 
 	while (!exit_flag) {
 		mainloop();

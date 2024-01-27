@@ -1,6 +1,5 @@
-/* scan_eaton_serial.c: detect Eaton serial XCP, SHUT and Q1 devices
- * 
- *  Copyright (C) 2012  Arnaud Quette <ArnaudQuette@eaton.com>
+/*
+ *  Copyright (C) 2012 - EATON
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,6 +15,11 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
+
+/*! \file scan_eaton_serial.c
+    \brief detect Eaton serial XCP, SHUT and Q1 devices
+    \author Arnaud Quette <ArnaudQuette@eaton.com>
+*/
 
 #include "common.h"
 

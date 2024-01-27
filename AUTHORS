@@ -170,3 +170,7 @@ D: pwmib support for snmp-ups
 N: Kjell Claesson
 E: Kjell.claesson@epost.tidanet.se
 D: Author of bcmxcp driver, 3-phase work.
+
+N: Giuseppe Corbelli
+E: giuseppe.corbelli@copanitalia.com
+D: Author of asem driver

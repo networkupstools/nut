@@ -9,7 +9,7 @@ SUBDIRS = include common clients conf data tools docs drivers \
   lib scripts server tests
 
 # COPYING is included automatically.
-EXTRA_DIST = LICENSE-GPL2 LICENSE-GPL3 MAINTAINERS UPGRADING
+EXTRA_DIST = INSTALL.nut LICENSE-GPL2 LICENSE-GPL3 MAINTAINERS UPGRADING
 
 # ----------------------------------------------------------------------
 # flags to pass to ./configure when calling "make distcheck" and "make
@@ -21,8 +21,10 @@ DISTCHECK_FLAGS = --with-all --with-ssl --with-doc=auto
 DISTCHECK_LIGHT_FLAGS = --with-all=auto --with-ssl=auto --with-doc=auto
 
 DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
+ --with-systemdsystemunitdir='$${prefix}/lib/systemd/system' \
  --with-hotplug-dir='$${prefix}/etc/hotplug'		\
- --with-udev-dir='$${prefix}/etc/udev'
+ --with-udev-dir='$${prefix}/etc/udev'			\
+ --with-devd-dir='$${prefix}/etc/devd'
 
 distcheck-light:
 	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_FLAGS)" distcheck
@@ -35,25 +37,31 @@ distcheck-light:
 distcleancheck:
 	@:
 
+# ----------------------------------------------------------------------
 # Automatically generate the ChangeLog from Git logs:
 MAINTAINERCLEAN_FILES = ChangeLog
+
+# Older boundary of the ChangeLog commits range
+# It can be a tag ('v2.2.0'), a commit hash, a date, ...
+# See gitrevisions for more information on specifying ranges
+GITLOG_START_POINT=v2.6.0
+
 # Force ChangeLog regeneration upon make dist (due to nonexistant 'dummy-stamp'),
 # in case it has already been generated previously
 dummy-stamp:
 ChangeLog: tools/gitlog2changelog.py dummy-stamp
-	$(top_srcdir)/tools/gitlog2changelog.py v2.6.0 || \
+	$(top_srcdir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) || \
 		echo "gitlog2changelog.py failed to generate the ChangeLog. See https://github.com/networkupstools/nut/commits/master" > $@
 
-if HAVE_ASCIIDOC
-website:
-	cd docs;  $(MAKE) $(AM_MAKEFLAGS) website
-	cd docs/man;  $(MAKE) $(AM_MAKEFLAGS) html-man
-	cd tools;  $(MAKE) $(AM_MAKEFLAGS) website
-	cd docs/website;  $(MAKE) $(AM_MAKEFLAGS) website
-else !HAVE_ASCIIDOC
-website:
-	@echo "Not building website since 'asciidoc' was not found."
-endif !HAVE_ASCIIDOC
+# ----------------------------------------------------------------------
+# Maintainers targets: distribution signature and hashes
+dist-sig:
+	rm -f nut-@PACKAGE_VERSION@.tar.gz.sig
+	gpg --detach-sign nut-@PACKAGE_VERSION@.tar.gz
+
+dist-hash:
+	md5sum nut-@PACKAGE_VERSION@.tar.gz > nut-@PACKAGE_VERSION@.tar.gz.md5
+	sha256sum nut-@PACKAGE_VERSION@.tar.gz > nut-@PACKAGE_VERSION@.tar.gz.sha256
 
 # ----------------------------------------------------------------------
 # targets from old build system (pre-automake).
@@ -100,7 +108,7 @@ install-cgi-man install-cgi-conf install-cgi-html:
 	@echo "Use './configure --with-cgi' instead."
 install-lib:
 	@echo "Error: 'make $@' no longer exists."
-	@echo "Use './configure --with-lib' instead."
+	@echo "Use './configure --with-dev' instead."
 usb build-usb install-usb:
 	@echo "Error: 'make $@' no longer exists."
 	@echo "Use './configure --with-usb' instead."
@@ -115,14 +123,17 @@ package:
 		cd scripts/HP-UX; \
 		make package; \
 		mv NUT_HPUX_package.depot NUT_HPUX_package@PACKAGE_VERSION@.depot; \
-	else \
-		if test `uname -s` = "SunOS"; then \
-			make; \
-			rm -rf @prefix@; \
-			make install; \
-			cd scripts/Solaris; \
-			make package; \
-			make uninstall; \
-			rm -rf @prefix@; \
-		fi; \
+	elif test `uname -s` = "SunOS"; then \
+		make; \
+		rm -rf @prefix@; \
+		make install; \
+		cd scripts/Solaris; \
+		make package; \
+		make uninstall; \
+		rm -rf @prefix@; \
+	elif test `uname -s` = "AIX"; then \
+		make dist; \
+		cp scripts/Aix/nut-aix.spec /usr/src/packages/SPECS; \
+		cp scripts/Aix/nut.init nut-*.tar.gz /usr/src/packages/SOURCES; \
+		rpm -ba /usr/src/packages/SPECS/nut-aix.spec; \
 	fi;

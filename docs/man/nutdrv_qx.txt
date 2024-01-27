@@ -17,7 +17,7 @@ For information about the core driver, see linkman:nutupsdrv[8].
 SUPPORTED HARDWARE
 ------------------
 
-The *nutdrv_qx* driver is known to work with various UPSes from 'Blazer', 'Energy Sistem', 'Fenton Technologies', 'General Electric', 'Mustek', 'Voltronic Power' (rebranded by many, many - have I said many? - others.. Long story short: if your UPS came with a software called 'Viewpower', chances are high that it works with this driver with the 'voltronic' <<_extra_arguments,protocol>>) and many others.
+The *nutdrv_qx* driver is known to work with various UPSes from 'Blazer', 'Energy Sistem', 'Fenton Technologies', 'General Electric', 'Mustek', 'Voltronic Power' (rebranded by many, many - have I said many? - others.. Long story short: if your UPS came with a software called 'Viewpower', chances are high that it works with this driver with one of the <<_extra_arguments,'voltronic*' protocols or with the 'mecer' one>>) and many others.
 
 The <<_internet_resources,NUT compatibility table>> lists all the known supported models.
 Keep in mind, however, that other models not listed there may also be supported, but haven't been tested.
@@ -35,22 +35,26 @@ The following are the ones that most likely will need changing (see linkman:ups.
 *ondelay =* 'value'::
 Time to wait before switching on the UPS (seconds).
 This value is truncated to units of 60 seconds.
-The acceptable range is +0..599940+ seconds.
++
 Note that a value below 3 minutes, may cause earlier firmware versions to not switch on automatically, so it defaults to 3 minutes (i.e. 180 seconds).
++
 This option provides a default value for *ups.delay.start* that will then be used by the driver in the automatic shutdown sequence (i.e. calling the driver with the *-k* option, calling linkman:upsdrvctl[8] with the *shutdown* option or when the +FSD+ flag is set and linkman:upsmon[8] enters its shutdown sequence): however you can change this value `on the fly' for the actual session, only for the use with instant commands, setting *ups.delay.start* with linkman:upsrw[8].
 
 *offdelay =* 'value'::
 Time to wait before shutting down the UPS (seconds).
 This value is truncated to units of 6 seconds (less than 60 seconds) or 60 seconds (more than 60 seconds).
 Defaults to 30 seconds.
++
 This option provides a default value for *ups.delay.shutdown* that will then be used by the driver in the automatic shutdown sequence (i.e. calling the driver with the *-k* option, calling linkman:upsdrvctl[8] with the *shutdown* option or when the +FSD+ flag is set and linkman:upsmon[8] enters its shutdown sequence): however you can change this value `on the fly' for the actual session, only for the use with instant commands, setting *ups.delay.shutdown* with linkman:upsrw[8].
 
 *stayoff*::
-If you set stayoff in linkman:ups.conf[5] when FSD arises the UPS will call a *shutdown.stayoff* shutting down after *ups.delay.shutdown* seconds and won't return, otherwise (standard behaviour) the UPS will call *shutdown.return* shutting down after *ups.delay.shutdown* seconds and then turn on after *ups.delay.start* seconds (if mains meanwhile returned).
+If you set stayoff in linkman:ups.conf[5] when FSD arises the UPS will call a *shutdown.stayoff* shutting down after *ups.delay.shutdown* seconds and won't return (see <<_known_problems,KNOWN PROBLEMS>>), otherwise (standard behaviour) the UPS will call *shutdown.return* shutting down after *ups.delay.shutdown* seconds and then turn on after *ups.delay.start* seconds (if mains meanwhile returned).
 
 *protocol =* 'string'::
 Skip autodetection of the protocol to use and only use the one specified.
-Supported values 'mecer', 'megatec', 'megatec/old', 'mustek', 'voltronic' and 'zinto'.
+Supported values: 'bestups', 'mecer', 'megatec', 'megatec/old', 'mustek', 'q1', 'voltronic', 'voltronic-qs', 'voltronic-qs-hex' and 'zinto'.
++
+Note that if you end up using the 'q1' protocol, you may want to give a try to the 'mecer', 'megatec' and 'zinto' ones setting the <<old-blazer-protocols-options,*novendor*/*norating* flags>> (only one, or both).
 
 *pollfreq =* 'value'::
 Set polling frequency, in seconds, to reduce the data flow.
@@ -99,8 +103,20 @@ If not specified, the driver defaults to 10%.
 Only used if *runtimecal* is also specified.
 
 
+BESTUPS, MECER, MEGATAEC, MEGATEC/OLD, MUSTEK, Q1, VOLTRONIC-QS, VOLTRONIC-QS-HEX, ZINTO PROTOCOLS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*ignoresab*::
+Some UPSes incorrectly report the `Shutdown Active' bit as always on, consequently making the driver believe the UPS is nearing a shutdown (and, as a result, ups.status always contains +FSD+... and you know what this means).
+Setting this flag will make the driver ignore the `Shutdown Active' bit.
+
+
+[[old-blazer-protocols-options]]
 MECER, MEGATAEC, MEGATEC/OLD, MUSTEK, ZINTO PROTOCOLS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*ondelay*::
+The acceptable range is +0..599940+ seconds.
 
 *offdelay*::
 The acceptable range is +12..600+ seconds.
@@ -114,11 +130,47 @@ Some UPSes will lock up if you attempt to read vendor information from them.
 Setting this flag will make the driver skip this step.
 
 
+BESTUPS PROTOCOL
+~~~~~~~~~~~~~~~~
+
+*ondelay*::
+The acceptable range is +60..599940+ seconds.
+
+*offdelay*::
+The acceptable range is +12..5940+ seconds.
+
+*pins_shutdown_mode =* 'value'::
+Set http://www.networkupstools.org/protocols/sola.html#_shutdown_set_command[shutdown mode functionality of Pin 1 and Pin 7] on the UPS DB9 communication port (Per Best Power’s EPS-0059) to 'value' [+0..6+].
+
+
+Q1 PROTOCOL
+~~~~~~~~~~~
+
+*ondelay*::
+The acceptable range is +0..599940+ seconds.
+
+*offdelay*::
+The acceptable range is +12..600+ seconds.
+
+
+VOLTRONIC-QS, VOLTRONIC-QS-HEX PROTOCOLS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*ondelay*::
+The acceptable range is +60..599940+ seconds.
+
+*offdelay*::
+The acceptable range is +12..540+ seconds.
+
+
 VOLTRONIC PROTOCOL
 ~~~~~~~~~~~~~~~~~~
 
 The following options are supported only by the 'voltronic' protocol.
 Not all of them are available on all the UPSes supported by this protocol.
+
+*ondelay*::
+The acceptable range is +0..599940+ seconds.
 
 *offdelay*::
 The acceptable range is +12..5940+ seconds.
@@ -184,7 +236,7 @@ If enabled, when the UPS is turned on, it will check if the battery is connected
 Enable or disable site fault detection [+enabled+/+disabled+].
 If enabled, the UPS will beep when the input neutral and hot wires are reversed.
 
-*costant_phase_angle =* 'string'::
+*constant_phase_angle =* 'string'::
 Enable or disable Constant Phase Angle Function (output and input phase angles are not equal) [+enabled+/+disabled+].
 
 *limited_runtime_on_battery =* 'string'::
@@ -270,13 +322,28 @@ The argument is a regular expression that must match the bus name where the UPS 
 
 *subdriver =* 'string'::
 Select a serial-over-USB subdriver to use.
-You have a choice between *phoenix*, *ippon*, *cypress*, and *krauler*.
+You have a choice between *cypress*, *fabula*, *fuji*, *ippon*, *krauler*, *phoenix* and *sgs*.
 When using this option, it is mandatory to also specify the *vendorid* and *productid*.
 
 *langid_fix =* 'value'::
 Apply the language ID workaround to the *krauler* subdriver.
 This is mandatory for some devices to work (LDLC, Dynamix and others).
 You must provide *value* (+0x409+ or +0x4095+), according to your device entry in NUT hardware compatibility list (HCL).
+
+
+IMPLEMENTATION NOTES
+^^^^^^^^^^^^^^^^^^^^
+
+*'fabula' subdriver*::
+This subdriver, meant to be used with the 'megatec' protocol, does *not* support the various *test.battery* commands.
+Plus, the *shutdown.return* command ignores the values set in 'ups.delay.start'/*ondelay* and makes the UPS turn on the load as soon as power is back.
+
+*'fuji' subdriver*::
+This subdriver, meant to be used with the 'megatec' protocol, does *not* support the *shutdown.stayoff* and *load.off* commands.
+Plus, the *shutdown.return* command ignores the values set in 'ups.delay.start'/*ondelay* and makes the UPS turn on the load as soon as power is back.
+
+*'krauler' subdriver*::
+This subdriver, meant to be used with the 'megatec' protocol, does *not* support the shutdown commands, i.e.: *shutdown.return*, *shutdown.stayoff* and *load.off*.
 
 
 UPS COMMANDS
@@ -290,6 +357,7 @@ Toggle the UPS beeper.
 
 *load.on*::
 Turn on the load immediately.
+(Not available on some hardware)
 
 *load.off*::
 Turn off the load immediately (see <<_known_problems,KNOWN PROBLEMS>>).
@@ -317,11 +385,19 @@ Stop a running battery test.
 (Not available on some hardware)
 
 
-MECER, MEGATEC, MEGATEC/OLD, MUSTEK, ZINTO PROTOCOLS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+BESTUPS, MECER, MEGATEC, MEGATEC/OLD, MUSTEK, Q1, ZINTO PROTOCOLS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *test.battery.start* 'value'::
 Perform a battery test for the duration of 'value' seconds (truncated to 60 seconds) [+60..5940+].
+
+
+VOLTRONIC POWER P98 UNITS (WITH MECER PROTOCOL)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*test.battery.start* 'value'::
+Perform a battery test for the duration of 'value' seconds (truncated to 60 seconds) [+12..5940+].
+This value is truncated to units of 6 seconds (less than 60 seconds) or 60 seconds (more than 60 seconds).
 
 
 VOLTRONIC PROTOCOL
@@ -429,6 +505,21 @@ The following instant command has also been changed:
 
 *test.battery.start* 'value'::
 While the old blazer drivers expected a 'value' in minutes, the *nutdrv_qx* driver wants a 'value' in seconds.
+
+
+NOTES FOR THE PREVIOUS USER OF BESTUPS DRIVER
+---------------------------------------------
+
+The *nutdrv_qx* driver having replaced the bestups one, some configuration changes may be required by users switching to *nutdrv_qx*.
+
+Part of this, the following bestups options, in linkman:ups.conf[5], are no longer supported by this driver:
+
+*nombattvolt*::
+*battvoltmult*::
+See <<_battery_charge,BATTERY CHARGE>>.
+
+*ID*::
+Discarded.
 
 
 NOTES FOR THE PREVIOUS USER OF VOLTRONIC DRIVERS
@@ -540,6 +631,26 @@ So, the *beeper.toggle* command may appear to have no effect in the status repor
 The temperature and load value is known to be bogus in some models.
 
 
+VOLTRONIC-QS UNITS
+~~~~~~~~~~~~~~~~~~
+
+Both *load.off* and *shutdown.stayoff* instant commands are known to work as expected (i.e. turn the load off indefinitely) only if mains is present, otherwise, as soon as mains returns the load will be powered.
+
+After issuing a *shutdown.return* instant command, the UPS won't wait *ondelay* before powering on the load, provided the following conditions are met:
+
+- if the load has been previously (no matter how long before) powered off through *load.off*/*shutdown.stayoff* _and_ powered on through *load.on*/*shutdown.stop* _and_
+- if AC wasn't cut after issuing the *load.off*/*shutdown.stayoff* (i.e. the UPS didn't turn itself off) _and_
+- if there's a power outage after issuing the *shutdown.return* command
+
+In this case, as soon as mains returns the load will be powered.
+
+
+VOLTRONIC-QS-HEX UNITS
+~~~~~~~~~~~~~~~~~~~~~~
+
+*shutdown.return*, *load.off*, and *shutdown.stayoff* instant commands are known to work as expected only if mains is present, otherwise, as soon as mains returns the load will be powered.
+
+
 UPS WARNINGS (VOLTRONIC PROTOCOL)
 ---------------------------------
 
@@ -548,68 +659,68 @@ Since more than one warning at a time can be signaled, and because of the limite
 If you want to know the explanation of that bit you can either watch the log or see the next table (unlisted bits equal to unknown warnings).
 
 .UPS Warnings for 'voltronic' UPSes
-[cols="5>,95",options="autowidth,header",frame="topbot",align="center",caption=""]
+[cols="5>,95",options="autowidth,header",frame="topbot",grid="rows",align="center",caption=""]
 |====
-|# |Corresponding Warning
-|1 |Battery disconnected
-|2 |Neutral not connected
-|3 |Site fault
-|4 |Phase sequence incorrect
-|5 |Phase sequence incorrect in bypass
-|6 |Input frequency unstable in bypass
-|7 |Battery overcharged
-|8 |Low battery
-|9 |Overload alarm
-|10 |Fan alarm
-|11 |EPO enabled
-|12 |Unable to turn on UPS
-|13 |Over temperature alarm
-|14 |Charger alarm
-|15 |Remote auto shutdown
-|16 |L1 input fuse not working
-|17 |L2 input fuse not working
-|18 |L3 input fuse not working
-|19 |Positive PFC abnormal in L1
-|20 |Negative PFC abnormal in L1
-|21 |Positive PFC abnormal in L2
-|22 |Negative PFC abnormal in L2
-|23 |Positive PFC abnormal in L3
-|24 |Negative PFC abnormal in L3
-|25 |Abnormal in CAN-bus communication
-|26 |Abnormal in synchronous signal circuit
-|27 |Abnormal in synchronous pulse signal circuit
-|28 |Abnormal in host signal circuit
-|29 |Male connector of parallel cable not connected well
-|30 |Female connector of parallel cable not connected well
-|31 |Parallel cable not connected well
-|32 |Battery connection not consistent in parallel systems
-|33 |AC connection not consistent in parallel systems
-|34 |Bypass connection not consistent in parallel systems
-|35 |UPS model types not consistent in parallel systems
-|36 |Capacity of UPSs not consistent in parallel systems
-|37 |Auto restart setting not consistent in parallel systems
-|38 |Battery cell over charge
-|39 |Battery protection setting not consistent in parallel systems
-|40 |Battery detection setting not consistent in parallel systems
-|41 |Bypass not allowed setting not consistent in parallel systems
-|42 |Converter setting not consistent in parallel systems
-|43 |High loss point for frequency in bypass mode not consistent in parallel systems
-|44 |Low loss point for frequency in bypass mode not consistent in parallel systems
-|45 |High loss point for voltage in bypass mode not consistent in parallel systems
-|46 |Low loss point for voltage in bypass mode not consistent in parallel systems
-|47 |High loss point for frequency in AC mode not consistent in parallel systems
-|48 |Low loss point for frequency in AC mode not consistent in parallel systems
-|49 |High loss point for voltage in AC mode not consistent in parallel systems
-|50 |Low loss point for voltage in AC mode not consistent in parallel systems
-|51 |Warning for locking in bypass mode after 3 consecutive overloads within 30 min
-|52 |Warning for three-phase AC input current unbalance
-|53 |Warning for a three-phase input current unbalance detected in battery mode
-|54 |Warning for Inverter inter-current unbalance
-|55 |Programmable outlets cut off pre-alarm
-|56 |Warning for Battery replace
-|57 |Abnormal warning on input phase angle
-|58 |Warning!! Cover of maintain switch is open
-|62 |EEPROM operation error
+|#	|Corresponding Warning
+|1	|Battery disconnected
+|2	|Neutral not connected
+|3	|Site fault
+|4	|Phase sequence incorrect
+|5	|Phase sequence incorrect in bypass
+|6	|Input frequency unstable in bypass
+|7	|Battery overcharged
+|8	|Low battery
+|9	|Overload alarm
+|10	|Fan alarm
+|11	|EPO enabled
+|12	|Unable to turn on UPS
+|13	|Over temperature alarm
+|14	|Charger alarm
+|15	|Remote auto shutdown
+|16	|L1 input fuse not working
+|17	|L2 input fuse not working
+|18	|L3 input fuse not working
+|19	|Positive PFC abnormal in L1
+|20	|Negative PFC abnormal in L1
+|21	|Positive PFC abnormal in L2
+|22	|Negative PFC abnormal in L2
+|23	|Positive PFC abnormal in L3
+|24	|Negative PFC abnormal in L3
+|25	|Abnormal in CAN-bus communication
+|26	|Abnormal in synchronous signal circuit
+|27	|Abnormal in synchronous pulse signal circuit
+|28	|Abnormal in host signal circuit
+|29	|Male connector of parallel cable not connected well
+|30	|Female connector of parallel cable not connected well
+|31	|Parallel cable not connected well
+|32	|Battery connection not consistent in parallel systems
+|33	|AC connection not consistent in parallel systems
+|34	|Bypass connection not consistent in parallel systems
+|35	|UPS model types not consistent in parallel systems
+|36	|Capacity of UPSs not consistent in parallel systems
+|37	|Auto restart setting not consistent in parallel systems
+|38	|Battery cell over charge
+|39	|Battery protection setting not consistent in parallel systems
+|40	|Battery detection setting not consistent in parallel systems
+|41	|Bypass not allowed setting not consistent in parallel systems
+|42	|Converter setting not consistent in parallel systems
+|43	|High loss point for frequency in bypass mode not consistent in parallel systems
+|44	|Low loss point for frequency in bypass mode not consistent in parallel systems
+|45	|High loss point for voltage in bypass mode not consistent in parallel systems
+|46	|Low loss point for voltage in bypass mode not consistent in parallel systems
+|47	|High loss point for frequency in AC mode not consistent in parallel systems
+|48	|Low loss point for frequency in AC mode not consistent in parallel systems
+|49	|High loss point for voltage in AC mode not consistent in parallel systems
+|50	|Low loss point for voltage in AC mode not consistent in parallel systems
+|51	|Warning for locking in bypass mode after 3 consecutive overloads within 30 min
+|52	|Warning for three-phase AC input current unbalance
+|53	|Warning for a three-phase input current unbalance detected in battery mode
+|54	|Warning for Inverter inter-current unbalance
+|55	|Programmable outlets cut off pre-alarm
+|56	|Warning for Battery replace
+|57	|Abnormal warning on input phase angle
+|58	|Warning!! Cover of maintain switch is open
+|62	|EEPROM operation error
 |====
 
 
@@ -636,6 +747,7 @@ linkman:upscmd[8],
 linkman:upsdrvctl[8],
 linkman:upsmon[8],
 linkman:upsrw[8]
+
 
 Internet Resources:
 ~~~~~~~~~~~~~~~~~~~

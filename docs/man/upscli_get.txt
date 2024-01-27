@@ -10,8 +10,8 @@ SYNOPSIS
 
  #include <upsclient.h>
 
- int upscli_get(UPSCONN_t *ups, int numq, const char **query,
-			int *numa, char ***answer)
+ int upscli_get(UPSCONN_t *ups, unsigned int numq, const char **query,
+			unsigned int *numa, char ***answer)
 
 DESCRIPTION
 -----------
@@ -43,7 +43,7 @@ QUERY FORMATTING
 To generate a request for `GET NUMLOGINS su700`, you would populate
 query and numq as follows:
 
-	int numq;
+	unsigned int numq;
 	const char *query[2];
 
 	query[0] = "NUMLOGINS";
@@ -57,6 +57,8 @@ ANSWER FORMATTING
 -----------------
 The raw response from upsd to the above query would be `NUMLOGINS su700 1`.
 Since this is split up for you, the values work out like this:
+
+	unsigned int numa;
 
 	numa = 3;
 	answer[0] = "NUMLOGINS"
@@ -95,6 +97,16 @@ RETURN VALUE
 ------------
 The *upscli_get()* function returns 0 on success, or -1 if an
 error occurs.
+
+If *upsd* disconnects, you may need to handle or ignore `SIGPIPE` in order to
+prevent your program from terminating the next time that the library writes to
+the disconnected socket. The following code in your initialization function
+will allow the *upscli_get()* call to return an error in that case:
+
+   #include <signal.h>
+   ...
+   signal (SIGPIPE, SIG_IGN);
+   ...
 
 SEE ALSO
 --------

@@ -11,8 +11,8 @@ SYNOPSIS
 
  #include <upsclient.h>
 
- int upscli_list_next(UPSCONN_t *ups, int numq, const char **query,
-			int *numa, char ***answer)
+ int upscli_list_next(UPSCONN_t *ups, unsigned int numq, const char **query,
+			unsigned int *numa, char ***answer)
 
 DESCRIPTION
 -----------

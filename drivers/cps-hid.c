@@ -28,29 +28,36 @@
 #include "cps-hid.h"
 #include "usb-common.h"
 
-#define CPS_HID_VERSION      "CyberPower HID 0.3"
+#define CPS_HID_VERSION      "CyberPower HID 0.4"
 
 /* Cyber Power Systems */
 #define CPS_VENDORID 0x0764
 
-/*
+/*! Battery voltage scale factor.
  * For some devices, the reported battery voltage is off by factor
  * of 1.5 so we need to apply a scale factor to it to get the real
  * battery voltage. By default, the factor is 1 (no scaling).
  */
 static double	battery_scale = 1;
+static int	might_need_battery_scale = 0;
+static int	battery_scale_checked = 0;
+
+/*! If the ratio of the battery voltage to the nominal battery voltage exceeds
+ * this factor, we assume that the battery voltage needs to be scaled by 2/3.
+ */
+static const double battery_voltage_sanity_check = 1.4;
 
 static void *cps_battery_scale(USBDevice_t *device)
 {
-	battery_scale = 0.667;
+	might_need_battery_scale = 1;
 	return NULL;
 }
 
 /* USB IDs device table */
 static usb_device_id_t cps_usb_device_table[] = {
-	/* 900AVR/BC900D, CP1200AVR/BC1200D */
+	/* 900AVR/BC900D */
 	{ USB_DEVICE(CPS_VENDORID, 0x0005), NULL },
-	/* Dynex DX-800U? */
+	/* Dynex DX-800U?, CP1200AVR/BC1200D, CP825AVR-G, CP1000AVRLCD, CP1000PFCLCD, CP1500C, CP550HG, etc. */
 	{ USB_DEVICE(CPS_VENDORID, 0x0501), &cps_battery_scale },
 	/* OR2200LCDRM2U, OR700LCDRM1U, PR6000LCDRTXL5U */
 	{ USB_DEVICE(CPS_VENDORID, 0x0601), NULL },
@@ -59,12 +66,48 @@ static usb_device_id_t cps_usb_device_table[] = {
 	{ -1, -1, NULL }
 };
 
+/*! Adjusts @a battery_scale if voltage is well above nominal.
+ */
+static void cps_adjust_battery_scale(double batt_volt)
+{
+	const char *batt_volt_nom_str;
+	double batt_volt_nom;
+
+	if(battery_scale_checked) {
+		return;
+	}
+
+	batt_volt_nom_str = dstate_getinfo("battery.voltage.nominal");
+	if(!batt_volt_nom_str) {
+		upsdebugx(2, "%s: 'battery.voltage.nominal' not available yet; skipping scale determination", __func__);
+		return;
+	}
+
+	batt_volt_nom = strtod(batt_volt_nom_str, NULL);
+	if(batt_volt_nom == 0) {
+		upsdebugx(3, "%s: 'battery.voltage.nominal' is %s", __func__, batt_volt_nom_str);
+		return;
+	}
+
+	if( (batt_volt / batt_volt_nom) > battery_voltage_sanity_check ) {
+		upslogx(LOG_INFO, "%s: battery readings will be scaled by 2/3", __func__);
+		battery_scale = 2.0/3;
+	}
+
+	battery_scale_checked = 1;
+}
+
 /* returns statically allocated string - must not use it again before
    done with result! */
 static const char *cps_battvolt_fun(double value)
 {
 	static char	buf[8];
 
+	if(might_need_battery_scale) {
+		cps_adjust_battery_scale(value);
+	}
+
+	upsdebugx(5, "%s: battery_scale = %.3f", __func__, battery_scale);
 	snprintf(buf, sizeof(buf), "%.1f", battery_scale * value);
 
 	return buf;

@@ -26,11 +26,12 @@
 
 #include "ietf-mib.h"
 
-#define IETF_MIB_VERSION	"1.4"
+#define IETF_MIB_VERSION	"1.5"
 
 /* SNMP OIDs set */
 #define IETF_OID_UPS_MIB	"1.3.6.1.2.1.33.1."
 #define IETF_SYSOID			".1.3.6.1.2.1.33"
+#define TRIPPLITE_SYSOID	".1.3.6.1.4.1.850.1"
 
 /* #define DEBUG */
 
@@ -39,7 +40,7 @@ static info_lkp_t ietf_battery_info[] = {
 	{ 2, ""   /* batteryNormal */},
 	{ 3, "LB" /* batteryLow */ },
 	{ 4, "LB" /* batteryDepleted */ },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t ietf_power_source_info[] = {
@@ -50,12 +51,12 @@ static info_lkp_t ietf_power_source_info[] = {
 	{ 5, "OB" /* battery */ },
 	{ 6, "OL BOOST" /* booster */ },
 	{ 7, "OL TRIM" /* reducer */ },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t ietf_overload_info[] = {
 	{ 1, "OVER" },	/* output overload */
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t ietf_test_active_info[] = {
@@ -64,7 +65,7 @@ static info_lkp_t ietf_test_active_info[] = {
 	{ 3, "TEST" },	/* upsTestGeneralSystemsTest */
 	{ 4, "TEST" },	/* upsTestQuickBatteryTest */
 	{ 5, "CAL" },	/* upsTestDeepBatteryCalibration */
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t ietf_test_result_info[] = {
@@ -74,28 +75,28 @@ static info_lkp_t ietf_test_result_info[] = {
 	{ 4, "aborted" },
 	{ 5, "in progress" },
 	{ 6, "no test initiated" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 #ifdef DEBUG
 static info_lkp_t ietf_shutdown_type_info[] = {
 	{ 1, "output" },
 	{ 2, "system" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 #endif
 
 static info_lkp_t ietf_yes_no_info[] = {
 	{ 1, "yes" },
 	{ 2, "no" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t ietf_beeper_status_info[] = {
 	{ 1, "disabled" },
 	{ 2, "enabled" },
 	{ 3, "muted" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 /* Snmp2NUT lookup table info_type, info_flags, info_len, OID, dfl, flags, oid2info, setvar */
@@ -275,3 +276,4 @@ static snmp_info_t ietf_mib[] = {
 };
 
 mib2nut_info_t	ietf = { "ietf", IETF_MIB_VERSION, IETF_OID_UPS_MIB "4.1.0", IETF_OID_UPS_MIB "1.1.0", ietf_mib, IETF_SYSOID };
+mib2nut_info_t	tripplite_ietf = { "ietf", IETF_MIB_VERSION, NULL, NULL, ietf_mib, TRIPPLITE_SYSOID };

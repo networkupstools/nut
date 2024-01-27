@@ -35,7 +35,7 @@
 
 	static int	sockfd = -1, stale = 1, alarm_active = 0, ignorelb = 0;
 	static char	*sockfn = NULL;
-	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[ST_MAX_VALUE_LEN];
+	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[LARGEBUF];
 	static st_tree_t	*dtree_root = NULL;
 	static conn_t	*connhead = NULL;
 	static cmdlist_t *cmdhead = NULL;
@@ -185,7 +185,7 @@ static void send_to_all(const char *fmt, ...)
 		ret = write(conn->fd, buf, strlen(buf));
 
 		if (ret != (int)strlen(buf)) {
-			upsdebugx(2, "write %d bytes to socket %d failed", (int)strlen(buf), conn->fd);
+			upsdebugx(1, "write %d bytes to socket %d failed", (int)strlen(buf), conn->fd);
 			sock_disconnect(conn);
 		}
 	}
@@ -211,7 +211,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	ret = write(conn->fd, buf, strlen(buf));
 
 	if (ret != (int)strlen(buf)) {
-		upsdebugx(2, "write %d bytes to socket %d failed", (int)strlen(buf), conn->fd);
+		upsdebugx(1, "write %d bytes to socket %d failed", (int)strlen(buf), conn->fd);
 		sock_disconnect(conn);
 		return 0;	/* failed */
 	}
@@ -238,22 +238,23 @@ static void sock_connect(int sock)
 	}
 
 	/* enable nonblocking I/O */
+	if (!do_synchronous) {
+		ret = fcntl(fd, F_GETFL, 0);
 
-	ret = fcntl(fd, F_GETFL, 0);
+		if (ret < 0) {
+			upslog_with_errno(LOG_ERR, "fcntl get on unix fd failed");
+			close(fd);
+			return;
+		}
 
-	if (ret < 0) {
-		upslog_with_errno(LOG_ERR, "fcntl get on unix fd failed");
-		close(fd);
-		return;
+		ret = fcntl(fd, F_SETFL, ret | O_NDELAY);
+
+		if (ret < 0) {
+			upslog_with_errno(LOG_ERR, "fcntl set O_NDELAY on unix fd failed");
+			close(fd);
+			return;
+		}	
 	}
-
-	ret = fcntl(fd, F_SETFL, ret | O_NDELAY);
-
-	if (ret < 0) {
-		upslog_with_errno(LOG_ERR, "fcntl set O_NDELAY on unix fd failed");
-		close(fd);
-		return;
-	}	
 
 	conn = xcalloc(1, sizeof(*conn));
 	conn->fd = fd;

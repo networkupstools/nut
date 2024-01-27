@@ -28,7 +28,7 @@
 #include "blazer.h"
 
 #define DRIVER_NAME	"Megatec/Q1 protocol USB driver"
-#define DRIVER_VERSION	"0.10"
+#define DRIVER_VERSION	"0.12"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -176,7 +176,7 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 static int ippon_command(const char *cmd, char *buf, size_t buflen)
 {
 	char	tmp[64];
-	int	ret;
+	int	ret, len;
 	size_t	i;
 
 	snprintf(tmp, sizeof(tmp), "%s", cmd);
@@ -207,10 +207,19 @@ static int ippon_command(const char *cmd, char *buf, size_t buflen)
 		return ret;
 	}
 
-	snprintf(buf, buflen, "%.*s", ret, tmp);
-
-	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
-	return ret;
+	/*
+	 * As Ippon will always return 64 bytes in response, we have to
+	 * calculate and return length of actual response data here.
+	 * Empty response will look like 0x00 0x0D, otherwise it will be
+	 * data string terminated by 0x0D.
+	 */
+	len = (int)strcspn(tmp, "\r");
+	upsdebugx(3, "read: %.*s", len, tmp);
+	if (len > 0) {
+		len ++;
+	}
+	snprintf(buf, buflen, "%.*s", len, tmp);
+	return len;
 }
 
 
@@ -443,7 +452,9 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 
 	case -ETIMEDOUT:	/* Connection timed out */
 	case -EOVERFLOW:	/* Value too large for defined data type */
+#ifdef EPROTO
 	case -EPROTO:		/* Protocol error */
+#endif
 	default:
 		break;
 	}
@@ -480,21 +491,14 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 
 void upsdrv_help(void)
 {
-	printf("Read The Fine Manual ('man 8 blazer')\n");
+	printf("Read The Fine Manual ('man 8 blazer_usb')\n");
 }
 
 
 void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE, "subdriver", "Serial-over-USB subdriver selection");
-	addvar(VAR_VALUE, "vendorid", "Regular expression to match UPS Manufacturer numerical ID (4 digits hexadecimal)");
-	addvar(VAR_VALUE, "productid", "Regular expression to match UPS Product numerical ID (4 digits hexadecimal)");
-
-	addvar(VAR_VALUE, "vendor", "Regular expression to match UPS Manufacturer string");
-	addvar(VAR_VALUE, "product", "Regular expression to match UPS Product string");
-	addvar(VAR_VALUE, "serial", "Regular expression to match UPS Serial number");
-
-	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
+	nut_usb_addvars();
 
 	addvar(VAR_VALUE, "langid_fix", "Apply the language ID workaround to the krauler subdriver (0x409 or 0x4095)");
 
@@ -585,7 +589,7 @@ void upsdrv_initups(void)
 			"and make sure you have an up-to-date version of NUT. If this does not help,\n"
 			"try running the driver with at least 'subdriver', 'vendorid' and 'productid'\n"
 			"options specified. Please refer to the man page for details about these options\n"
-			"(man 8 blazer).\n");
+			"(man 8 blazer_usb).\n");
 	}
 
 	if (!subdriver_command) {

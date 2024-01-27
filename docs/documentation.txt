@@ -3,20 +3,23 @@ Documentation
 =============
 endif::website[]
 
+
 User Documentation
 ------------------
 
 ifdef::website[]
 - FAQ - Frequently Asked Questions (link:docs/FAQ.html[online]) (link:docs/FAQ.pdf[PDF])
 - NUT User Manual (link:docs/user-manual.chunked/index.html[online]) (link:docs/user-manual.pdf[PDF])
-- Cables information (link:cables.html[online]) (link:cables.pdf[PDF])
+- Cables information (link:cables.html[online]) (link:docs/cables.pdf[PDF])
 - link:docs/man/index.html#User_man[User manual pages]
+- link:ddl/index.html#_supported_devices[Devices Dumps Library (DDL)]: Provides information on how devices are supported
 endif::website[]
 ifndef::website[]
 - link:../FAQ.html[FAQ - Frequently Asked Questions]
 - linkdoc:user-manual[NUT user manual]
 - <<Cables_information,Cables information>>
 - link:../man/index.html#User_man[User manual pages]
+- link:http://www.networkupstools.org/ddl/index.html#_supported_devices[Devices Dumps Library (DDL)]: Provides information on how devices are supported
 endif::website[]
 
 Developer Documentation
@@ -28,6 +31,7 @@ ifdef::website[]
 - link:ups-protocols.html[UPS protocols library]
 - link:docs/man/index.html#Developer_man[Developer manual pages]
 - link:nut-qa.html[NUT Quality Assurance]
+- link:ddl/index.html[Devices Dumps Library (DDL)]: Provides simulation data to the linkman:dummy-ups[8] driver
 endif::website[]
 ifndef::website[]
 - linkdoc:developer-guide[NUT Developer Guide]
@@ -35,22 +39,26 @@ ifndef::website[]
 - link:ups-protocols.html[UPS protocols library]
 - link:../man/index.html#Developer_man[Developer manual pages]
 - link:nut-qa.html[NUT Quality Assurance]
+- link:http://www.networkupstools.org/ddl/index.html[Devices Dumps Library (DDL)]: Provides simulation data to the linkman:dummy-ups[8] driver
 endif::website[]
 
 Offsite Links
 -------------
 
 [[general_powerdev_info]]
-These are general information about UPS and PDU.
+These are general information about UPS, PDU, ATS, PSU and SCD:
 
 - link:http://tldp.org/HOWTO/UPS-HOWTO/[UPS HOWTO] (The Linux Documentation Project)
 - link:http://en.wikipedia.org/wiki/Uninterruptible_power_supply[UPS on Wikipedia]
 - link:http://en.wikipedia.org/wiki/Power_distribution_unit[PDU on Wikipedia]
+- link:https://en.wikipedia.org/wiki/Transfer_switch[Automatic Transfer Switch]
+- link:https://en.wikipedia.org/wiki/Power_supply_unit_%28computer%29[Power Supply Units]
 - link:http://en.wikipedia.org/wiki/Solar_controller[Solar controller on Wikipedia]
 - link:http://www.pcguide.com/ref/power/ext/ups/over.htm[UPS on The PC Guide]
 
 These are writeups by users of the software.
 
+- link:http://rogerprice.org/NUT.html[NUT Setup with openSUSE] '(Roger Price)'
 - link:http://www.dimat.unina2.it/LCS/MonitoraggioUpsNutUbuntu10-eng.htm[Deploying NUT on an Ubuntu 10.04 cluster] '(Stefano Angelone)'   
 - link:http://blog.shadypixel.com/monitoring-a-ups-with-nut-on-debian-or-ubuntu-linux[Monitoring a UPS with nut on Debian or Ubuntu Linux] '(Avery Fay)'
 - link:http://linux.developpez.com/cours/upsusb/[Installation et gestion d'un UPS USB en réseau sous linux] '(Olivier Van Hoof, french)'
@@ -67,5 +75,5 @@ These are writeups by users of the software.
 News articles and Press releases
 --------------------------------
 
-- link:http://www.crn.com/white-box/199000818?pgno=1[Linux UPS Without Tears] '(A. Lizard)'
-- link:http://networking.earthweb.com/netsysm/article.php/10954_3295841_1[Graceful UPS shutdowns on Linux] '(Carla Schroder)'
+- link:http://www.crn.com/news/channel-programs/199000818/linux-ups-without-tears.htm[Linux UPS Without Tears] '(A. Lizard)'
+- link:http://www.enterprisenetworkingplanet.com/netsysm/article.php/3295841/Graceful-UPS-Shutdowns-on-Linux.htm[Graceful UPS shutdowns on Linux] '(Carla Schroder)'

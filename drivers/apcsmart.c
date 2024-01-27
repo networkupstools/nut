@@ -1004,7 +1004,7 @@ static void apc_getcaps(int qco)
 
 			/* make sure setvar knows what this is */
 			vt->flags |= APC_RW | APC_ENUM;
-		} else if (vt->flags & APC_PACK)
+		} else if (vt && (vt->flags & APC_PACK))
 			/*
 			 * Currently we assume - basing on the following
 			 * feedback:
@@ -1208,7 +1208,7 @@ static int getbaseinfo(void)
 {
 	unsigned int	i;
 	int	ret, qco;
-	char 	*cmds, temp[APC_LBUF];
+	char 	*cmds, *tail, temp[APC_LBUF];
 
 	/*
 	 *  try firmware lookup first; we could start with 'a', but older models
@@ -1243,9 +1243,16 @@ static int getbaseinfo(void)
 	/*
 	 * returned set is verified for validity above, so just extract
 	 * what's interesting for us
+	 *
+	 * the known format is:
+	 * ver.alerts.commands[.stuff]
 	 */
-	cmds = strrchr(temp, '.');
-	for (i = 1; i < strlen(cmds); i++)
+	cmds = strchr(temp, '.');
+	cmds = strchr(cmds + 1, '.');
+	tail = strchr(++cmds, '.');
+	if (tail)
+		*tail = 0;
+	for (i = 0; i < strlen(cmds); i++)
 		protocol_verify(cmds[i]);
 	deprecate_vars();
 
@@ -1691,7 +1698,7 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 		return STAT_SET_HANDLED;	/* FUTURE: no change */
 	}
 
-	for (i = 0; i < 6; i++) {
+	for (i = 0; i < 32; i++) {
 		if (apc_write(APC_NEXTVAL) != 1)
 			return STAT_SET_FAILED;
 

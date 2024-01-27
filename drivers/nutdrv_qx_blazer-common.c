@@ -1,4 +1,4 @@
-/* nutdrv_qx_blazer-common.c - Common functions/settings for nutdrv_qx_{mecer,megatec,megatec-old,mustek,zinto}.{c,h}
+/* nutdrv_qx_blazer-common.c - Common functions/settings for nutdrv_qx_{mecer,megatec,megatec-old,mustek,q1,voltronic-qs,zinto}.{c,h}
  *
  * Copyright (C)
  *   2013 Daniele Pezzini <hyouko@gmail.com>
@@ -42,8 +42,8 @@ info_rw_t	blazer_r_offdelay[] = {
 /* == Support functions == */
 
 /* This function allows the subdriver to "claim" a device: return 1 if the device is supported by this subdriver, else 0. */
-int	blazer_claim(void) {
-
+int	blazer_claim(void)
+{
 	/* To tell whether the UPS is supported or not, we'll check both status (Q1/QS/D) and vendor (I/FW?) - provided that we were not told not to do it with the ups.conf flag 'novendor'. */
 
 	item_t	*item = find_nut_info("input.voltage", 0, 0);
@@ -85,7 +85,29 @@ int	blazer_claim(void) {
 	}
 
 	return 1;
+}
 
+/* This function allows the subdriver to "claim" a device: return 1 if the device is supported by this subdriver, else 0.
+ * NOTE: this 'light' version only checks for status (Q1/QS/D/..) */
+int	blazer_claim_light(void)
+{
+	/* To tell whether the UPS is supported or not, we'll check just status (Q1/QS/D/..). */
+
+	item_t	*item = find_nut_info("input.voltage", 0, 0);
+
+	/* Don't know what happened */
+	if (!item)
+		return 0;
+
+	/* No reply/Unable to get value */
+	if (qx_process(item, NULL))
+		return 0;
+
+	/* Unable to process value */
+	if (ups_infoval_set(item) != 1)
+		return 0;
+
+	return 1;
 }
 
 /* Subdriver-specific flags/vars */
@@ -93,18 +115,28 @@ void	blazer_makevartable(void)
 {
 	addvar(VAR_FLAG, "norating", "Skip reading rating information from UPS");
 	addvar(VAR_FLAG, "novendor", "Skip reading vendor information from UPS");
+
+	blazer_makevartable_light();
+}
+
+/* Subdriver-specific flags/vars
+ * NOTE: this 'light' version only handles vars/flags related to UPS status query (Q1/QS/D/...) */
+void	blazer_makevartable_light(void)
+{
+	addvar(VAR_FLAG, "ignoresab", "Ignore 'Shutdown Active' bit in UPS status");
 }
 
 /* Subdriver-specific initups */
 void	blazer_initups(item_t *qx2nut)
 {
-	int	nr, nv;
+	int	nr, nv, isb;
 	item_t	*item;
 
 	nr = testvar("norating");
 	nv = testvar("novendor");
+	isb = testvar("ignoresab");
 
-	if (!nr && !nv)
+	if (!nr && !nv && !isb)
 		return;
 
 	for (item = qx2nut; item->info_type != NULL; item++) {
@@ -124,13 +156,40 @@ void	blazer_initups(item_t *qx2nut)
 			item->qxflags |= QX_FLAG_SKIP;
 		}
 
+		/* ignoresab */
+		if (isb && !strcasecmp(item->info_type, "ups.status") && item->from == 44 && item->to == 44) {
+			upsdebugx(2, "%s: skipping %s ('Shutdown Active' bit)", __func__, item->info_type);
+			item->qxflags |= QX_FLAG_SKIP;
+		}
+
+	}
+}
+
+/* Subdriver-specific initups
+ * NOTE: this 'light' version only checks for status (Q1/QS/D/..) related items */
+void	blazer_initups_light(item_t *qx2nut)
+{
+	item_t	*item;
+
+	if (!testvar("ignoresab"))
+		return;
+
+	for (item = qx2nut; item->info_type != NULL; item++) {
+
+		if (strcasecmp(item->info_type, "ups.status") || item->from != 44 || item->to != 44)
+			continue;
+
+		upsdebugx(2, "%s: skipping %s ('Shutdown Active' bit)", __func__, item->info_type);
+		item->qxflags |= QX_FLAG_SKIP;
+		break;
+
 	}
 }
 
 /* == Preprocess functions == */
 
 /* Preprocess setvars */
-int	blazer_process_setvar(item_t *item, char *value, size_t valuelen)
+int	blazer_process_setvar(item_t *item, char *value, const size_t valuelen)
 {
 	if (!strlen(value)) {
 		upsdebugx(2, "%s: value not given for %s", __func__, item->info_type);
@@ -170,7 +229,7 @@ int	blazer_process_setvar(item_t *item, char *value, size_t valuelen)
 }
 
 /* Preprocess instant commands */
-int	blazer_process_command(item_t *item, char *value, size_t valuelen)
+int	blazer_process_command(item_t *item, char *value, const size_t valuelen)
 {
 	if (!strcasecmp(item->info_type, "shutdown.return")) {
 
@@ -248,7 +307,7 @@ int	blazer_process_command(item_t *item, char *value, size_t valuelen)
 }
 
 /* Process status bits */
-int	blazer_process_status_bits(item_t *item, char *value, size_t valuelen)
+int	blazer_process_status_bits(item_t *item, char *value, const size_t valuelen)
 {
 	char	*val = "";
 
@@ -326,14 +385,10 @@ int	blazer_process_status_bits(item_t *item, char *value, size_t valuelen)
 
 	case 44:	/* Shutdown Active */
 
-		if (item->value[0] == '1') {
-			if (!strcasecmp(item->info_type, "ups.status"))
-				val = "FSD";
-			else	/* ups.alarm */
-				val = "Shutdown imminent!";
-		} else if (!strcasecmp(item->info_type, "ups.status")) {
+		if (item->value[0] == '1')
+			val = "FSD";
+		else
 			val = "!FSD";
-		}
 		break;
 
 	case 45:	/* Beeper status - ups.beeper.status */

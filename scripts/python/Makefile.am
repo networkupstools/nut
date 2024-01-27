@@ -3,6 +3,7 @@
 EXTRA_DIST = README \
 			 app/gui-1.3.glade \
 			 app/NUT-Monitor \
+			 app/nut-monitor.appdata.xml \
 			 app/nut-monitor.desktop \
 			 app/nut-monitor.png \
 			 app/README \

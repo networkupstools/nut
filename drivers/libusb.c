@@ -33,11 +33,8 @@
 #include "usb-common.h"
 #include "libusb.h"
 
-/* USB standard timeout */
-#define USB_TIMEOUT 5000
-
 #define USB_DRIVER_NAME		"USB communication driver"
-#define USB_DRIVER_VERSION	"0.32"
+#define USB_DRIVER_VERSION	"0.33"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -51,6 +48,23 @@ upsdrv_info_t comm_upsdrv_info = {
 #define MAX_REPORT_SIZE         0x1800
 
 static void libusb_close(usb_dev_handle *udev);
+
+/*! Add USB-related driver variables with addvar().
+ * This removes some code duplication across the USB drivers.
+ */
+void nut_usb_addvars(void)
+{
+	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
+	addvar(VAR_VALUE, "vendor", "Regular expression to match UPS Manufacturer string");
+	addvar(VAR_VALUE, "product", "Regular expression to match UPS Product string");
+	addvar(VAR_VALUE, "serial", "Regular expression to match UPS Serial number");
+
+	addvar(VAR_VALUE, "vendorid", "Regular expression to match UPS Manufacturer numerical ID (4 digits hexadecimal)");
+	addvar(VAR_VALUE, "productid", "Regular expression to match UPS Product numerical ID (4 digits hexadecimal)");
+
+	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
+	addvar(VAR_VALUE, "usb_set_altinterface", "Force redundant call to usb_set_altinterface() (value=bAlternateSetting; default=0)");
+}
 
 /* From usbutils: workaround libusb API goofs:  "byte" should never be sign extended;
  * using "char" is trouble.  Likewise, sizes should never be negative.
@@ -71,6 +85,45 @@ static inline int matches(USBDeviceMatcher_t *matcher, USBDevice_t *device) {
 		return 1;
 	}
 	return matcher->match_function(device, matcher->privdata);
+}
+
+/*! If needed, set the USB alternate interface.
+ *
+ * In NUT 2.7.2 and earlier, the following call was made unconditionally:
+ *   usb_set_altinterface(udev, 0);
+ *
+ * Although harmless on Linux and *BSD, this extra call prevents old Tripp Lite
+ * devices from working on Mac OS X (presumably the OS is already setting
+ * altinterface to 0).
+ */
+static int nut_usb_set_altinterface(usb_dev_handle *udev)
+{
+	int altinterface = 0, ret = 0;
+	char *alt_string, *endp = NULL;
+
+	if(testvar("usb_set_altinterface")) {
+		alt_string = getval("usb_set_altinterface");
+		if(alt_string) {
+			altinterface = (int)strtol(alt_string, &endp, 10);
+			if(endp && !(endp[0] == 0)) {
+				upslogx(LOG_WARNING, "%s: '%s' is not a valid number", __func__, alt_string);
+			}
+			if(altinterface < 0 || altinterface > 255) {
+				upslogx(LOG_WARNING, "%s: setting bAlternateInterface to %d will probably not work", __func__, altinterface);
+			}
+		}
+		/* set default interface */
+		upsdebugx(2, "%s: calling usb_set_altinterface(udev, %d)", __func__, altinterface);
+		ret = usb_set_altinterface(udev, altinterface);
+		if(ret != 0) {
+			upslogx(LOG_WARNING, "%s: usb_set_altinterface(udev, %d) returned %d (%s)",
+					__func__, altinterface, ret, usb_strerror() );
+		}
+		upslogx(LOG_NOTICE, "%s: usb_set_altinterface() should not be necessary - please email the nut-upsdev list with information about your UPS.", __func__);
+	} else {
+		upsdebugx(3, "%s: skipped usb_set_altinterface(udev, 0)", __func__);
+	}
+	return ret;
 }
 
 #define usb_control_msg         typesafe_control_msg
@@ -101,6 +154,10 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 	unsigned char *p;
 	char string[256];
 	int i;
+	/* All devices use HID descriptor at index 0. However, some newer
+	 * Eaton units have a light HID descriptor at index 0, and the full
+	 * version is at index 1 (in which case, bcdDevice == 0x0202) */
+	int hid_desc_index = 0;
 
 	/* report descriptor */
 	unsigned char	rdbuf[MAX_REPORT_SIZE];
@@ -146,6 +203,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 			curDevice->VendorID = dev->descriptor.idVendor;
 			curDevice->ProductID = dev->descriptor.idProduct;
 			curDevice->Bus = strdup(bus->dirname);
+			curDevice->bcdDevice = dev->descriptor.bcdDevice;
 
 			if (dev->descriptor.iManufacturer) {
 				ret = usb_get_string_simple(udev, dev->descriptor.iManufacturer,
@@ -177,6 +235,11 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 			upsdebugx(2, "- Product: %s", curDevice->Product ? curDevice->Product : "unknown");
 			upsdebugx(2, "- Serial Number: %s", curDevice->Serial ? curDevice->Serial : "unknown");
 			upsdebugx(2, "- Bus: %s", curDevice->Bus ? curDevice->Bus : "unknown");
+			upsdebugx(2, "- Device release number: %04x", curDevice->bcdDevice);
+
+			if ((curDevice->VendorID == 0x463) && (curDevice->bcdDevice == 0x0202)) {
+				hid_desc_index = 1;
+			}
 
 			upsdebugx(2, "Trying to match device");
 			for (m = matcher; m; m=m->next) {
@@ -223,8 +286,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 			}
 #endif
 
-			/* set default interface */
-			usb_set_altinterface(udev, 0);
+			nut_usb_set_altinterface(udev);
 
 			if (!callback) {
 				return 1;
@@ -241,9 +303,9 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 			/* Get HID descriptor */
 
 			/* FIRST METHOD: ask for HID descriptor directly. */
-			/* res = usb_get_descriptor(udev, USB_DT_HID, 0, buf, 0x9); */
+			/* res = usb_get_descriptor(udev, USB_DT_HID, hid_desc_index, buf, 0x9); */
 			res = usb_control_msg(udev, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
-					      (USB_DT_HID << 8) + 0, 0, buf, 0x9, USB_TIMEOUT);
+					      (USB_DT_HID << 8) + hid_desc_index, 0, buf, 0x9, USB_TIMEOUT);
 
 			if (res < 0) {
 				upsdebugx(2, "Unable to get HID descriptor (%s)", usb_strerror());
@@ -259,6 +321,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 			if (rdlen1 < -1) {
 				upsdebugx(2, "Warning: HID descriptor, method 1 failed");
 			}
+			upsdebugx(3, "HID descriptor length (method 1) %d", rdlen1);
 
 			/* SECOND METHOD: find HID descriptor among "extra" bytes of
 			   interface descriptor, i.e., bytes tucked onto the end of
@@ -284,12 +347,19 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 			if (rdlen2 < -1) {
 				upsdebugx(2, "Warning: HID descriptor, method 2 failed");
 			}
+			upsdebugx(3, "HID descriptor length (method 2) %d", rdlen2);
 
 			/* when available, always choose the second value, as it
 				seems to be more reliable (it is the one reported e.g. by
 				lsusb). Note: if the need arises, can change this to use
 				the maximum of the two values instead. */
-			rdlen = rdlen2 >= 0 ? rdlen2 : rdlen1;
+			if ((curDevice->VendorID == 0x463) && (curDevice->bcdDevice == 0x0202)) {
+				upsdebugx(1, "Eaton device v2.02. Using full report descriptor");
+				rdlen = rdlen1;
+			}
+			else {
+				rdlen = rdlen2 >= 0 ? rdlen2 : rdlen1;
+			}
 
 			if (rdlen < 0) {
 				upsdebugx(2, "Unable to retrieve any HID descriptor");
@@ -306,9 +376,9 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 				goto next_device;
 			}
 
-			/* res = usb_get_descriptor(udev, USB_DT_REPORT, 0, bigbuf, rdlen); */
+			/* res = usb_get_descriptor(udev, USB_DT_REPORT, hid_desc_index, bigbuf, rdlen); */
 			res = usb_control_msg(udev, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
-				(USB_DT_REPORT << 8) + 0, 0, rdbuf, rdlen, USB_TIMEOUT);
+				(USB_DT_REPORT << 8) + hid_desc_index, 0, rdbuf, rdlen, USB_TIMEOUT);
 
 			if (res < 0)
 			{
@@ -375,7 +445,9 @@ static int libusb_strerror(const int ret, const char *desc)
 		return 0;
 
 	case -EOVERFLOW:	/* Value too large for defined data type */
+#ifdef EPROTO
 	case -EPROTO:	/* Protocol error */
+#endif
 		upsdebugx(2, "%s: %s", desc, usb_strerror());
 		return 0;
 

@@ -31,8 +31,9 @@ At the present time, usbhid-ups supports:
  - all Dell USB models,
  - some APC models,
  - some Belkin models,
- - some Cyber Power Systems models.
- - some TrippLite models
+ - some Cyber Power Systems models,
+ - some Powercom models,
+ - some TrippLite models.
 
 For a more complete list, refer to the NUT hardware compatibility list,
 available in the source distribution as data/drivers.list, or on the
@@ -119,6 +120,14 @@ useful except for printing debugging information (typically used with
 With this option, the driver activates a tweak to workaround buggy firmware
 returning invalid HID report length. Some APC Back-UPS units are known to have
 this bug.
+
+*interruptonly*::
+If this flag is set, the driver will not poll UPS. This also implies using of
+INPUT flagged objects. Some Powercom units need this option.
+
+*interruptsize*='num'::
+Limit the number of bytes to read from interrupt pipe. For some Powercom units
+this option should be equal to 8.
 
 INSTALLATION
 ------------

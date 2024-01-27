@@ -42,12 +42,13 @@ extern upsdrv_info_t comm_upsdrv_info;
  * corresponding string did not exist or could not be retrieved.
  */
 typedef struct SHUTDevice_s {
-	uint16_t	VendorID; /*!< Device's Vendor ID */
-	uint16_t	ProductID; /*!< Device's Product ID */
-	char*		Vendor; /*!< Device's Vendor Name */
-	char*		Product; /*!< Device's Product Name */
-	char*		Serial; /* Product serial number */
-	char*		Bus;    /* Bus name, e.g. "003" */
+	uint16_t	VendorID;  /*!< Device's Vendor ID    */
+	uint16_t	ProductID; /*!< Device's Product ID   */
+	char*		Vendor;    /*!< Device's Vendor Name  */
+	char*		Product;   /*!< Device's Product Name */
+	char*		Serial;    /*!< Product serial number */
+	char*		Bus;       /*!< Bus name, e.g. "003"  */
+	uint16_t	bcdDevice; /*!< Device release number */
 } SHUTDevice_t;
 
 /*!

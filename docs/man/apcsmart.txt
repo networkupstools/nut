@@ -11,7 +11,7 @@ SYNOPSIS
 
 *apcsmart* -h
 
-*apcsmart* -a \'UPS_NAME' [-x option=value ...]
+*apcsmart* -a 'UPS_NAME' [-x option=value ...]
 
 NOTE: This man page only documents the hardware-specific features of the
 apcsmart driver. For information about the core driver, see
@@ -21,17 +21,17 @@ linkman:nutupsdrv[8].
 SUPPORTED HARDWARE
 ------------------
 
-The apcsmart driver should recognize (or at the very least work with) majority
-of Smart-UPS models - which includes Smart-UPS, Matrix-UPS and Back-UPS lineups,
-among few other ones.
+The apcsmart driver should recognize (or at the very least, work with) the
+majority of Smart-UPS models - which includes Smart-UPS, Matrix-UPS and Back-UPS
+lineups, among few other ones.
 
-Currently we can roughly divide APC hardware into 3 groups (note that the
-division isn\'t strict by any means, and the borders between those are pretty fuzzy):
+Currently, we can roughly divide APC hardware into four groups (note that the
+division isn't strict by any means, and the borders between those are pretty fuzzy):
 
 [very] "old" models::
     These models usually have old APC logo, white color and _no_ programmable
-    eeprom; You won\'t find them listed anywhere on APC's site either. The support
-    for those will be usually based on driver\'s compatibility tables, or if the
+    EEPROM; you won't find them listed anywhere on APC's site either. The support
+    for those will be usually based on driver's compatibility tables, or if the
     model (firmware) is not listed in those - the driver will try to follow the very
     basic subset of features, while still trying to remain useful. Despite
     "smart" tagname, they often tend to behave in pretty dumb way (see the
@@ -45,19 +45,32 @@ division isn\'t strict by any means, and the borders between those are pretty fu
 
 "new" models::
     These models usually come from late 1990s / pre-2009 times. They are often
-    referred as "3rd. gen". For the most part, they have programmable eeprom,
+    referred as "3rd. gen". For the most part, they have programmable EEPROM,
     report supported commands and capabilites, and should work just fine with the
     apcsmart driver.
 
 "microlink" models::
-    WARNING: these are not _natively_ supported by apcsmart (or apcupsd for that
-    matter, if you\'re wondering). Around 2007 APC (now APC Schneider) decided to
-    go back to its proprietry roots and all the new models (SMT, SMX, SURTD) use
-    completely different protocol and cables. If you purchased a new APC UPS,
-    that uses cable with rj45 on the one end, and db-9 on the other - then you
-    have such model. Your only option to support it through *NUT* is to
-    purchase "legacy communications card" - part #AP9620 (google \'AP9620' for
-    more details). Or if that\'s not an option, rely on official software.
+    WARNING: these are not _natively_ supported by *apcsmart* (or *apcupsd*,
+    for that matter, if you're wondering). Around 2007, APC (now APC Schneider)
+    decided to go back to its proprietry roots, and all the new models (SMT,
+    SMX, SURTD) use completely different protocol and cables. If you purchased
+    a new APC UPS - that uses cable with RJ45 on the one end, and DB-9 on the
+    other - then you have such model. Your only option to support it through
+    *NUT* is to purchase a "legacy communications card" - part #AP9620 (google
+    \'AP9620' for more details). Or if that's not an option, rely on official
+    software.
+
+Microsol models::
+    Several Microsol serial models sold in Brazil have been rebranded as APC
+    Back-UPS, and the model numbers tend to start with "BZ". If you have one
+    of these "Nobreaks", they will not work with the *apcsmart* driver - please
+    see the linkman:solis[8] driver instead.
++
+--
+.Example models:
+    * Back-UPS BZ1200-BR
+    * Back-UPS BZ2200BI-BR
+--
 
 Another thing to remember is that Smart protocol is not USB protocol. If you
 have UPS with both USB and serial ports, then depending on how you connect it,
@@ -92,9 +105,9 @@ Alternatively, you can also provide it on the command line using:
 TTY MODES
 ---------
 
-By default the driver works in canonical mode, but it showed to be a problem in
-windows systems. Furthermore there's a possibility of some obscure serial cards
-or serial-usb convertes that could cause problems as well. You can use
+By default the driver works in canonical mode, but it proved to be a problem in
+Windows systems. Furthermore there's a possibility of some obscure serial cards
+or serial-USB converters that could cause problems as well. You can use
 \'ttymode=' option to force non-canonical discipline in linkman:ups.conf[5]:
 
 *ttymode*=raw
@@ -114,7 +127,7 @@ behaviour quite a bit, depending on the model.
 *S* (soft hibernate)::
     This is most basic command present in probably all APC models. It will
     hibernate the UPS, and subsequently wake it up when the mains supply
-    returns. *The command doesn\'t work if UPS is running on mains.*
+    returns. *The command doesn't work if the UPS is running on mains.*
 
     "old" models:::
         The behaviour here is unfortunately pretty primitive - when the power
@@ -123,8 +136,8 @@ behaviour quite a bit, depending on the model.
 
     "new" models:::
         The behaviour here is as expected - the power is cut off after the
-        eeprom defined grace period. The UPS will wake up when the power
-        returns, after the eeprom defined delay AND if the eeprom defined min.
+        EEPROM defined grace period. The UPS will wake up when the power
+        returns, after the EEPROM defined delay AND if the EEPROM defined min.
         battery charge level is met. The delay is counted from the power\'s
         return.
 
@@ -154,8 +167,8 @@ command if your UPS supports it (and is not too old, see below).
         connection is kept alive).
 
     "new" models:::
-        All the usual variables defined in eeprom are respected (see *S*).
-        Additionally, if nnn > 0, the $$nnn*6$$ minutes are added to eeprom
+        All the usual variables defined in EEPROM are respected (see *S*).
+        Additionally, if nnn > 0, the $$nnn*6$$ minutes are added to EEPROM
         defined delay. UPS will not power up if it\'s running on batteries,
         contrary to what "old" models used to do - the combined delay is counted
         from the moment of power return.
@@ -167,7 +180,7 @@ trigger it (*awd* option, or argument to one of the supported instant commands).
 
 *K* (delayed poweroff)::
     This is permanent poweroff - the UPS will not wake up automatically. On
-    newer units, it will respect applicable eeprom variables.
+    newer units, it will respect applicable EEPROM variables.
 
 *Z* (instant poweroff)::
     This is also permanent poweroff - the UPS will not wake up automatically.
@@ -248,8 +261,8 @@ IGNORING LB STATE
 
 APC units - even if they report LB mode - will not go into shutdown
 automatically. This gives us even more control with reference to "when to
-actually shutdown psu". Since version 2.6.2, NUT supports *ignorelb* option in
-driver\'s section of linkman:ups.conf[5]. When such option is in effect,
+actually shutdown PSU". Since version 2.6.2, NUT supports *ignorelb* option in
+driver's section of linkman:ups.conf[5]. When such option is in effect,
 the core driver will ignore LB state as reported by specific driver and 
 start shutdown basing the decision _only_ on two conditions:
 
@@ -264,8 +277,8 @@ is not checked. If you want to explicitly disable one of the conditions, simply
 override the right hand variable causing the condition to always evaluate to
 false (you can even provide negative numbers).
 
-APC UPSes don\'t have battery.charge.low - you will have to define it if you want
-to use such condition (prefix the variable with override. or default.).
+APC UPSes don't have battery.charge.low - you will have to define it if you want
+to use such condition (prefix the variable with `override.` or `default.`).
 
 "New" units have battery.runtime.low, but depending on battery quality, firmware
 version, calibration and UPS load - this variable can be underestimated quite a bit -
@@ -335,9 +348,9 @@ Other supported commands:
 PREVIOUS DRIVER VERSION
 -----------------------
 
-Previous driver is still available as apcsmart-old - should there be any need to
+Previous driver is still available as *apcsmart-old*, should there be any need to
 use earlier version (bugs, incompatiblities with new functionality, etc.). In
-due time apcsmart-old will be phased out completely, but this won't happen until
+due time, *apcsmart-old* will be phased out completely, but this won't happen until
 the new version gets solid exposure with no pending issues.
 
 BUGS
@@ -362,7 +375,8 @@ new features, which is maintained by Michal Soltys <soltys@ziu.info>
 SEE ALSO
 --------
 
-linkman:nutupsdrv[8], linkman:ups.conf[5]
+linkman:nutupsdrv[8], linkman:ups.conf[5], linkman:usbhid-ups[8],
+linkman:solis[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

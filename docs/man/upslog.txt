@@ -86,6 +86,16 @@ The interval value is merely the number given to *sleep*(3) after running
 through the format string.  Therefore, a query will actually take slightly
 longer than the interval, depending on the speed of your system.
 
+ON-DEMAND LOGGING
+-----------------
+
+Sending a USR1 signal to a running *upslog* process makes it wake from the
+current sleep and log immediately.  This is useful when triggered from a
+*upssched* event trigger (e.g. `AT ONBATT` or `AT ONLINE`) to ensure that an
+entry always exists, even if the power goes away for a period of time shorter
+than that specified by the `-i` argument.
+
+
 LOG ROTATION
 ------------
 
@@ -103,7 +113,7 @@ linkman:upsd[8]
 Clients:
 ~~~~~~~~
 linkman:upsc[8], linkman:upscmd[8],
-linkman:upsrw[8], linkman:upsmon[8]
+linkman:upsrw[8], linkman:upsmon[8], linkman:upssched[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

@@ -44,6 +44,11 @@ on servers.
 Note that you need to install freeipmi (0.8.5 or higher) development package or
 files.
 
+	--with-linux_i2c
+
+Build and install i2c drivers (default: auto-detect)
+Note that you need to install libi2c development package or files.
+
 	--with-drivers=<driver>,<driver>,...
 
 Specify exactly which driver or drivers to build and install (this
@@ -85,9 +90,9 @@ Verbose output can be enabled using: ASCIIDOC_VERBOSE=-v make
 
 This feature requires AsciiDoc 8.6.3 (http://www.methods.co.nz/asciidoc).
 
-	--with-lib (default: no)
+	--with-dev (default: no)
 
-Build and install the upsclient library and header files. 
+Build and install the upsclient and nutclient library and header files. 
 
 	--with-all (no default)
 
@@ -101,7 +106,7 @@ library).
 
 Enable SSL support, using either Mozilla NSS or OpenSSL.
 If both are present, and nothing was specified, OpenSSL support will
-be prefered. Read docs/security.txt for instructions on SSL support.
+be preferred. Read docs/security.txt for instructions on SSL support.
 
 	--with-wrap (default: auto-detect)
 
@@ -112,18 +117,11 @@ more information.
 
 Enable IPv6 support.
 
-	--with-hal (default: no)
-
-Build and install Hardware Abstraction Layer support.
-If you own a USB unit, only protect your local system and run the
-Gnome or KDE desktop, this will enable a full Plug & Play usage.
-See docs/nut-hal.txt for additional information on how to set up
-and use HAL support.
-
 	--with-avahi (default: auto-detect)
 
 Build and install Avahi support, to publish NUT server availability
-using mDNS protocol.
+using mDNS protocol.  This requires Avahi development files for the
+Core and Client parts. 
 
 	--with-libltdl (default: auto-detect)
 
@@ -173,7 +171,7 @@ for this software.
 If you use one of the --with-user and --with-group options, then
 you have to use the other one too. 
 
-See the INSTALL document and the FAQ for more on this topic.
+See the INSTALL.nut document and the FAQ for more on this topic.
 
 	--with-logfacility=FACILITY
 
@@ -229,7 +227,7 @@ Sets the base directories for the man pages.  The default is
 
 	--includedir=PATH
 
-Sets the path for include files to be installed when --with-lib is
+Sets the path for include files to be installed when `--with-dev` is
 selected. For example, upsclient.h is installed here. The default
 is <prefix>/include.
 
@@ -268,7 +266,7 @@ HTML files will be installed to this path. By default, this is
 	--with-pkgconfig-dir=PATH
 
 Where to install pkg-config *.pc files. This option only has an
-effect if --with-lib is selected, and causes a pkg-config file to
+effect if `--with-dev` is selected, and causes a pkg-config file to
 be installed in the named location. The default is
 <exec_prefix>/pkgconfig.
 
@@ -348,21 +346,6 @@ compiler flags that are needed.
 	--with-ssl-libs, --with-usb-libs, --with-snmp-libs,
 	--with-neon-libs, --with-libltdl-libs
 	--with-powerman-libs="-L/foo/bar -labcd -lxyz"
-
-If your system doesn't have pkg-config and support for any of the above
-libraries isn't found (but you know it is installed), you must specify the
-linker flags that are needed.
-
-HAL addons (deprecated)
------------------------
-
-	--with-hal-includes="-DDBUS_API_SUBJECT_TO_CHANGE -I/usr/include/hal \
-		-I/usr/include/dbus-1.0 -I/usr/lib/dbus-1.0/include"
-	--with-hal-libs="-lhal -ldbus-1 -lpthread"
-	--with-hal-user="haldaemon"
-	--with-hal-device-match-key="info.bus"
-	--with-hal-callouts-path="${libdir}/hal"
-	--with-hal-fdi-path="${datarootdir}/hal/fdi/information/20thirdparty"
 
 If system doesn't have pkg-config or it fails to provides hints for some of the
 settings that are needed to set it up properly and the build in defaults are

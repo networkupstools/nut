@@ -584,36 +584,6 @@ char *xstrdup(const char *string)
 	return p;
 }
 
-/* modify in - strip all trailing instances of <sep> */
-char *rtrim(char *in, const char sep)
-{
-	char	*p;
-
-	if (in) {
-		p = &in[strlen(in) - 1];
-
-		while ((p >= in) && (*p == sep))
-			*p-- = '\0';
-	}
-	return in;
-}
-
-/* modify in - strip all leading instances of <sep> */
-char* ltrim(char *in, const char sep)
-{
-	char *p;
-
-	if (in) {
-		p = in;
-
-		while ((*p != '\0') && (*p == sep))
-			*p++ = *in++;
-
-		p = '\0';
-	}
-	return in;
-}
-
 /* Read up to buflen bytes from fd and return the number of bytes
    read. If no data is available within d_sec + d_usec, return 0.
    On error, a value < 0 is returned (errno indicates error). */

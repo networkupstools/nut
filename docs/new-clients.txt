@@ -23,7 +23,7 @@ to give access to upsd and UPS status information.
 Both static and shared versions are provided.
 
 These library files and associated header files are not installed by
-default.  You must `./configure --with-lib` to enable building and
+default.  You must `./configure --with-dev` to enable building and
 installing these files. The libraries can then be built and installed
 with `make` and `make install` as usual. This must be done before
 building other (non-NUT) programs which depend on them.
@@ -151,6 +151,6 @@ multiple UPS units).
 Java
 ----
 
-The NUT java support have been externalized.
+The NUT Java support has been externalized.
 It is available at https://github.com/networkupstools/jnut
 

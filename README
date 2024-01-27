@@ -123,13 +123,13 @@ The entry in `ups.conf` looks like this:
 To start and stop drivers, use upsdrvctl.  By default, it will start or
 stop every UPS in the config file:
 
-	/usr/local/ups/bin/upsdrvctl start
-	/usr/local/ups/bin/upsdrvctl stop
+	/usr/local/ups/sbin/upsdrvctl start
+	/usr/local/ups/sbin/upsdrvctl stop
 
 However, you can also just start or stop one by adding its name:
 
-	/usr/local/ups/bin/upsdrvctl start sparky
-	/usr/local/ups/bin/upsdrvctl stop sparky
+	/usr/local/ups/sbin/upsdrvctl start sparky
+	/usr/local/ups/sbin/upsdrvctl stop sparky
 
 To find the driver name for your device, refer to the section below
 called "HARDWARE SUPPORT TABLE".
@@ -223,8 +223,8 @@ upsdrvctl can also shut down (power down) all of your UPS hardware.
 WARNING: if you play around with this command, expect your filesystems
 to die.  Don't power off your computers unless they're ready for it:
 
-	/usr/local/ups/bin/upsdrvctl shutdown
-	/usr/local/ups/bin/upsdrvctl shutdown sparky
+	/usr/local/ups/sbin/upsdrvctl shutdown
+	/usr/local/ups/sbin/upsdrvctl shutdown sparky
 
 You should read the <<UPS_shutdown,Configuring automatic UPS shutdowns>>
 chapter to learn more about when to use this feature.  If called at the wrong

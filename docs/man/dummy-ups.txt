@@ -86,7 +86,7 @@ Repeater Mode
 
 Port is the name of a remote UPS, using the NUT form, ie:
 
-	<upsname>[@<hostname>[:<port>]]
+	<upsname>@<hostname>[:<port>]
 
 For instance:
 
@@ -94,6 +94,10 @@ For instance:
 		driver = dummy-ups
 		port = ups@hostname
 		desc = "dummy-ups in repeater mode"
+
+Unlike UPS specifications in the rest of NUT, the `@hostname` portion is not
+optional - it is the `@` character which enables Repeater Mode. To refer to an
+UPS on the same host as *dummy-ups*, use `port = upsname@localhost`.
 
 INTERACTION
 -----------
@@ -114,11 +118,11 @@ so support the same instant commands and settable values.
 BACKGROUND
 ----------
 
-This driver was written in one evening to replace the previous dummycons
-testing driver. It was too limited and required to work from a terminal to
-interact.
+Dummy Mode was originally written in one evening to replace the previous
+dummycons testing driver, which was too limited, and required a terminal for
+interaction.
 
-*dummy-ups* is useful for NUT client development, and other testing purpose.
+*dummy-ups* is useful for NUT client development, and other testing purposes.
 
 It also helps the NUT Quality Assurance effort, by automating some tests on the
 NUT framework.

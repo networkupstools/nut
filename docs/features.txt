@@ -18,10 +18,12 @@ More and more appliances manufacturers are bundling NUT...
 Multiple manufacturer and device support
 ----------------------------------------
 
-- Monitors many UPS, PDU and SCD models from more than 100 manufacturers with a
-unified interface (link:stable-hcl.html[Hardware Compatibility List]).
+- Monitors many UPS, PDU, ATS, PSU and SCD models from more than 140
+manufacturers with a unified interface 
+(link:stable-hcl.html[Hardware Compatibility List]).
 
-- Various communication types are supported with the same common interface:
+- Various communication types and many protocols are supported with the same
+common interface:
 	* serial,
 	* USB,
 	* network (SNMP, Eaton / MGE XML/HTTP).
@@ -57,19 +59,6 @@ path between them.
 WARNING: Be sure to plug your network's physical hardware (switches, hubs,
 routers, bridges, ...) into the UPS!
 
-
-////////////////////////////////////////////////////////////////////////////////
-*FIXME* to be removed?
-
-- This has also allowed us to create easily the Power Management integration.
-
-=== Power Management integration ===
-
-- Thanks to its modular design, NUT can feed data to the FreeDesktop Hardware Abstraction Layer (HAL).[[BR]]
- This allow a seemless integration of USB UPSs, at a small cost (around 200 Kb), reusing the standard Power Management GUIs and providing to users a full Plug & Play system.
-
-- The added bonus is that this is the best Power Management existing, surpassing the one that exist on Windows and Mac OS, both in terms of devices supported and of features.
-////////////////////////////////////////////////////////////////////////////////
 
 Redundancy support - Hot swap/high availability power supplies
 --------------------------------------------------------------
@@ -133,7 +122,7 @@ no mysteries or secrets in your critical monitoring tools.
 UPS management and control
 --------------------------
 
-- Writable variables may be edited on higher end equipment for local customizations
+- Writable variables may be edited on higher end equipment for local customization
 
 - Status monitoring can generate notifications (email/pager/SMS/...) on alert conditions
 

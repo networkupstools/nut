@@ -77,6 +77,11 @@ static void set_exit_flag(int sig)
 	exit_flag = sig;
 }
 
+static void set_print_now_flag(int sig)
+{
+	/* no need to do anything, the signal will cause sleep to be interrupted */
+}
+
 /* handlers: reload on HUP, exit on INT/QUIT/TERM */
 static void setup_signals(void)
 {
@@ -97,6 +102,10 @@ static void setup_signals(void)
 		fatal_with_errno(EXIT_FAILURE, "Can't install SIGQUIT handler");
 	if (sigaction(SIGTERM, &sa, NULL) < 0)
 		fatal_with_errno(EXIT_FAILURE, "Can't install SIGTERM handler");
+
+	sa.sa_handler = set_print_now_flag;
+	if (sigaction(SIGUSR1, &sa, NULL) < 0)
+		fatal_with_errno(EXIT_FAILURE, "Can't install SIGUSR1 handler");
 }
 
 static void help(const char *prog)

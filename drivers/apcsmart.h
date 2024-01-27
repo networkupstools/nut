@@ -143,7 +143,7 @@
 #define APC_GOSMART	'Y'
 #define APC_GODUMB	'R'
 #define APC_CMDSET	'a'
-#define APC_CMDSET_FMT	"^[0-9]\\.[^.]*\\.[^.]+$"
+#define APC_CMDSET_FMT	"^[0-9]\\.[^.]*\\.[^.]+(\\.[^.]+)?$"
 #define APC_CAPS	'\032'	/* ^Z */
 #define APC_NEXTVAL	'-'
 #define APC_FW_OLD	'V'

@@ -33,7 +33,10 @@ let ups_sep      = IniFile.sep IniFile.sep_re IniFile.sep_default
 let ups_global   = "chroot"
                  | "driverpath"
                  | "maxstartdelay"
+                 | "maxretry"
+                 | "retrydelay"
                  | "pollinterval"
+                 | "synchronous"
                  | "user"
 
 let ups_fields   = "driver"
@@ -41,7 +44,9 @@ let ups_fields   = "driver"
                  | "sdorder"
                  | "desc"
                  | "nolock"
+                 | "ignorelb"
                  | "maxstartdelay"
+                 | "synchronous"
 @SPECIFIC_DRV_VARS@
 
 let ups_entry    = IniFile.indented_entry (ups_global|ups_fields) ups_sep ups_comment

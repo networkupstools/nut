@@ -5,7 +5,6 @@
 #FIXME: SERLIBS is only useful for LDADD_DRIVERS_SERIAL not for LDADD_COMMON
 LDADD_COMMON = ../common/libcommon.la ../common/libparseconf.la
 LDADD_DRIVERS = $(LDADD_COMMON) main.o dstate.o
-LDADD_HAL_DRIVERS = $(LDADD_COMMON) libnuthalmain.a
 LDADD_DRIVERS_SERIAL = $(LDADD_DRIVERS) $(SERLIBS) serial.o
 
 # most targets are drivers, so make this the default
@@ -14,9 +13,6 @@ LDADD = $(LDADD_DRIVERS_SERIAL)
 # files. In any case, CFLAGS are only -I options, so there is no harm,
 # but only add them if we really use the target.
 AM_CFLAGS = -I$(top_srcdir)/include
-if WITH_HAL
-  AM_CFLAGS += $(LIBHAL_CFLAGS)
-endif
 if WITH_USB
   AM_CFLAGS += $(LIBUSB_CFLAGS)
 endif
@@ -42,13 +38,13 @@ SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
  nutdrv_qx
 SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
- blazer_usb richcomm_usb riello_usb nutdrv_qx
+ blazer_usb richcomm_usb riello_usb \
+ nutdrv_atcl_usb \
+ nutdrv_qx
 USB_DRIVERLIST = $(USB_LIBUSB_DRIVERLIST)
-HAL_DRIVERLIST = hald-addon-usbhid-ups hald-addon-bcmxcp_usb \
- hald-addon-tripplite_usb hald-addon-blazer_usb hald-addon-riello_usb	\
- hald-addon-nutdrv_qx
 NEONXML_DRIVERLIST = netxml-ups
 MACOSX_DRIVERLIST = macosx-ups
+LINUX_I2C_DRIVERLIST = asem
 
 # distribute all drivers, even ones that are not built by default
 EXTRA_PROGRAMS = $(SERIAL_DRIVERLIST) $(SNMP_DRIVERLIST) $(USB_DRIVERLIST) $(NEONXML_DRIVERLIST) $(MACOSX_DRIVERLIST)
@@ -67,10 +63,6 @@ endif
 if WITH_USB
    driverexec_PROGRAMS += $(USB_LIBUSB_DRIVERLIST)
 endif
-if WITH_HAL
-   halexecdir = $(HAL_CALLOUTS_PATH)
-   halexec_PROGRAMS = $(HAL_DRIVERLIST)
-endif
 if WITH_NEON
    driverexec_PROGRAMS += $(NEONXML_DRIVERLIST)
 endif
@@ -83,12 +75,15 @@ endif
 if WITH_MACOSX
    driverexec_PROGRAMS += $(MACOSX_DRIVERLIST)
 endif
+if WITH_LINUX_I2C
+   driverexec_PROGRAMS += $(LINUX_I2C_DRIVERLIST)
+endif
 else
    driverexec_PROGRAMS += skel
 endif
 
 # always build upsdrvctl
-driverexec_PROGRAMS += upsdrvctl
+sbin_PROGRAMS = upsdrvctl
 
 # ==========================================================================
 # Driver build details
@@ -134,6 +129,7 @@ rhino_SOURCES = rhino.c
 rhino_LDADD = $(LDADD) -lm
 safenet_SOURCES = safenet.c
 solis_SOURCES = solis.c
+solis_LDADD = $(LDADD) -lm
 tripplite_SOURCES = tripplite.c
 tripplite_LDADD = $(LDADD) -lm
 tripplitesu_SOURCES = tripplitesu.c
@@ -180,16 +176,20 @@ tripplite_usb_SOURCES = tripplite_usb.c libusb.c usb-common.c
 tripplite_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
 bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c usb-common.c
-bcmxcp_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
+bcmxcp_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
 blazer_usb_SOURCES = blazer.c blazer_usb.c libusb.c usb-common.c
 blazer_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
+
+nutdrv_atcl_usb_SOURCES = nutdrv_atcl_usb.c usb-common.c
+nutdrv_atcl_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
 
 richcomm_usb_SOURCES = richcomm_usb.c usb-common.c
 richcomm_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
 
 riello_usb_SOURCES = riello.c riello_usb.c libusb.c usb-common.c
 riello_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
+
 
 # HID-over-serial
 mge_shut_SOURCES = usbhid-ups.c libshut.c libhid.c hidparser.c mge-hid.c
@@ -200,29 +200,9 @@ mge_shut_LDADD = $(LDADD)
 # SNMP
 snmp_ups_SOURCES = snmp-ups.c apc-mib.c baytech-mib.c compaq-mib.c eaton-mib.c \
  ietf-mib.c mge-mib.c netvision-mib.c powerware-mib.c raritan-pdu-mib.c \
- bestpower-mib.c cyberpower-mib.c delta_ups-mib.c
+ bestpower-mib.c cyberpower-mib.c delta_ups-mib.c xppc-mib.c huawei-mib.c \
+ eaton-ats-mib.c apc-ats-mib.c
 snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS)
-
-# HAL
-hald_addon_usbhid_ups_SOURCES = usbhid-ups.c libhid.c libusb.c hidparser.c	\
- $(USBHID_UPS_SUBDRIVERS)
-hald_addon_usbhid_ups_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS)
-
-hald_addon_tripplite_usb_SOURCES = tripplite_usb.c libusb.c
-hald_addon_tripplite_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS) -lm
-
-hald_addon_bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c
-hald_addon_bcmxcp_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS)
-
-hald_addon_blazer_usb_SOURCES = blazer.c blazer_usb.c libusb.c
-hald_addon_blazer_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS) -lm
-
-hald_addon_riello_usb_SOURCES = riello.c riello_usb.c libusb.c
-hald_addon_riello_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS) -lm
-
-hald_addon_nutdrv_qx_SOURCES = nutdrv_qx.c libusb.c $(NUTDRV_QX_SUBDRIVERS)
-hald_addon_nutdrv_qx_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS) -lm
-hald_addon_nutdrv_qx_CFLAGS = $(AM_CFLAGS) -DQX_USB
 
 # NEON XML/HTTP
 netxml_ups_SOURCES = netxml-ups.c mge-xml.c
@@ -244,6 +224,10 @@ macosx_ups_LDADD = $(LDADD_DRIVERS)
 macosx_ups_LDFLAGS = $(LDFLAGS) -framework IOKit -framework CoreFoundation
 macosx_ups_SOURCES = macosx-ups.c
 
+# Asem
+asem_LDADD = $(LDADD_DRIVERS)
+asem_SOURCES = asem.c
+
 # nutdrv_qx USB/Serial
 nutdrv_qx_SOURCES = nutdrv_qx.c
 nutdrv_qx_LDADD = $(LDADD_DRIVERS) -lm
@@ -257,9 +241,10 @@ nutdrv_qx_CFLAGS += -DQX_USB
 nutdrv_qx_SOURCES += libusb.c usb-common.c
 nutdrv_qx_LDADD += $(LIBUSB_LIBS)
 endif
-NUTDRV_QX_SUBDRIVERS = nutdrv_qx_blazer-common.c nutdrv_qx_mecer.c	\
- nutdrv_qx_megatec.c nutdrv_qx_megatec-old.c nutdrv_qx_mustek.c	\
- nutdrv_qx_voltronic.c nutdrv_qx_zinto.c
+NUTDRV_QX_SUBDRIVERS = nutdrv_qx_bestups.c nutdrv_qx_blazer-common.c	\
+ nutdrv_qx_mecer.c nutdrv_qx_megatec.c nutdrv_qx_megatec-old.c	\
+ nutdrv_qx_mustek.c nutdrv_qx_q1.c nutdrv_qx_voltronic.c	\
+ nutdrv_qx_voltronic-qs.c nutdrv_qx_voltronic-qs-hex.c nutdrv_qx_zinto.c
 nutdrv_qx_SOURCES += $(NUTDRV_QX_SUBDRIVERS)
 
 # ----------------------------------------------------------------------
@@ -269,30 +254,20 @@ nutdrv_qx_SOURCES += $(NUTDRV_QX_SUBDRIVERS)
 
 dist_noinst_HEADERS = apc-mib.h apc-hid.h baytech-mib.h bcmxcp.h	\
  bcmxcp_io.h belkin.h belkin-hid.h bestpower-mib.h blazer.h cps-hid.h dstate.h \
- dstate-hal.h dummy-ups.h eaton-mib.h explore-hid.h gamatronic.h genericups.h	\
+ dummy-ups.h eaton-mib.h explore-hid.h gamatronic.h genericups.h	\
  hidparser.h hidtypes.h ietf-mib.h libhid.h libshut.h libusb.h liebert-hid.h	\
- main.h main-hal.h mge-hid.h mge-mib.h mge-shut.h mge-utalk.h		\
+ main.h mge-hid.h mge-mib.h mge-shut.h mge-utalk.h		\
  mge-xml.h microdowell.h netvision-mib.h netxml-ups.h nut-ipmi.h oneac.h		\
  powercom.h powerpanel.h powerp-bin.h powerp-txt.h powerware-mib.h raritan-pdu-mib.h	\
  safenet.h serial.h snmp-ups.h solis.h tripplite.h tripplite-hid.h 			\
  upshandler.h usb-common.h usbhid-ups.h powercom-hid.h compaq-mib.h idowell-hid.h \
  apcsmart.h apcsmart_tabs.h apcsmart-old.h apcupsd-ups.h cyberpower-mib.h riello.h openups-hid.h \
- delta_ups-mib.h nutdrv_qx.h nutdrv_qx_blazer-common.h nutdrv_qx_mecer.h	\
- nutdrv_qx_megatec.h nutdrv_qx_megatec-old.h nutdrv_qx_mustek.h nutdrv_qx_voltronic.h	\
- nutdrv_qx_zinto.h
+ delta_ups-mib.h nutdrv_qx.h nutdrv_qx_bestups.h nutdrv_qx_blazer-common.h nutdrv_qx_mecer.h	\
+ nutdrv_qx_megatec.h nutdrv_qx_megatec-old.h nutdrv_qx_mustek.h nutdrv_qx_q1.h	\
+ nutdrv_qx_voltronic.h nutdrv_qx_voltronic-qs.h nutdrv_qx_voltronic-qs-hex.h nutdrv_qx_zinto.h \
+ xppc-mib.h huawei-mib.h eaton-ats-mib.h apc-ats-mib.h
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,
 EXTRA_LIBRARIES = libdummy.a
 libdummy_a_SOURCES = main.c dstate.c serial.c
-
-# the nuthalmain library combines the code for main-hal.c and
-# dstate-hal.c. It is necessary for Automake-technical reasons,
-# because per-object CFLAGS can only be specified for libraries, not
-# for object files. This library is used during the build process,
-# and is not meant to be installed.
-
-EXTRA_LIBRARIES += libnuthalmain.a
-libnuthalmain_a_SOURCES = main-hal.c dstate-hal.c usb-common.c
-
-MOSTLYCLEANFILES = libnuthalmain.a

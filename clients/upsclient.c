@@ -20,6 +20,7 @@
 */
 
 #include "config.h"	/* safe because it doesn't contain prototypes */
+#include "nut_platform.h"
 
 #ifdef HAVE_PTHREAD
 /* this include is needed on AIX to have errno stored in thread local storage */
@@ -40,6 +41,20 @@
 #include "upsclient.h"
 #include "common.h"
 #include "timehead.h"
+
+/* WA for Solaris/i386 bug: non-blocking connect sets errno to ENOENT */
+#if (defined NUT_PLATFORM_SOLARIS && CPU_TYPE == i386)
+	#define SOLARIS_i386_NBCONNECT_ENOENT(status) (ENOENT == (status))
+#else
+	#define SOLARIS_i386_NBCONNECT_ENOENT(status) (0)
+#endif  /* end of Solaris/i386 WA for non-blocking connect */
+
+/* WA for AIX bug: non-blocking connect sets errno to 0 */
+#if (defined NUT_PLATFORM_AIX)
+	#define AIX_NBCONNECT_0(status) (0 == (status))
+#else
+	#define AIX_NBCONNECT_0(status) (0)
+#endif  /* end of AIX WA for non-blocking connect */
 
 #ifdef WITH_NSS
 	#include <prerror.h>
@@ -916,7 +931,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,stru
 		}
 
 		while ((v = connect(sock_fd, ai->ai_addr, ai->ai_addrlen)) < 0) {
-			if(errno == EINPROGRESS) {
+			if(errno == EINPROGRESS || SOLARIS_i386_NBCONNECT_ENOENT(errno) || AIX_NBCONNECT_0(errno)) {
 				FD_ZERO(&wfds);
 				FD_SET(sock_fd, &wfds);
 				select(sock_fd+1,NULL,&wfds,NULL,

@@ -17,7 +17,8 @@ then
 	fi
 fi
 
-if [ ! -f scripts/hal/ups-nut-device.fdi.in ] || [ ! -f scripts/udev/nut-usbups.rules.in ]
+if [ ! -f scripts/udev/nut-usbups.rules.in -o \
+     ! -f scripts/devd/nut-usb.conf.in ]
 then
 	if perl -e 1; then
 		echo "Regenerating the USB helper files..."

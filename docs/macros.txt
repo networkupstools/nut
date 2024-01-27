@@ -12,7 +12,6 @@ directory.
 	#define a replacement if necessary.
 
 - NUT_CHECK_LIBGD
-- NUT_CHECK_LIBHAL
 - NUT_CHECK_LIBNEON
 - NUT_CHECK_LIBNETSNMP
 - NUT_CHECK_LIBPOWERMAN

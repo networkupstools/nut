@@ -30,9 +30,12 @@
 - add syscontact/location (to all mib.h or centralized?)
 - complete shutdown
 - add enum values to OIDs.
-- optimize network flow by constructing one big packet (calling snmp_add_null_var
-for each OID request we made), instead of sending many small packets
-- add support for registration and traps (manager mode),
+- optimize network flow by:
+  1) caching OID values (as in usbhid-ups) with timestamping and lifetime
+  2) constructing one big packet (calling snmp_add_null_var
+     for each OID request we made), instead of sending many small packets
+- add support for registration and traps (manager mode)
+  => Issue: 1 trap listener for N snmp-ups drivers!
 - complete mib2nut data (add all OID translation to NUT)
 - externalize mib2nut data in .m2n files and load at driver startup using parseconf()...
 - adjust information logging.
@@ -79,7 +82,9 @@ for each OID request we made), instead of sending many small packets
 #define DISABLE_MIB_LOADING 1
 
 /* Parameters default values */
-#define DEFAULT_POLLFREQ	30		/* in seconds */
+#define DEFAULT_POLLFREQ          30   /* in seconds */
+#define DEFAULT_NETSNMP_RETRIES   5
+#define DEFAULT_NETSNMP_TIMEOUT   1    /* in seconds */
 
 /* use explicit booleans */
 #ifndef FALSE
@@ -112,7 +117,7 @@ typedef struct {
 typedef struct {
 	const char   *info_type;	/* INFO_ or CMD_ element */
 	int           info_flags;	/* flags to set in addinfo */
-	float         info_len;		/* length of strings if STR,
+	double        info_len;		/* length of strings if STR,
 								 * cmd value if CMD, multiplier otherwise. */
 	const char   *OID;			/* SNMP OID or NULL */
 	const char   *dfl;			/* default value */
@@ -151,6 +156,8 @@ typedef struct {
 #define SU_STATUS_NUM_ELEM	4
 #define SU_STATUS_INDEX(t)	(((t) >> 8) & 7)
 
+#define SU_OUTLET_GROUP     (1 << 10)   /* outlet group template definition */
+
 /* Phase specific data */
 #define SU_PHASES		(0x3F << 12)
 #define SU_INPHASES		(0x3 << 12)
@@ -174,6 +181,8 @@ typedef struct {
 
 #define SU_VAR_COMMUNITY	"community"
 #define SU_VAR_VERSION		"snmp_version"
+#define SU_VAR_RETRIES		"snmp_retries"
+#define SU_VAR_TIMEOUT		"snmp_timeout"
 #define SU_VAR_MIBS			"mibs"
 #define SU_VAR_POLLFREQ		"pollfreq"
 /* SNMP v3 related parameters */
@@ -202,7 +211,8 @@ typedef struct {
 
 typedef struct {
 	const char * OID;
-	const char *info_value;
+	const char *status_value; /* when not NULL, set ups.status to this */
+	const char *alarm_value;  /* when not NULL, set ups.alarm to this */
 } alarms_info_t;
 
 typedef struct {

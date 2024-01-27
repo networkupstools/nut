@@ -1,6 +1,5 @@
-/* scan_snmp.c: detect NUT supported SNMP devices
- * 
- *  Copyright (C) 2011 - Frederic Bohe <fredericbohe@eaton.com>
+/*
+ *  Copyright (C) 2011 - EATON
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,6 +15,11 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
+
+/*! \file scan_snmp.c
+    \brief detect NUT supported SNMP devices
+    \author Frederic Bohe <fredericbohe@eaton.com>
+*/
 
 #include "common.h"
 #include "nut-scan.h"
@@ -68,13 +72,10 @@
 static nutscan_device_t * dev_ret = NULL;
 #ifdef HAVE_PTHREAD
 static pthread_mutex_t dev_mutex;
-static pthread_t * thread_array = NULL;
-static int thread_count = 0;
 #endif
 long g_usec_timeout ;
 
 /* dynamic link library stuff */
-static char * libname = "libnetsnmp";
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
 
@@ -103,7 +104,7 @@ static oid * (*nut_usmHMACSHA1AuthProtocol);
 static oid * (*nut_usmDESPrivProtocol);
 
 /* return 0 on error */
-int nutscan_load_snmp_library()
+int nutscan_load_snmp_library(const char *libname_path)
 {
 	if( dl_handle != NULL ) {
 		/* if previous init failed */
@@ -114,12 +115,17 @@ int nutscan_load_snmp_library()
 		return 1;
 	}
 
-        if( lt_dlinit() != 0 ) {
-                fprintf(stderr, "Error initializing lt_init\n");
-                return 0;
-        }
+	if (libname_path == NULL) {
+		fprintf(stderr, "SNMP library not found. SNMP search disabled.\n");
+		return 0;
+	}
 
-	dl_handle = lt_dlopenext(libname);
+	if( lt_dlinit() != 0 ) {
+		fprintf(stderr, "Error initializing lt_init\n");
+		return 0;
+	}
+
+	dl_handle = lt_dlopen(libname_path);
 	if (!dl_handle) {
 		dl_error = lt_dlerror();
 		goto err;
@@ -232,7 +238,7 @@ int nutscan_load_snmp_library()
 
 	return 1;
 err:
-        fprintf(stderr, "Cannot load SNMP library (%s) : %s. SNMP search disabled.\n", libname, dl_error);
+	fprintf(stderr, "Cannot load SNMP library (%s) : %s. SNMP search disabled.\n", libname_path, dl_error);
 	dl_handle = (void *)1;
 	lt_dlexit();
 	return 0;
@@ -655,6 +661,8 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	char * ip_str = NULL;
 #ifdef HAVE_PTHREAD
 	pthread_t thread;
+	pthread_t * thread_array = NULL;
+	int thread_count = 0;
 
 	pthread_mutex_init(&dev_mutex,NULL);
 #endif
@@ -696,8 +704,9 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	pthread_mutex_destroy(&dev_mutex);
 	free(thread_array);
 #endif
-
-	return nutscan_rewind_device(dev_ret);
+	nutscan_device_t * result = nutscan_rewind_device(dev_ret);
+	dev_ret = NULL;
+	return result;
 }
 #else /* WITH_SNMP */
 nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip,long usec_timeout, nutscan_snmp_t * sec)

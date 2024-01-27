@@ -27,7 +27,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION		"0.38"
+#define DRIVER_VERSION		"0.41"
 
 #include "main.h"
 #include "libhid.h"
@@ -737,14 +737,12 @@ void upsdrv_makevartable(void)
 
 #ifndef SHUT_MODE
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
-	addvar(VAR_VALUE, "vendor", "Regular expression to match UPS Manufacturer string");
-	addvar(VAR_VALUE, "product", "Regular expression to match UPS Product string");
-	addvar(VAR_VALUE, "serial", "Regular expression to match UPS Serial number");
-	addvar(VAR_VALUE, "vendorid", "Regular expression to match UPS Manufacturer numerical ID (4 digits hexadecimal)");
-	addvar(VAR_VALUE, "productid", "Regular expression to match UPS Product numerical ID (4 digits hexadecimal)");
-	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
+	nut_usb_addvars();
+
 	addvar(VAR_FLAG, "explore", "Diagnostic matching of unsupported UPS");
 	addvar(VAR_FLAG, "maxreport", "Activate tweak for buggy APC Back-UPS firmware");
+	addvar(VAR_FLAG, "interruptonly", "Don't use polling, only use interrupt pipe");
+	addvar(VAR_VALUE, "interruptsize", "Number of bytes to read from interrupt pipe");
 #else
 	addvar(VAR_VALUE, "notification", "Set notification type, (ignored, only for backward compatibility)");
 #endif
@@ -755,7 +753,7 @@ void upsdrv_makevartable(void)
 void upsdrv_updateinfo(void)
 {
 	hid_info_t	*item;
-	HIDData_t	*event[MAX_EVENT_NUM];
+	HIDData_t	*event[MAX_EVENT_NUM], *found_data;
 	int		i, evtCount;
 	double		value;
 	time_t		now;
@@ -792,7 +790,23 @@ void upsdrv_updateinfo(void)
 	/* Get HID notifications on Interrupt pipe first */
 	if (use_interrupt_pipe == TRUE) {
 		evtCount = HIDGetEvents(udev, event, MAX_EVENT_NUM);
-		upsdebugx(1, "Got %i HID objects...", (evtCount >= 0) ? evtCount : 0);
+		switch (evtCount)
+		{
+		case -EBUSY:		/* Device or resource busy */
+			upslog_with_errno(LOG_CRIT, "Got disconnected by another driver");
+		case -EPERM:		/* Operation not permitted */
+		case -ENODEV:		/* No such device */
+		case -EACCES:		/* Permission denied */
+		case -EIO:		/* I/O error */
+		case -ENXIO:		/* No such device or address */
+		case -ENOENT:		/* No such file or directory */
+			/* Uh oh, got to reconnect! */
+			hd = NULL;
+			return;
+		default:
+			upsdebugx(1, "Got %i HID objects...", (evtCount >= 0) ? evtCount : 0);
+			break;
+		}
 	} else {
 		evtCount = 0;
 		upsdebugx(1, "Not using interrupt pipe...");
@@ -812,7 +826,15 @@ void upsdrv_updateinfo(void)
 		}
 
 		/* Skip Input reports, if we don't use the Feature report */
-		item = find_hid_info(FindObject_with_Path(pDesc, &(event[i]->Path), ITEM_FEATURE));
+		found_data = FindObject_with_Path(pDesc, &(event[i]->Path), interrupt_only ? ITEM_INPUT:ITEM_FEATURE);
+                if(!found_data && !interrupt_only) {
+			found_data = FindObject_with_Path(pDesc, &(event[i]->Path), ITEM_INPUT);
+		}
+		if(!found_data) {
+			upsdebugx(2, "Could not find event as either ITEM_INPUT or ITEM_FEATURE?");
+			continue;
+		}
+		item = find_hid_info(found_data);
 		if (!item) {
 			upsdebugx(3, "NUT doesn't use this HID object");
 			continue;
@@ -947,6 +969,15 @@ void upsdrv_initups(void)
 
 	upsdebugx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown",
 		hd->Product ? hd->Product : "unknown");
+
+	/* Activate Powercom tweaks */
+	if (testvar("interruptonly")) {
+		interrupt_only = 1;
+	}
+	val = getval("interruptsize");
+	if (val) {
+		interrupt_size = atoi(val);
+	}
 
 	if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
 		fatalx(EXIT_FAILURE, "Can't initialize data from HID UPS");
@@ -1269,7 +1300,9 @@ static bool_t hid_ups_walk(walkmode_t mode)
 
 		case -ETIMEDOUT:	/* Connection timed out */
 		case -EOVERFLOW:	/* Value too large for defined data type */
+#ifdef EPROTO
 		case -EPROTO:		/* Protocol error */
+#endif
 		case -EPIPE:		/* Broken pipe */
 		default:
 			/* Don't know what happened, try again later... */
@@ -1455,6 +1488,11 @@ static hid_info_t *find_nut_info(const char *varname)
 static hid_info_t *find_hid_info(const HIDData_t *hiddata)
 {
 	hid_info_t *hidups_item;
+
+	if(!hiddata) {
+		upsdebugx(2, "%s: hiddata == NULL", __func__);
+		return NULL;
+	}
 
 	for (hidups_item = subdriver->hid2nut; hidups_item->info_type != NULL ; hidups_item++) {
 

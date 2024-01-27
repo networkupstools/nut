@@ -230,7 +230,7 @@ static void powpan_initinfo(void)
 	 * was used for autodetection of the UPS. No need to do it again.
 	 */
 	if ((s = strtok(&powpan_answer[1], ",")) != NULL) {
-		dstate_setinfo("ups.model", "%s", rtrim(s, ' '));
+		dstate_setinfo("ups.model", "%s", str_rtrim(s, ' '));
 	}
 	if ((s = strtok(NULL, ",")) != NULL) {
 		dstate_setinfo("ups.firmware", "%s", s);
@@ -239,7 +239,7 @@ static void powpan_initinfo(void)
 		dstate_setinfo("ups.serial", "%s", s);
 	}
 	if ((s = strtok(NULL, ",")) != NULL) {
-		dstate_setinfo("ups.mfr", "%s", rtrim(s, ' '));
+		dstate_setinfo("ups.mfr", "%s", str_rtrim(s, ' '));
 	}
 
 	/*

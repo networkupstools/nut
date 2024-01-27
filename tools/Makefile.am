@@ -16,7 +16,8 @@
 # sub-directory
 SUBDIRS = . nut-scanner nutconf
 
-EXTRA_DIST = nut-usbinfo.pl nut-hclinfo.py nut-recorder.sh gitlog2changelog.py nut-snmpinfo.py
+EXTRA_DIST = nut-usbinfo.pl nut-recorder.sh nut-ddl-dump.sh \
+  gitlog2changelog.py nut-snmpinfo.py driver-list-format.sh
 
 all: nut-scanner-deps 
 
@@ -45,22 +46,10 @@ nut-scanner-deps:
 		echo "----------------------------------------------------------------------"; \
 	fi
 
-website:
-	@if python -c "import json,simplejson,lxml"; then \
-		echo "Regenerating the HTML and JSON formated HCL tables."; \
-		$(top_srcdir)/tools/nut-hclinfo.py; \
-	else \
-		echo "----------------------------------------------------------------------"; \
-		echo "Warning: either Python, or a required module (json, simplejson, lxml) "; \
-		echo "is not available."; \
-		echo "Skipping the HTML and JSON formated HCL tables regeneration."; \
-		echo "----------------------------------------------------------------------"; \
-	fi
-
 # call the USB info script upon "make dist", and if Perl is present
 # call the SNMP info script upon "make dist", and if Python is present
 # and call both for building nut-scanner
-# also generate HCL data files
+# Also ensure that data/driver.list is well formatted
 dist-hook:
 	@if python -c 1; then \
 		echo "Regenerating the SNMP helper files."; \
@@ -82,15 +71,6 @@ dist-hook:
 		echo "----------------------------------------------------------------------"; \
 	fi
 
-	@if python -c "import json,simplejson,lxml"; then \
-		echo "Regenerating the HTML and JSON formated HCL tables."; \
-		$(distdir)/nut-hclinfo.py; \
-	else \
-		echo "----------------------------------------------------------------------"; \
-		echo "Warning: either Python, or a required module (json, simplejson, lxml) "; \
-		echo "is not available."; \
-		echo "Skipping the HTML and JSON formated HCL tables regeneration."; \
-		echo "----------------------------------------------------------------------"; \
-	fi
+	@$(distdir)/driver-list-format.sh;
 
 .PHONY: nut-scanner-deps nut-scanner-snmp-deps nut-scanner-usb-deps

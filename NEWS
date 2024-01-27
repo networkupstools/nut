@@ -4,6 +4,239 @@ For a complete and more detailed list of changes, please refer to the
 ChangeLog file.
 
 ---------------------------------------------------------------------------
+Release notes for NUT 2.7.4 - what's new since 2.7.3:
+
+ - New class of device supported: ATS - Automatic Transfer Switch are now
+   supported in NUT. Eaton ATS are supported, and APC ones should be too. Users
+   are welcomed to test and provide feedback
+
+ - NUT command and variable naming scheme:
+   * Document battery.charger.status, which will in time replace the historic
+     CHRG and DISCHRG flags published in ups.status
+   * Many extensions to support outlets groups, thresholds / alarms (ambient,
+     input, output, outlet and outlet.group)
+
+ - support for new devices:
+   AEG PROTECT B / NAS
+   APC ATS AP7724 (should be supported)
+   Asium P700
+   Eaton ATS
+   Eaton 5E 1100iUSB
+   Eaton E Series DX UPS 1-20 kVA
+   Eaton Powerware 9125-5000g
+   Electrys UPS 2500
+   Fideltronic INIGO Viper 1200
+   Legrand Keor Multiplug
+   LYONN CTB-800V
+   Micropower LCD 1000
+   NHS Laser Senoidal 5000VA
+   Sweex model P220
+   TS Shara
+   Various APCUPSD-controlled APC devices
+
+ - snmp-ups:
+   * Improve automatic detection algorithm
+   * Provide access to Net-SNMP timeout and retries
+   * Proper handling of integer RW variables
+   * Implement support for alarms, through ups.alarm and outlet.n.alarm
+   * Improve log/debug output trace
+   * Fix loss of precision when setting values, using upsrw
+   * Support for outlets group management
+   * Many improvements and simplification
+   * Add support for Tripplite units using IETF mib
+   * Improve communication staleness detection and recovery
+   * Add devices MAC address publication
+   * Register values enumerations, when available
+   * Many improvements and fixes to the SNMP subdriver creation script
+
+ - Eaton:
+   * 3ph SNMP:
+     Many improvements to Powerware / XUPS MIB, for data and commands
+     Add support for Eaton Power Xpert Gateway UPS Card
+     Improve support for temperature and humidity, including low / high values
+     Alarms handling
+   * ePDU (G2 and G3):
+     Improve support for ambient sensor, including thresholds and dry contacts
+     Outlet groups handling, including data, thresholds, settings and commands
+     Alarms handling
+   * XML/PDC (netxml-ups):
+     Fix Eaton XML published data
+     Add some settings (R/W flags) on ambient thresholds
+
+ - bcmxcp_usb: improvements for device claiming and multi-packets responses
+
+ - dummy-ups: allow any variable to be modified
+
+ - libnutclient: Fix for reads when the socket was closed by NUT server
+
+ - macosx-ups:
+   * fix for 10.10 (Yosemite), v1.1
+   * gracefully handle disconnection of UPS (return "data stale")
+
+ - nutdrv_atcl_usb: point to nutdrv_qx (fuji) for 0001:0000
+
+ - nutdrv_qx:
+   * Add new 'sgs' USB subdriver to support TS Shara units
+   * various improvements and simplification, to the code and documentation
+
+ - nut-ipmipsu: improve FreeIPMI support
+
+ - nut-scanner:
+   * Don't depend on development libraries, by looking at some known paths,
+     including the one provided through --libdir, to find the correct libraries
+   * Fix a crash on a 2nd call to libnutscan with SNMP method
+
+ - powercom: fix the processing of input and output voltage for KIN units
+
+ - solis:
+   * many improvements and cleanup
+   * resync with end-of-packet character
+   * fixes for Microsol Back-Ups BZ1200-BR
+
+ - tripplitesu: Fix initialization when tripplite firmware is buggy (for
+   Tripplite SU1000RT2U and possibly more)
+
+ - usbhid-ups:
+   * various minor improvements
+   * support for Eaton UPS with dual HID report descriptor in HID Parser
+   * handle missing USB strings in APC code
+
+ - SSL support through Mozilla NSS: Rework the NSS tests to ensure that NSS is
+   actually installed and usable for enabling SSL support in NUT
+
+ - Augeas support: Augeas lens for ups.conf was updated to add various missing
+   global directives and ups fields
+
+ - scripts/systemd/nut-server.service.in: Restore systemd relationship since it
+   was preventing upsd from starting whenever one or more drivers, among several,
+   was failing to start
+
+ - Fix UPower device matching for recent kernels, since hiddev* devices now have
+   class "usbmisc", rather than "usb"
+
+ - Network protocol information: default to type NUMBER for variables that are
+   not flagged as STRING . This point is subject to improvements or change in
+   the next release 2.7.5.  Refer to docs/net-protocol.txt for more information
+
+ - As usual, more bugfixes, cleanup and improvements, on both source code
+   and documentation.
+
+---------------------------------------------------------------------------
+Release notes for NUT 2.7.3 - what's new since 2.7.2:
+
+ - reverted POWERDOWNFLAG to /etc/killpower as in 2.6.5 (packagers may want to
+   put this in another filesystem, though)
+
+ - configure/make fixes for ${systemdsystemunitdir}
+
+ - apcsmart: fix command set parsing for protocol version 4 (e.g. Smart-UPS
+   RT 10000 XL)
+
+ - upslog: SIGUSR1 forces an immediate log entry
+
+ - riello_usb/_ser: USB interface claim fix; improved error handling
+
+ - usbhid-ups: add support for OpenUPS2 (PID: D005), Liebert GXT3 (PID: 0008)
+   APC AP9584 Serial->USB kit (PID: 0000), and some Powercom models
+   (PID: 0001). Fixed scaling for Cyberpower 0764:0501.
+
+ - USB core: do not call usb_set_altinterface(0) by default
+
+ - nutdrv_qx: added fabula, fuji USB and Voltronic-QS-HEX subdrivers; add
+   bestups subdriver to supersede the old standalone bestups driver
+
+ - NUT Monitor: added FreeDesktop AppData file (including screenshots)
+
+ - renamed udev rules file to 62-nut-usbups.rules (permissions fix)
+
+ - added AIX packaging
+
+ - asem: added a driver for the UPS in ASEM PB1300 embedded PCs
+
+ - solis: updated to support APC Microsol units sold in Brazil
+
+ - tripplite_usb: updated to use dv/dq charge calculation for all models (also
+   exposes battery_min and battery max as configuration variables); added
+   binary 3005 protocol support (such as for SMART500RT1U)
+
+ - genericups: better debugging while parsing the cable description flags
+
+ - all drivers: a new 'synchronous' driver flag is available for very verbose
+   units, such as some ePDUs
+
+ - Eaton: 
+   * Add support for EnergySaving features for Eaton UPSs (HID USB/SHUT and
+     XCP USB/serial)
+   * Fix and complete Eaton ePDUs G2/G3 support
+   * ABM (Advanced Battery Monitoring) support through battery.charger.status
+     in HID (USB and SHUT), XCP (USB and serial) and SNMP (Powerware XUPS
+     MIB)
+
+ - support for new devices:
+   APC Back-UPS 1200BR and Back-UPS BZ2200BI-BR (Microsol)
+   ASEM SPA PB1300 UPS
+   Belkin Regulator PRO-USB
+   Cyber Power Systems Value 1500ELCD-RU
+   EUROCASE EA200N 2000VA
+   Fideltronik LUPUS 500
+   Flight Technic & International (FTUPS) FT-1000BS and FT-1000BS(T)
+   Grafenthal PR-3000-HS
+   JAWAN JW-UPSLC02
+   Lacerda New Orion 800VA
+   Mecer ME-1000-WTU
+   NHS Sistemas de Energia Expert C Online 6000/8000/10000
+   NHS Sistemas de Energia Expert S Online 6000/8000/10000
+   Powercom BNT-xxxAP (USB product id: 0001)
+   Rucelf UPOII-3000-96-EL
+   Tripp Lite OMNIVSINT800   
+   Voltronic Power Apex 1KVA and Imperial 1KVA
+
+---------------------------------------------------------------------------
+Release notes for NUT 2.7.2 - what's new since 2.7.1:
+
+ - This release is the second interim release of the 2.7 testing series.
+
+ - libupsclient had undefined references related to functions of libcommon.
+   This issue was reported on Debian (bug #731156) and is now fixed
+
+ - support for new devices:
+   CABAC UPS-1700DV2
+   Eaton Powerware 3105
+   Emerson Network Power Liebert PSI 1440
+   MicroDowell B.Box LP 500
+   Numeric Digital 800 plus
+   OptiUPS VS 575C
+   Tripp Lite SU10KRT3/1X
+
+ - FreeDesktop Hardware Abstraction Layer (HAL) support was removed.
+
+ - nutdrv_atcl_usb: new driver for 'ATCL FOR UPS'
+
+ - al175: re-introduced this driver (actually, it was in 2.7.1)
+
+ - upsdrvctl now provides retry options for upsdrvctl and driver(s)
+
+ - snmp-ups: add support for XPPC-MIB and Tripp Lite SU10KRT3/1X.
+   Also fix erroneous status in HP/Compaq SNMP MIB (with the most recent HP
+   firmware (1.76) ; improved various MIBs (APC, HP/Compaq, ...) 
+
+ - nutdrv_qx: add new 'fallback' Q1 subdriver, with minimal 'Q1' support.
+   General improvements on all subdrivers.
+
+ - mge-shut: partially revert PnP/RTS change, for initializing the
+   communication with the UPS. Note that nut-scanner similar function was
+   not modified however.
+
+ - FreeBSD DEVD support: generate devd.conf files for USB UPSes
+   This adds a --with-devd-dir=PATH option to ./configure
+
+ - The NUT website was moved to a standalone website. A separate code
+   repository and source archive are now available.
+
+ - As usual, more bugfixes, cleanup and improvements, on both source code
+   and documentation.
+
+---------------------------------------------------------------------------
 Release notes for NUT 2.7.1 - what's new since 2.6.5:
 
  - This release is an interim release, part of the testing series, and the
@@ -208,7 +441,7 @@ Release notes for NUT 2.6.4 - what's new since 2.6.3:
  - bestups has also received some care, though users are encouraged to switch
    to blazer_ser, since bestups will soon be deprecated.
 
- - newmge-shut has been heavilly improved.  However, replacement of the
+ - newmge-shut has been heavily improved.  However, replacement of the
    current mge-shut has been postponed to the next release, due to the CVE
    issue.
 
