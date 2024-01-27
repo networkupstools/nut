@@ -55,10 +55,55 @@
 
 # =======================================================================
 # CERTFILE <certificate file>
+# CERTFILE /usr/local/ups/etc/upsd.pem
 #
-# When compiled with SSL support, you can enter the certificate file here.
+# When compiled with SSL support with OpenSSL backend,
+# you can enter the certificate file here.
 # The certificates must be in PEM format and must be sorted starting with
 # the subject's certificate (server certificate), followed by intermediate
 # CA certificates (if applicable_ and the highest level (root) CA. It should
 # end with the server key. See 'docs/security.txt' or the Security chapter of
 # NUT user manual for more information on the SSL support in NUT.
+#
+# See 'docs/security.txt' or the Security chapter of NUT user manual
+# for more information on the SSL support in NUT.
+
+# =======================================================================
+# CERTPATH <certificate file or directory>
+# CERTPATH /usr/local/ups/etc/cert/upsd
+#
+# When compiled with SSL support with NSS backend,
+# you can enter the certificate path here.
+# Certificates are stored in a dedicated database (splitted in 3 files).
+# Specify the path of the database directory.
+# 
+# See 'docs/security.txt' or the Security chapter of NUT user manual
+# for more information on the SSL support in NUT.
+
+# =======================================================================
+# CERTIDENT <certificate name> <database password>
+# CERTIDENT "my nut server" "MyPasSw0rD"
+#
+# When compiled with SSL support with NSS backend,
+# you can specify the certificate name to retrieve from database to
+# authenticate itself and the password
+# required to access certificate related private key.
+# 
+# See 'docs/security.txt' or the Security chapter of NUT user manual
+# for more information on the SSL support in NUT.
+
+# =======================================================================
+# CERTREQUEST <certificate request level>
+# CERTREQUEST REQUIRE
+#
+# When compiled with SSL support with NSS backend and client certificate
+# validation (disabled by default, see 'docs/security.txt'),
+# you can specify if upsd requests or requires client's' certificates.
+# Possible values are :
+#  - 0 to not request to clients to provide any certificate
+#  - 1 to require to all clients a certificate
+#  - 2 to require to all clients a valid certificate
+# 
+# See 'docs/security.txt' or the Security chapter of NUT user manual
+# for more information on the SSL support in NUT.
+

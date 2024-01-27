@@ -60,6 +60,7 @@ int dstate_setinfo(const char *var, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
 int dstate_addenum(const char *var, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
+int dstate_addrange(const char *var, const int min, const int max);
 void dstate_setflags(const char *var, int flags);
 void dstate_setaux(const char *var, int aux);
 const char *dstate_getinfo(const char *var);

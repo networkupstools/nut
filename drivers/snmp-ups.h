@@ -201,6 +201,11 @@ typedef struct {
 #define SU_ERR_RATE 100	/* only print every nth error once limiting starts */
 
 typedef struct {
+	const char * OID;
+	const char *info_value;
+} alarms_info_t;
+
+typedef struct {
 	const char	*mib_name;
 	const char	*mib_version;
 	const char	*oid_pwr_status;
@@ -208,7 +213,7 @@ typedef struct {
 	snmp_info_t	*snmp_info;			/* pointer to the good Snmp2Nut lookup data */
 	const char	*sysOID;			/* OID to match against sysOID, aka MIB
 									 * main entry point */
-
+	alarms_info_t	*alarms_info;
 } mib2nut_info_t;
 
 /* Common SNMP functions */

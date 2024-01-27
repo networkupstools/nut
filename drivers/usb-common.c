@@ -20,27 +20,27 @@
 #include "common.h"
 #include "usb-common.h"
 
-int is_usb_device_supported(usb_device_id_t *usb_device_id_list, int dev_VendorID, int dev_ProductID)
+int is_usb_device_supported(usb_device_id_t *usb_device_id_list, USBDevice_t *device)
 {
 	int retval = NOT_SUPPORTED;
 	usb_device_id_t *usbdev;
 
 	for (usbdev = usb_device_id_list; usbdev->vendorID != -1; usbdev++) {
 
-		if (usbdev->vendorID != dev_VendorID) {
+		if (usbdev->vendorID != device->VendorID) {
 			continue;
 		}
 
 		/* flag as possibly supported if we see a known vendor */
 		retval = POSSIBLY_SUPPORTED;
 
-		if (usbdev->productID != dev_ProductID) {
+		if (usbdev->productID != device->ProductID) {
 			continue;
 		}
 
 		/* call the specific handler, if it exists */
 		if (usbdev->fun != NULL) {
-			(*usbdev->fun)();
+			(*usbdev->fun)(device);
 		}
 
 		return SUPPORTED;

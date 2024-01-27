@@ -1,0 +1,384 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: NUT Monitor\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-10-15 20:35+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: NUT-Monitor:150
+msgid "Var name"
+msgstr ""
+
+#: NUT-Monitor:158
+msgid "Value"
+msgstr ""
+
+#: NUT-Monitor:205
+msgid "Welcome to NUT Monitor"
+msgstr ""
+
+#: NUT-Monitor:304
+#, python-brace-format
+msgid "Found {0} devices on {1}"
+msgstr ""
+
+#: NUT-Monitor:307 NUT-Monitor:664
+#, python-brace-format
+msgid "Error connecting to '{0}' ({1})"
+msgstr ""
+
+#: NUT-Monitor:315
+msgid "Disconnecting from device"
+msgstr ""
+
+#: NUT-Monitor:380
+msgid "Are you sure that you want to remove this favorite ?"
+msgstr ""
+
+#: NUT-Monitor:388
+#, python-format
+msgid "Removed favorite '%s'"
+msgstr ""
+
+#: NUT-Monitor:414
+#, python-format
+msgid "Loaded '%s'"
+msgstr ""
+
+#: NUT-Monitor:422
+#, python-format
+msgid ""
+"Are you sure that you want to send\n"
+"'%s' to the device ?"
+msgstr ""
+
+#: NUT-Monitor:431
+#, python-brace-format
+msgid "Sent '{0}' command to {1}"
+msgstr ""
+
+#: NUT-Monitor:434
+#, python-brace-format
+msgid "Failed to send '{0}' ({1})"
+msgstr ""
+
+#: NUT-Monitor:452
+#, python-brace-format
+msgid ""
+"Enter a new value for the variable.\n"
+"\n"
+"{0} = {1} <span color=\"#606060\"><i>(current value)</i></span>"
+msgstr ""
+
+#: NUT-Monitor:466
+#, python-format
+msgid "Updated variable on %s"
+msgstr ""
+
+#: NUT-Monitor:474
+#, python-brace-format
+msgid "Error updating variable on '{0}' ({1})"
+msgstr ""
+
+#: NUT-Monitor:479
+#, python-format
+msgid "No variable modified on %s - User cancelled"
+msgstr ""
+
+#: NUT-Monitor:558
+#, python-format
+msgid ""
+"Error parsing favorites, password for '%s' is not in base64\n"
+"Skipping password for this entry"
+msgstr ""
+
+#: NUT-Monitor:567
+#, python-format
+msgid "Error while parsing favorites file (%s)"
+msgstr ""
+
+#: NUT-Monitor:578
+#, python-format
+msgid "Error while creating configuration folder (%s)"
+msgstr ""
+
+#: NUT-Monitor:590
+msgid "Saved favorites..."
+msgstr ""
+
+#: NUT-Monitor:593
+#, python-format
+msgid "Error while saving favorites (%s)"
+msgstr ""
+
+#: NUT-Monitor:665
+#, python-brace-format
+msgid ""
+"Error connecting to '{0}'\n"
+"{1}"
+msgstr ""
+
+#: NUT-Monitor:673 NUT-Monitor:674
+#, python-format
+msgid "Device '%s' not found on server"
+msgstr ""
+
+#: NUT-Monitor:708
+#, python-brace-format
+msgid "Connected to '{0}' on {1}"
+msgstr ""
+
+#: NUT-Monitor:740
+msgid "<i>Not connected</i>"
+msgstr ""
+
+#: NUT-Monitor:750
+#, python-format
+msgid "Disconnected from '%s'"
+msgstr ""
+
+#: NUT-Monitor:772
+msgid "Low batteries"
+msgstr ""
+
+#: NUT-Monitor:773
+msgid "Replace batteries !"
+msgstr ""
+
+#: NUT-Monitor:774
+msgid "(no battery protection)"
+msgstr ""
+
+#: NUT-Monitor:775
+msgid "Performing runtime calibration"
+msgstr ""
+
+#: NUT-Monitor:776
+msgid "Offline"
+msgstr ""
+
+#: NUT-Monitor:776
+msgid "not providing power to the load"
+msgstr ""
+
+#: NUT-Monitor:777
+msgid "Overloaded !"
+msgstr ""
+
+#: NUT-Monitor:777
+msgid "there is too much load for device"
+msgstr ""
+
+#: NUT-Monitor:778
+msgid "Triming <i>(UPS is triming incoming voltage)</i>"
+msgstr ""
+
+#: NUT-Monitor:779
+msgid "Boost <i>(UPS is boosting incoming voltage)</i>"
+msgstr ""
+
+#: NUT-Monitor:792
+msgid "Device status :"
+msgstr ""
+
+#: NUT-Monitor:795
+msgid "Online"
+msgstr ""
+
+#: NUT-Monitor:801
+msgid "On batteries"
+msgstr ""
+
+#: NUT-Monitor:804
+msgid "Device is running on batteries"
+msgstr ""
+
+#: NUT-Monitor:817
+msgid "discharging"
+msgstr ""
+
+#: NUT-Monitor:819
+msgid "charging"
+msgstr ""
+
+#: NUT-Monitor:825
+msgid "Model :"
+msgstr ""
+
+#: NUT-Monitor:829
+msgid "Temperature :"
+msgstr ""
+
+#: NUT-Monitor:833
+msgid "Battery voltage :"
+msgstr ""
+
+#: NUT-Monitor:844 gui-1.3.glade.h:11
+msgid "Battery charge :"
+msgstr ""
+
+#: NUT-Monitor:847 NUT-Monitor:856 NUT-Monitor:868
+msgid "Not available"
+msgstr ""
+
+#: NUT-Monitor:853
+msgid "UPS load :"
+msgstr ""
+
+#: NUT-Monitor:862
+msgid "<b>%H hours %M minutes %S seconds</b>"
+msgstr ""
+
+#: NUT-Monitor:864
+msgid "<b>%M minutes %S seconds</b>"
+msgstr ""
+
+#: NUT-Monitor:866
+msgid "<b><span color=\"#DD0000\">%M minutes %S seconds</span></b>"
+msgstr ""
+
+#: NUT-Monitor:876
+#, python-brace-format
+msgid "Error from '{0}' ({1})"
+msgstr ""
+
+#: NUT-Monitor:877
+#, python-brace-format
+msgid ""
+"Error from '{0}'\n"
+"{1}"
+msgstr ""
+
+#: gui-1.3.glade.h:1
+msgid "NUT Monitor"
+msgstr ""
+
+#: gui-1.3.glade.h:2
+msgid "_File"
+msgstr ""
+
+#: gui-1.3.glade.h:3
+msgid "F_avorites"
+msgstr ""
+
+#: gui-1.3.glade.h:4
+msgid "Host / Port : "
+msgstr ""
+
+#: gui-1.3.glade.h:5
+msgid "Device : "
+msgstr ""
+
+#: gui-1.3.glade.h:6
+msgid "None"
+msgstr ""
+
+#: gui-1.3.glade.h:7
+msgid "Use authentication"
+msgstr ""
+
+#: gui-1.3.glade.h:8
+msgid "Login / Password : "
+msgstr ""
+
+#: gui-1.3.glade.h:9
+msgid " NUT Server "
+msgstr ""
+
+#: gui-1.3.glade.h:10
+msgid "label"
+msgstr ""
+
+#: gui-1.3.glade.h:12
+msgid "Current load :"
+msgstr ""
+
+#: gui-1.3.glade.h:13
+msgid "Remaining time :"
+msgstr ""
+
+#: gui-1.3.glade.h:14
+msgid "N/A"
+msgstr ""
+
+#: gui-1.3.glade.h:15
+msgid "Device commands :"
+msgstr ""
+
+#: gui-1.3.glade.h:16
+msgid "Device status"
+msgstr ""
+
+#: gui-1.3.glade.h:17
+msgid "Device vars"
+msgstr ""
+
+#: gui-1.3.glade.h:18
+msgid ""
+"Enter a name for this favorite\n"
+"\n"
+"<span color=\"#808080\">You cannot re-use a name from another entry</span>\n"
+msgstr ""
+
+#: gui-1.3.glade.h:22
+msgid ""
+"\n"
+"Please select the favorite that you\n"
+"want to delete from list...\n"
+msgstr ""
+
+#: gui-1.3.glade.h:26
+msgid "<None>"
+msgstr ""
+
+#: gui-1.3.glade.h:27
+msgid "Enter a new value for the variable.\n"
+msgstr ""
+
+#: gui-1.3.glade.h:29
+msgid "Copyright (c) 2010 David Goncalves"
+msgstr ""
+
+#: gui-1.3.glade.h:30
+msgid ""
+"GUI to manage devices connected a NUT server.\n"
+"\n"
+"For more information about NUT (Network UPS Tools)\n"
+"please visit the author's website.\n"
+"\n"
+"http://www.networkupstools.org\n"
+msgstr ""
+
+#: gui-1.3.glade.h:37
+msgid "http://www.lestat.st"
+msgstr ""
+
+#: gui-1.3.glade.h:38
+msgid ""
+"Copyright (C) 2010 David Goncalves <david@lestat.st>\n"
+"\n"
+"This program is free software: you can redistribute it and/or modify\n"
+"it under the terms of the GNU General Public License as published by\n"
+"the Free Software Foundation; either version 3 of the License, or\n"
+"(at your option) any later version.\n"
+"\n"
+"This program is distributed in the hope that it will be useful,\n"
+"but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
+"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
+"GNU General Public License for more details.\n"
+"\n"
+"You should have received a copy of the GNU General Public License\n"
+"along with this program.  If not, see <http://www.gnu.org/licenses/>."
+msgstr ""

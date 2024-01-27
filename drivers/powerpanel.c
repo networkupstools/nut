@@ -36,14 +36,15 @@ static subdriver_t *subdriver[] = {
 };
 
 #define DRIVER_NAME	"CyberPower text/binary protocol UPS driver"
-#define DRIVER_VERSION	"0.25"
+#define DRIVER_VERSION	"0.26"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
 	DRIVER_VERSION,
 	"Doug Reynolds <mav@wastegate.net>\n" \
-	"Arjen de Korte <adkorte-guest@alioth.debian.org>",
+	"Arjen de Korte <adkorte-guest@alioth.debian.org>\n" \
+	"Timothy Pearson <kb9vqf@pearsoncomputing.net>",
 	DRV_EXPERIMENTAL,
 	{ NULL }
 };

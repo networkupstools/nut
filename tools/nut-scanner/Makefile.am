@@ -21,7 +21,7 @@ libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include $(LIBLTDL
 
 nut_scanner_SOURCES = nut-scanner.c
 nut_scanner_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include
-nut_scanner_LDADD = libnutscan.la
+nut_scanner_LDADD = libnutscan.la ../../common/libcommon.la
 
 if WITH_SSL
   libnutscan_la_CFLAGS += $(LIBSSL_CFLAGS)
@@ -48,7 +48,7 @@ dist_noinst_HEADERS = nutscan-usb.h nutscan-snmp.h
 if WITH_DEV
  include_HEADERS = nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h
 else
- dist_noinst_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h
+ dist_noinst_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h
 endif
 
 CLEANFILES = nutscan-usb.h nutscan-snmp.h

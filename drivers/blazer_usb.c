@@ -28,7 +28,7 @@
 #include "blazer.h"
 
 #define DRIVER_NAME	"Megatec/Q1 protocol USB driver"
-#define DRIVER_VERSION	"0.09"
+#define DRIVER_VERSION	"0.10"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -39,6 +39,8 @@ upsdrv_info_t upsdrv_info = {
 	DRV_BETA,
 	{ NULL }
 };
+
+#ifndef TESTING
 
 static usb_communication_subdriver_t *usb = &usb_subdriver;
 static usb_dev_handle		*udev = NULL;
@@ -313,28 +315,28 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 }
 
 
-static void *cypress_subdriver(void)
+static void *cypress_subdriver(USBDevice_t *device)
 {
 	subdriver_command = &cypress_command;
 	return NULL;
 }
 
 
-static void *ippon_subdriver(void)
+static void *ippon_subdriver(USBDevice_t *device)
 {
 	subdriver_command = &ippon_command;
 	return NULL;
 }
 
 
-static void *krauler_subdriver(void)
+static void *krauler_subdriver(USBDevice_t *device)
 {
 	subdriver_command = &krauler_command;
 	return NULL;
 }
 
 
-static void *phoenix_subdriver(void)
+static void *phoenix_subdriver(USBDevice_t *device)
 {
 	subdriver_command = &phoenix_command;
 	return NULL;
@@ -365,7 +367,7 @@ static int device_match_func(USBDevice_t *hd, void *privdata)
 		return 1;
 	}
 
-	switch (is_usb_device_supported(blazer_usb_id, hd->VendorID, hd->ProductID))
+	switch (is_usb_device_supported(blazer_usb_id, hd))
 	{
 	case SUPPORTED:
 		return 1;
@@ -383,6 +385,8 @@ static USBDeviceMatcher_t device_matcher = {
 	NULL,
 	NULL
 };
+
+#endif	/* TESTING */
 
 
 /*

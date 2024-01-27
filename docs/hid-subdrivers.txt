@@ -143,13 +143,13 @@ You should save this information to a file, e.g.
  drivers/usbhid-ups -DD -u root -x explore -x vendorid=XXXX auto >& /tmp/info
 
 You can create an initial "stub" subdriver for your device by using
-script scripts/subdriver/path-to-subdriver.sh. Note: this only creates
+script scripts/subdriver/gen-usbhid-subdriver.sh. Note: this only creates
 a "stub" and needs to be futher customized to be useful (see
 CUSTOMIZATION below).
 
 Use the script as follows:
 
-	scripts/subdriver/path-to-subdriver.sh < /tmp/info
+	scripts/subdriver/gen-usbhid-subdriver.sh < /tmp/info
 
 where /tmp/info is the file where you previously saved the debugging
 information.

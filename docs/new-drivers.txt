@@ -29,7 +29,8 @@ usbhid-ups driver, which is easier than writing an entire new driver.
 
 Similarly, if your UPS connects to your computer via an SNMP network
 card, you can probably add support for your device by writing a new
-subdriver to the existing snmp-ups driver.
+subdriver to the existing snmp-ups driver. Instructions are provided
+in the <<snmp-subdrivers, SNMP subdrivers>> chapter.
 
 Overall concept
 ---------------
@@ -199,6 +200,7 @@ Possible values for status_set:
 	OL      - On line (mains is present)
 	OB      - On battery (mains is not present)
 	LB      - Low battery
+	HB	- High battery
 	RB      - The battery needs to be replaced
 	CHRG    - The battery is charging
 	DISCHRG - The battery is discharging (inverter is providing load power)
@@ -286,14 +288,19 @@ Serial port handling
 Drivers which use serial port functions should include serial.h and use
 these functions whenever possible:
 
-- int ser_open(const char *port)
+	- int ser_open(const char *port)
 
 This opens the port and locks it if possible, using one of fcntl, lockf,
 or uu_lock depending on what may be available.  If something fails, it
 calls fatal for you.  If it succeeds, it always returns the fd that was
 opened.
 
-- int ser_set_speed(int fd, const char *port, speed_t speed)
+	- int ser_open_nf(const char *port)
+
+This is a non-fatal version of ser_open(), that does not call fatal if
+something fails.
+
+	- int ser_set_speed(int fd, const char *port, speed_t speed)
 
 This sets the speed of the port and also does some basic configuring
 with tcgetattr and tcsetattr.  If you have a special serial
@@ -303,6 +310,11 @@ The port name is provided again here so failures in tcgetattr() provide
 a useful error message.  This is the only place that will generate a
 message if someone passes a non-serial port /dev entry to your driver,
 so it needs the extra detail.
+
+	- int ser_set_speed_nf(int fd, const char *port, speed_t speed)
+
+This is a non-fatal version of ser_set_speed(), that does not call fatal
+if something fails.
 
 	- int ser_set_dtr(int fd, int state)
 	- int ser_set_rts(int fd, int state)
@@ -696,3 +708,13 @@ include::contact-closure.txt[]
 [[hid-subdrivers]]
 
 include::hid-subdrivers.txt[]
+
+
+[[snmp-subdrivers]]
+
+include::snmp-subdrivers.txt[]
+
+
+[[nutdrv_qx-subdrivers]]
+
+include::nutdrv_qx-subdrivers.txt[]

@@ -12,6 +12,7 @@ Introduction
 NUT provides several libraries, to ease interfacing with 3rd party programs:
 
 - *libupsclient*, to interact with NUT server (upsd),
+- *libnutclient*, to interact with NUT server at high level,
 - *libnutscan*, to discover NUT supported devices.
 
 External applications, such as asapm-ups, wmnut, and others, currently use it.

@@ -3,10 +3,9 @@
 #include "bcmxcp_io.h"
 #include "serial.h"
 
-#define PW_MAX_BAUD 5
 
-#define SUBDRIVER_NAME	"RS-232 communication subdriver"
-#define SUBDRIVER_VERSION	"0.19"
+#define SUBDRIVER_NAME    "RS-232 communication subdriver"
+#define SUBDRIVER_VERSION "0.20"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -17,23 +16,27 @@ upsdrv_info_t comm_upsdrv_info = {
 	{ NULL }
 };
 
+#define PW_MAX_BAUD 5
+
 struct pw_baud_rate {
 	int rate;
 	int name;
 } pw_baud_rates[] = {
-	{ B1200,  1200 },
-	{ B2400,  2400 },
-	{ B4800,  4800 },
-	{ B9600,  9600 },
 	{ B19200, 19200 },
+	{ B9600,  9600 },
+	{ B4800,  4800 },
+	{ B2400,  2400 },
+	{ B1200,  1200 },
+	/* end of structure. */
+	{ 0,  0 }
 };
 
-unsigned char AUT[4] = {0xCF, 0x69, 0xE8, 0xD5};		/* Autorisation	command	*/
+unsigned char AUT[4] = {0xCF, 0x69, 0xE8, 0xD5}; /* Autorisation command */
 
 static void send_command(unsigned char *command, int command_length)
 {
-	int		retry = 0, sent;
-	unsigned char	sbuf[128];
+	int retry = 0, sent;
+	unsigned char sbuf[128];
 
 	/* Prepare the send buffer */
 	sbuf[0] = PW_COMMAND_START_BYTE;
@@ -50,7 +53,7 @@ static void send_command(unsigned char *command, int command_length)
 	while (retry++ < PW_MAX_TRY) {
 
 		if (retry == PW_MAX_TRY) {
-			ser_send_char(upsfd, 0x1d);	/* last retry is preceded by a ESC.*/
+			ser_send_char(upsfd, 0x1d); /* last retry is preceded by a ESC.*/
 			usleep(250000);
 		}
 
@@ -75,7 +78,7 @@ void send_write_command(unsigned char *command, int command_length)
 /* get the answer of a command from the ups. And check that the answer is for this command */
 int get_answer(unsigned char *data, unsigned char command)
 {
-	unsigned char	my_buf[128];	/* packet has a maximum length of 121+5 bytes */
+	unsigned char	my_buf[128]; /* packet has a maximum length of 121+5 bytes */
 	int		length, end_length = 0, res, endblock = 0, start = 0;
 	unsigned char	block_number, sequence, pre_sequence = 0;
 
@@ -199,7 +202,7 @@ int get_answer(unsigned char *data, unsigned char command)
 
 static int command_sequence(unsigned char *command, int command_length, unsigned char *answer)
 {
-	int	bytes_read, retry = 0;
+	int bytes_read, retry = 0;
 
 	while (retry++ < PW_MAX_TRY) {
 
@@ -222,7 +225,7 @@ static int command_sequence(unsigned char *command, int command_length, unsigned
 /* Sends a single command (length=1). and get the answer */
 int command_read_sequence(unsigned char command, unsigned char *answer)
 {
-	int	bytes_read;
+	int bytes_read;
 
 	bytes_read = command_sequence(&command, 1, answer);
 
@@ -236,7 +239,7 @@ int command_read_sequence(unsigned char command, unsigned char *answer)
 /* Sends a setup command (length > 1) */
 int command_write_sequence(unsigned char *command, int command_length, unsigned	char *answer)
 {
-	int	bytes_read;
+	int bytes_read;
 
 	bytes_read = command_sequence(command, command_length, answer);
 
@@ -254,10 +257,10 @@ void upsdrv_comm_good()
 
 void pw_comm_setup(const char *port)
 {
-	unsigned char	command = PW_SET_REQ_ONLY_MODE;
-	unsigned char	id_command = PW_ID_BLOCK_REQ;
-	unsigned char	answer[256];
-	int		i = 0, baud, mybaud = 0, ret = -1;
+	unsigned char command = PW_SET_REQ_ONLY_MODE;
+	unsigned char id_command = PW_ID_BLOCK_REQ;
+	unsigned char answer[256];
+	int i = 0, baud, mybaud = 0, ret = -1;
 
 	if (getval("baud_rate") != NULL)
 	{
@@ -275,7 +278,7 @@ void pw_comm_setup(const char *port)
 		}
 
 		ser_set_speed(upsfd, device_path, mybaud);
-		ser_send_char(upsfd, 0x1d);	/* send ESC to take it out of menu */
+		ser_send_char(upsfd, 0x1d); /* send ESC to take it out of menu */
 		usleep(90000);
 		send_write_command(AUT, 4);
 		usleep(500000);
@@ -298,7 +301,7 @@ void pw_comm_setup(const char *port)
 	for (i=0; i<PW_MAX_BAUD; i++) {
 
 		ser_set_speed(upsfd, device_path, pw_baud_rates[i].rate);
-		ser_send_char(upsfd, 0x1d);	/* send ESC to take it out of menu */
+		ser_send_char(upsfd, 0x1d); /* send ESC to take it out of menu */
 		usleep(90000);
 		send_write_command(AUT, 4);
 		usleep(500000);
@@ -334,3 +337,4 @@ void upsdrv_cleanup(void)
 void upsdrv_reconnect(void)
 {
 }
+

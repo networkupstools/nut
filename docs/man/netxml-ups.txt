@@ -43,6 +43,10 @@ This value *must never* be higher than half the MAXAGE value specified in
 linkman:upsd.conf[5], otherwise you run the risk that linkman:upsd[8] declares
 the driver stale while it is waiting for a connection to timeout.
 
+*subscribe*::
+Connect to the NMC in subscribed mode. This allows to receive notifications
+and alarms more quickly, beside from the standard polling requests.
+
 *login*='value'::
 Set the login value for authenticated mode. This feature also needs the
 *password* argument, and allows value settings in the card.
@@ -51,6 +55,16 @@ This feature is not used yet.
 *password*='value'::
 Set the password value, needed with the login for authenticated mode.
 This feature is not used yet.
+
+*shutdown_duration*='value'::
+Set the shutdown duration of the operating system, in seconds. This
+represents the amount of time needed by the system to operate a clean
+shutdown. Defaults to 120 seconds.
+
+*shutdown_timer*='value'::
+Set the shutdown timer, in seconds. After 'value' seconds running on battery,
+the local system will receive a notification to shutdown.
+Defaults to "none" (disabled).
 
 IMPLEMENTATION
 --------------

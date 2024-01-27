@@ -95,10 +95,13 @@ Build and install all of the above (the serial, USB, SNMP, XML/HTTP and
 PowerMan drivers, the CGI programs and HTML files, and the upsclient
 library).
 
-	--with-ssl (default: auto-detect)
+    --with-ssl (default: auto-detect)
+    --with-nss (default: auto-detect)
+    --with-openssl (default: auto-detect)
 
-Enable SSL development code. Read the section "Configuring SSL" in
-docs/security.txt for instructions on SSL support.
+Enable SSL support, using either Mozilla NSS or OpenSSL.
+If both are present, and nothing was specified, OpenSSL support will
+be prefered. Read docs/security.txt for instructions on SSL support.
 
 	--with-wrap (default: auto-detect)
 

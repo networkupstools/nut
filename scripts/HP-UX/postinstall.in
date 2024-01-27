@@ -1,0 +1,81 @@
+#!/bin/sh
+
+# directory definitions
+NUT_DIR="@prefix@"
+INSTALLPATH=$NUT_DIR/script
+CONFIGPATH=/etc/rc.config.d
+SCRIPTPATH=/sbin/init.d
+LINKPATH=/sbin/rc3.d
+LINKPREFIX=991
+OWNER=root
+GROUP=root
+SCRIPTS="nut-upsd.sh nut-drvctl.sh nut-upsmon.sh"
+CONFIGS="nut-drvctl nut-upsd nut-upsmon"
+
+SCRIPTPERMS=0744
+CONFIGPERMS=0444
+
+# make sure the nut user exists and has correct memberships
+res=`grget -n nut`
+if [ -z "$res" ]; then
+	groupadd nut
+fi
+res=`pwget -n nut`
+if [ -z "$res" ]; then
+	useradd -g nut -G root -d ${NUT_DIR}/bin nut
+fi
+
+# make sure that conffiles are secured and have the correct ownerships
+if [ -d @CONFPATH@ ] ; then
+        chown root:nut @CONFPATH@
+fi
+for file in nut.conf ups.conf upsd.conf upsmon.conf upsd.users upssched.conf; do
+        if [ -f @CONFPATH@/$file ] ; then
+                chown root:nut @CONFPATH@/$file
+                chmod 640 @CONFPATH@/$file
+        fi
+done
+
+# make sure that /var/run/nut exists and has the correct ownerships
+if [ ! -d @PIDPATH@/nut ] ; then
+        mkdir -p @PIDPATH@/nut
+fi
+if [ -d @PIDPATH@/nut ] ; then
+        chown root:nut @PIDPATH@/nut
+        chmod 770 @PIDPATH@/nut
+fi
+
+# make sure that /var/state/ups exists and has the correct ownerships
+if [ ! -d @STATEPATH@ ] ; then
+        mkdir -p @STATEPATH@
+fi
+if [ -d /var/state/ups ] ; then
+        chown root:nut @STATEPATH@
+        chmod 770 @STATEPATH@
+fi
+
+#Set-up automatic start-up
+
+if [ ! -d $CONFIGPATH ]; then
+	echo "NO $CONFIGPATH"; exit 1;
+fi
+if [ ! -d $SCRIPTPATH ]; then
+	echo "NO $SCRIPTPATH"; exit 1;
+fi
+if [ ! -d $LINKPATH ]; then
+	echo "NO $LINKPATH"; exit 1;
+fi
+for script in $SCRIPTS; do
+	name=`basename ${script} .sh` ;
+	cp $INSTALLPATH/$script $SCRIPTPATH/$name
+	chown $OWNER:$GROUP $SCRIPTPATH/$name
+	chmod $SCRIPTPERMS $SCRIPTPATH/$name
+	
+	ln -f -s $SCRIPTPATH/$name $LINKPATH/K$LINKPREFIX$name
+	ln -f -s $SCRIPTPATH/$name $LINKPATH/S$LINKPREFIX$name
+done
+for config in $CONFIGS; do
+	cp $INSTALLPATH/$config $CONFIGPATH
+	chown $OWNER:$GROUP $CONFIGPATH
+	chmod $CONFIGPERMS $CONFIGPATH
+done

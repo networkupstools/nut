@@ -119,10 +119,13 @@ HTML_CGI_MANS = \
 # Development (--with-dev) related manpages
 SRC_DEV_PAGES = \
 	upsclient.txt \
+	upscli_add_host_cert.txt \
+	upscli_cleanup.txt \
 	upscli_connect.txt \
 	upscli_disconnect.txt \
 	upscli_fd.txt \
 	upscli_get.txt \
+	upscli_init.txt \
 	upscli_list_next.txt \
 	upscli_list_start.txt \
 	upscli_readline.txt \
@@ -132,6 +135,13 @@ SRC_DEV_PAGES = \
 	upscli_ssl.txt \
 	upscli_strerror.txt \
 	upscli_upserror.txt \
+	libnutclient.txt \
+	libnutclient_commands.txt \
+	libnutclient_devices.txt \
+	libnutclient_general.txt \
+	libnutclient_misc.txt \
+	libnutclient_tcp.txt \
+	libnutclient_variables.txt \
 	nutscan.txt \
 	nutscan_scan_snmp.txt \
 	nutscan_scan_usb.txt \
@@ -153,12 +163,16 @@ SRC_DEV_PAGES = \
 	libupsclient-config.txt \
 	skel.txt
 
+# NOTE: nutclient_*.3 has no source counterpart (libnutclient_*.txt)
 MAN3_DEV_PAGES = \
 	upsclient.3 \
+	upscli_add_host_cert.3 \
+	upscli_cleanup.3 \
 	upscli_connect.3 \
 	upscli_disconnect.3 \
 	upscli_fd.3 \
 	upscli_get.3 \
+	upscli_init.3 \
 	upscli_list_next.3 \
 	upscli_list_start.3 \
 	upscli_readline.3 \
@@ -168,6 +182,40 @@ MAN3_DEV_PAGES = \
 	upscli_ssl.3 \
 	upscli_strerror.3 \
 	upscli_upserror.3 \
+	libnutclient.3 \
+	libnutclient_commands.3 \
+	libnutclient_devices.3 \
+	libnutclient_general.3 \
+	libnutclient_misc.3 \
+	libnutclient_tcp.3 \
+	libnutclient_variables.3 \
+	nutclient_authenticate.3 \
+	nutclient_destroy.3 \
+	nutclient_device_forced_shutdown.3 \
+	nutclient_device_login.3 \
+	nutclient_device_master.3 \
+	nutclient_execute_device_command.3 \
+	nutclient_get_device_command_description.3 \
+	nutclient_get_device_commands.3 \
+	nutclient_get_device_description.3 \
+	nutclient_get_device_num_logins.3 \
+	nutclient_get_device_rw_variables.3 \
+	nutclient_get_devices.3 \
+	nutclient_get_device_variable_description.3 \
+	nutclient_get_device_variables.3 \
+	nutclient_get_device_variable_values.3 \
+	nutclient_has_device.3 \
+	nutclient_has_device_command.3 \
+	nutclient_has_device_variable.3 \
+	nutclient_logout.3 \
+	nutclient_set_device_variable_value.3 \
+	nutclient_set_device_variable_values.3 \
+	nutclient_tcp_create_client.3 \
+	nutclient_tcp_disconnect.3 \
+	nutclient_tcp_get_timeout.3 \
+	nutclient_tcp_is_connected.3 \
+	nutclient_tcp_reconnect.3 \
+	nutclient_tcp_set_timeout.3 \
 	nutscan.3 \
 	nutscan_scan_snmp.3 \
 	nutscan_scan_usb.3 \
@@ -201,10 +249,13 @@ endif
 
 HTML_DEV_MANS = \
 	upsclient.html \
+	upscli_add_host_cert.html \
+	upscli_cleanup.html \
 	upscli_connect.html \
 	upscli_disconnect.html \
 	upscli_fd.html \
 	upscli_get.html \
+	upscli_init.html \
 	upscli_list_next.html \
 	upscli_list_start.html \
 	upscli_readline.html \
@@ -214,6 +265,13 @@ HTML_DEV_MANS = \
 	upscli_ssl.html \
 	upscli_strerror.html \
 	upscli_upserror.html \
+	libnutclient.html \
+	libnutclient_commands.html \
+	libnutclient_devices.html \
+	libnutclient_general.html \
+	libnutclient_misc.html \
+	libnutclient_tcp.html \
+	libnutclient_variables.html \
 	nutscan.html \
 	nutscan_scan_snmp.html \
 	nutscan_scan_usb.html \
@@ -246,6 +304,7 @@ else
 
 # (--with-serial)
 SRC_SERIAL_PAGES = \
+	al175.txt	\
 	apcsmart.txt	\
 	apcsmart-old.txt	\
 	bcmxcp.txt 	\
@@ -255,7 +314,8 @@ SRC_SERIAL_PAGES = \
 	bestuferrups.txt	\
 	bestups.txt 	\
 	bestfcom.txt	\
-	blazer.txt	\
+	blazer-common.txt	\
+	blazer_ser.txt	\
 	clone.txt \
 	dummy-ups.txt	\
 	etapro.txt	\
@@ -272,18 +332,22 @@ SRC_SERIAL_PAGES = \
 	mge-utalk.txt	\
 	oneac.txt		\
 	microdowell.txt	\
+	nutdrv_qx.txt	\
 	optiups.txt	\
 	powercom.txt 	\
 	powerpanel.txt	\
 	rhino.txt		\
+	riello_ser.txt	\
 	safenet.txt	\
 	solis.txt		\
 	tripplite.txt	\
 	tripplitesu.txt	\
 	upscode2.txt	\
-	victronups.txt
+	victronups.txt	\
+	apcupsd-ups.txt
 
 MAN_SERIAL_PAGES = \
+	al175.8	\
 	apcsmart.8	\
 	apcsmart-old.8	\
 	bcmxcp.8 	\
@@ -293,7 +357,7 @@ MAN_SERIAL_PAGES = \
 	bestuferrups.8	\
 	bestups.8 	\
 	bestfcom.8	\
-	blazer.8	\
+	blazer_ser.8	\
 	clone.8 \
 	dummy-ups.8	\
 	etapro.8	\
@@ -308,24 +372,28 @@ MAN_SERIAL_PAGES = \
 	metasys.8	\
 	mge-shut.8	\
 	mge-utalk.8	\
+	nutdrv_qx.8	\
 	oneac.8		\
 	microdowell.8	\
 	optiups.8	\
 	powercom.8 	\
 	powerpanel.8	\
 	rhino.8		\
+	riello_ser.8	\
 	safenet.8	\
 	solis.8		\
 	tripplite.8	\
 	tripplitesu.8	\
 	upscode2.8	\
-	victronups.8
+	victronups.8	\
+	apcupsd-ups.8
 
 if WITH_SERIAL
   man8_MANS +=  $(MAN_SERIAL_PAGES)
 endif
 
 HTML_SERIAL_MANS = \
+	al175.html	\
 	apcsmart.html	\
 	apcsmart-old.html	\
 	bcmxcp.html 	\
@@ -335,7 +403,7 @@ HTML_SERIAL_MANS = \
 	bestuferrups.html	\
 	bestups.html 	\
 	bestfcom.html	\
-	blazer.html	\
+	blazer_ser.html	\
 	clone.html \
 	dummy-ups.html	\
 	etapro.html	\
@@ -350,18 +418,21 @@ HTML_SERIAL_MANS = \
 	metasys.html	\
 	mge-shut.html	\
 	mge-utalk.html	\
+	nutdrv_qx.html	\
 	oneac.html		\
 	microdowell.html	\
 	optiups.html	\
 	powercom.html 	\
 	powerpanel.html	\
 	rhino.html		\
+	riello_ser.html	\
 	safenet.html	\
 	solis.html		\
 	tripplite.html	\
 	tripplitesu.html	\
 	upscode2.html	\
-	victronups.html
+	victronups.html	\
+	apcupsd-ups.html
 
 # (--with-snmp)
 SRC_SNMP_PAGES = snmp-ups.txt
@@ -376,13 +447,20 @@ HTML_SNMP_MANS = snmp-ups.html
 # (--with-usb)
 SRC_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.txt \
+	blazer-common.txt	\
+	blazer_usb.txt	\
+	nutdrv_qx.txt	\
 	richcomm_usb.txt \
+	riello_usb.txt	\
 	tripplite_usb.txt \
 	usbhid-ups.txt
 
 MAN_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.8 \
+	blazer_usb.8 \
+	nutdrv_qx.8	\
 	richcomm_usb.8 \
+	riello_usb.8	\
 	tripplite_usb.8 \
 	usbhid-ups.8
 
@@ -392,7 +470,10 @@ endif
 
 HTML_USB_LIBUSB_MANS = \
 	bcmxcp_usb.html \
+	blazer_usb.html	\
+	nutdrv_qx.html	\
 	richcomm_usb.html \
+	riello_usb.html	\
 	tripplite_usb.html \
 	usbhid-ups.html
 
@@ -505,25 +586,24 @@ if HAVE_ASCIIDOC
 		--attribute localtime=`TZ=UTC date +%H:%M:%S` \
 		-o $@ $<
 
-### The --destination-dir flag doesn't seem to affect the intermediate .xml file.
-### Hence, the copying dance below.
-A2X_MANPAGE_OPTS = -f manpage --attribute nutversion="@PACKAGE_VERSION@"
+### Prior to Asciidoc ~8.6.8, the --destination-dir flag didn't seem to affect the location of the intermediate .xml file.
+A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
+	--attribute mansource="Network UPS Tools" \
+	--attribute manversion="@PACKAGE_VERSION@" \
+	--attribute manmanual="NUT Manual" \
+	--destination-dir=.
 
 .txt.1:
-	test -f `basename $<` || cp -p $< .
-	$(A2X) $(A2X_MANPAGE_OPTS) `basename $<`
+	$(A2X) $(A2X_MANPAGE_OPTS) $<
 
 .txt.3:
-	test -f `basename $<` || cp -p $< .
-	$(A2X) $(A2X_MANPAGE_OPTS) `basename $<`
+	$(A2X) $(A2X_MANPAGE_OPTS) $<
 
 .txt.5:
-	test -f `basename $<` || cp -p $< .
-	$(A2X) $(A2X_MANPAGE_OPTS) `basename $<`
+	$(A2X) $(A2X_MANPAGE_OPTS) $<
 
 .txt.8:
-	test -f `basename $<` || cp -p $< .
-	$(A2X) $(A2X_MANPAGE_OPTS) `basename $<`
+	$(A2X) $(A2X_MANPAGE_OPTS) $<
 
 else !HAVE_ASCIIDOC
 

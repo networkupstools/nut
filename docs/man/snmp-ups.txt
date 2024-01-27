@@ -58,14 +58,16 @@ linkman:ups.conf[5]:
 *mibs*='name'::
 Set MIB compliance (default=auto, allowed entries: refer to the above SUPPORTED HARDWARE).
 With "auto", the driver will try a select set of SNMP objects until it finds
-one that the device responds to.
-
+one that the device responds to.  Note that, since NUT 2.6.2, snmp-ups has a new
+method that uses sysObjectID, which is a pointer to the prefered MIB of the
+device, to detect supported devices.  This renders void the use of 'mib' option.
+   
 *community*='name'::
 Set community name (default = public).
 Note that you require a RW community name to change UPS settings (as for a powerdown).
 
 *snmp_version*='version'::
-Set SNMP version (default = v1, the other allowed value is v2c)
+Set SNMP version (default = v1, allowed: v2c, v3)
 
 *pollfreq*='value'::
 Set polling frequency in seconds, to reduce network flow (default=30)
@@ -132,14 +134,13 @@ The hostname of the UPS is specified with the "port" value in
 		port = snmp-ups.example.com
 		community = public
 		snmp_version = v1
-		mibs = ietf
 		pollfreq = 15
 		desc = "Example SNMP v1 device"
 
 	[snmpv3]
 		driver = snmp-ups
 		port = 166.99.224.132
-		mibs = mge
+		snmp_version = v3
 		secLevel = authPriv
 		secName = mysecurityname
 		authPassword = myauthenticationpassphrase
@@ -149,9 +150,6 @@ The hostname of the UPS is specified with the "port" value in
 AUTHORS
 -------
 Arnaud Quette, Dmitry Frolov
-
-Sponsored by Eaton <http://www.eaton.com>
-and originally by MGE UPS SYSTEMS <http://www.mgeups.com/>
 
 
 SEE ALSO

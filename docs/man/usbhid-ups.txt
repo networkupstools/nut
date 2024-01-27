@@ -115,6 +115,11 @@ ones that are not yet supported. This must always be combined with the
 useful except for printing debugging information (typically used with
 -DD).
 
+*maxreport*::
+With this option, the driver activates a tweak to workaround buggy firmware
+returning invalid HID report length. Some APC Back-UPS units are known to have
+this bug.
+
 INSTALLATION
 ------------
 

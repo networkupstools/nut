@@ -36,7 +36,7 @@
 #include "usbhid-ups.h"
 #include "mge-hid.h"
 
-#define MGE_HID_VERSION		"MGE HID 1.31"
+#define MGE_HID_VERSION		"MGE HID 1.32"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -266,6 +266,12 @@ static const char *mge_battery_capacity_fun(double value)
 
 static info_lkp_t mge_battery_capacity[] = {
 	{ 0, NULL, mge_battery_capacity_fun }
+};
+
+info_lkp_t eaton_enable_disable_info[] = {
+	{ 0, "disabled", NULL },
+	{ 1, "enabled", NULL },
+	{ 0, NULL, NULL }
 };
 
 static info_lkp_t mge_upstype_conversion[] = {
@@ -893,6 +899,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "ups.start.auto", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Input.[1].AutomaticRestart", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
 	{ "ups.start.battery", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Input.[3].StartOnBattery", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
 	{ "ups.start.reboot", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.ForcedReboot", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
+	{ "ups.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.PresentStatus.Switchable", NULL, "%s", HU_FLAG_SEMI_STATIC | HU_FLAG_ENUM, eaton_enable_disable_info },
 #ifdef HAVE_STRPTIME
 	{ "ups.date", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.Time", NULL, "%s", 0, mge_date_conversion },
 	{ "ups.time", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.Time", NULL, "%s", 0, mge_time_conversion },
@@ -924,8 +931,11 @@ static hid_info_t mge_hid2nut[] =
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.VoltageOutOfRange", NULL, NULL, 0, vrange_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.FrequencyOutOfRange", NULL, NULL, 0, frange_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Good", NULL, NULL, 0, off_info },
+#if 0
+	/* TODO: UPS.BatterySystem.Charger.PresentStatus.Used is related to ABM */
 	{ "BOOL", 0, 0, "UPS.BatterySystem.Charger.PresentStatus.Used", NULL, NULL, 0, off_info },
 	/* FIXME: on Dell, the above requires an "AND" with "UPS.BatterySystem.Charger.Mode = 4 (ABM Resting)" */
+#endif
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[2].PresentStatus.Used", NULL, NULL, 0, bypass_auto_info }, /* Automatic bypass */
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[4].PresentStatus.Used", NULL, NULL, 0, bypass_manual_info }, /* Manual bypass */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.FanFailure", NULL, NULL, 0, fanfail_info },
@@ -1099,7 +1109,13 @@ static char *get_model_name(const char *iProduct, const char *iModel)
 
 	/* Search for device type and formatting rules */
 	for (model = mge_model_names; model->iProduct; model++) {
-		upsdebugx(2, "comparing with: %s", model->name);
+		if(model->name) {
+			upsdebugx(2, "comparing with: %s", model->name);
+		}
+		else {
+			upsdebugx(2, "comparing with: %s %s", model->iProduct,
+					model->iModel);
+		}
 
 		if (strcmp(iProduct, model->iProduct)) {
 			continue;
@@ -1167,8 +1183,7 @@ static const char *mge_format_serial(HIDDevice_t *hd) {
 static int mge_claim(HIDDevice_t *hd) {
 
 #ifndef SHUT_MODE
-	int status = is_usb_device_supported(mge_usb_device_table, hd->VendorID,
-								 hd->ProductID);
+	int status = is_usb_device_supported(mge_usb_device_table, hd);
 
 	switch (status) {
 

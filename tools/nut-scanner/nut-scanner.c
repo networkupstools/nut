@@ -127,7 +127,6 @@ static void * run_eaton_serial(void * arg)
 	dev[TYPE_EATON_SERIAL] = nutscan_scan_eaton_serial (serial_ports);
 	return NULL;
 }
-
 #endif /* HAVE_PTHREAD */
 int printq(int quiet,const char *fmt, ...)
 {
@@ -456,6 +455,7 @@ display_help:
 	if( allow_snmp && nutscan_avail_snmp ) {
 		if( start_ip == NULL ) {
 			printq(quiet,"No start IP, skipping SNMP\n");
+			nutscan_avail_snmp = 0;
 		}
 		else {
 			printq(quiet,"Scanning SNMP bus.\n");
@@ -483,6 +483,7 @@ display_help:
 	if( allow_oldnut && nutscan_avail_nut) {
 		if( start_ip == NULL ) {
 			printq(quiet,"No start IP, skipping NUT bus (old connect method)\n");
+			nutscan_avail_nut = 0;
 		}
 		else {
 			printq(quiet,"Scanning NUT bus (old connect method).\n");
@@ -514,7 +515,7 @@ display_help:
 			nutscan_avail_ipmi = 0;
 		}
 #else
-		dev[TYPE_IPMI] = nutscan_scan_ipmi(start_ip,end_ip,timeout,&ipmi_sec);
+		dev[TYPE_IPMI] = nutscan_scan_ipmi(start_ip,end_ip,&ipmi_sec);
 #endif /* HAVE_PTHREAD */
 	}
 

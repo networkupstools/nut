@@ -1,4 +1,6 @@
+al175.html
 apcsmart.html
+apcupsd-ups.html
 bcmxcp.html
 bcmxcp_usb.html
 belkin.html
@@ -7,7 +9,7 @@ bestfcom.html
 bestfortress.html
 bestuferrups.html
 bestups.html
-blazer.html
+blazer*.html
 clone.html
 dummy-ups.html
 etapro.html
@@ -82,7 +84,9 @@ upscli_fd.html
 richcomm_usb.html
 Makefile
 Makefile.in
+al175.8
 apcsmart.8
+apcupsd-ups.8
 bcmxcp.8
 bcmxcp_usb.8
 belkin.8
@@ -264,3 +268,5 @@ nutscan_get_serial_ports_list.3
 nutscan_scan_eaton_serial.3
 nutscan_get_serial_ports_list.html
 nutscan_scan_eaton_serial.html
+nutdrv_qx.8
+nutdrv_qx.html

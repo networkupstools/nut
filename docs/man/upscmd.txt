@@ -57,6 +57,9 @@ your program will hang.
 This is not necessary when displaying the list, as the username and
 password are not required for read-only mode.
 
+Moreover, if you run this program inside a shell script or similar, you
+should only consider using output from stdout, not stderr.
+
 DANGEROUS COMMANDS
 ------------------
 

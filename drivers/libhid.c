@@ -56,6 +56,9 @@ static int path_to_string(char *string, size_t size, const HIDPath_t *path, usag
 static int8_t get_unit_expo(const HIDData_t *hiddata);
 static double exponent(double a, int8_t b);
 
+/* Tweak flag for APC Back-UPS */
+int max_report_size = 0;
+
 /* ---------------------------------------------------------------------- */
 /* report buffering system */
 
@@ -137,6 +140,9 @@ reportbuf_t *new_report_buffer(HIDDesc_t *pDesc)
    seconds, then the report is freshly read from the USB
    device. Otherwise, it is unchanged.
    Return 0 on success, -1 on error with errno set. */
+/* because buggy firmwares from APC return wrong report size, we either
+   ask the report with the found report size or with the whole buffer size
+   depending on the max_report_size flag */
 static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t *pData, int age)
 {
 	int	id = pData->ReportID;
@@ -148,7 +154,9 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 		return 0;
 	}
 
-	r = comm_driver->get_report(udev, id, rbuf->data[id], rbuf->len[id]);
+	r = comm_driver->get_report(udev, id, rbuf->data[id],
+		max_report_size ? (int)sizeof(rbuf->data[id]):rbuf->len[id]);
+
 	if (r <= 0) {
 		return -1;
 	}
@@ -256,7 +264,7 @@ static struct {
 
 /* CAUTION: be careful when modifying the output format of this function,
  * since it's used to produce sub-drivers "stub" using
- * scripts/subdriver/path-to-subdriver.sh
+ * scripts/subdriver/gen-usbhid-subdriver.sh
  */
 void HIDDumpTree(hid_dev_handle_t udev, usage_tables_t *utab)
 {

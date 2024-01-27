@@ -27,7 +27,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION		"0.37"
+#define DRIVER_VERSION		"0.38"
 
 #include "main.h"
 #include "libhid.h"
@@ -37,6 +37,7 @@
 
 /* include all known subdrivers */
 #include "mge-hid.h"
+
 #ifndef SHUT_MODE
 	#include "explore-hid.h"
 	#include "apc-hid.h"
@@ -46,6 +47,7 @@
 	#include "powercom-hid.h"
 	#include "tripplite-hid.h"
 	#include "idowell-hid.h"
+	#include "openups-hid.h"
 #endif
 
 /* master list of avaiable subdrivers */
@@ -62,6 +64,7 @@ static subdriver_t *subdriver_list[] = {
 	&powercom_subdriver,
 	&tripplite_subdriver,
 	&idowell_subdriver,
+	&openups_subdriver,
 #endif
 	NULL
 };
@@ -717,9 +720,8 @@ void upsdrv_makevartable(void)
 
 	upsdebugx(1, "upsdrv_makevartable...");
 
-        snprintf(temp, sizeof(temp), "Set low battery level, in %% (default=%s).", DEFAULT_LOWBATT);
-        addvar (VAR_VALUE, HU_VAR_LOWBATT, temp);
-
+	snprintf(temp, sizeof(temp), "Set low battery level, in %% (default=%s).", DEFAULT_LOWBATT);
+	addvar (VAR_VALUE, HU_VAR_LOWBATT, temp);
 
 	snprintf(temp, sizeof(temp), "Set shutdown delay, in seconds (default=%s)", DEFAULT_OFFDELAY);
 	addvar(VAR_VALUE, HU_VAR_OFFDELAY, temp);
@@ -742,6 +744,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "productid", "Regular expression to match UPS Product numerical ID (4 digits hexadecimal)");
 	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
 	addvar(VAR_FLAG, "explore", "Diagnostic matching of unsupported UPS");
+	addvar(VAR_FLAG, "maxreport", "Activate tweak for buggy APC Back-UPS firmware");
 #else
 	addvar(VAR_VALUE, "notification", "Set notification type, (ignored, only for backward compatibility)");
 #endif
@@ -904,6 +907,11 @@ void upsdrv_initups(void)
 	/* enforce use of the "vendorid" option if "explore" is given */
 	if (testvar("explore") && getval("vendorid")==NULL) {
 		fatalx(EXIT_FAILURE, "must specify \"vendorid\" when using \"explore\"");
+	}
+
+	/* Activate maxreport tweak */
+	if (testvar("maxreport")) {
+		max_report_size = 1;
 	}
 
 	/* process the UPS selection options */

@@ -332,7 +332,7 @@ void upsdrv_updateinfo(void)
 
 		/* Compute battery percent left based on battery voltages. */
 		battpercent = ((vbatt - fc.emptyvolts) 
-					   / (fc.fullvolts - fc.emptyvolts) * 100.0);
+					   / (fc.idealbvolts - fc.emptyvolts) * 100.0);
 		if (battpercent < 0.0) 
 			battpercent = 0.0;
 		else if (battpercent > 100.0)

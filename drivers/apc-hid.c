@@ -36,8 +36,19 @@
 /* APC */
 #define APC_VENDORID 0x051d
 
+/* Tweaks */
+char * tweak_max_report[] = {
+	/* Back-UPS ES 700 does NOT overflow. */
+	/* Back-UPS ES 725 does NOT overflow. */
+	/* Back-UPS ES 525 overflows on ReportID 0x0c
+		 (UPS.PowerSummary.RemainingCapacity).*/
+	"Back-UPS ES 525",
+	/* Back-UPS CS 650 overflows on ReportID 0x46 */
+	"Back-UPS CS",
+	NULL};
+
 /* Don't use interrupt pipe on 5G models (used by proprietary protocol) */
-static void *disable_interrupt_pipe(void)
+static void *disable_interrupt_pipe(USBDevice_t *device)
 {
 	if (use_interrupt_pipe == TRUE) {
 		upslogx(LOG_INFO, "interrupt pipe disabled (add 'pollonly' flag to 'ups.conf' to get rid of this message)");
@@ -46,10 +57,30 @@ static void *disable_interrupt_pipe(void)
 	return NULL;
 }
 
+/* Some models need special tweaks */
+static void *general_apc_check(USBDevice_t *device)
+{
+	int i = 0;
+
+	/* Some models of Back-UPS overflow on some ReportID.
+	 * This results in some data not being exposed and IO errors on
+	 * WIN32, causing endless reconnection or driver's failure */
+
+	while( tweak_max_report[i] != NULL ) {
+		if(!strncmp(device->Product, tweak_max_report[i],
+			strlen(tweak_max_report[i]))) {
+			max_report_size = 1;
+			return NULL;
+		}
+		i++;
+	}
+	return NULL;
+}
+
 /* USB IDs device table */
 static usb_device_id_t apc_usb_device_table[] = {
 	/* various models */
-	{ USB_DEVICE(APC_VENDORID, 0x0002), NULL },
+	{ USB_DEVICE(APC_VENDORID, 0x0002), general_apc_check },
 	/* various 5G models */
 	{ USB_DEVICE(APC_VENDORID, 0x0003), disable_interrupt_pipe },
 
@@ -437,8 +468,7 @@ static const char *apc_format_serial(HIDDevice_t *hd) {
  * the device is supported by this subdriver, else 0. */
 static int apc_claim(HIDDevice_t *hd) {
 
-	int status = is_usb_device_supported(apc_usb_device_table, hd->VendorID,
-								 hd->ProductID);
+	int status = is_usb_device_supported(apc_usb_device_table, hd);
 
 	switch (status) {
 

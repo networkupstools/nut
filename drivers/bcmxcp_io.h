@@ -5,7 +5,7 @@
 #ifndef BCMXCP_IO__
 #define BCMXCP_IO__
 
-#include "main.h"	/* for usbdrv_info_t */
+#include "main.h" /* for usbdrv_info_t */
 
 void send_read_command(unsigned char command);
 void send_write_command(unsigned char *command, int command_length);

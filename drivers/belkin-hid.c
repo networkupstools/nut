@@ -568,7 +568,7 @@ static const char *belkin_format_serial(HIDDevice_t *hd) {
  * the device is supported by this subdriver, else 0. */
 static int belkin_claim(HIDDevice_t *hd)
 {
-	int status = is_usb_device_supported(belkin_usb_device_table, hd->VendorID, hd->ProductID);
+	int status = is_usb_device_supported(belkin_usb_device_table, hd);
 
 	switch (status)
 	{

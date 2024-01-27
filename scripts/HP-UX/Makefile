@@ -49,3 +49,7 @@ remove:
 		rm -f $(LINKPATH)/S$(LINKPREFIX)$$name  \
 		|| echo "Unable to remove $(LINKPATH)/S$(LINKPREFIX)$$name"; \
 	done
+
+package:
+	./makedepot.sh
+	mv nut.depot NUT_HPUX_package.depot

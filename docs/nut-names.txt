@@ -35,9 +35,10 @@ during a transition period. The ups.* data will then be removed.
 | device.type         | Device type (ups, pdu, scd, psu)           | ups
 | device.description  | Device description (opaque string)         | Some ups
 | device.contact      | Device administrator name (opaque string)  | John Doe
-| device.location     | Device physical location (opaque string)   | 1rst floor
+| device.location     | Device physical location (opaque string)   | 1st floor
 | device.part         | Device part number (opaque string)         | 123456789
 | device.macaddr      | Physical network address of the device     | 68:b5:99:f5:89:27 
+| device.uptime       | Device uptime in seconds                   | 1782
 |=====================================================================================
 
 ups: General unit information
@@ -115,6 +116,8 @@ ups: General unit information
                           battery                      | yes
 | ups.start.reboot      | UPS coldstarts from battery
                           (enabled or disabled)        | yes
+| ups.shutdown          | Enable or disable UPS
+                          shutdown ability (poweroff)  | enabled
 |===============================================================================
 
 NOTE: When present, the value of *ups.start.auto* has an impact on shutdown.*
@@ -489,6 +492,7 @@ Instant commands
 | test.battery.start.quick | Start a "quick" battery test
 | test.battery.start.deep  | Start a "deep" battery test
 | test.battery.stop        | Stop the battery test
+| test.system.start        | Start a system test
 | calibrate.start          | Start runtime calibration
 | calibrate.stop           | Stop runtime calibration
 | bypass.start             | Put the UPS in bypass mode

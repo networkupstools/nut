@@ -856,7 +856,7 @@ class gui_updater( threading.Thread ) :
                     self.__parent_class._interface__widgets["progress_battery_load"].set_text( _("Not available") )
 
                 if ( vars.has_key( "battery.runtime" ) ) :
-                    autonomy = int(vars.get("battery.runtime",0))
+                    autonomy = int( float( vars.get( "battery.runtime", 0 ) ) )
 
                     if ( autonomy >= 3600 ) :
                         info = time.strftime( _("<b>%H hours %M minutes %S seconds</b>"), time.gmtime( autonomy ) )

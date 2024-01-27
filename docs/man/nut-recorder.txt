@@ -12,9 +12,9 @@ SYNOPSIS
 
 DESCRIPTION
 -----------
-*nut-recorder* is an utility to record device running sequence (Ie
-power failures or any other change) through a NUT data server, and
-dump it in a .seq format.
+*nut-recorder* is an utility to record sequences from running devices (such as
+power failures, or any other value changes) from upsd, and dump it in a .seq
+format.
 
 The .seq file can then be used by the linkman:dummy-ups[8] driver
 to replay the sequence.
@@ -23,7 +23,7 @@ OPTIONS
 -------
 'device-name'::
 
-Record the changes of that device.  The format for this option is
+Record the changes of this device.  The format for this option is
 'devname[@hostname[:port]]'.  The default hostname is "localhost".
 
 'output-file'::

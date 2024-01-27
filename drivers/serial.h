@@ -15,8 +15,10 @@
 #define SER_ERR_LIMIT 10	/* start limiting after 10 in a row  */
 #define SER_ERR_RATE 100	/* then only print every 100th error */
 
+int ser_open_nf(const char *port);
 int ser_open(const char *port);
 
+int ser_set_speed_nf(int fd, const char *port, speed_t speed);
 int ser_set_speed(int fd, const char *port, speed_t speed);
 
 /* set the state of modem control lines */

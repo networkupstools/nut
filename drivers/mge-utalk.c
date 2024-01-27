@@ -3,7 +3,7 @@
  *  Copyright (C) 2002 - 2005
  *     Arnaud Quette <arnaud.quette@gmail.com>
  *     Hans Ekkehard Plesser <hans.plesser@itf.nlh.no>
- *     Martin Loyer <martin@ouifi.net>
+ *     Martin Loyer <martin@degraaf.fr>
  *     Patrick Agrain <patrick.agrain@alcatel.fr>
  *     Nicholas Reilly <nreilly@magma.ca>
  *     Dave Abbott <d.abbott@dcs.shef.ac.uk>
@@ -64,7 +64,7 @@
 /* --------------------------------------------------------------- */
 
 #define DRIVER_NAME	"MGE UPS SYSTEMS/U-Talk driver"
-#define DRIVER_VERSION	"0.92"
+#define DRIVER_VERSION	"0.93"
 
 
 /* driver description structure */
@@ -73,7 +73,7 @@ upsdrv_info_t upsdrv_info = {
 	DRIVER_VERSION,
 	"Arnaud Quette <ArnaudQuette@gmail.com>\n" \
 	"Hans Ekkehard Plesser <hans.plesser@itf.nlh.no>\n" \
-	"Martin Loyer <martin@ouifi.net>\n" \
+	"Martin Loyer <martin@degraaf.fr>\n" \
 	"Patrick Agrain <patrick.agrain@alcatel.fr>\n" \
 	"Nicholas Reilly <nreilly@magma.ca>\n" \
 	"Dave Abbott <d.abbott@dcs.shef.ac.uk>\n" \
@@ -652,11 +652,12 @@ static void enable_ups_comm(void)
 {
 	char buf[8];
 	
+	/* send Z twice --- speeds up re-connect */
+	mge_command(NULL, 0, "Z");
+	mge_command(NULL, 0, "Z");
 	/* only enable communication if needed! */
 	if ( mge_command(buf, 8, "Si") <= 0)
 	{
-		mge_command(NULL, 0, "Z");   /* send Z twice --- speeds up re-connect */
-		mge_command(NULL, 0, "Z");
 		mge_command(NULL, 0, "Ax 1");
 		usleep(MGE_CONNECT_DELAY);
 	}
@@ -873,8 +874,9 @@ static int mge_command(char *reply, int replylen, const char *fmt, ...)
 	
 	va_end(ap);
 
-	/* Delay a bit to avoid overlap of a previous answer */
-	usleep(100000);
+	/* Delay a bit to avoid overlap of a previous answer (500 ms), as per
+	 * http://old.networkupstools.org/protocols/mge/9261zwfa.pdf § 6.1. Timings */
+	usleep(500000);
 	
 	/* flush received, unread data */
 	tcflush(upsfd, TCIFLUSH);

@@ -1,0 +1,646 @@
+NUTDRV_QX(8)
+============
+
+NAME
+----
+
+nutdrv_qx - Driver for Q* protocol serial and USB based UPS equipment
+
+
+NOTE
+----
+
+This man page only documents the hardware-specific features of the *nutdrv_qx* driver.
+For information about the core driver, see linkman:nutupsdrv[8].
+
+
+SUPPORTED HARDWARE
+------------------
+
+The *nutdrv_qx* driver is known to work with various UPSes from 'Blazer', 'Energy Sistem', 'Fenton Technologies', 'General Electric', 'Mustek', 'Voltronic Power' (rebranded by many, many - have I said many? - others.. Long story short: if your UPS came with a software called 'Viewpower', chances are high that it works with this driver with the 'voltronic' <<_extra_arguments,protocol>>) and many others.
+
+The <<_internet_resources,NUT compatibility table>> lists all the known supported models.
+Keep in mind, however, that other models not listed there may also be supported, but haven't been tested.
+
+All devices with a serial interface and many with a USB interface are supported.
+
+
+EXTRA ARGUMENTS
+---------------
+
+You may need to override or provide defaults for some values, depending on the make and model of your UPS.
+
+The following are the ones that most likely will need changing (see linkman:ups.conf[5]):
+
+*ondelay =* 'value'::
+Time to wait before switching on the UPS (seconds).
+This value is truncated to units of 60 seconds.
+The acceptable range is +0..599940+ seconds.
+Note that a value below 3 minutes, may cause earlier firmware versions to not switch on automatically, so it defaults to 3 minutes (i.e. 180 seconds).
+This option provides a default value for *ups.delay.start* that will then be used by the driver in the automatic shutdown sequence (i.e. calling the driver with the *-k* option, calling linkman:upsdrvctl[8] with the *shutdown* option or when the +FSD+ flag is set and linkman:upsmon[8] enters its shutdown sequence): however you can change this value `on the fly' for the actual session, only for the use with instant commands, setting *ups.delay.start* with linkman:upsrw[8].
+
+*offdelay =* 'value'::
+Time to wait before shutting down the UPS (seconds).
+This value is truncated to units of 6 seconds (less than 60 seconds) or 60 seconds (more than 60 seconds).
+Defaults to 30 seconds.
+This option provides a default value for *ups.delay.shutdown* that will then be used by the driver in the automatic shutdown sequence (i.e. calling the driver with the *-k* option, calling linkman:upsdrvctl[8] with the *shutdown* option or when the +FSD+ flag is set and linkman:upsmon[8] enters its shutdown sequence): however you can change this value `on the fly' for the actual session, only for the use with instant commands, setting *ups.delay.shutdown* with linkman:upsrw[8].
+
+*stayoff*::
+If you set stayoff in linkman:ups.conf[5] when FSD arises the UPS will call a *shutdown.stayoff* shutting down after *ups.delay.shutdown* seconds and won't return, otherwise (standard behaviour) the UPS will call *shutdown.return* shutting down after *ups.delay.shutdown* seconds and then turn on after *ups.delay.start* seconds (if mains meanwhile returned).
+
+*protocol =* 'string'::
+Skip autodetection of the protocol to use and only use the one specified.
+Supported values 'mecer', 'megatec', 'megatec/old', 'mustek', 'voltronic' and 'zinto'.
+
+*pollfreq =* 'value'::
+Set polling frequency, in seconds, to reduce the data flow.
+Between two polling requests the driver will do `quick polls' dealing just with ups.status.
+The default value is 30 (in seconds).
+
+If your UPS doesn't report either *battery.charge* or *battery.runtime* you may want to add the following ones in order to have guesstimated values:
+
+*default.battery.voltage.high =* 'value'::
+Maximum battery voltage that is reached after about 12 to 24 hours charging.
+If you want the driver to report a guesstimated *battery.charge*, you need to specify this (see <<_battery_charge,BATTERY CHARGE>>).
+
+*default.battery.voltage.low =* 'value'::
+Minimum battery voltage just before the UPS automatically shuts down.
+If you want the driver to report a guesstimated *battery.charge*, you need to specify this (see <<_battery_charge,BATTERY CHARGE>>).
+
+*default.battery.voltage.nominal =* 'value'::
+*override.battery.voltage.nominal =* 'value'::
+Some devices show a wrong nominal battery voltage (or none at all), so you may need to override or set a default value.
+
+*override.battery.packs =* 'value'::
+Some devices report a part of the total battery voltage.
+For instance, if *battery.voltage.nominal* is 24 V, but it reports a *battery.voltage* of around 2 V, the number of *battery.packs* to correct this reading would be 12.
+The driver will attempt to detect this automatically, but if this fails somehow, you may want to override this value.
+
+*runtimecal =* 'value,value,value,value'::
+Parameter used in the (optional) runtime estimation.
+This takes two runtimes at different loads.
+Typically, this uses the runtime at full load and the runtime at half load.
+For instance, if your UPS has a rated runtime of 240 seconds at full load and 720 seconds at half load, you would enter
++
+    runtimecal = 240,100,720,50
++
+The first load should always be higher than the second.
+If you have values available for loads other than 100 and 50 % respectively, you can use those too, but keep them spaced apart as far as reasonably possible.
+Just don't get too close to no load (prediction of runtime depends more on idle load for the battery then).
+
+*chargetime =* 'value'::
+The time needed to fully recharge the battery after being fully discharged.
+If not specified, the driver defaults to 43200 seconds (12 hours).
+Only used if *runtimecal* is also specified.
+
+*idleload =* 'value'::
+Minimum battery load used by the driver to estimate the runtime.
+If not specified, the driver defaults to 10%.
+Only used if *runtimecal* is also specified.
+
+
+MECER, MEGATAEC, MEGATEC/OLD, MUSTEK, ZINTO PROTOCOLS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*offdelay*::
+The acceptable range is +12..600+ seconds.
+
+*norating*::
+Some UPSes will lock up if you attempt to read rating information from them.
+Setting this flag will make the driver skip this step.
+
+*novendor*::
+Some UPSes will lock up if you attempt to read vendor information from them.
+Setting this flag will make the driver skip this step.
+
+
+VOLTRONIC PROTOCOL
+~~~~~~~~~~~~~~~~~~
+
+The following options are supported only by the 'voltronic' protocol.
+Not all of them are available on all the UPSes supported by this protocol.
+
+*offdelay*::
+The acceptable range is +12..5940+ seconds.
+
+*battery_number =* 'value'::
+Set number of batteries that make a pack to 'value' [+1..9+].
+This setting will change the charge and runtime estimation reported by the UPS.
+
+*output_phase_angle =* 'value'::
+Changes output phase angle to the provided value [+000+, +120+, +180+, +240+]°.
+
+
+UPS CAPABILITY SETTINGS
+^^^^^^^^^^^^^^^^^^^^^^^
+
+*reset_to_default*::
+Reset capability options and their voltage and frequency limits to safe default values.
+(*Doable only when the UPS is in Standby Mode*)
++
+Note that setting this option will reset also *ups.start.auto*, *battery.protection*, *battery.energysave*, *ups.start.battery*, *outlet.0.switchable*, *input.transfer.high*, *input.transfer.low*, *input.frequency.high* and *input.frequency.low*.
+
+These UPSes can be fine-tuned to suit your needs enabling or disabling the following options (the driver should tell you which one the UPS is capable of on startup: the settable ones will be reported either ar 'enabled' or 'disabled' in the logs):
+
+*alarm_control =* 'string'::
+Enable or disable alarm (BEEP!) [+enabled+/+disabled+].
+Settable also `on the fly' with *beeper.enable* and *beeper.disable* instant commands.
+
+*bypass_alarm =* 'string'::
+Enable or disable alarm (BEEP!) at Bypass Mode [+enabled+/+disabled+].
+
+*battery_alarm =* 'string'::
+Enable or disable alarm (BEEP!) at Battery Mode [+enabled+/+disabled+].
+
+*bypass_when_off =* 'string'::
+Enable or disable bypass when the UPS is Off [+enabled+/+disabled+].
+If enabled, AC will directly provide power to connected devices when the UPS is off.
+
+*bypass_forbidding =* 'string'::
+Enable or disable Bypass Forbidding [+enabled+/+disabled+].
+If enabled, the UPS will not transfer to bypass mode under any condition.
+
+*converter_mode =* 'string'::
+Enable or disable Converter Mode [+enabled+/+disabled+].
+When input frequency is within 40 Hz to 70 Hz, the UPS can be set at a constant output frequency, 50 Hz or 60 Hz.
+The UPS will still charge battery under this mode.
+
+*eco_mode =* 'string'::
+Enable or disable ECO Mode [+enabled+/+disabled+].
+When input voltage/frequency are within acceptable range, the UPS will bypass voltage to output for energy saving.
+PFC and INVERTER are still active at this mode.
+Settable also `on the fly' with *bypass.start* and *bypass.stop* instant commands.
+
+*advanced_eco_mode =* 'string'::
+Enable or disable Advanced ECO Mode [+enabled+/+disabled+].
+When input voltage/frequency are within acceptable range, the UPS will bypass voltage to output for energy saving.
+PFC and INVERTER are off at this mode.
+
+*battery_open_status_check =* 'string'::
+Enable or disable Battery Open Status Check [+enabled+/+disabled+].
+If enabled, when the UPS is turned on, it will check if the battery is connected or not.
+
+*site_fault_detection =* 'string'::
+Enable or disable site fault detection [+enabled+/+disabled+].
+If enabled, the UPS will beep when the input neutral and hot wires are reversed.
+
+*costant_phase_angle =* 'string'::
+Enable or disable Constant Phase Angle Function (output and input phase angles are not equal) [+enabled+/+disabled+].
+
+*limited_runtime_on_battery =* 'string'::
+Enable or disable limited runtime on battery mode [+enabled+/+disabled+].
+
+
+BYPASS MODE VOLTAGE/FREQUENCY LIMITS
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Variables to fine-tune voltage and frequency limits for Bypass mode.
+These limits are reset to safe default values by *reset_to_default*.
+
+If AC voltage and frequency are within acceptable range, Bypass mode will be used (If the UPS is capable of and it's enabled).
+
+Since these values are device-specific, if your UPS support them, you will get their settable limits printed in the logs on startup.
+
+*max_bypass_volt =* 'value'::
+Maximum voltage for Bypass Mode (V).
+
+*min_bypass_volt =* 'value'::
+Minimum voltage for Bypass Mode (V).
+
+*max_bypass_freq =* 'value'::
+Maximum frequency for Bypass Mode (Hz).
+
+*min_bypass_freq =* 'value'::
+Minimum frequency for Bypass Mode (Hz).
+
+
+OPTIONS SPECIFIC FOR P31 UPSES
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following options are available only on P31 UPSes.
+
+*work_range_type =* 'string'::
+Device grid working range for P31 UPSes [+Appliance+/+UPS+].
+
+
+TESTING
+^^^^^^^
+
+This protocol comes with a couple of functions that are not enabled by default because of the lack of knowledge of some part of the communication protocol used by these UPSes by your friendly neighborhood developer.
+Since these functions are supposed to be queries to the UPS for some kind of informations, they _should_ not make your UPS go boom.
+So if you are brave enough to risk your UPS and attached devices' life to help the developers, this will be very appreciated..
+*Do it at your own risk*.
+
+*testing*::
+If invoked the driver will exec also commands that still need testing.
+
+
+SERIAL INTERFACE ONLY
+~~~~~~~~~~~~~~~~~~~~~
+
+*cablepower =* 'string'::
+By default the driver will set DTR and clear RTS ('normal').
+If you find that your UPS isn't detected or the communication with the UPS is unreliable, you may try if clear DTR and set RTS ('reverse'), set DTR and RTS ('both') or clear DTR and RTS ('none') improves this situation.
+
+
+USB INTERFACE ONLY
+~~~~~~~~~~~~~~~~~~
+
+*port =* 'string'::
+You must set 'value' to *auto*.
+
+*vendorid =* 'regex'::
+*productid =* 'regex'::
+*vendor =* 'regex'::
+*product =* 'regex'::
+*serial =* 'regex'::
+Select a specific UPS, in case there is more than one connected via USB.
+Each option specifies an extended regular expression (see *regex(7)*) that must match the UPS's entire vendor/product/serial string (minus any surrounding whitespace), or the whole 4-digit hexadecimal code for vendorid and productid.
+Try *-DD* for finding out the strings to match.
++
+Examples:
+
+ - `-x vendor="Foo.Corporation.*"`
+ - `-x vendorid=051d*` (APC)
+ - `-x product=".*(Smart|Back)-?UPS.*"`
+
+*bus =* 'regex'::
+Select a UPS on a specific USB bus or group of busses.
+The argument is a regular expression that must match the bus name where the UPS is connected (e.g. +bus="002"+, +bus="00[2-3]"+).
+
+*subdriver =* 'string'::
+Select a serial-over-USB subdriver to use.
+You have a choice between *phoenix*, *ippon*, *cypress*, and *krauler*.
+When using this option, it is mandatory to also specify the *vendorid* and *productid*.
+
+*langid_fix =* 'value'::
+Apply the language ID workaround to the *krauler* subdriver.
+This is mandatory for some devices to work (LDLC, Dynamix and others).
+You must provide *value* (+0x409+ or +0x4095+), according to your device entry in NUT hardware compatibility list (HCL).
+
+
+UPS COMMANDS
+------------
+
+This driver supports some instant commands (see linkman:upscmd[8]):
+
+*beeper.toggle*::
+Toggle the UPS beeper.
+(Not available on some hardware)
+
+*load.on*::
+Turn on the load immediately.
+
+*load.off*::
+Turn off the load immediately (see <<_known_problems,KNOWN PROBLEMS>>).
+
+*shutdown.return*::
+Turn off the load and return when power is back.
+Uses the timers defined by *ups.delay.start* and *ups.delay.shutdown*.
+
+*shutdown.stayoff*::
+Turn off the load and remain off (see <<_known_problems,KNOWN PROBLEMS>>).
+Uses the timer defined by *ups.delay.shutdown*.
+
+*shutdown.stop*::
+Stop a shutdown in progress.
+
+*test.battery.start.deep*::
+Perform a long battery test.
+(Not available on some hardware)
+
+*test.battery.start.quick*::
+Perform a quick (10 second) battery test.
+
+*test.battery.stop*::
+Stop a running battery test.
+(Not available on some hardware)
+
+
+MECER, MEGATEC, MEGATEC/OLD, MUSTEK, ZINTO PROTOCOLS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*test.battery.start* 'value'::
+Perform a battery test for the duration of 'value' seconds (truncated to 60 seconds) [+60..5940+].
+
+
+VOLTRONIC PROTOCOL
+~~~~~~~~~~~~~~~~~~
+
+The following instant commands are available for the 'voltronic' protocol.
+Not all of them are available on all the UPSes supported by this protocol.
+
+*beeper.enable*::
+Enable the UPS beeper.
+
+*beeper.disable*::
+Disable the UPS beeper.
+
+*test.battery.start* 'value'::
+Perform a battery test for the duration of 'value' seconds [+12..5940+].
+This value is truncated to units of 6 seconds (less than 60 seconds) or 60 seconds (more than 60 seconds).
+
+*outlet.1.load.off*::
+Turn off outlet 1 load immediately.
+
+*outlet.1.load.on*::
+Turn on outlet 1 load immediately.
+
+*outlet.2.load.off*::
+Turn off outlet 2 load immediately.
+
+*outlet.2.load.on*::
+Turn on outlet 2 load immediately.
+
+*outlet.3.load.off*::
+Turn off outlet 3 load immediately.
+
+*outlet.3.load.on*::
+Turn on outlet 3 load immediately.
+
+*outlet.4.load.off*::
+Turn off outlet 4 load immediately.
+
+*outlet.4.load.on*::
+Turn on outlet 4 load immediately.
+
+*bypass.start*::
+Put the UPS in ECO Mode.
+
+*bypass.stop*::
+Take the UPS out of ECO Mode.
+
+
+BATTERY CHARGE
+--------------
+
+Due to popular demand, this driver will report a guesstimated *battery.charge* and optionally *battery.runtime*, provided you specified a couple of the <<_extra_arguments,EXTRA ARGUMENTS>> listed above.
+
+If you specify both *battery.voltage.high* and *battery.voltage.low* in linkman:ups.conf[5], but don't enter *runtimecal*, it will guesstimate the state of charge by looking at the battery voltage alone.
+This is not reliable under load, as this only gives reasonably accurate readings if you disconnect the load, let the battery rest for a couple of minutes and then measure the open cell voltage.
+This just isn't practical if the power went out and the UPS is providing power for your systems.
+
+                     battery.voltage - battery.voltage.low
+battery.charge =  ------------------------------------------ x 100 %
+                  battery.voltage.high - battery.voltage.low
+
+There is a way to get better readings without disconnecting the load but this requires one to keep track on how much (and how fast) current is going in and out of the battery.
+If you specified the *runtimecal*, the driver will attempt to do this.
+Note however, that this heavily relies on the values you enter and that the UPS must be able to report the load as well.
+There are quite a couple of devices that report 0 % (or any other fixed value) at all times, in which case this obviously doesn't work.
+
+The driver also has no way of determining the degradation of the battery capacity over time, so you'll have to deal with this yourself (by adjusting the values in *runtimecal*).
+Also note that the driver guesses the initial state of charge based on the battery voltage, so this may be less than 100 %, even when you are certain that they are full.
+There is just no way to reliably measure this between 0 and 100 % full charge.
+
+This is better than nothing (but not by much).
+If any of the above calculations is giving you incorrect readings, you are the one that put in the values in linkman:ups.conf[5], so don't complain with the author.
+If you need something better, buy a UPS that reports *battery.charge* and *battery.runtime* all by itself without the help of a NUT driver.
+
+
+NOTES FOR THE PREVIOUS USER OF MEGATEC DRIVERS
+----------------------------------------------
+
+The *nutdrv_qx* driver having replaced the megatec ones, some configuration changes may be required by users switching to *nutdrv_qx*.
+
+Part of this, the following megatec options, in linkman:ups.conf[5], have to be changed:
+
+*battvolts*::
+You need to use 'default.battery.voltage.high' and 'default.battery.voltage.low'
+
+*dtr* and *rts*::
+You need to use 'cablepower'
+
+*ignoreoff*::
+This parameter can simply be discarded, since it was a wrong understanding of the specification.
+
+
+NOTES FOR THE PREVIOUS USER OF BLAZER DRIVERS
+---------------------------------------------
+
+The *nutdrv_qx* driver having replaced the blazer ones, some configuration changes may be required by users switching to *nutdrv_qx*.
+
+Part of this, the following blazer options, in linkman:ups.conf[5], have to be changed:
+
+*ondelay*::
+While the previous blazer drivers expected minutes, the new *nutdrv_qx* driver wants seconds.
+
+The following instant command has also been changed:
+
+*test.battery.start* 'value'::
+While the old blazer drivers expected a 'value' in minutes, the *nutdrv_qx* driver wants a 'value' in seconds.
+
+
+NOTES FOR THE PREVIOUS USER OF VOLTRONIC DRIVERS
+------------------------------------------------
+
+The *nutdrv_qx* driver having replaced the voltronic ones, some configuration changes may be required by users switching to *nutdrv_qx*.
+
+Part of this, the following voltronic options, in linkman:ups.conf[5], have to be changed:
+
+*ondelay*::
+While the previous voltronic drivers expected minutes, the new *nutdrv_qx* driver wants seconds.
+It no longer defaults to 0 minutes but to 3 minutes (i.e. 180 seconds) for compatibility with the users switching from the old blazer drivers.
+
+*battnumb*::
+This option has been renamed to *battery_number*.
+
+The following options are no longer supported by this driver, you can now change them more conveniently `on the fly' calling linkman:upsrw[8] with the appropriate NUT variable - provided that your UPS supports them.
+
+[horizontal]
+*battpacks*:: -> *battery.packs*
++
+Set number of battery packs in parallel [+1..99+].
+This setting will change the charge and runtime estimation reported by the UPS.
+
+*battlow*:: -> *battery.voltage.low*
++
+Set minimum battery voltage just before the UPS automatically shuts down.
+This setting will change the charge and runtime estimation reported by the UPS.
+
+*auto_reboot*:: -> *ups.start.auto*
++
+Enable or disable auto reboot [+enabled+/+disabled+].
+If enabled, the UPS will auto recover when AC power returns.
+
+*battery_protection*:: -> *battery.protection*
++
+Enable or disable battery deep discharge protection [+enabled+/+disabled+].
+
+*energy_saving*:: -> *battery.energysave*
++
+Enable or disable Green power function [+enabled+/+disabled+].
+If enabled, for energy saving, the UPS will auto off when there is no load.
+
+*cold_start*:: -> *ups.start.battery*
++
+Enable or disable Cold Start [+enabled+/+disabled+].
+If enabled, the UPS can be turned on also if AC is not connected to the UPS.
+
+*outlet_control*:: -> *outlet.0.switchable*
++
+Enable or disable programmable outlets control at battery mode [+enabled+/+disabled+].
+If enabled, the UPS will cut off programmable outlets after backup time (set through *outlet.*{*1*,*2*,*3*,*4*}**.delay.shutdown**) arrives.
+If disabled, the UPS will provide continuous power to programmable outlets until the battery is running out.
+
+*max_eco_volt*:: -> *input.transfer.high*
++
+Maximum voltage for ECO Mode (V).
+If AC voltage is within acceptable range, ECO mode will be used (If the UPS is capable of and it’s enabled).
+
+*min_eco_volt*:: -> *input.transfer.low*
++
+Minimum voltage for ECO Mode (V).
+If AC voltage is within acceptable range, ECO mode will be used (If the UPS is capable of and it’s enabled).
+
+*max_eco_freq*:: -> *input.frequency.high*
++
+Maximum frequency for ECO Mode (Hz).
+If AC frequency is within acceptable range, ECO mode will be used (If the UPS is capable of and it’s enabled).
+
+*min_eco_freq*:: -> *input.frequency.low*
++
+Minimum frequency for ECO Mode (Hz).
+If AC frequency is within acceptable range, ECO mode will be used (If the UPS is capable of and it’s enabled).
+
+*outlet1_delay*:: -> *outlet.1.delay.shutdown*
++
+Delay time before programmable outlet 1 shuts down the load when on battery mode [+0..59940+] (seconds).
+
+*outlet2_delay*:: -> *outlet.2.delay.shutdown*
++
+Delay time before programmable outlet 2 shuts down the load when on battery mode [+0..59940+] (seconds).
+
+*outlet3_delay*:: -> *outlet.3.delay.shutdown*
++
+Delay time before programmable outlet 3 shuts down the load when on battery mode [+0..59940+] (seconds).
+
+*outlet4_delay*:: -> *outlet.4.delay.shutdown*
++
+Delay time before programmable outlet 4 shuts down the load when on battery mode [+0..59940+] (seconds).
+
+*batt_type*:: -> *battery.type*
++
+Battery type (for P31 UPSes only) [+Li+/+Flooded+/+AGM+].
+
+
+KNOWN PROBLEMS
+--------------
+
+Some UPS commands aren't supported by all models.
+In most cases, the driver will send a message to the system log when the user tries to execute an unsupported command.
+Unfortunately, some models don't even provide a way for the driver to check for this, so the unsupported commands will silently fail.
+
+Both the *load.off* and *shutdown.stayoff* instant commands are meant to turn the load off indefinitely.
+However, some UPS models don't allow this.
+
+Some models report a bogus value for the beeper status (will always be 'enabled' or 'disabled').
+So, the *beeper.toggle* command may appear to have no effect in the status reported by the driver when, in fact, it is working fine.
+
+The temperature and load value is known to be bogus in some models.
+
+
+UPS WARNINGS (VOLTRONIC PROTOCOL)
+---------------------------------
+
+The UPSes supported by 'voltronic' protocol report warnings through a 64bit flag (bit1bit2...bit63bit64) where 1 means that a warning arose, while 0 means no warning.
+Since more than one warning at a time can be signaled, and because of the limited space in the ups.alarm variable, if the length of the warnings exceeds that of ups.alarms variable, they will be reported as bits.
+If you want to know the explanation of that bit you can either watch the log or see the next table (unlisted bits equal to unknown warnings).
+
+.UPS Warnings for 'voltronic' UPSes
+[cols="5>,95",options="autowidth,header",frame="topbot",align="center",caption=""]
+|====
+|# |Corresponding Warning
+|1 |Battery disconnected
+|2 |Neutral not connected
+|3 |Site fault
+|4 |Phase sequence incorrect
+|5 |Phase sequence incorrect in bypass
+|6 |Input frequency unstable in bypass
+|7 |Battery overcharged
+|8 |Low battery
+|9 |Overload alarm
+|10 |Fan alarm
+|11 |EPO enabled
+|12 |Unable to turn on UPS
+|13 |Over temperature alarm
+|14 |Charger alarm
+|15 |Remote auto shutdown
+|16 |L1 input fuse not working
+|17 |L2 input fuse not working
+|18 |L3 input fuse not working
+|19 |Positive PFC abnormal in L1
+|20 |Negative PFC abnormal in L1
+|21 |Positive PFC abnormal in L2
+|22 |Negative PFC abnormal in L2
+|23 |Positive PFC abnormal in L3
+|24 |Negative PFC abnormal in L3
+|25 |Abnormal in CAN-bus communication
+|26 |Abnormal in synchronous signal circuit
+|27 |Abnormal in synchronous pulse signal circuit
+|28 |Abnormal in host signal circuit
+|29 |Male connector of parallel cable not connected well
+|30 |Female connector of parallel cable not connected well
+|31 |Parallel cable not connected well
+|32 |Battery connection not consistent in parallel systems
+|33 |AC connection not consistent in parallel systems
+|34 |Bypass connection not consistent in parallel systems
+|35 |UPS model types not consistent in parallel systems
+|36 |Capacity of UPSs not consistent in parallel systems
+|37 |Auto restart setting not consistent in parallel systems
+|38 |Battery cell over charge
+|39 |Battery protection setting not consistent in parallel systems
+|40 |Battery detection setting not consistent in parallel systems
+|41 |Bypass not allowed setting not consistent in parallel systems
+|42 |Converter setting not consistent in parallel systems
+|43 |High loss point for frequency in bypass mode not consistent in parallel systems
+|44 |Low loss point for frequency in bypass mode not consistent in parallel systems
+|45 |High loss point for voltage in bypass mode not consistent in parallel systems
+|46 |Low loss point for voltage in bypass mode not consistent in parallel systems
+|47 |High loss point for frequency in AC mode not consistent in parallel systems
+|48 |Low loss point for frequency in AC mode not consistent in parallel systems
+|49 |High loss point for voltage in AC mode not consistent in parallel systems
+|50 |Low loss point for voltage in AC mode not consistent in parallel systems
+|51 |Warning for locking in bypass mode after 3 consecutive overloads within 30 min
+|52 |Warning for three-phase AC input current unbalance
+|53 |Warning for a three-phase input current unbalance detected in battery mode
+|54 |Warning for Inverter inter-current unbalance
+|55 |Programmable outlets cut off pre-alarm
+|56 |Warning for Battery replace
+|57 |Abnormal warning on input phase angle
+|58 |Warning!! Cover of maintain switch is open
+|62 |EEPROM operation error
+|====
+
+
+AUTHORS
+-------
+
+Daniele Pezzini <hyouko@gmail.com>,
+Arnaud Quette <arnaud.quette@gmail.com>,
+John Stamp <kinsayder@hotmail.com>,
+Peter Selinger <selinger@users.sourceforge.net>,
+Arjen de Korte <adkorte-guest@alioth.debian.org>,
+Alexander Gordeev <lasaine@lvk.cs.msu.su>
+
+
+SEE ALSO
+--------
+
+linkman:blazer_ser[8],
+linkman:blazer_usb[8],
+linkman:nutupsdrv[8],
+linkman:ups.conf[5],
+linkman:upsc[8],
+linkman:upscmd[8],
+linkman:upsdrvctl[8],
+linkman:upsmon[8],
+linkman:upsrw[8]
+
+Internet Resources:
+~~~~~~~~~~~~~~~~~~~
+
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT HCL: http://www.networkupstools.org/stable-hcl.html
+

@@ -1,0 +1,63 @@
+Archived news
+-------------
+
+- October 31, 2011: link:download.html#_java_packages[jNUT and jNutWebAPI 0.2-SNAPSHOT released]
+- September 15, 2011: 2.6.2 released
+- September 2, 2011: link:download.html#_java_packages[jNUT (NUT Java support) 0.1-SNAPSHOT released]
+- July 4, 2011: link:download.html#_binary_packages[Beta NUT 2.6.1-1 package for Windows released]
+- June 8, 2011: link:http://www.dell.com/us/business/p/powervault-nx3500/pd[Dell PowerVault NX3500] use NUT for power protection
+- June 1, 2011: 2.6.1 released
+- May 19, 2011: link:download.html#_binary_packages[Beta NUT 2.6.0-1 package for Windows released]
+- January 14, 2011: 2.6.0 released
+- December 24, 2010: 2.6.0-pre1 released 
+- December 16, 2010: link:http://www.lestat.st/en/informatique/projets/nut-monitor[NUT-Monitor] 1.3 released
+- July 22, 2010: new client link:http://www.revpol.com/xymon_nut_scripts[Hobbit (Xymon) monitor plugin]
+- July 2, 2010: link:http://knut.prynych.cz[KNutClient] 1.0.3 and link update
+- May 12, 2010: link:http://www.lestat.st/en/informatique/projets/nut-monitor[NUT-Monitor] 1.2 released
+- March 22, 2010: link:http://knut.prynych.cz[KNutClient] 1.0
+- February 23, 2010: 2.4.3 released
+- February 19, 2010: 2.4.2 released
+- February 17, 2009: 2.4.1 released
+- January 28, 2009: 2.4.0 released
+- January 21, 2009: 2.4.0-pre2 released
+- December 24, 2008: 2.4.0-pre1 released
+- July 7, 2008: Client activity: new client link:http://www.lestat.st/en/informatique/projets/nut-monitor[NUT-Monitor]
+- June 27, 2008: Client activity: new Python class link:http://www.lestat.st/en/informatique/projets/pynut[PyNUT]
+- June 19, 2008: Client activity: KNutClient 0.9.4
+- May 7, 2008: 2.2.2 released
+- April 25, 2008: 2.2.2-pre3 released
+- April 15, 2008: 2.2.2-pre2 released
+- April 2, 2008: 2.2.2-pre1 released
+- December 21, 2007: 2.2.1 released
+- December 17, 2007: 2.2.1-pre2 released
+- October 4, 2007: 2.2.1-pre1 released
+- August 31, 2007: Client activity: UPS Monitor link update
+- August 31, 2007: Client activity: link:http://sourceforge.net/projects/winnutclient/[Windows NUT client 1.5.0]
+- July 5, 2007: 2.2.0 released
+- June 26, 2007: 2.2.0-pre2 released
+- June 5, 2007: Client activity: link:http://collectd.org/[collectd NUT plugin]
+- June 4, 2007: 2.2.0-pre1 released
+- April 10, 2007: Client activity: KNutClient 0.9.3
+- January 15, 2007: 2.0.5 released
+- January 8, 2007: Client activity: link:http://sourceforge.net/projects/winnutclient/[Windows NUT client]
+- January 4, 2007: 2.0.5-pre2 released
+- December 20, 2006: 2.0.5-pre1 released
+- July 27, 2006: 2.0.4 released
+- July 18, 2006: 2.0.4-pre2 released
+- July 7, 2006: 2.0.4-pre1 released
+- February 7, 2006: 2.0.3 released
+- December 22, 2005: 2.0.3-pre2 released
+- August 16, 2005: 2.0.3-pre1 released
+- June 27, 2005: 2.0.2 released
+- June 22, 2005: 2.0.2-pre2 released
+- June 15, 2005: new mailing lists ready on link:http://alioth.debian.org/mail/?group_id=30602[Alioth]
+- May 4, 2005: 2.0.2-pre1 released
+- April 15, 2005: new development infrastructure ready on link:http://alioth.debian.org/projects/nut/[Alioth]
+- March 15, 2005: Client activity: first beta of MGE Personal Solution Pac
+- March 11, 2005: Client activity: UPS Monitor 0.8 released
+- February 24, 2005: 2.0.1 released
+- February 2, 2005: Belated announcement: WMNut 0.61 released
+- October 20, 2004: Client activity: KNutClient 0.8.5 released
+- September 22, 2004: New driver project: BCMXCP
+- September 3, 2004: New EU mirror (thanks to Gilles, from Signetic)
+- August 10, 2004: Client activity: ups_control 1.7 released

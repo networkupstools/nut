@@ -29,7 +29,7 @@
 #include "tripplite-hid.h"
 #include "usb-common.h"
 
-#define TRIPPLITE_HID_VERSION "TrippLite HID 0.8"
+#define TRIPPLITE_HID_VERSION "TrippLite HID 0.81"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 
@@ -41,13 +41,13 @@
 static double	battery_scale = 1.0;
 
 /* Specific handlers for USB device matching */
-static void *battery_scale_1dot0(void)
+static void *battery_scale_1dot0(USBDevice_t *device)
 {
 	/* FIXME: we could remove this one since it's the default! */
 	battery_scale = 1.0;
 	return NULL;
 }
-static void *battery_scale_0dot1(void)
+static void *battery_scale_0dot1(USBDevice_t *device)
 {
 	battery_scale = 0.1;
 	return NULL;
@@ -95,6 +95,8 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3014), battery_scale_1dot0 },
 	/* e.g. ? */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3015), battery_scale_1dot0 },
+	/* e.g. TrippLite Smart1500LCD (newer unit) */
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3016), battery_scale_1dot0 },
 	/* e.g. TrippLite SmartOnline SU1500RTXL2UA (older unit?) */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x4001), battery_scale_1dot0 },
 	/* e.g. TrippLite SmartOnline SU6000RT4U? */
@@ -435,8 +437,7 @@ static const char *tripplite_format_serial(HIDDevice_t *hd) {
  * the device is supported by this subdriver, else 0. */
 static int tripplite_claim(HIDDevice_t *hd) {
 
-	int status = is_usb_device_supported(tripplite_usb_device_table, hd->VendorID,
-								 hd->ProductID);
+	int status = is_usb_device_supported(tripplite_usb_device_table, hd);
 
 	switch (status)
 	{

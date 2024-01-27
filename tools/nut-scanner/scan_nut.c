@@ -37,6 +37,7 @@ static int (*nut_upscli_list_start)(UPSCONN_t *ups, unsigned int numq,
 					const char **query);
 static int (*nut_upscli_list_next)(UPSCONN_t *ups, unsigned int numq,
 			const char **query,unsigned int *numa, char ***answer);
+static int (*nut_upscli_disconnect)(UPSCONN_t *ups);
 
 static nutscan_device_t * dev_ret = NULL;
 #ifdef HAVE_PTHREAD
@@ -98,6 +99,12 @@ int nutscan_load_upsclient_library()
                 goto err;
         }
 
+        *(void **) (&nut_upscli_disconnect) = lt_dlsym(dl_handle,
+							"upscli_disconnect");
+        if ((dl_error = lt_dlerror()) != NULL)  {
+                goto err;
+        }
+
         return 1;
 err:
         fprintf(stderr, "Cannot load NUT library (%s) : %s. NUT search disabled.\n", libname, dl_error);
@@ -133,6 +140,7 @@ static void * list_nut_devices(void * arg)
 		free(ups);
 		return NULL;
 	}
+
 	if ((*nut_upscli_tryconnect)(ups, hostname, port,UPSCLI_CONN_TRYSSL,&tv) < 0) {
 		free(target_hostname);
 		free(nut_arg);
@@ -141,6 +149,7 @@ static void * list_nut_devices(void * arg)
 	}
 
 	if((*nut_upscli_list_start)(ups, numq, query) < 0) {
+		(*nut_upscli_disconnect)(ups);
 		free(target_hostname);
 		free(nut_arg);
 		free(ups);
@@ -150,6 +159,7 @@ static void * list_nut_devices(void * arg)
 	while ((*nut_upscli_list_next)(ups,numq, query, &numa, &answer) == 1) {
 		/* UPS <upsname> <description> */
 		if (numa < 3) {
+			(*nut_upscli_disconnect)(ups);
 			free(target_hostname);
 			free(nut_arg);
 			free(ups);
@@ -182,6 +192,7 @@ static void * list_nut_devices(void * arg)
 		}
 	}
 
+	(*nut_upscli_disconnect)(ups);
 	free(target_hostname);
 	free(nut_arg);
 	free(ups);

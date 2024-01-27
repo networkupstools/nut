@@ -1,0 +1,65 @@
+#!/bin/sh
+
+#Postinstall script
+
+NUT_DIR="@prefix@"
+
+# make sure the nut user exists and has correct memberships
+res=`getent group nut`
+if [ -z "$res" ]; then
+	groupadd nut
+fi
+res=`getent passwd nut`
+if [ -z "$res" ]; then
+	useradd -g nut -G root -d ${NUT_DIR}/bin nut
+fi
+
+res=`groups nut | grep -w nut`
+if [ -z "$res" ]; then
+	usermod -g nut -G root nut
+fi
+
+# make sure that conffiles are secured and have the correct ownerships
+if [ -d @CONFPATH@ ] ; then
+	chown root:nut @CONFPATH@
+fi
+for file in nut.conf ups.conf upsd.conf upsmon.conf upsd.users upssched.conf; do
+	if [ -f @CONFPATH@/$file ] ; then
+		chown root:nut @CONFPATH@/$file
+		chmod 640 @CONFPATH@/$file
+	fi
+done
+
+# make sure that /var/run/nut exists and has the correct ownerships
+if [ ! -d @PIDPATH@/nut ] ; then
+	mkdir -p @PIDPATH@/nut
+fi
+if [ -d @PIDPATH@/nut ] ; then
+	chown root:nut @PIDPATH@/nut
+	chmod 770 @PIDPATH@/nut
+fi
+
+# make sure that /var/state/ups exists and has the correct ownerships
+if [ ! -d @STATEPATH@ ] ; then
+	mkdir -p @STATEPATH@
+fi
+if [ -d @STATEPATH@ ] ; then
+	chown root:nut @STATEPATH@
+	chmod 770 @STATEPATH@
+fi
+
+# Put init script in /etc/init.d
+
+cp $NUT_DIR/nut /etc/init.d
+chmod 744 /etc/init.d/nut
+
+ln -s /etc/init.d/nut /etc/rc3.d/S100nut > /dev/null 2>&1
+ln -s /etc/init.d/nut /etc/rc3.d/K100nut > /dev/null 2>&1
+
+# Start nut services
+
+#echo "Starting nut services"
+#$NUT_DIR/bin/upsdrvctl start #> /dev/null 2>&1
+#$NUT_DIR/sbin/upsd #> /dev/null 2>&1
+#$NUT_DIR/sbin/upsmon #> /dev/null 2>&1
+

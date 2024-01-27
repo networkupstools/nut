@@ -5,6 +5,7 @@ Makefile.in
 libnuthalmain.a
 al175
 apcsmart
+apcupsd-ups
 bcmxcp
 bcmxcp_usb
 belkin
@@ -24,14 +25,11 @@ everups
 fentonups
 gamatronic
 genericups
-hald-addon-bcmxcp_usb
-hald-addon-usbhid-ups
-hald-addon-tripplite_usb
 ippon
 isbmex
-lakeview_usb
 liebert
 liebert-esp2
+macosx-ups
 masterguard
 megatec
 megatec_usb
@@ -76,3 +74,7 @@ hald-addon-blazer_usb
 nut-ipmipsu
 apcsmart-old
 oldmge-shut
+riello_ser
+riello_usb
+nutdrv_qx
+hald-addon-nutdrv_qx

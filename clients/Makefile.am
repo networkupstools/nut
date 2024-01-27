@@ -20,9 +20,9 @@ endif
 bin_PROGRAMS = upsc upslog upsrw upscmd
 dist_bin_SCRIPTS = upssched-cmd
 sbin_PROGRAMS = upsmon upssched
-lib_LTLIBRARIES = libupsclient.la
+lib_LTLIBRARIES = libupsclient.la libnutclient.la
 if WITH_DEV
- include_HEADERS = upsclient.h ../include/parseconf.h
+ include_HEADERS = upsclient.h ../include/parseconf.h nutclient.h
 endif
 if WITH_CGI
  cgiexec_PROGRAMS = upsstats.cgi upsimage.cgi upsset.cgi
@@ -50,4 +50,10 @@ libupsclient_la_LIBADD = ../common/libparseconf.la
 if WITH_SSL
   libupsclient_la_LIBADD += $(LIBSSL_LIBS)
 endif
-libupsclient_la_LDFLAGS = -version-info 2:0:1
+
+# libupsclient version information
+# http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
+libupsclient_la_LDFLAGS = -version-info 3:1:0
+
+libnutclient_la_SOURCES = nutclient.h nutclient.cpp
+

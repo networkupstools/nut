@@ -11,8 +11,8 @@
 #include <unistd.h>
 #include <usb.h>
 
-#define SUBDRIVER_NAME	"USB communication subdriver"
-#define SUBDRIVER_VERSION	"0.21"
+#define SUBDRIVER_NAME    "USB communication subdriver"
+#define SUBDRIVER_VERSION "0.22"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -26,13 +26,13 @@ upsdrv_info_t comm_upsdrv_info = {
 #define MAX_TRY 4
 
 /* Powerware */
-#define POWERWARE	0x0592
+#define POWERWARE 0x0592
 
 /* Phoenixtec Power Co., Ltd */
-#define PHOENIXTEC	0x06da
+#define PHOENIXTEC 0x06da
 
 /* Hewlett Packard */
-#define HP_VENDORID	0x03f0
+#define HP_VENDORID 0x03f0
 
 /* USB functions */
 usb_dev_handle *nutusb_open(const char *port);
@@ -51,7 +51,7 @@ static int usb_set_powerware(usb_dev_handle *udev, unsigned char type, unsigned 
 	return usb_control_msg(udev, USB_ENDPOINT_OUT, USB_REQ_SET_DESCRIPTOR, (type << 8) + index, 0, buf, size, 1000);
 }
 
-static void *powerware_ups(void) {
+static void *powerware_ups(USBDevice_t *device) {
 	usb_set_descriptor = &usb_set_powerware;
 	return NULL;
 }
@@ -62,7 +62,7 @@ static int usb_set_phoenixtec(usb_dev_handle *udev, unsigned char type, unsigned
 	return usb_control_msg(udev, 0x42, 0x0d, (0x00 << 8) + 0x0, 0, buf, size, 1000);
 }
 
-static void *phoenixtec_ups(void) {
+static void *phoenixtec_ups(USBDevice_t *device) {
 	usb_set_descriptor = &usb_set_phoenixtec;
 	return NULL;
 }
@@ -85,14 +85,14 @@ static usb_device_id_t pw_usb_device_table[] = {
 };
 
 /* limit the amount of spew that goes in the syslog when we lose the UPS */
-#define USB_ERR_LIMIT 10	/* start limiting after 10 in a row  */
-#define USB_ERR_RATE 10		/* then only print every 10th error */
+#define USB_ERR_LIMIT 10 /* start limiting after 10 in a row  */
+#define USB_ERR_RATE 10  /* then only print every 10th error */
 #define XCP_USB_TIMEOUT 5000
 
 /* global variables */
 usb_dev_handle *upsdev = NULL;
-extern	int		exit_flag;
-static	unsigned int	comm_failures = 0;
+extern int exit_flag;
+static unsigned int comm_failures = 0;
 
 /* Functions implementations */
 void send_read_command(unsigned char command)
@@ -139,13 +139,13 @@ int get_answer(unsigned char *data, unsigned char command)
 	if (upsdev == NULL)
 		return -1;
 
-	length = 1;			/* non zero to enter the read loop */
-	end_length = 0;		/* total length of sequence(s), not counting header(s) */
-	endblock = 0;		/* signal the last sequence in the block */
-	bytes_read = 0;		/* total length of data read, including XCP header */
+	length = 1;        /* non zero to enter the read loop */
+	end_length = 0;    /* total length of sequence(s), not counting header(s) */
+	endblock = 0;      /* signal the last sequence in the block */
+	bytes_read = 0;    /* total length of data read, including XCP header */
 	res = 0;
 	ellapsed_time = 0;
-	seq_num = 1;		/* current theoric sequence */
+	seq_num = 1;       /* current theoric sequence */
 
 	upsdebugx(1, "entering get_answer(%x)", command);
 
@@ -155,7 +155,7 @@ int get_answer(unsigned char *data, unsigned char command)
 	while ( (!endblock) && ((XCP_USB_TIMEOUT - ellapsed_time)  > 0) ) {
 
 		/* Get (more) data if needed */
-		if ((length - bytes_read) > 0) {
+		if ((length - (bytes_read - 5)) > 0) {
 			res = usb_interrupt_read(upsdev, 0x81,
 				(char *)&buf[bytes_read],
 				(PW_ANSWER_MAX_SIZE - bytes_read),
@@ -295,7 +295,7 @@ int command_read_sequence(unsigned char command, unsigned char *data)
 }
 
 /* Sends a setup command (length > 1) */
-int command_write_sequence(unsigned char *command, int command_length, unsigned	char *answer)
+int command_write_sequence(unsigned char *command, int command_length, unsigned char *answer)
 {
 	int bytes_read = 0;
 	int retry = 0;
@@ -335,7 +335,10 @@ void upsdrv_cleanup(void)
 
 void upsdrv_reconnect(void)
 {
-	upslogx(LOG_WARNING, "RECONNECT USB DEVICE\n");
+	upsdebugx(4, "==================================================");
+	upsdebugx(4, "= device has been disconnected, try to reconnect =");
+	upsdebugx(4, "==================================================");
+
 	nutusb_close(upsdev, "USB");
 	upsdev = NULL;
 	upsdrv_initups();
@@ -359,7 +362,8 @@ static usb_dev_handle *open_powerware_usb(void)
 {
 	struct usb_bus *busses = usb_get_busses();  
 	struct usb_bus *bus;
-    
+	USBDevice_t curDevice;
+
 	for (bus = busses; bus; bus = bus->next)
 	{
 		struct usb_device *dev;
@@ -370,8 +374,18 @@ static usb_dev_handle *open_powerware_usb(void)
 				continue;
 			}
 
-			if (is_usb_device_supported(pw_usb_device_table,
-				dev->descriptor.idVendor, dev->descriptor.idProduct) == SUPPORTED) {
+			curDevice.VendorID = dev->descriptor.idVendor;
+			curDevice.ProductID = dev->descriptor.idProduct;
+			curDevice.Bus = strdup(bus->dirname);
+
+			/* FIXME: we should also retrieve
+			 * dev->descriptor.iManufacturer
+			 * dev->descriptor.iProduct
+			 * dev->descriptor.iSerialNumber
+			 * as in libusb.c->libusb_open()
+			 * This is part of the things to put in common... */
+
+			if (is_usb_device_supported(pw_usb_device_table, &curDevice) == SUPPORTED) {
 				return usb_open(dev);
 			}
 		}
@@ -463,13 +477,13 @@ int nutusb_close(usb_dev_handle *dev_h, const char *port)
 
 void nutusb_comm_fail(const char *fmt, ...)
 {
-	int	ret;
-	char	why[SMALLBUF];
-	va_list	ap;
+	int ret;
+	char why[SMALLBUF];
+	va_list ap;
 
 	/* this means we're probably here because select was interrupted */
 	if (exit_flag != 0)
-		return;		/* ignored, since we're about to exit anyway */
+		return; /* ignored, since we're about to exit anyway */
 
 	comm_failures++;
 
@@ -484,6 +498,7 @@ void nutusb_comm_fail(const char *fmt, ...)
 	if ((comm_failures > USB_ERR_LIMIT) &&
 		((comm_failures % USB_ERR_LIMIT) != 0)) {
 		/* Try reconnection */
+		upsdebugx(1, "Got to reconnect!\n");
 		upsdrv_reconnect();
 		return;
 	}
@@ -514,3 +529,4 @@ void nutusb_comm_good(void)
 	upslogx(LOG_NOTICE, "Communications with UPS re-established");
 	comm_failures = 0;
 }
+

@@ -2,8 +2,8 @@ dnl +------------------------------------------------------------------+
 dnl | Network UPS Tools: configure.in                                  |
 dnl +------------------------------------------------------------------+
 
-dnl NUT version number is defined here and *only* here (no more include/version)
-AC_INIT(nut, 2.6.5)
+dnl NUT version number is defined here, with a Git suffix in include/nut_version.h
+AC_INIT(nut, 2.7.1)
 AC_CONFIG_SRCDIR(server/upsd.c)
 AC_CONFIG_MACRO_DIR([m4])
 echo "Network UPS Tools version ${PACKAGE_VERSION}"
@@ -136,6 +136,14 @@ then
 fi
 
 case ${target_os} in
+   solaris2* )
+      dnl On Solaris, this allows errno to use thread local storage
+      CFLAGS="${CFLAGS} -D_REENTRANT"
+      ;;
+   aix* )
+      dnl On AIX, this allows errno to use thread local storage
+      CFLAGS="${CFLAGS} -D_REENTRANT"
+      ;;
    hpux11* )
       dnl It seems like the thread safe string functions will not be included
       dnl on 64 bit HP-UX unless we define _REENTRANT
@@ -261,16 +269,19 @@ dnl ----------------------------------------------------------------------
 dnl additional USB-related checks
 
 dnl Solaris 10/11 USB handling (need librt and libusb runtime path)
+dnl HPUX, since v11, needs an explicit activation of pthreads
 case ${target_os} in
    solaris2.1* )
       echo Checking for Solaris 10 / 11 specific configuration for usb drivers
       AC_SEARCH_LIBS(nanosleep, rt)
       LIBUSB_LIBS="-R/usr/sfw/lib ${LIBUSB_LIBS}"
       dnl FIXME: Sun's libusb doesn't support timeout (so blocks notification)
-      dnl and need to call libusb close upon reconnexion
+      dnl and need to call libusb close upon reconnection
       AC_DEFINE(SUN_LIBUSB, 1, [Define to 1 for Sun version of the libusb.])
       SUN_LIBUSB=1
       ;;
+    hpux11*)
+      CFLAGS="${CFLAGS} -lpthread"
 esac
 
 
@@ -449,26 +460,56 @@ NUT_REPORT_FEATURE([build Mac OS X meta-driver],
 			[WITH_MACOSX], [Define to enable Mac OS X meta-driver])
 
 dnl ----------------------------------------------------------------------
-dnl Check for --with-ssl
+dnl Check for with-ssl, and --with-nss or --with-openssl
+dnl Only one can be enabled at a time, with a preference for OpenSSL
+dnl if both are available
 
-NUT_ARG_WITH([ssl], [enable SSL development code], [auto])
+nut_ssl_lib=""
 
-dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto".
+NUT_ARG_WITH([ssl], [enable SSL support (either NSS or OpenSSL)], [auto])
+NUT_ARG_WITH([nss], [enable SSL support using Mozilla NSS], [auto])
+NUT_ARG_WITH([openssl], [enable SSL support using OpenSSL], [auto])
+
+dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto". 
 if test "${nut_with_ssl}" != "no"; then
-   dnl check for libssl compiler flags
-   NUT_CHECK_LIBSSL
+   dnl check if either NSS or OpenSSL was explicitly requested
+   if test "${nut_with_nss}" = "yes"; then
+      NUT_CHECK_LIBNSS
+      if test "${nut_have_libnss}" != "yes"; then
+         AC_MSG_ERROR(["Mozilla NSS not found, required for SSL support"])
+      fi
+   elif test "${nut_with_openssl}" = "yes"; then
+      NUT_CHECK_LIBOPENSSL
+      if test "${nut_have_openssl}" != "yes"; then
+         AC_MSG_ERROR(["OpenSSL not found, required for SSL support"])
+      fi
+   else
+      dnl Prefer OpenSSL over NSS otherwise
+      NUT_CHECK_LIBOPENSSL
+      if test "${nut_have_openssl}" != "yes"; then
+         NUT_CHECK_LIBNSS
+         if test "${nut_have_libnss}" != "yes"; then
+            dnl Only abort if SSL has been explicitly requested by the user
+            if test "${nut_with_ssl}" = "yes"; then
+               AC_MSG_ERROR(["Mozilla NSS and OpenSSL neither found, but are needed for the requested SSL support"])
+            else
+               AC_MSG_WARN(["Mozilla NSS and OpenSSL neither found, required for SSL support"])
+            fi
+            nut_with_ssl="no"
+         else
+            nut_with_nss="${nut_have_libnss}"
+         fi
+      else
+         nut_with_openssl="${nut_have_openssl}"
+      fi
+   fi
 fi
 
-if test "${nut_with_ssl}" = "yes" -a "${nut_have_libssl}" != "yes"; then
-   AC_MSG_ERROR(["OpenSSL not found, required for SSL support"])
-fi
+AM_CONDITIONAL(WITH_NSS, test "${nut_with_nss}" = "yes")
+AM_CONDITIONAL(WITH_OPENSSL, test "${nut_with_openssl}" = "yes")
 
-if test "${nut_with_ssl}" != "no"; then
-   nut_with_ssl="${nut_have_libssl}"
-fi
-
-NUT_REPORT_FEATURE([enable SSL development code], [${nut_with_ssl}], [],
-					[WITH_SSL], [Define to enable SSL development code])
+NUT_REPORT_FEATURE([enable SSL support], [${nut_with_ssl}], [${nut_ssl_lib}],
+					[WITH_SSL], [Define to enable SSL])
 
 dnl ----------------------------------------------------------------------
 dnl Check for --with-wrap
@@ -1054,6 +1095,10 @@ AC_PATH_PROGS([ASCIIDOC], [asciidoc], [none])
 AM_CONDITIONAL([MANUALUPDATE], [test "x$ASCIIDOC" != "xnone"])
 AC_PATH_PROGS([A2X], [a2x], [none])
 
+dnl check for spell checking deps
+AC_PATH_PROGS([ASPELL], [aspell], [none])
+AM_CONDITIONAL([HAVE_ASPELL], [test "x$ASPELL" != "xnone"])
+
 dnl expand ${sysconfdir} and write it out
 conftemp="${sysconfdir}"
 eval conftemp=\"${conftemp}\"
@@ -1121,6 +1166,7 @@ AC_SUBST(PIDPATH)
 AC_SUBST(STATEPATH)
 AC_SUBST(CONFPATH)
 AC_SUBST(BINDIR)
+AC_SUBST(DRVPATH)
 AC_SUBST(SBINDIR)
 AC_SUBST(PORT)
 AC_SUBST(RUN_AS_USER)
@@ -1140,6 +1186,7 @@ AC_OUTPUT([
  clients/Makefile
  common/Makefile
  conf/Makefile
+ conf/upsmon.conf.sample
  conf/upssched.conf.sample
  data/html/header.html
  data/html/Makefile
@@ -1152,6 +1199,7 @@ AC_OUTPUT([
  include/Makefile
  lib/libupsclient-config
  lib/libupsclient.pc
+ lib/libnutclient.pc
  lib/libnutscan.pc
  lib/Makefile
  scripts/augeas/Makefile
@@ -1169,13 +1217,18 @@ AC_OUTPUT([
  scripts/hotplug/Makefile
  scripts/hotplug/libhidups
  scripts/HP-UX/nut.psf
- scripts/java/Makefile
+ scripts/HP-UX/postinstall
  scripts/python/Makefile
  scripts/systemd/Makefile
  scripts/systemd/nut-driver.service
  scripts/systemd/nut-monitor.service
  scripts/systemd/nut-server.service
  scripts/systemd/nutshutdown
+ scripts/Solaris/Makefile
+ scripts/Solaris/pkginfo
+ scripts/Solaris/postinstall
+ scripts/Solaris/preremove
+ scripts/Solaris/nut 
  scripts/udev/Makefile
  scripts/udev/nut-ipmipsu.rules
  scripts/udev/nut-usbups.rules

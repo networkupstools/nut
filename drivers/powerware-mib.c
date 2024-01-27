@@ -24,7 +24,7 @@
 
 #include "powerware-mib.h"
 
-#define PW_MIB_VERSION "0.6.1"
+#define PW_MIB_VERSION "0.6.2"
 
 /* TODO: more sysOID and MIBs support:
  * 
@@ -84,7 +84,7 @@
 #define PW_OID_CONF_POWER	"1.3.6.1.4.1.534.1.10.3.0"	/* XUPS-MIB::xupsConfigOutputWatts.0 */
 #define PW_OID_CONF_FREQ	"1.3.6.1.4.1.534.1.10.4.0"	/* XUPS-MIB::xupsConfigOutputFreq.0 */
 
-#define PW_OID_ALARMS		"1.3.6.1.4.1.534.1.7.1"		/* XUPS-MIB::xupsAlarms */
+#define PW_OID_ALARMS		"1.3.6.1.4.1.534.1.7.1.0"		/* XUPS-MIB::xupsAlarms */
 #define PW_OID_ALARM_OB		"1.3.6.1.4.1.534.1.7.3"		/* XUPS-MIB::xupsOnBattery */
 #define PW_OID_ALARM_LB		"1.3.6.1.4.1.534.1.7.4"		/* XUPS-MIB::xupsLowBattery */
 
@@ -320,8 +320,18 @@ static snmp_info_t pw_mib[] = {
 	{ "load.on", 0, 1, PW_OID_CONT_ONDELAY, "",
 		SU_TYPE_CMD | SU_FLAG_OK, NULL },
 
+	{ "ups.alarms", 0, 1.0, PW_OID_ALARMS, "",
+		0, NULL },
+
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 } ;
 
-mib2nut_info_t	powerware = { "pw", PW_MIB_VERSION, "", PW_OID_MODEL_NAME, pw_mib, POWERWARE_SYSOID };
+static alarms_info_t pw_alarms[] = {
+        { PW_OID_ALARM_LB, "LB" },
+	/* end of structure. */
+	{ NULL, NULL }
+} ;
+
+
+mib2nut_info_t	powerware = { "pw", PW_MIB_VERSION, "", PW_OID_MODEL_NAME, pw_mib, POWERWARE_SYSOID , pw_alarms };

@@ -71,6 +71,9 @@ typedef struct nutscan_ipmi {
   #define IPMI_AUTHENTICATION_TYPE_OEM_PROP              0x05
   #define IPMI_AUTHENTICATION_TYPE_RMCPPLUS              0x06
 #endif /* IPMI_AUTHENTICATION_TYPE_NONE */
+#ifndef IPMI_PRIVILEGE_LEVEL_ADMIN
+  #define IPMI_PRIVILEGE_LEVEL_ADMIN                     0x04
+#endif /* IPMI_PRIVILEGE_LEVEL_ADMIN */
 
 #define IPMI_1_5		1
 #define IPMI_2_0		0

@@ -7,6 +7,28 @@ This file lists changes that affect users who installed older versions
 of this software.  When upgrading from an older version, be sure to
 check this file to see if you need to make changes to your system.
 
+Changes from 2.6.5 to 2.7.1
+---------------------------
+
+- The linkman:apcsmart[8] driver has been replaced by a new implementation. There is a new
+  parameter, 'ttymode', which may help if you have a non-standard serial port,
+  or Windows.  In case of issues with this new version, users can revert to
+  apcsmart-old.
+
+- The linkman:nutdrv_qx[8] driver will eventually supersede blazer_ser and blazer_usb.
+  Options are not exactly the same, but are documented in the nutdrv_qx man
+  page.
+
+- Mozilla NSS support has been added. The OpenSSL configuration options should
+  be unchanged, but please refer to the linkman:upsd.conf[5] and
+  linkman:upsmon.conf[5] documentation in case we missed something.
+
+- linkman:upsrw[8] now prints out the maximum size of variables. Hopefully you
+  are not parsing the output of upsrw - it would be easier to use one of the
+  NUT libraries, or implement the network protocol yourself.
+
+- The jNut source is now here: https://github.com/networkupstools/jNut
+
 Changes from 2.6.4 to 2.6.5
 ---------------------------
 

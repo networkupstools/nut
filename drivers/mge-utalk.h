@@ -3,7 +3,7 @@
  *  Copyright (C) 2002 - 2005
  *     Arnaud Quette <arnaud.quette@free.fr>  & <arnaud.quette@mgeups.com>
  *     Hans Ekkehard Plesser <hans.plesser@itf.nlh.no>
- *     Martin Loyer <martin@ouifi.net>
+ *     Martin Loyer <martin@degraaf.fr>
  *     Patrick Agrain <patrick.agrain@alcatel.fr>
  *     Nicholas Reilly <nreilly@magma.ca>
  *     Dave Abbott <d.abbott@dcs.shef.ac.uk>

@@ -35,14 +35,14 @@ distcheck-light:
 distcleancheck:
 	@:
 
-# Automatically generate the ChangeLog from SVN logs:
+# Automatically generate the ChangeLog from Git logs:
 MAINTAINERCLEAN_FILES = ChangeLog
-# Force ChangeLog regeneration upon make dist (due to inexistant 'dummy-stamp'),
+# Force ChangeLog regeneration upon make dist (due to nonexistant 'dummy-stamp'),
 # in case it has already been generated previously
 dummy-stamp:
-ChangeLog: tools/svn2cl.authors dummy-stamp
-	svn2cl --group-by-day --include-rev --authors=$< --reparagraph --revision 'HEAD:2332' --output=$@ || \
-		echo "svn2cl failed to generate the ChangeLog. See http://trac.networkupstools.org/projects/nut/timeline" > $@
+ChangeLog: tools/gitlog2changelog.py dummy-stamp
+	$(top_srcdir)/tools/gitlog2changelog.py v2.6.0 || \
+		echo "gitlog2changelog.py failed to generate the ChangeLog. See https://github.com/networkupstools/nut/commits/master" > $@
 
 if HAVE_ASCIIDOC
 website:
@@ -110,3 +110,19 @@ snmp build-snmp install-snmp install-snmp-mgr install-snmp-man:
 setver:
 	@echo "Error: 'make setver' no longer exists."
 	@echo "Edit configure.in to set version number."
+package:
+	if test `uname -s` = "HP-UX"; then \
+		cd scripts/HP-UX; \
+		make package; \
+		mv NUT_HPUX_package.depot NUT_HPUX_package@PACKAGE_VERSION@.depot; \
+	else \
+		if test `uname -s` = "SunOS"; then \
+			make; \
+			rm -rf @prefix@; \
+			make install; \
+			cd scripts/Solaris; \
+			make package; \
+			make uninstall; \
+			rm -rf @prefix@; \
+		fi; \
+	fi;

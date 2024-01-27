@@ -142,7 +142,7 @@ with your hardware.  If it doesn't detect your UPS by default, check the
 driver's man page or help (-h) to see which options are available.
 
 For example, the usbhid-ups driver allows you to use USB serial numbers to
-distingish between units via the "serial" configuration option.  To use this
+distinguish between units via the "serial" configuration option.  To use this
 feature, just add another line to your ups.conf section for that UPS:
 
 	[sparky]
@@ -209,6 +209,11 @@ and networked PDU, along with Blade and IPMI enabled servers.
 See the linkman:powerman-pdu[8] man page for more
 information.
 
+- The `apcupsd-ups` driver is a bridge to the Apcupsd daemon, thus handling
+all Apcupsd supported devices. The Apcupsd project supports many serial,
+USB and networked APC UPS.
++
+See the linkman:apcupsd-ups[8] man page for more information.
 
 UPS Shutdowns
 ~~~~~~~~~~~~~
