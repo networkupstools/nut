@@ -3,14 +3,14 @@
 # an auxiliary script to produce a "stub" snmp-ups subdriver from
 # SNMP data from a real agent or from dump files
 #
-# Version: 0.15
+# Version: 0.16
 #
 # See also: docs/snmp-subdrivers.txt
 #
 # Copyright (C)
 # 2011 - 2012 Arnaud Quette <arnaud.quette@free.fr>
 # 2015 - 2022 Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
-# 2011 - 2022 Jim Klimov <jimklimov+nut@gmail.com>
+# 2011 - 2024 Jim Klimov <jimklimov+nut@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
