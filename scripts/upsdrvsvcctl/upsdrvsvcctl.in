@@ -59,6 +59,10 @@ Options:
   -h            	display this help
   -t            	testing mode - prints actions without doing them
   -D            	raise debugging level
+  --timeout-cmd <prog>	service management calls will be time-limited
+  --timeout-args <arg>	by calling the specified program with its args.
+                    	By default, if coreutils timeout is found, it
+                    	would be used to limit service calls by 90 sec.
   start         	start all UPS drivers in ups.conf
   start <ups>   	only start driver for UPS <ups>
   stop          	stop all UPS drivers in ups.conf
@@ -98,6 +102,18 @@ SVCINST=""
 DRYRUN=""
 DEBUG=0
 # Note: DEBUG is UNUSED_PARAM so far
+
+# Optionally use Coreutils timeout to limit the
+# (potentially hanging) calls to systemd tools...
+# Should not hurt with SMF too, if it ever misbehaves.
+TIMEOUT_CMD=""
+TIMEOUT_ARGS=""
+if which timeout 2>/dev/null >/dev/null ; then
+    # Systemd default timeout for unit start/stop
+    TIMEOUT_CMD="timeout"
+    TIMEOUT_ARGS="90s"
+fi
+
 while [ $# -gt 0 ]; do
     case "$1" in
         resync) eval $DRYRUN $ENUMERATOR ; exit $? ;;
@@ -133,6 +149,26 @@ while [ $# -gt 0 ]; do
             $0 start $2
             exit $RES
             ;;
+        --timeout-length|--timeout-len|--timeout-args)
+            TIMEOUT_ARGS="$2"
+            shift
+            ;;
+        --timeout-cmd)
+            if [ -n "$2" ] ; then
+                if [ -x "$2" ] || which "$2" 2>/dev/null >/dev/null ; then
+                    TIMEOUT_CMD="$2"
+                else
+                    echo "ERROR: Received a '$2' argument for $1, and can not find such program; clearing the option so the basic functionality can proceed" >&2
+                    TIMEOUT_CMD=""
+                    TIMEOUT_ARGS=""
+                fi
+            else
+                echo "INFO: Received an empty argument for $1, clearing the option" >&2
+                TIMEOUT_CMD=""
+                TIMEOUT_ARGS=""
+            fi
+            shift
+            ;;
         -t) DRYRUN="echo" ;;
         -h) usage; exit 0 ;;
         -D) DEBUG="`expr $DEBUG + 1`" ;;
@@ -150,6 +186,10 @@ fi
 if [ -z "$ACTION" ]; then
     echo "No action was requested!" >&2
     exit 1
+fi
+
+if [ -n "$TIMEOUT_CMD" ]; then
+    echo "INFO: Detected presence of $TIMEOUT_CMD so will limit service management calls by passing the args: $TIMEOUT_ARGS" >&2
 fi
 
 if [ -z "$SVCINST" ]; then
@@ -178,7 +218,7 @@ esac
 
 for INST in $SVCINST ; do
     echo "$VERB $INST ..." >&2
-    $DRYRUN $CMD $CMDARG "$INST" &
+    $DRYRUN $TIMEOUT_CMD $TIMEOUT_ARGS $CMD $CMDARG "$INST" &
 done
 wait
 
@@ -188,7 +228,7 @@ case "$SERVICE_FRAMEWORK" in
         echo "Post-process clearing services that failed early..." >&2
         for INST in $SVCINST ; do
             echo "Clearing $INST (if it got broken) ..." >&2
-            $DRYRUN $CMD clear "$INST" &
+            $DRYRUN $TIMEOUT_CMD $TIMEOUT_ARGS $CMD clear "$INST" &
         done
         ;;
 esac

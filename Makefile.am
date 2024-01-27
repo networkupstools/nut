@@ -3,6 +3,15 @@
 # include directory for aclocal
 ACLOCAL_AMFLAGS = -I m4
 
+# Export certain values for ccache which NUT ci_build.sh can customize,
+# to facilitate developer iteration re-runs of "make" later.
+# At least GNU and BSD make implementations are okay with this syntax.
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_NAMESPACE=@CCACHE_NAMESPACE@
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_BASEDIR=@CCACHE_BASEDIR@
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_DIR=@CCACHE_DIR@
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_PATH=@CCACHE_PATH@
+@NUT_AM_MAKE_CAN_EXPORT@export PATH=@PATH_DURING_CONFIGURE@
+
 # subdirectories to build and distribute. The order matters, as
 # several subdirectories depend on stuff in "common" or tools being built first
 SUBDIRS = include common clients conf data docs drivers tools \
@@ -134,6 +143,17 @@ spellcheck spellcheck-interactive:
 	(cd $(builddir)/docs/man && $(MAKE) -s $@) || RES=$$? ; \
 	(cd $(builddir)/conf && $(MAKE) -s $@) || RES=$$? ; \
 	(cd $(builddir)/data && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/data/html && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts/Solaris && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts/Windows && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts/devd && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts/hotplug && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts/python && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts/systemd && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts/udev && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts/upsdrvsvcctl && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/tests/NIT && $(MAKE) -s $@) || RES=$$? ; \
 	exit $$RES
 
 # Note: the "all-docs" and "check-docs" targets may require tools not

@@ -4176,6 +4176,7 @@ void read_mibconf(char *mib)
 {
 	char	fn[SMALLBUF];
 	PCONF_CTX_t	ctx;
+	int	numerrors = 0;
 
 	upsdebugx(2, "SNMP UPS driver: entering %s(%s)", __func__, mib);
 
@@ -4190,6 +4191,7 @@ void read_mibconf(char *mib)
 		if (pconf_parse_error(&ctx)) {
 			upslogx(LOG_ERR, "Parse error: %s:%d: %s",
 				fn, ctx.linenum, ctx.errmsg);
+			numerrors++;
 			continue;
 		}
 
@@ -4207,8 +4209,17 @@ void read_mibconf(char *mib)
 				snprintfcat(errmsg, sizeof(errmsg), " %s",
 					ctx.arglist[i]);
 
+			numerrors++;
 			upslogx(LOG_WARNING, "%s", errmsg);
 		}
 	}
+
+	/* FIXME: Per legacy behavior, we silently went on.
+	 * Maybe should abort on unusable configs?
+	 */
+	if (numerrors) {
+		upslogx(LOG_ERR, "Encountered %d MIB config errors, those entries were ignored", numerrors);
+	}
+
 	pconf_finish(&ctx);
 }

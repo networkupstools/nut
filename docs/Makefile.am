@@ -1,3 +1,5 @@
+# Network UPS Tools: main docs
+
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 EXTRA_DIST =
 
@@ -17,6 +19,41 @@ IMAGE_FILES = images/asciidoc.png \
 	images/bigbox.png \
 	images/bizarre.png \
 	images/old-cgi.png
+
+# Logos which pop up in README.adoc acknowledgements and maybe other places:
+IMAGE_LOGO_FILES = \
+	images/ci/AppVeyor_logo-2x.png \
+	images/ci/AppVeyor_logo-ar21.png \
+	images/ci/CircleCI_vertical_black_logo.png \
+	images/ci/DO_Powered_by_Badge_blue.png \
+	images/ci/DO_Powered_by_Badge_blue_140pxW.png \
+	images/ci/fosshost.org_Host_Dark_56px.png \
+	images/ci/fosshost.org_Host_Light_309px.png \
+	images/ci/fosshost.org_Host_Light_38px.png \
+	images/ci/gandi-ar21.png \
+	images/ci/gandi-ar21.svg \
+	images/ci/GitHub-Mark-140pxW.png \
+	images/ci/GitHub-Mark-ea2971cee799.png \
+	images/ci/OC_logotype.png \
+	images/ci/OC_logo-watercolor-256.png \
+	images/ci/OC_logo_merged_171x32.png \
+	images/ci/OC_logo_merged_140x26.png
+
+IMAGE_LOGO_FILES_JENKINS_NUT = \
+	images/ci/jenkins-nut-large-256px.png \
+	images/ci/jenkins-nut-large-squared.png \
+	images/ci/jenkins-nut-large.pdn \
+	images/ci/jenkins-nut-large.png \
+	images/ci/jenkins-nut-small-256px.png \
+	images/ci/jenkins-nut-small.pdn \
+	images/ci/jenkins-nut-small.png \
+	images/ci/jenkins-nut-squared.png \
+	images/ci/jenkins-nut-transparent-bg-140pxW.png \
+	images/ci/jenkins-nut-transparent-bg-40px.png \
+	images/ci/jenkins-nut-transparent-bg.png \
+	images/ci/jenkins-nut.css \
+	images/ci/jenkins-nut.png \
+	images/ci/jenkins-nut.txt
 
 # Only track here the local deps
 SHARED_DEPS = nut-names.txt daisychain.txt asciidoc.conf asciidoc.txt
@@ -51,7 +88,7 @@ ALL_TXT_SRC = nut-names.txt daisychain.txt \
 ASPELL_FILTER_PATH = @ASPELL_FILTER_PATH@
 NUT_SPELL_DICT = nut.dict
 EXTRA_DIST += $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
- $(CABLES_IMAGES) $(NUT_SPELL_DICT) \
+ $(IMAGE_LOGO_FILES) $(IMAGE_LOGO_FILES_JENKINS_NUT) $(CABLES_IMAGES) $(NUT_SPELL_DICT) \
  docinfo.xml common.xsl xhtml.xsl chunked.xsl asciidoc.txt asciidoc-vars.conf
 
 ASCIIDOC_HTML_SINGLE = user-manual.html \
@@ -179,6 +216,7 @@ DOCBUILD_FILTER_GITHUB_LINKS = { \
         -e 's%\#\(\#[1-9][0-9]*\)%\1%g' \
 ; }
 
+# The $< is okay here, it is used in a suffix rule below
 DOCBUILD_CONVERT_GITHUB_LINKS = { \
     echo "  DOC-ASCIIDOC-GITHUB-LINKS    Parsing GitHub link patterns $< => $@"; \
     cat "$<" | $(DOCBUILD_FILTER_GITHUB_LINKS) > "$@.tmp" \
@@ -419,12 +457,43 @@ ASPELL_OUT_NOTERRORS = (^[ \t]*[\*\@]|^$$)
 #
 # NOTE: This portable rule RELIES on just one SPELLCHECK_SRC defined
 # at a time, with an outer Makefile caller ensuring the looping:
+
+SPELLCHECK_RECIPE_DEBUG_STREAM = /dev/null
+#SPELLCHECK_RECIPE_DEBUG_STREAM = &2
+
 $(SPELLCHECK_BUILDDIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE) $(abs_top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 	@LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	 if test x"$(SPELLCHECK_SRC_ONE)" = x ; then echo "SKIP: Bogus spellcheck call for empty target filename (with make target $@)" >&2 ; exit 0; fi; \
 	 case "$@" in *-spellchecked) ;; *) echo "SKIP: Bogus spellcheck call for non '*-spellchecked' target filename (with make target $@)" >&2 ; exit 0;; esac; \
 	 rm -f "$@" || true ; \
-	 echo "  ASPELL   Spell checking on $(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE)"; \
+	 REPORT_SRCDIR="$(SPELLCHECK_SRCDIR)"; \
+	 REPORT_SRC_ONE="$(SPELLCHECK_SRC_ONE)"; \
+	 REPORT_PREFIX="" ; \
+	 case "$(SPELLCHECK_SRC_ONE)" in \
+		/*) ;; \
+		*/*)	if [ x"$${REPORT_SRCDIR}" = x ] ; then \
+				echo EMPTY >$(SPELLCHECK_RECIPE_DEBUG_STREAM) ; \
+				REPORT_SRCDIR="`dirname "$(SPELLCHECK_SRC_ONE)"`"; \
+			else \
+				echo "APPEND: SPELLCHECK_SRCDIR='$(SPELLCHECK_SRCDIR)' SPELLCHECK_SRC_ONE='$(SPELLCHECK_SRC_ONE)' dirname='`dirname "$(SPELLCHECK_SRC_ONE)"`'" >$(SPELLCHECK_RECIPE_DEBUG_STREAM) ; \
+				REPORT_SRCDIR="$${REPORT_SRCDIR}/`dirname "$(SPELLCHECK_SRC_ONE)"`"; \
+			fi ; \
+			REPORT_SRC_ONE="`basename "$(SPELLCHECK_SRC_ONE)"`"; \
+			;; \
+		*) ;; \
+	 esac; \
+	 if [ x"$${REPORT_SRCDIR}" != x ] ; then \
+		tmpREPORT_PREFIX="NUT source root :: $${REPORT_SRCDIR} :: " ; \
+		REPORT_SRCDIR="`cd "$${REPORT_SRCDIR}" && { pwd >$(SPELLCHECK_RECIPE_DEBUG_STREAM) ; pwd | sed 's|^'"$(abs_top_srcdir)"'/*||' ; }`" \
+		|| { REPORT_SRCDIR="$(SPELLCHECK_SRCDIR)" ; REPORT_SRC_ONE="$(SPELLCHECK_SRC_ONE)" ; REPORT_PREFIX="" ; } ; \
+	 fi ; \
+	 echo "=== Got REPORT_SRCDIR='$${REPORT_SRCDIR}'" >$(SPELLCHECK_RECIPE_DEBUG_STREAM) ; \
+	 case "$${REPORT_SRCDIR}" in \
+		"") ;; \
+		*/) ;; \
+		*)  REPORT_SRCDIR="$${REPORT_SRCDIR}/" ;; \
+	 esac ; \
+	 echo "  ASPELL   Spell checking on $${REPORT_PREFIX}$${REPORT_SRCDIR}$${REPORT_SRC_ONE}"; \
 	 OUT="`(sed 's,^\(.*\)$$, \1,' | $(ASPELL) -a $(ASPELL_NUT_TEXMODE_ARGS) $(ASPELL_NUT_COMMON_ARGS) 2>&1) < "$(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE)"`" \
 		&& { if test -n "$$OUT" ; then OUT="`echo "$$OUT" | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' `" ; fi; \
 		     test -z "$$OUT" ; } \
@@ -482,14 +551,14 @@ spellcheck-sortdict: $(abs_builddir)/$(NUT_SPELL_DICT).sorted
 $(abs_builddir)/$(NUT_SPELL_DICT).sorted: $(abs_srcdir)/$(NUT_SPELL_DICT)
 	@cp -pf $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting
 	@LANG=$(ASPELL_ENV_LANG); LC_ALL=$(ASPELL_ENV_LANG); export LANG; export LC_ALL; ( \
-	    WORDLIST="`tail -n +2 < "$<" | sort | uniq`"; \
+	    WORDLIST="`tail -n +2 < "$?" | sort | uniq`"; \
 	    WORDCOUNT="`echo "$$WORDLIST" | wc -l`"; \
-	    head -1 < "$<" | while read P L C E ; do echo "$$P $$L $$WORDCOUNT $$E"; break; done ; \
+	    head -1 < "$?" | while read P L C E ; do echo "$$P $$L $$WORDCOUNT $$E"; break; done ; \
 	    echo "$$WORDLIST"; \
 	 ) > "$@"
 	@cp -f "$@" "$(abs_builddir)/$(NUT_SPELL_DICT)"
 	@if [ "$(abs_builddir)" != "$(abs_srcdir)" ] ; then \
-	    cp -f "$@" "$<" || true ; \
+	    cp -f "$@" "$?" || true ; \
 	    cp -f "$(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting" "$(abs_srcdir)/" || true ; \
 	 fi
 

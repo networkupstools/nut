@@ -97,7 +97,7 @@ int tracking_disable(void);
 int tracking_is_enabled(void);
 
 /* declarations from upsd.c */
-extern int		maxage, tracking_delay, allow_no_device;
+extern int		maxage, tracking_delay, allow_no_device, allow_not_all_listeners;
 extern nfds_t		maxconn;
 extern char		*statepath, *datapath;
 extern upstype_t	*firstups;

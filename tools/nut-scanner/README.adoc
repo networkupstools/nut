@@ -39,10 +39,11 @@ iteration function to display results:
 	{
 		nutscan_options_t * opt;
 		nutscan_device_t *device;
+		nutscan_usb_t usb_scanopts;
 
 		nutscan-init();
 
-		if ((device = nutscan_scan_usb()) == NULL) {
+		if ((device = nutscan_scan_usb(&usb_scanopts)) == NULL) {
 			printf("No device found\n");
 			exit(EXIT_FAILURE);
 		}

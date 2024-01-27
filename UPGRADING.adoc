@@ -21,6 +21,24 @@ be beneficial to add `--enable-option-checking=fatal` to the `./configure`
 command line, in order to quickly pick up any other removed option flags.
 ======
 
+Changes from 2.8.2 to 2.8.3
+---------------------------
+
+- PLANNED: Keep track of any further API clean-up?
+
+
+Changes from 2.8.1 to 2.8.2
+---------------------------
+
+- Added generation of FreeBSD/pfSense quirks for USB devices supported
+  by NUT (may get installed to `$datadir` e.g. `/usr/local/share/nut`
+  and need to be pasted into your `/boot/loader.conf.local`). [#2159]
+
+- nut-scanner now does not propose active `bus`, `busport` and `device`
+  values when generating device configurations by default. They may
+  appear as comments, or enabled by specifying the `-U` command-line
+  option several times. [#2221]
+
 Changes from 2.8.0 to 2.8.1
 ---------------------------
 

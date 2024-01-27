@@ -1,3 +1,14 @@
+# Network UPS Tools: nut-scanner
+
+# Export certain values for ccache which NUT ci_build.sh can customize,
+# to facilitate developer iteration re-runs of "make" later.
+# At least GNU and BSD make implementations are okay with this syntax.
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_NAMESPACE=@CCACHE_NAMESPACE@
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_BASEDIR=@CCACHE_BASEDIR@
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_DIR=@CCACHE_DIR@
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_PATH=@CCACHE_PATH@
+@NUT_AM_MAKE_CAN_EXPORT@export PATH=@PATH_DURING_CONFIGURE@
+
 # Generally, list headers and/or sources which are re-generated
 # for nut-scanner in the parent dir
 NUT_SCANNER_DEPS_H = nutscan-usb.h nutscan-snmp.h
@@ -50,7 +61,7 @@ if WITH_NUT_SCANNER
  bin_PROGRAMS = nut-scanner
  lib_LTLIBRARIES = libnutscan.la
 endif
-libnutscan_la_SOURCES = scan_nut.c scan_ipmi.c \
+libnutscan_la_SOURCES = scan_nut.c scan_nut_simulation.c scan_ipmi.c \
 			nutscan-device.c nutscan-ip.c nutscan-display.c \
 			nutscan-init.c scan_usb.c scan_snmp.c scan_xml_http.c \
 			scan_avahi.c scan_eaton_serial.c nutscan-serial.c
@@ -80,7 +91,7 @@ endif
 # object .so names would differ)
 #
 # libnutscan version information
-libnutscan_la_LDFLAGS += -version-info 2:2:0
+libnutscan_la_LDFLAGS += -version-info 2:5:0
 
 # libnutscan exported symbols regex
 # WARNING: Since the library includes parts of libcommon (as much as needed

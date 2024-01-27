@@ -1,4 +1,6 @@
-EXTRA_DIST = makelocal.sh precheck.py.in preproto.pl.in README
+# Network UPS Tools: scripts/Solaris
+
+EXTRA_DIST = makelocal.sh precheck.py.in preproto.pl.in README.adoc
 PROTOTYPE_DIR = $(DESTDIR)@prefix@
 SOLARIS_CHECK_TARGETS =
 PYTHON = @PYTHON@
@@ -88,5 +90,26 @@ check-local-solaris-smf: $(SOLARIS_SMF_MANIFESTS)
 	    echo "  SVCCFG-VALIDATE  $$F"; \
 	    /usr/sbin/svccfg validate "$$F" || RES=$$? ; \
 	 done; exit $$RES
+
+SPELLCHECK_SRC = README.adoc
+
+# NOTE: Due to portability, we do not use a GNU percent-wildcard extension:
+#%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+#	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+# NOTE: Portable suffix rules do not allow prerequisites, so we shim them here
+# by a wildcard target in case the make implementation can put the two together.
+*-spellchecked: Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+
+.sample.sample-spellchecked:
+	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+.in.in-spellchecked:
+	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+spellcheck spellcheck-interactive spellcheck-sortdict:
+	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SPELLCHECK_SRC)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+CLEANFILES = *-spellchecked
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp

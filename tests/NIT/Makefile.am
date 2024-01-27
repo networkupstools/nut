@@ -1,4 +1,15 @@
-EXTRA_DIST = nit.sh README
+# Network UPS Tools: NUT Integration Tests (NIT)
+
+# Export certain values for ccache which NUT ci_build.sh can customize,
+# to facilitate developer iteration re-runs of "make" later.
+# At least GNU and BSD make implementations are okay with this syntax.
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_NAMESPACE=@CCACHE_NAMESPACE@
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_BASEDIR=@CCACHE_BASEDIR@
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_DIR=@CCACHE_DIR@
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_PATH=@CCACHE_PATH@
+@NUT_AM_MAKE_CAN_EXPORT@export PATH=@PATH_DURING_CONFIGURE@
+
+EXTRA_DIST = nit.sh README.adoc
 
 if WITH_CHECK_NIT
 check: check-NIT
@@ -19,6 +30,27 @@ check-NIT-devel: $(abs_srcdir)/nit.sh
 	@cd "$(top_builddir)/server" && $(MAKE) -s upsd$(EXEEXT)
 	@cd "$(top_builddir)/drivers" && $(MAKE) -s dummy-ups$(EXEEXT)
 	@$(MAKE) check-NIT
+
+SPELLCHECK_SRC = README.adoc
+
+# NOTE: Due to portability, we do not use a GNU percent-wildcard extension:
+#%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+#	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+# NOTE: Portable suffix rules do not allow prerequisites, so we shim them here
+# by a wildcard target in case the make implementation can put the two together.
+*-spellchecked: Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+
+.sample.sample-spellchecked:
+	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+.in.in-spellchecked:
+	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+spellcheck spellcheck-interactive spellcheck-sortdict:
+	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SPELLCHECK_SRC)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+CLEANFILES = *-spellchecked
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 

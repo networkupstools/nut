@@ -114,6 +114,7 @@ MAINTAINER SANDBOX (to be completed and pushed)
 * bump the release identification:
 ** add an entry in `docs/docinfo.xml.in` for the actual fixed release version
    and date
+** revise `.github/workflows/PyNUTClient.yml` for fallback `TAG_NAME` naming
 ** revise `appveyor.yml` for branch naming
 ** revise `scripts/Windows/build-mingw-nut.sh` for fallback value of `VER_OPT`
 ** update version to <incremented version> (ex: 2.8.0) in `configure.ac`
@@ -183,6 +184,14 @@ MAINTAINER SANDBOX (to be completed and pushed)
 
 * draft and publish a GitHub release based on the signed tag
 ** attach the same copy of tarball, checksum and hash files as for nut-website
+
+* Make sure that the PyNUT module for the tagged release got published to
+  the main PyPI repository, as a build associated with the NUT release
+  version. This *should* be ensured by the GitHub actions, but the curent
+  workflow definition uses both `paths` and `branches`/`tags` triggers and
+  this may cause a release to be skipped if the PyNUT sources did not change.
+  The `scripts/python/module/Makefile.am` recipes automate the needed actions
+  to happen from a prepared maintainer's operating environment.
 
 * announce on mailing list, IRC, etc.
 

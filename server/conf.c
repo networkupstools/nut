@@ -202,7 +202,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 		}
 	}
 
-	/* ALLOW_NO_DEVICE <seconds> */
+	/* ALLOW_NO_DEVICE <bool> */
 	if (!strcmp(arg[0], "ALLOW_NO_DEVICE")) {
 		if (isdigit((size_t)arg[1][0])) {
 			allow_no_device = (atoi(arg[1]) != 0); /* non-zero arg is true here */
@@ -212,6 +212,19 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 			return 1;
 
 		upslogx(LOG_ERR, "ALLOW_NO_DEVICE has non numeric and non boolean value (%s)!", arg[1]);
+		return 0;
+	}
+
+	/* ALLOW_NOT_ALL_LISTENERS <bool> */
+	if (!strcmp(arg[0], "ALLOW_NOT_ALL_LISTENERS")) {
+		if (isdigit((size_t)arg[1][0])) {
+			allow_not_all_listeners = (atoi(arg[1]) != 0); /* non-zero arg is true here */
+			return 1;
+		}
+		if (parse_boolean(arg[1], &allow_not_all_listeners))
+			return 1;
+
+		upslogx(LOG_ERR, "ALLOW_NOT_ALL_LISTENERS has non numeric and non boolean value (%s)!", arg[1]);
 		return 0;
 	}
 
@@ -346,6 +359,7 @@ void load_upsdconf(int reloading)
 {
 	char	fn[SMALLBUF];
 	PCONF_CTX_t	ctx;
+	int	numerrors = 0;
 
 	snprintf(fn, sizeof(fn), "%s/upsd.conf", confpath());
 
@@ -374,6 +388,7 @@ void load_upsdconf(int reloading)
 		if (pconf_parse_error(&ctx)) {
 			upslogx(LOG_ERR, "Parse error: %s:%d: %s",
 				fn, ctx.linenum, ctx.errmsg);
+			numerrors++;
 			continue;
 		}
 
@@ -391,6 +406,7 @@ void load_upsdconf(int reloading)
 				snprintfcat(errmsg, sizeof(errmsg), " %s",
 					ctx.arglist[i]);
 
+			numerrors++;
 			upslogx(LOG_WARNING, "%s", errmsg);
 		}
 
@@ -399,7 +415,7 @@ void load_upsdconf(int reloading)
 	if (reloading) {
 		if (nut_debug_level_global > -1) {
 			upslogx(LOG_INFO,
-				"Applying debug_min=%d from upsd.conf",
+				"Applying DEBUG_MIN %d from upsd.conf",
 				nut_debug_level_global);
 			nut_debug_level = nut_debug_level_global;
 		} else {
@@ -410,6 +426,13 @@ void load_upsdconf(int reloading)
 				nut_debug_level_args);
 			nut_debug_level = nut_debug_level_args;
 		}
+	}
+
+	/* FIXME: Per legacy behavior, we silently went on.
+	 * Maybe should abort on unusable configs?
+	 */
+	if (numerrors) {
+		upslogx(LOG_ERR, "Encountered %d config errors, those entries were ignored", numerrors);
 	}
 
 	pconf_finish(&ctx);

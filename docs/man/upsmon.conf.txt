@@ -103,55 +103,63 @@ Each UPS that you need to be monitor should have a MONITOR line.  Not
 all of these need supply power to the system that is running upsmon.
 You may monitor other systems if you want to be able to send
 notifications about status changes on them.
-
++
 You must have at least one MONITOR directive in `upsmon.conf`.
-
-'system' is a UPS identifier.  It is in this form:
-
++
+* 'system' is a UPS identifier.  It is in this form:
++
 +<upsname>[@<hostname>[:<port>]]+
-
++
 The default hostname is "localhost".  Some examples:
-
- - "su700@mybox" means a UPS called "su700" on a system called "mybox".
++
+  - "su700@mybox" means a UPS called "su700" on a system called "mybox".
 This is the normal form.
- - "fenton@bigbox:5678" is a UPS called "fenton" on a system called
+  - "fenton@bigbox:5678" is a UPS called "fenton" on a system called
 "bigbox" which runs linkman:upsd[8] on port "5678".
 
-'powervalue' is an integer representing the number of power supplies
++
+* 'powervalue' is an integer representing the number of power supplies
 that the UPS feeds on this system.  Most normal computers have one power
 supply, and the UPS feeds it, so this value will be 1.  You need a very
 large or special system to have anything higher here.
-
++
 You can set the 'powervalue' to 0 if you want to monitor a UPS that
 doesn't actually supply power to this system.  This is useful when you
 want to have upsmon do notifications about status changes on a UPS
 without shutting down when it goes critical.
 
-The 'username' and 'password' on this line must match an entry in
++
+* The 'username' and 'password' on this line must match an entry in
 the `upsd` server system's linkman:upsd.users[5] file.
-
++
 If your username is "observer" and your password is "abcd", the MONITOR
 line might look like this (likely on a remote secondary system):
-
-+MONITOR myups@bigserver 1 observer abcd secondary+
-
++
+----
+MONITOR myups@bigserver 1 observer abcd secondary
+----
++
 Meanwhile, the `upsd.users` on `bigserver` would look like this:
++
+----
+[observer]
+	password = abcd
+	upsmon secondary
 
-	[observer]
-		password = abcd
-		upsmon secondary
-	
-	[upswired]
-		password = blah
-		upsmon primary
-
+[upswired]
+	password = blah
+	upsmon primary
+----
++
 And the copy of upsmon on that bigserver would run with the primary
 configuration:
++
+----
+MONITOR myups@bigserver 1 upswired blah primary
+----
 
-+MONITOR myups@bigserver 1 upswired blah primary+
-
-
-The 'type' refers to the relationship with linkman:upsd[8].  It can
++
+* The 'type' refers to the relationship with linkman:upsd[8].  It can
 be either "primary" or "secondary".  See linkman:upsmon[8] for more
 information on the meaning of these modes.  The mode you pick here
 also goes in the `upsd.users` file, as seen in the example above.
@@ -171,9 +179,13 @@ system log as configured.  If your devices are expected to be AWOL for an
 extended timeframe, you can use this throttle to reduce the stress on
 syslog traffic and storage, by posting these messages only once in every
 several loop cycles, and when the error condition has changed or cleared.
-
-A negative value means standard behavior, and a zero value means to never
-repeat the message (log only on start and end/change of the failure state).
++
+A negative value means standard behavior (log on every loop, effectively
+same as when `max=1`), and a zero value means to never repeat the message
+(log only on start and end/change of the failure state).
++
+Note that this throttle only applies to one latest-active error state per
+monitored device.
 
 *NOTIFYCMD* 'command'::
 
@@ -241,6 +253,8 @@ NOCOMM;; A UPS is unavailable (can't be contacted for monitoring)
 NOPARENT;; `upsmon` parent process died - shutdown impossible
 
 CAL;; UPS calibration in progress
+
+NOTCAL;; UPS calibration finished
 
 OFF;; UPS administratively OFF or asleep
 
@@ -432,6 +446,9 @@ When compiled with SSL support, you can enter the certificate path here.
 When compiled with SSL support with NSS, you can specify the certificate
 name to retrieve from database to authenticate itself and the password
 required to access certificate related private key.
++
+NOTE: Be sure to enclose "certificate name" in double-quotes if you
+are using a value with spaces in it.
 
 *CERTHOST* 'hostname' 'certificate name' 'certverify' 'forcessl'::
 
@@ -441,6 +458,9 @@ for each server you can contact.
 Each entry maps server name with the expected certificate name and flags
 indicating if the server certificate is verified and if the connection
 must be secure.
++
+NOTE: Be sure to enclose "certificate name" in double-quotes if you
+are using a value with spaces in it.
 
 *CERTVERIFY* '0 | 1'::
 

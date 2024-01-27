@@ -1,5 +1,14 @@
 # Network UPS Tools: server
 
+# Export certain values for ccache which NUT ci_build.sh can customize,
+# to facilitate developer iteration re-runs of "make" later.
+# At least GNU and BSD make implementations are okay with this syntax.
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_NAMESPACE=@CCACHE_NAMESPACE@
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_BASEDIR=@CCACHE_BASEDIR@
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_DIR=@CCACHE_DIR@
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_PATH=@CCACHE_PATH@
+@NUT_AM_MAKE_CAN_EXPORT@export PATH=@PATH_DURING_CONFIGURE@
+
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/common/libcommon.la \
 $(top_builddir)/common/libparseconf.la: dummy
@@ -9,19 +18,7 @@ $(top_builddir)/common/libparseconf.la: dummy
 # files. In any case, CFLAGS are only -I options, so there is no harm,
 # but only add them if we really use the target.
 AM_CFLAGS = -I$(top_srcdir)/include
-if WITH_WRAP
-  AM_CFLAGS += $(LIBWRAP_CFLAGS)
-endif
-if WITH_SSL
-  AM_CFLAGS += $(LIBSSL_CFLAGS)
-endif
 LDADD = $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la $(NETLIBS)
-if WITH_WRAP
-   LDADD += $(LIBWRAP_LIBS)
-endif
-if WITH_SSL
-   LDADD += $(LIBSSL_LIBS)
-endif
 
 sbin_PROGRAMS = upsd
 EXTRA_PROGRAMS = sockdebug
@@ -31,7 +28,19 @@ upsd_SOURCES = upsd.c user.c conf.c netssl.c sstate.c desc.c		\
  conf.h nut_ctype.h desc.h netcmds.h neterr.h netget.h netinstcmd.h		\
  netlist.h netmisc.h netset.h netuser.h netssl.h sstate.h stype.h upsd.h   \
  upstype.h user-data.h user.h
+upsd_CFLAGS = $(AM_CFLAGS)
+upsd_LDADD = $(LDADD)
 
+if WITH_WRAP
+  upsd_CFLAGS += $(LIBWRAP_CFLAGS)
+  upsd_LDADD += $(LIBWRAP_LIBS)
+endif
+if WITH_SSL
+  upsd_CFLAGS += $(LIBSSL_CFLAGS)
+  upsd_LDADD += $(LIBSSL_LIBS)
+endif
+
+# Developer, troubleshooting, or odd automation aid tool:
 if HAVE_WINDOWS
   sockdebug_SOURCES = pipedebug.c
 else !HAVE_WINDOWS

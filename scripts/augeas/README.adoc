@@ -12,11 +12,14 @@ In order to address this point, NUT now provides configuration tools and
 manipulation abstraction, to anybody who want to manipulate NUT configuration,
 through Augeas lenses and modules.
 
-From link:http://augeas.net[Augeas homepage]:
-
-"Augeas is a configuration editing tool. It parses configuration files in their
-native formats and transforms them into a tree. Configuration changes are made
-by manipulating this tree and saving it back into native config files."
+.From link:http://augeas.net[Augeas homepage]:
+[quote]
+____
+_Augeas is a configuration editing tool. It parses configuration files
+in their native formats and transforms them into a tree. Configuration
+changes are made by manipulating this tree and saving it back into
+native config files._
+____
 
 In other words, Augeas is the dreamed Registry, with all the advantages
 (such as a uniform interface and tools), and the added bonus of being
@@ -39,11 +42,11 @@ are welcome).
 
 As an example, on Debian and derivatives, do the following:
 
-	$ apt-get install augeas-lenses augeas-tools
+	:; apt-get install augeas-lenses augeas-tools
 
 And optionally:
 
-	$ apt-get install libaugeas0 libaugeas-dev python-augeas
+	:; apt-get install libaugeas0 libaugeas-dev python-augeas
 
 On RedHat and derivatives, you have to install the packages 'augeas' and
 'augeas-libs'.
@@ -53,23 +56,23 @@ On RedHat and derivatives, you have to install the packages 'augeas' and
 NUT lenses and modules for Augeas
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-These are the *.aug files in the present directory.
+These are the `*.aug` files in the present directory.
 
 You can either install the files to the right location on your system,
-generally in '/usr/share/augeas/lenses/', or use these from NUT
-source directory ('nut/scripts/augeas'). The latter is to be preferred for
+generally in `/usr/share/augeas/lenses/`, or use these from NUT
+source directory (`nut/scripts/augeas`). The latter is to be preferred for
 the time being.
 
 
 Create a test sandbox
 ---------------------
 
-NOTE: for now, it's easier to include an existing /etc/nut/ directory.
+NOTE: For now, it is easier to include an existing `/etc/nut/` directory.
 
-	$ export AUGEAS_ROOT=./augeas-sandbox
-	$ mkdir $AUGEAS_ROOT
-	$ sudo cp -pr /etc/nut $AUGEAS_ROOT
-	$ sudo chown -R $(id -nu):$(id -ng) $AUGEAS_ROOT
+	:; export AUGEAS_ROOT=./augeas-sandbox
+	:; mkdir $AUGEAS_ROOT
+	:; sudo cp -pr /etc/nut $AUGEAS_ROOT
+	:; sudo chown -R $(id -nu):$(id -ng) $AUGEAS_ROOT
 
 
 Start testing and using
@@ -89,13 +92,13 @@ Shell
 
 Start an augeas shell using:
 
-	$ augtool -b
+	:; augtool -b
 
-NOTE: if you have not installed NUT lenses, add '-I/path/to/nut/scripts/augeas'.
+NOTE: If you have not installed NUT lenses, add `-I/path/to/nut/scripts/augeas`.
 
 From there, you can perform different actions like:
 
-- list existing nut related files:
+- list existing NUT-related files:
 
 	augtool> ls /files/etc/nut/
 	nut.conf/ = (none)
@@ -104,7 +107,7 @@ From there, you can perform different actions like:
 	ups.conf/ = (none)
 	upsd.conf/ = (none
 +
-or using:
+or using the matcher:
 +
 	augtool> match /files/etc/nut/*
 	/files/etc/nut/nut.conf = (none)
@@ -112,21 +115,26 @@ or using:
 	/files/etc/nut/upsmon.conf = (none)
 	/files/etc/nut/ups.conf = (none)
 	/files/etc/nut/upsd.conf = (none)
-
-NOTE: if you don't see anything, you may search for error messages by using:
 +
+[NOTE]
+======
+If you don't see anything, you may search for error messages by using:
+
 	augtool> ls /augeas/files/etc/nut/*/errors
+
 and
+
 	augtool> get /augeas/files/etc/nut/ups.conf/error/message
 	/augeas/files/etc/nut/ups.conf/error/message = Permission denied
+======
 
-- create a new device entry (in ups.conf), called 'augtest':
+- create a new device entry (in `ups.conf`), called `augtest`:
 
 	augtool> set /files/etc/nut/ups.conf/augtest/driver dummy-ups
 	augtool> set /files/etc/nut/ups.conf/augtest/port auto
 	augtool> save
 
-- list the devices using the 'usbhid-ups' driver:
+- list the devices currently using the `usbhid-ups` driver:
 
 	augtool> match /files/etc/nut/ups.conf/*/driver dummy-ups
 
@@ -134,15 +142,15 @@ and
 C
 ~
 
-A library is available for C programs, along with pkg-config support.
+A library is available for C programs, along with `pkg-config` support.
 
 You can get the compilation and link flags using the following code
-in your configure script or Makefile:
+in your program's `configure` script or `Makefile`:
 
 	CFLAGS="`pkg-config --silence-errors --cflags augeas`"
 	LDFLAGS="`pkg-config --silence-errors --libs augeas`"
 
-Here is an code sample using this library for NUT configuration:
+Here is a code sample using this library for NUT configuration:
 
 --------------------------------------------------------------------------------
 augeas *a = aug_init(NULL, NULL, AUG_NONE);

@@ -48,6 +48,26 @@ unless the calling environment sets a same-named variable to enforce a value
 for the current run. One way this can happen is somebody un-commenting it in
 the 'nut.conf' file used by init-scripts and service unit method scripts.
 
+"ALLOW_NOT_ALL_LISTENERS 'Boolean'"::
+
+Normally upsd requires that all `LISTEN` directives can be honoured at the
+moment the daemon starts. If your LAN IP address (or host name) used in one
+of the `LISTEN` directives may be not always accessible, and for some reason
+do not want to just `LISTEN *` on the wildcard interface, but e.g. you still
+want to use `upsmon` on `localhost`, this option can help. Note you would
+have to restart `upsd` to pick up the `LISTEN`ed IP address if it appears
+later.
++
+Boolean values 'true', 'yes', 'on' and '1' mean that the server would not
+refuse to start if it can listen on at least one interface.
++
+Boolean values 'false', 'no', 'off' and '0' mean that the server should
+refuse to start if it can not LISTEN on each and every (non-localhost)
+interface found in upsd.conf. This is the default, unless the calling
+environment sets a same-named variable to enforce a value for the current run.
+One way this can happen is somebody un-commenting it in the 'nut.conf' file
+used by init-scripts and service unit method scripts.
+
 "STATEPATH 'path'"::
 
 Tell upsd to look for the driver state sockets in 'path' rather
@@ -104,6 +124,7 @@ connections.  Only set this if you know exactly what you're doing.
 
 When compiled with SSL support with OpenSSL backend, you can enter the
 certificate file here.
++
 The certificates must be in PEM format and must be sorted starting with
 the subject's certificate (server certificate), followed by intermediate
 CA certificates (if applicable_ and the highest level (root) CA. It should
@@ -114,6 +135,7 @@ NUT user manual for more information on the SSL support in NUT.
 
 When compiled with SSL support with NSS backend, you can enter the
 certificate path here.
++
 Certificates are stored in a dedicated database (data split in 3 files).
 Specify the path of the database directory.
 
@@ -122,12 +144,16 @@ Specify the path of the database directory.
 When compiled with SSL support with NSS backend, you can specify the
 certificate name to retrieve from database to authenticate itself and
 the password required to access certificate related private key.
++
+NOTE: Be sure to enclose "certificate name" in double-quotes if you
+are using a value with spaces in it.
 
 "CERTREQUEST 'certificate request level'"::
 
 When compiled with SSL support with NSS backend and client certificate
 validation (disabled by default, see 'docs/security.txt'),
 you can specify if upsd requests or requires client's' certificates.
++
 Possible values are :
 - '0' to not request to clients to provide any certificate
 - '1' to require to all clients a certificate
@@ -138,6 +164,7 @@ Possible values are :
 Tell upsd to disable older/weak SSL/TLS protocols and ciphers.
 With relatively recent versions of OpenSSL or NSS it will be restricted
 to TLSv1.2 or better.
++
 Unless you have really ancient clients, you probably want to enable this.
 Currently disabled by default to ensure compatibility with existing setups.
 
