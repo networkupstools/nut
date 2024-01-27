@@ -1,6 +1,6 @@
 /*  apc-hid.h - data to monitor APC USB/HID devices with NUT
  *
- *  Copyright (C)  
+ *  Copyright (C)
  *	2003 - 2005	Arnaud Quette <arnaud.quette@free.fr>
  *	2005		John Stamp <kinsayder@hotmail.com>
  *      2005            Peter Selinger <selinger@users.sourceforge.net>
@@ -30,7 +30,5 @@
 #include "usbhid-ups.h"
 
 extern subdriver_t apc_subdriver;
-
-extern int max_report_size;
 
 #endif /* APC_HID_H */

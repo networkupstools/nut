@@ -1,13 +1,14 @@
 NUT-SCANNER(8)
 ==============
 
-
 NAME
 ----
+
 nut-scanner - scan communication buses for NUT devices
 
 SYNOPSIS
 --------
+
 *nut-scanner* -h
 
 *nut-scanner* ['OPTIONS']
@@ -29,6 +30,7 @@ both during compilation and runtime, then SNMP discovery will be available.
 
 OPTIONS
 -------
+
 *-h*::
 Display the help text.
 
@@ -54,7 +56,7 @@ List all NUT-compatible USB devices currently plugged in.
 Scan SNMP devices. Requires at least a 'start IP', and optionally, an 'end IP'. See specific SNMP OPTIONS for community and security settings.
 
 *-M* | *--xml_scan*::
-Scan XML/HTTP devices. Broadcast a network message on the current network interfaces to retrieve XML/HTTP capable devices. No IP required. 
+Scan XML/HTTP devices. Broadcast a network message on the current network interfaces to retrieve XML/HTTP capable devices. No IP required.
 
 *-O* | *--oldnut_scan*::
 Scan NUT devices (i.e. upsd daemon) on IP ranging from 'start IP' to 'end IP'.
@@ -67,14 +69,14 @@ Scan NUT compatible power supplies available via IPMI on the current host, or ov
 
 *-E* | *--eaton_serial* 'serial ports'::
 Scan Eaton devices (XCP and SHUT) available via serial bus on the current host.
-This option must be requested explicitely, even for a complete scan.
+This option must be requested explicitly, even for a complete scan.
 'serial ports' can be expressed in various forms:
 
 - 'auto' to scan all serial ports.
-- a single charcater indicating a port number ('0' (zero) for /dev/ttyS0 and
+- a single character indicating a port number ('0' (zero) for /dev/ttyS0 and
 /dev/ttyUSB0 on Linux, '1' for COM1 on Windows, 'a' for /dev/ttya on Solaris...)
 - a range of N characters, hyphen separated, describing the range of
-ports using 'X-Y', where X and Y are characters refering to the port number.
+ports using 'X-Y', where X and Y are characters referring to the port number.
 - a single port name.
 - a list of ports name, coma separated, like '/dev/ttyS1,/dev/ttyS4'.
 
@@ -116,13 +118,13 @@ Set the 'security level' used for SNMPv3 messages. Allowed values are: noAuthNoP
 Set the 'security name' used for authenticated SNMPv3 messages. This parameter is mandatory if you set 'security level'.
 
 *-w* | *--authProtocol* 'authentication protocol'::
-Set the 'authentication protocol' used for authenticated SNMPv3 messages. Allowed values are MD5 or SHA. Default value is MD5.
+Set the 'authentication protocol' used for authenticated SNMPv3 messages. Allowed values are MD5, SHA, SHA256, SHA384 or SHA512 (depending on Net-SNMP library capabilities; check help of the `nut-scanner` binary program for the run-time supported list). Default value is MD5.
 
 *-W* | *--authPassword* 'authentication pass phrase'::
 Set the 'authentication pass phrase' used for authenticated SNMPv3 messages. This parameter is mandatory if you set 'security level' to authNoPriv or authPriv.
 
 *-x* | *--privProtocol* 'privacy protocol'::
-Set the 'privacy protocol' used for encrypted SNMPv3 messages. Allowed values are DES or AES. Default value is DES.
+Set the 'privacy protocol' used for encrypted SNMPv3 messages. Allowed values are DES, AES, AES192 or AES256 (depending on Net-SNMP library capabilities; check help of the `nut-scanner` binary program for the run-time supported list). Default value is DES.
 
 *-X* | *--privPassword* 'privacy pass phrase'::
 Set the 'privacy pass phrase' used for encrypted SNMPv3 messages. This parameter is mandatory if you set 'security level' to authPriv.
@@ -140,7 +142,7 @@ Specify the password to use when authenticating with the remote host (mandatory 
 Specify the IPMI 1.5 authentication type to use (NONE, STRAIGHT_PASSWORD_KEY, MD2, and MD5) with the remote host (default=MD5).
 This forces connection through the 'lan' IPMI interface , thus in IPMI 1.5 mode.
 
-*-D* | *--cipher_suite_id* 'cipher suite identifier'::
+*-L* | *--cipher_suite_id* 'cipher suite identifier'::
 Specify the IPMI 2.0 cipher suite ID to use. The Cipher Suite ID identifies a set of authentication, integrity, and
 confidentiality algorithms to use for IPMI 2.0  communication. The authentication algorithm identifies the algorithm
 to use for session setup, the integrity algorithm identifies the algorithm to use for session packet signatures, and the
@@ -172,6 +174,9 @@ Display available bus that can be scanned , depending on how the binary has been
 
 *-q* | *--quiet*::
 Display only scan result. No information on currently scanned bus is displayed.
+
+*-D* | *--nut_debug_level*::
+Raise the debugging level.  Use this multiple times to see more details.
 
 EXAMPLES
 --------
@@ -210,7 +215,7 @@ SEE ALSO
 
 linkman:ups.conf[5]
 
-INTERNET RESOURCES
-------------------
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
 
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

@@ -23,6 +23,9 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifndef NUT_TRIPPLITE_H_SEEN
+#define NUT_TRIPPLITE_H_SEEN 1
+
 #define ENDCHAR '\n'           /* replies end with CR LF -- use LF to end */
 #define IGNCHAR '\r'           /* ignore CR */
 #define MAXTRIES 3             /* max number of times we try to detect ups */
@@ -56,3 +59,4 @@
 #define MAX_VOLT 13.4          /* Max battery voltage (100%) */
 #define MIN_VOLT 11.0          /* Min battery voltage (10%) */
 
+#endif	/* NUT_TRIPPLITE_H_SEEN */

@@ -101,7 +101,7 @@ the current temperature scale.
 Insert the designation of the host being monitored, like `myups@localhost`.
 
 *@HOSTDESC@*::
-Insert the hout's description from linkman:hosts.conf[5].
+Insert the host's description from linkman:hosts.conf[5].
 
 *@HOSTLINK@*::
 Insert a link to upsstats.cgi with the "host" variable set to the
@@ -143,7 +143,7 @@ status variables:
 
 	ups.load;; UPS load - percentage
 
-	ups.temperature;; UPS temperature 
+	ups.temperature;; UPS temperature
 
 'extra' is where you can put additional definitions.  Right now
 the valid definitions are colors for various parts of the bars drawn
@@ -194,7 +194,7 @@ voltage trim/boost or "off" are yellow, and other events like being on
 battery or having a low battery are red.
 
 *@VAR* 'varname'*@*::
-Insert the current value of the status variable varname on the host being 
+Insert the current value of the status variable varname on the host being
 monitored, or "Not supported".
 
 *@RUNTIME@*::
@@ -232,4 +232,5 @@ linkman:upsstats.cgi[8], linkman:upsimage.cgi[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

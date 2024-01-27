@@ -1,6 +1,10 @@
 /* main.c - Network UPS Tools driver core
 
-   Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+   1999			Russell Kroll <rkroll@exploits.org>
+   2005 - 2017	Arnaud Quette <arnaud.quette@free.fr>
+   2017 		Eaton (author: Emilien Kia <EmilienKia@Eaton.com>)
+   2017 - 2022	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -17,37 +21,71 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "common.h"
 #include "main.h"
+#include "nut_stdint.h"
 #include "dstate.h"
+#include "attribute.h"
 
-	/* data which may be useful to the drivers */
-	int		upsfd = -1;
-	char		*device_path = NULL;
-	const char	*progname = NULL, *upsname = NULL, *device_name = NULL;
+#include <grp.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
-	/* may be set by the driver to wake up while in dstate_poll_fds */
-	int	extrafd = -1;
+/* data which may be useful to the drivers */
+int		upsfd = -1;
+char		*device_path = NULL;
+const char	*progname = NULL, *upsname = NULL, *device_name = NULL;
 
-	/* for ser_open */
-	int	do_lock_port = 1;
+/* may be set by the driver to wake up while in dstate_poll_fds */
+int	extrafd = -1;
 
-	/* for dstate->sock_connect, default to asynchronous */
-	int	do_synchronous = 0;
+/* for ser_open */
+int	do_lock_port = 1;
 
-	/* for detecting -a values that don't match anything */
-	static	int	upsname_found = 0;
+/* for dstate->sock_connect, default to effectively
+ * asynchronous (0) with fallback to synchronous (1) */
+int	do_synchronous = -1;
 
-	static vartab_t	*vartab_h = NULL;
+/* for detecting -a values that don't match anything */
+static	int	upsname_found = 0;
 
-	/* variables possibly set by the global part of ups.conf */
-	unsigned int	poll_interval = 2;
-	static char	*chroot_path = NULL, *user = NULL;
+static vartab_t	*vartab_h = NULL;
 
-	/* signal handling */
-	int	exit_flag = 0;
+/* variables possibly set by the global part of ups.conf
+ * user and group may be set globally or per-driver
+ */
+time_t	poll_interval = 2;
+static char	*chroot_path = NULL, *user = NULL, *group = NULL;
+static int	user_from_cmdline = 0, group_from_cmdline = 0;
 
-	/* everything else */
-	static char	*pidfn = NULL;
+/* signal handling */
+int	exit_flag = 0;
+
+/* should this driver instance go to background (default)
+ * or stay foregrounded (default if -D/-d options are set on
+ * command line)?
+ * Value is tri-state:
+ * -1 (default) Background the driver process
+ *  0 User required to not background explicitly,
+ *    or passed -D (or -d) and current value was -1
+ *  1 User required to background even if with -D or dump_mode
+ */
+static int background_flag = -1;
+
+/* Users can pass a -D[...] option to enable debugging.
+ * For the service tracing purposes, also the ups.conf
+ * can define a debug_min value in the global or device
+ * section, to set the minimal debug level (CLI provided
+ * value less than that would not have effect, can only
+ * have more).
+ */
+static int nut_debug_level_global = -1;
+static int nut_debug_level_driver = -1;
+
+/* everything else */
+static char	*pidfn = NULL;
+static int	dump_data = 0; /* Store the update_count requested */
 
 /* print the driver banner */
 void upsdrv_banner (void)
@@ -74,6 +112,9 @@ void upsdrv_banner (void)
 
 /* power down the attached load immediately */
 static void forceshutdown(void)
+	__attribute__((noreturn));
+
+static void forceshutdown(void)
 {
 	upslogx(LOG_NOTICE, "Initiating UPS shutdown");
 
@@ -87,20 +128,32 @@ static void help_msg(void)
 {
 	vartab_t	*tmp;
 
-	printf("\nusage: %s -a <id> [OPTIONS]\n", progname);
+	printf("\nusage: %s (-a <id>|-s <id>) [OPTIONS]\n", progname);
 
 	printf("  -a <id>        - autoconfig using ups.conf section <id>\n");
 	printf("                 - note: -x after -a overrides ups.conf settings\n\n");
 
+	printf("  -s <id>        - configure directly from cmd line arguments\n");
+	printf("                 - note: must specify all driver parameters with successive -x\n");
+	printf("                 - note: at least 'port' variable should be set\n");
+	printf("                 - note: to explore the current values on a device from an\n");
+	printf("                   unprivileged user account (with sufficient media access in\n");
+	printf("                   the OS - e.g. to query networked devices), you can specify\n");
+	printf("                   '-d 1' argument and `export NUT_STATEPATH=/tmp` beforehand\n\n");
+
 	printf("  -V             - print version, then exit\n");
 	printf("  -L             - print parseable list of driver variables\n");
-	printf("  -D             - raise debugging level\n");
+	printf("  -D             - raise debugging level (and stay foreground by default)\n");
+	printf("  -d <count>     - dump data to stdout after 'count' updates loop and exit\n");
+	printf("  -F             - stay foregrounded even if no debugging is enabled\n");
+	printf("  -B             - stay backgrounded even if debugging is bumped\n");
 	printf("  -q             - raise log level threshold\n");
 	printf("  -h             - display this help\n");
 	printf("  -k             - force shutdown\n");
 	printf("  -i <int>       - poll interval\n");
 	printf("  -r <dir>       - chroot to <dir>\n");
 	printf("  -u <user>      - switch to <user> (if started as root)\n");
+	printf("  -g <group>     - set pipe access to <group> (if started as root)\n");
 	printf("  -x <var>=<val> - set driver variable <var> to <val>\n");
 	printf("                 - example: -x cable=940-0095B\n\n");
 
@@ -255,6 +308,11 @@ static int main_arg(char *var, char *val)
 {
 	/* flags for main */
 
+	upsdebugx(3, "%s: var='%s' val='%s'",
+		__func__,
+		var ? var : "<null>", /* null should not happen... but... */
+		val ? val : "<null>");
+
 	if (!strcmp(var, "nolock")) {
 		do_lock_port = 0;
 		dstate_setinfo("driver.flag.nolock", "enabled");
@@ -268,7 +326,7 @@ static int main_arg(char *var, char *val)
 
 	/* any other flags are for the driver code */
 	if (!val)
-		return 0;
+		return 0;	/* unhandled, pass it through to the driver */
 
 	/* variables for main: port */
 
@@ -276,6 +334,39 @@ static int main_arg(char *var, char *val)
 		device_path = xstrdup(val);
 		device_name = xbasename(device_path);
 		dstate_setinfo("driver.parameter.port", "%s", val);
+		return 1;	/* handled */
+	}
+
+	/* user specified at the driver level overrides that on global level
+	 * or the built-in default
+	 */
+	if (!strcmp(var, "user")) {
+		if (user_from_cmdline) {
+			upsdebugx(0, "User '%s' specified in driver section "
+				"was ignored due to '%s' specified on command line",
+				val, user);
+		} else {
+			upsdebugx(1, "Overriding previously specified user '%s' "
+				"with '%s' specified for driver section",
+				user, val);
+			free(user);
+			user = xstrdup(val);
+		}
+		return 1;	/* handled */
+	}
+
+	if (!strcmp(var, "group")) {
+		if (group_from_cmdline) {
+			upsdebugx(0, "Group '%s' specified in driver section "
+				"was ignored due to '%s' specified on command line",
+				val, group);
+		} else {
+			upsdebugx(1, "Overriding previously specified group '%s' "
+				"with '%s' specified for driver section",
+				group, val);
+			free(group);
+			group = xstrdup(val);
+		}
 		return 1;	/* handled */
 	}
 
@@ -288,6 +379,9 @@ static int main_arg(char *var, char *val)
 	if (!strcmp(var, "synchronous")) {
 		if (!strcmp(val, "yes"))
 			do_synchronous=1;
+		else
+		if (!strcmp(val, "auto"))
+			do_synchronous=-1;
 		else
 			do_synchronous=0;
 
@@ -302,13 +396,36 @@ static int main_arg(char *var, char *val)
 	if (!strcmp(var, "desc"))
 		return 1;	/* handled */
 
+	/* Allow each driver to specify its minimal debugging level -
+	 * admins can set more with command-line args, but can't set
+	 * less without changing config. Should help debug of services. */
+	if (!strcmp(var, "debug_min")) {
+		int lvl = -1; // typeof common/common.c: int nut_debug_level
+		if ( str_to_int (val, &lvl, 10) && lvl >= 0 ) {
+			nut_debug_level_driver = lvl;
+		} else {
+			upslogx(LOG_INFO, "WARNING : Invalid debug_min value found in ups.conf for the driver");
+		}
+		return 1;	/* handled */
+	}
+
 	return 0;	/* unhandled, pass it through to the driver */
 }
 
 static void do_global_args(const char *var, const char *val)
 {
+	upsdebugx(3, "%s: var='%s' val='%s'",
+		__func__,
+		var ? var : "<null>", /* null should not happen... but... */
+		val ? val : "<null>");
+
 	if (!strcmp(var, "pollinterval")) {
-		poll_interval = atoi(val);
+		int ipv = atoi(val);
+		if (ipv > 0) {
+			poll_interval = (time_t)ipv;
+		} else {
+			fatalx(EXIT_FAILURE, "Error: invalid pollinterval: %d", ipv);
+		}
 		return;
 	}
 
@@ -318,17 +435,54 @@ static void do_global_args(const char *var, const char *val)
 	}
 
 	if (!strcmp(var, "user")) {
-		free(user);
-		user = xstrdup(val);
+		if (user_from_cmdline) {
+			upsdebugx(0, "User specified in global section '%s' "
+				"was ignored due to '%s' specified on command line",
+				val, user);
+		} else {
+			upsdebugx(1, "Overriding previously specified user '%s' "
+				"with '%s' specified in global section",
+				user, val);
+			free(user);
+			user = xstrdup(val);
+		}
+	}
+
+	if (!strcmp(var, "group")) {
+		if (group_from_cmdline) {
+			upsdebugx(0, "Group specified in global section '%s' "
+				"was ignored due to '%s' specified on command line",
+				val, group);
+		} else {
+			upsdebugx(1, "Overriding previously specified group '%s' "
+				"with '%s' specified in global section",
+				group, val);
+			free(group);
+			group = xstrdup(val);
+		}
 	}
 
 	if (!strcmp(var, "synchronous")) {
 		if (!strcmp(val, "yes"))
 			do_synchronous=1;
 		else
+		if (!strcmp(val, "auto"))
+			do_synchronous=-1;
+		else
 			do_synchronous=0;
 	}
 
+	/* Allow to specify its minimal debugging level for all drivers -
+	 * admins can set more with command-line args, but can't set
+	 * less without changing config. Should help debug of services. */
+	if (!strcmp(var, "debug_min")) {
+		int lvl = -1; // typeof common/common.c: int nut_debug_level
+		if ( str_to_int (val, &lvl, 10) && lvl >= 0 ) {
+			nut_debug_level_global = lvl;
+		} else {
+			upslogx(LOG_INFO, "WARNING : Invalid debug_min value found in ups.conf global settings");
+		}
+	}
 
 	/* unrecognized */
 }
@@ -365,15 +519,38 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 
 	/* don't let the user shoot themselves in the foot */
 	if (!strcmp(var, "driver")) {
-		if (strcmp(val, progname) != 0)
+		/* Accomodate for libtool wrapped developer iterations
+		 * running e.g. `drivers/.libs/lt-dummy-ups` filenames
+		 */
+		size_t tmplen = strlen("lt-");
+		if (strncmp("lt-", progname, tmplen) == 0
+		&&  strcmp(val, progname + tmplen) == 0) {
+			/* debug level may be not initialized yet, and situation
+			 * should not happen in end-user builds, so ok to yell: */
+			upsdebugx(0, "Seems this driver binary %s is a libtool "
+				"wrapped build for driver %s", progname, val);
+			/* progname points to xbasename(argv[0]) in-place;
+			 * roll the pointer forward a bit, we know we can:
+			 */
+			progname = progname + tmplen;
+		}
+
+		if (strcmp(val, progname) != 0) {
 			fatalx(EXIT_FAILURE, "Error: UPS [%s] is for driver %s, but I'm %s!\n",
 				confupsname, val, progname);
+		}
 		return;
 	}
 
 	/* allow per-driver overrides of the global setting */
 	if (!strcmp(var, "pollinterval")) {
-		poll_interval = atoi(val);
+		int ipv = atoi(val);
+		if (ipv > 0) {
+			poll_interval = (time_t)ipv;
+		} else {
+			fatalx(EXIT_FAILURE, "Error: UPS [%s]: invalid pollinterval: %d",
+				confupsname, ipv);
+		}
 		return;
 	}
 
@@ -453,6 +630,7 @@ static void exit_cleanup(void)
 	free(chroot_path);
 	free(device_path);
 	free(user);
+	free(group);
 
 	if (pidfn) {
 		unlink(pidfn);
@@ -480,7 +658,14 @@ static void setup_signals(void)
 	sigaction(SIGINT, &sa, NULL);
 	sigaction(SIGQUIT, &sa, NULL);
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#endif
 	sa.sa_handler = SIG_IGN;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
+# pragma GCC diagnostic pop
+#endif
 	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGPIPE, &sa, NULL);
 }
@@ -489,11 +674,15 @@ int main(int argc, char **argv)
 {
 	struct	passwd	*new_uid = NULL;
 	int	i, do_forceshutdown = 0;
+	int	update_count = 0;
 
 	atexit(exit_cleanup);
 
 	/* pick up a default from configure --with-user */
 	user = xstrdup(RUN_AS_USER);	/* xstrdup: this gets freed at exit */
+
+	/* pick up a default from configure --with-group */
+	group = xstrdup(RUN_AS_GROUP);	/* xstrdup: this gets freed at exit */
 
 	progname = xbasename(argv[0]);
 	open_syslog(progname);
@@ -508,7 +697,7 @@ int main(int argc, char **argv)
 	/* build the driver's extra (-x) variable table */
 	upsdrv_makevartable();
 
-	while ((i = getopt(argc, argv, "+a:kDhx:Lqr:u:Vi:")) != -1) {
+	while ((i = getopt(argc, argv, "+a:s:kFBDd:hx:Lqr:u:g:Vi:")) != -1) {
 		switch (i) {
 			case 'a':
 				upsname = optarg;
@@ -519,11 +708,31 @@ int main(int argc, char **argv)
 					fatalx(EXIT_FAILURE, "Error: Section %s not found in ups.conf",
 						optarg);
 				break;
+			case 's':
+				upsname = optarg;
+				upsname_found = 1;
+				break;
+			case 'F':
+				background_flag = 0;
+				break;
+			case 'B':
+				background_flag = 1;
+				break;
 			case 'D':
 				nut_debug_level++;
 				break;
-			case 'i':
-				poll_interval = atoi(optarg);
+			case 'd':
+				dump_data = atoi(optarg);
+				break;
+			case 'i': { /* scope */
+					int ipv = atoi(optarg);
+					if (ipv > 0) {
+						poll_interval = (time_t)ipv;
+					} else {
+						fatalx(EXIT_FAILURE, "Error: command-line: invalid pollinterval: %d",
+							ipv);
+					}
+				}
 				break;
 			case 'k':
 				do_lock_port = 0;
@@ -539,8 +748,36 @@ int main(int argc, char **argv)
 				chroot_path = xstrdup(optarg);
 				break;
 			case 'u':
+				if (user_from_cmdline) {
+					upsdebugx(1, "Previously specified user for drivers '%s' "
+						"was ignored due to '%s' specified on command line"
+						" (again?)",
+						user, optarg);
+				} else {
+					upsdebugx(1, "Built-in default or configured user "
+						"for drivers '%s' was ignored due to '%s' "
+						"specified on command line",
+						user, optarg);
+				}
 				free(user);
 				user = xstrdup(optarg);
+				user_from_cmdline = 1;
+				break;
+			case 'g':
+				if (group_from_cmdline) {
+					upsdebugx(1, "Previously specified group for drivers '%s' "
+						"was ignored due to '%s' specified on command line"
+						" (again?)",
+						group, optarg);
+				} else {
+					upsdebugx(1, "Built-in default or configured group "
+						"for drivers '%s' was ignored due to '%s' "
+						"specified on command line",
+						group, optarg);
+				}
+				free(group);
+				group = xstrdup(optarg);
+				group_from_cmdline = 1;
 				break;
 			case 'V':
 				/* already printed the banner, so exit */
@@ -557,6 +794,21 @@ int main(int argc, char **argv)
 		}
 	}
 
+	if (nut_debug_level > 0 || dump_data) {
+		if ( background_flag < 0 ) {
+			/* Only flop from default - stay foreground with debug on */
+			background_flag = 0;
+		} else {
+			upsdebugx (0,
+				"Debug level is %d, dump data count is %s, "
+				"but backgrounding mode requested as %s",
+				nut_debug_level,
+				dump_data ? "on" : "off",
+				background_flag ? "on" : "off"
+				);
+		}
+	} /* else: default remains `background_flag==-1` where nonzero is true */
+
 	argc -= optind;
 	argv += optind;
 
@@ -567,15 +819,32 @@ int main(int argc, char **argv)
 
 	if (!upsname_found) {
 		fatalx(EXIT_FAILURE,
-			"Error: specifying '-a id' is now mandatory. Try -h for help.");
+			"Error: specifying '-a id' or '-s id' is now mandatory. Try -h for help.");
 	}
 
 	/* we need to get the port from somewhere */
 	if (!device_path) {
 		fatalx(EXIT_FAILURE,
-			"Error: you must specify a port name in ups.conf. Try -h for help.");
+			"Error: you must specify a port name in ups.conf or in '-x port=...' argument.\n"
+			"Try -h for help.");
 	}
 
+	/* CLI debug level can not be smaller than debug_min specified
+	 * in ups.conf, and value specified for a driver config section
+	 * overrides the global one. Note that non-zero debug_min does
+	 * not impact foreground running mode.
+	 */
+	{
+		int nut_debug_level_upsconf = -1 ;
+		if ( nut_debug_level_global >= 0 && nut_debug_level_driver >= 0 ) {
+			nut_debug_level_upsconf = nut_debug_level_driver;
+		} else {
+			if ( nut_debug_level_global >= 0 ) nut_debug_level_upsconf = nut_debug_level_global;
+			if ( nut_debug_level_driver >= 0 ) nut_debug_level_upsconf = nut_debug_level_driver;
+		}
+		if ( nut_debug_level_upsconf > nut_debug_level )
+			nut_debug_level = nut_debug_level_upsconf;
+	}
 	upsdebugx(1, "debug level is '%d'", nut_debug_level);
 
 	new_uid = get_user_pwent(user);
@@ -585,13 +854,14 @@ int main(int argc, char **argv)
 
 	become_user(new_uid);
 
-	/* Only switch to statepath if we're not powering off */
-	/* This avoid case where ie /var is umounted */
-	if ((!do_forceshutdown) && (chdir(dflt_statepath())))
+	/* Only switch to statepath if we're not powering off
+	 * or not just dumping data (for discovery) */
+	/* This avoids case where ie /var is unmounted already */
+	if ((!do_forceshutdown) && (!dump_data) && (chdir(dflt_statepath())))
 		fatal_with_errno(EXIT_FAILURE, "Can't chdir to %s", dflt_statepath());
 
 	/* Setup signals to communicate with driver once backgrounded. */
-	if ((nut_debug_level == 0) && (!do_forceshutdown)) {
+	if ((background_flag != 0) && (!do_forceshutdown)) {
 		char	buffer[SMALLBUF];
 
 		setup_signals();
@@ -614,18 +884,25 @@ int main(int argc, char **argv)
 				break;
 			}
 
-			upslogx(LOG_WARNING, "Duplicate driver instance detected! Terminating other driver!");
+			upslogx(LOG_WARNING, "Duplicate driver instance detected (PID file %s exists)! Terminating other driver!", buffer);
 
 			/* Allow driver some time to quit */
 			sleep(5);
 		}
 
-		pidfn = xstrdup(buffer);
-		writepid(pidfn);	/* before backgrounding */
+		/* Only write pid if we're not just dumping data, for discovery */
+		if (!dump_data) {
+			pidfn = xstrdup(buffer);
+			writepid(pidfn);	/* before backgrounding */
+		}
 	}
 
 	/* clear out callback handler data */
 	memset(&upsh, '\0', sizeof(upsh));
+
+	/* note: device.type is set early to be overridden by the driver
+	 * when its a pdu! */
+	dstate_setinfo("device.type", "ups");
 
 	upsdrv_initups();
 
@@ -640,14 +917,18 @@ int main(int argc, char **argv)
 	if (do_forceshutdown)
 		forceshutdown();
 
-	/* note: device.type is set early to be overriden by the driver
-	 * when its a pdu! */
-	dstate_setinfo("device.type", "ups");
-
 	/* publish the top-level data: version numbers, driver name */
 	dstate_setinfo("driver.version", "%s", UPS_VERSION);
 	dstate_setinfo("driver.version.internal", "%s", upsdrv_info.version);
 	dstate_setinfo("driver.name", "%s", progname);
+
+	/*
+	 * If we are not debugging, send the early startup logs generated by
+	 * upsdrv_initinfo() and upsdrv_updateinfo() to syslog, not just stderr.
+	 * Otherwise these logs are lost.
+	 */
+	if ((nut_debug_level == 0) && (!dump_data))
+		syslogbit_set();
 
 	/* get the base data established before allowing connections */
 	upsdrv_initinfo();
@@ -676,14 +957,87 @@ int main(int argc, char **argv)
 	}
 
 	/* now we can start servicing requests */
-	dstate_init(progname, upsname);
+	/* Only write pid if we're not just dumping data, for discovery */
+	if (!dump_data) {
+		char * sockname = dstate_init(progname, upsname);
+		/* Normally we stick to the built-in account info,
+		 * so if they were not over-ridden - no-op here:
+		 */
+		if (strcmp(group, RUN_AS_GROUP)
+		||  strcmp(user,  RUN_AS_USER)
+		) {
+			int allOk = 1;
+			/* Tune group access permission to the pipe,
+			 * so that upsd can access it (using the
+			 * specified or retained default group):
+			 */
+			struct group *grp = getgrnam(group);
+			upsdebugx(1, "Group and/or user account for this driver "
+				"was customized ('%s:%s') compared to built-in "
+				"defaults. Fixing socket '%s' ownership/access.",
+				user, group, sockname);
+
+			if (grp == NULL) {
+				upsdebugx(1, "WARNING: could not resolve "
+					"group name '%s': %s",
+					group, strerror(errno)
+				);
+				allOk = 0;
+			} else {
+				struct stat statbuf;
+				mode_t mode;
+				if (chown(sockname, -1, grp->gr_gid)) {
+					upsdebugx(1, "WARNING: chown failed: %s",
+						strerror(errno)
+					);
+					allOk = 0;
+				}
+
+				if (stat(sockname, &statbuf)) {
+					/* Logically we'd fail chown above if file
+					 * does not exist or is not accessible, but
+					 * practically we only need stat for chmod
+					 */
+					upsdebugx(1, "WARNING: stat failed: %s",
+						strerror(errno)
+					);
+					allOk = 0;
+				} else {
+					/* chmod g+rw sockname */
+					mode = statbuf.st_mode;
+					mode |= S_IWGRP;
+					mode |= S_IRGRP;
+					if (chmod(sockname, mode)) {
+						upsdebugx(1, "WARNING: chmod failed: %s",
+							strerror(errno)
+						);
+						allOk = 0;
+					}
+				}
+			}
+
+			if (allOk) {
+				upsdebugx(1, "Group access for this driver successfully fixed");
+			} else {
+				upsdebugx(0, "WARNING: Needed to fix group access "
+					"to filesystem socket of this driver, but failed; "
+					"run the driver with more debugging to see how exactly.\n"
+					"Consumers of the socket, such as upsd data server, "
+					"can fail to interact with the driver and represent "
+					"the device: %s",
+					sockname);
+			}
+
+		}
+		free(sockname);
+	}
 
 	/* The poll_interval may have been changed from the default */
-	dstate_setinfo("driver.parameter.pollinterval", "%d", poll_interval);
+	dstate_setinfo("driver.parameter.pollinterval", "%jd", (intmax_t)poll_interval);
 
 	/* The synchronous option may have been changed from the default */
 	dstate_setinfo("driver.parameter.synchronous", "%s",
-		(do_synchronous==1)?"yes":"no");
+		(do_synchronous==1)?"yes":((do_synchronous==0)?"no":"auto"));
 
 	/* remap the device.* info from ups.* for the transition period */
 	if (dstate_getinfo("ups.mfr") != NULL)
@@ -693,7 +1047,7 @@ int main(int argc, char **argv)
 	if (dstate_getinfo("ups.serial") != NULL)
 		dstate_setinfo("device.serial", "%s", dstate_getinfo("ups.serial"));
 
-	if (nut_debug_level == 0) {
+	if (background_flag != 0) {
 		background();
 		writepid(pidfn);	/* PID changes when backgrounding */
 	}
@@ -707,13 +1061,27 @@ int main(int argc, char **argv)
 
 		upsdrv_updateinfo();
 
-		while (!dstate_poll_fds(timeout, extrafd) && !exit_flag) {
-			/* repeat until time is up or extrafd has data */
+		/* Dump the data tree (in upsc-like format) to stdout and exit */
+		if (dump_data) {
+			/* Wait for 'dump_data' update loops to ensure data completion */
+			if (update_count == dump_data) {
+				dstate_dump();
+				exit_flag = 1;
+			}
+			else
+				update_count++;
+		}
+		else {
+			while (!dstate_poll_fds(timeout, extrafd) && !exit_flag) {
+				/* repeat until time is up or extrafd has data */
+			}
 		}
 	}
 
 	/* if we get here, the exit flag was set by a signal handler */
-	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
+	/* however, avoid to "pollute" data dump output! */
+	if (!dump_data)
+		upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
 
 	exit(EXIT_SUCCESS);
 }

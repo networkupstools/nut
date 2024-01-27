@@ -18,6 +18,9 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifndef NUT_APCUPSD_UPS_H_SEEN
+#define NUT_APCUPSD_UPS_H_SEEN 1
+
 /* from usbhid-ups.h */
 /* --------------------------------------------------------------- */
 /* Struct & data for ups.status processing                         */
@@ -41,7 +44,8 @@ typedef struct {
 #define STATUS_CHRG		1024	/* charging */
 #define STATUS_DISCHRG		2048	/* discharging */
 
-status_lkp_t status_info[] = {
+/*
+static status_lkp_t status_info[] = {
   { "CAL", STATUS_CAL },
   { "TRIM", STATUS_TRIM },
   { "BOOST", STATUS_BOOST },
@@ -56,6 +60,7 @@ status_lkp_t status_info[] = {
   { "DISCHRG", STATUS_DISCHRG },
   { "NULL", 0 },
 };
+*/
 /* from usbhid-ups.h */
 
 typedef struct {
@@ -89,6 +94,7 @@ typedef struct {
 #define DU_FLAG_TIME			8
 #define DU_FLAG_FW1			16
 #define DU_FLAG_FW2			32
+#define DU_FLAG_PRESERVE 	64
 
 /* ------------ */
 /*  Data table  */
@@ -124,14 +130,21 @@ static apcuspd_info_t nut_data[] =
 	{ "LINEFREQ", "input.frequency", ST_FLAG_RW, 1, "%1.1f", DU_FLAG_NONE, NULL },
 	{ "OUTPUTV", "output.voltage", ST_FLAG_RW, 1, "%1.1f", DU_FLAG_NONE, NULL },
 	{ "LINEFREQ", "output.frequency", ST_FLAG_RW, 1, "%1.1f", DU_FLAG_NONE, NULL },
-	{ "BCHARGE", "battery.charge", ST_FLAG_RW, 1, "%1.1f", DU_FLAG_NONE, NULL },
+	{ "BCHARGE", "battery.charge", ST_FLAG_RW, 1, "%1.1f", DU_FLAG_PRESERVE, NULL },
 	{ "MBATTCHG", "battery.charge.low", ST_FLAG_RW, 1, "%.0f", DU_FLAG_NONE, NULL },
 	{ "BATTDATE", "battery.date", ST_FLAG_STRING /* | ST_FLAG_RW */, 16, NULL, DU_FLAG_DATE, NULL },
 	{ "BATTV", "battery.voltage", 0, 1, "%1.1f", DU_FLAG_NONE, NULL },
 	{ "NOMBATTV", "battery.voltage.nominal", 0, 1, "%1.1f", DU_FLAG_NONE, NULL },
-	{ "TIMELEFT", "battery.runtime", ST_FLAG_RW, 60, "%1.1f", DU_FLAG_NONE, NULL },
+	{ "TIMELEFT", "battery.runtime", ST_FLAG_RW, 60, "%1.1f", DU_FLAG_PRESERVE, NULL },
 	{ "MINTIMEL", "battery.runtime.low", ST_FLAG_RW, 60, "%.0f", DU_FLAG_NONE, NULL },
 	{ "RETPCT", "battery.charge.restart", ST_FLAG_RW, 1, "%1.1f", DU_FLAG_NONE, NULL },
 	{ "NOMPOWER", "ups.realpower.nominal", 0, 1, "%1.1f", DU_FLAG_INIT, NULL },
+	{ "LOAD_W", "ups.realpower", 0, 1, "%1.1f", DU_FLAG_NONE, NULL },
+	{ "LOADAPNT", "power.percent", ST_FLAG_RW, 1, "%1.1f", DU_FLAG_NONE, NULL },
+	{ "OUTCURNT", "output.current", 0, 1, "%1.2f", DU_FLAG_NONE, NULL },
+	{ "LOAD_VA", "ups.power", 0, 1, "%1.1f", DU_FLAG_NONE, NULL },
+	{ "NOMAPNT", "ups.power.nominal", 0, 1, "%.0f", DU_FLAG_INIT, NULL },
 	{ NULL, NULL, 0, 0, NULL, DU_FLAG_NONE, NULL }
 };
+
+#endif  /* NUT_APCUPSD_UPS_H_SEEN */

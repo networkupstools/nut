@@ -24,14 +24,22 @@
  */
 
 #include "main.h"     /* for getval() */
+#include "nut_float.h"
+#include "hidparser.h" /* for FindObject_with_ID_Node() */
 #include "usbhid-ups.h"
 #include "cps-hid.h"
 #include "usb-common.h"
 
-#define CPS_HID_VERSION      "CyberPower HID 0.4"
+#define CPS_HID_VERSION      "CyberPower HID 0.6"
 
 /* Cyber Power Systems */
 #define CPS_VENDORID 0x0764
+
+/* Values for correcting the HID on some models
+ * where LogMin and LogMax are set incorrectly in the HID.
+ */
+#define CPS_VOLTAGE_LOGMIN 0
+#define CPS_VOLTAGE_LOGMAX 511 /* Includes safety margin. */
 
 /*! Battery voltage scale factor.
  * For some devices, the reported battery voltage is off by factor
@@ -49,6 +57,8 @@ static const double battery_voltage_sanity_check = 1.4;
 
 static void *cps_battery_scale(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	might_need_battery_scale = 1;
 	return NULL;
 }
@@ -63,7 +73,7 @@ static usb_device_id_t cps_usb_device_table[] = {
 	{ USB_DEVICE(CPS_VENDORID, 0x0601), NULL },
 
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 
 /*! Adjusts @a battery_scale if voltage is well above nominal.
@@ -84,7 +94,7 @@ static void cps_adjust_battery_scale(double batt_volt)
 	}
 
 	batt_volt_nom = strtod(batt_volt_nom_str, NULL);
-	if(batt_volt_nom == 0) {
+	if(d_equal(batt_volt_nom, 0)) {
 		upsdebugx(3, "%s: 'battery.voltage.nominal' is %s", __func__, batt_volt_nom_str);
 		return;
 	}
@@ -114,7 +124,7 @@ static const char *cps_battvolt_fun(double value)
 }
 
 static info_lkp_t cps_battvolt[] = {
-	{ 0, NULL, &cps_battvolt_fun }
+	{ 0, NULL, &cps_battvolt_fun, NULL }
 };
 
 /* returns statically allocated string - must not use it again before
@@ -130,7 +140,7 @@ static const char *cps_battcharge_fun(double value)
 }
 
 static info_lkp_t cps_battcharge[] = {
-	{ 0, NULL, &cps_battcharge_fun }
+	{ 0, NULL, &cps_battcharge_fun, NULL }
 };
 
 /* --------------------------------------------------------------- */
@@ -193,12 +203,14 @@ static hid_info_t cps_hid2nut[] = {
   { "BOOL", 0, 0, "UPS.Output.Overload", NULL, NULL, 0, overload_info },
 
   /* Input page */
+  { "input.frequency", 0, 0, "UPS.Input.Frequency", NULL, "%.1f", 0, NULL },
   { "input.voltage.nominal", 0, 0, "UPS.Input.ConfigVoltage", NULL, "%.0f", 0, NULL },
   { "input.voltage", 0, 0, "UPS.Input.Voltage", NULL, "%.1f", 0, NULL },
   { "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.LowVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
   { "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.HighVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 
   /* Output page */
+  { "output.frequency", 0, 0, "UPS.Output.Frequency", NULL, "%.1f", 0, NULL },
   { "output.voltage", 0, 0, "UPS.Output.Voltage", NULL, "%.1f", 0, NULL },
   { "output.voltage.nominal", 0, 0, "UPS.Output.ConfigVoltage", NULL, "%.0f", 0, NULL },
 
@@ -257,6 +269,62 @@ static int cps_claim(HIDDevice_t *hd) {
 	}
 }
 
+/* CPS Models like CP900EPFCLCD return a syntactically legal but incorrect
+ * Report Descriptor whereby the Input High Transfer Max/Min values
+ * are used for the Output Voltage Usage Item limits.
+ * Additionally the Input Voltage LogMax is set incorrectly for EU models.
+ * This corrects them by finding and applying fixed
+ * voltage limits as being more appropriate.
+ */
+
+static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
+	HIDData_t *pData;
+
+	int vendorID = pDev->VendorID;
+	int productID = pDev->ProductID;
+	if (vendorID != CPS_VENDORID || productID != 0x0501) {
+		return 0;
+	}
+
+	upsdebugx(3, "Attempting Report Descriptor fix for UPS: Vendor: %04x, Product: %04x", vendorID, productID);
+
+	/* Apply the fix cautiously by looking for input voltage, high voltage transfer and output voltage report usages.
+	 * If the output voltage log min/max equals high voltage transfer log min/max then the bug is present.
+	 * To fix it Set both the input and output voltages to pre-defined settings.
+	 */
+
+	if ((pData=FindObject_with_ID_Node(pDesc_arg, 16, USAGE_POW_HIGH_VOLTAGE_TRANSFER))) {
+		long hvt_logmin = pData->LogMin;
+		long hvt_logmax = pData->LogMax;
+		upsdebugx(4, "Report Descriptor: hvt input LogMin: %ld LogMax: %ld", hvt_logmin, hvt_logmax);
+
+		if ((pData=FindObject_with_ID_Node(pDesc_arg, 18, USAGE_POW_VOLTAGE))) {
+			long output_logmin = pData->LogMin;
+			long output_logmax = pData->LogMax;
+			upsdebugx(4, "Report Descriptor: output LogMin: %ld LogMax: %ld",
+					output_logmin, output_logmax);
+
+			if (hvt_logmin == output_logmin && hvt_logmax == output_logmax) {
+				pData->LogMin = CPS_VOLTAGE_LOGMIN;
+				pData->LogMax = CPS_VOLTAGE_LOGMAX;
+				upsdebugx(3, "Fixing Report Descriptor. Set Output Voltage LogMin = %d, LogMax = %d",
+							CPS_VOLTAGE_LOGMIN , CPS_VOLTAGE_LOGMAX);
+				if ((pData=FindObject_with_ID_Node(pDesc_arg, 15, USAGE_POW_VOLTAGE))) {
+					long input_logmin = pData->LogMin;
+					long input_logmax = pData->LogMax;
+					upsdebugx(4, "Report Descriptor: input LogMin: %ld LogMax: %ld",
+							input_logmin, input_logmax);
+					upsdebugx(3, "Fixing Report Descriptor. Set Input Voltage LogMin = %d, LogMax = %d",
+							CPS_VOLTAGE_LOGMIN , CPS_VOLTAGE_LOGMAX);
+				}
+
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
 subdriver_t cps_subdriver = {
 	CPS_HID_VERSION,
 	cps_claim,
@@ -265,4 +333,5 @@ subdriver_t cps_subdriver = {
 	cps_format_model,
 	cps_format_mfr,
 	cps_format_serial,
+	cps_fix_report_desc,
 };

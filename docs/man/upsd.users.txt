@@ -3,6 +3,7 @@ UPSD.USERS(5)
 
 NAME
 ----
+
 upsd.users - Administrative user definitions for NUT upsd
 
 DESCRIPTION
@@ -12,7 +13,7 @@ Administrative commands such as setting variables and the instant
 commands are powerful, and access to them needs to be restricted.  This
 file defines who may access them, and what is available.
 
-Each user gets its own section.  The fields in that section set the 
+Each user gets its own section.  The fields in that section set the
 parameters associated with that user's privileges.  The section begins
 with the name of the user in brackets, and continues until the next user
 name in brackets or EOF.  These users are independent of /etc/passwd.
@@ -30,13 +31,13 @@ Here are some examples to get you started:
 		instcmds = test.panel.start
 		instcmds = test.panel.stop
 
-	[monmaster]
+	[upswired]
 		password = blah
-		upsmon master
+		upsmon primary
 
-	[monslave]
+	[observer]
 		password = abcd
-		upsmon slave
+		upsmon secondary
 
 FIELDS
 ------
@@ -53,7 +54,7 @@ actions are:
 
 	SET;; change the value of certain variables in the UPS
 
-	FSD;; set the forced shutdown flag in the UPS.  This is 
+	FSD;; set the forced shutdown flag in the UPS.  This is
 equivalent to an "on battery + low battery" situation for the purposes
 of monitoring.
 
@@ -72,7 +73,7 @@ of most of the known command names.
 *upsmon*::
 
 Add the necessary actions for a upsmon process to work.  This is either
-set to "master" or "slave".
+set to "primary" or "secondary".
 +
 Do not attempt to assign actions to upsmon by hand, as you may miss
 something important.  This method of designating a "upsmon user" was
@@ -84,7 +85,8 @@ SEE ALSO
 
 linkman:upsd[8], linkman:upsd.conf[5]
 
-INTERNET RESOURCES
-------------------
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 

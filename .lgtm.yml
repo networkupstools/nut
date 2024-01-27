@@ -1,0 +1,20 @@
+# NUT uses python scripts generated from templates saved mostly into *.py.in
+path_classifiers:
+  template:
+    - exclude: "**/*.py.in"
+    - exclude: "**/NUT-Monitor*.in"
+
+queries:
+- exclude: cpp/fixme-comment
+- exclude: python/fixme-comment
+
+extraction:
+  python:
+    python_setup:
+      # Is there a way to LGTM both 2 and 3?..
+      version: 2
+      setup_py: false
+    index:
+      filters:
+        - include: "**/*.py.in"
+        - include: "**/NUT-Monitor*.in"

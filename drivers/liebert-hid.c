@@ -4,6 +4,7 @@
  *  2003 - 2008 Arnaud Quette <arnaud.quette@free.fr>
  *  2005 - 2006 Peter Selinger <selinger@users.sourceforge.net>
  *  2007        Charles Lepple <clepple@gmail.com>
+ *  2018        Markus "Links2004" <help.markus+gitk@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,7 +27,7 @@
 #include "liebert-hid.h"
 #include "usb-common.h"
 
-#define LIEBERT_HID_VERSION     "Phoenixtec/Liebert HID 0.3"
+#define LIEBERT_HID_VERSION     "Phoenixtec/Liebert HID 0.41"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* Phoenixtec Power Co., Ltd */
@@ -43,7 +44,7 @@ static usb_device_id_t liebert_usb_device_table[] = {
 	{ USB_DEVICE(LIEBERT_VENDORID, 0xffff), NULL },
 
 	/* Terminating entry */
-	{ -1, -1, NULL }
+	{ 0, 0, NULL }
 };
 
 /* --------------------------------------------------------------- */
@@ -78,13 +79,27 @@ static hid_info_t liebert_hid2nut[] = {
   { "unmapped.ups.powersummary.imanufacturer", 0, 0, "UPS.PowerSummary.iManufacturer", NULL, "%.0f", 0, NULL },
 #endif
 
-  { "battery.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, "%.0f", 0, NULL },
-  { "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%.0f", 0, NULL },
+  { "battery.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, "%.2f", 0, NULL },
+  { "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%.2f", HU_FLAG_STATIC, NULL },
   { "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", 0, NULL },
   { "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", 0, NULL },
   { "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", 0, stringid_conversion },
 
   { "ups.load",   0, 0, "UPS.PowerSummary.PercentLoad", NULL, "%.0f", 0, NULL },
+
+  { "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", NULL, "%.1f", 0, NULL },
+  { "output.frequency", 0, 0, "UPS.PowerConverter.Output.Frequency", NULL, "%.2f", 0, NULL },
+
+  { "output.transfer.high", 0, 0, "UPS.PowerConverter.Output.HighVoltageTransfer", NULL, "%.1f", HU_FLAG_SEMI_STATIC, NULL },
+  { "output.transfer.low", 0, 0, "UPS.PowerConverter.Output.LowVoltageTransfer", NULL, "%.1f", HU_FLAG_SEMI_STATIC, NULL },
+
+  { "input.voltage", 0, 0, "UPS.PowerConverter.Input.[1].Voltage", NULL, "%.1f", 0, NULL },
+  { "input.frequency", 0, 0, "UPS.PowerConverter.Input.[1].Frequency", NULL, "%.2f", 0, NULL },
+
+  { "input.transfer.low", 0, 0, "UPS.PowerConverter.Output.ffff0057", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+  { "input.transfer.high", 0, 0, "UPS.PowerConverter.Output.ffff0058", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL},
+  { "input.frequency.transfer.low", 0, 0, "UPS.PowerConverter.Output.ffff00f9", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+  { "input.frequency.transfer.high", 0, 0, "UPS.PowerConverter.Output.ffff00f8", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL},
 
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, "%.0f", HU_FLAG_QUICK_POLL, online_info },
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL, "%.0f", HU_FLAG_QUICK_POLL, lowbatt_info },
@@ -142,4 +157,5 @@ subdriver_t liebert_subdriver = {
 	liebert_format_model,
 	liebert_format_mfr,
 	liebert_format_serial,
+	fix_report_desc,
 };

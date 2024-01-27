@@ -52,7 +52,9 @@ extern bool_t	 	use_interrupt_pipe;	/* Set to FALSE if interrupt reports should 
 					/* The driver will wait for Interrupt */
 					/* and do "light poll" in the meantime */
 
-#define MAX_STRING_SIZE    	128
+#ifndef MAX_STRING_SIZE
+#define MAX_STRING_SIZE	128
+#endif
 
 
 /* --------------------------------------------------------------- */
@@ -66,6 +68,9 @@ typedef struct {
 	const char	*(*fun)(double hid_value);	/* optional HID to NUT mapping */
 	double	(*nuf)(const char *nut_value);		/* optional NUT to HID mapping */
 } info_lkp_t;
+
+/* accessor on the status */
+extern unsigned ups_status_get(void);
 
 /* declarations of public lookup tables */
 /* boolean status values from UPS */
@@ -110,6 +115,40 @@ extern info_lkp_t hex_conversion[];
 extern info_lkp_t stringid_conversion[];
 extern info_lkp_t divide_by_10_conversion[];
 extern info_lkp_t kelvin_celsius_conversion[];
+
+/* ---------------------------------------------------------------------- */
+/* data for processing boolean values from UPS */
+
+#define	STATUS(x)	((unsigned)1<<x)
+
+typedef enum {
+	ONLINE = 0,	/* on line */
+	DISCHRG,	/* discharging */
+	CHRG,		/* charging */
+	LOWBATT,	/* low battery */
+	OVERLOAD,	/* overload */
+	REPLACEBATT,	/* replace battery */
+	SHUTDOWNIMM,	/* shutdown imminent */
+	TRIM,		/* SmartTrim */
+	BOOST,		/* SmartBoost */
+	BYPASSAUTO,	/* on automatic bypass */
+	BYPASSMAN,	/* on manual/service bypass */
+	OFF,		/* ups is off */
+	CAL,		/* calibration */
+	OVERHEAT,	/* overheat; Belkin, TrippLite */
+	COMMFAULT,	/* UPS fault; Belkin, TrippLite */
+	DEPLETED,	/* battery depleted; Belkin */
+	TIMELIMITEXP,	/* time limit expired; APC */
+	FULLYCHARGED,	/* battery full; CyberPower */
+	AWAITINGPOWER,	/* awaiting power; Belkin, TrippLite */
+	FANFAIL,	/* fan failure; MGE */
+	NOBATTERY,	/* battery missing; MGE */
+	BATTVOLTLO,	/* battery voltage too low; MGE */
+	BATTVOLTHI,	/* battery voltage too high; MGE */
+	CHARGERFAIL,	/* battery charger failure; MGE */
+	VRANGE,		/* voltage out of range */
+	FRANGE		/* frequency out of range */
+} status_bit_t;
 
 /* --------------------------------------------------------------- */
 /* Structure containing information about how to get/set data      */
@@ -169,6 +208,7 @@ typedef struct {
 	const char *(*format_model)(HIDDevice_t *hd);  /* driver-specific methods */
 	const char *(*format_mfr)(HIDDevice_t *hd);    /* for preparing human-    */
 	const char *(*format_serial)(HIDDevice_t *hd); /* readable information    */
+	int	(*fix_report_desc)(HIDDevice_t *pDev, HIDDesc_t *arg_pDesc);		/* Function called to potentially remedy defects in the parsed Report Descriptor caused by buggy HID contents*/
 } subdriver_t;
 
 /* the following functions are exported for the benefit of subdrivers */
@@ -177,4 +217,5 @@ int setvar(const char *varname, const char *val);
 
 void possibly_supported(const char *mfr, HIDDevice_t *hd);
 
+int fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *arg_pDesc);
 #endif /* USBHID_UPS_H */

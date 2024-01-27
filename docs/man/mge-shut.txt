@@ -1,4 +1,4 @@
-MGE-SHUT(8) 
+MGE-SHUT(8)
 ===========
 
 NAME
@@ -44,7 +44,7 @@ sent (via the *-k* switch).
 +
 The default value is 20 (in seconds). Usually this *must be lower* than
 'ondelay', but the driver will *not* warn you upon startup if it isn't.
- 
+
 *ondelay*='num'::
 Set the timer for the UPS to switch on in case the power returns after the
 kill power command had been sent but before the actual switch off. This
@@ -53,7 +53,7 @@ a power failure.
 +
 The default value is 30 (in seconds). Usually this *must be greater*
 than offdelay, but the driver will *not* warn you upon startup if it
-isn't. Some UPS'es will restart no matter what, even if the power is
+isn't. Some UPSes will restart no matter what, even if the power is
 (still) out at the moment this timer elapses. In that case, you could try
 if setting 'ondelay = -1' in *ups.conf* helps.
 +
@@ -90,8 +90,10 @@ SEE ALSO
 
 The core driver
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources
 ~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

@@ -1,4 +1,4 @@
-/* everups.c - support for Ever UPS models
+/* everups.c - support for Ever UPS models (serial)
 
    Copyright (C) 2001  Bartek Szady <bszx@bszxdomain.edu.eu.org>
 
@@ -20,8 +20,8 @@
 #include "main.h"
 #include "serial.h"
 
-#define DRIVER_NAME	"Ever UPS driver"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_NAME	"Ever UPS driver (serial)"
+#define DRIVER_VERSION	"0.04"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -64,9 +64,9 @@ static int InitUpsType(void)
 
 static const char *GetTypeUpsName(void)
 {
-        switch(upstype)
-        {
-	        case 67: return "NET 500-DPC";
+	switch(upstype)
+	{
+		case 67: return "NET 500-DPC";
 		case 68: return "NET 700-DPC";
 		case 69: return "NET 1000-DPC";
 		case 70: return "NET 1400-DPC";
@@ -95,7 +95,7 @@ void upsdrv_updateinfo(void)
 	unsigned long acuV;
 	unsigned long lineV;
 	double	fVal;
-	
+
 	if (!Code(2)) {
 		upslog_with_errno(LOG_INFO, "Code failed");
 		dstate_datastale();
@@ -106,7 +106,7 @@ void upsdrv_updateinfo(void)
 	ser_get_char(upsfd, recBuf, 3, 0);
 	if ((recBuf[0] & 1) !=0)
 		standby=1;
-	else 
+	else
 		battery=(recBuf[0] &4) !=0;
 	if (Code(1)) {  /*Accumulator voltage value*/
 		ser_send_char(upsfd, 189);

@@ -37,7 +37,7 @@ within this string are:
 
 %TIME format%;; Insert the time with strftime formatting
 
-%ETIME%;; Insert the number of seconds, ala time_t.  This is now a 
+%ETIME%;; Insert the number of seconds, ala time_t.  This is now a
 10 digit number.
 
 %HOST%;; insert the local hostname
@@ -50,8 +50,8 @@ within this string are:
 
 The default format string is:
 
- %TIME @Y@m@d @H@M@S% %VAR battery.charge% %VAR input.voltage% 
- %VAR ups.load% [%VAR ups.status%] %VAR ups.temperature% 
+ %TIME @Y@m@d @H@M@S% %VAR battery.charge% %VAR input.voltage%
+ %VAR ups.load% [%VAR ups.status%] %VAR ups.temperature%
  %VAR input.frequency%
 
 *-i* 'interval'::
@@ -65,16 +65,23 @@ the linkman:upsclient[3] library.
 
 Store the results in this file.
 +
-You can use "-" for stdout, but upslog will remain in the foreground.
+You can use "-" for stdout, but upslog will remain in the foreground
+by default.
+
+*-F*::
+upslog will run in the foreground, regardless of logging target.
+
+*-B*::
+upslog will run in the background, regardless of logging target.
 
 *-s* 'ups'::
-Monitor this UPS.  The format for this option is  
+Monitor this UPS.  The format for this option is
 +upsname[@hostname[:port]]+.  The default hostname is "localhost".
 
 *-u* 'username'::
 
-If started as root, upsmon will *setuid*(2) to the user id
-associated with 'username' for security.  
+If started as root, upslog will *setuid*(2) to the user id
+associated with 'username' for security.
 +
 If 'username' is not defined, it will use the value that was compiled into the
 program.  This defaults to "nobody", which is less than ideal.
@@ -108,13 +115,16 @@ SEE ALSO
 
 Server:
 ~~~~~~~
+
 linkman:upsd[8]
 
 Clients:
 ~~~~~~~~
+
 linkman:upsc[8], linkman:upscmd[8],
 linkman:upsrw[8], linkman:upsmon[8], linkman:upssched[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

@@ -20,8 +20,8 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#ifndef SSTATE_H_SEEN
-#define SSTATE_H_SEEN
+#ifndef NUT_SSTATE_H_SEEN
+#define NUT_SSTATE_H_SEEN 1
 
 #include "state.h"
 #include "upstype.h"
@@ -40,7 +40,7 @@ void sstate_disconnect(upstype_t *ups);
 void sstate_readline(upstype_t *ups);
 const char *sstate_getinfo(const upstype_t *ups, const char *var);
 int sstate_getflags(const upstype_t *ups, const char *var);
-int sstate_getaux(const upstype_t *ups, const char *var);
+long sstate_getaux(const upstype_t *ups, const char *var);
 const enum_t *sstate_getenumlist(const upstype_t *ups, const char *var);
 const range_t *sstate_getrangelist(const upstype_t *ups, const char *var);
 const cmdlist_t *sstate_getcmdlist(const upstype_t *ups);
@@ -59,4 +59,4 @@ const st_tree_t *sstate_getnode(const upstype_t *ups, const char *varname);
 /* *INDENT-ON* */
 #endif
 
-#endif /* SSTATE_H_SEEN */
+#endif /* NUT_SSTATE_H_SEEN */

@@ -1,6 +1,8 @@
 /* solis.h -  Microsol Solis UPS hardware
 
-   Copyright (C) 2004  Silvino B. Magalhaes  <sbm2yk@gmail.com>
+   Copyright (C) 2004  Silvino B. Magalhaes    <sbm2yk@gmail.com>
+                 2019  Roberto Panerai Velloso <rvelloso@gmail.com>
+
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -22,7 +24,7 @@
    2004/10/30 - Version 0.40 - add model data structs
    2004/11/22 - Version 0.50 - add internal e external shutdown programming
    2005/06/16 - Version 0.60 - save external shutdown programming to ups,
- 			       support new cables and Solaris compilation   
+                               support new cables and Solaris compilation
    2015/09/19 - Version 0.63 - patch for correct reading for Microsol Back-Ups BZ1200-BR
 
 */
@@ -30,16 +32,26 @@
 #ifndef INCLUDED_SOLIS_H
 #define INCLUDED_SOLIS_H
 
+#include "nut_stdint.h"
+
+/* General FIXMEs:
+ * * "static" declarations belong in some one single C source;
+ *   headers should use "extern" to refer linker to look for
+ *   vars in other object files
+ * * use a common definition of bool_t
+ */
 typedef int bool_t;
 
 /* autonomy constants */
 
-const static int bext[5] = {14,18,28,18,1};
-const static int nompow[5] = { 1000,1500,2000,3000,1200 };
-const static int inds[6] = { 0,0,1,2,3,4 };
-const static double InVolt_offset = 30.;
+static const int bext[5] = {14,18,28,18,1};
+static const int nompow[5] = { 1000,1500,2000,3000,1200 };
+static const int inds[6] = { 0,0,1,2,3,4 };
+static const double InVolt_offset = 30.;
+#define PACKET_SIZE 25
+static const size_t packet_size = PACKET_SIZE;
 
-const static struct {
+static const struct {
          int maxi;              /* power internals */
          int minc[21];          /* power minimal index */
          int maxc[21];          /* power maximus index */
@@ -202,7 +214,7 @@ const static struct {
  * Solis constants for data ajustment
  * ----------------------------------------------------------- */
 
-const static struct {
+static const struct {
   double m_infreq;
   double m_appp_offset;
   double m_involt193[2];
@@ -309,34 +321,34 @@ const static struct {
 
 
    */
-  { 101800.0, //m_infreq
-    56.0, //m_appp_offset
-    { 1.64, 9.34 },// m_involt193 - ok
-    { 2.5, -250.0 }, //m_involt194
-    { 35.0, 1000.0 }, //m_incurr
-    { 0.1551, 0.2525 }, //m_battvolt
-    { { 1.41, 13.0 }, { 1.4, 17.0 } }, //m_outvolt_s
-    { { 2.73, 25.0 }, { 2.73, 30.0 } }, //m_outvolt_i
-    { { 1.0/8.15, 0.25 }, { 1.0/8.15, 0.25 } }, //m_outcurr_s
-    { { 1.0/16.0, 0.4 }, { 1.0/15.0, 0.4 } }, //m_outcurr_i
-    { { 1.0/4.87, 19.0 }, { 1.0/4.55, 17.0 } }, //m_utilp_s
-    { { 1.0/4.78, 52.0 }, { 1.0/4.55, 55.0 } }, //m_utilp_i
-    { { 1.0/5.15, 29.0 }, { 1.0/4.8, 26.0 } },  //m__app_s
-    { { 1.0/4.78, 52.0 }, { 1.0/4.55, 55.0 } } //m_app_i
+  { 101800.0, /* m_infreq */
+    56.0, /* m_appp_offset */
+    { 1.64, 9.34 }, /* m_involt193 - ok */
+    { 2.5, -250.0 }, /* m_involt194 */
+    { 35.0, 1000.0 }, /* m_incurr */
+    { 0.1551, 0.2525 }, /* m_battvolt */
+    { { 1.41, 13.0 }, { 1.4, 17.0 } }, /* m_outvolt_s */
+    { { 2.73, 25.0 }, { 2.73, 30.0 } }, /* m_outvolt_i */
+    { { 1.0/8.15, 0.25 }, { 1.0/8.15, 0.25 } }, /* m_outcurr_s */
+    { { 1.0/16.0, 0.4 }, { 1.0/15.0, 0.4 } }, /* m_outcurr_i */
+    { { 1.0/4.87, 19.0 }, { 1.0/4.55, 17.0 } }, /* m_utilp_s */
+    { { 1.0/4.78, 52.0 }, { 1.0/4.55, 55.0 } }, /* m_utilp_i */
+    { { 1.0/5.15, 29.0 }, { 1.0/4.8, 26.0 } },  /* m__app_s */
+    { { 1.0/4.78, 52.0 }, { 1.0/4.55, 55.0 } } /* m_app_i */
   }
 };
 
 /* Date, time and programming group */
-static int const BASE_YEAR = 1998;
+static int const BASE_YEAR = 1998; /* Note: code below uses relative "unsigned char" years */
 static int Day, Month, Year;
 static int isprogram = 0, progshut = 0, prgups = 0;
 static int dian=0, mesn=0, anon=0, weekn=0;
 static int dhour, dmin, lhour, lmin, ihour,imin, isec, hourshut, minshut;
-static unsigned char DaysOnWeek=0, DaysOffWeek=0, DaysStd = 0;
+static uint8_t DaysOnWeek=0, DaysOffWeek=0, DaysStd = 0;
 static char seman[4];
 
 /* buffers */
-static unsigned char RecPack[25];
+static unsigned char RecPack[PACKET_SIZE];
 static unsigned char ConfigPack[12];
 
 /*
@@ -348,9 +360,6 @@ unsigned char DumpPack[242];
 static const char *Model;
 static int SolisModel, imodel;
 static int InputValue, Out220;
-
-/* protocol */
-static int pacsize;
 
 /* Status group */
 static unsigned char InputStatus,OutputStatus, BattStatus;
@@ -375,12 +384,12 @@ static double BattVoltage, Temperature, batcharge;
 static double AppPower, UtilPower, upscharge;
 static int ChargePowerFactor, NominalPower, UpsPowerFactor;
 
-static void prnInfo(void);
-static int  IsToday( unsigned char, int );
-static void AutonomyCalc( int );
-static void ScanReceivePack(void);
-static void CommReceive(const char*,  int );
-static void getbaseinfo(void);
-static void getupdateinfo(void);
+static void print_info(void);
+static int  is_today( unsigned char, int );
+static void autonomy_calc( int );
+static void scan_received_pack(void);
+static void comm_receive(const unsigned char*, size_t);
+static void get_base_info(void);
+static void get_update_info(void);
 
 #endif /* INCLUDED_SOLIS_H */

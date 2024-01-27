@@ -1,4 +1,4 @@
-NUT-IPMIPSU(8) 
+NUT-IPMIPSU(8)
 ==============
 
 NAME
@@ -100,16 +100,19 @@ Here is an example output for a Dell r610 server:
 
 AUTHOR
 ------
+
 Arnaud Quette <arnaud.quette@free.fr>
 
 SEE ALSO
 --------
+
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
 
-GNU FreeIPMI home page: http://www.gnu.org/software/freeipmi/
+* The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+* GNU FreeIPMI home page: http://www.gnu.org/software/freeipmi/

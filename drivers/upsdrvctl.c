@@ -17,6 +17,8 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h"  /* must be the first header */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,10 +26,11 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
-#include "config.h"
 #include "proto.h"
 #include "common.h"
 #include "upsconf.h"
+#include "attribute.h"
+#include "nut_stdint.h"
 
 typedef struct {
 	char	*upsname;
@@ -41,6 +44,9 @@ typedef struct {
 static ups_t	*upstable = NULL;
 
 static int	maxsdorder = 0, testmode = 0, exec_error = 0;
+
+	/* Should we wait for driver (1) or "parallelize" drivers start (0) */
+static int	waitfordrivers = 1;
 
 	/* timer - keeps us from getting stuck if a driver hangs */
 static int	maxstartdelay = 45;
@@ -56,6 +62,9 @@ static char	*driverpath = NULL;
 
 	/* passthrough to the drivers: chroot path and new user name */
 static char	*pt_root = NULL, *pt_user = NULL;
+
+	/* flag to pass nut_debug_level to launched drivers (as their -D... args) */
+static int	nut_debug_level_passthrough = 0;
 
 void do_upsconf_args(char *upsname, char *var, char *val)
 {
@@ -76,6 +85,9 @@ void do_upsconf_args(char *upsname, char *var, char *val)
 
 		if (!strcmp(var, "retrydelay"))
 			retrydelay = atoi(val);
+
+		if (!strcmp(var, "nowait"))
+			waitfordrivers = 0;
 
 		/* ignore anything else - it's probably for main */
 
@@ -144,13 +156,14 @@ static void stop_driver(const ups_t *ups)
 	ret = stat(pidfn, &fs);
 
 	if ((ret != 0) && (ups->port != NULL)) {
+		upslog_with_errno(LOG_ERR, "Can't open %s", pidfn);
 		snprintf(pidfn, sizeof(pidfn), "%s/%s-%s.pid", altpidpath(),
 			ups->driver, xbasename(ups->port));
 		ret = stat(pidfn, &fs);
 	}
 
 	if (ret != 0) {
-		upslog_with_errno(LOG_ERR, "Can't open %s", pidfn);
+		upslog_with_errno(LOG_ERR, "Can't open %s either", pidfn);
 		exec_error++;
 		return;
 	}
@@ -171,6 +184,8 @@ static void stop_driver(const ups_t *ups)
 
 static void waitpid_timeout(const int sig)
 {
+	NUT_UNUSED_VARIABLE(sig);
+
 	/* do nothing */
 	return;
 }
@@ -203,15 +218,25 @@ static void forkexec(char *const argv[], const ups_t *ups)
 		int	wstat;
 		struct sigaction	sa;
 
+		/* Handle "parallel" drivers startup */
+		if (waitfordrivers == 0) {
+			upsdebugx(2, "'nowait' set, continuing...");
+			return;
+		}
+
 		sigemptyset(&sa.sa_mask);
 		sa.sa_flags = 0;
 		sa.sa_handler = waitpid_timeout;
 		sigaction(SIGALRM, &sa, NULL);
 
-		if (ups->maxstartdelay != -1)
-			alarm(ups->maxstartdelay);
-		else
-			alarm(maxstartdelay);
+		/* Use the local maxstartdelay, if available */
+		if (ups->maxstartdelay != -1) {
+			if (ups->maxstartdelay >= 0)
+				alarm((unsigned int)ups->maxstartdelay);
+		} else { /* Otherwise, use the global (or default) value */
+			if (maxstartdelay >= 0)
+				alarm((unsigned int)maxstartdelay);
+		}
 
 		ret = waitpid(pid, &wstat, 0);
 
@@ -257,8 +282,8 @@ static void forkexec(char *const argv[], const ups_t *ups)
 
 static void start_driver(const ups_t *ups)
 {
-	char	*argv[8];
-	char	dfn[SMALLBUF];
+	char	*argv[9];
+	char	dfn[SMALLBUF], dbg[SMALLBUF];
 	int	ret, arg = 0;
 	int	initial_exec_error = exec_error, drv_maxretry = maxretry;
 	struct stat	fs;
@@ -272,6 +297,63 @@ static void start_driver(const ups_t *ups)
 		fatal_with_errno(EXIT_FAILURE, "Can't start %s", dfn);
 
 	argv[arg++] = dfn;
+
+	if (nut_debug_level_passthrough > 0
+	&&  nut_debug_level > 0
+	&&  sizeof(dbg) > 3
+	) {
+		size_t d, m;
+
+		/* cut-off point: buffer size or requested debug level */
+		m = sizeof(dbg) - 1;	/* leave a place for '\0' */
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wtautological-compare"
+# pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+		/* Different platforms, different sizes, none fits all... */
+		/* can we fit this many 'D's? */
+		if ((uintmax_t)SIZE_MAX > (uintmax_t)nut_debug_level /* else can't assign, requested debug level is huge */
+		&&  (size_t)nut_debug_level + 1 < m
+		) {
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
+			/* need even fewer (leave a place for '-'): */
+			m = (size_t)nut_debug_level + 1;
+		} else {
+			upsdebugx(1, "Requested debugging level %d is too "
+				"high for pass-through args, truncated to %zu",
+				nut_debug_level,
+				(m - 1)	/* count off '-' (and '\0' already) chars */
+				);
+		}
+
+		dbg[0] = '-';
+		for (d = 1; d < m ; d++) {
+			dbg[d] = 'D';
+		}
+		dbg[d] = '\0';
+		argv[arg++] = dbg;
+	}
+
 	argv[arg++] = (char *)"-a";		/* FIXME: cast away const */
 	argv[arg++] = ups->upsname;
 
@@ -309,10 +391,14 @@ static void start_driver(const ups_t *ups)
 		else {
 		/* otherwise, retry if still needed */
 			if (drv_maxretry > 0)
-				sleep (retrydelay);
+				if (retrydelay >= 0)
+					sleep ((unsigned int)retrydelay);
 		}
 	}
 }
+
+static void help(const char *progname)
+	__attribute__((noreturn));
 
 static void help(const char *progname)
 {
@@ -324,6 +410,7 @@ static void help(const char *progname)
 	printf("  -t			testing mode - prints actions without doing them\n");
 	printf("  -u <user>		drivers started will switch from root to <user>\n");
 	printf("  -D            	raise debugging level\n");
+	printf("  -d            	pass debugging level from upsdrvctl to driver\n");
 	printf("  start			start all UPS drivers in ups.conf\n");
 	printf("  start	<ups>		only start driver for UPS <ups>\n");
 	printf("  stop			stop all UPS drivers in ups.conf\n");
@@ -415,7 +502,7 @@ static void send_all_drivers(void (*command)(const ups_t *))
 		while (ups) {
 			if (ups->sdorder == i)
 				command(ups);
-			
+
 			ups = ups->next;
 		}
 	}
@@ -451,7 +538,7 @@ int main(int argc, char **argv)
 		UPS_VERSION);
 
 	prog = argv[0];
-	while ((i = getopt(argc, argv, "+htu:r:DV")) != -1) {
+	while ((i = getopt(argc, argv, "+htu:r:DdV")) != -1) {
 		switch(i) {
 			case 'r':
 				pt_root = optarg;
@@ -472,10 +559,13 @@ int main(int argc, char **argv)
 				nut_debug_level++;
 				break;
 
+			case 'd':
+				nut_debug_level_passthrough = 1;
+				break;
+
 			case 'h':
 			default:
 				help(prog);
-				break;
 		}
 	}
 
@@ -492,14 +582,18 @@ int main(int argc, char **argv)
 			nut_debug_level = 2;
 	}
 
-	upsdebugx(2, "\n"
-		   "If you're not a NUT core developer, chances are that you're told to enable debugging\n"
-		   "to see why a driver isn't working for you. We're sorry for the confusion, but this is\n"
-		   "the 'upsdrvctl' wrapper, not the driver you're interested in.\n\n"
-		   "Below you'll find one or more lines starting with 'exec:' followed by an absolute\n"
-		   "path to the driver binary and some command line option. This is what the driver\n"
-		   "starts and you need to copy and paste that line and append the debug flags to that\n"
-		   "line (less the 'exec:' prefix).\n");
+	if (nut_debug_level_passthrough == 0) {
+		upsdebugx(2, "\n"
+			"If you're not a NUT core developer, chances are that you're told to enable debugging\n"
+			"to see why a driver isn't working for you. We're sorry for the confusion, but this is\n"
+			"the 'upsdrvctl' wrapper, not the driver you're interested in.\n\n"
+			"Below you'll find one or more lines starting with 'exec:' followed by an absolute\n"
+			"path to the driver binary and some command line option. This is what the driver\n"
+			"starts and you need to copy and paste that line and append the debug flags to that\n"
+			"line (less the 'exec:' prefix).\n\n"
+			"Alternately, provide an additional '-d' (lower-case) parameter to 'upsdrvctl' to\n"
+			"pass its current debug level to the launched driver.\n");
+	}
 
 	if (!strcmp(argv[0], "start"))
 		command = &start_driver;

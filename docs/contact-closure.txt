@@ -74,15 +74,19 @@ When editing the genericups.h, the values have the following meanings:
 
 Outgoing lines:
 
-- line_norm = what to set to make the line "normal" - i.e. cable power
+- line_norm = what to set to make the line "normal" -- i.e. cable power
 - line_sd   = what to set to make the UPS shut down the load
 
 Incoming lines:
 
-- line_ol   = flag that appears for on line / on battery
-- val_ol    = value of that flag when the UPS is on battery
-- line_bl   = flag that appears for low battery / battery OK
-- val_bl    = value of that flag when the battery is low
+- line_ol     = flag that appears for on line / on battery
+- val_ol      = value of that flag when the UPS is on battery
+- line_bl     = flag that appears for low battery / battery OK
+- val_bl      = value of that flag when the battery is low
+- line_rb     = flag that appears for battery health
+- val_rb      = value of that flag when the battery needs a replacement
+- line_bypass = flag that appears for battery bypass / battery protection active
+- val_bypass  = value of that flag when the battery is bypassed / missing
 
 This may seem a bit confusing to have two variables per value that
 we want to read, but here's how it works.  If you set line_ol to
@@ -91,7 +95,7 @@ with the value of the serial port whenever a poll occurs.  If that flag
 exists, then the result of the and will be 0x80.  If it does not exist,
 the result will be 0.
 
-So, if line_ol = foo, then val_ol can only be foo or 0.  
+So, if line_ol = foo, then val_ol can only be foo or 0.
 
 As a general case, if 'line_ol == val_ol', then the value you're reading
 is active high.  Otherwise, it's active low.  Check out the guts of

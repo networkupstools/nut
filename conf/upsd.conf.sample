@@ -5,6 +5,8 @@
 # It should only be readable by the user that upsd becomes.  See the FAQ.
 #
 # Each entry below provides usage and default value.
+#
+# For more information, refer to upsd.conf manual page.
 
 # =======================================================================
 # MAXAGE <seconds>
@@ -20,6 +22,29 @@
 # for notifications from upsd about staleness.
 
 # =======================================================================
+# TRACKINGDELAY <seconds>
+# TRACKINGDELAY 3600
+#
+# This defaults to 1 hour. When instant commands and variables setting status
+# tracking is enabled, status execution information are kept during this
+# amount of time, and then cleaned up.
+
+# =======================================================================
+# ALLOW_NO_DEVICE <Boolean>
+# ALLOW_NO_DEVICE true
+#
+# Normally upsd requires that at least one device section is defined in ups.conf
+# when the daemon starts, to serve its data.  For automatically managed services
+# it may be preferred to have upsd always running, and reload the configuration
+# when power devices become defined.
+#
+# Boolean values 'true', 'yes', 'on' and '1' mean that the server would not
+# refuse to start with zero device sections found in ups.conf.
+#
+# Boolean values 'false', 'no', 'off' and '0' mean that the server should refuse
+# to start if zero device sections were found in ups.conf. This is the default.
+
+# =======================================================================
 # STATEPATH <path>
 # STATEPATH /var/run/nut
 #
@@ -27,15 +52,17 @@
 # than the default that was compiled into the program.
 
 # =======================================================================
-# LISTEN <address> [<port>]
+# LISTEN <IP address or name> [<port>]
 # LISTEN 127.0.0.1 3493
 # LISTEN ::1 3493
+# LISTEN myhostname 83493
+# LISTEN myhostname.mydomain
 #
 # This defaults to the localhost listening addresses and port 3493.
 # In case of IP v4 or v6 disabled kernel, only the available one will be used.
 #
-# You may specify each interface you want upsd to listen on for connections,
-# optionally with a port number.
+# You may specify each interface IP address or name that you want upsd to
+# listen on for connections, optionally with a port number.
 #
 # You may need this if you have multiple interfaces on your machine and
 # you don't want upsd to listen to all interfaces (for instance on a
@@ -74,9 +101,9 @@
 #
 # When compiled with SSL support with NSS backend,
 # you can enter the certificate path here.
-# Certificates are stored in a dedicated database (splitted in 3 files).
+# Certificates are stored in a dedicated database (split into 3 files).
 # Specify the path of the database directory.
-# 
+#
 # See 'docs/security.txt' or the Security chapter of NUT user manual
 # for more information on the SSL support in NUT.
 
@@ -88,7 +115,7 @@
 # you can specify the certificate name to retrieve from database to
 # authenticate itself and the password
 # required to access certificate related private key.
-# 
+#
 # See 'docs/security.txt' or the Security chapter of NUT user manual
 # for more information on the SSL support in NUT.
 
@@ -103,7 +130,39 @@
 #  - 0 to not request to clients to provide any certificate
 #  - 1 to require to all clients a certificate
 #  - 2 to require to all clients a valid certificate
-# 
+#
 # See 'docs/security.txt' or the Security chapter of NUT user manual
 # for more information on the SSL support in NUT.
 
+# =======================================================================
+# DISABLE_WEAK_SSL <Boolean>
+# DISABLE_WEAK_SSL true
+#
+# Tell upsd to disable older/weak SSL/TLS protocols and ciphers.
+#
+# With relatively recent versions of OpenSSL or NSS it will be restricted
+# to TLSv1.2 or better.
+#
+# Unless you have really ancient clients, you probably want to enable this.
+# Currently disabled by default to ensure compatibility with existing setups.
+
+# =======================================================================
+# DEBUG_MIN <Integer>
+# DEBUG_MIN 2
+#
+# Optionally specify a minimum debug level for `upsd` data daemon, e.g. for
+# troubleshooting a deployment, without impacting foreground or background
+# running mode directly, and without need to edit init-scripts or service
+# unit definitions. Note that command-line option `-D` can only increase
+# this verbosity level.
+#
+# NOTE: if the running daemon receives a `reload` command, presence of the
+# `DEBUG_MIN NUMBER` value in the configuration file can be used to tune
+# debugging verbosity in the running service daemon (it is recommended to
+# comment it away or set the minimum to explicit zero when done, to avoid
+# huge journals and I/O system abuse). Keep in mind that for this run-time
+# tuning, the `DEBUG_MIN` value *present* in *reloaded* configuration files
+# is applied instantly and overrides any previously set value, from file
+# or CLI options, regardless of older logging level being higher or lower
+# than the newly found number; a missing (or commented away) value however
+# does not change the previously active logging verbosity.

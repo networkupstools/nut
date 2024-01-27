@@ -3,6 +3,7 @@ NUT.CONF(5)
 
 NAME
 ----
+
 nut.conf - UPS definitions for Network UPS Tools
 
 DESCRIPTION
@@ -64,7 +65,7 @@ more details.  It is ignored when 'MODE' above indicates that no
 upsmon should be running.
 
 *POWEROFF_WAIT*::
-Optional.  At the end of an emergency system halt, the upsmon master
+Optional.  At the end of an emergency system halt, the upsmon primary
 will signal the UPS to switch off.  This may fail for a number of
 reasons.  Most notably is the case that mains power returns during
 the shutdown process.  See the section "Power races" in
@@ -82,6 +83,7 @@ Please read http://bugs.debian.org/358696 for more details.
 EXAMPLE
 -------
 
+------
    # /etc/nut/nut.conf.  See nut.conf(5)
    
    MODE=none
@@ -91,12 +93,13 @@ EXAMPLE
    UPSMON_OPTIONS=""
    
    # POWEROFF_WAIT=15m
+------
 
 INTEGRATION
 -----------
 
 An init script, such as /etc/init.d/nut, is expected to source this
-file in order to determine which component(s) has to be started.
+file in order to determine which components have to be started.
 
 SEE ALSO
 --------
@@ -104,6 +107,7 @@ SEE ALSO
 linkman:ups.conf[5], linkman:upsd.conf[5], linkman:upsd.users[5],
 linkman:upsmon.conf[5]
 
-INTERNET RESOURCES
-------------------
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

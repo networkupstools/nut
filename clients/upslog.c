@@ -20,12 +20,12 @@
 /* Basic theory of operation:
  *
  * First we go through and parse as much of the status format string as
- * possible.  We used to do this parsing run every time, but that's a 
+ * possible.  We used to do this parsing run every time, but that's a
  * waste of CPU since it can't change during the program's run.
  *
  * This version does the parsing pass once, and creates a linked list of
  * pointers to the functions that do the work and the arg they get.
- * 
+ *
  * That means the main loop just has to run the linked list and call
  * anything it finds in there.  Everything happens from there, and we
  * don't have to pointlessly reparse the string every time around.
@@ -37,9 +37,11 @@
 
 #include "config.h"
 #include "timehead.h"
+#include "nut_stdint.h"
 #include "upslog.h"
 
-	static	int	port, reopen_flag = 0, exit_flag = 0;
+	static	int	reopen_flag = 0, exit_flag = 0;
+	static	uint16_t	port;
 	static	char	*upsname, *hostname;
 	static	UPSCONN_t	ups;
 
@@ -79,6 +81,8 @@ static void set_exit_flag(int sig)
 
 static void set_print_now_flag(int sig)
 {
+	NUT_UNUSED_VARIABLE(sig);
+
 	/* no need to do anything, the signal will cause sleep to be interrupted */
 }
 
@@ -109,6 +113,9 @@ static void setup_signals(void)
 }
 
 static void help(const char *prog)
+	__attribute__((noreturn));
+
+static void help(const char *prog)
 {
 	printf("UPS status logger.\n");
 
@@ -118,7 +125,9 @@ static void help(const char *prog)
 	printf("  -f <format>	- Log format.  See below for details.\n");
 	printf("		- Use -f \"<format>\" so your shell doesn't break it up.\n");
 	printf("  -i <interval>	- Time between updates, in seconds\n");
-	printf("  -l <logfile>	- Log file name, or - for stdout\n");
+	printf("  -l <logfile>	- Log file name, or - for stdout (foreground by default)\n");
+	printf("  -F		- stay foregrounded even if logging into a file\n");
+	printf("  -B		- stay backgrounded even if logging to stdout\n");
 	printf("  -p <pidbase>  - Base name for PID file (defaults to \"%s\")\n", prog);
 	printf("  -s <ups>	- Monitor UPS <ups> - <upsname>@<host>[:<port>]\n");
 	printf("        	- Example: -s myups@server\n");
@@ -146,6 +155,7 @@ static void do_host(const char *arg)
 {
 	int	ret;
 	char	hn[LARGEBUF];
+	NUT_UNUSED_VARIABLE(arg);
 
 	ret = gethostname(hn, sizeof(hn));
 
@@ -159,11 +169,15 @@ static void do_host(const char *arg)
 
 static void do_upshost(const char *arg)
 {
+	NUT_UNUSED_VARIABLE(arg);
+
 	snprintfcat(logbuffer, sizeof(logbuffer), "%s", monhost);
 }
 
 static void do_pid(const char *arg)
 {
+	NUT_UNUSED_VARIABLE(arg);
+
 	snprintfcat(logbuffer, sizeof(logbuffer), "%ld", (long)getpid());
 }
 
@@ -172,6 +186,7 @@ static void do_time(const char *arg)
 	unsigned int	i;
 	char	timebuf[SMALLBUF], *format;
 	time_t	tod;
+	struct tm tmbuf;
 
 	format = xstrdup(arg);
 
@@ -181,7 +196,7 @@ static void do_time(const char *arg)
 			format[i] = '%';
 
 	time(&tod);
-	strftime(timebuf, sizeof(timebuf), format, localtime(&tod));
+	strftime(timebuf, sizeof(timebuf), format, localtime_r(&tod, &tmbuf));
 
 	snprintfcat(logbuffer, sizeof(logbuffer), "%s", timebuf);
 
@@ -191,7 +206,7 @@ static void do_time(const char *arg)
 static void getvar(const char *var)
 {
 	int	ret;
-	unsigned int	numq, numa;
+	size_t	numq, numa;
 	const	char	*query[4];
 	char	**answer;
 
@@ -235,6 +250,7 @@ static void do_var(const char *arg)
 static void do_etime(const char *arg)
 {
 	time_t	tod;
+	NUT_UNUSED_VARIABLE(arg);
 
 	time(&tod);
 	snprintfcat(logbuffer, sizeof(logbuffer), "%ld", (unsigned long) tod);
@@ -269,7 +285,7 @@ static void add_call(void (*fptr)(const char *arg), const char *arg)
 	tmp->next = NULL;
 
 	if (last)
-		last->next = tmp;	
+		last->next = tmp;
 	else
 		fhead = tmp;
 }
@@ -277,8 +293,9 @@ static void add_call(void (*fptr)(const char *arg), const char *arg)
 /* turn the format string into a list of function calls with args */
 static void compile_format(void)
 {
-	unsigned int	i;
-	int	j, found, ofs;
+	size_t	i;
+	int	j, found;
+	size_t	ofs;
 	char	*cmd, *arg, *ptr;
 
 	for (i = 0; i < strlen(logformat); i++) {
@@ -330,7 +347,7 @@ static void compile_format(void)
 		/* see if we know how to handle this command */
 
 		for (j = 0; logcmds[j].name != NULL; j++) {
-			if (strncasecmp(cmd, logcmds[j].name, 
+			if (strncasecmp(cmd, logcmds[j].name,
 				strlen(logcmds[j].name)) == 0) {
 
 				add_call(logcmds[j].func, arg);
@@ -378,7 +395,7 @@ static void run_flist(void)
 
 int main(int argc, char **argv)
 {
-	int	interval = 30, i;
+	int	interval = 30, i, foreground = -1;
 	const char	*prog = xbasename(argv[0]);
 	time_t	now, nextpoll = 0;
 	const char	*user = NULL;
@@ -390,11 +407,13 @@ int main(int argc, char **argv)
 
 	printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
 
-	 while ((i = getopt(argc, argv, "+hs:l:i:f:u:Vp:")) != -1) {
+	while ((i = getopt(argc, argv, "+hs:l:i:f:u:Vp:FB")) != -1) {
 		switch(i) {
 			case 'h':
 				help(prog);
+#ifndef HAVE___ATTRIBUTE__NORETURN
 				break;
+#endif
 
 			case 's':
 				monhost = optarg;
@@ -421,6 +440,14 @@ int main(int argc, char **argv)
 
 			case 'p':
 				pidfilebase = optarg;
+				break;
+
+			case 'F':
+				foreground = 1;
+				break;
+
+			case 'B':
+				foreground = 0;
 				break;
 		}
 	}
@@ -462,7 +489,7 @@ int main(int argc, char **argv)
 	if (!logformat)
 		fatalx(EXIT_FAILURE, "No format defined - but this should be impossible");
 
-	printf("logging status of %s to %s (%is intervals)\n", 
+	printf("logging status of %s to %s (%is intervals)\n",
 		monhost, logfn, interval);
 
 	if (upscli_splitname(monhost, &upsname, &hostname, &port) != 0) {
@@ -470,7 +497,7 @@ int main(int argc, char **argv)
 	}
 
 	if (upscli_connect(&ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0)
-		fprintf(stderr, "Warning: initial connect failed: %s\n", 
+		fprintf(stderr, "Warning: initial connect failed: %s\n",
 			upscli_strerror(&ups));
 
 	if (strcmp(logfn, "-") == 0)
@@ -484,10 +511,19 @@ int main(int argc, char **argv)
 	/* now drop root if we have it */
 	new_uid = get_user_pwent(user);
 
-	open_syslog(prog); 
+	open_syslog(prog);
 
-	if (logfile != stdout)
+	if (foreground < 0) {
+		if (logfile == stdout) {
+			foreground = 1;
+		} else {
+			foreground = 0;
+		}
+	}
+
+	if (!foreground) {
 		background();
+	}
 
 	setup_signals();
 
@@ -502,7 +538,7 @@ int main(int argc, char **argv)
 
 		if (nextpoll > now) {
 			/* there is still time left, so sleep it off */
-			sleep(difftime(nextpoll, now));
+			sleep((unsigned int)(difftime(nextpoll, now)));
 			nextpoll += interval;
 		} else {
 			/* we spent more time in polling than the interval allows */
@@ -510,7 +546,7 @@ int main(int argc, char **argv)
 		}
 
 		if (reopen_flag) {
-			upslogx(LOG_INFO, "Signal %d: reopening log file", 
+			upslogx(LOG_INFO, "Signal %d: reopening log file",
 				reopen_flag);
 			reopen_log();
 			reopen_flag = 0;
@@ -535,7 +571,7 @@ int main(int argc, char **argv)
 		fclose(logfile);
 
 	upscli_disconnect(&ups);
-	
+
 	exit(EXIT_SUCCESS);
 }
 
