@@ -126,6 +126,7 @@ typedef int bool_t;
 
 /* typedef void (*interpreter)(char *, char *, int); */
 
+/* Help align with DMF branch codebase until it is merged */
 #ifndef WITH_SNMP_LKP_FUN
 /* Recent addition of fun/nuf hooks in info_lkp_t is not well handled by
  * all corners of the codebase, e.g. not by DMF. So at least until that
@@ -168,12 +169,22 @@ typedef struct {
 #endif /* WITH_SNMP_LKP_FUN */
 } info_lkp_t;
 
+/* Help align with DMF branch codebase until it is merged */
 #if WITH_SNMP_LKP_FUN
-# define info_lkp_default(_1, _2)	{_1, _2, NULL, NULL, NULL, NULL}
-# define info_lkp_fun_vp2s(_1, _2, _3)	{_1, _2, _3, NULL, NULL, NULL}
-# define info_lkp_nuf_s2l(_1, _2, _3)	{_1, _2, NULL, _3, NULL, NULL}
-# define info_lkp_fun_s2l(_1, _2, _3)	{_1, _2, NULL, NULL, _3, NULL}
-# define info_lkp_nuf_vp2s(_1, _2, _3)	{_1, _2, NULL, NULL, NULL, _3}
+# if (defined WITH_DMFMIB) && (WITH_DMFMIB != 0)
+#  define info_lkp_default(_1, _2)	{_1, _2, NULL, NULL, NULL, NULL}
+#  define info_lkp_fun_vp2s(_1, _2, _3)	{_1, _2, _3, NULL, NULL, NULL}
+#  define info_lkp_nuf_s2l(_1, _2, _3)	{_1, _2, NULL, _3, NULL, NULL}
+#  define info_lkp_fun_s2l(_1, _2, _3)	{_1, _2, NULL, NULL, _3, NULL}
+#  define info_lkp_nuf_vp2s(_1, _2, _3)	{_1, _2, NULL, NULL, NULL, _3}
+# else
+#  define info_lkp_default(_1, _2)	{_1, _2, NULL, NULL}
+#  define info_lkp_fun_vp2s(_1, _2, _3)	{_1, _2, _3, NULL}
+#  define info_lkp_nuf_s2l(_1, _2, _3)	{_1, _2, NULL, _3}
+/* no-op without DMF extensions */
+#  define info_lkp_fun_s2l(_1, _2, _3)	{_1, _2, NULL, NULL}
+#  define info_lkp_nuf_vp2s(_1, _2, _3)	{_1, _2, NULL, NULL}
+# endif /* WITH_DMFMIB */
 #else
 # define info_lkp_default(_1, _2)	{_1, _2}
 /* Ignore the function pointer where not supported */
