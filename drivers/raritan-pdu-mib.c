@@ -25,7 +25,7 @@
 
 #include "raritan-pdu-mib.h"
 
-#define RARITAN_MIB_VERSION	"0.8"
+#define RARITAN_MIB_VERSION	"0.80"
 
 /* Raritan MIB
  * this one uses the same MIB as Eaton Revelation,
