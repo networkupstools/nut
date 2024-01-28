@@ -84,7 +84,7 @@ endif
 if HAVE_WINDOWS
 libcommon_la_SOURCES += wincompat.c $(top_srcdir)/include/wincompat.h
 libcommonclient_la_SOURCES += wincompat.c $(top_srcdir)/include/wincompat.h
-endif
+endif HAVE_WINDOWS
 
 # ensure inclusion of local implementation of missing systems functions
 # using LTLIBOBJS. Refer to configure.in/.ac -> AC_REPLACE_FUNCS
@@ -93,6 +93,11 @@ libcommonclient_la_LIBADD = libparseconf.la @LTLIBOBJS@ @NETLIBS@
 
 libcommon_la_CFLAGS = $(AM_CFLAGS)
 libcommonclient_la_CFLAGS = $(AM_CFLAGS)
+
+if WITH_NUTCONF
+libnutconf_la_CXXFLAGS = $(AM_CXXFLAGS)
+libnutconf_la_LIBADD = @LTLIBOBJS@ @NETLIBS@
+endif WITH_NUTCONF
 
 if HAVE_LIBREGEX
   libcommon_la_CFLAGS += $(LIBREGEX_CFLAGS)
