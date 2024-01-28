@@ -32,16 +32,89 @@
 
 extern "C" {
 #include <unistd.h>
-#ifndef WIN32
-# include <sys/socket.h>
-#else
-# include <wincompat.h>
-#endif
-#include <sys/un.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+
+/* Windows/Linux Socket compatibility layer, lifted from nutclient.cpp: */
+/* Thanks to Benjamin Roux (http://broux.developpez.com/articles/c/sockets/) */
+#ifdef WIN32
+#  include <wincompat.h>
+#  include <winsock2.h>
+#  define SOCK_OPT_CAST (char *)
+
+/* equivalent of W32_NETWORK_CALL_OVERRIDE
+ * invoked by wincompat.h in upsclient.c:
+ */
+static inline int sktconnect(int fh, struct sockaddr * name, int len)
+{
+	int ret = connect(fh,name,len);
+	errno = WSAGetLastError();
+	return ret;
+}
+static inline int sktread(int fh, void *buf, int size)
+{
+	int ret = recv(fh,(char*)buf,size,0);
+	errno = WSAGetLastError();
+	return ret;
+}
+static inline int sktwrite(int fh, const void*buf, int size)
+{
+	int ret = send(fh,(char*)buf,size,0);
+	errno = WSAGetLastError();
+	return ret;
+}
+static inline int sktclose(int fh)
+{
+	int ret = closesocket((SOCKET)fh);
+	errno = WSAGetLastError();
+	return ret;
+}
+
+#else /* not WIN32 */
+
+#  include <sys/un.h>
+#  include <sys/socket.h>
+#  include <netinet/in.h>
+#  include <arpa/inet.h>
+#  include <unistd.h> /* close */
+#  include <netdb.h> /* gethostbyname */
+#  include <fcntl.h>
+#  ifndef INVALID_SOCKET
+#    define INVALID_SOCKET -1
+#  endif
+#  ifndef SOCKET_ERROR
+#    define SOCKET_ERROR -1
+#  endif
+#  ifndef closesocket
+#    define closesocket(s) close(s)
+#  endif
+#  define SOCK_OPT_CAST
+   typedef int SOCKET;
+   typedef struct sockaddr_in SOCKADDR_IN;
+   typedef struct sockaddr SOCKADDR;
+   typedef struct in_addr IN_ADDR;
+
+#  define sktconnect(h,n,l)	::connect(h,n,l)
+#  define sktread(h,b,s) 	::read(h,b,s)
+#  define sktwrite(h,b,s) 	::write(h,b,s)
+#  define sktclose(h)		::close(h)
+
+/* WA for Solaris/i386 bug: non-blocking connect sets errno to ENOENT */
+#  if (defined NUT_PLATFORM_SOLARIS)
+#    define SOLARIS_i386_NBCONNECT_ENOENT(status) ( (!strcmp("i386", CPU_TYPE)) ? (ENOENT == (status)) : 0 )
+#  else
+#    define SOLARIS_i386_NBCONNECT_ENOENT(status) (0)
+#  endif  /* end of Solaris/i386 WA for non-blocking connect */
+
+/* WA for AIX bug: non-blocking connect sets errno to 0 */
+#  if (defined NUT_PLATFORM_AIX)
+#    define AIX_NBCONNECT_0(status) (0 == (status))
+#  else
+#    define AIX_NBCONNECT_0(status) (0)
+#  endif  /* end of AIX WA for non-blocking connect */
+
+#endif /* WIN32 */
+/* End of Windows/Linux Socket compatibility layer */
 }
 
 
