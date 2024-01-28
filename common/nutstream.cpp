@@ -173,6 +173,11 @@ NutStream::status_t NutMemory::putData(const std::string & data) {
 }
 
 
+/* FIXME: Align with OS envvars like TMPDIR or TEMPDIR,
+ * consider portability to Windows, or use of tmpfs like
+ * /dev/shm or (/var)/run on some platforms - e.g. NUT
+ * STATEPATH, (ALT)PIDPATH or similar locations desired
+ * by packager who knows their system. */
 const std::string NutFile::m_tmp_dir("/var/tmp");
 
 
