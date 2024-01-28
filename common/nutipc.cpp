@@ -51,7 +51,13 @@ pid_t Process::getPPID()
 	throw()
 #endif
 {
+#ifdef WIN32
+	/* FIXME: Detect HAVE_GETPPID in configure; throw exceptions here?..
+	 * NOTE: Does not seem to be currently used in nutconf codebase. */
+	return -1;
+#else
 	return getppid();
+#endif
 }
 
 
@@ -213,7 +219,16 @@ int Signal::send(Signal::enum_t signame, pid_t pid)
 #endif
 {
 	int sig = static_cast<int>(signame);
+#ifdef WIN32
+	/* FIXME: Implement (for NUT processes) via pipes?
+	 * See e.g. upsdrvctl implementation. */
+	std::stringstream e;
 
+	e << "Can't send signal " << sig << " to PID " << pid <<
+			": not implemented on this platform yet";
+
+	throw std::logic_error(e.str());
+#else
 	int status = ::kill(pid, sig);
 
 	if (0 == status)
@@ -227,6 +242,7 @@ int Signal::send(Signal::enum_t signame, pid_t pid)
 	e << "Can't send invalid signal " << sig;
 
 	throw std::logic_error(e.str());
+#endif
 }
 
 

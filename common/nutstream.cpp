@@ -510,7 +510,7 @@ void NutSocket::Address::init_unix(Address & addr, const std::string & path) {
 	NUT_UNUSED_VARIABLE(path);
 
 	std::stringstream e;
-	e << "Unix sockets not implemented for this platform: " << path;
+	e << "Unix sockets not implemented for this platform yet: " << path;
 //			addr.str() << ":" << path;
 
 	throw std::logic_error(e.str());

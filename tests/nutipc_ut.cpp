@@ -81,6 +81,11 @@ CPPUNIT_TEST_SUITE_REGISTRATION(NutIPCUnitTest);
 
 
 void NutIPCUnitTest::testExec() {
+#ifdef WIN32
+	/* FIXME: Some other program, maybe NUT's "message" handler, or "cmd -k" etc.?
+	 * And get Process working in the first place */
+	std::cout << "NutIPCUnitTest::testExec(): skipped on this platform" << std::endl;
+#else
 	static const std::string bin = "/bin/sh";
 
 	nut::Process::Executor::Arguments args;
@@ -93,6 +98,7 @@ void NutIPCUnitTest::testExec() {
 	CPPUNIT_ASSERT(123 == child.wait());
 
 	CPPUNIT_ASSERT(0 == nut::Process::execute("test 'Hello world' == 'Hello world'"));
+#endif	/* WIN32 */
 }
 
 
@@ -104,6 +110,10 @@ void NutIPCUnitTest::testSignalHandler(int signal) {
 }
 
 void NutIPCUnitTest::testSignalSend() {
+#ifdef WIN32
+	/* FIXME: Needs implementation for signals via pipes */
+	std::cout << "NutIPCUnitTest::testSignalSend(): skipped on this platform" << std::endl;
+#else
 	struct sigaction action;
 
 	pid_t my_pid = nut::Process::getPID();
@@ -144,6 +154,7 @@ void NutIPCUnitTest::testSignalSend() {
 	pid_file.removex();
 
 	signal_caught = 0;
+#endif	/* WIN32 */
 }
 
 
@@ -162,6 +173,10 @@ class TestSignalHandler: public nut::Signal::Handler {
 };  // end of class TestSignalHandler
 
 void NutIPCUnitTest::testSignalRecv() {
+#ifdef WIN32
+	/* FIXME: Needs implementation for signals via pipes */
+	std::cout << "NutIPCUnitTest::testSignalRecv(): skipped on this platform" << std::endl;
+#else
 	// Create signal handler thread
 	nut::Signal::List signals;
 
@@ -190,6 +205,7 @@ void NutIPCUnitTest::testSignalRecv() {
 	caught_signals.pop_front();
 
 	CPPUNIT_ASSERT(caught_signals.front() == nut::Signal::USER1);
+#endif	/* WIN32 */
 }
 
 // Implement out of class declaration to avoid

@@ -30,10 +30,12 @@
 #include <cassert>
 
 extern "C" {
-#include <sys/select.h>
+#ifndef WIN32
+# include <sys/select.h>
+# include <sys/wait.h>
+#endif	/* WIN32 */
 #include <sys/time.h>
 #include <sys/types.h>
-#include <sys/wait.h>
 #include <unistd.h>
 }
 
@@ -212,10 +214,17 @@ class NutFileUnitTest: public NutStreamUnitTest {
 
 
 void NutFileUnitTest::test() {
+#ifdef WIN32
+	/* FIXME: It seems that in the absence of envvars for temporary location,
+	 * mingw (or Windows implem behind it?) can choose C:\ or C:\WINDOWS and
+	 * generally we lack permissions to write there. */
+	std::cout << "NutFileUnitTest::test(): skipped on this platform" << std::endl;
+#else
 	nut::NutFile fstream(nut::NutFile::ANONYMOUS);
 
 	writex(&fstream);
 	readx(&fstream);
+#endif	/* WIN32 */
 }
 
 
@@ -294,6 +303,10 @@ bool NutSocketUnitTest::Writer::run() {
 
 
 void NutSocketUnitTest::test() {
+#ifdef WIN32
+	/* FIXME: get Process working in the first place */
+	std::cout << "NutSocketUnitTest::test(): skipped on this platform" << std::endl;
+#else
 	// Fork writer
 	pid_t writer_pid = ::fork();
 
@@ -325,6 +338,7 @@ void NutSocketUnitTest::test() {
 
 	CPPUNIT_ASSERT(wpid == writer_pid);
 	CPPUNIT_ASSERT(0    == writer_exit);
+#endif	/* WIN32 */
 }
 
 
