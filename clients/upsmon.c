@@ -1104,6 +1104,7 @@ static int is_ups_critical(utype_t *ups)
 		upslogx(LOG_WARNING,
 			"UPS [%s] is reported as (administratively) OFF",
 			ups->sys);
+		upsdebugx(1, "UPS [%s] is now critical being OFF for too long. In case of persisting unwanted shutdowns, consider disabling the upsmon 'OFFDURATION' option.", ups->sys);
 		return 1;
 	}
 
