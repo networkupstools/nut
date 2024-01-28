@@ -12,7 +12,7 @@ EXTRA_DIST = \
 	common_EN/install.res	\
 	common/solaris_init	\
 	common/ipp-shutdown-daemon.sh	\
-	common/README_ipp-os-shutdown.txt	\
+	common/README_ipp-os-shutdown.adoc	\
 	common/ipp-status	\
 	common/ipp.conf	\
 	common/ipp-wrapper	\
@@ -30,7 +30,7 @@ EXTRA_DIST = \
 	solcmn/solaris_init	\
 	solcmn/ipp-os-shutdown.conf.sample
 
-SPELLCHECK_SRC = README.adoc
+SPELLCHECK_SRC = README.adoc common/README_ipp-os-shutdown.adoc
 
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension:
 #%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
