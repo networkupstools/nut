@@ -1155,16 +1155,16 @@ void UpsmonConfigParser::onParseDirective(const std::string& directiveName, char
 			{
 				UpsmonConfiguration::Monitor monitor;
 				ConfigParamList::const_iterator it = values.begin();
-				std::stringstream system(*it++);
-				std::string word;
+				std::stringstream upsAtHost(*it++);
+				std::string wordToken;
 				/*
 				 * Why didn't the original author just receive the words
 				 * into their target strings?.. e.g.:
-				 *     std::getline(system, monitor.upsname, '@');
-				 *     std::getline(system, monitor.hostname);
+				 *     std::getline(upsAtHost, monitor.upsname, '@');
+				 *     std::getline(upsAtHost, monitor.hostname);
 				 */
-				monitor.upsname = (static_cast<void>(std::getline(system, word, '@')), word);
-				monitor.hostname = (static_cast<void>(std::getline(system, word)), word);
+				monitor.upsname = (static_cast<void>(std::getline(upsAtHost, wordToken, '@')), wordToken);
+				monitor.hostname = (static_cast<void>(std::getline(upsAtHost, wordToken)), wordToken);
 				monitor.port = (values.size() == 6 ? *StringToSettableNumber<uint16_t>(*it++) : 0u);
 				monitor.powerValue = StringToSettableNumber<unsigned int>(*it++);
 				monitor.username = *it++;
