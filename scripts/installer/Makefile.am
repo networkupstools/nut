@@ -1,6 +1,34 @@
 # Network UPS Tools: scripts/installer
 
-EXTRA_DIST = README.adoc
+EXTRA_DIST = \
+	README.adoc \
+	make_package.sh	\
+	version.sh	\
+	install.sh	\
+	uninstall-lsnw.sh	\
+	uninstall-ipp	\
+	nutconf-dummy	\
+	common_EN/license.txt	\
+	common_EN/install.res	\
+	common/solaris_init	\
+	common/ipp-shutdown-daemon.sh	\
+	common/README_ipp-os-shutdown.txt	\
+	common/ipp-status	\
+	common/ipp.conf	\
+	common/ipp-wrapper	\
+	common/ipp-event.sh	\
+	common/string.sh	\
+	common/ipp-host-shutdown.sample	\
+	common/shutdown	\
+	common/ipp-notifier.sh	\
+	common/ipp-os-shutdown	\
+	common/init	\
+	common/aix_init	\
+	aix/ipp-os-shutdown.conf.sample	\
+	aix/aix_init	\
+	hpux/ipp-os-shutdown.conf.sample	\
+	solcmn/solaris_init	\
+	solcmn/ipp-os-shutdown.conf.sample
 
 SPELLCHECK_SRC = README.adoc
 
