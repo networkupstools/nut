@@ -37,7 +37,16 @@ extern "C" {
 #ifndef WIN32
 # include <sys/socket.h>
 #else
-# include <wincompat.h>
+# if HAVE_WINSOCK2_H
+#  include <winsock2.h>
+# endif
+# if HAVE_WS2TCPIP_H
+#  include <ws2tcpip.h>
+# endif
+/* Using a private implementation in nutstream.cpp
+ * similar to nutclient.cpp; do not call wincompat.h!
+ * FIXME: refactor to reuse the C++ adaptation?
+ */
 #endif
 }
 

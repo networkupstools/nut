@@ -38,9 +38,14 @@ extern "C" {
 /* Windows/Linux Socket compatibility layer, lifted from nutclient.cpp: */
 /* Thanks to Benjamin Roux (http://broux.developpez.com/articles/c/sockets/) */
 #ifdef WIN32
-#  include <wincompat.h>
-#  include <winsock2.h>
 #  define SOCK_OPT_CAST (char *)
+
+# ifndef HAVE_SA_FAMILY_T
+/* FIXME: Actually detect this in configure script,
+ * and suggest a type from sockaddr* definition? */
+/* Holds AF_UNIX, AF_INET(6) et al */
+typedef unsigned short int sa_family_t;
+# endif
 
 /* equivalent of W32_NETWORK_CALL_OVERRIDE
  * invoked by wincompat.h in upsclient.c:
@@ -506,6 +511,17 @@ NutFile::~NutFile() {
 
 
 void NutSocket::Address::init_unix(Address & addr, const std::string & path) {
+#ifdef WIN32
+	/* FIXME: Windows pipes where available? See e.g. clone drivers */
+	NUT_UNUSED_VARIABLE(addr);
+	NUT_UNUSED_VARIABLE(path);
+
+	std::stringstream e;
+	e << "Unix sockets not implemented for this platform: " << path;
+//			addr.str() << ":" << path;
+
+	throw std::logic_error(e.str());
+#else
 	struct sockaddr_un * un_addr = reinterpret_cast<struct sockaddr_un *>(::malloc(sizeof(struct sockaddr_un)));
 
 	if (nullptr == un_addr)
@@ -522,6 +538,7 @@ void NutSocket::Address::init_unix(Address & addr, const std::string & path) {
 
 	addr.m_sock_addr = reinterpret_cast<struct sockaddr *>(un_addr);
 	addr.m_length    = sizeof(*un_addr);
+#endif
 }
 
 
@@ -709,6 +726,8 @@ std::string NutSocket::Address::str() const {
 	ss << "nut::NutSocket::Address(family: " << family;
 
 	switch (family) {
+#ifndef WIN32
+		/* FIXME: Add support for pipes on Windows? */
 		case AF_UNIX: {
 			struct sockaddr_un * addr = reinterpret_cast<struct sockaddr_un *>(m_sock_addr);
 
@@ -716,6 +735,7 @@ std::string NutSocket::Address::str() const {
 
 			break;
 		}
+#endif
 
 		case AF_INET: {
 			struct sockaddr_in * addr = reinterpret_cast<struct sockaddr_in *>(m_sock_addr);
