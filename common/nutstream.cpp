@@ -19,6 +19,8 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include "config.h"
+
 #include "nutstream.hpp"
 
 #include <iomanip>
@@ -30,7 +32,11 @@
 
 extern "C" {
 #include <unistd.h>
-#include <sys/socket.h>
+#ifndef WIN32
+# include <sys/socket.h>
+#else
+# include <wincompat.h>
+#endif
 #include <sys/un.h>
 #include <sys/types.h>
 #include <sys/stat.h>

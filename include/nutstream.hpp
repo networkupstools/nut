@@ -34,7 +34,11 @@ extern "C" {
 #include <errno.h>
 #include <stdint.h>
 #include <sys/types.h>
-#include <sys/socket.h>
+#ifndef WIN32
+# include <sys/socket.h>
+#else
+# include <wincompat.h>
+#endif
 }
 
 /* See include/common.h for details behind this */

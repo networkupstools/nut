@@ -36,8 +36,16 @@ extern "C" {
 #include <sys/types.h>
 #include <unistd.h>
 #include <signal.h>
-#include <sys/wait.h>
-#include <pthread.h>
+
+#ifndef WIN32
+# include <sys/wait.h>
+#else
+# include <wincompat.h>
+#endif
+
+#ifdef HAVE_PTHREAD
+# include <pthread.h>
+#endif
 }
 
 /* See include/common.h for details behind this */
