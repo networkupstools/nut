@@ -40,13 +40,6 @@ extern "C" {
 #ifdef WIN32
 #  define SOCK_OPT_CAST (char *)
 
-# ifndef HAVE_SA_FAMILY_T
-/* FIXME: Actually detect this in configure script,
- * and suggest a type from sockaddr* definition? */
-/* Holds AF_UNIX, AF_INET(6) et al */
-typedef unsigned short int sa_family_t;
-# endif
-
 /* equivalent of W32_NETWORK_CALL_OVERRIDE
  * invoked by wincompat.h in upsclient.c:
  */
@@ -720,12 +713,13 @@ static std::string formatIPv6addr(unsigned char const bytes[16]) {
 std::string NutSocket::Address::str() const {
 	assert(nullptr != m_sock_addr);
 
-	sa_family_t family = m_sock_addr->sa_family;
-
+	/* Note: we do not cache a copy of "family" because
+	 * its data type varies per platform, easier to just
+	 * request it each time - not a hot spot anyway. */
 	std::stringstream ss;
-	ss << "nut::NutSocket::Address(family: " << family;
+	ss << "nut::NutSocket::Address(family: " << m_sock_addr->sa_family;
 
-	switch (family) {
+	switch (m_sock_addr->sa_family) {
 #ifndef WIN32
 		/* FIXME: Add support for pipes on Windows? */
 		case AF_UNIX: {
@@ -755,7 +749,7 @@ std::string NutSocket::Address::str() const {
 
 		default: {
 			std::stringstream e;
-			e << "NOT IMPLEMENTED: Socket address family " << family << " unsupported";
+			e << "NOT IMPLEMENTED: Socket address family " << m_sock_addr->sa_family << " unsupported";
 
 			throw std::logic_error(e.str());
 		}
