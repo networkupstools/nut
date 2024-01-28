@@ -140,6 +140,8 @@ typedef int bool_t;
 # else
 #  define WITH_SNMP_LKP_FUN 1
 # endif
+#else
+# define WITH_SNMP_LKP_FUN 0
 #endif
 
 #ifndef WITH_SNMP_LKP_FUN_DUMMY
@@ -227,12 +229,13 @@ typedef struct {
 	info_lkp_t   *oid2info;   /* lookup table between OID and NUT values */
 } snmp_info_t;
 
-#if WITH_DMF_FUNCTIONS
-# if WITH_DMF_LUA
+/* Help align with DMF branch codebase until it is merged */
+#if defined WITH_DMF_FUNCTIONS && WITH_DMF_FUNCTIONS
+# if defined WITH_DMF_LUA && WITH_DMF_LUA
 #  define snmp_info_default(_1, _2, _3, _4, _5, _6, _7)	{_1, _2, _3, _4, _5, _6, _7, NULL, NULL, NULL}
 # else
 #  define snmp_info_default(_1, _2, _3, _4, _5, _6, _7)	{_1, _2, _3, _4, _5, _6, _7, NULL, NULL}
-# endif
+# endif /* WITH_DMF_LUA  */
 #else
 #  define snmp_info_default(_1, _2, _3, _4, _5, _6, _7)	{_1, _2, _3, _4, _5, _6, _7}
 #endif /* WITH_DMF_FUNCTIONS */
