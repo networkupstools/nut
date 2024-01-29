@@ -25,7 +25,7 @@
 
 #include "delta_ups-mib.h"
 
-#define DELTA_UPS_MIB_VERSION  "0.5"
+#define DELTA_UPS_MIB_VERSION  "0.50"
 
 #define DELTA_UPS_SYSOID       ".1.3.6.1.4.1.2254.2.4"
 

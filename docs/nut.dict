@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3449 utf-8
+personal_ws-1.1 en 3450 utf-8
 AAC
 AAS
 ABI
@@ -1860,6 +1860,7 @@ cpqpower
 cpsups
 cr
 crestfactor
+criticality
 crlf
 cron
 crontab

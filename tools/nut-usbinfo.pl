@@ -361,7 +361,8 @@ sub find_usbdevs
 				$driver=$1;
 			}
 			else {
-				die "Unknown driver type: $nameFile";
+				warn "Unknown driver type: $nameFile";
+				next;
 			}
 			if ($vendor{$VendorID}{$ProductID}{"driver"}) {
 				if ($driver ne $vendor{$VendorID}{$ProductID}{"driver"}) {

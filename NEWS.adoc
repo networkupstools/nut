@@ -55,6 +55,9 @@ https://github.com/networkupstools/nut/milestone/10
      activity was completed by the hardware, which led to mis-processing of
      shutdown triggers. Also, notification was added to report "finished
      calibration". [issue #2168, PR #2169]
+   * `upsmon` recognition of `OFF` state as a trigger for FSD (forced shut
+     down) criticality considered also the input line state, which may be
+     an independently evolving circumstance. [issue #2278, PR #2279]
    * `upsmon` support for `POLLFAIL_LOG_THROTTLE_MAX` did not neuter the
      applied setting when live-reloading configuration, so commenting it
      away in `upsmon.conf` did not have the effect of resetting the logging
