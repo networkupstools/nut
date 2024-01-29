@@ -292,76 +292,78 @@ static snmp_info_t eaton_ats16_nm2_mib[] = {
 	/* EMP002 (EATON EMP MIB) mapping, including daisychain support */
 	/* Warning: indexes start at '1' not '0'! */
 	/* sensorCount.0 */
-	{ "ambient.count", ST_FLAG_RW, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.1.0", "", 0, NULL },
+	snmp_info_default("ambient.count", ST_FLAG_RW, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.1.0", "", 0, NULL),
 	/* CommunicationStatus.n */
-	{ "ambient.%i.present", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.8.1.1.4.1.1.%i",
-		NULL, SU_AMBIENT_TEMPLATE, &eaton_ats16_nm2_emp002_ambient_presence_info[0] },
+	snmp_info_default("ambient.%i.present", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.8.1.1.4.1.1.%i",
+		NULL, SU_AMBIENT_TEMPLATE, &eaton_ats16_nm2_emp002_ambient_presence_info[0]),
 	/* sensorName.n: OctetString EMPDT1H1C2 @1 */
-	{ "ambient.%i.name", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.3.1.1.%i", "", SU_AMBIENT_TEMPLATE, NULL },
+	snmp_info_default("ambient.%i.name", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.3.1.1.%i", "", SU_AMBIENT_TEMPLATE, NULL),
 	/* sensorManufacturer.n */
-	{ "ambient.%i.mfr", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.2.1.6.%i", "", SU_AMBIENT_TEMPLATE, NULL },
+	snmp_info_default("ambient.%i.mfr", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.2.1.6.%i", "", SU_AMBIENT_TEMPLATE, NULL),
 	/* sensorModel.n */
-	{ "ambient.%i.model", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.2.1.7.%i", "", SU_AMBIENT_TEMPLATE, NULL },
+	snmp_info_default("ambient.%i.model", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.2.1.7.%i", "", SU_AMBIENT_TEMPLATE, NULL),
 	/* sensorSerialNumber.n */
-	{ "ambient.%i.serial", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.2.1.9.%i", "", SU_AMBIENT_TEMPLATE, NULL },
+	snmp_info_default("ambient.%i.serial", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.2.1.9.%i", "", SU_AMBIENT_TEMPLATE, NULL),
 	/* sensorUuid.n */
-	{ "ambient.%i.id", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.2.1.2.%i", "", SU_AMBIENT_TEMPLATE, NULL },
+	snmp_info_default("ambient.%i.id", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.2.1.2.%i", "", SU_AMBIENT_TEMPLATE, NULL),
 	/* sensorAddress.n */
-	{ "ambient.%i.address", 0, 1, ".1.3.6.1.4.1.534.6.8.1.1.2.1.4.%i", "", SU_AMBIENT_TEMPLATE, NULL },
+	snmp_info_default("ambient.%i.address", 0, 1, ".1.3.6.1.4.1.534.6.8.1.1.2.1.4.%i", "", SU_AMBIENT_TEMPLATE, NULL),
 	/* sensorFirmwareVersion.n */
-	{ "ambient.%i.firmware", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.2.1.10.%i", "", SU_AMBIENT_TEMPLATE, NULL },
+	snmp_info_default("ambient.%i.firmware", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.2.1.10.%i", "", SU_AMBIENT_TEMPLATE, NULL),
 	/* temperatureUnit.1
 	 * MUST be before the temperature data reading! */
-	{ "ambient.%i.temperature.unit", 0, 1.0, ".1.3.6.1.4.1.534.6.8.1.2.5.0", "", SU_AMBIENT_TEMPLATE, &eaton_ats16_nm2_sensor_temperature_unit_info[0] },
+	snmp_info_default("ambient.%i.temperature.unit", 0, 1.0, ".1.3.6.1.4.1.534.6.8.1.2.5.0", "", SU_AMBIENT_TEMPLATE, &eaton_ats16_nm2_sensor_temperature_unit_info[0]),
+
 	/* temperatureValue.n.1 */
-	{ "ambient.%i.temperature", 0, 0.1, ".1.3.6.1.4.1.534.6.8.1.2.3.1.3.%i.1", "", SU_AMBIENT_TEMPLATE,
 #if WITH_SNMP_LKP_FUN
-	&eaton_ats16_nm2_sensor_temperature_read_info[0]
+	snmp_info_default("ambient.%i.temperature", 0, 0.1, ".1.3.6.1.4.1.534.6.8.1.2.3.1.3.%i.1", "", SU_AMBIENT_TEMPLATE,
+		&eaton_ats16_nm2_sensor_temperature_read_info[0]),
 #else
-	NULL
+	snmp_info_default("ambient.%i.temperature", 0, 0.1, ".1.3.6.1.4.1.534.6.8.1.2.3.1.3.%i.1", "", SU_AMBIENT_TEMPLATE,
+		NULL),
 #endif
-	},
-	{ "ambient.%i.temperature.status", ST_FLAG_STRING, SU_INFOSIZE,
+
+	snmp_info_default("ambient.%i.temperature.status", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.8.1.2.3.1.1.%i.1",
-		NULL, SU_AMBIENT_TEMPLATE, &eaton_ats16_nm2_threshold_status_info[0] },
-	{ "ups.alarm", ST_FLAG_STRING, SU_INFOSIZE,
+		NULL, SU_AMBIENT_TEMPLATE, &eaton_ats16_nm2_threshold_status_info[0]),
+	snmp_info_default("ups.alarm", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.8.1.2.3.1.1.%i.1",
-		NULL, SU_AMBIENT_TEMPLATE, &eaton_ats16_nm2_threshold_temperature_alarms_info[0] },
+		NULL, SU_AMBIENT_TEMPLATE, &eaton_ats16_nm2_threshold_temperature_alarms_info[0]),
 	/* FIXME: ambient.n.temperature.{minimum,maximum} */
 	/* temperatureThresholdLowCritical.n.1 */
-	{ "ambient.%i.temperature.low.critical", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.8.1.2.2.1.6.%i.1", "", SU_AMBIENT_TEMPLATE, NULL },
+	snmp_info_default("ambient.%i.temperature.low.critical", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.8.1.2.2.1.6.%i.1", "", SU_AMBIENT_TEMPLATE, NULL),
 	/* temperatureThresholdLowWarning.n.1 */
-	{ "ambient.%i.temperature.low.warning", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.8.1.2.2.1.5.%i.1", "", SU_AMBIENT_TEMPLATE, NULL },
+	snmp_info_default("ambient.%i.temperature.low.warning", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.8.1.2.2.1.5.%i.1", "", SU_AMBIENT_TEMPLATE, NULL),
 	/* temperatureThresholdHighWarning.n.1 */
-	{ "ambient.%i.temperature.high.warning", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.8.1.2.2.1.7.%i.1", "", SU_AMBIENT_TEMPLATE, NULL },
+	snmp_info_default("ambient.%i.temperature.high.warning", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.8.1.2.2.1.7.%i.1", "", SU_AMBIENT_TEMPLATE, NULL),
 	/* temperatureThresholdHighCritical.n.1 */
-	{ "ambient.%i.temperature.high.critical", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.8.1.2.2.1.8.%i.1", "", SU_AMBIENT_TEMPLATE, NULL },
+	snmp_info_default("ambient.%i.temperature.high.critical", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.8.1.2.2.1.8.%i.1", "", SU_AMBIENT_TEMPLATE, NULL),
 	/* humidityValue.n.1 */
-	{ "ambient.%i.humidity", 0, 0.1, ".1.3.6.1.4.1.534.6.8.1.3.3.1.3.%i.1", "", SU_AMBIENT_TEMPLATE, NULL },
-	{ "ambient.%i.humidity.status", ST_FLAG_STRING, SU_INFOSIZE,
+	snmp_info_default("ambient.%i.humidity", 0, 0.1, ".1.3.6.1.4.1.534.6.8.1.3.3.1.3.%i.1", "", SU_AMBIENT_TEMPLATE, NULL),
+	snmp_info_default("ambient.%i.humidity.status", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.8.1.3.3.1.1.%i.1",
-		NULL, SU_AMBIENT_TEMPLATE, &eaton_ats16_nm2_threshold_status_info[0] },
-	{ "ups.alarm", ST_FLAG_STRING, SU_INFOSIZE,
+		NULL, SU_AMBIENT_TEMPLATE, &eaton_ats16_nm2_threshold_status_info[0]),
+	snmp_info_default("ups.alarm", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.8.1.3.3.1.1.%i.1",
-		NULL, SU_AMBIENT_TEMPLATE, &eaton_ats16_nm2_threshold_humidity_alarms_info[0] },
+		NULL, SU_AMBIENT_TEMPLATE, &eaton_ats16_nm2_threshold_humidity_alarms_info[0]),
 	/* FIXME: consider ambient.n.humidity.{minimum,maximum} */
 	/* humidityThresholdLowCritical.n.1 */
-	{ "ambient.%i.humidity.low.critical", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.8.1.3.2.1.6.%i.1", "", SU_AMBIENT_TEMPLATE, NULL },
+	snmp_info_default("ambient.%i.humidity.low.critical", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.8.1.3.2.1.6.%i.1", "", SU_AMBIENT_TEMPLATE, NULL),
 	/* humidityThresholdLowWarning.n.1 */
-	{ "ambient.%i.humidity.low.warning", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.8.1.3.2.1.5.%i.1", "", SU_AMBIENT_TEMPLATE, NULL },
+	snmp_info_default("ambient.%i.humidity.low.warning", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.8.1.3.2.1.5.%i.1", "", SU_AMBIENT_TEMPLATE, NULL),
 	/* humidityThresholdHighWarning.n.1 */
-	{ "ambient.%i.humidity.high.warning", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.8.1.3.2.1.7.%i.1", "", SU_AMBIENT_TEMPLATE, NULL },
+	snmp_info_default("ambient.%i.humidity.high.warning", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.8.1.3.2.1.7.%i.1", "", SU_AMBIENT_TEMPLATE, NULL),
 	/* humidityThresholdHighCritical.n.1 */
-	{ "ambient.%i.humidity.high.critical", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.8.1.3.2.1.8.%i.1", "", SU_AMBIENT_TEMPLATE, NULL },
+	snmp_info_default("ambient.%i.humidity.high.critical", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.8.1.3.2.1.8.%i.1", "", SU_AMBIENT_TEMPLATE, NULL),
 	/* digitalInputName.n.{1,2} */
-	{ "ambient.%i.contacts.1.name", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.4.2.1.1.%i.1", "", SU_AMBIENT_TEMPLATE, NULL },
-	{ "ambient.%i.contacts.2.name", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.4.2.1.1.%i.2", "", SU_AMBIENT_TEMPLATE, NULL },
+	snmp_info_default("ambient.%i.contacts.1.name", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.4.2.1.1.%i.1", "", SU_AMBIENT_TEMPLATE, NULL),
+	snmp_info_default("ambient.%i.contacts.2.name", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.4.2.1.1.%i.2", "", SU_AMBIENT_TEMPLATE, NULL),
 	/* digitalInputPolarity.n */
-	{ "ambient.%i.contacts.1.config", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.8.1.4.2.1.3.%i.1", "", SU_AMBIENT_TEMPLATE, &eaton_ats16_nm2_ambient_drycontacts_polarity_info[0] },
-	{ "ambient.%i.contacts.2.config", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.8.1.4.2.1.3.%i.2", "", SU_AMBIENT_TEMPLATE, &eaton_ats16_nm2_ambient_drycontacts_polarity_info[0] },
+	snmp_info_default("ambient.%i.contacts.1.config", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.8.1.4.2.1.3.%i.1", "", SU_AMBIENT_TEMPLATE, &eaton_ats16_nm2_ambient_drycontacts_polarity_info[0]),
+	snmp_info_default("ambient.%i.contacts.2.config", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.8.1.4.2.1.3.%i.2", "", SU_AMBIENT_TEMPLATE, &eaton_ats16_nm2_ambient_drycontacts_polarity_info[0]),
 	/* XUPS-MIB::xupsContactState.n */
-	{ "ambient.%i.contacts.1.status", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.4.3.1.3.%i.1", "", SU_AMBIENT_TEMPLATE, &eaton_ats16_nm2_ambient_drycontacts_state_info[0] },
-	{ "ambient.%i.contacts.2.status", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.4.3.1.3.%i.2", "", SU_AMBIENT_TEMPLATE, &eaton_ats16_nm2_ambient_drycontacts_state_info[0] },
+	snmp_info_default("ambient.%i.contacts.1.status", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.4.3.1.3.%i.1", "", SU_AMBIENT_TEMPLATE, &eaton_ats16_nm2_ambient_drycontacts_state_info[0]),
+	snmp_info_default("ambient.%i.contacts.2.status", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.4.3.1.3.%i.2", "", SU_AMBIENT_TEMPLATE, &eaton_ats16_nm2_ambient_drycontacts_state_info[0]),
 
 #if WITH_UNMAPPED_DATA_POINTS /* FIXME: Remaining data to be processed */
 	/* ats2InputStatusDephasing.0 = INTEGER: normal(1) */
