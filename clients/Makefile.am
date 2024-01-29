@@ -1,5 +1,4 @@
 # Network UPS Tools: clients
-EXTRA_DIST =
 
 # Export certain values for ccache which NUT ci_build.sh can customize,
 # to facilitate developer iteration re-runs of "make" later.
@@ -9,6 +8,8 @@ EXTRA_DIST =
 @NUT_AM_MAKE_CAN_EXPORT@export CCACHE_DIR=@CCACHE_DIR@
 @NUT_AM_MAKE_CAN_EXPORT@export CCACHE_PATH=@CCACHE_PATH@
 @NUT_AM_MAKE_CAN_EXPORT@export PATH=@PATH_DURING_CONFIGURE@
+
+EXTRA_DIST =
 
 # nutclient.cpp for some legacy reason (maybe initial detached development?)
 # optionally includes "common.h" with the NUT build setup - and this option

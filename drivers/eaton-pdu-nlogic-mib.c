@@ -24,7 +24,7 @@
 
 #include "eaton-pdu-nlogic-mib.h"
 
-#define EATON_PDU_NLOGIC_MIB_VERSION  "0.1"
+#define EATON_PDU_NLOGIC_MIB_VERSION  "0.10"
 
 #define EATON_PDU_NLOGIC_SYSOID       ".1.3.6.1.4.1.534.7.1"
 
