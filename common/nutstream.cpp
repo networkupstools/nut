@@ -35,7 +35,9 @@ extern "C" {
 #include <sys/types.h>
 #include <sys/stat.h>
 
-/* Windows/Linux Socket compatibility layer, lifted from nutclient.cpp: */
+/* Windows/Linux Socket compatibility layer, lifted from nutclient.cpp
+ * (note we do not use wincompat.h here as it slightly conflicts, with
+ * extern vs. static etc.) */
 /* Thanks to Benjamin Roux (http://broux.developpez.com/articles/c/sockets/) */
 #ifdef WIN32
 #  define SOCK_OPT_CAST (char *)
