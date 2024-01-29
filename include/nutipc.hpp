@@ -53,6 +53,14 @@ extern "C" {
 #define NUT_UNUSED_VARIABLE(x) (void)(x)
 #endif
 
+/* https://stackoverflow.com/questions/25197299/clang-doesnt-know-doxygens-retval-tag
+ * Alternately, make the command "known" via CLI args: -fcomment-block-commands=retval
+ */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wno-documentation-unknown-command"
+#endif
+
 namespace nut {
 
 /**
