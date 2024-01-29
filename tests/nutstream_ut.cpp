@@ -33,6 +33,11 @@ extern "C" {
 #ifndef WIN32
 # include <sys/select.h>
 # include <sys/wait.h>
+#else
+# if !(defined random) && !(defined HAVE_RANDOM)
+   /* WIN32 names it differently: */
+#  define random() rand()
+# endif
 #endif	/* WIN32 */
 #include <sys/time.h>
 #include <sys/types.h>
