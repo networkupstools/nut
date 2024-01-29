@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3450 utf-8
+personal_ws-1.1 en 3453 utf-8
 AAC
 AAS
 ABI
@@ -549,6 +549,7 @@ IPAR
 IPBX
 IPC
 IPM
+IPP
 IPs
 IPv
 IRC
@@ -1263,6 +1264,7 @@ SlackPack
 Slackware
 SmartBoost
 SmartCell
+SmartNUT
 SmartOnline
 SmartPro
 SmartSlot
@@ -1867,6 +1869,7 @@ crontab
 crossbuild
 crt
 crw
+crypto
 csh
 cshdelay
 css

@@ -1,0 +1,423 @@
+#!/bin/sh
+#
+#	ipp-os-shutdown
+#
+#	Copyright (c) 2015-2017, by Eaton (R) Corporation. All rights reserved.
+#
+#	A shell script to manage the emergency shutdown driven by IPP - Unix
+#	(NUT) in a way that can be customized more easily; called from upsmon
+#
+# Requires configuration from ipp.conf and upsmon.conf, or otherwise defaults
+# to the values below
+#
+
+usage() {
+	echo "Usage: $0 [-t timespec | +mins] [-h|-p|-r] [-k|-K]"
+	echo "Usage: $0 -c | cancel"
+	echo "Usage: $0 -s | status"
+	echo "Usage: $0 --help"
+	echo "  -t timespec	0+ minutes to delay before proceeding or 'now'==0"
+	echo "  +minutes	0+ minutes to delay before proceeding"
+	echo "  -h | -p | -r 	Passed to the OS shutdown command (halt/poweroff/reboot)"
+	echo "  -k | -K 	Enforce or forbid calls to request UPS powercycling"
+	echo "           	Otherwise rely on KILLPOWER file as managed by upsmon"
+	echo "  -c = cancel	Cancel a pending shutdown, if any"
+	echo "  -s = status	Return simple status (string and code) of pending shutdown"
+}
+
+#
+# Global variables
+#
+NUT_DIR="/usr/local/ups"
+NUT_RUN_DIR="/var/run/nut"
+NUT_CFG_DIR=""
+for D in "$NUT_DIR/etc" "/etc/nut" "/etc/ups" ; do
+	if [ -d "$D" ] && [ -f "$D/ups.conf" ] && [ -f "$D/ipp.conf" ] ; then
+		NUT_CFG_DIR="$D"
+		break
+	fi
+done
+unset D
+CONFIG_IPP="$NUT_CFG_DIR/ipp.conf"
+CONFIG_UPSMON="$NUT_CFG_DIR/upsmon.conf"
+POWERDOWNFLAG="$NUT_CFG_DIR/killpower"
+if [ ! -w "$NUT_CFG_DIR" ] ; then
+	echo "WARNING: Configuration directory $NUT_CFG_DIR is not writable by this user,"
+	echo "         it may be a problem to save the 'killpower' flag file when needed."
+fi >&2
+
+# Note: $NUT_DIR/xbin holds the wrappers to run NUT binaries with co-bundled
+# third party libs and hopefully without conflicts induced for the OS binaries
+PATH="$NUT_DIR/xbin:$NUT_DIR/sbin:$NUT_DIR/bin:$PATH"
+export PATH
+
+# Search for binaries under current PATH normally, no hardcoding
+NUT_UPSC="upsc"
+NUT_UPSCMD="upscmd"
+NUT_UPSRW="upsrw"
+NUT_UPSMON="upsmon"
+#NUT_UPSC="$NUT_DIR/xbin/upsc"
+#NUT_UPSCMD="$NUT_DIR/xbin/upscmd"
+#NUT_UPSRW="$NUT_DIR/xbin/upsrw"
+#NUT_UPSMON="$NUT_DIR/xbin/upsmon"
+
+# Scripts:
+NUT_IPPSTATUS="ipp-status"
+NUT_UPS_SHUTDOWN="shutdown"
+#NUT_IPPSTATUS="$NUT_DIR/bin/ipp-status"
+#NUT_UPS_SHUTDOWN="$NUT_DIR/shutdown"
+
+# If present and executable, it is called for individual host's additional
+# shutdown routines.
+SHUTDOWNSCRIPT_CUSTOM=""
+
+# Store the optional -k/-K request to "enforce" or "forbid" powercycling
+# May be overridden by the ipp.conf, though intended for CLI usage.
+POWERDOWNFLAG_USER=""
+
+SHUTDOWN_PIDFILE="${NUT_RUN_DIR}/shutdown.pid"
+SHUTDOWN_TIMER=-1
+
+# Set default values
+# Notification configuration
+CONSOLE_NOTIF=1
+SYSLOG_NOTIF=1
+CMD_WALL="wall"
+CMD_SYSLOG="logger"
+
+#################### THE OS SHUTDOWN PROGRAM SETTINGS ##################
+# The following flags may be OS-dependent and so overridden in the
+# config file below. Depending on OS and hardware support, "poweroff"
+# may tell the powersources to cut the power, and "halt" may sit
+# forever at the "OS is stopped" prompt or equivalent.
+SDFLAG_POWEROFF="-h"
+SDFLAG_REBOOT="-r"
+SDFLAG_HALT="-p"
+
+# The flag for quick stop (shorter service stop timeouts and fewer/no
+# logs, or outright go to kill remaining processes)
+SDFLAG_UNGRACEFUL="-F"
+
+# Trigger a shutdown without delay (zero delay)
+SDFLAG_INSTANT="+0"
+
+# The program which executes an OS shutdown, maybe including flags that
+# disable its interactive mode
+CMD_SHUTDOWN="/usr/sbin/shutdown"
+
+# Customize the shutdown command by setting the SDFLAG variables above here:
+CONFIG_SHUTDOWN="$NUT_DIR/etc/ipp-os-shutdown.conf"
+########################################################################
+
+# Potentially localizable message strings; those with s in the name contain
+# an argument processed as a string via printf; otherwise echo'ed directly
+DefaultSubject="Intelligent Power Protector (IPP) Emergency Shutdown"
+MessageIrreversible="Beginning irreversible stage of the powerfail shutdown"
+MessageIrreversibleTrap="Sorry, the powerfail shutdown is now irreversible, you should not abort it!"
+MessageTimerAbortedTrap="Delayed powerfail shutdown timer was successfully aborted before it expired"
+MessageShutdownIsDelayed_s="Powerfail shutdown was scheduled as delayed: sleeping for %s seconds"
+MessageShutdownNotDelayed="Powerfail: shutting down without delay"
+MessageCancelingPIDS_s="Canceling delayed powerfail shutdown PID: %s"
+MessageCannotCancelNone="Nothing scheduled, nothing to cancel"
+MessageCannotCancelIrrev="Scheduled shutdown is already irreversible, can not cancel it"
+MessageCannotQueueAnother="Shutdown already pending, cancel it first to queue another one"
+MessageCustomShutdownStarting_s="Initiating custom shutdown for %s..."
+MessageCustomShutdownCompleted_s="Custom shutdown for %s is completed"
+MessageKillpowerFileExists_s="the POWERDOWNFLAG file '%s' exists"
+MessageKillpowerFileAbsent_s="the POWERDOWNFLAG file '%s' does not exist"
+MessageKillpowerArgumentExists_s="the POWERDOWNFLAG_USER setting is '%s'"
+MessageKillpowerArgumentAbsent="the POWERDOWNFLAG_USER setting is empty, relying on POWERDOWNFLAG file (if any)"
+MessageUPSpowercycleCommandingPoweroff_s="Commanding the UPSes to power off and back on after a delay (%s), and powering this host off unconditionally"
+MessageUPSpowercycleCommanding_s="Commanding the UPSes to power off and back on after a delay (%s), but still proceeding to OS shutdown to the explicit host power-state requested originally"
+MessageUPSpowercycleNotCommanding="NOT commanding the UPSes to power-cycle; inspecting external power status at this moment"
+MessageExtPowerIsBackRebooting="External power is back, rebooting host rather than halting it"
+MessageExtPowerIsBack="External power is back, but we are still proceeding to OS shutdown to the explicit host power-state requested originally"
+MessageExtPowerNotBack="External power is not back, proceeding to OS shutdown to the host power-state requested originally"
+MessageRunningCmd_s="Proceeding to execute: '%s'"
+ORIG_PARAM_STR="$*"
+
+# Include definitions for shutdown flags before ipp.conf, so the latter
+# can e.g. predefine the $SDFLAG_POWERSTATE_DEFAULT value by name.
+if [ -f "$CONFIG_SHUTDOWN" ]; then
+	. "$CONFIG_SHUTDOWN"
+fi
+
+# Include IPP ipp.conf (may overwrite the above default values!)
+if [ -f "$CONFIG_IPP" ]; then
+	. "$CONFIG_IPP"
+fi
+
+# If nothing was set/guessed - use this value:
+[ -z "${SDFLAG_POWERSTATE_DEFAULT-}" ] && \
+	SDFLAG_POWERSTATE_DEFAULT="$SDFLAG_POWEROFF"
+
+# Default is to do whatever shutdown strategy the OS prefers and maybe
+# customize below (e.g. do fast shutdown if clusterware is present and
+# was stopped); override in config file to e.g. " " (space) to disable
+# this behavior and use the one configured value.
+[ -z "${SDFLAG_COMMONOPTIONS-}" ] && \
+	SDFLAG_COMMONOPTIONS=""
+
+# When we go into irreversible state, rename the existing PIDfile into this
+# (or create a new one if existing file disappeared)
+SHUTDOWN_PIDFILE_IRREVERSIBLE="${SHUTDOWN_PIDFILE}.irreversible"
+
+# String with current timestamp (for logging)
+ldate=""
+get_ldate() {
+	ldate="`date +\"%y-%m-%d - %H:%M:%S\"`" && return 0
+	# Optional first argument can contain the default value
+	if [ -n "$1" ] ; then ldate="$1" ; else ldate="`date`"; fi
+}
+
+logmsg() {
+	# The argument string is wrapped with formalities and
+	# logged into echo > stdout, syslog and wall
+	echo "${ldate}: $*"
+	if [ "$CONSOLE_NOTIF" -eq 1 -a -n "$CMD_WALL" ]; then
+		echo "${DefaultSubject}\n$* at ${ldate}" | $CMD_WALL 2>/dev/null
+	fi
+	if [ "$SYSLOG_NOTIF" -eq 1 -a -n "$CMD_SYSLOG" ]; then
+		$CMD_SYSLOG -t eaton-ipp "$*" 2>/dev/null
+	fi
+}
+
+check_pid() {
+	# Returns: PID in $1 is running = 0; not running = 1; syntax errors = 2
+	[ -n "$1" ] && [ "$1" -gt 0 ] || return 2
+	[ -d "/proc/$1" ] && return 0
+	( (ps -ef || ps -xawwu ) | grep -v grep | egrep "`basename $0`|shutdown" | \
+		awk '{print $2}' | grep -w "$1" ) 2>/dev/null && return 0
+	return 1
+}
+
+check_pids_atleastone() {
+	# Checks all args as PID numbers; if any one is running return 0
+	for P in "$@"; do
+		check_pid "$P" && return 0
+	done
+	return 1
+}
+
+check_pidfile() {
+	# First line of PIDFILE ($1) should contain one or more PIDs
+	# Check if file exists, and any pointed PID is running - then return 0
+	# No PID is running - return 1
+	# No file / bad filename / other errors - then return 2
+	if [ -n "$1" ] && [ -s "$1" ] && [ -r "$1" ]; then
+		PIDS="`head -1 "$1"`" && [ -n "$PIDS" ] || return 2
+		check_pids_atleastone $PIDS || return 1
+		return 0
+	fi
+	return 2
+}
+
+check_shutting_down() {
+	# IF THE PIDFILE DID NOT PASS A TEST, IT IS REMOVED TO REDUCE CONFUSION
+	# If the SHUTDOWN_PIDFILE_IRREVERSIBLE exists and points to a running
+	# process return 2
+	# If the SHUTDOWN_PIDFILE exists and the PID pointed by it is running
+	# return 1 - this means we can cancel it (can not queue new one)
+	# If neither file exists nor points to a running process return 0 -
+	# this means we can schedule a shutdown / have nothing to cancel
+	check_pidfile "$SHUTDOWN_PIDFILE_IRREVERSIBLE" && return 2
+	rm -f "$SHUTDOWN_PIDFILE_IRREVERSIBLE"
+	check_pidfile "$SHUTDOWN_PIDFILE" && return 1
+	rm -f "$SHUTDOWN_PIDFILE"
+	return 0
+}
+
+cancel_shutdown() {
+	# If the SHUTDOWN_PIDFILE exists and the PID pointed by it is running
+	# then kill that PID and remove the SHUTDOWN_PIDFILE
+	check_shutting_down
+	case "$?" in
+		0) echo "$MessageCannotCancelNone"; return 0 ;;
+		1)
+			PIDS="`head -1 "$SHUTDOWN_PIDFILE"`" && [ -n "$PIDS" ] || return 1
+			get_ldate
+			logmsg $(printf "${MessageCancelingPIDS_s}\n" "$PIDS")
+			kill -9 $PIDS
+			rm -f "$SHUTDOWN_PIDFILE" "$SHUTDOWN_PIDFILE_IRREVERSIBLE"
+			return 0 ;;
+		2) echo "$MessageCannotCancelIrrev"; return 2 ;;
+	esac
+}
+
+# Start with an empty value, so in the end if it remains empty
+# we can apply the default; otherwise - it is user's request.
+SDFLAG_POWERSTATE=""
+while [ "$#" -gt 0 ]; do
+	case "$1" in
+		-t) case "$2" in
+			now) SHUTDOWN_TIMER=0 ;;
+			[0-9]) [ "$2" -gt -1 ] && SHUTDOWN_TIMER="$2" || \
+				echo "Bad time parameter '$1 $2', ignoring" >&2 ;;
+			*)	echo "Bad time parameter '$1 $2', ignoring" >&2 ;;
+		    esac
+		    shift ;;
+		+0)	SHUTDOWN_TIMER="0" ;;
+		+[1-9]*) N="`echo "$1" | sed 's,^\+,,'`" && N="`expr 0 + "$N"`" && \
+			[ "$N" -gt -1 ] && SHUTDOWN_TIMER="$N" || \
+			echo "Bad time parameter '$1', ignoring" >&2 ;;
+		--help|help) usage; exit 0 ;;
+		-h|--halt) SDFLAG_POWERSTATE="$SDFLAG_HALT" ;;
+		-r|--reboot) SDFLAG_POWERSTATE="$SDFLAG_REBOOT" ;;
+		-p|--poweroff) SDFLAG_POWERSTATE="$SDFLAG_POWEROFF" ;;
+		-s|status)
+			check_shutting_down
+			RES=$?
+			case "$RES" in
+				0) echo "not-pending" ;;
+				1) echo "pending" ;;
+				2) echo "irreversible" ;;
+			esac
+			exit $RES ;;
+		-c|cancel) cancel_shutdown ; exit $? ;;
+		-k) POWERDOWNFLAG_USER="enforce" ;;
+		-K) POWERDOWNFLAG_USER="forbid" ;;
+		-l|block) # Undocumented - for dev. purposes
+			touch "${SHUTDOWN_PIDFILE}.disable" ; exit $? ;;
+		-L|unblock) # Undocumented - for dev. purposes
+			rm -f "${SHUTDOWN_PIDFILE}.disable" ; exit $? ;;
+		*) echo "Bad parameter '$1', ignoring" >&2 ;;
+	esac
+	shift
+done
+
+check_shutting_down
+RES=$?
+case "$RES" in
+	1) echo "$MessageCannotQueueAnother"; exit $RES ;;
+	2) echo "$MessageCannotCancelIrrev"; exit $RES ;;
+esac
+
+if [ -f "$CONFIG_UPSMON" ]; then
+	_VAR="`egrep '^[ \t]*POWERDOWNFLAG ' "$CONFIG_UPSMON" | sed 's,^[ \t]*POWERDOWNFLAG ,,'`"
+	_VAR="$(echo "$_VAR" | sed -e 's,^"\(.*\)"$,\1,g' -e "s,^\'\(.*\)\'$,\1,g")"
+	if [ $? = 0 ] && [ -n "$_VAR" ]; then
+		POWERDOWNFLAG="$_VAR"
+		echo "Detected setting of POWERDOWNFLAG file as '$POWERDOWNFLAG'"
+	fi
+fi
+
+DATE_START_DELAY="`date`"
+get_ldate "$DATE_START_DELAY"
+( echo "$$"; echo "$DATE_START_DELAY" ) > "$SHUTDOWN_PIDFILE"
+
+CONSOLE_NOTIF=1 SYSLOG_NOTIF=1 logmsg \
+	"$0 $ORIG_PARAM_STR was called to commit a powerfail shutdown. Current UPS state:" \
+	"`$NUT_IPPSTATUS`"
+
+# Clean up when this script is exited in any manner
+trap '_R=$?; rm -f "$SHUTDOWN_PIDFILE" "$SHUTDOWN_PIDFILE_IRREVERSIBLE" "$SHUTDOWN_PIDFILE.custom"; exit ${_R}' 0
+
+# schedule the shutdown delayed for $SHUTDOWN_TIMER minutes
+if [ "$SHUTDOWN_TIMER" -gt -1 ] 2>/dev/null; then
+	if [ "$SHUTDOWN_TIMER" -eq 0 ]; then
+		echo "$MessageShutdownNotDelayed"
+	else
+		SHUTDOWN_TIMER_SEC="`expr $SHUTDOWN_TIMER \* 60`" \
+			|| SHUTDOWN_TIMER_SEC="120"
+		logmsg $(printf "${MessageShutdownIsDelayed_s}\n" "${SHUTDOWN_TIMER_SEC}")
+		echo "+ ${SHUTDOWN_TIMER_SEC}" >> "$SHUTDOWN_PIDFILE"
+		trap 'get_ldate; logmsg "$MessageTimerAbortedTrap">&2 ; exit 0' 1 2 3 15
+		/usr/bin/sleep ${SHUTDOWN_TIMER_SEC}
+	fi
+fi
+
+if [ -f "${SHUTDOWN_PIDFILE}.disable" ]; then
+	logmsg "Development hook: '${SHUTDOWN_PIDFILE}.disable' exists, so not doing the actual shutdown"
+	exit 0
+fi
+
+cd /
+
+DATE_START_IRREV="`date`"
+get_ldate "$DATE_START_IRREV"
+CONSOLE_NOTIF=1 SYSLOG_NOTIF=1 logmsg "${MessageIrreversible}"
+trap 'echo "$MessageIrreversibleTrap">&2' 1 2 3 15
+(echo "$$"; echo "$DATE_START_DELAY"; echo "+ $SHUTDOWN_TIMER_SEC"; echo "$DATE_START_IRREV" ) \
+	> "${SHUTDOWN_PIDFILE_IRREVERSIBLE}" \
+	&& rm -f "${SHUTDOWN_PIDFILE}"
+
+# The custom shutdown routine if clusterware is present
+if [ -n "${SHUTDOWNSCRIPT_CUSTOM-}" ] && \
+   [ -x "${SHUTDOWNSCRIPT_CUSTOM}" ] && \
+   [ -s "${SHUTDOWNSCRIPT_CUSTOM}" ] \
+; then
+	export MessageCustomShutdownStarting_s MessageCustomShutdownCompleted_s
+	export MessageIrreversibleTrap DefaultSubject
+	export CONSOLE_NOTIF CMD_WALL SYSLOG_NOTIF CMD_SYSLOG
+	export SDFLAG_COMMONOPTIONS SDFLAG_UNGRACEFUL
+	get_ldate
+	logmsg $(printf "$MessageCustomShutdownStarting_s" "$SHUTDOWNSCRIPT_CUSTOM")
+	rm -f "$SHUTDOWN_PIDFILE.custom"
+	touch "$SHUTDOWN_PIDFILE.custom"
+	chmod 600 "$SHUTDOWN_PIDFILE.custom"
+	"$SHUTDOWNSCRIPT_CUSTOM" 3>"$SHUTDOWN_PIDFILE.custom"
+	get_ldate
+	logmsg $(printf "$MessageCustomShutdownCompleted_s" "$SHUTDOWNSCRIPT_CUSTOM")
+	# Some variables for this script could be modified in the custom one
+	[ -s "$SHUTDOWN_PIDFILE.custom" ] && . "$SHUTDOWN_PIDFILE.custom"
+	rm -f "$SHUTDOWN_PIDFILE.custom"
+fi
+
+# Did the power return to sufficient amount of UPSes while we were stopping?
+# NOTE: If we are the host which commands UPSes to power-cycle, we should
+# still request the powercycle and halt/poweroff ourselves.
+# This file is wiped during UPSMON startup so should not interfere needlessly.
+# We expect the /usr/local/ups tree to be still available
+POWERDOWNFLAG_UPSMON=no
+if [ -s "$POWERDOWNFLAG" ] || "$NUT_UPSMON" -K ; then
+	POWERDOWNFLAG_UPSMON=yes
+fi
+get_ldate
+if [ x"$POWERDOWNFLAG_UPSMON" = xyes ] ; then
+	logmsg $(printf "$MessageKillpowerFileExists_s" "$POWERDOWNFLAG")
+else
+	logmsg $(printf "$MessageKillpowerFileAbsent_s" "$POWERDOWNFLAG")
+fi
+if [ -n "$POWERDOWNFLAG_USER" ] ; then
+	logmsg $(printf "$MessageKillpowerArgumentExists_s" "$POWERDOWNFLAG_USER")
+else
+	logmsg "$MessageKillpowerArgumentAbsent"
+fi
+
+if [ x"$POWERDOWNFLAG_UPSMON" = xyes -o "$POWERDOWNFLAG_USER" = "enforce" ] && \
+   [ "$POWERDOWNFLAG_USER" != "forbid" ] \
+; then
+	# We will cut our (dev-assumed) power, so should poweroff to be safe...
+	if [ -z "${SDFLAG_POWERSTATE-}" ] ; then
+		CONSOLE_NOTIF=1 SYSLOG_NOTIF=1 logmsg $(printf "$MessageUPSpowercycleCommandingPoweroff_s" "$DELAY")
+		SDFLAG_POWERSTATE="$SDFLAG_POWEROFF"
+	else
+		CONSOLE_NOTIF=1 SYSLOG_NOTIF=1 logmsg $(printf "$MessageUPSpowercycleCommanding_s" "$DELAY")
+	fi
+	POWERDOWNFLAG_USER=enforce "$NUT_UPS_SHUTDOWN"
+else
+	logmsg "$MessageUPSpowercycleNotCommanding"
+	"$NUT_IPPSTATUS" -q
+	if [ $? -eq 0 ] ; then
+		if [ -z "${SDFLAG_POWERSTATE-}" ] ; then
+			CONSOLE_NOTIF=1 SYSLOG_NOTIF=1 logmsg "$MessageExtPowerIsBackRebooting"
+			SDFLAG_POWERSTATE="$SDFLAG_REBOOT"
+		else
+			CONSOLE_NOTIF=1 SYSLOG_NOTIF=1 logmsg "$MessageExtPowerIsBack"
+		fi
+	else
+		logmsg "$MessageExtPowerNotBack"
+	fi
+fi
+
+# By default, we continue with instant shutdown without waiting any more
+[ -z "${SDFLAG_COMMONOPTIONS-}" ] && \
+	SDFLAG_COMMONOPTIONS="$SDFLAG_INSTANT"
+
+[ -z "${SDFLAG_POWERSTATE-}" ] && \
+	SDFLAG_POWERSTATE="$SDFLAG_POWERSTATE_DEFAULT"
+
+get_ldate
+CONSOLE_NOTIF=1 SYSLOG_NOTIF=1 logmsg $(printf "$MessageRunningCmd_s" "$CMD_SHUTDOWN $SDFLAG_POWERSTATE $SDFLAG_COMMONOPTIONS")
+# Launch the operating system shutdown command
+$CMD_SHUTDOWN $SDFLAG_POWERSTATE $SDFLAG_COMMONOPTIONS

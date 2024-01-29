@@ -1,0 +1,33 @@
+#
+# ipp-os-shutdown.conf
+#
+# Settings that specify typical shutdown commands for various supported OSes
+# Version for Solaris (x86, SPARC)
+#
+
+# The program which executes an OS shutdown, maybe including flags that
+# disable its interactive mode
+CMD_SHUTDOWN="/usr/sbin/shutdown -y"
+
+# Depending on OS and hardware support, "poweroff" option may tell the
+# host's power source units to cut off their power to the motherboard,
+# and "halt" may sit forever at the "OS is stopped" prompt or equivalent.
+SDFLAG_POWEROFF="-i 5"
+SDFLAG_REBOOT="-i 6"
+SDFLAG_HALT="-i 0"
+
+# The flag for quick stop (shorter service stop timeouts and fewer/no
+# logs, or outright go to kill remaining processes)
+# NOTE: In Solaris, there are very ungraceful options for `poweroff`,
+# `halt` and `reboot` programs - but they are not exposed in `shutdown`.
+SDFLAG_UNGRACEFUL="-g 0"
+
+# Trigger a shutdown without delay
+SDFLAG_INSTANT="-g 0"
+
+## Filename to store the PID of a pending shutdown
+## If this file is absent, the shutdown can not be canceled (killed)
+## If the "${SHUTDOWN_PIDFILE}.irreversible" exists and points to running PID
+## then the new shutdown can not be queued (caller must cancel old one first)
+SHUTDOWN_PIDFILE="/var/state/ups/shutdown.pid"
+
