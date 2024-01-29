@@ -134,14 +134,6 @@ static info_lkp_t pw_pwr_info[] = {
 	info_lkp_default(11, "OL"),	/* essMode */
 		/* FIXME: is "11" correct here or in the line above? */
 
-	/* Extended status values */
-	info_lkp_default(240, "OB"),	/* battery (0xF0) */
-	info_lkp_default(100, "BYPASS"),	/* maintenanceBypass (0x64) */
-	info_lkp_default(96, "BYPASS"),	/* Bypass (0x60) */
-	info_lkp_default(81, "OL"),	/* high efficiency (0x51) */
-	info_lkp_default(80, "OL"),	/* normal (0x50) */
-	info_lkp_default(64, "OL"),	/* UPS supporting load, normal degraded mode (0x40) */
-	info_lkp_default(16, "OFF"),	/* none (0x10) */
 	info_lkp_sentinel
 };
 
