@@ -206,7 +206,7 @@ generate_C() {
 
 	#include "${HFILE}"
 
-	#define ${UDRIVER}_MIB_VERSION  "0.1"
+	#define ${UDRIVER}_MIB_VERSION  "0.01"
 
 	#define ${UDRIVER}_SYSOID       "${DEVICE_SYSOID}"
 
