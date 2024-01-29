@@ -9,6 +9,7 @@
  *   2002-2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *  			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *  			Niels Baggesen <niels@baggesen.net>
+ *   2020-2024  Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  Sponsored by Eaton <http://www.eaton.com>
  *   and originally by MGE UPS SYSTEMS <http://opensource.mgeups.com/>
@@ -183,9 +184,9 @@ typedef struct {
 #  define info_lkp_default(_1, _2)	{_1, _2, NULL, NULL}
 #  define info_lkp_fun_vp2s(_1, _2, _3)	{_1, _2, _3, NULL}
 #  define info_lkp_nuf_s2l(_1, _2, _3)	{_1, _2, NULL, _3}
-/* no-op without DMF extensions */
-#  define info_lkp_fun_s2l(_1, _2, _3)	{_1, _2, NULL, NULL}
-#  define info_lkp_nuf_vp2s(_1, _2, _3)	{_1, _2, NULL, NULL}
+/* Without DMF extensions, these methods poorly made do before the role split */
+#  define info_lkp_fun_s2l(_1, _2, _3)	{_1, _2, NULL, _3}
+#  define info_lkp_nuf_vp2s(_1, _2, _3)	{_1, _2, _3, NULL}
 # endif /* WITH_DMFMIB */
 #else
 # define info_lkp_default(_1, _2)	{_1, _2}
