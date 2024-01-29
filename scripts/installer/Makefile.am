@@ -1,36 +1,36 @@
-# Network UPS Tools: scripts (root)
+# Network UPS Tools: scripts/installer
 
 EXTRA_DIST = \
-    README.adoc \
-    avahi/nut.service.in \
-    HP-UX/nut-drvctl \
-    HP-UX/nut-drvctl.sh \
-    HP-UX/nut-upsd \
-    HP-UX/nut-upsd.sh \
-    HP-UX/nut-upsmon \
-    HP-UX/nut-upsmon.sh \
-    logrotate/nutlogd \
-    misc/nut.bash_completion \
-    misc/osd-notify \
-    perl/Nut.pm \
-    RedHat/halt.patch \
-    RedHat/README.adoc \
-    RedHat/ups.in \
-    RedHat/upsd.in \
-    RedHat/upsmon.in \
-    Solaris8/S99upsmon \
-    subdriver/gen-usbhid-subdriver.sh \
-    subdriver/gen-snmp-subdriver.sh \
-    upower/95-upower-hid.hwdb \
-    upower/95-upower-hid.rules \
-    usb_resetter/README.adoc \
-    usb_resetter/nut-driver.service \
-    Windows/halt.c \
-    Windows/Makefile
+	README.adoc \
+	make_package.sh	\
+	version.sh	\
+	install.sh	\
+	uninstall-lsnw.sh	\
+	uninstall-ipp	\
+	nutconf-dummy	\
+	common_EN/license.txt	\
+	common_EN/install.res	\
+	common/solaris_init	\
+	common/ipp-shutdown-daemon.sh	\
+	common/README_ipp-os-shutdown.adoc	\
+	common/ipp-status	\
+	common/ipp.conf	\
+	common/ipp-wrapper	\
+	common/ipp-event.sh	\
+	common/string.sh	\
+	common/ipp-host-shutdown.sample	\
+	common/shutdown	\
+	common/ipp-notifier.sh	\
+	common/ipp-os-shutdown	\
+	common/init	\
+	common/aix_init	\
+	aix/ipp-os-shutdown.conf.sample	\
+	aix/aix_init	\
+	hpux/ipp-os-shutdown.conf.sample	\
+	solcmn/solaris_init	\
+	solcmn/ipp-os-shutdown.conf.sample
 
-SUBDIRS = augeas devd hotplug installer python systemd udev ufw Solaris Windows upsdrvsvcctl
-
-SPELLCHECK_SRC = README.adoc RedHat/README.adoc usb_resetter/README.adoc
+SPELLCHECK_SRC = README.adoc common/README_ipp-os-shutdown.adoc
 
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension:
 #%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
@@ -49,6 +49,6 @@ SPELLCHECK_SRC = README.adoc RedHat/README.adoc usb_resetter/README.adoc
 spellcheck spellcheck-interactive spellcheck-sortdict:
 	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SPELLCHECK_SRC)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
-CLEANFILES = *-spellchecked RedHat/*-spellchecked usb_resetter/*-spellchecked
+CLEANFILES = *-spellchecked
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp

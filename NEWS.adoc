@@ -62,7 +62,7 @@ https://github.com/networkupstools/nut/milestone/10
      applied setting when live-reloading configuration, so commenting it
      away in `upsmon.conf` did not have the effect of resetting the logging
      frequency to default. It also did not reset the counters to certainly
-     follow the new configuration for existing faults. [#2207]
+     follow the new configuration for existing faults. [issue #2207, PR #2209]
    * `upsmon` support for `POLLFAIL_LOG_THROTTLE_MAX` had an off-by-one error
      (e.g. reporting "Data stale" or "Driver not connected" every 30 sec with
      `POLLFAIL_LOG_THROTTLE_MAX 5` and `POLLFREQ 5` settings). [#2207]
@@ -122,12 +122,18 @@ https://github.com/networkupstools/nut/milestone/10
    * Added publishing recipes for PyNUT client bindings for NUT, so it ends
      up in the link:https://pypi.org/project/PyNUTClient[PyPI repository].
      [#2158]
+   * Added support for new `ccache` namespace concept, where possible. [#2256]
+   * Fixed an issue for builds configured `--without-usb`. [#2263]
+   * Added a fallback for `libgd` discovery (for CGI etc. builds). [#2287]
+   * Made `aspell` TeX module detection more reliable. [#2206]
+   * Various other recipe and documentation clean-up efforts. [#2284, #2269,
+     #2261]
 
  - main driver core codebase:
    * Help users of drivers that can be built to support optionally USB and
      other media (like `nutdrv_qx` built for serial-only support), and built
      in fact without USB support but used for USB devices, with some more
-     information to make troubleshooting easier. [#2259]
+     information to make troubleshooting easier. [issue #2259, PR #2260]
    * Driver programs with debug tracing support via `-D` CLI option and/or
      the `NUT_DEBUG_LEVEL` environment variable now check those earlier in
      their life-time, so that initialization routine can be debugged. [#2259]
@@ -143,7 +149,11 @@ https://github.com/networkupstools/nut/milestone/10
    * Also applied other optimizations to the script implementation. [#682]
 
  - powerpanel text driver now handles status responses in any format and should
-   support most devices [#2156]
+   support most devices. [#2156]
+
+ - snmp-ups driver:
+   * added support for Eaton EMP002 sensor for ATS16 NM2 sub-driver. [#2286]
+   * mapping table updates for apc-mib sub-driver. [#2264]
 
  - usbhid-ups driver:
    * `arduino-hid` subdriver was enhanced from "initial bare bones" experimental
@@ -162,6 +172,17 @@ https://github.com/networkupstools/nut/milestone/10
        `onlinedischarge_log_throttle_sec`, by default 30 sec if `battery.charge`
        is not reported by the device (should be frequent by default, in case
        the UPS-reported state combination does reflect a bad power condition).
+
+ - Various code and documentation fixes for NSS crypto support. [#2274, #2268]
+
+ - Laid foundations for the SmartNUT effort (aiming to integrate drivers with
+   some other backends than the networked NUT data server process).
+
+ - Eaton contributed recipes and scripts used to create the IPP for Unix bundle
+   (UPS software companion), delivering NUT packages with an interactive
+   installer and some system integration scripts (events, notifications,
+   status, shutdown daemon...) [#2288]
+
 
 Release notes for NUT 2.8.1 - what's new since 2.8.0
 ----------------------------------------------------

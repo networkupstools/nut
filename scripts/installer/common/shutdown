@@ -1,0 +1,97 @@
+#!/bin/sh
+#	shutdown
+#
+#	Copyright (c) 2013-2017, by Eaton (R) Corporation. All rights reserved.
+#
+#	A shell script to command UPSes to power off and back on as part of
+#	the emergency shutdown driven by IPP - Unix (NUT); called from upsmon
+#
+# Requires configuration from ipp.conf, or otherwise default to the values below
+# Also requires matching features to be available in the UPSes and their drivers
+#
+# TODO remaining per IPSSUNIX-25:
+#	* The script acts on ALL UPSes configured on this system (`upsc -l`),
+#	  rather than those MONITORed as feeding a non-zero amount
+#	  power-sources in `upsmon.conf`
+#	* Consider the KILLPOWER flag-file (maybe this host should not power
+#	  off any UPS at all?)
+#	* The username is hardcoded as `admin` rather than taken from config
+#	* Maybe we do not try every possible instcmd for UPS poweroff/reboot -
+#	  revise against upsrw and upscmd for NETXML and SNMP drivers at least
+#
+
+NUT_DIR="/usr/local/ups"
+NUT_CFG_DIR=""
+for D in "$NUT_DIR/etc" "/etc/nut" "/etc/ups" ; do
+	if [ -d "$D" ] && [ -f "$D/ups.conf" ] && [ -f "$D/ipp.conf" ] ; then
+		NUT_CFG_DIR="$D"
+		break
+	fi
+done
+unset D
+CONFIG_IPP="$NUT_CFG_DIR/ipp.conf"
+
+# Note: $NUT_DIR/xbin holds the wrappers to run NUT binaries with co-bundled
+# third party libs and hopefully without conflicts induced for the OS binaries
+PATH="$NUT_DIR/xbin:$NUT_DIR/sbin:$NUT_DIR/bin:$PATH"
+export PATH
+
+# Search for binaries under current PATH normally, no hardcoding
+NUT_UPSC="upsc"
+NUT_UPSCMD="upscmd"
+NUT_UPSRW="upsrw"
+#NUT_UPSC="$NUT_DIR/xbin/upsc"
+#NUT_UPSCMD="$NUT_DIR/xbin/upscmd"
+#NUT_UPSRW="$NUT_DIR/xbin/upsrw"
+
+# Do not normally mangle the LD_LIBRARY_PATH - it can impact system tools too
+#LD_LIBRARY_PATH="$NUT_DIR/lib:/usr/lib:/lib:$LD_LIBRARY_PATH"
+#export LD_LIBRARY_PATH
+
+# This can be set by `ipp-os-shutdown` script, including via '-k' flag
+CALLER_POWERDOWNFLAG_USER="${POWERDOWNFLAG_USER-}"
+
+# Include IPP ipp.conf (may overwrite the above default values!) to
+# get shutdown delay and admin password
+if [ -f "$CONFIG_IPP" ] ; then
+	. "$CONFIG_IPP"
+fi
+
+if [ "$IPP_DEBUG" = yes ] ; then
+	exec >> /var/tmp/ipp-shutdown.log 2>&1
+	echo "`date`: Started shutting down: $0 $*" >&2
+	set >&2
+	set -x
+fi
+
+# If config forbids powercycling, and the caller does not require it,
+# then do not do it
+[ "$CALLER_POWERDOWNFLAG_USER" != "enforce" ] && \
+	[ "$POWERDOWNFLAG_USER" = "forbid" ] && exit 0
+
+# We need a number here, otherwise the UPS stays off
+# TODO: Consider "shutdown_duration" if netxml_ups is set up?
+# TODO: Do this per ups (move into the loop below then)?
+if test -n "$DELAY" && test "$DELAY" -ge 0 ; then true; else DELAY=120; fi
+
+DELAYON="`expr $DELAY + 10`"
+
+# TODO: Here we want to refine the list to only MONITORed UPSes that power us
+# and/or take into account the killpower flag-file (upsmon master vs slave
+# and/or `upsmon -k` status)
+# Convert to parsing of "ipp-status -p" which reports all needed details
+upslist="`"$NUT_UPSC" -l`"
+echo "$upslist"
+# NOTE: not all UPSes and not all drivers support all possible instcmd's
+# so we try as many as possible
+for u in $upslist; do
+	echo "Configuring poweroff-poweron for UPS '$u' ..."
+	"$NUT_UPSCMD" -u admin -p "$PASSWORD" "$u" load.on.delay "$DELAYON"
+	"$NUT_UPSCMD" -u admin -p "$PASSWORD" "$u" load.off.delay "$DELAY"
+	for o in 3 2 1 ; do
+		"$NUT_UPSRW" -s "outlet.$o.delay.start"="$DELAYON" \
+			-u admin -p "$PASSWORD" "$u"
+		"$NUT_UPSRW" -s "outlet.$o.delay.shutdown"="$DELAY" \
+			-u admin -p "$PASSWORD" "$u"
+	done
+done
