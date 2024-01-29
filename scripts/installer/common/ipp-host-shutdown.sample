@@ -1,0 +1,80 @@
+#!/bin/sh
+#
+# Script for custom emergency powerfail shutdown of a host to do actions that
+# were not implemented as part of normal OS shutdown routine for some reason.
+# Must run as root or with sufficient privileges to execute the actions.
+# Can print to >&3 some shell lines that would be sourced by the main script.
+#	Copyright (c) 2013-2015, by Eaton (R) Corporation. All rights reserved.
+#
+# Note: This file (ipp-host-shutdown.sample) is delivered by the package and
+# will be overwritten in case of upgrades. It is an example implementation of
+# a host-specific shutdown routine; make a copy, preferably with a name unique
+# to a host-role in your deployment, and reference it from `ipp.conf` with the
+# `SHUTDOWNSCRIPT_CUSTOM` variable.
+
+# Notification configuration is normally exported by `ipp-os-shutdown`
+#CONSOLE_NOTIF=1
+#SYSLOG_NOTIF=1
+#CMD_WALL="wall"
+#CMD_SYSLOG="logger"
+
+[ -z "${DefaultSubject-}" ] && \
+	DefaultSubject="Intelligent Power Protector (IPP) Emergency Shutdown"
+[ -z "${MessageCustomShutdownStarting_s-}" ] && \
+	MessageCustomShutdownStarting_s="Initiating custom shutdown for %s..."
+[ -z "${MessageCustomShutdownCompleted_s-}" ] && \
+	MessageCustomShutdownCompleted_s="Custom shutdown for %s is completed"
+[ -z "${MessageIrreversibleTrap-}" ] && \
+	MessageIrreversibleTrap="Sorry, the powerfail shutdown is now irreversible, you should not abort it!"
+
+# String with current timestamp (for logging)
+ldate=""
+get_ldate() {
+	ldate="`date +\"%y-%m-%d - %H:%M:%S\"`" && return 0
+	# Optional first argument can contain the default value
+	if [ -n "$1" ] ; then ldate="$1" ; else ldate="`date`"; fi
+}
+
+logmsg() {
+	# The argument string is wrapped with formalities and
+	# logged into echo > stdout, syslog and wall
+	echo "${ldate}: $*"
+	if [ "$CONSOLE_NOTIF" -eq 1 -a -n "$CMD_WALL" ]; then
+		echo "${DefaultSubject}\n$* at ${ldate}" | $CMD_WALL 2>/dev/null
+	fi
+	if [ "$SYSLOG_NOTIF" -eq 1 -a -n "$CMD_SYSLOG" ]; then
+		$CMD_SYSLOG -t eaton-ipp "$*" 2>/dev/null
+	fi
+}
+
+# The custom shutdown routine if clusterware is present
+if [ -x /etc/init.d/NONEXISTENT/clusterware ]; then
+	get_ldate
+	logmsg $(printf "$MessageCustomShutdownStarting_s" "clusterware")
+
+	trap 'echo "$MessageIrreversibleTrap">&2' 1 2 3 15
+
+	# Launch the cluster shutdown command
+	/etc/init.d/NONEXISTENT/clusterware stop
+
+	# Sleep after/during(?) cluster shutdown
+	# This cycle allows to keep ignoring CTRL+C and equivalents
+	# (a single sleep is indeed broken out of despite our traps)
+	N=300
+	while [ $N -gt 0 ]; do
+		N="`expr $N - 1`"
+		sleep 1
+	done
+
+	# By default, after clusterware stop there's nothing fragile left
+	# so we can ask for fast shutdown
+	[ -z "${SDFLAG_COMMONOPTIONS-}" ] && \
+		echo 'SDFLAG_COMMONOPTIONS="$SDFLAG_UNGRACEFUL"' >&3
+
+	get_ldate
+	logmsg $(printf "$MessageCustomShutdownCompleted_s" "clusterware")
+
+	trap '-' 1 2 3 15
+fi
+
+exit 0
