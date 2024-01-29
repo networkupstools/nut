@@ -4,6 +4,7 @@
  *  Copyright (C)
  *    2011-2012 Arnaud Quette <arnaud.quette@free.fr>
  *    2016-2020 Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
+ *    2024 Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  Note: this subdriver was initially generated as a "stub" by the
  *  gen-snmp-subdriver script. It must be customized!
@@ -177,7 +178,7 @@ static info_lkp_t eaton_ats16_nm2_threshold_humidity_alarms_info[] = {
 	info_lkp_sentinel
 };
 
-static info_lkp_t eaton_ats16_ambient_drycontacts_info[] = {
+static info_lkp_t eaton_ats16_nm2_ambient_drycontacts_info[] = {
 	info_lkp_default(-1, "unknown"),
 	info_lkp_default(1, "opened"),
 	info_lkp_default(2, "closed"),
@@ -283,11 +284,11 @@ static snmp_info_t eaton_ats16_nm2_mib[] = {
 	/* ats2ContactState.1 = INTEGER: open(1) */
 	snmp_info_default("ambient.contacts.1.status", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.10.2.5.4.1.3.1",
-		NULL, SU_FLAG_OK, &eaton_ats16_ambient_drycontacts_info[0]),
+		NULL, SU_FLAG_OK, &eaton_ats16_nm2_ambient_drycontacts_info[0]),
 	/* ats2ContactState.2 = INTEGER: open(1) */
 	snmp_info_default("ambient.contacts.2.status", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.10.2.5.4.1.3.2",
-		NULL, SU_FLAG_OK, &eaton_ats16_ambient_drycontacts_info[0]),
+		NULL, SU_FLAG_OK, &eaton_ats16_nm2_ambient_drycontacts_info[0]),
 
 	/* EMP002 (EATON EMP MIB) mapping, including daisychain support */
 	/* Warning: indexes start at '1' not '0'! */
