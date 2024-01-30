@@ -342,8 +342,9 @@ void NutSocketUnitTest::test() {
 	// Listen
 	nut::NutSocket listen_sock;
 
-	CPPUNIT_ASSERT_MESSAGE("Expected to listen on " << m_listen_address,
-		listen_sock.bind(m_listen_address));
+	std::stringstream msg_bind;
+	msg_bind << "Expected to listen on " << m_listen_address.str();
+	CPPUNIT_ASSERT_MESSAGE(msg_bind.str(), listen_sock.bind(m_listen_address));
 	CPPUNIT_ASSERT(listen_sock.listen(10));
 
 	// Accept connection
@@ -357,8 +358,10 @@ void NutSocketUnitTest::test() {
 	pid_t wpid = ::waitpid(writer_pid, &writer_exit, 0);
 
 	CPPUNIT_ASSERT(wpid == writer_pid);
-	CPPUNIT_ASSERT_MESSAGE("Got writer_exit=" << writer_exit << ", expected 0",
-	               0    == writer_exit);
+
+	std::stringstream msg_writer_exit;
+	msg_writer_exit << "Got writer_exit=" << writer_exit << ", expected 0";
+	CPPUNIT_ASSERT_MESSAGE(msg_writer_exit.str(), 0    == writer_exit);
 #endif	/* WIN32 */
 }
 
