@@ -344,7 +344,8 @@ void NutSocketUnitTest::test() {
 	pid_t wpid = ::waitpid(writer_pid, &writer_exit, 0);
 
 	CPPUNIT_ASSERT(wpid == writer_pid);
-	CPPUNIT_ASSERT(0    == writer_exit);
+	CPPUNIT_ASSERT_MESSAGE("Got writer_exit=" << writer_exit << ", expected 0",
+	               0    == writer_exit);
 #endif	/* WIN32 */
 }
 
