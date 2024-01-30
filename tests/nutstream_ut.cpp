@@ -288,7 +288,9 @@ class NutSocketUnitTest: public NutStreamUnitTest {
 
 
 /* Randomize to try avoiding collisions in parallel testing */
-const nut::NutSocket::Address NutSocketUnitTest::m_listen_address(127, 0, 0, 1, 10000 + (::random() % 40000));
+const nut::NutSocket::Address NutSocketUnitTest::m_listen_address(
+		127, 0, 0, 1,
+		10000 + static_cast<uint16_t>(::random() % 40000));
 
 
 bool NutSocketUnitTest::Writer::run() {
