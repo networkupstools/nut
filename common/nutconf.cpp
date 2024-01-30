@@ -357,15 +357,19 @@ NutParser::Token NutParser::parseToken() {
 				break;
 			}
 
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
 #endif
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
 # pragma GCC diagnostic ignored "-Wcovered-switch-default"
 #endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
 /* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
 #ifdef __clang__
 # pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
 # pragma clang diagnostic ignored "-Wcovered-switch-default"
 #endif
 			default:
@@ -374,7 +378,7 @@ NutParser::Token NutParser::parseToken() {
 #ifdef __clang__
 # pragma clang diagnostic pop
 #endif
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic pop
 #endif
 		}
@@ -444,16 +448,20 @@ void NutConfigParser::parseConfig() {
 	std::list<std::string> values;
 	char sep = 0;
 
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
 #endif
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
 # pragma GCC diagnostic ignored "-Wcovered-switch-default"
 #endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
 /* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
 #ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wcovered-switch-default"
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
 #endif
 	while (1) {
 		tok = parseToken();
@@ -691,7 +699,7 @@ void NutConfigParser::parseConfig() {
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT)
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic pop
 #endif
 
