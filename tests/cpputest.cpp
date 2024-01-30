@@ -19,13 +19,19 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "common.h"
+
 #include <stdexcept>
+#include <cstdlib>
 #include <cppunit/TestResult.h>
 #include <cppunit/CompilerOutputter.h>
 #include <cppunit/TextTestProgressListener.h>
 #include <cppunit/extensions/TestFactoryRegistry.h>
 #include <cppunit/ui/text/TestRunner.h>
-#include "common.h"
+
+extern "C" {
+#include "timehead.h"
+}
 
 // Inspired by https://stackoverflow.com/a/66702001
 class MyCustomProgressTestListener : public CppUnit::TextTestProgressListener {
@@ -50,6 +56,8 @@ int main(int argc, char* argv[])
       verbose = true;
     }
   }
+
+  ::srand(static_cast<unsigned int>(::time(nullptr)));
 
   /* Get the top level suite from the registry */
   std::cerr << "D: Getting test suite..." << std::endl;
