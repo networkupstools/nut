@@ -23,8 +23,6 @@
 
 #include "nutstream.hpp"
 
-#include <cppunit/extensions/HelperMacros.h>
-
 #include <cstdio>
 #include <cstdlib>
 #include <cassert>
@@ -44,6 +42,20 @@ extern "C" {
 #include <unistd.h>
 }
 
+/* Current CPPUnit offends the honor of C++98 */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_GLOBAL_CONSTRUCTORS)
+#pragma GCC diagnostic push
+# ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_GLOBAL_CONSTRUCTORS
+#  pragma GCC diagnostic ignored "-Wglobal-constructors"
+# endif
+# ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS
+#  pragma GCC diagnostic ignored "-Wexit-time-destructors"
+# endif
+#endif
+
+#include <cppunit/extensions/HelperMacros.h>
+
+namespace nut {
 
 /** Test data */
 static const std::string test_data(
@@ -360,3 +372,9 @@ CPPUNIT_TEST_SUITE_REGISTRATION(NutSocketUnitTest);
 //   definitions; its vtable will be emitted in every translation unit
 //   [-Werror,-Wweak-vtables]
 NutStreamUnitTest::~NutStreamUnitTest() {}
+
+} // namespace nut {}
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_GLOBAL_CONSTRUCTORS)
+#pragma GCC diagnostic pop
+#endif
