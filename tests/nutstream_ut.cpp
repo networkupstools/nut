@@ -342,7 +342,8 @@ void NutSocketUnitTest::test() {
 	// Listen
 	nut::NutSocket listen_sock;
 
-	CPPUNIT_ASSERT(listen_sock.bind(m_listen_address));
+	CPPUNIT_ASSERT_MESSAGE("Expected to listen on " << m_listen_address,
+		listen_sock.bind(m_listen_address));
 	CPPUNIT_ASSERT(listen_sock.listen(10));
 
 	// Accept connection
