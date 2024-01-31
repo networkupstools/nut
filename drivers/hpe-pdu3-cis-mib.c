@@ -21,7 +21,7 @@
 
 #include "hpe-pdu3-cis-mib.h"
 
-#define HPE_PDU3_CIS_MIB_VERSION  "0.1"
+#define HPE_PDU3_CIS_MIB_VERSION  "0.10"
 
 #define HPE_PDU3_CIS_SYSOID       ".1.3.6.1.4.1.232.165.11"
 #define HPE_PDU3_OID_MODEL_NAME	".1.3.6.1.4.1.232.165.11.1.2.1.3.1"

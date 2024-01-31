@@ -4680,6 +4680,7 @@ AC_CONFIG_FILES([
  scripts/hotplug/Makefile
  scripts/hotplug/libhidups
  scripts/HP-UX/nut.psf
+ scripts/installer/Makefile
  scripts/python/Makefile
  scripts/python/module/Makefile
  scripts/python/module/PyNUT.py
@@ -4692,6 +4693,9 @@ AC_CONFIG_FILES([
  scripts/systemd/nut-server.service
  scripts/systemd/nut-driver-enumerator.service
  scripts/systemd/nut-driver-enumerator.path
+ scripts/systemd/nut-driver-enumerator-daemon.service
+ scripts/systemd/nut-driver-enumerator-daemon-activator.service
+ scripts/systemd/nut-driver-enumerator-daemon-activator.path
  scripts/Solaris/nut-driver-enumerator.xml
  scripts/Solaris/nut-driver.xml
  scripts/Solaris/nut-monitor.xml

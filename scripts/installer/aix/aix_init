@@ -1,0 +1,223 @@
+#! /bin/sh
+#
+# ups: Starts and stops the Network UPS Tools 2.6.5 built for IPP - Unix 1.40-4 on AIX
+#       Customizations copyright (c) 2015-2017, by Eaton (R) Corporation. All rights reserved.
+#
+# chkconfig: - 26 74
+# description: Network UPS Tools is a collection of programs which provide a common \
+#		interface for monitoring and administering UPS hardware.
+# processname: upsd
+# config: /usr/local/ups/etc
+# config: /etc/rc.ups
+#
+### BEGIN INIT INFO
+# Provides: ups
+# Required-Start: $syslog $network $named
+# Required-Stop: $local_fs
+# Default-Stop: 0 1 6
+# Short-Description: Starts the Network UPS tools
+# Description: Network UPS Tools is a collection of programs which provide a common \
+#		interface for monitoring and administering UPS hardware. 
+### END INIT INFO
+
+NUT_DIR="/usr/local/ups"
+NUT_RUN_DIR="/var/run/nut"
+NUT_LOCK_FILE="/var/locks/ups"
+NUT_CFG_DIR=""
+for D in "$NUT_DIR/etc" "/etc/nut" "/etc/ups" ; do
+	if [ -d "$D" ] && [ -f "$D/ups.conf" ] && [ -f "$D/ipp.conf" ] ; then
+		NUT_CFG_DIR="$D"
+		break
+	fi
+done
+unset D
+CONFIG_IPP="$NUT_CFG_DIR/ipp.conf"
+CONFIG_NUT="$NUT_CFG_DIR/nut.conf"
+
+# Source /etc/profile to get proper env. settings
+#. /etc/profile
+
+# Note: $NUT_DIR/xbin holds the wrappers to run NUT binaries with co-bundled
+# third party libs and hopefully without conflicts induced for the OS binaries
+PATH="$NUT_DIR/xbin:$NUT_DIR/sbin:$NUT_DIR/bin:$PATH"
+export PATH
+
+# Do not normally mangle the LD_LIBRARY_PATH - it can impact system tools too
+#LD_LIBRARY_PATH="$NUT_DIR/lib:/usr/lib:/lib:$LD_LIBRARY_PATH"
+#export LD_LIBRARY_PATH
+
+
+success() {
+	echo OK
+}
+
+failure() {
+	echo FAILED
+	return 1
+}
+
+# Resolve what processes should run
+SERVER="no"
+CLIENT="no"
+
+if [ -f "$CONFIG_NUT" ]; then
+	. "$CONFIG_NUT"
+
+	case $MODE in
+		standalone|netserver)
+			SERVER="yes"
+			;;
+	esac
+
+	rpm -q nut-client >/dev/null 2>&1 && CLIENT="yes"
+fi
+
+SHUTDOWN_TIMER=-1
+if [ -f "$CONFIG_IPP" ]; then
+	. "$CONFIG_IPP"
+fi
+
+do_start() {
+	if [ "$SERVER" = "yes" ]; then
+		echo "Starting UPS driver controller: \c"
+		( upsdrvctl start >/dev/null 2>&1 && success || failure ) || \
+			RETVAL=$?
+
+		echo "Starting upsd: \c"
+		( upsd $UPSD_OPTIONS >/dev/null 2>&1 && success || failure ) || \
+			RETVAL=$?
+
+		echo "Cancel pending UPS powercycle, if any: \c"
+		if [ -x "${NUT_DIR}/init" ]; then
+			( "${NUT_DIR}/init" > /dev/null 2>&1 && success || failure ) || \
+				true #RETVAL=$?
+		fi
+	fi
+
+	if [ "$CLIENT" = "yes" ]; then
+		echo "Starting UPS monitor: \c"
+		if [ "$SHUTDOWN_TIMER" -gt -1 ]; then
+			# This host wants early shutdown support, must be root
+			( upsmon -p >/dev/null 2>&1 && success || failure ) || \
+				RETVAL=$?
+		else
+			( upsmon >/dev/null 2>&1 && success || failure ) || \
+				RETVAL=$?
+		fi
+	fi
+
+	[ "$RETVAL" = 0 ] && touch "${NUT_LOCK_FILE}"
+}
+
+do_stop() {
+	if test -e "${NUT_RUN_DIR}/upsmon.pid" ; then
+		echo "Stopping UPS monitor: \c"
+		PID="`cat "${NUT_RUN_DIR}/upsmon.pid"`"
+		( kill $PID && success || failure ) || \
+			RETVAL=$?
+		rm "${NUT_RUN_DIR}/upsmon.pid"
+	fi
+
+	if [ "$SERVER" = "yes" ]; then
+		if test -e "${NUT_RUN_DIR}/upsd.pid" ; then
+			echo "Stopping upsd: \c"
+			PID="`cat "${NUT_RUN_DIR}/upsd.pid"`"
+			( kill -9 $PID && success || failure ) || \
+				RETVAL=$?
+			rm "${NUT_RUN_DIR}/upsd.pid"
+		fi
+
+		echo "Shutting down UPS driver controller: \c"
+		( upsdrvctl stop > /dev/null 2>&1 && success || failure ) || \
+			RETVAL=$?
+	fi
+	[ "$RETVAL" = 0 ] && rm -f "${NUT_LOCK_FILE}"
+}
+
+do_restart() {
+	do_stop
+	waitmore=5
+	while [ -n "`ls ${NUT_RUN_DIR}/`" -a "$waitmore" -ge 1 ]
+	do
+	  sleep 1
+	  waitmore="`expr $waitmore - 1`"
+	done
+	do_start
+}
+
+do_reload() {
+	# FIXME: upsd and upsmon always return 0
+	# => can't tell if reload was successful
+	if [ "$SERVER" = "yes" ]; then
+		echo "Reloading upsd"
+		upsd -c reload || \
+			RETVAL=$?
+	fi
+
+	echo "Reloading upsmon"
+	upsmon -c reload || \
+		RETVAL=$?
+}
+
+RETVAL=0
+# See how we are called.
+case "$1" in
+	start)
+		do_start ;;
+
+	stop)
+		do_stop ;;
+
+	restart)
+		do_restart ;;
+
+	try-restart)
+		[ -f "${NUT_LOCK_FILE}" ] && do_restart || true
+		;;
+
+	reload)
+		do_reload ;;
+
+	force-reload)
+		do_restart ;;
+
+	status)
+		RETVAL_UPSD=0
+		if [ "$SERVER" = "yes" ]; then
+			RETVAL_UPSD=1
+			if test -f "${NUT_LOCK_FILE}" -o -s "${NUT_RUN_DIR}/upsd.pid" ; then
+				PID_UPSD="`cat "${NUT_RUN_DIR}/upsd.pid"`" && \
+					test -n "$PID_UPSD" && \
+					test -d "/proc/${PID_UPSD}" && \
+					echo "upsd is running with PID $PID_UPSD" && \
+					RETVAL_UPSD=0
+			fi
+			if [ "$RETVAL_UPSD" != 0 ]; then
+				echo "upsd is NOT running!" >&2
+				RETVAL=1
+			fi
+		fi
+
+		RETVAL_UPSMON=1
+		if test -s "${NUT_RUN_DIR}/upsmon.pid" ; then
+			PID_UPSMON="`cat "${NUT_RUN_DIR}/upsmon.pid"`" && \
+				test -n "$PID_UPSMON" && \
+				test -d "/proc/${PID_UPSMON}" && \
+				echo "upsmon is running with PID $PID_UPSMON" && \
+				RETVAL_UPSMON=0
+		elif rpm -q nut-client >/dev/null 2>&1; then :  # default error remains in place - package present, service not running
+		else
+			RETVAL_UPSMON=0
+		fi
+		if [ "$RETVAL_UPSMON" != 0 ]; then
+			echo "upsmon isn't running" >&2
+			RETVAL=1
+		fi
+		;;
+
+	*)
+		echo "Usage: $0 {start|stop|restart|try-restart|reload|force-reload|status}"
+		RETVAL=3
+esac
+
+exit $RETVAL
