@@ -1100,10 +1100,11 @@ static int is_ups_critical(utype_t *ups)
 
 	/* administratively OFF (long enough, see OFFDURATION) */
 	if (flag_isset(ups->status, ST_OFF) && offdurationtime >= 0
-	&& (ups->linestate == 0 || ups->offstate == 1)) {
+	&& ups->offstate == 1) {
 		upslogx(LOG_WARNING,
 			"UPS [%s] is reported as (administratively) OFF",
 			ups->sys);
+		upsdebugx(1, "UPS [%s] is now critical being OFF for too long. In case of persisting unwanted shutdowns, consider disabling the upsmon 'OFFDURATION' option.", ups->sys);
 		return 1;
 	}
 

@@ -23,7 +23,7 @@
 
 #include "apc-epdu-mib.h"
 
-#define APC_EPDU_MIB_VERSION  "0.1"
+#define APC_EPDU_MIB_VERSION  "0.10"
 
 #define APC_EPDU_MIB_SYSOID   ".1.3.6.1.4.1.318.1.3.4.9"
 

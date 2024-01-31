@@ -24,7 +24,7 @@
 
 #include "xppc-mib.h"
 
-#define XPPC_MIB_VERSION  "0.4"
+#define XPPC_MIB_VERSION  "0.40"
 
 #define XPPC_SYSOID       ".1.3.6.1.4.1.935"
 

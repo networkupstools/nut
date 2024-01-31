@@ -23,7 +23,7 @@
 
 #include "raritan-px2-mib.h"
 
-#define RARITAN_PX2_MIB_VERSION  "0.4"
+#define RARITAN_PX2_MIB_VERSION  "0.40"
 
 #define RARITAN_PX2_MIB_SYSOID     ".1.3.6.1.4.1.13742.6"
 #define RARITAN_PX2_OID_MODEL_NAME ".1.3.6.1.4.1.13742.6.3.2.1.1.3.1"
