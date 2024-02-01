@@ -340,8 +340,10 @@ int match_by_unitid(usb_dev_handle *argudev, USBDevice_t *arghd, usb_ctrl_charbu
 	NUT_UNUSED_VARIABLE(rdbuf);
 	NUT_UNUSED_VARIABLE(rdlen);
 
-	/* Read ups id from the ups.conf */
-    if (value != NULL) {
+    // If upsid is not defined in the config, return 1 (null behavior), otherwise read it from ups.conf
+    if (value == NULL) {
+        return 1;
+    } else {
         config_unit_id = atoi(value);
     }
 
