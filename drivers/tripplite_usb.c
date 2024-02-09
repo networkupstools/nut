@@ -330,7 +330,7 @@ int match_by_unitid(usb_dev_handle *argudev, USBDevice_t *arghd, usb_ctrl_charbu
 int match_by_unitid(usb_dev_handle *argudev, USBDevice_t *arghd, usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen)
 {
 	char *value = getval("upsid");
-	int config_unit_id = 0;
+	long config_unit_id = 0;
 	ssize_t ret;
 	unsigned char u_msg[] = "U";
 	unsigned char u_value[9];
@@ -340,13 +340,13 @@ int match_by_unitid(usb_dev_handle *argudev, USBDevice_t *arghd, usb_ctrl_charbu
 	NUT_UNUSED_VARIABLE(rdbuf);
 	NUT_UNUSED_VARIABLE(rdlen);
 
-    /* If upsid is not defined in the config, return 1 (null behavior - match any device),
+	/* If upsid is not defined in the config, return 1 (null behavior - match any device),
 	 * otherwise read it from the device and match against what was asked in ups.conf */
-    if (value == NULL) {
-        return 1;
-    } else {
-        config_unit_id = atoi(value);
-    }
+	if (value == NULL) {
+		return 1;
+	} else {
+		config_unit_id = atol(value);
+	}
 
 	/* Read ups id from the device */
 	if (tl_model != TRIPP_LITE_OMNIVS && tl_model != TRIPP_LITE_SMART_0004) {
@@ -355,18 +355,19 @@ int match_by_unitid(usb_dev_handle *argudev, USBDevice_t *arghd, usb_ctrl_charbu
 		if (ret <= 0) {
 			upslogx(LOG_INFO, "Unit ID not retrieved (not available on all models)");
 		} else {
-			unit_id = (int)((unsigned)(u_value[1]) << 8) | (unsigned)(u_value[2]);
-			upsdebugx(1, "Retrieved Unit ID: %d", unit_id);
+			/* Translating from two bytes (unsigned chars), so via uint16_t */
+			unit_id = (uint16_t)((uint16_t)(u_value[1]) << 8) | (uint16_t)(u_value[2]);
+			upsdebugx(1, "Retrieved Unit ID: %ld", unit_id);
 		}
 	}
 
-    /* Check if the ups ids match */
+	/* Check if the ups ids match */
 	if (config_unit_id == unit_id) {
-		upsdebugx(1, "Retrieved Unit ID (%d) matches the configured one (%d)",
+		upsdebugx(1, "Retrieved Unit ID (%ld) matches the configured one (%d)",
 			unit_id, config_unit_id);
 		return 1;
 	} else {
-		upsdebugx(1, "Retrieved Unit ID (%d) does not match the configured one (%d). "
+		upsdebugx(1, "Retrieved Unit ID (%ld) does not match the configured one (%d). "
 			"Do you have several compatible UPSes? Otherwise, please check if the ID "
 			"was set in the previous life of your device (can use upsrw to set another"
 			"value).", unit_id, config_unit_id);
