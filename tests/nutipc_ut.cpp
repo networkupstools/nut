@@ -187,24 +187,32 @@ void NutIPCUnitTest::testSignalRecv() {
 
 	pid_t my_pid = nut::Process::getPID();
 
+	/* NOTE: The signal order delivery is not specified by POSIX if several
+	 * ones arrive nearly simultaneously (and/or get confused by multi-CPU
+	 * routing). Linux tends to deliver lower-numbered signals first, so we
+	 * expect USER1 (10) before USER2 (12) to be consistent. Otherwise CI
+	 * builds tend to mess this up a bit.
+	 * TOTHINK: Sleep between sends to help ensure one-by-one delivery on
+	 * congested systems - maybe even if USER2 is sent first?..
+	 */
+	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER1, my_pid));
 	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER2, my_pid));
-	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER1, my_pid));
-	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER1, my_pid));
+	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER2, my_pid));
 
 	// Let the sig. handler thread finish...
 	::sleep(1);
 
 	CPPUNIT_ASSERT(caught_signals.size() == 3);
 
+	CPPUNIT_ASSERT(caught_signals.front() == nut::Signal::USER1);
+
+	caught_signals.pop_front();
+
 	CPPUNIT_ASSERT(caught_signals.front() == nut::Signal::USER2);
 
 	caught_signals.pop_front();
 
-	CPPUNIT_ASSERT(caught_signals.front() == nut::Signal::USER1);
-
-	caught_signals.pop_front();
-
-	CPPUNIT_ASSERT(caught_signals.front() == nut::Signal::USER1);
+	CPPUNIT_ASSERT(caught_signals.front() == nut::Signal::USER2);
 #endif	/* WIN32 */
 }
 
