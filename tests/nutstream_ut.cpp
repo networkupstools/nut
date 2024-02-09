@@ -305,10 +305,17 @@ class NutSocketUnitTest: public NutStreamUnitTest {
 };  // end of class NutSocketUnitTest
 
 
+/* Static initializer below may run before methods of the test,
+ * so it tends to repeat the same port for parallel CI runs */
+static long reallyRandom() {
+	::srand(static_cast<unsigned int>(::time(nullptr)));
+	return ::random();
+}
+
 /* Randomize to try avoiding collisions in parallel testing */
 const nut::NutSocket::Address NutSocketUnitTest::m_listen_address(
 		127, 0, 0, 1,
-		10000 + static_cast<uint16_t>(::random() % 40000));
+		10000 + static_cast<uint16_t>(reallyRandom() % 40000));
 
 
 bool NutSocketUnitTest::Writer::run() {
