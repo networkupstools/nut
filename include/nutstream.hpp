@@ -241,6 +241,21 @@ class NutFile: public NutStream {
 	bool m_current_ch_valid;
 
 	/**
+	 *  \brief  Convert enum access_t mode values to strings
+	 *          for standard library methods
+	 *
+	 *  Throws an exception on unexpected input (should never
+	 *  happen with proper enum usage).
+	 *
+	 *  \return Non-null "const char *" string
+	 */
+	const char *strAccessMode(access_t mode)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw(std::runtime_error)
+#endif
+		;
+
+	/**
 	 *  \brief  Generate temporary file name
 	 *
 	 *  Throws an exception on file name generation error.

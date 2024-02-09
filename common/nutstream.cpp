@@ -230,7 +230,7 @@ bool NutFile::exists(int & err_code, std::string & err_msg) const
 }
 
 
-bool NutFile::open(access_t mode, int & err_code, std::string & err_msg)
+const char * NutFile::strAccessMode(access_t mode)
 #if (defined __cplusplus) && (__cplusplus < 201100)
 		throw()
 #endif
@@ -243,13 +243,6 @@ bool NutFile::open(access_t mode, int & err_code, std::string & err_msg)
 	static const char *read_append      = "a+";
 
 	const char *mode_str = nullptr;
-
-	/* Can not open an unknown file name */
-	if (m_name.empty()) {
-		err_code = ENOENT;
-		err_msg  = std::string("No file name was specified");
-		return false;
-	}
 
 	switch (mode) {
 		case READ_ONLY:
@@ -274,11 +267,29 @@ bool NutFile::open(access_t mode, int & err_code, std::string & err_msg)
 
 	assert(nullptr != mode_str);
 
+	return mode_str;
+}
+
+bool NutFile::open(access_t mode, int & err_code, std::string & err_msg)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+{
+	const char *mode_str;
+
+	/* Can not open an unknown file name */
+	if (m_name.empty()) {
+		err_code = ENOENT;
+		err_msg  = std::string("No file name was specified");
+		return false;
+	}
+
 	if (nullptr != m_impl) {
 		/* TOTHINK: Should we care about errors in this close()? */
 		::fclose(m_impl);
 	}
 
+	mode_str = strAccessMode(mode);
 	m_impl = ::fopen(m_name.c_str(), mode_str);
 
 	if (nullptr != m_impl)
