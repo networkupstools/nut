@@ -86,7 +86,7 @@ isBusy_NUT_PORT() {
     # or available (non-0 = false)
     [ -n "${NUT_PORT}" ] || return
 
-    log_debug "Trying to report if NUT_PORT=${NUT_PORT} is used"
+    log_debug "isBusy_NUT_PORT() Trying to report if NUT_PORT=${NUT_PORT} is used"
     if [ -s /proc/net/tcp ] || [ -s /proc/net/tcp6 ]; then
         # Assume Linux - hex-encoded
         # IPv4:
@@ -98,19 +98,27 @@ isBusy_NUT_PORT() {
         #   0: 00000000000000000000000000000000:1F46 00000000000000000000000000000000:0000 0A 00000000:00000000 00:00000000 00000000    33        0 37451 1 00000000fa3c0c15 100 0 0 10 0
         NUT_PORT_HEX="`printf '%04X' "${NUT_PORT}"`"
         NUT_PORT_HITS="`cat /proc/net/tcp /proc/net/tcp6 2>/dev/null | awk '{print $2}' | grep -E ":${NUT_PORT_HEX}\$"`" \
-        && [ -n "$NUT_PORT_HITS" ] && return 0
+        && [ -n "$NUT_PORT_HITS" ] \
+        && log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is busy per /proc/net/tcp*" \
+        && return 0
 
         # We had a way to check, and the way said port is available
+        log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is not busy per /proc/net/tcp*"
         return 1
     fi
 
     (netstat -an || sockstat -l) 2>/dev/null | grep -E "[:.]${NUT_PORT}(\t| |\$)" > /dev/null && return
+    && log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is busy per netstat or sockstat" \
+    && return
 
-    (lsof -i :"${NUT_PORT}") 2>/dev/null && return
+    (lsof -i :"${NUT_PORT}") 2>/dev/null \
+    && log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is busy per lsof" \
+    && return
 
     # Not busy... or no tools to confirm?
     if (command -v netstat || command -v sockstat || command -v lsof) 2>/dev/null >/dev/null ; then
         # at least one tool is present, so not busy
+        log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is not busy per netstat, sockstat or lsof"
         return 1
     fi
 
