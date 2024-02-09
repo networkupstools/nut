@@ -340,7 +340,8 @@ int match_by_unitid(usb_dev_handle *argudev, USBDevice_t *arghd, usb_ctrl_charbu
 	NUT_UNUSED_VARIABLE(rdbuf);
 	NUT_UNUSED_VARIABLE(rdlen);
 
-    // If upsid is not defined in the config, return 1 (null behavior), otherwise read it from ups.conf
+    /* If upsid is not defined in the config, return 1 (null behavior - match any device),
+	 * otherwise read it from the device and match against what was asked in ups.conf */
     if (value == NULL) {
         return 1;
     } else {
@@ -355,13 +356,20 @@ int match_by_unitid(usb_dev_handle *argudev, USBDevice_t *arghd, usb_ctrl_charbu
 			upslogx(LOG_INFO, "Unit ID not retrieved (not available on all models)");
 		} else {
 			unit_id = (int)((unsigned)(u_value[1]) << 8) | (unsigned)(u_value[2]);
+			upsdebugx(1, "Retrieved Unit ID: %d", unit_id);
 		}
 	}
 
     /* Check if the ups ids match */
 	if (config_unit_id == unit_id) {
+		upsdebugx(1, "Retrieved Unit ID (%d) matches the configured one (%d)",
+			unit_id, config_unit_id);
 		return 1;
 	} else {
+		upsdebugx(1, "Retrieved Unit ID (%d) does not match the configured one (%d). "
+			"Do you have several compatible UPSes? Otherwise, please check if the ID "
+			"was set in the previous life of your device (can use upsrw to set another"
+			"value).", unit_id, config_unit_id);
 		return 0;
 	}
 }
