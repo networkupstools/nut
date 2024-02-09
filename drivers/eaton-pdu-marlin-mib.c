@@ -136,7 +136,7 @@ static info_lkp_t marlin_threshold_frequency_status_info[] = {
 
 static info_lkp_t marlin_ambient_drycontacts_info[] = {
 	info_lkp_default(-1, "unknown"),
-	info_lkp_default(0, "open"),
+	info_lkp_default(0, "opened"),
 	info_lkp_default(1, "closed"),
 	info_lkp_sentinel
 };
