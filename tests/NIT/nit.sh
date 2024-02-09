@@ -107,8 +107,8 @@ isBusy_NUT_PORT() {
         return 1
     fi
 
-    (netstat -an || sockstat -l) 2>/dev/null | grep -E "[:.]${NUT_PORT}(\t| |\$)" > /dev/null && return
-    && log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is busy per netstat or sockstat" \
+    (netstat -an || sockstat -l || ss -tn || ss -n) 2>/dev/null | grep -E "[:.]${NUT_PORT}(\t| |\$)" > /dev/null \
+    && log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is busy per netstat, sockstat or ss" \
     && return
 
     (lsof -i :"${NUT_PORT}") 2>/dev/null \
@@ -116,9 +116,9 @@ isBusy_NUT_PORT() {
     && return
 
     # Not busy... or no tools to confirm?
-    if (command -v netstat || command -v sockstat || command -v lsof) 2>/dev/null >/dev/null ; then
+    if (command -v netstat || command -v sockstat || command -v ss || command -v lsof) 2>/dev/null >/dev/null ; then
         # at least one tool is present, so not busy
-        log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is not busy per netstat, sockstat or lsof"
+        log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is not busy per netstat, sockstat, ss or lsof"
         return 1
     fi
 
