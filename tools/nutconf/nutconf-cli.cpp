@@ -2102,7 +2102,7 @@ static nut::UpsmonConfiguration::Monitor monitor(
  */
 static std::string getMode(const std::string & etc) {
 	std::string nut_conf_file(etc + "/nut.conf");
-
+	std::stringstream e;
 	nut::NutConfiguration nut_conf;
 
 	// Source previous configuration
@@ -2135,20 +2135,17 @@ static std::string getMode(const std::string & etc) {
 # pragma clang diagnostic ignored "-Wcovered-switch-default"
 #endif
 		default:
-			if (1) { // scoping
-				std::stringstream e;
+			break;
+	}
 
-				e << "INTERNAL ERROR: Unknown NUT mode: " << mode;
-
-				throw std::logic_error(e.str());
-			}
+	e << "INTERNAL ERROR: Unknown NUT mode: " << mode;
+	throw std::logic_error(e.str());
 #ifdef __clang__
 # pragma clang diagnostic pop
 #endif
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic pop
 #endif
-	}
 }
 
 
