@@ -363,11 +363,11 @@ int match_by_unitid(usb_dev_handle *argudev, USBDevice_t *arghd, usb_ctrl_charbu
 
 	/* Check if the ups ids match */
 	if (config_unit_id == unit_id) {
-		upsdebugx(1, "Retrieved Unit ID (%ld) matches the configured one (%d)",
+		upsdebugx(1, "Retrieved Unit ID (%ld) matches the configured one (%ld)",
 			unit_id, config_unit_id);
 		return 1;
 	} else {
-		upsdebugx(1, "Retrieved Unit ID (%ld) does not match the configured one (%d). "
+		upsdebugx(1, "Retrieved Unit ID (%ld) does not match the configured one (%ld). "
 			"Do you have several compatible UPSes? Otherwise, please check if the ID "
 			"was set in the previous life of your device (can use upsrw to set another"
 			"value).", unit_id, config_unit_id);
