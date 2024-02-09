@@ -1078,17 +1078,33 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         CANBUILD_NUTCONF=no
     fi
 
-    if [ "${CANBUILD_NUTCONF-}" = yes ] ; then
-        echo "WARNING: Build agent says it can build nutconf, enabling the experimental feature" >&2
-        CONFIG_OPTS+=("--with-nutconf=yes")
-    elif [ "${CANBUILD_NUTCONF-}" = no ] ; then
-        echo "WARNING: Build agent says it can not build nutconf, disabling the feature" >&2
-        CONFIG_OPTS+=("--with-nutconf=no")
-    fi
-
-    if [ -z "${CANBUILD_NUTCONF-}" ] ; then
-        CONFIG_OPTS+=("--with-nutconf=auto")
-    fi
+    case "${CANBUILD_NUTCONF-}" in
+        yes)
+            # Depends on C++11 or newer, so let configure script try this tediously
+            # unless we know we would not build for the too-old language revision
+            case "${CXXFLAGS-}" in
+                *-std=c++98*|*-std=gnu++98*|*-std=c++03*|*-std=gnu++03*)
+                    echo "WARNING: Build agent says it can build nutconf, but requires a test with C++ revision too old - so not requiring the experimental feature (auto-try)" >&2
+                    CONFIG_OPTS+=("--with-nutconf=auto")
+                    ;;
+                *-std=c++0x*|*-std=gnu++0x*|*-std=c++1*|*-std=gnu++1*|*-std=c++2*|*-std=gnu++2*)
+                    echo "WARNING: Build agent says it can build nutconf, and requires a test with a sufficiently new C++ revision - so requiring the experimental feature" >&2
+                    CONFIG_OPTS+=("--with-nutconf=yes")
+                    ;;
+                *)
+                    echo "WARNING: Build agent says it can build nutconf, and does not specify a test with prticular C++ revision - so not requiring the experimental feature (auto-try)" >&2
+                    CONFIG_OPTS+=("--with-nutconf=auto")
+                    ;;
+            esac
+            ;;
+        no)
+            echo "WARNING: Build agent says it can not build nutconf, disabling the feature (do not even try)" >&2
+            CONFIG_OPTS+=("--with-nutconf=no")
+            ;;
+        "")
+            CONFIG_OPTS+=("--with-nutconf=auto")
+            ;;
+    esac
 
     if [ "${CANBUILD_VALGRIND_TESTS-}" = no ] ; then
         echo "WARNING: Build agent says it has a broken valgrind, adding configure option to skip tests with it" >&2
