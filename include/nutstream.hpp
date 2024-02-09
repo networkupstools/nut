@@ -390,7 +390,8 @@ class NutFile: public NutStream {
 			return;
 
 		std::stringstream e;
-		e << "Failed to open file " << m_name << ": " << ec << ": " << em;
+		e << "Failed to open file " << m_name << ": "
+			<< ec << ": " << em;
 
 		throw std::runtime_error(e.str());
 	}

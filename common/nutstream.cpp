@@ -192,7 +192,8 @@ NutFile::NutFile(anonymous_t):
 		int err_code = errno;
 
 		std::stringstream e;
-		e << "Failed to create temporary file: " << err_code << ": " << ::strerror(err_code);
+		e << "Failed to create temporary file: " << err_code
+				<< ": " << ::strerror(err_code);
 
 		throw std::runtime_error(e.str());
 	}
