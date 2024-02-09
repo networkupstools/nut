@@ -54,13 +54,14 @@ upsdrv_info_t upsdrv_info = {
 void sms_parse_features(uint8_t *rawvalues, SmsData *results) {
     char tbattery[6];
     char frequency[4];
+    int i;
 
     memset(results->voltageRange, 0, sizeof(results->voltageRange));
     memset(results->currentRange, 0, sizeof(results->currentRange));
     memset(tbattery, 0, sizeof(tbattery));
     memset(frequency, 0, sizeof(frequency));
 
-    for (int i = 1; i < BUFFER_SIZE - 2; i++) {
+    for (i = 1; i < BUFFER_SIZE - 2; i++) {
         if (i <= 7) {
             snprintfcat(results->voltageRange, 14, "%c", rawvalues[i]);
         } else if (i <= 10) {
@@ -79,10 +80,12 @@ void sms_parse_features(uint8_t *rawvalues, SmsData *results) {
 void sms_parse_information(uint8_t *rawvalues, SmsData *results) {
     /* Count from 1 to ignore first char and remove 2 from BUFFER_SIZE
      *  to compensate the start and ignore '\r' from end. */
+    int i;
+
     memset(results->model, 0, sizeof(results->model));
     memset(results->version, 0, sizeof(results->version));
 
-    for (int i = 1; i < BUFFER_SIZE - 2; i++) {
+    for (i = 1; i < BUFFER_SIZE - 2; i++) {
         if (i <= 12) {
             snprintfcat(results->model, 24, "%c", rawvalues[i]);
         } else {
