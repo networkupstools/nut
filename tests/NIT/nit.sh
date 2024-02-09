@@ -1344,6 +1344,7 @@ testgroup_sandbox_nutscanner() {
 ################################################################
 
 case "${NIT_CASE}" in
+    isBusy_NUT_PORT) DEBUG=yes isBusy_NUT_PORT ;;
     cppnit) testgroup_sandbox_cppnit ;;
     python) testgroup_sandbox_python ;;
     nutscanner|nut-scanner) testgroup_sandbox_nutscanner ;;
