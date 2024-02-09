@@ -53,6 +53,7 @@ log_debug() {
     if shouldDebug ; then
         echo "`TZ=UTC LANG=C date` [DEBUG] $@" >&2
     fi
+    return 0
 }
 
 log_info() {
