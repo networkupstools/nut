@@ -182,6 +182,7 @@ const std::string NutFile::m_tmp_dir("/var/tmp");
 
 
 NutFile::NutFile(anonymous_t):
+	m_name(""),
 	m_impl(nullptr),
 	m_current_ch('\0'),
 	m_current_ch_valid(false)
@@ -206,8 +207,18 @@ bool NutFile::exists(int & err_code, std::string & err_msg) const
 #endif
 {
 	struct stat info;
+	int status;
 
-	int status = ::stat(m_name.c_str(), &info);
+	/* An opened file pointer is assumed to be backed by a file at this
+	 * moment (even if unlinked, temporary with unknown name, etc.) */
+	if (m_impl != nullptr)
+		return true;
+
+	/* Can not stat an unknown file name */
+	if (m_name.empty())
+		return false;
+
+	status = ::stat(m_name.c_str(), &info);
 
 	if (!status)
 		return true;
@@ -233,6 +244,13 @@ bool NutFile::open(access_t mode, int & err_code, std::string & err_msg)
 
 	const char *mode_str = nullptr;
 
+	/* Can not open an unknown file name */
+	if (m_name.empty()) {
+		err_code = ENOENT;
+		err_msg  = std::string("No file name was specified");
+		return false;
+	}
+
 	switch (mode) {
 		case READ_ONLY:
 			mode_str = read_only;
@@ -256,6 +274,11 @@ bool NutFile::open(access_t mode, int & err_code, std::string & err_msg)
 
 	assert(nullptr != mode_str);
 
+	if (nullptr != m_impl) {
+		/* TOTHINK: Should we care about errors in this close()? */
+		::fclose(m_impl);
+	}
+
 	m_impl = ::fopen(m_name.c_str(), mode_str);
 
 	if (nullptr != m_impl)
@@ -273,6 +296,11 @@ bool NutFile::close(int & err_code, std::string & err_msg)
 		throw()
 #endif
 {
+	/* Already closed (or never opened) - goal achieved */
+	if (nullptr == m_impl) {
+		return true;
+	}
+
 	err_code = ::fclose(m_impl);
 
 	if (0 != err_code) {
@@ -292,6 +320,17 @@ bool NutFile::remove(int & err_code, std::string & err_msg)
 		throw()
 #endif
 {
+	/* Can not unlink an unknown file name */
+	if (m_name.empty()) {
+		err_code = ENOENT;
+		err_msg  = std::string("No file name was specified");
+		return false;
+	}
+
+	/* FWIW, note that if the file descriptor is opened by this
+	 * or any other process(es), it remains usable only by them
+	 * after un-linking, and the file system resources would be
+	 * released only when everyone closes it. */
 	err_code = ::unlink(m_name.c_str());
 
 	if (0 != err_code) {
