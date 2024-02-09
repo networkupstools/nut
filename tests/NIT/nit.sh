@@ -87,7 +87,7 @@ isBusy_NUT_PORT() {
     [ -n "${NUT_PORT}" ] || return
 
     log_debug "isBusy_NUT_PORT() Trying to report if NUT_PORT=${NUT_PORT} is used"
-    if [ -s /proc/net/tcp ] || [ -s /proc/net/tcp6 ]; then
+    if [ -e /proc/net/tcp ] || [ -e /proc/net/tcp6 ]; then
         # Assume Linux - hex-encoded
         # IPv4:
         #   sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
