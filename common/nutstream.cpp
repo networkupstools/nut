@@ -366,40 +366,22 @@ NutFile::NutFile(const std::string & name, access_t mode):
 }
 
 
-std::string NutFile::tmpName()
-#if (defined __cplusplus) && (__cplusplus < 201100)
-	throw(std::runtime_error)
-#endif
-{
-	// Note: in many systems' implementations this claims a warning like:
-	//    the use of `tempnam' is dangerous, better use `mkstemp'
-	// or
-	//     These functions are deprecated because more secure versions
-	//     are available; see tmpnam_s, _wtmpnam_s.
-	// but it seems the alternatives are different for various platforms
-	// and so a replacement is not quite portable (stack of ifdef's?), per
-	// https://stackoverflow.com/questions/3299881/tmpnam-warning-saying-it-is-dangerous
-	char *tmp_name = ::tempnam(m_tmp_dir.c_str(), nullptr);
-
-	if (nullptr == tmp_name)
-		throw std::runtime_error(
-			"Failed to create temporary file name");
-
-	std::string tmp_name_str(tmp_name);
-
-	::free(tmp_name);
-
-	return tmp_name_str;
-}
-
-
 NutFile::NutFile(access_t mode):
-	m_name(tmpName()),
-	m_impl(nullptr),
-	m_current_ch('\0'),
-	m_current_ch_valid(false)
+			NutFile(ANONYMOUS)
 {
-	openx(mode);
+	const char *mode_str = strAccessMode(mode);
+	m_impl = ::freopen(nullptr, mode_str, m_impl);
+
+	if (nullptr == m_impl) {
+		int err_code = errno;
+
+		std::stringstream e;
+		e << "Failed to re-open temporary file with mode '" << mode_str
+				<< "': " << err_code
+				<< ": " << ::strerror(err_code);
+
+		throw std::runtime_error(e.str());
+	}
 }
 
 

@@ -255,19 +255,6 @@ class NutFile: public NutStream {
 #endif
 		;
 
-	/**
-	 *  \brief  Generate temporary file name
-	 *
-	 *  Throws an exception on file name generation error.
-	 *
-	 *  \return Temporary file name
-	 */
-	std::string tmpName()
-#if (defined __cplusplus) && (__cplusplus < 201100)
-		throw(std::runtime_error)
-#endif
-		;
-
 	public:
 
 	/** Constructor
