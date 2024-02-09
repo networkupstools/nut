@@ -32,7 +32,7 @@
  * static info_lkp_t huawei_onbatt_info[] = {
  * 	info_lkp_default(1, "OB"),
  * 	info_lkp_default(2, "OL"),
- * 	info_lkp_default(0, NULL),
+ * 	info_lkp_sentinel
  * };
  */
 
@@ -135,9 +135,9 @@ static snmp_info_t huawei_mib[] = {
 	 * To create a value lookup structure (as needed on the 2nd line), use the
 	 * following kind of declaration, outside of the present snmp_info_t[]:
 	 * static info_lkp_t huawei_onbatt_info[] = {
-	 * 	info_lkp_default(1, "OB"), },
-	 * 	info_lkp_default(2, "OL"), },
-	 * 	info_lkp_sentinel }
+	 * 	info_lkp_default(1, "OB"),
+	 * 	info_lkp_default(2, "OL"),
+	 * 	info_lkp_sentinel
 	 * };
 	 */
 
