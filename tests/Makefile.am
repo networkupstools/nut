@@ -105,7 +105,7 @@ $(top_builddir)/common/libcommon.la: dummy
 # List of src files for CppUnit tests
 CPPUNITTESTSRC = example.cpp nutclienttest.cpp
 # These are an optional part of cppunittest, if building WITH_NUTCONF
-CPPUNITTESTSRC_NUTCONF = nutconf.cpp nutstream_ut.cpp nutconf_ut.cpp nutipc_ut.cpp
+CPPUNITTESTSRC_NUTCONF = nutconf_parser_ut.cpp nutstream_ut.cpp nutconf_ut.cpp nutipc_ut.cpp
 # The test driver which orchestrates running those tests above
 CPPUNITTESTERSRC = cpputest.cpp
 
