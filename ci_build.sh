@@ -1895,7 +1895,7 @@ bindings)
 ""|inplace)
     echo "ERROR: No BUILD_TYPE was specified, doing a minimal default ritual without any required options" >&2
     if [ -n "${BUILD_WARNOPT}${BUILD_WARNFATAL}" ]; then
-        echo "WARNING: BUILD_WARNOPT and BUILD_WARNFATAL settings are ignored in this mode" >&2
+        echo "WARNING: BUILD_WARNOPT and BUILD_WARNFATAL settings are ignored in this mode (warnings are always enabled and fatal for these developer-oriented builds)" >&2
         sleep 5
     fi
     echo ""

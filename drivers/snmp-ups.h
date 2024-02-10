@@ -275,8 +275,8 @@ typedef struct {
 #define SU_AMBIENT_TEMPLATE	(1UL << 26)	/* ambient template definition */
 
 /* Reserved slot -- to import from DMF branch codebase:
-//#define SU_FLAG_FUNCTION	(1UL << 27)
-*/
+ * //#define SU_FLAG_FUNCTION	(1UL << 27)
+ */
 
 /* status string components
  * FIXME: these should be removed, since there is no added value.
