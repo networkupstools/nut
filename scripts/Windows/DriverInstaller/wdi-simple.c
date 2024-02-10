@@ -45,7 +45,9 @@ int __cdecl main(int argc, char** argv)
 	struct wdi_options_install_driver oid = { 0 };
 	int c, r;
 	int opt_silent = 0, opt_extract = 0, log_level = WDI_LOG_LEVEL_WARNING;
-//	int opt_silent = 0, opt_extract = 0, log_level = WDI_LOG_LEVEL_DEBUG;
+/*
+	int opt_silent = 0, opt_extract = 0, log_level = WDI_LOG_LEVEL_DEBUG;
+*/
 	char *inf_name = INF_NAME;
 	char *ext_dir = DEFAULT_DIR;
 	bool matching_device_found;
@@ -55,7 +57,9 @@ int __cdecl main(int argc, char** argv)
 	ocl.list_hubs = true;
 	ocl.trim_whitespaces = true;
 	opd.driver_type = WDI_LIBUSB0;
-//	opd.driver_type = WDI_WINUSB;
+/*
+	opd.driver_type = WDI_WINUSB;
+*/
 
 	wdi_set_log_level(log_level);
 
@@ -63,7 +67,7 @@ int __cdecl main(int argc, char** argv)
 	oprintf("-------------------------\n\n");
 	oprintf("Searching for known UPS...\n");
 
-	// Try to match against a plugged device
+	/* Try to match against a plugged device */
 	matching_device_found = false;
 	if (wdi_create_list(&ldev, &ocl) == WDI_SUCCESS) {
 		r = WDI_SUCCESS;
@@ -78,10 +82,14 @@ int __cdecl main(int argc, char** argv)
 			dev.driver = NULL;
 			dev.device_id = NULL;
 			dev.hardware_id = NULL;
-//			oprintf("NUT device : vid :  %0X - pid : %0X\n",dev.vid, dev.pid);
+/*
+			oprintf("NUT device : vid :  %0X - pid : %0X\n",dev.vid, dev.pid);
+*/
 
 			for (ldev = ldev_start; (ldev != NULL) && (r == WDI_SUCCESS); ldev = ldev->next) {
-//				oprintf("trying vid :  %0X - pid : %0X\n",ldev->vid, ldev->pid);
+/*
+				oprintf("trying vid :  %0X - pid : %0X\n",ldev->vid, ldev->pid);
+*/
 				if ( (ldev->vid == dev.vid) && (ldev->pid == dev.pid) && (ldev->mi == dev.mi) ) {
 					oprintf("Found UPS : vendor ID = %0X - Product ID = %0X\n",ldev->vid, ldev->pid, ldev->mi);
 					dev.hardware_id = ldev->hardware_id;
@@ -112,7 +120,7 @@ int __cdecl main(int argc, char** argv)
 		}
 	}
 
-	// No plugged USB device matches
+	/* No plugged USB device matches */
 	if (!matching_device_found) {
 		oprintf("No known UPS device found.\nTry installing libUSB manually.\nHit enter to continue\n");
 		getc(stdin);

@@ -2002,7 +2002,7 @@ static int	armac_command(const char *cmd, char *buf, size_t buflen)
 			ret = usb_interrupt_read(udev, 0x81,
 				(usb_ctrl_charbuf)tmpbuf, ARMAC_READ_SIZE_FOR_CONTROL, 100);
 			if (ret != ARMAC_READ_SIZE_FOR_CONTROL) {
-				// Timeout - buffer is clean.
+				/* Timeout - buffer is clean. */
 				break;
 			}
 			upsdebugx(4, "armac cleanup ret i=%" PRIuSIZE " ret=%d ctrl=%02hhx", i, ret, tmpbuf[0]);
