@@ -44,9 +44,11 @@ static int cases_failed;
 static char * pass_fail[2] = {"pass", "fail"};
 
 void getWithoutUnderscores(char *var) {
+	int i;
+
 	fEof=fscanf(testData, "%s", var);
-	for(int i=0; var[i]; i++) {
-		if(var[i]=='_') var[i]=' ';
+	for (i=0; var[i]; i++) {
+		if (var[i]=='_') var[i]=' ';
 	}
 }
 
@@ -237,8 +239,9 @@ int main(int argc, char **argv) {
 						printf("%s %s test rule %u [%s]\n", pass_fail[0], testType, i, rules);
 						cases_passed++;
 					} else {
+						int k;
 						printf("%s %s test rule %u [%s] %s", pass_fail[1], testType, i, rules, upsfdtest->rules[j]->stateName);
-						for(int k=0; k<upsfdtest->upsLinesCount; k++) {
+						for(k=0; k<upsfdtest->upsLinesCount; k++) {
 							printf(" %d", upsfdtest->upsLinesStates[k]);
 						}
 						printf("\n");
