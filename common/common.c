@@ -2295,7 +2295,8 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 
 # ifdef WIN32
 			if (!libname_path) {
-				for (char *p = current_test_path; *p != '\0' && (p - current_test_path) < LARGEBUF; p++) {
+				char *p;
+				for (p = current_test_path; *p != '\0' && (p - current_test_path) < LARGEBUF; p++) {
 					if (*p == '/') *p = '\\';
 				}
 				upsdebugx(3, "%s: WIN32: re-checking with %s", __func__, current_test_path);

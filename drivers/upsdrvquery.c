@@ -89,14 +89,14 @@ udq_pipe_conn_t *upsdrvquery_connect(const char *sockfn) {
 	}
 
 	conn->sockfd = CreateFile(
-			sockfn,         // pipe name
-			GENERIC_READ |  // read and write access
+			sockfn,         /* pipe name */
+			GENERIC_READ |  /* read and write access */
 			GENERIC_WRITE,
-			0,              // no sharing
-			NULL,           // default security attributes FIXME
-			OPEN_EXISTING,  // opens existing pipe
-			FILE_FLAG_OVERLAPPED, //  enable async IO
-			NULL);          // no template file
+			0,              /* no sharing */
+			NULL,           /* default security attributes FIXME */
+			OPEN_EXISTING,  /* opens existing pipe */
+			FILE_FLAG_OVERLAPPED, /*  enable async IO */
+			NULL);          /* no template file */
 
 	if (conn->sockfd == INVALID_HANDLE_VALUE) {
 		upslog_with_errno(LOG_ERR, "CreateFile : %d\n", GetLastError());
@@ -417,7 +417,7 @@ ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 		tv.tv_usec -= (suseconds_t)(difftimeval(now, start));
 		while (tv.tv_usec < 0) {
 			tv.tv_sec--;
-			tv.tv_usec = 1000000 + tv.tv_usec;	// Note it is negative
+			tv.tv_usec = 1000000 + tv.tv_usec;	/* Note it is negative */
 		}
 		if (tv.tv_sec <= 0 && tv.tv_usec <= 0) {
 			upsdebugx(5, "%s: requested timeout expired", __func__);
