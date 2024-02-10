@@ -3535,7 +3535,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])
     [AC_MSG_RESULT([yes, out of the box])
      have_cxx11=yes],
     [AS_CASE(["${CXXFLAGS}"],
-        [*"-std="*], [
+        [*"-std="*|*"-ansi"*], [
             AC_MSG_RESULT([no, not with the standard already set in CXXFLAGS='${CXXFLAGS}'])
             have_cxx11=no
         ],[
