@@ -67,9 +67,6 @@ static info_lkp_t raritanpx2_outlet_status_info[] = {
 	info_lkp_default(28, "critical"),
 	info_lkp_default(29, "selfTest"),
 	info_lkp_default(30, "nonRedundant"),
-
-	/* FIXME? Is this one a legacy typo? */
-	info_lkp_default(0, "NULL"),
 	info_lkp_sentinel
 };
 
