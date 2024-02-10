@@ -153,6 +153,9 @@ https://github.com/networkupstools/nut/milestone/10
  - powerpanel text driver now handles status responses in any format and should
    support most devices. [#2156]
 
+ - tripplite_usb driver now allows any device to match if a particular Unit ID
+   was not specified in `ups.conf`. [PR #2297, issues #2282 and #2258]
+
  - snmp-ups driver:
    * added support for Eaton EMP002 sensor for ATS16 NM2 sub-driver. [#2286]
    * mapping table updates for apc-mib sub-driver. [#2264]
