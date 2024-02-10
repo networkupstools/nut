@@ -317,7 +317,8 @@ Jenkins CI
 ^^^^^^^^^^
 
 Since mid-2021, the NUT CI farm is implemented by several virtual servers
-courteously provided by http://fosshost.org
+courteously provided by link:http://fosshost.org[Fosshost] and later by
+link:https://www.digitalocean.com/?refcode=d2fbf2b9e082&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge[DigitalOcean].
 
 These run various operating systems as build agents, and a Jenkins instance
 to orchestrate the builds of NUT branches and pull requests on those agents.
