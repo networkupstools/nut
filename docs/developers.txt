@@ -170,7 +170,7 @@ Other hints
 ~~~~~~~~~~~
 
 TIP: At this point NUT is expected to work correctly when built with a
-C99 (or rather GNU99 on many systems) or newer standard.
+"strict" C99 (or rather GNU99 on many systems) or newer standard.
 
 The NUT codebase may build in a mode without warnings made fatal on C89
 (GNU89), but the emitted warnings indicate that those binaries may crash.
@@ -178,8 +178,18 @@ By the end of 2021, NUT codebase has been revised to pass GNU and strict-C
 mode builds with C89 standard with the GCC toolkit (and on systems that do
 have the newer features in libraries, just hide them in standard headers);
 however CLANG toolkit is more restrictive about the C99+ syntax used.
-If somebody in the community requires to build and run NUT on systems
-that old, pull requests to fix the offending coding issues are welcome.
+That said, some systems refuse to expose methods or types available in
+their system headers and binary libraries if strict-C mode is used alone,
+without extra system-specific defines to enable more than the baseline.
+
+It was also seen that cross-builds (e.g. NUT for Windows using mingw on
+Linux) may be unable to define `WIN32` and/or find symbols for linking
+when using a strict-C language standard.
+
+The C++ support expects C++11 or newer (not really configured or tested
+for older C++98 or C++03), modulo features that were deprecated in later
+language revisions (C++14 onwards) as highlighted by warnings from newer
+compilers.
 
 Note also that the NUT codebase currently relies on certain features,
 such as the printf format modifiers for `(s)size_t`, use of `long long`,
@@ -190,8 +200,16 @@ revisions). Many of the "offences" against the older standard actually
 come from system and third-party header files.
 
 That said, the NUT CI farm does run non-regression builds with GNU C89
-and strict C89 standard revisions and minimal passing warnings level,
+and "strict" C89 standard revisions and minimal passing warnings level,
 to ensure that codebase is and remains at least basically compliant.
+We try to cover a few distributions from early 2000's for this, either
+in regular CI builds or one-off local builds for community members with
+a zoo of old systems.
+
+If somebody in the community actually requires to build and run NUT on
+systems that old, where newer compilers are not available, pull requests
+to fix the offending coding issues in some way that does not break other
+use-cases are welcome.
 
 Continuous Integration and Automated Builds
 -------------------------------------------
