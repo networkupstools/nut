@@ -6,6 +6,10 @@
  *
  *  Based on initial work and data from Opengear <support@opengear.com>
  *
+ *  NOTE: Many readings allow for PDU ID which is hard-coded to ".1" in
+ *  the mapping tables below at this time. This should be extended to NUT
+ *  support for "daisy-chain" concept which appeared later than this driver.
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
