@@ -25,6 +25,7 @@
  */
 
 #include "config.h" /* must be the first header */
+#include "common.h" /* for upsdebugx() etc */
 
 #include <string.h>
 
@@ -44,7 +45,6 @@
 #include "hidtypes.h"
  */
 
-#include "common.h" /* for upsdebugx() etc */
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello serial driver"
