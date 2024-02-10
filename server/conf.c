@@ -169,7 +169,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 	/* DEBUG_MIN (NUM) */
 	/* debug_min (NUM) also acceptable, to be on par with ups.conf */
 	if (!strcasecmp(arg[0], "DEBUG_MIN")) {
-		int lvl = -1; // typeof common/common.c: int nut_debug_level
+		int lvl = -1; /* typeof common/common.c: int nut_debug_level */
 		if ( str_to_int (arg[1], &lvl, 10) && lvl >= 0 ) {
 			nut_debug_level_global = lvl;
 		} else {

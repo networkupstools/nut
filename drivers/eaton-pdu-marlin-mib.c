@@ -232,7 +232,7 @@ const char *su_temperature_read_fun(void *raw_snmp_value) {
 	NUT_UNUSED_VARIABLE(raw_snmp_value);
 	return "dummy";
 }
-#endif // WITH_SNMP_LKP_FUN_DUMMY
+#endif /* WITH_SNMP_LKP_FUN_DUMMY */
 
 static info_lkp_t eaton_sensor_temperature_unit_info[] = {
 	{ 0, "dummy", eaton_sensor_temperature_unit_fun, NULL },
@@ -244,7 +244,7 @@ static info_lkp_t eaton_sensor_temperature_read_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
-#else // if not WITH_SNMP_LKP_FUN:
+#else /* if not WITH_SNMP_LKP_FUN: */
 
 /* FIXME: For now, DMF codebase falls back to old implementation with static
  * lookup/mapping tables for this, which can easily go into the DMF XML file.
@@ -256,7 +256,7 @@ static info_lkp_t eaton_sensor_temperature_unit_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
-#endif // WITH_SNMP_LKP_FUN
+#endif /* WITH_SNMP_LKP_FUN */
 
 /* Extracted from powerware-mib.c ; try to commonalize */
 static info_lkp_t marlin_ambient_drycontacts_polarity_info[] = {

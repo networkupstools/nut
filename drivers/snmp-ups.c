@@ -2174,7 +2174,7 @@ const char *su_find_strval(info_lkp_t *oid2info, void *value)
 #else
 	NUT_UNUSED_VARIABLE(oid2info);
 	upsdebugx(1, "%s: no mapping function for this OID string value (%s)", __func__, (char*)value);
-#endif // WITH_SNMP_LKP_FUN
+#endif /* WITH_SNMP_LKP_FUN */
 	return NULL;
 }
 
@@ -2194,7 +2194,7 @@ const char *su_find_infoval(info_lkp_t *oid2info, void *raw_value)
 		upsdebugx(2, "%s: got value '%s'", __func__, retvalue);
 		return retvalue;
 	}
-#endif // WITH_SNMP_LKP_FUN
+#endif /* WITH_SNMP_LKP_FUN */
 
 	/* Otherwise, use the simple values mapping */
 	for (info_lkp = oid2info; (info_lkp != NULL) &&

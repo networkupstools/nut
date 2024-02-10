@@ -89,6 +89,20 @@ AC_CONFIG_HEADERS([include/config.h])
 AC_PREFIX_DEFAULT(/usr/local/ups)
 AM_INIT_AUTOMAKE([subdir-objects])
 
+AS_CASE([${target_os}],
+	[*mingw*], [AS_CASE([${CFLAGS-}${CXXFLAGS-}],
+		[*"-std=c"*|*-ansi*], [
+			AC_MSG_NOTICE(
+[-----------------------------------------------------------------------
+WARNING: It seems you are building with MinGW and requested a strict C/C++
+language mode. Per https://stackoverflow.com/a/76780217/4715872 MinGW may
+not define WIN32 and other options needed for proper building and linking.
+If this happens, please retry with GNU C/C++ language mode options instead.
+-----------------------------------------------------------------------])
+			sleep 5
+		])]
+)
+
 dnl Default to `configure --enable-silent-rules` or `make V=1` for details?
 dnl This feature seems to require automake-1.13 or newer (1.11+ by other info)
 dnl On very old systems can comment it away with little loss (then automake-1.10
@@ -2833,6 +2847,7 @@ AS_IF([test "x$nut_cv_header_windows_h" = xyes],
 	[AM_CONDITIONAL([HAVE_WINDOWS], [false])]
 	)
 
+
 dnl ----------------------------------------------------------------------
 
 PREFIX="${prefix}"
@@ -3533,7 +3548,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])
     [AC_MSG_RESULT([yes, out of the box])
      have_cxx11=yes],
     [AS_CASE(["${CXXFLAGS}"],
-        [*"-std="*], [
+        [*"-std="*|*"-ansi"*], [
             AC_MSG_RESULT([no, not with the standard already set in CXXFLAGS='${CXXFLAGS}'])
             have_cxx11=no
         ],[
