@@ -39,6 +39,17 @@
 #include "nut_float.h"
 #include "timehead.h"
 
+#ifdef WIN32
+# include "wincompat.h"
+# ifndef LDOUBLE
+#  ifdef HAVE_LONG_DOUBLE
+#   define LDOUBLE long double
+#  else
+#   define LDOUBLE double
+#  endif
+# endif
+#endif
+
 #define MGE_HID_VERSION		"MGE HID 1.46"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
