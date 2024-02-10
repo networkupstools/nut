@@ -23,7 +23,7 @@
 
 #include "raritan-px2-mib.h"
 
-#define RARITAN_PX2_MIB_VERSION  "0.40"
+#define RARITAN_PX2_MIB_VERSION  "0.41"
 
 #define RARITAN_PX2_MIB_SYSOID     ".1.3.6.1.4.1.13742.6"
 #define RARITAN_PX2_OID_MODEL_NAME ".1.3.6.1.4.1.13742.6.3.2.1.1.3.1"
@@ -54,6 +54,15 @@ static info_lkp_t raritanpx2_outlet_status_info[] = {
 	info_lkp_default(19, "two"),
 	info_lkp_default(20, "inSync"),
 	info_lkp_default(21, "outOfSync"),
+	info_lkp_default(22, "i1OpenFault"),
+	info_lkp_default(23, "i1ShortFault"),
+	info_lkp_default(24, "i2OpenFault"),
+	info_lkp_default(25, "i2ShortFault"),
+	info_lkp_default(26, "fault"),
+	info_lkp_default(27, "warning"),
+	info_lkp_default(28, "critical"),
+	info_lkp_default(29, "selfTest"),
+	info_lkp_default(30, "nonRedundant"),
 
 	/* FIXME? Is this one a legacy typo? */
 	info_lkp_default(0, "NULL"),
