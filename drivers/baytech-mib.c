@@ -31,72 +31,72 @@
 #define BAYTECH_OID_MODEL_NAME	".1.3.6.1.4.1.4779.1.3.5.2.1.24.1"
 
 static info_lkp_t baytech_outlet_status_info[] = {
-	{ -1, "error", NULL, NULL },
-	{ 0, "off", NULL, NULL },
-	{ 1, "on", NULL, NULL },
-	{ 2, "cycling", NULL, NULL }, /* transitional status, "reboot" in MIB comments */
-	{ 3, "lockon", NULL, NULL },
-	{ 4, "lockoff", NULL, NULL },
-	{ 5, "unlock", NULL, NULL },
-	{ 6, "unknown", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(-1, "error"),
+	info_lkp_default(0, "off"),
+	info_lkp_default(1, "on"),
+	info_lkp_default(2, "cycling"),	/* transitional status, "reboot" in MIB comments */
+	info_lkp_default(3, "lockon"),
+	info_lkp_default(4, "lockoff"),
+	info_lkp_default(5, "unlock"),
+	info_lkp_default(6, "unknown"),
+	info_lkp_sentinel
 };
 
 /* Snmp2NUT lookup table for BayTech MIBs */
 static snmp_info_t baytech_mib[] = {
 
 	/* standard MIB items */
-	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
-	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
-	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
+	snmp_info_default("device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL),
+	snmp_info_default("device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL),
+	snmp_info_default("device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL),
 
 	/* Device page */
-	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "BayTech",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-	{ "device.model", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.4779.1.3.5.2.1.24.1",
-		"Generic SNMP PDU", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
-	{ "device.serial", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.4779.1.1.2.0", "",
-		SU_FLAG_STATIC | SU_FLAG_OK, NULL },
-	{ "device.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-	{ "device.macaddr", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.2.1.2.2.1.6.2",
-		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
+	snmp_info_default("device.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "BayTech",
+		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL),
+	snmp_info_default("device.model", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.4779.1.3.5.2.1.24.1",
+		"Generic SNMP PDU", SU_FLAG_STATIC | SU_FLAG_OK, NULL),
+	snmp_info_default("device.serial", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.4779.1.1.2.0", "",
+		SU_FLAG_STATIC | SU_FLAG_OK, NULL),
+	snmp_info_default("device.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu",
+		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL),
+	snmp_info_default("device.macaddr", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.2.1.2.2.1.6.2",
+		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL),
 
 	/* UPS page */
-	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "Baytech",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.4779.1.3.5.2.1.24.1",
-		"Generic SNMP PDU", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
-	{ "ups.id", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.4779.1.1.3.0",
-		"unknown", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
-	{ "ups.serial", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.4779.1.1.2.0", "",
-		SU_FLAG_STATIC | SU_FLAG_OK, NULL },
-	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.4779.1.1.1.0", "",
-		SU_FLAG_STATIC | SU_FLAG_OK, NULL },
-	{ "ups.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-	{ "ups.temperature", 0, 0.1, ".1.3.6.1.4.1.4779.1.3.5.5.1.10.2.1", NULL, 0, NULL },
+	snmp_info_default("ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "Baytech",
+		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL),
+	snmp_info_default("ups.model", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.4779.1.3.5.2.1.24.1",
+		"Generic SNMP PDU", SU_FLAG_STATIC | SU_FLAG_OK, NULL),
+	snmp_info_default("ups.id", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.4779.1.1.3.0",
+		"unknown", SU_FLAG_STATIC | SU_FLAG_OK, NULL),
+	snmp_info_default("ups.serial", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.4779.1.1.2.0", "",
+		SU_FLAG_STATIC | SU_FLAG_OK, NULL),
+	snmp_info_default("ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.4779.1.1.1.0", "",
+		SU_FLAG_STATIC | SU_FLAG_OK, NULL),
+	snmp_info_default("ups.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu",
+		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL),
+	snmp_info_default("ups.temperature", 0, 0.1, ".1.3.6.1.4.1.4779.1.3.5.5.1.10.2.1", NULL, 0, NULL),
 
 	/* Outlet page */
-	{ "outlet.id", 0, 1, NULL, "0", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-	{ "outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, NULL, "All outlets",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-	{ "outlet.count", 0, 1, ".1.3.6.1.4.1.4779.1.3.5.2.1.15.1", "0", 0, NULL },
-	{ "outlet.current", 0, 0.1, ".1.3.6.1.4.1.4779.1.3.5.5.1.6.2.1", NULL, 0, NULL },
-	{ "outlet.voltage", 0, 0.1, ".1.3.6.1.4.1.4779.1.3.5.5.1.8.2.1", NULL, 0, NULL },
+	snmp_info_default("outlet.id", 0, 1, NULL, "0", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL),
+	snmp_info_default("outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, NULL, "All outlets",
+		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL),
+	snmp_info_default("outlet.count", 0, 1, ".1.3.6.1.4.1.4779.1.3.5.2.1.15.1", "0", 0, NULL),
+	snmp_info_default("outlet.current", 0, 0.1, ".1.3.6.1.4.1.4779.1.3.5.5.1.6.2.1", NULL, 0, NULL),
+	snmp_info_default("outlet.voltage", 0, 0.1, ".1.3.6.1.4.1.4779.1.3.5.5.1.8.2.1", NULL, 0, NULL),
 
 	/* outlet template definition */
-	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.4779.1.3.5.3.1.3.1.%i", NULL, SU_OUTLET, &baytech_outlet_status_info[0] },
-	{ "outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.4779.1.3.5.3.1.4.1.%i", NULL, SU_OUTLET, NULL },
-	{ "outlet.%i.id", 0, 1, ".1.3.6.1.4.1.4779.1.3.5.6.1.3.2.1.%i", "%i", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_OUTLET | SU_FLAG_OK, NULL },
-	{ "outlet.%i.switchable", 0, 1, ".1.3.6.1.4.1.4779.1.3.5.3.1.1.1.%i", "yes", SU_FLAG_STATIC | SU_OUTLET, NULL },
+	snmp_info_default("outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.4779.1.3.5.3.1.3.1.%i", NULL, SU_OUTLET, &baytech_outlet_status_info[0]),
+	snmp_info_default("outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.4779.1.3.5.3.1.4.1.%i", NULL, SU_OUTLET, NULL),
+	snmp_info_default("outlet.%i.id", 0, 1, ".1.3.6.1.4.1.4779.1.3.5.6.1.3.2.1.%i", "%i", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_OUTLET | SU_FLAG_OK, NULL),
+	snmp_info_default("outlet.%i.switchable", 0, 1, ".1.3.6.1.4.1.4779.1.3.5.3.1.1.1.%i", "yes", SU_FLAG_STATIC | SU_OUTLET, NULL),
 
 	/* instant commands. */
-	{ "outlet.%i.load.off", 0, 1, ".1.3.6.1.4.1.4779.1.3.5.3.1.3.1.%i", "0", SU_TYPE_CMD | SU_OUTLET, NULL },
-	{ "outlet.%i.load.on", 0, 1, ".1.3.6.1.4.1.4779.1.3.5.3.1.3.1.%i", "1", SU_TYPE_CMD | SU_OUTLET, NULL },
+	snmp_info_default("outlet.%i.load.off", 0, 1, ".1.3.6.1.4.1.4779.1.3.5.3.1.3.1.%i", "0", SU_TYPE_CMD | SU_OUTLET, NULL),
+	snmp_info_default("outlet.%i.load.on", 0, 1, ".1.3.6.1.4.1.4779.1.3.5.3.1.3.1.%i", "1", SU_TYPE_CMD | SU_OUTLET, NULL),
 
 	/* end of structure. */
-	{ NULL, 0, 0, NULL, NULL, 0, NULL }
+	snmp_info_sentinel
 };
 
 mib2nut_info_t	baytech = { "baytech", BAYTECH_MIB_VERSION, NULL, BAYTECH_OID_MODEL_NAME, baytech_mib, BAYTECH_OID_MIB, NULL };
