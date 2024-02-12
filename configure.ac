@@ -4665,29 +4665,59 @@ AC_SUBST(PATH_DURING_CONFIGURE)
 
 dnl Some binaries, like CPPUNIT tests, have similar flags already added
 AC_MSG_CHECKING([whether to enable debug info in all NUT binaries])
-AS_IF([test x"${nut_with_debuginfo}" = xauto], [
-    AS_CASE(["${CFLAGS}${CXXFLAGS}"],
-        [*-O*|*-g*], [nut_with_debuginfo="Related settings already specified by caller, not changing anything"],
-        [nut_with_debuginfo=yes])
-])
-AS_CASE(["${nut_with_debuginfo}"],
+nut_with_debuginfo_C="${nut_with_debuginfo}"
+nut_with_debuginfo_CXX="${nut_with_debuginfo}"
+AS_CASE(["${CFLAGS}"],
+    [*-O*|*-g*], [
+        AS_IF([test x"${nut_with_debuginfo_C}" = xauto], [
+            nut_with_debuginfo_C="Related settings already specified by caller or detected CFLAGS, not changing anything"
+            ])
+        ],
+    [   dnl No competing options are provided
+        AS_CASE(["${nut_with_debuginfo_C}"],
+            [auto], [nut_with_debuginfo_C="yes"],
+            [no], [nut_with_debuginfo_C="legacy"])
+    ])
+
+AS_CASE(["${CXXFLAGS}"],
+    [*-O*|*-g*], [
+        AS_IF([test x"${nut_with_debuginfo_CXX}" = xauto], [
+            nut_with_debuginfo_CXX="Related settings already specified by caller or detected CXXFLAGS, not changing anything"
+            ])
+        ],
+    [   dnl No competing options are provided
+        AS_CASE(["${nut_with_debuginfo_CXX}"],
+            [auto], [nut_with_debuginfo_CXX="yes"],
+            [no], [nut_with_debuginfo_CXX="legacy"])
+    ])
+
+AS_CASE(["${nut_with_debuginfo_C}"],
     [yes], [
         AS_IF([test x"${CLANGCC}" = x"yes" -o test x"${GCC}" = x"yes"], [
             CFLAGS="${CFLAGS} -O0 -g3 -gdwarf-2"
-            ],[nut_with_debuginfo="Unknown C compiler, not adding options"]
-        )
-        AS_IF([test "x$CLANGXX" = xyes -o "x$GXX" = xyes], [
-            CXXFLAGS="${CXXFLAGS} -O0 -g3 -gdwarf-2"
-            ],[nut_with_debuginfo="Unknown C++ compiler, not adding options"]
+            ],[nut_with_debuginfo_C="Unknown C compiler, not adding options"]
         )],
-    [no], [
-        dnl # By default we do not add debug info
+    dnl # [no]: By default we do not add debug info
+    [legacy], [
         dnl # Apply legacy defaults if no flags were specified by caller
         AS_IF([test x"${CFLAGS_ORIG}" = x],	[CFLAGS="-O ${CFLAGS}"])
+        ]
+)
+
+AS_CASE(["${nut_with_debuginfo_CXX}"],
+    [yes], [
+        AS_IF([test "x$CLANGXX" = xyes -o "x$GXX" = xyes], [
+            CXXFLAGS="${CXXFLAGS} -O0 -g3 -gdwarf-2"
+            ],[nut_with_debuginfo_CXX="Unknown C++ compiler, not adding options"]
+        )],
+    dnl # [no]: By default we do not add debug info
+    [legacy], [
+        dnl # Apply legacy defaults if no flags were specified by caller
         AS_IF([test x"${CXXFLAGS_ORIG}" = x],	[CXXFLAGS="-O ${CXXFLAGS}"])
         ]
 )
-AC_MSG_RESULT(["${nut_with_debuginfo}"])
+
+AC_MSG_RESULT(["C: ${nut_with_debuginfo_C}; C++: ${nut_with_debuginfo_CXX}"])
 
 AC_MSG_NOTICE([Generating "data" files from templates, see below for executable scripts])
 AC_CONFIG_FILES([
