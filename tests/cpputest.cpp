@@ -76,7 +76,8 @@ int main(int argc, char* argv[])
   if (verbose) {
     /* Add a listener to report test names */
     std::cerr << "D: Setting test runner listener for test names..." << std::endl;
-    MyCustomProgressTestListener progress;
+    /* Only allocate when needed; static to avoid freeing */
+    static MyCustomProgressTestListener progress;
     runner.eventManager().addListener(&progress);
   }
 
