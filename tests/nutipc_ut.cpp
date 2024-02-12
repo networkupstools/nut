@@ -60,7 +60,8 @@ class NutIPCUnitTest: public CppUnit::TestFixture {
 	void testSignalSend();
 
 	/** Signal receiving test */
-	void testSignalRecv();
+	void testSignalRecvQuick();
+	void testSignalRecvStaggered();
 
 	public:
 
@@ -70,7 +71,8 @@ class NutIPCUnitTest: public CppUnit::TestFixture {
 	inline void test() {
 		testExec();
 		testSignalSend();
-		testSignalRecv();
+		testSignalRecvQuick();
+		testSignalRecvStaggered();
 	}
 
 	virtual ~NutIPCUnitTest() override;
@@ -172,10 +174,57 @@ class TestSignalHandler: public nut::Signal::Handler {
 	virtual ~TestSignalHandler() override;
 };  // end of class TestSignalHandler
 
-void NutIPCUnitTest::testSignalRecv() {
+void NutIPCUnitTest::testSignalRecvQuick() {
 #ifdef WIN32
 	/* FIXME: Needs implementation for signals via pipes */
-	std::cout << "NutIPCUnitTest::testSignalRecv(): skipped on this platform" << std::endl;
+	std::cout << "NutIPCUnitTest::testSignalRecvQuick(): skipped on this platform" << std::endl;
+#else
+	// Create signal handler thread
+	nut::Signal::List signals;
+
+	signals.push_back(nut::Signal::USER1);
+	signals.push_back(nut::Signal::USER2);
+
+	nut::Signal::HandlerThread<TestSignalHandler> sig_handler(signals);
+
+	pid_t my_pid = nut::Process::getPID();
+
+	/* NOTE: The signal order delivery is not specified by POSIX if several
+	 * ones arrive nearly simultaneously (and/or get confused by multi-CPU
+	 * routing). In this test we only verify that after sending several copies
+	 * of several signals, the expected counts of events were received.
+	 */
+	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER1, my_pid));
+	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER2, my_pid));
+	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER2, my_pid));
+	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER1, my_pid));
+	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER1, my_pid));
+
+	// Let the sig. handler thread finish...
+	::sleep(1);
+
+	CPPUNIT_ASSERT(caught_signals.size() == 5);
+
+	int countUSER1 = 0;
+	int countUSER2 = 0;
+	while (!caught_signals.empty()) {
+		switch (caught_signals.front()) {
+			case nut::Signal::USER1:	countUSER1++; break;
+			case nut::Signal::USER2:	countUSER2++; break;
+			default:	CPPUNIT_ASSERT_MESSAGE("Unexpected signal was received", 0);
+		}
+		caught_signals.pop_front();
+	}
+
+	CPPUNIT_ASSERT(countUSER1 == 3);
+	CPPUNIT_ASSERT(countUSER2 == 2);
+#endif	/* WIN32 */
+}
+
+void NutIPCUnitTest::testSignalRecvStaggered() {
+#ifdef WIN32
+	/* FIXME: Needs implementation for signals via pipes */
+	std::cout << "NutIPCUnitTest::testSignalRecvStaggered(): skipped on this platform" << std::endl;
 #else
 	// Create signal handler thread
 	nut::Signal::List signals;
@@ -194,13 +243,17 @@ void NutIPCUnitTest::testSignalRecv() {
 	 * builds tend to mess this up a bit.
 	 */
 	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER1, my_pid));
+	::sleep(1);
+
 	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER2, my_pid));
+	::sleep(1);
+
 	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER2, my_pid));
+	::sleep(1);
 
 	/* Help ensure ordered (one-by-one) delivery before re-posting a
 	 * presumably lower-numbered signal after some higher-numbered ones.
 	 */
-	::sleep(1);
 	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER1, my_pid));
 
 	// Let the sig. handler thread finish...
