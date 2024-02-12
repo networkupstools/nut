@@ -50,7 +50,7 @@ install:
         set CHERE_INVOKING=yes
         REM Start a 64 bit Mingw environment:
         set MSYSTEM=MINGW64
-        C:\msys64\usr\bin\bash -lc "PATH=\"/mingw64/bin:\$PATH\" ; export PATH ; pwd ; ccache -sv || echo 'SKIP: Could not query ccache stats' ; ccache -o sloppiness=file_macro || true ; ccache -o compression=true || true "
+        C:\msys64\usr\bin\bash -lc 'PATH="/mingw64/bin:$PATH" ; export PATH ; pwd ; ccache -sv || echo "SKIP: Could not query ccache stats" ; ccache -o sloppiness=file_macro || true ; ccache -o compression=true || true '
 
 
 before_build:
@@ -72,7 +72,7 @@ build_script:
         set CHERE_INVOKING=yes
         REM Start a 64 bit Mingw environment:
         set MSYSTEM=MINGW64
-        C:\msys64\usr\bin\bash -lc "date -u; PATH=\"/mingw64/bin:\$PATH\" CI_SKIP_CHECK=true ./ci_build.sh"
+        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" CI_SKIP_CHECK=true ./ci_build.sh'
 
 
 after_build:
@@ -81,7 +81,7 @@ after_build:
         set CHERE_INVOKING=yes
         REM Start a 64 bit Mingw environment:
         set MSYSTEM=MINGW64
-        C:\msys64\usr\bin\bash -lc "date -u; PATH=\"/mingw64/bin:\$PATH\" ; export PATH ; ccache -sv || ccache -s || echo 'SKIP: Could not query ccache stats'"
+        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" ; export PATH ; ccache -sv || ccache -s || echo "SKIP: Could not query ccache stats"'
 
 
 test_script:
@@ -91,9 +91,9 @@ test_script:
         REM Start a 64 bit Mingw environment:
         set MSYSTEM=MINGW64
         REM Start Mingw-based integration and unit checks:
-        C:\msys64\usr\bin\bash -lc "date -u; PATH=\"/mingw64/bin:\$PATH\" make -s check || ( RES=\$? ; for F in tests/*.log tests/*.trs ; do echo "=== \$F"; cat "\$F"; done; exit \$RES; )"
+        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" make -s check || ( RES=$? ; for F in tests/*.log tests/*.trs ; do echo "=== $F"; cat "$F"; done; exit $RES; )'
         REM Start a Mingw-based documentation spellcheck:
-        C:\msys64\usr\bin\bash -lc "date -u; PATH=\"/mingw64/bin:\$PATH\" make -s -j 4 spellcheck"
+        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" make -s -j 4 spellcheck'
 
 
 after_test:
@@ -104,7 +104,7 @@ after_test:
         set MSYSTEM=MINGW64
         REM Oh the joys of shell scripting with strings passed through CMD:
         REM Note: currently Python installation path with MSYS is buggy [#1584]
-        C:\msys64\usr\bin\bash -lc "date -u; if ! rm -rf '.inst' ; then echo 'WARNING: Failed to clean away .inst' ; fi ; PATH=\"/mingw64/bin:\$PATH\" make -s install-win-bundle DESTDIR=\"`pwd`/.inst/NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%\" ; ln -fs 'NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%' ./.inst/NUT-for-Windows-x86_64-SNAPSHOT ; ( cd .inst/NUT-for-Windows-x86_64-SNAPSHOT ; find . -ls ; )"
+        C:\msys64\usr\bin\bash -lc 'date -u; if ! rm -rf ".inst" ; then echo "WARNING: Failed to clean away .inst" ; fi ; PATH="/mingw64/bin:$PATH" make -s install-win-bundle DESTDIR="`pwd`/.inst/NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%" ; ln -fs "NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%" ./.inst/NUT-for-Windows-x86_64-SNAPSHOT ; ( cd .inst/NUT-for-Windows-x86_64-SNAPSHOT ; find . -ls ; )'
         cd .inst
         7z a ../NUT-for-Windows-x86_64-SNAPSHOT-%APPVEYOR_BUILD_VERSION%.7z NUT*
   - cmd: |
@@ -112,8 +112,8 @@ after_test:
         set CHERE_INVOKING=yes
         REM Start a 64 bit Mingw environment:
         set MSYSTEM=MINGW64
-        C:\msys64\usr\bin\bash -lc "date -u; PATH=\"/mingw64/bin:\$PATH" ; export PATH ; ccache -sv || ccache -s || echo 'SKIP: Could not query ccache stats'"
-        C:\msys64\usr\bin\bash -lc "date -u; PATH=\"/mingw64/bin:\$PATH" ; export PATH ; ccache -x || echo 'SKIP: Could not query ccache compression stats'"
+        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" ; export PATH ; ccache -sv || ccache -s || echo "SKIP: Could not query ccache stats"'
+        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" ; export PATH ; ccache -x || echo "SKIP: Could not query ccache compression stats"'
 
 
 artifacts:
