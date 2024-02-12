@@ -1370,6 +1370,15 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         fi
     fi
 
+    # When itertating configure.ac or m4 sources, we can end up with an
+    # existing but useless scropt file - nuke it and restart from scratch!
+    if [ -s "${CI_BUILDDIR}"/configure ] ; then
+        if ! sh -n "${CI_BUILDDIR}"/configure 2>/dev/null ; then
+            echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because current configure script syntax is broken"
+            rm -f "${CI_BUILDDIR}"/Makefile "${CI_BUILDDIR}"/configure
+        fi
+    fi
+
     if [ -s Makefile ]; then
         # Let initial clean-up be at default verbosity
 
@@ -1974,6 +1983,15 @@ bindings)
         ; then
             # Avoid reconfiguring for the sake of distclean
             echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because recipes changed"
+            rm -f "${CI_BUILDDIR}"/Makefile "${CI_BUILDDIR}"/configure
+        fi
+    fi
+
+    # When itertating configure.ac or m4 sources, we can end up with an
+    # existing but useless scropt file - nuke it and restart from scratch!
+    if [ -s "${CI_BUILDDIR}"/configure ] ; then
+        if ! sh -n "${CI_BUILDDIR}"/configure 2>/dev/null ; then
+            echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because current configure script syntax is broken"
             rm -f "${CI_BUILDDIR}"/Makefile "${CI_BUILDDIR}"/configure
         fi
     fi
