@@ -3671,7 +3671,6 @@ AC_MSG_RESULT(${have_cppunit})
 
 NUT_REPORT_FEATURE([build C++ tests with CPPUNIT], [${have_cppunit}], [],
 					[HAVE_CPPUNIT], [Define to enable CPPUNIT tests])
-AC_DEFINE_UNQUOTED(CPPUNIT_NUT_CXXFLAGS, $CPPUNIT_NUT_CXXFLAGS, [Compiler flags for cppunit tests])
 
 dnl ----------------------------------------------------------------------
 
@@ -4754,6 +4753,9 @@ AS_CASE(["${nut_with_debuginfo_CXX}"],
 )
 
 AC_MSG_RESULT(["C: ${nut_with_debuginfo_C}; C++: ${nut_with_debuginfo_CXX}"])
+
+dnl Only in the end, do you understand...
+AC_SUBST(CPPUNIT_NUT_CXXFLAGS)
 
 AC_MSG_NOTICE([Generating "data" files from templates, see below for executable scripts])
 AC_CONFIG_FILES([
