@@ -368,7 +368,7 @@ void NutSocketUnitTest::test() {
 		// Run writer
 		CPPUNIT_ASSERT(Writer(m_listen_address).run());
 
-		return;
+		exit(0);
 	}
 
 	// Listen
