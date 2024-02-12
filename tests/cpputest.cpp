@@ -45,7 +45,7 @@ class MyCustomProgressTestListener : public CppUnit::TextTestProgressListener {
 //   [-Werror,-Wweak-vtables]
 void MyCustomProgressTestListener::startTest(CppUnit::Test *test) {
     //fprintf(stderr, "starting test %s\n", test->getName().c_str());
-    std::cerr << "starting test " << test->getName() << std::endl << std::flush;
+    std::cerr << "starting test " << (test == nullptr ? "<null>" : test->getName()) << std::endl << std::flush;
 }
 
 int main(int argc, char* argv[])
