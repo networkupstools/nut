@@ -43,11 +43,11 @@ class NutIPCUnitTest: public CppUnit::TestFixture {
 	private:
 
 	CPPUNIT_TEST_SUITE(NutIPCUnitTest);
-		CPPUNIT_TEST(test);
+		CPPUNIT_TEST( testExec );
+		CPPUNIT_TEST( testSignalSend );
+		CPPUNIT_TEST( testSignalRecvQuick );
+		CPPUNIT_TEST( testSignalRecvStaggered );
 	CPPUNIT_TEST_SUITE_END();
-
-	/** External command execution test */
-	void testExec();
 
 	/**
 	 *  \brief  Test signal handler
@@ -56,6 +56,11 @@ class NutIPCUnitTest: public CppUnit::TestFixture {
 	 */
 	static void testSignalHandler(int signal);
 
+	public:
+
+	/** External command execution test */
+	void testExec();
+
 	/** Signal sending test */
 	void testSignalSend();
 
@@ -63,17 +68,8 @@ class NutIPCUnitTest: public CppUnit::TestFixture {
 	void testSignalRecvQuick();
 	void testSignalRecvStaggered();
 
-	public:
-
 	inline void setUp() override {}
 	inline void tearDown() override {}
-
-	inline void test() {
-		testExec();
-		testSignalSend();
-		testSignalRecvQuick();
-		testSignalRecvStaggered();
-	}
 
 	virtual ~NutIPCUnitTest() override;
 };  // end of class NutIPCUnitTest

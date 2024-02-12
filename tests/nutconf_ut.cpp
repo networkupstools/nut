@@ -34,7 +34,11 @@ class NutConfigUnitTest: public CppUnit::TestFixture {
 	private:
 
 	CPPUNIT_TEST_SUITE(NutConfigUnitTest);
-		CPPUNIT_TEST(test);
+		CPPUNIT_TEST( testNutConfiguration );
+		CPPUNIT_TEST( testUpsmonConfiguration );
+		CPPUNIT_TEST( testUpsdConfiguration );
+		CPPUNIT_TEST( testUpsConfiguration );
+		CPPUNIT_TEST( testUpsdUsersConfiguration );
 	CPPUNIT_TEST_SUITE_END();
 
 	/**
@@ -53,6 +57,8 @@ class NutConfigUnitTest: public CppUnit::TestFixture {
 	 */
 	void check(const nut::Serialisable * config, const std::string & content);
 
+	public:
+
 	/** nut.conf test */
 	void testNutConfiguration();
 
@@ -68,18 +74,8 @@ class NutConfigUnitTest: public CppUnit::TestFixture {
 	/** upsd.users test */
 	void testUpsdUsersConfiguration();
 
-	public:
-
 	inline void setUp() override {}
 	inline void tearDown() override {}
-
-	inline void test() {
-		testNutConfiguration();
-		testUpsmonConfiguration();
-		testUpsdConfiguration();
-		testUpsConfiguration();
-		testUpsdUsersConfiguration();
-	}
 
 	virtual ~NutConfigUnitTest() override;
 };  // end of class NutConfigUnitTest
