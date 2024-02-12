@@ -1029,7 +1029,7 @@ static int main_arg(char *var, char *val)
 	 * catch commented-away settings, so not checking previous value.
 	 */
 	if (!strcmp(var, "debug_min")) {
-		int lvl = -1; // typeof common/common.c: int nut_debug_level
+		int lvl = -1; /* typeof common/common.c: int nut_debug_level */
 		if ( str_to_int (val, &lvl, 10) && lvl >= 0 ) {
 			nut_debug_level_driver = lvl;
 		} else {
@@ -1154,7 +1154,7 @@ static void do_global_args(const char *var, const char *val)
 	 * catch commented-away settings, so not checking previous value.
 	 */
 	if (!strcmp(var, "debug_min")) {
-		int lvl = -1; // typeof common/common.c: int nut_debug_level
+		int lvl = -1; /* typeof common/common.c: int nut_debug_level */
 		if ( str_to_int (val, &lvl, 10) && lvl >= 0 ) {
 			nut_debug_level_global = lvl;
 		} else {

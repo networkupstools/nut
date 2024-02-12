@@ -25,6 +25,7 @@
  */
 
 #include "config.h" /* must be the first header */
+#include "common.h" /* for upsdebugx() etc */
 
 #include <string.h>
 
@@ -35,14 +36,15 @@
 #include "main.h"
 #include "serial.h"
 #include "timehead.h"
+
 /*
-// The serial driver has no need for HID structures/code currently
-// (maybe there is/was a plan for sharing something between siblings).
-// Note that HID is tied to libusb or libshut definitions at the moment.
+ * // The serial driver has no need for HID structures/code currently
+ * // (maybe there is/was a plan for sharing something between siblings).
+ * // Note that HID is tied to libusb or libshut definitions at the moment.
 #include "hidparser.h"
 #include "hidtypes.h"
-*/
-#include "common.h" /* for upsdebugx() etc */
+ */
+
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello serial driver"
