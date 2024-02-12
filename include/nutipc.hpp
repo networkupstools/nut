@@ -750,7 +750,12 @@ Signal::HandlerThread<H>::HandlerThread(const Signal::List & siglist)
 		struct sigaction action;
 
 		::memset(&action, 0, sizeof(action));
+# ifdef sigemptyset
+		// no :: here because macro
+		sigemptyset(&action.sa_mask);
+# else
 		::sigemptyset(&action.sa_mask);
+# endif
 
 		action.sa_handler = &signalNotifier;
 

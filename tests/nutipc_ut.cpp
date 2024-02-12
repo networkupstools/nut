@@ -118,7 +118,12 @@ void NutIPCUnitTest::testSignalSend() {
 
 	// Set SIGUSR1 signal handler
 	::memset(&action, 0, sizeof(action));
+# ifdef sigemptyset
+	// no :: here because macro
+	sigemptyset(&action.sa_mask);
+# else
 	::sigemptyset(&action.sa_mask);
+# endif
 
 	action.sa_handler = &testSignalHandler;
 
