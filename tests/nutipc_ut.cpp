@@ -205,12 +205,18 @@ void NutIPCUnitTest::testSignalRecvQuick() {
 	int countUSER1 = 0;
 	int countUSER2 = 0;
 	while (!caught_signals.empty()) {
-		switch (caught_signals.front()) {
-			case nut::Signal::USER1:	countUSER1++; break;
-			case nut::Signal::USER2:	countUSER2++; break;
-			default:	CPPUNIT_ASSERT_MESSAGE("Unexpected signal was received", 0);
-		}
+		nut::Signal::enum_t signal = caught_signals.front();
 		caught_signals.pop_front();
+
+		if (signal == nut::Signal::USER1) {
+			countUSER1++;
+		} else if (signal == nut::Signal::USER2) {
+			countUSER2++;
+		} else {
+			std::stringstream msg;
+			msg << "Unexpected signal was received: " << signal;
+			CPPUNIT_ASSERT_MESSAGE(msg.str(), 0);
+		}
 	}
 
 	CPPUNIT_ASSERT(countUSER1 == 3);
