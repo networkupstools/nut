@@ -313,10 +313,29 @@ static long reallyRandom() {
 }
 
 /* Randomize to try avoiding collisions in parallel testing */
+static uint16_t getFreePort() {
+	int tries = 100;
+	while (tries > 0) {
+		uint16_t port = 10000 + static_cast<uint16_t>(reallyRandom() % 40000);
+		nut::NutSocket::Address addr(127, 0, 0, 1, port);
+		nut::NutSocket sock;
+
+		if (sock.bind(addr)) {
+			sock.close();
+			return port;
+		}
+
+		sock.close();
+		tries--;
+	}
+
+	// Well, gotta try something...
+	return 10000;
+}
+
 const nut::NutSocket::Address NutSocketUnitTest::m_listen_address(
 		127, 0, 0, 1,
-		10000 + static_cast<uint16_t>(reallyRandom() % 40000));
-
+		getFreePort());
 
 bool NutSocketUnitTest::Writer::run() {
 	nut::NutSocket conn_sock;
