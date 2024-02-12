@@ -91,7 +91,7 @@ test_script:
         REM Start a 64 bit Mingw environment:
         set MSYSTEM=MINGW64
         REM Start Mingw-based integration and unit checks:
-        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" make -s check'
+        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" make -s check || ( RES=$? ; for F in tests/*.log tests/*.trs ; do echo "=== $F"; cat "$F"; done; exit $RES; )'
         REM Start a Mingw-based documentation spellcheck:
         C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" make -s -j 4 spellcheck'
 
