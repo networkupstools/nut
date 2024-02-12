@@ -96,6 +96,9 @@ if [ "$BUILD_TYPE" = fightwarn ]; then
     #[ -n "$NUT_USB_VARIANTS" ] || NUT_USB_VARIANTS=auto
 fi
 
+# configure default is "no"; an "auto" value is "yes unless CFLAGS say something"
+[ -n "${BUILD_DEBUGINFO-}" ] || BUILD_DEBUGINFO=""
+
 # Set this to enable verbose profiling
 [ -n "${CI_TIME-}" ] || CI_TIME=""
 case "$CI_TIME" in
@@ -1299,6 +1302,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # and errors are found more easily in a wall of text:
     CONFIG_OPTS+=("--enable-Wcolor")
 
+    if [ -n "${BUILD_DEBUGINFO-}" ]; then
+        CONFIG_OPTS+=("--with-debuginfo=${BUILD_DEBUGINFO}")
+    fi
+
     # Note: modern auto(re)conf requires pkg-config to generate the configure
     # script, so to stage the situation of building without one (as if on an
     # older system) we have to remove it when we already have the script.
@@ -1974,6 +1981,12 @@ bindings)
     else
         # Help developers debug:
         CONFIG_OPTS+=("--disable-silent-rules")
+    fi
+
+    if [ -n "${BUILD_DEBUGINFO-}" ]; then
+        CONFIG_OPTS+=("--with-debuginfo=${BUILD_DEBUGINFO}")
+    else
+        CONFIG_OPTS+=("--with-debuginfo=auto")
     fi
 
     ${CONFIGURE_SCRIPT} "${CONFIG_OPTS[@]}"

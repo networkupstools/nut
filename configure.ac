@@ -171,7 +171,9 @@ dnl Fix this early so we can expand with eval later
 test "${prefix}" = "NONE" && prefix="${ac_default_prefix}"
 test "${exec_prefix}" = "NONE" && exec_prefix='${prefix}'
 
-CFLAGS=${CFLAGS-"-O"}
+dnl # LEGACY DEFAULT # CFLAGS=${CFLAGS-"-O"}
+CFLAGS_ORIG="${CFLAGS-}"
+CXXFLAGS_ORIG="${CXXFLAGS-}"
 
 dnl Note: for practical and platform-independent use, see AX_REALPATH macro
 AC_CHECK_PROGS([REALPATH], [realpath], [])
@@ -1652,6 +1654,9 @@ NUT_ARG_ENABLE([warnings],
     [auto])
 NUT_ARG_ENABLE([Werror],
     [fail the build if compiler emits any warnings (treat them as errors)],
+    [no])
+NUT_ARG_WITH([debuginfo],
+    [enable compiler options for debug-friendly builds of all NUT binaries ("no" by default; "auto" means "yes unless CFLAGS say otherwise")],
     [no])
 dnl To help find warning/error details in a wall of text, see --enable-Wcolor handled above
 
@@ -4657,6 +4662,32 @@ AC_ARG_VAR(CCACHE_PATH)
 
 PATH_DURING_CONFIGURE="$PATH"
 AC_SUBST(PATH_DURING_CONFIGURE)
+
+dnl Some binaries, like CPPUNIT tests, have similar flags already added
+AC_MSG_CHECKING([whether to enable debug info in all NUT binaries])
+AS_IF([test x"${nut_with_debuginfo}" = xauto], [
+    AS_CASE(["${CFLAGS}${CXXFLAGS}"],
+        [*-O*|*-g*], [nut_with_debuginfo="Related settings already specified by caller, not changing anything"],
+        [nut_with_debuginfo=yes])
+])
+AS_CASE(["${nut_with_debuginfo}"],
+    [yes], [
+        AS_IF([test x"${CLANGCC}" = x"yes" -o test x"${GCC}" = x"yes"], [
+            CFLAGS="${CFLAGS} -O0 -g3 -gdwarf-2"
+            ],[nut_with_debuginfo="Unknown C compiler, not adding options"]
+        )
+        AS_IF([test "x$CLANGXX" = xyes -o "x$GXX" = xyes], [
+            CXXFLAGS="${CXXFLAGS} -O0 -g3 -gdwarf-2"
+            ],[nut_with_debuginfo="Unknown C++ compiler, not adding options"]
+        )],
+    [no], [
+        dnl # By default we do not add debug info
+        dnl # Apply legacy defaults if no flags were specified by caller
+        AS_IF([test x"${CFLAGS_ORIG}" = x],	[CFLAGS="-O ${CFLAGS}"])
+        AS_IF([test x"${CXXFLAGS_ORIG}" = x],	[CXXFLAGS="-O ${CXXFLAGS}"])
+        ]
+)
+AC_MSG_RESULT(["${nut_with_debuginfo}"])
 
 AC_MSG_NOTICE([Generating "data" files from templates, see below for executable scripts])
 AC_CONFIG_FILES([
