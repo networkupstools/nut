@@ -3576,6 +3576,9 @@ unset CPLUSPLUS_DECL
 
 AC_MSG_CHECKING(for have_cppunit)
 have_cppunit="no"
+dnl CPPUNIT_NUT_CXXFLAGS are set below if suitable, but can be
+dnl disabled further below if nut_with_debuginfo gets applied
+dnl for all NUT build products:
 CPPUNIT_NUT_CXXFLAGS=""
 AS_IF([test x"$have_PKG_CONFIG" = xyes],
     [AS_IF([test x"${have_cxx11}" = xyes],
@@ -4738,7 +4741,9 @@ AS_CASE(["${nut_with_debuginfo_C}"],
 AS_CASE(["${nut_with_debuginfo_CXX}"],
     [yes], [
         AS_IF([test "x$CLANGXX" = xyes -o "x$GXX" = xyes], [
+            dnl Where we can enable debug, minimize the optimizations
             CXXFLAGS="${CXXFLAGS} -O0 -g3 -gdwarf-2"
+            CPPUNIT_NUT_CXXFLAGS=""
             ],[nut_with_debuginfo_CXX="Unknown C++ compiler, not adding options"]
         )],
     dnl # [no]: By default we do not add debug info
