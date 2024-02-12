@@ -315,6 +315,17 @@ static long reallyRandom() {
 /* Randomize to try avoiding collisions in parallel testing */
 static uint16_t getFreePort() {
 	int tries = 100;
+#ifdef WIN32
+	WSADATA wsaData;
+	static int wsaStarted = 0;
+	if (!wsaStarted) {
+		if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+			std::cerr << "WIN32: Failed to WSAStartup() the socket layer" << std::endl << std::flush;
+		}
+		// well, at least attempted
+		wsaStarted = 1;
+	}
+#endif
 	while (tries > 0) {
 		uint16_t port = 10000 + static_cast<uint16_t>(reallyRandom() % 40000);
 		nut::NutSocket::Address addr(127, 0, 0, 1, port);
