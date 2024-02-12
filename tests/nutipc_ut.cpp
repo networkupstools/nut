@@ -177,6 +177,7 @@ void NutIPCUnitTest::testSignalRecvQuick() {
 #else
 	// Create signal handler thread
 	nut::Signal::List signals;
+	caught_signals.clear();
 
 	signals.push_back(nut::Signal::USER1);
 	signals.push_back(nut::Signal::USER2);
@@ -224,6 +225,7 @@ void NutIPCUnitTest::testSignalRecvStaggered() {
 #else
 	// Create signal handler thread
 	nut::Signal::List signals;
+	caught_signals.clear();
 
 	signals.push_back(nut::Signal::USER1);
 	signals.push_back(nut::Signal::USER2);
