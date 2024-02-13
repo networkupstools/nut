@@ -96,17 +96,28 @@ static bool readTestData(nut::NutStream * stream) {
 
 		nut::NutStream::status_t status = stream->getChar(ch);
 
-		if (nut::NutStream::NUTS_ERROR == status)
+		if (nut::NutStream::NUTS_ERROR == status) {
+			if (verbose)
+				std::cerr << "readTestData(): status==nut::NutStream::NUTS_ERROR" << std::endl;
 			return false;
+		}
 
 		if (nut::NutStream::NUTS_EOF == status)
 			break;
 
-		if (nut::NutStream::NUTS_OK != status)
+		if (nut::NutStream::NUTS_OK != status) {
+			if (verbose)
+				std::cerr << "readTestData(): status!=nut::NutStream::NUTS_OK: " << status << std::endl;
 			return false;
+		}
 
-		if (ch != test_data.at(pos))
+		if (ch != test_data.at(pos)) {
+			if (verbose)
+				std::cerr << "readTestData(): unexpected char '"
+						<< ch << "' at pos " << pos << ": want '"
+						<< test_data.at(pos) << "'" << std::endl;
 			return false;
+		}
 
 		// Every other character shall be checked twice
 		if (0 == iter % 8)
@@ -141,8 +152,11 @@ static bool writeTestData(nut::NutStream * stream) {
 
 		nut::NutStream::status_t status = stream->putChar(ch);
 
-		if (nut::NutStream::NUTS_OK != status)
+		if (nut::NutStream::NUTS_OK != status) {
+			if (verbose)
+				std::cerr << "writeTestData(): status!=nut::NutStream::NUTS_OK: " << status << std::endl;
 			return false;
+		}
 	}
 
 	// Write string to the stream
