@@ -3662,10 +3662,15 @@ return res ? 0 : 1;
 dnl # By default keep the originally detected have_cppunit value
 AC_MSG_CHECKING(for impact from --enable-cppunit option - should we build cppunit tests?)
 AC_ARG_ENABLE(cppunit,
-	[AS_HELP_STRING([--enable-cppunit], [enable CPPUNIT tests for C++ bindings])],
+	[AS_HELP_STRING([--enable-cppunit], [enable CPPUNIT tests for C++ bindings (yes, no, force, auto)])],
 	[AS_CASE(["${enableval}"],
+		["force"], [AS_IF([test x"${have_cppunit}" = xyes], [], [
+			AC_MSG_WARN([--with-cppunit=yes can not be satisfied, but developer asked for it])
+			have_cppunit=yes
+			])],
 		["yes"], [AS_IF([test x"${have_cppunit}" = xyes], [], [AC_MSG_ERROR([--with-cppunit=yes can not be satisfied])])],
 		["no"], [have_cppunit=no]
+		dnl # "auto" and other values keep what was detected (or not)
 	)])
 AC_MSG_RESULT(${have_cppunit})
 
