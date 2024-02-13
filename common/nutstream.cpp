@@ -32,6 +32,7 @@
 
 extern "C" {
 #include <unistd.h>
+#include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -179,6 +180,19 @@ NutStream::status_t NutMemory::putData(const std::string & data) {
  * STATEPATH, (ALT)PIDPATH or similar locations desired
  * by packager who knows their system. */
 
+static bool checkExistsWritableDir(const char *s) {
+	if (!s || *s == '\0')
+		return false;
+
+	if (!opendir(s))
+		return false;
+
+	if (!access(s, W_OK))
+		return false;
+
+	return true;
+}
+
 static const char* getTmpDirPath() {
 	const char *s;
 
@@ -186,17 +200,17 @@ static const char* getTmpDirPath() {
 	/* Suggestions from https://sourceforge.net/p/mingw/bugs/666/ */
 	static char wcharPath[MAX_PATH];
 	int i = GetTempPath(sizeof(wcharPath), wcharPath);
-	if ((i > 0) && (i < MAX_PATH))
+	if ((i > 0) && (i < MAX_PATH) && checkExistsWritableDir(wcharPath))
 		return (const char *)wcharPath;
 #endif
 
-	if (nullptr != (s = ::getenv("TMPDIR")))
+	if (checkExistsWritableDir(s = ::getenv("TMPDIR")))
 		return s;
-	if (nullptr != (s = ::getenv("TEMPDIR")))
+	if (checkExistsWritableDir(s = ::getenv("TEMPDIR")))
 		return s;
-	if (nullptr != (s = ::getenv("TEMP")))
+	if (checkExistsWritableDir(s = ::getenv("TEMP")))
 		return s;
-	if (nullptr != (s = ::getenv("TMP")))
+	if (checkExistsWritableDir(s = ::getenv("TMP")))
 		return s;
 	return "/var/tmp";
 }
