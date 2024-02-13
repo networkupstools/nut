@@ -96,7 +96,7 @@ libcommonclient_la_CFLAGS = $(AM_CFLAGS)
 
 if WITH_NUTCONF
 libnutconf_la_CXXFLAGS = $(AM_CXXFLAGS)
-libnutconf_la_LIBADD = @LTLIBOBJS@ @NETLIBS@
+libnutconf_la_LIBADD = @LTLIBOBJS@ @NETLIBS@ libcommonclient.la
 endif WITH_NUTCONF
 
 if HAVE_LIBREGEX

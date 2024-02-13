@@ -31,6 +31,8 @@
 #include <cerrno>
 
 extern "C" {
+#include "common.h"
+
 #include <unistd.h>
 #include <dirent.h>
 #include <sys/types.h>
@@ -199,7 +201,14 @@ static const char* getTmpDirPath() {
 #ifdef WIN32
 	/* Suggestions from https://sourceforge.net/p/mingw/bugs/666/ */
 	static char wcharPath[MAX_PATH];
-	int i = GetTempPath(sizeof(wcharPath), wcharPath);
+	int i;
+#endif
+
+	if (checkExistsWritableDir(s = ::altpidpath()))
+		return s;
+
+#ifdef WIN32
+	i = GetTempPath(sizeof(wcharPath), wcharPath);
 	if ((i > 0) && (i < MAX_PATH) && checkExistsWritableDir(wcharPath))
 		return (const char *)wcharPath;
 #endif
