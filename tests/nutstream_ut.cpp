@@ -40,6 +40,8 @@ extern "C" {
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+extern bool verbose;
 }
 
 /* Current CPPUnit offends the honor of C++98 */
@@ -330,17 +332,32 @@ static uint16_t getFreePort() {
 		uint16_t port = 10000 + static_cast<uint16_t>(reallyRandom() % 40000);
 		nut::NutSocket::Address addr(127, 0, 0, 1, port);
 		nut::NutSocket sock;
+		int ec;
+		std::string em;
 
-		if (sock.bind(addr)) {
+		if (sock.bind(addr, ec, em)) {
+			/* FWIW, "verbose" is only set in main() and this method currently
+			 * is part of static initialization before that. So no trace.
+			 */
+			if (verbose)
+				std::cerr << "getFreePort() could bind() port " << port
+						<< "; is FD valid?=" << sock.valid() << std::endl;
+			/* Let the destructor close it */
 			sock.closex();
 			return port;
 		}
 
+		if (verbose)
+			std::cerr << "getFreePort() failed to bind() port " << port
+					<< ": code " << ec << " aka " << em << ": will try another"
+					<< std::endl;
 		sock.closex();
 		tries--;
 	}
 
 	// Well, gotta try something...
+	if (verbose)
+		std::cerr << "getFreePort() failed to bind(), falling back to 10000" << std::endl;
 	return 10000;
 }
 

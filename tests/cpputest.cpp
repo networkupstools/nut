@@ -31,7 +31,12 @@
 
 extern "C" {
 #include "timehead.h"
+
+/* Let tests also see this flag */
+extern bool verbose;
 }
+
+bool verbose = false;
 
 // Inspired by https://stackoverflow.com/a/66702001
 class MyCustomProgressTestListener : public CppUnit::TextTestProgressListener {
@@ -50,7 +55,6 @@ void MyCustomProgressTestListener::startTest(CppUnit::Test *test) {
 
 int main(int argc, char* argv[])
 {
-  bool verbose = false;
   if (argc > 1) {
     if (strcmp("-v", argv[1]) == 0 || strcmp("--verbose", argv[1]) == 0 ) {
       verbose = true;
