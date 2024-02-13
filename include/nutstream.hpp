@@ -154,6 +154,40 @@ class NutStream {
 	 */
 	virtual status_t putData(const std::string & data) = 0;
 
+	/**
+	 *  \brief  Flush output buffers for the stream being written
+	 *
+	 *  \param[out]  err_code  Error code
+	 *  \param[out]  err_msg   Error message
+	 *
+	 *  \retval true  if flush succeeded
+	 *  \retval false if flush failed
+	 */
+	virtual bool flush(int & err_code, std::string & err_msg)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+		= 0;
+
+	/**
+	 *  \brief  Flush output buffers for the stream being written
+	 *
+	 *  \retval true  if flush succeeded
+	 *  \retval false if flush failed
+	 */
+	virtual bool flush()
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+		= 0;
+
+	/** Flush output buffers for the file (or throw exception) */
+	virtual void flushx()
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw(std::runtime_error)
+#endif
+		= 0;
+
 	/** Formal destructor */
 	virtual ~NutStream();
 
@@ -191,13 +225,13 @@ class NutMemory: public NutStream {
 	status_t putData(const std::string & data) override;
 
 	// No-op for this class:
-	inline bool flush (int & err_code, std::string & err_msg) {
+	inline bool flush (int & err_code, std::string & err_msg) override {
 		NUT_UNUSED_VARIABLE(err_code);
 		NUT_UNUSED_VARIABLE(err_msg);
 		return true;
 	}
-	inline bool flush() {return true;}
-	inline void flushx() {}
+	inline bool flush() override {return true;}
+	inline void flushx() override {}
 };  // end of class NutMemory
 
 
@@ -415,7 +449,7 @@ class NutFile: public NutStream {
 	 *  \retval true  if flush succeeded
 	 *  \retval false if flush failed
 	 */
-	bool flush(int & err_code, std::string & err_msg)
+	bool flush(int & err_code, std::string & err_msg) override
 #if (defined __cplusplus) && (__cplusplus < 201100)
 		throw()
 #endif
@@ -427,7 +461,7 @@ class NutFile: public NutStream {
 	 *  \retval true  if flush succeeded
 	 *  \retval false if flush failed
 	 */
-	inline bool flush()
+	inline bool flush() override
 #if (defined __cplusplus) && (__cplusplus < 201100)
 		throw()
 #endif
@@ -439,7 +473,7 @@ class NutFile: public NutStream {
 	}
 
 	/** Flush output buffers for the file (or throw exception) */
-	inline void flushx()
+	inline void flushx() override
 #if (defined __cplusplus) && (__cplusplus < 201100)
 		throw(std::runtime_error)
 #endif
@@ -1145,7 +1179,7 @@ class NutSocket: public NutStream {
 #if (defined __cplusplus) && (__cplusplus < 201100)
 		throw()
 #endif
-		;
+		override;
 
 	/**
 	 *  \brief  Flush output data into socket
@@ -1153,7 +1187,7 @@ class NutSocket: public NutStream {
 	 *  \retval true  if flush succeeded
 	 *  \retval false if flush failed
 	 */
-	inline bool flush()
+	inline bool flush() override
 #if (defined __cplusplus) && (__cplusplus < 201100)
 		throw()
 #endif
@@ -1165,7 +1199,7 @@ class NutSocket: public NutStream {
 	}
 
 	/** Flush output data into socket (or throw exception) */
-	inline void flushx()
+	inline void flushx() override
 #if (defined __cplusplus) && (__cplusplus < 201100)
 		throw(std::runtime_error)
 #endif
