@@ -173,13 +173,35 @@ NutStream::status_t NutMemory::putData(const std::string & data) {
 }
 
 
-/* FIXME: Align with OS envvars like TMPDIR or TEMPDIR,
+/* Here we align with OS envvars like TMPDIR or TEMPDIR,
  * consider portability to Windows, or use of tmpfs like
  * /dev/shm or (/var)/run on some platforms - e.g. NUT
  * STATEPATH, (ALT)PIDPATH or similar locations desired
  * by packager who knows their system. */
-const std::string NutFile::m_tmp_dir("/var/tmp");
 
+static const char* getTmpDirPath() {
+	const char *s;
+
+#ifdef WIN32
+	/* Suggestions from https://sourceforge.net/p/mingw/bugs/666/ */
+	static char wcharPath[MAX_PATH];
+	int i = GetTempPath(sizeof(wcharPath), wcharPath);
+	if ((i > 0) && (i < MAX_PATH))
+		return (const char *)wcharPath;
+#endif
+
+	if (nullptr != (s = ::getenv("TMPDIR")))
+		return s;
+	if (nullptr != (s = ::getenv("TEMPDIR")))
+		return s;
+	if (nullptr != (s = ::getenv("TEMP")))
+		return s;
+	if (nullptr != (s = ::getenv("TMP")))
+		return s;
+	return "/var/tmp";
+}
+
+const std::string NutFile::m_tmp_dir(getTmpDirPath());
 
 NutFile::NutFile(anonymous_t):
 	m_name(""),
@@ -187,7 +209,26 @@ NutFile::NutFile(anonymous_t):
 	m_current_ch('\0'),
 	m_current_ch_valid(false)
 {
+#ifdef WIN32
+	/* Suggestions from https://sourceforge.net/p/mingw/bugs/666/ because
+	 * msvcrt tmpfile() uses C: root dir and lacks permissions to actually
+	 * use it, and mingw tends to call that OS method so far */
+	char filename[MAX_PATH];
+	GetTempFileName(m_tmp_dir.c_str(), "nuttemp", 0, filename);
+	/* if (verbose) std::cerr << "TMP FILE: " << filename << std::endl; */
+	/* NOTE: Currently we use OS-default binary/text choice of mode... */
+	std::string mode_str = std::string(strAccessMode(READ_WRITE_CLEAR));
+	/* ...Still, we ask to auto-delete where supported: */
+	mode_str += std::string("D");
+	m_impl = ::fopen(filename, mode_str.c_str());
+	/* If it were not "const" we might assign it. But got no big need to.
+	 *   m_name = std::string(filename);
+	 */
+#else
+	/* Safer than tmpnam() but we don't know the filename here.
+	 * Not that we need it, system should auto-delete it. */
 	m_impl = ::tmpfile();
+#endif
 
 	if (nullptr == m_impl) {
 		int err_code = errno;
@@ -235,6 +276,8 @@ const char * NutFile::strAccessMode(access_t mode)
 		throw()
 #endif
 {
+	/* NOTE: Currently we use OS-default binary/text choice of content mode
+	 * since we primarily expect to manipulate user-editable config files */
 	static const char *read_only        = "r";
 	static const char *write_only       = "w";
 	static const char *read_write       = "r+";
