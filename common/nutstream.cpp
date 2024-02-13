@@ -1063,13 +1063,7 @@ bool NutSocket::flush(int & err_code, std::string & err_msg)
 			err_msg = std::string(::strerror(err_code));
 			return false;
 		}
-	} else {
-		/* UDP (or several other socket families generally) */
-#ifndef WIN32
-			/* best-effort... */
-			fflush(m_impl);
-#endif
-	}
+	} /* else Unix, UDP (or several other socket families generally); PRs welcome */
 
 	return true;
 }
