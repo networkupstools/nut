@@ -844,6 +844,7 @@ NutSocket::Address::~Address() {
 }
 
 
+/* NOTE: static class method */
 bool NutSocket::accept(
 	NutSocket &       sock,
 	const NutSocket & listen_sock,
@@ -859,6 +860,8 @@ bool NutSocket::accept(
 	socklen_t       sock_addr_size = sizeof(sock_addr);
 
 	sock.m_impl = ::accept(listen_sock.m_impl, &sock_addr, &sock_addr_size);
+	sock.m_domain = listen_sock.m_domain;
+	sock.m_type = listen_sock.m_type;
 
 	if (-1 != sock.m_impl)
 		return true;
@@ -886,6 +889,8 @@ bool NutSocket::accept(
 
 NutSocket::NutSocket(domain_t dom, type_t type, proto_t proto):
 	m_impl(-1),
+	m_domain(dom),
+	m_type(type),
 	m_current_ch('\0'),
 	m_current_ch_valid(false)
 {
@@ -913,6 +918,22 @@ bool NutSocket::bind(const Address & addr, int & err_code, std::string & err_msg
 		throw()
 #endif
 {
+	if (m_domain == NUTSOCKD_UNDEFINED) {
+		m_domain = static_cast<NutSocket::domain_t>(addr.m_sock_addr->sa_family);
+	}
+	else if (static_cast<int>(m_domain) != static_cast<int>(addr.m_sock_addr->sa_family)) {
+		err_code = EINVAL;
+		err_msg  = std::string(::strerror(err_code)) +
+				": bind() with a different socket address family than this object was created for";
+	}
+
+	if (m_type == NUTSOCKT_UNDEFINED) {
+		/* We should have this from constructor or accept() */
+		err_code = EINVAL;
+		err_msg  = std::string(::strerror(err_code)) +
+				": bind() with bad socket type";
+	}
+
 	err_code = ::bind(m_impl, addr.m_sock_addr, addr.m_length);
 
 	if (0 == err_code)
@@ -947,6 +968,22 @@ bool NutSocket::connect(const Address & addr, int & err_code, std::string & err_
 		throw()
 #endif
 {
+	if (m_domain == NUTSOCKD_UNDEFINED) {
+		m_domain = static_cast<NutSocket::domain_t>(addr.m_sock_addr->sa_family);
+	}
+	else if (static_cast<int>(m_domain) != static_cast<int>(addr.m_sock_addr->sa_family)) {
+		err_code = EINVAL;
+		err_msg  = std::string(::strerror(err_code)) +
+				": connect() with a different socket address family than this object was created for";
+	}
+
+	if (m_type == NUTSOCKT_UNDEFINED) {
+		/* We should have this from constructor or accept() */
+		err_code = EINVAL;
+		err_msg  = std::string(::strerror(err_code)) +
+				": connect() with bad socket type";
+	}
+
 	err_code = sktconnect(m_impl, addr.m_sock_addr, addr.m_length);
 
 	if (0 == err_code)

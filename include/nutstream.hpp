@@ -610,12 +610,14 @@ class NutSocket: public NutStream {
 		NUTSOCKD_UNIX   = AF_UNIX,	/** Unix */
 		NUTSOCKD_INETv4 = AF_INET,	/** IPv4 */
 		NUTSOCKD_INETv6 = AF_INET6,	/** IPv6 */
+		NUTSOCKD_UNDEFINED = -1
 	} domain_t;
 
 	/** Socket type */
 	typedef enum {
 		NUTSOCKT_STREAM = SOCK_STREAM,	/** Stream   */
 		NUTSOCKT_DGRAM  = SOCK_DGRAM,	/** Datagram */
+		NUTSOCKT_UNDEFINED = -1
 	} type_t;
 
 	/** Socket protocol */
@@ -757,6 +759,8 @@ class NutSocket: public NutStream {
 
 	/** Socket implementation */
 	int m_impl;
+	domain_t m_domain;
+	type_t m_type;
 
 	/** Current character cache */
 	char m_current_ch;
@@ -872,6 +876,8 @@ class NutSocket: public NutStream {
 	 */
 	NutSocket(accept_flag_t, const NutSocket & listen_sock, int & err_code, std::string & err_msg):
 		m_impl(-1),
+		m_domain(NUTSOCKD_UNDEFINED),
+		m_type(NUTSOCKT_UNDEFINED),
 		m_current_ch('\0'),
 		m_current_ch_valid(false)
 	{
@@ -887,6 +893,8 @@ class NutSocket: public NutStream {
 	 */
 	NutSocket(accept_flag_t, const NutSocket & listen_sock):
 		m_impl(-1),
+		m_domain(NUTSOCKD_UNDEFINED),
+		m_type(NUTSOCKT_UNDEFINED),
 		m_current_ch('\0'),
 		m_current_ch_valid(false)
 	{
