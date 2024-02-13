@@ -40,7 +40,7 @@ extern "C" {
  * extern vs. static etc.) */
 /* Thanks to Benjamin Roux (http://broux.developpez.com/articles/c/sockets/) */
 #ifdef WIN32
-#  define SOCK_OPT_CAST (char *)
+#  define SOCK_OPT_CAST(x) reinterpret_cast<const char*>(x)
 
 /* equivalent of W32_NETWORK_CALL_OVERRIDE
  * invoked by wincompat.h in upsclient.c:
@@ -75,8 +75,8 @@ static inline int sktclose(int fh)
 #  include <sys/un.h>
 #  include <sys/socket.h>
 #  include <netinet/in.h>
+#  include <netinet/tcp.h>
 #  include <arpa/inet.h>
-#  include <unistd.h> /* close */
 #  include <netdb.h> /* gethostbyname */
 #  include <fcntl.h>
 #  ifndef INVALID_SOCKET
@@ -88,7 +88,7 @@ static inline int sktclose(int fh)
 #  ifndef closesocket
 #    define closesocket(s) close(s)
 #  endif
-#  define SOCK_OPT_CAST
+#  define SOCK_OPT_CAST(x) reinterpret_cast<const char*>(x)
    typedef int SOCKET;
    typedef struct sockaddr_in SOCKADDR_IN;
    typedef struct sockaddr SOCKADDR;
@@ -342,6 +342,29 @@ bool NutFile::open(access_t mode, int & err_code, std::string & err_msg)
 	err_msg  = std::string(::strerror(err_code));
 
 	return false;
+}
+
+
+bool NutFile::flush(int & err_code, std::string & err_msg)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+{
+	if (nullptr == m_impl) {
+		err_code = EBADF;
+		err_msg = std::string(::strerror(err_code));
+		return false;
+	}
+
+	err_code = ::fflush(m_impl);
+
+	if (0 != err_code) {
+		err_msg = std::string(::strerror(err_code));
+
+		return false;
+	}
+
+	return true;
 }
 
 
@@ -993,6 +1016,48 @@ bool NutSocket::connect(const Address & addr, int & err_code, std::string & err_
 	err_msg  = std::string(::strerror(err_code));
 
 	return false;
+}
+
+
+bool NutSocket::flush(int & err_code, std::string & err_msg)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+{
+	if (-1 == m_impl) {
+		err_code = EBADF;
+		err_msg = std::string(::strerror(err_code));
+		return false;
+	}
+
+	if (m_type == NUTSOCKT_STREAM && m_domain == NUTSOCKD_INETv4) {
+		/* Assume IPv4 TCP: https://stackoverflow.com/a/71417876/4715872 */
+		int flag = 1;
+		if (!setsockopt(m_impl, IPPROTO_TCP, TCP_NODELAY, SOCK_OPT_CAST(&flag), sizeof(int))) {
+			err_code = errno;
+			err_msg = std::string(::strerror(err_code));
+			return false;
+		}
+		if (!sktwrite(m_impl, nullptr, 0)) {
+			err_code = errno;
+			err_msg = std::string(::strerror(err_code));
+			return false;
+		}
+		flag = 0;
+		if (!setsockopt(m_impl, IPPROTO_TCP, TCP_NODELAY, SOCK_OPT_CAST(&flag), sizeof(int))) {
+			err_code = errno;
+			err_msg = std::string(::strerror(err_code));
+			return false;
+		}
+	} else {
+		/* UDP (or several other socket families generally) */
+#ifndef WIN32
+			/* best-effort... */
+			fflush(m_impl);
+#endif
+	}
+
+	return true;
 }
 
 

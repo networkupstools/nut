@@ -190,6 +190,14 @@ class NutMemory: public NutStream {
 	status_t putString(const std::string & str) override;
 	status_t putData(const std::string & data) override;
 
+	// No-op for this class:
+	inline bool flush (int & err_code, std::string & err_msg) {
+		NUT_UNUSED_VARIABLE(err_code);
+		NUT_UNUSED_VARIABLE(err_msg);
+		return true;
+	}
+	inline bool flush() {return true;}
+	inline void flushx() {}
 };  // end of class NutMemory
 
 
@@ -394,6 +402,56 @@ class NutFile: public NutStream {
 		std::stringstream e;
 		e << "Failed to open file " << m_name << ": "
 			<< ec << ": " << em;
+
+		throw std::runtime_error(e.str());
+	}
+
+	/**
+	 *  \brief  Flush output buffers for the file
+	 *
+	 *  \param[out]  err_code  Error code
+	 *  \param[out]  err_msg   Error message
+	 *
+	 *  \retval true  if flush succeeded
+	 *  \retval false if flush failed
+	 */
+	bool flush(int & err_code, std::string & err_msg)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+		;
+
+	/**
+	 *  \brief  Flush output buffers for the file
+	 *
+	 *  \retval true  if flush succeeded
+	 *  \retval false if flush failed
+	 */
+	inline bool flush()
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+	{
+		int ec;
+		std::string em;
+
+		return flush(ec, em);
+	}
+
+	/** Flush output buffers for the file (or throw exception) */
+	inline void flushx()
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw(std::runtime_error)
+#endif
+	{
+		int ec;
+		std::string em;
+
+		if (flush(ec, em))
+			return;
+
+		std::stringstream e;
+		e << "Failed to flush file " << m_name << ": " << ec << ": " << em;
 
 		throw std::runtime_error(e.str());
 	}
@@ -1070,6 +1128,56 @@ class NutSocket: public NutStream {
 
 		std::stringstream e;
 		e << "Failed to connect socket: " << ec << ": " << em;
+
+		throw std::runtime_error(e.str());
+	}
+
+	/**
+	 *  \brief  Flush output data into socket
+	 *
+	 *  \param[out]  err_code  Error code
+	 *  \param[out]  err-msg   Error message
+	 *
+	 *  \retval true  if flush succeeded
+	 *  \retval false if flush failed
+	 */
+	bool flush(int & err_code, std::string & err_msg)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+		;
+
+	/**
+	 *  \brief  Flush output data into socket
+	 *
+	 *  \retval true  if flush succeeded
+	 *  \retval false if flush failed
+	 */
+	inline bool flush()
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+	{
+		int ec;
+		std::string em;
+
+		return flush(ec, em);
+	}
+
+	/** Flush output data into socket (or throw exception) */
+	inline void flushx()
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw(std::runtime_error)
+#endif
+	{
+		int ec;
+		std::string em;
+
+		if (flush(ec, em))
+			return;
+
+		std::stringstream e;
+		e << "Failed to flush socket " << m_impl << ": " << ec << ": " << em;
 
 		throw std::runtime_error(e.str());
 	}

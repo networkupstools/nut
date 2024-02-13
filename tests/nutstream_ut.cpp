@@ -253,17 +253,11 @@ class NutFileUnitTest: public NutStreamUnitTest {
 
 
 void NutFileUnitTest::test() {
-#ifdef WIN32
-	/* FIXME: It seems that in the absence of envvars for temporary location,
-	 * mingw (or Windows implem behind it?) can choose C:\ or C:\WINDOWS and
-	 * generally we lack permissions to write there. */
-	std::cout << "NutFileUnitTest::test(): skipped on this platform" << std::endl;
-#else
 	nut::NutFile fstream(nut::NutFile::ANONYMOUS);
 
 	writex(&fstream);
+	fstream.flushx();
 	readx(&fstream);
-#endif	/* WIN32 */
 }
 
 
