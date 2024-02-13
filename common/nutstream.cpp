@@ -904,7 +904,7 @@ bool NutSocket::connect(const Address & addr, int & err_code, std::string & err_
 		throw()
 #endif
 {
-	err_code = ::connect(m_impl, addr.m_sock_addr, addr.m_length);
+	err_code = sktconnect(m_impl, addr.m_sock_addr, addr.m_length);
 
 	if (0 == err_code)
 		return true;
@@ -921,7 +921,7 @@ bool NutSocket::close(int & err_code, std::string & err_msg)
 		throw()
 #endif
 {
-	err_code = ::close(m_impl);
+	err_code = sktclose(m_impl);
 
 	if (0 == err_code) {
 		m_impl = -1;
@@ -1000,7 +1000,7 @@ NutStream::status_t NutSocket::getString(std::string & str)
 	char buffer[512];
 
 	for (;;) {
-		ssize_t read_cnt = ::read(m_impl, buffer, sizeof(buffer) / sizeof(buffer[0]));
+		ssize_t read_cnt = sktread(m_impl, buffer, sizeof(buffer) / sizeof(buffer[0]));
 
 		if (read_cnt < 0)
 			return NUTS_ERROR;
@@ -1018,7 +1018,7 @@ NutStream::status_t NutSocket::putChar(char ch)
 		throw()
 #endif
 {
-	ssize_t write_cnt = ::write(m_impl, &ch, 1);
+	ssize_t write_cnt = sktwrite(m_impl, &ch, 1);
 
 	if (1 == write_cnt)
 		return NUTS_OK;
@@ -1042,7 +1042,7 @@ NutStream::status_t NutSocket::putString(const std::string & str)
 	if (0 == str_len)
 		return NUTS_OK;
 
-	ssize_t write_cnt = ::write(m_impl, str.data(), str_len);
+	ssize_t write_cnt = sktwrite(m_impl, str.data(), str_len);
 
 	// TODO: Under certain circumstances, less than the whole
 	// string might be written
