@@ -332,11 +332,12 @@ static uint16_t getFreePort() {
 		nut::NutSocket sock;
 
 		if (sock.bind(addr)) {
-			sock.closex();
+			/* Let the destructor close it */
+			/*sock.closex();*/
 			return port;
 		}
 
-		sock.closex();
+		/*sock.closex();*/
 		tries--;
 	}
 
