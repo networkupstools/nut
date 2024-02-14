@@ -4706,6 +4706,8 @@ PATH_DURING_CONFIGURE="$PATH"
 AC_SUBST(PATH_DURING_CONFIGURE)
 
 dnl Some binaries, like CPPUNIT tests, have similar flags already added
+dnl We might wipe their specific options below if consistently applying
+dnl debug-friendly options to everything
 AC_MSG_NOTICE([CONFIG_CFLAGS='${CONFIG_CFLAGS}'])
 AC_MSG_NOTICE([CONFIG_CXXFLAGS='${CONFIG_CXXFLAGS}'])
 AC_MSG_CHECKING([whether to enable debug info in all NUT binaries])
@@ -4718,9 +4720,7 @@ AS_CASE(["${CONFIG_CFLAGS}"],
             ])
         ],
     [   dnl No competing options are provided
-        AS_CASE(["${nut_with_debuginfo_C}"],
-            [auto], [nut_with_debuginfo_C="yes"],
-            [no], [nut_with_debuginfo_C="legacy"])
+        AS_IF([test x"${nut_with_debuginfo_C}" = xauto], [nut_with_debuginfo_C="yes"])
     ])
 
 AS_CASE(["${CONFIG_CXXFLAGS}"],
@@ -4730,9 +4730,7 @@ AS_CASE(["${CONFIG_CXXFLAGS}"],
             ])
         ],
     [   dnl No competing options are provided
-        AS_CASE(["${nut_with_debuginfo_CXX}"],
-            [auto], [nut_with_debuginfo_CXX="yes"],
-            [no], [nut_with_debuginfo_CXX="legacy"])
+        AS_IF([test x"${nut_with_debuginfo_CXX}" = xauto], [nut_with_debuginfo_CXX="yes"])
     ])
 
 AS_CASE(["${nut_with_debuginfo_C}"],
