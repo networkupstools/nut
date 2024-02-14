@@ -82,6 +82,11 @@ https://github.com/networkupstools/nut/milestone/10
      building NUT without it. [#2262]
    * Builds requested with a specific C/C++ language standard revision via
      `CFLAGS` and `CXXFLAGS` should again be honoured. [PR #2306]
+   * Allow requesting detailed debug builds (with disabled optimizations for
+     binaries to best match the source code) for supported compilers using
+     `configure` script option `--with-debuginfo`. Note that default autoconf
+     behavior usually embeds moderate optimizations and debug information on
+     its own. [PR #2310]
 
  - nut-usbinfo.pl, nut-scanner and libnutscan:
    * Library API version for `libnutscan` was bumped from 2.2.0 to 2.5.0
