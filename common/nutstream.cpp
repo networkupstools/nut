@@ -257,6 +257,7 @@ NutFile::NutFile(anonymous_t):
 	 *   m_name = std::string(filename);
 	 */
 #else
+	/* TOTHINK: How to make this use m_tmp_dir? Is it possible generally?  */
 	/* Safer than tmpnam() but we don't know the filename here.
 	 * Not that we need it, system should auto-delete it. */
 	m_impl = ::tmpfile();
@@ -268,6 +269,12 @@ NutFile::NutFile(anonymous_t):
 		std::stringstream e;
 		e << "Failed to create temporary file: " << err_code
 				<< ": " << ::strerror(err_code);
+
+#ifdef WIN32
+		e << ": tried using temporary location " << m_tmp_dir;
+		if (filename[0] != '\0')
+			e << ": OS suggested filename " << filename;
+#endif
 
 		throw std::runtime_error(e.str());
 	}
