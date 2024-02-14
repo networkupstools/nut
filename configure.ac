@@ -151,6 +151,9 @@ AC_PROG_CPP
 AC_PROG_CXX
 AC_PROG_CXX_C_O
 
+CFLAGS_AFTER_ACPROG="${CFLAGS-}"
+CXXFLAGS_AFTER_ACPROG="${CXXFLAGS-}"
+
 dnl AC_MSG_NOTICE([CFLAGS_AFTER_ACPROG="${CFLAGS-}"])
 dnl AC_MSG_NOTICE([CXXFLAGS_AFTER_ACPROG="${CXXFLAGS-}"])
 
@@ -4741,8 +4744,8 @@ AS_CASE(["${nut_with_debuginfo_C}"],
         )],
     dnl # [no]: By default we do not add debug info
     [legacy], [
-        dnl # Apply legacy defaults if no flags were specified by caller
-        AS_IF([test x"${CONFIG_CFLAGS}" = x],	[CFLAGS="-O ${CFLAGS}"])
+        dnl # Apply legacy defaults if no flags were specified by caller or detected by autoconf
+        AS_IF([test x"${CFLAGS_AFTER_ACPROG}" = x],	[CFLAGS="-O ${CFLAGS}"])
         ]
 )
 
@@ -4757,8 +4760,8 @@ AS_CASE(["${nut_with_debuginfo_CXX}"],
         )],
     dnl # [no]: By default we do not add debug info
     [legacy], [
-        dnl # Apply legacy defaults if no flags were specified by caller
-        AS_IF([test x"${CONFIG_CXXFLAGS}" = x],	[CXXFLAGS="-O ${CXXFLAGS}"])
+        dnl # Apply legacy defaults if no flags were specified by caller or detected by autoconf
+        AS_IF([test x"${CXXFLAGS_AFTER_ACPROG}" = x],	[CXXFLAGS="-O ${CXXFLAGS}"])
         ]
 )
 
