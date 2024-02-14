@@ -151,6 +151,9 @@ AC_PROG_CPP
 AC_PROG_CXX
 AC_PROG_CXX_C_O
 
+CFLAGS_AFTER_ACPROG="${CFLAGS-}"
+CXXFLAGS_AFTER_ACPROG="${CXXFLAGS-}"
+
 dnl AC_MSG_NOTICE([CFLAGS_AFTER_ACPROG="${CFLAGS-}"])
 dnl AC_MSG_NOTICE([CXXFLAGS_AFTER_ACPROG="${CXXFLAGS-}"])
 
@@ -3699,10 +3702,10 @@ AC_ARG_ENABLE(cppunit,
 	[AS_HELP_STRING([--enable-cppunit], [enable CPPUNIT tests for C++ bindings (yes, no, force, auto)])],
 	[AS_CASE(["${enableval}"],
 		["force"], [AS_IF([test x"${have_cppunit}" = xyes], [], [
-			AC_MSG_WARN([--with-cppunit=yes can not be satisfied, but developer asked for it])
+			AC_MSG_WARN([--enable-cppunit=yes can not be satisfied, but developer asked for it])
 			have_cppunit=yes
 			])],
-		["yes"], [AS_IF([test x"${have_cppunit}" = xyes], [], [AC_MSG_ERROR([--with-cppunit=yes can not be satisfied])])],
+		["yes"], [AS_IF([test x"${have_cppunit}" = xyes], [], [AC_MSG_ERROR([--enable-cppunit=yes can not be satisfied])])],
 		["no"], [have_cppunit=no]
 		dnl # "auto" and other values keep what was detected (or not)
 	)])
@@ -4745,6 +4748,8 @@ PATH_DURING_CONFIGURE="$PATH"
 AC_SUBST(PATH_DURING_CONFIGURE)
 
 dnl Some binaries, like CPPUNIT tests, have similar flags already added
+dnl We might wipe their specific options below if consistently applying
+dnl debug-friendly options to everything
 AC_MSG_NOTICE([CONFIG_CFLAGS='${CONFIG_CFLAGS}'])
 AC_MSG_NOTICE([CONFIG_CXXFLAGS='${CONFIG_CXXFLAGS}'])
 AC_MSG_CHECKING([whether to enable debug info in all NUT binaries])
@@ -4757,9 +4762,7 @@ AS_CASE(["${CONFIG_CFLAGS}"],
             ])
         ],
     [   dnl No competing options are provided
-        AS_CASE(["${nut_with_debuginfo_C}"],
-            [auto], [nut_with_debuginfo_C="yes"],
-            [no], [nut_with_debuginfo_C="legacy"])
+        AS_IF([test x"${nut_with_debuginfo_C}" = xauto], [nut_with_debuginfo_C="yes"])
     ])
 
 AS_CASE(["${CONFIG_CXXFLAGS}"],
@@ -4769,9 +4772,7 @@ AS_CASE(["${CONFIG_CXXFLAGS}"],
             ])
         ],
     [   dnl No competing options are provided
-        AS_CASE(["${nut_with_debuginfo_CXX}"],
-            [auto], [nut_with_debuginfo_CXX="yes"],
-            [no], [nut_with_debuginfo_CXX="legacy"])
+        AS_IF([test x"${nut_with_debuginfo_CXX}" = xauto], [nut_with_debuginfo_CXX="yes"])
     ])
 
 AS_CASE(["${nut_with_debuginfo_C}"],
@@ -4782,8 +4783,8 @@ AS_CASE(["${nut_with_debuginfo_C}"],
         )],
     dnl # [no]: By default we do not add debug info
     [legacy], [
-        dnl # Apply legacy defaults if no flags were specified by caller
-        AS_IF([test x"${CONFIG_CFLAGS}" = x],	[CFLAGS="-O ${CFLAGS}"])
+        dnl # Apply legacy defaults if no flags were specified by caller or detected by autoconf
+        AS_IF([test x"${CFLAGS_AFTER_ACPROG}" = x],	[CFLAGS="-O ${CFLAGS}"])
         ]
 )
 
@@ -4798,8 +4799,8 @@ AS_CASE(["${nut_with_debuginfo_CXX}"],
         )],
     dnl # [no]: By default we do not add debug info
     [legacy], [
-        dnl # Apply legacy defaults if no flags were specified by caller
-        AS_IF([test x"${CONFIG_CXXFLAGS}" = x],	[CXXFLAGS="-O ${CXXFLAGS}"])
+        dnl # Apply legacy defaults if no flags were specified by caller or detected by autoconf
+        AS_IF([test x"${CXXFLAGS_AFTER_ACPROG}" = x],	[CXXFLAGS="-O ${CXXFLAGS}"])
         ]
 )
 
