@@ -22,6 +22,7 @@
 #include "config.h"
 
 #include "nutstream.hpp"
+#include "nutipc.hpp"	/* Used in a test to "freeze" a writer child process */
 
 #include <cstdio>
 #include <cstdlib>
@@ -407,12 +408,30 @@ void NutSocketUnitTest::test() {
 		exit(0);
 	}
 
+	// Freeze the writer until we bind the port
+	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::STOP, writer_pid));
+
 	// Listen
 	nut::NutSocket listen_sock;
 
 	std::stringstream msg_bind;
 	msg_bind << "Expected to listen on " << m_listen_address.str();
-	CPPUNIT_ASSERT_MESSAGE(msg_bind.str(), listen_sock.bind(m_listen_address));
+	bool bound = listen_sock.bind(m_listen_address);
+	int retries = 5;
+
+	while (!bound && retries > 0) {
+		retries--;
+		if (verbose)
+			std::cerr << msg_bind.str() << ": will retry test in 15 sec ("
+					<< retries << " retries remaining)" << std::endl;
+		sleep(15);
+		bound = listen_sock.bind(m_listen_address);
+	}
+
+	// Un-freeze the writer as we have bound the port (or will fail next line)
+	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::CONT, writer_pid));
+
+	CPPUNIT_ASSERT_MESSAGE(msg_bind.str(), bound);
 	CPPUNIT_ASSERT(listen_sock.listen(10));
 
 	// Accept connection
