@@ -4719,7 +4719,7 @@ AS_CASE(["${CXXFLAGS_ORIG}"],
 
 AS_CASE(["${nut_with_debuginfo_C}"],
     [yes], [
-        AS_IF([test x"${CLANGCC}" = x"yes" -o test x"${GCC}" = x"yes"], [
+        AS_IF([test x"${CLANGCC}" = x"yes" -o x"${GCC}" = x"yes"], [
             CFLAGS="${CFLAGS} -O0 -g3 -gdwarf-2"
             ],[nut_with_debuginfo_C="Unknown C compiler, not adding options"]
         )],
