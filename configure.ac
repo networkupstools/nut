@@ -4694,6 +4694,8 @@ PATH_DURING_CONFIGURE="$PATH"
 AC_SUBST(PATH_DURING_CONFIGURE)
 
 dnl Some binaries, like CPPUNIT tests, have similar flags already added
+AC_MSG_NOTICE([CFLAGS_ORIG='${CFLAGS_ORIG}'])
+AC_MSG_NOTICE([CXXFLAGS_ORIG='${CXXFLAGS_ORIG}'])
 AC_MSG_CHECKING([whether to enable debug info in all NUT binaries])
 nut_with_debuginfo_C="${nut_with_debuginfo}"
 nut_with_debuginfo_CXX="${nut_with_debuginfo}"
