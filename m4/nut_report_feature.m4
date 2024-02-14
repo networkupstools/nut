@@ -129,6 +129,23 @@ AC_DEFUN([NUT_REPORT_COMPILERS],
      echo "NUT Compiler settings:"
      echo "----------------------"
      echo ""
+     if test x"${nut_with_debuginfo_C}" = x"yes" -o x"${nut_with_debuginfo_CXX}" = x"yes" ; then
+        printf 'NOTE: Settings for '
+        if test x"${nut_with_debuginfo_C}" = x"yes" ; then
+            printf 'C '
+        fi
+        if test x"${nut_with_debuginfo_C}${nut_with_debuginfo_CXX}" = x"yesyes" ; then
+            printf 'and '
+        fi
+        if test x"${nut_with_debuginfo_CXX}" = x"yes" ; then
+            printf 'C++ '
+        fi
+        printf 'compiler'
+        if test x"${nut_with_debuginfo_C}${nut_with_debuginfo_CXX}" = x"yesyes" ; then
+            printf 's'
+        fi
+        printf ' are adjusted for debugging (and minimal optimizations)\n\n'
+     fi
      printf '* CC      \t: %s\n' "$CC"
      printf '* CFLAGS  \t: %s\n' "$CFLAGS"
      printf '* CXX     \t: %s\n' "$CXX"
