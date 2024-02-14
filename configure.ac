@@ -1629,7 +1629,7 @@ AC_ARG_WITH(all,
 			dnl # if test -z "${with_nut_monitor}"; then with_nut_monitor="${withval}"; fi
 		fi
 
-		AC_MSG_RESULT("${withval}")
+		AC_MSG_RESULT([${withval}])
 	else
 		AC_MSG_RESULT(not given)
 	fi
@@ -4316,7 +4316,7 @@ AS_CASE(["${nut_enable_warnings}"],
      nut_enable_warnings="no"
     ]
 )
-AC_MSG_RESULT(["${nut_enable_warnings}"])
+AC_MSG_RESULT([${nut_enable_warnings}])
 
 dnl # Nothing special for gcc - we tend to survive it with GNU standard >= 99
 dnl # and fail with strict C standard. Suggestions welcome for "gcc-hard" to
@@ -4452,7 +4452,7 @@ AS_CASE(["${nut_enable_Werror}"],
         CXXFLAGS="${CXXFLAGS} -Wno-error"
         ]
 )
-AC_MSG_RESULT(["${nut_enable_Werror}"])
+AC_MSG_RESULT([${nut_enable_Werror}])
 
 dnl Some compilers (e.g. older clang-3.4) have issues with built-in methods
 dnl that are implemented as macros in system headers -- but only for some
@@ -4584,7 +4584,8 @@ AS_IF([test -n "${ac_abs_top_builddir}" && test -d "${ac_abs_top_builddir}"],
          TOP_BUILDDIR="`cd "$TOP_BUILDDIR" && pwd`" || AC_MSG_ERROR([Can not detect TOP_BUILDDIR])]
     )]
 )
-AC_MSG_RESULT(["${TOP_BUILDDIR}"])
+dnl Quoted in case someone copy-pastes this path and it has whitespaces:
+AC_MSG_RESULT(['${TOP_BUILDDIR}'])
 
 ABS_TOP_BUILDDIR="`cd "${TOP_BUILDDIR}" && pwd`" || AC_MSG_ERROR([Can not detect ABS_TOP_BUILDDIR])
 ABS_TOP_SRCDIR="`cd "${abs_srcdir}" && pwd`" || AC_MSG_ERROR([Can not detect ABS_TOP_SRCDIR])
@@ -4745,7 +4746,7 @@ AS_CASE(["${nut_with_debuginfo_CXX}"],
         ]
 )
 
-AC_MSG_RESULT(["C: ${nut_with_debuginfo_C}; C++: ${nut_with_debuginfo_CXX}"])
+AC_MSG_RESULT([C: ${nut_with_debuginfo_C}; C++: ${nut_with_debuginfo_CXX}])
 
 dnl Only in the end, do you understand...
 AC_SUBST(CPPUNIT_NUT_CXXFLAGS)
