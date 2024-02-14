@@ -110,6 +110,22 @@ dnl is known to suffice):
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])],
 	[AC_MSG_NOTICE([Silent Rules feature not defined in this automake version, skipped])])
 
+dnl +-------------------------------------------------------------------
+
+dnl Avoid "polluting" CFLAGS etc. with auto-settings like "-g -O2"
+dnl at least if we intend to tune --with-debuginfo anyway
+CFLAGS_ORIG="${CFLAGS-}"
+CXXFLAGS_ORIG="${CXXFLAGS-}"
+
+CFLAGS_BEFORE_ACPROG="${CFLAGS-}"
+CXXFLAGS_BEFORE_ACPROG="${CXXFLAGS-}"
+AC_MSG_NOTICE([CFLAGS_BEFORE_ACPROG="${CFLAGS-}"])
+AC_MSG_NOTICE([CXXFLAGS_BEFORE_ACPROG="${CXXFLAGS-}"])
+
+dnl # LEGACY DEFAULT # CFLAGS=${CFLAGS-"-O"}
+CFLAGS="${CFLAGS- }"
+CXXFLAGS="${CXXFLAGS- }"
+
 dnl we need Autoconf 2.61 or better to enable features of Posix that are extensions to C
 dnl (and actually 2.64 or better for m4/ax_check_compile_flag.m4 when it is sourced)
 dnl UPDATE: As tested on CentOS 6, its "autoconf-2.63-5.1.el6.noarch" also suffices.
@@ -117,13 +133,32 @@ dnl But OpenBSD 6.5 requires autoconf-2.65 and automake-1.13 or newer...
 AC_MSG_CHECKING(for autoconf macro to enable system extensions)
 m4_version_prereq(2.61, [
 	AC_MSG_RESULT(yes)
+        dnl Causes calls to ac_prog stuff, so dittoed below if "no"
 	AC_USE_SYSTEM_EXTENSIONS
 ], [
 	AC_MSG_RESULT(no)
+	AC_PROG_CC
 ])
 
 AC_PREREQ([2.63])
 dnl #AC_PREREQ([2.64])
+
+dnl Macro AC_PROG_CC_C99 is obsolete; use AC_PROG_CC
+dnl Note that NUT does not support building with C89 anyway
+dnl AC_PROG_CC_C99
+dnl Needed for per-target flags
+AM_PROG_CC_C_O
+AC_PROG_CPP
+AC_PROG_CXX
+AC_PROG_CXX_C_O
+
+AC_MSG_NOTICE([CFLAGS_AFTER_ACPROG="${CFLAGS-}"])
+AC_MSG_NOTICE([CXXFLAGS_AFTER_ACPROG="${CXXFLAGS-}"])
+
+dnl CFLAGS_BEFORE_ACPROG=${CFLAGS-}
+dnl CXXFLAGS_BEFORE_ACPROG=${CXXFLAGS-}
+
+dnl +-------------------------------------------------------------------
 
 dnl Use "./configure --enable-maintainer-mode" to keep Makefile.in and Makefile
 dnl in sync after Git updates.
@@ -172,8 +207,6 @@ test "${prefix}" = "NONE" && prefix="${ac_default_prefix}"
 test "${exec_prefix}" = "NONE" && exec_prefix='${prefix}'
 
 dnl # LEGACY DEFAULT # CFLAGS=${CFLAGS-"-O"}
-CFLAGS_ORIG="${CFLAGS-}"
-CXXFLAGS_ORIG="${CXXFLAGS-}"
 
 dnl Note: for practical and platform-independent use, see AX_REALPATH macro
 AC_CHECK_PROGS([REALPATH], [realpath], [])
@@ -590,27 +623,6 @@ dnl Define directory where LIBOBJS replacement functions are
 AC_CONFIG_LIBOBJ_DIR([common])
 
 dnl +-------------------------------------------------------------------
-
-CFLAGS_BEFORE_ACPROG="${CFLAGS-}"
-CXXFLAGS_BEFORE_ACPROG="${CXXFLAGS-}"
-AC_MSG_NOTICE([CFLAGS_BEFORE_ACPROG="${CFLAGS-}"])
-AC_MSG_NOTICE([CXXFLAGS_BEFORE_ACPROG="${CXXFLAGS-}"])
-
-dnl AC_PROG_CC
-dnl Macro AC_PROG_CC_C99 is obsolete; use AC_PROG_CC
-dnl Note that NUT does not support building with C89 anyway
-dnl AC_PROG_CC_C99
-dnl Needed for per-target flags
-AM_PROG_CC_C_O
-AC_PROG_CPP
-AC_PROG_CXX
-AC_PROG_CXX_C_O
-
-AC_MSG_NOTICE([CFLAGS_AFTER_ACPROG="${CFLAGS-}"])
-AC_MSG_NOTICE([CXXFLAGS_AFTER_ACPROG="${CXXFLAGS-}"])
-
-dnl CFLAGS_BEFORE_ACPROG=${CFLAGS-}
-dnl CXXFLAGS_BEFORE_ACPROG=${CXXFLAGS-}
 
 AC_PROG_INSTALL
 AC_PROG_MKDIR_P
