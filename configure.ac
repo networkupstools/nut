@@ -112,19 +112,16 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])],
 
 dnl +-------------------------------------------------------------------
 
-dnl Avoid "polluting" CFLAGS etc. with auto-settings like "-g -O2"
-dnl at least if we intend to tune --with-debuginfo anyway
+dnl Help avoid "polluting" CFLAGS etc. with auto-settings like "-g -O2"
+dnl at least if we intend to tune --with-debuginfo anyway (where we check
+dnl if the caller asked for specific optimizations). Following some
+dnl experimentation, we do not want to actually mangle the flags provided
+dnl by autoconf - for GCC at least, the rightmost mentions of conflicting
+dnl flags on command line win. We just want to know when it is okay to add ours.
 CFLAGS_ORIG="${CFLAGS-}"
 CXXFLAGS_ORIG="${CXXFLAGS-}"
-
-CFLAGS_BEFORE_ACPROG="${CFLAGS-}"
-CXXFLAGS_BEFORE_ACPROG="${CXXFLAGS-}"
 AC_MSG_NOTICE([CFLAGS_BEFORE_ACPROG="${CFLAGS-}"])
 AC_MSG_NOTICE([CXXFLAGS_BEFORE_ACPROG="${CXXFLAGS-}"])
-
-dnl # LEGACY DEFAULT # CFLAGS=${CFLAGS-"-O"}
-CFLAGS="${CFLAGS- }"
-CXXFLAGS="${CXXFLAGS- }"
 
 dnl we need Autoconf 2.61 or better to enable features of Posix that are extensions to C
 dnl (and actually 2.64 or better for m4/ax_check_compile_flag.m4 when it is sourced)
@@ -154,9 +151,6 @@ AC_PROG_CXX_C_O
 
 AC_MSG_NOTICE([CFLAGS_AFTER_ACPROG="${CFLAGS-}"])
 AC_MSG_NOTICE([CXXFLAGS_AFTER_ACPROG="${CXXFLAGS-}"])
-
-dnl CFLAGS_BEFORE_ACPROG=${CFLAGS-}
-dnl CXXFLAGS_BEFORE_ACPROG=${CXXFLAGS-}
 
 dnl +-------------------------------------------------------------------
 
@@ -4729,10 +4723,10 @@ dnl Some binaries, like CPPUNIT tests, have similar flags already added
 AC_MSG_CHECKING([whether to enable debug info in all NUT binaries])
 nut_with_debuginfo_C="${nut_with_debuginfo}"
 nut_with_debuginfo_CXX="${nut_with_debuginfo}"
-AS_CASE(["${CFLAGS}"],
+AS_CASE(["${CFLAGS_ORIG}"],
     [*-O*|*-g*], [
         AS_IF([test x"${nut_with_debuginfo_C}" = xauto], [
-            nut_with_debuginfo_C="Related settings already specified by caller or detected CFLAGS, not changing anything"
+            nut_with_debuginfo_C="Related settings already specified by caller CFLAGS, not changing anything"
             ])
         ],
     [   dnl No competing options are provided
@@ -4741,10 +4735,10 @@ AS_CASE(["${CFLAGS}"],
             [no], [nut_with_debuginfo_C="legacy"])
     ])
 
-AS_CASE(["${CXXFLAGS}"],
+AS_CASE(["${CXXFLAGS_ORIG}"],
     [*-O*|*-g*], [
         AS_IF([test x"${nut_with_debuginfo_CXX}" = xauto], [
-            nut_with_debuginfo_CXX="Related settings already specified by caller or detected CXXFLAGS, not changing anything"
+            nut_with_debuginfo_CXX="Related settings already specified by caller CXXFLAGS, not changing anything"
             ])
         ],
     [   dnl No competing options are provided
@@ -4771,6 +4765,7 @@ AS_CASE(["${nut_with_debuginfo_CXX}"],
         AS_IF([test "x$CLANGXX" = xyes -o "x$GXX" = xyes], [
             dnl Where we can enable debug, minimize the optimizations
             CXXFLAGS="${CXXFLAGS} -O0 -g3 -gdwarf-2"
+            dnl Use same settings for CPPUNIT tests (they bump their own by default)
             CPPUNIT_NUT_CXXFLAGS=""
             ],[nut_with_debuginfo_CXX="Unknown C++ compiler, not adding options"]
         )],
