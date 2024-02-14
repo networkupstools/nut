@@ -207,6 +207,10 @@ static const char* getTmpDirPath() {
 	if (checkExistsWritableDir(s = ::altpidpath()))
 		return s;
 
+	/* NOTE: For C++17 or newer we might also call
+	 * https://en.cppreference.com/w/cpp/filesystem/temp_directory_path
+	 */
+
 #ifdef WIN32
 	i = GetTempPathA(sizeof(pathbuf), pathbuf);
 	if ((i > 0) && (i < MAX_PATH) && checkExistsWritableDir(pathbuf))
