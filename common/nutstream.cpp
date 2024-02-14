@@ -242,6 +242,8 @@ NutFile::NutFile(anonymous_t):
 	 * msvcrt tmpfile() uses C: root dir and lacks permissions to actually
 	 * use it, and mingw tends to call that OS method so far */
 	char filename[MAX_PATH];
+	memset(filename, 0, sizeof(filename));
+
 	GetTempFileNameA(m_tmp_dir.c_str(), "nuttemp", 0, filename);
 	/* if (verbose) std::cerr << "TMP FILE: " << filename << std::endl; */
 	/* NOTE: Currently we use OS-default binary/text choice of mode... */
