@@ -31,6 +31,19 @@
 #include <cerrno>
 
 extern "C" {
+
+/* For C++ code below, we do not actually use the fallback time methods
+ * (on mingw mostly), but in C++ context they happen to conflict with
+ * time.h or ctime headers, while native-C does not. Just disable the
+ * fallback localtime_r(), gmtime_r() etc. if/when NUT timehead.h gets
+ * included by the header chain from common.h:
+ */
+#ifndef HAVE_GMTIME_R
+# define HAVE_GMTIME_R 111
+#endif
+#ifndef HAVE_LOCALTIME_R
+# define HAVE_LOCALTIME_R 111
+#endif
 #include "common.h"
 
 #include <unistd.h>
