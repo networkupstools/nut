@@ -239,6 +239,35 @@ static const char* getTmpDirPath() {
 	if (checkExistsWritableDir(s = ::getenv("TMP")))
 		return s;
 
+	/* Some OS-dependent locations */
+#ifdef WIN32
+	if (checkExistsWritableDir(s = "C:\\Temp"))
+		return s;
+	if (checkExistsWritableDir(s = "C:\\Windows\\Temp"))
+		return s;
+	if (checkExistsWritableDir(s = "/c/Temp"))
+		return s;
+	if (checkExistsWritableDir(s = "/c/Windows/Temp"))
+		return s;
+#else
+	if (checkExistsWritableDir(s = "/dev/shm"))
+		return s;
+	if (checkExistsWritableDir(s = "/run"))
+		return s;
+	if (checkExistsWritableDir(s = "/var/run"))
+		return s;
+#endif
+
+	/* May be applicable to WIN32 depending on emulation environment/mapping */
+	if (checkExistsWritableDir(s = "/tmp"))
+		return s;
+	if (checkExistsWritableDir(s = "/var/tmp"))
+		return s;
+
+	/* Maybe ok, for tests at least: a current working directory */
+	if (checkExistsWritableDir(s = "."))
+		return s;
+
 	return "/tmp";
 }
 
