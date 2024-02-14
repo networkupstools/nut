@@ -3701,10 +3701,10 @@ AC_ARG_ENABLE(cppunit,
 	[AS_HELP_STRING([--enable-cppunit], [enable CPPUNIT tests for C++ bindings (yes, no, force, auto)])],
 	[AS_CASE(["${enableval}"],
 		["force"], [AS_IF([test x"${have_cppunit}" = xyes], [], [
-			AC_MSG_WARN([--with-cppunit=yes can not be satisfied, but developer asked for it])
+			AC_MSG_WARN([--enable-cppunit=yes can not be satisfied, but developer asked for it])
 			have_cppunit=yes
 			])],
-		["yes"], [AS_IF([test x"${have_cppunit}" = xyes], [], [AC_MSG_ERROR([--with-cppunit=yes can not be satisfied])])],
+		["yes"], [AS_IF([test x"${have_cppunit}" = xyes], [], [AC_MSG_ERROR([--enable-cppunit=yes can not be satisfied])])],
 		["no"], [have_cppunit=no]
 		dnl # "auto" and other values keep what was detected (or not)
 	)])
