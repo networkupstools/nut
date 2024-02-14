@@ -225,7 +225,8 @@ static const char* getTmpDirPath() {
 		return s;
 	if (checkExistsWritableDir(s = ::getenv("TMP")))
 		return s;
-	return "/var/tmp";
+
+	return "/tmp";
 }
 
 const std::string NutFile::m_tmp_dir(getTmpDirPath());
