@@ -200,7 +200,7 @@ static const char* getTmpDirPath() {
 
 #ifdef WIN32
 	/* Suggestions from https://sourceforge.net/p/mingw/bugs/666/ */
-	static char wcharPath[MAX_PATH];
+	static char pathbuf[MAX_PATH];
 	int i;
 #endif
 
@@ -208,9 +208,9 @@ static const char* getTmpDirPath() {
 		return s;
 
 #ifdef WIN32
-	i = GetTempPath(sizeof(wcharPath), wcharPath);
-	if ((i > 0) && (i < MAX_PATH) && checkExistsWritableDir(wcharPath))
-		return (const char *)wcharPath;
+	i = GetTempPathA(sizeof(pathbuf), pathbuf);
+	if ((i > 0) && (i < MAX_PATH) && checkExistsWritableDir(pathbuf))
+		return (const char *)pathbuf;
 #endif
 
 	if (checkExistsWritableDir(s = ::getenv("TMPDIR")))
@@ -237,7 +237,7 @@ NutFile::NutFile(anonymous_t):
 	 * msvcrt tmpfile() uses C: root dir and lacks permissions to actually
 	 * use it, and mingw tends to call that OS method so far */
 	char filename[MAX_PATH];
-	GetTempFileName(m_tmp_dir.c_str(), "nuttemp", 0, filename);
+	GetTempFileNameA(m_tmp_dir.c_str(), "nuttemp", 0, filename);
 	/* if (verbose) std::cerr << "TMP FILE: " << filename << std::endl; */
 	/* NOTE: Currently we use OS-default binary/text choice of mode... */
 	std::string mode_str = std::string(strAccessMode(READ_WRITE_CLEAR));
