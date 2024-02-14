@@ -420,7 +420,8 @@ bool NutFile::open(access_t mode, int & err_code, std::string & err_msg)
 		return true;
 
 	err_code = errno;
-	err_msg  = std::string(::strerror(err_code));
+	err_msg  = "Failed to open file '" + m_name + "': "
+			+ std::string(::strerror(err_code));
 
 	return false;
 }
