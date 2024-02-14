@@ -4634,6 +4634,14 @@ ABS_TOP_BUILDDIR="`cd "${TOP_BUILDDIR}" && pwd`" || AC_MSG_ERROR([Can not detect
 ABS_TOP_SRCDIR="`cd "${abs_srcdir}" && pwd`" || AC_MSG_ERROR([Can not detect ABS_TOP_SRCDIR])
 AM_CONDITIONAL([BUILDING_IN_TREE], [test "${ABS_TOP_BUILDDIR}" = "${ABS_TOP_SRCDIR}"])
 
+dnl When building ON Windows (mingw/MSYS2, cygwin, etc.) fudge these
+dnl path strings back to what native OS methods would recognize.
+AC_CHECK_TOOL([CYGPATH], [cygpath], [none])
+AS_IF([test "x${CYGPATH}" != "xnone"], [
+    tmp="`${CYGPATH} -m "${ABS_TOP_BUILDDIR}" | sed 's,/,\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_BUILDDIR="$tmp"
+    tmp="`${CYGPATH} -m "${ABS_TOP_SRCDIR}" | sed 's,/,\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_SRCDIR="$tmp"
+])
+
 dnl Use these at best for tests (e.g. nutconf), not production code:
 AC_DEFINE_UNQUOTED([ABS_TOP_SRCDIR], ["${ABS_TOP_SRCDIR}"], [NUT source directory when the build was configured])
 AC_DEFINE_UNQUOTED([ABS_TOP_BUILDDIR], ["${ABS_TOP_BUILDDIR}"], [NUT build directory when the build was configured])
