@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3454 utf-8
+personal_ws-1.1 en 3456 utf-8
 AAC
 AAS
 ABI
@@ -1900,6 +1900,7 @@ dataok
 datasheet
 datastale
 dayofweek
+dbgsym
 dblatex
 dcd
 dcn
@@ -1910,6 +1911,7 @@ deUNV
 debian
 debootstrap
 debouncing
+debuginfo
 deci
 decrement
 decrypt
