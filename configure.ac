@@ -12,8 +12,8 @@ dnl flags on command line win. We just want to know when it is okay to add
 dnl ours. It seems these copies must be stashed as early as possible.
 dnl It may be poorly compatible with "in-place" build setup though;
 dnl trying some tricks around that.
-test -n "${CFLAGS_ORIG-}" || CFLAGS_ORIG="${CFLAGS-}"
-test -n "${CXXFLAGS_ORIG-}" || CXXFLAGS_ORIG="${CXXFLAGS-}"
+test -n "${CONFIG_CFLAGS-}" || CONFIG_CFLAGS="${CFLAGS-}"
+test -n "${CONFIG_CXXFLAGS-}" || CONFIG_CXXFLAGS="${CXXFLAGS-}"
 dnl +-------------------------------------------------------------------
 
 dnl NUT version number is defined here, with a Git suffixed macro like
@@ -612,20 +612,20 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         ])
         export NUT_VERSION_DEPLOYED
         dnl # Avoid replacement after re-entering:
-        test -n "${CFLAGS_ORIG-}" || CFLAGS_ORIG=" "
-        test -n "${CXXFLAGS_ORIG-}" || CXXFLAGS_ORIG=" "
-        export CFLAGS_ORIG
-        export CXXFLAGS_ORIG
+        test -n "${CONFIG_CFLAGS-}" || CONFIG_CFLAGS=" "
+        test -n "${CONFIG_CXXFLAGS-}" || CONFIG_CXXFLAGS=" "
+        export CONFIG_CFLAGS
+        export CONFIG_CXXFLAGS
         eval exec "$0" $CONFIG_FLAGS_DEPLOYED $CONFIG_FLAGS --disable-inplace-runtime
     ],[
         AC_MSG_NOTICE([No CONFIG_FLAGS were reported or discovered from existing NUT deployment (if any); restarting script for a clean run])
         NUT_VERSION_DEPLOYED="<reenter>"
         export NUT_VERSION_DEPLOYED
         dnl # Avoid replacement after re-entering:
-        test -n "${CFLAGS_ORIG-}" || CFLAGS_ORIG=" "
-        test -n "${CXXFLAGS_ORIG-}" || CXXFLAGS_ORIG=" "
-        export CFLAGS_ORIG
-        export CXXFLAGS_ORIG
+        test -n "${CONFIG_CFLAGS-}" || CONFIG_CFLAGS=" "
+        test -n "${CONFIG_CXXFLAGS-}" || CONFIG_CXXFLAGS=" "
+        export CONFIG_CFLAGS
+        export CONFIG_CXXFLAGS
         AC_MSG_NOTICE([exec "$0" $CONFIG_FLAGS --disable-inplace-runtime])
         eval exec "$0" $CONFIG_FLAGS --disable-inplace-runtime
     ])
@@ -4739,12 +4739,12 @@ PATH_DURING_CONFIGURE="$PATH"
 AC_SUBST(PATH_DURING_CONFIGURE)
 
 dnl Some binaries, like CPPUNIT tests, have similar flags already added
-AC_MSG_NOTICE([CFLAGS_ORIG='${CFLAGS_ORIG}'])
-AC_MSG_NOTICE([CXXFLAGS_ORIG='${CXXFLAGS_ORIG}'])
+AC_MSG_NOTICE([CONFIG_CFLAGS='${CONFIG_CFLAGS}'])
+AC_MSG_NOTICE([CONFIG_CXXFLAGS='${CONFIG_CXXFLAGS}'])
 AC_MSG_CHECKING([whether to enable debug info in all NUT binaries])
 nut_with_debuginfo_C="${nut_with_debuginfo}"
 nut_with_debuginfo_CXX="${nut_with_debuginfo}"
-AS_CASE(["${CFLAGS_ORIG}"],
+AS_CASE(["${CONFIG_CFLAGS}"],
     [*-O*|*-g*], [
         AS_IF([test x"${nut_with_debuginfo_C}" = xauto], [
             nut_with_debuginfo_C="Related settings already specified by caller CFLAGS, not changing anything"
@@ -4756,7 +4756,7 @@ AS_CASE(["${CFLAGS_ORIG}"],
             [no], [nut_with_debuginfo_C="legacy"])
     ])
 
-AS_CASE(["${CXXFLAGS_ORIG}"],
+AS_CASE(["${CONFIG_CXXFLAGS}"],
     [*-O*|*-g*], [
         AS_IF([test x"${nut_with_debuginfo_CXX}" = xauto], [
             nut_with_debuginfo_CXX="Related settings already specified by caller CXXFLAGS, not changing anything"
@@ -4777,7 +4777,7 @@ AS_CASE(["${nut_with_debuginfo_C}"],
     dnl # [no]: By default we do not add debug info
     [legacy], [
         dnl # Apply legacy defaults if no flags were specified by caller
-        AS_IF([test x"${CFLAGS_ORIG}" = x],	[CFLAGS="-O ${CFLAGS}"])
+        AS_IF([test x"${CONFIG_CFLAGS}" = x],	[CFLAGS="-O ${CFLAGS}"])
         ]
 )
 
@@ -4793,7 +4793,7 @@ AS_CASE(["${nut_with_debuginfo_CXX}"],
     dnl # [no]: By default we do not add debug info
     [legacy], [
         dnl # Apply legacy defaults if no flags were specified by caller
-        AS_IF([test x"${CXXFLAGS_ORIG}" = x],	[CXXFLAGS="-O ${CXXFLAGS}"])
+        AS_IF([test x"${CONFIG_CXXFLAGS}" = x],	[CXXFLAGS="-O ${CXXFLAGS}"])
         ]
 )
 
