@@ -120,8 +120,8 @@ dnl by autoconf - for GCC at least, the rightmost mentions of conflicting
 dnl flags on command line win. We just want to know when it is okay to add ours.
 CFLAGS_ORIG="${CFLAGS-}"
 CXXFLAGS_ORIG="${CXXFLAGS-}"
-AC_MSG_NOTICE([CFLAGS_BEFORE_ACPROG="${CFLAGS-}"])
-AC_MSG_NOTICE([CXXFLAGS_BEFORE_ACPROG="${CXXFLAGS-}"])
+dnl AC_MSG_NOTICE([CFLAGS_BEFORE_ACPROG="${CFLAGS-}"])
+dnl AC_MSG_NOTICE([CXXFLAGS_BEFORE_ACPROG="${CXXFLAGS-}"])
 
 dnl we need Autoconf 2.61 or better to enable features of Posix that are extensions to C
 dnl (and actually 2.64 or better for m4/ax_check_compile_flag.m4 when it is sourced)
@@ -149,8 +149,14 @@ AC_PROG_CPP
 AC_PROG_CXX
 AC_PROG_CXX_C_O
 
-AC_MSG_NOTICE([CFLAGS_AFTER_ACPROG="${CFLAGS-}"])
-AC_MSG_NOTICE([CXXFLAGS_AFTER_ACPROG="${CXXFLAGS-}"])
+dnl AC_MSG_NOTICE([CFLAGS_AFTER_ACPROG="${CFLAGS-}"])
+dnl AC_MSG_NOTICE([CXXFLAGS_AFTER_ACPROG="${CXXFLAGS-}"])
+
+dnl # LEGACY DEFAULT FALLBACK which NUT had since 2005 or before:
+dnl # if autoconf does not set any options, use default/moderate optimizations
+CFLAGS=${CFLAGS-"-O"}
+dnl # Not so far a legacy, added for consistency in 2024 :)
+CXXFLAGS=${CXXFLAGS-"-O"}
 
 dnl +-------------------------------------------------------------------
 
@@ -199,8 +205,6 @@ AC_DEFINE_UNQUOTED(NUT_NETVERSION, "${NUT_NETVERSION}", [NUT network protocol ve
 dnl Fix this early so we can expand with eval later
 test "${prefix}" = "NONE" && prefix="${ac_default_prefix}"
 test "${exec_prefix}" = "NONE" && exec_prefix='${prefix}'
-
-dnl # LEGACY DEFAULT # CFLAGS=${CFLAGS-"-O"}
 
 dnl Note: for practical and platform-independent use, see AX_REALPATH macro
 AC_CHECK_PROGS([REALPATH], [realpath], [])
