@@ -246,10 +246,12 @@ NutFile::NutFile(anonymous_t):
 
 	GetTempFileNameA(m_tmp_dir.c_str(), "nuttemp", 0, filename);
 	/* if (verbose) std::cerr << "TMP FILE: " << filename << std::endl; */
-	/* NOTE: Currently we use OS-default binary/text choice of mode... */
 	std::string mode_str = std::string(strAccessMode(READ_WRITE_CLEAR));
 	/* ...Still, we ask to auto-delete where supported: */
 	mode_str += std::string("D");
+	/* Per https://en.cppreference.com/w/cpp/io/c/tmpfile it is binary
+	 * for POSIX code, so match the behavior here: */
+	mode_str += std::string("b");
 	m_impl = ::fopen(filename, mode_str.c_str());
 	/* If it were not "const" we might assign it. But got no big need to.
 	 *   m_name = std::string(filename);
