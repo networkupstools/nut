@@ -193,7 +193,15 @@ https://github.com/networkupstools/nut/milestone/10
  - Eaton contributed recipes and scripts used to create the IPP for Unix bundle
    (UPS software companion), delivering NUT packages with an interactive
    installer and some system integration scripts (events, notifications,
-   status, shutdown daemon...) [#2288]
+   status, shutdown daemon...) -- provided "as is" at the moment, and may
+   later serve as foundation or inspiration for new NUT features. [#2288]
+
+ - nutconf (C++ library and tool to read and manage NUT configuration files)
+   was started in the open by Eaton employees and used in the IPP installer,
+   but the code lingered in a side branch. It was now brushed up to our common
+   best practices and added to the main codebase. As of this import, there are
+   known deficiencies in Windows platform support, as well as some un-awareness
+   about configuration key words which appeared in NUT since 2013. [#2290]
 
 
 Release notes for NUT 2.8.1 - what's new since 2.8.0

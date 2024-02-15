@@ -9,12 +9,21 @@
 @NUT_AM_MAKE_CAN_EXPORT@export CCACHE_PATH=@CCACHE_PATH@
 @NUT_AM_MAKE_CAN_EXPORT@export PATH=@PATH_DURING_CONFIGURE@
 
-AM_CFLAGS = -I$(top_srcdir)/include
+AM_CFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
+AM_CXXFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 AM_LDFLAGS = -no-undefined
 EXTRA_DIST =
 
 noinst_LTLIBRARIES = libparseconf.la libcommon.la libcommonclient.la
+if WITH_NUTCONF
+# We define the recipe below in any case, but only activate it by default
+# if the build configuration tells us to:
+noinst_LTLIBRARIES += libnutconf.la
+endif
+
 libparseconf_la_SOURCES = parseconf.c
+
+libnutconf_la_SOURCES = nutconf.cpp nutstream.cpp nutwriter.cpp nutipc.cpp
 
 # do not hard depend on '../include/nut_version.h', since it blocks
 # 'dist', and is only required for actual build, in which case
@@ -75,7 +84,7 @@ endif
 if HAVE_WINDOWS
 libcommon_la_SOURCES += wincompat.c $(top_srcdir)/include/wincompat.h
 libcommonclient_la_SOURCES += wincompat.c $(top_srcdir)/include/wincompat.h
-endif
+endif HAVE_WINDOWS
 
 # ensure inclusion of local implementation of missing systems functions
 # using LTLIBOBJS. Refer to configure.in/.ac -> AC_REPLACE_FUNCS
@@ -84,6 +93,11 @@ libcommonclient_la_LIBADD = libparseconf.la @LTLIBOBJS@ @NETLIBS@
 
 libcommon_la_CFLAGS = $(AM_CFLAGS)
 libcommonclient_la_CFLAGS = $(AM_CFLAGS)
+
+if WITH_NUTCONF
+libnutconf_la_CXXFLAGS = $(AM_CXXFLAGS)
+libnutconf_la_LIBADD = @LTLIBOBJS@ @NETLIBS@ libcommonclient.la
+endif WITH_NUTCONF
 
 if HAVE_LIBREGEX
   libcommon_la_CFLAGS += $(LIBREGEX_CFLAGS)

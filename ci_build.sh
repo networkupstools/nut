@@ -296,6 +296,18 @@ for L in $NODE_LABELS ; do
         "NUT_BUILD_CAPS=cppunit"|"NUT_BUILD_CAPS=cppunit=yes")
             [ -n "$CANBUILD_CPPUNIT_TESTS" ] || CANBUILD_CPPUNIT_TESTS=yes ;;
 
+        # This should cover both the --with-nutconf tool setting
+        # and the cppunit tests for it (if active per above).
+        # By default we would nowadays guess (requires C++11).
+        "NUT_BUILD_CAPS=nutconf=no")
+            [ -n "$CANBUILD_NUTCONF" ] || CANBUILD_NUTCONF=no ;;
+        "NUT_BUILD_CAPS=nutconf=no-gcc")
+            [ -n "$CANBUILD_NUTCONF" ] || CANBUILD_NUTCONF=no-gcc ;;
+        "NUT_BUILD_CAPS=nutconf=no-clang")
+            [ -n "$CANBUILD_NUTCONF" ] || CANBUILD_NUTCONF=no-clang ;;
+        "NUT_BUILD_CAPS=nutconf"|"NUT_BUILD_CAPS=nutconf=yes")
+            [ -n "$CANBUILD_NUTCONF" ] || CANBUILD_NUTCONF=yes ;;
+
         # Some (QEMU) builders have issues running valgrind as a tool
         "NUT_BUILD_CAPS=valgrind=no")
             [ -n "$CANBUILD_VALGRIND_TESTS" ] || CANBUILD_VALGRIND_TESTS=no ;;
@@ -1062,6 +1074,40 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         echo "WARNING: Build agent says it can't build or run libcppunit tests, adding configure option to skip them" >&2
         CONFIG_OPTS+=("--enable-cppunit=no")
     fi
+
+    if ( [ "${CANBUILD_NUTCONF-}" = "no-gcc" ] && [ "$COMPILER_FAMILY" = "GCC" ] ) \
+    || ( [ "${CANBUILD_NUTCONF-}" = "no-clang" ] && [ "$COMPILER_FAMILY" = "CLANG" ] ) \
+    ; then
+        CANBUILD_NUTCONF=no
+    fi
+
+    case "${CANBUILD_NUTCONF-}" in
+        yes)
+            # Depends on C++11 or newer, so let configure script try this tediously
+            # unless we know we would not build for the too-old language revision
+            case "${CXXFLAGS-}" in
+                *-std=c++98*|*-std=gnu++98*|*-std=c++03*|*-std=gnu++03*)
+                    echo "WARNING: Build agent says it can build nutconf, but requires a test with C++ revision too old - so not requiring the experimental feature (auto-try)" >&2
+                    CONFIG_OPTS+=("--with-nutconf=auto")
+                    ;;
+                *-std=c++0x*|*-std=gnu++0x*|*-std=c++1*|*-std=gnu++1*|*-std=c++2*|*-std=gnu++2*)
+                    echo "WARNING: Build agent says it can build nutconf, and requires a test with a sufficiently new C++ revision - so requiring the experimental feature" >&2
+                    CONFIG_OPTS+=("--with-nutconf=yes")
+                    ;;
+                *)
+                    echo "WARNING: Build agent says it can build nutconf, and does not specify a test with prticular C++ revision - so not requiring the experimental feature (auto-try)" >&2
+                    CONFIG_OPTS+=("--with-nutconf=auto")
+                    ;;
+            esac
+            ;;
+        no)
+            echo "WARNING: Build agent says it can not build nutconf, disabling the feature (do not even try)" >&2
+            CONFIG_OPTS+=("--with-nutconf=no")
+            ;;
+        "")
+            CONFIG_OPTS+=("--with-nutconf=auto")
+            ;;
+    esac
 
     if [ "${CANBUILD_VALGRIND_TESTS-}" = no ] ; then
         echo "WARNING: Build agent says it has a broken valgrind, adding configure option to skip tests with it" >&2
