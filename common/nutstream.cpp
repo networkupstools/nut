@@ -196,15 +196,43 @@ NutStream::status_t NutMemory::putData(const std::string & data) {
  * by packager who knows their system. */
 
 static bool checkExistsWritableDir(const char *s) {
-	if (!s || *s == '\0')
+#ifdef DEBUG
+	std::cerr << "checkExistsWritableDir(" << (s ? s : "<null>") << "): ";
+#endif
+	if (!s || *s == '\0') {
+#ifdef DEBUG
+		std::cerr << "null or empty string" << std::endl;
+#endif
 		return false;
+	}
 
-	if (!opendir(s))
+	if (!opendir(s)) {
+#ifdef DEBUG
+		std::cerr << "not a dir" << std::endl;
+#endif
 		return false;
+	}
 
-	if (!access(s, W_OK))
+	/* POSIX: If the requested access is permitted, access() succeeds
+	 * and shall return 0; otherwise, -1 shall be returned and errno
+	 * shall be set to indicate the error. */
+	if (access(s, X_OK)) {
+#ifdef DEBUG
+		std::cerr << "not traversable" << std::endl;
+#endif
 		return false;
+	}
 
+	if (access(s, W_OK)) {
+#ifdef DEBUG
+		std::cerr << "not writeable" << std::endl;
+#endif
+		return false;
+	}
+
+#ifdef DEBUG
+	std::cerr << "is ok" << std::endl;
+#endif
 	return true;
 }
 
