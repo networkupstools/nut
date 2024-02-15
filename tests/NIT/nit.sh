@@ -603,6 +603,64 @@ testcase_upsd_no_configs_in_driver_file() {
     fi
 }
 
+upsd_start_loop() {
+    TESTCASE="${1-upsd_start_loop}"
+
+    if isPidAlive "$PID_UPSD" ; then
+        return 0
+    fi
+
+    upsd -F &
+    PID_UPSD="$!"
+    log_debug "[${TESTCASE}] Tried to start UPSD as PID $PID_UPSD"
+    sleep 2
+    # Due to a busy port, server could have died by now
+
+    COUNTDOWN=60
+    while [ "$COUNTDOWN" -gt 0 ]; do
+        sleep 1
+        COUNTDOWN="`expr $COUNTDOWN - 1`"
+
+        # Is our server alive AND occupying the port?
+        PID_OK=true
+        isPidAlive "$PID_UPSD" || PID_OK=false # not running
+        PORT_OK=true
+        isBusy_NUT_PORT 2>/dev/null >/dev/null || PORT_OK=false # not busy
+        if "${PID_OK}" ; then
+            if "${PORT_OK}" ; then break ; fi
+            continue
+        fi
+
+        # FIXME: If we are here, even once, then PID_UPSD which we
+        # knew has already disappeared... wait() for its exit-code?
+        # Give some time for ports to time out, if busy and that is
+        # why the server died.
+        PORT_WORD=""
+        ${PORT_OK} || PORT_WORD="not "
+        log_warn "[${TESTCASE}] Port ${NUT_PORT} is ${PORT_WORD}listening and UPSD PID $PID_UPSD is not alive, will sleep and retry"
+
+        sleep 10
+        upsd -F &
+        PID_UPSD="$!"
+        log_warn "[${TESTCASE}] Tried to start UPSD again, now as PID $PID_UPSD"
+        sleep 5
+    done
+
+    if [ "$COUNTDOWN" -le 50 ] ; then
+        # Should not get to this, except on very laggy systems maybe
+        log_warn "[${TESTCASE}] Had to wait a few retries for the UPSD process to appear"
+    fi
+
+    # Return code is 0/OK if the server is alive AND occupying the port
+    if isPidAlive "$PID_UPSD" && isBusy_NUT_PORT 2>/dev/null >/dev/null ; then
+        log_debug "[${TESTCASE}] Port ${NUT_PORT} is listening and UPSD PID $PID_UPSD is alive"
+        return
+    fi
+
+    log_error "[${TESTCASE}] Port ${NUT_PORT} is not listening and/or UPSD PID $PID_UPSD is not alive"
+    return 1
+}
+
 testcase_upsd_allow_no_device() {
     log_separator
     log_info "[testcase_upsd_allow_no_device] Test UPSD allowed to run without driver configs"
@@ -612,24 +670,8 @@ testcase_upsd_allow_no_device() {
     if shouldDebug ; then
         ls -la "$NUT_CONFPATH/" || true
     fi
-    upsd -F &
-    PID_UPSD="$!"
-    log_debug "[testcase_upsd_allow_no_device] Tried to start UPSD as PID $PID_UPSD"
-    sleep 2
 
-    COUNTDOWN=60
-    while [ "$COUNTDOWN" -gt 0 ]; do
-        if isPidAlive "$PID_UPSD"; then break ; fi
-        # FIXME: If we are here, even once, then PID_UPSD which we
-        # knew has already disappeared... wait() for its exit-code?
-        sleep 1
-        COUNTDOWN="`expr $COUNTDOWN - 1`"
-    done
-
-    if [ "$COUNTDOWN" -le 50 ] ; then
-        # Should not get to this, except on very laggy systems maybe
-        log_warn "[testcase_upsd_allow_no_device] Had to wait a few retries for the UPSD process to appear"
-    fi
+    upsd_start_loop "testcase_upsd_allow_no_device"
 
     res_testcase_upsd_allow_no_device=0
     if [ "$COUNTDOWN" -gt 0 ] \
@@ -729,10 +771,8 @@ sandbox_start_upsd() {
     sandbox_generate_configs
 
     log_info "Starting UPSD for sandbox"
-    upsd -F &
-    PID_UPSD="$!"
-    log_debug "Tried to start UPSD as PID $PID_UPSD"
-    sleep 5
+
+    upsd_start_loop "sandbox"
 }
 
 sandbox_start_drivers() {
@@ -843,6 +883,8 @@ testcase_sandbox_start_upsd_after_drivers() {
     kill -15 $PID_UPSD 2>/dev/null
     wait $PID_UPSD
 
+    # Not calling upsd_start_loop() here, before drivers
+    # If the server starts, fine; if not - we retry below
     upsd -F &
     PID_UPSD="$!"
     log_debug "[testcase_sandbox_start_upsd_after_drivers] Tried to start UPSD as PID $PID_UPSD"
