@@ -441,6 +441,27 @@ bool NutFile::open(access_t mode, int & err_code, std::string & err_msg)
 		::fclose(m_impl);
 	}
 
+#ifdef WIN32
+	/* This currently fails with mingw due to looking at POSIXified paths:
+	 *   - Failed to open file /c/Users/abuild/Documents/FOSS/nut/conf/nut.conf.sample: 2: No such file or directory
+	 * while the file does exist (for git-bash and mingw shells):
+	 *   $ ls -la /c/Users/abuild/Documents/FOSS/nut/conf/nut.conf.sample
+	 *   -rw-r--r-- 1 abuild Users 4774 Jan 28 03:38 /c/Users/abuild/Documents/FOSS/nut/conf/nut.conf.sample
+	 *
+	 * For the test suite it is not a great problem, can be fixed
+	 * by using `cygpath` or `pwd -W` in `configure` script.
+	 * The run-time behavior is more troublesome: per discussion at
+	 * https://sourceforge.net/p/mingw/mailman/mingw-users/thread/gq8fi0$pk0$2@ger.gmane.org/
+	 * mingw uses fopen() from msvcrt directly, and it does not know
+	 * such paths (e.g. '/c/Users/...' means "C:\\c\\Users\\..." to it).
+	 * Paths coming from MSYS shell arguments are handled by the shell,
+	 * and this is more than about slash type (WINNT is okay with both),
+	 * but also e.g. prefixing an msys installation path 'C:\\msys64' or
+	 * similar when using absolute POSIX-style paths. Do we need a private
+	 * converter?.. Would an end user have MSYS installed at all?
+	 */
+#endif
+
 	mode_str = strAccessMode(mode);
 	m_impl = ::fopen(m_name.c_str(), mode_str);
 
