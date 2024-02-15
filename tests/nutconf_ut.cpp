@@ -120,6 +120,18 @@ void NutConfigUnitTest::testNutConfiguration() {
 	 *   $ ls -la /c/Users/abuild/Documents/FOSS/nut/conf/nut.conf.sample
 	 *   -rw-r--r-- 1 abuild Users 4774 Jan 28 03:38 /c/Users/abuild/Documents/FOSS/nut/conf/nut.conf.sample
 	 * Ought to be a low-hanging fruit to fix the test...
+	 *
+	 * UPDATE: For the test it is not a great problem, can be fixed
+	 * by using `cygpath` or `pwd -W` in `configure` script.
+	 * The run-time behavior is more troublesome: per discussion at
+	 * https://sourceforge.net/p/mingw/mailman/mingw-users/thread/gq8fi0$pk0$2@ger.gmane.org/
+	 * mingw uses fopen() from msvcrt directly, and it does not know
+	 * such paths (e.g. '/c/Users/...' means "C:\c\Users\..." to it).
+	 * Paths coming from MSYS shell arguments are handled by the shell,
+	 * and this is more than about slash type (WINNT is okay with both),
+	 * but also e.g. prefixing an msys installation path 'C:\msys64' or
+	 * similar when using absolute POSIX-style paths. Do we need a private
+	 * converter?.. Would an end user have MSYS installed at all?
 	 */
 	std::cout << "NutConfigUnitTest::testNutConfiguration(): skipped on this platform" << std::endl;
 #else
