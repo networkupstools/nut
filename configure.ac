@@ -4639,10 +4639,21 @@ AM_CONDITIONAL([BUILDING_IN_TREE], [test "${ABS_TOP_BUILDDIR}" = "${ABS_TOP_SRCD
 
 dnl When building ON Windows (mingw/MSYS2, cygwin, etc.) fudge these
 dnl path strings back to what native OS methods would recognize.
-AC_CHECK_TOOL([CYGPATH], [cygpath], [none])
-AS_IF([test "x${CYGPATH}" != "xnone"], [
-    tmp="`${CYGPATH} -m "${ABS_TOP_BUILDDIR}" | sed 's,/,\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_BUILDDIR="$tmp"
-    tmp="`${CYGPATH} -m "${ABS_TOP_SRCDIR}" | sed 's,/,\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_SRCDIR="$tmp"
+AS_CASE([${target_os}],
+    [*mingw*], [
+        dnl Cygwin path resolver
+        AC_CHECK_TOOL([CYGPATH], [cygpath], [none])
+        AS_IF([test "x${CYGPATH}" != "xnone"], [
+            tmp="`${CYGPATH} -m "${ABS_TOP_BUILDDIR}" | sed -e 's,/,\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_BUILDDIR="$tmp"
+            tmp="`${CYGPATH} -m "${ABS_TOP_SRCDIR}" | sed 's,/,\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_SRCDIR="$tmp"
+        ],[
+            dnl MSYS pwd with -W option to resolve
+            AC_CHECK_TOOL([PWD], [pwd], [none])
+            AS_IF([test "x${PWD}" != "xnone"], [
+                tmp="`(cd "${ABS_TOP_BUILDDIR}" && ${PWD} -W) | sed 's,/,\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_BUILDDIR="$tmp"
+                tmp="`(cd "${ABS_TOP_SRCDIR}" && ${PWD} -W) | sed 's,/,\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_SRCDIR="$tmp"
+            ])
+        ])
 ])
 
 dnl Use these at best for tests (e.g. nutconf), not production code:
