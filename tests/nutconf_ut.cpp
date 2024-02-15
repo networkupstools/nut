@@ -112,29 +112,6 @@ void NutConfigUnitTest::check(const nut::Serialisable * config, const std::strin
 
 
 void NutConfigUnitTest::testNutConfiguration() {
-#ifdef WIN32
-	/* This currently fails with mingw due to looking at POSIXified paths
-	 * in ABS_TOP_SRCDIR, and for some reason failing:
-	 *   - Failed to open file /c/Users/abuild/Documents/FOSS/nut/conf/nut.conf.sample: 2: No such file or directory
-	 * while the file does exist (for git-bash and mingw shells):
-	 *   $ ls -la /c/Users/abuild/Documents/FOSS/nut/conf/nut.conf.sample
-	 *   -rw-r--r-- 1 abuild Users 4774 Jan 28 03:38 /c/Users/abuild/Documents/FOSS/nut/conf/nut.conf.sample
-	 * Ought to be a low-hanging fruit to fix the test...
-	 *
-	 * UPDATE: For the test it is not a great problem, can be fixed
-	 * by using `cygpath` or `pwd -W` in `configure` script.
-	 * The run-time behavior is more troublesome: per discussion at
-	 * https://sourceforge.net/p/mingw/mailman/mingw-users/thread/gq8fi0$pk0$2@ger.gmane.org/
-	 * mingw uses fopen() from msvcrt directly, and it does not know
-	 * such paths (e.g. '/c/Users/...' means "C:\c\Users\..." to it).
-	 * Paths coming from MSYS shell arguments are handled by the shell,
-	 * and this is more than about slash type (WINNT is okay with both),
-	 * but also e.g. prefixing an msys installation path 'C:\msys64' or
-	 * similar when using absolute POSIX-style paths. Do we need a private
-	 * converter?.. Would an end user have MSYS installed at all?
-	 */
-	std::cout << "NutConfigUnitTest::testNutConfiguration(): skipped on this platform" << std::endl;
-#else
 	nut::NutConfiguration config;
 
 	load(static_cast<nut::Serialisable *>(&config), ABS_TOP_SRCDIR "/conf/nut.conf.sample");
@@ -144,15 +121,10 @@ void NutConfigUnitTest::testNutConfiguration() {
 	check(static_cast<nut::Serialisable *>(&config),
 		"MODE=standalone\n"
 	);
-#endif	/* WIN32 */
 }
 
 
 void NutConfigUnitTest::testUpsmonConfiguration() {
-#ifdef WIN32
-	/* See detailed comment above. Ought to be a low-hanging fruit... */
-	std::cout << "NutConfigUnitTest::testUpsmonConfiguration(): skipped on this platform" << std::endl;
-#else
 	nut::UpsmonConfiguration config;
 
 	// Note: this file gets generated from a .in template
@@ -175,15 +147,10 @@ void NutConfigUnitTest::testUpsmonConfiguration() {
 		"NOCOMMWARNTIME 300\n"
 		"FINALDELAY 5\n"
 	);
-#endif	/* WIN32 */
 }
 
 
 void NutConfigUnitTest::testUpsdConfiguration() {
-#ifdef WIN32
-	/* See detailed comment above. Ought to be a low-hanging fruit... */
-	std::cout << "NutConfigUnitTest::testUpsdConfiguration(): skipped on this platform" << std::endl;
-#else
 	nut::UpsdConfiguration config;
 
 	load(static_cast<nut::Serialisable *>(&config), ABS_TOP_SRCDIR "/conf/upsd.conf.sample");
@@ -212,15 +179,10 @@ void NutConfigUnitTest::testUpsdConfiguration() {
 		"LISTEN 127.0.0.1 3493\n"
 		"LISTEN ::1 3493\n"
 	);
-#endif	/* WIN32 */
 }
 
 
 void NutConfigUnitTest::testUpsConfiguration() {
-#ifdef WIN32
-	/* See detailed comment above. Ought to be a low-hanging fruit... */
-	std::cout << "NutConfigUnitTest::testUpsConfiguration(): skipped on this platform" << std::endl;
-#else
 	nut::UpsConfiguration config;
 
 	load(static_cast<nut::Serialisable *>(&config), ABS_TOP_SRCDIR "/conf/ups.conf.sample");
@@ -240,15 +202,10 @@ void NutConfigUnitTest::testUpsConfiguration() {
 		"\tport = /dev/ttyS0\n"
 		"\n"
 	);
-#endif	/* WIN32 */
 }
 
 
 void NutConfigUnitTest::testUpsdUsersConfiguration() {
-#ifdef WIN32
-	/* See detailed comment above. Ought to be a low-hanging fruit... */
-	std::cout << "NutConfigUnitTest::testUpsdUsersConfiguration(): skipped on this platform" << std::endl;
-#else
 	nut::UpsdUsersConfiguration config;
 
 	load(static_cast<nut::Serialisable *>(&config), ABS_TOP_SRCDIR "/conf/upsd.users.sample");
@@ -271,7 +228,6 @@ void NutConfigUnitTest::testUpsdUsersConfiguration() {
 		"\tupsmon master\n"
 		"\n"
 	);
-#endif	/* WIN32 */
 }
 
 // Implement out of class declaration to avoid
