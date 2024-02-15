@@ -226,7 +226,6 @@ static void * run_eaton_serial(void *arg)
 	dev[TYPE_EATON_SERIAL] = nutscan_scan_eaton_serial(serial_ports);
 	return NULL;
 }
-
 #endif /* HAVE_PTHREAD */
 
 static void show_usage(void)

@@ -1131,7 +1131,6 @@ AC_CHECK_FUNCS(vsnprintf snprintf, [], [
 	AC_TYPE_LONG_LONG_INT
 ])
 
-
 AC_REPLACE_FUNCS(setenv strerror atexit)
 
 case ${target_os} in
@@ -1589,7 +1588,7 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, gpio (currently on Linux released after ~2018), linux_i2c (on Linux), macosx-ups (on MacOS), cgi, dev, avahi, nut-scanner, pynut]),
+	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, gpio (currently on Linux released after ~2018), linux_i2c (on Linux), macosx-ups (on MacOS), cgi, dev, avahi, nut-scanner, nutconf, pynut]),
 [
 	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
@@ -1633,6 +1632,7 @@ AC_ARG_WITH(all,
 		if test -z "${with_dev}"; then with_dev="${withval}"; fi
 		if test -z "${with_avahi}"; then with_avahi="${withval}"; fi
 		if test -z "${with_nut_scanner}"; then with_nut_scanner="${withval}"; fi
+		if test -z "${with_nutconf}"; then with_nutconf="${withval}"; fi
 
 		if test -n "${PYTHON}${PYTHON2}${PYTHON3}" -a x"${withval}" = xyes \
 		|| test x"${withval}" != xyes \
@@ -1661,6 +1661,8 @@ dnl declare a number of --with-FEATURE options. Do this early, so that
 dnl they are listed near the top by "./configure --help"; however,
 dnl note that options with further investigation methods are listed
 dnl a bit below to be grouped with their additional with/enable help.
+
+NUT_ARG_WITH([nutconf], [build and install the nutconf tool (experimental, has compiler/coverage warnings)], [auto])
 
 NUT_ARG_WITH([dev], [build and install the development files], [no])
 
@@ -1736,7 +1738,6 @@ dnl NUT_ARG_WITH([openipmi], [enable IPMI support using OpenIPMI], [auto])
 dnl Platform-dependent drivers, currently their detection code is directly
 dnl spelled out in configure.ac
 NUT_ARG_WITH([macosx_ups], [build and install Mac OS X Power Sources meta-driver], [auto])
-
 NUT_ARG_WITH([linux_i2c], [build and install i2c drivers], [auto])
 
 dnl A Python GUI client application for the sysadmin desktop
@@ -3215,7 +3216,6 @@ fi
 AC_MSG_RESULT([${solarispkg_svr4}])
 AM_CONDITIONAL(WITH_SOLARIS_PKG_SVR4, test x"$solarispkg_svr4" = x"yes")
 
-
 AC_MSG_CHECKING(whether to make Solaris IPS packages)
 solarispkg_ips="auto"
 AC_ARG_WITH([solaris-pkg-ips],
@@ -3364,7 +3364,6 @@ dnl This option is only provided so that make distcheck can override it,
 dnl otherwise we ask pkg-config whenever --with-systemdsystemunitdir is
 dnl given
 
-
 AC_MSG_CHECKING(whether to install systemd shutdown files)
 AC_ARG_WITH([systemdshutdowndir],
 	AS_HELP_STRING([--with-systemdshutdowndir=DIR], [Directory for systemd shutdown scripts (auto)]),
@@ -3397,7 +3396,6 @@ if test -n "${systemdshutdowndir}"; then
 else
 	AC_MSG_RESULT(no)
 fi
-
 
 dnl Note: if (systemd-)tmpfiles tech is present, it can be useful even for
 dnl daemons starting not as systemd units, to pre-create /var/run/nut etc.
@@ -3715,6 +3713,24 @@ AC_MSG_RESULT(${have_cppunit})
 
 NUT_REPORT_FEATURE([build C++ tests with CPPUNIT], [${have_cppunit}], [],
 					[HAVE_CPPUNIT], [Define to enable CPPUNIT tests])
+
+dnl ----------------------------------------------------------------------
+
+AC_MSG_CHECKING(whether we can and want to build nutconf configuration-management tool)
+
+AS_CASE(["${nut_with_nutconf}"],
+		["auto"], [AS_IF([test x"${have_cxx11}" = xyes], [nut_with_nutconf="yes"], [nut_with_nutconf="no"])],
+		["yes"], [AS_IF([test x"${have_cxx11}" = xyes], [], [AC_MSG_ERROR([explicit --with-nutconf=yes can not be satisfied: C++11 support not enabled])])],
+		["no"], [nut_with_nutconf=no]
+	)
+AC_MSG_RESULT(${nut_with_nutconf})
+
+AM_CONDITIONAL(WITH_NUTCONF, test "${nut_with_nutconf}" = "yes")
+NUT_REPORT_FEATURE([build and install the nutconf tool (experimental, may lack support for recent NUT options)],
+					[${nut_with_nutconf}], [],
+					[WITH_NUTCONF], [Define to enable nutconf tool support])
+
+dnl ----------------------------------------------------------------------
 
 AC_MSG_CHECKING(whether to install Augeas configuration-management lenses)
 AC_ARG_WITH(augeas-lenses-dir,
@@ -4364,6 +4380,9 @@ dnl # -Wno-padded -- NSPR and NSS headers get to issue lots of that
 dnl # -Wno-c++98-compat-pedantic -Wno-c++98-compat -- our C++ code uses nullptr
 dnl #    as requested by newer linters, and C++98 does not. We require C++11
 dnl #    or newer anyway, and skip building C++ library and test otherwise.
+dnl # -Wno-exit-time-destructors -- "(static) const something" items would be
+dnl #    de-allocated en-masse when the program exits, not GC'ed at run-time.
+dnl #    Oh well...
 dnl # -Wno-fuse-ld-path -- not much in our control what recipes the autotools
 dnl #    on the build host generate... this tries to avoid failures due to:
 dnl #      clang-13: error: '-fuse-ld=' taking a path is deprecated.
@@ -4372,7 +4391,15 @@ dnl # -Wno-unsafe-buffer-usage -- clang-16 introduced a check too smart for
 dnl #    its own good. It detects use of pointer aritmetics as arrays are
 dnl #    walked, which is indeed potentially dangerous. And also is nearly
 dnl #    unavoidable in C (at least not without major rewrites of the world).
+dnl # -Wno-documentation-unknown-command -fcomment-block-commands=retval --
+dnl #    some clang versions sanity-check Doxygen style comments, but do not
+dnl #    recognize "\retval" key word. These options try to both ignore the
+dnl #    problematic area, and to add it as recognized (TODO: scripted check
+dnl #    for abilities of the current build's compiler instead)
 dnl ### Special exclusion picks for clang-medium (same as hard, plus...):
+dnl # -Wno-global-constructors -- using "const something" out of method context
+dnl #    potentially impacts start-up time and may be prone to race conditions
+dnl #    (for non-trivial interconnected objects), better be re-architected.
 dnl # -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion
 dnl #    -- reduce noise due to floating-point literals like "3.14" being a C
 dnl #    double type (a "3.14f" literal is a C float) cast implicitly into
@@ -4409,16 +4436,16 @@ AS_CASE(["${nut_enable_warnings}"],
         CXXFLAGS="${CXXFLAGS} -Wall"
         ],
     [clang-hard], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
         ],
     [clang-medium], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-conversion -Wno-incompatible-pointer-types-discards-qualifiers -Wno-incompatible-function-pointer-types-strict"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-conversion -Wno-incompatible-pointer-types-discards-qualifiers -Wno-incompatible-function-pointer-types-strict"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-global-constructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
         ],
     [clang-minimal], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Wno-documentation"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Wno-documentation"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Wno-documentation -Wno-documentation-unknown-command -fcomment-block-commands=retval"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Wno-documentation -Wno-documentation-unknown-command -fcomment-block-commands=retval"
         ],
     [gcc-legacy], [CFLAGS="${CFLAGS} -Wall -Wsign-compare"],
     [gcc-minimal], [
@@ -4609,6 +4636,29 @@ AC_MSG_RESULT(['${TOP_BUILDDIR}'])
 ABS_TOP_BUILDDIR="`cd "${TOP_BUILDDIR}" && pwd`" || AC_MSG_ERROR([Can not detect ABS_TOP_BUILDDIR])
 ABS_TOP_SRCDIR="`cd "${abs_srcdir}" && pwd`" || AC_MSG_ERROR([Can not detect ABS_TOP_SRCDIR])
 AM_CONDITIONAL([BUILDING_IN_TREE], [test "${ABS_TOP_BUILDDIR}" = "${ABS_TOP_SRCDIR}"])
+
+dnl When building ON Windows (mingw/MSYS2, cygwin, etc.) fudge these
+dnl path strings back to what native OS methods would recognize.
+AS_CASE([${target_os}],
+    [*mingw*], [
+        dnl Cygwin path resolver
+        AC_CHECK_TOOL([CYGPATH], [cygpath], [none])
+        AS_IF([test "x${CYGPATH}" != "xnone"], [
+            tmp="`${CYGPATH} -m "${ABS_TOP_BUILDDIR}" | sed -e 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_BUILDDIR="$tmp"
+            tmp="`${CYGPATH} -m "${ABS_TOP_SRCDIR}" | sed 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_SRCDIR="$tmp"
+        ],[
+            dnl MSYS pwd with -W option to resolve
+            AC_CHECK_TOOL([PWD], [pwd], [none])
+            AS_IF([test "x${PWD}" != "xnone"], [
+                tmp="`(cd "${ABS_TOP_BUILDDIR}" && ${PWD} -W) | sed 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_BUILDDIR="$tmp"
+                tmp="`(cd "${ABS_TOP_SRCDIR}" && ${PWD} -W) | sed 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_SRCDIR="$tmp"
+            ])
+        ])
+])
+
+dnl Use these at best for tests (e.g. nutconf), not production code:
+AC_DEFINE_UNQUOTED([ABS_TOP_SRCDIR], ["${ABS_TOP_SRCDIR}"], [NUT source directory when the build was configured])
+AC_DEFINE_UNQUOTED([ABS_TOP_BUILDDIR], ["${ABS_TOP_BUILDDIR}"], [NUT build directory when the build was configured])
 
 AC_MSG_CHECKING([whether to customize ${TOP_BUILDDIR}/scripts/systemd/nut-common-tmpfiles.conf.in for this system])
 dnl TOTHINK: Some distributions make the directories below owned
@@ -4840,6 +4890,7 @@ AC_CONFIG_FILES([
  server/Makefile
  tools/Makefile
  tools/nut-scanner/Makefile
+ tools/nutconf/Makefile
  tests/Makefile
  tests/NIT/Makefile
  Makefile
