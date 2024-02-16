@@ -33,6 +33,8 @@ extern "C" {
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
+
+extern bool verbose;
 }
 
 
@@ -147,6 +149,12 @@ void NutIPCUnitTest::testSignalSend() {
 	my_pid_ss.str("");
 	my_pid_ss.clear();
 	my_pid_ss << my_pid;
+
+	if (verbose)
+		std::cerr << "NutIPCUnitTest::testSignalSend(): using PID file '"
+		<< pid_file_name << "' for PID " << my_pid
+		<< " to store string '" << my_pid_ss.str() << "'"
+		<< std::endl << std::flush;
 
 	nut::NutFile pid_file(pid_file_name, nut::NutFile::WRITE_ONLY);
 
