@@ -136,11 +136,16 @@ void NutIPCUnitTest::testSignalSend() {
 
 	signal_caught = 0;
 
-	// Save PID to a PIDfile
-	static const std::string pid_file_name("/tmp/foobar.pid");
-
 	std::stringstream my_pid_ss;
 
+	// Save PID to a PIDfile; use an unique filename as much as we can
+	// (avoid conflicts in parallel running tests on NUT CI farm, etc.)
+	// FIXME: Use the m_tmp_dir we so tediously discover for nutstream.
+	my_pid_ss << "/tmp/nutipc_ut_" << my_pid << ".pid";
+	static const std::string pid_file_name(my_pid_ss.str());
+
+	my_pid_ss.str("");
+	my_pid_ss.clear();
 	my_pid_ss << my_pid;
 
 	nut::NutFile pid_file(pid_file_name, nut::NutFile::WRITE_ONLY);
