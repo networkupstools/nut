@@ -19,6 +19,8 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include "config.h"
+
 #include "nutstream.hpp"
 
 #include <iomanip>
@@ -29,13 +31,106 @@
 #include <cerrno>
 
 extern "C" {
+
+/* For C++ code below, we do not actually use the fallback time methods
+ * (on mingw mostly), but in C++ context they happen to conflict with
+ * time.h or ctime headers, while native-C does not. Just disable the
+ * fallback localtime_r(), gmtime_r() etc. if/when NUT timehead.h gets
+ * included by the header chain from common.h:
+ */
+#ifndef HAVE_GMTIME_R
+# define HAVE_GMTIME_R 111
+#endif
+#ifndef HAVE_LOCALTIME_R
+# define HAVE_LOCALTIME_R 111
+#endif
+#include "common.h"
+
 #include <unistd.h>
-#include <sys/socket.h>
-#include <sys/un.h>
+#include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+
+/* Windows/Linux Socket compatibility layer, lifted from nutclient.cpp
+ * (note we do not use wincompat.h here as it slightly conflicts, with
+ * extern vs. static etc.) */
+/* Thanks to Benjamin Roux (http://broux.developpez.com/articles/c/sockets/) */
+#ifdef WIN32
+#  define SOCK_OPT_CAST(x) reinterpret_cast<const char*>(x)
+
+/* equivalent of W32_NETWORK_CALL_OVERRIDE
+ * invoked by wincompat.h in upsclient.c:
+ */
+static inline int sktconnect(int fh, struct sockaddr * name, int len)
+{
+	int ret = connect(fh,name,len);
+	errno = WSAGetLastError();
+	return ret;
+}
+static inline int sktread(int fh, void *buf, int size)
+{
+	int ret = recv(fh,(char*)buf,size,0);
+	errno = WSAGetLastError();
+	return ret;
+}
+static inline int sktwrite(int fh, const void*buf, int size)
+{
+	int ret = send(fh,(char*)buf,size,0);
+	errno = WSAGetLastError();
+	return ret;
+}
+static inline int sktclose(int fh)
+{
+	int ret = closesocket((SOCKET)fh);
+	errno = WSAGetLastError();
+	return ret;
+}
+
+#else /* not WIN32 */
+
+#  include <sys/un.h>
+#  include <sys/socket.h>
+#  include <netinet/in.h>
+#  include <netinet/tcp.h>
+#  include <arpa/inet.h>
+#  include <netdb.h> /* gethostbyname */
+#  include <fcntl.h>
+#  ifndef INVALID_SOCKET
+#    define INVALID_SOCKET -1
+#  endif
+#  ifndef SOCKET_ERROR
+#    define SOCKET_ERROR -1
+#  endif
+#  ifndef closesocket
+#    define closesocket(s) close(s)
+#  endif
+#  define SOCK_OPT_CAST(x) reinterpret_cast<const char*>(x)
+   typedef int SOCKET;
+   typedef struct sockaddr_in SOCKADDR_IN;
+   typedef struct sockaddr SOCKADDR;
+   typedef struct in_addr IN_ADDR;
+
+#  define sktconnect(h,n,l)	::connect(h,n,l)
+#  define sktread(h,b,s) 	::read(h,b,s)
+#  define sktwrite(h,b,s) 	::write(h,b,s)
+#  define sktclose(h)		::close(h)
+
+/* WA for Solaris/i386 bug: non-blocking connect sets errno to ENOENT */
+#  if (defined NUT_PLATFORM_SOLARIS)
+#    define SOLARIS_i386_NBCONNECT_ENOENT(status) ( (!strcmp("i386", CPU_TYPE)) ? (ENOENT == (status)) : 0 )
+#  else
+#    define SOLARIS_i386_NBCONNECT_ENOENT(status) (0)
+#  endif  /* end of Solaris/i386 WA for non-blocking connect */
+
+/* WA for AIX bug: non-blocking connect sets errno to 0 */
+#  if (defined NUT_PLATFORM_AIX)
+#    define AIX_NBCONNECT_0(status) (0 == (status))
+#  else
+#    define AIX_NBCONNECT_0(status) (0)
+#  endif  /* end of AIX WA for non-blocking connect */
+
+#endif /* WIN32 */
+/* End of Windows/Linux Socket compatibility layer */
 }
 
 
@@ -94,21 +189,162 @@ NutStream::status_t NutMemory::putData(const std::string & data) {
 }
 
 
-const std::string NutFile::m_tmp_dir("/var/tmp");
+/* Here we align with OS envvars like TMPDIR or TEMPDIR,
+ * consider portability to Windows, or use of tmpfs like
+ * /dev/shm or (/var)/run on some platforms - e.g. NUT
+ * STATEPATH, (ALT)PIDPATH or similar locations desired
+ * by packager who knows their system. */
 
+static bool checkExistsWritableDir(const char *s) {
+#ifdef DEBUG
+	std::cerr << "checkExistsWritableDir(" << (s ? s : "<null>") << "): ";
+#endif
+	if (!s || *s == '\0') {
+#ifdef DEBUG
+		std::cerr << "null or empty string" << std::endl;
+#endif
+		return false;
+	}
+
+	if (!opendir(s)) {
+#ifdef DEBUG
+		std::cerr << "not a dir" << std::endl;
+#endif
+		return false;
+	}
+
+	/* POSIX: If the requested access is permitted, access() succeeds
+	 * and shall return 0; otherwise, -1 shall be returned and errno
+	 * shall be set to indicate the error. */
+	if (access(s, X_OK)) {
+#ifdef DEBUG
+		std::cerr << "not traversable" << std::endl;
+#endif
+		return false;
+	}
+
+	if (access(s, W_OK)) {
+#ifdef DEBUG
+		std::cerr << "not writeable" << std::endl;
+#endif
+		return false;
+	}
+
+#ifdef DEBUG
+	std::cerr << "is ok" << std::endl;
+#endif
+	return true;
+}
+
+static const char* getTmpDirPath() {
+	const char *s;
+
+#ifdef WIN32
+	/* Suggestions from https://sourceforge.net/p/mingw/bugs/666/ */
+	static char pathbuf[MAX_PATH];
+	int i;
+#endif
+
+	if (checkExistsWritableDir(s = ::altpidpath()))
+		return s;
+
+	/* NOTE: For C++17 or newer we might also call
+	 * https://en.cppreference.com/w/cpp/filesystem/temp_directory_path
+	 */
+
+#ifdef WIN32
+	i = GetTempPathA(sizeof(pathbuf), pathbuf);
+	if ((i > 0) && (i < MAX_PATH) && checkExistsWritableDir(pathbuf))
+		return (const char *)pathbuf;
+#endif
+
+	if (checkExistsWritableDir(s = ::getenv("TMPDIR")))
+		return s;
+	if (checkExistsWritableDir(s = ::getenv("TEMPDIR")))
+		return s;
+	if (checkExistsWritableDir(s = ::getenv("TEMP")))
+		return s;
+	if (checkExistsWritableDir(s = ::getenv("TMP")))
+		return s;
+
+	/* Some OS-dependent locations */
+#ifdef WIN32
+	if (checkExistsWritableDir(s = "C:\\Temp"))
+		return s;
+	if (checkExistsWritableDir(s = "C:\\Windows\\Temp"))
+		return s;
+	if (checkExistsWritableDir(s = "/c/Temp"))
+		return s;
+	if (checkExistsWritableDir(s = "/c/Windows/Temp"))
+		return s;
+#else
+	if (checkExistsWritableDir(s = "/dev/shm"))
+		return s;
+	if (checkExistsWritableDir(s = "/run"))
+		return s;
+	if (checkExistsWritableDir(s = "/var/run"))
+		return s;
+#endif
+
+	/* May be applicable to WIN32 depending on emulation environment/mapping */
+	if (checkExistsWritableDir(s = "/tmp"))
+		return s;
+	if (checkExistsWritableDir(s = "/var/tmp"))
+		return s;
+
+	/* Maybe ok, for tests at least: a current working directory */
+	if (checkExistsWritableDir(s = "."))
+		return s;
+
+	return "/tmp";
+}
+
+const std::string NutFile::m_tmp_dir(getTmpDirPath());
 
 NutFile::NutFile(anonymous_t):
+	m_name(""),
 	m_impl(nullptr),
 	m_current_ch('\0'),
 	m_current_ch_valid(false)
 {
+#ifdef WIN32
+	/* Suggestions from https://sourceforge.net/p/mingw/bugs/666/ because
+	 * msvcrt tmpfile() uses C: root dir and lacks permissions to actually
+	 * use it, and mingw tends to call that OS method so far */
+	char filename[MAX_PATH];
+	memset(filename, 0, sizeof(filename));
+
+	GetTempFileNameA(m_tmp_dir.c_str(), "nuttemp", 0, filename);
+	/* if (verbose) std::cerr << "TMP FILE: " << filename << std::endl; */
+	std::string mode_str = std::string(strAccessMode(READ_WRITE_CLEAR));
+	/* ...Still, we ask to auto-delete where supported: */
+	mode_str += std::string("D");
+	/* Per https://en.cppreference.com/w/cpp/io/c/tmpfile it is binary
+	 * for POSIX code, so match the behavior here: */
+	mode_str += std::string("b");
+	m_impl = ::fopen(filename, mode_str.c_str());
+	/* If it were not "const" we might assign it. But got no big need to.
+	 *   m_name = std::string(filename);
+	 */
+#else
+	/* TOTHINK: How to make this use m_tmp_dir? Is it possible generally?  */
+	/* Safer than tmpnam() but we don't know the filename here.
+	 * Not that we need it, system should auto-delete it. */
 	m_impl = ::tmpfile();
+#endif
 
 	if (nullptr == m_impl) {
 		int err_code = errno;
 
 		std::stringstream e;
-		e << "Failed to create temporary file: " << err_code << ": " << ::strerror(err_code);
+		e << "Failed to create temporary file: " << err_code
+				<< ": " << ::strerror(err_code);
+
+#ifdef WIN32
+		e << ": tried using temporary location " << m_tmp_dir;
+		if (filename[0] != '\0')
+			e << ": OS suggested filename " << filename;
+#endif
 
 		throw std::runtime_error(e.str());
 	}
@@ -121,8 +357,18 @@ bool NutFile::exists(int & err_code, std::string & err_msg) const
 #endif
 {
 	struct stat info;
+	int status;
 
-	int status = ::stat(m_name.c_str(), &info);
+	/* An opened file pointer is assumed to be backed by a file at this
+	 * moment (even if unlinked, temporary with unknown name, etc.) */
+	if (m_impl != nullptr)
+		return true;
+
+	/* Can not stat an unknown file name */
+	if (m_name.empty())
+		return false;
+
+	status = ::stat(m_name.c_str(), &info);
 
 	if (!status)
 		return true;
@@ -134,11 +380,13 @@ bool NutFile::exists(int & err_code, std::string & err_msg) const
 }
 
 
-bool NutFile::open(access_t mode, int & err_code, std::string & err_msg)
+const char * NutFile::strAccessMode(access_t mode)
 #if (defined __cplusplus) && (__cplusplus < 201100)
 		throw()
 #endif
 {
+	/* NOTE: Currently we use OS-default binary/text choice of content mode
+	 * since we primarily expect to manipulate user-editable config files */
 	static const char *read_only        = "r";
 	static const char *write_only       = "w";
 	static const char *read_write       = "r+";
@@ -171,15 +419,83 @@ bool NutFile::open(access_t mode, int & err_code, std::string & err_msg)
 
 	assert(nullptr != mode_str);
 
+	return mode_str;
+}
+
+bool NutFile::open(access_t mode, int & err_code, std::string & err_msg)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+{
+	const char *mode_str;
+
+	/* Can not open an unknown file name */
+	if (m_name.empty()) {
+		err_code = ENOENT;
+		err_msg  = std::string("No file name was specified");
+		return false;
+	}
+
+	if (nullptr != m_impl) {
+		/* TOTHINK: Should we care about errors in this close()? */
+		::fclose(m_impl);
+	}
+
+#ifdef WIN32
+	/* This currently fails with mingw due to looking at POSIXified paths:
+	 *   - Failed to open file /c/Users/abuild/Documents/FOSS/nut/conf/nut.conf.sample: 2: No such file or directory
+	 * while the file does exist (for git-bash and mingw shells):
+	 *   $ ls -la /c/Users/abuild/Documents/FOSS/nut/conf/nut.conf.sample
+	 *   -rw-r--r-- 1 abuild Users 4774 Jan 28 03:38 /c/Users/abuild/Documents/FOSS/nut/conf/nut.conf.sample
+	 *
+	 * For the test suite it is not a great problem, can be fixed
+	 * by using `cygpath` or `pwd -W` in `configure` script.
+	 * The run-time behavior is more troublesome: per discussion at
+	 * https://sourceforge.net/p/mingw/mailman/mingw-users/thread/gq8fi0$pk0$2@ger.gmane.org/
+	 * mingw uses fopen() from msvcrt directly, and it does not know
+	 * such paths (e.g. '/c/Users/...' means "C:\\c\\Users\\..." to it).
+	 * Paths coming from MSYS shell arguments are handled by the shell,
+	 * and this is more than about slash type (WINNT is okay with both),
+	 * but also e.g. prefixing an msys installation path 'C:\\msys64' or
+	 * similar when using absolute POSIX-style paths. Do we need a private
+	 * converter?.. Would an end user have MSYS installed at all?
+	 */
+#endif
+
+	mode_str = strAccessMode(mode);
 	m_impl = ::fopen(m_name.c_str(), mode_str);
 
 	if (nullptr != m_impl)
 		return true;
 
 	err_code = errno;
-	err_msg  = std::string(::strerror(err_code));
+	err_msg  = "Failed to open file '" + m_name + "': "
+			+ std::string(::strerror(err_code));
 
 	return false;
+}
+
+
+bool NutFile::flush(int & err_code, std::string & err_msg)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+{
+	if (nullptr == m_impl) {
+		err_code = EBADF;
+		err_msg = std::string(::strerror(err_code));
+		return false;
+	}
+
+	err_code = ::fflush(m_impl);
+
+	if (0 != err_code) {
+		err_msg = std::string(::strerror(err_code));
+
+		return false;
+	}
+
+	return true;
 }
 
 
@@ -188,6 +504,11 @@ bool NutFile::close(int & err_code, std::string & err_msg)
 		throw()
 #endif
 {
+	/* Already closed (or never opened) - goal achieved */
+	if (nullptr == m_impl) {
+		return true;
+	}
+
 	err_code = ::fclose(m_impl);
 
 	if (0 != err_code) {
@@ -207,6 +528,17 @@ bool NutFile::remove(int & err_code, std::string & err_msg)
 		throw()
 #endif
 {
+	/* Can not unlink an unknown file name */
+	if (m_name.empty()) {
+		err_code = ENOENT;
+		err_msg  = std::string("No file name was specified");
+		return false;
+	}
+
+	/* FWIW, note that if the file descriptor is opened by this
+	 * or any other process(es), it remains usable only by them
+	 * after un-linking, and the file system resources would be
+	 * released only when everyone closes it. */
 	err_code = ::unlink(m_name.c_str());
 
 	if (0 != err_code) {
@@ -231,40 +563,22 @@ NutFile::NutFile(const std::string & name, access_t mode):
 }
 
 
-std::string NutFile::tmpName()
-#if (defined __cplusplus) && (__cplusplus < 201100)
-	throw(std::runtime_error)
-#endif
-{
-	// Note: in many systems' implementations this claims a warning like:
-	//    the use of `tempnam' is dangerous, better use `mkstemp'
-	// or
-	//     These functions are deprecated because more secure versions
-	//     are available; see tmpnam_s, _wtmpnam_s.
-	// but it seems the alternatives are different for various platforms
-	// and so a replacement is not quite portable (stack of ifdef's?), per
-	// https://stackoverflow.com/questions/3299881/tmpnam-warning-saying-it-is-dangerous
-	char *tmp_name = ::tempnam(m_tmp_dir.c_str(), nullptr);
-
-	if (nullptr == tmp_name)
-		throw std::runtime_error(
-			"Failed to create temporary file name");
-
-	std::string tmp_name_str(tmp_name);
-
-	::free(tmp_name);
-
-	return tmp_name_str;
-}
-
-
 NutFile::NutFile(access_t mode):
-	m_name(tmpName()),
-	m_impl(nullptr),
-	m_current_ch('\0'),
-	m_current_ch_valid(false)
+			NutFile(ANONYMOUS)
 {
-	openx(mode);
+	const char *mode_str = strAccessMode(mode);
+	m_impl = ::freopen(nullptr, mode_str, m_impl);
+
+	if (nullptr == m_impl) {
+		int err_code = errno;
+
+		std::stringstream e;
+		e << "Failed to re-open temporary file with mode '" << mode_str
+				<< "': " << err_code
+				<< ": " << ::strerror(err_code);
+
+		throw std::runtime_error(e.str());
+	}
 }
 
 
@@ -422,6 +736,17 @@ NutFile::~NutFile() {
 
 
 void NutSocket::Address::init_unix(Address & addr, const std::string & path) {
+#ifdef WIN32
+	/* FIXME: Windows pipes where available? See e.g. clone drivers */
+	NUT_UNUSED_VARIABLE(addr);
+	NUT_UNUSED_VARIABLE(path);
+
+	std::stringstream e;
+	e << "Unix sockets not implemented for this platform yet: " << path;
+//			addr.str() << ":" << path;
+
+	throw std::logic_error(e.str());
+#else
 	struct sockaddr_un * un_addr = reinterpret_cast<struct sockaddr_un *>(::malloc(sizeof(struct sockaddr_un)));
 
 	if (nullptr == un_addr)
@@ -438,6 +763,7 @@ void NutSocket::Address::init_unix(Address & addr, const std::string & path) {
 
 	addr.m_sock_addr = reinterpret_cast<struct sockaddr *>(un_addr);
 	addr.m_length    = sizeof(*un_addr);
+#endif
 }
 
 
@@ -619,12 +945,15 @@ static std::string formatIPv6addr(unsigned char const bytes[16]) {
 std::string NutSocket::Address::str() const {
 	assert(nullptr != m_sock_addr);
 
-	sa_family_t family = m_sock_addr->sa_family;
-
+	/* Note: we do not cache a copy of "family" because
+	 * its data type varies per platform, easier to just
+	 * request it each time - not a hot spot anyway. */
 	std::stringstream ss;
-	ss << "nut::NutSocket::Address(family: " << family;
+	ss << "nut::NutSocket::Address(family: " << m_sock_addr->sa_family;
 
-	switch (family) {
+	switch (m_sock_addr->sa_family) {
+#ifndef WIN32
+		/* FIXME: Add support for pipes on Windows? */
 		case AF_UNIX: {
 			struct sockaddr_un * addr = reinterpret_cast<struct sockaddr_un *>(m_sock_addr);
 
@@ -632,6 +961,7 @@ std::string NutSocket::Address::str() const {
 
 			break;
 		}
+#endif
 
 		case AF_INET: {
 			struct sockaddr_in * addr = reinterpret_cast<struct sockaddr_in *>(m_sock_addr);
@@ -651,7 +981,7 @@ std::string NutSocket::Address::str() const {
 
 		default: {
 			std::stringstream e;
-			e << "NOT IMPLEMENTED: Socket address family " << family << " unsupported";
+			e << "NOT IMPLEMENTED: Socket address family " << m_sock_addr->sa_family << " unsupported";
 
 			throw std::logic_error(e.str());
 		}
@@ -668,6 +998,7 @@ NutSocket::Address::~Address() {
 }
 
 
+/* NOTE: static class method */
 bool NutSocket::accept(
 	NutSocket &       sock,
 	const NutSocket & listen_sock,
@@ -683,6 +1014,8 @@ bool NutSocket::accept(
 	socklen_t       sock_addr_size = sizeof(sock_addr);
 
 	sock.m_impl = ::accept(listen_sock.m_impl, &sock_addr, &sock_addr_size);
+	sock.m_domain = listen_sock.m_domain;
+	sock.m_type = listen_sock.m_type;
 
 	if (-1 != sock.m_impl)
 		return true;
@@ -710,6 +1043,8 @@ bool NutSocket::accept(
 
 NutSocket::NutSocket(domain_t dom, type_t type, proto_t proto):
 	m_impl(-1),
+	m_domain(dom),
+	m_type(type),
 	m_current_ch('\0'),
 	m_current_ch_valid(false)
 {
@@ -737,6 +1072,22 @@ bool NutSocket::bind(const Address & addr, int & err_code, std::string & err_msg
 		throw()
 #endif
 {
+	if (m_domain == NUTSOCKD_UNDEFINED) {
+		m_domain = static_cast<NutSocket::domain_t>(addr.m_sock_addr->sa_family);
+	}
+	else if (static_cast<int>(m_domain) != static_cast<int>(addr.m_sock_addr->sa_family)) {
+		err_code = EINVAL;
+		err_msg  = std::string(::strerror(err_code)) +
+				": bind() with a different socket address family than this object was created for";
+	}
+
+	if (m_type == NUTSOCKT_UNDEFINED) {
+		/* We should have this from constructor or accept() */
+		err_code = EINVAL;
+		err_msg  = std::string(::strerror(err_code)) +
+				": bind() with bad socket type";
+	}
+
 	err_code = ::bind(m_impl, addr.m_sock_addr, addr.m_length);
 
 	if (0 == err_code)
@@ -771,7 +1122,23 @@ bool NutSocket::connect(const Address & addr, int & err_code, std::string & err_
 		throw()
 #endif
 {
-	err_code = ::connect(m_impl, addr.m_sock_addr, addr.m_length);
+	if (m_domain == NUTSOCKD_UNDEFINED) {
+		m_domain = static_cast<NutSocket::domain_t>(addr.m_sock_addr->sa_family);
+	}
+	else if (static_cast<int>(m_domain) != static_cast<int>(addr.m_sock_addr->sa_family)) {
+		err_code = EINVAL;
+		err_msg  = std::string(::strerror(err_code)) +
+				": connect() with a different socket address family than this object was created for";
+	}
+
+	if (m_type == NUTSOCKT_UNDEFINED) {
+		/* We should have this from constructor or accept() */
+		err_code = EINVAL;
+		err_msg  = std::string(::strerror(err_code)) +
+				": connect() with bad socket type";
+	}
+
+	err_code = sktconnect(m_impl, addr.m_sock_addr, addr.m_length);
 
 	if (0 == err_code)
 		return true;
@@ -783,12 +1150,48 @@ bool NutSocket::connect(const Address & addr, int & err_code, std::string & err_
 }
 
 
+bool NutSocket::flush(int & err_code, std::string & err_msg)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+{
+	if (-1 == m_impl) {
+		err_code = EBADF;
+		err_msg = std::string(::strerror(err_code));
+		return false;
+	}
+
+	if (m_type == NUTSOCKT_STREAM && m_domain == NUTSOCKD_INETv4) {
+		/* Assume IPv4 TCP: https://stackoverflow.com/a/71417876/4715872 */
+		int flag = 1;
+		if (!setsockopt(m_impl, IPPROTO_TCP, TCP_NODELAY, SOCK_OPT_CAST(&flag), sizeof(int))) {
+			err_code = errno;
+			err_msg = std::string(::strerror(err_code));
+			return false;
+		}
+		if (!sktwrite(m_impl, nullptr, 0)) {
+			err_code = errno;
+			err_msg = std::string(::strerror(err_code));
+			return false;
+		}
+		flag = 0;
+		if (!setsockopt(m_impl, IPPROTO_TCP, TCP_NODELAY, SOCK_OPT_CAST(&flag), sizeof(int))) {
+			err_code = errno;
+			err_msg = std::string(::strerror(err_code));
+			return false;
+		}
+	} /* else Unix, UDP (or several other socket families generally); PRs welcome */
+
+	return true;
+}
+
+
 bool NutSocket::close(int & err_code, std::string & err_msg)
 #if (defined __cplusplus) && (__cplusplus < 201100)
 		throw()
 #endif
 {
-	err_code = ::close(m_impl);
+	err_code = sktclose(m_impl);
 
 	if (0 == err_code) {
 		m_impl = -1;
@@ -867,7 +1270,7 @@ NutStream::status_t NutSocket::getString(std::string & str)
 	char buffer[512];
 
 	for (;;) {
-		ssize_t read_cnt = ::read(m_impl, buffer, sizeof(buffer) / sizeof(buffer[0]));
+		ssize_t read_cnt = sktread(m_impl, buffer, sizeof(buffer) / sizeof(buffer[0]));
 
 		if (read_cnt < 0)
 			return NUTS_ERROR;
@@ -885,7 +1288,7 @@ NutStream::status_t NutSocket::putChar(char ch)
 		throw()
 #endif
 {
-	ssize_t write_cnt = ::write(m_impl, &ch, 1);
+	ssize_t write_cnt = sktwrite(m_impl, &ch, 1);
 
 	if (1 == write_cnt)
 		return NUTS_OK;
@@ -909,7 +1312,7 @@ NutStream::status_t NutSocket::putString(const std::string & str)
 	if (0 == str_len)
 		return NUTS_OK;
 
-	ssize_t write_cnt = ::write(m_impl, str.data(), str_len);
+	ssize_t write_cnt = sktwrite(m_impl, str.data(), str_len);
 
 	// TODO: Under certain circumstances, less than the whole
 	// string might be written

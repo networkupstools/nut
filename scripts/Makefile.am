@@ -28,8 +28,7 @@ EXTRA_DIST = \
     Windows/halt.c \
     Windows/Makefile
 
-
-SUBDIRS = augeas devd hotplug python systemd udev ufw Solaris Windows upsdrvsvcctl
+SUBDIRS = augeas devd hotplug installer python systemd udev ufw Solaris Windows upsdrvsvcctl
 
 if WITH_SNMP
 if WITH_NEON

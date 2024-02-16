@@ -40,7 +40,6 @@ static info_lkp_t baytech_outlet_status_info[] = {
 	info_lkp_default(5, "unlock"),
 	info_lkp_default(6, "unknown"),
 	info_lkp_sentinel
-
 };
 
 /* Snmp2NUT lookup table for BayTech MIBs */

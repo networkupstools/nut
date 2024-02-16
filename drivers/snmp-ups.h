@@ -10,6 +10,7 @@
  *   2002-2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *  			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *  			Niels Baggesen <niels@baggesen.net>
+ *   2020-2024  Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  Sponsored by Eaton <http://www.eaton.com>
  *   and originally by MGE UPS SYSTEMS <http://opensource.mgeups.com/>
@@ -198,6 +199,8 @@ typedef int bool_t;
 # else
 #  define WITH_SNMP_LKP_FUN 1
 # endif
+#else
+# define WITH_SNMP_LKP_FUN 0
 #endif
 
 #ifndef WITH_SNMP_LKP_FUN_DUMMY
@@ -283,8 +286,8 @@ typedef struct {
 	char *function_code;
 # if WITH_DMF_LUA
 	lua_State *luaContext;
-# endif
-#endif
+# endif /* WITH_DMF_LUA  */
+#endif /* WITH_DMF_FUNCTIONS */
 } snmp_info_t;
 
 #if WITH_DMF_FUNCTIONS
@@ -292,7 +295,7 @@ typedef struct {
 #  define snmp_info_default(_1, _2, _3, _4, _5, _6, _7)	{_1, _2, _3, _4, _5, _6, _7, NULL, NULL, NULL}
 # else
 #  define snmp_info_default(_1, _2, _3, _4, _5, _6, _7)	{_1, _2, _3, _4, _5, _6, _7, NULL, NULL}
-# endif
+# endif /* WITH_DMF_LUA  */
 #else
 #  define snmp_info_default(_1, _2, _3, _4, _5, _6, _7)	{_1, _2, _3, _4, _5, _6, _7}
 #endif /* WITH_DMF_FUNCTIONS */

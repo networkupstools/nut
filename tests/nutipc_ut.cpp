@@ -20,10 +20,10 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h"
 
 #include "nutipc.hpp"
 #include "nutstream.hpp"
-#include "config.h"
 
 #include <cppunit/extensions/HelperMacros.h>
 
@@ -43,11 +43,11 @@ class NutIPCUnitTest: public CppUnit::TestFixture {
 	private:
 
 	CPPUNIT_TEST_SUITE(NutIPCUnitTest);
-		CPPUNIT_TEST(test);
+		CPPUNIT_TEST( testExec );
+		CPPUNIT_TEST( testSignalSend );
+		CPPUNIT_TEST( testSignalRecvQuick );
+		CPPUNIT_TEST( testSignalRecvStaggered );
 	CPPUNIT_TEST_SUITE_END();
-
-	/** External command execution test */
-	void testExec();
 
 	/**
 	 *  \brief  Test signal handler
@@ -56,22 +56,20 @@ class NutIPCUnitTest: public CppUnit::TestFixture {
 	 */
 	static void testSignalHandler(int signal);
 
+	public:
+
+	/** External command execution test */
+	void testExec();
+
 	/** Signal sending test */
 	void testSignalSend();
 
 	/** Signal receiving test */
-	void testSignalRecv();
-
-	public:
+	void testSignalRecvQuick();
+	void testSignalRecvStaggered();
 
 	inline void setUp() override {}
 	inline void tearDown() override {}
-
-	inline void test() {
-		testExec();
-		testSignalSend();
-		testSignalRecv();
-	}
 
 	virtual ~NutIPCUnitTest() override;
 };  // end of class NutIPCUnitTest
@@ -81,6 +79,11 @@ CPPUNIT_TEST_SUITE_REGISTRATION(NutIPCUnitTest);
 
 
 void NutIPCUnitTest::testExec() {
+#ifdef WIN32
+	/* FIXME: Some other program, maybe NUT's "message" handler, or "cmd -k" etc.?
+	 * And get Process working in the first place */
+	std::cout << "NutIPCUnitTest::testExec(): skipped on this platform" << std::endl;
+#else
 	static const std::string bin = "/bin/sh";
 
 	nut::Process::Executor::Arguments args;
@@ -92,7 +95,8 @@ void NutIPCUnitTest::testExec() {
 
 	CPPUNIT_ASSERT(123 == child.wait());
 
-	CPPUNIT_ASSERT(0 == nut::Process::execute("test 'Hello world' == 'Hello world'"));
+	CPPUNIT_ASSERT(0 == nut::Process::execute("test 'Hello world' = 'Hello world'"));
+#endif	/* WIN32 */
 }
 
 
@@ -104,13 +108,22 @@ void NutIPCUnitTest::testSignalHandler(int signal) {
 }
 
 void NutIPCUnitTest::testSignalSend() {
+#ifdef WIN32
+	/* FIXME: Needs implementation for signals via pipes */
+	std::cout << "NutIPCUnitTest::testSignalSend(): skipped on this platform" << std::endl;
+#else
 	struct sigaction action;
 
 	pid_t my_pid = nut::Process::getPID();
 
 	// Set SIGUSR1 signal handler
 	::memset(&action, 0, sizeof(action));
+# ifdef sigemptyset
+	// no :: here because macro
+	sigemptyset(&action.sa_mask);
+# else
 	::sigemptyset(&action.sa_mask);
+# endif
 
 	action.sa_handler = &testSignalHandler;
 
@@ -144,6 +157,7 @@ void NutIPCUnitTest::testSignalSend() {
 	pid_file.removex();
 
 	signal_caught = 0;
+#endif	/* WIN32 */
 }
 
 
@@ -161,9 +175,14 @@ class TestSignalHandler: public nut::Signal::Handler {
 	virtual ~TestSignalHandler() override;
 };  // end of class TestSignalHandler
 
-void NutIPCUnitTest::testSignalRecv() {
+void NutIPCUnitTest::testSignalRecvQuick() {
+#ifdef WIN32
+	/* FIXME: Needs implementation for signals via pipes */
+	std::cout << "NutIPCUnitTest::testSignalRecvQuick(): skipped on this platform" << std::endl;
+#else
 	// Create signal handler thread
 	nut::Signal::List signals;
+	caught_signals.clear();
 
 	signals.push_back(nut::Signal::USER1);
 	signals.push_back(nut::Signal::USER2);
@@ -172,6 +191,13 @@ void NutIPCUnitTest::testSignalRecv() {
 
 	pid_t my_pid = nut::Process::getPID();
 
+	/* NOTE: The signal order delivery is not specified by POSIX if several
+	 * ones arrive nearly simultaneously (and/or get confused by multi-CPU
+	 * routing). In this test we only verify that after sending several copies
+	 * of several signals, the expected counts of events were received.
+	 */
+	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER1, my_pid));
+	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER2, my_pid));
 	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER2, my_pid));
 	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER1, my_pid));
 	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER1, my_pid));
@@ -179,17 +205,85 @@ void NutIPCUnitTest::testSignalRecv() {
 	// Let the sig. handler thread finish...
 	::sleep(1);
 
-	CPPUNIT_ASSERT(caught_signals.size() == 3);
+	CPPUNIT_ASSERT(caught_signals.size() == 5);
+
+	int countUSER1 = 0;
+	int countUSER2 = 0;
+	while (!caught_signals.empty()) {
+		nut::Signal::enum_t signal = caught_signals.front();
+		caught_signals.pop_front();
+
+		if (signal == nut::Signal::USER1) {
+			countUSER1++;
+		} else if (signal == nut::Signal::USER2) {
+			countUSER2++;
+		} else {
+			std::stringstream msg;
+			msg << "Unexpected signal was received: " << signal;
+			CPPUNIT_ASSERT_MESSAGE(msg.str(), 0);
+		}
+	}
+
+	CPPUNIT_ASSERT(countUSER1 == 3);
+	CPPUNIT_ASSERT(countUSER2 == 2);
+#endif	/* WIN32 */
+}
+
+void NutIPCUnitTest::testSignalRecvStaggered() {
+#ifdef WIN32
+	/* FIXME: Needs implementation for signals via pipes */
+	std::cout << "NutIPCUnitTest::testSignalRecvStaggered(): skipped on this platform" << std::endl;
+#else
+	// Create signal handler thread
+	nut::Signal::List signals;
+	caught_signals.clear();
+
+	signals.push_back(nut::Signal::USER1);
+	signals.push_back(nut::Signal::USER2);
+
+	nut::Signal::HandlerThread<TestSignalHandler> sig_handler(signals);
+
+	pid_t my_pid = nut::Process::getPID();
+
+	/* NOTE: The signal order delivery is not specified by POSIX if several
+	 * ones arrive nearly simultaneously (and/or get confused by multi-CPU
+	 * routing). Linux tends to deliver lower-numbered signals first, so we
+	 * expect USER1 (10) before USER2 (12) to be consistent. Otherwise CI
+	 * builds tend to mess this up a bit.
+	 */
+	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER1, my_pid));
+	::sleep(1);
+
+	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER2, my_pid));
+	::sleep(1);
+
+	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER2, my_pid));
+	::sleep(1);
+
+	/* Help ensure ordered (one-by-one) delivery before re-posting a
+	 * presumably lower-numbered signal after some higher-numbered ones.
+	 */
+	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER1, my_pid));
+
+	// Let the sig. handler thread finish...
+	::sleep(1);
+
+	CPPUNIT_ASSERT(caught_signals.size() == 4);
+
+	CPPUNIT_ASSERT(caught_signals.front() == nut::Signal::USER1);
+
+	caught_signals.pop_front();
+
+	CPPUNIT_ASSERT(caught_signals.front() == nut::Signal::USER2);
+
+	caught_signals.pop_front();
 
 	CPPUNIT_ASSERT(caught_signals.front() == nut::Signal::USER2);
 
 	caught_signals.pop_front();
 
 	CPPUNIT_ASSERT(caught_signals.front() == nut::Signal::USER1);
-
-	caught_signals.pop_front();
-
-	CPPUNIT_ASSERT(caught_signals.front() == nut::Signal::USER1);
+#endif	/* WIN32 */
 }
 
 // Implement out of class declaration to avoid

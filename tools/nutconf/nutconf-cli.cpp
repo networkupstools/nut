@@ -27,7 +27,6 @@
 #include "nutstream.hpp"
 
 extern "C" {
-#include "nut_platform.h"
 #if (defined WITH_NUTSCANNER)
 #include "nut-scan.h"
 #include "nutscan-init.h"
@@ -432,6 +431,41 @@ void Options::add(Options::type_t type, const std::string & opt) {
 			map = &m_double;
 
 			break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+			default:
+				/* Must not occur thanks to enum.
+				 * But otherwise we can see
+				 *   error: 'map' may be used uninitialized
+				 * from some overly zealous compilers.
+				 */
+				if (1) { // scoping
+					std::stringstream e;
+
+					e << "Options::add() got unsupported enum value";
+
+					throw std::logic_error(e.str());
+				}
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 	}
 
 	Map::iterator entry = map->insert(Map::value_type(opt, Arguments()));
@@ -2068,7 +2102,7 @@ static nut::UpsmonConfiguration::Monitor monitor(
  */
 static std::string getMode(const std::string & etc) {
 	std::string nut_conf_file(etc + "/nut.conf");
-
+	std::stringstream e;
 	nut::NutConfiguration nut_conf;
 
 	// Source previous configuration
@@ -2084,13 +2118,34 @@ static std::string getMode(const std::string & etc) {
 		case nut::NutConfiguration::MODE_NETCLIENT:  return "netclient";
 		case nut::NutConfiguration::MODE_CONTROLLED: return "controlled";
 		case nut::NutConfiguration::MODE_MANUAL:     return "manual";
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+		default:
+			break;
 	}
 
-	std::stringstream e;
-
 	e << "INTERNAL ERROR: Unknown NUT mode: " << mode;
-
 	throw std::logic_error(e.str());
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 }
 
 
@@ -3211,19 +3266,3 @@ int main(int argc, char * const argv[]) {
 
 	::exit(128);
 }
-
-
-/* Formal do_upsconf_args implementation to satisfy linker on AIX */
-#if (defined NUT_PLATFORM_AIX)
-static void do_upsconf_args_impl(char *upsname, char *var, char *val) {
-	std::cerr << "INTERNAL ERROR: formal do_upsconf_args called" << std::endl;
-
-	::exit(128);
-}
-
-extern "C" {
-void do_upsconf_args(char *upsname, char *var, char *val) {
-	do_upsconf_args_impl(upsname, var, val);
-}
-}
-#endif  /* end of #if (defined NUT_PLATFORM_AIX) */

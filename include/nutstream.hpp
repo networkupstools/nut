@@ -34,7 +34,20 @@ extern "C" {
 #include <errno.h>
 #include <stdint.h>
 #include <sys/types.h>
-#include <sys/socket.h>
+#ifndef WIN32
+# include <sys/socket.h>
+#else
+# if HAVE_WINSOCK2_H
+#  include <winsock2.h>
+# endif
+# if HAVE_WS2TCPIP_H
+#  include <ws2tcpip.h>
+# endif
+/* Using a private implementation in nutstream.cpp
+ * similar to nutclient.cpp; do not call wincompat.h!
+ * FIXME: refactor to reuse the C++ adaptation?
+ */
+#endif
 }
 
 /* See include/common.h for details behind this */
@@ -141,6 +154,40 @@ class NutStream {
 	 */
 	virtual status_t putData(const std::string & data) = 0;
 
+	/**
+	 *  \brief  Flush output buffers for the stream being written
+	 *
+	 *  \param[out]  err_code  Error code
+	 *  \param[out]  err_msg   Error message
+	 *
+	 *  \retval true  if flush succeeded
+	 *  \retval false if flush failed
+	 */
+	virtual bool flush(int & err_code, std::string & err_msg)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+		= 0;
+
+	/**
+	 *  \brief  Flush output buffers for the stream being written
+	 *
+	 *  \retval true  if flush succeeded
+	 *  \retval false if flush failed
+	 */
+	virtual bool flush()
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+		= 0;
+
+	/** Flush output buffers for the file (or throw exception) */
+	virtual void flushx()
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw(std::runtime_error)
+#endif
+		= 0;
+
 	/** Formal destructor */
 	virtual ~NutStream();
 
@@ -177,6 +224,14 @@ class NutMemory: public NutStream {
 	status_t putString(const std::string & str) override;
 	status_t putData(const std::string & data) override;
 
+	// No-op for this class:
+	inline bool flush (int & err_code, std::string & err_msg) override {
+		NUT_UNUSED_VARIABLE(err_code);
+		NUT_UNUSED_VARIABLE(err_msg);
+		return true;
+	}
+	inline bool flush() override {return true;}
+	inline void flushx() override {}
 };  // end of class NutMemory
 
 
@@ -228,13 +283,15 @@ class NutFile: public NutStream {
 	bool m_current_ch_valid;
 
 	/**
-	 *  \brief  Generate temporary file name
+	 *  \brief  Convert enum access_t mode values to strings
+	 *          for standard library methods
 	 *
-	 *  Throws an exception on file name generation error.
+	 *  Throws an exception on unexpected input (should never
+	 *  happen with proper enum usage).
 	 *
-	 *  \return Temporary file name
+	 *  \return Non-null "const char *" string
 	 */
-	std::string tmpName()
+	const char *strAccessMode(access_t mode)
 #if (defined __cplusplus) && (__cplusplus < 201100)
 		throw(std::runtime_error)
 #endif
@@ -377,7 +434,58 @@ class NutFile: public NutStream {
 			return;
 
 		std::stringstream e;
-		e << "Failed to open file " << m_name << ": " << ec << ": " << em;
+		e << "Failed to open file " << m_name << ": "
+			<< ec << ": " << em;
+
+		throw std::runtime_error(e.str());
+	}
+
+	/**
+	 *  \brief  Flush output buffers for the file
+	 *
+	 *  \param[out]  err_code  Error code
+	 *  \param[out]  err_msg   Error message
+	 *
+	 *  \retval true  if flush succeeded
+	 *  \retval false if flush failed
+	 */
+	bool flush(int & err_code, std::string & err_msg) override
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+		;
+
+	/**
+	 *  \brief  Flush output buffers for the file
+	 *
+	 *  \retval true  if flush succeeded
+	 *  \retval false if flush failed
+	 */
+	inline bool flush() override
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+	{
+		int ec;
+		std::string em;
+
+		return flush(ec, em);
+	}
+
+	/** Flush output buffers for the file (or throw exception) */
+	inline void flushx() override
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw(std::runtime_error)
+#endif
+	{
+		int ec;
+		std::string em;
+
+		if (flush(ec, em))
+			return;
+
+		std::stringstream e;
+		e << "Failed to flush file " << m_name << ": " << ec << ": " << em;
 
 		throw std::runtime_error(e.str());
 	}
@@ -594,12 +702,14 @@ class NutSocket: public NutStream {
 		NUTSOCKD_UNIX   = AF_UNIX,	/** Unix */
 		NUTSOCKD_INETv4 = AF_INET,	/** IPv4 */
 		NUTSOCKD_INETv6 = AF_INET6,	/** IPv6 */
+		NUTSOCKD_UNDEFINED = -1
 	} domain_t;
 
 	/** Socket type */
 	typedef enum {
 		NUTSOCKT_STREAM = SOCK_STREAM,	/** Stream   */
 		NUTSOCKT_DGRAM  = SOCK_DGRAM,	/** Datagram */
+		NUTSOCKT_UNDEFINED = -1
 	} type_t;
 
 	/** Socket protocol */
@@ -741,6 +851,8 @@ class NutSocket: public NutStream {
 
 	/** Socket implementation */
 	int m_impl;
+	domain_t m_domain;
+	type_t m_type;
 
 	/** Current character cache */
 	char m_current_ch;
@@ -856,6 +968,8 @@ class NutSocket: public NutStream {
 	 */
 	NutSocket(accept_flag_t, const NutSocket & listen_sock, int & err_code, std::string & err_msg):
 		m_impl(-1),
+		m_domain(NUTSOCKD_UNDEFINED),
+		m_type(NUTSOCKT_UNDEFINED),
 		m_current_ch('\0'),
 		m_current_ch_valid(false)
 	{
@@ -871,6 +985,8 @@ class NutSocket: public NutStream {
 	 */
 	NutSocket(accept_flag_t, const NutSocket & listen_sock):
 		m_impl(-1),
+		m_domain(NUTSOCKD_UNDEFINED),
+		m_type(NUTSOCKT_UNDEFINED),
 		m_current_ch('\0'),
 		m_current_ch_valid(false)
 	{
@@ -1046,6 +1162,56 @@ class NutSocket: public NutStream {
 
 		std::stringstream e;
 		e << "Failed to connect socket: " << ec << ": " << em;
+
+		throw std::runtime_error(e.str());
+	}
+
+	/**
+	 *  \brief  Flush output data into socket
+	 *
+	 *  \param[out]  err_code  Error code
+	 *  \param[out]  err-msg   Error message
+	 *
+	 *  \retval true  if flush succeeded
+	 *  \retval false if flush failed
+	 */
+	bool flush(int & err_code, std::string & err_msg)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+		override;
+
+	/**
+	 *  \brief  Flush output data into socket
+	 *
+	 *  \retval true  if flush succeeded
+	 *  \retval false if flush failed
+	 */
+	inline bool flush() override
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+	{
+		int ec;
+		std::string em;
+
+		return flush(ec, em);
+	}
+
+	/** Flush output data into socket (or throw exception) */
+	inline void flushx() override
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw(std::runtime_error)
+#endif
+	{
+		int ec;
+		std::string em;
+
+		if (flush(ec, em))
+			return;
+
+		std::stringstream e;
+		e << "Failed to flush socket " << m_impl << ": " << ec << ": " << em;
 
 		throw std::runtime_error(e.str());
 	}

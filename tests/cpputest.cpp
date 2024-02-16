@@ -19,13 +19,24 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "common.h"
+
 #include <stdexcept>
+#include <cstdlib>
 #include <cppunit/TestResult.h>
 #include <cppunit/CompilerOutputter.h>
 #include <cppunit/TextTestProgressListener.h>
 #include <cppunit/extensions/TestFactoryRegistry.h>
 #include <cppunit/ui/text/TestRunner.h>
-#include "common.h"
+
+extern "C" {
+#include "timehead.h"
+
+/* Let tests also see this flag */
+extern bool verbose;
+}
+
+bool verbose = false;
 
 // Inspired by https://stackoverflow.com/a/66702001
 class MyCustomProgressTestListener : public CppUnit::TextTestProgressListener {
@@ -39,17 +50,18 @@ class MyCustomProgressTestListener : public CppUnit::TextTestProgressListener {
 //   [-Werror,-Wweak-vtables]
 void MyCustomProgressTestListener::startTest(CppUnit::Test *test) {
     //fprintf(stderr, "starting test %s\n", test->getName().c_str());
-    std::cerr << "starting test " << test->getName() << std::endl;
+    std::cerr << "starting test " << (test == nullptr ? "<null>" : test->getName()) << std::endl << std::flush;
 }
 
 int main(int argc, char* argv[])
 {
-  bool verbose = false;
   if (argc > 1) {
     if (strcmp("-v", argv[1]) == 0 || strcmp("--verbose", argv[1]) == 0 ) {
       verbose = true;
     }
   }
+
+  ::srand(static_cast<unsigned int>(::time(nullptr)));
 
   /* Get the top level suite from the registry */
   std::cerr << "D: Getting test suite..." << std::endl;
@@ -68,7 +80,8 @@ int main(int argc, char* argv[])
   if (verbose) {
     /* Add a listener to report test names */
     std::cerr << "D: Setting test runner listener for test names..." << std::endl;
-    MyCustomProgressTestListener progress;
+    /* Only allocate when needed; static to avoid freeing */
+    static MyCustomProgressTestListener progress;
     runner.eventManager().addListener(&progress);
   }
 

@@ -1,8 +1,5 @@
 # top-level Makefile for NUT
 
-# include directory for aclocal
-ACLOCAL_AMFLAGS = -I m4
-
 # Export certain values for ccache which NUT ci_build.sh can customize,
 # to facilitate developer iteration re-runs of "make" later.
 # At least GNU and BSD make implementations are okay with this syntax.
@@ -11,6 +8,9 @@ ACLOCAL_AMFLAGS = -I m4
 @NUT_AM_MAKE_CAN_EXPORT@export CCACHE_DIR=@CCACHE_DIR@
 @NUT_AM_MAKE_CAN_EXPORT@export CCACHE_PATH=@CCACHE_PATH@
 @NUT_AM_MAKE_CAN_EXPORT@export PATH=@PATH_DURING_CONFIGURE@
+
+# include directory for aclocal
+ACLOCAL_AMFLAGS = -I m4
 
 # subdirectories to build and distribute. The order matters, as
 # several subdirectories depend on stuff in "common" or tools being built first

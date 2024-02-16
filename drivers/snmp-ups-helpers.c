@@ -81,16 +81,8 @@ const char *su_usdate_to_isodate_info_fun(void *raw_date)
 
 info_lkp_t su_convert_to_iso_date_info[] = {
 	/* array index = FUNMAP_USDATE_TO_ISODATE: */
-	{ 1, "dummy"
-#if WITH_SNMP_LKP_FUN
-		, su_usdate_to_isodate_info_fun, NULL, NULL, NULL
-#endif
-	},
-	{ 0, NULL
-#if WITH_SNMP_LKP_FUN
-		, NULL, NULL, NULL, NULL
-#endif
-	}
+	info_lkp_fun_vp2s(1, "dummy", su_usdate_to_isodate_info_fun),
+	info_lkp_sentinel
 };
 
 /* Process temperature value according to 'temperature_unit' */

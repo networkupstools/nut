@@ -96,6 +96,9 @@ if [ "$BUILD_TYPE" = fightwarn ]; then
     #[ -n "$NUT_USB_VARIANTS" ] || NUT_USB_VARIANTS=auto
 fi
 
+# configure default is "no"; an "auto" value is "yes unless CFLAGS say something"
+[ -n "${BUILD_DEBUGINFO-}" ] || BUILD_DEBUGINFO=""
+
 # Set this to enable verbose profiling
 [ -n "${CI_TIME-}" ] || CI_TIME=""
 case "$CI_TIME" in
@@ -1083,17 +1086,33 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         CANBUILD_NUTCONF=no
     fi
 
-    if [ "${CANBUILD_NUTCONF-}" = yes ] ; then
-        echo "WARNING: Build agent says it can build nutconf, enabling the experimental feature" >&2
-        CONFIG_OPTS+=("--with-nutconf=yes")
-    elif [ "${CANBUILD_NUTCONF-}" = no ] ; then
-        echo "WARNING: Build agent says it can not build nutconf, disabling the feature" >&2
-        CONFIG_OPTS+=("--with-nutconf=no")
-    fi
-
-    if [ -z "${CANBUILD_NUTCONF-}" ] ; then
-        CONFIG_OPTS+=("--with-nutconf=auto")
-    fi
+    case "${CANBUILD_NUTCONF-}" in
+        yes)
+            # Depends on C++11 or newer, so let configure script try this tediously
+            # unless we know we would not build for the too-old language revision
+            case "${CXXFLAGS-}" in
+                *-std=c++98*|*-std=gnu++98*|*-std=c++03*|*-std=gnu++03*)
+                    echo "WARNING: Build agent says it can build nutconf, but requires a test with C++ revision too old - so not requiring the experimental feature (auto-try)" >&2
+                    CONFIG_OPTS+=("--with-nutconf=auto")
+                    ;;
+                *-std=c++0x*|*-std=gnu++0x*|*-std=c++1*|*-std=gnu++1*|*-std=c++2*|*-std=gnu++2*)
+                    echo "WARNING: Build agent says it can build nutconf, and requires a test with a sufficiently new C++ revision - so requiring the experimental feature" >&2
+                    CONFIG_OPTS+=("--with-nutconf=yes")
+                    ;;
+                *)
+                    echo "WARNING: Build agent says it can build nutconf, and does not specify a test with prticular C++ revision - so not requiring the experimental feature (auto-try)" >&2
+                    CONFIG_OPTS+=("--with-nutconf=auto")
+                    ;;
+            esac
+            ;;
+        no)
+            echo "WARNING: Build agent says it can not build nutconf, disabling the feature (do not even try)" >&2
+            CONFIG_OPTS+=("--with-nutconf=no")
+            ;;
+        "")
+            CONFIG_OPTS+=("--with-nutconf=auto")
+            ;;
+    esac
 
     if [ "${CANBUILD_VALGRIND_TESTS-}" = no ] ; then
         echo "WARNING: Build agent says it has a broken valgrind, adding configure option to skip tests with it" >&2
@@ -1340,6 +1359,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # and errors are found more easily in a wall of text:
     CONFIG_OPTS+=("--enable-Wcolor")
 
+    if [ -n "${BUILD_DEBUGINFO-}" ]; then
+        CONFIG_OPTS+=("--with-debuginfo=${BUILD_DEBUGINFO}")
+    fi
+
     # Note: modern auto(re)conf requires pkg-config to generate the configure
     # script, so to stage the situation of building without one (as if on an
     # older system) we have to remove it when we already have the script.
@@ -1354,6 +1377,15 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         ; then
             # Avoid reconfiguring for the sake of distclean
             echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because recipes changed"
+            rm -f "${CI_BUILDDIR}"/Makefile "${CI_BUILDDIR}"/configure
+        fi
+    fi
+
+    # When itertating configure.ac or m4 sources, we can end up with an
+    # existing but useless scropt file - nuke it and restart from scratch!
+    if [ -s "${CI_BUILDDIR}"/configure ] ; then
+        if ! sh -n "${CI_BUILDDIR}"/configure 2>/dev/null ; then
+            echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because current configure script syntax is broken"
             rm -f "${CI_BUILDDIR}"/Makefile "${CI_BUILDDIR}"/configure
         fi
     fi
@@ -1933,9 +1965,9 @@ bindings)
     pushd "./bindings/${BINDING}" && ./ci_build.sh
     ;;
 ""|inplace)
-    echo "ERROR: No BUILD_TYPE was specified, doing a minimal default ritual without any required options" >&2
+    echo "WARNING: No BUILD_TYPE was specified, doing a minimal default ritual without any *required* build products and with developer-oriented options" >&2
     if [ -n "${BUILD_WARNOPT}${BUILD_WARNFATAL}" ]; then
-        echo "WARNING: BUILD_WARNOPT and BUILD_WARNFATAL settings are ignored in this mode" >&2
+        echo "WARNING: BUILD_WARNOPT and BUILD_WARNFATAL settings are ignored in this mode (warnings are always enabled and fatal for these developer-oriented builds)" >&2
         sleep 5
     fi
     echo ""
@@ -1961,6 +1993,15 @@ bindings)
         ; then
             # Avoid reconfiguring for the sake of distclean
             echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because recipes changed"
+            rm -f "${CI_BUILDDIR}"/Makefile "${CI_BUILDDIR}"/configure
+        fi
+    fi
+
+    # When itertating configure.ac or m4 sources, we can end up with an
+    # existing but useless scropt file - nuke it and restart from scratch!
+    if [ -s "${CI_BUILDDIR}"/configure ] ; then
+        if ! sh -n "${CI_BUILDDIR}"/configure 2>/dev/null ; then
+            echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because current configure script syntax is broken"
             rm -f "${CI_BUILDDIR}"/Makefile "${CI_BUILDDIR}"/configure
         fi
     fi
@@ -1996,6 +2037,12 @@ bindings)
     else
         # Help developers debug:
         CONFIG_OPTS+=("--disable-silent-rules")
+    fi
+
+    if [ -n "${BUILD_DEBUGINFO-}" ]; then
+        CONFIG_OPTS+=("--with-debuginfo=${BUILD_DEBUGINFO}")
+    else
+        CONFIG_OPTS+=("--with-debuginfo=auto")
     fi
 
     ${CONFIGURE_SCRIPT} "${CONFIG_OPTS[@]}"

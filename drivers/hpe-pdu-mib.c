@@ -24,7 +24,7 @@
 #include "hpe-pdu-mib.h"
 #include "dstate.h"
 
-#define HPE_EPDU_MIB_VERSION      "0.33"
+#define HPE_EPDU_MIB_VERSION      "0.34"
 #define HPE_EPDU_MIB_SYSOID       ".1.3.6.1.4.1.232.165.7"
 #define HPE_EPDU_OID_MODEL_NAME	".1.3.6.1.4.1.232.165.7.1.2.1.3.0"
 
@@ -96,7 +96,7 @@ static info_lkp_t hpe_pdu_threshold_frequency_status_info[] = {
 static info_lkp_t hpe_pdu_ambient_drycontacts_info[] = {
 	info_lkp_default(-1, "unknown"),
 	info_lkp_default(0, "unknown"),
-	info_lkp_default(1, "open"),
+	info_lkp_default(1, "opened"),
 	info_lkp_default(2, "closed"),
 	info_lkp_default(3, "bad"),
 	/* FIXME: what to do with that? */

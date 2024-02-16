@@ -19,23 +19,52 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h"
 
 #include "nutstream.hpp"
-
-#include <cppunit/extensions/HelperMacros.h>
+#include "nutipc.hpp"	/* Used in a test to "freeze" a writer child process */
 
 #include <cstdio>
 #include <cstdlib>
 #include <cassert>
 
 extern "C" {
-#include <sys/select.h>
+#ifndef WIN32
+# include <sys/select.h>
+# include <sys/wait.h>
+#else
+# if !(defined random) && !(defined HAVE_RANDOM)
+   /* WIN32 names it differently: */
+#  define random() rand()
+# endif
+#endif	/* WIN32 */
 #include <sys/time.h>
 #include <sys/types.h>
-#include <sys/wait.h>
 #include <unistd.h>
+
+extern bool verbose;
 }
 
+/* Current CPPUnit offends the honor of C++98 */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_GLOBAL_CONSTRUCTORS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS)
+#pragma GCC diagnostic push
+# ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_GLOBAL_CONSTRUCTORS
+#  pragma GCC diagnostic ignored "-Wglobal-constructors"
+# endif
+# ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS
+#  pragma GCC diagnostic ignored "-Wexit-time-destructors"
+# endif
+# ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS
+#  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+# endif
+#endif
+#ifdef __clang__
+# pragma clang diagnostic push "-Wdeprecated-declarations"
+#endif
+
+#include <cppunit/extensions/HelperMacros.h>
+
+namespace nut {
 
 /** Test data */
 static const std::string test_data(
@@ -68,17 +97,28 @@ static bool readTestData(nut::NutStream * stream) {
 
 		nut::NutStream::status_t status = stream->getChar(ch);
 
-		if (nut::NutStream::NUTS_ERROR == status)
+		if (nut::NutStream::NUTS_ERROR == status) {
+			if (verbose)
+				std::cerr << "readTestData(): status==nut::NutStream::NUTS_ERROR" << std::endl;
 			return false;
+		}
 
 		if (nut::NutStream::NUTS_EOF == status)
 			break;
 
-		if (nut::NutStream::NUTS_OK != status)
+		if (nut::NutStream::NUTS_OK != status) {
+			if (verbose)
+				std::cerr << "readTestData(): status!=nut::NutStream::NUTS_OK: " << status << std::endl;
 			return false;
+		}
 
-		if (ch != test_data.at(pos))
+		if (ch != test_data.at(pos)) {
+			if (verbose)
+				std::cerr << "readTestData(): unexpected char '"
+						<< ch << "' at pos " << pos << ": want '"
+						<< test_data.at(pos) << "'" << std::endl;
 			return false;
+		}
 
 		// Every other character shall be checked twice
 		if (0 == iter % 8)
@@ -113,8 +153,11 @@ static bool writeTestData(nut::NutStream * stream) {
 
 		nut::NutStream::status_t status = stream->putChar(ch);
 
-		if (nut::NutStream::NUTS_OK != status)
+		if (nut::NutStream::NUTS_OK != status) {
+			if (verbose)
+				std::cerr << "writeTestData(): status!=nut::NutStream::NUTS_OK: " << status << std::endl;
 			return false;
+		}
 	}
 
 	// Write string to the stream
@@ -214,6 +257,7 @@ void NutFileUnitTest::test() {
 	nut::NutFile fstream(nut::NutFile::ANONYMOUS);
 
 	writex(&fstream);
+	fstream.flushx();
 	readx(&fstream);
 }
 
@@ -272,8 +316,63 @@ class NutSocketUnitTest: public NutStreamUnitTest {
 };  // end of class NutSocketUnitTest
 
 
-const nut::NutSocket::Address NutSocketUnitTest::m_listen_address(127, 0, 0, 1, 10000);
+/* Static initializer below may run before methods of the test,
+ * so it tends to repeat the same port for parallel CI runs */
+static long reallyRandom() {
+	::srand(static_cast<unsigned int>(::time(nullptr)));
+	return ::random();
+}
 
+/* Randomize to try avoiding collisions in parallel testing */
+static uint16_t getFreePort() {
+	int tries = 100;
+#ifdef WIN32
+	WSADATA wsaData;
+	static int wsaStarted = 0;
+	if (!wsaStarted) {
+		if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+			std::cerr << "WIN32: Failed to WSAStartup() the socket layer" << std::endl << std::flush;
+		}
+		// well, at least attempted
+		wsaStarted = 1;
+	}
+#endif
+	while (tries > 0) {
+		uint16_t port = 10000 + static_cast<uint16_t>(reallyRandom() % 40000);
+		nut::NutSocket::Address addr(127, 0, 0, 1, port);
+		nut::NutSocket sock;
+		int ec;
+		std::string em;
+
+		if (sock.bind(addr, ec, em)) {
+			/* FWIW, "verbose" is only set in main() and this method currently
+			 * is part of static initialization before that. So no trace.
+			 */
+			if (verbose)
+				std::cerr << "getFreePort() could bind() port " << port
+						<< "; is FD valid?=" << sock.valid() << std::endl;
+			/* Let the destructor close it */
+			sock.closex();
+			return port;
+		}
+
+		if (verbose)
+			std::cerr << "getFreePort() failed to bind() port " << port
+					<< ": code " << ec << " aka " << em << ": will try another"
+					<< std::endl;
+		sock.closex();
+		tries--;
+	}
+
+	// Well, gotta try something...
+	if (verbose)
+		std::cerr << "getFreePort() failed to bind(), falling back to 10000" << std::endl;
+	return 10000;
+}
+
+const nut::NutSocket::Address NutSocketUnitTest::m_listen_address(
+		127, 0, 0, 1,
+		getFreePort());
 
 bool NutSocketUnitTest::Writer::run() {
 	nut::NutSocket conn_sock;
@@ -292,6 +391,10 @@ bool NutSocketUnitTest::Writer::run() {
 
 
 void NutSocketUnitTest::test() {
+#ifdef WIN32
+	/* FIXME: get Process working in the first place */
+	std::cout << "NutSocketUnitTest::test(): skipped on this platform" << std::endl;
+#else
 	// Fork writer
 	pid_t writer_pid = ::fork();
 
@@ -302,13 +405,33 @@ void NutSocketUnitTest::test() {
 		// Run writer
 		CPPUNIT_ASSERT(Writer(m_listen_address).run());
 
-		return;
+		exit(0);
 	}
+
+	// Freeze the writer until we bind the port
+	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::STOP, writer_pid));
 
 	// Listen
 	nut::NutSocket listen_sock;
 
-	CPPUNIT_ASSERT(listen_sock.bind(m_listen_address));
+	std::stringstream msg_bind;
+	msg_bind << "Expected to listen on " << m_listen_address.str();
+	bool bound = listen_sock.bind(m_listen_address);
+	int retries = 5;
+
+	while (!bound && retries > 0) {
+		retries--;
+		if (verbose)
+			std::cerr << msg_bind.str() << ": will retry test in 15 sec ("
+					<< retries << " retries remaining)" << std::endl;
+		sleep(15);
+		bound = listen_sock.bind(m_listen_address);
+	}
+
+	// Un-freeze the writer as we have bound the port (or will fail next line)
+	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::CONT, writer_pid));
+
+	CPPUNIT_ASSERT_MESSAGE(msg_bind.str(), bound);
 	CPPUNIT_ASSERT(listen_sock.listen(10));
 
 	// Accept connection
@@ -322,7 +445,11 @@ void NutSocketUnitTest::test() {
 	pid_t wpid = ::waitpid(writer_pid, &writer_exit, 0);
 
 	CPPUNIT_ASSERT(wpid == writer_pid);
-	CPPUNIT_ASSERT(0    == writer_exit);
+
+	std::stringstream msg_writer_exit;
+	msg_writer_exit << "Got writer_exit=" << writer_exit << ", expected 0";
+	CPPUNIT_ASSERT_MESSAGE(msg_writer_exit.str(), 0    == writer_exit);
+#endif	/* WIN32 */
 }
 
 
@@ -336,3 +463,12 @@ CPPUNIT_TEST_SUITE_REGISTRATION(NutSocketUnitTest);
 //   definitions; its vtable will be emitted in every translation unit
 //   [-Werror,-Wweak-vtables]
 NutStreamUnitTest::~NutStreamUnitTest() {}
+
+} // namespace nut {}
+
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_GLOBAL_CONSTRUCTORS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS)
+# pragma GCC diagnostic pop
+#endif

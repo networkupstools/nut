@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3489 utf-8
+personal_ws-1.1 en 3495 utf-8
 AAC
 AAS
 ABI
@@ -1270,6 +1270,7 @@ SlackPack
 Slackware
 SmartBoost
 SmartCell
+SmartNUT
 SmartOnline
 SmartPro
 SmartSlot
@@ -1874,12 +1875,14 @@ cpqpower
 cpsups
 cr
 crestfactor
+criticality
 crlf
 cron
 crontab
 crossbuild
 crt
 crw
+crypto
 csh
 cshdelay
 css
@@ -1910,6 +1913,7 @@ dataok
 datasheet
 datastale
 dayofweek
+dbgsym
 dblatex
 dcd
 dcn
@@ -1920,6 +1924,7 @@ deUNV
 debian
 debootstrap
 debouncing
+debuginfo
 deci
 decrement
 decrypt
@@ -2720,6 +2725,7 @@ ont
 ontd
 ontimedays
 ontiniedays
+onwards
 ooce
 openSUSE
 opencollective

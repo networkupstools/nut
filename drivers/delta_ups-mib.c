@@ -25,7 +25,7 @@
 
 #include "delta_ups-mib.h"
 
-#define DELTA_UPS_MIB_VERSION  "0.50"
+#define DELTA_UPS_MIB_VERSION  "0.51"
 
 #define DELTA_UPS_SYSOID       ".1.3.6.1.4.1.2254.2.4"
 
@@ -43,7 +43,7 @@ static info_lkp_t delta_ups_upstype_info[] = {
 	info_lkp_default(2, "off-line"),
 	info_lkp_default(3, "line-interactive"),
 	info_lkp_default(4, "3phase"),
-	info_lkp_default(5, "splite-phase"),
+	info_lkp_default(5, "split-phase"),
 	info_lkp_sentinel
 };
 

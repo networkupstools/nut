@@ -4,6 +4,7 @@
  *  Copyright (C)
  *    2011-2012 Arnaud Quette <arnaud.quette@free.fr>
  *    2016-2020 Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
+ *    2024 Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  Note: this subdriver was initially generated as a "stub" by the
  *  gen-snmp-subdriver script. It must be customized!
@@ -29,7 +30,7 @@
 #include "eaton-pdu-marlin-helpers.h"
 #endif
 
-#define EATON_ATS16_NM2_MIB_VERSION  "0.22"
+#define EATON_ATS16_NM2_MIB_VERSION  "0.23"
 
 #define EATON_ATS16_NM2_SYSOID  ".1.3.6.1.4.1.534.10.2" /* newer Network-M2 */
 #define EATON_ATS16_NM2_MODEL   ".1.3.6.1.4.1.534.10.2.1.2.0"
@@ -90,7 +91,7 @@ static info_lkp_t eaton_ats16_nm2_output_status_info[] = {
  * Future work for DMF might provide same-named routines via LUA-C gateway.
  */
 
-#if WITH_SNMP_LKP_FUN_DUMMY
+# if WITH_SNMP_LKP_FUN_DUMMY
 /* Temperature unit consideration */
 const char *eaton_sensor_temperature_unit_fun(void *raw_snmp_value) {
 	/* snmp_value here would be a (long*) */
@@ -103,7 +104,7 @@ const char *su_temperature_read_fun(void *raw_snmp_value) {
 	NUT_UNUSED_VARIABLE(raw_snmp_value);
 	return "dummy";
 };
-#endif /* WITH_SNMP_LKP_FUN_DUMMY */
+# endif /* WITH_SNMP_LKP_FUN_DUMMY */
 
 static info_lkp_t eaton_ats16_nm2_sensor_temperature_unit_info[] = {
 	info_lkp_fun_vp2s(0, "dummy", eaton_sensor_temperature_unit_fun),
@@ -115,7 +116,7 @@ static info_lkp_t eaton_ats16_nm2_sensor_temperature_read_info[] = {
 	info_lkp_sentinel
 };
 
-#else // if not WITH_SNMP_LKP_FUN:
+#else /* if not WITH_SNMP_LKP_FUN: */
 
 /* FIXME: For now, DMF codebase falls back to old implementation with static
  * lookup/mapping tables for this, which can easily go into the DMF XML file.
@@ -127,7 +128,7 @@ static info_lkp_t eaton_ats16_nm2_sensor_temperature_unit_info[] = {
 	info_lkp_sentinel
 };
 
-#endif // WITH_SNMP_LKP_FUN
+#endif /* WITH_SNMP_LKP_FUN */
 
 static info_lkp_t eaton_ats16_nm2_ambient_drycontacts_polarity_info[] = {
 	info_lkp_default(0, "normal-opened"),
@@ -177,7 +178,7 @@ static info_lkp_t eaton_ats16_nm2_threshold_humidity_alarms_info[] = {
 	info_lkp_sentinel
 };
 
-static info_lkp_t eaton_ats16_ambient_drycontacts_info[] = {
+static info_lkp_t eaton_ats16_nm2_ambient_drycontacts_info[] = {
 	info_lkp_default(-1, "unknown"),
 	info_lkp_default(1, "opened"),
 	info_lkp_default(2, "closed"),
@@ -283,11 +284,11 @@ static snmp_info_t eaton_ats16_nm2_mib[] = {
 	/* ats2ContactState.1 = INTEGER: open(1) */
 	snmp_info_default("ambient.contacts.1.status", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.10.2.5.4.1.3.1",
-		NULL, SU_FLAG_OK, &eaton_ats16_ambient_drycontacts_info[0]),
+		NULL, SU_FLAG_OK, &eaton_ats16_nm2_ambient_drycontacts_info[0]),
 	/* ats2ContactState.2 = INTEGER: open(1) */
 	snmp_info_default("ambient.contacts.2.status", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.10.2.5.4.1.3.2",
-		NULL, SU_FLAG_OK, &eaton_ats16_ambient_drycontacts_info[0]),
+		NULL, SU_FLAG_OK, &eaton_ats16_nm2_ambient_drycontacts_info[0]),
 
 	/* EMP002 (EATON EMP MIB) mapping, including daisychain support */
 	/* Warning: indexes start at '1' not '0'! */

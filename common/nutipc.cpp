@@ -20,9 +20,23 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include "config.h"
+
+/* For C++ code below, we do not actually use the fallback time methods
+ * (on mingw mostly), but in C++ context they happen to conflict with
+ * time.h or ctime headers, while native-C does not. Just disable the
+ * fallback localtime_r(), gmtime_r() etc. if/when NUT common.h gets
+ * included by the header chain:
+ */
+#ifndef HAVE_GMTIME_R
+# define HAVE_GMTIME_R 111
+#endif
+#ifndef HAVE_LOCALTIME_R
+# define HAVE_LOCALTIME_R 111
+#endif
+
 #include "nutipc.hpp"
 #include "nutstream.hpp"
-#include "config.h"
 
 #include <iostream>
 
@@ -50,7 +64,13 @@ pid_t Process::getPPID()
 	throw()
 #endif
 {
+#ifdef WIN32
+	/* FIXME: Detect HAVE_GETPPID in configure; throw exceptions here?..
+	 * NOTE: Does not seem to be currently used in nutconf codebase. */
+	return -1;
+#else
 	return getppid();
+#endif
 }
 
 
@@ -212,7 +232,16 @@ int Signal::send(Signal::enum_t signame, pid_t pid)
 #endif
 {
 	int sig = static_cast<int>(signame);
+#ifdef WIN32
+	/* FIXME: Implement (for NUT processes) via pipes?
+	 * See e.g. upsdrvctl implementation. */
+	std::stringstream e;
 
+	e << "Can't send signal " << sig << " to PID " << pid <<
+			": not implemented on this platform yet";
+
+	throw std::logic_error(e.str());
+#else
 	int status = ::kill(pid, sig);
 
 	if (0 == status)
@@ -226,6 +255,7 @@ int Signal::send(Signal::enum_t signame, pid_t pid)
 	e << "Can't send invalid signal " << sig;
 
 	throw std::logic_error(e.str());
+#endif
 }
 
 

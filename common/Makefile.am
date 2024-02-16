@@ -1,5 +1,14 @@
 # Network UPS Tools: common
 
+# Export certain values for ccache which NUT ci_build.sh can customize,
+# to facilitate developer iteration re-runs of "make" later.
+# At least GNU and BSD make implementations are okay with this syntax.
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_NAMESPACE=@CCACHE_NAMESPACE@
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_BASEDIR=@CCACHE_BASEDIR@
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_DIR=@CCACHE_DIR@
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_PATH=@CCACHE_PATH@
+@NUT_AM_MAKE_CAN_EXPORT@export PATH=@PATH_DURING_CONFIGURE@
+
 AM_CFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 AM_CXXFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 AM_LDFLAGS = -no-undefined
@@ -16,15 +25,6 @@ endif
 libparseconf_la_SOURCES = parseconf.c
 
 libnutconf_la_SOURCES = nutconf.cpp nutstream.cpp nutwriter.cpp nutipc.cpp
-
-# Export certain values for ccache which NUT ci_build.sh can customize,
-# to facilitate developer iteration re-runs of "make" later.
-# At least GNU and BSD make implementations are okay with this syntax.
-@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_NAMESPACE=@CCACHE_NAMESPACE@
-@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_BASEDIR=@CCACHE_BASEDIR@
-@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_DIR=@CCACHE_DIR@
-@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_PATH=@CCACHE_PATH@
-@NUT_AM_MAKE_CAN_EXPORT@export PATH=@PATH_DURING_CONFIGURE@
 
 # do not hard depend on '../include/nut_version.h', since it blocks
 # 'dist', and is only required for actual build, in which case
@@ -85,7 +85,7 @@ endif
 if HAVE_WINDOWS
 libcommon_la_SOURCES += wincompat.c $(top_srcdir)/include/wincompat.h
 libcommonclient_la_SOURCES += wincompat.c $(top_srcdir)/include/wincompat.h
-endif
+endif HAVE_WINDOWS
 
 # ensure inclusion of local implementation of missing systems functions
 # using LTLIBOBJS. Refer to configure.in/.ac -> AC_REPLACE_FUNCS
@@ -94,6 +94,11 @@ libcommonclient_la_LIBADD = libparseconf.la @LTLIBOBJS@ @NETLIBS@
 
 libcommon_la_CFLAGS = $(AM_CFLAGS)
 libcommonclient_la_CFLAGS = $(AM_CFLAGS)
+
+if WITH_NUTCONF
+libnutconf_la_CXXFLAGS = $(AM_CXXFLAGS)
+libnutconf_la_LIBADD = @LTLIBOBJS@ @NETLIBS@ libcommonclient.la
+endif WITH_NUTCONF
 
 if HAVE_LIBREGEX
   libcommon_la_CFLAGS += $(LIBREGEX_CFLAGS)

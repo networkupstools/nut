@@ -77,7 +77,7 @@ static snmp_info_t apc_ats_mib[] = {
 	/* atsIdentFirmwareRev.0 = STRING: "3.0.5" */
 	snmp_info_default("ups.firmware.aux", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.318.1.1.8.1.2.0", NULL, SU_FLAG_OK, NULL),
 	/* atsIdentFirmwareDate.0 = STRING: "09/13/11" */
-	/*{ "unmapped.atsIdentFirmwareDate", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.318.1.1.8.1.3.0", NULL, SU_FLAG_OK, NULL },*/
+	/*snmp_info_default("unmapped.atsIdentFirmwareDate", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.318.1.1.8.1.3.0", NULL, SU_FLAG_OK, NULL),*/
 	/* atsIdentSerialNumber.0 = STRING: "5A1516T15268" */
 	snmp_info_default("device.serial", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.318.1.1.8.1.6.0", NULL, SU_FLAG_OK, NULL),
 	/* FIXME: RFC for device.mfr.date! */
@@ -123,15 +123,15 @@ static snmp_info_t apc_ats_mib[] = {
 	/* Outlet groups collection */
 	/* Note: prefer the OutputBank data to the ConfigBank ones */
 	/* atsConfigBankTableSize.0 = INTEGER: 3 */
-	/*{ "outlet.group.count", 0, 1, ".1.3.6.1.4.1.318.1.1.8.4.13.0", NULL, SU_FLAG_OK, NULL },*/
+	/*snmp_info_default("outlet.group.count", 0, 1, ".1.3.6.1.4.1.318.1.1.8.4.13.0", NULL, SU_FLAG_OK, NULL),*/
 	/* atsOutputBankTableSize.0 = INTEGER: 3 */
 	snmp_info_default("outlet.group.count", 0, 1, ".1.3.6.1.4.1.318.1.1.8.5.4.4.0", NULL, SU_FLAG_OK, NULL),
 	/* atsConfigBankTableIndex.%i = INTEGER: %i */
-	/*{ "outlet.group.%i.id", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.318.1.1.8.4.14.1.1.%i", NULL, SU_FLAG_OK, NULL },*/
+	/*snmp_info_default("outlet.group.%i.id", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.318.1.1.8.4.14.1.1.%i", NULL, SU_FLAG_OK, NULL),*/
 	/* atsOutputBankTableIndex.%i = INTEGER: %i */
 	snmp_info_default("outlet.group.%i.id", 0, 1, ".1.3.6.1.4.1.318.1.1.8.5.4.5.1.1.%i", NULL, SU_FLAG_OK | SU_OUTLET_GROUP, NULL),
 	/* atsConfigBank.%i = INTEGER: total(1) */
-	/*{ "outlet.group.%i.name", 0, 1, ".1.3.6.1.4.1.318.1.1.8.4.14.1.2.%i", NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP, &apc_ats_group_name_info[0] },*/
+	/*snmp_info_default("outlet.group.%i.name", 0, 1, ".1.3.6.1.4.1.318.1.1.8.4.14.1.2.%i", NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP, &apc_ats_group_name_info[0]),*/
 	/* atsOutputBank.1 = INTEGER: total(1) */
 	snmp_info_default("outlet.group.%i.name", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.318.1.1.8.5.4.5.1.3.%i", NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP, &apc_ats_outletgroups_name_info[0]),
 	/* atsOutputBankCurrent.%i = Gauge32: 88 */

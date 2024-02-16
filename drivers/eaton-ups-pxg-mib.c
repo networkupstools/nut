@@ -411,6 +411,7 @@ static snmp_info_t eaton_pxg_mib[] = {
 		SU_STATUS_BATT, &eaton_pxg_alarm_lb[0]),
 	snmp_info_default("ups.status", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_BATT_STATUS, "",
 		SU_STATUS_BATT, &eaton_pxg_battery_abm_status[0]),
+
 #if USE_PW_MODE_INFO
 	/* FIXME: should be ups.mode or output.source (need RFC) */
 	/* Note: this define is not set via project options; code hidden with

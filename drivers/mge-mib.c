@@ -278,8 +278,10 @@ static snmp_info_t mge_mib[] = {
 	snmp_info_default("beeper.disable", 0, 1, "1.3.6.1.2.1.33.1.9.8.0", "1", SU_TYPE_CMD, NULL),
 	snmp_info_default("beeper.enable", 0, 1, "1.3.6.1.2.1.33.1.9.8.0", "2", SU_TYPE_CMD, NULL),
 	snmp_info_default("beeper.mute", 0, 1, "1.3.6.1.2.1.33.1.9.8.0", "3", SU_TYPE_CMD, NULL),
-	/*{ "load.off", 0, 1, "1.3.6.1.2.1.33.1.8.2.0", DEFAULT_OFFDELAY, SU_TYPE_CMD, NULL },
-	snmp_info_default("load.on", 0, 1, "1.3.6.1.2.1.33.1.8.3.0", DEFAULT_ONDELAY, SU_TYPE_CMD, NULL),*/
+/*
+	snmp_info_default("load.off", 0, 1, "1.3.6.1.2.1.33.1.8.2.0", DEFAULT_OFFDELAY, SU_TYPE_CMD, NULL),
+	snmp_info_default("load.on", 0, 1, "1.3.6.1.2.1.33.1.8.3.0", DEFAULT_ONDELAY, SU_TYPE_CMD, NULL),
+*/
 	snmp_info_default("load.off.delay", 0, 1, "1.3.6.1.2.1.33.1.8.2.0", NULL, SU_TYPE_CMD, NULL),
 	snmp_info_default("load.on.delay", 0, 1, "1.3.6.1.2.1.33.1.8.3.0", NULL, SU_TYPE_CMD, NULL),
 

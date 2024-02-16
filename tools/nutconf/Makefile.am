@@ -8,7 +8,7 @@ bin_PROGRAMS =
 # so we do not build it unless explicitly asked to.
 if WITH_NUTCONF
 bin_PROGRAMS += nutconf
-nutconf_SOURCES = nutconf.cpp
+nutconf_SOURCES = nutconf-cli.cpp
 nutconf_CXXFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 nutconf_LDADD = $(top_builddir)/common/libcommon.la \
                 $(top_builddir)/common/libnutconf.la

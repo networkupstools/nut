@@ -36,8 +36,16 @@ extern "C" {
 #include <sys/types.h>
 #include <unistd.h>
 #include <signal.h>
-#include <sys/wait.h>
-#include <pthread.h>
+
+#ifndef WIN32
+# include <sys/wait.h>
+#else
+# include <wincompat.h>
+#endif
+
+#ifdef HAVE_PTHREAD
+# include <pthread.h>
+#endif
 }
 
 /* See include/common.h for details behind this */
@@ -292,10 +300,22 @@ Process::Child<M>::Child(M main)
 	m_exited(false),
 	m_exit_code(0)
 {
+#ifdef WIN32
+	NUT_UNUSED_VARIABLE(main);
+
+	/* FIXME: Implement (for NUT processes) via pipes?
+	 * See e.g. upsdrvctl implementation. */
+	std::stringstream e;
+
+	e << "Can't fork: not implemented on this platform yet";
+
+	throw std::logic_error(e.str());
+#else
 	m_pid = ::fork();
 
 	if (!m_pid)
 		::exit(main());
+#endif
 }
 
 
@@ -305,6 +325,16 @@ int Process::Child<M>::wait()
 	throw(std::logic_error)
 #endif
 {
+#ifdef WIN32
+	/* FIXME: Implement (for NUT processes) via pipes?
+	 * See e.g. upsdrvctl implementation. */
+	std::stringstream e;
+
+	e << "Can't wait for PID " << m_pid <<
+		": not implemented on this platform yet";
+
+	throw std::logic_error(e.str());
+#else
 	if (m_exited)
 		return m_exit_code;
 
@@ -325,6 +355,7 @@ int Process::Child<M>::wait()
 	m_exit_code = WEXITSTATUS(m_exit_code);
 
 	return m_exit_code;
+#endif
 }
 
 
@@ -338,6 +369,7 @@ class Signal {
 
 	/** Signals */
 	typedef enum {
+#ifndef WIN32
 		HUP    = SIGHUP,     /** Hangup                            */
 		INT    = SIGINT,     /** Interrupt                         */
 		QUIT   = SIGQUIT,    /** Quit                              */
@@ -365,6 +397,7 @@ class Signal {
 		VTALRM = SIGVTALRM,  /** Virtual alarm clock               */
 		XCPU   = SIGXCPU,    /** CPU time limit exceeded           */
 		XFSZ   = SIGXFSZ,    /** File size limit exceeded          */
+#endif
 	} enum_t;  // end of typedef enum
 
 	/** Signal list */
@@ -674,6 +707,17 @@ Signal::HandlerThread<H>::HandlerThread(const Signal::List & siglist)
 	throw(std::logic_error, std::runtime_error)
 #endif
 {
+#ifdef WIN32
+	NUT_UNUSED_VARIABLE(siglist);
+
+	/* FIXME: Implement (for NUT processes) via pipes?
+	 * See e.g. upsdrvctl implementation. */
+	std::stringstream e;
+
+	e << "Can't prepare signal handling thread: not implemented on this platform yet";
+
+	throw std::logic_error(e.str());
+#else
 	// At most one instance per process allowed
 	if (-1 != s_comm_pipe[1])
 		throw std::logic_error(
@@ -706,7 +750,12 @@ Signal::HandlerThread<H>::HandlerThread(const Signal::List & siglist)
 		struct sigaction action;
 
 		::memset(&action, 0, sizeof(action));
+# ifdef sigemptyset
+		// no :: here because macro
+		sigemptyset(&action.sa_mask);
+# else
 		::sigemptyset(&action.sa_mask);
+# endif
 
 		action.sa_handler = &signalNotifier;
 
@@ -724,6 +773,7 @@ Signal::HandlerThread<H>::HandlerThread(const Signal::List & siglist)
 			throw std::runtime_error(e.str());
 		}
 	}
+#endif
 }
 
 
