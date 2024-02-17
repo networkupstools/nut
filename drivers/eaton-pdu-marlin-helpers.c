@@ -45,6 +45,15 @@
 /* Allow access to temperature_unit */
 # include "snmp-ups.h"
 
+/* Shunt the debugging calls when building self-test DMF driver code */
+/* FIXME: Go the next mile to pull common.o etc? We would rather not... */
+#ifdef WITH_DMFMIB_SELFTEST
+# ifdef upsdebugx
+#  undef upsdebugx
+# endif
+# define upsdebugx(...) {while(0);}
+#endif
+
 /* Take string "unitsPresent" (ex: "0,3,4,5"), and count the amount
  * of "," separators+1 using an inline function */
 long marlin_device_count_fun(const char *daisy_dev_list)
