@@ -33,6 +33,8 @@ extern "C" {
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
+
+extern bool verbose;
 }
 
 
@@ -136,12 +138,23 @@ void NutIPCUnitTest::testSignalSend() {
 
 	signal_caught = 0;
 
-	// Save PID to a PIDfile
-	static const std::string pid_file_name("/tmp/foobar.pid");
-
 	std::stringstream my_pid_ss;
 
+	// Save PID to a PIDfile; use an unique filename as much as we can
+	// (avoid conflicts in parallel running tests on NUT CI farm, etc.)
+	my_pid_ss << nut::NutFile::tmp_dir() << nut::NutFile::path_sep()
+		<< "nutipc_ut_" << my_pid << ".pid";
+	static const std::string pid_file_name(my_pid_ss.str());
+
+	my_pid_ss.str("");
+	my_pid_ss.clear();
 	my_pid_ss << my_pid;
+
+	if (verbose)
+		std::cerr << "NutIPCUnitTest::testSignalSend(): using PID file '"
+		<< pid_file_name << "' for PID " << my_pid
+		<< " to store string '" << my_pid_ss.str() << "'"
+		<< std::endl << std::flush;
 
 	nut::NutFile pid_file(pid_file_name, nut::NutFile::WRITE_ONLY);
 

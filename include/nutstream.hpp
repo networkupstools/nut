@@ -317,6 +317,30 @@ class NutFile: public NutStream {
 	NutFile(anonymous_t);
 
 	/**
+	 *  \brief  Detected temporary path name getter
+	 *
+	 *  \return Path name
+	 */
+	inline static const std::string & tmp_dir() {
+		return m_tmp_dir;
+	}
+
+	/**
+	 *  \brief  OS-dependent path separator character(s)
+	 *
+	 *  \return Path separator
+	 */
+	inline static const std::string & path_sep() {
+		static std::string pathsep =
+#ifdef WIN32
+			"\\";
+#else
+			"/";
+#endif
+		return pathsep;
+	}
+
+	/**
 	 *  \brief  File name getter
 	 *
 	 *  \return File name
