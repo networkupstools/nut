@@ -33,14 +33,6 @@
 
 #define PW_MIB_VERSION "0.106"
 
-/* TODO: more sysOID and MIBs support:
- *
- * Powerware UPS (Ingrasys X-SLOT and BD-SLOT): ".1.3.6.1.4.1.534.1"
- * Powerware PXGX cards: ".1.3.6.1.4.1.534.2.12"
- *		PXGX 2000 cards (UPS): Get xupsIdentModel (".1.3.6.1.4.1.534.1.1.2.0")
- * 		PXGX 1000 cards (PDU/RPP/RPM): Get pduNumPanels ".1.3.6.1.4.1.534.6.6.4.1.1.1.4.0"
- */
-
 /* Powerware UPS (Ingrasys X-SLOT and BD-SLOT)
  * Eaton Gigabit Network Card (Genepi) */
 #define POWERWARE_SYSOID	".1.3.6.1.4.1.534.1"
