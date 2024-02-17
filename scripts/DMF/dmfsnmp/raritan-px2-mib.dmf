@@ -24,7 +24,15 @@
 		<lookup_info oid="19" value="two"/>
 		<lookup_info oid="20" value="inSync"/>
 		<lookup_info oid="21" value="outOfSync"/>
-		<lookup_info oid="0" value="NULL"/>
+		<lookup_info oid="22" value="i1OpenFault"/>
+		<lookup_info oid="23" value="i1ShortFault"/>
+		<lookup_info oid="24" value="i2OpenFault"/>
+		<lookup_info oid="25" value="i2ShortFault"/>
+		<lookup_info oid="26" value="fault"/>
+		<lookup_info oid="27" value="warning"/>
+		<lookup_info oid="28" value="critical"/>
+		<lookup_info oid="29" value="selfTest"/>
+		<lookup_info oid="30" value="nonRedundant"/>
 	</lookup>
 	<lookup name="raritanpx2_outlet_switchability_info">
 		<lookup_info oid="-1" value="yes"/>
@@ -66,6 +74,6 @@
 		<snmp_info command="yes" default="1" multiplier="1.0" name="outlet.%i.load.on" oid=".1.3.6.1.4.1.13742.6.4.1.2.1.2.1.%i" outlet="yes"/>
 		<snmp_info command="yes" default="2" multiplier="1.0" name="outlet.%i.load.cycle" oid=".1.3.6.1.4.1.13742.6.4.1.2.1.2.1.%i" outlet="yes"/>
 	</snmp>
-	<mib2nut auto_check=".1.3.6.1.4.1.13742.6.3.2.1.1.3.1" mib_name="raritan-px2" name="raritan_px2" oid=".1.3.6.1.4.1.13742.6" snmp_info="raritan_px2_mib" version="0.4"/>
+	<mib2nut auto_check=".1.3.6.1.4.1.13742.6.3.2.1.1.3.1" mib_name="raritan-px2" name="raritan_px2" oid=".1.3.6.1.4.1.13742.6" snmp_info="raritan_px2_mib" version="0.41"/>
 </nut>
 
