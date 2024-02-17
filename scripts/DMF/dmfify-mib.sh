@@ -196,12 +196,25 @@ list_shared_sources() {
     # somehow? Support a nested loop and separate storage var
     # to find many such files?
     SNAME=""
-    for F in ../../../drivers/snmp-ups-helpers.c ../../drivers/snmp-ups-helpers.c \
+
+    for F in \
+        ../../../drivers/snmp-ups-helpers.c \
+        ../../drivers/snmp-ups-helpers.c \
         "${_SCRIPT_DIR}"/../../../drivers/snmp-ups-helpers.c \
         "${_SCRIPT_DIR}"/../../drivers/snmp-ups-helpers.c \
     ; do
         [ -s "$F" ] && SNAME="$F" && break
     done
+
+    for F in \
+        ../../../drivers/eaton-pdu-marlin-helpers.c \
+        ../../drivers/eaton-pdu-marlin-helpers.c \
+        "${_SCRIPT_DIR}"/../../../drivers/eaton-pdu-marlin-helpers.c \
+        "${_SCRIPT_DIR}"/../../drivers/eaton-pdu-marlin-helpers.c \
+    ; do
+        [ -s "$F" ] && SNAME="$SNAME $F" && break
+    done
+
     echo "$SNAME"
 }
 
