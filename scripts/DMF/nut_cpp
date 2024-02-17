@@ -31,27 +31,27 @@ sed \
     -e 's/^[ \t]*;/;/g' | \
 perl -0pe 's/\n([^#].*)\n;/\n$1;\n/g' | \
 sed \
-    -e 's/ __asm(.*) *$/;/' \
-    -e 's/__asm__ (.*) *;/;/' \
+    -e 's/ __asm *(.*) *$/;/g' \
+    -e 's/__asm__ *(.*) *;/;/g' \
     -e 's/__attribute__ *(([ *__[A-Za-z0-9_-]*__ *([^()]*))) */ /g' \
     -e 's/__attribute__ *(([^()]*)) */ /g' \
-    -e 's/__inline__/inline/' \
-    -e 's/__signed__/signed/' \
-    -e 's/__unsigned__/unsigned/' \
+    -e 's/__inline__/inline/g' \
+    -e 's/__signed__/signed/g' \
+    -e 's/__unsigned__/unsigned/g' \
     -e 's/__THROW;$/;/' \
-    -e 's/__END_DECLS//' \
-    -e 's/__BEGIN_DECLS//' \
-    -e 's/void (\*signal(int, void (\*)(int)))(int);//' \
-    -e 's/static __inline/static/' \
+    -e 's/__END_DECLS//g' \
+    -e 's/__BEGIN_DECLS//g' \
+    -e 's/void (\*signal(int, void (\*)(int)))(int);//g' \
+    -e 's/static __inline/static/g' \
     -e 's/static[ \t]*;/;/g' \
-    -e 's/__extern_inline/extern/' \
-    -e 's/extern __inline/extern/' \
-    -e 's/_Float[0-9]*x*/float/' \
+    -e 's/__extern_inline/extern/g' \
+    -e 's/extern __inline/extern/g' \
+    -e 's/_Float[0-9]*x*/float/g' \
     -e 's/__restrict//g' \
-    -e 's/__extension__//' \
-    -e 's/[ \t]_Noreturn[ \t]/ /' \
-    -e 's/__NORETURN_*//' \
-    -e 's/__builtin_va_list/int/'
+    -e 's/__extension__//g' \
+    -e 's/[ \t]_Noreturn[ \t]/ /g' \
+    -e 's/__NORETURN_*//g' \
+    -e 's/__builtin_va_list/int/g'
 } # // end of do_filter()
 
 # Repeat same filter a few times to strip appearing blank lines and trailing semicolons
