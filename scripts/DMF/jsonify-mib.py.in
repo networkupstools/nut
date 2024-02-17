@@ -346,8 +346,14 @@ class Visitor(c_ast.NodeVisitor):
             if node.type.type.type.names == ['snmp_info_t']:
                 self._mappings ["SNMP-INFO"][node.name] = self._visit_snmp_info_t (node)
             elif node.type.type.type.names == ['info_lkp_t']:
-                self._mappings ["INFO"][node.type.type.declname] = \
-                self._visit_info_lkp_t (node)
+                # Anticipate several sources (helpers and all), so if one
+                # of them lacks some mapping info - do not delete what we
+                # got from others :)
+                tmp = self._visit_info_lkp_t (node)
+                if self._mappings ["INFO"].get(node.type.type.declname) is None:
+                    self._mappings ["INFO"][node.type.type.declname] = tmp
+                else:
+                    self._mappings ["INFO"][node.type.type.declname].extend(tmp)
             elif node.type.type.type.names == ['alarms_info_t']:
                 self._mappings ["ALARMS-INFO"][node.type.type.declname] = \
                 self._visit_alarms_info_t (node)
