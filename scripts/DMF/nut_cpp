@@ -25,6 +25,11 @@ echo "PREPROCESS: ( cd `pwd` && $CPP $CFLAGS $CPPFLAGS $* )" >&2
 
 do_filter() {
 
+if [ "${DEBUG_NUT_CPP_DISABLE_FILTER-}" = "true" ] ; then
+    cat
+    return
+fi
+
 # tee temp-cpp-orig.tmp | \
 sed \
     -e '/^[ \t]*$/d' \
