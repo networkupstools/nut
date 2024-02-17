@@ -23,6 +23,9 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h" /* must be the first header */
+#include "common.h" /* for upsdebugx() etc */
+
 #include <sys/types.h>
 #ifndef WIN32
 #include <netinet/in.h>

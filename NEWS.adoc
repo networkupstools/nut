@@ -80,6 +80,13 @@ https://github.com/networkupstools/nut/milestone/10
      application name. [#2205]
    * Original recipe for `apc_modbus` strictly required USB support even if
      building NUT without it. [#2262]
+   * Builds requested with a specific C/C++ language standard revision via
+     `CFLAGS` and `CXXFLAGS` should again be honoured. [PR #2306]
+   * Allow requesting detailed debug builds (with disabled optimizations for
+     binaries to best match the source code) for supported compilers using
+     `configure` script option `--with-debuginfo`. Note that default autoconf
+     behavior usually embeds moderate optimizations and debug information on
+     its own. [PR #2310]
 
  - nut-usbinfo.pl, nut-scanner and libnutscan:
    * Library API version for `libnutscan` was bumped from 2.2.0 to 2.5.0
@@ -151,6 +158,9 @@ https://github.com/networkupstools/nut/milestone/10
  - powerpanel text driver now handles status responses in any format and should
    support most devices. [#2156]
 
+ - tripplite_usb driver now allows any device to match if a particular Unit ID
+   was not specified in `ups.conf`. [PR #2297, issues #2282 and #2258]
+
  - snmp-ups driver:
    * added support for Eaton EMP002 sensor for ATS16 NM2 sub-driver. [#2286]
    * mapping table updates for apc-mib sub-driver. [#2264]
@@ -181,7 +191,15 @@ https://github.com/networkupstools/nut/milestone/10
  - Eaton contributed recipes and scripts used to create the IPP for Unix bundle
    (UPS software companion), delivering NUT packages with an interactive
    installer and some system integration scripts (events, notifications,
-   status, shutdown daemon...) [#2288]
+   status, shutdown daemon...) -- provided "as is" at the moment, and may
+   later serve as foundation or inspiration for new NUT features. [#2288]
+
+ - nutconf (C++ library and tool to read and manage NUT configuration files)
+   was started in the open by Eaton employees and used in the IPP installer,
+   but the code lingered in a side branch. It was now brushed up to our common
+   best practices and added to the main codebase. As of this import, there are
+   known deficiencies in Windows platform support, as well as some un-awareness
+   about configuration key words which appeared in NUT since 2013. [#2290]
 
 
 Release notes for NUT 2.8.1 - what's new since 2.8.0

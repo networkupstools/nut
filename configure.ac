@@ -89,6 +89,32 @@ AC_CONFIG_HEADERS([include/config.h])
 AC_PREFIX_DEFAULT(/usr/local/ups)
 AM_INIT_AUTOMAKE([subdir-objects])
 
+AS_CASE([${target_os}],
+	[*mingw*], [AS_CASE([${CFLAGS-}${CXXFLAGS-}],
+		[*"-std=c"*|*-ansi*], [
+			AC_MSG_NOTICE(
+[-----------------------------------------------------------------------
+WARNING: It seems you are building with MinGW and requested a strict C/C++
+language mode. Per https://stackoverflow.com/a/76780217/4715872 MinGW may
+not define WIN32 and other options needed for proper building and linking.
+If this happens, please retry with GNU C/C++ language mode options instead.
+-----------------------------------------------------------------------])
+			sleep 5
+		])]
+)
+
+dnl +-------------------------------------------------------------------
+dnl Help avoid "polluting" CFLAGS etc. with auto-settings like "-g -O2"
+dnl at least if we intend to tune --with-debuginfo anyway (where we check
+dnl if the caller asked for specific optimizations). Following some
+dnl experimentation, we do not want to actually mangle the flags provided
+dnl by autoconf - for GCC at least, the rightmost mentions of conflicting
+dnl flags on command line win. We just want to know when it is okay to add
+dnl ours. They may be inherited from "in-place" build setup though.
+test -n "${CONFIG_CFLAGS-}" || CONFIG_CFLAGS="${CFLAGS-}"
+test -n "${CONFIG_CXXFLAGS-}" || CONFIG_CXXFLAGS="${CXXFLAGS-}"
+dnl +-------------------------------------------------------------------
+
 dnl Default to `configure --enable-silent-rules` or `make V=1` for details?
 dnl This feature seems to require automake-1.13 or newer (1.11+ by other info)
 dnl On very old systems can comment it away with little loss (then automake-1.10
@@ -96,20 +122,48 @@ dnl is known to suffice):
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])],
 	[AC_MSG_NOTICE([Silent Rules feature not defined in this automake version, skipped])])
 
+dnl +-------------------------------------------------------------------
 dnl we need Autoconf 2.61 or better to enable features of Posix that are extensions to C
 dnl (and actually 2.64 or better for m4/ax_check_compile_flag.m4 when it is sourced)
 dnl UPDATE: As tested on CentOS 6, its "autoconf-2.63-5.1.el6.noarch" also suffices.
 dnl But OpenBSD 6.5 requires autoconf-2.65 and automake-1.13 or newer...
+dnl AC_MSG_NOTICE([CFLAGS_BEFORE_ACPROG="${CFLAGS-}"])
+dnl AC_MSG_NOTICE([CXXFLAGS_BEFORE_ACPROG="${CXXFLAGS-}"])
 AC_MSG_CHECKING(for autoconf macro to enable system extensions)
 m4_version_prereq(2.61, [
 	AC_MSG_RESULT(yes)
+        dnl Causes calls to ac_prog stuff, so dittoed below if "no"
 	AC_USE_SYSTEM_EXTENSIONS
 ], [
 	AC_MSG_RESULT(no)
+	AC_PROG_CC
 ])
 
 AC_PREREQ([2.63])
 dnl #AC_PREREQ([2.64])
+
+dnl Macro AC_PROG_CC_C99 is obsolete; use AC_PROG_CC
+dnl Note that NUT does not support building with C89 anyway
+dnl AC_PROG_CC_C99
+dnl Needed for per-target flags
+AM_PROG_CC_C_O
+AC_PROG_CPP
+AC_PROG_CXX
+AC_PROG_CXX_C_O
+
+CFLAGS_AFTER_ACPROG="${CFLAGS-}"
+CXXFLAGS_AFTER_ACPROG="${CXXFLAGS-}"
+
+dnl AC_MSG_NOTICE([CFLAGS_AFTER_ACPROG="${CFLAGS-}"])
+dnl AC_MSG_NOTICE([CXXFLAGS_AFTER_ACPROG="${CXXFLAGS-}"])
+
+dnl # LEGACY DEFAULT FALLBACK which NUT had since 2005 or before:
+dnl # if autoconf does not set any options, use default/moderate optimizations
+CFLAGS=${CFLAGS-"-O"}
+dnl # Not so far a legacy, added for consistency in 2024 :)
+CXXFLAGS=${CXXFLAGS-"-O"}
+
+dnl +-------------------------------------------------------------------
 
 dnl Use "./configure --enable-maintainer-mode" to keep Makefile.in and Makefile
 dnl in sync after Git updates.
@@ -156,8 +210,6 @@ AC_DEFINE_UNQUOTED(NUT_NETVERSION, "${NUT_NETVERSION}", [NUT network protocol ve
 dnl Fix this early so we can expand with eval later
 test "${prefix}" = "NONE" && prefix="${ac_default_prefix}"
 test "${exec_prefix}" = "NONE" && exec_prefix='${prefix}'
-
-CFLAGS=${CFLAGS-"-O"}
 
 dnl Note: for practical and platform-independent use, see AX_REALPATH macro
 AC_CHECK_PROGS([REALPATH], [realpath], [])
@@ -560,11 +612,21 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
             NUT_VERSION_DEPLOYED="<reenter>"
         ])
         export NUT_VERSION_DEPLOYED
+        dnl # Avoid replacement after re-entering:
+        test -n "${CONFIG_CFLAGS-}" || CONFIG_CFLAGS=" "
+        test -n "${CONFIG_CXXFLAGS-}" || CONFIG_CXXFLAGS=" "
+        export CONFIG_CFLAGS
+        export CONFIG_CXXFLAGS
         eval exec "$0" $CONFIG_FLAGS_DEPLOYED $CONFIG_FLAGS --disable-inplace-runtime
     ],[
         AC_MSG_NOTICE([No CONFIG_FLAGS were reported or discovered from existing NUT deployment (if any); restarting script for a clean run])
         NUT_VERSION_DEPLOYED="<reenter>"
         export NUT_VERSION_DEPLOYED
+        dnl # Avoid replacement after re-entering:
+        test -n "${CONFIG_CFLAGS-}" || CONFIG_CFLAGS=" "
+        test -n "${CONFIG_CXXFLAGS-}" || CONFIG_CXXFLAGS=" "
+        export CONFIG_CFLAGS
+        export CONFIG_CXXFLAGS
         AC_MSG_NOTICE([exec "$0" $CONFIG_FLAGS --disable-inplace-runtime])
         eval exec "$0" $CONFIG_FLAGS --disable-inplace-runtime
     ])
@@ -575,15 +637,6 @@ AC_CONFIG_LIBOBJ_DIR([common])
 
 dnl +-------------------------------------------------------------------
 
-dnl AC_PROG_CC
-dnl Macro AC_PROG_CC_C99 is obsolete; use AC_PROG_CC
-dnl Note that NUT does not support building with C89 anyway
-dnl AC_PROG_CC_C99
-dnl Needed for per-target flags
-AM_PROG_CC_C_O
-AC_PROG_CPP
-AC_PROG_CXX
-AC_PROG_CXX_C_O
 AC_PROG_INSTALL
 AC_PROG_MKDIR_P
 AC_PROG_LN_S
@@ -1078,7 +1131,6 @@ AC_CHECK_FUNCS(vsnprintf snprintf, [], [
 	AC_TYPE_LONG_LONG_INT
 ])
 
-
 AC_REPLACE_FUNCS(setenv strerror atexit)
 
 case ${target_os} in
@@ -1536,7 +1588,7 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, gpio (currently on Linux released after ~2018), linux_i2c (on Linux), macosx-ups (on MacOS), cgi, dev, avahi, nut-scanner, pynut]),
+	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, gpio (currently on Linux released after ~2018), linux_i2c (on Linux), macosx-ups (on MacOS), cgi, dev, avahi, nut-scanner, nutconf, pynut]),
 [
 	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
@@ -1580,6 +1632,7 @@ AC_ARG_WITH(all,
 		if test -z "${with_dev}"; then with_dev="${withval}"; fi
 		if test -z "${with_avahi}"; then with_avahi="${withval}"; fi
 		if test -z "${with_nut_scanner}"; then with_nut_scanner="${withval}"; fi
+		if test -z "${with_nutconf}"; then with_nutconf="${withval}"; fi
 
 		if test -n "${PYTHON}${PYTHON2}${PYTHON3}" -a x"${withval}" = xyes \
 		|| test x"${withval}" != xyes \
@@ -1595,7 +1648,7 @@ AC_ARG_WITH(all,
 			dnl # if test -z "${with_nut_monitor}"; then with_nut_monitor="${withval}"; fi
 		fi
 
-		AC_MSG_RESULT("${withval}")
+		AC_MSG_RESULT([${withval}])
 	else
 		AC_MSG_RESULT(not given)
 	fi
@@ -1608,6 +1661,8 @@ dnl declare a number of --with-FEATURE options. Do this early, so that
 dnl they are listed near the top by "./configure --help"; however,
 dnl note that options with further investigation methods are listed
 dnl a bit below to be grouped with their additional with/enable help.
+
+NUT_ARG_WITH([nutconf], [build and install the nutconf tool (experimental, has compiler/coverage warnings)], [auto])
 
 NUT_ARG_WITH([dev], [build and install the development files], [no])
 
@@ -1638,6 +1693,9 @@ NUT_ARG_ENABLE([warnings],
     [auto])
 NUT_ARG_ENABLE([Werror],
     [fail the build if compiler emits any warnings (treat them as errors)],
+    [no])
+NUT_ARG_WITH([debuginfo],
+    [enable compiler options for debug-friendly builds of all NUT binaries ("no" by default; "auto" means "yes unless CFLAGS say otherwise")],
     [no])
 dnl To help find warning/error details in a wall of text, see --enable-Wcolor handled above
 
@@ -1680,7 +1738,6 @@ dnl NUT_ARG_WITH([openipmi], [enable IPMI support using OpenIPMI], [auto])
 dnl Platform-dependent drivers, currently their detection code is directly
 dnl spelled out in configure.ac
 NUT_ARG_WITH([macosx_ups], [build and install Mac OS X Power Sources meta-driver], [auto])
-
 NUT_ARG_WITH([linux_i2c], [build and install i2c drivers], [auto])
 
 dnl A Python GUI client application for the sysadmin desktop
@@ -2832,6 +2889,7 @@ AS_IF([test "x$nut_cv_header_windows_h" = xyes],
 	[AM_CONDITIONAL([HAVE_WINDOWS], [false])]
 	)
 
+
 dnl ----------------------------------------------------------------------
 
 PREFIX="${prefix}"
@@ -3158,7 +3216,6 @@ fi
 AC_MSG_RESULT([${solarispkg_svr4}])
 AM_CONDITIONAL(WITH_SOLARIS_PKG_SVR4, test x"$solarispkg_svr4" = x"yes")
 
-
 AC_MSG_CHECKING(whether to make Solaris IPS packages)
 solarispkg_ips="auto"
 AC_ARG_WITH([solaris-pkg-ips],
@@ -3307,7 +3364,6 @@ dnl This option is only provided so that make distcheck can override it,
 dnl otherwise we ask pkg-config whenever --with-systemdsystemunitdir is
 dnl given
 
-
 AC_MSG_CHECKING(whether to install systemd shutdown files)
 AC_ARG_WITH([systemdshutdowndir],
 	AS_HELP_STRING([--with-systemdshutdowndir=DIR], [Directory for systemd shutdown scripts (auto)]),
@@ -3340,7 +3396,6 @@ if test -n "${systemdshutdowndir}"; then
 else
 	AC_MSG_RESULT(no)
 fi
-
 
 dnl Note: if (systemd-)tmpfiles tech is present, it can be useful even for
 dnl daemons starting not as systemd units, to pre-create /var/run/nut etc.
@@ -3535,7 +3590,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])
     [AC_MSG_RESULT([yes, out of the box])
      have_cxx11=yes],
     [AS_CASE(["${CXXFLAGS}"],
-        [*"-std="*], [
+        [*"-std="*|*"-ansi"*], [
             AC_MSG_RESULT([no, not with the standard already set in CXXFLAGS='${CXXFLAGS}'])
             have_cxx11=no
         ],[
@@ -3558,6 +3613,9 @@ unset CPLUSPLUS_DECL
 
 AC_MSG_CHECKING(for have_cppunit)
 have_cppunit="no"
+dnl CPPUNIT_NUT_CXXFLAGS are set below if suitable, but can be
+dnl disabled further below if nut_with_debuginfo gets applied
+dnl for all NUT build products:
 CPPUNIT_NUT_CXXFLAGS=""
 AS_IF([test x"$have_PKG_CONFIG" = xyes],
     [AS_IF([test x"${have_cxx11}" = xyes],
@@ -3641,16 +3699,38 @@ return res ? 0 : 1;
 dnl # By default keep the originally detected have_cppunit value
 AC_MSG_CHECKING(for impact from --enable-cppunit option - should we build cppunit tests?)
 AC_ARG_ENABLE(cppunit,
-	[AS_HELP_STRING([--enable-cppunit], [enable CPPUNIT tests for C++ bindings])],
+	[AS_HELP_STRING([--enable-cppunit], [enable CPPUNIT tests for C++ bindings (yes, no, force, auto)])],
 	[AS_CASE(["${enableval}"],
-		["yes"], [AS_IF([test x"${have_cppunit}" = xyes], [], [AC_MSG_ERROR([--with-cppunit=yes can not be satisfied])])],
+		["force"], [AS_IF([test x"${have_cppunit}" = xyes], [], [
+			AC_MSG_WARN([--enable-cppunit=yes can not be satisfied, but developer asked for it])
+			have_cppunit=yes
+			])],
+		["yes"], [AS_IF([test x"${have_cppunit}" = xyes], [], [AC_MSG_ERROR([--enable-cppunit=yes can not be satisfied])])],
 		["no"], [have_cppunit=no]
+		dnl # "auto" and other values keep what was detected (or not)
 	)])
 AC_MSG_RESULT(${have_cppunit})
 
 NUT_REPORT_FEATURE([build C++ tests with CPPUNIT], [${have_cppunit}], [],
 					[HAVE_CPPUNIT], [Define to enable CPPUNIT tests])
-AC_DEFINE_UNQUOTED(CPPUNIT_NUT_CXXFLAGS, $CPPUNIT_NUT_CXXFLAGS, [Compiler flags for cppunit tests])
+
+dnl ----------------------------------------------------------------------
+
+AC_MSG_CHECKING(whether we can and want to build nutconf configuration-management tool)
+
+AS_CASE(["${nut_with_nutconf}"],
+		["auto"], [AS_IF([test x"${have_cxx11}" = xyes], [nut_with_nutconf="yes"], [nut_with_nutconf="no"])],
+		["yes"], [AS_IF([test x"${have_cxx11}" = xyes], [], [AC_MSG_ERROR([explicit --with-nutconf=yes can not be satisfied: C++11 support not enabled])])],
+		["no"], [nut_with_nutconf=no]
+	)
+AC_MSG_RESULT(${nut_with_nutconf})
+
+AM_CONDITIONAL(WITH_NUTCONF, test "${nut_with_nutconf}" = "yes")
+NUT_REPORT_FEATURE([build and install the nutconf tool (experimental, may lack support for recent NUT options)],
+					[${nut_with_nutconf}], [],
+					[WITH_NUTCONF], [Define to enable nutconf tool support])
+
+dnl ----------------------------------------------------------------------
 
 AC_MSG_CHECKING(whether to install Augeas configuration-management lenses)
 AC_ARG_WITH(augeas-lenses-dir,
@@ -4271,7 +4351,7 @@ AS_CASE(["${nut_enable_warnings}"],
      nut_enable_warnings="no"
     ]
 )
-AC_MSG_RESULT(["${nut_enable_warnings}"])
+AC_MSG_RESULT([${nut_enable_warnings}])
 
 dnl # Nothing special for gcc - we tend to survive it with GNU standard >= 99
 dnl # and fail with strict C standard. Suggestions welcome for "gcc-hard" to
@@ -4300,6 +4380,9 @@ dnl # -Wno-padded -- NSPR and NSS headers get to issue lots of that
 dnl # -Wno-c++98-compat-pedantic -Wno-c++98-compat -- our C++ code uses nullptr
 dnl #    as requested by newer linters, and C++98 does not. We require C++11
 dnl #    or newer anyway, and skip building C++ library and test otherwise.
+dnl # -Wno-exit-time-destructors -- "(static) const something" items would be
+dnl #    de-allocated en-masse when the program exits, not GC'ed at run-time.
+dnl #    Oh well...
 dnl # -Wno-fuse-ld-path -- not much in our control what recipes the autotools
 dnl #    on the build host generate... this tries to avoid failures due to:
 dnl #      clang-13: error: '-fuse-ld=' taking a path is deprecated.
@@ -4308,7 +4391,15 @@ dnl # -Wno-unsafe-buffer-usage -- clang-16 introduced a check too smart for
 dnl #    its own good. It detects use of pointer aritmetics as arrays are
 dnl #    walked, which is indeed potentially dangerous. And also is nearly
 dnl #    unavoidable in C (at least not without major rewrites of the world).
+dnl # -Wno-documentation-unknown-command -fcomment-block-commands=retval --
+dnl #    some clang versions sanity-check Doxygen style comments, but do not
+dnl #    recognize "\retval" key word. These options try to both ignore the
+dnl #    problematic area, and to add it as recognized (TODO: scripted check
+dnl #    for abilities of the current build's compiler instead)
 dnl ### Special exclusion picks for clang-medium (same as hard, plus...):
+dnl # -Wno-global-constructors -- using "const something" out of method context
+dnl #    potentially impacts start-up time and may be prone to race conditions
+dnl #    (for non-trivial interconnected objects), better be re-architected.
 dnl # -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion
 dnl #    -- reduce noise due to floating-point literals like "3.14" being a C
 dnl #    double type (a "3.14f" literal is a C float) cast implicitly into
@@ -4345,16 +4436,16 @@ AS_CASE(["${nut_enable_warnings}"],
         CXXFLAGS="${CXXFLAGS} -Wall"
         ],
     [clang-hard], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
         ],
     [clang-medium], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-conversion -Wno-incompatible-pointer-types-discards-qualifiers -Wno-incompatible-function-pointer-types-strict"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-conversion -Wno-incompatible-pointer-types-discards-qualifiers -Wno-incompatible-function-pointer-types-strict"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-global-constructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
         ],
     [clang-minimal], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Wno-documentation"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Wno-documentation"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Wno-documentation -Wno-documentation-unknown-command -fcomment-block-commands=retval"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wall -Wextra -Wno-documentation -Wno-documentation-unknown-command -fcomment-block-commands=retval"
         ],
     [gcc-legacy], [CFLAGS="${CFLAGS} -Wall -Wsign-compare"],
     [gcc-minimal], [
@@ -4407,7 +4498,7 @@ AS_CASE(["${nut_enable_Werror}"],
         CXXFLAGS="${CXXFLAGS} -Wno-error"
         ]
 )
-AC_MSG_RESULT(["${nut_enable_Werror}"])
+AC_MSG_RESULT([${nut_enable_Werror}])
 
 dnl Some compilers (e.g. older clang-3.4) have issues with built-in methods
 dnl that are implemented as macros in system headers -- but only for some
@@ -4539,11 +4630,35 @@ AS_IF([test -n "${ac_abs_top_builddir}" && test -d "${ac_abs_top_builddir}"],
          TOP_BUILDDIR="`cd "$TOP_BUILDDIR" && pwd`" || AC_MSG_ERROR([Can not detect TOP_BUILDDIR])]
     )]
 )
-AC_MSG_RESULT(["${TOP_BUILDDIR}"])
+dnl Quoted in case someone copy-pastes this path and it has whitespaces:
+AC_MSG_RESULT(['${TOP_BUILDDIR}'])
 
 ABS_TOP_BUILDDIR="`cd "${TOP_BUILDDIR}" && pwd`" || AC_MSG_ERROR([Can not detect ABS_TOP_BUILDDIR])
 ABS_TOP_SRCDIR="`cd "${abs_srcdir}" && pwd`" || AC_MSG_ERROR([Can not detect ABS_TOP_SRCDIR])
 AM_CONDITIONAL([BUILDING_IN_TREE], [test "${ABS_TOP_BUILDDIR}" = "${ABS_TOP_SRCDIR}"])
+
+dnl When building ON Windows (mingw/MSYS2, cygwin, etc.) fudge these
+dnl path strings back to what native OS methods would recognize.
+AS_CASE([${target_os}],
+    [*mingw*], [
+        dnl Cygwin path resolver
+        AC_CHECK_TOOL([CYGPATH], [cygpath], [none])
+        AS_IF([test "x${CYGPATH}" != "xnone"], [
+            tmp="`${CYGPATH} -m "${ABS_TOP_BUILDDIR}" | sed -e 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_BUILDDIR="$tmp"
+            tmp="`${CYGPATH} -m "${ABS_TOP_SRCDIR}" | sed 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_SRCDIR="$tmp"
+        ],[
+            dnl MSYS pwd with -W option to resolve
+            AC_CHECK_TOOL([PWD], [pwd], [none])
+            AS_IF([test "x${PWD}" != "xnone"], [
+                tmp="`(cd "${ABS_TOP_BUILDDIR}" && ${PWD} -W) | sed 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_BUILDDIR="$tmp"
+                tmp="`(cd "${ABS_TOP_SRCDIR}" && ${PWD} -W) | sed 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_SRCDIR="$tmp"
+            ])
+        ])
+])
+
+dnl Use these at best for tests (e.g. nutconf), not production code:
+AC_DEFINE_UNQUOTED([ABS_TOP_SRCDIR], ["${ABS_TOP_SRCDIR}"], [NUT source directory when the build was configured])
+AC_DEFINE_UNQUOTED([ABS_TOP_BUILDDIR], ["${ABS_TOP_BUILDDIR}"], [NUT build directory when the build was configured])
 
 AC_MSG_CHECKING([whether to customize ${TOP_BUILDDIR}/scripts/systemd/nut-common-tmpfiles.conf.in for this system])
 dnl TOTHINK: Some distributions make the directories below owned
@@ -4643,6 +4758,68 @@ AC_ARG_VAR(CCACHE_PATH)
 PATH_DURING_CONFIGURE="$PATH"
 AC_SUBST(PATH_DURING_CONFIGURE)
 
+dnl Some binaries, like CPPUNIT tests, have similar flags already added
+dnl We might wipe their specific options below if consistently applying
+dnl debug-friendly options to everything
+AC_MSG_NOTICE([CONFIG_CFLAGS='${CONFIG_CFLAGS}'])
+AC_MSG_NOTICE([CONFIG_CXXFLAGS='${CONFIG_CXXFLAGS}'])
+AC_MSG_CHECKING([whether to enable debug info in all NUT binaries])
+nut_with_debuginfo_C="${nut_with_debuginfo}"
+nut_with_debuginfo_CXX="${nut_with_debuginfo}"
+AS_CASE(["${CONFIG_CFLAGS}"],
+    [*-O*|*-g*], [
+        AS_IF([test x"${nut_with_debuginfo_C}" = xauto], [
+            nut_with_debuginfo_C="Related settings already specified by caller CFLAGS, not changing anything"
+            ])
+        ],
+    [   dnl No competing options are provided
+        AS_IF([test x"${nut_with_debuginfo_C}" = xauto], [nut_with_debuginfo_C="yes"])
+    ])
+
+AS_CASE(["${CONFIG_CXXFLAGS}"],
+    [*-O*|*-g*], [
+        AS_IF([test x"${nut_with_debuginfo_CXX}" = xauto], [
+            nut_with_debuginfo_CXX="Related settings already specified by caller CXXFLAGS, not changing anything"
+            ])
+        ],
+    [   dnl No competing options are provided
+        AS_IF([test x"${nut_with_debuginfo_CXX}" = xauto], [nut_with_debuginfo_CXX="yes"])
+    ])
+
+AS_CASE(["${nut_with_debuginfo_C}"],
+    [yes], [
+        AS_IF([test x"${CLANGCC}" = x"yes" -o x"${GCC}" = x"yes"], [
+            CFLAGS="${CFLAGS} -O0 -g3 -gdwarf-2"
+            ],[nut_with_debuginfo_C="Unknown C compiler, not adding options"]
+        )],
+    dnl # [no]: By default we do not add debug info
+    [legacy], [
+        dnl # Apply legacy defaults if no flags were specified by caller or detected by autoconf
+        AS_IF([test x"${CFLAGS_AFTER_ACPROG}" = x],	[CFLAGS="-O ${CFLAGS}"])
+        ]
+)
+
+AS_CASE(["${nut_with_debuginfo_CXX}"],
+    [yes], [
+        AS_IF([test "x$CLANGXX" = xyes -o "x$GXX" = xyes], [
+            dnl Where we can enable debug, minimize the optimizations
+            CXXFLAGS="${CXXFLAGS} -O0 -g3 -gdwarf-2"
+            dnl Use same settings for CPPUNIT tests (they bump their own by default)
+            CPPUNIT_NUT_CXXFLAGS=""
+            ],[nut_with_debuginfo_CXX="Unknown C++ compiler, not adding options"]
+        )],
+    dnl # [no]: By default we do not add debug info
+    [legacy], [
+        dnl # Apply legacy defaults if no flags were specified by caller or detected by autoconf
+        AS_IF([test x"${CXXFLAGS_AFTER_ACPROG}" = x],	[CXXFLAGS="-O ${CXXFLAGS}"])
+        ]
+)
+
+AC_MSG_RESULT([C: ${nut_with_debuginfo_C}; C++: ${nut_with_debuginfo_CXX}])
+
+dnl Only in the end, do you understand...
+AC_SUBST(CPPUNIT_NUT_CXXFLAGS)
+
 AC_MSG_NOTICE([Generating "data" files from templates, see below for executable scripts])
 AC_CONFIG_FILES([
  clients/Makefile
@@ -4713,6 +4890,7 @@ AC_CONFIG_FILES([
  server/Makefile
  tools/Makefile
  tools/nut-scanner/Makefile
+ tools/nutconf/Makefile
  tests/Makefile
  tests/NIT/Makefile
  Makefile

@@ -64,6 +64,12 @@ extern "C" {
 # endif
 #endif
 
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
 #if !defined (HAVE_SNPRINTF) || defined (__Lynx__)
 int snprintf (char *str, size_t count, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 3, 4)));
