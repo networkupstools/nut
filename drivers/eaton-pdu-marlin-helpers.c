@@ -30,15 +30,20 @@
 
 #include "config.h"	/* must be the first header */
 
-#include <stdlib.h>
-#include <stdio.h>
+#if defined WITH_SNMP_LKP_FUN && WITH_SNMP_LKP_FUN && defined WITH_SNMP_LKP_FUN_DUMMY && WITH_SNMP_LKP_FUN_DUMMY
+	/* Just avoid an "empty translation unit" */
+	void dummy_method(void);
+	void dummy_method(void) {}
+#else
+# include <stdlib.h>
+# include <stdio.h>
 
-#include "nut_stdint.h"
-#include "eaton-pdu-marlin-helpers.h"
-#include "dstate.h"
-#include "common.h"
+# include "nut_stdint.h"
+# include "eaton-pdu-marlin-helpers.h"
+# include "dstate.h"
+# include "common.h"
 /* Allow access to temperature_unit */
-#include "snmp-ups.h"
+# include "snmp-ups.h"
 
 /* Take string "unitsPresent" (ex: "0,3,4,5"), and count the amount
  * of "," separators+1 using an inline function */
@@ -89,3 +94,4 @@ const char *eaton_sensor_temperature_unit_fun(void *raw_snmp_value)
 	}
 	return "celsius";
 }
+#endif	/* WITH_SNMP_LKP_FUN && WITH_SNMP_LKP_FUN_DUMMY */

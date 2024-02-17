@@ -85,6 +85,7 @@ info_lkp_t su_convert_to_iso_date_info[] = {
 	info_lkp_sentinel
 };
 
+#if !(defined WITH_SNMP_LKP_FUN_DUMMY) || !WITH_SNMP_LKP_FUN_DUMMY
 /* Process temperature value according to 'temperature_unit' */
 const char *su_temperature_read_fun(void *raw_snmp_value)
 {
@@ -113,3 +114,4 @@ const char *su_temperature_read_fun(void *raw_snmp_value)
 	upsdebugx(2, "%s: %.1ld => %s", __func__, (snmp_value / 10), su_scratch_buf);
 	return su_scratch_buf;
 }
+#endif	/* WITH_SNMP_LKP_FUN_DUMMY */
