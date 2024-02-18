@@ -562,7 +562,16 @@ dmfcore_parse_dir (char *dir_name, dmfcore_parser_t *dcp)
 				} else {
 					int res;
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif
 					snprintf(file_path, PATH_MAX_SIZE, "%s/%s", dir_name, dir_ent[c]->d_name);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic pop
+#endif
 					assert(file_path);
 					res = dmfcore_parse_file(file_path, dcp);
 					upsdebugx (5, "dmfcore_parse_file (\"%s\", <%p>)=%d", file_path, (void*)dcp, res);
@@ -574,7 +583,7 @@ dmfcore_parse_dir (char *dir_name, dmfcore_parser_t *dcp)
 					}
 					free(file_path);
 				}
-			}else{
+			} else {
 				upslogx(LOG_ERR, "dmfcore_parse_dir(): File path too long");
 			}
 		}
