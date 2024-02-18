@@ -159,21 +159,24 @@ libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_ups
 endif
 libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include \
 			$(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
+
+if WITH_NEON
+if WITH_SNMP
 if WITH_DMF
 libnutscan_la_CFLAGS += -DWITH_DMFMIB=1
 if WITH_DMF_LUA
 libnutscan_la_LDFLAGS += $(LDFLAGS_DMF_LUA)
 libnutscan_la_CFLAGS += -DWITH_DMF_LUA=1 $(CFLAGS_DMF_LUA)
-else
+else !WITH_DMF_LUA
 libnutscan_la_CFLAGS += -DWITH_DMF_LUA=0
-endif
-else
-libnutscan_la_CFLAGS += -DWITH_DMFMIB=0 -DWITH_DMF_LUA=0
-endif
-
-if WITH_DMF
+endif !WITH_DMF_LUA
 libnutscan_la_LIBADD += $(top_builddir)/common/libnutdmfsnmp.la
-endif
+else !WITH_DMF
+libnutscan_la_CFLAGS += -DWITH_DMFMIB=0 -DWITH_DMF_LUA=0
+endif !WITH_DMF
+endif WITH_SNMP
+endif WITH_NEON
+
 libnutscan_la_LIBADD += $(top_builddir)/common/libcommonstr.la
 #libnutscan_la_LIBADD += $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la
 
@@ -191,20 +194,20 @@ nut_scanner_CFLAGS += -DWITH_DMFMIB=1
 if WITH_DMF_LUA
 nut_scanner_CFLAGS += -DWITH_DMF_LUA=1 $(CFLAGS_DMF_LUA)
 nut_scanner_LDFLAGS = $(LDFLAGS_DMF_LUA)
-else
+else !WITH_DMF_LUA
 nut_scanner_CFLAGS += -DWITH_DMF_LUA=0
-endif
-else
+endif !WITH_DMF_LUA
+else !WITH_DMF
 nut_scanner_CFLAGS += -DWITH_DMFMIB=0 -DWITH_DMF_LUA=0
-endif
+endif !WITH_DMF
 if ! WITH_LIBLTDL
 # The libs needed to handle XML parsing and usage of DMF SNMP are ltdl()'ed
 # but without this builds fail (TODO: Revise responsible code? LTDL in DMF?)
 #	$(LIBNETSNMP_LIBS)
 libnutscan_la_LIBADD += $(LIBNEON_LIBS)
-endif
-endif
-endif
+endif !WITH_LIBLTDL
+endif WITH_NEON
+endif WITH_SNMP
 
 if WITH_SSL
   libnutscan_la_CFLAGS += $(LIBSSL_CFLAGS)
