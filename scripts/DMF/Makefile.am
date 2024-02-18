@@ -311,6 +311,7 @@ $(abs_builddir)/$(DMFSNMP_RES_SUBDIR)/.uptodate: $(dmfsnmpres_DMFS)
 				*) N="$(abs_builddir)/$(DMFSNMP_RES_SUBDIR)/$$B"; \
 					if [ -s "$$F" ] && [ ! -s "$$N" ] ; then \
 						echo "  CP    $$F => $$N" >&2 ; \
+						$(MKDIR_P) "$(abs_builddir)/$(DMFSNMP_RES_SUBDIR)" && \
 						cp -f "$$F" "$$N" || exit ; \
 					fi ;; \
 			esac ; \
@@ -361,6 +362,7 @@ $(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFNUTSCAN_DEPS)
 		N="$(abs_builddir)/$(DMFNUTSCAN_RES_SUBDIR)/$(@F)"; \
 		if [ -s "$$F" ] && [ ! -s "$$N" ] ; then \
 			echo "  CP    $$F => $$N" >&2 && \
+			$(MKDIR_P) "$(abs_builddir)/$(DMFNUTSCAN_RES_SUBDIR)" && \
 			cp -f "$$F" "$$N" || { ls -la "$$F" "$$N" ; exit 1; } ; \
 		fi; \
 	 fi
