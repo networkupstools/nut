@@ -479,7 +479,7 @@ DMFTESTS_COMMON_CFLAGS += \
 
 if WITH_DMF
 # Included dependencies
-$(top_builddir)/common/libnutdmfsnmp.la :
+$(top_builddir)/common/libnutdmfsnmp.la : dummy
 	cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 noinst_PROGRAMS += dmf-test
@@ -654,6 +654,8 @@ dmf-fun-test:
 run-dmf-fun-test:
 	@echo "  SKIP   DMF support was not enabled or detected during project configuration, can not run test programs" >&2
 endif
+
+dummy:
 
 MAINTAINERCLEANFILES += Makefile.in .dirstamp
 
