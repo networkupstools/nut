@@ -4115,7 +4115,7 @@ NUT_REPORT_SETTING_PATH([System exec-library path],
 
 dnl ----------------------------------------------------------------------
 dnl Check for --with-dmf, --with-lua and/or --with-dmf_lua, --with-snmp_dmf and/or --with-snmp_dmf_lua
-dnl This MUST be after DATADIR has been processed!
+dnl This MUST be after NUT_DATADIR has been processed!
 NUT_ARG_WITH([dmf], [enable DMF (data mapping file) generic support], [auto])
 NUT_ARG_WITH([lua], [enable LUA-5.1+ scripting generic support], [auto])
 NUT_ARG_WITH([dmf_lua], [enable DMF (data mapping file) support including LUA-5.1+ scripting], [auto])
@@ -4322,15 +4322,15 @@ dmfnutscanresdir=""
 dmfsnmpdir=""
 dmfnutscandir=""
 if test "${nut_with_dmf}" = yes -o "${nut_with_snmp_dmf}" = yes -o "${nut_with_snmp_dmf_lua}" = yes ; then
-	dmfsnmpresdir="${DATADIR}/dmfsnmp"
-	dmfnutscanresdir="${DATADIR}/dmfnutscan"
-	dmfsnmpdir="${DATADIR}/dmfsnmp.d"
-	dmfnutscandir="${DATADIR}/dmfnutscan.d"
+	dmfsnmpresdir="${NUT_DATADIR}/dmfsnmp"
+	dmfnutscanresdir="${NUT_DATADIR}/dmfnutscan"
+	dmfsnmpdir="${NUT_DATADIR}/dmfsnmp.d"
+	dmfnutscandir="${NUT_DATADIR}/dmfnutscan.d"
 fi
 
 AC_MSG_CHECKING(whether to install DMF resource collection of mappings for SNMP-UPS driver)
 AC_ARG_WITH(dmfsnmp-res-dir,
-	AS_HELP_STRING([--with-dmfsnmp-res-dir=PATH], [where to install DMF resource collection of mappings for SNMP-UPS driver (DATADIR/dmfsnmp if DMF+SNMP are enabled)]),
+	AS_HELP_STRING([--with-dmfsnmp-res-dir=PATH], [where to install DMF resource collection of mappings for SNMP-UPS driver (NUT_DATADIR/dmfsnmp if DMF+SNMP are enabled)]),
 [
 	case "${withval}" in
 	yes)
@@ -4358,7 +4358,7 @@ AC_DEFINE_UNQUOTED(DEFAULT_DMFSNMP_RES_DIR, "${dmfsnmpresdir}", [Default path fo
 
 AC_MSG_CHECKING(whether to activate DMF collection of mappings for SNMP-UPS driver)
 AC_ARG_WITH(dmfsnmp-dir,
-	AS_HELP_STRING([--with-dmfsnmp-dir=PATH], [where to install DMF active collection of mappings for SNMP-UPS driver (DATADIR/dmfsnmp.d if DMF+SNMP are enabled)]),
+	AS_HELP_STRING([--with-dmfsnmp-dir=PATH], [where to install DMF active collection of mappings for SNMP-UPS driver (NUT_DATADIR/dmfsnmp.d if DMF+SNMP are enabled)]),
 [
 	case "${withval}" in
 	yes)
@@ -4386,7 +4386,7 @@ AC_DEFINE_UNQUOTED(DEFAULT_DMFSNMP_DIR, "${dmfsnmpdir}", [Default path for DMF a
 
 AC_MSG_CHECKING(whether to install DMF resource collection of mappings for nut-scanner SNMP mode)
 AC_ARG_WITH(dmfnutscan-res-dir,
-	AS_HELP_STRING([--with-dmfnutscan-res-dir=PATH], [where to install DMF resourcecollection of mappings for nut-scanner SNMP mode (DATADIR/dmfnutscan if DMF+SNMP are enabled)]),
+	AS_HELP_STRING([--with-dmfnutscan-res-dir=PATH], [where to install DMF resourcecollection of mappings for nut-scanner SNMP mode (NUT_DATADIR/dmfnutscan if DMF+SNMP are enabled)]),
 [
 	case "${withval}" in
 	yes)
@@ -4414,7 +4414,7 @@ AC_DEFINE_UNQUOTED(DEFAULT_DMFNUTSCAN_RES_DIR, "${dmfnutscanresdir}", [Default p
 
 AC_MSG_CHECKING(whether to activate DMF collection of mappings for nut-scanner SNMP mode)
 AC_ARG_WITH(dmfnutscan-dir,
-	AS_HELP_STRING([--with-dmfnutscan-dir=PATH], [where to install DMF active collection of mappings for nut-scanner SNMP mode (DATADIR/dmfnutscan.d if DMF+SNMP are enabled)]),
+	AS_HELP_STRING([--with-dmfnutscan-dir=PATH], [where to install DMF active collection of mappings for nut-scanner SNMP mode (NUT_DATADIR/dmfnutscan.d if DMF+SNMP are enabled)]),
 [
 	case "${withval}" in
 	yes)
