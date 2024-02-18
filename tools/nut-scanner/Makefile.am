@@ -85,13 +85,13 @@ if WITH_DMF
  nut_scanner_reindex_dmfsnmp_SOURCES = nut-scanner-reindex-dmfsnmp.c
  nut_scanner_reindex_dmfsnmp_LDADD = \
 	$(top_builddir)/common/libnutdmfsnmp.la \
-    $(top_builddir)/common/libcommon.la \
+	$(top_builddir)/common/libcommon.la \
 	$(top_builddir)/common/libparseconf.la \
-    $(LIBNETSNMP_LIBS)
+	$(LIBNETSNMP_LIBS)
  nut_scanner_reindex_dmfsnmp_CFLAGS = -I$(top_srcdir)/include \
-    -I$(top_srcdir)/drivers -I$(top_srcdir)/tools/nut-scanner \
-    $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS) \
-    -DDMFREINDEXER_MAKECHECK=0
+	-I$(top_srcdir)/drivers -I$(top_srcdir)/tools/nut-scanner \
+	$(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS) \
+	-DDMFREINDEXER_MAKECHECK=0
 
 if WITH_DMF_LUA
  nut_scanner_reindex_dmfsnmp_LDADD += $(LDFLAGS_DMF_LUA)
