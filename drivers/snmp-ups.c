@@ -3271,30 +3271,36 @@ static int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su
 }
 
 #if WITH_DMF_LUA
-int publish_Lua_dstate(lua_State *L){
+int publish_Lua_dstate(lua_State *L);
+int publish_Lua_dstate(lua_State *L) {
 	const char *info_type = lua_tostring(L, 1);
 	const char *value = lua_tostring(L, 2);
 
-	if((info_type) && (value))
+	if ((info_type) && (value))
 		dstate_setinfo(info_type, "%s", value);
 	return 0;
 }
 
-int lua_C_gateway(lua_State *L){
+int lua_C_gateway(lua_State *L);
+int lua_C_gateway(lua_State *L) {
 	/* get number of arguments */
-	const char *info_type = lua_tostring(L, 1);
-	int current_device_number = lua_tointeger(L, 2);
+	const char *lua_info_type = lua_tostring(L, 1);
+	int lua_current_device_number = lua_tointeger(L, 2);
 
-	char *buf = (char *) malloc((strlen(info_type)+12) * sizeof(char));
+	char *buf = (char *) malloc((strlen(lua_info_type)+12) * sizeof(char));
+	if (!buf) {
+		upsdebugx(1, "%s: failed to allocate a buffer", __func__);
+		return -1;
+	}
 
-	if(current_device_number > 0)
-		sprintf(buf, "device.%d.%s", current_device_number, info_type);
+	if (lua_current_device_number > 0)
+		sprintf(buf, "device.%d.%s", lua_current_device_number, lua_info_type);
 	else
-		sprintf(buf, "device.%s", info_type);
+		sprintf(buf, "device.%s", lua_info_type);
 
 	const char *value = dstate_getinfo(buf);
 
-	if(value)
+	if (value)
 		lua_pushstring(L, value);
 
 	/* return the number of results */
