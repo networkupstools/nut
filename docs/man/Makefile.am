@@ -1154,7 +1154,9 @@ spellcheck spellcheck-interactive spellcheck-sortdict:
 # stack (causing a dependency loop)!
 PREP_SRC = $(SRC_ALL_PAGES) asciidoc.conf
 .prep-src-docs: $(PREP_SRC)
-	@if test x"$(abs_srcdir)" != x"$(abs_builddir)" ; then \
+	@if test x"$(abs_srcdir)" = x"$(abs_builddir)" ; then \
+	    if ! test -e "$@" ; then touch "$@" ; fi ; \
+	 else \
 	    COUNT=30 ; \
 	    touch "$@.$$$$" ; \
 	    while test -e "$@.working" -a "$$COUNT" -gt 0 ; do sleep 1; COUNT="`expr $$COUNT - 1`"; done ; \

@@ -613,7 +613,9 @@ endif !HAVE_ASPELL
 # under the same dir structure (tool limitation)
 PREP_SRC = $(EXTRA_DIST) $(SPELLCHECK_SRC_DEFAULT)
 .prep-src-docs: $(PREP_SRC)
-	@if test x"$(abs_srcdir)" != x"$(abs_builddir)" ; then \
+	@if test x"$(abs_srcdir)" = x"$(abs_builddir)" ; then \
+	    if ! test -e "$@" ; then touch "$@" ; fi ; \
+	 else \
 	    COUNT=30 ; \
 	    touch "$@.$$$$" ; \
 	    while test -e "$@.working" -a "$$COUNT" -gt 0 ; do sleep 1; COUNT="`expr $$COUNT - 1`"; done ; \
