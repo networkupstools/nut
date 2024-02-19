@@ -39,6 +39,12 @@ static char * nutscan_device_type_string[TYPE_END] = {
 	"EATON_SERIAL"
 };
 
+/* Counter incremented by nutscan_display_ups_conf(); later maybe adding other
+ * renderer methods which could be interested in uniquely numbering the device
+ * configurations. Note that this is a monotonously increasing number suffixed
+ * to "nutdev-<type>". Naming of this sort is NOT part of nutscan_device_t or
+ * nutscan_options_t, it is defined by/appears in the renderer alone so far.
+ */
 static int last_nutdev_num = 0;
 
 void nutscan_display_ups_conf_with_sanity_check(nutscan_device_t * device)
@@ -196,8 +202,10 @@ void nutscan_display_sanity_check_serial(nutscan_device_t * device)
 	 */
 	nutscan_device_t * current_dev = device;
 	nutscan_options_t * opt;
-	/* Keep numbering consistent with global entry naming.
-	 * Note its last value is after loop, so "real + 1".
+	/* Keep numbering consistent with global entry naming
+	 * as we call the device config renderer and the sanity
+	 * check collector for the same device, then iterate.
+	 * Note its last value is after loop, so is "real + 1".
 	 */
 	int nutdev_num = last_nutdev_num - 1;
 	size_t listlen = 0, count = 0, i;
