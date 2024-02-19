@@ -45,7 +45,7 @@ static char * nutscan_device_type_string[TYPE_END] = {
  * to "nutdev-<type>". Naming of this sort is NOT part of nutscan_device_t or
  * nutscan_options_t, it is defined by/appears in the renderer alone so far.
  */
-static int last_nutdev_num = 0;
+static size_t last_nutdev_num = 0;
 
 void nutscan_display_ups_conf_with_sanity_check(nutscan_device_t * device)
 {
@@ -66,7 +66,7 @@ void nutscan_display_ups_conf(nutscan_device_t * device)
 	 */
 	nutscan_device_t * current_dev = device;
 	nutscan_options_t * opt;
-	static int nutdev_num = 1;
+	static size_t nutdev_num = 1;
 
 	upsdebugx(2, "%s: %s", __func__, device
 		? (device->type < TYPE_END ? nutscan_device_type_string[device->type] : "<UNKNOWN>")
@@ -83,7 +83,7 @@ void nutscan_display_ups_conf(nutscan_device_t * device)
 
 	/* Display each device */
 	do {
-		printf("[nutdev-%s%i]\n\tdriver = \"%s\"",
+		printf("[nutdev-%s%" PRIuSIZE "]\n\tdriver = \"%s\"",
 			nutscan_device_type_lstrings[current_dev->type],
 			nutdev_num, current_dev->driver);
 
@@ -219,7 +219,9 @@ void nutscan_display_sanity_check_serial(nutscan_device_t * device)
 	 * check collector for the same device, then iterate.
 	 * Note its last value is after loop, so is "real + 1".
 	 */
-	int nutdev_num = last_nutdev_num - 1;
+	size_t current_nutdev_num = last_nutdev_num - 1;
+	/* Human-friendly numbering */
+	size_t nutdev_num = 1;
 	size_t listlen = 0, count = 0, i;
 	keyval_strings_t *map = NULL, *entry = NULL;
 
@@ -258,15 +260,16 @@ void nutscan_display_sanity_check_serial(nutscan_device_t * device)
 		return;
 	}
 
-	upsdebugx(3, "%s: checking serial numbers for %" PRIuSIZE " device configuration(s)",
-		__func__, listlen);
+	upsdebugx(3, "%s: checking serial numbers for %" PRIuSIZE " device configuration(s)"
+		"; entry point (\"current device\") was #%" PRIuSIZE " in the list",
+		__func__, listlen, current_nutdev_num);
 
 	/* NOTE: we start the loop with current_dev == first device in list */
 	do {
 		/* Look for serial option in current device (iterated) */
 		char nutdev_name[SMALLBUF];
 		opt = current_dev->opt;
-		snprintf(nutdev_name, sizeof(nutdev_name), "nutdev-%s%i",
+		snprintf(nutdev_name, sizeof(nutdev_name), "nutdev-%s%" PRIuSIZE,
 			nutscan_device_type_lstrings[current_dev->type],
 			nutdev_num);
 
