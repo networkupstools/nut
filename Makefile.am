@@ -319,8 +319,14 @@ GITLOG_START_POINT=v2.6.0
 dummy-stamp:
 ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	cd $(abs_top_srcdir) && \
-	    CHANGELOG_FILE="$@" $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) || \
-	    { printf "gitlog2changelog.py failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; }
+	    if test -e .git ; then \
+	        CHANGELOG_FILE="$@" $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) || \
+	        { printf "gitlog2changelog.py failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; } ; \
+	    else \
+	        if ! test -s "$@" ; then \
+	            printf "Failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; \
+	        fi ; \
+	    fi
 
 ChangeLog.adoc: ChangeLog
 	cd $(abs_top_builddir)/docs && $(MAKE) ../ChangeLog.adoc
