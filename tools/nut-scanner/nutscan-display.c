@@ -250,8 +250,12 @@ void nutscan_display_sanity_check_serial(nutscan_device_t * device)
 		__func__, listlen);
 
 	do {
-		/* Look for serial option in current device */
+		/* Look for serial option in current device (iterated) */
+		char nutdev_name[SMALLBUF];
 		opt = current_dev->opt;
+		snprintf(nutdev_name, sizeof(nutdev_name), "nutdev-%s%i",
+			nutscan_device_type_lstrings[current_dev->type],
+			nutdev_num);
 
 		while (NULL != opt) {
 			if (opt->option != NULL && !strcmp(opt->option, "serial")) {
@@ -269,18 +273,18 @@ void nutscan_display_sanity_check_serial(nutscan_device_t * device)
 
 				if (entry) {
 					/* Got a hit => append value */
-					upsdebugx(3, "%s: duplicate entry for serial '%s'",
-						__func__, keytmp);
+					upsdebugx(3, "%s: duplicate entry for serial '%s' of '%s': %s",
+						__func__, keytmp, nutdev_name, entry->val);
 
 					/* TODO: If changing from preallocated LARGEBUF to
 					 * dynamic allocation, malloc data for larger "val".
 					 */
 					snprintfcat(entry->val, sizeof(entry->val),
-						",nutdev-serial%i", nutdev_num);
+						",%s", nutdev_name);
 				} else {
 					/* No hit => new key */
-					upsdebugx(3, "%s: new entry for serial '%s'",
-						__func__, keytmp);
+					upsdebugx(3, "%s: new entry for serial '%s' of %s",
+						__func__, keytmp, nutdev_name);
 
 					/* TODO: If changing from preallocated LARGEBUF to
 					 * dynamic allocation, malloc data for new "entry"
@@ -300,7 +304,7 @@ void nutscan_display_sanity_check_serial(nutscan_device_t * device)
 					snprintf(entry->key, sizeof(entry->key),
 						"%s", keytmp);
 					snprintf(entry->val, sizeof(entry->val),
-						"nutdev-serial%i", nutdev_num);
+						"%s", nutdev_name);
 				}
 
 				/* Abort the opt-searching loop for this device */
