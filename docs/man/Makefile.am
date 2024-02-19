@@ -837,7 +837,7 @@ LINKMAN_INCLUDE_GENERATED = linkman-driver-names.txt linkman-drivertool-names.tx
 LINKMAN_INCLUDE_CONSUMERS = index.txt upsd.txt nutupsdrv.txt
 
 linkman-driver-names.txt:
-	@if test x"$(srcdir)" != x"$(builddir)" ; then \
+	@if test x"$(abs_srcdir)" != x"$(abs_builddir)" ; then \
 	    if ! test -s "$(builddir)/$@" && test -s "$(srcdir)/$(@F)" ; then \
 	        ln -fs "$(srcdir)/$(@F)" "$(builddir)/" ; \
 	    fi ; \
@@ -852,7 +852,7 @@ linkman-driver-names.txt:
 	@if test ! -s "$@" ; then echo "- No NUT drivers were built" > "$@" ; fi
 
 linkman-drivertool-names.txt:
-	@if test x"$(srcdir)" != x"$(builddir)" ; then \
+	@if test x"$(abs_srcdir)" != x"$(abs_builddir)" ; then \
 	    if ! test -s "$(builddir)/$@" && test -s "$(srcdir)/$(@F)" ; then \
 	        ln -fs "$(srcdir)/$(@F)" "$(builddir)/" ; \
 	    fi ; \
