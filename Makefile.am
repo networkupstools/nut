@@ -318,7 +318,10 @@ dummy-stamp:
 ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	cd $(top_builddir) && \
 	    ./tools/gitlog2changelog.py $(GITLOG_START_POINT) || \
-	    { echo "gitlog2changelog.py failed to generate the ChangeLog. See https://github.com/networkupstools/nut/commits/master" > $@ ; }
+	    { printf "gitlog2changelog.py failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > $@ ; }
+
+ChangeLog.adoc: ChangeLog
+	cd $(abs_top_builddir)/docs && $(MAKE) ../ChangeLog.adoc
 
 nut_version.h include/nut_version.h:
 	cd $(abs_top_builddir)/include && $(MAKE) nut_version.h
