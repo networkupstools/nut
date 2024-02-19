@@ -217,11 +217,17 @@ void nutscan_display_sanity_check_serial(nutscan_device_t * device)
 	/* Keep numbering consistent with global entry naming
 	 * as we call the device config renderer and the sanity
 	 * check collector for the same device, then iterate.
-	 * Note its last value is after loop, so is "real + 1".
+	 * Note its last value is after loop, so says "real + 1".
+	 * Starts with "1", so a discovery of 1 device yields a
+	 * "last_nutdev_num==2" value here. We would rewind the
+	 * number to start at the beginning of the list for the
+	 * current device type.
+	 * FIXME: It now feels beneficial to add a "nutdev_name"
+	 * right into the nutscan_device_t or its "opt" and to
+	 * pre-parse all discovered lists of devices before any
+	 * rendering to consistently pre-set these strings.
 	 */
-	size_t current_nutdev_num = last_nutdev_num - 1;
-	/* Human-friendly numbering */
-	size_t nutdev_num = 1;
+	size_t nutdev_num = last_nutdev_num - 1;
 	size_t listlen = 0, count = 0, i;
 	keyval_strings_t *map = NULL, *entry = NULL;
 
@@ -233,7 +239,7 @@ void nutscan_display_sanity_check_serial(nutscan_device_t * device)
 		return;
 	}
 
-	/* At least one entry exists... */
+	/* At least one entry exists, this one (note the 1-based count!)... */
 	listlen++;
 
 	/* Find end of the list */
@@ -244,6 +250,7 @@ void nutscan_display_sanity_check_serial(nutscan_device_t * device)
 	/* Find start of the list and count its size */
 	while (current_dev->prev != NULL) {
 		current_dev = current_dev->prev;
+		nutdev_num--;
 		listlen++;
 	}
 
@@ -260,9 +267,8 @@ void nutscan_display_sanity_check_serial(nutscan_device_t * device)
 		return;
 	}
 
-	upsdebugx(3, "%s: checking serial numbers for %" PRIuSIZE " device configuration(s)"
-		"; entry point (\"current device\") was #%" PRIuSIZE " in the list",
-		__func__, listlen, current_nutdev_num);
+	upsdebugx(3, "%s: checking serial numbers for %" PRIuSIZE " device configuration(s)",
+		__func__, listlen);
 
 	/* NOTE: we start the loop with current_dev == first device in list */
 	do {
