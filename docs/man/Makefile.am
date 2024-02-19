@@ -875,11 +875,15 @@ DISTCLEANFILES = $(LINKMAN_INCLUDE_GENERATED)
 
 all:
 
-all-html html-man: $(HTML_MANS) index.html
+# Sub-make to fully process prep first, and only then go to actual make
+# (maybe parallel) with unambiguously defined sources and targets
+all-html html-man: .prep-src-docs
+	$(MAKE) $(AM_MAKEFLAGS_X) $(HTML_MANS) index.html
 
 # Have a way to build all man pages, not just those that fit currently
 # configured drivers, daemons, developer aspect, etc.
-all-man man-man: $(MAN_MANS)
+all-man man-man: .prep-src-docs
+	$(MAKE) $(AM_MAKEFLAGS_X) $(MAN_MANS)
 
 if WITH_MANS
 if ! SKIP_MANS
@@ -943,7 +947,7 @@ check-man-txt: $(SRC_ALL_PAGES)
 	    echo "FAILED man-source sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
 	fi; echo "PASSED man-source sanity check (checked $$CHECKED files)"; exit 0
 
-CLEANFILES = *-spellchecked
+CLEANFILES = *-spellchecked .prep-src-docs
 
 SUFFIXES = .txt .html .1 .3 .5 .8
 
@@ -964,6 +968,7 @@ CLEANFILES += *.1 *.3 *.5 *.8 *.xml *.html *.pdf
 # Working around a2x not friendly to parallelized runs.
 # See more details in the main NUT docs/Makefile.am
 DOCBUILD_BEGIN = { \
+    if test x"$(abs_srcdir)" != x"$(abs_builddir)" -a ! -e "$(abs_builddir)/.prep-src-docs"; then $(MAKE) $(AM_MAKEFLAGS_X) .prep-src-docs ; fi ; \
     if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
         rm -rf "./$${A2X_OUTDIR}" || true ; \
         test -d "$@" && rm -rf "$@" || true ; \
@@ -978,11 +983,6 @@ DOCBUILD_BEGIN = { \
     && ! test -w "${builddir}/docbook-xsl.css" \
     ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi ; \
     chmod -R u+w "./$${A2X_OUTDIR}" || true ; \
-    if test x"$(srcdir)" != x"$(builddir)" ; then \
-        if ! test -s "$(builddir)/$<" && test -s "$(srcdir)/`basename $<`" ; then \
-            ln -fs "$(srcdir)/`basename $<`" "$(builddir)/" ; \
-        fi ; \
-    fi ; \
     A2X_VERBOSE="$(ASCIIDOC_VERBOSE)"; if [ "$(V)" = 1 ]; then A2X_VERBOSE="--verbose"; fi; \
 }
 
@@ -1001,6 +1001,19 @@ DOCBUILD_END = { \
         rm -rf "./$${A2X_OUTDIR}" ; \
     fi ; \
 }
+
+# PORTABILITY NOTE: POSIX Make forbids the suffix rule definitions with
+# prerequisites like done below, and GNU Make of some versions complains;
+# https://www.gnu.org/software/make/manual/html_node/Error-Messages.html
+# says the prerequisites were ignored while a suffix rule was created;
+# eventually the POSIX stance would be taken to define a rule for a weird
+# verbatim target file name with prerequisites:
+# ../docs/Makefile:936: warning: ignoring prerequisites on suffix rule definition
+# Changes from ".txt.pdf: docinfo.xml" to "*.pdf: docinfo.xml" = ".txt.pdf:"
+# as done below may be pointless in the end (with regard to a portable way
+# to trigger builds by a changed dependency), but at least predictable and
+# not toxic.
+#*.html *.1 *.3 *.5 *.8: .prep-src-docs
 
 ### Regarding absolute paths in attributes below: by default asciidoc
 ### resolves include paths relative to the main document, so while we
@@ -1127,7 +1140,44 @@ endif !HAVE_ASCIIDOC
 spellcheck spellcheck-interactive spellcheck-sortdict:
 	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SRC_ALL_PAGES)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
+# When building out-of-tree, be sure to have all asciidoc resources
+# under the same dir structure (tool limitation)
+# NOTE: Not including *all* of EXTRA_DIST here, because we also "dist"
+# the built man pages in the tarball for end-users without an asciidoc
+# stack (causing a dependency loop)!
+PREP_SRC = $(SRC_ALL_PAGES) asciidoc.conf
+.prep-src-docs: $(PREP_SRC)
+	@if test x"$(abs_srcdir)" != x"$(abs_builddir)" ; then \
+	    COUNT=30 ; \
+	    touch "$@.$$$$" ; \
+	    while test -e "$@.working" -a "$$COUNT" -gt 0 ; do sleep 1; COUNT="`expr $$COUNT - 1`"; done ; \
+	    touch "$@.working" ; \
+	    if test -n "`find "$@" -newer "$@.$$$$" 2>/dev/null`" ; then \
+	        rm -f "$@.$$$$" "$@.working" ; \
+	        exit 0; \
+	    fi ; \
+	    rm -f "$@.$$$$" ; \
+	    COUNT=0; \
+	    for F in `cd "$(abs_srcdir)" && ls -1 $(PREP_SRC) | sort -n | uniq` ; do \
+	        D="`dirname "$$F"`" ; \
+	        $(MKDIR_P) "$(builddir)/$$D" || { rm -f "$@.working" ; exit 1 ; } ; \
+	        if ! test -e "$(builddir)/$$F" && test -s "$(srcdir)/$$F" ; then \
+	            echo "  LN     '$(srcdir)/$$F' => '$(builddir)/$$F'" >&2 ; \
+	            ln -fs "$(srcdir)/$$F" "$(builddir)/$$F" || { rm -f "$@.working" ; exit 1 ; } ; \
+	            COUNT="`expr $$COUNT + 1`" ; \
+	        fi ; \
+	    done ; \
+	    if test "$$COUNT" -gt 0 -o ! -e "$@" ; then touch "$@" ; fi ; \
+	 fi
+	@rm -f "$@.working"
+
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 clean-local:
 	$(AM_V_at)rm -rf tmp
+	$(AM_V_at)if test x"$(abs_srcdir)" != x"$(abs_builddir)" ; then \
+	    for F in $(PREP_SRC) ; do \
+	        rm -f "$(builddir)/$$F" ; \
+	    done ; \
+	    rm -f "$(builddir)/.prep-src-docs"*; \
+	 fi

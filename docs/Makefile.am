@@ -131,20 +131,27 @@ endif WITH_SPELLCHECK
 check-local: $(CHECK_LOCAL_TARGETS)
 
 # This list is defined by configure script choices and options:
-doc: @DOC_BUILD_LIST@
+doc: .prep-src-docs
+	$(MAKE) $(AM_MAKEFLAGS) @DOC_BUILD_LIST@
 
 # This target can be called by developers to go around the configure
 # script choices at their risk (e.g. missing tools are possible):
-docs: pdf html-single html-chunked man-man html-man
+docs: .prep-src-docs
+	$(MAKE) $(AM_MAKEFLAGS) pdf html-single html-chunked man-man html-man
 
 all-docs: docs
 
 check-docs: check-pdf check-html-single check-html-chunked check-man
 
-pdf: $(ASCIIDOC_PDF)
+pdf: .prep-src-docs
+	$(MAKE) $(AM_MAKEFLAGS) $(ASCIIDOC_PDF)
+
 # also build the HTML manpages with these targets
-html-single: $(ASCIIDOC_HTML_SINGLE)
-html-chunked: $(ASCIIDOC_HTML_CHUNKED)
+html-single: .prep-src-docs
+	$(MAKE) $(AM_MAKEFLAGS) $(ASCIIDOC_HTML_SINGLE)
+
+html-chunked: .prep-src-docs
+	$(MAKE) $(AM_MAKEFLAGS) $(ASCIIDOC_HTML_CHUNKED)
 
 # the "for" loops might better use $^ but it might be not portable
 check-pdf: $(ASCIIDOC_PDF)
@@ -182,18 +189,14 @@ check-html-chunked: $(ASCIIDOC_HTML_CHUNKED)
 # chosen during configure script execution. The "all-man" and "all-html"
 # rules build everything documented.
 check-man all-man man-man all-html html-man:
-	cd $(top_builddir)/docs/man/ && $(MAKE) -f Makefile $@
+	cd $(top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile $@
 
 man:
-	cd $(top_builddir)/docs/man/ && $(MAKE) -f Makefile all
+	cd $(top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile all
 
 CLEANFILES = *.xml *.html *.pdf *-spellchecked docbook-xsl.css docinfo.xml.in.tmp
 CLEANFILES += $(top_builddir)/INSTALL.nut $(top_builddir)/UPGRADING $(top_builddir)/NEWS $(top_builddir)/ChangeLog.adoc $(top_builddir)/README
 CLEANFILES += $(top_builddir)/*.adoc-parsed *.adoc-parsed
-
-# Dirs to clean
-clean-local:
-	$(AM_V_at)rm -rf *.chunked *.bak tmp
 
 ### TODO: general automatic dependency generation
 
@@ -325,6 +328,7 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) \
 # Note we only remove the original target (if present), if it is a directory -
 # e.g. created by "html-chunked" targets.
 DOCBUILD_BEGIN = { \
+    if test x"$(abs_srcdir)" != x"$(abs_builddir)" -a ! -e "$(abs_builddir)/.prep-src-docs"; then $(MAKE) $(AM_MAKEFLAGS) .prep-src-docs ; fi ; \
     if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
         rm -rf "./$${A2X_OUTDIR}" || true ; \
         test -d "$@" && rm -rf "$@" || true ; \
@@ -365,7 +369,7 @@ DOCBUILD_END = { \
 # as done below may be pointless in the end (with regard to a portable way
 # to trigger builds by a changed dependency), but at least predictable and
 # not toxic.
-*.html: common.xsl xhtml.xsl
+*.html: common.xsl xhtml.xsl .prep-src-docs
 .txt.html:
 	@A2X_OUTDIR="tmp/html-single.$(@F).$$$$" ; \
 	 echo "  DOC-HTML Generating $@"; \
@@ -373,7 +377,7 @@ DOCBUILD_END = { \
 	 $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl $< || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
-*.chunked: common.xsl chunked.xsl
+*.chunked: common.xsl chunked.xsl .prep-src-docs
 .txt.chunked:
 	@A2X_OUTDIR="tmp/html-chunked.$(@F).$$$$" ; \
 	 echo "  DOC-HTML-CHUNKED Generating $@"; \
@@ -382,13 +386,23 @@ DOCBUILD_END = { \
 	 $(DOCBUILD_END) ; exit $$RES
 
 # Note: non-HTML a2x modes may ignore the destination directory
-*.pdf: docinfo.xml
+*.pdf: docinfo.xml .prep-src-docs
 .txt.pdf:
 	@A2X_OUTDIR="tmp/pdf.$(@F).$$$$" ; \
 	 echo "  DOC-PDF  Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 $(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 $< || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
+
+# Used below for spellcheck and for .prep-src-docs
+SPELLCHECK_SRC_DEFAULT = $(ALL_TXT_SRC) \
+	asciidoc-vars.conf \
+	../README.adoc ../NEWS.adoc \
+	../INSTALL.nut.adoc ../UPGRADING.adoc \
+	../TODO.adoc ../scripts/ufw/README.adoc \
+	../scripts/augeas/README.adoc ../lib/README.adoc \
+	../tools/nut-scanner/README.adoc \
+	../AUTHORS ../COPYING ../LICENSE-GPL2 ../LICENSE-GPL3 ../LICENSE-DCO
 
 if HAVE_ASPELL
 # Non-interactively spell check all documentation source files.
@@ -400,14 +414,7 @@ if HAVE_ASPELL
 # tracked as a source file by NUT Git repository.
 # Note that `docs/asciidoc-vars.conf` is included into docs and so impacts
 # their resulting spellcheck verdicts.
-SPELLCHECK_SRC = $(ALL_TXT_SRC) \
-	asciidoc-vars.conf \
-	../README.adoc ../NEWS.adoc \
-	../INSTALL.nut.adoc ../UPGRADING.adoc \
-	../TODO.adoc ../scripts/ufw/README.adoc \
-	../scripts/augeas/README.adoc ../lib/README.adoc \
-	../tools/nut-scanner/README.adoc \
-	../AUTHORS ../COPYING ../LICENSE-GPL2 ../LICENSE-GPL3 ../LICENSE-DCO
+SPELLCHECK_SRC = $(SPELLCHECK_SRC_DEFAULT)
 
 # Directory SPELLCHECK_SRC files are relative to. Overriden by other Makefiles.
 SPELLCHECK_SRCDIR = $(srcdir)
@@ -592,5 +599,44 @@ spellcheck:
 spellcheck-interactive:
 	@echo "Documentation spell check not available since 'aspell' was not found."
 endif !HAVE_ASPELL
+
+
+# When building out-of-tree, be sure to have all asciidoc resources
+# under the same dir structure (tool limitation)
+PREP_SRC = $(EXTRA_DIST) $(SPELLCHECK_SRC_DEFAULT)
+.prep-src-docs: $(PREP_SRC)
+	@if test x"$(abs_srcdir)" != x"$(abs_builddir)" ; then \
+	    COUNT=30 ; \
+	    touch "$@.$$$$" ; \
+	    while test -e "$@.working" -a "$$COUNT" -gt 0 ; do sleep 1; COUNT="`expr $$COUNT - 1`"; done ; \
+	    touch "$@.working" ; \
+	    if test -n "`find "$@" -newer "$@.$$$$" 2>/dev/null`" ; then \
+	        rm -f "$@.$$$$" "$@.working" ; \
+	        exit 0; \
+	    fi ; \
+	    rm -f "$@.$$$$" ; \
+	    COUNT=0; \
+	    for F in `cd "$(abs_srcdir)" && ls -1 $(PREP_SRC) | sort -n | uniq` ; do \
+	        D="`dirname "$$F"`" ; \
+	        $(MKDIR_P) "$(builddir)/$$D" || { rm -f "$@.working" ; exit 1 ; } ; \
+	        if ! test -s "$(builddir)/$$F" && test -s "$(srcdir)/$$F" ; then \
+	            echo "  LN     '$(srcdir)/$$F' => '$(builddir)/$$F'" >&2 ; \
+	            ln -fs "$(srcdir)/$$F" "$(builddir)/$$F" || { rm -f "$@.working" ; exit 1 ; } ; \
+	            COUNT="`expr $$COUNT + 1`" ; \
+	        fi ; \
+	    done ; \
+	    if test "$$COUNT" -gt 0 -o ! -e "$@" ; then touch "$@" ; fi ; \
+	 fi
+	@rm -f "$@.working"
+
+# Dirs to clean, etc.
+clean-local:
+	$(AM_V_at)rm -rf *.chunked *.bak tmp
+	$(AM_V_at)if test x"$(abs_srcdir)" != x"$(abs_builddir)" ; then \
+	    for F in $(PREP_SRC) ; do \
+	        rm -f "$(builddir)/$$F" ; \
+	    done ; \
+	    rm -f "$(builddir)/.prep-src-docs"*; \
+	 fi
 
 .PHONY: html html-chunked html-single pdf man
