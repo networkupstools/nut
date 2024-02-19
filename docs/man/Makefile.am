@@ -1024,8 +1024,9 @@ DOCBUILD_END = { \
 ### string resolve meaningfully in the filesystem during docs build.
 .txt.html:
 	@A2X_OUTDIR="tmp/man-html.$(@F).$$$$" ; \
-	 echo "  DOC-MAN-HTML Generating $@"; \
+	 echo "  DOC-MAN-HTML Preparing to generate $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 echo "  DOC-MAN-HTML Generating $@"; \
 	 $(ASCIIDOC) --backend=xhtml11 $${A2X_VERBOSE} \
 		--attribute localdate="`TZ=UTC date +%Y-%m-%d`" \
 		--attribute localtime="`TZ=UTC date +%H:%M:%S`" \
@@ -1052,29 +1053,33 @@ A2X_MANPAGE_OPTS = --doctype manpage --format manpage $${A2X_VERBOSE} \
 
 .txt.1:
 	@A2X_OUTDIR="tmp/man1.$(@F).$$$$" ; \
-	 echo "  DOC-MAN  Generating $@"; \
+	 echo "  DOC-MAN  Preparing to generate $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 echo "  DOC-MAN  Generating $@"; \
 	 $(A2X) $(A2X_MANPAGE_OPTS) $< || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
 .txt.3:
 	@A2X_OUTDIR="tmp/man3.$(@F).$$$$" ; \
-	 echo "  DOC-MAN  Generating $@"; \
+	 echo "  DOC-MAN  Preparing to generate $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 echo "  DOC-MAN  Generating $@"; \
 	 $(A2X) $(A2X_MANPAGE_OPTS) $< || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
 .txt.5:
 	@A2X_OUTDIR="tmp/man5.$(@F).$$$$" ; \
-	 echo "  DOC-MAN  Generating $@"; \
+	 echo "  DOC-MAN  Preparing to generate $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 echo "  DOC-MAN  Generating $@"; \
 	 $(A2X) $(A2X_MANPAGE_OPTS) $< || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
 .txt.8:
 	@A2X_OUTDIR="tmp/man8.$(@F).$$$$" ; \
-	 echo "  DOC-MAN  Generating $@"; \
+	 echo "  DOC-MAN  Preparing to generate $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 echo "  DOC-MAN  Generating $@"; \
 	 $(A2X) $(A2X_MANPAGE_OPTS) $< || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 

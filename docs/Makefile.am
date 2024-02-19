@@ -372,16 +372,18 @@ DOCBUILD_END = { \
 *.html: common.xsl xhtml.xsl .prep-src-docs
 .txt.html:
 	@A2X_OUTDIR="tmp/html-single.$(@F).$$$$" ; \
-	 echo "  DOC-HTML Generating $@"; \
+	 echo "  DOC-HTML Preparing to generate $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 echo "  DOC-HTML Generating $@"; \
 	 $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl $< || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
 *.chunked: common.xsl chunked.xsl .prep-src-docs
 .txt.chunked:
 	@A2X_OUTDIR="tmp/html-chunked.$(@F).$$$$" ; \
-	 echo "  DOC-HTML-CHUNKED Generating $@"; \
+	 echo "  DOC-HTML-CHUNKED Preparing to generate $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 echo "  DOC-HTML-CHUNKED Generating $@"; \
 	 $(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl $< || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
@@ -389,8 +391,9 @@ DOCBUILD_END = { \
 *.pdf: docinfo.xml .prep-src-docs
 .txt.pdf:
 	@A2X_OUTDIR="tmp/pdf.$(@F).$$$$" ; \
-	 echo "  DOC-PDF  Generating $@"; \
+	 echo "  DOC-PDF  Preparing to generate $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 echo "  DOC-PDF  Generating $@"; \
 	 $(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 $< || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
