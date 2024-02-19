@@ -249,6 +249,7 @@ $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	 && TABCHAR="`printf '\t'`" \
 	 && $(SED) \
 	        -e 's,^\([0-9a-zA-Z]\),=== \1,' \
+	        -e 's,^=== \(NOTE: \),\1,' \
 	        -e 's,/[+],/\\\\\+,g' \
 	        -e 's,[+][+],\\\+\\\+,g' \
 	        -e 's,^\([ '"$${TABCHAR}"'][^+]*\)\([^+/\]\)[+],\1\2\\\+,g' \
