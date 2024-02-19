@@ -131,26 +131,31 @@ endif WITH_SPELLCHECK
 check-local: $(CHECK_LOCAL_TARGETS)
 
 # This list is defined by configure script choices and options:
-doc: .prep-src-docs
+doc:
+	+if test x"$(abs_srcdir)" != x"$(abs_builddir)" -a ! -e "$(abs_builddir)/.prep-src-docs"; then $(MAKE) $(AM_MAKEFLAGS) .prep-src-docs ; fi
 	+$(MAKE) $(AM_MAKEFLAGS) @DOC_BUILD_LIST@
 
 # This target can be called by developers to go around the configure
 # script choices at their risk (e.g. missing tools are possible):
-docs: .prep-src-docs
+docs:
+	+if test x"$(abs_srcdir)" != x"$(abs_builddir)" -a ! -e "$(abs_builddir)/.prep-src-docs"; then $(MAKE) $(AM_MAKEFLAGS) .prep-src-docs ; fi
 	+$(MAKE) $(AM_MAKEFLAGS) pdf html-single html-chunked man-man html-man
 
 all-docs: docs
 
 check-docs: check-pdf check-html-single check-html-chunked check-man
 
-pdf: .prep-src-docs
+pdf:
+	+if test x"$(abs_srcdir)" != x"$(abs_builddir)" -a ! -e "$(abs_builddir)/.prep-src-docs"; then $(MAKE) $(AM_MAKEFLAGS) .prep-src-docs ; fi
 	+$(MAKE) $(AM_MAKEFLAGS) $(ASCIIDOC_PDF)
 
 # also build the HTML manpages with these targets
-html-single: .prep-src-docs
+html-single:
+	+if test x"$(abs_srcdir)" != x"$(abs_builddir)" -a ! -e "$(abs_builddir)/.prep-src-docs"; then $(MAKE) $(AM_MAKEFLAGS) .prep-src-docs ; fi
 	+$(MAKE) $(AM_MAKEFLAGS) $(ASCIIDOC_HTML_SINGLE)
 
-html-chunked: .prep-src-docs
+html-chunked:
+	+if test x"$(abs_srcdir)" != x"$(abs_builddir)" -a ! -e "$(abs_builddir)/.prep-src-docs"; then $(MAKE) $(AM_MAKEFLAGS) .prep-src-docs ; fi
 	+$(MAKE) $(AM_MAKEFLAGS) $(ASCIIDOC_HTML_CHUNKED)
 
 # the "for" loops might better use $^ but it might be not portable

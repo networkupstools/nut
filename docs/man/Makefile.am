@@ -877,13 +877,15 @@ all:
 
 # Sub-make to fully process prep first, and only then go to actual make
 # (maybe parallel) with unambiguously defined sources and targets
-all-html html-man: .prep-src-docs
-	+$(MAKE) $(AM_MAKEFLAGS_X) $(HTML_MANS) index.html
+all-html html-man:
+	+if test x"$(abs_srcdir)" != x"$(abs_builddir)" -a ! -e "$(abs_builddir)/.prep-src-docs"; then $(MAKE) $(AM_MAKEFLAGS) .prep-src-docs ; fi
+	+$(MAKE) $(AM_MAKEFLAGS) $(HTML_MANS) index.html
 
 # Have a way to build all man pages, not just those that fit currently
 # configured drivers, daemons, developer aspect, etc.
-all-man man-man: .prep-src-docs
-	+$(MAKE) $(AM_MAKEFLAGS_X) $(MAN_MANS)
+all-man man-man:
+	+if test x"$(abs_srcdir)" != x"$(abs_builddir)" -a ! -e "$(abs_builddir)/.prep-src-docs"; then $(MAKE) $(AM_MAKEFLAGS) .prep-src-docs ; fi
+	+$(MAKE) $(AM_MAKEFLAGS) $(MAN_MANS)
 
 if WITH_MANS
 if ! SKIP_MANS
@@ -968,7 +970,7 @@ CLEANFILES += *.1 *.3 *.5 *.8 *.xml *.html *.pdf
 # Working around a2x not friendly to parallelized runs.
 # See more details in the main NUT docs/Makefile.am
 DOCBUILD_BEGIN = { \
-    if test x"$(abs_srcdir)" != x"$(abs_builddir)" -a ! -e "$(abs_builddir)/.prep-src-docs"; then $(MAKE) $(AM_MAKEFLAGS_X) .prep-src-docs ; fi ; \
+    if test x"$(abs_srcdir)" != x"$(abs_builddir)" -a ! -e "$(abs_builddir)/.prep-src-docs"; then $(MAKE) $(AM_MAKEFLAGS) .prep-src-docs ; fi ; \
     if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
         rm -rf "./$${A2X_OUTDIR}" || true ; \
         test -d "$@" && rm -rf "$@" || true ; \
