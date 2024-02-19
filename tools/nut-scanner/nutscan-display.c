@@ -49,6 +49,9 @@ static int last_nutdev_num = 0;
 
 void nutscan_display_ups_conf_with_sanity_check(nutscan_device_t * device)
 {
+	/* Note: while a single device is passed to the method, it is actually
+	 * used to locate the list of related device types and iterate it all.
+	 */
 	upsdebugx(2, "%s: %s", __func__, device
 		? (device->type < TYPE_END ? nutscan_device_type_string[device->type] : "<UNKNOWN>")
 		: "<NULL>");
@@ -58,6 +61,9 @@ void nutscan_display_ups_conf_with_sanity_check(nutscan_device_t * device)
 
 void nutscan_display_ups_conf(nutscan_device_t * device)
 {
+	/* Note: while a single device is passed to the method, it is actually
+	 * used to locate the list of related device types and iterate it all.
+	 */
 	nutscan_device_t * current_dev = device;
 	nutscan_options_t * opt;
 	static int nutdev_num = 1;
@@ -121,6 +127,9 @@ void nutscan_display_ups_conf(nutscan_device_t * device)
 
 void nutscan_display_parsable(nutscan_device_t * device)
 {
+	/* Note: while a single device is passed to the method, it is actually
+	 * used to locate the list of related device types and iterate it all.
+	 */
 	nutscan_device_t * current_dev = device;
 	nutscan_options_t * opt;
 
@@ -180,6 +189,9 @@ typedef struct keyval_strings {
 
 void nutscan_display_sanity_check_serial(nutscan_device_t * device)
 {
+	/* Note: while a single device is passed to the method, it is actually
+	 * used to locate the list of related device types and iterate it all.
+	 */
 	/* Some devices have useless serial numbers
 	 * (empty strings, all-zeroes, all-spaces etc.)
 	 * and others have identical serial numbers on
@@ -249,6 +261,7 @@ void nutscan_display_sanity_check_serial(nutscan_device_t * device)
 	upsdebugx(3, "%s: checking serial numbers for %" PRIuSIZE " device configuration(s)",
 		__func__, listlen);
 
+	/* NOTE: we start the loop with current_dev == first device in list */
 	do {
 		/* Look for serial option in current device (iterated) */
 		char nutdev_name[SMALLBUF];
@@ -373,6 +386,9 @@ exit:
 
 void nutscan_display_sanity_check(nutscan_device_t * device)
 {
+	/* Note: while a single device is passed to the method, it is actually
+	 * used to locate the list of related device types and iterate it all.
+	 */
 	upsdebugx(2, "%s: %s", __func__, device
 		? (device->type < TYPE_END ? nutscan_device_type_string[device->type] : "<UNKNOWN>")
 		: "<NULL>");
