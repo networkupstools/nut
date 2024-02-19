@@ -63,11 +63,13 @@ try:
 except Exception as ignored:
     pass
 
-# Create a ChangeLog file in the current directory.
-if fin_mode == 3:
-    fout = open("ChangeLog", "w", encoding="UTF-8")
+if CHANGELOG_FILE == "-":
+    fout = sys.stdout
 else:
-    fout = open("ChangeLog", "w")
+    if fin_mode == 3:
+        fout = open(CHANGELOG_FILE, "w", encoding="UTF-8")
+    else:
+        fout = open(CHANGELOG_FILE, "w")
 
 # Set up the loop variables in order to locate the blocks we want
 authorFound = False
