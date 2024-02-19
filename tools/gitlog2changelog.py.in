@@ -54,6 +54,15 @@ except TypeError:
     fin_mode = 2
     fin_chop = 1
 
+# Create a ChangeLog file in the current directory by default.
+CHANGELOG_FILE = "ChangeLog"
+try:
+    # e.g. point from Makefile to a builddir (caller ensures it exists)
+    if os.environ.get("CHANGELOG_FILE", None) is not None:
+        CHANGELOG_FILE = os.environ.get("CHANGELOG_FILE")
+except Exception as ignored:
+    pass
+
 # Create a ChangeLog file in the current directory.
 if fin_mode == 3:
     fout = open("ChangeLog", "w", encoding="UTF-8")
