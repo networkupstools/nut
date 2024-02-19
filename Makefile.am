@@ -164,6 +164,8 @@ spellcheck spellcheck-interactive:
 doc spellcheck-sortdict \
 all-docs check-docs \
 man all-man man-man check-man man-html all-html:
+	cd $(builddir)/docs/man && $(MAKE) .prep-src-docs
+	cd $(builddir)/docs && $(MAKE) .prep-src-docs
 	cd $(builddir)/docs && $(MAKE) $@
 
 INSTALL.nut UPGRADING NEWS README:
