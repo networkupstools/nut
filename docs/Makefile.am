@@ -132,26 +132,26 @@ check-local: $(CHECK_LOCAL_TARGETS)
 
 # This list is defined by configure script choices and options:
 doc: .prep-src-docs
-	$(MAKE) $(AM_MAKEFLAGS) @DOC_BUILD_LIST@
+	+$(MAKE) $(AM_MAKEFLAGS) @DOC_BUILD_LIST@
 
 # This target can be called by developers to go around the configure
 # script choices at their risk (e.g. missing tools are possible):
 docs: .prep-src-docs
-	$(MAKE) $(AM_MAKEFLAGS) pdf html-single html-chunked man-man html-man
+	+$(MAKE) $(AM_MAKEFLAGS) pdf html-single html-chunked man-man html-man
 
 all-docs: docs
 
 check-docs: check-pdf check-html-single check-html-chunked check-man
 
 pdf: .prep-src-docs
-	$(MAKE) $(AM_MAKEFLAGS) $(ASCIIDOC_PDF)
+	+$(MAKE) $(AM_MAKEFLAGS) $(ASCIIDOC_PDF)
 
 # also build the HTML manpages with these targets
 html-single: .prep-src-docs
-	$(MAKE) $(AM_MAKEFLAGS) $(ASCIIDOC_HTML_SINGLE)
+	+$(MAKE) $(AM_MAKEFLAGS) $(ASCIIDOC_HTML_SINGLE)
 
 html-chunked: .prep-src-docs
-	$(MAKE) $(AM_MAKEFLAGS) $(ASCIIDOC_HTML_CHUNKED)
+	+$(MAKE) $(AM_MAKEFLAGS) $(ASCIIDOC_HTML_CHUNKED)
 
 # the "for" loops might better use $^ but it might be not portable
 check-pdf: $(ASCIIDOC_PDF)
@@ -189,10 +189,10 @@ check-html-chunked: $(ASCIIDOC_HTML_CHUNKED)
 # chosen during configure script execution. The "all-man" and "all-html"
 # rules build everything documented.
 check-man all-man man-man all-html html-man:
-	cd $(top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile .prep-src-docs && $(MAKE) $(AM_MAKEFLAGS) -f Makefile $@
+	+cd $(top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile .prep-src-docs && $(MAKE) $(AM_MAKEFLAGS) -f Makefile $@
 
 man:
-	cd $(top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile .prep-src-docs && $(MAKE) $(AM_MAKEFLAGS) -f Makefile all
+	+cd $(top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile .prep-src-docs && $(MAKE) $(AM_MAKEFLAGS) -f Makefile all
 
 CLEANFILES = *.xml *.html *.pdf *-spellchecked docbook-xsl.css docinfo.xml.in.tmp
 CLEANFILES += $(top_builddir)/INSTALL.nut $(top_builddir)/UPGRADING $(top_builddir)/NEWS $(top_builddir)/ChangeLog.adoc $(top_builddir)/README
@@ -230,7 +230,7 @@ DOCBUILD_CONVERT_GITHUB_LINKS = { \
 	@$(DOCBUILD_CONVERT_GITHUB_LINKS)
 
 $(top_builddir)/ChangeLog:
-	@echo "  DOC-CHANGELOG-GENERATE	$@" \
+	+@echo "  DOC-CHANGELOG-GENERATE	$@" \
 	 && cd $(top_builddir) && $(MAKE) $(AM_FLAGS) $(@F)
 
 # BSD Make dislikes the path resolution here and does not always populate "$<"
@@ -371,7 +371,7 @@ DOCBUILD_END = { \
 # not toxic.
 *.html: common.xsl xhtml.xsl .prep-src-docs
 .txt.html:
-	@A2X_OUTDIR="tmp/html-single.$(@F).$$$$" ; \
+	@+A2X_OUTDIR="tmp/html-single.$(@F).$$$$" ; \
 	 echo "  DOC-HTML Preparing to generate $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 echo "  DOC-HTML Generating $@"; \
@@ -380,7 +380,7 @@ DOCBUILD_END = { \
 
 *.chunked: common.xsl chunked.xsl .prep-src-docs
 .txt.chunked:
-	@A2X_OUTDIR="tmp/html-chunked.$(@F).$$$$" ; \
+	@+A2X_OUTDIR="tmp/html-chunked.$(@F).$$$$" ; \
 	 echo "  DOC-HTML-CHUNKED Preparing to generate $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 echo "  DOC-HTML-CHUNKED Generating $@"; \
@@ -390,7 +390,7 @@ DOCBUILD_END = { \
 # Note: non-HTML a2x modes may ignore the destination directory
 *.pdf: docinfo.xml .prep-src-docs
 .txt.pdf:
-	@A2X_OUTDIR="tmp/pdf.$(@F).$$$$" ; \
+	@+A2X_OUTDIR="tmp/pdf.$(@F).$$$$" ; \
 	 echo "  DOC-PDF  Preparing to generate $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 echo "  DOC-PDF  Generating $@"; \

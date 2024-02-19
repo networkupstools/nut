@@ -878,12 +878,12 @@ all:
 # Sub-make to fully process prep first, and only then go to actual make
 # (maybe parallel) with unambiguously defined sources and targets
 all-html html-man: .prep-src-docs
-	$(MAKE) $(AM_MAKEFLAGS_X) $(HTML_MANS) index.html
+	+$(MAKE) $(AM_MAKEFLAGS_X) $(HTML_MANS) index.html
 
 # Have a way to build all man pages, not just those that fit currently
 # configured drivers, daemons, developer aspect, etc.
 all-man man-man: .prep-src-docs
-	$(MAKE) $(AM_MAKEFLAGS_X) $(MAN_MANS)
+	+$(MAKE) $(AM_MAKEFLAGS_X) $(MAN_MANS)
 
 if WITH_MANS
 if ! SKIP_MANS
@@ -1052,7 +1052,7 @@ A2X_MANPAGE_OPTS = --doctype manpage --format manpage $${A2X_VERBOSE} \
 	--destination-dir="$${A2X_OUTDIR}"
 
 .txt.1:
-	@A2X_OUTDIR="tmp/man1.$(@F).$$$$" ; \
+	@+A2X_OUTDIR="tmp/man1.$(@F).$$$$" ; \
 	 echo "  DOC-MAN  Preparing to generate $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 echo "  DOC-MAN  Generating $@"; \
@@ -1060,7 +1060,7 @@ A2X_MANPAGE_OPTS = --doctype manpage --format manpage $${A2X_VERBOSE} \
 	 $(DOCBUILD_END) ; exit $$RES
 
 .txt.3:
-	@A2X_OUTDIR="tmp/man3.$(@F).$$$$" ; \
+	@+A2X_OUTDIR="tmp/man3.$(@F).$$$$" ; \
 	 echo "  DOC-MAN  Preparing to generate $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 echo "  DOC-MAN  Generating $@"; \
@@ -1068,7 +1068,7 @@ A2X_MANPAGE_OPTS = --doctype manpage --format manpage $${A2X_VERBOSE} \
 	 $(DOCBUILD_END) ; exit $$RES
 
 .txt.5:
-	@A2X_OUTDIR="tmp/man5.$(@F).$$$$" ; \
+	@+A2X_OUTDIR="tmp/man5.$(@F).$$$$" ; \
 	 echo "  DOC-MAN  Preparing to generate $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 echo "  DOC-MAN  Generating $@"; \
@@ -1076,7 +1076,7 @@ A2X_MANPAGE_OPTS = --doctype manpage --format manpage $${A2X_VERBOSE} \
 	 $(DOCBUILD_END) ; exit $$RES
 
 .txt.8:
-	@A2X_OUTDIR="tmp/man8.$(@F).$$$$" ; \
+	@+A2X_OUTDIR="tmp/man8.$(@F).$$$$" ; \
 	 echo "  DOC-MAN  Preparing to generate $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 echo "  DOC-MAN  Generating $@"; \
@@ -1134,16 +1134,16 @@ endif !HAVE_ASCIIDOC
 
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension:
 #%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
-#	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+#	+$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
 # NOTE: Portable suffix rules do not allow prerequisites, so we shim them here
 # by a wildcard target in case the make implementation can put the two together.
 *.txt-spellchecked: Makefile.am $(abs_top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 .txt.txt-spellchecked:
-	$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+	+$(MAKE) -s -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
 spellcheck spellcheck-interactive spellcheck-sortdict:
-	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SRC_ALL_PAGES)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+	+$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SRC_ALL_PAGES)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
 # When building out-of-tree, be sure to have all asciidoc resources
 # under the same dir structure (tool limitation)
