@@ -313,12 +313,14 @@ GITLOG_START_POINT=v2.6.0
 
 # Force ChangeLog regeneration upon make dist (due to nonexistant 'dummy-stamp'),
 # in case it has already been generated previously
-# Note that the script is hard-coded to generate "ChangeLog" in the current dir
+# Note that the script is hard-coded to inspect Git workspace which contains
+# the current dir, and defaults to generate a "ChangeLog" in the current dir.
+# The script itself is generated from a template, so resides in builddir.
 dummy-stamp:
 ChangeLog: tools/gitlog2changelog.py dummy-stamp
-	cd $(top_builddir) && \
-	    ./tools/gitlog2changelog.py $(GITLOG_START_POINT) || \
-	    { printf "gitlog2changelog.py failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > $@ ; }
+	cd $(abs_top_srcdir) && \
+	    CHANGELOG_FILE="$@" $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) || \
+	    { printf "gitlog2changelog.py failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; }
 
 ChangeLog.adoc: ChangeLog
 	cd $(abs_top_builddir)/docs && $(MAKE) ../ChangeLog.adoc
