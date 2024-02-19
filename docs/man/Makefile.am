@@ -1168,7 +1168,7 @@ PREP_SRC = $(SRC_ALL_PAGES) asciidoc.conf
 	        $(MKDIR_P) "$(builddir)/$$D" || { rm -f "$@.working" ; exit 1 ; } ; \
 	        if ! test -e "$(builddir)/$$F" && test -s "$(srcdir)/$$F" ; then \
 	            echo "  LN     '$(srcdir)/$$F' => '$(builddir)/$$F'" >&2 ; \
-	            ln -fs "$(srcdir)/$$F" "$(builddir)/$$F" || { rm -f "$@.working" ; exit 1 ; } ; \
+	            ln -fs "$(abs_srcdir)/$$F" "$(builddir)/$$F" || { rm -f "$@.working" ; exit 1 ; } ; \
 	            COUNT="`expr $$COUNT + 1`" ; \
 	        fi ; \
 	    done ; \
