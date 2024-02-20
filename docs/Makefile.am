@@ -130,33 +130,24 @@ CHECK_LOCAL_TARGETS += spellcheck
 endif WITH_SPELLCHECK
 check-local: $(CHECK_LOCAL_TARGETS)
 
+# Make sure sources are there for out-of-tree builds
+@DOC_BUILD_LIST@ $(ASCIIDOC_PDF) $(ASCIIDOC_HTML_SINGLE) $(ASCIIDOC_HTML_CHUNKED): .prep-src-docs
+
 # This list is defined by configure script choices and options:
-doc:
-	+if test x"$(abs_srcdir)" != x"$(abs_builddir)" -a ! -e "$(abs_builddir)/.prep-src-docs"; then $(MAKE) $(AM_MAKEFLAGS) .prep-src-docs ; fi
-	+$(MAKE) $(AM_MAKEFLAGS) @DOC_BUILD_LIST@
+doc: @DOC_BUILD_LIST@
 
 # This target can be called by developers to go around the configure
 # script choices at their risk (e.g. missing tools are possible):
-docs:
-	+if test x"$(abs_srcdir)" != x"$(abs_builddir)" -a ! -e "$(abs_builddir)/.prep-src-docs"; then $(MAKE) $(AM_MAKEFLAGS) .prep-src-docs ; fi
-	+$(MAKE) $(AM_MAKEFLAGS) pdf html-single html-chunked man-man html-man
+docs: pdf html-single html-chunked man-man html-man
 
 all-docs: docs
 
 check-docs: check-pdf check-html-single check-html-chunked check-man
 
-pdf:
-	+if test x"$(abs_srcdir)" != x"$(abs_builddir)" -a ! -e "$(abs_builddir)/.prep-src-docs"; then $(MAKE) $(AM_MAKEFLAGS) .prep-src-docs ; fi
-	+$(MAKE) $(AM_MAKEFLAGS) $(ASCIIDOC_PDF)
-
+pdf: $(ASCIIDOC_PDF)
 # also build the HTML manpages with these targets
-html-single:
-	+if test x"$(abs_srcdir)" != x"$(abs_builddir)" -a ! -e "$(abs_builddir)/.prep-src-docs"; then $(MAKE) $(AM_MAKEFLAGS) .prep-src-docs ; fi
-	+$(MAKE) $(AM_MAKEFLAGS) $(ASCIIDOC_HTML_SINGLE)
-
-html-chunked:
-	+if test x"$(abs_srcdir)" != x"$(abs_builddir)" -a ! -e "$(abs_builddir)/.prep-src-docs"; then $(MAKE) $(AM_MAKEFLAGS) .prep-src-docs ; fi
-	+$(MAKE) $(AM_MAKEFLAGS) $(ASCIIDOC_HTML_CHUNKED)
+html-single: $(ASCIIDOC_HTML_SINGLE)
+html-chunked: $(ASCIIDOC_HTML_CHUNKED)
 
 # the "for" loops might better use $^ but it might be not portable
 check-pdf: $(ASCIIDOC_PDF)

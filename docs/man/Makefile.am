@@ -875,18 +875,15 @@ $(LINKMAN_INCLUDE_CONSUMERS): linkman-driver-names.txt linkman-drivertool-names.
 # git, and not part of tarball (to be in builddir) - so not in EXTRA_DIST.
 DISTCLEANFILES = $(LINKMAN_INCLUDE_GENERATED)
 
+$(HTML_MANS) $(MAN_MANS) index.html: .prep-src-docs
 
 # Sub-make to fully process prep first, and only then go to actual make
 # (maybe parallel) with unambiguously defined sources and targets
-all-html html-man:
-	+if test x"$(abs_srcdir)" != x"$(abs_builddir)" -a ! -e "$(abs_builddir)/.prep-src-docs"; then $(MAKE) $(AM_MAKEFLAGS) .prep-src-docs ; fi
-	+$(MAKE) $(AM_MAKEFLAGS) $(HTML_MANS) index.html
+all-html html-man: $(HTML_MANS) index.html
 
 # Have a way to build all man pages, not just those that fit currently
 # configured drivers, daemons, developer aspect, etc.
-all-man man-man:
-	+if test x"$(abs_srcdir)" != x"$(abs_builddir)" -a ! -e "$(abs_builddir)/.prep-src-docs"; then $(MAKE) $(AM_MAKEFLAGS) .prep-src-docs ; fi
-	+$(MAKE) $(AM_MAKEFLAGS) $(MAN_MANS)
+all-man man-man: $(MAN_MANS)
 
 if WITH_MANS
 if ! SKIP_MANS
