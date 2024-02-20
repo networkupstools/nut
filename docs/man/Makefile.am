@@ -876,7 +876,7 @@ $(LINKMAN_INCLUDE_CONSUMERS): linkman-driver-names.txt linkman-drivertool-names.
 DISTCLEANFILES = $(LINKMAN_INCLUDE_GENERATED)
 
 # Make sure sources are there for out-of-tree builds:
-$(HTML_MANS) $(MAN_MANS) index.html: $(builddir)/.prep-src-docs
+$(HTML_MANS) $(MAN_MANS) index.html: $(abs_builddir)/.prep-src-docs
 
 all-html html-man: $(HTML_MANS) index.html
 
@@ -1004,9 +1004,9 @@ DOCBUILD_END = { \
 ### or just touch-files for peace of mind (in-tree builds). Then we
 ### use these path names (truncated "_prepped") now surely located
 ### in the builddir as the sources for rendered docs.
-*.txt_prepped: $(builddir)/.prep-src-docs
+*.txt_prepped: $(abs_builddir)/.prep-src-docs
 
-#.txt.txt_prepped: $(builddir)/.prep-src-docs
+#.txt.txt_prepped: $(abs_builddir)/.prep-src-docs
 
 ### Regarding absolute paths in attributes below: by default asciidoc
 ### resolves include paths relative to the main document, so while we
@@ -1139,10 +1139,19 @@ spellcheck spellcheck-interactive spellcheck-sortdict:
 # the built man pages in the tarball for end-users without an asciidoc
 # stack (causing a dependency loop)!
 PREP_SRC = $(LINKMAN_INCLUDE_GENERATED) $(SRC_ALL_PAGES) asciidoc.conf
-$(builddir)/.prep-src-docs: $(PREP_SRC)
+
+# NOTE: Some "make" implementations prefix a relative or absent path to
+# the filenames in PREP_SRC, others (e.g. Sun make) prepend the absolute
+# path to locate the sources, so we end up with bogus trees under docs/.
+# Code below tries to detect and truncate this mess, including possible
+# source texts located in/under parent dirs.
+$(abs_builddir)/.prep-src-docs: $(PREP_SRC)
 	@if test x"$(abs_srcdir)" = x"$(abs_builddir)" ; then \
 	    COUNT=0; \
 	    for F in $(PREP_SRC) ; do \
+	        case "$$F" in \
+	            /*) F="`echo "$$F" | sed "s#^$(abs_top_srcdir)/*#./#"`"; cd "$(abs_top_builddir)" ;; \
+	        esac ; \
 	        if ! test -e "$${F}_prepped" ; then \
 	            touch "$${F}_prepped" || exit ; \
 	            COUNT="`expr $$COUNT + 1`" ; \
@@ -1159,16 +1168,20 @@ $(builddir)/.prep-src-docs: $(PREP_SRC)
 	    fi ; \
 	    rm -f "$@.$$$$" ; \
 	    COUNT=0; \
+	    linkroot="$(abs_builddir)" ; \
 	    for F in `cd "$(abs_srcdir)" && ls -1 $(PREP_SRC) | sort -n | uniq` ; do \
+	        case "$$F" in \
+	            /*) F="`echo "$$F" | sed "s#^$(abs_top_srcdir)/*#./#"`"; cd "$(abs_top_builddir)"; linkroot="$(abs_top_builddir)" ;; \
+	        esac ; \
 	        D="`dirname "$$F"`" ; \
-	        $(MKDIR_P) "$(builddir)/$$D" || { rm -f "$@.working" ; exit 1 ; } ; \
-	        if ! test -e "$(builddir)/$$F" && test -s "$(srcdir)/$$F" ; then \
-	            echo "  LN     '$(srcdir)/$$F' => '$(builddir)/$$F' (PWD = '`pwd`')" >&2 ; \
-	            ln -fs "$(abs_srcdir)/$$F" "$(builddir)/$$F" || { rm -f "$@.working" ; exit 1 ; } ; \
+	        $(MKDIR_P) "$${linkroot}/$$D" || { rm -f "$@.working" ; exit 1 ; } ; \
+	        if ! test -e "$${linkroot}/$$F" && test -s "$(srcdir)/$$F" ; then \
+	            echo "  LN     '$(srcdir)/$$F' => '$${linkroot}/$$F' (PWD = '`pwd`')" >&2 ; \
+	            ln -fs "$(abs_srcdir)/$$F" "$${linkroot}/$$F" || { rm -f "$@.working" ; exit 1 ; } ; \
 	            COUNT="`expr $$COUNT + 1`" ; \
 	        fi ; \
-	        if ! test -e "$(builddir)/$${F}_prepped" ; then \
-	            touch "$(builddir)/$${F}_prepped" || { rm -f "$@.working" ; exit 1 ; } ; \
+	        if ! test -e "$${linkroot}/$${F}_prepped" ; then \
+	            touch "$${linkroot}/$${F}_prepped" || { rm -f "$@.working" ; exit 1 ; } ; \
 	            COUNT="`expr $$COUNT + 1`" ; \
 	        fi ; \
 	    done ; \
@@ -1182,10 +1195,13 @@ clean-local:
 	$(AM_V_at)rm -rf tmp
 	$(AM_V_at)if test x"$(abs_srcdir)" != x"$(abs_builddir)" ; then \
 	    for F in $(PREP_SRC) ; do \
+	        case "$$F" in \
+	            /*) F="`echo "$$F" | sed "s#^$(abs_top_srcdir)/*#./#"`"; cd "$(abs_top_builddir)" ;; \
+	        esac ; \
 	        if test -L "$$F" || test -H "$$F" ; then \
-	            rm -f "$(builddir)/$$F" ; \
+	            rm -f "$$F" ; \
 	        fi ; \
-	        rm -f "$(builddir)/$${F}_prepped" ; \
+	        rm -f "$${F}_prepped" ; \
 	    done ; \
-	    rm -f "$(builddir)/.prep-src-docs"*; \
+	    rm -f "$(abs_builddir)/.prep-src-docs"*; \
 	 fi

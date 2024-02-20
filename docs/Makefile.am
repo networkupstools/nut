@@ -131,10 +131,10 @@ endif WITH_SPELLCHECK
 check-local: $(CHECK_LOCAL_TARGETS)
 
 # Make sure sources are there for out-of-tree builds:
-@DOC_BUILD_LIST@ $(ASCIIDOC_PDF) $(ASCIIDOC_HTML_SINGLE) $(ASCIIDOC_HTML_CHUNKED): $(builddir)/.prep-src-docs
+@DOC_BUILD_LIST@ $(ASCIIDOC_PDF) $(ASCIIDOC_HTML_SINGLE) $(ASCIIDOC_HTML_CHUNKED): $(abs_builddir)/.prep-src-docs
 
 # This list is defined by configure script choices and options:
-doc: $(builddir)/.prep-src-docs @DOC_BUILD_LIST@
+doc: $(abs_builddir)/.prep-src-docs @DOC_BUILD_LIST@
 
 # This target can be called by developers to go around the configure
 # script choices at their risk (e.g. missing tools are possible):
@@ -357,7 +357,7 @@ DOCBUILD_END = { \
 ### or just touch-files for peace of mind (in-tree builds). Then we
 ### use these path names (truncated "_prepped") now surely located
 ### in the builddir as the sources for rendered docs.
-*.txt_prepped: $(builddir)/.prep-src-docs
+*.txt_prepped: $(abs_builddir)/.prep-src-docs
 
 # PORTABILITY NOTE: POSIX Make forbids the suffix rule definitions with
 # prerequisites like done below, and GNU Make of some versions complains;
@@ -370,7 +370,7 @@ DOCBUILD_END = { \
 # as done below may be pointless in the end (with regard to a portable way
 # to trigger builds by a changed dependency), but at least predictable and
 # not toxic.
-###.txt.txt_prepped: $(builddir)/.prep-src-docs
+###.txt.txt_prepped: $(abs_builddir)/.prep-src-docs
 
 *.html: common.xsl xhtml.xsl
 .txt_prepped.html:
@@ -472,7 +472,7 @@ ASPELL_OUT_NOTERRORS = (^[ \t]*[\*\@]|^$$)
 SPELLCHECK_RECIPE_DEBUG_STREAM = /dev/null
 #SPELLCHECK_RECIPE_DEBUG_STREAM = &2
 
-$(SPELLCHECK_BUILDDIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE) $(abs_top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT) .prep-src-docs
+$(SPELLCHECK_BUILDDIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE) $(abs_top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/.prep-src-docs
 	@LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	 if test x"$(SPELLCHECK_SRC_ONE)" = x ; then echo "SKIP: Bogus spellcheck call for empty target filename (with make target $@)" >&2 ; exit 0; fi; \
 	 case "$@" in *-spellchecked) ;; *) echo "SKIP: Bogus spellcheck call for non '*-spellchecked' target filename (with make target $@)" >&2 ; exit 0;; esac; \
@@ -518,7 +518,7 @@ $(SPELLCHECK_BUILDDIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_SRCDIR)/
 
 # No physical need to depend on prep, however this brings peace of mind to
 # "make" itself that the *.txt source "dependencies" are satisfied.
-spellcheck: .prep-src-docs
+spellcheck: $(abs_builddir)/.prep-src-docs
 	@if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
 		echo "ASPELL DEBUG : information about the setup follows:"; \
 		LANG=$(ASPELL_ENV_LANG); LC_ALL=$(ASPELL_ENV_LANG); export LANG; export LC_ALL; \
@@ -609,10 +609,19 @@ endif !HAVE_ASPELL
 # When building out-of-tree, be sure to have all asciidoc resources
 # under the same dir structure (tool limitation)
 PREP_SRC = $(EXTRA_DIST) $(SPELLCHECK_SRC_DEFAULT)
-$(builddir)/.prep-src-docs: $(PREP_SRC)
+
+# NOTE: Some "make" implementations prefix a relative or absent path to
+# the filenames in PREP_SRC, others (e.g. Sun make) prepend the absolute
+# path to locate the sources, so we end up with bogus trees under docs/.
+# Code below tries to detect and truncate this mess, including possible
+# source texts located in/under parent dirs.
+$(abs_builddir)/.prep-src-docs: $(PREP_SRC)
 	@if test x"$(abs_srcdir)" = x"$(abs_builddir)" ; then \
 	    COUNT=0; \
 	    for F in $(PREP_SRC) ; do \
+	        case "$$F" in \
+	            /*) F="`echo "$$F" | sed "s#^$(abs_top_srcdir)/*#./#"`"; cd "$(abs_top_builddir)" ;; \
+	        esac ; \
 	        if ! test -e "$${F}_prepped" ; then \
 	            touch "$${F}_prepped" || exit ; \
 	            COUNT="`expr $$COUNT + 1`" ; \
@@ -630,16 +639,20 @@ $(builddir)/.prep-src-docs: $(PREP_SRC)
 	    fi ; \
 	    rm -f "$@.$$$$" ; \
 	    COUNT=0; \
+	    linkroot="$(abs_builddir)" ; \
 	    for F in `cd "$(abs_srcdir)" && ls -1 $(PREP_SRC) | sort -n | uniq` ; do \
+	        case "$$F" in \
+	            /*) F="`echo "$$F" | sed "s#^$(abs_top_srcdir)/*#./#"`"; cd "$(abs_top_builddir)"; linkroot="$(abs_top_builddir)" ;; \
+	        esac ; \
 	        D="`dirname "$$F"`" ; \
-	        $(MKDIR_P) "$(builddir)/$$D" || { rm -f "$@.working" ; exit 1 ; } ; \
-	        if ! test -s "$(builddir)/$$F" && test -s "$(srcdir)/$$F" ; then \
-	            echo "  LN     '$(srcdir)/$$F' => '$(builddir)/$$F' (PWD = '`pwd`')" >&2 ; \
-	            ln -fs "$(abs_srcdir)/$$F" "$(builddir)/$$F" || { rm -f "$@.working" ; exit 1 ; } ; \
+	        $(MKDIR_P) "$${linkroot}/$$D" || { rm -f "$@.working" ; exit 1 ; } ; \
+	        if ! test -s "$${linkroot}/$$F" && test -s "$(srcdir)/$$F" ; then \
+	            echo "  LN     '$(srcdir)/$$F' => '$${linkroot}/$$F' (PWD = '`pwd`')" >&2 ; \
+	            ln -fs "$(abs_srcdir)/$$F" "$${linkroot}/$$F" || { rm -f "$@.working" ; exit 1 ; } ; \
 	            COUNT="`expr $$COUNT + 1`" ; \
 	        fi ; \
-	        if ! test -e "$(builddir)/$${F}_prepped" ; then \
-	            touch "$(builddir)/$${F}_prepped" || { rm -f "$@.working" ; exit 1 ; } ; \
+	        if ! test -e "$${linkroot}/$${F}_prepped" ; then \
+	            touch "$${linkroot}/$${F}_prepped" || { rm -f "$@.working" ; exit 1 ; } ; \
 	            COUNT="`expr $$COUNT + 1`" ; \
 	        fi ; \
 	    done ; \
@@ -652,12 +665,15 @@ clean-local:
 	$(AM_V_at)rm -rf *.chunked *.bak tmp
 	$(AM_V_at)if test x"$(abs_srcdir)" != x"$(abs_builddir)" ; then \
 	    for F in $(PREP_SRC) ; do \
+	        case "$$F" in \
+	            /*) F="`echo "$$F" | sed "s#^$(abs_top_srcdir)/*#./#"`"; cd "$(abs_top_builddir)" ;; \
+	        esac ; \
 	        if test -L "$$F" || test -H "$$F" ; then \
-	            rm -f "$(builddir)/$$F" ; \
+	            rm -f "$$F" ; \
 	        fi ; \
-	        rm -f "$(builddir)/$${F}_prepped" ; \
+	        rm -f "$${F}_prepped" ; \
 	    done ; \
-	    rm -f "$(builddir)/.prep-src-docs"*; \
+	    rm -f "$(abs_builddir)/.prep-src-docs"*; \
 	 fi
 
 .PHONY: html html-chunked html-single pdf man
