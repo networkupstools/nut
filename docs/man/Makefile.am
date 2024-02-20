@@ -947,7 +947,7 @@ check-man-txt: $(SRC_ALL_PAGES)
 	    echo "FAILED man-source sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
 	fi; echo "PASSED man-source sanity check (checked $$CHECKED files)"; exit 0
 
-CLEANFILES = *-spellchecked .prep-src-docs
+CLEANFILES = *-spellchecked
 
 SUFFIXES = .txt .html .1 .3 .5 .8
 
