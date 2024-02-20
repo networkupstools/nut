@@ -223,6 +223,7 @@ if WITH_REGENERATE_DMF_SNMP
 # relies on known/assumed fixed input filename location and relation
 # to output filenames - which we sort of guarantee in other places.
   DMFGEN_CMD = ( \
+	if test x"$(V)" = x1 ; then echo "[D] abs_top_builddir='$(abs_top_builddir)' abs_top_srcdir='$(abs_top_srcdir)' top_builddir='$(top_builddir)' top_srcdir='$(top_srcdir)' builddir='$(builddir)' srcdir='$(srcdir)' PWD='`pwd`'" >&2 ; fi ; \
 	echo "  DMFIFY '$$CMIBFILE' => '$@' (PWD = `pwd`)" >&2 ; \
 	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)" || exit ; \
 	if test -f "$(DMFGEN_SANITY_VALIDATED)" ; then \
@@ -231,6 +232,7 @@ if WITH_REGENERATE_DMF_SNMP
 	      CFLAGS="$(DMFTOOLS_CFLAGS) $(AM_CFLAGS)" \
 	      LDFLAGSx="$(abs_top_builddir)/common/libcommon.la $(abs_top_builddir)/drivers/dstate.o" \
 	      CPPFLAGS="$(DMFTOOLS_CPPFLAGS) $(CPPFLAGS) $(AM_CPPFLAGS)" \
+	      ABS_BUILDDIR="$(abs_builddir)" \
 	      $(abs_srcdir)/dmfify-mib.sh --skip-sanity-check "$$CMIBFILE" "$@" \
 	    ) || exit; \
 	fi ; \

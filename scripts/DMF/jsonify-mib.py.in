@@ -32,6 +32,10 @@ Michal Vyskocil <michal.vyskocil@gmail.com>
 Jim Klimov <jimklimov+nut@gmail.com>
 """
 
+# Can be used for temporary file locations, if defined:
+ABS_BUILDDIR = os.environ.get("ABS_BUILDDIR", None)
+
+
 # TODO:
 #   - read the file to find and prints the comments
 
@@ -644,6 +648,9 @@ def test_compile(MIB_name, source = None):
     if source is None:
         test_file = MIB_name + "_TEST.c"
         obj_file =  MIB_name + "_TEST.o"
+        if ABS_BUILDDIR is not None:
+            test_file = os.path.sep.join([ABS_BUILDDIR, test_file])
+            obj_file = os.path.sep.join([ABS_BUILDDIR, obj_file])
         info ("CALL test_compile(): generate back %s from JSON, to compile below" % (test_file))
         with open (test_file, "wt") as fout:
             s_json2c (fout, MIB_name, v._mappings)
@@ -651,6 +658,9 @@ def test_compile(MIB_name, source = None):
         # Take the additional shared source as is to link it in
         test_file = source
         obj_file = MIB_name + "_" + os.path.splitext (os.path.basename (test_file)) [0] + "_TEST.o"
+        if ABS_BUILDDIR is not None:
+            # Use as is? # test_file = os.path.sep.join([ABS_BUILDDIR, test_file])
+            obj_file = os.path.sep.join([ABS_BUILDDIR, obj_file])
 
     try:
         gcc = os.environ["CC"]
@@ -698,6 +708,10 @@ if args.test:
     test_file = os.path.basename (args.source)
     MIB_name = os.path.splitext (test_file) [0]
     prog_file = MIB_name + "_TEST.exe"
+    if ABS_BUILDDIR is not None:
+        prog_file = os.path.sep.join([ABS_BUILDDIR, prog_file])
+    else:
+        prog_file = os.path.sep.join([".", prog_file])
 
     obj_files = []
     # First file is generated from our JSON:
@@ -743,7 +757,7 @@ if args.test:
         sys.exit (retcode.returncode)
     info ("SELFTEST ./" + prog_file)
     try:
-        subprocess.check_call ("./%s" % prog_file)
+        subprocess.check_call (prog_file)
     except subprocess.CalledProcessError as retcode:
         warn ("SELFTEST FAILED with code %s" % retcode.returncode)
         sys.exit (retcode.returncode)

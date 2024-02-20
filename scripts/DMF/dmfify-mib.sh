@@ -6,6 +6,7 @@
 #
 #   Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
 #   Copyright (C) 2016 - 2021 Jim Klimov <EvgenyKlimov@eaton.com>
+#   Copyright (C) 2022 - 2024 Jim Klimov <jimklimov+nut@gmail.com>
 #
 
 # A bashism, important for us here
@@ -18,6 +19,8 @@ XSD_DMFSNMP_XMLNS='http://www.networkupstools.org/dmf/snmp/snmp-ups'
 # Where to look for python scripts - same dir as this shell script
 _SCRIPT_DIR="`cd $(dirname "$0") && pwd`" || \
     _SCRIPT_DIR="./" # Fallback can fail
+_INITIAL_DIR="`pwd`" || _INITIAL_DIR="./" # Fallback can fail
+[ -n "${ABS_BUILDDIR-}" ] || ABS_BUILDDIR="${_INITIAL_DIR}"
 
 if [ -n "${PYTHON-}" ] ; then
     # May be a name/path of binary, or one with args - check both
@@ -165,26 +168,27 @@ dmfify_c_file() {
     for F in "${_SCRIPT_DIR}"/xmlify-mib.py.in "${_SCRIPT_DIR}"/xmlify-mib.py ; do
         [ -s "$F" ] && XNAME="$F" && break
     done
-    ( "${PYTHON}" "${JNAME}" --test "${cmib}" "$@" > "${mib}.json.tmp" && \
-      "${PYTHON}" "${XNAME}" < "${mib}.json.tmp" > "${mib}.dmf.tmp" ) \
-    && [ -s "${mib}.dmf.tmp" ] \
+    pwd
+    ( "${PYTHON}" "${JNAME}" --test "${cmib}" "$@" > "${ABS_BUILDDIR}/${mib}.json.tmp" && \
+      "${PYTHON}" "${XNAME}" < "${ABS_BUILDDIR}/${mib}.json.tmp" > "${ABS_BUILDDIR}/${mib}.dmf.tmp" ) \
+    && [ -s "${ABS_BUILDDIR}/${mib}.dmf.tmp" ] \
     || { ERRCODE=$?
         if [ $# -gt 0 ]; then
-            echo "ERROR: Could not parse '${cmib}' + $* into '${mib}.dmf'" >&2
+            echo "ERROR: Could not parse '${cmib}' + $* into '${ABS_BUILDDIR}/${mib}.dmf'" >&2
         else
-            echo "ERROR: Could not parse '${cmib}' into '${mib}.dmf'" >&2
+            echo "ERROR: Could not parse '${cmib}' into '${ABS_BUILDDIR}/${mib}.dmf'" >&2
         fi
-        echo "       You can inspect a copy of the intermediate result in '${mib}.json.tmp', '${mib}.dmf.tmp' and '${mib}_TEST.c'" >&2
+        echo "       You can inspect a copy of the intermediate result in '${mib}.json.tmp', '${mib}.dmf.tmp' and '${mib}_TEST.c' located in '${ABS_BUILDDIR}/', '${_SCRIPT_DIR}' and/or '`pwd`'" >&2
         return $ERRCODE; }
 
-    sed 's,^<nut>,\<nut version="'"${XSD_DMFSNMP_VERSION}"'" xmlns="'"${XSD_DMFSNMP_XMLNS}"'"\>,' < "${mib}.dmf.tmp" > "${mib}.dmf" \
+    sed 's,^<nut>,\<nut version="'"${XSD_DMFSNMP_VERSION}"'" xmlns="'"${XSD_DMFSNMP_XMLNS}"'"\>,' < "${ABS_BUILDDIR}/${mib}.dmf.tmp" > "${ABS_BUILDDIR}/${mib}.dmf" \
     || { ERRCODE=$?
-        echo "ERROR: Could not fix headers of '${mib}.dmf'" >&2
-        echo "       You can inspect a copy of the intermediate result in '${mib}.json.tmp', '${mib}.dmf.tmp' and '${mib}_TEST.c'" >&2
+        echo "ERROR: Could not fix headers of '${ABS_BUILDDIR}/${mib}.dmf'" >&2
+        echo "       You can inspect a copy of the intermediate result in '${mib}.json.tmp', '${mib}.dmf.tmp' and '${mib}_TEST.c located in '${ABS_BUILDDIR}/', '${_SCRIPT_DIR}' and/or '`pwd`''" >&2
         return $ERRCODE; }
 
-#    mv -f "${mib}.dmf.tmp" "${mib}.dmf" \
-#    && rm -f "${mib}_TEST"{.c,.exe} "${mib}.json.tmp"
+#    mv -f "${ABS_BUILDDIR}/${mib}.dmf.tmp" "${ABS_BUILDDIR}/${mib}.dmf" \
+#    && rm -f "${ABS_BUILDDIR}/${mib}_TEST"{.c,.exe} "${ABS_BUILDDIR}/${mib}.json.tmp"
 }
 
 list_shared_sources() {
