@@ -3,7 +3,7 @@
  *  Copyright (C)
  *  2003 - 2008 Arnaud Quette <arnaud.quette@free.fr>
  *  2005 - 2006 Peter Selinger <selinger@users.sourceforge.net>
- *  2020 - 2022 Jim Klimov <jimklimov+nut@gmail.com>
+ *  2020 - 2024 Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  Note: this subdriver was initially generated as a "stub" by the
  *  gen-usbhid-subdriver script. It must be customized.
@@ -31,10 +31,17 @@
 #include "cps-hid.h"
 #include "usb-common.h"
 
-#define CPS_HID_VERSION      "CyberPower HID 0.8"
+#define CPS_HID_VERSION      "CyberPower HID 0.80"
 
 /* Cyber Power Systems */
 #define CPS_VENDORID 0x0764
+
+/* ST Microelectronics */
+#define STMICRO_VENDORID	0x0483
+/* Please note that USB vendor ID 0x0483 is from ST Microelectronics -
+ * with actual product IDs delegated to different OEMs.
+ * Devices handled in this driver are marketed under Cyber Energy brand.
+ */
 
 /* Values for correcting the HID on some models
  * where LogMin and LogMax are set incorrectly in the HID.
@@ -72,6 +79,9 @@ static usb_device_id_t cps_usb_device_table[] = {
 	{ USB_DEVICE(CPS_VENDORID, 0x0501), &cps_battery_scale },
 	/* OR2200LCDRM2U, OR700LCDRM1U, PR6000LCDRTXL5U */
 	{ USB_DEVICE(CPS_VENDORID, 0x0601), NULL },
+
+	/* Cyber Energy branded devices by CPS */
+	{ USB_DEVICE(STMICRO_VENDORID, 0xa430), NULL },
 
 	/* Terminating entry */
 	{ 0, 0, NULL }
