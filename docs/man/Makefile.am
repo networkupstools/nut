@@ -1150,7 +1150,7 @@ spellcheck spellcheck-interactive spellcheck-sortdict:
 # NOTE: Not including *all* of EXTRA_DIST here, because we also "dist"
 # the built man pages in the tarball for end-users without an asciidoc
 # stack (causing a dependency loop)!
-PREP_SRC = $(SRC_ALL_PAGES) asciidoc.conf
+PREP_SRC = $(LINKMAN_INCLUDE_GENERATED) $(SRC_ALL_PAGES) asciidoc.conf
 .prep-src-docs: $(PREP_SRC)
 	@if test x"$(abs_srcdir)" = x"$(abs_builddir)" ; then \
 	    if ! test -e "$@" ; then touch "$@" ; fi ; \
