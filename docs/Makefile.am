@@ -621,7 +621,7 @@ PREP_SRC = $(EXTRA_DIST) $(SPELLCHECK_SRC_DEFAULT)
 	        D="`dirname "$$F"`" ; \
 	        $(MKDIR_P) "$(builddir)/$$D" || { rm -f "$@.working" ; exit 1 ; } ; \
 	        if ! test -s "$(builddir)/$$F" && test -s "$(srcdir)/$$F" ; then \
-	            echo "  LN     '$(srcdir)/$$F' => '$(builddir)/$$F'" >&2 ; \
+	            echo "  LN     '$(srcdir)/$$F' => '$(builddir)/$$F' (PWD = '`pwd`')" >&2 ; \
 	            ln -fs "$(abs_srcdir)/$$F" "$(builddir)/$$F" || { rm -f "$@.working" ; exit 1 ; } ; \
 	            COUNT="`expr $$COUNT + 1`" ; \
 	        fi ; \
