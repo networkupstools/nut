@@ -876,13 +876,8 @@ $(LINKMAN_INCLUDE_CONSUMERS): linkman-driver-names.txt linkman-drivertool-names.
 DISTCLEANFILES = $(LINKMAN_INCLUDE_GENERATED)
 
 # Make sure sources are there for out-of-tree builds:
-$(HTML_MANS) $(MAN_MANS) index.html: .prep-src-docs
+#$(HTML_MANS) $(MAN_MANS) index.html: .prep-src-docs
 
-# Make sure we look for source texts as symlinks in builddir first:
-VPATH = $(builddir):$(srcdir)
-
-# Sub-make to fully process prep first, and only then go to actual make
-# (maybe parallel) with unambiguously defined sources and targets
 all-html html-man: $(HTML_MANS) index.html
 
 # Have a way to build all man pages, not just those that fit currently
@@ -953,7 +948,7 @@ check-man-txt: $(SRC_ALL_PAGES)
 
 CLEANFILES = *-spellchecked
 
-SUFFIXES = .txt .html .1 .3 .5 .8
+SUFFIXES = .txt-prepped .txt .html .1 .3 .5 .8
 
 # For builds with allowed installation of prebuild man pages, check that
 # they exist in sources (make would pull them automatically as a fallback
@@ -972,7 +967,6 @@ CLEANFILES += *.1 *.3 *.5 *.8 *.xml *.html *.pdf
 # Working around a2x not friendly to parallelized runs.
 # See more details in the main NUT docs/Makefile.am
 DOCBUILD_BEGIN = { \
-    if test x"$(abs_srcdir)" != x"$(abs_builddir)" -a ! -e "$(abs_builddir)/.prep-src-docs"; then $(MAKE) $(AM_MAKEFLAGS) .prep-src-docs ; fi ; \
     if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
         rm -rf "./$${A2X_OUTDIR}" || true ; \
         test -d "$@" && rm -rf "$@" || true ; \
@@ -1006,18 +1000,11 @@ DOCBUILD_END = { \
     fi ; \
 }
 
-# PORTABILITY NOTE: POSIX Make forbids the suffix rule definitions with
-# prerequisites like done below, and GNU Make of some versions complains;
-# https://www.gnu.org/software/make/manual/html_node/Error-Messages.html
-# says the prerequisites were ignored while a suffix rule was created;
-# eventually the POSIX stance would be taken to define a rule for a weird
-# verbatim target file name with prerequisites:
-# ../docs/Makefile:936: warning: ignoring prerequisites on suffix rule definition
-# Changes from ".txt.pdf: docinfo.xml" to "*.pdf: docinfo.xml" = ".txt.pdf:"
-# as done below may be pointless in the end (with regard to a portable way
-# to trigger builds by a changed dependency), but at least predictable and
-# not toxic.
-*.html *.1 *.3 *.5 *.8: .prep-src-docs
+### Call the prep step consistently to create symlinks (out-of-tree)
+### or just touch-files for peace of mind (in-tree builds). Then we
+### use these path names (truncated "-prepped") now surely located
+### in the builddir as the sources for rendered docs.
+*.txt-prepped: .prep-src-docs
 
 ### Regarding absolute paths in attributes below: by default asciidoc
 ### resolves include paths relative to the main document, so while we
@@ -1026,11 +1013,10 @@ DOCBUILD_END = { \
 ### Note: `(top_)srcdir` and `(top_)builddir` must end with a path
 ### separator, or be empty -- so in all cases letting the resulting
 ### string resolve meaningfully in the filesystem during docs build.
-.txt.html:
+.txt-prepped.html:
 	@A2X_OUTDIR="tmp/man-html.$(@F).$$$$" ; \
-	 echo "  DOC-MAN-HTML Preparing to generate $@"; \
-	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 echo "  DOC-MAN-HTML Generating $@"; \
+	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 $(ASCIIDOC) --backend=xhtml11 $${A2X_VERBOSE} \
 		--attribute localdate="`TZ=UTC date +%Y-%m-%d`" \
 		--attribute localtime="`TZ=UTC date +%H:%M:%S`" \
@@ -1039,7 +1025,7 @@ DOCBUILD_END = { \
 		--attribute builddir="$(abs_builddir)/" \
 		--attribute top_srcdir="$(abs_top_srcdir)/" \
 		--attribute top_builddir="$(abs_top_builddir)/" \
-		-o "$${A2X_OUTDIR}/$(@F)" $< || RES=$$? ; \
+		-o "$${A2X_OUTDIR}/$(@F)" "$(<D)/`basename "$(<F)" -prepped`" || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
 ### Prior to Asciidoc ~8.6.8, the --destination-dir flag didn't seem to affect the location of the intermediate .xml file.
@@ -1055,36 +1041,32 @@ A2X_MANPAGE_OPTS = --doctype manpage --format manpage $${A2X_VERBOSE} \
 	--attribute top_builddir="$(abs_top_builddir)/" \
 	--destination-dir="$${A2X_OUTDIR}"
 
-.txt.1:
-	@+A2X_OUTDIR="tmp/man1.$(@F).$$$$" ; \
-	 echo "  DOC-MAN  Preparing to generate $@"; \
-	 $(DOCBUILD_BEGIN) ; RES=0; \
+.txt-prepped.1:
+	@A2X_OUTDIR="tmp/man1.$(@F).$$$$" ; \
 	 echo "  DOC-MAN  Generating $@"; \
-	 $(A2X) $(A2X_MANPAGE_OPTS) $< || RES=$$? ; \
+	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 $(A2X) $(A2X_MANPAGE_OPTS) "$(<D)/`basename "$(<F)" -prepped`" || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
-.txt.3:
-	@+A2X_OUTDIR="tmp/man3.$(@F).$$$$" ; \
-	 echo "  DOC-MAN  Preparing to generate $@"; \
-	 $(DOCBUILD_BEGIN) ; RES=0; \
+.txt-prepped.3:
+	@A2X_OUTDIR="tmp/man3.$(@F).$$$$" ; \
 	 echo "  DOC-MAN  Generating $@"; \
-	 $(A2X) $(A2X_MANPAGE_OPTS) $< || RES=$$? ; \
+	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 $(A2X) $(A2X_MANPAGE_OPTS) "$(<D)/`basename "$(<F)" -prepped`" || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
-.txt.5:
-	@+A2X_OUTDIR="tmp/man5.$(@F).$$$$" ; \
-	 echo "  DOC-MAN  Preparing to generate $@"; \
-	 $(DOCBUILD_BEGIN) ; RES=0; \
+.txt-prepped.5:
+	@A2X_OUTDIR="tmp/man5.$(@F).$$$$" ; \
 	 echo "  DOC-MAN  Generating $@"; \
-	 $(A2X) $(A2X_MANPAGE_OPTS) $< || RES=$$? ; \
+	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 $(A2X) $(A2X_MANPAGE_OPTS) "$(<D)/`basename "$(<F)" -prepped`" || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
-.txt.8:
-	@+A2X_OUTDIR="tmp/man8.$(@F).$$$$" ; \
-	 echo "  DOC-MAN  Preparing to generate $@"; \
-	 $(DOCBUILD_BEGIN) ; RES=0; \
+.txt-prepped.8:
+	@A2X_OUTDIR="tmp/man8.$(@F).$$$$" ; \
 	 echo "  DOC-MAN  Generating $@"; \
-	 $(A2X) $(A2X_MANPAGE_OPTS) $< || RES=$$? ; \
+	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 $(A2X) $(A2X_MANPAGE_OPTS) "$(<D)/`basename "$(<F)" -prepped`" || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
 else !HAVE_ASCIIDOC
@@ -1177,6 +1159,10 @@ PREP_SRC = $(LINKMAN_INCLUDE_GENERATED) $(SRC_ALL_PAGES) asciidoc.conf
 	            ln -fs "$(abs_srcdir)/$$F" "$(builddir)/$$F" || { rm -f "$@.working" ; exit 1 ; } ; \
 	            COUNT="`expr $$COUNT + 1`" ; \
 	        fi ; \
+	        if ! test -e "$(builddir)/$$F-prepped" ; then \
+	            touch "$(builddir)/$$F-prepped" || { rm -f "$@.working" ; exit 1 ; } ; \
+	            COUNT="`expr $$COUNT + 1`" ; \
+	        fi ; \
 	    done ; \
 	    if test "$$COUNT" -gt 0 -o ! -e "$@" ; then touch "$@" ; fi ; \
 	 fi
@@ -1191,6 +1177,7 @@ clean-local:
 	        if test -L "$$F" || test -H "$$F" ; then \
 	            rm -f "$(builddir)/$$F" ; \
 	        fi ; \
+	        rm -f "$(builddir)/$$F-prepped" ; \
 	    done ; \
 	    rm -f "$(builddir)/.prep-src-docs"*; \
 	 fi

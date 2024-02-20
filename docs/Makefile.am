@@ -121,7 +121,7 @@ ASCIIDOC_PDF = user-manual.pdf \
 	FAQ.pdf
 
 SUBDIRS = man cables
-SUFFIXES = .txt .html .pdf -spellchecked
+SUFFIXES = .txt .html .pdf -spellchecked .txt-prepped
 
 # This list is defined by configure script choices and options:
 CHECK_LOCAL_TARGETS = @DOC_CHECK_LIST@
@@ -131,10 +131,7 @@ endif WITH_SPELLCHECK
 check-local: $(CHECK_LOCAL_TARGETS)
 
 # Make sure sources are there for out-of-tree builds:
-@DOC_BUILD_LIST@ $(ASCIIDOC_PDF) $(ASCIIDOC_HTML_SINGLE) $(ASCIIDOC_HTML_CHUNKED): .prep-src-docs
-
-# Make sure we look for source texts as symlinks in builddir first:
-VPATH = $(builddir):$(srcdir)
+#@DOC_BUILD_LIST@ $(ASCIIDOC_PDF) $(ASCIIDOC_HTML_SINGLE) $(ASCIIDOC_HTML_CHUNKED): .prep-src-docs
 
 # This list is defined by configure script choices and options:
 doc: @DOC_BUILD_LIST@
@@ -188,10 +185,10 @@ check-html-chunked: $(ASCIIDOC_HTML_CHUNKED)
 # chosen during configure script execution. The "all-man" and "all-html"
 # rules build everything documented.
 check-man all-man man-man all-html html-man:
-	+cd $(top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile .prep-src-docs && $(MAKE) $(AM_MAKEFLAGS) -f Makefile $@
+	+cd $(top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile $@
 
 man:
-	+cd $(top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile .prep-src-docs && $(MAKE) $(AM_MAKEFLAGS) -f Makefile all
+	+cd $(top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile all
 
 CLEANFILES = *.xml *.html *.pdf *-spellchecked docbook-xsl.css docinfo.xml.in.tmp
 CLEANFILES += $(top_builddir)/INSTALL.nut $(top_builddir)/UPGRADING $(top_builddir)/NEWS $(top_builddir)/ChangeLog.adoc $(top_builddir)/README
@@ -327,7 +324,6 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) \
 # Note we only remove the original target (if present), if it is a directory -
 # e.g. created by "html-chunked" targets.
 DOCBUILD_BEGIN = { \
-    if test x"$(abs_srcdir)" != x"$(abs_builddir)" -a ! -e "$(abs_builddir)/.prep-src-docs"; then $(MAKE) $(AM_MAKEFLAGS) .prep-src-docs ; fi ; \
     if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
         rm -rf "./$${A2X_OUTDIR}" || true ; \
         test -d "$@" && rm -rf "$@" || true ; \
@@ -357,6 +353,12 @@ DOCBUILD_END = { \
     fi ; \
 }
 
+### Call the prep step consistently to create symlinks (out-of-tree)
+### or just touch-files for peace of mind (in-tree builds). Then we
+### use these path names (truncated "-prepped") now surely located
+### in the builddir as the sources for rendered docs.
+*.txt-prepped: .prep-src-docs
+
 # PORTABILITY NOTE: POSIX Make forbids the suffix rule definitions with
 # prerequisites like done below, and GNU Make of some versions complains;
 # https://www.gnu.org/software/make/manual/html_node/Error-Messages.html
@@ -368,32 +370,29 @@ DOCBUILD_END = { \
 # as done below may be pointless in the end (with regard to a portable way
 # to trigger builds by a changed dependency), but at least predictable and
 # not toxic.
-*.html: common.xsl xhtml.xsl .prep-src-docs
-.txt.html:
-	@+A2X_OUTDIR="tmp/html-single.$(@F).$$$$" ; \
-	 echo "  DOC-HTML Preparing to generate $@"; \
-	 $(DOCBUILD_BEGIN) ; RES=0; \
+*.html: common.xsl xhtml.xsl
+.txt-prepped.html:
+	@A2X_OUTDIR="tmp/html-single.$(@F).$$$$" ; \
 	 echo "  DOC-HTML Generating $@"; \
-	 $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl $< || RES=$$? ; \
+	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl "$(<D)/`basename "$(<F)" -prepped`" || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
-*.chunked: common.xsl chunked.xsl .prep-src-docs
-.txt.chunked:
-	@+A2X_OUTDIR="tmp/html-chunked.$(@F).$$$$" ; \
-	 echo "  DOC-HTML-CHUNKED Preparing to generate $@"; \
-	 $(DOCBUILD_BEGIN) ; RES=0; \
+*.chunked: common.xsl chunked.xsl
+.txt-prepped.chunked:
+	@A2X_OUTDIR="tmp/html-chunked.$(@F).$$$$" ; \
 	 echo "  DOC-HTML-CHUNKED Generating $@"; \
-	 $(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl $< || RES=$$? ; \
+	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 $(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl "$(<D)/`basename "$(<F)" -prepped`" || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
 # Note: non-HTML a2x modes may ignore the destination directory
-*.pdf: docinfo.xml .prep-src-docs
-.txt.pdf:
-	@+A2X_OUTDIR="tmp/pdf.$(@F).$$$$" ; \
-	 echo "  DOC-PDF  Preparing to generate $@"; \
-	 $(DOCBUILD_BEGIN) ; RES=0; \
+*.pdf: docinfo.xml
+.txt-prepped.pdf:
+	@A2X_OUTDIR="tmp/pdf.$(@F).$$$$" ; \
 	 echo "  DOC-PDF  Generating $@"; \
-	 $(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 $< || RES=$$? ; \
+	 $(DOCBUILD_BEGIN) ; RES=0; \
+	 $(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 "$(<D)/`basename "$(<F)" -prepped`" || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
 # Used below for spellcheck and for .prep-src-docs
@@ -628,6 +627,10 @@ PREP_SRC = $(EXTRA_DIST) $(SPELLCHECK_SRC_DEFAULT)
 	            ln -fs "$(abs_srcdir)/$$F" "$(builddir)/$$F" || { rm -f "$@.working" ; exit 1 ; } ; \
 	            COUNT="`expr $$COUNT + 1`" ; \
 	        fi ; \
+	        if ! test -e "$(builddir)/$$F-prepped" ; then \
+	            touch "$(builddir)/$$F-prepped" || { rm -f "$@.working" ; exit 1 ; } ; \
+	            COUNT="`expr $$COUNT + 1`" ; \
+	        fi ; \
 	    done ; \
 	    if test "$$COUNT" -gt 0 -o ! -e "$@" ; then touch "$@" ; fi ; \
 	 fi
@@ -641,6 +644,7 @@ clean-local:
 	        if test -L "$$F" || test -H "$$F" ; then \
 	            rm -f "$(builddir)/$$F" ; \
 	        fi ; \
+	        rm -f "$(builddir)/$$F-prepped" ; \
 	    done ; \
 	    rm -f "$(builddir)/.prep-src-docs"*; \
 	 fi
