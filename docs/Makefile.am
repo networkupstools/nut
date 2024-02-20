@@ -130,8 +130,11 @@ CHECK_LOCAL_TARGETS += spellcheck
 endif WITH_SPELLCHECK
 check-local: $(CHECK_LOCAL_TARGETS)
 
-# Make sure sources are there for out-of-tree builds
+# Make sure sources are there for out-of-tree builds:
 @DOC_BUILD_LIST@ $(ASCIIDOC_PDF) $(ASCIIDOC_HTML_SINGLE) $(ASCIIDOC_HTML_CHUNKED): .prep-src-docs
+
+# Make sure we look for source texts as symlinks in builddir first:
+VPATH = $(builddir):$(srcdir)
 
 # This list is defined by configure script choices and options:
 doc: @DOC_BUILD_LIST@

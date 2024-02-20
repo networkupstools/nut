@@ -875,7 +875,11 @@ $(LINKMAN_INCLUDE_CONSUMERS): linkman-driver-names.txt linkman-drivertool-names.
 # git, and not part of tarball (to be in builddir) - so not in EXTRA_DIST.
 DISTCLEANFILES = $(LINKMAN_INCLUDE_GENERATED)
 
+# Make sure sources are there for out-of-tree builds:
 $(HTML_MANS) $(MAN_MANS) index.html: .prep-src-docs
+
+# Make sure we look for source texts as symlinks in builddir first:
+VPATH = $(builddir):$(srcdir)
 
 # Sub-make to fully process prep first, and only then go to actual make
 # (maybe parallel) with unambiguously defined sources and targets
