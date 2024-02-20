@@ -1184,7 +1184,9 @@ clean-local:
 	$(AM_V_at)rm -rf tmp
 	$(AM_V_at)if test x"$(abs_srcdir)" != x"$(abs_builddir)" ; then \
 	    for F in $(PREP_SRC) ; do \
-	        rm -f "$(builddir)/$$F" ; \
+	        if test -L "$$F" || test -H "$$F" ; then \
+	            rm -f "$(builddir)/$$F" ; \
+	        fi ; \
 	    done ; \
 	    rm -f "$(builddir)/.prep-src-docs"*; \
 	 fi
