@@ -1017,7 +1017,7 @@ DOCBUILD_END = { \
 # as done below may be pointless in the end (with regard to a portable way
 # to trigger builds by a changed dependency), but at least predictable and
 # not toxic.
-#*.html *.1 *.3 *.5 *.8: .prep-src-docs
+*.html *.1 *.3 *.5 *.8: .prep-src-docs
 
 ### Regarding absolute paths in attributes below: by default asciidoc
 ### resolves include paths relative to the main document, so while we
