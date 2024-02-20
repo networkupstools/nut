@@ -20,6 +20,8 @@
 #EGREP = egrep
 EGREP = grep -E
 
+all:
+
 # Base configuration and client manpages, always installed
 SRC_CONF_PAGES = \
 	nut.conf.txt \
@@ -873,7 +875,6 @@ $(LINKMAN_INCLUDE_CONSUMERS): linkman-driver-names.txt linkman-drivertool-names.
 # git, and not part of tarball (to be in builddir) - so not in EXTRA_DIST.
 DISTCLEANFILES = $(LINKMAN_INCLUDE_GENERATED)
 
-all:
 
 # Sub-make to fully process prep first, and only then go to actual make
 # (maybe parallel) with unambiguously defined sources and targets

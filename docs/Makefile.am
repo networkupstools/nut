@@ -3,6 +3,8 @@
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 EXTRA_DIST =
 
+all: doc
+
 # Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
 #EGREP = egrep
 EGREP = grep -E
@@ -120,8 +122,6 @@ ASCIIDOC_PDF = user-manual.pdf \
 
 SUBDIRS = man cables
 SUFFIXES = .txt .html .pdf -spellchecked
-
-all: doc
 
 # This list is defined by configure script choices and options:
 CHECK_LOCAL_TARGETS = @DOC_CHECK_LIST@
