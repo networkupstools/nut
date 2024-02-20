@@ -876,7 +876,7 @@ $(LINKMAN_INCLUDE_CONSUMERS): linkman-driver-names.txt linkman-drivertool-names.
 DISTCLEANFILES = $(LINKMAN_INCLUDE_GENERATED)
 
 # Make sure sources are there for out-of-tree builds:
-#$(HTML_MANS) $(MAN_MANS) index.html: .prep-src-docs
+#$(HTML_MANS) $(MAN_MANS) index.html: $(builddir)/.prep-src-docs
 
 all-html html-man: $(HTML_MANS) index.html
 
@@ -1004,7 +1004,7 @@ DOCBUILD_END = { \
 ### or just touch-files for peace of mind (in-tree builds). Then we
 ### use these path names (truncated "-prepped") now surely located
 ### in the builddir as the sources for rendered docs.
-*.txt-prepped: .prep-src-docs
+*.txt-prepped: $(builddir)/.prep-src-docs
 
 ### Regarding absolute paths in attributes below: by default asciidoc
 ### resolves include paths relative to the main document, so while we
@@ -1137,7 +1137,7 @@ spellcheck spellcheck-interactive spellcheck-sortdict:
 # the built man pages in the tarball for end-users without an asciidoc
 # stack (causing a dependency loop)!
 PREP_SRC = $(LINKMAN_INCLUDE_GENERATED) $(SRC_ALL_PAGES) asciidoc.conf
-.prep-src-docs: $(PREP_SRC)
+$(builddir)/.prep-src-docs: $(PREP_SRC)
 	@if test x"$(abs_srcdir)" = x"$(abs_builddir)" ; then \
 	    if ! test -e "$@" ; then touch "$@" ; fi ; \
 	 else \

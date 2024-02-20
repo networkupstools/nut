@@ -131,7 +131,7 @@ endif WITH_SPELLCHECK
 check-local: $(CHECK_LOCAL_TARGETS)
 
 # Make sure sources are there for out-of-tree builds:
-#@DOC_BUILD_LIST@ $(ASCIIDOC_PDF) $(ASCIIDOC_HTML_SINGLE) $(ASCIIDOC_HTML_CHUNKED): .prep-src-docs
+#@DOC_BUILD_LIST@ $(ASCIIDOC_PDF) $(ASCIIDOC_HTML_SINGLE) $(ASCIIDOC_HTML_CHUNKED): $(builddir)/.prep-src-docs
 
 # This list is defined by configure script choices and options:
 doc: @DOC_BUILD_LIST@
@@ -357,7 +357,7 @@ DOCBUILD_END = { \
 ### or just touch-files for peace of mind (in-tree builds). Then we
 ### use these path names (truncated "-prepped") now surely located
 ### in the builddir as the sources for rendered docs.
-*.txt-prepped: .prep-src-docs
+*.txt-prepped: $(builddir)/.prep-src-docs
 
 # PORTABILITY NOTE: POSIX Make forbids the suffix rule definitions with
 # prerequisites like done below, and GNU Make of some versions complains;
@@ -605,7 +605,7 @@ endif !HAVE_ASPELL
 # When building out-of-tree, be sure to have all asciidoc resources
 # under the same dir structure (tool limitation)
 PREP_SRC = $(EXTRA_DIST) $(SPELLCHECK_SRC_DEFAULT)
-.prep-src-docs: $(PREP_SRC)
+$(builddir)/.prep-src-docs: $(PREP_SRC)
 	@if test x"$(abs_srcdir)" = x"$(abs_builddir)" ; then \
 	    if ! test -e "$@" ; then touch "$@" ; fi ; \
 	 else \
