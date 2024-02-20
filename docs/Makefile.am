@@ -610,7 +610,7 @@ PREP_SRC = $(EXTRA_DIST) $(SPELLCHECK_SRC_DEFAULT)
 $(builddir)/.prep-src-docs: $(PREP_SRC)
 	@if test x"$(abs_srcdir)" = x"$(abs_builddir)" ; then \
 	    COUNT=0; \
-	    for F in `ls -1 $(PREP_SRC) | sort -n | uniq` ; do \
+	    for F in $(PREP_SRC) ; do \
 	        if ! test -e "$${F}_prepped" ; then \
 	            touch "$${F}_prepped" || exit ; \
 	            COUNT="`expr $$COUNT + 1`" ; \
