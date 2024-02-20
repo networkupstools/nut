@@ -131,10 +131,10 @@ endif WITH_SPELLCHECK
 check-local: $(CHECK_LOCAL_TARGETS)
 
 # Make sure sources are there for out-of-tree builds:
-#@DOC_BUILD_LIST@ $(ASCIIDOC_PDF) $(ASCIIDOC_HTML_SINGLE) $(ASCIIDOC_HTML_CHUNKED): $(builddir)/.prep-src-docs
+@DOC_BUILD_LIST@ $(ASCIIDOC_PDF) $(ASCIIDOC_HTML_SINGLE) $(ASCIIDOC_HTML_CHUNKED): $(builddir)/.prep-src-docs
 
 # This list is defined by configure script choices and options:
-doc: @DOC_BUILD_LIST@
+doc: $(builddir)/.prep-src-docs @DOC_BUILD_LIST@
 
 # This target can be called by developers to go around the configure
 # script choices at their risk (e.g. missing tools are possible):
@@ -370,6 +370,8 @@ DOCBUILD_END = { \
 # as done below may be pointless in the end (with regard to a portable way
 # to trigger builds by a changed dependency), but at least predictable and
 # not toxic.
+###.txt.txt_prepped: $(builddir)/.prep-src-docs
+
 *.html: common.xsl xhtml.xsl
 .txt_prepped.html:
 	@A2X_OUTDIR="tmp/html-single.$(@F).$$$$" ; \
@@ -607,6 +609,13 @@ endif !HAVE_ASPELL
 PREP_SRC = $(EXTRA_DIST) $(SPELLCHECK_SRC_DEFAULT)
 $(builddir)/.prep-src-docs: $(PREP_SRC)
 	@if test x"$(abs_srcdir)" = x"$(abs_builddir)" ; then \
+	    COUNT=0; \
+	    for F in `ls -1 $(PREP_SRC) | sort -n | uniq` ; do \
+	        if ! test -e "$${F}_prepped" ; then \
+	            touch "$${F}_prepped" || exit ; \
+	            COUNT="`expr $$COUNT + 1`" ; \
+	        fi ; \
+	    done ; \
 	    if ! test -e "$@" ; then touch "$@" ; fi ; \
 	 else \
 	    COUNT=30 ; \
@@ -632,8 +641,8 @@ $(builddir)/.prep-src-docs: $(PREP_SRC)
 	            COUNT="`expr $$COUNT + 1`" ; \
 	        fi ; \
 	    done ; \
-	    if test "$$COUNT" -gt 0 -o ! -e "$@" ; then touch "$@" ; fi ; \
-	 fi
+	 fi ; \
+	 if test "$$COUNT" -gt 0 -o ! -e "$@" ; then touch "$@" ; fi
 	@rm -f "$@.working"
 
 # Dirs to clean, etc.

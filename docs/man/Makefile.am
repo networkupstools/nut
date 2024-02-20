@@ -876,7 +876,7 @@ $(LINKMAN_INCLUDE_CONSUMERS): linkman-driver-names.txt linkman-drivertool-names.
 DISTCLEANFILES = $(LINKMAN_INCLUDE_GENERATED)
 
 # Make sure sources are there for out-of-tree builds:
-#$(HTML_MANS) $(MAN_MANS) index.html: $(builddir)/.prep-src-docs
+$(HTML_MANS) $(MAN_MANS) index.html: $(builddir)/.prep-src-docs
 
 all-html html-man: $(HTML_MANS) index.html
 
@@ -946,7 +946,7 @@ check-man-txt: $(SRC_ALL_PAGES)
 	    echo "FAILED man-source sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
 	fi; echo "PASSED man-source sanity check (checked $$CHECKED files)"; exit 0
 
-CLEANFILES = *-spellchecked
+CLEANFILES = *-spellchecked .prep-src-docs *_prepped
 
 SUFFIXES = .txt_prepped .txt .html .1 .3 .5 .8
 
@@ -1005,6 +1005,8 @@ DOCBUILD_END = { \
 ### use these path names (truncated "_prepped") now surely located
 ### in the builddir as the sources for rendered docs.
 *.txt_prepped: $(builddir)/.prep-src-docs
+
+#.txt.txt_prepped: $(builddir)/.prep-src-docs
 
 ### Regarding absolute paths in attributes below: by default asciidoc
 ### resolves include paths relative to the main document, so while we
@@ -1139,7 +1141,13 @@ spellcheck spellcheck-interactive spellcheck-sortdict:
 PREP_SRC = $(LINKMAN_INCLUDE_GENERATED) $(SRC_ALL_PAGES) asciidoc.conf
 $(builddir)/.prep-src-docs: $(PREP_SRC)
 	@if test x"$(abs_srcdir)" = x"$(abs_builddir)" ; then \
-	    if ! test -e "$@" ; then touch "$@" ; fi ; \
+	    COUNT=0; \
+	    for F in `ls -1 $(PREP_SRC) | sort -n | uniq` ; do \
+	        if ! test -e "$${F}_prepped" ; then \
+	            touch "$${F}_prepped" || exit ; \
+	            COUNT="`expr $$COUNT + 1`" ; \
+	        fi ; \
+	    done ; \
 	 else \
 	    COUNT=30 ; \
 	    touch "$@.$$$$" ; \
@@ -1164,8 +1172,8 @@ $(builddir)/.prep-src-docs: $(PREP_SRC)
 	            COUNT="`expr $$COUNT + 1`" ; \
 	        fi ; \
 	    done ; \
-	    if test "$$COUNT" -gt 0 -o ! -e "$@" ; then touch "$@" ; fi ; \
-	 fi
+	 fi ; \
+	 if test "$$COUNT" -gt 0 -o ! -e "$@" ; then touch "$@" ; fi
 	@rm -f "$@.working"
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
