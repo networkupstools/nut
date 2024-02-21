@@ -532,7 +532,7 @@ spellcheck: $(abs_top_builddir)/docs/.prep-src-docs
 		if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
 			echo "ASPELL MAKEFILE DEBUG: Will see from `pwd` if '$(SPELLCHECK_SRCDIR)/$${docsrc}-spellchecked' is up to date" >&2; \
 		else true ; fi ; \
-		$(MAKE) -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC_ONE="$${docsrc}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" \
+		$(MAKE) -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_SRC_ONE="$${docsrc}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" \
 		|| FAILED="$$FAILED $(SPELLCHECK_SRCDIR)/$$docsrc"; \
 	 done ; \
 	 if test -n "$$FAILED" ; then \
