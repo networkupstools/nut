@@ -876,7 +876,7 @@ $(LINKMAN_INCLUDE_CONSUMERS): linkman-driver-names.txt linkman-drivertool-names.
 DISTCLEANFILES = $(LINKMAN_INCLUDE_GENERATED)
 
 # Make sure sources are there for out-of-tree builds:
-$(HTML_MANS) $(MAN_MANS) index.html: $(abs_builddir)/.prep-src-docs
+$(HTML_MANS) $(MAN_MANS) index.html: $(abs_top_builddir)/docs/man/.prep-src-docs
 
 all-html html-man: $(HTML_MANS) index.html
 
@@ -1004,9 +1004,9 @@ DOCBUILD_END = { \
 ### or just touch-files for peace of mind (in-tree builds). Then we
 ### use these path names (truncated "_prepped") now surely located
 ### in the builddir as the sources for rendered docs.
-*.txt_prepped: $(abs_builddir)/.prep-src-docs
+*.txt_prepped: $(abs_top_builddir)/docs/man/.prep-src-docs
 
-#.txt.txt_prepped: $(abs_builddir)/.prep-src-docs
+#.txt.txt_prepped: $(abs_top_builddir)/docs/man/.prep-src-docs
 
 ### Regarding absolute paths in attributes below: by default asciidoc
 ### resolves include paths relative to the main document, so while we
@@ -1145,8 +1145,9 @@ PREP_SRC = $(LINKMAN_INCLUDE_GENERATED) $(SRC_ALL_PAGES) asciidoc.conf
 # path to locate the sources, so we end up with bogus trees under docs/.
 # Code below tries to detect and truncate this mess, including possible
 # source texts located in/under parent dirs.
-$(abs_builddir)/.prep-src-docs: $(PREP_SRC)
-	@linkroot="$(abs_builddir)" ; \
+$(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC)
+	@cd "$(@D)" || exit ; \
+	 linkroot="$(abs_builddir)" ; \
 	 if test x"$(abs_srcdir)" = x"$(abs_builddir)" ; then \
 	    COUNT=0; \
 	    for F in $(PREP_SRC) ; do \
@@ -1214,5 +1215,5 @@ clean-local:
 	        fi ; \
 	        rm -f "$${F}_prepped" ; \
 	    done ; \
-	    rm -f "$(abs_builddir)/.prep-src-docs"*; \
+	    rm -f "$(abs_top_builddir)/docs/man/.prep-src-docs"*; \
 	 fi
