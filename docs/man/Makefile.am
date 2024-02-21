@@ -1146,8 +1146,7 @@ PREP_SRC = $(LINKMAN_INCLUDE_GENERATED) $(SRC_ALL_PAGES) asciidoc.conf
 # Code below tries to detect and truncate this mess, including possible
 # source texts located in/under parent dirs.
 $(abs_builddir)/.prep-src-docs: $(PREP_SRC)
-	@set -x ; \
-	 linkroot="$(abs_builddir)" ; \
+	@linkroot="$(abs_builddir)" ; \
 	 if test x"$(abs_srcdir)" = x"$(abs_builddir)" ; then \
 	    COUNT=0; \
 	    for F in $(PREP_SRC) ; do \
