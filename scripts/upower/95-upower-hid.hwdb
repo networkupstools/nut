@@ -38,6 +38,7 @@ usb:v047CpFFFF*
 
 # ST Microelectronics
 usb:v0483pA113*
+usb:v0483pA430*
  UPOWER_BATTERY_TYPE=ups
  UPOWER_VENDOR=ST Microelectronics
 
