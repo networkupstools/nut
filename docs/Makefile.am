@@ -523,7 +523,7 @@ spellcheck: $(abs_top_builddir)/docs/.prep-src-docs
 		echo "ASPELL DEBUG : information about the setup follows:"; \
 		LANG=$(ASPELL_ENV_LANG); LC_ALL=$(ASPELL_ENV_LANG); export LANG; export LC_ALL; \
 		$(ASPELL) --help || true; \
-		dpkg -l |grep -i aspell || true ; \
+		(command -v dpkg) && ( dpkg -l | grep -i aspell ) || true ; \
 		echo "ASPELL automatic execution line is : ( sed 's,^\(.*\)$$, \1,' < docfile.txt | $(ASPELL) -a $(ASPELL_NUT_TEXMODE_ARGS) $(ASPELL_NUT_COMMON_ARGS) | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' )" ; \
 		echo "ASPELL proceeding to spellchecking job..."; \
 	 else true; fi
