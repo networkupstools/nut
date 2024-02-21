@@ -1175,7 +1175,7 @@ $(abs_builddir)/.prep-src-docs: $(PREP_SRC)
 	    rm -f "$@.$$$$" ; \
 	    COUNT=0; \
 	    linksrcroot="$(abs_srcdir)" ; \
-	    for F in `cd "$(abs_srcdir)" && ls -1 $(PREP_SRC) | sort -n | uniq` ; do \
+	    for F in `cd "$(abs_builddir)" && ls -1 $(PREP_SRC) | sort -n | uniq` ; do \
 	        case "$$F" in \
 	            /*) F="`echo "$$F" | sed "s#^$(abs_top_srcdir)/*#./#"`"; \
 	                if test x"$${linkroot}" = x"$(abs_builddir)" ; then \
