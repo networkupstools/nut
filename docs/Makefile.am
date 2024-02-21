@@ -616,11 +616,17 @@ PREP_SRC = $(EXTRA_DIST) $(SPELLCHECK_SRC_DEFAULT)
 # Code below tries to detect and truncate this mess, including possible
 # source texts located in/under parent dirs.
 $(abs_builddir)/.prep-src-docs: $(PREP_SRC)
-	@if test x"$(abs_srcdir)" = x"$(abs_builddir)" ; then \
+	@set -x ; \
+	 linkroot="$(abs_builddir)" ; \
+	 if test x"$(abs_srcdir)" = x"$(abs_builddir)" ; then \
 	    COUNT=0; \
 	    for F in $(PREP_SRC) ; do \
 	        case "$$F" in \
-	            /*) F="`echo "$$F" | sed "s#^$(abs_top_srcdir)/*#./#"`"; cd "$(abs_top_builddir)" ;; \
+	            /*) F="`echo "$$F" | sed "s#^$(abs_top_srcdir)/*#./#"`"; \
+	                if test x"$${linkroot}" = x"$(abs_builddir)" ; then \
+	                    linkroot="$(abs_top_builddir)" ; \
+	                    cd "$(abs_top_builddir)" ; \
+	                fi ;; \
 	        esac ; \
 	        if ! test -e "$${F}_prepped" ; then \
 	            touch "$${F}_prepped" || exit ; \
@@ -639,16 +645,21 @@ $(abs_builddir)/.prep-src-docs: $(PREP_SRC)
 	    fi ; \
 	    rm -f "$@.$$$$" ; \
 	    COUNT=0; \
-	    linkroot="$(abs_builddir)" ; \
+	    linksrcroot="$(abs_srcdir)" ; \
 	    for F in `cd "$(abs_srcdir)" && ls -1 $(PREP_SRC) | sort -n | uniq` ; do \
 	        case "$$F" in \
-	            /*) F="`echo "$$F" | sed "s#^$(abs_top_srcdir)/*#./#"`"; cd "$(abs_top_builddir)"; linkroot="$(abs_top_builddir)" ;; \
+	            /*) F="`echo "$$F" | sed "s#^$(abs_top_srcdir)/*#./#"`"; \
+	                if test x"$${linkroot}" = x"$(abs_builddir)" ; then \
+	                    linkroot="$(abs_top_builddir)" ; \
+	                    linksrcroot="$(abs_top_srcdir)" ; \
+	                    cd "$(abs_top_builddir)" ; \
+	                fi ;; \
 	        esac ; \
 	        D="`dirname "$$F"`" ; \
 	        $(MKDIR_P) "$${linkroot}/$$D" || { rm -f "$@.working" ; exit 1 ; } ; \
-	        if ! test -s "$${linkroot}/$$F" && test -s "$(srcdir)/$$F" ; then \
-	            echo "  LN     '$(srcdir)/$$F' => '$${linkroot}/$$F' (PWD = '`pwd`')" >&2 ; \
-	            ln -fs "$(abs_srcdir)/$$F" "$${linkroot}/$$F" || { rm -f "$@.working" ; exit 1 ; } ; \
+	        if ! test -s "$${linkroot}/$$F" && test -s "$${linksrcroot}/$$F" ; then \
+	            echo "  LN     '$${linksrcroot}/$$F' => '$${linkroot}/$$F' (PWD = '`pwd`')" >&2 ; \
+	            ln -fs "$${linksrcroot}/$$F" "$${linkroot}/$$F" || { rm -f "$@.working" ; exit 1 ; } ; \
 	            COUNT="`expr $$COUNT + 1`" ; \
 	        fi ; \
 	        if ! test -e "$${linkroot}/$${F}_prepped" ; then \
