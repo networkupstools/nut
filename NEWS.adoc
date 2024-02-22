@@ -139,6 +139,8 @@ https://github.com/networkupstools/nut/milestone/10
    * Fixed an issue for builds configured `--without-usb`. [#2263]
    * Added a fallback for `libgd` discovery (for CGI etc. builds). [#2287]
    * Made `aspell` TeX module detection more reliable. [#2206]
+   * Fixed recipes for completely out-of-tree builds to pass with documentation
+     generation and checking on all tested "make" implementations. [#2318]
    * Various other recipe and documentation clean-up efforts. [#2284, #2269,
      #2261]
 
@@ -175,6 +177,8 @@ https://github.com/networkupstools/nut/milestone/10
    * `arduino-hid` subdriver was enhanced from "initial bare bones" experimental
      set of mapped data points to support some 20 more mappings to make it more
      useful as an UPS driver, not just a controller developer sandbox. [#2188]
+   * `cps-hid` subdriver now supports devices branded as Cyber Energy and built
+     by cooperation with Cyber Power Systems. [#2312]
    * The `onlinedischarge` configuration flag name was too ambiguous and got
      deprecated (will be supported but no longer promoted by documentation),
      introducing `onlinedischarge_onbattery` as the meaningful alias. [#2213]

@@ -3,6 +3,8 @@
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 EXTRA_DIST =
 
+all: doc
+
 # Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
 #EGREP = egrep
 EGREP = grep -E
@@ -27,9 +29,9 @@ IMAGE_LOGO_FILES = \
 	images/ci/CircleCI_vertical_black_logo.png \
 	images/ci/DO_Powered_by_Badge_blue.png \
 	images/ci/DO_Powered_by_Badge_blue_140pxW.png \
-	images/ci/fosshost.org_Host_Dark_56px.png \
-	images/ci/fosshost.org_Host_Light_309px.png \
-	images/ci/fosshost.org_Host_Light_38px.png \
+	images/ci/fosshost_org_Host_Dark_56px.png \
+	images/ci/fosshost_org_Host_Light_309px.png \
+	images/ci/fosshost_org_Host_Light_38px.png \
 	images/ci/gandi-ar21.png \
 	images/ci/gandi-ar21.svg \
 	images/ci/GitHub-Mark-140pxW.png \
@@ -119,9 +121,7 @@ ASCIIDOC_PDF = user-manual.pdf \
 	FAQ.pdf
 
 SUBDIRS = man cables
-SUFFIXES = .txt .html .pdf -spellchecked
-
-all: doc
+SUFFIXES = .txt .html .pdf -spellchecked .txt-prepped
 
 # This list is defined by configure script choices and options:
 CHECK_LOCAL_TARGETS = @DOC_CHECK_LIST@
@@ -130,8 +130,11 @@ CHECK_LOCAL_TARGETS += spellcheck
 endif WITH_SPELLCHECK
 check-local: $(CHECK_LOCAL_TARGETS)
 
+# Make sure sources are there for out-of-tree builds:
+@DOC_BUILD_LIST@ $(ASCIIDOC_PDF) $(ASCIIDOC_HTML_SINGLE) $(ASCIIDOC_HTML_CHUNKED): $(abs_top_builddir)/docs/.prep-src-docs
+
 # This list is defined by configure script choices and options:
-doc: @DOC_BUILD_LIST@
+doc: $(abs_top_builddir)/docs/.prep-src-docs @DOC_BUILD_LIST@
 
 # This target can be called by developers to go around the configure
 # script choices at their risk (e.g. missing tools are possible):
@@ -182,18 +185,14 @@ check-html-chunked: $(ASCIIDOC_HTML_CHUNKED)
 # chosen during configure script execution. The "all-man" and "all-html"
 # rules build everything documented.
 check-man all-man man-man all-html html-man:
-	cd $(top_builddir)/docs/man/ && $(MAKE) -f Makefile $@
+	+cd $(top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile $@
 
 man:
-	cd $(top_builddir)/docs/man/ && $(MAKE) -f Makefile all
+	+cd $(top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile all
 
 CLEANFILES = *.xml *.html *.pdf *-spellchecked docbook-xsl.css docinfo.xml.in.tmp
 CLEANFILES += $(top_builddir)/INSTALL.nut $(top_builddir)/UPGRADING $(top_builddir)/NEWS $(top_builddir)/ChangeLog.adoc $(top_builddir)/README
 CLEANFILES += $(top_builddir)/*.adoc-parsed *.adoc-parsed
-
-# Dirs to clean
-clean-local:
-	$(AM_V_at)rm -rf *.chunked *.bak tmp
 
 ### TODO: general automatic dependency generation
 
@@ -227,8 +226,8 @@ DOCBUILD_CONVERT_GITHUB_LINKS = { \
 	@$(DOCBUILD_CONVERT_GITHUB_LINKS)
 
 $(top_builddir)/ChangeLog:
-	@echo "  DOC-CHANGELOG-GENERATE	$@" \
-	 && cd $(top_builddir) && $(MAKE) $(AM_FLAGS) $(@F)
+	+@echo "  DOC-CHANGELOG-GENERATE	$@" \
+	 && cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # BSD Make dislikes the path resolution here and does not always populate "$<"
 # (and claims why: "Using $< in a non-suffix rule context is a GNUmake idiom"),
@@ -249,6 +248,7 @@ $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	 && TABCHAR="`printf '\t'`" \
 	 && $(SED) \
 	        -e 's,^\([0-9a-zA-Z]\),=== \1,' \
+	        -e 's,^=== \(NOTE: \),\1,' \
 	        -e 's,/[+],/\\\\\+,g' \
 	        -e 's,[+][+],\\\+\\\+,g' \
 	        -e 's,^\([ '"$${TABCHAR}"'][^+]*\)\([^+/\]\)[+],\1\2\\\+,g' \
@@ -353,6 +353,12 @@ DOCBUILD_END = { \
     fi ; \
 }
 
+### Call the prep step consistently to create symlinks (out-of-tree)
+### or just touch-files for peace of mind (in-tree builds). Then we
+### use these path names (truncated "-prepped") now surely located
+### in the builddir as the sources for rendered docs.
+*.txt-prepped: $(abs_top_builddir)/docs/.prep-src-docs
+
 # PORTABILITY NOTE: POSIX Make forbids the suffix rule definitions with
 # prerequisites like done below, and GNU Make of some versions complains;
 # https://www.gnu.org/software/make/manual/html_node/Error-Messages.html
@@ -364,30 +370,42 @@ DOCBUILD_END = { \
 # as done below may be pointless in the end (with regard to a portable way
 # to trigger builds by a changed dependency), but at least predictable and
 # not toxic.
+###.txt.txt-prepped: $(abs_top_builddir)/docs/.prep-src-docs
+
 *.html: common.xsl xhtml.xsl
-.txt.html:
+.txt-prepped.html:
 	@A2X_OUTDIR="tmp/html-single.$(@F).$$$$" ; \
 	 echo "  DOC-HTML Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
-	 $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl $< || RES=$$? ; \
+	 $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl "$(<D)/`basename "$(<F)" -prepped`" || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
 *.chunked: common.xsl chunked.xsl
-.txt.chunked:
+.txt-prepped.chunked:
 	@A2X_OUTDIR="tmp/html-chunked.$(@F).$$$$" ; \
 	 echo "  DOC-HTML-CHUNKED Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
-	 $(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl $< || RES=$$? ; \
+	 $(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl "$(<D)/`basename "$(<F)" -prepped`" || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
 # Note: non-HTML a2x modes may ignore the destination directory
 *.pdf: docinfo.xml
-.txt.pdf:
+.txt-prepped.pdf:
 	@A2X_OUTDIR="tmp/pdf.$(@F).$$$$" ; \
 	 echo "  DOC-PDF  Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
-	 $(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 $< || RES=$$? ; \
+	 $(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 "$(<D)/`basename "$(<F)" -prepped`" || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
+
+# Used below for spellcheck and for .prep-src-docs
+SPELLCHECK_SRC_DEFAULT = $(ALL_TXT_SRC) \
+	asciidoc-vars.conf \
+	../README.adoc ../NEWS.adoc \
+	../INSTALL.nut.adoc ../UPGRADING.adoc \
+	../TODO.adoc ../scripts/ufw/README.adoc \
+	../scripts/augeas/README.adoc ../lib/README.adoc \
+	../tools/nut-scanner/README.adoc \
+	../AUTHORS ../COPYING ../LICENSE-GPL2 ../LICENSE-GPL3 ../LICENSE-DCO
 
 if HAVE_ASPELL
 # Non-interactively spell check all documentation source files.
@@ -399,14 +417,7 @@ if HAVE_ASPELL
 # tracked as a source file by NUT Git repository.
 # Note that `docs/asciidoc-vars.conf` is included into docs and so impacts
 # their resulting spellcheck verdicts.
-SPELLCHECK_SRC = $(ALL_TXT_SRC) \
-	asciidoc-vars.conf \
-	../README.adoc ../NEWS.adoc \
-	../INSTALL.nut.adoc ../UPGRADING.adoc \
-	../TODO.adoc ../scripts/ufw/README.adoc \
-	../scripts/augeas/README.adoc ../lib/README.adoc \
-	../tools/nut-scanner/README.adoc \
-	../AUTHORS ../COPYING ../LICENSE-GPL2 ../LICENSE-GPL3 ../LICENSE-DCO
+SPELLCHECK_SRC = $(SPELLCHECK_SRC_DEFAULT)
 
 # Directory SPELLCHECK_SRC files are relative to. Overriden by other Makefiles.
 SPELLCHECK_SRCDIR = $(srcdir)
@@ -463,9 +474,10 @@ SPELLCHECK_RECIPE_DEBUG_STREAM = /dev/null
 
 $(SPELLCHECK_BUILDDIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE) $(abs_top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 	@LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
-	 if test x"$(SPELLCHECK_SRC_ONE)" = x ; then echo "SKIP: Bogus spellcheck call for empty target filename (with make target $@)" >&2 ; exit 0; fi; \
-	 case "$@" in *-spellchecked) ;; *) echo "SKIP: Bogus spellcheck call for non '*-spellchecked' target filename (with make target $@)" >&2 ; exit 0;; esac; \
+	 if test x"$(SPELLCHECK_SRC_ONE)" = x ; then echo "SKIP: Bogus spellcheck call for empty target filename (with make target $@ from `pwd`)" >&2 ; exit 0; fi; \
+	 case "$@" in *-spellchecked) ;; *) echo "SKIP: Bogus spellcheck call for non '*-spellchecked' target filename (with make target $@ from `pwd`)" >&2 ; exit 0;; esac; \
 	 rm -f "$@" || true ; \
+	 $(MKDIR_P) "$(@D)" || exit ; \
 	 REPORT_SRCDIR="$(SPELLCHECK_SRCDIR)"; \
 	 REPORT_SRC_ONE="$(SPELLCHECK_SRC_ONE)"; \
 	 REPORT_PREFIX="" ; \
@@ -510,16 +522,16 @@ spellcheck:
 		echo "ASPELL DEBUG : information about the setup follows:"; \
 		LANG=$(ASPELL_ENV_LANG); LC_ALL=$(ASPELL_ENV_LANG); export LANG; export LC_ALL; \
 		$(ASPELL) --help || true; \
-		dpkg -l |grep -i aspell || true ; \
+		(command -v dpkg) && ( dpkg -l | grep -i aspell ) || true ; \
 		echo "ASPELL automatic execution line is : ( sed 's,^\(.*\)$$, \1,' < docfile.txt | $(ASPELL) -a $(ASPELL_NUT_TEXMODE_ARGS) $(ASPELL_NUT_COMMON_ARGS) | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' )" ; \
 		echo "ASPELL proceeding to spellchecking job..."; \
 	 else true; fi
-	@FAILED="" ; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
+	+@FAILED="" ; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	 for docsrc in $(SPELLCHECK_SRC); do \
 		if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
 			echo "ASPELL MAKEFILE DEBUG: Will see from `pwd` if '$(SPELLCHECK_SRCDIR)/$${docsrc}-spellchecked' is up to date" >&2; \
 		else true ; fi ; \
-		$(MAKE) -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC_ONE="$${docsrc}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" \
+		$(MAKE) $(AM_MAKEFLAGS) -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_SRC_ONE="$${docsrc}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" \
 		|| FAILED="$$FAILED $(SPELLCHECK_SRCDIR)/$$docsrc"; \
 	 done ; \
 	 if test -n "$$FAILED" ; then \
@@ -574,7 +586,7 @@ spellcheck-interactive:
 		echo "FAILED interactive spellcheck for the following sources (relative to `pwd`): $$FAILED" >&2 ; \
 		exit 1; \
 	fi ; exit 0
-	$(MAKE) spellcheck-sortdict
+	+$(MAKE) $(AM_MAKEFLAGS) spellcheck-sortdict
 	@echo "------------------------------------------------------------------------"; \
 	 echo "Custom dictionary file $(NUT_SPELL_DICT) may have been updated now."; \
 	 echo "Use 'git add -p docs/$(NUT_SPELL_DICT) && git checkout -- docs/$(NUT_SPELL_DICT) && make spellcheck-sortdict && git add -p docs/$(NUT_SPELL_DICT)'"; \
@@ -591,5 +603,88 @@ spellcheck:
 spellcheck-interactive:
 	@echo "Documentation spell check not available since 'aspell' was not found."
 endif !HAVE_ASPELL
+
+
+# When building out-of-tree, be sure to have all asciidoc resources
+# under the same dir structure (tool limitation)
+PREP_SRC = $(EXTRA_DIST) $(SPELLCHECK_SRC_DEFAULT)
+
+# NOTE: Some "make" implementations prefix a relative or absent path to
+# the filenames in PREP_SRC, others (e.g. Sun make) prepend the absolute
+# path to locate the sources, so we end up with bogus trees under docs/.
+# Code below tries to detect and truncate this mess, including possible
+# source texts located in/under parent dirs.
+$(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC)
+	@cd "$(@D)" || exit ; \
+	 linkroot="$(abs_builddir)" ; \
+	 if test x"$(abs_srcdir)" = x"$(abs_builddir)" ; then \
+	    COUNT=0; \
+	    for F in $(PREP_SRC) ; do \
+	        case "$$F" in \
+	            /*) F="`echo "$$F" | sed "s#^$(abs_top_srcdir)/*#./#"`"; \
+	                if test x"$${linkroot}" = x"$(abs_builddir)" ; then \
+	                    linkroot="$(abs_top_builddir)" ; \
+	                    cd "$(abs_top_builddir)" ; \
+	                fi ;; \
+	        esac ; \
+	        if ! test -e "$${F}-prepped" ; then \
+	            touch "$${F}-prepped" || exit ; \
+	            COUNT="`expr $$COUNT + 1`" ; \
+	        fi ; \
+	    done ; \
+	    if ! test -e "$@" ; then touch "$@" ; fi ; \
+	 else \
+	    COUNT=30 ; \
+	    touch "$@.$$$$" ; \
+	    while test -e "$@.working" -a "$$COUNT" -gt 0 ; do sleep 1; COUNT="`expr $$COUNT - 1`"; done ; \
+	    touch "$@.working" ; \
+	    if test -n "`find "$@" -newer "$@.$$$$" 2>/dev/null`" ; then \
+	        rm -f "$@.$$$$" "$@.working" ; \
+	        exit 0; \
+	    fi ; \
+	    rm -f "$@.$$$$" ; \
+	    COUNT=0; \
+	    linksrcroot="$(abs_srcdir)" ; \
+	    for F in `echo $(PREP_SRC) | tr ' ' '\n' | sort -n | uniq` ; do \
+	        case "$$F" in \
+	            /*) F="`echo "$$F" | sed "s#^$(abs_top_srcdir)/*#./#"`"; \
+	                if test x"$${linkroot}" = x"$(abs_builddir)" ; then \
+	                    linkroot="$(abs_top_builddir)" ; \
+	                    linksrcroot="$(abs_top_srcdir)" ; \
+	                    cd "$(abs_top_builddir)" ; \
+	                fi ;; \
+	            "$(srcdir)"/*) F="`echo "$$F" | sed 's#^$(srcdir)/*#./#'`" ;; \
+	        esac ; \
+	        D="`dirname "$$F"`" ; \
+	        $(MKDIR_P) "$${linkroot}/$$D" || { rm -f "$@.working" ; exit 1 ; } ; \
+	        if ! test -s "$${linkroot}/$$F" && test -s "$${linksrcroot}/$$F" ; then \
+	            echo "  LN     '$${linksrcroot}/$$F' => '$${linkroot}/$$F' (PWD = '`pwd`')" >&2 ; \
+	            ln -fs "$${linksrcroot}/$$F" "$${linkroot}/$$F" || { rm -f "$@.working" ; exit 1 ; } ; \
+	            COUNT="`expr $$COUNT + 1`" ; \
+	        fi ; \
+	        if ! test -e "$${linkroot}/$${F}-prepped" ; then \
+	            touch "$${linkroot}/$${F}-prepped" || { rm -f "$@.working" ; exit 1 ; } ; \
+	            COUNT="`expr $$COUNT + 1`" ; \
+	        fi ; \
+	    done ; \
+	 fi ; \
+	 if test "$$COUNT" -gt 0 -o ! -e "$@" ; then touch "$@" ; fi
+	@rm -f "$@.working"
+
+# Dirs to clean, etc.
+clean-local:
+	$(AM_V_at)rm -rf *.chunked *.bak tmp
+	$(AM_V_at)for F in $(PREP_SRC) ; do \
+	        case "$$F" in \
+	            /*) F="`echo "$$F" | sed "s#^$(abs_top_srcdir)/*#./#"`"; cd "$(abs_top_builddir)" ;; \
+	        esac ; \
+	        if test x"$(abs_srcdir)" != x"$(abs_builddir)" ; then \
+	            if test -L "$$F" || test -h "$$F" ; then \
+	                rm -f "$$F" ; \
+	            fi ; \
+	        fi ; \
+	        rm -f "$${F}-prepped" ; \
+	    done ; \
+	    rm -f "$(abs_top_builddir)/docs/.prep-src-docs"*
 
 .PHONY: html html-chunked html-single pdf man

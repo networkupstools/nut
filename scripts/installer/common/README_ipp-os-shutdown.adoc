@@ -53,6 +53,7 @@ which can invoke a customized copy of `ipp-host-shutdown.sample` script
 for host-specific procedures (such as clusterware shutdown).
 
 The `ipp-os-shutdown` script has several roles:
+
 * it manages the delayed shutdown (which can be canceled before the timer
 expires, and can not be aborted after the timer expires - so it proceeds
 to the end)
@@ -82,13 +83,13 @@ It is recommended to configure `SHUTDOWN_TIMER=-1` (default) on those
 more important hosts which should stay up as long as possible and only
 shut down if all required UPSes have posted a low-battery status or
 forced-shutdown command. These hosts would by default schedule delayed
-UPS powercycling. To be on the safe side, sufficient `shutdown_duration`
+UPS power-cycling. To be on the safe side, sufficient `shutdown_duration`
 seconds should be configured in their `netxml-ups` driver blocks in the
 `/usr/local/ups/etc/ups.conf` file on the host.
 
 If the customer elects to use the early shutdown strategy for all hosts,
 the `POWERDOWNFLAG_USER=enforce` should be configured in the hosts with
-the highest `SHUTDOWN_TIMER` value so they would cause UPS powercycling.
+the highest `SHUTDOWN_TIMER` value so they would cause UPS power-cycling.
 Do not forget to define sufficient `DELAY` value for the OS shutdown to
 complete before the UPS turns itself off. The UPS would turn on the load
 automatically after some time, when external power is back and it has
@@ -99,11 +100,11 @@ web-interface for the UPS).
 
 * Install the package as usual
 
-- Uncompress the `ipp-*.tar.gz` archive for your OS
+- Un-compress the `ipp-*.tar.gz` archive for your OS
 
 - Change into the resulting `ipp-*` subdirectory
 
-- (optional) If a complete reinstallation is desired (including removal
+- (optional) If a complete re-installation is desired (including removal
 of old configuration files so they do not conflict with the new delivery),
 please also execute `IPP_WIPE_OLD_CONFIG=yes; export IPP_WIPE_OLD_CONFIG`
 in the shell before running the installation script
@@ -151,7 +152,7 @@ either `$SDFLAG_HALT` (halt) or `$SDFLAG_REBOOT` (reboot).
 If the customer elects to use the early shutdown strategy for all hosts,
 the `POWERDOWNFLAG_USER=enforce` should be configured in the `ipp.conf`
 file on hosts with the highest `SHUTDOWN_TIMER` value so they would cause
-UPS powercycling explicitly. By default, it may be enabled or forbidden
+UPS power-cycling explicitly. By default, it may be enabled or forbidden
 depending on the cause of shutdown.
 
 Make sure to define a sufficient `DELAY` value (in seconds) as well, for
@@ -183,7 +184,7 @@ ONBATT) is defined manually in the `ipp.conf` file
 and shutdown routine has started (and reported to be irreversible)
 
 - to report that the shutdown is in irreversible stage, as reaction
-to CTRL+C during console-run invokations like `ipp-os-shutdown -t now`
+to CTRL+C during console-run invocations like `ipp-os-shutdown -t now`
 
 - to execute custom shutdown script if it is found, and to skip it
 if not available
@@ -201,7 +202,7 @@ the Eaton NMC Web-GUI
 
 - to implement numerous fixes and improvements in the `install.sh`
 script, including integration of new settings for early shutdown
-and UPS powercycling strategy
+and UPS power-cycling strategy
 
 
 === A few important notes helpful during testing

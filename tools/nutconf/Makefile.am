@@ -25,7 +25,7 @@ endif WITH_NUTCONF
 $(top_builddir)/common/libcommon.la \
 $(top_builddir)/common/libnutconf.la \
 $(top_builddir)/tools/nut-scanner/libnutscan.la: dummy
-	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 dummy:
 

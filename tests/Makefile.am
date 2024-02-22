@@ -29,7 +29,7 @@ check_SCRIPTS =
 
 # NUT Integration Testing suite
 check-NIT check-NIT-devel:
-	cd "$(builddir)/NIT" && $(MAKE) $@
+	+cd "$(builddir)/NIT" && $(MAKE) $(AM_MAKEFLAGS) $@
 
 nutlogtest_SOURCES = nutlogtest.c
 nutlogtest_LDADD = $(top_builddir)/common/libcommon.la
@@ -102,7 +102,7 @@ EXTRA_DIST += generic_gpio_utest.h generic_gpio_test.txt
 $(top_builddir)/drivers/libdummy_mockdrv.la \
 $(top_builddir)/common/libnutconf.la \
 $(top_builddir)/common/libcommon.la: dummy
-	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 ### Optional tests which can not be built everywhere
 # List of src files for CppUnit tests
@@ -154,7 +154,7 @@ cppnit_SOURCES = $(CPPCLIENTTESTSRC) $(CPPUNITTESTERSRC)
 # only some parts of NUT):
 $(top_builddir)/clients/libnutclient.la \
 $(top_builddir)/clients/libnutclientstub.la: dummy
-	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 else !HAVE_CPPUNIT
 # Just redistribute test source into tarball if not building tests

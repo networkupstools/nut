@@ -26,7 +26,7 @@ EXTRA_DIST = README.adoc
 # Make sure we have the freshest files (no-op if built earlier and then
 # no driver sources and other dependencies were edited by a developer)
 $(NUT_SCANNER_DEPS): dummy
-	@cd .. && $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
+	+@cd .. && $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/include/nut_version.h \
@@ -35,7 +35,7 @@ $(top_builddir)/common/libnutdmfsnmp.la \
 $(top_builddir)/drivers/libserial-nutscan.la \
 $(top_builddir)/common/libcommonclient.la \
 $(top_builddir)/common/libcommon.la: dummy
-	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # do not hard depend on '../include/nut_version.h', since it blocks
 # 'dist', and is only required for actual build, in which case

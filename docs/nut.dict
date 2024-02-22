@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3495 utf-8
+personal_ws-1.1 en 3505 utf-8
 AAC
 AAS
 ABI
@@ -828,8 +828,8 @@ NOTOFF
 NQA
 NTP
 NUT's
-NUTClient
 NUTCONF
+NUTClient
 NUTSRC
 NUTServer
 NVA
@@ -947,6 +947,7 @@ POSIX
 POWERDOWNFLAG
 POWEREX
 POWERLINE
+POWERSTATE
 PPA
 PPD
 PPDn
@@ -1151,6 +1152,7 @@ SCO
 SCR
 SDA
 SDE
+SDFLAG
 SDR
 SDRnnnnn
 SDT
@@ -1170,6 +1172,7 @@ SGI
 SHA
 SHUTDOWNCMD
 SHUTDOWNEXIT
+SHUTDOWNSCRIPT
 SIG
 SIGHUP
 SIGINT
@@ -1826,6 +1829,7 @@ clepple
 clicky
 cls
 clueful
+clusterware
 cmake
 cmd
 cmdline
@@ -2112,6 +2116,7 @@ forcessl
 formatconfig
 formatparam
 formatstring
+fosshost
 fp
 freebsd
 freeipmi
@@ -2314,6 +2319,7 @@ ipmi
 ipmidetectd
 ipmimonitoring
 ipmipsu
+ipp
 ippon
 ipv
 ipxe
@@ -2814,6 +2820,7 @@ powerdev
 powerdown
 powerdownflag
 powerfactor
+powerfail
 powerman
 powermand
 powermust
@@ -2960,6 +2967,7 @@ rts
 ru
 rubygem
 runlevel
+runnable
 runtime
 runtimecal
 runtimek
@@ -3399,6 +3407,7 @@ virt
 virtinst
 virtualenv
 virtualization
+virtualized
 vivo
 vo
 vod
@@ -3420,6 +3429,7 @@ wf
 wget
 whitespace
 wiki
+wildcard
 wildcards
 wininit
 winnutclient
