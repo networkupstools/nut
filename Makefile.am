@@ -138,7 +138,9 @@ distclean-local:
 # Hook the documentation building and validating recipes
 # Note: these are optionally available (as determined during configure runs)
 spellcheck spellcheck-interactive:
-	@RES=0; \
+	+@RES=0; \
+	(cd $(builddir)/docs && $(MAKE) -s $(abs_top_builddir)/docs/.prep-src-docs) || RES=$$? ; \
+	(cd $(builddir)/docs/man && $(MAKE) -s $(abs_top_builddir)/docs/.prep-src-docs) || RES=$$? ; \
 	(cd $(builddir)/docs && $(MAKE) -s $@) || RES=$$? ; \
 	(cd $(builddir)/docs/man && $(MAKE) -s $@) || RES=$$? ; \
 	(cd $(builddir)/conf && $(MAKE) -s $@) || RES=$$? ; \
