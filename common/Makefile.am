@@ -42,7 +42,7 @@ common.c: $(top_builddir)/include/nut_version.h $(srcdir)/common.c
 endif
 
 $(top_builddir)/include/nut_version.h:
-	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 libcommon_la_SOURCES = state.c str.c upsconf.c
 libcommonclient_la_SOURCES = state.c str.c

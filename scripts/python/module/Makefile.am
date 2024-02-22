@@ -57,10 +57,10 @@ PyNUTClient: .pypi-src
 
 # Tagged releases should only have three blocks of digits separated by dots
 upload publish:
-	@echo "  PYPI  Checking upload type for module version '$(NUT_SOURCE_GITREV_NUMERIC)'" ; \
+	+@echo "  PYPI  Checking upload type for module version '$(NUT_SOURCE_GITREV_NUMERIC)'" ; \
 	 case x"`echo "$(NUT_SOURCE_GITREV_NUMERIC)" | tr -d '[0-9]'`" in \
-		x..) echo "  PYPI  ...release"; $(MAKE) $(AM_FLAGS) upload-pypi ;; \
-		x*)  echo "  PYPI  ...testing"; $(MAKE) $(AM_FLAGS) upload-testpypi ;; \
+		x..) echo "  PYPI  ...release"; $(MAKE) $(AM_MAKEFLAGS) upload-pypi ;; \
+		x*)  echo "  PYPI  ...testing"; $(MAKE) $(AM_MAKEFLAGS) upload-testpypi ;; \
 	 esac
 
 # README.txt is also a part of module standard expectations
@@ -119,9 +119,9 @@ upload publish:
 
 # Using pypa/setuptools
 .pypi-dist: .pypi-src
-	@$(MAKE) $(AM_FLAGS) .pypi-dist-pip-build || \
-	 $(MAKE) $(AM_FLAGS) .pypi-dist-obsolete || \
-	 $(MAKE) $(AM_FLAGS) .pypi-dist-pip-wheel
+	+@$(MAKE) $(AM_MAKEFLAGS) .pypi-dist-pip-build || \
+	 $(MAKE) $(AM_MAKEFLAGS) .pypi-dist-obsolete || \
+	 $(MAKE) $(AM_MAKEFLAGS) .pypi-dist-pip-wheel
 	@touch "$@"
 
 # The most modern approach as of 2023
