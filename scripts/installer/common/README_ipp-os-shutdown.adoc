@@ -53,6 +53,7 @@ which can invoke a customized copy of `ipp-host-shutdown.sample` script
 for host-specific procedures (such as clusterware shutdown).
 
 The `ipp-os-shutdown` script has several roles:
+
 * it manages the delayed shutdown (which can be canceled before the timer
 expires, and can not be aborted after the timer expires - so it proceeds
 to the end)
