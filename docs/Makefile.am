@@ -29,9 +29,9 @@ IMAGE_LOGO_FILES = \
 	images/ci/CircleCI_vertical_black_logo.png \
 	images/ci/DO_Powered_by_Badge_blue.png \
 	images/ci/DO_Powered_by_Badge_blue_140pxW.png \
-	images/ci/fosshost.org_Host_Dark_56px.png \
-	images/ci/fosshost.org_Host_Light_309px.png \
-	images/ci/fosshost.org_Host_Light_38px.png \
+	images/ci/fosshost_org_Host_Dark_56px.png \
+	images/ci/fosshost_org_Host_Light_309px.png \
+	images/ci/fosshost_org_Host_Light_38px.png \
 	images/ci/gandi-ar21.png \
 	images/ci/gandi-ar21.svg \
 	images/ci/GitHub-Mark-140pxW.png \
