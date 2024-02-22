@@ -1205,15 +1205,15 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 clean-local:
 	$(AM_V_at)rm -rf tmp
-	$(AM_V_at)if test x"$(abs_srcdir)" != x"$(abs_builddir)" ; then \
-	    for F in $(PREP_SRC) ; do \
+	$(AM_V_at)for F in $(PREP_SRC) ; do \
 	        case "$$F" in \
 	            /*) F="`echo "$$F" | sed "s#^$(abs_top_srcdir)/*#./#"`"; cd "$(abs_top_builddir)" ;; \
 	        esac ; \
-	        if test -L "$$F" || test -H "$$F" ; then \
-	            rm -f "$$F" ; \
+	        if test x"$(abs_srcdir)" != x"$(abs_builddir)" ; then \
+	            if test -L "$$F" || test -h "$$F" ; then \
+	                rm -f "$$F" ; \
+	            fi ; \
 	        fi ; \
 	        rm -f "$${F}_prepped" ; \
 	    done ; \
-	    rm -f "$(abs_top_builddir)/docs/man/.prep-src-docs"*; \
-	 fi
+	    rm -f "$(abs_top_builddir)/docs/man/.prep-src-docs"*
