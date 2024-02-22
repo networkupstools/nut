@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3458 utf-8
+personal_ws-1.1 en 3468 utf-8
 AAC
 AAS
 ABI
@@ -550,6 +550,7 @@ IPBX
 IPC
 IPM
 IPP
+IPSS
 IPs
 IPv
 IRC
@@ -942,6 +943,7 @@ POSIX
 POWERDOWNFLAG
 POWEREX
 POWERLINE
+POWERSTATE
 PPA
 PPD
 PPDn
@@ -1145,6 +1147,7 @@ SCO
 SCR
 SDA
 SDE
+SDFLAG
 SDR
 SDRnnnnn
 SDT
@@ -1164,6 +1167,7 @@ SGI
 SHA
 SHUTDOWNCMD
 SHUTDOWNEXIT
+SHUTDOWNSCRIPT
 SIG
 SIGHUP
 SIGINT
@@ -1383,6 +1387,7 @@ UNV
 UPGUARDS
 UPM
 UPOII
+UPP
 UPS's
 UPSCONN
 UPSDESC
@@ -1813,6 +1818,7 @@ clepple
 clicky
 cls
 clueful
+clusterware
 cmake
 cmd
 cmdline
@@ -2290,6 +2296,7 @@ ipmi
 ipmidetectd
 ipmimonitoring
 ipmipsu
+ipp
 ippon
 ipv
 ipxe
@@ -2784,6 +2791,7 @@ powerdev
 powerdown
 powerdownflag
 powerfactor
+powerfail
 powerman
 powermand
 powermust
@@ -2929,6 +2937,7 @@ rts
 ru
 rubygem
 runlevel
+runnable
 runtime
 runtimecal
 runtimek
@@ -3365,6 +3374,7 @@ virsh
 virt
 virtinst
 virtualization
+virtualized
 vivo
 vo
 vod

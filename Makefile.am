@@ -149,6 +149,7 @@ spellcheck spellcheck-interactive:
 	(cd $(builddir)/scripts/Windows && $(MAKE) -s $@) || RES=$$? ; \
 	(cd $(builddir)/scripts/devd && $(MAKE) -s $@) || RES=$$? ; \
 	(cd $(builddir)/scripts/hotplug && $(MAKE) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts/installer && $(MAKE) -s $@) || RES=$$? ; \
 	(cd $(builddir)/scripts/python && $(MAKE) -s $@) || RES=$$? ; \
 	(cd $(builddir)/scripts/systemd && $(MAKE) -s $@) || RES=$$? ; \
 	(cd $(builddir)/scripts/udev && $(MAKE) -s $@) || RES=$$? ; \
