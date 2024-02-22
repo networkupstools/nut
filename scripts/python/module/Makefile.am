@@ -57,7 +57,7 @@ PyNUTClient: .pypi-src
 
 # Tagged releases should only have three blocks of digits separated by dots
 upload publish:
-	@echo "  PYPI  Checking upload type for module version '$(NUT_SOURCE_GITREV_NUMERIC)'" ; \
+	+@echo "  PYPI  Checking upload type for module version '$(NUT_SOURCE_GITREV_NUMERIC)'" ; \
 	 case x"`echo "$(NUT_SOURCE_GITREV_NUMERIC)" | tr -d '[0-9]'`" in \
 		x..) echo "  PYPI  ...release"; $(MAKE) $(AM_MAKEFLAGS) upload-pypi ;; \
 		x*)  echo "  PYPI  ...testing"; $(MAKE) $(AM_MAKEFLAGS) upload-testpypi ;; \
@@ -119,7 +119,7 @@ upload publish:
 
 # Using pypa/setuptools
 .pypi-dist: .pypi-src
-	@$(MAKE) $(AM_MAKEFLAGS) .pypi-dist-pip-build || \
+	+@$(MAKE) $(AM_MAKEFLAGS) .pypi-dist-pip-build || \
 	 $(MAKE) $(AM_MAKEFLAGS) .pypi-dist-obsolete || \
 	 $(MAKE) $(AM_MAKEFLAGS) .pypi-dist-pip-wheel
 	@touch "$@"

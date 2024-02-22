@@ -526,12 +526,12 @@ spellcheck:
 		echo "ASPELL automatic execution line is : ( sed 's,^\(.*\)$$, \1,' < docfile.txt | $(ASPELL) -a $(ASPELL_NUT_TEXMODE_ARGS) $(ASPELL_NUT_COMMON_ARGS) | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' )" ; \
 		echo "ASPELL proceeding to spellchecking job..."; \
 	 else true; fi
-	@FAILED="" ; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
+	+@FAILED="" ; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	 for docsrc in $(SPELLCHECK_SRC); do \
 		if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
 			echo "ASPELL MAKEFILE DEBUG: Will see from `pwd` if '$(SPELLCHECK_SRCDIR)/$${docsrc}-spellchecked' is up to date" >&2; \
 		else true ; fi ; \
-		$(MAKE) -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_SRC_ONE="$${docsrc}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" \
+		$(MAKE) $(AM_MAKEFLAGS) -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_SRC="" SPELLCHECK_SRC_ONE="$${docsrc}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" \
 		|| FAILED="$$FAILED $(SPELLCHECK_SRCDIR)/$$docsrc"; \
 	 done ; \
 	 if test -n "$$FAILED" ; then \
@@ -586,7 +586,7 @@ spellcheck-interactive:
 		echo "FAILED interactive spellcheck for the following sources (relative to `pwd`): $$FAILED" >&2 ; \
 		exit 1; \
 	fi ; exit 0
-	$(MAKE) spellcheck-sortdict
+	+$(MAKE) $(AM_MAKEFLAGS) spellcheck-sortdict
 	@echo "------------------------------------------------------------------------"; \
 	 echo "Custom dictionary file $(NUT_SPELL_DICT) may have been updated now."; \
 	 echo "Use 'git add -p docs/$(NUT_SPELL_DICT) && git checkout -- docs/$(NUT_SPELL_DICT) && make spellcheck-sortdict && git add -p docs/$(NUT_SPELL_DICT)'"; \
