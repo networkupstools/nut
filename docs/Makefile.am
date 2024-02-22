@@ -227,7 +227,7 @@ DOCBUILD_CONVERT_GITHUB_LINKS = { \
 
 $(top_builddir)/ChangeLog:
 	+@echo "  DOC-CHANGELOG-GENERATE	$@" \
-	 && cd $(top_builddir) && $(MAKE) $(AM_FLAGS) $(@F)
+	 && cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # BSD Make dislikes the path resolution here and does not always populate "$<"
 # (and claims why: "Using $< in a non-suffix rule context is a GNUmake idiom"),
