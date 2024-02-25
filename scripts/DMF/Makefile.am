@@ -474,7 +474,13 @@ DMFTESTS_COMMON_CFLAGS = \
 #   /usr/include/features.h:397:4: error: #warning _FORTIFY_SOURCE
 #      requires compiling with optimization (-O) [-Werror=cpp]
 DMFTESTS_COMMON_CFLAGS += \
-	-ggdb -std=c99 -Wall -pedantic -Wc++-compat -D_FORTIFY_SOURCE=2 -O2 -fno-stack-check -fno-omit-frame-pointer -fstack-protector -ggdb3
+	-D_FORTIFY_SOURCE=2 -O2
+
+# Overlaps with warning levels NUT offers nowardays; should be
+# used via configure flags (some compilers in NUT CI farm do not
+# know the flags below):
+#DMFTESTS_COMMON_CFLAGS += \
+#	-ggdb -std=c99 -Wall -pedantic -Wc++-compat -fno-stack-check -fno-omit-frame-pointer -fstack-protector -ggdb3
 
 # For fans of suicide on obscure platforms ;)
 #DMFTESTS_COMMON_CFLAGS += -Werror
