@@ -191,6 +191,8 @@ else
   libnutdmfsnmp_la_CFLAGS += -DWITH_DMF_LUA=0
 endif
 
+else
+  EXTRA_DIST += dmfsnmp.c dmfcore.c alist.c
 endif
 
 # Note: Consumers of this lib will generally want the dependencies linked via:
@@ -202,7 +204,11 @@ endif
 #if WITH_DMF_LUA
 #  libnutdmfsnmp_consumer_CFLAGS += -DWITH_DMF_LUA=1 -DWITH_DMF_FUNCTIONS=1 $(LUA_INCLUDE)
 #endif
+else
+  EXTRA_DIST += dmfsnmp.c dmfcore.c alist.c
 endif
+else
+  EXTRA_DIST += dmfsnmp.c dmfcore.c alist.c
 endif
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
