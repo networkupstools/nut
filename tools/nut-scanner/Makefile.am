@@ -127,9 +127,9 @@ if HAVE_SEMAPHORE_LIBS
 libnutscan_la_LIBADD += $(SEMLIBS)
 endif HAVE_SEMAPHORE_LIBS
 
-# FIXME: From old ages onward, SERLIBS are added here and not in LIBADD... why?
-libnutscan_la_LDFLAGS = $(SERLIBS)
+libnutscan_la_LIBADD += $(SERLIBS)
 
+libnutscan_la_LDFLAGS =
 if HAVE_WINDOWS
   # Many versions of MingW seem to fail to build non-static DLL without this
   libnutscan_la_LDFLAGS += -no-undefined
