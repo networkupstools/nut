@@ -511,6 +511,10 @@ dmf_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA)
 #        $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS) -DWITH_DMFMIB=1 -DWITH_SNMP=1 -DWITH_NEON=1
 dmf_test_LDFLAGS = $(LDFLAGS_DMF_LUA)
 
+if HAVE_WINDOWS
+  dmf_test_LDADD  += $(top_builddir)/common/libnutwincompat.la
+endif HAVE_WINDOWS
+
 if WITH_LIBXML2
   dmf_test_LDADD  += $(LIBXML2_LIBS)
   dmf_test_CFLAGS += $(LIBXML2_CFLAGS)

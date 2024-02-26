@@ -25,6 +25,15 @@
 
 #include "config.h"	/* must be the first header */
 
+#ifndef HAVE_SETENV
+/* Avoid our override from proto.h, not used in this test program anyway */
+# define HAVE_SETENV 0
+#endif
+
+#ifdef WIN32
+# include "wincompat.h"
+#endif
+
 #include <errno.h>
 #include <dirent.h>
 #include <assert.h>
