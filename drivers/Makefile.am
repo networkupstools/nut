@@ -443,8 +443,8 @@ libdummy_mockdrv_la_LDFLAGS = -static $(top_builddir)/common/libcommon.la $(top_
 noinst_LTLIBRARIES = libserial-nutscan.la
 
 libserial_nutscan_la_SOURCES = serial.c bcmxcp_ser.c
-libserial_nutscan_la_LDFLAGS = $(SERLIBS)
-#libserial_nutscan_la_LDADD = $(LDADD) -lm
+libserial_nutscan_la_LDFLAGS =
+libserial_nutscan_la_LIBADD = $(SERLIBS)
 libserial_nutscan_la_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/clients -I$(top_srcdir)/include -I$(top_srcdir)/drivers
 
 dummy:
