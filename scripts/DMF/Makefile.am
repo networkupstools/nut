@@ -37,6 +37,17 @@ clean-local:
 
 check: check-local
 
+# Included dependencies
+$(abs_top_builddir)/common/libcommon.la: $(top_builddir)/common/libcommon.la
+$(abs_top_builddir)/drivers/dstate.o: $(top_builddir)/drivers/dstate.o
+
+$(top_builddir)/common/libcommon.la \
+$(top_builddir)/common/libcommonstr.la \
+$(top_builddir)/drivers/dstate.o \
+$(top_builddir)/common/libnutwincompat.la \
+$(top_builddir)/common/libnutdmfsnmp.la:
+	+cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
 # A way to to relative symlinks, or hardlinks, or copies... depends on OS.
 LN_S_R = @LN_S_R@ -f
 
@@ -486,10 +497,6 @@ DMFTESTS_COMMON_CFLAGS += \
 #DMFTESTS_COMMON_CFLAGS += -Werror
 
 if WITH_DMF
-# Included dependencies
-$(top_builddir)/common/libnutdmfsnmp.la : dummy
-	cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
-
 noinst_PROGRAMS += dmf-test
 
 dmf_test_SOURCES = $(DMFTEST_SRC)
@@ -524,7 +531,7 @@ endif
 CLEANFILES += dmf-reindex
 DMF_REINDEX = $(abs_top_builddir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp
 dmf-reindex:
-	cd $(abs_top_builddir)/tools/nut-scanner/ && $(MAKE) nut-scanner-reindex-dmfsnmp
+	+cd $(abs_top_builddir)/tools/nut-scanner/ && $(MAKE) nut-scanner-reindex-dmfsnmp
 	$(LN_S_R) $(abs_top_builddir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp dmf-reindex
 #endif
 
