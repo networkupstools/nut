@@ -81,8 +81,16 @@ else !HAVE_STRSEP
   libcommonclient_la_SOURCES += strsep.c
 endif !HAVE_STRSEP
 
-# TODO: libnutwincompat.la?
 if HAVE_WINDOWS
+  libnutwincompat_la_SOURCES = wincompat.c $(top_srcdir)/include/wincompat.h
+  libnutwincompat_la_LDFLAGS =
+  libnutwincompat_la_LIBADD =
+  # Assume setenv() provided by OS or nut_setenv() provided by
+  # another NUT library and linked to the final NUT program/lib
+  # (anyhow, avoid a link-time conflict with two definitions):
+  libnutwincompat_la_CFLAGS = $(AM_CFLAGS) -DHAVE_SETENV=1
+  noinst_LTLIBRARIES += libnutwincompat.la
+
   libcommon_la_SOURCES += wincompat.c $(top_srcdir)/include/wincompat.h
   libcommonclient_la_SOURCES += wincompat.c $(top_srcdir)/include/wincompat.h
 endif HAVE_WINDOWS
