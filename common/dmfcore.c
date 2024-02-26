@@ -503,8 +503,9 @@ dmfcore_parse_str (const char *dmf_string, dmfcore_parser_t *dcp)
 int
 dmfcore_parse_dir (char *dir_name, dmfcore_parser_t *dcp)
 {
-	struct dirent **dir_ent;
-	int i = 0, x = 0, result = 0, n = 0, c;
+	DIR *dp = NULL;
+	struct dirent *dirp;
+	int i = 0, x = 0, result = 0, n = 0, c = 0;
 #if WITH_LIBLTDL
 	int flag_libneon = 0;
 #endif /* WITH_LIBLTDL */
@@ -514,16 +515,17 @@ dmfcore_parse_dir (char *dir_name, dmfcore_parser_t *dcp)
 	assert (dir_name);
 	assert (dcp);
 
-	if ( (dir_name == NULL ) || \
-	     ( (n = scandir(dir_name, &dir_ent, NULL, alphasort)) == 0 ) )
-	{
-		upslogx(LOG_ERR, "ERROR: DMF directory '%s' not found or not readable",
-			dir_name ? dir_name : "<NULL>");
-		return ENOENT;
-	}
-
-	if (n < 0) {
-		result = errno;
+	errno = 0;
+	if ( (dir_name == NULL) || \
+	     ((dp = opendir(dir_name)) == NULL) || \
+	     errno != 0
+	) {
+		if (dir_name == NULL) {
+			result = ENOENT;
+			/* TOTHINK? result = EINVAL; EBADF? */
+		} else {
+			result = errno;
+		}
 		upslog_with_errno(LOG_ERR, "ERROR: DMF directory '%s' not found or not readable",
 			dir_name ? dir_name : "<NULL>");
 		return result;
@@ -541,20 +543,30 @@ dmfcore_parse_dir (char *dir_name, dmfcore_parser_t *dcp)
 	}
 #endif /* WITH_LIBLTDL */
 
+	errno = 0;
+	while ((dirp = readdir(dp)) != NULL)
+		n++;
+
+	if (errno) {
+		upsdebugx(1, "%s: had a problem counting directory entries: (%d) %s",
+			__func__, errno, strerror(errno));
+	}
+	rewinddir(dp);
+
 	upsdebugx(2, "Got %d entries to parse in directory %s", n, dir_name);
 
-	for (c = 0; c < n; c++)
+	while ((dirp = readdir(dp)) != NULL)
 	{
 		size_t fname_len;
 
-		upsdebugx (5, "dmfcore_parse_dir(): dir_ent[%d]->d_name=%s", c, dir_ent[c]->d_name);
-		fname_len = strlen(dir_ent[c]->d_name);
+		upsdebugx (5, "dmfcore_parse_dir(): dir_ent[%d]->d_name=%s", c, dirp->d_name);
+		fname_len = strlen(dirp->d_name);
 		if ( (fname_len > 4) &&
-		     (strstr(dir_ent[c]->d_name + fname_len - 4, ".dmf") ||
-		      strstr(dir_ent[c]->d_name + fname_len - 4, ".DMF") ) )
+		     (strstr(dirp->d_name + fname_len - 4, ".dmf") ||
+		      strstr(dirp->d_name + fname_len - 4, ".DMF") ) )
 		{
 			i++;
-			if(strlen(dir_name) + strlen(dir_ent[c]->d_name) < PATH_MAX_SIZE){
+			if(strlen(dir_name) + strlen(dirp->d_name) < PATH_MAX_SIZE){
 				char *file_path = (char *) calloc(PATH_MAX_SIZE, sizeof(char));
 				if (!file_path)
 				{
@@ -568,7 +580,7 @@ dmfcore_parse_dir (char *dir_name, dmfcore_parser_t *dcp)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
 #pragma GCC diagnostic ignored "-Wformat-truncation"
 #endif
-					snprintf(file_path, PATH_MAX_SIZE, "%s/%s", dir_name, dir_ent[c]->d_name);
+					snprintf(file_path, PATH_MAX_SIZE, "%s/%s", dir_name, dirp->d_name);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
 #pragma GCC diagnostic pop
 #endif
@@ -587,9 +599,8 @@ dmfcore_parse_dir (char *dir_name, dmfcore_parser_t *dcp)
 				upslogx(LOG_ERR, "dmfcore_parse_dir(): File path too long");
 			}
 		}
-		free(dir_ent[c]);
+		c++;
 	}
-	free(dir_ent);
 
 #if WITH_LIBLTDL
 	if(flag_libneon == 1)
