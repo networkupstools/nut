@@ -89,14 +89,14 @@ udq_pipe_conn_t *upsdrvquery_connect(const char *sockfn) {
 	}
 
 	conn->sockfd = CreateFile(
-			sockfn,         // pipe name
-			GENERIC_READ |  // read and write access
+			sockfn,         /* pipe name */
+			GENERIC_READ |  /* read and write access */
 			GENERIC_WRITE,
-			0,              // no sharing
-			NULL,           // default security attributes FIXME
-			OPEN_EXISTING,  // opens existing pipe
-			FILE_FLAG_OVERLAPPED, //  enable async IO
-			NULL);          // no template file
+			0,              /* no sharing */
+			NULL,           /* default security attributes FIXME */
+			OPEN_EXISTING,  /* opens existing pipe */
+			FILE_FLAG_OVERLAPPED, /*  enable async IO */
+			NULL);          /* no template file */
 
 	if (conn->sockfd == INVALID_HANDLE_VALUE) {
 		upslog_with_errno(LOG_ERR, "CreateFile : %d\n", GetLastError());
@@ -187,6 +187,13 @@ void upsdrvquery_close(udq_pipe_conn_t *conn) {
 
 ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 	ssize_t	ret;
+#ifndef WIN32
+	fd_set	rfds;
+#else
+	DWORD	bytesRead = 0;
+	BOOL	res = FALSE;
+	struct timeval	start, now, presleep;
+#endif
 
 	if (!conn || INVALID_FD(conn->sockfd)) {
 		upslog_with_errno(LOG_ERR, "socket not initialized");
@@ -194,8 +201,6 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 	}
 
 #ifndef WIN32
-	fd_set	rfds;
-
 	FD_ZERO(&rfds);
 	FD_SET(conn->sockfd, &rfds);
 
@@ -217,9 +222,6 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 	upslog_with_errno(LOG_ERR, "Support for this platform is not currently implemented");
 	return -1;
 */
-	DWORD	bytesRead = 0;
-	BOOL	res = FALSE;
-	struct timeval	start, now, presleep;
 
 	/* Is GetLastError() required to move on if pipe has more data?
 	 *   if (GetLastError() == ERROR_IO_PENDING) {
@@ -321,6 +323,12 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 
 ssize_t upsdrvquery_write(udq_pipe_conn_t *conn, const char *buf) {
 	size_t	buflen = strlen(buf);
+#ifndef WIN32
+	ssize_t	ret;
+#else
+	DWORD	bytesWritten = 0;
+	BOOL	result = FALSE;
+#endif  /* WIN32 */
 
 	upsdebugx(5, "%s: write to driver socket: %s", __func__, buf);
 
@@ -330,7 +338,7 @@ ssize_t upsdrvquery_write(udq_pipe_conn_t *conn, const char *buf) {
 	}
 
 #ifndef WIN32
-	int ret = write(conn->sockfd, buf, buflen);
+	ret = write(conn->sockfd, buf, buflen);
 
 	if (ret < 0 || ret != (int)buflen) {
 		upslog_with_errno(LOG_ERR, "Write to socket %d failed", conn->sockfd);
@@ -339,9 +347,6 @@ ssize_t upsdrvquery_write(udq_pipe_conn_t *conn, const char *buf) {
 
 	return ret;
 #else
-	DWORD	bytesWritten = 0;
-	BOOL	result = FALSE;
-
 	result = WriteFile(conn->sockfd, buf, buflen, &bytesWritten, NULL);
 	if (result == 0 || bytesWritten != (DWORD)buflen) {
 		upslog_with_errno(LOG_ERR, "Write to handle %p failed", conn->sockfd);
@@ -379,7 +384,7 @@ ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 		char *buf;
 		upsdrvquery_read_timeout(conn, tv);
 		gettimeofday(&now, NULL);
-		if (difftimeval(now, start) > (tv.tv_sec + 0.000001 * tv.tv_usec)) {
+		if (difftimeval(now, start) > ((double)(tv.tv_sec) + 0.000001 * (double)(tv.tv_usec))) {
 			upsdebugx(5, "%s: requested timeout expired", __func__);
 			break;
 		}
@@ -409,10 +414,10 @@ ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 		}
 
 		/* Diminishing timeouts for read() */
-		tv.tv_usec -= difftimeval(now, start);
+		tv.tv_usec -= (suseconds_t)(difftimeval(now, start));
 		while (tv.tv_usec < 0) {
 			tv.tv_sec--;
-			tv.tv_usec = 1000000 + tv.tv_usec;	// Note it is negative
+			tv.tv_usec = 1000000 + tv.tv_usec;	/* Note it is negative */
 		}
 		if (tv.tv_sec <= 0 && tv.tv_usec <= 0) {
 			upsdebugx(5, "%s: requested timeout expired", __func__);
@@ -558,7 +563,7 @@ ssize_t upsdrvquery_request(
 			continue;
 		}
 
-		if (difftimeval(now, start) > (tv.tv_sec + 0.000001 * tv.tv_usec)) {
+		if (difftimeval(now, start) > ((double)(tv.tv_sec) + 0.000001 * (double)(tv.tv_usec))) {
 			upsdebugx(5, "%s: timed out waiting for expected response",
 				__func__);
 			return -1;

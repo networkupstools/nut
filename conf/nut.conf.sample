@@ -1,19 +1,33 @@
 # Network UPS Tools: example nut.conf
 #
+# This file tries to standardize the various files being found in the field,
+# like /etc/default/nut on Debian based systems, /etc/sysconfig/ups on RedHat
+# based systems, ... Distribution's init script or service unit/method script
+# should source this file to see which component(s) has to be started.
+# Some scripts and units provided by NUT project itself may also look into
+# this file for optional configuration about OS integration.
+#
+# IMPORTANT NOTES:
+#  This file is intended to be sourced by standard POSIX shell scripts
+#  (so there is no guaranteed `export VAR=VAL` syntax) and additionally
+#  by systemd on Linux (no guaranteed expansion of variables).
+#  You MUST NOT use spaces around the equal sign!
+#  Practical support for this file and its settings currently varies between
+#  various OS packages and NUT sample scripts, but should converge over time.
+#
+# See also: `man nut.conf` (usually in Manual pages Section 5,
+#           for Configuration files)
+#
 ##############################################################################
 # General section
 ##############################################################################
 # The MODE determines which part of the NUT is to be started, and which
 # configuration files must be modified.
 #
-# This file try to standardize the various files being found in the field, like
-# /etc/default/nut on Debian based systems, /etc/sysconfig/ups on RedHat based
-# systems, ... Distribution's init script should source this file to see which
-# component(s) has to be started.
-#
 # The values of MODE can be:
 # - none: NUT is not configured, or use the Integrated Power Management, or use
-#   some external system to startup NUT components. So nothing is to be started.
+#   some external system to startup NUT components. So nothing is to be started
+#   by scripts or services bundled with NUT packages.
 # - standalone: This mode address a local only configuration, with 1 UPS
 #   protecting the local system. This implies to start the 3 NUT layers (driver,
 #   upsd and upsmon) and the matching configuration files. This mode can also
@@ -23,17 +37,52 @@
 #   specific LISTEN directive in upsd.conf.
 #   Since this MODE is opened to the network, a special care should be applied
 #   to security concerns.
-# - netclient: this mode only requires upsmon.
-#
-# IMPORTANT NOTE:
-#  This file is intended to be sourced by standard POSIX shell scripts (so
-#  there is no guaranteed `export VAR=VAL` syntax) and by systemd on Linux.
-#  You MUST NOT use spaces around the equal sign!
+# - netclient: this mode only requires upsmon (and tools it may be using, like
+#   upssched or custom scripts) to monitor a remote NUT server and possibly
+#   shut down this system (part of upsmon must run as root then).
 
 MODE=none
 
-# Uncomment this to allow starting the service even if ups.conf has no device
-# sections at the moment. This environment variable overrides the built-in
-# "false" and an optional same-named default flag that can be set in upsd.conf:
+# Uncomment this to allow starting the `upsd` data server even if `ups.conf`
+# has no device sections configured at the moment. This environment variable
+# overrides the built-in "false" flag in `upsd`, and an optional same-named
+# default flag that can be set in `upsd.conf`. If you want a data server always
+# running, even if it initially has nothing to serve (may be live-reloaded
+# later, when devices become configured), this option is for you.
 #ALLOW_NO_DEVICE=true
 #export ALLOW_NO_DEVICE
+
+# Uncomment this to allow starting the `upsd` data server even if not all
+# `LISTEN` directives can be honoured at the moment. This environment variable
+# overrides the built-in "false" flag in `upsd`, and an optional same-named
+# default flag that can be set in `upsd.conf`. If you want a data server always
+# running, even if it would potentially not serve all clients on every uptime,
+# this option is for you (note you would have to restart `upsd` to pick up the
+# `LISTEN`ed IP address if it appears later). Probably `LISTEN *` is better.
+#ALLOW_NOT_ALL_LISTENERS=true
+#export ALLOW_NOT_ALL_LISTENERS
+
+# The optional 'UPSD_OPTIONS' allow to set upsd specific command-line options.
+# It is ignored when 'MODE' above indicates that no upsd should be running.
+# It may be redundant in comparison to options which can be set in `upsd.conf`.
+#UPSD_OPTIONS=
+
+# The optional 'UPSMON_OPTIONS' allow to set upsmon specific command-line options.
+# It is ignored when 'MODE' above indicates that no upsmon should be running.
+# It may be redundant in comparison to options which can be set in `upsmon.conf`.
+#UPSMON_OPTIONS=
+
+# If the optional 'POWEROFF_WAIT' is configured (to a value that can be handled
+# by `/bin/sleep` on the current system - typically an integer with the number
+# of seconds for a delay, but not always limited to that syntax), and the current
+# system which manages one or more UPS devices would not only command it to shut
+# down, but also try to avoid the "Power race". Caveats emptor, see NUT FAQ and
+# other docs for details.
+#POWEROFF_WAIT=3600
+
+# The optional 'POWEROFF_QUIET' setting controls if the NUT shutdown integration
+# scripts or service units would emit messages about their activity (or lack
+# thereof). By default they may be verbose, to aid post-mortem troubleshooting
+# via logs or console captures.
+# Set to `true` to avoid that trove of information, if you consider it noise.
+#POWEROFF_QUIET=true

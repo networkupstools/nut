@@ -30,7 +30,7 @@
 #include <timehead.h>
 
 #define DRIVER_NAME "NUT ADELSYSTEM DC-UPS CB/CBI driver"
-#define DRIVER_VERSION "0.01"
+#define DRIVER_VERSION "0.02"
 
 /* variables */
 static modbus_t *mbctx = NULL;							/* modbus memory context */
@@ -900,13 +900,16 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 		case LVDC:					/* "output.voltage" */
 		case LCUR:					/* "output.current" */
 			if (reg_val != 0) {
+				char	*fval_s;
+				double	fval;
+
 				state->reg.val.ui16 = reg_val;
-				double fval = reg_val / 1000.00; /* convert mV to V, mA to A */
+				fval = reg_val / 1000.00; /* convert mV to V, mA to A */
 				n = snprintf(NULL, 0, "%.2f", fval);
 				if (ptr != NULL) {
 					free(ptr);
 				}
-				char *fval_s = (char *)xmalloc(sizeof(char) * (n + 1));
+				fval_s = (char *)xmalloc(sizeof(char) * (n + 1));
 				ptr = fval_s;
 				sprintf(fval_s, "%.2f", fval);
 				state->reg.strval = fval_s;
@@ -921,12 +924,14 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 		case BCEF:
 		case VAC:					/* "input.voltage" */
 			if (reg_val != 0) {
+				char	*reg_val_s;
+
 				state->reg.val.ui16 = reg_val;
 				n = snprintf(NULL, 0, "%d", reg_val);
 				if (ptr != NULL) {
 					free(ptr);
 				}
-				char *reg_val_s = (char *)xmalloc(sizeof(char) * (n + 1));
+				reg_val_s = (char *)xmalloc(sizeof(char) * (n + 1));
 				ptr = reg_val_s;
 				sprintf(reg_val_s, "%d", reg_val);
 				state->reg.strval = reg_val_s;
@@ -938,13 +943,16 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 			break;
 		case BSOC:					/* "battery.charge" */
 			if (reg_val != 0) {
+				double	fval;
+				char	*fval_s;
+
 				state->reg.val.ui16 = reg_val;
-				double fval = (double )reg_val * regs[BSOC].scale;
+				fval = (double )reg_val * regs[BSOC].scale;
 				n = snprintf(NULL, 0, "%.2f", fval);
 				if (ptr != NULL) {
 					free(ptr);
 				}
-				char *fval_s = (char *)xmalloc(sizeof(char) * (n + 1));
+				fval_s = (char *)xmalloc(sizeof(char) * (n + 1));
 				ptr = fval_s;
 				sprintf(fval_s, "%.2f", fval);
 				state->reg.strval = fval_s;
@@ -956,16 +964,21 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 			break;
 		case BTMP:					/* "battery.temperature" */
 		case OTMP:					/* "ups.temperature" */
-			state->reg.val.ui16 = reg_val;
-			double fval = reg_val - 273.15;
-			n = snprintf(NULL, 0, "%.2f", fval);
-			char *fval_s = (char *)xmalloc(sizeof(char) * (n + 1));
-			if (ptr != NULL) {
-				free(ptr);
+			{ /* scoping */
+				double	fval;
+				char	*fval_s;
+
+				state->reg.val.ui16 = reg_val;
+				fval = reg_val - 273.15;
+				n = snprintf(NULL, 0, "%.2f", fval);
+				fval_s = (char *)xmalloc(sizeof(char) * (n + 1));
+				if (ptr != NULL) {
+					free(ptr);
+				}
+				ptr = fval_s;
+				sprintf(fval_s, "%.2f", fval);
+				state->reg.strval = fval_s;
 			}
-			ptr = fval_s;
-			sprintf(fval_s, "%.2f", fval);
-			state->reg.strval = fval_s;
 			upsdebugx(3, "get_dev_state: variable: %s", state->reg.strval);
 			break;
 		case PMNG:					/* "ups.status" & "battery.charge" */
@@ -1155,15 +1168,18 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 		 * memory corruptions and buggy inputs below...
 		 */
 		default:
-			state->reg.val.ui16 = reg_val;
-			n = snprintf(NULL, 0, "%d", reg_val);
-			if (ptr != NULL) {
-				free(ptr);
+			{ /* scoping */
+				char	*reg_val_s;
+				state->reg.val.ui16 = reg_val;
+				n = snprintf(NULL, 0, "%d", reg_val);
+				if (ptr != NULL) {
+					free(ptr);
+				}
+				reg_val_s = (char *)xmalloc(sizeof(char) * (n + 1));
+				ptr = reg_val_s;
+				sprintf(reg_val_s, "%d", reg_val);
+				state->reg.strval = reg_val_s;
 			}
-			char *reg_val_s = (char *)xmalloc(sizeof(char) * (n + 1));
-			ptr = reg_val_s;
-			sprintf(reg_val_s, "%d", reg_val);
-			state->reg.strval = reg_val_s;
 			break;
 #ifdef __clang__
 # pragma clang diagnostic pop

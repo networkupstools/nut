@@ -160,6 +160,39 @@ MINSUPPLIES 1
 SHUTDOWNCMD "/sbin/shutdown -h +0"
 
 # --------------------------------------------------------------------------
+# SHUTDOWNEXIT <boolean|num>
+#
+# After initiating shutdown, should this upsmon daemon itself exit?
+# By doing so NUT secondary systems can tell the NUT primary that
+# it can proceed with its own shutdown and eventually tell the UPS
+# to cut power for the load. ("Yes" by default)
+#
+# Some "secondary" systems with workloads that take considerable time
+# to stop (e.g. virtual machines or large databases) can benefit from
+# reporting (by virtue of logging off the data server) that they are
+# ready for the "primary" system to begin its own shutdown and eventually
+# to tell the UPS to cut the power - not as soon as they have triggered
+# their own shutdown, but at a later point (e.g. when the upsmon service
+# is stopped AFTER the heavier workloads).
+#
+# Note that the actual ability to complete such shutdown depends on the
+# remaining battery run-time at the moment when UPS power state becomes
+# considered critical and the shutdowns begin. You may also have to tune
+# HOSTSYNC on the NUT primary to be long enough for those secondaries to
+# stop their services. In practice, it may be worthwhile to investigate
+# ways to trigger shutdowns earlier on these systems, e.g. by setting up
+# `upssched` integration, or `dummy-ups` driver with overrides for stricter
+# `battery.charge` or `battery.runtime` triggers than used by the rest of
+# your servers.
+#
+# This option supports Boolean-style strings (yes/on/true or no/off/false)
+# or numbers to define a delay (in seconds) between calling SHUTDOWNCMD
+# and exiting the daemon. Zero means immediate exit (default), negative
+# values mean never exiting on its own accord.
+#
+#SHUTDOWNEXIT yes
+
+# --------------------------------------------------------------------------
 # NOTIFYCMD <command>
 #
 # upsmon calls this to send messages when things happen
@@ -280,6 +313,12 @@ POWERDOWNFLAG "@POWERDOWNFLAG@"
 # NOTIFYMSG REPLBATT	"UPS %s battery needs to be replaced"
 # NOTIFYMSG NOCOMM	"UPS %s is unavailable"
 # NOTIFYMSG NOPARENT	"upsmon parent process died - shutdown impossible"
+# NOTIFYMSG CAL		"UPS %s: calibration in progress"
+# NOTIFYMSG NOTCAL	"UPS %s: calibration finished"
+# NOTIFYMSG OFF		"UPS %s: administratively OFF or asleep"
+# NOTIFYMSG NOTOFF	"UPS %s: no longer administratively OFF or asleep"
+# NOTIFYMSG BYPASS	"UPS %s: on bypass (powered, not protecting)"
+# NOTIFYMSG NOTBYPASS	"UPS %s: no longer on bypass"
 #
 # Note that %s is replaced with the identifier of the UPS in question.
 #
@@ -316,6 +355,12 @@ POWERDOWNFLAG "@POWERDOWNFLAG@"
 # NOTIFYFLAG REPLBATT	SYSLOG+WALL
 # NOTIFYFLAG NOCOMM	SYSLOG+WALL
 # NOTIFYFLAG NOPARENT	SYSLOG+WALL
+# NOTIFYFLAG CAL	SYSLOG+WALL
+# NOTIFYFLAG NOTCAL	SYSLOG+WALL
+# NOTIFYFLAG OFF	SYSLOG+WALL
+# NOTIFYFLAG NOTOFF	SYSLOG+WALL
+# NOTIFYFLAG BYPASS	SYSLOG+WALL
+# NOTIFYFLAG NOTBYPASS	SYSLOG+WALL
 #
 # Possible values for the flags:
 #
@@ -325,6 +370,25 @@ POWERDOWNFLAG "@POWERDOWNFLAG@"
 # IGNORE - Don't do anything
 #
 # If you use IGNORE, don't use any other flags on the same line.
+
+# --------------------------------------------------------------------------
+# OFFDURATION - put "OFF" state into effect if it persists for this many seconds
+#
+# NUT supports an "administrative OFF" for power devices which can be managed to
+# turn off their application workload, while the UPS or ePDU remains accessible
+# for monitoring and management. This toggle allows to delay propagation of such
+# state into a known loss of a feed (possibly triggering FSD on `upsmon` clients
+# which `MONITOR` the device and are in fact still alive -- e.g. with multiple
+# power sources or because they as the load are not really turned off), because
+# when some devices begin battery calibration, they report "OFF" for a few seconds
+# and only then they might report "CAL" after switching all the power relays --
+# thus causing false-positives for `upsmon` FSD trigger.
+#
+# A negative value means to disable decreasing the counter of working power
+# supplies in such cases, and a zero makes the effect of detected "OFF" state
+# immediate. Built-in default value is 30 (seconds).
+
+OFFDURATION 30
 
 # --------------------------------------------------------------------------
 # RBWARNTIME - replace battery warning time in seconds
@@ -357,8 +421,11 @@ NOCOMMWARNTIME 300
 # extended timeframe, you can use this throttle to reduce the stress on
 # syslog traffic and storage, by posting these messages only once in every
 # several loop cycles, and when the error condition has changed or cleared.
-# A negative value means standard behavior, and a zero value means to never
-# repeat the message (log only on start and end/change of the failure state).
+# A negative value means standard behavior (log on every loop, same as when
+# max=1), and a zero value means to never repeat the message (log only on
+# start and end/change of the failure state).
+# Note that this throttle only applies to one latest-active error state per
+# monitored device.
 #
 #POLLFAIL_LOG_THROTTLE_MAX 100
 

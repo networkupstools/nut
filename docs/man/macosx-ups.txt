@@ -6,10 +6,14 @@ NAME
 
 macosx-ups - monitor for Mac OS X built-in UPS and battery driver
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the hardware-specific features of the
+*macosx-ups* -h
+
+*macosx-ups* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 *macosx-ups* driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
@@ -82,5 +86,5 @@ linkman:nutupsdrv[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-* The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
 * The apcupsd home page: http://www.apcupsd.org/

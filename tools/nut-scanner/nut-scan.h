@@ -1,10 +1,10 @@
 /*
  *  Copyright (C)
  *    2011 - EATON
- *    2012 - Arnaud Quette <arnaud.quette@free.fr>
+ *    2012 - 2024 Arnaud Quette <arnaud.quette@free.fr>
  *    2016 - EATON - IP addressed XML scan
- *    2016-2021 - EATON - Various threads-related improvements
- *    2023 - Jim Klimov <jimklimov+nut@gmail.com>
+ *    2016 - 2021 - EATON - Various threads-related improvements
+ *    2023 - 2024 - Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -128,10 +128,10 @@ typedef struct nutscan_ipmi {
   #define IPMI_AUTHENTICATION_TYPE_STRAIGHT_PASSWORD_KEY 0x04
   #define IPMI_AUTHENTICATION_TYPE_OEM_PROP              0x05
   #define IPMI_AUTHENTICATION_TYPE_RMCPPLUS              0x06
-#endif
+#endif /* IPMI_AUTHENTICATION_TYPE_NONE */
 #ifndef IPMI_PRIVILEGE_LEVEL_ADMIN
   #define IPMI_PRIVILEGE_LEVEL_ADMIN                     0x04
-#endif
+#endif /* IPMI_PRIVILEGE_LEVEL_ADMIN */
 
 #define IPMI_1_5		1
 #define IPMI_2_0		0
@@ -144,16 +144,32 @@ typedef struct nutscan_xml {
 	char *peername;		/* Hostname or NULL for broadcast mode */
 } nutscan_xml_t;
 
+/* USB scan options structure */
+typedef struct nutscan_usb {
+	/* Hardware link related values below are not reliable for run-time
+	 * matching (they can change over time) but can be useful if e.g.
+	 * "serial" is not available or unique */
+	int report_bus;
+	int report_busport;
+	int report_device;
+
+	/* The value is not currently used for device matching, but might be
+	 * used later, and it is available from discovery */
+	int report_bcdDevice;
+} nutscan_usb_t;
+
 /* Scanning */
 nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip, useconds_t usec_timeout, nutscan_snmp_t * sec);
 
-nutscan_device_t * nutscan_scan_usb(void);
+nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts);
 
 /* If "ip" == NULL, do a broadcast scan */
 /* If sec->usec_timeout <= 0 then the common usec_timeout arg overrides it */
 nutscan_device_t * nutscan_scan_xml_http_range(const char *start_ip, const char *end_ip, useconds_t usec_timeout, nutscan_xml_t * sec);
 
 nutscan_device_t * nutscan_scan_nut(const char * startIP, const char * stopIP, const char * port, useconds_t usec_timeout);
+
+nutscan_device_t * nutscan_scan_nut_simulation(void);
 
 nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout);
 

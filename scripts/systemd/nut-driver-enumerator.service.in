@@ -1,8 +1,15 @@
+# Network UPS Tools (NUT) systemd integration
+# Copyright (C) 2011-2023 by NUT contirbutors
+# Distributed under the terms of GPLv2+
+# See https://networkupstools.org/
+# and https://github.com/networkupstools/nut/
+
 [Unit]
 # This unit starts early in system lifecycle to set up nut-driver instances.
 # End-user may also restart this unit after editing ups.conf to automatically
 # un-register or add new instances as appropriate.
 Description=Network UPS Tools - enumeration of configure-file devices into systemd unit instances
+Conflicts=nut-driver-enumerator-daemon.service nut-driver-enumerator-daemon-activator.path nut-driver-enumerator-daemon-activator.service
 After=local-fs.target
 Before=nut-driver.target
 PartOf=nut.target

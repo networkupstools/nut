@@ -9,6 +9,7 @@
  *   2002-2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *  			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *  			Niels Baggesen <niels@baggesen.net>
+ *   2020-2024  Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  Sponsored by Eaton <http://www.eaton.com>
  *   and originally by MGE UPS SYSTEMS <http://opensource.mgeups.com/>
@@ -126,6 +127,7 @@ typedef int bool_t;
 
 /* typedef void (*interpreter)(char *, char *, int); */
 
+/* Help align with DMF branch codebase until it is merged */
 #ifndef WITH_SNMP_LKP_FUN
 /* Recent addition of fun/nuf hooks in info_lkp_t is not well handled by
  * all corners of the codebase, e.g. not by DMF. So at least until that
@@ -139,6 +141,8 @@ typedef int bool_t;
 # else
 #  define WITH_SNMP_LKP_FUN 1
 # endif
+#else
+# define WITH_SNMP_LKP_FUN 0
 #endif
 
 #ifndef WITH_SNMP_LKP_FUN_DUMMY
@@ -167,6 +171,32 @@ typedef struct {
 	long (*nuf_s2l)(const char *nut_value);     /* optional NUT to SNMP mapping function, converting a NUT string into SNMP numeric data */
 #endif /* WITH_SNMP_LKP_FUN */
 } info_lkp_t;
+
+/* Help align with DMF branch codebase until it is merged */
+#if WITH_SNMP_LKP_FUN
+# if (defined WITH_DMFMIB) && (WITH_DMFMIB != 0)
+#  define info_lkp_default(_1, _2)	{_1, _2, NULL, NULL, NULL, NULL}
+#  define info_lkp_fun_vp2s(_1, _2, _3)	{_1, _2, _3, NULL, NULL, NULL}
+#  define info_lkp_nuf_s2l(_1, _2, _3)	{_1, _2, NULL, _3, NULL, NULL}
+#  define info_lkp_fun_s2l(_1, _2, _3)	{_1, _2, NULL, NULL, _3, NULL}
+#  define info_lkp_nuf_vp2s(_1, _2, _3)	{_1, _2, NULL, NULL, NULL, _3}
+# else
+#  define info_lkp_default(_1, _2)	{_1, _2, NULL, NULL}
+#  define info_lkp_fun_vp2s(_1, _2, _3)	{_1, _2, _3, NULL}
+#  define info_lkp_nuf_s2l(_1, _2, _3)	{_1, _2, NULL, _3}
+/* Without DMF extensions, these methods poorly made do before the role split */
+#  define info_lkp_fun_s2l(_1, _2, _3)	{_1, _2, NULL, _3}
+#  define info_lkp_nuf_vp2s(_1, _2, _3)	{_1, _2, _3, NULL}
+# endif /* WITH_DMFMIB */
+#else
+# define info_lkp_default(_1, _2)	{_1, _2}
+/* Ignore the function pointer where not supported */
+# define info_lkp_fun_vp2s(_1, _2, _3)	{_1, _2}
+# define info_lkp_nuf_s2l(_1, _2, _3)	{_1, _2}
+# define info_lkp_fun_s2l(_1, _2, _3)	{_1, _2}
+# define info_lkp_nuf_vp2s(_1, _2, _3)	{_1, _2}
+#endif /* WITH_SNMP_LKP_FUN */
+#define info_lkp_sentinel	info_lkp_default(0, NULL)
 
 /* Structure containing info about one item that can be requested
    from UPS and set in INFO.  If no interpreter functions is defined,
@@ -199,6 +229,18 @@ typedef struct {
 	                           */
 	info_lkp_t   *oid2info;   /* lookup table between OID and NUT values */
 } snmp_info_t;
+
+/* Help align with DMF branch codebase until it is merged */
+#if defined WITH_DMF_FUNCTIONS && WITH_DMF_FUNCTIONS
+# if defined WITH_DMF_LUA && WITH_DMF_LUA
+#  define snmp_info_default(_1, _2, _3, _4, _5, _6, _7)	{_1, _2, _3, _4, _5, _6, _7, NULL, NULL, NULL}
+# else
+#  define snmp_info_default(_1, _2, _3, _4, _5, _6, _7)	{_1, _2, _3, _4, _5, _6, _7, NULL, NULL}
+# endif /* WITH_DMF_LUA  */
+#else
+#  define snmp_info_default(_1, _2, _3, _4, _5, _6, _7)	{_1, _2, _3, _4, _5, _6, _7}
+#endif /* WITH_DMF_FUNCTIONS */
+#define snmp_info_sentinel	snmp_info_default(NULL, 0, 0, NULL, NULL, 0, NULL)
 
 /* "flags" bits 0..9 */
 #define SU_FLAG_OK			(1UL << 0)	/* show element to upsd -
@@ -275,8 +317,8 @@ typedef struct {
 #define SU_AMBIENT_TEMPLATE	(1UL << 26)	/* ambient template definition */
 
 /* Reserved slot -- to import from DMF branch codebase:
-//#define SU_FLAG_FUNCTION	(1UL << 27)
-*/
+ * //#define SU_FLAG_FUNCTION	(1UL << 27)
+ */
 
 /* status string components
  * FIXME: these should be removed, since there is no added value.

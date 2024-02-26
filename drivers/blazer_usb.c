@@ -7,7 +7,7 @@
  * device support from such legacy drivers over time.
  *
  * A document describing the protocol implemented by this driver can be
- * found online at "http://www.networkupstools.org/protocols/megatec.html".
+ * found online at "https://www.networkupstools.org/protocols/megatec.html".
  *
  * Copyright (C) 2003-2009  Arjen de Korte <adkorte-guest@alioth.debian.org>
  * Copyright (C) 2011-2012  Arnaud Quette <arnaud.quette@free.fr>
@@ -37,7 +37,7 @@
 #endif
 
 #define DRIVER_NAME	"Megatec/Q1 protocol USB driver"
-#define DRIVER_VERSION	"0.14"
+#define DRIVER_VERSION	"0.17"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -300,6 +300,7 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 			upsdebugx(1, "received %d (%d)", ret, buf[0]);
 
 			if (langid_fix != -1) {
+				size_t	di, si, size;
 				/* Limit this check, at least for now */
 				/* Invalid receive size - message corrupted */
 				if (ret != buf[0])
@@ -311,7 +312,7 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 				/* Simple unicode -> ASCII inplace conversion
 				 * FIXME: this code is at least shared with mge-shut/libshut
 				 * Create a common function? */
-				size_t di, si, size = (size_t)buf[0];
+				size = (size_t)buf[0];
 				for (di = 0, si = 2; si < size; si += 2) {
 					if (di >= (buflen - 1))
 						break;
@@ -564,8 +565,9 @@ static const struct subdriver_t {
 void upsdrv_help(void)
 {
 #ifndef TESTING
-	printf("\nAcceptable values for 'subdriver' via -x or ups.conf in this driver: ");
 	size_t i;
+
+	printf("\nAcceptable values for 'subdriver' via -x or ups.conf in this driver: ");
 
 	for (i = 0; subdriver[i].name != NULL; i++) {
 		if (i>0)
@@ -597,7 +599,7 @@ void upsdrv_initups(void)
 #ifndef TESTING
 	int	ret, langid;
 	char	tbuf[255]; /* Some devices choke on size > 255 */
-	char	*regex_array[7];
+	char	*regex_array[USBMATCHER_REGEXP_ARRAY_LIMIT];
 	char	*subdrv = getval("subdriver");
 
 	warn_if_bad_usb_port_filename(device_path);
@@ -609,6 +611,13 @@ void upsdrv_initups(void)
 	regex_array[4] = getval("serial");
 	regex_array[5] = getval("bus");
 	regex_array[6] = getval("device");
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	regex_array[7] = getval("busport");
+# else
+	if (getval("busport")) {
+		upslogx(LOG_WARNING, "\"busport\" is configured for the device, but is not actually handled by current build combination of NUT and libusb (ignored)");
+	}
+# endif
 
 	/* check for language ID workaround (#1) */
 	if (getval("langid_fix")) {
@@ -725,5 +734,8 @@ void upsdrv_cleanup(void)
 	free(usbdevice.Serial);
 	free(usbdevice.Bus);
 	free(usbdevice.Device);
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	free(usbdevice.BusPort);
+# endif
 #endif	/* TESTING */
 }

@@ -8,7 +8,7 @@
  *
  *      The logic of this file is ripped from mge-shut driver (also from
  *      Arnaud Quette), which is a "HID over serial link" UPS driver for
- *      Network UPS Tools <http://www.networkupstools.org/>
+ *      Network UPS Tools <https://www.networkupstools.org/>
  *
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@
 #include "nut_stdint.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.45"
+#define USB_DRIVER_VERSION	"0.46"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -66,6 +66,15 @@ void nut_usb_addvars(void)
 
 	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
 	addvar(VAR_VALUE, "device", "Regular expression to match USB device name");
+	addvar(VAR_VALUE, "busport", "Regular expression to match USB bus port name"
+#if (!defined WITH_USB_BUSPORT) || (!WITH_USB_BUSPORT)
+		/* Not supported by this version of libusb1,
+		 * but let's not crash config parsing on
+		 * unknown keywords due to such nuances! :)
+		 */
+		" (tolerated but ignored in this build)"
+#endif
+	);
 
 	/* Warning: this feature is inherently non-deterministic!
 	 * If you only care to know that at least one of your no-name UPSes is online,
@@ -84,6 +93,8 @@ void nut_usb_addvars(void)
 #else  /* no LIBUSB_API_VERSION */
 	dstate_setinfo("driver.version.usb", "libusb-%u.%u.%u", v->major, v->minor, v->micro);
 #endif /* LIBUSB_API_VERSION */
+
+	upsdebugx(1, "Using USB implementation: %s", dstate_getinfo("driver.version.usb"));
 }
 
 /* invoke matcher against device */
@@ -163,6 +174,9 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 	const struct libusb_interface_descriptor *if_desc;
 	libusb_device_handle *udev;
 	uint8_t bus_num, device_addr;
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	uint8_t bus_port;
+#endif
 	int ret, res;
 	unsigned char buf[20];
 	const unsigned char *p;
@@ -237,6 +251,9 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		free(curDevice->Serial);
 		free(curDevice->Bus);
 		free(curDevice->Device);
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+		free(curDevice->BusPort);
+#endif
 		memset(curDevice, '\0', sizeof(*curDevice));
 
 		/* Keep the list of items in sync with those matched by
@@ -248,12 +265,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			libusb_free_device_list(devlist, 1);
 			fatal_with_errno(EXIT_FAILURE, "Out of memory");
 		}
-		if (bus_num > 0) {
-			sprintf(curDevice->Bus, "%03d", bus_num);
-		} else {
-			upsdebugx(1, "%s: invalid libusb bus number %i",
-				__func__, bus_num);
-		}
+		sprintf(curDevice->Bus, "%03d", bus_num);
 
 		device_addr = libusb_get_device_address(device);
 		curDevice->Device = (char *)malloc(4);
@@ -275,8 +287,27 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			} else {
 				upsdebugx(1, "%s: invalid libusb device address %" PRIu8,
 					__func__, device_addr);
+				free(curDevice->Device);
+				curDevice->Device = NULL;
 			}
 		}
+
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+		bus_port = libusb_get_port_number(device);
+		curDevice->BusPort = (char *)malloc(4);
+		if (curDevice->BusPort == NULL) {
+			libusb_free_device_list(devlist, 1);
+			fatal_with_errno(EXIT_FAILURE, "Out of memory");
+		}
+		if (bus_port > 0) {
+			sprintf(curDevice->BusPort, "%03d", bus_port);
+		} else {
+			upsdebugx(1, "%s: invalid libusb bus number %i",
+				__func__, bus_port);
+			free(curDevice->BusPort);
+			curDevice->BusPort = NULL;
+		}
+#endif
 
 		curDevice->VendorID = dev_desc.idVendor;
 		curDevice->ProductID = dev_desc.idProduct;
@@ -342,6 +373,9 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		upsdebugx(2, "- Product: %s", curDevice->Product ? curDevice->Product : "unknown");
 		upsdebugx(2, "- Serial Number: %s", curDevice->Serial ? curDevice->Serial : "unknown");
 		upsdebugx(2, "- Bus: %s", curDevice->Bus ? curDevice->Bus : "unknown");
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+		upsdebugx(2, "- Bus Port: %s", curDevice->BusPort ? curDevice->BusPort : "unknown");
+#endif
 		upsdebugx(2, "- Device: %s", curDevice->Device ? curDevice->Device : "unknown");
 		upsdebugx(2, "- Device release number: %04x", curDevice->bcdDevice);
 
@@ -379,9 +413,10 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		 * that the device is not what we want. */
 		upsdebugx(2, "Device matches");
 
-		upsdebugx(2, "Reading first configuration descriptor");
+		upsdebugx(2, "Reading configuration descriptor %d of %d",
+			usb_subdriver.usb_config_index+1, dev_desc.bNumConfigurations);
 		ret = libusb_get_config_descriptor(device,
-			(uint8_t)usb_subdriver.hid_rep_index,
+			(uint8_t)usb_subdriver.usb_config_index,
 			&conf_desc);
 		/*ret = libusb_get_active_config_descriptor(device, &conf_desc);*/
 		if (ret < 0)
@@ -458,8 +493,9 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			libusb_free_config_descriptor(conf_desc);
 			libusb_free_device_list(devlist, 1);
 			fatalx(EXIT_FAILURE,
-				"Can't claim USB device [%04x:%04x]@%d/%d: %s",
+				"Can't claim USB device [%04x:%04x]@%d/%d/%d: %s",
 				curDevice->VendorID, curDevice->ProductID,
+				usb_subdriver.usb_config_index,
 				usb_subdriver.hid_rep_index,
 				usb_subdriver.hid_desc_index,
 				libusb_strerror((enum libusb_error)ret));
@@ -474,8 +510,9 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			libusb_free_config_descriptor(conf_desc);
 			libusb_free_device_list(devlist, 1);
 			fatalx(EXIT_FAILURE,
-				"Can't claim USB device [%04x:%04x]@%d/%d: %s",
+				"Can't claim USB device [%04x:%04x]@%d/%d/%d: %s",
 				curDevice->VendorID, curDevice->ProductID,
+				usb_subdriver.usb_config_index,
 				usb_subdriver.hid_rep_index,
 				usb_subdriver.hid_desc_index,
 				libusb_strerror((enum libusb_error)ret));
@@ -494,7 +531,10 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		}
 
 		if (!conf_desc) { /* ?? this should never happen */
-			upsdebugx(2, "  Couldn't retrieve descriptors");
+			upsdebugx(2, "  Couldn't retrieve config descriptor [%04x:%04x]@%d",
+				curDevice->VendorID, curDevice->ProductID,
+				usb_subdriver.usb_config_index
+			);
 			goto next_device;
 		}
 
@@ -986,6 +1026,7 @@ usb_communication_subdriver_t usb_subdriver = {
 	nut_libusb_set_report,
 	nut_libusb_get_string,
 	nut_libusb_get_interrupt,
+	LIBUSB_DEFAULT_CONF_INDEX,
 	LIBUSB_DEFAULT_INTERFACE,
 	LIBUSB_DEFAULT_DESC_INDEX,
 	LIBUSB_DEFAULT_HID_EP_IN,

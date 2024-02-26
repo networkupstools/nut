@@ -1,6 +1,7 @@
 #!@PYTHON@
 # Copyright 2008 Marcus D. Hanwell <marcus@cryos.org>
 # Minor changes for NUT by Charles Lepple
+# Subsequent maintenance for NUT by Jim Klimov (since 2021)
 # Distributed under the terms of the GNU General Public License v2 or later
 
 import re
@@ -53,11 +54,22 @@ except TypeError:
     fin_mode = 2
     fin_chop = 1
 
-# Create a ChangeLog file in the current directory.
-if fin_mode == 3:
-    fout = open("ChangeLog", "w", encoding="UTF-8")
+# Create a ChangeLog file in the current directory by default.
+CHANGELOG_FILE = "ChangeLog"
+try:
+    # e.g. point from Makefile to a builddir (caller ensures it exists)
+    if os.environ.get("CHANGELOG_FILE", None) is not None:
+        CHANGELOG_FILE = os.environ.get("CHANGELOG_FILE")
+except Exception as ignored:
+    pass
+
+if CHANGELOG_FILE == "-":
+    fout = sys.stdout
 else:
-    fout = open("ChangeLog", "w")
+    if fin_mode == 3:
+        fout = open(CHANGELOG_FILE, "w", encoding="UTF-8")
+    else:
+        fout = open(CHANGELOG_FILE, "w")
 
 # Set up the loop variables in order to locate the blocks we want
 authorFound = False

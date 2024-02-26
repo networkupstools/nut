@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2011 - 2023 Arnaud Quette (Design and part of implementation)
  *  Copyright (C) 2011 - EATON
  *  Copyright (C) 2016-2021 - EATON - Various threads-related improvements
  *
@@ -21,6 +22,7 @@
     \brief detect remote NUT services
     \author Frederic Bohe <fredericbohe@eaton.com>
     \author Jim Klimov <EvgenyKlimov@eaton.com>
+    \author Arnaud Quette <arnaudquette@free.fr>
 */
 
 #include "common.h"
@@ -28,6 +30,8 @@
 #include "nut-scan.h"
 #include "nut_stdint.h"
 #include <ltdl.h>
+
+#define SCAN_NUT_DRIVERNAME "dummy-ups"
 
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;
@@ -192,7 +196,7 @@ static void * list_nut_devices(void * arg)
 		dev->type = TYPE_NUT;
 		/* NOTE: There is no driver by such name, in practice it could
 		 * be a dummy-ups relay, a clone driver, or part of upsmon config */
-		dev->driver = strdup("nutclient");
+		dev->driver = strdup(SCAN_NUT_DRIVERNAME);
 		/* +1+1 is for '@' character and terminating 0 */
 		buf_size = strlen(answer[1]) + strlen(hostname) + 1 + 1;
 		if (port != PORT) {
@@ -440,13 +444,14 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 
 #ifdef HAVE_PTHREAD
 			if (pthread_create(&thread, NULL, list_nut_devices, (void*)nut_arg) == 0) {
+				nutscan_thread_t	*new_thread_array;
 # ifdef HAVE_PTHREAD_TRYJOIN
 				pthread_mutex_lock(&threadcount_mutex);
 				curr_threads++;
 # endif /* HAVE_PTHREAD_TRYJOIN */
 
 				thread_count++;
-				nutscan_thread_t *new_thread_array = realloc(thread_array,
+				new_thread_array = realloc(thread_array,
 					thread_count * sizeof(nutscan_thread_t));
 				if (new_thread_array == NULL) {
 					upsdebugx(1, "%s: Failed to realloc thread array", __func__);

@@ -122,6 +122,10 @@
  #define USB_CTRL_MSGVALUE_MIN	0
  #define USB_CTRL_MSGVALUE_MAX	UINT16_MAX
 
+ typedef uint8_t usb_ctrl_cfgindex;
+ #define USB_CTRL_CFGINDEX_MIN	0
+ #define USB_CTRL_CFGINDEX_MAX	UINT8_MAX
+
  typedef uint16_t usb_ctrl_repindex;
  #define USB_CTRL_REPINDEX_MIN	0
  #define USB_CTRL_REPINDEX_MAX	UINT16_MAX
@@ -411,6 +415,10 @@
  #define USB_CTRL_MSGVALUE_MIN	INT_MIN
  #define USB_CTRL_MSGVALUE_MAX	INT_MAX
 
+ typedef uint8_t usb_ctrl_cfgindex;
+ #define USB_CTRL_CFGINDEX_MIN	0
+ #define USB_CTRL_CFGINDEX_MAX	UINT8_MAX
+
  typedef int usb_ctrl_repindex;
  #define USB_CTRL_REPINDEX_MIN	INT_MIN
  #define USB_CTRL_REPINDEX_MAX	INT_MAX
@@ -460,6 +468,11 @@
 
 /* USB standard timeout [ms] */
 #define USB_TIMEOUT 5000
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+# define USBMATCHER_REGEXP_ARRAY_LIMIT	8
+#else
+# define USBMATCHER_REGEXP_ARRAY_LIMIT	7
+#endif
 
 /*!
  * USBDevice_t: Describe a USB device. This structure contains exactly
@@ -482,6 +495,9 @@ typedef struct USBDevice_s {
 	char		*Bus;      /*!< Bus name, e.g. "003"  */
 	uint16_t	bcdDevice; /*!< Device release number */
 	char		*Device;   /*!< Device name on the bus, e.g. "001"  */
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	char		*BusPort;  /*!< Port name, e.g. "001"  */
+#endif
 } USBDevice_t;
 
 /*!

@@ -85,6 +85,12 @@ int	tracking_delay = 3600;
  */
 int allow_no_device = 0;
 
+/*
+ * Preloaded to ALLOW_NOT_ALL_LISTENERS from upsd.conf or environment variable
+ * (with higher prio for envvar); defaults to disabled for legacy compat.
+ */
+int allow_not_all_listeners = 0;
+
 /* preloaded to {OPEN_MAX} in main, can be overridden via upsd.conf */
 nfds_t	maxconn = 0;
 
@@ -237,11 +243,31 @@ void listen_add(const char *addr, const char *port)
 	server->addr = xstrdup(addr);
 	server->port = xstrdup(port);
 	server->sock_fd = ERROR_FD_SOCK;
-	server->next = firstaddr;
+	server->next = NULL;
 
-	firstaddr = server;
+	if (firstaddr) {
+		stype_t	*tmp;
+		for (tmp = firstaddr; tmp->next; tmp = tmp->next);
+		tmp->next = server;
+	} else {
+		firstaddr = server;
+	}
 
 	upsdebugx(3, "listen_add: added %s:%s", server->addr, server->port);
+}
+
+/* Close the connection if needed and free the allocated memory.
+ * WARNING: it is up to the caller to rewrite the "next" pointer
+ * in whoever points to this server instance (if needed)! */
+static void stype_free(stype_t *server)
+{
+	if (VALID_FD_SOCK(server->sock_fd)) {
+		close(server->sock_fd);
+	}
+
+	free(server->addr);
+	free(server->port);
+	free(server);
 }
 
 /* create a listening socket for tcp connections */
@@ -255,7 +281,158 @@ static void setuptcp(stype_t *server)
 	struct addrinfo		hints, *res, *ai;
 	int	v = 0, one = 1;
 
+	if (VALID_FD_SOCK(server->sock_fd)) {
+		/* Already bound, e.g. thanks to 'LISTEN *' handling and injection
+		 * into the list we loop over */
+		upsdebugx(6, "setuptcp: SKIP bind to %s port %s: entry already initialized",
+			server->addr, server->port);
+		return;
+	}
+
 	upsdebugx(3, "setuptcp: try to bind to %s port %s", server->addr, server->port);
+	if (!strcmp(server->addr, "localhost")) {
+		/* Warn about possible surprises with IPv4 vs. IPv6 */
+		upsdebugx(1,
+			"setuptcp: WARNING: requested to LISTEN on 'localhost' "
+			"by name - will use the first system-resolved "
+			"IP address for that");
+	}
+
+	/* Special handling note for `LISTEN * <port>` directive with the
+	 * literal asterisk on systems with RFC-3493 (no relation!) support
+	 * for "IPv4-mapped addresses": it is possible (and technically
+	 * suffices) to LISTEN on "::" (aka "::0" or "0:0:0:0:0:0:0:0") and
+	 * also get an IPv4 any-address listener automatically. More so,
+	 * they would conflict and listening on one such socket precludes
+	 * listening on the other. On other systems (or with disabled
+	 * mapping so IPv6 really means "IPv6 only") we need both sockets.
+	 * NUT asks the system for "IPv6 only" mode when listening on any
+	 * sort of IPv6 addresses; it is however up to the system to implement
+	 * that ability and comply with our request.
+	 * Here we jump through some hoops:
+	 * * Try to get IPv6 any-address (unless constrained by CLI to IPv4);
+	 * * Try to get IPv4 any-address (unless constrained by CLI to IPv6),
+	 *   log information for the sysadmin that it might conflict with the
+	 *   IPv6 listener (IFF we have just opened one);
+	 * * Remember the one or two linked-list entries used, to release later.
+	 */
+	if (!strcmp(server->addr, "*")) {
+		stype_t	*serverAnyV4 = NULL, *serverAnyV6 = NULL;
+		int	canhaveAnyV4 = 0, canhaveAnyV6 = 0;
+
+		/* Note: default opt_af==AF_UNSPEC so not constrained to only one protocol */
+		if (opt_af != AF_INET6) {
+			/* Not constrained to IPv6 */
+			upsdebugx(1, "%s: handling 'LISTEN * %s' with IPv4 any-address support",
+				__func__, server->port);
+			serverAnyV4 = xcalloc(1, sizeof(*serverAnyV4));
+			serverAnyV4->addr = xstrdup("0.0.0.0");
+			serverAnyV4->port = xstrdup(server->port);
+			serverAnyV4->sock_fd = ERROR_FD_SOCK;
+			serverAnyV4->next = NULL;
+		}
+
+		if (opt_af != AF_INET) {
+			/* Not constrained to IPv4 */
+			upsdebugx(1, "%s: handling 'LISTEN * %s' with IPv6 any-address support",
+				__func__, server->port);
+			serverAnyV6 = xcalloc(1, sizeof(*serverAnyV6));
+			serverAnyV6->addr = xstrdup("::0");
+			serverAnyV6->port = xstrdup(server->port);
+			serverAnyV6->sock_fd = ERROR_FD_SOCK;
+			serverAnyV6->next = NULL;
+		}
+
+		if (serverAnyV6) {
+			setuptcp(serverAnyV6);
+			if (VALID_FD_SOCK(serverAnyV6->sock_fd)) {
+				canhaveAnyV6 = 1;
+			} else {
+				upsdebugx(3,
+					"%s: Could not bind to %s:%s trying to handle a 'LISTEN *' directive",
+					__func__, serverAnyV6->addr, serverAnyV6->port);
+			}
+		}
+
+		if (serverAnyV4) {
+			/* Try to get this listener if we can (no IPv4-mapped
+			 * IPv6 support was in force on this platform or its
+			 * configuration in some way that setsockopt(IPV6_V6ONLY)
+			 * failed to cancel).
+			 */
+			upsdebugx(3, "%s: try taking IPv4 'ANY'%s",
+				__func__,
+				canhaveAnyV6 ? " (if dual-stack IPv6 'ANY' did not grab it)" : "");
+			setuptcp(serverAnyV4);
+			if (VALID_FD_SOCK(serverAnyV4->sock_fd)) {
+				canhaveAnyV4 = 1;
+			} else {
+				upsdebugx(3,
+					"%s: Could not bind to IPv4 %s:%s%s",
+					__func__, serverAnyV4->addr, serverAnyV4->port,
+					canhaveAnyV6 ? (" after trying to bind to IPv6: "
+						"assuming dual-stack support on this "
+						"system could not be disabled") : "");
+			}
+		}
+
+		if (!canhaveAnyV4 && !canhaveAnyV6) {
+			fatalx(EXIT_FAILURE,
+				"Handling of 'LISTEN * %s' directive failed to bind to 'ANY' address",
+				server->port);
+		}
+
+		/* Finalize our findings and reset to normal operation
+		 * Note that at least one of these addresses is usable
+		 * and we keep it (and replace original "server" entry
+		 * keeping its place in the list).
+		 */
+		free(server->addr);
+		free(server->port);
+		if (canhaveAnyV4) {
+			upsdebugx(3, "%s: remembering IPv4 'ANY' instead of 'LISTEN *'", __func__);
+			server->addr = serverAnyV4->addr;
+			server->port = serverAnyV4->port;
+			server->sock_fd = serverAnyV4->sock_fd;
+			/* ...and keep whatever server->next there was */
+
+			/* Free the ghost, all needed info was relocated */
+			free(serverAnyV4);
+		} else {
+			if (serverAnyV4) {
+				/* Free any contents there were too */
+				stype_free(serverAnyV4);
+			}
+		}
+		serverAnyV4 = NULL;
+
+		if (canhaveAnyV6) {
+			if (canhaveAnyV4) {
+				/* "server" already populated by excerpts from V4, attach to it */
+				upsdebugx(3, "%s: also remembering IPv6 'ANY' instead of 'LISTEN *'", __func__);
+				serverAnyV6->next = server->next;
+				server->next = serverAnyV6;
+			} else {
+				/* Only retain V6 info */
+				upsdebugx(3, "%s: remembering IPv6 'ANY' instead of 'LISTEN *'", __func__);
+				server->addr = serverAnyV6->addr;
+				server->port = serverAnyV6->port;
+				server->sock_fd = serverAnyV6->sock_fd;
+				/* ...and keep whatever server->next there was */
+
+				/* Free the ghost, all needed info was relocated */
+				free(serverAnyV6);
+			}
+		} else {
+			if (serverAnyV6) {
+				/* Free any contents there were too */
+				stype_free(serverAnyV6);
+			}
+		}
+		serverAnyV6 = NULL;
+
+		return;
+	}
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_flags		= AI_PASSIVE;
@@ -283,6 +460,18 @@ static void setuptcp(stype_t *server)
 			fatal_with_errno(EXIT_FAILURE, "setuptcp: setsockopt");
 		}
 
+		/* Ordinarily we request that IPv6 listeners handle only IPv6
+		 * and not IPv4 mapped addresses - if the OS would honour that.
+		 * TOTHINK: Does any platform need `#ifdef IPV6_V6ONLY` given
+		 * that we apparently already have AF_INET6 OS support everywhere?
+		 */
+		if (ai->ai_family == AF_INET6) {
+			if (setsockopt(sock_fd, IPPROTO_IPV6, IPV6_V6ONLY, (void *)&one, sizeof(one)) != 0) {
+				upsdebug_with_errno(3, "setuptcp: setsockopt IPV6_V6ONLY");
+				/* ack, ignore */
+			}
+		}
+
 		if (bind(sock_fd, ai->ai_addr, ai->ai_addrlen) < 0) {
 			upsdebug_with_errno(3, "setuptcp: bind");
 			close(sock_fd);
@@ -304,6 +493,20 @@ static void setuptcp(stype_t *server)
 			upsdebug_with_errno(3, "setuptcp: listen");
 			close(sock_fd);
 			continue;
+		}
+
+		if (ai->ai_next) {
+			char ipaddrbuf[SMALLBUF];
+			const char *ipaddr;
+			snprintf(ipaddrbuf, sizeof(ipaddrbuf), " as ");
+			ipaddr = inet_ntop(ai->ai_family, ai->ai_addr,
+				ipaddrbuf + strlen(ipaddrbuf),
+				sizeof(ipaddrbuf));
+			upslogx(LOG_WARNING,
+				"setuptcp: bound to %s%s but there seem to be "
+				"further (ignored) addresses resolved for this name",
+				server->addr,
+				ipaddr == NULL ? "" : ipaddrbuf);
 		}
 
 		server->sock_fd = sock_fd;
@@ -687,14 +890,27 @@ static void client_readline(nut_ctype_t *client)
 void server_load(void)
 {
 	stype_t	*server;
+	size_t	listenersTotal = 0, listenersValid = 0,
+		listenersTotalLocalhost = 0, listenersValidLocalhost = 0,
+		listenersLocalhostName = 0,
+		listenersLocalhostName6 = 0,
+		listenersLocalhostIPv4 = 0,
+		listenersLocalhostIPv6 = 0,
+		listenersValidLocalhostName = 0,
+		listenersValidLocalhostName6 = 0,
+		listenersValidLocalhostIPv4 = 0,
+		listenersValidLocalhostIPv6 = 0;
 
-	/* default behaviour if no LISTEN addres has been specified */
+	/* default behaviour if no LISTEN address has been specified */
 	if (!firstaddr) {
+		/* Note: default opt_af==AF_UNSPEC so not constrained to only one protocol */
 		if (opt_af != AF_INET) {
+			upsdebugx(1, "%s: No LISTEN configuration provided, will try IPv6 localhost", __func__);
 			listen_add("::1", string_const(PORT));
 		}
 
 		if (opt_af != AF_INET6) {
+			upsdebugx(1, "%s: No LISTEN configuration provided, will try IPv4 localhost", __func__);
 			listen_add("127.0.0.1", string_const(PORT));
 		}
 	}
@@ -703,9 +919,114 @@ void server_load(void)
 		setuptcp(server);
 	}
 
+	/* Account separately from setuptcp() because it can edit the list,
+	 * e.g. when handling `LISTEN *` lines.
+	 */
+	for (server = firstaddr; server; server = server->next) {
+		listenersTotal++;
+		if (VALID_FD_SOCK(server->sock_fd)) {
+			listenersValid++;
+		}
+
+		if (!strcmp(server->addr, "localhost")) {
+			listenersLocalhostName++;
+			listenersTotalLocalhost++;
+			if (VALID_FD_SOCK(server->sock_fd)) {
+				listenersValidLocalhostName++;
+				listenersValidLocalhost++;
+			}
+		}
+
+		if (!strcmp(server->addr, "localhost6")) {
+			listenersLocalhostName6++;
+			listenersTotalLocalhost++;
+			if (VALID_FD_SOCK(server->sock_fd)) {
+				listenersValidLocalhostName6++;
+				listenersValidLocalhost++;
+			}
+		}
+
+		if (!strcmp(server->addr, "127.0.0.1")) {
+			listenersLocalhostIPv4++;
+			listenersTotalLocalhost++;
+			if (VALID_FD_SOCK(server->sock_fd)) {
+				listenersValidLocalhostIPv4++;
+				listenersValidLocalhost++;
+			}
+		}
+
+		if (!strcmp(server->addr, "::1")) {
+			listenersLocalhostIPv6++;
+			listenersTotalLocalhost++;
+			if (VALID_FD_SOCK(server->sock_fd)) {
+				listenersValidLocalhostIPv6++;
+				listenersValidLocalhost++;
+			}
+		}
+	}
+
+	upsdebugx(1, "%s: tried to set up %" PRIuSIZE
+		" listening sockets, succeeded with %" PRIuSIZE,
+		__func__, listenersTotal, listenersValid);
+	upsdebugx(3, "%s: ...of those related to localhost: "
+		"overall: %" PRIuSIZE " tried, %" PRIuSIZE " succeeded; "
+		"by name: %" PRIuSIZE "T/%" PRIuSIZE "S; "
+		"by name(6): %" PRIuSIZE "T/%" PRIuSIZE "S; "
+		"by IPv4 addr: %" PRIuSIZE "T/%" PRIuSIZE "S; "
+		"by IPv6 addr: %" PRIuSIZE "T/%" PRIuSIZE "S",
+		__func__,
+		listenersTotalLocalhost, listenersValidLocalhost,
+		listenersLocalhostName, listenersValidLocalhostName,
+		listenersLocalhostName6, listenersValidLocalhostName6,
+		listenersLocalhostIPv4, listenersValidLocalhostIPv4,
+		listenersLocalhostIPv6, listenersValidLocalhostIPv6
+		);
+
 	/* check if we have at least 1 valid LISTEN interface */
-	if (INVALID_FD_SOCK(firstaddr->sock_fd)) {
+	if (!listenersValid) {
 		fatalx(EXIT_FAILURE, "no listening interface available");
+	}
+
+	/* is everything requested - handled okay? */
+	if (listenersTotal == listenersValid)
+		return;
+
+	/* check for edge cases we can let slide */
+	if ( (listenersTotal - listenersValid) ==
+	     (listenersTotalLocalhost - listenersValidLocalhost)
+	) {
+		/* Note that we can also get into this situation
+		 * when "dual-stack" IPv6 listener also handles
+		 * IPv4 connections, and precludes successful
+		 * setup of the IPv4 listener later.
+		 *
+		 * FIXME? Can we get into this situation the other
+		 * way around - an IPv4 listener precluding the
+		 * IPv6 one, so end-user actually lacks one of the
+		 * requested connection types?
+		 */
+		upsdebugx(1, "%s: discrepancy corresponds to "
+			"addresses related to localhost; assuming "
+			"that it was attempted under several names "
+			"which resolved to same IP:PORT socket specs "
+			"(so only the first one of each succeeded)",
+			__func__);
+		return;
+	}
+
+	if (allow_not_all_listeners) {
+		upslogx(LOG_WARNING,
+			"WARNING: some listening interfaces were "
+			"not available, but the ALLOW_NOT_ALL_LISTENERS "
+			"setting is active");
+	} else {
+		upsdebugx(0,
+			"Reconcile available NUT server IP addresses "
+			"and LISTEN configuration, or consider the "
+			"ALLOW_NOT_ALL_LISTENERS setting!");
+		fatalx(EXIT_FAILURE,
+			"Fatal error: some listening interfaces were "
+			"not available");
 	}
 }
 
@@ -716,14 +1037,7 @@ void server_free(void)
 	/* cleanup server fds */
 	for (server = firstaddr; server; server = snext) {
 		snext = server->next;
-
-		if (VALID_FD_SOCK(server->sock_fd)) {
-			close(server->sock_fd);
-		}
-
-		free(server->addr);
-		free(server->port);
-		free(server);
+		stype_free(server);
 	}
 
 	firstaddr = NULL;
@@ -809,6 +1123,7 @@ static void poll_reload(void)
 {
 #ifndef WIN32
 	long	ret;
+	size_t	maxalloc;
 
 	ret = sysconf(_SC_OPEN_MAX);
 
@@ -826,7 +1141,7 @@ static void poll_reload(void)
 	}
 
 	/* How many items can we stuff into the array? */
-	size_t maxalloc = SIZE_MAX / sizeof(void *);
+	maxalloc = SIZE_MAX / sizeof(void *);
 	if ((uintmax_t)maxalloc < (uintmax_t)maxconn) {
 		fatalx(EXIT_FAILURE,
 			"You requested %" PRIdMAX " as maximum number of connections, but we can only allocate %" PRIuSIZE ".\n"
@@ -1883,6 +2198,30 @@ int main(int argc, char **argv)
 			 * configured yet - tell the clients so, properly.
 			 */
 			allow_no_device = 0;
+		}
+	}
+	} /* scope */
+
+	{ /* scope */
+	/* As documented above, the ALLOW_NOT_ALL_LISTENERS can be provided via
+	 * envvars and then has higher priority than an upsd.conf setting
+	 */
+	const char *envvar = getenv("ALLOW_NOT_ALL_LISTENERS");
+	if ( envvar != NULL) {
+		if ( (!strncasecmp("TRUE", envvar, 4)) || (!strncasecmp("YES", envvar, 3)) || (!strncasecmp("ON", envvar, 2)) || (!strncasecmp("1", envvar, 1)) ) {
+			/* Admins of this server expressed a desire to serve
+			 * NUT protocol if at least one configured listener
+			 * works (some may be missing and clients using those
+			 * addresses would not be served!)
+			 */
+			allow_not_all_listeners = 1;
+		} else if ( (!strncasecmp("FALSE", envvar, 5)) || (!strncasecmp("NO", envvar, 2)) || (!strncasecmp("OFF", envvar, 3)) || (!strncasecmp("0", envvar, 1)) ) {
+			/* Admins of this server expressed a desire to serve
+			 * NUT protocol only if all configured listeners work
+			 * (default for least surprise - admins must address
+			 * any configuration inconsistencies!)
+			 */
+			allow_not_all_listeners = 0;
 		}
 	}
 	} /* scope */

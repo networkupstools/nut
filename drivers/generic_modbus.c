@@ -27,7 +27,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME "NUT Generic Modbus driver"
-#define DRIVER_VERSION  "0.03"
+#define DRIVER_VERSION  "0.04"
 
 /* variables */
 static modbus_t *mbctx = NULL;                             /* modbus memory context */
@@ -707,7 +707,7 @@ int get_signal_state(devstate_t state)
 }
 
 /* get driver configuration parameters */
-void get_config_vars()
+void get_config_vars(void)
 {
 	int i; /* local index */
 

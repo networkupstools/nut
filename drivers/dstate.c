@@ -165,17 +165,17 @@ static TYPE_FD sock_open(const char *fn)
 #else /* WIN32 */
 
 	fd = CreateNamedPipe(
-			fn,			// pipe name
-			PIPE_ACCESS_DUPLEX |  // read/write access
-			FILE_FLAG_OVERLAPPED, // async IO
+			fn,			/* pipe name */
+			PIPE_ACCESS_DUPLEX |	/* read/write access */
+			FILE_FLAG_OVERLAPPED,	/* async IO */
 			PIPE_TYPE_BYTE |
 			PIPE_READMODE_BYTE |
 			PIPE_WAIT,
-			PIPE_UNLIMITED_INSTANCES, // max. instances
-			ST_SOCK_BUF_LEN,	// output buffer size
-			ST_SOCK_BUF_LEN,	// input buffer size
-			0,			// client time-out
-			NULL);			// FIXME: default security attribute
+			PIPE_UNLIMITED_INSTANCES,	/* max. instances */
+			ST_SOCK_BUF_LEN,	/* output buffer size */
+			ST_SOCK_BUF_LEN,	/* input buffer size */
+			0,			/* client time-out */
+			NULL);			/* FIXME: default security attribute */
 
 	if (INVALID_FD(fd)) {
 		fatal_with_errno(EXIT_FAILURE,
@@ -520,17 +520,17 @@ static void sock_connect(TYPE_FD sock)
 
 	/* sockfd is the handle of the connection pending pipe */
 	sockfd = CreateNamedPipe(
-			pipename,			// pipe name
-			PIPE_ACCESS_DUPLEX |  // read/write access
-			FILE_FLAG_OVERLAPPED, // async IO
+			pipename,		/* pipe name */
+			PIPE_ACCESS_DUPLEX |	/* read/write access */
+			FILE_FLAG_OVERLAPPED,	/* async IO */
 			PIPE_TYPE_BYTE |
 			PIPE_READMODE_BYTE |
 			PIPE_WAIT,
-			PIPE_UNLIMITED_INSTANCES, // max. instances
-			ST_SOCK_BUF_LEN,	// output buffer size
-			ST_SOCK_BUF_LEN,	// input buffer size
-			0,			// client time-out
-			NULL);			// FIXME: default security attribute
+			PIPE_UNLIMITED_INSTANCES,	/* max. instances */
+			ST_SOCK_BUF_LEN,	/* output buffer size */
+			ST_SOCK_BUF_LEN,	/* input buffer size */
+			0,			/* client time-out */
+			NULL);			/* FIXME: default security attribute */
 
 	if (INVALID_FD(sockfd)) {
 		fatal_with_errno(EXIT_FAILURE,
@@ -780,7 +780,7 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 			upsdebugx(3, "%s: TRACKING = %s", __func__, cmdid);
 
 		/* try the handler shared by all drivers first */
-		ret = main_instcmd(arg[1], arg[2], conn);
+		ret = main_instcmd(cmdname, cmdparam, conn);
 		if (ret != STAT_INSTCMD_UNKNOWN) {
 			/* The command was acknowledged by shared handler, and
 			 * either handled successfully, or failed, or was not
@@ -1400,6 +1400,20 @@ int dstate_delinfo(const char *var)
 	return ret;
 }
 
+int dstate_delinfo_olderthan(const char *var, const st_tree_timespec_t *cutoff)
+{
+	int	ret;
+
+	ret = state_delinfo_olderthan(&dtree_root, var, cutoff);
+
+	/* update listeners */
+	if (ret == 1) {
+		send_to_all("DELINFO %s\n", var);
+	}
+
+	return ret;
+}
+
 int dstate_delenum(const char *var, const char *val)
 {
 	int	ret;
@@ -1578,11 +1592,13 @@ void alarm_set(const char *buf)
 		 * Note: LARGEBUF was the original limit mismatched vs alarm_buf
 		 * size before PR #986.
 		 */
-		char alarm_tmp[LARGEBUF];
+		char	alarm_tmp[LARGEBUF];
+		int	ibuflen;
+		size_t	buflen;
+
 		memset(alarm_tmp, 0, sizeof(alarm_tmp));
 		/* A bit of complexity to keep both (int)snprintf(...) and (size_t)sizeof(...) happy */
-		int ibuflen = snprintf(alarm_tmp, sizeof(alarm_tmp), "%s", buf);
-		size_t buflen;
+		ibuflen = snprintf(alarm_tmp, sizeof(alarm_tmp), "%s", buf);
 		if (ibuflen < 0) {
 			alarm_tmp[0] = 'N';
 			alarm_tmp[1] = '/';
@@ -1618,10 +1634,12 @@ void alarm_set(const char *buf)
 		upslogx(LOG_ERR, "%s: error setting alarm_buf to: %s%s",
 			__func__, alarm_tmp, ( (buflen < sizeof(alarm_tmp)) ? "" : "...<truncated>" ) );
 	} else if ((size_t)ret > sizeof(alarm_buf)) {
-		char alarm_tmp[LARGEBUF];
+		char	alarm_tmp[LARGEBUF];
+		int	ibuflen;
+		size_t	buflen;
+
 		memset(alarm_tmp, 0, sizeof(alarm_tmp));
-		int ibuflen = snprintf(alarm_tmp, sizeof(alarm_tmp), "%s", buf);
-		size_t buflen;
+		ibuflen = snprintf(alarm_tmp, sizeof(alarm_tmp), "%s", buf);
 		if (ibuflen < 0) {
 			alarm_tmp[0] = 'N';
 			alarm_tmp[1] = '/';
@@ -1918,9 +1936,11 @@ static int dstate_tree_dump(const st_tree_t *node)
 /* Public interface */
 void dstate_dump(void)
 {
+	const st_tree_t *node;
+
 	upsdebugx(3, "Entering %s", __func__);
 
-	const st_tree_t *node = (const st_tree_t *)dstate_getroot();
+	node = (const st_tree_t *)dstate_getroot();
 
 	dstate_tree_dump(node);
 }

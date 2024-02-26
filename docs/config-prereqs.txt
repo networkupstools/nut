@@ -88,8 +88,8 @@ recommended for build agents with immutable system areas, etc.
 Build prerequisites to make NUT from scratch on various Operating Systems
 -------------------------------------------------------------------------
 
-Debian 10/11
-~~~~~~~~~~~~
+Debian 10/11/12
+~~~~~~~~~~~~~~~
 
 Being a popular baseline among Linux distributions, Debian is an
 important build target. Related common operating systems include
@@ -141,6 +141,15 @@ metadata about recently published package revisions:
 #   :; apt-get install python3 python3.9
 # You can find a list of what is (pre-)installed with:
 #   :; dpkg -l | grep -Ei 'perl|python'
+#
+# For localization maintenance (currently in Python NUT-Monitor app),
+# provide an `msgfmt` implementation, e.g.:
+#   :; apt-get install gettext
+#
+# To install the Python NUT-Monitor app, you may need some modules:
+#   :; apt-get install pip
+# For Python3:
+#   :; python3 -m pip install PyQt5 configparser
 
 # For spell-checking, highly recommended if you would propose pull requests:
 :; apt-get install \
@@ -179,8 +188,9 @@ metadata about recently published package revisions:
 :; apt-get install \
     libgpiod-dev
 
-:; apt-get install \
-    lua5.1-dev
+# NOTE: Some distributions lack a lua*-dev and only offer the base package
+:; apt-get install lua5.1
+:; apt-get install lua5.1-dev || true
 
 :; apt-get install \
     bash dash ksh busybox
@@ -485,6 +495,165 @@ required:
 :; pacman -S --needed \
     jre11-openjdk-headless
 ------
+
+Slackware Linux 15
+~~~~~~~~~~~~~~~~~~
+
+Another long-term presence in the Linux landscape, and sometimes the baseline
+for appliances, the Slackware project recently hit release 15 in 2022, averaging
+two years per major release.
+
+It can be installed e.g. in a VM, using ISO images from the project site; see:
+
+* http://www.slackware.com/ => http://www.slackware.com/getslack/ =>
+  https://mirrors.slackware.com/slackware/slackware-iso/slackware64-15.0-iso/
+* https://slackware.nl/slackware/slackware64-current-iso/
+
+You would have to first log in as `root` and run `cgdisk` to define partitioning
+for your virtual HDD, such as the common `/boot`, `swap` and `/` Linux layout,
+and run `setup` to install "everything".
+
+Note that "out of the box" Slackware does not currently on networked package
+repositories and calculated dependency trees, so one has to know exactly what
+they want installed.
+
+Third-party projects for package managers are also available, e.g.
+link:https://slackpkg.org/documentation.html[`slackpkg`] => see also
+https://docs.slackware.com/slackware:slackpkg and
+https://slackpkg.org/stable/ :
+----
+:; wget https://slackpkg.org/stable/slackpkg-15.0.10-noarch-1.txz && \
+   installpkg slackpkg-15.0.10-noarch-1.txz
+----
+
+Uncomment a mirror from `/etc/slackpkg/mirrors` according to your location
+and other preferences (or use the top-listed default), and begin with:
+----
+:; slackpkg update
+----
+
+Note that packages may be only installed or re-installed/upgraded as separate
+explicit operations, so the procedure to bring your system into needed shape
+is a bit cumbersome (and each command may by default be interactive with a
+choice menu), e.g.:
+----
+:; for P in \
+    bash mc vim sudo \
+   ; do slackpkg info "$P" || slackpkg install $P || break ; done
+----
+
+For procedures below, this is automated via `root` profile to become a
+`slackpkg-install` command:
+----
+:; grep "slackpkg-install" ~/.profile || {
+    echo 'slackpkg-install() { for P in "$@" ; do echo "=== $P:"; slackpkg info "$P" || slackpkg install "$P" || break ; done; }' >> ~/.profile
+   }
+:; . ~/.profile
+----
+
+If something has a hiccup, it suggests to look for the right name, e.g.:
+----
+:; slackpkg search python
+----
+
+For NUT dependencies and build tools:
+----
+:; slackpkg update
+
+# Baseline toolkits:
+# Note there is no cppcheck, cppunit, valgrind...
+# Note clang compiler tools are part of llvm package
+:; slackpkg-install \
+    ccache time \
+    coreutils diffutils \
+    git python3 perl curl \
+    make autoconf automake libtool binutils \
+    pkg-config \
+    gcc llvm
+
+# For spell-checking, highly recommended if you would propose pull requests:
+:; slackpkg-install aspell{,-en}
+
+# Note there is no direct "asciidoc" nor "a2x", just the competing project
+# "rubygem-asciidoctor" that NUT currently has no recipes for, so you can
+# not compile man/html/pdf docs here, per the default repository. See below
+# for tools from alternative repositories, which seem to work well. Manpage
+# compilation would require docbook-xml resources; older versions are in
+# this package https://slackbuilds.org/repository/15.0/system/docbook-xml/
+# and recent ones are in not-installed part of main repository:
+:; slackpkg-install linuxdoc-tools
+
+# More on Python (for NUT-Monitor UI):
+:; slackpkg-install \
+    python-pip qt5 gettext-tools gettext
+
+# For CGI graph generation - massive packages (X11):
+:; slackpkg-install \
+    gd
+
+# General dependencies:
+:; slackpkg-install \
+    openssl openssl-solibs mozilla-nss \
+    libusb \
+    net-snmp \
+    neon
+
+# Shells:
+:; slackpkg-install \
+    bash dash ksh93
+----
+
+Some more packages are available on the side, including Java (useful
+e.g. to make this environment into a fully fledged Jenkins worker).
+Other common NUT dependencies absent from primary Slackware repositories
+can be found and downloaded (seek `*.txz` package files, although a few
+are named `*.tgz`) from here, and passed to `installpkg`:
+
+* http://www.slackware.com/~alien/slackbuilds/openjdk11/
+* http://www.slackware.com/~alien/slackbuilds/asciidoc/
+* http://www.slackware.com/~alien/slackbuilds/cppunit/
+* http://www.slackware.com/~alien/slackbuilds/lua/ (5.1 in "stable") and
+  http://www.slackware.com/~alien/slackbuilds/lua53/ (5.4 in "current"
+  as of Slackware 15.1 candidate in the works) -- note that LUA is not
+  needed for the current NUT code base, but may become needed after import
+  of features from forks
+
+...and even the environment for Windows cross-builds, ancient compilers
+and modern toolkits to cover all bases:
+
+* http://www.slackware.com/~alien/slackbuilds/MinGW-w64/
+* http://www.slackware.com/~alien/slackbuilds/docker/
+* http://www.slackware.com/~alien/slackbuilds/gcc34/
+* http://www.slackware.com/~alien/slackbuilds/gcc5/
+
+FWIW, another "more official" but older Java package seems to be at:
+
+* http://www.slackware.com/~alien/slackbuilds/openjdk/
+* https://slackbuilds.org/repository/15.0/development/jdk/
+
+An example routine to install the latest instance of a package could be
+like this:
+----
+:; wget -m -l1 http://www.slackware.com/~alien/slackbuilds/asciidoc/pkg/ && \
+    find . -name '*.t?z'
+
+:; installpkg ./www.slackware.com/~alien/slackbuilds/asciidoc/pkg/asciidoc-8.1.0-noarch-2.tgz
+----
+
+Upon community members' recommendations, Sotirov's SlackPack is also considered
+a reputable repository: https://sotirov-bg.net/slackpack/ and should cover most
+if not all of the dependencies required for NUT building (including PowerMan,
+IPMI etc.)
+
+NOTE: If setting up a CI farm agent with builds in RAM disk, keep in mind that
+default mount options for `/dev/shm` preclude script execution. Either set up
+the agent in a non-standard fashion (to use another work area), or if this is
+a dedicated machine -- relax the mount options in `/etc/fstab`. Here is an
+example with `noexec` which we *must avoid* for such use-case:
+----
+:; mount | grep /dev/shm
+tmpfs on /dev/shm type tmpfs (rw,nosuid,nodev,noexec,relatime,inode64)
+----
 
 FreeBSD 12.2
 ~~~~~~~~~~~~
@@ -1180,9 +1349,9 @@ script or later during the build to fail. If that happens to you, disable the
 antivirus completely or exempt at least the NUT build area from protection.
 
 Windows with mingw
-------------------
+^^^^^^^^^^^^^^^^^^
 
-See `scripts/Windows/README` for original recommendations for the effort,
+See `scripts/Windows/README.adoc` for original recommendations for the effort,
 including possibilities of cross-builds with mingw available in Linux.
 
 Unfortunately these did not work for me at the time of testing, yielding
@@ -1200,10 +1369,10 @@ and redirect on SourceForge. You can download and unpack 7z archives from
 https://sourceforge.net/projects/mingw-w64/files/mingw-w64/mingw-w64-release/
 into e.g. `C:\Progra~1\mingw-w64\x86_64-8.1.0-release-posix-seh-rt_v6-rev0`
 location on your Windows system. Then for building further NUT dependencies
-see `scripts/Windows/README`.
+see `scripts/Windows/README.adoc`.
 
 Windows with MSYS2
-------------------
+^^^^^^^^^^^^^^^^^^
 
 The MSYS2 ecosystem is available at https://www.msys2.org/ and builds upon
 earlier work by link:https://www.mingw-w64.org[MinGW-w64] (in turn a fork
@@ -1335,7 +1504,7 @@ involved is very important.
 
 Notable packages *not found* in the repo:
 
-* snmp (net-snmp, ucd-snmp) -- instructions in `scripts/Windows/README`
+* snmp (net-snmp, ucd-snmp) -- instructions in `scripts/Windows/README.adoc`
   document now covers building it from source in MSYS2 MinGW x64 environment,
   essentially same as for Linux cross builds with proper `ARCH` and `PREFIX`
 * libregex (C version, direct NUT `configure` script support was added by

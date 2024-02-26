@@ -34,8 +34,8 @@ to produce a replacement by asking NUT programs for `--help` or for
 
 ----
 :; upsd -DV
-Network UPS Tools upsd 2.8.0.1
-Network UPS Tools version 2.8.0.1 configured with flags: --with-all=auto --with-doc=skip ...
+Network UPS Tools upsd 2.8.1
+Network UPS Tools version 2.8.1 configured with flags: --with-all=auto --with-doc=skip ...
 ----
 
 A more industrial approach is to use `lib/libupsclient-config --config-flags`
@@ -400,6 +400,13 @@ build further projects against NUT (such as wmNUT client and many others).
 Options for developers
 ~~~~~~~~~~~~~~~~~~~~~~
 
+	--enable-spellcheck (default: auto)
+
+Activate recipes for documentation source file spelling checks with `aspell`
+tool. Default behavior depends on availability of the tool, so if present --
+it would run for `make check` by default, to facilitate quicker acceptance
+of contributions.
+
 	--enable-check-NIT (default: no)
 
 Add `make check-NIT` to default activity of `make check` to run the
@@ -623,6 +630,17 @@ Sets the installation path for libraries.  Depending on the build
 configuration, this can include the `libupsclient`, `libnutclient`,
 `libnutclientsub`, `libnutscan` and their pkg-config metadata (see
 `--with-pkgconfig-dir` option). The default is `<exec_prefix>/lib`.
+
+	--libexecdir=PATH
+
+Sets the installation path for "executable libraries" -- helper scripts
+or programs that are not intended for direct and regular use by people,
+and rather are implementation details of services.  Depending on the
+build configuration, this can include the `nut-driver-enumerator.sh`,
+`sockdebug`, and others. The default is `<exec_prefix>/libexec`.
+
+Package distributions may want to use this option to customize this path
+to include the package name, e.g. set it to `<exec_prefix>/libexec/nut`.
 
 	--with-pkgconfig-dir=PATH
 

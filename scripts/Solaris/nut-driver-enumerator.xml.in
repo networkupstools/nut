@@ -9,7 +9,7 @@
 
 <service_bundle type='manifest' name='nut-driver-enumerator'>
 
-	<service name='system/power/nut-driver-enumerator' type='service' version='1.1'>
+	<service name='system/power/nut-driver-enumerator' type='service' version='1.2'>
 
 	<!--
 	  Wait for all local and usr filesystem to be mounted - project is
@@ -70,13 +70,13 @@
 			<exec_method
 			type='method'
 			name='start'
-			exec='@NUT_LIBEXECDIR@/nut-driver-enumerator.sh'
+			exec='REPORT_RESTART_42=no @NUT_LIBEXECDIR@/nut-driver-enumerator.sh'
 			timeout_seconds='0'/>
 
 			<exec_method
 			type='method'
 			name='refresh'
-			exec='@NUT_LIBEXECDIR@/nut-driver-enumerator.sh'
+			exec='REPORT_RESTART_42=no @NUT_LIBEXECDIR@/nut-driver-enumerator.sh'
 			timeout_seconds='0'/>
 
 <!-- a :KILL does not really apply to a transient service... -->
@@ -128,7 +128,7 @@
 			<exec_method
 			type='method'
 			name='start'
-			exec='@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --daemon'
+			exec='REPORT_RESTART_42=no @NUT_LIBEXECDIR@/nut-driver-enumerator.sh --daemon-after'
 			timeout_seconds='0'/>
 
 			<exec_method

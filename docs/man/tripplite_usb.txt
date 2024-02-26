@@ -63,6 +63,14 @@ file (or with '-x' on the command line):
 
 include::nut_usb_addvars.txt[]
 
+- `-x upsid="12345"`
+
+Select a specific UPS by its unique UPS ID. The argument is a regular expression 
+that must match the UPS ID string. This allows for precise identification of UPS 
+devices when multiple devices of the same make and model are connected.
+See below regarding how to read and write the ups id (unit id) using linkman:upsrw[8].
+
+
 [NOTE]
 .Notes for `tripplite_usb` driver handling of common USB matching settings:
 ======
@@ -110,7 +118,7 @@ changed at runtime by linkman:upsrw[8].
 
 *ups.id*::
 
-Some SMARTPRO models feature an ID that can be set and retrieved.
+Some SMARTPRO models feature an Unit ID (ups.id) that can be set and retrieved.
 If your UPS supports this feature, this variable will be listed in
 the output of linkman:upsrw[8].
 
@@ -143,10 +151,10 @@ same time, since they have different USB Product ID strings. If you have two
 SMART1500RM2U units, you would have to find which USB bus and device number
 each unit is on (via lsusb(8)).
 
-Some of the SMART*2U models have an ID number, but because this ID is not
-exposed as a USB string descriptor, there is no easy way to use this ID to
-distinguish between multiple UPS units on a single machine. The UPS would need
-to be claimed by the driver in order to read this ID.
+Some of the SMART*2U models have a configurable Unit ID number, and you can now use the `upsid` 
+config argument to uniquely specify which UPS a given driver instance should control. 
+This allows for precise identification of UPS devices when multiple devices are connected.
+To retrieve or set the upsid use the linkman:upsrw[8] utility.
 
 AUTHORS
 -------
@@ -180,4 +188,4 @@ regex(7), lsusb(8)
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

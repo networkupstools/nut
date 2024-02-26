@@ -10,7 +10,7 @@
  *
  *      The logic of this file is ripped from mge-shut driver (also from
  *      Arnaud Quette), which is a "HID over serial link" UPS driver for
- *      Network UPS Tools <http://www.networkupstools.org/>
+ *      Network UPS Tools <https://www.networkupstools.org/>
  *
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@
 #endif
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 0.1)"
-#define USB_DRIVER_VERSION	"0.44"
+#define USB_DRIVER_VERSION	"0.45"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -76,6 +76,11 @@ void nut_usb_addvars(void)
 
 	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
 	addvar(VAR_VALUE, "device", "Regular expression to match USB device name");
+	/* Not supported by libusb0, but let's not crash config
+	 * parsing on unknown keywords due to such nuances! :) */
+	addvar(VAR_VALUE, "busport", "Regular expression to match USB bus port name"
+		" (tolerated but ignored in this build)"
+	);
 
 	/* Warning: this feature is inherently non-deterministic!
 	 * If you only care to know that at least one of your no-name UPSes is online,
@@ -90,6 +95,8 @@ void nut_usb_addvars(void)
 	addvar(VAR_VALUE, "usb_set_altinterface", "Force redundant call to usb_set_altinterface() (value=bAlternateSetting; default=0)");
 
 	dstate_setinfo("driver.version.usb", "libusb-0.1 (or compat)");
+
+	upsdebugx(1, "Using USB implementation: %s", dstate_getinfo("driver.version.usb"));
 }
 
 /* From usbutils: workaround libusb (0.1) API goofs:
@@ -210,12 +217,13 @@ static int libusb_open(usb_dev_handle **udevp,
 	usb_ctrl_char	rdbuf[MAX_REPORT_SIZE];
 	usb_ctrl_charbufsize		rdlen;
 
+	struct usb_bus *busses;
+
 	/* libusb base init */
 	usb_init();
 	usb_find_busses();
 	usb_find_devices();
 
-	struct usb_bus *busses;
 #ifdef WIN32
 	busses = usb_get_busses();
 #else
@@ -287,6 +295,9 @@ static int libusb_open(usb_dev_handle **udevp,
 			free(curDevice->Serial);
 			free(curDevice->Bus);
 			free(curDevice->Device);
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+			free(curDevice->BusPort);
+#endif
 			memset(curDevice, '\0', sizeof(*curDevice));
 
 			/* Keep the list of items in sync with those matched by
@@ -297,6 +308,15 @@ static int libusb_open(usb_dev_handle **udevp,
 			curDevice->Bus = xstrdup(bus->dirname);
 			curDevice->Device = xstrdup(dev->filename);
 			curDevice->bcdDevice = dev->descriptor.bcdDevice;
+
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+			curDevice->BusPort = (char *)malloc(4);
+			if (curDevice->BusPort == NULL) {
+				fatal_with_errno(EXIT_FAILURE, "Out of memory");
+			}
+			upsdebugx(2, "%s: NOTE: BusPort is always zero with libusb0", __func__);
+			sprintf(curDevice->BusPort, "%03d", 0);
+#endif
 
 			if (dev->descriptor.iManufacturer) {
 				retries = MAX_RETRY;
@@ -347,6 +367,9 @@ static int libusb_open(usb_dev_handle **udevp,
 			upsdebugx(2, "- Serial Number: %s", curDevice->Serial ? curDevice->Serial : "unknown");
 			upsdebugx(2, "- Bus: %s", curDevice->Bus ? curDevice->Bus : "unknown");
 			upsdebugx(2, "- Device: %s", curDevice->Device ? curDevice->Device : "unknown");
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+			upsdebugx(2, "- Bus Port: %s", curDevice->BusPort ? curDevice->BusPort : "unknown");
+#endif
 			upsdebugx(2, "- Device release number: %04x", curDevice->bcdDevice);
 
 			/* FIXME: extend to Eaton OEMs (HP, IBM, ...) */
@@ -414,8 +437,9 @@ static int libusb_open(usb_dev_handle **udevp,
 				}
 
 				fatalx(EXIT_FAILURE,
-					"Can't claim USB device [%04x:%04x]@%d/%d: %s",
+					"Can't claim USB device [%04x:%04x]@%d/%d/%d: %s",
 					curDevice->VendorID, curDevice->ProductID,
+					usb_subdriver.usb_config_index,
 					usb_subdriver.hid_rep_index,
 					usb_subdriver.hid_desc_index,
 					usb_strerror());
@@ -428,8 +452,9 @@ static int libusb_open(usb_dev_handle **udevp,
 				}
 
 				fatalx(EXIT_FAILURE,
-					"Can't claim USB device [%04x:%04x]@%d/%d: %s",
+					"Can't claim USB device [%04x:%04x]@%d/%d/%d: %s",
 					curDevice->VendorID, curDevice->ProductID,
+					usb_subdriver.usb_config_index,
 					usb_subdriver.hid_rep_index,
 					usb_subdriver.hid_desc_index,
 					usb_strerror());
@@ -487,10 +512,7 @@ static int libusb_open(usb_dev_handle **udevp,
 
 			/* Note: on some broken UPS's (e.g. Tripp Lite Smart1000LCD),
 				only this second method gives the correct result */
-
-			/* for now, we always assume configuration 0, interface 0,
-			   altsetting 0, as above. */
-			iface = &dev->config[0].interface[usb_subdriver.hid_rep_index].altsetting[0];
+			iface = &dev->config[usb_subdriver.usb_config_index].interface[usb_subdriver.hid_rep_index].altsetting[0];
 			for (i=0; i<iface->extralen; i+=iface->extra[i]) {
 				upsdebugx(4, "i=%d, extra[i]=%02x, extra[i+1]=%02x", i,
 					iface->extra[i], iface->extra[i+1]);
@@ -883,6 +905,7 @@ usb_communication_subdriver_t usb_subdriver = {
 	libusb_set_report,
 	libusb_get_string,
 	libusb_get_interrupt,
+	LIBUSB_DEFAULT_CONF_INDEX,
 	LIBUSB_DEFAULT_INTERFACE,
 	LIBUSB_DEFAULT_DESC_INDEX,
 	LIBUSB_DEFAULT_HID_EP_IN,

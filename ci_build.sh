@@ -96,6 +96,9 @@ if [ "$BUILD_TYPE" = fightwarn ]; then
     #[ -n "$NUT_USB_VARIANTS" ] || NUT_USB_VARIANTS=auto
 fi
 
+# configure default is "no"; an "auto" value is "yes unless CFLAGS say something"
+[ -n "${BUILD_DEBUGINFO-}" ] || BUILD_DEBUGINFO=""
+
 # Set this to enable verbose profiling
 [ -n "${CI_TIME-}" ] || CI_TIME=""
 case "$CI_TIME" in
@@ -164,7 +167,20 @@ case "${CI_BUILDDIR-}" in
         ;;
 esac
 
-[ -n "$MAKE" ] || [ "$1" = spellcheck -o "$1" = spellcheck-interactive ] || MAKE=make
+# Just in case we get blanks from CI - consider them as not-set:
+if [ -z "`echo "${MAKE-}" | tr -d ' '`" ] ; then
+    if [ "$1" = spellcheck -o "$1" = spellcheck-interactive ] \
+    && (command -v gmake) >/dev/null 2>/dev/null \
+    ; then
+        # GNU make processes quiet mode better, which helps with spellcheck use-case
+        MAKE=gmake
+    else
+        # Use system default, there should be one (or fail eventually if not)
+        MAKE=make
+    fi
+    export MAKE
+fi
+
 [ -n "$GGREP" ] || GGREP=grep
 
 [ -n "$MAKE_FLAGS_QUIET" ] || MAKE_FLAGS_QUIET="VERBOSE=0 V=0 -s"
@@ -279,6 +295,18 @@ for L in $NODE_LABELS ; do
             [ -n "$CANBUILD_CPPUNIT_TESTS" ] || CANBUILD_CPPUNIT_TESTS=no-clang ;;
         "NUT_BUILD_CAPS=cppunit"|"NUT_BUILD_CAPS=cppunit=yes")
             [ -n "$CANBUILD_CPPUNIT_TESTS" ] || CANBUILD_CPPUNIT_TESTS=yes ;;
+
+        # This should cover both the --with-nutconf tool setting
+        # and the cppunit tests for it (if active per above).
+        # By default we would nowadays guess (requires C++11).
+        "NUT_BUILD_CAPS=nutconf=no")
+            [ -n "$CANBUILD_NUTCONF" ] || CANBUILD_NUTCONF=no ;;
+        "NUT_BUILD_CAPS=nutconf=no-gcc")
+            [ -n "$CANBUILD_NUTCONF" ] || CANBUILD_NUTCONF=no-gcc ;;
+        "NUT_BUILD_CAPS=nutconf=no-clang")
+            [ -n "$CANBUILD_NUTCONF" ] || CANBUILD_NUTCONF=no-clang ;;
+        "NUT_BUILD_CAPS=nutconf"|"NUT_BUILD_CAPS=nutconf=yes")
+            [ -n "$CANBUILD_NUTCONF" ] || CANBUILD_NUTCONF=yes ;;
 
         # Some (QEMU) builders have issues running valgrind as a tool
         "NUT_BUILD_CAPS=valgrind=no")
@@ -631,11 +659,18 @@ check_gitignore() {
         return 0
     fi
 
-    # One invocation should report to log:
-    git status $GIT_ARGS -s -- "${FILE_GLOB}" \
-    | grep -E -v '^.. \.ci.*\.log.*' \
-    | grep -E "${FILE_REGEX}" \
-    || echo "WARNING: Could not query git repo while in `pwd`" >&2
+    # One invocation should report to log if there was any discrepancy
+    # to report in the first place (GITOUT may be empty without error):
+    GITOUT="`git status $GIT_ARGS -s -- "${FILE_GLOB}"`" \
+    || { echo "WARNING: Could not query git repo while in `pwd`" >&2 ; GITOUT=""; }
+
+    if [ -n "${GITOUT-}" ] ; then
+        echo "$GITOUT" \
+        | grep -E -v '^.. \.ci.*\.log.*' \
+        | grep -E "${FILE_REGEX}"
+    else
+        echo "Got no output and no errors querying git repo while in `pwd`: seems clean" >&2
+    fi
     echo "==="
 
     # Another invocation checks that there was nothing to complain about:
@@ -726,16 +761,6 @@ fi
 if [ "$1" = spellcheck -o "$1" = spellcheck-interactive ] && [ -z "$BUILD_TYPE" ] ; then
     # Note: this is a little hack to reduce typing
     # and scrolling in (docs) developer iterations.
-    if [ -z "${MAKE-}" ] ; then
-        if (command -v gmake) >/dev/null 2>/dev/null ; then
-            # GNU make processes quiet mode better, which helps with this use-case
-            MAKE=gmake
-        else
-            # Use system default, there should be one
-            MAKE=make
-        fi
-        export MAKE
-    fi
     case "$CI_OS_NAME" in
         windows-msys2)
             # https://github.com/msys2/MSYS2-packages/issues/2088
@@ -771,7 +796,7 @@ fi
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 
 echo "Build host settings:"
-set | grep -E '^(PATH|.*CCACHE.*|CI_.*|OS_.*|CANBUILD_.*|NODE_LABELS|MAKE|C.*FLAGS|LDFLAGS|ARCH.*|BITS.*|CC|CXX|CPP|DO_.*|BUILD_.*)=' || true
+set | grep -E '^(PATH|[^ ]*CCACHE[^ ]*|CI_[^ ]*|OS_[^ ]*|CANBUILD_[^ ]*|NODE_LABELS|MAKE|C[^ ]*FLAGS|LDFLAGS|ARCH[^ ]*|BITS[^ ]*|CC|CXX|CPP|DO_[^ ]*|BUILD_[^ ]*)=' || true
 uname -a
 echo "LONG_BIT:`getconf LONG_BIT` WORD_BIT:`getconf WORD_BIT`" || true
 if command -v xxd >/dev/null ; then xxd -c 1 -l 6 | tail -1; else if command -v od >/dev/null; then od -N 1 -j 5 -b | head -1 ; else hexdump -s 5 -n 1 -C | head -1; fi; fi < /bin/ls 2>/dev/null | awk '($2 == 1){print "Endianness: LE"}; ($2 == 2){print "Endianness: BE"}' || true
@@ -1057,6 +1082,40 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         CONFIG_OPTS+=("--enable-cppunit=no")
     fi
 
+    if ( [ "${CANBUILD_NUTCONF-}" = "no-gcc" ] && [ "$COMPILER_FAMILY" = "GCC" ] ) \
+    || ( [ "${CANBUILD_NUTCONF-}" = "no-clang" ] && [ "$COMPILER_FAMILY" = "CLANG" ] ) \
+    ; then
+        CANBUILD_NUTCONF=no
+    fi
+
+    case "${CANBUILD_NUTCONF-}" in
+        yes)
+            # Depends on C++11 or newer, so let configure script try this tediously
+            # unless we know we would not build for the too-old language revision
+            case "${CXXFLAGS-}" in
+                *-std=c++98*|*-std=gnu++98*|*-std=c++03*|*-std=gnu++03*)
+                    echo "WARNING: Build agent says it can build nutconf, but requires a test with C++ revision too old - so not requiring the experimental feature (auto-try)" >&2
+                    CONFIG_OPTS+=("--with-nutconf=auto")
+                    ;;
+                *-std=c++0x*|*-std=gnu++0x*|*-std=c++1*|*-std=gnu++1*|*-std=c++2*|*-std=gnu++2*)
+                    echo "WARNING: Build agent says it can build nutconf, and requires a test with a sufficiently new C++ revision - so requiring the experimental feature" >&2
+                    CONFIG_OPTS+=("--with-nutconf=yes")
+                    ;;
+                *)
+                    echo "WARNING: Build agent says it can build nutconf, and does not specify a test with prticular C++ revision - so not requiring the experimental feature (auto-try)" >&2
+                    CONFIG_OPTS+=("--with-nutconf=auto")
+                    ;;
+            esac
+            ;;
+        no)
+            echo "WARNING: Build agent says it can not build nutconf, disabling the feature (do not even try)" >&2
+            CONFIG_OPTS+=("--with-nutconf=no")
+            ;;
+        "")
+            CONFIG_OPTS+=("--with-nutconf=auto")
+            ;;
+    esac
+
     if [ "${CANBUILD_VALGRIND_TESTS-}" = no ] ; then
         echo "WARNING: Build agent says it has a broken valgrind, adding configure option to skip tests with it" >&2
         CONFIG_OPTS+=("--with-valgrind=no")
@@ -1078,12 +1137,14 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     case "$BUILD_TYPE" in
         "default-nodoc")
             CONFIG_OPTS+=("--with-doc=no")
+            CONFIG_OPTS+=("--disable-spellcheck")
             DO_DISTCHECK=no
             ;;
         "default-spellcheck"|"default-shellcheck")
             CONFIG_OPTS+=("--with-all=no")
             CONFIG_OPTS+=("--with-libltdl=no")
             CONFIG_OPTS+=("--with-doc=man=skip")
+            CONFIG_OPTS+=("--enable-spellcheck")
             #TBD# CONFIG_OPTS+=("--with-shellcheck=yes")
             DO_DISTCHECK=no
             ;;
@@ -1137,6 +1198,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 
             # Do not build the docs as we are interested in binary code
             CONFIG_OPTS+=("--with-doc=skip")
+            CONFIG_OPTS+=("--disable-spellcheck")
             # Enable as many binaries to build as current worker setup allows
             CONFIG_OPTS+=("--with-all=auto")
 
@@ -1162,6 +1224,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         "default-alldrv")
             # Do not build the docs and make possible a distcheck below
             CONFIG_OPTS+=("--with-doc=skip")
+            CONFIG_OPTS+=("--disable-spellcheck")
             if [ "${CANBUILD_DRIVERS_ALL-}" = no ]; then
                 echo "WARNING: Build agent says it can't build 'all' driver types; will ask for what we can build" >&2
                 if [ "$DO_DISTCHECK" != no ]; then
@@ -1188,6 +1251,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         "default"|"default-tgt:"*|*)
             # Do not build the docs and tell distcheck it is okay
             CONFIG_OPTS+=("--with-doc=skip")
+            CONFIG_OPTS+=("--disable-spellcheck")
             ;;
     esac
     # NOTE: The case "$BUILD_TYPE" above was about setting CONFIG_OPTS.
@@ -1291,11 +1355,37 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # and errors are found more easily in a wall of text:
     CONFIG_OPTS+=("--enable-Wcolor")
 
+    if [ -n "${BUILD_DEBUGINFO-}" ]; then
+        CONFIG_OPTS+=("--with-debuginfo=${BUILD_DEBUGINFO}")
+    fi
+
     # Note: modern auto(re)conf requires pkg-config to generate the configure
     # script, so to stage the situation of building without one (as if on an
     # older system) we have to remove it when we already have the script.
     # This matches the use-case of distro-building from release tarballs that
     # include all needed pre-generated files to rely less on OS facilities.
+    if [ -s Makefile ]; then
+        if [ -n "`find "${SCRIPTDIR}" -name configure.ac -newer "${CI_BUILDDIR}"/configure`" ] \
+        || [ -n "`find "${SCRIPTDIR}" -name '*.m4' -newer "${CI_BUILDDIR}"/configure`" ] \
+        || [ -n "`find "${SCRIPTDIR}" -name Makefile.am -newer "${CI_BUILDDIR}"/Makefile`" ] \
+        || [ -n "`find "${SCRIPTDIR}" -name Makefile.in -newer "${CI_BUILDDIR}"/Makefile`" ] \
+        || [ -n "`find "${SCRIPTDIR}" -name Makefile.am -newer "${CI_BUILDDIR}"/Makefile.in`" ] \
+        ; then
+            # Avoid reconfiguring for the sake of distclean
+            echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because recipes changed"
+            rm -f "${CI_BUILDDIR}"/Makefile "${CI_BUILDDIR}"/configure
+        fi
+    fi
+
+    # When itertating configure.ac or m4 sources, we can end up with an
+    # existing but useless scropt file - nuke it and restart from scratch!
+    if [ -s "${CI_BUILDDIR}"/configure ] ; then
+        if ! sh -n "${CI_BUILDDIR}"/configure 2>/dev/null ; then
+            echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because current configure script syntax is broken"
+            rm -f "${CI_BUILDDIR}"/Makefile "${CI_BUILDDIR}"/configure
+        fi
+    fi
+
     if [ -s Makefile ]; then
         # Let initial clean-up be at default verbosity
 
@@ -1872,9 +1962,9 @@ bindings)
     pushd "./bindings/${BINDING}" && ./ci_build.sh
     ;;
 ""|inplace)
-    echo "ERROR: No BUILD_TYPE was specified, doing a minimal default ritual without any required options" >&2
+    echo "WARNING: No BUILD_TYPE was specified, doing a minimal default ritual without any *required* build products and with developer-oriented options" >&2
     if [ -n "${BUILD_WARNOPT}${BUILD_WARNFATAL}" ]; then
-        echo "WARNING: BUILD_WARNOPT and BUILD_WARNFATAL settings are ignored in this mode" >&2
+        echo "WARNING: BUILD_WARNOPT and BUILD_WARNFATAL settings are ignored in this mode (warnings are always enabled and fatal for these developer-oriented builds)" >&2
         sleep 5
     fi
     echo ""
@@ -1892,6 +1982,28 @@ bindings)
 
     cd "${SCRIPTDIR}"
     if [ -s Makefile ]; then
+        if [ -n "`find "${SCRIPTDIR}" -name configure.ac -newer "${CI_BUILDDIR}"/configure`" ] \
+        || [ -n "`find "${SCRIPTDIR}" -name '*.m4' -newer "${CI_BUILDDIR}"/configure`" ] \
+        || [ -n "`find "${SCRIPTDIR}" -name Makefile.am -newer "${CI_BUILDDIR}"/Makefile`" ] \
+        || [ -n "`find "${SCRIPTDIR}" -name Makefile.in -newer "${CI_BUILDDIR}"/Makefile`" ] \
+        || [ -n "`find "${SCRIPTDIR}" -name Makefile.am -newer "${CI_BUILDDIR}"/Makefile.in`" ] \
+        ; then
+            # Avoid reconfiguring for the sake of distclean
+            echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because recipes changed"
+            rm -f "${CI_BUILDDIR}"/Makefile "${CI_BUILDDIR}"/configure
+        fi
+    fi
+
+    # When itertating configure.ac or m4 sources, we can end up with an
+    # existing but useless scropt file - nuke it and restart from scratch!
+    if [ -s "${CI_BUILDDIR}"/configure ] ; then
+        if ! sh -n "${CI_BUILDDIR}"/configure 2>/dev/null ; then
+            echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because current configure script syntax is broken"
+            rm -f "${CI_BUILDDIR}"/Makefile "${CI_BUILDDIR}"/configure
+        fi
+    fi
+
+    if [ -s Makefile ]; then
         # Help developers debug:
         # Let initial clean-up be at default verbosity
         echo "=== Starting initial clean-up (from old build products)"
@@ -1907,6 +2019,7 @@ bindings)
     # enable whatever is auto-detectable (except docs), and highlight
     # any warnings if we can.
     CONFIG_OPTS=(--enable-Wcolor \
+        --enable-warnings --enable-Werror \
         --enable-keep_nut_report_feature \
         --with-all=auto --with-cgi=auto --with-serial=auto \
         --with-dev=auto --with-doc=skip \
@@ -1921,6 +2034,12 @@ bindings)
     else
         # Help developers debug:
         CONFIG_OPTS+=("--disable-silent-rules")
+    fi
+
+    if [ -n "${BUILD_DEBUGINFO-}" ]; then
+        CONFIG_OPTS+=("--with-debuginfo=${BUILD_DEBUGINFO}")
+    else
+        CONFIG_OPTS+=("--with-debuginfo=auto")
     fi
 
     ${CONFIGURE_SCRIPT} "${CONFIG_OPTS[@]}"
@@ -1948,9 +2067,9 @@ bindings)
 
 # These mingw modes below are currently experimental and not too integrated
 # with this script per se; it is intended to run for NUT CI farm on prepared
-# Linux+mingw worker nodes (see scripts/Windows/README) in an uniform manner,
-# using mostly default settings (warnings in particular) and some hardcoded
-# in that script (ARCH, CFLAGS, ...).
+# Linux+mingw worker nodes (see scripts/Windows/README.adoc) in an uniform
+# manner, using mostly default settings (warnings in particular) and some
+# values hardcoded in that script (ARCH, CFLAGS, ...).
 # Note that semi-native builds with e.g. MSYS2 on Windows should "just work" as
 # on any other supported platform (more details in docs/config-prereqs.txt).
 cross-windows-mingw*)

@@ -7,14 +7,19 @@ NAME
 bcmxcp_usb - Experimental driver for UPSes supporting the BCM/XCP protocol
 over USB
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the hardware-specific features of the
+*bcmxcp_usb* -h
+
+*bcmxcp_usb* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 bcmxcp_usb driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
-This driver is a variant of the serial driver bcmxcp and uses the same
-core code.
+
+NOTE: This driver is a variant of the serial driver linkman:bcmxcp[8] and
+uses the same core code.
 
 SUPPORTED HARDWARE
 ------------------
@@ -133,4 +138,4 @@ linkman:nutupsdrv[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

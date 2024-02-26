@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2011 - 2024 Arnaud Quette (Design and part of implementation)
  *  Copyright (C) 2011 - EATON
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -19,6 +20,7 @@
 /*! \file nutscan-device.c
     \brief manipulation of a container describing a NUT device
     \author Frederic Bohe <fredericbohe@eaton.com>
+	\author Arnaud Quette <arnaudquette@free.fr>
 */
 #include "config.h"	/* must be the first header */
 
@@ -27,17 +29,32 @@
 #include <string.h>
 #include <assert.h>
 
-const char * nutscan_device_type_strings[TYPE_END - 1] = {
+const char * nutscan_device_type_strings[TYPE_END] = {
+	"NONE", /* 0 */
 	"USB",
 	"SNMP",
 	"XML",
 	"NUT",
+	"NUT_SIMULATION",
 	"IPMI",
 	"Avahi",
 	"serial",
 };
 
-nutscan_device_t * nutscan_new_device()
+/* lower strings, used for device names */
+const char * nutscan_device_type_lstrings[TYPE_END] = {
+	"none", /* 0 */
+	"usb",
+	"snmp",
+	"xml",
+	"nut",
+	"simulation",
+	"ipmi",
+	"avahi",
+	"serial",
+};
+
+nutscan_device_t * nutscan_new_device(void)
 {
 	nutscan_device_t * device;
 
@@ -77,6 +94,10 @@ static void deep_free_device(nutscan_device_t * device)
 			free(current->value);
 		}
 
+		if (current->comment_tag != NULL) {
+			free(current->comment_tag);
+		}
+
 		free(current);
 	}
 
@@ -107,6 +128,11 @@ void nutscan_free_device(nutscan_device_t * device)
 
 void nutscan_add_option_to_device(nutscan_device_t * device, char * option, char * value)
 {
+	nutscan_add_commented_option_to_device(device, option, value, NULL);
+}
+
+void nutscan_add_commented_option_to_device(nutscan_device_t * device, char * option, char * value, char * comment_tag)
+{
 	nutscan_options_t **opt;
 
 	/* search for last entry */
@@ -134,6 +160,13 @@ void nutscan_add_option_to_device(nutscan_device_t * device, char * option, char
 	}
 	else {
 		(*opt)->value = NULL;
+	}
+
+	if (comment_tag != NULL) {
+		(*opt)->comment_tag = strdup(comment_tag);
+	}
+	else {
+		(*opt)->comment_tag = NULL;
 	}
 }
 

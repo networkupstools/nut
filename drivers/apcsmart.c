@@ -35,6 +35,9 @@
 #include "apcsmart.h"
 #include "apcsmart_tabs.h"
 
+#define DRIVER_NAME	"APC Smart protocol driver"
+#define DRIVER_VERSION	"3.32"
+
 #ifdef WIN32
 # ifndef ECANCELED
 #  define ECANCELED ERROR_CANCELLED
@@ -257,7 +260,7 @@ static void apc_ser_diff(struct termios *tioset, struct termios *tioget)
 
 	/* clear status flags so that they don't affect our binary compare */
 #if defined(PENDIN) || defined(FLUSHO)
-	for (i = 0; i < sizeof(tio)/sizeof(tio[0]); i++) {
+	for (i = 0; i < SIZEOF_ARRAY(tio); i++) {
 #ifdef PENDIN
 		tio[i]->c_lflag &= ~(unsigned int)PENDIN;
 #endif
@@ -280,7 +283,7 @@ static void apc_ser_diff(struct termios *tioset, struct termios *tioget)
 	 * rate of 2400.
 	 */
 
-	for (i = 0; i < sizeof(tio)/sizeof(tio[0]); i++) {
+	for (i = 0; i < SIZEOF_ARRAY(tio); i++) {
 		upsdebugx(1, "tc%cetattr(): gfmt1:cflag=%x:iflag=%x:lflag=%x:oflag=%x:", dir[i],
 				(unsigned int) tio[i]->c_cflag, (unsigned int) tio[i]->c_iflag,
 				(unsigned int) tio[i]->c_lflag, (unsigned int) tio[i]->c_oflag);
@@ -1021,25 +1024,36 @@ static void apc_getcaps(int qco)
 			/* if we expected this, just ignore it */
 			if (qco)
 				return;
-			fatalx(EXIT_FAILURE, "capability string has overflowed, please report this error !");
+			fatalx(EXIT_FAILURE,
+				"capability string has overflowed, "
+				"please report this error with device details!");
 		}
 
+		entptr = &ptr[4];
 		cmd = ptr[0];
 		loc = ptr[1];
 
 		if (ptr[2] < 48 || ptr[3] < 48) {
-			upsdebugx(0,
-				"%s: nument (%d) or entlen (%d) out of range",
-				__func__, (ptr[2] - 48), (ptr[3] - 48));
-			fatalx(EXIT_FAILURE,
-				"nument or entlen out of range\n"
-				"Please report this error\n"
-				"ERROR: capability overflow!");
-		}
+			upsdebugx(3,
+				"%s: SKIP: nument (%d) or entlen (%d) "
+				"out of range for cmd %d at loc %d",
+				__func__, (ptr[2] - 48), (ptr[3] - 48),
+				cmd, loc);
 
-		nument = (size_t)ptr[2] - 48;
-		entlen = (size_t)ptr[3] - 48;
-		entptr = &ptr[4];
+			/* just ignore it as we did for ages see e.g. v2.7.4
+			 * (note the next loop cycle was and still would be
+			 * no-op anyway, if "nument <= 0").
+			 */
+			nument = 0;
+			entlen = 0;
+
+			/* NOT a full skip: Gotta handle "vt" to act like before */
+			/*ptr = entptr;*/
+			/*continue;*/
+		} else {
+			nument = (size_t)ptr[2] - 48;
+			entlen = (size_t)ptr[3] - 48;
+		}
 
 		vt = vt_lookup_char(cmd);
 		valid = vt && ((loc == upsloc) || (loc == '4')) && !(vt->flags & APC_PACK);
@@ -2082,7 +2096,7 @@ void upsdrv_help(void)
 	printf(
 		"\nFor detailed information, please refer to:\n"
 		  " - apcsmart(8)\n"
-		  " - http://www.networkupstools.org/docs/man/apcsmart.html\n"
+		  " - https://www.networkupstools.org/docs/man/apcsmart.html\n"
 	      );
 }
 

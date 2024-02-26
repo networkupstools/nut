@@ -12,7 +12,10 @@ def buildCommit = '86a32237c7df45c5aba640746f7afc4de09505a1'
 
 // See https://github.com/networkupstools/jenkins-dynamatrix/ for the lib
 // Agent setup evolves at https://ci.networkupstools.org/computer/
-@Library('jenkins-dynamatrix') _
+// NOTE: The "${BRANCH_NAME}" below IS NOT A VARIABLE!
+//       Special notation per custom plugin build including changes from
+//       https://github.com/jenkinsci/pipeline-groovy-lib-plugin/pull/19/
+@Library('jenkins-dynamatrix@${BRANCH_NAME}') _
 import org.nut.dynamatrix.dynamatrixGlobalState;
 import org.nut.dynamatrix.*;
 
@@ -26,6 +29,13 @@ import org.nut.dynamatrix.*;
     dynacfgPipeline.disableSlowBuildAutotools = false
     dynacfgPipeline.disableSlowBuildCIBuild = false
     dynacfgPipeline.disableSlowBuildCIBuildExperimental = false
+
+    // NOTE: Disabled by default because with -std=c* the compiler and linker
+    // (at least on environments NUT CI farm has) do not "see" many things,
+    // and do not even define WIN32, and this is unrelated to NUT codebase.
+    // This toggle aims to only disable 'c' builds in the scenario; but the
+    //'gnu' ones should still happen if it is enabled overall.
+    dynacfgPipeline.disableStrictCIBuild_CrossWindows = true
 
     // At this time, GCC succeeds building C89/GNU89 mode for NUT
     // while CLANG complains about things we can't fix easily.
@@ -55,8 +65,16 @@ import org.nut.dynamatrix.*;
         dynacfgPipeline.disableSlowBuildCIBuild_QEMU = false
     }
 
-    dynacfgPipeline.traceBuildShell_configureEnvvars = false// true 
-    dynacfgPipeline.traceBuildShell = false //true
+    dynacfgPipeline.traceBuildShell_configureEnvvars = false // true
+    dynacfgPipeline.traceBuildShell = false // true
+
+    //if (false) // <<< (Un-)comment away in select runs/branches
+    //if (true)  // <<< (Un-)comment away in select runs/branches
+    if ( env?.BRANCH_NAME ==~ /.*fightwarn-verbose.*/ )
+    {
+        dynacfgPipeline.traceBuildShell_configureEnvvars = true // false
+        dynacfgPipeline.traceBuildShell = true // false
+    }
 
     dynacfgPipeline.failFast = //true //
         false
@@ -98,7 +116,7 @@ import org.nut.dynamatrix.*;
         //'stageNameFunc': null,
         //'dynamatrixAxesLabels': [~/^OS_.+/, 'MAKE'],
         'dynamatrixAxesLabels': ['OS_FAMILY', 'OS_DISTRO', 'MAKE'],
-        'single': '( \${MAKE} shellcheck )',
+        'single': '( if [ x"\${MAKE-}" = x ]; then echo "WARNING: MAKE is somehow unset, defaulting!" >&2; MAKE=make; fi; \${MAKE} shellcheck )',
         'multi': '(cd tests && SERVICE_FRAMEWORK="selftest" SHELL_PROGS="$SHELL_PROGS" ./nut-driver-enumerator-test.sh )',
         'multiLabel': 'SHELL_PROGS',
         'skipShells': [ 'zsh', 'tcsh', 'csh' ]
@@ -233,19 +251,24 @@ import org.nut.dynamatrix.*;
     if (!dynacfgPipeline.containsKey('buildPhases')) {
         dynacfgPipeline.buildPhases = [:]
     }
-    dynacfgPipeline.buildPhases['distcheck'] = """( eval \${CONFIG_ENVVARS} time \${MAKE} \${MAKE_OPTS} distcheck DISTCHECK_FLAGS="\${CONFIG_OPTS}" )"""
+
+    // Imported from jenkins-dynamatrix JSL vars/autotools.groovy:
+    // a workaround for the cases of curiously missing MAKE envvar...
+    dynacfgPipeline.buildPhases['distcheck'] = """( if [ x"\${MAKE-}" = x ]; then echo "WARNING: MAKE is somehow unset, defaulting!" >&2; MAKE=make; fi; eval \${CONFIG_ENVVARS} time \${MAKE} \${MAKE_OPTS} distcheck DISTCHECK_FLAGS="\${CONFIG_OPTS}" )"""
 
     // Note: shellcheck/spellcheck/... require autotools currently
     // or need to be redefined with respective BUILD_TYPE
     //dynacfgPipeline.buildSystem = 'ci_build.sh'
 
     //dynacfgPipeline.slowBuildDefaultBody = { echo "Running default custom build" }
-    dynacfgPipeline.slowBuildDefaultBody_autotools = { delegate -> setDelegate(delegate)
+    dynacfgPipeline.slowBuildDefaultBody_autotools = { def delegate -> setDelegate(delegate)
+        // Be sure to have a fixed resolved String here ASAP:
+        String stageNameClone = "${stageName}"
         def dsbcClone = dsbc.clone()
-        def stageNameClone = "${stageName}"
 
         stage('Investigate envvars (Autotools DEBUG)') {
-            echo "Running default custom build for '${stageName}' ==> ${dsbc.toString()}"
+            echo "Running default custom build for '${stageNameClone}' ==> ${dsbcClone.toString()}" +
+                (dynacfgPipeline?.configureEnvvars ? "" : " (note: has no dynacfgPipeline.configureEnvvars)")
             // Trick about endianness via ELF binary header picked up from https://serverfault.com/a/749469/490516
             sh label: 'Inspect initial envvars', script: """ hostname; date -u; uname -a
 echo "LONG_BIT:`getconf LONG_BIT` WORD_BIT:`getconf WORD_BIT`" || true
@@ -268,12 +291,14 @@ set | sort -n """
         }
     }
 
-    dynacfgPipeline.slowBuildDefaultBody_ci_build = { delegate -> setDelegate(delegate)
+    dynacfgPipeline.slowBuildDefaultBody_ci_build = { def delegate -> setDelegate(delegate)
+        // Be sure to have a fixed resolved String here ASAP:
+        String stageNameClone = "${stageName}"
         def dsbcClone = dsbc.clone()
-        def stageNameClone = "${stageName}"
 
         stage('Investigate envvars (CI_Build DEBUG)') {
-            echo "Running default custom build for '${stageName}' ==> ${dsbc.toString()}"
+            echo "Running default custom build for '${stageNameClone}' ==> ${dsbcClone.toString()}" +
+                (dynacfgPipeline?.configureEnvvars ? "" : " (note: has no dynacfgPipeline.configureEnvvars)")
             // Trick about endianness via ELF binary header picked up from https://serverfault.com/a/749469/490516
             sh label: 'Inspect initial envvars', script: """ hostname; date -u; uname -a
 echo "LONG_BIT:`getconf LONG_BIT` WORD_BIT:`getconf WORD_BIT`" || true
@@ -321,7 +346,7 @@ set | sort -n """
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
          branchRegexTarget: ~/fightwarn/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: dynacfgBase.commonLabelExpr,
                 //defaultDynamatrixConfig: dynacfgBase.defaultDynamatrixConfig,
@@ -359,7 +384,7 @@ set | sort -n """
          branchRegexTarget: ~/fightwarn/,
          // NOTE: For fightwarn, we want some schenarios that would always build to test
          //appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: dynacfgBase.commonLabelExpr,
                 //defaultDynamatrixConfig: dynacfgBase.defaultDynamatrixConfig,
@@ -401,7 +426,7 @@ set | sort -n """
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 requiredNodelabels: [],
                 excludedNodelabels: [],
@@ -438,7 +463,7 @@ set | sort -n """
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 requiredNodelabels: ["(NUT_BUILD_CAPS=valgrind=yes||NUT_BUILD_CAPS=valgrind)"],
                 excludedNodelabels: ["NUT_BUILD_CAPS=valgrind=no"],
@@ -483,7 +508,7 @@ set | sort -n """
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
          branchRegexTarget: ~/fightwarn/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 dynamatrixAxesLabels: ['OS_FAMILY'], // + [ 'OS_DISTRO', 'MAKE'],
                 requiredNodelabels: ["(NUT_BUILD_CAPS=cppcheck||NUT_BUILD_CAPS=cppcheck=yes)"],
@@ -527,7 +552,7 @@ set | sort -n """
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: "nut-builder:alldrv",
                 requiredNodelabels: ["(NUT_BUILD_CAPS=drivers:all||nut-builder:alldrv)"],
@@ -568,7 +593,7 @@ set | sort -n """
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: "nut-builder:alldrv",
                 requiredNodelabels: ["(NUT_BUILD_CAPS=drivers:all||nut-builder:alldrv)"],
@@ -604,7 +629,7 @@ set | sort -n """
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*)$/,
          branchRegexTarget: ~/fightwarn/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: "nut-builder:alldrv",
                 requiredNodelabels: ["(NUT_BUILD_CAPS=drivers:all||nut-builder:alldrv)"],
@@ -644,7 +669,7 @@ set | sort -n """
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_PY,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: "nut-builder:alldrv",
                 // TOTHINK: Should we also vary compilers here?
@@ -684,7 +709,7 @@ set | sort -n """
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_DOC,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: dynacfgBase.commonLabelExpr + " && doc-builder",
                 //commonLabelExpr: infra.labelDocumentationWorker(),
@@ -726,7 +751,7 @@ set | sort -n """
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_TXT,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: dynacfgBase.commonLabelExpr + " && doc-builder",
                 //commonLabelExpr: infra.labelDocumentationWorker(),
@@ -764,7 +789,7 @@ set | sort -n """
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 requiredNodelabels: [],
                 excludedNodelabels: [],
@@ -804,7 +829,7 @@ set | sort -n """
          //branchRegexSource: ~/^(PR-.+|.*fightwarn.*)$/,
          //branchRegexTarget: ~/fightwarn.*/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 requiredNodelabels: [],
                 excludedNodelabels: [],
@@ -838,7 +863,7 @@ set | sort -n """
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*89.*)$/,
          branchRegexTarget: ~/fightwarn.*89.*/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 requiredNodelabels: [],
                 excludedNodelabels: [],
@@ -872,7 +897,7 @@ set | sort -n """
          //branchRegexSource: ~/^(PR-.+|fightwarn.*|.*qemu.*)$/,
          //branchRegexTarget: ~/^(master|main|stable|.*qemu.*)$/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: "qemu-" + dynacfgBase.commonLabelExpr,
                 commonLabelExpr: "qemu-nut-builder || ssh-qemu-nut-builder",
@@ -914,7 +939,7 @@ set | sort -n """
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*)$/,
          branchRegexTarget: ~/fightwarn/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 requiredNodelabels: [],
                 excludedNodelabels: [],
@@ -958,7 +983,7 @@ set | sort -n """
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*89.*)$/,
          branchRegexTarget: ~/fightwarn.*89.*/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 requiredNodelabels: [],
                 excludedNodelabels: [],
@@ -995,7 +1020,7 @@ set | sort -n """
          //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
          //branchRegexTarget: dynacfgPipeline.branchStableRegex,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 requiredNodelabels: [],
                 excludedNodelabels: [],
@@ -1038,7 +1063,7 @@ set | sort -n """
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*)$/,
          branchRegexTarget: ~/fightwarn/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 requiredNodelabels: [],
                 excludedNodelabels: [],
@@ -1078,7 +1103,7 @@ set | sort -n """
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*)$/,
          branchRegexTarget: ~/fightwarn.*/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 requiredNodelabels: [],
                 excludedNodelabels: [],
@@ -1115,7 +1140,7 @@ set | sort -n """
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*89.*)$/,
          branchRegexTarget: ~/fightwarn.*89.*/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 requiredNodelabels: [],
                 excludedNodelabels: [],
@@ -1152,7 +1177,7 @@ set | sort -n """
          branchRegexSource: ~/^(PR-.+|.*fightwarn.*|.*Windows.*)$/,
          branchRegexTarget: ~/fightwarn|Windows-.*/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 requiredNodelabels: [],
                 excludedNodelabels: [],
@@ -1193,7 +1218,7 @@ set | sort -n """
          //branchRegexSource: ~/^(PR-.+|.*fightwarn.*|.*Windows.*)$/,
          //branchRegexTarget: ~/fightwarn|Windows-.*/,
          appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
-         'getParStages': { dynamatrix, Closure body ->
+         'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 commonLabelExpr: "cross-windows-nut-builder",
                 dynamatrixAxesLabels: ['OS_FAMILY', 'OS_DISTRO', 'ARCH${ARCH_BITS}', 'COMPILER'],
@@ -1203,7 +1228,7 @@ set | sort -n """
                 dynamatrixAxesVirtualLabelsMap: [
                     'BITS': [64, 32],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '11'] ],
-                    'CSTDVARIANT': ['c', 'gnu'],
+                    'CSTDVARIANT': ['gnu'] + (dynacfgPipeline.disableStrictCIBuild_CrossWindows ? [] : ['c']),
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
@@ -1261,14 +1286,23 @@ def stageNameFunc_ShellcheckCustom(DynamatrixSingleBuildConfig dsbc) {
 
 ///////////////////////////////////////////////////////////////////////////
 
-    // Hacky big switch for a max debug option
-    if (true)
-    if (false)
-    {
+// Hacky big switch for a max debug option
+//if (true)  // <<< (Un-)comment away in select runs/branches
+//if (false) // <<< (Un-)comment away in select runs/branches
+if ( env?.BRANCH_NAME ==~ /.*verbose.*/ )
+{
     dynamatrixGlobalState.enableDebugTrace = true
     dynamatrixGlobalState.enableDebugErrors = true
     dynamatrixGlobalState.enableDebugMilestones = true
     dynamatrixGlobalState.enableDebugMilestonesDetails = true
-    }
+    dynamatrixGlobalState.enableDebugTraceGithubStatusHighlights = true
+}
+
+//if (true)  // <<< (Un-)comment away in select runs/branches
+//if (false) // <<< (Un-)comment away in select runs/branches
+if ( env?.BRANCH_NAME ==~ /.*fightwarn.*/ )
+{
+    dynamatrixGlobalState.enableDebugTraceGithubStatusHighlights = true
+}
 
 dynamatrixPipeline(dynacfgBase, dynacfgPipeline)

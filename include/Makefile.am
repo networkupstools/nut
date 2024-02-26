@@ -1,5 +1,17 @@
+# Network UPS Tools: include
+
+# Export certain values for ccache which NUT ci_build.sh can customize,
+# to facilitate developer iteration re-runs of "make" later.
+# At least GNU and BSD make implementations are okay with this syntax.
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_NAMESPACE=@CCACHE_NAMESPACE@
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_BASEDIR=@CCACHE_BASEDIR@
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_DIR=@CCACHE_DIR@
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_PATH=@CCACHE_PATH@
+@NUT_AM_MAKE_CAN_EXPORT@export PATH=@PATH_DURING_CONFIGURE@
+
 dist_noinst_HEADERS = attribute.h common.h extstate.h proto.h			\
     state.h str.h timehead.h upsconf.h nut_float.h nut_stdint.h nut_platform.h	\
+    nutstream.hpp nutwriter.hpp nutipc.hpp nutconf.hpp \
     wincompat.h
 
 # Optionally deliverable as part of NUT public API:

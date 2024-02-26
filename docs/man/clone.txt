@@ -6,10 +6,14 @@ NAME
 
 clone - UPS driver clone
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the specific features of the
+*clone* -h
+
+*clone* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the specific features of the
 clone driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
@@ -142,4 +146,4 @@ linkman:dummy-ups[8]
 Internet Resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

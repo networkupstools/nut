@@ -34,6 +34,12 @@ export TZ LANG LC_ALL
 NUT_QUIET_INIT_SSL="true"
 export NUT_QUIET_INIT_SSL
 
+NUT_QUIET_INIT_UPSNOTIFY="true"
+export NUT_QUIET_INIT_UPSNOTIFY
+
+NUT_DEBUG_PID="true"
+export NUT_DEBUG_PID
+
 log_separator() {
     echo "" >&2
     echo "================================" >&2
@@ -47,6 +53,7 @@ log_debug() {
     if shouldDebug ; then
         echo "`TZ=UTC LANG=C date` [DEBUG] $@" >&2
     fi
+    return 0
 }
 
 log_info() {
@@ -79,8 +86,8 @@ isBusy_NUT_PORT() {
     # or available (non-0 = false)
     [ -n "${NUT_PORT}" ] || return
 
-    log_debug "Trying to report if NUT_PORT=${NUT_PORT} is used"
-    if [ -s /proc/net/tcp ] || [ -s /proc/net/tcp6 ]; then
+    log_debug "isBusy_NUT_PORT() Trying to report if NUT_PORT=${NUT_PORT} is used"
+    if [ -e /proc/net/tcp ] || [ -e /proc/net/tcp6 ]; then
         # Assume Linux - hex-encoded
         # IPv4:
         #   sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
@@ -91,19 +98,27 @@ isBusy_NUT_PORT() {
         #   0: 00000000000000000000000000000000:1F46 00000000000000000000000000000000:0000 0A 00000000:00000000 00:00000000 00000000    33        0 37451 1 00000000fa3c0c15 100 0 0 10 0
         NUT_PORT_HEX="`printf '%04X' "${NUT_PORT}"`"
         NUT_PORT_HITS="`cat /proc/net/tcp /proc/net/tcp6 2>/dev/null | awk '{print $2}' | grep -E ":${NUT_PORT_HEX}\$"`" \
-        && [ -n "$NUT_PORT_HITS" ] && return 0
+        && [ -n "$NUT_PORT_HITS" ] \
+        && log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is busy per /proc/net/tcp*" \
+        && return 0
 
         # We had a way to check, and the way said port is available
+        log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is not busy per /proc/net/tcp*"
         return 1
     fi
 
-    (netstat -an || sockstat -l) 2>/dev/null | grep -E "[:.]${NUT_PORT}(\t| |\$)" > /dev/null && return
+    (netstat -an || sockstat -l || ss -tn || ss -n) 2>/dev/null | grep -E "[:.]${NUT_PORT}(\t| |\$)" > /dev/null \
+    && log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is busy per netstat, sockstat or ss" \
+    && return
 
-    (lsof -i :"${NUT_PORT}") 2>/dev/null && return
+    (lsof -i :"${NUT_PORT}") 2>/dev/null \
+    && log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is busy per lsof" \
+    && return
 
     # Not busy... or no tools to confirm?
-    if (command -v netstat || command -v sockstat || command -v lsof) 2>/dev/null >/dev/null ; then
+    if (command -v netstat || command -v sockstat || command -v ss || command -v lsof) 2>/dev/null >/dev/null ; then
         # at least one tool is present, so not busy
+        log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is not busy per netstat, sockstat, ss or lsof"
         return 1
     fi
 
@@ -548,11 +563,11 @@ testcase_upsd_no_configs_at_all() {
     log_info "[testcase_upsd_no_configs_at_all] Test UPSD without configs at all"
     upsd -F
     if [ "$?" = 0 ]; then
-        log_error "upsd should fail without configs"
+        log_error "[testcase_upsd_no_configs_at_all] upsd should fail without configs"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_no_configs_at_all"
     else
-        log_info "OK, upsd failed to start in wrong conditions"
+        log_info "[testcase_upsd_no_configs_at_all] PASSED: upsd failed to start in wrong conditions"
         PASSED="`expr $PASSED + 1`"
     fi
 }
@@ -563,11 +578,11 @@ testcase_upsd_no_configs_driver_file() {
     generatecfg_upsd_trivial
     upsd -F
     if [ "$?" = 0 ]; then
-        log_error "upsd should fail without driver config file"
+        log_error "[testcase_upsd_no_configs_driver_file] upsd should fail without driver config file"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_no_configs_driver_file"
     else
-        log_info "OK, upsd failed to start in wrong conditions"
+        log_info "[testcase_upsd_no_configs_driver_file] PASSED: upsd failed to start in wrong conditions"
         PASSED="`expr $PASSED + 1`"
     fi
 }
@@ -579,13 +594,71 @@ testcase_upsd_no_configs_in_driver_file() {
     generatecfg_ups_trivial
     upsd -F
     if [ "$?" = 0 ]; then
-        log_error "upsd should fail without drivers defined in config file"
+        log_error "[testcase_upsd_no_configs_in_driver_file] upsd should fail without drivers defined in config file"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_no_configs_in_driver_file"
     else
-        log_info "OK, upsd failed to start in wrong conditions"
+        log_info "[testcase_upsd_no_configs_in_driver_file] PASSED: upsd failed to start in wrong conditions"
         PASSED="`expr $PASSED + 1`"
     fi
+}
+
+upsd_start_loop() {
+    TESTCASE="${1-upsd_start_loop}"
+
+    if isPidAlive "$PID_UPSD" ; then
+        return 0
+    fi
+
+    upsd -F &
+    PID_UPSD="$!"
+    log_debug "[${TESTCASE}] Tried to start UPSD as PID $PID_UPSD"
+    sleep 2
+    # Due to a busy port, server could have died by now
+
+    COUNTDOWN=60
+    while [ "$COUNTDOWN" -gt 0 ]; do
+        sleep 1
+        COUNTDOWN="`expr $COUNTDOWN - 1`"
+
+        # Is our server alive AND occupying the port?
+        PID_OK=true
+        isPidAlive "$PID_UPSD" || PID_OK=false # not running
+        PORT_OK=true
+        isBusy_NUT_PORT 2>/dev/null >/dev/null || PORT_OK=false # not busy
+        if "${PID_OK}" ; then
+            if "${PORT_OK}" ; then break ; fi
+            continue
+        fi
+
+        # FIXME: If we are here, even once, then PID_UPSD which we
+        # knew has already disappeared... wait() for its exit-code?
+        # Give some time for ports to time out, if busy and that is
+        # why the server died.
+        PORT_WORD=""
+        ${PORT_OK} || PORT_WORD="not "
+        log_warn "[${TESTCASE}] Port ${NUT_PORT} is ${PORT_WORD}listening and UPSD PID $PID_UPSD is not alive, will sleep and retry"
+
+        sleep 10
+        upsd -F &
+        PID_UPSD="$!"
+        log_warn "[${TESTCASE}] Tried to start UPSD again, now as PID $PID_UPSD"
+        sleep 5
+    done
+
+    if [ "$COUNTDOWN" -le 50 ] ; then
+        # Should not get to this, except on very laggy systems maybe
+        log_warn "[${TESTCASE}] Had to wait a few retries for the UPSD process to appear"
+    fi
+
+    # Return code is 0/OK if the server is alive AND occupying the port
+    if isPidAlive "$PID_UPSD" && isBusy_NUT_PORT 2>/dev/null >/dev/null ; then
+        log_debug "[${TESTCASE}] Port ${NUT_PORT} is listening and UPSD PID $PID_UPSD is alive"
+        return
+    fi
+
+    log_error "[${TESTCASE}] Port ${NUT_PORT} is not listening and/or UPSD PID $PID_UPSD is not alive"
+    return 1
 }
 
 testcase_upsd_allow_no_device() {
@@ -597,73 +670,65 @@ testcase_upsd_allow_no_device() {
     if shouldDebug ; then
         ls -la "$NUT_CONFPATH/" || true
     fi
-    upsd -F &
-    PID_UPSD="$!"
-    log_debug "Tried to start UPSD as PID $PID_UPSD"
-    sleep 2
 
-    COUNTDOWN=60
-    while [ "$COUNTDOWN" -gt 0 ]; do
-        if isPidAlive "$PID_UPSD"; then break ; fi
-        # FIXME: If we are here, even once, then PID_UPSD which we
-        # knew has already disappeared... wait() for its exit-code?
-        sleep 1
-        COUNTDOWN="`expr $COUNTDOWN - 1`"
-    done
+    upsd_start_loop "testcase_upsd_allow_no_device"
 
-    if [ "$COUNTDOWN" -le 50 ] ; then
-        # Should not get to this, except on very laggy systems maybe
-        log_warn "Had to wait a few retries for the UPSD process to appear"
-    fi
-
+    res_testcase_upsd_allow_no_device=0
     if [ "$COUNTDOWN" -gt 0 ] \
     && isPidAlive "$PID_UPSD" \
     ; then
-        log_info "OK, upsd is running"
+        log_info "[testcase_upsd_allow_no_device] OK, upsd is running"
         PASSED="`expr $PASSED + 1`"
 
         log_separator
-        log_info "Query listing from UPSD by UPSC (no devices configured yet) to test that UPSD responds to UPSC"
+        log_info "[testcase_upsd_allow_no_device] Query listing from UPSD by UPSC (no devices configured yet) to test that UPSD responds to UPSC"
         if runcmd upsc -l localhost:$NUT_PORT ; then
             :
         else
             # Note: avoid exact matching for stderr, because it can have Init SSL messages etc.
             if echo "$CMDERR" | grep "Error: Server disconnected" >/dev/null ; then
-                log_warn "Retry once to rule out laggy systems"
+                log_warn "[testcase_upsd_allow_no_device] Retry once to rule out laggy systems"
                 sleep 3
                 runcmd upsc -l localhost:$NUT_PORT
             fi
             if echo "$CMDERR" | grep "Error: Server disconnected" >/dev/null ; then
-                log_warn "Retry once more to rule out very laggy systems"
+                log_warn "[testcase_upsd_allow_no_device] Retry once more to rule out very laggy systems"
                 sleep 15
                 runcmd upsc -l localhost:$NUT_PORT
             fi
-            [ "$CMDRES" = 0 ] || die "upsd does not respond on port ${NUT_PORT} ($?): $CMDOUT"
+            [ "$CMDRES" = 0 ] || die "[testcase_upsd_allow_no_device] upsd does not respond on port ${NUT_PORT} ($?): $CMDOUT"
         fi
         if [ -n "$CMDOUT" ] ; then
-            log_error "got reply for upsc listing when none was expected: $CMDOUT"
+            log_error "[testcase_upsd_allow_no_device] got reply for upsc listing when none was expected: $CMDOUT"
             FAILED="`expr $FAILED + 1`"
             FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_allow_no_device"
+            res_testcase_upsd_allow_no_device=1
         else
-            log_info "OK, empty response as expected"
+            log_info "[testcase_upsd_allow_no_device] OK, empty response as expected"
             PASSED="`expr $PASSED + 1`"
         fi
     else
-        log_error "upsd was expected to be running although no devices are defined; is ups.conf populated?"
+        log_error "[testcase_upsd_allow_no_device] upsd was expected to be running although no devices are defined; is ups.conf populated?"
         ls -la "$NUT_CONFPATH/" || true
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_upsd_allow_no_device"
+        res_testcase_upsd_allow_no_device=1
         report_NUT_PORT
-
-        UPSD_RES=0
-        kill -15 $PID_UPSD
-        wait $PID_UPSD || UPSD_RES=$?
-        log_error "upsd exit-code was: $UPSD_RES"
-        return $UPSD_RES
     fi
 
+    log_info "[testcase_upsd_allow_no_device] stopping upsd: $PID_UPSD"
+    UPSD_RES=0
     kill -15 $PID_UPSD
-    wait $PID_UPSD
+    wait $PID_UPSD || UPSD_RES=$?
+    if [ "$res_testcase_upsd_allow_no_device" = 0 ] ; then
+        log_info "[testcase_upsd_allow_no_device] upsd exit-code was: $UPSD_RES"
+    else
+        log_error "[testcase_upsd_allow_no_device] upsd exit-code was: $UPSD_RES"
+    fi
+    if [ "$UPSD_RES" != 0 ]; then
+        return $UPSD_RES
+    fi
+    return $res_testcase_upsd_allow_no_device
 }
 
 testgroup_upsd_invalid_configs() {
@@ -706,10 +771,8 @@ sandbox_start_upsd() {
     sandbox_generate_configs
 
     log_info "Starting UPSD for sandbox"
-    upsd -F &
-    PID_UPSD="$!"
-    log_debug "Tried to start UPSD as PID $PID_UPSD"
-    sleep 5
+
+    upsd_start_loop "sandbox"
 }
 
 sandbox_start_drivers() {
@@ -727,19 +790,34 @@ sandbox_start_drivers() {
     #upsdrvctl -F start dummy &
     dummy-ups -a dummy -F &
     PID_DUMMYUPS="$!"
+    log_debug "Tried to start dummy-ups driver for 'dummy' as PID $PID_DUMMYUPS"
 
     if [ x"${TOP_SRCDIR}" != x ]; then
         dummy-ups -a UPS1 -F &
         PID_DUMMYUPS1="$!"
+        log_debug "Tried to start dummy-ups driver for 'UPS1' as PID $PID_DUMMYUPS1"
 
         dummy-ups -a UPS2 -F &
         PID_DUMMYUPS2="$!"
+        log_debug "Tried to start dummy-ups driver for 'UPS2' as PID $PID_DUMMYUPS2"
     fi
 
     sleep 5
 
     if shouldDebug ; then
-        (ps -ef || ps -xawwu) 2>/dev/null | grep -E '(ups|nut|dummy)' || true
+        (ps -ef || ps -xawwu) 2>/dev/null | grep -E '(ups|nut|dummy|'"`basename "$0"`"')' | grep -vE '(ssh|startups|grep)' || true
+    fi
+
+    if isPidAlive "$PID_DUMMYUPS" \
+    && { [ x"${TOP_SRCDIR}" != x ] && isPidAlive "$PID_DUMMYUPS1" && isPidAlive "$PID_DUMMYUPS2" \
+         || [ x"${TOP_SRCDIR}" = x ] ; } \
+    ; then
+        # All drivers expected for this environment are already running
+        log_info "Starting dummy-ups driver(s) for sandbox - all expected processes are running"
+        return 0
+    else
+        log_error "Starting dummy-ups driver(s) for sandbox - finished, but something seems to not be running"
+        return 1
     fi
 }
 
@@ -757,34 +835,46 @@ UPS2"
         EXPECTED_UPSLIST="`echo "$EXPECTED_UPSLIST" | tr -d '\r'`"
     fi
 
-    log_info "Query listing from UPSD by UPSC (driver not running yet)"
-    runcmd upsc -l localhost:$NUT_PORT || die "upsd does not respond on port ${NUT_PORT} ($?): $CMDOUT"
+    log_info "[testcase_sandbox_start_upsd_alone] Query listing from UPSD by UPSC (driver not running yet)"
+    res_testcase_sandbox_start_upsd_alone=0
+    runcmd upsc -l localhost:$NUT_PORT || die "[testcase_sandbox_start_upsd_alone] upsd does not respond on port ${NUT_PORT} ($?): $CMDOUT"
     # For windows runners (printf can do wonders, so strip CR if any):
     if [ x"${TOP_SRCDIR}" != x ]; then
         CMDOUT="`echo "$CMDOUT" | tr -d '\r'`"
     fi
     if [ x"$CMDOUT" != x"$EXPECTED_UPSLIST" ] ; then
-        log_error "got this reply for upsc listing when '$EXPECTED_UPSLIST' was expected: '$CMDOUT'"
+        log_error "[testcase_sandbox_start_upsd_alone] got this reply for upsc listing when '$EXPECTED_UPSLIST' was expected: '$CMDOUT'"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_start_upsd_alone"
+        res_testcase_sandbox_start_upsd_alone=1
     else
         PASSED="`expr $PASSED + 1`"
     fi
 
-    log_info "Query driver state from UPSD by UPSC (driver not running yet)"
+    log_info "[testcase_sandbox_start_upsd_alone] Query driver state from UPSD by UPSC (driver not running yet)"
     runcmd upsc dummy@localhost:$NUT_PORT && {
         log_error "upsc was supposed to answer with error exit code: $CMDOUT"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_start_upsd_alone"
+        res_testcase_sandbox_start_upsd_alone=1
     }
     # Note: avoid exact matching for stderr, because it can have Init SSL messages etc.
     if echo "$CMDERR" | grep 'Error: Driver not connected' >/dev/null ; then
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "got some other reply for upsc query when 'Error: Driver not connected' was expected on stderr: '$CMDOUT'"
+        log_error "[testcase_sandbox_start_upsd_alone] got some other reply for upsc query when 'Error: Driver not connected' was expected on stderr: '$CMDOUT'"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_start_upsd_alone"
+        res_testcase_sandbox_start_upsd_alone=1
     fi
+
+    if [ "$res_testcase_sandbox_start_upsd_alone" = 0 ]; then
+        log_info "[testcase_sandbox_start_upsd_alone] PASSED: got just the failures expected for data server alone (driver not running yet)"
+    else
+        log_error "[testcase_sandbox_start_upsd_alone] got some unexpected failures, see above"
+    fi
+
+    return $res_testcase_sandbox_start_upsd_alone
 }
 
 testcase_sandbox_start_upsd_after_drivers() {
@@ -793,35 +883,39 @@ testcase_sandbox_start_upsd_after_drivers() {
     kill -15 $PID_UPSD 2>/dev/null
     wait $PID_UPSD
 
+    # Not calling upsd_start_loop() here, before drivers
+    # If the server starts, fine; if not - we retry below
     upsd -F &
     PID_UPSD="$!"
-    log_debug "Tried to start UPSD as PID $PID_UPSD"
+    log_debug "[testcase_sandbox_start_upsd_after_drivers] Tried to start UPSD as PID $PID_UPSD"
 
     sandbox_start_drivers
     sandbox_start_upsd
 
     sleep 5
 
-    COUNTDOWN=60
+    COUNTDOWN=90
     while [ "$COUNTDOWN" -gt 0 ]; do
         # For query errors or known wait, keep looping
         runcmd upsc dummy@localhost:$NUT_PORT \
         && case "$CMDOUT" in
-            "ups.status: WAIT") ;;
+            *"ups.status: WAIT"*) ;;
             *) log_info "Got output:" ; echo "$CMDOUT" ; break ;;
         esac
         sleep 1
         COUNTDOWN="`expr $COUNTDOWN - 1`"
     done
 
-    if [ "$COUNTDOWN" -le 50 ] ; then
-        log_warn "Had to wait a few retries for the dummy driver to connect"
+    if [ "$COUNTDOWN" -le 88 ] ; then
+        log_warn "[testcase_sandbox_start_upsd_after_drivers] Had to wait a few retries for the dummy driver to connect"
     fi
 
     if [ "$COUNTDOWN" -le 1 ] ; then
         report_NUT_PORT
-        die "upsd does not respond on port ${NUT_PORT} ($?)"
+        die "[testcase_sandbox_start_upsd_after_drivers] upsd does not respond on port ${NUT_PORT} ($?)"
     fi
+
+    log_info "[testcase_sandbox_start_upsd_after_drivers] PASSED: upsd responds on port ${NUT_PORT}"
 }
 
 testcase_sandbox_start_drivers_after_upsd() {
@@ -830,75 +924,84 @@ testcase_sandbox_start_drivers_after_upsd() {
     sandbox_start_drivers
 
     log_info "[testcase_sandbox_start_drivers_after_upsd] Query driver state from UPSD by UPSC after driver startup"
-    COUNTDOWN=60
+    # Timing issues: upsd starts, we wait 10 sec, drivers start and init,
+    # at 20 sec upsd does not see them yet, at 30 sec the sockets connect
+    # but info does not come yet => may be "driver stale", finally at
+    # 40+(drv)/50+(upsd) sec a DUMPALL is processed (regular 30-sec loop?) -
+    # so tightly near a minute until we have sturdy replies.
+    COUNTDOWN=90
     while [ "$COUNTDOWN" -gt 0 ]; do
-        # For query errors or known wait, keep looping
+        # For query errors or known wait, keep looping. May get:
+        #   driver.state: updateinfo
+        #   ups.status: WAIT
         runcmd upsc dummy@localhost:$NUT_PORT \
         && case "$CMDOUT" in
-            "ups.status: WAIT") ;;
-            *) log_info "Got output:" ; echo "$CMDOUT" ; break ;;
+            *"ups.status: WAIT"*) ;;
+            *) log_info "[testcase_sandbox_start_drivers_after_upsd] Got output:" ; echo "$CMDOUT" ; break ;;
         esac
         sleep 1
         COUNTDOWN="`expr $COUNTDOWN - 1`"
     done
 
-    if [ "$COUNTDOWN" -le 58 ] ; then
-        log_warn "Had to wait a few retries for the dummy driver to connect"
+    if [ "$COUNTDOWN" -le 88 ] ; then
+        log_warn "[testcase_sandbox_start_drivers_after_upsd] Had to wait a few retries for the dummy driver to connect"
     fi
 
     if [ "$COUNTDOWN" -le 1 ] ; then
         # Should not get to this, except on very laggy systems maybe
-        log_error "Query failed, retrying with UPSD started after drivers"
+        log_error "[testcase_sandbox_start_drivers_after_upsd] Query failed, retrying with UPSD started after drivers"
         testcase_sandbox_start_upsd_after_drivers
     fi
 
     if [ x"${TOP_SRCDIR}" != x ]; then
-        log_info "Wait for dummy UPSes with larger data sets to initialize"
+        log_info "[testcase_sandbox_start_drivers_after_upsd] Wait for dummy UPSes with larger data sets to initialize"
         for U in UPS1 UPS2 ; do
-            COUNTDOWN=60
+            COUNTDOWN=90
             # TODO: Convert to runcmd()?
             OUT=""
             while [ x"$OUT" = x"ups.status: WAIT" ] ; do
                 OUT="`upsc $U@localhost:$NUT_PORT ups.status`" || break
-                [ x"$OUT" = x"ups.status: WAIT" ] || { log_info "Got output:"; echo "$OUT"; break; }
+                [ x"$OUT" = x"ups.status: WAIT" ] || { log_info "[testcase_sandbox_start_drivers_after_upsd] Got output:"; echo "$OUT"; break; }
                 sleep 1
                 COUNTDOWN="`expr $COUNTDOWN - 1`"
                 # Systemic error, e.g. could not create socket file?
-                [ "$COUNTDOWN" -lt 1 ] && die "Dummy driver did not start or respond in time"
+                [ "$COUNTDOWN" -lt 1 ] && die "[testcase_sandbox_start_drivers_after_upsd] Dummy driver did not start or respond in time"
             done
-            if [ "$COUNTDOWN" -le 58 ] ; then
-                log_warn "Had to wait a few retries for the $U driver to connect"
+            if [ "$COUNTDOWN" -le 88 ] ; then
+                log_warn "[testcase_sandbox_start_drivers_after_upsd] Had to wait a few retries for the $U driver to connect"
             fi
         done
     fi
 
-    log_info "Expected drivers are now responding via UPSD"
+    log_info "[testcase_sandbox_start_drivers_after_upsd] PASSED: Expected drivers are now responding via UPSD"
 }
 
 testcase_sandbox_upsc_query_model() {
-    loginfo "[testcase_sandbox_upsc_query_model] Query model from dummy device"
-    runcmd upsc dummy@localhost:$NUT_PORT device.model || die "upsd does not respond on port ${NUT_PORT} ($?): $CMDOUT"
+    log_info "[testcase_sandbox_upsc_query_model] Query model from dummy device"
+    runcmd upsc dummy@localhost:$NUT_PORT device.model || die "[testcase_sandbox_upsc_query_model] upsd does not respond on port ${NUT_PORT} ($?): $CMDOUT"
     if [ x"$CMDOUT" != x"Dummy UPS" ] ; then
-        log_error "got this reply for upsc query when 'Dummy UPS' was expected: $CMDOUT"
+        log_error "[testcase_sandbox_upsc_query_model] got this reply for upsc query when 'Dummy UPS' was expected: $CMDOUT"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_model"
     else
         PASSED="`expr $PASSED + 1`"
+        log_info "[testcase_sandbox_upsc_query_model] PASSED: got expected model from dummy device: $CMDOUT"
     fi
 }
 
 testcase_sandbox_upsc_query_bogus() {
     log_info "[testcase_sandbox_upsc_query_bogus] Query driver state from UPSD by UPSC for bogus info"
     runcmd upsc dummy@localhost:$NUT_PORT ups.bogus.value && {
-        log_error "upsc was supposed to answer with error exit code: $CMDOUT"
+        log_error "[testcase_sandbox_upsc_query_bogus] upsc was supposed to answer with error exit code: $CMDOUT"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_bogus"
     }
     # Note: avoid exact matching for stderr, because it can have Init SSL messages etc.
     if echo "$CMDERR" | grep 'Error: Variable not supported by UPS' >/dev/null ; then
         PASSED="`expr $PASSED + 1`"
+        log_info "[testcase_sandbox_upsc_query_bogus] PASSED: got expected reply to bogus query"
     else
-        log_error "got some other reply for upsc query when 'Error: Variable not supported by UPS' was expected on stderr: '$CMDOUT'"
+        log_error "[testcase_sandbox_upsc_query_bogus] got some other reply for upsc query when 'Error: Variable not supported by UPS' was expected on stderr: stderr:'$CMDERR' / stdout:'$CMDOUT'"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_bogus"
     fi
@@ -909,23 +1012,23 @@ testcase_sandbox_upsc_query_timer() {
     log_info "[testcase_sandbox_upsc_query_timer] Test that dummy-ups TIMER action changes the reported state"
     # Driver is set up to flip ups.status every 5 sec, so check every 3
     # TODO: Any need to convert to runcmd()?
-    OUT1="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "upsd does not respond on port ${NUT_PORT} ($?): $OUT1" ; sleep 3
-    OUT2="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "upsd does not respond on port ${NUT_PORT} ($?): $OUT2"
+    OUT1="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT1" ; sleep 3
+    OUT2="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT2"
     OUT3=""
     OUT4=""
     if [ x"$OUT1" = x"$OUT2" ]; then
         sleep 3
-        OUT3="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "upsd does not respond on port ${NUT_PORT} ($?): $OUT3"
+        OUT3="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT3"
         if [ x"$OUT2" = x"$OUT3" ]; then
             sleep 3
-            OUT4="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "upsd does not respond on port ${NUT_PORT} ($?): $OUT4"
+            OUT4="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT4"
         fi
     fi
     if echo "$OUT1$OUT2$OUT3$OUT4" | grep "OB" && echo "$OUT1$OUT2$OUT3$OUT4" | grep "OL" ; then
-        log_info "OK, ups.status flips over time"
+        log_info "[testcase_sandbox_upsc_query_timer] PASSED: ups.status flips over time"
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "ups.status did not flip over time"
+        log_error "[testcase_sandbox_upsc_query_timer] ups.status did not flip over time"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_timer"
     fi
@@ -953,10 +1056,10 @@ testcase_sandbox_python_without_credentials() {
          unset NUT_PASS || true
         "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
     ) ; then
-        log_info "OK, PyNUT did not complain"
+        log_info "[testcase_sandbox_python_without_credentials] PASSED: PyNUT did not complain"
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "PyNUT complained, check above"
+        log_error "[testcase_sandbox_python_without_credentials] PyNUT complained, check above"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_python_without_credentials"
     fi
@@ -976,10 +1079,10 @@ testcase_sandbox_python_with_credentials() {
         export NUT_USER NUT_PASS
         "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
     ) ; then
-        log_info "OK, PyNUT did not complain"
+        log_info "[testcase_sandbox_python_with_credentials] PASSED: PyNUT did not complain"
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "PyNUT complained, check above"
+        log_error "[testcase_sandbox_python_with_credentials] PyNUT complained, check above"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_python_with_credentials"
     fi
@@ -996,10 +1099,10 @@ testcase_sandbox_python_with_upsmon_credentials() {
         export NUT_USER NUT_PASS
         "${TOP_BUILDDIR}/scripts/python/module/test_nutclient.py"
     ) ; then
-        log_info "OK, PyNUT did not complain"
+        log_info "[testcase_sandbox_python_with_upsmon_credentials] PASSED: PyNUT did not complain"
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "PyNUT complained, check above"
+        log_error "[testcase_sandbox_python_with_upsmon_credentials] PyNUT complained, check above"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_python_with_upsmon_credentials"
     fi
@@ -1034,10 +1137,10 @@ testcase_sandbox_cppnit_without_creds() {
          unset NUT_PASS || true
         "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
-        log_info "OK, cppnit did not complain"
+        log_info "[testcase_sandbox_cppnit_without_creds] PASSED: cppnit did not complain"
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "cppnit complained, check above"
+        log_error "[testcase_sandbox_cppnit_without_creds] cppnit complained, check above"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_cppnit_without_creds"
     fi
@@ -1062,10 +1165,10 @@ testcase_sandbox_cppnit_simple_admin() {
         export NUT_USER NUT_PASS NUT_SETVAR_DEVICE
         "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
-        log_info "OK, cppnit did not complain"
+        log_info "[testcase_sandbox_cppnit_simple_admin] PASSED: cppnit did not complain"
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "cppnit complained, check above"
+        log_error "[testcase_sandbox_cppnit_simple_admin] cppnit complained, check above"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_cppnit_simple_admin"
     fi
@@ -1084,10 +1187,10 @@ testcase_sandbox_cppnit_upsmon_primary() {
         export NUT_USER NUT_PASS NUT_PRIMARY_DEVICE
         "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
-        log_info "OK, cppnit did not complain"
+        log_info "[testcase_sandbox_cppnit_upsmon_primary] PASSED: cppnit did not complain"
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "cppnit complained, check above"
+        log_error "[testcase_sandbox_cppnit_upsmon_primary] cppnit complained, check above"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_cppnit_upsmon_primary"
     fi
@@ -1106,10 +1209,10 @@ testcase_sandbox_cppnit_upsmon_master() {
         export NUT_USER NUT_PASS NUT_PRIMARY_DEVICE
         "${TOP_BUILDDIR}/tests/cppnit"
     ) ; then
-        log_info "OK, cppnit did not complain"
+        log_info "[testcase_sandbox_cppnit_upsmon_master] PASSED: cppnit did not complain"
         PASSED="`expr $PASSED + 1`"
     else
-        log_error "cppnit complained, check above"
+        log_error "[testcase_sandbox_cppnit_upsmon_master] cppnit complained, check above"
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_cppnit_upsmon_master"
     fi
@@ -1142,7 +1245,7 @@ testcase_sandbox_nutscanner_list() {
 
     log_separator
     log_info "[testcase_sandbox_nutscanner_list] Call libupsclient test suite: nut-scanner on localhost:${NUT_PORT}"
-    log_info "Preparing LD_LIBRARY_PATH='${LD_LIBRARY_PATH_CLIENT}'"
+    log_info "[testcase_sandbox_nutscanner_list] Preparing LD_LIBRARY_PATH='${LD_LIBRARY_PATH_CLIENT}'"
 
     # Note: for some reason `LD_LIBRARY_PATH=... runcmd ...` loses it :\
     LD_LIBRARY_PATH="${LD_LIBRARY_PATH_CLIENT}"
@@ -1150,44 +1253,70 @@ testcase_sandbox_nutscanner_list() {
 
     # NOTE: Currently mask mode is IPv4 only
     runcmd "${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner" -m 127.0.0.1/32 -O -p "${NUT_PORT}" \
+    && test -n "$CMDOUT" \
     || runcmd "${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner" -s localhost -O -p "${NUT_PORT}"
 
     LD_LIBRARY_PATH="${LD_LIBRARY_PATH_ORIG}"
     export LD_LIBRARY_PATH
 
+    log_info "[testcase_sandbox_nutscanner_list] findings from nut-scanner:"
+    echo "$CMDOUT"
+    log_info "[testcase_sandbox_nutscanner_list] inspecting these findings from nut-scanner..."
+
     # Note: the reported "driver" string is not too helpful as a "nutclient".
     # In practice this could be a "dummy-ups" repeater or "clone" driver,
     # or some of the config elements needed for upsmon (lacking creds/role)
+    # Also note that before PR #2247 nut-scanner returned "nutdev<NUM>"
+    # section names, but now it returns "nutdev-<BUS><NUM>" to differentiate
+    # the scanned buses (serial, snmp, usb, etc.)
     if (
         test -n "$CMDOUT" \
-        && echo "$CMDOUT" | grep -E '^\[nutdev1\]$' \
+        && echo "$CMDOUT" | grep -E '^\[nutdev-nut1\]$' \
         && echo "$CMDOUT" | grep 'port = "dummy@' \
         || return
 
         if [ "${NUT_PORT}" = 3493 ] || [ x"$NUT_PORT" = x ]; then
-            echo "Note: not testing for suffixed port number" >&2
+            log_info "[testcase_sandbox_nutscanner_list] Note: not testing for suffixed port number" >&2
         else
             echo "$CMDOUT" | grep -E 'dummy@.*'":${NUT_PORT}" \
-            || return
+            || {
+                log_error "[testcase_sandbox_nutscanner_list] dummy@... not found" >&2
+                return 1
+            }
         fi
 
         if [ x"${TOP_SRCDIR}" = x ]; then
-            echo "Note: only testing one dummy device" >&2
+            log_info "[testcase_sandbox_nutscanner_list] Note: only testing one dummy device" >&2
         else
-            echo "$CMDOUT" | grep -E '^\[nutdev2\]$' \
+            echo "$CMDOUT" | grep -E '^\[nutdev-nut2\]$' \
             && echo "$CMDOUT" | grep 'port = "UPS1@' \
-            && echo "$CMDOUT" | grep -E '^\[nutdev3\]$' \
+            && echo "$CMDOUT" | grep -E '^\[nutdev-nut3\]$' \
             && echo "$CMDOUT" | grep 'port = "UPS2@' \
-            || return
+            || {
+                log_error "[testcase_sandbox_nutscanner_list] something about UPS1/UPS2 not found" >&2
+                return 1
+            }
         fi
-    ) ; then
-        log_info "OK, nut-scanner found all expected devices"
+
+        if [ x"${TOP_SRCDIR}" = x ]; then
+            PORTS_WANT=1
+        else
+            PORTS_WANT=3
+        fi
+        PORTS_SEEN="`echo "$CMDOUT" | grep -Ec 'port *='`"
+
+        if [ "$PORTS_WANT" != "$PORTS_SEEN" ]; then
+            log_error "[testcase_sandbox_nutscanner_list] Too many 'port=' lines: want $PORTS_WANT != seen $PORTS_SEEN" >&2
+            return 1
+        fi
+    ) >/dev/null ; then
+        log_info "[testcase_sandbox_nutscanner_list] PASSED: nut-scanner found all expected devices"
         PASSED="`expr $PASSED + 1`"
     else
         if ( echo "$CMDERR" | grep -E "Cannot load NUT library.*libupsclient.*found.*NUT search disabled" ) ; then
-            log_warn "SKIP: ${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner: $CMDERR"
+            log_warn "[testcase_sandbox_nutscanner_list] SKIP: ${TOP_BUILDDIR}/tools/nut-scanner/nut-scanner: $CMDERR"
         else
-            log_error "nut-scanner complained or did not return all expected data, check above"
+            log_error "[testcase_sandbox_nutscanner_list] nut-scanner complained or did not return all expected data, check above"
             FAILED="`expr $FAILED + 1`"
             FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_nutscanner_list"
         fi
@@ -1214,6 +1343,7 @@ testgroup_sandbox() {
     testcases_sandbox_cppnit
     testcases_sandbox_nutscanner
 
+    log_separator
     sandbox_forget_configs
 }
 
@@ -1221,6 +1351,8 @@ testgroup_sandbox_python() {
     # Arrange for quick test iterations
     testcase_sandbox_start_drivers_after_upsd
     testcases_sandbox_python
+
+    log_separator
     sandbox_forget_configs
 }
 
@@ -1228,6 +1360,8 @@ testgroup_sandbox_cppnit() {
     # Arrange for quick test iterations
     testcase_sandbox_start_drivers_after_upsd
     testcases_sandbox_cppnit
+
+    log_separator
     sandbox_forget_configs
 }
 
@@ -1235,6 +1369,8 @@ testgroup_sandbox_cppnit_simple_admin() {
     # Arrange for quick test iterations
     testcase_sandbox_start_drivers_after_upsd
     testcase_sandbox_cppnit_simple_admin
+
+    log_separator
     sandbox_forget_configs
 }
 
@@ -1242,12 +1378,15 @@ testgroup_sandbox_nutscanner() {
     # Arrange for quick test iterations
     testcase_sandbox_start_drivers_after_upsd
     testcases_sandbox_nutscanner
+
+    log_separator
     sandbox_forget_configs
 }
 
 ################################################################
 
 case "${NIT_CASE}" in
+    isBusy_NUT_PORT) DEBUG=yes isBusy_NUT_PORT ;;
     cppnit) testgroup_sandbox_cppnit ;;
     python) testgroup_sandbox_python ;;
     nutscanner|nut-scanner) testgroup_sandbox_nutscanner ;;

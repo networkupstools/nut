@@ -262,14 +262,14 @@ CGI programs:
 Driver control:
 ~~~~~~~~~~~~~~~
 
-include::{builddir}/linkman-drivertool-names.txt[]
+include::{builddir}linkman-drivertool-names.txt[]
 
 Drivers:
 ~~~~~~~~
 
-include::{builddir}/linkman-driver-names.txt[]
+include::{builddir}linkman-driver-names.txt[]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

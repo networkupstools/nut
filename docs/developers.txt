@@ -101,12 +101,18 @@ Portability
 Avoid things that will break on other systems.  All the world is not an
 x86 Linux box.
 
+C comments
+~~~~~~~~~~
+
 There are still older systems out there that don't do C++ style comments.
 
 --------------------------------------
 /* Comments look like this. */
 // Not like this.
 --------------------------------------
+
+Variable declarations go on top
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Newer versions of gcc allow you to declare a variable inside a function
 after code, somewhat like the way C++ operates, like this:
@@ -123,8 +129,28 @@ function do_stuff(void)
 -------------------------------------------------------------------------------
 
 While this will compile and run on these newer versions, it will fail
-miserably for anyone on an older system.  That means you must not use
-it.  `gcc` only warns about this with `-pedantic` flag.
+miserably for anyone on an older system.  That means you must not use it.
+
+Note that `gcc` only warns about this with `-pedantic` flag, and `clang`
+with a `-Weverything` (possibly `-Wextra`) flag, which can be enabled by
+developers with `configure --enable-warnings=...` option values (and made
+fatal with `configure --enable-Werror`), to ensure non-regression of code
+quality.  It was reported that `clang-16` with such options does complain
+about non-portability to older C language revisions even if explicitly
+building for a newer revision.
+
+Please note that for the purposes of legacy-compatible variable declarations
+(on top of their scopes), a `NUT_UNUSED_VARIABLE(varname)` counts as code and
+should be used just below the declarations.  Initial assignments to variables
+(also as return values of methods) may generally happen as part of their
+declarations.
+
+You can use scoping (e.g. `do { ... } while (0);`) where it makes sense
+to constrain visibility of temporary variables, such as in `switch/case`
+blocks.
+
+Variable declaration in loop block syntax
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Another feature that does not work on some compilers (e.g. conforming
 to "ANSI C"/C89/C90 standard) is initial variable declaration inside a
@@ -140,8 +166,11 @@ function do_stuff(void)
 }
 --------------------------------------------------------------------------------
 
+Other hints
+~~~~~~~~~~~
+
 TIP: At this point NUT is expected to work correctly when built with a
-C99 (or rather GNU99 on many systems) or newer standard.
+"strict" C99 (or rather GNU99 on many systems) or newer standard.
 
 The NUT codebase may build in a mode without warnings made fatal on C89
 (GNU89), but the emitted warnings indicate that those binaries may crash.
@@ -149,8 +178,18 @@ By the end of 2021, NUT codebase has been revised to pass GNU and strict-C
 mode builds with C89 standard with the GCC toolkit (and on systems that do
 have the newer features in libraries, just hide them in standard headers);
 however CLANG toolkit is more restrictive about the C99+ syntax used.
-If somebody in the community requires to build and run NUT on systems
-that old, pull requests to fix the offending coding issues are welcome.
+That said, some systems refuse to expose methods or types available in
+their system headers and binary libraries if strict-C mode is used alone,
+without extra system-specific defines to enable more than the baseline.
+
+It was also seen that cross-builds (e.g. NUT for Windows using mingw on
+Linux) may be unable to define `WIN32` and/or find symbols for linking
+when using a strict-C language standard.
+
+The C++ support expects C++11 or newer (not really configured or tested
+for older C++98 or C++03), modulo features that were deprecated in later
+language revisions (C++14 onwards) as highlighted by warnings from newer
+compilers.
 
 Note also that the NUT codebase currently relies on certain features,
 such as the printf format modifiers for `(s)size_t`, use of `long long`,
@@ -161,8 +200,16 @@ revisions). Many of the "offences" against the older standard actually
 come from system and third-party header files.
 
 That said, the NUT CI farm does run non-regression builds with GNU C89
-and strict C89 standard revisions and minimal passing warnings level,
+and "strict" C89 standard revisions and minimal passing warnings level,
 to ensure that codebase is and remains at least basically compliant.
+We try to cover a few distributions from early 2000's for this, either
+in regular CI builds or one-off local builds for community members with
+a zoo of old systems.
+
+If somebody in the community actually requires to build and run NUT on
+systems that old, where newer compilers are not available, pull requests
+to fix the offending coding issues in some way that does not break other
+use-cases are welcome.
 
 Continuous Integration and Automated Builds
 -------------------------------------------
@@ -170,6 +217,9 @@ Continuous Integration and Automated Builds
 To ease and automate the build scenarios which were deemed important for
 quality assurance and non-regression checks of NUT, several solutions
 were introduced over time.
+
+Build automation tools and scripts
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ci_build.sh
 ^^^^^^^^^^^
@@ -267,7 +317,8 @@ Jenkins CI
 ^^^^^^^^^^
 
 Since mid-2021, the NUT CI farm is implemented by several virtual servers
-courteously provided by http://fosshost.org
+courteously provided by link:http://fosshost.org[Fosshost] and later by
+link:https://www.digitalocean.com/?refcode=d2fbf2b9e082&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge[DigitalOcean].
 
 These run various operating systems as build agents, and a Jenkins instance
 to orchestrate the builds of NUT branches and pull requests on those agents.
@@ -353,6 +404,27 @@ it would follow similar semantics.
 Some further details about the NUT CI farm workers are available in
 link:config-prereqs.txt[config-prereqs.txt] and
 link:ci-farm-lxc-setup.txt[ci-farm-lxc-setup.txt] documents.
+
+AppVeyor CI
+^^^^^^^^^^^
+
+Primarily used for building NUT for Windows on Windows instances provided
+in the cloud -- and so ensure non-regression as well as downloadable archives
+with binary installation prototype area, intended for enthusiastic testing
+(proper packaging to follow). NUT for Windows build-ability was re-introduced
+soon after NUT 2.8.0 release.
+
+This relies on a few prerequisite packages and a common NUT configuration,
+as coded in the `appveyor.yml` file in the NUT codebase.
+
+CircleCI
+^^^^^^^^
+
+Primarily used for building NUT for MacOS on instances provided in the cloud,
+and so ensure non-regression across several Xcode releases.
+
+This relies on a few prerequisite packages and a common NUT configuration,
+as coded in the `.circleci/config.yml` file in the NUT codebase.
 
 Travis CI
 ^^^^^^^^^
@@ -957,6 +1029,10 @@ body of the function (or an `#ifdef` branch of its code) using the
 `NUT_UNUSED_VARIABLE(varname)` as a routine call inside a function
 body, referring to the macro defined in `common.h`.
 
+Please note that for the purposes of legacy-compatible variable declarations
+(on top of their scopes), `NUT_UNUSED_VARIABLE(varname)` counts as code and
+should happen below the declarations.
+
 To display in a rough example:
 
 -------------------------------------------------------------------------------
@@ -1300,6 +1376,43 @@ You may notice that some older commits have `[[SVN:####]]` tags and Fossil-ID
 footers. These were lifted from the old SVN commit messages using reposurgeon,
 and should *not* be used as a guide for future commits.
 
+Commit sign-off
+---------------
+
+Please also note that since 2023 we explicitly ask for contributions to be
+"Signed Off" according to "Developer Certificate of Origin" as represented
+in the `LICENSE-DCO` file in the root of NUT source tree (verbatim copy of
+Version 1.1 of DCO published at https://developercertificate.org/ web site).
+This is exactly the same one created and used by the Linux kernel developers.
+
+This is a developer's certification that he or she has the right to submit
+the patch for inclusion into the project. Simply submitting a contribution
+implies this agreement, however, please include a "Signed-off-by" tag in
+every patch (this tag is a conventional way to confirm that you agree to
+the DCO). In other words, this tag certifies that committer has the rights
+to submit this work under the same license as the project and agrees to the
+terms of a Developer Certificate of Origin.
+
+Note that while git commit hook tricks are available to automatically sign
+off all commits, these signatures are intended to be a conscious (legally
+meaningful) act -- hence they are not automated in git core with an easy
+configuration option.
+
+For more details see:
+
+* https://github.com/networkupstools/nut/issues/1994
+* https://stackoverflow.com/questions/1962094/what-is-the-sign-off-feature-in-git-for
+* https://stackoverflow.com/questions/15015894/git-add-signed-off-by-line-using-format-signoff-not-working
+
+You are also encouraged to set up a PGP key, make its public part known, and
+use it to sign your git commits (in addition to the `Signed-Off-By` tag) by
+also passing a `-S` option or calling `git config commit.gpgsign true` once.
+Numerous public articles can walk you through this ordeal, including:
+
+* https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits
+* https://docs.github.com/en/authentication/managing-commit-signature-verification/telling-git-about-your-signing-key
+* https://www.kernel.org/doc/html/v4.19/process/maintainer-pgp-guide.html
+
 Repository etiquette and quality assurance
 ------------------------------------------
 
@@ -1350,11 +1463,11 @@ Here is an example workflow:
 	# Hack away
 
 	git add changed-file.c
-	git commit
+	git commit -s
 
 	# Fix a typo in a file or commit message:
 
-	git commit -a --amend
+	git commit -s -a --amend
 
 	# Someone committed something to the central repository. Fetch it.
 
@@ -1366,8 +1479,13 @@ Here is an example workflow:
 	git push username my-new-feature
 ------------------------------------------------------------------------------
 
-If you are new to Git, but are familiar with SVN, the
-link:http://git-scm.com/course/svn.html[following link] may be of use.
+If you are new to Git, but are familiar with SVN, some of the following links
+may be of use:
+
+* link:https://web.archive.org/web/20191224210950/https://git-scm.com/course/svn.html[Git - SVN Crash Course (archived)]
+* link:https://git-scm.com/book/en/v2/Git-and-Other-Systems-Migrating-to-Git[Git and Other Systems - Migrating to Git]
+* link:https://www.git-tower.com/learn/git/ebook/en/command-line/appendix/from-subversion-to-git[Switching from Subversion to Git]
+* link:https://www.atlassian.com/git/tutorials/migrating-overview[Migrate from SVN to Git]
 
 [[building]]
 Building the Code

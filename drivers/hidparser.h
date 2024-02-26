@@ -38,11 +38,11 @@ extern "C" {
 /* Include "usb-common.h" or "libshut.h" as appropriate, to define the 
  * usb_ctrl_* types used below according to the backend USB API version
  */
-#ifdef SHUT_MODE
+#if (defined SHUT_MODE) && SHUT_MODE
 # include "libshut.h"
-#else
+#else	/* !SHUT_MODE => USB */
 # include "usb-common.h"
-#endif
+#endif	/* SHUT_MODE / USB */
 
 /*
  * Parse_ReportDesc

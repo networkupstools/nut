@@ -54,6 +54,7 @@ static int (*nut_usb_get_string_simple)(libusb_device_handle *dev, int index,
  static void (*nut_usb_free_device_list)(libusb_device **list, int unref_devices);
  static uint8_t (*nut_usb_get_bus_number)(libusb_device *dev);
  static uint8_t (*nut_usb_get_device_address)(libusb_device *dev);
+ static uint8_t (*nut_usb_get_port_number)(libusb_device *dev);
  static int (*nut_usb_get_device_descriptor)(libusb_device *dev,
 	struct libusb_device_descriptor *desc);
 #else /* => WITH_LIBUSB_0_1 */
@@ -157,6 +158,20 @@ int nutscan_load_usb_library(const char *libname_path)
 			goto err;
 	}
 
+	/* This method may be absent in some libusb versions, and we should
+	 * tolerate that! In run-time driver code see also blocks fenced by:
+	 *   #if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	 */
+	*(void **) (&nut_usb_get_port_number) = lt_dlsym(dl_handle,
+					"libusb_get_port_number");
+	if ((dl_error = lt_dlerror()) != NULL) {
+			fprintf(stderr,
+				"While loading USB library (%s), failed to find libusb_get_port_number() : %s. "
+				"The \"busport\" USB matching option will be disabled.\n",
+				libname_path, dl_error);
+			nut_usb_get_port_number = NULL;
+	}
+
 	*(void **) (&nut_usb_get_device_descriptor) = lt_dlsym(dl_handle,
 					"libusb_get_device_descriptor");
 	if ((dl_error = lt_dlerror()) != NULL) {
@@ -215,7 +230,7 @@ err:
 /* end of dynamic link library stuff */
 
 static char* is_usb_device_supported(usb_device_id_t *usb_device_id_list,
-					int dev_VendorID, int dev_ProductID)
+					int dev_VendorID, int dev_ProductID, char **alt)
 {
 	usb_device_id_t *usbdev;
 
@@ -223,6 +238,8 @@ static char* is_usb_device_supported(usb_device_id_t *usb_device_id_list,
 		if ((usbdev->vendorID == dev_VendorID)
 		 && (usbdev->productID == dev_ProductID)
 		) {
+			if (alt)
+				*alt = usbdev->alt_driver_names;
 			return usbdev->driver_name;
 		}
 	}
@@ -231,7 +248,7 @@ static char* is_usb_device_supported(usb_device_id_t *usb_device_id_list,
 }
 
 /* return NULL if error */
-nutscan_device_t * nutscan_scan_usb()
+nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 {
 	int ret;
 	char string[256];
@@ -241,6 +258,7 @@ nutscan_device_t * nutscan_scan_usb()
 	 * (drivers/usb-common.h).
 	 */
 	char *driver_name = NULL;
+	char *alt_driver_names = NULL;
 	char *serialnumber = NULL;
 	char *device_name = NULL;
 	char *vendor_name = NULL;
@@ -251,7 +269,8 @@ nutscan_device_t * nutscan_scan_usb()
 	/* device_port physical meaning: connection port on that bus;
 	 *   different consumers plugged into same socket should have
 	 *   the same port value. However in practice such functionality
-	 *   depends on platform and HW involved.
+	 *   depends on platform and HW involved and may mean logical
+	 *   enumeration results.
 	 * In libusb1 API: first libusb_get_port_numbers() earlier known
 	 *    as libusb_get_port_path() for physical port number on the bus, see
 	 *    https://libusb.sourceforge.io/api-1.0/group__libusb__dev.html#ga14879a0ea7daccdcddb68852d86c00c4
@@ -261,12 +280,25 @@ nutscan_device_t * nutscan_scan_usb()
 	 * In libusb0 API: "device filename"
 	 */
 	char *device_port = NULL;
+
 	/* bcdDevice: aka "Device release number" - note we currently do not match by it */
 	uint16_t bcdDevice = 0;
+
+	nutscan_usb_t	default_scanopts;
+
 #if WITH_LIBUSB_1_0
 	libusb_device *dev;
 	libusb_device **devlist;
 	uint8_t bus_num;
+	/* Sort of like device_port above, but different (should be
+	 * more closely about physical port number than logical device
+	 * enumeration results). Uses libusb_get_port_number() where
+	 * available in libusb (and hoping the OS and HW honour it).
+	 */
+	char *bus_port = NULL;
+	ssize_t devcount = 0;
+	struct libusb_device_descriptor dev_desc;
+	int i;
 #else  /* => WITH_LIBUSB_0_1 */
 	struct usb_device *dev;
 	struct usb_bus *bus;
@@ -278,6 +310,18 @@ nutscan_device_t * nutscan_scan_usb()
 
 	if (!nutscan_avail_usb) {
 		return NULL;
+	}
+
+	if (!scanopts) {
+		default_scanopts.report_bus = 1;
+		default_scanopts.report_busport = 1;
+		/* AQU note: disabled by default, since it may lead to instabilities
+		 * and give more issues than solutions! */
+		default_scanopts.report_device = 0;
+		/* Generally not useful at the moment, and coded to be commented away
+		 * in formats that support it (e.g. ups.conf) or absent in others. */
+		default_scanopts.report_bcdDevice = 0;
+		scanopts = &default_scanopts;
 	}
 
 	/* libusb base init */
@@ -294,10 +338,6 @@ nutscan_device_t * nutscan_scan_usb()
 #endif /* WITH_LIBUSB_1_0 */
 
 #if WITH_LIBUSB_1_0
-	ssize_t devcount = 0;
-	struct libusb_device_descriptor dev_desc;
-	int i;
-
 	devcount = (*nut_usb_get_device_list)(NULL, &devlist);
 	if (devcount <= 0) {
 		(*nut_usb_exit)(NULL);
@@ -339,6 +379,22 @@ nutscan_device_t * nutscan_scan_usb()
 			}
 		}
 
+		if (nut_usb_get_port_number != NULL) {
+			bus_port = (char *)malloc(4);
+			if (bus_port == NULL) {
+				(*nut_usb_free_device_list)(devlist, 1);
+				(*nut_usb_exit)(NULL);
+				fatal_with_errno(EXIT_FAILURE, "Out of memory");
+			} else {
+				uint8_t port_num = (*nut_usb_get_port_number)(dev);
+				if (port_num > 0) {
+					snprintf(bus_port, 4, "%03d", port_num);
+				} else {
+					snprintf(bus_port, 4, ".*");
+				}
+			}
+		}
+
 		bcdDevice = dev_desc.bcdDevice;
 #else  /* => WITH_LIBUSB_0_1 */
 # ifndef WIN32
@@ -360,15 +416,15 @@ nutscan_device_t * nutscan_scan_usb()
 #endif
 			if ((driver_name =
 				is_usb_device_supported(usb_device_table,
-					VendorID, ProductID)) != NULL) {
+					VendorID, ProductID, &alt_driver_names)) != NULL) {
 
 				/* open the device */
 #if WITH_LIBUSB_1_0
 				ret = (*nut_usb_open)(dev, &udev);
 				if (!udev || ret != LIBUSB_SUCCESS) {
 					fprintf(stderr, "Failed to open device "
-						"bus '%s' device/port '%s', skipping: %s\n",
-						busname, device_port,
+						"bus '%s' device/port '%s' bus/port '%s', skipping: %s\n",
+						busname, device_port, bus_port,
 						(*nut_usb_strerror)(ret));
 
 					/* Note: closing is not applicable
@@ -379,6 +435,10 @@ nutscan_device_t * nutscan_scan_usb()
 
 					free(busname);
 					free(device_port);
+					if (bus_port != NULL) {
+						free(bus_port);
+						bus_port = NULL;
+					}
 
 					continue;
 				}
@@ -405,6 +465,10 @@ nutscan_device_t * nutscan_scan_usb()
 #if WITH_LIBUSB_1_0
 							free(busname);
 							free(device_port);
+							if (bus_port != NULL) {
+								free(bus_port);
+								bus_port = NULL;
+							}
 							(*nut_usb_free_device_list)(devlist, 1);
 							(*nut_usb_exit)(NULL);
 #endif	/* WITH_LIBUSB_1_0 */
@@ -425,6 +489,10 @@ nutscan_device_t * nutscan_scan_usb()
 #if WITH_LIBUSB_1_0
 							free(busname);
 							free(device_port);
+							if (bus_port != NULL) {
+								free(bus_port);
+								bus_port = NULL;
+							}
 							(*nut_usb_free_device_list)(devlist, 1);
 							(*nut_usb_exit)(NULL);
 #endif	/* WITH_LIBUSB_1_0 */
@@ -446,6 +514,10 @@ nutscan_device_t * nutscan_scan_usb()
 #if WITH_LIBUSB_1_0
 							free(busname);
 							free(device_port);
+							if (bus_port != NULL) {
+								free(bus_port);
+								bus_port = NULL;
+							}
 							(*nut_usb_free_device_list)(devlist, 1);
 							(*nut_usb_exit)(NULL);
 #endif	/* WITH_LIBUSB_1_0 */
@@ -466,6 +538,10 @@ nutscan_device_t * nutscan_scan_usb()
 #if WITH_LIBUSB_1_0
 					free(busname);
 					free(device_port);
+					if (bus_port != NULL) {
+						free(bus_port);
+						bus_port = NULL;
+					}
 					(*nut_usb_free_device_list)(devlist, 1);
 					(*nut_usb_exit)(NULL);
 #endif	/* WITH_LIBUSB_1_0 */
@@ -475,6 +551,9 @@ nutscan_device_t * nutscan_scan_usb()
 				nut_dev->type = TYPE_USB;
 				if (driver_name) {
 					nut_dev->driver = strdup(driver_name);
+				}
+				if (alt_driver_names) {
+					nut_dev->alt_driver_names = strdup(alt_driver_names);
 				}
 				nut_dev->port = strdup("auto");
 
@@ -512,19 +591,36 @@ nutscan_device_t * nutscan_scan_usb()
 					vendor_name = NULL;
 				}
 
-				nutscan_add_option_to_device(nut_dev,
+				nutscan_add_commented_option_to_device(nut_dev,
 					"bus",
-					busname);
+					busname,
+					scanopts->report_bus ? NULL : "");
 
-				nutscan_add_option_to_device(nut_dev,
+				nutscan_add_commented_option_to_device(nut_dev,
 					"device",
-					device_port);
+					device_port,
+					scanopts->report_device ? NULL : "");
 
-				/* Not currently matched by drivers, hence commented for now: */
-				sprintf(string, "%04X", bcdDevice);
-				nutscan_add_option_to_device(nut_dev,
-					"###NOTMATCHED-YET###bcdDevice",
-					string);
+#if WITH_LIBUSB_1_0
+				if (bus_port) {
+					nutscan_add_commented_option_to_device(nut_dev,
+						"busport",
+						bus_port,
+						scanopts->report_busport ? NULL : "");
+					free(bus_port);
+					bus_port = NULL;
+				}
+#endif	/* WITH_LIBUSB_1_0 */
+
+				if (scanopts->report_bcdDevice) {
+					/* Not currently matched by drivers, hence commented
+					 * for now even if requested via scanopts */
+					sprintf(string, "%04X", bcdDevice);
+					nutscan_add_commented_option_to_device(nut_dev,
+						"bcdDevice",
+						string,
+						"NOTMATCHED-YET");
+				}
 
 				current_nut_dev = nutscan_add_device_to_device(
 					current_nut_dev,
@@ -540,6 +636,10 @@ nutscan_device_t * nutscan_scan_usb()
 #else	/* not WITH_LIBUSB_0_1 */
 		free(busname);
 		free(device_port);
+		if (bus_port != NULL) {
+			free(bus_port);
+			bus_port = NULL;
+		}
 	}
 
 	(*nut_usb_free_device_list)(devlist, 1);
@@ -552,8 +652,10 @@ nutscan_device_t * nutscan_scan_usb()
 #else /* not WITH_USB */
 
 /* stub function */
-nutscan_device_t * nutscan_scan_usb()
+nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 {
+	NUT_UNUSED_VARIABLE(scanopts);
+
 	return NULL;
 }
 

@@ -157,6 +157,28 @@ The UPS needs to have its battery replaced.
 *NOCOMM*::
 The UPS can't be contacted for monitoring.
 
+*NOPARENT*::
+`upsmon` parent process died - shutdown impossible.
+
+*CAL*::
+UPS calibration in progress.
+
+*NOTCAL*::
+UPS calibration finished.
+
+*OFF*::
+UPS administratively OFF or asleep.
+
+*NOTOFF*::
+UPS no longer administratively OFF or asleep.
+
+*BYPASS*::
+UPS on bypass (powered, not protecting).
+
+*NOTBYPASS*::
+UPS no longer on bypass.
+
+
 NOTIFY COMMAND
 --------------
 
@@ -395,7 +417,7 @@ load and don't want some systems to be powered off while others remain
 running if the "wall power" returns at the wrong moment as usual, the "FSD"
 flag can not be removed from the data server unless its daemon is restarted.
 If we do take the first step in critical mode, then we normally intend to go
-all the way -- shut down all the servers gracefully, and power down the UPS.
+all the way -- shut down all the servers gracefully, and power down the UPS.
 
 Keep in mind that some UPS devices and corresponding drivers would also latch
 or otherwise resurface the "FSD" state again even if "wall power" is available,
@@ -456,9 +478,12 @@ system log as configured.  If your devices are expected to be AWOL for an
 extended timeframe, you can use POLLFAIL_LOG_THROTTLE_MAX to reduce the
 stress on syslog traffic and storage, by posting these messages only once
 in every several loop cycles, and when the error condition has changed or
-cleared. A negative value means standard behavior, and a zero value means
-to never repeat the message (log only on start and end/change of the failure
-state).
+cleared.  A negative value means standard behavior (log on every loop,
+effectively same as when `max=1`), and a zero value means to never repeat
+the message (log only on start and end/change of the failure state).
+
+Note that this throttle only applies to one latest-active error state per
+monitored device.
 
 RELOADING NUANCES
 -----------------
@@ -519,4 +544,4 @@ linkman:upsset.cgi[8], linkman:upsstats.cgi[8], linkman:upsimage.cgi[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

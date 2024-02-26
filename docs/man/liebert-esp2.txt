@@ -1,15 +1,19 @@
 LIEBERT-ESP2(8)
-==============
+===============
 
 NAME
 ----
 
 liebert-esp2 - Driver for Liebert UPS, using the ESP-II serial protocol
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the hardware-specific features of the
+*liebert-esp2* -h
+
+*liebert-esp2* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 liebert-esp2 driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
@@ -66,4 +70,4 @@ linkman:nutupsdrv[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

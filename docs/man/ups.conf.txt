@@ -247,6 +247,14 @@ definition and it can also be set in a UPS section.  This value controls how
 long upsdrvctl will wait for the driver to finish starting.  This keeps your
 system from getting stuck due to a broken driver or UPS.
 +
+Note that after this time `upsdrvctl` would just move along with its
+business (whether retrying the same driver if `maxretry>1`, or trying
+another driver if starting them all, or just eventually exit); however,
+each such most recently started "stuck" driver process may be further
+initializing in the background, and might even succeed eventually.
++
+They would not be actively killed by `upsdrvctl` after this timeout expires.
++
 The default is 45 seconds.
 
 *synchronous*::
@@ -319,4 +327,4 @@ linkman:upsdrvsvcctl[8]
 Internet resources
 ~~~~~~~~~~~~~~~~~~
 
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

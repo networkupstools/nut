@@ -2,8 +2,8 @@
  * riello_ser.c: support for Riello serial protocol based UPSes
  *
  * A document describing the protocol implemented by this driver can be
- * found online at "https://networkupstools.org/protocols/riello/PSGPSER-0104.pdf"
- * and "https://networkupstools.org/protocols/riello/PSSENTR-0100.pdf".
+ * found online at "https://www.networkupstools.org/protocols/riello/PSGPSER-0104.pdf"
+ * and "https://www.networkupstools.org/protocols/riello/PSSENTR-0100.pdf".
  *
  * Copyright (C) 2012 - Elio Parisi <e.parisi@riello-ups.com>
  *
@@ -25,6 +25,7 @@
  */
 
 #include "config.h" /* must be the first header */
+#include "common.h" /* for upsdebugx() etc */
 
 #include <string.h>
 
@@ -35,18 +36,19 @@
 #include "main.h"
 #include "serial.h"
 #include "timehead.h"
+
 /*
-// The serial driver has no need for HID structures/code currently
-// (maybe there is/was a plan for sharing something between siblings).
-// Note that HID is tied to libusb or libshut definitions at the moment.
+ * // The serial driver has no need for HID structures/code currently
+ * // (maybe there is/was a plan for sharing something between siblings).
+ * // Note that HID is tied to libusb or libshut definitions at the moment.
 #include "hidparser.h"
 #include "hidtypes.h"
-*/
-#include "common.h" /* for upsdebugx() etc */
+ */
+
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello serial driver"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.09"
 
 #define DEFAULT_OFFDELAY   5
 #define DEFAULT_BOOTDELAY  5
@@ -207,7 +209,7 @@ static void riello_serialcomm(uint8_t* arg_bufIn, uint8_t typedev)
 	}
 }
 
-static int get_ups_nominal()
+static int get_ups_nominal(void)
 {
 	uint8_t length;
 
@@ -240,7 +242,7 @@ static int get_ups_nominal()
 	return 0;
 }
 
-static int get_ups_status()
+static int get_ups_status(void)
 {
 	uint8_t numread, length;
 
@@ -280,7 +282,7 @@ static int get_ups_status()
 	return 0;
 }
 
-static int get_ups_extended()
+static int get_ups_extended(void)
 {
 	uint8_t length;
 
@@ -314,7 +316,7 @@ static int get_ups_extended()
 }
 
 /* Not static, exposed via header. Not used though, currently... */
-int get_ups_statuscode()
+int get_ups_statuscode(void)
 {
 	uint8_t length;
 
@@ -347,7 +349,7 @@ int get_ups_statuscode()
 	return 0;
 }
 
-static int get_ups_sentr()
+static int get_ups_sentr(void)
 {
 	uint8_t length;
 
@@ -679,7 +681,7 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 	return STAT_INSTCMD_UNKNOWN;
 }
 
-static int start_ups_comm()
+static int start_ups_comm(void)
 {
 	uint8_t length;
 

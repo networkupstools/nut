@@ -6,15 +6,19 @@ NAME
 
 belkinunv - Driver for Belkin "Universal UPS" and compatible
 
-NOTE
-----
+SYNOPSIS
+--------
 
-This man page only documents the hardware-specific features of the
+*belkinunv* -h
+
+*belkinunv* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 belkin driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
-This driver only supports serial connections. If your UPS has a USB port,
-please consult the Hardware Compatibility List (HCL) to see which of
+NOTE: This driver only supports serial connections. If your UPS has a USB
+port, please consult the Hardware Compatibility List (HCL) to see which of
 the USB drivers you should use.
 
 SUPPORTED HARDWARE
@@ -356,8 +360,8 @@ linkman:usbhid-ups[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
-* The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
 * The documentation for the protocol used by this UPS:
   link:http://www.mscs.dal.ca/~selinger/ups/belkin-universal-ups.html[belkin-universal-ups.html]
-  (link:https://networkupstools.org/protocols/belkin-universal.html[replica
+  (link:https://www.networkupstools.org/protocols/belkin-universal.html[replica
   on NUT site])

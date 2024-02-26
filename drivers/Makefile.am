@@ -1,10 +1,19 @@
 # Network UPS Tools: drivers
 
+# Export certain values for ccache which NUT ci_build.sh can customize,
+# to facilitate developer iteration re-runs of "make" later.
+# At least GNU and BSD make implementations are okay with this syntax.
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_NAMESPACE=@CCACHE_NAMESPACE@
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_BASEDIR=@CCACHE_BASEDIR@
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_DIR=@CCACHE_DIR@
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_PATH=@CCACHE_PATH@
+@NUT_AM_MAKE_CAN_EXPORT@export PATH=@PATH_DURING_CONFIGURE@
+
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/common/libcommon.la \
 $(top_builddir)/common/libparseconf.la \
 $(top_builddir)/clients/libupsclient.la: dummy
-	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # by default, link programs in this directory with libcommon.la
 # (libtool version of the static lib, in order to access LTLIBOBJS)
@@ -38,6 +47,9 @@ endif
 if WITH_MODBUS
   AM_CFLAGS += $(LIBMODBUS_CFLAGS)
 endif
+if HAVE_LIBREGEX
+  AM_CFLAGS += $(LIBREGEX_CFLAGS)
+endif
 
 NUTSW_DRIVERLIST = dummy-ups clone clone-outlet apcupsd-ups skel
 SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
@@ -45,7 +57,7 @@ SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
  gamatronic genericups isbmex liebert liebert-esp2 masterguard metasys	\
  mge-utalk microdowell microsol-apc mge-shut oneac optiups powercom rhino 	\
  safenet nutdrv_siemens-sitop solis tripplite tripplitesu upscode2 victronups powerpanel \
- blazer_ser ivtscd apcsmart apcsmart-old riello_ser
+ blazer_ser ivtscd apcsmart apcsmart-old riello_ser sms_ser
 SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
  blazer_usb richcomm_usb riello_usb \
@@ -55,7 +67,7 @@ SERIAL_USB_DRIVERLIST = \
 	nutdrv_qx
 NEONXML_DRIVERLIST = netxml-ups
 MACOSX_DRIVERLIST = macosx-ups
-MODBUS_DRIVERLIST = phoenixcontact_modbus generic_modbus huawei-ups2000 socomec_jbus adelsystem_cbi
+MODBUS_DRIVERLIST = phoenixcontact_modbus generic_modbus huawei-ups2000 socomec_jbus adelsystem_cbi apc_modbus
 LINUX_I2C_DRIVERLIST = asem pijuice
 POWERMAN_DRIVERLIST = powerman-pdu
 IPMI_DRIVERLIST = nut-ipmipsu
@@ -172,6 +184,8 @@ upscode2_LDADD = $(LDADD) -lm
 victronups_SOURCES = victronups.c
 riello_ser_SOURCES = riello.c riello_ser.c
 riello_ser_LDADD = $(LDADD) -lm
+sms_ser_SOURCES = sms_ser.c
+sms_ser_LDADD = $(LDADD) -lm
 
 # non-serial drivers: these use custom LDADD and/or CFLAGS
 
@@ -290,6 +304,16 @@ generic_modbus_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
 adelsystem_cbi_SOURCES = adelsystem_cbi.c
 adelsystem_cbi_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
 
+# APC Modbus driver (with support of modbus over different media)
+# Note that a version of libmodbus built with USB support is also needed
+# for USB connections. Legacy versions work for Serial and TCP links.
+apc_modbus_SOURCES = apc_modbus.c
+apc_modbus_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
+if WITH_USB
+  apc_modbus_SOURCES += $(LIBUSB_IMPL) hidparser.c usb-common.c
+  apc_modbus_LDADD += $(LIBUSB_LIBS)
+endif
+
 # Huawei UPS2000 driver
 # (this is both a Modbus and a serial driver)
 huawei_ups2000_SOURCES = huawei-ups2000.c
@@ -344,7 +368,7 @@ dist_noinst_HEADERS = apc-mib.h apc-iem-mib.h apc-hid.h arduino-hid.h baytech-mi
  main.h mge-hid.h mge-mib.h mge-utalk.h		\
  mge-xml.h microdowell.h microsol-apc.h microsol-common.h netvision-mib.h netxml-ups.h nut-ipmi.h oneac.h		\
  powercom.h powerpanel.h powerp-bin.h powerp-txt.h raritan-pdu-mib.h	\
- safenet.h serial.h snmp-ups.h solis.h tripplite.h tripplite-hid.h 			\
+ safenet.h serial.h sms_ser.h snmp-ups.h solis.h tripplite.h tripplite-hid.h 			\
  upshandler.h usb-common.h usbhid-ups.h powercom-hid.h compaq-mib.h idowell-hid.h \
  apcsmart.h apcsmart_tabs.h apcsmart-old.h apcupsd-ups.h cyberpower-mib.h riello.h openups-hid.h \
  delta_ups-mib.h nutdrv_qx.h nutdrv_qx_bestups.h nutdrv_qx_blazer-common.h	\

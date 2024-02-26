@@ -31,6 +31,8 @@
 #define ST_LOGIN       (1 << 5)       /* we are logged into this UPS              */
 #define ST_CLICONNECTED (1 << 6)      /* upscli_connect returned OK               */
 #define ST_CAL         (1 << 7)       /* UPS calibration in progress (CAL)        */
+#define ST_OFF         (1 << 8)       /* UPS is administratively off or asleep (OFF) */
+#define ST_BYPASS      (1 << 9)       /* UPS is on bypass so not protecting       */
 
 /* required contents of flag file */
 #define SDMAGIC "upsmon-shutdown-file"
@@ -60,6 +62,10 @@ typedef struct {
 	/* handle suppression of COMMOK and ONLINE at startup */
 	int	commstate;		/* these start at -1, and only	*/
 	int	linestate;		/* fire on a 0->1 transition	*/
+	int	offstate;		/* fire on a 0->1 transition, may	*/
+					/* be delayed vs. seeing OFF state	*/
+	int	bypassstate;		/* fire on a 0->1 transition;	*/
+					/* delays not implemented now	*/
 
 	/* see detailed comment for pollfail_log_throttle_max in upsmon.c
 	 * about handling of poll failure log throttling (syslog storage I/O)
@@ -71,6 +77,9 @@ typedef struct {
 	time_t  lastnoncrit;		/* time of last non-crit poll	*/
 	time_t	lastrbwarn;		/* time of last REPLBATT warning*/
 	time_t	lastncwarn;		/* time of last NOCOMM warning	*/
+
+	time_t	offsince;		/* time of recent entry into OFF state	*/
+
 	void	*next;
 }	utype_t;
 
@@ -87,6 +96,11 @@ typedef struct {
 #define NOTIFY_NOCOMM	8	/* UPS hasn't been contacted in a while	*/
 #define NOTIFY_NOPARENT	9	/* privileged parent process died       */
 #define NOTIFY_CAL		10	/* UPS is performing calibration        */
+#define NOTIFY_NOTCAL		11	/* UPS is performing calibration        */
+#define NOTIFY_OFF	12	/* UPS is administratively OFF or asleep*/
+#define NOTIFY_NOTOFF	13	/* UPS is not anymore administratively OFF or asleep*/
+#define NOTIFY_BYPASS	14	/* UPS is administratively on bypass    */
+#define NOTIFY_NOTBYPASS	15	/* UPS is not anymore administratively on bypass    */
 
 /* notify flag values */
 
@@ -127,6 +141,11 @@ static struct {
 	{ NOTIFY_NOCOMM,   "NOCOMM",   NULL, "UPS %s is unavailable", NOTIFY_DEFAULT },
 	{ NOTIFY_NOPARENT, "NOPARENT", NULL, "upsmon parent process died - shutdown impossible", NOTIFY_DEFAULT },
 	{ NOTIFY_CAL,      "CAL",      NULL, "UPS %s: calibration in progress", NOTIFY_DEFAULT },
+	{ NOTIFY_NOTCAL,   "NOTCAL",   NULL, "UPS %s: calibration finished", NOTIFY_DEFAULT },
+	{ NOTIFY_OFF,      "OFF",      NULL, "UPS %s: administratively OFF or asleep", NOTIFY_DEFAULT },
+	{ NOTIFY_NOTOFF,   "NOTOFF",   NULL, "UPS %s: no longer administratively OFF or asleep", NOTIFY_DEFAULT },
+	{ NOTIFY_BYPASS,   "BYPASS",   NULL, "UPS %s: on bypass (powered, not protecting)", NOTIFY_DEFAULT },
+	{ NOTIFY_NOTBYPASS,"NOTBYPASS",NULL, "UPS %s: no longer on bypass", NOTIFY_DEFAULT },
 	{ 0, NULL, NULL, NULL, 0 }
 };
 

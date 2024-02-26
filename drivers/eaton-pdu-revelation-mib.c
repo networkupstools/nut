@@ -55,21 +55,21 @@
 #define AR_OID_OUTLET_STATUS			AR_BASE_OID ".1.2.2.1.3"
 
 static info_lkp_t revelation_outlet_status_info[] = {
-	{ -1, "error", NULL, NULL },
-	{ 0, "off", NULL, NULL },
-	{ 1, "on", NULL, NULL },
-	{ 2, "cycling", NULL, NULL }, /* transitional status */
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(-1, "error"),
+	info_lkp_default(0, "off"),
+	info_lkp_default(1, "on"),
+	info_lkp_default(2, "cycling"),	/* transitional status */
+	info_lkp_sentinel
 };
 
 /* Ugly hack: having the matching OID present means that the outlet is
  * switchable. So, it should not require this value lookup */
 static info_lkp_t revelation_outlet_switchability_info[] = {
-	{ -1, "yes", NULL, NULL },
-	{ 0, "yes", NULL, NULL },
-	{ 1, "yes", NULL, NULL },
-	{ 2, "yes", NULL, NULL },
-	{ 0, NULL, NULL, NULL }
+	info_lkp_default(-1, "yes"),
+	info_lkp_default(0, "yes"),
+	info_lkp_default(1, "yes"),
+	info_lkp_default(2, "yes"),
+	info_lkp_sentinel
 };
 
 #define DO_OFF		"0"
@@ -88,64 +88,64 @@ static info_lkp_t revelation_outlet_switchability_info[] = {
 static snmp_info_t eaton_aphel_revelation_mib[] = {
 
 	/* standard MIB items */
-	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
-	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
-	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
+	snmp_info_default("device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL),
+	snmp_info_default("device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL),
+	snmp_info_default("device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL),
 
 	/* Device collection */
-	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON | Powerware",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-	{ "device.model", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_MODEL_NAME,
-		"Eaton Powerware ePDU Managed", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
-	{ "device.serial", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_SERIAL, "",
-		SU_FLAG_STATIC | SU_FLAG_OK, NULL },
-	{ "device.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-	{ "device.macaddr", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_UNIT_MACADDR, "",
-		SU_FLAG_STATIC | SU_FLAG_OK, NULL },
+	snmp_info_default("device.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON | Powerware",
+		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL),
+	snmp_info_default("device.model", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_MODEL_NAME,
+		"Eaton Powerware ePDU Managed", SU_FLAG_STATIC | SU_FLAG_OK, NULL),
+	snmp_info_default("device.serial", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_SERIAL, "",
+		SU_FLAG_STATIC | SU_FLAG_OK, NULL),
+	snmp_info_default("device.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu",
+		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL),
+	snmp_info_default("device.macaddr", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_UNIT_MACADDR, "",
+		SU_FLAG_STATIC | SU_FLAG_OK, NULL),
 	/* hardwareRev.0 = Integer: 26 */
 	/* FIXME: not compliant! to be RFC'ed */
-	{ "device.revision", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.6.1.1.7.0",
-		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
+	snmp_info_default("device.revision", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.6.1.1.7.0",
+		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL),
 
 	/* UPS collection */
-	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON | Powerware",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_MODEL_NAME,
-		"Generic SNMP PDU", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
-	{ "ups.id", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_DEVICE_NAME,
-		"unknown", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
-	{ "ups.serial", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_SERIAL, "",
-		SU_FLAG_STATIC | SU_FLAG_OK, NULL },
-	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_FIRMREV, "",
-		SU_FLAG_STATIC | SU_FLAG_OK, NULL },
-	{ "ups.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-	{ "ups.temperature", 0, 1, AR_OID_UNIT_CPUTEMPERATURE, NULL, 0, NULL },
+	snmp_info_default("ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON | Powerware",
+		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL),
+	snmp_info_default("ups.model", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_MODEL_NAME,
+		"Generic SNMP PDU", SU_FLAG_STATIC | SU_FLAG_OK, NULL),
+	snmp_info_default("ups.id", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_DEVICE_NAME,
+		"unknown", SU_FLAG_STATIC | SU_FLAG_OK, NULL),
+	snmp_info_default("ups.serial", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_SERIAL, "",
+		SU_FLAG_STATIC | SU_FLAG_OK, NULL),
+	snmp_info_default("ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_FIRMREV, "",
+		SU_FLAG_STATIC | SU_FLAG_OK, NULL),
+	snmp_info_default("ups.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu",
+		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL),
+	snmp_info_default("ups.temperature", 0, 1, AR_OID_UNIT_CPUTEMPERATURE, NULL, 0, NULL),
 
 	/* Outlet collection */
-	{ "outlet.id", 0, 1, NULL, "0", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-	{ "outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, NULL, "All outlets",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-	{ "outlet.count", 0, 1, AR_OID_OUTLET_COUNT, "0", 0, NULL },
-	{ "outlet.current", 0, 0.001, AR_OID_UNIT_CURRENT ".0", NULL, 0, NULL },
-	{ "outlet.voltage", 0, 0.001, AR_OID_UNIT_VOLTAGE ".0", NULL, 0, NULL },
-	{ "outlet.realpower", 0, 1.0, AR_OID_UNIT_ACTIVEPOWER ".0", NULL, 0, NULL },
-	{ "outlet.power", 0, 1.0, AR_OID_UNIT_APPARENTPOWER ".0", NULL, 0, NULL },
+	snmp_info_default("outlet.id", 0, 1, NULL, "0", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL),
+	snmp_info_default("outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, NULL, "All outlets",
+		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL),
+	snmp_info_default("outlet.count", 0, 1, AR_OID_OUTLET_COUNT, "0", 0, NULL),
+	snmp_info_default("outlet.current", 0, 0.001, AR_OID_UNIT_CURRENT ".0", NULL, 0, NULL),
+	snmp_info_default("outlet.voltage", 0, 0.001, AR_OID_UNIT_VOLTAGE ".0", NULL, 0, NULL),
+	snmp_info_default("outlet.realpower", 0, 1.0, AR_OID_UNIT_ACTIVEPOWER ".0", NULL, 0, NULL),
+	snmp_info_default("outlet.power", 0, 1.0, AR_OID_UNIT_APPARENTPOWER ".0", NULL, 0, NULL),
 
 	/* outlet template definition
 	 * Caution: the index of the data start at 0, while the name is +1
 	 * ie outlet.1 => <OID>.0 */
-	{ "outlet.%i.switchable", 0, 1, AR_OID_OUTLET_STATUS ".%i", "yes", SU_FLAG_STATIC | SU_OUTLET, &revelation_outlet_switchability_info[0] },
-	{ "outlet.%i.id", 0, 1, NULL, "%i", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK | SU_OUTLET, NULL },
-	{ "outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, AR_OID_OUTLET_NAME ".%i", NULL, SU_OUTLET, NULL },
-	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_OUTLET_STATUS ".%i", NULL, SU_FLAG_OK | SU_OUTLET, &revelation_outlet_status_info[0] },
-	{ "outlet.%i.current", 0, 0.001, AR_OID_OUTLET_CURRENT ".%i", NULL, SU_OUTLET, NULL },
-	{ "outlet.%i.current.maximum", 0, 0.001, AR_OID_OUTLET_MAXCURRENT ".%i", NULL, SU_OUTLET, NULL },
-	{ "outlet.%i.realpower", 0, 1.0, AR_OID_OUTLET_ACTIVEPOWER ".%i", NULL, SU_OUTLET, NULL },
-	{ "outlet.%i.voltage", 0, 1.0, AR_OID_OUTLET_VOLTAGE ".%i", NULL, SU_OUTLET, NULL },
-	{ "outlet.%i.powerfactor", 0, 0.01, AR_OID_OUTLET_POWERFACTOR ".%i", NULL, SU_OUTLET, NULL },
-	{ "outlet.%i.power", 0, 1.0, AR_OID_OUTLET_APPARENTPOWER ".%i", NULL, SU_OUTLET, NULL },
+	snmp_info_default("outlet.%i.switchable", 0, 1, AR_OID_OUTLET_STATUS ".%i", "yes", SU_FLAG_STATIC | SU_OUTLET, &revelation_outlet_switchability_info[0]),
+	snmp_info_default("outlet.%i.id", 0, 1, NULL, "%i", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK | SU_OUTLET, NULL),
+	snmp_info_default("outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, AR_OID_OUTLET_NAME ".%i", NULL, SU_OUTLET, NULL),
+	snmp_info_default("outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_OUTLET_STATUS ".%i", NULL, SU_FLAG_OK | SU_OUTLET, &revelation_outlet_status_info[0]),
+	snmp_info_default("outlet.%i.current", 0, 0.001, AR_OID_OUTLET_CURRENT ".%i", NULL, SU_OUTLET, NULL),
+	snmp_info_default("outlet.%i.current.maximum", 0, 0.001, AR_OID_OUTLET_MAXCURRENT ".%i", NULL, SU_OUTLET, NULL),
+	snmp_info_default("outlet.%i.realpower", 0, 1.0, AR_OID_OUTLET_ACTIVEPOWER ".%i", NULL, SU_OUTLET, NULL),
+	snmp_info_default("outlet.%i.voltage", 0, 1.0, AR_OID_OUTLET_VOLTAGE ".%i", NULL, SU_OUTLET, NULL),
+	snmp_info_default("outlet.%i.powerfactor", 0, 0.01, AR_OID_OUTLET_POWERFACTOR ".%i", NULL, SU_OUTLET, NULL),
+	snmp_info_default("outlet.%i.power", 0, 1.0, AR_OID_OUTLET_APPARENTPOWER ".%i", NULL, SU_OUTLET, NULL),
 
 	/* FIXME:
 	 * - delay for startup/shutdown sequence
@@ -157,25 +157,25 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 	/* Ambient collection */
 	/* We use critical levels, for both temperature and humidity,
 	 * since warning levels are also available! */
-	{ "ambient.temperature", 0, 1.0, ".1.3.6.1.4.1.534.6.6.6.2.2.1.3.0", NULL, SU_FLAG_OK, NULL },
-	{ "ambient.temperature.low", 0, 1.0, "1.3.6.1.4.1.534.6.6.6.2.2.1.6.0", NULL, SU_FLAG_OK, NULL },
-	{ "ambient.temperature.high", 0, 1.0, "1.3.6.1.4.1.534.6.6.6.2.2.1.7.0", NULL, SU_FLAG_OK, NULL },
-	{ "ambient.humidity", 0, 1.0, ".1.3.6.1.4.1.534.6.6.6.2.4.1.3.0", NULL, SU_FLAG_OK, NULL },
-	{ "ambient.humidity.low", 0, 1.0, ".1.3.6.1.4.1.534.6.6.6.2.4.1.6.0", NULL, SU_FLAG_OK, NULL },
-	{ "ambient.humidity.high", 0, 1.0, ".1.3.6.1.4.1.534.6.6.6.2.4.1.7.0", NULL, SU_FLAG_OK, NULL },
+	snmp_info_default("ambient.temperature", 0, 1.0, ".1.3.6.1.4.1.534.6.6.6.2.2.1.3.0", NULL, SU_FLAG_OK, NULL),
+	snmp_info_default("ambient.temperature.low", 0, 1.0, "1.3.6.1.4.1.534.6.6.6.2.2.1.6.0", NULL, SU_FLAG_OK, NULL),
+	snmp_info_default("ambient.temperature.high", 0, 1.0, "1.3.6.1.4.1.534.6.6.6.2.2.1.7.0", NULL, SU_FLAG_OK, NULL),
+	snmp_info_default("ambient.humidity", 0, 1.0, ".1.3.6.1.4.1.534.6.6.6.2.4.1.3.0", NULL, SU_FLAG_OK, NULL),
+	snmp_info_default("ambient.humidity.low", 0, 1.0, ".1.3.6.1.4.1.534.6.6.6.2.4.1.6.0", NULL, SU_FLAG_OK, NULL),
+	snmp_info_default("ambient.humidity.high", 0, 1.0, ".1.3.6.1.4.1.534.6.6.6.2.4.1.7.0", NULL, SU_FLAG_OK, NULL),
 
 	/* instant commands. */
 	/* Note that load.cycle might be replaced by / mapped on shutdown.reboot */
 	/* no counterpart found!
-	{ "outlet.load.off", 0, DO_OFF, AR_OID_OUTLET_STATUS ".0", NULL, SU_TYPE_CMD, NULL },
-	{ "outlet.load.on", 0, DO_ON, AR_OID_OUTLET_STATUS ".0", NULL, SU_TYPE_CMD, NULL },
-	{ "outlet.load.cycle", 0, DO_CYCLE, AR_OID_OUTLET_STATUS ".0", NULL, SU_TYPE_CMD, NULL }, */
-	{ "outlet.%i.load.off", 0, 1, AR_OID_OUTLET_STATUS ".%i", DO_OFF, SU_TYPE_CMD | SU_OUTLET, NULL },
-	{ "outlet.%i.load.on", 0, 1, AR_OID_OUTLET_STATUS ".%i", DO_ON, SU_TYPE_CMD | SU_OUTLET, NULL },
-	{ "outlet.%i.load.cycle", 0, 1, AR_OID_OUTLET_STATUS ".%i", DO_CYCLE, SU_TYPE_CMD | SU_OUTLET, NULL },
+	snmp_info_default("outlet.load.off", 0, DO_OFF, AR_OID_OUTLET_STATUS ".0", NULL, SU_TYPE_CMD, NULL),
+	snmp_info_default("outlet.load.on", 0, DO_ON, AR_OID_OUTLET_STATUS ".0", NULL, SU_TYPE_CMD, NULL),
+	snmp_info_default("outlet.load.cycle", 0, DO_CYCLE, AR_OID_OUTLET_STATUS ".0", NULL, SU_TYPE_CMD, NULL), */
+	snmp_info_default("outlet.%i.load.off", 0, 1, AR_OID_OUTLET_STATUS ".%i", DO_OFF, SU_TYPE_CMD | SU_OUTLET, NULL),
+	snmp_info_default("outlet.%i.load.on", 0, 1, AR_OID_OUTLET_STATUS ".%i", DO_ON, SU_TYPE_CMD | SU_OUTLET, NULL),
+	snmp_info_default("outlet.%i.load.cycle", 0, 1, AR_OID_OUTLET_STATUS ".%i", DO_CYCLE, SU_TYPE_CMD | SU_OUTLET, NULL),
 
 	/* end of structure. */
-	{ NULL, 0, 0, NULL, NULL, 0, NULL }
+	snmp_info_sentinel
 };
 
 

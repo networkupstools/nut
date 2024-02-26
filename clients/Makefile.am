@@ -1,4 +1,14 @@
 # Network UPS Tools: clients
+
+# Export certain values for ccache which NUT ci_build.sh can customize,
+# to facilitate developer iteration re-runs of "make" later.
+# At least GNU and BSD make implementations are okay with this syntax.
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_NAMESPACE=@CCACHE_NAMESPACE@
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_BASEDIR=@CCACHE_BASEDIR@
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_DIR=@CCACHE_DIR@
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_PATH=@CCACHE_PATH@
+@NUT_AM_MAKE_CAN_EXPORT@export PATH=@PATH_DURING_CONFIGURE@
+
 EXTRA_DIST =
 
 # nutclient.cpp for some legacy reason (maybe initial detached development?)
@@ -10,13 +20,21 @@ AM_CXXFLAGS = -DHAVE_NUTCOMMON=1 -I$(top_srcdir)/include
 $(top_builddir)/common/libcommon.la \
 $(top_builddir)/common/libcommonclient.la \
 $(top_builddir)/common/libparseconf.la: dummy
-	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
-# by default, link programs in this directory with libcommon.a
-LDADD = $(top_builddir)/common/libcommon.la libupsclient.la $(NETLIBS)
+LDADD_FULL = $(top_builddir)/common/libcommon.la libupsclient.la $(NETLIBS)
 if WITH_SSL
-  LDADD += $(LIBSSL_LIBS)
+  LDADD_FULL += $(LIBSSL_LIBS)
 endif
+
+LDADD_CLIENT = $(top_builddir)/common/libcommonclient.la libupsclient.la $(NETLIBS)
+if WITH_SSL
+  LDADD_CLIENT += $(LIBSSL_LIBS)
+endif
+
+# by default, link programs in this directory with
+# the more compact libcommonclient.a bundle
+LDADD = $(LDADD_CLIENT)
 
 # Avoid per-target CFLAGS, because this will prevent re-use of object
 # files. In any case, CFLAGS are only -I options, so there is no harm,
@@ -61,12 +79,13 @@ upscmd_SOURCES = upscmd.c upsclient.h
 upsrw_SOURCES = upsrw.c upsclient.h
 upslog_SOURCES = upslog.c upsclient.h upslog.h
 upsmon_SOURCES = upsmon.c upsmon.h upsclient.h
+upsmon_LDADD = $(LDADD_FULL)
 if HAVE_WINDOWS_SOCKETS
 message_SOURCES = message.c
 endif
 
 upssched_SOURCES = upssched.c upssched.h
-upssched_LDADD = $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la $(NETLIBS)
+upssched_LDADD = $(top_builddir)/common/libcommonclient.la $(top_builddir)/common/libparseconf.la $(NETLIBS)
 
 upsimage_cgi_SOURCES = upsimage.c upsclient.h upsimagearg.h cgilib.c cgilib.h
 upsimage_cgi_LDADD = $(LDADD) $(LIBGD_LDFLAGS)

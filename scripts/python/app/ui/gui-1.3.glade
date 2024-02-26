@@ -1028,7 +1028,7 @@ want to delete from list...
 For more information about NUT (Network UPS Tools)
 please visit the author's website.
 
-http://www.networkupstools.org
+https://www.networkupstools.org
 </property>
     <property name="website">http://www.lestat.st/informatique/projets/nut-monitor-en</property>
     <property name="website_label" translatable="yes">http://www.lestat.st</property>

@@ -39,6 +39,10 @@ else
 	PYTHON=""
 	# FIXME: Use something like TAB-completion to find every name on PATH?
 	for P in python python3 python2 \
+		python-3.14 python3.14 \
+		python-3.13 python3.13 \
+		python-3.12 python3.12 \
+		python-3.11 python3.11 \
 		python-3.10 python3.10 \
 		python-3.9 python3.9 \
 		python-3.7 python3.7 \
@@ -90,12 +94,21 @@ fi
 #    grep -i '">' tools/nut-usbinfo.pl
 # * List the names involved:
 #    grep -E 'output.*=' tools/nut-usbinfo.pl
+# Also check that the last re-generation is newer than the sources involved
+# (stay on top of CI rebuilds, development, Git branch switching...)
+# Someone please tell me why GNU `find dir -newer X -name Y -o -name Z` does
+# not filter away layer by layer, but rather finds the names Z and beyond
+# (same for the other way around)? Anyway, dumbed down for the most trivial
+# `find` implementations out there...
 if [ ! -f scripts/udev/nut-usbups.rules.in -o \
      ! -f scripts/hotplug/libhid.usermap -o \
      ! -f scripts/upower/95-upower-hid.hwdb -o \
      ! -f scripts/devd/nut-usb.conf.in -o \
-     ! -f tools/nut-scanner/nutscan-usb.h ]
-then
+     ! -f scripts/devd/nut-usb.quirks -o \
+     ! -f tools/nut-scanner/nutscan-usb.h ] \
+|| [ -n "`find drivers -newer scripts/hotplug/libhid.usermap | grep -E '(-hid|nutdrv_qx|usb.*)\.c'`" ] \
+|| [ -n "`find drivers -not -newer tools/nut-usbinfo.pl | grep -E '(-hid|nutdrv_qx|usb.*)\.c'`" ] \
+; then
 	if perl -e 1; then
 		VERBOSE_FLAG_PERL=""
 		if $DEBUG ; then
@@ -146,6 +159,11 @@ if ( command -v dos2unix ) 2>/dev/null >/dev/null ; then
 		echo ""
 	fi
 fi >&2
+
+# Required by autoconf for non-"foreign" projects;
+# is tracked as a NEWS.adoc for us however.
+[ -f NEWS ] || { echo "Please see NEWS.adoc for actual contents" > NEWS; }
+[ -f README ] || { echo "Please see README.adoc for actual contents" > README; }
 
 echo "Calling autoreconf..."
 AUTOTOOL_RES=0

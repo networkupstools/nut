@@ -65,8 +65,6 @@ static void PrintBufAndData(uint8_t *buf, size_t bufSize, HIDData_t *pData) {
 }
 
 static int RunBuiltInTests(char *argv[]) {
-	NUT_UNUSED_VARIABLE(argv);
-
 	int exitStatus = 0;
 	size_t i;
 	char *next;
@@ -104,7 +102,15 @@ static int RunBuiltInTests(char *argv[]) {
 		{.buf = "16 0c 00 00 00", .Offset = 10, .Size = 1, .LogMin = 0, .LogMax = 1, .expectedValue =  0}
 	};
 
-	for (i = 0; i < sizeof(testData)/sizeof(testData[0]); i++) {
+	/* See comments below about rdlen calculation emulation for tests */
+	usb_ctrl_char	bufC[2];
+	signed char	bufS[2];
+	unsigned char	bufU[2];
+	int rdlen;
+
+	NUT_UNUSED_VARIABLE(argv);
+
+	for (i = 0; i < SIZEOF_ARRAY(testData); i++) {
 		next = testData[i].buf;
 		for (bufSize = 0; *next != 0; bufSize++) {
 			reportBuf[bufSize] = (uint8_t) strtol(next, (char **)&next, 16);
@@ -134,10 +140,6 @@ static int RunBuiltInTests(char *argv[]) {
 	 * from the protocol buffer, and build a platform
 	 * dependent representation of a two-byte word.
 	 */
-	usb_ctrl_char	bufC[2];
-	signed char	bufS[2];
-	unsigned char	bufU[2];
-	int rdlen;
 
 	/* Example from issue https://github.com/networkupstools/nut/issues/1261
 	 * where resulting length 0x01a9 should be "425" but ended up "-87" */

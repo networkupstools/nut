@@ -94,7 +94,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Belkin 'Universal UPS' driver"
-#define DRIVER_VERSION	"0.08"
+#define DRIVER_VERSION	"0.09"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -159,7 +159,7 @@ upsdrv_info_t upsdrv_info = {
 #define BS_REPLACE   0x80
 
 /* size of an array */
-#define asize(x) ((int)(sizeof(x)/sizeof(x[0])))
+#define asize(x) ((int)(SIZEOF_ARRAY(x)))
 
 static const char *upstype[3] = {
 	"ONLINE",

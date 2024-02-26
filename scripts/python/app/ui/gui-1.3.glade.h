@@ -32,7 +32,7 @@ char *s = N_("GUI to manage devices connected a NUT server.\n"
              "For more information about NUT (Network UPS Tools)\n"
              "please visit the author's website.\n"
              "\n"
-             "http://www.networkupstools.org\n"
+             "https://www.networkupstools.org\n"
              "");
 char *s = N_("http://www.lestat.st");
 char *s = N_("Copyright (C) 2010 David Goncalves <david@lestat.st>\n"

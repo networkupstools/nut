@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2011 - 2024 Arnaud Quette (Design and part of implementation)
  *  Copyright (C) 2011-2021 - EATON
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -20,6 +21,7 @@
     \brief init functions for nut scanner library
     \author Frederic Bohe <fredericbohe@eaton.com>
     \author Arnaud Quette <ArnaudQuette@Eaton.com>
+	\author Arnaud Quette <arnaudquette@free.fr>
 */
 
 #include "common.h"
@@ -39,6 +41,7 @@
 int nutscan_avail_avahi = 0;
 int nutscan_avail_ipmi = 0;
 int nutscan_avail_nut = 0;
+int nutscan_avail_nut_simulation = 1;
 #ifdef WITH_SNMP_STATIC
 int nutscan_avail_snmp = 1;
 #else
@@ -108,6 +111,14 @@ void do_upsconf_args(char *confupsname, char *var, char *val) {
 
 void nutscan_init(void)
 {
+	char *libname = NULL;
+
+	/* Optional filter to not walk things twice */
+	nut_prepare_search_paths();
+
+	/* Report library paths we would search, at given debug verbosity level */
+	upsdebugx_report_search_paths(1, 1);
+
 #ifdef HAVE_PTHREAD
 /* TOTHINK: Should semaphores to limit thread count
  * and the more naive but portable methods be an
@@ -148,8 +159,6 @@ void nutscan_init(void)
 	pthread_mutex_init(&threadcount_mutex, NULL);
 # endif
 #endif	/* HAVE_PTHREAD */
-
-	char *libname = NULL;
 
 #ifdef WITH_USB
  #if WITH_LIBUSB_1_0
@@ -350,6 +359,11 @@ void nutscan_init(void)
 	upsdebugx(1, "%s: %s to load the library for %s",
 		__func__, nutscan_avail_nut ? "succeeded" : "failed", "NUT Client library");
 /* end of libupsclient for "old NUT" (vs. Avahi) protocol */
+
+
+/* start of "NUT Simulation" - unconditional */
+/* no need for additional library */
+	nutscan_avail_nut = 1;
 
 }
 
