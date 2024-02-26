@@ -70,10 +70,10 @@ LDFLAGS_LUA = $(LUA_LIB)
 if WITH_DMF_LUA
  CFLAGS_DMF_LUA = -DWITH_DMF_LUA=1 -DWITH_DMF_FUNCTIONS=1 $(CFLAGS_LUA)
  LDFLAGS_DMF_LUA = $(LDFLAGS_LUA)
-else
+else !WITH_DMF_LUA
  CFLAGS_DMF_LUA = -DWITH_DMF_LUA=0
  LDFLAGS_DMF_LUA =
-endif
+endif !WITH_DMF_LUA
 
 if WITH_NEON
 if WITH_SNMP
@@ -96,13 +96,13 @@ if WITH_DMF
 if WITH_DMF_LUA
  nut_scanner_reindex_dmfsnmp_LDADD += $(LDFLAGS_DMF_LUA)
  nut_scanner_reindex_dmfsnmp_CFLAGS += $(CFLAGS_DMF_LUA)
-endif
+endif WITH_DMF_LUA
 if ! WITH_LIBLTDL
  nut_scanner_reindex_dmfsnmp_LDADD += $(LIBNEON_LIBS)
-endif
-endif
-endif
-endif
+endif ! WITH_LIBLTDL
+endif WITH_DMF
+endif WITH_SNMP
+endif WITH_NEON
 
 # Note: we only build nut-scanner, and its library, if libltdl was found (required ATM!)
 if WITH_NUT_SCANNER
@@ -154,9 +154,9 @@ libnutscan_la_LDFLAGS += -version-info 2:5:0
 # dynamic/shared libnutcommon (etc.)
 if WITH_DMF
 libnutscan_la_LDFLAGS += -export-symbols-regex '^((dmf)?nutscan_|uninit_snmp_device_table|nut_debug_level|s_upsdebugx|max_threads|curr_threads|nut_report_config_flags|upsdebugx_report_search_paths|nut_prepare_search_paths)'
-else
+else !WITH_DMF
 libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebugx|max_threads|curr_threads|nut_report_config_flags|upsdebugx_report_search_paths|nut_prepare_search_paths)'
-endif
+endif !WITH_DMF
 libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include \
 			$(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
 
