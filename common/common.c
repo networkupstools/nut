@@ -539,13 +539,13 @@ int sendsignalfn(const char *pidfn, int sig)
 	pidf = fopen(pidfn, "r");
 	if (!pidf) {
 		upslog_with_errno(LOG_NOTICE, "fopen %s", pidfn);
-		return -1;
+		return -3;
 	}
 
 	if (fgets(buf, sizeof(buf), pidf) == NULL) {
 		upslogx(LOG_NOTICE, "Failed to read pid from %s", pidfn);
 		fclose(pidf);
-		return -1;
+		return -2;
 	}
 	/* TOTHINK: Original code only closed pidf before
 	 * exiting the method, on error or "normally".
@@ -1416,6 +1416,7 @@ vupslog_too_long:
 		syslog(priority, "%s", buf);
 	free(buf);
 }
+
 
 /* Return the default path for the directory containing configuration files */
 const char * confpath(void)
