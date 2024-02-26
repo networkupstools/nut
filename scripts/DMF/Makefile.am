@@ -244,6 +244,7 @@ if WITH_REGENERATE_DMF_SNMP
 	      LDFLAGSx="$(abs_top_builddir)/common/libcommon.la $(abs_top_builddir)/drivers/dstate.o" \
 	      CPPFLAGS="$(DMFTOOLS_CPPFLAGS) $(CPPFLAGS) $(AM_CPPFLAGS)" \
 	      ABS_BUILDDIR="$(abs_builddir)" \
+	      DEBUG="$(V)" \
 	      $(abs_srcdir)/dmfify-mib.sh --skip-sanity-check "$$CMIBFILE" "$@" \
 	    ) || exit; \
 	fi ; \
@@ -258,13 +259,14 @@ if WITH_REGENERATE_DMF_SNMP
 $(DMFGEN_SANITY_VALIDATED): dmfgen-sanity
 
 dmfgen-sanity: $(srcdir)/dmfify-mib.sh
-	@if $(abs_srcdir)/dmfify-mib.sh --sanity-check ; then \
+	@DEBUG="$(V)"; export DEBUG; \
+	 if $(abs_srcdir)/dmfify-mib.sh --sanity-check ; then \
 	    echo "Sanity-checked the low-level ability to generate DMF files - OK" >&2; \
 	    test -f "$(DMFGEN_SANITY_VALIDATED)" || touch $(DMFGEN_SANITY_VALIDATED); \
-	else \
+	 else \
 	    echo "SKIP: NOT REBUILDING DMF files due to absence of prerequisites like Python or pycparser" >&2; \
 	    rm -f $(DMFGEN_SANITY_VALIDATED); \
-	fi
+	 fi
 else
   DMFGEN_CMD = ( \
 	echo "SKIP: Generation of $@ from $$CMIBFILE not enabled by the configure script (--with-dmfsnmp-regenerate option)"; \
