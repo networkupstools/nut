@@ -108,7 +108,7 @@ endif
 if WITH_NUT_SCANNER
  bin_PROGRAMS += nut-scanner
  lib_LTLIBRARIES += libnutscan.la
-endif
+endif WITH_NUT_SCANNER
 libnutscan_la_SOURCES = scan_nut.c scan_nut_simulation.c scan_ipmi.c \
 			nutscan-snmp.c \
 			nutscan-device.c nutscan-ip.c nutscan-display.c \
@@ -119,12 +119,12 @@ libnutscan_la_LIBADD = $(NETLIBS)
 libnutscan_la_LIBADD += $(top_builddir)/drivers/libserial-nutscan.la
 if WITH_LIBLTDL
 libnutscan_la_LIBADD += $(LIBLTDL_LIBS)
-endif
+endif WITH_LIBLTDL
 #libnutscan_la_LIBADD += $(top_builddir)/common/libcommonclient.la
 if HAVE_SEMAPHORE_LIBS
 # Are additional libraries needed for semaphore support?
 libnutscan_la_LIBADD += $(SEMLIBS)
-endif
+endif HAVE_SEMAPHORE_LIBS
 
 # FIXME: From old ages onward, SERLIBS are added here and not in LIBADD... why?
 libnutscan_la_LDFLAGS = $(SERLIBS)
@@ -132,7 +132,7 @@ libnutscan_la_LDFLAGS = $(SERLIBS)
 if HAVE_WINDOWS
   # Many versions of MingW seem to fail to build non-static DLL without this
   libnutscan_la_LDFLAGS += -no-undefined
-endif
+endif HAVE_WINDOWS
 
 #
 # Below we set API versions of public libraries
@@ -141,7 +141,7 @@ endif
 # object .so names would differ)
 #
 # libnutscan version information
-libnutscan_la_LDFLAGS += $(SERLIBS) -version-info 2:5:0
+libnutscan_la_LDFLAGS += -version-info 2:5:0
 
 # libnutscan exported symbols regex
 # WARNING: Since the library includes parts of libcommon (as much as needed
@@ -212,10 +212,10 @@ endif WITH_SNMP
 if WITH_SSL
   libnutscan_la_CFLAGS += $(LIBSSL_CFLAGS)
   libnutscan_la_LIBADD += $(LIBSSL_LIBS)
-endif
+endif WITH_SSL
 if WITH_USB
   libnutscan_la_CFLAGS += $(LIBUSB_CFLAGS)
-endif
+endif WITH_USB
 # Note: do not indent automake "if" lines
 if WITH_SNMP
   libnutscan_la_CFLAGS += $(LIBNETSNMP_CFLAGS)
@@ -235,13 +235,13 @@ endif WITH_SNMP_STATIC
 endif WITH_SNMP
 if WITH_NEON
   libnutscan_la_CFLAGS += $(LIBNEON_CFLAGS)
-endif
+endif WITH_NEON
 if WITH_AVAHI
   libnutscan_la_CFLAGS += $(LIBAVAHI_CFLAGS)
-endif
+endif WITH_AVAHI
 if WITH_IPMI
   libnutscan_la_CFLAGS += $(LIBIPMI_CFLAGS)
-endif
+endif WITH_IPMI
 
 # C is not a header, but there is no dist_noinst_SOURCES
 dist_noinst_HEADERS += $(NUT_SCANNER_DEPS_H) $(NUT_SCANNER_DEPS_C)
@@ -249,9 +249,9 @@ dist_noinst_HEADERS += $(NUT_SCANNER_DEPS_H) $(NUT_SCANNER_DEPS_C)
 # Optionally deliverable as part of NUT public API:
 if WITH_DEV
  include_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h nutscan-snmp.h
-else
+else !WITH_DEV
  dist_noinst_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h nutscan-snmp.h
-endif
+endif !WITH_DEV
 
 dummy:
 
