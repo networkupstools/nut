@@ -93,10 +93,11 @@ def die (msg):
     sys.exit (1)
 
 def warn (msg):
-    print ("W: " + msg, file=sys.stderr)
+    if os.environ.get("DEBUG", "") in ["yes", "1"]:
+        print ("W: " + msg, file=sys.stderr)
 
 def debug (msg):
-    if os.environ.get("DEBUG") == "yes":
+    if os.environ.get("DEBUG", "") in ["yes", "1"]:
         print ("D: " + msg, file=sys.stderr)
 
 def mkElement (_element, **attrs):

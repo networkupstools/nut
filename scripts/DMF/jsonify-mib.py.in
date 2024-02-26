@@ -40,13 +40,15 @@ ABS_BUILDDIR = os.environ.get("ABS_BUILDDIR", None)
 #   - read the file to find and prints the comments
 
 def warn (msg):
-    print ("W: %s" % msg, file=sys.stderr)
+    if os.environ.get("DEBUG", "") in ["yes", "1"]:
+        print ("W: %s" % msg, file=sys.stderr)
 
 def info (msg):
-    print ("I: %s" % msg, file=sys.stderr)
+    if os.environ.get("DEBUG", "") in ["yes", "1", ""]:
+        print ("I: %s" % msg, file=sys.stderr)
 
 def debug (msg):
-    if os.environ.get("DEBUG") == "yes":
+    if os.environ.get("DEBUG", "") in ["yes", "1"]:
         print ("D: %s" % msg, file=sys.stderr)
 
 def f2f(node):
