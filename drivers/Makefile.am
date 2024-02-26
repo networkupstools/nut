@@ -24,6 +24,7 @@ LDADD_DRIVERS_SERIAL = libdummy_serial.la $(LDADD_DRIVERS) $(SERLIBS)
 
 # most targets are serial drivers, so make this the default
 LDADD = $(LDADD_DRIVERS_SERIAL)
+
 # Avoid per-target CFLAGS, because this will prevent re-use of object
 # files. In any case, CFLAGS are only -I options, so there is no harm,
 # but only add them if we really use the target.
@@ -443,7 +444,8 @@ noinst_LTLIBRARIES = libserial-nutscan.la
 
 libserial_nutscan_la_SOURCES = serial.c bcmxcp_ser.c
 libserial_nutscan_la_LDFLAGS = $(SERLIBS)
-libserial_nutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include -I$(top_srcdir)/drivers
+#libserial_nutscan_la_LDADD = $(LDADD) -lm
+libserial_nutscan_la_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/clients -I$(top_srcdir)/include -I$(top_srcdir)/drivers
 
 dummy:
 
