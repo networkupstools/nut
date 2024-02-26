@@ -32,6 +32,7 @@ $(NUT_SCANNER_DEPS): dummy
 $(top_builddir)/include/nut_version.h \
 $(top_builddir)/common/libparseconf.la \
 $(top_builddir)/common/libnutdmfsnmp.la \
+$(top_builddir)/common/libnutwincompat.la \
 $(top_builddir)/drivers/libserial-nutscan.la \
 $(top_builddir)/common/libcommonstr.la \
 $(top_builddir)/common/libcommonclient.la \
@@ -132,6 +133,7 @@ libnutscan_la_LIBADD += $(SERLIBS)
 libnutscan_la_LDFLAGS =
 if HAVE_WINDOWS
   # Many versions of MingW seem to fail to build non-static DLL without this
+  libnutscan_la_LIBADD += $(top_builddir)/common/libnutwincompat.la
   libnutscan_la_LDFLAGS += -no-undefined
 endif HAVE_WINDOWS
 
