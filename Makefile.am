@@ -96,75 +96,75 @@ distcheck-light:
 	+$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_FLAGS)" distcheck
 
 distcheck-light-man:
-	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_MAN_FLAGS)" distcheck
+	+$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_MAN_FLAGS)" distcheck
 
 # Make a distcheck (and check in particular) with enabled valgrind and debug info
 memcheck distcheck-valgrind:
 	+$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_VALGRIND_FLAGS)" distcheck
 
 distcheck-dmf-features-REGEN_NO:
-	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_REGEN_NO_FLAGS)" distcheck || 	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_REGEN_NO_FLAGS" >&2; exit $$RES; }
+	+$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_REGEN_NO_FLAGS)" distcheck || 	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_REGEN_NO_FLAGS" >&2; exit $$RES; }
 	echo "PASSED $@ suite!"
 
 distcheck-dmf-features-LTDL_YES:
-	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_LTDL_YES_FLAGS)" distcheck || 	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_LTDL_YES_FLAGS" >&2; exit $$RES; }
+	+$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_LTDL_YES_FLAGS)" distcheck || 	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_LTDL_YES_FLAGS" >&2; exit $$RES; }
 	echo "PASSED $@ suite!"
 
 distcheck-dmf-features-LTDL_NO:
-	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_LTDL_NO_FLAGS)" distcheck ||  	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_LTDL_NO_FLAGS" >&2; exit $$RES; }
+	+$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_LTDL_NO_FLAGS)" distcheck ||  	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_LTDL_NO_FLAGS" >&2; exit $$RES; }
 	echo "PASSED $@ suite!"
 
 distcheck-dmf-features-LUA_YES:
-	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_LUA_YES_FLAGS)" distcheck ||  	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_LUA_YES_FLAGS" >&2; exit $$RES; }
+	+$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_LUA_YES_FLAGS)" distcheck ||  	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_LUA_YES_FLAGS" >&2; exit $$RES; }
 	echo "PASSED $@ suite!"
 
 distcheck-dmf-features-LUA_YESNO:
-	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_LUA_YESNO_FLAGS)" distcheck ||	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_LUA_YESNO_FLAGS" >&2; exit $$RES; }
+	+$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_LUA_YESNO_FLAGS)" distcheck ||	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_LUA_YESNO_FLAGS" >&2; exit $$RES; }
 	echo "PASSED $@ suite!"
 
 distcheck-dmf-features-LUA_NO:
-	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_LUA_NO_FLAGS)" distcheck ||   	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_LUA_NO_FLAGS" >&2; exit $$RES; }
+	+$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_LUA_NO_FLAGS)" distcheck ||   	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_LUA_NO_FLAGS" >&2; exit $$RES; }
 	echo "PASSED $@ suite!"
 
 distcheck-dmf-features-REGEN_YES:
-	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_REGEN_YES_FLAGS)" distcheck ||	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_REGEN_YES_FLAGS" >&2; exit $$RES; }
+	+$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_REGEN_YES_FLAGS)" distcheck ||	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_REGEN_YES_FLAGS" >&2; exit $$RES; }
 	echo "PASSED $@ suite!"
 
 # Intentionally done as one rule, to avoid parallelization and conflicts
 distcheck-dmf-features:
-	$(MAKE) $(AM_MAKEFLAGS) distcheck-dmf-features-REGEN_NO
-	$(MAKE) $(AM_MAKEFLAGS) distcheck-dmf-features-LTDL_YES
-	$(MAKE) $(AM_MAKEFLAGS) distcheck-dmf-features-LTDL_NO
-	$(MAKE) $(AM_MAKEFLAGS) distcheck-dmf-features-LUA_YES
-	$(MAKE) $(AM_MAKEFLAGS) distcheck-dmf-features-LUA_YESNO
-	$(MAKE) $(AM_MAKEFLAGS) distcheck-dmf-features-LUA_NO
-	$(MAKE) $(AM_MAKEFLAGS) distcheck-dmf-features-REGEN_YES
+	+$(MAKE) $(AM_MAKEFLAGS) distcheck-dmf-features-REGEN_NO
+	+$(MAKE) $(AM_MAKEFLAGS) distcheck-dmf-features-LTDL_YES
+	+$(MAKE) $(AM_MAKEFLAGS) distcheck-dmf-features-LTDL_NO
+	+$(MAKE) $(AM_MAKEFLAGS) distcheck-dmf-features-LUA_YES
+	+$(MAKE) $(AM_MAKEFLAGS) distcheck-dmf-features-LUA_YESNO
+	+$(MAKE) $(AM_MAKEFLAGS) distcheck-dmf-features-LUA_NO
+	+$(MAKE) $(AM_MAKEFLAGS) distcheck-dmf-features-REGEN_YES
 	echo "PASSED $@ suite!"
 
 # Just test the common useful case of enabling (requiring) everything
 # related to DMF at once
 distcheck-dmf-all-yes:
-	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_ALL)" distcheck ||	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_ALL" >&2; exit $$RES; }
+	+$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_ALL)" distcheck ||	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_ALL" >&2; exit $$RES; }
 	echo "PASSED $@ suite!"
 
 distcheck-dmf-no:
-	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_NO)" distcheck ||	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_NO" >&2; exit $$RES; }
+	+$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_NO)" distcheck ||	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_NO" >&2; exit $$RES; }
 	echo "PASSED $@ suite!"
 
 distcheck-dmf-warnings:
-	$(MAKE) $(AM_MAKEFLAGS) CFLAGS="$(CFLAGS) -Werror -Wall" DISTCHECK_FLAGS="$(DISTCHECK_DMF_ALL)" distcheck
+	+$(MAKE) $(AM_MAKEFLAGS) CFLAGS="$(CFLAGS) -Werror -Wall" DISTCHECK_FLAGS="$(DISTCHECK_DMF_ALL)" distcheck
 	echo "PASSED $@ suite!"
 
 distcheck-dmf:
-	$(MAKE) $(AM_MAKEFLAGS) distcheck-light-man
-	$(MAKE) $(AM_MAKEFLAGS) distcheck-dmf-features
-	$(MAKE) $(AM_MAKEFLAGS) distcheck-dmf-warnings
+	+$(MAKE) $(AM_MAKEFLAGS) distcheck-light-man
+	+$(MAKE) $(AM_MAKEFLAGS) distcheck-dmf-features
+	+$(MAKE) $(AM_MAKEFLAGS) distcheck-dmf-warnings
 	echo "PASSED $@ suite!"
 
 # Shortcut for DMF development - only checks its specifics after building NUT
 # The extent of actions and tests called below depends on project configuration
 check-dmf: all
-	cd $(top_srcdir)/scripts/DMF && $(MAKE) check
+	+cd $(top_srcdir)/scripts/DMF && $(MAKE) check
 
 # workaround the dist generated files that are also part of the distribution
 # Note that distcleancheck is disabled for now, while waiting for a proper
