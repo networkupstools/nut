@@ -286,9 +286,15 @@ else
   DMFFILE_DIR=$(abs_srcdir)/
 endif
 
+# NOTE: "sleep" below lets some funny make programs catch up, hopefully
+# (if sub-make of a DMF reported completion but file is not here yet,
+# or if the initial reaction was to a file in srcdir/distdir)
 DMFLNK_CMD = ( \
 	case "$$DMFFILE" in /*) DMFFILE_DIR="" ;; *) DMFFILE_DIR="$(DMFFILE_DIR)" ;; esac; \
-	echo "  LN     '$$DMFFILE_DIR$$DMFFILE' => '$$DMFLINK' (PWD = `pwd`)" >&2 ; \
+	echo "  LN     '$$DMFFILE_DIR$$DMFFILE' => '$$DMFLINK' (PWD = '`pwd`', IN='$<', IN_ALL='$^', OUT='$@')" >&2 ; \
+	test -f "$$DMFFILE_DIR$$DMFFILE" || { echo "`date`: 1. File '$$DMFFILE_DIR$$DMFFILE' not found yet, sleeping a bit" >&2; sleep 5 ; sync; } ; \
+	test -f "$$DMFFILE_DIR$$DMFFILE" || { echo "`date`: 2. File '$$DMFFILE_DIR$$DMFFILE' not found yet, sleeping a bit" >&2; sleep 10 ; sync; } ; \
+	test -f "$$DMFFILE_DIR$$DMFFILE" || { echo "`date`: 3. File '$$DMFFILE_DIR$$DMFFILE' not found yet, sleeping a bit" >&2; sleep 15 ; sync; } ; \
 	if [ x"$(V)" = x1 ] ; then echo "BEFORE:" ; ls -la "$$DMFFILE_DIR$$DMFFILE" "$$DMFLINK" || true; fi ; \
 	DMFLINK_DIR="`dirname "$$DMFLINK"`"; \
 	test -d "$$DMFLINK_DIR" -a -w "$$DMFLINK_DIR" || $(MKDIR_P) "$$DMFLINK_DIR" || exit ; \
