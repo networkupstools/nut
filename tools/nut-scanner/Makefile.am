@@ -27,6 +27,7 @@ $(NUT_SCANNER_DEPS): dummy
 	+@cd .. && $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
+$(top_builddir)/include/nut_version.h \
 $(top_builddir)/common/libcommonclient.la \
 $(top_builddir)/common/libcommon.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
@@ -52,9 +53,6 @@ bcmxcp_ser.c: $(top_srcdir)/drivers/bcmxcp_ser.c
 
 CLEANFILES += $(LINKED_SOURCE_FILES)
 BUILT_SOURCES += $(LINKED_SOURCE_FILES)
-
-$(top_builddir)/include/nut_version.h:
-	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # Note: we only build nut-scanner, and its library, if libltdl was found (required!)
 if WITH_NUT_SCANNER
