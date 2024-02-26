@@ -658,7 +658,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 	/* free everything... */
 	i = 0;
 	while (serial_ports_list[i] != NULL) {
-	 	free(serial_ports_list[i]);
+		free(serial_ports_list[i]);
 		i++;
 	}
 	free( serial_ports_list);
