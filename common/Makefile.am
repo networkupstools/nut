@@ -13,6 +13,7 @@ AM_CFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 AM_CXXFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 AM_LDFLAGS = -no-undefined
 EXTRA_DIST =
+CLEANFILES =
 
 noinst_LTLIBRARIES = libparseconf.la libcommon.la libcommonclient.la
 if WITH_NUTCONF
@@ -52,7 +53,7 @@ libcommonclient_la_SOURCES += common.c
 else
 nodist_libcommon_la_SOURCES = common.c
 nodist_libcommonclient_la_SOURCES = common.c
-CLEANFILES = $(top_builddir)/common/common.c
+CLEANFILES += $(top_builddir)/common/common.c
 BUILT_SOURCES = common.c
 endif
 
