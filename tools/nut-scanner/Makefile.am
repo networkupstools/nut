@@ -33,6 +33,7 @@ $(top_builddir)/include/nut_version.h \
 $(top_builddir)/common/libparseconf.la \
 $(top_builddir)/common/libnutdmfsnmp.la \
 $(top_builddir)/drivers/libserial-nutscan.la \
+$(top_builddir)/common/libcommonstr.la \
 $(top_builddir)/common/libcommonclient.la \
 $(top_builddir)/common/libcommon.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
