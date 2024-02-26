@@ -47,11 +47,22 @@ $(top_builddir)/include/nut_version.h:
 
 libcommon_la_SOURCES = state.c str.c upsconf.c
 libcommonclient_la_SOURCES = state.c str.c
+
+# several other Makefiles include the two helpers common.c str.c (and
+# perhaps some other string-related code), so make them a library too;
+# note that LTLIBOBJS pulls in snprintf.c contents too.
+noinst_LTLIBRARIES += libcommonstr.la
+libcommonstr_la_SOURCES = str.c
+libcommonstr_la_CFLAGS = $(AM_CFLAGS) -DWITHOUT_LIBSYSTEMD=1
+libcommonstr_la_LIBADD = @LTLIBOBJS@
+
 if BUILDING_IN_TREE
 libcommon_la_SOURCES += common.c
+libcommonstr_la_SOURCES += common.c
 libcommonclient_la_SOURCES += common.c
 else
 nodist_libcommon_la_SOURCES = common.c
+nodist_libcommonstr_la_SOURCES = common.c
 nodist_libcommonclient_la_SOURCES = common.c
 CLEANFILES += $(top_builddir)/common/common.c
 BUILT_SOURCES = common.c
@@ -62,6 +73,7 @@ EXTRA_DIST += strptime.c
 else
 # fall back to NetBSD implem
 libcommon_la_SOURCES += strptime.c
+libcommonstr_la_SOURCES += strptime.c
 libcommonclient_la_SOURCES += strptime.c
 endif
 
@@ -70,6 +82,7 @@ EXTRA_DIST += strnlen.c
 else
 # fall back to FreeBSD implem
 libcommon_la_SOURCES += strnlen.c
+libcommonstr_la_SOURCES += strnlen.c
 libcommonclient_la_SOURCES += strnlen.c
 endif
 
@@ -78,6 +91,7 @@ EXTRA_DIST += strsep.c
 else
 # fall back to simple implem
 libcommon_la_SOURCES += strsep.c
+libcommonstr_la_SOURCES += strsep.c
 libcommonclient_la_SOURCES += strsep.c
 endif
 
@@ -112,6 +126,9 @@ if HAVE_LIBREGEX
   libcommon_la_CFLAGS += $(LIBREGEX_CFLAGS)
   libcommon_la_LIBADD += $(LIBREGEX_LIBS)
 
+  libcommonstr_la_CFLAGS += $(LIBREGEX_CFLAGS)
+  libcommonstr_la_LIBADD += $(LIBREGEX_LIBS)
+
   libcommonclient_la_CFLAGS += $(LIBREGEX_CFLAGS)
   libcommonclient_la_LIBADD += $(LIBREGEX_LIBS)
 endif
@@ -128,13 +145,6 @@ if WITH_LIBSYSTEMD
 #  libcommonclient_la_LIBADD += $(LIBSYSTEMD_LIBS)
   libcommonclient_la_CFLAGS += -DWITHOUT_LIBSYSTEMD=1
 endif
-
-# several other Makefiles include these two helpers, so make them a library too
-# note that LTLIBOBJS pulls in snprintf.c contents too
-noinst_LTLIBRARIES += libcommonstr.la
-libcommonstr_la_SOURCES = common.c str.c
-libcommonstr_la_CFLAGS = $(AM_CFLAGS) -DWITHOUT_LIBSYSTEMD=1
-libcommonstr_la_LIBADD = @LTLIBOBJS@
 
 if WITH_NEON
 if WITH_SNMP
