@@ -400,7 +400,7 @@ $(abs_top_builddir)/scripts/DMF/$(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf: $(
 	test -s "$@"
 endif
 
-$(DMFNUTSCAN_SYMLINK): $(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf
+$(DMFNUTSCAN_SYMLINK): $(abs_top_builddir)/scripts/DMF/$(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf
 	@DMFFILE="$(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf"; DMFLINK="$@"; $(DMFLNK_CMD)
 
 $(INSTALL_NUT_DMFNUTSCAN_SYMLINK): $(INSTALL_NUT_DMFNUTSCAN_FILE)
@@ -408,7 +408,7 @@ $(INSTALL_NUT_DMFNUTSCAN_SYMLINK): $(INSTALL_NUT_DMFNUTSCAN_FILE)
 
 $(DMFNUTSCAN_RES_SUBDIR)/.uptodate:
 	+$(MAKE) $(AM_MAKEFLAGS) $(abs_builddir)/$(DMFNUTSCAN_RES_SUBDIR)/.uptodate
-$(abs_builddir)/$(DMFNUTSCAN_RES_SUBDIR)/.uptodate: $(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf
+$(abs_builddir)/$(DMFNUTSCAN_RES_SUBDIR)/.uptodate: $(abs_top_builddir)/scripts/DMF/$(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf
 	@echo "DMFNUTSCAN_RES_SUBDIR is now up to date" >&2
 	@test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
 	touch "$@"
