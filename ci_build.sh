@@ -585,7 +585,12 @@ build_to_only_catch_errors_target() {
         default)
           $CI_TIME $MAKE -k $PARMAKE_FLAGS "$@" ;;
       esac ) && echo "`date`: SUCCESS" ; ) || \
-    ( echo "`date`: Starting the sequential build attempt (to list remaining files with errors considered fatal for this build configuration) for '$@'..."; \
+    ( RET=$?
+      if [ "$CI_FAILFAST" = true ]; then
+        echo "===== Aborting after parallel build attempt failure for '$*' because CI_FAILFAST=$CI_FAILFAST" >&2
+        exit $RET
+      fi
+      echo "`date`: Starting the sequential build attempt (to list remaining files with errors considered fatal for this build configuration) for '$@'..."; \
       $CI_TIME $MAKE $MAKE_FLAGS_VERBOSE "$@" -k ) || return $?
     return 0
 }
