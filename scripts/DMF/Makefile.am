@@ -237,11 +237,11 @@ if WITH_REGENERATE_DMF_SNMP
 # to output filenames - which we sort of guarantee in other places.
   DMFGEN_CMD = ( \
 	if test x"$(V)" = x1 ; then echo "[D] abs_top_builddir='$(abs_top_builddir)' abs_top_srcdir='$(abs_top_srcdir)' top_builddir='$(top_builddir)' top_srcdir='$(top_srcdir)' builddir='$(builddir)' srcdir='$(srcdir)' PWD='`pwd`'" >&2 ; fi ; \
-	echo "  DMFIFY '$$CMIBFILE' => '$@' (PWD = `pwd`)" >&2 ; \
+	if test x"$${ABS_OUTDIR-}" = x ; then ABS_OUTDIR="`pwd`" ; fi ; export ABS_OUTDIR ; \
+	echo "  DMFIFY '$$CMIBFILE' => '$@' (PWD='`pwd`', actual ABS_OUTDIR='$${ABS_OUTDIR}')" >&2 ; \
 	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)" || exit ; \
 	if test -f "$(DMFGEN_SANITY_VALIDATED)" ; then \
 	    ( cd "$(@D)" && \
-	      if test x"$${ABS_OUTDIR-}" = x ; then ABS_OUTDIR="`pwd`" ; fi ; export ABS_OUTDIR ; \
 	      test -d "$${ABS_OUTDIR}" -a -w "$${ABS_OUTDIR}" || $(MKDIR_P) "$${ABS_OUTDIR}" || exit ; \
 	      LANG=C LC_ALL=C TZ=UTC \
 	      CFLAGS="$(DMFTOOLS_CFLAGS) $(AM_CFLAGS)" \
