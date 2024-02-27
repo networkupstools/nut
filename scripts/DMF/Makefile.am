@@ -293,7 +293,11 @@ endif
 # or if the initial reaction was to a file in srcdir/distdir)
 DMFLNK_CMD = ( \
 	case "$$DMFFILE" in /*) DMFFILE_DIR="" ;; *) DMFFILE_DIR="$(DMFFILE_DIR)" ;; esac; \
-	echo "  LN     '$$DMFFILE_DIR$$DMFFILE' => '$$DMFLINK' (PWD = '`pwd`', IN='$?', IN_ALL='$^', OUT='$@')" >&2 ; \
+	if [ x"$(V)" = x1 ] ; then \
+		echo "  LN     '$$DMFFILE_DIR$$DMFFILE' => '$$DMFLINK' (PWD = '`pwd`', IN='$?', IN_ALL='$^', OUT='$@')" >&2 ; \
+	else \
+		echo "  LN     '$$DMFFILE_DIR$$DMFFILE' => '$$DMFLINK'" >&2 ; \
+	fi ; \
 	test -f "$$DMFFILE_DIR$$DMFFILE" || { echo "`date`: 1. File '$$DMFFILE_DIR$$DMFFILE' not found yet, sleeping a bit" >&2; sleep 5 ; sync; } ; \
 	test -f "$$DMFFILE_DIR$$DMFFILE" || { echo "`date`: 2. File '$$DMFFILE_DIR$$DMFFILE' not found yet, sleeping a bit" >&2; sleep 10 ; sync; } ; \
 	test -f "$$DMFFILE_DIR$$DMFFILE" || { echo "`date`: 3. File '$$DMFFILE_DIR$$DMFFILE' not found yet, sleeping a bit" >&2; sleep 15 ; sync; } ; \
