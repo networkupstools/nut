@@ -239,12 +239,13 @@ if WITH_REGENERATE_DMF_SNMP
 	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)" || exit ; \
 	if test -f "$(DMFGEN_SANITY_VALIDATED)" ; then \
 	    ( cd "$(@D)" && \
+	      if test x"$${ABS_OUTDIR-}" = x ; then ABS_OUTDIR="`pwd`" ; fi ; export ABS_OUTDIR ; \
+	      test -d "$${ABS_OUTDIR}" -a -w "$${ABS_OUTDIR}" || $(MKDIR_P) "$${ABS_OUTDIR}" || exit ; \
 	      LANG=C LC_ALL=C TZ=UTC \
 	      CFLAGS="$(DMFTOOLS_CFLAGS) $(AM_CFLAGS)" \
 	      LDFLAGSx="$(abs_top_builddir)/common/libcommon.la $(abs_top_builddir)/drivers/dstate.o" \
 	      CPPFLAGS="$(DMFTOOLS_CPPFLAGS) $(CPPFLAGS) $(AM_CPPFLAGS)" \
 	      ABS_BUILDDIR="$(abs_builddir)" \
-	      ABS_OUTDIR="`pwd`" \
 	      DEBUG="$(V)" \
 	      $(abs_srcdir)/dmfify-mib.sh --skip-sanity-check "$$CMIBFILE" "$@" \
 	    ) || exit; \
