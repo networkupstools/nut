@@ -9,7 +9,7 @@
 # Be portable - no bash etc... plain minimal shell. Tested with bash, dash,
 # busybox sh and ksh for good measure.
 #
-#   Copyright (C) 2016-2024 Jim Klimov <EvgenyKlimov@eaton.com>
+#   Copyright (C) 2016 Jim Klimov <EvgenyKlimov@eaton.com>
 #
 
 # Relative to here we look for old sources
@@ -62,13 +62,13 @@ print_makefile_LEGACY_NUT_DMF_RULES() {
             *)   CMIBFILE='$(abs_top_srcdir)/drivers/'"$CMIBBASE" ;;
         esac
         DMFBASE="`basename "$CMIBBASE" .c`".dmf
-        DMFFILE='$(abs_builddir)/$(DMFSNMP_RES_SUBDIR)/'"$DMFBASE"
+        DMFFILE='$(DMFSNMP_RES_SUBDIR)/'"$DMFBASE"
         case "$DMFBASE" in
             ietf-mib.dmf) L="S90_${DMFBASE}" ;;
             S*|K*) ;;
             *) L="S10_${DMFBASE}" ;;
         esac
-        DMFLINK='$(abs_builddir)/$(DMFSNMP_SUBDIR)/'"$L"
+        DMFLINK='$(DMFSNMP_SUBDIR)/'"$L"
         printf 'LEGACY_NUT_C_MIBS +=\t%s\n' "$CMIBFILE"
         printf 'LEGACY_NUT_DMFS   +=\t%s\n' "$DMFFILE"
         printf '%s : %s $(DMFGEN_DEPS)\n\t@DMFFILE="%s"; CMIBFILE="%s"; $(DMFGEN_CMD)\n\n' "$DMFFILE" "$CMIBFILE" "$DMFFILE" "$CMIBFILE"
