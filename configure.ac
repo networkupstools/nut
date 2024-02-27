@@ -1108,13 +1108,32 @@ AC_MSG_CHECKING([whether ln -sr works])
 dnl We need to relative-symlink some files. Or hardlink. Or copy...
 LN_S_R="cp -pR"
 if test "$as_ln_s" = "ln -s" ; then
-    LN_S_R="ln"
+    _abs_srcdir="`cd "${srcdir}" && pwd`" || _abs_srcdir=""
+    _abs_builddir="`pwd`"
+    dnl AC_MSG_NOTICE([srcdir='${srcdir}' _abs_srcdir='${_abs_srcdir}' _abs_builddir='${_abs_builddir}'])
+    if test x"${_abs_srcdir}" = x"${_abs_builddir}" ; then
+        LN_S_R="ln"
+    else
+        _fs_srcdir="`df "${_abs_srcdir}" | tail -1 | awk '{print $1}'`" || fs_srcdir="XXXs"
+        _fs_builddir="`df "${_abs_builddir}" | tail -1 | awk '{print $1}'`" || fs_builddir="XXXb"
+        dnl AC_MSG_NOTICE([_fs_srcdir='${_fs_srcdir}' _fs_builddir='${_fs_builddir}'])
+        if test x"${_fs_srcdir}" = x"${_fs_builddir}" ; then
+            LN_S_R="ln"
+        fi
+        dnl ELSE Source and build areas are in different filesystems,
+        dnl can not hardlink - keep copying approach in place
+        unset _fs_srcdir _fs_builddir
+    fi
+    unset _abs_srcdir _abs_builddir
+
+    dnl Explore GNU ln (or compatible) with relative symlink support
     DIR1="$(mktemp -d "dir1.XXXXXXX")" && \
     DIR2="$(mktemp -d "dir2.XXXXXXX")" && \
     touch "${DIR1}/a" && \
     $as_ln_s -r "${DIR1}/a" "${DIR2}/b" && \
     ls -la "${DIR2}/b" | grep '\.\./' > /dev/null && \
     LN_S_R="$as_ln_s -r"
+
     rm -rf "${DIR1}" "${DIR2}"
 fi
 AC_SUBST([LN_S_R], [${LN_S_R}])
