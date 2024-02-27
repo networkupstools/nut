@@ -203,7 +203,7 @@ dmfify_c_file() {
     for F in "${_SCRIPT_DIR}"/xmlify-mib.py.in "${_SCRIPT_DIR}"/xmlify-mib.py ; do
         [ -s "$F" ] && XNAME="$F" && break
     done
-    pwd
+    logmsg_debug "PWD: `pwd`"
     ( "${PYTHON}" "${JNAME}" --test "${cmib}" "$@" > "${ABS_BUILDDIR}/${mib}.json.tmp" && \
       "${PYTHON}" "${XNAME}" < "${ABS_BUILDDIR}/${mib}.json.tmp" > "${ABS_BUILDDIR}/${mib}.dmf.tmp" ) \
     && [ -s "${ABS_BUILDDIR}/${mib}.dmf.tmp" ] \
