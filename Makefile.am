@@ -1,8 +1,5 @@
 # top-level Makefile for NUT
 
-# include directory for aclocal
-ACLOCAL_AMFLAGS = -I m4
-
 # Export certain values for ccache which NUT ci_build.sh can customize,
 # to facilitate developer iteration re-runs of "make" later.
 # At least GNU and BSD make implementations are okay with this syntax.
@@ -11,6 +8,9 @@ ACLOCAL_AMFLAGS = -I m4
 @NUT_AM_MAKE_CAN_EXPORT@export CCACHE_DIR=@CCACHE_DIR@
 @NUT_AM_MAKE_CAN_EXPORT@export CCACHE_PATH=@CCACHE_PATH@
 @NUT_AM_MAKE_CAN_EXPORT@export PATH=@PATH_DURING_CONFIGURE@
+
+# include directory for aclocal
+ACLOCAL_AMFLAGS = -I m4
 
 # subdirectories to build and distribute. The order matters, as
 # several subdirectories depend on stuff in "common" or tools being built first
@@ -74,11 +74,11 @@ DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
  --with-pynut=app --with-nut_monitor=force
 
 distcheck-light:
-	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_FLAGS)" distcheck
+	+$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_FLAGS)" distcheck
 
 # Make a distcheck (and check in particular) with enabled valgrind and debug info
 memcheck distcheck-valgrind:
-	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_VALGRIND_FLAGS)" distcheck
+	+$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_VALGRIND_FLAGS)" distcheck
 
 # workaround the dist generated files that are also part of the distribution
 # Note that distcleancheck is disabled for now, while waiting for a proper
@@ -126,10 +126,10 @@ maintainer-clean-local:
 # should be available during their clean-up). Just in case, we make sure
 # here that their sub-distcleans complete first.
 distclean-local:
-	@for DIR in $(SUBDIRS) ; do \
+	+@for DIR in $(SUBDIRS) ; do \
 		if test -f "$${DIR}/Makefile" ; then \
 			echo "  DISTCLEAN  in $${DIR}" >&2 ; \
-			( cd "$${DIR}" && $(MAKE) -s distclean ) || exit ; \
+			( cd "$${DIR}" && $(MAKE) $(AM_MAKEFLAGS) -s distclean ) || exit ; \
 		fi ; \
 	 done
 	$(AM_V_at)rm -rf .inst tmp autom4te.cache
@@ -137,23 +137,27 @@ distclean-local:
 
 # Hook the documentation building and validating recipes
 # Note: these are optionally available (as determined during configure runs)
+# Maint: grep -l 'SPELLCHECK_' `git grep -lw spellcheck '*.am'`
 spellcheck spellcheck-interactive:
-	@RES=0; \
-	(cd $(builddir)/docs && $(MAKE) -s $@) || RES=$$? ; \
-	(cd $(builddir)/docs/man && $(MAKE) -s $@) || RES=$$? ; \
-	(cd $(builddir)/conf && $(MAKE) -s $@) || RES=$$? ; \
-	(cd $(builddir)/data && $(MAKE) -s $@) || RES=$$? ; \
-	(cd $(builddir)/data/html && $(MAKE) -s $@) || RES=$$? ; \
-	(cd $(builddir)/scripts && $(MAKE) -s $@) || RES=$$? ; \
-	(cd $(builddir)/scripts/Solaris && $(MAKE) -s $@) || RES=$$? ; \
-	(cd $(builddir)/scripts/Windows && $(MAKE) -s $@) || RES=$$? ; \
-	(cd $(builddir)/scripts/devd && $(MAKE) -s $@) || RES=$$? ; \
-	(cd $(builddir)/scripts/hotplug && $(MAKE) -s $@) || RES=$$? ; \
-	(cd $(builddir)/scripts/python && $(MAKE) -s $@) || RES=$$? ; \
-	(cd $(builddir)/scripts/systemd && $(MAKE) -s $@) || RES=$$? ; \
-	(cd $(builddir)/scripts/udev && $(MAKE) -s $@) || RES=$$? ; \
-	(cd $(builddir)/scripts/upsdrvsvcctl && $(MAKE) -s $@) || RES=$$? ; \
-	(cd $(builddir)/tests/NIT && $(MAKE) -s $@) || RES=$$? ; \
+	+@RES=0; \
+	(cd $(builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/.prep-src-docs) || RES=$$? ; \
+	(cd $(builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/.prep-src-docs) || RES=$$? ; \
+	(cd $(builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
+	(cd $(builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
+	(cd $(builddir)/conf && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
+	(cd $(builddir)/data && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
+	(cd $(builddir)/data/html && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts/Solaris && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts/Windows && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts/devd && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts/hotplug && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts/installer && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts/python && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts/systemd && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts/udev && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts/upsdrvsvcctl && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
+	(cd $(builddir)/tests/NIT && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
 	exit $$RES
 
 # Note: the "all-docs" and "check-docs" targets may require tools not
@@ -164,10 +168,10 @@ spellcheck spellcheck-interactive:
 doc spellcheck-sortdict \
 all-docs check-docs \
 man all-man man-man check-man man-html all-html:
-	cd $(builddir)/docs && $(MAKE) $@
+	+cd $(builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) $@
 
 INSTALL.nut UPGRADING NEWS README:
-	cd $(builddir)/docs && $(MAKE) ../$(@F).adoc-parsed && cp -f ../$(@F).adoc-parsed ../$(@F)
+	+cd $(builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) ../$(@F).adoc-parsed && cp -f ../$(@F).adoc-parsed ../$(@F)
 
 # Workarounds for https://github.com/github/markup/issues/1095
 # require direct definition of our attributes in each source
@@ -223,7 +227,7 @@ maintainer-asciidocs:
 	 )
 
 check-NIT check-NIT-devel:
-	cd $(builddir)/tests/NIT && $(MAKE) $@
+	+cd $(builddir)/tests/NIT && $(MAKE) $(AM_MAKEFLAGS) $@
 
 # This target adds syntax-checking for committed shell script files,
 # to avoid surprises and delays in finding fatal typos after packaging
@@ -297,7 +301,7 @@ cppcheck:
 endif !HAVE_CPPCHECK
 
 sockdebug:
-	cd $(builddir)/server && $(MAKE) $(AM_MAKEFLAGS) sockdebug$(EXEEXT)
+	+cd $(builddir)/server && $(MAKE) $(AM_MAKEFLAGS) sockdebug$(EXEEXT)
 
 # ----------------------------------------------------------------------
 # Automatically generate the ChangeLog from Git logs:
@@ -313,18 +317,29 @@ GITLOG_START_POINT=v2.6.0
 
 # Force ChangeLog regeneration upon make dist (due to nonexistant 'dummy-stamp'),
 # in case it has already been generated previously
-# Note that the script is hard-coded to generate "ChangeLog" in the current dir
+# Note that the script is hard-coded to inspect Git workspace which contains
+# the current dir, and defaults to generate a "ChangeLog" in the current dir.
+# The script itself is generated from a template, so resides in builddir.
 dummy-stamp:
 ChangeLog: tools/gitlog2changelog.py dummy-stamp
-	cd $(top_builddir) && \
-	    ./tools/gitlog2changelog.py $(GITLOG_START_POINT) || \
-	    { echo "gitlog2changelog.py failed to generate the ChangeLog. See https://github.com/networkupstools/nut/commits/master" > $@ ; }
+	cd $(abs_top_srcdir) && \
+	    if test -e .git ; then \
+	        CHANGELOG_FILE="$@" $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) || \
+	        { printf "gitlog2changelog.py failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; } ; \
+	    else \
+	        if ! test -s "$@" ; then \
+	            printf "Failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; \
+	        fi ; \
+	    fi
+
+ChangeLog.adoc: ChangeLog
+	+cd $(abs_top_builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) ../ChangeLog.adoc
 
 nut_version.h include/nut_version.h:
-	cd $(abs_top_builddir)/include && $(MAKE) nut_version.h
+	+cd $(abs_top_builddir)/include && $(MAKE) $(AM_MAKEFLAGS) nut_version.h
 
 tools/gitlog2changelog.py: tools/gitlog2changelog.py.in
-	cd $(@D) && $(MAKE) -s $(@F)
+	+cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) -s $(@F)
 
 # ----------------------------------------------------------------------
 # Maintainers targets: distribution signature and hashes
@@ -350,35 +365,35 @@ build:
 	@echo $(WARN)
 	@echo "Warning: 'make build' is deprecated. Use 'make all' instead."
 	@echo $(WARN)
-	$(MAKE) $(AM_MAKEFLAGS) all
+	+$(MAKE) $(AM_MAKEFLAGS) all
 install-bin:
 	@echo $(WARN)
 	@echo "Warning: 'make install-bin' is deprecated." 
 	@echo "Use 'make install-exec' instead for a similar effect."
 	@echo $(WARN)
-	cd common;  $(MAKE) $(AM_MAKEFLAGS) install
-	cd drivers; $(MAKE) $(AM_MAKEFLAGS) install
-	cd server;  $(MAKE) $(AM_MAKEFLAGS) install
-	cd clients; $(MAKE) $(AM_MAKEFLAGS) install
+	+cd common;  $(MAKE) $(AM_MAKEFLAGS) install
+	+cd drivers; $(MAKE) $(AM_MAKEFLAGS) install
+	+cd server;  $(MAKE) $(AM_MAKEFLAGS) install
+	+cd clients; $(MAKE) $(AM_MAKEFLAGS) install
 install-man: install-data-recursive
 	@echo $(WARN)
 	@echo "Warning: 'make install-man' is deprecated."
 	@echo "Use 'cd man; make install' instead."
 	@echo $(WARN)
-	cd man; $(MAKE) $(AM_MAKEFLAGS) install
+	+cd man; $(MAKE) $(AM_MAKEFLAGS) install
 install-conf:
 	@echo $(WARN)
 	@echo "Warning: 'make install-conf' is deprecated."
 	@echo "Use 'cd conf; make install' instead."
 	@echo $(WARN)
-	cd conf; $(MAKE) $(AM_MAKEFLAGS) install
+	+cd conf; $(MAKE) $(AM_MAKEFLAGS) install
 # The target install-data already has a standardized meaning under automake
 install-dirs:
 	@echo $(WARN)
 	@echo "Warning: 'make install-dirs' is deprecated."
 	@echo "Use 'make installdirs' instead."
 	@echo $(WARN)
-	$(MAKE) installdirs
+	+$(MAKE) installdirs
 cgi build-cgi install-cgi install-cgi-dir install-cgi-bin \
 install-cgi-man install-cgi-conf install-cgi-html: 
 	@echo "Error: 'make $@' no longer exists."
@@ -413,7 +428,7 @@ MAINTAINERCLEANFILES += $(MAINTAINERCLEANFILES_DISTBALL)
 MAINTAINERCLEANFILES += $(MAINTAINERCLEANFILES_PACKAGES)
 
 package: dist
-	DESTDIR="$(abs_builddir)/_install_pkgprotodir" ; export DESTDIR; \
+	+DESTDIR="$(abs_builddir)/_install_pkgprotodir" ; export DESTDIR; \
 	rm -rf "$$DESTDIR"; \
 	case "`uname -s`" in \
 	"HP-UX") \
@@ -453,8 +468,8 @@ if HAVE_WINDOWS
 # anything.
 install-win-bundle: all
 	@if test -z "$(DESTDIR)" ; then echo "ERROR: '$@': Bundle may only be installed to some DESTDIR prototype area'" >&2 ; exit 1; fi
-	$(MAKE) $(AM_MAKEFLAGS) DESTDIR='$(DESTDIR)' install
-	$(MAKE) $(AM_MAKEFLAGS) DESTDIR='$(DESTDIR)' install-win-bundle-thirdparty
+	+$(MAKE) $(AM_MAKEFLAGS) DESTDIR='$(DESTDIR)' install
+	+$(MAKE) $(AM_MAKEFLAGS) DESTDIR='$(DESTDIR)' install-win-bundle-thirdparty
 
 install-win-bundle-thirdparty:
 	@if test -z "$(DESTDIR)" ; then echo "ERROR: '$@': Bundle may only be installed to some DESTDIR prototype area'" >&2 ; exit 1; fi

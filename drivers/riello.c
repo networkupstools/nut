@@ -26,6 +26,9 @@
  * Reference of the derivative work: blazer driver
  */
 
+#include "config.h" /* must be the first header */
+#include "common.h" /* for upsdebugx() etc */
+
 #include <string.h>
 
 #include "main.h"

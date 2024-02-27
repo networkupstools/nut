@@ -23,6 +23,9 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h" /* must be the first header */
+#include "common.h" /* for upsdebugx() etc */
+
 #include <sys/types.h>
 #ifndef WIN32
 #include <netinet/in.h>
@@ -193,9 +196,16 @@ static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry,
 static void nss_error(const char* text)
 {
 	char buffer[SMALLBUF];
-	PRInt32 length = PR_GetErrorText(buffer);
-	if (length > 0 && length < SMALLBUF) {
-		upsdebugx(1, "nss_error %ld in %s : %s", (long)PR_GetError(), text, buffer);
+	PRErrorCode err_num = PR_GetError();
+	PRInt32 err_len = PR_GetErrorTextLength();
+
+	if (err_len > 0) {
+		if (err_len < SMALLBUF) {
+			PR_GetErrorText(buffer);
+			upsdebugx(1, "nss_error %ld in %s : %s", (long)err_num, text, buffer);
+		}else{
+			upsdebugx(1, "nss_error %ld in %s : Internal error buffer too small, needs %ld bytes", (long)err_num, text, (long)err_len);
+		}
 	}else{
 		upsdebugx(1, "nss_error %ld in %s", (long)PR_GetError(), text);
 	}
@@ -204,17 +214,21 @@ static void nss_error(const char* text)
 static int ssl_error(PRFileDesc *ssl, ssize_t ret)
 {
 	char buffer[256];
+	PRErrorCode err_num = PR_GetError();
+	PRInt32 err_len = PR_GetErrorTextLength();
 	PRInt32 length;
-	PRErrorCode e;
 	NUT_UNUSED_VARIABLE(ssl);
 	NUT_UNUSED_VARIABLE(ret);
 
-	e = PR_GetError();
-	length = PR_GetErrorText(buffer);
-	if (length > 0 && length < 256) {
-		upsdebugx(1, "ssl_error() ret=%d %*s", e, length, buffer);
-	} else {
-		upsdebugx(1, "ssl_error() ret=%d", e);
+	if (err_len > 0) {
+		if (err_len < SMALLBUF) {
+			length = PR_GetErrorText(buffer);
+			upsdebugx(1, "ssl_error %ld : %*s", (long)err_num, length, buffer);
+		}else{
+			upsdebugx(1, "ssl_error %ld : Internal error buffer too small, needs %ld bytes", (long)err_num, (long)err_len);
+		}
+	}else{
+		upsdebugx(1, "ssl_error %ld", (long)err_num);
 	}
 
 	return -1;
@@ -506,24 +520,21 @@ void ssl_init(void)
 
 	PK11_SetPasswordFunc(nss_password_callback);
 
-	if (certfile)
-		/* Note: this call can generate memory leaks not resolvable
-		 * by any release function.
-		 * Probably NSS key module object allocation and
-		 * probably NSS key db object allocation too. */
-		status = NSS_Init(certfile);
-	else
-		status = NSS_NoDB_Init(NULL);
+	/* Note: this call can generate memory leaks not resolvable
+	 * by any release function.
+	 * Probably NSS key module object allocation and
+	 * probably NSS key db object allocation too. */
+	status = NSS_Init(certfile);
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL context");
-		nss_error("upscli_init / NSS_[NoDB]_Init");
+		nss_error("ssl_init / NSS_Init");
 		return;
 	}
 
 	status = NSS_SetDomesticPolicy();
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL policy");
-		nss_error("upscli_init / NSS_SetDomesticPolicy");
+		nss_error("ssl_init / NSS_SetDomesticPolicy");
 		return;
 	}
 
@@ -531,7 +542,7 @@ void ssl_init(void)
 	status = SSL_ConfigServerSessionIDCache(0, 0, 0, NULL);
 	if (status != SECSuccess) {
 		upslogx(LOG_ERR, "Can not initialize SSL server cache");
-		nss_error("upscli_init / SSL_ConfigServerSessionIDCache");
+		nss_error("ssl_init / SSL_ConfigServerSessionIDCache");
 		return;
 	}
 
@@ -539,13 +550,13 @@ void ssl_init(void)
 		status = SSL_OptionSetDefault(SSL_ENABLE_SSL3, PR_TRUE);
 		if (status != SECSuccess) {
 			upslogx(LOG_ERR, "Can not enable SSLv3");
-			nss_error("upscli_init / SSL_OptionSetDefault(SSL_ENABLE_SSL3)");
+			nss_error("ssl_init / SSL_OptionSetDefault(SSL_ENABLE_SSL3)");
 			return;
 		}
 		status = SSL_OptionSetDefault(SSL_ENABLE_TLS, PR_TRUE);
 		if (status != SECSuccess) {
 			upslogx(LOG_ERR, "Can not enable TLSv1");
-			nss_error("upscli_init / SSL_OptionSetDefault(SSL_ENABLE_TLS)");
+			nss_error("ssl_init / SSL_OptionSetDefault(SSL_ENABLE_TLS)");
 			return;
 		}
 	} else {
@@ -553,7 +564,7 @@ void ssl_init(void)
 		status = SSL_VersionRangeGetSupported(ssl_variant_stream, &range);
 		if (status != SECSuccess) {
 			upslogx(LOG_ERR, "Can not get versions supported");
-			nss_error("upscli_init / SSL_VersionRangeGetSupported");
+			nss_error("ssl_init / SSL_VersionRangeGetSupported");
 			return;
 		}
 		range.min = SSL_LIBRARY_VERSION_TLS_1_1;
@@ -563,7 +574,7 @@ void ssl_init(void)
 		status = SSL_VersionRangeSetDefault(ssl_variant_stream, &range);
 		if (status != SECSuccess) {
 			upslogx(LOG_ERR, "Can not set versions supported");
-			nss_error("upscli_init / SSL_VersionRangeSetDefault");
+			nss_error("ssl_init / SSL_VersionRangeSetDefault");
 			return;
 		}
 		/* Disable old/weak ciphers */
@@ -575,13 +586,13 @@ void ssl_init(void)
 		status = SSL_OptionSetDefault(SSL_ENABLE_SSL3, PR_FALSE);
 		if (status != SECSuccess) {
 			upslogx(LOG_ERR, "Can not disable SSLv3");
-			nss_error("upscli_init / SSL_OptionSetDefault(SSL_DISABLE_SSL3)");
+			nss_error("ssl_init / SSL_OptionSetDefault(SSL_DISABLE_SSL3)");
 			return;
 		}
 		status = SSL_OptionSetDefault(SSL_ENABLE_TLS, PR_TRUE);
 		if (status != SECSuccess) {
 			upslogx(LOG_ERR, "Can not enable TLSv1");
-			nss_error("upscli_init / SSL_OptionSetDefault(SSL_ENABLE_TLS)");
+			nss_error("ssl_init / SSL_OptionSetDefault(SSL_ENABLE_TLS)");
 			return;
 		}
 #endif
@@ -599,7 +610,7 @@ void ssl_init(void)
 		status = SSL_OptionSetDefault(SSL_REQUEST_CERTIFICATE, PR_TRUE);
 		if (status != SECSuccess) {
 			upslogx(LOG_ERR, "Can not enable certificate request");
-			nss_error("upscli_init / SSL_OptionSetDefault(SSL_REQUEST_CERTIFICATE)");
+			nss_error("ssl_init / SSL_OptionSetDefault(SSL_REQUEST_CERTIFICATE)");
 			return;
 		}
 	}
@@ -608,7 +619,7 @@ void ssl_init(void)
 		status = SSL_OptionSetDefault(SSL_REQUIRE_CERTIFICATE, PR_TRUE);
 		if (status != SECSuccess) {
 			upslogx(LOG_ERR, "Can not enable certificate requirement");
-			nss_error("upscli_init / SSL_OptionSetDefault(SSL_REQUIRE_CERTIFICATE)");
+			nss_error("ssl_init / SSL_OptionSetDefault(SSL_REQUIRE_CERTIFICATE)");
 			return;
 		}
 	}
@@ -617,14 +628,14 @@ void ssl_init(void)
 	cert = PK11_FindCertFromNickname(certname, NULL);
 	if(cert==NULL)	{
 		upslogx(LOG_ERR, "Can not find server certificate");
-		nss_error("upscli_init / PK11_FindCertFromNickname");
+		nss_error("ssl_init / PK11_FindCertFromNickname");
 		return;
 	}
 
 	privKey = PK11_FindKeyByAnyCert(cert, NULL);
 	if(privKey==NULL){
 		upslogx(LOG_ERR, "Can not find private key associate to server certificate");
-		nss_error("upscli_init / PK11_FindKeyByAnyCert");
+		nss_error("ssl_init / PK11_FindKeyByAnyCert");
 		return;
 	}
 

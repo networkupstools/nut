@@ -14,6 +14,31 @@ have in their environments.
 Common preparations
 ~~~~~~~~~~~~~~~~~~~
 
+* Example list of packages for Debian-based systems may include (not
+  necessarily is limited to):
++
+----
+:; apt install lxc lxcfs lxc-templates \
+    ipxe-qemu qemu-kvm qemu-system-common qemu-system-data \
+    qemu-system-sparc qemu-system-x86 qemu-user-static qemu-utils \
+    virt-manager virt-viewer virtinst ovmf \
+    libvirt-daemon-system-systemd libvirt-daemon-system \
+    libvirt-daemon-driver-lxc libvirt-daemon-driver-qemu \
+    libvirt-daemon-config-network libvirt-daemon-config-nwfilter \
+    libvirt-daemon libvirt-clients
+
+# TODO: Where to find virt-top - present in some but not all releases?
+# Can fetch sources from https://packages.debian.org/sid/virt-top and follow
+# https://www.linuxfordevices.com/tutorials/debian/build-packages-from-source
+# Be sure to use 1.0.x versions, since 1.1.x uses a "better-optimized API"
+# which is not implemented by libvirt/LXC backend.
+----
++
+NOTE: This claims a footprint of over a gigabyte of new packages when
+  unpacked and installed to a minimally prepared OS. Much of that would
+  be the graphical environment dependencies required by several engines
+  and tools.
+
 * Prepare LXC and LIBVIRT-LXC integration, including an "independent"
   (aka "masqueraded) bridge for NAT, following https://wiki.debian.org/LXC
   and https://wiki.debian.org/LXC/SimpleBridge

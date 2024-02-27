@@ -470,7 +470,8 @@ static int apply_for_primary(utype_t *ups)
 	return 0;
 }
 
-/* authenticate to upsd, plus do LOGIN and MASTER if applicable */
+/* authenticate to upsd, plus do LOGIN and apply for PRIMARY/MASTER privileges
+ * if applicable to this ups device MONITORing configuration */
 static int do_upsd_auth(utype_t *ups)
 {
 	char	buf[SMALLBUF];
@@ -1099,10 +1100,11 @@ static int is_ups_critical(utype_t *ups)
 
 	/* administratively OFF (long enough, see OFFDURATION) */
 	if (flag_isset(ups->status, ST_OFF) && offdurationtime >= 0
-	&& (ups->linestate == 0 || ups->offstate == 1)) {
+	&& ups->offstate == 1) {
 		upslogx(LOG_WARNING,
 			"UPS [%s] is reported as (administratively) OFF",
 			ups->sys);
+		upsdebugx(1, "UPS [%s] is now critical being OFF for too long. In case of persisting unwanted shutdowns, consider disabling the upsmon 'OFFDURATION' option.", ups->sys);
 		return 1;
 	}
 
@@ -1778,7 +1780,7 @@ static int parse_conf_arg(size_t numargs, char **arg)
 	/* DEBUG_MIN (NUM) */
 	/* debug_min (NUM) also acceptable, to be on par with ups.conf */
 	if (!strcasecmp(arg[0], "DEBUG_MIN")) {
-		int lvl = -1; // typeof common/common.c: int nut_debug_level
+		int lvl = -1; /* typeof common/common.c: int nut_debug_level */
 		if ( str_to_int (arg[1], &lvl, 10) && lvl >= 0 ) {
 			nut_debug_level_global = lvl;
 		} else {

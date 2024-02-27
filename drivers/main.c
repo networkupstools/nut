@@ -351,6 +351,31 @@ void storeval(const char *var, char *val)
 	printf("Look in the man page or call this driver with -h for a list of\n");
 	printf("valid variable names and flags.\n");
 
+	if (!strcmp(progname, "nutdrv_qx")) {
+		/* First many entries are from nut_usb_addvars() implementations;
+		 * the latter two (about langid) are from nutdrv_qx.c
+		 */
+		if (!strcmp(var, "vendor")
+		||  !strcmp(var, "product")
+		||  !strcmp(var, "serial")
+		||  !strcmp(var, "vendorid")
+		||  !strcmp(var, "productid")
+		||  !strcmp(var, "bus")
+		||  !strcmp(var, "device")
+		||  !strcmp(var, "busport")
+		||  !strcmp(var, "usb_set_altinterface")
+		||  !strcmp(var, "allow_duplicates")
+		||  !strcmp(var, "langid_fix")
+		||  !strcmp(var, "noscanlangid")
+		) {
+			printf("\nNOTE: for driver '%s', options like '%s' are only available\n"
+				"if it was built with USB support. If you are running a custom build of NUT,\n"
+				"please check results of the `configure` checks, and consider an explicit\n"
+				"`--with-usb` option. Also make sure that both libusb library and headers\n"
+				"are installed in your build environment.\n\n", progname, var);
+		}
+	}
+
 	exit(EXIT_SUCCESS);
 }
 
@@ -1004,7 +1029,7 @@ static int main_arg(char *var, char *val)
 	 * catch commented-away settings, so not checking previous value.
 	 */
 	if (!strcmp(var, "debug_min")) {
-		int lvl = -1; // typeof common/common.c: int nut_debug_level
+		int lvl = -1; /* typeof common/common.c: int nut_debug_level */
 		if ( str_to_int (val, &lvl, 10) && lvl >= 0 ) {
 			nut_debug_level_driver = lvl;
 		} else {
@@ -1129,7 +1154,7 @@ static void do_global_args(const char *var, const char *val)
 	 * catch commented-away settings, so not checking previous value.
 	 */
 	if (!strcmp(var, "debug_min")) {
-		int lvl = -1; // typeof common/common.c: int nut_debug_level
+		int lvl = -1; /* typeof common/common.c: int nut_debug_level */
 		if ( str_to_int (val, &lvl, 10) && lvl >= 0 ) {
 			nut_debug_level_global = lvl;
 		} else {
@@ -1616,8 +1641,63 @@ int main(int argc, char **argv)
 	const char * cmd = NULL;
 #endif
 
+	const char optstring[] = "+a:s:kDFBd:hx:Lqr:u:g:Vi:c:"
+#ifndef WIN32
+		"P:"
+#endif
+		;
+
 	/* init verbosity from default in common.c (0 probably) */
 	nut_debug_level_args = nut_debug_level;
+
+	/* handle CLI-driven debug level in advance, to trace initialization if needed */
+	while ((i = getopt(argc, argv, optstring)) != -1) {
+		switch (i) {
+			case 'D':
+				/* bump right here, may impact reporting of other CLI args */
+				nut_debug_level++;
+				nut_debug_level_args++;
+				break;
+		}
+	}
+	/* Reset the index, read argv[1] next time (loop below)
+	 * https://pubs.opengroup.org/onlinepubs/9699919799/functions/getopt.html
+	 */
+	optind = 1;
+
+	if (foreground < 0) {
+		/* Guess a default */
+		/* Note: only care about CLI-requested debug verbosity here */
+		if (nut_debug_level > 0 || dump_data) {
+			/* Only flop from default - stay foreground with debug on */
+			foreground = 1;
+		} else {
+			/* Legacy default - stay background and quiet */
+			foreground = 0;
+		}
+	} else {
+		/* Follow explicit user -F/-B request */
+		upsdebugx (0,
+			"Debug level is %d, dump data count is %s, "
+			"but backgrounding mode requested as %s",
+			nut_debug_level,
+			dump_data ? "on" : "off",
+			foreground ? "off" : "on"
+			);
+	}
+
+	{ /* scoping */
+		char *s = getenv("NUT_DEBUG_LEVEL");
+		int l;
+		if (s && str_to_int(s, &l, 10)) {
+			if (l > 0 && nut_debug_level_args < 1) {
+				upslogx(LOG_INFO, "Defaulting debug verbosity to NUT_DEBUG_LEVEL=%d "
+					"since none was requested by command-line options", l);
+				nut_debug_level = l;
+				nut_debug_level_args = l;
+			}	/* else follow -D settings */
+		}	/* else nothing to bother about */
+	}
 
 	dstate_setinfo("driver.state", "init.starting");
 
@@ -1660,11 +1740,7 @@ int main(int argc, char **argv)
 	/* build the driver's extra (-x) variable table */
 	upsdrv_makevartable();
 
-	while ((i = getopt(argc, argv, "+a:s:kFBDd:hx:Lqr:u:g:Vi:c:"
-#ifndef WIN32
-		"P:"
-#endif
-	)) != -1) {
+	while ((i = getopt(argc, argv, optstring)) != -1) {
 		switch (i) {
 			case 'a':
 				if (upsname)
@@ -1699,9 +1775,7 @@ int main(int argc, char **argv)
 				foreground = 0;
 				break;
 			case 'D':
-				/* bump right here, may impact reporting of other CLI args */
-				nut_debug_level++;
-				nut_debug_level_args++;
+				/* Processed above */
 				break;
 			case 'd':
 				dump_data = atoi(optarg);
@@ -1826,40 +1900,6 @@ int main(int argc, char **argv)
 				fatalx(EXIT_FAILURE,
 					"Error: unknown option -%c. Try -h for help.", i);
 		}
-	}
-
-	if (foreground < 0) {
-		/* Guess a default */
-		/* Note: only care about CLI-requested debug verbosity here */
-		if (nut_debug_level > 0 || dump_data) {
-			/* Only flop from default - stay foreground with debug on */
-			foreground = 1;
-		} else {
-			/* Legacy default - stay background and quiet */
-			foreground = 0;
-		}
-	} else {
-		/* Follow explicit user -F/-B request */
-		upsdebugx (0,
-			"Debug level is %d, dump data count is %s, "
-			"but backgrounding mode requested as %s",
-			nut_debug_level,
-			dump_data ? "on" : "off",
-			foreground ? "off" : "on"
-			);
-	}
-
-	{ /* scoping */
-		char *s = getenv("NUT_DEBUG_LEVEL");
-		int l;
-		if (s && str_to_int(s, &l, 10)) {
-			if (l > 0 && nut_debug_level_args < 1) {
-				upslogx(LOG_INFO, "Defaulting debug verbosity to NUT_DEBUG_LEVEL=%d "
-					"since none was requested by command-line options", l);
-				nut_debug_level = l;
-				nut_debug_level_args = l;
-			}	/* else follow -D settings */
-		}	/* else nothing to bother about */
 	}
 
 	/* Since debug mode dumps from drivers are often posted to mailing list

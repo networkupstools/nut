@@ -800,7 +800,7 @@ endif::env-github[]
   See more at link:https://stories.jenkins.io/user-story/jenkins-is-the-way-for-networkupstools/[Jenkins
   is the way to build multi-platform NUT] article.
 
-| image:images/ci/fosshost.org_Host_Light_38px.png[alt="Fosshost logo",width="112",height="38"]
+| image:images/ci/fosshost_org_Host_Light_38px.png[alt="Fosshost logo",width="112",height="38"]
 | Fosshost provided virtual machines where the multi-platform NUT CI farm with
   a link:https://github.com/networkupstools/jenkins-dynamatrix/[jenkins-dynamatrix]
   link:https://github.com/networkupstools/nut/blob/master/Jenkinsfile-dynamatrix[setup]

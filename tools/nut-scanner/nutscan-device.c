@@ -94,6 +94,10 @@ static void deep_free_device(nutscan_device_t * device)
 			free(current->value);
 		}
 
+		if (current->comment_tag != NULL) {
+			free(current->comment_tag);
+		}
+
 		free(current);
 	}
 
@@ -124,6 +128,11 @@ void nutscan_free_device(nutscan_device_t * device)
 
 void nutscan_add_option_to_device(nutscan_device_t * device, char * option, char * value)
 {
+	nutscan_add_commented_option_to_device(device, option, value, NULL);
+}
+
+void nutscan_add_commented_option_to_device(nutscan_device_t * device, char * option, char * value, char * comment_tag)
+{
 	nutscan_options_t **opt;
 
 	/* search for last entry */
@@ -151,6 +160,13 @@ void nutscan_add_option_to_device(nutscan_device_t * device, char * option, char
 	}
 	else {
 		(*opt)->value = NULL;
+	}
+
+	if (comment_tag != NULL) {
+		(*opt)->comment_tag = strdup(comment_tag);
+	}
+	else {
+		(*opt)->comment_tag = NULL;
 	}
 }
 

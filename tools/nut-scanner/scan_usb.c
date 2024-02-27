@@ -248,7 +248,7 @@ static char* is_usb_device_supported(usb_device_id_t *usb_device_id_list,
 }
 
 /* return NULL if error */
-nutscan_device_t * nutscan_scan_usb(void)
+nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 {
 	int ret;
 	char string[256];
@@ -280,8 +280,12 @@ nutscan_device_t * nutscan_scan_usb(void)
 	 * In libusb0 API: "device filename"
 	 */
 	char *device_port = NULL;
+
 	/* bcdDevice: aka "Device release number" - note we currently do not match by it */
 	uint16_t bcdDevice = 0;
+
+	nutscan_usb_t	default_scanopts;
+
 #if WITH_LIBUSB_1_0
 	libusb_device *dev;
 	libusb_device **devlist;
@@ -306,6 +310,18 @@ nutscan_device_t * nutscan_scan_usb(void)
 
 	if (!nutscan_avail_usb) {
 		return NULL;
+	}
+
+	if (!scanopts) {
+		default_scanopts.report_bus = 1;
+		default_scanopts.report_busport = 1;
+		/* AQU note: disabled by default, since it may lead to instabilities
+		 * and give more issues than solutions! */
+		default_scanopts.report_device = 0;
+		/* Generally not useful at the moment, and coded to be commented away
+		 * in formats that support it (e.g. ups.conf) or absent in others. */
+		default_scanopts.report_bcdDevice = 0;
+		scanopts = &default_scanopts;
 	}
 
 	/* libusb base init */
@@ -575,29 +591,36 @@ nutscan_device_t * nutscan_scan_usb(void)
 					vendor_name = NULL;
 				}
 
-				nutscan_add_option_to_device(nut_dev,
+				nutscan_add_commented_option_to_device(nut_dev,
 					"bus",
-					busname);
+					busname,
+					scanopts->report_bus ? NULL : "");
 
-				nutscan_add_option_to_device(nut_dev,
+				nutscan_add_commented_option_to_device(nut_dev,
 					"device",
-					device_port);
+					device_port,
+					scanopts->report_device ? NULL : "");
 
 #if WITH_LIBUSB_1_0
 				if (bus_port) {
-					nutscan_add_option_to_device(nut_dev,
+					nutscan_add_commented_option_to_device(nut_dev,
 						"busport",
-						bus_port);
+						bus_port,
+						scanopts->report_busport ? NULL : "");
 					free(bus_port);
 					bus_port = NULL;
 				}
 #endif	/* WITH_LIBUSB_1_0 */
 
-				/* Not currently matched by drivers, hence commented for now: */
-				sprintf(string, "%04X", bcdDevice);
-				nutscan_add_option_to_device(nut_dev,
-					"###NOTMATCHED-YET###bcdDevice",
-					string);
+				if (scanopts->report_bcdDevice) {
+					/* Not currently matched by drivers, hence commented
+					 * for now even if requested via scanopts */
+					sprintf(string, "%04X", bcdDevice);
+					nutscan_add_commented_option_to_device(nut_dev,
+						"bcdDevice",
+						string,
+						"NOTMATCHED-YET");
+				}
 
 				current_nut_dev = nutscan_add_device_to_device(
 					current_nut_dev,
@@ -629,8 +652,10 @@ nutscan_device_t * nutscan_scan_usb(void)
 #else /* not WITH_USB */
 
 /* stub function */
-nutscan_device_t * nutscan_scan_usb(void)
+nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 {
+	NUT_UNUSED_VARIABLE(scanopts);
+
 	return NULL;
 }
 

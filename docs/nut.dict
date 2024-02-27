@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3423 utf-8
+personal_ws-1.1 en 3468 utf-8
 AAC
 AAS
 ABI
@@ -101,6 +101,7 @@ BCD
 BCHARGE
 BCM
 BD
+BMC
 BNT
 BOH
 BP
@@ -548,6 +549,8 @@ IPAR
 IPBX
 IPC
 IPM
+IPP
+IPSS
 IPs
 IPv
 IRC
@@ -784,6 +787,7 @@ NAK
 NAS
 NBF
 NConfigs
+NDE
 NETVER
 NETVERSION
 NFS
@@ -820,6 +824,7 @@ NOTOFF
 NQA
 NTP
 NUT's
+NUTCONF
 NUTClient
 NUTSRC
 NUTServer
@@ -938,6 +943,7 @@ POSIX
 POWERDOWNFLAG
 POWEREX
 POWERLINE
+POWERSTATE
 PPA
 PPD
 PPDn
@@ -1083,6 +1089,7 @@ RETPCT
 REXX
 RK
 RMCARD
+RMCPplus
 RMXL
 RNF
 RNG
@@ -1140,6 +1147,7 @@ SCO
 SCR
 SDA
 SDE
+SDFLAG
 SDR
 SDRnnnnn
 SDT
@@ -1159,6 +1167,7 @@ SGI
 SHA
 SHUTDOWNCMD
 SHUTDOWNEXIT
+SHUTDOWNSCRIPT
 SIG
 SIGHUP
 SIGINT
@@ -1259,6 +1268,7 @@ SlackPack
 Slackware
 SmartBoost
 SmartCell
+SmartNUT
 SmartOnline
 SmartPro
 SmartSlot
@@ -1377,6 +1387,7 @@ UNV
 UPGUARDS
 UPM
 UPOII
+UPP
 UPS's
 UPSCONN
 UPSDESC
@@ -1409,6 +1420,7 @@ USVs
 UTC
 UTalk
 UUU
+UUUU
 UX
 Ubuntu
 Ulf
@@ -1662,6 +1674,7 @@ backported
 backports
 backupspro
 badpassword
+bart
 baseurl
 bashrc
 batchable
@@ -1805,6 +1818,7 @@ clepple
 clicky
 cls
 clueful
+clusterware
 cmake
 cmd
 cmdline
@@ -1854,12 +1868,14 @@ cpqpower
 cpsups
 cr
 crestfactor
+criticality
 crlf
 cron
 crontab
 crossbuild
 crt
 crw
+crypto
 csh
 cshdelay
 css
@@ -1877,6 +1893,8 @@ cx
 cyberpower
 d'un
 da
+daemonization
+daemonize
 daemonized
 daisychain
 daisychained
@@ -1888,6 +1906,7 @@ dataok
 datasheet
 datastale
 dayofweek
+dbgsym
 dblatex
 dcd
 dcn
@@ -1898,6 +1917,7 @@ deUNV
 debian
 debootstrap
 debouncing
+debuginfo
 deci
 decrement
 decrypt
@@ -2074,6 +2094,7 @@ forcessl
 formatconfig
 formatparam
 formatstring
+fosshost
 fp
 freebsd
 freeipmi
@@ -2275,8 +2296,10 @@ ipmi
 ipmidetectd
 ipmimonitoring
 ipmipsu
+ipp
 ippon
 ipv
+ipxe
 isDefault
 isbmex
 ish
@@ -2317,6 +2340,7 @@ kr
 krauler
 ksh
 ktrace
+kvm
 labcd
 lan
 langid
@@ -2438,6 +2462,7 @@ lws
 lxc
 lxcbr
 lxccontainer
+lxcfs
 lxml
 lxyz
 lz
@@ -2619,7 +2644,9 @@ noro
 noscanlangid
 nosuid
 notAfter
+notifyflags
 notifyme
+notifymsg
 notifytype
 notransferoids
 novendor
@@ -2636,7 +2663,9 @@ numlogins
 numq
 nutclient
 nutclientmem
+nutconf
 nutdev
+nutdevN
 nutdrv
 nutmon
 nutscan
@@ -2645,6 +2674,7 @@ nutupsdrv
 nutvalue
 nvi
 nvo
+nwfilter
 odette
 odt
 offdelay
@@ -2673,6 +2703,7 @@ ont
 ontd
 ontimedays
 ontiniedays
+onwards
 ooce
 openSUSE
 opencollective
@@ -2691,6 +2722,7 @@ ostream
 otherprotocols
 otheruser
 outliers
+ovmf
 pF
 pacman
 pacstrap
@@ -2759,6 +2791,7 @@ powerdev
 powerdown
 powerdownflag
 powerfactor
+powerfail
 powerman
 powermand
 powermust
@@ -2790,6 +2823,7 @@ prereqs
 pretentiousVariableNamingSchemes
 prgshut
 printf
+priv
 privPassword
 privProtocol
 problemMatcher
@@ -2903,6 +2937,7 @@ rts
 ru
 rubygem
 runlevel
+runnable
 runtime
 runtimecal
 runtimek
@@ -2914,6 +2949,7 @@ safenet
 salicru
 sbin
 sbindir
+scanopts
 scd
 sched
 scm
@@ -2964,6 +3000,7 @@ sgs
 sha
 shm
 shutdownArguments
+shutdowncmd
 shutdowndebounce
 shutdowndelay
 shutdownpolarity
@@ -3013,6 +3050,7 @@ somepass
 something's
 sp
 spanish
+sparc
 spectype
 spellcheck
 splitaddr
@@ -3100,6 +3138,7 @@ syscalls
 sysconfdir
 sysconfig
 syslog
+syslogd
 systemctl
 systemd
 systemdshutdowndir
@@ -3284,6 +3323,7 @@ usbhid
 usbif
 usbinfo
 usbmisc
+usbscan
 usbups
 usbus
 usd
@@ -3300,6 +3340,7 @@ usleep
 usr
 utalk
 utf
+utils
 uu
 uucp
 vCPU
@@ -3330,7 +3371,10 @@ victronups
 vid
 vin
 virsh
+virt
+virtinst
 virtualization
+virtualized
 vivo
 vo
 vod
@@ -3351,6 +3395,7 @@ wf
 wget
 whitespace
 wiki
+wildcard
 wildcards
 wininit
 winnutclient

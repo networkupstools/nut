@@ -127,9 +127,17 @@ if test -z "${nut_have_libgd_seen}"; then
 				AC_MSG_CHECKING([with gdlib.pc Libs.private])
 				LDFLAGS="$LDFLAGS $_LIBS_PRIVATE"
 				unset ac_cv_search_gdImagePng
-				AC_SEARCH_LIBS(gdImagePng, gd, [], [nut_have_libgd=no])
+				AC_SEARCH_LIBS(gdImagePng, gd, [nut_have_libgd=yes], [nut_have_libgd=no])
 			])
 			unset _LIBS_PRIVATE
+			dnl At least mingw 32-bit builds of the DLL seem to not
+			dnl tell the linker how to get from GD to PNG lib
+			AS_IF([test x"$nut_have_libgd" = xno], [
+				AC_MSG_CHECKING([with explicit -lpng in the loop])
+				LDFLAGS="$LDFLAGS -lgd"
+				unset ac_cv_search_gdImagePng
+				AC_SEARCH_LIBS(gdImagePng, png png16, [nut_have_libgd=yes], [nut_have_libgd=no])
+			])
 		])
 	])
 

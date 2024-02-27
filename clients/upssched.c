@@ -683,6 +683,7 @@ static int sock_read(conn_t *conn)
 		 * fit in the US_MAX_READ length limit - at worst we would
 		 * "return 0", and continue with pconf_char() next round.
 		 */
+		size_t numarg;
 #ifndef WIN32
 		errno = 0;
 		ret = read(conn->fd, &ch, 1);
@@ -768,7 +769,7 @@ static int sock_read(conn_t *conn)
 
 		/* try to use it, and complain about unknown commands */
 		upsdebugx(3, "Ending sock_read() on a good note: try to use command:");
-		for (size_t numarg = 0; numarg < conn->ctx.numargs; numarg++)
+		for (numarg = 0; numarg < conn->ctx.numargs; numarg++)
 			upsdebugx(3, "\targ %" PRIuSIZE ": %s", numarg, conn->ctx.arglist[numarg]);
 		if (!sock_arg(conn)) {
 			log_unknown(conn->ctx.numargs, conn->ctx.arglist);

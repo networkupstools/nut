@@ -88,8 +88,8 @@ recommended for build agents with immutable system areas, etc.
 Build prerequisites to make NUT from scratch on various Operating Systems
 -------------------------------------------------------------------------
 
-Debian 10/11
-~~~~~~~~~~~~
+Debian 10/11/12
+~~~~~~~~~~~~~~~
 
 Being a popular baseline among Linux distributions, Debian is an
 important build target. Related common operating systems include
@@ -188,8 +188,9 @@ metadata about recently published package revisions:
 :; apt-get install \
     libgpiod-dev
 
-:; apt-get install \
-    lua5.1-dev
+# NOTE: Some distributions lack a lua*-dev and only offer the base package
+:; apt-get install lua5.1
+:; apt-get install lua5.1-dev || true
 
 :; apt-get install \
     bash dash ksh busybox
@@ -1348,7 +1349,7 @@ script or later during the build to fail. If that happens to you, disable the
 antivirus completely or exempt at least the NUT build area from protection.
 
 Windows with mingw
-------------------
+^^^^^^^^^^^^^^^^^^
 
 See `scripts/Windows/README.adoc` for original recommendations for the effort,
 including possibilities of cross-builds with mingw available in Linux.
@@ -1371,7 +1372,7 @@ location on your Windows system. Then for building further NUT dependencies
 see `scripts/Windows/README.adoc`.
 
 Windows with MSYS2
-------------------
+^^^^^^^^^^^^^^^^^^
 
 The MSYS2 ecosystem is available at https://www.msys2.org/ and builds upon
 earlier work by link:https://www.mingw-w64.org[MinGW-w64] (in turn a fork
