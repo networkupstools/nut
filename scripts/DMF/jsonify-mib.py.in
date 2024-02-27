@@ -457,8 +457,11 @@ static mib2nut_info_t %(name)s_TEST = { %(mib_name)s, %(mib_version)s, %(oid_pwr
 
 def s_json2c (fout, MIB_name, js):
     print ("""
+#include "config.h"
+
 #include <stdbool.h>
 #include <stdlib.h>
+#include <sys/types.h>
 #include "main.h"
 #include "snmp-ups.h"
 
