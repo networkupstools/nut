@@ -3286,7 +3286,7 @@ int lua_C_gateway(lua_State *L) {
 	/* get number of arguments */
 	const char *lua_info_type = lua_tostring(L, 1);
 	int lua_current_device_number = lua_tointeger(L, 2);
-
+	const char *value;
 	char *buf = (char *) malloc((strlen(lua_info_type)+12) * sizeof(char));
 	if (!buf) {
 		upsdebugx(1, "%s: failed to allocate a buffer", __func__);
@@ -3298,7 +3298,7 @@ int lua_C_gateway(lua_State *L) {
 	else
 		sprintf(buf, "device.%s", lua_info_type);
 
-	const char *value = dstate_getinfo(buf);
+	value = dstate_getinfo(buf);
 
 	if (value)
 		lua_pushstring(L, value);
@@ -3377,12 +3377,12 @@ bool_t snmp_ups_walk(int mode)
 					) {
 #if WITH_DMF_LUA
 						if (su_info_p->luaContext){
-							char *result = NULL;
+							char *result = NULL, *funcname;
 
 							lua_register(su_info_p->luaContext, "lua_C_gateway", lua_C_gateway);
 							lua_register(su_info_p->luaContext, "publish_Lua_dstate", publish_Lua_dstate);
 
-							char *funcname = snmp_info_type_to_main_function_name(su_info_p->info_type);
+							funcname = snmp_info_type_to_main_function_name(su_info_p->info_type);
 							upsdebugx(4, "DMF-LUA: Going to call Lua funcname:\n%s\n", funcname ? funcname : "<null>" );
 							upsdebugx(5, "DMF-LUA: Lua code block being interpreted:\n%s\n", su_info_p->function_code );
 							lua_getglobal(su_info_p->luaContext, funcname);

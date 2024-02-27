@@ -104,16 +104,18 @@ print_snmp_memory_struct(snmp_info_t *self)
 			    || (strcmp("lua", self->function_language)==0)
 		) {
 # if WITH_DMF_LUA
+			lua_State *f_aux;
 			upsdebugx(5, "Dumping SNMP_INFO entry backed by dynamic code in '%s' language",
 				self->function_language ? self->function_language : "LUA");
-			lua_State *f_aux = luaL_newstate();
+			f_aux = luaL_newstate();
 			luaL_openlibs(f_aux);
 			if (luaL_loadstring(f_aux, self->function_code)){
 				upsdebugx(5, "Error loading LUA functions:\n%s\n", self->function_code);
 			} else {
+				char *funcname;
 				upsdebugx(5, "***********-> Luatext:\n%s\n", self->function_code);
 				lua_pcall(f_aux,0,0,0);
-				char *funcname = snmp_info_type_to_main_function_name(self->info_type);
+				funcname = snmp_info_type_to_main_function_name(self->info_type);
 				upsdebugx(5, "***********-> Going to call Lua funcname:\n%s\n", funcname ? funcname : "<null>" );
 				lua_getglobal(f_aux, funcname);
 				lua_pcall(f_aux,0,1,0);
@@ -196,10 +198,12 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 char *
 snmp_info_type_to_main_function_name(const char * info_type)
 {
-	assert(info_type);
-	char *result = (char *) calloc(strlen(info_type), sizeof(char));
+	char *result;
 	int i = 0;
 	int j = 0;
+
+	assert(info_type);
+	result = (char *) calloc(strlen(info_type), sizeof(char));
 	while(info_type[i]){
 		if(info_type[i] != '.'){
 			result[j] = info_type[i];
@@ -881,6 +885,13 @@ lookup_info_node_handler(alist_t *list, const char **attrs)
 	alist_t *element = alist_get_last_element(list);
 	int i = 0;
 	char **arg = (char**) calloc ((INFO_LOOKUP_MAX_ATTRS + 1), sizeof (void**));
+#if WITH_SNMP_LKP_FUN
+	const char *(*fun_vp2s)(void *raw_snmp_value) = NULL;
+	long (*nuf_s2l)(const char *nut_value) = NULL;
+	long (*fun_s2l)(const char *snmp_value) = NULL;
+	const char *(*nuf_vp2s)(void *raw_nut_value) = NULL;
+#endif /* WITH_SNMP_LKP_FUN */
+
 	assert (arg);
 
 	arg[0] = get_param_by_name(LOOKUP_OID, attrs);
@@ -891,11 +902,6 @@ lookup_info_node_handler(alist_t *list, const char **attrs)
 	arg[4] = get_param_by_name(LOOKUP_FUN_S2L, attrs);
 	arg[5] = get_param_by_name(LOOKUP_NUF_VP2S, attrs);
 	arg[6] = get_param_by_name(LOOKUP_FUNCTIONSET, attrs);
-
-	const char *(*fun_vp2s)(void *raw_snmp_value) = NULL;
-	long (*nuf_s2l)(const char *nut_value) = NULL;
-	long (*fun_s2l)(const char *snmp_value) = NULL;
-	const char *(*nuf_vp2s)(void *raw_nut_value) = NULL;
 
 	if (arg[2] || arg[3] || arg[4] || arg[5] || arg[6]) {
 		upslogx(1, "WARNING : DMF does not support lookup functions at this time, "
@@ -1447,8 +1453,9 @@ mibdmf_xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
 				function_text = (char*) calloc(len + 2, sizeof(char));
 				sprintf(function_text, "%.*s\n", (int) len, cdata);
 			} else {
+				char *aux_str;
 				function_text = (char*) realloc(function_text, (strlen(function_text) + len + 2) * sizeof(char));
-				char *aux_str = (char*) calloc(len + 2, sizeof(char));
+				aux_str = (char*) calloc(len + 2, sizeof(char));
 				sprintf(aux_str, "%.*s\n", (int) len, cdata);
 				strcat(function_text, aux_str);
 				free(aux_str);
