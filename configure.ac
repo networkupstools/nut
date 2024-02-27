@@ -1119,9 +1119,11 @@ if test "$as_ln_s" = "ln -s" ; then
         dnl AC_MSG_NOTICE([_fs_srcdir='${_fs_srcdir}' _fs_builddir='${_fs_builddir}'])
         if test x"${_fs_srcdir}" = x"${_fs_builddir}" ; then
             LN_S_R="ln"
+        else
+            dnl Source and build areas are in different filesystems,
+            dnl can not hardlink - keep copying approach in place
+            AC_MSG_NOTICE([Source and build areas are in different filesystems, or we could not detect this for sure - avoiding hardlinks])
         fi
-        dnl ELSE Source and build areas are in different filesystems,
-        dnl can not hardlink - keep copying approach in place
         unset _fs_srcdir _fs_builddir
     fi
     unset _abs_srcdir _abs_builddir
