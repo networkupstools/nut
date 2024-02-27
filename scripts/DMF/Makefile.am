@@ -359,7 +359,7 @@ $(abs_builddir)/$(DMFSNMP_SUBDIR)/.uptodate: $(LEGACY_NUT_DMF_SYMLINKS)
 # TODO: The proper solution (sort, uniq) should probably be in the C code!
 # NOTE: Sorting is a problem now that some MIBs must be last (e.g. ietf) -
 #       so we add them in desired order explicitly...
-DMFNUTSCAN_DEPS = $(DMFSNMP_RES_SUBDIR)/.uptodate
+DMFNUTSCAN_DEPS = $(abs_builddir)/$(DMFSNMP_RES_SUBDIR)/.uptodate
 EXTRA_DIST += $(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf
 $(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf:
 	+$(MAKE) $(AM_MAKEFLAGS) $(abs_top_builddir)/scripts/DMF/$(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf
@@ -462,10 +462,18 @@ $(abs_builddir)/$(DMFNUTSCAN_SUBDIR)/.validated: $(abs_builddir)/$(DMFNUTSCAN_SU
 
 
 # Make sure all generated DMFs are up to date vs. C sources and recipes
-dmf-uptodate: $(DMFSNMP_RES_SUBDIR)/.uptodate $(DMFNUTSCAN_RES_SUBDIR)/.uptodate $(DMFSNMP_SUBDIR)/.uptodate $(DMFNUTSCAN_SUBDIR)/.uptodate
+dmf-uptodate: \
+	$(abs_builddir)/$(DMFSNMP_RES_SUBDIR)/.uptodate \
+	$(abs_builddir)/$(DMFNUTSCAN_RES_SUBDIR)/.uptodate \
+	$(abs_builddir)/$(DMFSNMP_SUBDIR)/.uptodate \
+	$(abs_builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate
 
 # Make sure all present DMFs are valid vs. XSD schema
-dmf-validate: dmf-uptodate $(DMFSNMP_RES_SUBDIR)/.validated $(DMFNUTSCAN_RES_SUBDIR)/.validated $(DMFSNMP_SUBDIR)/.validated $(DMFNUTSCAN_SUBDIR)/.validated
+dmf-validate: dmf-uptodate \
+	$(abs_builddir)/$(DMFSNMP_RES_SUBDIR)/.validated \
+	$(abs_builddir)/$(DMFNUTSCAN_RES_SUBDIR)/.validated \
+	$(abs_builddir)/$(DMFSNMP_SUBDIR)/.validated \
+	$(abs_builddir)/$(DMFNUTSCAN_SUBDIR)/.validated
 
 CFLAGS_LUA  = $(LUA_INCLUDE)
 LDFLAGS_LUA = $(LUA_LIB)
@@ -574,10 +582,10 @@ endif
 # Note: DMF dirs are currently hardcoded (above) so no big need to "cd" anywhere
 # But some data should be prepopulated there before we run leak tests etc.
 if WITH_DMF
-run-dmf-test: dmf-test $(DMFSNMP_SUBDIR)/.uptodate
+run-dmf-test: dmf-test $(abs_builddir)/$(DMFSNMP_SUBDIR)/.uptodate
 	cd $(DMFSNMP_SUBDIR) && ls -la && DEBUG="$(V)" $(DMF_TEST_RUNNER) $(abs_builddir)/dmf-test
 
-run-dmf-reindex: dmf-reindex $(DMFSNMP_SUBDIR)/.uptodate
+run-dmf-reindex: dmf-reindex $(abs_builddir)/$(DMFSNMP_SUBDIR)/.uptodate
 	cd $(DMFSNMP_SUBDIR) && ls -la && DEBUG="$(V)" $(DMF_TEST_RUNNER) $(DMF_REINDEX)
 else
 run-dmf-test run-dmf-reindex:
@@ -647,7 +655,7 @@ $(abs_builddir)/testdata-fun/.uptodate: $(FUN_EXAMPLE_DMFS)
 	touch "$@"
 
 if WITH_VALIDATE_DMF_SNMP
-$(abs_builddir)/testdata-lua/.validated: testdata-lua/.uptodate
+$(abs_builddir)/testdata-lua/.validated: $(abs_builddir)/testdata-lua/.uptodate
 	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
 	@cd "$(@D)" && for F in $(LUA_EXAMPLE_DMFS) ; do \
 	    echo " XMLLINT-LUA  $$F"; \
@@ -655,7 +663,7 @@ $(abs_builddir)/testdata-lua/.validated: testdata-lua/.uptodate
 	done
 	touch "$@"
 
-$(abs_builddir)/testdata-fun/.validated: testdata-fun/.uptodate
+$(abs_builddir)/testdata-fun/.validated: $(abs_builddir)/testdata-fun/.uptodate
 	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
 	@cd "$(@D)" && for F in $(FUN_EXAMPLE_DMFS) ; do \
 	    echo " XMLLINT-LUA  $$F"; \
@@ -671,11 +679,11 @@ endif
 CLEANFILES += $(abs_builddir)/testdata-lua/.validated testdata-lua/.validated
 CLEANFILES += $(abs_builddir)/testdata-fun/.validated testdata-fun/.validated
 
-#$(DMFSNMP_SUBDIR)/.uptodate 
-run-dmf-lua-test: dmf-lua-test testdata-lua/.validated
+#$(abs_builddir)/$(DMFSNMP_SUBDIR)/.uptodate ...
+run-dmf-lua-test: dmf-lua-test $(abs_builddir)/testdata-lua/.validated
 	cd $(abs_top_builddir)/scripts/DMF/testdata-lua && DEBUG="$(V)" $(DMF_TEST_RUNNER) $(abs_builddir)/dmf-lua-test
 
-run-dmf-fun-test: dmf-fun-test testdata-fun/.validated
+run-dmf-fun-test: dmf-fun-test $(abs_builddir)/testdata-fun/.validated
 	cd $(abs_top_builddir)/scripts/DMF/testdata-fun && DEBUG="$(V)" $(DMF_TEST_RUNNER) $(abs_builddir)/dmf-fun-test
 else
 dmf-lua-test:
