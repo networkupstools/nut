@@ -133,6 +133,8 @@ https://github.com/networkupstools/nut/milestone/10
    * Fixed an issue for builds configured `--without-usb`. [#2263]
    * Added a fallback for `libgd` discovery (for CGI etc. builds). [#2287]
    * Made `aspell` TeX module detection more reliable. [#2206]
+   * Fixed recipes for completely out-of-tree builds to pass with documentation
+     generation and checking on all tested "make" implementations. [#2318]
    * Various other recipe and documentation clean-up efforts. [#2284, #2269,
      #2261]
 

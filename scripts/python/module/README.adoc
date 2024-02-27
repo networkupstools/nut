@@ -126,7 +126,7 @@ ver
 ~~~
 
 Sends the `VER` command to the NUT data server and returns its self-reported
-identification such as version, product or distribution it may be bundied with.
+identification such as version, product or distribution it may be bundled with.
 
 Note that the NUT client interactions should not rely on reported versions,
 but follow the protocol as defined.

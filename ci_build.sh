@@ -659,11 +659,18 @@ check_gitignore() {
         return 0
     fi
 
-    # One invocation should report to log:
-    git status $GIT_ARGS -s -- "${FILE_GLOB}" \
-    | grep -E -v '^.. \.ci.*\.log.*' \
-    | grep -E "${FILE_REGEX}" \
-    || echo "WARNING: Could not query git repo while in `pwd`" >&2
+    # One invocation should report to log if there was any discrepancy
+    # to report in the first place (GITOUT may be empty without error):
+    GITOUT="`git status $GIT_ARGS -s -- "${FILE_GLOB}"`" \
+    || { echo "WARNING: Could not query git repo while in `pwd`" >&2 ; GITOUT=""; }
+
+    if [ -n "${GITOUT-}" ] ; then
+        echo "$GITOUT" \
+        | grep -E -v '^.. \.ci.*\.log.*' \
+        | grep -E "${FILE_REGEX}"
+    else
+        echo "Got no output and no errors querying git repo while in `pwd`: seems clean" >&2
+    fi
     echo "==="
 
     # Another invocation checks that there was nothing to complain about:
