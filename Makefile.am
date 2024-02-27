@@ -331,7 +331,7 @@ $(abs_top_builddir)/ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	        CHANGELOG_FILE="$@" $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) || \
 	        { printf "gitlog2changelog.py failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; } ; \
 	    else \
-	        if x"$(abs_top_srcdir)" != x"$(abs_top_builddir)" -a -s ./ChangeLog ; then \
+	        if test x"$(abs_top_srcdir)" != x"$(abs_top_builddir)" -a -s ./ChangeLog ; then \
 	            echo "Using distributed ChangeLog file from sources" >&2 ; \
 	            rm -f "$@" || true ; \
 	            cat ./ChangeLog > "$@" ; \
