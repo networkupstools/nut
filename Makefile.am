@@ -321,10 +321,10 @@ GITLOG_START_POINT=v2.6.0
 # the current dir, and defaults to generate a "ChangeLog" in the current dir.
 # The script itself is generated from a template, so resides in builddir.
 dummy-stamp:
-# Be sure to not confuse with a DIST'ed file (and try to overwrite it):
-ChangeLog: $(abs_top_builddir)/ChangeLog
+ChangeLog: dummy-stamp
 	+@$(MAKE) $(AM_MAKEFLAGS) $(abs_top_builddir)/ChangeLog
 
+# Be sure to not confuse with a DIST'ed file (and so try to overwrite it):
 $(abs_top_builddir)/ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	@cd $(abs_top_srcdir) && \
 	    if test -e .git ; then \
