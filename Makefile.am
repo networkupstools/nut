@@ -321,14 +321,22 @@ GITLOG_START_POINT=v2.6.0
 # the current dir, and defaults to generate a "ChangeLog" in the current dir.
 # The script itself is generated from a template, so resides in builddir.
 dummy-stamp:
-ChangeLog: tools/gitlog2changelog.py dummy-stamp
+# Be sure to not confuse with a DIST'ed file (and try to overwrite it):
+ChangeLog: $(abs_top_builddir)/ChangeLog
+$(abs_top_builddir)/ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	cd $(abs_top_srcdir) && \
 	    if test -e .git ; then \
 	        CHANGELOG_FILE="$@" $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) || \
 	        { printf "gitlog2changelog.py failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; } ; \
 	    else \
-	        if ! test -s "$@" ; then \
-	            printf "Failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; \
+	        if x"$(abs_top_srcdir)" != x"$(abs_top_builddir)" -a -s ./ChangeLog ; then \
+	            echo "Using distributed ChangeLog file from sources" >&2 ; \
+	            rm -f "$@" || true ; \
+	            cat ./ChangeLog > "$@" ; \
+	        else \
+	            if ! test -s "$@" ; then \
+	                printf "Failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; \
+	            fi ; \
 	        fi ; \
 	    fi
 
