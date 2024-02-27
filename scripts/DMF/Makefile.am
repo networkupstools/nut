@@ -244,6 +244,7 @@ if WITH_REGENERATE_DMF_SNMP
 	      LDFLAGSx="$(abs_top_builddir)/common/libcommon.la $(abs_top_builddir)/drivers/dstate.o" \
 	      CPPFLAGS="$(DMFTOOLS_CPPFLAGS) $(CPPFLAGS) $(AM_CPPFLAGS)" \
 	      ABS_BUILDDIR="$(abs_builddir)" \
+	      ABS_OUTDIR="`pwd`" \
 	      DEBUG="$(V)" \
 	      $(abs_srcdir)/dmfify-mib.sh --skip-sanity-check "$$CMIBFILE" "$@" \
 	    ) || exit; \

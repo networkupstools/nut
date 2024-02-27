@@ -19,8 +19,8 @@ XSD_DMFSNMP_XMLNS='http://www.networkupstools.org/dmf/snmp/snmp-ups'
 # Where to look for python scripts - same dir as this shell script
 _SCRIPT_DIR="`cd $(dirname "$0") && pwd`" || \
     _SCRIPT_DIR="./" # Fallback can fail
-_INITIAL_DIR="`pwd`" || _INITIAL_DIR="./" # Fallback can fail
-[ -n "${ABS_BUILDDIR-}" ] || ABS_BUILDDIR="${_INITIAL_DIR}"
+[ -n "${ABS_OUTDIR-}" ] || ABS_OUTDIR="`pwd`" || exit
+[ -n "${ABS_BUILDDIR-}" ] || ABS_BUILDDIR="${ABS_OUTDIR}"
 
 # Integrate with "make V=1"
 [ -n "${DEBUG-}" ] || DEBUG="${V-}"
@@ -224,6 +224,10 @@ dmfify_c_file() {
 
 #    mv -f "${ABS_BUILDDIR}/${mib}.dmf.tmp" "${ABS_BUILDDIR}/${mib}.dmf" \
 #    && rm -f "${ABS_BUILDDIR}/${mib}_TEST"{.c,.exe} "${ABS_BUILDDIR}/${mib}.json.tmp"
+
+    if [ -n "${ABS_OUTDIR-}" -a "${ABS_OUTDIR-}" != "${ABS_BUILDDIR}" ] ; then
+        mv -f "${ABS_BUILDDIR}/${mib}.dmf" "${ABS_OUTDIR}/" || return
+    fi
 }
 
 list_shared_sources() {
