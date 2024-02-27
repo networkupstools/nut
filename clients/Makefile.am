@@ -20,7 +20,7 @@ AM_CXXFLAGS = -DHAVE_NUTCOMMON=1 -I$(top_srcdir)/include
 $(top_builddir)/common/libcommon.la \
 $(top_builddir)/common/libcommonclient.la \
 $(top_builddir)/common/libparseconf.la: dummy
-	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 LDADD_FULL = $(top_builddir)/common/libcommon.la libupsclient.la $(NETLIBS)
 if WITH_SSL

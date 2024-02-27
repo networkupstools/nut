@@ -49,6 +49,7 @@ Makefile.in
 /missing
 /test-driver
 *-spellchecked
+*-prepped
 *.adoc-parsed
 *.adoc*.tmp
 *.txt*.tmp
