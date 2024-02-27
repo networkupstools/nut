@@ -323,8 +323,10 @@ GITLOG_START_POINT=v2.6.0
 dummy-stamp:
 # Be sure to not confuse with a DIST'ed file (and try to overwrite it):
 ChangeLog: $(abs_top_builddir)/ChangeLog
+	+@$(MAKE) $(AM_MAKEFLAGS) $(abs_top_builddir)/ChangeLog
+
 $(abs_top_builddir)/ChangeLog: tools/gitlog2changelog.py dummy-stamp
-	cd $(abs_top_srcdir) && \
+	@cd $(abs_top_srcdir) && \
 	    if test -e .git ; then \
 	        CHANGELOG_FILE="$@" $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) || \
 	        { printf "gitlog2changelog.py failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; } ; \
