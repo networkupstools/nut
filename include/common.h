@@ -171,6 +171,8 @@ typedef struct serial_handler_s {
 #define INVALID_FD_SOCK(a) (!VALID_FD_SOCK(a))
 #define INVALID_FD(a) (!VALID_FD(a))
 
+#define SIZEOF_ARRAY(a) (sizeof(a) / sizeof(a[0]))
+
 extern const char *UPS_VERSION;
 
 /* Use in code to notify the developers and quiesce the compiler that

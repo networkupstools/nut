@@ -6,11 +6,20 @@ NAME
 
 apc_modbus - Driver for APC Smart-UPS Modbus protocol
 
+SYNOPSIS
+--------
+
+*apc_modbus* -h
+
+*apc_modbus* -a 'UPS_NAME' ['OPTIONS']
+
 SUPPORTED HARDWARE
 ------------------
 
 Generally this driver should work for all the APC Modbus UPS devices. Some
 devices might expose more than is currently supported, like multiple phases.
+A general rule of thumb is that APC devices (or firmware versions) released
+after 2010 are more likely to support Modbus than the USB HID standard.
 
 Tested with the following hardware:
 
@@ -20,6 +29,23 @@ Tested with the following hardware:
 
 Note that you will have to enable Modbus communication. In the front panel of
 the UPS, go to Advanced Menu mode, under Configuration and enable Modbus.
+
+NOTE: This driver was tested with Serial, TCP and USB interfaces for Modbus.
+Notably, the Serial ports are not available on all devices nowadays; the TCP
+support may require a purchase of an additional network management card; and
+the USB support *currently* requires a non-standard build of libmodbus (pull
+request against the upstream library is pending, as of at the time of this
+publication) as a pre-requisite to building NUT with this part of the support.
+For more details (including how to build the custom library and NUT with it)
+please see link:https://github.com/networkupstools/nut/pull/2063[NUT PR #2063]
+
+NOTE: As currently published, this driver supports reading information from
+the UPS. Implementation of support to write (set modifiable variables or send
+commands) is expected with a later release. This can impact the host shutdown
+routines in particular (no ability to actively tell the UPS to power off or
+cycle in the end). As a workaround, you can try integrating `apctest` (from
+the "apcupsd" project) with a "Test to kill power" into your late-shutdown
+procedure, if needed.
 
 EXTRA ARGUMENTS
 ---------------

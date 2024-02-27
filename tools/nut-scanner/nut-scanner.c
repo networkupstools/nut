@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2011 - 2012  Arnaud Quette <arnaud.quette@free.fr>
+ *  Copyright (C) 2011 - 2024  Arnaud Quette <arnaud.quette@free.fr>
  *  Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
  *  Copyright (C) 2016 - 2023 Jim Klimov <EvgenyKlimov@eaton.com>
  *
@@ -61,7 +61,7 @@
 
 #define ERR_BAD_OPTION	(-1)
 
-static const char optstring[] = "?ht:T:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:QNPqIVaD";
+static const char optstring[] = "?ht:T:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:QnNPqIVaD";
 
 #ifdef HAVE_GETOPT_LONG
 static const struct option longopts[] = {
@@ -89,6 +89,7 @@ static const struct option longopts[] = {
 	{ "xml_scan", no_argument, NULL, 'M' },
 	{ "oldnut_scan", no_argument, NULL, 'O' },
 	{ "avahi_scan", no_argument, NULL, 'A' },
+	{ "nut_simulation_scan", no_argument, NULL, 'n' },
 	{ "ipmi_scan", no_argument, NULL, 'I' },
 	{ "disp_nut_conf_with_sanity_check", no_argument, NULL, 'Q' },
 	{ "disp_nut_conf", no_argument, NULL, 'N' },
@@ -111,15 +112,62 @@ static char * start_ip = NULL;
 static char * end_ip = NULL;
 static char * port = NULL;
 static char * serial_ports = NULL;
+static int cli_link_detail_level = -1;
 
 #ifdef HAVE_PTHREAD
 static pthread_t thread[TYPE_END];
 
 static void * run_usb(void *arg)
 {
-	NUT_UNUSED_VARIABLE(arg);
+	nutscan_usb_t scanopts, *scanopts_ptr = &scanopts;
 
-	dev[TYPE_USB] = nutscan_scan_usb();
+	if (!arg) {
+		/* null => use library defaults; should not happen here anyway */
+		scanopts_ptr = NULL;
+	} else {
+		/* 0: do not report bus/device/busport details
+		 * 1: report bus and busport, if available
+		 * 2: report bus/device/busport details
+		 * 3: like (2) and report bcdDevice (limited use and benefit)
+		 */
+		int link_detail_level = *((int*)arg);
+
+		switch (link_detail_level) {
+			case 0:
+				scanopts.report_bus = 0;
+				scanopts.report_busport = 0;
+				scanopts.report_device = 0;
+				scanopts.report_bcdDevice = 0;
+				break;
+
+			case 1:
+				scanopts.report_bus = 1;
+				scanopts.report_busport = 1;
+				scanopts.report_device = 0;
+				scanopts.report_bcdDevice = 0;
+				break;
+
+			case 2:
+				scanopts.report_bus = 1;
+				scanopts.report_busport = 1;
+				scanopts.report_device = 1;
+				scanopts.report_bcdDevice = 0;
+				break;
+
+			case 3:
+				scanopts.report_bus = 1;
+				scanopts.report_busport = 1;
+				scanopts.report_device = 1;
+				scanopts.report_bcdDevice = 1;
+				break;
+
+			default:
+				upsdebugx(1, "%s: using library default link_detail_level settings", __func__);
+				scanopts_ptr = NULL;
+		}
+	}
+
+	dev[TYPE_USB] = nutscan_scan_usb(scanopts_ptr);
 	return NULL;
 }
 
@@ -147,6 +195,14 @@ static void * run_nut_old(void *arg)
 	return NULL;
 }
 
+static void * run_nut_simulation(void *arg)
+{
+	NUT_UNUSED_VARIABLE(arg);
+
+	dev[TYPE_NUT_SIMULATION] = nutscan_scan_nut_simulation();
+	return NULL;
+}
+
 static void * run_avahi(void *arg)
 {
 	NUT_UNUSED_VARIABLE(arg);
@@ -170,7 +226,6 @@ static void * run_eaton_serial(void *arg)
 	dev[TYPE_EATON_SERIAL] = nutscan_scan_eaton_serial(serial_ports);
 	return NULL;
 }
-
 #endif /* HAVE_PTHREAD */
 
 static void show_usage(void)
@@ -183,7 +238,8 @@ static void show_usage(void)
 	puts("OPTIONS:");
 	printf("  -C, --complete_scan: Scan all available devices except serial ports (default).\n");
 	if (nutscan_avail_usb) {
-		printf("  -U, --usb_scan: Scan USB devices.\n");
+		printf("  -U, --usb_scan: Scan USB devices. Specify twice or more to report different\n"
+			"                  detail levels of (change-prone) physical properties.\n");
 	} else {
 		printf("* Options for USB devices scan not enabled: library not detected.\n");
 	}
@@ -203,6 +259,7 @@ static void show_usage(void)
 	} else {
 		printf("* Options for NUT devices (avahi method) scan not enabled: library not detected.\n");
 	}
+	printf("  -n, --nut_simulation_scan: Scan for NUT simulated devices (.dev files in $CONFPATH).\n");
 	if (nutscan_avail_ipmi) {
 		printf("  -I, --ipmi_scan: Scan IPMI devices.\n");
 	} else {
@@ -360,6 +417,7 @@ int main(int argc, char *argv[])
 	int allow_snmp = 0;
 	int allow_xml = 0;
 	int allow_oldnut = 0;
+	int allow_nut_simulation = 0;
 	int allow_avahi = 0;
 	int allow_ipmi = 0;
 	int allow_eaton_serial = 0; /* MUST be requested explicitly! */
@@ -625,6 +683,9 @@ int main(int argc, char *argv[])
 					goto display_help;
 				}
 				allow_usb = 1;
+				/* NOTE: Starts as -1, so the first -U sets it to 0 (minimal detail) */
+				if (cli_link_detail_level < 3)
+					cli_link_detail_level++;
 				break;
 			case 'M':
 				if (!nutscan_avail_xml_http) {
@@ -640,6 +701,9 @@ int main(int argc, char *argv[])
 					goto display_help;
 				}
 				allow_avahi = 1;
+				break;
+			case 'n':
+				allow_nut_simulation = 1;
 				break;
 			case 'I':
 				if (!nutscan_avail_ipmi) {
@@ -737,7 +801,7 @@ display_help:
 		upsdebugx(1, "Extracted IP address range from CIDR net/mask: %s => %s", start_ip, end_ip);
 	}
 
-	if (!allow_usb && !allow_snmp && !allow_xml && !allow_oldnut &&
+	if (!allow_usb && !allow_snmp && !allow_xml && !allow_oldnut && !allow_nut_simulation &&
 		!allow_avahi && !allow_ipmi && !allow_eaton_serial
 	) {
 		allow_all = 1;
@@ -748,6 +812,7 @@ display_help:
 		allow_snmp = 1;
 		allow_xml = 1;
 		allow_oldnut = 1;
+		allow_nut_simulation = 1;
 		allow_avahi = 1;
 		allow_ipmi = 1;
 		/* BEWARE: allow_all does not include allow_eaton_serial! */
@@ -759,13 +824,13 @@ display_help:
 	if (allow_usb && nutscan_avail_usb) {
 		upsdebugx(quiet, "Scanning USB bus.");
 #ifdef HAVE_PTHREAD
-		if (pthread_create(&thread[TYPE_USB], NULL, run_usb, NULL)) {
+		if (pthread_create(&thread[TYPE_USB], NULL, run_usb, &cli_link_detail_level)) {
 			upsdebugx(1, "pthread_create returned an error; disabling this scan mode");
 			nutscan_avail_usb = 0;
 		}
 #else
 		upsdebugx(1, "USB SCAN: no pthread support, starting nutscan_scan_usb...");
-		dev[TYPE_USB] = nutscan_scan_usb();
+		dev[TYPE_USB] = nutscan_scan_usb(&cli_link_detail_level);
 #endif /* HAVE_PTHREAD */
 	} else {
 		upsdebugx(1, "USB SCAN: not requested, SKIPPED");
@@ -830,6 +895,22 @@ display_help:
 		}
 	} else {
 		upsdebugx(1, "NUT bus (old) SCAN: not requested, SKIPPED");
+	}
+
+	if (allow_nut_simulation && nutscan_avail_nut_simulation) {
+		upsdebugx(quiet, "Scanning NUT simulation devices.");
+#ifdef HAVE_PTHREAD
+		upsdebugx(1, "NUT simulation devices SCAN: starting pthread_create with run_nut_simulation...");
+		if (pthread_create(&thread[TYPE_NUT_SIMULATION], NULL, run_nut_simulation, NULL)) {
+			upsdebugx(1, "pthread_create returned an error; disabling this scan mode");
+			nutscan_avail_nut_simulation = 0;
+		}
+#else
+			upsdebugx(1, "NUT simulation devices SCAN: no pthread support, starting nutscan_scan_nut_simulation...");
+			dev[TYPE_NUT_SIMULATION] = nutscan_scan_nut_simulation(timeout);
+#endif /* HAVE_PTHREAD */
+	} else {
+		upsdebugx(1, "NUT simulation devices SCAN: not requested, SKIPPED");
 	}
 
 	if (allow_avahi && nutscan_avail_avahi) {
@@ -898,6 +979,10 @@ display_help:
 		upsdebugx(1, "NUT bus (old) SCAN: join back the pthread");
 		pthread_join(thread[TYPE_NUT], NULL);
 	}
+	if (allow_nut_simulation && nutscan_avail_nut_simulation && thread[TYPE_NUT_SIMULATION]) {
+		upsdebugx(1, "NUT simulation devices SCAN: join back the pthread");
+		pthread_join(thread[TYPE_NUT_SIMULATION], NULL);
+	}
 	if (allow_avahi && nutscan_avail_avahi && thread[TYPE_AVAHI]) {
 		upsdebugx(1, "NUT bus (avahi) SCAN: join back the pthread");
 		pthread_join(thread[TYPE_AVAHI], NULL);
@@ -933,6 +1018,11 @@ display_help:
 	display_func(dev[TYPE_NUT]);
 	upsdebugx(1, "SCANS DONE: free resources: NUT bus (old)");
 	nutscan_free_device(dev[TYPE_NUT]);
+
+	upsdebugx(1, "SCANS DONE: display results: NUT simulation devices");
+	display_func(dev[TYPE_NUT_SIMULATION]);
+	upsdebugx(1, "SCANS DONE: free resources: NUT simulation devices");
+	nutscan_free_device(dev[TYPE_NUT_SIMULATION]);
 
 	upsdebugx(1, "SCANS DONE: display results: NUT bus (avahi)");
 	display_func(dev[TYPE_AVAHI]);

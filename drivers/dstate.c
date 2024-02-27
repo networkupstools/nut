@@ -165,17 +165,17 @@ static TYPE_FD sock_open(const char *fn)
 #else /* WIN32 */
 
 	fd = CreateNamedPipe(
-			fn,			// pipe name
-			PIPE_ACCESS_DUPLEX |  // read/write access
-			FILE_FLAG_OVERLAPPED, // async IO
+			fn,			/* pipe name */
+			PIPE_ACCESS_DUPLEX |	/* read/write access */
+			FILE_FLAG_OVERLAPPED,	/* async IO */
 			PIPE_TYPE_BYTE |
 			PIPE_READMODE_BYTE |
 			PIPE_WAIT,
-			PIPE_UNLIMITED_INSTANCES, // max. instances
-			ST_SOCK_BUF_LEN,	// output buffer size
-			ST_SOCK_BUF_LEN,	// input buffer size
-			0,			// client time-out
-			NULL);			// FIXME: default security attribute
+			PIPE_UNLIMITED_INSTANCES,	/* max. instances */
+			ST_SOCK_BUF_LEN,	/* output buffer size */
+			ST_SOCK_BUF_LEN,	/* input buffer size */
+			0,			/* client time-out */
+			NULL);			/* FIXME: default security attribute */
 
 	if (INVALID_FD(fd)) {
 		fatal_with_errno(EXIT_FAILURE,
@@ -520,17 +520,17 @@ static void sock_connect(TYPE_FD sock)
 
 	/* sockfd is the handle of the connection pending pipe */
 	sockfd = CreateNamedPipe(
-			pipename,			// pipe name
-			PIPE_ACCESS_DUPLEX |  // read/write access
-			FILE_FLAG_OVERLAPPED, // async IO
+			pipename,		/* pipe name */
+			PIPE_ACCESS_DUPLEX |	/* read/write access */
+			FILE_FLAG_OVERLAPPED,	/* async IO */
 			PIPE_TYPE_BYTE |
 			PIPE_READMODE_BYTE |
 			PIPE_WAIT,
-			PIPE_UNLIMITED_INSTANCES, // max. instances
-			ST_SOCK_BUF_LEN,	// output buffer size
-			ST_SOCK_BUF_LEN,	// input buffer size
-			0,			// client time-out
-			NULL);			// FIXME: default security attribute
+			PIPE_UNLIMITED_INSTANCES,	/* max. instances */
+			ST_SOCK_BUF_LEN,	/* output buffer size */
+			ST_SOCK_BUF_LEN,	/* input buffer size */
+			0,			/* client time-out */
+			NULL);			/* FIXME: default security attribute */
 
 	if (INVALID_FD(sockfd)) {
 		fatal_with_errno(EXIT_FAILURE,
@@ -780,7 +780,7 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 			upsdebugx(3, "%s: TRACKING = %s", __func__, cmdid);
 
 		/* try the handler shared by all drivers first */
-		ret = main_instcmd(arg[1], arg[2], conn);
+		ret = main_instcmd(cmdname, cmdparam, conn);
 		if (ret != STAT_INSTCMD_UNKNOWN) {
 			/* The command was acknowledged by shared handler, and
 			 * either handled successfully, or failed, or was not

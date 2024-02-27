@@ -53,7 +53,7 @@
  * situation.
  */
 #if WITH_LINUX_I2C
-#if !HAVE_DECL_I2C_SMBUS_ACCESS
+# if !HAVE_DECL_I2C_SMBUS_ACCESS
 static inline __s32 i2c_smbus_access(int file, char read_write, __u8 command,
                                      int size, union i2c_smbus_data *data)
 {
@@ -70,9 +70,9 @@ static inline __s32 i2c_smbus_access(int file, char read_write, __u8 command,
 		err = -errno;
 	return err;
 }
-#endif
+# endif
 
-#if !HAVE_DECL_I2C_SMBUS_READ_BYTE_DATA
+# if !HAVE_DECL_I2C_SMBUS_READ_BYTE_DATA
 static inline __s32 i2c_smbus_read_byte_data(int file, __u8 command)
 {
 	union i2c_smbus_data data;
@@ -84,9 +84,9 @@ static inline __s32 i2c_smbus_read_byte_data(int file, __u8 command)
 	else
 		return 0x0FF & data.byte;
 }
-#endif
+# endif
 
-#if !HAVE_DECL_I2C_SMBUS_WRITE_BYTE_DATA
+# if !HAVE_DECL_I2C_SMBUS_WRITE_BYTE_DATA
 static inline __s32 i2c_smbus_write_byte_data(int file, __u8 command, __u8 value)
 {
 	union i2c_smbus_data data;
@@ -99,9 +99,9 @@ static inline __s32 i2c_smbus_write_byte_data(int file, __u8 command, __u8 value
 	else
 		return 0x0FF & data.byte;
 }
-#endif
+# endif
 
-#if !HAVE_DECL_I2C_SMBUS_READ_WORD_DATA
+# if !HAVE_DECL_I2C_SMBUS_READ_WORD_DATA
 static inline __s32 i2c_smbus_read_word_data(int file, __u8 command)
 {
 	union i2c_smbus_data data;
@@ -113,9 +113,9 @@ static inline __s32 i2c_smbus_read_word_data(int file, __u8 command)
 	else
 		return 0x0FFFF & data.word;
 }
-#endif
+# endif
 
-#if !HAVE_DECL_I2C_SMBUS_WRITE_WORD_DATA
+# if !HAVE_DECL_I2C_SMBUS_WRITE_WORD_DATA
 static inline __s32 i2c_smbus_write_word_data(int file, __u8 command, __u16 value)
 {
 	union i2c_smbus_data data;
@@ -128,9 +128,9 @@ static inline __s32 i2c_smbus_write_word_data(int file, __u8 command, __u16 valu
 	else
 		return 0x0FFFF & data.word;
 }
-#endif
+# endif
 
-#if !HAVE_DECL_I2C_SMBUS_READ_BLOCK_DATA
+# if !HAVE_DECL_I2C_SMBUS_READ_BLOCK_DATA
 static inline __u8* i2c_smbus_read_i2c_block_data(int file, __u8 command, __u8 length, __u8 *values)
 {
 	union i2c_smbus_data data;
@@ -152,8 +152,8 @@ static inline __u8* i2c_smbus_read_i2c_block_data(int file, __u8 command, __u8 l
 
 	return values;
 }
-#endif
-#endif // if WITH_LINUX_I2C
+# endif
+#endif /* if WITH_LINUX_I2C */
 
 #define STATUS_CMD                          0x40
 #define CHARGE_LEVEL_CMD                    0x41

@@ -110,7 +110,7 @@ static int RunBuiltInTests(char *argv[]) {
 
 	NUT_UNUSED_VARIABLE(argv);
 
-	for (i = 0; i < sizeof(testData)/sizeof(testData[0]); i++) {
+	for (i = 0; i < SIZEOF_ARRAY(testData); i++) {
 		next = testData[i].buf;
 		for (bufSize = 0; *next != 0; bufSize++) {
 			reportBuf[bufSize] = (uint8_t) strtol(next, (char **)&next, 16);

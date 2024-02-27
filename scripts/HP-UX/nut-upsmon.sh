@@ -24,6 +24,9 @@ umask 022
 PATH=/usr/sbin:/usr/bin:/sbin
 export PATH
 
+NUT_QUIET_INIT_UPSNOTIFY=true
+export NUT_QUIET_INIT_UPSNOTIFY
+
 WHAT='NUT UPS monitor (Network UPS Tools -- http://www.exploits.org/nut)'
 WHAT_PATH=/opt/nut/sbin/upsmon
 WHAT_CONFIG=/etc/rc.config.d/nut-upsmon

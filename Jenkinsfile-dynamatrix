@@ -12,7 +12,10 @@ def buildCommit = '86a32237c7df45c5aba640746f7afc4de09505a1'
 
 // See https://github.com/networkupstools/jenkins-dynamatrix/ for the lib
 // Agent setup evolves at https://ci.networkupstools.org/computer/
-@Library('jenkins-dynamatrix') _
+// NOTE: The "${BRANCH_NAME}" below IS NOT A VARIABLE!
+//       Special notation per custom plugin build including changes from
+//       https://github.com/jenkinsci/pipeline-groovy-lib-plugin/pull/19/
+@Library('jenkins-dynamatrix@${BRANCH_NAME}') _
 import org.nut.dynamatrix.dynamatrixGlobalState;
 import org.nut.dynamatrix.*;
 
@@ -26,6 +29,13 @@ import org.nut.dynamatrix.*;
     dynacfgPipeline.disableSlowBuildAutotools = false
     dynacfgPipeline.disableSlowBuildCIBuild = false
     dynacfgPipeline.disableSlowBuildCIBuildExperimental = false
+
+    // NOTE: Disabled by default because with -std=c* the compiler and linker
+    // (at least on environments NUT CI farm has) do not "see" many things,
+    // and do not even define WIN32, and this is unrelated to NUT codebase.
+    // This toggle aims to only disable 'c' builds in the scenario; but the
+    //'gnu' ones should still happen if it is enabled overall.
+    dynacfgPipeline.disableStrictCIBuild_CrossWindows = true
 
     // At this time, GCC succeeds building C89/GNU89 mode for NUT
     // while CLANG complains about things we can't fix easily.
@@ -1218,7 +1228,7 @@ set | sort -n """
                 dynamatrixAxesVirtualLabelsMap: [
                     'BITS': [64, 32],
                     'CSTDVERSION_${KEY}': [ ['c': '99', 'cxx': '11'] ],
-                    'CSTDVARIANT': ['c', 'gnu'],
+                    'CSTDVARIANT': ['gnu'] + (dynacfgPipeline.disableStrictCIBuild_CrossWindows ? [] : ['c']),
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
@@ -1285,6 +1295,14 @@ if ( env?.BRANCH_NAME ==~ /.*verbose.*/ )
     dynamatrixGlobalState.enableDebugErrors = true
     dynamatrixGlobalState.enableDebugMilestones = true
     dynamatrixGlobalState.enableDebugMilestonesDetails = true
+    dynamatrixGlobalState.enableDebugTraceGithubStatusHighlights = true
+}
+
+//if (true)  // <<< (Un-)comment away in select runs/branches
+//if (false) // <<< (Un-)comment away in select runs/branches
+if ( env?.BRANCH_NAME ==~ /.*fightwarn.*/ )
+{
+    dynamatrixGlobalState.enableDebugTraceGithubStatusHighlights = true
 }
 
 dynamatrixPipeline(dynacfgBase, dynacfgPipeline)

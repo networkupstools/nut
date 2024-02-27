@@ -17,7 +17,7 @@
   <!-- AUTOINSERT LOCATION -->
   <revision>
     <revnumber>2.8.1</revnumber>
-    <date>TBD</date>
+    <date>2023-10-31</date>
     <authorinitials>JK</authorinitials>
     <revremark>
         Some changes to API, docs and recipes, in particular to simplify local

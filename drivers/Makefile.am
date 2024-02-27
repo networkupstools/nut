@@ -1,10 +1,19 @@
 # Network UPS Tools: drivers
 
+# Export certain values for ccache which NUT ci_build.sh can customize,
+# to facilitate developer iteration re-runs of "make" later.
+# At least GNU and BSD make implementations are okay with this syntax.
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_NAMESPACE=@CCACHE_NAMESPACE@
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_BASEDIR=@CCACHE_BASEDIR@
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_DIR=@CCACHE_DIR@
+@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_PATH=@CCACHE_PATH@
+@NUT_AM_MAKE_CAN_EXPORT@export PATH=@PATH_DURING_CONFIGURE@
+
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/common/libcommon.la \
 $(top_builddir)/common/libparseconf.la \
 $(top_builddir)/clients/libupsclient.la: dummy
-	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # by default, link programs in this directory with libcommon.la
 # (libtool version of the static lib, in order to access LTLIBOBJS)
@@ -294,8 +303,16 @@ generic_modbus_SOURCES = generic_modbus.c
 generic_modbus_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
 adelsystem_cbi_SOURCES = adelsystem_cbi.c
 adelsystem_cbi_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
-apc_modbus_SOURCES = apc_modbus.c $(LIBUSB_IMPL) hidparser.c usb-common.c
-apc_modbus_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS) $(LIBUSB_LIBS)
+
+# APC Modbus driver (with support of modbus over different media)
+# Note that a version of libmodbus built with USB support is also needed
+# for USB connections. Legacy versions work for Serial and TCP links.
+apc_modbus_SOURCES = apc_modbus.c
+apc_modbus_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
+if WITH_USB
+  apc_modbus_SOURCES += $(LIBUSB_IMPL) hidparser.c usb-common.c
+  apc_modbus_LDADD += $(LIBUSB_LIBS)
+endif
 
 # Huawei UPS2000 driver
 # (this is both a Modbus and a serial driver)

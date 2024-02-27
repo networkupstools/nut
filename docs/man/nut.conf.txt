@@ -65,6 +65,20 @@ If you want a data server always running and responding on the network, even
 if it initially has nothing to serve (may be live-reloaded later, when devices
 become configured), this option is for you.
 
+*ALLOW_NOT_ALL_LISTENERS*::
+Optional, defaults to `false`.  Set this to `true` to allow starting the `upsd`
+NUT data server even if not all `LISTEN` directives can be honoured at the
+moment. This environment variable overrides the built-in "false" flag in the
+`upsd` program, and an optional same-named default flag that can be set in
+`upsd.conf`.
++
+If you want a data server always running, even if it would potentially not
+serve all clients on every uptime, this option is for you (note you would
+have to restart `upsd` to pick up the `LISTEN`ed IP address if it appears
+later).
++
+Probably configuring `LISTEN *` is a better choice in such cases.
+
 *UPSD_OPTIONS*::
 Optional.  Set upsd specific options. See linkman:upsd[8] for more
 details.  It is ignored when 'MODE' above indicates that no upsd

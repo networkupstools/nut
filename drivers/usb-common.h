@@ -122,6 +122,10 @@
  #define USB_CTRL_MSGVALUE_MIN	0
  #define USB_CTRL_MSGVALUE_MAX	UINT16_MAX
 
+ typedef uint8_t usb_ctrl_cfgindex;
+ #define USB_CTRL_CFGINDEX_MIN	0
+ #define USB_CTRL_CFGINDEX_MAX	UINT8_MAX
+
  typedef uint16_t usb_ctrl_repindex;
  #define USB_CTRL_REPINDEX_MIN	0
  #define USB_CTRL_REPINDEX_MAX	UINT16_MAX
@@ -410,6 +414,10 @@
  typedef int usb_ctrl_msgvalue;
  #define USB_CTRL_MSGVALUE_MIN	INT_MIN
  #define USB_CTRL_MSGVALUE_MAX	INT_MAX
+
+ typedef uint8_t usb_ctrl_cfgindex;
+ #define USB_CTRL_CFGINDEX_MIN	0
+ #define USB_CTRL_CFGINDEX_MAX	UINT8_MAX
 
  typedef int usb_ctrl_repindex;
  #define USB_CTRL_REPINDEX_MIN	INT_MIN

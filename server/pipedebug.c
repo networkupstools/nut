@@ -53,14 +53,14 @@ static HANDLE pipe_connect(const char *pipefn)
 	}
 
 	fd = CreateFile(
-			pipename,       // pipe name
-			GENERIC_READ |  // read and write access
+			pipename,       /* pipe name */
+			GENERIC_READ |  /* read and write access */
 			GENERIC_WRITE,
-			0,              // no sharing
-			NULL,           // default security attributes FIXME
-			OPEN_EXISTING,  // opens existing pipe
-			FILE_FLAG_OVERLAPPED, //  enable async IO
-			NULL);          // no template file
+			0,              /* no sharing */
+			NULL,           /* default security attributes FIXME */
+			OPEN_EXISTING,  /* opens existing pipe */
+			FILE_FLAG_OVERLAPPED, /*  enable async IO */
+			NULL);          /* no template file */
 
 	if (fd == INVALID_HANDLE_VALUE) {
 		printf("CreateFile : %d\n",GetLastError());

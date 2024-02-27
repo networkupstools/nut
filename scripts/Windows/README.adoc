@@ -1,0 +1,753 @@
+NUT and MS Windows
+==================
+
+Introduction
+------------
+
+NUT is now also available for the Microsoft Windows platform.
+
+This methodology (and Windows support in general) are currently experimental,
+so pull requests are welcome to tie up some loose ends (add more prerequisites,
+test and fix programs, re-enable some code just commented away by `ifdef`s...)
+
+NOTE: It is possible to prepare a Windows machine with tools and prerequisites
+for building NUT natively, as detailed in `docs/config-prereqs.txt` and easily
+handled by NUT common `ci_build.sh` script. Most prerequisites are already
+packaged in that environment, but notably net-snmp is missing -- but can be
+built from source following this document. Possibly, the instructions below
+would converge there over time to keep it simple.
+
+For additional reference about prerequisite preparation and further ideas for
+the NUT for Windows effort, please see detailed report in the mailing list:
+
+* https://alioth-lists.debian.net/pipermail/nut-upsdev/2016-April/007171.html -
+  [Nut-upsdev] How to build NUT Windows Port
+
+* https://alioth-lists.debian.net/pipermail/nut-upsdev/2016-April/007172.html -
+  [Nut-upsdev] NUT Windows port sources review
+
+
+Cross compiling from Linux
+--------------------------
+
+Fortunately, you are not forced to have a real Windows system to compile NUT.
+The following chapters will guide you through setting up up a
+link:http://mingw-w64.sourceforge.net[MinGW-w64] build environment and
+compiling NUT.
+
+NOTE: These instructions were re-verified (and codebase slightly amended)
+with an Ubuntu 21.10 container as the dedicated build environment.
+Support was added to NUT common `ci_build.sh` script to call the helper
+`build-mingw-nut.sh` from this directory when cross-building on Linux
+for Windows in the specially crafted sandbox (conformance is assumed),
+if you use one of `BUILD_TYPE=cross-windows-mingw(-64|-32|)` as this
+made NUT CI farm integration easier.
+
+NOTE: The Ubuntu (20.04 or newer) environment provided by WSL2 also seems
+suitable for semi-native builds on a Windows system, following the same
+instructions. However, note that some builds may be broken or complicated
+by antivirus software (it really dislikes someone writing into EXE files).
+
+Beside MinGW detailed below, you would need the usual dependencies to
+configure and build NUT (if you would bootstrap it from github sources
+rather than a tarball -- without a pre-generated `configure` script).
+Notably, `asciidoc` with its many dependencies may be required for
+generation of man pages into the intermediate tarball used by script
+referenced below.
+
+MinGW-w64 build environment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You will first need to setup a MinGW-w64 build environment.
+
+NOTE: While adding `ccache` is optional, it is quite recommended especially
+if you plan to iterate many builds (whether of NUT or the dependencies).
+At least for Ubuntu 21.10 packaging, it is integrated with `mingw-w64`
+tool naming out of the box.
+
+On Debian/Ubuntu and similar systems, use:
+
+	# apt-get update
+	# apt-get install mingw-w64
+
+On Redhat and similar systems, use:
+
+	# ???
+
+You will also need pthread and mingw regex libraries, and other recommended
+dependencies as detailed below.
+
+[NOTE]
+================================================================================
+
+If you use script `./build-mingw-nut.sh` mentioned below, you may skip setting
+these environment variables when building NUT. You would however need to use
+them once (per `ARCH`) to provide the prerequisites below if built from source.
+
+When using the compilation approach, use the following HOST_FLAG, BUILD_FLAG
+and CC, CFLAGS, LDFLAGS and PREFIX:
+
+- prefer either to
+------
+:; export ARCH="x86_64-w64-mingw32"
+------
+or
+------
+:; export ARCH="i686-w64-mingw32"
+------
+(it can help to open two terminals and copy one ARCH into each
+  and then the lines below into both of them; be sure to use separate
+  directory trees for the unpacked build workspaces)
+
+- for either-ARCH build environment further set:
+------
+:; export HOST_FLAG="--host=$ARCH"
+:; PREFIX="/usr/$ARCH"
+------
+
+- NOTE: Technically, these instructions may apply to builds with MinGW on
+  Windows semi-natively (e.g. to add the net-snmp libraries which are not
+  packaged for MSYS2 MinGW currently). Generally you can use environment
+  variables set by different launchers of MinGW terminal sessions depending
+  on the target profile (32/64 bit, gcc/clang, libc implementation...)
+
+** For `sudo make install` in instructions below, you may have to omit the
+   `sudo` part if missing in your MSYS2 MinGW environment;
+
+** For a "native build" directly for consumption in the currently configured
+   environment, you would not use cross-build path in `PREFIX` and not set
+   the `HOST_FLAG` value:
++
+------
+:; export ARCH="$MINGW_CHOST"
+:; PREFIX="$MINGW_PREFIX"
+:; export HOST_FLAG=""
+------
+
+** If you wanted a "real cross-build" for a different MinGW environment, you
+   might want to set those (but the NUT build would then need to be told to
+   search for headers, libraries and pkg-config data in extra locations):
++
+------
+:; export ARCH="$MINGW_CHOST"
+:; PREFIX="$MINGW_PREFIX/$ARCH"
+:; export HOST_FLAG="--host=$ARCH"
+------
+** You might want then to verify that it sets values you expect with a command
+   like this:
++
+------
+:; set | grep -E '^(ARCH|PREFIX|HOST_FLAG)='
+#export ARCH="x86_64-w64-mingw32"
+#PREFIX="/mingw64/x86_64-w64-mingw32"
+------
+
+- on Debian/Ubuntu style systems also:
+------
+:; BUILD_FLAG="--build=`dpkg-architecture -qDEB_BUILD_GNU_TYPE`"
+------
+  * Note that this bit is very Debian specific!
+    Hints for Redhat-style systems are wanted.
+
+- also export the following compilation flags:
+------
+:; export CFLAGS="$CFLAGS -D_POSIX=1 -I${PREFIX}/include/"
+:; export CXXFLAGS="$CXXFLAGS -D_POSIX=1 -I${PREFIX}/include/"
+:; export LDFLAGS="$LDFLAGS -L${PREFIX}/lib/"
+:; export PKG_CONFIG_PATH="${PREFIX}"/lib/pkgconfig
+------
+
+- prepare the download and build area, e.g. to match copy-paste instructions
+below, it would be like:
+------
+:; DLDIR=~/nut-win-deps
+:; WSDIR="$DLDIR"/"$ARCH"
+:; mkdir -p "$WSDIR" "$DLDIR"
+------
+
+================================================================================
+
+
+pthread library
+^^^^^^^^^^^^^^^
+
+NOTE: The MinGW distribution in Ubuntu 21.10 already includes pthread files,
+so the build instructions below were not relevant for this component.
+
+On older Debian systems, you can use the following packages repository:
+link:https://launchpad.net/~mingw-packages/+archive/ppa[MinGW PPA]
+
+However at the moment this PPA seems to be stale and serve very old packages,
+so it could be better to roll your own as detailed below.
+
+On Redhat: FIXME
+
+////////////////////////////////////////////////////////////////////////////////
+http://fedoraproject.org/wiki/MinGW/CrossCompilerFramework
+https://fedoraproject.org/wiki/Packaging:MinGW?rd=Packaging:MinGW_Future
+https://fedoraproject.org/wiki/Packaging:MinGW_Old
+////////////////////////////////////////////////////////////////////////////////
+
+You can also compile it (where that is still needed) using:
+
+	:; ( cd "$DLDIR" && wget -c http://mirrors.kernel.org/sources.redhat.com/pthreads-win32/pthreads-w32-2-8-0-release.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/pthreads-w32-2-8-0-release.tar.gz
+	:; cd pthreads-w32-2-8-0-release/
+	:; make -f GNUmakefile "CROSS=$ARCH-" $BUILD_FLAG GC-inlined
+	:; sudo cp *.dll ${PREFIX}/pthreads/lib/
+	:; sudo cp *.a ${PREFIX}/lib/
+	:; sudo cp pthread.h sched.h semaphore.h ${PREFIX}/pthreads/include
+
+
+MinGW regex library
+^^^^^^^^^^^^^^^^^^^
+
+You can compile it  using:
+
+	:; ( cd "$DLDIR" && wget -c http://netcologne.dl.sourceforge.net/project/mingw/Other/UserContributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/mingw-libgnurx-2.5.1-src.tar.gz
+	:; cd mingw-libgnurx-2.5.1
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; make
+	:; sudo make install
+
+
+libtool (libltdl)
+^^^^^^^^^^^^^^^^^
+
+	:; ( cd "$DLDIR" && wget -c https://ftpmirror.gnu.org/libtool/libtool-2.4.6.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/libtool-2.4.6.tar.gz
+	:; cd libtool-2.4.6
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; make
+	:; sudo make install
+
+
+libusb
+^^^^^^
+
+* libusb-1.0
+
+	:; ( cd "$DLDIR" && wget -c https://sourceforge.net/projects/libusb/files/libusb-1.0/libusb-1.0.26/libusb-1.0.26.tar.bz2 )
+	:; cd "$WSDIR"
+	:; tar xjf "$DLDIR"/libusb-1.0.26.tar.bz2
+	:; cd libusb-1.0.26
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; make
+	:; sudo make install
+
+* libusb-compat-0.1 (API translation layer for older codebase, uses libusb-1.0)
+
+	:; ( cd "$DLDIR" && wget -c https://github.com/libusb/libusb-compat-0.1/archive/refs/heads/master.zip -O libusb-compat-0.1-master.zip )
+	:; cd "$WSDIR"
+	:; unzip "$DLDIR"/libusb-compat-0.1-master.zip
+	:; cd libusb-compat-0.1-master
+	:; ./bootstrap.sh
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; make
+	:; sudo make install
+
+
+zlib
+^^^^
+
+Needed for libpng at least, but likely many others too.
+
+[NOTE]
+======
+On recent Debian/Ubuntu systems, you might have luck with:
+------
+:; sudo apt-get install libz-mingw-w64-dev
+------
+======
+
+On any system, you can build from source; however the current version has
+a nuance to address for mingw builds:
+
+	:; ( cd "$DLDIR" && wget -c -O zlib-1.2.12.tar.gz https://github.com/madler/zlib/archive/refs/tags/v1.2.12.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/zlib-1.2.12.tar.gz
+	:; cd zlib-1.2.12
+
+	# Edit the `configure` script (not autotools generated) to
+	# neuter the MINGW `leave 1` line:
+	  MINGW* | mingw*)
+	# temporary bypass
+	        rm -f $test.[co] $test $test$shared_ext
+	        echo "Please use win32/Makefile.gcc instead." | tee -a configure.log
+	-       leave 1
+	+       ###leave 1
+	        LDSHARED=${LDSHARED-"$cc -shared"}
+	        LDSHAREDLIBC=""
+	        EXE='.exe' ;;
+
+	:; CHOST="$ARCH" ./configure --prefix="$PREFIX"
+	:; make
+	:; sudo make install
+
+
+openssl
+^^^^^^^
+
+OpenSSL is an optional dependency for NUT itself (it or Mozilla NSS can
+be used to protect the networking communications), and for libneon below
+(OpenSSL or GnuTLS).
+
+Note the non-standard `config` script bundled along, and hoops to jump
+through...
+
+	:; ( cd "$DLDIR" && wget -c https://www.openssl.org/source/openssl-1.1.1q.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/openssl-1.1.1q.tar.gz
+	:; cd openssl-1.1.1q
+	# Build options partially lifted from OBS packaging, see:
+	# https://build.opensuse.org/package/view_file/windows:mingw:win32/mingw32-openssl-1_1/mingw32-openssl-1_1.spec?expand=1
+	:; ( case "$ARCH" in
+	     *x86_64*) SYSTEM=MINGW64 ;;
+	     *i?86*) SYSTEM=MINGW32 ;;
+	     *) SYSTEM=MINGW ;;
+	     esac
+	     export SYSTEM
+	     ./config \
+	        no-idea enable-rfc3779 zlib shared \
+	        -fno-common \
+	        --prefix="$PREFIX" --cross-compile-prefix="/usr/bin/$ARCH-" \
+	        -DPURIFY -D__USE_GNU
+	   )
+	:; make
+	:; sudo make install
+
+
+xz (liblzma)
+^^^^^^^^^^^^
+
+Needed for libxml2.
+
+	:; ( cd "$DLDIR" && wget -c https://tukaani.org/xz/xz-5.2.5.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/xz-5.2.5.tar.gz
+	:; cd xz-5.2.5
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; make
+	:; sudo make install
+
+
+libxml2
+^^^^^^^
+
+Needed for libneon.
+
+/////////////////////////////////////////////////////////////////////////////
+// ...and for fontconfig
+/////////////////////////////////////////////////////////////////////////////
+
+	:; ( cd "$DLDIR" && wget -c https://gitlab.gnome.org/GNOME/libxml2/-/archive/v2.9.14/libxml2-v2.9.14.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/libxml2-v2.9.14.tar.gz
+	:; cd libxml2-v2.9.14
+	:; ./autogen.sh --prefix="$PREFIX" $HOST_FLAG --without-python
+	:; make
+	:; sudo make install
+
+
+gd (cgi)
+^^^^^^^^
+
+Note that for the general-case build libgd supports a huge dependency tree,
+so for the NUT purposes we are going for as little as possible.
+
+Initially the purpose was to have libgd installed to build/link against for
+the Windows target. Subsequently more dependencies were documented, but still
+further refinement may be needed to have it actually usable for CGI web pages
+rendering.
+
+Finally note that end-users would have to install a CGI-capable web server to
+use this feature in practice.
+
+* zlib: see above
+
+* iconv:
++
+Seems to be directly used by `libgd` (at least queried in its `configure` script):
+
+	:; ( cd "$DLDIR" && wget -c https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.17.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/libiconv-1.17.tar.gz
+	:; cd libiconv-1.17
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; make
+	:; sudo make install
+
+
+* freetype:
++
+NOTE: For some reason it won't build in an Ubuntu 20.04 running under WSL2 --
+blocks running an `apinames.exe` program that it has just built. May be a
+problem of the emulation layer (as it calls the EXE via `/tools/init`),
+and/or of the system antivirus interaction?..
+
+	:; ( cd "$DLDIR" && wget -c https://download.savannah.gnu.org/releases/freetype/freetype-2.12.1.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/freetype-2.12.1.tar.gz
+	:; cd freetype-2.12.1
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG --without-brotli
+	:; make
+	:; sudo make install
+
+
+/////////////////////////////////////////////////////////////////////////////
+WIP - fontconfig not usable yet due to ICU failing to cross-build
+Maybe an older version of either would fare better?..
+
+* gperf is needed by fontconfig build routine as a tool usable on the build
+  system, so a packaged install should suffice, e.g. `apt-get install gperf`.
+  Otherwise, build one from source (and note that this may be needed e.g.
+  for native builds on Windows, but not "just" for using a cross-binary that
+  the build host can generate but not run natively).
+
+	:; ( cd "$DLDIR" && wget -c http://ftp.gnu.org/pub/gnu/gperf/gperf-3.1.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/gperf-3.1.tar.gz
+	:; cd gperf-3.1
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; make
+	:; sudo make install
+
+
+* ICU:
+
+For a cross-build of ICU, you should first build and install a copy
+for the host system, then use it as a resource for the final build.
+Set aside a good part of an hour to get this built:
+
+	:; ( cd "$DLDIR" && wget -c https://github.com/unicode-org/icu/releases/download/release-71-1/icu4c-71_1-src.tgz )
+
+	# This one is built for native host architecture and provides
+	# some resources to ARCH builds later on:
+	:; cd "$DLDIR"
+	:; tar xzf icu4c-71_1-src.tgz
+	:; rm -rf icu-native || true
+	:; mv icu icu-native   # note, no version in the pathname
+	:; cd icu-native/source
+	:; ./configure CFLAGS= CXXFLAGS= LDFLAGS= ARCH=
+	:; make
+
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/icu4c-71_1-src.tgz
+	:; cd icu/source
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG --with-cross-build="$DLDIR"/icu-native/source
+	:; make
+	:; sudo make install
+
+
+* fontconfig:
+
+	:; ( cd "$DLDIR" && wget -c https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.14.0.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/fontconfig-2.14.0.tar.gz
+	:; cd fontconfig-2.14.0/
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG --enable-libxml2
+	:; make
+	:; sudo make install
+
+// for fontconfig
+/////////////////////////////////////////////////////////////////////////////
+
+
+* libpng:
+
+	:; ( cd "$DLDIR" && wget -c https://download.sourceforge.net/libpng/libpng-1.6.37.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/libpng-1.6.37.tar.gz
+	:; cd libpng-1.6.37
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; make
+	:; sudo make install
+
+* libgd itself:
++
+TODO: This works for 64-bit builds, however 32-bit ones are burdened with `@8`
+or `@12` suffixes to symbol names, and subsequent link checks in NUT fail to
+find `libgd` as usable -- so CGI is not built in 32-bit mode. According to
+such context, this must be something about STDCALL and/or "extern C"...
+
+	:; ( cd "$DLDIR" && wget -c https://github.com/libgd/libgd/releases/download/gd-2.3.3/libgd-2.3.3.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/libgd-2.3.3.tar.gz
+	:; cd libgd-2.3.3
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG \
+	    --with-png --with-freetype \
+	    --without-tiff --without-jpeg --without-xpm \
+	    --without-fontconfig
+	# Note: currently we configure away almost all capabilities,
+	# to match the dependency binaries (and/or headers) present
+	# on the build system. Review resulting build recipes that
+	# they DO NOT refer to system /usr/include locations!
+	# In practice we would likely need the fontconfig pieces to work.
+	:; make
+	:; sudo make install
+
+
+libmodbus
+^^^^^^^^^
+
+	:; ( cd "$DLDIR" && wget -c https://libmodbus.org/releases/libmodbus-3.1.7.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/libmodbus-3.1.7.tar.gz
+	:; cd libmodbus-3.1.7
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; make
+	:; sudo make install
+
+
+net-snmp
+^^^^^^^^
+
+	:; ( cd "$DLDIR" && wget -c https://sourceforge.net/projects/net-snmp/files/net-snmp/5.9.1/net-snmp-5.9.1.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/net-snmp-5.9.1.tar.gz
+	:; cd net-snmp-5.9.1
+	:; yes "" | ./configure --prefix="$PREFIX" $HOST_FLAG \
+	    --with-default-snmp-version=3 --disable-agent --disable-daemon \
+	    --with-sys-contact="" --with-sys-location="" --with-logfile=none \
+	    --with-persistent-directory="${PREFIX}/var/net-snmp" \
+	    --disable-embedded-perl --without-perl-modules --disable-perl-cc-checks \
+	    --enable-shared
+	# NOTE: ./configure script may ask a few questions, or may just print
+	# a banner that it would; hopefully all replies needed for current
+	# version are covered above
+	# The following long `LDFLAGS` ensure that shared `libnetsnmp-40.dll`
+	# gets built and later installed (and siblings which NUT does not use):
+	:; make LDFLAGS="-no-undefined -lws2_32 -lregex -Xlinker --ignore-unresolved-symbol=_app_name_long -Xlinker --ignore-unresolved-symbol=app_name_long"
+	:; find . -type f -name '*.dll' -o -name '*.dll.a'
+	:; sudo make install
+
+NOTE: net-snmp tends to only `make` a static-linking library for Windows
+by default (the shared library only appears with `LDFLAGS` proposed above).
+In this case consumers must link not only with `-lnetsnmp` but also its
+dependencies explicitly -- see `Libs.private` line in `netsnmp.pc` of
+your build (or installation in `${PREFIX}/lib/pkgconfig/netsnmp.pc`).
+Builds can extract this info with `pkg-config --libs --static netsnmp`
+as NUT scenarios do (for mingw, if shared-linking attempt fails).
+
+
+libneon
+^^^^^^^
+
+As of release 0.32.2 libneon failed to build  -- neither in Windows MSYS2 nor
+in Linux mingw environments. Some tinkering was needed to make it happen, and
+was posted as https://github.com/notroj/neon/pull/84 (pull request sourced
+from https://github.com/jimklimov/neon/tree/fix-mingw-cross branch). Due to
+this, instructions below differ from others by setting up an out-of-tree build
+instead of a tarball download. Eventually it would hopefully suffice to fetch
+https://notroj.github.io/neon/neon-0.32.5.tar.gz or newer (PR was merged after
+libneon 0.32.4 release).
+
+NOTE: Ability to `make docs` here relies on presence of `xmlto` program.
+In NUT CI workers prepared according to `docs/config-prereqs.txt` this should
+be among dependencies for `asciidoc`; beware that with prerequisites it has
+quite a large installation footprint. Alternately check PR #69, or consult
+the Makefiles for current `install` target definition to run its job without
+`install-docs` part (example posted below).
+
+	#:; ( cd "$DLDIR" && git clone -b fix-mingw-cross https://github.com/jimklimov/neon neon-git )
+	:; ( cd "$DLDIR" && git clone https://github.com/notroj/neon neon-git )
+	:; ( cd "$DLDIR/neon-git" && ./autogen.sh )
+	:; cd "$WSDIR"
+	:; rm -rf neon-git ; mkdir neon-git
+	:; cd neon-git
+	:; "$DLDIR"/neon-git/configure --prefix="$PREFIX" $HOST_FLAG \
+	    --enable-shared --with-ssl=openssl
+	:; make all docs
+	:; sudo make install \
+	   || sudo make install-lib install-headers install-config install-nls ###install-docs
+
+
+/////////////////////////////////////////////////////////////////////////////
+// for avahi
+
+libpcre
+^^^^^^^
+
+Needed for glib2 (further for avahi).
+
+	:; ( cd "$DLDIR" && wget -c https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.40/pcre2-10.40.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/pcre2-10.40.tar.gz
+	:; cd pcre2-10.40
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; make all
+	:; sudo make install
+	:; sudo ln -s libpcre2-posix.pc ${PREFIX}/lib/pkgconfig/libpcre.pc
+
+
+gettext/libintl
+^^^^^^^^^^^^^^^
+
+WARNING: Currently gettext does not build, at least on WSL2 Ubuntu,
+fails with `undefined reference to '__imp_formatstring_ruby'`.
+
+Needed for glib2 (further for avahi).
+
+	:; ( cd "$DLDIR" && wget -c https://ftp.gnu.org/pub/gnu/gettext/gettext-0.20.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/gettext-0.20.tar.gz
+	:; cd gettext-0.20
+	# Flags tweaked due to http://savannah.gnu.org/bugs/?36443
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG \
+	    CFLAGS="$CFLAGS -O2" CXXFLAGS="$CXXFLAGS -O2"
+	:; make all
+	:; sudo make install
+
+
+glib2
+^^^^^
+
+WARNING: Currently glib2 does not build, at least on WSL2 Ubuntu, fails to
+find gettext (not built above).
+
+Needed for avahi.
+
+Requires `meson` build system, e.g. via:
+------
+:; sudo apt-get install meson
+------
+
+NOTE: Latest glib-2.73.3 as of this writing requires `meson >= 0.60.0` but the
+one provided in WSL2 Ubuntu 20.04 OS packages is older (0.53.2). In this case,
+try an older glib2 release, e.g. glib-2.72.1 seems compatible.
+
+Configuration options below were initially borrowed from
+https://build.opensuse.org/package/view_file/windows:mingw:win32/mingw32-glib2/mingw32-glib2.spec?expand=1
+
+	:; ( cd "$DLDIR" && wget -c https://gitlab.gnome.org/GNOME/glib/-/archive/2.72.1/glib-2.72.1.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/glib-2.72.1.tar.gz
+	:; cd glib-2.72.1
+	:; case "$ARCH" in
+	     *x86_64*) cp -pf .gitlab-ci/cross_file_mingw64.txt .gitlab-ci/cross_file_${ARCH}.txt ;;
+	     *i686*) sed 's,x86_64,i686,g' < .gitlab-ci/cross_file_mingw64.txt > .gitlab-ci/cross_file_${ARCH}.txt ;;
+	   esac
+	# We do not have an ARCH-dependent pkg-config binary:
+	:; sed "s,^pkgconfig = .*\$,pkgconfig = 'pkg-config'," \
+	    -i .gitlab-ci/cross_file_${ARCH}.txt
+	# With meson, config and build can be done in one shot:
+	:; meson --prefix="$PREFIX" \
+	    --buildtype=plain --wrap-mode=nodownload \
+	    --auto-features=auto \
+	    --cross-file=.gitlab-ci/cross_file_${ARCH}.txt \
+	    . build \
+	    --default-library=shared \
+	    -Dman=false -Dgtk_doc=false \
+	    -Dsystemtap=false -Ddtrace=false \
+	    -Dinstalled_tests=false -Dlibelf=disabled
+	:; sudo meson install
+
+
+avahi
+^^^^^
+
+WARNING: Currently avahi does not build, at least on WSL2 Ubuntu, fails to
+find glib2 (not built above).
+
+Release 0.8 (and current git as of this writing) sources use `-Wl,-z...`
+linking flags which are not supported by mingw `ld` tooling, and so fail
+to configure.
+
+[NOTE]
+======
+To build from Git sources or regenerate `configure` in tarball sources
+like shown below, you should also have `gettextize` tool before running
+`autogen.sh`, e.g. via:
+------
+:; sudo apt install intltool autopoint
+:; ( cd "$DLDIR" && git clone https://github.com/lathiat/avahi avahi-git )
+:; ( cd "$DLDIR/avahi-git" && ./autogen.sh )
+# Stock script would go on to try configuring by default,
+# and that bit fails in cross-env vars
+------
+======
+
+	:; ( cd "$DLDIR" && wget -c https://github.com/lathiat/avahi/releases/download/v0.8/avahi-0.8.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/avahi-0.8.tar.gz
+	:; cd avahi-0.8
+	:; vi common/acx_pthread.m4
+	# Edit `common/acx_pthread.m4` to remove `-Wl,-z,defs` near
+	# AC_MSG_CHECKING([whether -pthread is sufficient with -shared])
+	# Alternatively just edit `configure` script from the tarball.
+	:; ./autogen.sh || true
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; make
+	:; sudo make install
+
+
+// for avahi
+/////////////////////////////////////////////////////////////////////////////
+
+
+Other requirements
+^^^^^^^^^^^^^^^^^^
+
+ipmi, ssl with Mozilla NSS...
+
+* https://ftp.gnu.org/gnu/freeipmi/freeipmi-1.6.9.tar.gz
+* https://ftp.mozilla.org/pub/security/nss/releases/NSS_3_79_RTM/src/nss-3.79-with-nspr-4.34.tar.gz
+
+
+Cross-building NUT with MinGW in Linux
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+After preparing at least the required dependencies above, use one of
+the following methods to compile NUT as:
+
+* out-of-tree from git source (easier to iterate for development, so default):
+
+	(cd scripts/Windows/ && ./build-mingw-nut.sh all64)
++
+or, depending on the build environment(s) you have prepared,
++
+	(cd scripts/Windows/ && ./build-mingw-nut.sh all32)
++
+[NOTE]
+======
+This is also automated for common NUT CI build script, calling it like this:
+------
+# Try to guess bitness based on ARCH or CFLAGS:
+BUILD_TYPE=cross-windows-mingw ./ci_build.sh
+
+# Or specifically:
+BUILD_TYPE=cross-windows-mingw-32 ./ci_build.sh
+BUILD_TYPE=cross-windows-mingw-64 ./ci_build.sh
+------
+======
+
+
+* an existing source tarball (can be fetched from NUT website):
+
+	:; export SOURCEMODE=stable
+	### Optionally: export VER_OPT=2.8.1
+	:; cd scripts/Windows/
+	:; ./build-mingw-nut.sh
+
+
+* To (re-)build from scratch with a dist tarball, e.g. testing how a stable
+release would fare, starting from a git checkout, use this:
+
+	:; ./autogen.sh && ./configure && make dist && \
+	    (cd scripts/Windows/ && SOURCEMODE=dist ./build-mingw-nut.sh all64)
+
+If everything goes fine, you will find a NUT installation tree in 'nut_install'
+sub-directory. Note the script accepts some parameters e.g. for 32/64 bit build
+targets.
+
+NOTE: For other ways of building and packaging, it might make sense for
+a packaged delivery to also `make install DESTDIR=.../nut_install` from
+the sources of dependency projects built above, or at least to copy the
+built `*.dll` files from `${PREFIX}/bin` to `nut_install/bin`. For those
+dependencies that are listed above, the script does this best-effort
+activity (does not fail if some are missing, but running the programs
+can fail later).

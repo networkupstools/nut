@@ -178,19 +178,21 @@ dnl # confuse the compiler assumptions - along with its provided headers)...
 dnl # ideally; in practice however cppunit, net-snmp and some system include
 dnl # files do cause grief to picky compiler settings (more so from third
 dnl # party packages shipped via /usr/local/... namespace):
-    AS_IF([test "x$CLANGCC" = xyes -o "x$GCC" = xyes], [
-dnl #        CFLAGS="-isystem /usr/include $CFLAGS"
-        AS_IF([test -d /usr/local/include],
-            [CFLAGS="-isystem /usr/local/include $CFLAGS"])
-        AS_IF([test -d /usr/pkg/include],
-            [CFLAGS="-isystem /usr/pkg/include $CFLAGS"])
-    ])
-    AS_IF([test "x$CLANGXX" = xyes -o "x$GXX" = xyes], [
-dnl #        CXXFLAGS="-isystem /usr/include $CXXFLAGS"
-        AS_IF([test -d /usr/local/include],
-            [CXXFLAGS="-isystem /usr/local/include $CXXFLAGS"])
-        AS_IF([test -d /usr/pkg/include],
-            [CXXFLAGS="-isystem /usr/pkg/include $CXXFLAGS"])
+    AS_IF([test "x$cross_compiling" != xyes], [
+        AS_IF([test "x$CLANGCC" = xyes -o "x$GCC" = xyes], [
+dnl #            CFLAGS="-isystem /usr/include $CFLAGS"
+            AS_IF([test -d /usr/local/include],
+                [CFLAGS="-isystem /usr/local/include $CFLAGS"])
+            AS_IF([test -d /usr/pkg/include],
+                [CFLAGS="-isystem /usr/pkg/include $CFLAGS"])
+        ])
+        AS_IF([test "x$CLANGXX" = xyes -o "x$GXX" = xyes], [
+dnl #           CXXFLAGS="-isystem /usr/include $CXXFLAGS"
+            AS_IF([test -d /usr/local/include],
+                [CXXFLAGS="-isystem /usr/local/include $CXXFLAGS"])
+            AS_IF([test -d /usr/pkg/include],
+                [CXXFLAGS="-isystem /usr/pkg/include $CXXFLAGS"])
+        ])
     ])
 
 dnl # Default to avoid noisy warnings on older compilers
@@ -205,7 +207,7 @@ dnl # Some distributions and platforms also have problems
 dnl # building in "strict C" mode, so for the GNU-compatible
 dnl # compilers we default to the GNU C/C++ dialects.
     AS_IF([test "x$GCC" = xyes -o "x$CLANGCC" = xyes],
-        [AS_CASE(["${CFLAGS}"], [-std=*], [],
+        [AS_CASE(["${CFLAGS}"], [*"-std="*|*"-ansi"*], [],
             [AC_LANG_PUSH([C])
              AX_CHECK_COMPILE_FLAG([-std=gnu99],
                 [AC_MSG_NOTICE([Defaulting C standard support to GNU C99 on a GCC or CLANG compatible compiler])
@@ -218,7 +220,7 @@ dnl # compilers we default to the GNU C/C++ dialects.
 dnl # Note: this might upset some very old compilers
 dnl # but then by default we wouldn't build C++ parts
     AS_IF([test "x$GCC" = xyes -o "x$CLANGCC" = xyes],
-        [AS_CASE(["${CXXFLAGS}"], [-std=*], [],
+        [AS_CASE(["${CXXFLAGS}"], [*"-std="*|*"-ansi"*], [],
             [AC_LANG_PUSH([C++])
              AX_CHECK_COMPILE_FLAG([-std=gnu++11],
                 [AC_MSG_NOTICE([Defaulting C++ standard support to GNU C++11 on a GCC or CLANG compatible compiler])
@@ -244,7 +246,7 @@ dnl # Some distributions and platforms also have problems
 dnl # building in "strict C" mode, so for the GNU-compatible
 dnl # compilers we default to the GNU C/C++ dialects.
     AS_IF([test "x$GCC" = xyes -o "x$CLANGCC" = xyes],
-        [AS_CASE(["${CFLAGS}"], [*-std=*], [],
+        [AS_CASE(["${CFLAGS}"], [*"-std="*|*"-ansi"*], [],
             [AC_LANG_PUSH([C])
              AX_CHECK_COMPILE_FLAG([-std=gnu99],
                 [AC_MSG_NOTICE([Defaulting C standard support to GNU C99 on a GCC or CLANG compatible compiler])
@@ -257,7 +259,7 @@ dnl # compilers we default to the GNU C/C++ dialects.
 dnl # Note: this might upset some very old compilers
 dnl # but then by default we wouldn't build C++ parts
     AS_IF([test "x$GCC" = xyes -o "x$CLANGCC" = xyes],
-        [AS_CASE(["${CXXFLAGS}"], [*-std=*], [],
+        [AS_CASE(["${CXXFLAGS}"], [*"-std="*|*"-ansi"*], [],
             [AC_LANG_PUSH([C++])
              AX_CHECK_COMPILE_FLAG([-std=gnu++11],
                 [AC_MSG_NOTICE([Defaulting C++ standard support to GNU C++11 on a GCC or CLANG compatible compiler])

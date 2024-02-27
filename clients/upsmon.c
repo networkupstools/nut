@@ -3,6 +3,7 @@
    Copyright (C)
      1998  Russell Kroll <rkroll@exploits.org>
      2012  Arnaud Quette <arnaud.quette.free.fr>
+     2020-2023  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -60,8 +61,9 @@ static	unsigned int	pollfreq = 5, pollfreqalert = 5;
 	 * will only be repeated every so many POLLFREQ loops.
 	 * If pollfail_log_throttle_max == 0, such error messages will
 	 * only be reported once when that situation starts, and ends.
-	 * By default it is logged every pollfreq (which can abuse syslog
-	 * and its storage).
+	 * By default (or for negative values) it is logged every pollfreq
+	 * loop cycle (which can abuse syslog and its storage), same as
+	 * if "max = 1".
 	 * To support this, each utype_t (UPS) structure tracks individual
 	 * pollfail_log_throttle_count and pollfail_log_throttle_state
 	 */
@@ -112,6 +114,7 @@ static	char	*certpasswd = NULL;
 static	int	certverify = 0;		/* don't verify by default */
 static	int	forcessl = 0;		/* don't require ssl by default */
 
+static	int	shutdownexitdelay = 0;	/* by default doshutdown() exits immediately */
 static	int	userfsd = 0, pipefd[2];
 	/* Should we run "all in one" (e.g. as root) or split
 	 * into two upsmon processes for some more security? */
@@ -215,7 +218,8 @@ typedef struct async_notify_s {
 	int flags;
 	char *ntype;
 	char *upsname;
-	char *date; } async_notify_t;
+	char *date;
+} async_notify_t;
 
 static unsigned __stdcall async_notify(LPVOID param)
 {
@@ -466,7 +470,8 @@ static int apply_for_primary(utype_t *ups)
 	return 0;
 }
 
-/* authenticate to upsd, plus do LOGIN and MASTER if applicable */
+/* authenticate to upsd, plus do LOGIN and apply for PRIMARY/MASTER privileges
+ * if applicable to this ups device MONITORing configuration */
 static int do_upsd_auth(utype_t *ups)
 {
 	char	buf[SMALLBUF];
@@ -811,6 +816,28 @@ static void doshutdown(void)
 				shutdowncmd);
 	}
 
+	if (shutdownexitdelay == 0) {
+		upsdebugx(1,
+			"Exiting upsmon immediately "
+			"after initiating shutdown, by default");
+	} else
+	if (shutdownexitdelay < 0) {
+		upslogx(LOG_WARNING,
+			"Configured to not exit upsmon "
+			"after initiating shutdown");
+		/* Technically, here we sleep until SIGTERM or poweroff */
+		do {
+			sleep(1);
+		} while (!exit_flag);
+	} else {
+		upslogx(LOG_WARNING,
+			"Configured to only exit upsmon %d sec "
+			"after initiating shutdown", shutdownexitdelay);
+		do {
+			sleep(1);
+			shutdownexitdelay--;
+		} while (!exit_flag && shutdownexitdelay);
+	}
 	exit(EXIT_SUCCESS);
 }
 
@@ -1073,10 +1100,11 @@ static int is_ups_critical(utype_t *ups)
 
 	/* administratively OFF (long enough, see OFFDURATION) */
 	if (flag_isset(ups->status, ST_OFF) && offdurationtime >= 0
-	&& (ups->linestate == 0 || ups->offstate == 1)) {
+	&& ups->offstate == 1) {
 		upslogx(LOG_WARNING,
 			"UPS [%s] is reported as (administratively) OFF",
 			ups->sys);
+		upsdebugx(1, "UPS [%s] is now critical being OFF for too long. In case of persisting unwanted shutdowns, consider disabling the upsmon 'OFFDURATION' option.", ups->sys);
 		return 1;
 	}
 
@@ -1188,7 +1216,7 @@ static void upsreplbatt(utype_t *ups)
 	}
 }
 
-static void ups_cal(utype_t *ups)
+static void ups_is_cal(utype_t *ups)
 {
 	if (flag_isset(ups->status, ST_CAL)) { 	/* no change */
 		upsdebugx(4, "%s: %s (no change)", __func__, ups->sys);
@@ -1201,6 +1229,16 @@ static void ups_cal(utype_t *ups)
 
 	do_notify(ups, NOTIFY_CAL);
 	setflag(&ups->status, ST_CAL);
+}
+
+static void ups_is_notcal(utype_t *ups)
+{
+	/* Called when CAL is NOT among known states */
+	if (flag_isset(ups->status, ST_CAL)) {	/* actual change */
+		do_notify(ups, NOTIFY_NOTCAL);
+		clearflag(&ups->status, ST_CAL);
+		try_restore_pollfreq(ups);
+	}
 }
 
 static void ups_fsd(utype_t *ups)
@@ -1221,10 +1259,21 @@ static void ups_fsd(utype_t *ups)
 /* cleanly close the connection to a given UPS */
 static void drop_connection(utype_t *ups)
 {
-	upsdebugx(2, "Dropping connection to UPS [%s]", ups->sys);
+	if (ups->linestate == 1 && flag_isset(ups->status, ST_ONLINE))
+		upsdebugx(2, "Dropping connection to UPS [%s], last seen as fully online.", ups->sys);
+	else
+		upsdebugx(2, "Dropping connection to UPS [%s], last seen as not fully online (might be considered critical later).", ups->sys);
+
+	if(ups->offstate == 1 || flag_isset(ups->status, ST_OFF))
+		upsdebugx(2, "Disconnected UPS [%s] was last seen in status OFF, this UPS might be considered critical later.", ups->sys);
+
+	if(ups->bypassstate == 1 || flag_isset(ups->status, ST_BYPASS))
+		upsdebugx(2, "Disconnected UPS [%s] was last seen in status BYPASS, this UPS might be considered critical later.", ups->sys);
+
+	if(flag_isset(ups->status, ST_CAL))
+		upsdebugx(2, "Disconnected UPS [%s] was last seen in status CAL, this UPS might be considered critical later.", ups->sys);
 
 	ups->commstate = 0;
-	ups->linestate = 0;
 
 	/* forget poll-failure logging throttling */
 	ups->pollfail_log_throttle_count = -1;
@@ -1570,6 +1619,28 @@ static int parse_conf_arg(size_t numargs, char **arg)
 		return 1;
 	}
 
+	/* SHUTDOWNEXIT <boolean|number> */
+	if (!strcmp(arg[0], "SHUTDOWNEXIT")) {
+		if (!strcasecmp(arg[1], "on")
+		||  !strcasecmp(arg[1], "yes")
+		||  !strcasecmp(arg[1], "true")) {
+			shutdownexitdelay = 0;
+		} else
+		if (!strcasecmp(arg[1], "off")
+		||  !strcasecmp(arg[1], "no")
+		||  !strcasecmp(arg[1], "false")) {
+			shutdownexitdelay = -1;
+		} else {
+			if (!str_to_int(arg[1], &shutdownexitdelay, 10)) {
+				upslogx(LOG_WARNING,
+					"SHUTDOWNEXIT value not recognized, "
+					"defaulting to 'yes'");
+				shutdownexitdelay = 0;
+			}
+		}
+		return 1;
+	}
+
 	/* POWERDOWNFLAG <fn> */
 	if (!strcmp(arg[0], "POWERDOWNFLAG")) {
 		checkmode(arg[0], powerdownflag, arg[1], reload_flag);
@@ -1709,7 +1780,7 @@ static int parse_conf_arg(size_t numargs, char **arg)
 	/* DEBUG_MIN (NUM) */
 	/* debug_min (NUM) also acceptable, to be on par with ups.conf */
 	if (!strcasecmp(arg[0], "DEBUG_MIN")) {
-		int lvl = -1; // typeof common/common.c: int nut_debug_level
+		int lvl = -1; /* typeof common/common.c: int nut_debug_level */
 		if ( str_to_int (arg[1], &lvl, 10) && lvl >= 0 ) {
 			nut_debug_level_global = lvl;
 		} else {
@@ -1781,6 +1852,7 @@ static void upsmon_err(const char *errmsg)
 static void loadconfig(void)
 {
 	PCONF_CTX_t	ctx;
+	int	numerrors = 0;
 
 	pconf_init(&ctx, upsmon_err);
 
@@ -1800,12 +1872,34 @@ static void loadconfig(void)
 		 * (or commented away) the debug_min
 		 * setting, detect that */
 		nut_debug_level_global = -1;
+
+		if (pollfail_log_throttle_max >= 0) {
+			utype_t	*ups;
+
+			upslogx(LOG_INFO,
+				"Forgetting POLLFAIL_LOG_THROTTLE_MAX=%d and "
+				"resetting UPS error-state counters before "
+				"a configuration reload",
+				pollfail_log_throttle_max);
+			pollfail_log_throttle_max = -1;
+
+			/* forget poll-failure logging throttling, so that we
+			 * rediscover the error-states and the counts involved
+			 */
+			ups = firstups;
+			while (ups) {
+				ups->pollfail_log_throttle_count = -1;
+				ups->pollfail_log_throttle_state = UPSCLI_ERR_NONE;
+				ups = ups->next;
+			}
+		}
 	}
 
 	while (pconf_file_next(&ctx)) {
 		if (pconf_parse_error(&ctx)) {
 			upslogx(LOG_ERR, "Parse error: %s:%d: %s",
 				configfile, ctx.linenum, ctx.errmsg);
+			numerrors++;
 			continue;
 		}
 
@@ -1824,6 +1918,7 @@ static void loadconfig(void)
 				snprintfcat(errmsg, sizeof(errmsg), " %s",
 					ctx.arglist[i]);
 
+			numerrors++;
 			upslogx(LOG_WARNING, "%s", errmsg);
 		}
 	}
@@ -1831,7 +1926,7 @@ static void loadconfig(void)
 	if (reload_flag == 1) {
 		if (nut_debug_level_global > -1) {
 			upslogx(LOG_INFO,
-				"Applying debug_min=%d from upsmon.conf",
+				"Applying DEBUG_MIN %d from upsmon.conf",
 				nut_debug_level_global);
 			nut_debug_level = nut_debug_level_global;
 		} else {
@@ -1845,9 +1940,16 @@ static void loadconfig(void)
 
 		if (pollfail_log_throttle_max >= 0) {
 			upslogx(LOG_INFO,
-				"Applying pollfail_log_throttle_max=%d from upsmon.conf",
+				"Applying POLLFAIL_LOG_THROTTLE_MAX %d from upsmon.conf",
 				pollfail_log_throttle_max);
 		}
+	}
+
+	/* FIXME: Per legacy behavior, we silently went on.
+	 * Maybe should abort on unusable configs?
+	 */
+	if (numerrors) {
+		upslogx(LOG_ERR, "Encountered %d config errors, those entries were ignored", numerrors);
 	}
 
 	pconf_finish(&ctx);
@@ -2074,6 +2176,10 @@ static void parse_status(utype_t *ups, char *status)
 		clearflag(&ups->status, ST_LOWBATT);
 	if (!strstr(status, "FSD"))
 		clearflag(&ups->status, ST_FSD);
+
+	/* similar to above - clear these flags and send notifications */
+	if (!strstr(status, "CAL"))
+		ups_is_notcal(ups);
 	if (!strstr(status, "OFF"))
 		ups_is_notoff(ups);
 	if (!strstr(status, "BYPASS"))
@@ -2098,7 +2204,7 @@ static void parse_status(utype_t *ups, char *status)
 		if (!strcasecmp(statword, "RB"))
 			upsreplbatt(ups);
 		if (!strcasecmp(statword, "CAL"))
-			ups_cal(ups);
+			ups_is_cal(ups);
 		if (!strcasecmp(statword, "OFF"))
 			ups_is_off(ups);
 		if (!strcasecmp(statword, "BYPASS"))
@@ -2179,9 +2285,11 @@ static void pollups(utype_t *ups)
 				 * failure state */
 				pollfail_log = 0;
 			} else {
-				/* Only log once for start, every MAX iterations,
-				 * and end of the same failure state */
-				if (ups->pollfail_log_throttle_count++ >= pollfail_log_throttle_max) {
+				/* here (pollfail_log_throttle_max > 0) :
+				 * only log once for start, every MAX iterations,
+				 * and end of the same failure state
+				 */
+				if (ups->pollfail_log_throttle_count++ >= (pollfail_log_throttle_max - 1)) {
 					/* ping... */
 					pollfail_log = 1;
 					ups->pollfail_log_throttle_count = 0;
@@ -2202,9 +2310,10 @@ static void pollups(utype_t *ups)
 				upslogx(LOG_ERR, "Poll UPS [%s] failure state code "
 					"changed from %d to %d; "
 					"report below will only be repeated to syslog "
-					"every %d polling loop cycles:",
+					"every %d polling loop cycles (%d sec):",
 					ups->sys, ups->pollfail_log_throttle_state,
-					upserror, pollfail_log_throttle_max);
+					upserror, pollfail_log_throttle_max,
+					pollfail_log_throttle_max * pollfreq);
 			}
 
 			ups->pollfail_log_throttle_state = upserror;

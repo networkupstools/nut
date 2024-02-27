@@ -221,6 +221,8 @@
 
 "Crown"	"ups"	"2"	"CMU-SP1200IEC"	"USB"	"nutdrv_qx port=auto vendorid=0001 productid=0000 protocol=hunnox langid_fix=0x0409 novendor noscanlangid"	# https://github.com/networkupstools/nut/pull/638 caveats at https://github.com/networkupstools/nut/issues/1014
 
+"Cyber Energy"	"ups"	"3"	"Models with USB ID 0483:A430"	"USB"	"usbhid-ups"	# https://alioth-lists.debian.net/pipermail/nut-upsdev/2024-February/007966.html
+
 "Cyber Power Systems"	"ups"	"1"	"550SL"	""	"genericups upstype=7"
 "Cyber Power Systems"	"ups"	"1"	"725SL"	""	"genericups upstype=7"
 "Cyber Power Systems"	"ups"	"1"	"CPS1100AVR"	""	"powerpanel"
@@ -607,7 +609,7 @@
 "Legrand"	"ups"	"2"	"Keor Line RT"	"Serial"	"nutdrv_qx"
 "Legrand"	"ups"	"2"	"Keor Line RT"	"USB"	"nutdrv_qx"
 "Legrand"	"ups"	"2"	"Keor LP"	"Serial"	"nutdrv_qx"
-"Legrand"	"ups"	"2"	"Keor Multiplug"	"USB"	"nutdrv_qx"
+"Legrand"	"ups"	"2"	"Keor Multiplug"	"USB"	"nutdrv_qx"	# NOTE: As of 2023 reports, the "NEW Keor Multiplug" is not supported (also by older vendor SW)
 "Legrand"	"ups"	"2"	"Keor S"	"Serial"	"nutdrv_qx"
 "Legrand"	"ups"	"2"	"Keor S"	"USB"	"nutdrv_qx"
 "Legrand"	"ups"	"3"	"Keor PDU"	"USB"	"usbhid-ups"
@@ -904,6 +906,9 @@
 
 "Numeric"	"ups"	"2"	"3000 SW"	""	"blazer_ser"
 "Numeric"	"ups"	"2"	"Digital 800 plus"	"USB"	"nutdrv_qx or blazer_usb"
+
+"NUT"	"ups"	"5"	"all supported NUT devices, through remote upsd"	""	"dummy-ups"
+"NUT"	"ups"	"5"	"Simulated devices"	""	"dummy-ups"
 
 "Oneac"	"ups"	"1"	"ON400"	"advanced interface"	"oneac"
 "Oneac"	"ups"	"1"	"ON600"	"advanced interface"	"oneac"

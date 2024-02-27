@@ -1,0 +1,99 @@
+#!/sbin/sh
+
+# ups: Starts and stops the Network UPS Tools 2.6.5 built for IPP - Unix 1.40-4 on Solaris
+#       Customizations copyright (c) 2015-2017, by Eaton (R) Corporation. All rights reserved.
+
+NUT_DIR="/usr/local/ups"
+NUT_RUN_DIR="/var/state/ups"
+NUT_LOCK_FILE="/var/locks/ups"
+NUT_CFG_DIR=""
+for D in "$NUT_DIR/etc" "/etc/nut" "/etc/ups" ; do
+	if [ -d "$D" ] && [ -f "$D/ups.conf" ] && [ -f "$D/ipp.conf" ] ; then
+		NUT_CFG_DIR="$D"
+		break
+	fi
+done
+unset D
+CONFIG_IPP="$NUT_CFG_DIR/ipp.conf"
+
+# Note: $NUT_DIR/xbin holds the wrappers to run NUT binaries with co-bundled
+# third party libs and hopefully without conflicts induced for the OS binaries
+PATH="$NUT_DIR/xbin:$NUT_DIR/sbin:$NUT_DIR/bin:$PATH"
+export PATH
+
+# Do not normally mangle the LD_LIBRARY_PATH - it can impact system tools too
+#LD_LIBRARY_PATH="$NUT_DIR/lib:/usr/lib:/lib:$LD_LIBRARY_PATH"
+#export LD_LIBRARY_PATH
+
+SHUTDOWN_TIMER=-1
+if [ -f "$CONFIG_IPP" ]; then
+	. "$CONFIG_IPP"
+fi
+
+ups_stop () {
+	echo "in ups stop function"
+	pkill -n upsmon
+	pkill -n upsd
+	upsdrvctl stop > /dev/null 2>&1
+	towait=5
+	while \
+		pgrep netxml-ups > /dev/null || \
+		pgrep snmp-ups > /dev/null || \
+		pgrep upsd > /dev/null || \
+		pgrep upsmon > /dev/null \
+	; do
+		sleep 1
+		towait="`expr $towait - 1`"
+		if [ "$towait" -le 0 ] ; then
+			echo "warning: some daemons did not die"
+			break
+		fi
+	done
+	# If the user changed ups.conf definitions and then asks for
+	# a NUT restart, the old instance of a driver might not die
+	# with obsolete knowledge of upsdrvctl
+	LIST="`ls -1 ${NUT_RUN_DIR}/*.pid | grep -v /shutdown.pid 2>/dev/null`"
+	if [ -n "$LIST" ]; then
+		echo "in ups stop function: killing some left-over daemons:"
+		echo "$LIST"
+		kill -15 `cat $LIST` > /dev/null 2>&1
+		sleep 5
+	fi
+}
+
+ups_start () {
+	echo "in ups start function"
+	upsdrvctl start #> /dev/null 2>&1
+	upsd #> /dev/null 2>&1
+	if [ "$SHUTDOWN_TIMER" -gt -1 ]; then
+		# This host wants early shutdown support, must be root
+		upsmon -p #> /dev/null 2>&1
+	else
+		upsmon #> /dev/null 2>&1
+	fi
+	"$NUT_DIR"/init  #> /dev/null 2>&1
+}
+
+case $1 in
+'start')
+	ups_start
+	;;
+
+'stop')
+	ups_stop
+	;;
+
+'restart')
+	ups_stop
+	ups_start
+	;;
+
+*)
+	echo ""
+	echo "Usage: '$0' {start | stop | restart }"
+	echo ""
+	exit 64
+	;;
+
+esac
+exit $?

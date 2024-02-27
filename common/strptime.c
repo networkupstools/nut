@@ -32,6 +32,10 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+
+/* Use NUT build configuration */
+#include "config.h"
+
 /*
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
@@ -77,13 +81,13 @@ static char gmt[] = { "GMT" };
 static char utc[] = { "UTC" };
 /* RFC-822/RFC-2822 */
 static const char * const nast[5] = {
-       "EST",    "CST",    "MST",    "PST",    "\0\0\0"
+	"EST",	"CST",	"MST",	"PST",	"\0\0\0"
 };
 static const char * const nadt[5] = {
-       "EDT",    "CDT",    "MDT",    "PDT",    "\0\0\0"
+	"EDT",	"CDT",	"MDT",	"PDT",	"\0\0\0"
 };
 static const char * const am_pm[2] = {
-       "am", "pm"
+	"am", "pm"
 };
 static const char * const day[7] = {
 	"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"
@@ -107,7 +111,7 @@ static const u_char *find_string(const u_char *, int *, const char * const *,
 static int
 strncasecmp(const char *a, const char *b, size_t c)
 {
-    return _strnicmp(a, b, c);
+	return _strnicmp(a, b, c);
 }
 #endif
 */
@@ -163,11 +167,11 @@ literal:
 		/*
 		 * "Complex" conversion rules, implemented through recursion.
 		 */
-		/* we do not need 'c'
-      case 'c': Date and time, using the locale's format. 
+/* // we do not need 'c':
+		case 'c': Date and time, using the locale's format.
 			new_fmt = _ctloc(d_t_fmt);
 			goto recurse;
-      */
+*/
 
 		case 'D':	/* The date as "%m/%d/%y". */
 			new_fmt = "%m/%d/%y";
@@ -185,7 +189,7 @@ literal:
 			goto recurse;
 
 		case 'r':	/* The time in 12-hour clock representation. */
-			new_fmt = "%I:%M:S %p";//_ctloc(t_fmt_ampm);
+			new_fmt = "%I:%M:S %p";/*_ctloc(t_fmt_ampm); */
 			LEGAL_ALT(0);
 			goto recurse;
 
@@ -194,18 +198,20 @@ literal:
 			LEGAL_ALT(0);
 			goto recurse;
 
-		/* we don't use 'X'
-      case 'X': The time, using the locale's format.
+/* // we don't use 'X'
+		case 'X': The time, using the locale's format.
 			new_fmt =_ctloc(t_fmt);
 			goto recurse;
-      */
+*/
 
-		/* we do not need 'x'
-      case 'x': The date, using the locale's format.
-			new_fmt =_ctloc(d_fmt);*/
+/* // we do not need 'x'
+		case 'x': The date, using the locale's format.
+			new_fmt =_ctloc(d_fmt);
+*/
+
 recurse:
 			bp = (const u_char *)strptime((const char *)bp,
-							    new_fmt, tm);
+							new_fmt, tm);
 			LEGAL_ALT(ALT_E);
 			continue;
 
@@ -319,7 +325,7 @@ recurse:
 				}
 
 				tm = localtime(&sse);
-            if (tm == NULL)
+				if (tm == NULL)
 					bp = NULL;
 			}
 			continue;
@@ -356,9 +362,9 @@ recurse:
 		case 'G':	/* The year corresponding to the ISO week
 				 * number with century.
 				 */
-			do
+			do {
 				bp++;
-			while (isdigit(*bp));
+			} while (isdigit(*bp));
 			continue;
 
 		case 'V':	/* The ISO 8601:1988 week number as decimal */
@@ -392,7 +398,8 @@ recurse:
 		case 'Z':
 			_tzset();
 			if (strncasecmp((const char *)bp, gmt, 3) == 0
-          || strncasecmp((const char *)bp, utc, 3) == 0) {
+			 || strncasecmp((const char *)bp, utc, 3) == 0
+			) {
 				tm->tm_isdst = 0;
 #ifdef TM_GMTOFF
 				tm->TM_GMTOFF = 0;
@@ -403,8 +410,8 @@ recurse:
 				bp += 3;
 			} else {
 				ep = find_string(bp, &i,
-					       	 (const char * const *)tzname,
-					       	  NULL, 2);
+					(const char * const *)tzname,
+					NULL, 2);
 				if (ep != NULL) {
 					tm->tm_isdst = i;
 #ifdef TM_GMTOFF
@@ -490,12 +497,13 @@ recurse:
 				}
 
 				if ((*bp >= 'A' && *bp <= 'I') ||
-				    (*bp >= 'L' && *bp <= 'Y')) {
+				    (*bp >= 'L' && *bp <= 'Y')
+				) {
 #ifdef TM_GMTOFF
 					/* Argh! No 'J'! */
 					if (*bp >= 'A' && *bp <= 'I')
 						tm->TM_GMTOFF =
-						    ('A' - 1) - (int)*bp;
+							('A' - 1) - (int)*bp;
 					else if (*bp >= 'L' && *bp <= 'M')
 						tm->TM_GMTOFF = 'A' - (int)*bp;
 					else if (*bp >= 'N' && *bp <= 'Y')
