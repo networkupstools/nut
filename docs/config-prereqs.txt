@@ -229,7 +229,12 @@ You may have to ensure that `/proc` is mounted in the target chroot
 (or do this from the running container).
 
 For DMF, additionally install `python-pycparser` (or in newer distributions,
-an explicitly versioned package, e.g. `python3-pycparser`), and `libxml2-dev`.
+an explicitly versioned package, e.g. `python3-pycparser`), and `libxml2-dev`:
+------
+:; apt-get install libxml2-dev
+
+:; apt-get install python-pycparser || apt-get install python3-pycparser
+------
 
 CentOS 6 and 7
 ~~~~~~~~~~~~~~
