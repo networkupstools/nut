@@ -34,35 +34,39 @@ if [ "${DEBUG_NUT_CPP_DISABLE_FILTER-}" = "true" ] ; then
     return
 fi
 
+# \t in sed is not always portable, better use raw char value
+TABCHAR="`printf '\t'`"
+SPACETAB="[ $TABCHAR]"
+
 # tee temp-cpp-orig.tmp | \
 sed \
-    -e '/^[ \t]*$/d' \
-    -e 's/^[ \t]*;/;/g' | \
+    -e '/^'"${SPACETAB}"'*$/d' \
+    -e 's/^'"${SPACETAB}"'*;/;/g' | \
 perl -0pe 's/\n([^#].*)\n;/\n$1;\n/g' | \
 sed \
-    -e 's/__asm_* *(.*) *;/;/g' \
-    -e 's/__attribute__ *(([ *__[A-Za-z0-9_-]*__ *([^()]*))) */ /g' \
-    -e 's/__attribute__ *((__aligned__([^()]*([^()]*)))) */ /g' \
-    -e 's/__attribute__ *(([^()]*)) */ /g' \
+    -e 's/__asm_*'"${SPACETAB}"'*(.*)'"${SPACETAB}"'*;/;/g' \
+    -e 's/__attribute__'"${SPACETAB}"'*((['"${SPACETAB}"'*__[A-Za-z0-9_-]*__'"${SPACETAB}"'*([^()]*)))'"${SPACETAB}"'*/ /g' \
+    -e 's/__attribute__'"${SPACETAB}"'*((__aligned__([^()]*([^()]*))))'"${SPACETAB}"'*/ /g' \
+    -e 's/__attribute__'"${SPACETAB}"'*(([^()]*))'"${SPACETAB}"'*/ /g' \
     -e 's/__inline__/inline/g' \
     -e 's/__signed__/signed/g' \
     -e 's/__unsigned__/unsigned/g' \
     -e 's/__THROW;$/;/' \
     -e 's/__END_DECLS//g' \
     -e 's/__BEGIN_DECLS//g' \
-    -e 's/void (\*signal(int, void (\*)(int)))(int);//g' \
-    -e 's/static __inline/static/g' \
-    -e 's/static[ \t]*;/;/g' \
+    -e 's/void'"${SPACETAB}"'(\*signal(int, void (\*)(int)))(int);//g' \
+    -e 's/static'"${SPACETAB}"'__inline/static/g' \
+    -e 's/static'"${SPACETAB}"'*;/;/g' \
     -e 's/__extern_inline/extern/g' \
-    -e 's/extern __inline/extern/g' \
+    -e 's/extern'"${SPACETAB}"'__inline/extern/g' \
     -e 's/_Float[0-9]*x*/float/g' \
     -e 's/__restrict//g' \
     -e 's/_*_Nullable//g' \
     -e 's/_*_Nonnull//g' \
     -e 's/_Thread_local//g' \
     -e 's/__extension__//g' \
-    -e 's/[ \t]_Noreturn[ \t]/ /g' \
-    -e 's/^_Noreturn[ \t]/ /g' \
+    -e 's/'"${SPACETAB}"'_Noreturn'"${SPACETAB}"'/ /g' \
+    -e 's/^_Noreturn'"${SPACETAB}"'/ /g' \
     -e 's/__NORETURN_*//g' \
     -e 's/__builtin_va_list/int/g'
 } # // end of do_filter()
