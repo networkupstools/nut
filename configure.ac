@@ -1620,16 +1620,44 @@ dnl ### Not forced:   lua, dmf_lua, snmp_dmf_lua
 		if test -z "${with_serial}"; then with_serial="${withval}"; fi
 		if test -z "${with_usb}"; then with_usb="${withval}"; fi
 		if test -z "${with_snmp}"; then with_snmp="${withval}"; fi
-		if test -z "${with_snmp_dmf}"; then with_snmp_dmf="${withval}"; fi
+		if test -z "${with_snmp_dmf}"; then
+			if test -z "${with_dmf}"; then
+				with_snmp_dmf="${withval}"
+			else
+				dnl Expecting "yes", "no" or "auto":
+				case "${with_snmp}${with_dmf}" in
+					*no*)	with_snmp_dmf="no" ;;
+					*yes*)	with_snmp_dmf="yes" ;;
+					*)	with_snmp_dmf="auto" ;;
+				esac
+			fi
+		else
+			dnl Align DMF functionality to explicit request
+			dnl for a build of snmp-ups-dmf driver
+			if test -z "${with_dmf}" -a x"${with_snmp_dmf}" != xno; then
+				with_dmf="${with_snmp_dmf}"
+			fi
+		fi
 dnl NOTE: The LUA integration is experimental, so not forced as part of --with-all
+dnl TODO: Integrate interactions for "with_dmf", "with_snmp", "with_snmp_dmf"
+dnl       settings, if something was asked explicitly beside e.g. "--with-all=no".
 dnl		if test -z "${with_lua}"; then with_lua="${withval}"; fi
 dnl		if test -z "${with_dmf_lua}"; then with_dmf_lua="${withval}"; fi
 dnl		if test -z "${with_snmp_dmf_lua}"; then with_snmp_dmf_lua="${withval}"; fi
 		if test -z "${with_neon}"; then with_neon="${withval}"; fi
-		if test -z "${with_libxml2}"; then with_libxml2="${withval}"; fi
+		if test -z "${with_libxml2}"; then
+			if test -z "${with_dmf}"; then
+				with_libxml2="${withval}"
+			else
+				dnl Align to explicit request for DMF functionality
+				dnl (or lack thereof, currently the only consumer)
+				with_libxml2="${with_dmf}"
+			fi
+		fi
 		if test -z "${with_powerman}"; then with_powerman="${withval}"; fi
 		if test -z "${with_modbus}"; then with_modbus="${withval}"; fi
 		if test -z "${with_ipmi}"; then with_ipmi="${withval}"; fi
+		if test -z "${with_dmf}"; then with_dmf="${withval}"; fi
 
 		dnl Platform-dependent snowflakes that are required or auto:
 		if test -z "${with_gpio}"; then
