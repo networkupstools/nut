@@ -40,9 +40,10 @@ sed \
     -e 's/^[ \t]*;/;/g' | \
 perl -0pe 's/\n([^#].*)\n;/\n$1;\n/g' | \
 sed \
-    -e 's/ __asm *(.*) *$/;/g' \
+    -e 's/ __asm *(.*) *;* *$/;/g' \
     -e 's/__asm__ *(.*) *;/;/g' \
     -e 's/__attribute__ *(([ *__[A-Za-z0-9_-]*__ *([^()]*))) */ /g' \
+    -e 's/__attribute__ *((__aligned__([^()]*([^()]*)))) */ /g' \
     -e 's/__attribute__ *(([^()]*)) */ /g' \
     -e 's/__inline__/inline/g' \
     -e 's/__signed__/signed/g' \
@@ -57,8 +58,12 @@ sed \
     -e 's/extern __inline/extern/g' \
     -e 's/_Float[0-9]*x*/float/g' \
     -e 's/__restrict//g' \
+    -e 's/_*_Nullable//g' \
+    -e 's/_*_Nonnull//g' \
+    -e 's/_Thread_local//g' \
     -e 's/__extension__//g' \
     -e 's/[ \t]_Noreturn[ \t]/ /g' \
+    -e 's/^_Noreturn[ \t]/ /g' \
     -e 's/__NORETURN_*//g' \
     -e 's/__builtin_va_list/int/g'
 } # // end of do_filter()
