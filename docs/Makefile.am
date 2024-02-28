@@ -240,7 +240,7 @@ $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	 || { \
 	     MSG="FAILED to resolve input or output filename with this make implementation, or input was not generated!"; \
 	     echo "  DOC-CHANGELOG-ASCIIDOC	SKIP: $${MSG}" >&2; \
-	     test -n "$@" && echo "$${MSG}" > "$@" ; \
+	     test -n "$@" && { printf '=== Failed to generate the ChangeLog\n\n%s\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n' "$${MSG}" > "$@" ; } ; \
 	     exit ; \
 	 } ; \
 	 echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@" \
