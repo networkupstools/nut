@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This wrapper around Python scripts uses them to generate XML DMF files
 # from existing NUT *-mib.c sources with legacy mapping structures.

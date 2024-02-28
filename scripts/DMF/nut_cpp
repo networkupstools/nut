@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # The pipeline to convert legacy *-mib.c files with structures into new DMF
 # markup involves parsing the C code. The pycparser (Python module) used
