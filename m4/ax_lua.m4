@@ -638,9 +638,39 @@ AC_DEFUN([AX_LUA_LIBS],
       [$_ax_lua_extra_libs])
     LIBS=$_ax_lua_saved_libs
 
-    AS_IF([test "x$ac_cv_search_lua_load" != 'xno' &&
-           test "x$ac_cv_search_lua_load" != 'xnone required'],
-      [LUA_LIB="$ac_cv_search_lua_load $_ax_lua_extra_libs"])
+    dnl Retry with addidional library paths
+    AS_IF([test "x$ac_cv_search_lua_load" = 'xno'],
+        [
+        for _ax_lua_libdir in \
+            /usr/lib \
+            /usr/local/lib \
+        ; do
+            _ax_lua_saved_libs=$LIBS
+            LIBS="$LIBS -L${_ax_lua_libdir} $LUA_LIB"
+            AS_UNSET([ac_cv_search_lua_load])
+            AC_SEARCH_LIBS([lua_load],
+              [ lua$LUA_VERSION \
+                lua$LUA_SHORT_VERSION \
+                lua-$LUA_VERSION \
+                lua-$LUA_SHORT_VERSION \
+                lua \
+              ],
+              [_ax_found_lua_libs='yes'],
+              [_ax_found_lua_libs='no'],
+              [$_ax_lua_extra_libs])
+            LIBS=$_ax_lua_saved_libs
+
+            AS_IF([test "x$ac_cv_search_lua_load" != 'xno' &&
+               test "x$ac_cv_search_lua_load" != 'xnone required'],
+              [LUA_LIB="-L${_ax_lua_libdir} $ac_cv_search_lua_load $_ax_lua_extra_libs"
+               break])
+        done
+        unset _ax_lua_libdir
+        ],[
+            AS_IF([test "x$ac_cv_search_lua_load" != 'xno' &&
+                   test "x$ac_cv_search_lua_load" != 'xnone required'],
+              [LUA_LIB="$ac_cv_search_lua_load $_ax_lua_extra_libs"])
+        ])
   ])
 
   dnl Test the result and run user code.
