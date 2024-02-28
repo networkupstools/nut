@@ -34,6 +34,10 @@ if [ "${DEBUG_NUT_CPP_DISABLE_FILTER-}" = "true" ] ; then
     return
 fi
 
+# NOTE: "Directives not supported yet" in practice means #include <...>
+# ones which were hidden by ifdef's but now pop up in pre-processed text
+# somehow... So we filter those out too.
+
 # \t in sed is not always portable, better use raw char value
 TABCHAR="`printf '\t'`"
 SPACETAB="[ $TABCHAR]"
@@ -41,6 +45,7 @@ SPACETAB="[ $TABCHAR]"
 # tee temp-cpp-orig.tmp | \
 sed \
     -e '/^'"${SPACETAB}"'*$/d' \
+    -e '/^'"${SPACETAB}"'*#'"${SPACETAB}"'*include/d' \
     -e 's/^'"${SPACETAB}"'*;/;/g' | \
 perl -0pe 's/\n([^#].*)\n;/\n$1;\n/g' | \
 sed \
