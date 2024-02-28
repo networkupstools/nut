@@ -50,12 +50,19 @@ if test -z "${nut_have_libltdl_seen}"; then
 	], [])dnl No fallback here - we probe suitable libs below
 	AC_MSG_RESULT([${LIBS}])
 
-	AC_CHECK_HEADERS(ltdl.h, [nut_have_libltdl=yes], [nut_have_libltdl=no], [AC_INCLUDES_DEFAULT])
+	AC_CHECK_HEADERS(ltdl.h, [nut_have_libltdl=yes], [
+		dnl Double-check if we stashed include paths to try above
+		AS_IF([test -n "$myCFLAGS"], [
+			CFLAGS="$myCFLAGS"
+			AS_UNSET([ac_cv_header_ltdl_h])
+			AC_CHECK_HEADERS(ltdl.h, [nut_have_libltdl=yes], [nut_have_libltdl=no], [AC_INCLUDES_DEFAULT])
+			],[nut_have_libltdl=no]
+		)], [AC_INCLUDES_DEFAULT])
 	AS_IF([test x"$nut_have_libltdl" = xyes], [
 		dnl ltdl-number may help find it for MingW DLLs naming
 		AC_SEARCH_LIBS(lt_dlinit, ltdl ltdl-7, [], [
 			nut_have_libltdl=no
-			AS_IF([test -n "$myCFLAGS"], [
+			AS_IF([test -n "$myCFLAGS" -a x"$myCFLAGS" != x"$CFLAGS"], [
 				CFLAGS="$myCFLAGS"
 				dnl No ltdl-7 here, this codepath is unlikely on Windows where that matters:
 				AC_SEARCH_LIBS(lt_dlinit, ltdl, [nut_have_libltdl=yes], [])
