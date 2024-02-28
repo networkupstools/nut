@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # an auxiliary script to produce a "stub" snmp-ups subdriver from
 # SNMP data from a real agent or from dump files
