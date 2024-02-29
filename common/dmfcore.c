@@ -224,10 +224,32 @@ int load_neon_lib(void)
 	else {
 		upsdebugx(1, "load_neon_lib(): lt_dlerror() final succeeded, library loaded");
 		free(neon_libname_path);
+#  if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS)
+#   pragma GCC diagnostic push
+#   pragma GCC diagnostic ignored "-Waddress"
+#  endif
+#  ifdef __clang__
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Waddress"
+#  endif
+#  if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS)
+#   pragma GCC diagnostic push
+#   pragma GCC diagnostic ignored "-Waddress"
+#  endif
+#  ifdef __clang__
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Waddress"
+#  endif
 		if (xml_init != NULL) {
 			upsdebugx(1, "load_neon_lib(): calling xmlInitParser()");
 			xml_init();
 		}
+#  ifdef __clang__
+#   pragma clang diagnostic pop
+#  endif
+#  if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS)
+#   pragma GCC diagnostic pop
+#  endif
 		return OK;
 	}
 
@@ -241,10 +263,32 @@ err:
 	return ERR;
 # else /* not WITH_LIBLTDL */
 	upsdebugx(1, "load_neon_lib(): no-op because ltdl was not enabled during compilation,\nusual dynamic linking should be in place instead");
+#  if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS)
+#   pragma GCC diagnostic push
+#   pragma GCC diagnostic ignored "-Waddress"
+#  endif
+#  ifdef __clang__
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Waddress"
+#  endif
+#  if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS)
+#   pragma GCC diagnostic push
+#   pragma GCC diagnostic ignored "-Waddress"
+#  endif
+#  ifdef __clang__
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Waddress"
+#  endif
 	if (xml_init != NULL) {
 		upsdebugx(1, "load_neon_lib(): calling xmlInitParser()");
 		xml_init();
 	}
+#  ifdef __clang__
+#   pragma clang diagnostic pop
+#  endif
+#  if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS)
+#   pragma GCC diagnostic pop
+#  endif
 	return OK;
 # endif /* WITH_LIBLTDL */
 
@@ -259,6 +303,22 @@ static
 void unload_neon_lib(void)
 {
 #ifdef WITH_NEON
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Waddress"
+# endif
+# ifdef __clang__
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Waddress"
+# endif
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Waddress"
+# endif
+# ifdef __clang__
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Waddress"
+# endif
 	if (xml_uninitenc != NULL) {
 		upsdebugx(1, "unload_neon_lib(): calling xmlCleanupCharEncodingHandlers()");
 		xml_uninitenc();
@@ -267,12 +327,19 @@ void unload_neon_lib(void)
 		upsdebugx(1, "unload_neon_lib(): calling xmlCleanupParser()");
 		xml_uninit();
 	}
-#if WITH_LIBLTDL
+# ifdef __clang__
+#  pragma clang diagnostic pop
+# endif
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS)
+#  pragma GCC diagnostic pop
+# endif
+
+# if WITH_LIBLTDL
 	upsdebugx(1, "unload_neon_lib(): unloading the library");
 	lt_dlclose(dl_handle_libneon);
 	dl_handle_libneon = NULL;
 	lt_dlexit();
-#endif /* WITH_LIBLTDL */
+# endif /* WITH_LIBLTDL */
 #endif /* WITH_NEON */
 }
 
