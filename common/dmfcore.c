@@ -126,12 +126,12 @@ int load_neon_lib(void)
 
 	upsdebugx(1, "load_neon_lib(): neon_libname_path = %s", neon_libname_path);
 	if(!neon_libname_path) {
-		upslogx(LOG_NOTICE, "Error loading Neon library required for DMF: %s not found by dynamic loader; please verify it is in your /usr/lib or some otherwise searched dynamic-library path", "libneon.so");
+		upslogx(LOG_NOTICE, "Error loading Neon library required for DMF: %s not found by dynamic loader; please verify it is in your /usr/lib or some otherwise searched dynamic-library path, under this exact name (maybe you just need a symlink?)", "libneon.so");
 
 		neon_libname_path = get_libname("libneon-gnutls.so");
 		upsdebugx(1, "load_neon_lib(): neon_libname_path = %s", neon_libname_path);
 		if(!neon_libname_path) {
-			upslogx(LOG_ERR, "Error loading Neon library required for DMF: %s not found by dynamic loader; please verify it is in your /usr/lib or some otherwise searched dynamic-library path", "libneon-gnutls.so");
+			upslogx(LOG_ERR, "Error loading Neon library required for DMF: %s not found by dynamic loader; please verify it is in your /usr/lib or some otherwise searched dynamic-library path, under this exact name (maybe you just need a symlink?)", "libneon-gnutls.so");
 			return ERR;
 		}
 	}
