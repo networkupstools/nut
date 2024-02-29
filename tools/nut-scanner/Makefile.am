@@ -258,7 +258,7 @@ endif !WITH_DEV
 
 dummy:
 
-CLEANFILES += *-spellchecked README
+CLEANFILES += *-spellchecked README nut-scanner-reindex-dmfsnmp dmf-reindex
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
