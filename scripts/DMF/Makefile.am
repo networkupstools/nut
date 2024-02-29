@@ -252,14 +252,18 @@ if WITH_REGENERATE_DMF_SNMP
 # (we can not use $< in this context); this approach is a hack that
 # relies on known/assumed fixed input filename location and relation
 # to output filenames - which we sort of guarantee in other places.
+# NOTE about MKDIR_P passing here and below: on some platforms it may be
+# defined via expanded relative path to `$(top_builddir)/install-sh` and
+# be invalid for callers whose current directory is not $(builddir).
+# Take care to not use it inside contexts shifted by `cd somewhere`.
   DMFGEN_CMD = ( \
 	if test x"$(V)" = x1 ; then echo "[D] abs_top_builddir='$(abs_top_builddir)' abs_top_srcdir='$(abs_top_srcdir)' top_builddir='$(top_builddir)' top_srcdir='$(top_srcdir)' builddir='$(builddir)' srcdir='$(srcdir)' PWD='`pwd`'" >&2 ; fi ; \
 	if test x"$${ABS_OUTDIR-}" = x ; then ABS_OUTDIR="`pwd`" ; fi ; export ABS_OUTDIR ; \
 	echo "  DMFIFY '$$CMIBFILE' => '$@' (PWD='`pwd`', actual ABS_OUTDIR='$${ABS_OUTDIR}')" >&2 ; \
 	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)" || exit ; \
 	if test -f "$(DMFGEN_SANITY_VALIDATED)" ; then \
+	    test -d "$${ABS_OUTDIR}" -a -w "$${ABS_OUTDIR}" || $(MKDIR_P) "$${ABS_OUTDIR}" || exit ; \
 	    ( cd "$(@D)" && \
-	      test -d "$${ABS_OUTDIR}" -a -w "$${ABS_OUTDIR}" || $(MKDIR_P) "$${ABS_OUTDIR}" || exit ; \
 	      LANG=C LC_ALL=C TZ=UTC \
 	      CFLAGS="$(DMFTOOLS_CFLAGS) $(AM_CFLAGS)" \
 	      LDFLAGSx="$(abs_top_builddir)/common/libcommon.la $(abs_top_builddir)/drivers/dstate.o" \
