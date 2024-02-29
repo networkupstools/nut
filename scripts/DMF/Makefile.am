@@ -186,7 +186,11 @@ CLEANFILES += $(noinst_PROGRAMS) \
 	$(builddir)/$(DMFSNMP_RES_SUBDIR)/*.dmf.tmp \
 	$(builddir)/$(DMFSNMP_RES_SUBDIR)/*.json.tmp \
 	$(builddir)/$(DMFSNMP_RES_SUBDIR)/*_TEST.c \
-	$(builddir)/$(DMFSNMP_RES_SUBDIR)/*_TEST.exe
+	$(builddir)/$(DMFSNMP_RES_SUBDIR)/*_TEST.exe \
+	$(builddir)/*.dmf.tmp \
+	$(builddir)/*.json.tmp \
+	$(builddir)/*_TEST.c \
+	$(builddir)/*_TEST.exe
 
 # A bit of magic for the simpler "automake if" below
 # which can not process "if (A || B)" statements
