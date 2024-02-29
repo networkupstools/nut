@@ -187,6 +187,11 @@ https://github.com/networkupstools/nut/milestone/10
        is not reported by the device (should be frequent by default, in case
        the UPS-reported state combination does reflect a bad power condition).
 
+ - nutdrv_qx driver:
+   * Fixed handling of `battery_voltage_reports_one_pack` configuration flag
+     introduced in NUT v2.8.1. [originally by PR #1279; fixed by PR #2324,
+     issue #2325]
+
  - Various code and documentation fixes for NSS crypto support. [#2274, #2268]
 
  - Laid foundations for the SmartNUT effort (aiming to integrate drivers with
