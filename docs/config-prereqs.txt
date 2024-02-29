@@ -21,9 +21,27 @@ Some of the below are alternatives, e.g. compiler toolkits (gcc vs. clang)
 or SSL implementations (OpenSSL vs Mozilla NSS) -- no problem installing
 both, at a disk space cost.
 
-NOTE: Some NUT branches may need additional or different software versions
+[NOTE]
+======
+Some NUT branches may need additional or different software versions
 that are not yet included into `master` branch dependencies, e.g. the DMF
-(Dynamic Mapping Files) sub-project needs LUA 5.1.
+(Dynamic Mapping Files) sub-project needs LUA 5.1 for build and run-time,
+and some Python modules for build, e.g. using OS packaging or custom call
+to `pip install pycparser`.
+
+In case your system still provides a Python 2.x environment (and for some
+reason you want to use it instead of Python 3.x), but does not anymore
+provide a `pip` nor `pycparser` packages for it, you may need to use an
+external bootstrap first, e.g.:
+
+------
+# Fetch get-pip.py for python 2.7
+:; curl https://bootstrap.pypa.io/pip/2.7/get-pip.py --output get-pip.py
+:; python2 get-pip.py
+:; python2 -m pip --version
+:; python2 -m pip install pycparser
+------
+======
 
 More packages and/or system setup may be needed to actually run NUT with
 all features enabled; chapters below concern just with building it.
