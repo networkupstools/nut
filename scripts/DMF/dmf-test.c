@@ -89,10 +89,27 @@ main (void)
 
 	nut_debug_level = 10;
 
+/* Older CLANG (e.g. clang-3.4) sees short strings in str{n}cmp()
+ * arguments as arrays and claims out-of-bounds accesses
+ */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ARRAY_BOUNDS)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Warray-bounds"
+#endif
 	if ((s = getenv("DEBUG")) && !strcmp(s, "0")) {
 		/* Handle "make V=1" or "V=0" */
 		nut_debug_level = 0;
 	}
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ARRAY_BOUNDS)
+# pragma GCC diagnostic pop
+#endif
 
 	/* Where would we load libs from? */
 	upsdebugx_report_search_paths(1, 1);
