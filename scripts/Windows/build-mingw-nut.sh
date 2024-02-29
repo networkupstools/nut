@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # NOTE: bash syntax (non-POSIX script) is used below!
 #
