@@ -689,6 +689,33 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
     AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wextra-semi-stmt" (outside functions)])
   ])
 
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Waddress"],
+    [ax_cv__pragma__gcc__diags_ignored_address],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[void func(void) {
+#pragma GCC diagnostic ignored "-Waddress"
+}
+]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_address=yes],
+      [ax_cv__pragma__gcc__diags_ignored_address=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_address" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Waddress"])
+  ])
+
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Waddress" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_address_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Waddress"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_address_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_address_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_address_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Waddress" (outside functions)])
+  ])
+
   AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wcast-align"],
     [ax_cv__pragma__gcc__diags_ignored_cast_align],
     [AC_COMPILE_IFELSE(
