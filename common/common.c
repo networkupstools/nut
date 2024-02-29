@@ -2254,7 +2254,7 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 	 */
 	DIR *dp;
 	struct dirent *dirp;
-	char *libname_path = NULL;
+	char *libname_path = NULL, *libname_alias = NULL;
 	char current_test_path[LARGEBUF];
 
 	memset(current_test_path, 0, LARGEBUF);
@@ -2284,9 +2284,15 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 
 		upsdebugx(5,"Comparing lib %s with dirpath entry %s", base_libname, dirp->d_name);
 		compres = strncmp(dirp->d_name, base_libname, base_libname_length);
-		if (compres == 0
-		&&  dirp->d_name[base_libname_length] == '\0' /* avoid "*.dll.a" etc. */
-		) {
+		if (compres == 0) {
+			/* avoid "*.dll.a", ".so.1.2.3" etc. */
+			if (dirp->d_name[base_libname_length] != '\0') {
+				if (!libname_alias) {
+					libname_alias = xstrdup(dirp->d_name);
+				}
+				continue;
+			}
+
 			snprintf(current_test_path, LARGEBUF, "%s/%s", dirname, dirp->d_name);
 #if HAVE_DECL_REALPATH
 			libname_path = realpath(current_test_path, NULL);
@@ -2337,6 +2343,17 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 	} /* while iterating dir */
 
 	closedir(dp);
+
+	if (libname_alias) {
+		if (!libname_path) {
+			upsdebugx(1, "Got no strong candidate path for lib %s in %s"
+				", but saw seemingly related names (are you missing"
+				" a symbolic link, perhaps?) e.g.: %s",
+				base_libname, dirname, libname_alias);
+		}
+
+		free(libname_alias);
+	}
 
 	return libname_path;
 }
