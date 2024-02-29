@@ -843,9 +843,16 @@ default site.
     openssl nss \
     augeas \
     libusb1 \
-    neon \
     net-snmp \
     avahi
+
+# For netxml-ups driver the library should suffice; however for nut-scanner
+# you may currently require to add a `libneon.so` symlink (the package seems
+# to only deliver a numbered SO library name), e.g.:
+:; pkg_add neon && \
+   if ! test -s /usr/local/lib/libneon.so ; then
+    ln -s "`cd /usr/local/lib && ls -1 libneon.so.* | sort -n | tail -1`" /usr/local/lib/libneon.so
+   fi
 
 # Select a LUA-5.1 (or possibly 5.2?) version
 :; pkg_add \
