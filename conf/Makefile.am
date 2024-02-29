@@ -22,7 +22,7 @@ SPELLCHECK_SRC = $(dist_sysconf_DATA) \
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension.
 # We also have to export some variables that may be tainted by relative
 # paths when parsing the other makefile (e.g. MKDIR_P that may be defined
-# via expanded $(top_builddir)/install_sh):
+# via expanded $(top_builddir)/install-sh):
 #%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 #	+$(MAKE) -s -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
