@@ -247,9 +247,12 @@ You may have to ensure that `/proc` is mounted in the target chroot
 
 For DMF, additionally install `python-pycparser` (or in newer distributions,
 an explicitly versioned package, e.g. `python3-pycparser` and hacks detailed
-above if you want to test with Python 2.x specifically), and `libxml2-dev`:
+above if you want to test with Python 2.x specifically), and `libxml2-dev`;
+on some distributions you may also need a separate `libxml2-utils` package
+for the `xmllint` tool:
 ------
 :; apt-get install libxml2-dev
+:; apt-get install libxml2-utils || true
 
 :; apt-get install python-pycparser || apt-get install python3-pycparser
 ------
