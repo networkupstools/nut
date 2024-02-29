@@ -94,6 +94,9 @@ main (void)
 		nut_debug_level = 0;
 	}
 
+	/* Where would we load libs from? */
+	upsdebugx_report_search_paths(1, 1);
+
 	dmp = mibdmf_parser_new();
 	if (!dmp) {
 		fprintf(stderr,"FATAL: Can not allocate the DMF parsing structures\n");
