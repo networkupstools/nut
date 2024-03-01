@@ -595,13 +595,13 @@ spellcheck-interactive:
 	 echo "------------------------------------------------------------------------"
 
 else !HAVE_ASPELL
-# This rule woulf probably just fail; normally with no ASPELL there are no callers for it
+# This rule would probably just fail; normally with no ASPELL there are no callers for it
 */*-spellchecked *-spellchecked: Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
-	@echo "  SKIP-ASPELL   $@ : Documentation spell check not available since 'aspell' was not found." >&2
+	@echo "  SKIP-ASPELL   $@ : Documentation spell check not available since 'aspell' was not found (or missing its English dictionary)." >&2
 spellcheck:
-	@echo "Documentation spell check not available since 'aspell' was not found."
+	@echo "Documentation spell check not available since 'aspell' was not found (or missing its English dictionary)."
 spellcheck-interactive:
-	@echo "Documentation spell check not available since 'aspell' was not found."
+	@echo "Documentation spell check not available since 'aspell' was not found (or missing its English dictionary)."
 endif !HAVE_ASPELL
 
 
