@@ -91,9 +91,6 @@ EXTRA_DIST += legacy-mibfiles-list.mk.in
 testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf:
 	+$(MAKE) $(AM_MAKEFLAGS) $(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf
 
-$(abs_builddir)/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf:
-	+$(MAKE) $(AM_MAKEFLAGS) $(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf
-
 #$(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: DEBUG=yes
 #$(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: DMFTOOLS_CFLAGS += -DWITH_SNMP_LKP_FUN_DUMMY=1 -DWITH_SNMP_LKP_FUN=1
 #$(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: DMFTOOLS_CPPFLAGS += -DWITH_SNMP_LKP_FUN_DUMMY=1 -DWITH_SNMP_LKP_FUN=1
