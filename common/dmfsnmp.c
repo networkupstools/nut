@@ -690,7 +690,14 @@ mibdmf_parser_new_list(mibdmf_parser_t *dmp)
 	else
 		dmp->list = (alist_t **) realloc(dmp->list, (dmp->sublist_elements + 1) * sizeof(alist_t *));
 	assert (dmp->list);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type-strict"
+#endif
 	dmp->list[dmp->sublist_elements - 1] = alist_new( NULL,(void (*)(void **))alist_destroy, NULL );
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT)
+#pragma GCC diagnostic pop
+#endif
 	assert (dmp->list[dmp->sublist_elements - 1]);
 	dmp->list[dmp->sublist_elements] = NULL;
 }
@@ -839,6 +846,10 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 		alarm[i].alarm_value = NULL;
 	}
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type-strict"
+#endif
 	if(arg[0])
 	{
 		alist_append(element, ((mib2nut_info_t *(*) (
@@ -848,6 +859,9 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 			(arg[0], arg[1], arg[3], arg[4],
 			 snmp, arg[2], alarm));
 	}
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT)
+#pragma GCC diagnostic pop
+#endif
 
 	for (i = 0; i < (INFO_MIB2NUT_MAX_ATTRS + 1); i++)
 		free (arg[i]);
@@ -868,10 +882,17 @@ alarm_info_node_handler(alist_t *list, const char **attrs)
 	arg[1] = get_param_by_name(ALARM_STATUS, attrs);
 	arg[2] = get_param_by_name(ALARM_OID, attrs);
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type-strict"
+#endif
 	if(arg[0])
 		alist_append(element, ( (alarms_info_t *(*)
 			(const char *, const char *, const char *) )
 			element->new_element) (arg[0], arg[1], arg[2]));
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT)
+#pragma GCC diagnostic pop
+#endif
 
 	for(i = 0; i < (INFO_ALARM_MAX_ATTRS + 1); i++)
 		free (arg[i]);
@@ -894,6 +915,10 @@ lookup_info_node_handler(alist_t *list, const char **attrs)
 
 	assert (arg);
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type-strict"
+#endif
 	arg[0] = get_param_by_name(LOOKUP_OID, attrs);
 	arg[1] = get_param_by_name(LOOKUP_VALUE, attrs);
 #if WITH_SNMP_LKP_FUN
@@ -935,6 +960,9 @@ lookup_info_node_handler(alist_t *list, const char **attrs)
 			, fun_vp2s, nuf_s2l, fun_s2l, nuf_vp2s
 #endif /* WITH_SNMP_LKP_FUN */
 			));
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT)
+#pragma GCC diagnostic pop
+#endif
 
 	for(i = 0; i < (INFO_LOOKUP_MAX_ATTRS + 1); i++)
 		free (arg[i]);
@@ -951,8 +979,15 @@ function_node_handler(alist_t *list, const char **attrs)
 
 	argname = get_param_by_name(SNMP_NAME, attrs);
 	arglang = get_param_by_name("language", attrs);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type-strict"
+#endif
 	if(argname != NULL)
 		alist_append(element, ((dmf_function_t *(*) (const char *, const char *)) element->new_element) (argname, arglang));
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT)
+#pragma GCC diagnostic pop
+#endif
 	if(argname != NULL)
 		free(argname);
 	if(arglang != NULL)
@@ -977,6 +1012,11 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 	char **arg = (char**) calloc (
 		(INFO_SNMP_MAX_ATTRS + 1), sizeof (void**) );
 	assert (arg);
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type-strict"
+#endif
 
 	arg[0] = get_param_by_name(SNMP_NAME, attrs);
 	arg[1] = get_param_by_name(SNMP_MULTIPLIER, attrs);
@@ -1097,6 +1137,10 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 			, &func_lang, &func_code
 #endif
 			));
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT)
+#pragma GCC diagnostic pop
+#endif
 
 	for(i = 0; i < (INFO_SNMP_MAX_ATTRS + 1); i++)
 		free (arg[i]);
@@ -1295,6 +1339,10 @@ mibdmf_xml_dict_start_cb(void *userdata, int parent,
 	dmp = (mibdmf_parser_t*) userdata;
 	list = *(mibdmf_get_aux_list_ptr(dmp));
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type-strict"
+#endif
 	if(strcmp(name,DMFTAG_MIB2NUT) == 0)
 	{
 		alist_append(list, alist_new(auxname, info_mib2nut_destroy,
@@ -1333,6 +1381,7 @@ mibdmf_xml_dict_start_cb(void *userdata, int parent,
 #if WITH_DMF_FUNCTIONS
 		alist_append(list, alist_new(auxname, function_destroy,
 				(void (*)(void)) function_new));
+
 		functions_aux = 1;
 #else
 		upsdebugx(2, "WARN: NUT was not compiled with DMF function feature, 'functions' DMF tag ignored.");
@@ -1353,6 +1402,9 @@ mibdmf_xml_dict_start_cb(void *userdata, int parent,
 	}
 	free(auxname);
 	return DMF_NEON_CALLBACK_OK;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT)
+#pragma GCC diagnostic pop
+#endif
 }
 
 int
