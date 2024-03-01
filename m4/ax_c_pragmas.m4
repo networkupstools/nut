@@ -743,6 +743,7 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
     AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wcast-align" (outside functions)])
   ])
 
+  dnl https://reviews.llvm.org/D134831
   AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wcast-function-type-strict"],
     [ax_cv__pragma__gcc__diags_ignored_cast_function_type_strict],
     [AC_COMPILE_IFELSE(
