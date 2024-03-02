@@ -120,7 +120,7 @@ endif
 if HAVE_CXX11
 # libnutclient version information and build
 libnutclient_la_SOURCES = nutclient.h nutclient.cpp
-libnutclient_la_LDFLAGS = -version-info 1:0:0
+libnutclient_la_LDFLAGS = -version-info 2:2:0
 # Needed in not-standalone builds with -DHAVE_NUTCOMMON=1
 # which is defined for in-tree CXX builds above:
 libnutclient_la_LIBADD = $(top_builddir)/common/libcommonclient.la
@@ -135,7 +135,7 @@ endif
 if HAVE_CXX11
 # libnutclientstub version information and build
 libnutclientstub_la_SOURCES = nutclientmem.h nutclientmem.cpp
-libnutclientstub_la_LDFLAGS = -version-info 1:0:0
+libnutclientstub_la_LDFLAGS = -version-info 1:1:0
 libnutclientstub_la_LIBADD = libnutclient.la
 if HAVE_WINDOWS
   # Many versions of MingW seem to fail to build non-static DLL without this
