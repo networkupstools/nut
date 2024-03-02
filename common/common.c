@@ -1378,6 +1378,7 @@ vupslog_too_long:
 	 * so mark the starting point whenever we first try to log */
 	if (upslog_start.tv_sec == 0) {
 		struct timeval		now;
+
 		gettimeofday(&now, NULL);
 		upslog_start = now;
 	}
