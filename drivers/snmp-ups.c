@@ -122,7 +122,7 @@ static char *dmf_file = NULL;
  *   cd scripts/DMF/dmfsnmp.d/ && grep '<mib2nut ' *.dmf | \
  *   sed 's,^.*S.._\(.*\)\.dmf:.* name="\([^"]*\).*$,\t\&\2\,\t// This struct comes from : \1.c,'
  * (note to keep "ietf" entry as the last one, manually) and copy-paste
- * them here in that resulting order.
+ * them here in that resulting order (and fix the // comment format).
  */
 static mib2nut_info_t *mib2nut[] = {
 	&apc_ats,			/* This struct comes from : apc-ats-mib.c */
@@ -618,7 +618,7 @@ void upsdrv_makevartable(void)
 		"Set path to the Data Mapping Format file to use");
 	addvar(VAR_VALUE, SU_VAR_DMFDIR,
 		"Set path to the directory of Data Mapping Format files to use");
-#endif
+#endif /* WITH_DMFMIB */
 
 	addvar(VAR_VALUE, SU_VAR_ONDELAY,
 		"Set start delay time after shutdown");
@@ -694,8 +694,8 @@ void upsdrv_initups(void)
 			/* FIXME? Shouldn't this exit? */
 			return;
 		}
-	} // scope the table loop vars
-#else
+	} /* scope the table loop vars */
+#else /* not WITH_DMFMIB */
 	upsdebugx(1, "SNMP UPS driver: using built-in MIB-to-NUT mappings");
 #endif /* WITH_DMFMIB */
 
@@ -905,7 +905,7 @@ void upsdrv_cleanup(void)
 	/* DMF specific cleanup */
 	mibdmf_parser_destroy(&dmp);
 	mib2nut = NULL;
-#endif
+#endif /* WITH_DMFMIB */
 }
 
 /* -----------------------------------------------------------
@@ -1920,6 +1920,7 @@ void su_alarm_set(snmp_info_t *su_info_p, long value)
 		 * start of path */
 		if (info_type[0] == 'L') {
 			/* Extract phase number */
+
 			item_number = atoi(info_type+1);
 
 			upsdebugx(2, "%s: appending phase L%i", __func__, item_number);
@@ -2096,7 +2097,7 @@ static mib2nut_info_t *match_sysoid(void)
 					"for mapping table entry #%d \"%s\"",
 					__func__, i, mib2nut[i]->mib_name
 					);
-#endif
+#endif /* WITH_DMFMIB */
 				continue;
 			}
 			else if (snmp_info[0].info_type == NULL) {
@@ -2200,7 +2201,7 @@ bool_t load_mib2nut(const char *mib)
 					"for mapping table entry #%d \"%s\"",
 					__func__, i, mib2nut[i]->mib_name
 					);
-#endif
+#endif /* WITH_DMFMIB */
 				continue;
 			}
 			else if (snmp_info[0].info_type == NULL) {
@@ -2573,6 +2574,7 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 				}
 			}
 		}
+
 		/* Only store if it's a template for outlets or outlets groups,
 		 * not for daisychain (which has different index) */
 		if (su_info_p->flags & SU_OUTLET)
@@ -2584,6 +2586,7 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 		else
 			device_template_index_base = base_index;
 	}
+
 	upsdebugx(3, "%s: template_index_base = %i", __func__, base_index);
 	return base_index;
 }
@@ -3375,7 +3378,7 @@ bool_t snmp_ups_walk(int mode)
 					    || (strcmp("lua-5.1", su_info_p->function_language)==0)
 					    || (strcmp("lua", su_info_p->function_language)==0)
 					) {
-#if WITH_DMF_LUA
+# if WITH_DMF_LUA
 						if (su_info_p->luaContext){
 							char *result = NULL, *funcname;
 
@@ -3406,10 +3409,10 @@ bool_t snmp_ups_walk(int mode)
 								free(buf);
 							}
 						} /* if (su_info_p->luaContext) */
-#else
+# else /* not WITH_DMF_LUA */
 						upsdebugx(1, "SNMP_INFO entry backed by dynamic code in '%s' was skipped because support for this language is not compiled in",
 							su_info_p->function_language ? su_info_p->function_language : "LUA");
-#endif /* WITH_DMF_LUA */
+# endif /* WITH_DMF_LUA */
 					} /* if function_language resolved to "lua*" */
 					else {
 						upsdebugx(1, "SNMP_INFO entry backed by dynamic code in '%s' was skipped because support for this language is not compiled in",
