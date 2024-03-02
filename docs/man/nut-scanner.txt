@@ -1,13 +1,14 @@
 NUT-SCANNER(8)
 ==============
 
-
 NAME
 ----
+
 nut-scanner - scan communication buses for NUT devices
 
 SYNOPSIS
 --------
+
 *nut-scanner* -h
 
 *nut-scanner* ['OPTIONS']
@@ -33,6 +34,7 @@ both during compilation and runtime, then SNMP discovery will be available.
 
 OPTIONS
 -------
+
 *-h*::
 Display the help text.
 
@@ -104,7 +106,6 @@ This option must be requested explicitly, even for a complete scan.
 ports using 'X-Y', where X and Y are characters referring to the port number.
 - a single port name.
 - a list of ports name, coma separated, like '/dev/ttyS1,/dev/ttyS4'.
-
 
 NETWORK OPTIONS
 ---------------
@@ -219,7 +220,7 @@ MISCELLANEOUS OPTIONS
 Display NUT version.
 
 *-a* | *--available*::
-Display available buses that can be scanned , depending on how the nut-scanner
+Display available buses that can be scanned, depending on how the nut-scanner
 binary program has been compiled. (e.g. OLDNUT, USB, SNMP, XML, AVAHI, IPMI).
 
 *-q* | *--quiet*::
