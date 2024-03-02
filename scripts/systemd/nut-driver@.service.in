@@ -20,6 +20,7 @@ After=local-fs.target
 
 # Propagate stopping of the target:
 PartOf=nut-driver.target
+
 # Note: The choice of "network.target" allows to schedule this unit
 # roughly when the network stack of this OS is ready (e.g. that the
 # subsequent `upsd` will have a `0.0.0.0` or a `localhost` to bind
