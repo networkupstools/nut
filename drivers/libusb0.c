@@ -655,7 +655,7 @@ static int libusb_open(usb_dev_handle **udevp,
 				USB_REQ_GET_DESCRIPTOR,
 				(USB_DT_REPORT << 8) + usb_subdriver.hid_desc_index,
 				usb_subdriver.hid_rep_index,
-				rdbuf, (unsigned)rdlen, USB_TIMEOUT);
+				rdbuf, rdlen, USB_TIMEOUT);
 
 			if (res < 0)
 			{
