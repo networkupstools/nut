@@ -164,6 +164,7 @@ IPMI drivers
 	--with-freeipmi
 
 Build and install IPMI PSU driver (default: auto-detect)
+
 This allows to monitor numerous Power Supply Units (PSU) found on servers.
 
 Note that you need to install freeipmi (0.8.5 or higher, for nut-scanner;
