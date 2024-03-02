@@ -79,7 +79,7 @@ class interface :
         # the `nut-monitor-py2gtk2.desktop` for windowing resources:
         # g_set_prgname('nut-monitor-py2gtk2')
 
-        self.__glade_file = os.path.join( os.path.dirname( sys.argv[0] ), "gui-1.3.glade" )
+        self.__glade_file = os.path.join( os.path.dirname( sys.argv[0] ), "ui/gui-1.3.glade" )
 
         self.__widgets["interface"]                   = gtk.glade.XML( self.__glade_file, "window1", APP )
         self.__widgets["main_window"]                 = self.__widgets["interface"].get_widget("window1")
