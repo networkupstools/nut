@@ -204,11 +204,15 @@ https://github.com/networkupstools/nut/milestone/10
  - Laid foundations for the SmartNUT effort (aiming to integrate drivers with
    some other backends than the networked NUT data server process).
 
- - Eaton contributed recipes and scripts used to create the IPP for Unix bundle
-   (UPS software companion), delivering NUT packages with an interactive
+ - Eaton contributed recipes and scripts used to create the IPP for Unix
+   bundle (aka Eaton IPSS Unix or UPP), a freely available value-added
+   packaging of NUT distributed as the UPS software companion for OSes
+   where their more complex UPS monitoring/management tools had not been
+   ported. This allows for delivery of NUT packages with an interactive
    installer and some system integration scripts (events, notifications,
-   status, shutdown daemon...) -- provided "as is" at the moment, and may
-   later serve as foundation or inspiration for new NUT features. [#2288]
+   status, shutdown daemon...), and was contributed to the NUT upstream
+   project by Eaton -- provided "as is" at the moment, and may later serve
+   as foundation or inspiration for new NUT features. [#2288]
 
  - nutconf (C++ library and tool to read and manage NUT configuration files)
    was started in the open by Eaton employees and used in the IPP installer,
