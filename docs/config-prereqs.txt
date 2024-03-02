@@ -859,7 +859,7 @@ default site.
     lua
 
 :; pkg_add \
-    dash ksh93
+    bash dash ksh93
 
 :; pkg_add \
     argp-standalone \
