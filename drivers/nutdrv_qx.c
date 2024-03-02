@@ -678,6 +678,7 @@ static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 			(usb_ctrl_charbuf)tmp, 8, 1000);
 
 		/* No error!!! */
+		/* if (ret == -110) */
 		if (ret == LIBUSB_ERROR_TIMEOUT)
 			break;
 
@@ -1685,7 +1686,6 @@ static int	snr_command(const char *cmd, char *buf, size_t buflen)
 			/* This may serve in the future */
 			upsdebugx(1, "received %d (%d)", ret, buf[0]);
 
-
 			if (ret != buf[0]) {
 				upsdebugx(1, "size mismatch: %d / %d", ret, buf[0]);
 				continue;
@@ -2070,7 +2070,7 @@ static int	armac_command(const char *cmd, char *buf, size_t buflen)
 		 * Current assumption is that this is number of bytes available on the UPS side
 		 * with up to 5 (ret - 1) transferred.
 		 */
-		bytes_available = (unsigned char)tmpbuf[0] & 0x0f;
+		bytes_available = (unsigned char)tmpbuf[0] & 0x3f;
 		if (bytes_available == 0) {
 			/* End of transfer */
 			break;
@@ -2118,7 +2118,7 @@ static int	armac_command(const char *cmd, char *buf, size_t buflen)
 
 		if (bytes_available <= 2) {
 			/* Slow down, let the UPS buffer more bytes */
-			usleep(15000);
+			usleep(10000);
 		}
 	}
 end_of_message:
@@ -2981,6 +2981,7 @@ void	upsdrv_makevartable(void)
 
 #ifdef QX_USB
 	addvar(VAR_VALUE, "subdriver", "Serial-over-USB subdriver selection");
+
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
 	nut_usb_addvars();
 
@@ -3487,7 +3488,6 @@ static ssize_t	qx_command(const char *cmd, char *buf, size_t buflen)
 	NUT_UNUSED_VARIABLE(buflen);
 
 #ifndef TESTING
-
 
 # ifdef QX_USB
 
