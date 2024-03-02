@@ -1013,8 +1013,8 @@ static snmp_info_t hpe_pdu3_cis_mib[] = {
 	/* pdu3HumidityName.1.1 = STRING: "RH" */
 	snmp_info_default("unmapped.pdu3HumidityName", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.232.165.11.4.3.1.2.1.1", NULL, SU_FLAG_OK, NULL),
 	/* pdu3HumidityName.1.2 = STRING: "                 " */
-	{ "unmapped.pdu3HumidityName", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.232.165.11.4.3.1.2.1.2", NULL, SU_FLAG_OK, NULL },
-//FIXME: missing sub MIB for ambient sensor?
+	snmp_info_default("unmapped.pdu3HumidityName", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.232.165.11.4.3.1.2.1.2", NULL, SU_FLAG_OK, NULL),
+/* FIXME: missing sub MIB for ambient sensor? */
 	/*  = STRING: "                 " */
 	snmp_info_default("unmapped. = STRING: "                 "", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.232.165.11.4.3.1.2.1.3", NULL, SU_FLAG_OK, NULL),
 	/*  = STRING: "                 " */
