@@ -146,6 +146,13 @@ https://github.com/networkupstools/nut/milestone/10
    * Driver programs with debug tracing support via `-D` CLI option and/or
      the `NUT_DEBUG_LEVEL` environment variable now check those earlier in
      their life-time, so that initialization routine can be debugged. [#2259]
+   * Multiple USB-capable drivers got options to customize `usb_config_index`
+     `usb_hid_rep_index`, `usb_hid_desc_index`, `usb_hid_ep_in` and
+     `usb_hid_ep_out` hardware connection settings via `ups.conf` options.
+     This is treated as experimental, not all code paths may be actually
+     using such values from `struct usb_communication_subdriver_t` rather
+     than hard-coded defaults. Discovery of correct values is up to the
+     user at the moment (using `lsusb`, internet search, luck...) [#2149]
 
  - nut-driver-enumerator (NDE) service/script:
    * The optional daemon mode (primarily useful for systems which monitor
