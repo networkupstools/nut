@@ -778,7 +778,7 @@ For DMF, additionally `pkg install py27-pycparser-2.20 py38-pycparser-2.20`
 to `pkg install libxml2` (might be pulled as a dependency of e.g. `libneon`
 already).
 
-OpenBSD 6.4
+OpenBSD 6.5
 ~~~~~~~~~~~
 
 Note that `PATH` for builds on BSD should include `/usr/local/...`:
@@ -796,23 +796,23 @@ your pick interactively or as part of package name (e.g. `autoconf-2.69p2`).
 
 NOTE: For the purposes of builds with Jenkins CI agents, since summer 2022 it
 requires JDK11 which was first delivered with OpenBSD 6.5. Earlier iterations
-used OpenBSD 6.4 and version nuances in this document may still reflect that.
+used OpenBSD 6.5 and version nuances in this document may still reflect that.
 
 During builds, you may have to tell system dispatcher scripts which version
 to use (which feels inconvenient, but on the up-side for CI -- this system
 allows to test many versions of auto-tools in the same agent), e.g.:
 ------
-:; export AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.10
+:; export AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.13
 ------
 
 To use the `ci_build.sh` don't forget `bash` which is not part of OpenBSD
 base installation. It is not required for "legacy" builds arranged by just
 `autogen.sh` and `configure` scripts.
 
-NOTE: The OpenBSD 6.4 `install64.iso` installation includes a set of packages
+NOTE: The OpenBSD 6.5 `install65.iso` installation includes a set of packages
 that seems to exceed whatever is available on network mirrors; for example,
 the CD image included `clang` program while it is not available to `pkg_add`,
-at least not via http://ftp.netbsd.hu/mirrors/openbsd/6.4/packages/amd64/
+at least not via http://ftp.netbsd.hu/mirrors/openbsd/6.5/packages/amd64/
 mirror. The `gcc` version on CD image differed notably from that in the
 networked repository (4.2.x vs 4.9.x).
 You may have to echo a working base URL (part before "6.5/..." into the
@@ -876,7 +876,7 @@ default site.
     lua
 
 :; pkg_add \
-    bash dash busybox ksh93
+    bash dash ksh93
 
 :; pkg_add \
     argp-standalone \
@@ -1053,7 +1053,7 @@ binaries and into `/usr/lib/ccache`:
 NOTE: For Jenkins agents, also need to `pkgin install openjdk11` (will be
 in `JAVA_HOME=/usr/pkg/java/openjdk11`).
 
-OpenIndiana 2021.04
+OpenIndiana 2021.10
 ~~~~~~~~~~~~~~~~~~~
 
 Note that due to IPS and `pkg(5)`, a version of python is part of baseline
