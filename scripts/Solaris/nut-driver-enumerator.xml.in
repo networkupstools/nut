@@ -9,7 +9,7 @@
 
 <service_bundle type='manifest' name='nut-driver-enumerator'>
 
-	<service name='system/power/nut-driver-enumerator' type='service' version='1.1'>
+	<service name='system/power/nut-driver-enumerator' type='service' version='1.2'>
 
 	<!--
 	  Wait for all local and usr filesystem to be mounted - project is
