@@ -239,7 +239,8 @@ static void show_usage(void)
 	printf("  -C, --complete_scan: Scan all available devices except serial ports (default).\n");
 	if (nutscan_avail_usb) {
 		printf("  -U, --usb_scan: Scan USB devices. Specify twice or more to report different\n"
-			"                  detail levels of (change-prone) physical properties.\n");
+			"                  detail levels of (change-prone) physical properties.\n"
+			"                  This usage can be combined with '-C' or other scan types.\n");
 	} else {
 		printf("* Options for USB devices scan not enabled: library not detected.\n");
 	}
@@ -683,7 +684,8 @@ int main(int argc, char *argv[])
 					goto display_help;
 				}
 				allow_usb = 1;
-				/* NOTE: Starts as -1, so the first -U sets it to 0 (minimal detail) */
+				/* NOTE: Starts as -1, so the first -U sets it to 0
+				 * (minimal detail); further -U can bump it */
 				if (cli_link_detail_level < 3)
 					cli_link_detail_level++;
 				break;
@@ -809,6 +811,11 @@ display_help:
 
 	if (allow_all) {
 		allow_usb = 1;
+		/* NOTE: Starts as -1, so when we scan everything - set
+		 * it to 0 (minimal detail); further -U can bump it */
+		if (cli_link_detail_level < 0)
+			cli_link_detail_level++;
+
 		allow_snmp = 1;
 		allow_xml = 1;
 		allow_oldnut = 1;
