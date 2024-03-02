@@ -220,8 +220,8 @@ MISCELLANEOUS OPTIONS
 Display NUT version.
 
 *-a* | *--available*::
-Display available bus that can be scanned, depending on how the nut-scanner
-binary program has been compiled. (OLDNUT, USB, SNMP, XML, AVAHI, IPMI).
+Display available buses that can be scanned, depending on how the nut-scanner
+binary program has been compiled. (e.g. OLDNUT, USB, SNMP, XML, AVAHI, IPMI).
 
 *-q* | *--quiet*::
 Display only scan result. No information on currently scanned bus is displayed.
