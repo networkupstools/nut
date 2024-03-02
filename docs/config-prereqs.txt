@@ -60,14 +60,14 @@ environment, and build some tests:
     make all && make check && make spellcheck
 ------
 
-NOTE: You can toggle some `configure` options to check different dependency
+You can toggle some `configure` options to check different dependency
 variants, e.g. `--with-ssl=nss` vs. `--with-ssl=openssl`
 
-NOTE: For reproducible runs of various pre-sets of configuration during
+For reproducible runs of various pre-sets of configuration during
 development, take a look at `ci_build.sh` script and different `BUILD_TYPE`
 (and other) environment variable settings that it supports. A minimal run
 with it is just to call the script, e.g.:
-+
+
 ------
 :; mkdir -p nut && cd nut && \
    git clone https://github.com/networkupstools/nut/ -b fightwarn .
@@ -796,7 +796,7 @@ your pick interactively or as part of package name (e.g. `autoconf-2.69p2`).
 
 NOTE: For the purposes of builds with Jenkins CI agents, since summer 2022 it
 requires JDK11 which was first delivered with OpenBSD 6.5. Earlier iterations
-used OpenBSD 6.5 and version nuances in this document may still reflect that.
+used OpenBSD 6.4 and version nuances in this document may still reflect that.
 
 During builds, you may have to tell system dispatcher scripts which version
 to use (which feels inconvenient, but on the up-side for CI -- this system
