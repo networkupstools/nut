@@ -6,7 +6,7 @@
  *  Copyright (C)
  *       2005-2006 Olli Savia <ops@iki.fi>
  *       2005-2006 Niels Baggesen <niels@baggesen.net>
- *       2015-2021 Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
+ *       2015-2022 Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
