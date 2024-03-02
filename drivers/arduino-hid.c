@@ -151,18 +151,24 @@ static int arduino_claim(HIDDevice_t *hd)
 		case POSSIBLY_SUPPORTED:
 			/* by default, reject, unless the productid option is given */
 			if (getval("productid")) {
-				usb->hid_ep_in=4;
-				usb->hid_ep_out=5;
-				usb->hid_rep_index = 2;
+				if (!getval("usb_hid_ep_in"))
+					usb->hid_ep_in=4;
+				if (!getval("usb_hid_ep_out"))
+					usb->hid_ep_out=5;
+				if (!getval("usb_hid_rep_index"))
+					usb->hid_rep_index = 2;
 				return 1;
 			}
 			possibly_supported("Arduino", hd);
 			return 0;
 
 		case SUPPORTED:
-			usb->hid_ep_in=4;
-			usb->hid_ep_out=5;
-			usb->hid_rep_index = 2;
+			if (!getval("usb_hid_ep_in"))
+				usb->hid_ep_in=4;
+			if (!getval("usb_hid_ep_out"))
+				usb->hid_ep_out=5;
+			if (!getval("usb_hid_rep_index"))
+				usb->hid_rep_index = 2;
 			return 1;
 
 		case NOT_SUPPORTED:

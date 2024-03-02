@@ -819,7 +819,7 @@ AC_CHECK_FUNCS(strtok_r fileno sigemptyset sigaction,
 dnl For these we have a fallback implementation via the other,
 dnl if at least one is available, so initial check is quiet.
 dnl This typically pops up in POSIX vs. Windows builds:
-AC_CHECK_FUNCS(localtime_r localtime_s gmtime_r gmtime_s,
+AC_CHECK_FUNCS(localtime_r localtime_s gmtime_r gmtime_s timegm _mkgmtime,
 	[], [])
 
 AC_MSG_CHECKING([for at least one gmtime implementation])
@@ -834,6 +834,14 @@ AC_MSG_CHECKING([for at least one localtime implementation])
 AS_IF([test x"${ac_cv_func_localtime_s}-${ac_cv_func_localtime_r}" = "xno-no"], [
 	AC_MSG_RESULT([no])
 	AC_MSG_WARN([Required C library routine localtime_s nor localtime_r was not found; try adding -D_POSIX_C_SOURCE=200112L])
+	],[
+	AC_MSG_RESULT([yes])
+	])
+
+AC_MSG_CHECKING([for at least one timegm implementation])
+AS_IF([test x"${ac_cv_func_timegm}-${ac_cv_func__mkgmtime}" = "xno-no"], [
+	AC_MSG_RESULT([no])
+	AC_MSG_WARN([Required C library routine timegm nor _mkgmtime was not found])
 	],[
 	AC_MSG_RESULT([yes])
 	])
@@ -1108,13 +1116,34 @@ AC_MSG_CHECKING([whether ln -sr works])
 dnl We need to relative-symlink some files. Or hardlink. Or copy...
 LN_S_R="cp -pR"
 if test "$as_ln_s" = "ln -s" ; then
-    LN_S_R="ln"
+    _abs_srcdir="`cd "${srcdir}" && pwd`" || _abs_srcdir=""
+    _abs_builddir="`pwd`"
+    dnl AC_MSG_NOTICE([srcdir='${srcdir}' _abs_srcdir='${_abs_srcdir}' _abs_builddir='${_abs_builddir}'])
+    if test x"${_abs_srcdir}" = x"${_abs_builddir}" ; then
+        LN_S_R="ln"
+    else
+        _fs_srcdir="`df "${_abs_srcdir}" | tail -1 | awk '{print $1}'`" || fs_srcdir="XXXs"
+        _fs_builddir="`df "${_abs_builddir}" | tail -1 | awk '{print $1}'`" || fs_builddir="XXXb"
+        dnl AC_MSG_NOTICE([_fs_srcdir='${_fs_srcdir}' _fs_builddir='${_fs_builddir}'])
+        if test x"${_fs_srcdir}" = x"${_fs_builddir}" ; then
+            LN_S_R="ln"
+        else
+            dnl Source and build areas are in different filesystems,
+            dnl can not hardlink - keep copying approach in place
+            AC_MSG_NOTICE([Source and build areas are in different filesystems, or we could not detect this for sure - avoiding hardlinks])
+        fi
+        unset _fs_srcdir _fs_builddir
+    fi
+    unset _abs_srcdir _abs_builddir
+
+    dnl Explore GNU ln (or compatible) with relative symlink support
     DIR1="$(mktemp -d "dir1.XXXXXXX")" && \
     DIR2="$(mktemp -d "dir2.XXXXXXX")" && \
     touch "${DIR1}/a" && \
     $as_ln_s -r "${DIR1}/a" "${DIR2}/b" && \
     ls -la "${DIR2}/b" | grep '\.\./' > /dev/null && \
     LN_S_R="$as_ln_s -r"
+
     rm -rf "${DIR1}" "${DIR2}"
 fi
 AC_SUBST([LN_S_R], [${LN_S_R}])

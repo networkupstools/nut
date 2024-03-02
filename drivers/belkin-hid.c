@@ -31,7 +31,7 @@
 
 #include <math.h>     /* for fabs() */
 
-#define BELKIN_HID_VERSION      "Belkin/Liebert HID 0.18"
+#define BELKIN_HID_VERSION      "Belkin/Liebert HID 0.19"
 
 /* Belkin */
 #define BELKIN_VENDORID	0x050d
@@ -68,9 +68,11 @@ static usb_device_id_t belkin_usb_device_table[] = {
 	{ USB_DEVICE(BELKIN_VENDORID, 0x1100), NULL },
 
 	/* Liebert GXT4 UPS */
-	{ USB_DEVICE(LIEBERT_VENDORID, 0x0004), NULL },
+	{ USB_DEVICE(LIEBERT_VENDORID, 0x0000), NULL },
 	/* Liebert PowerSure PSA UPS */
 	{ USB_DEVICE(LIEBERT_VENDORID, 0x0001), NULL },
+	/* Liebert PowerSure PST UPS */
+	{ USB_DEVICE(LIEBERT_VENDORID, 0x0002), NULL },
 	/* Liebert PowerSure PSI 1440 */
 	{ USB_DEVICE(LIEBERT_VENDORID, 0x0004), NULL },
 	/* Liebert GXT3 */

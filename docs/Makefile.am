@@ -240,7 +240,7 @@ $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	 || { \
 	     MSG="FAILED to resolve input or output filename with this make implementation, or input was not generated!"; \
 	     echo "  DOC-CHANGELOG-ASCIIDOC	SKIP: $${MSG}" >&2; \
-	     test -n "$@" && echo "$${MSG}" > "$@" ; \
+	     test -n "$@" && { printf '=== Failed to generate the ChangeLog\n\n%s\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n' "$${MSG}" > "$@" ; } ; \
 	     exit ; \
 	 } ; \
 	 echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@" \
@@ -595,13 +595,13 @@ spellcheck-interactive:
 	 echo "------------------------------------------------------------------------"
 
 else !HAVE_ASPELL
-# This rule woulf probably just fail; normally with no ASPELL there are no callers for it
+# This rule would probably just fail; normally with no ASPELL there are no callers for it
 */*-spellchecked *-spellchecked: Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
-	@echo "  SKIP-ASPELL   $@ : Documentation spell check not available since 'aspell' was not found." >&2
+	@echo "  SKIP-ASPELL   $@ : Documentation spell check not available since 'aspell' was not found (or missing its English dictionary)." >&2
 spellcheck:
-	@echo "Documentation spell check not available since 'aspell' was not found."
+	@echo "Documentation spell check not available since 'aspell' was not found (or missing its English dictionary)."
 spellcheck-interactive:
-	@echo "Documentation spell check not available since 'aspell' was not found."
+	@echo "Documentation spell check not available since 'aspell' was not found (or missing its English dictionary)."
 endif !HAVE_ASPELL
 
 
