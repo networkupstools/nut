@@ -274,12 +274,14 @@ Prepare CentOS repository mirrors
 For CentOS 7 it seems that not all repositories are equally good; some of
 the software below is only served by EPEL (Extra Packages for Enterprise
 Linux), as detailed at:
+
 * https://docs.fedoraproject.org/en-US/epel/
 * https://www.redhat.com/en/blog/whats-epel-and-how-do-i-use-it
 * https://pkgs.org/download/epel-release
 
 You may have to specify a mirror as the `baseurl` in a `/etc/yum.repos.d/...`
 file (as the aged distributions become less served by mirrors), such as:
+
 * https://www.mirrorservice.org/sites/dl.fedoraproject.org/pub/epel/7/x86_64/
 +
 ------
@@ -343,7 +345,6 @@ NOTE: On CentOS, `libusb` means 0.1.x and `libusbx` means 1.x.x API version
 NOTE: On CentOS, it seems that development against libi2c/smbus is not
 supported. Neither the suitable devel packages were found, nor i2c-based
 drivers in distro packaging of NUT. Resolution and doc PRs are welcome.
-
 
 ------
 :; yum install \
