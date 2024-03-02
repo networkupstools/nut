@@ -24,6 +24,7 @@
     \author Arnaud Quette <arnaud.quette@free.fr>
     \author Michal Vyskocil <MichalVyskocil@eaton.com>
     \author Jim Klimov <EvgenyKlimov@eaton.com>
+    \author Jim Klimov <jimklimov+nut@gmail.com>
 */
 
 #include "common.h"	/* Must be first include to pull "config.h" */

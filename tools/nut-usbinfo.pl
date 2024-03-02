@@ -1,9 +1,9 @@
 #!/usr/bin/env perl
-#   Current Version : 1.4
+#   Current Version : 1.5
 #   Copyright (C) 2008 - 2012 dloic (loic.dardant AT gmail DOT com)
 #   Copyright (C) 2008 - 2015 Arnaud Quette <arnaud.quette@free.fr>
 #   Copyright (C) 2013 - 2014 Charles Lepple <clepple+nut@gmail.com>
-#   Copyright (C) 2014 - 2023 Jim Klimov <jimklimov+nut@gmail.com>
+#   Copyright (C) 2014 - 2024 Jim Klimov <jimklimov+nut@gmail.com>
 #
 #   Based on the usbdevice.pl script, made for the Ubuntu Media Center
 #   for the final use of the LIRC project.
