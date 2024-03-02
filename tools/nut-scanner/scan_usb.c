@@ -612,6 +612,8 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 				}
 #endif	/* WITH_LIBUSB_1_0 */
 
+				/* FIXME: Detect and suggest HID index, interface number, etc. */
+
 				if (scanopts->report_bcdDevice) {
 					/* Not currently matched by drivers, hence commented
 					 * for now even if requested via scanopts */

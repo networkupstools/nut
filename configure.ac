@@ -819,7 +819,7 @@ AC_CHECK_FUNCS(strtok_r fileno sigemptyset sigaction,
 dnl For these we have a fallback implementation via the other,
 dnl if at least one is available, so initial check is quiet.
 dnl This typically pops up in POSIX vs. Windows builds:
-AC_CHECK_FUNCS(localtime_r localtime_s gmtime_r gmtime_s,
+AC_CHECK_FUNCS(localtime_r localtime_s gmtime_r gmtime_s timegm _mkgmtime,
 	[], [])
 
 AC_MSG_CHECKING([for at least one gmtime implementation])
@@ -834,6 +834,14 @@ AC_MSG_CHECKING([for at least one localtime implementation])
 AS_IF([test x"${ac_cv_func_localtime_s}-${ac_cv_func_localtime_r}" = "xno-no"], [
 	AC_MSG_RESULT([no])
 	AC_MSG_WARN([Required C library routine localtime_s nor localtime_r was not found; try adding -D_POSIX_C_SOURCE=200112L])
+	],[
+	AC_MSG_RESULT([yes])
+	])
+
+AC_MSG_CHECKING([for at least one timegm implementation])
+AS_IF([test x"${ac_cv_func_timegm}-${ac_cv_func__mkgmtime}" = "xno-no"], [
+	AC_MSG_RESULT([no])
+	AC_MSG_WARN([Required C library routine timegm nor _mkgmtime was not found])
 	],[
 	AC_MSG_RESULT([yes])
 	])

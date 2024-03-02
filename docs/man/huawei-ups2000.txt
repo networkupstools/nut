@@ -31,9 +31,13 @@ on Linux 5.12 and newer kernels, but there are exceptions, read the section
 *Cabling* carefully).
 
 The UPS2000 series has two variants: UPS2000-A with a tower chassis,
-and UPS2000-G with a rack-mount chassis. Both should be equally supported,
-but more testers are needed.
-Currently, it has been tested on the following models.
+and UPS2000-G with a rack-mount chassis. Within these two variants,
+there are also two sub-variants: a standard runtime model powered by
+an internal battery pack denoted by an "S" suffix, and a long runtime
+model powered by an external battery pack denoted by an "L" suffix.
+
+All of these models should be equally supported, but more testers are
+needed. Currently, it has been tested on the following models.
 
 * UPS2000-A-1KTTS (firmware: UPS2000A, V2R1C1SPC40, P1.0-D1.0)
 * UPS2000-A-1KTTS (firmware: UPS2000A, V2R1C1SPC50, P1.0-D1.0)
@@ -42,6 +46,7 @@ Currently, it has been tested on the following models.
 * UPS2000-G-1KRTS (firmware: UPS2000G, V2R1C1SPC50, P1.0-D1.0)
 * UPS2000-G-3KRTS (firmware: UPS2000A, V2R1C1SPC40, P1.0-D1.0)
 * UPS2000-G-3KRTS (firmware: UPS2000G, V2R1C1SPC50, P1.0-D1.0)
+* UPS2000-G-3KRTL (firmware: UPS2000A, V2R1C1SPC40, P1.0-D1.0)
 
 If your model is not in the list, we encourage you to report successful
 or unsuccessful results to the bug tracker or the mailing list.

@@ -153,6 +153,13 @@ int USBNewExactMatcher(USBDeviceMatcher_t **matcher, USBDevice_t *hd)
 #ifdef DEBUG_EXACT_MATCH_DEVICE
 	data->Device = hd->Device ? strdup(hd->Device) : NULL;
 #endif
+
+	/* NOTE: Callers must pre-initialize to NULL! */
+	if (matcher && *matcher) {
+		free(*matcher);
+		*matcher = NULL;
+	}
+
 	*matcher = m;
 
 	return 0;
@@ -332,6 +339,12 @@ int USBNewRegexMatcher(USBDeviceMatcher_t **matcher, char **regex, int cflags)
 			USBFreeRegexMatcher(m);
 			return r;
 		}
+	}
+
+	/* NOTE: Callers must pre-initialize to NULL! */
+	if (matcher && *matcher) {
+		free(*matcher);
+		*matcher = NULL;
 	}
 
 	*matcher = m;

@@ -37,7 +37,7 @@
 #endif
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 0.1)"
-#define USB_DRIVER_VERSION	"0.45"
+#define USB_DRIVER_VERSION	"0.47"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -93,6 +93,12 @@ void nut_usb_addvars(void)
 		"(association of driver to device may vary between runs)");
 
 	addvar(VAR_VALUE, "usb_set_altinterface", "Force redundant call to usb_set_altinterface() (value=bAlternateSetting; default=0)");
+
+	addvar(VAR_VALUE, "usb_config_index",	"Deeper tuning of USB communications for complex devices");
+	addvar(VAR_VALUE, "usb_hid_rep_index",	"Deeper tuning of USB communications for complex devices");
+	addvar(VAR_VALUE, "usb_hid_desc_index",	"Deeper tuning of USB communications for complex devices");
+	addvar(VAR_VALUE, "usb_hid_ep_in",	"Deeper tuning of USB communications for complex devices");
+	addvar(VAR_VALUE, "usb_hid_ep_out",	"Deeper tuning of USB communications for complex devices");
 
 	dstate_setinfo("driver.version.usb", "libusb-0.1 (or compat)");
 
@@ -218,6 +224,76 @@ static int libusb_open(usb_dev_handle **udevp,
 	usb_ctrl_charbufsize		rdlen;
 
 	struct usb_bus *busses;
+
+	static int usb_hid_number_opts_parsed = 0;
+	if (!usb_hid_number_opts_parsed) {
+		const char *s;
+		unsigned short us = 0;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-type-limit-compare"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#pragma clang diagnostic ignored "-Wtautological-compare"
+#pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+		if ((s = getval("usb_config_index"))) {
+			if (!str_to_ushort(s, &us, 16) || (us > USB_CTRL_CFGINDEX_MAX)) {
+				fatalx(EXIT_FAILURE, "%s: could not parse usb_config_index", __func__);
+			}
+			usb_subdriver.usb_config_index = (usb_ctrl_cfgindex)us;
+		}
+		if ((s = getval("usb_hid_rep_index"))) {
+			if (!str_to_ushort(s, &us, 16) || (us > USB_CTRL_REPINDEX_MAX)) {
+				fatalx(EXIT_FAILURE, "%s: could not parse usb_hid_rep_index", __func__);
+			}
+			usb_subdriver.hid_rep_index = (usb_ctrl_repindex)us;
+		}
+		if ((s = getval("usb_hid_desc_index"))) {
+			if (!str_to_ushort(s, &us, 16) || (us > USB_CTRL_DESCINDEX_MAX)) {
+				fatalx(EXIT_FAILURE, "%s: could not parse usb_hid_desc_index", __func__);
+			}
+			usb_subdriver.hid_desc_index = (usb_ctrl_descindex)us;
+		}
+		if ((s = getval("usb_hid_ep_in"))) {
+			if (!str_to_ushort(s, &us, 16) || (us > USB_CTRL_ENDPOINT_MAX)) {
+				fatalx(EXIT_FAILURE, "%s: could not parse usb_hid_ep_in", __func__);
+			}
+			usb_subdriver.hid_ep_in = (usb_ctrl_endpoint)us;
+		}
+		if ((s = getval("usb_hid_ep_out"))) {
+			if (!str_to_ushort(s, &us, 16) || (us > USB_CTRL_ENDPOINT_MAX)) {
+				fatalx(EXIT_FAILURE, "%s: could not parse usb_hid_ep_out", __func__);
+			}
+			usb_subdriver.hid_ep_out = (usb_ctrl_endpoint)us;
+		}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+
+		usb_hid_number_opts_parsed = 1;
+	}
 
 	/* libusb base init */
 	usb_init();
@@ -374,7 +450,8 @@ static int libusb_open(usb_dev_handle **udevp,
 
 			/* FIXME: extend to Eaton OEMs (HP, IBM, ...) */
 			if ((curDevice->VendorID == 0x463) && (curDevice->bcdDevice == 0x0202)) {
-				usb_subdriver.hid_desc_index = 1;
+				if (!getval("usb_hid_desc_index"))
+					usb_subdriver.hid_desc_index = 1;
 			}
 
 			upsdebugx(2, "Trying to match device");
@@ -618,6 +695,18 @@ static int libusb_open(usb_dev_handle **udevp,
 				"Report descriptor retrieved (Reportlen = %"
 				PRI_NUT_USB_CTRL_CHARBUFSIZE ")", rdlen);
 			upsdebugx(2, "Found HID device");
+
+			upsdebugx(3, "Using default, detected or customized USB HID numbers: "
+				"usb_config_index=%d usb_hid_rep_index=%d "
+				"usb_hid_desc_index=%d "
+				"usb_hid_ep_in=%d usb_hid_ep_out=%d",
+				usb_subdriver.usb_config_index,
+				usb_subdriver.hid_rep_index,
+				usb_subdriver.hid_desc_index,
+				usb_subdriver.hid_ep_in,
+				usb_subdriver.hid_ep_out
+				);
+
 			fflush(stdout);
 
 			return rdlen;

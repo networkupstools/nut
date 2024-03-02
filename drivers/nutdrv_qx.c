@@ -370,8 +370,7 @@ static void	qx_initbattery(void)
 		batt_packs_known = 1;
 	}
 
-	val = getval("battery_voltage_reports_one_pack");
-	if (val) {
+	if (testvar("battery_voltage_reports_one_pack")) {
 		battery_voltage_reports_one_pack = 1;
 		/* If we already have a battery.voltage reading from the device,
 		 * it is not yet "adjusted" to consider the multiplication for
