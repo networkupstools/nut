@@ -94,6 +94,7 @@ Build and install the serial drivers (default: yes)
 	--with-usb
 
 Build and install the USB drivers (default: auto-detect)
+
 Note that you need to install the libusb development package or files,
 and that both libusb 0.1 and 1.0 are supported. In case both are
 available, libusb 1.0 takes precedence, and will be used by default.
@@ -109,6 +110,7 @@ SNMP drivers
 	--with-snmp
 
 Build and install the SNMP drivers (default: auto-detect)
+
 Note that you need to install libsnmp development package or files.
 
 	--with-net-snmp-config
@@ -117,6 +119,7 @@ In addition to the `--with-snmp` option above, this one allows to provide
 a custom program name (in `PATH`) or complete pathname to `net-snmp-config`
 (may have copies named per architecture, e.g. `net-snmp-config-32` and
 `net-snmp-config-64`).
+
 This may be needed on build systems which support multiple architectures,
 or in cases where your distribution names this program differently.
 With a default value of `yes` it would mean preference of this program,
@@ -128,6 +131,7 @@ XML drivers and features
 	--with-neon
 
 Build and install the XML drivers (default: auto-detect)
+
 Note that you need to install neon development package or files.
 
 Drivers with dynamic data mapping
@@ -146,6 +150,7 @@ LLNC CHAOS Powerman driver
 	--with-powerman
 
 Build and install Powerman PDU client driver (default: auto-detect)
+
 This allows to interact with the Powerman daemon, and the numerous
 Power Distribution Units (PDU) supported by the
 https://github.com/chaos/powerman[powerman] project.
@@ -451,6 +456,7 @@ Networking transport security
 	--with-openssl (default: auto-detect)
 
 Enable SSL support, using either Mozilla NSS or OpenSSL.
+
 If both are present, and nothing was specified, OpenSSL support will
 be preferred.
 
@@ -597,6 +603,7 @@ all others to `<bindir>`. The defaults are `<exec_prefix>/sbin` and
 See also `--with-drvpath` below.
 
 	--with-drvpath=PATH
+
 The UPS drivers will be installed to this path.  By default they
 install to `<exec_prefix>/bin`, i.e. `/usr/local/ups/bin`.
 
