@@ -14,7 +14,8 @@ over time by the NUT Team, side projects and/or general community members
 - Python Client module and application,
 - Perl client module,
 - Augeas support lenses and modules for NUT,
-- scripts to generate DMF data files from existing drivers/*-mib.c structures,
+- scripts to generate DMF data files from existing `drivers/*-mib.c`
+  structures (mapping and lookup tables, etc.),
 - support to run NUT components as service unit instances:
   * shared `nut-driver-enumerator` and `upsdrvsvcctl` logic,
   * `systemd` support files,
