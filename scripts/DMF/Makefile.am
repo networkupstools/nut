@@ -140,7 +140,7 @@ install-data-hook: install_dmfsnmp_data install_dmfnutscan_data
 
 uninstall-hook:
 	-rm -f $(INSTALL_NUT_DMFNUTSCAN_SYMLINK) $(INSTALL_NUT_DMF_SYMLINKS)
-endif
+endif WITH_DMF
 
 EXTRA_DIST += dmfsnmp.xsd dmfnutscan.xsd
 DISTCLEANFILES += $(LEGACY_NUT_DMF_SYMLINKS) $(DMFNUTSCAN_SYMLINK)
@@ -198,17 +198,17 @@ ADD_TGT_DMF =
 
 if WITH_DMF
 TGT_CHECK_LOCAL += run-dmf-test
-endif
+endif WITH_DMF
 
 if WITH_VALIDATE_DMF_SNMP
   ADD_TGT_CHECK_LOCAL += dmf-validate
   ADD_TGT_DMF += dmf-validate
-else
+else !WITH_VALIDATE_DMF_SNMP
 if WITH_VALIDATE_DMF_NUTSCAN
   ADD_TGT_CHECK_LOCAL += dmf-validate
   ADD_TGT_DMF += dmf-validate
-endif
-endif
+endif WITH_VALIDATE_DMF_NUTSCAN
+endif !WITH_VALIDATE_DMF_SNMP
 
 check-local: $(TGT_CHECK_LOCAL) $(ADD_TGT_CHECK_LOCAL)
 dmf: $(TGT_DMF) $(ADD_TGT_DMF)
@@ -218,7 +218,7 @@ check-experimental: progs check-local run-dmf-lua-test run-dmf-fun-test
 check-all: check-experimental
 check-lua: run-dmf-lua-test
 check-fun: run-dmf-fun-test
-endif
+endif WITH_DMF
 
 # Recipes to build DMF files with the sources and tools we have are defined
 # via $(DMFGEN_CMD) as used in legacy-mibfiles-list.mk for example.
@@ -289,7 +289,7 @@ dmfgen-sanity: $(srcdir)/dmfify-mib.sh
 	    echo "SKIP: NOT REBUILDING DMF files due to absence of prerequisites like Python or pycparser" >&2; \
 	    rm -f $(DMFGEN_SANITY_VALIDATED); \
 	 fi
-else
+else !WITH_REGENERATE_DMF_SNMP
   DMFGEN_CMD = ( \
 	echo "SKIP: Generation of $@ from $$CMIBFILE not enabled by the configure script (--with-dmfsnmp-regenerate option)"; \
 	rm -f $(DMFGEN_SANITY_VALIDATED); \
@@ -297,16 +297,16 @@ else
 		echo "ERROR: Distributed file $@ is missing" >&2; exit 2; \
 	fi; \
 	)
-endif
+endif !WITH_REGENERATE_DMF_SNMP
 
 # For regenerated files, we link from `pwd` (e.g. .../_build/scripts/DMF during
 # distcheck) and fail if it did not go well (generation failed); but when the
 # caller explicitly does not regenerate DMFs from Cs, we use pre-generated ones.
 if WITH_REGENERATE_DMF_SNMP
   DMFFILE_DIR=
-else
+else !WITH_REGENERATE_DMF_SNMP
   DMFFILE_DIR=$(abs_srcdir)/
-endif
+endif !WITH_REGENERATE_DMF_SNMP
 
 # NOTE: "sleep" below lets some funny make programs catch up, hopefully
 # (if sub-make of a DMF reported completion but file is not here yet,
@@ -401,7 +401,7 @@ $(abs_top_builddir)/scripts/DMF/$(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf: $(
 	     rm -f "$@.tmp"* ; exit 1; } ; exit 0
 	rm -f "$@.tmp"*
 	test -s "$@"
-else
+else !WITH_REGENERATE_DMF_NUTSCAN
 $(abs_top_builddir)/scripts/DMF/$(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFNUTSCAN_DEPS)
 	@echo "SKIP: Generation of $@ not enabled by the configure script (--with-dmfnutscan-regenerate option)"
 	@if test ! -s "$@" -a ! -s "$(abs_srcdir)/$(DMFNUTSCAN_RES_SUBDIR)/$(@F)"; then echo "ERROR: Distributed file $@ is missing" >&2; exit 2; fi; true
@@ -416,7 +416,7 @@ $(abs_top_builddir)/scripts/DMF/$(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf: $(
 		fi; \
 	 fi
 	test -s "$@"
-endif
+endif !WITH_REGENERATE_DMF_NUTSCAN
 
 $(DMFNUTSCAN_SYMLINK): $(abs_top_builddir)/scripts/DMF/$(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf
 	@DMFFILE="$(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf"; DMFLINK="$@"; $(DMFLNK_CMD)
@@ -458,13 +458,13 @@ if WITH_VALIDATE_DMF_SNMP
 	done; \
 	touch "$(@F)"; \
 	)
-else
+else !WITH_VALIDATE_DMF_SNMP
   DMFLINT_CMD = ( \
 	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)" || exit ; \
 	echo "SKIP: Validation of $@ not enabled by the configure script ($$DMFLINT_OPTION option)" ; \
 	echo "VALIDATION-SKIPPED" > "$@" ; \
 	)
-endif
+endif !WITH_VALIDATE_DMF_SNMP
 
 $(abs_builddir)/$(DMFSNMP_RES_SUBDIR)/.validated: $(abs_builddir)/$(DMFSNMP_RES_SUBDIR)/.uptodate
 	@DMFLINT_XSD="$(abs_srcdir)/dmfsnmp.xsd" ; DMFLINT_OPTION="--with-dmfsnmp-validate"; $(DMFLINT_CMD)
@@ -498,21 +498,21 @@ LDFLAGS_LUA = $(LUA_LIB)
 if WITH_DMF_LUA
  CFLAGS_DMF_LUA = -DWITH_DMF_LUA=1 -DWITH_DMF_FUNCTIONS=1 $(CFLAGS_LUA)
  LDFLAGS_DMF_LUA = $(LDFLAGS_LUA)
-else
+else !WITH_DMF_LUA
 # Note: absence of LUA does not require to set -DWITH_DMF_FUNCTIONS=0
  CFLAGS_DMF_LUA = -DWITH_DMF_LUA=0
  LDFLAGS_DMF_LUA =
-endif
+endif !WITH_DMF_LUA
 
 if WITH_LIBLTDL
   LIBS_dmfsnmp_ltdlXneon = $(LIBLTDL_LIBS)
   CFLAGS_dmfsnmp_ltdlXneon = $(LIBNEON_CFLAGS) $(LIBLTDL_CFLAGS) -DWITH_LIBLTDL=1
-else
+else !WITH_LIBLTDL
 if WITH_NEON
   LIBS_dmfsnmp_ltdlXneon = $(LIBNEON_LIBS)
   CFLAGS_dmfsnmp_ltdlXneon = $(LIBNEON_CFLAGS) -DWITH_LIBLTDL=0
-endif
-endif
+endif WITH_NEON
+endif !WITH_LIBLTDL
 
 
 progs: $(noinst_PROGRAMS)
@@ -570,8 +570,8 @@ endif HAVE_WINDOWS
 if WITH_LIBXML2
   dmf_test_LDADD  += $(LIBXML2_LIBS)
   dmf_test_CFLAGS += $(LIBXML2_CFLAGS)
-endif
-endif
+endif WITH_LIBXML2
+endif WITH_DMF
 
 # This seems to cause issues regardless of "if", so
 # devs desiring to hack should just uncomment this part
@@ -593,9 +593,9 @@ dmf-reindex:
 
 if WITH_VALGRIND
 DMF_TEST_RUNNER = $(VALGRIND) --leak-check=full --track-origins=yes --show-leak-kinds=all -v
-else
+else !WITH_VALGRIND
 DMF_TEST_RUNNER =
-endif
+endif !WITH_VALGRIND
 
 # Note: DMF dirs are currently hardcoded (above) so no big need to "cd" anywhere
 # But some data should be prepopulated there before we run leak tests etc.
@@ -605,10 +605,10 @@ run-dmf-test: dmf-test $(abs_builddir)/$(DMFSNMP_SUBDIR)/.uptodate
 
 run-dmf-reindex: dmf-reindex $(abs_builddir)/$(DMFSNMP_SUBDIR)/.uptodate
 	cd $(DMFSNMP_SUBDIR) && ls -la && DEBUG="$(V)" $(DMF_TEST_RUNNER) $(DMF_REINDEX)
-else
+else !WITH_DMF
 run-dmf-test run-dmf-reindex:
 	@echo "  SKIP   DMF support was not enabled or detected during project configuration, can not run test programs" >&2
-endif
+endif !WITH_DMF
 
 if WITH_DMF
 if WITH_LUA
@@ -629,7 +629,7 @@ dmf_lua_test_LDFLAGS = $(LDFLAGS_LUA)
 if WITH_LIBXML2
   dmf_lua_test_LDADD  += $(LIBXML2_LIBS)
   dmf_lua_test_CFLAGS += $(LIBXML2_CFLAGS)
-endif
+endif WITH_LIBXML2
 
 noinst_PROGRAMS += dmf-fun-test
 # Note: This uses CFLAGS_LUA not CFLAGS_DMF_LUA so the test bits can build
@@ -647,7 +647,7 @@ dmf_fun_test_LDFLAGS = $(LDFLAGS_LUA)
 if WITH_LIBXML2
   dmf_fun_test_LDADD  += $(LIBXML2_LIBS)
   dmf_fun_test_CFLAGS += $(LIBXML2_CFLAGS)
-endif
+endif WITH_LIBXML2
 
 testdata-lua/.validated:
 	+$(MAKE) $(AM_MAKEFLAGS) $(abs_builddir)/testdata-lua/.validated
@@ -688,12 +688,12 @@ $(abs_builddir)/testdata-fun/.validated: $(abs_builddir)/testdata-fun/.uptodate
 	    $(XMLLINT) --noout --schema $(abs_srcdir)/dmfsnmp.xsd "$$F" || exit; \
 	done
 	touch "$@"
-else
+else !WITH_VALIDATE_DMF_SNMP
 $(abs_builddir)/testdata-lua/.validated $(abs_builddir)/testdata-fun/.validated:
 	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
 	@echo "SKIP: Validation of $@ not enabled by the configure script (--with-dmfsnmp-validate option)"
 	@echo "VALIDATION-SKIPPED" > "$@"
-endif
+endif !WITH_VALIDATE_DMF_SNMP
 CLEANFILES += $(abs_builddir)/testdata-lua/.validated testdata-lua/.validated
 CLEANFILES += $(abs_builddir)/testdata-fun/.validated testdata-fun/.validated
 
@@ -703,7 +703,7 @@ run-dmf-lua-test: dmf-lua-test $(abs_builddir)/testdata-lua/.validated
 
 run-dmf-fun-test: dmf-fun-test $(abs_builddir)/testdata-fun/.validated
 	cd $(abs_top_builddir)/scripts/DMF/testdata-fun && DEBUG="$(V)" $(DMF_TEST_RUNNER) $(abs_builddir)/dmf-fun-test
-else
+else !WITH_LUA
 dmf-lua-test:
 	@echo "  SKIP   LUA support was not enabled or detected during project configuration, can not build dmf-lua-test program" >&2
 
@@ -715,8 +715,8 @@ dmf-fun-test:
 
 run-dmf-fun-test:
 	@echo "  SKIP   LUA support was not enabled or detected during project configuration, can not run-dmf-fun-test" >&2
-endif
-else
+endif !WITH_LUA
+else !WITH_DMF
 dmf-lua-test:
 	@echo "  SKIP   DMF support was not enabled or detected during project configuration, can not build dmf-lua-test program" >&2
 
@@ -728,7 +728,7 @@ dmf-fun-test:
 
 run-dmf-fun-test:
 	@echo "  SKIP   DMF support was not enabled or detected during project configuration, can not run test programs" >&2
-endif
+endif !WITH_DMF
 
 dummy:
 
