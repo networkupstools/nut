@@ -167,11 +167,6 @@ if WITH_DMF
 # other libraries we build (typically consumed with libcommonstr.la)
   libnutdmfsnmp_la_LIBADD = $(LIBNETSNMP_LIBS)
 
-if WITH_LIBXML2
-  libnutdmfsnmp_la_LIBADD += $(LIBXML2_LIBS)
-  libnutdmfsnmp_la_CFLAGS += $(LIBXML2_CFLAGS)
-endif WITH_LIBXML2
-
 if WITH_LIBLTDL
 # NOTE: the C macro WITH_LIBLTDL=1 will probably be defined by config.h
 # and unlike the DMF macros, we do not care much about this case.
@@ -190,6 +185,13 @@ if WITH_DMF_LUA
 else !WITH_DMF_LUA
   libnutdmfsnmp_la_CFLAGS += -DWITH_DMF_LUA=0
 endif !WITH_DMF_LUA
+
+# Mention libxml2 last, its search paths seem to upset builds on FreeBSD
+# at least (due to entanglement of SO cross-references).
+if WITH_LIBXML2
+  libnutdmfsnmp_la_LIBADD += $(LIBXML2_LIBS)
+  libnutdmfsnmp_la_CFLAGS += $(LIBXML2_CFLAGS)
+endif WITH_LIBXML2
 
 else !WITH_DMF
   EXTRA_DIST += dmfsnmp.c dmfcore.c alist.c
