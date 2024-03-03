@@ -1,7 +1,8 @@
 /*
  *  Copyright (C) 2011 - 2024  Arnaud Quette <arnaud.quette@free.fr>
  *  Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
- *  Copyright (C) 2016 - 2023 Jim Klimov <EvgenyKlimov@eaton.com>
+ *  Copyright (C) 2016 - 2021 Jim Klimov <EvgenyKlimov@eaton.com>
+ *  Copyright (C) 2022 - 2024 Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,6 +24,7 @@
     \author Arnaud Quette <arnaud.quette@free.fr>
     \author Michal Vyskocil <MichalVyskocil@eaton.com>
     \author Jim Klimov <EvgenyKlimov@eaton.com>
+    \author Jim Klimov <jimklimov+nut@gmail.com>
 */
 
 #include "common.h"	/* Must be first include to pull "config.h" */
