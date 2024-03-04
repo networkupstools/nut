@@ -760,7 +760,11 @@ set | sort -n """
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
                      // Build in a subdirectory to check that out-of-dir
-                     // builds are healthy too
+                     // builds are healthy too.
+                     // NOTE: It would be useful to also have a recipe to build
+                     // "completely out-of-tree", in a different filesystem (to
+                     // make sure we do not rely on hard-links, relative paths,
+                     // etc.)
                      'CI_BUILDDIR=obj',
                      'BUILD_WARNFATAL=yes','BUILD_WARNOPT=minimal'
                     ]
