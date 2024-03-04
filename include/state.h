@@ -32,6 +32,14 @@ extern "C" {
 
 #define ST_SOCK_BUF_LEN 512
 
+#include "timehead.h"
+
+#if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_CLOCK_MONOTONIC) && HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC
+typedef struct timespec	st_tree_timespec_t;
+#else
+typedef struct timeval	st_tree_timespec_t;
+#endif
+
 typedef struct st_tree_s {
 	char	*var;
 	char	*val;			/* points to raw or safe */
@@ -45,6 +53,12 @@ typedef struct st_tree_s {
 	int	flags;
 	long	aux;
 
+	/* When was this entry last written (meaning that
+	 * val/raw/safe, flags, aux, enum or range value
+	 * was added, changed or deleted)?
+	 */
+	st_tree_timespec_t	lastset;
+
 	struct enum_s		*enum_list;
 	struct range_s		*range_list;
 
@@ -52,6 +66,8 @@ typedef struct st_tree_s {
 	struct st_tree_s	*right;
 } st_tree_t;
 
+int state_get_timestamp(st_tree_timespec_t *now);
+int st_tree_node_compare_timestamp(const st_tree_t *node, const st_tree_timespec_t *cutoff);
 int state_setinfo(st_tree_t **nptr, const char *var, const char *val);
 int state_addenum(st_tree_t *root, const char *var, const char *val);
 int state_addrange(st_tree_t *root, const char *var, const int min, const int max);
@@ -67,6 +83,7 @@ void state_infofree(st_tree_t *node);
 void state_cmdfree(cmdlist_t *list);
 int state_delcmd(cmdlist_t **list, const char *cmd);
 int state_delinfo(st_tree_t **root, const char *var);
+int state_delinfo_olderthan(st_tree_t **root, const char *var, const st_tree_timespec_t *cutoff);
 int state_delenum(st_tree_t *root, const char *var, const char *val);
 int state_delrange(st_tree_t *root, const char *var, const int min, const int max);
 st_tree_t *state_tree_find(st_tree_t *node, const char *var);

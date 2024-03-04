@@ -9,6 +9,7 @@
  * Copyright (C) 2016 Carlos Dominguez <CarlosDominguez@eaton.com>
  * Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
  * Copyright (C) 2016-2021 Jim Klimov <EvgenyKlimov@eaton.com>
+ * Copyright (C) 2024 Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -74,10 +75,11 @@
  * places the discovered information into a new entry under the "list" tree,
  * or into dynamically grown arrays "mib2nut_info_t *mib2nut_table" (snmp-ups)
  * and "snmp_device_id_t *device_table" (for nut-scanner), as appropriate.
- * References to these tables can be received with `get_mib2nut_table()` and
- * `get_device_table()` methods. You can also `get_device_table_counter()` to
- * look up the two tables' lengths (they were last `realloc()`ed to this size)
- * including the zeroed-out sentinel last entries, but historically the NUT
+ * References to these tables can be received with `mibdmf_get_mib2nut_table()`
+ * and `mibdmf_get_device_table()` methods. You can also utilize
+ * `mibdmf_get_device_table_counter()` to look up the two tables' lengths
+ * (they were last `realloc()`ed to this size) including the zeroed-out
+ * "sentinels" in their last entries, but historically the NUT table-parsing
  * way consisted of looking through the tables until hitting the sentinel
  * entry and so determining its size or otherwise end of loop - and this
  * remains the official and reliable manner of length determination (not
@@ -117,6 +119,10 @@
 # ifndef WITH_DMF_FUNCTIONS
 #  define WITH_DMF_FUNCTIONS WANT_DMF_FUNCTIONS
 # endif
+#endif
+
+#ifndef WITH_DMF_LUA
+# define WITH_DMF_LUA 0
 #endif
 
 #if WITH_DMF_LUA
@@ -259,7 +265,7 @@ typedef struct {
 
 /* Initialize the data for dmf.c */
 mibdmf_parser_t *
-	mibdmf_parser_new();
+	mibdmf_parser_new(void);
 
 /* Properly destroy the object hierarchy and NULLify the caller's pointer */
 void
@@ -328,7 +334,7 @@ void
 	print_mib2nut_memory_struct (mib2nut_info_t *self);
 
 
-/* Helpers for string comparison (includng NULL consideration); */
+/* Helpers for string comparison (including NULL consideration); */
 bool
 	dmf_streq (const char* x, const char* y);
 
@@ -373,7 +379,7 @@ info_lkp_t *
 	, long (*nuf_s2l)(const char *nut_value)
 	, long (*fun_s2l)(const char *snmp_value)
 	, const char *(*nuf_vp2s)(void *raw_nut_value)
-#endif // WITH_SNMP_LKP_FUN
+#endif /* WITH_SNMP_LKP_FUN */
 	);
 
 /* Destroy and NULLify the reference to alist_t, list of collections */

@@ -1,0 +1,130 @@
+NUT for Windows Installer
+=========================
+
+This component aims to provide an integrated installer for NUT on Windows,
+including registration as the preferred handler of certain USB vendor and
+product identifiers.
+
+Various waves of the NUT for Windows effort happened over the decades, with
+the latest one being integration of the platform-specific source code which
+was previously available in side projects, into the main Network UPS Tools
+project and its continuous-integration builds, between NUT v2.8.0 and v2.8.1
+releases (over 2022-2023 time frame).
+
+NOTE: This document aims to revive institutional knowledge about producing
+a NUT for Windows installer file. Currently builds of NUT for Windows are
+quite possible, they can result in preparation of a tarball of an installed
+directory tree which is immediately usable on Windows. However, separate
+steps may be needed for USB specifically (so that NUT drivers and not the
+default "HID Battery" handler can attach to the device) and for OS Service
+integration. It is assumed that the installer would handle these rituals.
+
+Prerequisites for building NUT for Windows
+------------------------------------------
+
+Please see the documentation provided with the NUT sources about prerequisites
+needed for semi-native builds (on Windows using MinGW x64 and MSYS2 projects)
+and cross-builds (on Linux with mingw64 packages):
+
+* linkdoc:/docs/config-prereqs.txt
+* linkdoc:/scripts/Windows/README.adoc
+
+With these dependencies in place, the common NUT `ci_build.sh` script can be
+used to wrap the typical configuration, build and installation procedures.
+Similar results can be of course achieved by direct use of the `configure`
+script, which may be the way to go particularly for customized builds.
+
+See also `scripts/Windows/build-mingw-nut.sh` for the cross-build wrapper
+details.
+
+Prerequisites for building the installer
+----------------------------------------
+
+NUT for Windows uses the WiX Toolset to codify and implement the installer:
+
+* https://wixtoolset.org/
+* https://wixtoolset.org/docs/intro/
+* https://wixtoolset.org/docs/tools/wixexe/
+* https://wixtoolset.org/docs/tools/heat/
+* link:https://wixtoolset.org/docs/v3/overview/candle/[candle.exe] and
+  link:https://wixtoolset.org/docs/v3/overview/light/[light.exe] tools
+  were used in current scripts (dating from 2013) but were obsoleted
+  after WiX v3 and became part of `wix.exe` according to
+  https://wixtoolset.org/docs/fourthree/ update notes
+* https://github.com/wixtoolset/
+* https://github.com/wixtoolset/wix/
+
+The toolset in turn requires the .NET framework (and the related NuGet tool)
+which is available on Windows and Linux platforms, at least. In case of the
+latter (for cross-builds) note that many of the newer distribution releases
+should include dotnet packages in their repositories; for earlier releases
+a Microsoft repository can be added -- as detailed in their documentation:
+
+* https://learn.microsoft.com/en-us/dotnet/core/install/linux
+* https://dotnet.microsoft.com/en-us/download
+* https://www.nuget.org/downloads
+
+For example, on Ubuntu the installation can be performed like this:
+----
+:; sudo apt-get update && \
+   sudo apt-get install -y dotnet-sdk-7.0 nuget
+----
+
+NOTE: For installation on Ubuntu 20.04 and older, where an additional
+package repository is required, please see instructions at
+https://learn.microsoft.com/en-us/dotnet/core/install/linux-ubuntu-2004
+
+Subsequent installation of the toolset on either platform would be:
+----
+:; dotnet tool install --global wix
+----
+
+Maintaining the recipes and building the installer artifact
+-----------------------------------------------------------
+
+NOTE: To be investigated, modernized and completed per
+https://github.com/networkupstools/nut/issues/1485
+
+Files were not touched considerably since 2013 (or earlier?) and would
+likely need deeper investigation and update to be useful. Findings so far:
+
+- Directory `scripts/Windows/DriverInstaller` contains a helper
+  program (currently named `wdi-simple`) for driver installation
+
+- Directory `scripts/Windows/Installer` (with this document) contains
+  the batch file script to call WiX tools (currently geared for WiX v3
+  or older) and the XML file which describes the installer actions and
+  the file/directory structures it would deliver.
+  * It would be helpful to find how to generate the filesystem structure
+    (names, `GUID`s, what else?) based on the prototype area prepared by
+    `make install DESTDIR=...` during a NUT build. It does not have to
+    be part of *every* build (e.g. we can want this separated by driver
+    types to allow end-users to install just a subset of NUT, similar
+    to how this happens with multi-package approach on Unix/Linux) but
+    an automated process which makes maintenance easier would be great:
+    let a human sort where different filenames are categorized, and let
+    automation discover that some installed files are not mentioned or
+    some listed files are not present.
+
+- Directory `scripts/Windows/Installer/ImageFiles` contains various
+  resources used by the installer, including apparently `Others/` for
+  third-party files and `emptyDir` as a target for NUT `make install`?
+  * This may be moderately compatible with what the Makefile driven
+    installation does with current codebase -- especially how it pulls
+    third-party library DLL files into the prototype install area.
+
+- The `scripts/Windows/wininit.c` program provides a rough equivalent
+  to POSIX init scripts, to wrap various NUT daemons as a single unit.
+  Its git history saw several re-architecting decisions, so if there
+  are any concerns if the current version does "the right thing", we
+  have some precedent ideas to look at. To a lesser extent, similar
+  code might have appeared and disappeared in the Windows-branch code
+  of daemons like `upsd` and `upsmon` before it condensed in this one.
+
+The batch file and the XML manifest currently list a few libraries from
+msys/mingw (as of back when this was coded). Current Makefile recipes
+take a more active approach by walking the dynamic dependencies of the
+built NUT binaries to copy those from the build environment.
+
+The batch file takes care to pass sample configuration and documentation
+files through `unix2dos` -- keep this in mind for new implementations.

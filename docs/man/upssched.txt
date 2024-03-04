@@ -8,6 +8,7 @@ upssched - Timer helper for scheduling events from upsmon
 
 SYNOPSIS
 --------
+
 *upssched*
 
 NOTE: *upssched* should be run from linkman:upsmon[8] via the NOTIFYCMD.
@@ -100,6 +101,25 @@ when there are none running.  If the timer daemon isn't running, there
 are no timers to cancel, and furthermore there is no need to start
 a clock-watcher.  So, it skips that step and exits sooner.
 
+ENVIRONMENT VARIABLES
+---------------------
+
+*NUT_DEBUG_LEVEL* sets default debug verbosity if no *-D* arguments
+were provided on command line, but does not request that the daemon
+runs in foreground mode.
+
+NOTE: Unlike some other NUT daemons, `upssched` with enabled debug
+does not stop reporting on `stderr`! It forks a background process
+with the first call as an event handler, which exits soon after all
+tracked timers have elapsed and were handled (if needed).
+
+*UPSNAME* and *NOTIFYTYPE* are required, as detailed above. They are
+set by `upsmon` when it calls `upssched` as its choice of `NOTIFYCMD`.
+
+*NUT_CONFPATH* is the path name of the directory that contains
+`upssched.conf` and other configuration files.  If this variable is not set,
+*upssched* uses a built-in default, which is often `/usr/local/ups/etc`.
+
 FILES
 -----
 
@@ -112,4 +132,5 @@ linkman:upsmon[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

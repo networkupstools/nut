@@ -3,7 +3,7 @@
  * do not crash).
  *
  * Copyright (C)
- *	2020	Jim Klimov <jimklimov@gmail.com>
+ *	2020-2023	Jim Klimov <jimklimov@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
+
+#include "config.h"
 #include "common.h"
 
 int main(void) {
@@ -29,7 +31,9 @@ int main(void) {
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wformat-overflow"
 #endif
-    upsdebugx(0, "D: checking with libc handling of NULL: '%s' vs '%s'", s1, s2);
+
+    upsdebugx(0, "D: checking with libc handling of NULL (can segfault for some libc implementations):");
+    upsdebugx(0, "D:   '%s' vs '%s'", s1, s2);
 
 /* This explicitly does not work with -Wformat, due to verbatim NULL without a var:
  * nutlogtest.c:20:5: error: reading through null pointer (argument 4) [-Werror=format=]

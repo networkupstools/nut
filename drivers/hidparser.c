@@ -202,7 +202,7 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 
 				/* Remove Usage */
 				pParser->UsageSize--;
-		        }
+			}
 
 			/* Get Index if any */
 			if (pParser->Value >= 0x80) {
@@ -361,7 +361,7 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 		upslogx(LOG_ERR, "%s: HID Usage too high", __func__);
 
 	/* FIXME: comparison is always false due to limited range of data type [-Werror=type-limits]
-	 * with ReportID beint uint8_t and MAX_REPORT being 500 currently */
+	 * with ReportID being uint8_t and MAX_REPORT being 500 currently */
 	/*
 	if(pParser->Data.ReportID >= MAX_REPORT)
 		upslogx(LOG_ERR, "%s: Too many HID reports", __func__);
@@ -433,6 +433,35 @@ HIDData_t *FindObject_with_ID(HIDDesc_t *pDesc_arg, uint8_t ReportID, uint8_t Of
 		}
 
 		if (pData->Offset != Offset) {
+			continue;
+		}
+
+		return pData;
+	}
+
+	return NULL;
+}
+
+/*
+ * FindObject_with_ID_Node
+ * Get pData item with given ReportID and Node. Return NULL if not found.
+ * -------------------------------------------------------------------------- */
+HIDData_t *FindObject_with_ID_Node(HIDDesc_t *pDesc_arg, uint8_t ReportID, HIDNode_t Node)
+{
+	size_t	i;
+
+	for (i = 0; i < pDesc_arg->nitems; i++) {
+		HIDData_t	*pData = &pDesc_arg->item[i];
+		HIDPath_t	*pPath;
+		uint8_t	size;
+
+		if (pData->ReportID != ReportID) {
+			continue;
+		}
+
+		pPath = &pData->Path;
+		size = pPath->Size;
+		if (size == 0 || pPath->Node[size-1] != Node) {
 			continue;
 		}
 

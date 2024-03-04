@@ -25,6 +25,7 @@
 
 #include "common.h"
 #include "nut-scan.h"
+#include "nut_stdint.h"
 
 /* Need this on AIX when using xlc to get alloca */
 #ifdef _AIX
@@ -89,7 +90,7 @@ static pthread_mutex_t dev_mutex;
 
 /* Fake driver main, for using serial functions, needed for bcmxcp_ser.c */
 char  *device_path;
-int   upsfd;
+TYPE_FD   upsfd;
 int   exit_flag = 0;
 int   do_lock_port;
 
@@ -131,7 +132,7 @@ unsigned char calc_checksum(const unsigned char *buf)
 
 /* Light version of of drivers/libshut.c->shut_synchronise()
  * return 1 if OK, 0 otherwise */
-static int shut_synchronise(int arg_upsfd)
+static int shut_synchronise(TYPE_FD_SER arg_upsfd)
 {
 	int try;
 	unsigned char reply = '\0';
@@ -161,9 +162,9 @@ static int shut_synchronise(int arg_upsfd)
 static nutscan_device_t * nutscan_scan_eaton_serial_shut(const char* port_name)
 {
 	nutscan_device_t * dev = NULL;
-	int devfd = -1;
+	TYPE_FD_SER devfd = ser_open_nf(port_name);
 
-	if ((devfd = ser_open_nf(port_name)) != -1) {
+	if (VALID_FD_SER(devfd)) {
 		/* set RTS to off and DTR to on to allow correct behavior
 		 * with UPS using PnP feature */
 		if (ser_set_dtr(devfd, 1) != -1) {
@@ -210,14 +211,15 @@ static nutscan_device_t * nutscan_scan_eaton_serial_shut(const char* port_name)
 static nutscan_device_t * nutscan_scan_eaton_serial_xcp(const char* port_name)
 {
 	nutscan_device_t * dev = NULL;
-	int i, devfd = -1;
+	int i;
 	ssize_t ret;
 	unsigned char	answer[256];
 	unsigned char	sbuf[128];
+	TYPE_FD_SER devfd = ser_open_nf(port_name);
 
 	memset(sbuf, 0, 128);
 
-	if ((devfd = ser_open_nf(port_name)) != -1) {
+	if (VALID_FD_SER(devfd)) {
 #ifdef HAVE_PTHREAD
 		pthread_mutex_lock(&dev_mutex);
 #endif
@@ -303,10 +305,10 @@ static nutscan_device_t * nutscan_scan_eaton_serial_q1(const char* port_name)
 	struct termios tio;
 	ssize_t ret = 0;
 	int retry;
-	int devfd = -1;
 	char buf[128];
+	TYPE_FD_SER devfd = ser_open_nf(port_name);
 
-	if ((devfd = ser_open_nf(port_name)) != -1) {
+	if (VALID_FD_SER(devfd)) {
 		if (ser_set_speed_nf(devfd, port_name, B2400) != -1) {
 
 			if (!tcgetattr(devfd, &tio)) {
@@ -399,8 +401,10 @@ static void * nutscan_scan_eaton_serial_device(void * port_arg)
 nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 {
 	bool_t pass = TRUE; /* Track that we may spawn a scanning thread */
+#ifndef WIN32
 	struct sigaction oldact;
 	int change_action_handler = 0;
+#endif
 	char *current_port_name = NULL;
 	char **serial_ports_list;
 	int  current_port_nb;
@@ -421,6 +425,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 		return NULL;
 	}
 
+#ifndef WIN32
 	/* Ignore SIGPIPE if the caller hasn't set a handler for it yet */
 	if (sigaction(SIGPIPE, NULL, &oldact) == 0) {
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
@@ -435,6 +440,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 # pragma GCC diagnostic pop
 #endif
 	}
+#endif
 
 	/* port(s) iterator */
 	current_port_nb = 0;
@@ -474,8 +480,8 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 		 * other protocol scanners...
 		 */
 		if (curr_threads >= max_threads) {
-			upsdebugx(2, "%s: already running %zu scanning threads "
-				"(launched overall: %zu), "
+			upsdebugx(2, "%s: already running %" PRIuSIZE " scanning threads "
+				"(launched overall: %" PRIuSIZE "), "
 				"waiting until some would finish",
 				__func__, curr_threads, thread_count);
 			while (curr_threads >= max_threads) {
@@ -489,12 +495,12 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 					ret = pthread_tryjoin_np(thread_array[i].thread, NULL);
 					switch (ret) {
 						case ESRCH:     /* No thread with the ID thread could be found - already "joined"? */
-							upsdebugx(5, "%s: Was thread #%zu joined earlier?", __func__, i);
+							upsdebugx(5, "%s: Was thread #%" PRIuSIZE " joined earlier?", __func__, i);
 							break;
 						case 0:         /* thread exited */
 							if (curr_threads > 0) {
 								curr_threads --;
-								upsdebugx(4, "%s: Joined a finished thread #%zu", __func__, i);
+								upsdebugx(4, "%s: Joined a finished thread #%" PRIuSIZE, __func__, i);
 							} else {
 								/* threadcount_mutex fault? */
 								upsdebugx(0, "WARNING: %s: Accounting of thread count "
@@ -503,13 +509,13 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 							thread_array[i].active = FALSE;
 							break;
 						case EBUSY:     /* actively running */
-							upsdebugx(6, "%s: thread #%zu still busy (%i)",
+							upsdebugx(6, "%s: thread #%" PRIuSIZE " still busy (%i)",
 								__func__, i, ret);
 							break;
 						case EDEADLK:   /* Errors with thread interactions... bail out? */
 						case EINVAL:    /* Errors with thread interactions... bail out? */
 						default:        /* new pthreads abilities? */
-							upsdebugx(5, "%s: thread #%zu reported code %i",
+							upsdebugx(5, "%s: thread #%" PRIuSIZE " reported code %i",
 								__func__, i, ret);
 							break;
 					}
@@ -533,13 +539,14 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 
 #ifdef HAVE_PTHREAD
 			if (pthread_create(&thread, NULL, nutscan_scan_eaton_serial_device, (void*)current_port_name) == 0) {
+				nutscan_thread_t	*new_thread_array;
 # ifdef HAVE_PTHREAD_TRYJOIN
 				pthread_mutex_lock(&threadcount_mutex);
 				curr_threads++;
 # endif /* HAVE_PTHREAD_TRYJOIN */
 
 				thread_count++;
-				nutscan_thread_t *new_thread_array = realloc(thread_array,
+				new_thread_array = realloc(thread_array,
 					thread_count * sizeof(nutscan_thread_t));
 				if (new_thread_array == NULL) {
 					upsdebugx(1, "%s: Failed to realloc thread array", __func__);
@@ -572,7 +579,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 					if (!thread_array[i].active) {
 						/* Probably should not get here,
 						 * but handle it just in case */
-						upsdebugx(0, "WARNING: %s: Midway clean-up: did not expect thread %zu to be not active",
+						upsdebugx(0, "WARNING: %s: Midway clean-up: did not expect thread %" PRIuSIZE " to be not active",
 							__func__, i);
 						sem_post(semaphore);
 						continue;
@@ -619,7 +626,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 			pthread_mutex_lock(&threadcount_mutex);
 			if (curr_threads > 0) {
 				curr_threads --;
-				upsdebugx(5, "%s: Clean-up: Joined a finished thread #%zu",
+				upsdebugx(5, "%s: Clean-up: Joined a finished thread #%" PRIuSIZE,
 					__func__, i);
 			} else {
 				upsdebugx(0, "WARNING: %s: Clean-up: Accounting of thread count "
@@ -635,6 +642,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 	pthread_mutex_destroy(&dev_mutex);
 #endif /* HAVE_PTHREAD */
 
+#ifndef WIN32
 	if (change_action_handler) {
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
 # pragma GCC diagnostic push
@@ -645,6 +653,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 # pragma GCC diagnostic pop
 #endif
 	}
+#endif /* WIN32 */
 
 	/* free everything... */
 	i = 0;

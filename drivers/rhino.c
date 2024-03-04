@@ -34,10 +34,11 @@
 #include "main.h"
 #include "serial.h"
 #include "nut_float.h"
+#include "nut_stdint.h"
 #include "timehead.h"
 
-#define DRIVER_NAME		"Microsol Rhino UPS driver"
-#define DRIVER_VERSION	"0.52"
+#define DRIVER_NAME	"Microsol Rhino UPS driver"
+#define DRIVER_VERSION	"0.53"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -394,7 +395,7 @@ CommReceive(const unsigned char *bufptr, ssize_t size)
 	if( size == 37 )
 		Waiting = 0;
 
-	printf("CommReceive size = %zd waiting = %d\n", size, Waiting );
+	printf("CommReceive size = %" PRIiSIZE " waiting = %d\n", size, Waiting );
 
 	switch( Waiting )
 	{

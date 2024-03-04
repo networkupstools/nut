@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # The pipeline to convert legacy *-mib.c files with structures into new DMF
 # markup involves parsing the C code. The pycparser (Python module) used
@@ -9,6 +9,7 @@
 #
 #    Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
 #    Copyright (C) 2016 - 2021 Jim Klimov <EvgenyKlimov@eaton.com>
+#    Copyright (C) 2022 - 2024 Jim Klimov <jimklimov+nut@gmail.com>
 #
 
 [ -n "${CPP-}" ] || CPP="cpp"
@@ -21,50 +22,59 @@
 set -o pipefail
 #set -exv
 
-echo "PREPROCESS: ( cd `pwd` && $CPP $CFLAGS $CPPFLAGS $* )" >&2
+# Hush when "make V=0"
+if [ x"${DEBUG-}" = x -o x"${DEBUG-}" = x1 -o x"${V-}" = x1 ] ; then
+    echo "PREPROCESS: ( cd `pwd` && $CPP $CFLAGS $CPPFLAGS $* )" >&2
+fi
 
 do_filter() {
 
+if [ "${DEBUG_NUT_CPP_DISABLE_FILTER-}" = "true" ] ; then
+    cat
+    return
+fi
+
+# NOTE: "Directives not supported yet" in practice means #include <...>
+# ones which were hidden by ifdef's but now pop up in pre-processed text
+# somehow... So we filter those out too.
+
+# \t in sed is not always portable, better use raw char value
+TABCHAR="`printf '\t'`"
+SPACETAB="[ $TABCHAR]"
+
 # tee temp-cpp-orig.tmp | \
 sed \
-    -e '/^[ \t]*$/d' \
-    -e 's/^[ \t]*;/;/g' | \
+    -e '/^'"${SPACETAB}"'*$/d' \
+    -e '/^'"${SPACETAB}"'*#'"${SPACETAB}"'*include/d' \
+    -e 's/^'"${SPACETAB}"'*;/;/g' | \
 perl -0pe 's/\n([^#].*)\n;/\n$1;\n/g' | \
 sed \
-    -e 's/ __asm(.*)$/;/' \
-    -e 's/__asm__ (.*);/;/' \
-    -e 's/__attribute__ ((visibility("default"))) //' \
-    -e 's/__attribute__((noreturn))//' \
-    -e 's/__attribute__((unused))//' \
-    -e 's/__attribute__((aligned(8)));/;/' \
-    -e 's/__attribute__((availability(.*)));/;/' \
-    -e 's/__attribute__((availability(.*)))//' \
-    -e 's/__attribute__((format.*)));$/;/' \
-    -e 's/__inline__/inline/' \
-    -e 's/__signed__/signed/' \
-    -e 's/__unsigned__/unsigned/' \
+    -e 's/__asm_*'"${SPACETAB}"'*(.*)'"${SPACETAB}"'*;/;/g' \
+    -e 's/__attribute__'"${SPACETAB}"'*((['"${SPACETAB}"'*__[A-Za-z0-9_-]*__'"${SPACETAB}"'*([^()]*)))'"${SPACETAB}"'*/ /g' \
+    -e 's/__attribute__'"${SPACETAB}"'*((__aligned__([^()]*([^()]*))))'"${SPACETAB}"'*/ /g' \
+    -e 's/__attribute__'"${SPACETAB}"'*((aligned([0-9]*)))'"${SPACETAB}"'*/ /g' \
+    -e 's/__attribute__'"${SPACETAB}"'*(([^()]*))'"${SPACETAB}"'*/ /g' \
+    -e 's/__inline__/inline/g' \
+    -e 's/__signed__/signed/g' \
+    -e 's/__unsigned__/unsigned/g' \
     -e 's/__THROW;$/;/' \
-    -e 's/__END_DECLS//' \
-    -e 's/__BEGIN_DECLS//' \
-    -e 's/void (\*signal(int, void (\*)(int)))(int);//' \
-    -e 's/__attribute__ ((__nothrow__ , __leaf__)) __attribute__ ((__const__));/;/' \
-    -e 's/__attribute__ ((__mode__ (__[A-Z][A-Z]__)));/;/' \
-    -e 's/__attribute__ ((__mode__ (__word__)));/;/' \
-    -e 's/__attribute__ ((__nothrow__ , __leaf__));/;/' \
-    -e 's/__attribute__ ((__nonnull__ ([0-9])));/;/' \
-    -e 's/__attribute__ ((__nothrow__ , __leaf__)) //' \
-    -e 's/__attribute__ ((__nothrow__ , __leaf__)) __attribute__ ((__malloc__)) ;/;/' \
-    -e 's/__attribute__ ((__const__))//' \
-    -e 's/__attribute__.*;/;/' \
-    -e 's/static __inline/static/' \
-    -e 's/__extern_inline/extern/' \
-    -e 's/extern __inline/extern/' \
-    -e 's/_Float[0-9]*x*/float/' \
+    -e 's/__END_DECLS//g' \
+    -e 's/__BEGIN_DECLS//g' \
+    -e 's/void'"${SPACETAB}"'(\*signal(int, void (\*)(int)))(int);//g' \
+    -e 's/static'"${SPACETAB}"'__inline/static/g' \
+    -e 's/static'"${SPACETAB}"'*;/;/g' \
+    -e 's/__extern_inline/extern/g' \
+    -e 's/extern'"${SPACETAB}"'__inline/extern/g' \
+    -e 's/_Float[0-9]*x*/float/g' \
     -e 's/__restrict//g' \
-    -e 's/__extension__//' \
-    -e 's/[ \t]_Noreturn[ \t]/ /' \
-    -e 's/__NORETURN_*//' \
-    -e 's/__builtin_va_list/int/'
+    -e 's/_*_Nullable//g' \
+    -e 's/_*_Nonnull//g' \
+    -e 's/_Thread_local//g' \
+    -e 's/__extension__//g' \
+    -e 's/'"${SPACETAB}"'_Noreturn'"${SPACETAB}"'/ /g' \
+    -e 's/^_Noreturn'"${SPACETAB}"'/ /g' \
+    -e 's/__NORETURN_*//g' \
+    -e 's/__builtin_va_list/int/g'
 } # // end of do_filter()
 
 # Repeat same filter a few times to strip appearing blank lines and trailing semicolons
@@ -76,7 +86,10 @@ $CPP $CFLAGS $CPPFLAGS "${@}" | \
 
 RET=$?
 if [ "$RET" = 0 ]; then
-    echo "INFO: CPP+SED passed OK" >&2
+    # Hush when "make V=0"
+    if [ x"${DEBUG-}" = x -o x"${DEBUG-}" = x1 -o x"${V-}" = x1 ] ; then
+        echo "INFO: CPP+SED passed OK" >&2
+    fi
 else
     echo "ERROR: CPP+SED returned code $RET" >&2
     # Invalidate the C code so pycparser detects the problem early

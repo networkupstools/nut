@@ -48,7 +48,7 @@
 #include "timehead.h"
 
 #define DRIVER_NAME	"Microsol Solis UPS driver"
-#define DRIVER_VERSION	"0.68"
+#define DRIVER_VERSION	"0.69"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -413,16 +413,18 @@ static void scan_received_pack(void) {
 				OutVoltage = RecPack[1] * a *  TENSAO_SAIDA_F1_MI[configRelay] + TENSAO_SAIDA_F2_MI[configRelay];
 			}
 		} else {
+			double	RealPower, potVA1, potVA2, potLin, potRe;
+
 			OutCurrent = (float)(corrente_saida_F1_MR * RecPack[5] + corrente_saida_F2_MR);
 			OutVoltage = RecPack[1] * TENSAO_SAIDA_F1_MR[configRelay] + TENSAO_SAIDA_F2_MR[configRelay];
 			AppPower = OutCurrent * OutVoltage;
 
-			double RealPower = (RecPack[7] + RecPack[8] * 256);
+			RealPower = (RecPack[7] + RecPack[8] * 256);
 
-			double potVA1 = 5.968 * AppPower - 284.36;
-			double potVA2 = 7.149 * AppPower - 567.18;
-			double potLin = 0.1664 * RealPower + 49.182;
-			double potRe = 0.1519 * RealPower + 32.644;
+			potVA1 = 5.968 * AppPower - 284.36;
+			potVA2 = 7.149 * AppPower - 567.18;
+			potLin = 0.1664 * RealPower + 49.182;
+			potRe = 0.1519 * RealPower + 32.644;
 			if (fabs(potVA1 - RealPower) < fabs(potVA2 - RealPower))
 				RealPower = potLin;
 			else
@@ -765,13 +767,13 @@ static void get_base_info(void) {
 		/* synchronization failed */
 		fatalx(EXIT_FAILURE, NO_SOLIS);
 	} else {
-		upsdebugx(4, "%s: requesting %zu bytes from ser_get_buf_len()", __func__, packet_size);
+		upsdebugx(4, "%s: requesting %" PRIuSIZE " bytes from ser_get_buf_len()", __func__, packet_size);
 		tam = ser_get_buf_len(upsfd, packet, packet_size, 3, 0);
 		if (tam < 0) {
-			upsdebugx(0, "%s: Error (%zd) reading from ser_get_buf_len()", __func__, tam);
+			upsdebugx(0, "%s: Error (%" PRIiSIZE ") reading from ser_get_buf_len()", __func__, tam);
 			fatalx(EXIT_FAILURE, NO_SOLIS);
 		}
-		upsdebugx(2, "%s: received %zd bytes from ser_get_buf_len()", __func__, tam);
+		upsdebugx(2, "%s: received %" PRIiSIZE " bytes from ser_get_buf_len()", __func__, tam);
 		if (tam > 0 && nut_debug_level >= 4) {
 			upsdebug_hex(4, "received from ser_get_buf_len()", packet, (size_t)tam);
 		}
@@ -875,15 +877,15 @@ static void get_update_info(void) {
 	/* get update package */
 	temp[0] = 0; /* flush temp buffer */
 
-	upsdebugx(3, "%s: requesting %zu bytes from ser_get_buf_len()", __func__, packet_size);
+	upsdebugx(3, "%s: requesting %" PRIuSIZE " bytes from ser_get_buf_len()", __func__, packet_size);
 	tam = ser_get_buf_len(upsfd, temp, packet_size, 3, 0);
 
 	if (tam < 0) {
-		upsdebugx(0, "%s: Error (%zd) reading from ser_get_buf_len()", __func__, tam);
+		upsdebugx(0, "%s: Error (%" PRIiSIZE ") reading from ser_get_buf_len()", __func__, tam);
 		fatalx(EXIT_FAILURE, NO_SOLIS);
 	}
 
-	upsdebugx(2, "%s: received %zd bytes from ser_get_buf_len()", __func__, tam);
+	upsdebugx(2, "%s: received %" PRIiSIZE " bytes from ser_get_buf_len()", __func__, tam);
 	if(tam > 0 && nut_debug_level >= 4)
 		upsdebug_hex(4, "received from ser_get_buf_len()", temp, (size_t)tam);
 

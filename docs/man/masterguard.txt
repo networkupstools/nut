@@ -3,19 +3,36 @@ MASTERGUARD(8)
 
 NAME
 ----
+
 masterguard - Driver for Masterguard UPS equipment
 
-NOTES
------
-This man page only documents the hardware-specific features of the
+SYNOPSIS
+--------
+
+*masterguard* -h
+
+*masterguard* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 masterguard driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
-There's a much newer and more comprehensive driver based on the Q*
-framework that also supports USB, see linkman:nutdrv_qx[8].
+NOTE
+----
+
+Please note that this driver is deprecated and will not receive
+new development. If it works for managing your devices -- fine,
+but if you are running it to try setting up a new device, please
+consider the newer linkman:nutdrv_qx[8] instead, which should
+handle all 'Q*' protocol variants for NUT.
+
+Please do also report if your device works with this driver,
+but linkman:nutdrv_qx[8] would not actually support it with any
+subdriver!
 
 SUPPORTED HARDWARE
 ------------------
+
 This driver supports Masterguard UPS equipment (serial connection only).
 
 EXTRA ARGUMENTS
@@ -26,6 +43,7 @@ Cancel the shutdown procedure.
 
 AUTHOR
 ------
+
 Michael Spanier <mail@michael-spanier.de>
 
 SEE ALSO
@@ -33,12 +51,15 @@ SEE ALSO
 
 Newer driver:
 ~~~~~~~~~~~~~
+
 linkman:nutdrv_qx[8]
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

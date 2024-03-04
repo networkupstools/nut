@@ -1,9 +1,10 @@
 /*
  *  Copyright (C)
  *    2011 - EATON
- *    2012 - Arnaud Quette <arnaud.quette@free.fr>
+ *    2012 - 2024 Arnaud Quette <arnaud.quette@free.fr>
  *    2016 - EATON - IP addressed XML scan
- *    2016-2021 - EATON - Various threads-related improvements
+ *    2016 - 2021 - EATON - Various threads-related improvements
+ *    2023 - 2024 - Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,14 +32,36 @@
 #ifndef NUT_SCAN_H
 #define NUT_SCAN_H
 
-#include "config.h"
 #include <sys/types.h>
-#include "nut_stdint.h"
 
-#include <nutscan-init.h>
-#include <nutscan-device.h>
-#include <nutscan-ip.h>
-#include <timehead.h>
+/* Ensure uint16_t et al: */
+#if defined HAVE_INTTYPES_H
+#  include <inttypes.h>
+#endif
+
+#if defined HAVE_STDINT_H
+#  include <stdint.h>
+#endif
+
+#if defined HAVE_LIMITS_H
+#  include <limits.h>
+#endif
+
+/* Ensure useconds_t et al: */
+#ifdef TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
+
+#include "nutscan-init.h"
+#include "nutscan-device.h"
+#include "nutscan-ip.h"
 
 #ifdef WITH_IPMI
 #include <freeipmi/freeipmi.h>
@@ -105,10 +128,10 @@ typedef struct nutscan_ipmi {
   #define IPMI_AUTHENTICATION_TYPE_STRAIGHT_PASSWORD_KEY 0x04
   #define IPMI_AUTHENTICATION_TYPE_OEM_PROP              0x05
   #define IPMI_AUTHENTICATION_TYPE_RMCPPLUS              0x06
-#endif
+#endif /* IPMI_AUTHENTICATION_TYPE_NONE */
 #ifndef IPMI_PRIVILEGE_LEVEL_ADMIN
   #define IPMI_PRIVILEGE_LEVEL_ADMIN                     0x04
-#endif
+#endif /* IPMI_PRIVILEGE_LEVEL_ADMIN */
 
 #define IPMI_1_5		1
 #define IPMI_2_0		0
@@ -121,16 +144,32 @@ typedef struct nutscan_xml {
 	char *peername;		/* Hostname or NULL for broadcast mode */
 } nutscan_xml_t;
 
+/* USB scan options structure */
+typedef struct nutscan_usb {
+	/* Hardware link related values below are not reliable for run-time
+	 * matching (they can change over time) but can be useful if e.g.
+	 * "serial" is not available or unique */
+	int report_bus;
+	int report_busport;
+	int report_device;
+
+	/* The value is not currently used for device matching, but might be
+	 * used later, and it is available from discovery */
+	int report_bcdDevice;
+} nutscan_usb_t;
+
 /* Scanning */
 nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip, useconds_t usec_timeout, nutscan_snmp_t * sec);
 
-nutscan_device_t * nutscan_scan_usb(void);
+nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts);
 
 /* If "ip" == NULL, do a broadcast scan */
 /* If sec->usec_timeout <= 0 then the common usec_timeout arg overrides it */
 nutscan_device_t * nutscan_scan_xml_http_range(const char *start_ip, const char *end_ip, useconds_t usec_timeout, nutscan_xml_t * sec);
 
 nutscan_device_t * nutscan_scan_nut(const char * startIP, const char * stopIP, const char * port, useconds_t usec_timeout);
+
+nutscan_device_t * nutscan_scan_nut_simulation(void);
 
 nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout);
 
@@ -149,6 +188,11 @@ sem_t * nutscan_semaphore(void);
 /* Display functions */
 void nutscan_display_ups_conf(nutscan_device_t * device);
 void nutscan_display_parsable(nutscan_device_t * device);
+
+/* Display sanity-check concerns for various fields etc. (if any) */
+void nutscan_display_ups_conf_with_sanity_check(nutscan_device_t * device);
+void nutscan_display_sanity_check(nutscan_device_t * device);
+void nutscan_display_sanity_check_serial(nutscan_device_t * device);
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */

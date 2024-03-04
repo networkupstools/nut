@@ -1,40 +1,76 @@
-/* nutipc.cpp - NUT IPC
+/*
+    nutipc.cpp - NUT IPC
 
-   Copyright (C) 2012 Eaton
+    Copyright (C) 2012 Eaton
 
-   Author: Vaclav Krpec  <VaclavKrpec@Eaton.com>
+        Author: Vaclav Krpec  <VaclavKrpec@Eaton.com>
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
+
+#include "config.h"
+
+/* For C++ code below, we do not actually use the fallback time methods
+ * (on mingw mostly), but in C++ context they happen to conflict with
+ * time.h or ctime headers, while native-C does not. Just disable the
+ * fallback localtime_r(), gmtime_r() etc. if/when NUT common.h gets
+ * included by the header chain:
+ */
+#ifndef HAVE_GMTIME_R
+# define HAVE_GMTIME_R 111
+#endif
+#ifndef HAVE_LOCALTIME_R
+# define HAVE_LOCALTIME_R 111
+#endif
 
 #include "nutipc.hpp"
 #include "nutstream.hpp"
-#include "config.h"
 
 #include <iostream>
 
 
 namespace nut {
 
-pid_t Process::getPID() throw() {
+/* Trivial implementations out of class declaration to avoid
+ * error: 'ClassName' has no out-of-line virtual method definitions; its vtable
+ *   will be emitted in every translation unit [-Werror,-Wweak-vtables]
+ */
+Process::Main::~Main() {}
+Signal::Handler::~Handler() {}
+
+pid_t Process::getPID()
+#if (defined __cplusplus) && (__cplusplus < 201100)
+	throw()
+#endif
+{
 	return getpid();
 }
 
 
-pid_t Process::getPPID() throw() {
+pid_t Process::getPPID()
+#if (defined __cplusplus) && (__cplusplus < 201100)
+	throw()
+#endif
+{
+#ifdef WIN32
+	/* FIXME: Detect HAVE_GETPPID in configure; throw exceptions here?..
+	 * NOTE: Does not seem to be currently used in nutconf codebase. */
+	return -1;
+#else
 	return getppid();
+#endif
 }
 
 
@@ -133,7 +169,7 @@ Process::Executor::Executor(const std::string & command) {
 
 
 int Process::Executor::operator () ()
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 	throw(std::runtime_error)
 #endif
 {
@@ -151,14 +187,14 @@ int Process::Executor::operator () ()
 		args_c_str[i] = (*arg).c_str();
 	}
 
-	args_c_str[i] = NULL;
+	args_c_str[i] = nullptr;
 
-	int status = ::execvp(bin_c_str, (char * const *)args_c_str);
+	int status = ::execvp(bin_c_str, const_cast<char * const *>(args_c_str));
 
 	// Upon successful execution, the execvp function never returns
 	// (since the process context is replaced, completely)
 
-	delete args_c_str;
+	delete[] args_c_str;
 
 	std::stringstream e;
 
@@ -169,7 +205,7 @@ int Process::Executor::operator () ()
 
 
 int sigPipeWriteCmd(int fh, void * cmd, size_t cmd_size)
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 	throw(std::runtime_error)
 #endif
 {
@@ -178,11 +214,11 @@ int sigPipeWriteCmd(int fh, void * cmd, size_t cmd_size)
 	do {
 		ssize_t written = ::write(fh, cmd_bytes, cmd_size);
 
-		if (-1 == written)
+		if (written < 0)
 			return errno;
 
 		cmd_bytes += written;
-		cmd_size  -= written;
+		cmd_size  -= static_cast<size_t>(written);
 
 	} while (cmd_size);
 
@@ -191,12 +227,21 @@ int sigPipeWriteCmd(int fh, void * cmd, size_t cmd_size)
 
 
 int Signal::send(Signal::enum_t signame, pid_t pid)
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 	throw(std::logic_error)
 #endif
 {
-	int sig = (int)signame;
+	int sig = static_cast<int>(signame);
+#ifdef WIN32
+	/* FIXME: Implement (for NUT processes) via pipes?
+	 * See e.g. upsdrvctl implementation. */
+	std::stringstream e;
 
+	e << "Can't send signal " << sig << " to PID " << pid <<
+			": not implemented on this platform yet";
+
+	throw std::logic_error(e.str());
+#else
 	int status = ::kill(pid, sig);
 
 	if (0 == status)
@@ -210,6 +255,7 @@ int Signal::send(Signal::enum_t signame, pid_t pid)
 	e << "Can't send invalid signal " << sig;
 
 	throw std::logic_error(e.str());
+#endif
 }
 
 

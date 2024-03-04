@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2011 - 2024 Arnaud Quette (Design and part of implementation)
  *  Copyright (C) 2011 - EATON
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -19,6 +20,7 @@
 /*! \file scan_avahi.c
     \brief detect NUT through Avahi mDNS / DNS-SD services
     \author Frederic Bohe <fredericbohe@eaton.com>
+    \author Arnaud Quette <arnaudquette@free.fr>
 */
 
 #include "common.h"
@@ -39,6 +41,8 @@
 #include <avahi-common/error.h>
 
 #include <ltdl.h>
+
+#define SCAN_AVAHI_DRIVERNAME "dummy-ups"
 
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;
@@ -264,7 +268,9 @@ static void update_device(const char * host_name, const char *ip, uint16_t port,
 			device_found = 1;
 			dev = nutscan_new_device();
 			dev->type = TYPE_NUT;
-			dev->driver = strdup("nutclient");
+			/* NOTE: There is no driver by such name, in practice it could
+			 * be a dummy-ups relay, a clone driver, or part of upsmon config */
+			dev->driver = strdup(SCAN_AVAHI_DRIVERNAME);
 			if (proto == AVAHI_PROTO_INET) {
 				nutscan_add_option_to_device(dev, "desc", "IPv4");
 			}
@@ -282,7 +288,7 @@ static void update_device(const char * host_name, const char *ip, uint16_t port,
 					5 + 1 + 1 + 1;
 				dev->port = malloc(buf_size);
 				if (dev->port) {
-					snprintf(dev->port, buf_size, "%s@%s:%u",
+					snprintf(dev->port, buf_size, "%s@%s:%" PRIu16,
 						device, host_name, port);
 				}
 			}
@@ -320,7 +326,7 @@ static void update_device(const char * host_name, const char *ip, uint16_t port,
 		else {
 			dev = nutscan_new_device();
 			dev->type = TYPE_NUT;
-			dev->driver = strdup("nutclient");
+			dev->driver = strdup(SCAN_AVAHI_DRIVERNAME);
 			if (proto == AVAHI_PROTO_INET) {
 				nutscan_add_option_to_device(dev, "desc", "IPv4");
 			}
@@ -519,7 +525,7 @@ nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout)
 
 	/* Allocate main loop object */
 	if (!(simple_poll = (*nut_avahi_simple_poll_new)())) {
-		fprintf(stderr, "Failed to create simple poll object.\n");
+		fprintf(stderr, "Failed to create Avahi simple poll object.\n");
 		goto fail;
 	}
 
@@ -541,7 +547,7 @@ nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout)
 	/* Check wether creating the client object succeeded */
 	if (!client) {
 		fprintf(stderr,
-			"Failed to create client: %s\n",
+			"Failed to create Avahi client: %s\n",
 			(*nut_avahi_strerror)(error));
 		goto fail;
 	}
@@ -560,7 +566,7 @@ nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout)
 # pragma GCC diagnostic pop
 #endif
 		fprintf(stderr,
-			"Failed to create service browser: %s\n",
+			"Failed to create Avahi service browser: %s\n",
 			(*nut_avahi_strerror)((*nut_avahi_client_errno)(client)));
 		goto fail;
 	}
@@ -582,7 +588,9 @@ fail:
 
 	return nutscan_rewind_device(dev_ret);
 }
-#else  /* WITH_AVAHI */
+
+#else  /* not WITH_AVAHI */
+
 /* stub function */
 nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout)
 {
@@ -590,4 +598,5 @@ nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout)
 
 	return NULL;
 }
+
 #endif /* WITH_AVAHI */

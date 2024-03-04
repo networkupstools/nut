@@ -28,7 +28,8 @@
 #define IsBitSet(val, bit) ((val) & (1 << (bit)))
 
 #define DRIVER_NAME	"Liebert ESP-II serial UPS driver"
-#define DRIVER_VERSION	"0.05"
+#define DRIVER_VERSION	"0.06"
+
 #define UPS_SHUTDOWN_DELAY 12 /* it means UPS will be shutdown 120 sec */
 #define SHUTDOWN_CMD_LEN  8
 
@@ -201,7 +202,7 @@ void upsdrv_initinfo(void)
 		}
 
 		buf[i<<1] = 0;
-		upsdebugx(1, "return: %zd (8=success)", ret);
+		upsdebugx(1, "return: %" PRIiSIZE " (8=success)", ret);
 
 		if (ret == 8) { /* last command successful */
 			dstate_setinfo(vartab[vari].var,"%s",buf);

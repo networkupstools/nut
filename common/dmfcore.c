@@ -11,6 +11,7 @@
  * Copyright (C) 2016 Carlos Dominguez <CarlosDominguez@eaton.com>
  * Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
  * Copyright (C) 2016 - 2017 Jim Klimov <EvgenyKlimov@eaton.com>
+ * Copyright (C) 2024 Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -115,7 +116,9 @@ static void (*xml_uninitenc)(void);
 /* Note: names for popular libneon implementations are hard-coded at this
  * time - and just one, so extra DLLs (if an OS requires several to load)
  * are not supported. (TODO: link this to LIBNEON_LIBS from configure) */
-int load_neon_lib(void){
+static
+int load_neon_lib(void)
+{
 #ifdef WITH_NEON
 # if WITH_LIBLTDL
 	char *neon_libname_path = get_libname("libneon.so");
@@ -123,12 +126,12 @@ int load_neon_lib(void){
 
 	upsdebugx(1, "load_neon_lib(): neon_libname_path = %s", neon_libname_path);
 	if(!neon_libname_path) {
-		upslogx(LOG_NOTICE, "Error loading Neon library required for DMF: %s not found by dynamic loader; please verify it is in your /usr/lib or some otherwise searched dynamic-library path", "libneon.so");
+		upslogx(LOG_NOTICE, "Error loading Neon library required for DMF: %s not found by dynamic loader; please verify it is in your /usr/lib or some otherwise searched dynamic-library path, under this exact name (maybe you just need a symlink?)", "libneon.so");
 
 		neon_libname_path = get_libname("libneon-gnutls.so");
 		upsdebugx(1, "load_neon_lib(): neon_libname_path = %s", neon_libname_path);
 		if(!neon_libname_path) {
-			upslogx(LOG_ERR, "Error loading Neon library required for DMF: %s not found by dynamic loader; please verify it is in your /usr/lib or some otherwise searched dynamic-library path", "libneon-gnutls.so");
+			upslogx(LOG_ERR, "Error loading Neon library required for DMF: %s not found by dynamic loader; please verify it is in your /usr/lib or some otherwise searched dynamic-library path, under this exact name (maybe you just need a symlink?)", "libneon-gnutls.so");
 			return ERR;
 		}
 	}
@@ -221,10 +224,32 @@ int load_neon_lib(void){
 	else {
 		upsdebugx(1, "load_neon_lib(): lt_dlerror() final succeeded, library loaded");
 		free(neon_libname_path);
+#  if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS)
+#   pragma GCC diagnostic push
+#   pragma GCC diagnostic ignored "-Waddress"
+#  endif
+#  ifdef __clang__
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Waddress"
+#  endif
+#  if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS)
+#   pragma GCC diagnostic push
+#   pragma GCC diagnostic ignored "-Waddress"
+#  endif
+#  ifdef __clang__
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Waddress"
+#  endif
 		if (xml_init != NULL) {
 			upsdebugx(1, "load_neon_lib(): calling xmlInitParser()");
 			xml_init();
 		}
+#  ifdef __clang__
+#   pragma clang diagnostic pop
+#  endif
+#  if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS)
+#   pragma GCC diagnostic pop
+#  endif
 		return OK;
 	}
 
@@ -238,10 +263,32 @@ err:
 	return ERR;
 # else /* not WITH_LIBLTDL */
 	upsdebugx(1, "load_neon_lib(): no-op because ltdl was not enabled during compilation,\nusual dynamic linking should be in place instead");
+#  if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS)
+#   pragma GCC diagnostic push
+#   pragma GCC diagnostic ignored "-Waddress"
+#  endif
+#  ifdef __clang__
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Waddress"
+#  endif
+#  if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS)
+#   pragma GCC diagnostic push
+#   pragma GCC diagnostic ignored "-Waddress"
+#  endif
+#  ifdef __clang__
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Waddress"
+#  endif
 	if (xml_init != NULL) {
 		upsdebugx(1, "load_neon_lib(): calling xmlInitParser()");
 		xml_init();
 	}
+#  ifdef __clang__
+#   pragma clang diagnostic pop
+#  endif
+#  if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS)
+#   pragma GCC diagnostic pop
+#  endif
 	return OK;
 # endif /* WITH_LIBLTDL */
 
@@ -252,8 +299,26 @@ err:
 #endif /* WITH_NEON */
 }
 
-void unload_neon_lib(){
+static
+void unload_neon_lib(void)
+{
 #ifdef WITH_NEON
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Waddress"
+# endif
+# ifdef __clang__
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Waddress"
+# endif
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Waddress"
+# endif
+# ifdef __clang__
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Waddress"
+# endif
 	if (xml_uninitenc != NULL) {
 		upsdebugx(1, "unload_neon_lib(): calling xmlCleanupCharEncodingHandlers()");
 		xml_uninitenc();
@@ -262,12 +327,19 @@ void unload_neon_lib(){
 		upsdebugx(1, "unload_neon_lib(): calling xmlCleanupParser()");
 		xml_uninit();
 	}
-#if WITH_LIBLTDL
+# ifdef __clang__
+#  pragma clang diagnostic pop
+# endif
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ADDRESS)
+#  pragma GCC diagnostic pop
+# endif
+
+# if WITH_LIBLTDL
 	upsdebugx(1, "unload_neon_lib(): unloading the library");
 	lt_dlclose(dl_handle_libneon);
 	dl_handle_libneon = NULL;
 	lt_dlexit();
-#endif /* WITH_LIBLTDL */
+# endif /* WITH_LIBLTDL */
 #endif /* WITH_NEON */
 }
 
@@ -280,7 +352,7 @@ void unload_neon_lib(){
  * the format-specific parsed_data structure, and pass to dmfcore_parse*().
  */
 dmfcore_parser_t*
-dmfcore_parser_new()
+dmfcore_parser_new(void)
 {
 	dmfcore_parser_t *self = (dmfcore_parser_t *) calloc (1, sizeof (dmfcore_parser_t));
 	assert (self);
@@ -314,6 +386,7 @@ dmfcore_parse_file(char *file_name, dmfcore_parser_t *dcp)
 	char buffer[4096]; /* Align with common cluster/FSblock size nowadays */
 	FILE *f;
 	int result = 0;
+	ne_xml_parser *parser;
 #if WITH_LIBLTDL
 	int flag_libneon = 0;
 #endif /* WITH_LIBLTDL */
@@ -358,7 +431,7 @@ dmfcore_parse_file(char *file_name, dmfcore_parser_t *dcp)
 	}
 #endif /* WITH_LIBLTDL */
 
-	ne_xml_parser *parser = xml_create ();
+	parser = xml_create ();
 	xml_push_handler (parser, dcp->xml_dict_start_cb,
 		dcp->xml_cdata_cb
 		, dcp->xml_end_cb, dcp->parsed_data);
@@ -414,6 +487,7 @@ dmfcore_parse_str (const char *dmf_string, dmfcore_parser_t *dcp)
 {
 	int result = 0;
 	size_t len;
+	ne_xml_parser *parser;
 #if WITH_LIBLTDL
 	int flag_libneon = 0;
 #endif /* WITH_LIBLTDL */
@@ -457,7 +531,7 @@ dmfcore_parse_str (const char *dmf_string, dmfcore_parser_t *dcp)
 	}
 #endif /* WITH_LIBLTDL */
 
-	ne_xml_parser *parser = xml_create ();
+	parser = xml_create ();
 	xml_push_handler (parser, dcp->xml_dict_start_cb,
 		dcp->xml_cdata_cb
 		, dcp->xml_end_cb, dcp->parsed_data);
@@ -496,8 +570,9 @@ dmfcore_parse_str (const char *dmf_string, dmfcore_parser_t *dcp)
 int
 dmfcore_parse_dir (char *dir_name, dmfcore_parser_t *dcp)
 {
-	struct dirent **dir_ent;
-	int i = 0, x = 0, result = 0, n = 0;
+	DIR *dp = NULL;
+	struct dirent *dirp;
+	int i = 0, x = 0, result = 0, n = 0, c = 0;
 #if WITH_LIBLTDL
 	int flag_libneon = 0;
 #endif /* WITH_LIBLTDL */
@@ -507,16 +582,17 @@ dmfcore_parse_dir (char *dir_name, dmfcore_parser_t *dcp)
 	assert (dir_name);
 	assert (dcp);
 
-	if ( (dir_name == NULL ) || \
-	     ( (n = scandir(dir_name, &dir_ent, NULL, alphasort)) == 0 ) )
-	{
-		upslogx(LOG_ERR, "ERROR: DMF directory '%s' not found or not readable",
-			dir_name ? dir_name : "<NULL>");
-		return ENOENT;
-	}
-
-	if (n < 0) {
-		result = errno;
+	errno = 0;
+	if ( (dir_name == NULL) || \
+	     ((dp = opendir(dir_name)) == NULL) || \
+	     errno != 0
+	) {
+		if (dir_name == NULL) {
+			result = ENOENT;
+			/* TOTHINK? result = EINVAL; EBADF? */
+		} else {
+			result = errno;
+		}
 		upslog_with_errno(LOG_ERR, "ERROR: DMF directory '%s' not found or not readable",
 			dir_name ? dir_name : "<NULL>");
 		return result;
@@ -534,27 +610,49 @@ dmfcore_parse_dir (char *dir_name, dmfcore_parser_t *dcp)
 	}
 #endif /* WITH_LIBLTDL */
 
+	errno = 0;
+	while ((dirp = readdir(dp)) != NULL)
+		n++;
+
+	if (errno) {
+		upsdebugx(1, "%s: had a problem counting directory entries: (%d) %s",
+			__func__, errno, strerror(errno));
+	}
+	rewinddir(dp);
+
 	upsdebugx(2, "Got %d entries to parse in directory %s", n, dir_name);
 
-	int c;
-	for (c = 0; c < n; c++)
+	while ((dirp = readdir(dp)) != NULL)
 	{
-		upsdebugx (5, "dmfcore_parse_dir(): dir_ent[%d]->d_name=%s", c, dir_ent[c]->d_name);
-		size_t fname_len = strlen(dir_ent[c]->d_name);
+		size_t fname_len;
+
+		upsdebugx (5, "dmfcore_parse_dir(): dir_ent[%d]->d_name=%s", c, dirp->d_name);
+		fname_len = strlen(dirp->d_name);
 		if ( (fname_len > 4) &&
-		     (strstr(dir_ent[c]->d_name + fname_len - 4, ".dmf") ||
-		      strstr(dir_ent[c]->d_name + fname_len - 4, ".DMF") ) )
+		     (strstr(dirp->d_name + fname_len - 4, ".dmf") ||
+		      strstr(dirp->d_name + fname_len - 4, ".DMF") ) )
 		{
 			i++;
-			if(strlen(dir_name) + strlen(dir_ent[c]->d_name) < PATH_MAX_SIZE){
+			if(strlen(dir_name) + strlen(dirp->d_name) < PATH_MAX_SIZE){
 				char *file_path = (char *) calloc(PATH_MAX_SIZE, sizeof(char));
 				if (!file_path)
 				{
-					upslogx(LOG_ERR, "dmfcore_parse_dir(): calloc() failed");
+					upslogx(LOG_ERR, "dqmfcore_parse_dir(): calloc() failed");
 				} else {
-					sprintf(file_path, "%s/%s", dir_name, dir_ent[c]->d_name);
+					int res;
+
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif
+					snprintf(file_path, PATH_MAX_SIZE, "%s/%s", dir_name, dirp->d_name);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#pragma GCC diagnostic pop
+#endif
 					assert(file_path);
-					int res = dmfcore_parse_file(file_path, dcp);
+					res = dmfcore_parse_file(file_path, dcp);
 					upsdebugx (5, "dmfcore_parse_file (\"%s\", <%p>)=%d", file_path, (void*)dcp, res);
 					if ( res != 0 )
 					{
@@ -564,13 +662,12 @@ dmfcore_parse_dir (char *dir_name, dmfcore_parser_t *dcp)
 					}
 					free(file_path);
 				}
-			}else{
+			} else {
 				upslogx(LOG_ERR, "dmfcore_parse_dir(): File path too long");
 			}
 		}
-		free(dir_ent[c]);
+		c++;
 	}
-	free(dir_ent);
 
 #if WITH_LIBLTDL
 	if(flag_libneon == 1)

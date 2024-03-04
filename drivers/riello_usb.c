@@ -4,7 +4,7 @@
  * A document describing the protocol implemented by this driver can be
  * found online at:
  *
- *   http://www.networkupstools.org/ups-protocols/riello/PSGPSER-0104.pdf
+ *   https://www.networkupstools.org/protocols/riello/PSGPSER-0104.pdf
  *
  * Copyright (C) 2012 - Elio Parisi <e.parisi@riello-ups.com>
  * Copyright (C) 2016   Eaton
@@ -28,15 +28,13 @@
 
 #include "config.h" /* must be the first header */
 
-#include <stdint.h>
-
 #include "main.h"
 #include "nut_libusb.h"
 #include "usb-common.h"
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello USB driver"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.11"
 
 #define DEFAULT_OFFDELAY   5  /*!< seconds (max 0xFF) */
 #define DEFAULT_BOOTDELAY  5  /*!< seconds (max 0xFF) */
@@ -83,7 +81,7 @@ static void ussleep(useconds_t usec)
 	usleep(usec);
 }
 
-static int cypress_setfeatures()
+static int cypress_setfeatures(void)
 {
 	int ret;
 
@@ -95,9 +93,9 @@ static int cypress_setfeatures()
 
 	/* Write features report */
 	ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
-								0x09,						/* HID_REPORT_SET = 0x09 */
-								0 + (0x03 << 8),		/* HID_REPORT_TYPE_FEATURE */
-								0, (usb_ctrl_charbuf) bufOut, 0x5, 1000);
+		0x09,				/* HID_REPORT_SET = 0x09 */
+		0 + (0x03 << 8),		/* HID_REPORT_TYPE_FEATURE */
+		0, (usb_ctrl_charbuf) bufOut, 0x5, 1000);
 
 	if (ret <= 0) {
 		upsdebugx(3, "send: %s", ret ? nut_usb_strerror(ret) : "error");
@@ -197,7 +195,7 @@ static int Get_USB_Packet(uint8_t *buffer)
 	}
 
 	/* copy to buffer */
-	size = inBuf[0] & 0x07;
+	size = (unsigned char)(inBuf[0]) & 0x07;
 	if (size)
 		memcpy(buffer, &inBuf[1], size);
 
@@ -350,13 +348,17 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 	int ret;
 
 	if (udev == NULL) {
-		ret = usb->open(&udev, &usbdevice, reopen_matcher, &driver_callback);
+		dstate_setinfo("driver.state", "reconnect.trying");
+
+		ret = usb->open_dev(&udev, &usbdevice, reopen_matcher, &driver_callback);
 
 		upsdebugx (3, "riello_command err udev NULL : %d ", ret);
 		if (ret < 0)
 			return ret;
 
+		dstate_setinfo("driver.state", "reconnect.updateinfo");
 		upsdrv_initinfo();	/* reconnect usb cable */
+		dstate_setinfo("driver.state", "quiet");
 	}
 
 	ret = (*subdriver_command)(cmd, buf, length, buflen);
@@ -369,7 +371,7 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 
 	switch (ret)
 	{
-	case ERROR_BUSY:			/* Device or resource busy */
+	case LIBUSB_ERROR_BUSY:			/* Device or resource busy */
 		fatal_with_errno(EXIT_FAILURE, "Got disconnected by another driver");
 #ifndef HAVE___ATTRIBUTE__NORETURN
 		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
@@ -383,7 +385,7 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 # endif
 #endif
 
-	case ERROR_PIPE:			/* Broken pipe */
+	case LIBUSB_ERROR_PIPE:			/* Broken pipe */
 		if (usb_clear_halt(udev, 0x81) == 0) {
 			upsdebugx(1, "Stall condition cleared");
 			break;
@@ -397,28 +399,34 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 			upsdebugx(1, "Device reset handled");
 		}
 		goto fallthrough_case_reconnect;
-	case ERROR_NO_DEVICE: /* No such device */
-	case ERROR_ACCESS:    /* Permission denied */
-	case ERROR_IO:        /* I/O error */
+	case LIBUSB_ERROR_NO_DEVICE: /* No such device */
+	case LIBUSB_ERROR_ACCESS:    /* Permission denied */
+	case LIBUSB_ERROR_IO:        /* I/O error */
 #if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
 	case -ENXIO:				/* No such device or address */
 #endif
-	case ERROR_NOT_FOUND:		/* No such file or directory */
+	case LIBUSB_ERROR_NOT_FOUND:		/* No such file or directory */
 	fallthrough_case_reconnect:
 		/* Uh oh, got to reconnect! */
-		usb->close(udev);
+		dstate_setinfo("driver.state", "reconnect.trying");
+		usb->close_dev(udev);
 		udev = NULL;
 		break;
 
-	case ERROR_TIMEOUT:  /* Connection timed out */
+	case LIBUSB_ERROR_TIMEOUT:  /* Connection timed out */
 		upsdebugx (3, "riello_command err: Resource temporarily unavailable");
 		break;
 
-	case ERROR_OVERFLOW: /* Value too large for defined data type */
-#if EPROTO && WITH_LIBUSB_0_1
+#ifndef WIN32
+/* libusb win32 does not know EPROTO and EOVERFLOW,
+ * it only returns EIO for any IO errors */
+	case LIBUSB_ERROR_OVERFLOW: /* Value too large for defined data type */
+# if EPROTO && WITH_LIBUSB_0_1
 	case -EPROTO:		/* Protocol error */
-#endif
+# endif
 		break;
+#endif
+
 	default:
 		break;
 	}
@@ -426,7 +434,7 @@ static int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t 
 	return ret;
 }
 
-static int get_ups_nominal()
+static int get_ups_nominal(void)
 {
 
 	uint8_t length;
@@ -459,7 +467,7 @@ static int get_ups_nominal()
 	return 0;
 }
 
-static int get_ups_status()
+static int get_ups_status(void)
 {
 	uint8_t numread, length;
 	int recv;
@@ -498,7 +506,7 @@ static int get_ups_status()
 	return 0;
 }
 
-static int get_ups_extended()
+static int get_ups_extended(void)
 {
 	uint8_t length;
 	int recv;
@@ -531,7 +539,7 @@ static int get_ups_extended()
 }
 
 /* Not static, exposed via header. Not used though, currently... */
-int get_ups_statuscode()
+int get_ups_statuscode(void)
 {
 	uint8_t length;
 	int recv;
@@ -787,7 +795,7 @@ static int riello_instcmd(const char *cmdname, const char *extra)
 	return STAT_INSTCMD_UNKNOWN;
 }
 
-static int start_ups_comm()
+static int start_ups_comm(void)
 {
 	uint16_t length;
 	int recv;
@@ -828,7 +836,8 @@ void upsdrv_help(void)
 
 void upsdrv_makevartable(void)
 {
-
+	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
+	nut_usb_addvars();
 }
 
 void upsdrv_initups(void)
@@ -842,9 +851,11 @@ void upsdrv_initups(void)
 	};
 
 	int	ret;
-	char	*regex_array[7];
+	char	*regex_array[USBMATCHER_REGEXP_ARRAY_LIMIT];
 
 	char	*subdrv = getval("subdriver");
+
+	warn_if_bad_usb_port_filename(device_path);
 
 	regex_array[0] = getval("vendorid");
 	regex_array[1] = getval("productid");
@@ -853,6 +864,13 @@ void upsdrv_initups(void)
 	regex_array[4] = getval("serial");
 	regex_array[5] = getval("bus");
 	regex_array[6] = getval("device");
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	regex_array[7] = getval("busport");
+#else
+	if (getval("busport")) {
+		upslogx(LOG_WARNING, "\"busport\" is configured for the device, but is not actually handled by current build combination of NUT and libusb (ignored)");
+	}
+#endif
 
 	/* pick up the subdriver name if set explicitly */
 	if (subdrv) {
@@ -892,7 +910,7 @@ void upsdrv_initups(void)
 	/* link the matchers */
 	regex_matcher->next = &device_matcher;
 
-	ret = usb->open(&udev, &usbdevice, regex_matcher, &driver_callback);
+	ret = usb->open_dev(&udev, &usbdevice, regex_matcher, &driver_callback);
 	if (ret < 0) {
 		fatalx(EXIT_FAILURE,
 			"No supported devices found. Please check your device availability with 'lsusb'\n"
@@ -997,9 +1015,6 @@ void upsdrv_initinfo(void)
 }
 
 void upsdrv_shutdown(void)
-	__attribute__((noreturn));
-
-void upsdrv_shutdown(void)
 {
 	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
 	int retry;
@@ -1027,10 +1042,13 @@ void upsdrv_shutdown(void)
 			continue;
 		}
 
-		fatalx(EXIT_SUCCESS, "Shutting down");
+		upslogx(LOG_ERR, "Shutting down");
+		set_exit_flag(-2);	/* EXIT_SUCCESS */
+		return;
 	}
 
-	fatalx(EXIT_FAILURE, "Shutdown failed!");
+	upslogx(LOG_ERR, "Shutdown failed!");
+	set_exit_flag(-1);
 }
 
 void upsdrv_updateinfo(void)
@@ -1214,7 +1232,7 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_cleanup(void)
 {
-	usb->close(udev);
+	usb->close_dev(udev);
 	USBFreeExactMatcher(reopen_matcher);
 	USBFreeRegexMatcher(regex_matcher);
 	free(usbdevice.Vendor);
@@ -1222,4 +1240,7 @@ void upsdrv_cleanup(void)
 	free(usbdevice.Serial);
 	free(usbdevice.Bus);
 	free(usbdevice.Device);
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	free(usbdevice.BusPort);
+#endif
 }

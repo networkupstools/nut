@@ -4,6 +4,11 @@
 
    masterguard.c created on 15.8.2001
 
+   OBSOLETION WARNING: Please to not base new development on this
+   codebase, instead create a new subdriver for nutdrv_qx which
+   generally covers all Megatec/Qx protocol family and aggregates
+   device support from such legacy drivers over time.
+
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 2 of the License, or
@@ -21,9 +26,10 @@
 
 #include "main.h"
 #include "serial.h"
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"MASTERGUARD UPS driver"
-#define DRIVER_VERSION	"0.25"
+#define DRIVER_VERSION	"0.26"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -421,7 +427,7 @@ static ssize_t ups_ident( void )
 	else if( ret > 0 )
 	{
 		if( DEBUG )
-			printf( "WH says <%s> with length %zi\n", buf, ret );
+			printf( "WH says <%s> with length %" PRIiSIZE "\n", buf, ret );
 		upslog_with_errno( LOG_INFO,
 			"New WH String found. Please report to maintainer\n" );
 	}
@@ -502,7 +508,7 @@ void upsdrv_updateinfo(void)
 	if( ret != lenRSP )
 	{
 		if( DEBUG )
-			printf( "buf = %s len = %zi\n", buf, ret );
+			printf( "buf = %s len = %" PRIiSIZE "\n", buf, ret );
 		upslog_with_errno( LOG_ERR, "Error in UPS response " );
 		dstate_datastale();
 		return;
@@ -561,6 +567,15 @@ void upsdrv_initups(void)
 	int     count = 0;
 	int     fail  = 0;
 	int     good  = 0;
+
+	upsdebugx(0,
+		"Please note that this driver is deprecated and will not receive\n"
+		"new development. If it works for managing your devices - fine,\n"
+		"but if you are running it to try setting up a new device, please\n"
+		"consider the newer nutdrv_qx instead, which should handle all 'Qx'\n"
+		"protocol variants for NUT. (Please also report if your device works\n"
+		"with this driver, but nutdrv_qx would not actually support it with\n"
+		"any subdriver!)\n");
 
 	/* setup serial port */
 	upsfd = ser_open(device_path);

@@ -30,21 +30,36 @@
 
 #include "config.h"	/* must be the first header */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
+#if defined WITH_SNMP_LKP_FUN && WITH_SNMP_LKP_FUN && defined WITH_SNMP_LKP_FUN_DUMMY && WITH_SNMP_LKP_FUN_DUMMY
+	/* Just avoid an "empty translation unit" */
+	void dummy_method(void);
+	void dummy_method(void) {}
+#else
+# include <stdlib.h>
+# include <stdio.h>
 
-#include "eaton-pdu-marlin-helpers.h"
-#include "dstate.h"
+# include "nut_stdint.h"
+# include "eaton-pdu-marlin-helpers.h"
+# include "dstate.h"
+# include "common.h"
 /* Allow access to temperature_unit */
-#include "snmp-ups.h"
+# include "snmp-ups.h"
 
+/* Shunt the debugging calls when building self-test DMF driver code */
+/* FIXME: Go the next mile to pull common.o etc? We would rather not... */
+#ifdef WITH_DMFMIB_SELFTEST
+# ifdef upsdebugx
+#  undef upsdebugx
+# endif
+# define upsdebugx(...) {while(0);}
+#endif
 
 /* Take string "unitsPresent" (ex: "0,3,4,5"), and count the amount
  * of "," separators+1 using an inline function */
 long marlin_device_count_fun(const char *daisy_dev_list)
 {
 	long count = 0, i;
+
 	for (i = 0; daisy_dev_list[i] != '\0'; i++) {
 		if (daisy_dev_list[i] == ',') {
 			/* Each comma means a new device in the list */
@@ -55,6 +70,9 @@ long marlin_device_count_fun(const char *daisy_dev_list)
 		/* Non-empty string => at least one device, and no trailing commas */
 		count ++;
 	}
+
+	upsdebugx(3, "%s: counted devices in '%s', got %ld",
+		__func__, daisy_dev_list, count);
 	return count;
 }
 
@@ -85,3 +103,4 @@ const char *eaton_sensor_temperature_unit_fun(void *raw_snmp_value)
 	}
 	return "celsius";
 }
+#endif	/* WITH_SNMP_LKP_FUN && WITH_SNMP_LKP_FUN_DUMMY */

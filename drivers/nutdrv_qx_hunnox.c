@@ -26,7 +26,7 @@
 
 #include "nutdrv_qx_hunnox.h"
 
-#define HUNNOX_VERSION "Hunnox 0.01"
+#define HUNNOX_VERSION "Hunnox 0.02"
 
 /* qx2nut lookup table */
 static item_t	hunnox_qx2nut[] = {
@@ -43,7 +43,7 @@ static item_t	hunnox_qx2nut[] = {
 	{ "output.voltage",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	13,	17,	"%.1f",	QX_FLAG_QUICK_POLL,	NULL,	NULL,	NULL },
 	{ "ups.load",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	19,	21,	"%.0f",	QX_FLAG_QUICK_POLL,	NULL,	NULL,	NULL },
 	{ "input.frequency",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	23,	26,	"%.1f",	QX_FLAG_QUICK_POLL,	NULL,	NULL,	NULL },
-	{ "battery.voltage",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	28,	31,	"%.2f",	QX_FLAG_QUICK_POLL,	NULL,	NULL,	NULL },
+	{ "battery.voltage",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	28,	31,	"%.2f",	QX_FLAG_QUICK_POLL,	NULL,	NULL,	qx_multiply_battvolt },
 	{ "ups.temperature",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	33,	36,	"%.1f",	QX_FLAG_QUICK_POLL,	NULL,	NULL,	NULL },
 	/* Status bits */
 	{ "ups.status",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	38,	38,	NULL,	QX_FLAG_QUICK_POLL,	NULL,	NULL,	blazer_process_status_bits },	/* Utility Fail (Immediate) */

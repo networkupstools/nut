@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #	make_package.sh
 #	Copyright (c) 2013-2015, by Eaton (R) Corporation. All rights reserved.

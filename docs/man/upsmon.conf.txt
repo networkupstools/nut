@@ -103,55 +103,63 @@ Each UPS that you need to be monitor should have a MONITOR line.  Not
 all of these need supply power to the system that is running upsmon.
 You may monitor other systems if you want to be able to send
 notifications about status changes on them.
-
++
 You must have at least one MONITOR directive in `upsmon.conf`.
-
-'system' is a UPS identifier.  It is in this form:
-
++
+* 'system' is a UPS identifier.  It is in this form:
++
 +<upsname>[@<hostname>[:<port>]]+
-
++
 The default hostname is "localhost".  Some examples:
-
- - "su700@mybox" means a UPS called "su700" on a system called "mybox".
++
+  - "su700@mybox" means a UPS called "su700" on a system called "mybox".
 This is the normal form.
- - "fenton@bigbox:5678" is a UPS called "fenton" on a system called
+  - "fenton@bigbox:5678" is a UPS called "fenton" on a system called
 "bigbox" which runs linkman:upsd[8] on port "5678".
 
-'powervalue' is an integer representing the number of power supplies
++
+* 'powervalue' is an integer representing the number of power supplies
 that the UPS feeds on this system.  Most normal computers have one power
 supply, and the UPS feeds it, so this value will be 1.  You need a very
 large or special system to have anything higher here.
-
++
 You can set the 'powervalue' to 0 if you want to monitor a UPS that
 doesn't actually supply power to this system.  This is useful when you
 want to have upsmon do notifications about status changes on a UPS
 without shutting down when it goes critical.
 
-The 'username' and 'password' on this line must match an entry in
++
+* The 'username' and 'password' on this line must match an entry in
 the `upsd` server system's linkman:upsd.users[5] file.
-
++
 If your username is "observer" and your password is "abcd", the MONITOR
 line might look like this (likely on a remote secondary system):
-
-+MONITOR myups@bigserver 1 observer abcd secondary+
-
++
+----
+MONITOR myups@bigserver 1 observer abcd secondary
+----
++
 Meanwhile, the `upsd.users` on `bigserver` would look like this:
++
+----
+[observer]
+	password = abcd
+	upsmon secondary
 
-	[observer]
-		password = abcd
-		upsmon secondary
-	
-	[upswired]
-		password = blah
-		upsmon primary
-
+[upswired]
+	password = blah
+	upsmon primary
+----
++
 And the copy of upsmon on that bigserver would run with the primary
 configuration:
++
+----
+MONITOR myups@bigserver 1 upswired blah primary
+----
 
-+MONITOR myups@bigserver 1 upswired blah primary+
-
-
-The 'type' refers to the relationship with linkman:upsd[8].  It can
++
+* The 'type' refers to the relationship with linkman:upsd[8].  It can
 be either "primary" or "secondary".  See linkman:upsmon[8] for more
 information on the meaning of these modes.  The mode you pick here
 also goes in the `upsd.users` file, as seen in the example above.
@@ -162,6 +170,22 @@ upsmon will trigger a NOTIFY_NOCOMM after this many seconds if it can't
 reach any of the UPS entries in this configuration file.  It keeps
 warning you until the situation is fixed.  By default this is 300
 seconds.
+
+*POLLFAIL_LOG_THROTTLE_MAX* 'count'::
+
+upsmon normally reports polling failures for each device that are in place
+for each POLLFREQ loop (e.g. "Data stale" or "Driver not connected") to
+system log as configured.  If your devices are expected to be AWOL for an
+extended timeframe, you can use this throttle to reduce the stress on
+syslog traffic and storage, by posting these messages only once in every
+several loop cycles, and when the error condition has changed or cleared.
++
+A negative value means standard behavior (log on every loop, effectively
+same as when `max=1`), and a zero value means to never repeat the message
+(log only on start and end/change of the failure state).
++
+Note that this throttle only applies to one latest-active error state per
+monitored device.
 
 *NOTIFYCMD* 'command'::
 
@@ -226,11 +250,26 @@ REPLBATT;; The UPS battery is bad and needs to be replaced
 
 NOCOMM;; A UPS is unavailable (can't be contacted for monitoring)
 
-*NOTIFYFLAG* 'type' 'flag'[\+'flag'][+'flag']...::
+NOPARENT;; `upsmon` parent process died - shutdown impossible
+
+CAL;; UPS calibration in progress
+
+NOTCAL;; UPS calibration finished
+
+OFF;; UPS administratively OFF or asleep
+
+NOTOFF;; UPS no longer administratively OFF or asleep
+
+BYPASS;; UPS on bypass (powered, not protecting)
+
+NOTBYPASS;; UPS no longer on bypass
+
+*NOTIFYFLAG* 'type' 'flag'[+'flag']...::
 
 By default, upsmon sends walls global messages to all logged in users)
-via /bin/wall and writes to the syslog when things happen.  You can
-change this.
+via `/bin/wall` and writes to the syslog when things happen.
+Except for Windows where upsmon only writes to the syslog by default.
+You can change this.
 +
 Examples:
 +
@@ -293,6 +332,27 @@ Refer to the section:
 [[UPS_shutdown]] "Configuring automatic shutdowns for low battery events",
 or refer to the online version.
 
+*OFFDURATION* 'seconds'::
+
+NUT supports an "administrative OFF" for power devices which can be managed to
+turn off their application workload, while the UPS or ePDU remains accessible
+for monitoring and management. This toggle allows to delay propagation of such
+state into a known loss of a feed (possibly triggering FSD on `upsmon` clients
+which `MONITOR` the device and are in fact still alive -- e.g. with multiple
+power sources or because they as the load are not really turned off), because
+when some devices begin battery calibration, they report "OFF" for a few seconds
+and only then they might report "CAL" after switching all the power relays --
+thus causing false-positives for `upsmon` FSD trigger.
++
+A negative value means to disable decreasing the counter of working power
+supplies in such cases, and a zero makes the effect of detected "OFF" state
+immediate. Built-in default value is 30 (seconds), to put an "OFF" state into
+effect (decrease known-fed supplies count) if it persists for this many seconds.
++
+NOTE: so far we support the device reporting an "OFF" state which usually
+means completely un-powering the load; a bug-tracker issue was logged to
+design similar support for just some manageable outlets or outlet groups.
+
 *RBWARNTIME* 'seconds'::
 
 When a UPS says that it needs to have its battery replaced, upsmon will
@@ -338,6 +398,36 @@ together, i.e.:
 
 	SHUTDOWNCMD "/sbin/shutdown -h +0"
 
+*SHUTDOWNEXIT* 'boolean|number'::
+
+After initiating shutdown, should this upsmon daemon itself exit?
+By doing so NUT secondary systems can tell the NUT primary that
+it can proceed with its own shutdown and eventually tell the UPS
+to cut power for the load. ("Yes" by default)
++
+Some "secondary" systems with workloads that take considerable time
+to stop (e.g. virtual machines or large databases) can benefit from
+reporting (by virtue of logging off the data server) that they are
+ready for the "primary" system to begin its own shutdown and eventually
+to tell the UPS to cut the power - not as soon as they have triggered
+their own shutdown, but at a later point (e.g. when the upsmon service
+is stopped AFTER the heavier workloads).
++
+Note that the actual ability to complete such shutdown depends on the
+remaining battery run-time at the moment when UPS power state becomes
+considered critical and the shutdowns begin. You may also have to tune
+`HOSTSYNC` on the NUT primary to be long enough for those secondaries to
+stop their services. In practice, it may be worthwhile to investigate
+ways to trigger shutdowns earlier on these systems, e.g. by setting up
+`upssched` integration, or `dummy-ups` driver with overrides for stricter
+`battery.charge` or `battery.runtime` triggers than used by the rest of
+your servers.
++
+This option supports Boolean-style strings (yes/on/true or no/off/false)
+or numbers to define a delay (in seconds) between calling `SHUTDOWNCMD`
+and exiting the daemon. Zero means immediate exit (default), negative
+values mean never exiting on its own accord.
+
 *CERTPATH* 'certificate file or database'::
 
 When compiled with SSL support, you can enter the certificate path here.
@@ -356,6 +446,9 @@ When compiled with SSL support, you can enter the certificate path here.
 When compiled with SSL support with NSS, you can specify the certificate
 name to retrieve from database to authenticate itself and the password
 required to access certificate related private key.
++
+NOTE: Be sure to enclose "certificate name" in double-quotes if you
+are using a value with spaces in it.
 
 *CERTHOST* 'hostname' 'certificate name' 'certverify' 'forcessl'::
 
@@ -365,6 +458,9 @@ for each server you can contact.
 Each entry maps server name with the expected certificate name and flags
 indicating if the server certificate is verified and if the connection
 must be secure.
++
+NOTE: Be sure to enclose "certificate name" in double-quotes if you
+are using a value with spaces in it.
 
 *CERTVERIFY* '0 | 1'::
 
@@ -393,10 +489,30 @@ support SSL, so don't use it unless all of them have it running.
 When compiled with NSS support of SSL, can be overridden for host
 specified with a CERTHOST directive.
 
+*DEBUG_MIN* 'INTEGER'::
+
+Optionally specify a minimum debug level for `upsmon` daemon, e.g. for
+troubleshooting a deployment, without impacting foreground or background
+running mode directly. Command-line option `-D` can only increase this
+verbosity level.
++
+NOTE: if the running daemon receives a `reload` command, presence of the
+`DEBUG_MIN NUMBER` value in the configuration file can be used to tune
+debugging verbosity in the running service daemon (it is recommended to
+comment it away or set the minimum to explicit zero when done, to avoid
+huge journals and I/O system abuse). Keep in mind that for this run-time
+tuning, the `DEBUG_MIN` value *present* in *reloaded* configuration files
+is applied instantly and overrides any previously set value, from file
+or CLI options, regardless of older logging level being higher or lower
+than the newly found number; a missing (or commented away) value however
+does not change the previously active logging verbosity.
+
 SEE ALSO
 --------
+
 linkman:upsmon[8], linkman:upsd[8], linkman:nutupsdrv[8].
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

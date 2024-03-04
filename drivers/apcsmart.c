@@ -35,6 +35,15 @@
 #include "apcsmart.h"
 #include "apcsmart_tabs.h"
 
+#define DRIVER_NAME	"APC Smart protocol driver"
+#define DRIVER_VERSION	"3.32"
+
+#ifdef WIN32
+# ifndef ECANCELED
+#  define ECANCELED ERROR_CANCELLED
+# endif
+#endif
+
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
@@ -111,7 +120,7 @@ static const char *prtchr(char x)
 	static char info[32];
 
 	curr = (curr + 8) & 0x1F;
-	snprintf(info + curr, 8, isprint(x) ? "%c" : "0x%02x", x);
+	snprintf(info + curr, 8, isprint((size_t)x) ? "%c" : "0x%02x", x);
 
 	return info + curr;
 }
@@ -251,7 +260,7 @@ static void apc_ser_diff(struct termios *tioset, struct termios *tioget)
 
 	/* clear status flags so that they don't affect our binary compare */
 #if defined(PENDIN) || defined(FLUSHO)
-	for (i = 0; i < sizeof(tio)/sizeof(tio[0]); i++) {
+	for (i = 0; i < SIZEOF_ARRAY(tio); i++) {
 #ifdef PENDIN
 		tio[i]->c_lflag &= ~(unsigned int)PENDIN;
 #endif
@@ -274,7 +283,7 @@ static void apc_ser_diff(struct termios *tioset, struct termios *tioget)
 	 * rate of 2400.
 	 */
 
-	for (i = 0; i < sizeof(tio)/sizeof(tio[0]); i++) {
+	for (i = 0; i < SIZEOF_ARRAY(tio); i++) {
 		upsdebugx(1, "tc%cetattr(): gfmt1:cflag=%x:iflag=%x:lflag=%x:oflag=%x:", dir[i],
 				(unsigned int) tio[i]->c_cflag, (unsigned int) tio[i]->c_iflag,
 				(unsigned int) tio[i]->c_lflag, (unsigned int) tio[i]->c_oflag);
@@ -448,8 +457,9 @@ static ssize_t apc_read_i(char *buf, size_t buflen, int flags, const char *fn, u
 		fatalx (EXIT_FAILURE, "Error: apc_read_i called with buflen too large");
 	}
 
-	if (upsfd == -1)
+	if (INVALID_FD(upsfd))
 		return 0;
+
 	if (flags & SER_D0) {
 		sec = 0; usec = 0;
 	}
@@ -574,7 +584,7 @@ static ssize_t apc_write_i(unsigned char code, const char *fn, unsigned int ln)
 	ssize_t ret;
 	errno = 0;
 
-	if (upsfd == -1)
+	if (INVALID_FD(upsfd))
 		return 0;
 
 	ret = ser_send_char(upsfd, code);
@@ -1014,25 +1024,36 @@ static void apc_getcaps(int qco)
 			/* if we expected this, just ignore it */
 			if (qco)
 				return;
-			fatalx(EXIT_FAILURE, "capability string has overflowed, please report this error !");
+			fatalx(EXIT_FAILURE,
+				"capability string has overflowed, "
+				"please report this error with device details!");
 		}
 
+		entptr = &ptr[4];
 		cmd = ptr[0];
 		loc = ptr[1];
 
 		if (ptr[2] < 48 || ptr[3] < 48) {
-			upsdebugx(0,
-				"%s: nument (%d) or entlen (%d) out of range",
-				__func__, (ptr[2] - 48), (ptr[3] - 48));
-			fatalx(EXIT_FAILURE,
-				"nument or entlen out of range\n"
-				"Please report this error\n"
-				"ERROR: capability overflow!");
-		}
+			upsdebugx(3,
+				"%s: SKIP: nument (%d) or entlen (%d) "
+				"out of range for cmd %d at loc %d",
+				__func__, (ptr[2] - 48), (ptr[3] - 48),
+				cmd, loc);
 
-		nument = (size_t)ptr[2] - 48;
-		entlen = (size_t)ptr[3] - 48;
-		entptr = &ptr[4];
+			/* just ignore it as we did for ages see e.g. v2.7.4
+			 * (note the next loop cycle was and still would be
+			 * no-op anyway, if "nument <= 0").
+			 */
+			nument = 0;
+			entlen = 0;
+
+			/* NOT a full skip: Gotta handle "vt" to act like before */
+			/*ptr = entptr;*/
+			/*continue;*/
+		} else {
+			nument = (size_t)ptr[2] - 48;
+			entlen = (size_t)ptr[3] - 48;
+		}
 
 		vt = vt_lookup_char(cmd);
 		valid = vt && ((loc == upsloc) || (loc == '4')) && !(vt->flags & APC_PACK);
@@ -1550,7 +1571,7 @@ static int sdcmd_AT(const void *str)
 	/* Range-check: padto is 2 or 3 per above */
 	if (ret != (ssize_t)padto + 1) {
 		upslogx(LOG_ERR,
-			"issuing [%s] with %zu digits failed",
+			"issuing [%s] with %" PRIuSIZE " digits failed",
 			prtchr(APC_CMD_GRACEDOWN), padto);
 		return STAT_INSTCMD_FAILED;
 	}
@@ -1712,7 +1733,7 @@ void upsdrv_shutdown(void)
 		ups_status = APC_STAT_LB | APC_STAT_OB;
 	}
 
-	if (testvar("advorder") && toupper(*getval("advorder")) != 'N')
+	if (testvar("advorder") && toupper((size_t)*getval("advorder")) != 'N')
 		upsdrv_shutdown_advanced();
 	else
 		upsdrv_shutdown_simple();
@@ -2040,10 +2061,10 @@ static int instcmd(const char *cmd, const char *ext)
 		if (!ext || !*ext)
 			return sdcmd_S(0);
 
-		if (toupper(*ext) == 'A')
+		if (toupper((size_t)*ext) == 'A')
 			return sdcmd_AT(ext + 3);
 
-		if (toupper(*ext) == 'C')
+		if (toupper((size_t)*ext) == 'C')
 			return sdcmd_CS(0);
 	}
 
@@ -2075,7 +2096,7 @@ void upsdrv_help(void)
 	printf(
 		"\nFor detailed information, please refer to:\n"
 		  " - apcsmart(8)\n"
-		  " - http://www.networkupstools.org/docs/man/apcsmart.html\n"
+		  " - https://www.networkupstools.org/docs/man/apcsmart.html\n"
 	      );
 }
 
@@ -2116,7 +2137,7 @@ void upsdrv_cleanup(void)
 {
 	char temp[APC_LBUF];
 
-	if (upsfd == -1)
+	if (INVALID_FD(upsfd))
 		return;
 
 	apc_flush(0);

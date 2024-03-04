@@ -8,8 +8,8 @@ This project is the result of years of work by many individuals and companies.
 Many people have written or tweaked the software; the drivers, clients, server
 and documentation have all received valuable attention from numerous sources.
 
-Many of them are listed within the source code, AUTHORS file, release notes, and
-mailing list archives, but some prefer to be anonymous.
+Many of them are listed within the source code, AUTHORS file, release notes,
+and mailing list archives, but some prefer to be anonymous.
 This software would not be possible without their help.
 
 
@@ -19,8 +19,10 @@ The NUT Team
 Active members
 ~~~~~~~~~~~~~~
 
-- Jim Klimov: project leader (since 2020), OpenIndiana and OmniOS packager, CI ops and infra
-- Arnaud Quette: ex-project leader (from 2005 to 2020), Debian packager and jack of all trades
+- Jim Klimov: project leader (since 2020), OpenIndiana and OmniOS packager,
+  CI dev/ops and infra
+- Arnaud Quette: ex-project leader (from 2005 to 2020), Debian packager
+  and jack of all trades
 - Charles Lepple: senior lieutenant
 - Daniele Pezzini: senior developer
 - Kjell Claesson: senior developer
@@ -120,7 +122,7 @@ list, and the rest of the information is available via the
 link:http://article.gmane.org/gmane.comp.monitoring.nut.user/8173[list
 archives].
 
-* link:https://nag.company/en[NAG], through Alexey Kazancev and Igor Ryabov, 
+* link:https://nag.company/en[NAG], through Alexey Kazancev and Igor Ryabov,
 has added support for SNR-UPS-LID-XXXX models as usb-hid UPS.
 
 * link:http://www.ablerex.com.tw/[Ablere Electronics Co., Ltd.] contributed

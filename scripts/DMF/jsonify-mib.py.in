@@ -7,6 +7,7 @@
 #
 #    Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
 #    Copyright (C) 2016 - 2021 Jim Klimov <EvgenyKlimov@eaton.com>
+#    Copyright (C) 2022 - 2024 Jim Klimov <jimklimov+nut@gmail.com>
 #
 
 from __future__ import print_function
@@ -32,17 +33,23 @@ Michal Vyskocil <michal.vyskocil@gmail.com>
 Jim Klimov <jimklimov+nut@gmail.com>
 """
 
+# Can be used for temporary file locations, if defined:
+ABS_BUILDDIR = os.environ.get("ABS_BUILDDIR", None)
+
+
 # TODO:
 #   - read the file to find and prints the comments
 
 def warn (msg):
-    print ("W: %s" % msg, file=sys.stderr)
+    if os.environ.get("DEBUG", "") in ["yes", "1"]:
+        print ("W: %s" % msg, file=sys.stderr)
 
 def info (msg):
-    print ("I: %s" % msg, file=sys.stderr)
+    if os.environ.get("DEBUG", "") in ["yes", "1", ""]:
+        print ("I: %s" % msg, file=sys.stderr)
 
 def debug (msg):
-    if os.environ.get("DEBUG") == "yes":
+    if os.environ.get("DEBUG", "") in ["yes", "1"]:
         print ("D: %s" % msg, file=sys.stderr)
 
 def f2f(node):
@@ -346,8 +353,14 @@ class Visitor(c_ast.NodeVisitor):
             if node.type.type.type.names == ['snmp_info_t']:
                 self._mappings ["SNMP-INFO"][node.name] = self._visit_snmp_info_t (node)
             elif node.type.type.type.names == ['info_lkp_t']:
-                self._mappings ["INFO"][node.type.type.declname] = \
-                self._visit_info_lkp_t (node)
+                # Anticipate several sources (helpers and all), so if one
+                # of them lacks some mapping info - do not delete what we
+                # got from others :)
+                tmp = self._visit_info_lkp_t (node)
+                if self._mappings ["INFO"].get(node.type.type.declname) is None:
+                    self._mappings ["INFO"][node.type.type.declname] = tmp
+                else:
+                    self._mappings ["INFO"][node.type.type.declname].extend(tmp)
             elif node.type.type.type.names == ['alarms_info_t']:
                 self._mappings ["ALARMS-INFO"][node.type.type.declname] = \
                 self._visit_alarms_info_t (node)
@@ -445,7 +458,11 @@ static mib2nut_info_t %(name)s_TEST = { %(mib_name)s, %(mib_version)s, %(oid_pwr
 
 def s_json2c (fout, MIB_name, js):
     print ("""
+#include "config.h"
+
 #include <stdbool.h>
+#include <stdlib.h>
+#include <sys/types.h>
 #include "main.h"
 #include "snmp-ups.h"
 
@@ -465,17 +482,21 @@ int input_phases, output_phases, bypass_phases;
 // Replicate what drivers/main.c exports
 int do_synchronous = 0;
 
+int do_debug = 1;
+
 static inline bool streq (const char* x, const char* y)
 {
     if (!x && !y)
         return true;
     if (!x || !y) {
-        fprintf(stderr, "\\nDEBUG: strEQ(): One compared string (but not both) is NULL:\\n\\t%%s\\n\\t%%s\\n\\n", x ? x : "<NULL>" , y ? y : "<NULL>");
+        if (do_debug)
+            fprintf(stderr, "\\nDEBUG: strEQ(): One compared string (but not both) is NULL:\\n\\t%%s\\n\\t%%s\\n\\n", x ? x : "<NULL>" , y ? y : "<NULL>");
         return false;
         }
     int cmp = strcmp (x, y);
     if (cmp != 0) {
-        fprintf(stderr, "\\nDEBUG: strEQ(): Strings not equal (%%i):\\n\\t%%s\\n\\t%%s\\n\\n", cmp, x, y);
+        if (do_debug)
+            fprintf(stderr, "\\nDEBUG: strEQ(): Strings not equal (%%i):\\n\\t%%s\\n\\t%%s\\n\\n", cmp, x, y);
     }
     return cmp == 0;
 }
@@ -483,7 +504,8 @@ static inline bool streq (const char* x, const char* y)
 static inline bool strneq (const char* x, const char* y)
 {
     if (!x && !y) {
-        fprintf(stderr, "\\nDEBUG: strNEQ(): Both compared strings are NULL\\n");
+        if (do_debug)
+            fprintf(stderr, "\\nDEBUG: strNEQ(): Both compared strings are NULL\\n");
         return false;
         }
     if (!x || !y) {
@@ -491,7 +513,8 @@ static inline bool strneq (const char* x, const char* y)
         }
     int cmp = strcmp (x, y);
     if (cmp == 0) {
-        fprintf(stderr, "\\nDEBUG: strNEQ(): Strings are equal (%%i):\\n\\t%%s\\n\\t%%s\\n\\n", cmp, x, y);
+        if (do_debug)
+            fprintf(stderr, "\\nDEBUG: strNEQ(): Strings are equal (%%i):\\n\\t%%s\\n\\t%%s\\n\\n", cmp, x, y);
     }
     return cmp != 0;
 }
@@ -507,24 +530,52 @@ static inline bool strneq (const char* x, const char* y)
     # generate test function
     print ("""
 int main () {
-    size_t i = 0;""", file=fout)
+    size_t i = 0;
+    char *s;
+
+/* Older CLANG (e.g. clang-3.4) sees short strings in str{n}cmp()
+ * arguments as arrays and claims out-of-bounds accesses
+ */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ARRAY_BOUNDS)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Warray-bounds"
+#endif
+    if ((s = getenv("DEBUG")) && !strcmp(s, "0"))
+        do_debug = 0;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ARRAY_BOUNDS)
+# pragma GCC diagnostic pop
+#endif
+
+""", file=fout)
 
     for key in js["INFO"]:
         print ("""
-    fprintf (stderr, "Test %(k)s: ");
+    if (do_debug)
+        fprintf (stderr, "Test %(k)s: ");
     for (i = 0; %(k)s_TEST [i].oid_value != 0 && %(k)s_TEST [i].info_value != NULL; i++) {
-        fprintf (stderr, "[%%zi] ", i);
+        if (do_debug)
+            fprintf (stderr, "[%%zi] ", i);
         assert (%(k)s [i].oid_value == %(k)s_TEST [i].oid_value);
         assert (%(k)s [i].info_value && %(k)s_TEST [i].info_value);
         assert (streq (%(k)s [i].info_value, %(k)s_TEST [i].info_value));
     }
-    fprintf (stderr, "OK\\n");""" % {'k' : key}, file=fout)
+    if (do_debug)
+        fprintf (stderr, "OK\\n");""" % {'k' : key}, file=fout)
 
     for key in js ["SNMP-INFO"].keys ():
         print ("""
-    fprintf (stderr, "Test %(k)s: ");
+    if (do_debug)
+        fprintf (stderr, "Test %(k)s: ");
     for (i = 0; %(k)s_TEST [i].info_type != NULL; i++) {
-        fprintf (stderr, "[%%zi] ", i);
+        if (do_debug)
+            fprintf (stderr, "[%%zi] ", i);
         assert (streq (%(k)s [i].info_type, %(k)s_TEST [i].info_type));
         assert (%(k)s [i].info_flags == %(k)s_TEST [i].info_flags);
         assert (%(k)s [i].info_len == %(k)s_TEST [i].info_len);
@@ -532,17 +583,21 @@ int main () {
         assert (streq (%(k)s [i].dfl, %(k)s_TEST [i].dfl));
         assert (%(k)s [i].flags == %(k)s_TEST [i].flags);
         if (%(k)s [i].oid2info != %(k)s_TEST [i].oid2info) {
-            fprintf (stderr, "%(k)s[%%zi].oid2info     =<%%p>\\n", i, %(k)s[i].oid2info);
-            fprintf (stderr, "%(k)s_TEST[%%zi].oid2info=<%%p>\\n", i, %(k)s_TEST[i].oid2info);
+            if (do_debug)
+                fprintf (stderr, "%(k)s[%%zi].oid2info     =<%%p>\\n", i, %(k)s[i].oid2info);
+            if (do_debug)
+                fprintf (stderr, "%(k)s_TEST[%%zi].oid2info=<%%p>\\n", i, %(k)s_TEST[i].oid2info);
             return 1;
         }
         // assert (%(k)s [i].setvar == %(k)s_TEST [i].setvar);
     }
-    fprintf (stderr, "OK\\n");""" % {'k' : key}, file=fout)
+    if (do_debug)
+        fprintf (stderr, "OK\\n");""" % {'k' : key}, file=fout)
 
     for key in js ["MIB2NUT"].keys ():
         print ("""
-    fprintf (stderr, "Test %(k)s\\n");
+    if (do_debug)
+        fprintf (stderr, "Test %(k)s\\n");
     assert (streq (%(k)s_TEST.mib_name, %(k)s.mib_name));
     assert (streq (%(k)s_TEST.mib_version, %(k)s.mib_version));
     assert (streq (%(k)s_TEST.oid_pwr_status, %(k)s.oid_pwr_status));
@@ -638,6 +693,9 @@ def test_compile(MIB_name, source = None):
     if source is None:
         test_file = MIB_name + "_TEST.c"
         obj_file =  MIB_name + "_TEST.o"
+        if ABS_BUILDDIR is not None:
+            test_file = os.path.sep.join([ABS_BUILDDIR, test_file])
+            obj_file = os.path.sep.join([ABS_BUILDDIR, obj_file])
         info ("CALL test_compile(): generate back %s from JSON, to compile below" % (test_file))
         with open (test_file, "wt") as fout:
             s_json2c (fout, MIB_name, v._mappings)
@@ -645,6 +703,9 @@ def test_compile(MIB_name, source = None):
         # Take the additional shared source as is to link it in
         test_file = source
         obj_file = MIB_name + "_" + os.path.splitext (os.path.basename (test_file)) [0] + "_TEST.o"
+        if ABS_BUILDDIR is not None:
+            # Use as is? # test_file = os.path.sep.join([ABS_BUILDDIR, test_file])
+            obj_file = os.path.sep.join([ABS_BUILDDIR, obj_file])
 
     try:
         gcc = os.environ["CC"]
@@ -692,6 +753,10 @@ if args.test:
     test_file = os.path.basename (args.source)
     MIB_name = os.path.splitext (test_file) [0]
     prog_file = MIB_name + "_TEST.exe"
+    if ABS_BUILDDIR is not None:
+        prog_file = os.path.sep.join([ABS_BUILDDIR, prog_file])
+    else:
+        prog_file = os.path.sep.join([".", prog_file])
 
     obj_files = []
     # First file is generated from our JSON:
@@ -737,7 +802,7 @@ if args.test:
         sys.exit (retcode.returncode)
     info ("SELFTEST ./" + prog_file)
     try:
-        subprocess.check_call ("./%s" % prog_file)
+        subprocess.check_call (prog_file)
     except subprocess.CalledProcessError as retcode:
         warn ("SELFTEST FAILED with code %s" % retcode.returncode)
         sys.exit (retcode.returncode)

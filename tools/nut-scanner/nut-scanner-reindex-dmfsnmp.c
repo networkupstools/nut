@@ -5,6 +5,7 @@
  * Copyright (C) 2016 Carlos Dominguez <CarlosDominguez@eaton.com>
  * Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
  * Copyright (C) 2016 Jim Klimov <EvgenyKlimov@eaton.com>
+ * Copyright (C) 2024 Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,11 +22,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include "config.h"
+
 #include <errno.h>
 #include <dirent.h>
 #include <assert.h>
 
-#include "config.h"
 #include "common.h"
 #if (!DMFREINDEXER_MAKECHECK)
 # include "nut_version.h"
@@ -41,11 +43,11 @@
 #define XSD_DMFNUTSCAN_XMLNS    "http://www.networkupstools.org/dmf/snmp/nutscan"
 #endif
 
-const char optstring[] = "?hDVkKZ:";
+static const char optstring[] = "?hDVkKZ:";
 #define ERR_BAD_OPTION	(-1)
 
 #ifdef HAVE_GETOPT_LONG
-const struct option longopts[] = {
+static const struct option longopts[] = {
 	{ "help", no_argument, NULL, 'h' },
 	{ "nut_debug_level", no_argument, NULL, 'D' },
 	{ "version", no_argument, NULL, 'V' },
@@ -62,6 +64,10 @@ int main(int argc, char *argv[])
 	int opt_ret;
 	int result = 0;
 	int ret_code = EXIT_SUCCESS;
+	mibdmf_parser_t *dmp = NULL, *newdmp = NULL;
+	snmp_device_id_t *devtab = NULL, *newdevtab = NULL;
+	size_t i, j, k, newdmf_len, newdmf_size;
+	char *newdmf = NULL;
 	int proceed_on_errors = 1; /* By default, do as much as we can */
 	char *dir_name = NULL; /* TODO: Make configurable the dir and/or list of files */
 	int dir_name_dynamic = 0;
@@ -82,6 +88,15 @@ int main(int argc, char *argv[])
 /* TODO: Usage (help), Command-line args */
 /* option to append just a few (new) files to existing (large) index */
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_BREAK
+#pragma GCC diagnostic ignored "-Wunreachable-code-break"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
 	while ((opt_ret = getopt_long(argc, argv, optstring, longopts, NULL)) != -1) {
 
 		switch(opt_ret) {
@@ -133,12 +148,15 @@ int main(int argc, char *argv[])
 				return ret_code;
 		}
 	}
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 
-	mibdmf_parser_t * dmp = mibdmf_parser_new();
+	dmp = mibdmf_parser_new();
 	if (!dmp) {
 		fatalx(EXIT_FAILURE, "=== DMF-Reindex: FATAL: Can not allocate the DMF parsing structures\n");
 		/* TODO: Can we pass this code to fatalx? */
-		return ENOMEM;
+		/*return ENOMEM;*/
 	}
 
 	upsdebugx(1, "=== DMF-Reindex: Loading DMF structures from directory '%s':\n\n", dir_name);
@@ -149,18 +167,18 @@ int main(int argc, char *argv[])
 		/* TODO: Error-checking? Faults in some parses should be fatal or not? */
 		fatalx(EXIT_FAILURE, "=== DMF-Reindex: FATAL: Could not find or parse some files (return code %i)\n", result);
 		/* TODO: Can we pass this code to fatalx? */
-		return result;
+		/*return result;*/
 	}
 
 	/* Loop through discovered device_table and print it back as DMF markup */
 	upsdebugx(2, "=== DMF-Reindex: Print DMF subset for snmp_device_table[]...\n\n");
 
-	snmp_device_id_t *devtab = mibdmf_get_device_table(dmp);
+	devtab = mibdmf_get_device_table(dmp);
 	if (!devtab)
 	{
 		fatalx(EXIT_FAILURE, "=== DMF-Reindex: FATAL: Can not access the parsed device_table\n");
 		/* TODO: Can we pass this code to fatalx? */
-		return ENOMEM;
+		/*return ENOMEM;*/
 	}
 
 	/* Below we sprintf the index into a memory string, parse the result as
@@ -169,13 +187,13 @@ int main(int argc, char *argv[])
 	/* TODO: uniquify output, so that an old index that was read in does not
 	 * pollute the parsed results (at least not for completely same items as
 	 * already exist in the table)? What to do about partial hits ~ updates? */
-	size_t i;
-	size_t newdmf_len = 0, newdmf_size = 1024;
-	char *newdmf = (char*)calloc(newdmf_size, sizeof(char));
+	newdmf_len = 0;
+	newdmf_size = 1024;
+	newdmf = (char*)calloc(newdmf_size, sizeof(char));
 	if (!newdmf) {
 		fatalx(EXIT_FAILURE, "=== DMF-Reindex: FATAL: Can not allocate the buffer for parsed DMF\n");
 		/* TODO: Can we pass this code to fatalx? */
-		return ENOMEM;
+		/*return ENOMEM;*/
 	}
 	newdmf_len += snprintf(newdmf + newdmf_len, (newdmf_size - newdmf_len),
 		"<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
@@ -193,7 +211,7 @@ int main(int argc, char *argv[])
 			if (!newdmf) {
 				fatalx(EXIT_FAILURE, "=== DMF-Reindex: FATAL: Can not extend the buffer for parsed DMF\n");
 				/* TODO: Can we pass this code to fatalx? */
-				return ENOMEM;
+				/*return ENOMEM;*/
 			}
 			upsdebugx(2, "\nExtended the buffer to %zu bytes\n", newdmf_size);
 		}
@@ -222,11 +240,11 @@ int main(int argc, char *argv[])
 	upsdebugx(2, "[LAST: num=%zu (lenafter=%zu)] ", i, newdmf_len);
 	upsdebugx(1, "\n=== DMF-Reindex: Indexed %zu entries...\n\n", i);
 
-	mibdmf_parser_t * newdmp = mibdmf_parser_new();
+	newdmp = mibdmf_parser_new();
 	if (!newdmp) {
 		fatalx(EXIT_FAILURE, "=== DMF-Reindex: FATAL: Can not allocate the DMF verification parsing structures\n\n");
 		/* TODO: Can we pass this code to fatalx? */
-		return ENOMEM;
+		/*return ENOMEM;*/
 	}
 
 	upsdebugx(1, "=== DMF-Reindex: Loading DMF structures from prepared string (verification)\n\n");
@@ -235,20 +253,21 @@ int main(int argc, char *argv[])
 	if (result != 0) {
 		fatalx(EXIT_FAILURE, "=== DMF-Reindex: The generated document FAILED syntax verification (return code %d)\n\n", ret_code);
 		/* TODO: Can we pass this code to fatalx? */
-		return ret_code;
+		/*return ret_code;*/
 	}
 
 	/* Loop through reparsed device_table and compare to original one */
 	upsdebugx(1, "=== DMF-Reindex: Verify reparsed content for snmp_device_table[]...\n\n");
-	snmp_device_id_t *newdevtab = mibdmf_get_device_table(newdmp);
+	newdevtab = mibdmf_get_device_table(newdmp);
 	if (!newdevtab)
 	{
 		fatalx(EXIT_FAILURE, "=== DMF-Reindex: FATAL: Can not access the reparsed device_table\n");
 		/* TODO: Can we pass this code to fatalx? */
-		return ENOMEM;
+		/*return ENOMEM;*/
 	}
 
-	size_t j = -1, k = -1;
+	j = -1;
+	k = -1;
 	result = 0;
 	/* Make sure that all values we've considered are present in re-parse */
 	for (k = 0; !is_sentinel__snmp_device_id_t(&(devtab[k])) ; k++)
@@ -293,7 +312,7 @@ int main(int argc, char *argv[])
 	{
 		fatalx(EXIT_FAILURE, "=== DMF-Reindex: The generated document FAILED content verification (%d issues)\n\n", result);
 		/* TODO: Can we pass this code to fatalx? */
-		return result;
+		/*return result;*/
 	}
 
 	upsdebugx(1, "=== DMF-Reindex: Checks succeeded - printing generated DMF to stdout...\n\n");

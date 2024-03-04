@@ -1,3 +1,5 @@
+# Network UPS Tools: NUT configuration tool
+
 all: $(bin_PROGRAMS)
 
 bin_PROGRAMS =
@@ -6,7 +8,7 @@ bin_PROGRAMS =
 # so we do not build it unless explicitly asked to.
 if WITH_NUTCONF
 bin_PROGRAMS += nutconf
-nutconf_SOURCES = nutconf.cpp
+nutconf_SOURCES = nutconf-cli.cpp
 nutconf_CXXFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 nutconf_LDADD = $(top_builddir)/common/libcommon.la \
                 $(top_builddir)/common/libnutconf.la
@@ -15,16 +17,15 @@ nutconf_LDADD = $(top_builddir)/common/libcommon.la \
 if WITH_LIBLTDL
 nutconf_CXXFLAGS += -DWITH_NUTSCANNER -I$(top_srcdir)/tools/nut-scanner
 nutconf_LDADD += $(top_builddir)/tools/nut-scanner/libnutscan.la
-endif
+endif WITH_LIBLTDL
 
-# End of WITH_NUTCONF
-endif
+endif WITH_NUTCONF
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/common/libcommon.la \
 $(top_builddir)/common/libnutconf.la \
 $(top_builddir)/tools/nut-scanner/libnutscan.la: dummy
-	@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 dummy:
 

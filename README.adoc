@@ -1,0 +1,838 @@
+Network UPS Tools Overview
+==========================
+// NOTE: No blank line here, document-header include processing should kick in!
+//GH_MARKUP_1095//ifdef::top_srcdir[]
+//GH_MARKUP_1095//include::{top_srcdir}docs/asciidoc-vars.conf[]
+//GH_MARKUP_1095//endif::top_srcdir[]
+//GH_MARKUP_1095//ifndef::top_srcdir[]
+//GH_MARKUP_1095//include::docs/asciidoc-vars.conf[]
+//GH_MARKUP_1095//endif::top_srcdir[]
+//GH_MARKUP_1095_INCLUDE_BEGIN//7c5e90132 (2023-09-13) docs/asciidoc-vars.conf: fence against re-definitions of website-url and (top_)(src|build)dir attributes
+ifndef::asciidoc-vars-nut-included[]
+:asciidoc-vars-nut-included:	true
+// NOTE: The big block of comments and definitions below comes from
+// NUT::docs/asciidoc-vars.conf and is included into top-level document
+// sources by maintenance recipes directly (`make maintainer-asciidocs`),
+// due to current limitations of the GitHub Web UI asciidoc renderer.
+// Hopefully it can be dropped in favor of compact include definitions
+// (see README.adoc for anticipated example) after this issue is resolved
+// on their side:
+// * https://github.com/github/markup/issues/1095
+//
+// This file should be included into NUT documentation sources to consistently
+// define certain expandable attributes, with contents defined based on the
+// rendition target (e.g. GitHub Web UI, plain text, locally built HTML/PDF...)
+// Note that currently GitHub Web UI references lead to nut-website (as of
+// last built and published revision), not to neighboring documents in the
+// source browser (which would make sense for branch revisions, etc.) due
+// to certain complexity about referencing other-document sections with a
+// partially functional rendering engine there. Exploration and fixes are
+// welcome (actually working links like
+// https://github.com/networkupstools/nut/tree/master#installing or
+// https://github.com/networkupstools/nut/blob/master/UPGRADING.adoc#changes-from-274-to-280
+// do seem promising)!
+//
+// Since the GitHub UI does not allow use of custom asciidoc configuration
+// files, or generally does not process the `include:` requests at this time,
+// clumsy expandable attributes had to be used (usually a set including a
+// prefix with meaningful name, and one or more separators and/or a suffix
+// with shortened names). For our classic documentation renditions, they
+// should resolve to properly defined macros from `docs/asciidoc.conf`
+// (usually named same as the variables defined here, for simplicity):
+// * `linkdoc` allows to refer to a file under `docs/` directory (or
+//   its nut-website rendition).
+// * `xref` substitutes the asciidoc shorthand '<< >>' syntax with
+//   attributes that conditionally expand to:
+//   - links on GitHub (references can point at most to a section of
+//     level docs/common.xsl's <chunk.section.depth>), or
+//   - xref asciidoc macros when generating docs.
+// * `linksingledoc` guarantees that, when chunked HTML is generated,
+//   the link always points to a non-chunked file.
+// * `linkman2` allows to support different names for the manpage and
+//   the command shown. This is also needed to properly display links
+//   to manpages in both GitHub and generated docs without defining an
+//   attribute for each manpage.
+//
+// Optional attributes set by callers:
+// * `website-url` (defaulted below) may be used for "historic website"
+//   snapshot builds... hopefully
+// * `website` is used as a boolean toggle in our recipes for nut-website
+//   vs. offline documentation renditions
+// * `env-github` is used as a boolean toggle, set by GitHub Web-UI renderer
+// * `(top_)srcdir` and `(top_)builddir` can be set by `Makefile.am`
+//   calling the `a2x` tool, since some of the files with the asciidoc
+//   mark-up are only generated or post-processed during build and
+//   (due to `make dist` restrictions) being build products, they may
+//   not reside in same directory as static source text files which
+//   reference or include them. Note that the non-`top` paths would
+//   normally differ based on location of the `Makefile` involved
+//   (e.g. workspace root, or the `docs`, or `docs/man` directories).
+//   These variables are expected to be absolute paths, or ones relative
+//   to asciidoc-selected `:base_dir`, and to end with a relevant path
+//   separator, or be empty -- so in all cases letting the resulting
+//   string resolve meaningfully in the filesystem during docs build.
+//
+// Please keep the remaining comments and definitions as one big block
+// so it does not become a series of empty paragraphs in the rendered
+// documents!
+//
+ifndef::website-url[]
+:website-url:	https://www.networkupstools.org/
+endif::website-url[]
+//
+ifndef::srcdir[]
+:srcdir:
+endif::srcdir[]
+//
+ifndef::builddir[]
+:builddir:
+endif::builddir[]
+//
+ifndef::top_srcdir[]
+:top_srcdir:
+endif::top_srcdir[]
+//
+ifndef::top_builddir[]
+:top_builddir:
+endif::top_builddir[]
+//
+//
+// Address links on GitHub vs docs
+// (note: 'env-github' attribute is set on GitHub)
+//
+// - when generating docs:
+ifndef::env-github[]
+//   * xref -> xref
+//     syntax: {xref}<id>{x-s}[<caption>]
+//     -> xref:<id>[<caption>]
+:xref:		xref:
+:x-s:
+//   * link to doc -> our macro
+//     syntax: {linkdoc}<document>{ld-s}[<display title>]
+//     -> linkdoc:<document>[<display title>]
+:linkdoc:	linkdoc:
+:ld-s:
+//   * link to single doc -> our macro
+//     syntax: {linksingledoc}<document>{lsd-s}[<display title>]
+//     -> linksingledoc:<document>[<display title>]
+:linksingledoc:	linksingledoc:
+:lsd-s:
+//   * link to manpage -> our macro
+//     syntax: {linkman2}<command-page>{lm-s}<displayed-command>{lm-c}<manpage-section>{lm-e}
+//     -> linkman2:<command-page>[<displayed-command>,<manpage-section>]
+:linkman2:	linkman2:
+:lm-s:		[
+:lm-c:		,
+:lm-e:		]
+endif::env-github[]
+//
+// - on GitHub:
+ifdef::env-github[]
+//     In our normal builds, Makefile variables convey the needed paths
+//     (used relatively below as `image:images/ci/...png` etc.)
+:imagesdir:	docs
+//   * xref -> link
+//     syntax: {xref}<id>{x-s}[<caption>]
+//     In order for it to work, <id> can reference at most a section of
+//     level docs/common.xsl's <chunk.section.depth>
+//     -> {website-url}docs/user-manual.chunked/<id>.html[<caption>]
+:xref:		{website-url}docs/user-manual.chunked/
+:x-s:		.html
+//   * link to doc -> link
+//     syntax: {linkdoc}<document>{ld-s}[<display title>]
+//     -> {website-url}docs/<document>.chunked/index.html[<display title>]
+:linkdoc:	{website-url}docs/
+:ld-s:		.chunked/index.html
+//   * link to single doc -> link
+//     syntax: {linksingledoc}<document>{lsd-s}[<display title>]
+//     -> {website-url}docs/<document>.html[<display title>]
+:linksingledoc:	{website-url}docs/
+:lsd-s:		.html
+//   * link to manpage -> link
+//     syntax: {linkman2}<command-page>{lm-s}<displayed-command>{lm-c}<manpage-section>{lm-e}
+//     All the fields are mandatory.
+//     -> {website-url}docs/man/<command-page>.html[<displayed-command>(<manpage-section>)]
+:linkman2:	{website-url}docs/man/
+:lm-s:		.html[
+:lm-c:		(
+:lm-e:		)]
+endif::env-github[]
+endif::asciidoc-vars-nut-included[]
+//
+//GH_MARKUP_1095_INCLUDE_END//
+
+
+Description
+-----------
+
+Network UPS Tools is a collection of programs which provide a common
+interface for monitoring and administering UPS, PDU and SCD hardware.
+It uses a layered approach to connect all of the parts.
+
+Drivers are provided for a wide assortment of equipment.  They
+understand the specific language of each device and map it back to a
+compatibility layer.  This means both an expensive high end UPS, a simple
+"power strip" PDU, or any other power device can be handled transparently
+with a uniform management interface.
+
+This information is cached by the network server `upsd`, which then
+answers queries from the clients.  upsd contains a number of access
+control features to limit the abilities of the clients.  Only authorized
+hosts may monitor or control your hardware if you wish.  Since the
+notion of monitoring over the network is built into the software, you
+can hang many systems off one large UPS, and they will all shut down
+together. You can also use NUT to power on, off or cycle your data center
+nodes, individually or globally through PDU outlets.
+
+Clients such as `upsmon` check on the status of the hardware and do things
+when necessary.  The most important task is shutting down the operating
+system cleanly before the UPS runs out of power.  Other programs are
+also provided to log information regularly, monitor status through your
+web browser, and more.
+
+
+NUT and the ecosystem
+---------------------
+
+NUT comes pre-packaged for many operating systems and embedded in storage,
+automation or virtualization appliances, and is also often shipped as the
+software companion by several UPS vendors. Of course, it is quite normal
+and supported to build your own -- whether for an operating system which
+lacks it yet, or for an older distribution which lacks the current NUT
+version; whether to take advantage of new features or to troubleshoot a
+new UPS deployment with a debugger in hand.
+
+Given its core position at the heart of your systems' lifecycle, we make
+it a point to have current NUT building and running anywhere, especially
+where older releases did work before (including "abandonware" like the
+servers and OSes from the turn of millennium): if those boxes are still
+alive and in need of power protection, they should be able to get it.
+
+[TIP]
+=====
+If you like how the NUT project helps protect your systems from power
+outages, please consider sponsoring or at least "starring" it on GitHub at
+https://github.com/networkupstools/nut/ - these stars are among metrics
+which the larger potential sponsors consider when choosing how to help
+FOSS projects. Keeping the lights shining in such a large non-regression
+build matrix is a big undertaking!
+
+See <<acknowledgements-ci-ops,acknowledgements of organizations which help
+with NUT CI and other daily operations>> for an overview of the shared effort.
+=====
+
+As a FOSS project, for over a quarter of a century we welcome contributions
+of both core code (drivers and other features), build recipes and other
+integration elements to make it work on your favourite system, documentation
+revisions to make it more accessible to newcomers, as well as hardware vendor
+cooperation with first-hand driver and protocol submissions, and just about
+anything else you can think of.
+
+
+Installing
+----------
+
+If you are installing these programs for the first time, go read the
+{xref}_installation_instructions{x-s}[installation instructions]
+to find out how to do that.  This document contains more information
+on what all of this stuff does.
+
+
+Upgrading
+---------
+
+When upgrading from an older version, always check the
+{xref}Upgrading_notes{x-s}[upgrading notes] to see what may have
+changed.  Compatibility issues and other changes will be listed there
+to ease the process.
+
+
+Configuring and using
+---------------------
+
+Once NUT is installed, refer to the
+{xref}Configuration_notes{x-s}[configuration notes] for directions.
+
+
+Documentation
+-------------
+
+This is just an overview of the software.  You should read the man pages,
+included example configuration files, and auxiliary documentation for the
+parts that you intend to use.
+
+
+Network Information
+-------------------
+
+These programs are designed to share information over the network.  In
+the examples below, `localhost` is used as the hostname.  This can also
+be an IP address or a fully qualified domain name.  You can specify a
+port number if your upsd process runs on another port.
+
+In the case of the program `upsc`, to view the variables on the UPS called
+sparky on the `upsd` server running on the local machine, you'd do this:
+
+	/usr/local/ups/bin/upsc sparky@localhost
+
+The default port number is 3493.  You can change this with
+"configure --with-port" at compile-time.  To make a client talk to upsd
+on a specific port, add it after the hostname with a colon, like this:
+
+	/usr/local/ups/bin/upsc sparky@localhost:1234
+
+This is handy when you have a mixed environment and some of the systems
+are on different ports.
+
+The general form for UPS identifiers is this:
+
+	<upsname>[@<hostname>[:<port>]]
+
+Keep this in mind when viewing the examples below.
+
+
+Manifest
+--------
+
+This package is broken down into several categories:
+
+- *drivers*	- These programs talk directly to your UPS hardware.
+- *server*	- upsd serves data from the drivers to the network.
+- *clients*	- They talk to upsd and do things with the status data.
+- *cgi-bin*	- Special class of clients that you can use with your web server.
+- *scripts*	- Contains various scripts, like the Perl and Python binding,
+integration bits and applications.
+
+Drivers
+-------
+
+These programs provide support for specific UPS models.  They understand
+the protocols and port specifications which define status information
+and convert it to a form that upsd can understand.
+
+To configure drivers, edit ups.conf.  For this example, we'll have a UPS
+called "sparky" that uses the apcsmart driver and is connected to
+`/dev/ttyS1`.  That's the second serial port on most Linux-based systems.
+The entry in `ups.conf` looks like this:
+
+	[sparky]
+		driver = apcsmart
+		port = /dev/ttyS1
+
+To start and stop drivers, use upsdrvctl of upsdrvsvcctl (installed on
+operating systems with a service management framework supported by NUT).
+By default, it will start or stop every UPS in the config file:
+
+	/usr/local/ups/sbin/upsdrvctl start
+	/usr/local/ups/sbin/upsdrvctl stop
+
+However, you can also just start or stop one by adding its name:
+
+	/usr/local/ups/sbin/upsdrvctl start sparky
+	/usr/local/ups/sbin/upsdrvctl stop sparky
+
+On operating systems with a supported service management framework,
+you might wrap your NUT drivers into individual services instances
+with:
+
+	/usr/local/ups/sbin/upsdrvsvcctl resync
+
+and then manage those service instances with commands like:
+
+	/usr/local/ups/sbin/upsdrvsvcctl start sparky
+	/usr/local/ups/sbin/upsdrvsvcctl stop sparky
+
+To find the driver name for your device, refer to the section below
+called "HARDWARE SUPPORT TABLE".
+
+Extra Settings
+~~~~~~~~~~~~~~
+
+Some drivers may require additional settings to properly communicate
+with your hardware.  If it doesn't detect your UPS by default, check the
+driver's man page or help (-h) to see which options are available.
+
+For example, the usbhid-ups driver allows you to use USB serial numbers to
+distinguish between units via the "serial" configuration option.  To use this
+feature, just add another line to your ups.conf section for that UPS:
+
+	[sparky]
+		driver = usbhid-ups
+		port = auto
+		serial = 1234567890
+
+Hardware Compatibility List
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The {xref}HCL{x-s}[Hardware Compatibility List] is available in the source directory
+('nut-X.Y.Z/data/driver.list'), and is generally distributed with packages.
+For example, it is available on Debian systems as:
+
+	/usr/share/nut/driver.list
+
+This table is also available link:{website-url}stable-hcl.html[online].
+
+
+If your driver has vanished, see the {linksingledoc}FAQ{lsd-s}[FAQ] and
+{xref}Upgrading_notes{x-s}[Upgrading notes].
+
+Generic Device Drivers
+~~~~~~~~~~~~~~~~~~~~~~
+
+NUT provides several generic drivers that support a variety of very similar
+models.
+
+- The `genericups` driver supports many serial models that use the same basic
+principle to communicate with the computer.  This is known as "contact
+closure", and basically involves raising or lowering signals to indicate
+power status.
++
+This type of UPS tends to be cheaper, and only provides the very simplest
+data about power and battery status.  Advanced features like battery
+charge readings and such require a "smart" UPS and a driver which
+supports it.
++
+See the {linkman2}genericups{lm-s}genericups{lm-c}8{lm-e} man page for more information.
+
+- The `usbhid-ups` driver attempts to communicate with USB HID Power Device
+Class (PDC) UPSes. These units generally implement the same basic protocol,
+with minor variations in the exact set of supported attributes. This driver
+also applies several correction factors when the UPS firmware reports values
+with incorrect scale factors.
++
+See the {linkman2}usbhid-ups{lm-s}usbhid-ups{lm-c}8{lm-e} man page for more information.
+
+- The `nutdrv_qx` driver supports the Megatec / Q1 protocol that is used in
+many brands (Blazer, Energy Sistem, Fenton Technologies, Mustek, Voltronic
+Power and many others).
++
+See the {linkman2}nutdrv_qx{lm-s}nutdrv_qx{lm-c}8{lm-e} man page for more information.
+
+- The `snmp-ups` driver handles various SNMP enabled devices, from many
+different manufacturers. In SNMP terms, `snmp-ups` is a manager, that
+monitors SNMP agents.
++
+See the {linkman2}snmp-ups{lm-s}snmp-ups{lm-c}8{lm-e} man page for more information.
+
+- The `powerman-pdu` is a bridge to the PowerMan daemon, thus handling all
+PowerMan supported devices. The PowerMan project supports several serial
+and networked PDU, along with Blade and IPMI enabled servers.
++
+See the {linkman2}powerman-pdu{lm-s}powerman-pdu{lm-c}8{lm-e} man page for more
+information.
+
+- The `apcupsd-ups` driver is a bridge to the Apcupsd daemon, thus handling
+all Apcupsd supported devices. The Apcupsd project supports many serial,
+USB and networked APC UPS.
++
+See the {linkman2}apcupsd-ups{lm-s}apcupsd-ups{lm-c}8{lm-e} man page for more information.
+
+UPS Shutdowns
+~~~~~~~~~~~~~
+
+upsdrvctl can also shut down (power down) all of your UPS hardware.
+
+WARNING: if you play around with this command, expect your filesystems
+to die.  Don't power off your computers unless they're ready for it:
+
+	/usr/local/ups/sbin/upsdrvctl shutdown
+	/usr/local/ups/sbin/upsdrvctl shutdown sparky
+
+You should read the {xref}UPS_shutdown{x-s}[Configuring automatic UPS shutdowns]
+chapter to learn more about when to use this feature.  If called at the wrong
+time, you may cause data loss by turning off a system with a filesystem
+mounted read-write.
+
+Power distribution unit management
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+NUT also provides an advanced support for power distribution units.
+
+You should read the
+{xref}outlet_management{x-s}[NUT outlets management and PDU notes]
+chapter to learn more about when to use this feature.
+
+Network Server
+--------------
+
+`upsd` is responsible for passing data from the drivers to the client
+programs via the network.  It should be run immediately after `upsdrvctl`
+in your system's startup scripts.
+
+`upsd` should be kept running whenever possible, as it is the only source
+of status information for the monitoring clients like `upsmon`.
+
+
+Monitoring client
+-----------------
+
+`upsmon` provides the essential feature that you expect to find in UPS
+monitoring software: safe shutdowns when the power fails.
+
+In the layered scheme of NUT software, it is a client.  It has this
+separate section in the documentation since it is so important.
+
+You configure it by telling it about UPSes that you want to monitor in
+upsmon.conf.  Each UPS can be defined as one of two possible types:
+a "primary" or "secondary".
+
+Primary
+~~~~~~~
+
+The monitored UPS possibly supplies power to this system running `upsmon`,
+but more importantly -- this system can manage the UPS (typically, this
+instance of `upsmon` runs on the same system as the `upsd` and driver(s)):
+it is capable and responsible for shutting it down when the battery is
+depleted (or in another approach, lingering to deplete it or to tell the
+UPS to reboot its load after too much time has elapsed and this system
+is still alive -- meaning wall power returned at a  "wrong" moment).
+
+The shutdown of this (primary) system itself, as well as eventually an
+UPS shutdown, occurs after any secondary systems ordered to shut down
+first have disconnected, or a critical urgency threshold was passed.
+
+If your UPS is plugged directly into a system's serial or USB port, the
+`upsmon` process on that system should define its relation to that UPS
+as a primary. It may be more complicated for higher-end UPSes with a
+shared network management capability (typically via SNMP) or several
+serial/USB ports that can be used simultaneously, and depends on what
+vendors and drivers implement. Setups with several competing primaries
+(for redundancy) are technically possible, if each one runs its own
+full stack of NUT, but results can be random (currently NUT does not
+provide a way to coordinate several entities managing the same device).
+
+For a typical home user, there's one computer connected to one UPS.
+That means you would run on the same computer the whole NUT stack --
+a suitable driver, `upsd`, and `upsmon` in primary mode.
+
+Secondary
+~~~~~~~~~
+
+The monitored UPS may supply power to the system running `upsmon` (or
+alternatively, it may be a monitoring station with zero PSUs fed by
+that UPS), but more importantly, this system can't manage the UPS --
+e.g. shut it down directly (through a locally running NUT driver).
+
+Use this mode when you run multiple computers on the same UPS.
+Obviously, only one can be connected to the serial or USB port
+on a typical UPS, and that system is the primary. Everything
+else is a secondary.
+
+For a typical home user, there's one computer connected to one UPS.
+That means you run a driver, `upsd`, and `upsmon` in primary mode.
+
+Additional Information
+~~~~~~~~~~~~~~~~~~~~~~
+
+More information on configuring upsmon can be found in these places:
+
+- The {linkman2}upsmon{lm-s}upsmon{lm-c}8{lm-e} man page
+- {xref}BigServers{x-s}[Typical setups for big servers]
+- {xref}UPS_shutdown{x-s}[Configuring automatic UPS shutdowns] chapter
+- The stock `upsmon.conf` that comes with the package
+
+
+Clients
+-------
+
+Clients talk to upsd over the network and do useful things with the data
+from the drivers.  There are tools for command line access, and a few
+special clients which can be run through your web server as CGI
+programs.
+
+For more details on specific programs, refer to their man pages.
+
+upsc
+~~~~
+
+`upsc` is a simple client that will display the values of variables known
+to `upsd` and your UPS drivers.  It will list every variable by default,
+or just one if you specify an additional argument.  This can be useful
+in shell scripts for monitoring something without writing your own
+network code.
+
+`upsc` is a quick way to find out if your driver(s) and upsd are working
+together properly.  Just run `upsc <ups>` to see what's going on, i.e.:
+
+	morbo:~$ upsc sparky@localhost
+	ambient.humidity: 035.6
+	ambient.humidity.alarm.maximum: NO,NO
+	ambient.humidity.alarm.minimum: NO,NO
+	ambient.temperature: 25.14
+	...
+
+If you are interested in writing a simple client that monitors `upsd`,
+the source code for `upsc` is a good way to learn about using the
+upsclient functions.
+
+See the {linkman2}upsc{lm-s}upsc{lm-c}8{lm-e} man page and
+{xref}nut-names{x-s}[NUT command and variable naming scheme] for more information.
+
+upslog
+~~~~~~
+
+`upslog` will write status information from `upsd` to a file at set
+intervals.  You can use this to generate graphs or reports with other
+programs such as `gnuplot`.
+
+upsrw
+~~~~~
+
+`upsrw` allows you to display and change the read/write variables in your
+UPS hardware.  Not all devices or drivers implement this, so this may
+not have any effect on your system.
+
+A driver that supports read/write variables will give results like this:
+
+	$ upsrw sparky@localhost
+
+	( many skipped )
+
+	[ups.test.interval]
+	Interval between self tests
+	Type: ENUM
+	Option: "1209600"
+	Option: "604800" SELECTED
+	Option: "0"
+
+	( more skipped )
+
+On the other hand, one that doesn't support them won't print anything:
+
+	$ upsrw fenton@gearbox
+
+	( nothing )
+
+`upsrw` requires administrator powers to change settings in the hardware.
+Refer to {linkman2}upsd.users{lm-s}upsd.users{lm-c}5{lm-e} for information on defining
+users in `upsd`.
+
+upscmd
+~~~~~~
+
+Some UPS hardware and drivers support the notion of an instant command -
+a feature such as starting a battery test, or powering off the load.
+You can use upscmd to list or invoke instant commands if your
+hardware/drivers support them.
+
+Use the -l command to list them, like this:
+
+	$ upscmd -l sparky@localhost
+	Instant commands supported on UPS [sparky@localhost]:
+
+	load.on - Turn on the load immediately
+	test.panel.start - Start testing the UPS panel
+	calibrate.start - Start run time calibration
+	calibrate.stop - Stop run time calibration
+	...
+
+`upscmd` requires administrator powers to start instant commands.
+To define users and passwords in `upsd`, see
+{linkman2}upsd.users{lm-s}upsd.users{lm-c}5{lm-e}.
+
+
+CGI Programs
+------------
+
+The CGI programs are clients that run through your web server.  They
+allow you to see UPS status and perform certain administrative commands
+from any web browser.  Javascript and cookies are not required.
+
+These programs are not installed or compiled by default.  To compile
+and install them, first run `configure --with-cgi`, then do `make` and
+`make install`.  If you receive errors about "gd" during configure, go
+get it and install it before continuing.
+
+You can get the source here:
+
+- http://www.libgd.org/
+
+In the event that you need libpng or zlib in order to compile gd,
+they can be found at these URLs:
+
+- http://www.libpng.org/pub/png/pngcode.html
+- http://www.zlib.net/
+
+
+Access Restrictions
+~~~~~~~~~~~~~~~~~~~
+
+The CGI programs use hosts.conf to see if they are allowed to talk to a
+host.  This keeps malicious visitors from creating queries from your web
+server to random hosts on the Internet.
+
+If you get error messages that say "Access to that host is not
+authorized", you're probably missing an entry in your hosts.conf.
+
+upsstats
+~~~~~~~~
+
+`upsstats` generates web pages from HTML templates, and plugs in status
+information in the right places.  It looks like a distant relative of
+APC's old Powerchute interface.  You can use it to monitor several
+systems or just focus on one.
+
+It also can generate IMG references to `upsimage`.
+
+upsimage
+~~~~~~~~
+
+This is usually called by upsstats via IMG SRC tags to draw either the
+utility or outgoing voltage, battery charge percent, or load percent.
+
+upsset
+~~~~~~
+
+`upsset` provides several useful administration functions through a web
+interface.  You can use `upsset` to kick off instant commands on your UPS
+hardware like running a battery test.  You can also use it to change
+variables in your UPS that accept user-specified values.
+
+Essentially, `upsset` provides the functions of `upsrw` and `upscmd`, but
+with a happy pointy-clicky interface.
+
+`upsset` will not run until you convince it that you have secured your
+system.  You *must* secure your CGI path so that random interlopers
+can't run this program remotely.  See the `upsset.conf` file.  Once you
+have secured the directory, you can enable this program in that
+configuration file.  It is not active by default.
+
+
+Version Numbering
+-----------------
+
+The version numbers work like this: if the middle number is odd, it's a
+development tree, otherwise it is the stable tree.
+
+The past stable trees were 1.0, 1.2, 1.4, 2.0, 2.2 and 2.4, with the
+latest such stable tree designated 2.6.  The development trees were 1.1,
+1.3, 1.5, 2.1 and 2.3.  Since the 2.4 release, there is no real separate
+development branch anymore since the code is available through a revision
+control system (namely, Git -- or actually Subversion back then) and its
+snapshots become published releases.
+
+Since 2.7 line of releases, sources are tracked in Git revision control
+system, with the project ecosystem being hosted on GitHub, and any code
+improvements or other contributions merged through common pull request
+approach and custom NUT CI testing on multiple platforms.
+
+Major release jumps are mostly due to large changes to the features
+list.  There have also been a number of architectural changes which
+may not be noticeable to most users, but which can impact developers.
+
+Backwards and Forwards Compatibility
+------------------------------------
+
+The network protocol for the current version of NUT should be
+backwards-compatible all the way back to version 1.4. A newer client should
+fail gracefully when querying an older server.
+
+If you need more details about cross-compatibility of older NUT releases
+(1.x vs. 2.x), please see the {xref}Project_History{x-s}[Project history] chapter.
+
+Support / Help / etc.
+---------------------
+
+If you are in need of help, refer to the
+{xref}Support_Request{x-s}[Support instructions] in the user manual.
+
+
+Hacking / Development Info
+--------------------------
+
+Additional documentation can be found in:
+
+- the {linkdoc}developer-guide{ld-s}[Developer Guide],
+- the {linkdoc}packager-guide{ld-s}[Packager Guide].
+
+
+Acknowledgements / Contributions
+--------------------------------
+
+The many people who have participated in creating and improving NUT are
+listed in the user manual {xref}Acknowledgements{x-s}[acknowledgements appendix].
+
+[[acknowledgements-ci-ops]]
+
+We would like to highlight some organizations which provide continuous
+support to the NUT project (and many other FOSS projects) on technological
+and organizational sides, such as helping keep the donations transparent,
+NUT CI farm afloat, and public resources visible. Thanks for keeping the
+clocks ticking, day and night:
+
+////////////
+FIXME: Use different (better-resolution) images for PDF rendering?
+
+FIXME: PDF cells seem to align weirdly, like setting the bottom of the first
+line of text to be on the same level as bottom of the image, or similar to that.
+
+NOTE: GitHub renderer (or CSS stack?) ignores style settings and squashes the
+logo column into a fixed-width monster with either our specified heights, or
+with teeny-tiny thumbnail magnitude images, so it is prettier to leave it as
+a "single-column table" by default. Grid/Frame settings are also ignored, but
+we can try our best anyway.
+
+NOTE: The classic asciidoc/a2x renderer seems to not support link/url options,
+but at least does not complain about them either.
+////////////
+
+ifndef::env-github[]
+[frame="none",grid="none",cols="^.<1,<.<2"]
+endif::env-github[]
+ifdef::env-github[]
+[frame="none",grid="none",cols="<1*"]
+endif::env-github[]
+|===
+| image:images/ci/GitHub-Mark-140pxW.png[alt="GitHub logo",width="140",height="140",link="https://github.com/"]
+| The link:https://github.com/networkupstools/["NetworkUPSTools" organization
+  on GitHub] arranges a lot of things, including source code hosting for NUT
+  itself and several related projects, team management, projects, issue and
+  pull request discussions, sponsorship, nut-website rendering and hosting,
+  some automated actions, and more...
+
+| image:images/ci/jenkins-nut-transparent-bg-140pxW.png[alt="Jenkins and NUT logo",width="139",height="104",link="https://www.jenkins.io/"]
+| The link:https://www.jenkins.io/[Jenkins CI] project and its huge plugin
+  ecosystem provides the technological foundation for the largest island of
+  the link:https://ci.networkupstools.org/[self-hosted NUT CI farm].
+  There is a fair amount of cross-pollination between the upstream project
+  and community, and the development done originally for the NUT CI farm.
+
+  See more at link:https://stories.jenkins.io/user-story/jenkins-is-the-way-for-networkupstools/[Jenkins
+  is the way to build multi-platform NUT] article.
+
+| image:images/ci/fosshost_org_Host_Light_38px.png[alt="Fosshost logo",width="112",height="38"]
+| Fosshost provided virtual machines where the multi-platform NUT CI farm with
+  a link:https://github.com/networkupstools/jenkins-dynamatrix/[jenkins-dynamatrix]
+  link:https://github.com/networkupstools/nut/blob/master/Jenkinsfile-dynamatrix[setup]
+  runs to arrange builds in numerous operating environments and a lot of toolkit
+  versions and implementations. Some workers running on NUT community members'
+  machines can also dial in to provide an example of their favourite platforms.
+  Literally hundreds of NUT builds run for each iteration, to make sure NUT can
+  always build and work everywhere.
+
+  This allows us to ensure that NUT remains portable across two decades' worth
+  of operating systems, compilers, script interpreters, tools and third-party
+  dependencies.
+
+| image:images/ci/CircleCI_vertical_black_logo.png[alt="CircleCI logo",width="130",height="107",link="https://circleci.com/"]
+| The
+  link:https://app.circleci.com/pipelines/github/networkupstools/nut/[CircleCI
+  NUT pipeline] allows us to test NUT CI builds on MacOS.
+
+| image:images/ci/AppVeyor_logo-ar21.png[alt="AppVeyor logo",width="120",height="60",link="https://www.appveyor.com/"]
+| The link:https://ci.appveyor.com/project/nut-travis/nut/[AppVeyor
+  NUT pipeline] allows us to test NUT CI builds on Windows (and publish
+  preview tarballs with binaries).
+
+| image:images/ci/DO_Powered_by_Badge_blue_140pxW.png[alt="DigitalOcean logo",width="140",height="29",link="https://www.digitalocean.com/?refcode=d2fbf2b9e082&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge"]
+| The link:https://www.digitalocean.com/?refcode=d2fbf2b9e082&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge[DigitalOcean]
+  droplets allow us to host NUT CI farm Jenkins controller and the build agents
+  for multiple operating systems.
+
+| image:images/ci/gandi-ar21.png[alt="Gandi.Net logo",width="120",height="60",link="https://www.gandi.net/"]
+| link:https://www.gandi.net/[Gandi.Net] took up the costs of NUT DNS hosting.
+
+| image:images/ci/OC_logo_merged_140x26.png[alt="Open Collective logo",width="140",height="26",link="https://opencollective.com/"]
+| https://opencollective.com/networkupstools allows us to arrange monetary
+  donations and spending, with public transparency of everything that happens.
+|===

@@ -23,10 +23,23 @@
 #include "sstate.h"
 #include "user.h"
 #include "netssl.h"
+#include "nut_stdint.h"
 #include <ctype.h>
 
 static ups_t	*upstable = NULL;
 int	num_ups = 0;
+
+/* Users can pass a -D[...] option to enable debugging.
+ * For the service tracing purposes, also the upsd.conf
+ * can define a debug_min value in the global section,
+ * to set the minimal debug level (CLI provided value less
+ * than that would not have effect, can only have more).
+ */
+int	nut_debug_level_global = -1;
+/* Debug level specified via command line - we revert to
+ * it when reloading if there was no DEBUG_MIN in upsd.conf
+ */
+int nut_debug_level_args = 0;
 
 /* add another UPS for monitoring from ups.conf */
 static void ups_create(const char *fn, const char *name, const char *desc)
@@ -51,6 +64,19 @@ static void ups_create(const char *fn, const char *name, const char *desc)
 
 	temp->stale = 1;
 	temp->retain = 1;
+#ifdef WIN32
+	memset(&temp->read_overlapped,0,sizeof(temp->read_overlapped));
+	memset(temp->buf,0,sizeof(temp->buf));
+	temp->read_overlapped.hEvent = CreateEvent(NULL, /* Security */
+						FALSE, /* auto-reset*/
+						FALSE, /* initial state = non signaled */
+						NULL /* no name */);
+	if(temp->read_overlapped.hEvent == NULL ) {
+		upslogx(LOG_ERR, "Can't create event for UPS [%s]",
+			name);
+		return;
+	}
+#endif
 	temp->sock_fd = sstate_connect(temp);
 
 	/* preload this to the current time to avoid false staleness */
@@ -91,8 +117,12 @@ static void ups_update(const char *fn, const char *name, const char *desc)
 		sstate_cmdfree(temp);
 		pconf_finish(&temp->sock_ctx);
 
+#ifndef WIN32
 		close(temp->sock_fd);
-		temp->sock_fd = -1;
+#else
+		CloseHandle(temp->sock_fd);
+#endif
+		temp->sock_fd = ERROR_FD;
 		temp->dumpdone = 0;
 
 		/* now redefine the filename and wrap up */
@@ -136,9 +166,21 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 	if (numargs < 2)
 		return 0;
 
+	/* DEBUG_MIN (NUM) */
+	/* debug_min (NUM) also acceptable, to be on par with ups.conf */
+	if (!strcasecmp(arg[0], "DEBUG_MIN")) {
+		int lvl = -1; /* typeof common/common.c: int nut_debug_level */
+		if ( str_to_int (arg[1], &lvl, 10) && lvl >= 0 ) {
+			nut_debug_level_global = lvl;
+		} else {
+			upslogx(LOG_INFO, "DEBUG_MIN has non numeric or negative value in upsd.conf");
+		}
+		return 1;
+	}
+
 	/* MAXAGE <seconds> */
 	if (!strcmp(arg[0], "MAXAGE")) {
-		if (isdigit(arg[1][0])) {
+		if (isdigit((size_t)arg[1][0])) {
 			maxage = atoi(arg[1]);
 			return 1;
 		}
@@ -150,7 +192,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 
 	/* TRACKINGDELAY <seconds> */
 	if (!strcmp(arg[0], "TRACKINGDELAY")) {
-		if (isdigit(arg[1][0])) {
+		if (isdigit((size_t)arg[1][0])) {
 			tracking_delay = atoi(arg[1]);
 			return 1;
 		}
@@ -160,9 +202,9 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 		}
 	}
 
-	/* ALLOW_NO_DEVICE <seconds> */
+	/* ALLOW_NO_DEVICE <bool> */
 	if (!strcmp(arg[0], "ALLOW_NO_DEVICE")) {
-		if (isdigit(arg[1][0])) {
+		if (isdigit((size_t)arg[1][0])) {
 			allow_no_device = (atoi(arg[1]) != 0); /* non-zero arg is true here */
 			return 1;
 		}
@@ -173,9 +215,22 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 		return 0;
 	}
 
+	/* ALLOW_NOT_ALL_LISTENERS <bool> */
+	if (!strcmp(arg[0], "ALLOW_NOT_ALL_LISTENERS")) {
+		if (isdigit((size_t)arg[1][0])) {
+			allow_not_all_listeners = (atoi(arg[1]) != 0); /* non-zero arg is true here */
+			return 1;
+		}
+		if (parse_boolean(arg[1], &allow_not_all_listeners))
+			return 1;
+
+		upslogx(LOG_ERR, "ALLOW_NOT_ALL_LISTENERS has non numeric and non boolean value (%s)!", arg[1]);
+		return 0;
+	}
+
 	/* MAXCONN <connections> */
 	if (!strcmp(arg[0], "MAXCONN")) {
-		if (isdigit(arg[1][0])) {
+		if (isdigit((size_t)arg[1][0])) {
 			/* FIXME: Check for overflows (and int size of nfds_t vs. long) - see get_max_pid_t() for example */
 			maxconn = (nfds_t)atol(arg[1]);
 			return 1;
@@ -188,8 +243,16 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 
 	/* STATEPATH <dir> */
 	if (!strcmp(arg[0], "STATEPATH")) {
+		const char *sp = getenv("NUT_STATEPATH");
+		if (sp && strcmp(sp, arg[1])) {
+			/* Only warn if the two strings are not equal */
+			upslogx(LOG_WARNING,
+				"Ignoring STATEPATH='%s' from configuration file, "
+				"in favor of NUT_STATEPATH='%s' environment variable",
+				NUT_STRARG(arg[1]), NUT_STRARG(sp));
+		}
 		free(statepath);
-		statepath = xstrdup(arg[1]);
+		statepath = xstrdup(sp ? sp : arg[1]);
 		return 1;
 	}
 
@@ -217,7 +280,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 #ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
 	/* CERTREQUEST (0 | 1 | 2) */
 	if (!strcmp(arg[0], "CERTREQUEST")) {
-		if (isdigit(arg[1][0])) {
+		if (isdigit((size_t)arg[1][0])) {
 			certrequest = atoi(arg[1]);
 			return 1;
 		}
@@ -296,6 +359,7 @@ void load_upsdconf(int reloading)
 {
 	char	fn[SMALLBUF];
 	PCONF_CTX_t	ctx;
+	int	numerrors = 0;
 
 	snprintf(fn, sizeof(fn), "%s/upsd.conf", confpath());
 
@@ -313,10 +377,18 @@ void load_upsdconf(int reloading)
 		return;
 	}
 
+	if (reloading) {
+		/* if upsd.conf added or changed
+		 * (or commented away) the debug_min
+		 * setting, detect that */
+		nut_debug_level_global = -1;
+	}
+
 	while (pconf_file_next(&ctx)) {
 		if (pconf_parse_error(&ctx)) {
 			upslogx(LOG_ERR, "Parse error: %s:%d: %s",
 				fn, ctx.linenum, ctx.errmsg);
+			numerrors++;
 			continue;
 		}
 
@@ -334,9 +406,33 @@ void load_upsdconf(int reloading)
 				snprintfcat(errmsg, sizeof(errmsg), " %s",
 					ctx.arglist[i]);
 
+			numerrors++;
 			upslogx(LOG_WARNING, "%s", errmsg);
 		}
 
+	}
+
+	if (reloading) {
+		if (nut_debug_level_global > -1) {
+			upslogx(LOG_INFO,
+				"Applying DEBUG_MIN %d from upsd.conf",
+				nut_debug_level_global);
+			nut_debug_level = nut_debug_level_global;
+		} else {
+			/* DEBUG_MIN is absent or commented-away in ups.conf */
+			upslogx(LOG_INFO,
+				"Applying debug level %d from "
+				"original command line arguments",
+				nut_debug_level_args);
+			nut_debug_level = nut_debug_level_args;
+		}
+	}
+
+	/* FIXME: Per legacy behavior, we silently went on.
+	 * Maybe should abort on unusable configs?
+	 */
+	if (numerrors) {
+		upslogx(LOG_ERR, "Encountered %d config errors, those entries were ignored", numerrors);
 	}
 
 	pconf_finish(&ctx);
@@ -454,8 +550,12 @@ static void delete_ups(upstype_t *target)
 			else
 				last->next = ptr->next;
 
-			if (ptr->sock_fd != -1)
+			if (VALID_FD(ptr->sock_fd))
+#ifndef WIN32
 				close(ptr->sock_fd);
+#else
+				CloseHandle(ptr->sock_fd);
+#endif
 
 			/* release memory */
 			sstate_infofree(ptr);
@@ -516,7 +616,7 @@ void conf_reload(void)
 	}
 
 	/* reload from ups.conf */
-	read_upsconf();
+	read_upsconf(1);		/* 1 = may abort upon fundamental errors */
 	upsconf_add(1);			/* 1 = reloading */
 
 	/* now reread upsd.conf */

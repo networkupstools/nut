@@ -6,14 +6,20 @@ NAME
 
 powercom - UPS driver for serial Powercom/Trust/Advice UPS equipment
 
-NOTE
-----
-This man page only documents the hardware-specific features of the
+SYNOPSIS
+--------
+
+*powercom* -h
+
+*powercom* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 powercom driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
+
 This driver supports many similar kinds of serial UPS hardware (as well as a
 few USB UPS models with USB-to-serial adapters).  The most common ones are the
 Trust 425/625, Powercom, and Advice Partner/King PR750.  Others using the same
@@ -24,6 +30,7 @@ see the NUT Hardware Compatibility List (HCL).
 
 EXTRA ARGUMENTS
 ---------------
+
 This driver supports the following optional settings in the
 linkman:ups.conf[5] file:
 
@@ -116,6 +123,7 @@ system startup -- just when the power consumption tends to be high.
 
 DEFAULT VALUES FOR THE EXTRA ARGUMENTS
 --------------------------------------
+
  linevoltage = 230
  manufacturer = PowerCom
  modelname = Unknown
@@ -128,6 +136,7 @@ values for ALL models.
 
 Trust
 ~~~~~
+
  numOfBytesFromUPS = 11
  methodOfFlowControl = dtr0rts1
  validationSequence = {{5,0},{7,0},{8,0}}
@@ -139,6 +148,7 @@ Trust
 
 KP625AP
 ~~~~~~~
+
  numOfBytesFromUPS = 16
  methodOfFlowControl = dtr0rts1
  validationSequence = {{5,0x80},{7,0},{8,0}}
@@ -150,6 +160,7 @@ KP625AP
 
 Egys
 ~~~~
+
  numOfBytesFromUPS = 16
  methodOfFlowControl = no_flow_control
  validationSequence = {{5,0x80},{7,0},{8,0}}
@@ -161,6 +172,7 @@ Egys
 
 IMP
 ~~~
+
  numOfBytesFromUPS = 16
  methodOfFlowControl = no_flow_control
  validationSequence = {{5,0xFF},{7,0},{8,0}}
@@ -168,6 +180,7 @@ IMP
 
 KIN
 ~~~
+
  numOfBytesFromUPS = 16
  methodOfFlowControl = no_flow_control
  validationSequence = {{11,0x4b},{8,0},{8,0}}
@@ -175,6 +188,7 @@ KIN
 
 BNT
 ~~~
+
  numOfBytesFromUPS = 16
  methodOfFlowControl = no_flow_control
  validationSequence = {{11,0x42},{8,0},{8,0}}
@@ -182,6 +196,7 @@ BNT
 
 BNT-other
 ~~~~~~~~~
+
  numOfBytesFromUPS = 16
  methodOfFlowControl = no_flow_control
  validationSequence = {{8,0},{8,0},{8,0}}
@@ -193,25 +208,29 @@ BNT-other
 
 OPTI
 ~~~~
+
  numOfBytesFromUPS = 16
  methodOfFlowControl = no_flow_control
  validationSequence = {{5,0xFF},{7,0},{8,0}}
  shutdownArguments = {{1,30},y}
 
-AUTHOR
-------
-Peter Bieringer <pb@bieringer.de>,
-Alexey Sidorov <alexsid@altlinux.org>,
-Keven L. Ates <atescomp@gmail.com>,
-Rouben Tchakhmakhtchian <rouben@rouben.net>
+AUTHORS
+-------
+
+* Peter Bieringer <pb@bieringer.de>
+* Alexey Sidorov <alexsid@altlinux.org>
+* Keven L. Ates <atescomp@gmail.com>
+* Rouben Tchakhmakhtchian <rouben@rouben.net>
 
 SEE ALSO
 --------
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

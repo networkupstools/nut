@@ -1,0 +1,111 @@
+ADELSYSTEM_CBI(8)
+=================
+
+NAME
+----
+
+adelsystem_cbi - Driver for the ADELSYSTEM CB/CBI DC-UPS
+
+SYNOPSIS
+--------
+
+*adelsystem_cbi* -h
+
+*adelsystem_cbi* -a 'DEVICE_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the specific features of the *adelsystem_cbi*
+driver. For information about the core driver, see linkman:nutupsdrv[8].
+
+SUPPORTED HARDWARE
+------------------
+
+This is the driver for the adelsystem cb/cbi dc-ups devices.
+
+The driver has been tested against CBI2801224A, all in one 12/24Vdc DC-UPS.
+
+More information about this UPS can be found here: ::
+https://www.adelsystem.com/en/products/dc-ups-/
+
+
+EXTRA ARGUMENTS
+---------------
+
+This driver supports the following optional settings in the
+linkman:ups.conf[5] file:
+
+Serial:
+~~~~~~
+
+*ser_baud_rate*='value'::
+A integer specifying the serial port baud rate (default 9600).
+
+*ser_data_bit*='value'::
+A integer specifying the serial port data bit (default 8).
+
+*ser_parity*='value'::
+A character specifying the serial port parity (default N).
+
+*ser_stop_bit*='value'::
+An integer specifying the serial port stop bit (default 1).
+
+Modbus:
+~~~~~~
+
+*dev_slave_id*='value'::
+An integer specifying the device modbus slave ID (default 1).
+
+
+CONFIGURATION
+-------------
+
+Here is an example of adelsystem_cbi driver configuration in *ups.conf* file:
+----
+[adelsystem_cbi]
+  driver = adelsystem_cbi
+  port = /dev/ttyUSB0
+  desc = "adelsystem cb/cbi ups driver"
+  # serial settings
+  ser_baud_rate = 9600
+  ser_parity = N
+  ser_data_bit = 8
+  ser_stop_bit = 1
+  # modbus slave id
+  dev_slave_id = 5
+----
+
+INSTANT COMMANDS
+----------------
+
+This driver support the following instant commands:
+
+load.off::
+executes "instant poweroff"
+
+INSTALLATION
+------------
+
+This driver is not built by default. You can build it by installing
+libmodbus and running `configure --with-modbus=yes`.
+
+You also need to give proper permissions on the local serial device
+file (/dev/ttyUSB0 for example) to allow the run-time NUT driver user
+account to access it.
+
+AUTHOR
+------
+
+Dimitris Economou <dimitris.s.economou@gmail.com>
+
+SEE ALSO
+--------
+
+The core driver:
+~~~~~~~~~~~~~~~~
+
+linkman:nutupsdrv[8], linkman:ups.conf[5]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
+* The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
+* libmodbus home page: http://libmodbus.org

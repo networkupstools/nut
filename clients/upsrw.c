@@ -22,10 +22,14 @@
 #include "common.h"
 #include "nut_platform.h"
 
+#ifndef WIN32
 #include <pwd.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#else
+#include "wincompat.h"
+#endif
 
 #include "nut_stdint.h"
 #include "upsclient.h"
@@ -49,8 +53,10 @@ static void usage(const char *prog)
 	printf("Demo program to set variables within UPS hardware.\n");
 	printf("\n");
 	printf("  -h            display this help text\n");
+	printf("  -V            display the version of this software\n");
 	printf("  -s <variable>	specify variable to be changed\n");
 	printf("		use -s VAR=VALUE to avoid prompting for value\n");
+	printf("  -l            show all possible read/write variables.\n");
 	printf("  -u <username> set username for command authentication\n");
 	printf("  -p <password> set password for command authentication\n");
 	printf("  -w            wait for the completion of setting by the driver\n");
@@ -59,7 +65,9 @@ static void usage(const char *prog)
 	printf("\n");
 	printf("  <ups>         UPS identifier - <upsname>[@<hostname>[:<port>]]\n");
 	printf("\n");
-	printf("Call without -s to show all possible read/write variables.\n");
+	printf("Call without -s to show all possible read/write variables (same as -l).\n");
+
+	nut_report_config_flags();
 }
 
 static void clean_exit(void)
@@ -122,9 +130,10 @@ static void do_set(const char *varname, const char *newval)
 #pragma GCC diagnostic ignored "-Wformat-truncation"
 #endif
 	/* From the check above, we know that we have exactly UUID4_LEN chars
-	 * (aka sizeof(tracking_id)) in the buf after "OK TRACKING " prefix.
+	 * (aka sizeof(tracking_id)) in the buf after "OK TRACKING " prefix,
+	 * plus the null-byte.
 	 */
-	assert (UUID4_LEN == snprintf(tracking_id, sizeof(tracking_id), "%s", buf + strlen("OK TRACKING ")));
+	assert (UUID4_LEN == 1 + snprintf(tracking_id, sizeof(tracking_id), "%s", buf + strlen("OK TRACKING ")));
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
 #pragma GCC diagnostic pop
 #endif
@@ -395,7 +404,7 @@ static void do_enum(const char *varname, const int vartype, const long len)
 		/* ENUM <upsname> <varname> <value> */
 
 		if (numa < 4) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %zu args, need at least 4)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 4)", numa);
 		}
 
 		printf("Option: \"%s\"", answer[3]);
@@ -448,7 +457,7 @@ static void do_range(const char *varname)
 		/* RANGE <upsname> <varname> <min> <max> */
 
 		if (numa < 5) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %zu args, need at least 4)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 4)", numa);
 		}
 
 		min = atoi(answer[3]);
@@ -591,7 +600,7 @@ static void print_rwlist(void)
 
 		/* RW <upsname> <varname> <value> */
 		if (numa < 4) {
-			fatalx(EXIT_FAILURE, "Error: insufficient data (got %zu args, need at least 4)", numa);
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 4)", numa);
 		}
 
 		/* sock this entry away for later */
@@ -628,15 +637,22 @@ static void print_rwlist(void)
 
 int main(int argc, char **argv)
 {
-	int	i, port;
+	int	i;
+	uint16_t	port;
 	const char	*prog = xbasename(argv[0]);
 	char	*password = NULL, *username = NULL, *setvar = NULL;
 
-	while ((i = getopt(argc, argv, "+hs:p:t:u:wV")) != -1) {
+	while ((i = getopt(argc, argv, "+hls:p:t:u:wV")) != -1) {
 		switch (i)
 		{
 		case 's':
 			setvar = optarg;
+			break;
+		case 'l':
+			if (setvar) {
+				upslogx(LOG_WARNING, "Listing mode requested, overriding setvar specified earlier!");
+				setvar = NULL;
+			}
 			break;
 		case 'p':
 			password = optarg;
@@ -653,6 +669,7 @@ int main(int argc, char **argv)
 			break;
 		case 'V':
 			printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
+			nut_report_config_flags();
 			exit(EXIT_SUCCESS);
 		case 'h':
 		default:

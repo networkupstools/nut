@@ -1,0 +1,21 @@
+:titles.underlines: "__","==","--","~~","^^"
+
+Network UPS Tools Change Log
+____________________________
+:Author: NUT_project_community_contributors
+
+Introduction
+============
+
+The primary goal of the Network UPS Tools (NUT) project is to provide support
+for Power Devices, such as Uninterruptible Power Supplies, Power Distribution
+Units and Solar Controllers.
+
+[[Change_Log]]
+Very detailed Change Log
+========================
+
+This document intends to detail the change log for relatively recent work
+(roughly since the source code was tracked in Git).
+
+include::{builddir}../ChangeLog.adoc-parsed[]

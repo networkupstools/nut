@@ -1,22 +1,23 @@
-/* nutipc.hpp - NUT IPC
+/*
+    nutipc.hpp - NUT IPC
 
-   Copyright (C) 2012 Eaton
+    Copyright (C) 2012 Eaton
 
-   Author: Vaclav Krpec  <VaclavKrpec@Eaton.com>
+        Author: Vaclav Krpec  <VaclavKrpec@Eaton.com>
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
 #ifndef NUT_NUTIPC_HPP
@@ -35,10 +36,22 @@ extern "C" {
 #include <sys/types.h>
 #include <unistd.h>
 #include <signal.h>
-#include <sys/wait.h>
-#include <pthread.h>
+
+#ifndef WIN32
+# include <sys/wait.h>
+#else
+# include <wincompat.h>
+#endif
+
+#ifdef HAVE_PTHREAD
+# include <pthread.h>
+#endif
 }
 
+/* See include/common.h for details behind this */
+#ifndef NUT_UNUSED_VARIABLE
+#define NUT_UNUSED_VARIABLE(x) (void)(x)
+#endif
 
 namespace nut {
 
@@ -54,10 +67,18 @@ class Process {
 	public:
 
 	/** Get current process ID */
-	static pid_t getPID() throw();
+	static pid_t getPID()
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+		;
 
 	/** Get parent process ID */
-	static pid_t getPPID() throw();
+	static pid_t getPPID()
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw()
+#endif
+		;
 
 	/**
 	 *  Process main routine functor prototype
@@ -67,8 +88,14 @@ class Process {
 
 		/** Formal constructor */
 		Main() {}
+		virtual ~Main();
 
 		public:
+
+		/* Avoid implicit copy/move operator declarations */
+		Main(Main&&) = default;
+		Main& operator=(const Main&) = default;
+		//Main& operator=(Main&&) = default;
 
 		/** Routine */
 		virtual int operator () () = 0;
@@ -99,7 +126,7 @@ class Process {
 		 *  \param  main  Child process main routine
 		 */
 		Child(M main)
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 			throw(std::runtime_error)
 #endif
 			;
@@ -118,7 +145,7 @@ class Process {
 		 *  \return Child process exit code
 		 */
 		int wait()
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 			throw(std::logic_error)
 #endif
 			;
@@ -192,11 +219,10 @@ class Process {
 
 		/** Execution of the binary */
 		int operator () ()
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 			throw(std::runtime_error)
 #endif
-			;
-
+			override;
 	};  // end of class Executor
 
 	/**
@@ -266,33 +292,55 @@ class Process {
 
 template <class M>
 Process::Child<M>::Child(M main)
-#if (defined __cplusplus) && (__cplusplus < 201700)
-throw(std::runtime_error)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+	throw(std::runtime_error)
 #endif
 	:
 	m_pid(0),
 	m_exited(false),
 	m_exit_code(0)
 {
+#ifdef WIN32
+	NUT_UNUSED_VARIABLE(main);
+
+	/* FIXME: Implement (for NUT processes) via pipes?
+	 * See e.g. upsdrvctl implementation. */
+	std::stringstream e;
+
+	e << "Can't fork: not implemented on this platform yet";
+
+	throw std::logic_error(e.str());
+#else
 	m_pid = ::fork();
 
 	if (!m_pid)
 		::exit(main());
+#endif
 }
 
 
 template <class M>
 int Process::Child<M>::wait()
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 	throw(std::logic_error)
 #endif
 {
+#ifdef WIN32
+	/* FIXME: Implement (for NUT processes) via pipes?
+	 * See e.g. upsdrvctl implementation. */
+	std::stringstream e;
+
+	e << "Can't wait for PID " << m_pid <<
+		": not implemented on this platform yet";
+
+	throw std::logic_error(e.str());
+#else
 	if (m_exited)
 		return m_exit_code;
 
 	pid_t wpid = ::waitpid(m_pid, &m_exit_code, 0);
 
-	if (-1 == m_pid) {
+	if (-1 == wpid) {
 		int erno = errno;
 
 		std::stringstream e;
@@ -307,6 +355,7 @@ int Process::Child<M>::wait()
 	m_exit_code = WEXITSTATUS(m_exit_code);
 
 	return m_exit_code;
+#endif
 }
 
 
@@ -320,6 +369,7 @@ class Signal {
 
 	/** Signals */
 	typedef enum {
+#ifndef WIN32
 		HUP    = SIGHUP,     /** Hangup                            */
 		INT    = SIGINT,     /** Interrupt                         */
 		QUIT   = SIGQUIT,    /** Quit                              */
@@ -338,15 +388,16 @@ class Signal {
 		CHILD  = SIGCHLD,    /** Child stopped or terminated       */
 		CONT   = SIGCONT,    /** Continue if stopped               */
 		STOP   = SIGSTOP,    /** Stop process (unmaskable)         */
-		TSTOP  = SIGTSTP,    /** Stop typed at tty                 */
-		TTYIN  = SIGTTIN,    /** tty input for background process  */
-		TTYOUT = SIGTTOU,    /** tty output for background process */
+		TSTOP  = SIGTSTP,    /** Stop typed at TTY                 */
+		TTYIN  = SIGTTIN,    /** TTY input for background process  */
+		TTYOUT = SIGTTOU,    /** TTY output for background process */
 		PROF   = SIGPROF,    /** Profiling timer expired           */
 		SYS    = SIGSYS,     /** Bad argument to routine           */
 		URG    = SIGURG,     /** Urgent condition on socket        */
 		VTALRM = SIGVTALRM,  /** Virtual alarm clock               */
 		XCPU   = SIGXCPU,    /** CPU time limit exceeded           */
 		XFSZ   = SIGXFSZ,    /** File size limit exceeded          */
+#endif
 	} enum_t;  // end of typedef enum
 
 	/** Signal list */
@@ -373,7 +424,7 @@ class Signal {
 		virtual void operator () (enum_t signal) = 0;
 
 		/** Formal destructor */
-		virtual ~Handler() {}
+		virtual ~Handler();
 
 	};  // end of class Handler
 
@@ -393,8 +444,8 @@ class Signal {
 
 		/** Control commands */
 		typedef enum {
-			QUIT   = 0,  /**< Shutdown the thread */
-			SIGNAL = 1,  /**< Signal obtained     */
+			HT_QUIT   = 0,  /**< Shutdown the thread */
+			HT_SIGNAL = 1,  /**< Signal obtained     */
 		} command_t;
 
 		/** Communication pipe */
@@ -411,7 +462,8 @@ class Signal {
 		 *  It passes all signals to signal handler instance of \ref H
 		 *  Which must implement the \ref Signal::Handler interface.
 		 *  The handler is instantiated in scope of the routine.
-		 *  It closes the communication pipe read end in reaction to \ref QUIT command.
+		 *  It closes the communication pipe read end in reaction to
+		 *  \ref HT_QUIT command.
 		 *
 		 *  \param  comm_pipe_read_end  Communication pipe read end
 		 *
@@ -425,12 +477,12 @@ class Signal {
 		 *  The actual signal handler routine executed by the OS when the process
 		 *  obtains signal to be handled.
 		 *  The function simply writes the signal number to the signal handler
-		 *  thread communication pipe (as parameter of the \ref SIGNAL command).
+		 *  thread communication pipe (as parameter of the \ref HT_SIGNAL command).
 		 *  The signal handling itself (whatever necessary) shall be done
-		 *  by the dedicated thread (to avoid possible re-entrancy issues).
+		 *  by the dedicated thread (to avoid possible re-entrance issues).
 		 *
 		 *  Note that \c ::write is required to be an async-signal-safe function by
-		 *  POSIX.1-2004; also note that up to \c PIPE_BUF bytes are written atomicaly
+		 *  POSIX.1-2004; also note that up to \c PIPE_BUF bytes are written atomically
 		 *  as required by IEEE Std 1003.1, 2004 Edition,\c PIPE_BUF being typically
 		 *  hundreds of bytes at least (POSIX requires 512B, Linux provides whole 4KiB
 		 *  page).
@@ -460,7 +512,7 @@ class Signal {
 		 *  \param  siglist  List of signals that shall be handled by the thread
 		 */
 		HandlerThread(const Signal::List & siglist)
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 			throw(std::logic_error, std::runtime_error)
 #endif
 			;
@@ -473,7 +525,7 @@ class Signal {
 		 *  Closes the communication pipe write end.
 		 */
 		void quit()
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 			throw(std::runtime_error)
 #endif
 			;
@@ -484,7 +536,7 @@ class Signal {
 		 *  Forces the signal handler thread termination (unless already down).
 		 */
 		~HandlerThread()
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 			throw(std::runtime_error)
 #endif
 			;
@@ -504,7 +556,7 @@ class Signal {
 	 *  \retval ESRCH if the process (group) identified doesn't exist
 	 */
 	static int send(enum_t signame, pid_t pid)
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 		throw(std::logic_error)
 #endif
 		;
@@ -527,14 +579,14 @@ class Signal {
 };  // end of class Signal
 
 
-/** Initialisation of the communication pipes */
+/** Initialization of the communication pipes */
 template <class H>
 int Signal::HandlerThread<H>::s_comm_pipe[2] = { -1, -1 };
 
 
 template <class H>
 void * Signal::HandlerThread<H>::main(void * comm_pipe_read_end) {
-	int rfd = *(int *)comm_pipe_read_end;
+	int rfd = *(reinterpret_cast<int *>(comm_pipe_read_end));
 
 	H handler;
 
@@ -547,7 +599,7 @@ void * Signal::HandlerThread<H>::main(void * comm_pipe_read_end) {
 		// Note that direct blocking read could be also used;
 		// however, select allows timeout specification
 		// which might come handy...
-		int fdno = ::select(FD_SETSIZE, &rfds, NULL, NULL, NULL);
+		int fdno = ::select(FD_SETSIZE, &rfds, nullptr, nullptr, nullptr);
 
 		// TBD: Die or recover on error?
 		if (-1 == fdno) {
@@ -579,17 +631,17 @@ void * Signal::HandlerThread<H>::main(void * comm_pipe_read_end) {
 
 		assert(sizeof(word) == read_out);
 
-		command_t command = (command_t)word;
+		command_t command = static_cast<command_t>(word);
 
 		switch (command) {
-			case QUIT:
+			case HT_QUIT:
 				// Close comm. pipe read end
 				::close(rfd);
 
 				// Terminate thread
-				pthread_exit(NULL);
+				::pthread_exit(nullptr);
 
-			case SIGNAL:
+			case HT_SIGNAL:
 				// Read signal number
 				read_out = ::read(rfd, &word, sizeof(word));
 
@@ -605,7 +657,7 @@ void * Signal::HandlerThread<H>::main(void * comm_pipe_read_end) {
 
 				assert(sizeof(word) == read_out);
 
-				Signal::enum_t sig = (Signal::enum_t)word;
+				Signal::enum_t sig = static_cast<Signal::enum_t>(word);
 
 				// Handle signal
 				handler(sig);
@@ -620,15 +672,15 @@ void * Signal::HandlerThread<H>::main(void * comm_pipe_read_end) {
 /**
  *  \brief  Write command to command pipe
  *
- *  \param  fh        Pipe writing end
+ *  \param  fh        Pipe writing end (file handle)
  *  \param  cmd       Command
- *  \param  cmd_size  Comand size
+ *  \param  cmd_size  Command size
  *
  *  \retval 0     on success
  *  \retval errno on error
  */
 int sigPipeWriteCmd(int fh, void * cmd, size_t cmd_size)
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 	throw(std::runtime_error)
 #endif
 	;
@@ -637,24 +689,35 @@ int sigPipeWriteCmd(int fh, void * cmd, size_t cmd_size)
 template <class H>
 void Signal::HandlerThread<H>::signalNotifier(int signal) {
 	int sig[2] = {
-		(int)Signal::HandlerThread<H>::SIGNAL,
+		static_cast<int>(Signal::HandlerThread<H>::HT_SIGNAL),
 	};
 
 	sig[1] = signal;
 
 	// TBD: The return value is silently ignored.
 	// Either the write should've succeeded or the handling
-	// thread is already comming down...
+	// thread is already coming down...
 	sigPipeWriteCmd(s_comm_pipe[1], sig, sizeof(sig));
 }
 
 
 template <class H>
 Signal::HandlerThread<H>::HandlerThread(const Signal::List & siglist)
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 	throw(std::logic_error, std::runtime_error)
 #endif
 {
+#ifdef WIN32
+	NUT_UNUSED_VARIABLE(siglist);
+
+	/* FIXME: Implement (for NUT processes) via pipes?
+	 * See e.g. upsdrvctl implementation. */
+	std::stringstream e;
+
+	e << "Can't prepare signal handling thread: not implemented on this platform yet";
+
+	throw std::logic_error(e.str());
+#else
 	// At most one instance per process allowed
 	if (-1 != s_comm_pipe[1])
 		throw std::logic_error(
@@ -670,7 +733,7 @@ Signal::HandlerThread<H>::HandlerThread(const Signal::List & siglist)
 	}
 
 	// Start the thread
-	int status = ::pthread_create(&m_impl, NULL, &main, s_comm_pipe);
+	int status = ::pthread_create(&m_impl, nullptr, &main, s_comm_pipe);
 
 	if (status) {
 		std::stringstream e;
@@ -687,14 +750,19 @@ Signal::HandlerThread<H>::HandlerThread(const Signal::List & siglist)
 		struct sigaction action;
 
 		::memset(&action, 0, sizeof(action));
+# ifdef sigemptyset
+		// no :: here because macro
+		sigemptyset(&action.sa_mask);
+# else
 		::sigemptyset(&action.sa_mask);
+# endif
 
 		action.sa_handler = &signalNotifier;
 
 		int signo = static_cast<int>(*sig);
 
 		// TBD: We might want to save the old handlers...
-		status = ::sigaction(signo, &action, NULL);
+		status = ::sigaction(signo, &action, nullptr);
 
 		if (status) {
 			std::stringstream e;
@@ -705,20 +773,21 @@ Signal::HandlerThread<H>::HandlerThread(const Signal::List & siglist)
 			throw std::runtime_error(e.str());
 		}
 	}
+#endif
 }
 
 
 template <class H>
 void Signal::HandlerThread<H>::quit()
-#if (defined __cplusplus) && (__cplusplus < 201700)
+#if (defined __cplusplus) && (__cplusplus < 201100)
 	throw(std::runtime_error)
 #endif
 {
-	static int quit = (int)Signal::HandlerThread<H>::QUIT;
+	static int quit = static_cast<int>(Signal::HandlerThread<H>::HT_QUIT);
 
 	sigPipeWriteCmd(s_comm_pipe[1], &quit, sizeof(quit));
 
-	int status = ::pthread_join(m_impl, NULL);
+	int status = ::pthread_join(m_impl, nullptr);
 
 	if (status) {
 		std::stringstream e;
@@ -741,8 +810,8 @@ void Signal::HandlerThread<H>::quit()
 
 
 template <class H>
-Signal::HandlerThread<H>::~HandlerThread()
-#if (defined __cplusplus) && (__cplusplus < 201700)
+Signal::HandlerThread<H>::~HandlerThread<H>()
+#if (defined __cplusplus) && (__cplusplus < 201100)
 	throw(std::runtime_error)
 #endif
 {

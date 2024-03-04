@@ -19,17 +19,42 @@
 		<lookup_info oid="3" value="OB"/>
 		<lookup_info oid="4" value="OL BOOST"/>
 		<lookup_info oid="5" value="OFF"/>
-		<lookup_info oid="7" value="OL"/>
-		<lookup_info oid="1" value="NULL"/>
 		<lookup_info oid="6" value="OFF"/>
+		<lookup_info oid="7" value="OL"/>
+		<lookup_info oid="8" value="OL"/>
+		<lookup_info oid="9" value="OL BYPASS"/>
+		<lookup_info oid="10" value="OL TRIM"/>
+		<lookup_info oid="11" value="OL OVER"/>
+		<lookup_info oid="1" value="NULL"/>
+	</lookup>
+	<lookup name="cyberpower_testdiag_results">
+		<lookup_info oid="1" value="Ok"/>
+		<lookup_info oid="2" value="Failed"/>
+		<lookup_info oid="3" value="InvalidTest"/>
+		<lookup_info oid="4" value="TestInProgress"/>
+	</lookup>
+	<lookup name="cyberpower_transfer_reasons">
+		<lookup_info oid="1" value="noTransfer"/>
+		<lookup_info oid="2" value="highLineVoltage"/>
+		<lookup_info oid="3" value="brownout"/>
+		<lookup_info oid="4" value="selfTest"/>
+	</lookup>
+	<lookup name="cyberpower_ups_alarm_info">
+		<lookup_info oid="1" value=""/>
+		<lookup_info oid="2" value="Temperature too high!"/>
+		<lookup_info oid="3" value="Internal UPS fault!"/>
 	</lookup>
 	<lookup name="su_convert_to_iso_date_info">
 		<lookup_info oid="1" value="dummy"/>
 	</lookup>
 	<snmp name="cyberpower_mib">
+		<snmp_info flag_ok="yes" multiplier="128.0" name="device.description" oid=".1.3.6.1.2.1.1.1.0" string="yes" writable="yes"/>
+		<snmp_info flag_ok="yes" multiplier="128.0" name="device.contact" oid=".1.3.6.1.2.1.1.4.0" string="yes" writable="yes"/>
+		<snmp_info flag_ok="yes" multiplier="128.0" name="device.location" oid=".1.3.6.1.2.1.1.6.0" string="yes" writable="yes"/>
 		<snmp_info absent="yes" default="ups" flag_ok="yes" multiplier="128.0" name="device.type" static="yes" string="yes"/>
 		<snmp_info absent="yes" default="CYBERPOWER" flag_ok="yes" multiplier="128.0" name="ups.mfr" static="yes" string="yes"/>
 		<snmp_info default="CyberPower" multiplier="128.0" name="ups.model" oid=".1.3.6.1.4.1.3808.1.1.1.1.1.1.0" static="yes" string="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="8.0" name="ups.id" oid=".1.3.6.1.4.1.3808.1.1.1.1.1.2.0" static="yes" string="yes" writable="yes"/>
 		<snmp_info default="" multiplier="128.0" name="ups.serial" oid=".1.3.6.1.4.1.3808.1.1.1.1.2.3.0" static="yes" string="yes"/>
 		<snmp_info default="" multiplier="128.0" name="ups.firmware" oid=".1.3.6.1.4.1.3808.1.1.1.1.2.1.0" static="yes" string="yes"/>
 		<snmp_info default="" multiplier="128.0" name="ups.mfr.date" oid=".1.3.6.1.4.1.3808.1.1.1.1.2.2.0" string="yes"/>
@@ -38,6 +63,8 @@
 		<snmp_info calibration="yes" default="" flag_ok="yes" lookup="cyberpower_cal_status" multiplier="128.0" name="ups.status" oid=".1.3.6.1.4.1.3808.1.1.1.7.2.7.0" string="yes"/>
 		<snmp_info default="" flag_ok="yes" lookup="cyberpower_battrepl_status" multiplier="128.0" name="ups.status" oid=".1.3.6.1.4.1.3808.1.1.1.2.2.5.0" replace_battery="yes" string="yes"/>
 		<snmp_info default="" multiplier="1.0" name="ups.load" oid=".1.3.6.1.4.1.3808.1.1.1.4.2.3.0"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="ups.temperature" oid=".1.3.6.1.4.1.3808.1.1.1.10.2.0"/>
+		<snmp_info default="" flag_ok="yes" lookup="cyberpower_ups_alarm_info" multiplier="128.0" name="ups.alarm" oid=".1.3.6.1.4.1.3808.1.1.1.10.1.0" string="yes"/>
 		<snmp_info default="" multiplier="1.0" name="battery.runtime" oid=".1.3.6.1.4.1.3808.1.1.1.2.2.4.0"/>
 		<snmp_info default="" multiplier="1.0" name="battery.runtime.elapsed" oid=".1.3.6.1.4.1.3808.1.1.1.2.1.2.0"/>
 		<snmp_info default="" multiplier="0.1" name="battery.voltage" oid=".1.3.6.1.2.1.33.1.2.5.0"/>
@@ -47,24 +74,29 @@
 		<snmp_info default="" multiplier="0.1" name="battery.current" oid=".1.3.6.1.4.1.3808.1.1.1.2.2.7.0"/>
 		<snmp_info default="" multiplier="1.0" name="battery.charge" oid=".1.3.6.1.4.1.3808.1.1.1.2.2.1.0"/>
 		<snmp_info default="" multiplier="1.0" name="battery.temperature" oid=".1.3.6.1.4.1.3808.1.1.1.2.2.3.0"/>
+		<snmp_info default="" flag_ok="yes" multiplier="8.0" name="battery.date" oid=".1.3.6.1.4.1.3808.1.1.1.2.1.3.0" semistatic="yes" string="yes"/>
 		<snmp_info default="" multiplier="0.1" name="input.voltage" oid=".1.3.6.1.4.1.3808.1.1.1.3.2.1.0"/>
 		<snmp_info default="" multiplier="0.1" name="input.frequency" oid=".1.3.6.1.4.1.3808.1.1.1.3.2.4.0"/>
+		<snmp_info default="" flag_ok="yes" int_val="yes" lookup="cyberpower_transfer_reasons" multiplier="1.0" name="input.transfer.reason" oid=".1.3.6.1.4.1.3808.1.1.1.3.2.5.0" string="yes"/>
 		<snmp_info default="" multiplier="0.1" name="output.voltage" oid=".1.3.6.1.4.1.3808.1.1.1.4.2.1.0"/>
 		<snmp_info default="" multiplier="0.1" name="output.frequency" oid=".1.3.6.1.4.1.3808.1.1.1.4.2.2.0"/>
 		<snmp_info default="" multiplier="0.1" name="output.current" oid=".1.3.6.1.4.1.3808.1.1.1.4.2.4.0"/>
 		<snmp_info default="0" flag_ok="yes" multiplier="1.0" name="ups.delay.start" oid=".1.3.6.1.4.1.3808.1.1.1.5.2.9.0" time_val="yes" writable="yes"/>
 		<snmp_info absent="yes" default="0" flag_ok="yes" multiplier="1.0" name="ups.delay.reboot"/>
 		<snmp_info default="60" flag_ok="yes" multiplier="1.0" name="ups.delay.shutdown" oid=".1.3.6.1.4.1.3808.1.1.1.5.2.11.0" time_val="yes" writable="yes"/>
-		<snmp_info command="yes" flag_ok="yes" multiplier="2.0" name="load.off" oid=".1.3.6.1.4.1.3808.1.1.1.6.2.1.0"/>
-		<snmp_info command="yes" flag_ok="yes" multiplier="2.0" name="load.on" oid=".1.3.6.1.4.1.3808.1.1.1.6.2.6.0"/>
-		<snmp_info command="yes" flag_ok="yes" multiplier="3.0" name="shutdown.stayoff" oid=".1.3.6.1.4.1.3808.1.1.1.6.2.6.0"/>
-		<snmp_info command="yes" flag_ok="yes" multiplier="3.0" name="shutdown.return" oid=".1.3.6.1.4.1.3808.1.1.1.6.2.3.0"/>
-		<snmp_info command="yes" flag_ok="yes" multiplier="2.0" name="test.failure.start" oid=".1.3.6.1.4.1.3808.1.1.1.6.2.4.0"/>
-		<snmp_info command="yes" flag_ok="yes" multiplier="2.0" name="test.panel.start" oid=".1.3.6.1.4.1.3808.1.1.1.7.2.5.0"/>
-		<snmp_info command="yes" flag_ok="yes" multiplier="2.0" name="test.battery.start" oid=".1.3.6.1.4.1.3808.1.1.1.7.2.2.0"/>
-		<snmp_info command="yes" flag_ok="yes" multiplier="2.0" name="calibrate.start" oid=".1.3.6.1.4.1.3808.1.1.1.7.2.6.0"/>
-		<snmp_info command="yes" flag_ok="yes" multiplier="3.0" name="calibrate.stop" oid=".1.3.6.1.4.1.3808.1.1.1.7.2.6.0"/>
+		<snmp_info command="yes" default="2" flag_ok="yes" multiplier="1.0" name="load.off" oid=".1.3.6.1.4.1.3808.1.1.1.6.2.1.0"/>
+		<snmp_info command="yes" default="2" flag_ok="yes" multiplier="1.0" name="load.on" oid=".1.3.6.1.4.1.3808.1.1.1.6.2.6.0"/>
+		<snmp_info command="yes" default="3" flag_ok="yes" multiplier="1.0" name="shutdown.stayoff" oid=".1.3.6.1.4.1.3808.1.1.1.6.2.6.0"/>
+		<snmp_info command="yes" default="3" flag_ok="yes" multiplier="1.0" name="shutdown.return" oid=".1.3.6.1.4.1.3808.1.1.1.6.2.3.0"/>
+		<snmp_info command="yes" default="2" flag_ok="yes" multiplier="1.0" name="test.failure.start" oid=".1.3.6.1.4.1.3808.1.1.1.6.2.4.0"/>
+		<snmp_info command="yes" default="2" flag_ok="yes" multiplier="1.0" name="test.panel.start" oid=".1.3.6.1.4.1.3808.1.1.1.7.2.5.0"/>
+		<snmp_info command="yes" default="2" flag_ok="yes" multiplier="1.0" name="test.battery.start" oid=".1.3.6.1.4.1.3808.1.1.1.7.2.2.0"/>
+		<snmp_info command="yes" default="2" flag_ok="yes" multiplier="1.0" name="calibrate.start" oid=".1.3.6.1.4.1.3808.1.1.1.7.2.6.0"/>
+		<snmp_info command="yes" default="3" flag_ok="yes" multiplier="1.0" name="calibrate.stop" oid=".1.3.6.1.4.1.3808.1.1.1.7.2.6.0"/>
+		<snmp_info default="" flag_ok="yes" multiplier="8.0" name="ups.test.date" oid=".1.3.6.1.4.1.3808.1.1.1.7.2.4.0" semistatic="yes" string="yes"/>
+		<snmp_info default="" flag_ok="yes" lookup="cyberpower_testdiag_results" multiplier="128.0" name="ups.test.result" oid=".1.3.6.1.4.1.3808.1.1.1.7.2.3.0" string="yes"/>
 	</snmp>
-	<mib2nut auto_check=".1.3.6.1.4.1.3808.1.1.1.1.1.1.0" mib_name="cyberpower" name="cyberpower" oid=".1.3.6.1.4.1.3808.1.1.1" snmp_info="cyberpower_mib" version="0.4"/>
+	<mib2nut auto_check=".1.3.6.1.4.1.3808.1.1.1.1.1.1.0" mib_name="cyberpower" name="cyberpower2" oid=".1.3.6.1.4.1.3808" snmp_info="cyberpower_mib" version="0.55"/>
+	<mib2nut auto_check=".1.3.6.1.4.1.3808.1.1.1.1.1.1.0" mib_name="cyberpower" name="cyberpower" oid=".1.3.6.1.4.1.3808.1.1.1" snmp_info="cyberpower_mib" version="0.55"/>
 </nut>
 

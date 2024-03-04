@@ -1,22 +1,25 @@
-/* nutwriter.cpp - NUT writer
+/*
+    nutwriter.cpp - NUT writer
 
-   Copyright (C)
+    Copyright (C)
         2012	Vaclav Krpec  <VaclavKrpec@Eaton.com>
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
+
+#include "config.h"
 
 #include "nutwriter.hpp"
 
@@ -62,6 +65,16 @@
 
 
 namespace nut {
+
+
+/* Trivial implementations out of class declaration to avoid
+ * error: 'ClassName' has no out-of-line virtual method definitions; its vtable
+ *   will be emitted in every translation unit [-Werror,-Wweak-vtables]
+ */
+NutConfigWriter::~NutConfigWriter() {}
+NutConfConfigWriter::~NutConfConfigWriter() {}
+UpsmonConfigWriter::~UpsmonConfigWriter() {}
+UpsdConfigWriter::~UpsdConfigWriter() {}
 
 // End-of-Line separators (arch. dependent)
 
@@ -135,7 +148,7 @@ NutWriter::status_t NutConfConfigWriter::writeConfig(const NutConfiguration & co
 	status_t status;
 
 	// Mode
-	// TBD: How should I serialise an unknown mode?
+	// TBD: How should I serialize an unknown mode?
 	if (config.mode.set()) {
 		std::string mode_str;
 
@@ -198,7 +211,7 @@ struct NotifyFlagsStrings {
 	static const FlagStrings flag_str;
 
 	/**
-	 *  \brief  Initialise notify flag strings
+	 *  \brief  Initialize notify flag strings
 	 *
 	 *  \return Notify flag strings map
 	 */
@@ -235,14 +248,14 @@ const NotifyFlagsStrings::FlagStrings NotifyFlagsStrings::flag_str =
 
 
 /**
- *  \brief  upsmon notify flags serialiser
+ *  \brief  upsmon notify flags serializer
  *
  *  \param  type   Notification type
  *  \param  flags  Notification flags
  *
  *  \return NOTIFYFLAG directive string
  */
-static std::string serialiseNotifyFlags(UpsmonConfiguration::NotifyType type, unsigned short flags) {
+static std::string serializeNotifyFlags(UpsmonConfiguration::NotifyType type, unsigned int flags) {
 	static const NotifyFlagsStrings::FlagStrings::const_iterator ignore_str_iter =
 		NotifyFlagsStrings::flag_str.find(UpsmonConfiguration::NOTIFY_IGNORE);
 
@@ -281,14 +294,14 @@ static std::string serialiseNotifyFlags(UpsmonConfiguration::NotifyType type, un
 
 
 /**
- *  \brief  upsmon notify messages serialiser
+ *  \brief  upsmon notify messages serializer
  *
  *  \param  type   Notification type
  *  \param  msg    Notification message
  *
  *  \return NOTIFYMSG directive string
  */
-static std::string serialiseNotifyMessage(UpsmonConfiguration::NotifyType type, const std::string & msg) {
+static std::string serializeNotifyMessage(UpsmonConfiguration::NotifyType type, const std::string & msg) {
 	assert(type < UpsmonConfiguration::NOTIFY_TYPE_MAX);
 
 	std::string directive("NOTIFYMSG ");
@@ -304,7 +317,7 @@ static std::string serialiseNotifyMessage(UpsmonConfiguration::NotifyType type, 
 /**
  *  \brief  Get notify type successor
  *
- *  TBD: Should be in nutconf.h
+ *  TBD: Should be in nutconf.hpp
  *
  *  \param  type  Notify type
  *
@@ -320,9 +333,9 @@ inline static UpsmonConfiguration::NotifyType nextNotifyType(UpsmonConfiguration
 
 
 /**
- *  \brief  Notify type pre-incrementation
+ *  \brief  Notify type pre-increment
  *
- *  TBD: Should be in nutconf.h
+ *  TBD: Should be in nutconf.hpp
  *
  *  \param[in,out]  type  Notify type
  *
@@ -334,14 +347,15 @@ inline static UpsmonConfiguration::NotifyType operator ++(UpsmonConfiguration::N
 
 
 /**
- *  \brief  Notify type post-incrementation
+ *  \brief  Notify type post-increment
  *
- *  TBD: Should be in nutconf.h
+ *  TBD: Should be in nutconf.hpp
  *
  *  \param[in,out]  type  Notify type
  *
  *  \return \c type
  */
+/* // CURRENTLY UNUSED
 inline static UpsmonConfiguration::NotifyType operator ++(UpsmonConfiguration::NotifyType & type, int) {
 	UpsmonConfiguration::NotifyType type_copy = type;
 
@@ -349,16 +363,16 @@ inline static UpsmonConfiguration::NotifyType operator ++(UpsmonConfiguration::N
 
 	return type_copy;
 }
-
+*/
 
 /**
- *  \brief  UPS monitor definition serialiser
+ *  \brief  UPS monitor definition serializer
  *
  *  \param  monitor  Monitor
  *
  *  \return Monitor config. directive
  */
-static std::string serialiseMonitor(const UpsmonConfiguration::Monitor & monitor) {
+static std::string serializeMonitor(const UpsmonConfiguration::Monitor & monitor) {
 	std::stringstream directive;
 
 	directive << "MONITOR ";
@@ -404,6 +418,19 @@ NutWriter::status_t UpsmonConfigWriter::writeConfig(const UpsmonConfiguration & 
 	#define UPSMON_DIRECTIVEX(name, arg_t, arg, quote_arg) \
 		CONFIG_DIRECTIVEX(name, arg_t, arg, quote_arg)
 
+/* The "false" arg in macro below evaluates to `if (false) ...` after
+ * pre-processing, and causes warnings about unreachable code */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
 	UPSMON_DIRECTIVEX("RUN_AS_USER",    std::string,  config.runAsUser,      false);
 	UPSMON_DIRECTIVEX("SHUTDOWNCMD",    std::string,  config.shutdownCmd,    true);
 	UPSMON_DIRECTIVEX("NOTIFYCMD",      std::string,  config.notifyCmd,      true);
@@ -416,6 +443,12 @@ NutWriter::status_t UpsmonConfigWriter::writeConfig(const UpsmonConfiguration & 
 	UPSMON_DIRECTIVEX("RBWARNTIME",     unsigned int, config.rbWarnTime,     false);
 	UPSMON_DIRECTIVEX("NOCOMMWARNTIME", unsigned int, config.noCommWarnTime, false);
 	UPSMON_DIRECTIVEX("FINALDELAY",     unsigned int, config.finalDelay,     false);
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+# pragma GCC diagnostic pop
+#endif
 
 	#undef UPSMON_DIRECTIVEX
 
@@ -426,7 +459,7 @@ NutWriter::status_t UpsmonConfigWriter::writeConfig(const UpsmonConfiguration & 
 
 	for (; type < UpsmonConfiguration::NOTIFY_TYPE_MAX; ++type) {
 		if (config.notifyFlags[type].set()) {
-			std::string directive = serialiseNotifyFlags(type, config.notifyFlags[type]);
+			std::string directive = serializeNotifyFlags(type, config.notifyFlags[type]);
 
 			status_t status = writeDirective(directive);
 
@@ -440,7 +473,7 @@ NutWriter::status_t UpsmonConfigWriter::writeConfig(const UpsmonConfiguration & 
 
 	for (; type < UpsmonConfiguration::NOTIFY_TYPE_MAX; ++type) {
 		if (config.notifyMessages[type].set()) {
-			std::string directive = serialiseNotifyMessage(type, config.notifyMessages[type]);
+			std::string directive = serializeNotifyMessage(type, config.notifyMessages[type]);
 
 			status_t status = writeDirective(directive);
 
@@ -453,7 +486,7 @@ NutWriter::status_t UpsmonConfigWriter::writeConfig(const UpsmonConfiguration & 
 	std::list<UpsmonConfiguration::Monitor>::const_iterator mon_iter = config.monitors.begin();
 
 	for (; mon_iter != config.monitors.end(); ++mon_iter) {
-		std::string directive = serialiseMonitor(*mon_iter);
+		std::string directive = serializeMonitor(*mon_iter);
 
 		status_t status = writeDirective(directive);
 
@@ -466,13 +499,13 @@ NutWriter::status_t UpsmonConfigWriter::writeConfig(const UpsmonConfiguration & 
 
 
 /**
- *  \brief  upsd listen address serialiser
+ *  \brief  upsd listen address serializer
  *
  *  \param  address  Listen address
  *
- *  \return Serialised listen address
+ *  \return Serialized listen address
  */
-static std::string serialiseUpsdListenAddress(const UpsdConfiguration::Listen & address) {
+static std::string serializeUpsdListenAddress(const UpsdConfiguration::Listen & address) {
 	std::stringstream directive;
 
 	directive << "LISTEN " << address.address;
@@ -502,10 +535,29 @@ NutWriter::status_t UpsdConfigWriter::writeConfig(const UpsdConfiguration & conf
 	#define UPSD_DIRECTIVEX(name, arg_t, arg) \
 		CONFIG_DIRECTIVEX(name, arg_t, arg, false)
 
+/* The "false" arg in macro below evaluates to `if (false) ...` after
+ * pre-processing, and causes warnings about unreachable code */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
 	UPSD_DIRECTIVEX("MAXAGE",    unsigned int, config.maxAge);
 	UPSD_DIRECTIVEX("MAXCONN",   unsigned int, config.maxConn);
 	UPSD_DIRECTIVEX("STATEPATH", std::string,  config.statePath);
 	UPSD_DIRECTIVEX("CERTFILE",  std::string,  config.certFile);
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+# pragma GCC diagnostic pop
+#endif
 
 	#undef UPSD_DIRECTIVEX
 
@@ -513,7 +565,7 @@ NutWriter::status_t UpsdConfigWriter::writeConfig(const UpsdConfiguration & conf
 	std::list<UpsdConfiguration::Listen>::const_iterator la_iter = config.listens.begin();
 
 	for (; la_iter != config.listens.end(); ++la_iter) {
-		std::string directive = serialiseUpsdListenAddress(*la_iter);
+		std::string directive = serializeUpsdListenAddress(*la_iter);
 
 		status_t status = writeDirective(directive);
 
@@ -553,7 +605,7 @@ NutWriter::status_t DefaultConfigWriter::writeDirective(const std::string & str)
  *
  *  \param  val  Value string
  *
- *  \return Value string ready for serialisation
+ *  \return Value string ready for serialization
  */
 static std::string encodeValue(const std::string & val) {
 	// Check the string for spaces and '='
@@ -643,7 +695,7 @@ NutWriter::status_t GenericConfigWriter::writeSection(const GenericConfigSection
 NutWriter::status_t GenericConfigWriter::writeConfig(const GenericConfiguration & config) {
 	// Write sections
 	// Note that lexicographic ordering places the global
-	// (i.e. empty-name) section as the 1st one
+	// (i.e. empty-name) section as the first one
 	GenericConfiguration::SectionMap::const_iterator section_iter = config.sections.begin();
 
 	for (; section_iter != config.sections.end(); ++section_iter) {
@@ -688,7 +740,7 @@ NutWriter::status_t UpsdUsersConfigWriter::writeSection(const GenericConfigSecti
 					upsmon_entry_separator);
 		}
 
-		// Standard entry serialisation
+		// Standard entry serialization
 		else {
 			status = writeSectionEntry(entry_iter->second);
 		}

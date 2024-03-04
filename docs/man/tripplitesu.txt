@@ -3,20 +3,28 @@ TRIPPLITESU(8)
 
 NAME
 ----
+
 tripplitesu - Driver for Tripp-Lite SmartOnline (SU) UPS equipment
 
-NOTE
-----
-This man page only documents the hardware-specific features of the
+SYNOPSIS
+--------
+
+*tripplitesu* -h
+
+*tripplitesu* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
 tripplitesu driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
+
 This driver supports the Tripp Lite SmartOnline family (via the serial port).
 
 EXTRA ARGUMENTS
 ---------------
+
 This driver supports the following optional settings in the
 linkman:ups.conf[5]:
 
@@ -27,6 +35,7 @@ until there are only a few seconds left.  Common values are around 25--30.
 
 AUTHOR
 ------
+
 Allan N. Hessenflow <allanh@kallisti.com>
 
 SEE ALSO
@@ -34,12 +43,15 @@ SEE ALSO
 
 The core driver:
 ~~~~~~~~~~~~~~~~
+
 linkman:nutupsdrv[8]
 
 Other drivers for Tripp-Lite hardware:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 linkman:tripplite[8], linkman:tripplite_usb[8], linkman:usbhid-ups[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/

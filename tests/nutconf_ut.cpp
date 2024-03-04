@@ -1,31 +1,31 @@
 /*
-NUT configuration unit test
+    NUT configuration unit test
 
-Copyright (C)
-2012	Vaclav Krpec <VaclavKrpec@Eaton.com>
+    Copyright (C)
+        2012	Vaclav Krpec <VaclavKrpec@Eaton.com>
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h"
 
 #include "nutstream.hpp"
-#include "nutconf.h"
+#include "nutconf.hpp"
 #include "nutwriter.hpp"
 
 #include <cppunit/extensions/HelperMacros.h>
-
 
 /**
  *  \brief  NUT configuration unit test
@@ -34,7 +34,11 @@ class NutConfigUnitTest: public CppUnit::TestFixture {
 	private:
 
 	CPPUNIT_TEST_SUITE(NutConfigUnitTest);
-		CPPUNIT_TEST(test);
+		CPPUNIT_TEST( testNutConfiguration );
+		CPPUNIT_TEST( testUpsmonConfiguration );
+		CPPUNIT_TEST( testUpsdConfiguration );
+		CPPUNIT_TEST( testUpsConfiguration );
+		CPPUNIT_TEST( testUpsdUsersConfiguration );
 	CPPUNIT_TEST_SUITE_END();
 
 	/**
@@ -46,12 +50,14 @@ class NutConfigUnitTest: public CppUnit::TestFixture {
 	void load(nut::Serialisable * config, const std::string & file_name);
 
 	/**
-	 *  \brief  Check configuration serialisation contents
+	 *  \brief  Check configuration serialization contents
 	 *
 	 *  \param  config   Configuration object
-	 *  \param  content  Expected serialisation
+	 *  \param  content  Expected serialization
 	 */
 	void check(const nut::Serialisable * config, const std::string & content);
+
+	public:
 
 	/** nut.conf test */
 	void testNutConfiguration();
@@ -68,21 +74,11 @@ class NutConfigUnitTest: public CppUnit::TestFixture {
 	/** upsd.users test */
 	void testUpsdUsersConfiguration();
 
-	public:
+	inline void setUp() override {}
+	inline void tearDown() override {}
 
-	inline void setUp() {}
-	inline void tearDown() {}
-
-	inline void test() {
-		testNutConfiguration();
-		testUpsmonConfiguration();
-		testUpsdConfiguration();
-		testUpsConfiguration();
-		testUpsdUsersConfiguration();
-	}
-
+	virtual ~NutConfigUnitTest() override;
 };  // end of class NutConfigUnitTest
-
 
 // Register the test suite
 CPPUNIT_TEST_SUITE_REGISTRATION(NutConfigUnitTest);
@@ -108,9 +104,9 @@ void NutConfigUnitTest::check(const nut::Serialisable * config, const std::strin
 
 	if (content != str) {
 		std::cerr << "--- expected ---" << std::endl << content << "--- end ---" << std::endl;
-		std::cerr << "--- serialised ---" << std::endl << str << "--- end ---" << std::endl;
+		std::cerr << "--- serialized ---" << std::endl << str << "--- end ---" << std::endl;
 
-		CPPUNIT_ASSERT_MESSAGE("Configuration serialisation check failed", 0);
+		CPPUNIT_ASSERT_MESSAGE("Configuration serialization check failed", 0);
 	}
 }
 
@@ -118,7 +114,7 @@ void NutConfigUnitTest::check(const nut::Serialisable * config, const std::strin
 void NutConfigUnitTest::testNutConfiguration() {
 	nut::NutConfiguration config;
 
-	load(static_cast<nut::Serialisable *>(&config), TOP_SRCDIR "/conf/nut.conf.sample");
+	load(static_cast<nut::Serialisable *>(&config), ABS_TOP_SRCDIR "/conf/nut.conf.sample");
 
 	config.mode = nut::NutConfiguration::MODE_STANDALONE;
 
@@ -131,7 +127,8 @@ void NutConfigUnitTest::testNutConfiguration() {
 void NutConfigUnitTest::testUpsmonConfiguration() {
 	nut::UpsmonConfiguration config;
 
-	load(static_cast<nut::Serialisable *>(&config), TOP_SRCDIR "/conf/upsmon.conf.sample");
+	// Note: this file gets generated from a .in template
+	load(static_cast<nut::Serialisable *>(&config), ABS_TOP_BUILDDIR "/conf/upsmon.conf.sample");
 
 	config.shutdownCmd   = "/sbin/shutdown -h +2 'System shutdown in 2 minutes!'";
 	config.powerDownFlag = "/run/nut/killpower";
@@ -156,7 +153,7 @@ void NutConfigUnitTest::testUpsmonConfiguration() {
 void NutConfigUnitTest::testUpsdConfiguration() {
 	nut::UpsdConfiguration config;
 
-	load(static_cast<nut::Serialisable *>(&config), TOP_SRCDIR "/conf/upsd.conf.sample");
+	load(static_cast<nut::Serialisable *>(&config), ABS_TOP_SRCDIR "/conf/upsd.conf.sample");
 
 	config.maxAge    = 15;
 	config.statePath = "/var/run/nut";
@@ -188,7 +185,7 @@ void NutConfigUnitTest::testUpsdConfiguration() {
 void NutConfigUnitTest::testUpsConfiguration() {
 	nut::UpsConfiguration config;
 
-	load(static_cast<nut::Serialisable *>(&config), TOP_SRCDIR "/conf/ups.conf.sample");
+	load(static_cast<nut::Serialisable *>(&config), ABS_TOP_SRCDIR "/conf/ups.conf.sample");
 
 	static const std::string my_ups("powerpal");
 
@@ -196,7 +193,9 @@ void NutConfigUnitTest::testUpsConfiguration() {
 	config.setPort(my_ups, "/dev/ttyS0");
 	config.setDescription(my_ups, "Web server");
 
+	// Note: "maxretry = 3" comes from current ups.conf.sample non-comment lines
 	check(static_cast<nut::Serialisable *>(&config),
+		"maxretry = 3\n\n"
 		"[powerpal]\n"
 		"\tdesc = \"Web server\"\n"
 		"\tdriver = blazer_ser\n"
@@ -209,7 +208,7 @@ void NutConfigUnitTest::testUpsConfiguration() {
 void NutConfigUnitTest::testUpsdUsersConfiguration() {
 	nut::UpsdUsersConfiguration config;
 
-	load(static_cast<nut::Serialisable *>(&config), TOP_SRCDIR "/conf/upsd.users.sample");
+	load(static_cast<nut::Serialisable *>(&config), ABS_TOP_SRCDIR "/conf/upsd.users.sample");
 
 	config.setPassword("upsmon", "ytrewq");
 	config.setUpsmonMode(nut::UpsdUsersConfiguration::UPSMON_MASTER);
@@ -230,3 +229,9 @@ void NutConfigUnitTest::testUpsdUsersConfiguration() {
 		"\n"
 	);
 }
+
+// Implement out of class declaration to avoid
+//   error: 'SomeClass' has no out-of-line virtual method
+//   definitions; its vtable will be emitted in every translation unit
+//   [-Werror,-Wweak-vtables]
+NutConfigUnitTest::~NutConfigUnitTest() {}

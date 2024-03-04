@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-set -x 
+set -x
 
 CUR_DIR=$(pwd)
 TOP_DIR=$CUR_DIR/../..
@@ -26,5 +26,4 @@ cd $CUR_DIR
 swpackage -s nut.psf -d $CUR_DIR/nut.depot; \
 #tar cvf nut.depot.tar nut.depot
 #gzip nut.depot.tar
-echo "Execution completed" 
-
+echo "Execution completed"

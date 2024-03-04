@@ -2,6 +2,7 @@
  *  Copyright (C) 2011 - Frederic Bohe <FredericBohe@Eaton.com>
  *  Copyright (C) 2016 - Arnaud Quette <ArnaudQuette@Eaton.com>
  *  Copyright (C) 2016 - Jim Klimov <EvgenyKlimov@Eaton.com>
+ *  Copyright (C) 2024 Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -45,7 +46,7 @@ typedef struct {
 extern "C" {
 #endif
 
-#if WANT_DEVSCAN_SNMP_BUILTIN == 1
+#if defined WANT_DEVSCAN_SNMP_BUILTIN && WANT_DEVSCAN_SNMP_BUILTIN == 1
 # ifndef DEVSCAN_SNMP_BUILTIN
 #  define DEVSCAN_SNMP_BUILTIN
 /* Can use a copy of the structure that was pre-compiled into the binary */
@@ -53,7 +54,7 @@ extern "C" {
 # endif /* DEVSCAN_SNMP_BUILTIN */
 #endif /* WANT_DEVSCAN_SNMP_BUILTIN */
 
-#if WANT_DEVSCAN_SNMP_DMF == 1
+#if defined WANT_DEVSCAN_SNMP_DMF && WANT_DEVSCAN_SNMP_DMF == 1
 # ifndef DEVSCAN_SNMP_DMF
 #  define DEVSCAN_SNMP_DMF
 /* Can use a copy of the structure that will be populated dynamically */
@@ -61,7 +62,7 @@ extern "C" {
 # endif /* DEVSCAN_SNMP_DMF */
 #endif /* WANT_DEVSCAN_SNMP_DMF */
 
-#if WANT_LIBNUTSCAN_SNMP_DMF == 1
+#if defined WANT_LIBNUTSCAN_SNMP_DMF && WANT_LIBNUTSCAN_SNMP_DMF == 1
 # ifndef LIBNUTSCAN_SNMP_DMF
 #  ifdef DMF_SNMP_H
 #   define LIBNUTSCAN_SNMP_DMF
@@ -70,7 +71,7 @@ extern "C" {
 	extern char *dmfnutscan_snmp_dir;
 	extern mibdmf_parser_t *dmfnutscan_snmp_dmp;
 	/* Just reference this to NULLify when client quits and frees DMF stuff */
-	void uninit_snmp_device_table();
+	void uninit_snmp_device_table(void);
 #  endif /* DMF_SNMP_H already included */
 # endif /* LIBNUTSCAN_SNMP_DMF */
 #endif /* WANT_LIBNUTSCAN_SNMP_DMF */

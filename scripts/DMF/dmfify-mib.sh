@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This wrapper around Python scripts uses them to generate XML DMF files
 # from existing NUT *-mib.c sources with legacy mapping structures.
@@ -6,6 +6,7 @@
 #
 #   Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
 #   Copyright (C) 2016 - 2021 Jim Klimov <EvgenyKlimov@eaton.com>
+#   Copyright (C) 2022 - 2024 Jim Klimov <jimklimov+nut@gmail.com>
 #
 
 # A bashism, important for us here
@@ -18,6 +19,43 @@ XSD_DMFSNMP_XMLNS='http://www.networkupstools.org/dmf/snmp/snmp-ups'
 # Where to look for python scripts - same dir as this shell script
 _SCRIPT_DIR="`cd $(dirname "$0") && pwd`" || \
     _SCRIPT_DIR="./" # Fallback can fail
+[ -n "${ABS_OUTDIR-}" ] || ABS_OUTDIR="`pwd`" || exit
+[ -n "${ABS_BUILDDIR-}" ] || ABS_BUILDDIR="${ABS_OUTDIR}"
+
+# Integrate with "make V=1"
+[ -n "${DEBUG-}" ] || DEBUG="${V-}"
+
+logmsg_info() {
+    if [ x"${DEBUG-}" = x1 -o x"${DEBUG-}" = xyes -o x"${DEBUG-}" = x ] ; then
+        echo "INFO: $*" >&2
+    fi
+    return 0
+}
+
+logmsg_debug() {
+    if [ x"${DEBUG-}" = x1 -o x"${DEBUG-}" = xyes ] ; then
+        echo "DEBUG-INFO: $*" >&2
+    fi
+    return 0
+}
+
+logmsg_error() {
+#    if [ x"${DEBUG-}" = x1 -o x"${DEBUG-}" = xyes ] ; then
+        echo "ERROR: $*" >&2
+#    fi
+    return 0
+}
+
+die() {
+    code=$?
+    if [ "$1" -ge 0 ] 2>/dev/null ; then
+        code="$1"
+        shift
+    fi
+
+    logmsg_error "$@"
+    exit $code
+}
 
 if [ -n "${PYTHON-}" ] ; then
     # May be a name/path of binary, or one with args - check both
@@ -44,7 +82,7 @@ fi
 # "/usr/bin/env python" value into a real path; ignoring args to python
 # itself (if any).
 [ -n "${PYTHON}" ] && PYTHON="`command -v $PYTHON | tail -1`" && [ -x "$PYTHON" ] \
-|| { echo "ERROR: Can not find Python 2.7+: '$PYTHON'" >&2; exit 2; }
+|| die 2 "Can not find Python 2.7+: '$PYTHON'"
 
 # The pycparser uses GCC-compatible flags
 [ -n "${CC-}" ] || CC="`command -v gcc`"
@@ -75,7 +113,7 @@ if [ -n "${CC-}" ] ; then
         *)  CC="`command -v "$CC"`" ;;
     esac
 fi
-[ -n "${CC}" ] && [ -x "$CC" ] || { echo "ERROR: Can not find (G)CC: '$CC'" >&2; exit 2; }
+[ -n "${CC}" ] && [ -x "$CC" ] || die 2 "Can not find (G)CC: '$CC'"
 export CC CFLAGS CC_ENV
 
 [ -n "${CPP-}" ] || CPP="`command -v cpp`"
@@ -106,7 +144,7 @@ if [ -n "${CPP-}" ] ; then
         *)  CPP="`command -v "$CPP"`" ;;
     esac
 fi
-[ -n "${CPP}" ] && [ -x "$CPP" ] || { echo "ERROR: Can not find a C preprocessor: '$CPP'" >&2; exit 2; }
+[ -n "${CPP}" ] && [ -x "$CPP" ] || die 2 "Can not find a C preprocessor: '$CPP'"
 export CPP CPPFLAGS CPP_ENV
 
 if [ "$1" == "--skip-sanity-check" ]; then
@@ -115,14 +153,14 @@ else
     # Here we only check basic prerequisites (a module provided with Python 2.7
     # and an extra module that end-user is expected to pre-install per README).
     # Other included modules will be checked when scripts are executed.
-    echo "INFO: Validating some basics about your Python installation" >&2
+    logmsg_info "Validating some basics about your Python installation"
     for PYMOD in argparse pycparser json; do
         "${PYTHON}" -c "import $PYMOD; print ($PYMOD);" || \
-            { echo "ERROR: Can not use Python module '$PYMOD'" >&2; exit 2; }
+            die 2 "Can not use Python module '$PYMOD'"
     done
 
-    eval $CPP_ENV "$CPP" $CPPFLAGS --help > /dev/null || { echo "ERROR: Can not find a C preprocessor: '$CPP'" >&2; exit 2; }
-    eval $CC_ENV  "$CC"  $CFLAGS   --help > /dev/null || { echo "ERROR: Can not find a C compiler: '$CC'" >&2; exit 2; }
+    eval $CPP_ENV "$CPP" $CPPFLAGS --help > /dev/null || die 2 "Can not find a C preprocessor: '$CPP'"
+    eval $CC_ENV  "$CC"  $CFLAGS   --help > /dev/null || die 2 "Can not find a C compiler: '$CC'"
 
     if [ "$1" = "--sanity-check" ]; then
         # We are alive by now, so checks above have succeeded
@@ -135,7 +173,7 @@ dmfify_c_file() {
     # Optional second one names the output file (and temporary files)
     # Optional third (and beyond) name additional files to look into
     # (e.g. the snmp-ups-helpers.c for shared tables and routines)
-    #echo "dmfify_c_file: '$1' '$2' '$3' ..." >&2
+    #logmsg_debug "dmfify_c_file: '$1' '$2' '$3' ..." >&2
     local cmib="$1"
     local mib="$2"
     shift
@@ -150,11 +188,11 @@ dmfify_c_file() {
     fi
 
     [ -n "${cmib}" ] && [ -s "${cmib}" ] || \
-        { echo "ERROR: dmfify_c_file() can not process argument '${cmib}'!" >&2
+        { logmsg_error "dmfify_c_file() can not process argument '${cmib}'!"
           return 2; }
 
-    echo "INFO: Parsing '${cmib}' into '${mib}.dmf'; do not worry if 'missing setvar' warnings pop up..." >&2
-    if [ $# -gt 0 ]; then echo "INFO: Additionally parsing resources from: $*" >&2; fi
+    logmsg_info "Parsing '${cmib}' into '${mib}.dmf'; do not worry if 'missing setvar' warnings pop up..."
+    if [ $# -gt 0 ]; then logmsg_info "Additionally parsing resources from: $*" ; fi
 
     # Code below assumes that the *.py.in only template the shebang line
     JNAME=""
@@ -165,26 +203,31 @@ dmfify_c_file() {
     for F in "${_SCRIPT_DIR}"/xmlify-mib.py.in "${_SCRIPT_DIR}"/xmlify-mib.py ; do
         [ -s "$F" ] && XNAME="$F" && break
     done
-    ( "${PYTHON}" "${JNAME}" --test "${cmib}" "$@" > "${mib}.json.tmp" && \
-      "${PYTHON}" "${XNAME}" < "${mib}.json.tmp" > "${mib}.dmf.tmp" ) \
-    && [ -s "${mib}.dmf.tmp" ] \
+    logmsg_debug "PWD: `pwd`"
+    ( "${PYTHON}" "${JNAME}" --test "${cmib}" "$@" > "${ABS_BUILDDIR}/${mib}.json.tmp" && \
+      "${PYTHON}" "${XNAME}" < "${ABS_BUILDDIR}/${mib}.json.tmp" > "${ABS_BUILDDIR}/${mib}.dmf.tmp" ) \
+    && [ -s "${ABS_BUILDDIR}/${mib}.dmf.tmp" ] \
     || { ERRCODE=$?
         if [ $# -gt 0 ]; then
-            echo "ERROR: Could not parse '${cmib}' + $* into '${mib}.dmf'" >&2
+            logmsg_error "Could not parse '${cmib}' + $* into '${ABS_BUILDDIR}/${mib}.dmf'"
         else
-            echo "ERROR: Could not parse '${cmib}' into '${mib}.dmf'" >&2
+            logmsg_error "Could not parse '${cmib}' into '${ABS_BUILDDIR}/${mib}.dmf'"
         fi
-        echo "       You can inspect a copy of the intermediate result in '${mib}.json.tmp', '${mib}.dmf.tmp' and '${mib}_TEST.c'" >&2
+        logmsg_error "You can inspect a copy of the intermediate result in '${mib}.json.tmp', '${mib}.dmf.tmp' and '${mib}_TEST.c' located in '${ABS_BUILDDIR}/', '${_SCRIPT_DIR}' and/or '`pwd`'"
         return $ERRCODE; }
 
-    sed 's,^<nut>,\<nut version="'"${XSD_DMFSNMP_VERSION}"'" xmlns="'"${XSD_DMFSNMP_XMLNS}"'"\>,' < "${mib}.dmf.tmp" > "${mib}.dmf" \
+    sed 's,^<nut>,\<nut version="'"${XSD_DMFSNMP_VERSION}"'" xmlns="'"${XSD_DMFSNMP_XMLNS}"'"\>,' < "${ABS_BUILDDIR}/${mib}.dmf.tmp" > "${ABS_BUILDDIR}/${mib}.dmf" \
     || { ERRCODE=$?
-        echo "ERROR: Could not fix headers of '${mib}.dmf'" >&2
-        echo "       You can inspect a copy of the intermediate result in '${mib}.json.tmp', '${mib}.dmf.tmp' and '${mib}_TEST.c'" >&2
+        logmsg_error "Could not fix headers of '${ABS_BUILDDIR}/${mib}.dmf'"
+        logmsg_error "You can inspect a copy of the intermediate result in '${mib}.json.tmp', '${mib}.dmf.tmp' and '${mib}_TEST.c located in '${ABS_BUILDDIR}/', '${_SCRIPT_DIR}' and/or '`pwd`''"
         return $ERRCODE; }
 
-#    mv -f "${mib}.dmf.tmp" "${mib}.dmf" \
-#    && rm -f "${mib}_TEST"{.c,.exe} "${mib}.json.tmp"
+#    mv -f "${ABS_BUILDDIR}/${mib}.dmf.tmp" "${ABS_BUILDDIR}/${mib}.dmf" \
+#    && rm -f "${ABS_BUILDDIR}/${mib}_TEST"{.c,.exe} "${ABS_BUILDDIR}/${mib}.json.tmp"
+
+    if [ -n "${ABS_OUTDIR-}" -a "${ABS_OUTDIR-}" != "${ABS_BUILDDIR}" ] ; then
+        mv -f "${ABS_BUILDDIR}/${mib}.dmf" "${ABS_OUTDIR}/" || return
+    fi
 }
 
 list_shared_sources() {
@@ -196,12 +239,26 @@ list_shared_sources() {
     # somehow? Support a nested loop and separate storage var
     # to find many such files?
     SNAME=""
-    for F in ../../../drivers/snmp-ups-helpers.c ../../drivers/snmp-ups-helpers.c \
+
+    for F in \
+        ../../../drivers/snmp-ups-helpers.c \
+        ../../drivers/snmp-ups-helpers.c \
         "${_SCRIPT_DIR}"/../../../drivers/snmp-ups-helpers.c \
         "${_SCRIPT_DIR}"/../../drivers/snmp-ups-helpers.c \
     ; do
         [ -s "$F" ] && SNAME="$F" && break
     done
+
+    for F in \
+        ../../../drivers/eaton-pdu-marlin-helpers.c \
+        ../../drivers/eaton-pdu-marlin-helpers.c \
+        "${_SCRIPT_DIR}"/../../../drivers/eaton-pdu-marlin-helpers.c \
+        "${_SCRIPT_DIR}"/../../drivers/eaton-pdu-marlin-helpers.c \
+    ; do
+        [ -s "$F" ] && SNAME="$SNAME $F" && break
+    done
+
+    # echo the return value (string)
     echo "$SNAME"
 }
 
@@ -219,19 +276,19 @@ dmfify_NUT_drivers() {
     SNAME="`list_shared_sources`"
     for cmib in ../../../drivers/*-mib.c ../../drivers/*-mib.c; do
         [ -s "${cmib}" ] || \
-            { echo "ERROR: File not found or is empty: '${cmib}'" >&2; continue; }
+            { logmsg_error "File not found or is empty: '${cmib}'" ; continue; }
         # Note: helper sources must be arg 3+ below;
         # arg2 may be empty but must then be present
         dmfify_c_file "${cmib}" "" $SNAME || return
         i=$(($i+1))
     done
-    [ "$i" = 0 ] && echo "ERROR: No files processed" >&2 && return 2
-    echo "INFO: Processed $i files OK" >&2
+    [ "$i" = 0 ] && logmsg_error "No files processed" && return 2
+    logmsg_info "Processed $i files OK"
     return 0
 }
 
 if [[ "$#" -gt 0 ]]; then
-    echo "INFO: Got some arguments, assuming they are NUT filenames for parsing" >&2
+    logmsg_info "Got some arguments, assuming they are NUT filenames for parsing"
     SNAME="`list_shared_sources`"
     # Note: helper sources must be arg 3+ below;
     # arg2 may be empty but must then be present
@@ -248,8 +305,8 @@ if [[ "$#" -gt 0 ]]; then
         shift
     done
 else
-    echo "INFO: No arguments provided, will try to parse all NUT drivers" >&2
+    logmsg_info "No arguments provided, will try to parse all NUT drivers"
     dmfify_NUT_drivers || exit
 fi
 
-echo "OK - All done" >&2
+logmsg_info "OK - All done"

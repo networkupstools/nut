@@ -9,7 +9,7 @@
 # Be portable - no bash etc... plain minimal shell. Tested with bash, dash,
 # busybox sh and ksh for good measure.
 #
-#   Copyright (C) 2016 Jim Klimov <EvgenyKlimov@eaton.com>
+#   Copyright (C) 2016-2024 Jim Klimov <EvgenyKlimov@eaton.com>
 #
 
 # Relative to here we look for old sources
@@ -54,7 +54,7 @@ print_makefile_LEGACY_NUT_DMF_RULES() {
     echo 'LEGACY_NUT_DMF_SYMLINKS ='
     echo 'INSTALL_NUT_DMF_SYMLINKS ='
 
-    printf '\n# NOTE: DMFSNMP_SUBDIR, DMFSNMP_RES_SUBDIR, DMFGEN_DEPS and DMFGEN_CMD,\n# and dmfsnmpdir and dmfsnmpresdir (for install) are defined in Makefile.am\n\n'
+    printf '\n# NOTE: DMFSNMP_SUBDIR, DMFSNMP_RES_SUBDIR, DMFGEN_DEPS and DMFGEN_CMD,\n# and dmfsnmpdir and dmfsnmpresdir (for install) are defined in Makefile.am\n# The ABS_OUTDIR in recipes below allows certain "make" implementations\n# to not try overwriting a SOURCE (e.g. DISTed and read-only) DMF file.\n\n'
 
     for CMIBBASE in `sort_LEGACY_NUT_C_MIBS` ; do
         case "$CMIBBASE" in
@@ -62,7 +62,8 @@ print_makefile_LEGACY_NUT_DMF_RULES() {
             *)   CMIBFILE='$(abs_top_srcdir)/drivers/'"$CMIBBASE" ;;
         esac
         DMFBASE="`basename "$CMIBBASE" .c`".dmf
-        DMFFILE='$(DMFSNMP_RES_SUBDIR)/'"$DMFBASE"
+        DMFSUBDIR='$(DMFSNMP_RES_SUBDIR)/'
+        DMFFILE="${DMFSUBDIR}${DMFBASE}"
         case "$DMFBASE" in
             ietf-mib.dmf) L="S90_${DMFBASE}" ;;
             S*|K*) ;;
@@ -71,7 +72,7 @@ print_makefile_LEGACY_NUT_DMF_RULES() {
         DMFLINK='$(DMFSNMP_SUBDIR)/'"$L"
         printf 'LEGACY_NUT_C_MIBS +=\t%s\n' "$CMIBFILE"
         printf 'LEGACY_NUT_DMFS   +=\t%s\n' "$DMFFILE"
-        printf '%s : %s $(DMFGEN_DEPS)\n\t@DMFFILE="%s"; CMIBFILE="%s"; $(DMFGEN_CMD)\n\n' "$DMFFILE" "$CMIBFILE" "$DMFFILE" "$CMIBFILE"
+        printf '%s : %s $(DMFGEN_DEPS)\n\t@DMFFILE="%s"; CMIBFILE="%s"; ABS_OUTDIR="$(abs_builddir)/%s"; $(DMFGEN_CMD)\n\n' "$DMFFILE" "$CMIBFILE" "$DMFFILE" "$CMIBFILE" "$DMFSUBDIR"
         printf 'LEGACY_NUT_DMF_SYMLINKS += %s\n' "$DMFLINK"
         printf '%s : %s\n\t@DMFFILE="%s"; DMFLINK="%s"; $(DMFLNK_CMD)\n\n' "$DMFLINK" "$DMFFILE" "$DMFFILE" "$DMFLINK"
         INSTFILE='$(DESTDIR)$(dmfsnmpresdir)/'"$DMFBASE"

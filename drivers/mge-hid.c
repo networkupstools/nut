@@ -37,8 +37,20 @@
 #include "usbhid-ups.h"
 #include "mge-hid.h"
 #include "nut_float.h"
+#include "timehead.h"
 
-#define MGE_HID_VERSION		"MGE HID 1.45"
+#ifdef WIN32
+# include "wincompat.h"
+# ifndef LDOUBLE
+#  ifdef HAVE_LONG_DOUBLE
+#   define LDOUBLE long double
+#  else
+#   define LDOUBLE double
+#  endif
+# endif
+#endif
+
+#define MGE_HID_VERSION		"MGE HID 1.46"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -56,13 +68,15 @@
 /* AEG */
 #define AEG_VENDORID 0x2b2d
 
+/* Note that normally this VID is handled by Liebert/Phoenixtec HID mapping,
+ * here it is just for for AEG PROTECT NAS devices: */
 /* Phoenixtec Power Co., Ltd */
 #define PHOENIXTEC 0x06da
 
 /* IBM */
 #define IBM_VENDORID 0x04b3
 
-#ifndef SHUT_MODE
+#if !((defined SHUT_MODE) && SHUT_MODE)
 #include "usb-common.h"
 
 /* USB IDs device table */
@@ -95,7 +109,7 @@ static usb_device_id_t mge_usb_device_table[] = {
 	/* Terminating entry */
 	{ 0, 0, NULL }
 };
-#endif
+#endif	/* !SHUT_MODE => USB */
 
 typedef enum {
 	MGE_DEFAULT_OFFLINE = 0,
@@ -166,12 +180,12 @@ static char		mge_scratch_buf[20];
  * float mode is not important from the software's perspective, it's there to
  * help determine if the charger is advancing correctly.
  * So in float mode, the charger is charging the battery, so by definition you
- * can assert the CHRG flag in NUT when in “float” mode or “charge” mode.
- * When in “rest” mode the charger is not delivering anything to the battery,
+ * can assert the CHRG flag in NUT when in "float" mode or "charge" mode.
+ * When in "rest" mode the charger is not delivering anything to the battery,
  * but it will when the ABM cycle(28 days) ends, or a battery discharge occurs
- * and utility returns.  This is when the ABM status should be “resting”.
+ * and utility returns.  This is when the ABM status should be "resting".
  * If a battery failure is detected that disables the charger, it should be
- * reporting “off” in the ABM charger status.
+ * reporting "off" in the ABM charger status.
  * Of course when delivering load power from the battery, the ABM status is
  * discharging.
  */
@@ -182,6 +196,27 @@ static char		mge_scratch_buf[20];
 
 /* Internal flag to process battery status (CHRG/DISCHRG) and ABM */
 static int advanced_battery_monitoring = ABM_UNKNOWN;
+
+/* TODO: Lifted from strptime.c... maybe should externalize the fallback?
+ * NOTE: HAVE_DECL_* are always defined, 0 or 1. Many other flags are not.
+ */
+#if ! HAVE_DECL_ROUND
+# ifndef WIN32
+static long round (double value)
+# else
+static long round (LDOUBLE value)
+# endif
+{
+  long intpart;
+
+  intpart = (long)value;
+  value = value - intpart;
+  if (value >= 0.5)
+    intpart++;
+
+  return intpart;
+}
+#endif /* HAVE_DECL_ROUND */
 
 /* Used to store internally if ABM is enabled or not */
 static const char *eaton_abm_enabled_fun(double value)
@@ -671,7 +706,6 @@ static info_lkp_t eaton_check_country_info[] = {
  * compute a realpower approximation using available data */
 static const char *eaton_compute_realpower_fun(double value)
 {
-	NUT_UNUSED_VARIABLE(value);
 	const char *str_ups_load = dstate_getinfo("ups.load");
 	const char *str_power_nominal = dstate_getinfo("ups.power.nominal");
 	const char *str_powerfactor = dstate_getinfo("output.powerfactor");
@@ -679,12 +713,14 @@ static const char *eaton_compute_realpower_fun(double value)
 	int power_nominal = 0;
 	int ups_load = 0;
 	double realpower = 0;
+	NUT_UNUSED_VARIABLE(value);
+
 	if (str_power_nominal && str_ups_load) {
 		/* Extract needed values */
 		ups_load = atoi(str_ups_load);
 		power_nominal = atoi(str_power_nominal);
 		if (str_powerfactor)
-			powerfactor = atoi(str_powerfactor);
+			powerfactor = atof(str_powerfactor);
 		/* Compute the value */
 		realpower = round(ups_load * 0.01 * power_nominal * powerfactor);
 		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.0f", realpower);
@@ -1246,6 +1282,10 @@ static hid_info_t mge_hid2nut[] =
 	/* Special case: boolean values that are mapped to ups.status and ups.alarm */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, online_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[3].PresentStatus.Used", NULL, NULL, 0, mge_onbatt_info },
+#if 0
+	/* NOTE: see entry with eaton_converter_online_info below now */
+	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.Used", NULL, NULL, 0, online_info },
+#endif
 	/* These 2 ones are used when ABM is disabled */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, eaton_discharging_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Charging", NULL, NULL, HU_FLAG_QUICK_POLL, eaton_charging_info },
@@ -1271,6 +1311,7 @@ static hid_info_t mge_hid2nut[] =
 	 * and must hence be after "UPS.PowerSummary.PresentStatus.Good" */
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.Used", NULL, NULL, 0, eaton_converter_online_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[2].PresentStatus.Used", NULL, NULL, 0, bypass_auto_info }, /* Automatic bypass */
+	/* NOTE: entry [3] is above as mge_onbatt_info */
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[4].PresentStatus.Used", NULL, NULL, 0, bypass_manual_info }, /* Manual bypass */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.FanFailure", NULL, NULL, 0, fanfail_info },
 	{ "BOOL", 0, 0, "UPS.BatterySystem.Battery.PresentStatus.Present", NULL, NULL, 0, nobattery_info },
@@ -1546,7 +1587,10 @@ static const char *mge_format_serial(HIDDevice_t *hd) {
  * the device is supported by this subdriver, else 0. */
 static int mge_claim(HIDDevice_t *hd) {
 
-#ifndef SHUT_MODE
+#if (defined SHUT_MODE) && SHUT_MODE
+	NUT_UNUSED_VARIABLE(hd);
+	return 1;
+#else	/* !SHUT_MODE => USB */
 	int status = is_usb_device_supported(mge_usb_device_table, hd);
 
 	switch (status) {
@@ -1567,6 +1611,21 @@ static int mge_claim(HIDDevice_t *hd) {
 				 * not a UPS, so don't use possibly_supported here
 				 */
 				return 0;
+
+			case PHOENIXTEC:
+				/* The vendorid 0x06da is primarily handled by
+				 * liebert-hid, except for (maybe) AEG PROTECT NAS
+				 * branded devices */
+				if (hd->Vendor && strstr(hd->Vendor, "AEG")) {
+					return 1;
+				}
+				if (hd->Product && strstr(hd->Product, "AEG")) {
+					return 1;
+				}
+
+				/* Let liebert-hid grab this */
+				return 0;
+
 			default: /* Valid for Eaton */
 				/* by default, reject, unless the productid option is given */
 				if (getval("productid")) {
@@ -1577,16 +1636,28 @@ static int mge_claim(HIDDevice_t *hd) {
 		}
 
 	case SUPPORTED:
+
+		switch (hd->VendorID)
+		{
+			case PHOENIXTEC: /* see comments above */
+				if (hd->Vendor && strstr(hd->Vendor, "AEG")) {
+					return 1;
+				}
+				if (hd->Product && strstr(hd->Product, "AEG")) {
+					return 1;
+				}
+
+				/* Let liebert-hid grab this */
+				return 0;
+		}
+
 		return 1;
 
 	case NOT_SUPPORTED:
 	default:
 		return 0;
 	}
-#else
-	NUT_UNUSED_VARIABLE(hd);
-	return 1;
-#endif
+#endif	/* SHUT_MODE / USB */
 }
 
 subdriver_t mge_subdriver = {
