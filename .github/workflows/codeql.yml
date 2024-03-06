@@ -75,7 +75,7 @@ jobs:
     - if: matrix.language == 'cpp'
       name: NUT CI Build (default-all-errors matrix)
       run: |
-        BUILD_TYPE=default-all-errors ${{ matrix.compiler }} NUT_SSL_VARIANTS=${{ matrix.NUT_SSL_VARIANTS }} NUT_USB_VARIANTS=${{ matrix.NUT_USB_VARIANTS }} ./ci_build.sh
+        BUILD_TYPE=default-all-errors BUILD_SSL_ONCE=true DO_DISTCHECK=no CI_SKIP_CHECK=true CANBUILD_DOCS_ALL=no ${{ matrix.compiler }} NUT_SSL_VARIANTS=${{ matrix.NUT_SSL_VARIANTS }} NUT_USB_VARIANTS=${{ matrix.NUT_USB_VARIANTS }} ./ci_build.sh
 
     #- if: matrix.language == 'cpp'
     #  name: NUT CI Build (fightwarn-all)
