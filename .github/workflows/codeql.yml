@@ -35,7 +35,7 @@ jobs:
         language: [ 'cpp', 'python' ]
         # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby' ]
         # Learn more about CodeQL language support at https://aka.ms/codeql-docs/language-support
-        os: [ubuntu-latest]
+        os: ['ubuntu-latest']
         # TOTHINK: windows-latest, macos-latest
 
     steps:
@@ -56,7 +56,7 @@ jobs:
         config-file: ./.github/codeql/codeql-config.yml
 
     # https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/codeql-code-scanning-for-compiled-languages
-    - if: matrix.language == 'cpp' && matrix.os == "ubuntu-latest"
+    - if: matrix.language == 'cpp' && matrix.os == 'ubuntu-latest'
       name: NUT CI Prerequisite packages (Ubuntu)
       run: |
         sudo apt update
