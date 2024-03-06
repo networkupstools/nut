@@ -494,8 +494,8 @@ set | sort -n """
                     // BUILD_TYPE=default-tgt:distcheck-light + NO_PKG_CONFIG=true ?
                     ],
                 dynamatrixAxesCommonEnv: [
-                    ['LANG=C','LC_ALL=C','TZ=UTC'
-                     //,'BUILD_WARNFATAL=yes','BUILD_WARNOPT=hard'
+                    ['LANG=C','LC_ALL=C','TZ=UTC','BUILD_WARNFATAL=yes'
+                     //,'BUILD_WARNOPT=hard'
                     ]
                     ],
                 allowedFailure: [
@@ -543,8 +543,8 @@ set | sort -n """
                     'BUILD_TYPE': ['default-tgt:cppcheck']
                     ],
                 dynamatrixAxesCommonEnv: [
-                    ['LANG=C','LC_ALL=C','TZ=UTC', 'DO_CLEAN_CHECK=no'
-                     //,'BUILD_WARNFATAL=yes','BUILD_WARNOPT=hard'
+                    ['LANG=C','LC_ALL=C','TZ=UTC', 'DO_CLEAN_CHECK=no', 'BUILD_WARNFATAL=yes'
+                     //,'BUILD_WARNOPT=hard'
                     ]
                     ],
                 allowedFailure: [
@@ -719,7 +719,8 @@ set | sort -n """
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
-                     'BUILD_WARNFATAL=yes','BUILD_WARNOPT=minimal'
+                     'BUILD_WARNFATAL=yes'
+                     //,'BUILD_WARNOPT=medium'
                     ]
                     ],
                 allowedFailure: [
@@ -766,7 +767,8 @@ set | sort -n """
                      // make sure we do not rely on hard-links, relative paths,
                      // etc.)
                      'CI_BUILDDIR=obj',
-                     'BUILD_WARNFATAL=yes','BUILD_WARNOPT=minimal'
+                     'BUILD_WARNFATAL=yes'
+                     //,'BUILD_WARNOPT=minimal'
                     ]
                     ],
                 allowedFailure: [
@@ -805,7 +807,8 @@ set | sort -n """
                     ],
                 dynamatrixAxesCommonEnv: [
                     ['LANG=C','LC_ALL=C','TZ=UTC',
-                     'BUILD_WARNFATAL=yes','BUILD_WARNOPT=minimal'
+                     'BUILD_WARNFATAL=yes'
+                     //,'BUILD_WARNOPT=minimal'
                     ]
                     ],
                 allowedFailure: [
