@@ -23,7 +23,7 @@ on:
 jobs:
   analyze:
     name: Analyze
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     permissions:
       actions: read
       contents: read
@@ -32,10 +32,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'cpp' ]
+        language: [ 'cpp', 'python' ]
         # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby' ]
         # Learn more about CodeQL language support at https://aka.ms/codeql-docs/language-support
-        # TODO: Want to find Python sources to test like with LGTM, see https://github.com/networkupstools/nut/issues/1726
+        os: [ubuntu-latest]
+        # TOTHINK: windows-latest, macos-latest
 
     steps:
     - name: Checkout repository
@@ -52,12 +53,33 @@ jobs:
 
         # Details on CodeQL's query packs refer to : https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
         # queries: security-extended,security-and-quality
+        config-file: ./.github/codeql/codeql-config.yml
 
+    # https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/codeql-code-scanning-for-compiled-languages
+    - if: matrix.language == 'cpp' && matrix.os == "ubuntu-latest"
+      name: NUT CI Prerequisite packages (Ubuntu)
+      run: |
+        sudo apt update
+        sudo apt install libltdl-dev libtool libtool-bin cppcheck gcc g++ clang ccache
+        sudo apt install libgd-dev libcppunit-dev libsystemd-dev libssl-dev libnss3-dev augeas-tools libaugeas-dev augeas-lenses libusb-dev libusb-1.0-0-dev libi2c-dev libmodbus-dev libsnmp-dev libpowerman0-dev libfreeipmi-dev libipmimonitoring-dev libavahi-common-dev libavahi-core-dev libavahi-client-dev libgpiod-dev
+        sudo apt install libi2c-dev i2c-tools lm-sensors || true
 
     # Autobuild attempts to build any compiled languages  (C/C++, C#, Go, or Java).
     # If this step fails, then you should remove it and run the build manually (see below)
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v3
+    #- name: Autobuild
+    #  uses: github/codeql-action/autobuild@v3
+
+    - if: matrix.language == 'cpp'
+      name: NUT CI Build (fightwarn-all)
+      run: |
+        BUILD_TYPE=fightwarn-all ./ci_build.sh
+
+    #- if: matrix.language == 'x-cpp'
+    #  name: NUT CI Build
+    #  run: |
+    #    ./autogen.sh
+    #    ./configure --with-all=auto --with-dev --without-docs
+    #    make -j 8
 
     # ℹ️ Command-line programs to run using the OS shell.
     # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
