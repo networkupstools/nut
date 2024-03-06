@@ -23,7 +23,7 @@ on:
 jobs:
   analyze:
     name: Analyze
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     permissions:
       actions: read
       contents: read
@@ -35,7 +35,8 @@ jobs:
         language: [ 'cpp', 'python' ]
         # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby' ]
         # Learn more about CodeQL language support at https://aka.ms/codeql-docs/language-support
-        # TODO: Want to find Python sources to test like with LGTM, see https://github.com/networkupstools/nut/issues/1726
+        os: [ubuntu-latest]
+        # TOTHINK: windows-latest, macos-latest
 
     steps:
     - name: Checkout repository
@@ -55,7 +56,7 @@ jobs:
         config-file: ./.github/codeql/codeql-config.yml
 
     # https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/codeql-code-scanning-for-compiled-languages
-    - if: matrix.language == 'cpp'
+    - if: matrix.language == 'cpp' && matrix.os == "ubuntu-latest"
       name: NUT CI Prerequisite packages (Ubuntu)
       run: |
         sudo apt update
