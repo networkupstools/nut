@@ -37,6 +37,9 @@ jobs:
         # Learn more about CodeQL language support at https://aka.ms/codeql-docs/language-support
         os: ['ubuntu-latest']
         # TOTHINK: windows-latest, macos-latest
+        compiler: ['CC=gcc CXX=g++', 'CC=clang CXX=clang++']
+        NUT_SSL_VARIANTS: ['no', 'nss', 'openssl']
+        NUT_USB_VARIANTS: ['no', '1.0', '0.1']
 
     steps:
     - name: Checkout repository
@@ -70,9 +73,14 @@ jobs:
     #  uses: github/codeql-action/autobuild@v3
 
     - if: matrix.language == 'cpp'
-      name: NUT CI Build (fightwarn-all)
+      name: NUT CI Build (default-all-errors matrix)
       run: |
-        BUILD_TYPE=fightwarn-all ./ci_build.sh
+        BUILD_TYPE=default-all-errors ${{ matrix.compiler }} NUT_SSL_VARIANTS=${{ matrix.NUT_SSL_VARIANTS }} NUT_USB_VARIANTS=${{ matrix.NUT_USB_VARIANTS }} ./ci_build.sh
+
+    #- if: matrix.language == 'cpp'
+    #  name: NUT CI Build (fightwarn-all)
+    #  run: |
+    #    BUILD_TYPE=fightwarn-all ./ci_build.sh
 
     #- if: matrix.language == 'x-cpp'
     #  name: NUT CI Build
