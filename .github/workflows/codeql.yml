@@ -32,7 +32,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'cpp', 'python' ]
+        # https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs
+        language: [ 'cpp' ]
         # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby' ]
         # Learn more about CodeQL language support at https://aka.ms/codeql-docs/language-support
         os: ['ubuntu-latest']
@@ -40,6 +41,13 @@ jobs:
         compiler: ['CC=gcc CXX=g++', 'CC=clang CXX=clang++']
         NUT_SSL_VARIANTS: ['no', 'nss', 'openssl']
         NUT_USB_VARIANTS: ['no', '1.0', '0.1']
+        include:
+          # Add cell(s) to the matrix, beside the combinatorics made above
+          - language: 'python'
+            os: 'ubuntu-latest'
+            compiler: 'PYTHON=python3'
+            NUT_SSL_VARIANTS: 'no'
+            NUT_USB_VARIANTS: 'no'
 
     steps:
     - name: Checkout repository
