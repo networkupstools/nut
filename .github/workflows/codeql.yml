@@ -40,7 +40,7 @@ jobs:
         # TOTHINK: windows-latest, macos-latest
         compiler: ['CC=gcc CXX=g++', 'CC=clang CXX=clang++']
         NUT_SSL_VARIANTS: ['no', 'nss', 'openssl']
-        NUT_USB_VARIANTS: ['no', '1.0', '0.1']
+        NUT_USB_VARIANTS: ['no', 'libusb-1.0', 'libusb-0.1']
         include:
           # Add cell(s) to the matrix, beside the combinatorics made above
           - language: 'python'
@@ -80,22 +80,25 @@ jobs:
     #- name: Autobuild
     #  uses: github/codeql-action/autobuild@v3
 
-    - if: matrix.language == 'cpp'
-      name: NUT CI Build (default-all-errors matrix)
-      run: |
-        BUILD_TYPE=default-all-errors BUILD_SSL_ONCE=true DO_DISTCHECK=no CI_SKIP_CHECK=true CANBUILD_DOCS_ALL=no ${{ matrix.compiler }} NUT_SSL_VARIANTS=${{ matrix.NUT_SSL_VARIANTS }} NUT_USB_VARIANTS=${{ matrix.NUT_USB_VARIANTS }} ./ci_build.sh
+    #- if: matrix.language == 'cpp'
+    #  name: NUT CI Build (default-all-errors matrix)
+    #  run: |
+    #    BUILD_TYPE=default-all-errors BUILD_SSL_ONCE=true DO_DISTCHECK=no CI_SKIP_CHECK=true CANBUILD_DOCS_ALL=no ${{ matrix.compiler }} NUT_SSL_VARIANTS=${{ matrix.NUT_SSL_VARIANTS }} NUT_USB_VARIANTS=${{ matrix.NUT_USB_VARIANTS }} ./ci_build.sh
 
     #- if: matrix.language == 'cpp'
     #  name: NUT CI Build (fightwarn-all)
     #  run: |
     #    BUILD_TYPE=fightwarn-all ./ci_build.sh
 
-    #- if: matrix.language == 'x-cpp'
-    #  name: NUT CI Build
-    #  run: |
-    #    ./autogen.sh
-    #    ./configure --with-all=auto --with-dev --without-docs
-    #    make -j 8
+    # TOTHINK: Can we prepare the working area once (apt, autogen => containers?)
+    # and then spread it out for builds and analyses?
+    # Can ccache be used across builds?
+    - if: matrix.language == 'cpp'
+      name: NUT CI Build
+      run: |
+        ./autogen.sh
+        ./configure --enable-warnings --enable-Werror --enable-Wcolor --with-all=auto --with-dev --without-docs ${{matrix.compiler}} --with-ssl=${{matrix.NUT_SSL_VARIANTS}} --with-usb=${{matrix.NUT_USB_VARIANTS}}
+        make -s -j 8
 
     # ℹ️ Command-line programs to run using the OS shell.
     # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
