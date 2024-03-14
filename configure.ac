@@ -4784,6 +4784,19 @@ AC_ARG_VAR(CCACHE_BASEDIR)
 AC_ARG_VAR(CCACHE_DIR)
 AC_ARG_VAR(CCACHE_PATH)
 
+dnl Some versions of ccache take poorly to an exported empty CCACHE_DIR etc.
+dnl Avoid exporting them if not set at the configure time (assuming ci_build.sh
+dnl integration or user's shell profile sets them persistently)
+AS_IF([test x"${CCACHE_NAMESPACE-}" = x], [NUT_AM_EXPORT_CCACHE_NAMESPACE="#"], [NUT_AM_EXPORT_CCACHE_NAMESPACE=""])
+AC_SUBST(NUT_AM_EXPORT_CCACHE_NAMESPACE)
+AS_IF([test x"${CCACHE_BASEDIR-}" = x], [NUT_AM_EXPORT_CCACHE_BASEDIR="#"], [NUT_AM_EXPORT_CCACHE_BASEDIR=""])
+AC_SUBST(NUT_AM_EXPORT_CCACHE_BASEDIR)
+AS_IF([test x"${CCACHE_DIR-}" = x], [NUT_AM_EXPORT_CCACHE_DIR="#"], [NUT_AM_EXPORT_CCACHE_DIR=""])
+AC_SUBST(NUT_AM_EXPORT_CCACHE_DIR)
+
+dnl Application of PATH_DURING_CONFIGURE is also fenced by NUT_AM_EXPORT_CCACHE_PATH:
+AS_IF([test x"${CCACHE_PATH-}" = x], [NUT_AM_EXPORT_CCACHE_PATH="#"], [NUT_AM_EXPORT_CCACHE_PATH=""])
+AC_SUBST(NUT_AM_EXPORT_CCACHE_PATH)
 PATH_DURING_CONFIGURE="$PATH"
 AC_SUBST(PATH_DURING_CONFIGURE)
 
