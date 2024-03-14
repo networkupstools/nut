@@ -449,10 +449,13 @@ set | sort -n """
                     'CSTDVARIANT': ['gnu']
                     ],
                 dynamatrixAxesCommonEnv: [
+                    // One set of several simultaneously exported envvars!
+                    // CONFIG_OPTS are picked up by our dynamatrix configuration
+                    // and substituted into shell "as is" for normal builds
+                    // (so splitting into many tokens), or quoted as a single
+                    // token DISTCHECK_FLAGS in its stage (split by make later).
                     ['LANG=C','LC_ALL=C','TZ=UTC',
-                     // TODO: Find a way to pass space-separated tokens through withEnv()
-                     //'CONFIG_OPTS=\"--with-all=auto\\ --with-docs=auto\\ --with-ssl=auto\\ --enable-Werror\\ --enable-warnings\\ --disable-Wcolor\\ --enable-silent-rules\"'
-                     'CONFIG_OPTS=--enable-Werror'
+                     'CONFIG_OPTS=--with-all=auto --with-docs=auto --with-ssl=auto --enable-Werror --enable-warnings --disable-Wcolor --enable-silent-rules'
                     ]
                     ],
 
