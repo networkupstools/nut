@@ -3,6 +3,7 @@
 
     Copyright (C)
         2012	Emilien Kia <emilien.kia@gmail.com>
+        2024	Jim Klimov <jimklimov+nut@gmail.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -1075,6 +1076,18 @@ UpsmonConfiguration::NotifyType UpsmonConfiguration::NotifyTypeFromString(const 
 		return NOTIFY_NOCOMM;
 	else if(str=="NOPARENT")
 		return NOTIFY_NOPARENT;
+	else if(str=="CAL")
+		return NOTIFY_CAL;
+	else if(str=="NOTCAL")
+		return NOTIFY_NOTCAL;
+	else if(str=="OFF")
+		return NOTIFY_OFF;
+	else if(str=="NOTOFF")
+		return NOTIFY_NOTOFF;
+	else if(str=="BYPASS")
+		return NOTIFY_BYPASS;
+	else if(str=="NOTBYPASS")
+		return NOTIFY_NOTBYPASS;
 	else
 		return NOTIFY_TYPE_MAX;
 }

@@ -1,5 +1,7 @@
 /*
- *  Copyright (C) 2013 - EATON
+ *  Copyright (C)
+ *      2013 - EATON
+ *      2024 - Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -130,7 +132,8 @@ const char * Usage::s_text[] = {
 	"UPS device is specified by the following sequence:",
 	"    <ups_ID> <driver> <port> [<key>=<value>]*",
 	"Notification types:",
-	"    ONLINE, ONBATT, LOWBATT, FSD, COMMOK, COMMBAD, SHUTDOWN, REPLBATT, NOCOMM, NOPARENT",
+	"    ONLINE, ONBATT, LOWBATT, FSD, COMMOK, COMMBAD, SHUTDOWN, REPLBATT, NOCOMM, NOPARENT,",
+	"    CAL, NOTCAL, OFF, NOTOFF, BYPASS, NOTBYPASS",
 	"Notification flags:",
 	"    SYSLOG, WALL, EXEC, IGNORE",
 	"User specification:",

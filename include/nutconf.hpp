@@ -3,6 +3,7 @@
 
     Copyright (C)
 	2012	Emilien Kia <emilien.kia@gmail.com>
+	2024	Jim Klimov <jimklimov+nut@gmail.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -658,6 +659,12 @@ public:
 		NOTIFY_REPLBATT,
 		NOTIFY_NOCOMM,
 		NOTIFY_NOPARENT,
+		NOTIFY_CAL,
+		NOTIFY_NOTCAL,
+		NOTIFY_OFF,
+		NOTIFY_NOTOFF,
+		NOTIFY_BYPASS,
+		NOTIFY_NOTBYPASS,
 		NOTIFY_TYPE_MAX
 	};
 
