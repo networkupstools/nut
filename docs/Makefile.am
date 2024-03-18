@@ -244,7 +244,7 @@ $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	     exit ; \
 	 } ; \
 	 echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@" \
-	 && printf "ifdef::txt[]\n== Very detailed Change Log\nendif::txt[]\n\n" > "$@.tmp" \
+	 && printf "ifdef::txt[]\n== Very detailed Change Log\n:ascii-ids:\nendif::txt[]\n\n" > "$@.tmp" \
 	 && TABCHAR="`printf '\t'`" \
 	 && $(SED) \
 	        -e 's,^\([0-9a-zA-Z]\),=== \1,' \
