@@ -467,7 +467,7 @@ set | sort -n """
                 runAllowedFailure: true,
                 //dynamatrixAxesLabels: ['OS_FAMILY', 'OS_DISTRO', '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
                 //dynamatrixAxesLabels: [~/^OS/, '${COMPILER}VER', 'ARCH${ARCH_BITS}'],
-                dynamatrixAxesLabels: [~/^OS/, 'COMPILER'],
+                dynamatrixAxesLabels: [~/^OS_DISTRO/, 'COMPILER'],
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_STRICT_C
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                     + [[~/OS_DISTRO=openbsd-6\./, ~/COMPILER=GCC/]]
