@@ -10,6 +10,17 @@ from textwrap import TextWrapper
 import sys
 import subprocess
 
+# Python 3 compatibility hack
+try:
+    unicode('')
+except NameError:
+    unicode = str
+
+try:
+    import unicodedata
+except:
+    pass
+
 rev_range = "HEAD"
 
 if len(sys.argv) > 1:
@@ -104,6 +115,13 @@ for line in fin:
         try:
             author = authorList[1]
             author = author[0 : len(author) - fin_chop]
+            try:
+                if isinstance(author, str):
+                    author = unicodedata.normalize(u'NFKD', unicode(author, "UTF=8")).encode('ascii', 'ignore').decode('utf8')
+                else:
+                    author = unicodedata.normalize(u'NFKD', author).encode('ascii', 'ignore').decode('utf8')
+            except Exception as e:
+                print("Could not unicodedata.normalize() author '%s': %s" % (author, str(e)))
             authorFound = True
         except:
             print("Could not parse authorList = '%s'" % (line))
