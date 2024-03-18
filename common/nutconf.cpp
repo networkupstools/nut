@@ -1233,7 +1233,7 @@ void UpsmonConfigParser::onParseDirective(const std::string& directiveName, char
 		{
 			if(values.size()>0)
 			{
-				_config->hotSync = StringToSettableNumber<unsigned int>(values.front());
+				_config->hostSync = StringToSettableNumber<unsigned int>(values.front());
 			}
 		}
 		else if(directiveName == "DEADTIME")

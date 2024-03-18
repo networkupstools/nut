@@ -445,7 +445,7 @@ NutWriter::status_t UpsmonConfigWriter::writeConfig(const UpsmonConfiguration & 
 	UPSMON_DIRECTIVEX("MINSUPPLIES",    unsigned int, config.minSupplies,    false);
 	UPSMON_DIRECTIVEX("POLLFREQ",       unsigned int, config.poolFreq,       false);
 	UPSMON_DIRECTIVEX("POLLFREQALERT",  unsigned int, config.poolFreqAlert,  false);
-	UPSMON_DIRECTIVEX("HOSTSYNC",       unsigned int, config.hotSync,        false);
+	UPSMON_DIRECTIVEX("HOSTSYNC",       unsigned int, config.hostSync,       false);
 	UPSMON_DIRECTIVEX("DEADTIME",       unsigned int, config.deadTime,       false);
 	UPSMON_DIRECTIVEX("RBWARNTIME",     unsigned int, config.rbWarnTime,     false);
 	UPSMON_DIRECTIVEX("NOCOMMWARNTIME", unsigned int, config.noCommWarnTime, false);

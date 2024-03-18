@@ -638,7 +638,7 @@ public:
 	void parseFromString(const std::string& str);
 
 	Settable<std::string>  runAsUser, shutdownCmd, notifyCmd, powerDownFlag;
-	Settable<unsigned int> minSupplies, poolFreq, poolFreqAlert, hotSync;
+	Settable<unsigned int> minSupplies, poolFreq, poolFreqAlert, hostSync;
 	Settable<unsigned int> deadTime, rbWarnTime, noCommWarnTime, finalDelay;
 
 	enum NotifyFlag {
