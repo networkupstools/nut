@@ -470,6 +470,11 @@ set | sort -n """
                 dynamatrixAxesLabels: [~/^OS/, 'COMPILER'],
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_STRICT_C
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
+                    + [[~/OS_DISTRO=openbsd-6\./, ~/COMPILER=GCC/]]
+                    // Here we picked just OSes and compilers (gcc or clang),
+                    // so exclude systems which have e.g. gcc-4.2.1 which claims
+                    // type range comparison warnings despite pragma fencing.
+                    // gcc-4.8.x on CentOS 7 and Ubuntu 14.04 looks already okay.
                 ], body)
             }, // getParStages
         //'bodyParStages': {}
