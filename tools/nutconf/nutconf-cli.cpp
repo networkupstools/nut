@@ -128,7 +128,7 @@ const char * Usage::s_text[] = {
 	"",
 	"NUT modes: standalone, netserver, netclient, controlled, manual, none",
 	"Monitor is specified by the following sequence:",
-	"    <ups_ID> <host>[:<port>] <power_value> <user> <passwd> (\"master\"|\"slave\")",
+	"    <ups_ID> <host>[:<port>] <power_value> <user> <passwd> (\"primary\"|\"secondary\")",
 	"UPS device is specified by the following sequence:",
 	"    <ups_ID> <driver> <port> [<key>=<value>]*",
 	"Notification types:",
@@ -2090,7 +2090,7 @@ static nut::UpsmonConfiguration::Monitor monitor(
 	monitor.hostname   = host_port.substr(0, colon_idx);
 	monitor.port       = port;
 	monitor.powerValue = power_value;
-	monitor.isMaster   = "master" == mode;
+	monitor.isMaster   = ("primary" == mode || "master" == mode);
 
 	return monitor;
 }
@@ -2594,11 +2594,11 @@ static void setUsers(
 			nut::UpsdUsersConfiguration::upsmon_mode_t mode =
 				nut::UpsdUsersConfiguration::UPSMON_UNDEF;
 
-			if ("master" == upsmon_user->mode)
-				mode = nut::UpsdUsersConfiguration::UPSMON_MASTER;
+			if ("primary" == upsmon_user->mode || "master" == upsmon_user->mode)
+				mode = nut::UpsdUsersConfiguration::UPSMON_PRIMARY;
 
-			else if ("slave" == upsmon_user->mode)
-				mode = nut::UpsdUsersConfiguration::UPSMON_SLAVE;
+			else if ("secondary" == upsmon_user->mode || "slave" == upsmon_user->mode)
+				mode = nut::UpsdUsersConfiguration::UPSMON_SECONDARY;
 
 			else {
 				std::cerr

@@ -1084,8 +1084,8 @@ public:
 	/** upsmon mode */
 	typedef enum {
 		UPSMON_UNDEF = 0,  /**< Unknown mode */
-		UPSMON_MASTER,     /**< Master  mode */
-		UPSMON_SLAVE,      /**< Slave   mode */
+		UPSMON_PRIMARY,    /**< Primary   (legacy "Master") mode */
+		UPSMON_SECONDARY,  /**< Secondary (legacy "Slave")  mode */
 	} upsmon_mode_t;
 
 	/** User-specific configuration attributes getters and setters \{ */

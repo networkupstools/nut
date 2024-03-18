@@ -1190,7 +1190,7 @@ void UpsmonConfigParser::onParseDirective(const std::string& directiveName, char
 				monitor.powerValue = StringToSettableNumber<unsigned int>(*it++);
 				monitor.username = *it++;
 				monitor.password = *it++;
-				monitor.isMaster = (*it) == "master";
+				monitor.isMaster = (*it) == "primary";	// master for NUT v2.7.4 and older
 				_config->monitors.push_back(monitor);
 			}
 		}
@@ -1583,11 +1583,11 @@ UpsdUsersConfiguration::upsmon_mode_t UpsdUsersConfiguration::getUpsmonMode() co
 {
 	std::string mode_str = getStr("upsmon", "upsmon");
 
-	if ("master" == mode_str)
-		return UPSMON_MASTER;
+	if ("primary" == mode_str || "master" == mode_str)
+		return UPSMON_PRIMARY;
 
-	if ("slave" == mode_str)
-		return UPSMON_SLAVE;
+	if ("secondary" == mode_str || "slave" == mode_str)
+		return UPSMON_SECONDARY;
 
 	return UPSMON_UNDEF;
 }
@@ -1597,7 +1597,8 @@ void UpsdUsersConfiguration::setUpsmonMode(upsmon_mode_t mode)
 {
 	assert(UPSMON_UNDEF != mode);
 
-	setStr("upsmon", "upsmon", (UPSMON_MASTER == mode ? "master" : "slave"));
+	setStr("upsmon", "upsmon", (UPSMON_PRIMARY == mode ? "primary" : "secondary"));
+	/* NUT v2.7.4 and older: setStr("upsmon", "upsmon", (UPSMON_PRIMARY == mode ? "master" : "slave")); */
 }
 
 
