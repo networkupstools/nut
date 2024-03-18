@@ -9,6 +9,13 @@
 @NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export CCACHE_PATH=@CCACHE_PATH@
 @NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export PATH=@PATH_DURING_CONFIGURE@
 
+# First target defines default behavior: all
+# We follow up with another pass to `make doc` because our wild recipes
+# sometimes preclude generating all of them on the first pass (FIXME!)
+# missing e.g. PDF and HTML which then pop up in `make check` footprint.
+all: all-recursive
+	+@$(MAKE) $(AM_MAKEFLAGS) doc
+
 # include directory for aclocal
 ACLOCAL_AMFLAGS = -I m4
 
