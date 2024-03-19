@@ -32,6 +32,10 @@ EXTRA_DIST = \
 
 SPELLCHECK_SRC = README.adoc common/README_ipp-os-shutdown.adoc
 
+nut:
+	rm -f "$@"
+	$(LN_S) $(top_srcdir) "$@"
+
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension.
 # We also have to export some variables that may be tainted by relative
 # paths when parsing the other makefile (e.g. MKDIR_P that may be defined
@@ -53,5 +57,9 @@ spellcheck spellcheck-interactive spellcheck-sortdict:
 	+$(MAKE) -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC="$(SPELLCHECK_SRC)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
 CLEANFILES = *-spellchecked
+
+# Remove "nut" if it is a symlink to the source tree
+clean-local:
+	if test -L nut || test -h nut ; then rm -f nut ; fi
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
