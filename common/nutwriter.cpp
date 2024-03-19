@@ -3,6 +3,7 @@
 
     Copyright (C)
         2012	Vaclav Krpec  <VaclavKrpec@Eaton.com>
+        2024	Jim Klimov <jimklimov+nut@gmail.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -240,6 +241,12 @@ const NotifyFlagsStrings::TypeStrings NotifyFlagsStrings::type_str = {
 	"REPLBATT",	// NOTIFY_REPLBATT
 	"NOCOMM",	// NOTIFY_NOCOMM
 	"NOPARENT",	// NOTIFY_NOPARENT
+	"CAL\t",	// NOTIFY_CAL (including padding)
+	"NOTCAL",	// NOTIFY_NOTCAL
+	"OFF\t",	// NOTIFY_OFF (including padding)
+	"NOTOFF",	// NOTIFY_NOTOFF
+	"BYPASS",	// NOTIFY_BYPASS
+	"NOTBYPASS",	// NOTIFY_NOTBYPASS
 };
 
 
@@ -391,8 +398,9 @@ static std::string serializeMonitor(const UpsmonConfiguration::Monitor & monitor
 	// Username & password
 	directive << monitor.username << ' ' << monitor.password << ' ';
 
-	// Master/slave
-	directive << (monitor.isMaster ? "master" : "slave");
+	// Primary/secondary (legacy master/slave)
+	directive << (monitor.isMaster ? "primary" : "secondary");
+	/* NUT v2.7.4 and older: directive << (monitor.isMaster ? "master" : "slave");*/
 
 	return directive.str();
 }
@@ -438,7 +446,7 @@ NutWriter::status_t UpsmonConfigWriter::writeConfig(const UpsmonConfiguration & 
 	UPSMON_DIRECTIVEX("MINSUPPLIES",    unsigned int, config.minSupplies,    false);
 	UPSMON_DIRECTIVEX("POLLFREQ",       unsigned int, config.poolFreq,       false);
 	UPSMON_DIRECTIVEX("POLLFREQALERT",  unsigned int, config.poolFreqAlert,  false);
-	UPSMON_DIRECTIVEX("HOSTSYNC",       unsigned int, config.hotSync,        false);
+	UPSMON_DIRECTIVEX("HOSTSYNC",       unsigned int, config.hostSync,       false);
 	UPSMON_DIRECTIVEX("DEADTIME",       unsigned int, config.deadTime,       false);
 	UPSMON_DIRECTIVEX("RBWARNTIME",     unsigned int, config.rbWarnTime,     false);
 	UPSMON_DIRECTIVEX("NOCOMMWARNTIME", unsigned int, config.noCommWarnTime, false);

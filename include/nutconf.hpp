@@ -3,6 +3,7 @@
 
     Copyright (C)
 	2012	Emilien Kia <emilien.kia@gmail.com>
+	2024	Jim Klimov <jimklimov+nut@gmail.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -637,7 +638,7 @@ public:
 	void parseFromString(const std::string& str);
 
 	Settable<std::string>  runAsUser, shutdownCmd, notifyCmd, powerDownFlag;
-	Settable<unsigned int> minSupplies, poolFreq, poolFreqAlert, hotSync;
+	Settable<unsigned int> minSupplies, poolFreq, poolFreqAlert, hostSync;
 	Settable<unsigned int> deadTime, rbWarnTime, noCommWarnTime, finalDelay;
 
 	enum NotifyFlag {
@@ -658,6 +659,12 @@ public:
 		NOTIFY_REPLBATT,
 		NOTIFY_NOCOMM,
 		NOTIFY_NOPARENT,
+		NOTIFY_CAL,
+		NOTIFY_NOTCAL,
+		NOTIFY_OFF,
+		NOTIFY_NOTOFF,
+		NOTIFY_BYPASS,
+		NOTIFY_NOTBYPASS,
 		NOTIFY_TYPE_MAX
 	};
 
@@ -1077,8 +1084,8 @@ public:
 	/** upsmon mode */
 	typedef enum {
 		UPSMON_UNDEF = 0,  /**< Unknown mode */
-		UPSMON_MASTER,     /**< Master  mode */
-		UPSMON_SLAVE,      /**< Slave   mode */
+		UPSMON_PRIMARY,    /**< Primary   (legacy "Master") mode */
+		UPSMON_SECONDARY,  /**< Secondary (legacy "Slave")  mode */
 	} upsmon_mode_t;
 
 	/** User-specific configuration attributes getters and setters \{ */

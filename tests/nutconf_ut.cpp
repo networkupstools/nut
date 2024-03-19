@@ -3,6 +3,7 @@
 
     Copyright (C)
         2012	Vaclav Krpec <VaclavKrpec@Eaton.com>
+        2024    Jim Klimov <jimklimov+nut@gmail.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -211,7 +212,7 @@ void NutConfigUnitTest::testUpsdUsersConfiguration() {
 	load(static_cast<nut::Serialisable *>(&config), ABS_TOP_SRCDIR "/conf/upsd.users.sample");
 
 	config.setPassword("upsmon", "ytrewq");
-	config.setUpsmonMode(nut::UpsdUsersConfiguration::UPSMON_MASTER);
+	config.setUpsmonMode(nut::UpsdUsersConfiguration::UPSMON_PRIMARY);
 
 	config.setPassword("admin", "qwerty=ui");
 	config.setActions("admin", nut::ConfigParamList(1, "SET"));
@@ -225,7 +226,7 @@ void NutConfigUnitTest::testUpsdUsersConfiguration() {
 		"\n"
 		"[upsmon]\n"
 		"\tpassword = ytrewq\n"
-		"\tupsmon master\n"
+		"\tupsmon primary\n"
 		"\n"
 	);
 }

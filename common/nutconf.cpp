@@ -3,6 +3,7 @@
 
     Copyright (C)
         2012	Emilien Kia <emilien.kia@gmail.com>
+        2024	Jim Klimov <jimklimov+nut@gmail.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -1075,6 +1076,18 @@ UpsmonConfiguration::NotifyType UpsmonConfiguration::NotifyTypeFromString(const 
 		return NOTIFY_NOCOMM;
 	else if(str=="NOPARENT")
 		return NOTIFY_NOPARENT;
+	else if(str=="CAL")
+		return NOTIFY_CAL;
+	else if(str=="NOTCAL")
+		return NOTIFY_NOTCAL;
+	else if(str=="OFF")
+		return NOTIFY_OFF;
+	else if(str=="NOTOFF")
+		return NOTIFY_NOTOFF;
+	else if(str=="BYPASS")
+		return NOTIFY_BYPASS;
+	else if(str=="NOTBYPASS")
+		return NOTIFY_NOTBYPASS;
 	else
 		return NOTIFY_TYPE_MAX;
 }
@@ -1177,7 +1190,7 @@ void UpsmonConfigParser::onParseDirective(const std::string& directiveName, char
 				monitor.powerValue = StringToSettableNumber<unsigned int>(*it++);
 				monitor.username = *it++;
 				monitor.password = *it++;
-				monitor.isMaster = (*it) == "master";
+				monitor.isMaster = (*it) == "primary";	// master for NUT v2.7.4 and older
 				_config->monitors.push_back(monitor);
 			}
 		}
@@ -1220,7 +1233,7 @@ void UpsmonConfigParser::onParseDirective(const std::string& directiveName, char
 		{
 			if(values.size()>0)
 			{
-				_config->hotSync = StringToSettableNumber<unsigned int>(values.front());
+				_config->hostSync = StringToSettableNumber<unsigned int>(values.front());
 			}
 		}
 		else if(directiveName == "DEADTIME")
@@ -1570,11 +1583,11 @@ UpsdUsersConfiguration::upsmon_mode_t UpsdUsersConfiguration::getUpsmonMode() co
 {
 	std::string mode_str = getStr("upsmon", "upsmon");
 
-	if ("master" == mode_str)
-		return UPSMON_MASTER;
+	if ("primary" == mode_str || "master" == mode_str)
+		return UPSMON_PRIMARY;
 
-	if ("slave" == mode_str)
-		return UPSMON_SLAVE;
+	if ("secondary" == mode_str || "slave" == mode_str)
+		return UPSMON_SECONDARY;
 
 	return UPSMON_UNDEF;
 }
@@ -1584,7 +1597,8 @@ void UpsdUsersConfiguration::setUpsmonMode(upsmon_mode_t mode)
 {
 	assert(UPSMON_UNDEF != mode);
 
-	setStr("upsmon", "upsmon", (UPSMON_MASTER == mode ? "master" : "slave"));
+	setStr("upsmon", "upsmon", (UPSMON_PRIMARY == mode ? "primary" : "secondary"));
+	/* NUT v2.7.4 and older: setStr("upsmon", "upsmon", (UPSMON_PRIMARY == mode ? "master" : "slave")); */
 }
 
 
