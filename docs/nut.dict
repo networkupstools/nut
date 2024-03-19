@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3470 utf-8
+personal_ws-1.1 en 3478 utf-8
 AAC
 AAS
 ABI
@@ -1570,6 +1570,7 @@ aec
 af
 aggregator
 ai
+aix
 al
 ala
 alarmcenables
@@ -2198,6 +2199,7 @@ hotplug
 hotplugging
 hovercharge
 hpe
+hpux
 href
 htaccess
 html
@@ -2365,6 +2367,7 @@ libdir
 libdummy
 libexec
 libexecdir
+libexpat
 libfreeipmi
 libgd
 libgpgme
@@ -3023,6 +3026,7 @@ sitop
 sizeof
 ske
 skel
+sl
 slackpkg
 slaveid
 slavesync
@@ -3045,8 +3049,11 @@ socat
 sockdebug
 socketname
 socomec
+solari
 solaris
+solcmn
 solibs
+solint
 solis
 somename
 somepass
