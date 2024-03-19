@@ -2722,6 +2722,7 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 	pdf*)
 		AC_MSG_CHECKING([if dblatex version can build ${nut_doc_build_target_base} (minimum required ${DBLATEX_MIN_VERSION})])
 		can_build_doc_pdf=no
+		can_build_doc_pdf_nonascii_titles=no
 		AX_COMPARE_VERSION([${DBLATEX_VERSION}], [ge], [${DBLATEX_MIN_VERSION}], [
 			( cd "$DOCTESTDIR" && ${A2X} --format=pdf --destination-dir=. "${abs_srcdir}"/docs/asciidoc.txt && test -s asciidoc.pdf ) && can_build_doc_pdf=yes
 			rm -f "${DOCTESTDIR}"/asciidoc.pdf
@@ -2729,6 +2730,10 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 		if test "${can_build_doc_pdf}" = yes ; then
 			AC_MSG_RESULT(yes)
 			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
+			AC_MSG_CHECKING([if dblatex can process non-ASCII section titles for PDF])
+			( cd "$DOCTESTDIR" && sed -e 's/^Intro/'"`printf '\303\215'`"'ntro/' -e 's/Works in Progress/Works '"`printf '\303\255'`"'n Progress/' < "${abs_srcdir}"/docs/asciidoc.txt > asciidoc.tmp.txt && ${A2X} --format=pdf --destination-dir=. asciidoc.tmp.txt && test -s asciidoc.tmp.pdf ) && can_build_doc_pdf_nonascii_titles=yes
+			rm -f "${DOCTESTDIR}"/asciidoc.tmp.pdf
+			AC_MSG_RESULT(${can_build_doc_pdf_nonascii_titles})
 		else
 			AC_MSG_RESULT(no)
 			if test "${nut_doc_build_target_flag}" = "yes" ; then
@@ -2803,6 +2808,8 @@ no)
 	fi
 	;;
 esac
+
+AM_CONDITIONAL(WITH_PDF_NONASCII_TITLES, [test x"$can_build_doc_pdf_nonascii_titles" = xyes])
 
 NUT_REPORT_FEATURE([build specific documentation format(s)], [${nut_with_doc}], [${DOC_BUILD_LIST}],
 					[WITH_DOCS], [Define to enable overall documentation generation])
@@ -4784,6 +4791,19 @@ AC_ARG_VAR(CCACHE_BASEDIR)
 AC_ARG_VAR(CCACHE_DIR)
 AC_ARG_VAR(CCACHE_PATH)
 
+dnl Some versions of ccache take poorly to an exported empty CCACHE_DIR etc.
+dnl Avoid exporting them if not set at the configure time (assuming ci_build.sh
+dnl integration or user's shell profile sets them persistently)
+AS_IF([test x"${CCACHE_NAMESPACE-}" = x], [NUT_AM_EXPORT_CCACHE_NAMESPACE="#"], [NUT_AM_EXPORT_CCACHE_NAMESPACE=""])
+AC_SUBST(NUT_AM_EXPORT_CCACHE_NAMESPACE)
+AS_IF([test x"${CCACHE_BASEDIR-}" = x], [NUT_AM_EXPORT_CCACHE_BASEDIR="#"], [NUT_AM_EXPORT_CCACHE_BASEDIR=""])
+AC_SUBST(NUT_AM_EXPORT_CCACHE_BASEDIR)
+AS_IF([test x"${CCACHE_DIR-}" = x], [NUT_AM_EXPORT_CCACHE_DIR="#"], [NUT_AM_EXPORT_CCACHE_DIR=""])
+AC_SUBST(NUT_AM_EXPORT_CCACHE_DIR)
+
+dnl Application of PATH_DURING_CONFIGURE is also fenced by NUT_AM_EXPORT_CCACHE_PATH:
+AS_IF([test x"${CCACHE_PATH-}" = x], [NUT_AM_EXPORT_CCACHE_PATH="#"], [NUT_AM_EXPORT_CCACHE_PATH=""])
+AC_SUBST(NUT_AM_EXPORT_CCACHE_PATH)
 PATH_DURING_CONFIGURE="$PATH"
 AC_SUBST(PATH_DURING_CONFIGURE)
 

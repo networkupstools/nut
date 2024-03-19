@@ -299,7 +299,23 @@ static const char* getTmpDirPath() {
 	return "/tmp";
 }
 
+/* Pedantic builds complain about the static variable below...
+ * It is assumed safe to ignore since it is a std::string with
+ * no complex teardown at program exit.
+ */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_GLOBAL_CONSTRUCTORS)
+#pragma GCC diagnostic push
+# ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_GLOBAL_CONSTRUCTORS
+#  pragma GCC diagnostic ignored "-Wglobal-constructors"
+# endif
+# ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS
+#  pragma GCC diagnostic ignored "-Wexit-time-destructors"
+# endif
+#endif
 const std::string NutFile::m_tmp_dir(getTmpDirPath());
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS || defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_GLOBAL_CONSTRUCTORS)
+#pragma GCC diagnostic pop
+#endif
 
 NutFile::NutFile(anonymous_t):
 	m_name(""),

@@ -3,11 +3,18 @@
 # Export certain values for ccache which NUT ci_build.sh can customize,
 # to facilitate developer iteration re-runs of "make" later.
 # At least GNU and BSD make implementations are okay with this syntax.
-@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_NAMESPACE=@CCACHE_NAMESPACE@
-@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_BASEDIR=@CCACHE_BASEDIR@
-@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_DIR=@CCACHE_DIR@
-@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_PATH=@CCACHE_PATH@
-@NUT_AM_MAKE_CAN_EXPORT@export PATH=@PATH_DURING_CONFIGURE@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_NAMESPACE@export CCACHE_NAMESPACE=@CCACHE_NAMESPACE@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_BASEDIR@export CCACHE_BASEDIR=@CCACHE_BASEDIR@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_DIR@export CCACHE_DIR=@CCACHE_DIR@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export CCACHE_PATH=@CCACHE_PATH@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export PATH=@PATH_DURING_CONFIGURE@
+
+# First target defines default behavior: all
+# We follow up with another pass to `make doc` because our wild recipes
+# sometimes preclude generating all of them on the first pass (FIXME!)
+# missing e.g. PDF and HTML which then pop up in `make check` footprint.
+all: all-recursive
+	+@$(MAKE) $(AM_MAKEFLAGS) doc
 
 # include directory for aclocal
 ACLOCAL_AMFLAGS = -I m4
@@ -324,11 +331,17 @@ dummy-stamp:
 ChangeLog: dummy-stamp
 	+@$(MAKE) $(AM_MAKEFLAGS) $(abs_top_builddir)/ChangeLog
 
+if WITH_PDF_NONASCII_TITLES
+WITH_PDF_NONASCII_TITLES_ENVVAR = WITH_PDF_NONASCII_TITLES=yes
+else
+WITH_PDF_NONASCII_TITLES_ENVVAR = WITH_PDF_NONASCII_TITLES=no
+endif
+
 # Be sure to not confuse with a DIST'ed file (and so try to overwrite it):
 $(abs_top_builddir)/ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	@cd $(abs_top_srcdir) && \
 	    if test -e .git ; then \
-	        CHANGELOG_FILE="$@" $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) || \
+	        CHANGELOG_FILE="$@" $(WITH_PDF_NONASCII_TITLES_ENVVAR) $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) || \
 	        { printf "gitlog2changelog.py failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; } ; \
 	    else \
 	        if test x"$(abs_top_srcdir)" != x"$(abs_top_builddir)" -a -s ./ChangeLog ; then \

@@ -10,6 +10,17 @@ from textwrap import TextWrapper
 import sys
 import subprocess
 
+# Python 3 compatibility hack
+try:
+    unicode('')
+except NameError:
+    unicode = str
+
+try:
+    import unicodedata
+except:
+    pass
+
 rev_range = "HEAD"
 
 if len(sys.argv) > 1:
@@ -81,6 +92,14 @@ messageNL = False
 files = ""
 prevAuthorLine = ""
 
+# Legacy default: keep as is
+authorMustBeASCII = False
+authorMustBeASCII_inverse_setting = str(os.environ.get("WITH_PDF_NONASCII_TITLES", "")).upper()
+if authorMustBeASCII_inverse_setting in ["YES", "TRUE"]:
+    authorMustBeASCII = False
+elif authorMustBeASCII_inverse_setting in ["NO", "FALSE"]:
+    authorMustBeASCII = True
+
 # See also: https://github.com/python/cpython/blob/main/Lib/textwrap.py
 wrapper = TextWrapper(initial_indent="\t", subsequent_indent="\t  ", break_on_hyphens=False, break_long_words=False)
 
@@ -104,6 +123,14 @@ for line in fin:
         try:
             author = authorList[1]
             author = author[0 : len(author) - fin_chop]
+            if authorMustBeASCII:
+                try:
+                    if isinstance(author, str):
+                        author = unicodedata.normalize(u'NFKD', unicode(author, "UTF=8")).encode('ascii', 'ignore').decode('utf8')
+                    else:
+                        author = unicodedata.normalize(u'NFKD', author).encode('ascii', 'ignore').decode('utf8')
+                except Exception as e:
+                    print("Could not unicodedata.normalize() author '%s': %s" % (author, str(e)))
             authorFound = True
         except:
             print("Could not parse authorList = '%s'" % (line))

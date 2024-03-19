@@ -233,6 +233,12 @@ $(top_builddir)/ChangeLog:
 # (and claims why: "Using $< in a non-suffix rule context is a GNUmake idiom"),
 # but it has a "$?" for "list of dependencies that are newer than the target".
 # For more details see https://man.freebsd.org/cgi/man.cgi
+if WITH_PDF_NONASCII_TITLES
+A2X_ASCII_IDS =
+else !WITH_PDF_NONASCII_TITLES
+A2X_ASCII_IDS = ":ascii-ids:\n"
+endif !WITH_PDF_NONASCII_TITLES
+
 $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	@INPUT="$?"; \
 	 test -n "$${INPUT}" || INPUT="$$(top_builddir)/ChangeLog" ; \
@@ -244,7 +250,7 @@ $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	     exit ; \
 	 } ; \
 	 echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@" \
-	 && printf "ifdef::txt[]\n== Very detailed Change Log\nendif::txt[]\n\n" > "$@.tmp" \
+	 && printf "ifdef::txt[]\n== Very detailed Change Log\n"$(A2X_ASCII_IDS)"endif::txt[]\n\n" > "$@.tmp" \
 	 && TABCHAR="`printf '\t'`" \
 	 && $(SED) \
 	        -e 's,^\([0-9a-zA-Z]\),=== \1,' \
