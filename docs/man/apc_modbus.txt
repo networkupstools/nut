@@ -83,6 +83,46 @@ Set the Modbus slave id. The default slave id is 1.
 Set the Modbus response timeout. The default timeout is set by libmodbus. It can
 be good to set a higher timeout on TCP connections with high latency.
 
+BUGS
+----
+
+This driver relies on advanced features of `libmodbus` to talk Modbus protocol
+over USB specifically (Serial and TCP are part of common library codebase).
+At the time of this writing, the common library project is just expecting a
+merge of the pull request with this ability.
+
+For the time being, if your OS distribution does not ship the required feature
+set, you may have to build your own `libmodbus` and subsequently (re-)build NUT
+against this library, as detailed in the NUT GitHub Wiki at
+https://github.com/networkupstools/nut/wiki/APC-UPS-with-Modbus-protocol
+
+The short sequence may be like follows:
+------
+cd ~/
+git clone -b rtu_usb https://github.com/networkupstools/libmodbus
+cd libmodbus
+./autogen.sh
+./configure --with-libusb --prefix=/path/to/prefix
+make install
+
+cd ~/
+git clone https://github.com/networkupstools/nut
+cd nut
+./autogen.sh
+./configure --with-drivers=apc_modbus --with-usb --with-modbus \
+   --with-modbus-includes=-I/path/to/prefix/include/modbus \
+   --with-modbus-libs="-L/path/to/prefix/lib -lmodbus"
+make
+------
+
+NOTE: Other `configure` options may be needed for proper behavior, such as
+`--prefix`, `--with-sysconfdir`, `--with-user` and `--with-group` to match
+your packaged or otherwise preceding NUT installation.
+
+The `./configure --enable-inplace-runtime` may be a good start to inherit
+build configuration from an existing NUT deployment, as further detailed at
+https://github.com/networkupstools/nut/wiki/Building-NUT-for-in%E2%80%90place-upgrades-or-non%E2%80%90disruptive-tests
+
 AUTHORS
 -------
 
