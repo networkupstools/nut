@@ -177,12 +177,12 @@ spellcheck spellcheck-interactive:
 doc spellcheck-sortdict \
 all-docs check-docs \
 man all-man man-man check-man man-html all-html:
-	+cd $(builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/.prep-src-docs
-	+cd $(builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/man/.prep-src-docs
-	+cd $(builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) $@
+	+cd $(abs_top_builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/.prep-src-docs
+	+cd $(abs_top_builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/man/.prep-src-docs
+	+cd $(abs_top_builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) $@
 
 INSTALL.nut UPGRADING NEWS README:
-	+cd $(builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) ../$(@F).adoc-parsed && cp -f ../$(@F).adoc-parsed ../$(@F)
+	+cd $(abs_top_builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) ../$(@F).adoc-parsed && cp -f ../$(@F).adoc-parsed ../$(@F)
 
 # Workarounds for https://github.com/github/markup/issues/1095
 # require direct definition of our attributes in each source

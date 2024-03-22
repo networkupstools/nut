@@ -186,10 +186,10 @@ check-html-chunked: $(ASCIIDOC_HTML_CHUNKED)
 # chosen during configure script execution. The "all-man" and "all-html"
 # rules build everything documented.
 check-man all-man man-man all-html html-man:
-	+cd $(top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile $@
+	+cd $(abs_top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile $@
 
 man:
-	+cd $(top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile all
+	+cd $(abs_top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile all
 
 CLEANFILES = *.xml *.html *.pdf *-spellchecked docbook-xsl.css docinfo.xml.in.tmp
 CLEANFILES += $(top_builddir)/INSTALL.nut $(top_builddir)/UPGRADING $(top_builddir)/NEWS $(top_builddir)/ChangeLog.adoc $(top_builddir)/README
