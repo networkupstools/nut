@@ -104,7 +104,24 @@ cd libmodbus
 ./autogen.sh
 ./configure --with-libusb --prefix=/path/to/prefix
 make install
+------
 
+[NOTE]
+======
+* you may need to `make && sudo make install` if you want to place this library
+  files' variant into a system path (like `--prefix=/usr/local/ups` to match
+  NUT defaults -- this activity would need privilege elevation via `sudo`),
+  and not into your home directory or some `/tmp` location.
+* conversely, you may want to
+  `./configure --with-libusb --enable-static --disable-shared --prefix=/path/to/prefix`
+  and only build and install a static `libmodbus.a` (can well be installed into
+  `/tmp` or similarly short-lived location), so that the customized Modbus+USB
+  logic gets built directly into `apc_modbus` binary program and there would be
+  no potential run-time conflict with a dynamic library file available elsewhere
+  in the system.
+======
+
+------
 cd ~/
 git clone https://github.com/networkupstools/nut
 cd nut
@@ -115,9 +132,12 @@ cd nut
 make
 ------
 
-NOTE: Other `configure` options may be needed for proper behavior, such as
+[NOTE]
+======
+* Other NUT `configure` options may be needed for proper behavior, such as
 `--prefix`, `--with-sysconfdir`, `--with-user` and `--with-group` to match
 your packaged or otherwise preceding NUT installation.
+======
 
 The `./configure --enable-inplace-runtime` may be a good start to inherit
 build configuration from an existing NUT deployment, as further detailed at
