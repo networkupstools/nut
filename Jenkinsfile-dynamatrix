@@ -25,7 +25,8 @@ import org.nut.dynamatrix.*;
     def dynacfgPipeline = [:]
 
     // NOTE: These can be further disabled or active in different combo specs
-    // below based on branch names
+    // below based on branch names. Also note that the values are somewhat
+    // "inversed" -- e.g. that "disabledSomething = false" means "enable it".
     dynacfgPipeline.disableSlowBuildAutotools = false
     dynacfgPipeline.disableSlowBuildCIBuild = false
     dynacfgPipeline.disableSlowBuildCIBuildExperimental = false
@@ -427,12 +428,12 @@ set | sort -n """
         //'bodyParStages': {}
         ] // one slowBuild filter configuration, autotools-Wall
 
-        ,[name: 'Default autotools driven build with default configuration, bitness and warning levels on each NUT CI farm platform (but with fatal warnings as of gnu99/gnu++11)',
+        ,[name: 'Default autotools driven build with default configuration, bitness and warning levels on each NUT CI farm platform (but with fatal warnings as of gnu99/gnu++11, must pass where enabled)',
          disabled: dynacfgPipeline.disableSlowBuildAutotools,
-         branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
-         branchRegexTarget: dynacfgPipeline.branchStableRegex,
+         //branchRegexSource: ~/^(PR-.+|fightwarn.*)$/,
+         //branchRegexTarget: dynacfgPipeline.branchStableRegex,
          //branchRegexTarget: ~/fightwarn/,
-         appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
+         //appliesToChangedFilesRegex: dynacfgPipeline.appliesToChangedFilesRegex_C,
          'getParStages': { def dynamatrix, Closure body ->
             return dynamatrix.generateBuild([
                 //commonLabelExpr: dynacfgBase.commonLabelExpr,

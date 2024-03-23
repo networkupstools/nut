@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3478 utf-8
+personal_ws-1.1 en 3480 utf-8
 AAC
 AAS
 ABI
@@ -2431,6 +2431,7 @@ lk
 lldb
 llvm
 lm
+lmodbus
 ln
 lnetsnmp
 loadPercentage
@@ -2940,6 +2941,7 @@ rqt
 rsa
 rsync
 rts
+rtu
 ru
 rubygem
 runlevel
