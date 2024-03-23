@@ -44,6 +44,13 @@ Changes from 2.8.1 to 2.8.2
   appear as comments, or enabled by specifying the `-U` command-line
   option several times. [#2221]
 
+- The `tools/gitlog2changelog.py.in` script was revised, in particular to
+  convert section titles (with contributor names) into plain ASCII character
+  set, for `dblatex` versions which do not allow diacritics and other kinds
+  of non-trivial characters in sections. A number of other projects seem to
+  use the NUT version of the script, and are encouraged to look at related
+  changes in `configure.ac` and `Makefile.am` recipes. [PR #2360, PR #2366]
+
 Changes from 2.8.0 to 2.8.1
 ---------------------------
 

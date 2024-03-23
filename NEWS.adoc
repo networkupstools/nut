@@ -221,6 +221,12 @@ https://github.com/networkupstools/nut/milestone/10
    known deficiencies in Windows platform support, as well as some un-awareness
    about configuration key words which appeared in NUT since 2013. [#2290]
 
+ - The `tools/gitlog2changelog.py.in` script was revised, in particular to
+   convert section titles (with contributor names coming from Git metadata)
+   into plain ASCII character set, for `dblatex` versions which do not allow
+   diacritics and other kinds of non-trivial characters in sections. This can
+   cause successful builds of `ChangeLog.pdf` file on more platforms, but at
+   expense of a semi-cosmetic difference in those names. [PR #2360, PR #2366]
 
 Release notes for NUT 2.8.1 - what's new since 2.8.0
 ----------------------------------------------------
