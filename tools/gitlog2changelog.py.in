@@ -132,8 +132,8 @@ for line in fin:
             author = author[0 : len(author) - fin_chop]
             if authorMustBeASCII:
                 try:
-                    if isinstance(author, str):
-                        author = unicodedata.normalize(u'NFKD', unicode(author, "UTF=8")).encode('ascii', 'ignore').decode('utf8')
+                    if isinstance(author, str) and unicode != str:
+                        author = unicodedata.normalize(u'NFKD', unicode(author, "utf-8")).encode('ascii', 'ignore').decode('utf8')
                     else:
                         author = unicodedata.normalize(u'NFKD', author).encode('ascii', 'ignore').decode('utf8')
                 except Exception as e:
