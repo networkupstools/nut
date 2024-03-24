@@ -31,7 +31,7 @@
 
 #include <math.h>     /* for fabs() */
 
-#define BELKIN_HID_VERSION      "Belkin/Liebert HID 0.19"
+#define BELKIN_HID_VERSION      "Belkin/Liebert HID 0.20"
 
 /* Belkin */
 #define BELKIN_VENDORID	0x050d
@@ -90,6 +90,7 @@ static const char *liebert_replacebatt_fun(double value);
 static const char *liebert_shutdownimm_fun(double value);
 static const char *liebert_config_voltage_fun(double value);
 static const char *liebert_line_voltage_fun(double value);
+static const char *liebert_psi5_line_voltage_fun(double value);
 
 static info_lkp_t liebert_online_info[] = {
 	{ 0, NULL, liebert_online_fun, NULL }
@@ -121,6 +122,10 @@ static info_lkp_t liebert_config_voltage_info[] = {
 
 static info_lkp_t liebert_line_voltage_info[] = {
 	{ 0, NULL, liebert_line_voltage_fun, NULL },
+};
+
+static info_lkp_t liebert_psi5_line_voltage_info[] = {
+	{ 0, NULL, liebert_psi5_line_voltage_fun, NULL },
 };
 
 static double liebert_config_voltage_mult = 1.0;
@@ -187,6 +192,23 @@ static const char *liebert_line_voltage_fun(double value)
 	if( value < 1 ) {
 		if( fabs(value - 1e-7) < 1e-9 ) {
 			liebert_line_voltage_mult = 1e7;
+			upsdebugx(2, "Input/OutputVoltage = %g -> assuming correction factor = %g",
+				value, liebert_line_voltage_mult);
+		} else {
+			upslogx(LOG_NOTICE, "LineVoltage exponent looks wrong, but not correcting.");
+		}
+	}
+
+	snprintf(liebert_conversion_buf, sizeof(liebert_conversion_buf), "%.1f",
+			value * liebert_line_voltage_mult);
+	return liebert_conversion_buf;
+}
+
+static const char *liebert_psi5_line_voltage_fun(double value)
+{
+	if( value < 1 ) {
+		if( fabs(value - 1e-3) < 1e-3 ) {
+			liebert_line_voltage_mult = 1e5;
 			upsdebugx(2, "Input/OutputVoltage = %g -> assuming correction factor = %g",
 				value, liebert_line_voltage_mult);
 		} else {
@@ -482,6 +504,17 @@ static hid_info_t belkin_hid2nut[] = {
   { "battery.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, "%s", 0, liebert_line_voltage_info },
   { "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%s", HU_FLAG_STATIC, liebert_config_voltage_info },
   { "ups.load", 0, 0, "UPS.Output.PercentLoad", NULL, "%.0f", 0, NULL },
+  /* Liebert PSI5 */
+  { "input.voltage.nominal", 0, 0, "UPS.Flow.ConfigVoltage", NULL, "%.0f", 0, NULL },
+  { "input.frequency", 0, 0, "UPS.PowerConverter.Input.Frequency", NULL, "%s", 0, divide_by_100_conversion },
+  { "input.voltage", 0, 0, "UPS.PowerConverter.Input.Voltage", NULL, "%s", 0, liebert_psi5_line_voltage_info },
+  { "output.voltage.nominal", 0, 0, "UPS.Flow.ConfigVoltage", NULL, "%.0f", 0, NULL },
+  { "output.frequency", 0, 0, "UPS.PowerConverter.Output.Frequency", NULL, "%s", 0, divide_by_100_conversion },
+  { "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", NULL, "%s", 0, liebert_psi5_line_voltage_info },
+  { "ups.load", 0, 0, "UPS.OutletSystem.Outlet.PercentLoad", NULL, "%.0f", 0, NULL },
+  { "battery.voltage", 0, 0, "UPS.BatterySystem.Battery.Voltage", NULL, "%s", 0, liebert_psi5_line_voltage_info },
+  { "battery.voltage.nominal", 0, 0, "UPS.BatterySystem.Battery.ConfigVoltage", NULL, "%.0f", 0, NULL },
+  { "battery.capacity", 0, 0, "UPS.Flow.ConfigApparentPower", NULL, "%.0f", 0, NULL },
   /* status */
   { "BOOL", 0, 0, "UPS.PowerSummary.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, liebert_discharging_info }, /* might not need to be liebert_* version */
   { "BOOL", 0, 0, "UPS.PowerSummary.Charging", NULL, NULL, HU_FLAG_QUICK_POLL, liebert_charging_info },

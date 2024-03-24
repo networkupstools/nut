@@ -184,6 +184,7 @@ FAILED: did not generate an executable configure script!
 # scripts, and need you to explicitly say which version you want, e.g.
 #    export AUTOCONF_VERSION=2.65 AUTOMAKE_VERSION=1.13
 # If you get issues with AC_DISABLE_STATIC make sure you have libtool.
+#
 # If it complains about "too few" or "excess" "arguments to builtin ifdef",
 # check the configure.ac line it refers to and un-comment (or comment away)
 # the third argument for AM_SILENT_RULES check, or comment away the whole
@@ -226,3 +227,5 @@ $CONFIG_SHELL -n configure 2>/dev/null >/dev/null \
 }
 
 echo "The generated configure script passed shell interpreter syntax checks"
+echo "Please proceed by running './configure --with-many-desired-options'"
+echo "For details check './configure --help' or docs/configure.txt in NUT sources"

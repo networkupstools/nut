@@ -555,6 +555,22 @@ info_lkp_t divide_by_10_conversion[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
+static const char *divide_by_100_conversion_fun(double value)
+{
+       static char buf[20];
+
+       snprintf(buf, sizeof(buf), "%0.1f", value * 0.01);
+
+       return buf;
+}
+
+/* FIXME? Do we need an inverse "nuf()" here? */
+info_lkp_t divide_by_100_conversion[] = {
+       { 0, NULL, divide_by_100_conversion_fun, NULL }
+};
+
+/* returns statically allocated string - must not use it again before
+   done with result! */
 static const char *kelvin_celsius_conversion_fun(double value)
 {
 	static char buf[20];
@@ -997,7 +1013,7 @@ void upsdrv_makevartable(void)
 
 	addvar(VAR_VALUE, "onlinedischarge_log_throttle_hovercharge",
 		"Set to throttle log messages about discharging while online (only if battery.charge is under this value)");
-	
+
 	addvar(VAR_FLAG, "disable_fix_report_desc",
 		"Set to disable fix-ups for broken USB encoding, etc. which we apply by default on certain vendors/products");
 

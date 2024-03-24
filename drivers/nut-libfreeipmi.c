@@ -363,6 +363,11 @@ static int libfreeipmi_get_psu_info (const void *areabuf,
 										uint8_t area_length,
 										IPMIDevice_t *ipmi_dev)
 {
+	/* FIXME: libfreeipmi headers currently define the 4 voltage_range
+	 * values as "unsigned int". It seems earlier it was "int", but now
+	 * the compiler complains when it is in place - so changed to unsigned.
+	 * The proper fix might be to detect and influence this in configure. */
+
 	/* FIXME: directly use ipmi_dev fields */
 	unsigned int overall_capacity;
 	input_voltage_range_t low_end_input_voltage_range_1;

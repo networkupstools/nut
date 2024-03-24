@@ -22,6 +22,8 @@ EGREP = grep -E
 
 all:
 
+all-am-local all-local: $(abs_top_builddir)/docs/man/.prep-src-docs
+
 # Base configuration and client manpages, always installed
 SRC_CONF_PAGES = \
 	nut.conf.txt \
@@ -950,7 +952,7 @@ CLEANFILES = *-spellchecked .prep-src-docs *-prepped
 
 SUFFIXES = .txt-prepped .txt .html .1 .3 .5 .8
 
-# For builds with allowed installation of prebuild man pages, check that
+# For builds with allowed installation of prebuilt man pages, check that
 # they exist in sources (make would pull them automatically as a fallback
 # from failed lookup in build products). For builds that require rebuild
 # of man pages, abort with error if build product is missing.

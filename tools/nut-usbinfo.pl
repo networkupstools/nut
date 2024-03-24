@@ -1,9 +1,9 @@
 #!/usr/bin/env perl
-#   Current Version : 1.4
+#   Current Version : 1.5
 #   Copyright (C) 2008 - 2012 dloic (loic.dardant AT gmail DOT com)
 #   Copyright (C) 2008 - 2015 Arnaud Quette <arnaud.quette@free.fr>
 #   Copyright (C) 2013 - 2014 Charles Lepple <clepple+nut@gmail.com>
-#   Copyright (C) 2014 - 2023 Jim Klimov <jimklimov+nut@gmail.com>
+#   Copyright (C) 2014 - 2024 Jim Klimov <jimklimov+nut@gmail.com>
 #
 #   Based on the usbdevice.pl script, made for the Ubuntu Media Center
 #   for the final use of the LIRC project.
@@ -353,12 +353,18 @@ sub find_usbdevs
 			# process the driver name
 			my $driver=$nameFile;
 			my $preferDriver=1;
-			if($nameFile=~/(.+)-hid\.c/) {
+			if($nameFile=~/(.+)-hid\.c$/) {
 				$driver="usbhid-ups";
 			}
 			# generic matching rule *.c => *
 			elsif ($nameFile =~ /(.+)\.c$/) {
 				$driver=$1;
+			}
+			elsif ($nameFile =~ /(.+)\.(orig|bak|tmp)/) {
+				return;
+			}
+			elsif ($nameFile =~ /(.+)_(BACKUP|LOCAL|REMOTE|BASE)_\d*/) {
+				return;
 			}
 			else {
 				warn "Unknown driver type: $nameFile";

@@ -717,7 +717,7 @@ below.
 
 :; pkg install \
     cppunit \
-    openssl nss \
+    nss \
     augeas \
     libmodbus \
     neon \
@@ -725,6 +725,15 @@ below.
     powerman \
     freeipmi \
     avahi
+
+# NOTE: At least on FreeBSD 12, system-provided crypto exists and is used
+# by libnetsnmp, libneon, etc. - but is not marked as a package. Conversely,
+# the openssl-1.1.1k (as of this writing) can be installed as a package into
+# /usr/local/lib and then causes linking conflicts. The core system-provided
+# build of openssl does include headers and is useful for NUT build "as is".
+# ONLY INSTALL THIS PACKAGE IF REQUIRED (may get problems to rectify later):
+:; test -e /lib/libcrypto.so -a -e /usr/lib/libssl.so || \
+   pkg install openssl
 
 :; pkg install \
     lua51
@@ -859,7 +868,7 @@ default site.
     lua
 
 :; pkg_add \
-    dash ksh93
+    bash dash ksh93
 
 :; pkg_add \
     argp-standalone \

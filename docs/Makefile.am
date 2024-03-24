@@ -131,6 +131,7 @@ endif WITH_SPELLCHECK
 check-local: $(CHECK_LOCAL_TARGETS)
 
 # Make sure sources are there for out-of-tree builds:
+all-local all-am-local \
 @DOC_BUILD_LIST@ $(ASCIIDOC_PDF) $(ASCIIDOC_HTML_SINGLE) $(ASCIIDOC_HTML_CHUNKED): $(abs_top_builddir)/docs/.prep-src-docs
 
 # This list is defined by configure script choices and options:
@@ -185,10 +186,10 @@ check-html-chunked: $(ASCIIDOC_HTML_CHUNKED)
 # chosen during configure script execution. The "all-man" and "all-html"
 # rules build everything documented.
 check-man all-man man-man all-html html-man:
-	+cd $(top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile $@
+	+cd $(abs_top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile $@
 
 man:
-	+cd $(top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile all
+	+cd $(abs_top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile all
 
 CLEANFILES = *.xml *.html *.pdf *-spellchecked docbook-xsl.css docinfo.xml.in.tmp
 CLEANFILES += $(top_builddir)/INSTALL.nut $(top_builddir)/UPGRADING $(top_builddir)/NEWS $(top_builddir)/ChangeLog.adoc $(top_builddir)/README
@@ -233,6 +234,12 @@ $(top_builddir)/ChangeLog:
 # (and claims why: "Using $< in a non-suffix rule context is a GNUmake idiom"),
 # but it has a "$?" for "list of dependencies that are newer than the target".
 # For more details see https://man.freebsd.org/cgi/man.cgi
+if WITH_PDF_NONASCII_TITLES
+A2X_ASCII_IDS =
+else !WITH_PDF_NONASCII_TITLES
+A2X_ASCII_IDS = ":ascii-ids:\n"
+endif !WITH_PDF_NONASCII_TITLES
+
 $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	@INPUT="$?"; \
 	 test -n "$${INPUT}" || INPUT="$$(top_builddir)/ChangeLog" ; \
@@ -244,7 +251,7 @@ $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	     exit ; \
 	 } ; \
 	 echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@" \
-	 && printf "ifdef::txt[]\n== Very detailed Change Log\nendif::txt[]\n\n" > "$@.tmp" \
+	 && printf "ifdef::txt[]\n== Very detailed Change Log\n"$(A2X_ASCII_IDS)"endif::txt[]\n\n" > "$@.tmp" \
 	 && TABCHAR="`printf '\t'`" \
 	 && $(SED) \
 	        -e 's,^\([0-9a-zA-Z]\),=== \1,' \
