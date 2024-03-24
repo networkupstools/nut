@@ -32,17 +32,22 @@ include::nut_usb_addvars.txt[]
 EXTRA ARGUMENTS
 ---------------
 
-You may need to tweak some settings, depending on the make and model of your UPS
-(see linkman:ups.conf[5]):
+You may need to tweak some settings, depending on the make and model of your
+UPS (see linkman:ups.conf[5]):
 
 *localcalculation*::
-When enabled, driver will calculate values of `battery.runtime` and `battery.charge`
-locally. This is for some Riello models (iPlug and iDialog series) that provide
-incorrect values. Local calculation is done according to nominal battery capacity,
-nominal battery voltage, actual battery charge, maximum and actual UPS load.
+When enabled, driver will calculate values of `battery.runtime` and
+`battery.charge` "locally" in the driver. This is for some Riello models
+(iPlug and iDialog series) which provide incorrect values in hardware readings.
+This "local calculation" is done according to nominal battery capacity, nominal
+battery voltage, actual battery charge, maximum and actual UPS load.
 +
-Lead battery charge graph is not linear, so guesstimated charge value may not be
-perfectly accurate. However it should be good enough to determine battery
+You may want to also configure 'default.battery.voltage.low' and
+'default.battery.voltage.high' in case the built-in default range
+(from 10.7V to 12.9V) does not match your hardware.
++
+NOTE: Lead (PbAc) battery charge graph is not linear, so guesstimated charge value may
+not be perfectly accurate. However it should be good enough to determine battery
 actual status and roughly estimate the time it can power the system.
 +
 WARNING: This keyword may be deprecated in future releases of the driver, in favor of

@@ -73,6 +73,8 @@ static USBDeviceMatcher_t *regex_matcher = NULL;
 /* Flag for estimation of battery.runtime and battery.charge */
 static int localcalculation = 0;
 static int localcalculation_logged = 0;
+static double batt_volt_low = 10.7;
+static double batt_volt_high = 12.9;
 
 static int (*subdriver_command)(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen) = NULL;
 
@@ -961,7 +963,9 @@ void upsdrv_initinfo(void)
 	if (testvar("localcalculation")) {
 		localcalculation = 1;
 		upsdebugx(1, "Will guesstimate battery charge and runtime "
-			"instead of trusting device readings (if any)");
+			"instead of trusting device readings (if any); "
+			"consider also setting default.battery.voltage.low "
+			"and default.battery.voltage.high for this device");
 	}
 	dstate_setinfo("driver.parameter.localcalculation", "%d", localcalculation);
 
@@ -1074,6 +1078,7 @@ void upsdrv_updateinfo(void)
 	int battcharge;
 	float battruntime;
 	float upsloadfactor;
+	const char *val = NULL;
 
 	upsdebugx(1, "countlost %d",countlost);
 
@@ -1108,11 +1113,39 @@ void upsdrv_updateinfo(void)
 	dstate_setinfo("input.bypass.frequency", "%.2f", DevData.Fbypass/10.0);
 	dstate_setinfo("output.frequency", "%.2f", DevData.Fout/10.0);
 	dstate_setinfo("battery.voltage", "%.1f", DevData.Ubat/10.0);
+
+	/* Can be set via default.* or override.* driver options
+	 * if not served by the device HW/FW */
+	val = dstate_getinfo("battery.voltage.low");
+	if (val) {
+		batt_volt_low = strtod(val, NULL);
+	}
+
+	val = dstate_getinfo("battery.voltage.high");
+	if (val) {
+		batt_volt_high = strtod(val, NULL);
+	}
+
 	if (localcalculation) {
 		/* NOTE: at this time "localcalculation" is a configuration toggle.
-  		 * Maybe later it can be replaced by a common "runtimecal" setting. */
-		/* Considered "Ubat" physical range here is 10.7V to 12.9V: */
-		battcharge = ((DevData.Ubat <= 129) && (DevData.Ubat >=107)) ? (((DevData.Ubat-107)*100)/22) : ((DevData.Ubat < 107) ? 0 : 100);
+		 * Maybe later it can be replaced by a common "runtimecal" setting. */
+		/* Considered "Ubat" physical range here is e.g. 10.7V to 12.9V
+		 * seen as "107" or "129" integers in the DevData properties: */
+		uint16_t	Ubat_low  = batt_volt_low  * 10;	/* e.g. 107 */
+		uint16_t	Ubat_high = batt_volt_high * 10;	/* e.g. 129 */
+		static int batt_volt_logged = 0;
+
+		if (!batt_volt_logged) {
+			upsdebugx(0, "\nUsing battery.voltage.low=%.1f and "
+				"battery.voltage.high=%.1f for \"localcalculation\" "
+				"guesstimates of battery.charge and battery.runtime",
+				batt_volt_low, batt_volt_high);
+			batt_volt_logged = 1;
+		}
+
+		battcharge = ((DevData.Ubat <= Ubat_high) && (DevData.Ubat >= Ubat_low))
+			? (((DevData.Ubat - Ubat_low)*100) / (Ubat_high - Ubat_low))
+			: ((DevData.Ubat < Ubat_low) ? 0 : 100);
 		battruntime = (DevData.NomBatCap * DevData.NomUbat * 3600.0/DevData.NomPowerKW) * (battcharge/100.0);
 		upsloadfactor = (DevData.Pout1 > 0) ? (DevData.Pout1/100.0) : 1;
 
