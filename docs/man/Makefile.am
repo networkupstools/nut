@@ -22,6 +22,8 @@ EGREP = grep -E
 
 all:
 
+all-am-local all-local: $(abs_top_builddir)/docs/man/.prep-src-docs
+
 # Base configuration and client manpages, always installed
 SRC_CONF_PAGES = \
 	nut.conf.txt \

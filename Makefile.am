@@ -9,11 +9,13 @@
 @NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export CCACHE_PATH=@CCACHE_PATH@
 @NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export PATH=@PATH_DURING_CONFIGURE@
 
-# First target defines default behavior: all
+# First target often defines default behavior: all
 # We follow up with another pass to `make doc` because our wild recipes
 # sometimes preclude generating all of them on the first pass (FIXME!)
-# missing e.g. PDF and HTML which then pop up in `make check` footprint.
-all: all-recursive
+# missing e.g. PDF and HTML which then pop up in `make check` footprint,
+# or misses a .prep-src-docs stage needed to pattern-make man page files
+# with some "make" implementations...
+all all-am-local all-local: doc all-recursive
 	+@$(MAKE) $(AM_MAKEFLAGS) doc
 
 # include directory for aclocal
@@ -148,7 +150,7 @@ distclean-local:
 spellcheck spellcheck-interactive:
 	+@RES=0; \
 	(cd $(builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/.prep-src-docs) || RES=$$? ; \
-	(cd $(builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/.prep-src-docs) || RES=$$? ; \
+	(cd $(builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/man/.prep-src-docs) || RES=$$? ; \
 	(cd $(builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
 	(cd $(builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
 	(cd $(builddir)/conf && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
@@ -175,10 +177,12 @@ spellcheck spellcheck-interactive:
 doc spellcheck-sortdict \
 all-docs check-docs \
 man all-man man-man check-man man-html all-html:
-	+cd $(builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) $@
+	+cd $(abs_top_builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/.prep-src-docs
+	+cd $(abs_top_builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/man/.prep-src-docs
+	+cd $(abs_top_builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) $@
 
 INSTALL.nut UPGRADING NEWS README:
-	+cd $(builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) ../$(@F).adoc-parsed && cp -f ../$(@F).adoc-parsed ../$(@F)
+	+cd $(abs_top_builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) ../$(@F).adoc-parsed && cp -f ../$(@F).adoc-parsed ../$(@F)
 
 # Workarounds for https://github.com/github/markup/issues/1095
 # require direct definition of our attributes in each source
