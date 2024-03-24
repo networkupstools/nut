@@ -187,6 +187,10 @@ riello_ser_LDADD = $(LDADD) -lm
 sms_ser_SOURCES = sms_ser.c
 sms_ser_LDADD = $(LDADD) -lm
 
+#alezz's blazer_soi
+blazer_soi_SOURCES = blazer.c blazer_soi.c
+blazer_soi_LDADD = $(LDADD) -lm
+
 # non-serial drivers: these use custom LDADD and/or CFLAGS
 
 # dummy (in NUTSW_DRIVERLIST)
