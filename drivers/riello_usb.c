@@ -76,8 +76,8 @@ static int localcalculation_logged = 0;
 /* NOTE: Do not change these default, they refer to battery.voltage.nominal=12.0
  * and used in related maths later */
 static double batt_volt_nom = 12.0;
-static double batt_volt_low = 10.7;
-static double batt_volt_high = 12.9;
+static double batt_volt_low = 10.4;
+static double batt_volt_high = 13.0;
 
 static int (*subdriver_command)(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen) = NULL;
 
