@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3480 utf-8
+personal_ws-1.1 en 3483 utf-8
 AAC
 AAS
 ABI
@@ -2213,8 +2213,10 @@ hwdb
 hypervisor
 hypervisors
 iBox
+iDialog
 iDowell
 iManufacturer
+iPlug
 iSerial
 iUSB
 ib
@@ -2435,6 +2437,7 @@ lmodbus
 ln
 lnetsnmp
 loadPercentage
+localcalculation
 localhost
 localtime
 lockf
