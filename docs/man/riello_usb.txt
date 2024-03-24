@@ -44,7 +44,9 @@ battery voltage, actual battery charge, maximum and actual UPS load.
 +
 You may want to also configure 'default.battery.voltage.low' and
 'default.battery.voltage.high' in case the built-in default range
-(from 10.7V to 12.9V) does not match your hardware.
+(from 10.7V to 12.9V) does not match your hardware, or give a shot
+to 'default.battery.voltage.nominal' (e.g. '24') if your device does
+not serve that either.
 +
 NOTE: Lead (PbAc) battery charge graph is not linear, so guesstimated charge value may
 not be perfectly accurate. However it should be good enough to determine battery
