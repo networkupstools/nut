@@ -180,6 +180,9 @@ https://github.com/networkupstools/nut/milestone/10
      useful as an UPS driver, not just a controller developer sandbox. [#2188]
    * `cps-hid` subdriver now supports devices branded as Cyber Energy and built
      by cooperation with Cyber Power Systems. [#2312]
+   * `belkin-hid` subdriver now supports Liebert PSI5 devices which have a
+     different numeric reading scale than earlier handled models. [issue #2271,
+     PR #2272, PR #2369]
    * The `onlinedischarge` configuration flag name was too ambiguous and got
      deprecated (will be supported but no longer promoted by documentation),
      introducing `onlinedischarge_onbattery` as the meaningful alias. [#2213]
