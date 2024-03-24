@@ -5,8 +5,15 @@
 # https://github.com/networkupstools/nut/
 #
 # To keep up to date, monitor upstream NUT
-# https://github.com/networkupstools/nut/commits/master/scripts/upower/95-upower-hid.hwdb
+#   https://github.com/networkupstools/nut/commits/master/scripts/upower/95-upower-hid.hwdb
 # or checkout the NUT repository and call 'tools/nut-usbinfo.pl'
+# One or more "match lines" below are used to set a "property" for a device;
+# for more syntax and system installation (and override) notes, see
+#   https://www.freedesktop.org/software/systemd/man/hwdb.html
+# (or equivalent for the version of systemd used in your distribution)
+# Note that "During runtime, only the binary database is used" as compiled
+# from files like this by e.g. `systemctl restart systemd-hwdb-update.service`
+# (if you edit your copy locally or maintain a site-local override file in /etc).
 
 # Hewlett Packard
 usb:v03F0p0001*
