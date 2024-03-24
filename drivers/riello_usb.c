@@ -1107,6 +1107,9 @@ void upsdrv_updateinfo(void)
 	dstate_setinfo("output.frequency", "%.2f", DevData.Fout/10.0);
 	dstate_setinfo("battery.voltage", "%.1f", DevData.Ubat/10.0);
 	if (localcalculation) {
+		/* NOTE: at this time "localcalculation" is a configuration toggle.
+  		 * Maybe later it can be replaced by a common "runtimecal" setting. */
+		/* Considered "Ubat" physical range here is 10.7V to 12.9V: */
 		battcharge = ((DevData.Ubat <= 129) && (DevData.Ubat >=107)) ? (((DevData.Ubat-107)*100)/22) : ((DevData.Ubat < 107) ? 0 : 100);
 		battruntime = (DevData.NomBatCap * DevData.NomUbat * 3600.0/DevData.NomPowerKW) * (battcharge/100.0);
 		upsloadfactor = (DevData.Pout1 > 0) ? (DevData.Pout1/100.0) : 1;
@@ -1123,12 +1126,18 @@ void upsdrv_updateinfo(void)
 			localcalculation_logged = 1;
 		}
 		if ((DevData.BatCap < 0xFFFF) && (DevData.BatTime < 0xFFFF)) {
+			/* Use values reported by the driver unless they are marked
+			 * invalid/unknown by HW/FW (all bits in the word are set).
+			 */
 			dstate_setinfo("battery.charge", "%u", DevData.BatCap);
 			dstate_setinfo("battery.runtime", "%u", DevData.BatTime*60);
 		}
 	}
 
 	if (DevData.Tsystem == 255) {
+		/* Use values reported by the driver unless they are marked
+		 * invalid/unknown by HW/FW (all bits in the word are set).
+		 */
 		/*dstate_setinfo("ups.temperature", "%u", 0);*/
 		upsdebugx(4, "Reported temperature value is 0xFF, "
 			"probably meaning \"-1\" for error or "
