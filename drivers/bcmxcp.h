@@ -622,4 +622,6 @@ typedef enum ebool { FALSE, TRUE } bool_t;
 typedef int bool_t;
 #endif
 
+void bcmxcp_makevartable(void);
+
 #endif	/* NUT_BCMXCP_H_SEEN */
