@@ -3,7 +3,8 @@
  *  Copyright (C)
  *  2003 - 2008 Arnaud Quette <arnaud.quette@free.fr>
  *  2005        Peter Selinger <selinger@users.sourceforge.net>
- *  2011, 2014  Charles Lepple <clepple+nut@gmail>
+ *  2011, 2014  Charles Lepple <clepple+nut@gmail.com>
+ *  2024        James R. Parks <jrjparks@zathera.com>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
  *
