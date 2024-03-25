@@ -33,7 +33,7 @@
 
 #include <math.h>     /* for fabs() */
 
-#define BELKIN_HID_VERSION      "Belkin/Liebert HID 0.21"
+#define BELKIN_HID_VERSION      "Belkin/Liebert HID 0.20"
 
 /* Belkin */
 #define BELKIN_VENDORID	0x050d
@@ -94,15 +94,13 @@ static const char *liebert_shutdownimm_fun(double value);
 /* These lookup functions also cover the 1e-7 factor which seems to
  * be due to a broken report descriptor in certain Liebert units.
  * Exposed for unit testing - not "static" */
-const char *liebert_config_voltage_fun(double value);
-const char *liebert_line_voltage_fun(double value);
-const char *liebert_psi5_line_voltage_fun(double value);
+static const char *liebert_config_voltage_fun(double value);
+static const char *liebert_line_voltage_fun(double value);
+static const char *liebert_psi5_line_voltage_fun(double value);
 
-extern double liebert_config_voltage_mult, liebert_line_voltage_mult;
-double liebert_config_voltage_mult = 1.0;
-double liebert_line_voltage_mult = 1.0;
+static double liebert_config_voltage_mult = 1.0;
+static double liebert_line_voltage_mult = 1.0;
 static char liebert_conversion_buf[10];
-
 
 static info_lkp_t liebert_online_info[] = {
 	{ 0, NULL, liebert_online_fun, NULL }
@@ -174,7 +172,7 @@ static const char *liebert_shutdownimm_fun(double value)
  * Logic is weird since the ConfigVoltage item comes after InputVoltage and
  * OutputVoltage.
  */
-const char *liebert_config_voltage_fun(double value)
+static const char *liebert_config_voltage_fun(double value)
 {
 	if( value < 1 ) {
 		if( fabs(value - 1e-7) < 1e-9 ) {
@@ -192,7 +190,7 @@ const char *liebert_config_voltage_fun(double value)
 	return liebert_conversion_buf;
 }
 
-const char *liebert_line_voltage_fun(double value)
+static const char *liebert_line_voltage_fun(double value)
 {
 	if( value < 1 ) {
 		if( fabs(value - 1e-7) < 1e-9 ) {
@@ -209,7 +207,7 @@ const char *liebert_line_voltage_fun(double value)
 	return liebert_conversion_buf;
 }
 
-const char *liebert_psi5_line_voltage_fun(double value)
+static const char *liebert_psi5_line_voltage_fun(double value)
 {
 	if( value < 1 ) {
 		if( fabs(value - 1e-3) < 1e-3 ) {

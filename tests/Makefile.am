@@ -73,14 +73,15 @@ TESTS += getvaluetest getexponenttest
 
 # We only need to call a few methods, not use the whole source - so
 # not linking it as a getvaluetest_SOURCE file (has too many deps):
-noinst_LTLIBRARIES += libbelkin.la
-nodist_libbelkin_la_SOURCES = belkin-hid.c driver-stub-usb.c
-libbelkin_la_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
-libbelkin_la_LIBADD = $(top_builddir)/common/libcommon.la
+noinst_LTLIBRARIES += libdriverstubusb.la
+nodist_libdriverstubusb_la_SOURCES = driver-stub-usb.c
+libdriverstubusb_la_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
+#libdriverstubusb_la_LIBADD = $(top_builddir)/common/libcommon.la
 
+getexponenttest.c: belkin-hid.c
 getexponenttest_SOURCES = getexponenttest.c
-#getexponenttest_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
-getexponenttest_LDADD = $(top_builddir)/common/libcommon.la libbelkin.la
+getexponenttest_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
+getexponenttest_LDADD = $(top_builddir)/common/libcommon.la libdriverstubusb.la
 
 getvaluetest_SOURCES = getvaluetest.c
 nodist_getvaluetest_SOURCES = hidparser.c

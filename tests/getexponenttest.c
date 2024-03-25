@@ -32,11 +32,13 @@
 #include <string.h>
 #include "common.h"
 
-/* from drivers/belkin-hid.c: */
+#include "belkin-hid.c"
+/* from drivers/belkin-hid.c we test:
 extern double liebert_config_voltage_mult, liebert_line_voltage_mult;
 const char *liebert_config_voltage_fun(double value);
 const char *liebert_line_voltage_fun(double value);
 const char *liebert_psi5_line_voltage_fun(double value);
+ */
 
 static void Usage(char *name) {
 /*
