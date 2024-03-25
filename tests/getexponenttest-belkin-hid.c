@@ -75,9 +75,14 @@ static int RunBuiltInTests(char *argv[]) {
 	} testData[] = {
 		{.buf = "0.000273",	.expectedRawValue = 0.000273,	.type = 3, .expectedMult = 1e5, .expectedValue = 27.3	},
 		{.buf = "0.001212",	.expectedRawValue = 0.001212,	.type = 3, .expectedMult = 1e5, .expectedValue = 121.2	},
+		{.buf = "0.002456",	.expectedRawValue = 0.002456,	.type = 3, .expectedMult = 1e5, .expectedValue = 245.6	},
+		{.buf = "0.003801",	.expectedRawValue = 0.003801,	.type = 3, .expectedMult = 1e5, .expectedValue = 380.1	},
+		{.buf = "0.004151",	.expectedRawValue = 0.004151,	.type = 3, .expectedMult = 1e5, .expectedValue = 415.1	},
 
 		{.buf = "1.39e-06",	.expectedRawValue = 0.00000139,	.type = 2, .expectedMult = 1e7, .expectedValue = 13.9	},
+		{.buf = "1.273e-05",	.expectedRawValue = 0.00001273,	.type = 2, .expectedMult = 1e7, .expectedValue = 127.3	},
 		{.buf = "2.201e-05",	.expectedRawValue = 0.00002201,	.type = 2, .expectedMult = 1e7, .expectedValue = 220.1	},
+		{.buf = "4.201e-05",	.expectedRawValue = 0.00004201,	.type = 2, .expectedMult = 1e7, .expectedValue = 420.1	},
 
 		/* Edge cases - what should not be converted (good enough already) */
 		{.buf = "12",	.expectedRawValue = 12.0,	.type = 3, .expectedMult = 1, .expectedValue = 12.0	},
