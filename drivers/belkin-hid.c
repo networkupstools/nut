@@ -174,8 +174,13 @@ static const char *liebert_shutdownimm_fun(double value)
  */
 static const char *liebert_config_voltage_fun(double value)
 {
-	if( value < 1 ) {
-		if( fabs(value - 1e-7) < 1e-9 ) {
+	/* Does not fire with devices seen diring investigation for
+	 *   https://github.com/networkupstools/nut/issues/2370
+	 * as the ones seen serve nominal "config" values as integers
+	 * (e.g. "230" for line and "24" for battery).
+	 */
+	if (value < 1) {
+		if (fabs(value - 1e-7) < 1e-9) {
 			liebert_config_voltage_mult = 1e8;
 			liebert_line_voltage_mult = 1e7; /* stomp this in case input voltage was low */
 			upsdebugx(2, "ConfigVoltage = %g -> assuming correction factor = %g",
@@ -192,8 +197,17 @@ static const char *liebert_config_voltage_fun(double value)
 
 static const char *liebert_line_voltage_fun(double value)
 {
-	if( value < 1 ) {
-		if( fabs(value - 1e-7) < 1e-9 ) {
+	/* Keep large readings like "230" or "24" as is */
+	if (value < 1) {
+		/* Practical use-case for mult=1e7:
+		 *   1.39e-06  =>  13.9
+		 *   2.201e-05 => 220.1
+		 * NOTE: The clause below is in fact broken for this use-case,
+		 * but was present in sources for ages (worked wrongly with an
+		 * integer-oriented abs() so collapsed into "if (0 < 1e-9) {")!
+		 *   if (fabs(value - 1e-7) < 1e-9) {
+		 */
+		if (fabs(value - 1e-7) < 1e-9) {
 			liebert_line_voltage_mult = 1e7;
 			upsdebugx(2, "Input/OutputVoltage = %g -> assuming correction factor = %g",
 				value, liebert_line_voltage_mult);
@@ -209,8 +223,12 @@ static const char *liebert_line_voltage_fun(double value)
 
 static const char *liebert_psi5_line_voltage_fun(double value)
 {
-	if( value < 1 ) {
-		if( fabs(value - 1e-3) < 1e-3 ) {
+	if (value < 1) {
+		/* Practical use-case for mult=1e5:
+		 *   0.000273 =>  27.3
+		 *   0.001212 => 121.2
+		 */
+		if (fabs(value - 1e-3) < 1e-3) {
 			liebert_line_voltage_mult = 1e5;
 			upsdebugx(2, "Input/OutputVoltage = %g -> assuming correction factor = %g",
 				value, liebert_line_voltage_mult);
