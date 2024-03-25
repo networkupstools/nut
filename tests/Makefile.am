@@ -16,6 +16,7 @@ all: $(TESTS)
 EXTRA_DIST = nut-driver-enumerator-test.sh nut-driver-enumerator-test--ups.conf
 
 TESTS =
+noinst_LTLIBRARIES =
 CLEANFILES = *.trs *.log
 
 AM_CFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/drivers
@@ -57,15 +58,29 @@ nuttimetest_SOURCES = nuttimetest.c
 nuttimetest_LDADD = $(top_builddir)/common/libcommon.la
 
 # Separate the .deps of other dirs from this one
-LINKED_SOURCE_FILES = hidparser.c
+LINKED_SOURCE_FILES = hidparser.c belkin-hid.c
 
 # NOTE: Not using "$<" due to a legacy Sun/illumos dmake bug with resolver
 # of dynamic vars, see e.g. https://man.omnios.org/man1/make#BUGS
 hidparser.c: $(top_srcdir)/drivers/hidparser.c
 	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/hidparser.c" "$@"
 
+belkin-hid.c: $(top_srcdir)/drivers/belkin-hid.c
+	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/belkin-hid.c" "$@"
+
 if WITH_USB
-TESTS += getvaluetest
+TESTS += getvaluetest getexponenttest
+
+# We only need to call a few methods, not use the whole source - so
+# not linking it as a getvaluetest_SOURCE file (has too many deps):
+noinst_LTLIBRARIES += libbelkin.la
+nodist_libbelkin_la_SOURCES = belkin-hid.c driver-stub-usb.c
+libbelkin_la_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
+libbelkin_la_LIBADD = $(top_builddir)/common/libcommon.la
+
+getexponenttest_SOURCES = getexponenttest.c
+#getexponenttest_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
+getexponenttest_LDADD = $(top_builddir)/common/libcommon.la libbelkin.la
 
 getvaluetest_SOURCES = getvaluetest.c
 nodist_getvaluetest_SOURCES = hidparser.c
@@ -73,7 +88,7 @@ nodist_getvaluetest_SOURCES = hidparser.c
 getvaluetest_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
 getvaluetest_LDADD = $(top_builddir)/common/libcommon.la
 else !WITH_USB
-EXTRA_DIST += getvaluetest.c hidparser.c
+EXTRA_DIST += getvaluetest.c hidparser.c belkin-hid.c
 endif !WITH_USB
 
 if WITH_GPIO
@@ -101,6 +116,7 @@ EXTRA_DIST += generic_gpio_utest.h generic_gpio_test.txt
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/drivers/libdummy_mockdrv.la \
 $(top_builddir)/common/libnutconf.la \
+$(top_builddir)/common/libcommonclient.la \
 $(top_builddir)/common/libcommon.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 

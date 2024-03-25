@@ -5,6 +5,7 @@
  *  2005        Peter Selinger <selinger@users.sourceforge.net>
  *  2011, 2014  Charles Lepple <clepple+nut@gmail.com>
  *  2024        James R. Parks <jrjparks@zathera.com>
+ *  2024        Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
  *
@@ -32,7 +33,7 @@
 
 #include <math.h>     /* for fabs() */
 
-#define BELKIN_HID_VERSION      "Belkin/Liebert HID 0.20"
+#define BELKIN_HID_VERSION      "Belkin/Liebert HID 0.21"
 
 /* Belkin */
 #define BELKIN_VENDORID	0x050d
@@ -89,9 +90,19 @@ static const char *liebert_charging_fun(double value);
 static const char *liebert_lowbatt_fun(double value);
 static const char *liebert_replacebatt_fun(double value);
 static const char *liebert_shutdownimm_fun(double value);
-static const char *liebert_config_voltage_fun(double value);
-static const char *liebert_line_voltage_fun(double value);
-static const char *liebert_psi5_line_voltage_fun(double value);
+
+/* These lookup functions also cover the 1e-7 factor which seems to
+ * be due to a broken report descriptor in certain Liebert units.
+ * Exposed for unit testing - not "static" */
+const char *liebert_config_voltage_fun(double value);
+const char *liebert_line_voltage_fun(double value);
+const char *liebert_psi5_line_voltage_fun(double value);
+
+extern double liebert_config_voltage_mult, liebert_line_voltage_mult;
+double liebert_config_voltage_mult = 1.0;
+double liebert_line_voltage_mult = 1.0;
+static char liebert_conversion_buf[10];
+
 
 static info_lkp_t liebert_online_info[] = {
 	{ 0, NULL, liebert_online_fun, NULL }
@@ -129,13 +140,6 @@ static info_lkp_t liebert_psi5_line_voltage_info[] = {
 	{ 0, NULL, liebert_psi5_line_voltage_fun, NULL },
 };
 
-static double liebert_config_voltage_mult = 1.0;
-static double liebert_line_voltage_mult = 1.0;
-static char liebert_conversion_buf[10];
-
-/* These lookup functions also cover the 1e-7 factor which seems to be due to a
- * broken report descriptor in certain Liebert units.
- */
 static const char *liebert_online_fun(double value)
 {
 	return value ? "online" : "!online";
@@ -170,7 +174,7 @@ static const char *liebert_shutdownimm_fun(double value)
  * Logic is weird since the ConfigVoltage item comes after InputVoltage and
  * OutputVoltage.
  */
-static const char *liebert_config_voltage_fun(double value)
+const char *liebert_config_voltage_fun(double value)
 {
 	if( value < 1 ) {
 		if( fabs(value - 1e-7) < 1e-9 ) {
@@ -188,7 +192,7 @@ static const char *liebert_config_voltage_fun(double value)
 	return liebert_conversion_buf;
 }
 
-static const char *liebert_line_voltage_fun(double value)
+const char *liebert_line_voltage_fun(double value)
 {
 	if( value < 1 ) {
 		if( fabs(value - 1e-7) < 1e-9 ) {
@@ -205,7 +209,7 @@ static const char *liebert_line_voltage_fun(double value)
 	return liebert_conversion_buf;
 }
 
-static const char *liebert_psi5_line_voltage_fun(double value)
+const char *liebert_psi5_line_voltage_fun(double value)
 {
 	if( value < 1 ) {
 		if( fabs(value - 1e-3) < 1e-3 ) {

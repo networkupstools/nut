@@ -16,6 +16,10 @@
 /nuttimetest
 /nuttimetest.log
 /nuttimetest.trs
+/getexponenttest
+/getexponenttest.log
+/getexponenttest.trs
+/belkin-hid.c
 /getvaluetest
 /getvaluetest.log
 /getvaluetest.trs
