@@ -98,23 +98,23 @@ static info_lkp_t liebert_online_info[] = {
 };
 
 static info_lkp_t liebert_discharging_info[] = {
-        { 0, NULL, liebert_discharging_fun, NULL }
+	{ 0, NULL, liebert_discharging_fun, NULL }
 };
 
 static info_lkp_t liebert_charging_info[] = {
-        { 0, NULL, liebert_charging_fun, NULL }
+	{ 0, NULL, liebert_charging_fun, NULL }
 };
 
 static info_lkp_t liebert_lowbatt_info[] = {
-        { 0, NULL, liebert_lowbatt_fun, NULL }
+	{ 0, NULL, liebert_lowbatt_fun, NULL }
 };
 
 static info_lkp_t liebert_replacebatt_info[] = {
-        { 0, NULL, liebert_replacebatt_fun, NULL }
+	{ 0, NULL, liebert_replacebatt_fun, NULL }
 };
 
 static info_lkp_t liebert_shutdownimm_info[] = {
-        { 0, NULL, liebert_shutdownimm_fun, NULL }
+	{ 0, NULL, liebert_shutdownimm_fun, NULL }
 };
 
 static info_lkp_t liebert_config_voltage_info[] = {
