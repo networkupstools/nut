@@ -33,7 +33,7 @@
 
 #include <math.h>     /* for fabs() */
 
-#define BELKIN_HID_VERSION      "Belkin/Liebert HID 0.20"
+#define BELKIN_HID_VERSION      "Belkin/Liebert HID 0.21"
 
 /* Belkin */
 #define BELKIN_VENDORID	0x050d
@@ -207,7 +207,7 @@ static const char *liebert_line_voltage_fun(double value)
 		 * integer-oriented abs() so collapsed into "if (0 < 1e-9) {")!
 		 *   if (fabs(value - 1e-7) < 1e-9) {
 		 */
-		if (fabs(value - 1e-7) < 1e-9) {
+		if (fabs(value - 1e-5) < 4*1e-5) {
 			liebert_line_voltage_mult = 1e7;
 			upsdebugx(2, "Input/OutputVoltage = %g -> assuming correction factor = %g",
 				value, liebert_line_voltage_mult);
@@ -228,7 +228,7 @@ static const char *liebert_psi5_line_voltage_fun(double value)
 		 *   0.000273 =>  27.3
 		 *   0.001212 => 121.2
 		 */
-		if (fabs(value - 1e-3) < 1e-3) {
+		if (fabs(value - 1e-3) < 4*1e-3) {
 			liebert_line_voltage_mult = 1e5;
 			upsdebugx(2, "Input/OutputVoltage = %g -> assuming correction factor = %g",
 				value, liebert_line_voltage_mult);
