@@ -27,6 +27,7 @@
 #include "config.h"
 
 #include "nut_stdint.h"
+#include "nut_float.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -100,7 +101,7 @@ static int RunBuiltInTests(char *argv[]) {
 		liebert_config_voltage_mult = 1.0;
 
 		rawValue = strtod(testData[i].buf, NULL);
-		if (rawValue != testData[i].expectedRawValue) {
+		if (!d_equal(rawValue, testData[i].expectedRawValue)) {
 			printf(" value '%s' parsing FAIL: got %g expected %g\n",
 				testData[i].buf, rawValue, testData[i].expectedRawValue);
 			/* Fix testData definition! */
@@ -133,7 +134,7 @@ static int RunBuiltInTests(char *argv[]) {
 
 		printf("Test #%" PRIiSIZE "  \t", i + 1);
 		value = strtod(valueStr, NULL);
-		if (value == testData[i].expectedValue && mult == testData[i].expectedMult) {
+		if (d_equal(value, testData[i].expectedValue) && d_equal(mult, testData[i].expectedMult)) {
 			printf("%s\tGOT value %9g\tmult %6g PASS\n",
 				(testData[i].type < 1 || testData[i].type > 3 ? "<null>" : methodName[testData[i].type - 1]),
 				value, mult);
