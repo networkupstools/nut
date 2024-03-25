@@ -58,15 +58,12 @@ nuttimetest_SOURCES = nuttimetest.c
 nuttimetest_LDADD = $(top_builddir)/common/libcommon.la
 
 # Separate the .deps of other dirs from this one
-LINKED_SOURCE_FILES = hidparser.c belkin-hid.c
+LINKED_SOURCE_FILES = hidparser.c
 
 # NOTE: Not using "$<" due to a legacy Sun/illumos dmake bug with resolver
 # of dynamic vars, see e.g. https://man.omnios.org/man1/make#BUGS
 hidparser.c: $(top_srcdir)/drivers/hidparser.c
 	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/hidparser.c" "$@"
-
-belkin-hid.c: $(top_srcdir)/drivers/belkin-hid.c
-	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/belkin-hid.c" "$@"
 
 if WITH_USB
 TESTS += getvaluetest getexponenttest-belkin-hid
@@ -78,7 +75,7 @@ nodist_libdriverstubusb_la_SOURCES = driver-stub-usb.c
 libdriverstubusb_la_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
 #libdriverstubusb_la_LIBADD = $(top_builddir)/common/libcommon.la
 
-getexponenttest-belkin-hid.c: belkin-hid.c
+getexponenttest-belkin-hid.c: $(top_srcdir)/drivers/belkin-hid.c
 getexponenttest_belkin_hid_SOURCES = getexponenttest-belkin-hid.c
 getexponenttest_belkin_hid_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
 getexponenttest_belkin_hid_LDADD = $(top_builddir)/common/libcommon.la libdriverstubusb.la
@@ -89,7 +86,7 @@ nodist_getvaluetest_SOURCES = hidparser.c
 getvaluetest_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
 getvaluetest_LDADD = $(top_builddir)/common/libcommon.la
 else !WITH_USB
-EXTRA_DIST += getvaluetest.c hidparser.c belkin-hid.c
+EXTRA_DIST += getvaluetest.c hidparser.c
 endif !WITH_USB
 
 if WITH_GPIO
