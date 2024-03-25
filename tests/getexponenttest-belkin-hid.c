@@ -1,7 +1,8 @@
-/* getexponenttest - check detection of correct multiplication exponent value
- * for miniscule readings from USB HID (as used in e.g. drivers/belkin-hid.c
- * subdriver). Eventually may be extended to similar tests for other driver
- * methods.
+/* getexponenttest-belkin-hid - check detection of correct multiplication
+ * exponent value for miniscule readings from USB HID (as used in the
+ * drivers/belkin-hid.c subdriver of usbhid-ups).
+ * Eventually may be extended to similar tests for other drivers' methods,
+ * or more likely cloned to #include them in similar fashion.
  *
  * See also:
  *  https://github.com/networkupstools/nut/issues/2370

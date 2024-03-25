@@ -1,7 +1,7 @@
 /* placeholder/mock method implementations to just directly use driver
  * source code as done for belkin-hid.c (and eventually similar code)
  * for almost-in-vivo testing (and minimal intrusion to that codebase).
- * See also: getexponenttest.c
+ * See also: getexponenttest-belkin-hid.c
  *
  * Copyright (C)
  *      2024   Jim Klimov <jimklimov+nut@gmail.com>

@@ -69,7 +69,7 @@ belkin-hid.c: $(top_srcdir)/drivers/belkin-hid.c
 	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/belkin-hid.c" "$@"
 
 if WITH_USB
-TESTS += getvaluetest getexponenttest
+TESTS += getvaluetest getexponenttest-belkin-hid
 
 # We only need to call a few methods, not use the whole source - so
 # not linking it as a getvaluetest_SOURCE file (has too many deps):
@@ -78,10 +78,10 @@ nodist_libdriverstubusb_la_SOURCES = driver-stub-usb.c
 libdriverstubusb_la_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
 #libdriverstubusb_la_LIBADD = $(top_builddir)/common/libcommon.la
 
-getexponenttest.c: belkin-hid.c
-getexponenttest_SOURCES = getexponenttest.c
-getexponenttest_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
-getexponenttest_LDADD = $(top_builddir)/common/libcommon.la libdriverstubusb.la
+getexponenttest-belkin-hid.c: belkin-hid.c
+getexponenttest_belkin_hid_SOURCES = getexponenttest-belkin-hid.c
+getexponenttest_belkin_hid_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
+getexponenttest_belkin_hid_LDADD = $(top_builddir)/common/libcommon.la libdriverstubusb.la
 
 getvaluetest_SOURCES = getvaluetest.c
 nodist_getvaluetest_SOURCES = hidparser.c
