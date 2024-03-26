@@ -96,7 +96,6 @@ static const char *liebert_shutdownimm_fun(double value);
  * Exposed for unit testing - not "static" */
 static const char *liebert_config_voltage_fun(double value);
 static const char *liebert_line_voltage_fun(double value);
-static const char *liebert_psi5_line_voltage_fun(double value);
 
 static double liebert_config_voltage_mult = 1.0;
 static double liebert_line_voltage_mult = 1.0;
@@ -132,10 +131,6 @@ static info_lkp_t liebert_config_voltage_info[] = {
 
 static info_lkp_t liebert_line_voltage_info[] = {
 	{ 0, NULL, liebert_line_voltage_fun, NULL },
-};
-
-static info_lkp_t liebert_psi5_line_voltage_info[] = {
-	{ 0, NULL, liebert_psi5_line_voltage_fun, NULL },
 };
 
 static const char *liebert_online_fun(double value)
@@ -199,6 +194,9 @@ static const char *liebert_line_voltage_fun(double value)
 {
 	/* Keep large readings like "230" or "24" as is */
 	if (value < 1) {
+		int picked_scale = 0;
+		/* NOTE: Start with tiniest scale first */
+
 		/* Practical use-case for mult=1e7:
 		 *   1.39e-06  =>  13.9
 		 *   2.201e-05 => 220.1
@@ -209,27 +207,18 @@ static const char *liebert_line_voltage_fun(double value)
 		 */
 		if (fabs(value - 1e-5) < 4*1e-5) {
 			liebert_line_voltage_mult = 1e7;
-			upsdebugx(2, "Input/OutputVoltage = %g -> assuming correction factor = %g",
-				value, liebert_line_voltage_mult);
-		} else {
-			upslogx(LOG_NOTICE, "LineVoltage exponent looks wrong, but not correcting.");
-		}
-	}
-
-	snprintf(liebert_conversion_buf, sizeof(liebert_conversion_buf), "%.1f",
-			value * liebert_line_voltage_mult);
-	return liebert_conversion_buf;
-}
-
-static const char *liebert_psi5_line_voltage_fun(double value)
-{
-	if (value < 1) {
+			picked_scale = 1;
+		} else
 		/* Practical use-case for mult=1e5:
 		 *   0.000273 =>  27.3
 		 *   0.001212 => 121.2
 		 */
 		if (fabs(value - 1e-3) < 4*1e-3) {
 			liebert_line_voltage_mult = 1e5;
+			picked_scale = 1;
+		}
+
+		if (picked_scale) {
 			upsdebugx(2, "Input/OutputVoltage = %g -> assuming correction factor = %g",
 				value, liebert_line_voltage_mult);
 		} else {
@@ -528,12 +517,12 @@ static hid_info_t belkin_hid2nut[] = {
   /* Liebert PSI5 */
   { "input.voltage.nominal", 0, 0, "UPS.Flow.ConfigVoltage", NULL, "%.0f", 0, NULL },
   { "input.frequency", 0, 0, "UPS.PowerConverter.Input.Frequency", NULL, "%s", 0, divide_by_100_conversion },
-  { "input.voltage", 0, 0, "UPS.PowerConverter.Input.Voltage", NULL, "%s", 0, liebert_psi5_line_voltage_info },
+  { "input.voltage", 0, 0, "UPS.PowerConverter.Input.Voltage", NULL, "%s", 0, liebert_line_voltage_info },
   { "output.voltage.nominal", 0, 0, "UPS.Flow.ConfigVoltage", NULL, "%.0f", 0, NULL },
   { "output.frequency", 0, 0, "UPS.PowerConverter.Output.Frequency", NULL, "%s", 0, divide_by_100_conversion },
-  { "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", NULL, "%s", 0, liebert_psi5_line_voltage_info },
+  { "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", NULL, "%s", 0, liebert_line_voltage_info },
   { "ups.load", 0, 0, "UPS.OutletSystem.Outlet.PercentLoad", NULL, "%.0f", 0, NULL },
-  { "battery.voltage", 0, 0, "UPS.BatterySystem.Battery.Voltage", NULL, "%s", 0, liebert_psi5_line_voltage_info },
+  { "battery.voltage", 0, 0, "UPS.BatterySystem.Battery.Voltage", NULL, "%s", 0, liebert_line_voltage_info },
   { "battery.voltage.nominal", 0, 0, "UPS.BatterySystem.Battery.ConfigVoltage", NULL, "%.0f", 0, NULL },
   { "battery.capacity", 0, 0, "UPS.Flow.ConfigApparentPower", NULL, "%.0f", 0, NULL },
   /* status */

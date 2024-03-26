@@ -39,15 +39,14 @@
 extern double liebert_config_voltage_mult, liebert_line_voltage_mult;
 const char *liebert_config_voltage_fun(double value);
 const char *liebert_line_voltage_fun(double value);
-const char *liebert_psi5_line_voltage_fun(double value);
  */
 
 static void Usage(char *name) {
 /*
-	printf("%s {-c <config_voltage> | -l <old_line_voltage> | -p <psi5_line_voltage>} <expected_multiplier> <expected_voltage>\n", name);
+	printf("%s {-c <config_voltage> | -l <line_voltage>} <expected_multiplier> <expected_voltage>\n", name);
 	printf("\n");
 	printf("%s -c 12\n", name);
-	printf("%s -p 0.001212\n", name);
+	printf("%s -l 0.001212\n", name);
 	printf("%s -l 1.39e-06\n", name);
 */
 	printf("%s\nIf no arguments are given a builtin set of tests are run.\n", name);
@@ -60,24 +59,23 @@ static int RunBuiltInTests(char *argv[]) {
 	double	rawValue, value, mult;
 	const char	*valueStr;
 
-	static char* methodName[3] = {
+	static char* methodName[2] = {
 		"liebert_config_voltage_mult()   ",
-		"liebert_line_voltage_mult()     ",
-		"liebert_psi5_line_voltage_mult()"
+		"liebert_line_voltage_mult()     "
 	};
 
 	static struct {
 		char *buf;			/* raw voltage as a string (from CLI input, e.g. NUT driver log trace) */
 		double expectedRawValue;	/* parsed raw voltage (as seen in USB HID reports) */
-		char type;			/* 1 = config, 2 = line, 3 = PSI5 line */
+		char type;			/* 1 = config, 2 = line */
 		double expectedMult;		/* expected liebert_config_voltage_mult or liebert_line_voltage_mult */
 		double expectedValue;		/* the expected result of decoding the value in the buffer */
 	} testData[] = {
-		{.buf = "0.000273",	.expectedRawValue = 0.000273,	.type = 3, .expectedMult = 1e5, .expectedValue = 27.3	},
-		{.buf = "0.001212",	.expectedRawValue = 0.001212,	.type = 3, .expectedMult = 1e5, .expectedValue = 121.2	},
-		{.buf = "0.002456",	.expectedRawValue = 0.002456,	.type = 3, .expectedMult = 1e5, .expectedValue = 245.6	},
-		{.buf = "0.003801",	.expectedRawValue = 0.003801,	.type = 3, .expectedMult = 1e5, .expectedValue = 380.1	},
-		{.buf = "0.004151",	.expectedRawValue = 0.004151,	.type = 3, .expectedMult = 1e5, .expectedValue = 415.1	},
+		{.buf = "0.000273",	.expectedRawValue = 0.000273,	.type = 2, .expectedMult = 1e5, .expectedValue = 27.3	},
+		{.buf = "0.001212",	.expectedRawValue = 0.001212,	.type = 2, .expectedMult = 1e5, .expectedValue = 121.2	},
+		{.buf = "0.002456",	.expectedRawValue = 0.002456,	.type = 2, .expectedMult = 1e5, .expectedValue = 245.6	},
+		{.buf = "0.003801",	.expectedRawValue = 0.003801,	.type = 2, .expectedMult = 1e5, .expectedValue = 380.1	},
+		{.buf = "0.004151",	.expectedRawValue = 0.004151,	.type = 2, .expectedMult = 1e5, .expectedValue = 415.1	},
 
 		{.buf = "1.39e-06",	.expectedRawValue = 0.00000139,	.type = 2, .expectedMult = 1e7, .expectedValue = 13.9	},
 		{.buf = "1.273e-05",	.expectedRawValue = 0.00001273,	.type = 2, .expectedMult = 1e7, .expectedValue = 127.3	},
@@ -85,11 +83,6 @@ static int RunBuiltInTests(char *argv[]) {
 		{.buf = "4.201e-05",	.expectedRawValue = 0.00004201,	.type = 2, .expectedMult = 1e7, .expectedValue = 420.1	},
 
 		/* Edge cases - what should not be converted (good enough already) */
-		{.buf = "12",	.expectedRawValue = 12.0,	.type = 3, .expectedMult = 1, .expectedValue = 12.0	},
-		{.buf = "12.3",	.expectedRawValue = 12.3,	.type = 3, .expectedMult = 1, .expectedValue = 12.3	},
-		{.buf = "232.1",	.expectedRawValue = 232.1,	.type = 3, .expectedMult = 1, .expectedValue = 232.1	},
-		{.buf = "240",	.expectedRawValue = 240.0,	.type = 3, .expectedMult = 1, .expectedValue = 240.0	},
-
 		{.buf = "12",	.expectedRawValue = 12.0,	.type = 2, .expectedMult = 1, .expectedValue = 12.0	},
 		{.buf = "12.3",	.expectedRawValue = 12.3,	.type = 2, .expectedMult = 1, .expectedValue = 12.3	},
 		{.buf = "232.1",	.expectedRawValue = 232.1,	.type = 2, .expectedMult = 1, .expectedValue = 232.1	},
@@ -128,11 +121,6 @@ static int RunBuiltInTests(char *argv[]) {
 				mult = liebert_line_voltage_mult;
 				break;
 
-			case 3:
-				valueStr = liebert_psi5_line_voltage_fun(rawValue);
-				mult = liebert_line_voltage_mult;
-				break;
-
 			default:
 				printf(" invalid entry\n");
 				continue;
@@ -148,7 +136,7 @@ static int RunBuiltInTests(char *argv[]) {
 			printf("%s\tGOT value %9g\tmult %6g FAIL"
 				"\tEXPECTED v=%7g\tm=%7g"
 				"\tORIGINAL (string)'%s'\t=> (double)%g\n",
-				(testData[i].type < 1 || testData[i].type > 3 ? "<null>" : methodName[testData[i].type - 1]),
+				(testData[i].type < 1 || testData[i].type > 2 ? "<null>" : methodName[testData[i].type - 1]),
 				value, mult,
 				testData[i].expectedValue,
 				testData[i].expectedMult,
