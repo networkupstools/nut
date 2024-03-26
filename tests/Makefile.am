@@ -88,6 +88,7 @@ getvaluetest_LDADD = $(top_builddir)/common/libcommon.la
 else !WITH_USB
 EXTRA_DIST += getvaluetest.c hidparser.c
 endif !WITH_USB
+EXTRA_DIST += driver-stub-usb.c
 
 if WITH_GPIO
 TESTS += gpiotest
