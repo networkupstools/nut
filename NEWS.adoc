@@ -182,7 +182,9 @@ https://github.com/networkupstools/nut/milestone/10
      by cooperation with Cyber Power Systems. [#2312]
    * `belkin-hid` subdriver now supports Liebert PSI5 devices which have a
      different numeric reading scale than earlier handled models. [issue #2271,
-     PR #2272, PR #2369]
+     PR #2272, PR #2369] Generally the wrong-scale processing was addressed,
+     including a regression in NUT v2.8.0 which led to zero values
+     in voltage data points which NUT v2.7.4 reported well [#2371]
    * The `onlinedischarge` configuration flag name was too ambiguous and got
      deprecated (will be supported but no longer promoted by documentation),
      introducing `onlinedischarge_onbattery` as the meaningful alias. [#2213]
