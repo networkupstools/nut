@@ -383,6 +383,12 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
    * added `onlinedischarge_calibration` option for UPSes that report
      `OL+DISCHRG` when they are in calibration mode [#2104]
 
+ - riello_usb updates:
+   * added `localcalculation` option to compute `battery.runtime` and
+     `battery.charge` if the device provides bogus values [#1692, #1685]
+     (similar to `runtimecal` in some other drivers, may be refactored
+     to that configuration and logic model in later NUT releases)
+
  - powercom driver should now try harder to refresh data from device [#356]
 
  - tripplite_usb driver now supports configuration of `upsid` to match the
