@@ -87,6 +87,10 @@ https://github.com/networkupstools/nut/milestone/10
      `configure` script option `--with-debuginfo`. Note that default autoconf
      behavior usually embeds moderate optimizations and debug information on
      its own. [PR #2310]
+   * A fix applied among clean-ups between NUT v2.7.4 and v2.8.0 releases
+     backfired for `usbhid-ups` subdriver `belkin-hid` which in practice
+     relied on the broken older behavior; more details in its entry below.
+     [PR #2371]
 
  - nut-usbinfo.pl, nut-scanner and libnutscan:
    * Library API version for `libnutscan` was bumped from 2.2.0 to 2.5.0
