@@ -1061,6 +1061,12 @@ void upsdrv_initinfo(void)
 			batt_volt_high *= times12;
 		}
 	} else {
+		if (valL)
+			batt_volt_low = strtod(valL, NULL);
+
+		if (valH)
+			batt_volt_high = strtod(valH, NULL);
+
 		/* If just one of those is set, then what? */
 		if (valL || valH) {
 			upsdebugx(1, "WARNING: Only one of battery.voltage.low=%.1f "
