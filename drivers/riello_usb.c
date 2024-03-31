@@ -1049,30 +1049,47 @@ void upsdrv_initinfo(void)
 	valL = dstate_getinfo("battery.voltage.low");
 	valH = dstate_getinfo("battery.voltage.high");
 
-	if (!valL && !valH) {
-		/* Both not set (NULL) => pick by nominal (X times 12V).
-		 * Pick a suitable low/high range (or keep built-in default).
+	{	/* scoping */
+		/* Pick a suitable low/high range (or keep built-in default).
+		 * The factor may be a count of battery packs in the UPS.
 		 */
 		int times12 = batt_volt_nom / 12;
 		if (times12 > 1) {
 			/* Scale up the range for 24V (X=2) etc. */
-			upsdebugx(1, "Using %i times the voltage range of 12V PbAc battery", times12);
+			upsdebugx(3, "%s: Using %i times the voltage range of 12V PbAc battery",
+				__func__, times12);
 			batt_volt_low  *= times12;
 			batt_volt_high *= times12;
 		}
-	} else {
-		if (valL)
-			batt_volt_low = strtod(valL, NULL);
+	}
 
-		if (valH)
+	if (!valL && !valH) {
+		/* Both not set (NULL) => pick by nominal (X times 12V above). */
+		upsdebugx(3, "Neither battery.voltage.low=%.1f "
+			"nor battery.voltage.high=%.1f is set via "
+			"driver configuration or by device; keeping "
+			"at built-in default value (aligned "
+			"with battery.voltage.nominal=%.1f)",
+			batt_volt_low, batt_volt_high, batt_volt_nom);
+	} else {
+		if (valL) {
+			batt_volt_low = strtod(valL, NULL);
+			upsdebugx(2, "%s: Using battery.voltage.low=%.1f from device or settings",
+				__func__, batt_volt_low);
+		}
+
+		if (valH) {
 			batt_volt_high = strtod(valH, NULL);
+			upsdebugx(2, "%s: Using battery.voltage.high=%.1f from device or settings",
+				__func__, batt_volt_high);
+		}
 
 		/* If just one of those is set, then what? */
 		if (valL || valH) {
 			upsdebugx(1, "WARNING: Only one of battery.voltage.low=%.1f "
 				"or battery.voltage.high=%.1f is set via "
 				"driver configuration; keeping the other "
-				"at built-in default value (and not aligning "
+				"at built-in default value (aligned "
 				"with battery.voltage.nominal=%.1f)",
 				batt_volt_low, batt_volt_high, batt_volt_nom);
 		} else {
