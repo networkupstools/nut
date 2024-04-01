@@ -150,6 +150,7 @@ MAINTAINER SANDBOX (to be completed and pushed)
 ----
 :; git tag -sm 'Release NUT v2.8.0' v2.8.0
 ----
+** in case of second thoughts, `git tag -d v2.8.0` and retry later
 ** try to avoid adding signed tags later (ex. v2.8.0-signed) to avoid the
    mess in GitHub release URLs (or do amend that post-factum), for more
    details see e.g. https://github.com/networkupstools/nut/issues/1971
