@@ -88,7 +88,7 @@ MAINTAINER SANDBOX (to be completed and pushed)
 
 * clean up "in-development" bits from files, e.g.:
 ** TODO etc. referring planned future in the `NEWS.adoc` and `UPDATING.adoc`
-   files
+   files - except for the upcoming release
 ** comment away the top-most (auto-resolved) NUT version and build date
    in `docs/docinfo.xml.in` -- DO NOT add (or at least commit) an entry
    for the actual fixed release version and date just yet
@@ -104,9 +104,11 @@ MAINTAINER SANDBOX (to be completed and pushed)
   any recent changes to drivers (including `main.c` and other major impact
   from common code) and sub-drivers (`*-hid.c` for `usbhid-ups`, `*-mib.c`
   for `snmp-ups`, `nutdrv_qx_*` etc.) have been reflected in bumps to their
-  `DRIVER_VERSION` or equivalen macros
+  `DRIVER_VERSION` or equivalent macros
 ** ideally maintained during development, as features are getting merged for
    community testing and future development baseline in the master branch
+** this is the good time to remove the `PLANNED` status from the upcoming
+   release info section title
 * NOTE that the `ChangeLog` file is currently not tracked in SCM
 * update this document: `docs/maintainer-guide.txt` as it inevitably requires
 * commit these finishing touches
@@ -158,7 +160,8 @@ MAINTAINER SANDBOX (to be completed and pushed)
 * post-release update of the "in-development" codebase:
 ** maybe update nut/configure.ac version to <incremented version>.1 (ex: 2.8.0.1)
 ** `git revert` the commit which cleaned up "in-development" bits above
-** Possibly resolve relevant merge conflicts for the changed context
+** Possibly resolve relevant merge conflicts for the changed context,
+   e.g. the changed "PLANNED" status of the now-issued release info
 
 * push commits and tag
 
