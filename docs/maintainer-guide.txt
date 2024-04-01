@@ -118,12 +118,15 @@ MAINTAINER SANDBOX (to be completed and pushed)
 * commit these finishing touches
 
 * bump the release identification:
+** update version to <exact incremented version> (ex: 2.8.0) in `configure.ac`
+----
+:; git commit -sm 'configure.ac: update AC_INIT for NUT v2.8.0 release`
+----
 ** add an entry in `docs/docinfo.xml.in` for the actual fixed release version
    and date
 ** revise `.github/workflows/PyNUTClient.yml` for fallback `TAG_NAME` naming
 ** revise `appveyor.yml` for branch naming
 ** revise `scripts/Windows/build-mingw-nut.sh` for fallback value of `VER_OPT`
-** update version to <exact incremented version> (ex: 2.8.0) in `configure.ac`
 ** commit with a relevant release message, e.g.:
 ----
 :; git commit -sm 'Update versions for release of NUT v2.8.0'
@@ -164,6 +167,9 @@ MAINTAINER SANDBOX (to be completed and pushed)
 
 * post-release update of the "in-development" codebase:
 ** maybe update nut/configure.ac version to <incremented version>.1 (ex: 2.8.0.1)
+----
+:; git commit -sm 'configure.ac: bump AC_INIT to development version 2.8.0.1'
+----
 ** `git revert` the commit which cleaned up "in-development" bits above
 ** Possibly resolve relevant merge conflicts for the changed context,
    e.g. the changed "PLANNED" status of the now-issued release info
