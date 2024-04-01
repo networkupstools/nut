@@ -148,7 +148,7 @@ MAINTAINER SANDBOX (to be completed and pushed)
 ----
 * create a GPG-signed tag v<incremented version> (ex: v2.8.0):
 ----
-:; git tag -sm 'Release NUT v2.8.0'
+:; git tag -sm 'Release NUT v2.8.0' v2.8.0
 ----
 ** try to avoid adding signed tags later (ex. v2.8.0-signed) to avoid the
    mess in GitHub release URLs (or do amend that post-factum), for more
