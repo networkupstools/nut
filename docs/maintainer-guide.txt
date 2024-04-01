@@ -123,7 +123,7 @@ MAINTAINER SANDBOX (to be completed and pushed)
 ** revise `.github/workflows/PyNUTClient.yml` for fallback `TAG_NAME` naming
 ** revise `appveyor.yml` for branch naming
 ** revise `scripts/Windows/build-mingw-nut.sh` for fallback value of `VER_OPT`
-** update version to <incremented version> (ex: 2.8.0) in `configure.ac`
+** update version to <exact incremented version> (ex: 2.8.0) in `configure.ac`
 ** commit with a relevant release message, e.g.:
 ----
 :; git commit -sm 'Update versions for release of NUT v2.8.0'
