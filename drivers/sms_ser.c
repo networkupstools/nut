@@ -31,7 +31,7 @@
 #define ENDCHAR '\r'
 
 #define DRIVER_NAME "SMS Brazil UPS driver"
-#define DRIVER_VERSION "1.00"
+#define DRIVER_VERSION "1.01"
 
 #define QUERY_SIZE 7
 #define BUFFER_SIZE 18

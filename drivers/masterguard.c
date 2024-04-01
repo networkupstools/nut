@@ -29,7 +29,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"MASTERGUARD UPS driver"
-#define DRIVER_VERSION	"0.26"
+#define DRIVER_VERSION	"0.27"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
