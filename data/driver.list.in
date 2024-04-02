@@ -34,6 +34,8 @@
 #
 # Duplicate text in the last field will be cooked out during the conversion
 # to HTML with ROWSPAN magic.  They must be an exact match for this to work.
+#
+# The entry may be followed by comments. Be sure to not use double-quotes there!
 
 "Ablerex"	"ups"	"2"	"625L"	"USB"	"blazer_usb"
 "Ablerex"	"ups"	"2"	"Hope Office 400/600"	""	"blazer_ser"
