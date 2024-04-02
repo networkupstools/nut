@@ -186,9 +186,12 @@ MAINTAINER SANDBOX (to be completed and pushed)
    NOTE: for `nut` submodule be sure to refer to the tagged commit, not to
    the subsequent "in-development" codebase.
 ** in `source` submodule add a copy of tarball, checksum and hash files for
-   download
+   download: `make dist{,-hash,-sig}`
+*** for a `new-X.Y.Z.txt` file use the `NEWS.adoc` with a stripped title
+    (see existing files)
 ** `git tag` the website release
-** generate and publish a "historic" sub-site snapshot (currently manually)
+** generate and publish a "historic" sub-site snapshot (currently manually,
+   check comments in nut-website's `ci_build.sh` script and/or its README file)
 ** update `nut` submodule to current commit ("in-development" codebase), and
    the `historic/index.txt` to refer to the snapshot for reference (users of
    specific-version packages)
