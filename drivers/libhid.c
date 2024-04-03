@@ -239,7 +239,7 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 	r = (size_t)ret;
 
 	if (rbuf->len[id] != r) {
-		/* e.g. if maxreportsize flag was set */
+		/* e.g. if max_report_size flag was set */
 		upsdebugx(2,
 			"%s: expected %" PRIuSIZE " bytes, but got %" PRIuSIZE " instead",
 			__func__, rbuf->len[id], r);

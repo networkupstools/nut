@@ -1461,6 +1461,8 @@ NOTE: There was no public NUT 2.7.0 release.
  - usbhid-ups: final fix for APC Back UPS ES.  APC Back UPS ES devices have
    buggy firmware, and this version does not cause a regression. The max_report
    variable should be set automatically based on the USB identification values.
+   * UPDATE: known as `maxreport` flag for `usbhid-ups` driver, and as a
+     `max_report_size` setting in code, as of NUT v2.8.2 release.
 
  - nut-scanner: fix crash
 
