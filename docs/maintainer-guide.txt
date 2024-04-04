@@ -218,4 +218,11 @@ MAINTAINER SANDBOX (to be completed and pushed)
 
 * announce on mailing list, IRC, etc.
 
+* create a GitHub issue label for the new release, e.g. at
+  https://github.com/networkupstools/nut/labels?q=impact :
+----
+impacts-release-2.8.0
+Issues reported against NUT release 2.8.0 (maybe vanilla or with minor packaging tweaks)
+----
+
 //////////////////////////////////////////////////////////////////////////////
