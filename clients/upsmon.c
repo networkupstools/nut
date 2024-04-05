@@ -1593,8 +1593,10 @@ static void checkmode(char *cfgentry, char *oldvalue, char *newvalue,
 	if (use_pipe == 0)
 		return;
 
-	/* it's ok if we're not reloading yet */
-	if (reloading == 0)
+	/* it's ok if we're not reloading yet
+	 * or "almost-fake" loading to show help()
+	 */
+	if (reloading < 1)
 		return;
 
 	/* also nothing to do if it didn't change */
@@ -1658,7 +1660,7 @@ static int parse_conf_arg(size_t numargs, char **arg)
 		powerdownflag = filter_path(arg[1]);
 #endif
 
-		if (!reload_flag)
+		if (reload_flag == 0)
 			upslogx(LOG_INFO, "Using power down flag file %s",
 				arg[1]);
 
@@ -1871,6 +1873,12 @@ static void loadconfig(void)
 
 		if (reload_flag == 1) {
 			upslog_with_errno(LOG_ERR, "Reload failed: %s", ctx.errmsg);
+			return;
+		}
+
+		if (reload_flag == -1) {
+			/* For help() */
+			upsdebugx(1, "Load failed: %s", ctx.errmsg);
 			return;
 		}
 
@@ -2475,7 +2483,7 @@ static void help(const char *arg_progname)
 	/* Try to get POWERDOWNFLAG? */
 	if (!powerdownflag) {
 		/* Avoid fatalx() on bad/absent configs */
-		reload_flag = 1;
+		reload_flag = -1;
 
 		/* Hush messages normally emitted by loadconfig() */
 		nut_debug_level = -2;
