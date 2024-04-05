@@ -1936,11 +1936,14 @@ static void loadconfig(void)
 				nut_debug_level_global);
 			nut_debug_level = nut_debug_level_global;
 		} else {
-			/* DEBUG_MIN is absent or commented-away in ups.conf */
-			upslogx(LOG_INFO,
-				"Applying debug level %d from "
-				"original command line arguments",
-				nut_debug_level_args);
+			/* DEBUG_MIN is absent or commented-away in ups.conf
+			 * Negative value may be set by help() to be really quiet
+			 */
+			if (nut_debug_level_args > -1)
+				upslogx(LOG_INFO,
+					"Applying debug level %d from "
+					"original command line arguments",
+					nut_debug_level_args);
 			nut_debug_level = nut_debug_level_args;
 		}
 
