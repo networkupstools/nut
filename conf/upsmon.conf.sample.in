@@ -1,6 +1,11 @@
 # Network UPS Tools: example upsmon configuration
 #
 # This file contains passwords, so keep it secure.
+#
+# A minimal configuration should include at least one MONITOR instruction,
+# MINSUPPLIES (may be 0 if this system is only monitoring other NUT servers),
+# and a POWERDOWNFLAG if this machine is a "primary" system connected to
+# the UPS and drives its late-shutdown power-off command in an emergency.
 
 # --------------------------------------------------------------------------
 # RUN_AS_USER <userid>

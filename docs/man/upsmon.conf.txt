@@ -14,6 +14,11 @@ will monitor and to tell it how to shut down the system when necessary.
 It will contain passwords, so keep it secure.  Ideally, only the upsmon
 process should be able to read it.
 
+A minimal configuration should include at least one `MONITOR` instruction,
+`MINSUPPLIES` (may be 0 if this system is only monitoring other NUT servers),
+and a `POWERDOWNFLAG` if this machine is a "primary" system connected to
+the UPS and drives its late-shutdown power-off command in an emergency.
+
 Additionally, other optional configuration values can be set in this
 file.
 
