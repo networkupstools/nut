@@ -41,7 +41,7 @@ https://github.com/networkupstools/nut/milestone/11
 
 
 
- - upsmon: it was realised that the `POWERDOWNFLAG` must be explicitly set in
+ - upsmon: it was realized that the `POWERDOWNFLAG` must be explicitly set in
    the configuration file, there is no built-in default in the binary program
    (the settings facilitated by the `configure` script during build "only"
    impact the `upsmon.conf.sample`, init-scripts and similar files generated
