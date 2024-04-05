@@ -1492,22 +1492,28 @@ static void addups(int reloading, const char *sys, const char *pvs,
 	else
 		firstups = tmp;
 
-	if (tmp->pv)
-		upslogx(LOG_INFO, "UPS: %s (%s) (power value %d)", tmp->sys,
-			flag_isset(tmp->status, ST_PRIMARY) ? "primary" : "secondary",
-			tmp->pv);
-	else
-		upslogx(LOG_INFO, "UPS: %s (monitoring only)", tmp->sys);
+	/* Negative debug value may be set by help() to be really quiet */
+	if (nut_debug_level > -1) {
+		if (tmp->pv)
+			upslogx(LOG_INFO, "UPS: %s (%s) (power value %d)", tmp->sys,
+				flag_isset(tmp->status, ST_PRIMARY) ? "primary" : "secondary",
+				tmp->pv);
+		else
+			upslogx(LOG_INFO, "UPS: %s (monitoring only)", tmp->sys);
+	}
 
 	tmp->upsname = tmp->hostname = NULL;
 
 	if (upscli_splitname(tmp->sys, &tmp->upsname, &tmp->hostname,
-		&tmp->port) != 0) {
-		upslogx(LOG_ERR, "Error: unable to split UPS name [%s]",
-			tmp->sys);
+		&tmp->port) != 0
+	) {
+		if (nut_debug_level > -1) {
+			upslogx(LOG_ERR, "Error: unable to split UPS name [%s]",
+				tmp->sys);
+		}
 	}
 
-	if (!tmp->upsname)
+	if (!tmp->upsname && nut_debug_level > -1)
 		upslogx(LOG_WARNING, "Warning: UPS [%s]: no upsname set!",
 			tmp->sys);
 }
@@ -1587,8 +1593,10 @@ static void checkmode(char *cfgentry, char *oldvalue, char *newvalue,
 	if (use_pipe == 0)
 		return;
 
-	/* it's ok if we're not reloading yet */
-	if (reloading == 0)
+	/* it's ok if we're not reloading yet
+	 * or "almost-fake" loading to show help()
+	 */
+	if (reloading < 1)
 		return;
 
 	/* also nothing to do if it didn't change */
@@ -1652,7 +1660,7 @@ static int parse_conf_arg(size_t numargs, char **arg)
 		powerdownflag = filter_path(arg[1]);
 #endif
 
-		if (!reload_flag)
+		if (reload_flag == 0)
 			upslogx(LOG_INFO, "Using power down flag file %s",
 				arg[1]);
 
@@ -1854,6 +1862,10 @@ static void loadconfig(void)
 	PCONF_CTX_t	ctx;
 	int	numerrors = 0;
 
+	upsdebugx(1, "%s: %s %s", __func__,
+		(reload_flag == 1) ? "Reloading" : "Loading",
+		configfile);
+
 	pconf_init(&ctx, upsmon_err);
 
 	if (!pconf_file_begin(&ctx, configfile)) {
@@ -1861,6 +1873,12 @@ static void loadconfig(void)
 
 		if (reload_flag == 1) {
 			upslog_with_errno(LOG_ERR, "Reload failed: %s", ctx.errmsg);
+			return;
+		}
+
+		if (reload_flag == -1) {
+			/* For help() */
+			upsdebugx(1, "Load failed: %s", ctx.errmsg);
 			return;
 		}
 
@@ -1930,11 +1948,14 @@ static void loadconfig(void)
 				nut_debug_level_global);
 			nut_debug_level = nut_debug_level_global;
 		} else {
-			/* DEBUG_MIN is absent or commented-away in ups.conf */
-			upslogx(LOG_INFO,
-				"Applying debug level %d from "
-				"original command line arguments",
-				nut_debug_level_args);
+			/* DEBUG_MIN is absent or commented-away in ups.conf
+			 * Negative value may be set by help() to be really quiet
+			 */
+			if (nut_debug_level_args > -1)
+				upslogx(LOG_INFO,
+					"Applying debug level %d from "
+					"original command line arguments",
+					nut_debug_level_args);
 			nut_debug_level = nut_debug_level_args;
 		}
 
@@ -1953,6 +1974,16 @@ static void loadconfig(void)
 	}
 
 	pconf_finish(&ctx);
+
+	/* TOTHINK: Should this warning be limited to non-WIN32 builds? */
+	if (!powerdownflag) {
+		upslogx(LOG_WARNING, "No POWERDOWNFLAG value was configured in %s!",
+			configfile);
+		upslogx(LOG_INFO,
+			"Should be a path to file that is normally writeable "
+			"for root user, and remains at least readable late "
+			"in shutdown after all unmounting completes.");
+	}
 }
 
 #ifndef WIN32
@@ -2445,6 +2476,30 @@ static void help(const char *arg_progname)
 
 static void help(const char *arg_progname)
 {
+	int old_debug_level = nut_debug_level;
+	int old_debug_level_args = nut_debug_level_args;
+	int old_debug_level_global = nut_debug_level_global;
+
+	/* Try to get POWERDOWNFLAG? */
+	if (!powerdownflag) {
+		/* Avoid fatalx() on bad/absent configs */
+		reload_flag = -1;
+
+		/* Hush messages normally emitted by loadconfig() */
+		nut_debug_level = -2;
+		nut_debug_level_args = -2;
+		nut_debug_level_global = -2;
+
+		loadconfig();
+
+		nut_debug_level = old_debug_level;
+		nut_debug_level_args = old_debug_level_args;
+		nut_debug_level_global = old_debug_level_global;
+
+		/* Separate from logs emitted by loadconfig() */
+		/* printf("\n"); */
+	}
+
 	printf("Monitors UPS servers and may initiate shutdown if necessary.\n\n");
 
 	printf("usage: %s [OPTIONS]\n\n", arg_progname);
@@ -2461,7 +2516,8 @@ static void help(const char *arg_progname)
 	printf("  -B		stay backgrounded even if debugging is bumped\n");
 	printf("  -V		display the version of this software\n");
 	printf("  -h		display this help\n");
-	printf("  -K		checks POWERDOWNFLAG, sets exit code to 0 if set\n");
+	printf("  -K		checks POWERDOWNFLAG (%s), sets exit code to 0 if set\n",
+		powerdownflag ? powerdownflag : "***NOT CONFIGURED***");
 	printf("  -p		always run privileged (disable privileged parent)\n");
 	printf("  -u <user>	run child as user <user> (ignored when using -p)\n");
 	printf("  -4		IPv4 only\n");
