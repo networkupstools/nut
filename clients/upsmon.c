@@ -1860,6 +1860,10 @@ static void loadconfig(void)
 	PCONF_CTX_t	ctx;
 	int	numerrors = 0;
 
+	upsdebugx(1, "%s: %s %s", __func__,
+		(reload_flag == 1) ? "Reloading" : "Loading",
+		configfile);
+
 	pconf_init(&ctx, upsmon_err);
 
 	if (!pconf_file_begin(&ctx, configfile)) {
