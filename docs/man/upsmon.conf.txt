@@ -327,6 +327,10 @@ stuck at the "halted" stage even if the power returns during the shutdown
 process.  This usually does not work well on contact-closure UPSes that
 use the genericups driver.
 +
+WARNING: The `upsmon` binary program does not have a built-in default,
+so this setting MUST be specified in the configuration, in order for the
+late shutdown integration to work on the particular primary-mode system!
++
 See the config-notes.txt file in the docs subdirectory for more information.
 Refer to the section:
 [[UPS_shutdown]] "Configuring automatic shutdowns for low battery events",
