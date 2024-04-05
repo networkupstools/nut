@@ -324,8 +324,17 @@ also apply here.
 *POWERDOWNFLAG* 'filename'::
 
 upsmon creates this file when running in primary mode when the UPS needs
-to be powered off.  You should check for this file in your shutdown
-scripts and call `upsdrvctl shutdown` if it exists.
+to be powered off.  You should check for this file in your late shutdown
+scripts and call `upsdrvctl shutdown` if it exists; note that `upsmon -K`
+may be called for this effect, if NUT configuration files remain readable
+at that point (file systems mostly unmounted or changed to read-only).
++
+Historically it was often `/etc/killpower` but nowadays you may want it
+in a temporary filesystem (e.g. under `/run` or `/run/nut` location).
++
+Note that double backslashes must be used for Windows paths, e.g.
+`C:\\Temp\\killpower` (modern Windows may also accept forward slashes
+like `C:/Temp/killpower` but YMMV).
 +
 This is done to forcibly reset the secondary systems, so they don't get
 stuck at the "halted" stage even if the power returns during the shutdown
