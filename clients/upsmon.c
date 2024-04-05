@@ -1966,6 +1966,16 @@ static void loadconfig(void)
 	}
 
 	pconf_finish(&ctx);
+
+	/* TOTHINK: Should this warning be limited to non-WIN32 builds? */
+	if (!powerdownflag) {
+		upslogx(LOG_WARNING, "No POWERDOWNFLAG value was configured in %s!",
+			configfile);
+		upslogx(LOG_INFO,
+			"Should be a path to file that is normally writeable "
+			"for root user, and remains at least readable late "
+			"in shutdown after all unmounting completes.");
+	}
 }
 
 #ifndef WIN32
