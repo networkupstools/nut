@@ -2468,6 +2468,30 @@ static void help(const char *arg_progname)
 
 static void help(const char *arg_progname)
 {
+	int old_debug_level = nut_debug_level;
+	int old_debug_level_args = nut_debug_level_args;
+	int old_debug_level_global = nut_debug_level_global;
+
+	/* Try to get POWERDOWNFLAG? */
+	if (!powerdownflag) {
+		/* Avoid fatalx() on bad/absent configs */
+		reload_flag = 1;
+
+		/* Hush messages normally emitted by loadconfig() */
+		nut_debug_level = -2;
+		nut_debug_level_args = -2;
+		nut_debug_level_global = -2;
+
+		loadconfig();
+
+		nut_debug_level = old_debug_level;
+		nut_debug_level_args = old_debug_level_args;
+		nut_debug_level_global = old_debug_level_global;
+
+		/* Separate from logs emitted by loadconfig() */
+		/* printf("\n"); */
+	}
+
 	printf("Monitors UPS servers and may initiate shutdown if necessary.\n\n");
 
 	printf("usage: %s [OPTIONS]\n\n", arg_progname);
@@ -2484,7 +2508,8 @@ static void help(const char *arg_progname)
 	printf("  -B		stay backgrounded even if debugging is bumped\n");
 	printf("  -V		display the version of this software\n");
 	printf("  -h		display this help\n");
-	printf("  -K		checks POWERDOWNFLAG, sets exit code to 0 if set\n");
+	printf("  -K		checks POWERDOWNFLAG (%s), sets exit code to 0 if set\n",
+		powerdownflag ? powerdownflag : "***NOT CONFIGURED***");
 	printf("  -p		always run privileged (disable privileged parent)\n");
 	printf("  -u <user>	run child as user <user> (ignored when using -p)\n");
 	printf("  -4		IPv4 only\n");
