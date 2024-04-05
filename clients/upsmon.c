@@ -1492,22 +1492,28 @@ static void addups(int reloading, const char *sys, const char *pvs,
 	else
 		firstups = tmp;
 
-	if (tmp->pv)
-		upslogx(LOG_INFO, "UPS: %s (%s) (power value %d)", tmp->sys,
-			flag_isset(tmp->status, ST_PRIMARY) ? "primary" : "secondary",
-			tmp->pv);
-	else
-		upslogx(LOG_INFO, "UPS: %s (monitoring only)", tmp->sys);
+	/* Negative debug value may be set by help() to be really quiet */
+	if (nut_debug_level > -1) {
+		if (tmp->pv)
+			upslogx(LOG_INFO, "UPS: %s (%s) (power value %d)", tmp->sys,
+				flag_isset(tmp->status, ST_PRIMARY) ? "primary" : "secondary",
+				tmp->pv);
+		else
+			upslogx(LOG_INFO, "UPS: %s (monitoring only)", tmp->sys);
+	}
 
 	tmp->upsname = tmp->hostname = NULL;
 
 	if (upscli_splitname(tmp->sys, &tmp->upsname, &tmp->hostname,
-		&tmp->port) != 0) {
-		upslogx(LOG_ERR, "Error: unable to split UPS name [%s]",
-			tmp->sys);
+		&tmp->port) != 0
+	) {
+		if (nut_debug_level > -1) {
+			upslogx(LOG_ERR, "Error: unable to split UPS name [%s]",
+				tmp->sys);
+		}
 	}
 
-	if (!tmp->upsname)
+	if (!tmp->upsname && nut_debug_level > -1)
 		upslogx(LOG_WARNING, "Warning: UPS [%s]: no upsname set!",
 			tmp->sys);
 }
