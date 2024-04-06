@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3484 utf-8
+personal_ws-1.1 en 3486 utf-8
 AAC
 AAS
 ABI
@@ -2091,6 +2091,7 @@ fmt
 fno
 fontconfig
 footnoteref
+fopen
 forceshutdown
 forcessl
 formatconfig
@@ -2988,6 +2989,7 @@ selftest
 sendback
 sendline
 sendmail
+sendsignal
 sequentialized
 ser
 seria

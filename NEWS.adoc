@@ -40,6 +40,12 @@ https://github.com/networkupstools/nut/milestone/11
  - (expected) Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0
 
 
+ - drivers, upsd, upsmon: reduce "scary noise" about failure to `fopen()`
+   the PID file (which most of the time means that no previous instance of
+   the daemon was running to potentially conflict with), especially useless
+   since in recent NUT releases the verdicts from `sendsignal*()` methods
+   are analyzed and lead to layman worded situation reports in these programs.
+   [issue #1782]
 
  - upsmon: it was realized that the `POWERDOWNFLAG` must be explicitly set in
    the configuration file, there is no built-in default in the binary program
