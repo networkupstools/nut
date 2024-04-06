@@ -2031,6 +2031,8 @@ int main(int argc, char **argv)
 	 * for probing whether a competing older instance of this program
 	 * is running (error if it is).
 	 */
+	/* Hush the fopen(pidfile) message but let "real errors" be seen */
+	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_FOPEN_PIDFILE - 1;
 #ifndef WIN32
 	/* If cmd == 0 we are starting and check if a previous instance
 	 * is running by sending signal '0' (i.e. 'kill <pid> 0' equivalent)
@@ -2137,6 +2139,9 @@ int main(int argc, char **argv)
 
 		exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
 	}
+
+	/* Restore the signal errors verbosity */
+	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_DEFAULT;
 
 	argc -= optind;
 	argv += optind;
