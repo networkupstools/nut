@@ -121,7 +121,7 @@ ASCIIDOC_PDF = user-manual.pdf \
 	FAQ.pdf
 
 SUBDIRS = man cables
-SUFFIXES = .txt .html .pdf -spellchecked .txt-prepped
+SUFFIXES = .txt .html .pdf .txt-spellchecked .txt-prepped
 
 # This list is defined by configure script choices and options:
 CHECK_LOCAL_TARGETS = @DOC_CHECK_LIST@
