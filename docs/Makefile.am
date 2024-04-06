@@ -310,7 +310,7 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) \
 # As of version 8.6.9 it lies, and the argument is required for our distcheck
 # (and does affect PDF builds, as found during work on collision-avoidance -
 # true with at least asciidoc/a2x versions 9.0.0rc2).
-# For more details see issues https://github.com/asciidoc/asciidoc/issues/44
+# For more details see issues https://web.archive.org/web/20201207082352/https://github.com/asciidoc/asciidoc/issues/44
 # and https://github.com/networkupstools/nut/pull/281 (in short, attempts
 # to "fix" this warning broke NUT build). If this is to be retried later, see
 # https://github.com/networkupstools/nut/pull/281/commits/fe17861c4ea12679b3ebfefa8a6d692d79d99f2d
