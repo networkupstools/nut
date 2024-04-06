@@ -2034,6 +2034,9 @@ int main(int argc, char **argv)
 		exit(((cmdret < 0) || (((uintmax_t)cmdret) > ((uintmax_t)INT_MAX))) ? 255 : (int)cmdret);
 	}
 
+	/* Hush the fopen(pidfile) message but let "real errors" be seen */
+	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_FOPEN_PIDFILE - 1;
+
 #ifndef WIN32
 	/* Setup PID file to receive signals to communicate with this driver
 	 * instance once backgrounded, and to stop a competing older instance.
@@ -2223,6 +2226,9 @@ int main(int argc, char **argv)
 		}
 	}
 #endif	/* WIN32 */
+
+	/* Restore the signal errors verbosity */
+	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_DEFAULT;
 
 	/* clear out callback handler data */
 	memset(&upsh, '\0', sizeof(upsh));
