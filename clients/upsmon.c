@@ -3005,6 +3005,13 @@ int main(int argc, char *argv[])
 
 	open_syslog(prog);
 
+	if (checking_flag) {
+		/* Do not normally report the UPSes we would monitor, etc.
+		 * from loadconfig() for just checking the killpower flag */
+		if (nut_debug_level == 0)
+			nut_debug_level = -2;
+	}
+
 	loadconfig();
 
 	/* CLI debug level can not be smaller than debug_min specified
