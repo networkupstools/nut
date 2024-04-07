@@ -531,6 +531,15 @@ Some supporting maintenance and development is doable with IntelliJ IDEA,
 making some things easier to do than with a simple Notepad, but it does
 not handle C/C++ development as such.
 
+Take note that some IDEs can store their project data in the source root
+directory of a project (such as NUT codebase). While `.gitignore` rules
+can take care of not adding your local configuration into the SCM, these
+locations can be wiped by a careless `git clean -fdX`. You are advised
+to explore configuring your IDE to store project configurations outside
+the source codebase location, or to track such directories as `nbproject`
+or `nb-cache` as a separate Git repository (not necessarily a submodule
+of NUT nor really diligently tracked) to avoid such surprises.
+
 IDE notes on Windows
 ~~~~~~~~~~~~~~~~~~~~
 

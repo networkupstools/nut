@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3484 utf-8
+personal_ws-1.1 en 3486 utf-8
 AAC
 AAS
 ABI
@@ -2067,6 +2067,7 @@ fc
 fcb
 fcntl
 fd
+fdX
 fds
 fe
 featureReport
@@ -2599,6 +2600,7 @@ nanosleep
 nashkaminski
 natively
 nb
+nbproject
 nbr
 nbsp
 nd
