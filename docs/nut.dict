@@ -2067,6 +2067,7 @@ fc
 fcb
 fcntl
 fd
+fdX
 fds
 fe
 featureReport
@@ -2600,6 +2601,7 @@ nanosleep
 nashkaminski
 natively
 nb
+nbproject
 nbr
 nbsp
 nd

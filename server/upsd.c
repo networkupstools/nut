@@ -1924,6 +1924,7 @@ int main(int argc, char **argv)
 	snprintf(pidfn, sizeof(pidfn), "%s/%s.pid", altpidpath(), progname);
 
 	printf("Network UPS Tools %s %s\n", progname, UPS_VERSION);
+	fflush(stdout);
 
 	while ((i = getopt(argc, argv, "+h46p:qr:i:fu:Vc:P:DFB")) != -1) {
 		switch (i) {

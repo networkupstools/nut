@@ -325,6 +325,8 @@ static void notify(const char *notice, int flags, const char *ntype,
 		}
 	}
 
+	upsdebugx(6, "%s (child): exiting after notifications", __func__);
+
 	exit(EXIT_SUCCESS);
 #else
 	async_notify_t * data;
@@ -379,6 +381,10 @@ static void do_notify(const utype_t *ups, int ntype)
 #endif
 			notify(msg, notifylist[i].flags, notifylist[i].name,
 				upsname);
+
+			upsdebugx(3, "%s: ntype 0x%04x (%s) finished",
+				__func__, ntype, notifylist[i].name);
+
 			return;
 		}
 	}
@@ -2782,6 +2788,7 @@ int main(int argc, char *argv[])
 #endif
 
 	printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
+	fflush(stdout);
 
 	/* if no configuration file is specified on the command line, use default */
 	configfile = xmalloc(SMALLBUF);
@@ -3182,5 +3189,6 @@ int main(int argc, char *argv[])
 	upsnotify(NOTIFY_STATE_STOPPING, "Signal %d: exiting", exit_flag);
 	upsmon_cleanup();
 
+	upsdebugx(1, "Finally exiting due to signal %d", exit_flag);
 	exit(EXIT_SUCCESS);
 }

@@ -155,6 +155,8 @@ void upsdrv_banner (void)
 		printf("%s %s\n", upsdrv_info.subdrv_info[i]->name,
 			upsdrv_info.subdrv_info[i]->version);
 	}
+
+	fflush(stdout);
 }
 
 #ifndef DRIVERS_MAIN_WITHOUT_MAIN
