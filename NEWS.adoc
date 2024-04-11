@@ -40,6 +40,12 @@ https://github.com/networkupstools/nut/milestone/11
  - (expected) Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0
 
 
+ - riello_ser updates:
+   * added `localcalculation` option to compute `battery.runtime` and
+     `battery.charge` if the device provides bogus values [issue #2390,
+     following in the footsteps of #1692, #1685 done for `riello_usb`]
+     (similar to `runtimecal` in some other drivers, may be refactored
+     to that configuration and logic model in later NUT releases)
 
  - upsmon: it was realized that the `POWERDOWNFLAG` must be explicitly set in
    the configuration file, there is no built-in default in the binary program
