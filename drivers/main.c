@@ -229,6 +229,9 @@ static void help_msg(void)
 	printf("                   - reload-or-exit: re-read configuration files (exit the old\n");
 	printf("                     driver instance if needed, so an external caller like the\n");
 	printf("                     systemd or SMF frameworks would start another copy)\n");
+	printf("                   - exit: tell the currently running driver instance to just exit\n");
+	printf("                     (so an external caller like the new driver instance, or the\n");
+	printf("                     systemd or SMF frameworks would start another copy)\n");
 	/* NOTE for FIXME above: PID-signalling is non-WIN32-only for us */
 	printf("  -P <pid>       - send the signal above to specified PID (bypassing PID file)\n");
 # endif	/* WIN32 */
@@ -746,6 +749,11 @@ int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 				NUT_STRARG(upsname));
 			return STAT_INSTCMD_INVALID;
 		}
+	}
+
+	if (!strcmp(cmdname, "driver.exit")) {
+		set_reload_flag(SIGCMD_EXIT);
+		return STAT_INSTCMD_HANDLED;
 	}
 
 #ifndef WIN32
@@ -1551,6 +1559,15 @@ static void set_reload_flag(
 			break;
 #endif
 
+		case SIGCMD_EXIT:	/* Not even a signal, but a socket protocol action,
+			* and not a reload either - just applied here for consistency */
+/*
+			reload_flag = 15;
+			break;
+*/
+			set_exit_flag(-2);
+			return;
+
 		case SIGCMD_RELOAD:	/* SIGHUP */
 		case SIGCMD_RELOAD_OR_ERROR:	/* Not even a signal, but a socket protocol action */
 		default:
@@ -1564,10 +1581,13 @@ static void set_reload_flag(
 	if (sig && !strcmp(sig, SIGCMD_RELOAD_OR_ERROR)) {
 		/* reload what we can, log what needs a restart so skipped */
 		reload_flag = 1;
+	} else if (sig && !strcmp(sig, SIGCMD_EXIT)) {
+		set_exit_flag(-2);
+		return;
 	} else {
 		/* non-fatal reload as a fallback */
 		reload_flag = 1;
-        }
+	}
 
 	upsdebugx(1, "%s: raising reload flag due to command %s => reload_flag=%d",
 		__func__, sig, reload_flag);
@@ -1813,6 +1833,10 @@ int main(int argc, char **argv)
 				if (!strncmp(optarg, "reload-or-error", strlen(optarg))) {
 					cmd = SIGCMD_RELOAD_OR_ERROR;
 				}
+				else
+				if (!strncmp(optarg, "exit", strlen(optarg))) {
+					cmd = SIGCMD_EXIT;
+				}
 #ifndef WIN32
 				else
 				if (!strncmp(optarg, "reload", strlen(optarg))) {
@@ -1835,9 +1859,14 @@ int main(int argc, char **argv)
 						"Error: unknown argument to option -%c. Try -h for help.", i);
 				}
 #ifndef WIN32
-				upsdebugx(1, "Will send signal %d (%s) for command '%s' "
-					"to already-running driver %s-%s (if any) and exit",
-					cmd, strsignal(cmd), optarg, progname, upsname);
+				if (cmd > 0)
+					upsdebugx(1, "Will send signal %d (%s) for command '%s' "
+						"to already-running driver %s-%s (if any) and exit",
+						cmd, strsignal(cmd), optarg, progname, upsname);
+				else
+					upsdebugx(1, "Will send request for command '%s' (internal code %d) "
+						"to already-running driver %s-%s (if any) and exit",
+						optarg, cmd, progname, upsname);
 #else
 				upsdebugx(1, "Will send request '%s' for command '%s' "
 					"to already-running driver %s-%s (if any) and exit",
@@ -2008,28 +2037,49 @@ int main(int argc, char **argv)
 	/* Handle reload-or-error over socket protocol with
 	 * the running older driver instance */
 #ifndef WIN32
-	if (cmd == SIGCMD_RELOAD_OR_ERROR)
+	if (cmd == SIGCMD_RELOAD_OR_ERROR || cmd == SIGCMD_EXIT)
 #else
-	if (cmd && !strcmp(cmd, SIGCMD_RELOAD_OR_ERROR))
+	if (cmd && (!strcmp(cmd, SIGCMD_RELOAD_OR_ERROR) || !strcmp(cmd, SIGCMD_EXIT)))
 #endif  /* WIN32 */
 	{	/* Not a signal, but a socket protocol action */
 		ssize_t	cmdret = -1;
-		char	buf[LARGEBUF];
+		char	buf[LARGEBUF], cmdbuf[LARGEBUF];
 		struct timeval	tv;
+		char *cmdname = NULL;
+
+#ifndef WIN32
+		if (cmd == SIGCMD_RELOAD_OR_ERROR)
+#else
+		if (!strcmp(cmd, SIGCMD_RELOAD_OR_ERROR))
+#endif
+			cmdname = "reload-or-error";
+		else
+#ifndef WIN32
+		if (cmd == SIGCMD_EXIT)
+#else
+		if (!strcmp(cmd, SIGCMD_EXIT))
+#endif
+			cmdname = "exit";
+
+		upsdebugx(1, "Signalling UPS [%s]: driver.%s",
+			upsname, NUT_STRARG(cmdname));
+		if (!cmdname)
+			fatalx(EXIT_FAILURE, "Command not recognized");
 
 		/* Post the query and wait for reply */
 		/* FIXME: coordinate with pollfreq? */
 		tv.tv_sec = 15;
 		tv.tv_usec = 0;
+		snprintf(cmdbuf, sizeof(cmdbuf), "INSTCMD driver.%s\n", cmdname);
 		cmdret = upsdrvquery_oneshot(progname, upsname,
-			"INSTCMD driver.reload-or-error\n",
-			buf, sizeof(buf), &tv);
+			cmdbuf, buf, sizeof(buf), &tv);
 
 		if (cmdret < 0) {
 			upslog_with_errno(LOG_ERR, "Socket dialog with the other driver instance");
 		} else {
 			/* TODO: handle buf reply contents */
-			upslogx(LOG_INFO, "Request to reload-or-error returned code %" PRIiSIZE, cmdret);
+			upslogx(LOG_INFO, "Request for driver to %s returned code %" PRIiSIZE,
+				cmdname, cmdret);
 		}
 
 		/* exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE); */
