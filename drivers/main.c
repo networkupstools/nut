@@ -2041,10 +2041,11 @@ int main(int argc, char **argv)
 
 #ifndef WIN32
 	/* Setup PID file to receive signals to communicate with this driver
-	 * instance once backgrounded, and to stop a competing older instance.
-	 * Or to send it a signal deliberately.
+	 * instance once backgrounded (or staying foregrounded with `-FF`),
+	 * and to stop a competing older instance. Or to send it a signal
+	 * deliberately.
 	 */
-	if (cmd || ((foreground == 0) && (!do_forceshutdown))) {
+	if (cmd || ((foreground == 0 || foreground == 2) && (!do_forceshutdown))) {
 		char	pidfnbuf[SMALLBUF];
 
 		snprintf(pidfnbuf, sizeof(pidfnbuf), "%s/%s-%s.pid", altpidpath(), progname, upsname);
@@ -2462,6 +2463,7 @@ sockname_ownership_finished:
 				snprintf(pidfnbuf, sizeof(pidfnbuf), "%s/%s-%s.pid", altpidpath(), progname, upsname);
 				pidfn = xstrdup(pidfnbuf);
 			}
+			/* Probably was saved above already, but better safe than sorry */
 			upslogx(LOG_WARNING, "Running as foreground process, but saving a PID file anyway");
 			writepid(pidfn);
 			break;
