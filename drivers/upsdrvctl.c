@@ -1,6 +1,9 @@
 /* upsdrvctl.c - UPS driver controller
 
-   Copyright (C) 2001  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+   2001		Russell Kroll <rkroll@exploits.org>
+   2005 - 2017	Arnaud Quette <arnaud.quette@free.fr>
+   2017 - 2024	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
