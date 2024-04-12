@@ -938,7 +938,7 @@ static void help(const char *arg_progname)
 	printf("  -FF			driver stays foregrounded and still saves the PID file\n");
 	printf("  -B			driver(s) stay backgrounded even if debugging is bumped\n");
 
-	printf("Signalling a running driver:\n");
+	printf("\nSignalling a running driver:\n");
 	printf("  -c <command>		send <command> via signal to running driver(s)\n");
 	printf("              		supported commands:\n");
 #ifndef WIN32
@@ -966,7 +966,7 @@ static void help(const char *arg_progname)
 	printf("              		  systemd or SMF frameworks would start another copy)\n");
 #endif /* WIN32 */
 
-	printf("Driver life cycle options:\n");
+	printf("\nDriver life cycle options:\n");
 	printf("  start			start all UPS drivers in ups.conf\n");
 	printf("  start	<ups>		only start driver for UPS <ups>\n");
 	printf("  stop			stop all UPS drivers in ups.conf\n");
