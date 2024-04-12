@@ -2141,20 +2141,24 @@ int main(int argc, char **argv)
 		/* away. If not, retry a couple of times. */
 		for (i = 0; i < 3; i++) {
 			struct stat	st;
+			int	sigret;
 
-			if (stat(pidfnbuf, &st) != 0) {
-				/* PID file not found */
+			if ((sigret = stat(pidfnbuf, &st)) != 0) {
+				upsdebugx(1, "PID file %s not found; stat() returned %d (errno=%d): %s",
+					pidfnbuf, sigret, errno, strerror(errno));
 				break;
 			}
 
 			upslogx(LOG_WARNING, "Duplicate driver instance detected (PID file %s exists)! Terminating other driver!", pidfnbuf);
 
-			if (sendsignalfn(pidfnbuf, SIGTERM) != 0) {
-				/* Can't send signal to PID, assume invalid file */
+			if ((sigret = sendsignalfn(pidfnbuf, SIGTERM) != 0)) {
+				upsdebugx(1, "Can't send signal to PID, assume invalid PID file %s; "
+					"sendsignalfn() returned %d (errno=%d): %s",
+					pidfnbuf, sigret, errno, strerror(errno));
 				break;
 			}
 
-			/* Allow driver some time to quit */
+			upsdebugx(1, "Signal sent without errors, allow the other driver instance some time to quit");
 			sleep(5);
 		}
 
