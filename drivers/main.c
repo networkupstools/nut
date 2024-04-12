@@ -2083,21 +2083,21 @@ int main(int argc, char **argv)
 				/* if cmd was nontrivial - speak up below, else be quiet */
 				upsdebugx(1, "Just failed to send signal, no daemon was running");
 				break;
-			}
+			} /* switch (cmdret) */
 
-		/* We were signalling a daemon, successfully or not - exit now...
-		 * Modulo the possibility of a "reload-or-something" where we
-		 * effectively terminate the old driver and start a new one due
-		 * to configuration changes that were not reloadable. Such mode
-		 * is not implemented currently.
-		 */
-		if (cmdret != 0) {
-			/* sendsignal*() above might have logged more details
-			 * for troubleshooting, e.g. about lack of PID file
+			/* We were signalling a daemon, successfully or not - exit now...
+			 * Modulo the possibility of a "reload-or-something" where we
+			 * effectively terminate the old driver and start a new one due
+			 * to configuration changes that were not reloadable. Such mode
+			 * is not implemented currently.
 			 */
-			upslogx(LOG_NOTICE, "Failed to signal the currently running daemon (if any)");
+			if (cmdret != 0) {
+				/* sendsignal*() above might have logged more details
+				 * for troubleshooting, e.g. about lack of PID file
+				 */
+				upslogx(LOG_NOTICE, "Failed to signal the currently running daemon (if any)");
 # ifdef HAVE_SYSTEMD
-			switch (cmd) {
+				switch (cmd) {
 				case SIGCMD_RELOAD:
 					upslogx(LOG_NOTICE, "Try something like "
 						"'systemctl reload nut-driver@%s.service'%s",
@@ -2122,7 +2122,7 @@ int main(int argc, char **argv)
 						upsname,
 						(oldpid < 0 ? " or add '-P $PID' argument" : ""));
 					break;
-				}
+				} /* switch (cmd) */
 				/* ... or edit nut-server.service locally to start `upsd -FF`
 				 * and so save the PID file for ability to manage the daemon
 				 * beside the service framework, possibly confusing things...
@@ -2132,10 +2132,10 @@ int main(int argc, char **argv)
 					upslogx(LOG_NOTICE, "Try to add '-P $PID' argument");
 				}
 # endif	/* HAVE_SYSTEMD */
-			}
+			} /* if (cmdret != 0) */
 
 			exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
-		}
+		} /* if (cmd) */
 
 		/* Try to prevent that driver is started multiple times. If a PID file */
 		/* already exists, send a TERM signal to the process and try if it goes */
