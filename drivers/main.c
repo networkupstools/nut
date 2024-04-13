@@ -2113,6 +2113,10 @@ int main(int argc, char **argv)
 	 * earlier instance to exit cleanly. After all, this socket file
 	 * should exist for the driver to talk to the NUT data server...
 	 */
+
+	/* Hush the fopen(pidfile) message but let "real errors" be seen */
+	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_FOPEN_PIDFILE - 1;
+
 	if (!cmd && (!do_forceshutdown)) {
 		ssize_t	cmdret = -1;
 		char	buf[LARGEBUF];
@@ -2187,15 +2191,19 @@ int main(int argc, char **argv)
 				 * but as we report a fault here - let the
 				 * user know that not all is lost right now :)
 				 */
+
+				/* Restore the signal errors verbosity, so that
+				 * e.g. follow-up fopen() issues can be seen -
+				 * we did probably encounter a sibling driver
+				 * instance after all, so can talk about it.
+				 */
+				nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_DEFAULT;
 			}
 		}
 
-		/* Restore the signal errors verbosity */
+		/* Restore the socket protocol errors verbosity */
 		nut_upsdrvquery_debug_level = NUT_UPSDRVQUERY_DEBUG_LEVEL_DEFAULT;
 	}
-
-	/* Hush the fopen(pidfile) message but let "real errors" be seen */
-	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_FOPEN_PIDFILE - 1;
 
 #ifndef WIN32
 	/* Setup PID file to receive signals to communicate with this driver
