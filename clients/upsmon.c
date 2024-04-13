@@ -2894,6 +2894,8 @@ int main(int argc, char *argv[])
 	 * for probing whether a competing older instance of this program
 	 * is running (error if it is).
 	 */
+	/* Hush the fopen(pidfile) message but let "real errors" be seen */
+	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_FOPEN_PIDFILE - 1;
 #ifndef WIN32
 	/* If cmd == 0 we are starting and check if a previous instance
 	 * is running by sending signal '0' (i.e. 'kill <pid> 0' equivalent)
@@ -2953,8 +2955,9 @@ int main(int argc, char *argv[])
 		 */
 		upslogx(LOG_WARNING, "Could not %s PID file "
 			"to see if previous upsmon instance is "
-			"already running!",
-			(cmdret == -3 ? "find" : "parse"));
+			"already running!%s",
+			(cmdret == -3 ? "find" : "parse"),
+			(checking_flag ? " This is okay during OS shutdown, which is when checking POWERDOWNFLAG makes most sense." : ""));
 		break;
 
 	case -1:
@@ -3007,10 +3010,20 @@ int main(int argc, char *argv[])
 		exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
 	}
 
+	/* Restore the signal errors verbosity */
+	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_DEFAULT;
+
 	argc -= optind;
 	argv += optind;
 
 	open_syslog(prog);
+
+	if (checking_flag) {
+		/* Do not normally report the UPSes we would monitor, etc.
+		 * from loadconfig() for just checking the killpower flag */
+		if (nut_debug_level == 0)
+			nut_debug_level = -2;
+	}
 
 	loadconfig();
 

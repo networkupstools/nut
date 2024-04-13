@@ -233,7 +233,7 @@ socket_error:
 	}
 
 #ifndef WIN32
-/* TODO: implement WIN32 */
+/* TODO: implement WIN32: https://github.com/networkupstools/nut/issues/1916 */
 /* handle generally signalling the UPS */
 	/* Real signals */
 #ifndef WIN32
@@ -281,6 +281,8 @@ socket_error:
 	if (testmode)
 		return;
 
+	/* Hush the fopen(pidfile) message but let "real errors" be seen */
+	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_FOPEN_PIDFILE - 1;
 #ifndef WIN32
 	if (ups->pid == -1) {
 		ret = sendsignalfn(pidfn, cmd);
@@ -296,12 +298,14 @@ socket_error:
 #else
 	ret = sendsignal(pidfn, cmd);
 #endif
+	/* Restore the signal errors verbosity */
+	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_DEFAULT;
 
 	if (ret < 0) {
 		upslog_with_errno(LOG_ERR, "Signalling %s failed: %d", pidfn, ret);
 		exec_error++;
 	}
-#endif	/* WIN32 */
+#endif	/* WIN32: https://github.com/networkupstools/nut/issues/1916 */
 }
 
 /* handle generally signalling the UPS with recently raised signal */
@@ -353,6 +357,9 @@ static void stop_driver(const ups_t *ups)
 	if (testmode)
 		return;
 
+	/* Hush the fopen(pidfile) message but let "real errors" be seen */
+	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_FOPEN_PIDFILE - 1;
+
 #ifndef WIN32
 	if (ups->pid == -1) {
 		ret = sendsignalfn(pidfn, SIGTERM);
@@ -360,7 +367,7 @@ static void stop_driver(const ups_t *ups)
 		ret = sendsignalpid(ups->pid, SIGTERM);
 		/* reap zombie if this child died */
 		if (waitpid(ups->pid, NULL, WNOHANG) == ups->pid) {
-			return;
+			goto clean_return;
 		}
 	}
 #else
@@ -376,7 +383,7 @@ static void stop_driver(const ups_t *ups)
 			ret = sendsignalpid(ups->pid, SIGKILL);
 			/* reap zombie if this child died */
 			if (waitpid(ups->pid, NULL, WNOHANG) == ups->pid) {
-				return;
+				goto clean_return;
 			}
 		}
 #else
@@ -386,7 +393,7 @@ static void stop_driver(const ups_t *ups)
 		if (ret < 0) {
 			upslog_with_errno(LOG_ERR, "Stopping %s failed", pidfn);
 			exec_error++;
-			return;
+			goto clean_return;
 		}
 	}
 
@@ -397,7 +404,7 @@ static void stop_driver(const ups_t *ups)
 		} else {
 			/* reap zombie if this child died */
 			if (waitpid(ups->pid, NULL, WNOHANG) == ups->pid) {
-					return;
+				goto clean_return;
 			}
 			ret = sendsignalpid(ups->pid, 0);
 		}
@@ -406,7 +413,7 @@ static void stop_driver(const ups_t *ups)
 #endif
 		if (ret != 0) {
 			upsdebugx(2, "Sending signal to %s failed, driver is finally down or wrongly owned", pidfn);
-			return;
+			goto clean_return;
 		}
 		sleep(1);
 	}
@@ -418,7 +425,7 @@ static void stop_driver(const ups_t *ups)
 	} else {
 		/* reap zombie if this child died */
 		if (waitpid(ups->pid, NULL, WNOHANG) == ups->pid) {
-			return;
+			goto clean_return;
 		}
 		ret = sendsignalpid(ups->pid, SIGKILL);
 	}
@@ -434,7 +441,7 @@ static void stop_driver(const ups_t *ups)
 			} else {
 				/* reap zombie if this child died */
 				if (waitpid(ups->pid, NULL, WNOHANG) == ups->pid) {
-					return;
+					goto clean_return;
 				}
 				ret = sendsignalpid(ups->pid, 0);
 			}
@@ -449,7 +456,7 @@ static void stop_driver(const ups_t *ups)
 				if (ups->pid == -1) {
 					unlink(pidfn);
 				}
-				return;
+				goto clean_return;
 			}
 			sleep(1);
 		}
@@ -457,6 +464,10 @@ static void stop_driver(const ups_t *ups)
 
 	upslog_with_errno(LOG_ERR, "Stopping %s failed", pidfn);
 	exec_error++;
+
+clean_return:
+	/* Restore the signal errors verbosity */
+	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_DEFAULT;
 }
 
 void set_exit_flag(const int sig)
@@ -939,7 +950,7 @@ static void help(const char *arg_progname)
 	printf("  -c <command>		send <command> via signal to running driver(s)\n");
 	printf("              		supported commands:\n");
 #ifndef WIN32
-/* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
+/* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds: https://github.com/networkupstools/nut/issues/1916 */
 	printf("              		- data-dump: if the driver still has STDOUT attached (maybe\n");
 	printf("              		  to log), dump its currently collected information there\n");
 	printf("              		- reload: re-read configuration files, ignoring changed\n");
@@ -952,7 +963,7 @@ static void help(const char *arg_progname)
 	printf("              		  based on that count, so the caller can decide the fate of\n");
 	printf("              		  the currently running driver instance\n");
 #ifndef WIN32
-/* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
+/* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds: https://github.com/networkupstools/nut/issues/1916 */
 # ifdef SIGCMD_RELOAD_OR_RESTART
 	printf("              		- reload-or-restart: re-read configuration files (close the\n");
 	printf("              		  old driver instance device connection if needed, and have\n");
@@ -1190,7 +1201,7 @@ int main(int argc, char **argv)
 					signal_flag = SIGCMD_RELOAD_OR_ERROR;
 				}
 #ifndef WIN32
-/* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
+/* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds: https://github.com/networkupstools/nut/issues/1916 */
 				else
 				if (!strncmp(optarg, "dump", strlen(optarg))) {
 					signal_flag = SIGCMD_DATA_DUMP;
@@ -1209,7 +1220,7 @@ int main(int argc, char **argv)
 				if (!strncmp(optarg, "reload-or-exit", strlen(optarg))) {
 					signal_flag = SIGCMD_RELOAD_OR_EXIT;
 				}
-#endif	/* WIN32 */
+#endif	/* WIN32: https://github.com/networkupstools/nut/issues/1916 */
 
 				/* bad command given */
 				if (!signal_flag) {

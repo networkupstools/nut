@@ -4,7 +4,7 @@
    1999			Russell Kroll <rkroll@exploits.org>
    2005 - 2017	Arnaud Quette <arnaud.quette@free.fr>
    2017 		Eaton (author: Emilien Kia <EmilienKia@Eaton.com>)
-   2017 - 2022	Jim Klimov <jimklimov+nut@gmail.com>
+   2017 - 2024	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -2036,12 +2036,16 @@ int main(int argc, char **argv)
 		exit(((cmdret < 0) || (((uintmax_t)cmdret) > ((uintmax_t)INT_MAX))) ? 255 : (int)cmdret);
 	}
 
+	/* Hush the fopen(pidfile) message but let "real errors" be seen */
+	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_FOPEN_PIDFILE - 1;
+
 #ifndef WIN32
 	/* Setup PID file to receive signals to communicate with this driver
-	 * instance once backgrounded, and to stop a competing older instance.
-	 * Or to send it a signal deliberately.
+	 * instance once backgrounded (or staying foregrounded with `-FF`),
+	 * and to stop a competing older instance. Or to send it a signal
+	 * deliberately.
 	 */
-	if (cmd || ((foreground == 0) && (!do_forceshutdown))) {
+	if (cmd || ((foreground == 0 || foreground == 2) && (!do_forceshutdown))) {
 		char	pidfnbuf[SMALLBUF];
 
 		snprintf(pidfnbuf, sizeof(pidfnbuf), "%s/%s-%s.pid", altpidpath(), progname, upsname);
@@ -2079,21 +2083,21 @@ int main(int argc, char **argv)
 				/* if cmd was nontrivial - speak up below, else be quiet */
 				upsdebugx(1, "Just failed to send signal, no daemon was running");
 				break;
-			}
+			} /* switch (cmdret) */
 
-		/* We were signalling a daemon, successfully or not - exit now...
-		 * Modulo the possibility of a "reload-or-something" where we
-		 * effectively terminate the old driver and start a new one due
-		 * to configuration changes that were not reloadable. Such mode
-		 * is not implemented currently.
-		 */
-		if (cmdret != 0) {
-			/* sendsignal*() above might have logged more details
-			 * for troubleshooting, e.g. about lack of PID file
+			/* We were signalling a daemon, successfully or not - exit now...
+			 * Modulo the possibility of a "reload-or-something" where we
+			 * effectively terminate the old driver and start a new one due
+			 * to configuration changes that were not reloadable. Such mode
+			 * is not implemented currently.
 			 */
-			upslogx(LOG_NOTICE, "Failed to signal the currently running daemon (if any)");
+			if (cmdret != 0) {
+				/* sendsignal*() above might have logged more details
+				 * for troubleshooting, e.g. about lack of PID file
+				 */
+				upslogx(LOG_NOTICE, "Failed to signal the currently running daemon (if any)");
 # ifdef HAVE_SYSTEMD
-			switch (cmd) {
+				switch (cmd) {
 				case SIGCMD_RELOAD:
 					upslogx(LOG_NOTICE, "Try something like "
 						"'systemctl reload nut-driver@%s.service'%s",
@@ -2118,7 +2122,7 @@ int main(int argc, char **argv)
 						upsname,
 						(oldpid < 0 ? " or add '-P $PID' argument" : ""));
 					break;
-				}
+				} /* switch (cmd) */
 				/* ... or edit nut-server.service locally to start `upsd -FF`
 				 * and so save the PID file for ability to manage the daemon
 				 * beside the service framework, possibly confusing things...
@@ -2128,30 +2132,34 @@ int main(int argc, char **argv)
 					upslogx(LOG_NOTICE, "Try to add '-P $PID' argument");
 				}
 # endif	/* HAVE_SYSTEMD */
-			}
+			} /* if (cmdret != 0) */
 
 			exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
-		}
+		} /* if (cmd) */
 
 		/* Try to prevent that driver is started multiple times. If a PID file */
 		/* already exists, send a TERM signal to the process and try if it goes */
 		/* away. If not, retry a couple of times. */
 		for (i = 0; i < 3; i++) {
 			struct stat	st;
+			int	sigret;
 
-			if (stat(pidfnbuf, &st) != 0) {
-				/* PID file not found */
+			if ((sigret = stat(pidfnbuf, &st)) != 0) {
+				upsdebugx(1, "PID file %s not found; stat() returned %d (errno=%d): %s",
+					pidfnbuf, sigret, errno, strerror(errno));
 				break;
 			}
 
 			upslogx(LOG_WARNING, "Duplicate driver instance detected (PID file %s exists)! Terminating other driver!", pidfnbuf);
 
-			if (sendsignalfn(pidfnbuf, SIGTERM) != 0) {
-				/* Can't send signal to PID, assume invalid file */
+			if ((sigret = sendsignalfn(pidfnbuf, SIGTERM) != 0)) {
+				upsdebugx(1, "Can't send signal to PID, assume invalid PID file %s; "
+					"sendsignalfn() returned %d (errno=%d): %s",
+					pidfnbuf, sigret, errno, strerror(errno));
 				break;
 			}
 
-			/* Allow driver some time to quit */
+			upsdebugx(1, "Signal sent without errors, allow the other driver instance some time to quit");
 			sleep(5);
 		}
 
@@ -2225,6 +2233,9 @@ int main(int argc, char **argv)
 		}
 	}
 #endif	/* WIN32 */
+
+	/* Restore the signal errors verbosity */
+	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_DEFAULT;
 
 	/* clear out callback handler data */
 	memset(&upsh, '\0', sizeof(upsh));
@@ -2452,6 +2463,7 @@ sockname_ownership_finished:
 				snprintf(pidfnbuf, sizeof(pidfnbuf), "%s/%s-%s.pid", altpidpath(), progname, upsname);
 				pidfn = xstrdup(pidfnbuf);
 			}
+			/* Probably was saved above already, but better safe than sorry */
 			upslogx(LOG_WARNING, "Running as foreground process, but saving a PID file anyway");
 			writepid(pidfn);
 			break;

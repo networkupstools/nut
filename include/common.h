@@ -347,6 +347,12 @@ void nut_report_config_flags(void);
 void upsdebugx_report_search_paths(int level, int report_search_paths_builtin);
 void nut_prepare_search_paths(void);
 
+/* Internal toggle for some NUT programs that deal with signal sending.
+ * For a detailed rationale comment see common.c */
+extern int nut_sendsignal_debug_level;
+#define NUT_SENDSIGNAL_DEBUG_LEVEL_DEFAULT 6
+#define NUT_SENDSIGNAL_DEBUG_LEVEL_FOPEN_PIDFILE 5
+
 extern int nut_debug_level;
 extern int nut_log_level;
 
