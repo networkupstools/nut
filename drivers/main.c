@@ -2086,6 +2086,89 @@ int main(int argc, char **argv)
 		exit(((cmdret < 0) || (((uintmax_t)cmdret) > ((uintmax_t)INT_MAX))) ? 255 : (int)cmdret);
 	}
 
+	/* If we would be starting as a driver (not to command a sibling),
+	 * any earlier instances should be turned off - to release access
+	 * to hardware connections and to generally avoid any confusion.
+	 * Further below we would try to use a PID file (if at all used
+	 * and still present) to terminate an earlier instance, but first
+	 * we would try to use the Unix socket protocol to tell that
+	 * earlier instance to exit cleanly. After all, this socket file
+	 * should exist for the driver to talk to the NUT data server...
+	 */
+	if (!cmd && (!do_forceshutdown)) {
+		ssize_t	cmdret = -1;
+		char	buf[LARGEBUF];
+		struct timeval	tv;
+
+		upsdebugx(1, "Signalling UPS [%s]: driver.exit (quietly, no fuss if no driver is running or responding)", upsname);
+
+		/* Post the query and wait for reply */
+		/* FIXME: coordinate with pollfreq? */
+		tv.tv_sec = 15;
+		tv.tv_usec = 0;
+
+		/* Hush the messages about initial connection failure, but
+		 * let "real errors" from started communication be seen.
+		 * It is okay if no driver instance is running at this
+		 * point, but if it is running but not communicating -
+		 * that is another story.
+		 */
+		nut_upsdrvquery_debug_level = NUT_UPSDRVQUERY_DEBUG_LEVEL_CONNECT - 1;
+		cmdret = upsdrvquery_oneshot(progname, upsname,
+			"INSTCMD driver.exit\n",
+			buf, sizeof(buf), &tv);
+
+		upsdebugx(1, "Request for other driver to exit returned code %" PRIiSIZE,
+			cmdret);
+		if (cmdret < 0) {
+			/* Failed to communicate, assume no other instance runs */
+			upsdebug_with_errno(1, "Socket dialog with the other driver instance "
+				"(may be absent) failed");
+		} else {
+			/* NOTE: Successful dialog does not mean the other
+			 * driver instance has stopped (just that it responded
+			 * "yes, sir!" - actual wind-down can take some time.
+			 */
+			upslogx(LOG_WARNING, "Duplicate driver instance detected (local %s exists)! Asking other driver to self-terminate!",
+#ifndef WIN32
+				"Unix socket"
+#else
+				"pipe"
+#endif
+				);
+
+			for (i = 10; i > 0; i--) {
+				if (exit_flag)
+					fatalx(EXIT_FAILURE, "Got a break signal ourselves during attempt to terminate other driver");
+
+				/* Allow driver some time to quit, and
+				 * retry until it does not respond anymore */
+				sleep(5);
+
+				if (exit_flag)
+					fatalx(EXIT_FAILURE, "Got a break signal ourselves during attempt to terminate other driver");
+
+				tv.tv_sec = 3;
+				tv.tv_usec = 0;
+				cmdret = upsdrvquery_oneshot(progname, upsname,
+					"INSTCMD driver.exit\n",
+					buf, sizeof(buf), &tv);
+				upsdebugx(1, "Subsequent request for other driver to exit returned code %"
+					PRIiSIZE, cmdret);
+
+				if (cmdret < 0)
+					break;
+			}
+
+			if (i < 1) {
+				upslogx(LOG_WARNING, "Duplicate driver instance did not respond to termination requests! Is it stuck or from an older NUT release?");
+			}
+		}
+
+		/* Restore the signal errors verbosity */
+		nut_upsdrvquery_debug_level = NUT_UPSDRVQUERY_DEBUG_LEVEL_DEFAULT;
+	}
+
 #ifndef WIN32
 	/* Setup PID file to receive signals to communicate with this driver
 	 * instance once backgrounded, and to stop a competing older instance.
