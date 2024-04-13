@@ -2147,7 +2147,8 @@ int main(int argc, char **argv)
 			 * driver instance has stopped (just that it responded
 			 * "yes, sir!" - actual wind-down can take some time.
 			 */
-			upslogx(LOG_WARNING, "Duplicate driver instance detected (local %s exists)! Asking other driver to self-terminate!",
+			upslogx(LOG_WARNING, "Duplicate driver instance detected (local %s exists)! "
+				"Asked the other driver nicely to self-terminate!",
 #ifndef WIN32
 				"Unix socket"
 #else
@@ -2179,7 +2180,13 @@ int main(int argc, char **argv)
 			}
 
 			if (i < 1) {
-				upslogx(LOG_WARNING, "Duplicate driver instance did not respond to termination requests! Is it stuck or from an older NUT release?");
+				upslogx(LOG_WARNING, "Duplicate driver instance did not respond to termination requests! "
+					"Is it stuck or from an older NUT release? "
+					"Will retry via PID file and signals, if available.");
+				/* NOTE: We would try via PID in any case,
+				 * but as we report a fault here - let the
+				 * user know that not all is lost right now :)
+				 */
 			}
 		}
 
