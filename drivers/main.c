@@ -2203,6 +2203,9 @@ int main(int argc, char **argv)
 
 			/* Allow driver some time to quit */
 			sleep(5);
+
+			if (exit_flag)
+				fatalx(EXIT_FAILURE, "Got a break signal during attempt to terminate other driver");
 		}
 
 		if (i > 0) {
