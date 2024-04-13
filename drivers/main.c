@@ -2061,8 +2061,26 @@ int main(int argc, char **argv)
 #endif
 			cmdname = "exit";
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_OVERFLOW || defined HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION)
+# pragma GCC diagnostic push
+# ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_OVERFLOW
+#  pragma GCC diagnostic ignored "-Wformat-overflow"
+# endif
+# ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#  pragma GCC diagnostic ignored "-Wformat-truncation"
+# endif
+#endif
+		/* Some compilers do detect a chance of cmdname=NULL with
+		 * NUT builds on systems where libc does not care and prints
+		 * the right thing anyway (so NUT_STRARG macro is trivial).
+		 * In this weird case gotta silence the static checks.
+		 */
 		upsdebugx(1, "Signalling UPS [%s]: driver.%s",
 			upsname, NUT_STRARG(cmdname));
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_OVERFLOW || defined HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION)
+# pragma GCC diagnostic pop
+#endif
+
 		if (!cmdname)
 			fatalx(EXIT_FAILURE, "Command not recognized");
 
