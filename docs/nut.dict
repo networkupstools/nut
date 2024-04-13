@@ -2092,6 +2092,7 @@ fmt
 fno
 fontconfig
 footnoteref
+fopen
 forceshutdown
 forcessl
 formatconfig
@@ -2990,6 +2991,7 @@ selftest
 sendback
 sendline
 sendmail
+sendsignal
 sequentialized
 ser
 seria

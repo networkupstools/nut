@@ -108,6 +108,23 @@ pid_t get_max_pid_t(void)
 #endif
 }
 
+	/* Normally sendsignalfn(), sendsignalpid() and related methods call
+	 * upslogx() to report issues such as failed fopen() of PID file,
+	 * failed parse of its contents, inability to send a signal (absent
+	 * process or some other issue like permissions).
+	 * Some of these low-level reports look noisy and scary to users,
+	 * others are a bit confusing ("PID file not found... is it bad or
+	 * good, what do I do with that knowledge?") so several consuming
+	 * programs actually parse the returned codes to formulate their
+	 * own messages like "No earlier instance of this daemon was found
+	 * running" and users benefit even less from low-level reports.
+	 * This variable and its values are a bit of internal detail between
+	 * certain NUT programs to hush the low-level reports when they are
+	 * not being otherwise debugged (e.g. nut_debug_level < 1).
+	 * Default value allows all those messages to appear.
+	 */
+	int	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_DEFAULT;
+
 	int	nut_debug_level = 0;
 	int	nut_log_level = 0;
 	static	int	upslog_flags = UPSLOG_STDERR;
@@ -459,9 +476,10 @@ int sendsignalpid(pid_t pid, int sig)
 	int	ret;
 
 	if (pid < 2 || pid > get_max_pid_t()) {
-		upslogx(LOG_NOTICE,
-			"Ignoring invalid pid number %" PRIdMAX,
-			(intmax_t) pid);
+		if (nut_debug_level > 0 || nut_sendsignal_debug_level > 0)
+			upslogx(LOG_NOTICE,
+				"Ignoring invalid pid number %" PRIdMAX,
+				(intmax_t) pid);
 		return -1;
 	}
 
@@ -469,7 +487,8 @@ int sendsignalpid(pid_t pid, int sig)
 	ret = kill(pid, 0);
 
 	if (ret < 0) {
-		perror("kill");
+		if (nut_debug_level > 0 || nut_sendsignal_debug_level > 1)
+			perror("kill");
 		return -1;
 	}
 
@@ -478,7 +497,8 @@ int sendsignalpid(pid_t pid, int sig)
 		ret = kill(pid, sig);
 
 		if (ret < 0) {
-			perror("kill");
+			if (nut_debug_level > 0 || nut_sendsignal_debug_level > 1)
+				perror("kill");
 			return -1;
 		}
 	}
@@ -513,7 +533,10 @@ pid_t parsepid(const char *buf)
 	if (_pid <= get_max_pid_t()) {
 		pid = (pid_t)_pid;
 	} else {
-		upslogx(LOG_NOTICE, "Received a pid number too big for a pid_t: %" PRIdMAX, _pid);
+		if (nut_debug_level > 0 || nut_sendsignal_debug_level > 0)
+			upslogx(LOG_NOTICE,
+				"Received a pid number too big for a pid_t: %"
+				PRIdMAX, _pid);
 	}
 
 	return pid;
@@ -533,12 +556,19 @@ int sendsignalfn(const char *pidfn, int sig)
 
 	pidf = fopen(pidfn, "r");
 	if (!pidf) {
-		upslog_with_errno(LOG_NOTICE, "fopen %s", pidfn);
+		/* This one happens quite often when a daemon starts
+		 * for the first time and no opponent PID file exists,
+		 * so the cut-off verbosity is higher.
+		 */
+		if (nut_debug_level > 0 ||
+		    nut_sendsignal_debug_level >= NUT_SENDSIGNAL_DEBUG_LEVEL_FOPEN_PIDFILE)
+			upslog_with_errno(LOG_NOTICE, "fopen %s", pidfn);
 		return -3;
 	}
 
 	if (fgets(buf, sizeof(buf), pidf) == NULL) {
-		upslogx(LOG_NOTICE, "Failed to read pid from %s", pidfn);
+		if (nut_debug_level > 0 || nut_sendsignal_debug_level > 2)
+			upslogx(LOG_NOTICE, "Failed to read pid from %s", pidfn);
 		fclose(pidf);
 		return -2;
 	}
