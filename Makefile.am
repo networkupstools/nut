@@ -175,7 +175,7 @@ spellcheck spellcheck-interactive:
 # such as PDF generators, so it should only be called at developer's
 # discretion, choice and risk. The "check-man" targets covers source
 # texts, man pages and HTML rendering of man pages, as enabled by tools.
-doc spellcheck-sortdict \
+doc spellcheck-sortdict spellcheck-report-dict-usage \
 all-docs check-docs \
 man all-man man-man check-man man-html all-html:
 	+cd $(abs_top_builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/.prep-src-docs
