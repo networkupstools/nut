@@ -4,7 +4,7 @@
  *
  * @author Copyright (C) 2016 Eaton
  *         Copyright (C) 2016 Arnaud Quette <aquette.dev@gmail.com>
- *         Copyright (C) 2021 Jim Klimov <jimklimov+nut@gmail.com>
+ *         Copyright (C) 2021-2024 Jim Klimov <jimklimov+nut@gmail.com>
  *
  *      The logic of this file is ripped from mge-shut driver (also from
  *      Arnaud Quette), which is a "HID over serial link" UPS driver for
@@ -33,7 +33,7 @@
 #include "nut_stdint.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.47"
+#define USB_DRIVER_VERSION	"0.48"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -872,6 +872,7 @@ static int nut_libusb_strerror(const int ret, const char *desc)
 		return 0;
 #endif /* WIN32 */
 
+	case LIBUSB_SUCCESS:         /** TOTHINK: Should this be quiet? */
 	case LIBUSB_ERROR_OTHER:     /** Other error */
 	default:                     /** Undetermined, log only */
 		upslogx(LOG_DEBUG, "%s: %s", desc, libusb_strerror((enum libusb_error)ret));
@@ -1021,6 +1022,18 @@ static int nut_libusb_get_string(
 
 	ret = libusb_get_string_descriptor_ascii(udev, (uint8_t)StringIdx,
 		(unsigned char*)buf, (int)buflen);
+
+	/** 0 can be seen as an empty string, or as LIBUSB_SUCCESS for
+	 * logging below - also tends to happen */
+	if (ret == 0) {
+		size_t len = strlen(buf);
+		upsdebugx(2, "%s: libusb_get_string_descriptor_ascii() returned "
+			"0 (might be just LIBUSB_SUCCESS code), "
+			"actual buf length is %" PRIuSIZE, __func__, len);
+		/* if (len) */
+			return len;
+		/* else may log "nut_libusb_get_string: Success" and return 0 below */
+	}
 
 	return nut_libusb_strerror(ret, __func__);
 }
