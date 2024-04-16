@@ -1384,6 +1384,8 @@
 
 "Viewsonic"	"ups"	"1"	"PowerES"	"420E"	"optiups"
 
+"Visench"	"ups"	"1"	"C1K"	"(/dev/ttyCH341USB0 with USB ID 1a86:7523)"	"nutdrv_qx"	# https://github.com/networkupstools/nut/issues/2395 : Visench C1K; mfr/model are strings of `2`'s; USB ID identifies as QinHeng Electronics CH340 serial converter chip
+
 "Vivaldi"	"ups"	"1"	"EA200 LED"	"USB"	"richcomm_usb"
 
 "Voltronic Power"	"ups"	"2"	"Apex 1KVA"	"Serial"	"nutdrv_qx"
