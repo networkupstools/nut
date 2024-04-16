@@ -229,6 +229,9 @@ static void help_msg(void)
 	printf("                   - reload-or-exit: re-read configuration files (exit the old\n");
 	printf("                     driver instance if needed, so an external caller like the\n");
 	printf("                     systemd or SMF frameworks would start another copy)\n");
+	printf("                   - exit: tell the currently running driver instance to just exit\n");
+	printf("                     (so an external caller like the new driver instance, or the\n");
+	printf("                     systemd or SMF frameworks would start another copy)\n");
 	/* NOTE for FIXME above: PID-signalling is non-WIN32-only for us */
 	printf("  -P <pid>       - send the signal above to specified PID (bypassing PID file)\n");
 # endif	/* WIN32 */
@@ -746,6 +749,11 @@ int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 				NUT_STRARG(upsname));
 			return STAT_INSTCMD_INVALID;
 		}
+	}
+
+	if (!strcmp(cmdname, "driver.exit")) {
+		set_reload_flag(SIGCMD_EXIT);
+		return STAT_INSTCMD_HANDLED;
 	}
 
 #ifndef WIN32
@@ -1551,6 +1559,15 @@ static void set_reload_flag(
 			break;
 #endif
 
+		case SIGCMD_EXIT:	/* Not even a signal, but a socket protocol action,
+			* and not a reload either - just applied here for consistency */
+/*
+			reload_flag = 15;
+			break;
+*/
+			set_exit_flag(-2);
+			return;
+
 		case SIGCMD_RELOAD:	/* SIGHUP */
 		case SIGCMD_RELOAD_OR_ERROR:	/* Not even a signal, but a socket protocol action */
 		default:
@@ -1564,10 +1581,13 @@ static void set_reload_flag(
 	if (sig && !strcmp(sig, SIGCMD_RELOAD_OR_ERROR)) {
 		/* reload what we can, log what needs a restart so skipped */
 		reload_flag = 1;
+	} else if (sig && !strcmp(sig, SIGCMD_EXIT)) {
+		set_exit_flag(-2);
+		return;
 	} else {
 		/* non-fatal reload as a fallback */
 		reload_flag = 1;
-        }
+	}
 
 	upsdebugx(1, "%s: raising reload flag due to command %s => reload_flag=%d",
 		__func__, sig, reload_flag);
@@ -1813,6 +1833,10 @@ int main(int argc, char **argv)
 				if (!strncmp(optarg, "reload-or-error", strlen(optarg))) {
 					cmd = SIGCMD_RELOAD_OR_ERROR;
 				}
+				else
+				if (!strncmp(optarg, "exit", strlen(optarg))) {
+					cmd = SIGCMD_EXIT;
+				}
 #ifndef WIN32
 				else
 				if (!strncmp(optarg, "reload", strlen(optarg))) {
@@ -1835,9 +1859,14 @@ int main(int argc, char **argv)
 						"Error: unknown argument to option -%c. Try -h for help.", i);
 				}
 #ifndef WIN32
-				upsdebugx(1, "Will send signal %d (%s) for command '%s' "
-					"to already-running driver %s-%s (if any) and exit",
-					cmd, strsignal(cmd), optarg, progname, upsname);
+				if (cmd > 0)
+					upsdebugx(1, "Will send signal %d (%s) for command '%s' "
+						"to already-running driver %s-%s (if any) and exit",
+						cmd, strsignal(cmd), optarg, progname, upsname);
+				else
+					upsdebugx(1, "Will send request for command '%s' (internal code %d) "
+						"to already-running driver %s-%s (if any) and exit",
+						optarg, cmd, progname, upsname);
 #else
 				upsdebugx(1, "Will send request '%s' for command '%s' "
 					"to already-running driver %s-%s (if any) and exit",
@@ -2008,36 +2037,173 @@ int main(int argc, char **argv)
 	/* Handle reload-or-error over socket protocol with
 	 * the running older driver instance */
 #ifndef WIN32
-	if (cmd == SIGCMD_RELOAD_OR_ERROR)
+	if (cmd == SIGCMD_RELOAD_OR_ERROR || cmd == SIGCMD_EXIT)
 #else
-	if (cmd && !strcmp(cmd, SIGCMD_RELOAD_OR_ERROR))
+	if (cmd && (!strcmp(cmd, SIGCMD_RELOAD_OR_ERROR) || !strcmp(cmd, SIGCMD_EXIT)))
 #endif  /* WIN32 */
 	{	/* Not a signal, but a socket protocol action */
 		ssize_t	cmdret = -1;
-		char	buf[LARGEBUF];
+		char	buf[LARGEBUF], cmdbuf[LARGEBUF];
 		struct timeval	tv;
+		char *cmdname = NULL;
+
+#ifndef WIN32
+		if (cmd == SIGCMD_RELOAD_OR_ERROR)
+#else
+		if (!strcmp(cmd, SIGCMD_RELOAD_OR_ERROR))
+#endif
+			cmdname = "reload-or-error";
+		else
+#ifndef WIN32
+		if (cmd == SIGCMD_EXIT)
+#else
+		if (!strcmp(cmd, SIGCMD_EXIT))
+#endif
+			cmdname = "exit";
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_OVERFLOW || defined HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION)
+# pragma GCC diagnostic push
+# ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_OVERFLOW
+#  pragma GCC diagnostic ignored "-Wformat-overflow"
+# endif
+# ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+#  pragma GCC diagnostic ignored "-Wformat-truncation"
+# endif
+#endif
+		/* Some compilers do detect a chance of cmdname=NULL with
+		 * NUT builds on systems where libc does not care and prints
+		 * the right thing anyway (so NUT_STRARG macro is trivial).
+		 * In this weird case gotta silence the static checks.
+		 */
+		upsdebugx(1, "Signalling UPS [%s]: driver.%s",
+			upsname, NUT_STRARG(cmdname));
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_OVERFLOW || defined HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION)
+# pragma GCC diagnostic pop
+#endif
+
+		if (!cmdname)
+			fatalx(EXIT_FAILURE, "Command not recognized");
 
 		/* Post the query and wait for reply */
 		/* FIXME: coordinate with pollfreq? */
 		tv.tv_sec = 15;
 		tv.tv_usec = 0;
+		snprintf(cmdbuf, sizeof(cmdbuf), "INSTCMD driver.%s\n", cmdname);
 		cmdret = upsdrvquery_oneshot(progname, upsname,
-			"INSTCMD driver.reload-or-error\n",
-			buf, sizeof(buf), &tv);
+			cmdbuf, buf, sizeof(buf), &tv);
 
 		if (cmdret < 0) {
 			upslog_with_errno(LOG_ERR, "Socket dialog with the other driver instance");
 		} else {
 			/* TODO: handle buf reply contents */
-			upslogx(LOG_INFO, "Request to reload-or-error returned code %" PRIiSIZE, cmdret);
+			upslogx(LOG_INFO, "Request for driver to %s returned code %" PRIiSIZE,
+				cmdname, cmdret);
 		}
 
 		/* exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE); */
 		exit(((cmdret < 0) || (((uintmax_t)cmdret) > ((uintmax_t)INT_MAX))) ? 255 : (int)cmdret);
 	}
 
+	/* If we would be starting as a driver (not to command a sibling),
+	 * any earlier instances should be turned off - to release access
+	 * to hardware connections and to generally avoid any confusion.
+	 * Further below we would try to use a PID file (if at all used
+	 * and still present) to terminate an earlier instance, but first
+	 * we would try to use the Unix socket protocol to tell that
+	 * earlier instance to exit cleanly. After all, this socket file
+	 * should exist for the driver to talk to the NUT data server...
+	 */
+
 	/* Hush the fopen(pidfile) message but let "real errors" be seen */
 	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_FOPEN_PIDFILE - 1;
+
+	if (!cmd && (!do_forceshutdown)) {
+		ssize_t	cmdret = -1;
+		char	buf[LARGEBUF];
+		struct timeval	tv;
+
+		upsdebugx(1, "Signalling UPS [%s]: driver.exit (quietly, no fuss if no driver is running or responding)", upsname);
+
+		/* Post the query and wait for reply */
+		/* FIXME: coordinate with pollfreq? */
+		tv.tv_sec = 15;
+		tv.tv_usec = 0;
+
+		/* Hush the messages about initial connection failure, but
+		 * let "real errors" from started communication be seen.
+		 * It is okay if no driver instance is running at this
+		 * point, but if it is running but not communicating -
+		 * that is another story.
+		 */
+		nut_upsdrvquery_debug_level = NUT_UPSDRVQUERY_DEBUG_LEVEL_CONNECT - 1;
+		cmdret = upsdrvquery_oneshot(progname, upsname,
+			"INSTCMD driver.exit\n",
+			buf, sizeof(buf), &tv);
+
+		upsdebugx(1, "Request for other driver to exit returned code %" PRIiSIZE,
+			cmdret);
+		if (cmdret < 0) {
+			/* Failed to communicate, assume no other instance runs */
+			upsdebug_with_errno(1, "Socket dialog with the other driver instance "
+				"(may be absent) failed");
+		} else {
+			/* NOTE: Successful dialog does not mean the other
+			 * driver instance has stopped (just that it responded
+			 * "yes, sir!" - actual wind-down can take some time.
+			 */
+			upslogx(LOG_WARNING, "Duplicate driver instance detected (local %s exists)! "
+				"Asked the other driver nicely to self-terminate!",
+#ifndef WIN32
+				"Unix socket"
+#else
+				"pipe"
+#endif
+				);
+
+			for (i = 10; i > 0; i--) {
+				if (exit_flag)
+					fatalx(EXIT_FAILURE, "Got a break signal ourselves during attempt to terminate other driver");
+
+				/* Allow driver some time to quit, and
+				 * retry until it does not respond anymore */
+				sleep(5);
+
+				if (exit_flag)
+					fatalx(EXIT_FAILURE, "Got a break signal ourselves during attempt to terminate other driver");
+
+				tv.tv_sec = 3;
+				tv.tv_usec = 0;
+				cmdret = upsdrvquery_oneshot(progname, upsname,
+					"INSTCMD driver.exit\n",
+					buf, sizeof(buf), &tv);
+				upsdebugx(1, "Subsequent request for other driver to exit returned code %"
+					PRIiSIZE, cmdret);
+
+				if (cmdret < 0)
+					break;
+			}
+
+			if (i < 1) {
+				upslogx(LOG_WARNING, "Duplicate driver instance did not respond to termination requests! "
+					"Is it stuck or from an older NUT release? "
+					"Will retry via PID file and signals, if available.");
+				/* NOTE: We would try via PID in any case,
+				 * but as we report a fault here - let the
+				 * user know that not all is lost right now :)
+				 */
+
+				/* Restore the signal errors verbosity, so that
+				 * e.g. follow-up fopen() issues can be seen -
+				 * we did probably encounter a sibling driver
+				 * instance after all, so can talk about it.
+				 */
+				nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_DEFAULT;
+			}
+		}
+
+		/* Restore the socket protocol errors verbosity */
+		nut_upsdrvquery_debug_level = NUT_UPSDRVQUERY_DEBUG_LEVEL_DEFAULT;
+	}
 
 #ifndef WIN32
 	/* Setup PID file to receive signals to communicate with this driver
@@ -2161,6 +2327,9 @@ int main(int argc, char **argv)
 
 			upsdebugx(1, "Signal sent without errors, allow the other driver instance some time to quit");
 			sleep(5);
+
+			if (exit_flag)
+				fatalx(EXIT_FAILURE, "Got a break signal during attempt to terminate other driver");
 		}
 
 		if (i > 0) {

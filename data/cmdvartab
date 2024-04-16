@@ -194,6 +194,7 @@ VARDESC driver.version.usb "USB library version"
 # VARDESC driver.parameter.[[:alpha:]]+ "Driver parameter: <name>"
 # VARDESC driver.flag.[[:alpha:]]+ "Driver flag: <name>"
 
+CMDDESC driver.exit "Tell the driver daemon to just exit its program (so the caller or service management framework can restart it with new options)"
 CMDDESC driver.killpower "Tell the driver daemon to initiate UPS shutdown; should be unlocked with driver.flag.allow_killpower option or variable setting"
 CMDDESC driver.reload "Reload running driver configuration from the file system (only works for changes in some options)"
 CMDDESC driver.reload-or-error "Reload running driver configuration from the file system (only works for changes in some options); return an error if something changed and could not be applied live (so the caller can restart it with new options)"
