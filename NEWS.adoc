@@ -59,6 +59,10 @@ https://github.com/networkupstools/nut/milestone/11
      (similar to `runtimecal` in some other drivers, may be refactored
      to that configuration and logic model in later NUT releases)
 
+ - USB drivers could log `(nut_)libusb_get_string: Success` due to either
+   reading an empty string or getting a success code `0` from libusb.
+   This difference should now be better logged, and not into syslog. [#2399]
+
  - upsmon: it was realized that the `POWERDOWNFLAG` must be explicitly set in
    the configuration file, there is no built-in default in the binary program
    (the settings facilitated by the `configure` script during build "only"
