@@ -50,6 +50,7 @@ Makefile.in
 /test-driver
 *-spellchecked
 *-prepped
+*.usage-report
 *.adoc-parsed
 *.adoc*.tmp
 *.txt*.tmp
