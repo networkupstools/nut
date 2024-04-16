@@ -401,6 +401,29 @@ POWERDOWNFLAG "@POWERDOWNFLAG@"
 OFFDURATION 30
 
 # --------------------------------------------------------------------------
+# OBLBDURATION - put "OB LB" state into effect if it persists for this many
+# seconds
+#
+# NUT normally raises alarms for immediate shutdown (FSD) for consumers of an
+# UPS known to be on battery (OB) and achieving the low battery status (LB),
+# if that is their last remaining power source to satisfy their MINSUPPLIES
+# setting. In some special cases, users may want to delay raising the alarm
+# (using the OBLBDURATION option) at their discretion and risk of an ungraceful
+# shutdown.
+#
+# A non-positive value makes the FSD effect of detected "OB LB" state immediate.
+# Built-in default value is 0 (seconds).
+#
+# NOTE: If both `OBLBDURATION` and `HOSTSYNC` options are set on the same
+# (secondary) `upsmon` client system, and `HOSTSYNC` is shorter, it would be
+# effectively ignored: `upsmon` would wait for up to `OBLBDURATION` seconds
+# for the "OB LB" state to clear, and then the secondary client logic would
+# fall through to immediate shutdown. If the primary system issues an FSD on
+# this UPS, that would take an even higher-priority effect as soon as seen.
+#
+#OBLBDURATION 0
+
+# --------------------------------------------------------------------------
 # RBWARNTIME - replace battery warning time in seconds
 #
 # upsmon will normally warn you about a battery that needs to be replaced

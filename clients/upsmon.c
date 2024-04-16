@@ -3,7 +3,7 @@
    Copyright (C)
      1998  Russell Kroll <rkroll@exploits.org>
      2012  Arnaud Quette <arnaud.quette.free.fr>
-     2020-2023  Jim Klimov <jimklimov+nut@gmail.com>
+     2020-2024  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -85,6 +85,20 @@ static	int	pollfail_log_throttle_max = -1;
 	 * logged for adding similar support for just some outlets/groups.
 	 */
 static	int	offdurationtime = 30;
+
+	/* Normally we raise alarms for immediate shutdown for consumers
+	 * of an UPS known to be on battery (OB) and achieving the low
+	 * battery status (LB), if that is their last remaining power
+	 * source to satisfy their MINSUPPLIES setting.
+	 * In some cases, users may want to delay raising the alarm
+	 * (using the OBLBDURATION option) at their discretion and risk
+	 * of an ungraceful shutdown.
+	 * UPS state polling frequency will be the minimum of this delay
+	 * and POLLFREQALERT (as normally applied for "OB" devices) when
+	 * this situation is in place.
+	 * Non-positive values are currently treated as 0 (immediate FSD).
+	 */
+static	int	oblbdurationtime = 0;
 
 	/* secondary hosts are given 15 sec by default to logout from upsd */
 static	int	hostsync = 15;
@@ -1068,6 +1082,9 @@ static int is_ups_critical(utype_t *ups)
 	if (flag_isset(ups->status, ST_FSD))
 		return 1;
 
+	/* Used in a number of clauses below */
+	time(&now);
+
 	if (ups->commstate == 0) {
 		if (flag_isset(ups->status, ST_CAL)) {
 			upslogx(LOG_WARNING,
@@ -1117,8 +1134,23 @@ static int is_ups_critical(utype_t *ups)
 	/* not OB or not LB = not critical yet */
 	if ((!flag_isset(ups->status, ST_ONBATT))
 	|| (!flag_isset(ups->status, ST_LOWBATT))
-	)
+	) {
+		if (ups->oblbsince > 0) {
+			upslogx(LOG_WARNING,
+				"%s: seems that UPS [%s] returned from OB+LB "
+				"state now after spending %" PRIiMAX
+				" seconds in it",
+				__func__, ups->upsname,
+				(intmax_t)(now - ups->oblbsince));
+			ups->oblbsince = 0;
+
+			if (flag_isset(ups->status, ST_ONBATT))
+				sleepval = pollfreqalert;
+			else
+				sleepval = pollfreq;
+		}
 		return 0;
+	}
 
 	/* must be OB+LB now */
 
@@ -1135,17 +1167,90 @@ static int is_ups_critical(utype_t *ups)
 		return 0;
 	}
 
+	if (oblbdurationtime > 0) {
+		/* User configured this upsmon instance to delay
+		 * issuing or processing FSD alerts */
+		if (ups->oblbsince < 1 && now > 0) {
+			/* We would bump polling frequency if needed,
+			 * to check the UPS state as soon as needed
+			 * to see if this requested OB+LB duration
+			 * has elapsed (every 1 sec in extreme case).
+			 * Using GCD algorithm inspired by
+			 *   https://www.programiz.com/c-programming/examples/hcf-gcd
+			 */
+			int n1 = (pollfreqalert > 0) ? pollfreqalert : 1;
+			int n2 = (oblbdurationtime > 0) ? oblbdurationtime : 1;
+
+			/* Find GCD: */
+			while (n1 != n2) {
+				if (n1 > n2)
+					n1 -= n2;
+				else
+					n2 -= n1;
+			}
+			sleepval = (n1 > 0) ? n1 : 1;
+
+			upslogx(LOG_WARNING,
+				"%s: seems that UPS [%s] is OB+LB now, "
+				"but OBLBDURATION=%d - not declaring "
+				"a critical state just now, but will "
+				"bump the polling rate to %d (from "
+				"POLLFREQALERT=%d) and wait to see "
+				"if this situation dissipates soon",
+				__func__, ups->upsname,
+				oblbdurationtime,
+				sleepval,
+				pollfreqalert);
+
+			if (!flag_isset(ups->status, ST_PRIMARY)
+			&& hostsync > oblbdurationtime
+			) {
+				upslogx(LOG_WARNING,
+					"%s: HOSTSYNC=%d exceeds OBLBDURATION "
+					"and would be effectively ignored on "
+					"this secondary upsmon client system",
+					__func__, hostsync);
+			}
+
+			ups->oblbsince = now;
+
+			return 0;
+		}
+
+		/* Already looping in OB LB duration? */
+		if (now > 0 && (now - ups->oblbsince < oblbdurationtime)) {
+			upslogx(LOG_WARNING,
+				"%s: seems that UPS [%s] is still "
+				"OB+LB for %" PRIiMAX " sec out of %d delay",
+				__func__, ups->upsname,
+				(intmax_t)(now - ups->oblbsince),
+				oblbdurationtime);
+			return 0;
+		}
+
+		upslogx(LOG_WARNING,
+			"%s: seems that UPS [%s] is still "
+			"OB+LB for %" PRIiMAX " sec out of %d delay - "
+			"proceeding with shutdown alerts",
+			__func__, ups->upsname,
+			(intmax_t)(now - ups->oblbsince),
+			oblbdurationtime);
+
+		/* Timer expired, fall through to raise FSD on this primary
+		 * or handle it on the secondary */
+	}
+
 	/* if we're a primary, declare it critical so we set FSD on it */
-	if (flag_isset(ups->status, ST_PRIMARY))
+	if (flag_isset(ups->status, ST_PRIMARY)) {
 		return 1;
+	}
 
-	/* must be a secondary now */
-
-	/* FSD isn't set, so the primary hasn't seen it yet */
-
-	time(&now);
-
-	/* give the primary up to HOSTSYNC seconds before shutting down */
+	/* We must be a secondary now, in OB+LB situation, and
+	 * FSD isn't set - so the primary hasn't seen it yet.
+	 * Give the primary up to HOSTSYNC seconds to report it
+	 * before commencing to shut down this secondary system
+	 * anyway.
+	 */
 	if ((now - ups->lastnoncrit) > hostsync) {
 		upslogx(LOG_WARNING, "Giving up on the primary for UPS [%s] "
 			"after %d sec since last comms",
@@ -1153,7 +1258,8 @@ static int is_ups_critical(utype_t *ups)
 		return 1;
 	}
 
-	/* there's still time left, maybe OB+LB will go away next time we look? */
+	/* secondary: there's still time left, maybe OB+LB will go away next
+	 * time we look? */
 	return 0;
 }
 
@@ -1716,6 +1822,14 @@ static int parse_conf_arg(size_t numargs, char **arg)
 	/* OFFDURATION <num> */
 	if (!strcmp(arg[0], "OFFDURATION")) {
 		offdurationtime = atoi(arg[1]);
+		return 1;
+	}
+
+	/* OBLBDURATION <num> */
+	if (!strcmp(arg[0], "OBLBDURATION")) {
+		oblbdurationtime = atoi(arg[1]);
+		if (oblbdurationtime < 1)
+			oblbdurationtime = 0;
 		return 1;
 	}
 
