@@ -478,7 +478,7 @@ updatecfg_upsmon_supplies() {
     sed -e 's,^\(MINSUPPLIES\) [0-9][0-9]*$,\1 '"$NUMSUP"',' \
         -e 's,^\(MONITOR .*\) [0-9][0-9]* \(.*\)$,\1 '"$NUMSUP"' \2,' \
         < "$NUT_CONFPATH/upsmon.conf" > "$NUT_CONFPATH/upsmon.conf.tmp" \
-        && cat "$NUT_CONFPATH/upsmon.conf.tmp" "$NUT_CONFPATH/upsmon.conf" \
+        && ( cat "$NUT_CONFPATH/upsmon.conf.tmp" > "$NUT_CONFPATH/upsmon.conf" ) \
         && rm -f "$NUT_CONFPATH/upsmon.conf.tmp"
 }
 
