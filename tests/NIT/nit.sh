@@ -22,7 +22,7 @@
 # ksh, busybox sh...)
 #
 # Copyright
-#	2022-2023 Jim Klimov <jimklimov+nut@gmail.com>
+#	2022-2024 Jim Klimov <jimklimov+nut@gmail.com>
 #
 # License: GPLv2+
 
@@ -461,6 +461,22 @@ EOF
 
 ### upsmon.conf: ##################################################
 
+updatecfg_upsmon_supplies() {
+    NUMSUP="${1-}"
+    [ -n "$NUMSUP" ] && [ "$NUMSUP" -ge 0 ] || NUMSUP=1
+
+    [ -s "$NUT_CONFPATH/upsmon.conf" ] \
+    || die "Failed to rewrite config - not populated yet: upsmon.conf"
+
+    # NOTE: "sed -i file" is not ubiquitously portable
+    # Using "cat" to retain FS permissions maybe set above
+    sed -e 's,^\(MINSUPPLIES\) [0-9][0-9]*$,\1 '"$NUMSUP"',' \
+        -e 's,^\(MONITOR .*\) [0-9][0-9]* \(.*\)$,\1 '"$NUMSUP"' \2,' \
+        < "$NUT_CONFPATH/upsmon.conf" > "$NUT_CONFPATH/upsmon.conf.tmp" \
+        && cat "$NUT_CONFPATH/upsmon.conf.tmp" "$NUT_CONFPATH/upsmon.conf" \
+        && rm -f "$NUT_CONFPATH/upsmon.conf.tmp"
+}
+
 generatecfg_upsmon_trivial() {
     # Populate the configs for the run
     (  echo 'MINSUPPLIES 0' > "$NUT_CONFPATH/upsmon.conf" || exit
@@ -477,30 +493,50 @@ generatecfg_upsmon_trivial() {
     else
         chmod 640 "$NUT_CONFPATH/upsmon.conf"
     fi
+
+    if [ $# -gt 0 ] ; then
+        updatecfg_upsmon_supplies "$1"
+    fi
 }
 
 generatecfg_upsmon_master() {
     generatecfg_upsmon_trivial
     echo "MONITOR 'dummy@localhost:$NUT_PORT' 0 'dummy-admin-m' '${TESTPASS_UPSMON_PRIMARY}' master" >> "$NUT_CONFPATH/upsmon.conf" \
     || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
+
+    if [ $# -gt 0 ] ; then
+        updatecfg_upsmon_supplies "$1"
+    fi
 }
 
 generatecfg_upsmon_primary() {
     generatecfg_upsmon_trivial
     echo "MONITOR 'dummy@localhost:$NUT_PORT' 0 'dummy-admin' '${TESTPASS_UPSMON_PRIMARY}' primary" >> "$NUT_CONFPATH/upsmon.conf" \
     || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
+
+    if [ $# -gt 0 ] ; then
+        updatecfg_upsmon_supplies "$1"
+    fi
 }
 
 generatecfg_upsmon_slave() {
     generatecfg_upsmon_trivial
     echo "MONITOR 'dummy@localhost:$NUT_PORT' 0 'dummy-user-s' '${TESTPASS_UPSMON_SECONDARY}' slave" >> "$NUT_CONFPATH/upsmon.conf" \
     || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
+
+    if [ $# -gt 0 ] ; then
+        updatecfg_upsmon_supplies "$1"
+    fi
 }
 
 generatecfg_upsmon_secondary() {
     generatecfg_upsmon_trivial
     echo "MONITOR 'dummy@localhost:$NUT_PORT' 0 'dummy-user' '${TESTPASS_UPSMON_SECONDARY}' secondary" >> "$NUT_CONFPATH/upsmon.conf" \
     || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
+
+    if [ $# -gt 0 ] ; then
+        updatecfg_upsmon_supplies "$1"
+    fi
 }
 
 ### ups.conf: ##################################################
