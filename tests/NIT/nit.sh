@@ -345,6 +345,34 @@ export NUT_PORT
 # Help track collisions in log, if someone else starts a test in same directory
 log_info "Using NUT_PORT=${NUT_PORT} for this test run"
 
+# This file is not used by the test code, it is an
+# aid for "DEBUG_SLEEP=X" mode so the caller can
+# quickly source needed values into their shell.
+#
+# NOTE: `set` typically wraps the values in quotes,
+# but (maybe?) not all shell implementations do.
+# Just in case, we have a fallback with single quotes.
+# FIXME: We assume no extra quoting or escaping in
+# the values when fallback is used. If this is a
+# problem on any platform (Win/Mac and spaces in
+# paths?) please investigate and fix accordingly.
+set | grep -E '^(NUT_|LD_LIBRARY_PATH|DEBUG).*=' \
+| while IFS='=' read K V ; do
+    case "$K" in
+        LD_LIBRARY_PATH_CLIENT|LD_LIBRARY_PATH_ORIG|NUT_PORT_*)
+            continue
+            ;;
+    esac
+
+    case "$V" in
+        '"'*'"'|"'"*"'")
+            printf "%s=%s\nexport %s\n\n" "$K" "$V" "$K" ;;
+        *)
+            printf "%s='%s'\nexport %s\n\n" "$K" "$V" "$K" ;;
+    esac
+done > "$NUT_CONFPATH/NIT.env"
+log_info "Populated environment variables for this run into $NUT_CONFPATH/NIT.env"
+
 ### upsd.conf: ##################################################
 
 generatecfg_upsd_trivial() {
@@ -1419,7 +1447,11 @@ if [ -n "${DEBUG_SLEEP-}" ] ; then
     fi
 
     log_separator
-    log_info "Sleeping now as asked (for ${DEBUG_SLEEP} seconds starting `date -u`), so you can play with the driver and server running; hint: export NUT_PORT=$NUT_PORT"
+    log_info "Sleeping now as asked (for ${DEBUG_SLEEP} seconds starting `date -u`), so you can play with the driver and server running"
+    log_info "Populated environment variables for this run into a file so you can source them: . '$NUT_CONFPATH/NIT.env'"
+    printf "NIT_SCRIPT_PID='%s'\nexport NIT_SCRIPT_PID\n" "$$" >> "$NUT_CONFPATH/NIT.env"
+    log_separator
+    cat "$NUT_CONFPATH/NIT.env"
     log_separator
 
     sleep "${DEBUG_SLEEP}"
