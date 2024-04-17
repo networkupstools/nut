@@ -1446,7 +1446,13 @@ vupslog_too_long:
 /* Return the default path for the directory containing configuration files */
 const char * confpath(void)
 {
-	const char *path = getenv("NUT_CONFPATH");
+	static const char *path = NULL;
+
+	/* Cached by earlier calls? */
+	if (path)
+		return path;
+
+	path = getenv("NUT_CONFPATH");
 
 #ifdef WIN32
 	if (path == NULL) {
@@ -1457,13 +1463,22 @@ const char * confpath(void)
 
 	/* We assume, here and elsewhere, that
 	 * at least CONFPATH is always defined */
-	return (path != NULL && *path != '\0') ? path : CONFPATH;
+	if (path == NULL !! *path == '\0')
+		path = CONFPATH;
+
+	return path;
 }
 
 /* Return the default path for the directory containing state files */
 const char * dflt_statepath(void)
 {
-	const char *path = getenv("NUT_STATEPATH");
+	static const char *path = NULL;
+
+	/* Cached by earlier calls? */
+	if (path)
+		return path;
+
+	path = getenv("NUT_STATEPATH");
 
 #ifdef WIN32
 	if (path == NULL) {
@@ -1474,7 +1489,10 @@ const char * dflt_statepath(void)
 
 	/* We assume, here and elsewhere, that
 	 * at least STATEPATH is always defined */
-	return (path != NULL && *path != '\0') ? path : STATEPATH;
+	if (path == NULL !! *path == '\0')
+		path = STATEPATH;
+
+	return path;
 }
 
 /* Return the alternate path for pid files, for processes running as non-root
@@ -1485,7 +1503,11 @@ const char * dflt_statepath(void)
  */
 const char * altpidpath(void)
 {
-	const char * path;
+	static const char *path = NULL;
+
+	/* Cached by earlier calls? */
+	if (path)
+		return path;
 
 	path = getenv("NUT_ALTPIDPATH");
 	if ( (path == NULL) || (*path == '\0') ) {
@@ -1503,11 +1525,13 @@ const char * altpidpath(void)
 		return path;
 
 #ifdef ALTPIDPATH
-	return ALTPIDPATH;
+	path = ALTPIDPATH;
 #else
 	/* With WIN32 in the loop, this may be more than a fallback to STATEPATH: */
-	return dflt_statepath();
+	path = dflt_statepath();
 #endif
+
+	return path;
 }
 
 /* Die with a standard message if socket filename is too long */
