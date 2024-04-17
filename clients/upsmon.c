@@ -2100,9 +2100,9 @@ static void loadconfig(void)
 		upslogx(LOG_WARNING, "No POWERDOWNFLAG value was configured in %s!",
 			configfile);
 		upslogx(LOG_INFO,
-			"Should be a path to file that is normally writeable "
-			"for root user, and remains at least readable late "
-			"in shutdown after all unmounting completes.");
+			"POWERDOWNFLAG should be a path to file that is normally "
+			"writeable for root user, and remains at least readable "
+			"late in shutdown after all unmounting completes.");
 	}
 }
 
