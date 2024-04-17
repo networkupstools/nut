@@ -1433,6 +1433,21 @@ upsmon_start_loop() {
     return 1
 }
 
+sandbox_start_upsmon_master() {
+    # Optional arg can specify amount of power sources to MONITOR and require
+    if isPidAlive "$PID_UPSMON" ; then
+        # FIXME: Kill and restart? Reconfigure and reload?
+        return 0
+    fi
+
+    sandbox_generate_configs
+    generatecfg_upsmon_master "$@"
+
+    log_info "Starting UPSMON as master for sandbox"
+
+    upsmon_start_loop "sandbox"
+}
+
 ####################################
 
 testgroup_sandbox() {
@@ -1484,6 +1499,16 @@ testgroup_sandbox_nutscanner() {
     sandbox_forget_configs
 }
 
+testgroup_sandbox_upsmon_master() {
+    # Arrange for quick test iterations
+    # Optional arg can specify amount of power sources to MONITOR and require
+    testcase_sandbox_start_drivers_after_upsd
+    sandbox_start_upsmon_master "$@"
+
+    log_separator
+    sandbox_forget_configs
+}
+
 ################################################################
 
 case "${NIT_CASE}" in
@@ -1497,7 +1522,10 @@ case "${NIT_CASE}" in
         log_warn "Be sure to have previously run with DEBUG_SLEEP and"
         log_warn "   have exported the NUT_PORT upsd is listening on!"
         log_warn "========================================================"
-        "${NIT_CASE}" ;;
+        # NOTE: Not quoted, can have further arguments
+        # e.g. NIT_CASE="testgroup_sandbox_upsmon_master 1"
+        eval ${NIT_CASE}
+        ;;
     generatecfg_*|is*)
         # NOTE: Keep in sync with TESTDIR cleanup above
         # (at start-up and at the exit-trap) and stop_daemons below
