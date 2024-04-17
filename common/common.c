@@ -447,7 +447,7 @@ void writepid(const char *name)
 	if (*name == '/')
 		snprintf(fn, sizeof(fn), "%s", name);
 	else
-		snprintf(fn, sizeof(fn), "%s/%s.pid", PIDPATH, name);
+		snprintf(fn, sizeof(fn), "%s/%s.pid", rootpidpath(), name);
 
 	mask = umask(022);
 	pidf = fopen(fn, "w");
@@ -661,7 +661,7 @@ int sendsignal(const char *progname, int sig)
 {
 	char	fn[SMALLBUF];
 
-	snprintf(fn, sizeof(fn), "%s/%s.pid", PIDPATH, progname);
+	snprintf(fn, sizeof(fn), "%s/%s.pid", rootpidpath(), progname);
 
 	return sendsignalfn(fn, sig);
 }
@@ -1463,7 +1463,7 @@ const char * confpath(void)
 
 	/* We assume, here and elsewhere, that
 	 * at least CONFPATH is always defined */
-	if (path == NULL !! *path == '\0')
+	if (path == NULL || *path == '\0')
 		path = CONFPATH;
 
 	return path;
@@ -1489,7 +1489,7 @@ const char * dflt_statepath(void)
 
 	/* We assume, here and elsewhere, that
 	 * at least STATEPATH is always defined */
-	if (path == NULL !! *path == '\0')
+	if (path == NULL || *path == '\0')
 		path = STATEPATH;
 
 	return path;
@@ -1530,6 +1530,36 @@ const char * altpidpath(void)
 	/* With WIN32 in the loop, this may be more than a fallback to STATEPATH: */
 	path = dflt_statepath();
 #endif
+
+	return path;
+}
+
+/* Return the main path for pid files, for processes running as root, such
+ * as upsmon. Typically this is the built-in PIDPATH (from configure script)
+ * but certain use-cases such as the test suite can override it with the
+ * NUT_PIDPATH environment variable.
+ */
+const char * rootpidpath(void)
+{
+	static const char *path = NULL;
+
+	/* Cached by earlier calls? */
+	if (path)
+		return path;
+
+	path = getenv("NUT_PIDPATH");
+
+#ifdef WIN32
+	if (path == NULL) {
+		/* fall back to built-in pathname relative to binary/workdir */
+		path = getfullpath(PATH_ETC);
+	}
+#endif
+
+	/* We assume, here and elsewhere, that
+	 * at least PIDPATH is always defined */
+	if (path == NULL || *path == '\0')
+		path = PIDPATH;
 
 	return path;
 }

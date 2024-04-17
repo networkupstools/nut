@@ -21,6 +21,7 @@
  */
 
 #include "config.h"
+#include "common.h"
 
 /* For C++ code below, we do not actually use the fallback time methods
  * (on mingw mostly), but in C++ context they happen to conflict with
@@ -293,8 +294,9 @@ int Signal::send(Signal::enum_t signame, const std::string & pid_file) {
 int NutSignal::send(NutSignal::enum_t signame, const std::string & process) {
 	std::string pid_file;
 
-	// TBD: What's ALTPIDPATH and shouldn't we also consider it?
-	pid_file += PIDPATH;
+	// FIXME: What about ALTPIDPATH (for non-root daemons)
+	// and shouldn't we also consider it (e.g. try/catch)?
+	pid_file += rootpidpath();
 	pid_file += '/';
 	pid_file += process;
 	pid_file += ".pid";

@@ -264,8 +264,11 @@ const char * confpath(void);
 /* Return the default path for the directory containing state files */
 const char * dflt_statepath(void);
 
-/* Return the alternate path for pid files */
+/* Return the alternate path for pid files (non-root daemons) */
 const char * altpidpath(void);
+
+/* Return the main path for pid files (root daemons like upsmon) */
+const char * rootpidpath(void);
 
 /* Die with a standard message if socket filename is too long */
 void check_unix_socket_filename(const char *fn);

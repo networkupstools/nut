@@ -80,6 +80,11 @@ https://github.com/networkupstools/nut/milestone/11
    * added an `OBLBDURATION` (seconds) setting to optionally delay raising
      the alarm for immediate shutdown in critical situation. [#321]
 
+ - common code: root-owned daemons now use not the hard-coded `PIDPATH` value
+   set by the `configure` script during build, but can override it with a
+   `NUT_PIDPATH` environment variable in certain use-cases (such as tests).
+   [#2407]
+
 
 Release notes for NUT 2.8.2 - what's new since 2.8.1
 ----------------------------------------------------
