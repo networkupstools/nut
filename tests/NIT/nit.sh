@@ -1462,6 +1462,21 @@ case "${NIT_CASE}" in
         log_warn "   have exported the NUT_PORT upsd is listening on!"
         log_warn "========================================================"
         "${NIT_CASE}" ;;
+    generatecfg_*|is*)
+        log_warn "========================================================"
+        log_warn "You asked to run just a specific helper method: '${NIT_CASE}'"
+        log_warn "Populated environment variables for this run into a file so you can source them: . '$NUT_CONFPATH/NIT.env'"
+        log_warn "Notably, NUT_CONFPATH='$NUT_CONFPATH' now"
+        log_warn "========================================================"
+        # NOTE: Not quoted, can have further arguments
+        eval ${NIT_CASE}
+        if [ $? = 0 ] ; then
+            PASSED="`expr $PASSED + 1`"
+        else
+            FAILED="`expr $FAILED + 1`"
+            FAILED_FUNCS="$FAILED_FUNCS $NIT_CASE"
+        fi
+        ;;
     "") # Default test groups:
         testgroup_upsd_invalid_configs
         testgroup_upsd_questionable_configs
