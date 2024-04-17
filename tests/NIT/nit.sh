@@ -390,7 +390,7 @@ EOF
         chmod 640 "$NUT_CONFPATH/upsd.conf"
     fi
 
-    # Some systems listining on symbolic "localhost" actually
+    # Some systems listening on symbolic "localhost" actually
     # only bind to IPv6, and Python telnetlib resolves IPv4
     # and fails its connection tests. Others fare well with
     # both addresses in one command.
