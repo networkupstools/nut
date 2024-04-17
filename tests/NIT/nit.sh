@@ -263,7 +263,11 @@ if [ `echo "$TESTDIR" | wc -c` -gt 80 ]; then
     fi
     TESTDIR="`mktemp -d "${TMPDIR}/nit-tmp.$$.XXXXXX"`" || die "Failed to mktemp"
 else
-    rm -rf "${TESTDIR}" || true
+    # NOTE: Keep in sync with NIT_CASE handling and the exit-trap below
+    case "${NIT_CASE}" in
+        generatecfg_*|is*) ;;
+        *) rm -rf "${TESTDIR}" || true ;;
+    esac
 fi
 log_info "Using '$TESTDIR' for generated configs and state files"
 
@@ -288,7 +292,7 @@ stop_daemons() {
     PID_DUMMYUPS2=""
 }
 
-trap 'RES=$?; stop_daemons; if [ "${TESTDIR}" != "${BUILDDIR}/tmp" ] ; then rm -rf "${TESTDIR}" ; fi; exit $RES;' 0 1 2 3 15
+trap 'RES=$?; stop_daemons; if [ "${TESTDIR}" != "${BUILDDIR}/tmp" ] ; then case "${NIT_CASE}" in generatecfg_*|is*) ;; *) rm -rf "${TESTDIR}" ;; esac; fi; exit $RES;' 0 1 2 3 15
 
 NUT_STATEPATH="${TESTDIR}/run"
 NUT_PIDPATH="${TESTDIR}/run"
@@ -1469,6 +1473,8 @@ case "${NIT_CASE}" in
         log_warn "========================================================"
         "${NIT_CASE}" ;;
     generatecfg_*|is*)
+        # NOTE: Keep in sync with TESTDIR cleanup above
+        # (at start-up and at the exit-trap)
         log_warn "========================================================"
         log_warn "You asked to run just a specific helper method: '${NIT_CASE}'"
         log_warn "Populated environment variables for this run into a file so you can source them: . '$NUT_CONFPATH/NIT.env'"
