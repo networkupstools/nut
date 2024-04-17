@@ -355,6 +355,7 @@ void nut_prepare_search_paths(void);
 extern int nut_sendsignal_debug_level;
 #define NUT_SENDSIGNAL_DEBUG_LEVEL_DEFAULT 6
 #define NUT_SENDSIGNAL_DEBUG_LEVEL_FOPEN_PIDFILE 5
+#define NUT_SENDSIGNAL_DEBUG_LEVEL_KILL_SIG0PING 4
 
 extern int nut_debug_level;
 extern int nut_log_level;

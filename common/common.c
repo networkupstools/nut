@@ -487,7 +487,7 @@ int sendsignalpid(pid_t pid, int sig)
 	ret = kill(pid, 0);
 
 	if (ret < 0) {
-		if (nut_debug_level > 0 || nut_sendsignal_debug_level > 1)
+		if (nut_debug_level > 0 || nut_sendsignal_debug_level >= NUT_SENDSIGNAL_DEBUG_LEVEL_KILL_SIG0PING)
 			perror("kill");
 		return -1;
 	}
