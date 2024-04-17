@@ -246,6 +246,7 @@ for PROG in upsd upsc dummy-ups upsmon ; do
 done
 
 PID_UPSD=""
+PID_UPSMON=""
 PID_DUMMYUPS=""
 PID_DUMMYUPS1=""
 PID_DUMMYUPS2=""
@@ -280,13 +281,14 @@ if [ "`id -u`" = 0 ]; then
 fi
 
 stop_daemons() {
-    if [ -n "$PID_UPSD$PID_DUMMYUPS$PID_DUMMYUPS1$PID_DUMMYUPS2" ] ; then
+    if [ -n "$PID_UPSD$PID_UPSMON$PID_DUMMYUPS$PID_DUMMYUPS1$PID_DUMMYUPS2" ] ; then
         log_info "Stopping test daemons"
-        kill -15 $PID_UPSD $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 2>/dev/null || return 0
-        wait $PID_UPSD $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 || true
+        kill -15 $PID_UPSD $PID_UPSMON $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 2>/dev/null || return 0
+        wait $PID_UPSD $PID_UPSMON $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 || true
     fi
 
     PID_UPSD=""
+    PID_UPSMON=""
     PID_DUMMYUPS=""
     PID_DUMMYUPS1=""
     PID_DUMMYUPS2=""
@@ -1406,6 +1408,30 @@ testcases_sandbox_nutscanner() {
 ####################################
 
 # TODO: Some upsmon tests?
+
+upsmon_start_loop() {
+    TESTCASE="${1-upsmon_start_loop}"
+
+    if isPidAlive "$PID_UPSMON" ; then
+        return 0
+    fi
+
+    upsmon -F &
+    PID_UPSMON="$!"
+    log_debug "[${TESTCASE}] Tried to start UPSMON as PID $PID_UPSMON"
+    sleep 2
+    # Due to severe config errors, client could have died by now
+    # TOTHINK: Loop like for upsd?
+
+    # Return code is 0/OK if the client is alive
+    if isPidAlive "$PID_UPSMON" ; then
+        log_debug "[${TESTCASE}] UPSMON PID $PID_UPSMON is alive after a short while"
+        return
+    fi
+
+    log_error "[${TESTCASE}] UPSMON PID $PID_UPSMON is not alive after a short while"
+    return 1
+}
 
 ####################################
 
