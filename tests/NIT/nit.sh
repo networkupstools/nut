@@ -291,9 +291,10 @@ stop_daemons() {
 trap 'RES=$?; stop_daemons; if [ "${TESTDIR}" != "${BUILDDIR}/tmp" ] ; then rm -rf "${TESTDIR}" ; fi; exit $RES;' 0 1 2 3 15
 
 NUT_STATEPATH="${TESTDIR}/run"
+NUT_PIDPATH="${TESTDIR}/run"
 NUT_ALTPIDPATH="${TESTDIR}/run"
 NUT_CONFPATH="${TESTDIR}/etc"
-export NUT_STATEPATH NUT_ALTPIDPATH NUT_CONFPATH
+export NUT_STATEPATH NUT_PIDPATH NUT_ALTPIDPATH NUT_CONFPATH
 
 # TODO: Find a portable way to (check and) grab a random unprivileged port?
 if [ -n "${NUT_PORT-}" ] && [ "$NUT_PORT" -gt 0 ] && [ "$NUT_PORT" -lt 65536 ] ; then
