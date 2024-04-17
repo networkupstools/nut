@@ -350,6 +350,10 @@ log_info "Using NUT_PORT=${NUT_PORT} for this test run"
 # aid for "DEBUG_SLEEP=X" mode so the caller can
 # quickly source needed values into their shell.
 #
+# WARNING: Variables in this file are not guaranteed
+# to impact subsequent runs of this script (nit.sh),
+# e.g. NUT_PORT may be inherited, but paths would not be!
+#
 # NOTE: `set` typically wraps the values in quotes,
 # but (maybe?) not all shell implementations do.
 # Just in case, we have a fallback with single quotes.
