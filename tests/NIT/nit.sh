@@ -292,7 +292,7 @@ stop_daemons() {
     PID_DUMMYUPS2=""
 }
 
-trap 'RES=$?; stop_daemons; if [ "${TESTDIR}" != "${BUILDDIR}/tmp" ] ; then case "${NIT_CASE}" in generatecfg_*|is*) ;; *) rm -rf "${TESTDIR}" ;; esac; fi; exit $RES;' 0 1 2 3 15
+trap 'RES=$?; case "${NIT_CASE}" in generatecfg_*|is*) ;; *) stop_daemons; if [ "${TESTDIR}" != "${BUILDDIR}/tmp" ] ; then rm -rf "${TESTDIR}"; fi ;; esac; exit $RES;' 0 1 2 3 15
 
 NUT_STATEPATH="${TESTDIR}/run"
 NUT_PIDPATH="${TESTDIR}/run"
@@ -1474,7 +1474,7 @@ case "${NIT_CASE}" in
         "${NIT_CASE}" ;;
     generatecfg_*|is*)
         # NOTE: Keep in sync with TESTDIR cleanup above
-        # (at start-up and at the exit-trap)
+        # (at start-up and at the exit-trap) and stop_daemons below
         log_warn "========================================================"
         log_warn "You asked to run just a specific helper method: '${NIT_CASE}'"
         log_warn "Populated environment variables for this run into a file so you can source them: . '$NUT_CONFPATH/NIT.env'"
@@ -1524,7 +1524,11 @@ if [ -n "${DEBUG_SLEEP-}" ] ; then
     log_separator
 fi
 
-stop_daemons
+# We have a trap.... but for good measure, do some explicit clean-up:
+case "${NIT_CASE}" in
+    generatecfg_*|is*) ;;
+    *) stop_daemons ;;
+esac
 
 if [ "$PASSED" = 0 ] || [ "$FAILED" != 0 ] ; then
     die "Some test scenarios failed!"
