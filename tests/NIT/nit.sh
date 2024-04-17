@@ -1568,7 +1568,7 @@ if [ -n "${DEBUG_SLEEP-}" ] ; then
     log_separator
     log_info "Sleeping now as asked (for ${DEBUG_SLEEP} seconds starting `date -u`), so you can play with the driver and server running"
     log_info "Populated environment variables for this run into a file so you can source them: . '$NUT_CONFPATH/NIT.env'"
-    printf "NIT_SCRIPT_PID='%s'\nexport NIT_SCRIPT_PID\n" "$$" >> "$NUT_CONFPATH/NIT.env"
+    printf "PID_NIT_SCRIPT='%s'\nexport PID_NIT_SCRIPT\n" "$$" >> "$NUT_CONFPATH/NIT.env"
     log_separator
     cat "$NUT_CONFPATH/NIT.env"
     log_separator
