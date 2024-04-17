@@ -491,7 +491,7 @@ generatecfg_upsmon_trivial() {
     # Populate the configs for the run
     rm -f "$NUT_STATEPATH/upsmon.sd.log"
     (  echo 'MINSUPPLIES 0' > "$NUT_CONFPATH/upsmon.conf" || exit
-       echo 'SHUTDOWNCMD "echo \"`date`: TESTING_DUMMY_SHUTDOWN_NOW\" | tee \"$NUT_STATEPATH\"/upsmon.sd.log"' >> "$NUT_CONFPATH/upsmon.conf" || exit
+       echo 'SHUTDOWNCMD "echo \"`date`: TESTING_DUMMY_SHUTDOWN_NOW\" | tee \"'"$NUT_STATEPATH"'/upsmon.sd.log\" "' >> "$NUT_CONFPATH/upsmon.conf" || exit
 
        if [ -n "${NUT_DEBUG_MIN-}" ] ; then
            echo "DEBUG_MIN ${NUT_DEBUG_MIN}" >> "$NUT_CONFPATH/upsmon.conf" || exit
