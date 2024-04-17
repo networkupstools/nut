@@ -367,6 +367,7 @@ set | grep -E '^(NUT_|LD_LIBRARY_PATH|DEBUG|PATH).*=' \
         LD_LIBRARY_PATH_CLIENT|LD_LIBRARY_PATH_ORIG|PATH_*|NUT_PORT_*)
             continue
             ;;
+        DEBUG_SLEEP|PATH|LD_LIBRARY_PATH*) printf '### ' ;;
     esac
 
     case "$V" in
