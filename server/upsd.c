@@ -191,6 +191,8 @@ upstype_t *get_ups_ptr(const char *name)
 	upstype_t	*tmp;
 
 	if (!name) {
+		upsdebugx(3, "%s: not a valid UPS: <null>",
+			__func__);
 		return NULL;
 	}
 
@@ -200,6 +202,8 @@ upstype_t *get_ups_ptr(const char *name)
 		}
 	}
 
+	upsdebugx(3, "%s: not a valid UPS: %s",
+		__func__, NUT_STRARG(name));
 	return NULL;
 }
 
