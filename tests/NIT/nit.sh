@@ -512,7 +512,7 @@ generatecfg_upsmon_trivial() {
 
 generatecfg_upsmon_master() {
     generatecfg_upsmon_trivial
-    echo "MONITOR 'dummy@localhost:$NUT_PORT' 0 'dummy-admin-m' '${TESTPASS_UPSMON_PRIMARY}' master" >> "$NUT_CONFPATH/upsmon.conf" \
+    echo "MONITOR \"dummy@localhost:$NUT_PORT\" 0 \"dummy-admin-m\" \"${TESTPASS_UPSMON_PRIMARY}\" master" >> "$NUT_CONFPATH/upsmon.conf" \
     || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
 
     if [ $# -gt 0 ] ; then
@@ -522,7 +522,7 @@ generatecfg_upsmon_master() {
 
 generatecfg_upsmon_primary() {
     generatecfg_upsmon_trivial
-    echo "MONITOR 'dummy@localhost:$NUT_PORT' 0 'dummy-admin' '${TESTPASS_UPSMON_PRIMARY}' primary" >> "$NUT_CONFPATH/upsmon.conf" \
+    echo "MONITOR \"dummy@localhost:$NUT_PORT\" 0 \"dummy-admin\" \"${TESTPASS_UPSMON_PRIMARY}\" primary" >> "$NUT_CONFPATH/upsmon.conf" \
     || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
 
     if [ $# -gt 0 ] ; then
@@ -532,7 +532,7 @@ generatecfg_upsmon_primary() {
 
 generatecfg_upsmon_slave() {
     generatecfg_upsmon_trivial
-    echo "MONITOR 'dummy@localhost:$NUT_PORT' 0 'dummy-user-s' '${TESTPASS_UPSMON_SECONDARY}' slave" >> "$NUT_CONFPATH/upsmon.conf" \
+    echo "MONITOR \"dummy@localhost:$NUT_PORT\" 0 \"dummy-user-s\" \"${TESTPASS_UPSMON_SECONDARY}\" slave" >> "$NUT_CONFPATH/upsmon.conf" \
     || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
 
     if [ $# -gt 0 ] ; then
@@ -542,7 +542,7 @@ generatecfg_upsmon_slave() {
 
 generatecfg_upsmon_secondary() {
     generatecfg_upsmon_trivial
-    echo "MONITOR 'dummy@localhost:$NUT_PORT' 0 'dummy-user' '${TESTPASS_UPSMON_SECONDARY}' secondary" >> "$NUT_CONFPATH/upsmon.conf" \
+    echo "MONITOR \"dummy@localhost:$NUT_PORT\" 0 \"dummy-user\" \"${TESTPASS_UPSMON_SECONDARY}\" secondary" >> "$NUT_CONFPATH/upsmon.conf" \
     || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
 
     if [ $# -gt 0 ] ; then
