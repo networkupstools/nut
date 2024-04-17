@@ -40,6 +40,12 @@ https://github.com/networkupstools/nut/milestone/11
  - (expected) Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0
 
 
+ - Fix fallout of development in NUT v2.8.0 and/or v2.8.1 and/or v2.8.2:
+   * Move of `NUT_DEBUG_LEVEL` and "-D" CLI option handling to start of
+     driver programs for issue #2259 in NUT v2.8.2 release misfired with
+     regard to data-dump mode (it no longer caused foreground by default).
+     [#2408]
+
  - drivers, upsd, upsmon: reduce "scary noise" about failure to `fopen()`
    the PID file (which most of the time means that no previous instance of
    the daemon was running to potentially conflict with), especially useless

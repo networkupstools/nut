@@ -1685,6 +1685,9 @@ int main(int argc, char **argv)
 				nut_debug_level++;
 				nut_debug_level_args++;
 				break;
+			case 'd':
+				dump_data = atoi(optarg);
+				break;
 		}
 	}
 	/* Reset the index, read argv[1] next time (loop below)
@@ -1805,7 +1808,7 @@ int main(int argc, char **argv)
 				/* Processed above */
 				break;
 			case 'd':
-				dump_data = atoi(optarg);
+				/* Processed above */
 				break;
 			case 'i': { /* scope */
 					int ipv = atoi(optarg);
