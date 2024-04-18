@@ -40,6 +40,12 @@ https://github.com/networkupstools/nut/milestone/11
  - (expected) Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0
 
 
+ - Fix fallout of development in NUT v2.8.0 and/or v2.8.1 and/or v2.8.2:
+   * Move of `NUT_DEBUG_LEVEL` and "-D" CLI option handling to start of
+     driver programs for issue #2259 in NUT v2.8.2 release misfired with
+     regard to data-dump mode (it no longer caused foreground by default).
+     [#2408]
+
  - drivers, upsd, upsmon: reduce "scary noise" about failure to `fopen()`
    the PID file (which most of the time means that no previous instance of
    the daemon was running to potentially conflict with), especially useless
@@ -79,6 +85,11 @@ https://github.com/networkupstools/nut/milestone/11
      from templates). [issue #321, PR #2383]
    * added an `OBLBDURATION` (seconds) setting to optionally delay raising
      the alarm for immediate shutdown in critical situation. [#321]
+
+ - common code: root-owned daemons now use not the hard-coded `PIDPATH` value
+   set by the `configure` script during build, but can override it with a
+   `NUT_PIDPATH` environment variable in certain use-cases (such as tests).
+   [#2407]
 
 
 Release notes for NUT 2.8.2 - what's new since 2.8.1

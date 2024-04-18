@@ -264,8 +264,11 @@ const char * confpath(void);
 /* Return the default path for the directory containing state files */
 const char * dflt_statepath(void);
 
-/* Return the alternate path for pid files */
+/* Return the alternate path for pid files (non-root daemons) */
 const char * altpidpath(void);
+
+/* Return the main path for pid files (root daemons like upsmon) */
+const char * rootpidpath(void);
 
 /* Die with a standard message if socket filename is too long */
 void check_unix_socket_filename(const char *fn);
@@ -352,6 +355,7 @@ void nut_prepare_search_paths(void);
 extern int nut_sendsignal_debug_level;
 #define NUT_SENDSIGNAL_DEBUG_LEVEL_DEFAULT 6
 #define NUT_SENDSIGNAL_DEBUG_LEVEL_FOPEN_PIDFILE 5
+#define NUT_SENDSIGNAL_DEBUG_LEVEL_KILL_SIG0PING 4
 
 extern int nut_debug_level;
 extern int nut_log_level;

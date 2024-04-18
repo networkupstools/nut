@@ -2100,9 +2100,9 @@ static void loadconfig(void)
 		upslogx(LOG_WARNING, "No POWERDOWNFLAG value was configured in %s!",
 			configfile);
 		upslogx(LOG_INFO,
-			"Should be a path to file that is normally writeable "
-			"for root user, and remains at least readable late "
-			"in shutdown after all unmounting completes.");
+			"POWERDOWNFLAG should be a path to file that is normally "
+			"writeable for root user, and remains at least readable "
+			"late in shutdown after all unmounting completes.");
 	}
 }
 
@@ -3009,7 +3009,7 @@ int main(int argc, char *argv[])
 	 * is running (error if it is).
 	 */
 	/* Hush the fopen(pidfile) message but let "real errors" be seen */
-	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_FOPEN_PIDFILE - 1;
+	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_KILL_SIG0PING - 1;
 #ifndef WIN32
 	/* If cmd == 0 we are starting and check if a previous instance
 	 * is running by sending signal '0' (i.e. 'kill <pid> 0' equivalent)

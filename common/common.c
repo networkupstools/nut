@@ -447,7 +447,7 @@ void writepid(const char *name)
 	if (*name == '/')
 		snprintf(fn, sizeof(fn), "%s", name);
 	else
-		snprintf(fn, sizeof(fn), "%s/%s.pid", PIDPATH, name);
+		snprintf(fn, sizeof(fn), "%s/%s.pid", rootpidpath(), name);
 
 	mask = umask(022);
 	pidf = fopen(fn, "w");
@@ -487,7 +487,7 @@ int sendsignalpid(pid_t pid, int sig)
 	ret = kill(pid, 0);
 
 	if (ret < 0) {
-		if (nut_debug_level > 0 || nut_sendsignal_debug_level > 1)
+		if (nut_debug_level > 0 || nut_sendsignal_debug_level >= NUT_SENDSIGNAL_DEBUG_LEVEL_KILL_SIG0PING)
 			perror("kill");
 		return -1;
 	}
@@ -661,7 +661,7 @@ int sendsignal(const char *progname, int sig)
 {
 	char	fn[SMALLBUF];
 
-	snprintf(fn, sizeof(fn), "%s/%s.pid", PIDPATH, progname);
+	snprintf(fn, sizeof(fn), "%s/%s.pid", rootpidpath(), progname);
 
 	return sendsignalfn(fn, sig);
 }
@@ -1446,7 +1446,13 @@ vupslog_too_long:
 /* Return the default path for the directory containing configuration files */
 const char * confpath(void)
 {
-	const char *path = getenv("NUT_CONFPATH");
+	static const char *path = NULL;
+
+	/* Cached by earlier calls? */
+	if (path)
+		return path;
+
+	path = getenv("NUT_CONFPATH");
 
 #ifdef WIN32
 	if (path == NULL) {
@@ -1457,13 +1463,22 @@ const char * confpath(void)
 
 	/* We assume, here and elsewhere, that
 	 * at least CONFPATH is always defined */
-	return (path != NULL && *path != '\0') ? path : CONFPATH;
+	if (path == NULL || *path == '\0')
+		path = CONFPATH;
+
+	return path;
 }
 
 /* Return the default path for the directory containing state files */
 const char * dflt_statepath(void)
 {
-	const char *path = getenv("NUT_STATEPATH");
+	static const char *path = NULL;
+
+	/* Cached by earlier calls? */
+	if (path)
+		return path;
+
+	path = getenv("NUT_STATEPATH");
 
 #ifdef WIN32
 	if (path == NULL) {
@@ -1474,7 +1489,10 @@ const char * dflt_statepath(void)
 
 	/* We assume, here and elsewhere, that
 	 * at least STATEPATH is always defined */
-	return (path != NULL && *path != '\0') ? path : STATEPATH;
+	if (path == NULL || *path == '\0')
+		path = STATEPATH;
+
+	return path;
 }
 
 /* Return the alternate path for pid files, for processes running as non-root
@@ -1485,7 +1503,11 @@ const char * dflt_statepath(void)
  */
 const char * altpidpath(void)
 {
-	const char * path;
+	static const char *path = NULL;
+
+	/* Cached by earlier calls? */
+	if (path)
+		return path;
 
 	path = getenv("NUT_ALTPIDPATH");
 	if ( (path == NULL) || (*path == '\0') ) {
@@ -1503,11 +1525,43 @@ const char * altpidpath(void)
 		return path;
 
 #ifdef ALTPIDPATH
-	return ALTPIDPATH;
+	path = ALTPIDPATH;
 #else
 	/* With WIN32 in the loop, this may be more than a fallback to STATEPATH: */
-	return dflt_statepath();
+	path = dflt_statepath();
 #endif
+
+	return path;
+}
+
+/* Return the main path for pid files, for processes running as root, such
+ * as upsmon. Typically this is the built-in PIDPATH (from configure script)
+ * but certain use-cases such as the test suite can override it with the
+ * NUT_PIDPATH environment variable.
+ */
+const char * rootpidpath(void)
+{
+	static const char *path = NULL;
+
+	/* Cached by earlier calls? */
+	if (path)
+		return path;
+
+	path = getenv("NUT_PIDPATH");
+
+#ifdef WIN32
+	if (path == NULL) {
+		/* fall back to built-in pathname relative to binary/workdir */
+		path = getfullpath(PATH_ETC);
+	}
+#endif
+
+	/* We assume, here and elsewhere, that
+	 * at least PIDPATH is always defined */
+	if (path == NULL || *path == '\0')
+		path = PIDPATH;
+
+	return path;
 }
 
 /* Die with a standard message if socket filename is too long */

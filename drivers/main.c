@@ -1685,6 +1685,9 @@ int main(int argc, char **argv)
 				nut_debug_level++;
 				nut_debug_level_args++;
 				break;
+			case 'd':
+				dump_data = atoi(optarg);
+				break;
 		}
 	}
 	/* Reset the index, read argv[1] next time (loop below)
@@ -1805,7 +1808,7 @@ int main(int argc, char **argv)
 				/* Processed above */
 				break;
 			case 'd':
-				dump_data = atoi(optarg);
+				/* Processed above */
 				break;
 			case 'i': { /* scope */
 					int ipv = atoi(optarg);
@@ -2115,7 +2118,7 @@ int main(int argc, char **argv)
 	 */
 
 	/* Hush the fopen(pidfile) message but let "real errors" be seen */
-	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_FOPEN_PIDFILE - 1;
+	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_KILL_SIG0PING - 1;
 
 	if (!cmd && (!do_forceshutdown)) {
 		ssize_t	cmdret = -1;
