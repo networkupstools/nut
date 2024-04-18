@@ -2118,7 +2118,7 @@ int main(int argc, char **argv)
 	 */
 
 	/* Hush the fopen(pidfile) message but let "real errors" be seen */
-	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_FOPEN_PIDFILE - 1;
+	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_KILL_SIG0PING - 1;
 
 	if (!cmd && (!do_forceshutdown)) {
 		ssize_t	cmdret = -1;
