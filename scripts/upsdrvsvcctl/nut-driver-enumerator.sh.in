@@ -1220,7 +1220,13 @@ nut_driver_enumerator_main() {
        fi \
     && [ "$RESTART_ALL" = no ] && return 0
 
-    if [ "${#NEW_CHECKSUM}" != 0 ]; then
+    # Check list of devices with new section contents (per checksum) as
+    # compared to older runs (stashed in service instance configurations).
+    if [ "${#NEW_CHECKSUM}" = 0 ]; then
+        if [ "${VERBOSE_LOOP}" = yes ] ; then
+            echo "`date -u` : No changes to reconcile between *contents* of ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF', but the *list* of instances vs. devices seems to have changed"
+        fi
+    else
         for UPSS in $NEW_CHECKSUM ; do
             CURR_DRV="`upsconf_getDriver "$UPSS"`" || CURR_DRV=""
             DO_UNREGISTER=yes
