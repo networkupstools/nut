@@ -1210,11 +1210,11 @@ nut_driver_enumerator_main() {
     # while the check for no new device section definitions is just boolean.
     # We can only exit quickly if both there are no changed sections and no
     # new or removed sections since last run.
-    ( [ -z "$UPSLIST_FILE" -a -z "$UPSLIST_SVCS" ] || ( \
+    { [ -z "$UPSLIST_FILE" -a -z "$UPSLIST_SVCS" ] || { \
         NEW_CHECKSUM="`upslist_checksums_unchanged "$UPSLIST_FILE" "$UPSLIST_SVCS"`" \
         && [ "${#NEW_CHECKSUM}" = 0 ] \
-        && upslist_equals "$UPSLIST_FILE" "$UPSLIST_SVCS" \
-    ) ) \
+        && upslist_equals "$UPSLIST_FILE" "$UPSLIST_SVCS" ; \
+    } ; } \
     && if [ -z "$DAEMON_SLEEP" -o "${VERBOSE_LOOP}" = yes ] ; then \
         echo "`date -u` : OK: No changes to reconcile between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF'" ; \
        fi \
