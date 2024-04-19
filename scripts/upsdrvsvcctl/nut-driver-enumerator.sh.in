@@ -1249,6 +1249,9 @@ nut_driver_enumerator_main() {
             echo "`date -u` : No changes to reconcile between *contents* of ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF', but the *list* of instances vs. devices seems to have changed"
         fi
     else
+        if [ "${VERBOSE_LOOP}" = yes ] ; then
+            echo "`date -u` : Got some changes to reconcile between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF', content checksums changed for: `echo ${NEW_CHECKSUM} | tr '\n' ' '`"
+        fi
         for UPSS in $NEW_CHECKSUM ; do
             CURR_DRV="`upsconf_getDriver "$UPSS"`" || CURR_DRV=""
             DO_UNREGISTER=yes
@@ -1256,6 +1259,9 @@ nut_driver_enumerator_main() {
                 # If reload is handled and does not complain,
                 # we are OK to proceed without re-defining
                 # and restarting the driver service instance.
+                if [ "${VERBOSE_LOOP}" = yes ] ; then
+                    echo "`date -u` : Reloading ${SERVICE_FRAMEWORK} service instance ${UPSS} whose section in config file has changed: calling driver program '${CURR_DRV}' for the low-level work..." >&2
+                fi
                 "@DRVPATH@/$CURR_DRV" -a "$UPSS" -c reload-or-error >/dev/null 2>/dev/null \
                 && DO_UNREGISTER=no
             fi
