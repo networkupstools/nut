@@ -363,6 +363,11 @@ upslist_savednames_find_missing() {
     # Verify that all existing service units have a saved DEVICE name
     # Report those that do not have a value there (any value) so we can
     # amend those quickly after an upgrade. Otherwise we trust these.
+    # Return codes:
+    #    0) Some services were defined and at least one had DEVICE values
+    #       (those that did not are reported in stdout)
+    #    1) No services defined yet (empty stdout)
+    #    2) All service units do not have DEVICE values (all reported in stdout)
 
     # Get full instance names from system and from props
     SVCINSTS="`$hook_listInstances_raw`" && [ "${#SVCINSTS}" != 0 ] || return 1
@@ -370,10 +375,14 @@ upslist_savednames_find_missing() {
     SVCINST_PROPS="`$hook_findSavedDeviceName`" && [ "${#SVCINST_PROPS}" != 0 ] \
     || { echo $SVCINSTS ; return 2; }
 
-    # Find services which do not have saved names in props
+    # Find and report services which do *not* have saved device names in
+    # props (do not report those that have a non-trivial prop value):
+    # whether an empty value or completely absent from the list
     for SVCINST in $SVCINSTS ; do
-        echo "$SVCINST_PROPS" | grep -E "^${SVCINST_PROPS}\t"'$' >/dev/null || echo "$SVCINST"
+        echo "$SVCINST_PROPS" | grep -E "^${SVCINST}${TABCHAR}"'$' >/dev/null && echo "$SVCINST"
+        echo "$SVCINST_PROPS" | grep -E "^${SVCINST}${TABCHAR}" >/dev/null || echo "$SVCINST"
     done
+    return 0
 }
 
 upslist_savednames_find_mismatch() {
@@ -387,20 +396,30 @@ upslist_savednames_find_mismatch() {
     # This situation might occur in some errors, but the likely case
     # is updating from versions that did not track this info yet (but
     # upslist_savednames_find_missing() should have handled those).
+    # Return codes:
+    #    0) Some services were defined and at least one had DEVICE values
+    #       (those that did not are reported in stdout)
+    #    1) No services defined yet (empty stdout)
+    #    2) All service units do not have DEVICE values (empty stdout)
 
     # Get full instance names from system and from props
     SVCINSTS="`$hook_listInstances_raw`" && [ "${#SVCINSTS}" != 0 ] || return 1
     SVCINST_PROPS="`$hook_findSavedDeviceName`" && [ "${#SVCINST_PROPS}" != 0 ] || return 2
 
-    # Find services whose props exist but services do not
+    # Find services whose props exist but services themselves do not
+    # (e.g. upgrading from some version with different naming patterns)
     echo "$SVCINST_PROPS" | while read SVCINST_PROP DEVNAME_PROP ; do
         echo "$SVCINSTS" | grep -E "^${SVCINST_PROP}"'$' >/dev/null || echo "$SVCINST_PROP"
     done
 
-    # Find services which do not have saved names in props
+    # Find and report services which do *not* have saved device names in
+    # props (do not report those that have a non-trivial prop value):
+    # whether an empty value or completely absent from the list
     for SVCINST in $SVCINSTS ; do
-        echo "$SVCINST_PROPS" | grep -E "^${SVCINST_PROP}\t"'$' >/dev/null || echo "$SVCINST"
+        echo "$SVCINST_PROPS" | grep -E "^${SVCINST}${TABCHAR}"'$' >/dev/null && echo "$SVCINST"
+        echo "$SVCINST_PROPS" | grep -E "^${SVCINST}${TABCHAR}" >/dev/null || echo "$SVCINST"
     done
+    return 0
 }
 
 upsconf_getSection_content() {
