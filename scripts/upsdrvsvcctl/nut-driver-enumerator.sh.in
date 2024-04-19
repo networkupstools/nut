@@ -1253,24 +1253,30 @@ nut_driver_enumerator_main() {
             echo "`date -u` : Got some changes to reconcile between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF', content checksums changed for: `echo ${NEW_CHECKSUM} | tr '\n' ' '`"
         fi
         for UPSS in $NEW_CHECKSUM ; do
-            CURR_DRV="`upsconf_getDriver "$UPSS"`" || CURR_DRV=""
+            # NOTE: Pedantically, UPSS is a service instance name,
+            # and may be the MD5-normalized version in certain cases.
+            # For some operations below we need the original ups.conf
+            # section name for the device - the CURR_DEV value.
+            CURR_DEV="`USE_SAVEDINST=true get_device_for_service "${UPSS}"`" && [ "${#CURR_DEV}" -gt 0 ] || CURR_DEV="${UPSS}"
+            CURR_DRV="`upsconf_getDriver "${CURR_DEV}"`" || CURR_DRV=""
             DO_UNREGISTER=yes
             if [ -n "$CURR_DRV" ] ; then
                 # If reload is handled and does not complain,
                 # we are OK to proceed without re-defining
                 # and restarting the driver service instance.
                 if [ "${VERBOSE_LOOP}" = yes ] ; then
-                    echo "`date -u` : Reloading ${SERVICE_FRAMEWORK} service instance ${UPSS} whose section in config file has changed: calling driver program '${CURR_DRV}' for the low-level work..." >&2
+                    echo "`date -u` : Reloading ${SERVICE_FRAMEWORK} service instance '${UPSS}' whose section '${CURR_DEV}' in config file has changed: calling driver program '${CURR_DRV}' for the low-level work..." >&2
                 fi
-                "@DRVPATH@/$CURR_DRV" -a "$UPSS" -c reload-or-error >/dev/null 2>/dev/null \
-                || { if [ "${VERBOSE_LOOP}" = yes ] ; then sleep 1; "@DRVPATH@/$CURR_DRV" -a "$UPSS" -c reload-or-error >&2 ; fi; } \
+                "@DRVPATH@/$CURR_DRV" -a "${CURR_DEV}" -c reload-or-error >/dev/null 2>/dev/null \
+                || { if [ "${VERBOSE_LOOP}" = yes ] ; then sleep 1; "@DRVPATH@/$CURR_DRV" -a "${CURR_DEV}" -c reload-or-error >&2 ; fi; } \
                 && DO_UNREGISTER=no
             fi
             if [ "$DO_UNREGISTER" = yes ] ; then
-                echo "Dropping old ${SERVICE_FRAMEWORK} service instance ${UPSS} whose section in config file has changed..." >&2
+                echo "Dropping old ${SERVICE_FRAMEWORK} service instance '${UPSS}' whose section '${CURR_DEV}' in config file has changed..." >&2
                 $hook_unregisterInstance "$UPSS"
+                # Re-registration to reconcile below should set the "saved" values
             else
-                echo "Keeping ${SERVICE_FRAMEWORK} service instance ${UPSS} whose section in config file has changed: live reload sufficed" >&2
+                echo "Keeping ${SERVICE_FRAMEWORK} service instance '${UPSS}' whose section '${CURR_DEV}' in config file has changed: live reload sufficed." >&2
             fi
         done
         upslist_readSvcs "after updating for new config section checksums"
