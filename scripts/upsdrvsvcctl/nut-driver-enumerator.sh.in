@@ -1276,7 +1276,9 @@ nut_driver_enumerator_main() {
                 $hook_unregisterInstance "$UPSS"
                 # Re-registration to reconcile below should set the "saved" values
             else
-                echo "Keeping ${SERVICE_FRAMEWORK} service instance '${UPSS}' whose section '${CURR_DEV}' in config file has changed: live reload sufficed." >&2
+                echo "Keeping ${SERVICE_FRAMEWORK} service instance '${UPSS}' whose section '${CURR_DEV}' in config file has changed: live reload sufficed. Saving updated info into service properties." >&2
+                $hook_setSavedMD5 "$UPSS" "`upsconf_getSection_MD5 "${CURR_DEV}"`"
+                $hook_setSavedDeviceName "$UPSS" "${CURR_DEV}"
             fi
         done
         upslist_readSvcs "after updating for new config section checksums"
