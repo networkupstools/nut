@@ -386,7 +386,10 @@ upslist_savednames_find_missing() {
 }
 
 upslist_savednames_find_mismatch() {
+    # NOTE: Not used currently (as of NUT v2.8.2)
     # TODO: Make use of this to fsck the enumerator configs
+    # TODO: Complete checking MD5 normalized names if original not hit
+    # TODO: Report all unit names if none has the DEVICE values? (code 2)
     #
     # Verify that all existing service units have a saved DEVICE name
     # and that such name does match the unit instance's name (original
