@@ -1263,6 +1263,7 @@ nut_driver_enumerator_main() {
                     echo "`date -u` : Reloading ${SERVICE_FRAMEWORK} service instance ${UPSS} whose section in config file has changed: calling driver program '${CURR_DRV}' for the low-level work..." >&2
                 fi
                 "@DRVPATH@/$CURR_DRV" -a "$UPSS" -c reload-or-error >/dev/null 2>/dev/null \
+                || { if [ "${VERBOSE_LOOP}" = yes ] ; then sleep 1; "@DRVPATH@/$CURR_DRV" -a "$UPSS" -c reload-or-error >&2 ; fi; } \
                 && DO_UNREGISTER=no
             fi
             if [ "$DO_UNREGISTER" = yes ] ; then
