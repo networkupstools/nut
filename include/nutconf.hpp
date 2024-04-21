@@ -1092,6 +1092,8 @@ public:
 
 	inline std::string getPassword(const std::string & user) const { return getStr(user, "password"); }
 
+	/** Currently valid actions include "SET" and "FSD",
+	 *  but the method does not constrain the values */
 	inline ConfigParamList getActions(const std::string & user) const
 	{
 		ConfigParamList actions;
@@ -1099,6 +1101,8 @@ public:
 		return actions;
 	}
 
+	/** Valid commands are "ALL" or a list of specific commands
+	 *  supported by the device (NUT driver dependent) */
 	inline ConfigParamList getInstantCommands(const std::string & user) const
 	{
 		ConfigParamList cmds;
@@ -1124,6 +1128,9 @@ public:
 	 *
 	 *  \param  mode  Mode
 	 */
+	/* TOTHINK: Do we need a writer (other method, optional parameter
+	 * to this one) for obsolete wordings of the upsmon mode?
+	 * Note: reader in the getter accepts both old and new values. */
 	void setUpsmonMode(upsmon_mode_t mode);
 
 	/** \} */
