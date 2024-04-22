@@ -656,10 +656,17 @@ NutWriter::status_t UpsdConfigWriter::writeConfig(const UpsdConfiguration & conf
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Wunreachable-code"
 #endif
-	UPSD_DIRECTIVEX("MAXAGE",    unsigned int, config.maxAge);
-	UPSD_DIRECTIVEX("MAXCONN",   unsigned int, config.maxConn);
-	UPSD_DIRECTIVEX("STATEPATH", std::string,  config.statePath);
-	UPSD_DIRECTIVEX("CERTFILE",  std::string,  config.certFile);
+	UPSD_DIRECTIVEX("DEBUG_MIN",                int,          config.debugMin);
+	UPSD_DIRECTIVEX("MAXAGE",                   unsigned int, config.maxAge);
+	UPSD_DIRECTIVEX("MAXCONN",                  unsigned int, config.maxConn);
+	UPSD_DIRECTIVEX("TRACKINGDELAY",            unsigned int, config.trackingDelay);
+	UPSD_DIRECTIVEX("ALLOW_NO_DEVICE",          bool,         config.allowNoDevice);
+	UPSD_DIRECTIVEX("ALLOW_NOT_ALL_LISTENERS",  bool,         config.allowNotAllListeners);
+	UPSD_DIRECTIVEX("DISABLE_WEAK_SSL",         bool,         config.disableWeakSsl);
+	CONFIG_DIRECTIVEX("STATEPATH",              std::string,  config.statePath, true);
+	CONFIG_DIRECTIVEX("CERTFILE",               std::string,  config.certFile, true);
+	CONFIG_DIRECTIVEX("CERTPATH",               std::string,  config.certPath, true);
+	UPSD_DIRECTIVEX("CERTREQUEST",              unsigned int, config.certRequestLevel);
 #ifdef __clang__
 # pragma clang diagnostic pop
 #endif
@@ -668,6 +675,16 @@ NutWriter::status_t UpsdConfigWriter::writeConfig(const UpsdConfiguration & conf
 #endif
 
 	#undef UPSD_DIRECTIVEX
+
+	// Certificate identity
+	if (config.certIdent.set()) {
+		std::string directive = serializeCertIdent(config.certIdent);
+
+		status_t status = writeDirective(directive);
+
+		if (NUTW_OK != status)
+			return status;
+	}
 
 	// Listen addresses
 	std::list<UpsdConfiguration::Listen>::const_iterator la_iter = config.listens.begin();

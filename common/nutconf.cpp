@@ -1633,7 +1633,16 @@ void UpsdConfigParser::onParseDirective(const std::string& directiveName, char s
 
 	if(_config)
 	{
-		if(directiveName == "MAXAGE")
+		if(!(::strcasecmp(directiveName.c_str(), "DEBUG_MIN")))
+		{
+			// NOTE: We allow DEBUG_MIN in any casing as it can be copy-pasted
+			// between different configs and they use different historic casing
+			if(values.size()>0)
+			{
+				_config->debugMin = StringToSettableNumber<int>(values.front());
+			}
+		}
+		else if(directiveName == "MAXAGE")
 		{
 			if(values.size()>0)
 			{
@@ -1654,11 +1663,61 @@ void UpsdConfigParser::onParseDirective(const std::string& directiveName, char s
 				_config->maxConn = StringToSettableNumber<unsigned int>(values.front());
 			}
 		}
+		else if(directiveName == "TRACKINGDELAY")
+		{
+			if(values.size()>0)
+			{
+				_config->trackingDelay = StringToSettableNumber<unsigned int>(values.front());
+			}
+		}
+		else if(directiveName == "ALLOW_NO_DEVICE")
+		{
+			if(values.size()>0)
+			{
+				_config->allowNoDevice = StringToSettableNumber<bool>(values.front());
+			}
+		}
+		else if(directiveName == "ALLOW_NOT_ALL_LISTENERS")
+		{
+			if(values.size()>0)
+			{
+				_config->allowNotAllListeners = StringToSettableNumber<bool>(values.front());
+			}
+		}
+		else if(directiveName == "DISABLE_WEAK_SSL")
+		{
+			if(values.size()>0)
+			{
+				_config->allowNotAllListeners = StringToSettableNumber<bool>(values.front());
+			}
+		}
 		else if(directiveName == "CERTFILE")
 		{
 			if(values.size()>0)
 			{
 				_config->certFile = values.front();
+			}
+		}
+		else if(directiveName == "CERTPATH")
+		{
+			if(values.size()>0)
+			{
+				_config->certPath = values.front();
+			}
+		}
+		else if(directiveName == "CERTIDENT")
+		{
+			if(values.size()==2)
+			{
+				_config->certIdent.certName = values.front();
+				_config->certIdent.certDbPass = (*(++values.begin()));
+			}
+		}
+		else if(directiveName == "CERTREQUEST")
+		{
+			if(values.size()>0)
+			{
+				_config->certRequestLevel = StringToSettableNumber<unsigned int>(values.front());
 			}
 		}
 		else if(directiveName == "LISTEN")

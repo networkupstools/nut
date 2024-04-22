@@ -1384,8 +1384,10 @@ public:
 	UpsdConfiguration();
 	void parseFromString(const std::string& str);
 
-	Settable<unsigned int> maxAge, maxConn;
-	Settable<std::string>  statePath, certFile;
+	Settable<int> debugMin;
+	Settable<unsigned int> maxAge, maxConn, trackingDelay, certRequestLevel;
+	Settable<std::string>  statePath, certFile, certPath;
+	Settable<bool> allowNoDevice, allowNotAllListeners, disableWeakSsl;
 
 	struct Listen
 	{
@@ -1398,6 +1400,8 @@ public:
 		}
 	};
 	std::list<Listen> listens;
+
+	CertIdent certIdent;
 
 	/** Serialisable interface implementation \{ */
 	bool parseFrom(NutStream & istream) override;
