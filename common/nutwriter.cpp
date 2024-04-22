@@ -106,6 +106,23 @@ const std::string GenericConfigWriter::s_default_section_entry_indent("\t");
 const std::string GenericConfigWriter::s_default_section_entry_separator(" = ");
 
 
+/**
+ *  \brief  NSS certificate identity serializer
+ *
+ *  \param  ident  Certificate identity object
+ *
+ *  \return Serialized certificate identity
+ */
+static std::string serializeCertIdent(const nut::CertIdent & ident) {
+	std::stringstream directive;
+	const std::string & val1 = (ident.certName), val2 = (ident.certDbPass);
+
+	directive << "CERTIDENT \"" << val1 << "\" \"" << val2 << "\"";
+
+	return directive.str();
+}
+
+
 NutWriter::status_t NutWriter::writeEachLine(const std::string & str, const std::string & pref) {
 	for (size_t pos = 0; pos < str.size(); ) {
 		// Prefix every line

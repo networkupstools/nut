@@ -144,6 +144,26 @@ public:
 
 
 /**
+ * \brief	Certificate Identification structure for NUT
+ *
+ * Contains a certificate name and database password
+ */
+struct CertIdent
+{
+	Settable<std::string> certName, certDbPass;
+
+	inline bool operator==(const CertIdent& ident)const
+	{
+		return certName == ident.certName && certDbPass == ident.certDbPass;
+	}
+
+	inline bool set()const
+	{
+		return certName.set() && certDbPass.set();
+	}
+};
+
+/**
  * NUT config parser.
  */
 class NutParser
