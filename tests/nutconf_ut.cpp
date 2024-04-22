@@ -196,14 +196,15 @@ void NutConfigUnitTest::testUpsdConfiguration() {
 
 	config.listens.push_back(listen);
 
+	// NOTE: Three-arg check() here to retry (and succeed) with un-quoted paths
 	check(static_cast<nut::Serialisable *>(&config),
 		"MAXAGE 15\n"
 		"MAXCONN 1024\n"
-		"STATEPATH /var/run/nut\n"
+		"STATEPATH \"/var/run/nut\"\n"
 		"CERTFILE /usr/share/ssl-cert/ssleay.cnf\n"
 		"LISTEN 127.0.0.1 3493\n"
 		"LISTEN ::1 3493\n"
-	);
+	, false);
 }
 
 
