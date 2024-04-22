@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3163 utf-8
+personal_ws-1.1 en 3151 utf-8
 AAC
 AAS
 ABI
@@ -37,8 +37,6 @@ ATT
 ATTRS
 ATX
 ATs
-AUTOCOMMIT
-AUTOPUSH
 AVL
 AVR
 AVRLCD
@@ -867,7 +865,6 @@ PSX
 PThreads
 PULS
 PV
-PWLv
 PWR
 PXG
 PYTHONPATH
@@ -973,7 +970,6 @@ REDi
 REFREPO
 REPLBATT
 REQSSL
-RESPIN
 RETPCT
 REXX
 RK
@@ -1014,7 +1010,6 @@ Rickard
 Ridgway
 Riihikallio
 Rik
-RntmK
 Rocketfish
 Rodrigues
 Rodríguez
@@ -1033,7 +1028,6 @@ SDA
 SDE
 SDFLAG
 SDR
-SDRnnnnn
 SDT
 SELFTEST
 SELinux
@@ -1209,7 +1203,6 @@ TTT
 TXF
 TXG
 TXV
-TXVxx
 Tchakhmakhtchian
 TcpClient
 Technic
@@ -1866,9 +1859,6 @@ fffdddxxx
 ffff
 fi
 fightwarn
-figlineint
-figoffline
-figonline
 filename
 filenames
 filesystem
@@ -2660,7 +2650,6 @@ runlevel
 runnable
 runtime
 runtimecal
-runtimek
 runtimes
 rva
 rw
@@ -2889,7 +2878,6 @@ timehead
 timername
 timestamp
 timeticks
-tiocm
 tios
 tmp
 tmpfiles
