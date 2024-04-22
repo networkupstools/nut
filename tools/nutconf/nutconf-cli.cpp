@@ -2090,7 +2090,7 @@ static nut::UpsmonConfiguration::Monitor monitor(
 	monitor.hostname   = host_port.substr(0, colon_idx);
 	monitor.port       = port;
 	monitor.powerValue = power_value;
-	monitor.isMaster   = ("primary" == mode || "master" == mode);
+	monitor.isPrimary  = ("primary" == mode || "master" == mode);
 
 	return monitor;
 }

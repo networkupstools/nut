@@ -679,7 +679,7 @@ public:
 		uint16_t port;
 		unsigned int powerValue;
 		std::string username, password;
-		bool isMaster;
+		bool isPrimary;
 	};
 
 	std::list<Monitor> monitors;

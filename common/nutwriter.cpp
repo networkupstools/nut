@@ -407,8 +407,8 @@ static std::string serializeMonitor(const UpsmonConfiguration::Monitor & monitor
 	directive << monitor.username << ' ' << monitor.password << ' ';
 
 	// Primary/secondary (legacy master/slave)
-	directive << (monitor.isMaster ? "primary" : "secondary");
-	/* NUT v2.7.4 and older: directive << (monitor.isMaster ? "master" : "slave");*/
+	directive << (monitor.isPrimary ? "primary" : "secondary");
+	/* NUT v2.7.4 and older: directive << (monitor.isPrimary ? "master" : "slave");*/
 
 	return directive.str();
 }

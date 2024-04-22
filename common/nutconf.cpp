@@ -1229,7 +1229,7 @@ void UpsmonConfigParser::onParseDirective(const std::string& directiveName, char
 				monitor.powerValue = StringToSettableNumber<unsigned int>(*it++);
 				monitor.username = *it++;
 				monitor.password = *it++;
-				monitor.isMaster = (*it) == "primary";	// master for NUT v2.7.4 and older
+				monitor.isPrimary = (*it) == "primary";	// master for NUT v2.7.4 and older
 				_config->monitors.push_back(monitor);
 			}
 		}
