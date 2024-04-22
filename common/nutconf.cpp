@@ -56,15 +56,30 @@ NutParser::~NutParser() {}
 template <typename T>
 Settable<T> StringToSettableNumber(const std::string & src)
 {
-	std::stringstream ss(src);
-	T result;
-	if(ss >> result)
-	{
-		return Settable<T>(result);
-	}
-	else
-	{
-		return Settable<T>();
+	if (typeid(T) == typeid(bool)) {
+		static const Settable<T> b0(false);
+		static const Settable<T> b1(true);
+
+		// See also: GenericConfiguration::str2bool()
+		// FIXME: Can these two methods be merged?
+		if ("true" == src) return b1;
+		if ("on"   == src) return b1;
+		if ("1"    == src) return b1;
+		if ("yes"  == src) return b1;
+		if ("ok"   == src) return b1;
+
+		return b0;
+	} else {
+		std::stringstream ss(src);
+		T result;
+		if(ss >> result)
+		{
+			return Settable<T>(result);
+		}
+		else
+		{
+			return Settable<T>();
+		}
 	}
 }
 
@@ -1048,7 +1063,7 @@ bool GenericConfiguration::str2bool(const std::string & str)
 {
 	if ("true" == str) return true;
 	if ("on"   == str) return true;
-	if ("1"	== str) return true;
+	if ("1"    == str) return true;
 	if ("yes"  == str) return true;
 	if ("ok"   == str) return true;
 
