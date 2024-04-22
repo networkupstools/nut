@@ -26,6 +26,7 @@
 #include "nutconf.hpp"
 #include "nutwriter.hpp"
 
+#include <algorithm>
 #include <cppunit/extensions/HelperMacros.h>
 
 /**
@@ -55,8 +56,19 @@ class NutConfigUnitTest: public CppUnit::TestFixture {
 	 *
 	 *  \param  config   Configuration object
 	 *  \param  content  Expected serialization
+	 *  \param  quote_sensitive  Flag to allow stripping double-quotes for fallback comparison
 	 */
-	void check(const nut::Serialisable * config, const std::string & content);
+	void check(const nut::Serialisable * config, const std::string & content, const bool quote_sensitive);
+
+	/**
+	 *  \brief  Check configuration serialization contents (exact)
+	 *
+	 *  \param  config   Configuration object
+	 *  \param  content  Expected serialization
+	 */
+	inline void check(const nut::Serialisable * config, const std::string & content) {
+		check(config, content, true);
+	}
 
 	public:
 
@@ -92,7 +104,7 @@ void NutConfigUnitTest::load(nut::Serialisable * config, const std::string & fil
 }
 
 
-void NutConfigUnitTest::check(const nut::Serialisable * config, const std::string & content) {
+void NutConfigUnitTest::check(const nut::Serialisable * config, const std::string & content, const bool quote_sensitive) {
 	nut::NutMemory mem;
 
 	CPPUNIT_ASSERT(config->writeTo(mem));
@@ -103,12 +115,24 @@ void NutConfigUnitTest::check(const nut::Serialisable * config, const std::strin
 
 	CPPUNIT_ASSERT(nut::NutStream::NUTS_OK == status);
 
-	if (content != str) {
-		std::cerr << "--- expected ---" << std::endl << content << "--- end ---" << std::endl;
-		std::cerr << "--- serialized ---" << std::endl << str << "--- end ---" << std::endl;
+	if (content == str)
+		return;
 
-		CPPUNIT_ASSERT_MESSAGE("Configuration serialization check failed", 0);
+	if (!quote_sensitive) {
+		// Re-check with quotes stripped (we output paths, passwords etc. quoted)
+		std::string uqStr = str, uqContent = content;
+		uqStr.erase(std::remove(uqStr.begin(), uqStr.end(), '"'), uqStr.end());
+		uqContent.erase(std::remove(uqContent.begin(), uqContent.end(), '"'), uqContent.end());
+
+		if (uqContent == uqStr)
+			return;
 	}
+
+	// Neither expectation was met
+	std::cerr << "--- expected ---" << std::endl << content << "--- end ---" << std::endl;
+	std::cerr << "--- serialized ---" << std::endl << str << "--- end ---" << std::endl;
+
+	CPPUNIT_ASSERT_MESSAGE("Configuration serialization check failed", 0);
 }
 
 
