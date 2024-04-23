@@ -36,32 +36,32 @@ using namespace std;
 
 class NutConfTest : public CppUnit::TestFixture
 {
-  CPPUNIT_TEST_SUITE( NutConfTest );
-    CPPUNIT_TEST( testOptions );
-    CPPUNIT_TEST( testParseCHARS );
-    CPPUNIT_TEST( testParseSTRCHARS );
-    CPPUNIT_TEST( testPasreToken );
-    CPPUNIT_TEST( testPasreTokenWithoutColon );
-	CPPUNIT_TEST( testGenericConfigParser );
-	CPPUNIT_TEST( testUpsmonConfigParser );
-	CPPUNIT_TEST( testNutConfConfigParser );
-	CPPUNIT_TEST( testUpsdConfigParser );
-  CPPUNIT_TEST_SUITE_END();
+	CPPUNIT_TEST_SUITE( NutConfTest );
+		CPPUNIT_TEST( testOptions );
+		CPPUNIT_TEST( testParseCHARS );
+		CPPUNIT_TEST( testParseSTRCHARS );
+		CPPUNIT_TEST( testParseToken );
+		CPPUNIT_TEST( testParseTokenWithoutColon );
+		CPPUNIT_TEST( testGenericConfigParser );
+		CPPUNIT_TEST( testUpsmonConfigParser );
+		CPPUNIT_TEST( testNutConfConfigParser );
+		CPPUNIT_TEST( testUpsdConfigParser );
+	CPPUNIT_TEST_SUITE_END();
 
 public:
-  void setUp() override;
-  void tearDown() override;
+	void setUp() override;
+	void tearDown() override;
 
-  void testOptions();
-  void testParseCHARS();
-  void testParseSTRCHARS();
-  void testPasreToken();
-  void testPasreTokenWithoutColon();
+	void testOptions();
+	void testParseCHARS();
+	void testParseSTRCHARS();
+	void testParseToken();
+	void testParseTokenWithoutColon();
 
-  void testGenericConfigParser();
-  void testUpsmonConfigParser();
-  void testNutConfConfigParser();
-  void testUpsdConfigParser();
+	void testGenericConfigParser();
+	void testUpsmonConfigParser();
+	void testNutConfConfigParser();
+	void testUpsdConfigParser();
 };
 
 // Registers the fixture into the 'registry'
@@ -140,7 +140,7 @@ void NutConfTest::testParseSTRCHARS()
     }
 }
 
-void NutConfTest::testPasreToken()
+void NutConfTest::testParseToken()
 {
     static const char* src =
         "Bonjour monde\n"
@@ -177,7 +177,7 @@ void NutConfTest::testPasreToken()
 
 }
 
-void NutConfTest::testPasreTokenWithoutColon()
+void NutConfTest::testParseTokenWithoutColon()
 {
     static const char* src =
         "Bonjour monde\n"
