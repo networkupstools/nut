@@ -153,6 +153,15 @@ private:
 	Settable<int>  i;
 
 public:
+	/** If set, its value specifies if we want i==0/1 to mean false/true
+	 *  in value-equality and type-cast operators for int and bool types.
+	 *  NOTE: If true, assignment from "0" and "1" strings sets the int
+	 *  not bool stored value representation!
+	 *  NOTE: Survives the clear() call which applies to stored value,
+	 *  but would be reset by assignment from another BoolInt object.
+	 */
+	Settable<bool> bool01;
+
 	inline void clear()
 	{
 		i.clear();
@@ -162,18 +171,28 @@ public:
 	inline BoolInt& operator=(const BoolInt& other)
 	{
 		clear();
+		bool01.clear();
 
 		if (other.b.set()) b = other.b;
 		if (other.i.set()) i = other.i;
+
+		if (other.bool01.set())
+			bool01 = other.bool01;
+
 		return *this;
 	}
 
 	inline BoolInt& operator=(BoolInt&& other)
 	{
 		clear();
+		bool01.clear();
 
 		if (other.b.set()) b = other.b;
 		if (other.i.set()) i = other.i;
+
+		if (other.bool01.set())
+			bool01 = other.bool01;
+
 		return *this;
 	}
 
@@ -215,12 +234,26 @@ public:
 
 		if ("false" == src) { b = b0; return *this; }
 		if ("off"   == src) { b = b0; return *this; }
-		if ("0"     == src) { b = b0; return *this; }
+		if ("0"     == src) {
+			if (bool01.set() && bool01 == false) {
+				i = 0;
+			} else {
+				b = b0;
+			}
+			return *this;
+		}
 		if ("no"    == src) { b = b0; return *this; }
 
 		if ("true"  == src) { b = b1; return *this; }
 		if ("on"    == src) { b = b1; return *this; }
-		if ("1"     == src) { b = b1; return *this; }
+		if ("1"     == src) {
+			if (bool01.set() && bool01 == false) {
+				i = 1;
+			} else {
+				b = b1;
+			}
+			return *this;
+		}
 		if ("yes"   == src) { b = b1; return *this; }
 		if ("ok"    == src) { b = b1; return *this; }
 
@@ -245,17 +278,22 @@ public:
 
 	inline bool operator==(const BoolInt& other)const
 	{
-		// Either direct values are set and then equal;
+		// Either direct values are set and then equal; optionally
 		// else numeric values of int and bool are cross-equal.
 		if (b.set() && other.b.set()) return (b == other.b);
 		if (i.set() && other.i.set()) return (i == other.i);
 
-		// false if at least one object has neither i nor b set(), or
-		// if their numeric values do not match up as 0 or 1 exactly.
-		if (i.set() && other.b.set())
-			return ( (other.b && i == 1) || (!other.b && i == 0) );
-		if (b.set() && other.i.set())
-			return ( (b && other.i == 1) || (!b && other.i == 0) );
+		if ((bool01.set() && bool01 == true)
+		|| (!bool01.set() && other.bool01.set() && other.bool01 == true)
+		) {
+			// false if at least one object has neither i nor b
+			// values "set()", or if their numeric values do not
+			// match up as 0 or 1 exactly vs. boolean values.
+			if (i.set() && other.b.set())
+				return ( (other.b && i == 1) || (!other.b && i == 0) );
+			if (b.set() && other.i.set())
+				return ( (b && other.i == 1) || (!b && other.i == 0) );
+		}
 
 		return false;
 	}
@@ -263,20 +301,28 @@ public:
 	inline bool operator==(const bool other)const
 	{
 		if (b.set()) return (b == other);
-		if (i.set()) return ((other && i == 1) || (!other && i == 0));
+		if (bool01.set() && bool01 == true) {
+			if (i.set())
+				return ((other && i == 1) || (!other && i == 0));
+		}
 		return false;
 	}
 
 	inline bool operator==(const int other)const
 	{
 		if (i.set()) return (i == other);
-		if (b.set()) return ((b && other == 1) || (!b && other == 0));
+		if (bool01.set() && bool01 == true) {
+			if (b.set())
+				return ((b && other == 1) || (!b && other == 0));
+		}
 		return false;
 	}
 
 	inline bool operator==(const std::string other)const
 	{
 		BoolInt tmp;
+		if (bool01.set())
+			tmp.bool01 = bool01;
 		tmp = other;
 		return (*this == tmp);
 	}
@@ -301,9 +347,14 @@ public:
 
 	operator int() {
 		if (i.set()) return i;
-		if (b.set()) {
-			if (b) return 1;
-			return 0;
+		if (bool01.set() && bool01 == true) {
+			if (b.set()) {
+				if (b) return 1;
+				return 0;
+			}
+		} else {
+			throw std::invalid_argument(
+				"BoolInt value not set to int");
 		}
 
 		throw std::invalid_argument(
@@ -312,9 +363,14 @@ public:
 
 	operator bool() {
 		if (b.set()) return b;
-		if (i.set()) {
-			if (i == 0) return false;
-			if (i == 1) return true;
+		if (bool01.set() && bool01 == true) {
+			if (i.set()) {
+				if (i == 0) return false;
+				if (i == 1) return true;
+			}
+		} else {
+			throw std::invalid_argument(
+				"BoolInt value not set to bool");
 		}
 
 		throw std::invalid_argument(
