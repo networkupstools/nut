@@ -183,14 +183,18 @@ static std::string serializeCertHost(const nut::CertHost & certHost) {
 	// Spec says to write these as 0/1 integers
 	nut::BoolInt bi;
 	int i;
-	bi.bool01 = true;	// relaxed mode for 0/1 as false/true handling
+	// NOTE: After copy-assignments below (which inherit original strictness),
+	// need to add relaxed mode for 0/1 as false/true handling:
+	//bi.bool01 = true;
 
 	// Assumed to be set() - exception otherwise
 	bi = certHost.certVerify;
+	bi.bool01 = true;
 	i = bi;
 	directive << " " << i;
 
 	bi = certHost.forceSsl;
+	bi.bool01 = true;
 	i = bi;
 	directive << " " << i;
 
@@ -539,13 +543,50 @@ NutWriter::status_t UpsmonConfigWriter::writeConfig(const UpsmonConfiguration & 
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Wunreachable-code"
 #endif
-	UPSMON_DIRECTIVEX("RUN_AS_USER",    std::string,  config.runAsUser,      false);
+	UPSMON_DIRECTIVEX("DEBUG_MIN",      int,          config.debugMin,       false);
+	UPSMON_DIRECTIVEX("RUN_AS_USER",    std::string,  config.runAsUser,      true);
 	UPSMON_DIRECTIVEX("SHUTDOWNCMD",    std::string,  config.shutdownCmd,    true);
 	UPSMON_DIRECTIVEX("NOTIFYCMD",      std::string,  config.notifyCmd,      true);
-	UPSMON_DIRECTIVEX("POWERDOWNFLAG",  std::string,  config.powerDownFlag,  false);
+	UPSMON_DIRECTIVEX("POWERDOWNFLAG",  std::string,  config.powerDownFlag,  true);
 	UPSMON_DIRECTIVEX("MINSUPPLIES",    unsigned int, config.minSupplies,    false);
 	UPSMON_DIRECTIVEX("POLLFREQ",       unsigned int, config.poolFreq,       false);
 	UPSMON_DIRECTIVEX("POLLFREQALERT",  unsigned int, config.poolFreqAlert,  false);
+	UPSMON_DIRECTIVEX("POLLFAIL_LOG_THROTTLE_MAX", int, config.pollFailLogThrottleMax,  false);
+	UPSMON_DIRECTIVEX("OFFDURATION",    int,          config.offDuration,    false);
+	UPSMON_DIRECTIVEX("OBLBDURATION",   int,          config.oblbDuration,   false);
+	UPSMON_DIRECTIVEX("SHUTDOWNEXIT",   nut::BoolInt, config.shutdownExit,   false);
+
+	UPSMON_DIRECTIVEX("CERTPATH",       std::string,  config.certPath,       true);
+
+	// Spec says to write these as 0/1 integers
+	// and the macro requires Settable<>
+	// Mumbo-jumbo below for guaranteed casting to int
+	nut::BoolInt bi, bi2;
+	Settable<nut::BoolInt> bis;
+	int i;
+	// NOTE: After copy-assignments below (which inherit original strictness),
+	// need to add relaxed mode for 0/1 as false/true handling:
+	// bi.bool01 = true;
+	bi2.bool01 = false;	// strict mode for 0/1 as int handling
+
+	if (config.certVerify.set()) {
+		bi = config.certVerify;
+		bi.bool01 = true;
+		i = bi;
+		bi2 = i;
+		bis = bi2;
+		UPSMON_DIRECTIVEX("CERTVERIFY",     nut::BoolInt, bis,                   false);
+	}
+
+	if (config.forceSsl.set()) {
+		bi = config.forceSsl;
+		bi.bool01 = true;
+		i = bi;
+		bi2 = i;
+		bis = bi2;
+		UPSMON_DIRECTIVEX("FORCESSL",       nut::BoolInt, bis,                   false);
+	}
+
 	UPSMON_DIRECTIVEX("HOSTSYNC",       unsigned int, config.hostSync,       false);
 	UPSMON_DIRECTIVEX("DEADTIME",       unsigned int, config.deadTime,       false);
 	UPSMON_DIRECTIVEX("RBWARNTIME",     unsigned int, config.rbWarnTime,     false);
@@ -559,6 +600,28 @@ NutWriter::status_t UpsmonConfigWriter::writeConfig(const UpsmonConfiguration & 
 #endif
 
 	#undef UPSMON_DIRECTIVEX
+
+	// Certificate identity
+	if (config.certIdent.set()) {
+		std::string directive = serializeCertIdent(config.certIdent);
+
+		status_t status = writeDirective(directive);
+
+		if (NUTW_OK != status)
+			return status;
+	}
+
+	// Remote host(s) protected by specific certificates on their listeners
+	std::list<nut::CertHost>::const_iterator la_iter = config.certHosts.begin();
+
+	for (; la_iter != config.certHosts.end(); ++la_iter) {
+		std::string directive = serializeCertHost(*la_iter);
+
+		status_t status = writeDirective(directive);
+
+		if (NUTW_OK != status)
+			return status;
+	}
 
 	UpsmonConfiguration::NotifyType type;
 

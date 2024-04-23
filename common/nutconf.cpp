@@ -1275,7 +1275,16 @@ void UpsmonConfigParser::onParseDirective(const std::string& directiveName, char
 
 	if(_config)
 	{
-		if(directiveName == "RUN_AS_USER")
+		if(!(::strcasecmp(directiveName.c_str(), "DEBUG_MIN")))
+		{
+			// NOTE: We allow DEBUG_MIN in any casing as it can be copy-pasted
+			// between different configs and they use different historic casing
+			if(values.size()>0)
+			{
+				_config->debugMin = StringToSettableNumber<int>(values.front());
+			}
+		}
+		else if(directiveName == "RUN_AS_USER")
 		{
 			if(values.size()>0)
 			{
@@ -1339,6 +1348,83 @@ void UpsmonConfigParser::onParseDirective(const std::string& directiveName, char
 			if(values.size()>0)
 			{
 				_config->poolFreqAlert = StringToSettableNumber<unsigned int>(values.front());
+			}
+		}
+		else if(directiveName == "POLLFAIL_LOG_THROTTLE_MAX")
+		{
+			if(values.size()>0)
+			{
+				_config->pollFailLogThrottleMax = StringToSettableNumber<int>(values.front());
+			}
+		}
+		else if(directiveName == "OFFDURATION")
+		{
+			if(values.size()>0)
+			{
+				_config->offDuration = StringToSettableNumber<int>(values.front());
+			}
+		}
+		else if(directiveName == "OBLBDURATION")
+		{
+			if(values.size()>0)
+			{
+				_config->oblbDuration = StringToSettableNumber<int>(values.front());
+			}
+		}
+		else if(directiveName == "SHUTDOWNEXIT")
+		{
+			if(values.size()>0)
+			{
+				nut::BoolInt bi;
+				bi << values.front();
+				_config->shutdownExit = bi;
+			}
+		}
+		else if(directiveName == "CERTPATH")
+		{
+			if(values.size()>0)
+			{
+				_config->certPath = values.front();
+			}
+		}
+		else if(directiveName == "CERTIDENT")
+		{
+			if(values.size()==2)
+			{
+				_config->certIdent.certName = values.front();
+				_config->certIdent.certDbPass = (*(++values.begin()));
+			}
+		}
+		else if(directiveName == "CERTHOST")
+		{
+			if(values.size()==4)
+			{
+				nut::CertHost certHost;
+				ConfigParamList::const_iterator it = values.begin();
+				certHost.host       = *it++;
+				certHost.certName   = *it++;
+				certHost.certVerify = *it++;
+				certHost.forceSsl   = *it++;
+
+				_config->certHosts.push_back(certHost);
+			}
+		}
+		else if(directiveName == "CERTVERIFY")
+		{
+			if(values.size()>0)
+			{
+				nut::BoolInt bi;
+				bi << values.front();
+				_config->certVerify = bi;
+			}
+		}
+		else if(directiveName == "FORCESSL")
+		{
+			if(values.size()>0)
+			{
+				nut::BoolInt bi;
+				bi << values.front();
+				_config->forceSsl = bi;
 			}
 		}
 		else if(directiveName == "HOSTSYNC")

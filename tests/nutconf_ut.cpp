@@ -160,17 +160,55 @@ void NutConfigUnitTest::testUpsmonConfiguration() {
 	config.poolFreqAlert = 10;
 	config.deadTime      = 30;
 
+	config.debugMin      = 6;
+
+	// Note different bool wording expected below
+	// and generally try different input types here.
+	// Hm, maybe we need typed constructors to init
+	// the values for test? ("new" weirdness below
+	// is due to Settable<> formal type mismatch)
+	config.shutdownExit  = (*(new nut::BoolInt()) << "true");
+	config.oblbDuration  = -1;
+	config.certVerify    = (*(new nut::BoolInt()) << false);
+	config.forceSsl      = (*(new nut::BoolInt()) << "1");
+
+	config.certIdent.certName    = "My test cert";
+	config.certIdent.certDbPass  = "DbPwd!";
+
+	nut::CertHost certHost;
+	certHost.host        = "remote:3493";
+	certHost.certName    = "NUT server cert";
+	certHost.certVerify  = (*(new nut::BoolInt()) << "true");
+	certHost.forceSsl    = (*(new nut::BoolInt()) << 0);
+	config.certHosts.push_back(certHost);
+
+	certHost.host        = "localhost:13493";
+	certHost.certName    = "My NUT server cert";
+	certHost.certVerify  = (*(new nut::BoolInt()) << "false");
+	certHost.forceSsl    = (*(new nut::BoolInt()) << false);
+	config.certHosts.push_back(certHost);
+
+	// Note: More config data points come from the file loaded above
 	check(static_cast<nut::Serialisable *>(&config),
+		"DEBUG_MIN 6\n"
 		"SHUTDOWNCMD \"/sbin/shutdown -h +2 'System shutdown in 2 minutes!'\"\n"
-		"POWERDOWNFLAG /run/nut/killpower\n"
+		"POWERDOWNFLAG \"/run/nut/killpower\"\n"
 		"MINSUPPLIES 1\n"
 		"POLLFREQ 5\n"
 		"POLLFREQALERT 10\n"
+		"OFFDURATION 30\n"
+		"OBLBDURATION -1\n"
+		"SHUTDOWNEXIT yes\n"
+		"CERTVERIFY 0\n"
+		"FORCESSL 1\n"
 		"HOSTSYNC 15\n"
 		"DEADTIME 30\n"
 		"RBWARNTIME 43200\n"
 		"NOCOMMWARNTIME 300\n"
 		"FINALDELAY 5\n"
+		"CERTIDENT \"My test cert\" \"DbPwd!\"\n"
+		"CERTHOST \"remote:3493\" \"NUT server cert\" 1 0\n"
+		"CERTHOST \"localhost:13493\" \"My NUT server cert\" 0 0\n"
 	);
 }
 

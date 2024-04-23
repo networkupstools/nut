@@ -1259,7 +1259,16 @@ public:
 	UpsmonConfiguration();
 	void parseFromString(const std::string& str);
 
+	Settable<int>          debugMin, pollFailLogThrottleMax;
+	Settable<int>          offDuration, oblbDuration;
 	Settable<std::string>  runAsUser, shutdownCmd, notifyCmd, powerDownFlag;
+	/* yes|no (boolean) or a delay */
+	Settable<nut::BoolInt> shutdownExit;
+	/* practically boolean, but in 0|1 written form (bool01 fiddling) */
+	Settable<nut::BoolInt> certVerify, forceSsl;
+	Settable<std::string>  certPath;
+	CertIdent              certIdent;
+	std::list<CertHost>    certHosts;
 	Settable<unsigned int> minSupplies, poolFreq, poolFreqAlert, hostSync;
 	Settable<unsigned int> deadTime, rbWarnTime, noCommWarnTime, finalDelay;
 
