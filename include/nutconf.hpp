@@ -163,6 +163,33 @@ struct CertIdent
 	}
 };
 
+
+/**
+ * \brief	Certificate protected host structure for NUT
+ *
+ * Contains a host name, certificate name and option flags
+ */
+struct CertHost
+{
+	Settable<std::string> host, certName;
+	Settable<int> certVerify, forceSsl;
+
+	inline bool operator==(const CertHost& other)const
+	{
+		return certName == other.certName
+			&& host == other.host
+			&& certVerify == other.certVerify
+			&& forceSsl == other.forceSsl;
+	}
+
+	inline bool set()const
+	{
+		return certName.set() && host.set()
+			&& certVerify.set() && forceSsl.set();
+	}
+};
+
+
 /**
  * NUT config parser.
  */

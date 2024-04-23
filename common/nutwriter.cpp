@@ -123,6 +123,33 @@ static std::string serializeCertIdent(const nut::CertIdent & ident) {
 }
 
 
+/**
+ *  \brief  NSS certificate-protected host info serializer
+ *
+ *  \param  certHost  Certificate-protected host info object
+ *
+ *  \return Serialized certificate-protected host info
+ */
+static std::string serializeCertHost(const nut::CertHost & certHost) {
+	std::stringstream directive;
+	const std::string & val1 = (certHost.host), val2 = (certHost.certName);
+
+	directive << "CERTHOST \"" << val1 << "\" \"" << val2 << "\"";
+
+	// Spec says to write these as 0/1 integers
+	int i;
+
+	// Assumed to be set() - exception otherwise
+	i = certHost.certVerify;
+	directive << " " << i;
+
+	i = certHost.forceSsl;
+	directive << " " << i;
+
+	return directive.str();
+}
+
+
 NutWriter::status_t NutWriter::writeEachLine(const std::string & str, const std::string & pref) {
 	for (size_t pos = 0; pos < str.size(); ) {
 		// Prefix every line
