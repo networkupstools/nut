@@ -144,6 +144,202 @@ public:
 
 
 /**
+ * \brief	Mix a boolean (yes/no) or wider integer range
+ */
+class BoolInt
+{
+private:
+	Settable<bool> b;
+	Settable<int>  i;
+
+public:
+	inline void clear()
+	{
+		i.clear();
+		b.clear();
+	}
+
+	inline BoolInt& operator=(const BoolInt& other)
+	{
+		clear();
+
+		if (other.b.set()) b = other.b;
+		if (other.i.set()) i = other.i;
+		return *this;
+	}
+
+	inline BoolInt& operator=(BoolInt&& other)
+	{
+		clear();
+
+		if (other.b.set()) b = other.b;
+		if (other.i.set()) i = other.i;
+		return *this;
+	}
+
+	inline BoolInt& operator=(int val)
+	{
+		clear();
+		i = val;
+		return *this;
+	}
+
+	inline BoolInt& operator=(bool val)
+	{
+		clear();
+		b = val;
+		return *this;
+	}
+
+	inline BoolInt& operator=(const char* s)
+	{
+		if (!s)
+			throw std::invalid_argument(
+				"BoolInt value from <null> string is is not supported");
+
+		std::string src(s);
+		return (*this = src);
+	}
+
+	inline BoolInt& operator=(std::string src)
+	{
+		static const Settable<bool> b0(false);
+		static const Settable<bool> b1(true);
+
+		// NOTE: Not a pointer, is not null at least
+		if (src.empty())
+			throw std::invalid_argument(
+				"BoolInt value from <empty> string is is not supported");
+
+		clear();
+
+		if ("false" == src) { b = b0; return *this; }
+		if ("off"   == src) { b = b0; return *this; }
+		if ("0"     == src) { b = b0; return *this; }
+		if ("no"    == src) { b = b0; return *this; }
+
+		if ("true"  == src) { b = b1; return *this; }
+		if ("on"    == src) { b = b1; return *this; }
+		if ("1"     == src) { b = b1; return *this; }
+		if ("yes"   == src) { b = b1; return *this; }
+		if ("ok"    == src) { b = b1; return *this; }
+
+		std::stringstream ss(src);
+		int result;
+		if (ss >> result && ss.rdbuf()->in_avail() == 0) {
+			// Conversion succeeded and all chars were read
+			// (e.g. not a decimal number)
+			i = result;
+#ifdef DEBUG
+			std::cerr << "BoolInt assigned from '" << src
+				<< "': got int '" << result << "'"
+				<< " stream empty? " << ss.rdbuf()->in_avail()
+				<< std::endl;
+#endif
+			return *this;
+		}
+
+		throw std::invalid_argument("BoolInt value from '" + src +
+			"' string not understood as bool nor int");
+	}
+
+	inline bool operator==(const BoolInt& other)const
+	{
+		// Either direct values are set and then equal;
+		// else numeric values of int and bool are cross-equal.
+		if (b.set() && other.b.set()) return (b == other.b);
+		if (i.set() && other.i.set()) return (i == other.i);
+
+		// false if at least one object has neither i nor b set(), or
+		// if their numeric values do not match up as 0 or 1 exactly.
+		if (i.set() && other.b.set())
+			return ( (other.b && i == 1) || (!other.b && i == 0) );
+		if (b.set() && other.i.set())
+			return ( (b && other.i == 1) || (!b && other.i == 0) );
+
+		return false;
+	}
+
+	inline bool operator==(const bool other)const
+	{
+		if (b.set()) return (b == other);
+		if (i.set()) return ((other && i == 1) || (!other && i == 0));
+		return false;
+	}
+
+	inline bool operator==(const int other)const
+	{
+		if (i.set()) return (i == other);
+		if (b.set()) return ((b && other == 1) || (!b && other == 0));
+		return false;
+	}
+
+	inline bool operator==(const std::string other)const
+	{
+		BoolInt tmp;
+		tmp = other;
+		return (*this == tmp);
+	}
+
+	inline bool operator==(const char* s)const
+	{
+		if (!s)
+			return false;
+
+		std::string src(s);
+		return (*this == src);
+	}
+
+	inline bool set()const
+	{
+		if (i.set() && b.set())
+			throw std::invalid_argument(
+				"BoolInt value somehow got both bool and int values set");
+
+		return (i.set() || b.set());
+	}
+
+	operator int() {
+		if (i.set()) return i;
+		if (b.set()) {
+			if (b) return 1;
+			return 0;
+		}
+
+		throw std::invalid_argument(
+			"BoolInt value not set, neither to bool nor to int");
+	}
+
+	operator bool() {
+		if (b.set()) return b;
+		if (i.set()) {
+			if (i == 0) return false;
+			if (i == 1) return true;
+		}
+
+		throw std::invalid_argument(
+			"BoolInt value not set, neither to bool nor to int");
+	}
+
+	operator std::string() {
+		if (b.set()) {
+			if (b) return "yes";
+			return "no";
+		}
+
+		if (i.set()) {
+			std::ostringstream ss;
+			ss << i;
+			return ss.str();
+		}
+
+		throw std::invalid_argument(
+			"BoolInt value not set, neither to bool nor to int");
+	}
+};
+
+
+/**
  * \brief	Certificate Identification structure for NUT
  *
  * Contains a certificate name and database password

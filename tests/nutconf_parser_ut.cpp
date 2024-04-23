@@ -40,6 +40,7 @@ class NutConfTest : public CppUnit::TestFixture
 		CPPUNIT_TEST( testOptions );
 		CPPUNIT_TEST( testParseCHARS );
 		CPPUNIT_TEST( testParseSTRCHARS );
+		CPPUNIT_TEST( testParseBoolInt );
 		CPPUNIT_TEST( testParseToken );
 		CPPUNIT_TEST( testParseTokenWithoutColon );
 		CPPUNIT_TEST( testGenericConfigParser );
@@ -55,6 +56,7 @@ public:
 	void testOptions();
 	void testParseCHARS();
 	void testParseSTRCHARS();
+	void testParseBoolInt();
 	void testParseToken();
 	void testParseTokenWithoutColon();
 
@@ -138,6 +140,126 @@ void NutConfTest::testParseSTRCHARS()
         NutParser parse("To\\\"to");
         CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find quoted-escaped string 'To\"to'", string("To\"to"), parse.parseSTRCHARS());
     }
+}
+
+void NutConfTest::testParseBoolInt()
+{
+	// NOTE: Can not use CPPUNIT_ASSERT_EQUAL() below, requires an assertEqual() method
+	BoolInt bi;
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should be not 'set()' initially", !(bi.set()));
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("Unassigned BoolInt should not be equal to an int",
+		CPPUNIT_ASSERT(bi == 0));
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("Unassigned BoolInt should not be equal to an int",
+		CPPUNIT_ASSERT(bi == 1));
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("Unassigned BoolInt should not be equal to a bool",
+		CPPUNIT_ASSERT(bi == true));
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("Unassigned BoolInt should not be equal to a bool",
+		CPPUNIT_ASSERT(bi == false));
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("Unassigned BoolInt should not be equal to a string",
+		CPPUNIT_ASSERT(bi == "2"));
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("Unassigned BoolInt should not be equal to a string",
+		CPPUNIT_ASSERT(bi == "on"));
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("Unassigned BoolInt should not be equal to a string",
+		CPPUNIT_ASSERT(bi == "no"));
+/*
+	// Actually not "must throw", just returns false for any comparisons - see above
+	CPPUNIT_ASSERT_THROW_MESSAGE("Unassigned BoolInt comparisons must throw exceptions (string)",
+		if (bi == "1")  {}, std::invalid_argument);
+	CPPUNIT_ASSERT_THROW_MESSAGE("Unassigned BoolInt comparisons must throw exceptions (int)",
+		if (bi == 1)    {}, std::invalid_argument);
+	CPPUNIT_ASSERT_THROW_MESSAGE("Unassigned BoolInt comparisons must throw exceptions (bool)",
+		if (bi == true) {}, std::invalid_argument);
+*/
+
+	bi = 42;
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should be 'set()' after assignment from int", bi.set());
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should be equal to the int", (bi == 42));
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should be equal to the string value of int", (bi == "42"));
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("BoolInt should not be equal to another int",
+		CPPUNIT_ASSERT(bi == 2));
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("BoolInt should not be equal to a bool",
+		CPPUNIT_ASSERT(bi == true));
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("BoolInt should not be equal to a bool",
+		CPPUNIT_ASSERT(bi == false));
+
+	bi = true;
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should be 'set()' after assignment from bool", bi.set());
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should be equal to the bool", (bi == true));
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should be equal to the int value of bool", (bi == 1));
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("BoolInt should not be equal to another bool",
+		CPPUNIT_ASSERT(bi == false));
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("BoolInt should not be equal to int value of another bool",
+		CPPUNIT_ASSERT(bi == 0));
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("BoolInt should not be equal to another int",
+		CPPUNIT_ASSERT(bi == 2));
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("BoolInt should not be equal to old int",
+		CPPUNIT_ASSERT(bi == 42));
+
+	bi = false;
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should be 'set()' after assignment from bool", bi.set());
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should be equal to the bool", (bi == false));
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should be equal to the int value of bool", (bi == 0));
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("BoolInt should not be equal to another bool",
+		CPPUNIT_ASSERT(bi == true));
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("BoolInt should not be equal to int value of another bool",
+		CPPUNIT_ASSERT(bi == 1));
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("BoolInt should not be equal to another int",
+		CPPUNIT_ASSERT(bi == 2));
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("BoolInt should not be equal to old int",
+		CPPUNIT_ASSERT(bi == 42));
+
+	bi = "-1";
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should be 'set()' after assignment from string", bi.set());
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should be equal to the int", (bi == -1));
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("BoolInt should not be equal to another int",
+		CPPUNIT_ASSERT(bi == 2));
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("BoolInt should not be equal to a bool",
+		CPPUNIT_ASSERT(bi == true));
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("BoolInt should not be equal to a bool",
+		CPPUNIT_ASSERT(bi == false));
+
+	bi = "off";
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should be 'set()' after assignment from string", bi.set());
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should be equal to the bool", (bi == false));
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should be equal to the int value of bool", (bi == 0));
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should be equal to the string value of bool", (bi == "off"));
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should be equal to the string value of bool", (bi == "false"));
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should be equal to the string value of bool", (bi == "0"));
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should be equal to the string value of bool", (bi == "no"));
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("BoolInt should not be equal to the string value of another bool",
+		CPPUNIT_ASSERT(bi == "yes"));
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("BoolInt should not be equal to the string value of another bool",
+		CPPUNIT_ASSERT(bi == "true"));
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("BoolInt should not be equal to the string value of another bool",
+		CPPUNIT_ASSERT(bi == "1"));
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("BoolInt should not be equal to the string value of another bool",
+		CPPUNIT_ASSERT(bi == "on"));
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("BoolInt should not be equal to the string value of another bool",
+		CPPUNIT_ASSERT(bi == "ok"));
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("BoolInt should not be equal to another bool",
+		CPPUNIT_ASSERT(bi == true));
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("BoolInt should not be equal to int value of another bool",
+		CPPUNIT_ASSERT(bi == 1));
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("BoolInt should not be equal to another int",
+		CPPUNIT_ASSERT(bi == 2));
+	CPPUNIT_ASSERT_ASSERTION_FAIL_MESSAGE("BoolInt should not be equal to old int",
+		CPPUNIT_ASSERT(bi == 42));
+
+	CPPUNIT_ASSERT_THROW_MESSAGE("BoolInt assignment from invalid strings must throw exceptions",
+		(bi = "AbraCadabra"), std::invalid_argument);
+
+	CPPUNIT_ASSERT_THROW_MESSAGE("BoolInt assignment from invalid strings must throw exceptions",
+		(bi = "1.5"), std::invalid_argument);
+
+	CPPUNIT_ASSERT_THROW_MESSAGE("BoolInt assignment from invalid strings must throw exceptions",
+		(bi = "-3.8"), std::invalid_argument);
+
+	// Standard casing only
+	CPPUNIT_ASSERT_THROW_MESSAGE("BoolInt assignment from invalid strings must throw exceptions",
+		(bi = "OFF"), std::invalid_argument);
+
+	bi.clear();
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should be not 'set()' after 'clear()", !(bi.set()));
 }
 
 void NutConfTest::testParseToken()
