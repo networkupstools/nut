@@ -162,6 +162,12 @@ public:
 	 */
 	Settable<bool> bool01;
 
+	/** Leave all contents un-set */
+	BoolInt() {}
+	BoolInt(const BoolInt& other) {
+		*this = other;
+	}
+
 	inline void clear()
 	{
 		i.clear();
