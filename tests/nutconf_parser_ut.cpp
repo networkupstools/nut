@@ -34,6 +34,10 @@ using namespace nut;
 #include <algorithm>
 using namespace std;
 
+extern "C" {
+	extern bool verbose;
+}
+
 class NutConfTest : public CppUnit::TestFixture
 {
 	CPPUNIT_TEST_SUITE( NutConfTest );
@@ -274,6 +278,36 @@ void NutConfTest::testParseBoolInt()
 	CPPUNIT_ASSERT_THROW_MESSAGE("BoolInt assignment from invalid strings must throw exceptions",
 		(bi = "OFF"), std::invalid_argument);
 
+	// Not-strict comparisons: int or string 0/1 values are bools
+	std::string s;
+	bi << "true";
+	s = bi.toString();
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should get printed as expected string value", (s == "yes"));
+
+	bi << false;
+	s = bi.toString();
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should get printed as expected string value", (s == "no"));
+
+	bi << 1;
+	s = bi.toString();
+	if (verbose)
+		std::cerr << "Non-strict? " << bi.bool01 << " : numeric 1 "
+				<< "=> (string)'" << s << "' aka (ostream)'" << bi << "'"
+				<< std::endl;
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should get printed as expected string value (0/1 => bool)", (s == "yes"));
+
+	bi = 0;
+	s = bi.toString();
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should get printed as expected string value (0/1 => bool)", (s == "no"));
+
+	bi = "1";
+	s = bi.toString();
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should get printed as expected string value (0/1 => bool)", (s == "yes"));
+
+	bi = "0";
+	s = bi.toString();
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should get printed as expected string value (0/1 => bool)", (s == "no"));
+
 	bi.clear();
 	CPPUNIT_ASSERT_MESSAGE("BoolInt should be not 'set()' after 'clear()", !(bi.set()));
 }
@@ -416,6 +450,32 @@ void NutConfTest::testParseBoolIntStrict()
 	// Standard casing only
 	CPPUNIT_ASSERT_THROW_MESSAGE("BoolInt assignment from invalid strings must throw exceptions",
 		(bi = "OFF"), std::invalid_argument);
+
+	// Strict comparisons: int or string 0/1 values are int not bool
+	std::string s;
+	bi << "true";
+	s = bi.toString();
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should get printed as expected string value", (s == "yes"));
+
+	bi << false;
+	s = bi.toString();
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should get printed as expected string value", (s == "no"));
+
+	bi << 1;
+	s = bi.toString();
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should get printed as expected string value (0/1 => int)", (s == "1"));
+
+	bi = 0;
+	s = bi.toString();
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should get printed as expected string value (0/1 => int)", (s == "0"));
+
+	bi = "1";
+	s = bi.toString();
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should get printed as expected string value (0/1 => int)", (s == "1"));
+
+	bi << "0";
+	s = bi.toString();
+	CPPUNIT_ASSERT_MESSAGE("BoolInt should get printed as expected string value (0/1 => int)", (s == "0"));
 
 	bi.clear();
 	CPPUNIT_ASSERT_MESSAGE("BoolInt should be not 'set()' after 'clear()", !(bi.set()));

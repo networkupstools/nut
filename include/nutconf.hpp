@@ -276,6 +276,30 @@ public:
 			"' string not understood as bool nor int");
 	}
 
+	inline BoolInt& operator<<(bool other)
+	{
+		*this = other;
+		return *this;
+	}
+
+	inline BoolInt& operator<<(int other)
+	{
+		*this = other;
+		return *this;
+	}
+
+	inline BoolInt& operator<<(std::string other)
+	{
+		*this = other;
+		return *this;
+	}
+
+	inline BoolInt& operator<<(const char* other)
+	{
+		*this = other;
+		return *this;
+	}
+
 	inline bool operator==(const BoolInt& other)const
 	{
 		// Either direct values are set and then equal; optionally
@@ -377,13 +401,18 @@ public:
 			"BoolInt value not set, neither to bool nor to int");
 	}
 
-	operator std::string() {
+	inline std::string toString()const {
 		if (b.set()) {
 			if (b) return "yes";
 			return "no";
 		}
 
 		if (i.set()) {
+			if (bool01.set() && bool01 == true) {
+				if (i == 0) return "no";
+				if (i == 1) return "yes";
+			}
+
 			std::ostringstream ss;
 			ss << i;
 			return ss.str();
@@ -392,7 +421,22 @@ public:
 		throw std::invalid_argument(
 			"BoolInt value not set, neither to bool nor to int");
 	}
+
+	// FIXME: `std::string s = bi;` just won't work
+	// but we can use `s = bi.toString()` or `cout << bi`
+	operator std::string()const {
+		return this->toString();
+	}
+
+	operator std::string&()const {
+		return *(new std::string(this->operator std::string()));
+	}
 };
+
+std::ostream& operator << (std::ostream &os, const BoolInt &bi);
+inline std::ostream& operator << (std::ostream &os, const BoolInt &bi) {
+	return (os << bi.toString());
+}
 
 
 /**
