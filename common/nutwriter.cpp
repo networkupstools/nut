@@ -137,13 +137,17 @@ static std::string serializeCertHost(const nut::CertHost & certHost) {
 	directive << "CERTHOST \"" << val1 << "\" \"" << val2 << "\"";
 
 	// Spec says to write these as 0/1 integers
+	nut::BoolInt bi;
 	int i;
+	bi.bool01 = true;	// relaxed mode for 0/1 as false/true handling
 
 	// Assumed to be set() - exception otherwise
-	i = certHost.certVerify;
+	bi = certHost.certVerify;
+	i = bi;
 	directive << " " << i;
 
-	i = certHost.forceSsl;
+	bi = certHost.forceSsl;
+	i = bi;
 	directive << " " << i;
 
 	return directive.str();

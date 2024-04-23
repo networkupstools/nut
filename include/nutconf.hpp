@@ -512,7 +512,7 @@ struct CertIdent
 struct CertHost
 {
 	Settable<std::string> host, certName;
-	Settable<int> certVerify, forceSsl;
+	nut::BoolInt certVerify, forceSsl;
 
 	inline bool operator==(const CertHost& other)const
 	{
