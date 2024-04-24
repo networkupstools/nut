@@ -72,10 +72,18 @@ namespace nut {
  * error: 'ClassName' has no out-of-line virtual method definitions; its vtable
  *   will be emitted in every translation unit [-Werror,-Wweak-vtables]
  */
-NutConfigWriter::~NutConfigWriter() {}
-NutConfConfigWriter::~NutConfConfigWriter() {}
-UpsmonConfigWriter::~UpsmonConfigWriter() {}
-UpsdConfigWriter::~UpsdConfigWriter() {}
+NutConfigWriter::~NutConfigWriter() {}	// generic interface/base class
+// Flat-config classes:
+NutConfConfigWriter::~NutConfConfigWriter() {}	// nut.conf, shell format
+UpsmonConfigWriter::~UpsmonConfigWriter() {}	// upsmon.conf
+UpsdConfigWriter::~UpsdConfigWriter() {}		// upsd.conf
+// Structured-config classes R/W is handled via GenericConfiguration:
+//	UpsConfiguration:		ups.conf
+//	UpsdUsersConfiguration:	upsd.users
+// Not handled currently:
+//	xxx:	upssched.conf
+//	xxx:	upsset.conf
+//	xxx:	hosts.conf
 
 // End-of-Line separators (arch. dependent)
 
