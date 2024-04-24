@@ -65,6 +65,50 @@
 	} while (0)
 
 
+/**
+ *  \brief  Shell (envvar) configuration directive generator
+ *
+ *  The macro is used to simplify generation of
+ *  nut.conf file directives.
+ *
+ *  IMPORTANT NOTE:
+ *  In case of writing error, the macro causes immediate
+ *  return from the calling function (propagating the writing status).
+ *
+ *  \param  name       Directive name
+ *  \param  arg_t      Directive argument implementation type
+ *  \param  arg        Directive argument
+ *  \param  quote_arg  Boolean flag; check to quote the argument
+ */
+// NOTE: Due to this being a macro applied to any argument type,
+// implementation for e.g. bool handling jumps through hoops like
+// stringification and back. FIXME: working optimization welcome.
+#define SHELL_CONFIG_DIRECTIVEX(name, arg_t, arg, quote_arg) \
+	do { \
+		if ((arg).set()) { \
+			const arg_t & arg_val = (arg); \
+			std::stringstream ss; \
+			ss << name << '='; \
+			if (quote_arg) \
+				ss << '\''; \
+			if (typeid(arg_val) == typeid(bool&)) { \
+				std::stringstream ssb; \
+				ssb << arg_val; \
+				std::string sb = ssb.str(); \
+				if ("1" == sb) { ss << "true"; } \
+				else if ("0" == sb) { ss << "false"; } \
+				else { ss << arg_val; } \
+			} else \
+				ss << arg_val; \
+			if (quote_arg) \
+				ss << '\''; \
+			status_t status = writeDirective(ss.str()); \
+			if (NUTW_OK != status) \
+				return status; \
+		} \
+	} while (0)
+
+
 namespace nut {
 
 
