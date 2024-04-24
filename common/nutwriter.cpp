@@ -250,11 +250,10 @@ NutWriter::status_t SectionlessConfigWriter::writeSectionName(const std::string 
 
 
 NutWriter::status_t NutConfConfigWriter::writeConfig(const NutConfiguration & config) {
-	status_t status;
-
 	// Mode
 	// TBD: How should I serialize an unknown mode?
 	if (config.mode.set()) {
+		status_t status;
 		std::string mode_str;
 
 		NutConfiguration::NutMode mode = config.mode;
@@ -293,6 +292,14 @@ NutWriter::status_t NutConfConfigWriter::writeConfig(const NutConfiguration & co
 		if (NUTW_OK != status)
 			return status;
 	}
+
+	SHELL_CONFIG_DIRECTIVEX("ALLOW_NO_DEVICE",		bool,			config.allowNoDevice,	false);
+	SHELL_CONFIG_DIRECTIVEX("ALLOW_NOT_ALL_LISTENERS",	bool,		config.allowNotAllListeners,	false);
+	SHELL_CONFIG_DIRECTIVEX("UPSD_OPTIONS",			std::string,	config.upsdOptions,		true);
+	SHELL_CONFIG_DIRECTIVEX("UPSMON_OPTIONS",		std::string,	config.upsmonOptions,	true);
+	SHELL_CONFIG_DIRECTIVEX("POWEROFF_WAIT",		unsigned int,	config.poweroffWait,	false);
+	SHELL_CONFIG_DIRECTIVEX("POWEROFF_QUIET",		bool,			config.poweroffQuiet,	false);
+	SHELL_CONFIG_DIRECTIVEX("NUT_DEBUG_LEVEL",		int,			config.debugLevel,		false);
 
 	return NUTW_OK;
 }

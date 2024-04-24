@@ -1360,6 +1360,11 @@ public:
 
 	Settable<NutMode> mode;
 
+	Settable<bool>		allowNoDevice, allowNotAllListeners, poweroffQuiet;
+	Settable<std::string>	upsdOptions, upsmonOptions;
+	Settable<unsigned int>	poweroffWait;
+	Settable<int>		debugLevel;
+
 	static NutMode NutModeFromString(const std::string& str);
 
 	/** Serialisable interface implementation \{ */

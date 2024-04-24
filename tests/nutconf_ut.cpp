@@ -143,8 +143,15 @@ void NutConfigUnitTest::testNutConfiguration() {
 
 	config.mode = nut::NutConfiguration::MODE_STANDALONE;
 
+	config.upsdOptions   = "-DDD -B";
+	config.allowNoDevice = true;
+	config.poweroffQuiet = false;
+
 	check(static_cast<nut::Serialisable *>(&config),
 		"MODE=standalone\n"
+		"ALLOW_NO_DEVICE=true\n"
+		"UPSD_OPTIONS='-DDD -B'\n"
+		"POWEROFF_QUIET=false\n"
 	);
 }
 

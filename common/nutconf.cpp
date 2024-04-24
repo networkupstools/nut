@@ -1611,16 +1611,70 @@ void NutConfConfigParser::onParseDirective(const std::string& directiveName, cha
 {
 	// Comments are ignored for now
 	// NOTE: although sep must be '=', sep is not verified.
-	if(_config && directiveName=="MODE" && values.size()==1)
+	if(_config)
 	{
-		std::string val = values.front();
-		NutConfiguration::NutMode mode = NutConfiguration::NutModeFromString(val);
-		if(mode != NutConfiguration::MODE_UNKNOWN)
-			_config->mode = mode;
-	}
-	else
-	{
-		// TODO WTF with errors ?
+		if(directiveName == "MODE")
+		{
+			if (values.size()==1) {
+				std::string val = values.front();
+				NutConfiguration::NutMode mode = NutConfiguration::NutModeFromString(val);
+				if(mode != NutConfiguration::MODE_UNKNOWN)
+					_config->mode = mode;
+			}
+		}
+		else if(directiveName == "ALLOW_NO_DEVICE")
+		{
+			if(values.size()>0)
+			{
+				_config->allowNoDevice = StringToSettableNumber<bool>(values.front());
+			}
+		}
+		else if(directiveName == "ALLOW_NOT_ALL_LISTENERS")
+		{
+			if(values.size()>0)
+			{
+				_config->allowNotAllListeners = StringToSettableNumber<bool>(values.front());
+			}
+		}
+		else if(directiveName == "UPSD_OPTIONS")
+		{
+			if(values.size()>0)
+			{
+				_config->upsdOptions = values.front();
+			}
+		}
+		else if(directiveName == "UPSMON_OPTIONS")
+		{
+			if(values.size()>0)
+			{
+				_config->upsmonOptions = values.front();
+			}
+		}
+		else if(directiveName == "POWEROFF_WAIT")
+		{
+			if(values.size()>0)
+			{
+				_config->poweroffWait = StringToSettableNumber<unsigned int>(values.front());
+			}
+		}
+		else if(directiveName == "POWEROFF_QUIET")
+		{
+			if(values.size()>0)
+			{
+				_config->poweroffQuiet = StringToSettableNumber<bool>(values.front());
+			}
+		}
+		else if(directiveName == "NUT_DEBUG_LEVEL")
+		{
+			if(values.size()>0)
+			{
+				_config->debugLevel = StringToSettableNumber<int>(values.front());
+			}
+		}
+		else
+		{
+			// TODO WTF with errors ?
+		}
 	}
 }
 
