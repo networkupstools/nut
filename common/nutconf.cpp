@@ -97,44 +97,53 @@ void NutParser::setOptions(unsigned int options, bool set)
 	}
 }
 
-char NutParser::get() {
+char NutParser::get()
+{
 	if (_pos >= _buffer.size())
 		return 0;
 	else
 		return _buffer[_pos++];
 }
 
-char NutParser::peek() {
+char NutParser::peek()
+{
 	return _buffer[_pos];
 }
 
-size_t NutParser::getPos()const {
+size_t NutParser::getPos()const
+{
 	return _pos;
 }
 
-void NutParser::setPos(size_t pos) {
+void NutParser::setPos(size_t pos)
+{
 	_pos = pos;
 }
 
-char NutParser::charAt(size_t pos)const {
+char NutParser::charAt(size_t pos)const
+{
 	return _buffer[pos];
 }
 
-void NutParser::pushPos() {
+void NutParser::pushPos()
+{
 	_stack.push_back(_pos);
 }
 
-size_t NutParser::popPos() {
+size_t NutParser::popPos()
+{
 	size_t pos = _stack.back();
 	_stack.pop_back();
 	return pos;
 }
 
-void NutParser::rewind() {
+void NutParser::rewind()
+{
 	_pos = popPos();
 }
 
-void NutParser::back() {
+void NutParser::back()
+{
 	if (_pos > 0)
 		--_pos;
 }
@@ -145,7 +154,8 @@ void NutParser::back() {
  *             | '\\' ( __SPACES__ | '\\' | '\"' | '#' )
  * TODO: accept "\t", "\s", "\r", "\n" ??
  */
-std::string NutParser::parseCHARS() {
+std::string NutParser::parseCHARS()
+{
 	bool escaped = false; // Is char escaped ?
 	std::string res; // Stored string
 
@@ -181,7 +191,8 @@ std::string NutParser::parseCHARS() {
  *             | '\\' ( '\\' | '\"' )
  * TODO: accept "\t", "\s", "\r", "\n" ??
  */
-std::string NutParser::parseSTRCHARS() {
+std::string NutParser::parseSTRCHARS()
+{
 	bool escaped = false; // Is char escaped ?
 	std::string str; // Stored string
 
@@ -214,7 +225,8 @@ std::string NutParser::parseSTRCHARS() {
 /** Parse a string source for getting the next token, ignoring spaces.
  * \return Token type.
  */
-NutParser::Token NutParser::parseToken() {
+NutParser::Token NutParser::parseToken()
+{
 
 	/** Lexical parsing machine state enumeration.*/
 	typedef enum {
@@ -388,7 +400,8 @@ NutParser::Token NutParser::parseToken() {
 	return token;
 }
 
-std::list<NutParser::Token> NutParser::parseLine() {
+std::list<NutParser::Token> NutParser::parseLine()
+{
 	std::list<NutParser::Token> res;
 
 	while (true) {
@@ -420,19 +433,23 @@ std::list<NutParser::Token> NutParser::parseLine() {
 //
 
 NutConfigParser::NutConfigParser(const char* buffer, unsigned int options) :
-NutParser(buffer, options) {
+NutParser(buffer, options)
+{
 }
 
 NutConfigParser::NutConfigParser(const std::string& buffer, unsigned int options) :
-NutParser(buffer, options) {
+NutParser(buffer, options)
+{
 }
 
-void NutConfigParser::parseConfig(BaseConfiguration* config) {
+void NutConfigParser::parseConfig(BaseConfiguration* config)
+{
 	NUT_UNUSED_VARIABLE(config);
 	parseConfig();
 }
 
-void NutConfigParser::parseConfig() {
+void NutConfigParser::parseConfig()
+{
 	onParseBegin();
 
 	enum ConfigParserState {
@@ -714,23 +731,31 @@ void NutConfigParser::parseConfig() {
 //
 
 DefaultConfigParser::DefaultConfigParser(const char* buffer) :
-NutConfigParser(buffer) {
+NutConfigParser(buffer)
+{
 }
 
 DefaultConfigParser::DefaultConfigParser(const std::string& buffer) :
-NutConfigParser(buffer) {
+NutConfigParser(buffer)
+{
 }
 
-void DefaultConfigParser::onParseBegin() {
+void DefaultConfigParser::onParseBegin()
+{
 	// Start with empty section (i.e. global one)
 	_section.clear();
 }
 
-void DefaultConfigParser::onParseComment(const std::string& /*comment*/) {
+void DefaultConfigParser::onParseComment(
+		const std::string& /*comment*/)
+{
 	// Comments are ignored for now
 }
 
-void DefaultConfigParser::onParseSectionName(const std::string& sectionName, const std::string& /*comment*/) {
+void DefaultConfigParser::onParseSectionName(
+		const std::string& sectionName,
+		const std::string& /*comment*/)
+{
 	// Comments are ignored for now
 
 	// Process current section.
@@ -743,7 +768,12 @@ void DefaultConfigParser::onParseSectionName(const std::string& sectionName, con
 	_section.name = sectionName;
 }
 
-void DefaultConfigParser::onParseDirective(const std::string& directiveName, char /*sep*/, const ConfigParamList& values, const std::string& /*comment*/) {
+void DefaultConfigParser::onParseDirective(
+		const std::string& directiveName,
+		char /*sep*/,
+		const ConfigParamList& values,
+		const std::string& /*comment*/)
+{
 	// Comments are ignored for now
 	// Separator has no specific semantic in this context
 
@@ -754,7 +784,8 @@ void DefaultConfigParser::onParseDirective(const std::string& directiveName, cha
 	// TODO Can probably be optimized.
 }
 
-void DefaultConfigParser::onParseEnd() {
+void DefaultConfigParser::onParseEnd()
+{
 	// Process current (last) section
 	if (!_section.empty()) {
 		onParseSection(_section);
@@ -767,11 +798,13 @@ void DefaultConfigParser::onParseEnd() {
 // GenericConfigSection
 //
 
-bool GenericConfigSection::empty()const {
+bool GenericConfigSection::empty()const
+{
 	return name.empty() && entries.empty();
 }
 
-void GenericConfigSection::clear() {
+void GenericConfigSection::clear()
+{
 	name.clear();
 	entries.clear();
 }
@@ -977,7 +1010,10 @@ void GenericConfiguration::setStr(
 }
 
 
-long long int GenericConfiguration::getInt(const std::string & section, const std::string & entry, long long int val) const
+long long int GenericConfiguration::getInt(
+		const std::string & section,
+		const std::string & entry,
+		long long int val) const
 {
 	ConfigParamList params;
 
@@ -996,7 +1032,10 @@ long long int GenericConfiguration::getInt(const std::string & section, const st
 }
 
 
-void GenericConfiguration::setInt(const std::string & section, const std::string & entry, long long int val)
+void GenericConfiguration::setInt(
+		const std::string & section,
+		const std::string & entry,
+		long long int val)
 {
 	std::stringstream val_str;
 	val_str << val;
