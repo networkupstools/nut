@@ -1693,6 +1693,13 @@ public:
 	inline void setUseCRLF(const std::string & ups, bool set = true)        { setBool(ups, "use_crlf",       set); }
 	inline void setUsePreLF(const std::string & ups, bool set = true)       { setBool(ups, "use_pre_lf",     set); }
 
+	// FIXME: What to do about "default.*" and "override.*"
+	// settings that apply to anything (vars!) that follows?
+	// Maybe nest the UpsConfiguration objects, and so query
+	// e.g. upscfg.default.getBatteryNominalVoltage() ?
+	// Or just keep that info in ConfigParamList per section
+	// and wrap free-style queries?
+
 	/** \} */
 
 	virtual ~UpsConfiguration() override;
