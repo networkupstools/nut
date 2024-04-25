@@ -965,6 +965,116 @@ protected:
 	}
 
 	/**
+	 *  \brief  Configuration boolean option getter
+	 *
+	 *  Value depends on original string representation of a setting.
+	 *
+	 *  \param  section  Section name
+	 *  \param  entry    Entry name
+	 *  \param  val      Default value
+	 *
+	 *  \return Configuration parameter as boolean (or the default if not defined)
+	 */
+	bool getBool(
+		const std::string & section,
+		const std::string & entry,
+		bool                val = false) const;
+
+	/**
+	 *  \brief  Configuration boolean option getter
+	 *
+	 *  Value depends on original string representation of a setting.
+	 *
+	 *  \param  section  Section name
+	 *  \param  entry    Entry name
+	 *  \param  val      Default value
+	 *
+	 *  \return Configuration parameter as boolean (or the default if not defined)
+	 */
+	// Avoid error: implicit conversion turns string literal
+	//       into bool: 'const char[7]' to 'bool'
+	bool getBool(
+		const std::string & section,
+		const char        * entry,
+		bool                val = false) const
+	{
+		return getBool(section, std::string(entry), val);
+	}
+
+	/**
+	 *  \brief  Global scope configuration boolean option getter
+	 *
+	 *  Value depends on original string representation of a setting.
+	 *
+	 *  \param  entry  Entry name
+	 *  \param  val      Default value
+	 *
+	 *  \return Configuration parameter as boolean (or the default if not defined)
+	 */
+	inline bool getBool(const std::string & entry, bool val = false) const
+	{
+		return getBool("", entry, val);
+	}
+
+	/**
+	 *  \brief  Configuration boolean option setter
+	 *
+	 *  \param  section  Section name
+	 *  \param  entry    Entry name
+	 *  \param  val      Default value
+	 */
+	inline void setBool(
+		const std::string & section,
+		const std::string & entry,
+		bool                val = true)
+	{
+		setStr(section, entry, bool2str(val));
+	}
+
+	/**
+	 *  \brief  Global scope configuration boolean option setter
+	 *
+	 *  \param  entry    Entry name
+	 *  \param  val      Default value
+	 */
+	inline void setBool(
+		const std::string & entry,
+		bool                val = true)
+	{
+		setBool("", entry, val);
+	}
+
+	/**
+	 *  \brief  Configuration boolean option setter from a string
+	 *
+	 *  \param  section  Section name
+	 *  \param  entry    Entry name
+	 *  \param  val      Default value
+	 */
+	inline void setBool(
+		const std::string & section,
+		const std::string & entry,
+		const std::string & val = "true")
+	{
+		// Normalize:
+		bool b = str2bool(val);
+		setStr(section, entry, bool2str(b));
+	}
+
+	/**
+	 *  \brief  Global scope configuration boolean option setter from a string
+	 *
+	 *  \param  entry    Entry name
+	 *  \param  val      Default value
+	 */
+	inline void setBool(
+		const std::string & entry,
+		const std::string & val = "true")
+	{
+		setBool("", entry, val);
+	}
+
+	/**
 	 *  \brief  Configuration number getter
 	 *
 	 *  \param  section  Section name

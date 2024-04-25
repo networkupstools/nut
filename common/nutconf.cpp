@@ -1025,6 +1025,18 @@ void GenericConfiguration::setStr(
 }
 
 
+bool GenericConfiguration::getBool(
+		const std::string & section,
+		const std::string & entry,
+		bool                val) const
+{
+		std::string s = getStr(section, entry);
+		if (s.empty())
+			return val;
+		return str2bool(s);
+}
+
+
 bool GenericConfiguration::getFlag(
 		const std::string & section,
 		const std::string & entry) const
