@@ -908,6 +908,63 @@ protected:
 	}
 
 	/**
+	 *  \brief  Configuration flag getter
+	 *
+	 *  False is returned if the section or entry doesn't exist.
+	 *  If a flag exists in configuration (any value is ignored),
+	 *  it is effectively True.
+	 *
+	 *  \param  section  Section name
+	 *  \param  entry    Entry name
+	 *
+	 *  \return Configuration parameter as boolean
+	 */
+	bool getFlag(
+		const std::string & section,
+		const std::string & entry) const;
+
+	/**
+	 *  \brief  Global scope configuration flag getter
+	 *
+	 *  False is returned if the entry doesn't exist.
+	 *  If a flag exists in configuration (any value is ignored),
+	 *  it is effectively True.
+	 *
+	 *  \param  entry  Entry name
+	 *
+	 *  \return Configuration parameter as boolean
+	 */
+	inline bool getFlag(const std::string & entry) const
+	{
+		return getFlag("", entry);
+	}
+
+	/**
+	 *  \brief  Configuration flag setter (mentioned == true)
+	 *
+	 *  Note: to unset a flag, just use remove() method.
+	 *
+	 *  \param  section  Section name
+	 *  \param  entry    Entry name
+	 */
+	void setFlag(
+		const std::string & section,
+		const std::string & entry);
+
+	/**
+	 *  \brief  Global scope configuration flag setter (mentioned == true)
+	 *
+	 *  Note: to unset a flag, just use remove() method.
+	 *
+	 *  \param  entry    Entry name
+	 */
+	inline void setFlag(
+		const std::string & entry)
+	{
+		setFlag("", entry);
+	}
+
+	/**
 	 *  \brief  Configuration number getter
 	 *
 	 *  \param  section  Section name

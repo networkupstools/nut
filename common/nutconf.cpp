@@ -1025,6 +1025,32 @@ void GenericConfiguration::setStr(
 }
 
 
+bool GenericConfiguration::getFlag(
+		const std::string & section,
+		const std::string & entry) const
+{
+	ConfigParamList params;
+
+	if (!get(section, entry, params))
+		return false;
+
+	// Flag - if exists then "true"
+	return true;
+}
+
+
+void GenericConfiguration::setFlag(
+		const std::string & section,
+		const std::string & entry)
+{
+	ConfigParamList param;
+
+	param.push_back("true");
+
+	set(section, entry, param);
+}
+
+
 long long int GenericConfiguration::getInt(
 		const std::string & section,
 		const std::string & entry,
