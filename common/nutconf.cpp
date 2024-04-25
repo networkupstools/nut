@@ -1097,6 +1097,55 @@ void GenericConfiguration::setInt(
 }
 
 
+long long int GenericConfiguration::getIntHex(
+		const std::string & section,
+		const std::string & entry,
+		long long int val) const
+{
+	ConfigParamList params;
+
+	if (!get(section, entry, params))
+		return val;
+
+	if (params.empty())
+		return val;
+
+	// TBD: What if there are multiple values?
+	std::string s = params.front();
+	size_t foundPos = s.rfind("0x", 0);
+	if (foundPos == std::string::npos || foundPos != 0) {
+		// Add the prefix for hex conversion
+		s = "0x" + s;
+	}
+	std::stringstream val_str;
+	val_str << std::hex << s;
+
+	// Output into int type
+	val_str >> std::hex >> val;
+
+	return val;
+}
+
+
+void GenericConfiguration::setIntHex(
+		const std::string & section,
+		const std::string & entry,
+		long long int val)
+{
+	std::stringstream val_str;
+
+	// Note NUT v2.8.1 introduced these as "hexnum" values,
+	// but the strtoul() underneath knows to strip "0x" for
+	// base16 conversions - so can we write them either way:
+
+	// https://stackoverflow.com/a/61060765/4715872
+	// << std::showbase for "0x" in saved printouts
+	val_str << std::nouppercase << std::hex << val;
+
+	set(section, entry, ConfigParamList(1, val_str.str()));
+}
+
+
 nut::BoolInt GenericConfiguration::getBoolInt(
 		const std::string & section,
 		const std::string & entry,

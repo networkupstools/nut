@@ -1127,6 +1127,58 @@ protected:
 	}
 
 	/**
+	 *  \brief  Configuration number getter (hex value even if without leading "0x")
+	 *
+	 *  \param  section  Section name
+	 *  \param  entry    Entry name
+	 *  \param  val      Default value
+	 *
+	 *  \return Configuration parameter as number (or the default if not defined)
+	 */
+	long long int getIntHex(
+		const std::string & section,
+		const std::string & entry,
+		long long int       val = 0) const;
+
+	/**
+	 *  \brief  Global scope configuration number getter (hex value even if without leading "0x")
+	 *
+	 *  \param  entry    Entry name
+	 *  \param  val      Default value
+	 *
+	 *  \return Configuration parameter as number (or the default if not defined)
+	 */
+	inline long long int getIntHex(const std::string & entry, long long int val = 0) const
+	{
+		return getIntHex("", entry, val);
+	}
+
+	/**
+	 *  \brief  Configuration number setter (hex value even if without leading "0x")
+	 *
+	 *  \param  section  Section name
+	 *  \param  entry    Entry name
+	 *  \param  val      Default value
+	 */
+	void setIntHex(
+		const std::string & section,
+		const std::string & entry,
+		long long int       val);
+
+	/**
+	 *  \brief  Global scope configuration number setter (hex value even if without leading "0x")
+	 *
+	 *  \param  entry    Entry name
+	 *  \param  val      Default value
+	 */
+	inline void setIntHex(
+		const std::string & entry,
+		long long int       val)
+	{
+		setIntHex("", entry, val);
+	}
+
+	/**
 	 *  \brief  Cast numeric type with range check
 	 *
 	 *  Throws an exception on cast error.
