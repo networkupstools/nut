@@ -1555,27 +1555,27 @@ public:
 	inline long long int getVoltage(const std::string & ups)           const { return getInt(ups, "voltage"); }             // CHECKME
 	inline long long int getWait(const std::string & ups)              const { return getInt(ups, "wait"); }                // CHECKME
 
-	inline bool getNolock(const std::string & ups)         const { return str2bool(getStr(ups, "nolock")); }
-	inline bool getCable(const std::string & ups)          const { return str2bool(getStr(ups, "cable")); }
-	inline bool getDumbTerm(const std::string & ups)       const { return str2bool(getStr(ups, "dumbterm")); }
-	inline bool getExplore(const std::string & ups)        const { return str2bool(getStr(ups, "explore")); }
-	inline bool getFakeLowBatt(const std::string & ups)    const { return str2bool(getStr(ups, "fake_lowbatt")); }
-	inline bool getFlash(const std::string & ups)          const { return str2bool(getStr(ups, "flash")); }
-	inline bool getFullUpdate(const std::string & ups)     const { return str2bool(getStr(ups, "full_update")); }
-	inline bool getLangIDfix(const std::string & ups)      const { return str2bool(getStr(ups, "langid_fix")); }
-	inline bool getLoadOff(const std::string & ups)        const { return str2bool(getStr(ups, "load.off")); }
-	inline bool getLoadOn(const std::string & ups)         const { return str2bool(getStr(ups, "load.on")); }
-	inline bool getNoHang(const std::string & ups)         const { return str2bool(getStr(ups, "nohang")); }
-	inline bool getNoRating(const std::string & ups)       const { return str2bool(getStr(ups, "norating")); }
-	inline bool getNoTransferOIDs(const std::string & ups) const { return str2bool(getStr(ups, "notransferoids")); }
-	inline bool getNoVendor(const std::string & ups)       const { return str2bool(getStr(ups, "novendor")); }
-	inline bool getNoWarnNoImp(const std::string & ups)    const { return str2bool(getStr(ups, "nowarn_noimp")); }
-	inline bool getPollOnly(const std::string & ups)       const { return str2bool(getStr(ups, "pollonly")); }
-	inline bool getSilent(const std::string & ups)         const { return str2bool(getStr(ups, "silent")); }
-	inline bool getStatusOnly(const std::string & ups)     const { return str2bool(getStr(ups, "status_only")); }
-	inline bool getSubscribe(const std::string & ups)      const { return str2bool(getStr(ups, "subscribe")); }
-	inline bool getUseCRLF(const std::string & ups)        const { return str2bool(getStr(ups, "use_crlf")); }
-	inline bool getUsePreLF(const std::string & ups)       const { return str2bool(getStr(ups, "use_pre_lf")); }
+	inline bool getNolock(const std::string & ups)         const { return getBool(ups, "nolock"); }
+	inline bool getCable(const std::string & ups)          const { return getBool(ups, "cable"); }
+	inline bool getDumbTerm(const std::string & ups)       const { return getBool(ups, "dumbterm"); }
+	inline bool getExplore(const std::string & ups)        const { return getBool(ups, "explore"); }
+	inline bool getFakeLowBatt(const std::string & ups)    const { return getBool(ups, "fake_lowbatt"); }
+	inline bool getFlash(const std::string & ups)          const { return getBool(ups, "flash"); }
+	inline bool getFullUpdate(const std::string & ups)     const { return getBool(ups, "full_update"); }
+	inline bool getLangIDfix(const std::string & ups)      const { return getBool(ups, "langid_fix"); }
+	inline bool getLoadOff(const std::string & ups)        const { return getBool(ups, "load.off"); }
+	inline bool getLoadOn(const std::string & ups)         const { return getBool(ups, "load.on"); }
+	inline bool getNoHang(const std::string & ups)         const { return getBool(ups, "nohang"); }
+	inline bool getNoRating(const std::string & ups)       const { return getBool(ups, "norating"); }
+	inline bool getNoTransferOIDs(const std::string & ups) const { return getBool(ups, "notransferoids"); }
+	inline bool getNoVendor(const std::string & ups)       const { return getBool(ups, "novendor"); }
+	inline bool getNoWarnNoImp(const std::string & ups)    const { return getBool(ups, "nowarn_noimp"); }
+	inline bool getPollOnly(const std::string & ups)       const { return getBool(ups, "pollonly"); }
+	inline bool getSilent(const std::string & ups)         const { return getBool(ups, "silent"); }
+	inline bool getStatusOnly(const std::string & ups)     const { return getBool(ups, "status_only"); }
+	inline bool getSubscribe(const std::string & ups)      const { return getBool(ups, "subscribe"); }
+	inline bool getUseCRLF(const std::string & ups)        const { return getBool(ups, "use_crlf"); }
+	inline bool getUsePreLF(const std::string & ups)       const { return getBool(ups, "use_pre_lf"); }
 
 
 	inline void setDriver(const std::string & ups, const std::string & driver)                { setStr(ups, "driver",              driver); }
@@ -1671,27 +1671,27 @@ public:
 	inline void setVoltage(const std::string & ups, long long int voltage)         { setInt(ups, "voltage",            voltage); }      // CHECKME
 	inline void setWait(const std::string & ups, long long int wait)               { setInt(ups, "wait",               wait); }         // CHECKME
 
-	inline void setNolock(const std::string & ups, bool set = true)         { setStr(ups, "nolock",         bool2str(set)); }
-	inline void setCable(const std::string & ups, bool set = true)          { setStr(ups, "cable",          bool2str(set)); }
-	inline void setDumbTerm(const std::string & ups, bool set = true)       { setStr(ups, "dumbterm",       bool2str(set)); }
-	inline void setExplore(const std::string & ups, bool set = true)        { setStr(ups, "explore",        bool2str(set)); }
-	inline void setFakeLowBatt(const std::string & ups, bool set = true)    { setStr(ups, "fake_lowbatt",   bool2str(set)); }
-	inline void setFlash(const std::string & ups, bool set = true)          { setStr(ups, "flash",          bool2str(set)); }
-	inline void setFullUpdate(const std::string & ups, bool set = true)     { setStr(ups, "full_update",    bool2str(set)); }
-	inline void setLangIDfix(const std::string & ups, bool set = true)      { setStr(ups, "langid_fix",     bool2str(set)); }
-	inline void setLoadOff(const std::string & ups, bool set = true)        { setStr(ups, "load.off",       bool2str(set)); }
-	inline void setLoadOn(const std::string & ups, bool set = true)         { setStr(ups, "load.on",        bool2str(set)); }
-	inline void setNoHang(const std::string & ups, bool set = true)         { setStr(ups, "nohang",         bool2str(set)); }
-	inline void setNoRating(const std::string & ups, bool set = true)       { setStr(ups, "norating",       bool2str(set)); }
-	inline void setNoTransferOIDs(const std::string & ups, bool set = true) { setStr(ups, "notransferoids", bool2str(set)); }
-	inline void setNoVendor(const std::string & ups, bool set = true)       { setStr(ups, "novendor",       bool2str(set)); }
-	inline void setNoWarnNoImp(const std::string & ups, bool set = true)    { setStr(ups, "nowarn_noimp",   bool2str(set)); }
-	inline void setPollOnly(const std::string & ups, bool set = true)       { setStr(ups, "pollonly",       bool2str(set)); }
-	inline void setSilent(const std::string & ups, bool set = true)         { setStr(ups, "silent",         bool2str(set)); }
-	inline void setStatusOnly(const std::string & ups, bool set = true)     { setStr(ups, "status_only",    bool2str(set)); }
-	inline void setSubscribe(const std::string & ups, bool set = true)      { setStr(ups, "subscribe",      bool2str(set)); }
-	inline void setUseCRLF(const std::string & ups, bool set = true)        { setStr(ups, "use_crlf",       bool2str(set)); }
-	inline void setUsePreLF(const std::string & ups, bool set = true)       { setStr(ups, "use_pre_lf",     bool2str(set)); }
+	inline void setNolock(const std::string & ups, bool set = true)         { setBool(ups, "nolock",         set); }
+	inline void setCable(const std::string & ups, bool set = true)          { setBool(ups, "cable",          set); }
+	inline void setDumbTerm(const std::string & ups, bool set = true)       { setBool(ups, "dumbterm",       set); }
+	inline void setExplore(const std::string & ups, bool set = true)        { setBool(ups, "explore",        set); }
+	inline void setFakeLowBatt(const std::string & ups, bool set = true)    { setBool(ups, "fake_lowbatt",   set); }
+	inline void setFlash(const std::string & ups, bool set = true)          { setBool(ups, "flash",          set); }
+	inline void setFullUpdate(const std::string & ups, bool set = true)     { setBool(ups, "full_update",    set); }
+	inline void setLangIDfix(const std::string & ups, bool set = true)      { setBool(ups, "langid_fix",     set); }
+	inline void setLoadOff(const std::string & ups, bool set = true)        { setBool(ups, "load.off",       set); }
+	inline void setLoadOn(const std::string & ups, bool set = true)         { setBool(ups, "load.on",        set); }
+	inline void setNoHang(const std::string & ups, bool set = true)         { setBool(ups, "nohang",         set); }
+	inline void setNoRating(const std::string & ups, bool set = true)       { setBool(ups, "norating",       set); }
+	inline void setNoTransferOIDs(const std::string & ups, bool set = true) { setBool(ups, "notransferoids", set); }
+	inline void setNoVendor(const std::string & ups, bool set = true)       { setBool(ups, "novendor",       set); }
+	inline void setNoWarnNoImp(const std::string & ups, bool set = true)    { setBool(ups, "nowarn_noimp",   set); }
+	inline void setPollOnly(const std::string & ups, bool set = true)       { setBool(ups, "pollonly",       set); }
+	inline void setSilent(const std::string & ups, bool set = true)         { setBool(ups, "silent",         set); }
+	inline void setStatusOnly(const std::string & ups, bool set = true)     { setBool(ups, "status_only",    set); }
+	inline void setSubscribe(const std::string & ups, bool set = true)      { setBool(ups, "subscribe",      set); }
+	inline void setUseCRLF(const std::string & ups, bool set = true)        { setBool(ups, "use_crlf",       set); }
+	inline void setUsePreLF(const std::string & ups, bool set = true)       { setBool(ups, "use_pre_lf",     set); }
 
 	/** \} */
 
