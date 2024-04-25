@@ -164,8 +164,46 @@ public:
 
 	/** Leave all contents un-set */
 	BoolInt() {}
+
+	BoolInt(const bool val) {
+		*this = val;
+	}
+	BoolInt(const bool val, bool newBool01) {
+		this->bool01 = newBool01;
+		*this = val;
+	}
+
+	BoolInt(const int val) {
+		*this = val;
+	}
+	BoolInt(const int val, bool newBool01) {
+		this->bool01 = newBool01;
+		*this = val;
+	}
+
+	BoolInt(const char* val) {
+		*this = val;
+	}
+	BoolInt(const char* val, bool newBool01) {
+		this->bool01 = newBool01;
+		*this = val;
+	}
+
+	BoolInt(const std::string &val) {
+		*this = val;
+	}
+	BoolInt(const std::string &val, bool newBool01) {
+		this->bool01 = newBool01;
+		*this = val;
+	}
+
 	BoolInt(const BoolInt& other) {
 		*this = other;
+	}
+	BoolInt(const BoolInt& other, bool newBool01) {
+		this->bool01 = newBool01;
+		*this = other;
+		this->bool01 = newBool01;
 	}
 
 	inline void clear()
