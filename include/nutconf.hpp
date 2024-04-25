@@ -1541,6 +1541,44 @@ public:
 		setStr(ups, key, val);
 	}
 
+	/** PUZZLE: What to do about "default.*" and "override.*"
+	 * settings that apply to anything (vars!) that follows?
+	 * Maybe nest the UpsConfiguration objects, and so query
+	 * e.g. upscfg.default.getBatteryNominalVoltage() ?
+	 * Or just keep that info in ConfigParamList per section
+	 * and wrap free-style queries? */
+	inline std::string   getDefaultStr(const std::string & ups, const std::string & key)            const { return getStr(ups, "default." + key); }
+	inline long long int getDefaultInt(const std::string & ups, const std::string & key)            const { return getInt(ups, "default." + key); }
+	inline long long int getDefaultIntHex(const std::string & ups, const std::string & key)         const { return getIntHex(ups, "default." + key); }
+	inline bool          getDefaultFlag(const std::string & ups, const std::string & key)           const { return getFlag(ups, "default." + key); }
+	inline bool          getDefaultBool(const std::string & ups, const std::string & key)           const { return getBool(ups, "default." + key); }
+	inline nut::BoolInt  getDefaultBoolInt(const std::string & ups, const std::string & key)        const { return getBoolInt(ups, "default." + key); }
+	inline double        getDefaultDouble(const std::string & ups, const std::string & key)         const { return getDouble(ups, "default." + key); }
+
+	inline std::string   getOverrideStr(const std::string & ups, const std::string & key)           const { return getStr(ups, "override." + key); }
+	inline long long int getOverrideInt(const std::string & ups, const std::string & key)           const { return getInt(ups, "override." + key); }
+	inline long long int getOverrideIntHex(const std::string & ups, const std::string & key)        const { return getIntHex(ups, "override." + key); }
+	inline bool          getOverrideFlag(const std::string & ups, const std::string & key)          const { return getFlag(ups, "override." + key); }
+	inline bool          getOverrideBool(const std::string & ups, const std::string & key)          const { return getBool(ups, "override." + key); }
+	inline nut::BoolInt  getOverrideBoolInt(const std::string & ups, const std::string & key)       const { return getBoolInt(ups, "override." + key); }
+	inline double        getOverrideDouble(const std::string & ups, const std::string & key)        const { return getDouble(ups, "override." + key); }
+
+	inline void setDefaultStr(const std::string & ups, const std::string & key, const std::string & val)  { setStr(ups, "default." + key, val); }
+	inline void setDefaultInt(const std::string & ups, const std::string & key, long long int val)        { setInt(ups, "default." + key, val); }
+	inline void setDefaultIntHex(const std::string & ups, const std::string & key, long long int val)     { setIntHex(ups, "default." + key, val); }
+	inline void setDefaultFlag(const std::string & ups, const std::string & key)                          { setFlag(ups, "default." + key); }
+	inline void setDefaultBool(const std::string & ups, const std::string & key, bool val)                { setBool(ups, "default." + key, val); }
+	inline void setDefaultBoolInt(const std::string & ups, const std::string & key, nut::BoolInt val)     { setBoolInt(ups, "default." + key, val); }
+	inline void setDefaultDouble(const std::string & ups, const std::string & key, double val)            { setDouble(ups, "default." + key, val); }
+
+	inline void setOverrideStr(const std::string & ups, const std::string & key, const std::string & val) { setStr(ups, "override." + key, val); }
+	inline void setOverrideInt(const std::string & ups, const std::string & key, long long int val)       { setInt(ups, "override." + key, val); }
+	inline void setOverrideIntHex(const std::string & ups, const std::string & key, long long int val)    { setIntHex(ups, "override." + key, val); }
+	inline void setOverrideFlag(const std::string & ups, const std::string & key)                         { setFlag(ups, "override." + key); }
+	inline void setOverrideBool(const std::string & ups, const std::string & key, bool val)               { setBool(ups, "override." + key, val); }
+	inline void setOverrideBoolInt(const std::string & ups, const std::string & key, nut::BoolInt val)    { setBoolInt(ups, "override." + key, val); }
+	inline void setOverrideDouble(const std::string & ups, const std::string & key, double val)           { setDouble(ups, "override." + key, val); }
+
 	/** UPS-specific configuration attributes getters and setters \{ */
 	inline std::string getDriver(const std::string & ups)              const { return getStr(ups, "driver"); }
 	inline std::string getDescription(const std::string & ups)         const { return getStr(ups, "desc"); }
@@ -1643,6 +1681,16 @@ public:
 	inline long long int getUPSdelayStart(const std::string & ups)     const { return getInt(ups, "ups.delay.start"); }     // CHECKME
 	inline long long int getVoltage(const std::string & ups)           const { return getInt(ups, "voltage"); }             // CHECKME
 	inline long long int getWait(const std::string & ups)              const { return getInt(ups, "wait"); }                // CHECKME
+
+	// May be a flag or a number; 0 is among valid values (default -1 for unset)
+	inline long long int getUsbSetAltInterface(const std::string & ups)          const { return getInt(ups, "usb_set_altinterface", -1); }      // CHECKME
+
+	// NUT specifies these as "hexnum" values (optionally with prefixed 0x but hex anyway)
+	inline long long int getUsbConfigIndex(const std::string & ups)              const { return getIntHex(ups, "usb_config_index"); }           // CHECKME
+	inline long long int getUsbHidDescIndex(const std::string & ups)             const { return getIntHex(ups, "usb_hid_desc_index"); }         // CHECKME
+	inline long long int getUsbHidRepIndex(const std::string & ups)              const { return getIntHex(ups, "usb_hid_rep_index"); }          // CHECKME
+	inline long long int getUsbHidEndpointIn(const std::string & ups)            const { return getIntHex(ups, "usb_hid_ep_in"); }              // CHECKME
+	inline long long int getUsbHidEndpointOut(const std::string & ups)           const { return getIntHex(ups, "usb_hid_ep_out"); }             // CHECKME
 
 	// Flag - if exists then "true"
 	inline bool getIgnoreLB(const std::string & ups)       const { return getFlag(ups, "ignorelb"); }
@@ -1767,6 +1815,16 @@ public:
 	inline void setVoltage(const std::string & ups, long long int voltage)         { setInt(ups, "voltage",            voltage); }      // CHECKME
 	inline void setWait(const std::string & ups, long long int wait)               { setInt(ups, "wait",               wait); }         // CHECKME
 
+	// May be a flag or a number; 0 is among valid values (default -1 for unset)
+	inline void setUsbSetAltInterface(const std::string & ups, long long int val = 0)       { setInt(ups, "usb_set_altinterface",              val); }         // CHECKME
+
+	// NUT specifies these as "hexnum" values (optionally with prefixed 0x but hex anyway)
+	inline void setUsbConfigIndex(const std::string & ups, long long int val)               { setIntHex(ups, "usb_config_index",               val); }         // CHECKME
+	inline void setUsbHidDescIndex(const std::string & ups, long long int val)              { setIntHex(ups, "usb_hid_desc_index",             val); }         // CHECKME
+	inline void setUsbHidRepIndex(const std::string & ups, long long int val)               { setIntHex(ups, "usb_hid_rep_index",              val); }         // CHECKME
+	inline void setUsbHidEndpointIn(const std::string & ups, long long int val)             { setIntHex(ups, "usb_hid_ep_in",                  val); }         // CHECKME
+	inline void setUsbHidEndpointOut(const std::string & ups, long long int val)            { setIntHex(ups, "usb_hid_ep_out",                 val); }         // CHECKME
+
 	// Flag - if exists then "true"; remove() to "unset" => "false"
 	inline void setIgnoreLB(const std::string & ups)                        { setFlag(ups, "ignorelb"); }
 
@@ -1791,13 +1849,6 @@ public:
 	inline void setSubscribe(const std::string & ups, bool set = true)      { setBool(ups, "subscribe",      set); }
 	inline void setUseCRLF(const std::string & ups, bool set = true)        { setBool(ups, "use_crlf",       set); }
 	inline void setUsePreLF(const std::string & ups, bool set = true)       { setBool(ups, "use_pre_lf",     set); }
-
-	// FIXME: What to do about "default.*" and "override.*"
-	// settings that apply to anything (vars!) that follows?
-	// Maybe nest the UpsConfiguration objects, and so query
-	// e.g. upscfg.default.getBatteryNominalVoltage() ?
-	// Or just keep that info in ConfigParamList per section
-	// and wrap free-style queries?
 
 	/** \} */
 

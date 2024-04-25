@@ -264,15 +264,88 @@ void NutConfigUnitTest::testUpsConfiguration() {
 	config.setPort(my_ups, "/dev/ttyS0");
 	config.setDescription(my_ups, "Web server");
 
+	// IRL not for a serial-port UPS, but okay for tests;
+	// Note NUT v2.8.1 introduced these as "hexnum" values,
+	// but the strtoul() underneath knows to strip "0x" for
+	// base16 conversions - so can we write them either way:
+	config.setUsbConfigIndex(my_ups, 0x81);
+	config.setUsbHidDescIndex(my_ups, 0x3f);
+
 	// Note: "maxretry = 3" comes from current ups.conf.sample non-comment lines
-	check(static_cast<nut::Serialisable *>(&config),
+	std::string expected =
 		"maxretry = 3\n\n"
 		"[powerpal]\n"
 		"\tdesc = \"Web server\"\n"
 		"\tdriver = blazer_ser\n"
 		"\tport = /dev/ttyS0\n"
-		"\n"
-	);
+		"\tusb_config_index = 81\n"
+		"\tusb_hid_desc_index = 3f\n"
+		"\n";
+
+	check(static_cast<nut::Serialisable *>(&config), expected);
+
+	// Make sure we can parse back the "hexnum" entries correctly
+	config.parseFromString(expected);
+	check(static_cast<nut::Serialisable *>(&config), expected);
+
+	// Check that "0x" prefix (and/or quotes) do not matter on
+	// this platform (note that parsing results are strings from
+	// original input; for the check we interpret them as numbers
+	// and save back):
+	std::string input2 =
+		"maxretry = 3\n\n"
+		"[powerpal]\n"
+		"\tdesc = \"Web server\"\n"
+		"\tdriver = blazer_ser\n"
+		"\tport = /dev/ttyS0\n"
+		"\tusb_config_index = 0x81\n"
+		"\tusb_hid_desc_index = \"0x3f\"\n"
+		"\n";
+
+	config.parseFromString(input2);
+	config.setUsbConfigIndex (my_ups, config.getUsbConfigIndex(my_ups));
+	config.setUsbHidDescIndex(my_ups, config.getUsbHidDescIndex(my_ups));
+	check(static_cast<nut::Serialisable *>(&config), expected);
+
+	CPPUNIT_ASSERT_EQUAL(static_cast<long long int>(129),
+			config.getUsbConfigIndex(my_ups));
+	CPPUNIT_ASSERT_EQUAL(static_cast<long long int>(0x3f),
+			config.getUsbHidDescIndex(my_ups));
+
+	// Check default.* and override.* value(!) pre-sets:
+	std::string input3 =
+		"[powerpal]\n"
+		"\tdesc = \"Web server\"\n"
+		"\tdriver = blazer_ser\n"
+		"\tport = /dev/ttyS0\n"
+		"\tdefault.battery.voltage.high = 28.3\n"
+		"\n";
+
+	// "high" is inherited from input; "log" added by code:
+	std::string expected3 =
+		"[powerpal]\n"
+		"\tdefault.battery.voltage.high = 28.3\n"
+		"\tdesc = \"Web server\"\n"
+		"\tdriver = blazer_ser\n"
+		"\toverride.battery.voltage.low = 12.4\n"
+		"\tport = /dev/ttyS0\n"
+		"\n";
+
+	config.parseFromString(input3);
+	config.setOverrideDouble(my_ups, "battery.voltage.low", 12.4);
+
+	// "maxretry" is inherited from earlier content of config
+	// (not cleared). Maybe a bug, address later.
+	check(static_cast<nut::Serialisable *>(&config),
+		"maxretry = 3\n\n" + expected3);
+
+	// TODO: Wipe method? Fix parse*() to clear global section
+	// like they do clear and repopulate an UPS section?
+	// Re-parse from scratch
+	nut::UpsConfiguration config3;
+	config3.parseFromString(input3);
+	config3.setOverrideDouble(my_ups, "battery.voltage.low", 12.4);
+	check(static_cast<nut::Serialisable *>(&config3), expected3);
 }
 
 
