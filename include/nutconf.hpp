@@ -1179,6 +1179,58 @@ protected:
 	}
 
 	/**
+	 *  \brief  Configuration floating-point number getter
+	 *
+	 *  \param  section  Section name
+	 *  \param  entry    Entry name
+	 *  \param  val      Default value
+	 *
+	 *  \return Configuration parameter as number (or the default if not defined)
+	 */
+	double getDouble(
+		const std::string & section,
+		const std::string & entry,
+		double              val = 0.0) const;
+
+	/**
+	 *  \brief  Global scope configuration floating-point number getter
+	 *
+	 *  \param  entry    Entry name
+	 *  \param  val      Default value
+	 *
+	 *  \return Configuration parameter as number (or the default if not defined)
+	 */
+	inline double getDouble(const std::string & entry, double val = 0.0) const
+	{
+		return getDouble("", entry, val);
+	}
+
+	/**
+	 *  \brief  Configuration floating-point number setter
+	 *
+	 *  \param  section  Section name
+	 *  \param  entry    Entry name
+	 *  \param  val      Default value
+	 */
+	void setDouble(
+		const std::string & section,
+		const std::string & entry,
+		double              val);
+
+	/**
+	 *  \brief  Global scope configuration floating-point number setter
+	 *
+	 *  \param  entry    Entry name
+	 *  \param  val      Default value
+	 */
+	inline void setDouble(
+		const std::string & entry,
+		double              val)
+	{
+		setDouble("", entry, val);
+	}
+
+	/**
 	 *  \brief  Cast numeric type with range check
 	 *
 	 *  Throws an exception on cast error.

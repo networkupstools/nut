@@ -1146,6 +1146,40 @@ void GenericConfiguration::setIntHex(
 }
 
 
+double GenericConfiguration::getDouble(
+		const std::string & section,
+		const std::string & entry,
+		double val) const
+{
+	ConfigParamList params;
+
+	if (!get(section, entry, params))
+		return val;
+
+	if (params.empty())
+		return val;
+
+	// TBD: What if there are multiple values?
+	std::stringstream val_str(params.front());
+
+	val_str >> val;
+
+	return val;
+}
+
+
+void GenericConfiguration::setDouble(
+		const std::string & section,
+		const std::string & entry,
+		double val)
+{
+	std::stringstream val_str;
+	val_str << val;
+
+	set(section, entry, ConfigParamList(1, val_str.str()));
+}
+
+
 nut::BoolInt GenericConfiguration::getBoolInt(
 		const std::string & section,
 		const std::string & entry,

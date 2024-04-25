@@ -339,6 +339,11 @@ void NutConfigUnitTest::testUpsConfiguration() {
 	check(static_cast<nut::Serialisable *>(&config),
 		"maxretry = 3\n\n" + expected3);
 
+	CPPUNIT_ASSERT_DOUBLES_EQUAL(28.3,
+			config.getDefaultDouble(my_ups, "battery.voltage.high"), 0.0001);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL(12.4,
+			config.getOverrideDouble(my_ups, "battery.voltage.low"), 0.0001);
+
 	// TODO: Wipe method? Fix parse*() to clear global section
 	// like they do clear and repopulate an UPS section?
 	// Re-parse from scratch
