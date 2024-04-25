@@ -1163,12 +1163,80 @@ protected:
 	}
 
 	/**
+	 *  \brief  Configuration mixed boolean/int option getter
+	 *
+	 *  Value depends on original string representation of a setting.
+	 *
+	 *  \param  section  Section name
+	 *  \param  entry    Entry name
+	 *  \param  val      Default value
+	 *
+	 *  \return Configuration parameter as BoolInt type for original
+	 *          values which have a boolean or integer-numeric meaning
+	 *          (or the default if not defined)
+	 */
+	nut::BoolInt getBoolInt(
+		const std::string & section,
+		const std::string & entry,
+		nut::BoolInt        val = false) const;
+
+	/**
+	 *  \brief  Global scope configuration mixed boolean/int option getter
+	 *
+	 *  Value depends on original string representation of a setting.
+	 *
+	 *  \param  entry    Entry name
+	 *  \param  val      Default value
+	 *
+	 *  \return Configuration parameter as BoolInt type for original
+	 *          values which have a boolean or integer-numeric meaning
+	 *          (or the default if not defined)
+	 */
+	inline nut::BoolInt getBoolInt(const std::string & entry, nut::BoolInt val = false) const
+	{
+		return getBoolInt("", entry, val);
+	}
+
+	/**
+	 *  \brief  Configuration mixed boolean/int option setter
+	 *
+	 *  Input value types are auto-converted through BoolInt
+	 *  type for sanity checks (e.g. throw exceptions for
+	 *  invalid string contents) and are stored as strings
+	 *  internally.
+	 *
+	 *  \param  section  Section name
+	 *  \param  entry    Entry name
+	 *  \param  val      Default value
+	 */
+	inline void setBoolInt(
+		const std::string & section,
+		const std::string & entry,
+		nut::BoolInt        val = true)
+	{
+		setStr(section, entry, val);
+	}
+
+	/**
+	 *  \brief  Global scope configuration mixed boolean/int option setter
+	 *
+	 *  \param  entry    Entry name
+	 *  \param  val      Default value
+	 */
+	inline void setBoolInt(
+		const std::string & entry,
+		nut::BoolInt        val = true)
+	{
+		setBoolInt("", entry, val);
+	}
+
+	/**
 	 *  \brief  Resolve string as Boolean value
 	 *
 	 *  \param  str  String
 	 *
 	 *  \retval true  IFF the string expresses a known true value
-	 *  \retval false otherwise
+	 *  \retval false otherwise (no errors emitted for bogus inputs)
 	 */
 	static bool str2bool(const std::string & str);
 

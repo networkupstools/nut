@@ -1097,6 +1097,26 @@ void GenericConfiguration::setInt(
 }
 
 
+nut::BoolInt GenericConfiguration::getBoolInt(
+		const std::string & section,
+		const std::string & entry,
+		nut::BoolInt val) const
+{
+	ConfigParamList params;
+
+	if (!get(section, entry, params))
+		return val;
+
+	if (params.empty())
+		return val;
+
+	// TBD: What if there are multiple values?
+	nut::BoolInt bi(params.front());
+
+	return bi;
+}
+
+
 bool GenericConfiguration::str2bool(const std::string & str)
 {
 	if ("true" == str) return true;
