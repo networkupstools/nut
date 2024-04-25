@@ -1452,17 +1452,32 @@ public:
 
 	inline std::string getChroot()     const { return getStr("chroot"); }
 	inline std::string getDriverPath() const { return getStr("driverpath"); }
+	inline std::string getGroup()      const { return getStr("group"); }
+	inline std::string getSynchronous() const { return getStr("synchronous"); }
 	inline std::string getUser()       const { return getStr("user"); }
 
+	// Flag - if exists then "true"
+	inline bool getNoWait()            const { return getFlag("nowait"); }
+
+	inline long long int getDebugMin()      const { return getInt("debug_min"); }
+	inline long long int getMaxRetry()      const { return getInt("maxretry"); }
 	inline long long int getMaxStartDelay() const { return getInt("maxstartdelay"); }
-	inline long long int getPollInterval() const  { return getInt("pollinterval", 5); }  // TODO: check the default
+	inline long long int getPollInterval()  const { return getInt("pollinterval", 5); }  // TODO: check the default
+	inline long long int getRetryDelay()    const { return getInt("retrydelay"); }
 
 	inline void setChroot(const std::string & path)     { setStr("chroot",     path); }
 	inline void setDriverPath(const std::string & path) { setStr("driverpath", path); }
+	inline void setGroup(const std::string & group)     { setStr("group",      group); }
+	inline void setSynchronous(const std::string & val) { setStr("synchronous", val); }
 	inline void setUser(const std::string & user)       { setStr("user",       user); }
 
+	inline void setNoWait()                             { setFlag("nowait"); }
+
+	inline void setDebugMin(long long int num)          { setInt("debug_min",     num); }
+	inline void setMaxRetry(long long int num)          { setInt("maxretry",      num); }
 	inline void setMaxStartDelay(long long int delay)   { setInt("maxstartdelay", delay); }
 	inline void setPollInterval(long long int interval) { setInt("pollinterval",  interval); }
+	inline void setRetryDelay(long long int delay)      { setInt("retrydelay",    delay); }
 
 	/** \} */
 
@@ -1492,6 +1507,7 @@ public:
 	inline std::string getBus(const std::string & ups)                 const { return getStr(ups, "bus"); }
 	inline std::string getCommunity(const std::string & ups)           const { return getStr(ups, "community"); }
 	inline std::string getFRUID(const std::string & ups)               const { return getStr(ups, "fruid"); }
+	inline std::string getGroup(const std::string & ups)               const { return getStr(ups, "group"); }
 	inline std::string getLoadStatus(const std::string & ups)          const { return getStr(ups, "load.status"); }
 	inline std::string getLogin(const std::string & ups)               const { return getStr(ups, "login"); }
 	inline std::string getLowbatt(const std::string & ups)             const { return getStr(ups, "lowbatt"); }
@@ -1520,9 +1536,11 @@ public:
 	inline std::string getShutdownArguments(const std::string & ups)   const { return getStr(ups, "shutdownArguments"); }
 	inline std::string getSNMPversion(const std::string & ups)         const { return getStr(ups, "snmp_version"); }
 	inline std::string getSubdriver(const std::string & ups)           const { return getStr(ups, "subdriver"); }
+	inline std::string getSynchronous(const std::string & ups)         const { return getStr(ups, "synchronous"); }
 	inline std::string getType(const std::string & ups)                const { return getStr(ups, "type"); }
 	inline std::string getUPStype(const std::string & ups)             const { return getStr(ups, "upstype"); }
 	inline std::string getUSD(const std::string & ups)                 const { return getStr(ups, "usd"); }
+	inline std::string getUser(const std::string & ups)                const { return getStr(ups, "user"); }
 	inline std::string getUsername(const std::string & ups)            const { return getStr(ups, "username"); }
 	inline std::string getValidationSequence(const std::string & ups)  const { return getStr(ups, "validationSequence"); }
 	inline std::string getVendor(const std::string & ups)              const { return getStr(ups, "vendor"); }
@@ -1530,6 +1548,7 @@ public:
 	inline std::string getWUGrace(const std::string & ups)             const { return getStr(ups, "wugrace"); }
 
 
+	inline long long int getDebugMin(const std::string & ups)          const { return getInt(ups, "debug_min"); }
 	inline long long int getSDOrder(const std::string & ups)           const { return getInt(ups, "sdorder"); }             // TODO: Is that a number?
 	inline long long int getMaxStartDelay(const std::string & ups)     const { return getInt(ups, "maxstartdelay"); }
 	inline long long int getAdvOrder(const std::string & ups)          const { return getInt(ups, "advorder"); }            // CHECKME
@@ -1573,6 +1592,9 @@ public:
 	inline long long int getVoltage(const std::string & ups)           const { return getInt(ups, "voltage"); }             // CHECKME
 	inline long long int getWait(const std::string & ups)              const { return getInt(ups, "wait"); }                // CHECKME
 
+	// Flag - if exists then "true"
+	inline bool getIgnoreLB(const std::string & ups)       const { return getFlag(ups, "ignorelb"); }
+
 	inline bool getNolock(const std::string & ups)         const { return getBool(ups, "nolock"); }
 	inline bool getCable(const std::string & ups)          const { return getBool(ups, "cable"); }
 	inline bool getDumbTerm(const std::string & ups)       const { return getBool(ups, "dumbterm"); }
@@ -1609,6 +1631,7 @@ public:
 	inline void setBus(const std::string & ups, const std::string & bus)                      { setStr(ups, "bus",                 bus); }
 	inline void setCommunity(const std::string & ups, const std::string & community)          { setStr(ups, "community",           community); }
 	inline void setFRUID(const std::string & ups, const std::string & fruid)                  { setStr(ups, "fruid",               fruid); }
+	inline void setGroup(const std::string & ups, const std::string & group)                  { setStr(ups, "group",               group); }
 	inline void setLoadStatus(const std::string & ups, const std::string & load_status)       { setStr(ups, "load.status",         load_status); }
 	inline void setLogin(const std::string & ups, const std::string & login)                  { setStr(ups, "login",               login); }
 	inline void setLowbatt(const std::string & ups, const std::string & lowbatt)              { setStr(ups, "lowbatt",             lowbatt); }
@@ -1637,15 +1660,18 @@ public:
 	inline void setShutdownArguments(const std::string & ups, const std::string & sd_args)    { setStr(ups, "shutdownArguments",   sd_args); }
 	inline void setSNMPversion(const std::string & ups, const std::string & snmp_version)     { setStr(ups, "snmp_version",        snmp_version); }
 	inline void setSubdriver(const std::string & ups, const std::string & subdriver)          { setStr(ups, "subdriver",           subdriver); }
+	inline void setSynchronous(const std::string & ups, const std::string & synchronous)      { setStr(ups, "synchronous",         synchronous); }
 	inline void setType(const std::string & ups, const std::string & type)                    { setStr(ups, "type",                type); }
 	inline void setUPStype(const std::string & ups, const std::string & upstype)              { setStr(ups, "upstype",             upstype); }
 	inline void setUSD(const std::string & ups, const std::string & usd)                      { setStr(ups, "usd",                 usd); }
 	inline void setUsername(const std::string & ups, const std::string & username)            { setStr(ups, "username",            username); }
+	inline void setUser(const std::string & ups, const std::string & user)                    { setStr(ups, "user",                user); }
 	inline void setValidationSequence(const std::string & ups, const std::string & valid_seq) { setStr(ups, "validationSequence",  valid_seq); }
 	inline void setVendor(const std::string & ups, const std::string & vendor)                { setStr(ups, "vendor",              vendor); }
 	inline void setVendorID(const std::string & ups, const std::string & vendorid)            { setStr(ups, "vendorid",            vendorid); }
 	inline void setWUGrace(const std::string & ups, const std::string & wugrace)              { setStr(ups, "wugrace",             wugrace); }
 
+	inline void setDebugMin(const std::string & ups, long long int val)            { setInt(ups, "debug_min",          val); }
 	inline void setSDOrder(const std::string & ups, long long int ord)             { setInt(ups, "sdorder",            ord); }
 	inline void setMaxStartDelay(const std::string & ups, long long int delay)     { setInt(ups, "maxstartdelay",      delay); }
 	inline void setADVorder(const std::string & ups, long long int advorder)       { setInt(ups, "advorder",           advorder); }     // CHECKME
@@ -1688,6 +1714,9 @@ public:
 	inline void setUPSdelayStart(const std::string & ups, long long int delay)     { setInt(ups, "ups.delay.start",    delay); }        // CHECKME
 	inline void setVoltage(const std::string & ups, long long int voltage)         { setInt(ups, "voltage",            voltage); }      // CHECKME
 	inline void setWait(const std::string & ups, long long int wait)               { setInt(ups, "wait",               wait); }         // CHECKME
+
+	// Flag - if exists then "true"; remove() to "unset" => "false"
+	inline void setIgnoreLB(const std::string & ups)                        { setFlag(ups, "ignorelb"); }
 
 	inline void setNolock(const std::string & ups, bool set = true)         { setBool(ups, "nolock",         set); }
 	inline void setCable(const std::string & ups, bool set = true)          { setBool(ups, "cable",          set); }
