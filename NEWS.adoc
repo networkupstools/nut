@@ -89,6 +89,11 @@ https://github.com/networkupstools/nut/milestone/11
    * added an `OBLBDURATION` (seconds) setting to optionally delay raising
      the alarm for immediate shutdown in critical situation. [#321]
 
+ - upsd:
+   * `upsd_cleanup()` is now traced, to more easily see that the daemon is
+     exiting (and/or start-up has aborted due to configuration or run-time
+     issues). Warning about "world readable" files clarified. [#2417]
+
  - common code: root-owned daemons now use not the hard-coded `PIDPATH` value
    set by the `configure` script during build, but can override it with a
    `NUT_PIDPATH` environment variable in certain use-cases (such as tests).
