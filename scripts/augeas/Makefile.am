@@ -29,9 +29,10 @@ if HAVE_AUGPARSE
 check-local:
 	@echo "augparse proceeding to lenses verification job..."; \
 	echo "DISABLED for now due to https://github.com/networkupstools/nut/issues/657"
-endif
+
 # FIXME
 #	augparse -I $(srcdir)/ $(srcdir)/tests/test_nut.aug
+endif
 
 if WITH_AUGLENS
 # Now "make install" should cover delivery of Augeas lenses...
