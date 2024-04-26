@@ -15,7 +15,8 @@ let ups_conf1 = "
 [testups]
 	driver = dummy-ups
 	port = auto
-	desc = \"Dummy UPS\"
+	desc = \"Dummy UPS Driver\"
+	default.battery.voltage.high = 28.8
 "
 
 test NutUpsConf.ups_lns get ups_conf1 =
@@ -23,7 +24,8 @@ test NutUpsConf.ups_lns get ups_conf1 =
 	{ "testups"
 		{ "driver" = "dummy-ups"   }
 		{ "port"   = "auto" }
-		{ "desc"   = "Dummy UPS"    } }
+		{ "desc"   = "Dummy UPS Driver"    }
+		{ "default.battery.voltage.high" = "28.8" } }
 
 (* desc is a single token made of two words prefixed by one quote
  * as part of its content below (escaped by backslashes) *)

@@ -43,6 +43,9 @@ let ups_global   = "chroot"
                  | "group"
                  | "debug_min"
 
+(* This expression did involve a lot of courtship around the parser *)
+let ups_fields_re = /(default|override)\.[^:=#\t\n\r ]+/
+
 let ups_fields   = "driver"
                  | "port"
                  | "sdorder"
@@ -54,11 +57,9 @@ let ups_fields   = "driver"
                  | "user"
                  | "group"
                  | "debug_min"
-                 | "default\.[^ \t]+"
-                 | "override\.[^ \t]+"
 @SPECIFIC_DRV_VARS@
 
-let ups_entry    = IniFile.indented_entry (ups_global|ups_fields) ups_sep ups_comment
+let ups_entry    = IniFile.indented_entry (ups_global|ups_fields|ups_fields_re) ups_sep ups_comment
 
 let ups_title    = IniFile.indented_title IniFile.record_re
 
