@@ -305,6 +305,11 @@ void NutConfigUnitTest::testUpsConfiguration() {
 	config.parseFromString(input2);
 	config.setUsbConfigIndex (my_ups, config.getUsbConfigIndex(my_ups));
 	config.setUsbHidDescIndex(my_ups, config.getUsbHidDescIndex(my_ups));
+
+	// Should retrieve "-1" for unset value by default in its getter,
+	// and auto-destroy the (missing) entry upon set() because < 0
+	config.setUsbSetAltInterface (my_ups, config.getUsbSetAltInterface(my_ups));
+
 	check(static_cast<nut::Serialisable *>(&config), expected);
 
 	CPPUNIT_ASSERT_EQUAL(static_cast<long long int>(129),

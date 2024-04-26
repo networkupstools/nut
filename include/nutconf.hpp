@@ -1868,7 +1868,7 @@ public:
 	inline void setWait(const std::string & ups, long long int wait)               { setInt(ups, "wait",               wait); }         // CHECKME
 
 	// May be a flag or a number; 0 is among valid values (default -1 for unset)
-	inline void setUsbSetAltInterface(const std::string & ups, long long int val = 0)       { setInt(ups, "usb_set_altinterface",              val); }         // CHECKME
+	inline void setUsbSetAltInterface(const std::string & ups, long long int val = 0)       { if (val >= 0) { setInt(ups, "usb_set_altinterface", val); } else { remove(ups, "usb_set_altinterface"); } }         // CHECKME
 
 	// NUT specifies these as "hexnum" values (optionally with prefixed 0x but hex anyway)
 	inline void setUsbConfigIndex(const std::string & ups, long long int val)               { setIntHex(ups, "usb_config_index",               val); }         // CHECKME
