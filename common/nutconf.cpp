@@ -1053,13 +1053,17 @@ bool GenericConfiguration::getFlag(
 
 void GenericConfiguration::setFlag(
 		const std::string & section,
-		const std::string & entry)
+		const std::string & entry,
+		bool                val)
 {
 	ConfigParamList param;
 
-	param.push_back("true");
-
-	set(section, entry, param);
+	if (val) {
+		param.push_back("true");
+		set(section, entry, param);
+	} else {
+		remove(section, entry);
+	}
 }
 
 

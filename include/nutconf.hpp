@@ -942,26 +942,28 @@ protected:
 	/**
 	 *  \brief  Configuration flag setter (mentioned == true)
 	 *
-	 *  Note: to unset a flag, just use remove() method.
+	 *  Note: to unset a flag, we just use remove() method.
 	 *
 	 *  \param  section  Section name
 	 *  \param  entry    Entry name
 	 */
 	void setFlag(
 		const std::string & section,
-		const std::string & entry);
+		const std::string & entry,
+		bool                val = true);
 
 	/**
 	 *  \brief  Global scope configuration flag setter (mentioned == true)
 	 *
-	 *  Note: to unset a flag, just use remove() method.
+	 *  Note: to unset a flag, we just use remove() method.
 	 *
 	 *  \param  entry    Entry name
 	 */
 	inline void setFlag(
-		const std::string & entry)
+		const std::string & entry,
+		bool                val = true)
 	{
-		setFlag("", entry);
+		setFlag("", entry, val);
 	}
 
 	/**
@@ -1575,7 +1577,7 @@ public:
 	inline void setSynchronous(const std::string & val) { setStr("synchronous", val); }
 	inline void setUser(const std::string & user)       { setStr("user",       user); }
 
-	inline void setNoWait()                             { setFlag("nowait"); }
+	inline void setNoWait(bool val = true)              { setFlag("nowait",    val); }
 
 	inline void setDebugMin(long long int num)          { setInt("debug_min",     num); }
 	inline void setMaxRetry(long long int num)          { setInt("maxretry",      num); }
@@ -1618,7 +1620,7 @@ public:
 	inline void setDefaultStr(const std::string & ups, const std::string & key, const std::string & val)  { setStr(ups, "default." + key, val); }
 	inline void setDefaultInt(const std::string & ups, const std::string & key, long long int val)        { setInt(ups, "default." + key, val); }
 	inline void setDefaultIntHex(const std::string & ups, const std::string & key, long long int val)     { setIntHex(ups, "default." + key, val); }
-	inline void setDefaultFlag(const std::string & ups, const std::string & key)                          { setFlag(ups, "default." + key); }
+	inline void setDefaultFlag(const std::string & ups, const std::string & key, bool val = true)         { setFlag(ups, "default." + key, val); }
 	inline void setDefaultBool(const std::string & ups, const std::string & key, bool val)                { setBool(ups, "default." + key, val); }
 	inline void setDefaultBoolInt(const std::string & ups, const std::string & key, nut::BoolInt val)     { setBoolInt(ups, "default." + key, val); }
 	inline void setDefaultDouble(const std::string & ups, const std::string & key, double val)            { setDouble(ups, "default." + key, val); }
@@ -1626,7 +1628,7 @@ public:
 	inline void setOverrideStr(const std::string & ups, const std::string & key, const std::string & val) { setStr(ups, "override." + key, val); }
 	inline void setOverrideInt(const std::string & ups, const std::string & key, long long int val)       { setInt(ups, "override." + key, val); }
 	inline void setOverrideIntHex(const std::string & ups, const std::string & key, long long int val)    { setIntHex(ups, "override." + key, val); }
-	inline void setOverrideFlag(const std::string & ups, const std::string & key)                         { setFlag(ups, "override." + key); }
+	inline void setOverrideFlag(const std::string & ups, const std::string & key, bool val = true)        { setFlag(ups, "override." + key, val); }
 	inline void setOverrideBool(const std::string & ups, const std::string & key, bool val)               { setBool(ups, "override." + key, val); }
 	inline void setOverrideBoolInt(const std::string & ups, const std::string & key, nut::BoolInt val)    { setBoolInt(ups, "override." + key, val); }
 	inline void setOverrideDouble(const std::string & ups, const std::string & key, double val)           { setDouble(ups, "override." + key, val); }
@@ -1878,7 +1880,7 @@ public:
 	inline void setUsbHidEndpointOut(const std::string & ups, long long int val)            { setIntHex(ups, "usb_hid_ep_out",                 val); }         // CHECKME
 
 	// Flag - if exists then "true"; remove() to "unset" => "false"
-	inline void setIgnoreLB(const std::string & ups)                        { setFlag(ups, "ignorelb"); }
+	inline void setIgnoreLB(const std::string & ups, bool val = true)       { setFlag(ups, "ignorelb", val); }
 
 	inline void setNolock(const std::string & ups, bool set = true)         { setBool(ups, "nolock",         set); }
 	inline void setCable(const std::string & ups, bool set = true)          { setBool(ups, "cable",          set); }
