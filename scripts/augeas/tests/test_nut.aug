@@ -10,19 +10,66 @@ test NutNutConf.nut_lns get nut_conf =
 	{ }
 	{ "MODE" = "standalone" }
 
-let ups_conf  = "
+(* desc is a single token made of two words below *)
+let ups_conf1 = "
 [testups]
 	driver = dummy-ups
 	port = auto
 	desc = \"Dummy UPS\"
 "
 
-test NutUpsConf.ups_lns get ups_conf = 
+test NutUpsConf.ups_lns get ups_conf1 =
 	{ }
-	{ "testups" 
+	{ "testups"
 		{ "driver" = "dummy-ups"   }
 		{ "port"   = "auto" }
-		{ "desc"   = "\"Dummy UPS\""    } }
+		{ "desc"   = "Dummy UPS"    } }
+
+(* desc is a single token made of two words prefixed by one quote
+ * as part of its content below (escaped by backslashes) *)
+let ups_conf2 = "
+[testups]
+	driver = dummy-ups
+	port = auto
+	desc = \"\\\"Dummy UPS\"
+"
+
+test NutUpsConf.ups_lns get ups_conf2 =
+	{ }
+	{ "testups"
+		{ "driver" = "dummy-ups"   }
+		{ "port"   = "auto" }
+		{ "desc"   = "\\\"Dummy UPS"    } }
+
+(* desc is a single token made of two words surrounded by quotes
+ * as part of its content below (escaped by backslashes) *)
+(* FIXME: Lens fails to parse the second escaped slash,
+ *        test below is truncated so far:
+ * ./tests/test_nut.aug:53.0-58.41:exception thrown in test
+ * ./tests/test_nut.aug:53.5-.37:exception: Get did not match entire input
+ *     Lens: /usr/share/augeas/lenses/dist/inifile.aug:497.25-.43:
+ *     Error encountered at 5:0 (44 characters into string)
+ *     <er = dummy-ups\n\tport = auto\n|=|\tdesc = "\"Dummy UPS\""\n>
+ *
+ *     Tree generated so far:
+ *     /testups
+ * /testups/driver = "dummy-ups"
+ * /testups/port = "auto"
+ *)
+let ups_conf3 = "
+[testups]
+	driver = dummy-ups
+	port = auto
+	desc = \"\\\"Dummy UPS\\\"
+"
+
+test NutUpsConf.ups_lns get ups_conf3 =
+	{ }
+	{ "testups"
+		{ "driver" = "dummy-ups"   }
+		{ "port"   = "auto" }
+		{ "desc"   = "\\\"Dummy UPS\\"    } }
+
 
 
 let upsd_conf = "
