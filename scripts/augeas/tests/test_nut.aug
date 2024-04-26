@@ -48,7 +48,8 @@ test NutUpsConf.ups_lns get ups_conf2 =
 
 (* desc is a single token made of two words surrounded by quotes
  * as part of its content below (escaped by backslashes) *)
-(* FIXME: Lens fails to parse the second escaped slash,
+(* FIXME: Lens fails to parse the second escaped slash, probably
+ *        because of "to_comment_re" or "entry_generic_nocomment"
  *        test below is truncated so far:
  * ./tests/test_nut.aug:53.0-58.41:exception thrown in test
  * ./tests/test_nut.aug:53.5-.37:exception: Get did not match entire input
