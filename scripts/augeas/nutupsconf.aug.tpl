@@ -4,7 +4,8 @@ Module: NutUpsConf
 
 Author: Raphael Pinson <raphink@gmail.com>
         Frederic Bohe  <fredericbohe@eaton.com>
-        Arnaud Quette <arnaud.quette@gmail.com>
+        Arnaud Quette  <arnaud.quette@gmail.com>
+        Jim Klimov     <jimklimov+nut@gmail.com>
 
 About: License
   This file is licensed under the GPL.
@@ -34,10 +35,13 @@ let ups_global   = "chroot"
                  | "driverpath"
                  | "maxstartdelay"
                  | "maxretry"
+                 | "nowait"
                  | "retrydelay"
                  | "pollinterval"
                  | "synchronous"
                  | "user"
+                 | "group"
+                 | "debug_min"
 
 let ups_fields   = "driver"
                  | "port"
@@ -47,6 +51,11 @@ let ups_fields   = "driver"
                  | "ignorelb"
                  | "maxstartdelay"
                  | "synchronous"
+                 | "user"
+                 | "group"
+                 | "debug_min"
+                 | "default\.[^ \t]+"
+                 | "override\.[^ \t]+"
 @SPECIFIC_DRV_VARS@
 
 let ups_entry    = IniFile.indented_entry (ups_global|ups_fields) ups_sep ups_comment
