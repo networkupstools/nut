@@ -1373,7 +1373,7 @@ public:
 	Settable<std::string>  certPath;
 	CertIdent              certIdent;
 	std::list<CertHost>    certHosts;
-	Settable<unsigned int> minSupplies, poolFreq, poolFreqAlert, hostSync;
+	Settable<unsigned int> minSupplies, pollFreq, pollFreqAlert, hostSync;
 	Settable<unsigned int> deadTime, rbWarnTime, noCommWarnTime, finalDelay;
 
 	enum NotifyFlag {

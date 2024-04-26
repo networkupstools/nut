@@ -618,8 +618,8 @@ void NutConfTest::testUpsmonConfigParser()
 	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find SHUTDOWNCMD '/sbin/shutdown -h +0'", string("/sbin/shutdown -h +0"), *conf.shutdownCmd);
 	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find NOTIFYCMD '/usr/local/ups/bin/notifyme'", string("/usr/local/ups/bin/notifyme"), *conf.notifyCmd);
 	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find POWERDOWNFLAG '/etc/killpower'", string("/etc/killpower"), *conf.powerDownFlag);
-	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find POLLFREQ 30", 30u, *conf.poolFreq);
-	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find POLLFREQALERT 5", 5u, *conf.poolFreqAlert);
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find POLLFREQ 30", 30u, *conf.pollFreq);
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find POLLFREQALERT 5", 5u, *conf.pollFreqAlert);
 	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find HOSTSYNC 15", 15u, *conf.hostSync);
 	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find DEADTIME 15", 15u, *conf.deadTime);
 	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find RBWARNTIME 43200", 43200u, *conf.rbWarnTime);

@@ -1423,14 +1423,14 @@ void UpsmonConfigParser::onParseDirective(const std::string& directiveName, char
 		{
 			if(values.size()>0)
 			{
-				_config->poolFreq = StringToSettableNumber<unsigned int>(values.front());
+				_config->pollFreq = StringToSettableNumber<unsigned int>(values.front());
 			}
 		}
 		else if(directiveName == "POLLFREQALERT")
 		{
 			if(values.size()>0)
 			{
-				_config->poolFreqAlert = StringToSettableNumber<unsigned int>(values.front());
+				_config->pollFreqAlert = StringToSettableNumber<unsigned int>(values.front());
 			}
 		}
 		else if(directiveName == "POLLFAIL_LOG_THROTTLE_MAX")

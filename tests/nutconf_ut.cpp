@@ -164,7 +164,7 @@ void NutConfigUnitTest::testUpsmonConfiguration() {
 
 	config.shutdownCmd   = "/sbin/shutdown -h +2 'System shutdown in 2 minutes!'";
 	config.powerDownFlag = "/run/nut/killpower";
-	config.poolFreqAlert = 10;
+	config.pollFreqAlert = 10;
 	config.deadTime      = 30;
 
 	config.debugMin      = 6;

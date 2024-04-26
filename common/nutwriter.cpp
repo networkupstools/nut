@@ -556,8 +556,8 @@ NutWriter::status_t UpsmonConfigWriter::writeConfig(const UpsmonConfiguration & 
 	UPSMON_DIRECTIVEX("NOTIFYCMD",      std::string,  config.notifyCmd,      true);
 	UPSMON_DIRECTIVEX("POWERDOWNFLAG",  std::string,  config.powerDownFlag,  true);
 	UPSMON_DIRECTIVEX("MINSUPPLIES",    unsigned int, config.minSupplies,    false);
-	UPSMON_DIRECTIVEX("POLLFREQ",       unsigned int, config.poolFreq,       false);
-	UPSMON_DIRECTIVEX("POLLFREQALERT",  unsigned int, config.poolFreqAlert,  false);
+	UPSMON_DIRECTIVEX("POLLFREQ",       unsigned int, config.pollFreq,       false);
+	UPSMON_DIRECTIVEX("POLLFREQALERT",  unsigned int, config.pollFreqAlert,  false);
 	UPSMON_DIRECTIVEX("POLLFAIL_LOG_THROTTLE_MAX", int, config.pollFailLogThrottleMax,  false);
 	UPSMON_DIRECTIVEX("OFFDURATION",    int,          config.offDuration,    false);
 	UPSMON_DIRECTIVEX("OBLBDURATION",   int,          config.oblbDuration,   false);
