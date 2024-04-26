@@ -28,10 +28,7 @@ dist-hook:
 if HAVE_AUGPARSE
 check-local:
 	@echo "augparse proceeding to lenses verification job..."; \
-	echo "DISABLED for now due to https://github.com/networkupstools/nut/issues/657"
-
-# FIXME
-#	augparse -I $(srcdir)/ $(srcdir)/tests/test_nut.aug
+	$(AUGPARSE) -I $(srcdir)/ $(srcdir)/tests/test_nut.aug
 endif
 
 if WITH_AUGLENS
