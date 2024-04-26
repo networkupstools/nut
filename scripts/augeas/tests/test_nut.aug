@@ -33,7 +33,7 @@ let ups_conf2 = "
 [testups]
 	driver = dummy-ups
 	port = auto
-	desc = \"\\\"Dummy UPS\"
+	desc = \"\\\"Dummy UPS\" # comment line
 "
 
 test NutUpsConf.ups_lns get ups_conf2 =
@@ -41,7 +41,10 @@ test NutUpsConf.ups_lns get ups_conf2 =
 	{ "testups"
 		{ "driver" = "dummy-ups"   }
 		{ "port"   = "auto" }
-		{ "desc"   = "\\\"Dummy UPS"    } }
+		{ "desc"   = "\\\"Dummy UPS"
+			{ "#comment" = "comment line" }
+		}
+	}
 
 (* desc is a single token made of two words surrounded by quotes
  * as part of its content below (escaped by backslashes) *)
