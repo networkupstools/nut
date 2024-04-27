@@ -1553,6 +1553,35 @@ protected:
 /** UPS configuration */
 class UpsConfiguration : public GenericConfiguration
 {
+	/* Note: key words for ups.conf are well collected from sources
+	 * by augeas lens preparation scripts. Maintainers of this class
+	 * can consume that information like this to see key words in
+	 * context of their use in sources and documentation (omit the
+	 * `continue` in grep of `nutconf.hpp` to see details of ALL
+	 * keywords and not just those not yet covered by this class
+	 * (e.g. to verify handling as str/int/bool/flag... types):
+
+:; ( cd scripts/augeas && python ./gen-nutupsconf-aug.py.in )
+
+:; grep -E '[=|] "' scripts/augeas/nutupsconf.aug.in | awk '{print $NF}' | tr -d '"' \
+  | while read O ; do echo "=== $O :" ; \
+    grep -w '"'"$O"'"' ./include/nutconf.hpp && continue ; \
+    grep -A10 -w "$O" ./docs/man/*.txt || echo '!!! UNDOCUMENTED !!!' ; \
+    echo "-----"; grep -A10 -w '"'"$O"'"' ./drivers/*.{c,h} || echo '!!! NOT USED IN CODE !!!' ; \
+    echo "-----"; echo "" ; done | less
+
+	 * Arrange found new keywords into two columns (first would be
+	 * "C names" camel-cased and expanded as deemed fit) and generate
+	 * lines for code blocks below as e.g.:
+:; while read C O ; do \
+   printf '\tinline std::string get%-45sconst { return getStr(ups, "%s"); }\n' \
+      "$C"'(const std::string & ups)' "$O"; \
+   printf '\tinline void set%-75s{ setStr(ups, "%-22s val); }\n' \
+      "$C"'(const std::string & ups, const std::string & val)' "$O"'",' ; \
+   done  < nutupsconf-newnames.bool | sort
+
+	 */
+
 public:
 	/** Global configuration attributes getters and setters \{ */
 
