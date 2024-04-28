@@ -1566,8 +1566,8 @@ class UpsConfiguration : public GenericConfiguration
 :; grep -E '[=|] "' scripts/augeas/nutupsconf.aug.in | awk '{print $NF}' | tr -d '"' \
   | while read O ; do echo "=== $O :" ; \
     grep -w '"'"$O"'"' ./include/nutconf.hpp && continue ; \
-    grep -A10 -w "$O" ./docs/man/*.txt || echo '!!! UNDOCUMENTED !!!' ; \
-    echo "-----"; grep -A10 -w '"'"$O"'"' ./drivers/*.{c,h} || echo '!!! NOT USED IN CODE !!!' ; \
+    { cd ./docs/man/ && grep -A10 -w "$O" *.txt || echo '!!! UNDOCUMENTED !!!' ; } ; \
+    echo "-----"; { cd ./drivers && grep -A10 -w '"'"$O"'"' *.{c,h} || echo '!!! NOT USED IN CODE !!!' ; } ; \
     echo "-----"; echo "" ; done | less
 
 	 * Arrange found new keywords into two columns (first would be
