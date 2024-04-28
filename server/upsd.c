@@ -5,6 +5,7 @@
 	2008		Arjen de Korte <adkorte-guest@alioth.debian.org>
 	2011 - 2012	Arnaud Quette <arnaud.quette.free.fr>
 	2019 		Eaton (author: Arnaud Quette <ArnaudQuette@eaton.com>)
+	2020 - 2024	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -1092,6 +1093,8 @@ static void driver_free(void)
 
 static void upsd_cleanup(void)
 {
+	upsdebugx(1, "%s: starting the end-game", __func__);
+
 	if (strlen(pidfn) > 0) {
 		unlink(pidfn);
 	}
@@ -1121,6 +1124,8 @@ static void upsd_cleanup(void)
 		CloseHandle(mutex);
 	}
 #endif
+
+	upsdebugx(1, "%s: finished", __func__);
 }
 
 static void poll_reload(void)
@@ -1879,7 +1884,7 @@ void check_perms(const char *fn)
 
 	/* include the x bit here in case we check a directory */
 	if (st.st_mode & (S_IROTH | S_IXOTH)) {
-		upslogx(LOG_WARNING, "%s is world readable", fn);
+		upslogx(LOG_WARNING, "WARNING: %s is world readable (hope you don't have passwords there)", fn);
 	}
 #else
 	NUT_UNUSED_VARIABLE(fn);

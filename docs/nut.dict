@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3152 utf-8
+personal_ws-1.1 en 3132 utf-8
 AAC
 AAS
 ABI
@@ -195,6 +195,7 @@ Chatziathanassiou
 CheckUPS
 CheckUPSAvailable
 Checksum
+Christoph
 Chu
 Cichowski
 CircleCI
@@ -390,7 +391,6 @@ GND
 GNUmakefile
 GObject
 GPIO
-GPIOCHIP
 GPL
 GPSER
 GRs
@@ -715,7 +715,6 @@ NOAUTH
 NOBROADCAST
 NOCOMM
 NOCOMMWARNTIME
-NOCONF
 NOGET
 NOMBATTV
 NOMINV
@@ -737,8 +736,6 @@ NTP
 NUT's
 NUTCONF
 NUTClient
-NUTSRC
-NUTServer
 NVA
 NX
 Nadav
@@ -781,8 +778,6 @@ ONF
 ONV
 OOM
 OSABI
-OSC
-OSF
 OSs
 OUTDIR
 OUTPUTV
@@ -1390,7 +1385,6 @@ accessmode
 acl
 acm
 acpi
-acquisited
 acx
 adb
 addcmd
@@ -1608,7 +1602,6 @@ chkconfig
 chmod
 chown
 chr
-christoph
 chroot
 chrooted
 chrooting
@@ -1703,7 +1696,6 @@ datagrams
 dataok
 datasheet
 datastale
-dbgsym
 dblatex
 dcd
 dcn
@@ -2033,7 +2025,6 @@ innotech
 inode
 inplace
 installable
-installcheck
 installpkg
 installurl
 instcmd
@@ -2108,7 +2099,6 @@ kvm
 labcd
 lan
 langid
-largp
 lasaine
 ld
 ldd
@@ -2207,7 +2197,6 @@ lookup
 loopback
 lowbatt
 lowbattery
-lposix
 lr
 lregex
 lsd
@@ -2295,7 +2284,6 @@ modprobe
 monmaster
 monofasico
 monpasswd
-monslave
 monuser
 morbo
 mortem
@@ -2368,7 +2356,6 @@ nobody's
 nobt
 nodev
 nodownload
-nodtk
 noexec
 noflag
 nogroup
@@ -2442,7 +2429,6 @@ openipmi
 openjdk
 openlog
 openmp
-opensolaris
 openssh
 openssl
 optimizations
@@ -2605,7 +2591,6 @@ regtype
 relatime
 releasekeyring
 relicensing
-remoting
 renderer
 renderers
 repindex
@@ -2776,7 +2761,6 @@ stan
 startIP
 startdelay
 startup
-statefilepath
 statepath
 stayoff
 stderr
@@ -2972,7 +2956,6 @@ upscode
 upscommon
 upsct
 upsd
-upsd's
 upsdebug
 upsdebugx
 upsdev
@@ -2992,7 +2975,6 @@ upslog
 upslogx
 upsmon
 upsmon's
-upsmonuser
 upsname
 upsonbatt
 upspass
@@ -3016,7 +2998,6 @@ usbhid
 usbif
 usbinfo
 usbmisc
-usbscan
 usbups
 usbus
 usd
@@ -3075,7 +3056,6 @@ wDescriptorLength
 waitbeforereconnect
 wakeup
 wc
-wchar
 wdi
 webserver
 wf
