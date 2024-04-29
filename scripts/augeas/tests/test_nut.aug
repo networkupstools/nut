@@ -61,6 +61,11 @@ test NutUpsConf.ups_lns get ups_conf2 =
  *     /testups
  * /testups/driver = "dummy-ups"
  * /testups/port = "auto"
+ *
+ * NOTE That for NUT parsing, such trailing slash is likely a problem
+ * that is not caught by lens parser either: it should mean escaping
+ * the next character (quote) and so an unfinished line. This test case
+ * should have failed but currently does not.
  *)
 let ups_conf3 = "
 [testups]
