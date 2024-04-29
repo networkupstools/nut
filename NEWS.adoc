@@ -102,6 +102,11 @@ https://github.com/networkupstools/nut/milestone/11
  - brought keyword dictionaries of `nutconf` and `augeas` NUT configuration
    file parsers up to date; restored automated checks for `augeas` lenses.
    [issue #657, issue #2294]
++
+   NOTE: Some known issues remain with augeas lens definitions so currently
+   they should be able to parse common simple use-cases but not certain types
+   of more complex configurations (e.g. some line patterns that involve too
+   many double-quote characters) which are valid for NUT proper. [#657]
 
 
 Release notes for NUT 2.8.2 - what's new since 2.8.1
