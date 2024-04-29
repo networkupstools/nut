@@ -35,6 +35,7 @@
 #include <list>
 #include <map>
 #include <stdexcept>
+#include <typeinfo>
 
 /* See include/common.h for details behind this */
 #ifndef NUT_UNUSED_VARIABLE

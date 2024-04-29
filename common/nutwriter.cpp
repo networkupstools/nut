@@ -30,7 +30,7 @@
 #include <list>
 #include <map>
 #include <cassert>
-
+#include <typeinfo>
 
 /**
  *  \brief  NUT configuration directive generator
