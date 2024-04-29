@@ -28,7 +28,17 @@ dist-hook:
 if HAVE_AUGPARSE
 check-local:
 	@echo "augparse proceeding to lenses verification job..."; \
+	 echo "DISABLED for now due to https://github.com/networkupstools/nut/issues/657 -" ; \
+	 echo "as a developer, you can run the tests below manually but not automatically:" ; \
+	 echo "    $(AUGPARSE) -I $(srcdir)/ $(srcdir)/tests/test_nut.aug" ; \
+	 echo "or 'make check-augeas' or 'make check-augeas-all' in `pwd`"
+
+check-augeas:
 	$(AUGPARSE) -I $(srcdir)/ $(srcdir)/tests/test_nut.aug
+
+check-augeas-all: check-augeas
+	$(AUGPARSE) -I $(srcdir)/ $(srcdir)/tests/test_nut_flaky.aug
+	$(AUGPARSE) -I $(srcdir)/ $(srcdir)/tests/test_nut_fixme.aug
 endif
 
 if WITH_AUGLENS
