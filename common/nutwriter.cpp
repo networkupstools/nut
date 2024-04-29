@@ -575,6 +575,10 @@ NutWriter::status_t UpsmonConfigWriter::writeConfig(const UpsmonConfiguration & 
 	// need to add relaxed mode for 0/1 as false/true handling:
 	// bi.bool01 = true;
 	bi2.bool01 = false;	// strict mode for 0/1 as int handling
+	// Avoid static analysis concerns that the internal _value
+	// "may be used uninitialized in this function" (ETOOSMART):
+	bi = false;
+	bi2 = false;
 
 	if (config.certVerify.set()) {
 		bi = config.certVerify;
