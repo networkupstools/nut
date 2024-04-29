@@ -44,7 +44,7 @@ let ups_global   = "chroot"
                  | "debug_min"
 
 (* This expression did involve a lot of courtship around the parser *)
-let ups_fields_re = /(default|override)\.[^:=#\t\n\r ]+/
+let ups_fields_re = /(default|override)\.[^:=#\r\t\n ]+/
 
 let ups_fields   = "driver"
                  | "port"
