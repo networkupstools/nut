@@ -417,7 +417,10 @@ public:
 		if (i.set()) return i;
 		if (bool01.set() && bool01 == true) {
 			if (b.set()) {
-				if (b) return 1;
+				/** Cause use of operator to avoid warnings like
+				 * "may be used uninitialized in this function"
+				 */
+				if (b == true) return 1;
 				return 0;
 			}
 		} else {
@@ -447,7 +450,7 @@ public:
 
 	inline std::string toString()const {
 		if (b.set()) {
-			if (b) return "yes";
+			if (b == true) return "yes";
 			return "no";
 		}
 
