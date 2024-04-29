@@ -1763,117 +1763,116 @@ public:
 	inline std::string getLimitedRuntimeOnBattery(const std::string & ups)const { return getStr(ups, "limited_runtime_on_battery"); }
 	inline std::string getSiteFaultDetection(const std::string & ups)  const { return getStr(ups, "site_fault_detection"); }
 
-	inline long long int getAsem_HB(const std::string & ups)             const { return getInt(ups, "hb"); }
-	inline long long int getAsem_LB(const std::string & ups)             const { return getInt(ups, "lb"); }
-	inline long long int getBatteryNumber(const std::string & ups)       const { return getInt(ups, "battery_number"); }
-	inline long long int getI2C_address(const std::string & ups)         const { return getInt(ups, "i2c_address"); }
-	inline long long int getInterruptSize(const std::string & ups)       const { return getInt(ups, "interruptsize"); }
-	inline long long int getMaxPollsWithoutData(const std::string & ups) const { return getInt(ups, "max_polls_without_data"); }
-	inline long long int getModbus_ByteTimeoutSec(const std::string & ups)const { return getInt(ups, "mod_byte_to_s"); }
-	inline long long int getModbus_ByteTimeoutUsec(const std::string & ups)const { return getInt(ups, "mod_byte_to_us"); }
-	inline long long int getModbus_CHRG_addr(const std::string & ups)    const { return getInt(ups, "CHRG_addr"); }
-	inline long long int getModbus_CHRG_noro(const std::string & ups)    const { return getInt(ups, "CHRG_noro"); }
-	inline long long int getModbus_CHRG_regtype(const std::string & ups) const { return getInt(ups, "CHRG_regtype"); }
-	inline long long int getModbus_DISCHRG_addr(const std::string & ups) const { return getInt(ups, "DISCHRG_addr"); }
-	inline long long int getModbus_DISCHRG_noro(const std::string & ups) const { return getInt(ups, "DISCHRG_noro"); }
-	inline long long int getModbus_DISCHRG_regtype(const std::string & ups)const { return getInt(ups, "DISCHRG_regtype"); }
-	inline long long int getModbus_DataBits(const std::string & ups)     const { return getInt(ups, "databits"); }
-	inline long long int getModbus_DeviceSlaveId(const std::string & ups)const { return getInt(ups, "dev_slave_id"); }
-	inline long long int getModbus_FSD_addr(const std::string & ups)     const { return getInt(ups, "FSD_addr"); }
-	inline long long int getModbus_FSD_noro(const std::string & ups)     const { return getInt(ups, "FSD_noro"); }
-	inline long long int getModbus_FSD_pulse_duration(const std::string & ups)const { return getInt(ups, "FSD_pulse_duration"); }
-	inline long long int getModbus_FSD_regtype(const std::string & ups)  const { return getInt(ups, "FSD_regtype"); }
-	inline long long int getModbus_HB_addr(const std::string & ups)      const { return getInt(ups, "HB_addr"); }
-	inline long long int getModbus_HB_noro(const std::string & ups)      const { return getInt(ups, "HB_noro"); }
-	inline long long int getModbus_HB_regtype(const std::string & ups)   const { return getInt(ups, "HB_regtype"); }
-	inline long long int getModbus_LB_addr(const std::string & ups)      const { return getInt(ups, "LB_addr"); }
-	inline long long int getModbus_LB_noro(const std::string & ups)      const { return getInt(ups, "LB_noro"); }
-	inline long long int getModbus_LB_regtype(const std::string & ups)   const { return getInt(ups, "LB_regtype"); }
-	inline long long int getModbus_OB_addr(const std::string & ups)      const { return getInt(ups, "OB_addr"); }
-	inline long long int getModbus_OB_noro(const std::string & ups)      const { return getInt(ups, "OB_noro"); }
-	inline long long int getModbus_OB_regtype(const std::string & ups)   const { return getInt(ups, "OB_regtype"); }
-	inline long long int getModbus_OL_addr(const std::string & ups)      const { return getInt(ups, "OL_addr"); }
-	inline long long int getModbus_OL_noro(const std::string & ups)      const { return getInt(ups, "OL_noro"); }
-	inline long long int getModbus_OL_regtype(const std::string & ups)   const { return getInt(ups, "OL_regtype"); }
-	inline long long int getModbus_RB_addr(const std::string & ups)      const { return getInt(ups, "RB_addr"); }
-	inline long long int getModbus_RB_noro(const std::string & ups)      const { return getInt(ups, "RB_noro"); }
-	inline long long int getModbus_RB_regtype(const std::string & ups)   const { return getInt(ups, "RB_regtype"); }
+	inline long long int getAdvOrder(const std::string & ups)                  const { return getInt(ups, "advorder"); }            // CHECKME
+	inline long long int getAsem_HB(const std::string & ups)                   const { return getInt(ups, "hb"); }
+	inline long long int getAsem_LB(const std::string & ups)                   const { return getInt(ups, "lb"); }
+	inline long long int getBatteryNumber(const std::string & ups)             const { return getInt(ups, "battery_number"); }
+	inline long long int getBatteryPercentage(const std::string & ups)         const { return getInt(ups, "batteryPercentage"); }   // CHECKME
+	inline long long int getBattVoltMult(const std::string & ups)              const { return getInt(ups, "battvoltmult"); }        // CHECKME
+	inline long long int getBaudRate(const std::string & ups)                  const { return getInt(ups, "baud_rate"); }           // CHECKME
+	inline long long int getBaudrate(const std::string & ups)                  const { return getInt(ups, "baudrate"); }            // CHECKME
+	inline long long int getCablePower(const std::string & ups)                const { return getInt(ups, "cablepower"); }          // CHECKME
+	inline long long int getChargeTime(const std::string & ups)                const { return getInt(ups, "chargetime"); }          // CHECKME
+	inline long long int getDaysOff(const std::string & ups)                   const { return getInt(ups, "daysoff"); }             // CHECKME
+	inline long long int getDaySweek(const std::string & ups)                  const { return getInt(ups, "daysweek"); }            // CHECKME
+	inline long long int getDebugMin(const std::string & ups)                  const { return getInt(ups, "debug_min"); }
+	inline long long int getFrequency(const std::string & ups)                 const { return getInt(ups, "frequency"); }           // CHECKME
+	inline long long int getHourOff(const std::string & ups)                   const { return getInt(ups, "houroff"); }             // CHECKME
+	inline long long int getHourOn(const std::string & ups)                    const { return getInt(ups, "houron"); }              // CHECKME
+	inline long long int getI2C_address(const std::string & ups)               const { return getInt(ups, "i2c_address"); }
+	inline long long int getIdleLoad(const std::string & ups)                  const { return getInt(ups, "idleload"); }            // CHECKME
+	inline long long int getInputTimeout(const std::string & ups)              const { return getInt(ups, "input_timeout"); }       // CHECKME
+	inline long long int getInterruptSize(const std::string & ups)             const { return getInt(ups, "interruptsize"); }
+	inline long long int getLineVoltage(const std::string & ups)               const { return getInt(ups, "linevoltage"); }         // CHECKME
+	inline long long int getLoadpercentage(const std::string & ups)            const { return getInt(ups, "loadPercentage"); }      // CHECKME
+	inline long long int getMaxLoad(const std::string & ups)                   const { return getInt(ups, "max_load"); }            // CHECKME
+	inline long long int getMaxPollsWithoutData(const std::string & ups)       const { return getInt(ups, "max_polls_without_data"); }
+	inline long long int getMaxStartDelay(const std::string & ups)             const { return getInt(ups, "maxstartdelay"); }
+	inline long long int getMFR(const std::string & ups)                       const { return getInt(ups, "mfr"); }                 // CHECKME
+	inline long long int getMinCharge(const std::string & ups)                 const { return getInt(ups, "mincharge"); }           // CHECKME
+	inline long long int getMinRuntime(const std::string & ups)                const { return getInt(ups, "minruntime"); }          // CHECKME
+	inline long long int getModbus_ByteTimeoutSec(const std::string & ups)     const { return getInt(ups, "mod_byte_to_s"); }
+	inline long long int getModbus_ByteTimeoutUsec(const std::string & ups)    const { return getInt(ups, "mod_byte_to_us"); }
+	inline long long int getModbus_CHRG_addr(const std::string & ups)          const { return getInt(ups, "CHRG_addr"); }
+	inline long long int getModbus_CHRG_noro(const std::string & ups)          const { return getInt(ups, "CHRG_noro"); }
+	inline long long int getModbus_CHRG_regtype(const std::string & ups)       const { return getInt(ups, "CHRG_regtype"); }
+	inline long long int getModbus_DISCHRG_addr(const std::string & ups)       const { return getInt(ups, "DISCHRG_addr"); }
+	inline long long int getModbus_DISCHRG_noro(const std::string & ups)       const { return getInt(ups, "DISCHRG_noro"); }
+	inline long long int getModbus_DISCHRG_regtype(const std::string & ups)    const { return getInt(ups, "DISCHRG_regtype"); }
+	inline long long int getModbus_DataBits(const std::string & ups)           const { return getInt(ups, "databits"); }
+	inline long long int getModbus_DeviceSlaveId(const std::string & ups)      const { return getInt(ups, "dev_slave_id"); }
+	inline long long int getModbus_FSD_addr(const std::string & ups)           const { return getInt(ups, "FSD_addr"); }
+	inline long long int getModbus_FSD_noro(const std::string & ups)           const { return getInt(ups, "FSD_noro"); }
+	inline long long int getModbus_FSD_pulse_duration(const std::string & ups) const { return getInt(ups, "FSD_pulse_duration"); }
+	inline long long int getModbus_FSD_regtype(const std::string & ups)        const { return getInt(ups, "FSD_regtype"); }
+	inline long long int getModbus_HB_addr(const std::string & ups)            const { return getInt(ups, "HB_addr"); }
+	inline long long int getModbus_HB_noro(const std::string & ups)            const { return getInt(ups, "HB_noro"); }
+	inline long long int getModbus_HB_regtype(const std::string & ups)         const { return getInt(ups, "HB_regtype"); }
+	inline long long int getModbus_LB_addr(const std::string & ups)            const { return getInt(ups, "LB_addr"); }
+	inline long long int getModbus_LB_noro(const std::string & ups)            const { return getInt(ups, "LB_noro"); }
+	inline long long int getModbus_LB_regtype(const std::string & ups)         const { return getInt(ups, "LB_regtype"); }
+	inline long long int getModbus_OB_addr(const std::string & ups)            const { return getInt(ups, "OB_addr"); }
+	inline long long int getModbus_OB_noro(const std::string & ups)            const { return getInt(ups, "OB_noro"); }
+	inline long long int getModbus_OB_regtype(const std::string & ups)         const { return getInt(ups, "OB_regtype"); }
+	inline long long int getModbus_OL_addr(const std::string & ups)            const { return getInt(ups, "OL_addr"); }
+	inline long long int getModbus_OL_noro(const std::string & ups)            const { return getInt(ups, "OL_noro"); }
+	inline long long int getModbus_OL_regtype(const std::string & ups)         const { return getInt(ups, "OL_regtype"); }
+	inline long long int getModbus_RB_addr(const std::string & ups)            const { return getInt(ups, "RB_addr"); }
+	inline long long int getModbus_RB_noro(const std::string & ups)            const { return getInt(ups, "RB_noro"); }
+	inline long long int getModbus_RB_regtype(const std::string & ups)         const { return getInt(ups, "RB_regtype"); }
 	inline long long int getModbus_ResponseTimeoutMsec(const std::string & ups)const { return getInt(ups, "response_timeout_ms"); }
-	inline long long int getModbus_ResponseTimeoutSec(const std::string & ups)const { return getInt(ups, "mod_resp_to_s"); }
+	inline long long int getModbus_ResponseTimeoutSec(const std::string & ups) const { return getInt(ups, "mod_resp_to_s"); }
 	inline long long int getModbus_ResponseTimeoutUsec(const std::string & ups)const { return getInt(ups, "mod_resp_to_us"); }
-	inline long long int getModbus_RioSlaveId(const std::string & ups)   const { return getInt(ups, "rio_slave_id"); }
-	inline long long int getModbus_SerBaudRate(const std::string & ups)  const { return getInt(ups, "ser_baud_rate"); }
-	inline long long int getModbus_SerDataBit(const std::string & ups)   const { return getInt(ups, "ser_data_bit"); }
-	inline long long int getModbus_SerStopBit(const std::string & ups)   const { return getInt(ups, "ser_stop_bit"); }
-	inline long long int getModbus_SlaveId(const std::string & ups)      const { return getInt(ups, "slaveid"); }
-	inline long long int getModbus_StopBits(const std::string & ups)     const { return getInt(ups, "stopbits"); }
+	inline long long int getModbus_RioSlaveId(const std::string & ups)         const { return getInt(ups, "rio_slave_id"); }
+	inline long long int getModbus_SerBaudRate(const std::string & ups)        const { return getInt(ups, "ser_baud_rate"); }
+	inline long long int getModbus_SerDataBit(const std::string & ups)         const { return getInt(ups, "ser_data_bit"); }
+	inline long long int getModbus_SerStopBit(const std::string & ups)         const { return getInt(ups, "ser_stop_bit"); }
+	inline long long int getModbus_SlaveId(const std::string & ups)            const { return getInt(ups, "slaveid"); }
+	inline long long int getModbus_StopBits(const std::string & ups)           const { return getInt(ups, "stopbits"); }
+	inline long long int getNomBattVolt(const std::string & ups)               const { return getInt(ups, "nombattvolt"); }         // CHECKME
+	inline long long int getNumOfBytesFromUPS(const std::string & ups)         const { return getInt(ups, "numOfBytesFromUPS"); }   // CHECKME
+	inline long long int getOffDelay(const std::string & ups)                  const { return getInt(ups, "OffDelay"); }            // CHECKME
+	inline long long int getOffdelay(const std::string & ups)                  const { return getInt(ups, "offdelay"); }            // CHECKME
+	inline long long int getOnDelay(const std::string & ups)                   const { return getInt(ups, "OnDelay"); }             // CHECKME
+	inline long long int getOndelay(const std::string & ups)                   const { return getInt(ups, "ondelay"); }             // CHECKME
 	inline long long int getOnlineDischargeLogThrottleHovercharge(const std::string & ups)const { return getInt(ups, "onlinedischarge_log_throttle_hovercharge"); }
 	inline long long int getOnlineDischargeLogThrottleSec(const std::string & ups)const { return getInt(ups, "onlinedischarge_log_throttle_sec"); }
-	inline long long int getOutputPhaseAngle(const std::string & ups)    const { return getInt(ups, "output_phase_angle"); }
-	inline long long int getPinsShutdownMode(const std::string & ups)    const { return getInt(ups, "pins_shutdown_mode"); }
-	inline long long int getSemistaticFreq(const std::string & ups)      const { return getInt(ups, "semistaticfreq"); }
-	inline long long int getShutdownDuration(const std::string & ups)    const { return getInt(ups, "shutdown_duration"); }
-	inline long long int getShutdownTimer(const std::string & ups)       const { return getInt(ups, "shutdown_timer"); }
-	inline long long int getSlaveAddress(const std::string & ups)        const { return getInt(ups, "slave_address"); }
-	inline long long int getSnmpRetries(const std::string & ups)         const { return getInt(ups, "snmp_retries"); }
-	inline long long int getSnmpTimeout(const std::string & ups)         const { return getInt(ups, "snmp_timeout"); }
-	inline long long int getWaitBeforeReconnect(const std::string & ups) const { return getInt(ups, "waitbeforereconnect"); }
-
-	inline long long int getDebugMin(const std::string & ups)          const { return getInt(ups, "debug_min"); }
-	inline long long int getSDOrder(const std::string & ups)           const { return getInt(ups, "sdorder"); }             // TODO: Is that a number?
-	inline long long int getMaxStartDelay(const std::string & ups)     const { return getInt(ups, "maxstartdelay"); }
-	inline long long int getAdvOrder(const std::string & ups)          const { return getInt(ups, "advorder"); }            // CHECKME
-	inline long long int getBatteryPercentage(const std::string & ups) const { return getInt(ups, "batteryPercentage"); }   // CHECKME
-	inline long long int getOffDelay(const std::string & ups)          const { return getInt(ups, "OffDelay"); }            // CHECKME
-	inline long long int getOnDelay(const std::string & ups)           const { return getInt(ups, "OnDelay"); }             // CHECKME
-	inline long long int getBattVoltMult(const std::string & ups)      const { return getInt(ups, "battvoltmult"); }        // CHECKME
-	inline long long int getBaudRate(const std::string & ups)          const { return getInt(ups, "baud_rate"); }           // CHECKME
-	inline long long int getBaudrate(const std::string & ups)          const { return getInt(ups, "baudrate"); }            // CHECKME
-	inline long long int getCablePower(const std::string & ups)        const { return getInt(ups, "cablepower"); }          // CHECKME
-	inline long long int getChargeTime(const std::string & ups)        const { return getInt(ups, "chargetime"); }          // CHECKME
-	inline long long int getDaysOff(const std::string & ups)           const { return getInt(ups, "daysoff"); }             // CHECKME
-	inline long long int getDaySweek(const std::string & ups)          const { return getInt(ups, "daysweek"); }            // CHECKME
-	inline long long int getFrequency(const std::string & ups)         const { return getInt(ups, "frequency"); }           // CHECKME
-	inline long long int getHourOff(const std::string & ups)           const { return getInt(ups, "houroff"); }             // CHECKME
-	inline long long int getHourOn(const std::string & ups)            const { return getInt(ups, "houron"); }              // CHECKME
-	inline long long int getIdleLoad(const std::string & ups)          const { return getInt(ups, "idleload"); }            // CHECKME
-	inline long long int getInputTimeout(const std::string & ups)      const { return getInt(ups, "input_timeout"); }       // CHECKME
-	inline long long int getLineVoltage(const std::string & ups)       const { return getInt(ups, "linevoltage"); }         // CHECKME
-	inline long long int getLoadpercentage(const std::string & ups)    const { return getInt(ups, "loadPercentage"); }      // CHECKME
-	inline long long int getMaxLoad(const std::string & ups)           const { return getInt(ups, "max_load"); }            // CHECKME
-	inline long long int getMFR(const std::string & ups)               const { return getInt(ups, "mfr"); }                 // CHECKME
-	inline long long int getMinCharge(const std::string & ups)         const { return getInt(ups, "mincharge"); }           // CHECKME
-	inline long long int getMinRuntime(const std::string & ups)        const { return getInt(ups, "minruntime"); }          // CHECKME
-	inline long long int getNomBattVolt(const std::string & ups)       const { return getInt(ups, "nombattvolt"); }         // CHECKME
-	inline long long int getNumOfBytesFromUPS(const std::string & ups) const { return getInt(ups, "numOfBytesFromUPS"); }   // CHECKME
-	inline long long int getOffdelay(const std::string & ups)          const { return getInt(ups, "offdelay"); }            // CHECKME
-	inline long long int getOndelay(const std::string & ups)           const { return getInt(ups, "ondelay"); }             // CHECKME
-	inline long long int getOutputPace(const std::string & ups)        const { return getInt(ups, "output_pace"); }         // CHECKME
-	inline long long int getPollFreq(const std::string & ups)          const { return getInt(ups, "pollfreq"); }            // CHECKME
-	inline long long int getPowerUp(const std::string & ups)           const { return getInt(ups, "powerup"); }             // CHECKME
-	inline long long int getPrgShut(const std::string & ups)           const { return getInt(ups, "prgshut"); }             // CHECKME
-	inline long long int getRebootDelay(const std::string & ups)       const { return getInt(ups, "rebootdelay"); }         // CHECKME
-	inline long long int getSDtime(const std::string & ups)            const { return getInt(ups, "sdtime"); }              // CHECKME
-	inline long long int getShutdownDelay(const std::string & ups)     const { return getInt(ups, "shutdown_delay"); }      // CHECKME
-	inline long long int getStartDelay(const std::string & ups)        const { return getInt(ups, "startdelay"); }          // CHECKME
-	inline long long int getTestTime(const std::string & ups)          const { return getInt(ups, "testtime"); }            // CHECKME
-	inline long long int getTimeout(const std::string & ups)           const { return getInt(ups, "timeout"); }             // CHECKME
-	inline long long int getUPSdelayShutdown(const std::string & ups)  const { return getInt(ups, "ups.delay.shutdown"); }  // CHECKME
-	inline long long int getUPSdelayStart(const std::string & ups)     const { return getInt(ups, "ups.delay.start"); }     // CHECKME
-	inline long long int getVoltage(const std::string & ups)           const { return getInt(ups, "voltage"); }             // CHECKME
+	inline long long int getOutputPace(const std::string & ups)                const { return getInt(ups, "output_pace"); }         // CHECKME
+	inline long long int getOutputPhaseAngle(const std::string & ups)          const { return getInt(ups, "output_phase_angle"); }
+	inline long long int getPinsShutdownMode(const std::string & ups)          const { return getInt(ups, "pins_shutdown_mode"); }
+	inline long long int getPollFreq(const std::string & ups)                  const { return getInt(ups, "pollfreq"); }            // CHECKME
+	inline long long int getPowerUp(const std::string & ups)                   const { return getInt(ups, "powerup"); }             // CHECKME
+	inline long long int getPrgShut(const std::string & ups)                   const { return getInt(ups, "prgshut"); }             // CHECKME
+	inline long long int getRebootDelay(const std::string & ups)               const { return getInt(ups, "rebootdelay"); }         // CHECKME
+	inline long long int getSDOrder(const std::string & ups)                   const { return getInt(ups, "sdorder"); }             // TODO: Is that a number?
+	inline long long int getSDtime(const std::string & ups)                    const { return getInt(ups, "sdtime"); }              // CHECKME
+	inline long long int getSemistaticFreq(const std::string & ups)            const { return getInt(ups, "semistaticfreq"); }
+	inline long long int getShutdownDelay(const std::string & ups)             const { return getInt(ups, "shutdown_delay"); }      // CHECKME
+	inline long long int getShutdownDuration(const std::string & ups)          const { return getInt(ups, "shutdown_duration"); }
+	inline long long int getShutdownTimer(const std::string & ups)             const { return getInt(ups, "shutdown_timer"); }
+	inline long long int getSlaveAddress(const std::string & ups)              const { return getInt(ups, "slave_address"); }
+	inline long long int getSnmpRetries(const std::string & ups)               const { return getInt(ups, "snmp_retries"); }
+	inline long long int getSnmpTimeout(const std::string & ups)               const { return getInt(ups, "snmp_timeout"); }
+	inline long long int getStartDelay(const std::string & ups)                const { return getInt(ups, "startdelay"); }          // CHECKME
+	inline long long int getTestTime(const std::string & ups)                  const { return getInt(ups, "testtime"); }            // CHECKME
+	inline long long int getTimeout(const std::string & ups)                   const { return getInt(ups, "timeout"); }             // CHECKME
+	inline long long int getUPSdelayShutdown(const std::string & ups)          const { return getInt(ups, "ups.delay.shutdown"); }  // CHECKME
+	inline long long int getUPSdelayStart(const std::string & ups)             const { return getInt(ups, "ups.delay.start"); }     // CHECKME
+	inline long long int getVoltage(const std::string & ups)                   const { return getInt(ups, "voltage"); }             // CHECKME
+	inline long long int getWaitBeforeReconnect(const std::string & ups)       const { return getInt(ups, "waitbeforereconnect"); }
 
 	/** belkinunv: both a flag (wait for AC power) and value (also wait for charge level) */
-	inline long long int getWait(const std::string & ups)              const { return getInt(ups, "wait"); }
+	inline long long int getWait(const std::string & ups)                      const { return getInt(ups, "wait"); }
 
 	/** May be a flag or a number; 0 is among valid values (default -1 for unset) */
-	inline long long int getUsbSetAltInterface(const std::string & ups)          const { return getInt(ups, "usb_set_altinterface", -1); }      // CHECKME
+	inline long long int getUsbSetAltInterface(const std::string & ups)        const { return getInt(ups, "usb_set_altinterface", -1); }      // CHECKME
 
 	// NUT specifies these as "hexnum" values (optionally with prefixed 0x but hex anyway)
-	inline long long int getUsbConfigIndex(const std::string & ups)              const { return getIntHex(ups, "usb_config_index"); }           // CHECKME
-	inline long long int getUsbHidDescIndex(const std::string & ups)             const { return getIntHex(ups, "usb_hid_desc_index"); }         // CHECKME
-	inline long long int getUsbHidRepIndex(const std::string & ups)              const { return getIntHex(ups, "usb_hid_rep_index"); }          // CHECKME
-	inline long long int getUsbHidEndpointIn(const std::string & ups)            const { return getIntHex(ups, "usb_hid_ep_in"); }              // CHECKME
-	inline long long int getUsbHidEndpointOut(const std::string & ups)           const { return getIntHex(ups, "usb_hid_ep_out"); }             // CHECKME
+	inline long long int getUsbConfigIndex(const std::string & ups)            const { return getIntHex(ups, "usb_config_index"); }           // CHECKME
+	inline long long int getUsbHidDescIndex(const std::string & ups)           const { return getIntHex(ups, "usb_hid_desc_index"); }         // CHECKME
+	inline long long int getUsbHidRepIndex(const std::string & ups)            const { return getIntHex(ups, "usb_hid_rep_index"); }          // CHECKME
+	inline long long int getUsbHidEndpointIn(const std::string & ups)          const { return getIntHex(ups, "usb_hid_ep_in"); }              // CHECKME
+	inline long long int getUsbHidEndpointOut(const std::string & ups)         const { return getIntHex(ups, "usb_hid_ep_out"); }             // CHECKME
 
 	inline double getBatteryMax(const std::string & ups)          const { return getDouble(ups, "battery_max"); }
 	inline double getBatteryMin(const std::string & ups)          const { return getDouble(ups, "battery_min"); }
@@ -1920,7 +1919,7 @@ public:
 	inline void setDriver(const std::string & ups, const std::string & driver)                { setStr(ups, "driver",              driver); }
 	inline void setDescription(const std::string & ups, const std::string & desc)             { setStr(ups, "desc",                desc); }
 	inline void setFRUID(const std::string & ups, const std::string & fruid)                  { setStr(ups, "fruid",               fruid); }
-	inline void setGenericGPIO_Rules(const std::string & ups, const std::string & val)        { setStr(ups, "rules",                val); }
+	inline void setGenericGPIO_Rules(const std::string & ups, const std::string & val)        { setStr(ups, "rules",               val); }
 	inline void setGenericUPS_BYPASS(const std::string & ups, const std::string & bypass)     { setStr(ups, "BYPASS",              bypass); }
 	inline void setGenericUPS_CP(const std::string & ups, const std::string & cp)             { setStr(ups, "CP",                  cp); }
 	inline void setGenericUPS_LB(const std::string & ups, const std::string & lb)             { setStr(ups, "LB",                  lb); }
@@ -1935,11 +1934,11 @@ public:
 	inline void setManufacturer(const std::string & ups, const std::string & manufacturer)    { setStr(ups, "manufacturer",        manufacturer); }
 	inline void setMethodOfFlowControl(const std::string & ups, const std::string & method)   { setStr(ups, "methodOfFlowControl", method); }
 	inline void setMIBs(const std::string & ups, const std::string & mibs)                    { setStr(ups, "mibs",                mibs); }
-	inline void setModbus_DeviceMfr(const std::string & ups, const std::string & val)         { setStr(ups, "device_mfr",           val); }
-	inline void setModbus_DeviceModel(const std::string & ups, const std::string & val)       { setStr(ups, "device_model",         val); }
-	inline void setModbus_Parity(const std::string & ups, const std::string & val)            { setStr(ups, "parity",               val); }
-	inline void setModbus_PortType(const std::string & ups, const std::string & val)          { setStr(ups, "porttype",             val); }
-	inline void setModbus_SerParity(const std::string & ups, const std::string & val)         { setStr(ups, "ser_parity",           val); }
+	inline void setModbus_DeviceMfr(const std::string & ups, const std::string & val)         { setStr(ups, "device_mfr",          val); }
+	inline void setModbus_DeviceModel(const std::string & ups, const std::string & val)       { setStr(ups, "device_model",        val); }
+	inline void setModbus_Parity(const std::string & ups, const std::string & val)            { setStr(ups, "parity",              val); }
+	inline void setModbus_PortType(const std::string & ups, const std::string & val)          { setStr(ups, "porttype",            val); }
+	inline void setModbus_SerParity(const std::string & ups, const std::string & val)         { setStr(ups, "ser_parity",          val); }
 	inline void setModel(const std::string & ups, const std::string & model)                  { setStr(ups, "model",               model); }
 	inline void setModelName(const std::string & ups, const std::string & modelname)          { setStr(ups, "modelname",           modelname); }
 	inline void setNotification(const std::string & ups, const std::string & notification)    { setStr(ups, "notification",        notification); }
@@ -1962,151 +1961,150 @@ public:
 	inline void setSNMPversion(const std::string & ups, const std::string & snmp_version)     { setStr(ups, "snmp_version",        snmp_version); }
 	inline void setSubdriver(const std::string & ups, const std::string & subdriver)          { setStr(ups, "subdriver",           subdriver); }
 	inline void setSynchronous(const std::string & ups, const std::string & synchronous)      { setStr(ups, "synchronous",         synchronous); }
-	inline void setTtyMode(const std::string & ups, const std::string & val)                  { setStr(ups, "ttymode",              val); }
+	inline void setTtyMode(const std::string & ups, const std::string & val)                  { setStr(ups, "ttymode",             val); }
 	inline void setType(const std::string & ups, const std::string & type)                    { setStr(ups, "type",                type); }
 	inline void setUPStype(const std::string & ups, const std::string & upstype)              { setStr(ups, "upstype",             upstype); }
-	inline void setUpsId(const std::string & ups, const std::string & val)                    { setStr(ups, "upsid",                val); }
-	inline void setUsbBusPort(const std::string & ups, const std::string & val)               { setStr(ups, "busport",              val); }
-	inline void setUsbDevice(const std::string & ups, const std::string & val)                { setStr(ups, "device",               val); }
+	inline void setUpsId(const std::string & ups, const std::string & val)                    { setStr(ups, "upsid",               val); }
+	inline void setUsbBusPort(const std::string & ups, const std::string & val)               { setStr(ups, "busport",             val); }
+	inline void setUsbDevice(const std::string & ups, const std::string & val)                { setStr(ups, "device",              val); }
 	inline void setUSD(const std::string & ups, const std::string & usd)                      { setStr(ups, "usd",                 usd); }
 	inline void setUsername(const std::string & ups, const std::string & username)            { setStr(ups, "username",            username); }
 	inline void setUser(const std::string & ups, const std::string & user)                    { setStr(ups, "user",                user); }
 	inline void setValidationSequence(const std::string & ups, const std::string & valid_seq) { setStr(ups, "validationSequence",  valid_seq); }
 	inline void setVendor(const std::string & ups, const std::string & vendor)                { setStr(ups, "vendor",              vendor); }
 	inline void setVendorID(const std::string & ups, const std::string & vendorid)            { setStr(ups, "vendorid",            vendorid); }
-	inline void setWorkRangeType(const std::string & ups, const std::string & val)            { setStr(ups, "work_range_type",      val); }
+	inline void setWorkRangeType(const std::string & ups, const std::string & val)            { setStr(ups, "work_range_type",     val); }
 	inline void setWUGrace(const std::string & ups, const std::string & wugrace)              { setStr(ups, "wugrace",             wugrace); }
 
-	inline void setAsem_HB(const std::string & ups, long long int val)                        { setInt(ups, "hb",                   val); }
-	inline void setAsem_LB(const std::string & ups, long long int val)                        { setInt(ups, "lb",                   val); }
-	inline void setBatteryNumber(const std::string & ups, long long int val)                  { setInt(ups, "battery_number",       val); }
-	inline void setI2C_address(const std::string & ups, long long int val)                    { setInt(ups, "i2c_address",          val); }
-	inline void setInterruptSize(const std::string & ups, long long int val)                  { setInt(ups, "interruptsize",        val); }
+	inline void setADVorder(const std::string & ups, long long int advorder)                  { setInt(ups, "advorder",            advorder); }     // CHECKME
+	inline void setAsem_HB(const std::string & ups, long long int val)                        { setInt(ups, "hb",                  val); }
+	inline void setAsem_LB(const std::string & ups, long long int val)                        { setInt(ups, "lb",                  val); }
+	inline void setBatteryNumber(const std::string & ups, long long int val)                  { setInt(ups, "battery_number",      val); }
+	inline void setBatteryPercentage(const std::string & ups, long long int batt)             { setInt(ups, "batteryPercentage",   batt); }         // CHECKME
+	inline void setBattVoltMult(const std::string & ups, long long int mult)                  { setInt(ups, "battvoltmult",        mult); }         // CHECKME
+	inline void setBaudRate(const std::string & ups, long long int baud_rate)                 { setInt(ups, "baud_rate",           baud_rate); }    // CHECKME
+	inline void setBaudrate(const std::string & ups, long long int baudrate)                  { setInt(ups, "baudrate",            baudrate); }     // CHECKME
+	inline void setCablePower(const std::string & ups, long long int cablepower)              { setInt(ups, "cablepower",          cablepower); }   // CHECKME
+	inline void setChargeTime(const std::string & ups, long long int chargetime)              { setInt(ups, "chargetime",          chargetime); }   // CHECKME
+	inline void setDaysOff(const std::string & ups, long long int daysoff)                    { setInt(ups, "daysoff",             daysoff); }      // CHECKME
+	inline void setDaysWeek(const std::string & ups, long long int daysweek)                  { setInt(ups, "daysweek",            daysweek); }     // CHECKME
+	inline void setDebugMin(const std::string & ups, long long int val)                       { setInt(ups, "debug_min",           val); }
+	inline void setFrequency(const std::string & ups, long long int frequency)                { setInt(ups, "frequency",           frequency); }    // CHECKME
+	inline void setHourOff(const std::string & ups, long long int houroff)                    { setInt(ups, "houroff",             houroff); }      // CHECKME
+	inline void setHourOn(const std::string & ups, long long int houron)                      { setInt(ups, "houron",              houron); }       // CHECKME
+	inline void setI2C_address(const std::string & ups, long long int val)                    { setInt(ups, "i2c_address",         val); }
+	inline void setIdleLoad(const std::string & ups, long long int idleload)                  { setInt(ups, "idleload",            idleload); }     // CHECKME
+	inline void setInputTimeout(const std::string & ups, long long int timeout)               { setInt(ups, "input_timeout",       timeout); }      // CHECKME
+	inline void setInterruptSize(const std::string & ups, long long int val)                  { setInt(ups, "interruptsize",       val); }
+	inline void setLineVoltage(const std::string & ups, long long int linevoltage)            { setInt(ups, "linevoltage",         linevoltage); }  // CHECKME
+	inline void setLoadpercentage(const std::string & ups, long long int load)                { setInt(ups, "loadPercentage",      load); }         // CHECKME
+	inline void setMaxLoad(const std::string & ups, long long int max_load)                   { setInt(ups, "max_load",            max_load); }     // CHECKME
 	inline void setMaxPollsWithoutData(const std::string & ups, long long int val)            { setInt(ups, "max_polls_without_data", val); }
-	inline void setModbus_ByteTimeoutSec(const std::string & ups, long long int val)          { setInt(ups, "mod_byte_to_s",        val); }
-	inline void setModbus_ByteTimeoutUsec(const std::string & ups, long long int val)         { setInt(ups, "mod_byte_to_us",       val); }
-	inline void setModbus_CHRG_addr(const std::string & ups, long long int val)               { setInt(ups, "CHRG_addr",            val); }
-	inline void setModbus_CHRG_noro(const std::string & ups, long long int val)               { setInt(ups, "CHRG_noro",            val); }
-	inline void setModbus_CHRG_regtype(const std::string & ups, long long int val)            { setInt(ups, "CHRG_regtype",         val); }
-	inline void setModbus_DISCHRG_addr(const std::string & ups, long long int val)            { setInt(ups, "DISCHRG_addr",         val); }
-	inline void setModbus_DISCHRG_noro(const std::string & ups, long long int val)            { setInt(ups, "DISCHRG_noro",         val); }
-	inline void setModbus_DISCHRG_regtype(const std::string & ups, long long int val)         { setInt(ups, "DISCHRG_regtype",      val); }
-	inline void setModbus_DataBits(const std::string & ups, long long int val)                { setInt(ups, "databits",             val); }
-	inline void setModbus_DeviceSlaveId(const std::string & ups, long long int val)           { setInt(ups, "dev_slave_id",         val); }
-	inline void setModbus_FSD_addr(const std::string & ups, long long int val)                { setInt(ups, "FSD_addr",             val); }
-	inline void setModbus_FSD_noro(const std::string & ups, long long int val)                { setInt(ups, "FSD_noro",             val); }
-	inline void setModbus_FSD_pulse_duration(const std::string & ups, long long int val)      { setInt(ups, "FSD_pulse_duration",   val); }
-	inline void setModbus_FSD_regtype(const std::string & ups, long long int val)             { setInt(ups, "FSD_regtype",          val); }
-	inline void setModbus_HB_addr(const std::string & ups, long long int val)                 { setInt(ups, "HB_addr",              val); }
-	inline void setModbus_HB_noro(const std::string & ups, long long int val)                 { setInt(ups, "HB_noro",              val); }
-	inline void setModbus_HB_regtype(const std::string & ups, long long int val)              { setInt(ups, "HB_regtype",           val); }
-	inline void setModbus_LB_addr(const std::string & ups, long long int val)                 { setInt(ups, "LB_addr",              val); }
-	inline void setModbus_LB_noro(const std::string & ups, long long int val)                 { setInt(ups, "LB_noro",              val); }
-	inline void setModbus_LB_regtype(const std::string & ups, long long int val)              { setInt(ups, "LB_regtype",           val); }
-	inline void setModbus_OB_addr(const std::string & ups, long long int val)                 { setInt(ups, "OB_addr",              val); }
-	inline void setModbus_OB_noro(const std::string & ups, long long int val)                 { setInt(ups, "OB_noro",              val); }
-	inline void setModbus_OB_regtype(const std::string & ups, long long int val)              { setInt(ups, "OB_regtype",           val); }
-	inline void setModbus_OL_addr(const std::string & ups, long long int val)                 { setInt(ups, "OL_addr",              val); }
-	inline void setModbus_OL_noro(const std::string & ups, long long int val)                 { setInt(ups, "OL_noro",              val); }
-	inline void setModbus_OL_regtype(const std::string & ups, long long int val)              { setInt(ups, "OL_regtype",           val); }
-	inline void setModbus_RB_addr(const std::string & ups, long long int val)                 { setInt(ups, "RB_addr",              val); }
-	inline void setModbus_RB_noro(const std::string & ups, long long int val)                 { setInt(ups, "RB_noro",              val); }
-	inline void setModbus_RB_regtype(const std::string & ups, long long int val)              { setInt(ups, "RB_regtype",           val); }
-	inline void setModbus_ResponseTimeoutMsec(const std::string & ups, long long int val)     { setInt(ups, "response_timeout_ms",  val); }
-	inline void setModbus_ResponseTimeoutSec(const std::string & ups, long long int val)      { setInt(ups, "mod_resp_to_s",        val); }
-	inline void setModbus_ResponseTimeoutUsec(const std::string & ups, long long int val)     { setInt(ups, "mod_resp_to_us",       val); }
-	inline void setModbus_RioSlaveId(const std::string & ups, long long int val)              { setInt(ups, "rio_slave_id",         val); }
-	inline void setModbus_SerBaudRate(const std::string & ups, long long int val)             { setInt(ups, "ser_baud_rate",        val); }
-	inline void setModbus_SerDataBit(const std::string & ups, long long int val)              { setInt(ups, "ser_data_bit",         val); }
-	inline void setModbus_SerStopBit(const std::string & ups, long long int val)              { setInt(ups, "ser_stop_bit",         val); }
-	inline void setModbus_SlaveId(const std::string & ups, long long int val)                 { setInt(ups, "slaveid",              val); }
-	inline void setModbus_StopBits(const std::string & ups, long long int val)                { setInt(ups, "stopbits",             val); }
-	inline void setOnlineDischargeLogThrottleHovercharge(const std::string & ups, long long int val){ setInt(ups, "onlinedischarge_log_throttle_hovercharge", val); }
+	inline void setMaxStartDelay(const std::string & ups, long long int delay)                { setInt(ups, "maxstartdelay",       delay); }
+	inline void setMFR(const std::string & ups, long long int mfr)                            { setInt(ups, "mfr",                 mfr); }          // CHECKME
+	inline void setMinCharge(const std::string & ups, long long int mincharge)                { setInt(ups, "mincharge",           mincharge); }    // CHECKME
+	inline void setMinRuntime(const std::string & ups, long long int minruntime)              { setInt(ups, "minruntime",          minruntime); }   // CHECKME
+	inline void setModbus_ByteTimeoutSec(const std::string & ups, long long int val)          { setInt(ups, "mod_byte_to_s",       val); }
+	inline void setModbus_ByteTimeoutUsec(const std::string & ups, long long int val)         { setInt(ups, "mod_byte_to_us",      val); }
+	inline void setModbus_CHRG_addr(const std::string & ups, long long int val)               { setInt(ups, "CHRG_addr",           val); }
+	inline void setModbus_CHRG_noro(const std::string & ups, long long int val)               { setInt(ups, "CHRG_noro",           val); }
+	inline void setModbus_CHRG_regtype(const std::string & ups, long long int val)            { setInt(ups, "CHRG_regtype",        val); }
+	inline void setModbus_DISCHRG_addr(const std::string & ups, long long int val)            { setInt(ups, "DISCHRG_addr",        val); }
+	inline void setModbus_DISCHRG_noro(const std::string & ups, long long int val)            { setInt(ups, "DISCHRG_noro",        val); }
+	inline void setModbus_DISCHRG_regtype(const std::string & ups, long long int val)         { setInt(ups, "DISCHRG_regtype",     val); }
+	inline void setModbus_DataBits(const std::string & ups, long long int val)                { setInt(ups, "databits",            val); }
+	inline void setModbus_DeviceSlaveId(const std::string & ups, long long int val)           { setInt(ups, "dev_slave_id",        val); }
+	inline void setModbus_FSD_addr(const std::string & ups, long long int val)                { setInt(ups, "FSD_addr",            val); }
+	inline void setModbus_FSD_noro(const std::string & ups, long long int val)                { setInt(ups, "FSD_noro",            val); }
+	inline void setModbus_FSD_pulse_duration(const std::string & ups, long long int val)      { setInt(ups, "FSD_pulse_duration",  val); }
+	inline void setModbus_FSD_regtype(const std::string & ups, long long int val)             { setInt(ups, "FSD_regtype",         val); }
+	inline void setModbus_HB_addr(const std::string & ups, long long int val)                 { setInt(ups, "HB_addr",             val); }
+	inline void setModbus_HB_noro(const std::string & ups, long long int val)                 { setInt(ups, "HB_noro",             val); }
+	inline void setModbus_HB_regtype(const std::string & ups, long long int val)              { setInt(ups, "HB_regtype",          val); }
+	inline void setModbus_LB_addr(const std::string & ups, long long int val)                 { setInt(ups, "LB_addr",             val); }
+	inline void setModbus_LB_noro(const std::string & ups, long long int val)                 { setInt(ups, "LB_noro",             val); }
+	inline void setModbus_LB_regtype(const std::string & ups, long long int val)              { setInt(ups, "LB_regtype",          val); }
+	inline void setModbus_OB_addr(const std::string & ups, long long int val)                 { setInt(ups, "OB_addr",             val); }
+	inline void setModbus_OB_noro(const std::string & ups, long long int val)                 { setInt(ups, "OB_noro",             val); }
+	inline void setModbus_OB_regtype(const std::string & ups, long long int val)              { setInt(ups, "OB_regtype",          val); }
+	inline void setModbus_OL_addr(const std::string & ups, long long int val)                 { setInt(ups, "OL_addr",             val); }
+	inline void setModbus_OL_noro(const std::string & ups, long long int val)                 { setInt(ups, "OL_noro",             val); }
+	inline void setModbus_OL_regtype(const std::string & ups, long long int val)              { setInt(ups, "OL_regtype",          val); }
+	inline void setModbus_RB_addr(const std::string & ups, long long int val)                 { setInt(ups, "RB_addr",             val); }
+	inline void setModbus_RB_noro(const std::string & ups, long long int val)                 { setInt(ups, "RB_noro",             val); }
+	inline void setModbus_RB_regtype(const std::string & ups, long long int val)              { setInt(ups, "RB_regtype",          val); }
+	inline void setModbus_ResponseTimeoutMsec(const std::string & ups, long long int val)     { setInt(ups, "response_timeout_ms", val); }
+	inline void setModbus_ResponseTimeoutSec(const std::string & ups, long long int val)      { setInt(ups, "mod_resp_to_s",       val); }
+	inline void setModbus_ResponseTimeoutUsec(const std::string & ups, long long int val)     { setInt(ups, "mod_resp_to_us",      val); }
+	inline void setModbus_RioSlaveId(const std::string & ups, long long int val)              { setInt(ups, "rio_slave_id",        val); }
+	inline void setModbus_SerBaudRate(const std::string & ups, long long int val)             { setInt(ups, "ser_baud_rate",       val); }
+	inline void setModbus_SerDataBit(const std::string & ups, long long int val)              { setInt(ups, "ser_data_bit",        val); }
+	inline void setModbus_SerStopBit(const std::string & ups, long long int val)              { setInt(ups, "ser_stop_bit",        val); }
+	inline void setModbus_SlaveId(const std::string & ups, long long int val)                 { setInt(ups, "slaveid",             val); }
+	inline void setModbus_StopBits(const std::string & ups, long long int val)                { setInt(ups, "stopbits",            val); }
+	inline void setNomBattVolt(const std::string & ups, long long int nombattvolt)            { setInt(ups, "nombattvolt",         nombattvolt); }  // CHECKME
+	inline void setNumOfBytesFromUPS(const std::string & ups, long long int bytes)            { setInt(ups, "numOfBytesFromUPS",   bytes); }        // CHECKME
+	inline void setOffDelay(const std::string & ups, long long int offdelay)                  { setInt(ups, "OffDelay",            offdelay); }     // CHECKME
+	inline void setOffdelay(const std::string & ups, long long int offdelay)                  { setInt(ups, "offdelay",            offdelay); }     // CHECKME
+	inline void setOnDelay(const std::string & ups, long long int ondelay)                    { setInt(ups, "OnDelay",             ondelay); }      // CHECKME
+	inline void setOndelay(const std::string & ups, long long int ondelay)                    { setInt(ups, "ondelay",             ondelay); }      // CHECKME
+	inline void setOnlineDischargeLogThrottleHovercharge(const std::string & ups, long long int val) { setInt(ups, "onlinedischarge_log_throttle_hovercharge", val); }
 	inline void setOnlineDischargeLogThrottleSec(const std::string & ups, long long int val)  { setInt(ups, "onlinedischarge_log_throttle_sec", val); }
-	inline void setOutputPhaseAngle(const std::string & ups, long long int val)               { setInt(ups, "output_phase_angle",   val); }
-	inline void setPinsShutdownMode(const std::string & ups, long long int val)               { setInt(ups, "pins_shutdown_mode",   val); }
-	inline void setSemistaticFreq(const std::string & ups, long long int val)                 { setInt(ups, "semistaticfreq",       val); }
-	inline void setShutdownDuration(const std::string & ups, long long int val)               { setInt(ups, "shutdown_duration",    val); }
-	inline void setShutdownTimer(const std::string & ups, long long int val)                  { setInt(ups, "shutdown_timer",       val); }
-	inline void setSlaveAddress(const std::string & ups, long long int val)                   { setInt(ups, "slave_address",        val); }
-	inline void setSnmpRetries(const std::string & ups, long long int val)                    { setInt(ups, "snmp_retries",         val); }
-	inline void setSnmpTimeout(const std::string & ups, long long int val)                    { setInt(ups, "snmp_timeout",         val); }
-	inline void setWaitBeforeReconnect(const std::string & ups, long long int val)            { setInt(ups, "waitbeforereconnect",  val); }
-
-	inline void setDebugMin(const std::string & ups, long long int val)            { setInt(ups, "debug_min",          val); }
-	inline void setSDOrder(const std::string & ups, long long int ord)             { setInt(ups, "sdorder",            ord); }
-	inline void setMaxStartDelay(const std::string & ups, long long int delay)     { setInt(ups, "maxstartdelay",      delay); }
-	inline void setADVorder(const std::string & ups, long long int advorder)       { setInt(ups, "advorder",           advorder); }     // CHECKME
-	inline void setBatteryPercentage(const std::string & ups, long long int batt)  { setInt(ups, "batteryPercentage",  batt); }         // CHECKME
-	inline void setOffDelay(const std::string & ups, long long int offdelay)       { setInt(ups, "OffDelay",           offdelay); }     // CHECKME
-	inline void setOnDelay(const std::string & ups, long long int ondelay)         { setInt(ups, "OnDelay",            ondelay); }      // CHECKME
-	inline void setBattVoltMult(const std::string & ups, long long int mult)       { setInt(ups, "battvoltmult",       mult); }         // CHECKME
-	inline void setBaudRate(const std::string & ups, long long int baud_rate)      { setInt(ups, "baud_rate",          baud_rate); }    // CHECKME
-	inline void setBaudrate(const std::string & ups, long long int baudrate)       { setInt(ups, "baudrate",           baudrate); }     // CHECKME
-	inline void setCablePower(const std::string & ups, long long int cablepower)   { setInt(ups, "cablepower",         cablepower); }   // CHECKME
-	inline void setChargeTime(const std::string & ups, long long int chargetime)   { setInt(ups, "chargetime",         chargetime); }   // CHECKME
-	inline void setDaysOff(const std::string & ups, long long int daysoff)         { setInt(ups, "daysoff",            daysoff); }      // CHECKME
-	inline void setDaysWeek(const std::string & ups, long long int daysweek)       { setInt(ups, "daysweek",           daysweek); }     // CHECKME
-	inline void setFrequency(const std::string & ups, long long int frequency)     { setInt(ups, "frequency",          frequency); }    // CHECKME
-	inline void setHourOff(const std::string & ups, long long int houroff)         { setInt(ups, "houroff",            houroff); }      // CHECKME
-	inline void setHourOn(const std::string & ups, long long int houron)           { setInt(ups, "houron",             houron); }       // CHECKME
-	inline void setIdleLoad(const std::string & ups, long long int idleload)       { setInt(ups, "idleload",           idleload); }     // CHECKME
-	inline void setInputTimeout(const std::string & ups, long long int timeout)    { setInt(ups, "input_timeout",      timeout); }      // CHECKME
-	inline void setLineVoltage(const std::string & ups, long long int linevoltage) { setInt(ups, "linevoltage",        linevoltage); }  // CHECKME
-	inline void setLoadpercentage(const std::string & ups, long long int load)     { setInt(ups, "loadPercentage",     load); }         // CHECKME
-	inline void setMaxLoad(const std::string & ups, long long int max_load)        { setInt(ups, "max_load",           max_load); }     // CHECKME
-	inline void setMFR(const std::string & ups, long long int mfr)                 { setInt(ups, "mfr",                mfr); }          // CHECKME
-	inline void setMinCharge(const std::string & ups, long long int mincharge)     { setInt(ups, "mincharge",          mincharge); }    // CHECKME
-	inline void setMinRuntime(const std::string & ups, long long int minruntime)   { setInt(ups, "minruntime",         minruntime); }   // CHECKME
-	inline void setNomBattVolt(const std::string & ups, long long int nombattvolt) { setInt(ups, "nombattvolt",        nombattvolt); }  // CHECKME
-	inline void setNumOfBytesFromUPS(const std::string & ups, long long int bytes) { setInt(ups, "numOfBytesFromUPS",  bytes); }        // CHECKME
-	inline void setOffdelay(const std::string & ups, long long int offdelay)       { setInt(ups, "offdelay",           offdelay); }     // CHECKME
-	inline void setOndelay(const std::string & ups, long long int ondelay)         { setInt(ups, "ondelay",            ondelay); }      // CHECKME
-	inline void setOutputPace(const std::string & ups, long long int output_pace)  { setInt(ups, "output_pace",        output_pace); }  // CHECKME
-	inline void setPollFreq(const std::string & ups, long long int pollfreq)       { setInt(ups, "pollfreq",           pollfreq); }     // CHECKME
-	inline void setPowerUp(const std::string & ups, long long int powerup)         { setInt(ups, "powerup",            powerup); }      // CHECKME
-	inline void setPrgShut(const std::string & ups, long long int prgshut)         { setInt(ups, "prgshut",            prgshut); }      // CHECKME
-	inline void setRebootDelay(const std::string & ups, long long int delay)       { setInt(ups, "rebootdelay",        delay); }        // CHECKME
-	inline void setSDtime(const std::string & ups, long long int sdtime)           { setInt(ups, "sdtime",             sdtime); }       // CHECKME
-	inline void setShutdownDelay(const std::string & ups, long long int delay)     { setInt(ups, "shutdown_delay",     delay); }        // CHECKME
-	inline void setStartDelay(const std::string & ups, long long int delay)        { setInt(ups, "startdelay",         delay); }        // CHECKME
-	inline void setTestTime(const std::string & ups, long long int testtime)       { setInt(ups, "testtime",           testtime); }     // CHECKME
-	inline void setTimeout(const std::string & ups, long long int timeout)         { setInt(ups, "timeout",            timeout); }      // CHECKME
-	inline void setUPSdelayShutdown(const std::string & ups, long long int delay)  { setInt(ups, "ups.delay.shutdown", delay); }        // CHECKME
-	inline void setUPSdelayStart(const std::string & ups, long long int delay)     { setInt(ups, "ups.delay.start",    delay); }        // CHECKME
-	inline void setVoltage(const std::string & ups, long long int voltage)         { setInt(ups, "voltage",            voltage); }      // CHECKME
+	inline void setOutputPace(const std::string & ups, long long int output_pace)             { setInt(ups, "output_pace",         output_pace); }  // CHECKME
+	inline void setOutputPhaseAngle(const std::string & ups, long long int val)               { setInt(ups, "output_phase_angle",  val); }
+	inline void setPinsShutdownMode(const std::string & ups, long long int val)               { setInt(ups, "pins_shutdown_mode",  val); }
+	inline void setPollFreq(const std::string & ups, long long int pollfreq)                  { setInt(ups, "pollfreq",            pollfreq); }     // CHECKME
+	inline void setPowerUp(const std::string & ups, long long int powerup)                    { setInt(ups, "powerup",             powerup); }      // CHECKME
+	inline void setPrgShut(const std::string & ups, long long int prgshut)                    { setInt(ups, "prgshut",             prgshut); }      // CHECKME
+	inline void setRebootDelay(const std::string & ups, long long int delay)                  { setInt(ups, "rebootdelay",         delay); }        // CHECKME
+	inline void setSDtime(const std::string & ups, long long int sdtime)                      { setInt(ups, "sdtime",              sdtime); }       // CHECKME
+	inline void setSDOrder(const std::string & ups, long long int ord)                        { setInt(ups, "sdorder",             ord); }
+	inline void setSemistaticFreq(const std::string & ups, long long int val)                 { setInt(ups, "semistaticfreq",      val); }
+	inline void setShutdownDelay(const std::string & ups, long long int delay)                { setInt(ups, "shutdown_delay",      delay); }        // CHECKME
+	inline void setShutdownDuration(const std::string & ups, long long int val)               { setInt(ups, "shutdown_duration",   val); }
+	inline void setShutdownTimer(const std::string & ups, long long int val)                  { setInt(ups, "shutdown_timer",      val); }
+	inline void setSlaveAddress(const std::string & ups, long long int val)                   { setInt(ups, "slave_address",       val); }
+	inline void setSnmpRetries(const std::string & ups, long long int val)                    { setInt(ups, "snmp_retries",        val); }
+	inline void setSnmpTimeout(const std::string & ups, long long int val)                    { setInt(ups, "snmp_timeout",        val); }
+	inline void setStartDelay(const std::string & ups, long long int delay)                   { setInt(ups, "startdelay",          delay); }        // CHECKME
+	inline void setTestTime(const std::string & ups, long long int testtime)                  { setInt(ups, "testtime",            testtime); }     // CHECKME
+	inline void setTimeout(const std::string & ups, long long int timeout)                    { setInt(ups, "timeout",             timeout); }      // CHECKME
+	inline void setUPSdelayShutdown(const std::string & ups, long long int delay)             { setInt(ups, "ups.delay.shutdown",  delay); }        // CHECKME
+	inline void setUPSdelayStart(const std::string & ups, long long int delay)                { setInt(ups, "ups.delay.start",     delay); }        // CHECKME
+	inline void setVoltage(const std::string & ups, long long int voltage)                    { setInt(ups, "voltage",             voltage); }      // CHECKME
+	inline void setWaitBeforeReconnect(const std::string & ups, long long int val)            { setInt(ups, "waitbeforereconnect", val); }
 
 	// Items below are "unused" - mostly set in
 	// drivers/nutdrv_qx_masterguard.c
-	inline void setFault1(const std::string & ups, const std::string & val)                   { setStr(ups, "fault_1",              val); }
-	inline void setFault2(const std::string & ups, const std::string & val)                   { setStr(ups, "fault_2",              val); }
-	inline void setFault3(const std::string & ups, const std::string & val)                   { setStr(ups, "fault_3",              val); }
-	inline void setFault4(const std::string & ups, const std::string & val)                   { setStr(ups, "fault_4",              val); }
-	inline void setFault5(const std::string & ups, const std::string & val)                   { setStr(ups, "fault_5",              val); }
-	inline void setInputFaultVoltage(const std::string & ups, const std::string & val)        { setStr(ups, "input_fault_voltage",  val); }
-	inline void setNominalCellVoltage(const std::string & ups, const std::string & val)       { setStr(ups, "nominal_cell_voltage", val); }
+	inline void setFault1(const std::string & ups, const std::string & val)                   { setStr(ups, "fault_1",             val); }
+	inline void setFault2(const std::string & ups, const std::string & val)                   { setStr(ups, "fault_2",             val); }
+	inline void setFault3(const std::string & ups, const std::string & val)                   { setStr(ups, "fault_3",             val); }
+	inline void setFault4(const std::string & ups, const std::string & val)                   { setStr(ups, "fault_4",             val); }
+	inline void setFault5(const std::string & ups, const std::string & val)                   { setStr(ups, "fault_5",             val); }
+	inline void setInputFaultVoltage(const std::string & ups, const std::string & val)        { setStr(ups, "input_fault_voltage", val); }
+	inline void setNominalCellVoltage(const std::string & ups, const std::string & val)       { setStr(ups, "nominal_cell_voltage",val); }
 	inline void setNumberOfBatteryCells(const std::string & ups, const std::string & val)     { setStr(ups, "number_of_battery_cells", val); }
-	inline void setOutputVoltages(const std::string & ups, const std::string & val)           { setStr(ups, "output_voltages",      val); }
-	inline void setRechargeTime(const std::string & ups, const std::string & val)             { setStr(ups, "recharge_time",        val); }
-	inline void setRuntimeFull(const std::string & ups, const std::string & val)              { setStr(ups, "runtime_full",         val); }
-	inline void setRuntimeHalf(const std::string & ups, const std::string & val)              { setStr(ups, "runtime_half",         val); }
-	inline void setSeries(const std::string & ups, const std::string & val)                   { setStr(ups, "series",               val); }
+	inline void setOutputVoltages(const std::string & ups, const std::string & val)           { setStr(ups, "output_voltages",     val); }
+	inline void setRechargeTime(const std::string & ups, const std::string & val)             { setStr(ups, "recharge_time",       val); }
+	inline void setRuntimeFull(const std::string & ups, const std::string & val)              { setStr(ups, "runtime_full",        val); }
+	inline void setRuntimeHalf(const std::string & ups, const std::string & val)              { setStr(ups, "runtime_half",        val); }
+	inline void setSeries(const std::string & ups, const std::string & val)                   { setStr(ups, "series",              val); }
 
 	// Items below are essentially booleans (expected values
 	// are "enabled/disabled") -- refactoring planned per
 	// https://github.com/networkupstools/nut/issues/2421
-	inline void setAdvancedEcoMode(const std::string & ups, const std::string & val)          { setStr(ups, "advanced_eco_mode",    val); }
-	inline void setAlarmControl(const std::string & ups, const std::string & val)             { setStr(ups, "alarm_control",        val); }
-	inline void setBatteryAlarm(const std::string & ups, const std::string & val)             { setStr(ups, "battery_alarm",        val); }
+	inline void setAdvancedEcoMode(const std::string & ups, const std::string & val)          { setStr(ups, "advanced_eco_mode",   val); }
+	inline void setAlarmControl(const std::string & ups, const std::string & val)             { setStr(ups, "alarm_control",       val); }
+	inline void setBatteryAlarm(const std::string & ups, const std::string & val)             { setStr(ups, "battery_alarm",       val); }
 	inline void setBatteryOpenStatusCheck(const std::string & ups, const std::string & val)   { setStr(ups, "battery_open_status_check", val); }
-	inline void setBypassAlarm(const std::string & ups, const std::string & val)              { setStr(ups, "bypass_alarm",         val); }
-	inline void setBypassForbidding(const std::string & ups, const std::string & val)         { setStr(ups, "bypass_forbidding",    val); }
-	inline void setBypassWhenOff(const std::string & ups, const std::string & val)            { setStr(ups, "bypass_when_off",      val); }
-	inline void setConstantPhaseAngle(const std::string & ups, const std::string & val)       { setStr(ups, "constant_phase_angle", val); }
-	inline void setConverterMode(const std::string & ups, const std::string & val)            { setStr(ups, "converter_mode",       val); }
-	inline void setEcoMode(const std::string & ups, const std::string & val)                  { setStr(ups, "eco_mode",             val); }
+	inline void setBypassAlarm(const std::string & ups, const std::string & val)              { setStr(ups, "bypass_alarm",        val); }
+	inline void setBypassForbidding(const std::string & ups, const std::string & val)         { setStr(ups, "bypass_forbidding",   val); }
+	inline void setBypassWhenOff(const std::string & ups, const std::string & val)            { setStr(ups, "bypass_when_off",     val); }
+	inline void setConstantPhaseAngle(const std::string & ups, const std::string & val)       { setStr(ups, "constant_phase_angle",val); }
+	inline void setConverterMode(const std::string & ups, const std::string & val)            { setStr(ups, "converter_mode",      val); }
+	inline void setEcoMode(const std::string & ups, const std::string & val)                  { setStr(ups, "eco_mode",            val); }
 	inline void setLimitedRuntimeOnBattery(const std::string & ups, const std::string & val)  { setStr(ups, "limited_runtime_on_battery", val); }
-	inline void setSiteFaultDetection(const std::string & ups, const std::string & val)       { setStr(ups, "site_fault_detection", val); }
+	inline void setSiteFaultDetection(const std::string & ups, const std::string & val)       { setStr(ups, "site_fault_detection",val); }
 
 	/** belkinunv: both a flag (wait for AC power) and value (also wait for charge level) */
 	inline void setWait(const std::string & ups, long long int wait)               { setInt(ups, "wait",               wait); }         // CHECKME
@@ -2121,13 +2119,13 @@ public:
 	inline void setUsbHidEndpointIn(const std::string & ups, long long int val)             { setIntHex(ups, "usb_hid_ep_in",                  val); }         // CHECKME
 	inline void setUsbHidEndpointOut(const std::string & ups, long long int val)            { setIntHex(ups, "usb_hid_ep_out",                 val); }         // CHECKME
 
-	inline void setBatteryMax(const std::string & ups, double val)                          { setDouble(ups, "battery_max",          val); }
-	inline void setBatteryMin(const std::string & ups, double val)                          { setDouble(ups, "battery_min",          val); }
-	inline void setCSHackDelay(const std::string & ups, double val)                         { setDouble(ups, "cshdelay",             val); }
-	inline void setMaxBypassFreq(const std::string & ups, double val)                       { setDouble(ups, "max_bypass_freq",      val); }
-	inline void setMaxBypassVolt(const std::string & ups, double val)                       { setDouble(ups, "max_bypass_volt",      val); }
-	inline void setMinBypassFreq(const std::string & ups, double val)                       { setDouble(ups, "min_bypass_freq",      val); }
-	inline void setMinBypassVolt(const std::string & ups, double val)                       { setDouble(ups, "min_bypass_volt",      val); }
+	inline void setBatteryMax(const std::string & ups, double val)                          { setDouble(ups, "battery_max",        val); }
+	inline void setBatteryMin(const std::string & ups, double val)                          { setDouble(ups, "battery_min",        val); }
+	inline void setCSHackDelay(const std::string & ups, double val)                         { setDouble(ups, "cshdelay",           val); }
+	inline void setMaxBypassFreq(const std::string & ups, double val)                       { setDouble(ups, "max_bypass_freq",    val); }
+	inline void setMaxBypassVolt(const std::string & ups, double val)                       { setDouble(ups, "max_bypass_volt",    val); }
+	inline void setMinBypassFreq(const std::string & ups, double val)                       { setDouble(ups, "min_bypass_freq",    val); }
+	inline void setMinBypassVolt(const std::string & ups, double val)                       { setDouble(ups, "min_bypass_volt",    val); }
 
 	// Flag - if exists then "true"; remove() to "unset" => "false"
 	inline void setCancelShutdown(const std::string & ups, bool set = true) { setFlag(ups, "CS",             set); }
