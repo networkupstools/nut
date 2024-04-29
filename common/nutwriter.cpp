@@ -293,6 +293,17 @@ NutWriter::status_t NutConfConfigWriter::writeConfig(const NutConfiguration & co
 			return status;
 	}
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
 	SHELL_CONFIG_DIRECTIVEX("ALLOW_NO_DEVICE",		bool,			config.allowNoDevice,	false);
 	SHELL_CONFIG_DIRECTIVEX("ALLOW_NOT_ALL_LISTENERS",	bool,		config.allowNotAllListeners,	false);
 	SHELL_CONFIG_DIRECTIVEX("UPSD_OPTIONS",			std::string,	config.upsdOptions,		true);
@@ -300,6 +311,12 @@ NutWriter::status_t NutConfConfigWriter::writeConfig(const NutConfiguration & co
 	SHELL_CONFIG_DIRECTIVEX("POWEROFF_WAIT",		unsigned int,	config.poweroffWait,	false);
 	SHELL_CONFIG_DIRECTIVEX("POWEROFF_QUIET",		bool,			config.poweroffQuiet,	false);
 	SHELL_CONFIG_DIRECTIVEX("NUT_DEBUG_LEVEL",		int,			config.debugLevel,		false);
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+# pragma GCC diagnostic pop
+#endif
 
 	return NUTW_OK;
 }
