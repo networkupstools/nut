@@ -1201,6 +1201,8 @@
 "Tecnoware"	"ups"	"2"	"UPS ERA LCD 0.65"	"USB"	"blazer_usb langid_fix=0x409"
 "Tecnoware"	"ups"	"2"	"UPS ERA PLUS 1100"	"USB"	"blazer_usb"	# https://www.tecnoware.com/Prodotti/FGCERAPL1100/ups-era-plus-1100.aspx https://github.com/networkupstools/nut/issues/747
 
+"Texas Instruments"	"ups"	"5"	"INA219"	"hwmon"	"hwmon_ina219"
+
 "Tripp Lite"	"ups"	"1"	"(various)"	"Lan 2.2 interface - black 73-0844 cable"	"genericups upstype=5"
 "Tripp Lite"	"ups"	"3"	"1500 LCD"	"USB"	"usbhid-ups"
 "Tripp Lite"	"ups"	"3"	"AVR550U"	"USB (protocol 2010)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=930&txtModelID=3090
