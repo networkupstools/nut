@@ -86,3 +86,8 @@ MODE=none
 # via logs or console captures.
 # Set to `true` to avoid that trove of information, if you consider it noise.
 #POWEROFF_QUIET=true
+
+# The optional 'NUT_DEBUG_LEVEL' setting controls the default debugging message
+# verbosity passed to NUT daemons. As an environment variable, its priority sits
+# between that of 'DEBUG_MIN' setting of a driver and the command-line options.
+#NUT_DEBUG_LEVEL=0

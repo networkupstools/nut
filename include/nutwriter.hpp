@@ -127,7 +127,7 @@ class NutWriter {
 
 
 /**
- *  \brief  NUT configuration writer interface
+ *  \brief  NUT configuration writer interface (generic)
  */
 class NutConfigWriter: public NutWriter {
 	protected:
