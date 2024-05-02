@@ -70,7 +70,7 @@ static int sec_upsrecv (char *buf)
 				lenbuf[3] = '\0';
 				ret = atoi(lenbuf);
 				if (ret > 0) {
-					strcpy(buf,buf+5);
+					memmove(buf, buf+5, 135);
 					return(ret);
 				}
 				else return (-2);
