@@ -6,6 +6,7 @@
  *   2005-2006 Peter Selinger <selinger@users.sourceforge.net>
  *   2007-2009 Arjen de Korte <adkorte-guest@alioth.debian.org>
  *   2016      Eaton / Arnaud Quette <ArnaudQuette@Eaton.com>
+ *   2020-2024 Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program was sponsored by MGE UPS SYSTEMS, and now Eaton
  *
@@ -28,7 +29,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.53"
+#define DRIVER_VERSION	"0.54"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
@@ -1348,6 +1349,21 @@ void upsdrv_initups(void)
 		}
 	}
 
+	val = getval("onlinedischarge_log_throttle_hovercharge");
+	if (val) {
+		int ipv = atoi(val);
+		if (ipv < 1 || ipv > 100) {
+			onlinedischarge_log_throttle_hovercharge = 100;
+			upslogx(LOG_WARNING,
+				"Warning: invalid value for "
+				"onlinedischarge_log_throttle_hovercharge: %s, "
+				"defaulting to %d",
+				val, onlinedischarge_log_throttle_hovercharge);
+		} else {
+			onlinedischarge_log_throttle_hovercharge = ipv;
+		}
+	}
+
 	if (testvar("disable_fix_report_desc")) {
 		disable_fix_report_desc = 1;
 	}
@@ -2032,14 +2048,17 @@ static void ups_status_set(void)
 				) {
 					/* Charge has changed, but is it
 					 * now low enough to worry? */
-					if (onlinedischarge_log_throttle_hovercharge
-					    < onlinedischarge_log_throttle_charge
+					if (current_charge
+					    < onlinedischarge_log_throttle_hovercharge
 					) {
 						upsdebugx(3, "%s: current "
 							"battery.charge=%d is under "
-							"onlinedischarge_log_throttle_charge=%d",
+							"onlinedischarge_log_throttle_hovercharge=%d "
+							"(previous onlinedischarge_log_throttle_charge=%d): %s",
 							__func__, current_charge,
-							onlinedischarge_log_throttle_charge);
+							onlinedischarge_log_throttle_hovercharge,
+							onlinedischarge_log_throttle_charge,
+							(current_charge > onlinedischarge_log_throttle_charge ? "charging" : "draining"));
 						do_logmsg = 1;
 					} else {
 						/* All seems OK, don't spam log
@@ -2048,9 +2067,12 @@ static void ups_status_set(void)
 						upsdebugx(5, "%s: current "
 							"battery.charge=%d "
 							"is okay compared to "
-							"onlinedischarge_log_throttle_charge=%d",
+							"onlinedischarge_log_throttle_hovercharge=%d "
+							"(previous onlinedischarge_log_throttle_charge=%d): %s",
 							__func__, current_charge,
-							onlinedischarge_log_throttle_charge);
+							onlinedischarge_log_throttle_hovercharge,
+							onlinedischarge_log_throttle_charge,
+							(current_charge > onlinedischarge_log_throttle_charge ? "charging" : "draining"));
 					}
 				}
 			} else {
@@ -2104,9 +2126,10 @@ static void ups_status_set(void)
 				} else {
 					snprintf(msg_charge, sizeof(msg_charge),
 						"Battery charge changed from %d to %d "
-						"since last such report. ",
+						"since last such report (%s). ",
 						onlinedischarge_log_throttle_charge,
-						current_charge);
+						current_charge,
+						(current_charge > onlinedischarge_log_throttle_charge ? "charging" : "draining"));
 				}
 				onlinedischarge_log_throttle_charge = current_charge;
 			}
