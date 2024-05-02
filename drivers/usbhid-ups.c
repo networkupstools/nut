@@ -1970,8 +1970,8 @@ static void ups_status_set(void)
 		|| onlinedischarge_log_throttle_charge != -1
 	)) {
 		upsdebugx(1,
-			"%s: seems that UPS [%s] was in OL+DISCHRG state, "
-			"but no longer is now.",
+			"%s: seems that UPS [%s] was in OL+DISCHRG state "
+			"previously, but no is longer discharging now.",
 			__func__, upsname);
 		onlinedischarge_log_throttle_timestamp = 0;
 		onlinedischarge_log_throttle_charge = -1;
@@ -2011,9 +2011,21 @@ static void ups_status_set(void)
 			/* First disable, then enable if OK for noise*/
 			do_logmsg = 0;
 
-			/* Time or not, did the charge change since last log? */
+			/* Time or not, did the charge change since last log?
+			 * Reminder: "onlinedischarge_log_throttle_charge" is
+			 * the last-reported charge in OL+DISCHRG situation,
+			 * as the battery remainder trickles down and we only
+			 * report the changes (throttling the message stream).
+			 * The "onlinedischarge_log_throttle_hovercharge" lets
+			 * us ignore sufficiently high battery charges, where
+			 * the user configuration (or defaults at 100%) tell
+			 * us this is just about the battery not accepting the
+			 * external power *all* the time so its charge "hovers"
+			 * (typically between 90%-100%) to benefit the chemical
+			 * process back-end of the battery and its life time.
+			 */
 			if ((s = dstate_getinfo("battery.charge"))) {
-				/* NOTE: "0" may mean a conversion error: */
+				/* NOTE: exact "0" may mean a conversion error: */
 				current_charge = atoi(s);
 				if (current_charge > 0
 				&&  current_charge != onlinedischarge_log_throttle_charge
@@ -2073,6 +2085,7 @@ static void ups_status_set(void)
 		}
 
 		if (do_logmsg) {
+			/* If OL+DISCHRG, and not-throttled against log spam */
 			char	msg_charge[LARGEBUF];
 			msg_charge[0] = '\0';
 
