@@ -69,6 +69,9 @@ static int sec_upsrecv (char *buf)
 				strncpy(lenbuf, buf+2, 3);
 				lenbuf[3] = '\0';
 				ret = atoi(lenbuf);
+				if (ret > 140) {
+					ret = 140;
+				}
 				if (ret > 0) {
 					memmove(buf, buf+5, 135);
 					return(ret);
