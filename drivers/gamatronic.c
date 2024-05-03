@@ -33,7 +33,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Gamatronic UPS driver"
-#define DRIVER_VERSION	"0.05"
+#define DRIVER_VERSION	"0.06"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -69,8 +69,11 @@ static int sec_upsrecv (char *buf)
 				strncpy(lenbuf, buf+2, 3);
 				lenbuf[3] = '\0';
 				ret = atoi(lenbuf);
+				if (ret > 140) {
+					ret = 140;
+				}
 				if (ret > 0) {
-					strcpy(buf,buf+5);
+					memmove(buf, buf+5, 135);
 					return(ret);
 				}
 				else return (-2);
