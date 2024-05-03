@@ -80,6 +80,9 @@ static int sec_upsrecv (char *buf)
 				lenbuf[3] = '\0';
 				ret = atoi(lenbuf);
 				if (ret > GAMATRONIC_BUF_LEN) {
+					upslogx(1, "%s: got a longer response from "
+						"ser_get_line() than expected: %d > %d",
+						__func__, ret, GAMATRONIC_BUF_LEN);
 					ret = GAMATRONIC_BUF_LEN;
 				}
 				if (ret > 0) {
