@@ -89,6 +89,8 @@ https://github.com/networkupstools/nut/milestone/11
    * added an `OBLBDURATION` (seconds) setting to optionally delay raising
      the alarm for immediate shutdown in critical situation. [#321]
 
+ - gamatronic driver revised for safer memory operations. [#2427]
+
  - upsd:
    * `upsd_cleanup()` is now traced, to more easily see that the daemon is
      exiting (and/or start-up has aborted due to configuration or run-time
