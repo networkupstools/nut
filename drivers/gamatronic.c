@@ -80,9 +80,9 @@ static int sec_upsrecv (char *buf)
 				lenbuf[3] = '\0';
 				ret = atoi(lenbuf);
 				if (ret > GAMATRONIC_BUF_LEN) {
-					upslogx(1, "%s: got a longer response from "
-						"ser_get_line() than expected: %d > %d",
-						__func__, ret, GAMATRONIC_BUF_LEN);
+					upslogx(1, "%s: got a longer response message "
+						"than expected for protocol: %d (%s) > %d",
+						__func__, ret, lenbuf, GAMATRONIC_BUF_LEN);
 					ret = GAMATRONIC_BUF_LEN;
 				}
 				if (ret > 0) {
@@ -91,7 +91,12 @@ static int sec_upsrecv (char *buf)
 					memmove(buf, buf+5, (GAMATRONIC_BUF_LEN - 5));
 					return(ret);
 				}
-				else return (-2);
+
+				/* else (ret <= 0) : */
+				upslogx(1, "%s: invalid response message length: %s",
+					__func__, lenbuf);
+				return (-2);
+
 			default:
 				return(-2);
 		}
