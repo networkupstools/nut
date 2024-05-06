@@ -63,6 +63,14 @@ class Settable
 protected:
 	Type _value;
 	bool _set;
+	std::string errMsg_ENOTSET()const {
+		static const std::string msg =
+			"Can not retrieve a Settable value of "
+			"an instance that was not assigned yet "
+			"(or was last known cleared)";
+		return msg;
+	}
+
 public:
 	Settable():_set(false){}
 	Settable(const Settable<Type>& val):_value(val._value), _set(val._set){}
@@ -76,37 +84,41 @@ public:
 	bool set()const{return _set;}
 	void clear(){_set = false;}
 
-	operator const Type&()const{
+	operator const Type&()const
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw(std::invalid_argument)
+#endif
+	{
 		if (!set())
-			throw std::invalid_argument(
-				"Can not retrieve a Settable value of "
-				"an instance that was not assigned yet "
-				"(or was last known cleared)");
+			throw std::invalid_argument(errMsg_ENOTSET());
 		return _value;
 	}
-	operator Type&(){
+	operator Type&()
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw(std::invalid_argument)
+#endif
+	{
 		if (!set())
-			throw std::invalid_argument(
-				"Can not retrieve a Settable value of "
-				"an instance that was not assigned yet "
-				"(or was last known cleared)");
+			throw std::invalid_argument(errMsg_ENOTSET());
 		return _value;
 	}
 
-	const Type& operator *()const{
+	const Type& operator *()const
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw(std::invalid_argument)
+#endif
+	{
 		if (!set())
-			throw std::invalid_argument(
-				"Can not retrieve a Settable value of "
-				"an instance that was not assigned yet "
-				"(or was last known cleared)");
+			throw std::invalid_argument(errMsg_ENOTSET());
 		return _value;
 	}
-	Type& operator *(){
+	Type& operator *()
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw(std::invalid_argument)
+#endif
+	{
 		if (!set())
-			throw std::invalid_argument(
-				"Can not retrieve a Settable value of "
-				"an instance that was not assigned yet "
-				"(or was last known cleared)");
+			throw std::invalid_argument(errMsg_ENOTSET());
 		return _value;
 	}
 
