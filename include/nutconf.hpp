@@ -76,11 +76,39 @@ public:
 	bool set()const{return _set;}
 	void clear(){_set = false;}
 
-	operator const Type&()const{return _value;}
-	operator Type&(){return _value;}
+	operator const Type&()const{
+		if (!set())
+			throw std::invalid_argument(
+				"Can not retrieve a Settable value of "
+				"an instance that was not assigned yet "
+				"(or was last known cleared)");
+		return _value;
+	}
+	operator Type&(){
+		if (!set())
+			throw std::invalid_argument(
+				"Can not retrieve a Settable value of "
+				"an instance that was not assigned yet "
+				"(or was last known cleared)");
+		return _value;
+	}
 
-	const Type& operator *()const{return _value;}
-	Type& operator *(){return _value;}
+	const Type& operator *()const{
+		if (!set())
+			throw std::invalid_argument(
+				"Can not retrieve a Settable value of "
+				"an instance that was not assigned yet "
+				"(or was last known cleared)");
+		return _value;
+	}
+	Type& operator *(){
+		if (!set())
+			throw std::invalid_argument(
+				"Can not retrieve a Settable value of "
+				"an instance that was not assigned yet "
+				"(or was last known cleared)");
+		return _value;
+	}
 
 	Settable<Type>& operator=(const Type& val){_value = val; _set = true; return *this;}
 
