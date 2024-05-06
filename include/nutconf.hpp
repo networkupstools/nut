@@ -296,6 +296,9 @@ public:
 	}
 
 	inline BoolInt& operator=(const char* s)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw(std::invalid_argument)
+#endif
 	{
 		if (!s)
 			throw std::invalid_argument(
@@ -306,6 +309,9 @@ public:
 	}
 
 	inline BoolInt& operator=(std::string src)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw(std::invalid_argument)
+#endif
 	{
 		static const Settable<bool> b0(false);
 		static const Settable<bool> b1(true);
@@ -446,6 +452,9 @@ public:
 	}
 
 	inline bool set()const
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw(std::invalid_argument)
+#endif
 	{
 		if (i.set() && b.set())
 			throw std::invalid_argument(
@@ -454,7 +463,11 @@ public:
 		return (i.set() || b.set());
 	}
 
-	operator int() {
+	operator int()
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw(std::invalid_argument)
+#endif
+	{
 		if (i.set()) return i;
 		if (bool01.set() && bool01 == true) {
 			if (b.set()) {
@@ -473,7 +486,11 @@ public:
 			"BoolInt value not set, neither to bool nor to int");
 	}
 
-	operator bool() {
+	operator bool()
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw(std::invalid_argument)
+#endif
+	{
 		if (b.set()) return b;
 		if (bool01.set() && bool01 == true) {
 			if (i.set()) {
@@ -489,7 +506,11 @@ public:
 			"BoolInt value not set, neither to bool nor to int");
 	}
 
-	inline std::string toString()const {
+	inline std::string toString()const
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw(std::invalid_argument)
+#endif
+	{
 		if (b.set()) {
 			if (b == true) return "yes";
 			return "no";
@@ -1363,6 +1384,9 @@ protected:
 		const std::string & section,
 		const std::string & entry,
 		nut::BoolInt        val = true)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw(std::invalid_argument)
+#endif
 	{
 		setStr(section, entry, val);
 	}
