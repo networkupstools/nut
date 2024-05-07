@@ -452,6 +452,7 @@ HUPCL
 HV
 HVT
 HW
+HWMON
 Hajduch
 Hanno
 Harnhammar
@@ -1328,6 +1329,7 @@ WTU
 Waldie
 WantedBy
 WatchdogSec
+Waveshare
 WebFreak
 Werror
 Weverything
@@ -1517,6 +1519,7 @@ baudrate
 baytech
 baz
 bcdDevice
+bcm
 bcmxcp
 bd
 belkin
@@ -1546,6 +1549,7 @@ bootable
 bp
 br
 brazil
+brcm
 brotli
 bsd
 bt
@@ -1669,6 +1673,7 @@ crw
 crypto
 csh
 cshdelay
+csi
 css
 cstdint
 ctime
@@ -1768,13 +1773,20 @@ drvpath
 drwxr
 drwxrwx
 ds
+dsi
 dsr
 dsssl
 dstate
 dt
+dtb
+dtbo
+dtc
 dtds
 dtksh
+dtoverlay
+dtparam
 dtr
+dts
 du
 dumbterm
 dummycons
@@ -1973,6 +1985,8 @@ https
 huawei
 hunnox
 hwdb
+hwmon
+hwmonX
 hypervisor
 hypervisors
 iBox
@@ -2005,6 +2019,7 @@ im
 imagesdir
 img
 imv
+ina
 includePath
 includedir
 inductor
@@ -2827,6 +2842,7 @@ sysV
 syscalls
 sysconfdir
 sysconfig
+sysfs
 syslog
 syslogd
 systemctl
