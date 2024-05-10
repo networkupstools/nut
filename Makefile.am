@@ -360,18 +360,27 @@ $(abs_top_builddir)/ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	    if test -e .git ; then \
 	        NUT_GITDIR=".git" ; if test -r "$${NUT_GITDIR}" -a ! -d "$${NUT_GITDIR}" ; then GD="`grep -E '^gitdir:' "$${NUT_GITDIR}" | sed 's/^gitdir: *//'`" && test -n "$$GD" -a -d "$$GD" && NUT_GITDIR="$$GD" ; fi ; \
 	        if test -s "$@" -a -d "$${NUT_GITDIR}" -a -z "`find "$${NUT_GITDIR}" -newer "$@"`" 2>/dev/null ; then \
+	            echo "  DOC-CHANGELOG-GENERATE        $@ : SKIP (keep existing)" ; \
 	            echo "Using still-valid ChangeLog file generated earlier from same revision of Git source metadata in '$${NUT_GITDIR}'" >&2 ; \
 	        else \
-	            CHANGELOG_FILE="$@" $(WITH_PDF_NONASCII_TITLES_ENVVAR) $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) || \
-	            { printf "gitlog2changelog.py failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; } ; \
+	            echo "  DOC-CHANGELOG-GENERATE        $@" ; \
+	            CHANGELOG_FILE="$@" $(WITH_PDF_NONASCII_TITLES_ENVVAR) $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) || { \
+	                echo "  DOC-CHANGELOG-GENERATE        $@ : FAILED (non-fatal)" >&2 ; \
+	                printf "gitlog2changelog.py failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; \
+	            } ; \
 	        fi ; \
 	    else \
 	        if test x"$(abs_top_srcdir)" != x"$(abs_top_builddir)" -a -s ./ChangeLog ; then \
+	            echo "  DOC-CHANGELOG-GENERATE        $@ : SKIP (keep existing)" ; \
 	            echo "Using distributed ChangeLog file from sources" >&2 ; \
 	            rm -f "$@" || true ; \
 	            cat ./ChangeLog > "$@" ; \
 	        else \
-	            if ! test -s "$@" ; then \
+	            if test -s "$@" ; then \
+	                echo "  DOC-CHANGELOG-GENERATE        $@ : SKIP (keep existing)" ; \
+	                echo "Using distributed ChangeLog file from sources" >&2 ; \
+	            else \
+	                echo "  DOC-CHANGELOG-GENERATE        $@ : FAILED (non-fatal)" >&2 ; \
 	                printf "Failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; \
 	            fi ; \
 	        fi ; \

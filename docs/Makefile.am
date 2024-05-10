@@ -238,7 +238,7 @@ DOCBUILD_CONVERT_GITHUB_LINKS = { \
 	@$(DOCBUILD_CONVERT_GITHUB_LINKS)
 
 $(top_builddir)/ChangeLog:
-	+@echo "  DOC-CHANGELOG-GENERATE	$@" \
+	+@echo "  DOC-CHANGELOG-GENERATE	$@ : call parent Makefile" \
 	 && cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # BSD Make dislikes the path resolution here and does not always populate "$<"
