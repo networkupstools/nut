@@ -342,12 +342,19 @@ else
 WITH_PDF_NONASCII_TITLES_ENVVAR = WITH_PDF_NONASCII_TITLES=no
 endif
 
-# Be sure to not confuse with a DIST'ed file (and so try to overwrite it):
+# Be sure to not confuse with a DIST'ed file (and so try to overwrite it);
+# do however avoid re-generating it if already made on a previous pass and
+# the Git HEAD pointer did not change since then (subsequent generation of
+# the huge PDF/HTML files can cost dearly):
 $(abs_top_builddir)/ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	@cd $(abs_top_srcdir) && \
 	    if test -e .git ; then \
-	        CHANGELOG_FILE="$@" $(WITH_PDF_NONASCII_TITLES_ENVVAR) $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) || \
-	        { printf "gitlog2changelog.py failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; } ; \
+	        if test -e .git/HEAD && ( rm -f "`find "$@" -not -newer .git/HEAD`" || true ) 2>/dev/null && ls -la .git/HEAD "$@" 2>/dev/null ; then \
+	            echo "Using still-valid ChangeLog file generated earlier from same revision of Git source metadata" >&2 ; \
+	        else \
+	            CHANGELOG_FILE="$@" $(WITH_PDF_NONASCII_TITLES_ENVVAR) $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) || \
+	            { printf "gitlog2changelog.py failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; } ; \
+	        fi ; \
 	    else \
 	        if test x"$(abs_top_srcdir)" != x"$(abs_top_builddir)" -a -s ./ChangeLog ; then \
 	            echo "Using distributed ChangeLog file from sources" >&2 ; \
