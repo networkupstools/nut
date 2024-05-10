@@ -237,7 +237,8 @@ DOCBUILD_CONVERT_GITHUB_LINKS = { \
 .adoc.adoc-parsed:
 	@$(DOCBUILD_CONVERT_GITHUB_LINKS)
 
-$(top_builddir)/ChangeLog:
+dummy:
+$(top_builddir)/ChangeLog: dummy
 	+@echo "  DOC-CHANGELOG-GENERATE	$@ : call parent Makefile" \
 	 && cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
