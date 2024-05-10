@@ -112,6 +112,10 @@ https://github.com/networkupstools/nut/milestone/11
    of more complex configurations (e.g. some line patterns that involve too
    many double-quote characters) which are valid for NUT proper. [#657]
 
+ - various recipe, documentation and source files were revised to address
+   respective warnings issued by the new generations of analysis tools.
+   [#823, #2437, link:https://github.com/networkupstools/nut-website/issues/52[nut-website issue #52]]
+
 
 Release notes for NUT 2.8.2 - what's new since 2.8.1
 ----------------------------------------------------
