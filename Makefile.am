@@ -344,13 +344,23 @@ endif
 
 # Be sure to not confuse with a DIST'ed file (and so try to overwrite it);
 # do however avoid re-generating it if already made on a previous pass and
-# the Git HEAD pointer did not change since then (subsequent generation of
-# the huge PDF/HTML files can cost dearly):
+# the Git HEAD pointer (branch) or its actual "index" or "object" database
+# did not change since then - meaning the local developer or CI did not
+# modify the metadata (subsequent generation of the huge PDF/HTML files
+# can cost dearly).
+# Note there's a bit more fuss about Git internals which NUT should not
+# really care about encapsulation-wise (detection of NUT_GITDIR location
+# which may reside elsewhere, e.g. with local repo clones with reference
+# repo configuration, or submodules). But this is a Git-crawling target
+# anyway, and in the worst case (Git's design changes) we would spend a
+# bit of time researching the FS in vain, and go on to re-generate the
+# ChangeLog when maybe we should not have - oh well:
 $(abs_top_builddir)/ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	@cd $(abs_top_srcdir) && \
 	    if test -e .git ; then \
-	        if test -e .git/HEAD && ( rm -f "`find "$@" -not -newer .git/HEAD`" || true ) 2>/dev/null && ls -la .git/HEAD "$@" 2>/dev/null ; then \
-	            echo "Using still-valid ChangeLog file generated earlier from same revision of Git source metadata" >&2 ; \
+	        NUT_GITDIR=".git" ; if test -r "$${NUT_GITDIR}" -a ! -d "$${NUT_GITDIR}" ; then GD="`grep -E '^gitdir:' "$${NUT_GITDIR}" | sed 's/^gitdir: *//'`" && test -n "$$GD" -a -d "$$GD" && NUT_GITDIR="$$GD" ; fi ; \
+	        if test -s "$@" -a -d "$${NUT_GITDIR}" -a -z "`find "$${NUT_GITDIR}" -newer "$@"`" 2>/dev/null ; then \
+	            echo "Using still-valid ChangeLog file generated earlier from same revision of Git source metadata in '$${NUT_GITDIR}'" >&2 ; \
 	        else \
 	            CHANGELOG_FILE="$@" $(WITH_PDF_NONASCII_TITLES_ENVVAR) $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) || \
 	            { printf "gitlog2changelog.py failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; } ; \
