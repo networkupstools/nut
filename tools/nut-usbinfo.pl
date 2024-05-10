@@ -28,6 +28,7 @@
 # - manage deps in Makefile.am
 
 use File::Find;
+use Cwd;
 use strict;
 
 
@@ -87,6 +88,9 @@ my %vendorName;
 
 ################# MAIN #################
 
+if ($ENV{"DEBUG"}) {
+	print stderr "main(): finding in scanPath=" . $scanPath . "\n";
+}
 find({wanted=>\&find_usbdevs, preprocess=>sub{sort @_}}, $scanPath);
 &gen_usb_files;
 
@@ -279,6 +283,10 @@ sub gen_usb_files
 
 sub find_usbdevs
 {
+	if ($ENV{"DEBUG"}) {
+		print stderr "find_usbdevs(): pwd='" . Cwd::cwd() . "' nameFile='" . $_ . "'\n";
+	}
+
 	# maybe there's an option to turn off all .* files, but anyway this is stupid
 	return $File::Find::prune = 1 if ($_ eq '.svn') || ($_ =~ /^\.#/) || ($_ =~ /\.orig$/);
 
