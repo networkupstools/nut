@@ -288,7 +288,10 @@ sub find_usbdevs
 	}
 
 	# maybe there's an option to turn off all .* files, but anyway this is stupid
-	return $File::Find::prune = 1 if ($_ eq '.svn') || ($_ =~ /^\.#/) || ($_ =~ /\.orig$/);
+	# Note that on some platforms "." and ".." do also pop up;
+	# take care to NOT prune (avoid recursion into) the "." one:
+	return $File::Find::prune = 1 if ($_ eq '.svn') || ($_ =~ /^\.#/) || ($_ =~ /\.(orig|o|la|lo|exe)$/) || ($_ eq '.libs') || ($_ eq '.deps') || ($_ eq '..');
+	return $File::Find::prune = 0 if ($_ eq '.');
 
 	my $nameFile=$_;
 	my $lastComment="";
