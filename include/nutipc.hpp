@@ -814,11 +814,7 @@ void Signal::HandlerThread<H>::quit()
 
 
 template <class H>
-Signal::HandlerThread<H>::~HandlerThread
-#if (defined __cplusplus) && (__cplusplus < 202000)
-	<H>
-#endif
-()
+Signal::HandlerThread<H>::~HandlerThread()
 #if (defined __cplusplus) && (__cplusplus < 201100)
 	throw(std::runtime_error)
 #endif
