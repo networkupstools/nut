@@ -342,19 +342,45 @@ else
 WITH_PDF_NONASCII_TITLES_ENVVAR = WITH_PDF_NONASCII_TITLES=no
 endif
 
-# Be sure to not confuse with a DIST'ed file (and so try to overwrite it):
+# Be sure to not confuse with a DIST'ed file (and so try to overwrite it);
+# do however avoid re-generating it if already made on a previous pass and
+# the Git HEAD pointer (branch) or its actual "index" or "object" database
+# did not change since then - meaning the local developer or CI did not
+# modify the metadata (subsequent generation of the huge PDF/HTML files
+# can cost dearly).
+# Note there's a bit more fuss about Git internals which NUT should not
+# really care about encapsulation-wise (detection of NUT_GITDIR location
+# which may reside elsewhere, e.g. with local repo clones with reference
+# repo configuration, or submodules). But this is a Git-crawling target
+# anyway, and in the worst case (Git's design changes) we would spend a
+# bit of time researching the FS in vain, and go on to re-generate the
+# ChangeLog when maybe we should not have - oh well:
 $(abs_top_builddir)/ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	@cd $(abs_top_srcdir) && \
 	    if test -e .git ; then \
-	        CHANGELOG_FILE="$@" $(WITH_PDF_NONASCII_TITLES_ENVVAR) $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) || \
-	        { printf "gitlog2changelog.py failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; } ; \
+	        NUT_GITDIR=".git" ; if test -r "$${NUT_GITDIR}" -a ! -d "$${NUT_GITDIR}" ; then GD="`grep -E '^gitdir:' "$${NUT_GITDIR}" | sed 's/^gitdir: *//'`" && test -n "$$GD" -a -d "$$GD" && NUT_GITDIR="$$GD" ; fi ; \
+	        if test -s "$@" -a -d "$${NUT_GITDIR}" -a -z "`find "$${NUT_GITDIR}" -newer "$@"`" 2>/dev/null ; then \
+	            echo "  DOC-CHANGELOG-GENERATE        $@ : SKIP (keep existing)" ; \
+	            echo "Using still-valid ChangeLog file generated earlier from same revision of Git source metadata in '$${NUT_GITDIR}'" >&2 ; \
+	        else \
+	            echo "  DOC-CHANGELOG-GENERATE        $@" ; \
+	            CHANGELOG_FILE="$@" $(WITH_PDF_NONASCII_TITLES_ENVVAR) $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) || { \
+	                echo "  DOC-CHANGELOG-GENERATE        $@ : FAILED (non-fatal)" >&2 ; \
+	                printf "gitlog2changelog.py failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; \
+	            } ; \
+	        fi ; \
 	    else \
 	        if test x"$(abs_top_srcdir)" != x"$(abs_top_builddir)" -a -s ./ChangeLog ; then \
+	            echo "  DOC-CHANGELOG-GENERATE        $@ : SKIP (keep existing)" ; \
 	            echo "Using distributed ChangeLog file from sources" >&2 ; \
 	            rm -f "$@" || true ; \
 	            cat ./ChangeLog > "$@" ; \
 	        else \
-	            if ! test -s "$@" ; then \
+	            if test -s "$@" ; then \
+	                echo "  DOC-CHANGELOG-GENERATE        $@ : SKIP (keep existing)" ; \
+	                echo "Using distributed ChangeLog file from sources" >&2 ; \
+	            else \
+	                echo "  DOC-CHANGELOG-GENERATE        $@ : FAILED (non-fatal)" >&2 ; \
 	                printf "Failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; \
 	            fi ; \
 	        fi ; \
