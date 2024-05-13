@@ -93,6 +93,10 @@ https://github.com/networkupstools/nut/milestone/11
    * added an `OBLBDURATION` (seconds) setting to optionally delay raising
      the alarm for immediate shutdown in critical situation. [#321]
 
+ - gamatronic driver revised for safer memory operations; this was reported
+   to have fixed a Segmentation Fault seen in earlier NUT releases with
+   some of the devices supported by this driver. [#2427]
+
  - upsd:
    * `upsd_cleanup()` is now traced, to more easily see that the daemon is
      exiting (and/or start-up has aborted due to configuration or run-time
@@ -111,6 +115,10 @@ https://github.com/networkupstools/nut/milestone/11
    they should be able to parse common simple use-cases but not certain types
    of more complex configurations (e.g. some line patterns that involve too
    many double-quote characters) which are valid for NUT proper. [#657]
+
+ - various recipe, documentation and source files were revised to address
+   respective warnings issued by the new generations of analysis tools.
+   [#823, #2437, link:https://github.com/networkupstools/nut-website/issues/52[nut-website issue #52]]
 
 
 Release notes for NUT 2.8.2 - what's new since 2.8.1

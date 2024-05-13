@@ -63,6 +63,14 @@ class Settable
 protected:
 	Type _value;
 	bool _set;
+	std::string errMsg_ENOTSET()const {
+		static const std::string msg =
+			"Can not retrieve a Settable value of "
+			"an instance that was not assigned yet "
+			"(or was last known cleared)";
+		return msg;
+	}
+
 public:
 	Settable():_set(false){}
 	Settable(const Settable<Type>& val):_value(val._value), _set(val._set){}
@@ -76,11 +84,43 @@ public:
 	bool set()const{return _set;}
 	void clear(){_set = false;}
 
-	operator const Type&()const{return _value;}
-	operator Type&(){return _value;}
+	operator const Type&()const
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw(std::invalid_argument)
+#endif
+	{
+		if (!set())
+			throw std::invalid_argument(errMsg_ENOTSET());
+		return _value;
+	}
+	operator Type&()
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw(std::invalid_argument)
+#endif
+	{
+		if (!set())
+			throw std::invalid_argument(errMsg_ENOTSET());
+		return _value;
+	}
 
-	const Type& operator *()const{return _value;}
-	Type& operator *(){return _value;}
+	const Type& operator *()const
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw(std::invalid_argument)
+#endif
+	{
+		if (!set())
+			throw std::invalid_argument(errMsg_ENOTSET());
+		return _value;
+	}
+	Type& operator *()
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw(std::invalid_argument)
+#endif
+	{
+		if (!set())
+			throw std::invalid_argument(errMsg_ENOTSET());
+		return _value;
+	}
 
 	Settable<Type>& operator=(const Type& val){_value = val; _set = true; return *this;}
 
@@ -256,6 +296,9 @@ public:
 	}
 
 	inline BoolInt& operator=(const char* s)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw(std::invalid_argument)
+#endif
 	{
 		if (!s)
 			throw std::invalid_argument(
@@ -266,6 +309,9 @@ public:
 	}
 
 	inline BoolInt& operator=(std::string src)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw(std::invalid_argument)
+#endif
 	{
 		static const Settable<bool> b0(false);
 		static const Settable<bool> b1(true);
@@ -406,6 +452,9 @@ public:
 	}
 
 	inline bool set()const
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw(std::invalid_argument)
+#endif
 	{
 		if (i.set() && b.set())
 			throw std::invalid_argument(
@@ -414,7 +463,11 @@ public:
 		return (i.set() || b.set());
 	}
 
-	operator int() {
+	operator int()
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw(std::invalid_argument)
+#endif
+	{
 		if (i.set()) return i;
 		if (bool01.set() && bool01 == true) {
 			if (b.set()) {
@@ -433,7 +486,11 @@ public:
 			"BoolInt value not set, neither to bool nor to int");
 	}
 
-	operator bool() {
+	operator bool()
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw(std::invalid_argument)
+#endif
+	{
 		if (b.set()) return b;
 		if (bool01.set() && bool01 == true) {
 			if (i.set()) {
@@ -449,7 +506,11 @@ public:
 			"BoolInt value not set, neither to bool nor to int");
 	}
 
-	inline std::string toString()const {
+	inline std::string toString()const
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw(std::invalid_argument)
+#endif
+	{
 		if (b.set()) {
 			if (b == true) return "yes";
 			return "no";
@@ -1323,6 +1384,9 @@ protected:
 		const std::string & section,
 		const std::string & entry,
 		nut::BoolInt        val = true)
+#if (defined __cplusplus) && (__cplusplus < 201100)
+		throw(std::invalid_argument)
+#endif
 	{
 		setStr(section, entry, val);
 	}

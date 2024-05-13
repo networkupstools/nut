@@ -187,6 +187,10 @@ static std::string serializeCertHost(const nut::CertHost & certHost) {
 	// need to add relaxed mode for 0/1 as false/true handling:
 	//bi.bool01 = true;
 
+	// Avoid static analysis concerns that the internal _value
+	// "may be used uninitialized in this function" (ETOOSMART):
+	bi = false;
+
 	// Assumed to be set() - exception otherwise
 	bi = certHost.certVerify;
 	bi.bool01 = true;
