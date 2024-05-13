@@ -6,6 +6,7 @@
  *   2005-2006 Peter Selinger <selinger@users.sourceforge.net>
  *   2007-2009 Arjen de Korte <adkorte-guest@alioth.debian.org>
  *   2016      Eaton / Arnaud Quette <ArnaudQuette@Eaton.com>
+ *   2020-2024 Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program was sponsored by MGE UPS SYSTEMS, and now Eaton
  *
@@ -28,7 +29,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.53"
+#define DRIVER_VERSION	"0.54"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
@@ -1348,6 +1349,21 @@ void upsdrv_initups(void)
 		}
 	}
 
+	val = getval("onlinedischarge_log_throttle_hovercharge");
+	if (val) {
+		int ipv = atoi(val);
+		if (ipv < 1 || ipv > 100) {
+			onlinedischarge_log_throttle_hovercharge = 100;
+			upslogx(LOG_WARNING,
+				"Warning: invalid value for "
+				"onlinedischarge_log_throttle_hovercharge: %s, "
+				"defaulting to %d",
+				val, onlinedischarge_log_throttle_hovercharge);
+		} else {
+			onlinedischarge_log_throttle_hovercharge = ipv;
+		}
+	}
+
 	if (testvar("disable_fix_report_desc")) {
 		disable_fix_report_desc = 1;
 	}
@@ -1970,8 +1986,8 @@ static void ups_status_set(void)
 		|| onlinedischarge_log_throttle_charge != -1
 	)) {
 		upsdebugx(1,
-			"%s: seems that UPS [%s] was in OL+DISCHRG state, "
-			"but no longer is now.",
+			"%s: seems that UPS [%s] was in OL+DISCHRG state "
+			"previously, but no is longer discharging now.",
 			__func__, upsname);
 		onlinedischarge_log_throttle_timestamp = 0;
 		onlinedischarge_log_throttle_charge = -1;
@@ -2011,23 +2027,38 @@ static void ups_status_set(void)
 			/* First disable, then enable if OK for noise*/
 			do_logmsg = 0;
 
-			/* Time or not, did the charge change since last log? */
+			/* Time or not, did the charge change since last log?
+			 * Reminder: "onlinedischarge_log_throttle_charge" is
+			 * the last-reported charge in OL+DISCHRG situation,
+			 * as the battery remainder trickles down and we only
+			 * report the changes (throttling the message stream).
+			 * The "onlinedischarge_log_throttle_hovercharge" lets
+			 * us ignore sufficiently high battery charges, where
+			 * the user configuration (or defaults at 100%) tell
+			 * us this is just about the battery not accepting the
+			 * external power *all* the time so its charge "hovers"
+			 * (typically between 90%-100%) to benefit the chemical
+			 * process back-end of the battery and its life time.
+			 */
 			if ((s = dstate_getinfo("battery.charge"))) {
-				/* NOTE: "0" may mean a conversion error: */
+				/* NOTE: exact "0" may mean a conversion error: */
 				current_charge = atoi(s);
 				if (current_charge > 0
 				&&  current_charge != onlinedischarge_log_throttle_charge
 				) {
 					/* Charge has changed, but is it
 					 * now low enough to worry? */
-					if (onlinedischarge_log_throttle_hovercharge
-					    < onlinedischarge_log_throttle_charge
+					if (current_charge
+					    < onlinedischarge_log_throttle_hovercharge
 					) {
 						upsdebugx(3, "%s: current "
 							"battery.charge=%d is under "
-							"onlinedischarge_log_throttle_charge=%d",
+							"onlinedischarge_log_throttle_hovercharge=%d "
+							"(previous onlinedischarge_log_throttle_charge=%d): %s",
 							__func__, current_charge,
-							onlinedischarge_log_throttle_charge);
+							onlinedischarge_log_throttle_hovercharge,
+							onlinedischarge_log_throttle_charge,
+							(current_charge > onlinedischarge_log_throttle_charge ? "charging" : "draining"));
 						do_logmsg = 1;
 					} else {
 						/* All seems OK, don't spam log
@@ -2036,9 +2067,12 @@ static void ups_status_set(void)
 						upsdebugx(5, "%s: current "
 							"battery.charge=%d "
 							"is okay compared to "
-							"onlinedischarge_log_throttle_charge=%d",
+							"onlinedischarge_log_throttle_hovercharge=%d "
+							"(previous onlinedischarge_log_throttle_charge=%d): %s",
 							__func__, current_charge,
-							onlinedischarge_log_throttle_charge);
+							onlinedischarge_log_throttle_hovercharge,
+							onlinedischarge_log_throttle_charge,
+							(current_charge > onlinedischarge_log_throttle_charge ? "charging" : "draining"));
 					}
 				}
 			} else {
@@ -2073,6 +2107,7 @@ static void ups_status_set(void)
 		}
 
 		if (do_logmsg) {
+			/* If OL+DISCHRG, and not-throttled against log spam */
 			char	msg_charge[LARGEBUF];
 			msg_charge[0] = '\0';
 
@@ -2091,9 +2126,10 @@ static void ups_status_set(void)
 				} else {
 					snprintf(msg_charge, sizeof(msg_charge),
 						"Battery charge changed from %d to %d "
-						"since last such report. ",
+						"since last such report (%s). ",
 						onlinedischarge_log_throttle_charge,
-						current_charge);
+						current_charge,
+						(current_charge > onlinedischarge_log_throttle_charge ? "charging" : "draining"));
 				}
 				onlinedischarge_log_throttle_charge = current_charge;
 			}
