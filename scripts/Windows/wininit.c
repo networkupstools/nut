@@ -122,7 +122,7 @@ static DWORD create_process(char * command)
 }
 
 /* return PID of created process or 0 on failure */
-static DWORD run_drivers()
+static DWORD run_drivers(void)
 {
 	char command[MAX_PATH];
 	char *path;
@@ -134,7 +134,7 @@ static DWORD run_drivers()
 }
 
 /* return PID of created process or 0 on failure */
-static DWORD stop_drivers()
+static DWORD stop_drivers(void)
 {
 	char command[MAX_PATH];
 	char *path;
@@ -146,7 +146,7 @@ static DWORD stop_drivers()
 }
 
 /* return PID of created process or 0 on failure */
-static void run_upsd()
+static void run_upsd(void)
 {
 	char command[MAX_PATH];
 	char *path;
@@ -157,7 +157,7 @@ static void run_upsd()
 	upsd_pid = create_process(command);
 }
 
-static void stop_upsd()
+static void stop_upsd(void)
 {
 	if (sendsignal(UPSD_PIPE_NAME, COMMAND_STOP)) {
 		print_event(LOG_ERR, "Error stopping upsd (%d)", GetLastError());
@@ -165,7 +165,7 @@ static void stop_upsd()
 }
 
 /* return PID of created process or 0 on failure */
-static void run_upsmon()
+static void run_upsmon(void)
 {
 	char command[MAX_PATH];
 	char *path;
@@ -176,7 +176,7 @@ static void run_upsmon()
 	upsmon_pid = create_process(command);
 }
 
-static void stop_upsmon()
+static void stop_upsmon(void)
 {
 	if (sendsignal(UPSMON_PIPE_NAME, COMMAND_STOP)) {
 		print_event(LOG_ERR, "Error stopping upsmon (%d)", GetLastError());
@@ -184,7 +184,7 @@ static void stop_upsmon()
 }
 
 /* Return 0 if powerdown flag is set */
-static DWORD test_powerdownflag()
+static DWORD test_powerdownflag(void)
 {
 	char command[MAX_PATH];
 	char *path;
@@ -237,7 +237,7 @@ static DWORD test_powerdownflag()
 	return 1;
 }
 
-static DWORD shutdown_ups()
+static DWORD shutdown_ups(void)
 {
 	char command[MAX_PATH];
 	char *path;
