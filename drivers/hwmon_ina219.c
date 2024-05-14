@@ -253,6 +253,11 @@ static int parse_voltage(const char *s, double *v)
 
 static void battery_voltage_params_init(void)
 {
+	/* Note: with this device, we do not really expect these values
+	 * to be reported by hardware or change over time, so this is
+	 * only parsed (from built-in or user-provided defaults) into
+	 * C variables once.
+	 */
 	const char *d_min = dstate_getinfo("battery.voltage.low");
 	const char *d_max = dstate_getinfo("battery.voltage.high");
 	double volt_nominal;
