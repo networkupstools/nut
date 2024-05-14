@@ -87,6 +87,13 @@ MAN_CLIENT_PAGES = \
 	upssched.8
 endif WITH_MANS
 
+if HAVE_WINDOWS
+SRC_CLIENT_PAGES += nut.exe.txt
+if WITH_MANS
+MAN_CLIENT_PAGES += nut.exe.8
+endif WITH_MANS
+endif HAVE_WINDOWS
+
 man8_MANS = $(MAN_CLIENT_PAGES)
 
 HTML_CLIENT_MANS = \
@@ -101,6 +108,10 @@ HTML_CLIENT_MANS = \
 	upsmon.html \
 	upsrw.html \
 	upssched.html
+
+if HAVE_WINDOWS
+HTML_CLIENT_MANS += nut.exe.html
+endif HAVE_WINDOWS
 
 SRC_TOOL_PAGES = nut-scanner.txt nut-recorder.txt nutconf.txt
 
