@@ -688,6 +688,11 @@ int main(int argc, char **argv)
 				"exiting, this is a Windows service which can't "
 				"be run as a regular application by default. "
 				"Try -N to start it as a regular application.");
+
+			if (argc < 2) {
+				help(progname);
+				return EXIT_FAILURE;
+			}
 		}
 	}
 	else {
