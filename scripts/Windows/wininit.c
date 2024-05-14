@@ -283,16 +283,17 @@ static int parse_nutconf(BOOL start_flag)
 					return 1;
 				}
 				else {
-					print_event(LOG_INFO,"stop upsd");
+					print_event(LOG_INFO, "Stopping upsd");
 					stop_upsd();
-					print_event(LOG_INFO,"stop drivers");
+					print_event(LOG_INFO, "Stopping drivers");
 					stop_drivers();
-					print_event(LOG_INFO,"stop upsmon");
+					print_event(LOG_INFO, "Stopping upsmon");
 					stop_upsmon();
-					/* Give a chance to upsmon to write the POWERDOWNFLAG  file */
+
+					/* Give upsmon a chance to write the POWERDOWNFLAG file */
 					Sleep(1000);
 					if (test_powerdownflag() == 0) {
-						print_event(LOG_INFO, "shutdown ups");
+						print_event(LOG_INFO, "Shutting down the UPS");
 						shutdown_ups();
 					}
 					print_event(LOG_INFO, "End of NUT stop");
@@ -301,10 +302,12 @@ static int parse_nutconf(BOOL start_flag)
 			}
 			if (strstr(buf, "netclient") != NULL) {
 				if (start_flag == NUT_START) {
+					print_event(LOG_INFO, "Starting upsmon (client only)");
 					run_upsmon();
 					return 1;
 				}
 				else {
+					print_event(LOG_INFO, "Stopping upsmon (client only)");
 					stop_upsmon();
 					return 1;
 				}
