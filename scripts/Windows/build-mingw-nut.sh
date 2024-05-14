@@ -116,10 +116,11 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 
 	# Note: installation prefix here is "/" and desired INSTALL_DIR
 	# location is passed to `make install` as DESTDIR below.
+	# FIXME: Implement support for --without-pkg-config in m4 and use it
 	$CONFIGURE_SCRIPT $HOST_FLAG $BUILD_FLAG --prefix=/ \
 	    $KEEP_NUT_REPORT_FEATURE_FLAG \
 	    PKG_CONFIG_PATH="${ARCH_PREFIX}/lib/pkgconfig" \
-	    --without-pkg-config --with-all=auto \
+	    --with-all=auto \
 	    --without-systemdsystemunitdir \
 	    --with-pynut=app \
 	    --with-augeas-lenses-dir=/augeas-lenses \
