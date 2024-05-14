@@ -63,18 +63,18 @@
 #define POWERWARE_VENDORID	0x0592
 
 /* Hewlett Packard */
-#define HP_VENDORID 0x03f0
+#define HP_VENDORID		0x03f0
 
 /* AEG */
-#define AEG_VENDORID 0x2b2d
+#define AEG_VENDORID		0x2b2d
 
 /* Note that normally this VID is handled by Liebert/Phoenixtec HID mapping,
  * here it is just for for AEG PROTECT NAS devices: */
 /* Phoenixtec Power Co., Ltd */
-#define PHOENIXTEC 0x06da
+#define PHOENIXTEC		0x06da
 
 /* IBM */
-#define IBM_VENDORID 0x04b3
+#define IBM_VENDORID		0x04b3
 
 #if !((defined SHUT_MODE) && SHUT_MODE)
 #include "usb-common.h"
