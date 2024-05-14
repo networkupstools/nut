@@ -50,7 +50,7 @@
 # endif
 #endif
 
-#define MGE_HID_VERSION		"MGE HID 1.46"
+#define MGE_HID_VERSION		"MGE HID 1.47"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -131,7 +131,7 @@ typedef enum {
 		MGE_PULSAR_M_2200,
 		MGE_PULSAR_M_3000,
 		MGE_PULSAR_M_3000_XL,
-	EATON_5P = 0x500			/* Eaton 5P / 5PX series */
+	EATON_5P = 0x500			/* Eaton 5P / 5PX / 5SC series */
 } models_type_t;
 
 /* Default to line-interactive or online (ie, not offline).
@@ -1122,6 +1122,27 @@ static models_name_t mge_model_names [] =
 	{ "Eaton 5P", "850", EATON_5P, "5P 850" },
 	{ "Eaton 5P", "1150", EATON_5P, "5P 1150" },
 	{ "Eaton 5P", "1550", EATON_5P, "5P 1550" },
+
+	/* Eaton 5PX, names assumed per VA numbers in
+	 * https://www.eaton.com/gb/en-gb/catalog/backup-power-ups-surge-it-power-distribution/eaton-5px-ups-emea.html#tab-2
+	 * and a user report in https://github.com/networkupstools/nut/issues/2380
+	 * Fixes for actual product/model names reported via USB are welcome
+	 */
+	{ "Eaton 5PX", "1500", EATON_5P, NULL },
+	{ "Eaton 5PX", "2200", EATON_5P, NULL },
+	{ "Eaton 5PX", "3000", EATON_5P, NULL },
+
+	/* Eaton 5SC, names assumed per VA numbers in
+	 * https://www.eaton.com/gb/en-gb/site-search.html.searchTerm$5sc.tabs$all.html
+	 * and a user report in https://github.com/networkupstools/nut/issues/2380
+	 * Fixes for actual product/model names reported via USB are welcome
+	 */
+	{ "Eaton 5SC", "500", EATON_5P, NULL },
+	{ "Eaton 5SC", "750", EATON_5P, NULL },
+	{ "Eaton 5SC", "1000", EATON_5P, NULL },
+	{ "Eaton 5SC", "1500", EATON_5P, NULL },
+	{ "Eaton 5SC", "2200", EATON_5P, NULL },
+	{ "Eaton 5SC", "3000", EATON_5P, NULL },
 
 	/* Pulsar M models */
 	{ "PULSAR M", "2200", MGE_PULSAR_M_2200, NULL },
