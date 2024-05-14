@@ -684,15 +684,26 @@ int main(int argc, char **argv)
 	if (service_flag) {
 		if (!StartServiceCtrlDispatcher(DispatchTable))
 		{
-			print_event(LOG_ERR, "StartServiceCtrlDispatcher failed : "
-				"exiting, this is a Windows service which can't "
-				"be run as a regular application by default. "
-				"Try -N to start it as a regular application.");
+			DWORD LastError = GetLastError();
 
-			if (argc < 2) {
-				help(progname);
-				return EXIT_FAILURE;
+			if (LastError == ERROR_FAILED_SERVICE_CONTROLLER_CONNECT) {
+				const char *msg = "StartServiceCtrlDispatcher failed: "
+					"exiting. This is a Windows service which can't "
+					"be run as a regular application by default. "
+					"Try -N to start it as a regular application.";
+
+				print_event(LOG_ERR, "%s", msg);
+				fprintf(stderr, "ERROR: %s\n\n", msg);
+
+				if (argc < 2) {
+					help(progname);
+				}
+			} else {
+				print_event(LOG_ERR, "StartServiceCtrlDispatcher failed (%ld): "
+					"exiting", LastError);
 			}
+
+			return EXIT_FAILURE;
 		}
 	}
 	else {
