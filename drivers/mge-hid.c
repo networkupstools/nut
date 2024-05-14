@@ -207,14 +207,14 @@ static long round (double value)
 static long round (LDOUBLE value)
 # endif
 {
-  long intpart;
+	long intpart;
 
-  intpart = (long)value;
-  value = value - intpart;
-  if (value >= 0.5)
-    intpart++;
+	intpart = (long)value;
+	value = value - intpart;
+	if (value >= 0.5)
+		intpart++;
 
-  return intpart;
+	return intpart;
 }
 #endif /* HAVE_DECL_ROUND */
 
