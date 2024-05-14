@@ -616,10 +616,38 @@ static void WINAPI SvcMain(DWORD argc, LPTSTR *argv)
 	}
 }
 
+static void help(const char *arg_progname)
+{
+	printf("Network UPS Tools %s %s\n\n", arg_progname, UPS_VERSION);
+
+	printf("NUT for Windows all-in-one wrapper for driver(s), data server and monitoring client\n");
+	printf("including shutdown and power-off handling (where supported).\n\n");
+
+	printf("Usage: %s [OPTION]\n\n", arg_progname);
+
+	printf("Options (note minus not slash as the control character), one of:\n");
+	printf("    -I	Install as a service (%s)\n", SVCNAME);
+	printf("    -U	Uninstall the service\n");
+	printf("    -N	Run once in non-service mode\n");
+	printf("    -V	Display NUT version and exit\n");
+	printf("    -h	Display this help and exit\n");	/* also /? but be hush about the one slash */
+}
+
 int main(int argc, char **argv)
 {
-	int i;
-	while ((i = getopt(argc, argv, "+IUN")) != -1) {
+	int	i, default_opterr = opterr;
+	const char	*progname = xbasename(argc > 0 ? argv[0] : "nut.exe");
+
+	if (argc > 1 && !strcmp(argv[1], "/?")) {
+		help(progname);
+		return EXIT_SUCCESS;
+	}
+
+	/* TODO: Do not warn about unknown args - pass them to SvcMain()
+	 * Currently neutered because that method ignores argc/argv de-facto.
+	 *    opterr = 0;
+	 */
+	while ((i = getopt(argc, argv, "+IUNVh")) != -1) {
 		switch (i) {
 			case 'I':
 				return SvcInstall(SVCNAME, NULL);
@@ -629,6 +657,14 @@ int main(int argc, char **argv)
 				service_flag = FALSE;
 				upslogx(LOG_ERR, "Running in non-service mode\n");
 				break;
+			case 'V':
+				/* also show the optional CONFIG_FLAGS banner if available */
+				printf("Network UPS Tools %s %s\n", progname, UPS_VERSION);
+				nut_report_config_flags();
+				return EXIT_SUCCESS;
+			case 'h':
+				help(progname);
+				return EXIT_SUCCESS;
 			default:
 				/* Assume console-app start would come up - and pass args there, quietly */
 				break;
@@ -636,6 +672,7 @@ int main(int argc, char **argv)
 	}
 
 	optind = 0;
+	opterr = default_opterr;
 
 	SERVICE_TABLE_ENTRY DispatchTable[] =
 	{
