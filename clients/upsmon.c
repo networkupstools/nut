@@ -2550,8 +2550,9 @@ static void clear_pdflag(void)
 	ret = pdflag_status();
 
 	if (ret == -1)  {
-		upslogx(LOG_ERR, "POWERDOWNFLAG (%s) does not contain"
-			"the upsmon magic string - disabling!", powerdownflag);
+		upslogx(LOG_ERR, "POWERDOWNFLAG (%s) does not contain "
+			"the upsmon magic string (not a NUT file) - "
+			"disabling!", powerdownflag);
 		powerdownflag = NULL;
 		return;
 	}
