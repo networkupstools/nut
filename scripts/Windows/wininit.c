@@ -594,16 +594,17 @@ static void WINAPI SvcMain(DWORD argc, LPTSTR *argv)
 				break;
 			}
 		}
-		/* a new pipe connection has been signaled */
+
 		if (handles[ret] == pipe_connection_overlapped.hEvent) {
+			/* a new pipe connection has been signaled */
 			pipe_connect();
 		}
-		/* one of the read event handle has been signaled */
 		else {
+			/* one of the read event handles has been signaled */
 			if (conn != NULL) {
 				if (pipe_ready(conn)) {
 					buf = conn->buf;
-					/* a frame is a DWORD indicating priority followed by an array of char (not necessarily followed by a terminal 0 */
+					/* a frame is a DWORD indicating priority followed by an array of char (not necessarily followed by a terminal 0) */
 					priority = *((DWORD *)buf);
 					buf = buf + sizeof(DWORD);
 					print_event(priority, buf);
@@ -629,6 +630,7 @@ int main(int argc, char **argv)
 				upslogx(LOG_ERR, "Running in non-service mode\n");
 				break;
 			default:
+				/* Assume console-app start would come up - and pass args there, quietly */
 				break;
 		}
 	}
