@@ -2,7 +2,7 @@
  *
  *  Copyright (C)
  *        2003 - 2015 Arnaud Quette <arnaud.quette@free.fr>
- *        2015 - 2016 Eaton / Arnaud Quette <ArnaudQuette@Eaton.com>
+ *        2015 - 2024 Eaton / Arnaud Quette <ArnaudQuette@Eaton.com>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
  *
