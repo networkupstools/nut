@@ -457,9 +457,7 @@ void upsdrv_shutdown(void)
 
 void upsdrv_help(void)
 {
-	printf("\nOptions:\n");
-	printf("  sysfs_dir = " SYSFS_HWMON_DIR " (sysfs hwmon directory, used if port=auto)\n");
-	printf("\n");
+	/* No special options in this driver (vars/flags are auto-documented) */
 }
 
 void upsdrv_cleanup(void)
