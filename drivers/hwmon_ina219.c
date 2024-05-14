@@ -180,8 +180,14 @@ static int scan_hwmon_ina219(const char *sysfs_hwmon_dir)
 
 		snprintf(hwmon_dir, sizeof(hwmon_dir), "%s/%s",
 					sysfs_hwmon_dir, entry->d_name);
-		if (detect_ina219(hwmon_dir))
+		if (detect_ina219(hwmon_dir) < 0) {
+			/* Log this one only if really troubleshooting,
+			 * this is quite an anticipated and noisy situation,
+			 * to disregard most of the directories in sysfs :)
+			 */
+			upsdebugx(6, "skipping path %s: not the expected subsystem", hwmon_dir);
 			continue;
+		}
 
 		snprintf(ina219_base_path, sizeof(ina219_base_path), "%s", hwmon_dir);
 		closedir(sysfs);
