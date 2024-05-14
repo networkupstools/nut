@@ -121,6 +121,26 @@ static DWORD create_process(char * command)
 	return  ProcessInformation.dwProcessId;
 }
 
+/* Return a statically allocated buffer, no need to free() it */
+static const char * makearg_debug(void)
+{
+	static char	buf[SMALLBUF];
+	char	*p = buf;
+	size_t	i;
+
+	if (nut_debug_level < 1)
+		return("");
+
+	*p = '-';
+	p++;
+	for (i = 0; (i < (size_t)nut_debug_level && i < (sizeof(buf) - 2)); i++, p++) {
+		*p = 'D';
+	}
+	*p = '\0';
+
+	return (const char *)buf;
+}
+
 /* return PID of created process or 0 on failure */
 static DWORD run_drivers(void)
 {
@@ -128,7 +148,12 @@ static DWORD run_drivers(void)
 	char *path;
 
 	path = getfullpath(PATH_BIN);
-	snprintf(command, sizeof(command), "%s\\upsdrvctl.exe start", path);
+	if (nut_debug_level < 1) {
+		snprintf(command, sizeof(command), "%s\\upsdrvctl.exe start", path);
+	} else {
+		snprintf(command, sizeof(command), "%s\\upsdrvctl.exe -d %s start",
+			path, makearg_debug());
+	}
 	free(path);
 	return create_process(command);
 }
@@ -140,7 +165,12 @@ static DWORD stop_drivers(void)
 	char *path;
 
 	path = getfullpath(PATH_BIN);
-	snprintf(command, sizeof(command), "%s\\upsdrvctl.exe stop", path);
+	if (nut_debug_level < 1) {
+		snprintf(command, sizeof(command), "%s\\upsdrvctl.exe stop", path);
+	} else {
+		snprintf(command, sizeof(command), "%s\\upsdrvctl.exe %s stop",
+			path, makearg_debug());
+	}
 	free(path);
 	return create_process(command);
 }
@@ -153,6 +183,9 @@ static void run_upsd(void)
 
 	path = getfullpath(PATH_SBIN);
 	snprintf(command, sizeof(command), "%s\\upsd.exe", path);
+	if (nut_debug_level > 0) {
+		snprintfcat(command, sizeof(command), " %s", makearg_debug());
+	}
 	free(path);
 	upsd_pid = create_process(command);
 }
@@ -172,6 +205,9 @@ static void run_upsmon(void)
 
 	path = getfullpath(PATH_SBIN);
 	snprintf(command, sizeof(command), "%s\\upsmon.exe", path);
+	if (nut_debug_level > 0) {
+		snprintfcat(command, sizeof(command), " %s", makearg_debug());
+	}
 	free(path);
 	upsmon_pid = create_process(command);
 }
@@ -198,6 +234,9 @@ static DWORD test_powerdownflag(void)
 
 	path = getfullpath(PATH_SBIN);
 	snprintf(command, sizeof(command), "%s\\upsmon.exe -K", path);
+	if (nut_debug_level > 0) {
+		snprintfcat(command, sizeof(command), " %s", makearg_debug());
+	}
 	free(path);
 
 	memset(&StartupInfo, 0, sizeof(STARTUPINFO));
@@ -243,7 +282,12 @@ static DWORD shutdown_ups(void)
 	char *path;
 
 	path = getfullpath(PATH_BIN);
-	snprintf(command, sizeof(command), "%s\\upsdrvctl.exe shutdown", path);
+	if (nut_debug_level < 1) {
+		snprintf(command, sizeof(command), "%s\\upsdrvctl.exe shutdown", path);
+	} else {
+		snprintf(command, sizeof(command), "%s\\upsdrvctl.exe -d %s shutdown",
+			path, makearg_debug());
+	}
 	free(path);
 	return create_process(command);
 }
@@ -629,6 +673,7 @@ static void help(const char *arg_progname)
 	printf("    -I	Install as a service (%s)\n", SVCNAME);
 	printf("    -U	Uninstall the service\n");
 	printf("    -N	Run once in non-service mode\n");
+	printf("    -D	Raise debug verbosity (passed to launched NUT programs)\n");
 	printf("    -V	Display NUT version and exit\n");
 	printf("    -h	Display this help and exit\n");	/* also /? but be hush about the one slash */
 }
@@ -647,7 +692,7 @@ int main(int argc, char **argv)
 	 * Currently neutered because that method ignores argc/argv de-facto.
 	 *    opterr = 0;
 	 */
-	while ((i = getopt(argc, argv, "+IUNVh")) != -1) {
+	while ((i = getopt(argc, argv, "+IUNDVh")) != -1) {
 		switch (i) {
 			case 'I':
 				return SvcInstall(SVCNAME, NULL);
@@ -656,6 +701,9 @@ int main(int argc, char **argv)
 			case 'N':
 				service_flag = FALSE;
 				upslogx(LOG_ERR, "Running in non-service mode\n");
+				break;
+			case 'D':
+				nut_debug_level++;
 				break;
 			case 'V':
 				/* also show the optional CONFIG_FLAGS banner if available */
@@ -666,7 +714,13 @@ int main(int argc, char **argv)
 				help(progname);
 				return EXIT_SUCCESS;
 			default:
-				/* Assume console-app start would come up - and pass args there, quietly */
+				/* Assume console-app start would come up - and pass args
+				 * there, quietly; note that getopt() converts unknown
+				 * chars to '?' so we can not log what exactly was wrong.
+				 */
+				upsdebugx(1, "%s: unknown option ignored "
+					"(maybe SvcMain would use it later)",
+					progname);
 				break;
 		}
 	}
