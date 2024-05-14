@@ -28,7 +28,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"'ATCL FOR UPS' USB driver"
-#define DRIVER_VERSION	"1.17"
+#define DRIVER_VERSION	"1.18"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {

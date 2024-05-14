@@ -35,7 +35,7 @@
 #endif
 
 #define DRIVER_NAME     "Best Fortress UPS driver"
-#define DRIVER_VERSION  "0.08"
+#define DRIVER_VERSION  "0.09"
 
 /* driver description structure */
 upsdrv_info_t   upsdrv_info = {

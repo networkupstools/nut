@@ -88,6 +88,7 @@ ALL_TXT_SRC = nut-names.txt daisychain.txt \
  release-notes.txt ChangeLog.txt solaris-usb.txt
 
 ASPELL_FILTER_PATH = @ASPELL_FILTER_PATH@
+# NOTE: This can be set by caller such as nut-website builder:
 NUT_SPELL_DICT = nut.dict
 EXTRA_DIST += $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
  $(IMAGE_LOGO_FILES) $(IMAGE_LOGO_FILES_JENKINS_NUT) $(CABLES_IMAGES) $(NUT_SPELL_DICT) \
@@ -121,7 +122,7 @@ ASCIIDOC_PDF = user-manual.pdf \
 	FAQ.pdf
 
 SUBDIRS = man cables
-SUFFIXES = .txt .html .pdf -spellchecked .txt-prepped
+SUFFIXES = .txt .html .pdf .txt-spellchecked .txt-prepped
 
 # This list is defined by configure script choices and options:
 CHECK_LOCAL_TARGETS = @DOC_CHECK_LIST@
@@ -144,6 +145,16 @@ docs: pdf html-single html-chunked man-man html-man
 all-docs: docs
 
 check-docs: check-pdf check-html-single check-html-chunked check-man
+
+# Not called by default, but handy for maintainers to check which words
+# in the custom dictionary are used or not by the current NUT codebase.
+# Note that historically many words were added to facilitate rendition
+# of the nut-website (long ago splintered from main nut repository),
+# but since recently it has a way to track its own additions to the
+# dictionary file. This code should help populate it as well, and keep
+# only relevant entries in the appropriate corner of the sources.
+# Note this can take 5-10 minutes!
+spellcheck-report-dict-usage: $(NUT_SPELL_DICT).usage-report
 
 pdf: $(ASCIIDOC_PDF)
 # also build the HTML manpages with these targets
@@ -226,8 +237,9 @@ DOCBUILD_CONVERT_GITHUB_LINKS = { \
 .adoc.adoc-parsed:
 	@$(DOCBUILD_CONVERT_GITHUB_LINKS)
 
-$(top_builddir)/ChangeLog:
-	+@echo "  DOC-CHANGELOG-GENERATE	$@" \
+dummy:
+$(top_builddir)/ChangeLog: dummy
+	+@echo "  DOC-CHANGELOG-GENERATE	$@ : call parent Makefile" \
 	 && cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # BSD Make dislikes the path resolution here and does not always populate "$<"
@@ -310,7 +322,7 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) \
 # As of version 8.6.9 it lies, and the argument is required for our distcheck
 # (and does affect PDF builds, as found during work on collision-avoidance -
 # true with at least asciidoc/a2x versions 9.0.0rc2).
-# For more details see issues https://github.com/asciidoc/asciidoc/issues/44
+# For more details see issues https://web.archive.org/web/20201207082352/https://github.com/asciidoc/asciidoc/issues/44
 # and https://github.com/networkupstools/nut/pull/281 (in short, attempts
 # to "fix" this warning broke NUT build). If this is to be retried later, see
 # https://github.com/networkupstools/nut/pull/281/commits/fe17861c4ea12679b3ebfefa8a6d692d79d99f2d
@@ -543,7 +555,7 @@ spellcheck:
 	 done ; \
 	 if test -n "$$FAILED" ; then \
 		echo "=====================================================================" ; \
-		echo "FAILED automatic spellcheck for the following sources (relative to `pwd`): $$FAILED" ; \
+		echo "FAILED automatic spellcheck for the following sources (relative to `pwd`) using custom dictionary file '$(NUT_SPELL_DICT)': $$FAILED" ; \
 		echo "=====================================================================" ; \
 		echo "Please 'cd $(abs_top_builddir) && make spellcheck-interactive'"; \
 		echo "to either fix document sources or update the dictionary of accepted"; \
@@ -590,13 +602,13 @@ spellcheck-interactive:
 			FAILED="$$FAILED $(SPELLCHECK_SRCDIR)/$$docsrc"; \
 	done ; \
 	if test -n "$$FAILED" ; then \
-		echo "FAILED interactive spellcheck for the following sources (relative to `pwd`): $$FAILED" >&2 ; \
+		echo "FAILED interactive spellcheck for the following sources (relative to `pwd`) using custom dictionary file '$(NUT_SPELL_DICT)': $$FAILED" >&2 ; \
 		exit 1; \
 	fi ; exit 0
 	+$(MAKE) $(AM_MAKEFLAGS) spellcheck-sortdict
 	@echo "------------------------------------------------------------------------"; \
 	 echo "Custom dictionary file $(NUT_SPELL_DICT) may have been updated now."; \
-	 echo "Use 'git add -p docs/$(NUT_SPELL_DICT) && git checkout -- docs/$(NUT_SPELL_DICT) && make spellcheck-sortdict && git add -p docs/$(NUT_SPELL_DICT)'"; \
+	 echo "Use e.g. 'git add -p docs/$(NUT_SPELL_DICT) && git checkout -- docs/$(NUT_SPELL_DICT) && make spellcheck-sortdict && git add -p docs/$(NUT_SPELL_DICT)'"; \
 	 echo "to review changes (please DO NOT REMOVE LINES that aspell chose to drop,"; \
 	 echo "because other systems might not know these words in their system dictionaries)"; \
 	 echo "------------------------------------------------------------------------"
@@ -611,6 +623,41 @@ spellcheck-interactive:
 	@echo "Documentation spell check not available since 'aspell' was not found (or missing its English dictionary)."
 endif !HAVE_ASPELL
 
+# Note that NUT_SPELL_DICT may be an include snippet without the header line.
+# To exclude files like `docs/nut.dict` or `nut-website.dict(.addons)` from
+# the usage lookups, we assume that a `*.dict*` pattern fits any used names.
+# Entries prefixed with '+++' mean something used in NUT sources in context
+# that aspell is likely to treat as a word (standalone or surrounded by certain
+# chars); otherwise in entries prefixed with '---' we print hit counts and
+# contents (if any, ending with '^^^') for the character pattern across the
+# whole Git-tracked codebase (case-insensitively for good measure).
+# Note this can take 5-10 minutes!
+# TOTHINK: Constrain to (caller-specified or default) SPELLCHECK_SRC?
+$(NUT_SPELL_DICT).usage-report: $(NUT_SPELL_DICT)
+	@echo "Preparing $@"; \
+	 LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
+	 grep -v -E '^personal_ws' < $? \
+	 | while read W ; do ( \
+		cd "$(abs_top_srcdir)" || exit ; \
+		git grep -q "$$W" -- ':!*.dict*' || git grep -qE "[0-9_,./\ -]$$W[0-9_,./\ -]" -- ':!*.dict*' ) \
+		&& echo "+++ $$W" \
+		|| ( \
+			HITS_CS="`git grep "$$W" -- ':!*.dict*'`" || true; \
+			HITS_CI="`git grep -i "$$W" -- ':!*.dict*'`" || true; \
+			if [ -n "$$HITS_CS" ] ; then HITC_CS="`echo "$$HITS_CS" | wc -l`" ; else HITC_CS=0; fi; \
+			if [ -n "$$HITS_CI" ] ; then HITC_CI="`echo "$$HITS_CI" | wc -l`" ; else HITC_CI=0; fi; \
+			printf '%s (%d case-sensitive/%d case-insensitive)\n' "--- $$W" "$$HITC_CS" "$$HITC_CI"; \
+			if [ "$$HITC_CS" != 0 ] ; then echo "$$HITS_CS" ; echo "^^^"; else \
+				if [ "$$HITC_CI" != 0 ] ; then echo "$$HITS_CI" ; echo "^^^"; fi; \
+			fi; \
+		); \
+	 done > "$@.tmp"
+	test -f "$@.tmp" && mv -f "$@.tmp" "$@"
+	@echo "Reporting words from $? possibly not used in current inspected code base revision under $(abs_top_srcdir)" >&2 ; \
+	 grep -E '^--- ' < "$@" | grep '(0 ' || echo "SUCCESS: None found"
+
+CLEANFILES += $(NUT_SPELL_DICT).usage-report.tmp
+MAINTAINERCLEANFILES += $(NUT_SPELL_DICT).usage-report
 
 # When building out-of-tree, be sure to have all asciidoc resources
 # under the same dir structure (tool limitation)

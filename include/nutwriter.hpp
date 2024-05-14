@@ -3,6 +3,7 @@
 
     Copyright (C)
 	2012	Vaclav Krpec  <VaclavKrpec@Eaton.com>
+	2024	Jim Klimov <jimklimov+nut@gmail.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -126,7 +127,7 @@ class NutWriter {
 
 
 /**
- *  \brief  NUT configuration writer interface
+ *  \brief  NUT configuration writer interface (generic)
  */
 class NutConfigWriter: public NutWriter {
 	protected:

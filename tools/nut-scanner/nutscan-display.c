@@ -261,7 +261,7 @@ void nutscan_display_sanity_check_serial(nutscan_device_t * device)
 	 */
 
 	/* Reserve enough slots for all-unique serials */
-	map = calloc(sizeof(keyval_strings_t), listlen);
+	map = calloc(listlen, sizeof(keyval_strings_t));
 	if (map == NULL) {
 		fprintf(stderr, "%s: Memory allocation error, skipped\n", __func__);
 		return;

@@ -108,6 +108,23 @@ pid_t get_max_pid_t(void)
 #endif
 }
 
+	/* Normally sendsignalfn(), sendsignalpid() and related methods call
+	 * upslogx() to report issues such as failed fopen() of PID file,
+	 * failed parse of its contents, inability to send a signal (absent
+	 * process or some other issue like permissions).
+	 * Some of these low-level reports look noisy and scary to users,
+	 * others are a bit confusing ("PID file not found... is it bad or
+	 * good, what do I do with that knowledge?") so several consuming
+	 * programs actually parse the returned codes to formulate their
+	 * own messages like "No earlier instance of this daemon was found
+	 * running" and users benefit even less from low-level reports.
+	 * This variable and its values are a bit of internal detail between
+	 * certain NUT programs to hush the low-level reports when they are
+	 * not being otherwise debugged (e.g. nut_debug_level < 1).
+	 * Default value allows all those messages to appear.
+	 */
+	int	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_DEFAULT;
+
 	int	nut_debug_level = 0;
 	int	nut_log_level = 0;
 	static	int	upslog_flags = UPSLOG_STDERR;
@@ -430,7 +447,7 @@ void writepid(const char *name)
 	if (*name == '/')
 		snprintf(fn, sizeof(fn), "%s", name);
 	else
-		snprintf(fn, sizeof(fn), "%s/%s.pid", PIDPATH, name);
+		snprintf(fn, sizeof(fn), "%s/%s.pid", rootpidpath(), name);
 
 	mask = umask(022);
 	pidf = fopen(fn, "w");
@@ -459,9 +476,10 @@ int sendsignalpid(pid_t pid, int sig)
 	int	ret;
 
 	if (pid < 2 || pid > get_max_pid_t()) {
-		upslogx(LOG_NOTICE,
-			"Ignoring invalid pid number %" PRIdMAX,
-			(intmax_t) pid);
+		if (nut_debug_level > 0 || nut_sendsignal_debug_level > 0)
+			upslogx(LOG_NOTICE,
+				"Ignoring invalid pid number %" PRIdMAX,
+				(intmax_t) pid);
 		return -1;
 	}
 
@@ -469,7 +487,8 @@ int sendsignalpid(pid_t pid, int sig)
 	ret = kill(pid, 0);
 
 	if (ret < 0) {
-		perror("kill");
+		if (nut_debug_level > 0 || nut_sendsignal_debug_level >= NUT_SENDSIGNAL_DEBUG_LEVEL_KILL_SIG0PING)
+			perror("kill");
 		return -1;
 	}
 
@@ -478,7 +497,8 @@ int sendsignalpid(pid_t pid, int sig)
 		ret = kill(pid, sig);
 
 		if (ret < 0) {
-			perror("kill");
+			if (nut_debug_level > 0 || nut_sendsignal_debug_level > 1)
+				perror("kill");
 			return -1;
 		}
 	}
@@ -513,7 +533,10 @@ pid_t parsepid(const char *buf)
 	if (_pid <= get_max_pid_t()) {
 		pid = (pid_t)_pid;
 	} else {
-		upslogx(LOG_NOTICE, "Received a pid number too big for a pid_t: %" PRIdMAX, _pid);
+		if (nut_debug_level > 0 || nut_sendsignal_debug_level > 0)
+			upslogx(LOG_NOTICE,
+				"Received a pid number too big for a pid_t: %"
+				PRIdMAX, _pid);
 	}
 
 	return pid;
@@ -533,12 +556,19 @@ int sendsignalfn(const char *pidfn, int sig)
 
 	pidf = fopen(pidfn, "r");
 	if (!pidf) {
-		upslog_with_errno(LOG_NOTICE, "fopen %s", pidfn);
+		/* This one happens quite often when a daemon starts
+		 * for the first time and no opponent PID file exists,
+		 * so the cut-off verbosity is higher.
+		 */
+		if (nut_debug_level > 0 ||
+		    nut_sendsignal_debug_level >= NUT_SENDSIGNAL_DEBUG_LEVEL_FOPEN_PIDFILE)
+			upslog_with_errno(LOG_NOTICE, "fopen %s", pidfn);
 		return -3;
 	}
 
 	if (fgets(buf, sizeof(buf), pidf) == NULL) {
-		upslogx(LOG_NOTICE, "Failed to read pid from %s", pidfn);
+		if (nut_debug_level > 0 || nut_sendsignal_debug_level > 2)
+			upslogx(LOG_NOTICE, "Failed to read pid from %s", pidfn);
 		fclose(pidf);
 		return -2;
 	}
@@ -631,7 +661,7 @@ int sendsignal(const char *progname, int sig)
 {
 	char	fn[SMALLBUF];
 
-	snprintf(fn, sizeof(fn), "%s/%s.pid", PIDPATH, progname);
+	snprintf(fn, sizeof(fn), "%s/%s.pid", rootpidpath(), progname);
 
 	return sendsignalfn(fn, sig);
 }
@@ -1416,7 +1446,13 @@ vupslog_too_long:
 /* Return the default path for the directory containing configuration files */
 const char * confpath(void)
 {
-	const char *path = getenv("NUT_CONFPATH");
+	static const char *path = NULL;
+
+	/* Cached by earlier calls? */
+	if (path)
+		return path;
+
+	path = getenv("NUT_CONFPATH");
 
 #ifdef WIN32
 	if (path == NULL) {
@@ -1427,13 +1463,22 @@ const char * confpath(void)
 
 	/* We assume, here and elsewhere, that
 	 * at least CONFPATH is always defined */
-	return (path != NULL && *path != '\0') ? path : CONFPATH;
+	if (path == NULL || *path == '\0')
+		path = CONFPATH;
+
+	return path;
 }
 
 /* Return the default path for the directory containing state files */
 const char * dflt_statepath(void)
 {
-	const char *path = getenv("NUT_STATEPATH");
+	static const char *path = NULL;
+
+	/* Cached by earlier calls? */
+	if (path)
+		return path;
+
+	path = getenv("NUT_STATEPATH");
 
 #ifdef WIN32
 	if (path == NULL) {
@@ -1444,7 +1489,10 @@ const char * dflt_statepath(void)
 
 	/* We assume, here and elsewhere, that
 	 * at least STATEPATH is always defined */
-	return (path != NULL && *path != '\0') ? path : STATEPATH;
+	if (path == NULL || *path == '\0')
+		path = STATEPATH;
+
+	return path;
 }
 
 /* Return the alternate path for pid files, for processes running as non-root
@@ -1455,7 +1503,11 @@ const char * dflt_statepath(void)
  */
 const char * altpidpath(void)
 {
-	const char * path;
+	static const char *path = NULL;
+
+	/* Cached by earlier calls? */
+	if (path)
+		return path;
 
 	path = getenv("NUT_ALTPIDPATH");
 	if ( (path == NULL) || (*path == '\0') ) {
@@ -1473,11 +1525,43 @@ const char * altpidpath(void)
 		return path;
 
 #ifdef ALTPIDPATH
-	return ALTPIDPATH;
+	path = ALTPIDPATH;
 #else
 	/* With WIN32 in the loop, this may be more than a fallback to STATEPATH: */
-	return dflt_statepath();
+	path = dflt_statepath();
 #endif
+
+	return path;
+}
+
+/* Return the main path for pid files, for processes running as root, such
+ * as upsmon. Typically this is the built-in PIDPATH (from configure script)
+ * but certain use-cases such as the test suite can override it with the
+ * NUT_PIDPATH environment variable.
+ */
+const char * rootpidpath(void)
+{
+	static const char *path = NULL;
+
+	/* Cached by earlier calls? */
+	if (path)
+		return path;
+
+	path = getenv("NUT_PIDPATH");
+
+#ifdef WIN32
+	if (path == NULL) {
+		/* fall back to built-in pathname relative to binary/workdir */
+		path = getfullpath(PATH_ETC);
+	}
+#endif
+
+	/* We assume, here and elsewhere, that
+	 * at least PIDPATH is always defined */
+	if (path == NULL || *path == '\0')
+		path = PIDPATH;
+
+	return path;
 }
 
 /* Die with a standard message if socket filename is too long */

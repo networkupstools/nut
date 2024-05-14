@@ -27,7 +27,7 @@
 #include "nut-ipmi.h"
 
 #define DRIVER_NAME	"IPMI PSU driver"
-#define DRIVER_VERSION	"0.32"
+#define DRIVER_VERSION	"0.33"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -183,7 +183,8 @@ void upsdrv_help(void)
 /* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {
-	/* FIXME: need more params.
+	/* FIXME: need more params. */
+/*
 	addvar(VAR_VALUE, "username", "Remote server username");
 	addvar(VAR_VALUE, "password", "Remote server password");
 	addvar(VAR_VALUE, "authtype",
@@ -192,7 +193,9 @@ void upsdrv_makevartable(void)
 		"Type of the device to match ('psu' for \"Power Supply\")");
 
 	addvar(VAR_VALUE, "serial", "Serial number to match a specific device");
-	addvar(VAR_VALUE, "fruid", "FRU identifier to match a specific device"); */
+	addvar(VAR_VALUE, "fruid", "FRU identifier to match a specific device");
+	addvar(VAR_VALUE, "sensorid", "Sensor identifier to match a specific device");
+*/
 }
 
 void upsdrv_initups(void)

@@ -30,7 +30,7 @@
 #include <timehead.h>
 
 #define DRIVER_NAME "NUT ADELSYSTEM DC-UPS CB/CBI driver"
-#define DRIVER_VERSION "0.02"
+#define DRIVER_VERSION "0.03"
 
 /* variables */
 static modbus_t *mbctx = NULL;							/* modbus memory context */

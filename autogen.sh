@@ -226,6 +226,6 @@ $CONFIG_SHELL -n configure 2>/dev/null >/dev/null \
 	exit 1
 }
 
-echo "The generated configure script passed shell interpreter syntax checks"
+echo "SUCCESS: The generated configure script passed shell interpreter syntax checks"
 echo "Please proceed by running './configure --with-many-desired-options'"
 echo "For details check './configure --help' or docs/configure.txt in NUT sources"

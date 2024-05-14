@@ -363,6 +363,11 @@ upslist_savednames_find_missing() {
     # Verify that all existing service units have a saved DEVICE name
     # Report those that do not have a value there (any value) so we can
     # amend those quickly after an upgrade. Otherwise we trust these.
+    # Return codes:
+    #    0) Some services were defined and at least one had DEVICE values
+    #       (those that did not are reported in stdout)
+    #    1) No services defined yet (empty stdout)
+    #    2) All service units do not have DEVICE values (all reported in stdout)
 
     # Get full instance names from system and from props
     SVCINSTS="`$hook_listInstances_raw`" && [ "${#SVCINSTS}" != 0 ] || return 1
@@ -370,14 +375,21 @@ upslist_savednames_find_missing() {
     SVCINST_PROPS="`$hook_findSavedDeviceName`" && [ "${#SVCINST_PROPS}" != 0 ] \
     || { echo $SVCINSTS ; return 2; }
 
-    # Find services which do not have saved names in props
+    # Find and report services which do *not* have saved device names in
+    # props (do not report those that have a non-trivial prop value):
+    # whether an empty value or completely absent from the list
     for SVCINST in $SVCINSTS ; do
-        echo "$SVCINST_PROPS" | grep -E "^${SVCINST_PROPS}\t"'$' >/dev/null || echo "$SVCINST"
+        echo "$SVCINST_PROPS" | grep -E "^${SVCINST}${TABCHAR}"'$' >/dev/null && echo "$SVCINST"
+        echo "$SVCINST_PROPS" | grep -E "^${SVCINST}${TABCHAR}" >/dev/null || echo "$SVCINST"
     done
+    return 0
 }
 
 upslist_savednames_find_mismatch() {
+    # NOTE: Not used currently (as of NUT v2.8.2)
     # TODO: Make use of this to fsck the enumerator configs
+    # TODO: Complete checking MD5 normalized names if original not hit
+    # TODO: Report all unit names if none has the DEVICE values? (code 2)
     #
     # Verify that all existing service units have a saved DEVICE name
     # and that such name does match the unit instance's name (original
@@ -387,20 +399,30 @@ upslist_savednames_find_mismatch() {
     # This situation might occur in some errors, but the likely case
     # is updating from versions that did not track this info yet (but
     # upslist_savednames_find_missing() should have handled those).
+    # Return codes:
+    #    0) Some services were defined and at least one had DEVICE values
+    #       (those that did not are reported in stdout)
+    #    1) No services defined yet (empty stdout)
+    #    2) All service units do not have DEVICE values (empty stdout)
 
     # Get full instance names from system and from props
     SVCINSTS="`$hook_listInstances_raw`" && [ "${#SVCINSTS}" != 0 ] || return 1
     SVCINST_PROPS="`$hook_findSavedDeviceName`" && [ "${#SVCINST_PROPS}" != 0 ] || return 2
 
-    # Find services whose props exist but services do not
+    # Find services whose props exist but services themselves do not
+    # (e.g. upgrading from some version with different naming patterns)
     echo "$SVCINST_PROPS" | while read SVCINST_PROP DEVNAME_PROP ; do
         echo "$SVCINSTS" | grep -E "^${SVCINST_PROP}"'$' >/dev/null || echo "$SVCINST_PROP"
     done
 
-    # Find services which do not have saved names in props
+    # Find and report services which do *not* have saved device names in
+    # props (do not report those that have a non-trivial prop value):
+    # whether an empty value or completely absent from the list
     for SVCINST in $SVCINSTS ; do
-        echo "$SVCINST_PROPS" | grep -E "^${SVCINST_PROP}\t"'$' >/dev/null || echo "$SVCINST"
+        echo "$SVCINST_PROPS" | grep -E "^${SVCINST}${TABCHAR}"'$' >/dev/null && echo "$SVCINST"
+        echo "$SVCINST_PROPS" | grep -E "^${SVCINST}${TABCHAR}" >/dev/null || echo "$SVCINST"
     done
+    return 0
 }
 
 upsconf_getSection_content() {
@@ -1210,32 +1232,54 @@ nut_driver_enumerator_main() {
     # while the check for no new device section definitions is just boolean.
     # We can only exit quickly if both there are no changed sections and no
     # new or removed sections since last run.
-    ( [ -z "$UPSLIST_FILE" -a -z "$UPSLIST_SVCS" ] || ( \
+    { [ -z "$UPSLIST_FILE" -a -z "$UPSLIST_SVCS" ] || { \
         NEW_CHECKSUM="`upslist_checksums_unchanged "$UPSLIST_FILE" "$UPSLIST_SVCS"`" \
         && [ "${#NEW_CHECKSUM}" = 0 ] \
-        && upslist_equals "$UPSLIST_FILE" "$UPSLIST_SVCS" \
-    ) ) \
+        && upslist_equals "$UPSLIST_FILE" "$UPSLIST_SVCS" ; \
+    } ; } \
     && if [ -z "$DAEMON_SLEEP" -o "${VERBOSE_LOOP}" = yes ] ; then \
         echo "`date -u` : OK: No changes to reconcile between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF'" ; \
        fi \
     && [ "$RESTART_ALL" = no ] && return 0
 
-    if [ "${#NEW_CHECKSUM}" != 0 ]; then
+    # Check list of devices with new section contents (per checksum) as
+    # compared to older runs (stashed in service instance configurations).
+    if [ "${#NEW_CHECKSUM}" = 0 ]; then
+        if [ "${VERBOSE_LOOP}" = yes ] ; then
+            echo "`date -u` : No changes to reconcile between *contents* of ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF', but the *list* of instances vs. devices seems to have changed"
+        fi
+    else
+        if [ "${VERBOSE_LOOP}" = yes ] ; then
+            echo "`date -u` : Got some changes to reconcile between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF', content checksums changed for: `echo ${NEW_CHECKSUM} | tr '\n' ' '`"
+        fi
         for UPSS in $NEW_CHECKSUM ; do
-            CURR_DRV="`upsconf_getDriver "$UPSS"`" || CURR_DRV=""
+            # NOTE: Pedantically, UPSS is a service instance name,
+            # and may be the MD5-normalized version in certain cases.
+            # For some operations below we need the original ups.conf
+            # section name for the device - the CURR_DEV value.
+            CURR_DEV="`USE_SAVEDINST=true get_device_for_service "${UPSS}"`" && [ "${#CURR_DEV}" -gt 0 ] || CURR_DEV="${UPSS}"
+            CURR_DRV="`upsconf_getDriver "${CURR_DEV}"`" || CURR_DRV=""
             DO_UNREGISTER=yes
             if [ -n "$CURR_DRV" ] ; then
                 # If reload is handled and does not complain,
                 # we are OK to proceed without re-defining
                 # and restarting the driver service instance.
-                "@DRVPATH@/$CURR_DRV" -a "$UPSS" -c reload-or-error >/dev/null 2>/dev/null \
+                if [ "${VERBOSE_LOOP}" = yes ] ; then
+                    echo "`date -u` : Reloading ${SERVICE_FRAMEWORK} service instance '${UPSS}' whose section '${CURR_DEV}' in config file has changed: calling driver program '${CURR_DRV}' for the low-level work..." >&2
+                fi
+                "@DRVPATH@/$CURR_DRV" -a "${CURR_DEV}" -c reload-or-error >/dev/null 2>/dev/null \
+                || { if [ "${VERBOSE_LOOP}" = yes ] ; then sleep 1; "@DRVPATH@/$CURR_DRV" -a "${CURR_DEV}" -c reload-or-error >&2 ; fi; } \
                 && DO_UNREGISTER=no
             fi
             if [ "$DO_UNREGISTER" = yes ] ; then
-                echo "Dropping old ${SERVICE_FRAMEWORK} service instance ${UPSS} whose section in config file has changed..." >&2
+                echo "Dropping old ${SERVICE_FRAMEWORK} service instance '${UPSS}' whose section '${CURR_DEV}' in config file has changed..." >&2
                 $hook_unregisterInstance "$UPSS"
+                # Re-registration to reconcile below should set the "saved" values
             else
-                echo "Keeping ${SERVICE_FRAMEWORK} service instance ${UPSS} whose section in config file has changed: live reload sufficed" >&2
+                echo "Keeping ${SERVICE_FRAMEWORK} service instance '${UPSS}' whose section '${CURR_DEV}' in config file has changed: live reload sufficed. Saving updated info into service properties." >&2
+                $hook_setSavedMD5 "$UPSS" "`upsconf_getSection_MD5 "${CURR_DEV}"`"
+                # TOTHINK: This is already there, else we redefine units for bigger discrepancies?
+                # $hook_setSavedDeviceName "$UPSS" "${CURR_DEV}"
             fi
         done
         upslist_readSvcs "after updating for new config section checksums"

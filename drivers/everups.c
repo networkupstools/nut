@@ -21,7 +21,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Ever UPS driver (serial)"
-#define DRIVER_VERSION	"0.05"
+#define DRIVER_VERSION	"0.06"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {

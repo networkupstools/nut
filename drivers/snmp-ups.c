@@ -174,7 +174,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION	"1.30"
+#define DRIVER_VERSION	"1.31"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -3315,7 +3315,7 @@ bool_t snmp_ups_walk(int mode)
 
 #ifdef COUNT_ITERATIONS
 			/* check stale elements only on each PN_STALE_RETRY iteration. */
-	 		if ((su_info_p->flags & SU_FLAG_STALE) &&
+			if ((su_info_p->flags & SU_FLAG_STALE) &&
 					(iterations % SU_STALE_RETRY) != 0)
 				continue;
 #endif

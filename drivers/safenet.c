@@ -41,7 +41,7 @@
 #include "safenet.h"
 
 #define DRIVER_NAME	"Generic SafeNet UPS driver"
-#define DRIVER_VERSION	"1.80"
+#define DRIVER_VERSION	"1.81"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {

@@ -142,6 +142,9 @@ are:
                    which can not be applied "on the fly" (may fail for
                    critical changes like run-time user/group accounts)
 /////////
+        *exit*;;   tell the currently running driver instance to just exit
+                   (so an external caller like the new driver instance, or
+                   the systemd or SMF frameworks would start another copy)
 
 If the `upsdrvctl` was launched to remain in memory and manage NUT driver
 processes, it can receive supported signals and pass them to those drivers.
