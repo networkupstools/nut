@@ -121,6 +121,7 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 	    $KEEP_NUT_REPORT_FEATURE_FLAG \
 	    PKG_CONFIG_PATH="${ARCH_PREFIX}/lib/pkgconfig" \
 	    --with-all=auto \
+	    --with-doc="man=auto html-single=auto html-chunked=skip pdf=skip" \
 	    --without-systemdsystemunitdir \
 	    --with-pynut=app \
 	    --with-augeas-lenses-dir=/augeas-lenses \
