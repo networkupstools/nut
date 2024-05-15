@@ -711,17 +711,17 @@ HTML_MODBUS_MANS = phoenixcontact_modbus.html \
 endif ! SOME_DRIVERS
 
 # (--with-linux_i2c)
-SRC_LINUX_I2C_PAGES = asem.txt pijuice.txt
+SRC_LINUX_I2C_PAGES = asem.txt pijuice.txt hwmon_ina219.txt
 if ! SOME_DRIVERS
 if WITH_MANS
-MAN_LINUX_I2C_PAGES = asem.8 pijuice.8
+MAN_LINUX_I2C_PAGES = asem.8 pijuice.8 hwmon_ina219.8
 endif WITH_MANS
 
 if WITH_LINUX_I2C
 man8_MANS += $(MAN_LINUX_I2C_PAGES)
 endif WITH_LINUX_I2C
 
-HTML_LINUX_I2C_MANS = asem.html pijuice.html
+HTML_LINUX_I2C_MANS = asem.html pijuice.html hwmon_ina219.html
 endif ! SOME_DRIVERS
 
 # (--with-gpio)
