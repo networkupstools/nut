@@ -27,6 +27,13 @@ Changes from 2.8.2 to 2.8.3
 - PLANNED: Keep track of any further API clean-up?
 
 
+- Enabled installation of built PDF and HTML (including man page renditions)
+  files under the configured `docdir`. It seems previously they were only
+  built (if requested) but not installed via `make`, unlike the common man
+  pages which are delivered automatically. Packaging recipes can likely
+  be simplified now. [#2445]
+
+
 Changes from 2.8.1 to 2.8.2
 ---------------------------
 

@@ -107,6 +107,11 @@ https://github.com/networkupstools/nut/milestone/11
    `NUT_PIDPATH` environment variable in certain use-cases (such as tests).
    [#2407]
 
+ - enabled installation of built PDF and HTML (including man page renditions)
+   files under the configured `docdir`. It seems previously they were only
+   built (if requested) but not installed via `make`, unlike the common man
+   pages which are delivered automatically. [#2445]
+
  - brought keyword dictionaries of `nutconf` and `augeas` NUT configuration
    file parsers up to date; restored automated checks for `augeas` lenses.
    [issue #657, issue #2294]
