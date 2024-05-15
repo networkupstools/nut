@@ -166,9 +166,12 @@ htmldoc_DATA =
 if WITH_HTML_SINGLE
 htmldoc_DATA += $(ASCIIDOC_HTML_SINGLE)
 endif
-if WITH_HTML_CHUNKED
-htmldoc_DATA += $(ASCIIDOC_HTML_CHUNKED)
-endif
+# FIXME: Install tools refuse to work with directories in this context
+# and html-chunked documentation has a separate tree per document.
+# Maybe an "(un)install-data-local" or "install-data-hook" for this?
+#if WITH_HTML_CHUNKED
+#htmldoc_DATA += $(ASCIIDOC_HTML_CHUNKED)
+#endif
 if WITH_PDFS
 pdf_DATA = $(ASCIIDOC_PDFS)
 endif
