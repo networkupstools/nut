@@ -665,7 +665,8 @@ static void help(const char *arg_progname)
 	printf("Network UPS Tools %s %s\n\n", arg_progname, UPS_VERSION);
 
 	printf("NUT for Windows all-in-one wrapper for driver(s), data server and monitoring client\n");
-	printf("including shutdown and power-off handling (where supported).\n\n");
+	printf("including shutdown and power-off handling (where supported). All together they rely\n");
+	printf("on nut.conf and other files in %s\n\n", confpath());
 
 	printf("Usage: %s [OPTION]\n\n", arg_progname);
 
