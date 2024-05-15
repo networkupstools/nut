@@ -68,7 +68,7 @@ SERIAL_USB_DRIVERLIST = \
 NEONXML_DRIVERLIST = netxml-ups
 MACOSX_DRIVERLIST = macosx-ups
 MODBUS_DRIVERLIST = phoenixcontact_modbus generic_modbus huawei-ups2000 socomec_jbus adelsystem_cbi apc_modbus
-LINUX_I2C_DRIVERLIST = asem pijuice
+LINUX_I2C_DRIVERLIST = asem pijuice hwmon_ina219
 POWERMAN_DRIVERLIST = powerman-pdu
 IPMI_DRIVERLIST = nut-ipmipsu
 GPIO_DRIVERLIST = generic_gpio_libgpiod
@@ -329,6 +329,8 @@ asem_LDADD = $(LDADD_DRIVERS) $(LIBI2C_LIBS)
 asem_SOURCES = asem.c
 pijuice_LDADD = $(LDADD_DRIVERS) $(LIBI2C_LIBS)
 pijuice_SOURCES = pijuice.c
+hwmon_ina219_LDADD = $(LDADD_DRIVERS)
+hwmon_ina219_SOURCES = hwmon_ina219.c
 
 # GPIO drivers
 generic_gpio_libgpiod_SOURCES = generic_gpio_common.c generic_gpio_libgpiod.c
