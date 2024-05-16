@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3148 utf-8
+personal_ws-1.1 en 3149 utf-8
 AAC
 AAS
 ABI
@@ -1756,6 +1756,7 @@ dnf
 dnl
 dnsmasq
 docbook
+docdir
 docs
 dod
 domxml

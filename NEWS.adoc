@@ -123,6 +123,13 @@ https://github.com/networkupstools/nut/milestone/11
    as a service, have a help message, pass debug verbosity to launched NUT
    programs...) and add a man page for it. [issue #2432, PR #2446]
 
+ - enabled installation of built single-file PDF and HTML (including man page
+   renditions) under the configured `docdir`. It seems previously they were
+   only built (if requested) but not installed via `make`, unlike the common
+   man pages which are delivered automatically. [#2445]
++
+   NOTE: The `html-chunked` documents are currently still not installed.
+
  - brought keyword dictionaries of `nutconf` and `augeas` NUT configuration
    file parsers up to date; restored automated checks for `augeas` lenses.
    [issue #657, issue #2294]

@@ -161,6 +161,21 @@ pdf: $(ASCIIDOC_PDF)
 html-single: $(ASCIIDOC_HTML_SINGLE)
 html-chunked: $(ASCIIDOC_HTML_CHUNKED)
 
+# htmldocdir and pdfdir are set by autoconf/automake
+htmldoc_DATA =
+if WITH_HTML_SINGLE
+htmldoc_DATA += $(ASCIIDOC_HTML_SINGLE)
+endif
+# FIXME: Install tools refuse to work with directories in this context
+# and html-chunked documentation has a separate tree per document.
+# Maybe an "(un)install-data-local" or "install-data-hook" for this?
+#if WITH_HTML_CHUNKED
+#htmldoc_DATA += $(ASCIIDOC_HTML_CHUNKED)
+#endif
+if WITH_PDFS
+pdf_DATA = $(ASCIIDOC_PDFS)
+endif
+
 # the "for" loops might better use $^ but it might be not portable
 check-pdf: $(ASCIIDOC_PDF)
 	@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \

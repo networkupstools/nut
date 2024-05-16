@@ -116,10 +116,12 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 
 	# Note: installation prefix here is "/" and desired INSTALL_DIR
 	# location is passed to `make install` as DESTDIR below.
+	# FIXME: Implement support for --without-pkg-config in m4 and use it
 	$CONFIGURE_SCRIPT $HOST_FLAG $BUILD_FLAG --prefix=/ \
 	    $KEEP_NUT_REPORT_FEATURE_FLAG \
 	    PKG_CONFIG_PATH="${ARCH_PREFIX}/lib/pkgconfig" \
-	    --without-pkg-config --with-all=auto \
+	    --with-all=auto \
+	    --with-doc="man=auto html-single=auto html-chunked=skip pdf=skip" \
 	    --without-systemdsystemunitdir \
 	    --with-pynut=app \
 	    --with-augeas-lenses-dir=/augeas-lenses \
@@ -128,6 +130,8 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 	echo "$0: configure phase complete ($?)" >&2
 
 	make 1>/dev/null || exit
+	make doc 1>/dev/null || exit
+	make -k man-man html-man 1>/dev/null || true
 	echo "$0: build phase complete ($?)" >&2
 
 	if [ "x$INSTALL_WIN_BUNDLE" = xtrue ] ; then

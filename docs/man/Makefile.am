@@ -845,6 +845,16 @@ HTML_MANS = \
 	$(HTML_LINUX_I2C_MANS) \
 	$(HTML_GPIO_MANS)
 
+# htmlmandir is set by autoconf/automake
+htmlman_DATA =
+if WITH_HTML_SINGLE
+htmlman_DATA += $(HTML_MANS)
+else !WITH_HTML_SINGLE
+if WITH_HTML_CHUNKED
+htmlman_DATA += $(HTML_MANS)
+endif WITH_HTML_CHUNKED
+endif !WITH_HTML_SINGLE
+
 # Note: target documents, except nutupsdrv.txt itself, start the
 # list of drivers with `- linkman:nutupsdrv[8]` entry
 # To regenerate these files, do `make distclean` first
