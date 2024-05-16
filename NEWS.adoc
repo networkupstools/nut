@@ -118,6 +118,11 @@ https://github.com/networkupstools/nut/milestone/11
    `NUT_PIDPATH` environment variable in certain use-cases (such as tests).
    [#2407]
 
+ - revised `nut.exe` (the NUT for Windows wrapper for all-in-one service)
+   to be more helpful with command-line use (report that it failed to start
+   as a service, have a help message, pass debug verbosity to launched NUT
+   programs...) and add a man page for it. [issue #2432, PR #2446]
+
  - enabled installation of built single-file PDF and HTML (including man page
    renditions) under the configured `docdir`. It seems previously they were
    only built (if requested) but not installed via `make`, unlike the common
