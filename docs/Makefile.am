@@ -245,8 +245,8 @@ DOCBUILD_FILTER_GITHUB_LINKS = { \
 # The $< is okay here, it is used in a suffix rule below
 DOCBUILD_CONVERT_GITHUB_LINKS = { \
     echo "  DOC-ASCIIDOC-GITHUB-LINKS    Parsing GitHub link patterns $< => $@"; \
-    cat "$<" | $(DOCBUILD_FILTER_GITHUB_LINKS) > "$@.tmp" \
-    && mv -f "$@.tmp" "$@" \
+    cat "$<" | $(DOCBUILD_FILTER_GITHUB_LINKS) > "$@.tmp.$$$$" \
+    && mv -f "$@.tmp.$$$$" "$@" \
 ; }
 
 .adoc.adoc-parsed:
@@ -278,7 +278,7 @@ $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	     exit ; \
 	 } ; \
 	 echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@" \
-	 && printf "ifdef::txt[]\n== Very detailed Change Log\n"$(A2X_ASCII_IDS)"endif::txt[]\n\n" > "$@.tmp" \
+	 && printf "ifdef::txt[]\n== Very detailed Change Log\n"$(A2X_ASCII_IDS)"endif::txt[]\n\n" > "$@.tmp.$$$$" \
 	 && TABCHAR="`printf '\t'`" \
 	 && $(SED) \
 	        -e 's,^\([0-9a-zA-Z]\),=== \1,' \
@@ -289,8 +289,8 @@ $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	        -e 's,^\([ '"$${TABCHAR}"'].*\)\([~|^]\),\1\\\2,g' \
 	        -e 's,\[\[\([^]]*\)\]\],[\1],g' \
 	        -e 's,^\(\s\s*\)\([0-9]\),\1{empty}\2,g' \
-	   < "$${INPUT}" >> "$@.tmp" \
-	 && mv -f "$@.tmp" "$@"
+	   < "$${INPUT}" >> "$@.tmp.$$$$" \
+	 && mv -f "$@.tmp.$$$$" "$@"
 
 # Add other directory deps (not for local EXTRA_DIST) and generated contents
 FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS) $(SHARED_DEPS) \
@@ -666,8 +666,9 @@ $(NUT_SPELL_DICT).usage-report: $(NUT_SPELL_DICT)
 				if [ "$$HITC_CI" != 0 ] ; then echo "$$HITS_CI" ; echo "^^^"; fi; \
 			fi; \
 		); \
-	 done > "$@.tmp"
-	test -f "$@.tmp" && mv -f "$@.tmp" "$@"
+	 done > "$@.tmp.$$$$" \
+	 && test -f "$@.tmp.$$$$" \
+	 && mv -f "$@.tmp.$$$$" "$@"
 	@echo "Reporting words from $? possibly not used in current inspected code base revision under $(abs_top_srcdir)" >&2 ; \
 	 grep -E '^--- ' < "$@" | grep '(0 ' || echo "SUCCESS: None found"
 
