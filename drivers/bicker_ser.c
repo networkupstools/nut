@@ -27,10 +27,11 @@
  * +-------+-------+-------+-------+--- - - - ---+-------+
  * |  SOH  | Size  | Index |  CMD  |    Data     |  EOT  |
  * +-------+-------+-------+-------+--- - - - ---+-------+
+ *         |        HEADER         |
  *
  * where:
  * - `SOH` is the start signal ('\x01')
- * - `Size` is the length of the `Data` field (in bytes) plus 3
+ * - `Size` is the length (in bytes) of the header and the data field
  * - `Index` is the command index (always '\x03')
  * - `CMD` is the command code to execute
  * - `Data` is the (optional) argument of the command
@@ -50,12 +51,16 @@
 #define DRIVER_NAME	"Bicker serial protocol"
 #define DRIVER_VERSION	"0.01"
 
-#define BICKER_PACKET	(1+1+1+1+252+1)
 #define BICKER_SOH	'\x01'
 #define BICKER_EOT	'\x04'
 #define BICKER_DELAY	20
 #define BICKER_RETRIES	3
 #define BYTESWAP(in)	((((uint16_t)(in) & 0x00FF) << 8) + (((uint16_t)(in) & 0xFF00) >> 8))
+
+/* Protocol fixed lengths */
+#define BICKER_HEADER	3
+#define BICKER_MAXDATA	(255 - BICKER_HEADER)
+#define BICKER_PACKET	(1 + BICKER_HEADER + BICKER_MAXDATA + 1)
 
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
@@ -74,9 +79,9 @@ static ssize_t bicker_send(char cmd, const void *data, size_t datalen)
 	ser_flush_io(upsfd);
 
 	if (data != NULL) {
-		if (datalen > 252) {
-			upslogx(LOG_ERR, "Data size exceeded: %d > 252",
-				(int)datalen);
+		if (datalen > BICKER_MAXDATA) {
+			upslogx(LOG_ERR, "Data size exceeded: %d > %d",
+				(int)datalen, BICKER_MAXDATA);
 			return 0;
 		}
 		memcpy(buf + 4, data, datalen);
@@ -85,13 +90,11 @@ static ssize_t bicker_send(char cmd, const void *data, size_t datalen)
 	}
 
 	buf[0] = BICKER_SOH;
-	buf[1] = datalen + 3; /* Packet size must include the header */
+	buf[1] = datalen + BICKER_HEADER;
 	buf[2] = '\x03'; /* Command index is always 3 */
 	buf[3] = cmd;
-	buf[4 + datalen] = BICKER_EOT;
-
-	/* The full packet includes SOH and EOT bytes too */
-	buflen = datalen + 3 + 2;
+	buf[1 + BICKER_HEADER + datalen] = BICKER_EOT;
+	buflen = 1 + BICKER_HEADER + datalen + 1;
 
 	ret = ser_send_buf(upsfd, buf, buflen);
 	if (ret < 0) {
@@ -145,8 +148,10 @@ static ssize_t bicker_receive(char cmd, void *dst, size_t dstlen)
 		return ret;
 	}
 
-	datalen = buf[1] - 3;
+	datalen = buf[1] - BICKER_HEADER;
 
+	/* Still to be read: command index (1 byte), command (1 byte), data
+	 * (datalen bytes) and EOT (1 byte), i.e. `datalen + 3` bytes  */
 	ret = bicker_receive_buf(buf + 2, datalen + 3);
 	if (ret <= 0) {
 		return ret;
