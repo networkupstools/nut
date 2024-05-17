@@ -196,6 +196,11 @@
 "Best Power"	"ups"	"1"	"Micro-Ferrups"	""	"bestuferrups"
 "Best Power"	"ups"	"1"	"Fortress/Ferrups"	"f-command support"	"bestfcom"
 
+"Bicker"	"ups"	"3"	"UPSIC-1205"	""	"bicker_ser"
+"Bicker"	"ups"	"3"	"UPSIC-2403"	""	"bicker_ser"
+"Bicker"	"ups"	"3"	"DC2412-UPS"	""	"bicker_ser"
+"Bicker"	"ups"	"3"	"DC2412-UPS-LD"	""	"bicker_ser"
+
 "Borri"	"ups"	"2"	"B400-010-B/B400-020-B/B400-030-B/B400-010-C/B400-020-C/B400-030-C"	"USB"	"blazer_usb"
 "Borri"	"ups"	"2"	"B400-R010-B/B400-R020-B/B400-R030-B/B400-R010-C/B400-R020-C/B400-R030-C"	"USB"	"blazer_usb"
 "Borri"	"ups"	"2"	"B500-060-B/B500-100-B/B500-060-C/B500-100-C"	"USB"	"blazer_usb"
