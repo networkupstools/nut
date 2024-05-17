@@ -55,6 +55,7 @@
 #define BICKER_EOT	'\x04'
 #define BICKER_DELAY	20
 #define BICKER_RETRIES	3
+#define BYTESWAP(in)	((((uint16_t)(in) & 0x00FF) << 8) + (((uint16_t)(in) & 0xFF00) >> 8))
 
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
@@ -180,9 +181,18 @@ static ssize_t bicker_read_int16(char cmd, int16_t *dst)
 		return ret;
 	}
 
-	/* XXX: by default, data is stored in little-endian so,
-	 * on big-endian platforms, a byte swap should be needed */
-	return bicker_receive(cmd, dst, 2);
+	ret = bicker_receive(cmd, dst, 2);
+	if (ret <= 0) {
+		return ret;
+	}
+
+#ifdef WORDS_BIGENDIAN
+	/* By default data is stored in little-endian so, on big-endian
+	 * platforms, a byte swap must be performed */
+	*dst = BYTESWAP(*dst);
+#endif
+
+	return ret;
 }
 
 /* For some reason the `seconds` delay (at least on my UPSIC-2403D)
