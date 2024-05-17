@@ -53,6 +53,8 @@
 #define BICKER_PACKET	(1+1+1+1+252+1)
 #define BICKER_SOH	'\x01'
 #define BICKER_EOT	'\x04'
+#define BICKER_DELAY	20
+#define BICKER_RETRIES	3
 
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
@@ -62,16 +64,15 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
-static ssize_t bicker_send(char cmd, const char *data)
+static ssize_t bicker_send(char cmd, const void *data, size_t datalen)
 {
 	char buf[BICKER_PACKET];
-	size_t datalen, buflen;
+	size_t buflen;
 	ssize_t ret;
 
 	ser_flush_io(upsfd);
 
 	if (data != NULL) {
-		datalen = strlen(data);
 		if (datalen > 252) {
 			upslogx(LOG_ERR, "Data size exceeded: %d > 252",
 				(int)datalen);
@@ -162,7 +163,9 @@ static ssize_t bicker_receive(char cmd, void *dst, size_t dstlen)
 		return 0;
 	}
 
-	memcpy(dst, buf + 4, datalen);
+	if (dst != NULL) {
+		memcpy(dst, buf + 4, datalen);
+	}
 
 	upsdebug_hex(3, "bicker_receive", buf, datalen + 5);
 	return datalen;
@@ -172,7 +175,7 @@ static ssize_t bicker_read_int16(char cmd, int16_t *dst)
 {
 	ssize_t ret;
 
-	ret = bicker_send(cmd, NULL);
+	ret = bicker_send(cmd, NULL, 0);
 	if (ret <= 0) {
 		return ret;
 	}
@@ -180,6 +183,60 @@ static ssize_t bicker_read_int16(char cmd, int16_t *dst)
 	/* XXX: by default, data is stored in little-endian so,
 	 * on big-endian platforms, a byte swap should be needed */
 	return bicker_receive(cmd, dst, 2);
+}
+
+/* For some reason the `seconds` delay (at least on my UPSIC-2403D)
+ * is not honored: the shutdown is always delayed by 2 seconds. This
+ * fixed delay seems to be independent from the state of the UPS (on
+ * line or on battery) and from the dip switches setting.
+ *
+ * As response I get the same command with `0xE0` in the data field.
+ */
+static ssize_t bicker_delayed_shutdown(uint8_t seconds)
+{
+	ssize_t ret;
+	uint8_t response;
+
+	ret = bicker_send('\x32', &seconds, 1);
+	if (ret <= 0) {
+		return ret;
+	}
+
+	ret = bicker_receive('\x32', &response, 1);
+	if (ret > 0) {
+		upslogx(LOG_INFO, "Shutting down in %d seconds: response = 0x%02X",
+			(int)seconds, (unsigned)response);
+	}
+
+	return ret;
+}
+
+static ssize_t bicker_shutdown(void)
+{
+	const char *str;
+	int delay;
+
+	str = dstate_getinfo("ups.delay.shutdown");
+	delay = atoi(str);
+	if (delay > 255) {
+		upslogx(LOG_WARNING, "Shutdown delay too big: %d > 255",
+			delay);
+		delay = 255;
+	}
+
+	return bicker_delayed_shutdown(delay);
+}
+
+static int bicker_instcmd(const char *cmdname, const char *extra)
+{
+	NUT_UNUSED_VARIABLE(extra);
+
+	if (!strcasecmp(cmdname, "shutdown.return")) {
+		bicker_shutdown();
+	}
+
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	return STAT_INSTCMD_UNKNOWN;
 }
 
 void upsdrv_initinfo(void)
@@ -190,6 +247,8 @@ void upsdrv_initinfo(void)
 	 * serial communication is provided by the PSZ-1063 extension
 	 * module, so it seems correct to put that into the model */
 	dstate_setinfo("device.model", "PSZ-1063");
+
+	upsh.instcmd = bicker_instcmd;
 }
 
 void upsdrv_updateinfo(void)
@@ -282,7 +341,16 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	upslogx(LOG_ERR, "shutdown not supported");
+	int retry;
+
+	for (retry = 1; retry <= BICKER_RETRIES; retry++) {
+		if (bicker_shutdown() > 0) {
+			set_exit_flag(-2);	/* EXIT_SUCCESS */
+			return;
+		}
+	}
+
+	upslogx(LOG_ERR, "Shutdown failed!");
 	set_exit_flag(-1);
 }
 
@@ -298,6 +366,11 @@ void upsdrv_initups(void)
 {
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B38400);
+
+	/* Adding this variable here because upsdrv_initinfo() is not
+	 * called when triggering a forced shutdown and
+	 * "ups.delay.shutdown" is needed right there */
+	dstate_setinfo("ups.delay.shutdown", "%u", BICKER_DELAY);
 }
 
 void upsdrv_cleanup(void)
