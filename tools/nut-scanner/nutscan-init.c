@@ -48,11 +48,7 @@ int nutscan_avail_avahi = 0;
 int nutscan_avail_ipmi = 0;
 int nutscan_avail_nut = 0;	/* aka oldnut detection via libupsclient compared to avahi as newnut */
 int nutscan_avail_nut_simulation = 0;
-#ifdef WITH_SNMP_STATIC
-int nutscan_avail_snmp = 1;
-#else
 int nutscan_avail_snmp = 0;
-#endif
 int nutscan_avail_usb = 0;
 int nutscan_avail_xml_http = 0;
 
@@ -215,12 +211,23 @@ void nutscan_init(void)
 #endif	/* WITH_USB */
 
 #ifdef WITH_SNMP
+ #ifdef WITH_SNMP_STATIC
+	/* This is a rare situation, reserved for platforms where libnetsnmp or
+	 * equivalent (some other ucd-snmp descendants) was not packaged, and
+	 * thus was custom-built for NUT (so linked statically to avoid potential
+	 * conflicts with whatever else people may have practically deployed
+	 * nearby).
+	 */
+	upsdebugx(1, "%s: skipped loading the library for %s: was linked statically during NUT build",
+		__func__, "LibSNMP");
+	nutscan_avail_snmp = 1;
+ #else
 	libname = get_libname("libnetsnmp" SOEXT);
- #ifdef WIN32
+  #ifdef WIN32
 	if (!libname) {
 		libname = get_libname("libnetsnmp-40" SOEXT);
 	}
- #endif
+  #endif
 	if (libname) {
 		upsdebugx(1, "%s: get_libname() resolved '%s' for %s, loading it",
 			__func__, libname, "LibSNMP");
@@ -232,14 +239,15 @@ void nutscan_init(void)
 			"trying to load it with libtool default resolver",
 			__func__, "LibSNMP");
 		nutscan_avail_snmp = nutscan_load_snmp_library("libnetsnmp" SOEXT);
-#ifdef WIN32
+  #ifdef WIN32
 		if (!nutscan_avail_snmp) {
 			nutscan_avail_snmp = nutscan_load_snmp_library("libnetsnmp-40" SOEXT);
 		}
-#endif
+  #endif
 	}
 	upsdebugx(1, "%s: %s to load the library for %s",
 		__func__, nutscan_avail_snmp ? "succeeded" : "failed", "LibSNMP");
+ #endif	/* WITH_SNMP_STATIC */
 #else
 	upsdebugx(1, "%s: skipped loading the library for %s: was absent during NUT build",
 		__func__, "LibSNMP");
