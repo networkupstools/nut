@@ -48,6 +48,9 @@ https://github.com/networkupstools/nut/milestone/11
    * The `nut-driver-enumerator.sh` improvements misfired in v2.8.2 release
      with an overlooked bit of shell syntax, and caused `nut-driver@upsname`
      instances to not auto-restart when `ups.conf` is edited. [#682, #2410]
+   * Addition of "NUT Simulated devices" support to `nut-scanner` in v2.8.2
+     broke detection of (in-)ability to find and query "Old NUT" servers via
+     `libupsclient.so` (internal flag got always enabled). [#2246]
 
  - drivers, upsd, upsmon: reduce "scary noise" about failure to `fopen()`
    the PID file (which most of the time means that no previous instance of
