@@ -842,7 +842,7 @@ display_help:
 		dev[TYPE_USB] = nutscan_scan_usb(&cli_link_detail_level);
 #endif /* HAVE_PTHREAD */
 	} else {
-		upsdebugx(1, "USB SCAN: not requested, SKIPPED");
+		upsdebugx(1, "USB SCAN: not requested or supported, SKIPPED");
 	}
 
 	if (allow_snmp && nutscan_avail_snmp) {
@@ -864,7 +864,7 @@ display_help:
 #endif /* HAVE_PTHREAD */
 		}
 	} else {
-		upsdebugx(1, "SNMP SCAN: not requested, SKIPPED");
+		upsdebugx(1, "SNMP SCAN: not requested or supported, SKIPPED");
 	}
 
 	if (allow_xml && nutscan_avail_xml_http) {
@@ -881,7 +881,7 @@ display_help:
 		dev[TYPE_XML] = nutscan_scan_xml_http_range(start_ip, end_ip, timeout, &xml_sec);
 #endif /* HAVE_PTHREAD */
 	} else {
-		upsdebugx(1, "XML/HTTP SCAN: not requested, SKIPPED");
+		upsdebugx(1, "XML/HTTP SCAN: not requested or supported, SKIPPED");
 	}
 
 	if (allow_oldnut && nutscan_avail_nut) {
@@ -903,7 +903,7 @@ display_help:
 #endif /* HAVE_PTHREAD */
 		}
 	} else {
-		upsdebugx(1, "NUT bus (old) SCAN: not requested, SKIPPED");
+		upsdebugx(1, "NUT bus (old) SCAN: not requested or supported, SKIPPED");
 	}
 
 	if (allow_nut_simulation && nutscan_avail_nut_simulation) {
@@ -919,7 +919,7 @@ display_help:
 			dev[TYPE_NUT_SIMULATION] = nutscan_scan_nut_simulation(timeout);
 #endif /* HAVE_PTHREAD */
 	} else {
-		upsdebugx(1, "NUT simulation devices SCAN: not requested, SKIPPED");
+		upsdebugx(1, "NUT simulation devices SCAN: not requested or supported, SKIPPED");
 	}
 
 	if (allow_avahi && nutscan_avail_avahi) {
@@ -935,7 +935,7 @@ display_help:
 		dev[TYPE_AVAHI] = nutscan_scan_avahi(timeout);
 #endif /* HAVE_PTHREAD */
 	} else {
-		upsdebugx(1, "NUT bus (avahi) SCAN: not requested, SKIPPED");
+		upsdebugx(1, "NUT bus (avahi) SCAN: not requested or supported, SKIPPED");
 	}
 
 	if (allow_ipmi && nutscan_avail_ipmi) {
@@ -951,7 +951,7 @@ display_help:
 		dev[TYPE_IPMI] = nutscan_scan_ipmi(start_ip, end_ip, &ipmi_sec);
 #endif /* HAVE_PTHREAD */
 	} else {
-		upsdebugx(1, "IPMI SCAN: not requested, SKIPPED");
+		upsdebugx(1, "IPMI SCAN: not requested or supported, SKIPPED");
 	}
 
 	/* Eaton serial scan */
@@ -968,7 +968,7 @@ display_help:
 		dev[TYPE_EATON_SERIAL] = nutscan_scan_eaton_serial (serial_ports);
 #endif /* HAVE_PTHREAD */
 	} else {
-		upsdebugx(1, "SERIAL SCAN: not requested, SKIPPED");
+		upsdebugx(1, "SERIAL SCAN: not requested or supported, SKIPPED");
 	}
 
 #ifdef HAVE_PTHREAD
