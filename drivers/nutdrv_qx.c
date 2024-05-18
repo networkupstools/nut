@@ -2256,7 +2256,7 @@ static qx_usb_device_id_t	qx_usb_id[] = {
 	{ USB_DEVICE(0x0001, 0x0000),	"ATCL FOR UPS",	"ATCL FOR UPS",		&fuji_subdriver },	/* Fuji UPSes */
 	{ USB_DEVICE(0x0001, 0x0000),	NULL,		NULL,			&krauler_subdriver },	/* Krauler UP-M500VA */
 	{ USB_DEVICE(0x0001, 0x0000),	NULL,		"MEC0003",		&snr_subdriver },	/* SNR-UPS-LID-XXXX UPSes */
-	{ USB_DEVICE(0x0925, 0x1234),	NULL,		NULL,					&armac_subdriver },	/* Armac UPS and maybe other richcomm-like or using old PowerManagerII software */
+	{ USB_DEVICE(0x0925, 0x1234),	NULL,		NULL,			&armac_subdriver },	/* Armac UPS and maybe other richcomm-like or using old PowerManagerII software */
 	/* End of list */
 	{ -1,	-1,	NULL,	NULL,	NULL }
 };

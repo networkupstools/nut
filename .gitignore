@@ -50,9 +50,12 @@ Makefile.in
 /test-driver
 *-spellchecked
 *-prepped
+*.usage-report
 *.adoc-parsed
 *.adoc*.tmp
+*.adoc*.tmp.*
 *.txt*.tmp
+*.txt*.tmp.*
 /cppcheck*.xml
 /.ci*.txt*
 /.ci*.log

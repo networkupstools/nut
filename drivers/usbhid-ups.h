@@ -122,6 +122,7 @@ extern info_lkp_t date_conversion[];
 extern info_lkp_t hex_conversion[];
 extern info_lkp_t stringid_conversion[];
 extern info_lkp_t divide_by_10_conversion[];
+extern info_lkp_t divide_by_100_conversion[];
 extern info_lkp_t kelvin_celsius_conversion[];
 
 /* ---------------------------------------------------------------------- */

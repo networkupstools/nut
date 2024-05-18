@@ -27,7 +27,7 @@
 #include "generic_gpio_libgpiod.h"
 
 #define DRIVER_NAME	"GPIO UPS driver"
-#define DRIVER_VERSION	"1.01"
+#define DRIVER_VERSION	"1.02"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {

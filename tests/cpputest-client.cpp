@@ -6,7 +6,8 @@
    as opposed to nutclienttest.cpp which unit-tests the class API etc.
    in isolated-binary fashion.
 
-   Copyright (C) 2022  Jim Klimov <jimklimov@gmail.com>
+   Copyright (C)
+	2022-2024	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by

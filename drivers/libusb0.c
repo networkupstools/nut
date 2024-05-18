@@ -5,6 +5,7 @@
  * @author Copyright (C)
  *  2003 - 2007 Arnaud Quette <aquette.dev@gmail.com>
  *  2005 - 2007 Peter Selinger <selinger@users.sourceforge.net>
+ *  2021 - 2024 Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
  *
@@ -37,7 +38,7 @@
 #endif
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 0.1)"
-#define USB_DRIVER_VERSION	"0.47"
+#define USB_DRIVER_VERSION	"0.48"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -781,6 +782,7 @@ static int libusb_strerror(const int ret, const char *desc)
 		return 0;
 #endif	/* WIN32 */
 
+	case 0: 	/** TOTHINK: Should this (probably LIBUSB_SUCCESS) be quiet? */
 	default:	/* Undetermined, log only */
 		upslogx(LOG_DEBUG, "%s: %s", desc, usb_strerror());
 		return 0;
@@ -906,6 +908,18 @@ static int libusb_get_string(
 #ifdef WIN32
 	errno = -ret;
 #endif
+
+	/** 0 can be seen as an empty string, or as a success for
+	 * logging below - also tends to happen */
+	if (ret == 0) {
+		size_t len = strlen(buf);
+		upsdebugx(2, "%s: usb_get_string_simple() returned "
+			"0 (might be just success code), "
+			"actual buf length is %" PRIuSIZE, __func__, len);
+		/* if (len) */
+			return len;
+		/* else may log "libusb_get_string: Success" and return 0 below */
+	}
 
 	return libusb_strerror(ret, __func__);
 }

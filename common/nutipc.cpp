@@ -5,6 +5,10 @@
 
         Author: Vaclav Krpec  <VaclavKrpec@Eaton.com>
 
+    Copyright (C) 2024 NUT Community
+
+        Author: Jim Klimov  <jimklimov+nut@gmail.com>
+
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
@@ -35,6 +39,7 @@
 # define HAVE_LOCALTIME_R 111
 #endif
 
+#include "common.h"
 #include "nutipc.hpp"
 #include "nutstream.hpp"
 
@@ -293,8 +298,9 @@ int Signal::send(Signal::enum_t signame, const std::string & pid_file) {
 int NutSignal::send(NutSignal::enum_t signame, const std::string & process) {
 	std::string pid_file;
 
-	// TBD: What's ALTPIDPATH and shouldn't we also consider it?
-	pid_file += PIDPATH;
+	// FIXME: What about ALTPIDPATH (for non-root daemons)
+	// and shouldn't we also consider it (e.g. try/catch)?
+	pid_file += rootpidpath();
 	pid_file += '/';
 	pid_file += process;
 	pid_file += ".pid";

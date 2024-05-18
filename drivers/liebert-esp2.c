@@ -28,7 +28,7 @@
 #define IsBitSet(val, bit) ((val) & (1 << (bit)))
 
 #define DRIVER_NAME	"Liebert ESP-II serial UPS driver"
-#define DRIVER_VERSION	"0.06"
+#define DRIVER_VERSION	"0.07"
 
 #define UPS_SHUTDOWN_DELAY 12 /* it means UPS will be shutdown 120 sec */
 #define SHUTDOWN_CMD_LEN  8

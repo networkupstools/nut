@@ -56,7 +56,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Siemens SITOP UPS500 series driver"
-#define DRIVER_VERSION	"0.04"
+#define DRIVER_VERSION	"0.05"
 
 #define RX_BUFFER_SIZE 100
 

@@ -3,6 +3,7 @@ Module: NutNutConf
  Parses @CONFPATH@/nut.conf
 
 Author: Frederic Bohe  <fredericbohe@eaton.com>
+        Jim Klimov     <jimklimov+nut@gmail.com>
 
 About: License
   This file is licensed under the GPL.
@@ -32,15 +33,48 @@ let eol      = Util.eol
 let comment  = Util.comment
 let empty    = Util.empty
 
+(* note different definitions than in other configs - this one is shell-syntax *)
+let bool     = /true|false|"true"|"false"|'true'|'false'/
+let num      = /[0-9]+|"[0-9]+"|'[0-9]+'/
+let num_signed      = /[+-]?[0-9]+|"[+-]?[0-9]+"|'[+-]?[0-9]+'/
+let word     = /[^"#; \t\n]+/
+
+(* Variable: quoted_word *)
+let word_space  = /"[^"\n]+"/
+let quoted_word = /"[^" \t\n]+"|'[^' \t\n]+'/
+
+(* Variable: word_all *)
+let word_all = word_space | word | quoted_word
 
 let nut_possible_mode = "none"
 			| "standalone"
 			| "netserver"
 			| "netclient"
+			| "controlled"
+			| "manual"
 
 let nut_mode = [ sep_spc . key "MODE" . def_sep . sep_spc . store nut_possible_mode . eol ]
 
-let nut_lns  = (nut_mode|comment|empty)*
+let nut_bool_re = "ALLOW_NO_DEVICE"
+                  | "ALLOW_NOT_ALL_LISTENERS"
+                  | "POWEROFF_QUIET"
+
+let nut_bool          = [ sep_spc . key nut_bool_re . def_sep . sep_spc . store bool . eol ]
+
+let nut_num_re = "POWEROFF_WAIT"
+
+let nut_num          = [ sep_spc . key nut_num_re . def_sep . sep_spc . store num . eol ]
+
+let nut_num_signed_re = "NUT_DEBUG_LEVEL"
+
+let nut_num_signed          = [ sep_spc . key nut_num_signed_re . def_sep . sep_spc . store num_signed . eol ]
+
+let nut_word_all_re = "UPSD_OPTIONS"
+                  | "UPSMON_OPTIONS"
+
+let nut_word_all          = [ sep_spc . key nut_word_all_re . def_sep . sep_spc . store word_all . eol ]
+
+let nut_lns  = (nut_mode|nut_bool|nut_num|nut_num_signed|nut_word_all|comment|empty)*
 
 let nut_filter = ( incl "@CONFPATH@/nut.conf" )
 			. Util.stdexcl

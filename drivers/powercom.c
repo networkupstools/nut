@@ -86,7 +86,7 @@
 #include "math.h"
 
 #define DRIVER_NAME	"PowerCom protocol UPS driver"
-#define DRIVER_VERSION	"0.21"
+#define DRIVER_VERSION	"0.22"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {

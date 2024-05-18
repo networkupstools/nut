@@ -34,6 +34,8 @@
 #
 # Duplicate text in the last field will be cooked out during the conversion
 # to HTML with ROWSPAN magic.  They must be an exact match for this to work.
+#
+# The entry may be followed by comments. Be sure to not use double-quotes there!
 
 "Ablerex"	"ups"	"2"	"625L"	"USB"	"blazer_usb"
 "Ablerex"	"ups"	"2"	"Hope Office 400/600"	""	"blazer_ser"
@@ -246,7 +248,7 @@
 "Cyber Power Systems"	"ups"	"3"	"CP1350AVRLCD"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"3"	"CP1500AVRLCD"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"3"	"CP850PFCLCD"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/605
-"Cyber Power Systems"	"ups"	"3"	"CP1350PFCLCD"	"USB"	"usbhid-ups"	# https://alioth-lists.debian.net/pipermail/nut-upsuser/2023-October/013441.html 
+"Cyber Power Systems"	"ups"	"3"	"CP1350PFCLCD"	"USB"	"usbhid-ups"	# https://alioth-lists.debian.net/pipermail/nut-upsuser/2023-October/013441.html
 "Cyber Power Systems"	"ups"	"3"	"CP1500PFCLCD"	"USB"	"usbhid-ups"	# https://www.cyberpowersystems.com/product/ups/cp1500pfclcd/ https://github.com/networkupstools/nut/issues/520
 "Cyber Power Systems"	"ups"	"3"	"CPJ500"	"USB"	"usbhid-ups"	# https://www.cyberpower.com/jp/ja/product/sku/cpj500#downloads https://github.com/networkupstools/nut/issues/1403
 "Cyber Power Systems"	"ups"	"3"	"CP900AVR"	"USB"	"usbhid-ups"
@@ -609,7 +611,7 @@
 "Legrand"	"ups"	"2"	"Keor Line RT"	"Serial"	"nutdrv_qx"
 "Legrand"	"ups"	"2"	"Keor Line RT"	"USB"	"nutdrv_qx"
 "Legrand"	"ups"	"2"	"Keor LP"	"Serial"	"nutdrv_qx"
-"Legrand"	"ups"	"2"	"Keor Multiplug"	"USB"	"nutdrv_qx"	# NOTE: As of 2023 reports, the "NEW Keor Multiplug" is not supported (also by older vendor SW)
+"Legrand"	"ups"	"2"	"Keor Multiplug"	"USB"	"nutdrv_qx"	# NOTE: As of 2023 reports, the 'NEW Keor Multiplug' is not supported (also by older vendor SW)
 "Legrand"	"ups"	"2"	"Keor S"	"Serial"	"nutdrv_qx"
 "Legrand"	"ups"	"2"	"Keor S"	"USB"	"nutdrv_qx"
 "Legrand"	"ups"	"3"	"Keor PDU"	"USB"	"usbhid-ups"
@@ -1111,8 +1113,8 @@
 "Riello"	"ups"	"3"	"(various)"	"Netman Plus 101 SNMP Box"	"snmp-ups"
 "Riello"	"ups"	"3"	"(various)"	"Netman Plus 102 SNMP Card"	"snmp-ups"
 "Riello"	"ups"	"3"	"(various)"	"Netman Plus 202 SNMP Card"	"snmp-ups"
-"Riello"	"ups"	"3"	"(various)"	"Netman 204 SNMP Card"	"snmp-ups"	# Note: in https://github.com/networkupstools/nut/issues/1878 submitted not as "Netman Plus", clarification requested
-"Riello"	"ups"	"3"	"(various)"	"Netman 208 SNMP Card"	"snmp-ups"	# Note: in https://github.com/networkupstools/nut/issues/1878 submitted not as "Netman Plus", clarification requested
+"Riello"	"ups"	"3"	"(various)"	"Netman 204 SNMP Card"	"snmp-ups"	# Note: in https://github.com/networkupstools/nut/issues/1878 submitted not as 'Netman Plus', clarification requested
+"Riello"	"ups"	"3"	"(various)"	"Netman 208 SNMP Card"	"snmp-ups"	# Note: in https://github.com/networkupstools/nut/issues/1878 submitted not as 'Netman Plus', clarification requested
 
 "Rocketfish"	"ups"	"3"	"RF-1000VA / RF-1025VA"	"USB"	"usbhid-ups"
 
@@ -1200,6 +1202,8 @@
 "Tecnoware"	"ups"	"2"	"Easy Power 1200"	""	"blazer_ser"
 "Tecnoware"	"ups"	"2"	"UPS ERA LCD 0.65"	"USB"	"blazer_usb langid_fix=0x409"
 "Tecnoware"	"ups"	"2"	"UPS ERA PLUS 1100"	"USB"	"blazer_usb"	# https://www.tecnoware.com/Prodotti/FGCERAPL1100/ups-era-plus-1100.aspx https://github.com/networkupstools/nut/issues/747
+
+"Texas Instruments"	"ups"	"5"	"INA219"	"hwmon"	"hwmon_ina219"
 
 "Tripp Lite"	"ups"	"1"	"(various)"	"Lan 2.2 interface - black 73-0844 cable"	"genericups upstype=5"
 "Tripp Lite"	"ups"	"3"	"1500 LCD"	"USB"	"usbhid-ups"
@@ -1381,6 +1385,8 @@
 "Victron/IMV"	"ups"	"1"	"Lite"	"crack cable"	"genericups upstype=10"
 
 "Viewsonic"	"ups"	"1"	"PowerES"	"420E"	"optiups"
+
+"Visench"	"ups"	"1"	"C1K"	"(/dev/ttyCH341USB0 with USB ID 1a86:7523)"	"nutdrv_qx"	# https://github.com/networkupstools/nut/issues/2395 : Visench C1K; mfr/model are strings of `2`'s; USB ID identifies as QinHeng Electronics CH340 serial converter chip
 
 "Vivaldi"	"ups"	"1"	"EA200 LED"	"USB"	"richcomm_usb"
 

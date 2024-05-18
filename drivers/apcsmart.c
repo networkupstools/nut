@@ -36,7 +36,7 @@
 #include "apcsmart_tabs.h"
 
 #define DRIVER_NAME	"APC Smart protocol driver"
-#define DRIVER_VERSION	"3.32"
+#define DRIVER_VERSION	"3.33"
 
 #ifdef WIN32
 # ifndef ECANCELED

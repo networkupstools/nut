@@ -1,0 +1,83 @@
+NUT.EXE(8)
+==========
+
+NAME
+----
+
+nut.exe - NUT for Windows wrapper for all-in-one service
+
+SYNOPSIS
+--------
+
+*nut.exe* {-h | /?}
+
+*nut.exe* ['OPTIONS']
+
+*nut.exe* (as a service implementation)
+
+DESCRIPTION
+-----------
+
+*nut.exe* wraps NUT programs to start and stop as a Windows service.
+
+Depending on 'nut.conf' setting of 'MODE', it would manage the bundle of
+driver(s), 'upsd' data server and 'upsmon' client, as well as attempt an
+UPS shutdown command in case of FSD handling, or for mere 'netclient' systems
+it would run just the 'upsmon' client to monitor remote UPS device(s) and
+initiate the OS shut down on the local Windows system as applicable.
+
+OPTIONS
+-------
+
+*nut.exe* is currently launched with no arguments when it is intended to
+run as the implementation of a registered Windows service; it would error
+out otherwise.
+
+*/?*::
+Display the help text and exit.
+
+*-h*::
+Display the help text and exit.
+
+*-V*::
+Display NUT version and exit.
+
+*-D*::
+Raise the debug level.  Use this multiple times for additional details.
+The non-trivial debug level would be passed down to launched NUT programs.
+Primarily useful for troubleshooting with the non-service mode.
+
+*-I*::
+Install as a Windows service called "Network UPS Tools".
+
+*-U*::
+Uninstall the Windows service.
+
+*-N*::
+Run once in non-service mode (for troubleshooting).
+
+DIAGNOSTICS
+-----------
+
+*nut.exe* should not interact with console message buffers (stdout, stderr)
+much, except when explicitly asked to (e.g. displaying help and NUT version,
+running with verbose debug mode) or when exiting after an attempted service
+initialization while not running in a service context.
+
+Most of normal logging from *nut.exe* goes to the Windows Event Log.
+
+Launched NUT programs may emit messages of their own; their fate when no
+console is attached is questionable.
+
+SEE ALSO
+--------
+
+linkman:nut.conf[5], linkman:ups.conf[5], linkman:nutupsdrv[8],
+linkman:upsd[8], linkman:upsd.conf[5], linkman:upsd.users[5],
+linkman:upsmon[8], linkman:upsmon.conf[5]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
+

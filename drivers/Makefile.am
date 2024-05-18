@@ -3,11 +3,11 @@
 # Export certain values for ccache which NUT ci_build.sh can customize,
 # to facilitate developer iteration re-runs of "make" later.
 # At least GNU and BSD make implementations are okay with this syntax.
-@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_NAMESPACE=@CCACHE_NAMESPACE@
-@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_BASEDIR=@CCACHE_BASEDIR@
-@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_DIR=@CCACHE_DIR@
-@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_PATH=@CCACHE_PATH@
-@NUT_AM_MAKE_CAN_EXPORT@export PATH=@PATH_DURING_CONFIGURE@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_NAMESPACE@export CCACHE_NAMESPACE=@CCACHE_NAMESPACE@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_BASEDIR@export CCACHE_BASEDIR=@CCACHE_BASEDIR@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_DIR@export CCACHE_DIR=@CCACHE_DIR@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export CCACHE_PATH=@CCACHE_PATH@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export PATH=@PATH_DURING_CONFIGURE@
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/common/libcommon.la \
@@ -71,7 +71,7 @@ SERIAL_USB_DRIVERLIST = \
 NEONXML_DRIVERLIST = netxml-ups
 MACOSX_DRIVERLIST = macosx-ups
 MODBUS_DRIVERLIST = phoenixcontact_modbus generic_modbus huawei-ups2000 socomec_jbus adelsystem_cbi apc_modbus
-LINUX_I2C_DRIVERLIST = asem pijuice
+LINUX_I2C_DRIVERLIST = asem pijuice hwmon_ina219
 POWERMAN_DRIVERLIST = powerman-pdu
 IPMI_DRIVERLIST = nut-ipmipsu
 GPIO_DRIVERLIST = generic_gpio_libgpiod
@@ -363,6 +363,8 @@ asem_LDADD = $(LDADD_DRIVERS) $(LIBI2C_LIBS)
 asem_SOURCES = asem.c
 pijuice_LDADD = $(LDADD_DRIVERS) $(LIBI2C_LIBS)
 pijuice_SOURCES = pijuice.c
+hwmon_ina219_LDADD = $(LDADD_DRIVERS)
+hwmon_ina219_SOURCES = hwmon_ina219.c
 
 # GPIO drivers
 generic_gpio_libgpiod_SOURCES = generic_gpio_common.c generic_gpio_libgpiod.c

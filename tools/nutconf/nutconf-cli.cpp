@@ -1,5 +1,7 @@
 /*
- *  Copyright (C) 2013 - EATON
+ *  Copyright (C)
+ *      2013 - EATON
+ *      2024 - Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -126,11 +128,12 @@ const char * Usage::s_text[] = {
 	"",
 	"NUT modes: standalone, netserver, netclient, controlled, manual, none",
 	"Monitor is specified by the following sequence:",
-	"    <ups_ID> <host>[:<port>] <power_value> <user> <passwd> (\"master\"|\"slave\")",
+	"    <ups_ID> <host>[:<port>] <power_value> <user> <passwd> (\"primary\"|\"secondary\")",
 	"UPS device is specified by the following sequence:",
 	"    <ups_ID> <driver> <port> [<key>=<value>]*",
 	"Notification types:",
-	"    ONLINE, ONBATT, LOWBATT, FSD, COMMOK, COMMBAD, SHUTDOWN, REPLBATT, NOCOMM, NOPARENT",
+	"    ONLINE, ONBATT, LOWBATT, FSD, COMMOK, COMMBAD, SHUTDOWN, REPLBATT, NOCOMM, NOPARENT,",
+	"    CAL, NOTCAL, OFF, NOTOFF, BYPASS, NOTBYPASS",
 	"Notification flags:",
 	"    SYSLOG, WALL, EXEC, IGNORE",
 	"User specification:",
@@ -2087,7 +2090,7 @@ static nut::UpsmonConfiguration::Monitor monitor(
 	monitor.hostname   = host_port.substr(0, colon_idx);
 	monitor.port       = port;
 	monitor.powerValue = power_value;
-	monitor.isMaster   = "master" == mode;
+	monitor.isPrimary  = ("primary" == mode || "master" == mode);
 
 	return monitor;
 }
@@ -2591,11 +2594,11 @@ static void setUsers(
 			nut::UpsdUsersConfiguration::upsmon_mode_t mode =
 				nut::UpsdUsersConfiguration::UPSMON_UNDEF;
 
-			if ("master" == upsmon_user->mode)
-				mode = nut::UpsdUsersConfiguration::UPSMON_MASTER;
+			if ("primary" == upsmon_user->mode || "master" == upsmon_user->mode)
+				mode = nut::UpsdUsersConfiguration::UPSMON_PRIMARY;
 
-			else if ("slave" == upsmon_user->mode)
-				mode = nut::UpsdUsersConfiguration::UPSMON_SLAVE;
+			else if ("secondary" == upsmon_user->mode || "slave" == upsmon_user->mode)
+				mode = nut::UpsdUsersConfiguration::UPSMON_SECONDARY;
 
 			else {
 				std::cerr

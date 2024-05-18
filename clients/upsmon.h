@@ -1,6 +1,9 @@
 /* upsmon.h - headers and other useful things for upsmon.h
 
-   Copyright (C) 2000  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+     2000  Russell Kroll <rkroll@exploits.org>
+     2012  Arnaud Quette <arnaud.quette.free.fr>
+     2020-2024  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -79,6 +82,7 @@ typedef struct {
 	time_t	lastncwarn;		/* time of last NOCOMM warning	*/
 
 	time_t	offsince;		/* time of recent entry into OFF state	*/
+	time_t	oblbsince;		/* time of recent entry into OB LB state (normally this causes immediate shutdown alert, unless we are configured to delay it)	*/
 
 	void	*next;
 }	utype_t;

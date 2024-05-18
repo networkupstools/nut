@@ -3,11 +3,21 @@
 # Export certain values for ccache which NUT ci_build.sh can customize,
 # to facilitate developer iteration re-runs of "make" later.
 # At least GNU and BSD make implementations are okay with this syntax.
-@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_NAMESPACE=@CCACHE_NAMESPACE@
-@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_BASEDIR=@CCACHE_BASEDIR@
-@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_DIR=@CCACHE_DIR@
-@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_PATH=@CCACHE_PATH@
-@NUT_AM_MAKE_CAN_EXPORT@export PATH=@PATH_DURING_CONFIGURE@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_NAMESPACE@export CCACHE_NAMESPACE=@CCACHE_NAMESPACE@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_BASEDIR@export CCACHE_BASEDIR=@CCACHE_BASEDIR@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_DIR@export CCACHE_DIR=@CCACHE_DIR@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export CCACHE_PATH=@CCACHE_PATH@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export PATH=@PATH_DURING_CONFIGURE@
+
+# First target often defines default behavior: all
+# We follow up with another pass to `make doc` because our wild recipes
+# sometimes preclude generating all of them on the first pass (FIXME!)
+# missing e.g. PDF and HTML which then pop up in `make check` footprint,
+# or misses a .prep-src-docs stage needed to pattern-make man page files
+# with some "make" implementations...
+all all-am-local all-local: all-recursive
+	+@$(MAKE) $(AM_MAKEFLAGS) doc
+	+@$(MAKE) $(AM_MAKEFLAGS) doc
 
 # include directory for aclocal
 ACLOCAL_AMFLAGS = -I m4
@@ -227,7 +237,7 @@ distclean-local:
 spellcheck spellcheck-interactive:
 	+@RES=0; \
 	(cd $(builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/.prep-src-docs) || RES=$$? ; \
-	(cd $(builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/.prep-src-docs) || RES=$$? ; \
+	(cd $(builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/man/.prep-src-docs) || RES=$$? ; \
 	(cd $(builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
 	(cd $(builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
 	(cd $(builddir)/conf && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
@@ -251,13 +261,15 @@ spellcheck spellcheck-interactive:
 # such as PDF generators, so it should only be called at developer's
 # discretion, choice and risk. The "check-man" targets covers source
 # texts, man pages and HTML rendering of man pages, as enabled by tools.
-doc spellcheck-sortdict \
+doc spellcheck-sortdict spellcheck-report-dict-usage \
 all-docs check-docs \
-man all-man man-man check-man man-html all-html:
-	+cd $(builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) $@
+man all-man man-man check-man html-man all-html:
+	+cd $(abs_top_builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/.prep-src-docs
+	+cd $(abs_top_builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/man/.prep-src-docs
+	+cd $(abs_top_builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) $@
 
 INSTALL.nut UPGRADING NEWS README:
-	+cd $(builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) ../$(@F).adoc-parsed && cp -f ../$(@F).adoc-parsed ../$(@F)
+	+cd $(abs_top_builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) ../$(@F).adoc-parsed && cp -f ../$(@F).adoc-parsed ../$(@F)
 
 # Workarounds for https://github.com/github/markup/issues/1095
 # require direct definition of our attributes in each source
@@ -412,19 +424,51 @@ dummy-stamp:
 ChangeLog: dummy-stamp
 	+@$(MAKE) $(AM_MAKEFLAGS) $(abs_top_builddir)/ChangeLog
 
-# Be sure to not confuse with a DIST'ed file (and so try to overwrite it):
+if WITH_PDF_NONASCII_TITLES
+WITH_PDF_NONASCII_TITLES_ENVVAR = WITH_PDF_NONASCII_TITLES=yes
+else
+WITH_PDF_NONASCII_TITLES_ENVVAR = WITH_PDF_NONASCII_TITLES=no
+endif
+
+# Be sure to not confuse with a DIST'ed file (and so try to overwrite it);
+# do however avoid re-generating it if already made on a previous pass and
+# the Git HEAD pointer (branch) or its actual "index" or "object" database
+# did not change since then - meaning the local developer or CI did not
+# modify the metadata (subsequent generation of the huge PDF/HTML files
+# can cost dearly).
+# Note there's a bit more fuss about Git internals which NUT should not
+# really care about encapsulation-wise (detection of NUT_GITDIR location
+# which may reside elsewhere, e.g. with local repo clones with reference
+# repo configuration, or submodules). But this is a Git-crawling target
+# anyway, and in the worst case (Git's design changes) we would spend a
+# bit of time researching the FS in vain, and go on to re-generate the
+# ChangeLog when maybe we should not have - oh well:
 $(abs_top_builddir)/ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	@cd $(abs_top_srcdir) && \
 	    if test -e .git ; then \
-	        CHANGELOG_FILE="$@" $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) || \
-	        { printf "gitlog2changelog.py failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; } ; \
+	        NUT_GITDIR=".git" ; if test -r "$${NUT_GITDIR}" -a ! -d "$${NUT_GITDIR}" ; then GD="`grep -E '^gitdir:' "$${NUT_GITDIR}" | sed 's/^gitdir: *//'`" && test -n "$$GD" -a -d "$$GD" && NUT_GITDIR="$$GD" ; fi ; \
+	        if test -s "$@" -a -d "$${NUT_GITDIR}" && test -z "`find "$${NUT_GITDIR}" -newer "$@" 2>/dev/null`" ; then \
+	            echo "  DOC-CHANGELOG-GENERATE        $@ : SKIP (keep existing)" ; \
+	            echo "Using still-valid ChangeLog file generated earlier from same revision of Git source metadata in '$${NUT_GITDIR}'" >&2 ; \
+	        else \
+	            echo "  DOC-CHANGELOG-GENERATE        $@" ; \
+	            CHANGELOG_FILE="$@" $(WITH_PDF_NONASCII_TITLES_ENVVAR) $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) || { \
+	                echo "  DOC-CHANGELOG-GENERATE        $@ : FAILED (non-fatal)" >&2 ; \
+	                printf "gitlog2changelog.py failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; \
+	            } ; \
+	        fi ; \
 	    else \
 	        if test x"$(abs_top_srcdir)" != x"$(abs_top_builddir)" -a -s ./ChangeLog ; then \
+	            echo "  DOC-CHANGELOG-GENERATE        $@ : SKIP (keep existing)" ; \
 	            echo "Using distributed ChangeLog file from sources" >&2 ; \
 	            rm -f "$@" || true ; \
 	            cat ./ChangeLog > "$@" ; \
 	        else \
-	            if ! test -s "$@" ; then \
+	            if test -s "$@" ; then \
+	                echo "  DOC-CHANGELOG-GENERATE        $@ : SKIP (keep existing)" ; \
+	                echo "Using distributed ChangeLog file from sources" >&2 ; \
+	            else \
+	                echo "  DOC-CHANGELOG-GENERATE        $@ : FAILED (non-fatal)" >&2 ; \
 	                printf "Failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; \
 	            fi ; \
 	        fi ; \

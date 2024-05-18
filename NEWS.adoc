@@ -40,8 +40,115 @@ https://github.com/networkupstools/nut/milestone/11
  - (expected) Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0
 
 
-PLANNED: Release notes for NUT 2.8.2 - what's new since 2.8.1
--------------------------------------------------------------
+ - Fix fallout of development in NUT v2.8.0 and/or v2.8.1 and/or v2.8.2:
+   * Move of `NUT_DEBUG_LEVEL` and "-D" CLI option handling to start of
+     driver programs for issue #2259 in NUT v2.8.2 release misfired with
+     regard to data-dump mode (it no longer caused foreground by default).
+     [#2408]
+   * The `nut-driver-enumerator.sh` improvements misfired in v2.8.2 release
+     with an overlooked bit of shell syntax, and caused `nut-driver@upsname`
+     instances to not auto-restart when `ups.conf` is edited. [#682, #2410]
+   * Addition of "NUT Simulated devices" support to `nut-scanner` in v2.8.2
+     broke detection of (in-)ability to find and query "Old NUT" servers via
+     `libupsclient.so` (internal flag got always enabled). [#2246]
+
+ - drivers, upsd, upsmon: reduce "scary noise" about failure to `fopen()`
+   the PID file (which most of the time means that no previous instance of
+   the daemon was running to potentially conflict with), especially useless
+   since in recent NUT releases the verdicts from `sendsignal*()` methods
+   are analyzed and lead to layman worded situation reports in these programs.
+   [issue #1782, PR #2384]
+
+ - drivers started with the `-FF` command-line option (e.g. wrapped into the
+   systemd units to stay "foregrounded" *and* save a PID file anyway) should
+   now also handle an existing PID file to interact with the earlier instance
+   of the driver program, if still running (e.g. started manually). [#2384]
+
+ - Extended instant commands for driver reloading with a `driver.exit`
+   command for a protocol equivalent of sending a `SIGTERM`, e.g. when
+   a newer instance of the driver program tries to start. [#1903, #2392]
+
+ - riello_ser updates:
+   * added `localcalculation` option to compute `battery.runtime` and
+     `battery.charge` if the device provides bogus values [issue #2390,
+     following in the footsteps of #1692, #1685 done for `riello_usb`]
+     (similar to `runtimecal` in some other drivers, may be refactored
+     to that configuration and logic model in later NUT releases)
+
+ - added Visench C1K (using serial port converter with USB ID `1a86:7523`)
+   as known supported by `nutdrv_qx` (Megatec protocol) since at least
+   NUT v2.7.4 release [#2395]
+
+ - usbhid-ups updates:
+   * Support of the `onlinedischarge_log_throttle_hovercharge` in the NUT
+     v2.8.2 release was found to be incomplete. [#2423, follow-up to #2215]
+   * MGE HID list of `mge_model_names[]` was extended for Eaton 5PX and 5SC
+     series (largely guessing, feedback and PRs for adaptation to actual
+     string values reported by devices via USB are welcome), so these devices
+     would now report `battery.voltage` and `battery.voltage.nominal`. [#2380]
+
+ - USB drivers could log `(nut_)libusb_get_string: Success` due to either
+   reading an empty string or getting a success code `0` from libusb.
+   This difference should now be better logged, and not into syslog. [#2399]
+
+ - Introduced a new driver concept for interaction with OS-reported hardware
+   monitoring readings. Currently instantiated as `hwmon_ina219` specifically
+   made for Texas Instruments INA219 chip as exposed in the Linux "hwmon"
+   subsystem of its "sysfs" interface (and talking I2C under the hood), this
+   approach seems to have good potential to expand into covering more devices
+   and perhaps platforms. [#2430]
+
+ - upsmon:
+   * it was realized that the `POWERDOWNFLAG` must be explicitly set in the
+     configuration file, there is no built-in default in the binary program
+     (the settings facilitated by the `configure` script during build "only"
+     impact the `upsmon.conf.sample`, init-scripts and similar files generated
+     from templates). [issue #321, PR #2383]
+   * added an `OBLBDURATION` (seconds) setting to optionally delay raising
+     the alarm for immediate shutdown in critical situation. [#321]
+
+ - gamatronic driver revised for safer memory operations; this was reported
+   to have fixed a Segmentation Fault seen in earlier NUT releases with
+   some of the devices supported by this driver. [#2427]
+
+ - upsd:
+   * `upsd_cleanup()` is now traced, to more easily see that the daemon is
+     exiting (and/or start-up has aborted due to configuration or run-time
+     issues). Warning about "world readable" files clarified. [#2417]
+
+ - common code: root-owned daemons now use not the hard-coded `PIDPATH` value
+   set by the `configure` script during build, but can override it with a
+   `NUT_PIDPATH` environment variable in certain use-cases (such as tests).
+   [#2407]
+
+ - revised `nut.exe` (the NUT for Windows wrapper for all-in-one service)
+   to be more helpful with command-line use (report that it failed to start
+   as a service, have a help message, pass debug verbosity to launched NUT
+   programs...) and add a man page for it. [issue #2432, PR #2446]
+
+ - enabled installation of built single-file PDF and HTML (including man page
+   renditions) under the configured `docdir`. It seems previously they were
+   only built (if requested) but not installed via `make`, unlike the common
+   man pages which are delivered automatically. [#2445]
++
+   NOTE: The `html-chunked` documents are currently still not installed.
+
+ - brought keyword dictionaries of `nutconf` and `augeas` NUT configuration
+   file parsers up to date; restored automated checks for `augeas` lenses.
+   [issue #657, issue #2294]
++
+   NOTE: Some known issues remain with augeas lens definitions so currently
+   they should be able to parse common simple use-cases but not certain types
+   of more complex configurations (e.g. some line patterns that involve too
+   many double-quote characters) which are valid for NUT proper. [#657]
+
+ - various recipe, documentation and source files were revised to address
+   respective warnings issued by the new generations of analysis tools.
+   [#823, #2437, link:https://github.com/networkupstools/nut-website/issues/52[nut-website issue #52]]
+
+
+Release notes for NUT 2.8.2 - what's new since 2.8.1
+----------------------------------------------------
 
 https://github.com/networkupstools/nut/milestone/10
 
@@ -87,6 +194,10 @@ https://github.com/networkupstools/nut/milestone/10
      `configure` script option `--with-debuginfo`. Note that default autoconf
      behavior usually embeds moderate optimizations and debug information on
      its own. [PR #2310]
+   * A fix applied among clean-ups between NUT v2.7.4 and v2.8.0 releases
+     backfired for `usbhid-ups` subdriver `belkin-hid` which in practice
+     relied on the broken older behavior; more details in its entry below.
+     [PR #2371]
 
  - nut-usbinfo.pl, nut-scanner and libnutscan:
    * Library API version for `libnutscan` was bumped from 2.2.0 to 2.5.0
@@ -180,6 +291,11 @@ https://github.com/networkupstools/nut/milestone/10
      useful as an UPS driver, not just a controller developer sandbox. [#2188]
    * `cps-hid` subdriver now supports devices branded as Cyber Energy and built
      by cooperation with Cyber Power Systems. [#2312]
+   * `belkin-hid` subdriver now supports Liebert PSI5 devices which have a
+     different numeric reading scale than earlier handled models. [issue #2271,
+     PR #2272, PR #2369] Generally the wrong-scale processing was addressed,
+     including a regression in NUT v2.8.0 which led to zero values
+     in voltage data points which NUT v2.7.4 reported well [#2371]
    * The `onlinedischarge` configuration flag name was too ambiguous and got
      deprecated (will be supported but no longer promoted by documentation),
      introducing `onlinedischarge_onbattery` as the meaningful alias. [#2213]
@@ -221,6 +337,12 @@ https://github.com/networkupstools/nut/milestone/10
    known deficiencies in Windows platform support, as well as some un-awareness
    about configuration key words which appeared in NUT since 2013. [#2290]
 
+ - The `tools/gitlog2changelog.py.in` script was revised, in particular to
+   convert section titles (with contributor names coming from Git metadata)
+   into plain ASCII character set, for `dblatex` versions which do not allow
+   diacritics and other kinds of non-trivial characters in sections. This can
+   cause successful builds of `ChangeLog.pdf` file on more platforms, but at
+   expense of a semi-cosmetic difference in those names. [PR #2360, PR #2366]
 
 Release notes for NUT 2.8.1 - what's new since 2.8.0
 ----------------------------------------------------
@@ -367,6 +489,12 @@ as part of https://github.com/networkupstools/nut/issues/1410 solution.
      replacement date) [#1644]
    * added `onlinedischarge_calibration` option for UPSes that report
      `OL+DISCHRG` when they are in calibration mode [#2104]
+
+ - riello_usb updates:
+   * added `localcalculation` option to compute `battery.runtime` and
+     `battery.charge` if the device provides bogus values [#1692, #1685]
+     (similar to `runtimecal` in some other drivers, may be refactored
+     to that configuration and logic model in later NUT releases)
 
  - powercom driver should now try harder to refresh data from device [#356]
 
@@ -1440,6 +1568,8 @@ NOTE: There was no public NUT 2.7.0 release.
  - usbhid-ups: final fix for APC Back UPS ES.  APC Back UPS ES devices have
    buggy firmware, and this version does not cause a regression. The max_report
    variable should be set automatically based on the USB identification values.
+   * UPDATE: known as `maxreport` flag for `usbhid-ups` driver, and as a
+     `max_report_size` setting in code, as of NUT v2.8.2 release.
 
  - nut-scanner: fix crash
 

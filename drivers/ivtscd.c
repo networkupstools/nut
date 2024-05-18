@@ -25,7 +25,7 @@
 #include "attribute.h"
 
 #define DRIVER_NAME	"IVT Solar Controller driver"
-#define DRIVER_VERSION	"0.04"
+#define DRIVER_VERSION	"0.05"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
