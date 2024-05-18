@@ -89,8 +89,8 @@ static const struct option longopts[] = {
 	{ "usb_scan", no_argument, NULL, 'U' },
 	{ "snmp_scan", no_argument, NULL, 'S' },
 	{ "xml_scan", no_argument, NULL, 'M' },
-	{ "oldnut_scan", no_argument, NULL, 'O' },
-	{ "avahi_scan", no_argument, NULL, 'A' },
+	{ "oldnut_scan", no_argument, NULL, 'O' },	/* "old" NUT libupsclient.so scan */
+	{ "avahi_scan", no_argument, NULL, 'A' },	/* "new" NUT scan where deployed */
 	{ "nut_simulation_scan", no_argument, NULL, 'n' },
 	{ "ipmi_scan", no_argument, NULL, 'I' },
 	{ "disp_nut_conf_with_sanity_check", no_argument, NULL, 'Q' },
@@ -256,11 +256,11 @@ static void show_usage(void)
 	} else {
 		printf("* Options for XML/HTTP devices scan not enabled: library not detected.\n");
 	}
-	printf("  -O, --oldnut_scan: Scan NUT devices (old method).\n");
+	printf("  -O, --oldnut_scan: Scan NUT devices (old method via libupsclient).\n");
 	if (nutscan_avail_avahi) {
-		printf("  -A, --avahi_scan: Scan NUT devices (avahi method).\n");
+		printf("  -A, --avahi_scan: Scan NUT devices (new avahi method).\n");
 	} else {
-		printf("* Options for NUT devices (avahi method) scan not enabled: library not detected.\n");
+		printf("* Options for NUT devices (new avahi method) scan not enabled: library not detected.\n");
 	}
 	printf("  -n, --nut_simulation_scan: Scan for NUT simulated devices (.dev files in $CONFPATH).\n");
 	if (nutscan_avail_ipmi) {
@@ -886,11 +886,11 @@ display_help:
 
 	if (allow_oldnut && nutscan_avail_nut) {
 		if (start_ip == NULL) {
-			upsdebugx(quiet, "No start IP, skipping NUT bus (old connect method)");
+			upsdebugx(quiet, "No start IP, skipping NUT bus (old libupsclient connect method)");
 			nutscan_avail_nut = 0;
 		}
 		else {
-			upsdebugx(quiet, "Scanning NUT bus (old connect method).");
+			upsdebugx(quiet, "Scanning NUT bus (old libupsclient connect method).");
 #ifdef HAVE_PTHREAD
 			upsdebugx(1, "NUT bus (old) SCAN: starting pthread_create with run_nut_old...");
 			if (pthread_create(&thread[TYPE_NUT], NULL, run_nut_old, NULL)) {
