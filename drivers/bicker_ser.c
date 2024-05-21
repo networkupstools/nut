@@ -111,6 +111,7 @@
 
 #define BICKER_SOH	'\x01'
 #define BICKER_EOT	'\x04'
+#define BICKER_TIMEOUT	1
 #define BICKER_DELAY	20
 #define BICKER_RETRIES	3
 #define BYTESWAP(in)	((((uint16_t)(in) & 0x00FF) << 8) + (((uint16_t)(in) & 0xFF00) >> 8))
@@ -128,6 +129,14 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
+/**
+ * Send a packet.
+ * @param idx     Command index
+ * @param cmd     Command
+ * @param data    Source data or NULL for no data field
+ * @param datalen Size of the source data field or 0
+ * @return        `datalen` on success or -1 on errors.
+ */
 static ssize_t bicker_send(char idx, char cmd, const void *data, size_t datalen)
 {
 	char buf[BICKER_PACKET];
@@ -140,7 +149,7 @@ static ssize_t bicker_send(char idx, char cmd, const void *data, size_t datalen)
 		if (datalen > BICKER_MAXDATA) {
 			upslogx(LOG_ERR, "Data size exceeded: %d > %d",
 				(int)datalen, BICKER_MAXDATA);
-			return 0;
+			return -1;
 		}
 		memcpy(buf + 4, data, datalen);
 	} else {
@@ -157,99 +166,134 @@ static ssize_t bicker_send(char idx, char cmd, const void *data, size_t datalen)
 	ret = ser_send_buf(upsfd, buf, buflen);
 	if (ret < 0) {
 		upslog_with_errno(LOG_WARNING, "ser_send_buf failed");
-		return ret;
+		return -1;
 	} else if ((size_t) ret != buflen) {
 		upslogx(LOG_WARNING, "ser_send_buf returned %d instead of %d",
 			(int)ret, (int)buflen);
-		return 0;
+		return -1;
 	}
 
 	upsdebug_hex(3, "bicker_send", buf, buflen);
-	return ret;
+	return datalen;
 }
 
-static ssize_t bicker_receive_buf(void *dst, size_t dstlen)
-{
-	ssize_t ret;
-
-	ret = ser_get_buf(upsfd, dst, dstlen, 1, 1);
-	if (ret < 0) {
-		upslog_with_errno(LOG_WARNING, "ser_get_buf failed");
-		return ret;
-	} else if ((size_t) ret != dstlen) {
-		upslogx(LOG_WARNING, "ser_get_buf returned %d instead of %d",
-			(int)ret, (int)dstlen);
-		return 0;
-	}
-
-	upsdebug_hex(3, "bicker_receive_buf", dst, dstlen);
-	return ret;
-}
-
-static ssize_t bicker_receive(char idx, char cmd, void *dst, size_t dstlen)
+/**
+ * Receive a packet with a data field of unknown size.
+ * @param idx  Command index
+ * @param cmd  Command
+ * @param data Destination buffer or NULL to discard the data field
+ * @return     The size of the data field on success or -1 on errors.
+ *
+ * The data field is stored directly in the destination buffer. `data`,
+ * if not NULL, must have at least BICKER_MAXDATA bytes.
+ */
+static ssize_t bicker_receive(char idx, char cmd, void *data)
 {
 	ssize_t ret;
 	size_t datalen;
 	char buf[BICKER_PACKET];
 
-	ret = bicker_receive_buf(buf, 1);
-	if (ret <= 0) {
-		return ret;
+	/* Read first two bytes (SOH + size) */
+	ret = ser_get_buf(upsfd, buf, 2, BICKER_TIMEOUT, 0);
+	if (ret < 0) {
+		upslog_with_errno(LOG_WARNING, "Initial ser_get_buf failed");
+		return -1;
+	} else if (ret < 2) {
+		upslogx(LOG_WARNING, "Timeout waiting for response packet");
+		return -1;
 	} else if (buf[0] != BICKER_SOH) {
 		upslogx(LOG_WARNING, "Received 0x%02X instead of SOH (0x%02X)",
 			(unsigned)buf[0], (unsigned)BICKER_SOH);
-		return 0;
-	}
-
-	ret = bicker_receive_buf(buf + 1, 1);
-	if (ret <= 0) {
-		return ret;
+		return -1;
 	}
 
 	datalen = buf[1] - BICKER_HEADER;
 
-	/* Still to be read: command index (1 byte), command (1 byte), data
-	 * (datalen bytes) and EOT (1 byte), i.e. `datalen + 3` bytes  */
-	ret = bicker_receive_buf(buf + 2, datalen + 3);
-	if (ret <= 0) {
-		return ret;
+	/* Read the rest: command index (1 byte), command (1 byte), data
+	 * (datalen bytes) and EOT (1 byte), i.e. `datalen + 3` bytes */
+	ret = ser_get_buf(upsfd, buf + 2, datalen + 3, BICKER_TIMEOUT, 0);
+	if (ret < 0) {
+		upslog_with_errno(LOG_WARNING, "ser_get_buf failed");
+		return -1;
+	} else if ((size_t)ret < datalen + 3) {
+		upslogx(LOG_WARNING, "Timeout waiting for the end of the packet");
+		return -1;
 	} else if (buf[datalen + 4] != BICKER_EOT) {
 		upslogx(LOG_WARNING, "Received 0x%02X instead of EOT (0x%02X)",
 			(unsigned)buf[datalen + 4], (unsigned)BICKER_EOT);
-		return 0;
+		return -1;
 	} else if (buf[2] != idx) {
 		upslogx(LOG_WARNING, "Command indexes do not match: sent 0x%02X, received 0x%02X",
 			(unsigned)idx, (unsigned)buf[2]);
-		return 0;
+		return -1;
 	} else if (buf[3] != cmd) {
 		upslogx(LOG_WARNING, "Commands do not match: sent 0x%02X, received 0x%02X",
 			(unsigned)cmd, (unsigned)buf[3]);
-		return 0;
-	} else if (dstlen < datalen) {
-		upslogx(LOG_ERR, "Not enough space for the payload: %d < %d",
-			(int)dstlen, (int)datalen);
-		return 0;
+		return -1;
 	}
 
-	if (dst != NULL) {
-		memcpy(dst, buf + 4, datalen);
+	if (data != NULL) {
+		memcpy(data, buf + 4, datalen);
 	}
 
 	upsdebug_hex(3, "bicker_receive", buf, datalen + 5);
 	return datalen;
 }
 
+/**
+ * Receive a packet with a data field of known size.
+ * @param idx     Command index
+ * @param cmd     Command
+ * @param data    Destination buffer or NULL to discard the data field
+ * @param datalen  The expected size of the data field
+ * @return        The size of the data field on success or -1 on errors.
+ *
+ * `data`, if specified, must have at least `datalen` bytes. If
+ * `datalen` is less than the received data size, an error is thrown.
+ */
+static ssize_t bicker_receive_known(char idx, char cmd, void *data, size_t datalen)
+{
+	ssize_t ret;
+	size_t real_datalen;
+	char real_data[BICKER_MAXDATA];
+
+	ret = bicker_receive(idx, cmd, real_data);
+	if (ret < 0) {
+		return ret;
+	}
+
+	real_datalen = (size_t)ret;
+
+	if (datalen < real_datalen) {
+		upslogx(LOG_ERR, "Not enough space for the payload: %d < %d",
+			(int)datalen, (int)real_datalen);
+		return -1;
+	}
+
+	if (data != NULL) {
+		memcpy(data, real_data, real_datalen);
+	}
+
+	return real_datalen;
+}
+
+/**
+ * Execute a command that returns an int16_t value.
+ * @param idx Command index
+ * @param cmd Command
+ * @param dst Destination for the value
+ */
 static ssize_t bicker_read_int16(char idx, char cmd, int16_t *dst)
 {
 	ssize_t ret;
 
 	ret = bicker_send(idx, cmd, NULL, 0);
-	if (ret <= 0) {
+	if (ret < 0) {
 		return ret;
 	}
 
-	ret = bicker_receive(idx, cmd, dst, 2);
-	if (ret <= 0) {
+	ret = bicker_receive_known(idx, cmd, dst, 2);
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -275,12 +319,12 @@ static ssize_t bicker_delayed_shutdown(uint8_t seconds)
 	uint8_t response;
 
 	ret = bicker_send('\x03', '\x32', &seconds, 1);
-	if (ret <= 0) {
+	if (ret < 0) {
 		return ret;
 	}
 
-	ret = bicker_receive('\x03', '\x32', &response, 1);
-	if (ret > 0) {
+	ret = bicker_receive_known('\x03', '\x32', &response, 1);
+	if (ret >= 0) {
 		upslogx(LOG_INFO, "Shutting down in %d seconds: response = 0x%02X",
 			(int)seconds, (unsigned)response);
 	}
@@ -334,21 +378,21 @@ void upsdrv_updateinfo(void)
 	ssize_t ret;
 
 	ret = bicker_read_int16('\x03', '\x25', &data);
-	if (ret <= 0) {
+	if (ret < 0) {
 		dstate_datastale();
 		return;
 	}
 	dstate_setinfo("input.voltage", "%.1f", (double) data / 1000);
 
 	ret = bicker_read_int16('\x03', '\x28', &data);
-	if (ret <= 0) {
+	if (ret < 0) {
 		dstate_datastale();
 		return;
 	}
 	dstate_setinfo("input.current", "%.3f", (double) data / 1000);
 
 	ret = bicker_read_int16('\x03', '\x27', &data);
-	if (ret <= 0) {
+	if (ret < 0) {
 		dstate_datastale();
 		return;
 	}
@@ -357,14 +401,14 @@ void upsdrv_updateinfo(void)
 	/* This is a supercap UPS so, in this context,
 	 * the "battery" is the supercap stack */
 	ret = bicker_read_int16('\x03', '\x26', &data);
-	if (ret <= 0) {
+	if (ret < 0) {
 		dstate_datastale();
 		return;
 	}
 	dstate_setinfo("battery.voltage", "%.3f", (double) data / 1000);
 
 	ret = bicker_read_int16('\x03', '\x29', &charge_current);
-	if (ret <= 0) {
+	if (ret < 0) {
 		dstate_datastale();
 		return;
 	}
@@ -390,7 +434,7 @@ void upsdrv_updateinfo(void)
 	 * 15. RV Reserved Bit
 	 */
 	ret = bicker_read_int16('\x03', '\x1B', &data);
-	if (ret <= 0) {
+	if (ret < 0) {
 		dstate_datastale();
 		return;
 	}
