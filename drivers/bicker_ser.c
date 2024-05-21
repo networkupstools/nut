@@ -443,6 +443,7 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
+	const char *str;
 	uint8_t u8;
 	uint16_t u16;
 	int16_t i16;
@@ -512,7 +513,8 @@ void upsdrv_updateinfo(void)
 	status_init();
 
 	/* Consider the battery low when its charge is < 30% */
-	if (u8 < 30) {
+	str = dstate_getinfo("battery.charge.low");
+	if (u8 < atoi(str)) {
 		status_set("LB");
 	}
 
@@ -596,6 +598,8 @@ void upsdrv_initups(void)
 	if (bicker_read_string('\x01', '\x64', string) >= 0) {
 		dstate_setinfo("battery.type", string);
 	}
+
+	dstate_setinfo("battery.charge.low", "%d", 30);
 
 	/* Not implemented on all UPSes */
 	if (bicker_read_string('\x01', '\x65', string) >= 0) {
