@@ -18,8 +18,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/* The protocol is detailed in section 14 of the DC/UPSIC user's manual,
- * downloadable somewhere from the Bicker website.
+/* The protocol is reported in many Bicker's manuals but (according to
+ * Bicker itself) the best source is the UPS Gen Software's user manual:
+ *
+ * https://www.bicker.de/media/pdf/ff/cc/fe/en_user_manual_ups-gen2-configuration-software.pdf
  *
  * Basically, this is a binary protocol without checksums:
  *
@@ -32,14 +34,70 @@
  * where:
  * - `SOH` is the start signal ('\x01')
  * - `Size` is the length (in bytes) of the header and the data field
- * - `Index` is the command index (always '\x03')
- * - `CMD` is the command code to execute
+ * - `Index` is the command index: see AVAILABLE COMMANDS
+ * - `CMD` is the command code to execute: see AVAILABLE COMMANDS
  * - `Data` is the (optional) argument of the command
  * - `EOT` is the end signal ('\x04')
  *
- * The same format is used for incoming and outcoming packets. Although
- * not explicitly documented, the data returned by the `Data` field
- * seems to be in little-endian order.
+ * The same format is used for incoming and outcoming packets. The data
+ * returned in the `Data` field is always in little-endian order.
+ *
+ * AVAILABLE COMMANDS
+ * ------------------
+ *
+ * - Index = 0x01 (GENERIC)
+ *   - CMD = 0x40 (status flags)
+ *   - CMD = 0x41 (input voltage)
+ *   - CMD = 0x42 (input current)
+ *   - CMD = 0x43 (output voltage)
+ *   - CMD = 0x44 (output current)
+ *   - CMD = 0x45 (battery voltage)
+ *   - CMD = 0x46 (battery current)
+ *   - CMD = 0x47 (battery state of charge)
+ *   - CMD = 0x48 (battery state of health)
+ *   - CMD = 0x49 (battery cycles)
+ *   - CMD = 0x4A (battery temperature)
+ *   - CMD = 0x60 (manufacturer)
+ *   - CMD = 0x61 (serial number)
+ *   - CMD = 0x62 (device name)
+ *   - CMD = 0x63 (firmware version)
+ *   - CMD = 0x64 (battery pack)
+ *   - CMD = 0x65 (firmware core version)
+ *   - CMD = 0x66 (CPU temperature)
+ *   - CMD = 0x67 (hardware revision)
+ *   - CMD = 0x21 (UPS output)
+ *   - CMD = 0x2F (shutdown flag)
+ *   - CMD = 0x7A (reset parameter settings)
+ *
+ * - Index = 0x07 (PARAMETER)
+ *   - CMD = 0x00 (get/set dummy entry: do not use!)
+ *   - CMD = 0x01 (get/set load sensor)
+ *   - CMD = 0x02 (get/set maximum backup time)
+ *   - CMD = 0x03 (get/set os shutdown by timer)
+ *   - CMD = 0x04 (get/set restart delay timer)
+ *   - CMD = 0x05 (get/set minimum capacity to start)
+ *   - CMD = 0x06 (get/set maximum backup time by in-1)
+ *   - CMD = 0x07 (get/set os shutdown by soc)
+ *   - CMD = 0x08 (get/set battery soc low threshold)
+ *   - CMD = 0x09 (get/set relay event configuration)
+ *   - CMD = 0x0A (get/set RS232 port configuration: place holder!)
+ *
+ * - Index = 0x03 (COMMANDS GOT FROM UPSIC MANUAL)
+ *   - CMD = 0x1B (GetChargeStatusRegister)
+ *   - CMD = 0x1C (GetMonitorStatusRegister)
+ *   - CMD = 0x1E (GetCapacity)
+ *   - CMD = 0x1F (GetEsr)
+ *   - CMD = 0x20 (GetVCap1Voltage)
+ *   - CMD = 0x21 (GetVCap2Voltage)
+ *   - CMD = 0x22 (GetVCap3Voltage)
+ *   - CMD = 0x23 (GetVCap4Voltage)
+ *   - CMD = 0x25 (GetInputVoltage)
+ *   - CMD = 0x26 (GetCapStackVoltage)
+ *   - CMD = 0x27 (GetOutputVoltage)
+ *   - CMD = 0x28 (GetInputCurrent)
+ *   - CMD = 0x29 (GetChargeCurrent)
+ *   - CMD = 0x31 (StartCapEsrMeasurement)
+ *   - CMD = 0x32 (SetTimeToShutdown)
  */
 
 #include "config.h"
