@@ -123,6 +123,12 @@
 #define TOUINT(ch)	((unsigned)(uint8_t)(ch))
 #define BYTESWAP(in)	((((uint16_t)(in) & 0x00FF) << 8) + (((uint16_t)(in) & 0xFF00) >> 8))
 
+#ifdef WORDS_BIGENDIAN
+#define SWAPONBE(in)	BYTESWAP(in)
+#else
+#define SWAPONBE(in)	(in)
+#endif
+
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
 	DRIVER_VERSION,
@@ -130,6 +136,15 @@ upsdrv_info_t upsdrv_info = {
 	DRV_EXPERIMENTAL,
 	{ NULL }
 };
+
+typedef struct {
+	uint8_t  id;
+	uint16_t min;
+	uint16_t max;
+	uint16_t std;
+	uint8_t  enabled;
+	uint16_t val;
+} BickerParameter;
 
 /**
  * Send a packet.
@@ -366,6 +381,88 @@ static ssize_t bicker_read_string(char idx, char cmd, char *dst)
 	return ret;
 }
 
+static ssize_t bicker_receive_parameter(BickerParameter *parameter)
+{
+	ssize_t ret;
+	uint8_t data[10];
+
+	ret = bicker_receive_known(0x07, parameter->id, data, 10);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* The returned `data` is in the format:
+	 *   [AA] [bbBB] [ccCC] [ddDD] [EE] [ffFF]
+	 * where:
+	 *   [AA]   = parameter ID (Byte)
+	 *   [BBbb] = minimum value (UInt16)
+	 *   [CCcc] = maximum value (UInt16)
+	 *   [DDdd] = standard value (UInt16)
+	 *   [EE]   = enabled (Bool)
+	 *   [FFff] = value (UInt16)
+	 */
+	parameter->id = data[0];
+	parameter->min = SWAPONBE(* (uint16_t *) &data[1]);
+	parameter->max = SWAPONBE(* (uint16_t *) &data[3]);
+	parameter->std = SWAPONBE(* (uint16_t *) &data[5]);
+	parameter->enabled = data[7];
+	parameter->val = SWAPONBE(* (uint16_t *) &data[8]);
+
+	upsdebugx(3, "Parameter %d = %d (%s, min = %d, max = %d, std = %d)",
+		  parameter->id, parameter->val,
+		  parameter->enabled ? "enabled" : "disabled",
+		  parameter->min, parameter->max, parameter->std);
+
+	return ret;
+}
+
+/**
+ * Get a Bicker parameter.
+ * @param parameter In/out parameter struct
+ * @return The size of the data field on success or -1 on errors.
+ *
+ * You must fill at least the `parameter->id` field.
+ */
+static ssize_t bicker_get(BickerParameter *parameter)
+{
+	ssize_t ret;
+
+	ret = bicker_send(0x07, parameter->id, NULL, 0);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return bicker_receive_parameter(parameter);
+}
+
+/**
+ * Set a Bicker parameter.
+ * @param parameter In parameter struct
+ * @return The size of the data field on success or -1 on errors.
+ *
+ * You must fill at least the `parameter->id`, `parameter->enabled` and
+ * `parameter->val` fields.
+ */
+static ssize_t bicker_set(BickerParameter *parameter)
+{
+	ssize_t ret;
+	uint8_t data[3];
+
+	/* Format of `data` is "[EE] [ffFF]"
+	 * where:
+	 *   [EE]   = enabled (Bool)
+	 *   [FFff] = value (UInt16)
+	 */
+	data[0] = parameter->enabled;
+	* (uint16_t *) &data[1] = SWAPONBE(parameter->val);
+	ret = bicker_send(0x07, parameter->id, data, 3);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return bicker_receive_parameter(parameter);
+}
+
 /* For some reason the `seconds` delay (at least on my UPSIC-2403D)
  * is not honored: the shutdown is always delayed by 2 seconds. This
  * fixed delay seems to be independent from the state of the UPS (on
@@ -420,6 +517,29 @@ static int bicker_instcmd(const char *cmdname, const char *extra)
 	return STAT_INSTCMD_UNKNOWN;
 }
 
+static int bicker_setvar(const char *varname, const char *val)
+{
+	if (!strcasecmp(varname, "battery.charge.restart")) {
+		BickerParameter parameter;
+		parameter.id = 0x05;
+		parameter.enabled = 1;
+		parameter.val = atoi(val);
+		dstate_setinfo("battery.charge.restart", "%u", parameter.val);
+	} else if (!strcasecmp(varname, "ups.delay.start")) {
+		BickerParameter parameter;
+		parameter.id = 0x04;
+		parameter.enabled = 1;
+		parameter.val = atoi(val);
+		if (bicker_set(&parameter) >= 0) {
+			dstate_setinfo("ups.delay.start", "%u", parameter.val);
+		}
+		return STAT_SET_HANDLED;
+	}
+
+	upslogx(LOG_NOTICE, "setvar: unknown variable [%s]", varname);
+	return STAT_SET_UNKNOWN;
+}
+
 void upsdrv_initinfo(void)
 {
 	char string[BICKER_MAXDATA + 1];
@@ -439,6 +559,7 @@ void upsdrv_initinfo(void)
 	}
 
 	upsh.instcmd = bicker_instcmd;
+	upsh.setvar = bicker_setvar;
 }
 
 void upsdrv_updateinfo(void)
@@ -581,6 +702,7 @@ void upsdrv_makevartable(void)
 void upsdrv_initups(void)
 {
 	char string[BICKER_MAXDATA + 1];
+	BickerParameter parameter;
 
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B38400);
@@ -604,6 +726,19 @@ void upsdrv_initups(void)
 	/* Not implemented on all UPSes */
 	if (bicker_read_string('\x01', '\x65', string) >= 0) {
 		dstate_setinfo("ups.firmware.aux", string);
+	}
+
+	parameter.id = 0x05;
+	if (bicker_get(&parameter) >= 0) {
+		/* XXX: it seems to not work */
+		dstate_setinfo("battery.charge.restart", "%u",
+			       parameter.enabled ? parameter.val : 0);
+	}
+
+	parameter.id = 0x04;
+	if (bicker_get(&parameter) >= 0) {
+		dstate_setinfo("ups.delay.start", "%u",
+			       parameter.enabled ? parameter.val : 0);
 	}
 }
 
