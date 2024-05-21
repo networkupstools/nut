@@ -114,12 +114,14 @@
 #define BICKER_TIMEOUT	1
 #define BICKER_DELAY	20
 #define BICKER_RETRIES	3
-#define BYTESWAP(in)	((((uint16_t)(in) & 0x00FF) << 8) + (((uint16_t)(in) & 0xFF00) >> 8))
 
 /* Protocol fixed lengths */
 #define BICKER_HEADER	3
 #define BICKER_MAXDATA	(255 - BICKER_HEADER)
 #define BICKER_PACKET	(1 + BICKER_HEADER + BICKER_MAXDATA + 1)
+
+#define TOUINT(ch)	((unsigned)(uint8_t)(ch))
+#define BYTESWAP(in)	((((uint16_t)(in) & 0x00FF) << 8) + (((uint16_t)(in) & 0xFF00) >> 8))
 
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
@@ -194,16 +196,16 @@ static ssize_t bicker_receive(char idx, char cmd, void *data)
 	char buf[BICKER_PACKET];
 
 	/* Read first two bytes (SOH + size) */
-	ret = ser_get_buf(upsfd, buf, 2, BICKER_TIMEOUT, 0);
+	ret = ser_get_buf_len(upsfd, buf, 2, BICKER_TIMEOUT, 0);
 	if (ret < 0) {
-		upslog_with_errno(LOG_WARNING, "Initial ser_get_buf failed");
+		upslog_with_errno(LOG_WARNING, "Initial ser_get_buf_len failed");
 		return -1;
 	} else if (ret < 2) {
 		upslogx(LOG_WARNING, "Timeout waiting for response packet");
 		return -1;
 	} else if (buf[0] != BICKER_SOH) {
 		upslogx(LOG_WARNING, "Received 0x%02X instead of SOH (0x%02X)",
-			(unsigned)buf[0], (unsigned)BICKER_SOH);
+			TOUINT(buf[0]), TOUINT(BICKER_SOH));
 		return -1;
 	}
 
@@ -211,24 +213,31 @@ static ssize_t bicker_receive(char idx, char cmd, void *data)
 
 	/* Read the rest: command index (1 byte), command (1 byte), data
 	 * (datalen bytes) and EOT (1 byte), i.e. `datalen + 3` bytes */
-	ret = ser_get_buf(upsfd, buf + 2, datalen + 3, BICKER_TIMEOUT, 0);
+	ret = ser_get_buf_len(upsfd, buf + 2, datalen + 3, BICKER_TIMEOUT, 0);
 	if (ret < 0) {
-		upslog_with_errno(LOG_WARNING, "ser_get_buf failed");
+		upslog_with_errno(LOG_WARNING, "ser_get_buf_len failed");
 		return -1;
-	} else if ((size_t)ret < datalen + 3) {
+	}
+
+	upsdebug_hex(3, "bicker_receive", buf, ret + 2);
+
+	if ((size_t)ret < datalen + 3) {
 		upslogx(LOG_WARNING, "Timeout waiting for the end of the packet");
 		return -1;
 	} else if (buf[datalen + 4] != BICKER_EOT) {
 		upslogx(LOG_WARNING, "Received 0x%02X instead of EOT (0x%02X)",
-			(unsigned)buf[datalen + 4], (unsigned)BICKER_EOT);
+			TOUINT(buf[datalen + 4]), TOUINT(BICKER_EOT));
 		return -1;
 	} else if (buf[2] != idx) {
-		upslogx(LOG_WARNING, "Command indexes do not match: sent 0x%02X, received 0x%02X",
-			(unsigned)idx, (unsigned)buf[2]);
+		/* This probably suggests the command is correct but not
+		 * supported, so no logging performed here */
+		upsdebugx(2, "Indexes do not match, maybe the command is not supported?"
+			  " Sent 0x%02X, received 0x%02X",
+			  TOUINT(idx), TOUINT(buf[2]));
 		return -1;
 	} else if (buf[3] != cmd) {
 		upslogx(LOG_WARNING, "Commands do not match: sent 0x%02X, received 0x%02X",
-			(unsigned)cmd, (unsigned)buf[3]);
+			TOUINT(cmd), TOUINT(buf[3]));
 		return -1;
 	}
 
@@ -236,7 +245,6 @@ static ssize_t bicker_receive(char idx, char cmd, void *data)
 		memcpy(data, buf + 4, datalen);
 	}
 
-	upsdebug_hex(3, "bicker_receive", buf, datalen + 5);
 	return datalen;
 }
 
@@ -278,10 +286,30 @@ static ssize_t bicker_receive_known(char idx, char cmd, void *data, size_t datal
 }
 
 /**
+ * Execute a command that returns an uint8_t value.
+ * @param idx Command index
+ * @param cmd Command
+ * @param dst Destination for the value
+ * @return    The size of the data field on success or -1 on errors.
+ */
+static ssize_t bicker_read_uint8(char idx, char cmd, uint8_t *dst)
+{
+	ssize_t ret;
+
+	ret = bicker_send(idx, cmd, NULL, 0);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return bicker_receive_known(idx, cmd, dst, 1);
+}
+
+/**
  * Execute a command that returns an int16_t value.
  * @param idx Command index
  * @param cmd Command
  * @param dst Destination for the value
+ * @return    The size of the data field on success or -1 on errors.
  */
 static ssize_t bicker_read_int16(char idx, char cmd, int16_t *dst)
 {
@@ -303,6 +331,38 @@ static ssize_t bicker_read_int16(char idx, char cmd, int16_t *dst)
 	*dst = BYTESWAP(*dst);
 #endif
 
+	return ret;
+}
+
+static ssize_t bicker_read_uint16(char idx, char cmd, uint16_t *dst)
+{
+	return bicker_read_int16(idx, cmd, (int16_t *) dst);
+}
+
+/**
+ * Execute a command that returns a string.
+ * @param idx Command index
+ * @param cmd Command
+ * @param dst Destination for the string
+ *
+ * `dst` must have at least BICKER_MAXDATA+1 bytes, the additional byte
+ * needed to accomodate the ending '\0'.
+ */
+static ssize_t bicker_read_string(char idx, char cmd, char *dst)
+{
+	ssize_t ret;
+
+	ret = bicker_send(idx, cmd, NULL, 0);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = bicker_receive(idx, cmd, dst);
+	if (ret < 0) {
+		return ret;
+	}
+
+	dst[ret] = '\0';
 	return ret;
 }
 
@@ -362,97 +422,130 @@ static int bicker_instcmd(const char *cmdname, const char *extra)
 
 void upsdrv_initinfo(void)
 {
+	char string[BICKER_MAXDATA + 1];
+
 	dstate_setinfo("device.type", "ups");
-	dstate_setinfo("device.mfr", "Bicker Elektronik GmbH");
-	/* No way to detect the UPS model within the protocol but the
-	 * serial communication is provided by the PSZ-1063 extension
-	 * module, so it seems correct to put that into the model */
-	dstate_setinfo("device.model", "PSZ-1063");
+
+	if (bicker_read_string('\x01', '\x60', string) >= 0) {
+		dstate_setinfo("device.mfr", string);
+	}
+
+	if (bicker_read_string('\x01', '\x61', string) >= 0) {
+		dstate_setinfo("device.serial", string);
+	}
+
+	if (bicker_read_string('\x01', '\x62', string) >= 0) {
+		dstate_setinfo("device.model", string);
+	}
 
 	upsh.instcmd = bicker_instcmd;
 }
 
 void upsdrv_updateinfo(void)
 {
-	int16_t data, charge_current;
+	uint8_t u8;
+	uint16_t u16;
+	int16_t i16;
 	ssize_t ret;
 
-	ret = bicker_read_int16('\x03', '\x25', &data);
+	ret = bicker_read_uint16('\x01', '\x41', &u16);
 	if (ret < 0) {
 		dstate_datastale();
 		return;
 	}
-	dstate_setinfo("input.voltage", "%.1f", (double) data / 1000);
+	dstate_setinfo("input.voltage", "%.1f", (double) u16 / 1000);
 
-	ret = bicker_read_int16('\x03', '\x28', &data);
+	ret = bicker_read_uint16('\x01', '\x42', &u16);
 	if (ret < 0) {
 		dstate_datastale();
 		return;
 	}
-	dstate_setinfo("input.current", "%.3f", (double) data / 1000);
+	dstate_setinfo("input.current", "%.3f", (double) u16 / 1000);
 
-	ret = bicker_read_int16('\x03', '\x27', &data);
+	ret = bicker_read_uint16('\x01', '\x43', &u16);
 	if (ret < 0) {
 		dstate_datastale();
 		return;
 	}
-	dstate_setinfo("output.voltage", "%.3f", (double) data / 1000);
+	dstate_setinfo("output.voltage", "%.3f", (double) u16 / 1000);
+
+	ret = bicker_read_uint16('\x01', '\x44', &u16);
+	if (ret < 0) {
+		dstate_datastale();
+		return;
+	}
+	dstate_setinfo("output.current", "%.3f", (double) u16 / 1000);
 
 	/* This is a supercap UPS so, in this context,
 	 * the "battery" is the supercap stack */
-	ret = bicker_read_int16('\x03', '\x26', &data);
+	ret = bicker_read_uint16('\x01', '\x45', &u16);
 	if (ret < 0) {
 		dstate_datastale();
 		return;
 	}
-	dstate_setinfo("battery.voltage", "%.3f", (double) data / 1000);
+	dstate_setinfo("battery.voltage", "%.3f", (double) u16 / 1000);
 
-	ret = bicker_read_int16('\x03', '\x29', &charge_current);
+	ret = bicker_read_int16('\x01', '\x46', &i16);
 	if (ret < 0) {
 		dstate_datastale();
 		return;
 	}
-	dstate_setinfo("battery.current", "%.3f", (double) charge_current / 1000);
+	dstate_setinfo("battery.current", "%.3f", (double) i16 / 1000);
 
-	/* GetChargeStaturRegister returns a 16 bit register:
-	 *
-	 *  0. SD Shows that the device is in step-down (charging) mode.
-	 *  1. SU Shows that the device is in step-up (backup) mode.
-	 *  2. CV Shows that the charger is in constant voltage mode.
-	 *  3. UV Shows that the charger is in undervoltage lockout.
-	 *  4. CL Shows that the device is in input current limit.
-	 *  5. CG Shows that the capacitor voltage is above power good threshold.
-	 *  6. CS Shows that the capacitor manager is shunting.
-	 *  7. CB Shows that the capacitor manager is balancing.
-	 *  8. CD Shows that the charger is temporarily disabled for capacitance measurement.
-	 *  9. CC Shows that the charger is in constant current mode.
-	 * 10. RV Reserved Bit
-	 * 11. PF Shows that the input voltage is below the Power Fail Input (PFI) threshold.
-	 * 12. RV Reserved Bit
-	 * 13. RV Reserved Bit
-	 * 14. RV Reserved Bit
-	 * 15. RV Reserved Bit
-	 */
-	ret = bicker_read_int16('\x03', '\x1B', &data);
+	/* Not implemented for all energy packs: failure acceptable */
+	if (bicker_read_uint16('\x01', '\x4A', &u16) >= 0) {
+		dstate_setinfo("battery.temperature", "%.1f", (double) u16 - 273.16);
+	}
+
+	/* Not implemented for all energy packs: failure acceptable */
+	if (bicker_read_uint8('\x01', '\x48', &u8) >= 0) {
+		dstate_setinfo("battery.status", "%d%%", u8);
+	}
+
+	ret = bicker_read_uint8('\x01', '\x47', &u8);
 	if (ret < 0) {
 		dstate_datastale();
 		return;
 	}
+	dstate_setinfo("battery.charge", "%d", u8);
 
 	status_init();
 
-	/* Check PF (bit 11) to know if the UPS is on line/battery */
-	status_set((data & 0x0800) > 0 ? "OB" : "OL");
-
-	/* Check CG (bit 5) to know if the battery is low */
-	if ((data & 0x0020) == 0) {
+	/* Consider the battery low when its charge is < 30% */
+	if (u8 < 30) {
 		status_set("LB");
 	}
 
-	/* If there is a current of more than 1 A flowing towards
-	 * the supercaps, consider the battery in charging mode */
-	if (charge_current > 1000) {
+	/* StatusFlags() returns an 8 bit register:
+	 * 0. Charging
+	 * 1. Discharging
+	 * 2. Power present
+	 * 3. Battery present
+	 * 4. Shutdown received
+	 * 5. Overcurrent
+	 * 6. ---
+	 * 7. ---
+	 */
+	ret = bicker_read_uint8('\x01', '\x40', &u8);
+	if (ret < 0) {
+		dstate_datastale();
+		return;
+	}
+
+	if ((u8 & 0x01) > 0) {
 		status_set("CHRG");
+	}
+	if ((u8 & 0x02) > 0) {
+		status_set("DISCHRG");
+	}
+	dstate_setinfo("battery.charger.status",
+		       (u8 & 0x01) > 0 ? "charging" :
+		       (u8 & 0x02) > 0 ? "discharging" :
+		       "resting");
+
+	status_set((u8 & 0x04) > 0 ? "OL" : "OB");
+	if ((u8 & 0x20) > 0) {
+		status_set("OVER");
 	}
 
 	status_commit();
@@ -485,13 +578,29 @@ void upsdrv_makevartable(void)
 
 void upsdrv_initups(void)
 {
+	char string[BICKER_MAXDATA + 1];
+
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B38400);
+	ser_set_dtr(upsfd, 1);
 
 	/* Adding this variable here because upsdrv_initinfo() is not
 	 * called when triggering a forced shutdown and
 	 * "ups.delay.shutdown" is needed right there */
 	dstate_setinfo("ups.delay.shutdown", "%u", BICKER_DELAY);
+
+	if (bicker_read_string('\x01', '\x63', string) >= 0) {
+		dstate_setinfo("ups.firmware", string);
+	}
+
+	if (bicker_read_string('\x01', '\x64', string) >= 0) {
+		dstate_setinfo("battery.type", string);
+	}
+
+	/* Not implemented on all UPSes */
+	if (bicker_read_string('\x01', '\x65', string) >= 0) {
+		dstate_setinfo("ups.firmware.aux", string);
+	}
 }
 
 void upsdrv_cleanup(void)
