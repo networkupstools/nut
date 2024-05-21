@@ -128,7 +128,7 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
-static ssize_t bicker_send(char cmd, const void *data, size_t datalen)
+static ssize_t bicker_send(char idx, char cmd, const void *data, size_t datalen)
 {
 	char buf[BICKER_PACKET];
 	size_t buflen;
@@ -149,7 +149,7 @@ static ssize_t bicker_send(char cmd, const void *data, size_t datalen)
 
 	buf[0] = BICKER_SOH;
 	buf[1] = datalen + BICKER_HEADER;
-	buf[2] = '\x03'; /* Command index is always 3 */
+	buf[2] = idx;
 	buf[3] = cmd;
 	buf[1 + BICKER_HEADER + datalen] = BICKER_EOT;
 	buflen = 1 + BICKER_HEADER + datalen + 1;
@@ -186,7 +186,7 @@ static ssize_t bicker_receive_buf(void *dst, size_t dstlen)
 	return ret;
 }
 
-static ssize_t bicker_receive(char cmd, void *dst, size_t dstlen)
+static ssize_t bicker_receive(char idx, char cmd, void *dst, size_t dstlen)
 {
 	ssize_t ret;
 	size_t datalen;
@@ -217,9 +217,13 @@ static ssize_t bicker_receive(char cmd, void *dst, size_t dstlen)
 		upslogx(LOG_WARNING, "Received 0x%02X instead of EOT (0x%02X)",
 			(unsigned)buf[datalen + 4], (unsigned)BICKER_EOT);
 		return 0;
+	} else if (buf[2] != idx) {
+		upslogx(LOG_WARNING, "Command indexes do not match: sent 0x%02X, received 0x%02X",
+			(unsigned)idx, (unsigned)buf[2]);
+		return 0;
 	} else if (buf[3] != cmd) {
 		upslogx(LOG_WARNING, "Commands do not match: sent 0x%02X, received 0x%02X",
-			(unsigned)cmd, (unsigned)buf[1]);
+			(unsigned)cmd, (unsigned)buf[3]);
 		return 0;
 	} else if (dstlen < datalen) {
 		upslogx(LOG_ERR, "Not enough space for the payload: %d < %d",
@@ -235,16 +239,16 @@ static ssize_t bicker_receive(char cmd, void *dst, size_t dstlen)
 	return datalen;
 }
 
-static ssize_t bicker_read_int16(char cmd, int16_t *dst)
+static ssize_t bicker_read_int16(char idx, char cmd, int16_t *dst)
 {
 	ssize_t ret;
 
-	ret = bicker_send(cmd, NULL, 0);
+	ret = bicker_send(idx, cmd, NULL, 0);
 	if (ret <= 0) {
 		return ret;
 	}
 
-	ret = bicker_receive(cmd, dst, 2);
+	ret = bicker_receive(idx, cmd, dst, 2);
 	if (ret <= 0) {
 		return ret;
 	}
@@ -270,12 +274,12 @@ static ssize_t bicker_delayed_shutdown(uint8_t seconds)
 	ssize_t ret;
 	uint8_t response;
 
-	ret = bicker_send('\x32', &seconds, 1);
+	ret = bicker_send('\x03', '\x32', &seconds, 1);
 	if (ret <= 0) {
 		return ret;
 	}
 
-	ret = bicker_receive('\x32', &response, 1);
+	ret = bicker_receive('\x03', '\x32', &response, 1);
 	if (ret > 0) {
 		upslogx(LOG_INFO, "Shutting down in %d seconds: response = 0x%02X",
 			(int)seconds, (unsigned)response);
@@ -329,21 +333,21 @@ void upsdrv_updateinfo(void)
 	int16_t data, charge_current;
 	ssize_t ret;
 
-	ret = bicker_read_int16('\x25', &data);
+	ret = bicker_read_int16('\x03', '\x25', &data);
 	if (ret <= 0) {
 		dstate_datastale();
 		return;
 	}
 	dstate_setinfo("input.voltage", "%.1f", (double) data / 1000);
 
-	ret = bicker_read_int16('\x28', &data);
+	ret = bicker_read_int16('\x03', '\x28', &data);
 	if (ret <= 0) {
 		dstate_datastale();
 		return;
 	}
 	dstate_setinfo("input.current", "%.3f", (double) data / 1000);
 
-	ret = bicker_read_int16('\x27', &data);
+	ret = bicker_read_int16('\x03', '\x27', &data);
 	if (ret <= 0) {
 		dstate_datastale();
 		return;
@@ -352,14 +356,14 @@ void upsdrv_updateinfo(void)
 
 	/* This is a supercap UPS so, in this context,
 	 * the "battery" is the supercap stack */
-	ret = bicker_read_int16('\x26', &data);
+	ret = bicker_read_int16('\x03', '\x26', &data);
 	if (ret <= 0) {
 		dstate_datastale();
 		return;
 	}
 	dstate_setinfo("battery.voltage", "%.3f", (double) data / 1000);
 
-	ret = bicker_read_int16('\x29', &charge_current);
+	ret = bicker_read_int16('\x03', '\x29', &charge_current);
 	if (ret <= 0) {
 		dstate_datastale();
 		return;
@@ -385,7 +389,7 @@ void upsdrv_updateinfo(void)
 	 * 14. RV Reserved Bit
 	 * 15. RV Reserved Bit
 	 */
-	ret = bicker_read_int16('\x1B', &data);
+	ret = bicker_read_int16('\x03', '\x1B', &data);
 	if (ret <= 0) {
 		dstate_datastale();
 		return;
