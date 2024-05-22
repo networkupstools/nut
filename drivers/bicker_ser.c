@@ -103,6 +103,7 @@
 #include "config.h"
 #include "main.h"
 #include "attribute.h"
+#include "nut_stdint.h"
 
 #include "serial.h"
 
@@ -160,8 +161,9 @@ static ssize_t bicker_send(uint8_t idx, uint8_t cmd, const void *data, size_t da
 
 	if (data != NULL) {
 		if (datalen > BICKER_MAXDATA) {
-			upslogx(LOG_ERR, "Data size exceeded: %d > %d",
-				(int)datalen, BICKER_MAXDATA);
+			upslogx(LOG_ERR,
+				"Data size exceeded: %" PRIuSIZE " > %d",
+				datalen, BICKER_MAXDATA);
 			return -1;
 		}
 		memcpy(buf + 4, data, datalen);
@@ -181,8 +183,9 @@ static ssize_t bicker_send(uint8_t idx, uint8_t cmd, const void *data, size_t da
 		upslog_with_errno(LOG_WARNING, "ser_send_buf failed");
 		return -1;
 	} else if ((size_t) ret != buflen) {
-		upslogx(LOG_WARNING, "ser_send_buf returned %d instead of %d",
-			(int)ret, (int)buflen);
+		upslogx(LOG_WARNING, "ser_send_buf returned %"
+			PRIiSIZE " instead of %" PRIuSIZE,
+			ret, buflen);
 		return -1;
 	}
 
@@ -216,7 +219,7 @@ static ssize_t bicker_receive(uint8_t idx, uint8_t cmd, void *data)
 		return -1;
 	} else if (buf[0] != BICKER_SOH) {
 		upslogx(LOG_WARNING, "Received 0x%02X instead of SOH (0x%02X)",
-			TOUINT(buf[0]), TOUINT(BICKER_SOH));
+			(unsigned)buf[0], (unsigned)BICKER_SOH);
 		return -1;
 	}
 
@@ -237,7 +240,7 @@ static ssize_t bicker_receive(uint8_t idx, uint8_t cmd, void *data)
 		return -1;
 	} else if (buf[datalen + 4] != BICKER_EOT) {
 		upslogx(LOG_WARNING, "Received 0x%02X instead of EOT (0x%02X)",
-			TOUINT(buf[datalen + 4]), TOUINT(BICKER_EOT));
+			(unsigned)buf[datalen + 4], (unsigned)BICKER_EOT);
 		return -1;
 	} else if (idx != 0xEE && buf[2] == 0xEE) {
 		/* I found experimentally that, when the syntax is
@@ -247,11 +250,11 @@ static ssize_t bicker_receive(uint8_t idx, uint8_t cmd, void *data)
 		return -1;
 	} else if (buf[2] != idx) {
 		upslogx(LOG_WARNING, "Indexes do not match: sent 0x%02X, received 0x%02X",
-			TOUINT(idx), TOUINT(buf[2]));
+			(unsigned)idx, (unsigned)buf[2]);
 		return -1;
 	} else if (buf[3] != cmd) {
 		upslogx(LOG_WARNING, "Commands do not match: sent 0x%02X, received 0x%02X",
-			TOUINT(cmd), TOUINT(buf[3]));
+			(unsigned)cmd, (unsigned)buf[3]);
 		return -1;
 	}
 
@@ -287,8 +290,9 @@ static ssize_t bicker_receive_known(uint8_t idx, uint8_t cmd, void *data, size_t
 	real_datalen = (size_t)ret;
 
 	if (datalen < real_datalen) {
-		upslogx(LOG_ERR, "Not enough space for the payload: %d < %d",
-			(int)datalen, (int)real_datalen);
+		upslogx(LOG_ERR, "Not enough space for the payload: %"
+			PRIuSIZE " < %" PRIuSIZE,
+			datalen, real_datalen);
 		return -1;
 	}
 
@@ -414,10 +418,11 @@ static ssize_t bicker_receive_parameter(BickerParameter *parameter)
 	parameter->enabled = data[7];
 	parameter->val = WORDLH(data[8], data[9]);
 
-	upsdebugx(3, "Parameter %d = %d (%s, min = %d, max = %d, std = %d)",
-		  parameter->id, parameter->val,
+	upsdebugx(3, "Parameter %u = %u (%s, min = %u, max = %u, std = %u)",
+		  (unsigned)parameter->id, (unsigned)parameter->val,
 		  parameter->enabled ? "enabled" : "disabled",
-		  parameter->min, parameter->max, parameter->std);
+		  (unsigned)parameter->min, (unsigned)parameter->max,
+		  (unsigned)parameter->std);
 
 	return ret;
 }
@@ -490,7 +495,7 @@ static ssize_t bicker_delayed_shutdown(uint8_t seconds)
 	ret = bicker_receive_known(0x03, 0x32, &response, 1);
 	if (ret >= 0) {
 		upslogx(LOG_INFO, "Shutting down in %d seconds: response = 0x%02X",
-			(int)seconds, (unsigned)response);
+			seconds, (unsigned)response);
 	}
 
 	return ret;
