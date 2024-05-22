@@ -240,7 +240,7 @@ static ssize_t bicker_receive(char idx, char cmd, void *data)
 			TOUINT(buf[datalen + 4]), TOUINT(BICKER_EOT));
 		return -1;
 	} else if (idx != '\xEE' && buf[2] == '\xEE') {
-		/* I found sperimentally that, when the syntax is
+		/* I found experimentally that, when the syntax is
 		 * formally correct but a feature is not supported,
 		 * the device returns "\x01\x03\xEE\x07\x04". */
 		upsdebugx(2, "Command is not supported");
@@ -267,10 +267,10 @@ static ssize_t bicker_receive(char idx, char cmd, void *data)
  * @param idx     Command index
  * @param cmd     Command
  * @param data    Destination buffer or NULL to discard the data field
- * @param datalen  The expected size of the data field
+ * @param datalen The expected size of the data field
  * @return        The size of the data field on success or -1 on errors.
  *
- * `data`, if specified, must have at least `datalen` bytes. If
+ * `data`, if not NULL, must have at least `datalen` bytes. If
  * `datalen` is less than the received data size, an error is thrown.
  */
 static ssize_t bicker_receive_known(char idx, char cmd, void *data, size_t datalen)
@@ -363,10 +363,11 @@ static ssize_t bicker_read_int16(char idx, char cmd, int16_t *dst)
  * Execute a command that returns a string.
  * @param idx Command index
  * @param cmd Command
- * @param dst Destination for the string
+ * @param dst Destination for the string or NULL to discard
+ * @return    The size of the data field on success or -1 on errors.
  *
- * `dst` must have at least BICKER_MAXDATA+1 bytes, the additional byte
- * needed to accomodate the ending '\0'.
+ * `dst`, if not NULL, must have at least BICKER_MAXDATA+1 bytes, the
+ * additional byte needed to accomodate the ending '\0'.
  */
 static ssize_t bicker_read_string(char idx, char cmd, char *dst)
 {
@@ -472,7 +473,7 @@ static ssize_t bicker_set(BickerParameter *parameter)
 /* For some reason the `seconds` delay (at least on my UPSIC-2403D)
  * is not honored: the shutdown is always delayed by 2 seconds. This
  * fixed delay seems to be independent from the state of the UPS (on
- * line or on battery) and from the dip switches setting.
+ * line or on battery) and from the DIP switches setting.
  *
  * As response I get the same command with `0xE0` in the data field.
  */
