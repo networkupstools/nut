@@ -116,10 +116,10 @@
 #define BICKER_DELAY	20
 #define BICKER_RETRIES	3
 
-/* Protocol fixed lengths */
-#define BICKER_HEADER	3
-#define BICKER_MAXDATA	(255 - BICKER_HEADER)
-#define BICKER_PACKET	(1 + BICKER_HEADER + BICKER_MAXDATA + 1)
+/* Protocol lengths */
+#define BICKER_HEADER		3
+#define BICKER_MAXDATA		(255 - BICKER_HEADER)
+#define BICKER_PACKET(datalen)	(1 + BICKER_HEADER + (datalen) + 1)
 
 #define TOUINT(ch)	((unsigned)(uint8_t)(ch))
 #define LOWBYTE(w)	((uint8_t)((uint16_t)(w) & 0x00FF))
@@ -153,11 +153,9 @@ typedef struct {
  */
 static ssize_t bicker_send(uint8_t idx, uint8_t cmd, const void *data, size_t datalen)
 {
-	uint8_t buf[BICKER_PACKET];
+	uint8_t buf[BICKER_PACKET(BICKER_MAXDATA)];
 	size_t buflen;
 	ssize_t ret;
-
-	ser_flush_io(upsfd);
 
 	if (data != NULL) {
 		if (datalen > BICKER_MAXDATA) {
@@ -166,17 +164,19 @@ static ssize_t bicker_send(uint8_t idx, uint8_t cmd, const void *data, size_t da
 				datalen, BICKER_MAXDATA);
 			return -1;
 		}
-		memcpy(buf + 4, data, datalen);
+		memcpy(&buf[1 + BICKER_HEADER], data, datalen);
 	} else {
 		datalen = 0;
 	}
 
+	ser_flush_io(upsfd);
+
+	buflen = BICKER_PACKET(datalen);
 	buf[0] = BICKER_SOH;
-	buf[1] = datalen + BICKER_HEADER;
+	buf[1] = BICKER_HEADER + datalen;
 	buf[2] = idx;
 	buf[3] = cmd;
-	buf[1 + BICKER_HEADER + datalen] = BICKER_EOT;
-	buflen = 1 + BICKER_HEADER + datalen + 1;
+	buf[buflen - 1] = BICKER_EOT;
 
 	ret = ser_send_buf(upsfd, buf, buflen);
 	if (ret < 0) {
@@ -206,8 +206,8 @@ static ssize_t bicker_send(uint8_t idx, uint8_t cmd, const void *data, size_t da
 static ssize_t bicker_receive(uint8_t idx, uint8_t cmd, void *data)
 {
 	ssize_t ret;
-	size_t datalen;
-	uint8_t buf[BICKER_PACKET];
+	size_t buflen, datalen;
+	uint8_t buf[BICKER_PACKET(BICKER_MAXDATA)];
 
 	/* Read first two bytes (SOH + size) */
 	ret = ser_get_buf_len(upsfd, buf, 2, BICKER_TIMEOUT, 0);
@@ -223,11 +223,12 @@ static ssize_t bicker_receive(uint8_t idx, uint8_t cmd, void *data)
 		return -1;
 	}
 
+	/* buf[1] (the size field) is BICKER_HEADER + data length, so */
 	datalen = buf[1] - BICKER_HEADER;
 
-	/* Read the rest: command index (1 byte), command (1 byte), data
-	 * (datalen bytes) and EOT (1 byte), i.e. `datalen + 3` bytes */
-	ret = ser_get_buf_len(upsfd, buf + 2, datalen + 3, BICKER_TIMEOUT, 0);
+	/* Read the rest of the packet */
+	buflen = BICKER_PACKET(datalen);
+	ret = ser_get_buf_len(upsfd, buf + 2, buflen - 2, BICKER_TIMEOUT, 0);
 	if (ret < 0) {
 		upslog_with_errno(LOG_WARNING, "ser_get_buf_len failed");
 		return -1;
@@ -235,12 +236,12 @@ static ssize_t bicker_receive(uint8_t idx, uint8_t cmd, void *data)
 
 	upsdebug_hex(3, "bicker_receive", buf, ret + 2);
 
-	if ((size_t)ret < datalen + 3) {
+	if ((size_t)ret < buflen - 2) {
 		upslogx(LOG_WARNING, "Timeout waiting for the end of the packet");
 		return -1;
-	} else if (buf[datalen + 4] != BICKER_EOT) {
+	} else if (buf[buflen - 1] != BICKER_EOT) {
 		upslogx(LOG_WARNING, "Received 0x%02X instead of EOT (0x%02X)",
-			(unsigned)buf[datalen + 4], (unsigned)BICKER_EOT);
+			(unsigned)buf[buflen - 1], (unsigned)BICKER_EOT);
 		return -1;
 	} else if (idx != 0xEE && buf[2] == 0xEE) {
 		/* I found experimentally that, when the syntax is
@@ -259,7 +260,7 @@ static ssize_t bicker_receive(uint8_t idx, uint8_t cmd, void *data)
 	}
 
 	if (data != NULL) {
-		memcpy(data, buf + 4, datalen);
+		memcpy(data, &buf[1 + BICKER_HEADER], datalen);
 	}
 
 	return datalen;
@@ -326,7 +327,7 @@ static ssize_t bicker_read_uint8(uint8_t idx, uint8_t cmd, uint8_t *dst)
  * Execute a command that returns an uint16_t value.
  * @param idx Command index
  * @param cmd Command
- * @param dst Destination for the value of NULL to discard
+ * @param dst Destination for the value or NULL to discard
  * @return    The size of the data field on success or -1 on errors.
  */
 static ssize_t bicker_read_uint16(uint8_t idx, uint8_t cmd, uint16_t *dst)
