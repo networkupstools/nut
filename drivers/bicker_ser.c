@@ -550,15 +550,15 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("device.type", "ups");
 
 	if (bicker_read_string('\x01', '\x60', string) >= 0) {
-		dstate_setinfo("device.mfr", string);
+		dstate_setinfo("device.mfr", "%s", string);
 	}
 
 	if (bicker_read_string('\x01', '\x61', string) >= 0) {
-		dstate_setinfo("device.serial", string);
+		dstate_setinfo("device.serial", "%s", string);
 	}
 
 	if (bicker_read_string('\x01', '\x62', string) >= 0) {
-		dstate_setinfo("device.model", string);
+		dstate_setinfo("device.model", "%s", string);
 	}
 
 	upsh.instcmd = bicker_instcmd;
@@ -717,18 +717,18 @@ void upsdrv_initups(void)
 	dstate_setinfo("ups.delay.shutdown", "%u", BICKER_DELAY);
 
 	if (bicker_read_string('\x01', '\x63', string) >= 0) {
-		dstate_setinfo("ups.firmware", string);
+		dstate_setinfo("ups.firmware", "%s", string);
 	}
 
 	if (bicker_read_string('\x01', '\x64', string) >= 0) {
-		dstate_setinfo("battery.type", string);
+		dstate_setinfo("battery.type", "%s", string);
 	}
 
 	dstate_setinfo("battery.charge.low", "%d", 30);
 
 	/* Not implemented on all UPSes */
 	if (bicker_read_string('\x01', '\x65', string) >= 0) {
-		dstate_setinfo("ups.firmware.aux", string);
+		dstate_setinfo("ups.firmware.aux", "%s", string);
 	}
 
 	parameter.id = 0x05;
