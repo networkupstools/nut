@@ -243,12 +243,15 @@ static ssize_t bicker_receive(char idx, char cmd, void *data)
 		upslogx(LOG_WARNING, "Received 0x%02X instead of EOT (0x%02X)",
 			TOUINT(buf[datalen + 4]), TOUINT(BICKER_EOT));
 		return -1;
+	} else if (idx != '\xEE' && buf[2] == '\xEE') {
+		/* I found sperimentally that, when the syntax is
+		 * formally correct but a feature is not supported,
+		 * the device returns "\x01\x03\xEE\x07\x04". */
+		upsdebugx(2, "Command is not supported");
+		return -1;
 	} else if (buf[2] != idx) {
-		/* This probably suggests the command is correct but not
-		 * supported, so no logging performed here */
-		upsdebugx(2, "Indexes do not match, maybe the command is not supported?"
-			  " Sent 0x%02X, received 0x%02X",
-			  TOUINT(idx), TOUINT(buf[2]));
+		upslogx(LOG_WARNING, "Indexes do not match: sent 0x%02X, received 0x%02X",
+			TOUINT(idx), TOUINT(buf[2]));
 		return -1;
 	} else if (buf[3] != cmd) {
 		upslogx(LOG_WARNING, "Commands do not match: sent 0x%02X, received 0x%02X",
