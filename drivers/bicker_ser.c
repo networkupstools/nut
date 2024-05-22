@@ -121,13 +121,9 @@
 #define BICKER_PACKET	(1 + BICKER_HEADER + BICKER_MAXDATA + 1)
 
 #define TOUINT(ch)	((unsigned)(uint8_t)(ch))
-#define BYTESWAP(in)	((((uint16_t)(in) & 0x00FF) << 8) + (((uint16_t)(in) & 0xFF00) >> 8))
-
-#ifdef WORDS_BIGENDIAN
-#define SWAPONBE(in)	BYTESWAP(in)
-#else
-#define SWAPONBE(in)	(in)
-#endif
+#define LOWBYTE(w)	((uint8_t)((uint16_t)(w) & 0x00FF))
+#define HIGHBYTE(w)	((uint8_t)(((uint16_t)(w) & 0xFF00) >> 8))
+#define WORDLH(l,h)	((uint16_t)((l) + ((h) << 8)))
 
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
@@ -323,38 +319,44 @@ static ssize_t bicker_read_uint8(char idx, char cmd, uint8_t *dst)
 }
 
 /**
- * Execute a command that returns an int16_t value.
+ * Execute a command that returns an uint16_t value.
  * @param idx Command index
  * @param cmd Command
- * @param dst Destination for the value
+ * @param dst Destination for the value of NULL to discard
  * @return    The size of the data field on success or -1 on errors.
  */
-static ssize_t bicker_read_int16(char idx, char cmd, int16_t *dst)
+static ssize_t bicker_read_uint16(char idx, char cmd, uint16_t *dst)
 {
 	ssize_t ret;
+	uint8_t data[2];
 
 	ret = bicker_send(idx, cmd, NULL, 0);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = bicker_receive_known(idx, cmd, dst, 2);
+	ret = bicker_receive_known(idx, cmd, data, 2);
 	if (ret < 0) {
 		return ret;
 	}
 
-#ifdef WORDS_BIGENDIAN
-	/* By default data is stored in little-endian so, on big-endian
-	 * platforms, a byte swap must be performed */
-	*dst = BYTESWAP(*dst);
-#endif
+	if (dst != NULL) {
+		*dst = WORDLH(data[0], data[1]);
+	}
 
 	return ret;
 }
 
-static ssize_t bicker_read_uint16(char idx, char cmd, uint16_t *dst)
+/**
+ * Execute a command that returns an int16_t value.
+ * @param idx Command index
+ * @param cmd Command
+ * @param dst Destination for the value or NULL to discard
+ * @return    The size of the data field on success or -1 on errors.
+ */
+static ssize_t bicker_read_int16(char idx, char cmd, int16_t *dst)
 {
-	return bicker_read_int16(idx, cmd, (int16_t *) dst);
+	return bicker_read_uint16(idx, cmd, (uint16_t *) dst);
 }
 
 /**
@@ -405,11 +407,11 @@ static ssize_t bicker_receive_parameter(BickerParameter *parameter)
 	 *   [FFff] = value (UInt16)
 	 */
 	parameter->id = data[0];
-	parameter->min = SWAPONBE(* (uint16_t *) &data[1]);
-	parameter->max = SWAPONBE(* (uint16_t *) &data[3]);
-	parameter->std = SWAPONBE(* (uint16_t *) &data[5]);
+	parameter->min = WORDLH(data[1], data[2]);
+	parameter->max = WORDLH(data[3], data[4]);
+	parameter->std = WORDLH(data[5], data[6]);
 	parameter->enabled = data[7];
-	parameter->val = SWAPONBE(* (uint16_t *) &data[8]);
+	parameter->val = WORDLH(data[8], data[9]);
 
 	upsdebugx(3, "Parameter %d = %d (%s, min = %d, max = %d, std = %d)",
 		  parameter->id, parameter->val,
@@ -457,7 +459,8 @@ static ssize_t bicker_set(BickerParameter *parameter)
 	 *   [FFff] = value (UInt16)
 	 */
 	data[0] = parameter->enabled;
-	* (uint16_t *) &data[1] = SWAPONBE(parameter->val);
+	data[1] = LOWBYTE(parameter->val);
+	data[2] = HIGHBYTE(parameter->val);
 	ret = bicker_send(0x07, parameter->id, data, 3);
 	if (ret < 0) {
 		return ret;
