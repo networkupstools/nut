@@ -32,12 +32,12 @@
  *         |        HEADER         |
  *
  * where:
- * - `SOH` is the start signal ('\x01')
+ * - `SOH` is the start signal (0x01)
  * - `Size` is the length (in bytes) of the header and the data field
  * - `Index` is the command index: see AVAILABLE COMMANDS
  * - `CMD` is the command code to execute: see AVAILABLE COMMANDS
  * - `Data` is the (optional) argument of the command
- * - `EOT` is the end signal ('\x04')
+ * - `EOT` is the end signal (0x04)
  *
  * The same format is used for incoming and outcoming packets. The data
  * returned in the `Data` field is always in little-endian order.
@@ -109,8 +109,8 @@
 #define DRIVER_NAME	"Bicker serial protocol"
 #define DRIVER_VERSION	"0.01"
 
-#define BICKER_SOH	'\x01'
-#define BICKER_EOT	'\x04'
+#define BICKER_SOH	0x01
+#define BICKER_EOT	0x04
 #define BICKER_TIMEOUT	1
 #define BICKER_DELAY	20
 #define BICKER_RETRIES	3
@@ -150,9 +150,9 @@ typedef struct {
  * @param datalen Size of the source data field or 0
  * @return        `datalen` on success or -1 on errors.
  */
-static ssize_t bicker_send(char idx, char cmd, const void *data, size_t datalen)
+static ssize_t bicker_send(uint8_t idx, uint8_t cmd, const void *data, size_t datalen)
 {
-	char buf[BICKER_PACKET];
+	uint8_t buf[BICKER_PACKET];
 	size_t buflen;
 	ssize_t ret;
 
@@ -200,11 +200,11 @@ static ssize_t bicker_send(char idx, char cmd, const void *data, size_t datalen)
  * The data field is stored directly in the destination buffer. `data`,
  * if not NULL, must have at least BICKER_MAXDATA bytes.
  */
-static ssize_t bicker_receive(char idx, char cmd, void *data)
+static ssize_t bicker_receive(uint8_t idx, uint8_t cmd, void *data)
 {
 	ssize_t ret;
 	size_t datalen;
-	char buf[BICKER_PACKET];
+	uint8_t buf[BICKER_PACKET];
 
 	/* Read first two bytes (SOH + size) */
 	ret = ser_get_buf_len(upsfd, buf, 2, BICKER_TIMEOUT, 0);
@@ -239,10 +239,10 @@ static ssize_t bicker_receive(char idx, char cmd, void *data)
 		upslogx(LOG_WARNING, "Received 0x%02X instead of EOT (0x%02X)",
 			TOUINT(buf[datalen + 4]), TOUINT(BICKER_EOT));
 		return -1;
-	} else if (idx != '\xEE' && buf[2] == '\xEE') {
+	} else if (idx != 0xEE && buf[2] == 0xEE) {
 		/* I found experimentally that, when the syntax is
 		 * formally correct but a feature is not supported,
-		 * the device returns "\x01\x03\xEE\x07\x04". */
+		 * the device returns 0x01 0x03 0xEE 0x07 0x04. */
 		upsdebugx(2, "Command is not supported");
 		return -1;
 	} else if (buf[2] != idx) {
@@ -273,11 +273,11 @@ static ssize_t bicker_receive(char idx, char cmd, void *data)
  * `data`, if not NULL, must have at least `datalen` bytes. If
  * `datalen` is less than the received data size, an error is thrown.
  */
-static ssize_t bicker_receive_known(char idx, char cmd, void *data, size_t datalen)
+static ssize_t bicker_receive_known(uint8_t idx, uint8_t cmd, void *data, size_t datalen)
 {
 	ssize_t ret;
 	size_t real_datalen;
-	char real_data[BICKER_MAXDATA];
+	uint8_t real_data[BICKER_MAXDATA];
 
 	ret = bicker_receive(idx, cmd, real_data);
 	if (ret < 0) {
@@ -306,7 +306,7 @@ static ssize_t bicker_receive_known(char idx, char cmd, void *data, size_t datal
  * @param dst Destination for the value
  * @return    The size of the data field on success or -1 on errors.
  */
-static ssize_t bicker_read_uint8(char idx, char cmd, uint8_t *dst)
+static ssize_t bicker_read_uint8(uint8_t idx, uint8_t cmd, uint8_t *dst)
 {
 	ssize_t ret;
 
@@ -325,7 +325,7 @@ static ssize_t bicker_read_uint8(char idx, char cmd, uint8_t *dst)
  * @param dst Destination for the value of NULL to discard
  * @return    The size of the data field on success or -1 on errors.
  */
-static ssize_t bicker_read_uint16(char idx, char cmd, uint16_t *dst)
+static ssize_t bicker_read_uint16(uint8_t idx, uint8_t cmd, uint16_t *dst)
 {
 	ssize_t ret;
 	uint8_t data[2];
@@ -354,7 +354,7 @@ static ssize_t bicker_read_uint16(char idx, char cmd, uint16_t *dst)
  * @param dst Destination for the value or NULL to discard
  * @return    The size of the data field on success or -1 on errors.
  */
-static ssize_t bicker_read_int16(char idx, char cmd, int16_t *dst)
+static ssize_t bicker_read_int16(uint8_t idx, uint8_t cmd, int16_t *dst)
 {
 	return bicker_read_uint16(idx, cmd, (uint16_t *) dst);
 }
@@ -369,7 +369,7 @@ static ssize_t bicker_read_int16(char idx, char cmd, int16_t *dst)
  * `dst`, if not NULL, must have at least BICKER_MAXDATA+1 bytes, the
  * additional byte needed to accomodate the ending '\0'.
  */
-static ssize_t bicker_read_string(char idx, char cmd, char *dst)
+static ssize_t bicker_read_string(uint8_t idx, uint8_t cmd, char *dst)
 {
 	ssize_t ret;
 
@@ -482,12 +482,12 @@ static ssize_t bicker_delayed_shutdown(uint8_t seconds)
 	ssize_t ret;
 	uint8_t response;
 
-	ret = bicker_send('\x03', '\x32', &seconds, 1);
+	ret = bicker_send(0x03, 0x32, &seconds, 1);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = bicker_receive_known('\x03', '\x32', &response, 1);
+	ret = bicker_receive_known(0x03, 0x32, &response, 1);
 	if (ret >= 0) {
 		upslogx(LOG_INFO, "Shutting down in %d seconds: response = 0x%02X",
 			(int)seconds, (unsigned)response);
@@ -553,15 +553,15 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("device.type", "ups");
 
-	if (bicker_read_string('\x01', '\x60', string) >= 0) {
+	if (bicker_read_string(0x01, 0x60, string) >= 0) {
 		dstate_setinfo("device.mfr", "%s", string);
 	}
 
-	if (bicker_read_string('\x01', '\x61', string) >= 0) {
+	if (bicker_read_string(0x01, 0x61, string) >= 0) {
 		dstate_setinfo("device.serial", "%s", string);
 	}
 
-	if (bicker_read_string('\x01', '\x62', string) >= 0) {
+	if (bicker_read_string(0x01, 0x62, string) >= 0) {
 		dstate_setinfo("device.model", "%s", string);
 	}
 
@@ -577,28 +577,28 @@ void upsdrv_updateinfo(void)
 	int16_t i16;
 	ssize_t ret;
 
-	ret = bicker_read_uint16('\x01', '\x41', &u16);
+	ret = bicker_read_uint16(0x01, 0x41, &u16);
 	if (ret < 0) {
 		dstate_datastale();
 		return;
 	}
 	dstate_setinfo("input.voltage", "%.1f", (double) u16 / 1000);
 
-	ret = bicker_read_uint16('\x01', '\x42', &u16);
+	ret = bicker_read_uint16(0x01, 0x42, &u16);
 	if (ret < 0) {
 		dstate_datastale();
 		return;
 	}
 	dstate_setinfo("input.current", "%.3f", (double) u16 / 1000);
 
-	ret = bicker_read_uint16('\x01', '\x43', &u16);
+	ret = bicker_read_uint16(0x01, 0x43, &u16);
 	if (ret < 0) {
 		dstate_datastale();
 		return;
 	}
 	dstate_setinfo("output.voltage", "%.3f", (double) u16 / 1000);
 
-	ret = bicker_read_uint16('\x01', '\x44', &u16);
+	ret = bicker_read_uint16(0x01, 0x44, &u16);
 	if (ret < 0) {
 		dstate_datastale();
 		return;
@@ -607,14 +607,14 @@ void upsdrv_updateinfo(void)
 
 	/* This is a supercap UPS so, in this context,
 	 * the "battery" is the supercap stack */
-	ret = bicker_read_uint16('\x01', '\x45', &u16);
+	ret = bicker_read_uint16(0x01, 0x45, &u16);
 	if (ret < 0) {
 		dstate_datastale();
 		return;
 	}
 	dstate_setinfo("battery.voltage", "%.3f", (double) u16 / 1000);
 
-	ret = bicker_read_int16('\x01', '\x46', &i16);
+	ret = bicker_read_int16(0x01, 0x46, &i16);
 	if (ret < 0) {
 		dstate_datastale();
 		return;
@@ -622,16 +622,16 @@ void upsdrv_updateinfo(void)
 	dstate_setinfo("battery.current", "%.3f", (double) i16 / 1000);
 
 	/* Not implemented for all energy packs: failure acceptable */
-	if (bicker_read_uint16('\x01', '\x4A', &u16) >= 0) {
+	if (bicker_read_uint16(0x01, 0x4A, &u16) >= 0) {
 		dstate_setinfo("battery.temperature", "%.1f", (double) u16 - 273.16);
 	}
 
 	/* Not implemented for all energy packs: failure acceptable */
-	if (bicker_read_uint8('\x01', '\x48', &u8) >= 0) {
+	if (bicker_read_uint8(0x01, 0x48, &u8) >= 0) {
 		dstate_setinfo("battery.status", "%d%%", u8);
 	}
 
-	ret = bicker_read_uint8('\x01', '\x47', &u8);
+	ret = bicker_read_uint8(0x01, 0x47, &u8);
 	if (ret < 0) {
 		dstate_datastale();
 		return;
@@ -656,7 +656,7 @@ void upsdrv_updateinfo(void)
 	 * 6. ---
 	 * 7. ---
 	 */
-	ret = bicker_read_uint8('\x01', '\x40', &u8);
+	ret = bicker_read_uint8(0x01, 0x40, &u8);
 	if (ret < 0) {
 		dstate_datastale();
 		return;
@@ -720,18 +720,18 @@ void upsdrv_initups(void)
 	 * "ups.delay.shutdown" is needed right there */
 	dstate_setinfo("ups.delay.shutdown", "%u", BICKER_DELAY);
 
-	if (bicker_read_string('\x01', '\x63', string) >= 0) {
+	if (bicker_read_string(0x01, 0x63, string) >= 0) {
 		dstate_setinfo("ups.firmware", "%s", string);
 	}
 
-	if (bicker_read_string('\x01', '\x64', string) >= 0) {
+	if (bicker_read_string(0x01, 0x64, string) >= 0) {
 		dstate_setinfo("battery.type", "%s", string);
 	}
 
 	dstate_setinfo("battery.charge.low", "%d", 30);
 
 	/* Not implemented on all UPSes */
-	if (bicker_read_string('\x01', '\x65', string) >= 0) {
+	if (bicker_read_string(0x01, 0x65, string) >= 0) {
 		dstate_setinfo("ups.firmware.aux", "%s", string);
 	}
 
