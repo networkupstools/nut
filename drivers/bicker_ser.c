@@ -140,7 +140,7 @@ typedef struct {
 	uint16_t max;
 	uint16_t std;
 	uint8_t  enabled;
-	uint16_t val;
+	uint16_t value;
 } BickerParameter;
 
 /**
@@ -402,44 +402,45 @@ static ssize_t bicker_receive_parameter(BickerParameter *parameter)
 		return ret;
 	}
 
-	/* The returned `data` is in the format:
-	 *   [AA] [bbBB] [ccCC] [ddDD] [EE] [ffFF]
-	 * where:
-	 *   [AA]   = parameter ID (Byte)
-	 *   [BBbb] = minimum value (UInt16)
-	 *   [CCcc] = maximum value (UInt16)
-	 *   [DDdd] = standard value (UInt16)
-	 *   [EE]   = enabled (Bool)
-	 *   [FFff] = value (UInt16)
-	 */
-	parameter->id = data[0];
-	parameter->min = WORDLH(data[1], data[2]);
-	parameter->max = WORDLH(data[3], data[4]);
-	parameter->std = WORDLH(data[5], data[6]);
-	parameter->enabled = data[7];
-	parameter->val = WORDLH(data[8], data[9]);
+	if (parameter != NULL) {
+		/* The returned `data` is in the format:
+		 *   [AA] [bbBB] [ccCC] [ddDD] [EE] [ffFF]
+		 * where:
+		 *   [AA]   = parameter ID (Byte)
+		 *   [BBbb] = minimum value (UInt16)
+		 *   [CCcc] = maximum value (UInt16)
+		 *   [DDdd] = standard value (UInt16)
+		 *   [EE]   = enabled (Bool)
+		 *   [FFff] = value (UInt16)
+		 */
+		parameter->id = data[0];
+		parameter->min = WORDLH(data[1], data[2]);
+		parameter->max = WORDLH(data[3], data[4]);
+		parameter->std = WORDLH(data[5], data[6]);
+		parameter->enabled = data[7];
+		parameter->value = WORDLH(data[8], data[9]);
 
-	upsdebugx(3, "Parameter %u = %u (%s, min = %u, max = %u, std = %u)",
-		  (unsigned)parameter->id, (unsigned)parameter->val,
-		  parameter->enabled ? "enabled" : "disabled",
-		  (unsigned)parameter->min, (unsigned)parameter->max,
-		  (unsigned)parameter->std);
+		upsdebugx(3, "Parameter %u = %u (%s, min = %u, max = %u, std = %u)",
+			  (unsigned)parameter->id, (unsigned)parameter->value,
+			  parameter->enabled ? "enabled" : "disabled",
+			  (unsigned)parameter->min, (unsigned)parameter->max,
+			  (unsigned)parameter->std);
+	}
 
 	return ret;
 }
 
 /**
  * Get a Bicker parameter.
- * @param parameter In/out parameter struct
+ * @param id        ID of the parameter (0x01..0x0A)
+ * @param parameter Where to store the response or NULL to discard
  * @return The size of the data field on success or -1 on errors.
- *
- * You must fill at least the `parameter->id` field.
  */
-static ssize_t bicker_get(BickerParameter *parameter)
+static ssize_t bicker_get(uint8_t id, BickerParameter *parameter)
 {
 	ssize_t ret;
 
-	ret = bicker_send(0x07, parameter->id, NULL, 0);
+	ret = bicker_send(0x07, id, NULL, 0);
 	if (ret < 0) {
 		return ret;
 	}
@@ -449,13 +450,13 @@ static ssize_t bicker_get(BickerParameter *parameter)
 
 /**
  * Set a Bicker parameter.
- * @param parameter In parameter struct
+ * @param id        ID of the parameter (0x01..0x0A)
+ * @param enabled   0 to disable, 1 to enable
+ * @param value
+ * @param parameter Where to store the response or NULL to discard
  * @return The size of the data field on success or -1 on errors.
- *
- * You must fill at least the `parameter->id`, `parameter->enabled` and
- * `parameter->val` fields.
  */
-static ssize_t bicker_set(BickerParameter *parameter)
+static ssize_t bicker_set(uint8_t id, uint8_t enabled, uint16_t value, BickerParameter *parameter)
 {
 	ssize_t ret;
 	uint8_t data[3];
@@ -465,10 +466,10 @@ static ssize_t bicker_set(BickerParameter *parameter)
 	 *   [EE]   = enabled (Bool)
 	 *   [FFff] = value (UInt16)
 	 */
-	data[0] = parameter->enabled;
-	data[1] = LOWBYTE(parameter->val);
-	data[2] = HIGHBYTE(parameter->val);
-	ret = bicker_send(0x07, parameter->id, data, 3);
+	data[0] = enabled;
+	data[1] = LOWBYTE(value);
+	data[2] = HIGHBYTE(value);
+	ret = bicker_send(0x07, id, data, 3);
 	if (ret < 0) {
 		return ret;
 	}
@@ -533,19 +534,18 @@ static int bicker_instcmd(const char *cmdname, const char *extra)
 static int bicker_setvar(const char *varname, const char *val)
 {
 	if (!strcasecmp(varname, "battery.charge.restart")) {
-		BickerParameter parameter;
-		parameter.id = 0x05;
-		parameter.enabled = 1;
-		parameter.val = atoi(val);
-		dstate_setinfo("battery.charge.restart", "%u", parameter.val);
-	} else if (!strcasecmp(varname, "ups.delay.start")) {
-		BickerParameter parameter;
-		parameter.id = 0x04;
-		parameter.enabled = 1;
-		parameter.val = atoi(val);
-		if (bicker_set(&parameter) >= 0) {
-			dstate_setinfo("ups.delay.start", "%u", parameter.val);
+		int value = (uint16_t)atoi(val);
+		if (bicker_set(0x05, 1, value, NULL) < 0) {
+			return STAT_SET_FAILED;
 		}
+		dstate_setinfo("battery.charge.restart", "%u", value);
+		return STAT_SET_HANDLED;
+	} else if (!strcasecmp(varname, "ups.delay.start")) {
+		int value = (uint16_t)atoi(val);
+		if (bicker_set(0x04, 1, value, NULL) < 0) {
+			return STAT_SET_FAILED;
+		}
+		dstate_setinfo("ups.delay.start", "%u", value);
 		return STAT_SET_HANDLED;
 	}
 
@@ -741,17 +741,15 @@ void upsdrv_initups(void)
 		dstate_setinfo("ups.firmware.aux", "%s", string);
 	}
 
-	parameter.id = 0x05;
-	if (bicker_get(&parameter) >= 0) {
+	if (bicker_get(0x05, &parameter) >= 0) {
 		/* XXX: it seems to not work */
 		dstate_setinfo("battery.charge.restart", "%u",
-			       parameter.enabled ? parameter.val : 0);
+			       parameter.enabled ? parameter.value : 0);
 	}
 
-	parameter.id = 0x04;
-	if (bicker_get(&parameter) >= 0) {
+	if (bicker_get(0x04, &parameter) >= 0) {
 		dstate_setinfo("ups.delay.start", "%u",
-			       parameter.enabled ? parameter.val : 0);
+			       parameter.enabled ? parameter.value : 0);
 	}
 }
 
