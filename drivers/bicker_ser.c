@@ -115,6 +115,7 @@
 #define BICKER_TIMEOUT	1
 #define BICKER_DELAY	20
 #define BICKER_RETRIES	3
+#define BICKER_MAXID	0x0A /* Max parameter ID */
 
 /* Protocol lengths */
 #define BICKER_HEADER		3
@@ -460,6 +461,17 @@ static ssize_t bicker_set(uint8_t id, uint8_t enabled, uint16_t value, BickerPar
 {
 	ssize_t ret;
 	uint8_t data[3];
+
+	if (id < 1 || id > BICKER_MAXID) {
+		upslogx(LOG_ERR, "bicker_set(0x%02X, %d, %u): id out of range (0x01..0x%02X)",
+			(unsigned)id, enabled, (unsigned)value,
+			(unsigned)BICKER_MAXID);
+		return -1;
+	} else if (enabled > 1) {
+		upslogx(LOG_ERR, "bicker_set(0x%02X, %d, %u): enabled must be 0 or 1",
+			(unsigned)id, enabled, (unsigned)value);
+		return -1;
+	}
 
 	/* Format of `data` is "[EE] [ffFF]"
 	 * where:
