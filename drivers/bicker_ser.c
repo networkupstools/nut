@@ -144,6 +144,18 @@ typedef struct {
 	uint16_t value;
 } BickerParameter;
 
+typedef struct {
+	uint8_t     bicker_id;
+	const char *nut_name;
+} BickerMapping;
+
+static const BickerMapping bicker_mappings[] = {
+	{ 0x02, "ups.delay.shutdown" },
+	{ 0x04, "ups.delay.start" },
+	{ 0x05, "battery.charge.restart" },
+	{ 0x07, "battery.charge.low" },
+};
+
 /**
  * Send a packet.
  * @param idx     Command index
@@ -489,6 +501,38 @@ static ssize_t bicker_set(uint8_t id, uint8_t enabled, uint16_t value, BickerPar
 	return bicker_receive_parameter(parameter);
 }
 
+/**
+ * Write to a Bicker parameter.
+ * @param id        ID of the parameter (0x01..0x0A)
+ * @param val       A string with the value to write
+ * @param parameter Where to store the response (required!)
+ * @return The size of the data field on success or -1 on errors.
+ *
+ * This function is similar to bicker_set() but accepts string values.
+ * If `val` is NULL or empty, the underlying Bicker parameter is
+ * disabled and reset to its standard value.
+ */
+static int bicker_write(uint8_t id, const char *val, BickerParameter *parameter)
+{
+	ssize_t ret;
+	uint8_t enabled;
+	uint16_t value;
+
+	if (val == NULL || val[0] == '\0') {
+		ret = bicker_get(id, parameter);
+		if (ret < 0) {
+			return ret;
+		}
+		enabled = 0;
+		value = parameter->std;
+	} else {
+		enabled = 1;
+		value = atoi(val);
+	}
+
+	return bicker_set(id, enabled, value, parameter);
+}
+
 /* For some reason the `seconds` delay (at least on my UPSIC-2403D)
  * is not honored: the shutdown is always delayed by 2 seconds. This
  * fixed delay seems to be independent from the state of the UPS (on
@@ -521,7 +565,7 @@ static ssize_t bicker_shutdown(void)
 	int delay;
 
 	str = dstate_getinfo("ups.delay.shutdown");
-	delay = atoi(str);
+	delay = str != NULL ? atoi(str) : 0;
 	if (delay > 255) {
 		upslogx(LOG_WARNING, "Shutdown delay too big: %d > 255",
 			delay);
@@ -545,20 +589,26 @@ static int bicker_instcmd(const char *cmdname, const char *extra)
 
 static int bicker_setvar(const char *varname, const char *val)
 {
-	if (!strcasecmp(varname, "battery.charge.restart")) {
-		int value = (uint16_t)atoi(val);
-		if (bicker_set(0x05, 1, value, NULL) < 0) {
-			return STAT_SET_FAILED;
+	const BickerMapping *mapping;
+	unsigned i;
+	BickerParameter parameter;
+
+	/* Handle mapped parameters */
+	for (i = 0; i < SIZEOF_ARRAY(bicker_mappings); ++i) {
+		mapping = &bicker_mappings[i];
+		if (!strcasecmp(varname, mapping->nut_name)) {
+			if (bicker_write(mapping->bicker_id, val, &parameter) < 0) {
+				return STAT_SET_FAILED;
+			}
+
+			if (parameter.enabled) {
+				dstate_setinfo(varname, "%u", parameter.value);
+			} else {
+				/* Disabled parameters are removed from NUT */
+				dstate_delinfo(varname);
+			}
+			return STAT_SET_HANDLED;
 		}
-		dstate_setinfo("battery.charge.restart", "%u", value);
-		return STAT_SET_HANDLED;
-	} else if (!strcasecmp(varname, "ups.delay.start")) {
-		int value = (uint16_t)atoi(val);
-		if (bicker_set(0x04, 1, value, NULL) < 0) {
-			return STAT_SET_FAILED;
-		}
-		dstate_setinfo("ups.delay.start", "%u", value);
-		return STAT_SET_HANDLED;
 	}
 
 	upslogx(LOG_NOTICE, "setvar: unknown variable [%s]", varname);
@@ -658,9 +708,9 @@ void upsdrv_updateinfo(void)
 
 	status_init();
 
-	/* Consider the battery low when its charge is < 30% */
+	/* On no "battery.charge.low" variable, use 30% */
 	str = dstate_getinfo("battery.charge.low");
-	if (u8 < atoi(str)) {
+	if (u8 < (str != NULL ? atoi(str) : 30)) {
 		status_set("LB");
 	}
 
@@ -728,15 +778,12 @@ void upsdrv_initups(void)
 {
 	char string[BICKER_MAXDATA + 1];
 	BickerParameter parameter;
+	const BickerMapping *mapping;
+	unsigned i;
 
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B38400);
 	ser_set_dtr(upsfd, 1);
-
-	/* Adding this variable here because upsdrv_initinfo() is not
-	 * called when triggering a forced shutdown and
-	 * "ups.delay.shutdown" is needed right there */
-	dstate_setinfo("ups.delay.shutdown", "%u", BICKER_DELAY);
 
 	if (bicker_read_string(0x01, 0x63, string) >= 0) {
 		dstate_setinfo("ups.firmware", "%s", string);
@@ -746,22 +793,19 @@ void upsdrv_initups(void)
 		dstate_setinfo("battery.type", "%s", string);
 	}
 
-	dstate_setinfo("battery.charge.low", "%d", 30);
-
 	/* Not implemented on all UPSes */
 	if (bicker_read_string(0x01, 0x65, string) >= 0) {
 		dstate_setinfo("ups.firmware.aux", "%s", string);
 	}
 
-	if (bicker_get(0x05, &parameter) >= 0) {
-		/* XXX: it seems to not work */
-		dstate_setinfo("battery.charge.restart", "%u",
-			       parameter.enabled ? parameter.value : 0);
-	}
-
-	if (bicker_get(0x04, &parameter) >= 0) {
-		dstate_setinfo("ups.delay.start", "%u",
-			       parameter.enabled ? parameter.value : 0);
+	/* Initialize mapped parameters */
+	for (i = 0; i < SIZEOF_ARRAY(bicker_mappings); ++i) {
+		mapping = &bicker_mappings[i];
+		if (bicker_get(mapping->bicker_id, &parameter) >= 0 &&
+		    parameter.enabled) {
+			dstate_setinfo(mapping->nut_name, "%u",
+				       (unsigned)parameter.value);
+		}
 	}
 }
 
