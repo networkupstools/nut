@@ -26,6 +26,16 @@ UPS shutdown command in case of FSD handling, or for mere 'netclient' systems
 it would run just the 'upsmon' client to monitor remote UPS device(s) and
 initiate the OS shut down on the local Windows system as applicable.
 
+Beside launching or stopping a set of the NUT programs in certain cases,
+this helper program also allows to register (or un-register) itself as a
+Windows service. To actually manage the service from command line you can
+execute the Windows `net` command, e.g.:
+
+----
+net stop "Network UPS Tools"
+net start "Network UPS Tools"
+----
+
 OPTIONS
 -------
 
