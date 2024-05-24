@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3151 utf-8
+personal_ws-1.1 en 3165 utf-8
 AAC
 AAS
 ABI
@@ -60,6 +60,7 @@ Antonino
 Apodaca
 AppData
 AppVeyor
+ArgumentList
 Arjen
 Arkadiusz
 Armin
@@ -611,6 +612,7 @@ LineB
 Lintian
 ListClients
 Lite's
+LocalIP
 LogMax
 LogMin
 LowBatt
@@ -907,6 +909,7 @@ PowerPS
 PowerPal
 PowerPanel
 PowerShare
+PowerShell
 PowerShield
 PowerSure
 PowerTech
@@ -924,6 +927,7 @@ PresentStatus
 Priv
 ProductID
 Progra
+ProgramFiles
 Proxmox
 Prynych
 Pulizzi
@@ -997,6 +1001,7 @@ Redhat
 Regados
 Reinholdtsen
 Remi
+RemoteIP
 Remoting
 Rene
 René
@@ -1014,6 +1019,7 @@ Rodríguez
 Rouben
 Rozman
 Rucelf
+RunAs
 RunUPSCommand
 RxD
 Ryabov
@@ -1405,6 +1411,7 @@ adm
 admin's
 adminbox
 adoc
+advfirewall
 advorder
 ae
 aec
@@ -2204,6 +2211,8 @@ lnetsnmp
 loadPercentage
 localcalculation
 localhost
+localip
+localport
 localtime
 lockf
 logfacility
@@ -2350,6 +2359,7 @@ nds
 netcat
 netclient
 netserver
+netsh
 netsnmp
 netvision
 networkupstools
@@ -2530,6 +2540,7 @@ powernet
 poweroff
 powerpal
 powerpanel
+powershell
 powerup
 powervalue
 powerware
@@ -2610,6 +2621,7 @@ regtype
 relatime
 releasekeyring
 relicensing
+remoteip
 renderer
 renderers
 repindex
@@ -2823,6 +2835,7 @@ sublicense
 sublicenses
 submodule
 submodules
+subnet
 subtree
 sudo
 suid

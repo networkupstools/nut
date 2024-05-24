@@ -38,7 +38,33 @@ net start "Network UPS Tools"
 
 You can also execute `nut start` to automatically register the service
 (if not yet registered) and start it, and `nut stop` to stop the service
-if registered.
+(if registered and running).
+
+Note that for a Windows machine to act as a NUT data server for further
+clients, you may have to add Windows Firewall rules to allow incoming
+connections (by default to port `3493/tcp`), e.g. using PowerShell to
+elevate (alternately right-click a "Command Prompt" shortcut and select
+"Run as administrator"), and execute `netsh` to actually configure the
+needed "Advanced Firewall" rule:
+
+----
+REM Elevate to administrator status then run netsh to add firewall rule.
+REM Recommended to adapt "LocalIP" to expected listeners of this server,
+REM and "RemoteIP" to your single or comma-separated subnet(s) in CIDR
+REM notation, specific client IP address(es), or ranges of address(es)
+REM (dash-separated, as IP1-IP2).
+
+REM The following goes as one long command line:
+
+powershell.exe -Command "Start-Process netsh.exe -ArgumentList
+  \"advfirewall firewall add rule name=NUT-upsd-data-server
+    dir=in action=allow localip=ANY remoteip=ANY
+    program=%ProgramFiles%\NUT\sbin\upsd.exe
+    localport=3493 protocol=tcp\" -Verb RunAs"
+----
+
+Keep in mind that by default NUT `upsd` only listens on `localhost`, so
+you would need to add some `LISTEN` directives in `upsd.conf` as well.
 
 OPTIONS
 -------
