@@ -1,4 +1,5 @@
 /* wininit.c - MS Windows service which replace the init script
+               (compiled as "nut.exe")
 
    Copyright (C)
 	2010	Frederic Bohe <fredericbohe@eaton.com>
