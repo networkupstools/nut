@@ -424,6 +424,45 @@ static int SvcInstall(const char * SvcName, const char * args)
 	return EXIT_SUCCESS;
 }
 
+/* Returns a positive value if the service name exists
+ * -2 if we can not open the service manager
+ * -1 if we can not open the service itself
+ * +1 SvcName exists
+ */
+static int SvcExists(const char * SvcName)
+{
+	SC_HANDLE SCManager;
+	SC_HANDLE Service;
+
+	SCManager = OpenSCManager(
+			NULL,			/* local computer */
+			NULL,			/* ServicesActive database */
+			SC_MANAGER_ALL_ACCESS);	/* full access rights */
+
+	if (NULL == SCManager) {
+		upsdebugx(1, "OpenSCManager failed (%d)\n", (int)GetLastError());
+		return -2;
+	}
+
+	Service = OpenService(
+			SCManager,	/* SCM database */
+			SvcName,	/* name of service */
+			DELETE);	/* need delete access */
+
+	if (Service == NULL) {
+		upsdebugx(1, "OpenService failed (%d) for \"%s\"\n",
+			(int)GetLastError(), SvcName);
+		CloseServiceHandle(SCManager);
+		return -1;
+	}
+
+	CloseServiceHandle(Service);
+	CloseServiceHandle(SCManager);
+
+	upsdebugx(1, "Service \"%s\" seems to exist", SvcName);
+	return 1;
+}
+
 static int SvcUninstall(const char * SvcName)
 {
 	SC_HANDLE SCManager;
