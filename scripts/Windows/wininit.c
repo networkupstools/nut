@@ -706,9 +706,14 @@ static void help(const char *arg_progname)
 
 	printf("NUT for Windows all-in-one wrapper for driver(s), data server and monitoring client\n");
 	printf("including shutdown and power-off handling (where supported). All together they rely\n");
-	printf("on nut.conf and other files in %s\n\n", confpath());
+	printf("on nut.conf and other files in %s\n", confpath());
 
-	printf("Usage: %s [OPTION]\n\n", arg_progname);
+	printf("\nUsage: %s {start | stop}\n\n", arg_progname);
+	printf("    start	Install as a service (%s) if not yet done, then `net start` it\n", SVCNAME);
+	printf("    stop	If the service (%s) is installed, command it to `net stop`\n", SVCNAME);
+	printf("Note you may have to run this in an elevated privilege command shell, or use `runas`\n");
+
+	printf("\nUsage: %s [OPTION]\n\n", arg_progname);
 
 	printf("Options (note minus not slash as the control character), one of:\n");
 	printf("    -I	Install as a service (%s)\n", SVCNAME);
@@ -724,9 +729,35 @@ int main(int argc, char **argv)
 	int	i, default_opterr = opterr;
 	const char	*progname = xbasename(argc > 0 ? argv[0] : "nut.exe");
 
-	if (argc > 1 && !strcmp(argv[1], "/?")) {
-		help(progname);
-		return EXIT_SUCCESS;
+	if (argc > 1) {
+		if (!strcmp(argv[1], "/?")) {
+			help(progname);
+			return EXIT_SUCCESS;
+		}
+
+		if (!strcmp(argv[1], "stop")) {
+			int ret;
+			if (SvcExists(SVCNAME) < 0)
+				fprintf(stderr, "WARNING: Can not access service \"%s\"", SVCNAME);
+
+			ret = system("net stop \"" SVCNAME "\"");
+			if (ret == 0)
+				return EXIT_SUCCESS;
+			fatalx(EXIT_FAILURE, "FAILED stopping %s: %i", SVCNAME, ret);
+		}
+
+		if (!strcmp(argv[1], "start")) {
+			int ret;
+			if (SvcExists(SVCNAME) < 0) {
+				fprintf(stderr, "WARNING: Can not access service \"%s\", registering first", SVCNAME);
+				SvcInstall(SVCNAME, NULL);
+			}
+
+			ret = system("net start \"" SVCNAME "\"");
+			if (ret == 0)
+				return EXIT_SUCCESS;
+			fatalx(EXIT_FAILURE, "FAILED starting %s: %i", SVCNAME, ret);
+		}
 	}
 
 	/* TODO: Do not warn about unknown args - pass them to SvcMain()
