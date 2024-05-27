@@ -681,7 +681,6 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
-	const char *str;
 	uint8_t u8;
 	uint16_t u16;
 	int16_t i16;
@@ -750,9 +749,8 @@ void upsdrv_updateinfo(void)
 
 	status_init();
 
-	/* On no "battery.charge.low" variable, use 30% */
-	str = dstate_getinfo("battery.charge.low");
-	if (u8 < (str != NULL ? atoi(str) : 30)) {
+	/* In `u8` we already have the battery charge */
+	if (u8 < atoi(dstate_getinfo("battery.charge.low"))) {
 		status_set("LB");
 	}
 
@@ -848,6 +846,11 @@ void upsdrv_initups(void)
 			dstate_setinfo(mapping->nut_name, "%u",
 				       (unsigned)parameter.value);
 		}
+	}
+
+	/* Ensure "battery.charge.low" variable is defined */
+	if (dstate_getinfo("battery.charge.low") == NULL) {
+		dstate_setinfo("battery.charge.low", "%d", 20);
 	}
 }
 
