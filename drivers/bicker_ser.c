@@ -405,17 +405,17 @@ static ssize_t bicker_read_string(uint8_t idx, uint8_t cmd, char *dst)
 	return ret;
 }
 
-static ssize_t bicker_receive_parameter(BickerParameter *parameter)
+static ssize_t bicker_receive_parameter(BickerParameter *dst)
 {
 	ssize_t ret;
 	uint8_t data[10];
 
-	ret = bicker_receive_known(0x07, parameter->id, data, 10);
+	ret = bicker_receive_known(0x07, dst->id, data, 10);
 	if (ret < 0) {
 		return ret;
 	}
 
-	if (parameter != NULL) {
+	if (dst != NULL) {
 		/* The returned `data` is in the format:
 		 *   [AA] [bbBB] [ccCC] [ddDD] [EE] [ffFF]
 		 * where:
@@ -426,18 +426,18 @@ static ssize_t bicker_receive_parameter(BickerParameter *parameter)
 		 *   [EE]   = enabled (Bool)
 		 *   [FFff] = value (UInt16)
 		 */
-		parameter->id = data[0];
-		parameter->min = WORDLH(data[1], data[2]);
-		parameter->max = WORDLH(data[3], data[4]);
-		parameter->std = WORDLH(data[5], data[6]);
-		parameter->enabled = data[7];
-		parameter->value = WORDLH(data[8], data[9]);
+		dst->id = data[0];
+		dst->min = WORDLH(data[1], data[2]);
+		dst->max = WORDLH(data[3], data[4]);
+		dst->std = WORDLH(data[5], data[6]);
+		dst->enabled = data[7];
+		dst->value = WORDLH(data[8], data[9]);
 
 		upsdebugx(3, "Parameter %u = %u (%s, min = %u, max = %u, std = %u)",
-			  (unsigned)parameter->id, (unsigned)parameter->value,
-			  parameter->enabled ? "enabled" : "disabled",
-			  (unsigned)parameter->min, (unsigned)parameter->max,
-			  (unsigned)parameter->std);
+			  (unsigned)dst->id, (unsigned)dst->value,
+			  dst->enabled ? "enabled" : "disabled",
+			  (unsigned)dst->min, (unsigned)dst->max,
+			  (unsigned)dst->std);
 	}
 
 	return ret;
@@ -445,11 +445,11 @@ static ssize_t bicker_receive_parameter(BickerParameter *parameter)
 
 /**
  * Get a Bicker parameter.
- * @param id        ID of the parameter (0x01..0x0A)
- * @param parameter Where to store the response or NULL to discard
+ * @param id  ID of the parameter (0x01..0x0A)
+ * @param dst Where to store the response or NULL to discard
  * @return The size of the data field on success or -1 on errors.
  */
-static ssize_t bicker_get(uint8_t id, BickerParameter *parameter)
+static ssize_t bicker_get(uint8_t id, BickerParameter *dst)
 {
 	ssize_t ret;
 
@@ -458,18 +458,18 @@ static ssize_t bicker_get(uint8_t id, BickerParameter *parameter)
 		return ret;
 	}
 
-	return bicker_receive_parameter(parameter);
+	return bicker_receive_parameter(dst);
 }
 
 /**
  * Set a Bicker parameter.
- * @param id        ID of the parameter (0x01..0x0A)
- * @param enabled   0 to disable, 1 to enable
- * @param value
- * @param parameter Where to store the response or NULL to discard
+ * @param id      ID of the parameter (0x01..0x0A)
+ * @param enabled 0 to disable, 1 to enable
+ * @param value   What to set in the value field
+ * @param dst     Where to store the response or NULL to discard
  * @return The size of the data field on success or -1 on errors.
  */
-static ssize_t bicker_set(uint8_t id, uint8_t enabled, uint16_t value, BickerParameter *parameter)
+static ssize_t bicker_set(uint8_t id, uint8_t enabled, uint16_t value, BickerParameter *dst)
 {
 	ssize_t ret;
 	uint8_t data[3];
@@ -498,39 +498,39 @@ static ssize_t bicker_set(uint8_t id, uint8_t enabled, uint16_t value, BickerPar
 		return ret;
 	}
 
-	return bicker_receive_parameter(parameter);
+	return bicker_receive_parameter(dst);
 }
 
 /**
  * Write to a Bicker parameter.
- * @param id        ID of the parameter (0x01..0x0A)
- * @param val       A string with the value to write
- * @param parameter Where to store the response (required!)
+ * @param id  ID of the parameter (0x01..0x0A)
+ * @param val A string with the value to write
+ * @param dst Where to store the response (required!)
  * @return The size of the data field on success or -1 on errors.
  *
  * This function is similar to bicker_set() but accepts string values.
  * If `val` is NULL or empty, the underlying Bicker parameter is
  * disabled and reset to its standard value.
  */
-static int bicker_write(uint8_t id, const char *val, BickerParameter *parameter)
+static int bicker_write(uint8_t id, const char *val, BickerParameter *dst)
 {
 	ssize_t ret;
 	uint8_t enabled;
 	uint16_t value;
 
 	if (val == NULL || val[0] == '\0') {
-		ret = bicker_get(id, parameter);
+		ret = bicker_get(id, dst);
 		if (ret < 0) {
 			return ret;
 		}
 		enabled = 0;
-		value = parameter->std;
+		value = dst->std;
 	} else {
 		enabled = 1;
 		value = atoi(val);
 	}
 
-	return bicker_set(id, enabled, value, parameter);
+	return bicker_set(id, enabled, value, dst);
 }
 
 /* For some reason the `seconds` delay (at least on my UPSIC-2403D)
