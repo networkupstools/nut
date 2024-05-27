@@ -505,7 +505,7 @@ static ssize_t bicker_set(uint8_t id, uint8_t enabled, uint16_t value, BickerPar
  * Write to a Bicker parameter.
  * @param id  ID of the parameter (0x01..0x0A)
  * @param val A string with the value to write
- * @param dst Where to store the response (required!)
+ * @param dst Where to store the response or NULL to discard
  * @return The size of the data field on success or -1 on errors.
  *
  * This function is similar to bicker_set() but accepts string values.
@@ -515,22 +515,32 @@ static ssize_t bicker_set(uint8_t id, uint8_t enabled, uint16_t value, BickerPar
 static int bicker_write(uint8_t id, const char *val, BickerParameter *dst)
 {
 	ssize_t ret;
+	BickerParameter parameter;
 	uint8_t enabled;
 	uint16_t value;
 
 	if (val == NULL || val[0] == '\0') {
-		ret = bicker_get(id, dst);
+		ret = bicker_get(id, &parameter);
 		if (ret < 0) {
 			return ret;
 		}
 		enabled = 0;
-		value = dst->std;
+		value = parameter.std;
 	} else {
 		enabled = 1;
 		value = atoi(val);
 	}
 
-	return bicker_set(id, enabled, value, dst);
+	ret = bicker_set(id, enabled, value, &parameter);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (dst != NULL) {
+		memcpy(dst, &parameter, sizeof(parameter));
+	}
+
+	return ret;
 }
 
 /* For some reason the `seconds` delay (at least on my UPSIC-2403D)
