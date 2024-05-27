@@ -157,6 +157,24 @@ static const BickerMapping bicker_mappings[] = {
 };
 
 /**
+ * Parameter id validation.
+ * @param id      Id of the parameter
+ * @param context Description of the calling code for the log message
+ * @return 1 on valid id, 0 on errors.
+ *
+ * The id is valid if within the 0x01..BICKER_MAXID range (inclusive).
+ */
+static int bicker_valid_id(uint8_t id, const char *context)
+{
+	if (id < 1 || id > BICKER_MAXID) {
+		upslogx(LOG_ERR, "%s: parameter id 0x%02X is out of range (0x01..0x%02X)",
+			context, (unsigned)id, (unsigned)BICKER_MAXID);
+		return 0;
+	}
+	return 1;
+}
+
+/**
  * Send a packet.
  * @param idx     Command index
  * @param cmd     Command
@@ -419,7 +437,7 @@ static ssize_t bicker_receive_parameter(BickerParameter *dst)
 		/* The returned `data` is in the format:
 		 *   [AA] [bbBB] [ccCC] [ddDD] [EE] [ffFF]
 		 * where:
-		 *   [AA]   = parameter ID (Byte)
+		 *   [AA]   = parameter id (Byte)
 		 *   [BBbb] = minimum value (UInt16)
 		 *   [CCcc] = maximum value (UInt16)
 		 *   [DDdd] = standard value (UInt16)
@@ -445,13 +463,17 @@ static ssize_t bicker_receive_parameter(BickerParameter *dst)
 
 /**
  * Get a Bicker parameter.
- * @param id  ID of the parameter (0x01..0x0A)
+ * @param id  Id of the parameter
  * @param dst Where to store the response or NULL to discard
  * @return The size of the data field on success or -1 on errors.
  */
 static ssize_t bicker_get(uint8_t id, BickerParameter *dst)
 {
 	ssize_t ret;
+
+	if (!bicker_valid_id(id, "bicker_get")) {
+		return -1;
+	}
 
 	ret = bicker_send(0x07, id, NULL, 0);
 	if (ret < 0) {
@@ -463,7 +485,7 @@ static ssize_t bicker_get(uint8_t id, BickerParameter *dst)
 
 /**
  * Set a Bicker parameter.
- * @param id      ID of the parameter (0x01..0x0A)
+ * @param id      Id of the parameter
  * @param enabled 0 to disable, 1 to enable
  * @param value   What to set in the value field
  * @param dst     Where to store the response or NULL to discard
@@ -474,10 +496,7 @@ static ssize_t bicker_set(uint8_t id, uint8_t enabled, uint16_t value, BickerPar
 	ssize_t ret;
 	uint8_t data[3];
 
-	if (id < 1 || id > BICKER_MAXID) {
-		upslogx(LOG_ERR, "bicker_set(0x%02X, %d, %u): id out of range (0x01..0x%02X)",
-			(unsigned)id, enabled, (unsigned)value,
-			(unsigned)BICKER_MAXID);
+	if (!bicker_valid_id(id, "bicker_set")) {
 		return -1;
 	} else if (enabled > 1) {
 		upslogx(LOG_ERR, "bicker_set(0x%02X, %d, %u): enabled must be 0 or 1",
@@ -503,7 +522,7 @@ static ssize_t bicker_set(uint8_t id, uint8_t enabled, uint16_t value, BickerPar
 
 /**
  * Write to a Bicker parameter.
- * @param id  ID of the parameter (0x01..0x0A)
+ * @param id  Id of the parameter
  * @param val A string with the value to write
  * @param dst Where to store the response or NULL to discard
  * @return The size of the data field on success or -1 on errors.
