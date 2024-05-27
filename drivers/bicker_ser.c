@@ -336,6 +336,57 @@ static ssize_t bicker_receive_known(uint8_t idx, uint8_t cmd, void *data, size_t
 }
 
 /**
+ * Receive the response of a set/get parameter command.
+ * @param id  Id of the parameter
+ * @param dst Where to store the response or NULL to discard
+ * @return The size of the data field on success or -1 on errors.
+ */
+static ssize_t bicker_receive_parameter(uint8_t id, BickerParameter *dst)
+{
+	ssize_t ret;
+	uint8_t data[10];
+	BickerParameter parameter;
+
+	if (!bicker_valid_id(id, "bicker_receive_parameter")) {
+		return -1;
+	}
+
+	ret = bicker_receive_known(0x07, id, data, sizeof(data));
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* The returned `data` is in the format:
+	 *   [AA] [bbBB] [ccCC] [ddDD] [EE] [ffFF]
+	 * where:
+	 *   [AA]   = parameter id (Byte)
+	 *   [BBbb] = minimum value (UInt16)
+	 *   [CCcc] = maximum value (UInt16)
+	 *   [DDdd] = standard value (UInt16)
+	 *   [EE]   = enabled (Bool)
+	 *   [FFff] = value (UInt16)
+	 */
+	parameter.id = data[0];
+	parameter.min = WORDLH(data[1], data[2]);
+	parameter.max = WORDLH(data[3], data[4]);
+	parameter.std = WORDLH(data[5], data[6]);
+	parameter.enabled = data[7];
+	parameter.value = WORDLH(data[8], data[9]);
+
+	upsdebugx(3, "Parameter %u = %u (%s, min = %u, max = %u, std = %u)",
+		  (unsigned)parameter.id, (unsigned)parameter.value,
+		  parameter.enabled ? "enabled" : "disabled",
+		  (unsigned)parameter.min, (unsigned)parameter.max,
+		  (unsigned)parameter.std);
+
+	if (dst != NULL) {
+		memcpy(dst, &parameter, sizeof(parameter));
+	}
+
+	return ret;
+}
+
+/**
  * Execute a command that returns an uint8_t value.
  * @param idx Command index
  * @param cmd Command
@@ -423,44 +474,6 @@ static ssize_t bicker_read_string(uint8_t idx, uint8_t cmd, char *dst)
 	return ret;
 }
 
-static ssize_t bicker_receive_parameter(BickerParameter *dst)
-{
-	ssize_t ret;
-	uint8_t data[10];
-
-	ret = bicker_receive_known(0x07, dst->id, data, 10);
-	if (ret < 0) {
-		return ret;
-	}
-
-	if (dst != NULL) {
-		/* The returned `data` is in the format:
-		 *   [AA] [bbBB] [ccCC] [ddDD] [EE] [ffFF]
-		 * where:
-		 *   [AA]   = parameter id (Byte)
-		 *   [BBbb] = minimum value (UInt16)
-		 *   [CCcc] = maximum value (UInt16)
-		 *   [DDdd] = standard value (UInt16)
-		 *   [EE]   = enabled (Bool)
-		 *   [FFff] = value (UInt16)
-		 */
-		dst->id = data[0];
-		dst->min = WORDLH(data[1], data[2]);
-		dst->max = WORDLH(data[3], data[4]);
-		dst->std = WORDLH(data[5], data[6]);
-		dst->enabled = data[7];
-		dst->value = WORDLH(data[8], data[9]);
-
-		upsdebugx(3, "Parameter %u = %u (%s, min = %u, max = %u, std = %u)",
-			  (unsigned)dst->id, (unsigned)dst->value,
-			  dst->enabled ? "enabled" : "disabled",
-			  (unsigned)dst->min, (unsigned)dst->max,
-			  (unsigned)dst->std);
-	}
-
-	return ret;
-}
-
 /**
  * Get a Bicker parameter.
  * @param id  Id of the parameter
@@ -480,7 +493,7 @@ static ssize_t bicker_get(uint8_t id, BickerParameter *dst)
 		return ret;
 	}
 
-	return bicker_receive_parameter(dst);
+	return bicker_receive_parameter(id, dst);
 }
 
 /**
@@ -517,7 +530,7 @@ static ssize_t bicker_set(uint8_t id, uint8_t enabled, uint16_t value, BickerPar
 		return ret;
 	}
 
-	return bicker_receive_parameter(dst);
+	return bicker_receive_parameter(id, dst);
 }
 
 /**
