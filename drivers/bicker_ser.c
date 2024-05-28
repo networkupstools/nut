@@ -108,7 +108,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Bicker serial protocol"
-#define DRIVER_VERSION	"0.01"
+#define DRIVER_VERSION	"0.02"
 
 #define BICKER_SOH	0x01
 #define BICKER_EOT	0x04
