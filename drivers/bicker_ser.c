@@ -687,6 +687,18 @@ static int bicker_setvar(const char *varname, const char *val)
 	unsigned i;
 	BickerParameter parameter;
 
+	/* This should not be needed because when `bicker_write()` is
+	 * successful the `parameter` struct is populated but gcc seems
+	 * not to be smart enough to realize that and errors out with
+	 * "error: ‘parameter...’ may be used uninitialized in this function"
+	 */
+	parameter.id = 0;
+	parameter.min = 0;
+	parameter.max = BICKER_MAXVAL;
+	parameter.std = 0;
+	parameter.enabled = 0;
+	parameter.value = 0;
+
 	/* Handle mapped parameters */
 	for (i = 0; i < SIZEOF_ARRAY(bicker_mappings); ++i) {
 		mapping = &bicker_mappings[i];
