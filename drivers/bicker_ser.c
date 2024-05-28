@@ -116,6 +116,7 @@
 #define BICKER_DELAY	20
 #define BICKER_RETRIES	3
 #define BICKER_MAXID	0x0A /* Max parameter ID */
+#define BICKER_MAXVAL	0xFFFF /* Max parameter value */
 
 /* Protocol lengths */
 #define BICKER_HEADER		3
@@ -147,13 +148,31 @@ typedef struct {
 typedef struct {
 	uint8_t     bicker_id;
 	const char *nut_name;
+	const char *description;
 } BickerMapping;
 
 static const BickerMapping bicker_mappings[] = {
-	{ 0x02, "ups.delay.shutdown" },
-	{ 0x04, "ups.delay.start" },
-	{ 0x05, "battery.charge.restart" },
-	{ 0x07, "battery.charge.low" },
+	/* In docs/nut-names.txt: names and descriptions from there */
+	{ 0x02, "ups.delay.shutdown",
+		"Interval to wait after shutdown with delay command (seconds)" },
+	{ 0x04, "ups.delay.start",
+		"Interval to wait before restarting the load (seconds)" },
+	{ 0x05, "battery.charge.restart",
+		"Minimum battery level for UPS restart after power-off" },
+	{ 0x07, "battery.charge.low",
+		"Remaining battery level when UPS switches to LB (percent)" },
+
+	/* Not in docs/nut-names.txt: crafted names and descriptions */
+	{ 0x01, "output.current.low",
+		"Current threshold under which the power will be cut (mA)" },
+	{ 0x03, "ups.delay.shutdown.signal",
+		"Interval to wait before sending the shutdown signal (seconds)" },
+	{ 0x06, "ups.delay.shutdown.in1",
+		"Interval to wait with IN1 high before sending the shutdown signal (seconds)" },
+	{ 0x08, "battery.charge.low.empty",
+		"Battery level threshold for the empty signal (percent)" },
+	{ 0x09, "ups.relay.mode",
+		"Behavior of the relay" },
 };
 
 /**
@@ -475,6 +494,42 @@ static ssize_t bicker_read_string(uint8_t idx, uint8_t cmd, char *dst)
 }
 
 /**
+ * Create a read-write Bicker parameter.
+ * @param parameter Source information
+ * @param mapping   How that parameter is mapped to NUT
+ */
+static void bicker_new(const BickerParameter *parameter, const BickerMapping *mapping)
+{
+	const char *varname;
+
+	varname = mapping->nut_name;
+	if (parameter->enabled) {
+		dstate_setinfo(varname, "%u", (unsigned)parameter->value);
+	} else {
+		/* dstate_setinfo(varname, "") triggers a GCC warning */
+		dstate_setinfo(varname, "%s", "");
+	}
+
+	/* Using ST_FLAG_STRING so an empty string can be used
+	 * to identify a disabled parameter */
+	dstate_setflags(varname, ST_FLAG_RW | ST_FLAG_STRING);
+
+	/* Just tested it: setting a range does not hinder setting
+	 * an empty string with `dstate_setinfo(varname, "")` */
+	if (parameter->min == BICKER_MAXVAL) {
+		/* The device here is likely corrupt:
+		 * apply a standard range to try using it anyway */
+		upslogx(LOG_WARNING, "Parameter %s is corrupt", varname);
+		dstate_addrange(varname, 0, BICKER_MAXVAL);
+	} else {
+		dstate_addrange(varname, parameter->min, parameter->max);
+	}
+
+	/* Maximum value for an uint16_t is 65535, i.e. 5 digits */
+	dstate_setaux(varname, 5);
+}
+
+/**
  * Get a Bicker parameter.
  * @param id  Id of the parameter
  * @param dst Where to store the response or NULL to discard
@@ -644,7 +699,8 @@ static int bicker_setvar(const char *varname, const char *val)
 			}
 
 			if (parameter.enabled) {
-				dstate_setinfo(varname, "%u", parameter.value);
+				dstate_setinfo(varname, "%u",
+					       (unsigned)parameter.value);
 			} else {
 				/* Disabled parameters are removed from NUT */
 				dstate_delinfo(varname);
@@ -841,10 +897,8 @@ void upsdrv_initups(void)
 	/* Initialize mapped parameters */
 	for (i = 0; i < SIZEOF_ARRAY(bicker_mappings); ++i) {
 		mapping = &bicker_mappings[i];
-		if (bicker_get(mapping->bicker_id, &parameter) >= 0 &&
-		    parameter.enabled) {
-			dstate_setinfo(mapping->nut_name, "%u",
-				       (unsigned)parameter.value);
+		if (bicker_get(mapping->bicker_id, &parameter) >= 0) {
+			bicker_new(&parameter, mapping);
 		}
 	}
 
