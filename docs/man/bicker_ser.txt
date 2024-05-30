@@ -82,11 +82,14 @@ Currently this setting is only valid for relay signaling. Cannot be disabled.
 *experimental.ups.relay.mode* (default `0x01`)::
 This parameter controls the behavior of the relay in case of different events.
 Cannot be disabled.
-- `0x01` On power fail (normally closed)
-- `0x02` On power fail (normally opened)
-- `0x03` Shutdown impulse (1 second)
-- `0x04` Battery low signal (normally closed)
-- `0x05` Battery defect signal (normally closed)
++
+Available relay modes:
+[horizontal]
+`0x01`::: On power fail (normally closed)
+`0x02`::: On power fail (normally opened)
+`0x03`::: Shutdown impulse (1 second)
+`0x04`::: Battery low signal (normally closed)
+`0x05`::: Battery defect signal (normally closed)
 
 INSTANT COMMANDS
 ----------------
