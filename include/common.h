@@ -1,6 +1,8 @@
 /* common.h - prototypes for the common useful functions
 
-   Copyright (C) 2000  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+    2000  Russell Kroll <rkroll@exploits.org>
+    2020-2024 Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -228,9 +230,6 @@ int sendsignal(const char *progname, int sig);
 int sendsignal(const char *progname, const char * sig);
 #endif
 
-int snprintfcat(char *dst, size_t size, const char *fmt, ...)
-	__attribute__ ((__format__ (__printf__, 3, 4)));
-
 /* Report maximum platform value for the pid_t */
 pid_t get_max_pid_t(void);
 
@@ -364,6 +363,33 @@ void *xmalloc(size_t size);
 void *xcalloc(size_t number, size_t size);
 void *xrealloc(void *ptr, size_t size);
 char *xstrdup(const char *string);
+
+int vsnprintfcat(char *dst, size_t size, const char *fmt, va_list ap);
+int snprintfcat(char *dst, size_t size, const char *fmt, ...)
+	__attribute__ ((__format__ (__printf__, 3, 4)));
+
+/* Mitigate the inherent insecurity of dynamically constructed formatting
+ * strings vs. a fixed vararg list with its amounts and types of variables
+ * printed by this or that method and pre-compiled in the program.
+ */
+char *minimize_formatting_string(char *buf, size_t buflen, const char *fmt);
+char *minimize_formatting_string_staticbuf(const char *fmt);
+int validate_formatting_string(const char *fmt_dynamic, const char *fmt_reference);
+
+int vsnprintfcat_dynamic(char *dst, size_t size, const char *fmt_dynamic, const char *fmt_reference, va_list va);
+int snprintfcat_dynamic(char *dst, size_t size, const char *fmt_dynamic, const char *fmt_reference, ...)
+	__attribute__ ((__format__ (__printf__, 4, 5)));
+
+int vsnprintf_dynamic(char *dst, size_t size, const char *fmt_dynamic, const char *fmt_reference, va_list va);
+int snprintf_dynamic(char *dst, size_t size, const char *fmt_dynamic, const char *fmt_reference, ...)
+	__attribute__ ((__format__ (__printf__, 4, 5)));
+
+/* Practical helper with a static buffer which we can use for setting
+ * values as a "%s" string e.g. in calls to dstate_setinfo(), etc.
+ * Sets buffer to empty string in case of errors.
+ */
+char * mkstr_dynamic(const char *fmt_dynamic, const char *fmt_reference, ...)
+	__attribute__ ((__format__ (__printf__, 2, 3)));
 
 /**** REGEX helper methods ****/
 

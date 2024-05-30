@@ -1,7 +1,7 @@
 /* common.c - common useful functions
 
    Copyright (C) 2000  Russell Kroll <rkroll@exploits.org>
-   Copyright (C) 2021-2022  Jim Klimov <jimklimov+nut@gmail.com>
+   Copyright (C) 2021-2024  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -606,9 +606,8 @@ int sendsignalfn(const char *pidfn, const char * sig)
 }
 #endif	/* WIN32 */
 
-int snprintfcat(char *dst, size_t size, const char *fmt, ...)
+int vsnprintfcat(char *dst, size_t size, const char *fmt, va_list ap)
 {
-	va_list ap;
 	size_t len = strlen(dst);
 	int ret;
 
@@ -619,7 +618,6 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 		return -1;
 	}
 
-	va_start(ap, fmt);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
 #endif
@@ -634,7 +632,6 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
-	va_end(ap);
 
 	dst[size] = '\0';
 
@@ -653,6 +650,31 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 	}
 #endif
 	return (int)len + ret;
+}
+
+int snprintfcat(char *dst, size_t size, const char *fmt, ...)
+{
+	va_list ap;
+	int ret;
+
+	va_start(ap, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+	/* Note: this code intentionally uses a caller-provided format string */
+	ret = vsnprintfcat(dst, size, fmt, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
+	va_end(ap);
+
+	return ret;
 }
 
 /* lazy way to send a signal if the program uses the PIDPATH */
@@ -1282,6 +1304,300 @@ void nut_report_config_flags(void)
 			(config_flags && *config_flags != '\0' ? "configured with flags: " : "configured all by default guesswork"),
 			(config_flags && *config_flags != '\0' ? config_flags : "")
 		);
+}
+
+char * minimize_formatting_string(char *buf, size_t buflen, const char *fmt)
+{
+	/* Return the bare-bone formatting string contained in "fmt"
+	 * as "%" characters followed immediately by ASCII letters,
+	 * or null if "fmt" is null (empty string if it has no "%"),
+	 * or "buf" is null, or "buflen" is too short.
+	 * Allows to compare different formatting strings to check
+	 * if they describe the same expected amounts of arguments
+	 * and their types.
+	 * Uses a caller-specified buffer and returns a pointer to
+	 * it, or NULL upon errors.
+	 */
+	const char	*p;
+	char	*b, inEscape;
+	size_t	i;
+
+	if (!fmt || !buf || buflen == 0)
+		return NULL;
+
+	for (b = buf, p = fmt, i = 0, inEscape = 0;
+		(*p != '\0' && i < buflen);
+		p++
+	) {
+		if (*p == '%') {
+			if (*(p+1) == '%') {
+				/* Escaped percent character, not a variable indicator; skip it right away */
+				p++;
+			} else {
+				inEscape = 1;
+				*b++ = *p;
+				i++;
+			}
+			continue;
+		}
+
+		if (inEscape) {
+			/* Did we hit a printf format conversion character?
+			 * Or another character that is critical for stack
+			 * intepretation as a variable argument list?
+			 * https://cplusplus.com/reference/cstdio/printf/
+			 */
+
+			if (*p == 'l' || *p == 'L' || *p == 'h' || *p == 'z' || *p == 'j' || *p == 't') {
+				/* Integer/pointer type size modifiers, e.g.
+				 * long (long...) something, or a short int (h)
+				 * size_t (z), intmax_t (j), ptrdiff_t (t)
+				 */
+				*b++ = *p;
+				i++;
+				continue;
+			}
+
+			if (*p == '*') {
+				/* Field length will be in another vararg on the stack */
+				*b++ = *p;
+				i++;
+				continue;
+			}
+
+			if ((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z') || *p == '*') {
+				/* Assume a conversion character (standards-dependent) */
+				inEscape = 0;
+				*b++ = *p;
+				i++;
+			}
+		}
+	}
+
+	if (inEscape) {
+		upsdebugx(1, "%s: error parsing '%s' as a formatting string - "
+			"got a dangling percent character", __func__, fmt);
+	}
+
+	*b = '\0';
+	return buf;
+}
+
+char * minimize_formatting_string_staticbuf(const char *fmt)
+{
+	/* Return the bare-bone formatting string contained in "fmt"
+	 * as "%" characters followed immediately by ASCII letters,
+	 * or null if "fmt" is null (empty string if it has no "%").
+	 * Allows to compare different formatting strings to check
+	 * if they describe the same expected amounts of arguments
+	 * and their types.
+	 * Returns a pointer to a static buffer; callers should
+	 * xstrdup() and free() the returned value where applicable
+	 * (e.g. if there is a need to compare several strings), or
+	 * just use minimize_formatting_string() with their own
+	 * buffers right away.
+	 */
+
+	static char	buf[LARGEBUF];
+
+	return minimize_formatting_string(buf, sizeof(buf), fmt);
+}
+
+int validate_formatting_string(const char *fmt_dynamic, const char *fmt_reference)
+{
+	/* Work around the insecurity of dynamic formatting strings (created
+	 * or selected at run-time and potentially mis-matching the stack of
+	 * subsequent varargs) by checking that the dynamic formatting string
+	 * to be used in practice matches the reference expectation. Compiler
+	 * is in position to statically check that the actual varargs match
+	 * that reference during build.
+	 * Returns 0 if the two reference strings minimize to the same value,
+	 * or a negative value (and sets errno) in case of errors:
+	 *   -1  for memory-related errors
+	 *   -2  for minimize_formatting_string() returning NULL
+	 *       (also likely memory errors)
+	 *   -3  and errno=EINVAL for successfully checked formatting strings
+	 *       that were found to be not equivalent
+	 */
+	if (!fmt_dynamic || !fmt_reference) {
+		errno = EFAULT;
+		return -1;
+	} else {
+		/* Prepare buffers for minimized formatting strings.
+		 * To err on the safe side, size them same as originals.
+		 */
+		size_t lenD = strlen(fmt_dynamic) + 1;
+		size_t lenR = strlen(fmt_reference) + 1;
+		char *bufD = xcalloc(lenD, sizeof(char)), *bufR = xcalloc(lenR, sizeof(char));
+
+		if (!bufD || !bufR) {
+			if (bufD)
+				free(bufD);
+			if (bufR)
+				free(bufR);
+			errno = ENOMEM;
+			return -1;
+		}
+
+		if (!minimize_formatting_string(bufD, lenD, fmt_dynamic)
+		||  !minimize_formatting_string(bufR, lenR, fmt_reference)
+		) {
+			free(bufD);
+			free(bufR);
+			errno = ERANGE;
+			return -2;
+		}
+
+		if (!strcmp(bufD, bufR)) {
+			/* Two strings compared as equals, good to go */
+			free(bufD);
+			free(bufR);
+			return 0;
+		}
+
+		/* FIXME: Check for functional equivalence, e.g. format chars
+		 * "x", "X", "i", "d", "u" ("o", "c"?) all describe an int,
+		 * and "g", "G", "f", "F", "E" are doubles.
+		 * Cross-check with standards about automatic expansion of
+		 * byte-size for many of these types when passed in varargs.
+		 */
+
+		/* This be should not be fatal right here, but may be in the caller logic */
+		upsdebugx(1, "%s: dynamic formatting string '%s' is not equivalent to expected '%s'",
+			__func__, fmt_dynamic, fmt_reference);
+		free(bufD);
+		free(bufR);
+		errno = EINVAL;
+		return -3;
+	}
+}
+
+int vsnprintfcat_dynamic(char *dst, size_t size, const char *fmt_dynamic, const char *fmt_reference, va_list ap)
+{
+	if (!dst || size == 0 || validate_formatting_string(fmt_dynamic, fmt_reference) < 0) {
+		return -1;
+	} else {
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+		/* Note: this code intentionally uses a caller-provided format string */
+		return vsnprintfcat(dst, size, fmt_dynamic, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
+	}
+}
+
+int snprintfcat_dynamic(char *dst, size_t size, const char *fmt_dynamic, const char *fmt_reference, ...)
+{
+	va_list ap;
+	int ret;
+
+	va_start(ap, fmt_reference);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+	/* Note: this code intentionally uses a caller-provided format string */
+	ret = vsnprintfcat_dynamic(dst, size, fmt_dynamic, fmt_reference, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
+	va_end(ap);
+
+	return ret;
+}
+
+int vsnprintf_dynamic(char *dst, size_t size, const char *fmt_dynamic, const char *fmt_reference, va_list ap)
+{
+	if (!dst || size == 0 || validate_formatting_string(fmt_dynamic, fmt_reference) < 0) {
+		return -1;
+	} else {
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+		/* Note: this code intentionally uses a caller-provided format string */
+		return vsnprintf(dst, size, fmt_dynamic, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
+	}
+}
+
+int snprintf_dynamic(char *dst, size_t size, const char *fmt_dynamic, const char *fmt_reference, ...)
+{
+	va_list ap;
+	int ret;
+
+	va_start(ap, fmt_reference);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+	/* Note: this code intentionally uses a caller-provided format string */
+	ret = vsnprintf_dynamic(dst, size, fmt_dynamic, fmt_reference, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
+	va_end(ap);
+
+	return ret;
+}
+
+char * mkstr_dynamic(const char *fmt_dynamic, const char *fmt_reference, ...)
+{
+	/* Practical helper with a static buffer which we can use for setting
+	 * values as a "%s" string e.g. in calls to dstate_setinfo(), etc.
+	 * Sets buffer to empty string in case of errors.
+	 */
+	static char buf[LARGEBUF];
+	va_list ap;
+	int ret;
+
+	va_start(ap, fmt_reference);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+	/* Note: this code intentionally uses a caller-provided format string */
+	ret = vsnprintf_dynamic(buf, sizeof(buf), fmt_dynamic, fmt_reference, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
+	va_end(ap);
+
+	if (ret < 0) {
+		buf[0] = '\0';
+	}
+
+	return buf;
 }
 
 static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
