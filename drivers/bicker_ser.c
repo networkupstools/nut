@@ -108,7 +108,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Bicker serial protocol"
-#define DRIVER_VERSION	"0.01"
+#define DRIVER_VERSION	"0.02"
 
 #define BICKER_SOH	0x01
 #define BICKER_EOT	0x04
@@ -116,6 +116,7 @@
 #define BICKER_DELAY	20
 #define BICKER_RETRIES	3
 #define BICKER_MAXID	0x0A /* Max parameter ID */
+#define BICKER_MAXVAL	0xFFFF /* Max parameter value */
 
 /* Protocol lengths */
 #define BICKER_HEADER		3
@@ -147,14 +148,50 @@ typedef struct {
 typedef struct {
 	uint8_t     bicker_id;
 	const char *nut_name;
+	const char *description;
 } BickerMapping;
 
 static const BickerMapping bicker_mappings[] = {
-	{ 0x02, "ups.delay.shutdown" },
-	{ 0x04, "ups.delay.start" },
-	{ 0x05, "battery.charge.restart" },
-	{ 0x07, "battery.charge.low" },
+	/* Official variables present in docs/nut-names.txt */
+	{ 0x02, "ups.delay.shutdown",
+		"Interval to wait after shutdown with delay command (seconds)" },
+	{ 0x04, "ups.delay.start",
+		"Interval to wait before restarting the load (seconds)" },
+	{ 0x05, "battery.charge.restart",
+		"Minimum battery level for UPS restart after power-off" },
+	{ 0x07, "battery.charge.low",
+		"Remaining battery level when UPS switches to LB (percent)" },
+
+	/* Unofficial variables under the "experimental" namespace */
+	{ 0x01, "experimental.output.current.low",
+		"Current threshold under which the power will be cut (mA)" },
+	{ 0x03, "experimental.ups.delay.shutdown.signal",
+		"Interval to wait before sending the shutdown signal (seconds)" },
+	{ 0x06, "experimental.ups.delay.shutdown.signal.masked",
+		"Interval to wait with IN1 high before sending the shutdown signal (seconds)" },
+	{ 0x08, "experimental.battery.charge.low.empty",
+		"Battery level threshold for the empty signal (percent)" },
+	{ 0x09, "experimental.ups.relay.mode",
+		"Behavior of the relay" },
 };
+
+/**
+ * Parameter id validation.
+ * @param id      Id of the parameter
+ * @param context Description of the calling code for the log message
+ * @return 1 on valid id, 0 on errors.
+ *
+ * The id is valid if within the 0x01..BICKER_MAXID range (inclusive).
+ */
+static int bicker_valid_id(uint8_t id, const char *context)
+{
+	if (id < 1 || id > BICKER_MAXID) {
+		upslogx(LOG_ERR, "%s: parameter id 0x%02X is out of range (0x01..0x%02X)",
+			context, (unsigned)id, (unsigned)BICKER_MAXID);
+		return 0;
+	}
+	return 1;
+}
 
 /**
  * Send a packet.
@@ -283,38 +320,86 @@ static ssize_t bicker_receive(uint8_t idx, uint8_t cmd, void *data)
  * Receive a packet with a data field of known size.
  * @param idx     Command index
  * @param cmd     Command
- * @param data    Destination buffer or NULL to discard the data field
+ * @param dst     Destination buffer or NULL to discard the data field
  * @param datalen The expected size of the data field
- * @return        The size of the data field on success or -1 on errors.
+ * @return        `datalen` on success or -1 on errors.
  *
- * `data`, if not NULL, must have at least `datalen` bytes. If
- * `datalen` is less than the received data size, an error is thrown.
+ * `dst`, if not NULL, must have at least `datalen` bytes. If the data
+ * is not exactly `datalen` bytes, an error is thrown.
  */
-static ssize_t bicker_receive_known(uint8_t idx, uint8_t cmd, void *data, size_t datalen)
+static ssize_t bicker_receive_known(uint8_t idx, uint8_t cmd, void *dst, size_t datalen)
 {
 	ssize_t ret;
-	size_t real_datalen;
-	uint8_t real_data[BICKER_MAXDATA];
+	uint8_t data[BICKER_MAXDATA];
 
-	ret = bicker_receive(idx, cmd, real_data);
+	ret = bicker_receive(idx, cmd, data);
 	if (ret < 0) {
 		return ret;
 	}
 
-	real_datalen = (size_t)ret;
-
-	if (datalen < real_datalen) {
-		upslogx(LOG_ERR, "Not enough space for the payload: %"
-			PRIuSIZE " < %" PRIuSIZE,
-			datalen, real_datalen);
+	if (datalen != (size_t)ret) {
+		upslogx(LOG_ERR, "Data size does not match: expected %"
+			PRIuSIZE " but got %" PRIiSIZE " bytes",
+			datalen, ret);
 		return -1;
 	}
 
-	if (data != NULL) {
-		memcpy(data, real_data, real_datalen);
+	if (dst != NULL) {
+		memcpy(dst, data, datalen);
 	}
 
-	return real_datalen;
+	return datalen;
+}
+
+/**
+ * Receive the response of a set/get parameter command.
+ * @param id  Id of the parameter
+ * @param dst Where to store the response or NULL to discard
+ * @return The size of the data field on success or -1 on errors.
+ */
+static ssize_t bicker_receive_parameter(uint8_t id, BickerParameter *dst)
+{
+	ssize_t ret;
+	uint8_t data[10];
+	BickerParameter parameter;
+
+	if (!bicker_valid_id(id, "bicker_receive_parameter")) {
+		return -1;
+	}
+
+	ret = bicker_receive_known(0x07, id, data, sizeof(data));
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* The returned `data` is in the format:
+	 *   [AA] [bbBB] [ccCC] [ddDD] [EE] [ffFF]
+	 * where:
+	 *   [AA]   = parameter id (Byte)
+	 *   [BBbb] = minimum value (UInt16)
+	 *   [CCcc] = maximum value (UInt16)
+	 *   [DDdd] = standard value (UInt16)
+	 *   [EE]   = enabled (Bool)
+	 *   [FFff] = value (UInt16)
+	 */
+	parameter.id = data[0];
+	parameter.min = WORDLH(data[1], data[2]);
+	parameter.max = WORDLH(data[3], data[4]);
+	parameter.std = WORDLH(data[5], data[6]);
+	parameter.enabled = data[7];
+	parameter.value = WORDLH(data[8], data[9]);
+
+	upsdebugx(3, "Parameter %u = %u (%s, min = %u, max = %u, std = %u)",
+		  (unsigned)parameter.id, (unsigned)parameter.value,
+		  parameter.enabled ? "enabled" : "disabled",
+		  (unsigned)parameter.min, (unsigned)parameter.max,
+		  (unsigned)parameter.std);
+
+	if (dst != NULL) {
+		memcpy(dst, &parameter, sizeof(parameter));
+	}
+
+	return ret;
 }
 
 /**
@@ -405,79 +490,78 @@ static ssize_t bicker_read_string(uint8_t idx, uint8_t cmd, char *dst)
 	return ret;
 }
 
-static ssize_t bicker_receive_parameter(BickerParameter *parameter)
+/**
+ * Create a read-write Bicker parameter.
+ * @param parameter Source information
+ * @param mapping   How that parameter is mapped to NUT
+ */
+static void bicker_new(const BickerParameter *parameter, const BickerMapping *mapping)
 {
-	ssize_t ret;
-	uint8_t data[10];
+	const char *varname;
 
-	ret = bicker_receive_known(0x07, parameter->id, data, 10);
-	if (ret < 0) {
-		return ret;
+	varname = mapping->nut_name;
+	if (parameter->enabled) {
+		dstate_setinfo(varname, "%u", (unsigned)parameter->value);
+	} else {
+		/* dstate_setinfo(varname, "") triggers a GCC warning */
+		dstate_setinfo(varname, "%s", "");
 	}
 
-	if (parameter != NULL) {
-		/* The returned `data` is in the format:
-		 *   [AA] [bbBB] [ccCC] [ddDD] [EE] [ffFF]
-		 * where:
-		 *   [AA]   = parameter ID (Byte)
-		 *   [BBbb] = minimum value (UInt16)
-		 *   [CCcc] = maximum value (UInt16)
-		 *   [DDdd] = standard value (UInt16)
-		 *   [EE]   = enabled (Bool)
-		 *   [FFff] = value (UInt16)
-		 */
-		parameter->id = data[0];
-		parameter->min = WORDLH(data[1], data[2]);
-		parameter->max = WORDLH(data[3], data[4]);
-		parameter->std = WORDLH(data[5], data[6]);
-		parameter->enabled = data[7];
-		parameter->value = WORDLH(data[8], data[9]);
+	/* Using ST_FLAG_STRING so an empty string can be used
+	 * to identify a disabled parameter */
+	dstate_setflags(varname, ST_FLAG_RW | ST_FLAG_STRING);
 
-		upsdebugx(3, "Parameter %u = %u (%s, min = %u, max = %u, std = %u)",
-			  (unsigned)parameter->id, (unsigned)parameter->value,
-			  parameter->enabled ? "enabled" : "disabled",
-			  (unsigned)parameter->min, (unsigned)parameter->max,
-			  (unsigned)parameter->std);
+	/* Just tested it: setting a range does not hinder setting
+	 * an empty string with `dstate_setinfo(varname, "")` */
+	if (parameter->min == BICKER_MAXVAL) {
+		/* The device here is likely corrupt:
+		 * apply a standard range to try using it anyway */
+		upslogx(LOG_WARNING, "Parameter %s is corrupt", varname);
+		dstate_addrange(varname, 0, BICKER_MAXVAL);
+	} else {
+		dstate_addrange(varname, parameter->min, parameter->max);
 	}
 
-	return ret;
+	/* Maximum value for an uint16_t is 65535, i.e. 5 digits */
+	dstate_setaux(varname, 5);
 }
 
 /**
  * Get a Bicker parameter.
- * @param id        ID of the parameter (0x01..0x0A)
- * @param parameter Where to store the response or NULL to discard
+ * @param id  Id of the parameter
+ * @param dst Where to store the response or NULL to discard
  * @return The size of the data field on success or -1 on errors.
  */
-static ssize_t bicker_get(uint8_t id, BickerParameter *parameter)
+static ssize_t bicker_get(uint8_t id, BickerParameter *dst)
 {
 	ssize_t ret;
+
+	if (!bicker_valid_id(id, "bicker_get")) {
+		return -1;
+	}
 
 	ret = bicker_send(0x07, id, NULL, 0);
 	if (ret < 0) {
 		return ret;
 	}
 
-	return bicker_receive_parameter(parameter);
+	return bicker_receive_parameter(id, dst);
 }
 
 /**
  * Set a Bicker parameter.
- * @param id        ID of the parameter (0x01..0x0A)
- * @param enabled   0 to disable, 1 to enable
- * @param value
- * @param parameter Where to store the response or NULL to discard
+ * @param id      Id of the parameter
+ * @param enabled 0 to disable, 1 to enable
+ * @param value   What to set in the value field
+ * @param dst     Where to store the response or NULL to discard
  * @return The size of the data field on success or -1 on errors.
  */
-static ssize_t bicker_set(uint8_t id, uint8_t enabled, uint16_t value, BickerParameter *parameter)
+static ssize_t bicker_set(uint8_t id, uint8_t enabled, uint16_t value, BickerParameter *dst)
 {
 	ssize_t ret;
 	uint8_t data[3];
 
-	if (id < 1 || id > BICKER_MAXID) {
-		upslogx(LOG_ERR, "bicker_set(0x%02X, %d, %u): id out of range (0x01..0x%02X)",
-			(unsigned)id, enabled, (unsigned)value,
-			(unsigned)BICKER_MAXID);
+	if (!bicker_valid_id(id, "bicker_set")) {
 		return -1;
 	} else if (enabled > 1) {
 		upslogx(LOG_ERR, "bicker_set(0x%02X, %d, %u): enabled must be 0 or 1",
@@ -498,39 +582,49 @@ static ssize_t bicker_set(uint8_t id, uint8_t enabled, uint16_t value, BickerPar
 		return ret;
 	}
 
-	return bicker_receive_parameter(parameter);
+	return bicker_receive_parameter(id, dst);
 }
 
 /**
  * Write to a Bicker parameter.
- * @param id        ID of the parameter (0x01..0x0A)
- * @param val       A string with the value to write
- * @param parameter Where to store the response (required!)
+ * @param id  Id of the parameter
+ * @param val A string with the value to write
+ * @param dst Where to store the response or NULL to discard
  * @return The size of the data field on success or -1 on errors.
  *
  * This function is similar to bicker_set() but accepts string values.
  * If `val` is NULL or empty, the underlying Bicker parameter is
  * disabled and reset to its standard value.
  */
-static int bicker_write(uint8_t id, const char *val, BickerParameter *parameter)
+static int bicker_write(uint8_t id, const char *val, BickerParameter *dst)
 {
 	ssize_t ret;
+	BickerParameter parameter;
 	uint8_t enabled;
 	uint16_t value;
 
 	if (val == NULL || val[0] == '\0') {
-		ret = bicker_get(id, parameter);
+		ret = bicker_get(id, &parameter);
 		if (ret < 0) {
 			return ret;
 		}
 		enabled = 0;
-		value = parameter->std;
+		value = parameter.std;
 	} else {
 		enabled = 1;
 		value = atoi(val);
 	}
 
-	return bicker_set(id, enabled, value, parameter);
+	ret = bicker_set(id, enabled, value, &parameter);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (dst != NULL) {
+		memcpy(dst, &parameter, sizeof(parameter));
+	}
+
+	return ret;
 }
 
 /* For some reason the `seconds` delay (at least on my UPSIC-2403D)
@@ -593,6 +687,18 @@ static int bicker_setvar(const char *varname, const char *val)
 	unsigned i;
 	BickerParameter parameter;
 
+	/* This should not be needed because when `bicker_write()` is
+	 * successful the `parameter` struct is populated but gcc seems
+	 * not to be smart enough to realize that and errors out with
+	 * "error: ‘parameter...’ may be used uninitialized in this function"
+	 */
+	parameter.id = 0;
+	parameter.min = 0;
+	parameter.max = BICKER_MAXVAL;
+	parameter.std = 0;
+	parameter.enabled = 0;
+	parameter.value = 0;
+
 	/* Handle mapped parameters */
 	for (i = 0; i < SIZEOF_ARRAY(bicker_mappings); ++i) {
 		mapping = &bicker_mappings[i];
@@ -602,7 +708,8 @@ static int bicker_setvar(const char *varname, const char *val)
 			}
 
 			if (parameter.enabled) {
-				dstate_setinfo(varname, "%u", parameter.value);
+				dstate_setinfo(varname, "%u",
+					       (unsigned)parameter.value);
 			} else {
 				/* Disabled parameters are removed from NUT */
 				dstate_delinfo(varname);
@@ -633,13 +740,14 @@ void upsdrv_initinfo(void)
 		dstate_setinfo("device.model", "%s", string);
 	}
 
+	dstate_addcmd("shutdown.return");
+
 	upsh.instcmd = bicker_instcmd;
 	upsh.setvar = bicker_setvar;
 }
 
 void upsdrv_updateinfo(void)
 {
-	const char *str;
 	uint8_t u8;
 	uint16_t u16;
 	int16_t i16;
@@ -708,9 +816,8 @@ void upsdrv_updateinfo(void)
 
 	status_init();
 
-	/* On no "battery.charge.low" variable, use 30% */
-	str = dstate_getinfo("battery.charge.low");
-	if (u8 < (str != NULL ? atoi(str) : 30)) {
+	/* In `u8` we already have the battery charge */
+	if (u8 < atoi(dstate_getinfo("battery.charge.low"))) {
 		status_set("LB");
 	}
 
@@ -801,11 +908,14 @@ void upsdrv_initups(void)
 	/* Initialize mapped parameters */
 	for (i = 0; i < SIZEOF_ARRAY(bicker_mappings); ++i) {
 		mapping = &bicker_mappings[i];
-		if (bicker_get(mapping->bicker_id, &parameter) >= 0 &&
-		    parameter.enabled) {
-			dstate_setinfo(mapping->nut_name, "%u",
-				       (unsigned)parameter.value);
+		if (bicker_get(mapping->bicker_id, &parameter) >= 0) {
+			bicker_new(&parameter, mapping);
 		}
+	}
+
+	/* Ensure "battery.charge.low" variable is defined */
+	if (dstate_getinfo("battery.charge.low") == NULL) {
+		dstate_setinfo("battery.charge.low", "%d", 20);
 	}
 }
 
