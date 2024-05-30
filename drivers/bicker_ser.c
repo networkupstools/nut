@@ -740,6 +740,8 @@ void upsdrv_initinfo(void)
 		dstate_setinfo("device.model", "%s", string);
 	}
 
+	dstate_addcmd("shutdown.return");
+
 	upsh.instcmd = bicker_instcmd;
 	upsh.setvar = bicker_setvar;
 }
