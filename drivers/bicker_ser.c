@@ -320,38 +320,35 @@ static ssize_t bicker_receive(uint8_t idx, uint8_t cmd, void *data)
  * Receive a packet with a data field of known size.
  * @param idx     Command index
  * @param cmd     Command
- * @param data    Destination buffer or NULL to discard the data field
+ * @param dst     Destination buffer or NULL to discard the data field
  * @param datalen The expected size of the data field
- * @return        The size of the data field on success or -1 on errors.
+ * @return        `datalen` on success or -1 on errors.
  *
- * `data`, if not NULL, must have at least `datalen` bytes. If
- * `datalen` is less than the received data size, an error is thrown.
+ * `dst`, if not NULL, must have at least `datalen` bytes. If the data
+ * is not exactly `datalen` bytes, an error is thrown.
  */
-static ssize_t bicker_receive_known(uint8_t idx, uint8_t cmd, void *data, size_t datalen)
+static ssize_t bicker_receive_known(uint8_t idx, uint8_t cmd, void *dst, size_t datalen)
 {
 	ssize_t ret;
-	size_t real_datalen;
-	uint8_t real_data[BICKER_MAXDATA];
+	uint8_t data[BICKER_MAXDATA];
 
-	ret = bicker_receive(idx, cmd, real_data);
+	ret = bicker_receive(idx, cmd, data);
 	if (ret < 0) {
 		return ret;
 	}
 
-	real_datalen = (size_t)ret;
-
-	if (datalen < real_datalen) {
-		upslogx(LOG_ERR, "Not enough space for the payload: %"
-			PRIuSIZE " < %" PRIuSIZE,
-			datalen, real_datalen);
+	if (datalen != (size_t)ret) {
+		upslogx(LOG_ERR, "Data size does not match: expected %"
+			PRIuSIZE " but got %" PRIiSIZE " bytes",
+			datalen, ret);
 		return -1;
 	}
 
-	if (data != NULL) {
-		memcpy(data, real_data, real_datalen);
+	if (dst != NULL) {
+		memcpy(dst, data, datalen);
 	}
 
-	return real_datalen;
+	return datalen;
 }
 
 /**
