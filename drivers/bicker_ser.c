@@ -152,7 +152,7 @@ typedef struct {
 } BickerMapping;
 
 static const BickerMapping bicker_mappings[] = {
-	/* In docs/nut-names.txt: names and descriptions from there */
+	/* Official variables present in docs/nut-names.txt */
 	{ 0x02, "ups.delay.shutdown",
 		"Interval to wait after shutdown with delay command (seconds)" },
 	{ 0x04, "ups.delay.start",
@@ -162,16 +162,16 @@ static const BickerMapping bicker_mappings[] = {
 	{ 0x07, "battery.charge.low",
 		"Remaining battery level when UPS switches to LB (percent)" },
 
-	/* Not in docs/nut-names.txt: crafted names and descriptions */
-	{ 0x01, "output.current.low",
+	/* Unofficial variables under the "experimental" namespace */
+	{ 0x01, "experimental.output.current.low",
 		"Current threshold under which the power will be cut (mA)" },
-	{ 0x03, "ups.delay.shutdown.signal",
+	{ 0x03, "experimental.ups.delay.shutdown.signal",
 		"Interval to wait before sending the shutdown signal (seconds)" },
-	{ 0x06, "ups.delay.shutdown.in1",
+	{ 0x06, "experimental.ups.delay.shutdown.signal.masked",
 		"Interval to wait with IN1 high before sending the shutdown signal (seconds)" },
-	{ 0x08, "battery.charge.low.empty",
+	{ 0x08, "experimental.battery.charge.low.empty",
 		"Battery level threshold for the empty signal (percent)" },
-	{ 0x09, "ups.relay.mode",
+	{ 0x09, "experimental.ups.relay.mode",
 		"Behavior of the relay" },
 };
 
