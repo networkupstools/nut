@@ -1346,31 +1346,77 @@ char * minimize_formatting_string(char *buf, size_t buflen, const char *fmt)
 			 * Or another character that is critical for stack
 			 * intepretation as a variable argument list?
 			 * https://cplusplus.com/reference/cstdio/printf/
+			 * Note that some widths are only required with
+			 * C99 and C++11 standards, and may be not available
+			 * before. Still, since we rely on macro names from
+			 * those standards (or inspired by them) like PRIiMAX
+			 * or PRIuSIZE, defined (if missing in OS headers)
+			 * by our "nut_stdint.h".
 			 */
+			switch (*p) {
+				/* We care about integer/pointer type size "width" modifiers, e.g.: */
+				case 'l':	/* long (long) int */
+				case 'L':	/* long double */
+				case 'h':	/* short int/char */
+#if defined(__cplusplus) || (defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)) || (defined _STDC_C99) || (defined __C99FEATURES__) /* C99+ build mode */ || (defined PRIiMAX && defined PRIiSIZE)
+				/* Technically, double "ll" and "hh" are also new */
+				case 'z':	/* size_t */
+				case 'j':	/* intmax_t */
+				case 't':	/* ptrdiff_t */
+#endif
+				/* and here field length will be in another vararg on the stack: */
+				case '*':
+					*b++ = *p;
+					i++;
+					continue;
 
-			if (*p == 'l' || *p == 'L' || *p == 'h' || *p == 'z' || *p == 'j' || *p == 't') {
-				/* Integer/pointer type size modifiers, e.g.
-				 * long (long...) something, or a short int (h)
-				 * size_t (z), intmax_t (j), ptrdiff_t (t)
-				 */
-				*b++ = *p;
-				i++;
-				continue;
+				/* Known conversion characters, collapse some numeric format
+				 * specifiers to unambiguous basic type for later comparisons */
+				case 'd':
+				case 'i':
+					inEscape = 0;
+					*b++ = 'i';
+					i++;
+					continue;
+
+				case 'u':
+				case 'o':
+				case 'x':
+				case 'X':
+					inEscape = 0;
+					*b++ = 'u';
+					i++;
+					continue;
+
+				case 'f':
+				case 'e':
+				case 'E':
+				case 'g':
+				case 'G':
+#if defined(__cplusplus) || (defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)) || (defined _STDC_C99) || (defined __C99FEATURES__) /* C99+ build mode */
+				case 'F':
+				case 'a':
+				case 'A':
+#endif
+					inEscape = 0;
+					*b++ = 'f';
+					i++;
+					continue;
+
+				case 'c':
+				case 's':
+				case 'p':
+				case 'n':
+					inEscape = 0;
+					*b++ = *p;
+					i++;
+					continue;
 			}
 
-			if (*p == '*') {
-				/* Field length will be in another vararg on the stack */
-				*b++ = *p;
-				i++;
-				continue;
-			}
-
-			if ((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z') || *p == '*') {
-				/* Assume a conversion character (standards-dependent) */
-				inEscape = 0;
-				*b++ = *p;
-				i++;
-			}
+			/* Assume and skip a flags/width/precision character
+			 * (non-POSIX standards-dependent), inconsequential
+			 * for printf style stack parsing and memory-safety.
+			 */
 		}
 	}
 
@@ -1454,13 +1500,6 @@ int validate_formatting_string(const char *fmt_dynamic, const char *fmt_referenc
 			free(bufR);
 			return 0;
 		}
-
-		/* FIXME: Check for functional equivalence, e.g. format chars
-		 * "x", "X", "i", "d", "u" ("o", "c"?) all describe an int,
-		 * and "g", "G", "f", "F", "E" are doubles.
-		 * Cross-check with standards about automatic expansion of
-		 * byte-size for many of these types when passed in varargs.
-		 */
 
 		/* This be should not be fatal right here, but may be in the caller logic */
 		upsdebugx(1, "%s: dynamic formatting string '%s' is not equivalent to expected '%s'",

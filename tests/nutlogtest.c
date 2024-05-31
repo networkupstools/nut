@@ -70,6 +70,7 @@ int main(void) {
 		char *dynfmt = "Test '%s'", *p;
 		char buf[LARGEBUF];
 
+		nut_debug_level = 1;
 		if (snprintf_dynamic(buf, sizeof(buf), dynfmt, "%s", "Single string via dynamic format") > 0) {
 			upsdebugx(0, "D: >>> %s", buf);
 			if (!strcmp(buf, "Test 'Single string via dynamic format'")) {
@@ -95,8 +96,33 @@ int main(void) {
 		upsdebugx(0, ">>> %s", NUT_STRARG(p));
 		if (!p || *p == '\0' || strcmp(p, "Test 'Single string inlined by mkstr_dynamic()'")) {
 			upsdebugx(0, "E: mkstr_dynamic() failed to prepare a dynamically formatted string: got unexpected content");
+			ret++;
 		} else {
 			upsdebugx(0, "D: mkstr_dynamic() prepared a dynamically formatted string with expected content");
+		}
+	}
+
+	if (1) {	/* scoping */
+		char	**p,
+			*fmtFloat[] = { "%f", " %A", " %0.1E%% ", NULL },
+			*fmtNotFloat[] = { "%f%", "%m", "$f", NULL };
+
+		for (p = &(fmtFloat[0]); *p; p++) {
+			if (validate_formatting_string(*p, "Voltage: %G is not %%d") < 0) {
+				upsdebugx(0, "E: validate_formatting_string() expecting %%f equivalent failed for: '%s'", *p);
+				ret++;
+			} else {
+				upsdebugx(0, "D: validate_formatting_string() expecting %%f equivalent passed for: '%s'", *p);
+			}
+		}
+
+		for (p = &(fmtNotFloat[0]); *p; p++) {
+			if (validate_formatting_string("%f", *p) < 0) {
+				upsdebugx(0, "D: validate_formatting_string() expecting %%f failed (as it should have) for: '%s'", *p);
+			} else {
+				upsdebugx(0, "E: validate_formatting_string() expecting %%f passed (but should not have) for: '%s'", *p);
+				ret++;
+			}
 		}
 	}
 
