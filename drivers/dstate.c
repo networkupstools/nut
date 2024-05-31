@@ -1191,13 +1191,11 @@ int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
  * COMMON
  ******************************************************************/
 
-int dstate_setinfo(const char *var, const char *fmt, ...)
+int vdstate_setinfo(const char *var, const char *fmt, va_list ap)
 {
 	int	ret;
 	char	value[ST_MAX_VALUE_LEN];
-	va_list	ap;
 
-	va_start(ap, fmt);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
 #endif
@@ -1211,7 +1209,6 @@ int dstate_setinfo(const char *var, const char *fmt, ...)
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
-	va_end(ap);
 
 	ret = state_setinfo(&dtree_root, var, value);
 
@@ -1222,13 +1219,63 @@ int dstate_setinfo(const char *var, const char *fmt, ...)
 	return ret;
 }
 
-int dstate_addenum(const char *var, const char *fmt, ...)
+int dstate_setinfo(const char *var, const char *fmt, ...)
 {
 	int	ret;
-	char	value[ST_MAX_VALUE_LEN];
 	va_list	ap;
 
 	va_start(ap, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+	ret = vdstate_setinfo(var, fmt, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
+	va_end(ap);
+
+	return ret;
+}
+
+int dstate_setinfo_dynamic(const char *var, const char *fmt_dynamic, const char *fmt_reference, ...)
+{
+	if (!var || validate_formatting_string(fmt_dynamic, fmt_reference) < 0) {
+		return -1;
+	} else {
+		int	ret;
+		va_list	ap;
+
+		va_start(ap, fmt_reference);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+		ret = vdstate_setinfo(var, fmt_dynamic, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
+		va_end(ap);
+
+		return ret;
+	}
+}
+
+int vdstate_addenum(const char *var, const char *fmt, va_list ap)
+{
+	int	ret;
+	char	value[ST_MAX_VALUE_LEN];
+
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
 #endif
@@ -1242,13 +1289,36 @@ int dstate_addenum(const char *var, const char *fmt, ...)
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
-	va_end(ap);
 
 	ret = state_addenum(dtree_root, var, value);
 
 	if (ret == 1) {
 		send_to_all("ADDENUM %s \"%s\"\n", var, value);
 	}
+
+	return ret;
+}
+
+int dstate_addenum(const char *var, const char *fmt, ...)
+{
+	int	ret;
+	va_list	ap;
+
+	va_start(ap, fmt);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+	ret = vdstate_addenum(var, fmt, ap);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+#pragma GCC diagnostic pop
+#endif
+	va_end(ap);
 
 	return ret;
 }
