@@ -1245,7 +1245,7 @@ int dstate_setinfo(const char *var, const char *fmt, ...)
 
 int dstate_setinfo_dynamic(const char *var, const char *fmt_dynamic, const char *fmt_reference, ...)
 {
-	if (!var || validate_formatting_string(fmt_dynamic, fmt_reference) < 0) {
+	if (!var || validate_formatting_string(fmt_dynamic, fmt_reference, 1) < 0) {
 		return -1;
 	} else {
 		int	ret;

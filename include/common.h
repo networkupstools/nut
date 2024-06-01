@@ -371,10 +371,14 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 /* Mitigate the inherent insecurity of dynamically constructed formatting
  * strings vs. a fixed vararg list with its amounts and types of variables
  * printed by this or that method and pre-compiled in the program.
+ * Verbosity is passed to upsdebugx(); a negative value should keep it quiet
+ * (e.g. when code deliberately checks for suitable formatting constraints).
+ * Consumers like the *_dynamic() methods here and in dstate typically use
+ * "1" to make errors in code visible with any effort to troubleshoot them.
  */
-char *minimize_formatting_string(char *buf, size_t buflen, const char *fmt);
-char *minimize_formatting_string_staticbuf(const char *fmt);
-int validate_formatting_string(const char *fmt_dynamic, const char *fmt_reference);
+char *minimize_formatting_string(char *buf, size_t buflen, const char *fmt, int verbosity);
+char *minimize_formatting_string_staticbuf(const char *fmt, int verbosity);
+int validate_formatting_string(const char *fmt_dynamic, const char *fmt_reference, int verbosity);
 
 int vsnprintfcat_dynamic(char *dst, size_t size, const char *fmt_dynamic, const char *fmt_reference, va_list va);
 int snprintfcat_dynamic(char *dst, size_t size, const char *fmt_dynamic, const char *fmt_reference, ...)

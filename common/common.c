@@ -1306,7 +1306,7 @@ void nut_report_config_flags(void)
 		);
 }
 
-char * minimize_formatting_string(char *buf, size_t buflen, const char *fmt)
+char * minimize_formatting_string(char *buf, size_t buflen, const char *fmt, int verbosity)
 {
 	/* Return the bare-bone formatting string contained in "fmt"
 	 * as "%" characters followed immediately by ASCII letters,
@@ -1421,15 +1421,16 @@ char * minimize_formatting_string(char *buf, size_t buflen, const char *fmt)
 	}
 
 	if (inEscape) {
-		upsdebugx(1, "%s: error parsing '%s' as a formatting string - "
-			"got a dangling percent character", __func__, fmt);
+		if (verbosity >= 0)
+			upsdebugx(verbosity, "%s: error parsing '%s' as a formatting string - "
+				"got a dangling percent character", __func__, fmt);
 	}
 
 	*b = '\0';
 	return buf;
 }
 
-char * minimize_formatting_string_staticbuf(const char *fmt)
+char * minimize_formatting_string_staticbuf(const char *fmt, int verbosity)
 {
 	/* Return the bare-bone formatting string contained in "fmt"
 	 * as "%" characters followed immediately by ASCII letters,
@@ -1446,10 +1447,10 @@ char * minimize_formatting_string_staticbuf(const char *fmt)
 
 	static char	buf[LARGEBUF];
 
-	return minimize_formatting_string(buf, sizeof(buf), fmt);
+	return minimize_formatting_string(buf, sizeof(buf), fmt, verbosity);
 }
 
-int validate_formatting_string(const char *fmt_dynamic, const char *fmt_reference)
+int validate_formatting_string(const char *fmt_dynamic, const char *fmt_reference, int verbosity)
 {
 	/* Work around the insecurity of dynamic formatting strings (created
 	 * or selected at run-time and potentially mis-matching the stack of
@@ -1485,8 +1486,8 @@ int validate_formatting_string(const char *fmt_dynamic, const char *fmt_referenc
 			return -1;
 		}
 
-		if (!minimize_formatting_string(bufD, lenD, fmt_dynamic)
-		||  !minimize_formatting_string(bufR, lenR, fmt_reference)
+		if (!minimize_formatting_string(bufD, lenD, fmt_dynamic, verbosity)
+		||  !minimize_formatting_string(bufR, lenR, fmt_reference, verbosity)
 		) {
 			free(bufD);
 			free(bufR);
@@ -1502,8 +1503,10 @@ int validate_formatting_string(const char *fmt_dynamic, const char *fmt_referenc
 		}
 
 		/* This be should not be fatal right here, but may be in the caller logic */
-		upsdebugx(1, "%s: dynamic formatting string '%s' is not equivalent to expected '%s'",
-			__func__, fmt_dynamic, fmt_reference);
+		if (verbosity >= 0)
+			upsdebugx(verbosity,
+				"%s: dynamic formatting string '%s' is not equivalent to expected '%s'",
+				__func__, fmt_dynamic, fmt_reference);
 		free(bufD);
 		free(bufR);
 		errno = EINVAL;
@@ -1513,7 +1516,7 @@ int validate_formatting_string(const char *fmt_dynamic, const char *fmt_referenc
 
 int vsnprintfcat_dynamic(char *dst, size_t size, const char *fmt_dynamic, const char *fmt_reference, va_list ap)
 {
-	if (!dst || size == 0 || validate_formatting_string(fmt_dynamic, fmt_reference) < 0) {
+	if (!dst || size == 0 || validate_formatting_string(fmt_dynamic, fmt_reference, 1) < 0) {
 		return -1;
 	} else {
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
@@ -1560,7 +1563,7 @@ int snprintfcat_dynamic(char *dst, size_t size, const char *fmt_dynamic, const c
 
 int vsnprintf_dynamic(char *dst, size_t size, const char *fmt_dynamic, const char *fmt_reference, va_list ap)
 {
-	if (!dst || size == 0 || validate_formatting_string(fmt_dynamic, fmt_reference) < 0) {
+	if (!dst || size == 0 || validate_formatting_string(fmt_dynamic, fmt_reference, 1) < 0) {
 		return -1;
 	} else {
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL

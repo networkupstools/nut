@@ -108,7 +108,7 @@ int main(void) {
 			*fmtNotFloat[] = { "%f%", "%m", "$f", NULL };
 
 		for (p = &(fmtFloat[0]); *p; p++) {
-			if (validate_formatting_string(*p, "Voltage: %G is not %%d") < 0) {
+			if (validate_formatting_string(*p, "Voltage: %G is not %%d", 1) < 0) {
 				upsdebugx(0, "E: validate_formatting_string() expecting %%f equivalent failed for: '%s'", *p);
 				ret++;
 			} else {
@@ -117,7 +117,7 @@ int main(void) {
 		}
 
 		for (p = &(fmtNotFloat[0]); *p; p++) {
-			if (validate_formatting_string("%f", *p) < 0) {
+			if (validate_formatting_string("%f", *p, 1) < 0) {
 				upsdebugx(0, "D: validate_formatting_string() expecting %%f failed (as it should have) for: '%s'", *p);
 			} else {
 				upsdebugx(0, "E: validate_formatting_string() expecting %%f passed (but should not have) for: '%s'", *p);
