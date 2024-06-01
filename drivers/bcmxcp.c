@@ -118,7 +118,7 @@ TODO List:
 #include "bcmxcp.h"
 
 #define DRIVER_NAME    "BCMXCP UPS driver"
-#define DRIVER_VERSION "0.34"
+#define DRIVER_VERSION "0.35"
 
 #define MAX_NUT_NAME_LENGTH 128
 #define NUT_OUTLET_POSITION   7
@@ -897,19 +897,7 @@ void decode_meter_map_entry(const unsigned char *entry, const unsigned char form
 		fValue = get_float(entry);
 		/* Format is packed BCD */
 		snprintf(sFormat, 31, "%%%d.%df", ((format & 0xf0) >> 4), (format & 0x0f));
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-		snprintf(value, 127, sFormat, fValue);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+		snprintf_dynamic(value, 127, sFormat, "%f", fValue);
 	}
 	else if (format == 0xe2) {
 		/* Seconds */

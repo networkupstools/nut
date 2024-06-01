@@ -275,20 +275,10 @@ static void drawbar(
 	gdImageFilledRectangle(im, 25, bar_y, width - 25, scale_height,
 		bar_color);
 
-	/* stick the text version of the value at the bottom center */
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-	snprintf(text, sizeof(text), format, value);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	/* stick the text version of the value at the bottom center
+	 * expected format is one of imgvar[] entries for "double value"
+	 */
+	snprintf_dynamic(text, sizeof(text), format, "%f", value);
 	gdImageString(im, gdFontMediumBold,
 		(width - (int)(strlen(text))*gdFontMediumBold->w)/2,
 		height - gdFontMediumBold->h,
