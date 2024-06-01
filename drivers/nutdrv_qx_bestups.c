@@ -517,7 +517,7 @@ static int	bestups_model(item_t *item, char *value, const size_t valuelen)
 	/* Unknown devices */
 	} else {
 
-		snprintf(value, valuelen, item->dfl, "Unknown (%s)", item->value);
+		snprintf(value, valuelen, "Unknown (%s)", item->value);
 		upslogx(LOG_INFO, "Unknown model detected - please report this ID: '%s'", item->value);
 
 	}
