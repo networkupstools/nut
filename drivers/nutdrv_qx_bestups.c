@@ -539,25 +539,20 @@ static int	bestups_batt_runtime(item_t *item, char *value, const size_t valuelen
 static int	bestups_batt_packs(item_t *item, char *value, const size_t valuelen)
 {
 	item_t	*unskip;
+	long	l;
 
 	if (strspn(item->value, "0123456789 ") != strlen(item->value)) {
 		upsdebugx(2, "%s: non numerical value [%s: %s]", __func__, item->info_type, item->value);
 		return -1;
 	}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-	snprintf(value, valuelen, item->dfl, strtol(item->value, NULL, 10));
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	l = strtol(item->value, NULL, 10);
+	if (l < 0 || l > INT_MAX) {
+		upsdebugx(2, "%s: value out of range [%s: %s]", __func__, item->info_type, item->value);
+		return -1;
+	}
+
+	snprintf_dynamic(value, valuelen, item->dfl, "%d", (int)l);
 
 	/* Unskip battery.packs setvar */
 	unskip = find_nut_info("battery.packs", QX_FLAG_SETVAR, 0);
