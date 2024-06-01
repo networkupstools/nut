@@ -61,6 +61,8 @@ static device_portname_t device_portname[] = {
 #endif
 #ifdef NUT_PLATFORM_SOLARIS
 	{ "/dev/tty%c", 'a', 'z' },
+	{ "/dev/cua/%c", 'a', 'z' },
+	{ "/dev/cua%c", '0', '9' },
 #endif
 #ifdef NUT_PLATFORM_AIX
 	{ "/dev/tty%c", '0', '9' },
@@ -68,6 +70,13 @@ static device_portname_t device_portname[] = {
 #ifdef NUT_PLATFORM_LINUX
 	{ "/dev/ttyS%c", '0', '9' },
 	{ "/dev/ttyUSB%c", '0', '9' },
+	{ "/dev/cua%c", '0', '9' },
+#endif
+#ifdef NUT_PLATFORM_OPENBSD
+	{ "/dev/cua0%c", '0', '9' },
+	{ "/dev/cua0%c", 'a', 'f' },
+	{ "/dev/cuac%c", '0', '7' },
+	{ "/dev/cuaU%c", '0', '3' },
 #endif
 #ifdef NUT_PLATFORM_MS_WINDOWS
 	{ "COM%c",  '1', '9'},
