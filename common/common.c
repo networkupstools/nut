@@ -1563,7 +1563,10 @@ int snprintfcat_dynamic(char *dst, size_t size, const char *fmt_dynamic, const c
 
 int vsnprintf_dynamic(char *dst, size_t size, const char *fmt_dynamic, const char *fmt_reference, va_list ap)
 {
-	if (!dst || size == 0 || validate_formatting_string(fmt_dynamic, fmt_reference, 1) < 0) {
+	/* NOTE: Not checking for NULL "dst" or its "size", this is a valid
+	 * use-case for vsnprintf() to gauge how long the string would be.
+	 */
+	if (validate_formatting_string(fmt_dynamic, fmt_reference, 1) < 0) {
 		return -1;
 	} else {
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
