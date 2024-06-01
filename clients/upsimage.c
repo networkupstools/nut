@@ -321,6 +321,12 @@ static void noimage(const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: Not converting to hardened NUT methods with dynamic
+	 * format string checking, this one is used locally with
+	 * fixed strings (and args) */
+	/* FIXME: Actually, almost only fixed strings, no formatting
+	 * needed here: one use-case of having a format, and another
+	 * with externally prepared snprintf(). */
 	vsnprintf(msg, sizeof(msg), fmt, ap);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop

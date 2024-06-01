@@ -732,7 +732,7 @@ static void extract_info(const char *buf, const mge_info_item_t *item,
    NOTE: MGE counts bytes/chars the opposite way as C,
          see mge-utalk manpage.  If status commands send two
          data items, these are separated by a space, so
-	 the elements of the second item are in buf[16..9].
+         the elements of the second item are in buf[16..9].
 */
 
 static int get_ups_status(void)
@@ -903,6 +903,9 @@ static ssize_t mge_command(char *reply, size_t replylen, const char *fmt, ...)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
+	/* Note: Not converting to hardened NUT methods with dynamic
+	 * format string checking, this one is used locally with
+	 * fixed strings (and args) quite intensively */
 	ret = vsnprintf(command, sizeof(command), fmt, ap);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
