@@ -585,19 +585,12 @@ static int	bestups_get_pins_shutdown_mode(item_t *item, char *value, const size_
 	}
 	pins_shutdown_mode = (int)l;
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-	snprintf(value, valuelen, item->dfl, pins_shutdown_mode);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	/* NOTE: Mapping table has "%.0f" for R/W of this concept's value,
+	 * meaning zero digits after the decimal point (could as well be
+	 * an int right away?)
+	 * TODO: Someone with the device should check replacement by "%d".
+	 */
+	snprintf_dynamic(value, valuelen, item->dfl, "%.0f", (double)pins_shutdown_mode);
 
 	/* We were not asked by the user to change the value */
 	if ((item->qxflags & QX_FLAG_NONUT) && !getval(item->info_type))
