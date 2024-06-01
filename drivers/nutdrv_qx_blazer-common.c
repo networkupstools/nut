@@ -329,7 +329,26 @@ int	blazer_process_command(item_t *item, char *value, const size_t valuelen)
 
 		delay = delay / 60;
 
-		snprintf(value, valuelen, item->command, delay);
+		/* In various mapping tables, "%02d" is prevalent; actual
+		 * value is range-checked above to fit into a typical int
+		 */
+		if (validate_formatting_string(item->command, "%d", -1) >= 0) {
+			/* The most likely case, should not cause debug-log
+			 * noise for most end-users when missing the check */
+			snprintf_dynamic(value, valuelen, item->command, "%d", (int)delay);
+		} else {
+			if (validate_formatting_string(item->command, "", -1) >= 0) {
+				/* A few mappings seem to just request the test
+				 * without parameters, so the second check is
+				 * for that eventuality
+				 */
+				snprintf(value, valuelen, "%s", item->command);
+			} else {
+				/* Finally try the actual long int (complaining
+				 * with default verbosity==1 if a bad fit) */
+				snprintf_dynamic(value, valuelen, item->command, "%ld", delay);
+			}
+		}
 
 	} else {
 
