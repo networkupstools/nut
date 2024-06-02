@@ -1317,6 +1317,10 @@ char * minimize_formatting_string(char *buf, size_t buflen, const char *fmt, int
 	 * and their types.
 	 * Uses a caller-specified buffer and returns a pointer to
 	 * it, or NULL upon errors.
+	 * WARNING: Does not try to be a pedantically correct printf
+	 * style parser and allows foolishness like "%llhhG" which
+	 * the real methods would reject (and which would fail any
+	 * conparison with e.g. "%G" proper).
 	 */
 	const char	*p;
 	char	*b, inEscape;
