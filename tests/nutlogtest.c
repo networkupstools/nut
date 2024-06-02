@@ -84,9 +84,13 @@ int main(void) {
 			ret++;
 		}
 
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_OVERFLOW)
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT)
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wformat"
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_EXTRA_ARGS)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wformat-extra-args"
 #endif
 		if (snprintf_dynamic(buf, sizeof(buf), dynfmt, "%d", "Single string via dynamic format", 1) < 0) {
 			upsdebugx(0, "D: snprintf_dynamic() correctly reports mis-matched formats");
@@ -94,7 +98,10 @@ int main(void) {
 			upsdebugx(0, "E: snprintf_dynamic() wrongly reports well-matched formats");
 			ret++;
 		}
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_OVERFLOW)
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_EXTRA_ARGS)
+#  pragma GCC diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT)
 #  pragma GCC diagnostic pop
 #endif
 
