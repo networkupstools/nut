@@ -84,11 +84,25 @@ int main(void) {
 			ret++;
 		}
 
-		if (snprintf_dynamic(buf, sizeof(buf), dynfmt, "%s%d", "Single string via dynamic format", 1) < 0) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_OVERFLOW)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wformat"
+#endif
+		if (snprintf_dynamic(buf, sizeof(buf), dynfmt, "%d", "Single string via dynamic format", 1) < 0) {
 			upsdebugx(0, "D: snprintf_dynamic() correctly reports mis-matched formats");
 		} else {
 			upsdebugx(0, "E: snprintf_dynamic() wrongly reports well-matched formats");
 			ret++;
+		}
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_OVERFLOW)
+#  pragma GCC diagnostic pop
+#endif
+
+		if (snprintf_dynamic(buf, sizeof(buf), dynfmt, "%s%d", "Single string via dynamic format, plus ignored garbage", 1) < 0) {
+			upsdebugx(0, "E: snprintf_dynamic() wrongly reports well-matched formats");
+			ret++;
+		} else {
+			upsdebugx(0, "D: snprintf_dynamic() correctly reports mis-matched formats");
 		}
 
 		/* Note extra non-type chars in "expected" format are stripped */
@@ -103,24 +117,69 @@ int main(void) {
 	}
 
 	if (1) {	/* scoping */
+		int	res;
 		char	**p,
 			*fmtFloat[] = { "%f", " %A", " %0.1E%% ", NULL },
-			*fmtNotFloat[] = { "%f%", "%m", "$f", NULL };
+			*fmtNotFloat[] = { "%s", NULL },
+			/* TODO: Add conversion? More methods? */
+			*fmtConvertFloatOKAY[] = { "<empty>", "%f%", "%m", "$f", NULL },
+			*fmtConvertFloatTODO[] = { "%lf", "%d", NULL },
+			*fmtConvertIntOKAY[] = { "<empty>", NULL },
+			*fmtConvertIntTODO[] = { "%ld", "%lld", "%hd", NULL }
+			;
 
 		for (p = &(fmtFloat[0]); *p; p++) {
-			if (validate_formatting_string(*p, "Voltage: %G is not %%d", 1) < 0) {
-				upsdebugx(0, "E: validate_formatting_string() expecting %%f equivalent failed for: '%s'", *p);
+			if ((res = validate_formatting_string(*p, "Voltage: %G is not %%d", 1)) < 0) {
+				upsdebugx(0, "E: validate_formatting_string() expecting %%f equivalent failed (%i) for: '%s'", res, *p);
 				ret++;
 			} else {
-				upsdebugx(0, "D: validate_formatting_string() expecting %%f equivalent passed for: '%s'", *p);
+				upsdebugx(0, "D: validate_formatting_string() expecting %%f equivalent passed (%i) for: '%s'", res, *p);
 			}
 		}
 
 		for (p = &(fmtNotFloat[0]); *p; p++) {
-			if (validate_formatting_string("%f", *p, 1) < 0) {
-				upsdebugx(0, "D: validate_formatting_string() expecting %%f failed (as it should have) for: '%s'", *p);
+			if ((res = validate_formatting_string(*p, "%f", 1)) < 0) {
+				upsdebugx(0, "D: validate_formatting_string() expecting %%f failed (%i) (as it should have) for: '%s'", res, *p);
 			} else {
-				upsdebugx(0, "E: validate_formatting_string() expecting %%f passed (but should not have) for: '%s'", *p);
+				upsdebugx(0, "E: validate_formatting_string() expecting %%f passed (%i) (but should not have) for: '%s'", res, *p);
+				ret++;
+			}
+		}
+
+		/* Auto-conversion or other non-exact equivalence */
+		for (p = &(fmtConvertFloatOKAY[0]); *p; p++) {
+			if ((res = validate_formatting_string(*p, "%f", 1)) > 0) {
+				upsdebugx(0, "D: validate_formatting_string() expecting %%f passed (%i) (non-exactly) for: '%s'", res, *p);
+			} else {
+				upsdebugx(0, "E: validate_formatting_string() expecting %%f failed (%i) for: '%s'", res, *p);
+				ret++;
+			}
+		}
+
+		for (p = &(fmtConvertIntOKAY[0]); *p; p++) {
+			if ((res = validate_formatting_string(*p, "%d", 1)) > 0) {
+				upsdebugx(0, "D: validate_formatting_string() expecting %%f passed (%i) (non-exactly) for: '%s'", res, *p);
+			} else {
+				upsdebugx(0, "E: validate_formatting_string() expecting %%f failed (%i) for: '%s'", res, *p);
+				ret++;
+			}
+		}
+
+		/* TODO: Make such cases safely fit */
+		for (p = &(fmtConvertFloatTODO[0]); *p; p++) {
+			if ((res = validate_formatting_string(*p, "%f", 1)) < 0) {
+				upsdebugx(0, "D: validate_formatting_string() expecting %%f failed (%i) (as it should have) for: '%s'", res, *p);
+			} else {
+				upsdebugx(0, "E: validate_formatting_string() expecting %%f passed (%i) (but should not have) for: '%s'", res, *p);
+				ret++;
+			}
+		}
+
+		for (p = &(fmtConvertIntTODO[0]); *p; p++) {
+			if ((res = validate_formatting_string(*p, "%d", 1)) < 0) {
+				upsdebugx(0, "D: validate_formatting_string() expecting %%d failed (%i) (as it should have) for: '%s'", res, *p);
+			} else {
+				upsdebugx(0, "E: validate_formatting_string() expecting %%d passed (%i) (but should not have) for: '%s'", res, *p);
 				ret++;
 			}
 		}

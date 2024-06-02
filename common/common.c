@@ -1463,7 +1463,10 @@ int validate_formatting_string(const char *fmt_dynamic, const char *fmt_referenc
 	 * is in position to statically check that the actual varargs match
 	 * that reference during build.
 	 * Returns 0 if the two reference strings minimize to the same value,
-	 * or a negative value (and sets errno) in case of errors:
+	 * a positive value if they are sufficiently compatible (but not equal):
+	 *    1  dynamic format is the beginning of reference format
+	 *       (and there are some ignored left-over arguments)
+	 * ...or a negative value (and sets errno) in case of errors:
 	 *   -1  for memory-related errors
 	 *   -2  for minimize_formatting_string() returning NULL
 	 *       (also likely memory errors)
@@ -1480,6 +1483,7 @@ int validate_formatting_string(const char *fmt_dynamic, const char *fmt_referenc
 		size_t lenD = strlen(fmt_dynamic) + 1;
 		size_t lenR = strlen(fmt_reference) + 1;
 		char *bufD = xcalloc(lenD, sizeof(char)), *bufR = xcalloc(lenR, sizeof(char));
+		size_t lenBufD;
 
 		if (!bufD || !bufR) {
 			if (bufD)
@@ -1504,6 +1508,46 @@ int validate_formatting_string(const char *fmt_dynamic, const char *fmt_referenc
 			free(bufD);
 			free(bufR);
 			return 0;
+		}
+
+		/* Does the reference format start with the complete
+		 * value of the dynamic format? (so bufR is same or
+		 * longer than bufD, and with operation just ignoring
+		 * extra passed arguments, if any)
+		 */
+
+		/* First, strip dangling non-conversion characters */
+		lenBufD = strlen(bufD);
+		while (lenBufD > 0) {
+			switch (bufD[lenBufD-1]) {
+				case '*':
+				case 'i':
+				case 'u':
+				case 'f':
+				case 'c':
+				case 's':
+				case 'p':
+				case 'n':
+					break;
+
+				default:
+					lenBufD--;
+					bufD[lenBufD] = '\0';
+					continue;
+			}
+			break;
+		}
+
+		if (!strncmp(bufD, bufR, strlen(bufD))) {
+			if (verbosity >= 0)
+				upsdebugx(verbosity,
+					"%s: dynamic formatting string '%s' (normalized as '%s') "
+					"is a subset of expected '%s' (normalized as '%s'); "
+					"ignoring some passed arguments but okay",
+					__func__, fmt_dynamic, bufD, fmt_reference, bufR);
+			free(bufD);
+			free(bufR);
+			return 1;
 		}
 
 		/* This be should not be fatal right here, but may be in the caller logic */
