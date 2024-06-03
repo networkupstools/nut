@@ -23,7 +23,7 @@ ifndef::website[]
 - link:https://www.networkupstools.org/ddl/index.html#_supported_devices[Devices Dumps Library (DDL)]: Provides information on how devices are supported; see also link:https://www.networkupstools.org/stable-hcl.html[the HCL]
 - link:../solaris-usb.html[Notes on NUT monitoring of USB devices in Solaris and related operating systems]
 endif::website[]
-- link:https://github.com/networkupstools/ConfigExamples/releases/latest/downloads/ConfigExamples.pdf[NUT Configuration Examples] book maintained by Roger Price
+- link:https://github.com/networkupstools/ConfigExamples/releases/latest/download/ConfigExamples.pdf[NUT Configuration Examples] book maintained by Roger Price
 - link:https://github.com/networkupstools/nut/wiki[NUT GitHub Wiki]
 
 Developer Documentation
