@@ -376,6 +376,16 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
  * Consumers like the *_dynamic() methods here and in dstate typically use
  * "1" to make errors in code visible with any effort to troubleshoot them.
  */
+/* Verbosity built into the methods which call the *_formatting_*() and
+ * pass this value as the verbosity variable argument. It is anticipated
+ * that some custom builds can define it to e.g. 0 to see discrepancies
+ * at run-time without enabling any debug verbosity: */
+#ifndef NUT_DYNAMICFORMATTING_DEBUG_LEVEL
+# define NUT_DYNAMICFORMATTING_DEBUG_LEVEL 1
+#endif
+/* Verbosity built into consumers that deliberately check the formatting
+ * strings for this or that outcome and do not want noise in the log: */
+#define NUT_DYNAMICFORMATTING_DEBUG_LEVEL_SILENT -1
 char *minimize_formatting_string(char *buf, size_t buflen, const char *fmt, int verbosity);
 char *minimize_formatting_string_staticbuf(const char *fmt, int verbosity);
 int validate_formatting_string(const char *fmt_dynamic, const char *fmt_reference, int verbosity);

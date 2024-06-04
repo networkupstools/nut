@@ -332,12 +332,11 @@ int	blazer_process_command(item_t *item, char *value, const size_t valuelen)
 		/* In various mapping tables, "%02d" is prevalent; actual
 		 * value is range-checked above to fit into a typical int
 		 */
-		if (validate_formatting_string(item->command, "%d", -1) >= 0) {
-			/* The most likely case, should not cause debug-log
-			 * noise for most end-users when missing the check */
+		if (validate_formatting_string(item->command, "%d", NUT_DYNAMICFORMATTING_DEBUG_LEVEL_SILENT) >= 0) {
+			/* The most likely case, should not cause much overhead */
 			snprintf_dynamic(value, valuelen, item->command, "%d", (int)delay);
 		} else {
-			if (validate_formatting_string(item->command, "", -1) >= 0) {
+			if (validate_formatting_string(item->command, "", NUT_DYNAMICFORMATTING_DEBUG_LEVEL_SILENT) >= 0) {
 				/* A few mappings seem to just request the test
 				 * without parameters, so the second check is
 				 * for that eventuality
