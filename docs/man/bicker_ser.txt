@@ -34,6 +34,63 @@ EXTRA ARGUMENTS
 
 This driver supports no extra arguments from linkman:ups.conf[5].
 
+VARIABLES
+---------
+
+Depending on the type of your UPS unit, some of the following variables may
+be changed with linkman:upsrw[8]. If the driver can't read a variable from the
+UPS, it will not be made available. Whenever not explicitly stated, any variable
+can be disabled, in which case the action it performs will not be executed. To
+disable a variable, set it to an empty value.
+
+*ups.delay.shutdown* (in seconds, default disabled)::
+If activated and the UPS is in battery mode and the set time has expired, the
+output will be disabled, and the UPS and energy storage will be disconnected.
+
+*ups.delay.start* (in seconds, default disabled)::
+If activated and a restart condition switches the UPS output off and on again,
+the set time is the delay between switching on and off. The time should cause a
+defined off time so that capacities in the application can be discharged.
+
+*battery.charge.restart* (in percent, default disabled)::
+If activated and the UPS is off or restarts, the UPS output will not be released
+until the energy storage device has the set charge state. The energy storage
+device is charged in the meantime.
+
+*battery.charge.low* (in percent, default `20`)::
+If activated and the UPS is in battery mode and the battery level drops below
+the set value, a shutdown command via relay event is signaled.
+
+*experimental.output.current.low* (in mA, default `200`)::
+If activated and the UPS is in battery mode and the current drops below the set
+value, the output of the UPS will shut down and disconnect the energy storage to
+prevent self-discharge.
+
+*experimental.ups.delay.shutdown.signal* (in seconds, default disabled)::
+If activated and the UPS is in battery mode and the set time has elapsed, a
+shutdown command via relay event is signaled.
+
+*experimental.ups.delay.shutdown.signal.masked* (in seconds, default disabled)::
+If activated and the UPS is in battery mode and the signal at the IN-1 input is
+high and the set time has expired, a shutdown command via relay event is
+signaled.
+
+*experimental.battery.charge.low.empty* (in percent, default `20`)::
+This parameter stores the threshold value for the "Battery Empty" signal.
+Currently this setting is only valid for relay signaling. Cannot be disabled.
+
+*experimental.ups.relay.mode* (default `0x01`)::
+This parameter controls the behavior of the relay in case of different events.
+Cannot be disabled.
++
+Available relay modes:
+[horizontal]
+`0x01`::: On power fail (normally closed)
+`0x02`::: On power fail (normally opened)
+`0x03`::: Shutdown impulse (1 second)
+`0x04`::: Battery low signal (normally closed)
+`0x05`::: Battery defect signal (normally closed)
+
 INSTANT COMMANDS
 ----------------
 
