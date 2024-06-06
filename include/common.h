@@ -201,6 +201,18 @@ extern const char *UPS_VERSION;
 /** @brief Default timeout (in seconds) for retrieving the result of a `TRACKING`-enabled operation (e.g. `INSTCMD`, `SET VAR`). */
 #define DEFAULT_TRACKING_TIMEOUT	10
 
+/* Normally we can (attempt to) use the syslog or Event Log (WIN32),
+ * but environment variable NUT_DEBUG_SYSLOG allows to bypass it, and
+ * perhaps keep daemons logging to stderr (e.g. in NUT Integration Test
+ * suite to not pollute the OS logs, or in systemd where stderr and
+ * syslog both go into the same journal). Returns:
+ *  0  Not disabled (NUT_DEBUG_SYSLOG not set to a value below; unset or "default"
+ *     values are handled quietly, but others emit a warning)
+ *  1  Disabled and background() keeps stderr attached (NUT_DEBUG_SYSLOG="stderr")
+ *  2  Disabled and background() detaches stderr as usual (NUT_DEBUG_SYSLOG="none")
+ */
+int syslog_is_disabled(void);
+
 /* get the syslog ready for us */
 void open_syslog(const char *progname);
 

@@ -37,6 +37,10 @@ export NUT_QUIET_INIT_SSL
 NUT_QUIET_INIT_UPSNOTIFY="true"
 export NUT_QUIET_INIT_UPSNOTIFY
 
+# Avoid noise in syslog and OS console
+NUT_DEBUG_SYSLOG="stderr"
+export NUT_DEBUG_SYSLOG
+
 NUT_DEBUG_PID="true"
 export NUT_DEBUG_PID
 
