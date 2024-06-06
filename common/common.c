@@ -146,11 +146,38 @@ static int xbit_test(int val, int flag)
 	return ((val & flag) == flag);
 }
 
+int syslog_is_disabled(void)
+{
+	static int value = -1;
+
+	if (value < 0) {
+		char *s = getenv("NUT_DEBUG_SYSLOG");
+		/* Not set or not disabled by the setting: default is enabled (inversed per method name) */
+		value = 0;
+		if (s) {
+			if (!strcmp(s, "stderr")) {
+				value = 1;
+			} else if (!strcmp(s, "none") || !strcmp(s, "false")) {
+				value = 2;
+			} else if (!strcmp(s, "syslog") || !strcmp(s, "true") || !strcmp(s, "default")) {
+				/* Just reserve a value to quietly do the default */
+				value = 0;
+			} else {
+				upsdebugx(0, "%s: unknown NUT_DEBUG_SYSLOG='%s' value, ignored (assuming enabled)",
+					__func__, s);
+			}
+		}
+	}
+
+	return value;
+}
+
 /* enable writing upslog_with_errno() and upslogx() type messages to
    the syslog */
 void syslogbit_set(void)
 {
-	xbit_set(&upslog_flags, UPSLOG_SYSLOG);
+	if (!syslog_is_disabled())
+		xbit_set(&upslog_flags, UPSLOG_SYSLOG);
 }
 
 /* get the syslog ready for us */
@@ -159,12 +186,15 @@ void open_syslog(const char *progname)
 #ifndef WIN32
 	int	opt;
 
+	if (syslog_is_disabled())
+		return;
+
 	opt = LOG_PID;
 
 	/* we need this to grab /dev/log before chroot */
-#ifdef LOG_NDELAY
+# ifdef LOG_NDELAY
 	opt |= LOG_NDELAY;
-#endif
+# endif	/* LOG_NDELAY */
 
 	openlog(progname, opt, LOG_FACILITY);
 
@@ -197,31 +227,43 @@ void open_syslog(const char *progname)
 		break;
 	default:
 		fatalx(EXIT_FAILURE, "Invalid log level threshold");
-#else
+# else
 	case 0:
 		break;
 	default:
 		upslogx(LOG_INFO, "Changing log level threshold not possible");
 		break;
-#endif
+# endif	/* HAVE_SETLOGMASK && HAVE_DECL_LOG_UPTO */
 	}
 #else
 	EventLogName = progname;
-#endif
+#endif	/* WIND32 */
 }
 
 /* close ttys and become a daemon */
 void background(void)
 {
+	/* Normally we enable SYSLOG and disable STDERR,
+	 * unless NUT_DEBUG_SYSLOG envvar interferes as
+	 * interpreted in syslog_is_disabled() method: */
+	int	syslog_disabled = syslog_is_disabled(),
+		stderr_disabled = (syslog_disabled == 0 || syslog_disabled == 2);
+
 #ifndef WIN32
 	int	pid;
 
 	if ((pid = fork()) < 0)
 		fatal_with_errno(EXIT_FAILURE, "Unable to enter background");
+#endif
 
-	xbit_set(&upslog_flags, UPSLOG_SYSLOG);
-	xbit_clear(&upslog_flags, UPSLOG_STDERR);
+	if (!syslog_disabled)
+		/* not disabled: NUT_DEBUG_SYSLOG is unset or invalid */
+		xbit_set(&upslog_flags, UPSLOG_SYSLOG);
+	if (stderr_disabled)
+		/* NUT_DEBUG_SYSLOG="none" or unset/invalid */
+		xbit_clear(&upslog_flags, UPSLOG_STDERR);
 
+#ifndef WIN32
 	if (pid != 0) {
 		/* parent */
 		/* these are typically fds 0-2: */
@@ -234,7 +276,7 @@ void background(void)
 	/* child */
 
 	/* make fds 0-2 (typically) point somewhere defined */
-#ifdef HAVE_DUP2
+# ifdef HAVE_DUP2
 	/* system can close (if needed) and (re-)open a specific FD number */
 	if (1) { /* scoping */
 		TYPE_FD devnull = open("/dev/null", O_RDWR);
@@ -245,13 +287,15 @@ void background(void)
 			fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDIN");
 		if (dup2(devnull, STDOUT_FILENO) != STDOUT_FILENO)
 			fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDOUT");
-		if (dup2(devnull, STDERR_FILENO) != STDERR_FILENO)
-			fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDERR");
+		if (stderr_disabled) {
+			if (dup2(devnull, STDERR_FILENO) != STDERR_FILENO)
+				fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDERR");
+		}
 
 		close(devnull);
 	}
-#else
-# ifdef HAVE_DUP
+# else
+#  ifdef HAVE_DUP
 	/* opportunistically duplicate to the "lowest-available" FD number */
 	close(STDIN_FILENO);
 	if (open("/dev/null", O_RDWR) != STDIN_FILENO)
@@ -261,10 +305,12 @@ void background(void)
 	if (dup(STDIN_FILENO) != STDOUT_FILENO)
 		fatal_with_errno(EXIT_FAILURE, "dup /dev/null as STDOUT");
 
-	close(STDERR_FILENO);
-	if (dup(STDIN_FILENO) != STDERR_FILENO)
-		fatal_with_errno(EXIT_FAILURE, "dup /dev/null as STDERR");
-# else
+	if (stderr_disabled) {
+		close(STDERR_FILENO);
+		if (dup(STDIN_FILENO) != STDERR_FILENO)
+			fatal_with_errno(EXIT_FAILURE, "dup /dev/null as STDERR");
+	}
+#  else
 	close(STDIN_FILENO);
 	if (open("/dev/null", O_RDWR) != STDIN_FILENO)
 		fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDIN");
@@ -273,20 +319,18 @@ void background(void)
 	if (open("/dev/null", O_RDWR) != STDOUT_FILENO)
 		fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDOUT");
 
-	close(STDERR_FILENO);
-	if (open("/dev/null", O_RDWR) != STDERR_FILENO)
-		fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDERR");
+	if (stderr_disabled) {
+		close(STDERR_FILENO);
+		if (open("/dev/null", O_RDWR) != STDERR_FILENO)
+			fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDERR");
+	}
+#  endif
 # endif
-#endif
 
-#ifdef HAVE_SETSID
+# ifdef HAVE_SETSID
 	setsid();		/* make a new session to dodge signals */
-#endif
-
-#else /* WIN32 */
-	xbit_set(&upslog_flags, UPSLOG_SYSLOG);
-	xbit_clear(&upslog_flags, UPSLOG_STDERR);
-#endif
+# endif
+#endif	/* not WIN32 */
 
 	upslogx(LOG_INFO, "Startup successful");
 }
@@ -876,9 +920,15 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 		va_end(va);
 
 		if ((ret < 0) || (ret >= (int) sizeof(msgbuf))) {
-			syslog(LOG_WARNING,
-				"%s (%s:%d): vsnprintf needed more than %" PRIuSIZE " bytes: %d",
-				__func__, __FILE__, __LINE__, sizeof(msgbuf), ret);
+			if (syslog_is_disabled()) {
+				fprintf(stderr,
+					"%s (%s:%d): vsnprintf needed more than %" PRIuSIZE " bytes: %d",
+					__func__, __FILE__, __LINE__, sizeof(msgbuf), ret);
+			} else {
+				syslog(LOG_WARNING,
+					"%s (%s:%d): vsnprintf needed more than %" PRIuSIZE " bytes: %d",
+					__func__, __FILE__, __LINE__, sizeof(msgbuf), ret);
+			}
 		} else {
 			msglen = strlen(msgbuf);
 		}
@@ -914,9 +964,15 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 			usec_t monots = timespec_load(&monoclock_ts);
 			ret = snprintf(monoclock_str + 1, sizeof(monoclock_str) - 1, "MONOTONIC_USEC=%" PRI_USEC, monots);
 			if ((ret < 0) || (ret >= (int) sizeof(monoclock_str) - 1)) {
-				syslog(LOG_WARNING,
-					"%s (%s:%d): snprintf needed more than %" PRIuSIZE " bytes: %d",
-					__func__, __FILE__, __LINE__, sizeof(monoclock_str), ret);
+				if (syslog_is_disabled()) {
+					fprintf(stderr,
+						"%s (%s:%d): snprintf needed more than %" PRIuSIZE " bytes: %d",
+						__func__, __FILE__, __LINE__, sizeof(monoclock_str), ret);
+				} else {
+					syslog(LOG_WARNING,
+						"%s (%s:%d): snprintf needed more than %" PRIuSIZE " bytes: %d",
+						__func__, __FILE__, __LINE__, sizeof(monoclock_str), ret);
+				}
 				msglen = 0;
 			} else {
 				monoclock_str[0] = '\n';
@@ -933,9 +989,15 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 		if (msglen) {
 			ret = snprintf(buf, sizeof(buf), "STATUS=%s", msgbuf);
 			if ((ret < 0) || (ret >= (int) sizeof(buf))) {
-				syslog(LOG_WARNING,
-					"%s (%s:%d): snprintf needed more than %" PRIuSIZE " bytes: %d",
-					__func__, __FILE__, __LINE__, sizeof(buf), ret);
+				if (syslog_is_disabled()) {
+					fprintf(stderr,
+						"%s (%s:%d): snprintf needed more than %" PRIuSIZE " bytes: %d",
+						__func__, __FILE__, __LINE__, sizeof(buf), ret);
+				} else {
+					syslog(LOG_WARNING,
+						"%s (%s:%d): snprintf needed more than %" PRIuSIZE " bytes: %d",
+						__func__, __FILE__, __LINE__, sizeof(buf), ret);
+				}
 				msglen = 0;
 			} else {
 				msglen = (size_t)ret;
@@ -1128,9 +1190,15 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 		if ((ret < 0) || (ret >= (int) sizeof(buf))) {
 			/* Refusal to send the watchdog ping is not an error to report */
 			if ( !(ret == -126 && (state == NOTIFY_STATE_WATCHDOG)) ) {
-				syslog(LOG_WARNING,
-					"%s (%s:%d): snprintf needed more than %" PRIuSIZE " bytes: %d",
-					__func__, __FILE__, __LINE__, sizeof(buf), ret);
+				if (syslog_is_disabled()) {
+					fprintf(stderr,
+						"%s (%s:%d): snprintf needed more than %" PRIuSIZE " bytes: %d",
+						__func__, __FILE__, __LINE__, sizeof(buf), ret);
+				} else {
+					syslog(LOG_WARNING,
+						"%s (%s:%d): snprintf needed more than %" PRIuSIZE " bytes: %d",
+						__func__, __FILE__, __LINE__, sizeof(buf), ret);
+				}
 			}
 			ret = -1;
 		} else {
@@ -1365,10 +1433,17 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 		/* Arbitrary limit, gotta stop somewhere */
 		if (bufsize > LARGEBUF * 64) {
 vupslog_too_long:
-			syslog(LOG_WARNING, "vupslog: vsnprintf needed "
-				"more than %" PRIuSIZE " bytes; logged "
-				"output can be truncated",
-				bufsize);
+			if (syslog_is_disabled()) {
+				fprintf(stderr, "vupslog: vsnprintf needed "
+					"more than %" PRIuSIZE " bytes; logged "
+					"output can be truncated",
+					bufsize);
+			} else {
+				syslog(LOG_WARNING, "vupslog: vsnprintf needed "
+					"more than %" PRIuSIZE " bytes; logged "
+					"output can be truncated",
+					bufsize);
+			}
 			break;
 		}
 	} while(1);
@@ -1672,8 +1747,13 @@ void s_upsdebug_with_errno(int level, const char *fmt, ...)
 			ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);
 		}
 		if ((ret < 0) || (ret >= (int) sizeof(fmt2))) {
-			syslog(LOG_WARNING, "upsdebug_with_errno: snprintf needed more than %d bytes",
-				LARGEBUF);
+			if (syslog_is_disabled()) {
+				fprintf(stderr, "upsdebug_with_errno: snprintf needed more than %d bytes",
+					LARGEBUF);
+			} else {
+				syslog(LOG_WARNING, "upsdebug_with_errno: snprintf needed more than %d bytes",
+					LARGEBUF);
+			}
 		} else {
 			fmt = (const char *)fmt2;
 		}
@@ -1722,8 +1802,13 @@ void s_upsdebugx(int level, const char *fmt, ...)
 		}
 
 		if ((ret < 0) || (ret >= (int) sizeof(fmt2))) {
-			syslog(LOG_WARNING, "upsdebugx: snprintf needed more than %d bytes",
-				LARGEBUF);
+			if (syslog_is_disabled()) {
+				fprintf(stderr, "upsdebugx: snprintf needed more than %d bytes",
+					LARGEBUF);
+			} else {
+				syslog(LOG_WARNING, "upsdebugx: snprintf needed more than %d bytes",
+					LARGEBUF);
+			}
 		} else {
 			fmt = (const char *)fmt2;
 		}
@@ -1850,10 +1935,25 @@ failed:
 
 static void vfatal(const char *fmt, va_list va, int use_strerror)
 {
+	/* Normally we enable SYSLOG and disable STDERR,
+	 * unless NUT_DEBUG_SYSLOG envvar interferes as
+	 * interpreted in syslog_is_disabled() method: */
+	int	syslog_disabled = syslog_is_disabled(),
+		stderr_disabled = (syslog_disabled == 0 || syslog_disabled == 2);
+
 	if (xbit_test(upslog_flags, UPSLOG_STDERR_ON_FATAL))
 		xbit_set(&upslog_flags, UPSLOG_STDERR);
-	if (xbit_test(upslog_flags, UPSLOG_SYSLOG_ON_FATAL))
-		xbit_set(&upslog_flags, UPSLOG_SYSLOG);
+	if (xbit_test(upslog_flags, UPSLOG_SYSLOG_ON_FATAL)) {
+		if (syslog_disabled) {
+			/* FIXME: Corner case... env asked for stderr
+			 * instead of syslog - should we care about
+			 * UPSLOG_STDERR_ON_FATAL being not set? */
+			if (!stderr_disabled)
+				xbit_set(&upslog_flags, UPSLOG_STDERR);
+		} else {
+			xbit_set(&upslog_flags, UPSLOG_SYSLOG);
+		}
+	}
 
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
