@@ -52,7 +52,7 @@ https://github.com/networkupstools/nut/milestone/11
      broke detection of (in-)ability to find and query "Old NUT" servers via
      `libupsclient.so` (internal flag got always enabled). [#2246]
 
- - drivers, upsd, upsmon: reduce "scary noise" about failure to `fopen()`
+ - drivers, `upsd`, `upsmon`: reduce "scary noise" about failure to `fopen()`
    the PID file (which most of the time means that no previous instance of
    the daemon was running to potentially conflict with), especially useless
    since in recent NUT releases the verdicts from `sendsignal*()` methods
@@ -87,6 +87,10 @@ https://github.com/networkupstools/nut/milestone/11
      string values reported by devices via USB are welcome), so these devices
      would now report `battery.voltage` and `battery.voltage.nominal`. [#2380]
 
+ - bicker_ser: added new driver for Bicker 12/24Vdc UPS via RS-232 serial
+   communication protocol, which supports any UPS shipped with the PSZ-1053
+   extension module. [PR #2448]
+
  - USB drivers could log `(nut_)libusb_get_string: Success` due to either
    reading an empty string or getting a success code `0` from libusb.
    This difference should now be better logged, and not into syslog. [#2399]
@@ -116,16 +120,21 @@ https://github.com/networkupstools/nut/milestone/11
      exiting (and/or start-up has aborted due to configuration or run-time
      issues). Warning about "world readable" files clarified. [#2417]
 
- - common code: introduced a `NUT_DEBUG_SYSLOG` environment variable to tweak
-   activation of syslog message emission (and related detachment of `stderr`
-   when backgrounding), primarily useful for NIT and perhaps systemd. Most
-   methods relied on logging bits being set, so this change aims to be minimally
-   invasive to impact setting of those bits (or not) in the first place. [#2394]
+ - common code:
+   * introduced a `NUT_DEBUG_SYSLOG` environment variable to tweak activation
+     of syslog message emission (and related detachment of `stderr` when
+     backgrounding), primarily useful for NIT and perhaps systemd. Most
+     methods relied on logging bits being set, so this change aims to be
+     minimally invasive to impact setting of those bits (or not) in the
+     first place. [#2394]
+   * `root`-owned daemons now use not the hard-coded `PIDPATH` value set
+     by the `configure` script during build, but can override it with a
+     `NUT_PIDPATH` environment variable in certain use-cases (such as
+     tests). [#2407]
 
- - common code: root-owned daemons now use not the hard-coded `PIDPATH` value
-   set by the `configure` script during build, but can override it with a
-   `NUT_PIDPATH` environment variable in certain use-cases (such as tests).
-   [#2407]
+ - various recipe, documentation and source files were revised to address
+   respective warnings issued by the new generations of analysis tools.
+   [#823, #2437, link:https://github.com/networkupstools/nut-website/issues/52[nut-website issue #52]]
 
  - revised `nut.exe` (the NUT for Windows wrapper for all-in-one service)
    to be more helpful with command-line use (report that it failed to start
@@ -147,14 +156,6 @@ https://github.com/networkupstools/nut/milestone/11
    they should be able to parse common simple use-cases but not certain types
    of more complex configurations (e.g. some line patterns that involve too
    many double-quote characters) which are valid for NUT proper. [#657]
-
- - various recipe, documentation and source files were revised to address
-   respective warnings issued by the new generations of analysis tools.
-   [#823, #2437, link:https://github.com/networkupstools/nut-website/issues/52[nut-website issue #52]]
-
- - bicker_ser: added new driver for Bicker 12/24Vdc UPS via RS-232 serial
-   communication protocol, which supports any UPS shipped with the PSZ-1053
-   extension module. [PR #2448]
 
 
 Release notes for NUT 2.8.2 - what's new since 2.8.1
