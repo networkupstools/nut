@@ -1047,6 +1047,12 @@ AC_CHECK_HEADER([sys/select.h],
     [AC_DEFINE([HAVE_SYS_SELECT_H], [1],
         [Define to 1 if you have <sys/select.h>.])])
 
+AC_CHECK_HEADER([unistd.h],
+    [AC_DEFINE([HAVE_UNISTD_H], [1],
+        [Define to 1 if you have <unistd.h>.])])
+
+AC_CHECK_FUNCS(readlink)
+
 AC_CACHE_CHECK([for suseconds_t],
     [ac_cv_type_suseconds_t],
     [AC_COMPILE_IFELSE(

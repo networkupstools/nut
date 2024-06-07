@@ -226,6 +226,37 @@ void become_user(struct passwd *pw);
 /* drop down into a directory and throw away pointers to the old path */
 void chroot_start(const char *path);
 
+/* Try to identify process (program) name for the given PID,
+ * return NULL if we can not for any reason (does not run,
+ * no rights, do not know how to get it on current OS, etc.)
+ * If the returned value is not NULL, caller should free() it.
+ * Some implementation pieces borrowed from
+ * https://man7.org/linux/man-pages/man2/readlink.2.html and
+ * https://github.com/openbsd/src/blob/master/bin/ps/ps.c
+ * NOTE: Very much platform-dependent! */
+char * getprocname(pid_t pid);
+
+/* Determine the base name of specified progname (may be full path)
+ * and the location of the last "." dot character in it for extension
+ * (caller's len and dot populated only if pointers are not NULL).
+ */
+size_t parseprogbasename(char *buf, size_t buflen, const char *progname, size_t *pprogbasenamelen, size_t *pprogbasenamedot);
+
+/* If we can determine the binary path name of the specified "pid",
+ * check if it matches the assumed name of the current program.
+ * Returns:
+ *	-2	Could not parse a program name (ok to proceed,
+ *		risky - but matches legacy behavior)
+ *	-1	Could not identify a program name (ok to proceed,
+ *		risky - but matches legacy behavior)
+ *	0	Process name identified, does not seem to match
+ *	1+	Process name identified, and seems to match with
+ *		varying precision
+ * Generally speaking, if (checkprocname(...)) then ok to proceed
+ */
+int checkprocname(pid_t pid, const char *progname);
+
+
 /* write a pid file - <name> is a full pathname *or* just the program name */
 void writepid(const char *name);
 

@@ -32,6 +32,10 @@
 #include <wincompat.h>
 #endif
 
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>	/* readlink */
+#endif
+
 #include <dirent.h>
 #if !HAVE_DECL_REALPATH
 # include <sys/stat.h>
@@ -433,6 +437,15 @@ void become_user(struct passwd *pw)
 #endif
 }
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic push
+#endif
+#if (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC)
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#if (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC)
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
 /* drop down into a directory and throw away pointers to the old path */
 void chroot_start(const char *path)
 {
@@ -453,6 +466,353 @@ void chroot_start(const char *path)
 #ifndef WIN32
 	upsdebugx(1, "chrooted into %s", path);
 #endif
+}
+
+char * getprocname(pid_t pid)
+{
+	/* Try to identify process (program) name for the given PID,
+	 * return NULL if we can not for any reason (does not run,
+	 * no rights, do not know how to get it on current OS, etc.)
+	 * If the returned value is not NULL, caller should free() it.
+	 * Some implementation pieces borrowed from
+	 * https://man7.org/linux/man-pages/man2/readlink.2.html and
+	 * https://github.com/openbsd/src/blob/master/bin/ps/ps.c
+	 * NOTE: Very much platform-dependent!
+	 */
+	char	*procname = NULL;
+	size_t	procnamelen = 0;
+#ifdef UNIX_PATH_MAX
+	char	pathname[UNIX_PATH_MAX];
+#else
+	char	pathname[PATH_MAX];
+#endif
+	struct stat	st;
+
+#ifdef WIN32
+	/* Try Windows API calls, then fall through to /proc emulation in MinGW/MSYS2
+	 * https://stackoverflow.com/questions/1591342/c-how-to-determine-if-a-windows-process-is-running
+	 * http://cppip.blogspot.com/2013/01/check-if-process-is-running.html
+	 */
+#endif
+
+	if (stat("/proc", &st) == 0 && ((st.st_mode & S_IFMT) == S_IFDIR)) {
+		upsdebugx(3, "%s: /proc is an accessible directory, investigating", __func__);
+#if (defined HAVE_READLINK) && HAVE_READLINK
+		/* Linux-like */
+		if (snprintf(pathname, sizeof(pathname), "/proc/%" PRIuMAX "/exe", (uintmax_t)pid) < 10) {
+			upsdebug_with_errno(3, "%s: failed to snprintf pathname: Linux-like", __func__);
+			goto finish;
+		}
+
+		if (lstat(pathname, &st) == 0) {
+			goto process_stat_symlink;
+		}
+
+		/* FreeBSD-like */
+		if (snprintf(pathname, sizeof(pathname), "/proc/%" PRIuMAX "/file", (uintmax_t)pid) < 10) {
+			upsdebug_with_errno(3, "%s: failed to snprintf pathname: FreeBSD-like", __func__);
+			goto finish;
+		}
+
+		if (lstat(pathname, &st) == 0) {
+			goto process_stat_symlink;
+		}
+
+		goto process_parse_file;
+
+process_stat_symlink:
+		upsdebugx(3, "%s: located symlink for PID %" PRIuMAX " at: %s",
+			__func__, (uintmax_t)pid, pathname);
+		/* Some magic symlinks under (for example) /proc and /sys
+		 * report 'st_size' as zero. In that case, take PATH_MAX
+		 * or equivalent as a "good enough" estimate. */
+		if (st.st_size) {
+			/* Add one for ending '\0' */
+			procnamelen = st.st_size + 1;
+		} else {
+			procnamelen = sizeof(pathname);
+		}
+
+		/* Not xcalloc() here, not too fatal if we fail */
+		procname = (char*)calloc(procnamelen, sizeof(char));
+		if (procname) {
+			int nbytes = readlink(pathname, procname, procnamelen);
+			if (nbytes < 0) {
+				upsdebug_with_errno(1, "%s: failed to readlink() from %s",
+					__func__, pathname);
+				free(procname);
+				procname = NULL;
+				goto process_parse_file;
+			}
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+			if ((unsigned int)nbytes > SIZE_MAX || procnamelen <= (size_t)nbytes) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+				upsdebugx(1, "%s: failed to readlink() from %s: may have been truncated",
+					__func__, pathname);
+				free(procname);
+				procname = NULL;
+				goto process_parse_file;
+			}
+
+			/* Got a useful reply */
+			procname[nbytes] = '\0';
+			goto finish;
+		} else {
+			upsdebug_with_errno(3, "%s: failed to allocate the procname string "
+				"to readlink() size %" PRIuSIZE, __func__, procnamelen);
+			goto finish;
+		}
+#else
+		upsdebugx(3, "%s: this platform does not have readlink(), skipping this method", __func__);
+#endif	/* HAVE_READLINK */
+
+process_parse_file:
+		upsdebugx(3, "%s: try to parse some files under /proc", __func__);
+
+		/* TODO: Check /proc/NNN/cmdline (may start with a '-' to ignore,
+		 * for a title string like "-bash" where programs edit their argv[0] */
+
+		/* TODO: Check /proc/NNN/stat (second token, in parentheses, may be truncated)
+		 * see e.g. https://stackoverflow.com/a/12675103/4715872 */
+
+		/* TODO: Solaris/illumos: parse binary structure at /proc/NNN/psinfo */
+	} else {
+		upsdebug_with_errno(3, "%s: /proc is not a directory or not accessible", __func__);
+		/* TODO: OpenBSD: no /proc; use API call, see ps.c link above */
+	}
+
+	goto finish;
+
+finish:
+	if (procname) {
+		if (strlen(procname) == 0) {
+			free(procname);
+			procname = NULL;
+		} else {
+			upsdebugx(1, "%s: determined process name for PID %" PRIuMAX ": %s",
+				__func__, (uintmax_t)pid, procname);
+		}
+	}
+
+	if (!procname) {
+		upsdebugx(1, "%s: failed to determine process name for PID %" PRIuMAX,
+			__func__, (uintmax_t)pid);
+	}
+
+	return procname;
+}
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC) && (!defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC) )
+# pragma GCC diagnostic pop
+#endif
+
+size_t parseprogbasename(char *buf, size_t buflen, const char *progname, size_t *pprogbasenamelen, size_t *pprogbasenamedot)
+{
+	size_t	i,
+		progbasenamelen = 0,
+		progbasenamedot = 0;
+
+	if (pprogbasenamelen)
+		*pprogbasenamelen = 0;
+
+	if (pprogbasenamedot)
+		*pprogbasenamedot = 0;
+
+	if (!buf || !progname || !buflen || progname[0] == '\0')
+		return 0;
+
+	for (i = 0; i < buflen && progname[i] != '\0'; i++) {
+		if (progname[i] == '/'
+#ifdef WIN32
+		||  progname[i] == '\\'
+#endif
+		) {
+			progbasenamelen = 0;
+			progbasenamedot = 0;
+			continue;
+		}
+
+		if (progname[i] == '.')
+			progbasenamedot = progbasenamelen;
+
+		buf[progbasenamelen++] = progname[i];
+	}
+	buf[progbasenamelen] = '\0';
+	buf[buflen - 1] = '\0';
+
+	if (pprogbasenamelen)
+		*pprogbasenamelen = progbasenamelen;
+
+	if (pprogbasenamedot)
+		*pprogbasenamedot = progbasenamedot;
+
+	return progbasenamelen;
+}
+
+int checkprocname(pid_t pid, const char *progname)
+{
+	/* If we can determine the binary path name of the specified "pid",
+	 * check if it matches the assumed name of the current program.
+	 * Returns:
+	 *	-2	Could not parse a program name (ok to proceed,
+	 *		risky - but matches legacy behavior)
+	 *	-1	Could not identify a program name (ok to proceed,
+	 *		risky - but matches legacy behavior)
+	 *	0	Process name identified, does not seem to match
+	 *	1+	Process name identified, and seems to match with
+	 *		varying precision
+	 * Generally speaking, if (checkprocname(...)) then ok to proceed
+	 */
+	char	*procname = getprocname(pid);
+	int	ret = -127;
+	size_t	procbasenamelen = 0, progbasenamelen = 0;
+	/* Track where the last dot is in the basename; 0 means none */
+	size_t	procbasenamedot = 0, progbasenamedot = 0;
+#ifdef UNIX_PATH_MAX
+	char	procbasename[UNIX_PATH_MAX], progbasename[UNIX_PATH_MAX];
+#else
+	char	procbasename[PATH_MAX], progbasename[PATH_MAX];
+#endif
+
+	if (!procname || !progname) {
+		ret = -1;
+		goto finish;
+	}
+
+	/* First quickly try for an exact hit (possible dir names included) */
+	if (!strcmp(procname, progname)) {
+		ret = 1;
+		goto finish;
+	}
+
+	/* Parse the basenames apart */
+	if (!parseprogbasename(progbasename, sizeof(progbasename), progname, &progbasenamelen, &progbasenamedot)
+	||  !parseprogbasename(procbasename, sizeof(procbasename), procname, &procbasenamelen, &procbasenamedot)
+	) {
+		ret = -2;
+		goto finish;
+	}
+
+	/* First quickly try for an exact hit of base names */
+	if (progbasenamelen == procbasenamelen && progbasenamedot == procbasenamedot && !strcmp(procname, progname)) {
+		ret = 2;
+		goto finish;
+	}
+
+	/* Check for executable program filename extensions and/or case-insensitive
+	 * matching on some platforms */
+#ifdef WIN32
+	if (!strcasecmp(procname, progname)) {
+		ret = 3;
+		goto finish;
+	}
+
+	if (!strcasecmp(procbasename, progbasename)) {
+		ret = 4;
+		goto finish;
+	}
+
+	if (progbasenamedot == procbasenamedot || !progbasenamedot || !procbasenamedot) {
+		/* Same base name before ext, maybe different casing or absence of ext in one of them */
+		size_t	dot = progbasenamedot ? progbasenamedot : procbasenamedot;
+
+		if (!strncasecmp(progbasename, procbasename, dot - 1) &&
+		     (  (progbasenamedot && !strcasecmp(progbasename + progbasenamedot, ".exe"))
+		     || (procbasenamedot && !strcasecmp(procbasename + procbasenamedot, ".exe")) )
+		) {
+			ret = 5;
+			goto finish;
+		}
+	}
+#endif
+
+	/* Nothing above has matched */
+	ret = 0;
+
+finish:
+	switch (ret) {
+		case 5:
+			upsdebugx(1,
+				"%s: exact case-insensitive base name hit with "
+				"an executable program extension involved for "
+				"PID %" PRIuMAX " of '%s'=>'%s' and checked "
+				"'%s'=>'%s'",
+				__func__, (uintmax_t)pid,
+				procname, procbasename,
+				progname, progbasename);
+			break;
+
+		case 4:
+			upsdebugx(1,
+				"%s: case-insensitive base name hit for PID %"
+				PRIuMAX " of '%s'=>'%s' and checked '%s'=>'%s'",
+				__func__, (uintmax_t)pid,
+				procname, procbasename,
+				progname, progbasename);
+			break;
+
+		case 3:
+			upsdebugx(1,
+				"%s: case-insensitive full name hit for PID %"
+				PRIuMAX " of '%s' and checked '%s'",
+				__func__, (uintmax_t)pid, procname, progname);
+			break;
+
+		case 2:
+			upsdebugx(1,
+				"%s: case-sensitive base name hit for PID %"
+				PRIuMAX " of '%s'=>'%s' and checked '%s'=>'%s'",
+				__func__, (uintmax_t)pid,
+				procname, procbasename,
+				progname, progbasename);
+			break;
+
+		case 1:
+			upsdebugx(1,
+				"%s: exact case-sensitive full name hit for PID %"
+				PRIuMAX " of '%s' and checked '%s'",
+				__func__, (uintmax_t)pid, procname, progname);
+			break;
+
+		case 0:
+			upsdebugx(1,
+				"%s: did not find any match of program names "
+				"for PID %" PRIuMAX " of '%s'=>'%s' and checked "
+				"'%s'=>'%s'",
+				__func__, (uintmax_t)pid,
+				procname, procbasename,
+				progname, progbasename);
+			break;
+
+		case -1:
+			/* failed to getprocname(), logged above in it */
+			break;
+
+		case -2:
+			upsdebugx(1,
+				"%s: failed to parse base names of the programs",
+				__func__);
+			break;
+
+		default:
+			upsdebugx(1,
+				"%s: unexpected result looking for process name "
+				"of PID %" PRIuMAX ": %d",
+				__func__, (uintmax_t)pid, ret);
+			ret = -127;
+			break;
+	}
+
+	return ret;
 }
 
 #ifdef WIN32
