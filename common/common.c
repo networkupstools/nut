@@ -497,6 +497,7 @@ char * getprocname(pid_t pid)
 
 	if (stat("/proc", &st) == 0 && ((st.st_mode & S_IFMT) == S_IFDIR)) {
 		upsdebugx(3, "%s: /proc is an accessible directory, investigating", __func__);
+
 #if (defined HAVE_READLINK) && HAVE_READLINK
 		/* Linux-like */
 		if (snprintf(pathname, sizeof(pathname), "/proc/%" PRIuMAX "/exe", (uintmax_t)pid) < 10) {
@@ -593,7 +594,7 @@ process_parse_file:
 		if (stat(pathname, &st) == 0) {
 			FILE* fp = fopen(pathname, "r");
 			if (fp) {
-				char	buf[LARGEBUF];
+				char	buf[sizeof(pathname)];
 				if (fgets(buf, sizeof(buf), fp) != NULL) {
 					/* check the first token in the file, the program name */
 					char* first = strtok(buf, " ");
@@ -626,9 +627,56 @@ process_parse_file:
 			}
 		}
 
-
-		/* TODO: Check /proc/NNN/stat (second token, in parentheses, may be truncated)
+		/* Check /proc/NNN/stat (second token, in parentheses, may be truncated)
 		 * see e.g. https://stackoverflow.com/a/12675103/4715872 */
+		if (snprintf(pathname, sizeof(pathname), "/proc/%" PRIuMAX "/stat", (uintmax_t)pid) < 10) {
+			upsdebug_with_errno(3, "%s: failed to snprintf pathname: Linux-like", __func__);
+			goto finish;
+		}
+
+		if (stat(pathname, &st) == 0) {
+			FILE* fp = fopen(pathname, "r");
+			if (fp) {
+				long	spid;
+				char	sstate;
+				char	buf[sizeof(pathname)];
+
+				memset (buf, 0, sizeof(buf));
+				if ( (fscanf(fp, "%ld (%[^)]) %c", &spid, buf, &sstate)) == 3 ) {
+					/* Some names can be pretty titles like "init(Ubuntu)"
+					 * or "Relay(223)". Or truncated like "docker-desktop-".
+					 * Tokenize by "(" " " and extract the first token to
+					 * address the former "problem", not too much we can
+					 * do about the latter except for keeping NUT program
+					 * names concise.
+					 */
+					char* first = strtok(buf, "( ");
+
+					fclose(fp);
+					if (first) {
+						/* Not xcalloc() here, not too fatal if we fail */
+						if ((procnamelen = strlen(first))) {
+							upsdebugx(3, "%s: try to parse some files under /proc: processing %s "
+								"(WARNING: may be truncated)",
+								__func__, pathname);
+							if ((procname = (char*)calloc(procnamelen + 1, sizeof(char)))) {
+								if (snprintf(procname, procnamelen + 1, "%s", first) < 1) {
+									upsdebug_with_errno(3, "%s: failed to snprintf pathname: Linux-like", __func__);
+								}
+							} else {
+								upsdebug_with_errno(3, "%s: failed to allocate the procname "
+									"string to store token from 'cmdline' size %" PRIuSIZE,
+									__func__, procnamelen);
+							}
+
+							goto finish;
+						}
+					}
+				} else {
+					fclose(fp);
+				}
+			}
+		}
 
 		/* TODO: Solaris/illumos: parse binary structure at /proc/NNN/psinfo */
 	} else {
