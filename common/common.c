@@ -580,8 +580,52 @@ process_stat_symlink:
 process_parse_file:
 		upsdebugx(3, "%s: try to parse some files under /proc", __func__);
 
-		/* TODO: Check /proc/NNN/cmdline (may start with a '-' to ignore,
-		 * for a title string like "-bash" where programs edit their argv[0] */
+		/* Check /proc/NNN/cmdline (may start with a '-' to ignore, for
+		 * a title string like "-bash" where programs edit their argv[0]
+		 * (Linux-like OSes at least). Inspired by
+		 * https://gist.github.com/evanslai/30c6d588a80222f665f10b4577dadd61
+		 */
+		if (snprintf(pathname, sizeof(pathname), "/proc/%" PRIuMAX "/cmdline", (uintmax_t)pid) < 10) {
+			upsdebug_with_errno(3, "%s: failed to snprintf pathname: Linux-like", __func__);
+			goto finish;
+		}
+
+		if (stat(pathname, &st) == 0) {
+			FILE* fp = fopen(pathname, "r");
+			if (fp) {
+				char	buf[LARGEBUF];
+				if (fgets(buf, sizeof(buf), fp) != NULL) {
+					/* check the first token in the file, the program name */
+					char* first = strtok(buf, " ");
+
+					fclose(fp);
+					if (first) {
+						if (*first == '-')
+							first++;
+
+						/* Not xcalloc() here, not too fatal if we fail */
+						if ((procnamelen = strlen(first))) {
+							upsdebugx(3, "%s: try to parse some files under /proc: processing %s",
+								__func__, pathname);
+							if ((procname = (char*)calloc(procnamelen + 1, sizeof(char)))) {
+								if (snprintf(procname, procnamelen + 1, "%s", first) < 1) {
+									upsdebug_with_errno(3, "%s: failed to snprintf pathname: Linux-like", __func__);
+								}
+							} else {
+								upsdebug_with_errno(3, "%s: failed to allocate the procname "
+									"string to store token from 'cmdline' size %" PRIuSIZE,
+									__func__, procnamelen);
+							}
+
+							goto finish;
+						}
+					}
+				} else {
+					fclose(fp);
+				}
+			}
+		}
+
 
 		/* TODO: Check /proc/NNN/stat (second token, in parentheses, may be truncated)
 		 * see e.g. https://stackoverflow.com/a/12675103/4715872 */
