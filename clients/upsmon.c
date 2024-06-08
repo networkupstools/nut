@@ -3018,7 +3018,7 @@ int main(int argc, char *argv[])
 	if (oldpid < 0) {
 		cmdret = sendsignal(prog, cmd);
 	} else {
-		cmdret = sendsignalpid(oldpid, cmd);
+		cmdret = sendsignalpid(oldpid, cmd, prog);
 	}
 
 #else	/* WIN32 */

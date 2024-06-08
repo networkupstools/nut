@@ -304,9 +304,9 @@ socket_error:
 	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_KILL_SIG0PING - 1;
 #ifndef WIN32
 	if (ups->pid == -1) {
-		ret = sendsignalfn(pidfn, cmd);
+		ret = sendsignalfn(pidfn, cmd, ups->driver);
 	} else {
-		ret = sendsignalpid(ups->pid, cmd);
+		ret = sendsignalpid(ups->pid, cmd, ups->driver);
 		/* reap zombie if this child died */
 		if (waitpid(ups->pid, NULL, WNOHANG) == ups->pid) {
 			upslog_with_errno(LOG_WARNING,
@@ -381,9 +381,9 @@ static void stop_driver(const ups_t *ups)
 
 #ifndef WIN32
 	if (ups->pid == -1) {
-		ret = sendsignalfn(pidfn, SIGTERM);
+		ret = sendsignalfn(pidfn, SIGTERM, ups->driver);
 	} else {
-		ret = sendsignalpid(ups->pid, SIGTERM);
+		ret = sendsignalpid(ups->pid, SIGTERM, ups->driver);
 		/* reap zombie if this child died */
 		if (waitpid(ups->pid, NULL, WNOHANG) == ups->pid) {
 			goto clean_return;
@@ -397,9 +397,9 @@ static void stop_driver(const ups_t *ups)
 #ifndef WIN32
 		upsdebugx(2, "SIGTERM to %s failed, retrying with SIGKILL", pidfn);
 		if (ups->pid == -1) {
-			ret = sendsignalfn(pidfn, SIGKILL);
+			ret = sendsignalfn(pidfn, SIGKILL, ups->driver);
 		} else {
-			ret = sendsignalpid(ups->pid, SIGKILL);
+			ret = sendsignalpid(ups->pid, SIGKILL, ups->driver);
 			/* reap zombie if this child died */
 			if (waitpid(ups->pid, NULL, WNOHANG) == ups->pid) {
 				goto clean_return;
@@ -419,16 +419,16 @@ static void stop_driver(const ups_t *ups)
 	for (i = 0; i < 5 ; i++) {
 #ifndef WIN32
 		if (ups->pid == -1) {
-			ret = sendsignalfn(pidfn, 0);
+			ret = sendsignalfn(pidfn, 0, ups->driver);
 		} else {
 			/* reap zombie if this child died */
 			if (waitpid(ups->pid, NULL, WNOHANG) == ups->pid) {
 				goto clean_return;
 			}
-			ret = sendsignalpid(ups->pid, 0);
+			ret = sendsignalpid(ups->pid, 0, ups->driver);
 		}
 #else
-		ret = sendsignalfn(pidfn, 0);
+		ret = sendsignalfn(pidfn, 0, ups->driver);
 #endif
 		if (ret != 0) {
 			upsdebugx(2, "Sending signal to %s failed, driver is finally down or wrongly owned", pidfn);
@@ -440,13 +440,13 @@ static void stop_driver(const ups_t *ups)
 #ifndef WIN32
 	upslog_with_errno(LOG_ERR, "Stopping %s failed, retrying harder", pidfn);
 	if (ups->pid == -1) {
-		ret = sendsignalfn(pidfn, SIGKILL);
+		ret = sendsignalfn(pidfn, SIGKILL, ups->driver);
 	} else {
 		/* reap zombie if this child died */
 		if (waitpid(ups->pid, NULL, WNOHANG) == ups->pid) {
 			goto clean_return;
 		}
-		ret = sendsignalpid(ups->pid, SIGKILL);
+		ret = sendsignalpid(ups->pid, SIGKILL, ups->driver);
 	}
 #else
 	upslog_with_errno(LOG_ERR, "Stopping %s failed, retrying again", pidfn);
@@ -456,16 +456,16 @@ static void stop_driver(const ups_t *ups)
 		for (i = 0; i < 5 ; i++) {
 #ifndef WIN32
 			if (ups->pid == -1) {
-				ret = sendsignalfn(pidfn, 0);
+				ret = sendsignalfn(pidfn, 0, ups->driver);
 			} else {
 				/* reap zombie if this child died */
 				if (waitpid(ups->pid, NULL, WNOHANG) == ups->pid) {
 					goto clean_return;
 				}
-				ret = sendsignalpid(ups->pid, 0);
+				ret = sendsignalpid(ups->pid, 0, ups->driver);
 			}
 #else
-			ret = sendsignalfn(pidfn, 0);
+			ret = sendsignalfn(pidfn, 0, ups->driver);
 #endif
 			if (ret != 0) {
 				upsdebugx(2, "Sending signal to %s failed, driver is finally down or wrongly owned", pidfn);

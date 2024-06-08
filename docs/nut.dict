@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3165 utf-8
+personal_ws-1.1 en 3168 utf-8
 AAC
 AAS
 ABI
@@ -2569,6 +2569,7 @@ probu
 proc
 productid
 prog
+progname
 prtconf
 ps
 psu
@@ -2702,6 +2703,8 @@ sendback
 sendline
 sendmail
 sendsignal
+sendsignalfn
+sendsignalpid
 sequentialized
 ser
 seria

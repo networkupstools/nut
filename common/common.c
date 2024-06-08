@@ -574,6 +574,7 @@ process_stat_symlink:
 		}
 #else
 		upsdebugx(3, "%s: this platform does not have readlink(), skipping this method", __func__);
+		goto process_parse_file;
 #endif	/* HAVE_READLINK */
 
 process_parse_file:
@@ -595,7 +596,8 @@ process_parse_file:
 
 finish:
 	if (procname) {
-		if (strlen(procname) == 0) {
+		procnamelen = strlen(procname);
+		if (procnamelen == 0) {
 			free(procname);
 			procname = NULL;
 		} else {
@@ -874,7 +876,7 @@ void writepid(const char *name)
 /* send sig to pid, returns -1 for error, or
  * zero for a successfully sent signal
  */
-int sendsignalpid(pid_t pid, int sig)
+int sendsignalpid(pid_t pid, int sig, const char *progname)
 {
 #ifndef WIN32
 	int	ret;
@@ -889,7 +891,16 @@ int sendsignalpid(pid_t pid, int sig)
 		return -1;
 	}
 
-	/* see if this is going to work first - does the process exist? */
+	if (progname && !checkprocname(pid, progname)) {
+		if (nut_debug_level > 0 || nut_sendsignal_debug_level > 1)
+			upslogx(LOG_ERR, "Tried to signal PID %" PRIuMAX
+				" which exists but is not of program '%s'",
+				(uintmax_t)pid, progname);
+		return -1;
+	}
+
+	/* see if this is going to work first - does the process exist,
+	 * and do we have permissions to signal it? */
 	ret = kill(pid, 0);
 
 	if (ret < 0) {
@@ -913,6 +924,7 @@ int sendsignalpid(pid_t pid, int sig)
 #else
 	NUT_UNUSED_VARIABLE(pid);
 	NUT_UNUSED_VARIABLE(sig);
+	NUT_UNUSED_VARIABLE(progname);
 	upslogx(LOG_ERR,
 		"%s: not implemented for Win32 and "
 		"should not have been called directly!",
@@ -953,7 +965,7 @@ pid_t parsepid(const char *buf)
  * zero for a successfully sent signal
  */
 #ifndef WIN32
-int sendsignalfn(const char *pidfn, int sig)
+int sendsignalfn(const char *pidfn, int sig, const char *progname)
 {
 	char	buf[SMALLBUF];
 	FILE	*pidf;
@@ -989,7 +1001,7 @@ int sendsignalfn(const char *pidfn, int sig)
 
 	if (pid >= 0) {
 		/* this method actively reports errors, if any */
-		ret = sendsignalpid(pid, sig);
+		ret = sendsignalpid(pid, sig, progname);
 	}
 
 	fclose(pidf);
@@ -998,9 +1010,10 @@ int sendsignalfn(const char *pidfn, int sig)
 
 #else	/* => WIN32 */
 
-int sendsignalfn(const char *pidfn, const char * sig)
+int sendsignalfn(const char *pidfn, const char * sig, const char *progname_ignored)
 {
 	BOOL	ret;
+	NUT_UNUSED_VARIABLE(progname_ignored);
 
 	ret = send_to_named_pipe(pidfn, sig);
 
@@ -1069,12 +1082,13 @@ int sendsignal(const char *progname, int sig)
 
 	snprintf(fn, sizeof(fn), "%s/%s.pid", rootpidpath(), progname);
 
-	return sendsignalfn(fn, sig);
+	return sendsignalfn(fn, sig, progname);
 }
 #else
 int sendsignal(const char *progname, const char * sig)
 {
-	return sendsignalfn(progname, sig);
+	/* progname is used as the pipe name for WIN32 */
+	return sendsignalfn(progname, sig, NULL);
 }
 #endif
 
