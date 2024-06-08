@@ -879,6 +879,8 @@ int sendsignalpid(pid_t pid, int sig)
 #ifndef WIN32
 	int	ret;
 
+	/* TOTHINK: What about containers where a NUT daemon *is* the only process
+	 * and is the PID=1 of the container (recycle if dead)? */
 	if (pid < 2 || pid > get_max_pid_t()) {
 		if (nut_debug_level > 0 || nut_sendsignal_debug_level > 0)
 			upslogx(LOG_NOTICE,
