@@ -83,6 +83,13 @@ const char *UPS_VERSION = NUT_VERSION_MACRO;
 #include <sys/types.h>
 #include <limits.h>
 #include <stdlib.h>
+
+#if defined(HAVE_LIB_BSD_KVM_PROC) && HAVE_LIB_BSD_KVM_PROC
+# include <kvm.h>
+# include <sys/param.h>
+# include <sys/sysctl.h>
+#endif
+
 pid_t get_max_pid_t(void)
 {
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
@@ -681,8 +688,57 @@ process_parse_file:
 		/* TODO: Solaris/illumos: parse binary structure at /proc/NNN/psinfo */
 	} else {
 		upsdebug_with_errno(3, "%s: /proc is not a directory or not accessible", __func__);
-		/* TODO: OpenBSD: no /proc; use API call, see ps.c link above */
 	}
+
+#if defined(HAVE_LIB_BSD_KVM_PROC) && HAVE_LIB_BSD_KVM_PROC
+	/* OpenBSD, maybe other BSD: no /proc; use API call, see ps.c link above and
+	 * https://kaashif.co.uk/2015/06/18/how-to-get-a-list-of-processes-on-openbsd-in-c/
+	 */
+	if (!procname) {
+		char	errbuf[_POSIX2_LINE_MAX];
+		kvm_t	*kd = kvm_openfiles(NULL, NULL, NULL, KVM_NO_FILES, errbuf);
+
+		upsdebugx(3, "%s: try to parse BSD KVM process info snapsnot", __func__);
+		if (!kd) {
+			upsdebugx(3, "%s: try to parse BSD KVM process info snapsnot: "
+				"kvm_openfiles() returned NULL", __func__);
+		} else {
+			int	nentries = 0;
+			struct	kinfo_proc *kp = kvm_getprocs(kd, KERN_PROC_PID, pid, sizeof(*kp), &nentries);
+
+			if (!kp) {
+				upsdebugx(3, "%s: try to parse BSD KVM process info snapsnot: "
+					"kvm_getprocs() returned NULL", __func__);
+			} else {
+				int	i;
+				if (nentries != 1)
+					upsdebugx(3, "%s: expected to get 1 reply from BSD kvm_getprocs but got %d",
+						__func__, nentries);
+				for (i = 0; i < nentries; i++) {
+					upsdebugx(5, "%s: processing reply #%d from BSD"
+						" kvm_getprocs: pid=%" PRIuMAX " name='%s'",
+						__func__, i, (uintmax_t)kp[i].p_pid, kp[i].p_comm);
+					if ((uintmax_t)(kp[i].p_pid) == (uintmax_t)pid) {
+						/* Not xcalloc() here, not too fatal if we fail */
+						if ((procnamelen = strlen(kp[i].p_comm))) {
+							if ((procname = (char*)calloc(procnamelen + 1, sizeof(char)))) {
+								if (snprintf(procname, procnamelen + 1, "%s", kp[i].p_comm) < 1) {
+									upsdebug_with_errno(3, "%s: failed to snprintf pathname: BSD-like", __func__);
+								}
+							} else {
+								upsdebug_with_errno(3, "%s: failed to allocate the procname "
+									"string to store token from 'cmdline' size %" PRIuSIZE,
+									__func__, procnamelen);
+							}
+
+							goto finish;
+						}
+					}
+				}
+			}
+		}
+	}
+#endif	/* HAVE_LIB_BSD_KVM_PROC */
 
 	goto finish;
 

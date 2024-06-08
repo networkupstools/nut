@@ -1111,6 +1111,44 @@ AS_IF([test x"${ac_cv_func_usleep}" = xyes],
     [AC_MSG_WARN([Required C library routine usleep not found; try adding -D_POSIX_C_SOURCE=200112L])]
     )
 
+dnl OpenBSD (at least) methods to query process info, per
+dnl https://github.com/openbsd/src/blob/master/bin/ps/ps.c
+dnl https://kaashif.co.uk/2015/06/18/how-to-get-a-list-of-processes-on-openbsd-in-c/
+BSDKVMPROCLIBS=""
+myLIBS="$LIBS"
+LIBS="$LIBS -lkvm"
+AC_CACHE_CHECK([for BSD KVM process info libs],
+    [ac_cv_lib_bsd_kvm_proc],
+    [AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([[
+#include <stdio.h>
+#include <kvm.h>
+#include <limits.h>
+#include <sys/param.h>
+#include <sys/sysctl.h>
+        ]],
+            [[
+    char errbuf[_POSIX2_LINE_MAX];
+    kvm_t *kernel = kvm_openfiles(NULL, NULL, NULL, KVM_NO_FILES, errbuf);
+    int nentries = 0;
+    struct kinfo_proc *kinfo = kvm_getprocs(kernel, KERN_PROC_ALL, 0, sizeof(struct kinfo_proc), &nentries);
+    int i;
+    for (i = 0; i < nentries; ++i) {
+        printf("%s\n", kinfo[i].p_comm);
+    }
+/* autoconf adds ";return 0;" */
+/* we hope the code above fails if type is not defined or range is not sufficient */
+]])],
+        [ac_cv_lib_bsd_kvm_proc=yes
+        BSDKVMPROCLIBS="-lkvm"
+        ], [ac_cv_lib_bsd_kvm_proc=no]
+    )])
+LIBS="$myLIBS"
+
+AS_IF([test x"${ac_cv_lib_bsd_kvm_proc}" = xyes],
+    [AC_DEFINE([HAVE_LIB_BSD_KVM_PROC], 1, [defined if we have libs, includes and methods for BSD KVM process info])]
+    )
+
 AC_LANG_POP([C])
 
 dnl These routines' arg types differ in strict C standard mode
@@ -4329,6 +4367,7 @@ AC_SUBST(DRIVER_BUILD_LIST)
 AC_SUBST(DRIVER_MAN_LIST)
 AC_SUBST(DRIVER_MAN_LIST_PAGES)
 AC_SUBST(DRIVER_INSTALL_TARGET)
+AC_SUBST(BSDKVMPROCLIBS)
 AC_SUBST(NETLIBS)
 AC_SUBST(SERLIBS)
 AC_SUBST(SEMLIBS)
