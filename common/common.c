@@ -1,7 +1,7 @@
 /* common.c - common useful functions
 
    Copyright (C) 2000  Russell Kroll <rkroll@exploits.org>
-   Copyright (C) 2021-2022  Jim Klimov <jimklimov+nut@gmail.com>
+   Copyright (C) 2021-2024  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -23,13 +23,15 @@
 
 #include <ctype.h>
 #ifndef WIN32
-#include <syslog.h>
-#include <errno.h>
-#include <pwd.h>
-#include <grp.h>
-#include <sys/un.h>
+# include <syslog.h>
+# include <errno.h>
+# include <pwd.h>
+# include <grp.h>
+# include <sys/un.h>
 #else
-#include <wincompat.h>
+# include <wincompat.h>
+# include <processthreadsapi.h>
+# include <psapi.h>
 #endif
 
 #ifdef HAVE_UNISTD_H
@@ -504,6 +506,62 @@ char * getprocname(pid_t pid)
 	 * https://stackoverflow.com/questions/1591342/c-how-to-determine-if-a-windows-process-is-running
 	 * http://cppip.blogspot.com/2013/01/check-if-process-is-running.html
 	 */
+	upsdebugx(5, "%s: begin to query WIN32 process info", __func__);
+	HANDLE process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, (DWORD)pid);
+	if (process) {
+		DWORD	ret = GetModuleFileNameExA(
+				process,	/* hProcess */
+				NULL,		/* hModule */
+				(LPSTR)pathname,
+				(DWORD)(sizeof(pathname))
+			);
+		CloseHandle(process);
+		pathname[sizeof(pathname) - 1] = '\0';
+
+		if (ret) {
+			/* length of the string copied to the buffer */
+			procnamelen = strlen(pathname);
+
+			upsdebugx(3, "%s: try to parse the name from WIN32 process info",
+				__func__);
+			if (ret != procnamelen) {
+				upsdebugx(3, "%s: length mismatch getting WIN32 process info: %"
+					PRIuMAX " vs. " PRIuSIZE,
+					__func__, (uintmax_t)ret, procnamelen);
+			}
+
+			if ((procname = (char*)calloc(procnamelen + 1, sizeof(char)))) {
+				if (snprintf(procname, procnamelen + 1, "%s", pathname) < 1) {
+					upsdebug_with_errno(3, "%s: failed to snprintf procname: WIN32-like", __func__);
+				} else {
+					goto finish;
+				}
+			} else {
+				upsdebug_with_errno(3, "%s: failed to allocate the procname "
+					"string to store token from WIN32 size %" PRIuSIZE,
+					__func__, procnamelen);
+			}
+
+			/* Fall through to try /proc etc. if available */
+		} else {
+			LPVOID WinBuf;
+			DWORD WinErr = GetLastError();
+			FormatMessage(
+				FORMAT_MESSAGE_MAX_WIDTH_MASK |
+				FORMAT_MESSAGE_ALLOCATE_BUFFER |
+				FORMAT_MESSAGE_FROM_SYSTEM |
+				FORMAT_MESSAGE_IGNORE_INSERTS,
+				NULL,
+				WinErr,
+				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+				(LPTSTR) &WinBuf,
+				0, NULL );
+
+			upsdebugx(3, "%s: failed to get WIN32 process info: %s",
+				__func__, (char *)WinBuf);
+			LocalFree(WinBuf);
+		}
+	}
 #endif
 
 	if (stat("/proc", &st) == 0 && ((st.st_mode & S_IFMT) == S_IFDIR)) {
