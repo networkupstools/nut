@@ -586,7 +586,7 @@ process_stat_symlink:
 #endif	/* HAVE_READLINK */
 
 process_parse_file:
-		upsdebugx(3, "%s: try to parse some files under /proc", __func__);
+		upsdebugx(5, "%s: try to parse some files under /proc", __func__);
 
 		/* Check /proc/NNN/cmdline (may start with a '-' to ignore, for
 		 * a title string like "-bash" where programs edit their argv[0]
@@ -617,7 +617,7 @@ process_parse_file:
 								__func__, pathname);
 							if ((procname = (char*)calloc(procnamelen + 1, sizeof(char)))) {
 								if (snprintf(procname, procnamelen + 1, "%s", first) < 1) {
-									upsdebug_with_errno(3, "%s: failed to snprintf pathname: Linux-like", __func__);
+									upsdebug_with_errno(3, "%s: failed to snprintf procname: Linux-like", __func__);
 								}
 							} else {
 								upsdebug_with_errno(3, "%s: failed to allocate the procname "
@@ -668,11 +668,11 @@ process_parse_file:
 								__func__, pathname);
 							if ((procname = (char*)calloc(procnamelen + 1, sizeof(char)))) {
 								if (snprintf(procname, procnamelen + 1, "%s", first) < 1) {
-									upsdebug_with_errno(3, "%s: failed to snprintf pathname: Linux-like", __func__);
+									upsdebug_with_errno(3, "%s: failed to snprintf procname: Linux-like", __func__);
 								}
 							} else {
 								upsdebug_with_errno(3, "%s: failed to allocate the procname "
-									"string to store token from 'cmdline' size %" PRIuSIZE,
+									"string to store token from 'stat' size %" PRIuSIZE,
 									__func__, procnamelen);
 							}
 
@@ -723,11 +723,12 @@ process_parse_file:
 						if ((procnamelen = strlen(kp[i].p_comm))) {
 							if ((procname = (char*)calloc(procnamelen + 1, sizeof(char)))) {
 								if (snprintf(procname, procnamelen + 1, "%s", kp[i].p_comm) < 1) {
-									upsdebug_with_errno(3, "%s: failed to snprintf pathname: BSD-like", __func__);
+									upsdebug_with_errno(3, "%s: failed to snprintf procname: BSD-like", __func__);
 								}
 							} else {
 								upsdebug_with_errno(3, "%s: failed to allocate the procname "
-									"string to store token from 'cmdline' size %" PRIuSIZE,
+									"string to store token from BSD KVM process info "
+									"snapsnot size %" PRIuSIZE,
 									__func__, procnamelen);
 							}
 
