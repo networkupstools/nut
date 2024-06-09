@@ -90,6 +90,10 @@ const char *UPS_VERSION = NUT_VERSION_MACRO;
 # include <sys/sysctl.h>
 #endif
 
+#if defined(HAVE_LIB_ILLUMOS_PROC) && HAVE_LIB_ILLUMOS_PROC
+# include <procfs.h>
+#endif
+
 pid_t get_max_pid_t(void)
 {
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
@@ -685,7 +689,55 @@ process_parse_file:
 			}
 		}
 
-		/* TODO: Solaris/illumos: parse binary structure at /proc/NNN/psinfo */
+#if defined(HAVE_LIB_ILLUMOS_PROC) && HAVE_LIB_ILLUMOS_PROC
+		/* Solaris/illumos: parse binary structure at /proc/NNN/psinfo */
+		if (snprintf(pathname, sizeof(pathname), "/proc/%" PRIuMAX "/psinfo", (uintmax_t)pid) < 10) {
+			upsdebug_with_errno(3, "%s: failed to snprintf pathname: Solaris/illumos-like", __func__);
+			goto finish;
+		}
+
+		if (stat(pathname, &st) == 0) {
+			FILE* fp = fopen(pathname, "r");
+			if (!fp) {
+				upsdebug_with_errno(3, "%s: try to parse '%s':"
+					"fopen() returned NULL", __func__, pathname);
+			} else {
+				psinfo_t	info;	/* process information from /proc */
+				size_t	r;
+
+				memset (&info, 0, sizeof(info));
+				r = fread((char *)&info, sizeof (info), 1, fp);
+				if (r != 1) {
+					upsdebug_with_errno(3, "%s: try to parse '%s': "
+						"unexpected read size: got %" PRIuSIZE
+						" record(s) from file of size %" PRIuMAX
+						" vs. 1 piece of %" PRIuSIZE " struct size",
+						__func__, pathname, r,
+						(uintmax_t)st.st_size, sizeof (info));
+					fclose(fp);
+				} else {
+					fclose(fp);
+
+					/* Not xcalloc() here, not too fatal if we fail */
+					if ((procnamelen = strlen(info.pr_fname))) {
+						upsdebugx(3, "%s: try to parse some files under /proc: processing %s",
+							__func__, pathname);
+						if ((procname = (char*)calloc(procnamelen + 1, sizeof(char)))) {
+							if (snprintf(procname, procnamelen + 1, "%s", info.pr_fname) < 1) {
+								upsdebug_with_errno(3, "%s: failed to snprintf pathname: Solaris/illumos-like", __func__);
+							}
+						} else {
+							upsdebug_with_errno(3, "%s: failed to allocate the procname "
+								"string to store token from 'psinfo' size %" PRIuSIZE,
+								__func__, procnamelen);
+						}
+
+						goto finish;
+					}
+				}
+			}
+		}
+#endif
 	} else {
 		upsdebug_with_errno(3, "%s: /proc is not a directory or not accessible", __func__);
 	}

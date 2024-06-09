@@ -1149,6 +1149,30 @@ AS_IF([test x"${ac_cv_lib_bsd_kvm_proc}" = xyes],
     [AC_DEFINE([HAVE_LIB_BSD_KVM_PROC], 1, [defined if we have libs, includes and methods for BSD KVM process info])]
     )
 
+dnl https://github.com/illumos/illumos-gate/blob/master/usr/src/uts/common/sys/procfs.h#L318
+dnl https://github.com/illumos/illumos-gate/blob/master/usr/src/cmd/ps/ps.c
+AC_CACHE_CHECK([for Solaris/illumos process info libs],
+    [ac_cv_lib_illumos_proc],
+    [AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([[
+#include <stdio.h>
+#include <procfs.h>
+        ]],
+            [[
+    psinfo_t info;
+    printf("%s", info.pr_fname)
+/* autoconf adds ";return 0;" */
+/* we hope the code above fails if type is not defined or range is not sufficient */
+]])],
+        [ac_cv_lib_illumos_proc=yes
+        ], [ac_cv_lib_illumos_proc=no]
+    )])
+LIBS="$myLIBS"
+
+AS_IF([test x"${ac_cv_lib_illumos_proc}" = xyes],
+    [AC_DEFINE([HAVE_LIB_ILLUMOS_PROC], 1, [defined if we have libs, includes and methods for Solaris/illumos process info])]
+    )
+
 AC_LANG_POP([C])
 
 dnl These routines' arg types differ in strict C standard mode
