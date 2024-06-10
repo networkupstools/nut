@@ -1111,14 +1111,6 @@ static int is_ups_critical(utype_t *ups)
 				ups->sys);
 			return 1;
 		}
-
-		if (ups->linestate == 0) {
-			upslogx(LOG_WARNING,
-				"UPS [%s] was last known to be not fully online "
-				"and currently is not communicating, assuming dead",
-				ups->sys);
-			return 1;
-		}
 	}
 
 	/* administratively OFF (long enough, see OFFDURATION) */
