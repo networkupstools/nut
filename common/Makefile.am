@@ -97,8 +97,8 @@ endif HAVE_WINDOWS
 
 # ensure inclusion of local implementation of missing systems functions
 # using LTLIBOBJS. Refer to configure.in/.ac -> AC_REPLACE_FUNCS
-libcommon_la_LIBADD = libparseconf.la @LTLIBOBJS@ @NETLIBS@
-libcommonclient_la_LIBADD = libparseconf.la @LTLIBOBJS@ @NETLIBS@
+libcommon_la_LIBADD = libparseconf.la @LTLIBOBJS@ @NETLIBS@ @BSDKVMPROCLIBS@
+libcommonclient_la_LIBADD = libparseconf.la @LTLIBOBJS@ @NETLIBS@ @BSDKVMPROCLIBS@
 
 libcommon_la_CFLAGS = $(AM_CFLAGS)
 libcommonclient_la_CFLAGS = $(AM_CFLAGS)

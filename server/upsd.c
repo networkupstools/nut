@@ -2049,9 +2049,9 @@ int main(int argc, char **argv)
 	 */
 
 	if (oldpid < 0) {
-		cmdret = sendsignalfn(pidfn, cmd);
+		cmdret = sendsignalfn(pidfn, cmd, progname);
 	} else {
-		cmdret = sendsignalpid(oldpid, cmd);
+		cmdret = sendsignalpid(oldpid, cmd, progname);
 	}
 #else	/* if WIN32 */
 	if (cmd) {

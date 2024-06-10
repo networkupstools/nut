@@ -33,6 +33,12 @@ Changes from 2.8.2 to 2.8.3
   pages which are delivered automatically. Packaging recipes can likely
   be simplified now. [#2445]
 
+- Internal API change for `sendsignalpid()` and `sendsignalfn()` methods,
+  which can impact NUT forks which build using `libcommon.la` and similar
+  libraries.  Added new last argument with `const char *progname` (may be
+  `NULL`) to check that we are signalling an expected program name when we
+  work with a PID. [#2463]
+
 
 Changes from 2.8.1 to 2.8.2
 ---------------------------

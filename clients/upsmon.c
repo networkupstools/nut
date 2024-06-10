@@ -1104,11 +1104,17 @@ static int is_ups_critical(utype_t *ups)
 		}
 
 		if (ups->linestate == 0) {
-			upslogx(LOG_WARNING,
+			/* Just a message for post-mortem troubleshooting:
+			 * no flag flips, no return values issued just here
+			 * (note the message is likely to appear on every
+			 * cycle when the communications are down, to help
+			 * track when this was the case; no log throttling).
+			 */
+			upsdebugx(1,
 				"UPS [%s] was last known to be not fully online "
-				"and currently is not communicating, assuming dead",
+				"and currently is not communicating, just so you "
+				"know (waiting for DEADTIME to elapse)",
 				ups->sys);
-			return 1;
 		}
 	}
 
@@ -3009,7 +3015,7 @@ int main(int argc, char *argv[])
 	if (oldpid < 0) {
 		cmdret = sendsignal(prog, cmd);
 	} else {
-		cmdret = sendsignalpid(oldpid, cmd);
+		cmdret = sendsignalpid(oldpid, cmd, prog);
 	}
 
 #else	/* WIN32 */

@@ -2570,6 +2570,7 @@ probu
 proc
 productid
 prog
+progname
 prtconf
 ps
 psu
@@ -2703,6 +2704,8 @@ sendback
 sendline
 sendmail
 sendsignal
+sendsignalfn
+sendsignalpid
 sequentialized
 ser
 seria
