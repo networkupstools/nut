@@ -1111,6 +1111,20 @@ static int is_ups_critical(utype_t *ups)
 				ups->sys);
 			return 1;
 		}
+
+		if (ups->linestate == 0) {
+			/* Just a message for post-mortem troubleshooting:
+			 * no flag flips, no return values issued just here
+			 * (note the message is likely to appear on every
+			 * cycle when the communications are down, to help
+			 * track when this was the case; no log throttling).
+			 */
+			upsdebugx(1,
+				"UPS [%s] was last known to be not fully online "
+				"and currently is not communicating, just so you "
+				"know (waiting for DEADTIME to elapse)",
+				ups->sys);
+		}
 	}
 
 	/* administratively OFF (long enough, see OFFDURATION) */
