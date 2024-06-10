@@ -51,6 +51,10 @@ https://github.com/networkupstools/nut/milestone/11
    * Addition of "NUT Simulated devices" support to `nut-scanner` in v2.8.2
      broke detection of (in-)ability to find and query "Old NUT" servers via
      `libupsclient.so` (internal flag got always enabled). [#2246]
+   * A fix for `upsmon` v2.8.1 setting of `OFFDURATION` [PR #2108, issue #2104,
+     revisiting PR #2055, issue #2044] was overly zealous and impacted also
+     the `OB` state in cases where communications to the data server were
+     severed and `DEADTIME` setting was not honored. [PR #2462, issue #2454]
 
  - drivers, upsd, upsmon: reduce "scary noise" about failure to `fopen()`
    the PID file (which most of the time means that no previous instance of
