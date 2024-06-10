@@ -1003,7 +1003,7 @@ finish:
 	switch (ret) {
 		case 5:
 			upsdebugx(1,
-				"%s: exact case-insensitive base name hit with "
+				"%s: case-insensitive base name hit with "
 				"an executable program extension involved for "
 				"PID %" PRIuMAX " of '%s'=>'%s' and checked "
 				"'%s'=>'%s'",
