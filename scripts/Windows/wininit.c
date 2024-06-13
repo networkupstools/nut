@@ -193,7 +193,7 @@ static void run_upsd(void)
 
 static void stop_upsd(void)
 {
-	if (sendsignal(UPSD_PIPE_NAME, COMMAND_STOP)) {
+	if (sendsignal(UPSD_PIPE_NAME, COMMAND_STOP, 0)) {
 		print_event(LOG_ERR, "Error stopping upsd (%d)", GetLastError());
 	}
 }
@@ -215,7 +215,7 @@ static void run_upsmon(void)
 
 static void stop_upsmon(void)
 {
-	if (sendsignal(UPSMON_PIPE_NAME, COMMAND_STOP)) {
+	if (sendsignal(UPSMON_PIPE_NAME, COMMAND_STOP, 0)) {
 		print_event(LOG_ERR, "Error stopping upsmon (%d)", GetLastError());
 	}
 }

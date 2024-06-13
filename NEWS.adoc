@@ -145,7 +145,8 @@ https://github.com/networkupstools/nut/milestone/11
      significantly from a `progname` string defined in the respective NUT
      source file, so a boolean `NUT_IGNORE_CHECKPROCNAME` environment
      variable support was added to optionally disable this verification.
-     [issue #2463]
+     Also the NUT daemons should request to double-check against their
+     run-time process name (if it can be detected). [issue #2463]
 
  - various recipe, documentation and source files were revised to address
    respective warnings issued by the new generations of analysis tools.

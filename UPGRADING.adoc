@@ -46,7 +46,8 @@ Changes from 2.8.2 to 2.8.3
   names differ significantly from a `progname` defined in the respective
   NUT source file, so a boolean `NUT_IGNORE_CHECKPROCNAME` environment
   variable support was added to optionally disable this verification.
-  [issue #2463]
+  Also the NUT daemons should request to double-check against their
+  run-time process name (if it can be detected). [issue #2463]
 
 
 Changes from 2.8.1 to 2.8.2
