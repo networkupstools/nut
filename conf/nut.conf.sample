@@ -101,3 +101,12 @@ MODE=none
 #  `none`    Disabled and background() detaches stderr as usual
 #  `default`/unset/other   Not disabled
 #NUT_DEBUG_SYSLOG=stderr
+
+# Normally NUT can (attempt to) verify that the program file name matches the
+# name associated with a running process, when using PID files to send signals.
+# The `NUT_IGNORE_CHECKPROCNAME` boolean toggle allows to quickly skip such
+# verification, in case it causes problems (e.g. NUT programs were renamed and
+# do not match built-in expectations). This environment variable can also be
+# optionally set in init-scripts or service methods for `upsd`, `upsmon` and
+# NUT drivers/`upsdrvctl`.
+#NUT_IGNORE_CHECKPROCNAME=true

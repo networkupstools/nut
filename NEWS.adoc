@@ -139,7 +139,13 @@ https://github.com/networkupstools/nut/milestone/11
      that if they can resolve the program name of a running process with
      this identifier, that such name matches the current program (avoid
      failures to start NUT daemons if PID files are on persistent storage,
-     and some unrelated program got that PID after a reboot). [#2463]
+     and some unrelated program got that PID after a reboot).  This might
+     introduce regressions for heavily customized NUT builds (e.g. those
+     embedded in NAS or similar devices) where binary file names differ
+     significantly from a `progname` string defined in the respective NUT
+     source file, so a boolean `NUT_IGNORE_CHECKPROCNAME` environment
+     variable support was added to optionally disable this verification.
+     [issue #2463]
 
  - various recipe, documentation and source files were revised to address
    respective warnings issued by the new generations of analysis tools.

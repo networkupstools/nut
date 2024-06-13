@@ -44,7 +44,9 @@ Changes from 2.8.2 to 2.8.3
   determine one). This might introduce regressions for heavily customized
   NUT builds (e.g. embedded in NAS or similar devices) whose binary file
   names differ significantly from a `progname` defined in the respective
-  NUT source file. [issue #2463]
+  NUT source file, so a boolean `NUT_IGNORE_CHECKPROCNAME` environment
+  variable support was added to optionally disable this verification.
+  [issue #2463]
 
 
 Changes from 2.8.1 to 2.8.2

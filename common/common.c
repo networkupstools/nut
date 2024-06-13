@@ -924,6 +924,7 @@ int checkprocname(pid_t pid, const char *progname)
 	/* If we can determine the binary path name of the specified "pid",
 	 * check if it matches the assumed name of the current program.
 	 * Returns:
+	 *	-3	Skipped because NUT_IGNORE_CHECKPROCNAME is set
 	 *	-2	Could not parse a program name (ok to proceed,
 	 *		risky - but matches legacy behavior)
 	 *	-1	Could not identify a program name (ok to proceed,
@@ -933,7 +934,7 @@ int checkprocname(pid_t pid, const char *progname)
 	 *		varying precision
 	 * Generally speaking, if (checkprocname(...)) then ok to proceed
 	 */
-	char	*procname = getprocname(pid);
+	char	*procname = NULL, *s;
 	int	ret = -127;
 	size_t	procbasenamelen = 0, progbasenamelen = 0;
 	/* Track where the last dot is in the basename; 0 means none */
@@ -944,6 +945,16 @@ int checkprocname(pid_t pid, const char *progname)
 	char	procbasename[PATH_MAX], progbasename[PATH_MAX];
 #endif
 
+	if ((s = getenv("NUT_IGNORE_CHECKPROCNAME"))) {
+		/* FIXME: Make server/conf.c::parse_boolean() reusable */
+		if ( (!strcasecmp(s, "true")) || (!strcasecmp(s, "on")) || (!strcasecmp(s, "yes")) || (!strcasecmp(s, "1"))) {
+			upsdebugx(1, "%s: skipping because caller set NUT_IGNORE_CHECKPROCNAME", __func__);
+			ret = -3;
+			goto finish;
+		}
+	}
+
+	procname = getprocname(pid);
 	if (!procname || !progname) {
 		ret = -1;
 		goto finish;
@@ -1062,6 +1073,10 @@ finish:
 			upsdebugx(1,
 				"%s: failed to parse base names of the programs",
 				__func__);
+			break;
+
+		case -3:
+			/* skipped due to envvar, logged above */
 			break;
 
 		default:

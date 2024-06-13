@@ -246,6 +246,7 @@ size_t parseprogbasename(char *buf, size_t buflen, const char *progname, size_t 
 /* If we can determine the binary path name of the specified "pid",
  * check if it matches the assumed name of the current program.
  * Returns:
+ *	-3	Skipped because NUT_IGNORE_CHECKPROCNAME is set
  *	-2	Could not parse a program name (ok to proceed,
  *		risky - but matches legacy behavior)
  *	-1	Could not identify a program name (ok to proceed,
