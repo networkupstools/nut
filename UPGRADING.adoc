@@ -37,7 +37,14 @@ Changes from 2.8.2 to 2.8.3
   which can impact NUT forks which build using `libcommon.la` and similar
   libraries.  Added new last argument with `const char *progname` (may be
   `NULL`) to check that we are signalling an expected program name when we
-  work with a PID. [#2463]
+  work with a PID.  With the same effort, NUT programs which deal with PID
+  files to send signals (`upsd`, `upsmon`, drivers and `upsdrvctl`) would
+  now default to a safety precaution -- checking that the running process
+  with that PID has the expected program name (on platforms where we can
+  determine one). This might introduce regressions for heavily customized
+  NUT builds (e.g. embedded in NAS or similar devices) whose binary file
+  names differ significantly from a `progname` defined in the respective
+  NUT source file. [issue #2463]
 
 
 Changes from 2.8.1 to 2.8.2
