@@ -246,6 +246,7 @@ size_t parseprogbasename(char *buf, size_t buflen, const char *progname, size_t 
 /* If we can determine the binary path name of the specified "pid",
  * check if it matches the assumed name of the current program.
  * Returns:
+ *	-3	Skipped because NUT_IGNORE_CHECKPROCNAME is set
  *	-2	Could not parse a program name (ok to proceed,
  *		risky - but matches legacy behavior)
  *	-1	Could not identify a program name (ok to proceed,
@@ -267,9 +268,9 @@ pid_t parsepid(const char *buf);
 
 /* send a signal to another running NUT process */
 #ifndef WIN32
-int sendsignal(const char *progname, int sig);
+int sendsignal(const char *progname, int sig, int check_current_progname);
 #else
-int sendsignal(const char *progname, const char * sig);
+int sendsignal(const char *progname, const char * sig, int check_current_progname);
 #endif
 
 int snprintfcat(char *dst, size_t size, const char *fmt, ...)
@@ -280,7 +281,7 @@ pid_t get_max_pid_t(void);
 
 /* send sig to pid after some sanity checks, returns
  * -1 for error, or zero for a successfully sent signal */
-int sendsignalpid(pid_t pid, int sig, const char *progname);
+int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_progname);
 
 /* open <pidfn>, get the pid, then send it <sig>
  * returns zero for successfully sent signal,
@@ -292,11 +293,15 @@ int sendsignalpid(pid_t pid, int sig, const char *progname);
 #ifndef WIN32
 /* open <pidfn>, get the pid, then send it <sig>
  * if executable process with that pid has suitable progname
+ * (specified or that of the current process, depending on args:
+ * most daemons request to check_current_progname for their other
+ * process instancees, but upsdrvctl which manages differently
+ * named driver programs does not request it)
  */
-int sendsignalfn(const char *pidfn, int sig, const char *progname);
+int sendsignalfn(const char *pidfn, int sig, const char *progname, int check_current_progname);
 #else
 /* No progname here - communications via named pipe */
-int sendsignalfn(const char *pidfn, const char * sig, const char *progname_ignored);
+int sendsignalfn(const char *pidfn, const char * sig, const char *progname_ignored, int check_current_progname_ignored);
 #endif
 
 const char *xbasename(const char *file);
