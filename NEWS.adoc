@@ -164,6 +164,12 @@ https://github.com/networkupstools/nut/milestone/11
 +
    NOTE: The `html-chunked` documents are currently still not installed.
 
+ - added support to `./confgure --with-doc=man=dist-auto` to use distributed
+   manual page files if present; only fall back to build them if we can. [#2473]
+
+ - added a `make distcheck-light-man` recipe to require verification that the
+   manual page files can be built using the prepared "tarball" archive. [#2473]
+
  - brought keyword dictionaries of `nutconf` and `augeas` NUT configuration
    file parsers up to date; restored automated checks for `augeas` lenses.
    [issue #657, issue #2294]
