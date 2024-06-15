@@ -924,6 +924,7 @@ int checkprocname(pid_t pid, const char *progname)
 	/* If we can determine the binary path name of the specified "pid",
 	 * check if it matches the assumed name of the current program.
 	 * Returns:
+	 *	-3	Skipped because NUT_IGNORE_CHECKPROCNAME is set
 	 *	-2	Could not parse a program name (ok to proceed,
 	 *		risky - but matches legacy behavior)
 	 *	-1	Could not identify a program name (ok to proceed,
@@ -933,7 +934,7 @@ int checkprocname(pid_t pid, const char *progname)
 	 *		varying precision
 	 * Generally speaking, if (checkprocname(...)) then ok to proceed
 	 */
-	char	*procname = getprocname(pid);
+	char	*procname = NULL, *s;
 	int	ret = -127;
 	size_t	procbasenamelen = 0, progbasenamelen = 0;
 	/* Track where the last dot is in the basename; 0 means none */
@@ -944,6 +945,16 @@ int checkprocname(pid_t pid, const char *progname)
 	char	procbasename[PATH_MAX], progbasename[PATH_MAX];
 #endif
 
+	if ((s = getenv("NUT_IGNORE_CHECKPROCNAME"))) {
+		/* FIXME: Make server/conf.c::parse_boolean() reusable */
+		if ( (!strcasecmp(s, "true")) || (!strcasecmp(s, "on")) || (!strcasecmp(s, "yes")) || (!strcasecmp(s, "1"))) {
+			upsdebugx(1, "%s: skipping because caller set NUT_IGNORE_CHECKPROCNAME", __func__);
+			ret = -3;
+			goto finish;
+		}
+	}
+
+	procname = getprocname(pid);
 	if (!procname || !progname) {
 		ret = -1;
 		goto finish;
@@ -1064,6 +1075,10 @@ finish:
 				__func__);
 			break;
 
+		case -3:
+			/* skipped due to envvar, logged above */
+			break;
+
 		default:
 			upsdebugx(1,
 				"%s: unexpected result looking for process name "
@@ -1135,10 +1150,11 @@ void writepid(const char *name)
 /* send sig to pid, returns -1 for error, or
  * zero for a successfully sent signal
  */
-int sendsignalpid(pid_t pid, int sig, const char *progname)
+int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_progname)
 {
 #ifndef WIN32
-	int	ret;
+	int	ret, cpn1 = -10, cpn2 = -10;
+	char	*current_progname = NULL;
 
 	/* TOTHINK: What about containers where a NUT daemon *is* the only process
 	 * and is the PID=1 of the container (recycle if dead)? */
@@ -1150,12 +1166,113 @@ int sendsignalpid(pid_t pid, int sig, const char *progname)
 		return -1;
 	}
 
-	if (progname && !checkprocname(pid, progname)) {
-		if (nut_debug_level > 0 || nut_sendsignal_debug_level > 1)
-			upslogx(LOG_ERR, "Tried to signal PID %" PRIuMAX
-				" which exists but is not of program '%s'",
-				(uintmax_t)pid, progname);
+	ret = 0;
+	if (progname) {
+		/* Check against some expected (often built-in) name */
+		if (!(cpn1 = checkprocname(pid, progname))) {
+			/* Did not match expected (often built-in) name */
+			ret = -1;
+		} else {
+			if (cpn1 > 0) {
+				/* Matched expected name, ok to proceed */
+				ret = 1;
+			}
+			/* ...else could not determine name of PID; think later */
+		}
+	}
+	/* if (cpn1 == -3) => NUT_IGNORE_CHECKPROCNAME=true */
+	/* if (cpn1 == -1) => could not determine name of PID... retry just in case? */
+	if (ret <= 0 && check_current_progname && cpn1 != -3) {
+		/* NOTE: This could be optimized a bit by pre-finding the procname
+		 * of "pid" and re-using it, but this is not a hot enough code path
+		 * to bother much.
+		 */
+		current_progname = getprocname(getpid());
+		if (current_progname && (cpn2 = checkprocname(pid, current_progname))) {
+			if (cpn2 > 0) {
+				/* Matched current process as asked, ok to proceed */
+				ret = 2;
+			}
+			/* ...else could not determine name of PID; think later */
+		} else {
+			if (current_progname) {
+				/* Did not match current process name */
+				ret = -2;
+			} /* else just did not determine current process
+			   * name, so did not actually check either
+			   * // ret = -3;
+			   */
+		}
+	}
+
+	/* if ret == 0, ok to proceed - not asked for any sanity checks;
+	 * if ret > 0 we had some definitive match above
+	 */
+	if (ret < 0) {
+		upsdebugx(1,
+			"%s: ran at least one check, and all such checks "
+			"found a process name for PID %" PRIuMAX " and "
+			"failed to match: expected progname='%s' (res=%d), "
+			"current progname='%s' (res=%d)",
+			__func__, (uintmax_t)pid,
+			NUT_STRARG(progname), cpn1,
+			NUT_STRARG(current_progname), cpn2);
+
+		if (nut_debug_level > 0 || nut_sendsignal_debug_level > 1) {
+			switch (ret) {
+				case -1:
+					upslogx(LOG_ERR, "Tried to signal PID %" PRIuMAX
+						" which exists but is not of"
+						" expected program '%s'; not asked"
+						" to cross-check current PID's name",
+						(uintmax_t)pid, progname);
+					break;
+
+				/* Maybe we tried both data sources, maybe just current_progname */
+				case -2:
+				/*case -3:*/
+					if (progname && current_progname) {
+						/* Tried both, downgraded verdict further */
+						upslogx(LOG_ERR, "Tried to signal PID %" PRIuMAX
+							" which exists but is not of expected"
+							" program '%s' nor current '%s'",
+							(uintmax_t)pid, progname, current_progname);
+					} else if (current_progname) {
+						/* Not asked for progname==NULL */
+						upslogx(LOG_ERR, "Tried to signal PID %" PRIuMAX
+							" which exists but is not of"
+							" current program '%s'",
+							(uintmax_t)pid, current_progname);
+					} else if (progname) {
+						upslogx(LOG_ERR, "Tried to signal PID %" PRIuMAX
+							" which exists but is not of"
+							" expected program '%s'; could not"
+							" cross-check current PID's name",
+							(uintmax_t)pid, progname);
+					} else {
+						/* Both NULL; one not asked, another not detected;
+						 * should not actually get here (wannabe `ret==-3`)
+						 */
+						upslogx(LOG_ERR, "Tried to signal PID %" PRIuMAX
+							" but could not cross-check current PID's"
+							" name: did not expect to get here",
+							(uintmax_t)pid);
+					}
+					break;
+			}
+		}
+
+		if (current_progname) {
+			free(current_progname);
+			current_progname = NULL;
+		}
+
+		/* Logged or not, sanity-check was requested and failed */
 		return -1;
+	}
+	if (current_progname) {
+		free(current_progname);
+		current_progname = NULL;
 	}
 
 	/* see if this is going to work first - does the process exist,
@@ -1184,6 +1301,8 @@ int sendsignalpid(pid_t pid, int sig, const char *progname)
 	NUT_UNUSED_VARIABLE(pid);
 	NUT_UNUSED_VARIABLE(sig);
 	NUT_UNUSED_VARIABLE(progname);
+	NUT_UNUSED_VARIABLE(check_current_progname);
+	/* Windows builds use named pipes, not signals per se */
 	upslogx(LOG_ERR,
 		"%s: not implemented for Win32 and "
 		"should not have been called directly!",
@@ -1224,7 +1343,7 @@ pid_t parsepid(const char *buf)
  * zero for a successfully sent signal
  */
 #ifndef WIN32
-int sendsignalfn(const char *pidfn, int sig, const char *progname)
+int sendsignalfn(const char *pidfn, int sig, const char *progname, int check_current_progname)
 {
 	char	buf[SMALLBUF];
 	FILE	*pidf;
@@ -1260,7 +1379,7 @@ int sendsignalfn(const char *pidfn, int sig, const char *progname)
 
 	if (pid >= 0) {
 		/* this method actively reports errors, if any */
-		ret = sendsignalpid(pid, sig, progname);
+		ret = sendsignalpid(pid, sig, progname, check_current_progname);
 	}
 
 	fclose(pidf);
@@ -1269,10 +1388,11 @@ int sendsignalfn(const char *pidfn, int sig, const char *progname)
 
 #else	/* => WIN32 */
 
-int sendsignalfn(const char *pidfn, const char * sig, const char *progname_ignored)
+int sendsignalfn(const char *pidfn, const char * sig, const char *progname_ignored, int check_current_progname_ignored)
 {
 	BOOL	ret;
 	NUT_UNUSED_VARIABLE(progname_ignored);
+	NUT_UNUSED_VARIABLE(check_current_progname_ignored);
 
 	ret = send_to_named_pipe(pidfn, sig);
 
@@ -1357,19 +1477,21 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 
 /* lazy way to send a signal if the program uses the PIDPATH */
 #ifndef WIN32
-int sendsignal(const char *progname, int sig)
+int sendsignal(const char *progname, int sig, int check_current_progname)
 {
 	char	fn[SMALLBUF];
 
 	snprintf(fn, sizeof(fn), "%s/%s.pid", rootpidpath(), progname);
 
-	return sendsignalfn(fn, sig, progname);
+	return sendsignalfn(fn, sig, progname, check_current_progname);
 }
 #else
-int sendsignal(const char *progname, const char * sig)
+int sendsignal(const char *progname, const char * sig, int check_current_progname)
 {
-	/* progname is used as the pipe name for WIN32 */
-	return sendsignalfn(progname, sig, NULL);
+	/* progname is used as the pipe name for WIN32
+	 * check_current_progname is de-facto ignored
+	 */
+	return sendsignalfn(progname, sig, NULL, check_current_progname);
 }
 #endif
 

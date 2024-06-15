@@ -3013,15 +3013,15 @@ int main(int argc, char *argv[])
 	 * is running by sending signal '0' (i.e. 'kill <pid> 0' equivalent)
 	 */
 	if (oldpid < 0) {
-		cmdret = sendsignal(prog, cmd);
+		cmdret = sendsignal(prog, cmd, 1);
 	} else {
-		cmdret = sendsignalpid(oldpid, cmd, prog);
+		cmdret = sendsignalpid(oldpid, cmd, prog, 1);
 	}
 
 #else	/* WIN32 */
 	if (cmd) {
 		/* Command the running daemon, it should be there */
-		cmdret = sendsignal(UPSMON_PIPE_NAME, cmd);
+		cmdret = sendsignal(UPSMON_PIPE_NAME, cmd, 1);
 	} else {
 		/* Starting new daemon, check for competition */
 		mutex = CreateMutex(NULL, TRUE, UPSMON_PIPE_NAME);
