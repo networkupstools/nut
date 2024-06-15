@@ -1,6 +1,7 @@
 /* common.h - prototypes for the common useful functions
 
    Copyright (C) 2000  Russell Kroll <rkroll@exploits.org>
+   Copyright (C) 2021-2024  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -199,6 +200,18 @@ extern const char *UPS_VERSION;
 /** @brief Default timeout (in seconds) for retrieving the result of a `TRACKING`-enabled operation (e.g. `INSTCMD`, `SET VAR`). */
 #define DEFAULT_TRACKING_TIMEOUT	10
 
+/* Normally we can (attempt to) use the syslog or Event Log (WIN32),
+ * but environment variable NUT_DEBUG_SYSLOG allows to bypass it, and
+ * perhaps keep daemons logging to stderr (e.g. in NUT Integration Test
+ * suite to not pollute the OS logs, or in systemd where stderr and
+ * syslog both go into the same journal). Returns:
+ *  0  Not disabled (NUT_DEBUG_SYSLOG not set to a value below; unset or "default"
+ *     values are handled quietly, but others emit a warning)
+ *  1  Disabled and background() keeps stderr attached (NUT_DEBUG_SYSLOG="stderr")
+ *  2  Disabled and background() detaches stderr as usual (NUT_DEBUG_SYSLOG="none")
+ */
+int syslog_is_disabled(void);
+
 /* get the syslog ready for us */
 void open_syslog(const char *progname);
 
@@ -214,6 +227,38 @@ void become_user(struct passwd *pw);
 /* drop down into a directory and throw away pointers to the old path */
 void chroot_start(const char *path);
 
+/* Try to identify process (program) name for the given PID,
+ * return NULL if we can not for any reason (does not run,
+ * no rights, do not know how to get it on current OS, etc.)
+ * If the returned value is not NULL, caller should free() it.
+ * Some implementation pieces borrowed from
+ * https://man7.org/linux/man-pages/man2/readlink.2.html and
+ * https://github.com/openbsd/src/blob/master/bin/ps/ps.c
+ * NOTE: Very much platform-dependent! */
+char * getprocname(pid_t pid);
+
+/* Determine the base name of specified progname (may be full path)
+ * and the location of the last "." dot character in it for extension
+ * (caller's len and dot populated only if pointers are not NULL).
+ */
+size_t parseprogbasename(char *buf, size_t buflen, const char *progname, size_t *pprogbasenamelen, size_t *pprogbasenamedot);
+
+/* If we can determine the binary path name of the specified "pid",
+ * check if it matches the assumed name of the current program.
+ * Returns:
+ *	-3	Skipped because NUT_IGNORE_CHECKPROCNAME is set
+ *	-2	Could not parse a program name (ok to proceed,
+ *		risky - but matches legacy behavior)
+ *	-1	Could not identify a program name (ok to proceed,
+ *		risky - but matches legacy behavior)
+ *	0	Process name identified, does not seem to match
+ *	1+	Process name identified, and seems to match with
+ *		varying precision
+ * Generally speaking, if (checkprocname(...)) then ok to proceed
+ */
+int checkprocname(pid_t pid, const char *progname);
+
+
 /* write a pid file - <name> is a full pathname *or* just the program name */
 void writepid(const char *name);
 
@@ -221,11 +266,11 @@ void writepid(const char *name);
  * a few sanity checks; returns -1 on error */
 pid_t parsepid(const char *buf);
 
-/* send a signal to another running process */
+/* send a signal to another running NUT process */
 #ifndef WIN32
-int sendsignal(const char *progname, int sig);
+int sendsignal(const char *progname, int sig, int check_current_progname);
 #else
-int sendsignal(const char *progname, const char * sig);
+int sendsignal(const char *progname, const char * sig, int check_current_progname);
 #endif
 
 int snprintfcat(char *dst, size_t size, const char *fmt, ...)
@@ -236,7 +281,7 @@ pid_t get_max_pid_t(void);
 
 /* send sig to pid after some sanity checks, returns
  * -1 for error, or zero for a successfully sent signal */
-int sendsignalpid(pid_t pid, int sig);
+int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_progname);
 
 /* open <pidfn>, get the pid, then send it <sig>
  * returns zero for successfully sent signal,
@@ -246,10 +291,17 @@ int sendsignalpid(pid_t pid, int sig);
  * -1   Error sending signal
  */
 #ifndef WIN32
-/* open <pidfn>, get the pid, then send it <sig> */
-int sendsignalfn(const char *pidfn, int sig);
+/* open <pidfn>, get the pid, then send it <sig>
+ * if executable process with that pid has suitable progname
+ * (specified or that of the current process, depending on args:
+ * most daemons request to check_current_progname for their other
+ * process instancees, but upsdrvctl which manages differently
+ * named driver programs does not request it)
+ */
+int sendsignalfn(const char *pidfn, int sig, const char *progname, int check_current_progname);
 #else
-int sendsignalfn(const char *pidfn, const char * sig);
+/* No progname here - communications via named pipe */
+int sendsignalfn(const char *pidfn, const char * sig, const char *progname_ignored, int check_current_progname_ignored);
 #endif
 
 const char *xbasename(const char *file);

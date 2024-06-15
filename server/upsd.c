@@ -2049,14 +2049,14 @@ int main(int argc, char **argv)
 	 */
 
 	if (oldpid < 0) {
-		cmdret = sendsignalfn(pidfn, cmd);
+		cmdret = sendsignalfn(pidfn, cmd, progname, 1);
 	} else {
-		cmdret = sendsignalpid(oldpid, cmd);
+		cmdret = sendsignalpid(oldpid, cmd, progname, 1);
 	}
 #else	/* if WIN32 */
 	if (cmd) {
 		/* Command the running daemon, it should be there */
-		cmdret = sendsignal(UPSD_PIPE_NAME, cmd);
+		cmdret = sendsignal(UPSD_PIPE_NAME, cmd, 1);
 	} else {
 		/* Starting new daemon, check for competition */
 		mutex = CreateMutex(NULL, TRUE, UPSD_PIPE_NAME);
