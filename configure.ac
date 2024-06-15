@@ -2291,6 +2291,8 @@ fi
 NUT_REPORT_FEATURE([enable libltdl (Libtool dlopen abstraction) support], [${nut_with_libltdl}], [],
 					[WITH_LIBLTDL], [Define to enable libltdl (Libtool dlopen abstraction) support])
 
+dnl Explicitly report if we are building nut-scanner or not
+dnl since it requires libltdl
 if test x"${nut_with_libltdl}" = x"no" && test x"${nut_with_nut_scanner}" = x"yes"; then
     AC_MSG_ERROR([libltdl support was disabled or not found, but --with-nut-scanner was requested and requires it])
 fi
