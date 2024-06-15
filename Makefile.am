@@ -92,7 +92,7 @@ memcheck distcheck-valgrind:
 	+$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_VALGRIND_FLAGS)" distcheck
 
 distcheck-light-man:
-	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_MAN_FLAGS)" distcheck
+	+$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_MAN_FLAGS)" distcheck
 
 # workaround the dist generated files that are also part of the distribution
 # Note that distcleancheck is disabled for now, while waiting for a proper
