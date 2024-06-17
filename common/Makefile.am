@@ -54,7 +54,7 @@ libcommonclient_la_SOURCES = state.c str.c
 noinst_LTLIBRARIES += libcommonstr.la
 libcommonstr_la_SOURCES = str.c
 libcommonstr_la_CFLAGS = $(AM_CFLAGS) -DWITHOUT_LIBSYSTEMD=1
-libcommonstr_la_LIBADD = @LTLIBOBJS@
+libcommonstr_la_LIBADD = @LTLIBOBJS@ @BSDKVMPROCLIBS@
 
 if BUILDING_IN_TREE
   libcommon_la_SOURCES += common.c
