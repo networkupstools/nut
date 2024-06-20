@@ -1579,6 +1579,9 @@ if [ -n "${DEBUG_SLEEP-}" ] ; then
     log_separator
     cat "$NUT_CONFPATH/NIT.env"
     log_separator
+    log_info "See above about important variables from the test sandbox and a way to 'source' them into your shell"
+    log_info "You may want to press Ctrl+Z now and command 'bg' to the shell, if you did not start '$0 &' backgrounded already"
+    log_info "To kill the script early, return it to foreground with 'fg' and press Ctrl+C, or 'kill -2 \$PID_NIT_SCRIPT' (kill -2 $$)"
 
     sleep "${DEBUG_SLEEP}"
     log_info "Sleep finished"
