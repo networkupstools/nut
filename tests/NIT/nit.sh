@@ -17,6 +17,9 @@
 #	NUT_DEBUG_MIN=3	to set (minimum) debug level for drivers, upsd...
 #	NUT_PORT=12345	custom port for upsd to listen and clients to query
 #
+# Common sandbox run for testing goes from NUT root build directory like:
+#	DEBUG_SLEEP=600 NUT_PORT=12345 NIT_CASE=testcase_sandbox_start_drivers_after_upsd make check-NIT &
+#
 # Design note: written with dumbed-down POSIX shell syntax, to
 # properly work in whatever different OSes have (bash, dash,
 # ksh, busybox sh...)
