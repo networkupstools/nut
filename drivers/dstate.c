@@ -25,15 +25,15 @@
 
 #include <stdio.h>
 #ifndef WIN32
-#include <stdarg.h>
-#include <sys/stat.h>
-#include <pwd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/un.h>
+# include <stdarg.h>
+# include <sys/stat.h>
+# include <pwd.h>
+# include <sys/types.h>
+# include <sys/socket.h>
+# include <sys/un.h>
 #else
-#include <strings.h>
-#include "wincompat.h"
+# include <strings.h>
+# include "wincompat.h"
 #endif
 
 #include "common.h"
