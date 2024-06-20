@@ -3,7 +3,8 @@
    Copyright (C)
 	2003		Russell Kroll <rkroll@exploits.org>
 	2008		Arjen de Korte <adkorte-guest@alioth.debian.org>
-	2012 - 2017	Arnaud Quette <arnaud.quette@free.fr>
+	2012-2017	Arnaud Quette <arnaud.quette@free.fr>
+	2020-2024	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -889,6 +890,25 @@ static void sock_read(conn_t *conn)
 			sock_disconnect(conn);
 			return;
 		}
+	}
+
+	if (ret == 0) {
+		int	flags = fcntl(conn->fd, F_GETFL);
+		upsdebugx(2, "%s: read() returned 0; flags=%04X O_NDELAY=%04X", __func__, flags, O_NDELAY);
+		if (flags & O_NDELAY || O_NDELAY == 0) {
+			/* O_NDELAY with zero bytes means nothing to read but
+			 * since read() follows a successful select() with
+			 * ready file descriptor, ret shouldn't be 0.
+			 * This may also mean that the counterpart has exited
+			 * and the file descriptor should be reaped.
+			 * e.g. a `driver -c reload -a testups` fires its
+			 * message over Unix socket and disconnects.
+			 */
+			upsdebugx(1, "%s: it seems the other side has closed the connection", __func__);
+			sock_disconnect(conn);
+			return;
+		}
+		/* else assume we will soon have data waiting in the buffer */
 	}
 #else
 	char *buf = conn->buf;

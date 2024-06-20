@@ -55,6 +55,11 @@ https://github.com/networkupstools/nut/milestone/11
      revisiting PR #2055, issue #2044] was overly zealous and impacted also
      the `OB` state in cases where communications to the data server were
      severed and `DEADTIME` setting was not honored. [PR #2462, issue #2454]
+   * Using `drivername -c reload` (e.g. facilitated by `nut-driver-enumerator`
+     script and service when editing `ups.conf`) led to disconnected Unix
+     sockets and a tight polling loop that hogged CPU. While the underlying
+     bug is ancient, it took recent development to hit it as a practical
+     regression. [issue #1904, issue #2484]
 
  - drivers, `upsd`, `upsmon`: reduce "scary noise" about failure to `fopen()`
    the PID file (which most of the time means that no previous instance of
