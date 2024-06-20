@@ -570,6 +570,7 @@ static void sock_connect(TYPE_FD sock)
 #endif
 
 	conn->nobroadcast = 0;
+	conn->readzero = 0;
 	pconf_init(&conn->ctx, NULL);
 
 	if (connhead) {
@@ -893,7 +894,7 @@ static void sock_read(conn_t *conn)
 	}
 
 	if (ret == 0) {
-		int	flags = fcntl(conn->fd, F_GETFL);
+		int	flags = fcntl(conn->fd, F_GETFL), is_closed = 0;
 		upsdebugx(2, "%s: read() returned 0; flags=%04X O_NDELAY=%04X", __func__, flags, O_NDELAY);
 		if (flags & O_NDELAY || O_NDELAY == 0) {
 			/* O_NDELAY with zero bytes means nothing to read but
@@ -904,11 +905,25 @@ static void sock_read(conn_t *conn)
 			 * e.g. a `driver -c reload -a testups` fires its
 			 * message over Unix socket and disconnects.
 			 */
+			is_closed = 1;
+		} else {
+			/* assume we will soon have data waiting in the buffer */
+			conn->readzero++;
+			upsdebugx(1, "%s: got zero-sized reads %d times in a row", __func__, conn->readzero);
+			if (conn->readzero > DSTATE_CONN_READZERO_THROTTLE_MAX) {
+				is_closed = 2;
+			} else {
+				usleep(DSTATE_CONN_READZERO_THROTTLE_USEC);
+			}
+		}
+
+		if (is_closed) {
 			upsdebugx(1, "%s: it seems the other side has closed the connection", __func__);
 			sock_disconnect(conn);
 			return;
 		}
-		/* else assume we will soon have data waiting in the buffer */
+	} else {
+		conn->readzero = 0;
 	}
 #else
 	char *buf = conn->buf;
