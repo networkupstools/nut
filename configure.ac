@@ -3931,6 +3931,12 @@ else
 fi
 AM_CONDITIONAL(WITH_AUGLENS, test -n "${auglensdir}")
 
+if test -n "${auglensdir}"; then
+	auglenstestsdir="${auglensdir}/tests"
+else
+	auglenstestsdir=''
+fi
+
 AC_PATH_PROGS([AUGPARSE], [augparse], [none])
 AM_CONDITIONAL([HAVE_AUGPARSE], [test "x${AUGPARSE}" != "xnone"])
 AC_MSG_CHECKING([whether to enable Augeas configuration-management lenses tests])
@@ -3940,6 +3946,7 @@ else
 	AC_MSG_RESULT(no)
 fi
 
+dnl ----------------------------------------------------------------------
 
 AC_MSG_CHECKING(whether to install hotplug rules)
 AC_ARG_WITH(hotplug-dir,
@@ -4448,6 +4455,7 @@ AC_SUBST(systemdsystemunitdir)
 AC_SUBST(systemdshutdowndir)
 AC_SUBST(systemdtmpfilesdir)
 AC_SUBST(auglensdir)
+AC_SUBST(auglenstestsdir)
 AC_SUBST(hotplugdir)
 AC_SUBST(udevdir)
 
