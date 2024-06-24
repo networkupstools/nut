@@ -55,10 +55,16 @@ bcmxcp_ser.c: $(top_srcdir)/drivers/bcmxcp_ser.c
 CLEANFILES += $(LINKED_SOURCE_FILES)
 BUILT_SOURCES += $(LINKED_SOURCE_FILES)
 
-# Note: we only build nut-scanner, and its library, if libltdl was found (required!)
+# We optionally append values to this below
+bin_PROGRAMS =
+lib_LTLIBRARIES =
+include_HEADERS =
+dist_noinst_HEADERS =
+
+# Note: we only build nut-scanner, and its library, if libltdl was found (required ATM!)
 if WITH_NUT_SCANNER
- bin_PROGRAMS = nut-scanner
- lib_LTLIBRARIES = libnutscan.la
+ bin_PROGRAMS += nut-scanner
+ lib_LTLIBRARIES += libnutscan.la
 endif WITH_NUT_SCANNER
 libnutscan_la_SOURCES = scan_nut.c scan_nut_simulation.c scan_ipmi.c \
 			nutscan-device.c nutscan-ip.c nutscan-display.c \
@@ -148,11 +154,11 @@ if WITH_IPMI
 endif WITH_IPMI
 
 # C is not a header, but there is no dist_noinst_SOURCES
-dist_noinst_HEADERS = $(NUT_SCANNER_DEPS_H) $(NUT_SCANNER_DEPS_C)
+dist_noinst_HEADERS += $(NUT_SCANNER_DEPS_H) $(NUT_SCANNER_DEPS_C)
 
 # Optionally deliverable as part of NUT public API:
 if WITH_DEV
- include_HEADERS = nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h
+ include_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h
 else !WITH_DEV
  dist_noinst_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h
 endif !WITH_DEV
