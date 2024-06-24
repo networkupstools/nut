@@ -81,7 +81,7 @@ endif HAVE_WINDOWS
 # object .so names would differ)
 #
 # libnutscan version information
-libnutscan_la_LDFLAGS += -version-info 2:5:0
+libnutscan_la_LDFLAGS += -version-info 2:5:1
 
 # libnutscan exported symbols regex
 # WARNING: Since the library includes parts of libcommon (as much as needed
