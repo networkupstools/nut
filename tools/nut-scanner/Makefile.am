@@ -39,22 +39,6 @@ $(top_builddir)/common/libcommon.la: dummy
 # be built before anything else
 nut-scanner.c: $(top_builddir)/include/nut_version.h
 
-LINKED_SOURCE_FILES =
-
-# Separate the .deps of other dirs from this one
-# NOTE: Not using "$<" due to a legacy Sun/illumos dmake bug with resolver
-# of dynamic vars, see e.g. https://man.omnios.org/man1/make#BUGS
-LINKED_SOURCE_FILES += serial.c
-serial.c: $(top_srcdir)/drivers/serial.c
-	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/serial.c" "$@"
-
-LINKED_SOURCE_FILES += bcmxcp_ser.c
-bcmxcp_ser.c: $(top_srcdir)/drivers/bcmxcp_ser.c
-	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/bcmxcp_ser.c" "$@"
-
-CLEANFILES += $(LINKED_SOURCE_FILES)
-BUILT_SOURCES += $(LINKED_SOURCE_FILES)
-
 # We optionally append values to this below
 bin_PROGRAMS =
 lib_LTLIBRARIES =
@@ -70,7 +54,6 @@ libnutscan_la_SOURCES = scan_nut.c scan_nut_simulation.c scan_ipmi.c \
 			nutscan-device.c nutscan-ip.c nutscan-display.c \
 			nutscan-init.c scan_usb.c scan_snmp.c scan_xml_http.c \
 			scan_avahi.c scan_eaton_serial.c nutscan-serial.c
-#nodist_libnutscan_la_SOURCES = $(LINKED_SOURCE_FILES)
 libnutscan_la_LIBADD = $(NETLIBS)
 libnutscan_la_LIBADD += $(top_builddir)/drivers/libserial-nutscan.la
 
