@@ -18,7 +18,7 @@
 */
 
 #ifndef UPSCLIENT_H_SEEN
-#define UPSCLIENT_H_SEEN
+#define UPSCLIENT_H_SEEN 1
 
 #ifdef WITH_OPENSSL
 	#include <openssl/err.h>

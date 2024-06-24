@@ -3,6 +3,7 @@
    Copyright (C)
 	2003	Russell Kroll <rkroll@exploits.org>
 	2012-2017	Arnaud Quette <arnaud.quette@free.fr>
+	2020-2024	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -52,7 +53,14 @@ typedef struct conn_s {
 	struct conn_s	*prev;
 	struct conn_s	*next;
 	int	nobroadcast;	/* connections can request to ignore send_to_all() updates */
+	int	readzero;	/* how many times in a row we had zero bytes read; see DSTATE_CONN_READZERO_THROTTLE_USEC and DSTATE_CONN_READZERO_THROTTLE_MAX */
 } conn_t;
+
+/* sleep after read()ing zero bytes */
+#define DSTATE_CONN_READZERO_THROTTLE_USEC	500
+
+/* close socket after read()ing zero bytes this many times in a row */
+#define DSTATE_CONN_READZERO_THROTTLE_MAX	5
 
 #include "main.h"	/* for set_exit_flag(); uses conn_t itself */
 

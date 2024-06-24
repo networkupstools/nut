@@ -28,7 +28,7 @@ $(NUT_SCANNER_DEPS): dummy
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/include/nut_version.h \
-$(top_builddir)/common/libcommonclient.la \
+$(top_builddir)/common/libcommonstr.la \
 $(top_builddir)/common/libcommon.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
@@ -68,7 +68,7 @@ libnutscan_la_LIBADD = $(NETLIBS)
 if WITH_LIBLTDL
 libnutscan_la_LIBADD += $(LIBLTDL_LIBS)
 endif WITH_LIBLTDL
-libnutscan_la_LIBADD += $(top_builddir)/common/libcommonclient.la
+
 if HAVE_SEMAPHORE_LIBS
 # Are additional libraries needed for semaphore support?
 libnutscan_la_LIBADD += $(SEMLIBS)
@@ -103,6 +103,8 @@ libnutscan_la_LDFLAGS += -version-info 2:6:0
 libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebugx|max_threads|curr_threads|nut_report_config_flags|upsdebugx_report_search_paths|nut_prepare_search_paths|snprintf_dynamic)'
 libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include \
 			$(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
+
+libnutscan_la_LIBADD += $(top_builddir)/common/libcommonstr.la
 
 nut_scanner_SOURCES = nut-scanner.c
 nut_scanner_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include

@@ -275,9 +275,20 @@ snmp_ups_CFLAGS = $(AM_CFLAGS)
 snmp_ups_CFLAGS += $(LIBNETSNMP_CFLAGS)
 snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS) -lm
 
+if WITH_SSL
+  snmp_ups_CFLAGS += $(LIBSSL_CFLAGS)
+  snmp_ups_LDADD += $(LIBSSL_LIBS)
+endif
+
 # NEON XML/HTTP
 netxml_ups_SOURCES = netxml-ups.c mge-xml.c
 netxml_ups_LDADD = $(LDADD_DRIVERS) $(LIBNEON_LIBS)
+netxml_ups_CFLAGS = $(AM_CFLAGS)
+
+if WITH_SSL
+  netxml_ups_CFLAGS += $(LIBSSL_CFLAGS)
+  netxml_ups_LDADD += $(LIBSSL_LIBS)
+endif
 
 # Powerman
 powerman_pdu_SOURCES = powerman-pdu.c
