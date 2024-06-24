@@ -28,6 +28,7 @@ $(NUT_SCANNER_DEPS): dummy
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/include/nut_version.h \
+$(top_builddir)/drivers/libserial-nutscan.la \
 $(top_builddir)/common/libcommonstr.la \
 $(top_builddir)/common/libcommon.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
@@ -63,8 +64,10 @@ libnutscan_la_SOURCES = scan_nut.c scan_nut_simulation.c scan_ipmi.c \
 			nutscan-device.c nutscan-ip.c nutscan-display.c \
 			nutscan-init.c scan_usb.c scan_snmp.c scan_xml_http.c \
 			scan_avahi.c scan_eaton_serial.c nutscan-serial.c
-nodist_libnutscan_la_SOURCES = $(LINKED_SOURCE_FILES)
+#nodist_libnutscan_la_SOURCES = $(LINKED_SOURCE_FILES)
 libnutscan_la_LIBADD = $(NETLIBS)
+libnutscan_la_LIBADD += $(top_builddir)/drivers/libserial-nutscan.la
+
 if WITH_LIBLTDL
 libnutscan_la_LIBADD += $(LIBLTDL_LIBS)
 endif WITH_LIBLTDL
