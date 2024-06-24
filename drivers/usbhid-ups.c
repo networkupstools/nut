@@ -29,7 +29,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.54"
+#define DRIVER_VERSION	"0.55"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
@@ -2303,19 +2303,7 @@ static int ups_infoval_set(hid_info_t *item, double value)
 
 		dstate_setinfo(item->info_type, "%s", nutvalue);
 	} else {
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-		dstate_setinfo(item->info_type, item->dfl, value);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+		dstate_setinfo_dynamic(item->info_type, item->dfl, "%f", value);
 	}
 
 	return 1;

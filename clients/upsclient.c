@@ -554,16 +554,6 @@ const char *upscli_strerror(UPSCONN_t *ups)
 	char	sslbuf[UPSCLI_ERRBUF_LEN];
 #endif
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-
 	if (!ups) {
 		return upscli_errlist[UPSCLI_ERR_INVALIDARG].str;
 	}
@@ -582,9 +572,10 @@ const char *upscli_strerror(UPSCONN_t *ups)
 		return upscli_errlist[ups->upserror].str;
 
 	case 1:		/* add message from system's strerror */
-		snprintf(ups->errbuf, UPSCLI_ERRBUF_LEN,
+		snprintf_dynamic(
+			ups->errbuf, UPSCLI_ERRBUF_LEN,
 			upscli_errlist[ups->upserror].str,
-			strerror(ups->syserrno));
+			"%s", strerror(ups->syserrno));
 		return ups->errbuf;
 
 	case 2:		/* SSL error */
@@ -592,13 +583,15 @@ const char *upscli_strerror(UPSCONN_t *ups)
 		err = ERR_get_error();
 		if (err) {
 			ERR_error_string(err, sslbuf);
-			snprintf(ups->errbuf, UPSCLI_ERRBUF_LEN,
+			snprintf_dynamic(
+				ups->errbuf, UPSCLI_ERRBUF_LEN,
 				upscli_errlist[ups->upserror].str,
-				sslbuf);
+				"%s", sslbuf);
 		} else {
-			snprintf(ups->errbuf, UPSCLI_ERRBUF_LEN,
+			snprintf_dynamic(
+				ups->errbuf, UPSCLI_ERRBUF_LEN,
 				upscli_errlist[ups->upserror].str,
-				"peer disconnected");
+				"%s", "peer disconnected");
 		}
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 		if (PR_GetErrorTextLength() < UPSCLI_ERRBUF_LEN) {
@@ -615,15 +608,12 @@ const char *upscli_strerror(UPSCONN_t *ups)
 		return ups->errbuf;
 
 	case 3:		/* parsing (parseconf) error */
-		snprintf(ups->errbuf, UPSCLI_ERRBUF_LEN,
+		snprintf_dynamic(
+			ups->errbuf, UPSCLI_ERRBUF_LEN,
 			upscli_errlist[ups->upserror].str,
-			ups->pc_ctx.errmsg);
+			"%s", ups->pc_ctx.errmsg);
 		return ups->errbuf;
 	}
-
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
 
 	/* fallthrough */
 
@@ -1316,23 +1306,9 @@ static void build_cmd(char *buf, size_t bufsize, const char *cmdname,
 			format = " %s";
 		}
 
-		/* snprintfcat would tie us to common */
-
-		len = strlen(buf);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-		snprintf(buf + len, bufsize - len, format,
-			pconf_encode(arg[i], enc, sizeof(enc)));
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+		snprintfcat_dynamic(
+			buf, bufsize, format,
+			"%s", pconf_encode(arg[i], enc, sizeof(enc)));
 	}
 
 	len = strlen(buf);

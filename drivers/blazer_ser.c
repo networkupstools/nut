@@ -31,7 +31,7 @@
 #include "blazer.h"
 
 #define DRIVER_NAME	"Megatec/Q1 protocol serial driver"
-#define DRIVER_VERSION	"1.62"
+#define DRIVER_VERSION	"1.63"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
