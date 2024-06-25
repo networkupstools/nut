@@ -106,7 +106,6 @@ if HAVE_WINDOWS
   noinst_LTLIBRARIES += libnutwincompat.la
 
   libcommon_la_SOURCES += wincompat.c $(top_srcdir)/include/wincompat.h
-  libcommonstr_la_SOURCES += wincompat.c $(top_srcdir)/include/wincompat.h
   libcommonclient_la_SOURCES += wincompat.c $(top_srcdir)/include/wincompat.h
 endif HAVE_WINDOWS
 
