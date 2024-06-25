@@ -2845,26 +2845,26 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 			dnl Avoid rebuilding existing build products due to their timestamp dependencies:
 			touch -r "${abs_srcdir}"/docs/man/Makefile.am "${abs_srcdir}"/docs/man/*.{1,2,3,4,5,6,7,8,9}* "${abs_srcdir}"/docs/man/*.{txt,xml,html,pdf} || true
 		else
-		  if test "${can_build_doc_man}" = yes ; then
-			AC_MSG_RESULT(yes)
-			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
-		  else
-			AC_MSG_RESULT(no)
-			if test "${nut_doc_build_target_flag}" = "yes" ; then
-				DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
-				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+			if test "${can_build_doc_man}" = yes ; then
+				AC_MSG_RESULT(yes)
+				DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
 			else
-				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
-				if test "${nut_doc_build_target_flag}" = "auto" || test "${nut_doc_build_target_flag}" = "dist-auto" ; then
-					if test "${have_disted_doc_man}" = yes ; then
-						AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, but can install pre-built distributed copies])
-						DOC_INSTALL_DISTED_MANS="yes"
-					else
-						AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, and unable to install pre-built distributed copies because they are absent])
-					fi
-				fi  # Other variants include "no", "skip"...
+				AC_MSG_RESULT(no)
+				if test "${nut_doc_build_target_flag}" = "yes" ; then
+					DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
+					AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+				else
+					DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
+					if test "${nut_doc_build_target_flag}" = "auto" || test "${nut_doc_build_target_flag}" = "dist-auto" ; then
+						if test "${have_disted_doc_man}" = yes ; then
+							AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, but can install pre-built distributed copies])
+							DOC_INSTALL_DISTED_MANS="yes"
+						else
+							AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, and unable to install pre-built distributed copies because they are absent])
+						fi
+					fi  # Other variants include "no", "skip"...
+				fi
 			fi
-		  fi
 		fi
 		;;
 
@@ -2911,9 +2911,9 @@ NUT_REPORT_FEATURE([build specific documentation format(s)], [${nut_with_doc}], 
 # for "make check" in "docs/" here...
 DOC_CHECK_LIST=""
 if test "${nut_with_doc}" = yes ; then
-    for V in $DOC_BUILD_LIST ; do
-        DOC_CHECK_LIST="$DOC_CHECK_LIST check-$V"
-    done
+	for V in $DOC_BUILD_LIST ; do
+		DOC_CHECK_LIST="$DOC_CHECK_LIST check-$V"
+	done
 fi
 
 WITH_MANS=no
