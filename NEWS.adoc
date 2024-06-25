@@ -178,7 +178,11 @@ https://github.com/networkupstools/nut/milestone/11
  - added a `common/Makefile.am` build product for a new internal library
    `libcommonstr.la` which allows a smaller selection of helper methods
    for tools like `nut-scanner` which do not need the full `libcommon.la`
-   nor `libcommonclient.la`. [#2478]
+   nor `libcommonclient.la`. [#2478, #2491]
+
+ - added a `drivers/Makefile.am` build product for a new internal library
+   `libserial-nutscan.la` to simplify `tools/nut-scanner/Makefile.am` recipes.
+   [#2490]
 
  - build of `snmp-ups` and `netxml-ups` drivers now explicitly brings linker
    dependency on chosen SSL libraries. [#2479]

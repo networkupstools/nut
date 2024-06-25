@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3171 utf-8
+personal_ws-1.1 en 3172 utf-8
 AAC
 AAS
 ABI
@@ -2175,6 +2175,7 @@ libpowerman
 libre
 libregex
 libs
+libserial
 libsnmp
 libssl
 libsystemd
