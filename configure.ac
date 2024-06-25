@@ -2880,10 +2880,10 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 			dnl Avoid rebuilding existing build products due to their timestamp dependencies:
 			touch -r "${abs_srcdir}"/docs/man/Makefile.am "${abs_srcdir}"/docs/man/*.{1,2,3,4,5,6,7,8,9}* "${abs_srcdir}"/docs/man/*.{txt,xml,html,pdf} || true
 		else
-		  if test "${can_build_doc_man}" = yes ; then
+		if test "${can_build_doc_man}" = yes ; then
 			AC_MSG_RESULT(yes)
 			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
-		  else
+		else
 			AC_MSG_RESULT(no)
 			if test "${nut_doc_build_target_flag}" = "yes" ; then
 				DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
@@ -2899,7 +2899,7 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 					fi
 				fi  # Other variants include "no", "skip"...
 			fi
-		  fi
+		fi
 		fi
 		;;
 
@@ -3981,6 +3981,7 @@ else
 	AC_MSG_RESULT(no)
 fi
 
+dnl ----------------------------------------------------------------------
 
 AC_MSG_CHECKING(whether to install hotplug rules)
 AC_ARG_WITH(hotplug-dir,

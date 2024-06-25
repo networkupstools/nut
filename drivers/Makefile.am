@@ -303,6 +303,11 @@ if WITH_SSL
   snmp_ups_dmf_LDADD += $(LIBSSL_LIBS)
 endif
 
+if WITH_SSL
+  snmp_ups_CFLAGS += $(LIBSSL_CFLAGS)
+  snmp_ups_LDADD += $(LIBSSL_LIBS)
+endif
+
 # NEON XML/HTTP
 netxml_ups_SOURCES = netxml-ups.c mge-xml.c
 netxml_ups_LDADD = $(LDADD_DRIVERS) $(LIBNEON_LIBS)

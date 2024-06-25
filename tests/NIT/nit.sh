@@ -17,6 +17,9 @@
 #	NUT_DEBUG_MIN=3	to set (minimum) debug level for drivers, upsd...
 #	NUT_PORT=12345	custom port for upsd to listen and clients to query
 #
+# Common sandbox run for testing goes from NUT root build directory like:
+#	DEBUG_SLEEP=600 NUT_PORT=12345 NIT_CASE=testcase_sandbox_start_drivers_after_upsd make check-NIT &
+#
 # Design note: written with dumbed-down POSIX shell syntax, to
 # properly work in whatever different OSes have (bash, dash,
 # ksh, busybox sh...)
@@ -1573,9 +1576,19 @@ if [ -n "${DEBUG_SLEEP-}" ] ; then
     log_info "Sleeping now as asked (for ${DEBUG_SLEEP} seconds starting `date -u`), so you can play with the driver and server running"
     log_info "Populated environment variables for this run into a file so you can source them: . '$NUT_CONFPATH/NIT.env'"
     printf "PID_NIT_SCRIPT='%s'\nexport PID_NIT_SCRIPT\n" "$$" >> "$NUT_CONFPATH/NIT.env"
+    set | grep -E '^PID_[^ =]*='"'?[0-9][0-9]*'?$" | while IFS='=' read K V ; do
+        V="`echo "$V" | tr -d "'"`"
+        # Dummy comment to reset syntax highlighting due to ' quote above
+        if [ -n "$V" ] ; then
+            printf "%s='%s'\nexport %s\n" "$K" "$V" "$K"
+        fi
+    done >> "$NUT_CONFPATH/NIT.env"
     log_separator
     cat "$NUT_CONFPATH/NIT.env"
     log_separator
+    log_info "See above about important variables from the test sandbox and a way to 'source' them into your shell"
+    log_info "You may want to press Ctrl+Z now and command 'bg' to the shell, if you did not start '$0 &' backgrounded already"
+    log_info "To kill the script early, return it to foreground with 'fg' and press Ctrl+C, or 'kill -2 \$PID_NIT_SCRIPT' (kill -2 $$)"
 
     sleep "${DEBUG_SLEEP}"
     log_info "Sleep finished"

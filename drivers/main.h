@@ -1,5 +1,5 @@
 #ifndef NUT_MAIN_H_SEEN
-#define NUT_MAIN_H_SEEN
+#define NUT_MAIN_H_SEEN 1
 
 #include "common.h"
 #include "upsconf.h"
