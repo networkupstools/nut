@@ -1047,6 +1047,12 @@ AC_CHECK_HEADER([sys/select.h],
     [AC_DEFINE([HAVE_SYS_SELECT_H], [1],
         [Define to 1 if you have <sys/select.h>.])])
 
+AC_CHECK_HEADER([unistd.h],
+    [AC_DEFINE([HAVE_UNISTD_H], [1],
+        [Define to 1 if you have <unistd.h>.])])
+
+AC_CHECK_FUNCS(readlink)
+
 AC_CACHE_CHECK([for suseconds_t],
     [ac_cv_type_suseconds_t],
     [AC_COMPILE_IFELSE(
@@ -1103,6 +1109,68 @@ if (usleep(us) != 0) return 1 /* per doc, no errors are returned actually */
 AS_IF([test x"${ac_cv_func_usleep}" = xyes],
     [AC_DEFINE([HAVE_USLEEP], 1, [defined if standard library has, and C standard allows, the usleep(us) method])],
     [AC_MSG_WARN([Required C library routine usleep not found; try adding -D_POSIX_C_SOURCE=200112L])]
+    )
+
+dnl OpenBSD (at least) methods to query process info, per
+dnl https://github.com/openbsd/src/blob/master/bin/ps/ps.c
+dnl https://kaashif.co.uk/2015/06/18/how-to-get-a-list-of-processes-on-openbsd-in-c/
+BSDKVMPROCLIBS=""
+myLIBS="$LIBS"
+LIBS="$LIBS -lkvm"
+AC_CACHE_CHECK([for BSD KVM process info libs],
+    [ac_cv_lib_bsd_kvm_proc],
+    [AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([[
+#include <stdio.h>
+#include <kvm.h>
+#include <limits.h>
+#include <sys/param.h>
+#include <sys/sysctl.h>
+        ]],
+            [[
+    char errbuf[_POSIX2_LINE_MAX];
+    kvm_t *kernel = kvm_openfiles(NULL, NULL, NULL, KVM_NO_FILES, errbuf);
+    int nentries = 0;
+    struct kinfo_proc *kinfo = kvm_getprocs(kernel, KERN_PROC_ALL, 0, sizeof(struct kinfo_proc), &nentries);
+    int i;
+    for (i = 0; i < nentries; ++i) {
+        printf("%s\n", kinfo[i].p_comm);
+    }
+/* autoconf adds ";return 0;" */
+/* we hope the code above fails if type is not defined or range is not sufficient */
+]])],
+        [ac_cv_lib_bsd_kvm_proc=yes
+        BSDKVMPROCLIBS="-lkvm"
+        ], [ac_cv_lib_bsd_kvm_proc=no]
+    )])
+LIBS="$myLIBS"
+
+AS_IF([test x"${ac_cv_lib_bsd_kvm_proc}" = xyes],
+    [AC_DEFINE([HAVE_LIB_BSD_KVM_PROC], 1, [defined if we have libs, includes and methods for BSD KVM process info])]
+    )
+
+dnl https://github.com/illumos/illumos-gate/blob/master/usr/src/uts/common/sys/procfs.h#L318
+dnl https://github.com/illumos/illumos-gate/blob/master/usr/src/cmd/ps/ps.c
+AC_CACHE_CHECK([for Solaris/illumos process info libs],
+    [ac_cv_lib_illumos_proc],
+    [AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([[
+#include <stdio.h>
+#include <procfs.h>
+        ]],
+            [[
+    psinfo_t info;
+    printf("%s", info.pr_fname)
+/* autoconf adds ";return 0;" */
+/* we hope the code above fails if type is not defined or range is not sufficient */
+]])],
+        [ac_cv_lib_illumos_proc=yes
+        ], [ac_cv_lib_illumos_proc=no]
+    )])
+LIBS="$myLIBS"
+
+AS_IF([test x"${ac_cv_lib_illumos_proc}" = xyes],
+    [AC_DEFINE([HAVE_LIB_ILLUMOS_PROC], 1, [defined if we have libs, includes and methods for Solaris/illumos process info])]
     )
 
 AC_LANG_POP([C])
@@ -2812,26 +2880,26 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 			dnl Avoid rebuilding existing build products due to their timestamp dependencies:
 			touch -r "${abs_srcdir}"/docs/man/Makefile.am "${abs_srcdir}"/docs/man/*.{1,2,3,4,5,6,7,8,9}* "${abs_srcdir}"/docs/man/*.{txt,xml,html,pdf} || true
 		else
-		  if test "${can_build_doc_man}" = yes ; then
-			AC_MSG_RESULT(yes)
-			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
-		  else
-			AC_MSG_RESULT(no)
-			if test "${nut_doc_build_target_flag}" = "yes" ; then
-				DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
-				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+			if test "${can_build_doc_man}" = yes ; then
+				AC_MSG_RESULT(yes)
+				DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
 			else
-				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
-				if test "${nut_doc_build_target_flag}" = "auto" || test "${nut_doc_build_target_flag}" = "dist-auto" ; then
-					if test "${have_disted_doc_man}" = yes ; then
-						AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, but can install pre-built distributed copies])
-						DOC_INSTALL_DISTED_MANS="yes"
-					else
-						AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, and unable to install pre-built distributed copies because they are absent])
-					fi
-				fi  # Other variants include "no", "skip"...
+				AC_MSG_RESULT(no)
+				if test "${nut_doc_build_target_flag}" = "yes" ; then
+					DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
+					AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+				else
+					DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
+					if test "${nut_doc_build_target_flag}" = "auto" || test "${nut_doc_build_target_flag}" = "dist-auto" ; then
+						if test "${have_disted_doc_man}" = yes ; then
+							AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, but can install pre-built distributed copies])
+							DOC_INSTALL_DISTED_MANS="yes"
+						else
+							AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, and unable to install pre-built distributed copies because they are absent])
+						fi
+					fi  # Other variants include "no", "skip"...
+				fi
 			fi
-		  fi
 		fi
 		;;
 
@@ -2878,9 +2946,9 @@ NUT_REPORT_FEATURE([build specific documentation format(s)], [${nut_with_doc}], 
 # for "make check" in "docs/" here...
 DOC_CHECK_LIST=""
 if test "${nut_with_doc}" = yes ; then
-    for V in $DOC_BUILD_LIST ; do
-        DOC_CHECK_LIST="$DOC_CHECK_LIST check-$V"
-    done
+	for V in $DOC_BUILD_LIST ; do
+		DOC_CHECK_LIST="$DOC_CHECK_LIST check-$V"
+	done
 fi
 
 WITH_MANS=no
@@ -3899,9 +3967,9 @@ fi
 AM_CONDITIONAL(WITH_AUGLENS, test -n "${auglensdir}")
 
 if test -n "${auglensdir}"; then
-    auglenstestsdir="${auglensdir}/tests"
+	auglenstestsdir="${auglensdir}/tests"
 else
-    auglenstestsdir=''
+	auglenstestsdir=''
 fi
 
 AC_PATH_PROGS([AUGPARSE], [augparse], [none])
@@ -3913,6 +3981,7 @@ else
 	AC_MSG_RESULT(no)
 fi
 
+dnl ----------------------------------------------------------------------
 
 AC_MSG_CHECKING(whether to install hotplug rules)
 AC_ARG_WITH(hotplug-dir,
@@ -4944,6 +5013,7 @@ AC_SUBST(DRIVER_BUILD_LIST)
 AC_SUBST(DRIVER_MAN_LIST)
 AC_SUBST(DRIVER_MAN_LIST_PAGES)
 AC_SUBST(DRIVER_INSTALL_TARGET)
+AC_SUBST(BSDKVMPROCLIBS)
 AC_SUBST(NETLIBS)
 AC_SUBST(SERLIBS)
 AC_SUBST(SEMLIBS)

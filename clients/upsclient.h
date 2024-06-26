@@ -18,7 +18,7 @@
 */
 
 #ifndef UPSCLIENT_H_SEEN
-#define UPSCLIENT_H_SEEN
+#define UPSCLIENT_H_SEEN 1
 
 #ifdef WITH_OPENSSL
 	#include <openssl/err.h>
@@ -51,6 +51,10 @@
 # else
 #  include <time.h>
 # endif
+#endif
+
+#if defined HAVE_SYS_TYPES_H
+  #include <sys/types.h>
 #endif
 
 #ifdef __cplusplus

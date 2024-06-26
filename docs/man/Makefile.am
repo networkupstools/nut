@@ -430,6 +430,7 @@ SRC_SERIAL_PAGES = \
 	bestuferrups.txt	\
 	bestups.txt 	\
 	bestfcom.txt	\
+	bicker_ser.txt	\
 	blazer-common.txt	\
 	blazer_ser.txt	\
 	clone.txt \
@@ -477,6 +478,7 @@ MAN_SERIAL_PAGES = \
 	bestuferrups.8	\
 	bestups.8 	\
 	bestfcom.8	\
+	bicker_ser.8	\
 	blazer_ser.8	\
 	clone.8 \
 	dummy-ups.8	\
@@ -526,6 +528,7 @@ HTML_SERIAL_MANS = \
 	bestuferrups.html	\
 	bestups.html 	\
 	bestfcom.html	\
+	bicker_ser.html	\
 	blazer_ser.html	\
 	clone.html \
 	dummy-ups.html	\

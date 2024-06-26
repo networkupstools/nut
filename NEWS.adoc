@@ -51,8 +51,17 @@ https://github.com/networkupstools/nut/milestone/11
    * Addition of "NUT Simulated devices" support to `nut-scanner` in v2.8.2
      broke detection of (in-)ability to find and query "Old NUT" servers via
      `libupsclient.so` (internal flag got always enabled). [#2246]
+   * A fix for `upsmon` v2.8.1 setting of `OFFDURATION` [PR #2108, issue #2104,
+     revisiting PR #2055, issue #2044] was overly zealous and impacted also
+     the `OB` state in cases where communications to the data server were
+     severed and `DEADTIME` setting was not honored. [PR #2462, issue #2454]
+   * Using `drivername -c reload` (e.g. facilitated by `nut-driver-enumerator`
+     script and service when editing `ups.conf`) led to disconnected Unix
+     sockets and a tight polling loop that hogged CPU. While the underlying
+     bug is ancient, it took recent development to hit it as a practical
+     regression. [issue #1904, issue #2484]
 
- - drivers, upsd, upsmon: reduce "scary noise" about failure to `fopen()`
+ - drivers, `upsd`, `upsmon`: reduce "scary noise" about failure to `fopen()`
    the PID file (which most of the time means that no previous instance of
    the daemon was running to potentially conflict with), especially useless
    since in recent NUT releases the verdicts from `sendsignal*()` methods
@@ -87,6 +96,10 @@ https://github.com/networkupstools/nut/milestone/11
      string values reported by devices via USB are welcome), so these devices
      would now report `battery.voltage` and `battery.voltage.nominal`. [#2380]
 
+ - bicker_ser: added new driver for Bicker 12/24Vdc UPS via RS-232 serial
+   communication protocol, which supports any UPS shipped with the PSZ-1053
+   extension module. [PR #2448]
+
  - USB drivers could log `(nut_)libusb_get_string: Success` due to either
    reading an empty string or getting a success code `0` from libusb.
    This difference should now be better logged, and not into syslog. [#2399]
@@ -116,10 +129,33 @@ https://github.com/networkupstools/nut/milestone/11
      exiting (and/or start-up has aborted due to configuration or run-time
      issues). Warning about "world readable" files clarified. [#2417]
 
- - common code: root-owned daemons now use not the hard-coded `PIDPATH` value
-   set by the `configure` script during build, but can override it with a
-   `NUT_PIDPATH` environment variable in certain use-cases (such as tests).
-   [#2407]
+ - common code:
+   * introduced a `NUT_DEBUG_SYSLOG` environment variable to tweak activation
+     of syslog message emission (and related detachment of `stderr` when
+     backgrounding), primarily useful for NIT and perhaps systemd. Most
+     methods relied on logging bits being set, so this change aims to be
+     minimally invasive to impact setting of those bits (or not) in the
+     first place. [#2394]
+   * `root`-owned daemons now use not the hard-coded `PIDPATH` value set
+     by the `configure` script during build, but can override it with a
+     `NUT_PIDPATH` environment variable in certain use-cases (such as
+     tests). [#2407]
+   * introduced a check for daemons working with PID files to double-check
+     that if they can resolve the program name of a running process with
+     this identifier, that such name matches the current program (avoid
+     failures to start NUT daemons if PID files are on persistent storage,
+     and some unrelated program got that PID after a reboot).  This might
+     introduce regressions for heavily customized NUT builds (e.g. those
+     embedded in NAS or similar devices) where binary file names differ
+     significantly from a `progname` string defined in the respective NUT
+     source file, so a boolean `NUT_IGNORE_CHECKPROCNAME` environment
+     variable support was added to optionally disable this verification.
+     Also the NUT daemons should request to double-check against their
+     run-time process name (if it can be detected). [issue #2463]
+
+ - various recipe, documentation and source files were revised to address
+   respective warnings issued by the new generations of analysis tools.
+   [#823, #2437, link:https://github.com/networkupstools/nut-website/issues/52[nut-website issue #52]]
 
  - revised `nut.exe` (the NUT for Windows wrapper for all-in-one service)
    to be more helpful with command-line use (report that it failed to start
@@ -133,6 +169,24 @@ https://github.com/networkupstools/nut/milestone/11
 +
    NOTE: The `html-chunked` documents are currently still not installed.
 
+ - added support to `./configure --with-doc=man=dist-auto` to use distributed
+   manual page files if present; only fall back to build them if we can. [#2473]
+
+ - added a `make distcheck-light-man` recipe to require verification that the
+   manual page files can be built using the prepared "tarball" archive. [#2473]
+
+ - added a `common/Makefile.am` build product for a new internal library
+   `libcommonstr.la` which allows a smaller selection of helper methods
+   for tools like `nut-scanner` which do not need the full `libcommon.la`
+   nor `libcommonclient.la`. [#2478, #2491]
+
+ - added a `drivers/Makefile.am` build product for a new internal library
+   `libserial-nutscan.la` to simplify `tools/nut-scanner/Makefile.am` recipes.
+   [#2490]
+
+ - build of `snmp-ups` and `netxml-ups` drivers now explicitly brings linker
+   dependency on chosen SSL libraries. [#2479]
+
  - brought keyword dictionaries of `nutconf` and `augeas` NUT configuration
    file parsers up to date; restored automated checks for `augeas` lenses.
    [issue #657, issue #2294]
@@ -141,10 +195,6 @@ https://github.com/networkupstools/nut/milestone/11
    they should be able to parse common simple use-cases but not certain types
    of more complex configurations (e.g. some line patterns that involve too
    many double-quote characters) which are valid for NUT proper. [#657]
-
- - various recipe, documentation and source files were revised to address
-   respective warnings issued by the new generations of analysis tools.
-   [#823, #2437, link:https://github.com/networkupstools/nut-website/issues/52[nut-website issue #52]]
 
 
 Release notes for NUT 2.8.2 - what's new since 2.8.1

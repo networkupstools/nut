@@ -1113,11 +1113,17 @@ static int is_ups_critical(utype_t *ups)
 		}
 
 		if (ups->linestate == 0) {
-			upslogx(LOG_WARNING,
+			/* Just a message for post-mortem troubleshooting:
+			 * no flag flips, no return values issued just here
+			 * (note the message is likely to appear on every
+			 * cycle when the communications are down, to help
+			 * track when this was the case; no log throttling).
+			 */
+			upsdebugx(1,
 				"UPS [%s] was last known to be not fully online "
-				"and currently is not communicating, assuming dead",
+				"and currently is not communicating, just so you "
+				"know (waiting for DEADTIME to elapse)",
 				ups->sys);
-			return 1;
 		}
 	}
 
@@ -3016,15 +3022,15 @@ int main(int argc, char *argv[])
 	 * is running by sending signal '0' (i.e. 'kill <pid> 0' equivalent)
 	 */
 	if (oldpid < 0) {
-		cmdret = sendsignal(prog, cmd);
+		cmdret = sendsignal(prog, cmd, 1);
 	} else {
-		cmdret = sendsignalpid(oldpid, cmd);
+		cmdret = sendsignalpid(oldpid, cmd, prog, 1);
 	}
 
 #else	/* WIN32 */
 	if (cmd) {
 		/* Command the running daemon, it should be there */
-		cmdret = sendsignal(UPSMON_PIPE_NAME, cmd);
+		cmdret = sendsignal(UPSMON_PIPE_NAME, cmd, 1);
 	} else {
 		/* Starting new daemon, check for competition */
 		mutex = CreateMutex(NULL, TRUE, UPSMON_PIPE_NAME);
