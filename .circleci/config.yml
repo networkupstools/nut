@@ -72,12 +72,13 @@ jobs:
             HOMEBREW_NO_AUTO_UPDATE=1; export HOMEBREW_NO_AUTO_UPDATE;
             brew install ccache bash libtool binutils autoconf automake git m4 pkg-config gd libusb neon net-snmp openssl $BREW_MORE
 
-#      - run:
-#          name: "homebrew-libtool"
-#          command: |-
-#            #find /usr /opt /lib* -name '*ltdl*' -ls 2>/dev/null || true
-#            brew unlink libtool && brew link libtool
-#            #find /usr /opt /lib* -name '*ltdl*' -ls 2>/dev/null || true
+      # https://github.com/Homebrew/legacy-homebrew/issues/15488
+      - run:
+          name: "homebrew-libtool"
+          command: |-
+            #find /usr /opt /lib* -name '*ltdl*' -ls 2>/dev/null || true
+            brew unlink libtool && brew link libtool
+            #find /usr /opt /lib* -name '*ltdl*' -ls 2>/dev/null || true
 
       - restore_cache:
           keys:
