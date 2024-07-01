@@ -2047,6 +2047,11 @@ bindings)
         CONFIG_OPTS+=("--with-debuginfo=auto")
     fi
 
+    if [ -n "${PYTHON-}" ]; then
+        # WARNING: Watch out for whitespaces, not handled here!
+        CONFIG_OPTS+=("--with-python=${PYTHON}")
+    fi
+
     ${CONFIGURE_SCRIPT} "${CONFIG_OPTS[@]}"
 
     # NOTE: Currently parallel builds are expected to succeed (as far
