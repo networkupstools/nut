@@ -137,6 +137,10 @@ jobs:
             - ~/.ccache
           key: ccache-{{ .Branch }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
 
+      - store_artifacts:
+          path: config.log
+
+
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
