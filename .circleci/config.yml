@@ -117,9 +117,9 @@ jobs:
           command: |-
             CI_CCACHE_SYMLINKDIR="/opt/homebrew/opt/ccache/libexec" \
             CANBUILD_NIT_TESTS=yes \
-            CFLAGS="$CC_STDVER -Wno-poison-system-directories -Wno-deprecated-declarations" \
-            CXXFLAGS="$CXX_STDVER -Wno-poison-system-directories" \
-            LDFLAGS="-L/usr/local/lib" \
+            CFLAGS="$CC_STDVER -Wno-poison-system-directories -Wno-deprecated-declarations -I/opt/homebrew/include" \
+            CXXFLAGS="$CXX_STDVER -Wno-poison-system-directories -I/opt/homebrew/include" \
+            LDFLAGS="-L/opt/homebrew/lib -L/usr/local/lib" \
             ./ci_build.sh
 
       - run:
