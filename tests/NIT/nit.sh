@@ -1129,7 +1129,7 @@ isTestablePython() {
     if [ x"${PY_SHEBANG}" = x"#!no" ] ; then
         return 1
     fi
-    log_info "Detected python shebang: '${PY_SHEBANG}'"
+    log_debug "=======\nDetected python shebang: '${PY_SHEBANG}'"
     return 0
 }
 
