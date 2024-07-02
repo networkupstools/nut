@@ -347,7 +347,23 @@ int num = NETSNMP_DRAFT_BLUMENTHAL_AES_04 + 1; /* if defined, NETSNMP_DRAFT_BLUM
 			 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04, 0, [Variable or macro by this name is not resolvable])
 			])
 
+		dnl Help ltdl if we can (nut-scanner etc.)
+		for TOKEN in $LIBS ; do
+			AS_CASE(["${TOKEN}"],
+				[-l*snmp*], [
+					AX_REALPATH_LIB([${TOKEN}], [SOPATH_LIBNETSNMP], [])
+					AS_IF([test -n "${SOPATH_LIBNETSNMP}" && test -s "${SOPATH_LIBNETSNMP}"], [
+						AC_DEFINE_UNQUOTED([SOPATH_LIBNETSNMP],["${SOPATH_LIBNETSNMP}"],[Path to dynamic library on build system])
+						SOFILE_LIBNETSNMP="`basename "$SOPATH_LIBNETSNMP"`"
+						AC_DEFINE_UNQUOTED([SOFILE_LIBNETSNMP],["${SOFILE_LIBNETSNMP}"],[Base file name of dynamic library on build system])
+						break
+					])
+				]
+			)
+		done
+		unset TOKEN
 	])
+
 	AC_LANG_POP([C])
 
 	dnl restore original CFLAGS and LIBS

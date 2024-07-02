@@ -92,6 +92,22 @@ if test -z "${nut_have_libfreeipmi_seen}"; then
 		AC_DEFINE(HAVE_FREEIPMI, 1, [Define if FreeIPMI support is available])
 		LIBIPMI_CFLAGS="${CFLAGS}"
 		LIBIPMI_LIBS="${LIBS}"
+
+		dnl Help ltdl if we can (nut-scanner etc.)
+		for TOKEN in $LIBS ; do
+			AS_CASE(["${TOKEN}"],
+				[-l*ipmi*], [
+					AX_REALPATH_LIB([${TOKEN}], [SOPATH_LIBFREEIPMI], [])
+					AS_IF([test -n "${SOPATH_LIBFREEIPMI}" && test -s "${SOPATH_LIBFREEIPMI}"], [
+						AC_DEFINE_UNQUOTED([SOPATH_LIBFREEIPMI],["${SOPATH_LIBFREEIPMI}"],[Path to dynamic library on build system])
+						SOFILE_LIBFREEIPMI="`basename "$SOPATH_LIBFREEIPMI"`"
+						AC_DEFINE_UNQUOTED([SOFILE_LIBFREEIPMI],["${SOFILE_LIBFREEIPMI}"],[Base file name of dynamic library on build system])
+						break
+					])
+				]
+			)
+		done
+		unset TOKEN
 	fi
 
 	if test "${nut_have_freeipmi_11x_12x}" = "yes"; then
