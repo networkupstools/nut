@@ -35,10 +35,14 @@
 #include <string.h>
 #include "nut-scan.h"
 
-#ifndef WIN32
-#define SOEXT ".so"
+#ifdef WIN32
+# define SOEXT ".dll"
 #else
-#define SOEXT ".dll"
+# if defined WITH_MACOSX && WITH_MACOSX
+#  define SOEXT ".dylib"
+# else	/* not WIN32, not MACOS */
+#  define SOEXT ".so"
+# endif
 #endif
 
 /* Flags for code paths we can support in this run (libs available or not

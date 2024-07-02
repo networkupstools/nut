@@ -48,11 +48,12 @@ AC_DEFUN([AX_REALPATH_LIB],
         dnl # Primarily we care to know dynamically linked (shared object)
         dnl # files, so inject the extension to the presumed base name
         AS_CASE(["${myLIBNAME}"],
-            [*.so*|*.a|*.o|*.lo|*.la|*.dll|*.dll.a|*.lib], [],
+            [*.so*|*.a|*.o|*.lo|*.la|*.dll|*.dll.a|*.lib|*.dylib], [],
             [
                 AS_CASE(["${target_os}"],
-                    [*mingw*], [myLIBNAME="${myLIBNAME}.dll"],
-                               [myLIBNAME="${myLIBNAME}.so"])
+                    [*mingw*],  [myLIBNAME="${myLIBNAME}.dll"],
+                    [*darwin*], [myLIBNAME="${myLIBNAME}.dylib"],
+                                [myLIBNAME="${myLIBNAME}.so"])
             ]
         )
 
