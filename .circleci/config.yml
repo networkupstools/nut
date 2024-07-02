@@ -17,7 +17,8 @@ jobs:
     parameters:
       XCODE_VER:
         type: string
-        default: "12.5.1"
+        # https://circleci.com/docs/using-macos/#supported-xcode-versions-silicon
+        default: "13.4.1"
       CC:
         type: string
         default: "" # e.g. "clang"
@@ -65,24 +66,35 @@ jobs:
 
       # Note: MacOS default /bin/bash 3.x is too old for ci_build.sh
       # Brew brings /usr/local/bin/bash 5.x as of this writing
-      # TODO: Are Binutils needed?
       - run:
           name: "homebrew"
           command: |-
             HOMEBREW_NO_AUTO_UPDATE=1; export HOMEBREW_NO_AUTO_UPDATE;
-            brew install ccache bash libtool pkg-config gd libusb neon net-snmp openssl $BREW_MORE #binutils
+            brew install ccache bash libtool binutils autoconf automake git m4 pkg-config gd libusb neon net-snmp openssl $BREW_MORE
 
-#      - run:
-#          name: "homebrew-libtool"
-#          command: |-
-#            #find /usr /opt /lib* -name '*ltdl*' -ls 2>/dev/null || true
-#            brew unlink libtool && brew link libtool
-#            #find /usr /opt /lib* -name '*ltdl*' -ls 2>/dev/null || true
+      # https://github.com/Homebrew/legacy-homebrew/issues/15488
+      - run:
+          name: "homebrew-libtool"
+          command: |-
+            #find /usr /opt /lib* -name '*ltdl*' -ls 2>/dev/null || true
+            brew unlink libtool && brew link libtool
+            #find /usr /opt /lib* -name '*ltdl*' -ls 2>/dev/null || true
 
       - restore_cache:
           keys:
             - ccache-{{ .Branch }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
             - ccache-master-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
+
+      # Fail fast if we had a problem with prerequisites - this
+      # situation would likely impact all build branches anyway.
+      # Requires a Personal API token in the building account:
+      # https://support.circleci.com/hc/en-us/articles/360052058811-Exit-Build-Early-if-Any-Test-Fails
+      - run:
+          name: Fail Fast
+          when: on_fail
+          command: |-
+            echo "Canceling workflow as a step resulted in failure"
+            curl -X POST --header "Content-Type: application/json" "https://circleci.com/api/v2/workflow/${CIRCLE_WORKFLOW_ID}/cancel?circle-token=${CIRCLE_TOKEN}"
 
 #      - run:
 #          name: "check shell"
@@ -99,14 +111,15 @@ jobs:
       # uses of sem_init() and sem_destroy() in nut-scanner.c)
       # NOTE: CANBUILD_NIT_TESTS=yes to check if single-executor environments
       # do not have a problem with it.
+      # NOTE: Older Homebrew versions used CI_CCACHE_SYMLINKDIR="/usr/local/opt/ccache/libexec"
       - run:
           name: "ci_build"
           command: |-
-            CI_CCACHE_SYMLINKDIR="/usr/local/opt/ccache/libexec" \
+            CI_CCACHE_SYMLINKDIR="/opt/homebrew/opt/ccache/libexec" \
             CANBUILD_NIT_TESTS=yes \
-            CFLAGS="$CC_STDVER -Wno-poison-system-directories -Wno-deprecated-declarations" \
-            CXXFLAGS="$CXX_STDVER -Wno-poison-system-directories" \
-            LDFLAGS="-L/usr/local/lib" \
+            CFLAGS="$CC_STDVER -Wno-poison-system-directories -Wno-deprecated-declarations -I/opt/homebrew/include" \
+            CXXFLAGS="$CXX_STDVER -Wno-poison-system-directories -I/opt/homebrew/include" \
+            LDFLAGS="-L/opt/homebrew/lib -L/usr/local/lib" \
             ./ci_build.sh
 
       - run:
@@ -125,6 +138,10 @@ jobs:
             - ~/.ccache
           key: ccache-{{ .Branch }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
 
+      - store_artifacts:
+          path: config.log
+
+
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
@@ -136,15 +153,15 @@ workflows:
 ### This scenario is a subset of fightwarn-all below (modulo C standard),
 ### so disabled to not waste time from free CircleCI allowance limit:
 #      - osx-xcode:
-#          name: "gnu17-clang-xcode12_5_1-default-all-errors"
-#          XCODE_VER: "12.5.1"
+#          name: "gnu17-clang-xcode13_4_1-default-all-errors"
+#          XCODE_VER: "13.4.1"
 #          CC: "clang"
 #          CXX: "clang++"
 #          CC_STDVER: "-std=gnu17"
 #          CXX_STDVER: "-std=gnu++17"
 
       - osx-xcode:
-          name: "gnu11-gcc-xcode12_5_1-out-of-tree"
+          name: "gnu11-gcc-xcode13_4_1-out-of-tree"
           CC: "gcc"
           CXX: "g++"
           CC_STDVER: "-std=gnu11"
@@ -153,7 +170,7 @@ workflows:
           CI_BUILDDIR: "obj"
 
       - osx-xcode:
-          name: "c99-cxx11-gcc-xcode12_5_1-default-distcheck"
+          name: "c99-cxx11-gcc-xcode13_4_1-default-distcheck"
           CC: "gcc"
           CXX: "g++"
           CC_STDVER: "-std=c99"
@@ -162,7 +179,7 @@ workflows:
           BUILD_TYPE: "default"
 
       - osx-xcode:
-          name: "stdDefault-xcode12_5_1-fightwarn-all"
+          name: "stdDefault-xcode13_4_1-fightwarn-all"
           # Run "default-all-errors" with both compiler families,
           # using their default C/C++ standard for current release:
           BUILD_TYPE: "fightwarn-all"
@@ -170,8 +187,8 @@ workflows:
 ### This does not work due to missing dependencies built for MacOS in homebrew:
 ### TODO? Evaluate other packagers (MacPorts, fink...)?
 #      - osx-xcode:
-#          name: "c17-clang-xcode12_5_1-alldrv"
-#          XCODE_VER: "12.5.1"
+#          name: "c17-clang-xcode13_4_1-alldrv"
+#          XCODE_VER: "13.4.1"
 #          CC: "clang"
 #          CXX: "clang++"
 #          CC_STDVER: "-std=c17"

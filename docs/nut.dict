@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3169 utf-8
+personal_ws-1.1 en 3173 utf-8
 AAC
 AAS
 ABI
@@ -2137,6 +2137,8 @@ libaugeas
 libavahi
 libc
 libcommon
+libcommonclient
+libcommonstr
 libcppunit
 libcrypto
 libcurl
@@ -2173,6 +2175,7 @@ libpowerman
 libre
 libregex
 libs
+libserial
 libsnmp
 libssl
 libsystemd
@@ -2885,6 +2888,7 @@ tcsetattr
 tcsh
 td
 tdriver
+telnetlib
 tempmax
 tempmin
 termios

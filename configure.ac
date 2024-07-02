@@ -2291,6 +2291,8 @@ fi
 NUT_REPORT_FEATURE([enable libltdl (Libtool dlopen abstraction) support], [${nut_with_libltdl}], [],
 					[WITH_LIBLTDL], [Define to enable libltdl (Libtool dlopen abstraction) support])
 
+dnl Explicitly report if we are building nut-scanner or not
+dnl since it requires libltdl
 if test x"${nut_with_libltdl}" = x"no" && test x"${nut_with_nut_scanner}" = x"yes"; then
     AC_MSG_ERROR([libltdl support was disabled or not found, but --with-nut-scanner was requested and requires it])
 fi
@@ -2445,7 +2447,7 @@ if test x"${nut_with_nut_monitor}" != xno ; then
 fi
 
 dnl ${nut_with_pynut}: TODO: arg values to request python 2, 3 or both
-AC_MSG_CHECKING([if we can and should install PyNUT module])
+AC_MSG_CHECKING([if we can and should install PyNUT module (note for warnings from python 3.11 and beyond: we have a fallback nut_telnetlib module just in case)])
 nut_with_pynut_py=""
 nut_with_pynut_py2=""
 nut_with_pynut_py3=""
@@ -2467,6 +2469,15 @@ if test x"${nut_with_pynut}" != xno \
         if ${PYTHON3} -c "import telnetlib" \
         ; then
             nut_with_pynut_py3="yes"
+        else
+            dnl We have a stashed copy from Python 3.10, so
+            dnl this line essentially checks for presence of
+            dnl a usable interpreter implementation compatible
+            dnl with Python 3.x syntax.
+            if (cd script/python/module && ${PYTHON3} -c "import nut_telnetlib as telnetlib") \
+            ; then
+                nut_with_pynut_py3="yes"
+            fi
         fi
     fi
 
@@ -2478,6 +2489,12 @@ if test x"${nut_with_pynut}" != xno \
         if ${PYTHON} -c "import telnetlib" \
         ; then
             nut_with_pynut_py="yes"
+        else
+            dnl See comments above
+            if (cd script/python/module && ${PYTHON} -c "import nut_telnetlib as telnetlib") \
+            ; then
+                nut_with_pynut_py="yes"
+            fi
         fi
     fi
 fi
@@ -2570,6 +2587,18 @@ AC_SUBST([nut_with_pynut], [${nut_with_pynut}])
 AC_SUBST([nut_with_pynut_py], [${nut_with_pynut_py}])
 AC_SUBST([nut_with_pynut_py2], [${nut_with_pynut_py2}])
 AC_SUBST([nut_with_pynut_py3], [${nut_with_pynut_py3}])
+
+dnl MacOS Darwin has a problem with script shebangs, and tends to run anything
+dnl with shell. On the upside, it has no limit on length or amount of tokens
+dnl in the shebang line.
+dnl https://github.com/NixOS/nixpkgs/issues/65351/
+AS_CASE([${target_os}],
+	[*darwin*], [
+		AS_IF([test -n "${PYTHON}"  -a x"${PYTHON}"  != xno], [ PYTHON=" /usr/bin/env ${PYTHON}"])
+		AS_IF([test -n "${PYTHON2}" -a x"${PYTHON2}" != xno], [PYTHON2=" /usr/bin/env ${PYTHON2}"])
+		AS_IF([test -n "${PYTHON3}" -a x"${PYTHON3}" != xno], [PYTHON3=" /usr/bin/env ${PYTHON3}"])
+		]
+)
 
 AS_IF([test "${nut_with_nut_monitor}" != no -o "${nut_with_pynut}" != no], [
     NUT_REPORT([use default  Python  interpreter],   [${PYTHON}])
@@ -2686,6 +2715,9 @@ case "${nut_with_doc}" in
 	skip|all=skip)
 		nut_doc_build_list="man=skip html-single=skip html-chunked=skip pdf=skip"
 		;;
+	dist-auto) # Experimental, currently only for MANs: prefer disted files if present, auto otherwise
+		nut_doc_build_list="man=dist-auto html-single=dist-auto html-chunked=dist-auto pdf=dist-auto"
+		;;
 	no|all=no)
 		nut_doc_build_list=""
 		;;
@@ -2726,7 +2758,7 @@ for nut_doc_build_target in $nut_doc_build_list; do
 		;;
 	esac
 	case "${nut_doc_build_target_flag}" in
-	yes|no|auto|skip) ;;
+	yes|no|auto|skip|dist-auto) ;;
 	"") nut_doc_build_target_flag="yes" ;;
 	*)	rm -rf "${DOCTESTDIR}"
 		AC_MSG_ERROR([Invalid documentation format option: ${nut_doc_build_target}]) ;;
@@ -2817,31 +2849,48 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 		;;
 
 	man*)
+		dnl Experimental support for --with-doc=man=dist-auto to prefer pre-disted docs if available, below
 		AC_MSG_CHECKING([if we can build ${nut_doc_build_target_base}])
 		can_build_doc_man=no
+		have_disted_doc_man=no
+		want_disted_doc_man=no
+		if test -s "${abs_srcdir}"/docs/man/snmp-ups.8 ; then
+			dnl Test that groff files exist (building from distributed tarball, not git repo)
+			have_disted_doc_man=yes
+		fi
+		if test x"${nut_doc_build_target}" = x"man=dist-auto" || test "${nut_doc_build_target_flag}" = "dist-auto"; then
+			want_disted_doc_man=yes
+		fi
 		if test "${nut_have_asciidoc}" = yes ; then
 			( cd "$DOCTESTDIR" && ${A2X} --format manpage --destination-dir=. --xsltproc-opts="--nonet" "${abs_srcdir}"/docs/man/snmp-ups.txt && test -s snmp-ups.8 ) && can_build_doc_man=yes
 			rm -f "${DOCTESTDIR}"/snmp-ups.8
 		fi
-		if test "${can_build_doc_man}" = yes ; then
-			AC_MSG_RESULT(yes)
-			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
+		if test "${want_disted_doc_man}" = yes && test "${have_disted_doc_man}" = yes ; then
+			AC_MSG_NOTICE([Requested, and can, install pre-built distributed copies of ${nut_doc_build_target_base} documentation])
+			DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
+			DOC_INSTALL_DISTED_MANS="yes"
+			dnl Avoid rebuilding existing build products due to their timestamp dependencies:
+			touch -r "${abs_srcdir}"/docs/man/Makefile.am "${abs_srcdir}"/docs/man/*.{1,2,3,4,5,6,7,8,9}* "${abs_srcdir}"/docs/man/*.{txt,xml,html,pdf} || true
 		else
-			AC_MSG_RESULT(no)
-			if test "${nut_doc_build_target_flag}" = "yes" ; then
-				DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
-				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+			if test "${can_build_doc_man}" = yes ; then
+				AC_MSG_RESULT(yes)
+				DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
 			else
-				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
-				if test "${nut_doc_build_target_flag}" = "auto" ; then
-dnl Test that groff files exist (building from distributed tarball, not git repo)
-					if test -s "${abs_srcdir}"/docs/man/snmp-ups.8 ; then
-						AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, but can install pre-built distributed copies])
-						DOC_INSTALL_DISTED_MANS="yes"
-					else
-						AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, and unable to install pre-built distributed copies because they are absent])
-					fi
-				fi  # Other variants include "no", "skip"...
+				AC_MSG_RESULT(no)
+				if test "${nut_doc_build_target_flag}" = "yes" ; then
+					DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
+					AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+				else
+					DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
+					if test "${nut_doc_build_target_flag}" = "auto" || test "${nut_doc_build_target_flag}" = "dist-auto" ; then
+						if test "${have_disted_doc_man}" = yes ; then
+							AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, but can install pre-built distributed copies])
+							DOC_INSTALL_DISTED_MANS="yes"
+						else
+							AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, and unable to install pre-built distributed copies because they are absent])
+						fi
+					fi  # Other variants include "no", "skip"...
+				fi
 			fi
 		fi
 		;;
@@ -2889,9 +2938,9 @@ NUT_REPORT_FEATURE([build specific documentation format(s)], [${nut_with_doc}], 
 # for "make check" in "docs/" here...
 DOC_CHECK_LIST=""
 if test "${nut_with_doc}" = yes ; then
-    for V in $DOC_BUILD_LIST ; do
-        DOC_CHECK_LIST="$DOC_CHECK_LIST check-$V"
-    done
+	for V in $DOC_BUILD_LIST ; do
+		DOC_CHECK_LIST="$DOC_CHECK_LIST check-$V"
+	done
 fi
 
 WITH_MANS=no
@@ -3909,6 +3958,12 @@ else
 fi
 AM_CONDITIONAL(WITH_AUGLENS, test -n "${auglensdir}")
 
+if test -n "${auglensdir}"; then
+	auglenstestsdir="${auglensdir}/tests"
+else
+	auglenstestsdir=''
+fi
+
 AC_PATH_PROGS([AUGPARSE], [augparse], [none])
 AM_CONDITIONAL([HAVE_AUGPARSE], [test "x${AUGPARSE}" != "xnone"])
 AC_MSG_CHECKING([whether to enable Augeas configuration-management lenses tests])
@@ -3918,6 +3973,7 @@ else
 	AC_MSG_RESULT(no)
 fi
 
+dnl ----------------------------------------------------------------------
 
 AC_MSG_CHECKING(whether to install hotplug rules)
 AC_ARG_WITH(hotplug-dir,
@@ -4426,6 +4482,7 @@ AC_SUBST(systemdsystemunitdir)
 AC_SUBST(systemdshutdowndir)
 AC_SUBST(systemdtmpfilesdir)
 AC_SUBST(auglensdir)
+AC_SUBST(auglenstestsdir)
 AC_SUBST(hotplugdir)
 AC_SUBST(udevdir)
 

@@ -275,9 +275,20 @@ snmp_ups_CFLAGS = $(AM_CFLAGS)
 snmp_ups_CFLAGS += $(LIBNETSNMP_CFLAGS)
 snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS) -lm
 
+if WITH_SSL
+  snmp_ups_CFLAGS += $(LIBSSL_CFLAGS)
+  snmp_ups_LDADD += $(LIBSSL_LIBS)
+endif
+
 # NEON XML/HTTP
 netxml_ups_SOURCES = netxml-ups.c mge-xml.c
 netxml_ups_LDADD = $(LDADD_DRIVERS) $(LIBNEON_LIBS)
+netxml_ups_CFLAGS = $(AM_CFLAGS)
+
+if WITH_SSL
+  netxml_ups_CFLAGS += $(LIBSSL_CFLAGS)
+  netxml_ups_LDADD += $(LIBSSL_LIBS)
+endif
 
 # Powerman
 powerman_pdu_SOURCES = powerman-pdu.c
@@ -394,6 +405,7 @@ dist_noinst_HEADERS = \
 # for object files. This library is used during the build process,
 # and is not meant to be installed.
 EXTRA_LTLIBRARIES = libdummy.la libdummy_serial.la libdummy_upsdrvquery.la
+
 libdummy_la_SOURCES = main.c dstate.c
 libdummy_la_LDFLAGS = -no-undefined -static
 libdummy_serial_la_SOURCES = serial.c
@@ -408,6 +420,14 @@ EXTRA_LTLIBRARIES += libdummy_mockdrv.la
 libdummy_mockdrv_la_SOURCES = main.c dstate.c
 libdummy_mockdrv_la_CFLAGS = $(AM_CFLAGS) -DDRIVERS_MAIN_WITHOUT_MAIN=1
 libdummy_mockdrv_la_LDFLAGS = -static $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la
+
+# Also define a library with serial-port UPS routines needed for nut-scanner
+noinst_LTLIBRARIES = libserial-nutscan.la
+
+libserial_nutscan_la_SOURCES = serial.c bcmxcp_ser.c
+libserial_nutscan_la_LDFLAGS =
+libserial_nutscan_la_LIBADD = $(SERLIBS)
+libserial_nutscan_la_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/clients -I$(top_srcdir)/include -I$(top_srcdir)/drivers
 
 dummy:
 

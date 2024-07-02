@@ -28,7 +28,9 @@ $(NUT_SCANNER_DEPS): dummy
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/include/nut_version.h \
-$(top_builddir)/common/libcommonclient.la \
+$(top_builddir)/common/libnutwincompat.la \
+$(top_builddir)/drivers/libserial-nutscan.la \
+$(top_builddir)/common/libcommonstr.la \
 $(top_builddir)/common/libcommon.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
@@ -38,47 +40,39 @@ $(top_builddir)/common/libcommon.la: dummy
 # be built before anything else
 nut-scanner.c: $(top_builddir)/include/nut_version.h
 
-LINKED_SOURCE_FILES =
+# We optionally append values to this below
+bin_PROGRAMS =
+lib_LTLIBRARIES =
+include_HEADERS =
+dist_noinst_HEADERS =
 
-# Separate the .deps of other dirs from this one
-# NOTE: Not using "$<" due to a legacy Sun/illumos dmake bug with resolver
-# of dynamic vars, see e.g. https://man.omnios.org/man1/make#BUGS
-LINKED_SOURCE_FILES += serial.c
-serial.c: $(top_srcdir)/drivers/serial.c
-	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/serial.c" "$@"
-
-LINKED_SOURCE_FILES += bcmxcp_ser.c
-bcmxcp_ser.c: $(top_srcdir)/drivers/bcmxcp_ser.c
-	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/bcmxcp_ser.c" "$@"
-
-CLEANFILES += $(LINKED_SOURCE_FILES)
-BUILT_SOURCES += $(LINKED_SOURCE_FILES)
-
-# Note: we only build nut-scanner, and its library, if libltdl was found (required!)
+# Note: we only build nut-scanner, and its library, if libltdl was found (required ATM!)
 if WITH_NUT_SCANNER
- bin_PROGRAMS = nut-scanner
- lib_LTLIBRARIES = libnutscan.la
+ bin_PROGRAMS += nut-scanner
+ lib_LTLIBRARIES += libnutscan.la
 endif WITH_NUT_SCANNER
 libnutscan_la_SOURCES = scan_nut.c scan_nut_simulation.c scan_ipmi.c \
 			nutscan-device.c nutscan-ip.c nutscan-display.c \
 			nutscan-init.c scan_usb.c scan_snmp.c scan_xml_http.c \
 			scan_avahi.c scan_eaton_serial.c nutscan-serial.c
-nodist_libnutscan_la_SOURCES = $(LINKED_SOURCE_FILES)
 libnutscan_la_LIBADD = $(NETLIBS)
+libnutscan_la_LIBADD += $(top_builddir)/drivers/libserial-nutscan.la
+
 if WITH_LIBLTDL
 libnutscan_la_LIBADD += $(LIBLTDL_LIBS)
 endif WITH_LIBLTDL
-libnutscan_la_LIBADD += $(top_builddir)/common/libcommonclient.la
+
 if HAVE_SEMAPHORE_LIBS
 # Are additional libraries needed for semaphore support?
 libnutscan_la_LIBADD += $(SEMLIBS)
 endif HAVE_SEMAPHORE_LIBS
 
-# FIXME: From old ages onward, SERLIBS are added here and not in LIBADD... why?
-libnutscan_la_LDFLAGS = $(SERLIBS)
+libnutscan_la_LIBADD += $(SERLIBS)
 
+libnutscan_la_LDFLAGS =
 if HAVE_WINDOWS
   # Many versions of MingW seem to fail to build non-static DLL without this
+  libnutscan_la_LIBADD += $(top_builddir)/common/libnutwincompat.la
   libnutscan_la_LDFLAGS += -no-undefined
 endif HAVE_WINDOWS
 
@@ -89,7 +83,7 @@ endif HAVE_WINDOWS
 # object .so names would differ)
 #
 # libnutscan version information
-libnutscan_la_LDFLAGS += -version-info 2:5:0
+libnutscan_la_LDFLAGS += -version-info 2:5:1
 
 # libnutscan exported symbols regex
 # WARNING: Since the library includes parts of libcommon (as much as needed
@@ -103,6 +97,8 @@ libnutscan_la_LDFLAGS += -version-info 2:5:0
 libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebugx|max_threads|curr_threads|nut_report_config_flags|upsdebugx_report_search_paths|nut_prepare_search_paths)'
 libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include \
 			$(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
+
+libnutscan_la_LIBADD += $(top_builddir)/common/libcommonstr.la
 
 nut_scanner_SOURCES = nut-scanner.c
 nut_scanner_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include
@@ -143,11 +139,11 @@ if WITH_IPMI
 endif WITH_IPMI
 
 # C is not a header, but there is no dist_noinst_SOURCES
-dist_noinst_HEADERS = $(NUT_SCANNER_DEPS_H) $(NUT_SCANNER_DEPS_C)
+dist_noinst_HEADERS += $(NUT_SCANNER_DEPS_H) $(NUT_SCANNER_DEPS_C)
 
 # Optionally deliverable as part of NUT public API:
 if WITH_DEV
- include_HEADERS = nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h
+ include_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h
 else !WITH_DEV
  dist_noinst_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h
 endif !WITH_DEV

@@ -255,9 +255,16 @@ Other values understood for this option are listed below:
 * A `--with-doc=no` quietly skips generation of all types of documentation,
   including manpages.
 
-* `--with-doc=skip` is used to configure some of the `make distcheck*`
+* A `--with-doc=skip` is used to configure some of the `make distcheck*`
   scenarios to re-use man page files built and distributed by the main
   build and not waste time on re-generation of those.
+
+* A `--with-doc=dist-auto` allows to use pre-distributed MAN pages if present
+  (should be in "tarball" release archives; should not be among Git-tracked
+  sources; may be left over from earlier builds in same workspace), or build
+  those if we can (the `auto` part). Practically this is implemented in detail
+  only for `--with-doc=man=dist-auto`, as we do not dist HTML and PDF products;
+  it is a placeholder for those to simplify the generic configuration calls.
 
 Multiple documentation format values can be specified, separated with comma.
 Each such value can be suffixed with `=yes` to require building of this one

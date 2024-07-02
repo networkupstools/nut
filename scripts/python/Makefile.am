@@ -70,6 +70,7 @@ NUT_MONITOR_COMMON = \
 	app/locale/ru/LC_MESSAGES/NUT-Monitor.mo
 
 PYNUT_COMMON = \
+	module/nut_telnetlib.py \
 	module/README.adoc
 
 # Note: we both distribute and install the generated *.mo translation files
