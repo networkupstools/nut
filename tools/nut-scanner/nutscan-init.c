@@ -195,6 +195,7 @@ void nutscan_init(void)
 			__func__, libname, "LibUSB");
 		nutscan_avail_usb = nutscan_load_usb_library(libname);
 		free(libname);
+		libname = NULL;
 	} else {
 		/* let libtool (lt_dlopen) do its default magic maybe better */
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
@@ -245,6 +246,7 @@ void nutscan_init(void)
 			__func__, libname, "LibSNMP");
 		nutscan_avail_snmp = nutscan_load_snmp_library(libname);
 		free(libname);
+		libname = NULL;
 	} else {
 		/* let libtool (lt_dlopen) do its default magic maybe better */
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
@@ -283,6 +285,7 @@ void nutscan_init(void)
 			__func__, libname, "LibNeon");
 		nutscan_avail_xml_http = nutscan_load_neon_library(libname);
 		free(libname);
+		libname = NULL;
 	} else {
 		/* let libtool (lt_dlopen) do its default magic maybe better */
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
@@ -315,6 +318,7 @@ void nutscan_init(void)
 			__func__, libname, "LibAvahi");
 		nutscan_avail_avahi = nutscan_load_avahi_library(libname);
 		free(libname);
+		libname = NULL;
 	} else {
 		/* let libtool (lt_dlopen) do its default magic maybe better */
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
@@ -336,6 +340,7 @@ void nutscan_init(void)
 			__func__, libname, "LibFreeIPMI");
 		nutscan_avail_ipmi = nutscan_load_ipmi_library(libname);
 		free(libname);
+		libname = NULL;
 	} else {
 		/* let libtool (lt_dlopen) do its default magic maybe better */
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
@@ -367,6 +372,7 @@ void nutscan_init(void)
 			__func__, libname, "NUT Client library");
 		nutscan_avail_nut = nutscan_load_upsclient_library(libname);
 		free(libname);
+		libname = NULL;
 	} else {
 		/* let libtool (lt_dlopen) do its default magic maybe better */
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
