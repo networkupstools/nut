@@ -2096,7 +2096,7 @@ int main(int argc, char **argv)
 		 */
 		upslogx(LOG_WARNING, "Could not %s PID file '%s' "
 			"to see if previous upsd instance is "
-			"already running!",
+			"already running or not!",
 			(cmdret == -3 ? "find" : "parse"),
 			pidfn);
 		break;
