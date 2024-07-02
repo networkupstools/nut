@@ -3076,7 +3076,7 @@ int main(int argc, char *argv[])
 		 */
 		upslogx(LOG_WARNING, "Could not %s PID file "
 			"to see if previous upsmon instance is "
-			"already running!%s",
+			"already running or not!%s",
 			(cmdret == -3 ? "find" : "parse"),
 			(checking_flag ? " This is okay during OS shutdown, which is when checking POWERDOWNFLAG makes most sense." : ""));
 		break;
