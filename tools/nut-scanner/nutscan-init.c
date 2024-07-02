@@ -35,10 +35,14 @@
 #include <string.h>
 #include "nut-scan.h"
 
-#ifndef WIN32
-#define SOEXT ".so"
+#ifdef WIN32
+# define SOEXT ".dll"
 #else
-#define SOEXT ".dll"
+# if defined WITH_MACOSX && WITH_MACOSX
+#  define SOEXT ".dylib"
+# else	/* not WIN32, not MACOS */
+#  define SOEXT ".so"
+# endif
 #endif
 
 /* Flags for code paths we can support in this run (libs available or not
@@ -109,7 +113,7 @@ void do_upsconf_args(char *confupsname, char *var, char *val) {
 	NUT_UNUSED_VARIABLE(var);
 	NUT_UNUSED_VARIABLE(val);
 }
-#endif
+#endif	/* WIN32 */
 
 void nutscan_init(void)
 {
@@ -162,56 +166,134 @@ void nutscan_init(void)
 # endif
 #endif	/* HAVE_PTHREAD */
 
+	/* Below we proceed to try loading dynamic libraries at run-time.
+	 * This allows a pre-built `nut-scanner` binary to not require all
+	 * of the possible NUT prerequisites to be installed on a system
+	 * (needlessly expanding its footprint) and allows to package the
+	 * tool with conservative formal dependencies.
+	 *
+	 * From the build time we can remember full SOPATH_LIB<X> and/or
+	 * base SOFILE_LIB<X> with specific library file names available
+	 * on the build system (with ".so.X.Y.Z" extensions or "libX-YZ.dll"
+	 * embedded version identifiers).
+	 *
+	 * Historically we allow run-time environments to override the
+	 * library search paths (e.g. for bundled NUT installers that
+	 * may be incompatible with OS library builds), so we use full
+	 * SOPATH_LIB<X> as the last option, but prefer a presumably
+	 * known-compatible SOFILE_LIB<X> first.
+	 */
+
 #ifdef WITH_USB
- #if WITH_LIBUSB_1_0
-	libname = get_libname("libusb-1.0" SOEXT);
- #else
-	libname = get_libname("libusb-0.1" SOEXT);
-  #ifdef WIN32
+# if WITH_LIBUSB_1_0
+
+#  ifdef SOFILE_LIBUSB1
+	if (!libname) {
+		libname = get_libname(SOFILE_LIBUSB1);
+	}
+#  endif	/* SOFILE_LIBUSB1 */
+	if (!libname) {
+		libname = get_libname("libusb-1.0" SOEXT);
+	}
+#  ifdef SOPATH_LIBUSB1
+	if (!libname) {
+		libname = get_libname(SOPATH_LIBUSB1);
+	}
+#  endif	/* SOPATH_LIBUSB1 */
+
+# else	/* not WITH_LIBUSB_1_0 => WITH_LIBUSB_0_1 */
+
+#  ifdef SOFILE_LIBUSB0
+	if (!libname) {
+		libname = get_libname(SOFILE_LIBUSB0);
+	}
+#  endif	/* SOFILE_LIBUSB0 */
+	if (!libname) {
+		libname = get_libname("libusb-0.1" SOEXT);
+	}
+#  ifdef WIN32
 	/* TODO: Detect DLL name at build time, or rename it at install time? */
 	/* libusb-compat built for mingw per NUT instructions */
 	if (!libname) {
 		libname = get_libname("libusb-0-1-4" SOEXT);
 	}
-  #endif
- #endif
+#  endif	/* WIN32 */
+#  ifdef SOPATH_LIBUSB0
+	if (!libname) {
+		libname = get_libname(SOPATH_LIBUSB0);
+	}
+#  endif	/* SOPATH_LIBUSB0 */
+# endif	/* WITH_LIBUSB_X_Y */
+
 	if (!libname) {
 		/* We can also use libusb-compat from newer libusb-1.0 releases */
 		libname = get_libname("libusb" SOEXT);
 	}
+
 	if (libname) {
 		upsdebugx(1, "%s: get_libname() resolved '%s' for %s, loading it",
 			__func__, libname, "LibUSB");
 		nutscan_avail_usb = nutscan_load_usb_library(libname);
 		free(libname);
+		libname = NULL;
 	} else {
 		/* let libtool (lt_dlopen) do its default magic maybe better */
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
 			"trying to load it with libtool default resolver",
 			__func__, "LibUSB");
- #if WITH_LIBUSB_1_0
-		nutscan_avail_usb = nutscan_load_usb_library("libusb-1.0" SOEXT);
- #else
-		nutscan_avail_usb = nutscan_load_usb_library("libusb-0.1" SOEXT);
-  #ifdef WIN32
+
+# if WITH_LIBUSB_1_0
+
+#  ifdef SOFILE_LIBUSB1
+		if (!nutscan_avail_usb) {
+			nutscan_avail_usb = nutscan_load_usb_library(SOFILE_LIBUSB1);
+		}
+#  endif	/* SOFILE_LIBUSB1 */
+		if (!nutscan_avail_usb) {
+			nutscan_avail_usb = nutscan_load_usb_library("libusb-1.0" SOEXT);
+		}
+#  ifdef SOPATH_LIBUSB1
+		if (!nutscan_avail_usb) {
+			nutscan_avail_usb = nutscan_load_usb_library(SOPATH_LIBUSB1);
+		}
+#  endif	/* SOPATH_LIBUSB1 */
+
+# else	/* not WITH_LIBUSB_1_0 => WITH_LIBUSB_0_1 */
+
+#  ifdef SOFILE_LIBUSB0
+		if (!nutscan_avail_usb) {
+			nutscan_avail_usb = nutscan_load_usb_library(SOFILE_LIBUSB0);
+		}
+#  endif	/* SOFILE_LIBUSB0 */
+		if (!nutscan_avail_usb) {
+			nutscan_avail_usb = nutscan_load_usb_library("libusb-0.1" SOEXT);
+		}
+#  ifdef WIN32
 		if (!nutscan_avail_usb) {
 			nutscan_avail_usb = nutscan_load_usb_library("libusb-0-1-4" SOEXT);
 		}
-  #endif
- #endif
+#  endif	/* WIN32 */
+#  ifdef SOPATH_LIBUSB0
 		if (!nutscan_avail_usb) {
+			nutscan_avail_usb = nutscan_load_usb_library(SOPATH_LIBUSB0);
+		}
+#  endif	/* SOPATH_LIBUSB0 */
+# endif	/* WITH_LIBUSB_X_Y */
+
+		if (!nutscan_avail_usb) {
+			/* We can also use libusb-compat from newer libusb-1.0 releases */
 			nutscan_avail_usb = nutscan_load_usb_library("libusb" SOEXT);
 		}
 	}
 	upsdebugx(1, "%s: %s to load the library for %s",
 		__func__, nutscan_avail_usb ? "succeeded" : "failed", "LibUSB");
-#else
+#else	/* not WITH_USB */
 	upsdebugx(1, "%s: skipped loading the library for %s: was absent during NUT build",
 		__func__, "LibUSB");
 #endif	/* WITH_USB */
 
 #ifdef WITH_SNMP
- #ifdef WITH_SNMP_STATIC
+# ifdef WITH_SNMP_STATIC
 	/* This is a rare situation, reserved for platforms where libnetsnmp or
 	 * equivalent (some other ucd-snmp descendants) was not packaged, and
 	 * thus was custom-built for NUT (so linked statically to avoid potential
@@ -221,125 +303,230 @@ void nutscan_init(void)
 	upsdebugx(1, "%s: skipped loading the library for %s: was linked statically during NUT build",
 		__func__, "LibSNMP");
 	nutscan_avail_snmp = 1;
- #else
-	libname = get_libname("libnetsnmp" SOEXT);
-  #ifdef WIN32
+# else	/* not WITH_SNMP_STATIC */
+#  ifdef SOFILE_LIBNETSNMP
+	if (!libname) {
+		libname = get_libname(SOFILE_LIBNETSNMP);
+	}
+#  endif	/* SOFILE_LIBNETSNMP */
+	if (!libname) {
+		libname = get_libname("libnetsnmp" SOEXT);
+	}
+#  ifdef WIN32
 	if (!libname) {
 		libname = get_libname("libnetsnmp-40" SOEXT);
 	}
-  #endif
+#  endif	/* WIN32 */
+#  ifdef SOPATH_LIBNETSNMP
+	if (!libname) {
+		libname = get_libname(SOPATH_LIBNETSNMP);
+	}
+#  endif	/* SOPATH_LIBNETSNMP */
+
 	if (libname) {
 		upsdebugx(1, "%s: get_libname() resolved '%s' for %s, loading it",
 			__func__, libname, "LibSNMP");
 		nutscan_avail_snmp = nutscan_load_snmp_library(libname);
 		free(libname);
+		libname = NULL;
 	} else {
 		/* let libtool (lt_dlopen) do its default magic maybe better */
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
 			"trying to load it with libtool default resolver",
 			__func__, "LibSNMP");
-		nutscan_avail_snmp = nutscan_load_snmp_library("libnetsnmp" SOEXT);
-  #ifdef WIN32
+#  ifdef SOFILE_LIBNETSNMP
+		if (!nutscan_avail_snmp) {
+			nutscan_avail_snmp = nutscan_load_snmp_library(SOFILE_LIBNETSNMP);
+		}
+#  endif	/* SOFILE_LIBNETSNMP */
+		if (!nutscan_avail_snmp) {
+			nutscan_avail_snmp = nutscan_load_snmp_library("libnetsnmp" SOEXT);
+		}
+#  ifdef WIN32
 		if (!nutscan_avail_snmp) {
 			nutscan_avail_snmp = nutscan_load_snmp_library("libnetsnmp-40" SOEXT);
 		}
-  #endif
+#  endif	/* WIN32 */
+#  ifdef SOPATH_LIBNETSNMP
+		if (!nutscan_avail_snmp) {
+			nutscan_avail_snmp = nutscan_load_snmp_library(SOPATH_LIBNETSNMP);
+		}
+#  endif	/* SOPATH_LIBNETSNMP */
 	}
 	upsdebugx(1, "%s: %s to load the library for %s",
 		__func__, nutscan_avail_snmp ? "succeeded" : "failed", "LibSNMP");
- #endif	/* WITH_SNMP_STATIC */
-#else
+# endif	/* WITH_SNMP_STATIC */
+#else	/* not WITH_SNMP */
 	upsdebugx(1, "%s: skipped loading the library for %s: was absent during NUT build",
 		__func__, "LibSNMP");
 #endif	/* WITH_SNMP */
 
 #ifdef WITH_NEON
-	libname = get_libname("libneon" SOEXT);
+# ifdef SOFILE_LIBNEON
+	if (!libname) {
+		libname = get_libname(SOFILE_LIBNEON);
+	}
+# endif	/* SOFILE_LIBNEON */
+	if (!libname) {
+		libname = get_libname("libneon" SOEXT);
+	}
 	if (!libname) {
 		libname = get_libname("libneon-gnutls" SOEXT);
 	}
- #ifdef WIN32
+# ifdef WIN32
 	if (!libname) {
 		libname = get_libname("libneon-27" SOEXT);
 	}
 	if (!libname) {
 		libname = get_libname("libneon-gnutls-27" SOEXT);
 	}
- #endif
+# endif	/* WIN32 */
+# ifdef SOPATH_LIBNEON
+	if (!libname) {
+		libname = get_libname(SOPATH_LIBNEON);
+	}
+# endif	/* SOPATH_LIBNEON */
+
 	if (libname) {
 		upsdebugx(1, "%s: get_libname() resolved '%s' for %s, loading it",
 			__func__, libname, "LibNeon");
 		nutscan_avail_xml_http = nutscan_load_neon_library(libname);
 		free(libname);
+		libname = NULL;
 	} else {
 		/* let libtool (lt_dlopen) do its default magic maybe better */
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
 			"trying to load it with libtool default resolver",
 			__func__, "LibNeon");
-		nutscan_avail_xml_http = nutscan_load_neon_library("libneon" SOEXT);
+# ifdef SOFILE_LIBNEON
+		if (!nutscan_avail_xml_http) {
+			nutscan_avail_xml_http = nutscan_load_neon_library(SOFILE_LIBNEON);
+		}
+# endif	/* SOFILE_LIBNEON */
+		if (!nutscan_avail_xml_http) {
+			nutscan_avail_xml_http = nutscan_load_neon_library("libneon" SOEXT);
+		}
 		if (!nutscan_avail_xml_http) {
 			nutscan_avail_xml_http = nutscan_load_neon_library("libneon-gnutls" SOEXT);
 		}
-#ifdef WIN32
+# ifdef WIN32
 		if (!nutscan_avail_xml_http) {
 			nutscan_avail_xml_http = nutscan_load_neon_library("libneon-27" SOEXT);
 		}
 		if (!nutscan_avail_xml_http) {
 			nutscan_avail_xml_http = nutscan_load_neon_library("libneon-gnutls-27" SOEXT);
 		}
-#endif
+# endif	/* WIN32 */
+# ifdef SOPATH_LIBNEON
+		if (!nutscan_avail_xml_http) {
+			nutscan_avail_xml_http = nutscan_load_neon_library(SOPATH_LIBNEON);
+		}
+# endif	/* SOPATH_LIBNEON */
 	}
 	upsdebugx(1, "%s: %s to load the library for %s",
 		__func__, nutscan_avail_xml_http ? "succeeded" : "failed", "LibNeon");
-#else
+#else	/* not WITH_NEON */
 	upsdebugx(1, "%s: skipped loading the library for %s: was absent during NUT build",
 		__func__, "LibNeon");
 #endif	/* WITH_NEON */
 
 #ifdef WITH_AVAHI
-	libname = get_libname("libavahi-client" SOEXT);
+# ifdef SOFILE_LIBAVAHI
+	if (!libname) {
+		libname = get_libname(SOFILE_LIBAVAHI);
+	}
+# endif	/* SOFILE_LIBAVAHI */
+	if (!libname) {
+		libname = get_libname("libavahi-client" SOEXT);
+	}
+# ifdef SOPATH_LIBAVAHI
+	if (!libname) {
+		libname = get_libname(SOPATH_LIBAVAHI);
+	}
+# endif	/* SOPATH_LIBAVAHI */
+
 	if (libname) {
 		upsdebugx(1, "%s: get_libname() resolved '%s' for %s, loading it",
 			__func__, libname, "LibAvahi");
 		nutscan_avail_avahi = nutscan_load_avahi_library(libname);
 		free(libname);
+		libname = NULL;
 	} else {
 		/* let libtool (lt_dlopen) do its default magic maybe better */
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
 			"trying to load it with libtool default resolver",
 			__func__, "LibAvahi");
-		nutscan_avail_avahi = nutscan_load_avahi_library("libavahi-client" SOEXT);
+# ifdef SOFILE_LIBAVAHI
+		if (!nutscan_avail_avahi) {
+			nutscan_avail_avahi = nutscan_load_avahi_library(SOFILE_LIBAVAHI);
+		}
+# endif	/* SOFILE_LIBAVAHI */
+		if (!nutscan_avail_avahi) {
+			nutscan_avail_avahi = nutscan_load_avahi_library("libavahi-client" SOEXT);
+# ifdef SOPATH_LIBAVAHI
+		if (!nutscan_avail_avahi) {
+			nutscan_avail_avahi = nutscan_load_avahi_library(SOPATH_LIBAVAHI);
+		}
+# endif	/* SOPATH_LIBAVAHI */
+		}
 	}
 	upsdebugx(1, "%s: %s to load the library for %s",
 		__func__, nutscan_avail_avahi ? "succeeded" : "failed", "LibAvahi");
-#else
+#else	/* not WITH_AVAHI */
 	upsdebugx(1, "%s: skipped loading the library for %s: was absent during NUT build",
 		__func__, "LibAvahi");
 #endif	/* WITH_AVAHI */
 
 #ifdef WITH_FREEIPMI
-	libname = get_libname("libfreeipmi" SOEXT);
+# ifdef SOFILE_LIBFREEIPMI
+	if (!libname) {
+		libname = get_libname(SOFILE_LIBFREEIPMI);
+	}
+# endif	/* SOFILE_LIBFREEIPMI */
+	if (!libname) {
+		libname = get_libname("libfreeipmi" SOEXT);
+	}
+# ifdef SOPATH_LIBFREEIPMI
+	if (!libname) {
+		libname = get_libname(SOPATH_LIBFREEIPMI);
+	}
+# endif	/* SOPATH_LIBAVAHI */
 	if (libname) {
 		upsdebugx(1, "%s: get_libname() resolved '%s' for %s, loading it",
 			__func__, libname, "LibFreeIPMI");
 		nutscan_avail_ipmi = nutscan_load_ipmi_library(libname);
 		free(libname);
+		libname = NULL;
 	} else {
 		/* let libtool (lt_dlopen) do its default magic maybe better */
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
 			"trying to load it with libtool default resolver",
 			__func__, "LibFreeIPMI");
-		nutscan_avail_ipmi = nutscan_load_ipmi_library("libfreeipmi" SOEXT);
+# ifdef SOFILE_LIBFREEIPMI
+		if (!nutscan_avail_ipmi) {
+			nutscan_avail_ipmi = nutscan_load_ipmi_library(SOFILE_LIBFREEIPMI);
+		}
+# endif	/* SOFILE_LIBFREEIPMI */
+		if (!nutscan_avail_ipmi) {
+			nutscan_avail_ipmi = nutscan_load_ipmi_library("libfreeipmi" SOEXT);
+		}
+# ifdef SOPATH_LIBFREEIPMI
+		if (!nutscan_avail_ipmi) {
+			nutscan_avail_ipmi = nutscan_load_ipmi_library(SOPATH_LIBFREEIPMI);
+		}
+# endif	/* SOPATH_LIBFREEIPMI */
 	}
 	upsdebugx(1, "%s: %s to load the library for %s",
 		__func__, nutscan_avail_ipmi ? "succeeded" : "failed", "LibFreeIPMI");
-#else
+#else	/* not WITH_FREEIPMI */
 	upsdebugx(1, "%s: skipped loading the library for %s: was absent during NUT build",
 		__func__, "LibFreeIPMI");
 #endif	/* WITH_FREEIPMI */
 
 /* start of libupsclient for "old NUT" (vs. Avahi) protocol - unconditional */
-	libname = get_libname("libupsclient" SOEXT);
+	if (!libname) {
+		libname = get_libname("libupsclient" SOEXT);
+	}
 #ifdef WIN32
 	/* TODO: Detect DLL name at build time, or rename it at install time? */
 	/* e.g. see clients/Makefile.am for version-info value */
@@ -349,12 +536,13 @@ void nutscan_init(void)
 	if (!libname) {
 		libname = get_libname("libupsclient-3" SOEXT);
 	}
-#endif
+#endif	/* WIN32 */
 	if (libname) {
 		upsdebugx(1, "%s: get_libname() resolved '%s' for %s, loading it",
 			__func__, libname, "NUT Client library");
 		nutscan_avail_nut = nutscan_load_upsclient_library(libname);
 		free(libname);
+		libname = NULL;
 	} else {
 		/* let libtool (lt_dlopen) do its default magic maybe better */
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
@@ -368,7 +556,7 @@ void nutscan_init(void)
 		if (!nutscan_avail_nut) {
 			nutscan_avail_nut = nutscan_load_upsclient_library("libupsclient-3" SOEXT);
 		}
-#endif
+#endif	/* WIN32 */
 	}
 	upsdebugx(1, "%s: %s to load the library for %s",
 		__func__, nutscan_avail_nut ? "succeeded" : "failed", "NUT Client library");

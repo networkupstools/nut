@@ -1371,16 +1371,21 @@ Currently known dependencies for basic build include:
 :; HOMEBREW_NO_AUTO_UPDATE=1; export HOMEBREW_NO_AUTO_UPDATE
 
 # Required:
-:; brew install ccache bash libtool pkg-config gd libusb neon net-snmp openssl
+:; brew install ccache bash libtool pkg-config gd libusb neon net-snmp openssl \
+        binutils autoconf automake git m4
 ----
 
 Note that ccache is installed in a different location than expected by default
 in the `ci_build.sh` script, so if your system allows to add the symbolic link
-to `/usr/local/opt/ccache/libexec` as `/usr/lib/ccache` -- please do so as the
-easiest way out. Alternatively, to prepare building sessions with `ci_build.sh`
-you can:
+to `/opt/homebrew/opt/ccache/libexec` (earlier `/usr/local/opt/ccache/libexec`)
+as `/usr/lib/ccache` -- please do so as the easiest way out.
+
+Alternatively, to prepare building sessions with `ci_build.sh` you can:
 ----
-:; export CI_CCACHE_SYMLINKDIR="/usr/local/opt/ccache/libexec"
+:; export CI_CCACHE_SYMLINKDIR="/opt/homebrew/opt/ccache/libexec"
+
+### ...or for older builders:
+#:; export CI_CCACHE_SYMLINKDIR="/usr/local/opt/ccache/libexec"
 ----
 
 
