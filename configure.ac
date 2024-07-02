@@ -2447,7 +2447,7 @@ if test x"${nut_with_nut_monitor}" != xno ; then
 fi
 
 dnl ${nut_with_pynut}: TODO: arg values to request python 2, 3 or both
-AC_MSG_CHECKING([if we can and should install PyNUT module])
+AC_MSG_CHECKING([if we can and should install PyNUT module (note for warnings from python 3.11 and beyond: we have a fallback nut_telnetlib module just in case)])
 nut_with_pynut_py=""
 nut_with_pynut_py2=""
 nut_with_pynut_py3=""
@@ -2469,6 +2469,15 @@ if test x"${nut_with_pynut}" != xno \
         if ${PYTHON3} -c "import telnetlib" \
         ; then
             nut_with_pynut_py3="yes"
+        else
+            dnl We have a stashed copy from Python 3.10, so
+            dnl this line essentially checks for presence of
+            dnl a usable interpreter implementation compatible
+            dnl with Python 3.x syntax.
+            if (cd script/python/module && ${PYTHON3} -c "import nut_telnetlib as telnetlib") \
+            ; then
+                nut_with_pynut_py3="yes"
+            fi
         fi
     fi
 
@@ -2480,6 +2489,12 @@ if test x"${nut_with_pynut}" != xno \
         if ${PYTHON} -c "import telnetlib" \
         ; then
             nut_with_pynut_py="yes"
+        else
+            dnl See comments above
+            if (cd script/python/module && ${PYTHON} -c "import nut_telnetlib as telnetlib") \
+            ; then
+                nut_with_pynut_py="yes"
+            fi
         fi
     fi
 fi

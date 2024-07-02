@@ -162,6 +162,10 @@ https://github.com/networkupstools/nut/milestone/11
    as a service, have a help message, pass debug verbosity to launched NUT
    programs...) and add a man page for it. [issue #2432, PR #2446]
 
+ - the `PyNUTClient` module should no longer rely on presence of a `telnetlib`
+   module in the build or execution environment (deprecated in Python 3.11,
+   removed since Python 3.13). [#2183]
+
  - enabled installation of built single-file PDF and HTML (including man page
    renditions) under the configured `docdir`. It seems previously they were
    only built (if requested) but not installed via `make`, unlike the common
