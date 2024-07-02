@@ -76,8 +76,10 @@ AC_DEFUN([AX_REALPATH_LIB],
                     dnl ...which we then resolve with dlltool into a libnetsnmp-40.dll
                     dnl and finally find one in /usr/x86_64-w64-mingw32/bin/libnetsnmp-40.dll
                     dnl (note the version number embedded into base name).
-                    myLIBPATH="`$LD --verbose -Bdynamic ${myLIBNAME_LD} | grep -wi dll | tail -1`" \
-                    && test -n "${myLIBPATH}" && test -s "${myLIBPATH}" \
+                    { myLIBPATH="`$LD --verbose -Bdynamic ${myLIBNAME_LD} | grep -wi dll | tail -1`" \
+                    && test -n "${myLIBPATH}" && test -s "${myLIBPATH}" ; } \
+                    || { myLIBPATH="`$LD $LDFLAGS $LIBS --verbose -Bdynamic ${myLIBNAME_LD} | grep -wi dll | tail -1`" \
+                    && test -n "${myLIBPATH}" && test -s "${myLIBPATH}" ; } \
                     || myLIBPATH=""
 
                     dnl Resolve dynamic library "internal" name from its stub, if needed
@@ -109,8 +111,11 @@ AC_DEFUN([AX_REALPATH_LIB],
                         ]
                     )
                 ])
-            ], [ dnl # POSIX builds
-                myLIBPATH="`${CC} --print-file-name="$myLIBNAME"`" || myLIBPATH=""
+            ], [ dnl # POSIX/MacOS builds
+                { myLIBPATH="`${CC} --print-file-name="$myLIBNAME"`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
+                || { myLIBPATH="`${CC} $CFLAGS --print-file-name="$myLIBNAME"`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
+                || { myLIBPATH="`${CC} $CFLAGS $LDFLAGS $LIBS --print-file-name="$myLIBNAME"`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
+                || myLIBPATH=""
             ])
 
         AS_IF([test -n "${myLIBPATH}" && test -s "${myLIBPATH}"], [
