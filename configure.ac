@@ -2573,6 +2573,18 @@ AC_SUBST([nut_with_pynut_py], [${nut_with_pynut_py}])
 AC_SUBST([nut_with_pynut_py2], [${nut_with_pynut_py2}])
 AC_SUBST([nut_with_pynut_py3], [${nut_with_pynut_py3}])
 
+dnl MacOS Darwin has a problem with script shebangs, and tends to run anything
+dnl with shell. On the upside, it has no limit on length or amount of tokens
+dnl in the shebang line.
+dnl https://github.com/NixOS/nixpkgs/issues/65351/
+AS_CASE([${target_os}],
+	[*darwin*], [
+		AS_IF([test -n "${PYTHON}"  -a x"${PYTHON}"  != xno], [ PYTHON=" /usr/bin/env ${PYTHON}"])
+		AS_IF([test -n "${PYTHON2}" -a x"${PYTHON2}" != xno], [PYTHON2=" /usr/bin/env ${PYTHON2}"])
+		AS_IF([test -n "${PYTHON3}" -a x"${PYTHON3}" != xno], [PYTHON3=" /usr/bin/env ${PYTHON3}"])
+		]
+)
+
 AS_IF([test "${nut_with_nut_monitor}" != no -o "${nut_with_pynut}" != no], [
     NUT_REPORT([use default  Python  interpreter],   [${PYTHON}])
     NUT_REPORT([use specific Python2 interpreter],   [${PYTHON2}])
