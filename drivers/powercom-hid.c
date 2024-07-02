@@ -93,7 +93,7 @@ static const char *powercom_shutdown_fun(double value)
 {
 	uint16_t	i = value;
 
-	snprintf(powercom_scratch_buf, sizeof(powercom_scratch_buf), "%d", 60 * (i & 0x00FF) + (i >> 8));
+	snprintf(powercom_scratch_buf, sizeof(powercom_scratch_buf), "%d", 60 * (i >> 8) + (i & 0x00FF));
 	upsdebugx(3, "%s: value = %.0f, buf = %s", __func__, value, powercom_scratch_buf);
 
 	return powercom_scratch_buf;
@@ -113,8 +113,8 @@ static double powercom_shutdown_nuf(const char *value)
 
 	val = (uint16_t)iv;
 	val = val ? val : 1;    /* 0 sets the maximum delay */
-	command = ((uint16_t)((val % 60) << 8)) + (uint16_t)(val / 60);
-	command |= 0x4000;	/* AC RESTART NORMAL ENABLE */
+	command = ((uint16_t)((val / 60) << 8)) + (uint16_t)(val % 60);
+	command |= 0x0040;	/* AC RESTART NORMAL ENABLE */
 	upsdebugx(3, "%s: value = %s, command = %04X", __func__, value, command);
 
 	return command;
@@ -138,8 +138,8 @@ static double powercom_stayoff_nuf(const char *value)
 
 	val = (uint16_t)iv;
 	val = val ? val : 1;    /* 0 sets the maximum delay */
-	command = ((uint16_t)((val % 60) << 8)) + (uint16_t)(val / 60);
-	command |= 0x8000;	/* AC RESTART NORMAL DISABLE */
+	command = ((uint16_t)((val / 60) << 8)) + (uint16_t)(val % 60);
+	command |= 0x0080;	/* AC RESTART NORMAL DISABLE */
 	upsdebugx(3, "%s: value = %s, command = %04X", __func__, value, command);
 
 	return command;
