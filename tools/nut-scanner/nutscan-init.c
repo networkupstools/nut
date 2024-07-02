@@ -171,13 +171,46 @@ void nutscan_init(void)
 	 * of the possible NUT prerequisites to be installed on a system
 	 * (needlessly expanding its footprint) and allows to package the
 	 * tool with conservative formal dependencies.
+	 *
+	 * From the build time we can remember full SOPATH_LIB<X> and/or
+	 * base SOFILE_LIB<X> with specific library file names available
+	 * on the build system (with ".so.X.Y.Z" extensions or "libX-YZ.dll"
+	 * embedded version identifiers).
+	 *
+	 * Historically we allow run-time environments to override the
+	 * library search paths (e.g. for bundled NUT installers that
+	 * may be incompatible with OS library builds), so we use full
+	 * SOPATH_LIB<X> as the last option, but prefer a presumably
+	 * known-compatible SOFILE_LIB<X> first.
 	 */
 
 #ifdef WITH_USB
 # if WITH_LIBUSB_1_0
-	libname = get_libname("libusb-1.0" SOEXT);
+
+#  ifdef SOFILE_LIBUSB1
+	if (!libname) {
+		libname = get_libname(SOFILE_LIBUSB1);
+	}
+#  endif	/* SOFILE_LIBUSB1 */
+	if (!libname) {
+		libname = get_libname("libusb-1.0" SOEXT);
+	}
+#  ifdef SOPATH_LIBUSB1
+	if (!libname) {
+		libname = get_libname(SOPATH_LIBUSB1);
+	}
+#  endif	/* SOPATH_LIBUSB1 */
+
 # else	/* not WITH_LIBUSB_1_0 => WITH_LIBUSB_0_1 */
-	libname = get_libname("libusb-0.1" SOEXT);
+
+#  ifdef SOFILE_LIBUSB0
+	if (!libname) {
+		libname = get_libname(SOFILE_LIBUSB0);
+	}
+#  endif	/* SOFILE_LIBUSB0 */
+	if (!libname) {
+		libname = get_libname("libusb-0.1" SOEXT);
+	}
 #  ifdef WIN32
 	/* TODO: Detect DLL name at build time, or rename it at install time? */
 	/* libusb-compat built for mingw per NUT instructions */
@@ -185,11 +218,18 @@ void nutscan_init(void)
 		libname = get_libname("libusb-0-1-4" SOEXT);
 	}
 #  endif	/* WIN32 */
+#  ifdef SOPATH_LIBUSB0
+	if (!libname) {
+		libname = get_libname(SOPATH_LIBUSB0);
+	}
+#  endif	/* SOPATH_LIBUSB0 */
 # endif	/* WITH_LIBUSB_X_Y */
+
 	if (!libname) {
 		/* We can also use libusb-compat from newer libusb-1.0 releases */
 		libname = get_libname("libusb" SOEXT);
 	}
+
 	if (libname) {
 		upsdebugx(1, "%s: get_libname() resolved '%s' for %s, loading it",
 			__func__, libname, "LibUSB");
@@ -201,16 +241,45 @@ void nutscan_init(void)
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
 			"trying to load it with libtool default resolver",
 			__func__, "LibUSB");
+
 # if WITH_LIBUSB_1_0
-		nutscan_avail_usb = nutscan_load_usb_library("libusb-1.0" SOEXT);
+
+#  ifdef SOFILE_LIBUSB1
+		if (!nutscan_avail_usb) {
+			nutscan_avail_usb = nutscan_load_usb_library(SOFILE_LIBUSB1);
+		}
+#  endif	/* SOFILE_LIBUSB1 */
+		if (!nutscan_avail_usb) {
+			nutscan_avail_usb = nutscan_load_usb_library("libusb-1.0" SOEXT);
+		}
+#  ifdef SOPATH_LIBUSB1
+		if (!nutscan_avail_usb) {
+			nutscan_avail_usb = nutscan_load_usb_library(SOPATH_LIBUSB1);
+		}
+#  endif	/* SOPATH_LIBUSB1 */
+
 # else	/* not WITH_LIBUSB_1_0 => WITH_LIBUSB_0_1 */
-		nutscan_avail_usb = nutscan_load_usb_library("libusb-0.1" SOEXT);
+
+#  ifdef SOFILE_LIBUSB0
+		if (!nutscan_avail_usb) {
+			nutscan_avail_usb = nutscan_load_usb_library(SOFILE_LIBUSB0);
+		}
+#  endif	/* SOFILE_LIBUSB0 */
+		if (!nutscan_avail_usb) {
+			nutscan_avail_usb = nutscan_load_usb_library("libusb-0.1" SOEXT);
+		}
 #  ifdef WIN32
 		if (!nutscan_avail_usb) {
 			nutscan_avail_usb = nutscan_load_usb_library("libusb-0-1-4" SOEXT);
 		}
 #  endif	/* WIN32 */
+#  ifdef SOPATH_LIBUSB0
+		if (!nutscan_avail_usb) {
+			nutscan_avail_usb = nutscan_load_usb_library(SOPATH_LIBUSB0);
+		}
+#  endif	/* SOPATH_LIBUSB0 */
 # endif	/* WITH_LIBUSB_X_Y */
+
 		if (!nutscan_avail_usb) {
 			/* We can also use libusb-compat from newer libusb-1.0 releases */
 			nutscan_avail_usb = nutscan_load_usb_library("libusb" SOEXT);
@@ -235,12 +304,25 @@ void nutscan_init(void)
 		__func__, "LibSNMP");
 	nutscan_avail_snmp = 1;
 # else	/* not WITH_SNMP_STATIC */
-	libname = get_libname("libnetsnmp" SOEXT);
+#  ifdef SOFILE_LIBNETSNMP
+	if (!libname) {
+		libname = get_libname(SOFILE_LIBNETSNMP);
+	}
+#  endif	/* SOFILE_LIBNETSNMP */
+	if (!libname) {
+		libname = get_libname("libnetsnmp" SOEXT);
+	}
 #  ifdef WIN32
 	if (!libname) {
 		libname = get_libname("libnetsnmp-40" SOEXT);
 	}
 #  endif	/* WIN32 */
+#  ifdef SOPATH_LIBNETSNMP
+	if (!libname) {
+		libname = get_libname(SOPATH_LIBNETSNMP);
+	}
+#  endif	/* SOPATH_LIBNETSNMP */
+
 	if (libname) {
 		upsdebugx(1, "%s: get_libname() resolved '%s' for %s, loading it",
 			__func__, libname, "LibSNMP");
@@ -252,12 +334,24 @@ void nutscan_init(void)
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
 			"trying to load it with libtool default resolver",
 			__func__, "LibSNMP");
-		nutscan_avail_snmp = nutscan_load_snmp_library("libnetsnmp" SOEXT);
+#  ifdef SOFILE_LIBNETSNMP
+		if (!nutscan_avail_snmp) {
+			nutscan_avail_snmp = nutscan_load_snmp_library(SOFILE_LIBNETSNMP);
+		}
+#  endif	/* SOFILE_LIBNETSNMP */
+		if (!nutscan_avail_snmp) {
+			nutscan_avail_snmp = nutscan_load_snmp_library("libnetsnmp" SOEXT);
+		}
 #  ifdef WIN32
 		if (!nutscan_avail_snmp) {
 			nutscan_avail_snmp = nutscan_load_snmp_library("libnetsnmp-40" SOEXT);
 		}
 #  endif	/* WIN32 */
+#  ifdef SOPATH_LIBNETSNMP
+		if (!nutscan_avail_snmp) {
+			nutscan_avail_snmp = nutscan_load_snmp_library(SOPATH_LIBNETSNMP);
+		}
+#  endif	/* SOPATH_LIBNETSNMP */
 	}
 	upsdebugx(1, "%s: %s to load the library for %s",
 		__func__, nutscan_avail_snmp ? "succeeded" : "failed", "LibSNMP");
@@ -268,7 +362,14 @@ void nutscan_init(void)
 #endif	/* WITH_SNMP */
 
 #ifdef WITH_NEON
-	libname = get_libname("libneon" SOEXT);
+# ifdef SOFILE_LIBNEON
+	if (!libname) {
+		libname = get_libname(SOFILE_LIBNEON);
+	}
+# endif	/* SOFILE_LIBNEON */
+	if (!libname) {
+		libname = get_libname("libneon" SOEXT);
+	}
 	if (!libname) {
 		libname = get_libname("libneon-gnutls" SOEXT);
 	}
@@ -280,6 +381,12 @@ void nutscan_init(void)
 		libname = get_libname("libneon-gnutls-27" SOEXT);
 	}
 # endif	/* WIN32 */
+# ifdef SOPATH_LIBNEON
+	if (!libname) {
+		libname = get_libname(SOPATH_LIBNEON);
+	}
+# endif	/* SOPATH_LIBNEON */
+
 	if (libname) {
 		upsdebugx(1, "%s: get_libname() resolved '%s' for %s, loading it",
 			__func__, libname, "LibNeon");
@@ -291,7 +398,14 @@ void nutscan_init(void)
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
 			"trying to load it with libtool default resolver",
 			__func__, "LibNeon");
-		nutscan_avail_xml_http = nutscan_load_neon_library("libneon" SOEXT);
+# ifdef SOFILE_LIBNEON
+		if (!nutscan_avail_xml_http) {
+			nutscan_avail_xml_http = nutscan_load_neon_library(SOFILE_LIBNEON);
+		}
+# endif	/* SOFILE_LIBNEON */
+		if (!nutscan_avail_xml_http) {
+			nutscan_avail_xml_http = nutscan_load_neon_library("libneon" SOEXT);
+		}
 		if (!nutscan_avail_xml_http) {
 			nutscan_avail_xml_http = nutscan_load_neon_library("libneon-gnutls" SOEXT);
 		}
@@ -303,6 +417,11 @@ void nutscan_init(void)
 			nutscan_avail_xml_http = nutscan_load_neon_library("libneon-gnutls-27" SOEXT);
 		}
 # endif	/* WIN32 */
+# ifdef SOPATH_LIBNEON
+		if (!nutscan_avail_xml_http) {
+			nutscan_avail_xml_http = nutscan_load_neon_library(SOPATH_LIBNEON);
+		}
+# endif	/* SOPATH_LIBNEON */
 	}
 	upsdebugx(1, "%s: %s to load the library for %s",
 		__func__, nutscan_avail_xml_http ? "succeeded" : "failed", "LibNeon");
@@ -312,7 +431,20 @@ void nutscan_init(void)
 #endif	/* WITH_NEON */
 
 #ifdef WITH_AVAHI
-	libname = get_libname("libavahi-client" SOEXT);
+# ifdef SOFILE_LIBAVAHI
+	if (!libname) {
+		libname = get_libname(SOFILE_LIBAVAHI);
+	}
+# endif	/* SOFILE_LIBAVAHI */
+	if (!libname) {
+		libname = get_libname("libavahi-client" SOEXT);
+	}
+# ifdef SOPATH_LIBAVAHI
+	if (!libname) {
+		libname = get_libname(SOPATH_LIBAVAHI);
+	}
+# endif	/* SOPATH_LIBAVAHI */
+
 	if (libname) {
 		upsdebugx(1, "%s: get_libname() resolved '%s' for %s, loading it",
 			__func__, libname, "LibAvahi");
@@ -324,7 +456,19 @@ void nutscan_init(void)
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
 			"trying to load it with libtool default resolver",
 			__func__, "LibAvahi");
-		nutscan_avail_avahi = nutscan_load_avahi_library("libavahi-client" SOEXT);
+# ifdef SOFILE_LIBAVAHI
+		if (!nutscan_avail_avahi) {
+			nutscan_avail_avahi = nutscan_load_avahi_library(SOFILE_LIBAVAHI);
+		}
+# endif	/* SOFILE_LIBAVAHI */
+		if (!nutscan_avail_avahi) {
+			nutscan_avail_avahi = nutscan_load_avahi_library("libavahi-client" SOEXT);
+# ifdef SOPATH_LIBAVAHI
+		if (!nutscan_avail_avahi) {
+			nutscan_avail_avahi = nutscan_load_avahi_library(SOPATH_LIBAVAHI);
+		}
+# endif	/* SOPATH_LIBAVAHI */
+		}
 	}
 	upsdebugx(1, "%s: %s to load the library for %s",
 		__func__, nutscan_avail_avahi ? "succeeded" : "failed", "LibAvahi");
@@ -334,7 +478,19 @@ void nutscan_init(void)
 #endif	/* WITH_AVAHI */
 
 #ifdef WITH_FREEIPMI
-	libname = get_libname("libfreeipmi" SOEXT);
+# ifdef SOFILE_LIBFREEIPMI
+	if (!libname) {
+		libname = get_libname(SOFILE_LIBFREEIPMI);
+	}
+# endif	/* SOFILE_LIBFREEIPMI */
+	if (!libname) {
+		libname = get_libname("libfreeipmi" SOEXT);
+	}
+# ifdef SOPATH_LIBFREEIPMI
+	if (!libname) {
+		libname = get_libname(SOPATH_LIBFREEIPMI);
+	}
+# endif	/* SOPATH_LIBAVAHI */
 	if (libname) {
 		upsdebugx(1, "%s: get_libname() resolved '%s' for %s, loading it",
 			__func__, libname, "LibFreeIPMI");
@@ -346,7 +502,19 @@ void nutscan_init(void)
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
 			"trying to load it with libtool default resolver",
 			__func__, "LibFreeIPMI");
-		nutscan_avail_ipmi = nutscan_load_ipmi_library("libfreeipmi" SOEXT);
+# ifdef SOFILE_LIBFREEIPMI
+		if (!nutscan_avail_ipmi) {
+			nutscan_avail_ipmi = nutscan_load_ipmi_library(SOFILE_LIBFREEIPMI);
+		}
+# endif	/* SOFILE_LIBFREEIPMI */
+		if (!nutscan_avail_ipmi) {
+			nutscan_avail_ipmi = nutscan_load_ipmi_library("libfreeipmi" SOEXT);
+		}
+# ifdef SOPATH_LIBFREEIPMI
+		if (!nutscan_avail_ipmi) {
+			nutscan_avail_ipmi = nutscan_load_ipmi_library(SOPATH_LIBFREEIPMI);
+		}
+# endif	/* SOPATH_LIBFREEIPMI */
 	}
 	upsdebugx(1, "%s: %s to load the library for %s",
 		__func__, nutscan_avail_ipmi ? "succeeded" : "failed", "LibFreeIPMI");
@@ -356,7 +524,9 @@ void nutscan_init(void)
 #endif	/* WITH_FREEIPMI */
 
 /* start of libupsclient for "old NUT" (vs. Avahi) protocol - unconditional */
-	libname = get_libname("libupsclient" SOEXT);
+	if (!libname) {
+		libname = get_libname("libupsclient" SOEXT);
+	}
 #ifdef WIN32
 	/* TODO: Detect DLL name at build time, or rename it at install time? */
 	/* e.g. see clients/Makefile.am for version-info value */
