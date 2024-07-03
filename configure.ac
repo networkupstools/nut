@@ -2336,13 +2336,16 @@ dnl their existence once (in NUT_CHECK*PYTHON* m4 macros).
 
 dnl ${nut_with_nut_monitor}: TODO: arg values to request python 2 gtk2,
 dnl python 3 qt5, or both
-AC_MSG_CHECKING([if we can and should install NUT-Monitor desktop application])
+AC_MSG_CHECKING([if we want install NUT-Monitor desktop application])
+AC_MSG_RESULT([${nut_with_nut_monitor}])
 nut_with_nut_monitor_py2gtk2=""
 nut_with_nut_monitor_py3qt5=""
 nut_with_nut_monitor_desktop=""
 dnl TODO: Add a way to define this path? will have app/ maybe module/ inside...
 nut_with_nut_monitor_dir="${datarootdir}/nut-monitor"
+
 PYTHON_FAILED_TEST_DETAILS=""
+dnl ### AC_MSG_NOTICE([nut_with_nut_monitor-1: ${nut_with_nut_monitor}])
 if test x"${nut_with_nut_monitor}" != xno ; then
     dnl While we might just install for "yes" request, in hopes user would
     dnl get their python ecosystem in place later, we need some criteria to
@@ -2357,6 +2360,7 @@ if test x"${nut_with_nut_monitor}" != xno ; then
         esac
     fi
 fi
+dnl ### AC_MSG_NOTICE([nut_with_nut_monitor-2: ${nut_with_nut_monitor}])
 
 if test x"${nut_with_nut_monitor}" != xno ; then
     dnl Note: no double-quoting for use, the command string may be multi-token
@@ -2365,19 +2369,25 @@ if test x"${nut_with_nut_monitor}" != xno ; then
     PYTHON2_TEST_MODULES="re,glob,codecs,gtk,gtk.glade,gobject,ConfigParser"
     PYTHON3_TEST_MODULES="re,glob,codecs,PyQt5.uic,configparser"
     if test -n "${PYTHON2_VERSION_INFO_REPORT}" ; then
+        AC_MSG_CHECKING([if have python2 prerequisites for NUT-Monitor desktop application])
         if ${PYTHON2} -c "import ${PYTHON2_TEST_MODULES}" 1>&5 2>&5 \
         ; then
             nut_with_nut_monitor_py2gtk2="yes"
+            AC_MSG_RESULT([yes])
         else
+            AC_MSG_RESULT([no])
             PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python2 modules: '${PYTHON2_TEST_MODULES}'"
         fi
     fi
 
     if test -n "${PYTHON3_VERSION_INFO_REPORT}" ; then
+        AC_MSG_CHECKING([if have python3 prerequisites for NUT-Monitor desktop application])
         if ${PYTHON3} -c "import ${PYTHON3_TEST_MODULES}" 1>&5 2>&5 \
         ; then
             nut_with_nut_monitor_py3qt5="yes"
+            AC_MSG_RESULT([yes])
         else
+            AC_MSG_RESULT([no])
             PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python3 modules: '${PYTHON3_TEST_MODULES}'"
         fi
     fi
@@ -2388,18 +2398,24 @@ if test x"${nut_with_nut_monitor}" != xno ; then
     && test x"${PYTHON_VERSION_INFO_REPORT}" != x"${PYTHON3_VERSION_INFO_REPORT}" \
     && test x"${PYTHON_VERSION_INFO_REPORT}" != x"${PYTHON2_VERSION_INFO_REPORT}" \
     ; then
+        AC_MSG_CHECKING([if have python3 prerequisites for NUT-Monitor desktop application in default python])
         if ${PYTHON} -c "import ${PYTHON3_TEST_MODULES}" 1>&5 2>&5 \
         ; then
             nut_with_nut_monitor_py3qt5="yes"
+            AC_MSG_RESULT([yes])
         else
+            AC_MSG_RESULT([no])
             PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python3 modules: '${PYTHON3_TEST_MODULES}'"
         fi
 
+        AC_MSG_CHECKING([if have python2 prerequisites for NUT-Monitor desktop application in default python])
         if ${PYTHON} -c "import ${PYTHON2_TEST_MODULES}" 1>&5 2>&5 \
         ; then
             nut_with_nut_monitor_py2gtk2="yes"
             PYTHON_FAILED_TEST_DETAILS=""
+            AC_MSG_RESULT([yes])
         else
+            AC_MSG_RESULT([no])
             if test -n "${PYTHON_FAILED_TEST_DETAILS}" ; then
                 PYTHON_FAILED_TEST_DETAILS="${PYTHON_FAILED_TEST_DETAILS} and some or all of these Python2 modules: '${PYTHON2_TEST_MODULES}'"
             else
@@ -2408,6 +2424,9 @@ if test x"${nut_with_nut_monitor}" != xno ; then
         fi
     fi
 
+    dnl ### AC_MSG_NOTICE([nut_with_nut_monitor-3: ${nut_with_nut_monitor}])
+    dnl ### AC_MSG_NOTICE([nut_with_nut_monitor_py2gtk2: ${nut_with_nut_monitor_py2gtk2}])
+    dnl ### AC_MSG_NOTICE([nut_with_nut_monitor_py3qt5: ${nut_with_nut_monitor_py3qt5}])
     dnl Can we satisfy any NUT-Monitor installation request?
     if test -n "${nut_with_nut_monitor_py2gtk2}${nut_with_nut_monitor_py3qt5}" ; then
         case "${nut_with_nut_monitor}" in
@@ -2422,6 +2441,9 @@ if test x"${nut_with_nut_monitor}" != xno ; then
         esac
     fi
 fi
+
+AC_MSG_CHECKING([if we can and should install NUT-Monitor desktop application])
+dnl ### AC_MSG_NOTICE([nut_with_nut_monitor-4: ${nut_with_nut_monitor}])
 case "${nut_with_nut_monitor}" in
     "no") if test -n "${PYTHON_FAILED_TEST_DETAILS}" ; then
             AC_MSG_RESULT([${nut_with_nut_monitor}: ${PYTHON_FAILED_TEST_DETAILS}])
@@ -2432,6 +2454,7 @@ case "${nut_with_nut_monitor}" in
     *) AC_MSG_RESULT([${nut_with_nut_monitor}]) ;;
 esac
 
+dnl ### AC_MSG_NOTICE([nut_with_nut_monitor-5: ${nut_with_nut_monitor}])
 if test x"${nut_with_nut_monitor}" != xno ; then
     if (command -v desktop-file-install || which desktop-file-install) >/dev/null 2>/dev/null ; then
         case "${nut_with_nut_monitor}" in
@@ -2446,6 +2469,7 @@ if test x"${nut_with_nut_monitor}" != xno ; then
         esac
     fi
 fi
+dnl ### AC_MSG_NOTICE([nut_with_nut_monitor-6: ${nut_with_nut_monitor}])
 
 dnl Check if we can use distributed or fallback telnetlib module for PyNUTClient
 nut_have_telnetlib_py=""
