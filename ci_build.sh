@@ -1021,6 +1021,47 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     ;;
             esac
             ;;
+        *darwin*|*macos*|*osx*)
+            # Architecture-dependent base dir, e.g.
+            # * /usr/local on macos x86
+            # * /opt/homebrew on macos Apple Silicon
+            if [ -n "${HOMEBREW_PREFIX-}" -a -d "${HOMEBREW_PREFIX-}" ]; then
+                SYS_PKG_CONFIG_PATH="${HOMEBREW_PREFIX}/lib/pkgconfig"
+                CFLAGS="${CFLAGS-} -I${HOMEBREW_PREFIX}/include"
+                CXXFLAGS="${CXXFLAGS-} -I${HOMEBREW_PREFIX}/include"
+                CPPFLAGS="${CPPFLAGS-} -I${HOMEBREW_PREFIX}/include"
+                LDFLAGS="${LDFLAGS-} -L${HOMEBREW_PREFIX}/lib"
+
+                # Net-SNMP "clashes" with system-provided tools (but no header/lib)
+                # so explicit args are needed
+                checkFSobj="${HOMEBREW_PREFIX}/opt/net-snmp/lib/pkgconfig"
+                if [ -d "$checkFSobj" ] ; then
+                    echo "Homebrew: export flags for Net-SNMP"
+                    SYS_PKG_CONFIG_PATH="$SYS_PKG_CONFIG_PATH:$checkFSobj"
+                    #CONFIG_OPTS+=("--with-snmp-includes=-I${HOMEBREW_PREFIX}/opt/net-snmp/include")
+                    #CONFIG_OPTS+=("--with-snmp-libs=-L${HOMEBREW_PREFIX}/opt/net-snmp/lib")
+                fi
+
+                # A bit hackish to check this outside `configure`, but...
+                if [ -s "${HOMEBREW_PREFIX-}/include/ltdl.h" ] ; then
+                    echo "Homebrew: export flags for LibLTDL"
+                    # The m4 script clear default CFLAGS/LIBS so benefit from new ones
+                    CONFIG_OPTS+=("--with-libltdl-includes=-I${HOMEBREW_PREFIX}/include")
+                    CONFIG_OPTS+=("--with-libltdl-libs=-L${HOMEBREW_PREFIX}/lib -lltdl")
+                fi
+
+                if [ -z "${XML_CATALOG_FILES-}" ] ; then
+                    checkFSobj="${HOMEBREW_PREFIX}/etc/xml/catalog"
+                    if [ -e "$checkFSobj" ] ; then
+                        echo "Homebrew: export XML_CATALOG_FILES='$checkFSobj' for asciidoc et al"
+                        XML_CATALOG_FILES="$checkFSobj"
+                        export XML_CATALOG_FILES
+                    fi
+                fi
+            else
+                echo "WARNING: It seems you are building on MacOS, but HOMEBREW_PREFIX is not set or valid; it can help with auto-detection of some features!"
+            fi
+            ;;
     esac
     if [ -n "$SYS_PKG_CONFIG_PATH" ] ; then
         if [ -n "$PKG_CONFIG_PATH" ] ; then
