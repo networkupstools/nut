@@ -2133,12 +2133,11 @@ if test "${nut_with_linux_i2c}" != no; then
                 [AC_DEFINE([HAVE_LINUX_SMBUS_H], [1],
                     [Define to 1 if you have <i2c/smbus.h>.])]
             )
+            nut_have_linux_i2c="no"
             AC_CHECK_DECLS(
                 [i2c_smbus_access, i2c_smbus_read_byte_data, i2c_smbus_write_byte_data, i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
-                [], dnl # nut_with_linux_i2c="yes"
-                [AS_IF([test "${nut_with_linux_i2c}" = "yes"],
-                    [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)],
-                    [nut_with_linux_i2c="no"])],
+                [nut_have_linux_i2c="yes"],
+                [],
                 [#include <stdio.h>
                  #ifdef HAVE_LINUX_I2C_DEV_H
                  #include <linux/i2c-dev.h>
@@ -2154,13 +2153,26 @@ if test "${nut_with_linux_i2c}" != no; then
             dnl Note: here we keep the verdict from above, or make it worse.
             LIBS_SAVED="$LIBS"
             LIBS=""
-            AC_SEARCH_LIBS([i2c_smbus_read_byte, i2c_smbus_access, i2c_smbus_read_byte_data, i2c_smbus_write_byte_datai2c_smbus_write_byte_data, i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
-                [i2c],
+            AS_IF([test "${nut_have_linux_i2c}" = yes], [
+                nut_have_linux_i2c="no"
+                AC_SEARCH_LIBS(i2c_smbus_read_byte, i2c, [
+                AC_SEARCH_LIBS(i2c_smbus_access, i2c, [
+                AC_SEARCH_LIBS(i2c_smbus_read_byte_data, i2c, [
+                AC_SEARCH_LIBS(i2c_smbus_write_byte_data, i2c, [
+                AC_SEARCH_LIBS(i2c_smbus_read_word_data, i2c, [
+                AC_SEARCH_LIBS(i2c_smbus_write_word_data, i2c, [
+                AC_SEARCH_LIBS(i2c_smbus_read_block_data, i2c, [
+                    [nut_have_linux_i2c="yes"]
+                ])])])])])])])])
+
+            dnl # Note: *with* (desire) is not "no" in this big if-clause
+            AS_IF([test "${nut_have_linux_i2c}" = yes],
                 [nut_with_linux_i2c="yes"],
                 [AS_IF([test "${nut_with_linux_i2c}" = "yes"],
                     [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)],
                     [nut_with_linux_i2c="no"])
                 ])
+
             LIBI2C_LIBS="$LIBS"
             LIBS="$LIBS_SAVED"
             ;;
