@@ -130,8 +130,8 @@ jobs:
           command: |-
             HOMEBREW_PREFIX="${HOMEBREW_PREFIX}" \
             CANBUILD_NIT_TESTS=yes \
-            CFLAGS="$CC_STDVER -Wno-poison-system-directories -Wno-deprecated-declarations" \
-            CXXFLAGS="$CXX_STDVER -Wno-poison-system-directories" \
+            CFLAGS="$CC_STDVER" \
+            CXXFLAGS="$CXX_STDVER" \
             ./ci_build.sh
 
       - run:
