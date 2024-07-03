@@ -69,16 +69,30 @@ if test -z "${nut_have_libregex_seen}"; then
 #endif
 ])
 
-	AC_SEARCH_LIBS([regcomp, regexec], [], [nut_have_regex=yes], [
+	AC_SEARCH_LIBS([regcomp], [], [nut_have_regex=yes], [
 		AS_IF([test x"$LIBS" = x], [
+			nut_have_regex=no
 			dnl Avoid using cached reply for the absent library name
-			unset ac_cv_search_regcomp__regexec || true
-			AC_SEARCH_LIBS([regcomp, regexec], [regex], [
+			unset ac_cv_search_regcomp || true
+			AC_SEARCH_LIBS([regcomp], [regex], [
 				LIBS="-lregex"
 				nut_have_regex=yes
 			])
 		])
 	])
+
+	AS_IF([test x"$nut_have_regex" = xyes], [
+	AC_SEARCH_LIBS([regexec], [], [nut_have_regex=yes], [
+		AS_IF([test x"$LIBS" = x], [
+			nut_have_regex=no
+			dnl Avoid using cached reply for the absent library name
+			unset ac_cv_search_regexec || true
+			AC_SEARCH_LIBS([regexec], [regex], [
+				LIBS="-lregex"
+				nut_have_regex=yes
+			])
+		])
+	])])
 
 	AS_IF([test x"${nut_have_regex}" = xyes], [
 		LIBREGEX_CFLAGS="${CFLAGS}"
