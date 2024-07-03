@@ -1027,9 +1027,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             # * /opt/homebrew on macos Apple Silicon
             if [ -n "${HOMEBREW_PREFIX-}" -a -d "${HOMEBREW_PREFIX-}" ]; then
                 SYS_PKG_CONFIG_PATH="${HOMEBREW_PREFIX}/lib/pkgconfig"
-                CFLAGS="${CFLAGS-} -I${HOMEBREW_PREFIX}/include"
-                CXXFLAGS="${CXXFLAGS-} -I${HOMEBREW_PREFIX}/include"
-                CPPFLAGS="${CPPFLAGS-} -I${HOMEBREW_PREFIX}/include"
+                CFLAGS="${CFLAGS-} -isystem ${HOMEBREW_PREFIX}/include -I${HOMEBREW_PREFIX}/include"
+                CXXFLAGS="${CXXFLAGS-} -isystem ${HOMEBREW_PREFIX}/include -I${HOMEBREW_PREFIX}/include"
+                CPPFLAGS="${CPPFLAGS-} -isystem ${HOMEBREW_PREFIX}/include -I${HOMEBREW_PREFIX}/include"
                 LDFLAGS="${LDFLAGS-} -L${HOMEBREW_PREFIX}/lib"
 
                 # Net-SNMP "clashes" with system-provided tools (but no header/lib)
@@ -1038,7 +1038,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 if [ -d "$checkFSobj" ] ; then
                     echo "Homebrew: export flags for Net-SNMP"
                     SYS_PKG_CONFIG_PATH="$SYS_PKG_CONFIG_PATH:$checkFSobj"
-                    #CONFIG_OPTS+=("--with-snmp-includes=-I${HOMEBREW_PREFIX}/opt/net-snmp/include")
+                    #CONFIG_OPTS+=("--with-snmp-includes=-isystem ${HOMEBREW_PREFIX}/opt/net-snmp/include -I${HOMEBREW_PREFIX}/opt/net-snmp/include")
                     #CONFIG_OPTS+=("--with-snmp-libs=-L${HOMEBREW_PREFIX}/opt/net-snmp/lib")
                 fi
 
@@ -1046,7 +1046,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 if [ -s "${HOMEBREW_PREFIX-}/include/ltdl.h" ] ; then
                     echo "Homebrew: export flags for LibLTDL"
                     # The m4 script clear default CFLAGS/LIBS so benefit from new ones
-                    CONFIG_OPTS+=("--with-libltdl-includes=-I${HOMEBREW_PREFIX}/include")
+                    CONFIG_OPTS+=("--with-libltdl-includes=-isystem ${HOMEBREW_PREFIX}/include -I${HOMEBREW_PREFIX}/include")
                     CONFIG_OPTS+=("--with-libltdl-libs=-L${HOMEBREW_PREFIX}/lib -lltdl")
                 fi
 
