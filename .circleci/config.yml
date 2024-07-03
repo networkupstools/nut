@@ -108,8 +108,8 @@ jobs:
             find "${HOMEBREW_PREFIX}"/Cellar/openssl* -ls || true
             pkg-config --libs --cflags nss || true
             pkg-config --libs --cflags openssl || {
-                brew unlink openssl && brew link openssl
-                pkg-config --libs --cflags openssl ; } || true
+                brew unlink openssl && brew link --force openssl
+                pkg-config --libs --cflags openssl ; }
 
       - restore_cache:
           keys:
