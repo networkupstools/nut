@@ -40,7 +40,7 @@ jobs:
       BREW_MORE:
         type: string
         default: "" # e.g. "avahi" for all-driver tests
-      NUTCI_HOMEBREW_BASEDIR:
+      HOMEBREW_PREFIX:
         # See https://docs.brew.sh/Installation :
         # * /opt/homebrew for Apple Silicon,
         # * /usr/local for macOS Intel and
@@ -58,7 +58,7 @@ jobs:
       BUILD_TYPE: << parameters.BUILD_TYPE >>
       CI_BUILDDIR: << parameters.CI_BUILDDIR >>
       BREW_MORE: << parameters.BREW_MORE >>
-      NUTCI_HOMEBREW_BASEDIR: << parameters.NUTCI_HOMEBREW_BASEDIR >>
+      HOMEBREW_PREFIX: << parameters.HOMEBREW_PREFIX >>
 
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
@@ -128,11 +128,11 @@ jobs:
       - run:
           name: "ci_build"
           command: |-
-            CI_CCACHE_SYMLINKDIR="${NUTCI_HOMEBREW_BASEDIR}/opt/ccache/libexec" \
+            CI_CCACHE_SYMLINKDIR="${HOMEBREW_PREFIX}/opt/ccache/libexec" \
             CANBUILD_NIT_TESTS=yes \
-            CFLAGS="$CC_STDVER -Wno-poison-system-directories -Wno-deprecated-declarations -I${NUTCI_HOMEBREW_BASEDIR}/include" \
-            CXXFLAGS="$CXX_STDVER -Wno-poison-system-directories -I${NUTCI_HOMEBREW_BASEDIR}/include" \
-            LDFLAGS="-L${NUTCI_HOMEBREW_BASEDIR}/lib -L/usr/local/lib" \
+            CFLAGS="$CC_STDVER -Wno-poison-system-directories -Wno-deprecated-declarations -I${HOMEBREW_PREFIX}/include" \
+            CXXFLAGS="$CXX_STDVER -Wno-poison-system-directories -I${HOMEBREW_PREFIX}/include" \
+            LDFLAGS="-L${HOMEBREW_PREFIX}/lib -L/usr/local/lib" \
             ./ci_build.sh
 
       - run:
