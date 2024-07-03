@@ -133,7 +133,9 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 
 	dnl Check if the Net-SNMP library is usable
 	nut_have_libnetsnmp_static=no
-	AC_CHECK_HEADERS(net-snmp/net-snmp-config.h, [nut_have_libnetsnmp=yes], [nut_have_libnetsnmp=no], [AC_INCLUDES_DEFAULT])
+	AC_CHECK_HEADERS([net-snmp/net-snmp-config.h net-snmp/net-snmp-includes.h], [nut_have_libnetsnmp=yes], [nut_have_libnetsnmp=no], [AC_INCLUDES_DEFAULT])
+	AC_MSG_NOTICE([DEBUG: ac_cv_header_net_snmp_net_snmp_config_h=${ac_cv_header_net_snmp_net_snmp_config_h}])
+	AC_MSG_NOTICE([DEBUG: ac_cv_header_net_snmp_net_snmp_includes_h=${ac_cv_header_net_snmp_net_snmp_includes_h}])
 	AC_CHECK_FUNCS(init_snmp, [], [
 		dnl Probably is dysfunctional, except one case...
 		nut_have_libnetsnmp=no
