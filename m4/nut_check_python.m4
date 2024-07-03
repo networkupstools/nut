@@ -47,6 +47,8 @@ AC_DEFUN([NUT_CHECK_PYTHON],
         PYTHON=""
         PYTHON_SITE_PACKAGES=""
         PYTHON_VERSION_REPORT=""
+        PYTHON_VERSION_INFO_REPORT=""
+        PYTHON_SYSPATH_REPORT=""
         AS_CASE([${nut_with_python}],
             [auto|yes|""], [AC_CHECK_PROGS([PYTHON], [python python3 python2], [_python_runtime])],
             [no], [PYTHON="no"],
@@ -98,7 +100,7 @@ AC_DEFUN([NUT_CHECK_PYTHON],
 
         AS_IF([test -n "${PYTHON}" && test "${PYTHON}" != "no"], [
             AS_IF([test x"`$PYTHON -c 'import sys; print (sys.version_info >= (2, 6))'`" = xTrue],
-                [PYTHON_VERSION_REPORT=" (`$PYTHON -c 'import sys; print (sys.version_info)'`)"],
+                [PYTHON_VERSION_INFO_REPORT=" (`$PYTHON -c 'import sys; print (sys.version_info)'`)"],
                 [AC_MSG_WARN([Version reported by ${PYTHON} was not suitable as python])
                  PYTHON=no])
             ])
@@ -111,10 +113,21 @@ AC_DEFUN([NUT_CHECK_PYTHON],
             ])
 
         AC_MSG_CHECKING([python interpeter to call])
-        AC_MSG_RESULT([${PYTHON}${PYTHON_VERSION_REPORT}])
+        AC_MSG_RESULT([${PYTHON}${PYTHON_VERSION_INFO_REPORT}])
         AC_SUBST([PYTHON], [${PYTHON}])
         AM_CONDITIONAL([HAVE_PYTHON], [test -n "${PYTHON}" && test "${PYTHON}" != "no"])
         AS_IF([test -n "${PYTHON}" && test "${PYTHON}" != "no"], [
+            AC_MSG_CHECKING([python build sys.version])
+            dnl Can have extra lines about compiler used, etc.
+            PYTHON_VERSION_REPORT="`${PYTHON} -c 'import sys; print(sys.version);' | tr '\n' ' '`" \
+            || PYTHON_VERSION_REPORT=""
+            AC_MSG_RESULT([${PYTHON_VERSION_REPORT}])
+
+            AC_MSG_CHECKING([python sys.path used to search for modules])
+            PYTHON_SYSPATH_REPORT="`${PYTHON} -c 'import sys; print(sys.path);'`" \
+            || PYTHON_SYSPATH_REPORT=""
+            AC_MSG_RESULT([${PYTHON_SYSPATH_REPORT}])
+
             export PYTHON
             AC_CACHE_CHECK([python site-packages location], [nut_cv_PYTHON_SITE_PACKAGES], [
                 nut_cv_PYTHON_SITE_PACKAGES="`${PYTHON} -c 'import site; print(site.getsitepackages().pop(0))'`"
@@ -139,10 +152,12 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
         PYTHON2=""
         PYTHON2_SITE_PACKAGES=""
         PYTHON2_VERSION_REPORT=""
+        PYTHON2_VERSION_INFO_REPORT=""
+        PYTHON2_SYSPATH_REPORT=""
         AS_CASE([${nut_with_python2}],
             [auto|yes|""], [
                 dnl Cross check --with-python results:
-                AS_CASE(["${PYTHON_VERSION_REPORT}"],
+                AS_CASE(["${PYTHON_VERSION_INFO_REPORT}"],
                     [*major=2,*], [
                         PYTHON2="`${PYTHON} -c 'import sys; print(sys.executable);' 2>/dev/null`" && test -n "${PYTHON2}" || PYTHON2="${PYTHON}"
                         PYTHON2="`realpath "${PYTHON2}" 2>/dev/null`" && test -n "${PYTHON2}" || {
@@ -210,7 +225,7 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
 
         AS_IF([test -n "${PYTHON2}" && test "${PYTHON2}" != "no"], [
             AS_IF([test x"`$PYTHON2 -c 'import sys; print (sys.version_info >= (2, 6) and sys.version_info < (3, 0))'`" = xTrue],
-                [PYTHON2_VERSION_REPORT=" (`$PYTHON2 -c 'import sys; print (sys.version_info)'`)"],
+                [PYTHON2_VERSION_INFO_REPORT=" (`$PYTHON2 -c 'import sys; print (sys.version_info)'`)"],
                 [AC_MSG_WARN([Version reported by ${PYTHON2} was not suitable as python2])
                  PYTHON2=no])
             ])
@@ -223,10 +238,21 @@ AC_DEFUN([NUT_CHECK_PYTHON2],
             ])
 
         AC_MSG_CHECKING([python2 interpeter to call])
-        AC_MSG_RESULT([${PYTHON2}${PYTHON2_VERSION_REPORT}])
+        AC_MSG_RESULT([${PYTHON2}${PYTHON2_VERSION_INFO_REPORT}])
         AC_SUBST([PYTHON2], [${PYTHON2}])
         AM_CONDITIONAL([HAVE_PYTHON2], [test -n "${PYTHON2}" && test "${PYTHON2}" != "no"])
         AS_IF([test -n "${PYTHON2}" && test "${PYTHON2}" != "no"], [
+            AC_MSG_CHECKING([python2 build sys.version])
+            dnl Can have extra lines about compiler used, etc.
+            PYTHON2_VERSION_REPORT="`${PYTHON2} -c 'import sys; print(sys.version);' | tr '\n' ' '`" \
+            || PYTHON2_VERSION_REPORT=""
+            AC_MSG_RESULT([${PYTHON2_VERSION_REPORT}])
+
+            AC_MSG_CHECKING([python2 sys.path used to search for modules])
+            PYTHON2_SYSPATH_REPORT="`${PYTHON2} -c 'import sys; print(sys.path);'`" \
+            || PYTHON2_SYSPATH_REPORT=""
+            AC_MSG_RESULT([${PYTHON2_SYSPATH_REPORT}])
+
             export PYTHON2
             AC_CACHE_CHECK([python2 site-packages location], [nut_cv_PYTHON2_SITE_PACKAGES], [
                 nut_cv_PYTHON2_SITE_PACKAGES="`${PYTHON2} -c 'import site; print(site.getsitepackages().pop(0))'`"
@@ -251,10 +277,12 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
         PYTHON3=""
         PYTHON3_SITE_PACKAGES=""
         PYTHON3_VERSION_REPORT=""
+        PYTHON3_VERSION_INFO_REPORT=""
+        PYTHON3_SYSPATH_REPORT=""
         AS_CASE([${nut_with_python3}],
             [auto|yes|""], [
                 dnl Cross check --with-python results:
-                AS_CASE(["${PYTHON_VERSION_REPORT}"],
+                AS_CASE(["${PYTHON_VERSION_INFO_REPORT}"],
                     [*major=3,*], [
                         PYTHON3="`${PYTHON} -c 'import sys; print(sys.executable);' 2>/dev/null`" && test -n "${PYTHON3}" || PYTHON3="${PYTHON}"
                         PYTHON3="`realpath "${PYTHON3}" 2>/dev/null`" && test -n "${PYTHON3}" || {
@@ -322,7 +350,7 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
 
         AS_IF([test -n "${PYTHON3}" && test "${PYTHON3}" != "no"], [
             AS_IF([test x"`$PYTHON3 -c 'import sys; print (sys.version_info >= (3, 0))'`" = xTrue],
-                [PYTHON3_VERSION_REPORT=" (`$PYTHON3 -c 'import sys; print (sys.version_info)'`)"],
+                [PYTHON3_VERSION_INFO_REPORT=" (`$PYTHON3 -c 'import sys; print (sys.version_info)'`)"],
                 [AC_MSG_WARN([Version reported by ${PYTHON3} was not suitable as python3])
                  PYTHON3=no])
             ])
@@ -335,10 +363,21 @@ AC_DEFUN([NUT_CHECK_PYTHON3],
             ])
 
         AC_MSG_CHECKING([python3 interpeter to call])
-        AC_MSG_RESULT([${PYTHON3}${PYTHON3_VERSION_REPORT}])
+        AC_MSG_RESULT([${PYTHON3}${PYTHON3_VERSION_INFO_REPORT}])
         AC_SUBST([PYTHON3], [${PYTHON3}])
         AM_CONDITIONAL([HAVE_PYTHON3], [test -n "${PYTHON3}" && test "${PYTHON3}" != "no"])
         AS_IF([test -n "${PYTHON3}" && test "${PYTHON3}" != "no"], [
+            AC_MSG_CHECKING([python3 build sys.version])
+            dnl Can have extra lines about compiler used, etc.
+            PYTHON3_VERSION_REPORT="`${PYTHON3} -c 'import sys; print(sys.version);' | tr '\n' ' '`" \
+            || PYTHON3_VERSION_REPORT=""
+            AC_MSG_RESULT([${PYTHON3_VERSION_REPORT}])
+
+            AC_MSG_CHECKING([python3 sys.path used to search for modules])
+            PYTHON3_SYSPATH_REPORT="`${PYTHON3} -c 'import sys; print(sys.path);'`" \
+            || PYTHON3_SYSPATH_REPORT=""
+            AC_MSG_RESULT([${PYTHON3_SYSPATH_REPORT}])
+
             export PYTHON3
             AC_CACHE_CHECK([python3 site-packages location], [nut_cv_PYTHON3_SITE_PACKAGES], [
                 nut_cv_PYTHON3_SITE_PACKAGES="`${PYTHON3} -c 'import site; print(site.getsitepackages().pop(0))'`"

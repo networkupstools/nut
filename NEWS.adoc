@@ -212,6 +212,11 @@ installed.
    of more complex configurations (e.g. some line patterns that involve too
    many double-quote characters) which are valid for NUT proper. [#657]
 
+ - NUT CI farm build recipes, documentation and some `m4`/`configure.ac`
+   sources updated to handle a much larger build scope on MacOS. Also
+   migrated the builders to Apple Silicon from x86 (deprecated by CircleCI).
+   [#2502]
+
 
 Release notes for NUT 2.8.2 - what's new since 2.8.1
 ----------------------------------------------------

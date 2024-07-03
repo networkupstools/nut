@@ -304,9 +304,12 @@ if WITH_SSL
 endif
 
 if WITH_SSL
+if !WITH_OPENSSL
+  snmp_ups_CFLAGS += -UNETSNMP_USE_OPENSSL
+endif !WITH_OPENSSL
   snmp_ups_CFLAGS += $(LIBSSL_CFLAGS)
   snmp_ups_LDADD += $(LIBSSL_LIBS)
-endif
+endif WITH_SSL
 
 # NEON XML/HTTP
 netxml_ups_SOURCES = netxml-ups.c mge-xml.c

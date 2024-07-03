@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3213 utf-8
+personal_ws-1.1 en 3215 utf-8
 AAC
 AAS
 ABI
@@ -861,6 +861,7 @@ PROTVER
 PRs
 PSA
 PSD
+PSF
 PSFn
 PSGPSER
 PSSENTR
@@ -1184,6 +1185,7 @@ Sy
 Sycon
 Symmetra
 Symmetras
+SyntaxWarning
 Sysgration
 SyslogIdentifier
 SystemIO
