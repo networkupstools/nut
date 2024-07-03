@@ -2446,38 +2446,48 @@ if test x"${nut_with_nut_monitor}" != xno ; then
     fi
 fi
 
-dnl ${nut_with_pynut}: TODO: arg values to request python 2, 3 or both
-AC_MSG_CHECKING([if we can and should install PyNUT module (note for warnings from Python 3.11 and beyond: we have a fallback nut_telnetlib module just in case)])
-nut_with_pynut_py=""
-nut_with_pynut_py2=""
-nut_with_pynut_py3=""
+nut_have_telnetlib_py=""
+nut_have_telnetlib_py2=""
+nut_have_telnetlib_py3=""
 if test x"${nut_with_pynut}" != xno \
     -a -n "${PYTHON}${PYTHON2}${PYTHON3}" \
 ; then
     if test -n "${PYTHON2}" \
     && (command -v ${PYTHON2} || which ${PYTHON2}) >/dev/null 2>/dev/null \
     ; then
+        AC_MSG_CHECKING([if we can use stock Python2 telnetlib module provided with interpreter ${PYTHON2}])
         if ${PYTHON2} -c "import telnetlib" \
         ; then
-            nut_with_pynut_py2="yes"
+            nut_have_telnetlib_py2="yes"
+        else
+            nut_have_telnetlib_py2="no"
         fi
+        AC_MSG_RESULT([${nut_have_telnetlib_py2}])
     fi
 
     if test -n "${PYTHON3}" \
     && (command -v ${PYTHON3} || which ${PYTHON3}) >/dev/null 2>/dev/null \
     ; then
+        AC_MSG_CHECKING([Checking below if we can use stock Python3 telnetlib module for PyNUTClient provided with interpreter ${PYTHON3} (note for warnings from Python 3.11 and beyond: we have a fallback nut_telnetlib module just in case)])
         if ${PYTHON3} -c "import telnetlib" \
         ; then
-            nut_with_pynut_py3="yes"
+            nut_have_telnetlib_py3="yes"
         else
+            nut_have_telnetlib_py3="no"
+        fi
+        AC_MSG_RESULT([${nut_have_telnetlib_py3}])
+
+        if test x"${nut_have_telnetlib_py3}" = x"no" ; then
             dnl We have a stashed copy from Python 3.10, so
             dnl this line essentially checks for presence of
             dnl a usable interpreter implementation compatible
             dnl with Python 3.x syntax.
+            AC_MSG_CHECKING([Checking below if we can use fallback Python3 nut_telnetlib module for PyNUTClient])
             if (cd "${srcdir}"/scripts/python/module && ${PYTHON3} -c "import nut_telnetlib as telnetlib") \
             ; then
-                nut_with_pynut_py3="yes"
+                nut_have_telnetlib_py3="yes"
             fi
+            AC_MSG_RESULT([${nut_have_telnetlib_py3}])
         fi
     fi
 
@@ -2486,16 +2496,47 @@ if test x"${nut_with_pynut}" != xno \
     && (command -v ${PYTHON} || which ${PYTHON}) >/dev/null 2>/dev/null \
     && test "${PYTHON}" != "${PYTHON2}" -a "${PYTHON}" != "${PYTHON3}" \
     ; then
+        AC_MSG_CHECKING([Checking below if we can use stock Python telnetlib module for PyNUTClient provided with interpreter ${PYTHON} (note for warnings from Python 3.11 and beyond: we have a fallback nut_telnetlib module just in case)])
         if ${PYTHON} -c "import telnetlib" \
         ; then
-            nut_with_pynut_py="yes"
+            nut_have_telnetlib_py="yes"
         else
+            nut_have_telnetlib_py="no"
+        fi
+        AC_MSG_RESULT([${nut_have_telnetlib_py}])
+
+        if test x"${nut_have_telnetlib_py}" = x"no" ; then
             dnl See comments above
+            AC_MSG_CHECKING([Checking below if we can use fallback Python nut_telnetlib module for PyNUTClient])
             if (cd "${srcdir}"/scripts/python/module && ${PYTHON} -c "import nut_telnetlib as telnetlib") \
             ; then
-                nut_with_pynut_py="yes"
+                nut_have_telnetlib_py="yes"
             fi
+            AC_MSG_RESULT([${nut_have_telnetlib_py}])
         fi
+    fi
+fi
+
+dnl ${nut_with_pynut}: TODO: arg values to request python 2, 3 or both
+dnl Note that per block above, nut_have_telnetlib_py* values are definitive
+dnl if checked, or empty if skipped (no such python, not nut_with_pynut, etc.)
+AC_MSG_CHECKING([if we can and should install PyNUT module])
+nut_with_pynut_py=""
+nut_with_pynut_py2=""
+nut_with_pynut_py3=""
+if test x"${nut_with_pynut}" != xno \
+    -a -n "${PYTHON}${PYTHON2}${PYTHON3}" \
+; then
+    if test x"${nut_have_telnetlib_py2}" = x"yes" ; then
+        nut_with_pynut_py2="yes"
+    fi
+
+    if test x"${nut_have_telnetlib_py3}" = x"yes" ; then
+        nut_with_pynut_py3="yes"
+    fi
+
+    if test x"${nut_have_telnetlib_py}" = x"yes" ; then
+        nut_with_pynut_py="yes"
     fi
 fi
 
