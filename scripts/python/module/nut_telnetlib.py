@@ -4,6 +4,10 @@ r"""TELNET client class.
 This file has been copied for PyNUTClient fallback needs from Python 3.10
 (newer Python releases obsoleted the module) and not modified except for
 this notice.
+
+See https://github.com/python/cpython/blob/3.10/Lib/telnetlib.py as of
+https://raw.githubusercontent.com/python/cpython/60419a7e96577cf783b3b45bf3984f9fb0d7ddff/Lib/telnetlib.py
+and https://github.com/python/cpython/blob/3.10/LICENSE
 ------
 
 Based on RFC 854: TELNET Protocol Specification, by J. Postel and

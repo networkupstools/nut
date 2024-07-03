@@ -1453,7 +1453,7 @@ AS_IF([test x"${ac_cv_struct_pollfd}" = xyes],
     )
 
 dnl ----------------------------------------------------------------------
-dnl Check for python binary program names per language version
+dnl Check for Python binary program names per language version
 dnl to embed into scripts and Make rules
 NUT_CHECK_PYTHON_DEFAULT
 
@@ -2330,29 +2330,37 @@ NUT_REPORT_FEATURE([build CGI programs], [${nut_with_cgi}], [],
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-pynut and --with-nut_monitor
 
-dnl ${nut_with_nut_monitor}: TODO: arg values to request python 2 gtk2,
-dnl python 3 qt5, or both
-AC_MSG_CHECKING([if we can and should install NUT-Monitor desktop application])
+dnl The PYTHON*_REPORT vars also serve as flags that we have certain usable
+dnl Python interpreter versions to care about below, so we only test for
+dnl their existence once (in NUT_CHECK*PYTHON* m4 macros).
+
+dnl ${nut_with_nut_monitor}: TODO: arg values to request Python 2 gtk2,
+dnl Python 3 qt5, or both
+AC_MSG_CHECKING([if we want install NUT-Monitor desktop application])
+AC_MSG_RESULT([${nut_with_nut_monitor}])
 nut_with_nut_monitor_py2gtk2=""
 nut_with_nut_monitor_py3qt5=""
 nut_with_nut_monitor_desktop=""
 dnl TODO: Add a way to define this path? will have app/ maybe module/ inside...
 nut_with_nut_monitor_dir="${datarootdir}/nut-monitor"
+
 PYTHON_FAILED_TEST_DETAILS=""
+dnl ### AC_MSG_NOTICE([nut_with_nut_monitor-1: ${nut_with_nut_monitor}])
 if test x"${nut_with_nut_monitor}" != xno ; then
     dnl While we might just install for "yes" request, in hopes user would
-    dnl get their python ecosystem in place later, we need some criteria to
+    dnl get their Python ecosystem in place later, we need some criteria to
     dnl avoid installing it always :) Also, need to substitute the shebang.
     if test -z "${PYTHON}${PYTHON2}${PYTHON3}" ; then
         case "${nut_with_nut_monitor}" in
             "auto") nut_with_nut_monitor="no"
-                    PYTHON_FAILED_TEST_DETAILS="No python 2/3 interpreter was found"
+                    PYTHON_FAILED_TEST_DETAILS="No Python 2/3 interpreter was found"
                 ;;
-            "yes")  AC_MSG_ERROR([No python 2/3 interpreter was found, required for NUT-Monitor desktop application])
+            "yes")  AC_MSG_ERROR([No Python 2/3 interpreter was found, required for NUT-Monitor desktop application])
                 ;;
         esac
     fi
 fi
+dnl ### AC_MSG_NOTICE([nut_with_nut_monitor-2: ${nut_with_nut_monitor}])
 
 if test x"${nut_with_nut_monitor}" != xno ; then
     dnl Note: no double-quoting for use, the command string may be multi-token
@@ -2360,53 +2368,73 @@ if test x"${nut_with_nut_monitor}" != xno ; then
     dnl for "config.log" details since... forever? Still, hardcoded numbers...
     PYTHON2_TEST_MODULES="re,glob,codecs,gtk,gtk.glade,gobject,ConfigParser"
     PYTHON3_TEST_MODULES="re,glob,codecs,PyQt5.uic,configparser"
-    if test -n "${PYTHON2}" \
-    && (command -v ${PYTHON2} || which ${PYTHON2}) >/dev/null 2>/dev/null \
-    ; then
+    if test -n "${PYTHON2_VERSION_INFO_REPORT}" ; then
+        AC_MSG_CHECKING([if we have Python2 prerequisites for NUT-Monitor desktop application])
         if ${PYTHON2} -c "import ${PYTHON2_TEST_MODULES}" 1>&5 2>&5 \
         ; then
             nut_with_nut_monitor_py2gtk2="yes"
+            AC_MSG_RESULT([yes])
         else
+            AC_MSG_RESULT([no])
             PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python2 modules: '${PYTHON2_TEST_MODULES}'"
         fi
     fi
 
-    if test -n "${PYTHON3}" \
-    && (command -v ${PYTHON3} || which ${PYTHON3}) >/dev/null 2>/dev/null \
-    ; then
+    if test -n "${PYTHON3_VERSION_INFO_REPORT}" ; then
+        AC_MSG_CHECKING([if we have Python3 prerequisites for NUT-Monitor desktop application])
         if ${PYTHON3} -c "import ${PYTHON3_TEST_MODULES}" 1>&5 2>&5 \
         ; then
             nut_with_nut_monitor_py3qt5="yes"
+            AC_MSG_RESULT([yes])
         else
-            PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python3 modules: '${PYTHON3_TEST_MODULES}'"
+            AC_MSG_RESULT([no])
+            if test -n "${PYTHON_FAILED_TEST_DETAILS}" ; then
+                PYTHON_FAILED_TEST_DETAILS="${PYTHON_FAILED_TEST_DETAILS} and some or all of these Python3 modules: '${PYTHON3_TEST_MODULES}'"
+            else
+                PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python3 modules: '${PYTHON3_TEST_MODULES}'"
+            fi
         fi
     fi
 
     dnl Fall back to default interpreter
     if test -z "${nut_with_nut_monitor_py2gtk2}${nut_with_nut_monitor_py3qt5}" \
-    && test -n "${PYTHON}" \
-    && (command -v ${PYTHON} || which ${PYTHON2}) >/dev/null 2>/dev/null \
+    && test -n "${PYTHON_VERSION_INFO_REPORT}" \
+    && test x"${PYTHON_VERSION_INFO_REPORT}" != x"${PYTHON3_VERSION_INFO_REPORT}" \
+    && test x"${PYTHON_VERSION_INFO_REPORT}" != x"${PYTHON2_VERSION_INFO_REPORT}" \
     ; then
+        AC_MSG_CHECKING([if we have Python3 prerequisites for NUT-Monitor desktop application in default Python])
         if ${PYTHON} -c "import ${PYTHON3_TEST_MODULES}" 1>&5 2>&5 \
         ; then
             nut_with_nut_monitor_py3qt5="yes"
+            AC_MSG_RESULT([yes])
         else
-            PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python3 modules: '${PYTHON3_TEST_MODULES}'"
+            AC_MSG_RESULT([no])
+            if test -n "${PYTHON_FAILED_TEST_DETAILS}" ; then
+                PYTHON_FAILED_TEST_DETAILS="${PYTHON_FAILED_TEST_DETAILS} and some or all of these Python3 modules in default Python: '${PYTHON3_TEST_MODULES}'"
+            else
+                PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python3 modules in default Python: '${PYTHON3_TEST_MODULES}'"
+            fi
         fi
 
+        AC_MSG_CHECKING([if we have Python2 prerequisites for NUT-Monitor desktop application in default Python])
         if ${PYTHON} -c "import ${PYTHON2_TEST_MODULES}" 1>&5 2>&5 \
         ; then
             nut_with_nut_monitor_py2gtk2="yes"
             PYTHON_FAILED_TEST_DETAILS=""
+            AC_MSG_RESULT([yes])
         else
+            AC_MSG_RESULT([no])
             if test -n "${PYTHON_FAILED_TEST_DETAILS}" ; then
-                PYTHON_FAILED_TEST_DETAILS="${PYTHON_FAILED_TEST_DETAILS} and some or all of these Python2 modules: '${PYTHON2_TEST_MODULES}'"
+                PYTHON_FAILED_TEST_DETAILS="${PYTHON_FAILED_TEST_DETAILS} and some or all of these Python2 modules in default Python: '${PYTHON2_TEST_MODULES}'"
             else
-                PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python2 modules: '${PYTHON2_TEST_MODULES}'"
+                PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python2 modules in default Python: '${PYTHON2_TEST_MODULES}'"
             fi
         fi
     fi
 
+    dnl ### AC_MSG_NOTICE([nut_with_nut_monitor-3: ${nut_with_nut_monitor}])
+    dnl ### AC_MSG_NOTICE([nut_with_nut_monitor_py2gtk2: ${nut_with_nut_monitor_py2gtk2}])
+    dnl ### AC_MSG_NOTICE([nut_with_nut_monitor_py3qt5: ${nut_with_nut_monitor_py3qt5}])
     dnl Can we satisfy any NUT-Monitor installation request?
     if test -n "${nut_with_nut_monitor_py2gtk2}${nut_with_nut_monitor_py3qt5}" ; then
         case "${nut_with_nut_monitor}" in
@@ -2416,11 +2444,14 @@ if test x"${nut_with_nut_monitor}" != xno ; then
         case "${nut_with_nut_monitor}" in
             "auto") nut_with_nut_monitor="no" ;;
             "yes")
-                AC_MSG_ERROR([No python 2/3 interpreter with needed modules was found, as required for NUT-Monitor desktop application: ${PYTHON_FAILED_TEST_DETAILS}])
+                AC_MSG_ERROR([No Python 2/3 interpreter with needed modules was found, as required for NUT-Monitor desktop application: ${PYTHON_FAILED_TEST_DETAILS}])
                 ;;
         esac
     fi
 fi
+
+AC_MSG_CHECKING([if we can and should install NUT-Monitor desktop application])
+dnl ### AC_MSG_NOTICE([nut_with_nut_monitor-4: ${nut_with_nut_monitor}])
 case "${nut_with_nut_monitor}" in
     "no") if test -n "${PYTHON_FAILED_TEST_DETAILS}" ; then
             AC_MSG_RESULT([${nut_with_nut_monitor}: ${PYTHON_FAILED_TEST_DETAILS}])
@@ -2431,6 +2462,7 @@ case "${nut_with_nut_monitor}" in
     *) AC_MSG_RESULT([${nut_with_nut_monitor}]) ;;
 esac
 
+dnl ### AC_MSG_NOTICE([nut_with_nut_monitor-5: ${nut_with_nut_monitor}])
 if test x"${nut_with_nut_monitor}" != xno ; then
     if (command -v desktop-file-install || which desktop-file-install) >/dev/null 2>/dev/null ; then
         case "${nut_with_nut_monitor}" in
@@ -2445,57 +2477,96 @@ if test x"${nut_with_nut_monitor}" != xno ; then
         esac
     fi
 fi
+dnl ### AC_MSG_NOTICE([nut_with_nut_monitor-6: ${nut_with_nut_monitor}])
 
-dnl ${nut_with_pynut}: TODO: arg values to request python 2, 3 or both
-AC_MSG_CHECKING([if we can and should install PyNUT module (note for warnings from python 3.11 and beyond: we have a fallback nut_telnetlib module just in case)])
+dnl Check if we can use distributed or fallback telnetlib module for PyNUTClient
+nut_have_telnetlib_py=""
+nut_have_telnetlib_py2=""
+nut_have_telnetlib_py3=""
+if test x"${nut_with_pynut}" != xno \
+    -a -n "${PYTHON}${PYTHON2}${PYTHON3}" \
+; then
+    if test -n "${PYTHON2_VERSION_INFO_REPORT}" ; then
+        AC_MSG_CHECKING([if we can use stock Python2 telnetlib module provided with interpreter ${PYTHON2}])
+        if ${PYTHON2} -c "import telnetlib" \
+        ; then
+            nut_have_telnetlib_py2="yes"
+        else
+            nut_have_telnetlib_py2="no"
+        fi
+        AC_MSG_RESULT([${nut_have_telnetlib_py2}])
+    fi
+
+    if test -n "${PYTHON3_VERSION_INFO_REPORT}" ; then
+        AC_MSG_CHECKING([if we can use stock Python3 telnetlib module for PyNUTClient provided with interpreter ${PYTHON3} (note for warnings from Python 3.11 and beyond: we have a fallback nut_telnetlib module just in case)])
+        if ${PYTHON3} -c "import telnetlib" \
+        ; then
+            nut_have_telnetlib_py3="yes"
+        else
+            nut_have_telnetlib_py3="no"
+        fi
+        AC_MSG_RESULT([${nut_have_telnetlib_py3}])
+
+        if test x"${nut_have_telnetlib_py3}" = x"no" ; then
+            dnl We have a stashed copy from Python 3.10, so
+            dnl this line essentially checks for presence of
+            dnl a usable interpreter implementation compatible
+            dnl with Python 3.x syntax.
+            AC_MSG_CHECKING([if we can use fallback Python3 nut_telnetlib module for PyNUTClient])
+            if (cd "${srcdir}"/scripts/python/module && ${PYTHON3} -c "import nut_telnetlib as telnetlib") \
+            ; then
+                nut_have_telnetlib_py3="yes"
+            fi
+            AC_MSG_RESULT([${nut_have_telnetlib_py3}])
+        fi
+    fi
+
+    dnl Test same-ness of pythons with sys.version also?
+    if test -n "${PYTHON_VERSION_INFO_REPORT}" \
+    && test x"${PYTHON_VERSION_INFO_REPORT}" != x"${PYTHON3_VERSION_INFO_REPORT}" \
+    && test x"${PYTHON_VERSION_INFO_REPORT}" != x"${PYTHON2_VERSION_INFO_REPORT}" \
+    ; then
+        AC_MSG_CHECKING([if we can use stock Python telnetlib module for PyNUTClient provided with interpreter ${PYTHON} (note for warnings from Python 3.11 and beyond: we have a fallback nut_telnetlib module just in case)])
+        if ${PYTHON} -c "import telnetlib" \
+        ; then
+            nut_have_telnetlib_py="yes"
+        else
+            nut_have_telnetlib_py="no"
+        fi
+        AC_MSG_RESULT([${nut_have_telnetlib_py}])
+
+        if test x"${nut_have_telnetlib_py}" = x"no" ; then
+            dnl See comments above
+            AC_MSG_CHECKING([if we can use fallback Python nut_telnetlib module for PyNUTClient])
+            if (cd "${srcdir}"/scripts/python/module && ${PYTHON} -c "import nut_telnetlib as telnetlib") \
+            ; then
+                nut_have_telnetlib_py="yes"
+            fi
+            AC_MSG_RESULT([${nut_have_telnetlib_py}])
+        fi
+    fi
+fi
+
+dnl ${nut_with_pynut}: TODO: arg values to request Python 2, 3 or both
+dnl Note that per block above, nut_have_telnetlib_py* values are definitive
+dnl if checked, or empty if skipped (no such Python, not nut_with_pynut, etc.)
+AC_MSG_CHECKING([if we can and should install PyNUT module])
 nut_with_pynut_py=""
 nut_with_pynut_py2=""
 nut_with_pynut_py3=""
 if test x"${nut_with_pynut}" != xno \
     -a -n "${PYTHON}${PYTHON2}${PYTHON3}" \
 ; then
-    if test -n "${PYTHON2}" \
-    && (command -v ${PYTHON2} || which ${PYTHON2}) >/dev/null 2>/dev/null \
-    ; then
-        if ${PYTHON2} -c "import telnetlib" \
-        ; then
-            nut_with_pynut_py2="yes"
-        fi
+    if test x"${nut_have_telnetlib_py2}" = x"yes" ; then
+        nut_with_pynut_py2="yes"
     fi
 
-    if test -n "${PYTHON3}" \
-    && (command -v ${PYTHON3} || which ${PYTHON3}) >/dev/null 2>/dev/null \
-    ; then
-        if ${PYTHON3} -c "import telnetlib" \
-        ; then
-            nut_with_pynut_py3="yes"
-        else
-            dnl We have a stashed copy from Python 3.10, so
-            dnl this line essentially checks for presence of
-            dnl a usable interpreter implementation compatible
-            dnl with Python 3.x syntax.
-            if (cd script/python/module && ${PYTHON3} -c "import nut_telnetlib as telnetlib") \
-            ; then
-                nut_with_pynut_py3="yes"
-            fi
-        fi
+    if test x"${nut_have_telnetlib_py3}" = x"yes" ; then
+        nut_with_pynut_py3="yes"
     fi
 
-    dnl Test same-ness of pythons with sys.version also?
-    if test -n "${PYTHON}" \
-    && (command -v ${PYTHON} || which ${PYTHON}) >/dev/null 2>/dev/null \
-    && test "${PYTHON}" != "${PYTHON2}" -a "${PYTHON}" != "${PYTHON3}" \
-    ; then
-        if ${PYTHON} -c "import telnetlib" \
-        ; then
-            nut_with_pynut_py="yes"
-        else
-            dnl See comments above
-            if (cd script/python/module && ${PYTHON} -c "import nut_telnetlib as telnetlib") \
-            ; then
-                nut_with_pynut_py="yes"
-            fi
-        fi
+    if test x"${nut_have_telnetlib_py}" = x"yes" ; then
+        nut_with_pynut_py="yes"
     fi
 fi
 
@@ -2537,7 +2608,7 @@ if test x"${nut_with_pynut}" != xno ; then
                 if test "${nut_with_nut_monitor}" = yes -o "${nut_with_nut_monitor}" = force ; then
                     nut_with_pynut="app"
                 else
-                    AC_MSG_ERROR([python interpreter and/or its site-packages location not found, but required for PyNUT])
+                    AC_MSG_ERROR([Python interpreter and/or its site-packages location not found, but required for PyNUT])
                 fi
                 ;;
         esac
