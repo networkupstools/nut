@@ -107,7 +107,9 @@ jobs:
             ls -la "${HOMEBREW_PREFIX}/include/openssl"/* || true
             find "${HOMEBREW_PREFIX}"/Cellar/openssl* -ls || true
             pkg-config --libs --cflags nss || true
-            pkg-config --libs --cflags openssl || true
+            pkg-config --libs --cflags openssl || {
+                brew unlink openssl && brew link openssl
+                pkg-config --libs --cflags openssl ; } || true
 
       - restore_cache:
           keys:
