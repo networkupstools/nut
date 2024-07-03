@@ -234,12 +234,30 @@ PIDPATH="/var/run"
 dnl Honour new LFS recommendations if applied on the build system:
 AS_IF([test -d "/run"], [PIDPATH="/run"])
 
+AC_CHECK_PROGS([GETENT], [getent], [])
+AC_CHECK_PROGS([ID], [id], [])
+
+PROBE_OS_USER="false"
+PROBE_OS_GROUP="false"
+AS_IF([test x"${GETENT}" != x], [
+	PROBE_OS_USER="${GETENT} passwd "
+	PROBE_OS_GROUP="${GETENT} group "
+	],[
+	AS_IF([test x"${ID}" != x], [
+		PROBE_OS_USER="${ID} -u "
+		PROBE_OS_GROUP="${ID} -g "
+		],[
+		AC_MSG_WARN([Can not check existence of user and group accounts on this system])
+		])
+	]
+)
+
 dnl Defaults for respective configure options below
 dnl Note these defaults may change further below depending on OS and
 dnl certain other configure options (e.g. "in-place replacement")
 RUN_AS_USER="nobody"
 RUN_AS_GROUP="nobody"
-AS_IF([test -n "`getent group nogroup`" && ! test -n "`getent group "${RUN_AS_GROUP}"`"],
+AS_IF([test -n "`${PROBE_OS_GROUP} nogroup`" && ! test -n "`${PROBE_OS_GROUP} "${RUN_AS_GROUP}"`"],
     [RUN_AS_GROUP="nogroup"]
 )
 
@@ -522,7 +540,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
             [for F in "${udevdir}/rules.d"/*-nut-*.rules ; do
                 if test -s "$F" ; then
                     nut_inplace_group="`grep GROUP= "$F" | head -1 | sed 's,^.* GROUP="*\(.*\)"*.*$,\1,'`" \
-                    && test -n "`getent group "${nut_inplace_group}"`" \
+                    && test -n "`${PROBE_OS_GROUP} "${nut_inplace_group}"`" \
                     && AC_MSG_RESULT([Got from ${F}]) \
                     && break \
                     || nut_inplace_group=""
@@ -531,8 +549,8 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
             ])
 
         AS_IF([test -z "${nut_inplace_group}"],
-            [AS_IF([test -n "`getent group nut`"], [nut_inplace_group="nut"],
-                [AS_IF([test -n "`getent group ups`"], [nut_inplace_group="ups"])])])
+            [AS_IF([test -n "`${PROBE_OS_GROUP} nut`"], [nut_inplace_group="nut"],
+                [AS_IF([test -n "`${PROBE_OS_GROUP} ups`"], [nut_inplace_group="ups"])])])
 
         AS_IF([test -n "${nut_inplace_group}"], [
             AC_MSG_RESULT([${nut_inplace_group}])
@@ -556,7 +574,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
                 `grep -E '^ *##*  *RUN_AS_USER' "${CONFPATH}/upsmon.conf" | awk '{print $3}'`\
             ; do \
                 AS_IF([test -z "${nut_inplace_user}"], [
-                    test -n "`getent passwd "${nut_inplace_user}"`" \
+                    test -n "`${PROBE_OS_USER} "${nut_inplace_user}"`" \
                     && AC_MSG_RESULT([Got from ${CONFPATH}/upsmon.conf]) \
                     || nut_inplace_user=""])
              done
@@ -569,7 +587,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
                 `grep -E '^ *##*  *RUN_AS_USER' "${CONFPATH}/upsmon.conf.sample" | awk '{print $3}'`\
             ; do \
                 AS_IF([test -z "${nut_inplace_user}"], [
-                    test -n "`getent passwd "${nut_inplace_user}"`" \
+                    test -n "`${PROBE_OS_USER} "${nut_inplace_user}"`" \
                     && AC_MSG_RESULT([Got from ${CONFPATH}/upsmon.conf]) \
                     || nut_inplace_user=""])
              done
@@ -587,15 +605,15 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         ; do
             AS_IF([test -z "${nut_inplace_user}" && test -s "$F"],
                 [nut_inplace_user="`grep -E '^ *nutuser=' "$F" | sed 's,^ *nutuser=,,'`" \
-                && test -n "`getent passwd "${nut_inplace_user}"`" \
+                && test -n "`${PROBE_OS_USER} "${nut_inplace_user}"`" \
                 && AC_MSG_RESULT([Got from $F]) \
                 || nut_inplace_user=""
             ])
         done
 
         AS_IF([test -z "${nut_inplace_user}"],
-            [AS_IF([test -n "`getent passwd nut`"], [nut_inplace_user="nut"],
-                [AS_IF([test -n "`getent passwd ups`"], [nut_inplace_user="ups"])])])
+            [AS_IF([test -n "`${PROBE_OS_USER} nut`"], [nut_inplace_user="nut"],
+                [AS_IF([test -n "`${PROBE_OS_USER} ups`"], [nut_inplace_user="ups"])])])
 
         AS_IF([test -n "${nut_inplace_user}"], [
             AC_MSG_RESULT([${nut_inplace_user}])
