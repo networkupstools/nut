@@ -40,6 +40,14 @@ jobs:
       BREW_MORE:
         type: string
         default: "" # e.g. "avahi" for all-driver tests
+      NUTCI_HOMEBREW_BASEDIR:
+        # See https://docs.brew.sh/Installation :
+        # * /opt/homebrew for Apple Silicon,
+        # * /usr/local for macOS Intel and
+        # * /home/linuxbrew/.linuxbrew for Linux
+        type: string
+        default: "/opt/homebrew" # since July 2024 CircleCI only serves Apple Silicon instances
+        #default: "/usr/local" # was when CircleCI builders had x86
 
     environment:
       CC: << parameters.CC >>
@@ -111,15 +119,14 @@ jobs:
       # uses of sem_init() and sem_destroy() in nut-scanner.c)
       # NOTE: CANBUILD_NIT_TESTS=yes to check if single-executor environments
       # do not have a problem with it.
-      # NOTE: x86 Homebrew versions used CI_CCACHE_SYMLINKDIR="/usr/local/opt/ccache/libexec"
       - run:
           name: "ci_build"
           command: |-
-            CI_CCACHE_SYMLINKDIR="/opt/homebrew/opt/ccache/libexec" \
+            CI_CCACHE_SYMLINKDIR="${NUTCI_HOMEBREW_BASEDIR}/opt/ccache/libexec" \
             CANBUILD_NIT_TESTS=yes \
-            CFLAGS="$CC_STDVER -Wno-poison-system-directories -Wno-deprecated-declarations -I/opt/homebrew/include" \
-            CXXFLAGS="$CXX_STDVER -Wno-poison-system-directories -I/opt/homebrew/include" \
-            LDFLAGS="-L/opt/homebrew/lib -L/usr/local/lib" \
+            CFLAGS="$CC_STDVER -Wno-poison-system-directories -Wno-deprecated-declarations -I${NUTCI_HOMEBREW_BASEDIR}/include" \
+            CXXFLAGS="$CXX_STDVER -Wno-poison-system-directories -I${NUTCI_HOMEBREW_BASEDIR}/include" \
+            LDFLAGS="-L${NUTCI_HOMEBREW_BASEDIR}/lib -L/usr/local/lib" \
             ./ci_build.sh
 
       - run:
