@@ -1800,6 +1800,59 @@ NUT_ARG_WITH([debuginfo],
 dnl To help find warning/error details in a wall of text, see --enable-Wcolor handled above
 
 dnl ----------------------------------------------------------------------
+dnl Check for with-ssl, and --with-nss or --with-openssl which can be used
+dnl by NUT as well as its networking-capable dependencies (net-snmp, etc.)
+dnl Only one can be enabled at a time, with a preference for OpenSSL
+dnl if both are available
+
+nut_ssl_lib=""
+
+NUT_ARG_WITH([ssl], [enable SSL support (either NSS or OpenSSL)], [auto])
+NUT_ARG_WITH([nss], [enable SSL support using Mozilla NSS], [auto])
+NUT_ARG_WITH([openssl], [enable SSL support using OpenSSL], [auto])
+
+dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_ssl}" != "no"; then
+   dnl check if either NSS or OpenSSL was explicitly requested
+   if test "${nut_with_nss}" = "yes"; then
+      NUT_CHECK_LIBNSS
+      if test "${nut_have_libnss}" != "yes"; then
+         AC_MSG_ERROR([Mozilla NSS not found (required for SSL support)])
+      fi
+   elif test "${nut_with_openssl}" = "yes"; then
+      NUT_CHECK_LIBOPENSSL
+      if test "${nut_have_openssl}" != "yes"; then
+         AC_MSG_ERROR([OpenSSL not found (required for SSL support)])
+      fi
+   else
+      dnl Prefer OpenSSL over NSS otherwise
+      NUT_CHECK_LIBOPENSSL
+      if test "${nut_have_openssl}" != "yes"; then
+         NUT_CHECK_LIBNSS
+         if test "${nut_have_libnss}" != "yes"; then
+            dnl Only abort if SSL has been explicitly requested by the user
+            if test "${nut_with_ssl}" = "yes"; then
+               AC_MSG_ERROR([Neither Mozilla NSS nor OpenSSL was found, but one is needed for the requested SSL support.])
+            else
+               AC_MSG_WARN([Neither Mozilla NSS nor OpenSSL was found (required for SSL support)])
+            fi
+            nut_with_ssl="no"
+         else
+            nut_with_nss="${nut_have_libnss}"
+         fi
+      else
+         nut_with_openssl="${nut_have_openssl}"
+      fi
+   fi
+fi
+
+AM_CONDITIONAL(WITH_NSS, test "${nut_with_nss}" = "yes")
+AM_CONDITIONAL(WITH_OPENSSL, test "${nut_with_openssl}" = "yes")
+
+NUT_REPORT_FEATURE([enable SSL support], [${nut_with_ssl}], [${nut_ssl_lib}],
+					[WITH_SSL], [Define to enable SSL])
+
+dnl ----------------------------------------------------------------------
 dnl Check for presence and compiler flags of various libraries
 
 NUT_ARG_WITH([serial], [build and install serial drivers], [yes])
@@ -2191,58 +2244,6 @@ NUT_REPORT_FEATURE(
     [WITH_LINUX_I2C],
     [Define to enable I2C support]
 )
-
-dnl ----------------------------------------------------------------------
-dnl Check for with-ssl, and --with-nss or --with-openssl
-dnl Only one can be enabled at a time, with a preference for OpenSSL
-dnl if both are available
-
-nut_ssl_lib=""
-
-NUT_ARG_WITH([ssl], [enable SSL support (either NSS or OpenSSL)], [auto])
-NUT_ARG_WITH([nss], [enable SSL support using Mozilla NSS], [auto])
-NUT_ARG_WITH([openssl], [enable SSL support using OpenSSL], [auto])
-
-dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_ssl}" != "no"; then
-   dnl check if either NSS or OpenSSL was explicitly requested
-   if test "${nut_with_nss}" = "yes"; then
-      NUT_CHECK_LIBNSS
-      if test "${nut_have_libnss}" != "yes"; then
-         AC_MSG_ERROR([Mozilla NSS not found (required for SSL support)])
-      fi
-   elif test "${nut_with_openssl}" = "yes"; then
-      NUT_CHECK_LIBOPENSSL
-      if test "${nut_have_openssl}" != "yes"; then
-         AC_MSG_ERROR([OpenSSL not found (required for SSL support)])
-      fi
-   else
-      dnl Prefer OpenSSL over NSS otherwise
-      NUT_CHECK_LIBOPENSSL
-      if test "${nut_have_openssl}" != "yes"; then
-         NUT_CHECK_LIBNSS
-         if test "${nut_have_libnss}" != "yes"; then
-            dnl Only abort if SSL has been explicitly requested by the user
-            if test "${nut_with_ssl}" = "yes"; then
-               AC_MSG_ERROR([Neither Mozilla NSS nor OpenSSL was found, but one is needed for the requested SSL support.])
-            else
-               AC_MSG_WARN([Neither Mozilla NSS nor OpenSSL was found (required for SSL support)])
-            fi
-            nut_with_ssl="no"
-         else
-            nut_with_nss="${nut_have_libnss}"
-         fi
-      else
-         nut_with_openssl="${nut_have_openssl}"
-      fi
-   fi
-fi
-
-AM_CONDITIONAL(WITH_NSS, test "${nut_with_nss}" = "yes")
-AM_CONDITIONAL(WITH_OPENSSL, test "${nut_with_openssl}" = "yes")
-
-NUT_REPORT_FEATURE([enable SSL support], [${nut_with_ssl}], [${nut_ssl_lib}],
-					[WITH_SSL], [Define to enable SSL])
 
 dnl ----------------------------------------------------------------------
 dnl Check for --with-wrap
