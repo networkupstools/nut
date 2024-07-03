@@ -164,6 +164,7 @@ workflows:
     jobs:
       # Note: while "ccache" lists hordes of symlinks to gcc-XXX versions,
       # in practice these toolkits are not installed (by default)
+      # or actually identify as clang
 
 ### This scenario is a subset of fightwarn-all below (modulo C standard),
 ### so disabled to not waste time from free CircleCI allowance limit:
@@ -175,19 +176,37 @@ workflows:
 #          CC_STDVER: "-std=gnu17"
 #          CXX_STDVER: "-std=gnu++17"
 
+#      - osx-xcode:
+#          name: "gnu11-gcc-xcode13_4_1-out-of-tree"
+#          CC: "gcc"
+#          CXX: "g++"
+#          CC_STDVER: "-std=gnu11"
+#          CXX_STDVER: "-std=gnu++11"
+#          # Try an out-of-tree build:
+#          CI_BUILDDIR: "obj"
+
+#      - osx-xcode:
+#          name: "c99-cxx11-gcc-xcode13_4_1-default-distcheck"
+#          CC: "gcc"
+#          CXX: "g++"
+#          CC_STDVER: "-std=c99"
+#          CXX_STDVER: "-std=c++11"
+#          # Try usual and distchecked build:
+#          BUILD_TYPE: "default"
+
       - osx-xcode:
-          name: "gnu11-gcc-xcode13_4_1-out-of-tree"
-          CC: "gcc"
-          CXX: "g++"
+          name: "gnu11-clang-xcode13_4_1-out-of-tree"
+          CC: "clang"
+          CXX: "clang++"
           CC_STDVER: "-std=gnu11"
           CXX_STDVER: "-std=gnu++11"
           # Try an out-of-tree build:
           CI_BUILDDIR: "obj"
 
       - osx-xcode:
-          name: "c99-cxx11-gcc-xcode13_4_1-default-distcheck"
-          CC: "gcc"
-          CXX: "g++"
+          name: "c99-cxx11-clang-xcode13_4_1-default-distcheck"
+          CC: "clang"
+          CXX: "clang++"
           CC_STDVER: "-std=c99"
           CXX_STDVER: "-std=c++11"
           # Try usual and distchecked build:
