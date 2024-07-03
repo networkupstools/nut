@@ -111,7 +111,7 @@ jobs:
       # uses of sem_init() and sem_destroy() in nut-scanner.c)
       # NOTE: CANBUILD_NIT_TESTS=yes to check if single-executor environments
       # do not have a problem with it.
-      # NOTE: Older Homebrew versions used CI_CCACHE_SYMLINKDIR="/usr/local/opt/ccache/libexec"
+      # NOTE: x86 Homebrew versions used CI_CCACHE_SYMLINKDIR="/usr/local/opt/ccache/libexec"
       - run:
           name: "ci_build"
           command: |-
