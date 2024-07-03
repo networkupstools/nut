@@ -24,6 +24,11 @@ if test -z "${nut_ax_realpath_lib_prereq_seen}"; then
             dnl # Assuming mingw (sourceware) x86_64-w64-mingw32-ld or similar
             AS_IF([test x"${LD-}" = x],
                 [AC_CHECK_TOOLS([LD], [ld ld.exe], [false])])
+        ],
+        [*darwin*], [
+            dnl # Can be a non-GNU ld
+            AS_IF([test x"${LD-}" = x],
+                [AC_CHECK_TOOLS([LD], [ld], [false])])
         ]
     )
 fi
@@ -57,17 +62,20 @@ AC_DEFUN([AX_REALPATH_LIB],
             ]
         )
 
-        AC_MSG_CHECKING([for real path to $1 (${myLIBNAME})])
+        AS_CASE(["${myLIBNAME}"],
+            [lib*], [
+                dnl Alas, the portable solution with sed is to avoid
+                dnl parentheses and pipe chars, got too many different
+                dnl ways to escape them in the wild
+                myLIBNAME_LD="`echo "$myLIBNAME" | sed -e 's/^lib/-l/' -e 's/\.dll$//' -e 's/\.dll\.a$//' -e 's/\.a$//' -e 's/\.o$//' -e 's/\.la$//' -e 's/\.lo$//' -e 's/\.lib$//' -e 's/\.dylib$//' -e 's/\.so\..*$//' -e 's/\.so//'`"
+            ], [myLIBNAME_LD="-l$myLIBNAME"]    dnl best-effort...
+        )
+
+        AC_MSG_CHECKING([for real path to $1 (re-parsed as ${myLIBNAME} likely file name / ${myLIBNAME_LD} linker arg)])
         myLIBPATH=""
         AS_CASE(["${target_os}"],
             [*mingw*], [
                 AS_IF([test x"${LD}" != x -a x"${LD}" != xfalse -a x"${DLLTOOL}" != x -a x"${DLLTOOL}" != xfalse], [
-                    AS_CASE(["${myLIBNAME}"],
-                        [lib*], [
-                            myLIBNAME_LD="`echo "$myLIBNAME" | sed -e 's/^lib/-l/' -e 's/\.\(dll\|dll\.a\|a\)$//i'`"
-                        ], [myLIBNAME_LD="-l$myLIBNAME"]    dnl best-effort...
-                    )
-
                     dnl Expected output (Linux mingw cross-build) ends like:
                     dnl   ==================================================
                     dnl   x86_64-w64-mingw32-ld: mode i386pep
@@ -116,7 +124,22 @@ AC_DEFUN([AX_REALPATH_LIB],
                 || { myLIBPATH="`${CC} $CFLAGS --print-file-name="$myLIBNAME"`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
                 || { myLIBPATH="`${CC} $CFLAGS $LDFLAGS $LIBS --print-file-name="$myLIBNAME"`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
                 || myLIBPATH=""
-            ])
+            ]
+        )
+
+        AS_IF([test -z "${myLIBPATH}" && test x"${LD}" != x -a x"${LD}" != xfalse], [
+            AS_CASE(["${target_os}"],
+                [*darwin*], [
+                    dnl Try MacOS-style LD as fallback; expecting strings like
+                    dnl   ld: warning: /usr/local/lib/libneon.dylib, ignoring unexpected dylib file
+                    { myLIBPATH="`${LD} -dynamic -r -arch "${target_cpu}" -search_dylibs_first "${myLIBNAME_LD}" 2>&1 | grep -w dylib | sed 's/^@<:@^\/@:>@*\(\/.*\.dylib\),.*$/\1/'`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
+                    || { myLIBPATH="`${LD} $LDFLAGS -dynamic -r -arch "${target_cpu}" -search_dylibs_first "${myLIBNAME_LD}" 2>&1 | grep -w dylib | sed 's/^@<:@^\/@:>@*\(\/.*\.dylib\),.*$/\1/'`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
+                    || { myLIBPATH="`${LD} $LDFLAGS $LIBS -dynamic -r -arch "${target_cpu}" -search_dylibs_first "${myLIBNAME_LD}" 2>&1 | grep -w dylib | sed 's/^@<:@^\/@:>@*\(\/.*\.dylib\),.*$/\1/'`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
+                    || myLIBPATH=""
+                    rm -f a.out 2>/dev/null || true
+                ]
+            )
+        ])
 
         AS_IF([test -n "${myLIBPATH}" && test -s "${myLIBPATH}"], [
             AC_MSG_RESULT([initially '${myLIBPATH}'])
