@@ -1028,7 +1028,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             if [ -n "${HOMEBREW_PREFIX-}" -a -d "${HOMEBREW_PREFIX-}" ]; then
                 SYS_PKG_CONFIG_PATH="${HOMEBREW_PREFIX}/lib/pkgconfig"
                 CFLAGS="${CFLAGS-} -Wno-poison-system-directories -Wno-deprecated-declarations -isystem ${HOMEBREW_PREFIX}/include -I${HOMEBREW_PREFIX}/include"
-                CPPFLAGS="${CPPFLAGS-} -Wno-poison-system-directories -Wno-deprecated-declarations -isystem ${HOMEBREW_PREFIX}/include -I${HOMEBREW_PREFIX}/include"
+                #CPPFLAGS="${CPPFLAGS-} -Wno-poison-system-directories -Wno-deprecated-declarations -isystem ${HOMEBREW_PREFIX}/include -I${HOMEBREW_PREFIX}/include"
                 CXXFLAGS="${CXXFLAGS-} -Wno-poison-system-directories -isystem ${HOMEBREW_PREFIX}/include -I${HOMEBREW_PREFIX}/include"
                 LDFLAGS="${LDFLAGS-} -L${HOMEBREW_PREFIX}/lib"
 
