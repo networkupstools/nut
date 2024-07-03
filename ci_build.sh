@@ -992,14 +992,6 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         fi
     fi
 
-    # Note: Potentially there can be spaces in entries for multiple
-    # *FLAGS here; this should be okay as long as entry expands to
-    # one token when calling shell (may not be the case for distcheck)
-    CONFIG_OPTS+=("CFLAGS=-I${BUILD_PREFIX}/include ${CFLAGS}")
-    CONFIG_OPTS+=("CPPFLAGS=-I${BUILD_PREFIX}/include ${CPPFLAGS}")
-    CONFIG_OPTS+=("CXXFLAGS=-I${BUILD_PREFIX}/include ${CXXFLAGS}")
-    CONFIG_OPTS+=("LDFLAGS=-L${BUILD_PREFIX}/lib ${LDFLAGS}")
-
     DEFAULT_PKG_CONFIG_PATH="${BUILD_PREFIX}/lib/pkgconfig"
     SYSPKG_CONFIG_PATH="" # Let the OS guess... usually
     case "`echo "$CI_OS_NAME" | tr 'A-Z' 'a-z'`" in
@@ -1036,6 +1028,14 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     else
         CONFIG_OPTS+=("PKG_CONFIG_PATH=${DEFAULT_PKG_CONFIG_PATH}")
     fi
+
+    # Note: Potentially there can be spaces in entries for multiple
+    # *FLAGS here; this should be okay as long as entry expands to
+    # one token when calling shell (may not be the case for distcheck)
+    CONFIG_OPTS+=("CFLAGS=-I${BUILD_PREFIX}/include ${CFLAGS}")
+    CONFIG_OPTS+=("CPPFLAGS=-I${BUILD_PREFIX}/include ${CPPFLAGS}")
+    CONFIG_OPTS+=("CXXFLAGS=-I${BUILD_PREFIX}/include ${CXXFLAGS}")
+    CONFIG_OPTS+=("LDFLAGS=-L${BUILD_PREFIX}/lib ${LDFLAGS}")
 
     CONFIG_OPTS+=("--enable-keep_nut_report_feature")
     CONFIG_OPTS+=("--prefix=${BUILD_PREFIX}")
