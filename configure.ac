@@ -2388,7 +2388,11 @@ if test x"${nut_with_nut_monitor}" != xno ; then
             AC_MSG_RESULT([yes])
         else
             AC_MSG_RESULT([no])
-            PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python3 modules: '${PYTHON3_TEST_MODULES}'"
+            if test -n "${PYTHON_FAILED_TEST_DETAILS}" ; then
+                PYTHON_FAILED_TEST_DETAILS="${PYTHON_FAILED_TEST_DETAILS} and some or all of these Python3 modules: '${PYTHON3_TEST_MODULES}'"
+            else
+                PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python3 modules: '${PYTHON3_TEST_MODULES}'"
+            fi
         fi
     fi
 
@@ -2405,7 +2409,11 @@ if test x"${nut_with_nut_monitor}" != xno ; then
             AC_MSG_RESULT([yes])
         else
             AC_MSG_RESULT([no])
-            PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python3 modules: '${PYTHON3_TEST_MODULES}'"
+            if test -n "${PYTHON_FAILED_TEST_DETAILS}" ; then
+                PYTHON_FAILED_TEST_DETAILS="${PYTHON_FAILED_TEST_DETAILS} and some or all of these Python3 modules in default python: '${PYTHON3_TEST_MODULES}'"
+            else
+                PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python3 modules in default python: '${PYTHON3_TEST_MODULES}'"
+            fi
         fi
 
         AC_MSG_CHECKING([if have python2 prerequisites for NUT-Monitor desktop application in default python])
@@ -2417,9 +2425,9 @@ if test x"${nut_with_nut_monitor}" != xno ; then
         else
             AC_MSG_RESULT([no])
             if test -n "${PYTHON_FAILED_TEST_DETAILS}" ; then
-                PYTHON_FAILED_TEST_DETAILS="${PYTHON_FAILED_TEST_DETAILS} and some or all of these Python2 modules: '${PYTHON2_TEST_MODULES}'"
+                PYTHON_FAILED_TEST_DETAILS="${PYTHON_FAILED_TEST_DETAILS} and some or all of these Python2 modules in default python: '${PYTHON2_TEST_MODULES}'"
             else
-                PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python2 modules: '${PYTHON2_TEST_MODULES}'"
+                PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python2 modules in default python: '${PYTHON2_TEST_MODULES}'"
             fi
         fi
     fi
