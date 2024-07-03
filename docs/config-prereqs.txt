@@ -1344,7 +1344,7 @@ See `.travis.yml` and `.circleci/config.yml` for practical details of the
 setup, and https://brew.sh if you want to install it on your MacOS system
 (note that its default packaged locations known as `HOMEBREW_PREFIX` differ
 depending on architecture -- see https://docs.brew.sh/Installation for more
-details).
+details; find via `brew config | grep HOMEBREW_PREFIX: | awk '{print $2}'`).
 
 Currently known dependencies for basic build include:
 ----

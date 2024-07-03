@@ -40,14 +40,15 @@ jobs:
       BREW_MORE:
         type: string
         default: "" # e.g. "avahi" for all-driver tests
-      HOMEBREW_PREFIX:
+      #HOMEBREW_PREFIX:
+        # Detected below at run-time
         # See https://docs.brew.sh/Installation :
         # * /opt/homebrew for Apple Silicon,
         # * /usr/local for macOS Intel and
         # * /home/linuxbrew/.linuxbrew for Linux
         # TODO: Find a way to select one of the values based on the platform?
-        type: string
-        default: "/opt/homebrew" # since July 2024 CircleCI only serves Apple Silicon instances
+        #type: string
+        #default: "/opt/homebrew" # since July 2024 CircleCI only serves Apple Silicon instances
         #default: "/usr/local" # was when CircleCI builders had x86
 
     environment:
@@ -58,7 +59,7 @@ jobs:
       BUILD_TYPE: << parameters.BUILD_TYPE >>
       CI_BUILDDIR: << parameters.CI_BUILDDIR >>
       BREW_MORE: << parameters.BREW_MORE >>
-      HOMEBREW_PREFIX: << parameters.HOMEBREW_PREFIX >>
+      #HOMEBREW_PREFIX: << parameters.HOMEBREW_PREFIX >>
 
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
@@ -97,6 +98,7 @@ jobs:
             #find /usr /opt /lib* -name '*ltdl*' -ls 2>/dev/null || true
             command -v pkg-config || true
             pkg-config --list-all || true
+            HOMEBREW_PREFIX="`brew config | grep HOMEBREW_PREFIX: | awk '{print $2}'`"
             ls -la "${HOMEBREW_PREFIX}/lib/pkgconfig" || true
             ls -la "${HOMEBREW_PREFIX}/include/openssl" || true
             ls -la "${HOMEBREW_PREFIX}/include/openssl"/* || true
@@ -138,7 +140,7 @@ jobs:
       - run:
           name: "ci_build"
           command: |-
-            HOMEBREW_PREFIX="${HOMEBREW_PREFIX}" \
+            HOMEBREW_PREFIX="`brew config | grep HOMEBREW_PREFIX: | awk '{print $2}'`" \
             CANBUILD_NIT_TESTS=yes \
             CFLAGS="$CC_STDVER" \
             CXXFLAGS="$CXX_STDVER" \
