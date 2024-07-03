@@ -112,6 +112,7 @@ jobs:
             pkg-config --libs --cflags openssl || {
                 brew unlink openssl && brew link --force openssl
                 pkg-config --libs --cflags openssl ; }
+            brew unlink net-snmp && brew link --force net-snmp
 
       - restore_cache:
           keys:
