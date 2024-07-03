@@ -2330,82 +2330,9 @@ NUT_REPORT_FEATURE([build CGI programs], [${nut_with_cgi}], [],
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-pynut and --with-nut_monitor
 
-dnl These also serve as flags that we have certain Python interpreter
-dnl versions to care about below, so we only test their existence once.
-nut_have_syspath_py=""
-nut_have_syspath_py2=""
-nut_have_syspath_py3=""
-nut_have_sysver_py=""
-nut_have_sysver_py2=""
-nut_have_sysver_py3=""
-nut_have_sysverinfo_py=""
-nut_have_sysverinfo_py2=""
-nut_have_sysverinfo_py3=""
-if test x"${nut_with_pynut}" != xno \
-    -a -n "${PYTHON}${PYTHON2}${PYTHON3}" \
-; then
-    if test -n "${PYTHON2}" \
-    && (command -v ${PYTHON2} || which ${PYTHON2}) >/dev/null 2>/dev/null \
-    ; then
-        AC_MSG_CHECKING([Python2 interpreter ${PYTHON2} sys.path])
-        nut_have_syspath_py2="`${PYTHON2} -c 'import sys; print(sys.path);'`" \
-        || nut_have_syspath_py2=""
-        AC_MSG_RESULT([${nut_have_syspath_py2}])
-
-        dnl Can have extra lines about compiler used, etc.
-        AC_MSG_CHECKING([Python2 interpreter ${PYTHON2} sys.version])
-        nut_have_sysver_py2="`${PYTHON2} -c 'import sys; print(sys.version);' | tr '\n' ' '`" \
-        || nut_have_sysver_py2=""
-        AC_MSG_RESULT([${nut_have_sysver_py2}])
-
-        AC_MSG_CHECKING([Python2 interpreter ${PYTHON2} sys.version_info])
-        nut_have_sysverinfo_py2="`${PYTHON2} -c 'import sys; print(sys.version_info);'`" \
-        || nut_have_sysverinfo_py2=""
-        AC_MSG_RESULT([${nut_have_sysverinfo_py2}])
-    fi
-
-    if test -n "${PYTHON3}" \
-    && (command -v ${PYTHON3} || which ${PYTHON3}) >/dev/null 2>/dev/null \
-    ; then
-        AC_MSG_CHECKING([Python3 interpreter ${PYTHON3} sys.path])
-        nut_have_syspath_py3="`${PYTHON3} -c 'import sys; print(sys.path);'`" \
-        || nut_have_syspath_py3=""
-        AC_MSG_RESULT([${nut_have_syspath_py3}])
-
-        dnl Can have extra lines about compiler used, etc.
-        AC_MSG_CHECKING([Python3 interpreter ${PYTHON3} sys.version])
-        nut_have_sysver_py3="`${PYTHON3} -c 'import sys; print(sys.version);' | tr '\n' ' '`" \
-        || nut_have_sysver_py3=""
-        AC_MSG_RESULT([${nut_have_sysver_py3}])
-
-        AC_MSG_CHECKING([Python3 interpreter ${PYTHON3} sys.version_info])
-        nut_have_sysverinfo_py3="`${PYTHON3} -c 'import sys; print(sys.version_info);'`" \
-        || nut_have_sysverinfo_py3=""
-        AC_MSG_RESULT([${nut_have_sysverinfo_py3}])
-    fi
-
-    dnl Test same-ness of pythons with sys.version also?
-    if test -n "${PYTHON}" \
-    && test "${PYTHON}" != "${PYTHON2}" -a "${PYTHON}" != "${PYTHON3}" \
-    && (command -v ${PYTHON} || which ${PYTHON}) >/dev/null 2>/dev/null \
-    ; then
-        AC_MSG_CHECKING([Default Python interpreter ${PYTHON} sys.path])
-        nut_have_syspath_py="`${PYTHON} -c 'import sys; print(sys.path);'`" \
-        || nut_have_syspath_py=""
-        AC_MSG_RESULT([${nut_have_syspath_py}])
-
-        dnl Can have extra lines about compiler used, etc.
-        AC_MSG_CHECKING([Default Python interpreter ${PYTHON} sys.version])
-        nut_have_sysver_py="`${PYTHON} -c 'import sys; print(sys.version);' | tr '\n' ' '`" \
-        || nut_have_sysver_py=""
-        AC_MSG_RESULT([${nut_have_sysver_py}])
-
-        AC_MSG_CHECKING([Default Python interpreter ${PYTHON} sys.version_info])
-        nut_have_sysverinfo_py="`${PYTHON} -c 'import sys; print(sys.version_info);'`" \
-        || nut_have_sysverinfo_py=""
-        AC_MSG_RESULT([${nut_have_sysverinfo_py}])
-    fi
-fi
+dnl The PYTHON*_REPORT vars also serve as flags that we have certain usable
+dnl Python interpreter versions to care about below, so we only test for
+dnl their existence once (in NUT_CHECK*PYTHON* m4 macros).
 
 dnl ${nut_with_nut_monitor}: TODO: arg values to request python 2 gtk2,
 dnl python 3 qt5, or both
@@ -2437,7 +2364,7 @@ if test x"${nut_with_nut_monitor}" != xno ; then
     dnl for "config.log" details since... forever? Still, hardcoded numbers...
     PYTHON2_TEST_MODULES="re,glob,codecs,gtk,gtk.glade,gobject,ConfigParser"
     PYTHON3_TEST_MODULES="re,glob,codecs,PyQt5.uic,configparser"
-    if test -n "${nut_have_sysverinfo_py2}" ; then
+    if test -n "${PYTHON2_VERSION_INFO_REPORT}" ; then
         if ${PYTHON2} -c "import ${PYTHON2_TEST_MODULES}" 1>&5 2>&5 \
         ; then
             nut_with_nut_monitor_py2gtk2="yes"
@@ -2446,7 +2373,7 @@ if test x"${nut_with_nut_monitor}" != xno ; then
         fi
     fi
 
-    if test -n "${nut_have_sysverinfo_py3}" ; then
+    if test -n "${PYTHON3_VERSION_INFO_REPORT}" ; then
         if ${PYTHON3} -c "import ${PYTHON3_TEST_MODULES}" 1>&5 2>&5 \
         ; then
             nut_with_nut_monitor_py3qt5="yes"
@@ -2457,7 +2384,9 @@ if test x"${nut_with_nut_monitor}" != xno ; then
 
     dnl Fall back to default interpreter
     if test -z "${nut_with_nut_monitor_py2gtk2}${nut_with_nut_monitor_py3qt5}" \
-    && test -n "${nut_have_sysverinfo_py}" \
+    && test -n "${PYTHON_VERSION_INFO_REPORT}" \
+    && test x"${PYTHON_VERSION_INFO_REPORT}" != x"${PYTHON3_VERSION_INFO_REPORT}" \
+    && test x"${PYTHON_VERSION_INFO_REPORT}" != x"${PYTHON2_VERSION_INFO_REPORT}" \
     ; then
         if ${PYTHON} -c "import ${PYTHON3_TEST_MODULES}" 1>&5 2>&5 \
         ; then
@@ -2525,7 +2454,7 @@ nut_have_telnetlib_py3=""
 if test x"${nut_with_pynut}" != xno \
     -a -n "${PYTHON}${PYTHON2}${PYTHON3}" \
 ; then
-    if test -n "${nut_have_sysverinfo_py2}" ; then
+    if test -n "${PYTHON2_VERSION_INFO_REPORT}" ; then
         AC_MSG_CHECKING([if we can use stock Python2 telnetlib module provided with interpreter ${PYTHON2}])
         if ${PYTHON2} -c "import telnetlib" \
         ; then
@@ -2536,7 +2465,7 @@ if test x"${nut_with_pynut}" != xno \
         AC_MSG_RESULT([${nut_have_telnetlib_py2}])
     fi
 
-    if test -n "${nut_have_sysverinfo_py3}" ; then
+    if test -n "${PYTHON3_VERSION_INFO_REPORT}" ; then
         AC_MSG_CHECKING([Checking below if we can use stock Python3 telnetlib module for PyNUTClient provided with interpreter ${PYTHON3} (note for warnings from Python 3.11 and beyond: we have a fallback nut_telnetlib module just in case)])
         if ${PYTHON3} -c "import telnetlib" \
         ; then
@@ -2561,7 +2490,10 @@ if test x"${nut_with_pynut}" != xno \
     fi
 
     dnl Test same-ness of pythons with sys.version also?
-    if test -n "${nut_have_sysverinfo_py}" ; then
+    if test -n "${PYTHON_VERSION_INFO_REPORT}" \
+    && test x"${PYTHON_VERSION_INFO_REPORT}" != x"${PYTHON3_VERSION_INFO_REPORT}" \
+    && test x"${PYTHON_VERSION_INFO_REPORT}" != x"${PYTHON2_VERSION_INFO_REPORT}" \
+    ; then
         AC_MSG_CHECKING([Checking below if we can use stock Python telnetlib module for PyNUTClient provided with interpreter ${PYTHON} (note for warnings from Python 3.11 and beyond: we have a fallback nut_telnetlib module just in case)])
         if ${PYTHON} -c "import telnetlib" \
         ; then
