@@ -128,12 +128,10 @@ jobs:
       - run:
           name: "ci_build"
           command: |-
-            CI_CCACHE_SYMLINKDIR="${HOMEBREW_PREFIX}/opt/ccache/libexec" \
-            XML_CATALOG_FILES="${HOMEBREW_PREFIX}/etc/xml/catalog" \
+            HOMEBREW_PREFIX="${HOMEBREW_PREFIX}" \
             CANBUILD_NIT_TESTS=yes \
-            CFLAGS="$CC_STDVER -Wno-poison-system-directories -Wno-deprecated-declarations -I${HOMEBREW_PREFIX}/include" \
-            CXXFLAGS="$CXX_STDVER -Wno-poison-system-directories -I${HOMEBREW_PREFIX}/include" \
-            LDFLAGS="-L${HOMEBREW_PREFIX}/lib -L/usr/local/lib" \
+            CFLAGS="$CC_STDVER -Wno-poison-system-directories -Wno-deprecated-declarations" \
+            CXXFLAGS="$CXX_STDVER -Wno-poison-system-directories" \
             ./ci_build.sh
 
       - run:
