@@ -96,6 +96,9 @@ jobs:
             #find /usr /opt /lib* -name '*ltdl*' -ls 2>/dev/null || true
             brew unlink libtool && brew link libtool
             #find /usr /opt /lib* -name '*ltdl*' -ls 2>/dev/null || true
+            brew info openssl
+            brew info openssl@3
+            brew info openssl@1.1
             command -v pkg-config || true
             pkg-config --list-all || true
             HOMEBREW_PREFIX="`brew config | grep HOMEBREW_PREFIX: | awk '{print $2}'`"
