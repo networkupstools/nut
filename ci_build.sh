@@ -191,16 +191,22 @@ fi
 # (note: a "-" value requests to NOT use a CI_CCACHE_SYMLINKDIR;
 # ccache may still be used via prefixing if the tool is found in
 # the PATH, unless you export CI_CCACHE_USE=no also):
-if [ -z "${CI_CCACHE_SYMLINKDIR-}" ] ; then
-    for D in \
+propose_CI_CCACHE_SYMLINKDIR() {
+    echo \
         "/usr/lib/ccache" \
         "/mingw64/lib/ccache/bin" \
         "/mingw32/lib/ccache/bin" \
         "/usr/lib64/ccache" \
         "/usr/libexec/ccache" \
         "/usr/lib/ccache/bin" \
-        "/usr/local/lib/ccache" \
-    ; do
+        "/usr/local/lib/ccache"
+
+    if [ -n "${HOMEBREW_PREFIX-}" ]; then
+        echo "${HOMEBREW_PREFIX}/opt/ccache/libexec"
+    fi
+}
+if [ -z "${CI_CCACHE_SYMLINKDIR-}" ] ; then
+    for D in `propose_CI_CCACHE_SYMLINKDIR` ; do
         if [ -d "$D" ] ; then
             if ( ls -la "$D" | grep -e ' -> .*ccache' >/dev/null) \
             || ( test -n "`find "$D" -maxdepth 1 -type f -exec grep -li ccache '{}' \;`" ) \
