@@ -77,7 +77,9 @@ jobs:
 
       # Note: MacOS default /bin/bash 3.x is too old for ci_build.sh
       # Brew brings /usr/local/bin/bash 5.x as of this writing
-      # We also reinstall openssl@3 because asciidoc deps pull in openssl@1
+      # We also reinstall/relink openssl@3 because asciidoc deps pull
+      # in openssl@1 and MAYBE they conflict (cause lack of exposed
+      # symlinks).
       - run:
           name: "homebrew"
           command: |-
@@ -87,26 +89,26 @@ jobs:
                 libusb neon net-snmp \
                 nss openssl \
                 libmodbus freeipmi powerman $BREW_MORE
-            brew reinstall openssl@3
+            #brew reinstall openssl@3
 
       # https://github.com/Homebrew/legacy-homebrew/issues/15488
       - run:
-          name: "homebrew-libtool"
+          name: "homebrew-relink"
           command: |-
             #find /usr /opt /lib* -name '*ltdl*' -ls 2>/dev/null || true
             brew unlink libtool && brew link libtool
             #find /usr /opt /lib* -name '*ltdl*' -ls 2>/dev/null || true
             brew info openssl
-            brew info openssl@3
-            brew info openssl@1.1
-            command -v pkg-config || true
-            pkg-config --list-all || true
-            HOMEBREW_PREFIX="`brew config | grep HOMEBREW_PREFIX: | awk '{print $2}'`"
-            ls -la "${HOMEBREW_PREFIX}/lib/pkgconfig" || true
-            ls -la "${HOMEBREW_PREFIX}/include/openssl" || true
-            ls -la "${HOMEBREW_PREFIX}/include/openssl"/* || true
-            find "${HOMEBREW_PREFIX}"/Cellar/openssl* -ls || true
-            pkg-config --libs --cflags nss || true
+            #brew info openssl@3
+            #brew info openssl@1.1
+            #command -v pkg-config || true
+            #pkg-config --list-all || true
+            #HOMEBREW_PREFIX="`brew config | grep HOMEBREW_PREFIX: | awk '{print $2}'`"
+            #ls -la "${HOMEBREW_PREFIX}/lib/pkgconfig" || true
+            #ls -la "${HOMEBREW_PREFIX}/include/openssl" || true
+            #ls -la "${HOMEBREW_PREFIX}/include/openssl"/* || true
+            #find "${HOMEBREW_PREFIX}"/Cellar/openssl* -ls || true
+            pkg-config --libs --cflags nss
             pkg-config --libs --cflags openssl || {
                 brew unlink openssl && brew link --force openssl
                 pkg-config --libs --cflags openssl ; }
