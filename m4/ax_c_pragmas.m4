@@ -188,6 +188,21 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
     AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNUSED_FUNCTION], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wunused-function"])
   ])
 
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wunused-parameter"],
+    [ax_cv__pragma__gcc__diags_ignored_unused_parameter],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[void func(void) {
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+}
+]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_unused_parameter=yes],
+      [ax_cv__pragma__gcc__diags_ignored_unused_parameter=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_unused_parameter" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNUSED_PARAMETER], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wunused-parameter"])
+  ])
+
   AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wdeprecated-declarations"],
     [ax_cv__pragma__gcc__diags_ignored_deprecated_declarations],
     [AC_COMPILE_IFELSE(
