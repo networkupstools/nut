@@ -81,7 +81,7 @@ jobs:
           command: |-
             HOMEBREW_NO_AUTO_UPDATE=1; export HOMEBREW_NO_AUTO_UPDATE;
             brew install ccache bash libtool binutils autoconf automake git m4 \
-                pkg-config aspell asciidoc gd \
+                pkg-config aspell asciidoc docbook-xsl gd \
                 libusb neon net-snmp \
                 nss openssl \
                 libmodbus freeipmi powerman $BREW_MORE
@@ -129,6 +129,7 @@ jobs:
           name: "ci_build"
           command: |-
             CI_CCACHE_SYMLINKDIR="${HOMEBREW_PREFIX}/opt/ccache/libexec" \
+            XML_CATALOG_FILES="${HOMEBREW_PREFIX}/etc/xml/catalog" \
             CANBUILD_NIT_TESTS=yes \
             CFLAGS="$CC_STDVER -Wno-poison-system-directories -Wno-deprecated-declarations -I${HOMEBREW_PREFIX}/include" \
             CXXFLAGS="$CXX_STDVER -Wno-poison-system-directories -I${HOMEBREW_PREFIX}/include" \

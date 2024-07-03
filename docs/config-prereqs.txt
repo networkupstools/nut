@@ -1342,8 +1342,9 @@ for compilers, and Homebrew community packaging for dependencies (including
 
 See `.travis.yml` and `.circleci/config.yml` for practical details of the
 setup, and https://brew.sh if you want to install it on your MacOS system
-(note that its default packaged locations differ depending on architecture --
-see https://docs.brew.sh/Installation for more details).
+(note that its default packaged locations known as `HOMEBREW_PREFIX` differ
+depending on architecture -- see https://docs.brew.sh/Installation for more
+details).
 
 Currently known dependencies for basic build include:
 ----
@@ -1352,7 +1353,7 @@ Currently known dependencies for basic build include:
 
 # Required:
 :; brew install ccache bash libtool binutils autoconf automake git m4 \
-        pkg-config aspell asciidoc gd \
+        pkg-config aspell asciidoc docbook-xsl gd \
         libusb neon net-snmp \
         nss openssl \
         libmodbus freeipmi powerman
@@ -1361,6 +1362,12 @@ Currently known dependencies for basic build include:
 NOTE: while `cppunit` is available, its headers cause compiler warnings
 with current NUT default settings. They may have to be amended for MacOS
 builds, so these tests for MacOS are not enabled in NUT CI at the moment.
+
+NOTE: for `asciidoc`/`a2x` to work, you should `export XML_CATALOG_FILES` with
+the location of packaged resources (`${HOMEBREW_PREFIX}/etc/xml/catalog`).
+On one test system, man page builds spewed warnings like
+`<unknown>:1: SyntaxWarning: invalid escape sequence '\S'`
+but seemed to produce reasonable results otherwise.
 
 Note that ccache is installed in a different location than expected by default
 in the `ci_build.sh` script, so if your system allows to add the symbolic link
