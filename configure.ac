@@ -2474,7 +2474,7 @@ if test x"${nut_with_pynut}" != xno \
             dnl this line essentially checks for presence of
             dnl a usable interpreter implementation compatible
             dnl with Python 3.x syntax.
-            if (cd scripts/python/module && ${PYTHON3} -c "import nut_telnetlib as telnetlib") \
+            if (cd "${srcdir}"/scripts/python/module && ${PYTHON3} -c "import nut_telnetlib as telnetlib") \
             ; then
                 nut_with_pynut_py3="yes"
             fi
@@ -2491,7 +2491,7 @@ if test x"${nut_with_pynut}" != xno \
             nut_with_pynut_py="yes"
         else
             dnl See comments above
-            if (cd scripts/python/module && ${PYTHON} -c "import nut_telnetlib as telnetlib") \
+            if (cd "${srcdir}"/scripts/python/module && ${PYTHON} -c "import nut_telnetlib as telnetlib") \
             ; then
                 nut_with_pynut_py="yes"
             fi
