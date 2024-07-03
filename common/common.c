@@ -3340,6 +3340,37 @@ char * get_libname(const char* base_libname)
 	int index = 0, counter = 0;
 	char *libname_path = NULL;
 	size_t base_libname_length = strlen(base_libname);
+	struct stat	st;
+
+	/* First, check for an exact hit by absolute/relative path
+	 * if `base_libname` includes path separator character(s) */
+	if (xbasename(base_libname) != base_libname) {
+#if HAVE_DECL_REALPATH
+		/* allocates the buffer we free() later */
+		libname_path = realpath(base_libname, NULL);
+		if (libname_path != NULL) {
+			if (stat(libname_path, &st) == 0) {
+				if (st.st_size > 0) {
+					upsdebugx(2, "Looking for lib %s, found by exact hit", base_libname);
+					goto found;
+				}
+			}
+
+			/* else: does not actually exist */
+			free(libname_path);
+			libname_path = NULL;
+		}
+#endif	/* HAVE_DECL_REALPATH */
+
+		/* Just check if candidate name is (points to?) valid file */
+		if (stat(base_libname, &st) == 0) {
+			if (st.st_size > 0) {
+				libname_path = xstrdup(base_libname);
+				upsdebugx(2, "Looking for lib %s, found by exact hit", base_libname);
+				goto found;
+			}
+		}
+	}
 
 	/* Normally these envvars should not be set, but if the user insists,
 	 * we should prefer the override... */
