@@ -2490,7 +2490,7 @@ if test x"${nut_with_pynut}" != xno \
     fi
 
     if test -n "${PYTHON3_VERSION_INFO_REPORT}" ; then
-        AC_MSG_CHECKING([Checking below if we can use stock Python3 telnetlib module for PyNUTClient provided with interpreter ${PYTHON3} (note for warnings from Python 3.11 and beyond: we have a fallback nut_telnetlib module just in case)])
+        AC_MSG_CHECKING([if we can use stock Python3 telnetlib module for PyNUTClient provided with interpreter ${PYTHON3} (note for warnings from Python 3.11 and beyond: we have a fallback nut_telnetlib module just in case)])
         if ${PYTHON3} -c "import telnetlib" \
         ; then
             nut_have_telnetlib_py3="yes"
@@ -2504,7 +2504,7 @@ if test x"${nut_with_pynut}" != xno \
             dnl this line essentially checks for presence of
             dnl a usable interpreter implementation compatible
             dnl with Python 3.x syntax.
-            AC_MSG_CHECKING([Checking below if we can use fallback Python3 nut_telnetlib module for PyNUTClient])
+            AC_MSG_CHECKING([if we can use fallback Python3 nut_telnetlib module for PyNUTClient])
             if (cd "${srcdir}"/scripts/python/module && ${PYTHON3} -c "import nut_telnetlib as telnetlib") \
             ; then
                 nut_have_telnetlib_py3="yes"
@@ -2518,7 +2518,7 @@ if test x"${nut_with_pynut}" != xno \
     && test x"${PYTHON_VERSION_INFO_REPORT}" != x"${PYTHON3_VERSION_INFO_REPORT}" \
     && test x"${PYTHON_VERSION_INFO_REPORT}" != x"${PYTHON2_VERSION_INFO_REPORT}" \
     ; then
-        AC_MSG_CHECKING([Checking below if we can use stock Python telnetlib module for PyNUTClient provided with interpreter ${PYTHON} (note for warnings from Python 3.11 and beyond: we have a fallback nut_telnetlib module just in case)])
+        AC_MSG_CHECKING([if we can use stock Python telnetlib module for PyNUTClient provided with interpreter ${PYTHON} (note for warnings from Python 3.11 and beyond: we have a fallback nut_telnetlib module just in case)])
         if ${PYTHON} -c "import telnetlib" \
         ; then
             nut_have_telnetlib_py="yes"
@@ -2529,7 +2529,7 @@ if test x"${nut_with_pynut}" != xno \
 
         if test x"${nut_have_telnetlib_py}" = x"no" ; then
             dnl See comments above
-            AC_MSG_CHECKING([Checking below if we can use fallback Python nut_telnetlib module for PyNUTClient])
+            AC_MSG_CHECKING([if we can use fallback Python nut_telnetlib module for PyNUTClient])
             if (cd "${srcdir}"/scripts/python/module && ${PYTHON} -c "import nut_telnetlib as telnetlib") \
             ; then
                 nut_have_telnetlib_py="yes"
