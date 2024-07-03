@@ -45,6 +45,7 @@ jobs:
         # * /opt/homebrew for Apple Silicon,
         # * /usr/local for macOS Intel and
         # * /home/linuxbrew/.linuxbrew for Linux
+        # TODO: Find a way to select one of the values based on the platform?
         type: string
         default: "/opt/homebrew" # since July 2024 CircleCI only serves Apple Silicon instances
         #default: "/usr/local" # was when CircleCI builders had x86
@@ -57,6 +58,7 @@ jobs:
       BUILD_TYPE: << parameters.BUILD_TYPE >>
       CI_BUILDDIR: << parameters.CI_BUILDDIR >>
       BREW_MORE: << parameters.BREW_MORE >>
+      NUTCI_HOMEBREW_BASEDIR: << parameters.NUTCI_HOMEBREW_BASEDIR >>
 
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
