@@ -78,6 +78,22 @@ if test -z "${nut_have_neon_seen}"; then
 		AC_CHECK_FUNCS(ne_set_connect_timeout ne_sock_connect_timeout)
 		LIBNEON_CFLAGS="${CFLAGS}"
 		LIBNEON_LIBS="${LIBS}"
+
+		dnl Help ltdl if we can (nut-scanner etc.)
+		for TOKEN in $LIBS ; do
+			AS_CASE(["${TOKEN}"],
+				[-l*neon*], [
+					AX_REALPATH_LIB([${TOKEN}], [SOPATH_LIBNEON], [])
+					AS_IF([test -n "${SOPATH_LIBNEON}" && test -s "${SOPATH_LIBNEON}"], [
+						AC_DEFINE_UNQUOTED([SOPATH_LIBNEON],["${SOPATH_LIBNEON}"],[Path to dynamic library on build system])
+						SOFILE_LIBNEON="`basename "$SOPATH_LIBNEON"`"
+						AC_DEFINE_UNQUOTED([SOFILE_LIBNEON],["${SOFILE_LIBNEON}"],[Base file name of dynamic library on build system])
+						break
+					])
+				]
+			)
+		done
+		unset TOKEN
 	fi
 
 	dnl restore original CFLAGS and LIBS

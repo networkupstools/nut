@@ -2,6 +2,9 @@ dnl detect if current compiler is clang or gcc (or...)
 
 AC_DEFUN([NUT_COMPILER_FAMILY],
 [
+if test -z "${nut_compiler_family_seen}"; then
+  nut_compiler_family_seen=yes
+
   CC_VERSION_FULL="`LANG=C LC_ALL=C $CC --version 2>&1`"   || CC_VERSION_FULL=""
   CXX_VERSION_FULL="`LANG=C LC_ALL=C $CXX --version 2>&1`" || CXX_VERSION_FULL=""
   CPP_VERSION_FULL="`LANG=C LC_ALL=C $CPP --version 2>&1`" || CPP_VERSION_FULL=""
@@ -86,6 +89,7 @@ AC_DEFUN([NUT_COMPILER_FAMILY],
   AS_IF([test "x$CC_VERSION" = x],  [CC_VERSION="`echo "${CC_VERSION_FULL}" | head -1`"])
   AS_IF([test "x$CXX_VERSION" = x], [CXX_VERSION="`echo "${CXX_VERSION_FULL}" | head -1`"])
   AS_IF([test "x$CPP_VERSION" = x], [CPP_VERSION="`echo "${CPP_VERSION_FULL}" | head -1`"])
+fi
 ])
 
 AC_DEFUN([NUT_CHECK_COMPILE_FLAG],

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3174 utf-8
+personal_ws-1.1 en 3176 utf-8
 AAC
 AAS
 ABI
@@ -970,6 +970,7 @@ RDLCK
 RDNT
 RDWR
 README
+REALPATH
 REDi
 REFREPO
 REPLBATT
@@ -2161,6 +2162,7 @@ libipmimonitoring
 libltdl
 liblzma
 libmodbus
+libname
 libneon
 libnetsnmp
 libnss

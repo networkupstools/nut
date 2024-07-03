@@ -40,6 +40,15 @@ jobs:
       BREW_MORE:
         type: string
         default: "" # e.g. "avahi" for all-driver tests
+      NUTCI_HOMEBREW_BASEDIR:
+        # See https://docs.brew.sh/Installation :
+        # * /opt/homebrew for Apple Silicon,
+        # * /usr/local for macOS Intel and
+        # * /home/linuxbrew/.linuxbrew for Linux
+        # TODO: Find a way to select one of the values based on the platform?
+        type: string
+        default: "/opt/homebrew" # since July 2024 CircleCI only serves Apple Silicon instances
+        #default: "/usr/local" # was when CircleCI builders had x86
 
     environment:
       CC: << parameters.CC >>
@@ -49,6 +58,7 @@ jobs:
       BUILD_TYPE: << parameters.BUILD_TYPE >>
       CI_BUILDDIR: << parameters.CI_BUILDDIR >>
       BREW_MORE: << parameters.BREW_MORE >>
+      NUTCI_HOMEBREW_BASEDIR: << parameters.NUTCI_HOMEBREW_BASEDIR >>
 
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
@@ -111,15 +121,14 @@ jobs:
       # uses of sem_init() and sem_destroy() in nut-scanner.c)
       # NOTE: CANBUILD_NIT_TESTS=yes to check if single-executor environments
       # do not have a problem with it.
-      # NOTE: Older Homebrew versions used CI_CCACHE_SYMLINKDIR="/usr/local/opt/ccache/libexec"
       - run:
           name: "ci_build"
           command: |-
-            CI_CCACHE_SYMLINKDIR="/opt/homebrew/opt/ccache/libexec" \
+            CI_CCACHE_SYMLINKDIR="${NUTCI_HOMEBREW_BASEDIR}/opt/ccache/libexec" \
             CANBUILD_NIT_TESTS=yes \
-            CFLAGS="$CC_STDVER -Wno-poison-system-directories -Wno-deprecated-declarations -I/opt/homebrew/include" \
-            CXXFLAGS="$CXX_STDVER -Wno-poison-system-directories -I/opt/homebrew/include" \
-            LDFLAGS="-L/opt/homebrew/lib -L/usr/local/lib" \
+            CFLAGS="$CC_STDVER -Wno-poison-system-directories -Wno-deprecated-declarations -I${NUTCI_HOMEBREW_BASEDIR}/include" \
+            CXXFLAGS="$CXX_STDVER -Wno-poison-system-directories -I${NUTCI_HOMEBREW_BASEDIR}/include" \
+            LDFLAGS="-L${NUTCI_HOMEBREW_BASEDIR}/lib -L/usr/local/lib" \
             ./ci_build.sh
 
       - run:
