@@ -132,11 +132,20 @@ AC_DEFUN([AX_REALPATH_LIB],
                 [*darwin*], [
                     dnl Try MacOS-style LD as fallback; expecting strings like
                     dnl   ld: warning: /usr/local/lib/libneon.dylib, ignoring unexpected dylib file
+                    my_uname_m="`uname -m`"
                     { myLIBPATH="`${LD} -dynamic -r -arch "${target_cpu}" -search_dylibs_first "${myLIBNAME_LD}" 2>&1 | grep -w dylib | sed 's/^@<:@^\/@:>@*\(\/.*\.dylib\),.*$/\1/'`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
                     || { myLIBPATH="`${LD} $LDFLAGS -dynamic -r -arch "${target_cpu}" -search_dylibs_first "${myLIBNAME_LD}" 2>&1 | grep -w dylib | sed 's/^@<:@^\/@:>@*\(\/.*\.dylib\),.*$/\1/'`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
                     || { myLIBPATH="`${LD} $LDFLAGS $LIBS -dynamic -r -arch "${target_cpu}" -search_dylibs_first "${myLIBNAME_LD}" 2>&1 | grep -w dylib | sed 's/^@<:@^\/@:>@*\(\/.*\.dylib\),.*$/\1/'`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
-                    || myLIBPATH=""
+                    || if test x"${target_cpu}" != x"${my_uname_m}" ; then
+                        { myLIBPATH="`${LD} -dynamic -r -arch "${my_uname_m}" -search_dylibs_first "${myLIBNAME_LD}" 2>&1 | grep -w dylib | sed 's/^@<:@^\/@:>@*\(\/.*\.dylib\),.*$/\1/'`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
+                        || { myLIBPATH="`${LD} $LDFLAGS -dynamic -r -arch "${my_uname_m}" -search_dylibs_first "${myLIBNAME_LD}" 2>&1 | grep -w dylib | sed 's/^@<:@^\/@:>@*\(\/.*\.dylib\),.*$/\1/'`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
+                        || { myLIBPATH="`${LD} $LDFLAGS $LIBS -dynamic -r -arch "${my_uname_m}" -search_dylibs_first "${myLIBNAME_LD}" 2>&1 | grep -w dylib | sed 's/^@<:@^\/@:>@*\(\/.*\.dylib\),.*$/\1/'`" && test -n "$myLIBPATH" && test -s "$myLIBPATH" ; } \
+                        || myLIBPATH=""
+                    else
+                        myLIBPATH=""
+                    fi
                     rm -f a.out 2>/dev/null || true
+                    unset my_uname_m
                 ]
             )
         ])
