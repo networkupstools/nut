@@ -1035,11 +1035,23 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 # Net-SNMP "clashes" with system-provided tools (but no header/lib)
                 # so explicit args are needed
                 checkFSobj="${HOMEBREW_PREFIX}/opt/net-snmp/lib/pkgconfig"
-                if [ -d "$checkFSobj" ] ; then
+                if [ -d "$checkFSobj" -a ! -e "${HOMEBREW_PREFIX}/lib/pkgconfig/netsnmp.pc" ] ; then
                     echo "Homebrew: export flags for Net-SNMP"
                     SYS_PKG_CONFIG_PATH="$SYS_PKG_CONFIG_PATH:$checkFSobj"
                     #CONFIG_OPTS+=("--with-snmp-includes=-isystem ${HOMEBREW_PREFIX}/opt/net-snmp/include -I${HOMEBREW_PREFIX}/opt/net-snmp/include")
                     #CONFIG_OPTS+=("--with-snmp-libs=-L${HOMEBREW_PREFIX}/opt/net-snmp/lib")
+                fi
+
+                if [ -d "${HOMEBREW_PREFIX}/opt/net-snmp/include" -a -d "${HOMEBREW_PREFIX}/include/openssl" ]; then
+                    # TODO? Check netsnmp.pc for Libs.private with
+                    #   -L/opt/homebrew/opt/openssl@1.1/lib
+                    # or
+                    #   -L/usr/local/opt/openssl@3/lib
+                    # among other options to derive the exact version
+                    # it wants, and serve that include path here
+                    echo "Homebrew: export configure options for Net-SNMP with default OpenSSL headers (too intimate on Homebrew)"
+                    CONFIG_OPTS+=("--with-snmp-includes=-isystem ${HOMEBREW_PREFIX}/opt/net-snmp/include -I${HOMEBREW_PREFIX}/opt/net-snmp/include -isystem ${HOMEBREW_PREFIX}/include -I${HOMEBREW_PREFIX}/include")
+                    CONFIG_OPTS+=("--with-snmp-libs=-L${HOMEBREW_PREFIX}/opt/net-snmp/lib -lnetsnmp")
                 fi
 
                 # A bit hackish to check this outside `configure`, but...
