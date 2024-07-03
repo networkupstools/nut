@@ -1351,9 +1351,16 @@ Currently known dependencies for basic build include:
 :; HOMEBREW_NO_AUTO_UPDATE=1; export HOMEBREW_NO_AUTO_UPDATE
 
 # Required:
-:; brew install ccache bash libtool pkg-config gd libusb neon net-snmp openssl \
-        binutils autoconf automake git m4
+:; brew install ccache bash libtool binutils autoconf automake git m4 \
+        pkg-config aspell asciidoc gd \
+        libusb neon net-snmp \
+        nss openssl \
+        libmodbus freeipmi powerman
 ----
+
+NOTE: while `cppunit` is available, its headers cause compiler warnings
+with current NUT default settings. They may have to be amended for MacOS
+builds, so these tests for MacOS are not enabled in NUT CI at the moment.
 
 Note that ccache is installed in a different location than expected by default
 in the `ci_build.sh` script, so if your system allows to add the symbolic link

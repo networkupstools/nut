@@ -80,7 +80,11 @@ jobs:
           name: "homebrew"
           command: |-
             HOMEBREW_NO_AUTO_UPDATE=1; export HOMEBREW_NO_AUTO_UPDATE;
-            brew install ccache bash libtool binutils autoconf automake git m4 pkg-config gd libusb neon net-snmp openssl $BREW_MORE
+            brew install ccache bash libtool binutils autoconf automake git m4 \
+                pkg-config aspell asciidoc gd \
+                libusb neon net-snmp \
+                nss openssl \
+                libmodbus freeipmi powerman $BREW_MORE
 
       # https://github.com/Homebrew/legacy-homebrew/issues/15488
       - run:
