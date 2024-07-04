@@ -25,6 +25,9 @@ jobs:
       CXX:
         type: string
         default: "" # e.g. "clang++"
+      CPP:
+        type: string
+        default: "" # e.g. "clang -E"
       CC_STDVER:
         type: string
         default: "" # e.g. "-std=gnu17"
@@ -54,6 +57,7 @@ jobs:
     environment:
       CC: << parameters.CC >>
       CXX: << parameters.CXX >>
+      CPP: << parameters.CPP >>
       CC_STDVER: << parameters.CC_STDVER >>
       CXX_STDVER: << parameters.CXX_STDVER >>
       BUILD_TYPE: << parameters.BUILD_TYPE >>
@@ -221,6 +225,7 @@ workflows:
           name: "gnu11-clang-xcode13_4_1-out-of-tree"
           CC: "clang"
           CXX: "clang++"
+          CPP: "clang -E"
           CC_STDVER: "-std=gnu11"
           CXX_STDVER: "-std=gnu++11"
           # Try an out-of-tree build:
@@ -230,6 +235,7 @@ workflows:
           name: "c99-cxx11-clang-xcode13_4_1-default-distcheck"
           CC: "clang"
           CXX: "clang++"
+          CPP: "clang -E"
           CC_STDVER: "-std=c99"
           CXX_STDVER: "-std=c++11"
           # Try usual and distchecked build:
