@@ -96,6 +96,9 @@ jobs:
                 lua pycparser libxml2 \
                 $BREW_MORE
             #brew reinstall openssl@3
+            if ps -ef | grep -v grep | grep sshd ; then
+                brew install mc
+            fi
 
       # https://github.com/Homebrew/legacy-homebrew/issues/15488
       - run:
