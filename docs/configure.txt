@@ -141,8 +141,10 @@ Drivers with dynamic data mapping
 
 Build and install DMF (data mapping file) support, currently implemented
 for snmp-ups (default: auto-detect)
+
 Note that you need to install libneon (mandatory) and xmllint / lua development
-package or files.
+package or files, and may have to pass options like `--with-lua-includes` and
+`--with-lua-libs` if they are not visible in common paths nor to `pkg-config`.
 
 LLNC CHAOS Powerman driver
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
