@@ -77,6 +77,7 @@ sed \
     -e 's/__extern_inline/extern/g' \
     -e 's/extern'"${SPACETAB}"'__inline/extern/g' \
     -e 's/_Float[0-9]*x*/float/g' \
+    -e 's/__uint128_t/__uint64_t/g' \
     -e 's/\^'"${SPACETAB}"'_*_Nonnull/*/g' \
     -e 's/__restrict//g' \
     -e 's/_*_Nullable//g' \
