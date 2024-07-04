@@ -1080,6 +1080,10 @@ To display in a rough example:
 	}
 -------------------------------------------------------------------------------
 
+All this having been said, we do detect and use the support for pragmas
+to quiesce the complaints about such situations, but limit their use to
+processing of certain third-party header files.
+
 Miscellaneous coding style tools
 --------------------------------
 
