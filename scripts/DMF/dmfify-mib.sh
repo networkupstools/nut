@@ -116,10 +116,14 @@ fi
 [ -n "${CC}" ] && [ -x "$CC" ] || die 2 "Can not find (G)CC: '$CC'"
 export CC CFLAGS CC_ENV
 
-[ -n "${CPP-}" ] || CPP="`command -v cpp`"
+# Avoid "cpp" directly as it may be too "traditional"
+[ -n "${CPP-}" ] || CPP="$CC -E" ### CPP="`command -v cpp`"
 CPP_ENV=""
 if [ -n "${CPP-}" ] ; then
     case "$CPP" in
+        "$CC -E") # exact hit
+            CPP_ENV="$CC_ENV"
+            ;;
         *" "*|*\t*) # args inside? prefixed envvars?
             STAGE=env
             for TOKEN in $CPP ; do
