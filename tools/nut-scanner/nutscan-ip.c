@@ -267,6 +267,7 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 	char * mask;
 	char * saveptr = NULL;
 	nutscan_ip_iter_t ip;
+	/* TODO: There can be up to 128-bit CIDR mask for IPv6... */
 	int mask_val;
 	int mask_byte;
 	int ret;
@@ -302,6 +303,7 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 	upsdebugx(5, "%s: parsed cidr=%s into first_ip=%s and mask=%s",
 		__func__, cidr, first_ip, mask);
 
+	/* TODO: check if mask is also an IP address or a bit count */
 	mask_val = atoi(mask);
 	upsdebugx(5, "%s: parsed mask value %d",
 		__func__, mask_val);
