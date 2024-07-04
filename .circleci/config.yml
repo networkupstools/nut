@@ -88,7 +88,9 @@ jobs:
                 pkg-config aspell asciidoc docbook-xsl cppunit gd \
                 libusb neon net-snmp \
                 nss openssl \
-                libmodbus freeipmi powerman $BREW_MORE
+                libmodbus freeipmi powerman \
+                lua pycparser libxml2 \
+                $BREW_MORE
             #brew reinstall openssl@3
 
       # https://github.com/Homebrew/legacy-homebrew/issues/15488
