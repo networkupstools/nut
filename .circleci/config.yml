@@ -87,7 +87,7 @@ jobs:
       - run:
           name: "homebrew"
           command: |-
-            HOMEBREW_NO_AUTO_UPDATE=1; export HOMEBREW_NO_AUTO_UPDATE;
+            #HOMEBREW_NO_AUTO_UPDATE=1; export HOMEBREW_NO_AUTO_UPDATE;
             brew install ccache bash libtool binutils autoconf automake git m4 \
                 pkg-config aspell asciidoc docbook-xsl cppunit gd \
                 libusb neon net-snmp \
