@@ -34,11 +34,12 @@
 #include <stdio.h>
 #include <string.h>
 #include "nut-scan.h"
+#include "nut_platform.h"
 
 #ifdef WIN32
 # define SOEXT ".dll"
 #else
-# if defined WITH_MACOSX && WITH_MACOSX
+# ifdef NUT_PLATFORM_APPLE_OSX
 #  define SOEXT ".dylib"
 # else	/* not WIN32, not MACOS */
 #  define SOEXT ".so"

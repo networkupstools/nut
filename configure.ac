@@ -234,12 +234,30 @@ PIDPATH="/var/run"
 dnl Honour new LFS recommendations if applied on the build system:
 AS_IF([test -d "/run"], [PIDPATH="/run"])
 
+AC_CHECK_PROGS([GETENT], [getent], [])
+AC_CHECK_PROGS([ID], [id], [])
+
+PROBE_OS_USER="false"
+PROBE_OS_GROUP="false"
+AS_IF([test x"${GETENT}" != x], [
+	PROBE_OS_USER="${GETENT} passwd "
+	PROBE_OS_GROUP="${GETENT} group "
+	],[
+	AS_IF([test x"${ID}" != x], [
+		PROBE_OS_USER="${ID} -u "
+		PROBE_OS_GROUP="${ID} -g "
+		],[
+		AC_MSG_WARN([Can not check existence of user and group accounts on this system])
+		])
+	]
+)
+
 dnl Defaults for respective configure options below
 dnl Note these defaults may change further below depending on OS and
 dnl certain other configure options (e.g. "in-place replacement")
 RUN_AS_USER="nobody"
 RUN_AS_GROUP="nobody"
-AS_IF([test -n "`getent group nogroup`" && ! test -n "`getent group "${RUN_AS_GROUP}"`"],
+AS_IF([test -n "`${PROBE_OS_GROUP} nogroup`" && ! test -n "`${PROBE_OS_GROUP} "${RUN_AS_GROUP}"`"],
     [RUN_AS_GROUP="nogroup"]
 )
 
@@ -522,7 +540,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
             [for F in "${udevdir}/rules.d"/*-nut-*.rules ; do
                 if test -s "$F" ; then
                     nut_inplace_group="`grep GROUP= "$F" | head -1 | sed 's,^.* GROUP="*\(.*\)"*.*$,\1,'`" \
-                    && test -n "`getent group "${nut_inplace_group}"`" \
+                    && test -n "`${PROBE_OS_GROUP} "${nut_inplace_group}"`" \
                     && AC_MSG_RESULT([Got from ${F}]) \
                     && break \
                     || nut_inplace_group=""
@@ -531,8 +549,8 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
             ])
 
         AS_IF([test -z "${nut_inplace_group}"],
-            [AS_IF([test -n "`getent group nut`"], [nut_inplace_group="nut"],
-                [AS_IF([test -n "`getent group ups`"], [nut_inplace_group="ups"])])])
+            [AS_IF([test -n "`${PROBE_OS_GROUP} nut`"], [nut_inplace_group="nut"],
+                [AS_IF([test -n "`${PROBE_OS_GROUP} ups`"], [nut_inplace_group="ups"])])])
 
         AS_IF([test -n "${nut_inplace_group}"], [
             AC_MSG_RESULT([${nut_inplace_group}])
@@ -556,7 +574,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
                 `grep -E '^ *##*  *RUN_AS_USER' "${CONFPATH}/upsmon.conf" | awk '{print $3}'`\
             ; do \
                 AS_IF([test -z "${nut_inplace_user}"], [
-                    test -n "`getent passwd "${nut_inplace_user}"`" \
+                    test -n "`${PROBE_OS_USER} "${nut_inplace_user}"`" \
                     && AC_MSG_RESULT([Got from ${CONFPATH}/upsmon.conf]) \
                     || nut_inplace_user=""])
              done
@@ -569,7 +587,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
                 `grep -E '^ *##*  *RUN_AS_USER' "${CONFPATH}/upsmon.conf.sample" | awk '{print $3}'`\
             ; do \
                 AS_IF([test -z "${nut_inplace_user}"], [
-                    test -n "`getent passwd "${nut_inplace_user}"`" \
+                    test -n "`${PROBE_OS_USER} "${nut_inplace_user}"`" \
                     && AC_MSG_RESULT([Got from ${CONFPATH}/upsmon.conf]) \
                     || nut_inplace_user=""])
              done
@@ -587,15 +605,15 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         ; do
             AS_IF([test -z "${nut_inplace_user}" && test -s "$F"],
                 [nut_inplace_user="`grep -E '^ *nutuser=' "$F" | sed 's,^ *nutuser=,,'`" \
-                && test -n "`getent passwd "${nut_inplace_user}"`" \
+                && test -n "`${PROBE_OS_USER} "${nut_inplace_user}"`" \
                 && AC_MSG_RESULT([Got from $F]) \
                 || nut_inplace_user=""
             ])
         done
 
         AS_IF([test -z "${nut_inplace_user}"],
-            [AS_IF([test -n "`getent passwd nut`"], [nut_inplace_user="nut"],
-                [AS_IF([test -n "`getent passwd ups`"], [nut_inplace_user="ups"])])])
+            [AS_IF([test -n "`${PROBE_OS_USER} nut`"], [nut_inplace_user="nut"],
+                [AS_IF([test -n "`${PROBE_OS_USER} ups`"], [nut_inplace_user="ups"])])])
 
         AS_IF([test -n "${nut_inplace_user}"], [
             AC_MSG_RESULT([${nut_inplace_user}])
@@ -1800,6 +1818,59 @@ NUT_ARG_WITH([debuginfo],
 dnl To help find warning/error details in a wall of text, see --enable-Wcolor handled above
 
 dnl ----------------------------------------------------------------------
+dnl Check for with-ssl, and --with-nss or --with-openssl which can be used
+dnl by NUT as well as its networking-capable dependencies (net-snmp, etc.)
+dnl Only one can be enabled at a time, with a preference for OpenSSL
+dnl if both are available
+
+nut_ssl_lib=""
+
+NUT_ARG_WITH([ssl], [enable SSL support (either NSS or OpenSSL)], [auto])
+NUT_ARG_WITH([nss], [enable SSL support using Mozilla NSS], [auto])
+NUT_ARG_WITH([openssl], [enable SSL support using OpenSSL], [auto])
+
+dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_ssl}" != "no"; then
+   dnl check if either NSS or OpenSSL was explicitly requested
+   if test "${nut_with_nss}" = "yes"; then
+      NUT_CHECK_LIBNSS
+      if test "${nut_have_libnss}" != "yes"; then
+         AC_MSG_ERROR([Mozilla NSS not found (required for SSL support)])
+      fi
+   elif test "${nut_with_openssl}" = "yes"; then
+      NUT_CHECK_LIBOPENSSL
+      if test "${nut_have_openssl}" != "yes"; then
+         AC_MSG_ERROR([OpenSSL not found (required for SSL support)])
+      fi
+   else
+      dnl Prefer OpenSSL over NSS otherwise
+      NUT_CHECK_LIBOPENSSL
+      if test "${nut_have_openssl}" != "yes"; then
+         NUT_CHECK_LIBNSS
+         if test "${nut_have_libnss}" != "yes"; then
+            dnl Only abort if SSL has been explicitly requested by the user
+            if test "${nut_with_ssl}" = "yes"; then
+               AC_MSG_ERROR([Neither Mozilla NSS nor OpenSSL was found, but one is needed for the requested SSL support.])
+            else
+               AC_MSG_WARN([Neither Mozilla NSS nor OpenSSL was found (required for SSL support)])
+            fi
+            nut_with_ssl="no"
+         else
+            nut_with_nss="${nut_have_libnss}"
+         fi
+      else
+         nut_with_openssl="${nut_have_openssl}"
+      fi
+   fi
+fi
+
+AM_CONDITIONAL(WITH_NSS, test "${nut_with_nss}" = "yes")
+AM_CONDITIONAL(WITH_OPENSSL, test "${nut_with_openssl}" = "yes")
+
+NUT_REPORT_FEATURE([enable SSL support], [${nut_with_ssl}], [${nut_ssl_lib}],
+					[WITH_SSL], [Define to enable SSL])
+
+dnl ----------------------------------------------------------------------
 dnl Check for presence and compiler flags of various libraries
 
 NUT_ARG_WITH([serial], [build and install serial drivers], [yes])
@@ -2133,12 +2204,11 @@ if test "${nut_with_linux_i2c}" != no; then
                 [AC_DEFINE([HAVE_LINUX_SMBUS_H], [1],
                     [Define to 1 if you have <i2c/smbus.h>.])]
             )
+            nut_have_linux_i2c="no"
             AC_CHECK_DECLS(
                 [i2c_smbus_access, i2c_smbus_read_byte_data, i2c_smbus_write_byte_data, i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
-                [], dnl # nut_with_linux_i2c="yes"
-                [AS_IF([test "${nut_with_linux_i2c}" = "yes"],
-                    [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)],
-                    [nut_with_linux_i2c="no"])],
+                [nut_have_linux_i2c="yes"],
+                [],
                 [#include <stdio.h>
                  #ifdef HAVE_LINUX_I2C_DEV_H
                  #include <linux/i2c-dev.h>
@@ -2154,13 +2224,26 @@ if test "${nut_with_linux_i2c}" != no; then
             dnl Note: here we keep the verdict from above, or make it worse.
             LIBS_SAVED="$LIBS"
             LIBS=""
-            AC_SEARCH_LIBS([i2c_smbus_read_byte, i2c_smbus_access, i2c_smbus_read_byte_data, i2c_smbus_write_byte_datai2c_smbus_write_byte_data, i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
-                [i2c],
+            AS_IF([test "${nut_have_linux_i2c}" = yes], [
+                nut_have_linux_i2c="no"
+                AC_SEARCH_LIBS(i2c_smbus_read_byte, i2c, [
+                AC_SEARCH_LIBS(i2c_smbus_access, i2c, [
+                AC_SEARCH_LIBS(i2c_smbus_read_byte_data, i2c, [
+                AC_SEARCH_LIBS(i2c_smbus_write_byte_data, i2c, [
+                AC_SEARCH_LIBS(i2c_smbus_read_word_data, i2c, [
+                AC_SEARCH_LIBS(i2c_smbus_write_word_data, i2c, [
+                AC_SEARCH_LIBS(i2c_smbus_read_block_data, i2c, [
+                    [nut_have_linux_i2c="yes"]
+                ])])])])])])])])
+
+            dnl # Note: *with* (desire) is not "no" in this big if-clause
+            AS_IF([test "${nut_have_linux_i2c}" = yes],
                 [nut_with_linux_i2c="yes"],
                 [AS_IF([test "${nut_with_linux_i2c}" = "yes"],
                     [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)],
                     [nut_with_linux_i2c="no"])
                 ])
+
             LIBI2C_LIBS="$LIBS"
             LIBS="$LIBS_SAVED"
             ;;
@@ -2179,58 +2262,6 @@ NUT_REPORT_FEATURE(
     [WITH_LINUX_I2C],
     [Define to enable I2C support]
 )
-
-dnl ----------------------------------------------------------------------
-dnl Check for with-ssl, and --with-nss or --with-openssl
-dnl Only one can be enabled at a time, with a preference for OpenSSL
-dnl if both are available
-
-nut_ssl_lib=""
-
-NUT_ARG_WITH([ssl], [enable SSL support (either NSS or OpenSSL)], [auto])
-NUT_ARG_WITH([nss], [enable SSL support using Mozilla NSS], [auto])
-NUT_ARG_WITH([openssl], [enable SSL support using OpenSSL], [auto])
-
-dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_ssl}" != "no"; then
-   dnl check if either NSS or OpenSSL was explicitly requested
-   if test "${nut_with_nss}" = "yes"; then
-      NUT_CHECK_LIBNSS
-      if test "${nut_have_libnss}" != "yes"; then
-         AC_MSG_ERROR([Mozilla NSS not found (required for SSL support)])
-      fi
-   elif test "${nut_with_openssl}" = "yes"; then
-      NUT_CHECK_LIBOPENSSL
-      if test "${nut_have_openssl}" != "yes"; then
-         AC_MSG_ERROR([OpenSSL not found (required for SSL support)])
-      fi
-   else
-      dnl Prefer OpenSSL over NSS otherwise
-      NUT_CHECK_LIBOPENSSL
-      if test "${nut_have_openssl}" != "yes"; then
-         NUT_CHECK_LIBNSS
-         if test "${nut_have_libnss}" != "yes"; then
-            dnl Only abort if SSL has been explicitly requested by the user
-            if test "${nut_with_ssl}" = "yes"; then
-               AC_MSG_ERROR([Neither Mozilla NSS nor OpenSSL was found, but one is needed for the requested SSL support.])
-            else
-               AC_MSG_WARN([Neither Mozilla NSS nor OpenSSL was found (required for SSL support)])
-            fi
-            nut_with_ssl="no"
-         else
-            nut_with_nss="${nut_have_libnss}"
-         fi
-      else
-         nut_with_openssl="${nut_have_openssl}"
-      fi
-   fi
-fi
-
-AM_CONDITIONAL(WITH_NSS, test "${nut_with_nss}" = "yes")
-AM_CONDITIONAL(WITH_OPENSSL, test "${nut_with_openssl}" = "yes")
-
-NUT_REPORT_FEATURE([enable SSL support], [${nut_with_ssl}], [${nut_ssl_lib}],
-					[WITH_SSL], [Define to enable SSL])
 
 dnl ----------------------------------------------------------------------
 dnl Check for --with-wrap

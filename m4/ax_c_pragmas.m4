@@ -188,6 +188,21 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
     AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNUSED_FUNCTION], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wunused-function"])
   ])
 
+  AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wunused-parameter"],
+    [ax_cv__pragma__gcc__diags_ignored_unused_parameter],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[void func(void) {
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+}
+]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_unused_parameter=yes],
+      [ax_cv__pragma__gcc__diags_ignored_unused_parameter=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_unused_parameter" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNUSED_PARAMETER], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wunused-parameter"])
+  ])
+
   AC_CACHE_CHECK([for pragma GCC diagnostic ignored "-Wdeprecated-declarations"],
     [ax_cv__pragma__gcc__diags_ignored_deprecated_declarations],
     [AC_COMPILE_IFELSE(
@@ -936,6 +951,90 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
   )
   AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_exit_time_destructors_besidefunc" = "yes"],[
     AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wexit-time-destructors" (outside functions)])
+  ])
+
+  AC_CACHE_CHECK([for C++ pragma GCC diagnostic ignored "-Wsuggest-override" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_suggest_override_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wsuggest-override"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_suggest_override_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_suggest_override_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_suggest_override_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SUGGEST_OVERRIDE_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wsuggest-override" (outside functions)])
+  ])
+
+  AC_CACHE_CHECK([for C++ pragma GCC diagnostic ignored "-Wsuggest-destructor-override" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_suggest_destructor_override_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wsuggest-destructor-override"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_suggest_destructor_override_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_suggest_destructor_override_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_suggest_destructor_override_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SUGGEST_DESTRUCTOR_OVERRIDE_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wsuggest-destructor-override" (outside functions)])
+  ])
+
+  AC_CACHE_CHECK([for C++ pragma GCC diagnostic ignored "-Wweak-vtables" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_weak_vtables_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wweak-vtables"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_weak_vtables_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_weak_vtables_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_weak_vtables_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_WEAK_VTABLES_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wweak-vtables" (outside functions)])
+  ])
+
+  AC_CACHE_CHECK([for C++ pragma GCC diagnostic ignored "-Wdeprecated-dynamic-exception-spec" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_deprecated_dynamic_exception_spec_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wdeprecated-dynamic-exception-spec"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_deprecated_dynamic_exception_spec_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_deprecated_dynamic_exception_spec_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_deprecated_dynamic_exception_spec_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DYNAMIC_EXCEPTION_SPEC_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wdeprecated-dynamic-exception-spec" (outside functions)])
+  ])
+
+  AC_CACHE_CHECK([for C++ pragma GCC diagnostic ignored "-Wextra-semi" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_extra_semi_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wextra-semi"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_extra_semi_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_extra_semi_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_extra_semi_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wextra-semi" (outside functions)])
+  ])
+
+  AC_CACHE_CHECK([for C++ pragma GCC diagnostic ignored "-Wold-style-cast" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_old_style_cast_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wold-style-cast"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_old_style_cast_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_old_style_cast_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_old_style_cast_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_OLD_STYLE_CAST_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wold-style-cast" (outside functions)])
+  ])
+
+  AC_CACHE_CHECK([for C++ pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant" (outside functions)],
+    [ax_cv__pragma__gcc__diags_ignored_zero_as_null_pointer_constant_besidefunc],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([[#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"]], [])],
+      [ax_cv__pragma__gcc__diags_ignored_zero_as_null_pointer_constant_besidefunc=yes],
+      [ax_cv__pragma__gcc__diags_ignored_zero_as_null_pointer_constant_besidefunc=no]
+    )]
+  )
+  AS_IF([test "$ax_cv__pragma__gcc__diags_ignored_zero_as_null_pointer_constant_besidefunc" = "yes"],[
+    AC_DEFINE([HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ZERO_AS_NULL_POINTER_CONSTANT_BESIDEFUNC], 1, [define if your compiler has #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant" (outside functions)])
   ])
 
   AC_LANG_POP([C++])
