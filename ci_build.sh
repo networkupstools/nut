@@ -1075,6 +1075,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         export XML_CATALOG_FILES
                     fi
                 fi
+
+                checkFSobj="${HOMEBREW_PREFIX}/opt/libxml2/lib/pkgconfig"
+                if [ -d "$checkFSobj" -a ! -e "${HOMEBREW_PREFIX}/lib/pkgconfig/libxml2.pc" ] ; then
+                    echo "Homebrew: export flags for LibXML2"
+                    SYS_PKG_CONFIG_PATH="$SYS_PKG_CONFIG_PATH:$checkFSobj"
+                fi
             else
                 echo "WARNING: It seems you are building on MacOS, but HOMEBREW_PREFIX is not set or valid; it can help with auto-detection of some features!"
             fi
