@@ -71,6 +71,18 @@
  */
 
 #if WITH_LIBLTDL
+# include "nut_platform.h"
+
+# ifdef WIN32
+#  define SOEXT ".dll"
+# else
+#  ifdef NUT_PLATFORM_APPLE_OSX
+#   define SOEXT ".dylib"
+#  else  /* not WIN32, not MACOS */
+#   define SOEXT ".so"
+#  endif
+# endif
+
 /* LTDL variables needed to load LibNEON */
 static lt_dlhandle dl_handle_libneon = NULL;
 static const char *dl_error = NULL;
@@ -121,17 +133,17 @@ int load_neon_lib(void)
 {
 #ifdef WITH_NEON
 # if WITH_LIBLTDL
-	char *neon_libname_path = get_libname("libneon.so");
+	char *neon_libname_path = get_libname("libneon" SOEXT);
 	int lt_dlinit_succeeded = 0;
 
 	upsdebugx(1, "load_neon_lib(): neon_libname_path = %s", neon_libname_path);
 	if(!neon_libname_path) {
-		upslogx(LOG_NOTICE, "Error loading Neon library required for DMF: %s not found by dynamic loader; please verify it is in your /usr/lib or some otherwise searched dynamic-library path, under this exact name (maybe you just need a symlink?)", "libneon.so");
+		upslogx(LOG_NOTICE, "Error loading Neon library required for DMF: %s not found by dynamic loader; please verify it is in your /usr/lib or some otherwise searched dynamic-library path, under this exact name (maybe you just need a symlink?)", "libneon" SOEXT);
 
-		neon_libname_path = get_libname("libneon-gnutls.so");
+		neon_libname_path = get_libname("libneon-gnutls" SOEXT);
 		upsdebugx(1, "load_neon_lib(): neon_libname_path = %s", neon_libname_path);
 		if(!neon_libname_path) {
-			upslogx(LOG_ERR, "Error loading Neon library required for DMF: %s not found by dynamic loader; please verify it is in your /usr/lib or some otherwise searched dynamic-library path, under this exact name (maybe you just need a symlink?)", "libneon-gnutls.so");
+			upslogx(LOG_ERR, "Error loading Neon library required for DMF: %s not found by dynamic loader; please verify it is in your /usr/lib or some otherwise searched dynamic-library path, under this exact name (maybe you just need a symlink?)", "libneon-gnutls" SOEXT);
 			return ERR;
 		}
 	}
