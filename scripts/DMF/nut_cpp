@@ -14,7 +14,12 @@
 
 # Note: on MacOS you would really want 'clang -E' here,
 # as plain 'cpp' fails to parse their system headers.
-[ -n "${CPP-}" ] || CPP="cpp"
+# Internally there 'cpp' is 'clang -E -traditional-cpp'
+# (for pre-C89 syntax) and 'cc', 'gcc', 'cpp' etc. are
+# all links to 'clang' which does its job as told to.
+# See https://bugs.llvm.org/show_bug.cgi?id=31886 and
+# https://stackoverflow.com/questions/42031921/unterminated-unconditional-directive-error-when-preprocessing-c-code
+[ -n "${CPP-}" ] || { [ -n "$CC" ] && CPP="$CC -E" || CPP="cpp" ; }
 # Note that CWD may often be "DMF" or "DMF/somesubdir", so default for both
 [ -n "${CPPFLAGS-}" ] || CPPFLAGS="-I../../include -I../../../include"
 [ -n "${CFLAGS-}" ] || CFLAGS=""
