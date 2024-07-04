@@ -978,6 +978,34 @@ offsets divisible by 4 or 8 (consistently for the whole table):
 #define SOMETHING_WITH_A_VERY_LONG_NAME     255	/* flag comment */
 --------------------------------------------------------------------------------
 
+While at it, we encourage indentation of nested preprocessor macros
+and pragmas, by adding a single space character for each inner level,
+as well as commenting the `#else` and `#endif` parts (especially if
+they are far away from their opening `#if`/`#ifdef`/`#ifndef` statement)
+to help visual navigation in the source code base. Please take care to
+keep the hash `#` character of the preprocessor lines in the left-most
+column, since some implementations of `cpp` parser used for analysis
+default to "traditional" (pre-C89) syntax shared with other languages,
+and then ignore lines which do not start with the hash character (or
+worse, ignore only some of them but not others).
+
+--------------------------------------------------------------------------------
+#ifdef WITH_SSL
+# ifdef WITH_NSS
+	/* some code for NSS */
+# endif	/* WITH_NSS */
+# ifdef WITH_OPENSSL
+#  ifndef WIN32
+	/* some code for OpenSSL on POSIX systems */
+#  else	/* not WIN32 */
+	/* some code for OpenSSL on Windows */
+#  endif	/* not WIN32 */
+# endif	/* WITH_OPENSSL */
+#else	/* not WITH_SSL */
+	/* report that crypto support is not built */
+#endif	/* WITH_SSL */
+--------------------------------------------------------------------------------
+
 If you write something that uses leading spaces, you may get away with
 it in a driver that's relatively secluded.  However, if we have to work
 on that code, expect it to get reformatted according to the above.
@@ -1051,6 +1079,10 @@ To display in a rough example:
 		return;
 	}
 -------------------------------------------------------------------------------
+
+All this having been said, we do detect and use the support for pragmas
+to quiesce the complaints about such situations, but limit their use to
+processing of certain third-party header files.
 
 Miscellaneous coding style tools
 --------------------------------
