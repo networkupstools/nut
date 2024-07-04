@@ -111,6 +111,11 @@ This option must be requested explicitly, even for a complete scan.
 NETWORK OPTIONS
 ---------------
 
+NOTE: Some of the networked buses (such as SNMP, NetXML, IPMI and "Old NUT")
+require IP address(es) to scan, and others have a
+different behavior when exactly no addresses are specified (it is not currently
+possible to mix the two behaviors in one invocation of the `nut-scanner` tool).
+
 *-t* | *--timeout* 'timeout'::
 Set the network timeout in seconds. Default timeout is 5 seconds.
 
