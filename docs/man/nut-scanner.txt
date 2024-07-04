@@ -117,11 +117,19 @@ IP addresses.  Normally a new range is specified by a set of one `-s` and one
 `-e` options following each other (in any order).  Lone or consecutive `-s` or
 `-e` options present on the command line would translate to single-IP queries.
 Also a `-m` option squashed between two `-s` and `-e` options would be a new
-range, turning those two into single-IP queries.
+range, turning those two into single-IP queries.  This feature does not by
+itself recombine "neighboring" addresses into one range, nor even check for
+duplicate or overlapping specifications.
 +
 Also note that some buses require IP address(es) to scan, and others have a
 different behavior when exactly no addresses are specified (it is not currently
 possible to mix the two behaviors in one invocation of the `nut-scanner` tool).
++
+Finally note that currently even if multi-threaded support is available, each
+range specification is a separate fan-out of queries constrained by the timeout.
+Requests to scan many single IP addresses will take a while to complete, much
+longer than if they were a single range.  This will be hopefully fixed in later
+releases.
 
 *-t* | *--timeout* 'timeout'::
 Set the network timeout in seconds. Default timeout is 5 seconds.
