@@ -868,6 +868,11 @@ display_help:
 	}
 
 	if (allow_xml && nutscan_avail_xml_http) {
+		/* NOTE: No check for IP address range,
+		 * NetXML default scan is broadcast
+		 * so it just runs (if requested and
+		 * supported).
+		 */
 		upsdebugx(quiet, "Scanning XML/HTTP bus.");
 		xml_sec.usec_timeout = timeout;
 #ifdef HAVE_PTHREAD
@@ -939,6 +944,11 @@ display_help:
 	}
 
 	if (allow_ipmi && nutscan_avail_ipmi) {
+		/* NOTE: No check for IP address range,
+		 * IPMI default scan is local device
+		 * so it just runs (if requested and
+		 * supported).
+		 */
 		upsdebugx(quiet, "Scanning IPMI bus.");
 #ifdef HAVE_PTHREAD
 		upsdebugx(1, "IPMI SCAN: starting pthread_create with run_ipmi...");
