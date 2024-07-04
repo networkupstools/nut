@@ -96,6 +96,7 @@ jobs:
             #brew reinstall openssl@3
             if ps -ef | grep -v grep | grep sshd ; then
                 brew install mc
+                ifconfig -a || true
             fi
 
       # https://github.com/Homebrew/legacy-homebrew/issues/15488
