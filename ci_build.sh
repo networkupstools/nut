@@ -55,7 +55,9 @@ case "$BUILD_TYPE" in
     fightwarn-gcc)
         CC="gcc"
         CXX="g++"
-        CPP="cpp"
+        # Avoid "cpp" directly as it may be too "traditional"
+        #CPP="cpp"
+        CPP="gcc -E"
         BUILD_TYPE=fightwarn
         ;;
     fightwarn-clang)
@@ -972,13 +974,13 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         # Note: can be a multi-token name like "clang -E" or just not a full pathname
         ( [ -x "$CPP" ] || $CPP --help >/dev/null 2>/dev/null ) && export CPP
     else
-        if is_gnucc "cpp" ; then
-            CPP=cpp && export CPP
-        else
-            case "$COMPILER_FAMILY" in
-                CLANG*|GCC*) CPP="$CC -E" && export CPP ;;
-            esac
-        fi
+        # Avoid "cpp" directly as it may be too "traditional"
+        case "$COMPILER_FAMILY" in
+            CLANG*|GCC*) CPP="$CC -E" && export CPP ;;
+            *) if is_gnucc "cpp" ; then
+                CPP=cpp && export CPP
+               fi ;;
+        esac
     fi
 
     if [ -z "${CANBUILD_LIBGD_CGI-}" ]; then
