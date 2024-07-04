@@ -59,8 +59,6 @@
 
 #include "nut-scan.h"
 
-#define DEFAULT_TIMEOUT 5
-
 #define ERR_BAD_OPTION	(-1)
 
 static const char optstring[] = "?ht:T:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:QnNPqIVaD";
