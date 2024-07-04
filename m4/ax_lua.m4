@@ -1,5 +1,5 @@
 # ===========================================================================
-#          http://www.gnu.org/software/autoconf-archive/ax_lua.html
+#          https://www.gnu.org/software/autoconf-archive/ax_lua.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -166,7 +166,7 @@
 #   Public License for more details.
 #
 #   You should have received a copy of the GNU General Public License along
-#   with this program. If not, see <http://www.gnu.org/licenses/>.
+#   with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 #   As a special exception, the respective Autoconf Macro's copyright owner
 #   gives unlimited permission to copy, distribute and modify the configure
@@ -181,7 +181,7 @@
 #   modified version of the Autoconf Macro, you may extend this special
 #   exception to the GPL to apply to your modified version as well.
 
-#serial 39
+#serial 42
 
 dnl =========================================================================
 dnl AX_PROG_LUA([MINIMUM-VERSION], [TOO-BIG-VERSION],
@@ -524,22 +524,17 @@ AC_DEFUN([AX_LUA_HEADERS],
             [ax_cv_lua_header_version],
             [ _ax_lua_saved_cppflags=$CPPFLAGS
               CPPFLAGS="$CPPFLAGS $LUA_INCLUDE"
-              AC_RUN_IFELSE(
-                [ AC_LANG_SOURCE([[
+              AC_COMPUTE_INT(ax_cv_lua_header_version_major,[LUA_VERSION_NUM/100],[AC_INCLUDES_DEFAULT
 #include <lua.h>
-#include <stdlib.h>
-#include <stdio.h>
-int main(int argc, char ** argv)
-{
-  if(argc > 1) printf("%s", LUA_VERSION);
-  exit(EXIT_SUCCESS);
-}
-]])
-                ],
-                [ ax_cv_lua_header_version=`./conftest$EXEEXT p | \
-                    $SED -n "s|^Lua \(@<:@0-9@:>@\{1,\}\.@<:@0-9@:>@\{1,\}\).\{0,\}|\1|p"`
-                ],
-                [ax_cv_lua_header_version='unknown'])
+],[ax_cv_lua_header_version_major=unknown])
+              AC_COMPUTE_INT(ax_cv_lua_header_version_minor,[LUA_VERSION_NUM%100],[AC_INCLUDES_DEFAULT
+#include <lua.h>
+],[ax_cv_lua_header_version_minor=unknown])
+              AS_IF([test "x$ax_cv_lua_header_version_major" = xunknown || test "x$ax_cv_lua_header_version_minor" = xunknown],[
+                ax_cv_lua_header_version=unknown
+              ],[
+                ax_cv_lua_header_version="$ax_cv_lua_header_version_major.$ax_cv_lua_header_version_minor"
+              ])
               CPPFLAGS=$_ax_lua_saved_cppflags
             ])
 
@@ -638,39 +633,9 @@ AC_DEFUN([AX_LUA_LIBS],
       [$_ax_lua_extra_libs])
     LIBS=$_ax_lua_saved_libs
 
-    dnl Retry with addidional library paths
-    AS_IF([test "x$ac_cv_search_lua_load" = 'xno'],
-        [
-        for _ax_lua_libdir in \
-            /usr/lib \
-            /usr/local/lib \
-        ; do
-            _ax_lua_saved_libs=$LIBS
-            LIBS="$LIBS -L${_ax_lua_libdir} $LUA_LIB"
-            AS_UNSET([ac_cv_search_lua_load])
-            AC_SEARCH_LIBS([lua_load],
-              [ lua$LUA_VERSION \
-                lua$LUA_SHORT_VERSION \
-                lua-$LUA_VERSION \
-                lua-$LUA_SHORT_VERSION \
-                lua \
-              ],
-              [_ax_found_lua_libs='yes'],
-              [_ax_found_lua_libs='no'],
-              [$_ax_lua_extra_libs])
-            LIBS=$_ax_lua_saved_libs
-
-            AS_IF([test "x$ac_cv_search_lua_load" != 'xno' &&
-               test "x$ac_cv_search_lua_load" != 'xnone required'],
-              [LUA_LIB="-L${_ax_lua_libdir} $ac_cv_search_lua_load $_ax_lua_extra_libs"
-               break])
-        done
-        unset _ax_lua_libdir
-        ],[
-            AS_IF([test "x$ac_cv_search_lua_load" != 'xno' &&
-                   test "x$ac_cv_search_lua_load" != 'xnone required'],
-              [LUA_LIB="$ac_cv_search_lua_load $_ax_lua_extra_libs"])
-        ])
+    AS_IF([test "x$ac_cv_search_lua_load" != 'xno' &&
+           test "x$ac_cv_search_lua_load" != 'xnone required'],
+      [LUA_LIB="$ac_cv_search_lua_load $_ax_lua_extra_libs"])
   ])
 
   dnl Test the result and run user code.
