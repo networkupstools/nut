@@ -140,6 +140,8 @@ https://github.com/networkupstools/nut/milestone/11
 +
 NOTE: Currently both the long and short names for `libupsclient` should be
 installed.
+   * newly added support to scan several IP addresses (single or ranges)
+     with the same call, by repeating command-line options. [#2244]
 
  - common code:
    * introduced a `NUT_DEBUG_SYSLOG` environment variable to tweak activation
