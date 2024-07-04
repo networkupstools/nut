@@ -78,7 +78,8 @@ an 'end IP'. See specific SNMP OPTIONS for community and security settings.
 
 *-M* | *--xml_scan*::
 Scan XML/HTTP devices. Can broadcast a network message on the current network
-interfaces to retrieve XML/HTTP capable devices. No IP required in this mode.
+interface(s) to retrieve XML/HTTP capable devices. No IP required in this mode.
+If IP address ranges are specified, they would be scanned instead of a broadcast.
 
 *-O* | *--oldnut_scan*::
 Scan NUT devices (i.e. upsd daemon) on IP ranging from 'start IP' to 'end IP'.
@@ -87,12 +88,12 @@ Scan NUT devices (i.e. upsd daemon) on IP ranging from 'start IP' to 'end IP'.
 Scan NUT simulated devices (.dev files in $CONFPATH).
 
 *-A* | *--avahi_scan*::
-Scan NUT servers using Avahi request on the current network interfaces.
-No IP required.
+Scan NUT servers using Avahi request on the current network interface(s).
+No IP address options are required or used.
 
 *-I* | *--ipmi_scan*::
 Scan NUT compatible power supplies available via IPMI on the current host,
-or over the network.
+or over the network if IP address ranges are specified.
 
 *-E* | *--eaton_serial* 'serial ports'::
 Scan Eaton devices (XCP and SHUT) available via serial bus on the current host.
@@ -124,7 +125,7 @@ If this parameter is omitted, only the 'start IP' is scanned. If 'end IP' is
 less than 'start IP', both parameters are internally permuted.
 
 *-m* | *--mask_cidr* 'IP address/mask'::
-Set a range of IP using CIDR notation.
+Set a range of IP addresses by using CIDR notation.
 
 NUT DEVICE OPTION
 -----------------
