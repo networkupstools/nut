@@ -252,6 +252,7 @@ static void * run_usb(void *arg)
 	dev[TYPE_USB] = nutscan_scan_usb(scanopts_ptr);
 	return NULL;
 }
+#endif	/* HAVE_PTHREAD */
 
 static void * run_snmp(void * arg)
 {
@@ -387,12 +388,11 @@ static void * run_ipmi(void * arg)
 
 static void * run_eaton_serial(void *arg)
 {
-	NUT_UNUSED_VARIABLE(arg);
+	char * arg_serial_ports = (char *)arg;
 
-	dev[TYPE_EATON_SERIAL] = nutscan_scan_eaton_serial(serial_ports);
+	dev[TYPE_EATON_SERIAL] = nutscan_scan_eaton_serial(arg_serial_ports);
 	return NULL;
 }
-#endif /* HAVE_PTHREAD */
 
 static void show_usage(void)
 {
@@ -1047,6 +1047,7 @@ display_help:
 		}
 #else
 		upsdebugx(1, "USB SCAN: no pthread support, starting nutscan_scan_usb...");
+		/* Not calling run_usb() here, as it re-processes the arg */
 		dev[TYPE_USB] = nutscan_scan_usb(&cli_link_detail_level);
 #endif /* HAVE_PTHREAD */
 	} else {
@@ -1068,7 +1069,8 @@ display_help:
 			}
 #else
 			upsdebugx(1, "SNMP SCAN: no pthread support, starting nutscan_scan_snmp...");
-			dev[TYPE_SNMP] = nutscan_scan_snmp(start_ip, end_ip, timeout, &snmp_sec);
+			/* dev[TYPE_SNMP] = nutscan_scan_snmp(start_ip, end_ip, timeout, &snmp_sec); */
+			run_snmp(&snmp_sec);
 #endif /* HAVE_PTHREAD */
 		}
 	} else {
@@ -1091,11 +1093,8 @@ display_help:
 		}
 #else
 		upsdebugx(1, "XML/HTTP SCAN: no pthread support, starting nutscan_scan_xml_http_range()...");
-		if (ip_ranges_count) {
-			dev[TYPE_XML] = nutscan_scan_xml_http_range(start_ip, end_ip, timeout, &xml_sec);
-		} else {
-			/* Probe broadcast */
-			dev[TYPE_XML] = nutscan_scan_xml_http_range(NULL, NULL, timeout, &xml_sec);
+		/* dev[TYPE_XML] = nutscan_scan_xml_http_range(start_ip, end_ip, timeout, &xml_sec); */
+		run_xml(&xml_sec);
 		}
 #endif /* HAVE_PTHREAD */
 	} else {
@@ -1117,7 +1116,8 @@ display_help:
 			}
 #else
 			upsdebugx(1, "NUT bus (old) SCAN: no pthread support, starting nutscan_scan_nut...");
-			dev[TYPE_NUT] = nutscan_scan_nut(start_ip, end_ip, port, timeout);
+			/*dev[TYPE_NUT] = nutscan_scan_nut(start_ip, end_ip, port, timeout);*/
+			run_nut_old(NULL);
 #endif /* HAVE_PTHREAD */
 		}
 	} else {
@@ -1133,8 +1133,9 @@ display_help:
 			nutscan_avail_nut_simulation = 0;
 		}
 #else
-			upsdebugx(1, "NUT simulation devices SCAN: no pthread support, starting nutscan_scan_nut_simulation...");
-			dev[TYPE_NUT_SIMULATION] = nutscan_scan_nut_simulation(timeout);
+		upsdebugx(1, "NUT simulation devices SCAN: no pthread support, starting nutscan_scan_nut_simulation...");
+		/* dev[TYPE_NUT_SIMULATION] = nutscan_scan_nut_simulation(); */
+		run_nut_simulation(NULL);
 #endif /* HAVE_PTHREAD */
 	} else {
 		upsdebugx(1, "NUT simulation devices SCAN: not requested or supported, SKIPPED");
@@ -1150,7 +1151,8 @@ display_help:
 		}
 #else
 		upsdebugx(1, "NUT bus (avahi) SCAN: no pthread support, starting nutscan_scan_avahi...");
-		dev[TYPE_AVAHI] = nutscan_scan_avahi(timeout);
+		/* dev[TYPE_AVAHI] = nutscan_scan_avahi(timeout); */
+		run_avahi(NULL);
 #endif /* HAVE_PTHREAD */
 	} else {
 		upsdebugx(1, "NUT bus (avahi) SCAN: not requested or supported, SKIPPED");
@@ -1171,12 +1173,8 @@ display_help:
 		}
 #else
 		upsdebugx(1, "IPMI SCAN: no pthread support, starting nutscan_scan_ipmi...");
-		if (ip_ranges_count) {
-			dev[TYPE_IPMI] = nutscan_scan_ipmi(start_ip, end_ip, &ipmi_sec);
-		} else {
-			/* Probe local device */
-			dev[TYPE_IPMI] = nutscan_scan_ipmi(NULL, NULL, &ipmi_sec);
-		}
+		/* dev[TYPE_IPMI] = nutscan_scan_ipmi(start_ip, end_ip, &ipmi_sec); */
+		run_ipmi(&ipmi_sec);
 #endif /* HAVE_PTHREAD */
 	} else {
 		upsdebugx(1, "IPMI SCAN: not requested or supported, SKIPPED");
@@ -1193,7 +1191,8 @@ display_help:
 		/* nutscan_avail_eaton_serial(?) = 0; */
 #else
 		upsdebugx(1, "SERIAL SCAN: no pthread support, starting nutscan_scan_eaton_serial...");
-		dev[TYPE_EATON_SERIAL] = nutscan_scan_eaton_serial (serial_ports);
+		/* dev[TYPE_EATON_SERIAL] = nutscan_scan_eaton_serial (serial_ports); */
+		run_eaton_serial(serial_ports);
 #endif /* HAVE_PTHREAD */
 	} else {
 		upsdebugx(1, "SERIAL SCAN: not requested or supported, SKIPPED");
