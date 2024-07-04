@@ -147,6 +147,8 @@ jobs:
       # uses of sem_init() and sem_destroy() in nut-scanner.c)
       # NOTE: CANBUILD_NIT_TESTS=yes to check if single-executor environments
       # do not have a problem with it.
+      # NOTE: python3.11 is available but broken on some of the workers
+      # (no homebrew dirs in search path)
       - run:
           name: "ci_build"
           command: |-
@@ -154,6 +156,7 @@ jobs:
             CANBUILD_NIT_TESTS=yes \
             CFLAGS="$CC_STDVER" \
             CXXFLAGS="$CXX_STDVER" \
+            PYTHON=python3.12 \
             ./ci_build.sh
 
       - run:
