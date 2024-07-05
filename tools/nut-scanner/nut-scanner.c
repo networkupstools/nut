@@ -36,6 +36,18 @@
 #include <unistd.h>
 #include <string.h>
 
+/* Headers related to getifaddrs() for `-m auto` on different platforms */
+#ifdef HAVE_SYS_SOCKET_H
+# include <sys/socket.h>
+#endif
+#include <sys/types.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <ifaddrs.h>
+#include <netdb.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
+
 #ifdef HAVE_PTHREAD
 # include <pthread.h>
 # ifdef HAVE_SEMAPHORE
@@ -443,6 +455,7 @@ static void show_usage(void)
 	printf("  -s, --start_ip <IP address>: First IP address to scan.\n");
 	printf("  -e, --end_ip <IP address>: Last IP address to scan.\n");
 	printf("  -m, --mask_cidr <IP address/mask>: Give a range of IP using CIDR notation.\n");
+	printf("  -m, --mask_cidr auto: Detect local IP address(es) and scan corresponding subnet(s).\n");
 	printf("NOTE: IP address range specifications can be repeated, to scan several.\n");
 	printf("Specifying a single first or last address before starting another range\n");
 	printf("leads to scanning just that one address as the range.\n");
@@ -575,6 +588,7 @@ int main(int argc, char *argv[])
 	nutscan_xml_t  xml_sec;
 	int opt_ret;
 	char *start_ip = NULL, *end_ip = NULL;
+	int auto_nets = 0;
 	int allow_all = 0;
 	int allow_usb = 0;
 	int allow_snmp = 0;
@@ -712,22 +726,94 @@ int main(int argc, char *argv[])
 				allow_eaton_serial = 1;
 				break;
 			case 'm':
-				if (start_ip || end_ip) {
-					/* Save whatever we have, either
-					 * this one address or an earlier
-					 * known range with its start or end */
+				if (!strcmp(optarg, "auto")) {
+					if (auto_nets) {
+						fprintf(stderr, "Duplicate request for connected subnet scan ignored\n");
+					} else {
+						/* Inspired by https://stackoverflow.com/a/63789267/4715872 */
+						struct ifaddrs *ifap;
+
+						if (getifaddrs(&ifap) < 0) {
+							fprintf(stderr,
+								"Failed to getifaddrs() for connected subnet scan: %s\n",
+								strerror(errno));
+							exit(EXIT_FAILURE);
+						} else {
+							struct ifaddrs *ifa;
+							for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
+								if (ifa->ifa_addr) {
+									if (ifa->ifa_addr->sa_family == AF_INET6) {
+										char addr[INET6_ADDRSTRLEN];
+										char mask[INET6_ADDRSTRLEN];
+										int masklen = 0;
+										uint8_t i, j;
+										struct sockaddr_in6 *sm = (struct sockaddr_in6 *)ifa->ifa_netmask;
+
+										for (j = 0; j < 16; j++) {
+											i = sm->sin6_addr.s6_addr[j];
+											while (i) {
+												masklen += i & 1;
+												i >>= 1;
+											}
+										}
+
+										getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in6), addr, sizeof(addr), NULL, 0, NI_NUMERICHOST);
+										getnameinfo(ifa->ifa_netmask, sizeof(struct sockaddr_in6), mask, sizeof(mask), NULL, 0, NI_NUMERICHOST);
+										printf("Interface: %s\tAddress: %s\tMask: %s (len: %i)\tFlags: %08x", ifa->ifa_name, addr, mask, masklen, ifa->ifa_flags);
+									} else if (ifa->ifa_addr->sa_family == AF_INET) {
+										struct sockaddr_in *sa = (struct sockaddr_in *)ifa->ifa_addr;
+										struct sockaddr_in *sm = (struct sockaddr_in *)ifa->ifa_netmask;
+										char *addr = inet_ntoa(sa->sin_addr);
+										char *mask = inet_ntoa(sm->sin_addr);
+										int masklen = 0;
+										in_addr_t i = sm->sin_addr.s_addr;
+
+										while (i) {
+											masklen += i & 1;
+											i >>= 1;
+										}
+										printf("Interface: %s\tAddress: %s\tMask: %s (len: %i)\tFlags: %08x", ifa->ifa_name, addr, mask, masklen, ifa->ifa_flags);
+/*
+									} else {
+										printf("Addr family: %" PRIuMAX, (intmax_t)ifa->ifa_addr->sa_family);
+*/
+									}
+
+									if (ifa->ifa_addr->sa_family == AF_INET6 || ifa->ifa_addr->sa_family == AF_INET) {
+										if (ifa->ifa_flags & IFF_LOOPBACK)
+											printf(" IFF_LOOPBACK");
+										if (ifa->ifa_flags & IFF_UP)
+											printf(" IFF_UP");
+										if (ifa->ifa_flags & IFF_RUNNING)
+											printf(" IFF_RUNNING");
+										if (ifa->ifa_flags &  IFF_BROADCAST)
+											printf("  IFF_BROADCAST(is assigned)");
+										printf("\n");
+									}
+								}
+							}
+							freeifaddrs(ifap);
+						}
+						auto_nets = 1;
+					}
+				} else {
+					if (start_ip || end_ip) {
+						/* Save whatever we have, either
+						 * this one address or an earlier
+						 * known range with its start or end */
+						add_ip_range(start_ip, end_ip);
+						start_ip = NULL;
+						end_ip = NULL;
+					}
+
+					upsdebugx(5, "Processing CIDR net/mask: %s", optarg);
+					nutscan_cidr_to_ip(optarg, &start_ip, &end_ip);
+					upsdebugx(5, "Extracted IP address range from CIDR net/mask: %s => %s", start_ip, end_ip);
+
 					add_ip_range(start_ip, end_ip);
 					start_ip = NULL;
 					end_ip = NULL;
 				}
-
-				upsdebugx(5, "Processing CIDR net/mask: %s", optarg);
-				nutscan_cidr_to_ip(optarg, &start_ip, &end_ip);
-				upsdebugx(5, "Extracted IP address range from CIDR net/mask: %s => %s", start_ip, end_ip);
-
-				add_ip_range(start_ip, end_ip);
-				start_ip = NULL;
-				end_ip = NULL;
 				break;
 			case 'D':
 				/* nothing to do, here */

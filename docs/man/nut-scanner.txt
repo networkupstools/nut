@@ -146,6 +146,9 @@ less than 'start IP', both parameters are internally permuted.
 
 *-m* | *--mask_cidr* 'IP address/mask'::
 Set a range of IP addresses by using CIDR notation.
++
+A special form `-m auto` allows `nut-scanner` to detect local IP address(es)
+and scan corresponding subnet(s) on supported platforms.
 
 NUT DEVICE OPTION
 -----------------
