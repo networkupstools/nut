@@ -267,11 +267,10 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 	char * mask;
 	char * saveptr = NULL;
 	nutscan_ip_iter_t ip;
-	/* TODO: There can be up to 128-bit CIDR mask for IPv6... */
-	int mask_val;
-	int mask_byte;
 	int ret;
-	uint32_t mask_bit; /* 32-bit IPv4 address bitmask */
+	int mask_val;	/* mask length in bits */
+	int mask_byte;	/* number of byte in 128-bit IPv6 address array (uint8_t[16]) for netmask */
+	uint32_t mask_bit; /* 32-bit IPv4 address bitmask value */
 	char host[SMALLBUF];
 	struct addrinfo hints;
 	struct addrinfo *res;
@@ -305,7 +304,7 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 
 	/* TODO: check if mask is also an IP address or a bit count */
 	mask_val = atoi(mask);
-	upsdebugx(5, "%s: parsed mask value %d",
+	upsdebugx(5, "%s: parsed mask into numeric value %d",
 		__func__, mask_val);
 
 	/* NOTE: Sanity-wise, some larger number also makes sense
@@ -333,15 +332,15 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 
 	if ((ret = getaddrinfo(first_ip, NULL, &hints, &res)) != 0) {
 		/* EAI_ADDRFAMILY? */
-		upsdebugx(5, "%s: getaddrinfo() failed for AF_INET (IPv4): %d",
-			__func__, ret);
+		upsdebugx(5, "%s: getaddrinfo() failed for AF_INET (IPv4, will retry with IPv6): %d: %s",
+			__func__, ret, gai_strerror(ret));
 
 		/* Try IPv6 detection */
 		ip.type = IPv6;
 		hints.ai_family = AF_INET6;
 		if ((ret = getaddrinfo(first_ip, NULL, &hints, &res)) != 0) {
-			upsdebugx(5, "%s: getaddrinfo() failed for AF_INET6 (IPv6): %d",
-				__func__, ret);
+			upsdebugx(5, "%s: getaddrinfo() failed for AF_INET6 (IPv6): %d: %s",
+				__func__, ret, gai_strerror(ret));
 			free(first_ip);
 			return 0;
 		}
@@ -406,7 +405,7 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 		free(first_ip);
 		return 1;
 	}
-	else {
+	else {	/* ip.type == IPv6 */
 		if (getaddrinfo(first_ip, NULL, &hints, &res) != 0) {
 			return 0;
 		}
