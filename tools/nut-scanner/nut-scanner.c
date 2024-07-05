@@ -734,10 +734,9 @@ int main(int argc, char *argv[])
 						struct ifaddrs *ifap;
 
 						if (getifaddrs(&ifap) < 0) {
-							fprintf(stderr,
+							fatalx(EXIT_FAILURE,
 								"Failed to getifaddrs() for connected subnet scan: %s\n",
 								strerror(errno));
-							exit(EXIT_FAILURE);
 						} else {
 							struct ifaddrs *ifa;
 							char msg[LARGEBUF];
