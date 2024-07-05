@@ -749,21 +749,25 @@ int main(int argc, char *argv[])
 						} else {
 							struct ifaddrs *ifa;
 							char msg[LARGEBUF];
+							char addr[LARGEBUF];
+							char mask[LARGEBUF];
+							int masklen = 0;
 
 							for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
 								if (ifa->ifa_addr) {
 									memset(msg, 0, sizeof(msg));
+									memset(addr, 0, sizeof(addr));
+									memset(mask, 0, sizeof(mask));
+									masklen = -1;
 
 									if (ifa->ifa_addr->sa_family == AF_INET6) {
-										char addr[INET6_ADDRSTRLEN];
-										char mask[INET6_ADDRSTRLEN];
-										int masklen = 0;
 										uint8_t i, j;
 
 										/* Ensure proper alignment */
 										struct sockaddr_in6 sm;
 										memcpy (&sm, ifa->ifa_netmask, sizeof(struct sockaddr_in6));
 
+										masklen = 0;
 										for (j = 0; j < 16; j++) {
 											i = sm.sin6_addr.s6_addr[j];
 											while (i) {
@@ -776,18 +780,17 @@ int main(int argc, char *argv[])
 										getnameinfo(ifa->ifa_netmask, sizeof(struct sockaddr_in6), mask, sizeof(mask), NULL, 0, NI_NUMERICHOST);
 										snprintf(msg, sizeof(msg), "Interface: %s\tAddress: %s\tMask: %s (len: %i)\tFlags: %08" PRIxMAX, ifa->ifa_name, addr, mask, masklen, (uintmax_t)ifa->ifa_flags);
 									} else if (ifa->ifa_addr->sa_family == AF_INET) {
-										char *addr, *mask;
-										int masklen = 0;
 										in_addr_t i;
 
 										/* Ensure proper alignment */
 										struct sockaddr_in sa, sm;
 										memcpy (&sa, ifa->ifa_addr, sizeof(struct sockaddr_in));
 										memcpy (&sm, ifa->ifa_netmask, sizeof(struct sockaddr_in));
-										addr = inet_ntoa(sa.sin_addr);
-										mask = inet_ntoa(sm.sin_addr);
+										snprintf(addr, sizeof(addr), "%s", inet_ntoa(sa.sin_addr));
+										snprintf(mask, sizeof(mask), "%s", inet_ntoa(sm.sin_addr));
 
 										i = sm.sin_addr.s_addr;
+										masklen = 0;
 										while (i) {
 											masklen += i & 1;
 											i >>= 1;
@@ -810,6 +813,26 @@ int main(int argc, char *argv[])
 											snprintfcat(msg, sizeof(msg), " IFF_BROADCAST(is assigned)");
 
 										upsdebugx(5, "Discovering getifaddrs(): %s", msg);
+
+										if (!(ifa->ifa_flags & IFF_LOOPBACK)
+										&&   (ifa->ifa_flags & IFF_UP)
+										&&   (ifa->ifa_flags & IFF_RUNNING)
+										&&   (ifa->ifa_flags & IFF_BROADCAST)
+										) {
+											char cidr[LARGEBUF];
+
+											if (snprintf(cidr, sizeof(cidr), "%s/%i", addr, masklen) < 0) {
+												fatalx(EXIT_FAILURE, "Could not construct a CIDR string from discovered address/mask");
+											}
+
+											upsdebugx(5, "Processing CIDR net/mask: %s", cidr);
+											nutscan_cidr_to_ip(cidr, &start_ip, &end_ip);
+											upsdebugx(5, "Extracted IP address range from CIDR net/mask: %s => %s", start_ip, end_ip);
+
+											add_ip_range(start_ip, end_ip);
+											start_ip = NULL;
+											end_ip = NULL;
+										}
 									}	/* else AF_UNIX or a dozen other types we do not care about here */
 								}
 							}
