@@ -33,6 +33,14 @@ Changes from 2.8.2 to 2.8.3
   pages which are delivered automatically. Packaging recipes can likely
   be simplified now. [#2445]
 
+- NUT products like `nut-scanner`, which dynamically load shared libraries
+  at run-time without persistent pre-linking, should now know the library
+  file names that were present during build (likely encumbered with version
+  suffixes), and prefer them over plain `libname.so` patterns used previously
+  (which on some platforms are only delivered by development packages as
+  symlinks). Packaging recipes can likely be simplified now: some distros
+  certainly did patch NUT source to similar effect). [#2431]
+
 - Internal API change for `sendsignalpid()` and `sendsignalfn()` methods,
   which can impact NUT forks which build using `libcommon.la` and similar
   libraries.  Added new last argument with `const char *progname` (may be

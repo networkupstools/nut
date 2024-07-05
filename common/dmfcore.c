@@ -71,6 +71,18 @@
  */
 
 #if WITH_LIBLTDL
+# include "nut_platform.h"
+
+# ifdef WIN32
+#  define SOEXT ".dll"
+# else
+#  ifdef NUT_PLATFORM_APPLE_OSX
+#   define SOEXT ".dylib"
+#  else  /* not WIN32, not MACOS */
+#   define SOEXT ".so"
+#  endif
+# endif
+
 /* LTDL variables needed to load LibNEON */
 static lt_dlhandle dl_handle_libneon = NULL;
 static const char *dl_error = NULL;
@@ -121,22 +133,57 @@ int load_neon_lib(void)
 {
 #ifdef WITH_NEON
 # if WITH_LIBLTDL
-	char *neon_libname_path = get_libname("libneon.so");
-	int lt_dlinit_succeeded = 0;
+	char	neon_libnames_tried[LARGEBUF];
+	char	*neon_libname_path = NULL, *s;
+	int	lt_dlinit_succeeded = 0;
+
+	memset(neon_libnames_tried, 0, sizeof(neon_libnames_tried));
+
+#  ifdef SOFILE_LIBNEON
+	if (!neon_libname_path) {
+		s = SOFILE_LIBNEON;
+		neon_libname_path = get_libname(s);
+		snprintfcat(neon_libnames_tried, sizeof(neon_libnames_tried), "%s ", s);
+	}
+#  endif /* SOFILE_LIBNEON */
+	if (!neon_libname_path) {
+		s = "libneon" SOEXT;
+		neon_libname_path = get_libname(s);
+		snprintfcat(neon_libnames_tried, sizeof(neon_libnames_tried), "%s ", s);
+	}
+	if (!neon_libname_path) {
+		s = "libneon-gnutls" SOEXT;
+		neon_libname_path = get_libname(s);
+		snprintfcat(neon_libnames_tried, sizeof(neon_libnames_tried), "%s ", s);
+	}
+#  ifdef WIN32
+	if (!neon_libname_path) {
+		s = "libneon-27" SOEXT;
+		neon_libname_path = get_libname(s);
+		snprintfcat(neon_libnames_tried, sizeof(neon_libnames_tried), "%s ", s);
+	}
+	if (!neon_libname_path) {
+		s = "libneon-gnutls-27" SOEXT;
+		neon_libname_path = get_libname(s);
+		snprintfcat(neon_libnames_tried, sizeof(neon_libnames_tried), "%s ", s);
+	}
+#  endif /* WIN32 */
+#  ifdef SOPATH_LIBNEON
+	if (!neon_libname_path) {
+		s = SOPATH_LIBNEON;
+		neon_libname_path = get_libname(s);
+		snprintfcat(neon_libnames_tried, sizeof(neon_libnames_tried), "%s ", s);
+	}
+#  endif /* SOPATH_LIBNEON */
 
 	upsdebugx(1, "load_neon_lib(): neon_libname_path = %s", neon_libname_path);
-	if(!neon_libname_path) {
-		upslogx(LOG_NOTICE, "Error loading Neon library required for DMF: %s not found by dynamic loader; please verify it is in your /usr/lib or some otherwise searched dynamic-library path, under this exact name (maybe you just need a symlink?)", "libneon.so");
-
-		neon_libname_path = get_libname("libneon-gnutls.so");
-		upsdebugx(1, "load_neon_lib(): neon_libname_path = %s", neon_libname_path);
-		if(!neon_libname_path) {
-			upslogx(LOG_ERR, "Error loading Neon library required for DMF: %s not found by dynamic loader; please verify it is in your /usr/lib or some otherwise searched dynamic-library path, under this exact name (maybe you just need a symlink?)", "libneon-gnutls.so");
-			return ERR;
-		}
+	if (!neon_libname_path) {
+		/* Note: neon_libnames_tried ends with a space already */
+		upslogx(LOG_ERR, "Error loading Neon library required for DMF: %snot found by dynamic loader; please verify it is in your /usr/lib or some otherwise searched dynamic-library path, under this exact name (maybe you just need a symlink?)", neon_libnames_tried);
+		return ERR;
 	}
 
-	if( lt_dlinit() != 0 ) {
+	if (lt_dlinit() != 0) {
 		/* FIXME : Make the search for candidate library names restartable,
 		 * so if we hit a bad filename, it is not instantly the end of road.
 		 * Applies here and below, where we check for symbols in the lib.
@@ -146,9 +193,9 @@ int load_neon_lib(void)
 	}
 	lt_dlinit_succeeded = 1;
 
-	if( dl_handle_libneon != NULL ) {
+	if (dl_handle_libneon != NULL) {
 		/* if previous init failed */
-		if( dl_handle_libneon == (void *)1 ) {
+		if (dl_handle_libneon == (void *)1) {
 			upsdebugx(1, "load_neon_lib(): previous ltdl engine init had failed");
 			goto err;
 		}
@@ -159,13 +206,13 @@ int load_neon_lib(void)
 
 	dl_handle_libneon = lt_dlopen(neon_libname_path);
 
-	if(!dl_handle_libneon) {
+	if (!dl_handle_libneon) {
 		dl_error = lt_dlerror();
 		upsdebugx(1, "load_neon_lib(): lt_dlopen() action failed");
 		goto err;
 	}
 
-	lt_dlerror();      /* Clear any existing error */
+	lt_dlerror();	/* Clear any existing error */
 
 	*(void**) (&xml_create) = lt_dlsym(dl_handle_libneon, "ne_xml_create");
 	if ( ((dl_error = lt_dlerror()) != NULL) || (!xml_create) ) {

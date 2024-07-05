@@ -60,23 +60,19 @@ if test -z "${nut_have_libregex_seen}"; then
 	dnl # Maybe already involved in NUT for Windows builds...
 	nut_have_regex=no
 	AC_CHECK_HEADER([regex.h],
-		[nut_have_regex=yes
-		 AC_DEFINE([HAVE_REGEX_H], [1],
+		[AC_DEFINE([HAVE_REGEX_H], [1],
 			[Define to 1 if you have <regex.h>.])])
+
 	AC_CHECK_DECLS([regexec, regcomp], [nut_have_regex=yes], [],
 [#ifdef HAVE_REGEX_H
 # include <regex.h>
 #endif
 ])
 
-	AC_SEARCH_LIBS([regcomp, regexec], [], [nut_have_regex=yes], [
-		AS_IF([test x"$LIBS" = x], [
-			dnl Avoid using cached reply for the absent library name
-			unset ac_cv_search_regcomp__regexec || true
-			AC_SEARCH_LIBS([regcomp, regexec], [regex], [
-				LIBS="-lregex"
-				nut_have_regex=yes
-			])
+	AS_IF([test x"${nut_have_regex}" = xyes], [
+		nut_have_regex=no
+		AC_SEARCH_LIBS([regcomp], [regex], [
+			AC_SEARCH_LIBS([regcomp], [regex], [nut_have_regex=yes])
 		])
 	])
 

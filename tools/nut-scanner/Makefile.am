@@ -204,6 +204,9 @@ endif WITH_USB
 # Note: do not indent automake "if" lines
 if WITH_SNMP
   libnutscan_la_CFLAGS += $(LIBNETSNMP_CFLAGS)
+if !WITH_OPENSSL
+  libnutscan_la_CFLAGS += -UNETSNMP_USE_OPENSSL
+endif !WITH_OPENSSL
 if    WITH_SNMP_STATIC
     # MinGW builds of libnetsnmp are static-only, so we link it in:
     libnutscan_la_CFLAGS += -DWITH_SNMP_STATIC=1
