@@ -142,12 +142,7 @@ static size_t add_ip_range(char * start_ip, char * end_ip)
 		end_ip = start_ip;
 	}
 
-	/* no xcalloc() nor fatalx() linked here, oh well */
-	p = calloc(1, sizeof(ip_range_t));
-	if (!p) {
-		upsdebugx(0, "%s: failed to allocate some memory", __func__);
-		exit(EXIT_FAILURE);
-	}
+	p = xcalloc(1, sizeof(ip_range_t));
 
 	p->start_ip = start_ip;
 	p->end_ip = end_ip;
