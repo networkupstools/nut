@@ -750,8 +750,11 @@ int main(int argc, char *argv[])
 						} else {
 							struct ifaddrs *ifa;
 							char msg[LARGEBUF];
-							char addr[LARGEBUF];
-							char mask[LARGEBUF];
+							/* Note: INET6_ADDRSTRLEN is large enough for IPv4 too,
+							 * and is smaller than LARGEBUF to avoid snprintf()
+							 * warnings that the result might not fit. */
+							char addr[INET6_ADDRSTRLEN];
+							char mask[INET6_ADDRSTRLEN];
 							int masklen = 0;
 
 							for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
