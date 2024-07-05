@@ -759,7 +759,7 @@ int main(int argc, char *argv[])
 
 										getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in6), addr, sizeof(addr), NULL, 0, NI_NUMERICHOST);
 										getnameinfo(ifa->ifa_netmask, sizeof(struct sockaddr_in6), mask, sizeof(mask), NULL, 0, NI_NUMERICHOST);
-										printf("Interface: %s\tAddress: %s\tMask: %s (len: %i)\tFlags: %08x", ifa->ifa_name, addr, mask, masklen, ifa->ifa_flags);
+										printf("Interface: %s\tAddress: %s\tMask: %s (len: %i)\tFlags: %08" PRIxMAX, ifa->ifa_name, addr, mask, masklen, (uintmax_t)ifa->ifa_flags);
 									} else if (ifa->ifa_addr->sa_family == AF_INET) {
 										struct sockaddr_in *sa = (struct sockaddr_in *)ifa->ifa_addr;
 										struct sockaddr_in *sm = (struct sockaddr_in *)ifa->ifa_netmask;
@@ -772,7 +772,7 @@ int main(int argc, char *argv[])
 											masklen += i & 1;
 											i >>= 1;
 										}
-										printf("Interface: %s\tAddress: %s\tMask: %s (len: %i)\tFlags: %08x", ifa->ifa_name, addr, mask, masklen, ifa->ifa_flags);
+										printf("Interface: %s\tAddress: %s\tMask: %s (len: %i)\tFlags: %08" PRIxMAX, ifa->ifa_name, addr, mask, masklen, (uintmax_t)ifa->ifa_flags);
 /*
 									} else {
 										printf("Addr family: %" PRIuMAX, (intmax_t)ifa->ifa_addr->sa_family);
