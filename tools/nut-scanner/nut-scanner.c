@@ -740,8 +740,12 @@ int main(int argc, char *argv[])
 							exit(EXIT_FAILURE);
 						} else {
 							struct ifaddrs *ifa;
+							char msg[LARGEBUF];
+
 							for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
 								if (ifa->ifa_addr) {
+									memset(msg, 0, sizeof(msg));
+
 									if (ifa->ifa_addr->sa_family == AF_INET6) {
 										char addr[INET6_ADDRSTRLEN];
 										char mask[INET6_ADDRSTRLEN];
@@ -759,7 +763,7 @@ int main(int argc, char *argv[])
 
 										getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in6), addr, sizeof(addr), NULL, 0, NI_NUMERICHOST);
 										getnameinfo(ifa->ifa_netmask, sizeof(struct sockaddr_in6), mask, sizeof(mask), NULL, 0, NI_NUMERICHOST);
-										printf("Interface: %s\tAddress: %s\tMask: %s (len: %i)\tFlags: %08" PRIxMAX, ifa->ifa_name, addr, mask, masklen, (uintmax_t)ifa->ifa_flags);
+										snprintf(msg, sizeof(msg), "Interface: %s\tAddress: %s\tMask: %s (len: %i)\tFlags: %08" PRIxMAX, ifa->ifa_name, addr, mask, masklen, (uintmax_t)ifa->ifa_flags);
 									} else if (ifa->ifa_addr->sa_family == AF_INET) {
 										struct sockaddr_in *sa = (struct sockaddr_in *)ifa->ifa_addr;
 										struct sockaddr_in *sm = (struct sockaddr_in *)ifa->ifa_netmask;
@@ -772,24 +776,25 @@ int main(int argc, char *argv[])
 											masklen += i & 1;
 											i >>= 1;
 										}
-										printf("Interface: %s\tAddress: %s\tMask: %s (len: %i)\tFlags: %08" PRIxMAX, ifa->ifa_name, addr, mask, masklen, (uintmax_t)ifa->ifa_flags);
+										snprintf(msg, sizeof(msg), "Interface: %s\tAddress: %s\tMask: %s (len: %i)\tFlags: %08" PRIxMAX, ifa->ifa_name, addr, mask, masklen, (uintmax_t)ifa->ifa_flags);
 /*
 									} else {
-										printf("Addr family: %" PRIuMAX, (intmax_t)ifa->ifa_addr->sa_family);
+										snprintf(msg, sizeof(msg), "Addr family: %" PRIuMAX, (intmax_t)ifa->ifa_addr->sa_family);
 */
 									}
 
 									if (ifa->ifa_addr->sa_family == AF_INET6 || ifa->ifa_addr->sa_family == AF_INET) {
 										if (ifa->ifa_flags & IFF_LOOPBACK)
-											printf(" IFF_LOOPBACK");
+											snprintfcat(msg, sizeof(msg), " IFF_LOOPBACK");
 										if (ifa->ifa_flags & IFF_UP)
-											printf(" IFF_UP");
+											snprintfcat(msg, sizeof(msg), " IFF_UP");
 										if (ifa->ifa_flags & IFF_RUNNING)
-											printf(" IFF_RUNNING");
-										if (ifa->ifa_flags &  IFF_BROADCAST)
-											printf("  IFF_BROADCAST(is assigned)");
-										printf("\n");
-									}
+											snprintfcat(msg, sizeof(msg), " IFF_RUNNING");
+										if (ifa->ifa_flags & IFF_BROADCAST)
+											snprintfcat(msg, sizeof(msg), " IFF_BROADCAST(is assigned)");
+
+										upsdebugx(1, "Discovering getifaddrs(): %s", msg);
+									}	/* else AF_UNIX or a dozen other types we do not care about here */
 								}
 							}
 							freeifaddrs(ifap);
