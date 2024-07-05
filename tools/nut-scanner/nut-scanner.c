@@ -750,10 +750,13 @@ int main(int argc, char *argv[])
 										char mask[INET6_ADDRSTRLEN];
 										int masklen = 0;
 										uint8_t i, j;
-										struct sockaddr_in6 *sm = (struct sockaddr_in6 *)ifa->ifa_netmask;
+
+										/* Ensure proper alignment */
+										struct sockaddr_in6 sm;
+										memcpy (&sm, ifa->ifa_netmask, sizeof(struct sockaddr_in6));
 
 										for (j = 0; j < 16; j++) {
-											i = sm->sin6_addr.s6_addr[j];
+											i = sm.sin6_addr.s6_addr[j];
 											while (i) {
 												masklen += i & 1;
 												i >>= 1;
@@ -764,13 +767,18 @@ int main(int argc, char *argv[])
 										getnameinfo(ifa->ifa_netmask, sizeof(struct sockaddr_in6), mask, sizeof(mask), NULL, 0, NI_NUMERICHOST);
 										snprintf(msg, sizeof(msg), "Interface: %s\tAddress: %s\tMask: %s (len: %i)\tFlags: %08" PRIxMAX, ifa->ifa_name, addr, mask, masklen, (uintmax_t)ifa->ifa_flags);
 									} else if (ifa->ifa_addr->sa_family == AF_INET) {
-										struct sockaddr_in *sa = (struct sockaddr_in *)ifa->ifa_addr;
-										struct sockaddr_in *sm = (struct sockaddr_in *)ifa->ifa_netmask;
-										char *addr = inet_ntoa(sa->sin_addr);
-										char *mask = inet_ntoa(sm->sin_addr);
+										char *addr, *mask;
 										int masklen = 0;
-										in_addr_t i = sm->sin_addr.s_addr;
+										in_addr_t i;
 
+										/* Ensure proper alignment */
+										struct sockaddr_in sa, sm;
+										memcpy (&sa, ifa->ifa_addr, sizeof(struct sockaddr_in));
+										memcpy (&sm, ifa->ifa_netmask, sizeof(struct sockaddr_in));
+										addr = inet_ntoa(sa.sin_addr);
+										mask = inet_ntoa(sm.sin_addr);
+
+										i = sm.sin_addr.s_addr;
 										while (i) {
 											masklen += i & 1;
 											i >>= 1;
