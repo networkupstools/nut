@@ -127,17 +127,17 @@ static size_t add_ip_range(char * start_ip, char * end_ip)
 	ip_range_t *p;
 
 	if (!start_ip && !end_ip) {
-		upsdebugx(1, "%s: skip, no addresses were provided", __func__);
+		upsdebugx(5, "%s: skip, no addresses were provided", __func__);
 		return ip_ranges_count;
 	}
 
 	if (start_ip == NULL) {
-		upsdebugx(1, "%s: only end address was provided, setting start to same: %s",
+		upsdebugx(5, "%s: only end address was provided, setting start to same: %s",
 			 __func__, end_ip);
 		start_ip = end_ip;
 	}
 	if (end_ip == NULL) {
-		upsdebugx(1, "%s: only start address was provided, setting end to same: %s",
+		upsdebugx(5, "%s: only start address was provided, setting end to same: %s",
 			 __func__, start_ip);
 		end_ip = start_ip;
 	}
