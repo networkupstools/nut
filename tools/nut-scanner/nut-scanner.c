@@ -726,6 +726,15 @@ int main(int argc, char *argv[])
 				allow_eaton_serial = 1;
 				break;
 			case 'm':
+				if (start_ip || end_ip) {
+					/* Save whatever we have, either
+					 * this one address or an earlier
+					 * known range with its start or end */
+					add_ip_range(start_ip, end_ip);
+					start_ip = NULL;
+					end_ip = NULL;
+				}
+
 				if (!strcmp(optarg, "auto")) {
 					if (auto_nets) {
 						fprintf(stderr, "Duplicate request for connected subnet scan ignored\n");
@@ -809,15 +818,7 @@ int main(int argc, char *argv[])
 						auto_nets = 1;
 					}
 				} else {
-					if (start_ip || end_ip) {
-						/* Save whatever we have, either
-						 * this one address or an earlier
-						 * known range with its start or end */
-						add_ip_range(start_ip, end_ip);
-						start_ip = NULL;
-						end_ip = NULL;
-					}
-
+					/* not `-m auto` => is `-m cidr` */
 					upsdebugx(5, "Processing CIDR net/mask: %s", optarg);
 					nutscan_cidr_to_ip(optarg, &start_ip, &end_ip);
 					upsdebugx(5, "Extracted IP address range from CIDR net/mask: %s => %s", start_ip, end_ip);
