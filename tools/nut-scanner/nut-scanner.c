@@ -800,7 +800,7 @@ int main(int argc, char *argv[])
 										if (ifa->ifa_flags & IFF_BROADCAST)
 											snprintfcat(msg, sizeof(msg), " IFF_BROADCAST(is assigned)");
 
-										upsdebugx(1, "Discovering getifaddrs(): %s", msg);
+										upsdebugx(5, "Discovering getifaddrs(): %s", msg);
 									}	/* else AF_UNIX or a dozen other types we do not care about here */
 								}
 							}
