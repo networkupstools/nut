@@ -739,6 +739,7 @@ int main(int argc, char *argv[])
 					if (auto_nets) {
 						fprintf(stderr, "Duplicate request for connected subnet scan ignored\n");
 					} else {
+						/* TODO: Refactor into a method, reduce indentation? */
 						/* Inspired by https://stackoverflow.com/a/63789267/4715872 */
 						struct ifaddrs *ifap;
 
@@ -814,6 +815,11 @@ int main(int argc, char *argv[])
 
 										upsdebugx(5, "Discovering getifaddrs(): %s", msg);
 
+										/* TODO: also rule out "link-local" address ranges
+										 * so we do not issue billions of worthless scans.
+										 * FIXME: IPv6 may also be a problem, see
+										 * https://github.com/networkupstools/nut/issues/2512
+										 */
 										if (!(ifa->ifa_flags & IFF_LOOPBACK)
 										&&   (ifa->ifa_flags & IFF_UP)
 										&&   (ifa->ifa_flags & IFF_RUNNING)
