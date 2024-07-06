@@ -472,6 +472,8 @@ static void show_usage(void)
 #ifdef WIN32
 	printf("                        (Currently not implemented for this platform)\n");
 #endif
+	printf("  -m, --mask_cidr auto4/auto6: Likewise, limiting to IPv4 or IPv6 interfaces.\n");
+	printf("                        Only the first auto* request would be honoured.\n");
 	printf("NOTE: IP address range specifications can be repeated, to scan several.\n");
 	printf("Specifying a single first or last address before starting another range\n");
 	printf("leads to scanning just that one address as the range.\n");
@@ -751,7 +753,7 @@ int main(int argc, char *argv[])
 					end_ip = NULL;
 				}
 
-				if (!strcmp(optarg, "auto")) {
+				if (!strcmp(optarg, "auto") || !strcmp(optarg, "auto4") || !strcmp(optarg, "auto6")) {
 					if (auto_nets) {
 						fprintf(stderr, "Duplicate request for connected subnet scan ignored\n");
 					} else {
@@ -759,7 +761,17 @@ int main(int argc, char *argv[])
 						/* TODO: Refactor into a method, reduce indentation? */
 						/* Inspired by https://stackoverflow.com/a/63789267/4715872 */
 						struct ifaddrs *ifap;
+#endif
 
+						if (!strcmp(optarg, "auto")) {
+							auto_nets = 46;
+						} else if (!strcmp(optarg, "auto4")) {
+							auto_nets = 4;
+						} else if (!strcmp(optarg, "auto6")) {
+							auto_nets = 6;
+						}
+
+#ifndef WIN32
 						if (getifaddrs(&ifap) < 0) {
 							fatalx(EXIT_FAILURE,
 								"Failed to getifaddrs() for connected subnet scan: %s\n",
@@ -844,6 +856,9 @@ int main(int argc, char *argv[])
 										&&   (ifa->ifa_flags & IFF_UP)
 										&&   (ifa->ifa_flags & IFF_RUNNING)
 										&&   (ifa->ifa_flags & IFF_BROADCAST)
+										&&  (auto_nets == 46
+										  || (auto_nets == 4 && ifa->ifa_addr->sa_family == AF_INET)
+										  || (auto_nets == 6 && ifa->ifa_addr->sa_family == AF_INET6) )
 										) {
 											char cidr[LARGEBUF];
 
@@ -868,7 +883,6 @@ int main(int argc, char *argv[])
 						/* https://stackoverflow.com/questions/122208/how-can-i-get-the-ip-address-of-a-local-computer */
 						upsdebugx(0, "Local address detection feature is not completed on Windows, please call back later");
 #endif
-						auto_nets = 1;
 					}
 				} else {
 					/* not `-m auto` => is `-m cidr` */

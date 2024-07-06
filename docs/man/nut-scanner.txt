@@ -148,7 +148,9 @@ less than 'start IP', both parameters are internally permuted.
 Set a range of IP addresses by using CIDR notation.
 +
 A special form `-m auto` allows `nut-scanner` to detect local IP address(es)
-and scan corresponding subnet(s) on supported platforms.
+and scan corresponding subnet(s) on supported platforms, and `-m auto4` or
+`-m auto6` limits the selected addresses to IPv4 and IPv6 respectively. Only
+the first "auto*" request would be honoured, others ignored with a warning.
 
 NUT DEVICE OPTION
 -----------------
