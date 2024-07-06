@@ -51,12 +51,14 @@
 #else
 /* Those 2 files for support of getaddrinfo, getnameinfo and freeaddrinfo
    on Windows 2000 and older versions */
+/* // TODO: complete "-m auto" support
 # include <ws2tcpip.h>
 # include <wspiapi.h>
 # ifndef AI_NUMERICSERV
 #  define AI_NUMERICSERV NI_NUMERICSERV
 # endif
 # include "wincompat.h"
+*/
 #endif
 
 #ifdef HAVE_PTHREAD
@@ -467,6 +469,9 @@ static void show_usage(void)
 	printf("  -e, --end_ip <IP address>: Last IP address to scan.\n");
 	printf("  -m, --mask_cidr <IP address/mask>: Give a range of IP using CIDR notation.\n");
 	printf("  -m, --mask_cidr auto: Detect local IP address(es) and scan corresponding subnet(s).\n");
+#ifdef WIN32
+	printf("                        (Currently not implemented for this platform)\n");
+#endif
 	printf("NOTE: IP address range specifications can be repeated, to scan several.\n");
 	printf("Specifying a single first or last address before starting another range\n");
 	printf("leads to scanning just that one address as the range.\n");
@@ -750,6 +755,7 @@ int main(int argc, char *argv[])
 					if (auto_nets) {
 						fprintf(stderr, "Duplicate request for connected subnet scan ignored\n");
 					} else {
+#ifndef WIN32
 						/* TODO: Refactor into a method, reduce indentation? */
 						/* Inspired by https://stackoverflow.com/a/63789267/4715872 */
 						struct ifaddrs *ifap;
@@ -858,6 +864,10 @@ int main(int argc, char *argv[])
 							}
 							freeifaddrs(ifap);
 						}
+#else	/* WIN32 */
+						/* https://stackoverflow.com/questions/122208/how-can-i-get-the-ip-address-of-a-local-computer */
+						upsdebugx(0, "Local address detection feature is not completed on Windows, please call back later");
+#endif
 						auto_nets = 1;
 					}
 				} else {
