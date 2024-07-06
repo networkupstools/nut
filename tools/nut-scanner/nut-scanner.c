@@ -41,12 +41,23 @@
 # include <sys/socket.h>
 #endif
 #include <sys/types.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <ifaddrs.h>
-#include <netdb.h>
-#include <sys/ioctl.h>
-#include <net/if.h>
+#ifndef WIN32
+# include <arpa/inet.h>
+# include <netinet/in.h>
+# include <ifaddrs.h>
+# include <netdb.h>
+# include <sys/ioctl.h>
+# include <net/if.h>
+#else
+/* Those 2 files for support of getaddrinfo, getnameinfo and freeaddrinfo
+   on Windows 2000 and older versions */
+# include <ws2tcpip.h>
+# include <wspiapi.h>
+# ifndef AI_NUMERICSERV
+#  define AI_NUMERICSERV NI_NUMERICSERV
+# endif
+# include "wincompat.h"
+#endif
 
 #ifdef HAVE_PTHREAD
 # include <pthread.h>
