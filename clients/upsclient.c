@@ -3,6 +3,7 @@
    Copyright (C)
 	2002	Russell Kroll <rkroll@exploits.org>
 	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2020 - 2024	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -1024,6 +1025,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 	ups->fd = -1;
 
 	if (!host) {
+		upslogx(LOG_WARNING, "%s: Host not found: '%s'", __func__, host);
 		ups->upserror = UPSCLI_ERR_NOSUCHHOST;
 		return -1;
 	}
@@ -1049,6 +1051,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 		case EAI_AGAIN:
 			continue;
 		case EAI_NONAME:
+			upslogx(LOG_WARNING, "%s: Host not found: '%s'", __func__, host);
 			ups->upserror = UPSCLI_ERR_NOSUCHHOST;
 			return -1;
 		case EAI_MEMORY:
