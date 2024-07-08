@@ -290,8 +290,8 @@ char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, const char * startIP, const 
 }
 
 /* return the next IP
-return NULL if there is no more IP
-*/
+ * return NULL if there is no more IP
+ */
 char * nutscan_ip_iter_inc(nutscan_ip_iter_t * ip)
 {
 	char host[SMALLBUF];
