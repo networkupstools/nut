@@ -199,8 +199,11 @@ static void * list_nut_devices(void * arg)
 		/* NOTE: There is no driver by such name, in practice it could
 		 * be a dummy-ups relay, a clone driver, or part of upsmon config */
 		dev->driver = strdup(SCAN_NUT_DRIVERNAME);
-		/* +1+1 is for '@' character and terminating 0 */
-		buf_size = strlen(answer[1]) + strlen(hostname) + 1 + 1;
+		/* +1+1 is for '@' character and terminating 0,
+		 * and the other +1+1 is for possible '[' and ']'
+		 * around the host name:
+		 */
+		buf_size = strlen(answer[1]) + strlen(hostname) + 1 + 1 + 1 + 1;
 		if (port != PORT) {
 			/* colon and up to 5 digits */
 			buf_size += 6;
@@ -209,13 +212,31 @@ static void * list_nut_devices(void * arg)
 		dev->port = malloc(buf_size);
 
 		if (dev->port) {
+			/* Check if IPv6 and needs brackets */
+			char	*hostname_colon = strchr(hostname, ':');
+
+			if (hostname_colon && *hostname_colon == '\0')
+				hostname_colon = NULL;
+			if (*hostname == '[')
+				hostname_colon = NULL;
+
 			if (port != PORT) {
-				snprintf(dev->port, buf_size, "%s@%s:%" PRIu16,
-					answer[1], hostname, port);
+				if (hostname_colon) {
+					snprintf(dev->port, buf_size, "%s@[%s]:%" PRIu16,
+						answer[1], hostname, port);
+				} else {
+					snprintf(dev->port, buf_size, "%s@%s:%" PRIu16,
+						answer[1], hostname, port);
+				}
 			} else {
 				/* Standard port, not suffixed */
-				snprintf(dev->port, buf_size, "%s@%s",
-					answer[1], hostname);
+				if (hostname_colon) {
+					snprintf(dev->port, buf_size, "%s@[%s]",
+						answer[1], hostname);
+				} else {
+					snprintf(dev->port, buf_size, "%s@%s",
+						answer[1], hostname);
+				}
 			}
 #ifdef HAVE_PTHREAD
 			pthread_mutex_lock(&dev_mutex);
