@@ -415,143 +415,48 @@ static void * run_eaton_serial(void *arg)
 static void handle_arg_cidr(char *optarg, int *auto_nets_ptr)
 {
 	char	*start_ip = NULL, *end_ip = NULL;
+	/* Scanning mode: IPv4, IPv6 or both */
 	int	auto_nets = -1;
 
-	if (!strcmp(optarg, "auto") || !strcmp(optarg, "auto4") || !strcmp(optarg, "auto6")) {
+#ifndef WIN32
+	/* NOTE: Would need WIN32-specific implementation */
+	/* Inspired by https://stackoverflow.com/a/63789267/4715872 */
+	struct ifaddrs *ifap;
+#endif
+
+	/* Is this a `-m auto<something_optional>` mode? */
+	if (!strncmp(optarg, "auto", 4)) {
 		if (auto_nets_ptr && *auto_nets_ptr) {
 			fprintf(stderr, "Duplicate request for connected subnet scan ignored\n");
-		} else {
-#ifndef WIN32
-			/* Inspired by https://stackoverflow.com/a/63789267/4715872 */
-			struct ifaddrs *ifap;
-#endif
-
-			if (!strcmp(optarg, "auto")) {
-				auto_nets = 46;
-			} else if (!strcmp(optarg, "auto4")) {
-				auto_nets = 4;
-			} else if (!strcmp(optarg, "auto6")) {
-				auto_nets = 6;
-			}
-			if (auto_nets_ptr) {
-				*auto_nets_ptr = auto_nets;
-			}
-
-#ifndef WIN32
-			if (getifaddrs(&ifap) < 0) {
-				fatalx(EXIT_FAILURE,
-					"Failed to getifaddrs() for connected subnet scan: %s\n",
-					strerror(errno));
-			} else {
-				struct ifaddrs *ifa;
-				char msg[LARGEBUF];
-				/* Note: INET6_ADDRSTRLEN is large enough for IPv4 too,
-				 * and is smaller than LARGEBUF to avoid snprintf()
-				 * warnings that the result might not fit. */
-				char addr[INET6_ADDRSTRLEN];
-				char mask[INET6_ADDRSTRLEN];
-				int masklen = 0;
-
-				for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
-					if (ifa->ifa_addr) {
-						memset(msg, 0, sizeof(msg));
-						memset(addr, 0, sizeof(addr));
-						memset(mask, 0, sizeof(mask));
-						masklen = -1;
-
-						if (ifa->ifa_addr->sa_family == AF_INET6) {
-							uint8_t i, j;
-
-							/* Ensure proper alignment */
-							struct sockaddr_in6 sm;
-							memcpy (&sm, ifa->ifa_netmask, sizeof(struct sockaddr_in6));
-
-							masklen = 0;
-							for (j = 0; j < 16; j++) {
-								i = sm.sin6_addr.s6_addr[j];
-								while (i) {
-									masklen += i & 1;
-									i >>= 1;
-								}
-							}
-
-							getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in6), addr, sizeof(addr), NULL, 0, NI_NUMERICHOST);
-							getnameinfo(ifa->ifa_netmask, sizeof(struct sockaddr_in6), mask, sizeof(mask), NULL, 0, NI_NUMERICHOST);
-							snprintf(msg, sizeof(msg), "Interface: %s\tAddress: %s\tMask: %s (len: %i)\tFlags: %08" PRIxMAX, ifa->ifa_name, addr, mask, masklen, (uintmax_t)ifa->ifa_flags);
-						} else if (ifa->ifa_addr->sa_family == AF_INET) {
-							in_addr_t i;
-
-							/* Ensure proper alignment */
-							struct sockaddr_in sa, sm;
-							memcpy (&sa, ifa->ifa_addr, sizeof(struct sockaddr_in));
-							memcpy (&sm, ifa->ifa_netmask, sizeof(struct sockaddr_in));
-							snprintf(addr, sizeof(addr), "%s", inet_ntoa(sa.sin_addr));
-							snprintf(mask, sizeof(mask), "%s", inet_ntoa(sm.sin_addr));
-
-							i = sm.sin_addr.s_addr;
-							masklen = 0;
-							while (i) {
-								masklen += i & 1;
-								i >>= 1;
-							}
-							snprintf(msg, sizeof(msg), "Interface: %s\tAddress: %s\tMask: %s (len: %i)\tFlags: %08" PRIxMAX, ifa->ifa_name, addr, mask, masklen, (uintmax_t)ifa->ifa_flags);
-/*
-						} else {
-							snprintf(msg, sizeof(msg), "Addr family: %" PRIuMAX, (intmax_t)ifa->ifa_addr->sa_family);
-*/
-						}
-
-						if (ifa->ifa_addr->sa_family == AF_INET6 || ifa->ifa_addr->sa_family == AF_INET) {
-							if (ifa->ifa_flags & IFF_LOOPBACK)
-								snprintfcat(msg, sizeof(msg), " IFF_LOOPBACK");
-							if (ifa->ifa_flags & IFF_UP)
-								snprintfcat(msg, sizeof(msg), " IFF_UP");
-							if (ifa->ifa_flags & IFF_RUNNING)
-								snprintfcat(msg, sizeof(msg), " IFF_RUNNING");
-							if (ifa->ifa_flags & IFF_BROADCAST)
-								snprintfcat(msg, sizeof(msg), " IFF_BROADCAST(is assigned)");
-
-							upsdebugx(5, "Discovering getifaddrs(): %s", msg);
-
-							/* TODO: also rule out "link-local" address ranges
-							 * so we do not issue billions of worthless scans.
-							 * FIXME: IPv6 may also be a problem, see
-							 * https://github.com/networkupstools/nut/issues/2512
-							 */
-							if (!(ifa->ifa_flags & IFF_LOOPBACK)
-							&&   (ifa->ifa_flags & IFF_UP)
-							&&   (ifa->ifa_flags & IFF_RUNNING)
-							&&   (ifa->ifa_flags & IFF_BROADCAST)
-							&&  (auto_nets == 46
-							  || (auto_nets == 4 && ifa->ifa_addr->sa_family == AF_INET)
-							  || (auto_nets == 6 && ifa->ifa_addr->sa_family == AF_INET6) )
-							) {
-								char cidr[LARGEBUF];
-
-								if (snprintf(cidr, sizeof(cidr), "%s/%i", addr, masklen) < 0) {
-									fatalx(EXIT_FAILURE, "Could not construct a CIDR string from discovered address/mask");
-								}
-
-								upsdebugx(5, "Processing CIDR net/mask: %s", cidr);
-								nutscan_cidr_to_ip(cidr, &start_ip, &end_ip);
-								upsdebugx(5, "Extracted IP address range from CIDR net/mask: %s => %s", start_ip, end_ip);
-
-								add_ip_range(start_ip, end_ip);
-								start_ip = NULL;
-								end_ip = NULL;
-							}
-						}	/* else AF_UNIX or a dozen other types we do not care about here */
-					}
-				}
-				freeifaddrs(ifap);
-			}
-#else	/* WIN32 */
-			/* https://stackoverflow.com/questions/122208/how-can-i-get-the-ip-address-of-a-local-computer */
-			upsdebugx(0, "Local address detection feature is not completed on Windows, please call back later");
-#endif
+			return;
 		}
-	} else {
-		/* not `-m auto` => is `-m cidr` */
+
+		/* Not very efficient to stack strcmp's, but
+		 * also not a hot codepath to care much, either.
+		 */
+		if (!strcmp(optarg, "auto")) {
+			auto_nets = 46;
+		} else if (!strcmp(optarg, "auto4")) {
+			auto_nets = 4;
+		} else if (!strcmp(optarg, "auto6")) {
+			auto_nets = 6;
+		} else {
+			/* TODO: maybe fail right away?
+			 *  Or claim a simple auto46 mode? */
+			upsdebugx(0,
+				"Got a '-m auto*' CLI option with unsupported "
+				"keyword pattern; assuming a CIDR, "
+				"likely to fail: %s", optarg);
+		}
+
+		/* Let the caller know, to allow for run-once support */
+		if (auto_nets_ptr) {
+			*auto_nets_ptr = auto_nets;
+		}
+	}
+
+	if (auto_nets < 0) {
+		/* not a supported `-m auto*` pattern => is `-m cidr` */
 		upsdebugx(5, "Processing CIDR net/mask: %s", optarg);
 		nutscan_cidr_to_ip(optarg, &start_ip, &end_ip);
 		upsdebugx(5, "Extracted IP address range from CIDR net/mask: %s => %s", start_ip, end_ip);
@@ -559,7 +464,123 @@ static void handle_arg_cidr(char *optarg, int *auto_nets_ptr)
 		add_ip_range(start_ip, end_ip);
 		start_ip = NULL;
 		end_ip = NULL;
+		return;
 	}
+
+	/* Handle `-m auto*` modes below */
+#ifndef WIN32
+	if (getifaddrs(&ifap) < 0) {
+		fatalx(EXIT_FAILURE,
+			"Failed to getifaddrs() for connected subnet scan: %s\n",
+			strerror(errno));
+	} else {
+		struct ifaddrs *ifa;
+		char msg[LARGEBUF];
+		/* Note: INET6_ADDRSTRLEN is large enough for IPv4 too,
+		 * and is smaller than LARGEBUF to avoid snprintf()
+		 * warnings that the result might not fit. */
+		char addr[INET6_ADDRSTRLEN];
+		char mask[INET6_ADDRSTRLEN];
+		int masklen = 0;
+
+		for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
+			if (ifa->ifa_addr) {
+				memset(msg, 0, sizeof(msg));
+				memset(addr, 0, sizeof(addr));
+				memset(mask, 0, sizeof(mask));
+				masklen = -1;
+
+				if (ifa->ifa_addr->sa_family == AF_INET6) {
+					uint8_t i, j;
+
+					/* Ensure proper alignment */
+					struct sockaddr_in6 sm;
+					memcpy (&sm, ifa->ifa_netmask, sizeof(struct sockaddr_in6));
+
+					masklen = 0;
+					for (j = 0; j < 16; j++) {
+						i = sm.sin6_addr.s6_addr[j];
+						while (i) {
+							masklen += i & 1;
+							i >>= 1;
+						}
+					}
+
+					getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in6), addr, sizeof(addr), NULL, 0, NI_NUMERICHOST);
+					getnameinfo(ifa->ifa_netmask, sizeof(struct sockaddr_in6), mask, sizeof(mask), NULL, 0, NI_NUMERICHOST);
+					snprintf(msg, sizeof(msg), "Interface: %s\tAddress: %s\tMask: %s (len: %i)\tFlags: %08" PRIxMAX, ifa->ifa_name, addr, mask, masklen, (uintmax_t)ifa->ifa_flags);
+				} else if (ifa->ifa_addr->sa_family == AF_INET) {
+					in_addr_t i;
+
+					/* Ensure proper alignment */
+					struct sockaddr_in sa, sm;
+					memcpy (&sa, ifa->ifa_addr, sizeof(struct sockaddr_in));
+					memcpy (&sm, ifa->ifa_netmask, sizeof(struct sockaddr_in));
+					snprintf(addr, sizeof(addr), "%s", inet_ntoa(sa.sin_addr));
+					snprintf(mask, sizeof(mask), "%s", inet_ntoa(sm.sin_addr));
+
+					i = sm.sin_addr.s_addr;
+					masklen = 0;
+					while (i) {
+						masklen += i & 1;
+						i >>= 1;
+					}
+					snprintf(msg, sizeof(msg), "Interface: %s\tAddress: %s\tMask: %s (len: %i)\tFlags: %08" PRIxMAX, ifa->ifa_name, addr, mask, masklen, (uintmax_t)ifa->ifa_flags);
+/*
+				} else {
+					snprintf(msg, sizeof(msg), "Addr family: %" PRIuMAX, (intmax_t)ifa->ifa_addr->sa_family);
+*/
+				}
+
+				if (ifa->ifa_addr->sa_family == AF_INET6 || ifa->ifa_addr->sa_family == AF_INET) {
+					if (ifa->ifa_flags & IFF_LOOPBACK)
+						snprintfcat(msg, sizeof(msg), " IFF_LOOPBACK");
+					if (ifa->ifa_flags & IFF_UP)
+						snprintfcat(msg, sizeof(msg), " IFF_UP");
+					if (ifa->ifa_flags & IFF_RUNNING)
+						snprintfcat(msg, sizeof(msg), " IFF_RUNNING");
+					if (ifa->ifa_flags & IFF_BROADCAST)
+						snprintfcat(msg, sizeof(msg), " IFF_BROADCAST(is assigned)");
+
+					upsdebugx(5, "Discovering getifaddrs(): %s", msg);
+
+					/* TODO: also rule out "link-local" address ranges
+					 * so we do not issue billions of worthless scans.
+					 * FIXME: IPv6 may also be a problem, see
+					 * https://github.com/networkupstools/nut/issues/2512
+					 */
+					if (!(ifa->ifa_flags & IFF_LOOPBACK)
+					&&   (ifa->ifa_flags & IFF_UP)
+					&&   (ifa->ifa_flags & IFF_RUNNING)
+					&&   (ifa->ifa_flags & IFF_BROADCAST)
+					&&  (auto_nets == 46
+					  || (auto_nets == 4 && ifa->ifa_addr->sa_family == AF_INET)
+					  || (auto_nets == 6 && ifa->ifa_addr->sa_family == AF_INET6) )
+					) {
+						char cidr[LARGEBUF];
+
+						if (snprintf(cidr, sizeof(cidr), "%s/%i", addr, masklen) < 0) {
+							fatalx(EXIT_FAILURE, "Could not construct a CIDR string from discovered address/mask");
+						}
+
+						upsdebugx(5, "Processing CIDR net/mask: %s", cidr);
+						nutscan_cidr_to_ip(cidr, &start_ip, &end_ip);
+						upsdebugx(5, "Extracted IP address range from CIDR net/mask: %s => %s", start_ip, end_ip);
+
+						add_ip_range(start_ip, end_ip);
+						start_ip = NULL;
+						end_ip = NULL;
+					}
+				}	/* else AF_UNIX or a dozen other types we do not care about here */
+			}
+		}
+		freeifaddrs(ifap);
+	}
+#else	/* WIN32 */
+	/* https://stackoverflow.com/questions/122208/how-can-i-get-the-ip-address-of-a-local-computer */
+	/* https://github.com/networkupstools/nut/issues/2516 */
+	upsdebugx(0, "Local address detection feature is not completed on Windows, please call back later");
+#endif
 }
 
 static void show_usage(void)
