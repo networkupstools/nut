@@ -247,11 +247,6 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 	int change_action_handler = 0;
 #endif
 	struct scan_nut_arg *nut_arg;
-#ifdef WIN32
-	WSADATA WSAdata;
-	WSAStartup(2,&WSAdata);
-	atexit((void(*)(void))WSACleanup);
-#endif
 
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE
@@ -265,7 +260,15 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 # if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE)
 	size_t  max_threads_scantype = max_threads_oldnut;
 # endif
+#endif /* HAVE_PTHREAD */
 
+#ifdef WIN32
+	WSADATA WSAdata;
+	WSAStartup(2,&WSAdata);
+	atexit((void(*)(void))WSACleanup);
+#endif
+
+#ifdef HAVE_PTHREAD
 	pthread_mutex_init(&dev_mutex, NULL);
 
 # ifdef HAVE_SEMAPHORE
