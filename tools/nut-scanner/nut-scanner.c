@@ -713,7 +713,13 @@ int main(int argc, char *argv[])
 					end_ip = NULL;
 				}
 
-				start_ip = strdup(optarg);
+				if (optarg[0] == '[' && optarg[strlen(optarg) - 1] == ']') {
+					start_ip = strdup(optarg + 1);
+					start_ip[strlen(start_ip) - 1] = '\0';
+				} else {
+					start_ip = strdup(optarg);
+				}
+
 				if (end_ip != NULL) {
 					/* Already we know two addresses, save them */
 					add_ip_range(start_ip, end_ip);
@@ -731,7 +737,13 @@ int main(int argc, char *argv[])
 					end_ip = NULL;
 				}
 
-				end_ip = strdup(optarg);
+				if (optarg[0] == '[' && optarg[strlen(optarg) - 1] == ']') {
+					end_ip = strdup(optarg + 1);
+					end_ip[strlen(end_ip) - 1] = '\0';
+				} else {
+					end_ip = strdup(optarg);
+				}
+
 				if (start_ip != NULL) {
 					/* Already we know two addresses, save them */
 					add_ip_range(start_ip, end_ip);
