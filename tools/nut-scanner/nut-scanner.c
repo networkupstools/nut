@@ -425,7 +425,9 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 	 * not likely to have a NUT/SNMP/NetXML/... server *that* close
 	 * nearby in addressing terms, for a tight filter to find them.
 	 */
-	int	masklen_hosts_limit = 8;
+	long	masklen_hosts_limit = 8;
+	char	*s = NULL;
+	int	errno_saved;
 
 #ifndef WIN32
 	/* NOTE: Would need WIN32-specific implementation */
@@ -454,26 +456,44 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 			auto_nets = 6;
 		} else if (!strncmp(arg_addr, "auto/", 5)) {
 			auto_nets = 46;
-			masklen_hosts_limit = atoi(arg_addr + 5);
-			if (masklen_hosts_limit < 0 || masklen_hosts_limit > 128) {
+			errno = 0;
+			masklen_hosts_limit = strtol(arg_addr + 5, &s, 10);
+			errno_saved = errno;
+			upsdebugx(6, "errno=%d s='%s'(%p) input='%s'(%p) output=%ld",
+				errno_saved, NUT_STRARG(s), (void *)s,
+				arg_addr + 5, (void *)(arg_addr + 5),
+				masklen_hosts_limit);
+			if (errno_saved || (s && *s != '\0') || masklen_hosts_limit < 0 || masklen_hosts_limit > 128) {
 				fatalx(EXIT_FAILURE,
-					"Invalid auto-net limit value: %s",
+					"Invalid auto-net limit value, should be an integer [0..128]: %s",
 					arg_addr);
 			}
 		} else if (!strncmp(arg_addr, "auto4/", 6)) {
 			auto_nets = 4;
-			masklen_hosts_limit = atoi(arg_addr + 6);
-			if (masklen_hosts_limit < 0 || masklen_hosts_limit > 32) {
+			errno = 0;
+			masklen_hosts_limit = strtol(arg_addr + 6, &s, 10);
+			errno_saved = errno;
+			upsdebugx(6, "errno=%d s='%s'(%p) input='%s'(%p) output=%ld",
+				errno_saved, NUT_STRARG(s), (void *)s,
+				arg_addr + 6, (void *)(arg_addr + 6),
+				masklen_hosts_limit);
+			if (errno_saved || (s && *s != '\0') || masklen_hosts_limit < 0 || masklen_hosts_limit > 32) {
 				fatalx(EXIT_FAILURE,
-					"Invalid auto-net limit value: %s",
+					"Invalid auto-net limit value, should be an integer [0..32]: %s",
 					arg_addr);
 			}
 		} else if (!strncmp(arg_addr, "auto6/", 6)) {
 			auto_nets = 6;
-			masklen_hosts_limit = atoi(arg_addr + 6);
-			if (masklen_hosts_limit < 0 || masklen_hosts_limit > 128) {
+			errno = 0;
+			masklen_hosts_limit = strtol(arg_addr + 6, &s, 10);
+			errno_saved = errno;
+			upsdebugx(6, "errno=%d s='%s'(%p) input='%s'(%p) output=%ld",
+				errno_saved, NUT_STRARG(s), (void *)s,
+				arg_addr + 6, (void *)(arg_addr + 6),
+				masklen_hosts_limit);
+			if (errno_saved || (s && *s != '\0') || masklen_hosts_limit < 0 || masklen_hosts_limit > 128) {
 				fatalx(EXIT_FAILURE,
-					"Invalid auto-net limit value: %s",
+					"Invalid auto-net limit value, should be an integer [0..128]: %s",
 					arg_addr);
 			}
 		} else {
@@ -607,7 +627,7 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 						 * an exact hit on one address,
 						 * so an IPv4/32 or IPv6/128.
 						 */
-						upsdebugx(6, "Subnet ignored: address range too large: %d bits allowed vs. %d bits per netmask",
+						upsdebugx(6, "Subnet ignored: address range too large: %ld bits allowed vs. %d bits per netmask",
 							masklen_hosts_limit, masklen_hosts);
 						continue;
 					}
