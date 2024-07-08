@@ -176,6 +176,7 @@ char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, const char * startIP, const 
 		return strdup(host);
 	}
 	else { /* IPv6 */
+		size_t	hlen;
 		for (i = 0; i < 16; i++) {
 			if (ip->start6.s6_addr[i] !=ip->stop6.s6_addr[i]) {
 				if (ip->start6.s6_addr[i] > ip->stop6.s6_addr[i]) {
@@ -185,9 +186,17 @@ char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, const char * startIP, const 
 			}
 		}
 
-		if (ntop6(&ip->start6, host, sizeof(host)) != 0) {
+		/* IPv6 addresses must be in square brackets,
+		 * for upsclient et al to differentiate them
+		 * from the port number.
+		 */
+		host[0] = '[';
+		if (ntop6(&ip->start6, host + 1, sizeof(host) - 2) != 0) {
 			return NULL;
 		}
+		hlen = strlen(host);
+		host[hlen] = ']';
+		host[hlen + 1] = '\0';
 
 		return strdup(host);
 	}
@@ -217,6 +226,8 @@ char * nutscan_ip_iter_inc(nutscan_ip_iter_t * ip)
 		return strdup(host);
 	}
 	else {
+		size_t	hlen;
+
 		/* Check if this is the last address to scan */
 		if (memcmp(&ip->start6.s6_addr, &ip->stop6.s6_addr,
 				sizeof(ip->start6.s6_addr)) == 0) {
@@ -224,9 +235,18 @@ char * nutscan_ip_iter_inc(nutscan_ip_iter_t * ip)
 		}
 
 		increment_IPv6(&ip->start6);
-		if (ntop6(&ip->start6, host, sizeof(host)) != 0) {
+
+		/* IPv6 addresses must be in square brackets,
+		 * for upsclient et al to differentiate them
+		 * from the port number.
+		 */
+		host[0] = '[';
+		if (ntop6(&ip->start6, host + 1, sizeof(host) - 2) != 0) {
 			return NULL;
 		}
+		hlen = strlen(host);
+		host[hlen] = ']';
+		host[hlen + 1] = '\0';
 
 		return strdup(host);
 	}
