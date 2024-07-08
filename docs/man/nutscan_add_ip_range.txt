@@ -1,5 +1,5 @@
-NUTSCAN_FREE_IP_RANGES(3)
-=========================
+NUTSCAN_ADD_IP_RANGE(3)
+=======================
 
 NAME
 ----
