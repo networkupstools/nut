@@ -616,7 +616,7 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 
 					thread_count++;
 					new_thread_array = realloc(thread_array,
-						thread_count*sizeof(nutscan_thread_t));
+						thread_count * sizeof(nutscan_thread_t));
 					if (new_thread_array == NULL) {
 						upsdebugx(1, "%s: Failed to realloc thread array", __func__);
 						break;

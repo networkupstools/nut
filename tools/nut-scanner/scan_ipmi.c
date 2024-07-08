@@ -619,6 +619,7 @@ nutscan_device_t * nutscan_scan_ipmi(const char * start_ip, const char * stop_ip
 		current_nut_dev = nutscan_scan_ipmi_device(NULL, NULL);
 	}
 	else {
+		/* TODO: Port HAVE_PTHREAD_TRYJOIN etc. from other files? */
 		if (start_ip == stop_ip || !stop_ip) {
 			upsdebugx(1, "%s: Scanning remote PSU for single IP address: %s",
 				__func__, start_ip);

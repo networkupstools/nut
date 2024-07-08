@@ -1028,6 +1028,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	nutscan_snmp_t * tmp_sec;
 	nutscan_ip_iter_t ip;
 	char * ip_str = NULL;
+
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE
 	sem_t * semaphore = nutscan_semaphore();
@@ -1153,6 +1154,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 				"(launched overall: %" PRIuSIZE "), "
 				"waiting until some would finish",
 				__func__, curr_threads, thread_count);
+
 			while (curr_threads >= max_threads
 			   || (curr_threads >= max_threads_scantype && max_threads_scantype > 0)
 			) {
@@ -1201,6 +1203,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 			}
 			upsdebugx(2, "%s: proceeding with scan", __func__);
 		}
+
 		/* NOTE: No change to default "pass" in this ifdef:
 		 * if we got to this line, we have a slot to use */
 #  endif /* HAVE_PTHREAD_TRYJOIN */
@@ -1279,7 +1282,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 			}
 # else
 #  ifdef HAVE_PTHREAD_TRYJOIN
-		/* TODO: Move the wait-loop for TRYJOIN here? */
+			/* TODO: Move the wait-loop for TRYJOIN here? */
 #  endif /* HAVE_PTHREAD_TRYJOIN */
 # endif  /* HAVE_SEMAPHORE */
 #endif   /* HAVE_PTHREAD */

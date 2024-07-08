@@ -377,6 +377,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 				"(launched overall: %" PRIuSIZE "), "
 				"waiting until some would finish",
 				__func__, curr_threads, thread_count);
+
 			while (curr_threads >= max_threads
 			   || (curr_threads >= max_threads_scantype && max_threads_scantype > 0)
 			) {
@@ -425,6 +426,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 			}
 			upsdebugx(2, "%s: proceeding with scan", __func__);
 		}
+
 		/* NOTE: No change to default "pass" in this ifdef:
 		 * if we got to this line, we have a slot to use */
 #  endif /* HAVE_PTHREAD_TRYJOIN */
@@ -520,7 +522,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 			}
 # else
 #  ifdef HAVE_PTHREAD_TRYJOIN
-		/* TODO: Move the wait-loop for TRYJOIN here? */
+			/* TODO: Move the wait-loop for TRYJOIN here? */
 #  endif /* HAVE_PTHREAD_TRYJOIN */
 # endif  /* HAVE_SEMAPHORE */
 #endif   /* HAVE_PTHREAD */
