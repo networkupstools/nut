@@ -138,11 +138,6 @@ static char * serial_ports = NULL;
 static int cli_link_detail_level = -1;
 
 /* Track requested IP ranges (from CLI or auto-discovery) */
-typedef struct ip_range_s {
-	char * start_ip;
-	char * end_ip;
-	struct ip_range_s * next;
-} ip_range_t;
 static ip_range_t * ip_ranges = NULL;
 static ip_range_t * ip_ranges_last = NULL;
 static size_t ip_ranges_count = 0;

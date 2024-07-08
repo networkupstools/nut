@@ -56,6 +56,14 @@ char * nutscan_ip_iter_init(nutscan_ip_iter_t *, const char * startIP, const cha
 char * nutscan_ip_iter_inc(nutscan_ip_iter_t *);
 int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip);
 
+/* Track requested IP ranges (from CLI or auto-discovery) */
+/* One IP address range: */
+typedef struct ip_range_s {
+	char * start_ip;
+	char * end_ip;
+	struct ip_range_s * next;
+} ip_range_t;
+
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 }
