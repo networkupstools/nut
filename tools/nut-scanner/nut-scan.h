@@ -73,7 +73,15 @@
 # ifdef HAVE_SEMAPHORE
 #  include <semaphore.h>
 # endif
+#endif
 
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
+#ifdef HAVE_PTHREAD
 # if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE)
 extern size_t max_threads, curr_threads, max_threads_netxml, max_threads_oldnut, max_threads_netsnmp;
 # endif
@@ -87,12 +95,6 @@ typedef struct nutscan_thread {
 	int		active;	/* true if the thread was created, false if joined (to not join twice) */
 } nutscan_thread_t;
 #endif /* HAVE_PTHREAD */
-
-#ifdef __cplusplus
-/* *INDENT-OFF* */
-extern "C" {
-/* *INDENT-ON* */
-#endif
 
 /* SNMP structure */
 typedef struct nutscan_snmp {
