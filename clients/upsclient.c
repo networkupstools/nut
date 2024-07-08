@@ -1700,6 +1700,10 @@ int upscli_splitaddr(const char *buf, char **hostname, uint16_t *port)
 	}
 
 	if (*tmp == '[') {
+		/* NOTE: Brackets are required for colon-separated IPv6
+		 * addresses, to differentiate from a port number. For
+		 * example, `[1234:5678]:3493` would seem right.
+		 */
 		if (strchr(tmp, ']') == NULL) {
 			fprintf(stderr, "upscli_splitaddr: missing closing bracket in [domain literal]\n");
 			return -1;
