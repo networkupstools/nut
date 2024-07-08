@@ -36,6 +36,31 @@
 #include <unistd.h>
 #include <string.h>
 
+/* Headers related to getifaddrs() for `-m auto` on different platforms */
+#ifdef HAVE_SYS_SOCKET_H
+# include <sys/socket.h>
+#endif
+#include <sys/types.h>
+#ifndef WIN32
+# include <arpa/inet.h>
+# include <netinet/in.h>
+# include <ifaddrs.h>
+# include <netdb.h>
+# include <sys/ioctl.h>
+# include <net/if.h>
+#else
+/* Those 2 files for support of getaddrinfo, getnameinfo and freeaddrinfo
+   on Windows 2000 and older versions */
+/* // TODO: complete "-m auto" support
+# include <ws2tcpip.h>
+# include <wspiapi.h>
+# ifndef AI_NUMERICSERV
+#  define AI_NUMERICSERV NI_NUMERICSERV
+# endif
+# include "wincompat.h"
+*/
+#endif
+
 #ifdef HAVE_PTHREAD
 # include <pthread.h>
 # ifdef HAVE_SEMAPHORE
@@ -58,8 +83,6 @@
 #endif   /* HAVE_PTHREAD */
 
 #include "nut-scan.h"
-
-#define DEFAULT_TIMEOUT 5
 
 #define ERR_BAD_OPTION	(-1)
 
@@ -110,11 +133,86 @@ static const struct option longopts[] = {
 static nutscan_device_t *dev[TYPE_END];
 
 static useconds_t timeout = DEFAULT_NETWORK_TIMEOUT * 1000 * 1000; /* in usec */
-static char * start_ip = NULL;
-static char * end_ip = NULL;
 static char * port = NULL;
 static char * serial_ports = NULL;
 static int cli_link_detail_level = -1;
+
+/* Track requested IP ranges (from CLI or auto-discovery) */
+typedef struct ip_range_s {
+	char * start_ip;
+	char * end_ip;
+	struct ip_range_s * next;
+} ip_range_t;
+static ip_range_t * ip_ranges = NULL;
+static ip_range_t * ip_ranges_last = NULL;
+static size_t ip_ranges_count = 0;
+
+static size_t add_ip_range(char * start_ip, char * end_ip)
+{
+	ip_range_t *p;
+
+	if (!start_ip && !end_ip) {
+		upsdebugx(5, "%s: skip, no addresses were provided", __func__);
+		return ip_ranges_count;
+	}
+
+	if (start_ip == NULL) {
+		upsdebugx(5, "%s: only end address was provided, setting start to same: %s",
+			 __func__, end_ip);
+		start_ip = end_ip;
+	}
+	if (end_ip == NULL) {
+		upsdebugx(5, "%s: only start address was provided, setting end to same: %s",
+			 __func__, start_ip);
+		end_ip = start_ip;
+	}
+
+	p = xcalloc(1, sizeof(ip_range_t));
+
+	p->start_ip = start_ip;
+	p->end_ip = end_ip;
+	p->next = NULL;
+
+	if (!ip_ranges) {
+		ip_ranges = p;
+	}
+
+	if (ip_ranges_last) {
+		ip_ranges_last->next = p;
+	}
+	ip_ranges_last = p;
+	ip_ranges_count++;
+
+	upsdebugx(1, "Recorded IP address range #%" PRIuSIZE ": [%s .. %s]",
+		ip_ranges_count, start_ip, end_ip);
+
+	return ip_ranges_count;
+}
+
+static void free_ip_ranges(void)
+{
+	ip_range_t *p = ip_ranges;
+
+	while (p) {
+		ip_ranges = p->next;
+
+		/* Only free the strings once, if they pointed to same */
+		if (p->start_ip == p->end_ip && p->start_ip) {
+			free(p->start_ip);
+		} else {
+			if (p->start_ip)
+				free(p->start_ip);
+			if (p->end_ip)
+				free(p->end_ip);
+		}
+
+		free(p);
+		p = ip_ranges;
+	}
+
+	ip_ranges_last = NULL;
+	ip_ranges_count = 0;
+}
 
 #ifdef HAVE_PTHREAD
 static pthread_t thread[TYPE_END];
@@ -172,28 +270,88 @@ static void * run_usb(void *arg)
 	dev[TYPE_USB] = nutscan_scan_usb(scanopts_ptr);
 	return NULL;
 }
+#endif	/* HAVE_PTHREAD */
 
 static void * run_snmp(void * arg)
 {
 	nutscan_snmp_t * sec = (nutscan_snmp_t *)arg;
+	nutscan_device_t * dev_ret;
+	ip_range_t *p = ip_ranges;
 
-	dev[TYPE_SNMP] = nutscan_scan_snmp(start_ip, end_ip, timeout, sec);
+	upsdebugx(2, "Entering %s for %" PRIuSIZE " IP address range(s)",
+		__func__, ip_ranges_count);
+
+	dev[TYPE_SNMP] = NULL;
+	while (p) {
+		dev_ret = nutscan_scan_snmp(p->start_ip, p->end_ip, timeout, sec);
+		if (!dev[TYPE_SNMP]) {
+			dev[TYPE_SNMP] = dev_ret;
+		} else {
+			dev[TYPE_SNMP] = nutscan_rewind_device(
+				nutscan_add_device_to_device(dev_ret, dev[TYPE_SNMP]));
+		}
+		p = p->next;
+	}
+
+	upsdebugx(2, "Finished %s loop", __func__);
 	return NULL;
 }
 
 static void * run_xml(void * arg)
 {
 	nutscan_xml_t * sec = (nutscan_xml_t *)arg;
+	nutscan_device_t * dev_ret;
+	ip_range_t *p = ip_ranges;
 
-	dev[TYPE_XML] = nutscan_scan_xml_http_range(start_ip, end_ip, timeout, sec);
+	upsdebugx(2, "Entering %s for %" PRIuSIZE " IP address range(s)",
+		__func__, ip_ranges_count);
+
+	if (!p) {
+		/* Probe broadcast */
+		dev[TYPE_XML] = nutscan_scan_xml_http_range(NULL, NULL, timeout, sec);
+
+		upsdebugx(2, "Finished %s query", __func__);
+		return NULL;
+	}
+
+	dev[TYPE_XML] = NULL;
+	while (p) {
+		dev_ret = nutscan_scan_xml_http_range(p->start_ip, p->end_ip, timeout, sec);
+		if (!dev[TYPE_XML]) {
+			dev[TYPE_XML] = dev_ret;
+		} else {
+			dev[TYPE_XML] = nutscan_rewind_device(
+				nutscan_add_device_to_device(dev_ret, dev[TYPE_XML]));
+		}
+		p = p->next;
+	}
+
+	upsdebugx(2, "Finished %s loop", __func__);
 	return NULL;
 }
 
 static void * run_nut_old(void *arg)
 {
+	nutscan_device_t * dev_ret;
+	ip_range_t *p = ip_ranges;
 	NUT_UNUSED_VARIABLE(arg);
 
-	dev[TYPE_NUT] = nutscan_scan_nut(start_ip, end_ip, port, timeout);
+	upsdebugx(2, "Entering %s for %" PRIuSIZE " IP address range(s)",
+		__func__, ip_ranges_count);
+
+	dev[TYPE_NUT] = NULL;
+	while (p) {
+		dev_ret = nutscan_scan_nut(p->start_ip, p->end_ip, port, timeout);
+		if (!dev[TYPE_NUT]) {
+			dev[TYPE_NUT] = dev_ret;
+		} else {
+			dev[TYPE_NUT] = nutscan_rewind_device(
+				nutscan_add_device_to_device(dev_ret, dev[TYPE_NUT]));
+		}
+		p = p->next;
+	}
+
+	upsdebugx(2, "Finished %s loop", __func__);
 	return NULL;
 }
 
@@ -216,19 +374,43 @@ static void * run_avahi(void *arg)
 static void * run_ipmi(void * arg)
 {
 	nutscan_ipmi_t * sec = (nutscan_ipmi_t *)arg;
+	nutscan_device_t * dev_ret;
+	ip_range_t *p = ip_ranges;
 
-	dev[TYPE_IPMI] = nutscan_scan_ipmi(start_ip, end_ip, sec);
+	upsdebugx(2, "Entering %s for %" PRIuSIZE " IP address range(s)",
+		__func__, ip_ranges_count);
+
+	if (!p) {
+		/* Probe local device */
+		dev[TYPE_IPMI] = nutscan_scan_ipmi(NULL, NULL, sec);
+
+		upsdebugx(2, "Finished %s query", __func__);
+		return NULL;
+	}
+
+	dev[TYPE_IPMI] = NULL;
+	while (p) {
+		dev_ret = nutscan_scan_ipmi(p->start_ip, p->end_ip, sec);
+		if (!dev[TYPE_IPMI]) {
+			dev[TYPE_IPMI] = dev_ret;
+		} else {
+			dev[TYPE_IPMI] = nutscan_rewind_device(
+				nutscan_add_device_to_device(dev_ret, dev[TYPE_IPMI]));
+		}
+		p = p->next;
+	}
+
+	upsdebugx(2, "Finished %s loop", __func__);
 	return NULL;
 }
 
 static void * run_eaton_serial(void *arg)
 {
-	NUT_UNUSED_VARIABLE(arg);
+	char * arg_serial_ports = (char *)arg;
 
-	dev[TYPE_EATON_SERIAL] = nutscan_scan_eaton_serial(serial_ports);
+	dev[TYPE_EATON_SERIAL] = nutscan_scan_eaton_serial(arg_serial_ports);
 	return NULL;
 }
-#endif /* HAVE_PTHREAD */
 
 static void show_usage(void)
 {
@@ -286,6 +468,15 @@ static void show_usage(void)
 	printf("  -s, --start_ip <IP address>: First IP address to scan.\n");
 	printf("  -e, --end_ip <IP address>: Last IP address to scan.\n");
 	printf("  -m, --mask_cidr <IP address/mask>: Give a range of IP using CIDR notation.\n");
+	printf("  -m, --mask_cidr auto: Detect local IP address(es) and scan corresponding subnet(s).\n");
+#ifdef WIN32
+	printf("                        (Currently not implemented for this platform)\n");
+#endif
+	printf("  -m, --mask_cidr auto4/auto6: Likewise, limiting to IPv4 or IPv6 interfaces.\n");
+	printf("                        Only the first auto* request would be honoured.\n");
+	printf("NOTE: IP address range specifications can be repeated, to scan several.\n");
+	printf("Specifying a single first or last address before starting another range\n");
+	printf("leads to scanning just that one address as the range.\n");
 
 	if (nutscan_avail_snmp) {
 		printf("\nSNMP v1 specific options:\n");
@@ -414,7 +605,8 @@ int main(int argc, char *argv[])
 	nutscan_ipmi_t ipmi_sec;
 	nutscan_xml_t  xml_sec;
 	int opt_ret;
-	char *	cidr = NULL;
+	char *start_ip = NULL, *end_ip = NULL;
+	int auto_nets = 0;
 	int allow_all = 0;
 	int allow_usb = 0;
 	int allow_snmp = 0;
@@ -512,22 +704,196 @@ int main(int argc, char *argv[])
 				}
 				break;
 			case 's':
+				if (start_ip) {
+					/* Save whatever we have, either
+					 * this one address or an earlier
+					 * known range with its end */
+					add_ip_range(start_ip, end_ip);
+					start_ip = NULL;
+					end_ip = NULL;
+				}
+
 				start_ip = strdup(optarg);
-				if (end_ip == NULL)
-					end_ip = start_ip;
+				if (end_ip != NULL) {
+					/* Already we know two addresses, save them */
+					add_ip_range(start_ip, end_ip);
+					start_ip = NULL;
+					end_ip = NULL;
+				}
 				break;
 			case 'e':
+				if (end_ip) {
+					/* Save whatever we have, either
+					 * this one address or an earlier
+					 * known range with its start */
+					add_ip_range(start_ip, end_ip);
+					start_ip = NULL;
+					end_ip = NULL;
+				}
+
 				end_ip = strdup(optarg);
-				if (start_ip == NULL)
-					start_ip = end_ip;
+				if (start_ip != NULL) {
+					/* Already we know two addresses, save them */
+					add_ip_range(start_ip, end_ip);
+					start_ip = NULL;
+					end_ip = NULL;
+				}
 				break;
 			case 'E':
 				serial_ports = strdup(optarg);
 				allow_eaton_serial = 1;
 				break;
 			case 'm':
-				cidr = strdup(optarg);
-				upsdebugx(5, "Got CIDR net/mask: %s", cidr);
+				if (start_ip || end_ip) {
+					/* Save whatever we have, either
+					 * this one address or an earlier
+					 * known range with its start or end */
+					add_ip_range(start_ip, end_ip);
+					start_ip = NULL;
+					end_ip = NULL;
+				}
+
+				if (!strcmp(optarg, "auto") || !strcmp(optarg, "auto4") || !strcmp(optarg, "auto6")) {
+					if (auto_nets) {
+						fprintf(stderr, "Duplicate request for connected subnet scan ignored\n");
+					} else {
+#ifndef WIN32
+						/* TODO: Refactor into a method, reduce indentation? */
+						/* Inspired by https://stackoverflow.com/a/63789267/4715872 */
+						struct ifaddrs *ifap;
+#endif
+
+						if (!strcmp(optarg, "auto")) {
+							auto_nets = 46;
+						} else if (!strcmp(optarg, "auto4")) {
+							auto_nets = 4;
+						} else if (!strcmp(optarg, "auto6")) {
+							auto_nets = 6;
+						}
+
+#ifndef WIN32
+						if (getifaddrs(&ifap) < 0) {
+							fatalx(EXIT_FAILURE,
+								"Failed to getifaddrs() for connected subnet scan: %s\n",
+								strerror(errno));
+						} else {
+							struct ifaddrs *ifa;
+							char msg[LARGEBUF];
+							/* Note: INET6_ADDRSTRLEN is large enough for IPv4 too,
+							 * and is smaller than LARGEBUF to avoid snprintf()
+							 * warnings that the result might not fit. */
+							char addr[INET6_ADDRSTRLEN];
+							char mask[INET6_ADDRSTRLEN];
+							int masklen = 0;
+
+							for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
+								if (ifa->ifa_addr) {
+									memset(msg, 0, sizeof(msg));
+									memset(addr, 0, sizeof(addr));
+									memset(mask, 0, sizeof(mask));
+									masklen = -1;
+
+									if (ifa->ifa_addr->sa_family == AF_INET6) {
+										uint8_t i, j;
+
+										/* Ensure proper alignment */
+										struct sockaddr_in6 sm;
+										memcpy (&sm, ifa->ifa_netmask, sizeof(struct sockaddr_in6));
+
+										masklen = 0;
+										for (j = 0; j < 16; j++) {
+											i = sm.sin6_addr.s6_addr[j];
+											while (i) {
+												masklen += i & 1;
+												i >>= 1;
+											}
+										}
+
+										getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in6), addr, sizeof(addr), NULL, 0, NI_NUMERICHOST);
+										getnameinfo(ifa->ifa_netmask, sizeof(struct sockaddr_in6), mask, sizeof(mask), NULL, 0, NI_NUMERICHOST);
+										snprintf(msg, sizeof(msg), "Interface: %s\tAddress: %s\tMask: %s (len: %i)\tFlags: %08" PRIxMAX, ifa->ifa_name, addr, mask, masklen, (uintmax_t)ifa->ifa_flags);
+									} else if (ifa->ifa_addr->sa_family == AF_INET) {
+										in_addr_t i;
+
+										/* Ensure proper alignment */
+										struct sockaddr_in sa, sm;
+										memcpy (&sa, ifa->ifa_addr, sizeof(struct sockaddr_in));
+										memcpy (&sm, ifa->ifa_netmask, sizeof(struct sockaddr_in));
+										snprintf(addr, sizeof(addr), "%s", inet_ntoa(sa.sin_addr));
+										snprintf(mask, sizeof(mask), "%s", inet_ntoa(sm.sin_addr));
+
+										i = sm.sin_addr.s_addr;
+										masklen = 0;
+										while (i) {
+											masklen += i & 1;
+											i >>= 1;
+										}
+										snprintf(msg, sizeof(msg), "Interface: %s\tAddress: %s\tMask: %s (len: %i)\tFlags: %08" PRIxMAX, ifa->ifa_name, addr, mask, masklen, (uintmax_t)ifa->ifa_flags);
+/*
+									} else {
+										snprintf(msg, sizeof(msg), "Addr family: %" PRIuMAX, (intmax_t)ifa->ifa_addr->sa_family);
+*/
+									}
+
+									if (ifa->ifa_addr->sa_family == AF_INET6 || ifa->ifa_addr->sa_family == AF_INET) {
+										if (ifa->ifa_flags & IFF_LOOPBACK)
+											snprintfcat(msg, sizeof(msg), " IFF_LOOPBACK");
+										if (ifa->ifa_flags & IFF_UP)
+											snprintfcat(msg, sizeof(msg), " IFF_UP");
+										if (ifa->ifa_flags & IFF_RUNNING)
+											snprintfcat(msg, sizeof(msg), " IFF_RUNNING");
+										if (ifa->ifa_flags & IFF_BROADCAST)
+											snprintfcat(msg, sizeof(msg), " IFF_BROADCAST(is assigned)");
+
+										upsdebugx(5, "Discovering getifaddrs(): %s", msg);
+
+										/* TODO: also rule out "link-local" address ranges
+										 * so we do not issue billions of worthless scans.
+										 * FIXME: IPv6 may also be a problem, see
+										 * https://github.com/networkupstools/nut/issues/2512
+										 */
+										if (!(ifa->ifa_flags & IFF_LOOPBACK)
+										&&   (ifa->ifa_flags & IFF_UP)
+										&&   (ifa->ifa_flags & IFF_RUNNING)
+										&&   (ifa->ifa_flags & IFF_BROADCAST)
+										&&  (auto_nets == 46
+										  || (auto_nets == 4 && ifa->ifa_addr->sa_family == AF_INET)
+										  || (auto_nets == 6 && ifa->ifa_addr->sa_family == AF_INET6) )
+										) {
+											char cidr[LARGEBUF];
+
+											if (snprintf(cidr, sizeof(cidr), "%s/%i", addr, masklen) < 0) {
+												fatalx(EXIT_FAILURE, "Could not construct a CIDR string from discovered address/mask");
+											}
+
+											upsdebugx(5, "Processing CIDR net/mask: %s", cidr);
+											nutscan_cidr_to_ip(cidr, &start_ip, &end_ip);
+											upsdebugx(5, "Extracted IP address range from CIDR net/mask: %s => %s", start_ip, end_ip);
+
+											add_ip_range(start_ip, end_ip);
+											start_ip = NULL;
+											end_ip = NULL;
+										}
+									}	/* else AF_UNIX or a dozen other types we do not care about here */
+								}
+							}
+							freeifaddrs(ifap);
+						}
+#else	/* WIN32 */
+						/* https://stackoverflow.com/questions/122208/how-can-i-get-the-ip-address-of-a-local-computer */
+						upsdebugx(0, "Local address detection feature is not completed on Windows, please call back later");
+#endif
+					}
+				} else {
+					/* not `-m auto` => is `-m cidr` */
+					upsdebugx(5, "Processing CIDR net/mask: %s", optarg);
+					nutscan_cidr_to_ip(optarg, &start_ip, &end_ip);
+					upsdebugx(5, "Extracted IP address range from CIDR net/mask: %s => %s", start_ip, end_ip);
+
+					add_ip_range(start_ip, end_ip);
+					start_ip = NULL;
+					end_ip = NULL;
+				}
 				break;
 			case 'D':
 				/* nothing to do, here */
@@ -799,10 +1165,11 @@ display_help:
 # endif
 #endif /* HAVE_PTHREAD */
 
-	if (cidr) {
-		upsdebugx(1, "Processing CIDR net/mask: %s", cidr);
-		nutscan_cidr_to_ip(cidr, &start_ip, &end_ip);
-		upsdebugx(1, "Extracted IP address range from CIDR net/mask: %s => %s", start_ip, end_ip);
+	if (start_ip != NULL || end_ip != NULL) {
+		/* Something did not cancel out above */
+		add_ip_range(start_ip, end_ip);
+		start_ip = NULL;
+		end_ip = NULL;
 	}
 
 	if (!allow_usb && !allow_snmp && !allow_xml && !allow_oldnut && !allow_nut_simulation &&
@@ -839,6 +1206,7 @@ display_help:
 		}
 #else
 		upsdebugx(1, "USB SCAN: no pthread support, starting nutscan_scan_usb...");
+		/* Not calling run_usb() here, as it re-processes the arg */
 		dev[TYPE_USB] = nutscan_scan_usb(&cli_link_detail_level);
 #endif /* HAVE_PTHREAD */
 	} else {
@@ -846,8 +1214,8 @@ display_help:
 	}
 
 	if (allow_snmp && nutscan_avail_snmp) {
-		if (start_ip == NULL) {
-			upsdebugx(quiet, "No start IP, skipping SNMP");
+		if (!ip_ranges_count) {
+			upsdebugx(quiet, "No IP range(s) requested, skipping SNMP");
 			nutscan_avail_snmp = 0;
 		}
 		else {
@@ -860,7 +1228,8 @@ display_help:
 			}
 #else
 			upsdebugx(1, "SNMP SCAN: no pthread support, starting nutscan_scan_snmp...");
-			dev[TYPE_SNMP] = nutscan_scan_snmp(start_ip, end_ip, timeout, &snmp_sec);
+			/* dev[TYPE_SNMP] = nutscan_scan_snmp(start_ip, end_ip, timeout, &snmp_sec); */
+			run_snmp(&snmp_sec);
 #endif /* HAVE_PTHREAD */
 		}
 	} else {
@@ -868,6 +1237,11 @@ display_help:
 	}
 
 	if (allow_xml && nutscan_avail_xml_http) {
+		/* NOTE: No check for ip_ranges_count,
+		 * NetXML default scan is broadcast
+		 * so it just runs (if requested and
+		 * supported).
+		 */
 		upsdebugx(quiet, "Scanning XML/HTTP bus.");
 		xml_sec.usec_timeout = timeout;
 #ifdef HAVE_PTHREAD
@@ -878,15 +1252,17 @@ display_help:
 		}
 #else
 		upsdebugx(1, "XML/HTTP SCAN: no pthread support, starting nutscan_scan_xml_http_range()...");
-		dev[TYPE_XML] = nutscan_scan_xml_http_range(start_ip, end_ip, timeout, &xml_sec);
+		/* dev[TYPE_XML] = nutscan_scan_xml_http_range(start_ip, end_ip, timeout, &xml_sec); */
+		run_xml(&xml_sec);
+		}
 #endif /* HAVE_PTHREAD */
 	} else {
 		upsdebugx(1, "XML/HTTP SCAN: not requested or supported, SKIPPED");
 	}
 
 	if (allow_oldnut && nutscan_avail_nut) {
-		if (start_ip == NULL) {
-			upsdebugx(quiet, "No start IP, skipping NUT bus (old libupsclient connect method)");
+		if (!ip_ranges_count) {
+			upsdebugx(quiet, "No IP range(s) requested, skipping NUT bus (old libupsclient connect method)");
 			nutscan_avail_nut = 0;
 		}
 		else {
@@ -899,7 +1275,8 @@ display_help:
 			}
 #else
 			upsdebugx(1, "NUT bus (old) SCAN: no pthread support, starting nutscan_scan_nut...");
-			dev[TYPE_NUT] = nutscan_scan_nut(start_ip, end_ip, port, timeout);
+			/*dev[TYPE_NUT] = nutscan_scan_nut(start_ip, end_ip, port, timeout);*/
+			run_nut_old(NULL);
 #endif /* HAVE_PTHREAD */
 		}
 	} else {
@@ -915,8 +1292,9 @@ display_help:
 			nutscan_avail_nut_simulation = 0;
 		}
 #else
-			upsdebugx(1, "NUT simulation devices SCAN: no pthread support, starting nutscan_scan_nut_simulation...");
-			dev[TYPE_NUT_SIMULATION] = nutscan_scan_nut_simulation(timeout);
+		upsdebugx(1, "NUT simulation devices SCAN: no pthread support, starting nutscan_scan_nut_simulation...");
+		/* dev[TYPE_NUT_SIMULATION] = nutscan_scan_nut_simulation(); */
+		run_nut_simulation(NULL);
 #endif /* HAVE_PTHREAD */
 	} else {
 		upsdebugx(1, "NUT simulation devices SCAN: not requested or supported, SKIPPED");
@@ -932,13 +1310,19 @@ display_help:
 		}
 #else
 		upsdebugx(1, "NUT bus (avahi) SCAN: no pthread support, starting nutscan_scan_avahi...");
-		dev[TYPE_AVAHI] = nutscan_scan_avahi(timeout);
+		/* dev[TYPE_AVAHI] = nutscan_scan_avahi(timeout); */
+		run_avahi(NULL);
 #endif /* HAVE_PTHREAD */
 	} else {
 		upsdebugx(1, "NUT bus (avahi) SCAN: not requested or supported, SKIPPED");
 	}
 
 	if (allow_ipmi && nutscan_avail_ipmi) {
+		/* NOTE: No check for ip_ranges_count,
+		 * IPMI default scan is local device
+		 * so it just runs (if requested and
+		 * supported).
+		 */
 		upsdebugx(quiet, "Scanning IPMI bus.");
 #ifdef HAVE_PTHREAD
 		upsdebugx(1, "IPMI SCAN: starting pthread_create with run_ipmi...");
@@ -948,7 +1332,8 @@ display_help:
 		}
 #else
 		upsdebugx(1, "IPMI SCAN: no pthread support, starting nutscan_scan_ipmi...");
-		dev[TYPE_IPMI] = nutscan_scan_ipmi(start_ip, end_ip, &ipmi_sec);
+		/* dev[TYPE_IPMI] = nutscan_scan_ipmi(start_ip, end_ip, &ipmi_sec); */
+		run_ipmi(&ipmi_sec);
 #endif /* HAVE_PTHREAD */
 	} else {
 		upsdebugx(1, "IPMI SCAN: not requested or supported, SKIPPED");
@@ -965,7 +1350,8 @@ display_help:
 		/* nutscan_avail_eaton_serial(?) = 0; */
 #else
 		upsdebugx(1, "SERIAL SCAN: no pthread support, starting nutscan_scan_eaton_serial...");
-		dev[TYPE_EATON_SERIAL] = nutscan_scan_eaton_serial (serial_ports);
+		/* dev[TYPE_EATON_SERIAL] = nutscan_scan_eaton_serial (serial_ports); */
+		run_eaton_serial(serial_ports);
 #endif /* HAVE_PTHREAD */
 	} else {
 		upsdebugx(1, "SERIAL SCAN: not requested or supported, SKIPPED");
@@ -1056,6 +1442,7 @@ display_help:
 
 	upsdebugx(1, "SCANS DONE: free common scanner resources");
 	nutscan_free();
+	free_ip_ranges();
 
 	upsdebugx(1, "SCANS DONE: EXIT_SUCCESS");
 	return EXIT_SUCCESS;

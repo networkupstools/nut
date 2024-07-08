@@ -156,6 +156,8 @@ static void * list_nut_devices(void * arg)
 	query[0] = "UPS";
 	numq = 1;
 
+	upsdebugx(2, "Entering %s for %s", __func__, target_hostname);
+
 	if ((*nut_upscli_splitaddr)(target_hostname, &hostname, &port) != 0) {
 		free(target_hostname);
 		free(nut_arg);
@@ -299,6 +301,16 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 
 	if (!nutscan_avail_nut) {
 		return NULL;
+	}
+
+	if (!startIP) {
+		upsdebugx(1, "%s: no starting IP address specified", __func__);
+	} else if (startIP == stopIP || !stopIP) {
+		upsdebugx(1, "%s: Scanning \"Old NUT\" bus for single IP address: %s",
+			__func__, startIP);
+	} else {
+		upsdebugx(1, "%s: Scanning \"Old NUT\" bus for IP address range: %s .. %s",
+			__func__, startIP, stopIP);
 	}
 
 #ifndef WIN32

@@ -1085,6 +1085,16 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 		return NULL;
 	}
 
+	if (!start_ip) {
+		upsdebugx(1, "%s: no starting IP address specified", __func__);
+	} else if (start_ip == stop_ip || !stop_ip) {
+		upsdebugx(1, "%s: Scanning SNMP for single IP address: %s",
+			__func__, start_ip);
+	} else {
+		upsdebugx(1, "%s: Scanning SNMP for IP address range: %s .. %s",
+			__func__, start_ip, stop_ip);
+	}
+
 	g_usec_timeout = usec_timeout;
 
 	/* Force numeric OIDs resolution (ie, do not resolve to textual names)

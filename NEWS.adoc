@@ -140,6 +140,13 @@ https://github.com/networkupstools/nut/milestone/11
 +
 NOTE: Currently both the long and short names for `libupsclient` should be
 installed.
+   * newly added support to scan several IP addresses (single or ranges)
+     with the same call, by repeating command-line options; also `-m auto{,4,6}`
+     can be specified (once) to select IP (all, IPv4, IPv6) address ranges of
+     configured local network interfaces (currently not implemented for WIN32).
+     [issue #2244, PR #2509, PR #2513]
+   * bumped version of `libnutscan` to 2.5.2, it now includes a few more
+     methods and symbols from `libcommon`. [issue #2244, PR #2509]
 
  - common code:
    * introduced a `NUT_DEBUG_SYSLOG` environment variable to tweak activation
