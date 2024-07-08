@@ -282,6 +282,12 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
         WSADATA WSAdata;
 #endif
 
+	if (!cidr) {
+		upsdebugx(0, "WARNING: %s: null cidr pointer was provided",
+			__func__);
+		return 0;
+	}
+
 	cidr_tok = strdup(cidr);
 	first_ip = strdup(strtok_r(cidr_tok, "/", &saveptr));
 	if (first_ip == NULL) {
