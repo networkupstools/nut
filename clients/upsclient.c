@@ -1210,7 +1210,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 		} else if (tryssl && ret == 0) {
 			if (certverify != 0) {
 				upslogx(LOG_NOTICE, "Can not connect to NUT server %s in SSL and "
-				"certificate is needed, disconnect", host);
+					"certificate is needed, disconnect", host);
 				upscli_disconnect(ups);
 				return -1;
 			}
