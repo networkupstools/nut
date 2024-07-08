@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3173 utf-8
+personal_ws-1.1 en 3178 utf-8
 AAC
 AAS
 ABI
@@ -754,6 +754,7 @@ NetInvent
 NetPro
 NetServer
 NetUps
+NetXML
 Netman
 NetworkUPSTools
 Neus
@@ -856,6 +857,7 @@ PROTVER
 PRs
 PSA
 PSD
+PSF
 PSFn
 PSGPSER
 PSSENTR
@@ -969,6 +971,7 @@ RDLCK
 RDNT
 RDWR
 README
+REALPATH
 REDi
 REFREPO
 REPLBATT
@@ -1177,6 +1180,7 @@ Sy
 Sycon
 Symmetra
 Symmetras
+SyntaxWarning
 Sysgration
 SyslogIdentifier
 SystemIO
@@ -2160,6 +2164,7 @@ libipmimonitoring
 libltdl
 liblzma
 libmodbus
+libname
 libneon
 libnetsnmp
 libnss

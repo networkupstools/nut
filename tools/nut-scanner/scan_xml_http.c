@@ -429,10 +429,11 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 	}
 
 	if (start_ip == NULL) {
-		upsdebugx(1, "Scanning XML/HTTP bus using broadcast.");
+		upsdebugx(1, "%s: Scanning XML/HTTP bus using broadcast.", __func__);
 	} else {
 		if ((start_ip == end_ip) || (end_ip == NULL) || (0 == strncmp(start_ip, end_ip, 128))) {
-			upsdebugx(1, "Scanning XML/HTTP bus for single IP (%s).", start_ip);
+			upsdebugx(1, "%s: Scanning XML/HTTP bus for single IP address: %s",
+				__func__, start_ip);
 		} else {
 			/* Iterate the range of IPs to scan */
 			nutscan_ip_iter_t ip;
@@ -449,7 +450,12 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 # if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE)
 			size_t  max_threads_scantype = max_threads_netxml;
 # endif
+#endif
 
+			upsdebugx(1, "%s: Scanning XML/HTTP bus for IP address range: %s .. %s",
+				__func__, start_ip, end_ip);
+
+#ifdef HAVE_PTHREAD
 			pthread_mutex_init(&dev_mutex, NULL);
 
 # ifdef HAVE_SEMAPHORE

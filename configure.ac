@@ -234,12 +234,30 @@ PIDPATH="/var/run"
 dnl Honour new LFS recommendations if applied on the build system:
 AS_IF([test -d "/run"], [PIDPATH="/run"])
 
+AC_CHECK_PROGS([GETENT], [getent], [])
+AC_CHECK_PROGS([ID], [id], [])
+
+PROBE_OS_USER="false"
+PROBE_OS_GROUP="false"
+AS_IF([test x"${GETENT}" != x], [
+	PROBE_OS_USER="${GETENT} passwd "
+	PROBE_OS_GROUP="${GETENT} group "
+	],[
+	AS_IF([test x"${ID}" != x], [
+		PROBE_OS_USER="${ID} -u "
+		PROBE_OS_GROUP="${ID} -g "
+		],[
+		AC_MSG_WARN([Can not check existence of user and group accounts on this system])
+		])
+	]
+)
+
 dnl Defaults for respective configure options below
 dnl Note these defaults may change further below depending on OS and
 dnl certain other configure options (e.g. "in-place replacement")
 RUN_AS_USER="nobody"
 RUN_AS_GROUP="nobody"
-AS_IF([test -n "`getent group nogroup`" && ! test -n "`getent group "${RUN_AS_GROUP}"`"],
+AS_IF([test -n "`${PROBE_OS_GROUP} nogroup`" && ! test -n "`${PROBE_OS_GROUP} "${RUN_AS_GROUP}"`"],
     [RUN_AS_GROUP="nogroup"]
 )
 
@@ -522,7 +540,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
             [for F in "${udevdir}/rules.d"/*-nut-*.rules ; do
                 if test -s "$F" ; then
                     nut_inplace_group="`grep GROUP= "$F" | head -1 | sed 's,^.* GROUP="*\(.*\)"*.*$,\1,'`" \
-                    && test -n "`getent group "${nut_inplace_group}"`" \
+                    && test -n "`${PROBE_OS_GROUP} "${nut_inplace_group}"`" \
                     && AC_MSG_RESULT([Got from ${F}]) \
                     && break \
                     || nut_inplace_group=""
@@ -531,8 +549,8 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
             ])
 
         AS_IF([test -z "${nut_inplace_group}"],
-            [AS_IF([test -n "`getent group nut`"], [nut_inplace_group="nut"],
-                [AS_IF([test -n "`getent group ups`"], [nut_inplace_group="ups"])])])
+            [AS_IF([test -n "`${PROBE_OS_GROUP} nut`"], [nut_inplace_group="nut"],
+                [AS_IF([test -n "`${PROBE_OS_GROUP} ups`"], [nut_inplace_group="ups"])])])
 
         AS_IF([test -n "${nut_inplace_group}"], [
             AC_MSG_RESULT([${nut_inplace_group}])
@@ -556,7 +574,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
                 `grep -E '^ *##*  *RUN_AS_USER' "${CONFPATH}/upsmon.conf" | awk '{print $3}'`\
             ; do \
                 AS_IF([test -z "${nut_inplace_user}"], [
-                    test -n "`getent passwd "${nut_inplace_user}"`" \
+                    test -n "`${PROBE_OS_USER} "${nut_inplace_user}"`" \
                     && AC_MSG_RESULT([Got from ${CONFPATH}/upsmon.conf]) \
                     || nut_inplace_user=""])
              done
@@ -569,7 +587,7 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
                 `grep -E '^ *##*  *RUN_AS_USER' "${CONFPATH}/upsmon.conf.sample" | awk '{print $3}'`\
             ; do \
                 AS_IF([test -z "${nut_inplace_user}"], [
-                    test -n "`getent passwd "${nut_inplace_user}"`" \
+                    test -n "`${PROBE_OS_USER} "${nut_inplace_user}"`" \
                     && AC_MSG_RESULT([Got from ${CONFPATH}/upsmon.conf]) \
                     || nut_inplace_user=""])
              done
@@ -587,15 +605,15 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         ; do
             AS_IF([test -z "${nut_inplace_user}" && test -s "$F"],
                 [nut_inplace_user="`grep -E '^ *nutuser=' "$F" | sed 's,^ *nutuser=,,'`" \
-                && test -n "`getent passwd "${nut_inplace_user}"`" \
+                && test -n "`${PROBE_OS_USER} "${nut_inplace_user}"`" \
                 && AC_MSG_RESULT([Got from $F]) \
                 || nut_inplace_user=""
             ])
         done
 
         AS_IF([test -z "${nut_inplace_user}"],
-            [AS_IF([test -n "`getent passwd nut`"], [nut_inplace_user="nut"],
-                [AS_IF([test -n "`getent passwd ups`"], [nut_inplace_user="ups"])])])
+            [AS_IF([test -n "`${PROBE_OS_USER} nut`"], [nut_inplace_user="nut"],
+                [AS_IF([test -n "`${PROBE_OS_USER} ups`"], [nut_inplace_user="ups"])])])
 
         AS_IF([test -n "${nut_inplace_user}"], [
             AC_MSG_RESULT([${nut_inplace_user}])
@@ -1453,7 +1471,7 @@ AS_IF([test x"${ac_cv_struct_pollfd}" = xyes],
     )
 
 dnl ----------------------------------------------------------------------
-dnl Check for python binary program names per language version
+dnl Check for Python binary program names per language version
 dnl to embed into scripts and Make rules
 NUT_CHECK_PYTHON_DEFAULT
 
@@ -1800,6 +1818,59 @@ NUT_ARG_WITH([debuginfo],
 dnl To help find warning/error details in a wall of text, see --enable-Wcolor handled above
 
 dnl ----------------------------------------------------------------------
+dnl Check for with-ssl, and --with-nss or --with-openssl which can be used
+dnl by NUT as well as its networking-capable dependencies (net-snmp, etc.)
+dnl Only one can be enabled at a time, with a preference for OpenSSL
+dnl if both are available
+
+nut_ssl_lib=""
+
+NUT_ARG_WITH([ssl], [enable SSL support (either NSS or OpenSSL)], [auto])
+NUT_ARG_WITH([nss], [enable SSL support using Mozilla NSS], [auto])
+NUT_ARG_WITH([openssl], [enable SSL support using OpenSSL], [auto])
+
+dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_ssl}" != "no"; then
+   dnl check if either NSS or OpenSSL was explicitly requested
+   if test "${nut_with_nss}" = "yes"; then
+      NUT_CHECK_LIBNSS
+      if test "${nut_have_libnss}" != "yes"; then
+         AC_MSG_ERROR([Mozilla NSS not found (required for SSL support)])
+      fi
+   elif test "${nut_with_openssl}" = "yes"; then
+      NUT_CHECK_LIBOPENSSL
+      if test "${nut_have_openssl}" != "yes"; then
+         AC_MSG_ERROR([OpenSSL not found (required for SSL support)])
+      fi
+   else
+      dnl Prefer OpenSSL over NSS otherwise
+      NUT_CHECK_LIBOPENSSL
+      if test "${nut_have_openssl}" != "yes"; then
+         NUT_CHECK_LIBNSS
+         if test "${nut_have_libnss}" != "yes"; then
+            dnl Only abort if SSL has been explicitly requested by the user
+            if test "${nut_with_ssl}" = "yes"; then
+               AC_MSG_ERROR([Neither Mozilla NSS nor OpenSSL was found, but one is needed for the requested SSL support.])
+            else
+               AC_MSG_WARN([Neither Mozilla NSS nor OpenSSL was found (required for SSL support)])
+            fi
+            nut_with_ssl="no"
+         else
+            nut_with_nss="${nut_have_libnss}"
+         fi
+      else
+         nut_with_openssl="${nut_have_openssl}"
+      fi
+   fi
+fi
+
+AM_CONDITIONAL(WITH_NSS, test "${nut_with_nss}" = "yes")
+AM_CONDITIONAL(WITH_OPENSSL, test "${nut_with_openssl}" = "yes")
+
+NUT_REPORT_FEATURE([enable SSL support], [${nut_with_ssl}], [${nut_ssl_lib}],
+					[WITH_SSL], [Define to enable SSL])
+
+dnl ----------------------------------------------------------------------
 dnl Check for presence and compiler flags of various libraries
 
 NUT_ARG_WITH([serial], [build and install serial drivers], [yes])
@@ -2133,12 +2204,11 @@ if test "${nut_with_linux_i2c}" != no; then
                 [AC_DEFINE([HAVE_LINUX_SMBUS_H], [1],
                     [Define to 1 if you have <i2c/smbus.h>.])]
             )
+            nut_have_linux_i2c="no"
             AC_CHECK_DECLS(
                 [i2c_smbus_access, i2c_smbus_read_byte_data, i2c_smbus_write_byte_data, i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
-                [], dnl # nut_with_linux_i2c="yes"
-                [AS_IF([test "${nut_with_linux_i2c}" = "yes"],
-                    [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)],
-                    [nut_with_linux_i2c="no"])],
+                [nut_have_linux_i2c="yes"],
+                [],
                 [#include <stdio.h>
                  #ifdef HAVE_LINUX_I2C_DEV_H
                  #include <linux/i2c-dev.h>
@@ -2154,13 +2224,26 @@ if test "${nut_with_linux_i2c}" != no; then
             dnl Note: here we keep the verdict from above, or make it worse.
             LIBS_SAVED="$LIBS"
             LIBS=""
-            AC_SEARCH_LIBS([i2c_smbus_read_byte, i2c_smbus_access, i2c_smbus_read_byte_data, i2c_smbus_write_byte_datai2c_smbus_write_byte_data, i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
-                [i2c],
+            AS_IF([test "${nut_have_linux_i2c}" = yes], [
+                nut_have_linux_i2c="no"
+                AC_SEARCH_LIBS(i2c_smbus_read_byte, i2c, [
+                AC_SEARCH_LIBS(i2c_smbus_access, i2c, [
+                AC_SEARCH_LIBS(i2c_smbus_read_byte_data, i2c, [
+                AC_SEARCH_LIBS(i2c_smbus_write_byte_data, i2c, [
+                AC_SEARCH_LIBS(i2c_smbus_read_word_data, i2c, [
+                AC_SEARCH_LIBS(i2c_smbus_write_word_data, i2c, [
+                AC_SEARCH_LIBS(i2c_smbus_read_block_data, i2c, [
+                    [nut_have_linux_i2c="yes"]
+                ])])])])])])])])
+
+            dnl # Note: *with* (desire) is not "no" in this big if-clause
+            AS_IF([test "${nut_have_linux_i2c}" = yes],
                 [nut_with_linux_i2c="yes"],
                 [AS_IF([test "${nut_with_linux_i2c}" = "yes"],
                     [AC_MSG_ERROR(i2c was required but can not be fulfilled for this build)],
                     [nut_with_linux_i2c="no"])
                 ])
+
             LIBI2C_LIBS="$LIBS"
             LIBS="$LIBS_SAVED"
             ;;
@@ -2179,58 +2262,6 @@ NUT_REPORT_FEATURE(
     [WITH_LINUX_I2C],
     [Define to enable I2C support]
 )
-
-dnl ----------------------------------------------------------------------
-dnl Check for with-ssl, and --with-nss or --with-openssl
-dnl Only one can be enabled at a time, with a preference for OpenSSL
-dnl if both are available
-
-nut_ssl_lib=""
-
-NUT_ARG_WITH([ssl], [enable SSL support (either NSS or OpenSSL)], [auto])
-NUT_ARG_WITH([nss], [enable SSL support using Mozilla NSS], [auto])
-NUT_ARG_WITH([openssl], [enable SSL support using OpenSSL], [auto])
-
-dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_ssl}" != "no"; then
-   dnl check if either NSS or OpenSSL was explicitly requested
-   if test "${nut_with_nss}" = "yes"; then
-      NUT_CHECK_LIBNSS
-      if test "${nut_have_libnss}" != "yes"; then
-         AC_MSG_ERROR([Mozilla NSS not found (required for SSL support)])
-      fi
-   elif test "${nut_with_openssl}" = "yes"; then
-      NUT_CHECK_LIBOPENSSL
-      if test "${nut_have_openssl}" != "yes"; then
-         AC_MSG_ERROR([OpenSSL not found (required for SSL support)])
-      fi
-   else
-      dnl Prefer OpenSSL over NSS otherwise
-      NUT_CHECK_LIBOPENSSL
-      if test "${nut_have_openssl}" != "yes"; then
-         NUT_CHECK_LIBNSS
-         if test "${nut_have_libnss}" != "yes"; then
-            dnl Only abort if SSL has been explicitly requested by the user
-            if test "${nut_with_ssl}" = "yes"; then
-               AC_MSG_ERROR([Neither Mozilla NSS nor OpenSSL was found, but one is needed for the requested SSL support.])
-            else
-               AC_MSG_WARN([Neither Mozilla NSS nor OpenSSL was found (required for SSL support)])
-            fi
-            nut_with_ssl="no"
-         else
-            nut_with_nss="${nut_have_libnss}"
-         fi
-      else
-         nut_with_openssl="${nut_have_openssl}"
-      fi
-   fi
-fi
-
-AM_CONDITIONAL(WITH_NSS, test "${nut_with_nss}" = "yes")
-AM_CONDITIONAL(WITH_OPENSSL, test "${nut_with_openssl}" = "yes")
-
-NUT_REPORT_FEATURE([enable SSL support], [${nut_with_ssl}], [${nut_ssl_lib}],
-					[WITH_SSL], [Define to enable SSL])
 
 dnl ----------------------------------------------------------------------
 dnl Check for --with-wrap
@@ -2330,29 +2361,37 @@ NUT_REPORT_FEATURE([build CGI programs], [${nut_with_cgi}], [],
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-pynut and --with-nut_monitor
 
-dnl ${nut_with_nut_monitor}: TODO: arg values to request python 2 gtk2,
-dnl python 3 qt5, or both
-AC_MSG_CHECKING([if we can and should install NUT-Monitor desktop application])
+dnl The PYTHON*_REPORT vars also serve as flags that we have certain usable
+dnl Python interpreter versions to care about below, so we only test for
+dnl their existence once (in NUT_CHECK*PYTHON* m4 macros).
+
+dnl ${nut_with_nut_monitor}: TODO: arg values to request Python 2 gtk2,
+dnl Python 3 qt5, or both
+AC_MSG_CHECKING([if we want install NUT-Monitor desktop application])
+AC_MSG_RESULT([${nut_with_nut_monitor}])
 nut_with_nut_monitor_py2gtk2=""
 nut_with_nut_monitor_py3qt5=""
 nut_with_nut_monitor_desktop=""
 dnl TODO: Add a way to define this path? will have app/ maybe module/ inside...
 nut_with_nut_monitor_dir="${datarootdir}/nut-monitor"
+
 PYTHON_FAILED_TEST_DETAILS=""
+dnl ### AC_MSG_NOTICE([nut_with_nut_monitor-1: ${nut_with_nut_monitor}])
 if test x"${nut_with_nut_monitor}" != xno ; then
     dnl While we might just install for "yes" request, in hopes user would
-    dnl get their python ecosystem in place later, we need some criteria to
+    dnl get their Python ecosystem in place later, we need some criteria to
     dnl avoid installing it always :) Also, need to substitute the shebang.
     if test -z "${PYTHON}${PYTHON2}${PYTHON3}" ; then
         case "${nut_with_nut_monitor}" in
             "auto") nut_with_nut_monitor="no"
-                    PYTHON_FAILED_TEST_DETAILS="No python 2/3 interpreter was found"
+                    PYTHON_FAILED_TEST_DETAILS="No Python 2/3 interpreter was found"
                 ;;
-            "yes")  AC_MSG_ERROR([No python 2/3 interpreter was found, required for NUT-Monitor desktop application])
+            "yes")  AC_MSG_ERROR([No Python 2/3 interpreter was found, required for NUT-Monitor desktop application])
                 ;;
         esac
     fi
 fi
+dnl ### AC_MSG_NOTICE([nut_with_nut_monitor-2: ${nut_with_nut_monitor}])
 
 if test x"${nut_with_nut_monitor}" != xno ; then
     dnl Note: no double-quoting for use, the command string may be multi-token
@@ -2360,53 +2399,73 @@ if test x"${nut_with_nut_monitor}" != xno ; then
     dnl for "config.log" details since... forever? Still, hardcoded numbers...
     PYTHON2_TEST_MODULES="re,glob,codecs,gtk,gtk.glade,gobject,ConfigParser"
     PYTHON3_TEST_MODULES="re,glob,codecs,PyQt5.uic,configparser"
-    if test -n "${PYTHON2}" \
-    && (command -v ${PYTHON2} || which ${PYTHON2}) >/dev/null 2>/dev/null \
-    ; then
+    if test -n "${PYTHON2_VERSION_INFO_REPORT}" ; then
+        AC_MSG_CHECKING([if we have Python2 prerequisites for NUT-Monitor desktop application])
         if ${PYTHON2} -c "import ${PYTHON2_TEST_MODULES}" 1>&5 2>&5 \
         ; then
             nut_with_nut_monitor_py2gtk2="yes"
+            AC_MSG_RESULT([yes])
         else
+            AC_MSG_RESULT([no])
             PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python2 modules: '${PYTHON2_TEST_MODULES}'"
         fi
     fi
 
-    if test -n "${PYTHON3}" \
-    && (command -v ${PYTHON3} || which ${PYTHON3}) >/dev/null 2>/dev/null \
-    ; then
+    if test -n "${PYTHON3_VERSION_INFO_REPORT}" ; then
+        AC_MSG_CHECKING([if we have Python3 prerequisites for NUT-Monitor desktop application])
         if ${PYTHON3} -c "import ${PYTHON3_TEST_MODULES}" 1>&5 2>&5 \
         ; then
             nut_with_nut_monitor_py3qt5="yes"
+            AC_MSG_RESULT([yes])
         else
-            PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python3 modules: '${PYTHON3_TEST_MODULES}'"
+            AC_MSG_RESULT([no])
+            if test -n "${PYTHON_FAILED_TEST_DETAILS}" ; then
+                PYTHON_FAILED_TEST_DETAILS="${PYTHON_FAILED_TEST_DETAILS} and some or all of these Python3 modules: '${PYTHON3_TEST_MODULES}'"
+            else
+                PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python3 modules: '${PYTHON3_TEST_MODULES}'"
+            fi
         fi
     fi
 
     dnl Fall back to default interpreter
     if test -z "${nut_with_nut_monitor_py2gtk2}${nut_with_nut_monitor_py3qt5}" \
-    && test -n "${PYTHON}" \
-    && (command -v ${PYTHON} || which ${PYTHON2}) >/dev/null 2>/dev/null \
+    && test -n "${PYTHON_VERSION_INFO_REPORT}" \
+    && test x"${PYTHON_VERSION_INFO_REPORT}" != x"${PYTHON3_VERSION_INFO_REPORT}" \
+    && test x"${PYTHON_VERSION_INFO_REPORT}" != x"${PYTHON2_VERSION_INFO_REPORT}" \
     ; then
+        AC_MSG_CHECKING([if we have Python3 prerequisites for NUT-Monitor desktop application in default Python])
         if ${PYTHON} -c "import ${PYTHON3_TEST_MODULES}" 1>&5 2>&5 \
         ; then
             nut_with_nut_monitor_py3qt5="yes"
+            AC_MSG_RESULT([yes])
         else
-            PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python3 modules: '${PYTHON3_TEST_MODULES}'"
+            AC_MSG_RESULT([no])
+            if test -n "${PYTHON_FAILED_TEST_DETAILS}" ; then
+                PYTHON_FAILED_TEST_DETAILS="${PYTHON_FAILED_TEST_DETAILS} and some or all of these Python3 modules in default Python: '${PYTHON3_TEST_MODULES}'"
+            else
+                PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python3 modules in default Python: '${PYTHON3_TEST_MODULES}'"
+            fi
         fi
 
+        AC_MSG_CHECKING([if we have Python2 prerequisites for NUT-Monitor desktop application in default Python])
         if ${PYTHON} -c "import ${PYTHON2_TEST_MODULES}" 1>&5 2>&5 \
         ; then
             nut_with_nut_monitor_py2gtk2="yes"
             PYTHON_FAILED_TEST_DETAILS=""
+            AC_MSG_RESULT([yes])
         else
+            AC_MSG_RESULT([no])
             if test -n "${PYTHON_FAILED_TEST_DETAILS}" ; then
-                PYTHON_FAILED_TEST_DETAILS="${PYTHON_FAILED_TEST_DETAILS} and some or all of these Python2 modules: '${PYTHON2_TEST_MODULES}'"
+                PYTHON_FAILED_TEST_DETAILS="${PYTHON_FAILED_TEST_DETAILS} and some or all of these Python2 modules in default Python: '${PYTHON2_TEST_MODULES}'"
             else
-                PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python2 modules: '${PYTHON2_TEST_MODULES}'"
+                PYTHON_FAILED_TEST_DETAILS="Missing some or all of these Python2 modules in default Python: '${PYTHON2_TEST_MODULES}'"
             fi
         fi
     fi
 
+    dnl ### AC_MSG_NOTICE([nut_with_nut_monitor-3: ${nut_with_nut_monitor}])
+    dnl ### AC_MSG_NOTICE([nut_with_nut_monitor_py2gtk2: ${nut_with_nut_monitor_py2gtk2}])
+    dnl ### AC_MSG_NOTICE([nut_with_nut_monitor_py3qt5: ${nut_with_nut_monitor_py3qt5}])
     dnl Can we satisfy any NUT-Monitor installation request?
     if test -n "${nut_with_nut_monitor_py2gtk2}${nut_with_nut_monitor_py3qt5}" ; then
         case "${nut_with_nut_monitor}" in
@@ -2416,11 +2475,14 @@ if test x"${nut_with_nut_monitor}" != xno ; then
         case "${nut_with_nut_monitor}" in
             "auto") nut_with_nut_monitor="no" ;;
             "yes")
-                AC_MSG_ERROR([No python 2/3 interpreter with needed modules was found, as required for NUT-Monitor desktop application: ${PYTHON_FAILED_TEST_DETAILS}])
+                AC_MSG_ERROR([No Python 2/3 interpreter with needed modules was found, as required for NUT-Monitor desktop application: ${PYTHON_FAILED_TEST_DETAILS}])
                 ;;
         esac
     fi
 fi
+
+AC_MSG_CHECKING([if we can and should install NUT-Monitor desktop application])
+dnl ### AC_MSG_NOTICE([nut_with_nut_monitor-4: ${nut_with_nut_monitor}])
 case "${nut_with_nut_monitor}" in
     "no") if test -n "${PYTHON_FAILED_TEST_DETAILS}" ; then
             AC_MSG_RESULT([${nut_with_nut_monitor}: ${PYTHON_FAILED_TEST_DETAILS}])
@@ -2431,6 +2493,7 @@ case "${nut_with_nut_monitor}" in
     *) AC_MSG_RESULT([${nut_with_nut_monitor}]) ;;
 esac
 
+dnl ### AC_MSG_NOTICE([nut_with_nut_monitor-5: ${nut_with_nut_monitor}])
 if test x"${nut_with_nut_monitor}" != xno ; then
     if (command -v desktop-file-install || which desktop-file-install) >/dev/null 2>/dev/null ; then
         case "${nut_with_nut_monitor}" in
@@ -2445,57 +2508,96 @@ if test x"${nut_with_nut_monitor}" != xno ; then
         esac
     fi
 fi
+dnl ### AC_MSG_NOTICE([nut_with_nut_monitor-6: ${nut_with_nut_monitor}])
 
-dnl ${nut_with_pynut}: TODO: arg values to request python 2, 3 or both
-AC_MSG_CHECKING([if we can and should install PyNUT module (note for warnings from python 3.11 and beyond: we have a fallback nut_telnetlib module just in case)])
+dnl Check if we can use distributed or fallback telnetlib module for PyNUTClient
+nut_have_telnetlib_py=""
+nut_have_telnetlib_py2=""
+nut_have_telnetlib_py3=""
+if test x"${nut_with_pynut}" != xno \
+    -a -n "${PYTHON}${PYTHON2}${PYTHON3}" \
+; then
+    if test -n "${PYTHON2_VERSION_INFO_REPORT}" ; then
+        AC_MSG_CHECKING([if we can use stock Python2 telnetlib module provided with interpreter ${PYTHON2}])
+        if ${PYTHON2} -c "import telnetlib" \
+        ; then
+            nut_have_telnetlib_py2="yes"
+        else
+            nut_have_telnetlib_py2="no"
+        fi
+        AC_MSG_RESULT([${nut_have_telnetlib_py2}])
+    fi
+
+    if test -n "${PYTHON3_VERSION_INFO_REPORT}" ; then
+        AC_MSG_CHECKING([if we can use stock Python3 telnetlib module for PyNUTClient provided with interpreter ${PYTHON3} (note for warnings from Python 3.11 and beyond: we have a fallback nut_telnetlib module just in case)])
+        if ${PYTHON3} -c "import telnetlib" \
+        ; then
+            nut_have_telnetlib_py3="yes"
+        else
+            nut_have_telnetlib_py3="no"
+        fi
+        AC_MSG_RESULT([${nut_have_telnetlib_py3}])
+
+        if test x"${nut_have_telnetlib_py3}" = x"no" ; then
+            dnl We have a stashed copy from Python 3.10, so
+            dnl this line essentially checks for presence of
+            dnl a usable interpreter implementation compatible
+            dnl with Python 3.x syntax.
+            AC_MSG_CHECKING([if we can use fallback Python3 nut_telnetlib module for PyNUTClient])
+            if (cd "${srcdir}"/scripts/python/module && ${PYTHON3} -c "import nut_telnetlib as telnetlib") \
+            ; then
+                nut_have_telnetlib_py3="yes"
+            fi
+            AC_MSG_RESULT([${nut_have_telnetlib_py3}])
+        fi
+    fi
+
+    dnl Test same-ness of pythons with sys.version also?
+    if test -n "${PYTHON_VERSION_INFO_REPORT}" \
+    && test x"${PYTHON_VERSION_INFO_REPORT}" != x"${PYTHON3_VERSION_INFO_REPORT}" \
+    && test x"${PYTHON_VERSION_INFO_REPORT}" != x"${PYTHON2_VERSION_INFO_REPORT}" \
+    ; then
+        AC_MSG_CHECKING([if we can use stock Python telnetlib module for PyNUTClient provided with interpreter ${PYTHON} (note for warnings from Python 3.11 and beyond: we have a fallback nut_telnetlib module just in case)])
+        if ${PYTHON} -c "import telnetlib" \
+        ; then
+            nut_have_telnetlib_py="yes"
+        else
+            nut_have_telnetlib_py="no"
+        fi
+        AC_MSG_RESULT([${nut_have_telnetlib_py}])
+
+        if test x"${nut_have_telnetlib_py}" = x"no" ; then
+            dnl See comments above
+            AC_MSG_CHECKING([if we can use fallback Python nut_telnetlib module for PyNUTClient])
+            if (cd "${srcdir}"/scripts/python/module && ${PYTHON} -c "import nut_telnetlib as telnetlib") \
+            ; then
+                nut_have_telnetlib_py="yes"
+            fi
+            AC_MSG_RESULT([${nut_have_telnetlib_py}])
+        fi
+    fi
+fi
+
+dnl ${nut_with_pynut}: TODO: arg values to request Python 2, 3 or both
+dnl Note that per block above, nut_have_telnetlib_py* values are definitive
+dnl if checked, or empty if skipped (no such Python, not nut_with_pynut, etc.)
+AC_MSG_CHECKING([if we can and should install PyNUT module])
 nut_with_pynut_py=""
 nut_with_pynut_py2=""
 nut_with_pynut_py3=""
 if test x"${nut_with_pynut}" != xno \
     -a -n "${PYTHON}${PYTHON2}${PYTHON3}" \
 ; then
-    if test -n "${PYTHON2}" \
-    && (command -v ${PYTHON2} || which ${PYTHON2}) >/dev/null 2>/dev/null \
-    ; then
-        if ${PYTHON2} -c "import telnetlib" \
-        ; then
-            nut_with_pynut_py2="yes"
-        fi
+    if test x"${nut_have_telnetlib_py2}" = x"yes" ; then
+        nut_with_pynut_py2="yes"
     fi
 
-    if test -n "${PYTHON3}" \
-    && (command -v ${PYTHON3} || which ${PYTHON3}) >/dev/null 2>/dev/null \
-    ; then
-        if ${PYTHON3} -c "import telnetlib" \
-        ; then
-            nut_with_pynut_py3="yes"
-        else
-            dnl We have a stashed copy from Python 3.10, so
-            dnl this line essentially checks for presence of
-            dnl a usable interpreter implementation compatible
-            dnl with Python 3.x syntax.
-            if (cd script/python/module && ${PYTHON3} -c "import nut_telnetlib as telnetlib") \
-            ; then
-                nut_with_pynut_py3="yes"
-            fi
-        fi
+    if test x"${nut_have_telnetlib_py3}" = x"yes" ; then
+        nut_with_pynut_py3="yes"
     fi
 
-    dnl Test same-ness of pythons with sys.version also?
-    if test -n "${PYTHON}" \
-    && (command -v ${PYTHON} || which ${PYTHON}) >/dev/null 2>/dev/null \
-    && test "${PYTHON}" != "${PYTHON2}" -a "${PYTHON}" != "${PYTHON3}" \
-    ; then
-        if ${PYTHON} -c "import telnetlib" \
-        ; then
-            nut_with_pynut_py="yes"
-        else
-            dnl See comments above
-            if (cd script/python/module && ${PYTHON} -c "import nut_telnetlib as telnetlib") \
-            ; then
-                nut_with_pynut_py="yes"
-            fi
-        fi
+    if test x"${nut_have_telnetlib_py}" = x"yes" ; then
+        nut_with_pynut_py="yes"
     fi
 fi
 
@@ -2537,7 +2639,7 @@ if test x"${nut_with_pynut}" != xno ; then
                 if test "${nut_with_nut_monitor}" = yes -o "${nut_with_nut_monitor}" = force ; then
                     nut_with_pynut="app"
                 else
-                    AC_MSG_ERROR([python interpreter and/or its site-packages location not found, but required for PyNUT])
+                    AC_MSG_ERROR([Python interpreter and/or its site-packages location not found, but required for PyNUT])
                 fi
                 ;;
         esac

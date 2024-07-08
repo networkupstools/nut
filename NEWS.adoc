@@ -129,6 +129,25 @@ https://github.com/networkupstools/nut/milestone/11
      exiting (and/or start-up has aborted due to configuration or run-time
      issues). Warning about "world readable" files clarified. [#2417]
 
+ - nut-scanner:
+   * the tool relies on dynamic loading of shared objects (library files)
+     orchestrated at run-time rather than pre-compiled, to avoid excessively
+     huge package footprints. This however relies on knowing (or sufficiently
+     safely guessing) the library file names to use, and short `libname.so`
+     is not ubiquitously available. With the new `m4` macro `AX_REALPATH_LIB`
+     we can store and try to use the file name which was present on the build
+     system, while we search for a suitable library. [#2431]
++
+NOTE: Currently both the long and short names for `libupsclient` should be
+installed.
+   * newly added support to scan several IP addresses (single or ranges)
+     with the same call, by repeating command-line options; also `-m auto{,4,6}`
+     can be specified (once) to select IP (all, IPv4, IPv6) address ranges of
+     configured local network interfaces (currently not implemented for WIN32).
+     [issue #2244, PR #2509, PR #2513]
+   * bumped version of `libnutscan` to 2.5.2, it now includes a few more
+     methods and symbols from `libcommon`. [issue #2244, PR #2509]
+
  - common code:
    * introduced a `NUT_DEBUG_SYSLOG` environment variable to tweak activation
      of syslog message emission (and related detachment of `stderr` when
@@ -199,6 +218,11 @@ https://github.com/networkupstools/nut/milestone/11
    they should be able to parse common simple use-cases but not certain types
    of more complex configurations (e.g. some line patterns that involve too
    many double-quote characters) which are valid for NUT proper. [#657]
+
+ - NUT CI farm build recipes, documentation and some `m4`/`configure.ac`
+   sources updated to handle a much larger build scope on MacOS. Also
+   migrated the builders to Apple Silicon from x86 (deprecated by CircleCI).
+   [#2502]
 
 
 Release notes for NUT 2.8.2 - what's new since 2.8.1

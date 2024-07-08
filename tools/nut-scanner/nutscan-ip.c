@@ -1,5 +1,6 @@
 /*
  *  Copyright (C) 2011 - EATON
+ *  Copyright (C) 2022 - 2024 Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -65,12 +66,12 @@ static void invert_IPv6(struct in6_addr * addr1, struct in6_addr * addr2)
 
 static int ntop(struct in_addr * ip, char * host, GETNAMEINFO_TYPE_ARG46 host_size)
 {
-	struct sockaddr_in in;
-	memset(&in, 0, sizeof(struct sockaddr_in));
-	in.sin_addr = *ip;
-	in.sin_family = AF_INET;
+	struct sockaddr_in in4;
+	memset(&in4, 0, sizeof(struct sockaddr_in));
+	in4.sin_addr = *ip;
+	in4.sin_family = AF_INET;
 	return getnameinfo(
-		(struct sockaddr *)&in,
+		(struct sockaddr *)&in4,
 		sizeof(struct sockaddr_in),
 		host, host_size, NULL, 0, NI_NUMERICHOST);
 }
@@ -94,9 +95,16 @@ char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, const char * startIP, const 
 	int i;
 	struct addrinfo hints;
 	struct addrinfo *res;
-	struct sockaddr_in * s_in;
-	struct sockaddr_in6 * s_in6;
 	char host[SMALLBUF];
+
+	/* Ensure proper alignment of IPvN structure fields:
+	 * we receive a pointer to res from getaddrinfo() et al,
+	 * so have no control about alignment of its further data.
+	 * Make a copy of the bytes into an object allocated
+	 * whichever way the system likes it.
+	 */
+	struct sockaddr_in	s_in4buf, *s_in4 = &s_in4buf;
+	struct sockaddr_in6	s_in6buf, *s_in6 = &s_in6buf;
 
 	if (startIP == NULL) {
 		return NULL;
@@ -120,31 +128,13 @@ char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, const char * startIP, const 
 			return NULL;
 		}
 
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wcast-align"
-#endif
-		/* Note: we receive a pointer to res above, so have
-		 * no control about alignment of its further data */
-		s_in6 = (struct sockaddr_in6 *)res->ai_addr;
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
-# pragma GCC diagnostic pop
-#endif
+		memcpy(s_in6, res->ai_addr, sizeof(struct sockaddr_in6));
 		memcpy(&ip->start6, &s_in6->sin6_addr, sizeof(struct in6_addr));
 		freeaddrinfo(res);
 	}
 	else {
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wcast-align"
-#endif
-		/* Note: we receive a pointer to res above, so have
-		 * no control about alignment of its further data */
-		s_in = (struct sockaddr_in *)res->ai_addr;
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
-# pragma GCC diagnostic pop
-#endif
-		ip->start = s_in->sin_addr;
+		memcpy(s_in4, res->ai_addr, sizeof(struct sockaddr_in));
+		ip->start = s_in4->sin_addr;
 		freeaddrinfo(res);
 	}
 
@@ -156,17 +146,8 @@ char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, const char * startIP, const 
 			return NULL;
 		}
 
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wcast-align"
-#endif
-		/* Note: we receive a pointer to res above, so have
-		 * no control about alignment of its further data */
-		s_in = (struct sockaddr_in *)res->ai_addr;
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
-# pragma GCC diagnostic pop
-#endif
-		ip->stop = s_in->sin_addr;
+		memcpy(s_in4, res->ai_addr, sizeof(struct sockaddr_in));
+		ip->stop = s_in4->sin_addr;
 		freeaddrinfo(res);
 	}
 	else {
@@ -175,16 +156,7 @@ char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, const char * startIP, const 
 			fprintf(stderr, "Invalid address : %s\n", stopIP);
 			return NULL;
 		}
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wcast-align"
-#endif
-		/* Note: we receive a pointer to res above, so have
-		 * no control about alignment of its further data */
-		s_in6 = (struct sockaddr_in6 *)res->ai_addr;
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
-# pragma GCC diagnostic pop
-#endif
+		memcpy(s_in6, res->ai_addr, sizeof(struct sockaddr_in6));
 		memcpy(&ip->stop6, &s_in6->sin6_addr, sizeof(struct in6_addr));
 		freeaddrinfo(res);
 	}
@@ -267,15 +239,22 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 	char * mask;
 	char * saveptr = NULL;
 	nutscan_ip_iter_t ip;
-	int mask_val;
-	int mask_byte;
 	int ret;
-	uint32_t mask_bit; /* 32-bit IPv4 address bitmask */
+	int mask_val;	/* mask length in bits */
+	int mask_byte;	/* number of byte in 128-bit IPv6 address array (uint8_t[16]) for netmask */
+	uint32_t mask_bit; /* 32-bit IPv4 address bitmask value */
 	char host[SMALLBUF];
 	struct addrinfo hints;
 	struct addrinfo *res;
-	struct sockaddr_in * s_in;
-	struct sockaddr_in6 * s_in6;
+
+	/* Ensure proper alignment of IPvN structure fields:
+	 * we receive a pointer to res from getaddrinfo() et al,
+	 * so have no control about alignment of its further data.
+	 * Make a copy of the bytes into an object allocated
+	 * whichever way the system likes it.
+	 */
+	struct sockaddr_in	s_in4buf, *s_in4 = &s_in4buf;
+	struct sockaddr_in6	s_in6buf, *s_in6 = &s_in6buf;
 
 	*start_ip = NULL;
 	*stop_ip = NULL;
@@ -302,8 +281,9 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 	upsdebugx(5, "%s: parsed cidr=%s into first_ip=%s and mask=%s",
 		__func__, cidr, first_ip, mask);
 
+	/* TODO: check if mask is also an IP address or a bit count */
 	mask_val = atoi(mask);
-	upsdebugx(5, "%s: parsed mask value %d",
+	upsdebugx(5, "%s: parsed mask into numeric value %d",
 		__func__, mask_val);
 
 	/* NOTE: Sanity-wise, some larger number also makes sense
@@ -331,44 +311,26 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 
 	if ((ret = getaddrinfo(first_ip, NULL, &hints, &res)) != 0) {
 		/* EAI_ADDRFAMILY? */
-		upsdebugx(5, "%s: getaddrinfo() failed for AF_INET (IPv4): %d",
-			__func__, ret);
+		upsdebugx(5, "%s: getaddrinfo() failed for AF_INET (IPv4, will retry with IPv6): %d: %s",
+			__func__, ret, gai_strerror(ret));
 
 		/* Try IPv6 detection */
 		ip.type = IPv6;
 		hints.ai_family = AF_INET6;
 		if ((ret = getaddrinfo(first_ip, NULL, &hints, &res)) != 0) {
-			upsdebugx(5, "%s: getaddrinfo() failed for AF_INET6 (IPv6): %d",
-				__func__, ret);
+			upsdebugx(5, "%s: getaddrinfo() failed for AF_INET6 (IPv6): %d: %s",
+				__func__, ret, gai_strerror(ret));
 			free(first_ip);
 			return 0;
 		}
 
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wcast-align"
-#endif
-		/* Note: we receive a pointer to res above, so have
-		 * no control about alignment of its further data */
-		s_in6 = (struct sockaddr_in6 *)res->ai_addr;
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
-# pragma GCC diagnostic pop
-#endif
+		memcpy(s_in6, res->ai_addr, sizeof(struct sockaddr_in6));
 		memcpy(&ip.start6, &s_in6->sin6_addr, sizeof(struct in6_addr));
 		freeaddrinfo(res);
 	}
 	else {
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wcast-align"
-#endif
-		/* Note: we receive a pointer to res above, so have
-		 * no control about alignment of its further data */
-		s_in = (struct sockaddr_in *)res->ai_addr;
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
-# pragma GCC diagnostic pop
-#endif
-		ip.start = s_in->sin_addr;
+		memcpy(s_in4, res->ai_addr, sizeof(struct sockaddr_in));
+		ip.start = s_in4->sin_addr;
 		freeaddrinfo(res);
 	}
 
@@ -404,20 +366,12 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 		free(first_ip);
 		return 1;
 	}
-	else {
+	else {	/* ip.type == IPv6 */
 		if (getaddrinfo(first_ip, NULL, &hints, &res) != 0) {
 			return 0;
 		}
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wcast-align"
-#endif
-		/* Note: we receive a pointer to res above, so have
-		 * no control about alignment of its further data */
-		s_in6 = (struct sockaddr_in6 *)res->ai_addr;
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN)
-# pragma GCC diagnostic pop
-#endif
+
+		memcpy(s_in6, res->ai_addr, sizeof(struct sockaddr_in6));
 		memcpy(&ip.stop6, &s_in6->sin6_addr, sizeof(struct in6_addr));
 		freeaddrinfo(res);
 

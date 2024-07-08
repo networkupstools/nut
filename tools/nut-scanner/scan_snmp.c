@@ -62,8 +62,27 @@
 #undef PACKAGE_TARNAME
 #endif
 
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNUSED_PARAMETER)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunused-parameter"
+#endif
+/* These tend to have inlined API implementations as empty braces,
+ * causing warnings about unused parameters.
+ */
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
+
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNUSED_PARAMETER)
+# pragma GCC diagnostic pop
+#endif
+
 #include "nutscan-snmp.h"
 
 /* Address API change */
@@ -1064,6 +1083,16 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 
 	if (!nutscan_avail_snmp) {
 		return NULL;
+	}
+
+	if (!start_ip) {
+		upsdebugx(1, "%s: no starting IP address specified", __func__);
+	} else if (start_ip == stop_ip || !stop_ip) {
+		upsdebugx(1, "%s: Scanning SNMP for single IP address: %s",
+			__func__, start_ip);
+	} else {
+		upsdebugx(1, "%s: Scanning SNMP for IP address range: %s .. %s",
+			__func__, start_ip, stop_ip);
 	}
 
 	g_usec_timeout = usec_timeout;

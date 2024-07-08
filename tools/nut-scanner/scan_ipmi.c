@@ -406,6 +406,8 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 	/* Are we scanning locally, or over the network? */
 	if (IPaddr == NULL)
 	{
+		upsdebugx(2, "Entering %s for local device scan", __func__);
+
 		/* FIXME: we need root right to access local IPMI!
 		if (!ipmi_is_root ()) {
 			fprintf(stderr, "IPMI scan: %s\n", ipmi_ctx_strerror (IPMI_ERR_PERMISSION));
@@ -432,6 +434,8 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 		}
 	}
 	else {
+
+		upsdebugx(2, "Entering %s for %s", __func__, IPaddr);
 
 #if 0
 		if (ipmi_sec->ipmi_version == IPMI_2_0) {
@@ -608,14 +612,20 @@ nutscan_device_t * nutscan_scan_ipmi(const char * start_ip, const char * stop_ip
 		return NULL;
 	}
 
-
 	/* Are we scanning locally, or through the network? */
 	if (start_ip == NULL)
 	{
-		/* Local PSU scan */
+		upsdebugx(1, "%s: Local PSU scan", __func__);
 		current_nut_dev = nutscan_scan_ipmi_device(NULL, NULL);
 	}
 	else {
+		if (start_ip == stop_ip || !stop_ip) {
+			upsdebugx(1, "%s: Scanning remote PSU for single IP address: %s",
+				__func__, start_ip);
+		} else {
+			upsdebugx(1, "%s: Scanning remote PSU for IP address range: %s .. %s",
+				__func__, start_ip, stop_ip);
+		}
 		ip_str = nutscan_ip_iter_init(&ip, start_ip, stop_ip);
 
 		while (ip_str != NULL) {

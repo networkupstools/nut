@@ -83,7 +83,7 @@ endif HAVE_WINDOWS
 # object .so names would differ)
 #
 # libnutscan version information
-libnutscan_la_LDFLAGS += -version-info 2:5:1
+libnutscan_la_LDFLAGS += -version-info 2:5:2
 
 # libnutscan exported symbols regex
 # WARNING: Since the library includes parts of libcommon (as much as needed
@@ -94,7 +94,7 @@ libnutscan_la_LDFLAGS += -version-info 2:5:1
 # copies of "nut_debug_level" making fun of our debug-logging attempts.
 # One solution to tackle if needed for those cases would be to make some
 # dynamic/shared libnutcommon (etc.)
-libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebugx|max_threads|curr_threads|nut_report_config_flags|upsdebugx_report_search_paths|nut_prepare_search_paths)'
+libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebugx|fatalx|xcalloc|snprintfcat|max_threads|curr_threads|nut_report_config_flags|upsdebugx_report_search_paths|nut_prepare_search_paths)'
 libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include \
 			$(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
 
@@ -114,6 +114,9 @@ endif WITH_USB
 # Note: do not indent automake "if" lines
 if WITH_SNMP
   libnutscan_la_CFLAGS += $(LIBNETSNMP_CFLAGS)
+if !WITH_OPENSSL
+  libnutscan_la_CFLAGS += -UNETSNMP_USE_OPENSSL
+endif !WITH_OPENSSL
 if    WITH_SNMP_STATIC
     # MinGW builds of libnetsnmp are static-only, so we link it in:
     libnutscan_la_CFLAGS += -DWITH_SNMP_STATIC=1

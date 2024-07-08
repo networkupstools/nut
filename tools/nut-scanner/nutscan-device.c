@@ -25,6 +25,7 @@
 #include "config.h"	/* must be the first header */
 
 #include "nutscan-device.h"
+#include "common.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -174,6 +175,11 @@ nutscan_device_t * nutscan_add_device_to_device(nutscan_device_t * first, nutsca
 {
 	nutscan_device_t * dev1 = NULL;
 	nutscan_device_t * dev2 = NULL;
+
+	if (first == second) {
+		upsdebugx(5, "%s: skip: called to \"add\" same list pointers", __func__);
+		return first;
+	}
 
 	/* Get end of first device */
 	if (first != NULL) {
