@@ -412,7 +412,7 @@ static void * run_eaton_serial(void *arg)
 	return NULL;
 }
 
-static void handle_arg_cidr(char *optarg, int *auto_nets_ptr)
+static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 {
 	char	*start_ip = NULL, *end_ip = NULL;
 	/* Scanning mode: IPv4, IPv6 or both */
@@ -434,7 +434,7 @@ static void handle_arg_cidr(char *optarg, int *auto_nets_ptr)
 #endif
 
 	/* Is this a `-m auto<something_optional>` mode? */
-	if (!strncmp(optarg, "auto", 4)) {
+	if (!strncmp(arg_addr, "auto", 4)) {
 		/* TODO: Maybe split later, to allow separate
 		 *  `-m auto4/X` and `-m auto6/Y` requests?
 		 */
@@ -446,35 +446,35 @@ static void handle_arg_cidr(char *optarg, int *auto_nets_ptr)
 		/* Not very efficient to stack strcmp's, but
 		 * also not a hot codepath to care much, either.
 		 */
-		if (!strcmp(optarg, "auto")) {
+		if (!strcmp(arg_addr, "auto")) {
 			auto_nets = 46;
-		} else if (!strcmp(optarg, "auto4")) {
+		} else if (!strcmp(arg_addr, "auto4")) {
 			auto_nets = 4;
-		} else if (!strcmp(optarg, "auto6")) {
+		} else if (!strcmp(arg_addr, "auto6")) {
 			auto_nets = 6;
-		} else if (!strncmp(optarg, "auto/", 5)) {
+		} else if (!strncmp(arg_addr, "auto/", 5)) {
 			auto_nets = 46;
-			masklen_hosts_limit = atoi(optarg + 5);
+			masklen_hosts_limit = atoi(arg_addr + 5);
 			if (masklen_hosts_limit < 0 || masklen_hosts_limit > 128) {
 				fatalx(EXIT_FAILURE,
 					"Invalid auto-net limit value: %s",
-					optarg);
+					arg_addr);
 			}
-		} else if (!strncmp(optarg, "auto4/", 6)) {
+		} else if (!strncmp(arg_addr, "auto4/", 6)) {
 			auto_nets = 4;
-			masklen_hosts_limit = atoi(optarg + 6);
+			masklen_hosts_limit = atoi(arg_addr + 6);
 			if (masklen_hosts_limit < 0 || masklen_hosts_limit > 32) {
 				fatalx(EXIT_FAILURE,
 					"Invalid auto-net limit value: %s",
-					optarg);
+					arg_addr);
 			}
-		} else if (!strncmp(optarg, "auto6/", 6)) {
+		} else if (!strncmp(arg_addr, "auto6/", 6)) {
 			auto_nets = 6;
-			masklen_hosts_limit = atoi(optarg + 6);
+			masklen_hosts_limit = atoi(arg_addr + 6);
 			if (masklen_hosts_limit < 0 || masklen_hosts_limit > 128) {
 				fatalx(EXIT_FAILURE,
 					"Invalid auto-net limit value: %s",
-					optarg);
+					arg_addr);
 			}
 		} else {
 			/* TODO: maybe fail right away?
@@ -482,7 +482,7 @@ static void handle_arg_cidr(char *optarg, int *auto_nets_ptr)
 			upsdebugx(0,
 				"Got a '-m auto*' CLI option with unsupported "
 				"keyword pattern; assuming a CIDR, "
-				"likely to fail: %s", optarg);
+				"likely to fail: %s", arg_addr);
 		}
 
 		/* Let the caller know, to allow for run-once support */
@@ -493,8 +493,8 @@ static void handle_arg_cidr(char *optarg, int *auto_nets_ptr)
 
 	if (auto_nets < 0) {
 		/* not a supported `-m auto*` pattern => is `-m cidr` */
-		upsdebugx(5, "Processing CIDR net/mask: %s", optarg);
-		nutscan_cidr_to_ip(optarg, &start_ip, &end_ip);
+		upsdebugx(5, "Processing CIDR net/mask: %s", arg_addr);
+		nutscan_cidr_to_ip(arg_addr, &start_ip, &end_ip);
 		upsdebugx(5, "Extracted IP address range from CIDR net/mask: %s => %s", start_ip, end_ip);
 
 		add_ip_range(start_ip, end_ip);
