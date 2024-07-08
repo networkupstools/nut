@@ -1172,7 +1172,10 @@ display_help:
 	}
 
 	upsdebugx(1, "Parallel scan support: max_threads=%" PRIuSIZE, max_threads);
-	sem_init(current_sem, 0, (unsigned int)max_threads);
+	if (sem_init(current_sem, 0, (unsigned int)max_threads)) {
+		/* Show this one to end-users so they know */
+		upsdebug_with_errno(0, "Parallel scan support: sem_init() failed");
+	}
 # endif
 #else
 	upsdebugx(1, "Parallel scan support: !HAVE_PTHREAD");

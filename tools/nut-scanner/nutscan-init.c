@@ -35,6 +35,7 @@
 #include <string.h>
 #include "nut-scan.h"
 #include "nut_platform.h"
+#include "nut_stdint.h"
 
 #ifdef WIN32
 # define SOEXT ".dll"
@@ -159,7 +160,12 @@ void nutscan_init(void)
 			__func__);
 		max_threads = UINT_MAX - 1;
 	}
-	sem_init(&semaphore, 0, (unsigned int)max_threads);
+
+	upsdebugx(1, "%s: Parallel scan support: max_threads=%" PRIuSIZE,
+		__func__, max_threads);
+	if (sem_init(&semaphore, 0, (unsigned int)max_threads)) {
+		upsdebug_with_errno(4, "%s: Parallel scan support: sem_init() failed", __func__);
+	}
 # endif
 
 # ifdef HAVE_PTHREAD_TRYJOIN

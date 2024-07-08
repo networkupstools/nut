@@ -1077,7 +1077,11 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 				__func__);
 			max_threads_scantype = UINT_MAX - 1;
 		}
-		sem_init(semaphore_scantype, 0, (unsigned int)max_threads_scantype);
+
+		upsdebugx(4, "%s: sem_init() for %" PRIuSIZE " threads", __func__, max_threads_scantype);
+		if (sem_init(semaphore_scantype, 0, (unsigned int)max_threads_scantype)) {
+			upsdebug_with_errno(4, "%s: sem_init() failed", __func__);
+		}
 	}
 # endif /* HAVE_SEMAPHORE */
 
@@ -1131,8 +1135,21 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 			sem_wait(semaphore);
 			pass = TRUE;
 		} else {
-			pass = ((max_threads_scantype == 0 || sem_trywait(semaphore_scantype) == 0) &&
-			        sem_trywait(semaphore) == 0);
+			/* If successful (the lock was acquired),
+			 * sem_wait() and sem_trywait() will return 0.
+			 * Otherwise, -1 is returned and errno is set,
+			 * and the state of the semaphore is unchanged.
+			 */
+			int	stwST = sem_trywait(semaphore_scantype), stwS = sem_trywait(semaphore);
+			pass = ((max_threads_scantype == 0 || stwST == 0) && stwS == 0);
+			upsdebugx(4, "%s: max_threads_scantype=%" PRIuSIZE
+				" curr_threads=%" PRIuSIZE
+				" thread_count=%" PRIuSIZE
+				" stwST=%d stwS=%d pass=%d",
+				__func__, max_threads_scantype,
+				curr_threads, thread_count,
+				stwST, stwS, pass
+			);
 		}
 # else
 #  ifdef HAVE_PTHREAD_TRYJOIN
@@ -1252,9 +1269,10 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 # ifdef HAVE_SEMAPHORE
 			/* Wait for all current scans to complete */
 			if (thread_array != NULL) {
-				upsdebugx (2, "%s: Running too many scanning threads, "
+				upsdebugx (2, "%s: Running too many scanning threads (%"
+					PRIuSIZE "), "
 					"waiting until older ones would finish",
-					__func__);
+					__func__, thread_count);
 				for (i = 0; i < thread_count ; i++) {
 					int ret;
 					if (!thread_array[i].active) {
