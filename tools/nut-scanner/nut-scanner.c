@@ -453,7 +453,7 @@ static void show_usage(void)
 
 	printf("  -E, --eaton_serial <serial ports list>: Scan serial Eaton devices (XCP, SHUT and Q1).\n");
 
-#if (defined HAVE_PTHREAD) && (defined HAVE_PTHREAD_TRYJOIN)
+#if (defined HAVE_PTHREAD) && ( (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE) )
 	printf("  -T, --thread <max number of threads>: Limit the amount of scanning threads running simultaneously (default: %" PRIuSIZE ").\n", max_threads);
 #else
 	printf("  -T, --thread <max number of threads>: Limit the amount of scanning threads running simultaneously (not implemented in this build: no pthread support)\n");
@@ -1133,6 +1133,15 @@ display_help:
 	}
 
 #ifdef HAVE_PTHREAD
+# if (defined HAVE_PTHREAD_TRYJOIN) && (defined HAVE_SEMAPHORE)
+	upsdebugx(1, "Parallel scan support: HAVE_PTHREAD && HAVE_PTHREAD_TRYJOIN && HAVE_SEMAPHORE");
+# elif (defined HAVE_PTHREAD_TRYJOIN)
+	upsdebugx(1, "Parallel scan support: HAVE_PTHREAD && HAVE_PTHREAD_TRYJOIN && !HAVE_SEMAPHORE");
+# elif (defined HAVE_SEMAPHORE)
+	upsdebugx(1, "Parallel scan support: HAVE_PTHREAD && !HAVE_PTHREAD_TRYJOIN && HAVE_SEMAPHORE");
+# else
+	upsdebugx(1, "Parallel scan support: HAVE_PTHREAD && !HAVE_PTHREAD_TRYJOIN && !HAVE_SEMAPHORE");
+# endif
 # ifdef HAVE_SEMAPHORE
 	/* FIXME: Currently sem_init already done on nutscan-init for lib need.
 	   We need to destroy it before re-init. We currently can't change "sem value"
@@ -1161,8 +1170,12 @@ display_help:
 			"WARNING: Limiting max_threads to range acceptable for sem_init()\n\n");
 		max_threads = UINT_MAX - 1;
 	}
+
+	upsdebugx(1, "Parallel scan support: max_threads=%" PRIuSIZE, max_threads);
 	sem_init(current_sem, 0, (unsigned int)max_threads);
 # endif
+#else
+	upsdebugx(1, "Parallel scan support: !HAVE_PTHREAD");
 #endif /* HAVE_PTHREAD */
 
 	if (start_ip != NULL || end_ip != NULL) {
