@@ -476,6 +476,7 @@ static void handle_arg_cidr(char *optarg, int *auto_nets_ptr)
 	} else {
 		struct ifaddrs	*ifa;
 		char	msg[LARGEBUF];
+		char	cidr[LARGEBUF];
 		/* Note: INET6_ADDRSTRLEN is large enough for IPv4 too,
 		 * and is smaller than LARGEBUF to avoid snprintf()
 		 * warnings that the result might not fit. */
@@ -552,33 +553,45 @@ static void handle_arg_cidr(char *optarg, int *auto_nets_ptr)
 
 					upsdebugx(5, "Discovering getifaddrs(): %s", msg);
 
+					if (ifa->ifa_flags & IFF_LOOPBACK) {
+						upsdebugx(6, "Subnet ignored: loopback");
+						continue;
+					}
+
+					if (!(
+						(ifa->ifa_flags & IFF_UP)
+					   &&   (ifa->ifa_flags & IFF_RUNNING)
+					   &&   (ifa->ifa_flags & IFF_BROADCAST)
+					)) {
+						upsdebugx(6, "Subnet ignored: not up and running, with a proper broadcast-able address");
+						continue;
+					}
+
+					if (!(
+						(auto_nets == 46
+					     || (auto_nets == 4 && ifa->ifa_addr->sa_family == AF_INET)
+					     || (auto_nets == 6 && ifa->ifa_addr->sa_family == AF_INET6) )
+					)) {
+						upsdebugx(6, "Subnet ignored: not of the requested address family");
+						continue;
+					}
+
 					/* TODO: also rule out "link-local" address ranges
 					 * so we do not issue billions of worthless scans.
 					 * FIXME: IPv6 may also be a problem, see
 					 * https://github.com/networkupstools/nut/issues/2512
 					 */
-					if (!(ifa->ifa_flags & IFF_LOOPBACK)
-					&&   (ifa->ifa_flags & IFF_UP)
-					&&   (ifa->ifa_flags & IFF_RUNNING)
-					&&   (ifa->ifa_flags & IFF_BROADCAST)
-					&&  (auto_nets == 46
-					  || (auto_nets == 4 && ifa->ifa_addr->sa_family == AF_INET)
-					  || (auto_nets == 6 && ifa->ifa_addr->sa_family == AF_INET6) )
-					) {
-						char cidr[LARGEBUF];
-
-						if (snprintf(cidr, sizeof(cidr), "%s/%i", addr, masklen) < 0) {
-							fatalx(EXIT_FAILURE, "Could not construct a CIDR string from discovered address/mask");
-						}
-
-						upsdebugx(5, "Processing CIDR net/mask: %s", cidr);
-						nutscan_cidr_to_ip(cidr, &start_ip, &end_ip);
-						upsdebugx(5, "Extracted IP address range from CIDR net/mask: %s => %s", start_ip, end_ip);
-
-						add_ip_range(start_ip, end_ip);
-						start_ip = NULL;
-						end_ip = NULL;
+					if (snprintf(cidr, sizeof(cidr), "%s/%i", addr, masklen_subnet) < 0) {
+						fatalx(EXIT_FAILURE, "Could not construct a CIDR string from discovered address/mask");
 					}
+
+					upsdebugx(5, "Processing CIDR net/mask: %s", cidr);
+					nutscan_cidr_to_ip(cidr, &start_ip, &end_ip);
+					upsdebugx(5, "Extracted IP address range from CIDR net/mask: %s => %s", start_ip, end_ip);
+
+					add_ip_range(start_ip, end_ip);
+					start_ip = NULL;
+					end_ip = NULL;
 				}	/* else AF_UNIX or a dozen other types we do not care about here */
 			}
 		}
