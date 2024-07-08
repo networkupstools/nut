@@ -87,7 +87,7 @@ if test -z "${nut_have_avahi_seen}"; then
 		dnl Help ltdl if we can (nut-scanner etc.)
 		for TOKEN in $LIBS ; do
 			AS_CASE(["${TOKEN}"],
-				[-l*avahi*], [
+				[-l*avahi*client*], [
 					AX_REALPATH_LIB([${TOKEN}], [SOPATH_LIBAVAHI], [])
 					AS_IF([test -n "${SOPATH_LIBAVAHI}" && test -s "${SOPATH_LIBAVAHI}"], [
 						AC_DEFINE_UNQUOTED([SOPATH_LIBAVAHI],["${SOPATH_LIBAVAHI}"],[Path to dynamic library on build system])
