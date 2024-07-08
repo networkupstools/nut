@@ -89,6 +89,19 @@ void nutscan_free_ip_ranges(nutscan_ip_range_list_t *irl);
 
 size_t nutscan_add_ip_range(nutscan_ip_range_list_t *irl, char * start_ip, char * end_ip);
 
+/* Iterator over given nutscan_ip_range_list_t structure
+ * and the currently pointed-to range in its list.
+ * Several iterators may use the same range.
+ */
+typedef struct nutscan_ip_range_list_iter_s {
+	const nutscan_ip_range_list_t * irl;	/* Structure with actual linked list of address-range entries */
+	nutscan_ip_range_t * ip_ranges_iter;	/* Helper for iteration: across the list of IP ranges */
+	nutscan_ip_iter_t    curr_ip_iter;	/* Helper for iteration: across one currently iterated IP range */
+} nutscan_ip_range_list_iter_t;
+
+char * nutscan_ip_ranges_iter_init(nutscan_ip_range_list_iter_t *irliter, const nutscan_ip_range_list_t *irl);
+char * nutscan_ip_ranges_iter_inc(nutscan_ip_range_list_iter_t *irliter);
+
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 }

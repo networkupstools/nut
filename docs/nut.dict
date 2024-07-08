@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3182 utf-8
+personal_ws-1.1 en 3185 utf-8
 AAC
 AAS
 ABI
@@ -1698,6 +1698,7 @@ cts
 ctypes
 cua
 cuaa
+curr
 customizations
 cvt
 cwd
@@ -2092,11 +2093,13 @@ ippon
 ipv
 ipxe
 irl
+irliter
 isDefault
 isbmex
 ish
 iso
 isolator
+iter
 ivtscd
 jNUT
 jNut

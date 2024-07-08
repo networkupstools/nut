@@ -162,20 +162,24 @@ typedef struct nutscan_usb {
 
 /* Scanning */
 nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip, useconds_t usec_timeout, nutscan_snmp_t * sec);
+nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl, useconds_t usec_timeout, nutscan_snmp_t * sec);
 
 nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts);
 
 /* If "ip" == NULL, do a broadcast scan */
 /* If sec->usec_timeout <= 0 then the common usec_timeout arg overrides it */
 nutscan_device_t * nutscan_scan_xml_http_range(const char *start_ip, const char *end_ip, useconds_t usec_timeout, nutscan_xml_t * sec);
+nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl, useconds_t usec_timeout, nutscan_xml_t * sec);
 
 nutscan_device_t * nutscan_scan_nut(const char * startIP, const char * stopIP, const char * port, useconds_t usec_timeout);
+nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, const char * port, useconds_t usec_timeout);
 
 nutscan_device_t * nutscan_scan_nut_simulation(void);
 
 nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout);
 
 nutscan_device_t * nutscan_scan_ipmi(const char * startIP, const char * stopIP, nutscan_ipmi_t * sec);
+nutscan_device_t * nutscan_scan_ip_range_ipmi(nutscan_ip_range_list_t * irl, nutscan_ipmi_t * sec);
 
 nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_list);
 
