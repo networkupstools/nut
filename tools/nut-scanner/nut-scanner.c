@@ -421,7 +421,7 @@ static void handle_arg_cidr(char *optarg, int *auto_nets_ptr)
 #ifndef WIN32
 	/* NOTE: Would need WIN32-specific implementation */
 	/* Inspired by https://stackoverflow.com/a/63789267/4715872 */
-	struct ifaddrs *ifap;
+	struct ifaddrs	*ifap;
 #endif
 
 	/* Is this a `-m auto<something_optional>` mode? */
@@ -474,14 +474,14 @@ static void handle_arg_cidr(char *optarg, int *auto_nets_ptr)
 			"Failed to getifaddrs() for connected subnet scan: %s\n",
 			strerror(errno));
 	} else {
-		struct ifaddrs *ifa;
-		char msg[LARGEBUF];
+		struct ifaddrs	*ifa;
+		char	msg[LARGEBUF];
 		/* Note: INET6_ADDRSTRLEN is large enough for IPv4 too,
 		 * and is smaller than LARGEBUF to avoid snprintf()
 		 * warnings that the result might not fit. */
-		char addr[INET6_ADDRSTRLEN];
-		char mask[INET6_ADDRSTRLEN];
-		int masklen = 0;
+		char	addr[INET6_ADDRSTRLEN];
+		char	mask[INET6_ADDRSTRLEN];
+		int	masklen = 0;
 
 		for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
 			if (ifa->ifa_addr) {
@@ -491,7 +491,7 @@ static void handle_arg_cidr(char *optarg, int *auto_nets_ptr)
 				masklen = -1;
 
 				if (ifa->ifa_addr->sa_family == AF_INET6) {
-					uint8_t i, j;
+					uint8_t	i, j;
 
 					/* Ensure proper alignment */
 					struct sockaddr_in6 sm;
@@ -510,7 +510,7 @@ static void handle_arg_cidr(char *optarg, int *auto_nets_ptr)
 					getnameinfo(ifa->ifa_netmask, sizeof(struct sockaddr_in6), mask, sizeof(mask), NULL, 0, NI_NUMERICHOST);
 					snprintf(msg, sizeof(msg), "Interface: %s\tAddress: %s\tMask: %s (len: %i)\tFlags: %08" PRIxMAX, ifa->ifa_name, addr, mask, masklen, (uintmax_t)ifa->ifa_flags);
 				} else if (ifa->ifa_addr->sa_family == AF_INET) {
-					in_addr_t i;
+					in_addr_t	i;
 
 					/* Ensure proper alignment */
 					struct sockaddr_in sa, sm;
