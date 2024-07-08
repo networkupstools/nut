@@ -331,13 +331,13 @@ MAN3_DEV_PAGES = \
 	nutscan_get_serial_ports_list.3 \
 	nutscan_init.3
 
+# Alias page for one text describing two commands:
 upscli_readline_timeout.3: upscli_readline.3
 	touch $@
 
 upscli_sendline_timeout.3: upscli_sendline.3
 	touch $@
 
-# Alias page for one text describing two commands:
 nutscan_add_commented_option_to_device.3: nutscan_add_option_to_device.3
 	touch $@
 
