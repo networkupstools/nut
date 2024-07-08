@@ -957,12 +957,28 @@ int main(int argc, char *argv[])
 
 		switch(opt_ret) {
 			case 't':
-				timeout = (useconds_t)atol(optarg) * 1000 * 1000; /*in usec*/
-				if (timeout <= 0) {
-					fprintf(stderr,
-						"Illegal timeout value, using default %ds\n",
-						DEFAULT_NETWORK_TIMEOUT);
-					timeout = DEFAULT_NETWORK_TIMEOUT * 1000 * 1000;
+				{ // scoping
+					long	l;
+					char	*s = NULL;
+					int	errno_saved;
+
+					errno = 0;
+					l = strtol(optarg, &s, 10);
+					errno_saved = errno;
+					upsdebugx(6, "errno=%d s='%s'(%p) input='%s'(%p) output=%ld",
+						errno_saved, NUT_STRARG(s), (void *)s,
+						optarg, (void *)(optarg), l);
+
+					if (errno_saved || (s && *s != '\0') || l <= 0) {
+						/* TODO: Any max limit? At least,
+						 * max(useconds_t)/1000000 ? */
+						fprintf(stderr,
+							"Illegal timeout value, using default %ds\n",
+							DEFAULT_NETWORK_TIMEOUT);
+						timeout = DEFAULT_NETWORK_TIMEOUT * 1000 * 1000;
+					} else {
+						timeout = (useconds_t)l * 1000 * 1000; /*in usec*/
+					}
 				}
 				break;
 			case 's':
