@@ -138,76 +138,7 @@ static char * serial_ports = NULL;
 static int cli_link_detail_level = -1;
 
 /* Track requested IP ranges (from CLI or auto-discovery) */
-static ip_range_t * ip_ranges = NULL;
-static ip_range_t * ip_ranges_last = NULL;
-static size_t ip_ranges_count = 0;
-
-static size_t add_ip_range(char * start_ip, char * end_ip)
-{
-	ip_range_t *p;
-
-	if (!start_ip && !end_ip) {
-		upsdebugx(5, "%s: skip, no addresses were provided", __func__);
-		return ip_ranges_count;
-	}
-
-	if (start_ip == NULL) {
-		upsdebugx(5, "%s: only end address was provided, setting start to same: %s",
-			 __func__, end_ip);
-		start_ip = end_ip;
-	}
-	if (end_ip == NULL) {
-		upsdebugx(5, "%s: only start address was provided, setting end to same: %s",
-			 __func__, start_ip);
-		end_ip = start_ip;
-	}
-
-	p = xcalloc(1, sizeof(ip_range_t));
-
-	p->start_ip = start_ip;
-	p->end_ip = end_ip;
-	p->next = NULL;
-
-	if (!ip_ranges) {
-		ip_ranges = p;
-	}
-
-	if (ip_ranges_last) {
-		ip_ranges_last->next = p;
-	}
-	ip_ranges_last = p;
-	ip_ranges_count++;
-
-	upsdebugx(1, "Recorded IP address range #%" PRIuSIZE ": [%s .. %s]",
-		ip_ranges_count, start_ip, end_ip);
-
-	return ip_ranges_count;
-}
-
-static void free_ip_ranges(void)
-{
-	ip_range_t *p = ip_ranges;
-
-	while (p) {
-		ip_ranges = p->next;
-
-		/* Only free the strings once, if they pointed to same */
-		if (p->start_ip == p->end_ip && p->start_ip) {
-			free(p->start_ip);
-		} else {
-			if (p->start_ip)
-				free(p->start_ip);
-			if (p->end_ip)
-				free(p->end_ip);
-		}
-
-		free(p);
-		p = ip_ranges;
-	}
-
-	ip_ranges_last = NULL;
-	ip_ranges_count = 0;
-}
+static nutscan_ip_range_list_t ip_ranges_list;
 
 #ifdef HAVE_PTHREAD
 static pthread_t thread[TYPE_END];
@@ -271,10 +202,10 @@ static void * run_snmp(void * arg)
 {
 	nutscan_snmp_t * sec = (nutscan_snmp_t *)arg;
 	nutscan_device_t * dev_ret;
-	ip_range_t *p = ip_ranges;
+	nutscan_ip_range_t *p = ip_ranges_list.ip_ranges;
 
 	upsdebugx(2, "Entering %s for %" PRIuSIZE " IP address range(s)",
-		__func__, ip_ranges_count);
+		__func__, ip_ranges_list.ip_ranges_count);
 
 	dev[TYPE_SNMP] = NULL;
 	while (p) {
@@ -296,10 +227,10 @@ static void * run_xml(void * arg)
 {
 	nutscan_xml_t * sec = (nutscan_xml_t *)arg;
 	nutscan_device_t * dev_ret;
-	ip_range_t *p = ip_ranges;
+	nutscan_ip_range_t *p = ip_ranges_list.ip_ranges;
 
 	upsdebugx(2, "Entering %s for %" PRIuSIZE " IP address range(s)",
-		__func__, ip_ranges_count);
+		__func__, ip_ranges_list.ip_ranges_count);
 
 	if (!p) {
 		/* Probe broadcast */
@@ -328,11 +259,11 @@ static void * run_xml(void * arg)
 static void * run_nut_old(void *arg)
 {
 	nutscan_device_t * dev_ret;
-	ip_range_t *p = ip_ranges;
+	nutscan_ip_range_t *p = ip_ranges_list.ip_ranges;
 	NUT_UNUSED_VARIABLE(arg);
 
 	upsdebugx(2, "Entering %s for %" PRIuSIZE " IP address range(s)",
-		__func__, ip_ranges_count);
+		__func__, ip_ranges_list.ip_ranges_count);
 
 	dev[TYPE_NUT] = NULL;
 	while (p) {
@@ -370,10 +301,10 @@ static void * run_ipmi(void * arg)
 {
 	nutscan_ipmi_t * sec = (nutscan_ipmi_t *)arg;
 	nutscan_device_t * dev_ret;
-	ip_range_t *p = ip_ranges;
+	nutscan_ip_range_t *p = ip_ranges_list.ip_ranges;
 
 	upsdebugx(2, "Entering %s for %" PRIuSIZE " IP address range(s)",
-		__func__, ip_ranges_count);
+		__func__, ip_ranges_list.ip_ranges_count);
 
 	if (!p) {
 		/* Probe local device */
@@ -674,6 +605,7 @@ int main(int argc, char *argv[])
 			nut_debug_level++;
 	}
 
+	nutscan_init_ip_ranges(&ip_ranges_list);
 	nutscan_init();
 
 	/* Default, see -Q/-N/-P below */
@@ -703,7 +635,7 @@ int main(int argc, char *argv[])
 					/* Save whatever we have, either
 					 * this one address or an earlier
 					 * known range with its end */
-					add_ip_range(start_ip, end_ip);
+					nutscan_add_ip_range(&ip_ranges_list, start_ip, end_ip);
 					start_ip = NULL;
 					end_ip = NULL;
 				}
@@ -711,7 +643,7 @@ int main(int argc, char *argv[])
 				start_ip = strdup(optarg);
 				if (end_ip != NULL) {
 					/* Already we know two addresses, save them */
-					add_ip_range(start_ip, end_ip);
+					nutscan_add_ip_range(&ip_ranges_list, start_ip, end_ip);
 					start_ip = NULL;
 					end_ip = NULL;
 				}
@@ -721,7 +653,7 @@ int main(int argc, char *argv[])
 					/* Save whatever we have, either
 					 * this one address or an earlier
 					 * known range with its start */
-					add_ip_range(start_ip, end_ip);
+					nutscan_add_ip_range(&ip_ranges_list, start_ip, end_ip);
 					start_ip = NULL;
 					end_ip = NULL;
 				}
@@ -729,7 +661,7 @@ int main(int argc, char *argv[])
 				end_ip = strdup(optarg);
 				if (start_ip != NULL) {
 					/* Already we know two addresses, save them */
-					add_ip_range(start_ip, end_ip);
+					nutscan_add_ip_range(&ip_ranges_list, start_ip, end_ip);
 					start_ip = NULL;
 					end_ip = NULL;
 				}
@@ -743,7 +675,7 @@ int main(int argc, char *argv[])
 					/* Save whatever we have, either
 					 * this one address or an earlier
 					 * known range with its start or end */
-					add_ip_range(start_ip, end_ip);
+					nutscan_add_ip_range(&ip_ranges_list, start_ip, end_ip);
 					start_ip = NULL;
 					end_ip = NULL;
 				}
@@ -865,7 +797,7 @@ int main(int argc, char *argv[])
 											nutscan_cidr_to_ip(cidr, &start_ip, &end_ip);
 											upsdebugx(5, "Extracted IP address range from CIDR net/mask: %s => %s", start_ip, end_ip);
 
-											add_ip_range(start_ip, end_ip);
+											nutscan_add_ip_range(&ip_ranges_list, start_ip, end_ip);
 											start_ip = NULL;
 											end_ip = NULL;
 										}
@@ -885,7 +817,7 @@ int main(int argc, char *argv[])
 					nutscan_cidr_to_ip(optarg, &start_ip, &end_ip);
 					upsdebugx(5, "Extracted IP address range from CIDR net/mask: %s => %s", start_ip, end_ip);
 
-					add_ip_range(start_ip, end_ip);
+					nutscan_add_ip_range(&ip_ranges_list, start_ip, end_ip);
 					start_ip = NULL;
 					end_ip = NULL;
 				}
@@ -1162,7 +1094,7 @@ display_help:
 
 	if (start_ip != NULL || end_ip != NULL) {
 		/* Something did not cancel out above */
-		add_ip_range(start_ip, end_ip);
+		nutscan_add_ip_range(&ip_ranges_list, start_ip, end_ip);
 		start_ip = NULL;
 		end_ip = NULL;
 	}
@@ -1209,7 +1141,7 @@ display_help:
 	}
 
 	if (allow_snmp && nutscan_avail_snmp) {
-		if (!ip_ranges_count) {
+		if (!ip_ranges_list.ip_ranges_count) {
 			upsdebugx(quiet, "No IP range(s) requested, skipping SNMP");
 			nutscan_avail_snmp = 0;
 		}
@@ -1256,7 +1188,7 @@ display_help:
 	}
 
 	if (allow_oldnut && nutscan_avail_nut) {
-		if (!ip_ranges_count) {
+		if (!ip_ranges_list.ip_ranges_count) {
 			upsdebugx(quiet, "No IP range(s) requested, skipping NUT bus (old libupsclient connect method)");
 			nutscan_avail_nut = 0;
 		}
@@ -1437,7 +1369,7 @@ display_help:
 
 	upsdebugx(1, "SCANS DONE: free common scanner resources");
 	nutscan_free();
-	free_ip_ranges();
+	nutscan_free_ip_ranges(&ip_ranges_list);
 
 	upsdebugx(1, "SCANS DONE: EXIT_SUCCESS");
 	return EXIT_SUCCESS;

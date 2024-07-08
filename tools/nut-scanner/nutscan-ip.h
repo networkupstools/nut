@@ -58,11 +58,36 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip);
 
 /* Track requested IP ranges (from CLI or auto-discovery) */
 /* One IP address range: */
-typedef struct ip_range_s {
+typedef struct nutscan_ip_range_s {
 	char * start_ip;
 	char * end_ip;
-	struct ip_range_s * next;
-} ip_range_t;
+	struct nutscan_ip_range_s * next;
+} nutscan_ip_range_t;
+
+/* List of IP address ranges and helper data: */
+typedef struct nutscan_ip_range_list_s {
+	nutscan_ip_range_t * ip_ranges;
+	nutscan_ip_range_t * ip_ranges_last;
+	size_t ip_ranges_count;
+} nutscan_ip_range_list_t;
+
+/* Initialize fields of caller-provided list
+ * (can allocate one if arg is NULL - caller
+ * must free it later). Does not assume that
+ * caller's list values are valid and should
+ * be freed (can be some garbage from stack).
+ *
+ * Returns pointer to the original or allocated list.
+ */
+nutscan_ip_range_list_t *nutscan_init_ip_ranges(nutscan_ip_range_list_t *irl);
+
+/* Free information from the list (does not
+ * free the list object itself, can be static)
+ * so it can be further re-used or freed.
+ */
+void nutscan_free_ip_ranges(nutscan_ip_range_list_t *irl);
+
+size_t nutscan_add_ip_range(nutscan_ip_range_list_t *irl, char * start_ip, char * end_ip);
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */
