@@ -593,6 +593,15 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 
 					upsdebugx(5, "Discovering getifaddrs(): %s", msg);
 
+					if (!(
+						(auto_nets == 46
+					     || (auto_nets == 4 && ifa->ifa_addr->sa_family == AF_INET)
+					     || (auto_nets == 6 && ifa->ifa_addr->sa_family == AF_INET6) )
+					)) {
+						upsdebugx(6, "Subnet ignored: not of the requested address family");
+						continue;
+					}
+
 					if (masklen_hosts_limit < masklen_hosts) {
 						/* NOTE: masklen_hosts==0 means
 						 * an exact hit on one address,
@@ -614,15 +623,6 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 					   &&   (ifa->ifa_flags & IFF_BROADCAST)
 					)) {
 						upsdebugx(6, "Subnet ignored: not up and running, with a proper broadcast-able address");
-						continue;
-					}
-
-					if (!(
-						(auto_nets == 46
-					     || (auto_nets == 4 && ifa->ifa_addr->sa_family == AF_INET)
-					     || (auto_nets == 6 && ifa->ifa_addr->sa_family == AF_INET6) )
-					)) {
-						upsdebugx(6, "Subnet ignored: not of the requested address family");
 						continue;
 					}
 
