@@ -508,7 +508,11 @@ static void handle_arg_cidr(char *optarg, int *auto_nets_ptr)
 
 					getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in6), addr, sizeof(addr), NULL, 0, NI_NUMERICHOST);
 					getnameinfo(ifa->ifa_netmask, sizeof(struct sockaddr_in6), mask, sizeof(mask), NULL, 0, NI_NUMERICHOST);
-					snprintf(msg, sizeof(msg), "Interface: %s\tAddress: %s\tMask: %s (len: %i)\tFlags: %08" PRIxMAX, ifa->ifa_name, addr, mask, masklen, (uintmax_t)ifa->ifa_flags);
+					snprintf(msg, sizeof(msg),
+						"Interface: %s\tAddress: %s\tMask: %s (len: %i)\tFlags: %08" PRIxMAX,
+						ifa->ifa_name, addr, mask,
+						masklen,
+						(uintmax_t)ifa->ifa_flags);
 				} else if (ifa->ifa_addr->sa_family == AF_INET) {
 					in_addr_t	i;
 
@@ -525,7 +529,11 @@ static void handle_arg_cidr(char *optarg, int *auto_nets_ptr)
 						masklen += i & 1;
 						i >>= 1;
 					}
-					snprintf(msg, sizeof(msg), "Interface: %s\tAddress: %s\tMask: %s (len: %i)\tFlags: %08" PRIxMAX, ifa->ifa_name, addr, mask, masklen, (uintmax_t)ifa->ifa_flags);
+					snprintf(msg, sizeof(msg),
+						"Interface: %s\tAddress: %s\tMask: %s (len: %i)\tFlags: %08" PRIxMAX,
+						ifa->ifa_name, addr, mask,
+						masklen,
+						(uintmax_t)ifa->ifa_flags);
 /*
 				} else {
 					snprintf(msg, sizeof(msg), "Addr family: %" PRIuMAX, (intmax_t)ifa->ifa_addr->sa_family);
