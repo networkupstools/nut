@@ -66,9 +66,9 @@ typedef struct nutscan_ip_range_s {
 
 /* List of IP address ranges and helper data: */
 typedef struct nutscan_ip_range_list_s {
-	nutscan_ip_range_t * ip_ranges;
-	nutscan_ip_range_t * ip_ranges_last;
-	size_t ip_ranges_count;
+	nutscan_ip_range_t * ip_ranges;		/* Actual linked list of entries, first entry */
+	nutscan_ip_range_t * ip_ranges_last;	/* Pointer to end of list for quicker additions */
+	size_t ip_ranges_count;			/* Counter of added entries */
 } nutscan_ip_range_list_t;
 
 /* Initialize fields of caller-provided list
