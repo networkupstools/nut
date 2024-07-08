@@ -131,6 +131,8 @@ Requests to scan many single IP addresses will take a while to complete, much
 longer than if they were a single range.  This will be hopefully fixed in later
 releases.
 
+NOTE: Colon-separated IPv6 addresses must be passed in square brackets.
+
 *-t* | *--timeout* 'timeout'::
 Set the network timeout in seconds. Default timeout is 5 seconds.
 
