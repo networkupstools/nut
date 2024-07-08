@@ -300,10 +300,18 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 	if (mask == NULL) {
 		upsdebugx(0, "WARNING: %s failed to parse mask from cidr=%s (first_ip=%s)",
 			__func__, cidr, first_ip);
-		free (first_ip);
+		free(first_ip);
 		free(cidr_tok);
 		return 0;
 	}
+
+	if (first_ip[0] == '[' && first_ip[strlen(first_ip) - 1] == ']') {
+		char *s = strdup(first_ip + 1);
+		s[strlen(s) - 1] = '\0';
+		free(first_ip);
+		first_ip = s;
+	}
+
 	upsdebugx(5, "%s: parsed cidr=%s into first_ip=%s and mask=%s",
 		__func__, cidr, first_ip, mask);
 
