@@ -125,6 +125,11 @@ Also note that some buses require IP address(es) to scan, and others have a
 different behavior when exactly no addresses are specified (it is not currently
 possible to mix the two behaviors in one invocation of the `nut-scanner` tool).
 +
+A single-address range may be a host name which would be resolved into one IP
+address by the system resolver. A CIDR using a host name and netmask length
+would be resolved into an IP address and subjected to the mask application,
+to query hosts "near" the named one.
++
 Finally note that currently even if multi-threaded support is available, each
 range specification is a separate fan-out of queries constrained by the timeout.
 Requests to scan many single IP addresses will take a while to complete, much
