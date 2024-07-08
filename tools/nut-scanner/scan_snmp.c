@@ -480,6 +480,8 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 	dev = nutscan_new_device();
 	dev->type = TYPE_SNMP;
 	dev->driver = strdup("snmp-ups");
+	/* FIXME: Should the IPv6 address here be bracketed?
+	 *  Does our driver support the notation? */
 	dev->port = strdup(session->peername);
 	if (response != NULL) {
 		buf = malloc (response->variables->val_len + 1);

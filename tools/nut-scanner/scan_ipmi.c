@@ -573,6 +573,8 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 			}
 			else {
 				/* FIXME: also check against "localhost" and its IPv{4,6} */
+				/* FIXME: Should the IPv6 address here be bracketed?
+				 *  Does our driver support the notation? */
 				sprintf(port_id, "id%x@%s", ipmi_id, IPaddr);
 			}
 			nut_dev->port = strdup(port_id);

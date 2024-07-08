@@ -353,6 +353,8 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 				if (parserFailed == 0) {
 					nut_dev->driver = strdup("netxml-ups");
 					sprintf(buf, "http://%s", string);
+					/* FIXME: Should the IPv6 address here be bracketed?
+					 *  Does our driver support the notation? */
 					nut_dev->port = strdup(buf);
 					upsdebugx(3,
 						"nutscan_scan_xml_http_generic(): "
