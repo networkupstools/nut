@@ -1,0 +1,74 @@
+NUTSCAN_FREE_IP_RANGES(3)
+=========================
+
+NAME
+----
+
+nutscan_add_ip_range - Add an entry with IP address range (start and end
+address) to a `nutscan_ip_range_list_t` structure.
+
+SYNOPSIS
+--------
+
+ #include <nut-scan.h>
+
+ /* One IP address range: */
+ typedef struct nutscan_ip_range_s {
+    char * start_ip;
+    char * end_ip;
+    struct nutscan_ip_range_s * next;
+ } nutscan_ip_range_t;
+
+ /* List of IP address ranges and helper data: */
+ typedef struct nutscan_ip_range_list_s {
+    nutscan_ip_range_t * ip_ranges;
+    nutscan_ip_range_t * ip_ranges_last;
+    size_t ip_ranges_count;
+ } nutscan_ip_range_list_t;
+
+
+ size_t nutscan_add_ip_range(
+    nutscan_ip_range_list_t *irl,
+    char * start_ip,
+    char * end_ip);
+
+DESCRIPTION
+-----------
+
+The *nutscan_add_ip_range()* function can create and add a `nutscan_ip_range_t`
+entry based on provided inputs to the specified `nutscan_ip_range_list_t`
+structure.  The resulting amount of entries in the structure is returned,
+or 0 in case of non-fatal errors.
+
+This function skips work if:
+
+* the structure pointer is `NULL` (0 is returned);
+* neither `start_ip` nor `end_ip` were provided, i.e. they have `NULL` values
+  (current list length from the structure is returned);
+* failed to allocate the entry (fatal).
+
+If only one of `start_ip` or `end_ip` values was provided (not `NULL`), a
+single-address range is created with both addresses set to the same pointer
+value.
+
+The structure should be initialized before use by `nutscan_init_ip_ranges()`.
+
+The caller must free the contents of the structure after completing its use
+by calling `nutscan_free_ip_ranges()` (after which the structure can be
+re-used for a new list), and explicitly `free()` the structure object itself if
+it was allocated dynamically (e.g. by calling `nutscan_init_ip_ranges(NULL)`).
+
+NOTES
+-----
+
+Technically, the function is currently defined in 'nutscan-ip.h' file.
+
+Currently there are no checks for duplicate or overlapping entries, so the
+same IP addresses and whole IP address ranges can be added to the list (and
+would eventually be scanned) many times.
+
+SEE ALSO
+--------
+
+linkman:nutscan_init_ip_ranges[3], linkman:nutscan_free_ip_ranges[3],
+linkman:nutscan_cidr_to_ip[3]

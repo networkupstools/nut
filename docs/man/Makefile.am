@@ -198,6 +198,9 @@ SRC_DEV_PAGES = \
 	nutscan_display_ups_conf_with_sanity_check.txt \
 	nutscan_display_ups_conf.txt \
 	nutscan_display_parsable.txt \
+	nutscan_init_ip_ranges.txt \
+	nutscan_free_ip_ranges.txt \
+	nutscan_add_ip_range.txt \
 	nutscan_cidr_to_ip.txt \
 	nutscan_new_device.txt \
 	nutscan_free_device.txt \
@@ -316,6 +319,9 @@ MAN3_DEV_PAGES = \
 	nutscan_display_ups_conf_with_sanity_check.3 \
 	nutscan_display_ups_conf.3 \
 	nutscan_display_parsable.3 \
+	nutscan_init_ip_ranges.3 \
+	nutscan_free_ip_ranges.3 \
+	nutscan_add_ip_range.3 \
 	nutscan_cidr_to_ip.3 \
 	nutscan_new_device.3 \
 	nutscan_free_device.3 \
@@ -391,6 +397,9 @@ HTML_DEV_MANS = \
 	nutscan_display_ups_conf_with_sanity_check.html \
 	nutscan_display_ups_conf.html \
 	nutscan_display_parsable.html \
+	nutscan_init_ip_ranges.html \
+	nutscan_free_ip_ranges.html \
+	nutscan_add_ip_range.html \
 	nutscan_cidr_to_ip.html \
 	nutscan_new_device.html \
 	nutscan_free_device.html \
