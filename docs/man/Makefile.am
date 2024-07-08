@@ -414,7 +414,15 @@ HTML_DEV_MANS = \
 # Can't make this work on all make implementations at once, so disabled for now
 # Anyway it would be the same man-like page for several functions
 HTML_DEV_MANS_FICTION = \
+	upscli_readline_timeout.html \
+	upscli_sendline_timeout.html \
 	nutscan_add_commented_option_to_device.html
+
+upscli_readline_timeout.html: upscli_readline.html
+	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+
+upscli_sendline_timeout.html: upscli_sendline.html
+	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
 
 nutscan_add_commented_option_to_device.html: nutscan_add_option_to_device.html
 	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
