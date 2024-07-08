@@ -725,9 +725,10 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 			result = nutscan_rewind_device(dev_ret);
 			dev_ret = NULL;
 			return result;
-		}
+		}	/* end of: scan range, maybe in parallel */
 	}
 
+	/* scan broadcast or single IP */
 	tmp_sec = malloc(sizeof(nutscan_xml_t));
 	if (tmp_sec == NULL) {
 		fprintf(stderr,
