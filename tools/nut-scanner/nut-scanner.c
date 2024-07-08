@@ -417,6 +417,15 @@ static void handle_arg_cidr(char *optarg, int *auto_nets_ptr)
 	char	*start_ip = NULL, *end_ip = NULL;
 	/* Scanning mode: IPv4, IPv6 or both */
 	int	auto_nets = -1;
+	/* Bit-length limit for *address part* of subnets to consider;
+	 * e.g. if your LAN's network range is 10.2.3.0/24 the address
+	 * part is (32-24)=8. Larger subnets e.g. 10.0.0.0/8 would be
+	 * ignored to avoid billions of scan requests. Note that while
+	 * this is applied to IPv6 also, their typical /64 subnets are
+	 * not likely to have a NUT/SNMP/NetXML/... server *that* close
+	 * nearby in addressing terms, for a tight filter to find them.
+	 */
+	int	masklen_hosts_limit = 8;
 
 #ifndef WIN32
 	/* NOTE: Would need WIN32-specific implementation */
@@ -426,6 +435,9 @@ static void handle_arg_cidr(char *optarg, int *auto_nets_ptr)
 
 	/* Is this a `-m auto<something_optional>` mode? */
 	if (!strncmp(optarg, "auto", 4)) {
+		/* TODO: Maybe split later, to allow separate
+		 *  `-m auto4/X` and `-m auto6/Y` requests?
+		 */
 		if (auto_nets_ptr && *auto_nets_ptr) {
 			fprintf(stderr, "Duplicate request for connected subnet scan ignored\n");
 			return;
@@ -440,6 +452,30 @@ static void handle_arg_cidr(char *optarg, int *auto_nets_ptr)
 			auto_nets = 4;
 		} else if (!strcmp(optarg, "auto6")) {
 			auto_nets = 6;
+		} else if (!strncmp(optarg, "auto/", 5)) {
+			auto_nets = 46;
+			masklen_hosts_limit = atoi(optarg + 5);
+			if (masklen_hosts_limit < 0 || masklen_hosts_limit > 128) {
+				fatalx(EXIT_FAILURE,
+					"Invalid auto-net limit value: %s",
+					optarg);
+			}
+		} else if (!strncmp(optarg, "auto4/", 6)) {
+			auto_nets = 4;
+			masklen_hosts_limit = atoi(optarg + 6);
+			if (masklen_hosts_limit < 0 || masklen_hosts_limit > 32) {
+				fatalx(EXIT_FAILURE,
+					"Invalid auto-net limit value: %s",
+					optarg);
+			}
+		} else if (!strncmp(optarg, "auto6/", 6)) {
+			auto_nets = 6;
+			masklen_hosts_limit = atoi(optarg + 6);
+			if (masklen_hosts_limit < 0 || masklen_hosts_limit > 128) {
+				fatalx(EXIT_FAILURE,
+					"Invalid auto-net limit value: %s",
+					optarg);
+			}
 		} else {
 			/* TODO: maybe fail right away?
 			 *  Or claim a simple auto46 mode? */
@@ -482,14 +518,15 @@ static void handle_arg_cidr(char *optarg, int *auto_nets_ptr)
 		 * warnings that the result might not fit. */
 		char	addr[INET6_ADDRSTRLEN];
 		char	mask[INET6_ADDRSTRLEN];
-		int	masklen = 0;
+		int	masklen_subnet = 0;
+		int	masklen_hosts = 0;
 
 		for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
 			if (ifa->ifa_addr) {
 				memset(msg, 0, sizeof(msg));
 				memset(addr, 0, sizeof(addr));
 				memset(mask, 0, sizeof(mask));
-				masklen = -1;
+				masklen_subnet = -1;
 
 				if (ifa->ifa_addr->sa_family == AF_INET6) {
 					uint8_t	i, j;
@@ -498,21 +535,22 @@ static void handle_arg_cidr(char *optarg, int *auto_nets_ptr)
 					struct sockaddr_in6 sm;
 					memcpy (&sm, ifa->ifa_netmask, sizeof(struct sockaddr_in6));
 
-					masklen = 0;
+					masklen_subnet = 0;
 					for (j = 0; j < 16; j++) {
 						i = sm.sin6_addr.s6_addr[j];
 						while (i) {
-							masklen += i & 1;
+							masklen_subnet += i & 1;
 							i >>= 1;
 						}
 					}
+					masklen_hosts = 128 - masklen_subnet;
 
 					getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in6), addr, sizeof(addr), NULL, 0, NI_NUMERICHOST);
 					getnameinfo(ifa->ifa_netmask, sizeof(struct sockaddr_in6), mask, sizeof(mask), NULL, 0, NI_NUMERICHOST);
 					snprintf(msg, sizeof(msg),
-						"Interface: %s\tAddress: %s\tMask: %s (len: %i)\tFlags: %08" PRIxMAX,
+						"Interface: %s\tAddress: %s\tMask: %s (subnet: %i, hosts: %i)\tFlags: %08" PRIxMAX,
 						ifa->ifa_name, addr, mask,
-						masklen,
+						masklen_subnet, masklen_hosts,
 						(uintmax_t)ifa->ifa_flags);
 				} else if (ifa->ifa_addr->sa_family == AF_INET) {
 					in_addr_t	i;
@@ -525,15 +563,17 @@ static void handle_arg_cidr(char *optarg, int *auto_nets_ptr)
 					snprintf(mask, sizeof(mask), "%s", inet_ntoa(sm.sin_addr));
 
 					i = sm.sin_addr.s_addr;
-					masklen = 0;
+					masklen_subnet = 0;
 					while (i) {
-						masklen += i & 1;
+						masklen_subnet += i & 1;
 						i >>= 1;
 					}
+					masklen_hosts = 32 - masklen_subnet;
+
 					snprintf(msg, sizeof(msg),
-						"Interface: %s\tAddress: %s\tMask: %s (len: %i)\tFlags: %08" PRIxMAX,
+						"Interface: %s\tAddress: %s\tMask: %s (subnet: %i, hosts: %i)\tFlags: %08" PRIxMAX,
 						ifa->ifa_name, addr, mask,
-						masklen,
+						masklen_subnet, masklen_hosts,
 						(uintmax_t)ifa->ifa_flags);
 /*
 				} else {
@@ -552,6 +592,16 @@ static void handle_arg_cidr(char *optarg, int *auto_nets_ptr)
 						snprintfcat(msg, sizeof(msg), " IFF_BROADCAST(is assigned)");
 
 					upsdebugx(5, "Discovering getifaddrs(): %s", msg);
+
+					if (masklen_hosts_limit < masklen_hosts) {
+						/* NOTE: masklen_hosts==0 means
+						 * an exact hit on one address,
+						 * so an IPv4/32 or IPv6/128.
+						 */
+						upsdebugx(6, "Subnet ignored: address range too large: %d bits allowed vs. %d bits per netmask",
+							masklen_hosts_limit, masklen_hosts);
+						continue;
+					}
 
 					if (ifa->ifa_flags & IFF_LOOPBACK) {
 						upsdebugx(6, "Subnet ignored: loopback");
