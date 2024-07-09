@@ -37,6 +37,9 @@
 #include "nut_platform.h"
 
 #ifdef WIN32
+# if defined HAVE_WINSOCK2_H && HAVE_WINSOCK2_H
+#  include <winsock2.h>
+# endif
 # define SOEXT ".dll"
 #else
 # ifdef NUT_PLATFORM_APPLE_OSX
@@ -119,6 +122,13 @@ void do_upsconf_args(char *confupsname, char *var, char *val) {
 void nutscan_init(void)
 {
 	char *libname = NULL;
+
+#ifdef WIN32
+	/* Required ritual before calling any socket functions */
+	WSADATA WSAdata;
+	WSAStartup(2,&WSAdata);
+	atexit((void(*)(void))WSACleanup);
+#endif
 
 	/* Optional filter to not walk things twice */
 	nut_prepare_search_paths();
@@ -567,7 +577,6 @@ void nutscan_init(void)
 /* start of "NUT Simulation" - unconditional */
 /* no need for additional library */
 	nutscan_avail_nut_simulation = 1;
-
 }
 
 void nutscan_free(void)

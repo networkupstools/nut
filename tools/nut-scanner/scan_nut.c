@@ -265,11 +265,6 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 	int change_action_handler = 0;
 #endif
 	struct scan_nut_arg *nut_arg;
-#ifdef WIN32
-	WSADATA WSAdata;
-	WSAStartup(2,&WSAdata);
-	atexit((void(*)(void))WSACleanup);
-#endif
 
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE

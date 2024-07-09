@@ -1054,12 +1054,6 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 	sem_t * semaphore_scantype = &semaphore_scantype_inst;
 # endif /* HAVE_SEMAPHORE */
 
-# ifdef WIN32
-	WSADATA WSAdata;
-	WSAStartup(2,&WSAdata);
-	atexit((void(*)(void))WSACleanup);
-# endif
-
 	pthread_t thread;
 	nutscan_thread_t * thread_array = NULL;
 	size_t thread_count = 0, i;
