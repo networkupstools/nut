@@ -214,31 +214,11 @@ static void * run_snmp(void * arg)
 static void * run_xml(void * arg)
 {
 	nutscan_xml_t * sec = (nutscan_xml_t *)arg;
-	nutscan_device_t * dev_ret;
-	nutscan_ip_range_t *p = ip_ranges_list.ip_ranges;
 
 	upsdebugx(2, "Entering %s for %" PRIuSIZE " IP address range(s)",
 		__func__, ip_ranges_list.ip_ranges_count);
 
-	if (!p) {
-		/* Probe broadcast */
-		dev[TYPE_XML] = nutscan_scan_xml_http_range(NULL, NULL, timeout, sec);
-
-		upsdebugx(2, "Finished %s query", __func__);
-		return NULL;
-	}
-
-	dev[TYPE_XML] = NULL;
-	while (p) {
-		dev_ret = nutscan_scan_xml_http_range(p->start_ip, p->end_ip, timeout, sec);
-		if (!dev[TYPE_XML]) {
-			dev[TYPE_XML] = dev_ret;
-		} else {
-			dev[TYPE_XML] = nutscan_rewind_device(
-				nutscan_add_device_to_device(dev_ret, dev[TYPE_XML]));
-		}
-		p = p->next;
-	}
+	dev[TYPE_XML] = nutscan_scan_ip_range_xml_http(&ip_ranges_list, timeout, sec);
 
 	upsdebugx(2, "Finished %s loop", __func__);
 	return NULL;
