@@ -235,10 +235,28 @@ static void * list_nut_devices(void * arg)
 	return NULL;
 }
 
-nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, const char* port, useconds_t usec_timeout)
+nutscan_device_t * nutscan_scan_nut(const char* start_ip, const char* stop_ip, const char* port, useconds_t usec_timeout)
+{
+	nutscan_device_t	*ndret;
+	nutscan_ip_range_list_t irl;
+
+	nutscan_init_ip_ranges(&irl);
+	nutscan_add_ip_range(&irl, (char *)start_ip, (char *)stop_ip);
+
+	ndret = nutscan_scan_ip_range_nut(&irl, port, usec_timeout);
+
+	/* Avoid nuking caller's strings here */
+	irl.ip_ranges->start_ip = NULL;
+	irl.ip_ranges->end_ip = NULL;
+	nutscan_free_ip_ranges(&irl);
+
+	return ndret;
+}
+
+nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, const char* port, useconds_t usec_timeout)
 {
 	bool_t pass = TRUE; /* Track that we may spawn a scanning thread */
-	nutscan_ip_iter_t ip;
+	nutscan_ip_range_list_iter_t ip;
 	char * ip_str = NULL;
 	char * ip_dest = NULL;
 	char buf[SMALLBUF];
@@ -303,14 +321,21 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 		return NULL;
 	}
 
-	if (!startIP) {
+	if (irl == NULL || irl->ip_ranges == NULL) {
+		return NULL;
+	}
+
+	if (!irl->ip_ranges->start_ip) {
 		upsdebugx(1, "%s: no starting IP address specified", __func__);
-	} else if (startIP == stopIP || !stopIP) {
+	} else if (irl->ip_ranges_count == 1
+		&& (irl->ip_ranges->start_ip == irl->ip_ranges->end_ip
+		    || !strcmp(irl->ip_ranges->start_ip, irl->ip_ranges->end_ip)
+	)) {
 		upsdebugx(1, "%s: Scanning \"Old NUT\" bus for single IP address: %s",
-			__func__, startIP);
+			__func__, irl->ip_ranges->start_ip);
 	} else {
-		upsdebugx(1, "%s: Scanning \"Old NUT\" bus for IP address range: %s .. %s",
-			__func__, startIP, stopIP);
+		upsdebugx(1, "%s: Scanning \"Old NUT\" bus for IP address range(s): %s",
+			__func__, nutscan_stringify_ip_ranges(irl));
 	}
 
 #ifndef WIN32
@@ -330,7 +355,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 	}
 #endif
 
-	ip_str = nutscan_ip_iter_init(&ip, startIP, stopIP);
+	ip_str = nutscan_ip_ranges_iter_init(&ip, irl);
 
 	while (ip_str != NULL) {
 #ifdef HAVE_PTHREAD
@@ -433,7 +458,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 
 		if (pass) {
 			if (port) {
-				if (ip.type == IPv4) {
+				if (ip.curr_ip_iter.type == IPv4) {
 					snprintf(buf, sizeof(buf), "%s:%s", ip_str, port);
 				}
 				else {
@@ -483,7 +508,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 			list_nut_devices(nut_arg);
 #endif /* if HAVE_PTHREAD */
 			free(ip_str);
-			ip_str = nutscan_ip_iter_inc(&ip);
+			ip_str = nutscan_ip_ranges_iter_inc(&ip);
 		} else { /* if not pass -- all slots busy */
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE

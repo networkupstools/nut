@@ -144,7 +144,10 @@ installed.
      with the same call, by repeating command-line options; also `-m auto{,4,6}`
      can be specified (once) to select IP (all, IPv4, IPv6) address ranges of
      configured local network interfaces (currently not implemented for WIN32).
-     [issue #2244, PR #2509, PR #2513]
+     An `/ADDRLEN` suffix can be added to the option, to filter out discovered
+     subnets with too many bits available for the host address part (avoiding
+     millions of scans in the extreme cases).
+     [issue #2244, issue #2511, PR #2509, PR #2513, PR #2517]
    * bumped version of `libnutscan` to 2.5.2, it now includes a few more
      methods and symbols from `libcommon`. [issue #2244, PR #2509]
 
