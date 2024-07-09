@@ -418,6 +418,31 @@ end:
 
 nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char * end_ip, useconds_t usec_timeout, nutscan_xml_t * sec)
 {
+	nutscan_device_t	*ndret;
+
+	/* Are we scanning locally, or through the network? */
+	if (start_ip || end_ip) {
+		nutscan_ip_range_list_t irl;
+
+		nutscan_init_ip_ranges(&irl);
+		nutscan_add_ip_range(&irl, (char *)start_ip, (char *)end_ip);
+
+		ndret = nutscan_scan_ip_range_xml_http(&irl, usec_timeout, sec);
+
+		/* Avoid nuking caller's strings here */
+		irl.ip_ranges->start_ip = NULL;
+		irl.ip_ranges->end_ip = NULL;
+		nutscan_free_ip_ranges(&irl);
+	} else {
+		/* Probe local device */
+		ndret = nutscan_scan_ip_range_xml_http(NULL, usec_timeout, sec);
+	}
+
+	return ndret;
+}
+
+nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl, useconds_t usec_timeout, nutscan_xml_t * sec)
+{
 	bool_t pass = TRUE; /* Track that we may spawn a scanning thread */
 	nutscan_xml_t * tmp_sec = NULL;
 	nutscan_device_t * result = NULL;
@@ -426,15 +451,16 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 		return NULL;
 	}
 
-	if (start_ip == NULL && end_ip != NULL) {
-		start_ip = end_ip;
-	}
-
-	if (start_ip == NULL) {
+	/* We assume the list is maintained by our methods, so should not have
+	 * null addresses. But just in case - check for it a little tiny once.
+	 */
+	if (irl == NULL || irl->ip_ranges == NULL
+	 || irl->ip_ranges->start_ip == NULL || irl->ip_ranges->end_ip == NULL
+	) {
 		upsdebugx(1, "%s: Scanning XML/HTTP bus using broadcast.", __func__);
 	} else {
 		/* Iterate the one or a range of IPs to scan */
-		nutscan_ip_iter_t ip;
+		nutscan_ip_range_list_iter_t ip;
 		char * ip_str = NULL;
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE
@@ -450,12 +476,15 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 # endif
 #endif
 
-		if ((start_ip == end_ip) || (end_ip == NULL) || (0 == strncmp(start_ip, end_ip, 128))) {
+		if (irl->ip_ranges_count == 1
+		&& (irl->ip_ranges->start_ip == irl->ip_ranges->end_ip
+		    || !strcmp(irl->ip_ranges->start_ip, irl->ip_ranges->end_ip)
+		)) {
 			upsdebugx(1, "%s: Scanning XML/HTTP bus for single IP address: %s",
-				__func__, start_ip);
+				__func__, irl->ip_ranges->start_ip);
 		} else {
-			upsdebugx(1, "%s: Scanning XML/HTTP bus for IP address range: %s .. %s",
-				__func__, start_ip, end_ip);
+			upsdebugx(1, "%s: Scanning XML/HTTP bus for IP address range(s): %s",
+				__func__, nutscan_stringify_ip_ranges(irl));
 		}
 
 #ifdef HAVE_PTHREAD
@@ -496,7 +525,7 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 
 #endif /* HAVE_PTHREAD */
 
-		ip_str = nutscan_ip_iter_init(&ip, start_ip, end_ip);
+		ip_str = nutscan_ip_ranges_iter_init(&ip, irl);
 
 		while (ip_str != NULL) {
 #ifdef HAVE_PTHREAD
@@ -655,7 +684,7 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 #endif /* if HAVE_PTHREAD */
 
 /*				free(ip_str); */ /* One of these free()s seems to cause a double-free instead */
-				ip_str = nutscan_ip_iter_inc(&ip);
+				ip_str = nutscan_ip_ranges_iter_inc(&ip);
 /*				free(tmp_sec); */
 			} else { /* if not pass -- all slots busy */
 #ifdef HAVE_PTHREAD
@@ -759,11 +788,11 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 	}
 
 	memcpy(tmp_sec, sec, sizeof(nutscan_xml_t));
-	if (start_ip == NULL) {
+	if (irl == NULL || irl->ip_ranges == NULL || irl->ip_ranges->start_ip == NULL) {
 		tmp_sec->peername = NULL;
 	} else {
 		/* Legacy code path for single-IP scan; should not get here */
-		tmp_sec->peername = strdup(start_ip);
+		tmp_sec->peername = strdup(irl->ip_ranges->start_ip);
 	}
 
 	if (tmp_sec->usec_timeout <= 0) {
@@ -784,6 +813,15 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 {
 	NUT_UNUSED_VARIABLE(start_ip);
 	NUT_UNUSED_VARIABLE(end_ip);
+	NUT_UNUSED_VARIABLE(usec_timeout);
+	NUT_UNUSED_VARIABLE(sec);
+	return NULL;
+}
+
+/* stub function */
+nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl, useconds_t usec_timeout, nutscan_xml_t * sec)
+{
+	NUT_UNUSED_VARIABLE(irl);
 	NUT_UNUSED_VARIABLE(usec_timeout);
 	NUT_UNUSED_VARIABLE(sec);
 	return NULL;

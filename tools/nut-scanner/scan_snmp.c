@@ -1025,10 +1025,29 @@ try_SysOID_free:
 nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip,
                                      useconds_t usec_timeout, nutscan_snmp_t * sec)
 {
+	nutscan_device_t	*ndret;
+	nutscan_ip_range_list_t irl;
+
+	nutscan_init_ip_ranges(&irl);
+	nutscan_add_ip_range(&irl, (char *)start_ip, (char *)stop_ip);
+
+	ndret = nutscan_scan_ip_range_snmp(&irl, usec_timeout, sec);
+
+	/* Avoid nuking caller's strings here */
+	irl.ip_ranges->start_ip = NULL;
+	irl.ip_ranges->end_ip = NULL;
+	nutscan_free_ip_ranges(&irl);
+
+	return ndret;
+}
+
+nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
+                                     useconds_t usec_timeout, nutscan_snmp_t * sec)
+{
 	bool_t pass = TRUE; /* Track that we may spawn a scanning thread */
 	nutscan_device_t * result;
 	nutscan_snmp_t * tmp_sec;
-	nutscan_ip_iter_t ip;
+	nutscan_ip_range_list_iter_t ip;
 	char * ip_str = NULL;
 
 #ifdef HAVE_PTHREAD
@@ -1093,14 +1112,21 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 		return NULL;
 	}
 
-	if (!start_ip) {
+	if (irl == NULL || irl->ip_ranges == NULL) {
+		return NULL;
+	}
+
+	if (!irl->ip_ranges->start_ip) {
 		upsdebugx(1, "%s: no starting IP address specified", __func__);
-	} else if (start_ip == stop_ip || !stop_ip) {
+	} else if (irl->ip_ranges_count == 1
+		&& (irl->ip_ranges->start_ip == irl->ip_ranges->end_ip
+		    || !strcmp(irl->ip_ranges->start_ip, irl->ip_ranges->end_ip)
+	)) {
 		upsdebugx(1, "%s: Scanning SNMP for single IP address: %s",
-			__func__, start_ip);
+			__func__, irl->ip_ranges->start_ip);
 	} else {
-		upsdebugx(1, "%s: Scanning SNMP for IP address range: %s .. %s",
-			__func__, start_ip, stop_ip);
+		upsdebugx(1, "%s: Scanning SNMP for IP address range(s): %s",
+			__func__, nutscan_stringify_ip_ranges(irl));
 	}
 
 	g_usec_timeout = usec_timeout;
@@ -1114,7 +1140,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	/* Initialize the SNMP library */
 	(*nut_init_snmp)("nut-scanner");
 
-	ip_str = nutscan_ip_iter_init(&ip, start_ip, stop_ip);
+	ip_str = nutscan_ip_ranges_iter_init(&ip, irl);
 
 	while (ip_str != NULL) {
 #ifdef HAVE_PTHREAD
@@ -1264,7 +1290,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 			try_SysOID((void *)tmp_sec);
 #endif  /* if HAVE_PTHREAD */
 /*			free(ip_str); */ /* Do not free() here - seems to cause a double-free instead */
-			ip_str = nutscan_ip_iter_inc(&ip);
+			ip_str = nutscan_ip_ranges_iter_inc(&ip);
 /*			free(tmp_sec); */
 		} else { /* if not pass -- all slots busy */
 #ifdef HAVE_PTHREAD
@@ -1367,6 +1393,16 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 {
 	NUT_UNUSED_VARIABLE(start_ip);
 	NUT_UNUSED_VARIABLE(stop_ip);
+	NUT_UNUSED_VARIABLE(usec_timeout);
+	NUT_UNUSED_VARIABLE(sec);
+	return NULL;
+}
+
+/* stub function */
+nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
+                                     useconds_t usec_timeout, nutscan_snmp_t * sec)
+{
+	NUT_UNUSED_VARIABLE(irl);
 	NUT_UNUSED_VARIABLE(usec_timeout);
 	NUT_UNUSED_VARIABLE(sec);
 	return NULL;

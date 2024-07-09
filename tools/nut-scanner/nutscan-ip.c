@@ -88,6 +88,252 @@ static int ntop6(struct in6_addr * ip, char * host, GETNAMEINFO_TYPE_ARG46 host_
 		host, host_size, NULL, 0, NI_NUMERICHOST);
 }
 
+/* Track requested IP ranges (from CLI or auto-discovery) */
+nutscan_ip_range_list_t *nutscan_init_ip_ranges(nutscan_ip_range_list_t *irl)
+{
+	if (!irl) {
+		irl = (nutscan_ip_range_list_t *)xcalloc(1, sizeof(nutscan_ip_range_list_t));
+	}
+
+	irl->ip_ranges = NULL;
+	irl->ip_ranges_last = NULL;
+	irl->ip_ranges_count = 0;
+
+	return irl;
+}
+
+void nutscan_free_ip_ranges(nutscan_ip_range_list_t *irl)
+{
+	nutscan_ip_range_t *p;
+
+	if (!irl) {
+		upsdebugx(5, "%s: skip, no nutscan_ip_range_list_t was specified", __func__);
+		return;
+	}
+
+	p = irl->ip_ranges;
+	while (p) {
+		irl->ip_ranges = p->next;
+
+		/* Only free the strings once, if they pointed to same */
+		if (p->start_ip == p->end_ip && p->start_ip) {
+			free(p->start_ip);
+		} else {
+			if (p->start_ip)
+				free(p->start_ip);
+			if (p->end_ip)
+				free(p->end_ip);
+		}
+
+		free(p);
+		p = irl->ip_ranges;
+	}
+
+	irl->ip_ranges_last = NULL;
+	irl->ip_ranges_count = 0;
+}
+
+size_t nutscan_add_ip_range(nutscan_ip_range_list_t *irl, char * start_ip, char * end_ip)
+{
+	nutscan_ip_range_t *p;
+
+	if (!irl) {
+		upsdebugx(5, "%s: skip, no nutscan_ip_range_list_t was specified", __func__);
+		return 0;
+	}
+
+	if (!start_ip && !end_ip) {
+		upsdebugx(5, "%s: skip, no addresses were provided", __func__);
+		return irl->ip_ranges_count;
+	}
+
+	if (start_ip == NULL) {
+		upsdebugx(5, "%s: only end address was provided, setting start to same: %s",
+			 __func__, end_ip);
+		start_ip = end_ip;
+	}
+	if (end_ip == NULL) {
+		upsdebugx(5, "%s: only start address was provided, setting end to same: %s",
+			 __func__, start_ip);
+		end_ip = start_ip;
+	}
+
+	p = xcalloc(1, sizeof(nutscan_ip_range_t));
+
+	if (start_ip == end_ip || strcmp(start_ip, end_ip) <= 0) {
+		p->start_ip = start_ip;
+		p->end_ip = end_ip;
+	} else {
+		p->start_ip = end_ip;
+		p->end_ip = start_ip;
+	}
+
+	p->next = NULL;
+
+	if (!irl->ip_ranges) {
+		/* First entry */
+		irl->ip_ranges = p;
+	}
+
+	if (irl->ip_ranges_last) {
+		/* Got earlier entries, promote the tail */
+		irl->ip_ranges_last->next = p;
+	}
+
+	irl->ip_ranges_last = p;
+	irl->ip_ranges_count++;
+
+	upsdebugx(1, "Recorded IP address range #%" PRIuSIZE ": [%s .. %s]",
+		irl->ip_ranges_count, start_ip, end_ip);
+
+	return irl->ip_ranges_count;
+}
+
+const char * nutscan_stringify_ip_ranges(nutscan_ip_range_list_t *irl)
+{
+	static char buf[LARGEBUF - 64];	/* Leave some space for upsdebugx() prefixes */
+	size_t	len = 0;
+
+	memset(buf, 0, sizeof(buf));
+	len += snprintf(buf + len, sizeof(buf) - len,
+		"(%" PRIuSIZE ")[",
+		(irl ? irl->ip_ranges_count : 0));
+
+	if (irl && irl->ip_ranges && irl->ip_ranges_count) {
+		nutscan_ip_range_t	*p;
+		size_t	j;
+
+		for (
+			j = 0, p = irl->ip_ranges;
+			p && len < sizeof(buf) - 6;
+			p = p->next, j++
+		 ) {
+			if (j) {
+				buf[len++] = ',';
+				buf[len++] = ' ';
+			}
+
+			if (len > sizeof(buf) - 6) {
+				/* Too little left, but enough for this */
+				buf[len++] = '.';
+				buf[len++] = '.';
+				buf[len++] = '.';
+				break;
+			}
+
+			if (p->start_ip == p->end_ip || !strcmp(p->start_ip, p->end_ip)) {
+				len += snprintf(buf + len, sizeof(buf) - len,
+					"%s", p->start_ip);
+			} else {
+				len += snprintf(buf + len, sizeof(buf) - len,
+					"%s .. %s", p->start_ip, p->end_ip);
+			}
+		}
+	}
+
+	if (len < sizeof(buf) - 1)
+		buf[len++] = ']';
+
+	return buf;
+}
+
+/* Return the first ip or NULL if error */
+char * nutscan_ip_ranges_iter_init(nutscan_ip_range_list_iter_t *irliter, const nutscan_ip_range_list_t *irl)
+{
+	char	*ip_str;
+
+	if (!irliter) {
+		upsdebugx(5, "%s: skip, no nutscan_ip_range_list_iter_t was specified", __func__);
+		return NULL;
+	}
+
+	if (!irl) {
+		upsdebugx(5, "%s: skip, no nutscan_ip_range_list_t was specified", __func__);
+		return NULL;
+	}
+
+	if (!irl->ip_ranges) {
+		upsdebugx(5, "%s: skip, empty nutscan_ip_range_list_t was specified", __func__);
+		return NULL;
+	}
+
+	memset(irliter, 0, sizeof(nutscan_ip_range_list_iter_t));
+	irliter->irl = irl;
+	irliter->ip_ranges_iter = irl->ip_ranges;
+	memset(&(irliter->curr_ip_iter), 0, sizeof(nutscan_ip_iter_t));
+
+	upsdebugx(4, "%s: beginning iteration with first IP range [%s .. %s]",
+		__func__, irliter->ip_ranges_iter->start_ip,
+		irliter->ip_ranges_iter->end_ip);
+
+	ip_str = nutscan_ip_iter_init(
+		&(irliter->curr_ip_iter),
+		irliter->ip_ranges_iter->start_ip,
+		irliter->ip_ranges_iter->end_ip);
+
+	upsdebugx(5, "%s: got IP from range: %s", __func__, NUT_STRARG(ip_str));
+	return ip_str;
+}
+
+/* return the next IP
+ * return NULL if there is no more IP
+ */
+char * nutscan_ip_ranges_iter_inc(nutscan_ip_range_list_iter_t *irliter)
+{
+	char	*ip_str;
+
+	if (!irliter) {
+		upsdebugx(5, "%s: skip, no nutscan_ip_range_list_iter_t was specified", __func__);
+		return NULL;
+	}
+
+	if (!irliter->irl) {
+		upsdebugx(5, "%s: skip, no nutscan_ip_range_list_t was specified", __func__);
+		return NULL;
+	}
+
+	if (!irliter->irl->ip_ranges) {
+		upsdebugx(5, "%s: skip, empty nutscan_ip_range_list_t was specified", __func__);
+		return NULL;
+	}
+
+	if (!irliter->ip_ranges_iter) {
+		upsdebugx(5, "%s: skip, finished nutscan_ip_range_list_t was specified", __func__);
+		return NULL;
+	}
+
+	ip_str = nutscan_ip_iter_inc(&(irliter->curr_ip_iter));
+
+	if (ip_str) {
+		upsdebugx(5, "%s: got IP from range: %s", __func__, NUT_STRARG(ip_str));
+		return ip_str;
+	}
+
+	upsdebugx(5, "%s: end of IP range [%s .. %s]",
+		__func__, irliter->ip_ranges_iter->start_ip,
+		irliter->ip_ranges_iter->end_ip);
+
+	/* else: end of one range, try to switch to next */
+	irliter->ip_ranges_iter = irliter->ip_ranges_iter->next;
+	if (!(irliter->ip_ranges_iter)) {
+		upsdebugx(5, "%s: end of whole IP range list", __func__);
+		return NULL;
+	}
+
+	memset(&(irliter->curr_ip_iter), 0, sizeof(nutscan_ip_iter_t));
+	upsdebugx(4, "%s: beginning iteration with next IP range [%s .. %s]",
+		__func__, irliter->ip_ranges_iter->start_ip,
+		irliter->ip_ranges_iter->end_ip);
+
+	ip_str = nutscan_ip_iter_init(
+		&(irliter->curr_ip_iter),
+		irliter->ip_ranges_iter->start_ip,
+		irliter->ip_ranges_iter->end_ip);
+
+	upsdebugx(5, "%s: got IP from range: %s", __func__, NUT_STRARG(ip_str));
+	return ip_str;
+}
+
 /* Return the first ip or NULL if error */
 char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, const char * startIP, const char * stopIP)
 {
@@ -204,8 +450,8 @@ char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, const char * startIP, const 
 }
 
 /* return the next IP
-return NULL if there is no more IP
-*/
+ * return NULL if there is no more IP
+ */
 char * nutscan_ip_iter_inc(nutscan_ip_iter_t * ip)
 {
 	char host[SMALLBUF];
