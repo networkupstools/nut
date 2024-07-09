@@ -1475,11 +1475,12 @@ dnl For `nut-scanner -m auto` modes, see also:
 dnl https://stackoverflow.com/a/41151132/4715872
 dnl https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-getadaptersaddresses (since ~Windows Vista)
 dnl https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-getadaptersinfo (before Windows XP; not recommended later)
+dnl Must check in global context, to have it not-defined where appropriate too
+NUT_CHECK_HEADER_IPHLPAPI
 AC_CHECK_FUNCS([getifaddrs], [], [
     AS_CASE([${target_os}],
         [*mingw*], [
             dnl Check for GetAdaptersAddresses / GetAdaptersInfo
-            NUT_CHECK_HEADER_IPHLPAPI
             AS_IF([test x"${nut_cv_header_iphlpapi_h}" = xyes], [
 
                 myIPHLPAPI_TEST_HEADERS='
