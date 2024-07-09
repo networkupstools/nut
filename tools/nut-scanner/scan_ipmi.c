@@ -602,7 +602,35 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
  * Return NULL on error, or a valid nutscan_device_t otherwise */
 nutscan_device_t * nutscan_scan_ipmi(const char * start_ip, const char * stop_ip, nutscan_ipmi_t * sec)
 {
-	nutscan_ip_iter_t ip;
+	nutscan_device_t	*ndret;
+
+	/* Are we scanning locally, or through the network? */
+	if (start_ip || stop_ip) {
+		nutscan_ip_range_list_t irl;
+
+		nutscan_init_ip_ranges(&irl);
+		nutscan_add_ip_range(&irl, (char *)start_ip, (char *)stop_ip);
+
+		ndret = nutscan_scan_ip_range_ipmi(&irl, sec);
+
+		/* Avoid nuking caller's strings here */
+		irl.ip_ranges->start_ip = NULL;
+		irl.ip_ranges->end_ip = NULL;
+		nutscan_free_ip_ranges(&irl);
+	} else {
+		/* Probe local device */
+		ndret = nutscan_scan_ip_range_ipmi(NULL, sec);
+	}
+
+	return ndret;
+}
+
+/* General IPMI scan entry point: scan 1 to n devices, local or remote,
+ * for IPMI support
+ * Return NULL on error, or a valid nutscan_device_t otherwise */
+nutscan_device_t * nutscan_scan_ip_range_ipmi(nutscan_ip_range_list_t * irl, nutscan_ipmi_t * sec)
+{
+	nutscan_ip_range_list_iter_t ip;
 	char * ip_str = NULL;
 	nutscan_ipmi_t * tmp_sec;
 	nutscan_device_t * nut_dev = NULL;
@@ -613,20 +641,23 @@ nutscan_device_t * nutscan_scan_ipmi(const char * start_ip, const char * stop_ip
 	}
 
 	/* Are we scanning locally, or through the network? */
-	if (start_ip == NULL)
+	if (irl == NULL || irl->ip_ranges == NULL)
 	{
 		upsdebugx(1, "%s: Local PSU scan", __func__);
 		current_nut_dev = nutscan_scan_ipmi_device(NULL, NULL);
 	}
 	else {
-		if (start_ip == stop_ip || !stop_ip) {
+		if (irl->ip_ranges_count == 1
+		&& (irl->ip_ranges->start_ip == irl->ip_ranges->end_ip
+		    || !strcmp(irl->ip_ranges->start_ip, irl->ip_ranges->end_ip)
+		)) {
 			upsdebugx(1, "%s: Scanning remote PSU for single IP address: %s",
-				__func__, start_ip);
+				__func__, irl->ip_ranges->start_ip);
 		} else {
-			upsdebugx(1, "%s: Scanning remote PSU for IP address range: %s .. %s",
-				__func__, start_ip, stop_ip);
+			upsdebugx(1, "%s: Scanning remote PSU for IP address range(s): %s",
+				__func__, nutscan_stringify_ip_ranges(irl));
 		}
-		ip_str = nutscan_ip_iter_init(&ip, start_ip, stop_ip);
+		ip_str = nutscan_ip_ranges_iter_init(&ip, irl);
 
 		while (ip_str != NULL) {
 			tmp_sec = malloc(sizeof(nutscan_ipmi_t));
@@ -637,7 +668,7 @@ nutscan_device_t * nutscan_scan_ipmi(const char * start_ip, const char * stop_ip
 				current_nut_dev = nutscan_add_device_to_device(current_nut_dev, nut_dev);
 			}
 			/* Prepare the next iteration */
-			ip_str = nutscan_ip_iter_inc(&ip);
+			ip_str = nutscan_ip_ranges_iter_inc(&ip);
 		}
 	}
 
@@ -651,6 +682,15 @@ nutscan_device_t *  nutscan_scan_ipmi(const char * startIP, const char * stopIP,
 {
 	NUT_UNUSED_VARIABLE(startIP);
 	NUT_UNUSED_VARIABLE(stopIP);
+	NUT_UNUSED_VARIABLE(sec);
+
+	return NULL;
+}
+
+/* stub function */
+nutscan_device_t *  nutscan_scan_ip_range_ipmi(nutscan_ip_range_list_t * irl, nutscan_ipmi_t * sec)
+{
+	NUT_UNUSED_VARIABLE(irl);
 	NUT_UNUSED_VARIABLE(sec);
 
 	return NULL;

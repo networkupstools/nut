@@ -300,31 +300,11 @@ static void * run_avahi(void *arg)
 static void * run_ipmi(void * arg)
 {
 	nutscan_ipmi_t * sec = (nutscan_ipmi_t *)arg;
-	nutscan_device_t * dev_ret;
-	nutscan_ip_range_t *p = ip_ranges_list.ip_ranges;
-
+	
 	upsdebugx(2, "Entering %s for %" PRIuSIZE " IP address range(s)",
 		__func__, ip_ranges_list.ip_ranges_count);
 
-	if (!p) {
-		/* Probe local device */
-		dev[TYPE_IPMI] = nutscan_scan_ipmi(NULL, NULL, sec);
-
-		upsdebugx(2, "Finished %s query", __func__);
-		return NULL;
-	}
-
-	dev[TYPE_IPMI] = NULL;
-	while (p) {
-		dev_ret = nutscan_scan_ipmi(p->start_ip, p->end_ip, sec);
-		if (!dev[TYPE_IPMI]) {
-			dev[TYPE_IPMI] = dev_ret;
-		} else {
-			dev[TYPE_IPMI] = nutscan_rewind_device(
-				nutscan_add_device_to_device(dev_ret, dev[TYPE_IPMI]));
-		}
-		p = p->next;
-	}
+	dev[TYPE_IPMI] = nutscan_scan_ip_range_ipmi(&ip_ranges_list, sec);
 
 	upsdebugx(2, "Finished %s loop", __func__);
 	return NULL;
