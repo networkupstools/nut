@@ -200,6 +200,7 @@ SRC_DEV_PAGES = \
 	nutscan_display_parsable.txt \
 	nutscan_init_ip_ranges.txt \
 	nutscan_free_ip_ranges.txt \
+	nutscan_stringify_ip_ranges.txt \
 	nutscan_add_ip_range.txt \
 	nutscan_ip_ranges_iter_init.txt \
 	nutscan_ip_ranges_iter_inc.txt \
@@ -323,6 +324,7 @@ MAN3_DEV_PAGES = \
 	nutscan_display_parsable.3 \
 	nutscan_init_ip_ranges.3 \
 	nutscan_free_ip_ranges.3 \
+	nutscan_stringify_ip_ranges.3 \
 	nutscan_add_ip_range.3 \
 	nutscan_ip_ranges_iter_init.3 \
 	nutscan_ip_ranges_iter_inc.3 \
@@ -415,6 +417,7 @@ HTML_DEV_MANS = \
 	nutscan_display_parsable.html \
 	nutscan_init_ip_ranges.html \
 	nutscan_free_ip_ranges.html \
+	nutscan_stringify_ip_ranges.html \
 	nutscan_add_ip_range.html \
 	nutscan_ip_ranges_iter_init.html \
 	nutscan_ip_ranges_iter_inc.html \

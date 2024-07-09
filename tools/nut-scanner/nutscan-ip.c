@@ -189,6 +189,54 @@ size_t nutscan_add_ip_range(nutscan_ip_range_list_t *irl, char * start_ip, char 
 	return irl->ip_ranges_count;
 }
 
+const char * nutscan_stringify_ip_ranges(nutscan_ip_range_list_t *irl)
+{
+	static char buf[LARGEBUF - 64];	/* Leave some space for upsdebugx() prefixes */
+	size_t	len = 0;
+
+	memset(buf, 0, sizeof(buf));
+	len += snprintf(buf + len, sizeof(buf) - len,
+		"(%" PRIuSIZE ")[",
+		(irl ? irl->ip_ranges_count : 0));
+
+	if (irl && irl->ip_ranges && irl->ip_ranges_count) {
+		nutscan_ip_range_t	*p;
+		size_t	j;
+
+		for (
+			j = 0, p = irl->ip_ranges;
+			p && len < sizeof(buf) - 6;
+			p = p->next, j++
+		 ) {
+			if (j) {
+				buf[len++] = ',';
+				buf[len++] = ' ';
+			}
+
+			if (len > sizeof(buf) - 6) {
+				/* Too little left, but enough for this */
+				buf[len++] = '.';
+				buf[len++] = '.';
+				buf[len++] = '.';
+				break;
+			}
+
+			if (p->start_ip == p->end_ip || !strcmp(p->start_ip, p->end_ip)) {
+				len += snprintf(buf + len, sizeof(buf) - len,
+					"%s", p->start_ip);
+			} else {
+				len += snprintf(buf + len, sizeof(buf) - len,
+					"%s .. %s", p->start_ip, p->end_ip);
+			}
+		}
+	}
+
+	if (len < sizeof(buf) - 1)
+		buf[len++] = ']';
+
+	return buf;
+}
+
 /* Return the first ip or NULL if error */
 char * nutscan_ip_ranges_iter_init(nutscan_ip_range_list_iter_t *irliter, const nutscan_ip_range_list_t *irl)
 {

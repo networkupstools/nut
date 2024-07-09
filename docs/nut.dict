@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3185 utf-8
+personal_ws-1.1 en 3186 utf-8
 AAC
 AAS
 ABI
@@ -2831,6 +2831,7 @@ strcpy
 strdup
 strerror
 strftime
+stringify
 strlen
 strnlen
 strptime

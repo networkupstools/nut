@@ -87,6 +87,10 @@ nutscan_ip_range_list_t *nutscan_init_ip_ranges(nutscan_ip_range_list_t *irl);
  */
 void nutscan_free_ip_ranges(nutscan_ip_range_list_t *irl);
 
+/* Prints contents of irl into a groovy-like string,
+ * using a static buffer (rewritten by each call) */
+const char * nutscan_stringify_ip_ranges(nutscan_ip_range_list_t *irl);
+
 size_t nutscan_add_ip_range(nutscan_ip_range_list_t *irl, char * start_ip, char * end_ip);
 
 /* Iterator over given nutscan_ip_range_list_t structure
