@@ -49,16 +49,18 @@
 # include <sys/ioctl.h>
 # include <net/if.h>
 #else
-/* Those 2 files for support of getaddrinfo, getnameinfo and freeaddrinfo
-   on Windows 2000 and older versions */
-/* // TODO: complete "-m auto" support
+# if defined HAVE_WINSOCK2_H && HAVE_WINSOCK2_H
+#  include <winsock2.h>
+# endif
+# if defined HAVE_IPHLPAPI_H && HAVE_IPHLPAPI_H
+#  include <iphlpapi.h>
+# endif
 # include <ws2tcpip.h>
 # include <wspiapi.h>
 # ifndef AI_NUMERICSERV
 #  define AI_NUMERICSERV NI_NUMERICSERV
 # endif
 # include "wincompat.h"
-*/
 #endif
 
 #ifdef HAVE_PTHREAD
@@ -291,11 +293,54 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 	char	*s = NULL;
 	int	errno_saved;
 
-#ifndef WIN32
-	/* NOTE: Would need WIN32-specific implementation */
+#ifdef HAVE_GETIFADDRS
+	/* NOTE: this ifdef is more precise than ifdef WIN32; assuming
+	 * its implementation of getifaddrs() would actually be functional
+	 * if it appears in the OS or mingw/cygwin/... shims eventually.
+	 * If it would be *not* functional, may have to revert to checking
+	 * (also?) for WIN32 here and below. */
 	/* Inspired by https://stackoverflow.com/a/63789267/4715872 */
-	struct ifaddrs	*ifap;
+	struct ifaddrs	*ifap = NULL, *ifa = NULL;
+#elif defined WIN32 && defined HAVE_GETADAPTERSADDRESSES
+	/* TODO: The two WIN32 approaches overlap quite a bit, deduplicate!
+	 * First shot comes straight from examples as a starting point, but... */
+	/* For Windows newer than Vista. Here and below, inspired by
+	 * https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-getadaptersaddresses
+	 * https://stackoverflow.com/questions/122208/how-can-i-get-the-ip-address-of-a-local-computer
+	 * https://stackoverflow.com/questions/41139561/find-ip-address-of-the-machine-in-c/41151132#41151132
+	 */
+
+	#define WIN32_GAA_WORKING_BUFFER_SIZE	15000
+	#define WIN32_GAA_MAX_TRIES	3
+
+	DWORD	dwRetVal = 0;
+
+	/* Set the flags to pass to GetAdaptersAddresses */
+	ULONG	flags = GAA_FLAG_INCLUDE_PREFIX;
+
+	/* default to unspecified address family (both IPv4 and IPv6) */
+	ULONG	family = AF_UNSPEC;
+
+	PIP_ADAPTER_ADDRESSES		pAddresses = NULL;
+	ULONG	outBufLen = 0;
+	ULONG	Iterations = 0;
+
+	PIP_ADAPTER_ADDRESSES		pCurrAddresses = NULL;
+	PIP_ADAPTER_UNICAST_ADDRESS	pUnicast = NULL;
+#elif defined WIN32 && defined HAVE_GETADAPTERSINFO
+	/* For Windows older than XP (present but not recommended
+	 * in later releases). Here and below, inspired by
+	 * https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-getadaptersinfo
+	 */
+
+	PIP_ADAPTER_INFO	pAdapterInfo;
+	PIP_ADAPTER_INFO	pAdapter = NULL;
+	DWORD	dwRetVal = 0;
+
+	ULONG	ulOutBufLen = sizeof (IP_ADAPTER_INFO);
 #endif
+
+	upsdebugx(3, "Entering %s('%s')", __func__, arg_addr);
 
 	/* Is this a `-m auto<something_optional>` mode? */
 	if (!strncmp(arg_addr, "auto", 4)) {
@@ -386,13 +431,144 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 	}
 
 	/* Handle `-m auto*` modes below */
-#ifndef WIN32
-	if (getifaddrs(&ifap) < 0) {
+#ifdef HAVE_GETIFADDRS
+	upsdebugx(4, "%s: using getifaddrs()", __func__);
+
+	if (getifaddrs(&ifap) < 0 || !ifap) {
+		if (ifap)
+			freeifaddrs(ifap);
 		fatalx(EXIT_FAILURE,
 			"Failed to getifaddrs() for connected subnet scan: %s\n",
 			strerror(errno));
-	} else {
-		struct ifaddrs	*ifa;
+		/* TOTHINK: Non-fatal, just return / goto finish?
+		 * Either way, do not proceed with code below! */
+	}
+#elif defined WIN32 && defined HAVE_GETADAPTERSADDRESSES
+	upsdebugx(4, "%s: using GetAdaptersAddresses()", __func__);
+
+	switch (auto_nets) {
+	case 4:
+		family = AF_INET;
+		break;
+
+	case 6:
+		family = AF_INET6;
+		break;
+
+	case 46:
+	default:
+		family = AF_UNSPEC;
+		break;
+	}
+
+	/* Allocate a 15 KB buffer to start with; we will be told
+	 * if more is needed (hence the loop below) */
+	outBufLen = WIN32_GAA_WORKING_BUFFER_SIZE;
+
+	do {
+		pAddresses = (IP_ADAPTER_ADDRESSES *) xcalloc(1, outBufLen);
+
+		dwRetVal =
+		    GetAdaptersAddresses(family, flags, NULL, pAddresses, &outBufLen);
+
+		if (dwRetVal == ERROR_BUFFER_OVERFLOW) {
+		    free(pAddresses);
+		    pAddresses = NULL;
+		} else {
+		    break;
+		}
+
+		Iterations++;
+	} while (
+		(dwRetVal == ERROR_BUFFER_OVERFLOW)
+		&& (Iterations < WIN32_GAA_MAX_TRIES)
+		);
+
+	if (dwRetVal != NO_ERROR) {
+		char	msgPrefix[LARGEBUF];
+
+		snprintf(msgPrefix, sizeof(msgPrefix),
+			"Failed to GetAdaptersAddresses() for "
+			"connected subnet scan (%" PRIiMAX ")",
+			(intmax_t)dwRetVal);
+
+		if (pAddresses) {
+			free(pAddresses);
+			pAddresses = NULL;
+		}
+
+		if (dwRetVal == ERROR_NO_DATA) {
+			fatalx(EXIT_FAILURE, "%s: %s",
+				msgPrefix,
+				"No addresses were found for the requested parameters");
+		} else {
+			LPVOID	lpMsgBuf = NULL;
+
+			if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+				FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, 
+				NULL, dwRetVal, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),   
+				// Default language
+				(LPTSTR) & lpMsgBuf, 0, NULL) && lpMsgBuf
+			) {
+				fatalx(EXIT_FAILURE, "%s: %s",
+					msgPrefix,
+					(LPTSTR)lpMsgBuf);
+			}
+
+			if (lpMsgBuf)
+				LocalFree(lpMsgBuf);
+			fatalx(EXIT_FAILURE, "%s", msgPrefix);
+		}
+
+		/* TOTHINK: Non-fatal, just return / goto finish?
+		 * Either way, do not proceed with code below! */
+	}
+#elif defined WIN32 && defined HAVE_GETADAPTERSINFO
+	upsdebugx(4, "%s: using GetAdaptersInfo()", __func__);
+
+	/* NOTE: IPv4 only! */
+	if (auto_nets == 6) {
+		fatalx(EXIT_FAILURE,
+			"Requested explicitly to query only IPv6 addresses, "
+			"but current system libraries support only IPv4."
+			);
+
+		/* TOTHINK: Non-fatal, just return / goto finish?
+		 * Either way, do not proceed with code below! */
+	}
+
+	pAdapterInfo = (IP_ADAPTER_INFO *) xcalloc(1, sizeof (IP_ADAPTER_INFO));
+
+	/* Make an initial call to GetAdaptersInfo to get
+	 * the necessary size into the ulOutBufLen variable */
+	if (GetAdaptersInfo(pAdapterInfo, &ulOutBufLen) == ERROR_BUFFER_OVERFLOW) {
+		free(pAdapterInfo);
+		pAdapterInfo = (IP_ADAPTER_INFO *) xcalloc(1, ulOutBufLen);
+	}
+
+	if ((dwRetVal = GetAdaptersInfo(pAdapterInfo, &ulOutBufLen)) != NO_ERROR) {
+		if (pAdapterInfo) {
+			free(pAdapterInfo);
+			pAdapterInfo = NULL;
+		}
+
+		fatalx(EXIT_FAILURE,
+			"Failed to GetAdaptersAddresses() for "
+			"connected subnet scan (%" PRIiMAX ")",
+			(intmax_t)dwRetVal);
+
+		/* TOTHINK: Non-fatal, just return / goto finish?
+		 * Either way, do not proceed with code below! */
+	}
+#else
+	fatalx(EXIT_FAILURE,
+		"Have no way to query local interface addresses on this "
+		"platform, please run without the '-m auto*' options!");
+#endif
+
+	/* Initial query did not fail, start a new scope
+	 * for more variables, to be allocated just now */
+	{
 		char	msg[LARGEBUF];
 		char	cidr[LARGEBUF];
 		/* Note: INET6_ADDRSTRLEN is large enough for IPv4 too,
@@ -402,19 +578,97 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 		char	mask[INET6_ADDRSTRLEN];
 		int	masklen_subnet = 0;
 		int	masklen_hosts = 0;
+		uintmax_t	ifflags = 0, iftype = 0;
 
+#ifdef HAVE_GETIFADDRS
+		/* Every IP address (even if aliases on same interfaces)
+		 * has its own "ifa" value.
+		 */
 		for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
-			if (ifa->ifa_addr) {
+			const char	*ifname = ifa->ifa_name;
+
+			ifflags = (uintmax_t)ifa->ifa_flags;
+			iftype  = ifflags;
+
+			if (ifa->ifa_addr)
+#elif defined WIN32 && defined HAVE_GETADAPTERSADDRESSES
+		/* Nested structure can hold many addresses of different
+		 * families assigned to the same physical interface.
+		 * https://learn.microsoft.com/en-us/windows/win32/api/iptypes/ns-iptypes-ip_adapter_addresses_lh
+		 * https://learn.microsoft.com/en-us/windows/win32/api/iptypes/ns-iptypes-ip_adapter_unicast_address_lh
+		 */
+		for (pCurrAddresses = pAddresses; pCurrAddresses; pCurrAddresses = pCurrAddresses->Next) {
+			char	ifname[LARGEBUF];
+			size_t	ifnamelen = 0;
+
+			ifflags = (uintmax_t)pCurrAddresses->Flags;
+			iftype  = (uintmax_t)pCurrAddresses->IfType;
+
+			/* Convert some fields from wide chars */
+			ifnamelen += snprintf(
+				ifname, 
+				sizeof(ifname),
+				"%s (",
+				pCurrAddresses->AdapterName);
+			ifnamelen += wcstombs(
+				ifname + ifnamelen,
+				pCurrAddresses->FriendlyName,
+				sizeof(ifname) - ifnamelen);
+			ifnamelen += snprintf(
+				ifname + ifnamelen,
+				sizeof(ifname) - ifnamelen,
+				"): ");
+			ifnamelen += wcstombs(
+				ifname + ifnamelen,
+				pCurrAddresses->Description,
+				sizeof(ifname) - ifnamelen);
+
+			if ( (ifflags & IP_ADAPTER_IPV6_ENABLED)
+			||   (ifflags & IP_ADAPTER_IPV4_ENABLED)
+			) for (pUnicast = pCurrAddresses->FirstUnicastAddress; pUnicast; pUnicast = pUnicast->Next)
+#elif defined WIN32 && defined HAVE_GETADAPTERSINFO
+		/* NOTE: IPv4 only!
+		 * https://learn.microsoft.com/en-us/windows/win32/api/iptypes/ns-iptypes-ip_adapter_info
+		 * https://learn.microsoft.com/en-us/windows/win32/api/iptypes/ns-iptypes-ip_addr_string
+		 * https://learn.microsoft.com/en-us/windows/win32/api/iptypes/ns-iptypes-ip_address_string
+		 */
+		for (pAdapter = pAdapterInfo; pAdapter; pAdapter = pAdapter->Next) {
+			IP_ADDR_STRING	*pUnicast;
+			char	ifname[LARGEBUF];
+			size_t	ifnamelen = 0;
+
+			iftype  = (uintmax_t)pAdapter->Type;
+			ifflags = iftype; /* The nearest they have to flags */
+			ifnamelen += snprintf(
+				ifname,
+				sizeof(ifname),
+				"%s: %s",
+				pAdapter->AdapterName,
+				pAdapter->Description);
+
+			for (pUnicast = &(pAdapter->IpAddressList); pUnicast; pUnicast = pUnicast->Next)
+#endif
+			{	/* Have some address to handle */
 				memset(msg, 0, sizeof(msg));
 				memset(addr, 0, sizeof(addr));
 				memset(mask, 0, sizeof(mask));
 				masklen_subnet = -1;
 
-				if (ifa->ifa_addr->sa_family == AF_INET6) {
+#if defined HAVE_GETIFADDRS || (defined WIN32 && defined HAVE_GETADAPTERSADDRESSES)
+# ifdef HAVE_GETIFADDRS
+				if (ifa->ifa_addr->sa_family == AF_INET6)
+# elif defined WIN32 && defined HAVE_GETADAPTERSADDRESSES
+				if (pUnicast->Address.lpSockaddr->sa_family == AF_INET6)
+# elif defined WIN32 && defined HAVE_GETADAPTERSINFO
+				if (0)	/* No IPv6 for this library call */
+# endif
+				{	/* IPv6 */
+# ifdef HAVE_GETIFADDRS
 					uint8_t	i, j;
 
 					/* Ensure proper alignment */
-					struct sockaddr_in6 sm;
+					struct sockaddr_in6 sa, sm;
+					memcpy (&sa, ifa->ifa_addr, sizeof(struct sockaddr_in6));
 					memcpy (&sm, ifa->ifa_netmask, sizeof(struct sockaddr_in6));
 
 					masklen_subnet = 0;
@@ -425,22 +679,55 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 							i >>= 1;
 						}
 					}
+# elif defined WIN32 && defined HAVE_GETADAPTERSADDRESSES
+					/* This structure member is only available on Windows Vista and later.
+					 * If we need earlier versions built for, need to use common struct.
+					 * https://learn.microsoft.com/en-us/windows/win32/api/iptypes/ns-iptypes-ip_adapter_unicast_address_lh
+					 */
+					masklen_subnet = pUnicast->OnLinkPrefixLength;
+# elif defined WIN32 && defined HAVE_GETADAPTERSINFO
+					masklen_subnet = 128;	/* no-op anyway */
+# endif
 					masklen_hosts = 128 - masklen_subnet;
 
-					getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in6), addr, sizeof(addr), NULL, 0, NI_NUMERICHOST);
-					getnameinfo(ifa->ifa_netmask, sizeof(struct sockaddr_in6), mask, sizeof(mask), NULL, 0, NI_NUMERICHOST);
+# ifdef HAVE_GETIFADDRS
+					getnameinfo((struct sockaddr *)&sa, sizeof(struct sockaddr_in6), addr, sizeof(addr), NULL, 0, NI_NUMERICHOST);
+					getnameinfo((struct sockaddr *)&sm, sizeof(struct sockaddr_in6), mask, sizeof(mask), NULL, 0, NI_NUMERICHOST);
+# elif defined WIN32 && defined HAVE_GETADAPTERSADDRESSES
+					getnameinfo(pUnicast->Address.lpSockaddr, sizeof(struct sockaddr_in6), addr, sizeof(addr), NULL, 0, NI_NUMERICHOST);
+					/* We have no real need for mask as an IP
+					 * string except debug logs, so let it be */
+					snprintf(mask, sizeof(mask), "/%i", masklen_subnet);
+# elif defined WIN32 && defined HAVE_GETADAPTERSINFO
+# endif
+
 					snprintf(msg, sizeof(msg),
-						"Interface: %s\tAddress: %s\tMask: %s (subnet: %i, hosts: %i)\tFlags: %08" PRIxMAX,
-						ifa->ifa_name, addr, mask,
+						"Interface: %s\tAddress: %s\tMask: %s (subnet: %i, hosts: %i)\tFlags: %08" PRIxMAX "\tType: %08" PRIxMAX,
+						ifname, addr, mask,
 						masklen_subnet, masklen_hosts,
-						(uintmax_t)ifa->ifa_flags);
-				} else if (ifa->ifa_addr->sa_family == AF_INET) {
+						ifflags, iftype);
+				}	/* IPv6 */
+#endif	/* HAVE_GETIFADDRS || HAVE_GETADAPTERSADDRESSES */
+				
+#ifdef HAVE_GETIFADDRS
+				else
+				if (ifa->ifa_addr->sa_family == AF_INET)
+#elif defined WIN32 && defined HAVE_GETADAPTERSADDRESSES
+				else
+				if (pUnicast->Address.lpSockaddr->sa_family == AF_INET)
+#elif defined WIN32 && defined HAVE_GETADAPTERSINFO
+				/* NOTE: No "else", no "if": IPv6 was skipped
+				 * on this platform and IPv4 was the only option */
+#endif
+				{	/* IPv4 */
+#ifdef HAVE_GETIFADDRS
 					in_addr_t	i;
 
 					/* Ensure proper alignment */
 					struct sockaddr_in sa, sm;
 					memcpy (&sa, ifa->ifa_addr, sizeof(struct sockaddr_in));
 					memcpy (&sm, ifa->ifa_netmask, sizeof(struct sockaddr_in));
+
 					snprintf(addr, sizeof(addr), "%s", inet_ntoa(sa.sin_addr));
 					snprintf(mask, sizeof(mask), "%s", inet_ntoa(sm.sin_addr));
 
@@ -450,37 +737,129 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 						masklen_subnet += i & 1;
 						i >>= 1;
 					}
+#elif defined WIN32 && defined HAVE_GETADAPTERSADDRESSES
+					masklen_subnet = pUnicast->OnLinkPrefixLength;
+
+					getnameinfo(pUnicast->Address.lpSockaddr, sizeof(struct sockaddr_in), addr, sizeof(addr), NULL, 0, NI_NUMERICHOST);
+					/* We have no real need for mask as an IP
+					 * string except debug logs, so let it be */
+					snprintf(mask, sizeof(mask), "/%i", masklen_subnet);
+#elif defined WIN32 && defined HAVE_GETADAPTERSINFO
+					struct sockaddr_in	sm;
+
+					snprintf(addr, sizeof(addr) > 16 ? 16 : sizeof(addr), "%s", pUnicast->IpAddress.String);
+					snprintf(mask, sizeof(mask) > 16 ? 16 : sizeof(mask), "%s", pUnicast->IpMask.String);
+
+					masklen_subnet = 0;
+					if (inet_pton(AF_INET, mask, &sm.sin_addr)) {
+						uint32_t	i = sm.sin_addr.s_addr;
+						while (i) {
+							masklen_subnet += i & 1;
+							i >>= 1;
+						}
+					}
+#endif
 					masklen_hosts = 32 - masklen_subnet;
 
 					snprintf(msg, sizeof(msg),
-						"Interface: %s\tAddress: %s\tMask: %s (subnet: %i, hosts: %i)\tFlags: %08" PRIxMAX,
-						ifa->ifa_name, addr, mask,
+						"Interface: %s\tAddress: %s\tMask: %s (subnet: %i, hosts: %i)\tFlags: %08" PRIxMAX "\tType: %08" PRIxMAX,
+						ifname, addr, mask,
 						masklen_subnet, masklen_hosts,
-						(uintmax_t)ifa->ifa_flags);
-/*
-				} else {
-					snprintf(msg, sizeof(msg), "Addr family: %" PRIuMAX, (intmax_t)ifa->ifa_addr->sa_family);
-*/
-				}
+						ifflags, iftype);
+				}	/* IPv4 */
 
+#ifdef HAVE_GETIFADDRS
+/*
+				else {
+					snprintf(msg, sizeof(msg), "Addr family: %" PRIuMAX, (intmax_t)ifa->ifa_addr->sa_family);
+				}
+*/
+#endif
+
+#ifdef HAVE_GETIFADDRS
 				if (ifa->ifa_addr->sa_family == AF_INET6 || ifa->ifa_addr->sa_family == AF_INET) {
-					if (ifa->ifa_flags & IFF_LOOPBACK)
+					if (iftype & IFF_LOOPBACK)
 						snprintfcat(msg, sizeof(msg), " IFF_LOOPBACK");
-					if (ifa->ifa_flags & IFF_UP)
+					if (iftype & IFF_UP)
 						snprintfcat(msg, sizeof(msg), " IFF_UP");
-					if (ifa->ifa_flags & IFF_RUNNING)
+					if (iftype & IFF_RUNNING)
 						snprintfcat(msg, sizeof(msg), " IFF_RUNNING");
-					if (ifa->ifa_flags & IFF_BROADCAST)
+					if (iftype & IFF_BROADCAST)
 						snprintfcat(msg, sizeof(msg), " IFF_BROADCAST(is assigned)");
+#elif defined WIN32 && defined HAVE_GETADAPTERSADDRESSES
+				/* https://learn.microsoft.com/en-us/windows/win32/api/nldef/ne-nldef-nl_prefix_origin
+				 * https://learn.microsoft.com/en-us/windows/win32/api/nldef/ne-nldef-nl_suffix_origin
+				 */
+				if (pUnicast->Address.lpSockaddr->sa_family == AF_INET
+				||  pUnicast->Address.lpSockaddr->sa_family == AF_INET6
+				) {
+					if (iftype == IF_TYPE_OTHER)
+						snprintfcat(msg, sizeof(msg), " IF_TYPE_OTHER");
+					if (iftype == IF_TYPE_ETHERNET_CSMACD)
+						snprintfcat(msg, sizeof(msg), " IF_TYPE_ETHERNET_CSMACD");
+					if (iftype == IF_TYPE_ISO88025_TOKENRING)
+						snprintfcat(msg, sizeof(msg), " IF_TYPE_ISO88025_TOKENRING");
+					if (iftype == IF_TYPE_PPP)
+						snprintfcat(msg, sizeof(msg), " IF_TYPE_PPP");
+					if (iftype == IF_TYPE_SOFTWARE_LOOPBACK)
+						snprintfcat(msg, sizeof(msg), " IF_TYPE_SOFTWARE_LOOPBACK");
+					if (iftype == IF_TYPE_ATM)
+						snprintfcat(msg, sizeof(msg), " IF_TYPE_ATM");
+					if (iftype == IF_TYPE_IEEE80211)
+						snprintfcat(msg, sizeof(msg), " IF_TYPE_IEEE80211");
+					if (iftype == IF_TYPE_TUNNEL)
+						snprintfcat(msg, sizeof(msg), " IF_TYPE_TUNNEL");
+					if (iftype == IF_TYPE_IEEE1394)
+						snprintfcat(msg, sizeof(msg), " IF_TYPE_IEEE1394");
+#elif defined WIN32 && defined HAVE_GETADAPTERSINFO
+				{	/* Just scoping for this platform */
+					if (iftype == MIB_IF_TYPE_OTHER)
+						snprintfcat(msg, sizeof(msg), " MIB_IF_TYPE_OTHER");
+					if (iftype == MIB_IF_TYPE_ETHERNET)
+						snprintfcat(msg, sizeof(msg), " MIB_IF_TYPE_ETHERNET");
+					if (iftype == IF_TYPE_ISO88025_TOKENRING)
+						snprintfcat(msg, sizeof(msg), " IF_TYPE_ISO88025_TOKENRING");
+					if (iftype == MIB_IF_TYPE_PPP)
+						snprintfcat(msg, sizeof(msg), " MIB_IF_TYPE_PPP");
+					if (iftype == MIB_IF_TYPE_LOOPBACK)
+						snprintfcat(msg, sizeof(msg), " MIB_IF_TYPE_LOOPBACK");
+					if (iftype == MIB_IF_TYPE_SLIP)
+						snprintfcat(msg, sizeof(msg), " MIB_IF_TYPE_SLIP");
+					if (iftype == IF_TYPE_IEEE80211)
+						snprintfcat(msg, sizeof(msg), " IF_TYPE_IEEE80211");
+#endif
 
 					upsdebugx(5, "Discovering getifaddrs(): %s", msg);
 
+#ifdef HAVE_GETIFADDRS
 					if (!(
 						(auto_nets == 46
 					     || (auto_nets == 4 && ifa->ifa_addr->sa_family == AF_INET)
 					     || (auto_nets == 6 && ifa->ifa_addr->sa_family == AF_INET6) )
 					)) {
 						upsdebugx(6, "Subnet ignored: not of the requested address family");
+						continue;
+					}
+#elif defined WIN32 && defined HAVE_GETADAPTERSADDRESSES
+					if (!(
+						(auto_nets == 46
+					     || (auto_nets == 4 && pUnicast->Address.lpSockaddr->sa_family == AF_INET)
+					     || (auto_nets == 6 && pUnicast->Address.lpSockaddr->sa_family == AF_INET6) )
+					)) {
+						upsdebugx(6, "Subnet ignored: not of the requested address family");
+						continue;
+					}
+#elif defined WIN32 && defined HAVE_GETADAPTERSINFO
+#endif
+
+					if (
+						!strcmp(addr, "0.0.0.0")
+						|| !strcmp(addr, "*")
+						|| !strcmp(addr, "::")
+						|| !strcmp(addr, "0::")
+					) {
+						/* FIXME: IPv6 spellings? Search for hex/digits other than 0? */
+						upsdebugx(6, "Subnet ignored: host address not assigned or mis-detected");
 						continue;
 					}
 
@@ -494,19 +873,35 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 						continue;
 					}
 
-					if (ifa->ifa_flags & IFF_LOOPBACK) {
+#ifdef HAVE_GETIFADDRS
+					if (iftype & IFF_LOOPBACK)
+#elif defined WIN32 && defined HAVE_GETADAPTERSADDRESSES
+					if (iftype == IF_TYPE_SOFTWARE_LOOPBACK)
+#elif defined WIN32 && defined HAVE_GETADAPTERSINFO
+					if (iftype == MIB_IF_TYPE_LOOPBACK)
+#endif
+					{
 						upsdebugx(6, "Subnet ignored: loopback");
 						continue;
 					}
+					/* TODO? Filter other interface types? */
 
+#ifdef HAVE_GETIFADDRS
 					if (!(
-						(ifa->ifa_flags & IFF_UP)
-					   &&   (ifa->ifa_flags & IFF_RUNNING)
-					   &&   (ifa->ifa_flags & IFF_BROADCAST)
+						(ifflags & IFF_UP)
+					   &&   (ifflags & IFF_RUNNING)
+					   &&   (ifflags & IFF_BROADCAST)
 					)) {
 						upsdebugx(6, "Subnet ignored: not up and running, with a proper broadcast-able address");
 						continue;
 					}
+#elif defined WIN32 && defined HAVE_GETADAPTERSADDRESSES
+					if (pCurrAddresses->OperStatus != IfOperStatusUp) {
+						upsdebugx(6, "Subnet ignored: not up and running");
+						continue;
+					}
+#elif defined WIN32 && defined HAVE_GETADAPTERSINFO
+#endif
 
 					/* TODO: also rule out "link-local" address ranges
 					 * so we do not issue billions of worthless scans.
@@ -527,13 +922,24 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 				}	/* else AF_UNIX or a dozen other types we do not care about here */
 			}
 		}
+	}
+
+/*finish:*/
+#ifdef HAVE_GETIFADDRS
+	if (ifap) {
 		freeifaddrs(ifap);
 	}
-#else	/* WIN32 */
-	/* https://stackoverflow.com/questions/122208/how-can-i-get-the-ip-address-of-a-local-computer */
-	/* https://github.com/networkupstools/nut/issues/2516 */
-	upsdebugx(0, "Local address detection feature is not completed on Windows, please call back later");
+#elif defined WIN32 && defined HAVE_GETADAPTERSADDRESSES
+	if (pAddresses) {
+		free(pAddresses);
+	}
+#elif defined WIN32 && defined HAVE_GETADAPTERSINFO
+	if (pAdapterInfo) {
+		free(pAdapterInfo);
+	}
 #endif
+
+	upsdebugx(3, "Finished %s('%s')", __func__, arg_addr);
 }
 
 static void show_usage(void)
