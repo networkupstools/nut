@@ -4943,19 +4943,23 @@ dnl When building ON Windows (mingw/MSYS2, cygwin, etc.) fudge these
 dnl path strings back to what native OS methods would recognize.
 AS_CASE([${target_os}],
     [*mingw*], [
+        AC_MSG_NOTICE([Will try to resolve Windows paths to ABS_TOP_SRCDIR and ABS_TOP_BUILDDIR with cygpath or mingw/msys pwd -W tool (would fail if not a native build)])
+
         dnl Cygwin path resolver
         AC_CHECK_TOOL([CYGPATH], [cygpath], [none])
-        AS_IF([test "x${CYGPATH}" != "xnone"], [
+        AS_IF([test "x${CYGPATH}" != "xnone" && test x"`${CYGPATH}`" != x], [
             tmp="`${CYGPATH} -m "${ABS_TOP_BUILDDIR}" | sed -e 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_BUILDDIR="$tmp"
             tmp="`${CYGPATH} -m "${ABS_TOP_SRCDIR}" | sed 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_SRCDIR="$tmp"
         ],[
             dnl MSYS pwd with -W option to resolve
             AC_CHECK_TOOL([PWDTOOL], [pwd], [none])
-            AS_IF([test "x${PWDTOOL}" != "xnone"], [
+            AS_IF([test "x${PWDTOOL}" != "xnone" && test x"`${PWDTOOL} -W`" != x], [
                 tmp="`(cd "${ABS_TOP_BUILDDIR}" && ${PWDTOOL} -W) | sed 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_BUILDDIR="$tmp"
                 tmp="`(cd "${ABS_TOP_SRCDIR}" && ${PWDTOOL} -W) | sed 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_SRCDIR="$tmp"
             ])
         ])
+
+        AC_MSG_NOTICE([FWIW, assuming ABS_TOP_SRCDIR="$ABS_TOP_SRCDIR" and ABS_TOP_BUILDDIR="$ABS_TOP_BUILDDIR"])
 ])
 
 dnl Use these at best for tests (e.g. nutconf), not production code:
