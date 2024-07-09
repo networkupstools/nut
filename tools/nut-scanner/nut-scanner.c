@@ -671,6 +671,13 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 					memcpy (&sa, ifa->ifa_addr, sizeof(struct sockaddr_in6));
 					memcpy (&sm, ifa->ifa_netmask, sizeof(struct sockaddr_in6));
 
+					/* FIXME: Here and below, this code
+					 * technically just counts set bits
+					 * and we assume they are a single
+					 * contiguous range in the address
+					 * portion of the IP address for a
+					 * netmask.
+					 */
 					masklen_subnet = 0;
 					for (j = 0; j < 16; j++) {
 						i = sm.sin6_addr.s6_addr[j];
