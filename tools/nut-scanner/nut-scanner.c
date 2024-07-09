@@ -201,23 +201,11 @@ static void * run_usb(void *arg)
 static void * run_snmp(void * arg)
 {
 	nutscan_snmp_t * sec = (nutscan_snmp_t *)arg;
-	nutscan_device_t * dev_ret;
-	nutscan_ip_range_t *p = ip_ranges_list.ip_ranges;
 
 	upsdebugx(2, "Entering %s for %" PRIuSIZE " IP address range(s)",
 		__func__, ip_ranges_list.ip_ranges_count);
 
-	dev[TYPE_SNMP] = NULL;
-	while (p) {
-		dev_ret = nutscan_scan_snmp(p->start_ip, p->end_ip, timeout, sec);
-		if (!dev[TYPE_SNMP]) {
-			dev[TYPE_SNMP] = dev_ret;
-		} else {
-			dev[TYPE_SNMP] = nutscan_rewind_device(
-				nutscan_add_device_to_device(dev_ret, dev[TYPE_SNMP]));
-		}
-		p = p->next;
-	}
+	dev[TYPE_SNMP] = nutscan_scan_ip_range_snmp(&ip_ranges_list, timeout, sec);
 
 	upsdebugx(2, "Finished %s loop", __func__);
 	return NULL;
