@@ -1470,6 +1470,140 @@ AS_IF([test x"${ac_cv_struct_pollfd}" = xyes],
     ]
     )
 
+NETLIBS_GETADDRS=""
+dnl For `nut-scanner -m auto` modes, see also:
+dnl https://stackoverflow.com/a/41151132/4715872
+dnl https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-getadaptersaddresses (since ~Windows Vista)
+dnl https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-getadaptersinfo (before Windows XP; not recommended later)
+AC_CHECK_FUNCS([getifaddrs], [], [
+    AS_CASE([${target_os}],
+        [*mingw*], [
+            dnl Check for GetAdaptersAddresses / GetAdaptersInfo
+            NUT_CHECK_HEADER_IPHLPAPI
+            AS_IF([test x"${nut_cv_header_iphlpapi_h}" = xyes], [
+
+                myIPHLPAPI_TEST_HEADERS='
+#if HAVE_WINDOWS_H
+# undef inline
+# ifndef WIN32_LEAN_AND_MEAN
+#  define WIN32_LEAN_AND_MEAN
+# endif
+# include <windows.h>
+# if HAVE_WINSOCK2_H
+#  include <winsock2.h>
+# endif
+# if HAVE_IPHLPAPI_H
+#  include <iphlpapi.h>
+# endif
+#endif
+#include <stdio.h>
+'
+
+                myIPHLPAPI_TEST_GAA='
+/* ULONG GetAdaptersAddresses(ULONG af, ULONG flags, void* rsvd, PIP_ADAPTER_ADDRESSES addrs, PULONG sizeptr); */
+IP_ADAPTER_ADDRESSES buf@<:@8@:>@;
+ULONG bufsz = sizeof(buf);
+printf("%ld ", GetAdaptersAddresses(AF_UNSPEC, GAA_FLAG_SKIP_MULTICAST, NULL, buf, &bufsz));
+printf("%ld ", GetAdaptersAddresses(AF_INET, GAA_FLAG_SKIP_DNS_SERVER, NULL, buf, &bufsz));
+printf("%ld ", GetAdaptersAddresses(AF_INET6, GAA_FLAG_SKIP_ANYCAST, NULL, buf, &bufsz))
+/* autoconf adds ";return 0;" */
+'
+
+                AC_CACHE_CHECK([for GetAdaptersAddresses() with IPv4 and IPv6 support],
+                    [ac_cv_func_GetAdaptersAddresses],
+                    [AC_LANG_PUSH([C])
+                    dnl e.g. add "-lws2_32" for mingw builds, maybe "-liphlpapi"
+                    dnl the NETLIBS are set by NUT_CHECK_SOCKETLIB above
+                    SAVED_LIBS="$LIBS"
+                    LIBS="$LIBS $NETLIBS"
+                    AX_RUN_OR_LINK_IFELSE(
+                        [AC_LANG_PROGRAM(
+                            [${myIPHLPAPI_TEST_HEADERS}],
+                            [${myIPHLPAPI_TEST_GAA}])],
+                        [ac_cv_func_GetAdaptersAddresses=yes
+                        ], [
+                            NETLIBS_GETADDRS="-liphlpapi"
+                            LIBS="$LIBS $NETLIBS $NETLIBS_GETADDRS"
+                            AX_RUN_OR_LINK_IFELSE(
+                                [AC_LANG_PROGRAM(
+                                    [${myIPHLPAPI_TEST_HEADERS}],
+                                    [${myIPHLPAPI_TEST_GAA}])],
+                                [
+                                    ac_cv_func_GetAdaptersAddresses=yes
+                                ], [
+                                    ac_cv_func_GetAdaptersAddresses=no
+                                    NETLIBS_GETADDRS=""
+                                ]
+                            )
+                        ]
+                    )
+                    AC_LANG_POP([C])
+                    LIBS="$SAVED_LIBS"
+                ])
+                AS_IF([test x"${ac_cv_func_GetAdaptersAddresses}" = xyes],
+                    [AC_DEFINE([HAVE_GETADAPTERSADDRESSES], 1, [defined if system has the GetAdaptersAddresses() method])],
+                    [dnl AC_MSG_WARN([WIN32 library routine GetAdaptersAddresses() not found])
+                     AS_CASE([${target_os}],
+                         [*mingw*], [AC_MSG_WARN([Windows antivirus might block this test])]
+                         )
+                    ]
+                    )
+
+                myIPHLPAPI_TEST_GAI='
+/* ULONG GetAdaptersInfo(PIP_ADAPTER_INFO addrs, PULONG sizeptr); */
+IP_ADAPTER_INFO buf@<:@8@:>@;
+ULONG bufsz = sizeof(buf);
+printf("%ld ", GetAdaptersInfo(buf, &bufsz))
+/* autoconf adds ";return 0;" */
+'
+
+                AC_CACHE_CHECK([for GetAdaptersInfo() with IPv4 only support],
+                    [ac_cv_func_GetAdaptersInfo],
+                    [AC_LANG_PUSH([C])
+                    dnl e.g. add "-lws2_32" for mingw builds
+                    dnl the NETLIBS are set by NUT_CHECK_SOCKETLIB above
+                    SAVED_LIBS="$LIBS"
+                    LIBS="$LIBS $NETLIBS $NETLIBS_GETADDRS"
+                    AX_RUN_OR_LINK_IFELSE(
+                        [AC_LANG_PROGRAM(
+                            [${myIPHLPAPI_TEST_HEADERS}],
+                            [${myIPHLPAPI_TEST_GAI}])],
+                        [ac_cv_func_GetAdaptersInfo=yes
+                        ], [
+                            NETLIBS_GETADDRS="-liphlpapi"
+                            LIBS="$LIBS $NETLIBS $NETLIBS_GETADDRS"
+                            AX_RUN_OR_LINK_IFELSE(
+                                [AC_LANG_PROGRAM(
+                                    [${myIPHLPAPI_TEST_HEADERS}],
+                                    [${myIPHLPAPI_TEST_GAI}])],
+                                [
+                                    ac_cv_func_GetAdaptersInfo=yes
+                                ], [
+                                    ac_cv_func_GetAdaptersInfo=no
+                                    NETLIBS_GETADDRS=""
+                                ]
+                            )
+                        ]
+                    )
+                    AC_LANG_POP([C])
+                    LIBS="$SAVED_LIBS"
+                ])
+                AS_IF([test x"${ac_cv_func_GetAdaptersInfo}" = xyes],
+                    [AC_DEFINE([HAVE_GETADAPTERSINFO], 1, [defined if system has the GetAdaptersInfo() method])],
+                    [dnl AC_MSG_WARN([WIN32 library routine GetAdaptersInfo() not found])
+                     AS_CASE([${target_os}],
+                         [*mingw*], [AC_MSG_WARN([Windows antivirus might block this test])]
+                         )
+                    ]
+                    )
+
+            ])
+            ]
+    )]
+)
+AC_SUBST([NETLIBS_GETADDRS])
+
+
 dnl ----------------------------------------------------------------------
 dnl Check for Python binary program names per language version
 dnl to embed into scripts and Make rules
