@@ -258,24 +258,12 @@ static void * run_xml(void * arg)
 
 static void * run_nut_old(void *arg)
 {
-	nutscan_device_t * dev_ret;
-	nutscan_ip_range_t *p = ip_ranges_list.ip_ranges;
 	NUT_UNUSED_VARIABLE(arg);
 
 	upsdebugx(2, "Entering %s for %" PRIuSIZE " IP address range(s)",
 		__func__, ip_ranges_list.ip_ranges_count);
 
-	dev[TYPE_NUT] = NULL;
-	while (p) {
-		dev_ret = nutscan_scan_nut(p->start_ip, p->end_ip, port, timeout);
-		if (!dev[TYPE_NUT]) {
-			dev[TYPE_NUT] = dev_ret;
-		} else {
-			dev[TYPE_NUT] = nutscan_rewind_device(
-				nutscan_add_device_to_device(dev_ret, dev[TYPE_NUT]));
-		}
-		p = p->next;
-	}
+	dev[TYPE_NUT] = nutscan_scan_ip_range_nut(&ip_ranges_list, port, timeout);
 
 	upsdebugx(2, "Finished %s loop", __func__);
 	return NULL;
