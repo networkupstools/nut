@@ -4950,10 +4950,10 @@ AS_CASE([${target_os}],
             tmp="`${CYGPATH} -m "${ABS_TOP_SRCDIR}" | sed 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_SRCDIR="$tmp"
         ],[
             dnl MSYS pwd with -W option to resolve
-            AC_CHECK_TOOL([PWD], [pwd], [none])
-            AS_IF([test "x${PWD}" != "xnone"], [
-                tmp="`(cd "${ABS_TOP_BUILDDIR}" && ${PWD} -W) | sed 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_BUILDDIR="$tmp"
-                tmp="`(cd "${ABS_TOP_SRCDIR}" && ${PWD} -W) | sed 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_SRCDIR="$tmp"
+            AC_CHECK_TOOL([PWDTOOL], [pwd], [none])
+            AS_IF([test "x${PWDTOOL}" != "xnone"], [
+                tmp="`(cd "${ABS_TOP_BUILDDIR}" && ${PWDTOOL} -W) | sed 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_BUILDDIR="$tmp"
+                tmp="`(cd "${ABS_TOP_SRCDIR}" && ${PWDTOOL} -W) | sed 's,/,\\\\\\\\,g'`" && test -n "$tmp" && test -d "$tmp" && ABS_TOP_SRCDIR="$tmp"
             ])
         ])
 ])
