@@ -43,8 +43,8 @@ Changes from 2.8.2 to 2.8.3
 
 - Numerous changes to `nut-scanner` and symbols that its `libnutscan.so`
   delivers have caused a library version bump.  New methods have been added
-  in a (hopefully) backwards compatible manner. [issue #2244 and numerous
-  PRs for it]
+  and one structure (`nutscan_ipmi_t`) updated in a (hopefully) backwards
+  compatible manner. [PR #2523, issue #2244 and numerous PRs for it]
 
 - Internal API change for `sendsignalpid()` and `sendsignalfn()` methods,
   which can impact NUT forks which build using `libcommon.la` and similar
