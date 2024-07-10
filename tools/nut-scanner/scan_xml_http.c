@@ -2,6 +2,7 @@
  *  Copyright (C) 2011 - EATON
  *  Copyright (C) 2016 - EATON - IP addressed XML scan
  *  Copyright (C) 2016-2021 - EATON - Various threads-related improvements
+ *  Copyright (C) 2020-2024 - Jim Klimov <jimklimov+nut@gmail.com> - support and modernization of codebase
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -30,24 +31,25 @@
 #include "nut_stdint.h"
 
 #ifdef WITH_NEON
+
 #ifndef WIN32
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/select.h>
-#define SOCK_OPT_CAST
+# include <sys/types.h>
+# include <sys/socket.h>
+# include <netdb.h>
+# include <arpa/inet.h>
+# include <netinet/in.h>
+# include <sys/select.h>
+# define SOCK_OPT_CAST
 #else
-#define SOCK_OPT_CAST (char*)
+# define SOCK_OPT_CAST (char*)
 /* Those 2 files for support of getaddrinfo, getnameinfo and freeaddrinfo
    on Windows 2000 and older versions */
-#include <ws2tcpip.h>
-#include <wspiapi.h>
+# include <ws2tcpip.h>
+# include <wspiapi.h>
 # if ! HAVE_INET_PTON
 #  include "wincompat.h"	/* fallback inet_ntop where needed */
 # endif
-#endif
+#endif	/* WIN32 */
 
 #include <string.h>
 #include <stdio.h>
@@ -69,6 +71,8 @@ static int (*nut_ne_xml_failed)(ne_xml_parser *p);
 static ne_xml_parser * (*nut_ne_xml_create)(void);
 static int (*nut_ne_xml_parse)(ne_xml_parser *p, const char *block, size_t len);
 
+/* This variable collects device(s) from a sequential or parallel scan,
+ * is returned to caller, and cleared to allow subsequent independent scans */
 static nutscan_device_t * dev_ret = NULL;
 #ifdef HAVE_PTHREAD
 static pthread_mutex_t dev_mutex;
@@ -450,6 +454,7 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 	 || irl->ip_ranges->start_ip == NULL || irl->ip_ranges->end_ip == NULL
 	) {
 		upsdebugx(1, "%s: Scanning XML/HTTP bus using broadcast.", __func__);
+		/* Fall through to after the if/else clause */
 	} else {
 		/* Iterate the one or a range of IPs to scan */
 		nutscan_ip_range_list_iter_t ip;
@@ -675,6 +680,7 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 				nutscan_scan_xml_http_generic((void *)tmp_sec);
 #endif /* if HAVE_PTHREAD */
 
+				/* Prepare the next iteration */
 /*				free(ip_str); */ /* One of these free()s seems to cause a double-free instead */
 				ip_str = nutscan_ip_ranges_iter_inc(&ip);
 /*				free(tmp_sec); */
@@ -807,6 +813,7 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 	NUT_UNUSED_VARIABLE(end_ip);
 	NUT_UNUSED_VARIABLE(usec_timeout);
 	NUT_UNUSED_VARIABLE(sec);
+
 	return NULL;
 }
 
@@ -816,6 +823,7 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 	NUT_UNUSED_VARIABLE(irl);
 	NUT_UNUSED_VARIABLE(usec_timeout);
 	NUT_UNUSED_VARIABLE(sec);
+
 	return NULL;
 }
 

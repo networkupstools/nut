@@ -124,15 +124,15 @@ typedef struct nutscan_ipmi {
 
 /* IPMI auth defines, simply using FreeIPMI defines */
 #ifndef IPMI_AUTHENTICATION_TYPE_NONE
-  #define IPMI_AUTHENTICATION_TYPE_NONE                  0x00
-  #define IPMI_AUTHENTICATION_TYPE_MD2                   0x01
-  #define IPMI_AUTHENTICATION_TYPE_MD5                   0x02
-  #define IPMI_AUTHENTICATION_TYPE_STRAIGHT_PASSWORD_KEY 0x04
-  #define IPMI_AUTHENTICATION_TYPE_OEM_PROP              0x05
-  #define IPMI_AUTHENTICATION_TYPE_RMCPPLUS              0x06
+# define IPMI_AUTHENTICATION_TYPE_NONE                  0x00
+# define IPMI_AUTHENTICATION_TYPE_MD2                   0x01
+# define IPMI_AUTHENTICATION_TYPE_MD5                   0x02
+# define IPMI_AUTHENTICATION_TYPE_STRAIGHT_PASSWORD_KEY 0x04
+# define IPMI_AUTHENTICATION_TYPE_OEM_PROP              0x05
+# define IPMI_AUTHENTICATION_TYPE_RMCPPLUS              0x06
 #endif /* IPMI_AUTHENTICATION_TYPE_NONE */
 #ifndef IPMI_PRIVILEGE_LEVEL_ADMIN
-  #define IPMI_PRIVILEGE_LEVEL_ADMIN                     0x04
+# define IPMI_PRIVILEGE_LEVEL_ADMIN                     0x04
 #endif /* IPMI_PRIVILEGE_LEVEL_ADMIN */
 
 #define IPMI_1_5		1

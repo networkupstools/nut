@@ -1,6 +1,7 @@
 /*
  *  Copyright (C) 2011 - EATON
  *  Copyright (C) 2016-2021 - EATON - Various threads-related improvements
+ *  Copyright (C) 2020-2024 - Jim Klimov <jimklimov+nut@gmail.com> - support and modernization of codebase
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,9 +32,9 @@
 #ifdef WITH_SNMP
 
 #ifndef WIN32
-#include <sys/socket.h>
+# include <sys/socket.h>
 #else
-#undef _WIN32_WINNT
+# undef _WIN32_WINNT
 #endif
 
 #include <stdio.h>
@@ -43,23 +44,23 @@
 /* workaround for buggy Net-SNMP config
  * from drivers/snmp-ups.h */
 #ifdef PACKAGE_BUGREPORT
-#undef PACKAGE_BUGREPORT
+# undef PACKAGE_BUGREPORT
 #endif
 
 #ifdef PACKAGE_NAME
-#undef PACKAGE_NAME
+# undef PACKAGE_NAME
 #endif
 
 #ifdef PACKAGE_VERSION
-#undef PACKAGE_VERSION
+# undef PACKAGE_VERSION
 #endif
 
 #ifdef PACKAGE_STRING
-#undef PACKAGE_STRING
+# undef PACKAGE_STRING
 #endif
 
 #ifdef PACKAGE_TARNAME
-#undef PACKAGE_TARNAME
+# undef PACKAGE_TARNAME
 #endif
 
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNUSED_PARAMETER)
@@ -87,14 +88,22 @@
 
 /* Address API change */
 #if ( ! NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol ) && ( ! defined usmAESPrivProtocol )
-#define USMAESPRIVPROTOCOL "usmAES128PrivProtocol"
-#define USMAESPRIVPROTOCOL_PTR usmAES128PrivProtocol
+# define USMAESPRIVPROTOCOL "usmAES128PrivProtocol"
+# define USMAESPRIVPROTOCOL_PTR usmAES128PrivProtocol
 #else
-#define USMAESPRIVPROTOCOL "usmAESPrivProtocol"
-#define USMAESPRIVPROTOCOL_PTR usmAESPrivProtocol
+# define USMAESPRIVPROTOCOL "usmAESPrivProtocol"
+# define USMAESPRIVPROTOCOL_PTR usmAESPrivProtocol
 #endif
 
 #define SysOID ".1.3.6.1.2.1.1.2.0"
+
+/* This variable collects device(s) from a sequential or parallel scan,
+ * is returned to caller, and cleared to allow subsequent independent scans */
+static nutscan_device_t * dev_ret = NULL;
+#ifdef HAVE_PTHREAD
+static pthread_mutex_t dev_mutex;
+#endif
+static useconds_t g_usec_timeout ;
 
 /* use explicit booleans */
 #ifndef FALSE
@@ -102,12 +111,6 @@ typedef enum ebool { FALSE = 0, TRUE } bool_t;
 #else
 typedef int bool_t;
 #endif
-
-static nutscan_device_t * dev_ret = NULL;
-#ifdef HAVE_PTHREAD
-static pthread_mutex_t dev_mutex;
-#endif
-static useconds_t g_usec_timeout ;
 
 #ifndef WITH_SNMP_STATIC
 /* dynamic link library stuff */
@@ -1289,6 +1292,8 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 #else   /* not HAVE_PTHREAD */
 			try_SysOID((void *)tmp_sec);
 #endif  /* if HAVE_PTHREAD */
+
+			/* Prepare the next iteration */
 /*			free(ip_str); */ /* Do not free() here - seems to cause a double-free instead */
 			ip_str = nutscan_ip_ranges_iter_inc(&ip);
 /*			free(tmp_sec); */
@@ -1395,6 +1400,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	NUT_UNUSED_VARIABLE(stop_ip);
 	NUT_UNUSED_VARIABLE(usec_timeout);
 	NUT_UNUSED_VARIABLE(sec);
+
 	return NULL;
 }
 
@@ -1405,6 +1411,7 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 	NUT_UNUSED_VARIABLE(irl);
 	NUT_UNUSED_VARIABLE(usec_timeout);
 	NUT_UNUSED_VARIABLE(sec);
+
 	return NULL;
 }
 

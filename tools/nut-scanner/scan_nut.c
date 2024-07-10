@@ -2,6 +2,7 @@
  *  Copyright (C) 2011 - 2023 Arnaud Quette (Design and part of implementation)
  *  Copyright (C) 2011 - EATON
  *  Copyright (C) 2016-2021 - EATON - Various threads-related improvements
+ *  Copyright (C) 2020-2024 - Jim Klimov <jimklimov+nut@gmail.com> - support and modernization of codebase
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,6 +47,8 @@ static int (*nut_upscli_list_next)(UPSCONN_t *ups, size_t numq,
 			const char **query, size_t *numa, char ***answer);
 static int (*nut_upscli_disconnect)(UPSCONN_t *ups);
 
+/* This variable collects device(s) from a sequential or parallel scan,
+ * is returned to caller, and cleared to allow subsequent independent scans */
 static nutscan_device_t * dev_ret = NULL;
 #ifdef HAVE_PTHREAD
 static pthread_mutex_t dev_mutex;
@@ -550,6 +553,8 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 #else  /* not HAVE_PTHREAD */
 			list_nut_devices(nut_arg);
 #endif /* if HAVE_PTHREAD */
+
+			/* Prepare the next iteration */
 			free(ip_str);
 			ip_str = nutscan_ip_ranges_iter_inc(&ip);
 		} else { /* if not pass -- all slots busy */
