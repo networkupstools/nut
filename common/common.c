@@ -3087,6 +3087,9 @@ void nut_prepare_search_paths(void) {
 				dupe = 1;
 #if HAVE_DECL_REALPATH
 				free((char *)dirname);
+				/* Have some valid value, for kicks (likely
+				 * to be ignored in the code path below) */
+				dirname = search_paths_builtin[i];
 #endif
 				break;
 			}
@@ -3097,10 +3100,17 @@ void nut_prepare_search_paths(void) {
 				"existing unique directory: %s",
 				__func__, count_filtered, dirname);
 #if !HAVE_DECL_REALPATH
+			/* Make a copy of table entry, else we have
+			 * a dynamic result of realpath() made above.
+			 */
 			dirname = (const char *)xstrdup(dirname);
 #endif
 			filtered_search_paths[count_filtered++] = dirname;
-		}
+		}	/* else: dirname was freed above (for realpath)
+			 * or is a reference to the table entry; no need
+			 * to free() it either way */
+
+		closedir(dp);
 	}
 
 	/* If we mangled this before, forget the old result: */
