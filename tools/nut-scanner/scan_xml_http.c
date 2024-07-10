@@ -182,7 +182,11 @@ static int startelm_cb(void *userdata, int parent, const char *nspace, const cha
 	return result;
 }
 
-static void * nutscan_scan_xml_http_generic(void * arg)
+/* Performs a (parallel-able) NetXML protocol scan of one remote host:port.
+ * Returns NULL, updates global dev_ret when a scan is successful.
+ * FREES the caller's copy of "arg" and "hostname" in it, if applicable.
+ */
+static void * nutscan_scan_xml_http_thready(void * arg)
 {
 	nutscan_xml_t * sec = (nutscan_xml_t *)arg;
 	char *scanMsg = "<SCAN_REQUEST/>";
@@ -221,12 +225,12 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 		usec_timeout = 5000000; /* Driver default : 5sec */
 
 	if (!nutscan_avail_xml_http) {
-		return NULL;
+		goto end_free;
 	}
 
 	if ((peerSocket = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
 		fprintf(stderr, "Error creating socket\n");
-		return NULL;
+		goto end_free;
 	}
 
 /* FIXME : Per http://stackoverflow.com/questions/683624/udp-broadcast-on-all-interfaces
@@ -237,7 +241,7 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 		sockAddress_udp.sin_family = AF_INET;
 		if (ip == NULL) {
 			upsdebugx(2,
-				"nutscan_scan_xml_http_generic() : scanning connected network segment(s) "
+				"nutscan_scan_xml_http_thready() : scanning connected network segment(s) "
 				"with a broadcast, attempt %d of %d with a timeout of %" PRIdMAX " usec",
 				(i + 1), MAX_RETRIES, (uintmax_t)usec_timeout);
 			sockAddress_udp.sin_addr.s_addr = INADDR_BROADCAST;
@@ -246,7 +250,7 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 				sizeof(sockopt_on));
 		} else {
 			upsdebugx(2,
-				"nutscan_scan_xml_http_generic() : scanning IP '%s' with a unicast, "
+				"nutscan_scan_xml_http_thready() : scanning IP '%s' with a unicast, "
 				"attempt %d of %d with a timeout of %" PRIdMAX " usec",
 				ip, (i + 1), MAX_RETRIES, (uintmax_t)usec_timeout);
 			inet_pton(AF_INET, ip, &(sockAddress_udp.sin_addr));
@@ -273,7 +277,7 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 			timeout.tv_sec = usec_timeout / 1000000;
 			timeout.tv_usec = usec_timeout % 1000000;
 
-			upsdebugx(5, "nutscan_scan_xml_http_generic() : sent request to %s, "
+			upsdebugx(5, "nutscan_scan_xml_http_thready() : sent request to %s, "
 				"loop #%d/%d, waiting for responses",
 				(ip ? ip : "<broadcast>"), (i + 1), MAX_RETRIES);
 			while ((ret = select(peerSocket + 1, &fds, NULL, NULL,
@@ -283,7 +287,7 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 				int	parserFailed;
 
 				retNum ++;
-				upsdebugx(5, "nutscan_scan_xml_http_generic() : request to %s, "
+				upsdebugx(5, "nutscan_scan_xml_http_thready() : request to %s, "
 					"loop #%d/%d, response #%d",
 					(ip ? ip : "<broadcast>"), (i + 1), MAX_RETRIES, retNum);
 
@@ -353,7 +357,7 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 					 *  Does our driver support the notation? */
 					nut_dev->port = strdup(buf);
 					upsdebugx(3,
-						"nutscan_scan_xml_http_generic(): "
+						"nutscan_scan_xml_http_thready(): "
 						"Adding configuration for driver='%s' port='%s'",
 						nut_dev->driver, nut_dev->port);
 					dev_ret = nutscan_add_device_to_device(
@@ -383,7 +387,7 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 
 				if (ip != NULL) {
 					upsdebugx(2,
-						"nutscan_scan_xml_http_generic(): we collected one reply "
+						"nutscan_scan_xml_http_thready(): we collected one reply "
 						"to unicast for %s (repsponse from %s), done",
 						ip, string);
 					goto end;
@@ -391,24 +395,35 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 			} /* while select() responses */
 			if (ip == NULL && dev_ret != NULL) {
 				upsdebugx(2,
-					"nutscan_scan_xml_http_generic(): we collected one round of replies "
+					"nutscan_scan_xml_http_thready(): we collected one round of replies "
 					"to broadcast with no errors, done");
 				goto end;
 			}
 		}
 	}
 	upsdebugx(2,
-		"nutscan_scan_xml_http_generic(): no replies collected for %s, done",
+		"nutscan_scan_xml_http_thready(): no replies collected for %s, done",
 		(ip ? ip : "<broadcast>"));
 	goto end;
 
 end_abort:
 	upsdebugx(1,
-		"Had to abort nutscan_scan_xml_http_generic() for %s, see fatal details above",
+		"Had to abort nutscan_scan_xml_http_thready() for %s, see fatal details above",
 		(ip ? ip : "<broadcast>"));
+
 end:
-	if (ip != NULL) /* do not free "ip", it comes from caller */
+	if (ip != NULL)
 		close(peerSocket);
+
+end_free:
+	/* free resources which come from the caller
+	 * (in parallel runs, nobody else can reap them)
+	 */
+	if (ip != NULL)
+		free(ip);
+	if (sec != NULL)
+		free(sec);
+
 	return NULL;
 }
 
@@ -652,7 +667,7 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 				}
 
 #ifdef HAVE_PTHREAD
-				if (pthread_create(&thread, NULL, nutscan_scan_xml_http_generic, (void *)tmp_sec) == 0) {
+				if (pthread_create(&thread, NULL, nutscan_scan_xml_http_thready, (void*)tmp_sec) == 0) {
 					nutscan_thread_t	*new_thread_array;
 # ifdef HAVE_PTHREAD_TRYJOIN
 					pthread_mutex_lock(&threadcount_mutex);
@@ -676,14 +691,17 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 					pthread_mutex_unlock(&threadcount_mutex);
 # endif /* HAVE_PTHREAD_TRYJOIN */
 				}
-#else /* not HAVE_PTHREAD */
-				nutscan_scan_xml_http_generic((void *)tmp_sec);
+#else /* if not HAVE_PTHREAD */
+				nutscan_scan_xml_http_thready(tmp_sec);
 #endif /* if HAVE_PTHREAD */
 
-				/* Prepare the next iteration */
-/*				free(ip_str); */ /* One of these free()s seems to cause a double-free instead */
+				/* Prepare the next iteration; note that
+				 * nutscan_scan_xml_http_thready()
+				 * takes care of freeing "tmp_sec" and its
+				 * reference (NOT strdup!) to "ip_str" as
+				 * peername.
+				 */
 				ip_str = nutscan_ip_ranges_iter_inc(&ip);
-/*				free(tmp_sec); */
 			} else { /* if not pass -- all slots busy */
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE
@@ -797,10 +815,10 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 		tmp_sec->usec_timeout = usec_timeout;
 	}
 
-	nutscan_scan_xml_http_generic(tmp_sec);
+	/* Note: the thready method releases the resources */
+	nutscan_scan_xml_http_thready(tmp_sec);
 	result = nutscan_rewind_device(dev_ret);
 	dev_ret = NULL;
-	free(tmp_sec);
 	return result;
 }
 

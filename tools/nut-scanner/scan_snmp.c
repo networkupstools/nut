@@ -894,7 +894,11 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 	return 1;
 }
 
-static void * try_SysOID(void * arg)
+/* Performs a (parallel-able) SNMP protocol scan of one remote host.
+ * Returns NULL, updates global dev_ret when a scan is successful.
+ * FREES the caller's copy of "sec" and "peername" in it, if applicable.
+ */
+static void * try_SysOID_thready(void * arg)
 {
 	struct snmp_session snmp_sess;
 	void * handle;
@@ -1265,7 +1269,7 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 			tmp_sec->peername = ip_str;
 
 #ifdef HAVE_PTHREAD
-			if (pthread_create(&thread, NULL, try_SysOID, (void*)tmp_sec) == 0) {
+			if (pthread_create(&thread, NULL, try_SysOID_thready, (void*)tmp_sec) == 0) {
 				nutscan_thread_t	*new_thread_array;
 # ifdef HAVE_PTHREAD_TRYJOIN
 				pthread_mutex_lock(&threadcount_mutex);
@@ -1289,14 +1293,17 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 				pthread_mutex_unlock(&threadcount_mutex);
 # endif /* HAVE_PTHREAD_TRYJOIN */
 			}
-#else   /* not HAVE_PTHREAD */
-			try_SysOID((void *)tmp_sec);
+#else   /* if not HAVE_PTHREAD */
+			try_SysOID_thready((void *)tmp_sec);
 #endif  /* if HAVE_PTHREAD */
 
-			/* Prepare the next iteration */
-/*			free(ip_str); */ /* Do not free() here - seems to cause a double-free instead */
+			/* Prepare the next iteration; note that
+			 * try_SysOID_thready()
+			 * takes care of freeing "tmp_sec" and its
+			 * reference (NOT strdup!) to "ip_str" as
+			 * peername.
+			 */
 			ip_str = nutscan_ip_ranges_iter_inc(&ip);
-/*			free(tmp_sec); */
 		} else { /* if not pass -- all slots busy */
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE

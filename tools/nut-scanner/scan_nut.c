@@ -62,6 +62,8 @@ typedef int bool_t;
 #endif
 
 struct scan_nut_arg {
+	/* String includes square brackets around host/IP
+	 * address, and/or :port suffix (if customized so): */
 	char * hostname;
 	useconds_t timeout;
 };
@@ -137,9 +139,14 @@ err:
 	lt_dlexit();
 	return 0;
 }
+/* end of dynamic link library stuff */
 
 /* FIXME: SSL support */
-static void * list_nut_devices(void * arg)
+/* Performs a (parallel-able) NUT protocol scan of one remote host:port.
+ * Returns NULL, updates global dev_ret when a scan is successful.
+ * FREES the caller's copy of "nut_arg" and "hostname" in it, if applicable.
+ */
+static void * list_nut_devices_thready(void * arg)
 {
 	struct scan_nut_arg * nut_arg = (struct scan_nut_arg*)arg;
 	char *target_hostname = nut_arg->hostname;
@@ -192,6 +199,7 @@ static void * list_nut_devices(void * arg)
 			free(ups);
 			return NULL;
 		}
+
 		/* FIXME: check for duplication by getting driver.port and device.serial
 		 * for comparison with other busses results */
 		/* FIXME:
@@ -256,6 +264,7 @@ static void * list_nut_devices(void * arg)
 	free(target_hostname);
 	free(nut_arg);
 	free(ups);
+
 	return NULL;
 }
 
@@ -526,7 +535,7 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 			nut_arg->hostname = ip_dest;
 
 #ifdef HAVE_PTHREAD
-			if (pthread_create(&thread, NULL, list_nut_devices, (void*)nut_arg) == 0) {
+			if (pthread_create(&thread, NULL, list_nut_devices_thready, (void*)nut_arg) == 0) {
 				nutscan_thread_t	*new_thread_array;
 # ifdef HAVE_PTHREAD_TRYJOIN
 				pthread_mutex_lock(&threadcount_mutex);
@@ -550,11 +559,16 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 				pthread_mutex_unlock(&threadcount_mutex);
 # endif /* HAVE_PTHREAD_TRYJOIN */
 			}
-#else  /* not HAVE_PTHREAD */
-			list_nut_devices(nut_arg);
+#else  /* if not HAVE_PTHREAD */
+			list_nut_devices_thready(nut_arg);
 #endif /* if HAVE_PTHREAD */
 
-			/* Prepare the next iteration */
+			/* Prepare the next iteration; note that
+			 * nutscan_scan_ipmi_device_thready()
+			 * takes care of freeing "tmp_sec" and its
+			 * copy (note strdup!) of "ip_str" as
+			 * hostname, possibly suffixed with a port.
+			 */
 			free(ip_str);
 			ip_str = nutscan_ip_ranges_iter_inc(&ip);
 		} else { /* if not pass -- all slots busy */
