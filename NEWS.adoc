@@ -151,6 +151,8 @@ installed.
      subnets with too many bits available for the host address part (avoiding
      millions of scans in the extreme cases).
      [issue #2244, issue #2511, PR #2509, PR #2513, PR #2517]
+   * implemented parallel scanning for IPMI bus, otherwise default scan for
+     all supported buses with `-m auto` takes unbearably long. [#2523]
    * bumped version of `libnutscan` to 2.5.2, it now includes a few more
      methods and symbols from `libcommon`. [issue #2244, PR #2509]
 

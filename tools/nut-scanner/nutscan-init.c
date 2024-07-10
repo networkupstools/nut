@@ -106,6 +106,7 @@ size_t max_threads_netsnmp = 0; /* 10240; */
 	 * Still, some practical limit can be useful (configurable?)
 	 * Here 0 means to not apply any special limit (beside max_threads).
 	 */
+size_t max_threads_ipmi = 0;	/* limits not yet known */
 
 # endif  /* HAVE_PTHREAD_TRYJOIN || HAVE_SEMAPHORE */
 

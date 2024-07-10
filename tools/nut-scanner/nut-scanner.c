@@ -1201,6 +1201,7 @@ int main(int argc, char *argv[])
 	ipmi_sec.ipmi_version = IPMI_1_5; /* default to IPMI 1.5, if not otherwise specified */
 	ipmi_sec.cipher_suite_id = 3; /* default to HMAC-SHA1; HMAC-SHA1-96; AES-CBC-128 */
 	ipmi_sec.privilege_level = IPMI_PRIVILEGE_LEVEL_ADMIN; /* should be sufficient */
+	ipmi_sec.peername = NULL;
 
 	/* Set the default values for XML HTTP (run_xml()) */
 	xml_sec.port_http = 80;

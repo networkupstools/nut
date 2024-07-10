@@ -83,7 +83,7 @@ extern "C" {
 
 #ifdef HAVE_PTHREAD
 # if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE)
-extern size_t max_threads, curr_threads, max_threads_netxml, max_threads_oldnut, max_threads_netsnmp;
+extern size_t max_threads, curr_threads, max_threads_netxml, max_threads_oldnut, max_threads_netsnmp, max_threads_ipmi;
 # endif
 
 # ifdef HAVE_PTHREAD_TRYJOIN
@@ -110,16 +110,17 @@ typedef struct nutscan_snmp {
 } nutscan_snmp_t;
 
 /* IPMI structure */
-/* Settings for OutofBand (remote) connection */
+/* Settings for Out-of-Band (remote) connection */
 typedef struct nutscan_ipmi {
-	char*			username;            /* IPMI 1.5 and 2.0 */
-	char*			password;            /* IPMI 1.5 and 2.0 */
-	int				authentication_type; /* IPMI 1.5 */
-	int				cipher_suite_id;     /* IPMI 2.0 */
-	char*			K_g_BMC_key;         /* IPMI 2.0, optional key for 2 key auth. */
-	int				privilege_level;     /* for both */
+	char*		username;            /* IPMI 1.5 and 2.0 */
+	char*		password;            /* IPMI 1.5 and 2.0 */
+	int		authentication_type; /* IPMI 1.5 */
+	int		cipher_suite_id;     /* IPMI 2.0 */
+	char*		K_g_BMC_key;         /* IPMI 2.0, optional key for 2 key auth. */
+	int		privilege_level;     /* for both */
 	unsigned int	workaround_flags;    /* for both */
-	int				ipmi_version;        /* IPMI 1.5 or 2.0? */
+	int		ipmi_version;        /* IPMI 1.5 or 2.0? */
+	char*		peername;            /* Hostname or IP for remote scans, NULL for local device bus (populated by scanning methods) */
 } nutscan_ipmi_t;
 
 /* IPMI auth defines, simply using FreeIPMI defines */
