@@ -813,6 +813,7 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 	NUT_UNUSED_VARIABLE(end_ip);
 	NUT_UNUSED_VARIABLE(usec_timeout);
 	NUT_UNUSED_VARIABLE(sec);
+
 	return NULL;
 }
 
@@ -822,6 +823,7 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 	NUT_UNUSED_VARIABLE(irl);
 	NUT_UNUSED_VARIABLE(usec_timeout);
 	NUT_UNUSED_VARIABLE(sec);
+
 	return NULL;
 }
 

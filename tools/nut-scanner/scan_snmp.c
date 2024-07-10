@@ -1400,6 +1400,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	NUT_UNUSED_VARIABLE(stop_ip);
 	NUT_UNUSED_VARIABLE(usec_timeout);
 	NUT_UNUSED_VARIABLE(sec);
+
 	return NULL;
 }
 
@@ -1410,6 +1411,7 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 	NUT_UNUSED_VARIABLE(irl);
 	NUT_UNUSED_VARIABLE(usec_timeout);
 	NUT_UNUSED_VARIABLE(sec);
+
 	return NULL;
 }
 
