@@ -101,3 +101,17 @@
    fun:init_snmp_once
    ...
 }
+{
+   <nut-scanner-ipmi-ctxinit>
+   Memcheck:Leak
+   ...
+   fun:wrap_nut_ipmi_ctx_create
+   ...
+}
+{
+   <nut-scanner-avahi-clientinit>
+   Memcheck:Leak
+   ...
+   fun:wrap_nut_avahi_client_new
+   ...
+}

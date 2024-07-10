@@ -530,6 +530,24 @@ static void client_callback(AvahiClient *c, AvahiClientState state, void * userd
 	}
 }
 
+static AvahiClient* wrap_nut_avahi_client_new(int *error)
+{
+	/* Allocate a new client */
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wassign-enum"
+#endif
+	/* It seems that avahi-common/defs.h only defines the flags in a
+	 * manner similar to bitmask flags to request certain features,
+	 * but lacks a value in that enum for lack of flags (unconstrained
+	 * lookup). So we have to silence a warning here...
+	 */
+	return (*nut_avahi_client_new)((*nut_avahi_simple_poll_get)(simple_poll), 0, client_callback, NULL, error);
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM)
+# pragma GCC diagnostic pop
+#endif
+}
+
 nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout)
 {
 	/* Example service publication
@@ -552,19 +570,7 @@ nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout)
 	}
 
 	/* Allocate a new client */
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM)
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wassign-enum"
-#endif
-	/* It seems that avahi-common/defs.h only defines the flags in a
-	 * manner similar to bitmask flags to request certain features,
-	 * but lacks a value in that enum for lack of flags (unconstrained
-	 * lookup). So we have to silence a warning here...
-	 */
-	client = (*nut_avahi_client_new)((*nut_avahi_simple_poll_get)(simple_poll), 0, client_callback, NULL, &error);
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM)
-# pragma GCC diagnostic pop
-#endif
+	client = wrap_nut_avahi_client_new(&error);
 
 	/* Check wether creating the client object succeeded */
 	if (!client) {

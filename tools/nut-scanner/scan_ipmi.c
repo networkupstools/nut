@@ -421,6 +421,11 @@ static int is_ipmi_device_supported(ipmi_ctx_t ipmi_ctx, int ipmi_id)
 	return 0;
 }
 
+static ipmi_ctx_t wrap_nut_ipmi_ctx_create(void)
+{
+	return (*nut_ipmi_ctx_create) ();
+}
+
 /* Check for IPMI support on a specific (local or remote) system
  * Return NULL on error, or a valid nutscan_device_t otherwise */
 nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t * ipmi_sec)
@@ -437,7 +442,7 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 	}
 
 	/* Initialize the FreeIPMI library. */
-	if (!(ipmi_ctx = (*nut_ipmi_ctx_create) ()))
+	if (!(ipmi_ctx = wrap_nut_ipmi_ctx_create()))
 	{
 		/* we have to force cleanup, since exit handler is not yet installed */
 		fprintf(stderr, "Failed to ipmi_ctx_create\n");
