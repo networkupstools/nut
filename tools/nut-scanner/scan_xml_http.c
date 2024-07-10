@@ -211,10 +211,12 @@ static void * nutscan_scan_xml_http_thready(void * arg)
 {
 	nutscan_xml_t * sec = (nutscan_xml_t *)arg;
 	char *scanMsg = "<SCAN_REQUEST/>";
-/* Note: at this time the HTTP/XML scan is in fact not implemented - just the UDP part */
+	/* Note: at this time the HTTP/XML scan is
+	 * in fact not implemented - just the UDP part */
 /*	uint16_t port_http = 80; */
 	uint16_t port_udp = 4679;
-/* A NULL "ip" causes a broadcast scan; otherwise the single ip address is queried directly */
+	/* A NULL "ip" causes a broadcast scan; otherwise
+	 * the single ip address is queried directly */
 	char *ip = NULL;
 	useconds_t usec_timeout = 0;
 	int peerSocket = -1;
@@ -254,26 +256,27 @@ static void * nutscan_scan_xml_http_thready(void * arg)
 		goto end_free;
 	}
 
-/* FIXME : Per http://stackoverflow.com/questions/683624/udp-broadcast-on-all-interfaces
- * A single sendto() generates a single packet, so one must iterate all known interfaces... */
+	/* FIXME : Per http://stackoverflow.com/questions/683624/udp-broadcast-on-all-interfaces
+	 * A single sendto() generates a single packet,
+	 * so one must iterate all known interfaces... */
 #define MAX_RETRIES 3
 	for (i = 0; i != MAX_RETRIES ; i++) {
 		/* Initialize socket */
 		sockAddress_udp.sin_family = AF_INET;
 		if (ip == NULL) {
 			upsdebugx(2,
-				"nutscan_scan_xml_http_thready() : scanning connected network segment(s) "
+				"%s: scanning connected network segment(s) "
 				"with a broadcast, attempt %d of %d with a timeout of %" PRIdMAX " usec",
-				(i + 1), MAX_RETRIES, (uintmax_t)usec_timeout);
+				__func__, (i + 1), MAX_RETRIES, (uintmax_t)usec_timeout);
 			sockAddress_udp.sin_addr.s_addr = INADDR_BROADCAST;
 			setsockopt(peerSocket, SOL_SOCKET, SO_BROADCAST,
 				SOCK_OPT_CAST &sockopt_on,
 				sizeof(sockopt_on));
 		} else {
 			upsdebugx(2,
-				"nutscan_scan_xml_http_thready() : scanning IP '%s' with a unicast, "
+				"%s: scanning IP '%s' with a unicast, "
 				"attempt %d of %d with a timeout of %" PRIdMAX " usec",
-				ip, (i + 1), MAX_RETRIES, (uintmax_t)usec_timeout);
+				__func__, ip, (i + 1), MAX_RETRIES, (uintmax_t)usec_timeout);
 			inet_pton(AF_INET, ip, &(sockAddress_udp.sin_addr));
 		}
 		sockAddress_udp.sin_port = htons(port_udp);
@@ -298,9 +301,9 @@ static void * nutscan_scan_xml_http_thready(void * arg)
 			timeout.tv_sec = usec_timeout / 1000000;
 			timeout.tv_usec = usec_timeout % 1000000;
 
-			upsdebugx(5, "nutscan_scan_xml_http_thready() : sent request to %s, "
+			upsdebugx(5, "%s: sent request to %s, "
 				"loop #%d/%d, waiting for responses",
-				(ip ? ip : "<broadcast>"), (i + 1), MAX_RETRIES);
+				__func__, (ip ? ip : "<broadcast>"), (i + 1), MAX_RETRIES);
 			while ((ret = select(peerSocket + 1, &fds, NULL, NULL,
 						&timeout))
 			) {
@@ -308,9 +311,9 @@ static void * nutscan_scan_xml_http_thready(void * arg)
 				int	parserFailed;
 
 				retNum ++;
-				upsdebugx(5, "nutscan_scan_xml_http_thready() : request to %s, "
+				upsdebugx(5, "%s: request to %s, "
 					"loop #%d/%d, response #%d",
-					(ip ? ip : "<broadcast>"), (i + 1), MAX_RETRIES, retNum);
+					__func__, (ip ? ip : "<broadcast>"), (i + 1), MAX_RETRIES, retNum);
 
 				timeout.tv_sec = usec_timeout / 1000000;
 				timeout.tv_usec = usec_timeout % 1000000;
@@ -358,9 +361,9 @@ static void * nutscan_scan_xml_http_thready(void * arg)
 				pthread_mutex_lock(&dev_mutex);
 #endif
 				upsdebugx(5,
-					"Some host at IP %s replied to NetXML UDP request on port %d, "
+					"%s: Some host at IP %s replied to NetXML UDP request on port %d, "
 					"inspecting the response...",
-					string, port_udp);
+					__func__, string, port_udp);
 				nut_dev->type = TYPE_XML;
 				/* Try to read device type */
 				parser = (*nut_ne_xml_create)();
@@ -378,9 +381,8 @@ static void * nutscan_scan_xml_http_thready(void * arg)
 					 *  Does our driver support the notation? */
 					nut_dev->port = strdup(buf);
 					upsdebugx(3,
-						"nutscan_scan_xml_http_thready(): "
-						"Adding configuration for driver='%s' port='%s'",
-						nut_dev->driver, nut_dev->port);
+						"%s: Adding configuration for driver='%s' port='%s'",
+						__func__, nut_dev->driver, nut_dev->port);
 					dev_ret = nutscan_add_device_to_device(
 						dev_ret, nut_dev);
 #ifdef HAVE_PTHREAD
@@ -408,29 +410,29 @@ static void * nutscan_scan_xml_http_thready(void * arg)
 
 				if (ip != NULL) {
 					upsdebugx(2,
-						"nutscan_scan_xml_http_thready(): we collected one reply "
+						"%s: we collected one reply "
 						"to unicast for %s (repsponse from %s), done",
-						ip, string);
+						__func__, ip, string);
 					goto end;
 				}
 			} /* while select() responses */
 			if (ip == NULL && dev_ret != NULL) {
 				upsdebugx(2,
-					"nutscan_scan_xml_http_thready(): we collected one round of replies "
-					"to broadcast with no errors, done");
+					"%s: we collected one round of replies "
+					"to broadcast with no errors, done", __func__);
 				goto end;
 			}
 		}
 	}
 	upsdebugx(2,
-		"nutscan_scan_xml_http_thready(): no replies collected for %s, done",
-		(ip ? ip : "<broadcast>"));
+		"%s: no replies collected for %s, done",
+		__func__, (ip ? ip : "<broadcast>"));
 	goto end;
 
 end_abort:
 	upsdebugx(1,
-		"Had to abort nutscan_scan_xml_http_thready() for %s, see fatal details above",
-		(ip ? ip : "<broadcast>"));
+		"%s: Had to abort scan for %s, see fatal details above",
+		__func__, (ip ? ip : "<broadcast>"));
 
 end:
 	/* Broadcast is also a socket! */
