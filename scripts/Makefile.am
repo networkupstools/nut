@@ -25,12 +25,15 @@ EXTRA_DIST = \
     upower/95-upower-hid.rules \
     usb_resetter/README.adoc \
     usb_resetter/nut-driver.service \
+    valgrind/README.adoc \
+    valgrind/.valgrind.supp \
+    valgrind/valgrind.sh \
     Windows/halt.c \
     Windows/Makefile
 
 SUBDIRS = augeas devd hotplug installer python systemd udev ufw Solaris Windows upsdrvsvcctl
 
-SPELLCHECK_SRC = README.adoc RedHat/README.adoc usb_resetter/README.adoc
+SPELLCHECK_SRC = README.adoc RedHat/README.adoc usb_resetter/README.adoc valgrind/README.adoc
 
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension.
 # We also have to export some variables that may be tainted by relative

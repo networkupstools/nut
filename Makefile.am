@@ -92,6 +92,7 @@ distcheck-light-man:
 
 # Make a distcheck (and check in particular) with enabled valgrind and debug info
 memcheck distcheck-valgrind:
+	@echo "See also scripts/valgrind in NUT sources for a helper tool"
 	+$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_VALGRIND_FLAGS)" distcheck
 
 # workaround the dist generated files that are also part of the distribution

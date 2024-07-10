@@ -184,6 +184,9 @@ installed.
    respective warnings issued by the new generations of analysis tools.
    [#823, #2437, link:https://github.com/networkupstools/nut-website/issues/52[nut-website issue #52]]
 
+ - added `scripts/valgrind` with a helper script and suppression file to
+   ignore common third-party problems. [#2511]
+
  - revised `nut.exe` (the NUT for Windows wrapper for all-in-one service)
    to be more helpful with command-line use (report that it failed to start
    as a service, have a help message, pass debug verbosity to launched NUT

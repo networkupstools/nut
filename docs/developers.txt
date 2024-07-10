@@ -1212,6 +1212,9 @@ suspected area and then exit cleanly.  valgrind will tell you if you've
 done anything dodgy like freeing regions twice, reading uninitialized
 memory, or if you've leaked memory anywhere.
 
+See also `scripts/valgrind` in NUT sources for a helper tool and resource
+files to suppress common third-party problems.
+
 For more information, refer to the link:http://valgrind.kde.org[Valgrind]
 project.
 
