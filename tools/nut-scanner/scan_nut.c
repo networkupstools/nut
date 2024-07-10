@@ -173,9 +173,9 @@ static void * list_nut_devices_thready(void * arg)
 	uint16_t port;
 	size_t numq, numa;
 	const char *query[4];
-	char **answer;
+	char **answer = NULL;
 	char *hostname = NULL;
-	UPSCONN_t *ups = malloc(sizeof(*ups));
+	UPSCONN_t *ups = xcalloc(1, sizeof(*ups));
 	nutscan_device_t * dev = NULL;
 	size_t buf_size;
 
@@ -188,35 +188,35 @@ static void * list_nut_devices_thready(void * arg)
 	upsdebugx(2, "Entering %s for %s", __func__, target_hostname);
 
 	if ((*nut_upscli_splitaddr)(target_hostname, &hostname, &port) != 0) {
-		free(target_hostname);
-		free(nut_arg);
-		free(ups);
-		return NULL;
+		/* Avoid disconnect from not connected ups */
+		if (ups) {
+			if (ups->host)
+				free(ups->host);
+			free(ups);
+		}
+		ups = NULL;
+		goto end;
 	}
 
 	if ((*nut_upscli_tryconnect)(ups, hostname, port, UPSCLI_CONN_TRYSSL, &tv) < 0) {
-		free(target_hostname);
-		free(nut_arg);
-		free(ups);
-		return NULL;
+		/* Avoid disconnect from not connected ups */
+		if (ups) {
+			if (ups->host)
+				free(ups->host);
+			free(ups);
+		}
+		ups = NULL;
+		goto end;
 	}
 
 	if ((*nut_upscli_list_start)(ups, numq, query) < 0) {
-		(*nut_upscli_disconnect)(ups);
-		free(target_hostname);
-		free(nut_arg);
-		free(ups);
-		return NULL;
+		goto end;
 	}
 
 	while ((*nut_upscli_list_next)(ups, numq, query, &numa, &answer) == 1) {
 		/* UPS <upsname> <description> */
 		if (numa < 3) {
-			(*nut_upscli_disconnect)(ups);
-			free(target_hostname);
-			free(nut_arg);
-			free(ups);
-			return NULL;
+			goto end;
 		}
 
 		/* FIXME: check for duplication by getting driver.port and device.serial
@@ -279,10 +279,20 @@ static void * list_nut_devices_thready(void * arg)
 
 	}
 
-	(*nut_upscli_disconnect)(ups);
-	free(target_hostname);
-	free(nut_arg);
-	free(ups);
+end:
+	if (ups) {
+		(*nut_upscli_disconnect)(ups);
+		if (ups->host)
+			free(ups->host);
+		free(ups);
+	}
+
+	if (target_hostname)
+		free(target_hostname);
+	if (hostname)
+		free(hostname);
+	if (nut_arg)
+		free(nut_arg);
 
 	return NULL;
 }
