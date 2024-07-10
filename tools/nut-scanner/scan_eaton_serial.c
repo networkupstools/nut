@@ -30,7 +30,7 @@
 
 /* Need this on AIX when using xlc to get alloca */
 #ifdef _AIX
-#pragma alloca
+# pragma alloca
 #endif /* _AIX */
 
 #include <fcntl.h>

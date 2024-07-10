@@ -27,6 +27,7 @@
 #include "nut-scan.h"
 
 #ifdef WITH_USB
+
 #include "upsclient.h"
 #include "nutscan-usb.h"
 #include <stdio.h>
@@ -43,10 +44,10 @@ static int (*nut_usb_get_string_simple)(libusb_device_handle *dev, int index,
 
 /* Compatibility layer between libusb 0.1 and 1.0 */
 #if WITH_LIBUSB_1_0
- #define USB_INIT_SYMBOL "libusb_init"
- #define USB_OPEN_SYMBOL "libusb_open"
- #define USB_CLOSE_SYMBOL "libusb_close"
- #define USB_STRERROR_SYMBOL "libusb_strerror"
+# define USB_INIT_SYMBOL "libusb_init"
+# define USB_OPEN_SYMBOL "libusb_open"
+# define USB_CLOSE_SYMBOL "libusb_close"
+# define USB_STRERROR_SYMBOL "libusb_strerror"
  static int (*nut_usb_open)(libusb_device *dev, libusb_device_handle **handle);
  static int (*nut_usb_init)(libusb_context **ctx);
  static void (*nut_usb_exit)(libusb_context *ctx);
@@ -59,10 +60,10 @@ static int (*nut_usb_get_string_simple)(libusb_device_handle *dev, int index,
  static int (*nut_usb_get_device_descriptor)(libusb_device *dev,
 	struct libusb_device_descriptor *desc);
 #else /* => WITH_LIBUSB_0_1 */
- #define USB_INIT_SYMBOL "usb_init"
- #define USB_OPEN_SYMBOL "usb_open"
- #define USB_CLOSE_SYMBOL "usb_close"
- #define USB_STRERROR_SYMBOL "usb_strerror"
+# define USB_INIT_SYMBOL "usb_init"
+# define USB_OPEN_SYMBOL "usb_open"
+# define USB_CLOSE_SYMBOL "usb_close"
+# define USB_STRERROR_SYMBOL "usb_strerror"
  static libusb_device_handle * (*nut_usb_open)(struct usb_device *dev);
  static void (*nut_usb_init)(void);
  static int (*nut_usb_find_busses)(void);

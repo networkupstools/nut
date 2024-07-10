@@ -32,9 +32,9 @@
 #ifdef WITH_SNMP
 
 #ifndef WIN32
-#include <sys/socket.h>
+# include <sys/socket.h>
 #else
-#undef _WIN32_WINNT
+# undef _WIN32_WINNT
 #endif
 
 #include <stdio.h>
@@ -44,23 +44,23 @@
 /* workaround for buggy Net-SNMP config
  * from drivers/snmp-ups.h */
 #ifdef PACKAGE_BUGREPORT
-#undef PACKAGE_BUGREPORT
+# undef PACKAGE_BUGREPORT
 #endif
 
 #ifdef PACKAGE_NAME
-#undef PACKAGE_NAME
+# undef PACKAGE_NAME
 #endif
 
 #ifdef PACKAGE_VERSION
-#undef PACKAGE_VERSION
+# undef PACKAGE_VERSION
 #endif
 
 #ifdef PACKAGE_STRING
-#undef PACKAGE_STRING
+# undef PACKAGE_STRING
 #endif
 
 #ifdef PACKAGE_TARNAME
-#undef PACKAGE_TARNAME
+# undef PACKAGE_TARNAME
 #endif
 
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNUSED_PARAMETER)
@@ -88,11 +88,11 @@
 
 /* Address API change */
 #if ( ! NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol ) && ( ! defined usmAESPrivProtocol )
-#define USMAESPRIVPROTOCOL "usmAES128PrivProtocol"
-#define USMAESPRIVPROTOCOL_PTR usmAES128PrivProtocol
+# define USMAESPRIVPROTOCOL "usmAES128PrivProtocol"
+# define USMAESPRIVPROTOCOL_PTR usmAES128PrivProtocol
 #else
-#define USMAESPRIVPROTOCOL "usmAESPrivProtocol"
-#define USMAESPRIVPROTOCOL_PTR usmAESPrivProtocol
+# define USMAESPRIVPROTOCOL "usmAESPrivProtocol"
+# define USMAESPRIVPROTOCOL_PTR usmAESPrivProtocol
 #endif
 
 #define SysOID ".1.3.6.1.2.1.1.2.0"

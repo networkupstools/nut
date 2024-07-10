@@ -31,24 +31,25 @@
 #include "nut_stdint.h"
 
 #ifdef WITH_NEON
+
 #ifndef WIN32
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/select.h>
-#define SOCK_OPT_CAST
+# include <sys/types.h>
+# include <sys/socket.h>
+# include <netdb.h>
+# include <arpa/inet.h>
+# include <netinet/in.h>
+# include <sys/select.h>
+# define SOCK_OPT_CAST
 #else
-#define SOCK_OPT_CAST (char*)
+# define SOCK_OPT_CAST (char*)
 /* Those 2 files for support of getaddrinfo, getnameinfo and freeaddrinfo
    on Windows 2000 and older versions */
-#include <ws2tcpip.h>
-#include <wspiapi.h>
+# include <ws2tcpip.h>
+# include <wspiapi.h>
 # if ! HAVE_INET_PTON
 #  include "wincompat.h"	/* fallback inet_ntop where needed */
 # endif
-#endif
+#endif	/* WIN32 */
 
 #include <string.h>
 #include <stdio.h>

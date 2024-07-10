@@ -54,7 +54,7 @@
 #endif
 
 #if defined HAVE_SYS_TYPES_H
-  #include <sys/types.h>
+# include <sys/types.h>
 #endif
 
 #ifdef __cplusplus

@@ -28,10 +28,11 @@
 #include "nut-scan.h"
 
 #ifdef WITH_IPMI
+
 #include "upsclient.h"
 #include <freeipmi/freeipmi.h>
-#include <stdio.h>
 #include <string.h>
+#include <stdio.h>
 #include <ltdl.h>
 
 #define NUT_IPMI_DRV_NAME	"nut-ipmipsu"
@@ -47,31 +48,31 @@ static const char *dl_error = NULL;
 
 #ifdef HAVE_FREEIPMI_11X_12X
   /* Functions symbols remapping */
-  #define IPMI_FRU_CLOSE_DEVICE_ID                     "ipmi_fru_close_device_id"
-  #define IPMI_FRU_CTX_DESTROY                         "ipmi_fru_ctx_destroy"
-  #define IPMI_FRU_CTX_CREATE                          "ipmi_fru_ctx_create"
-  #define IPMI_FRU_CTX_SET_FLAGS                       "ipmi_fru_ctx_set_flags"
-  #define IPMI_FRU_OPEN_DEVICE_ID                      "ipmi_fru_open_device_id"
-  #define IPMI_FRU_CTX_ERRORMSG                        "ipmi_fru_ctx_errormsg"
-  #define IPMI_FRU_READ_DATA_AREA                      "ipmi_fru_read_data_area"
-  #define IPMI_FRU_PARSE_NEXT                          "ipmi_fru_next"
+#  define IPMI_FRU_CLOSE_DEVICE_ID                     "ipmi_fru_close_device_id"
+#  define IPMI_FRU_CTX_DESTROY                         "ipmi_fru_ctx_destroy"
+#  define IPMI_FRU_CTX_CREATE                          "ipmi_fru_ctx_create"
+#  define IPMI_FRU_CTX_SET_FLAGS                       "ipmi_fru_ctx_set_flags"
+#  define IPMI_FRU_OPEN_DEVICE_ID                      "ipmi_fru_open_device_id"
+#  define IPMI_FRU_CTX_ERRORMSG                        "ipmi_fru_ctx_errormsg"
+#  define IPMI_FRU_READ_DATA_AREA                      "ipmi_fru_read_data_area"
+#  define IPMI_FRU_PARSE_NEXT                          "ipmi_fru_next"
   typedef ipmi_fru_ctx_t ipmi_fru_parse_ctx_t;
   typedef ipmi_sdr_ctx_t ipmi_sdr_cache_ctx_t;
   /* Functions remapping */
   static void (*nut_ipmi_sdr_ctx_destroy) (ipmi_sdr_ctx_t ctx);
 #else /* HAVE_FREEIPMI_11X_12X */
-  #define IPMI_FRU_AREA_SIZE_MAX                                   IPMI_FRU_PARSE_AREA_SIZE_MAX
-  #define IPMI_FRU_FLAGS_SKIP_CHECKSUM_CHECKS                      IPMI_FRU_PARSE_FLAGS_SKIP_CHECKSUM_CHECKS
-  #define IPMI_FRU_AREA_TYPE_MULTIRECORD_POWER_SUPPLY_INFORMATION  IPMI_FRU_PARSE_AREA_TYPE_MULTIRECORD_POWER_SUPPLY_INFORMATION
+#  define IPMI_FRU_AREA_SIZE_MAX                                   IPMI_FRU_PARSE_AREA_SIZE_MAX
+#  define IPMI_FRU_FLAGS_SKIP_CHECKSUM_CHECKS                      IPMI_FRU_PARSE_FLAGS_SKIP_CHECKSUM_CHECKS
+#  define IPMI_FRU_AREA_TYPE_MULTIRECORD_POWER_SUPPLY_INFORMATION  IPMI_FRU_PARSE_AREA_TYPE_MULTIRECORD_POWER_SUPPLY_INFORMATION
   /* Functions symbols remapping */
-  #define IPMI_FRU_CLOSE_DEVICE_ID                     "ipmi_fru_parse_close_device_id"
-  #define IPMI_FRU_CTX_DESTROY                         "ipmi_fru_parse_ctx_destroy"
-  #define IPMI_FRU_CTX_CREATE                          "ipmi_fru_parse_ctx_create"
-  #define IPMI_FRU_CTX_SET_FLAGS                       "ipmi_fru_parse_ctx_set_flags"
-  #define IPMI_FRU_OPEN_DEVICE_ID                      "ipmi_fru_parse_open_device_id"
-  #define IPMI_FRU_CTX_ERRORMSG                        "ipmi_fru_parse_ctx_errormsg"
-  #define IPMI_FRU_READ_DATA_AREA                      "ipmi_fru_parse_read_data_area"
-  #define IPMI_FRU_PARSE_NEXT                          "ipmi_fru_parse_next"
+#  define IPMI_FRU_CLOSE_DEVICE_ID                     "ipmi_fru_parse_close_device_id"
+#  define IPMI_FRU_CTX_DESTROY                         "ipmi_fru_parse_ctx_destroy"
+#  define IPMI_FRU_CTX_CREATE                          "ipmi_fru_parse_ctx_create"
+#  define IPMI_FRU_CTX_SET_FLAGS                       "ipmi_fru_parse_ctx_set_flags"
+#  define IPMI_FRU_OPEN_DEVICE_ID                      "ipmi_fru_parse_open_device_id"
+#  define IPMI_FRU_CTX_ERRORMSG                        "ipmi_fru_parse_ctx_errormsg"
+#  define IPMI_FRU_READ_DATA_AREA                      "ipmi_fru_parse_read_data_area"
+#  define IPMI_FRU_PARSE_NEXT                          "ipmi_fru_parse_next"
   /* Functions remapping */
   static void (*nut_ipmi_sdr_cache_ctx_destroy) (ipmi_sdr_cache_ctx_t ctx);
   static void (*nut_ipmi_sdr_parse_ctx_destroy) (ipmi_sdr_parse_ctx_t ctx);
