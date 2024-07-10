@@ -199,8 +199,11 @@ static void * list_nut_devices(void * arg)
 		/* NOTE: There is no driver by such name, in practice it could
 		 * be a dummy-ups relay, a clone driver, or part of upsmon config */
 		dev->driver = strdup(SCAN_NUT_DRIVERNAME);
-		/* +1+1 is for '@' character and terminating 0 */
-		buf_size = strlen(answer[1]) + strlen(hostname) + 1 + 1;
+		/* +1+1 is for '@' character and terminating 0,
+		 * and the other +1+1 is for possible '[' and ']'
+		 * around the host name:
+		 */
+		buf_size = strlen(answer[1]) + strlen(hostname) + 1 + 1 + 1 + 1;
 		if (port != PORT) {
 			/* colon and up to 5 digits */
 			buf_size += 6;
@@ -209,13 +212,31 @@ static void * list_nut_devices(void * arg)
 		dev->port = malloc(buf_size);
 
 		if (dev->port) {
+			/* Check if IPv6 and needs brackets */
+			char	*hostname_colon = strchr(hostname, ':');
+
+			if (hostname_colon && *hostname_colon == '\0')
+				hostname_colon = NULL;
+			if (*hostname == '[')
+				hostname_colon = NULL;
+
 			if (port != PORT) {
-				snprintf(dev->port, buf_size, "%s@%s:%" PRIu16,
-					answer[1], hostname, port);
+				if (hostname_colon) {
+					snprintf(dev->port, buf_size, "%s@[%s]:%" PRIu16,
+						answer[1], hostname, port);
+				} else {
+					snprintf(dev->port, buf_size, "%s@%s:%" PRIu16,
+						answer[1], hostname, port);
+				}
 			} else {
 				/* Standard port, not suffixed */
-				snprintf(dev->port, buf_size, "%s@%s",
-					answer[1], hostname);
+				if (hostname_colon) {
+					snprintf(dev->port, buf_size, "%s@[%s]",
+						answer[1], hostname);
+				} else {
+					snprintf(dev->port, buf_size, "%s@%s",
+						answer[1], hostname);
+				}
 			}
 #ifdef HAVE_PTHREAD
 			pthread_mutex_lock(&dev_mutex);
@@ -278,7 +299,15 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 # if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE)
 	size_t  max_threads_scantype = max_threads_oldnut;
 # endif
+#endif /* HAVE_PTHREAD */
 
+#ifdef WIN32
+	WSADATA WSAdata;
+	WSAStartup(2,&WSAdata);
+	atexit((void(*)(void))WSACleanup);
+#endif
+
+#ifdef HAVE_PTHREAD
 	pthread_mutex_init(&dev_mutex, NULL);
 
 # ifdef HAVE_SEMAPHORE
@@ -306,7 +335,11 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 				__func__);
 			max_threads_scantype = UINT_MAX - 1;
 		}
-		sem_init(semaphore_scantype, 0, (unsigned int)max_threads_scantype);
+
+		upsdebugx(4, "%s: sem_init() for %" PRIuSIZE " threads", __func__, max_threads_scantype);
+		if (sem_init(semaphore_scantype, 0, (unsigned int)max_threads_scantype)) {
+			upsdebug_with_errno(4, "%s: sem_init() failed", __func__);
+		}
 	}
 # endif /* HAVE_SEMAPHORE */
 
@@ -373,8 +406,21 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 			sem_wait(semaphore);
 			pass = TRUE;
 		} else {
-			pass = ((max_threads_scantype == 0 || sem_trywait(semaphore_scantype) == 0) &&
-			        sem_trywait(semaphore) == 0);
+			/* If successful (the lock was acquired),
+			 * sem_wait() and sem_trywait() will return 0.
+			 * Otherwise, -1 is returned and errno is set,
+			 * and the state of the semaphore is unchanged.
+			 */
+			int	stwST = sem_trywait(semaphore_scantype), stwS = sem_trywait(semaphore);
+			pass = ((max_threads_scantype == 0 || stwST == 0) && stwS == 0);
+			upsdebugx(4, "%s: max_threads_scantype=%" PRIuSIZE
+				" curr_threads=%" PRIuSIZE
+				" thread_count=%" PRIuSIZE
+				" stwST=%d stwS=%d pass=%d",
+				__func__, max_threads_scantype,
+				curr_threads, thread_count,
+				stwST, stwS, pass
+			);
 		}
 # else
 #  ifdef HAVE_PTHREAD_TRYJOIN
@@ -397,6 +443,7 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 				"(launched overall: %" PRIuSIZE "), "
 				"waiting until some would finish",
 				__func__, curr_threads, thread_count);
+
 			while (curr_threads >= max_threads
 			   || (curr_threads >= max_threads_scantype && max_threads_scantype > 0)
 			) {
@@ -445,6 +492,7 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 			}
 			upsdebugx(2, "%s: proceeding with scan", __func__);
 		}
+
 		/* NOTE: No change to default "pass" in this ifdef:
 		 * if we got to this line, we have a slot to use */
 #  endif /* HAVE_PTHREAD_TRYJOIN */
@@ -509,9 +557,10 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 # ifdef HAVE_SEMAPHORE
 			/* Wait for all current scans to complete */
 			if (thread_array != NULL) {
-				upsdebugx (2, "%s: Running too many scanning threads, "
+				upsdebugx (2, "%s: Running too many scanning threads (%"
+					PRIuSIZE "), "
 					"waiting until older ones would finish",
-					__func__);
+					__func__, thread_count);
 				for (i = 0; i < thread_count ; i++) {
 					int ret;
 					if (!thread_array[i].active) {
@@ -540,7 +589,7 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 			}
 # else
 #  ifdef HAVE_PTHREAD_TRYJOIN
-		/* TODO: Move the wait-loop for TRYJOIN here? */
+			/* TODO: Move the wait-loop for TRYJOIN here? */
 #  endif /* HAVE_PTHREAD_TRYJOIN */
 # endif  /* HAVE_SEMAPHORE */
 #endif   /* HAVE_PTHREAD */

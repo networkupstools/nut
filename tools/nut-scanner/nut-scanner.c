@@ -990,7 +990,7 @@ static void show_usage(void)
 
 	printf("  -E, --eaton_serial <serial ports list>: Scan serial Eaton devices (XCP, SHUT and Q1).\n");
 
-#if (defined HAVE_PTHREAD) && (defined HAVE_PTHREAD_TRYJOIN)
+#if (defined HAVE_PTHREAD) && ( (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE) )
 	printf("  -T, --thread <max number of threads>: Limit the amount of scanning threads running simultaneously (default: %" PRIuSIZE ").\n", max_threads);
 #else
 	printf("  -T, --thread <max number of threads>: Limit the amount of scanning threads running simultaneously (not implemented in this build: no pthread support)\n");
@@ -1267,7 +1267,13 @@ int main(int argc, char *argv[])
 					end_ip = NULL;
 				}
 
-				start_ip = strdup(optarg);
+				if (optarg[0] == '[' && optarg[strlen(optarg) - 1] == ']') {
+					start_ip = strdup(optarg + 1);
+					start_ip[strlen(start_ip) - 1] = '\0';
+				} else {
+					start_ip = strdup(optarg);
+				}
+
 				if (end_ip != NULL) {
 					/* Already we know two addresses, save them */
 					nutscan_add_ip_range(&ip_ranges_list, start_ip, end_ip);
@@ -1285,7 +1291,13 @@ int main(int argc, char *argv[])
 					end_ip = NULL;
 				}
 
-				end_ip = strdup(optarg);
+				if (optarg[0] == '[' && optarg[strlen(optarg) - 1] == ']') {
+					end_ip = strdup(optarg + 1);
+					end_ip[strlen(end_ip) - 1] = '\0';
+				} else {
+					end_ip = strdup(optarg);
+				}
+
 				if (start_ip != NULL) {
 					/* Already we know two addresses, save them */
 					nutscan_add_ip_range(&ip_ranges_list, start_ip, end_ip);
@@ -1549,6 +1561,15 @@ display_help:
 	}
 
 #ifdef HAVE_PTHREAD
+# if (defined HAVE_PTHREAD_TRYJOIN) && (defined HAVE_SEMAPHORE)
+	upsdebugx(1, "Parallel scan support: HAVE_PTHREAD && HAVE_PTHREAD_TRYJOIN && HAVE_SEMAPHORE");
+# elif (defined HAVE_PTHREAD_TRYJOIN)
+	upsdebugx(1, "Parallel scan support: HAVE_PTHREAD && HAVE_PTHREAD_TRYJOIN && !HAVE_SEMAPHORE");
+# elif (defined HAVE_SEMAPHORE)
+	upsdebugx(1, "Parallel scan support: HAVE_PTHREAD && !HAVE_PTHREAD_TRYJOIN && HAVE_SEMAPHORE");
+# else
+	upsdebugx(1, "Parallel scan support: HAVE_PTHREAD && !HAVE_PTHREAD_TRYJOIN && !HAVE_SEMAPHORE");
+# endif
 # ifdef HAVE_SEMAPHORE
 	/* FIXME: Currently sem_init already done on nutscan-init for lib need.
 	   We need to destroy it before re-init. We currently can't change "sem value"
@@ -1577,8 +1598,15 @@ display_help:
 			"WARNING: Limiting max_threads to range acceptable for sem_init()\n\n");
 		max_threads = UINT_MAX - 1;
 	}
-	sem_init(current_sem, 0, (unsigned int)max_threads);
+
+	upsdebugx(1, "Parallel scan support: max_threads=%" PRIuSIZE, max_threads);
+	if (sem_init(current_sem, 0, (unsigned int)max_threads)) {
+		/* Show this one to end-users so they know */
+		upsdebug_with_errno(0, "Parallel scan support: sem_init() failed");
+	}
 # endif
+#else
+	upsdebugx(1, "Parallel scan support: !HAVE_PTHREAD");
 #endif /* HAVE_PTHREAD */
 
 	if (start_ip != NULL || end_ip != NULL) {

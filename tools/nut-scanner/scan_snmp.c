@@ -480,6 +480,8 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 	dev = nutscan_new_device();
 	dev->type = TYPE_SNMP;
 	dev->driver = strdup("snmp-ups");
+	/* FIXME: Should the IPv6 address here be bracketed?
+	 *  Does our driver support the notation? */
 	dev->port = strdup(session->peername);
 	if (response != NULL) {
 		buf = malloc (response->variables->val_len + 1);
@@ -1047,20 +1049,28 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 	nutscan_snmp_t * tmp_sec;
 	nutscan_ip_range_list_iter_t ip;
 	char * ip_str = NULL;
+
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE
 	sem_t * semaphore = nutscan_semaphore();
 	sem_t   semaphore_scantype_inst;
 	sem_t * semaphore_scantype = &semaphore_scantype_inst;
 # endif /* HAVE_SEMAPHORE */
-
-	pthread_t thread;
+  pthread_t thread;
 	nutscan_thread_t * thread_array = NULL;
 	size_t thread_count = 0, i;
 # if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE)
 	size_t  max_threads_scantype = max_threads_netsnmp;
 # endif
+#endif /* HAVE_PTHREAD */
 
+#ifdef WIN32
+	WSADATA WSAdata;
+	WSAStartup(2,&WSAdata);
+	atexit((void(*)(void))WSACleanup);
+#endif
+
+#ifdef HAVE_PTHREAD
 	pthread_mutex_init(&dev_mutex, NULL);
 
 # ifdef HAVE_SEMAPHORE
@@ -1088,7 +1098,11 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 				__func__);
 			max_threads_scantype = UINT_MAX - 1;
 		}
-		sem_init(semaphore_scantype, 0, (unsigned int)max_threads_scantype);
+
+		upsdebugx(4, "%s: sem_init() for %" PRIuSIZE " threads", __func__, max_threads_scantype);
+		if (sem_init(semaphore_scantype, 0, (unsigned int)max_threads_scantype)) {
+			upsdebug_with_errno(4, "%s: sem_init() failed", __func__);
+		}
 	}
 # endif /* HAVE_SEMAPHORE */
 
@@ -1149,8 +1163,21 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 			sem_wait(semaphore);
 			pass = TRUE;
 		} else {
-			pass = ((max_threads_scantype == 0 || sem_trywait(semaphore_scantype) == 0) &&
-			        sem_trywait(semaphore) == 0);
+			/* If successful (the lock was acquired),
+			 * sem_wait() and sem_trywait() will return 0.
+			 * Otherwise, -1 is returned and errno is set,
+			 * and the state of the semaphore is unchanged.
+			 */
+			int	stwST = sem_trywait(semaphore_scantype), stwS = sem_trywait(semaphore);
+			pass = ((max_threads_scantype == 0 || stwST == 0) && stwS == 0);
+			upsdebugx(4, "%s: max_threads_scantype=%" PRIuSIZE
+				" curr_threads=%" PRIuSIZE
+				" thread_count=%" PRIuSIZE
+				" stwST=%d stwS=%d pass=%d",
+				__func__, max_threads_scantype,
+				curr_threads, thread_count,
+				stwST, stwS, pass
+			);
 		}
 # else
 #  ifdef HAVE_PTHREAD_TRYJOIN
@@ -1173,6 +1200,7 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 				"(launched overall: %" PRIuSIZE "), "
 				"waiting until some would finish",
 				__func__, curr_threads, thread_count);
+
 			while (curr_threads >= max_threads
 			   || (curr_threads >= max_threads_scantype && max_threads_scantype > 0)
 			) {
@@ -1221,6 +1249,7 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 			}
 			upsdebugx(2, "%s: proceeding with scan", __func__);
 		}
+
 		/* NOTE: No change to default "pass" in this ifdef:
 		 * if we got to this line, we have a slot to use */
 #  endif /* HAVE_PTHREAD_TRYJOIN */
@@ -1268,9 +1297,10 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 # ifdef HAVE_SEMAPHORE
 			/* Wait for all current scans to complete */
 			if (thread_array != NULL) {
-				upsdebugx (2, "%s: Running too many scanning threads, "
+				upsdebugx (2, "%s: Running too many scanning threads (%"
+					PRIuSIZE "), "
 					"waiting until older ones would finish",
-					__func__);
+					__func__, thread_count);
 				for (i = 0; i < thread_count ; i++) {
 					int ret;
 					if (!thread_array[i].active) {
@@ -1299,7 +1329,7 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 			}
 # else
 #  ifdef HAVE_PTHREAD_TRYJOIN
-		/* TODO: Move the wait-loop for TRYJOIN here? */
+			/* TODO: Move the wait-loop for TRYJOIN here? */
 #  endif /* HAVE_PTHREAD_TRYJOIN */
 # endif  /* HAVE_SEMAPHORE */
 #endif   /* HAVE_PTHREAD */

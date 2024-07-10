@@ -422,6 +422,7 @@ char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, const char * startIP, const 
 		return strdup(host);
 	}
 	else { /* IPv6 */
+		size_t	hlen;
 		for (i = 0; i < 16; i++) {
 			if (ip->start6.s6_addr[i] !=ip->stop6.s6_addr[i]) {
 				if (ip->start6.s6_addr[i] > ip->stop6.s6_addr[i]) {
@@ -431,9 +432,17 @@ char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, const char * startIP, const 
 			}
 		}
 
-		if (ntop6(&ip->start6, host, sizeof(host)) != 0) {
+		/* IPv6 addresses must be in square brackets,
+		 * for upsclient et al to differentiate them
+		 * from the port number.
+		 */
+		host[0] = '[';
+		if (ntop6(&ip->start6, host + 1, sizeof(host) - 2) != 0) {
 			return NULL;
 		}
+		hlen = strlen(host);
+		host[hlen] = ']';
+		host[hlen + 1] = '\0';
 
 		return strdup(host);
 	}
@@ -463,6 +472,8 @@ char * nutscan_ip_iter_inc(nutscan_ip_iter_t * ip)
 		return strdup(host);
 	}
 	else {
+		size_t	hlen;
+
 		/* Check if this is the last address to scan */
 		if (memcmp(&ip->start6.s6_addr, &ip->stop6.s6_addr,
 				sizeof(ip->start6.s6_addr)) == 0) {
@@ -470,9 +481,18 @@ char * nutscan_ip_iter_inc(nutscan_ip_iter_t * ip)
 		}
 
 		increment_IPv6(&ip->start6);
-		if (ntop6(&ip->start6, host, sizeof(host)) != 0) {
+
+		/* IPv6 addresses must be in square brackets,
+		 * for upsclient et al to differentiate them
+		 * from the port number.
+		 */
+		host[0] = '[';
+		if (ntop6(&ip->start6, host + 1, sizeof(host) - 2) != 0) {
 			return NULL;
 		}
+		hlen = strlen(host);
+		host[hlen] = ']';
+		host[hlen + 1] = '\0';
 
 		return strdup(host);
 	}
@@ -505,6 +525,12 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 	*start_ip = NULL;
 	*stop_ip = NULL;
 
+	if (!cidr) {
+		upsdebugx(0, "WARNING: %s: null cidr pointer was provided",
+			__func__);
+		return 0;
+	}
+
 	cidr_tok = strdup(cidr);
 	first_ip = strdup(strtok_r(cidr_tok, "/", &saveptr));
 	if (first_ip == NULL) {
@@ -517,10 +543,18 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 	if (mask == NULL) {
 		upsdebugx(0, "WARNING: %s failed to parse mask from cidr=%s (first_ip=%s)",
 			__func__, cidr, first_ip);
-		free (first_ip);
+		free(first_ip);
 		free(cidr_tok);
 		return 0;
 	}
+
+	if (first_ip[0] == '[' && first_ip[strlen(first_ip) - 1] == ']') {
+		char *s = strdup(first_ip + 1);
+		s[strlen(s) - 1] = '\0';
+		free(first_ip);
+		first_ip = s;
+	}
+
 	upsdebugx(5, "%s: parsed cidr=%s into first_ip=%s and mask=%s",
 		__func__, cidr, first_ip, mask);
 
