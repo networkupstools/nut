@@ -29,6 +29,9 @@
 #include "nut-scan.h"
 #include "nut_stdint.h"
 
+/* externally visible to nutscan-init */
+int nutscan_unload_snmp_library(void);
+
 #ifdef WITH_SNMP
 
 #ifndef WIN32
@@ -116,6 +119,7 @@ typedef int bool_t;
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
+static char *dl_saved_libname = NULL;
 #endif	/* WITH_SNMP_STATIC */
 
 static void (*nut_init_snmp)(const char *type);
@@ -177,9 +181,23 @@ static oid *nut_usmHMAC256SHA384AuthProtocol;
 static oid *nut_usmHMAC384SHA512AuthProtocol;
 #endif
 
+/* return 0 on success, -1 on error e.g. "was not loaded";
+ * other values may be possible if lt_dlclose() errors set them;
+ * visible externally */
+#ifndef WITH_SNMP_STATIC
+int nutscan_unload_library(int *avail, lt_dlhandle *pdl_handle, char **libpath);
+#endif
+int nutscan_unload_snmp_library(void)
+{
+#ifdef WITH_SNMP_STATIC
+	return 0;
+#else
+	return nutscan_unload_library(&nutscan_avail_snmp, &dl_handle, &dl_saved_libname);
+#endif
+}
+
 /* return 0 on error; visible externally */
 int nutscan_load_snmp_library(const char *libname_path);
-
 int nutscan_load_snmp_library(const char *libname_path)
 {
 #ifdef WITH_SNMP_STATIC
@@ -453,7 +471,11 @@ int nutscan_load_snmp_library(const char *libname_path)
 	}
 #endif /* NUT_HAVE_LIBNETSNMP_usmHMAC384SHA512AuthProtocol */
 
-#endif	/* WITH_SNMP_STATIC */
+	if (dl_saved_libname)
+		free(dl_saved_libname);
+	dl_saved_libname = xstrdup(libname_path);
+
+#endif	/* not WITH_SNMP_STATIC */
 
 	return 1;
 
@@ -464,6 +486,10 @@ err:
 		libname_path, dl_error);
 	dl_handle = (void *)1;
 	lt_dlexit();
+	if (dl_saved_libname) {
+		free(dl_saved_libname);
+		dl_saved_libname = NULL;
+	}
 	return 0;
 #endif	/* not WITH_SNMP_STATIC */
 }
@@ -1422,4 +1448,8 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 	return NULL;
 }
 
+int nutscan_unload_snmp_library(void)
+{
+	return 0;
+}
 #endif /* WITH_SNMP */

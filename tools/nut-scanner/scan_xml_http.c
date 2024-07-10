@@ -30,6 +30,9 @@
 #include "nut-scan.h"
 #include "nut_stdint.h"
 
+/* externally visible to nutscan-init */
+int nutscan_unload_neon_library(void);
+
 #ifdef WITH_NEON
 
 #ifndef WIN32
@@ -60,6 +63,7 @@
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
+static char *dl_saved_libname = NULL;
 
 static void (*nut_ne_xml_push_handler)(ne_xml_parser *p,
                             ne_xml_startelm_cb *startelm,
@@ -84,6 +88,15 @@ typedef enum ebool { FALSE = 0, TRUE } bool_t;
 #else
 typedef int bool_t;
 #endif
+
+/* return 0 on success, -1 on error e.g. "was not loaded";
+ * other values may be possible if lt_dlclose() errors set them;
+ * visible externally */
+int nutscan_unload_library(int *avail, lt_dlhandle *pdl_handle, char **libpath);
+int nutscan_unload_neon_library(void)
+{
+	return nutscan_unload_library(&nutscan_avail_xml_http, &dl_handle, &dl_saved_libname);
+}
 
 /* return 0 on error; visible externally */
 int nutscan_load_neon_library(const char *libname_path);
@@ -141,6 +154,10 @@ int nutscan_load_neon_library(const char *libname_path)
 		goto err;
 	}
 
+	if (dl_saved_libname)
+		free(dl_saved_libname);
+	dl_saved_libname = xstrdup(libname_path);
+
 	return 1;
 err:
 	fprintf(stderr,
@@ -148,6 +165,10 @@ err:
 		libname_path, dl_error);
 	dl_handle = (void *)1;
 	lt_dlexit();
+	if (dl_saved_libname) {
+		free(dl_saved_libname);
+		dl_saved_libname = NULL;
+	}
 	return 0;
 }
 
@@ -845,4 +866,8 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 	return NULL;
 }
 
+int nutscan_unload_neon_library(void)
+{
+	return 0;
+}
 #endif /* WITH_NEON */

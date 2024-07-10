@@ -28,6 +28,9 @@
 #include "nut-scan.h"
 #include "nut_stdint.h"
 
+/* externally visible to nutscan-init */
+int nutscan_unload_ipmi_library(void);
+
 #ifdef WITH_IPMI
 
 #include "upsclient.h"
@@ -46,6 +49,7 @@
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
+static char *dl_saved_libname = NULL;
 
 #ifdef HAVE_FREEIPMI_11X_12X
   /* Functions symbols remapping */
@@ -133,6 +137,15 @@ typedef int bool_t;
 /* Internal functions */
 static nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t * sec);
 static void * nutscan_scan_ipmi_device_thready(void * arg_sec);
+
+/* return 0 on success, -1 on error e.g. "was not loaded";
+ * other values may be possible if lt_dlclose() errors set them;
+ * visible externally */
+int nutscan_unload_library(int *avail, lt_dlhandle *pdl_handle, char **libpath);
+int nutscan_unload_ipmi_library(void)
+{
+	return nutscan_unload_library(&nutscan_avail_ipmi, &dl_handle, &dl_saved_libname);
+}
 
 /* Return 0 on error; visible externally */
 int nutscan_load_ipmi_library(const char *libname_path);
@@ -261,6 +274,10 @@ int nutscan_load_ipmi_library(const char *libname_path)
 			goto err;
 	}
 
+	if (dl_saved_libname)
+		free(dl_saved_libname);
+	dl_saved_libname = xstrdup(libname_path);
+
 	return 1;
 
 err:
@@ -269,6 +286,10 @@ err:
 		libname_path, dl_error);
 	dl_handle = (void *)1;
 	lt_dlexit();
+	if (dl_saved_libname) {
+		free(dl_saved_libname);
+		dl_saved_libname = NULL;
+	}
 	return 0;
 }
 /* end of dynamic link library stuff */
@@ -1048,4 +1069,8 @@ nutscan_device_t *  nutscan_scan_ip_range_ipmi(nutscan_ip_range_list_t * irl, nu
 	return NULL;
 }
 
+int nutscan_unload_ipmi_library(void)
+{
+	return 0;
+}
 #endif /* WITH_IPMI */

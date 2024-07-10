@@ -41,6 +41,11 @@
 # if defined HAVE_WINSOCK2_H && HAVE_WINSOCK2_H
 #  include <winsock2.h>
 # endif
+#endif
+
+/* FIXME: We may want to (also?) use lt_dlopenext(), so
+ * that libtool would offer platform-specific extensions */
+#ifdef WIN32
 # define SOEXT ".dll"
 #else
 # ifdef NUT_PLATFORM_APPLE_OSX
@@ -61,12 +66,19 @@ int nutscan_avail_snmp = 0;
 int nutscan_avail_usb = 0;
 int nutscan_avail_xml_http = 0;
 
+/* Methods defined in scan_*.c source files */
 int nutscan_load_usb_library(const char *libname_path);
+int nutscan_unload_usb_library(void);
 int nutscan_load_snmp_library(const char *libname_path);
+int nutscan_unload_snmp_library(void);
 int nutscan_load_neon_library(const char *libname_path);
+int nutscan_unload_neon_library(void);
 int nutscan_load_avahi_library(const char *libname_path);
+int nutscan_unload_avahi_library(void);
 int nutscan_load_ipmi_library(const char *libname_path);
+int nutscan_unload_ipmi_library(void);
 int nutscan_load_upsclient_library(const char *libname_path);
+int nutscan_unload_upsclient_library(void);
 
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE
@@ -586,26 +598,66 @@ void nutscan_init(void)
 	nutscan_avail_nut_simulation = 1;
 }
 
+/* return 0 on success, -1 on error e.g. "was not loaded";
+ * other values may be possible if lt_dlclose() errors set them;
+ * visible externally to scan_* modules */
+int nutscan_unload_library(int *avail, lt_dlhandle *pdl_handle, char **libpath);
+int nutscan_unload_library(int *avail, lt_dlhandle *pdl_handle, char **libpath)
+{
+	int ret = -1;
+
+	if (avail == NULL || pdl_handle == NULL) {
+		upsdebugx(1, "%s: called with bad inputs, no-op", __func__);
+		return -2;
+	}
+
+	/* never tried/already unloaded */
+	if (*pdl_handle == NULL) {
+		goto end;
+	}
+
+	/* if previous init failed */
+	if (*pdl_handle == (void *)1) {
+		goto end;
+	}
+
+	if (*avail == 0) {
+		upsdebugx(1, "%s: Asked to unload a module %p "
+			"for %s but our flag says it is not loaded",
+			__func__, (void *)(*pdl_handle),
+			(libpath && *libpath && **libpath)
+			? *libpath
+			: "<unidentified module>");
+	}
+
+	/* init has already been done */
+	if (libpath && *libpath && **libpath) {
+		upsdebugx(1, "%s: unloading module %s",
+			__func__, *libpath);
+	}
+	ret = lt_dlclose(*pdl_handle);
+	lt_dlexit();
+
+end:
+	*pdl_handle = NULL;
+	*avail = 0;
+
+	if (libpath && *libpath) {
+		free(*libpath);
+		*libpath = NULL;
+	}
+
+	return ret;
+}
+
 void nutscan_free(void)
 {
-	if (nutscan_avail_usb) {
-		lt_dlexit();
-	}
-	if (nutscan_avail_snmp) {
-		lt_dlexit();
-	}
-	if (nutscan_avail_xml_http) {
-		lt_dlexit();
-	}
-	if (nutscan_avail_avahi) {
-		lt_dlexit();
-	}
-	if (nutscan_avail_ipmi) {
-		lt_dlexit();
-	}
-	if (nutscan_avail_nut) {
-		lt_dlexit();
-	}
+	nutscan_unload_usb_library();
+	nutscan_unload_snmp_library();
+	nutscan_unload_neon_library();
+	nutscan_unload_avahi_library();
+	nutscan_unload_ipmi_library();
+	nutscan_unload_upsclient_library();
 
 #ifdef HAVE_PTHREAD
 /* TOTHINK: See comments near mutex/semaphore init code above */

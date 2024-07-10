@@ -27,6 +27,9 @@
 #include "common.h"
 #include "nut-scan.h"
 
+/* externally visible to nutscan-init */
+int nutscan_unload_avahi_library(void);
+
 #ifdef WITH_AVAHI
 
 #include <stdio.h>
@@ -48,6 +51,7 @@
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
+static char *dl_saved_libname = NULL;
 
 static AvahiClient* (*nut_avahi_service_browser_get_client)(AvahiServiceBrowser *);
 static int (*nut_avahi_simple_poll_loop)(AvahiSimplePoll *s);
@@ -90,6 +94,15 @@ static char* (*nut_avahi_string_list_to_string)(AvahiStringList *l);
 static int (*nut_avahi_service_browser_free)(AvahiServiceBrowser *);
 static char * (*nut_avahi_address_snprint)(char *ret_s, size_t length, const AvahiAddress *a);
 static const AvahiPoll* (*nut_avahi_simple_poll_get)(AvahiSimplePoll *s);
+
+/* return 0 on success, -1 on error e.g. "was not loaded";
+ * other values may be possible if lt_dlclose() errors set them;
+ * visible externally */
+int nutscan_unload_library(int *avail, lt_dlhandle *pdl_handle, char **libpath);
+int nutscan_unload_avahi_library(void)
+{
+	return nutscan_unload_library(&nutscan_avail_avahi, &dl_handle, &dl_saved_libname);
+}
 
 /* return 0 on error; visible externally */
 int nutscan_load_avahi_library(const char *libname_path);
@@ -210,6 +223,10 @@ int nutscan_load_avahi_library(const char *libname_path)
 		goto err;
 	}
 
+	if (dl_saved_libname)
+		free(dl_saved_libname);
+	dl_saved_libname = xstrdup(libname_path);
+
 	return 1;
 err:
 	fprintf(stderr,
@@ -217,6 +234,10 @@ err:
 		libname_path, dl_error);
 	dl_handle = (void *)1;
 	lt_dlexit();
+	if (dl_saved_libname) {
+		free(dl_saved_libname);
+		dl_saved_libname = NULL;
+	}
 	return 0;
 }
 /* end of dynamic link library stuff */
@@ -600,4 +621,8 @@ nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout)
 	return NULL;
 }
 
+int nutscan_unload_avahi_library(void)
+{
+	return 0;
+}
 #endif /* WITH_AVAHI */

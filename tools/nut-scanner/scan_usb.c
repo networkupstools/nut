@@ -26,6 +26,9 @@
 #include "common.h"
 #include "nut-scan.h"
 
+/* externally visible to nutscan-init */
+int nutscan_unload_usb_library(void);
+
 #ifdef WITH_USB
 
 #include "upsclient.h"
@@ -37,6 +40,8 @@
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
+static char *dl_saved_libname = NULL;
+
 static int (*nut_usb_close)(libusb_device_handle *dev);
 static int (*nut_usb_get_string_simple)(libusb_device_handle *dev, int index,
 		char *buf, size_t buflen);
@@ -75,6 +80,15 @@ static int (*nut_usb_get_string_simple)(libusb_device_handle *dev, int index,
  static int (*nut_usb_find_devices)(void);
  static char * (*nut_usb_strerror)(void);
 #endif /* WITH_LIBUSB_1_0 */
+
+/* return 0 on success, -1 on error e.g. "was not loaded";
+ * other values may be possible if lt_dlclose() errors set them;
+ * visible externally */
+int nutscan_unload_library(int *avail, lt_dlhandle *pdl_handle, char **libpath);
+int nutscan_unload_usb_library(void)
+{
+	return nutscan_unload_library(&nutscan_avail_usb, &dl_handle, &dl_saved_libname);
+}
 
 /* return 0 on error; visible externally */
 int nutscan_load_usb_library(const char *libname_path);
@@ -219,6 +233,10 @@ int nutscan_load_usb_library(const char *libname_path)
 	}
 #endif /* WITH_LIBUSB_1_0 */
 
+	if (dl_saved_libname)
+		free(dl_saved_libname);
+	dl_saved_libname = xstrdup(libname_path);
+
 	return 1;
 
 err:
@@ -227,6 +245,10 @@ err:
 		libname_path, dl_error);
 	dl_handle = (void *)1;
 	lt_dlexit();
+	if (dl_saved_libname) {
+		free(dl_saved_libname);
+		dl_saved_libname = NULL;
+	}
 	return 0;
 }
 /* end of dynamic link library stuff */
@@ -663,4 +685,9 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 	return NULL;
 }
 
+
+int nutscan_unload_usb_library(void)
+{
+	return 0;
+}
 #endif /* WITH_USB */

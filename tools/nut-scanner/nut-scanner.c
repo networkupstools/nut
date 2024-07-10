@@ -1886,8 +1886,8 @@ display_help:
 #endif
 
 	upsdebugx(1, "SCANS DONE: free common scanner resources");
-	nutscan_free();
 	nutscan_free_ip_ranges(&ip_ranges_list);
+	nutscan_free();
 
 	upsdebugx(1, "SCANS DONE: EXIT_SUCCESS");
 	return EXIT_SUCCESS;
