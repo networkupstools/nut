@@ -504,9 +504,6 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 
 	*start_ip = NULL;
 	*stop_ip = NULL;
-#ifdef WIN32
-        WSADATA WSAdata;
-#endif
 
 	cidr_tok = strdup(cidr);
 	first_ip = strdup(strtok_r(cidr_tok, "/", &saveptr));
@@ -549,11 +546,6 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 	hints.ai_family = AF_INET;
 
 	ip.type = IPv4;
-
-#ifdef WIN32
-        WSAStartup(2,&WSAdata);
-        atexit((void(*)(void))WSACleanup);
-#endif
 
 	if ((ret = getaddrinfo(first_ip, NULL, &hints, &res)) != 0) {
 		/* EAI_ADDRFAMILY? */
