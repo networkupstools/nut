@@ -1097,12 +1097,6 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 # endif
 #endif /* HAVE_PTHREAD */
 
-#ifdef WIN32
-	WSADATA WSAdata;
-	WSAStartup(2,&WSAdata);
-	atexit((void(*)(void))WSACleanup);
-#endif
-
 #ifdef HAVE_PTHREAD
 	pthread_mutex_init(&dev_mutex, NULL);
 
