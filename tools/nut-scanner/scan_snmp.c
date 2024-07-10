@@ -97,18 +97,20 @@
 
 #define SysOID ".1.3.6.1.2.1.1.2.0"
 
+/* This variable collects device(s) from a sequential or parallel scan,
+ * is returned to caller, and cleared to allow subsequent independent scans */
+static nutscan_device_t * dev_ret = NULL;
+#ifdef HAVE_PTHREAD
+static pthread_mutex_t dev_mutex;
+#endif
+static useconds_t g_usec_timeout ;
+
 /* use explicit booleans */
 #ifndef FALSE
 typedef enum ebool { FALSE = 0, TRUE } bool_t;
 #else
 typedef int bool_t;
 #endif
-
-static nutscan_device_t * dev_ret = NULL;
-#ifdef HAVE_PTHREAD
-static pthread_mutex_t dev_mutex;
-#endif
-static useconds_t g_usec_timeout ;
 
 #ifndef WITH_SNMP_STATIC
 /* dynamic link library stuff */
@@ -1290,6 +1292,8 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 #else   /* not HAVE_PTHREAD */
 			try_SysOID((void *)tmp_sec);
 #endif  /* if HAVE_PTHREAD */
+
+			/* Prepare the next iteration */
 /*			free(ip_str); */ /* Do not free() here - seems to cause a double-free instead */
 			ip_str = nutscan_ip_ranges_iter_inc(&ip);
 /*			free(tmp_sec); */

@@ -70,6 +70,8 @@ static int (*nut_ne_xml_failed)(ne_xml_parser *p);
 static ne_xml_parser * (*nut_ne_xml_create)(void);
 static int (*nut_ne_xml_parse)(ne_xml_parser *p, const char *block, size_t len);
 
+/* This variable collects device(s) from a sequential or parallel scan,
+ * is returned to caller, and cleared to allow subsequent independent scans */
 static nutscan_device_t * dev_ret = NULL;
 #ifdef HAVE_PTHREAD
 static pthread_mutex_t dev_mutex;
@@ -451,6 +453,7 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 	 || irl->ip_ranges->start_ip == NULL || irl->ip_ranges->end_ip == NULL
 	) {
 		upsdebugx(1, "%s: Scanning XML/HTTP bus using broadcast.", __func__);
+		/* Fall through to after the if/else clause */
 	} else {
 		/* Iterate the one or a range of IPs to scan */
 		nutscan_ip_range_list_iter_t ip;
@@ -676,6 +679,7 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 				nutscan_scan_xml_http_generic((void *)tmp_sec);
 #endif /* if HAVE_PTHREAD */
 
+				/* Prepare the next iteration */
 /*				free(ip_str); */ /* One of these free()s seems to cause a double-free instead */
 				ip_str = nutscan_ip_ranges_iter_inc(&ip);
 /*				free(tmp_sec); */
