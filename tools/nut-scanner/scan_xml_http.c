@@ -217,7 +217,7 @@ static void * nutscan_scan_xml_http_thready(void * arg)
 /* A NULL "ip" causes a broadcast scan; otherwise the single ip address is queried directly */
 	char *ip = NULL;
 	useconds_t usec_timeout = 0;
-	int peerSocket;
+	int peerSocket = -1;
 	int sockopt_on = 1;
 	struct sockaddr_in sockAddress_udp;
 	socklen_t sockAddressLength = sizeof(sockAddress_udp);
@@ -433,7 +433,8 @@ end_abort:
 		(ip ? ip : "<broadcast>"));
 
 end:
-	if (ip != NULL)
+	/* Broadcast is also a socket! */
+	if (peerSocket != -1)
 		close(peerSocket);
 
 end_free:
