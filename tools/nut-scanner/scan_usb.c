@@ -1,5 +1,6 @@
 /*
  *  Copyright (C) 2011-2016 - EATON
+ *  Copyright (C) 2020-2024 - Jim Klimov <jimklimov+nut@gmail.com> - support and modernization of codebase
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
