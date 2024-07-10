@@ -922,6 +922,12 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 	return 1;
 }
 
+static void * wrap_nut_snmp_sess_open(struct snmp_session *session)
+{
+	/* Open the session */
+	return (*nut_snmp_sess_open)(session); /* establish the session */
+}
+
 /* Performs a (parallel-able) SNMP protocol scan of one remote host.
  * Returns NULL, updates global dev_ret when a scan is successful.
  * FREES the caller's copy of "sec" and "peername" in it, if applicable.
@@ -951,7 +957,7 @@ static void * try_SysOID_thready(void * arg)
 	snmp_sess.timeout = (long)g_usec_timeout;
 
 	/* Open the session */
-	handle = (*nut_snmp_sess_open)(&snmp_sess); /* establish the session */
+	handle = wrap_nut_snmp_sess_open(&snmp_sess); /* establish the session */
 	if (handle == NULL) {
 		upsdebugx(2,
 			"Failed to open SNMP session for %s",
