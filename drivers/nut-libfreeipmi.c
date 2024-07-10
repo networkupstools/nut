@@ -310,22 +310,23 @@ static const char* libfreeipmi_getfield (uint8_t language_code,
 	if (strbuflen)
 		return strbuf;
 
-  return NULL;
+	return NULL;
 }
 
 /* Get voltage value from the IPMI voltage code */
 static float libfreeipmi_get_voltage (uint8_t voltage_code)
 {
-  if (voltage_code == IPMI_FRU_VOLTAGE_12V)
-    return 12;
-  else if (voltage_code == IPMI_FRU_VOLTAGE_MINUS12V)
-    return -12;
-  else if (voltage_code == IPMI_FRU_VOLTAGE_5V)
-    return 5;
-  else if (voltage_code == IPMI_FRU_VOLTAGE_3_3V)
-    return 3.3;
-  else
-    return 0;
+	/* FIXME: switch/case? */
+	if (voltage_code == IPMI_FRU_VOLTAGE_12V)
+		return 12;
+	else if (voltage_code == IPMI_FRU_VOLTAGE_MINUS12V)
+		return -12;
+	else if (voltage_code == IPMI_FRU_VOLTAGE_5V)
+		return 5;
+	else if (voltage_code == IPMI_FRU_VOLTAGE_3_3V)
+		return 3.3;
+	else
+		return 0;
 }
 
 /* Cleanup IPMI contexts */
