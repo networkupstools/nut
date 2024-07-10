@@ -94,3 +94,10 @@
    fun:_dlerror_run
    ...
 }
+{
+   <nut-scanner-snmp-libinit>
+   Memcheck:Leak
+   ...
+   fun:init_snmp_once
+   ...
+}

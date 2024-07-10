@@ -1057,6 +1057,15 @@ try_SysOID_free:
 	return NULL;
 }
 
+static void init_snmp_once(void)
+{
+	/* Initialize the SNMP library */
+	if (!nut_initialized_snmp) {
+		(*nut_init_snmp)("nut-scanner");
+		nut_initialized_snmp = 1;
+	}
+}
+
 nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip,
                                      useconds_t usec_timeout, nutscan_snmp_t * sec)
 {
@@ -1166,11 +1175,7 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 		upsdebugx(1, "Failed to enable numeric OIDs resolution");
 	}
 
-	/* Initialize the SNMP library */
-	if (!nut_initialized_snmp) {
-		(*nut_init_snmp)("nut-scanner");
-		nut_initialized_snmp = 1;
-	}
+	init_snmp_once();
 
 	ip_str = nutscan_ip_ranges_iter_init(&ip, irl);
 
