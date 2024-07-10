@@ -586,7 +586,8 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 				 * Otherwise, -1 is returned and errno is set,
 				 * and the state of the semaphore is unchanged.
 				 */
-				int	stwST = sem_trywait(semaphore_scantype), stwS = sem_trywait(semaphore);
+				int	stwST = sem_trywait(semaphore_scantype);
+				int	stwS  = sem_trywait(semaphore);
 				pass = ((max_threads_scantype == 0 || stwST == 0) && stwS == 0);
 				upsdebugx(4, "%s: max_threads_scantype=%" PRIuSIZE
 					" curr_threads=%" PRIuSIZE
