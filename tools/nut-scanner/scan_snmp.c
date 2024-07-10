@@ -121,6 +121,7 @@ static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
 static char *dl_saved_libname = NULL;
 #endif	/* WITH_SNMP_STATIC */
+static int nut_initialized_snmp = 0;
 
 static void (*nut_init_snmp)(const char *type);
 static void (*nut_snmp_sess_init)(netsnmp_session * session);
@@ -192,6 +193,7 @@ int nutscan_unload_snmp_library(void)
 #ifdef WITH_SNMP_STATIC
 	return 0;
 #else
+	nut_initialized_snmp = 0;
 	return nutscan_unload_library(&nutscan_avail_snmp, &dl_handle, &dl_saved_libname);
 #endif
 }
@@ -1165,7 +1167,10 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 	}
 
 	/* Initialize the SNMP library */
-	(*nut_init_snmp)("nut-scanner");
+	if (!nut_initialized_snmp) {
+		(*nut_init_snmp)("nut-scanner");
+		nut_initialized_snmp = 1;
+	}
 
 	ip_str = nutscan_ip_ranges_iter_init(&ip, irl);
 
