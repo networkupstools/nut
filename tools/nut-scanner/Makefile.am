@@ -75,6 +75,8 @@ if HAVE_WINDOWS
   libnutscan_la_LIBADD += $(top_builddir)/common/libnutwincompat.la
   libnutscan_la_LDFLAGS += -no-undefined
 endif HAVE_WINDOWS
+# Technically, we might only have this one set on Windows so far...
+libnutscan_la_LDFLAGS += @NETLIBS_GETADDRS@
 
 #
 # Below we set API versions of public libraries

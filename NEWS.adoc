@@ -146,7 +146,7 @@ installed.
    * newly added support to scan several IP addresses (single or ranges)
      with the same call, by repeating command-line options; also `-m auto{,4,6}`
      can be specified (once) to select IP (all, IPv4, IPv6) address ranges of
-     configured local network interfaces (currently not implemented for WIN32).
+     configured local network interfaces.
      An `/ADDRLEN` suffix can be added to the option, to filter out discovered
      subnets with too many bits available for the host address part (avoiding
      millions of scans in the extreme cases).

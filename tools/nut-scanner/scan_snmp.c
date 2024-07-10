@@ -1056,7 +1056,7 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 	sem_t   semaphore_scantype_inst;
 	sem_t * semaphore_scantype = &semaphore_scantype_inst;
 # endif /* HAVE_SEMAPHORE */
-	pthread_t thread;
+  pthread_t thread;
 	nutscan_thread_t * thread_array = NULL;
 	size_t thread_count = 0, i;
 # if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE)

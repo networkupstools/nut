@@ -200,16 +200,8 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 	ssize_t recv_size;
 	int i;
 	nutscan_device_t * nut_dev = NULL;
-#ifdef WIN32
-	WSADATA WSAdata;
-#endif
 
 	memset(&sockAddress_udp, 0, sizeof(sockAddress_udp));
-
-#ifdef WIN32
-	WSAStartup(2,&WSAdata);
-	atexit((void(*)(void))WSACleanup);
-#endif
 
 	if (sec != NULL) {
 /*		if (sec->port_http > 0 && sec->port_http <= 65534)
