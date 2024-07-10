@@ -598,7 +598,7 @@ void nutscan_init(void)
 	nutscan_avail_nut_simulation = 1;
 }
 
-/* return 0 on success, -1 on error e.g. "was not loaded";
+/* Return 0 on success, -1 on error e.g. "was not loaded";
  * other values may be possible if lt_dlclose() errors set them;
  * visible externally to scan_* modules */
 int nutscan_unload_library(int *avail, lt_dlhandle *pdl_handle, char **libpath);

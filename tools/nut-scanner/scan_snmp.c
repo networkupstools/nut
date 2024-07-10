@@ -40,8 +40,8 @@ int nutscan_unload_snmp_library(void);
 # undef _WIN32_WINNT
 #endif
 
-#include <stdio.h>
 #include <string.h>
+#include <stdio.h>
 #include <ltdl.h>
 
 /* workaround for buggy Net-SNMP config
@@ -182,7 +182,7 @@ static oid *nut_usmHMAC256SHA384AuthProtocol;
 static oid *nut_usmHMAC384SHA512AuthProtocol;
 #endif
 
-/* return 0 on success, -1 on error e.g. "was not loaded";
+/* Return 0 on success, -1 on error e.g. "was not loaded";
  * other values may be possible if lt_dlclose() errors set them;
  * visible externally */
 #ifndef WITH_SNMP_STATIC
@@ -198,7 +198,7 @@ int nutscan_unload_snmp_library(void)
 #endif
 }
 
-/* return 0 on error; visible externally */
+/* Return 0 on error; visible externally */
 int nutscan_load_snmp_library(const char *libname_path);
 int nutscan_load_snmp_library(const char *libname_path)
 {
@@ -312,7 +312,9 @@ int nutscan_load_snmp_library(const char *libname_path)
 		goto err;
 	}
 
-	lt_dlerror();	/* Clear any existing error */
+	/* Clear any existing error */
+	lt_dlerror();
+
 	*(void **) (&nut_init_snmp) = lt_dlsym(dl_handle, "init_snmp");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
@@ -1331,7 +1333,7 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 # endif /* HAVE_PTHREAD_TRYJOIN */
 			}
 #else   /* if not HAVE_PTHREAD */
-			try_SysOID_thready((void *)tmp_sec);
+			try_SysOID_thready(tmp_sec);
 #endif  /* if HAVE_PTHREAD */
 
 			/* Prepare the next iteration; note that

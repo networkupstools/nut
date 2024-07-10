@@ -81,7 +81,7 @@ static int (*nut_usb_get_string_simple)(libusb_device_handle *dev, int index,
  static char * (*nut_usb_strerror)(void);
 #endif /* WITH_LIBUSB_1_0 */
 
-/* return 0 on success, -1 on error e.g. "was not loaded";
+/* Return 0 on success, -1 on error e.g. "was not loaded";
  * other values may be possible if lt_dlclose() errors set them;
  * visible externally */
 int nutscan_unload_library(int *avail, lt_dlhandle *pdl_handle, char **libpath);
@@ -90,7 +90,7 @@ int nutscan_unload_usb_library(void)
 	return nutscan_unload_library(&nutscan_avail_usb, &dl_handle, &dl_saved_libname);
 }
 
-/* return 0 on error; visible externally */
+/* Return 0 on error; visible externally */
 int nutscan_load_usb_library(const char *libname_path);
 int nutscan_load_usb_library(const char *libname_path)
 {
@@ -118,7 +118,9 @@ int nutscan_load_usb_library(const char *libname_path)
 			dl_error = lt_dlerror();
 			goto err;
 	}
-	lt_dlerror();      /* Clear any existing error */
+
+	/* Clear any existing error */
+	lt_dlerror();
 
 	*(void **) (&nut_usb_init) = lt_dlsym(dl_handle, USB_INIT_SYMBOL);
 	if ((dl_error = lt_dlerror()) != NULL) {

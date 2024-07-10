@@ -89,7 +89,7 @@ typedef enum ebool { FALSE = 0, TRUE } bool_t;
 typedef int bool_t;
 #endif
 
-/* return 0 on success, -1 on error e.g. "was not loaded";
+/* Return 0 on success, -1 on error e.g. "was not loaded";
  * other values may be possible if lt_dlclose() errors set them;
  * visible externally */
 int nutscan_unload_library(int *avail, lt_dlhandle *pdl_handle, char **libpath);
@@ -98,7 +98,7 @@ int nutscan_unload_neon_library(void)
 	return nutscan_unload_library(&nutscan_avail_xml_http, &dl_handle, &dl_saved_libname);
 }
 
-/* return 0 on error; visible externally */
+/* Return 0 on error; visible externally */
 int nutscan_load_neon_library(const char *libname_path);
 int nutscan_load_neon_library(const char *libname_path)
 {
@@ -127,7 +127,9 @@ int nutscan_load_neon_library(const char *libname_path)
 		goto err;
 	}
 
-	lt_dlerror();      /* Clear any existing error */
+	/* Clear any existing error */
+	lt_dlerror();
+
 	*(void **) (&nut_ne_xml_push_handler) = lt_dlsym(dl_handle,
 						"ne_xml_push_handler");
 	if ((dl_error = lt_dlerror()) != NULL) {
@@ -171,6 +173,7 @@ err:
 	}
 	return 0;
 }
+/* end of dynamic link library stuff */
 
 /* A start-element callback for element with given namespace/name. */
 static int startelm_cb(void *userdata, int parent, const char *nspace, const char *name, const char **atts) {
@@ -479,8 +482,8 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl, useconds_t usec_timeout, nutscan_xml_t * sec)
 {
 	bool_t pass = TRUE; /* Track that we may spawn a scanning thread */
-	nutscan_xml_t * tmp_sec = NULL;
 	nutscan_device_t * result = NULL;
+	nutscan_xml_t * tmp_sec = NULL;
 
 	if (!nutscan_avail_xml_http) {
 		return NULL;
@@ -498,6 +501,7 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 		/* Iterate the one or a range of IPs to scan */
 		nutscan_ip_range_list_iter_t ip;
 		char * ip_str = NULL;
+
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE
 		sem_t * semaphore = nutscan_semaphore();

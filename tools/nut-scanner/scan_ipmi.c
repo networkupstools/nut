@@ -33,7 +33,6 @@ int nutscan_unload_ipmi_library(void);
 
 #ifdef WITH_IPMI
 
-#include "upsclient.h"
 #include <freeipmi/freeipmi.h>
 #include <string.h>
 #include <stdio.h>
@@ -138,7 +137,7 @@ typedef int bool_t;
 static nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t * sec);
 static void * nutscan_scan_ipmi_device_thready(void * arg_sec);
 
-/* return 0 on success, -1 on error e.g. "was not loaded";
+/* Return 0 on success, -1 on error e.g. "was not loaded";
  * other values may be possible if lt_dlclose() errors set them;
  * visible externally */
 int nutscan_unload_library(int *avail, lt_dlhandle *pdl_handle, char **libpath);
@@ -633,7 +632,6 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 
 			memset (port_id, 0, sizeof(port_id));
 		}
-
 	}
 
 	/* Final cleanup */

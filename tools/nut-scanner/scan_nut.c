@@ -30,6 +30,10 @@
 #include "upsclient.h"
 #include "nut-scan.h"
 #include "nut_stdint.h"
+
+/* externally visible to nutscan-init */
+int nutscan_unload_upsclient_library(void);
+
 #include <ltdl.h>
 
 #define SCAN_NUT_DRIVERNAME "dummy-ups"
@@ -69,27 +73,26 @@ struct scan_nut_arg {
 	useconds_t timeout;
 };
 
-/* return 0 on success, -1 on error e.g. "was not loaded";
+/* Return 0 on success, -1 on error e.g. "was not loaded";
  * other values may be possible if lt_dlclose() errors set them;
  * visible externally */
 int nutscan_unload_library(int *avail, lt_dlhandle *pdl_handle, char **libpath);
-int nutscan_unload_upsclient_library(void);
 int nutscan_unload_upsclient_library(void)
 {
 	return nutscan_unload_library(&nutscan_avail_nut, &dl_handle, &dl_saved_libname);
 }
 
-/* return 0 on error; visible externally */
+/* Return 0 on error; visible externally */
 int nutscan_load_upsclient_library(const char *libname_path);
 int nutscan_load_upsclient_library(const char *libname_path)
 {
 	if (dl_handle != NULL) {
-			/* if previous init failed */
-			if (dl_handle == (void *)1) {
-					return 0;
-			}
-			/* init has already been done */
-			return 1;
+		/* if previous init failed */
+		if (dl_handle == (void *)1) {
+				return 0;
+		}
+		/* init has already been done */
+		return 1;
 	}
 
 	if (libname_path == NULL) {
@@ -98,17 +101,18 @@ int nutscan_load_upsclient_library(const char *libname_path)
 	}
 
 	if (lt_dlinit() != 0) {
-			fprintf(stderr, "Error initializing lt_init\n");
-			return 0;
+		fprintf(stderr, "Error initializing lt_init\n");
+		return 0;
 	}
 
 	dl_handle = lt_dlopen(libname_path);
 	if (!dl_handle) {
-			dl_error = lt_dlerror();
-			goto err;
+		dl_error = lt_dlerror();
+		goto err;
 	}
 
-	lt_dlerror();      /* Clear any existing error */
+	/* Clear any existing error */
+	lt_dlerror();
 
 	*(void **) (&nut_upscli_splitaddr) = lt_dlsym(dl_handle,
 						"upscli_splitaddr");

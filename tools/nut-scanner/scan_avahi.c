@@ -95,7 +95,7 @@ static int (*nut_avahi_service_browser_free)(AvahiServiceBrowser *);
 static char * (*nut_avahi_address_snprint)(char *ret_s, size_t length, const AvahiAddress *a);
 static const AvahiPoll* (*nut_avahi_simple_poll_get)(AvahiSimplePoll *s);
 
-/* return 0 on success, -1 on error e.g. "was not loaded";
+/* Return 0 on success, -1 on error e.g. "was not loaded";
  * other values may be possible if lt_dlclose() errors set them;
  * visible externally */
 int nutscan_unload_library(int *avail, lt_dlhandle *pdl_handle, char **libpath);
@@ -104,7 +104,7 @@ int nutscan_unload_avahi_library(void)
 	return nutscan_unload_library(&nutscan_avail_avahi, &dl_handle, &dl_saved_libname);
 }
 
-/* return 0 on error; visible externally */
+/* Return 0 on error; visible externally */
 int nutscan_load_avahi_library(const char *libname_path);
 int nutscan_load_avahi_library(const char *libname_path)
 {
@@ -132,7 +132,10 @@ int nutscan_load_avahi_library(const char *libname_path)
 		dl_error = lt_dlerror();
 		goto err;
 	}
-	lt_dlerror();      /* Clear any existing error */
+
+	/* Clear any existing error */
+	lt_dlerror();
+
 	*(void **) (&nut_avahi_service_browser_get_client) = lt_dlsym(dl_handle, "avahi_service_browser_get_client");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
