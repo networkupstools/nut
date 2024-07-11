@@ -48,8 +48,8 @@ nutscan_device_t * nutscan_scan_nut_simulation(void)
 	upsdebugx(1, "Scanning: %s", CONFPATH);
 
 	if ((dp = opendir(CONFPATH)) == NULL) {
-		upsdebugx(1, "%s: Failed to open %s: %s (%d)",
-			__func__, CONFPATH, strerror(errno), errno);
+		upsdebug_with_errno(1, "%s: Failed to open %s",
+			__func__, CONFPATH);
 		upsdebugx(0, "Failed to open %s, skip NUT simulation scan",
 			CONFPATH);
 		return NULL;

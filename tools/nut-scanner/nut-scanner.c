@@ -348,7 +348,7 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 		 *  `-m auto4/X` and `-m auto6/Y` requests?
 		 */
 		if (auto_nets_ptr && *auto_nets_ptr) {
-			fprintf(stderr, "Duplicate request for connected subnet scan ignored\n");
+			upsdebugx(0, "Duplicate request for connected subnet scan ignored");
 			return;
 		}
 
@@ -437,9 +437,8 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 	if (getifaddrs(&ifap) < 0 || !ifap) {
 		if (ifap)
 			freeifaddrs(ifap);
-		fatalx(EXIT_FAILURE,
-			"Failed to getifaddrs() for connected subnet scan: %s\n",
-			strerror(errno));
+		fatal_with_errno(EXIT_FAILURE,
+			"Failed to getifaddrs() for connected subnet scan");
 		/* TOTHINK: Non-fatal, just return / goto finish?
 		 * Either way, do not proceed with code below! */
 	}
@@ -1175,7 +1174,7 @@ int main(int argc, char *argv[])
 	/* Get max number of files. */
 	if (getrlimit(RLIMIT_NOFILE, &nofile_limit) != 0) {
 		/* Report error, keep hardcoded default */
-		fprintf(stderr, "getrlimit() failed with errno=%d, keeping default job limits\n", errno);
+		upsdebug_with_errno(0, "getrlimit() failed, keeping default job limits");
 		nofile_limit.rlim_cur = 0;
 		nofile_limit.rlim_max = 0;
 	} else {
@@ -1201,6 +1200,7 @@ int main(int argc, char *argv[])
 	ipmi_sec.ipmi_version = IPMI_1_5; /* default to IPMI 1.5, if not otherwise specified */
 	ipmi_sec.cipher_suite_id = 3; /* default to HMAC-SHA1; HMAC-SHA1-96; AES-CBC-128 */
 	ipmi_sec.privilege_level = IPMI_PRIVILEGE_LEVEL_ADMIN; /* should be sufficient */
+	ipmi_sec.peername = NULL;
 
 	/* Set the default values for XML HTTP (run_xml()) */
 	xml_sec.port_http = 80;
@@ -1248,8 +1248,8 @@ int main(int argc, char *argv[])
 					if (errno_saved || (s && *s != '\0') || l <= 0) {
 						/* TODO: Any max limit? At least,
 						 * max(useconds_t)/1000000 ? */
-						fprintf(stderr,
-							"Illegal timeout value, using default %ds\n",
+						upsdebugx(0,
+							"Illegal timeout value, using default %ds",
 							DEFAULT_NETWORK_TIMEOUT);
 						timeout = DEFAULT_NETWORK_TIMEOUT * 1000 * 1000;
 					} else {
@@ -1403,8 +1403,8 @@ int main(int argc, char *argv[])
 					ipmi_sec.authentication_type = IPMI_AUTHENTICATION_TYPE_MD5;
 				}
 				else {
-					fprintf(stderr,
-						"Unknown authentication type (%s). Defaulting to MD5\n",
+					upsdebugx(0,
+						"Unknown authentication type (%s). Defaulting to MD5",
 						optarg);
 				}
 				break;
@@ -1448,27 +1448,27 @@ int main(int argc, char *argv[])
 							max_threads -= RESERVE_FD_COUNT;
 						}
 
-						fprintf(stderr,
+						upsdebugx(0,
 							"WARNING: Requested max scanning "
 							"thread count %s (%ld) exceeds the "
 							"current file descriptor count limit "
 							"(minus reservation), constraining "
-							"to %" PRIuSIZE "\n",
+							"to %" PRIuSIZE,
 							optarg, val, max_threads);
 					} else
 # endif /* HAVE_SYS_RESOURCE_H */
 						max_threads = (size_t)val;
 				} else {
-					fprintf(stderr,
+					upsdebugx(0,
 						"WARNING: Requested max scanning "
 						"thread count %s (%ld) is out of range, "
-						"using default %" PRIuSIZE "\n",
+						"using default %" PRIuSIZE,
 						optarg, val, max_threads);
 				}
 #else
-				fprintf(stderr,
+				upsdebugx(0,
 					"WARNING: Max scanning thread count option "
-					"is not supported in this build, ignored\n");
+					"is not supported in this build, ignored");
 #endif /* HAVE_PTHREAD && ways to limit the thread count */
 				}
 				break;
@@ -1885,8 +1885,8 @@ display_help:
 #endif
 
 	upsdebugx(1, "SCANS DONE: free common scanner resources");
-	nutscan_free();
 	nutscan_free_ip_ranges(&ip_ranges_list);
+	nutscan_free();
 
 	upsdebugx(1, "SCANS DONE: EXIT_SUCCESS");
 	return EXIT_SUCCESS;

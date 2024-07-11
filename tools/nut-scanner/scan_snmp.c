@@ -29,6 +29,9 @@
 #include "nut-scan.h"
 #include "nut_stdint.h"
 
+/* externally visible to nutscan-init */
+int nutscan_unload_snmp_library(void);
+
 #ifdef WITH_SNMP
 
 #ifndef WIN32
@@ -37,8 +40,8 @@
 # undef _WIN32_WINNT
 #endif
 
-#include <stdio.h>
 #include <string.h>
+#include <stdio.h>
 #include <ltdl.h>
 
 /* workaround for buggy Net-SNMP config
@@ -116,7 +119,9 @@ typedef int bool_t;
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
+static char *dl_saved_libname = NULL;
 #endif	/* WITH_SNMP_STATIC */
+static int nut_initialized_snmp = 0;
 
 static void (*nut_init_snmp)(const char *type);
 static void (*nut_snmp_sess_init)(netsnmp_session * session);
@@ -177,9 +182,24 @@ static oid *nut_usmHMAC256SHA384AuthProtocol;
 static oid *nut_usmHMAC384SHA512AuthProtocol;
 #endif
 
-/* return 0 on error; visible externally */
-int nutscan_load_snmp_library(const char *libname_path);
+/* Return 0 on success, -1 on error e.g. "was not loaded";
+ * other values may be possible if lt_dlclose() errors set them;
+ * visible externally */
+#ifndef WITH_SNMP_STATIC
+int nutscan_unload_library(int *avail, lt_dlhandle *pdl_handle, char **libpath);
+#endif
+int nutscan_unload_snmp_library(void)
+{
+#ifdef WITH_SNMP_STATIC
+	return 0;
+#else
+	nut_initialized_snmp = 0;
+	return nutscan_unload_library(&nutscan_avail_snmp, &dl_handle, &dl_saved_libname);
+#endif
+}
 
+/* Return 0 on error; visible externally */
+int nutscan_load_snmp_library(const char *libname_path);
 int nutscan_load_snmp_library(const char *libname_path)
 {
 #ifdef WITH_SNMP_STATIC
@@ -277,12 +297,12 @@ int nutscan_load_snmp_library(const char *libname_path)
 	}
 
 	if (libname_path == NULL) {
-		upsdebugx(1, "SNMP library not found. SNMP search disabled");
+		upsdebugx(0, "SNMP library not found. SNMP search disabled.");
 		return 0;
 	}
 
 	if (lt_dlinit() != 0) {
-		upsdebugx(1, "Error initializing lt_init");
+		upsdebugx(0, "%s: Error initializing lt_dlinit", __func__);
 		return 0;
 	}
 
@@ -292,7 +312,9 @@ int nutscan_load_snmp_library(const char *libname_path)
 		goto err;
 	}
 
-	lt_dlerror();	/* Clear any existing error */
+	/* Clear any existing error */
+	lt_dlerror();
+
 	*(void **) (&nut_init_snmp) = lt_dlsym(dl_handle, "init_snmp");
 	if ((dl_error = lt_dlerror()) != NULL) {
 		goto err;
@@ -453,17 +475,25 @@ int nutscan_load_snmp_library(const char *libname_path)
 	}
 #endif /* NUT_HAVE_LIBNETSNMP_usmHMAC384SHA512AuthProtocol */
 
-#endif	/* WITH_SNMP_STATIC */
+	if (dl_saved_libname)
+		free(dl_saved_libname);
+	dl_saved_libname = xstrdup(libname_path);
+
+#endif	/* not WITH_SNMP_STATIC */
 
 	return 1;
 
 #ifndef WITH_SNMP_STATIC
 err:
-	fprintf(stderr,
-		"Cannot load SNMP library (%s) : %s. SNMP search disabled.\n",
+	upsdebugx(0,
+		"Cannot load SNMP library (%s) : %s. SNMP search disabled.",
 		libname_path, dl_error);
 	dl_handle = (void *)1;
 	lt_dlexit();
+	if (dl_saved_libname) {
+		free(dl_saved_libname);
+		dl_saved_libname = NULL;
+	}
 	return 0;
 #endif	/* not WITH_SNMP_STATIC */
 }
@@ -663,15 +693,16 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 		else if (strcmp(sec->secLevel, "authPriv") == 0)
 			snmp_sess->securityLevel = SNMP_SEC_LEVEL_AUTHPRIV;
 		else {
-			fprintf(stderr,
-				"Bad SNMPv3 securityLevel: %s\n",
-				sec->secLevel);
+			upsdebugx(0, "WARNING: %s: "
+				"Bad SNMPv3 securityLevel: %s",
+				__func__, sec->secLevel);
 			return 0;
 		}
 
 		/* Security name */
 		if (sec->secName == NULL) {
-			fprintf(stderr, "securityName is required for SNMPv3\n");
+			upsdebugx(0, "WARNING: %s: securityName is required for SNMPv3",
+				__func__);
 			return 0;
 		}
 		snmp_sess->securityName = strdup(sec->secName);
@@ -686,20 +717,20 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 		switch (snmp_sess->securityLevel) {
 			case SNMP_SEC_LEVEL_AUTHNOPRIV:
 				if (sec->authPassword == NULL) {
-					fprintf(stderr,
+					upsdebugx(0, "WARNING: %s: "
 						"authPassword is required "
-						"for SNMPv3 in %s mode\n",
-						sec->secLevel);
+						"for SNMPv3 in %s mode",
+						__func__, sec->secLevel);
 					return 0;
 				}
 				break;
 			case SNMP_SEC_LEVEL_AUTHPRIV:
 				if ((sec->authPassword == NULL) ||
 					(sec->privPassword == NULL)) {
-					fprintf(stderr,
+					upsdebugx(0, "WARNING: %s: "
 						"authPassword and privPassword are "
-						"required for SNMPv3 in %s mode\n",
-						sec->secLevel);
+						"required for SNMPv3 in %s mode",
+						__func__, sec->secLevel);
 					return 0;
 				}
 				break;
@@ -761,9 +792,9 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 #else
 			{
 #endif
-				fprintf(stderr,
-					"Bad SNMPv3 authProtocol: %s\n",
-					sec->authProtocol);
+				upsdebugx(0, "WARNING: %s: "
+					"Bad SNMPv3 authProtocol: %s",
+					__func__, sec->authProtocol);
 				return 0;
 			}
 		}
@@ -783,8 +814,8 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
 # pragma GCC diagnostic pop
 #endif
-			fprintf(stderr, "Bad SNMPv3 securityAuthProtoLen: %" PRIuSIZE,
-				snmp_sess->securityAuthProtoLen);
+			upsdebugx(0, "WARNING: %s: Bad SNMPv3 securityAuthProtoLen: %" PRIuSIZE,
+				__func__, snmp_sess->securityAuthProtoLen);
 			return 0;
 		}
 		if ((*nut_generate_Ku)(snmp_sess->securityAuthProto,
@@ -795,9 +826,10 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 					&snmp_sess->securityAuthKeyLen)
 					!= SNMPERR_SUCCESS
 		) {
-			fprintf(stderr,
+			upsdebugx(0, "WARNING: %s: "
 				"Error generating Ku from "
-				"authentication pass phrase\n");
+				"authentication pass phrase",
+				__func__);
 			return 0;
 		}
 
@@ -848,9 +880,9 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 #else
 			{
 #endif
-				fprintf(stderr,
-					"Bad SNMPv3 privProtocol: %s\n",
-					sec->privProtocol);
+				upsdebugx(0, "WARNING: %s: "
+					"Bad SNMPv3 privProtocol: %s",
+					__func__, sec->privProtocol);
 				return 0;
 			}
 		}
@@ -871,8 +903,8 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
 # pragma GCC diagnostic pop
 #endif
-			fprintf(stderr, "Bad SNMPv3 securityAuthProtoLen: %" PRIuSIZE,
-				snmp_sess->securityAuthProtoLen);
+			upsdebugx(0, "WARNING: %s: Bad SNMPv3 securityAuthProtoLen: %" PRIuSIZE,
+				__func__, snmp_sess->securityAuthProtoLen);
 			return 0;
 		}
 		if ((*nut_generate_Ku)(snmp_sess->securityAuthProto,
@@ -883,9 +915,10 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 					&snmp_sess->securityPrivKeyLen)
 					!= SNMPERR_SUCCESS
 		) {
-			fprintf(stderr,
+			upsdebugx(0, "WARNING: %s: "
 				"Error generating Ku from "
-				"private pass phrase\n");
+				"private pass phrase",
+				__func__);
 			return 0;
 		}
 
@@ -894,7 +927,17 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 	return 1;
 }
 
-static void * try_SysOID(void * arg)
+static void * wrap_nut_snmp_sess_open(struct snmp_session *session)
+{
+	/* Open the session */
+	return (*nut_snmp_sess_open)(session); /* establish the session */
+}
+
+/* Performs a (parallel-able) SNMP protocol scan of one remote host.
+ * Returns NULL, updates global dev_ret when a scan is successful.
+ * FREES the caller's copy of "sec" and "peername" in it, if applicable.
+ */
+static void * try_SysOID_thready(void * arg)
 {
 	struct snmp_session snmp_sess;
 	void * handle;
@@ -919,7 +962,7 @@ static void * try_SysOID(void * arg)
 	snmp_sess.timeout = (long)g_usec_timeout;
 
 	/* Open the session */
-	handle = (*nut_snmp_sess_open)(&snmp_sess); /* establish the session */
+	handle = wrap_nut_snmp_sess_open(&snmp_sess); /* establish the session */
 	if (handle == NULL) {
 		upsdebugx(2,
 			"Failed to open SNMP session for %s",
@@ -940,7 +983,7 @@ static void * try_SysOID(void * arg)
 	pdu = (*nut_snmp_pdu_create)(SNMP_MSG_GET);
 
 	if (pdu == NULL) {
-		fprintf(stderr, "Not enough memory\n");
+		upsdebugx(0, "%s: Memory allocation error", __func__);
 		(*nut_snmp_sess_close)(handle);
 		goto try_SysOID_free;
 	}
@@ -1025,6 +1068,15 @@ try_SysOID_free:
 	return NULL;
 }
 
+static void init_snmp_once(void)
+{
+	/* Initialize the SNMP library */
+	if (!nut_initialized_snmp) {
+		(*nut_init_snmp)("nut-scanner");
+		nut_initialized_snmp = 1;
+	}
+}
+
 nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip,
                                      useconds_t usec_timeout, nutscan_snmp_t * sec)
 {
@@ -1066,12 +1118,6 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 	size_t  max_threads_scantype = max_threads_netsnmp;
 # endif
 #endif /* HAVE_PTHREAD */
-
-#ifdef WIN32
-	WSADATA WSAdata;
-	WSAStartup(2,&WSAdata);
-	atexit((void(*)(void))WSACleanup);
-#endif
 
 #ifdef HAVE_PTHREAD
 	pthread_mutex_init(&dev_mutex, NULL);
@@ -1134,14 +1180,13 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 
 	g_usec_timeout = usec_timeout;
 
-	/* Force numeric OIDs resolution (ie, do not resolve to textual names)
+	/* Force numeric OIDs resolution (i.e., do not resolve to textual names)
 	 * This is mostly for the convenience of debug output */
 	if (nut_snmp_out_toggle_options("n") != NULL) {
 		upsdebugx(1, "Failed to enable numeric OIDs resolution");
 	}
 
-	/* Initialize the SNMP library */
-	(*nut_init_snmp)("nut-scanner");
+	init_snmp_once();
 
 	ip_str = nutscan_ip_ranges_iter_init(&ip, irl);
 
@@ -1171,7 +1216,8 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 			 * Otherwise, -1 is returned and errno is set,
 			 * and the state of the semaphore is unchanged.
 			 */
-			int	stwST = sem_trywait(semaphore_scantype), stwS = sem_trywait(semaphore);
+			int	stwST = sem_trywait(semaphore_scantype);
+			int	stwS  = sem_trywait(semaphore);
 			pass = ((max_threads_scantype == 0 || stwST == 0) && stwS == 0);
 			upsdebugx(4, "%s: max_threads_scantype=%" PRIuSIZE
 				" curr_threads=%" PRIuSIZE
@@ -1261,11 +1307,16 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 
 		if (pass) {
 			tmp_sec = malloc(sizeof(nutscan_snmp_t));
+			if (tmp_sec == NULL) {
+				upsdebugx(0, "%s: Memory allocation error", __func__);
+				break;
+			}
+
 			memcpy(tmp_sec, sec, sizeof(nutscan_snmp_t));
 			tmp_sec->peername = ip_str;
 
 #ifdef HAVE_PTHREAD
-			if (pthread_create(&thread, NULL, try_SysOID, (void*)tmp_sec) == 0) {
+			if (pthread_create(&thread, NULL, try_SysOID_thready, (void*)tmp_sec) == 0) {
 				nutscan_thread_t	*new_thread_array;
 # ifdef HAVE_PTHREAD_TRYJOIN
 				pthread_mutex_lock(&threadcount_mutex);
@@ -1289,14 +1340,17 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 				pthread_mutex_unlock(&threadcount_mutex);
 # endif /* HAVE_PTHREAD_TRYJOIN */
 			}
-#else   /* not HAVE_PTHREAD */
-			try_SysOID((void *)tmp_sec);
+#else   /* if not HAVE_PTHREAD */
+			try_SysOID_thready(tmp_sec);
 #endif  /* if HAVE_PTHREAD */
 
-			/* Prepare the next iteration */
-/*			free(ip_str); */ /* Do not free() here - seems to cause a double-free instead */
+			/* Prepare the next iteration; note that
+			 * try_SysOID_thready()
+			 * takes care of freeing "tmp_sec" and its
+			 * reference (NOT strdup!) to "ip_str" as
+			 * peername.
+			 */
 			ip_str = nutscan_ip_ranges_iter_inc(&ip);
-/*			free(tmp_sec); */
 		} else { /* if not pass -- all slots busy */
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE
@@ -1415,4 +1469,8 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 	return NULL;
 }
 
+int nutscan_unload_snmp_library(void)
+{
+	return 0;
+}
 #endif /* WITH_SNMP */

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3186 utf-8
+personal_ws-1.1 en 3188 utf-8
 AAC
 AAS
 ABI
@@ -2594,6 +2594,7 @@ pts
 pty
 pulizzi
 pw
+pwd
 pwmib
 px
 pxW
@@ -2859,6 +2860,7 @@ subnets
 subtree
 sudo
 suid
+suppressions
 suseconds
 sv
 svc

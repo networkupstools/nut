@@ -380,7 +380,14 @@ static nutscan_device_t * nutscan_scan_eaton_serial_q1(const char* port_name)
 	return dev;
 }
 
-static void * nutscan_scan_eaton_serial_device(void * port_arg)
+/* Wrap calls to actual implementations of nutscan_scan_eaton_serial_shut(),
+ * nutscan_scan_eaton_serial_xcp() and/or nutscan_scan_eaton_serial_q1()
+ * which implement the semantics of parallel-able scanning.
+ * Returns the device entry, updates global dev_ret when a scan is successful.
+ * DOES NOT FREE the caller's copy of "port_arg", unlike many similar methods
+ * in other scanners.
+ */
+static void * nutscan_scan_eaton_serial_device_thready(void * port_arg)
 {
 	nutscan_device_t * dev = NULL;
 	char* port_name = (char*) port_arg;
@@ -396,6 +403,7 @@ static void * nutscan_scan_eaton_serial_device(void * port_arg)
 		}
 		/* Else try UTalk? */
 	}
+
 	return dev;
 }
 
@@ -546,7 +554,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 			current_port_name = serial_ports_list[current_port_nb];
 
 #ifdef HAVE_PTHREAD
-			if (pthread_create(&thread, NULL, nutscan_scan_eaton_serial_device, (void*)current_port_name) == 0) {
+			if (pthread_create(&thread, NULL, nutscan_scan_eaton_serial_device_thready, (void*)current_port_name) == 0) {
 				nutscan_thread_t	*new_thread_array;
 # ifdef HAVE_PTHREAD_TRYJOIN
 				pthread_mutex_lock(&threadcount_mutex);
@@ -571,17 +579,20 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 # endif /* HAVE_PTHREAD_TRYJOIN */
 			}
 #else   /* if not HAVE_PTHREAD */
-			nutscan_scan_eaton_serial_device(current_port_name);
+			nutscan_scan_eaton_serial_device_thready(current_port_name);
 #endif  /* if HAVE_PTHREAD */
+
+			/* Prepare the next iteration */
 			current_port_nb++;
 		} else { /* if not pass -- all slots busy */
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE
 			/* Wait for all current scans to complete */
 			if (thread_array != NULL) {
-				upsdebugx (2, "%s: Running too many scanning threads, "
+				upsdebugx (2, "%s: Running too many scanning threads (%"
+					PRIuSIZE "), "
 					"waiting until older ones would finish",
-					__func__);
+					__func__, thread_count);
 				for (i = 0; i < thread_count ; i++) {
 					int ret;
 					if (!thread_array[i].active) {

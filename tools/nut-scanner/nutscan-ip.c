@@ -370,7 +370,8 @@ char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, const char * startIP, const 
 		ip->type = IPv6;
 		hints.ai_family = AF_INET6;
 		if (getaddrinfo(startIP, NULL, &hints, &res) != 0) {
-			fprintf(stderr, "Invalid address : %s\n", startIP);
+			upsdebugx(0, "WARNING: %s: Invalid address : %s",
+				__func__, startIP);
 			return NULL;
 		}
 
@@ -388,7 +389,8 @@ char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, const char * startIP, const 
 	if (ip->type == IPv4) {
 		hints.ai_family = AF_INET;
 		if (getaddrinfo(stopIP, NULL, &hints, &res) != 0) {
-			fprintf(stderr, "Invalid address : %s\n", stopIP);
+			upsdebugx(0, "WARNING: %s: Invalid address : %s",
+				__func__, stopIP);
 			return NULL;
 		}
 
@@ -399,7 +401,8 @@ char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, const char * startIP, const 
 	else {
 		hints.ai_family = AF_INET6;
 		if (getaddrinfo(stopIP, NULL, &hints, &res) != 0) {
-			fprintf(stderr, "Invalid address : %s\n", stopIP);
+			upsdebugx(0, "WARNING: %s: Invalid address : %s",
+				__func__, stopIP);
 			return NULL;
 		}
 		memcpy(s_in6, res->ai_addr, sizeof(struct sockaddr_in6));

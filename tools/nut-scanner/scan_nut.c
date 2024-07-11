@@ -30,6 +30,10 @@
 #include "upsclient.h"
 #include "nut-scan.h"
 #include "nut_stdint.h"
+
+/* externally visible to nutscan-init */
+int nutscan_unload_upsclient_library(void);
+
 #include <ltdl.h>
 
 #define SCAN_NUT_DRIVERNAME "dummy-ups"
@@ -37,6 +41,7 @@
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
+static char *dl_saved_libname = NULL;
 
 static int (*nut_upscli_splitaddr)(const char *buf, char **hostname, uint16_t *port);
 static int (*nut_upscli_tryconnect)(UPSCONN_t *ups, const char *host, uint16_t port,
@@ -62,40 +67,52 @@ typedef int bool_t;
 #endif
 
 struct scan_nut_arg {
+	/* String includes square brackets around host/IP
+	 * address, and/or :port suffix (if customized so): */
 	char * hostname;
 	useconds_t timeout;
 };
 
-/* return 0 on error; visible externally */
+/* Return 0 on success, -1 on error e.g. "was not loaded";
+ * other values may be possible if lt_dlclose() errors set them;
+ * visible externally */
+int nutscan_unload_library(int *avail, lt_dlhandle *pdl_handle, char **libpath);
+int nutscan_unload_upsclient_library(void)
+{
+	return nutscan_unload_library(&nutscan_avail_nut, &dl_handle, &dl_saved_libname);
+}
+
+/* Return 0 on error; visible externally */
 int nutscan_load_upsclient_library(const char *libname_path);
 int nutscan_load_upsclient_library(const char *libname_path)
 {
 	if (dl_handle != NULL) {
-			/* if previous init failed */
-			if (dl_handle == (void *)1) {
-					return 0;
-			}
-			/* init has already been done */
-			return 1;
+		/* if previous init failed */
+		if (dl_handle == (void *)1) {
+				return 0;
+		}
+		/* init has already been done */
+		return 1;
 	}
 
 	if (libname_path == NULL) {
-		fprintf(stderr, "NUT client library not found. NUT search disabled.\n");
+		upsdebugx(0, "NUT client library not found. NUT search disabled.");
 		return 0;
 	}
 
 	if (lt_dlinit() != 0) {
-			fprintf(stderr, "Error initializing lt_init\n");
-			return 0;
+		upsdebugx(0, "%s: Error initializing lt_dlinit", __func__);
+		return 0;
 	}
 
 	dl_handle = lt_dlopen(libname_path);
 	if (!dl_handle) {
-			dl_error = lt_dlerror();
-			goto err;
+		dl_error = lt_dlerror();
+		goto err;
 	}
 
-	lt_dlerror();      /* Clear any existing error */
+	/* Clear any existing error */
+	lt_dlerror();
 
 	*(void **) (&nut_upscli_splitaddr) = lt_dlsym(dl_handle,
 						"upscli_splitaddr");
@@ -127,19 +144,32 @@ int nutscan_load_upsclient_library(const char *libname_path)
 			goto err;
 	}
 
+	if (dl_saved_libname)
+		free(dl_saved_libname);
+	dl_saved_libname = xstrdup(libname_path);
+
 	return 1;
 
 err:
-	fprintf(stderr,
-		"Cannot load NUT library (%s) : %s. NUT search disabled.\n",
+	upsdebugx(0,
+		"Cannot load NUT library (%s) : %s. NUT search disabled.",
 		libname_path, dl_error);
 	dl_handle = (void *)1;
 	lt_dlexit();
+	if (dl_saved_libname) {
+		free(dl_saved_libname);
+		dl_saved_libname = NULL;
+	}
 	return 0;
 }
+/* end of dynamic link library stuff */
 
 /* FIXME: SSL support */
-static void * list_nut_devices(void * arg)
+/* Performs a (parallel-able) NUT protocol scan of one remote host:port.
+ * Returns NULL, updates global dev_ret when a scan is successful.
+ * FREES the caller's copy of "nut_arg" and "hostname" in it, if applicable.
+ */
+static void * list_nut_devices_thready(void * arg)
 {
 	struct scan_nut_arg * nut_arg = (struct scan_nut_arg*)arg;
 	char *target_hostname = nut_arg->hostname;
@@ -147,9 +177,9 @@ static void * list_nut_devices(void * arg)
 	uint16_t port;
 	size_t numq, numa;
 	const char *query[4];
-	char **answer;
+	char **answer = NULL;
 	char *hostname = NULL;
-	UPSCONN_t *ups = malloc(sizeof(*ups));
+	UPSCONN_t *ups = xcalloc(1, sizeof(*ups));
 	nutscan_device_t * dev = NULL;
 	size_t buf_size;
 
@@ -162,36 +192,37 @@ static void * list_nut_devices(void * arg)
 	upsdebugx(2, "Entering %s for %s", __func__, target_hostname);
 
 	if ((*nut_upscli_splitaddr)(target_hostname, &hostname, &port) != 0) {
-		free(target_hostname);
-		free(nut_arg);
-		free(ups);
-		return NULL;
+		/* Avoid disconnect from not connected ups */
+		if (ups) {
+			if (ups->host)
+				free(ups->host);
+			free(ups);
+		}
+		ups = NULL;
+		goto end;
 	}
 
 	if ((*nut_upscli_tryconnect)(ups, hostname, port, UPSCLI_CONN_TRYSSL, &tv) < 0) {
-		free(target_hostname);
-		free(nut_arg);
-		free(ups);
-		return NULL;
+		/* Avoid disconnect from not connected ups */
+		if (ups) {
+			if (ups->host)
+				free(ups->host);
+			free(ups);
+		}
+		ups = NULL;
+		goto end;
 	}
 
 	if ((*nut_upscli_list_start)(ups, numq, query) < 0) {
-		(*nut_upscli_disconnect)(ups);
-		free(target_hostname);
-		free(nut_arg);
-		free(ups);
-		return NULL;
+		goto end;
 	}
 
 	while ((*nut_upscli_list_next)(ups, numq, query, &numa, &answer) == 1) {
 		/* UPS <upsname> <description> */
 		if (numa < 3) {
-			(*nut_upscli_disconnect)(ups);
-			free(target_hostname);
-			free(nut_arg);
-			free(ups);
-			return NULL;
+			goto end;
 		}
+
 		/* FIXME: check for duplication by getting driver.port and device.serial
 		 * for comparison with other busses results */
 		/* FIXME:
@@ -252,10 +283,21 @@ static void * list_nut_devices(void * arg)
 
 	}
 
-	(*nut_upscli_disconnect)(ups);
-	free(target_hostname);
-	free(nut_arg);
-	free(ups);
+end:
+	if (ups) {
+		(*nut_upscli_disconnect)(ups);
+		if (ups->host)
+			free(ups->host);
+		free(ups);
+	}
+
+	if (target_hostname)
+		free(target_hostname);
+	if (hostname)
+		free(hostname);
+	if (nut_arg)
+		free(nut_arg);
+
 	return NULL;
 }
 
@@ -303,12 +345,6 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 	size_t  max_threads_scantype = max_threads_oldnut;
 # endif
 #endif /* HAVE_PTHREAD */
-
-#ifdef WIN32
-	WSADATA WSAdata;
-	WSAStartup(2,&WSAdata);
-	atexit((void(*)(void))WSACleanup);
-#endif
 
 #ifdef HAVE_PTHREAD
 	pthread_mutex_init(&dev_mutex, NULL);
@@ -414,7 +450,8 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 			 * Otherwise, -1 is returned and errno is set,
 			 * and the state of the semaphore is unchanged.
 			 */
-			int	stwST = sem_trywait(semaphore_scantype), stwS = sem_trywait(semaphore);
+			int	stwST = sem_trywait(semaphore_scantype);
+			int	stwS  = sem_trywait(semaphore);
 			pass = ((max_threads_scantype == 0 || stwST == 0) && stwS == 0);
 			upsdebugx(4, "%s: max_threads_scantype=%" PRIuSIZE
 				" curr_threads=%" PRIuSIZE
@@ -518,6 +555,7 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 			}
 
 			if ((nut_arg = malloc(sizeof(struct scan_nut_arg))) == NULL) {
+				upsdebugx(0, "%s: Memory allocation error", __func__);
 				free(ip_dest);
 				break;
 			}
@@ -526,7 +564,7 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 			nut_arg->hostname = ip_dest;
 
 #ifdef HAVE_PTHREAD
-			if (pthread_create(&thread, NULL, list_nut_devices, (void*)nut_arg) == 0) {
+			if (pthread_create(&thread, NULL, list_nut_devices_thready, (void*)nut_arg) == 0) {
 				nutscan_thread_t	*new_thread_array;
 # ifdef HAVE_PTHREAD_TRYJOIN
 				pthread_mutex_lock(&threadcount_mutex);
@@ -550,11 +588,16 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 				pthread_mutex_unlock(&threadcount_mutex);
 # endif /* HAVE_PTHREAD_TRYJOIN */
 			}
-#else  /* not HAVE_PTHREAD */
-			list_nut_devices(nut_arg);
+#else  /* if not HAVE_PTHREAD */
+			list_nut_devices_thready(nut_arg);
 #endif /* if HAVE_PTHREAD */
 
-			/* Prepare the next iteration */
+			/* Prepare the next iteration; note that
+			 * nutscan_scan_ipmi_device_thready()
+			 * takes care of freeing "tmp_sec" and its
+			 * copy (note strdup!) of "ip_str" as
+			 * hostname, possibly suffixed with a port.
+			 */
 			free(ip_str);
 			ip_str = nutscan_ip_ranges_iter_inc(&ip);
 		} else { /* if not pass -- all slots busy */
