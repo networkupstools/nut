@@ -123,3 +123,20 @@
    fun:wrap_nut_avahi_client_new
    ...
 }
+{
+   # https://forums.freebsd.org/threads/named-semaphore-uninitialized-bytes.84850/
+   <glibc-sem_open>
+   Memcheck:Cond
+   ...
+   fun:sem_open
+   ...
+}
+{
+   <glibc-sem_trywait>
+   Memcheck:Cond
+   ...
+   fun:sem_trywait*
+   ...
+   fun:start_thread
+   ...
+}
