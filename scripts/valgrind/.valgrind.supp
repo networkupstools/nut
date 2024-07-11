@@ -34,21 +34,21 @@
    ...
 }
 {
-   <libssl_init>
+   <libssl_init_CRYPTO>
    Memcheck:Leak
    ...
    fun:CRYPTO_*
    ...
 }
 {
-   <libssl_init>
+   <libssl_init_SSL_CTX>
    Memcheck:Leak
    ...
    fun:SSL_CTX_*
    ...
 }
 {
-   <libssl_init>
+   <libssl_init_OPENSSL>
    Memcheck:Leak
    ...
    fun:OPENSSL_*

@@ -160,12 +160,12 @@ int nutscan_load_ipmi_library(const char *libname_path)
 	}
 
 	if (libname_path == NULL) {
-		fprintf(stderr, "IPMI library not found. IPMI search disabled.\n");
+		upsdebugx(0, "IPMI library not found. IPMI search disabled.");
 		return 0;
 	}
 
 	if (lt_dlinit() != 0) {
-		fprintf(stderr, "Error initializing lt_init\n");
+		upsdebugx(0, "%s: Error initializing lt_dlinit", __func__);
 		return 0;
 	}
 
@@ -280,8 +280,8 @@ int nutscan_load_ipmi_library(const char *libname_path)
 	return 1;
 
 err:
-	fprintf(stderr,
-		"Cannot load IPMI library (%s) : %s. IPMI search disabled.\n",
+	upsdebugx(0,
+		"Cannot load IPMI library (%s) : %s. IPMI search disabled.",
 		libname_path, dl_error);
 	dl_handle = (void *)1;
 	lt_dlexit();
@@ -345,7 +345,9 @@ static int is_ipmi_device_supported(ipmi_ctx_t ipmi_ctx, int ipmi_id)
 	/* Parse FRU information */
 	if (!(fru_parse_ctx = (*nut_ipmi_fru_ctx_create) (ipmi_ctx)))
 	{
-		fprintf(stderr, "Error with %s(): %s\n", IPMI_FRU_CTX_CREATE, (*nut_ipmi_ctx_errormsg)(ipmi_ctx));
+		upsdebugx(0, "%s: Error with %s(): %s",
+			__func__, IPMI_FRU_CTX_CREATE,
+			(*nut_ipmi_ctx_errormsg)(ipmi_ctx));
 		return 0;
 	}
 
@@ -361,7 +363,8 @@ static int is_ipmi_device_supported(ipmi_ctx_t ipmi_ctx, int ipmi_id)
 	}
 
 	if (ipmi_id < 0 || (unsigned int)ipmi_id > UINT8_MAX) {
-		fprintf(stderr, "is_ipmi_device_supported: ipmi_id=%d is out of range!\n", ipmi_id);
+		upsdebugx(0, "%s: ipmi_id=%d is out of range!",
+			__func__, ipmi_id);
 		return 0;
 	}
 	if ((*nut_ipmi_fru_open_device_id) (fru_parse_ctx, (uint8_t)ipmi_id) < 0)
@@ -444,7 +447,7 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 	if (!(ipmi_ctx = wrap_nut_ipmi_ctx_create()))
 	{
 		/* we have to force cleanup, since exit handler is not yet installed */
-		fprintf(stderr, "Failed to ipmi_ctx_create\n");
+		upsdebugx(0, "%s: Failed to ipmi_ctx_create", __func__);
 		return NULL;
 	}
 
@@ -455,7 +458,7 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 
 		/* FIXME: we need root right to access local IPMI!
 		if (!ipmi_is_root ()) {
-			fprintf(stderr, "IPMI scan: %s\n", ipmi_ctx_strerror (IPMI_ERR_PERMISSION));
+			upsdebugx(0, "%s: IPMI scan: %s", __func__, ipmi_ctx_strerror (IPMI_ERR_PERMISSION));
 		} */
 
 		if ((ret = (*nut_ipmi_ctx_find_inband) (ipmi_ctx,
@@ -489,7 +492,7 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 			 * int parse_kg (void *out, unsigned int outlen, const char *in)
 			 * if ((rv = parse_kg (common_cmd_args_config->k_g, IPMI_MAX_K_G_LENGTH + 1, data->string)) < 0)
 			 * {
-			 * 	fprintf (stderr, "Config File Error: k_g input formatted incorrectly\n");
+			 * 	upsdebugx(0, "%s: Config File Error: k_g input formatted incorrectly", __func__);
 			 * 	exit (EXIT_FAILURE);
 			 * }*/
 			if ((ret = (*nut_ipmi_ctx_open_outofband_2_0) (ipmi_ctx,
@@ -605,7 +608,7 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 		if (is_ipmi_device_supported(ipmi_ctx, ipmi_id)) {
 
 			if ((nut_dev = nutscan_new_device()) == NULL) {
-				fprintf(stderr, "Memory allocation error\n");
+				upsdebugx(0, "%s: Memory allocation error", __func__);
 				nutscan_free_device(current_nut_dev);
 				break;
 			}
@@ -915,10 +918,10 @@ nutscan_device_t * nutscan_scan_ip_range_ipmi(nutscan_ip_range_list_t * irl, nut
 			if (pass) {
 				tmp_sec = malloc(sizeof(nutscan_ipmi_t));
 				if (tmp_sec == NULL) {
-					fprintf(stderr,
-						"Memory allocation error\n");
-					return NULL;
+					upsdebugx(0, "%s: Memory allocation error", __func__);
+					break;
 				}
+
 				memcpy(tmp_sec, sec, sizeof(nutscan_ipmi_t));
 				tmp_sec->peername = ip_str;
 

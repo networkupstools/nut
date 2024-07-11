@@ -118,12 +118,12 @@ int nutscan_load_avahi_library(const char *libname_path)
 	}
 
 	if (libname_path == NULL) {
-		fprintf(stderr, "AVAHI client library not found. AVAHI search disabled.\n");
+		upsdebugx(0, "AVAHI client library not found. AVAHI search disabled.");
 		return 0;
 	}
 
 	if (lt_dlinit() != 0) {
-		fprintf(stderr, "Error initializing lt_init\n");
+		upsdebugx(0, "%s: Error initializing lt_dlinit", __func__);
 		return 0;
 	}
 
@@ -231,9 +231,10 @@ int nutscan_load_avahi_library(const char *libname_path)
 	dl_saved_libname = xstrdup(libname_path);
 
 	return 1;
+
 err:
-	fprintf(stderr,
-		"Cannot load AVAHI library (%s) : %s. AVAHI search disabled.\n",
+	upsdebugx(0,
+		"Cannot load AVAHI library (%s) : %s. AVAHI search disabled.",
 		libname_path, dl_error);
 	dl_handle = (void *)1;
 	lt_dlexit();
@@ -407,23 +408,23 @@ static void resolve_callback(
 
 	switch (event) {
 		case AVAHI_RESOLVER_FAILURE:
-			fprintf(stderr,
-				"(Resolver) Failed to resolve service '%s' of type '%s' in domain '%s': %s\n",
-				name, type, domain,
+			upsdebugx(0, "%s: "
+				"(Resolver) Failed to resolve service '%s' of type '%s' in domain '%s': %s",
+				__func__, name, type, domain,
 				(*nut_avahi_strerror)((*nut_avahi_client_errno)((*nut_avahi_service_resolver_get_client)(r))));
 			break;
 
 		case AVAHI_RESOLVER_FOUND: {
 			char a[AVAHI_ADDRESS_STR_MAX], *t;
 
-/*			fprintf(stderr, "Service '%s' of type '%s' in domain '%s':\n", name, type, domain); */
+/*			upsdebugx(1, "%s: Service '%s' of type '%s' in domain '%s':", __func__, name, type, domain); */
 
 			(*nut_avahi_address_snprint)(a, sizeof(a), address);
 			t = (*nut_avahi_string_list_to_string)(txt);
 
 			NUT_UNUSED_VARIABLE(flags);
 /*
-			fprintf(stderr,
+			upsdebugx(1,
 				"\t%s:%u (%s)\n"
 				"\tTXT=%s\n"
 				"\tcookie is %u\n"
@@ -471,14 +472,14 @@ static void browse_callback(
 	switch (event) {
 		case AVAHI_BROWSER_FAILURE:
 
-			fprintf(stderr,
-				"(Browser) %s\n",
+			upsdebugx(0, "%s: (Browser) %s",
+				__func__,
 				(*nut_avahi_strerror)((*nut_avahi_client_errno)((*nut_avahi_service_browser_get_client)(b))));
 			(*nut_avahi_simple_poll_quit)(simple_poll);
 			return;
 
 		case AVAHI_BROWSER_NEW:
-/*			fprintf(stderr, "(Browser) NEW: service '%s' of type '%s' in domain '%s'\n", name, type, domain); */
+/*			upsdebugx(1, "%s: "(Browser) NEW: service '%s' of type '%s' in domain '%s'", __func__, name, type, domain); */
 
 			/* We ignore the returned resolver object. In the callback
 			   function we free it. If the server is terminated before
@@ -498,14 +499,15 @@ static void browse_callback(
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM)
 # pragma GCC diagnostic pop
 #endif
-				fprintf(stderr,
-					"Failed to resolve service '%s': %s\n",
+				upsdebugx(0, "%s: "
+					"Failed to resolve service '%s': %s",
+					__func__,
 					name, (*nut_avahi_strerror)((*nut_avahi_client_errno)(c)));
 
 			break;
 
 		case AVAHI_BROWSER_REMOVE:
-			fprintf(stderr, "(Browser) REMOVE: service '%s' of type '%s' in domain '%s'\n", name, type, domain);
+			upsdebugx(0, "%s: (Browser) REMOVE: service '%s' of type '%s' in domain '%s'", __func__, name, type, domain);
 			break;
 
 		case AVAHI_BROWSER_ALL_FOR_NOW:
@@ -514,7 +516,7 @@ static void browse_callback(
 
 		case AVAHI_BROWSER_CACHE_EXHAUSTED:
 		fallthrough_AVAHI_BROWSER_CACHE_EXHAUSTED:
-/*			fprintf(stderr, "(Browser) %s\n", event == AVAHI_BROWSER_CACHE_EXHAUSTED ? "CACHE_EXHAUSTED" : "ALL_FOR_NOW"); */
+/*			upsdebugx(1, "%s: (Browser) %s", __func__, event == AVAHI_BROWSER_CACHE_EXHAUSTED ? "CACHE_EXHAUSTED" : "ALL_FOR_NOW"); */
 			break;
 	}
 }
@@ -526,8 +528,9 @@ static void client_callback(AvahiClient *c, AvahiClientState state, void * userd
 	/* Called whenever the client or server state changes */
 
 	if (state == AVAHI_CLIENT_FAILURE) {
-		fprintf(stderr,
-			"Server connection failure: %s\n",
+		upsdebugx(0, "%s: "
+			"Server connection failure: %s",
+			__func__,
 			(*nut_avahi_strerror)((*nut_avahi_client_errno)(c)));
 		(*nut_avahi_simple_poll_quit)(simple_poll);
 	}
@@ -568,7 +571,8 @@ nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout)
 
 	/* Allocate main loop object */
 	if (!(simple_poll = (*nut_avahi_simple_poll_new)())) {
-		fprintf(stderr, "Failed to create Avahi simple poll object.\n");
+		upsdebugx(0, "%s: Failed to create Avahi simple poll object.",
+			__func__);
 		goto fail;
 	}
 
@@ -577,9 +581,9 @@ nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout)
 
 	/* Check wether creating the client object succeeded */
 	if (!client) {
-		fprintf(stderr,
-			"Failed to create Avahi client: %s\n",
-			(*nut_avahi_strerror)(error));
+		upsdebugx(0, "%s: "
+			"Failed to create Avahi client: %s",
+			__func__, (*nut_avahi_strerror)(error));
 		goto fail;
 	}
 
@@ -596,8 +600,9 @@ nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout)
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM)
 # pragma GCC diagnostic pop
 #endif
-		fprintf(stderr,
-			"Failed to create Avahi service browser: %s\n",
+		upsdebugx(0, "%s: "
+			"Failed to create Avahi service browser: %s",
+			__func__,
 			(*nut_avahi_strerror)((*nut_avahi_client_errno)(client)));
 		goto fail;
 	}

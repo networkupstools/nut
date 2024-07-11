@@ -56,7 +56,6 @@ int nutscan_unload_neon_library(void);
 
 #include <string.h>
 #include <stdio.h>
-#include <errno.h>
 #include <ne_xml.h>
 #include <ltdl.h>
 
@@ -112,12 +111,12 @@ int nutscan_load_neon_library(const char *libname_path)
 	}
 
 	if (libname_path == NULL) {
-		fprintf(stderr, "Neon library not found. XML search disabled.\n");
+		upsdebugx(0, "Neon library not found. XML search disabled.");
 		return 0;
 	}
 
 	if (lt_dlinit() != 0) {
-		fprintf(stderr, "Error initializing lt_init\n");
+		upsdebugx(0, "%s: Error initializing lt_dlinit", __func__);
 		return 0;
 	}
 
@@ -161,9 +160,10 @@ int nutscan_load_neon_library(const char *libname_path)
 	dl_saved_libname = xstrdup(libname_path);
 
 	return 1;
+
 err:
-	fprintf(stderr,
-		"Cannot load XML library (%s) : %s. XML search disabled.\n",
+	upsdebugx(0,
+		"Cannot load XML library (%s) : %s. XML search disabled.",
 		libname_path, dl_error);
 	dl_handle = (void *)1;
 	lt_dlexit();
@@ -255,7 +255,8 @@ static void * nutscan_scan_xml_http_thready(void * arg)
 	}
 
 	if ((peerSocket = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
-		fprintf(stderr, "Error creating socket\n");
+		upsdebugx(0, "%s: Error creating socket for %s",
+			__func__, ip ? ip : "broadcast");
 		goto end_free;
 	}
 
@@ -289,8 +290,9 @@ static void * nutscan_scan_xml_http_thready(void * arg)
 			(struct sockaddr *)&sockAddress_udp,
 			sockAddressLength) <= 0
 		) {
-			fprintf(stderr,
-				"Error sending Eaton <SCAN_REQUEST/> to %s, #%d/%d\n",
+			upsdebugx(0, "%s: "
+				"Error sending Eaton <SCAN_REQUEST/> to %s, #%d/%d",
+				__func__,
 				(ip ? ip : "<broadcast>"), (i + 1), MAX_RETRIES);
 			usleep(usec_timeout);
 			continue;
@@ -322,9 +324,9 @@ static void * nutscan_scan_xml_http_thready(void * arg)
 				timeout.tv_usec = usec_timeout % 1000000;
 
 				if (ret == -1) {
-					fprintf(stderr,
-						"Error waiting on \
-						socket: %d\n", errno);
+					upsdebug_with_errno(0,
+						"%s: Error waiting on socket",
+						__func__);
 					break;
 				}
 
@@ -335,9 +337,9 @@ static void * nutscan_scan_xml_http_thready(void * arg)
 					&sockAddressLength);
 
 				if (recv_size < 0) {
-					fprintf(stderr,
-						"Error reading \
-						socket: %d, #%d/%d\n", errno, (i + 1), MAX_RETRIES);
+					upsdebug_with_errno(0, "%s: "
+						"Error reading socket: #%d/%d",
+						__func__, (i + 1), MAX_RETRIES);
 					usleep(usec_timeout);
 					continue;
 				}
@@ -348,15 +350,15 @@ static void * nutscan_scan_xml_http_thready(void * arg)
 					sizeof(string), NULL, 0,
 					NI_NUMERICHOST) != 0
 				) {
-					fprintf(stderr,
-						"Error converting IP address: %d\n", errno);
+					upsdebug_with_errno(0, "%s: "
+						"Error converting IP address", __func__);
 					usleep(usec_timeout);
 					continue;
 				}
 
 				nut_dev = nutscan_new_device();
 				if (nut_dev == NULL) {
-					fprintf(stderr, "Memory allocation error\n");
+					upsdebugx(0, "%s: Memory allocation error", __func__);
 					goto end_abort;
 				}
 
@@ -394,10 +396,10 @@ static void * nutscan_scan_xml_http_thready(void * arg)
 				}
 				else
 				{
-					fprintf(stderr,
+					upsdebugx(0, "WARNING: %s: "
 						"Device at IP %s replied with NetXML but was not deemed compatible "
-						"with 'netxml-ups' driver (unsupported protocol version, etc.)\n",
-						string);
+						"with 'netxml-ups' driver (unsupported protocol version, etc.)",
+						__func__, string);
 					nutscan_free_device(nut_dev);
 					nut_dev = NULL;
 #ifdef HAVE_PTHREAD
@@ -685,10 +687,10 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 			if (pass) {
 				tmp_sec = malloc(sizeof(nutscan_xml_t));
 				if (tmp_sec == NULL) {
-					fprintf(stderr,
-						"Memory allocation error\n");
-					return NULL;
+					upsdebugx(0, "%s: Memory allocation error", __func__);
+					break;
 				}
+
 				memcpy(tmp_sec, sec, sizeof(nutscan_xml_t));
 				tmp_sec->peername = ip_str;
 				if (tmp_sec->usec_timeout <= 0) {
@@ -827,8 +829,7 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 	/* both start_ip == end_ip == NULL, scan broadcast */
 	tmp_sec = malloc(sizeof(nutscan_xml_t));
 	if (tmp_sec == NULL) {
-		fprintf(stderr,
-			"Memory allocation error\n");
+		upsdebugx(0, "%s: Memory allocation error", __func__);
 		return NULL;
 	}
 

@@ -96,12 +96,12 @@ int nutscan_load_upsclient_library(const char *libname_path)
 	}
 
 	if (libname_path == NULL) {
-		fprintf(stderr, "NUT client library not found. NUT search disabled.\n");
+		upsdebugx(0, "NUT client library not found. NUT search disabled.");
 		return 0;
 	}
 
 	if (lt_dlinit() != 0) {
-		fprintf(stderr, "Error initializing lt_init\n");
+		upsdebugx(0, "%s: Error initializing lt_dlinit", __func__);
 		return 0;
 	}
 
@@ -151,8 +151,8 @@ int nutscan_load_upsclient_library(const char *libname_path)
 	return 1;
 
 err:
-	fprintf(stderr,
-		"Cannot load NUT library (%s) : %s. NUT search disabled.\n",
+	upsdebugx(0,
+		"Cannot load NUT library (%s) : %s. NUT search disabled.",
 		libname_path, dl_error);
 	dl_handle = (void *)1;
 	lt_dlexit();
@@ -555,6 +555,7 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 			}
 
 			if ((nut_arg = malloc(sizeof(struct scan_nut_arg))) == NULL) {
+				upsdebugx(0, "%s: Memory allocation error", __func__);
 				free(ip_dest);
 				break;
 			}
