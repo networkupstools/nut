@@ -143,6 +143,7 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 	make 1>/dev/null || exit
 	make doc 1>/dev/null || exit
 	make -k man-man html-man 1>/dev/null || true
+	(cd docs && make check) 1>/dev/null || exit
 	echo "$0: build phase complete ($?)" >&2
 
 	if [ "x$INSTALL_WIN_BUNDLE" = xtrue ] ; then
