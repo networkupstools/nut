@@ -216,45 +216,48 @@ check-pdf: $(ASCIIDOC_PDF)
 # and not exactly two mentions, should allow to catch the case
 # of overlapping documents. Checking for the last entry allows
 # to catch incomplete parses, where asciidoc gave up early.
-ChangeLog.html-contentchecked: ChangeLog.html
+# NOTE: No dependencies, avoids (re-)generation and log messages.
+ChangeLog.html-contentchecked:
 	@FAILED=""; \
-	 if [ -s '$(top_builddir)/ChangeLog' ] ; then \
+	 if [ -s '$(top_builddir)/ChangeLog' ] && [ -s ChangeLog.html ] ; then \
 	    SECOND_ENTRY="`grep -E '^[0-9]' '$(top_builddir)/ChangeLog' | head -2 | tail -1 | sed 's/ *[\"<].*//'`" || SECOND_ENTRY="" ; \
 	    FIRST_ENTRY="`grep -E '^[0-9]' '$(top_builddir)/ChangeLog' | head -1 | sed 's/ *[\"<].*//'`" || FIRST_ENTRY="" ; \
 	    LAST_ENTRY="`grep -E '^[0-9]' '$(top_builddir)/ChangeLog' | tail -1 | sed 's/ *[\"<].*//'`" || LAST_ENTRY="" ; \
 	    if [ -n "$${FIRST_ENTRY}" ] ; then \
-	        N="`grep -cE "title.*$${FIRST_ENTRY}" '$(?)'`" ; \
+	        N="`grep -cE "title.*$${FIRST_ENTRY}" 'ChangeLog.html'`" ; \
 	        if [ 2 != "$${N}" ] ; then \
-	            echo "FAILED $(?) check: does not contain expected first entry exactly twice (huge doc, must have got aborted mid-way): $${FIRST_ENTRY} (seen $$N times)" >&2 ; \
+	            echo "FAILED ChangeLog.html check: does not contain expected first entry exactly twice (huge doc, must have got aborted mid-way): $${FIRST_ENTRY} (seen $$N times)" >&2 ; \
 	            if [ -z "$$FAILED" ] ; then \
 	                echo "Expected size over 3MB (for common builds):" >&2 ; \
-	                ls -la "$(?)" '$(top_builddir)/ChangeLog'* >&2 ; \
-	                FAILED="$(?)" ; \
+	                ls -la "ChangeLog.html" '$(top_builddir)/ChangeLog'* >&2 ; \
+	                FAILED="ChangeLog.html" ; \
 	            fi ; \
 	        fi ; \
 	    fi; \
 	    if [ -n "$${SECOND_ENTRY}" ] ; then \
-	        N="`grep -cE "title.*$${SECOND_ENTRY}" '$(?)'`" ; \
+	        N="`grep -cE "title.*$${SECOND_ENTRY}" 'ChangeLog.html'`" ; \
 	        if [ 2 != "$${N}" ] ; then \
-	            echo "FAILED $(?) check: does not contain expected second entry exactly twice (huge doc, must have got aborted mid-way): $${SECOND_ENTRY} (seen $$N times)" >&2 ; \
+	            echo "FAILED ChangeLog.html check: does not contain expected second entry exactly twice (huge doc, must have got aborted mid-way): $${SECOND_ENTRY} (seen $$N times)" >&2 ; \
 	            if [ -z "$$FAILED" ] ; then \
 	                echo "Expected size over 3MB (for common builds):" >&2 ; \
-	                ls -la "$(?)" '$(top_builddir)/ChangeLog'* >&2 ; \
-	                FAILED="$(?)" ; \
+	                ls -la "ChangeLog.html" '$(top_builddir)/ChangeLog'* >&2 ; \
+	                FAILED="ChangeLog.html" ; \
 	            fi ; \
 	        fi ; \
 	    fi; \
 	    if [ -n "$${LAST_ENTRY}" ] ; then \
-	        N="`grep -cE "title.*$${LAST_ENTRY}" '$(?)'`" ; \
+	        N="`grep -cE "title.*$${LAST_ENTRY}" 'ChangeLog.html'`" ; \
 	        if [ 2 != "$${N}" ] ; then \
-	            echo "FAILED $(?) check: does not contain expected last entry exactly twice (huge doc, must have got aborted mid-way): $${LAST_ENTRY} (seen $$N times)" >&2 ; \
+	            echo "FAILED ChangeLog.html check: does not contain expected last entry exactly twice (huge doc, must have got aborted mid-way): $${LAST_ENTRY} (seen $$N times)" >&2 ; \
 	            if [ -z "$$FAILED" ] ; then \
 	                echo "Expected size over 3MB (for common builds):" >&2 ; \
-	                ls -la "$(?)" '$(top_builddir)/ChangeLog'* >&2 ; \
-	                FAILED="$(?)" ; \
+	                ls -la "ChangeLog.html" '$(top_builddir)/ChangeLog'* >&2 ; \
+	                FAILED="ChangeLog.html" ; \
 	            fi ; \
 	        fi ; \
 	    fi; \
+	 else \
+	    echo "SKIPPED $@ because input files were not available" >&2 ; \
 	 fi
 
 check-html-single: $(ASCIIDOC_HTML_SINGLE)
