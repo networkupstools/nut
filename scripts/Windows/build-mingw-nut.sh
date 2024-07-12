@@ -168,7 +168,7 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 		# on a modern Windows one could go to their installed "sbin" to
 		#   mklink .\libupsclient-3.dll ..\bin\libupsclient-3.dll
 		(cd "$INSTALL_DIR/bin" && ln libupsclient*.dll ../sbin/)
-		(cd "$INSTALL_DIR/cgi-bin" && ln ../bin/libupsclient*.dll ./) \
+		(cd "$INSTALL_DIR/cgi-bin" 2>/dev/null && ln ../bin/libupsclient*.dll ./) \
 		|| echo "NOTE: FAILED to process OPTIONAL cgi-bin directory; was NUT CGI enabled?" >&2
 
 		echo "NOTE: Adding third-party dependency libraries for each installed program" >&2
@@ -188,7 +188,7 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 		(cd "$INSTALL_DIR/sbin" && { DESTDIR="$INSTALL_DIR" dllldddir . | while read D ; do ln -f ../bin/"`basename "$D"`" ./ ; done ; } ) || true
 
 		# Hardlink libraries for cgi-bin if present:
-		(cd "$INSTALL_DIR/cgi-bin" && { DESTDIR="$INSTALL_DIR" dllldddir . | while read D ; do ln -f ../bin/"`basename "$D"`" ./ ; done ; } ) \
+		(cd "$INSTALL_DIR/cgi-bin" 2>/dev/null && { DESTDIR="$INSTALL_DIR" dllldddir . | while read D ; do ln -f ../bin/"`basename "$D"`" ./ ; done ; } ) \
 		|| echo "NOTE: FAILED to process OPTIONAL cgi-bin directory; was NUT CGI enabled?" >&2
 	fi
 
