@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3178 utf-8
+personal_ws-1.1 en 3179 utf-8
 AAC
 AAS
 ABI
@@ -2693,6 +2693,7 @@ screenshot
 screenshots
 scriptname
 sd
+sdcmd
 sddelay
 sdk
 sdl
