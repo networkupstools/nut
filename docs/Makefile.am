@@ -214,21 +214,33 @@ check-html-single: $(ASCIIDOC_HTML_SINGLE)
 	                    N="`grep -cE "title.*$${FIRST_ENTRY}" "$$F"`" ; \
 	                    if [ 2 != "$${N}" ] ; then \
 	                        echo "FAILED $$F check: does not contain expected first entry exactly twice (huge doc, must have got aborted mid-way): $${FIRST_ENTRY} (seen $$N times)" >&2 ; \
-	                        FAILED="$$FAILED $$F" ; \
+	                        if ! echo "$$FAILED" | grep -w "$$F" >/dev/null ; then \
+	                            echo "Expected size over 3MB (for common builds):" >&2 ; \
+	                            ls -la "$$F" "$(top_builddir)/ChangeLog"* >&2 ; \
+	                            FAILED="$$FAILED $$F" ; \
+	                        fi ; \
 	                    fi ; \
 	                fi; \
 	                if [ -n "$${SECOND_ENTRY}" ] ; then \
 	                    N="`grep -cE "title.*$${SECOND_ENTRY}" "$$F"`" ; \
 	                    if [ 2 != "$${N}" ] ; then \
 	                        echo "FAILED $$F check: does not contain expected second entry exactly twice (huge doc, must have got aborted mid-way): $${SECOND_ENTRY} (seen $$N times)" >&2 ; \
-	                        FAILED="$$FAILED $$F" ; \
+	                        if ! echo "$$FAILED" | grep -w "$$F" >/dev/null ; then \
+	                            echo "Expected size over 3MB (for common builds):" >&2 ; \
+	                            ls -la "$$F" "$(top_builddir)/ChangeLog"* >&2 ; \
+	                            FAILED="$$FAILED $$F" ; \
+	                        fi ; \
 	                    fi ; \
 	                fi; \
 	                if [ -n "$${LAST_ENTRY}" ] ; then \
 	                    N="`grep -cE "title.*$${LAST_ENTRY}" "$$F"`" ; \
 	                    if [ 2 != "$${N}" ] ; then \
 	                        echo "FAILED $$F check: does not contain expected last entry exactly twice (huge doc, must have got aborted mid-way): $${LAST_ENTRY} (seen $$N times)" >&2 ; \
-	                        FAILED="$$FAILED $$F" ; \
+	                        if ! echo "$$FAILED" | grep -w "$$F" >/dev/null ; then \
+	                            echo "Expected size over 3MB (for common builds):" >&2 ; \
+	                            ls -la "$$F" "$(top_builddir)/ChangeLog"* >&2 ; \
+	                            FAILED="$$FAILED $$F" ; \
+	                        fi ; \
 	                    fi ; \
 	                fi; \
 	            fi ;; \
