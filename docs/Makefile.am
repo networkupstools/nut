@@ -498,6 +498,7 @@ DOCBUILD_END = { \
 	            $(MAKE) $(AM_MAKEFLAGS) "`basename '$(@F)'`"-contentchecked || RES=$$? ; \
 	            if [ "$$RES" != 0 ] ; then \
 	                echo "  DOC-HTML Generating $@ (retry once)" >&2; \
+	                rm -f "$@"; \
 	                A2X_OUTDIR="tmp/html-single.$(@F).$$$$-retry" ; \
 	                $(DOCBUILD_BEGIN) ; RES=0; rm -f "`basename '$(@F)'`"-contentchecked || true ; \
 	                $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl "$(<D)/`basename '$(<F)' -prepped`" || RES=$$? ; \
