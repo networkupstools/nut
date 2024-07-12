@@ -201,53 +201,59 @@ check-pdf: $(ASCIIDOC_PDF)
 # and not exactly two mentions, should allow to catch the case
 # of overlapping documents. Checking for the last entry allows
 # to catch incomplete parses, where asciidoc gave up early.
+ChangeLog.html-contentchecked: ChangeLog.html
+	@FAILED=""; \
+	 if [ -s "$(top_builddir)/ChangeLog" ] ; then \
+	    SECOND_ENTRY="`grep -E '^[0-9]' "$(top_builddir)/ChangeLog" | head -2 | tail -1 | sed 's/ *["<].*//'`" || SECOND_ENTRY="" ; \
+	    FIRST_ENTRY="`grep -E '^[0-9]' "$(top_builddir)/ChangeLog" | head -1 | sed 's/ *["<].*//'`" || FIRST_ENTRY="" ; \
+	    LAST_ENTRY="`grep -E '^[0-9]' "$(top_builddir)/ChangeLog" | tail -1 | sed 's/ *["<].*//'`" || LAST_ENTRY="" ; \
+	    if [ -n "$${FIRST_ENTRY}" ] ; then \
+	        N="`grep -cE "title.*$${FIRST_ENTRY}" "$?"`" ; \
+	        if [ 2 != "$${N}" ] ; then \
+	            echo "FAILED $(?) check: does not contain expected first entry exactly twice (huge doc, must have got aborted mid-way): $${FIRST_ENTRY} (seen $$N times)" >&2 ; \
+	            if [ -z "$$FAILED" ] ; then \
+	                echo "Expected size over 3MB (for common builds):" >&2 ; \
+	                ls -la "$(?)" "$(top_builddir)/ChangeLog"* >&2 ; \
+	                FAILED="$(?)" ; \
+	            fi ; \
+	        fi ; \
+	    fi; \
+	    if [ -n "$${SECOND_ENTRY}" ] ; then \
+	        N="`grep -cE "title.*$${SECOND_ENTRY}" "$(?)"`" ; \
+	        if [ 2 != "$${N}" ] ; then \
+	            echo "FAILED $(?) check: does not contain expected second entry exactly twice (huge doc, must have got aborted mid-way): $${SECOND_ENTRY} (seen $$N times)" >&2 ; \
+	            if [ -z "$$FAILED" ] ; then \
+	                echo "Expected size over 3MB (for common builds):" >&2 ; \
+	                ls -la "$(?)" "$(top_builddir)/ChangeLog"* >&2 ; \
+	                FAILED="$(?)" ; \
+	            fi ; \
+	        fi ; \
+	    fi; \
+	    if [ -n "$${LAST_ENTRY}" ] ; then \
+	        N="`grep -cE "title.*$${LAST_ENTRY}" "$(?)"`" ; \
+	        if [ 2 != "$${N}" ] ; then \
+	            echo "FAILED $(?) check: does not contain expected last entry exactly twice (huge doc, must have got aborted mid-way): $${LAST_ENTRY} (seen $$N times)" >&2 ; \
+	            if [ -z "$$FAILED" ] ; then \
+	                echo "Expected size over 3MB (for common builds):" >&2 ; \
+	                ls -la "$(?)" "$(top_builddir)/ChangeLog"* >&2 ; \
+	                FAILED="$(?)" ; \
+	            fi ; \
+	        fi ; \
+	    fi; \
+	 fi
+
 check-html-single: $(ASCIIDOC_HTML_SINGLE)
-	@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
-	for F in $(ASCIIDOC_HTML_SINGLE) ; do \
+	+@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
+	 for F in $(ASCIIDOC_HTML_SINGLE) ; do \
 	    test -s "$$F" && { file "$$F" | $(EGREP) -i '(XML|HTML.*document)' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
 	    case "$$F" in \
 	        *ChangeLog*) if [ -s "$(top_builddir)/ChangeLog" ] ; then \
-	                SECOND_ENTRY="`grep -E '^[0-9]' "$(top_builddir)/ChangeLog" | head -2 | tail -1 | sed 's/ *["<].*//'`" || SECOND_ENTRY="" ; \
-	                FIRST_ENTRY="`grep -E '^[0-9]' "$(top_builddir)/ChangeLog" | head -1 | sed 's/ *["<].*//'`" || FIRST_ENTRY="" ; \
-	                LAST_ENTRY="`grep -E '^[0-9]' "$(top_builddir)/ChangeLog" | tail -1 | sed 's/ *["<].*//'`" || LAST_ENTRY="" ; \
-	                if [ -n "$${FIRST_ENTRY}" ] ; then \
-	                    N="`grep -cE "title.*$${FIRST_ENTRY}" "$$F"`" ; \
-	                    if [ 2 != "$${N}" ] ; then \
-	                        echo "FAILED $$F check: does not contain expected first entry exactly twice (huge doc, must have got aborted mid-way): $${FIRST_ENTRY} (seen $$N times)" >&2 ; \
-	                        if ! echo "$$FAILED" | grep -w "$$F" >/dev/null ; then \
-	                            echo "Expected size over 3MB (for common builds):" >&2 ; \
-	                            ls -la "$$F" "$(top_builddir)/ChangeLog"* >&2 ; \
-	                            FAILED="$$FAILED $$F" ; \
-	                        fi ; \
-	                    fi ; \
-	                fi; \
-	                if [ -n "$${SECOND_ENTRY}" ] ; then \
-	                    N="`grep -cE "title.*$${SECOND_ENTRY}" "$$F"`" ; \
-	                    if [ 2 != "$${N}" ] ; then \
-	                        echo "FAILED $$F check: does not contain expected second entry exactly twice (huge doc, must have got aborted mid-way): $${SECOND_ENTRY} (seen $$N times)" >&2 ; \
-	                        if ! echo "$$FAILED" | grep -w "$$F" >/dev/null ; then \
-	                            echo "Expected size over 3MB (for common builds):" >&2 ; \
-	                            ls -la "$$F" "$(top_builddir)/ChangeLog"* >&2 ; \
-	                            FAILED="$$FAILED $$F" ; \
-	                        fi ; \
-	                    fi ; \
-	                fi; \
-	                if [ -n "$${LAST_ENTRY}" ] ; then \
-	                    N="`grep -cE "title.*$${LAST_ENTRY}" "$$F"`" ; \
-	                    if [ 2 != "$${N}" ] ; then \
-	                        echo "FAILED $$F check: does not contain expected last entry exactly twice (huge doc, must have got aborted mid-way): $${LAST_ENTRY} (seen $$N times)" >&2 ; \
-	                        if ! echo "$$FAILED" | grep -w "$$F" >/dev/null ; then \
-	                            echo "Expected size over 3MB (for common builds):" >&2 ; \
-	                            ls -la "$$F" "$(top_builddir)/ChangeLog"* >&2 ; \
-	                            FAILED="$$FAILED $$F" ; \
-	                        fi ; \
-	                    fi ; \
-	                fi; \
+	                $(MAKE) $(AM_MAKEFLAGS) "`basename "$$F"`"-contentchecked || FAILED="$$FAILED $$F" ; \
 	            fi ;; \
 	    esac ; \
-	done; if test -n "$$FAILED" ; then \
+	 done; if test -n "$$FAILED" ; then \
 	    echo "FAILED HTML-single sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
-	fi; echo "PASSED HTML-single sanity check"; exit 0
+	 fi; echo "PASSED HTML-single sanity check"; exit 0
 
 check-html-chunked: $(ASCIIDOC_HTML_CHUNKED)
 	@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
@@ -273,7 +279,7 @@ check-man all-man man-man all-html html-man:
 man:
 	+cd $(abs_top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile all
 
-CLEANFILES = *.xml *.html *.pdf *-spellchecked docbook-xsl.css docinfo.xml.in.tmp
+CLEANFILES = *.xml *.html *.pdf *-spellchecked *-contentchecked docbook-xsl.css docinfo.xml.in.tmp
 CLEANFILES += $(top_builddir)/INSTALL.nut $(top_builddir)/UPGRADING $(top_builddir)/NEWS $(top_builddir)/ChangeLog.adoc $(top_builddir)/README
 CLEANFILES += $(top_builddir)/*.adoc-parsed *.adoc-parsed
 
