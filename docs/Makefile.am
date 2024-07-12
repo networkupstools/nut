@@ -185,10 +185,51 @@ check-pdf: $(ASCIIDOC_PDF)
 	    echo "FAILED PDF sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
 	fi; echo "PASSED PDF sanity check"; exit 0
 
+# Regarding ChangeLog check: sometimes asciidoc gives up early
+# (we have megabytes of text and thousands of sections here).
+# In some cases, the intermediate XML is broken and a2x=>xmllint
+# notices it. In others, it is truncated at just the right place
+# structurally and leads to a short HTML with only part of the
+# expected contents. We should no longer have several processes
+# trying to create the files involved (or rather do so atomically
+# and rename into final path, in case we still have competition
+# here); earlier when several generators appended to the same
+# file we could have several copies overlaid, with one of the
+# document's copies starting mid-sentence of another.
+# The two expected mentions are in the table of contents and
+# in the eventual section. Checking for first/second entries,
+# and not exactly two mentions, should allow to catch the case
+# of overlapping documents. Checking for the last entry allows
+# to catch incomplete parses, where asciidoc gave up early.
 check-html-single: $(ASCIIDOC_HTML_SINGLE)
 	@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	for F in $(ASCIIDOC_HTML_SINGLE) ; do \
 	    test -s "$$F" && { file "$$F" | $(EGREP) -i '(XML|HTML.*document)' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
+	    case "$$F" in \
+	        *ChangeLog*) if [ -s "$(top_builddir)/ChangeLog" ] ; then \
+	                SECOND_ENTRY="`grep -E '^[0-9]' "$(top_builddir)/ChangeLog" | head -2 | tail -1 | sed 's/ *["<].*//'`" || SECOND_ENTRY="" ; \
+	                FIRST_ENTRY="`grep -E '^[0-9]' "$(top_builddir)/ChangeLog" | head -1 | sed 's/ *["<].*//'`" || FIRST_ENTRY="" ; \
+	                LAST_ENTRY="`grep -E '^[0-9]' "$(top_builddir)/ChangeLog" | tail -1 | sed 's/ *["<].*//'`" || LAST_ENTRY="" ; \
+	                if [ -n "$${FIRST_ENTRY}" ] ; then \
+	                    if [ 2 != "`grep -cE "title.*$${FIRST_ENTRY}" "$$F"`" ] ; then \
+	                        echo "FAILED $$F check: does not contain expected first entry exactly twice (huge doc, must have got aborted mid-way): $${FIRST_ENTRY}" >&2 ; \
+	                        FAILED="$$FAILED $$F" ; \
+	                    fi ; \
+	                fi; \
+	                if [ -n "$${SECOND_ENTRY}" ] ; then \
+	                    if [ 2 != "`grep -cE "title.*$${SECOND_ENTRY}" "$$F"`" ] ; then \
+	                        echo "FAILED $$F check: does not contain expected second entry exactly twice (huge doc, must have got aborted mid-way): $${SECOND_ENTRY}" >&2 ; \
+	                        FAILED="$$FAILED $$F" ; \
+	                    fi ; \
+	                fi; \
+	                if [ -n "$${LAST_ENTRY}" ] ; then \
+	                    if [ 2 != "`grep -cE "title.*$${LAST_ENTRY}" "$$F"`" ] ; then \
+	                        echo "FAILED $$F check: does not contain expected last entry exactly twice (huge doc, must have got aborted mid-way): $${LAST_ENTRY}" >&2 ; \
+	                        FAILED="$$FAILED $$F" ; \
+	                    fi ; \
+	                fi; \
+	            fi ;; \
+	    esac ; \
 	done; if test -n "$$FAILED" ; then \
 	    echo "FAILED HTML-single sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
 	fi; echo "PASSED HTML-single sanity check"; exit 0
