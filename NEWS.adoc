@@ -144,11 +144,19 @@ https://github.com/networkupstools/nut/milestone/11
 +
 NOTE: Currently both the long and short names for `libupsclient` should be
 installed.
+   * fixed support for IPv6 addresses (passed in square brackets) for both
+     `-s` start/`-e` end command-line options, and for `-m cidr/mask` option.
+     [issue #2512, PR #2518]
    * newly added support to scan several IP addresses (single or ranges)
      with the same call, by repeating command-line options; also `-m auto{,4,6}`
      can be specified (once) to select IP (all, IPv4, IPv6) address ranges of
-     configured local network interfaces (currently not implemented for WIN32).
-     [issue #2244, PR #2509, PR #2513]
+     configured local network interfaces.
+     An `/ADDRLEN` suffix can be added to the option, to filter out discovered
+     subnets with too many bits available for the host address part (avoiding
+     millions of scans in the extreme cases).
+     [issue #2244, issue #2511, PR #2509, PR #2513, PR #2517]
+   * implemented parallel scanning for IPMI bus, otherwise default scan for
+     all supported buses with `-m auto` takes unbearably long. [#2523]
    * bumped version of `libnutscan` to 2.5.2, it now includes a few more
      methods and symbols from `libcommon`. [issue #2244, PR #2509]
 
@@ -179,6 +187,9 @@ installed.
  - various recipe, documentation and source files were revised to address
    respective warnings issued by the new generations of analysis tools.
    [#823, #2437, link:https://github.com/networkupstools/nut-website/issues/52[nut-website issue #52]]
+
+ - added `scripts/valgrind` with a helper script and suppression file to
+   ignore common third-party problems. [#2511]
 
  - revised `nut.exe` (the NUT for Windows wrapper for all-in-one service)
    to be more helpful with command-line use (report that it failed to start

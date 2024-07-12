@@ -100,13 +100,13 @@ static int match_function_exact(USBDevice_t *hd, void *privdata)
 	}
 #endif
 #if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
-  #ifdef DEBUG_EXACT_MATCH_BUSPORT
+# ifdef DEBUG_EXACT_MATCH_BUSPORT
 	if (strcmp_null(hd->BusPort, data->BusPort) != 0) {
 		upsdebugx(2, "%s: failed match of %s: %s != %s",
 		    __func__, "BusPort", hd->BusPort, data->BusPort);
 		return 0;
 	}
-  #endif
+# endif
 #endif
 #ifdef DEBUG_EXACT_MATCH_DEVICE
 	if (strcmp_null(hd->Device, data->Device) != 0) {

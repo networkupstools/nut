@@ -1,6 +1,7 @@
 /*
  *  Copyright (C) 2012 - EATON
  *  Copyright (C) 2016-2021 - EATON - Various threads-related improvements
+ *  Copyright (C) 2020-2024 - Jim Klimov <jimklimov+nut@gmail.com> - support and modernization of codebase
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -29,7 +30,7 @@
 
 /* Need this on AIX when using xlc to get alloca */
 #ifdef _AIX
-#pragma alloca
+# pragma alloca
 #endif /* _AIX */
 
 #include <fcntl.h>
@@ -379,7 +380,14 @@ static nutscan_device_t * nutscan_scan_eaton_serial_q1(const char* port_name)
 	return dev;
 }
 
-static void * nutscan_scan_eaton_serial_device(void * port_arg)
+/* Wrap calls to actual implementations of nutscan_scan_eaton_serial_shut(),
+ * nutscan_scan_eaton_serial_xcp() and/or nutscan_scan_eaton_serial_q1()
+ * which implement the semantics of parallel-able scanning.
+ * Returns the device entry, updates global dev_ret when a scan is successful.
+ * DOES NOT FREE the caller's copy of "port_arg", unlike many similar methods
+ * in other scanners.
+ */
+static void * nutscan_scan_eaton_serial_device_thready(void * port_arg)
 {
 	nutscan_device_t * dev = NULL;
 	char* port_name = (char*) port_arg;
@@ -395,6 +403,7 @@ static void * nutscan_scan_eaton_serial_device(void * port_arg)
 		}
 		/* Else try UTalk? */
 	}
+
 	return dev;
 }
 
@@ -408,10 +417,15 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 	char *current_port_name = NULL;
 	char **serial_ports_list;
 	int  current_port_nb;
+
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE
 	sem_t * semaphore = nutscan_semaphore();
-# endif
+	/* TODO? Port semaphore_scantype / max_threads_scantype
+	 *  from sibling sources? We do not have that many serial
+	 *  ports to care much, usually... right?
+	 */
+# endif /* HAVE_SEMAPHORE */
 	pthread_t thread;
 	nutscan_thread_t * thread_array = NULL;
 	size_t thread_count = 0, i;
@@ -484,6 +498,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 				"(launched overall: %" PRIuSIZE "), "
 				"waiting until some would finish",
 				__func__, curr_threads, thread_count);
+
 			while (curr_threads >= max_threads) {
 				for (i = 0; i < thread_count ; i++) {
 					int ret;
@@ -528,6 +543,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 			}
 			upsdebugx(2, "%s: proceeding with scan", __func__);
 		}
+
 		/* NOTE: No change to default "pass" in this ifdef:
 		 * if we got to this line, we have a slot to use */
 #  endif /* HAVE_PTHREAD_TRYJOIN */
@@ -538,7 +554,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 			current_port_name = serial_ports_list[current_port_nb];
 
 #ifdef HAVE_PTHREAD
-			if (pthread_create(&thread, NULL, nutscan_scan_eaton_serial_device, (void*)current_port_name) == 0) {
+			if (pthread_create(&thread, NULL, nutscan_scan_eaton_serial_device_thready, (void*)current_port_name) == 0) {
 				nutscan_thread_t	*new_thread_array;
 # ifdef HAVE_PTHREAD_TRYJOIN
 				pthread_mutex_lock(&threadcount_mutex);
@@ -563,17 +579,20 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 # endif /* HAVE_PTHREAD_TRYJOIN */
 			}
 #else   /* if not HAVE_PTHREAD */
-			nutscan_scan_eaton_serial_device(current_port_name);
+			nutscan_scan_eaton_serial_device_thready(current_port_name);
 #endif  /* if HAVE_PTHREAD */
+
+			/* Prepare the next iteration */
 			current_port_nb++;
 		} else { /* if not pass -- all slots busy */
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE
 			/* Wait for all current scans to complete */
 			if (thread_array != NULL) {
-				upsdebugx (2, "%s: Running too many scanning threads, "
+				upsdebugx (2, "%s: Running too many scanning threads (%"
+					PRIuSIZE "), "
 					"waiting until older ones would finish",
-					__func__);
+					__func__, thread_count);
 				for (i = 0; i < thread_count ; i++) {
 					int ret;
 					if (!thread_array[i].active) {

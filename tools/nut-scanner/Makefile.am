@@ -75,6 +75,8 @@ if HAVE_WINDOWS
   libnutscan_la_LIBADD += $(top_builddir)/common/libnutwincompat.la
   libnutscan_la_LDFLAGS += -no-undefined
 endif HAVE_WINDOWS
+# Technically, we might only have this one set on Windows so far...
+libnutscan_la_LDFLAGS += @NETLIBS_GETADDRS@
 
 #
 # Below we set API versions of public libraries
@@ -94,7 +96,7 @@ libnutscan_la_LDFLAGS += -version-info 2:5:2
 # copies of "nut_debug_level" making fun of our debug-logging attempts.
 # One solution to tackle if needed for those cases would be to make some
 # dynamic/shared libnutcommon (etc.)
-libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebugx|fatalx|xcalloc|snprintfcat|max_threads|curr_threads|nut_report_config_flags|upsdebugx_report_search_paths|nut_prepare_search_paths)'
+libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebug|fatalx|fatal_with_errno|xcalloc|snprintfcat|max_threads|curr_threads|nut_report_config_flags|upsdebugx_report_search_paths|nut_prepare_search_paths)'
 libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include \
 			$(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
 

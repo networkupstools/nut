@@ -125,11 +125,18 @@ Also note that some buses require IP address(es) to scan, and others have a
 different behavior when exactly no addresses are specified (it is not currently
 possible to mix the two behaviors in one invocation of the `nut-scanner` tool).
 +
+A single-address range may be a host name which would be resolved into one IP
+address by the system resolver. A CIDR using a host name and netmask length
+would be resolved into an IP address and subjected to the mask application,
+to query hosts "near" the named one.
++
 Finally note that currently even if multi-threaded support is available, each
 range specification is a separate fan-out of queries constrained by the timeout.
 Requests to scan many single IP addresses will take a while to complete, much
 longer than if they were a single range.  This will be hopefully fixed in later
 releases.
+
+NOTE: Colon-separated IPv6 addresses must be passed in square brackets.
 
 *-t* | *--timeout* 'timeout'::
 Set the network timeout in seconds. Default timeout is 5 seconds.
@@ -151,6 +158,14 @@ A special form `-m auto` allows `nut-scanner` to detect local IP address(es)
 and scan corresponding subnet(s) on supported platforms, and `-m auto4` or
 `-m auto6` limits the selected addresses to IPv4 and IPv6 respectively. Only
 the first "auto*" request would be honoured, others ignored with a warning.
++
+An `/ADDRLEN` suffix can be added to the option, to filter out discovered
+subnets with too many bits available for the host address part (avoiding
+millions of scans in the extreme cases).  For example, if your IPv4 LAN's
+network range is `10.2.3.0/24`, its address part is `(32-24)=8`. Note that
+while this is applied to IPv6 networks also, their typical `/64` subnets
+are not likely to have a NUT/SNMP/NetXML/... server *that* close nearby
+(in addressing terms), for a tight filter to find them. Default is `8`.
 
 NUT DEVICE OPTION
 -----------------

@@ -2,7 +2,7 @@
  *  Copyright (C) 2011 - 2024 Arnaud Quette (Design and part of implementation)
  *  Copyright (C) 2011 - 2021 EATON
  *  Copyright (C) 2016 - 2021 Jim Klimov <EvgenyKlimov@eaton.com>
- *  Copyright (C) 2022 - 2024 Jim Klimov <jimklimov+nut@gmail.com>
+ *  Copyright (C) 2021 - 2024 Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -35,7 +35,16 @@
 #include <string.h>
 #include "nut-scan.h"
 #include "nut_platform.h"
+#include "nut_stdint.h"
 
+#ifdef WIN32
+# if defined HAVE_WINSOCK2_H && HAVE_WINSOCK2_H
+#  include <winsock2.h>
+# endif
+#endif
+
+/* FIXME: We may want to (also?) use lt_dlopenext(), so
+ * that libtool would offer platform-specific extensions */
 #ifdef WIN32
 # define SOEXT ".dll"
 #else
@@ -57,12 +66,19 @@ int nutscan_avail_snmp = 0;
 int nutscan_avail_usb = 0;
 int nutscan_avail_xml_http = 0;
 
+/* Methods defined in scan_*.c source files */
 int nutscan_load_usb_library(const char *libname_path);
+int nutscan_unload_usb_library(void);
 int nutscan_load_snmp_library(const char *libname_path);
+int nutscan_unload_snmp_library(void);
 int nutscan_load_neon_library(const char *libname_path);
+int nutscan_unload_neon_library(void);
 int nutscan_load_avahi_library(const char *libname_path);
+int nutscan_unload_avahi_library(void);
 int nutscan_load_ipmi_library(const char *libname_path);
+int nutscan_unload_ipmi_library(void);
 int nutscan_load_upsclient_library(const char *libname_path);
+int nutscan_unload_upsclient_library(void);
 
 #ifdef HAVE_PTHREAD
 # ifdef HAVE_SEMAPHORE
@@ -102,6 +118,7 @@ size_t max_threads_netsnmp = 0; /* 10240; */
 	 * Still, some practical limit can be useful (configurable?)
 	 * Here 0 means to not apply any special limit (beside max_threads).
 	 */
+size_t max_threads_ipmi = 0;	/* limits not yet known */
 
 # endif  /* HAVE_PTHREAD_TRYJOIN || HAVE_SEMAPHORE */
 
@@ -119,6 +136,13 @@ void do_upsconf_args(char *confupsname, char *var, char *val) {
 void nutscan_init(void)
 {
 	char *libname = NULL;
+
+#ifdef WIN32
+	/* Required ritual before calling any socket functions */
+	WSADATA WSAdata;
+	WSAStartup(2,&WSAdata);
+	atexit((void(*)(void))WSACleanup);
+#endif
 
 	/* Optional filter to not walk things twice */
 	nut_prepare_search_paths();
@@ -159,7 +183,12 @@ void nutscan_init(void)
 			__func__);
 		max_threads = UINT_MAX - 1;
 	}
-	sem_init(&semaphore, 0, (unsigned int)max_threads);
+
+	upsdebugx(1, "%s: Parallel scan support: max_threads=%" PRIuSIZE,
+		__func__, max_threads);
+	if (sem_init(&semaphore, 0, (unsigned int)max_threads)) {
+		upsdebug_with_errno(4, "%s: Parallel scan support: sem_init() failed", __func__);
+	}
 # endif
 
 # ifdef HAVE_PTHREAD_TRYJOIN
@@ -567,29 +596,68 @@ void nutscan_init(void)
 /* start of "NUT Simulation" - unconditional */
 /* no need for additional library */
 	nutscan_avail_nut_simulation = 1;
+}
 
+/* Return 0 on success, -1 on error e.g. "was not loaded";
+ * other values may be possible if lt_dlclose() errors set them;
+ * visible externally to scan_* modules */
+int nutscan_unload_library(int *avail, lt_dlhandle *pdl_handle, char **libpath);
+int nutscan_unload_library(int *avail, lt_dlhandle *pdl_handle, char **libpath)
+{
+	int ret = -1;
+
+	if (avail == NULL || pdl_handle == NULL) {
+		upsdebugx(1, "%s: called with bad inputs, no-op", __func__);
+		return -2;
+	}
+
+	/* never tried/already unloaded */
+	if (*pdl_handle == NULL) {
+		goto end;
+	}
+
+	/* if previous init failed */
+	if (*pdl_handle == (void *)1) {
+		goto end;
+	}
+
+	if (*avail == 0) {
+		upsdebugx(1, "%s: Asked to unload a module %p "
+			"for %s but our flag says it is not loaded",
+			__func__, (void *)(*pdl_handle),
+			(libpath && *libpath && **libpath)
+			? *libpath
+			: "<unidentified module>");
+	}
+
+	/* init has already been done */
+	if (libpath && *libpath && **libpath) {
+		upsdebugx(1, "%s: unloading module %s",
+			__func__, *libpath);
+	}
+	ret = lt_dlclose(*pdl_handle);
+	lt_dlexit();
+
+end:
+	*pdl_handle = NULL;
+	*avail = 0;
+
+	if (libpath && *libpath) {
+		free(*libpath);
+		*libpath = NULL;
+	}
+
+	return ret;
 }
 
 void nutscan_free(void)
 {
-	if (nutscan_avail_usb) {
-		lt_dlexit();
-	}
-	if (nutscan_avail_snmp) {
-		lt_dlexit();
-	}
-	if (nutscan_avail_xml_http) {
-		lt_dlexit();
-	}
-	if (nutscan_avail_avahi) {
-		lt_dlexit();
-	}
-	if (nutscan_avail_ipmi) {
-		lt_dlexit();
-	}
-	if (nutscan_avail_nut) {
-		lt_dlexit();
-	}
+	nutscan_unload_usb_library();
+	nutscan_unload_snmp_library();
+	nutscan_unload_neon_library();
+	nutscan_unload_avahi_library();
+	nutscan_unload_ipmi_library();
+	nutscan_unload_upsclient_library();
 
 #ifdef HAVE_PTHREAD
 /* TOTHINK: See comments near mutex/semaphore init code above */
