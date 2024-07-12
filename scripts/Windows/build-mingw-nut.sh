@@ -117,6 +117,7 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 	# Note: installation prefix here is "/" and desired INSTALL_DIR
 	# location is passed to `make install` as DESTDIR below.
 	# FIXME: Implement support for --without-pkg-config in m4 and use it
+	RES_CFG=0
 	$CONFIGURE_SCRIPT $HOST_FLAG $BUILD_FLAG --prefix=/ \
 	    $KEEP_NUT_REPORT_FEATURE_FLAG \
 	    PKG_CONFIG_PATH="${ARCH_PREFIX}/lib/pkgconfig" \
@@ -126,9 +127,19 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 	    --with-pynut=app \
 	    --with-augeas-lenses-dir=/augeas-lenses \
 	    --enable-Werror \
-	|| exit
-	echo "$0: configure phase complete ($?)" >&2
+	|| RES_CFG=$?
+	echo "$0: configure phase complete ($RES_CFG)" >&2
+	[ x"$RES_CFG" = x0 ] || exit $RES_CFG
 
+	echo "Configuration finished, starting make" >&2
+	if [ -n "$PARMAKE_FLAGS" ]; then
+		echo "For parallel builds, '$PARMAKE_FLAGS' options would be used" >&2
+	fi
+	if [ -n "$MAKEFLAGS" ]; then
+		echo "Generally, MAKEFLAGS='$MAKEFLAGS' options would be passed" >&2
+	fi
+
+	# FIXME: parameterize ${MAKE} ?
 	make 1>/dev/null || exit
 	make doc 1>/dev/null || exit
 	make -k man-man html-man 1>/dev/null || true
