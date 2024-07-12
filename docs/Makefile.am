@@ -211,20 +211,23 @@ check-html-single: $(ASCIIDOC_HTML_SINGLE)
 	                FIRST_ENTRY="`grep -E '^[0-9]' "$(top_builddir)/ChangeLog" | head -1 | sed 's/ *["<].*//'`" || FIRST_ENTRY="" ; \
 	                LAST_ENTRY="`grep -E '^[0-9]' "$(top_builddir)/ChangeLog" | tail -1 | sed 's/ *["<].*//'`" || LAST_ENTRY="" ; \
 	                if [ -n "$${FIRST_ENTRY}" ] ; then \
-	                    if [ 2 != "`grep -cE "title.*$${FIRST_ENTRY}" "$$F"`" ] ; then \
-	                        echo "FAILED $$F check: does not contain expected first entry exactly twice (huge doc, must have got aborted mid-way): $${FIRST_ENTRY}" >&2 ; \
+	                    N="`grep -cE "title.*$${FIRST_ENTRY}" "$$F"`" ; \
+	                    if [ 2 != "$${N}" ] ; then \
+	                        echo "FAILED $$F check: does not contain expected first entry exactly twice (huge doc, must have got aborted mid-way): $${FIRST_ENTRY} (seen $$N times)" >&2 ; \
 	                        FAILED="$$FAILED $$F" ; \
 	                    fi ; \
 	                fi; \
 	                if [ -n "$${SECOND_ENTRY}" ] ; then \
-	                    if [ 2 != "`grep -cE "title.*$${SECOND_ENTRY}" "$$F"`" ] ; then \
-	                        echo "FAILED $$F check: does not contain expected second entry exactly twice (huge doc, must have got aborted mid-way): $${SECOND_ENTRY}" >&2 ; \
+	                    N="`grep -cE "title.*$${SECOND_ENTRY}" "$$F"`" ; \
+	                    if [ 2 != "$${N}" ] ; then \
+	                        echo "FAILED $$F check: does not contain expected second entry exactly twice (huge doc, must have got aborted mid-way): $${SECOND_ENTRY} (seen $$N times)" >&2 ; \
 	                        FAILED="$$FAILED $$F" ; \
 	                    fi ; \
 	                fi; \
 	                if [ -n "$${LAST_ENTRY}" ] ; then \
-	                    if [ 2 != "`grep -cE "title.*$${LAST_ENTRY}" "$$F"`" ] ; then \
-	                        echo "FAILED $$F check: does not contain expected last entry exactly twice (huge doc, must have got aborted mid-way): $${LAST_ENTRY}" >&2 ; \
+	                    N="`grep -cE "title.*$${LAST_ENTRY}" "$$F"`" ; \
+	                    if [ 2 != "$${N}" ] ; then \
+	                        echo "FAILED $$F check: does not contain expected last entry exactly twice (huge doc, must have got aborted mid-way): $${LAST_ENTRY} (seen $$N times)" >&2 ; \
 	                        FAILED="$$FAILED $$F" ; \
 	                    fi ; \
 	                fi; \
