@@ -548,8 +548,10 @@ configure_nut() {
       echo "=== CC='$CC' CXX='$CXX' CPP='$CPP'"
       [ -z "${CI_SHELL_IS_FLAKY-}" ] || echo "=== CI_SHELL_IS_FLAKY='$CI_SHELL_IS_FLAKY'"
       $CI_TIME $CONFIGURE_SCRIPT "${CONFIG_OPTS[@]}" \
+      && echo "$0: configure phase complete (0)" >&2 \
       && return 0 \
       || { RES_CFG=$?
+        echo "$0: configure phase complete ($RES_CFG)" >&2
         echo "FAILED ($RES_CFG) to configure nut, will dump config.log in a second to help troubleshoot CI" >&2
         echo "    (or press Ctrl+C to abort now if running interactively)" >&2
         sleep 5
@@ -581,6 +583,12 @@ build_to_only_catch_errors_target() {
 
     # Sub-shells to avoid crashing with "unhandled" faults in "set -e" mode:
     ( echo "`date`: Starting the parallel build attempt (quietly to build what we can) for '$@' ..."; \
+      if [ -n "$PARMAKE_FLAGS" ]; then
+        echo "For parallel builds, '$PARMAKE_FLAGS' options would be used"
+      fi
+      if [ -n "$MAKEFLAGS" ]; then
+        echo "Generally, MAKEFLAGS='$MAKEFLAGS' options would be passed"
+      fi
       ( case "${CI_PARMAKE_VERBOSITY}" in
         silent)
           # Note: stderr would still expose errors and warnings (needed for
@@ -2113,11 +2121,23 @@ bindings)
         CONFIG_OPTS+=("--with-python=${PYTHON}")
     fi
 
-    ${CONFIGURE_SCRIPT} "${CONFIG_OPTS[@]}"
+    RES_CFG=0
+    ${CONFIGURE_SCRIPT} "${CONFIG_OPTS[@]}" \
+    || RES_CFG=$?
+    echo "$0: configure phase complete ($RES_CFG)" >&2
+    [ x"$RES_CFG" = x0 ] || exit $RES_CFG
 
     # NOTE: Currently parallel builds are expected to succeed (as far
     # as recipes are concerned), and the builds without a BUILD_TYPE
     # are aimed at developer iterations so not tweaking verbosity.
+    echo "Configuration finished, starting make" >&2
+    if [ -n "$PARMAKE_FLAGS" ]; then
+        echo "For parallel builds, '$PARMAKE_FLAGS' options would be used" >&2
+    fi
+    if [ -n "$MAKEFLAGS" ]; then
+        echo "Generally, MAKEFLAGS='$MAKEFLAGS' options would be passed" >&2
+    fi
+
     #$MAKE all || \
     $MAKE $PARMAKE_FLAGS all || exit
     if [ "${CI_SKIP_CHECK}" != true ] ; then $MAKE check || exit ; fi
