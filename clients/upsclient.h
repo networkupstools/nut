@@ -53,6 +53,10 @@
 # endif
 #endif
 
+#if defined HAVE_SYS_TYPES_H
+# include <sys/types.h>
+#endif
+
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 extern "C" {

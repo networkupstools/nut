@@ -79,6 +79,7 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 		AC_MSG_WARN([did not find either net-snmp-config or pkg-config for net-snmp])
 	fi
 
+	myCFLAGS_SOURCE=""
 	AC_MSG_CHECKING(for Net-SNMP cflags)
 	AC_ARG_WITH(snmp-includes,
 		AS_HELP_STRING([@<:@--with-snmp-includes=CFLAGS@:>@], [include flags for the Net-SNMP library]),
@@ -88,17 +89,21 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 			AC_MSG_ERROR(invalid option --with(out)-snmp-includes - see docs/configure.txt)
 			;;
 		*)
+			myCFLAGS_SOURCE="confarg"
 			CFLAGS="${withval}"
 			;;
 		esac
 	], [AS_IF(["${prefer_NET_SNMP_CONFIG}"],
-		[CFLAGS="`${NET_SNMP_CONFIG} --base-cflags 2>/dev/null`"],
+		[CFLAGS="`${NET_SNMP_CONFIG} --base-cflags 2>/dev/null`"
+		 myCFLAGS_SOURCE="netsnmp-config"],
 		[AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[CFLAGS="`$PKG_CONFIG --silence-errors --cflags netsnmp 2>/dev/null`"]
+			[CFLAGS="`$PKG_CONFIG --silence-errors --cflags netsnmp 2>/dev/null`"
+			 myCFLAGS_SOURCE="pkg-config"],
+			[myCFLAGS_SOURCE="default"]
 			)]
 		)]
 	)
-	AC_MSG_RESULT([${CFLAGS}])
+	AC_MSG_RESULT([${CFLAGS} (source: ${myCFLAGS_SOURCE})])
 
 	myLIBS_SOURCE=""
 	AC_MSG_CHECKING(for Net-SNMP libs)
@@ -124,11 +129,19 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 			 myLIBS_SOURCE="default"])]
 		)]
 	)
-	AC_MSG_RESULT([${LIBS}])
+	AC_MSG_RESULT([${LIBS} (source: ${myLIBS_SOURCE})])
 
 	dnl Check if the Net-SNMP library is usable
 	nut_have_libnetsnmp_static=no
-	AC_CHECK_HEADERS(net-snmp/net-snmp-config.h, [nut_have_libnetsnmp=yes], [nut_have_libnetsnmp=no], [AC_INCLUDES_DEFAULT])
+	nut_have_libnetsnmp=no
+	AC_CHECK_HEADERS([net-snmp/net-snmp-config.h],
+		dnl The second header requires the first to be included
+		[AC_CHECK_HEADERS([net-snmp/net-snmp-includes.h], [nut_have_libnetsnmp=yes], [],
+		 [AC_INCLUDES_DEFAULT
+		 #include <net-snmp/net-snmp-config.h>
+		 ])
+		], [], [AC_INCLUDES_DEFAULT])
+
 	AC_CHECK_FUNCS(init_snmp, [], [
 		dnl Probably is dysfunctional, except one case...
 		nut_have_libnetsnmp=no
@@ -156,6 +169,7 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 		])
 	])
 	AS_UNSET([myLIBS_SOURCE])
+	AS_UNSET([myCFLAGS_SOURCE])
 
 	AS_IF([test "${nut_have_libnetsnmp}" = "yes"], [
 		LIBNETSNMP_CFLAGS="${CFLAGS}"
@@ -347,7 +361,23 @@ int num = NETSNMP_DRAFT_BLUMENTHAL_AES_04 + 1; /* if defined, NETSNMP_DRAFT_BLUM
 			 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04, 0, [Variable or macro by this name is not resolvable])
 			])
 
+		dnl Help ltdl if we can (nut-scanner etc.)
+		for TOKEN in $LIBS ; do
+			AS_CASE(["${TOKEN}"],
+				[-l*snmp*], [
+					AX_REALPATH_LIB([${TOKEN}], [SOPATH_LIBNETSNMP], [])
+					AS_IF([test -n "${SOPATH_LIBNETSNMP}" && test -s "${SOPATH_LIBNETSNMP}"], [
+						AC_DEFINE_UNQUOTED([SOPATH_LIBNETSNMP],["${SOPATH_LIBNETSNMP}"],[Path to dynamic library on build system])
+						SOFILE_LIBNETSNMP="`basename "$SOPATH_LIBNETSNMP"`"
+						AC_DEFINE_UNQUOTED([SOFILE_LIBNETSNMP],["${SOFILE_LIBNETSNMP}"],[Base file name of dynamic library on build system])
+						break
+					])
+				]
+			)
+		done
+		unset TOKEN
 	])
+
 	AC_LANG_POP([C])
 
 	dnl restore original CFLAGS and LIBS

@@ -55,7 +55,9 @@ case "$BUILD_TYPE" in
     fightwarn-gcc)
         CC="gcc"
         CXX="g++"
-        CPP="cpp"
+        # Avoid "cpp" directly as it may be too "traditional"
+        #CPP="cpp"
+        CPP="gcc -E"
         BUILD_TYPE=fightwarn
         ;;
     fightwarn-clang)
@@ -191,16 +193,22 @@ fi
 # (note: a "-" value requests to NOT use a CI_CCACHE_SYMLINKDIR;
 # ccache may still be used via prefixing if the tool is found in
 # the PATH, unless you export CI_CCACHE_USE=no also):
-if [ -z "${CI_CCACHE_SYMLINKDIR-}" ] ; then
-    for D in \
+propose_CI_CCACHE_SYMLINKDIR() {
+    echo \
         "/usr/lib/ccache" \
         "/mingw64/lib/ccache/bin" \
         "/mingw32/lib/ccache/bin" \
         "/usr/lib64/ccache" \
         "/usr/libexec/ccache" \
         "/usr/lib/ccache/bin" \
-        "/usr/local/lib/ccache" \
-    ; do
+        "/usr/local/lib/ccache"
+
+    if [ -n "${HOMEBREW_PREFIX-}" ]; then
+        echo "${HOMEBREW_PREFIX}/opt/ccache/libexec"
+    fi
+}
+if [ -z "${CI_CCACHE_SYMLINKDIR-}" ] ; then
+    for D in `propose_CI_CCACHE_SYMLINKDIR` ; do
         if [ -d "$D" ] ; then
             if ( ls -la "$D" | grep -e ' -> .*ccache' >/dev/null) \
             || ( test -n "`find "$D" -maxdepth 1 -type f -exec grep -li ccache '{}' \;`" ) \
@@ -540,8 +548,10 @@ configure_nut() {
       echo "=== CC='$CC' CXX='$CXX' CPP='$CPP'"
       [ -z "${CI_SHELL_IS_FLAKY-}" ] || echo "=== CI_SHELL_IS_FLAKY='$CI_SHELL_IS_FLAKY'"
       $CI_TIME $CONFIGURE_SCRIPT "${CONFIG_OPTS[@]}" \
+      && echo "$0: configure phase complete (0)" >&2 \
       && return 0 \
       || { RES_CFG=$?
+        echo "$0: configure phase complete ($RES_CFG)" >&2
         echo "FAILED ($RES_CFG) to configure nut, will dump config.log in a second to help troubleshoot CI" >&2
         echo "    (or press Ctrl+C to abort now if running interactively)" >&2
         sleep 5
@@ -573,6 +583,12 @@ build_to_only_catch_errors_target() {
 
     # Sub-shells to avoid crashing with "unhandled" faults in "set -e" mode:
     ( echo "`date`: Starting the parallel build attempt (quietly to build what we can) for '$@' ..."; \
+      if [ -n "$PARMAKE_FLAGS" ]; then
+        echo "For parallel builds, '$PARMAKE_FLAGS' options would be used"
+      fi
+      if [ -n "$MAKEFLAGS" ]; then
+        echo "Generally, MAKEFLAGS='$MAKEFLAGS' options would be passed"
+      fi
       ( case "${CI_PARMAKE_VERBOSITY}" in
         silent)
           # Note: stderr would still expose errors and warnings (needed for
@@ -961,13 +977,13 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         # Note: can be a multi-token name like "clang -E" or just not a full pathname
         ( [ -x "$CPP" ] || $CPP --help >/dev/null 2>/dev/null ) && export CPP
     else
-        if is_gnucc "cpp" ; then
-            CPP=cpp && export CPP
-        else
-            case "$COMPILER_FAMILY" in
-                CLANG*|GCC*) CPP="$CC -E" && export CPP ;;
-            esac
-        fi
+        # Avoid "cpp" directly as it may be too "traditional"
+        case "$COMPILER_FAMILY" in
+            CLANG*|GCC*) CPP="$CC -E" && export CPP ;;
+            *) if is_gnucc "cpp" ; then
+                CPP=cpp && export CPP
+               fi ;;
+        esac
     fi
 
     if [ -z "${CANBUILD_LIBGD_CGI-}" ]; then
@@ -992,14 +1008,6 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         fi
     fi
 
-    # Note: Potentially there can be spaces in entries for multiple
-    # *FLAGS here; this should be okay as long as entry expands to
-    # one token when calling shell (may not be the case for distcheck)
-    CONFIG_OPTS+=("CFLAGS=-I${BUILD_PREFIX}/include ${CFLAGS}")
-    CONFIG_OPTS+=("CPPFLAGS=-I${BUILD_PREFIX}/include ${CPPFLAGS}")
-    CONFIG_OPTS+=("CXXFLAGS=-I${BUILD_PREFIX}/include ${CXXFLAGS}")
-    CONFIG_OPTS+=("LDFLAGS=-L${BUILD_PREFIX}/lib ${LDFLAGS}")
-
     DEFAULT_PKG_CONFIG_PATH="${BUILD_PREFIX}/lib/pkgconfig"
     SYSPKG_CONFIG_PATH="" # Let the OS guess... usually
     case "`echo "$CI_OS_NAME" | tr 'A-Z' 'a-z'`" in
@@ -1023,6 +1031,59 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     ;;
             esac
             ;;
+        *darwin*|*macos*|*osx*)
+            # Architecture-dependent base dir, e.g.
+            # * /usr/local on macos x86
+            # * /opt/homebrew on macos Apple Silicon
+            if [ -n "${HOMEBREW_PREFIX-}" -a -d "${HOMEBREW_PREFIX-}" ]; then
+                SYS_PKG_CONFIG_PATH="${HOMEBREW_PREFIX}/lib/pkgconfig"
+                CFLAGS="${CFLAGS-} -Wno-poison-system-directories -Wno-deprecated-declarations -isystem ${HOMEBREW_PREFIX}/include -I${HOMEBREW_PREFIX}/include"
+                #CPPFLAGS="${CPPFLAGS-} -Wno-poison-system-directories -Wno-deprecated-declarations -isystem ${HOMEBREW_PREFIX}/include -I${HOMEBREW_PREFIX}/include"
+                CXXFLAGS="${CXXFLAGS-} -Wno-poison-system-directories -isystem ${HOMEBREW_PREFIX}/include -I${HOMEBREW_PREFIX}/include"
+                LDFLAGS="${LDFLAGS-} -L${HOMEBREW_PREFIX}/lib"
+
+                # Net-SNMP "clashes" with system-provided tools (but no header/lib)
+                # so explicit args are needed
+                checkFSobj="${HOMEBREW_PREFIX}/opt/net-snmp/lib/pkgconfig"
+                if [ -d "$checkFSobj" -a ! -e "${HOMEBREW_PREFIX}/lib/pkgconfig/netsnmp.pc" ] ; then
+                    echo "Homebrew: export flags for Net-SNMP"
+                    SYS_PKG_CONFIG_PATH="$SYS_PKG_CONFIG_PATH:$checkFSobj"
+                    #CONFIG_OPTS+=("--with-snmp-includes=-isystem ${HOMEBREW_PREFIX}/opt/net-snmp/include -I${HOMEBREW_PREFIX}/opt/net-snmp/include")
+                    #CONFIG_OPTS+=("--with-snmp-libs=-L${HOMEBREW_PREFIX}/opt/net-snmp/lib")
+                fi
+
+                if [ -d "${HOMEBREW_PREFIX}/opt/net-snmp/include" -a -d "${HOMEBREW_PREFIX}/include/openssl" ]; then
+                    # TODO? Check netsnmp.pc for Libs.private with
+                    #   -L/opt/homebrew/opt/openssl@1.1/lib
+                    # or
+                    #   -L/usr/local/opt/openssl@3/lib
+                    # among other options to derive the exact version
+                    # it wants, and serve that include path here
+                    echo "Homebrew: export configure options for Net-SNMP with default OpenSSL headers (too intimate on Homebrew)"
+                    CONFIG_OPTS+=("--with-snmp-includes=-isystem ${HOMEBREW_PREFIX}/opt/net-snmp/include -I${HOMEBREW_PREFIX}/opt/net-snmp/include -isystem ${HOMEBREW_PREFIX}/include -I${HOMEBREW_PREFIX}/include")
+                    CONFIG_OPTS+=("--with-snmp-libs=-L${HOMEBREW_PREFIX}/opt/net-snmp/lib -lnetsnmp")
+                fi
+
+                # A bit hackish to check this outside `configure`, but...
+                if [ -s "${HOMEBREW_PREFIX-}/include/ltdl.h" ] ; then
+                    echo "Homebrew: export flags for LibLTDL"
+                    # The m4 script clear default CFLAGS/LIBS so benefit from new ones
+                    CONFIG_OPTS+=("--with-libltdl-includes=-isystem ${HOMEBREW_PREFIX}/include -I${HOMEBREW_PREFIX}/include")
+                    CONFIG_OPTS+=("--with-libltdl-libs=-L${HOMEBREW_PREFIX}/lib -lltdl")
+                fi
+
+                if [ -z "${XML_CATALOG_FILES-}" ] ; then
+                    checkFSobj="${HOMEBREW_PREFIX}/etc/xml/catalog"
+                    if [ -e "$checkFSobj" ] ; then
+                        echo "Homebrew: export XML_CATALOG_FILES='$checkFSobj' for asciidoc et al"
+                        XML_CATALOG_FILES="$checkFSobj"
+                        export XML_CATALOG_FILES
+                    fi
+                fi
+            else
+                echo "WARNING: It seems you are building on MacOS, but HOMEBREW_PREFIX is not set or valid; it can help with auto-detection of some features!"
+            fi
+            ;;
     esac
     if [ -n "$SYS_PKG_CONFIG_PATH" ] ; then
         if [ -n "$PKG_CONFIG_PATH" ] ; then
@@ -1036,6 +1097,14 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     else
         CONFIG_OPTS+=("PKG_CONFIG_PATH=${DEFAULT_PKG_CONFIG_PATH}")
     fi
+
+    # Note: Potentially there can be spaces in entries for multiple
+    # *FLAGS here; this should be okay as long as entry expands to
+    # one token when calling shell (may not be the case for distcheck)
+    CONFIG_OPTS+=("CFLAGS=-I${BUILD_PREFIX}/include ${CFLAGS}")
+    CONFIG_OPTS+=("CPPFLAGS=-I${BUILD_PREFIX}/include ${CPPFLAGS}")
+    CONFIG_OPTS+=("CXXFLAGS=-I${BUILD_PREFIX}/include ${CXXFLAGS}")
+    CONFIG_OPTS+=("LDFLAGS=-L${BUILD_PREFIX}/lib ${LDFLAGS}")
 
     CONFIG_OPTS+=("--enable-keep_nut_report_feature")
     CONFIG_OPTS+=("--prefix=${BUILD_PREFIX}")
@@ -2047,11 +2116,28 @@ bindings)
         CONFIG_OPTS+=("--with-debuginfo=auto")
     fi
 
-    ${CONFIGURE_SCRIPT} "${CONFIG_OPTS[@]}"
+    if [ -n "${PYTHON-}" ]; then
+        # WARNING: Watch out for whitespaces, not handled here!
+        CONFIG_OPTS+=("--with-python=${PYTHON}")
+    fi
+
+    RES_CFG=0
+    ${CONFIGURE_SCRIPT} "${CONFIG_OPTS[@]}" \
+    || RES_CFG=$?
+    echo "$0: configure phase complete ($RES_CFG)" >&2
+    [ x"$RES_CFG" = x0 ] || exit $RES_CFG
 
     # NOTE: Currently parallel builds are expected to succeed (as far
     # as recipes are concerned), and the builds without a BUILD_TYPE
     # are aimed at developer iterations so not tweaking verbosity.
+    echo "Configuration finished, starting make" >&2
+    if [ -n "$PARMAKE_FLAGS" ]; then
+        echo "For parallel builds, '$PARMAKE_FLAGS' options would be used" >&2
+    fi
+    if [ -n "$MAKEFLAGS" ]; then
+        echo "Generally, MAKEFLAGS='$MAKEFLAGS' options would be passed" >&2
+    fi
+
     #$MAKE all || \
     $MAKE $PARMAKE_FLAGS all || exit
     if [ "${CI_SKIP_CHECK}" != true ] ; then $MAKE check || exit ; fi

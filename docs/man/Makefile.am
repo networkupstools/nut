@@ -198,6 +198,12 @@ SRC_DEV_PAGES = \
 	nutscan_display_ups_conf_with_sanity_check.txt \
 	nutscan_display_ups_conf.txt \
 	nutscan_display_parsable.txt \
+	nutscan_init_ip_ranges.txt \
+	nutscan_free_ip_ranges.txt \
+	nutscan_stringify_ip_ranges.txt \
+	nutscan_add_ip_range.txt \
+	nutscan_ip_ranges_iter_init.txt \
+	nutscan_ip_ranges_iter_inc.txt \
 	nutscan_cidr_to_ip.txt \
 	nutscan_new_device.txt \
 	nutscan_free_device.txt \
@@ -316,6 +322,12 @@ MAN3_DEV_PAGES = \
 	nutscan_display_ups_conf_with_sanity_check.3 \
 	nutscan_display_ups_conf.3 \
 	nutscan_display_parsable.3 \
+	nutscan_init_ip_ranges.3 \
+	nutscan_free_ip_ranges.3 \
+	nutscan_stringify_ip_ranges.3 \
+	nutscan_add_ip_range.3 \
+	nutscan_ip_ranges_iter_init.3 \
+	nutscan_ip_ranges_iter_inc.3 \
 	nutscan_cidr_to_ip.3 \
 	nutscan_new_device.3 \
 	nutscan_free_device.3 \
@@ -325,13 +337,25 @@ MAN3_DEV_PAGES = \
 	nutscan_get_serial_ports_list.3 \
 	nutscan_init.3
 
+# Alias page for one text describing two commands:
 upscli_readline_timeout.3: upscli_readline.3
 	touch $@
 
 upscli_sendline_timeout.3: upscli_sendline.3
 	touch $@
 
-# Alias page for one text describing two commands:
+nutscan_scan_ip_range_snmp.3: nutscan_scan_snmp.3
+	touch $@
+
+nutscan_scan_ip_range_xml_http.3: nutscan_scan_xml_http_range.3
+	touch $@
+
+nutscan_scan_ip_range_nut.3: nutscan_scan_nut.3
+	touch $@
+
+nutscan_scan_ip_range_ipmi.3: nutscan_scan_ipmi.3
+	touch $@
+
 nutscan_add_commented_option_to_device.3: nutscan_add_option_to_device.3
 	touch $@
 
@@ -391,6 +415,12 @@ HTML_DEV_MANS = \
 	nutscan_display_ups_conf_with_sanity_check.html \
 	nutscan_display_ups_conf.html \
 	nutscan_display_parsable.html \
+	nutscan_init_ip_ranges.html \
+	nutscan_free_ip_ranges.html \
+	nutscan_stringify_ip_ranges.html \
+	nutscan_add_ip_range.html \
+	nutscan_ip_ranges_iter_init.html \
+	nutscan_ip_ranges_iter_inc.html \
 	nutscan_cidr_to_ip.html \
 	nutscan_new_device.html \
 	nutscan_free_device.html \
@@ -405,7 +435,31 @@ HTML_DEV_MANS = \
 # Can't make this work on all make implementations at once, so disabled for now
 # Anyway it would be the same man-like page for several functions
 HTML_DEV_MANS_FICTION = \
+	upscli_readline_timeout.html \
+	upscli_sendline_timeout.html \
+	nutscan_scan_ip_range_snmp.html \
+	nutscan_scan_ip_range_xml_http.html \
+	nutscan_scan_ip_range_nut.html \
+	nutscan_scan_ip_range_ipmi.html \
 	nutscan_add_commented_option_to_device.html
+
+upscli_readline_timeout.html: upscli_readline.html
+	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+
+upscli_sendline_timeout.html: upscli_sendline.html
+	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+
+nutscan_scan_ip_range_snmp.html: nutscan_scan_snmp.html
+	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+
+nutscan_scan_ip_range_xml_http.html: nutscan_scan_xml_http_range.html
+	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+
+nutscan_scan_ip_range_nut.html: nutscan_scan_nut.html
+	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+
+nutscan_scan_ip_range_ipmi.html: nutscan_scan_ipmi.html
+	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
 
 nutscan_add_commented_option_to_device.html: nutscan_add_option_to_device.html
 	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@

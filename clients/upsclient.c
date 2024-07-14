@@ -3,6 +3,7 @@
    Copyright (C)
 	2002	Russell Kroll <rkroll@exploits.org>
 	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2020 - 2024	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -1014,6 +1015,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 	ups->fd = -1;
 
 	if (!host) {
+		upslogx(LOG_WARNING, "%s: Host not found: '%s'", __func__, NUT_STRARG(host));
 		ups->upserror = UPSCLI_ERR_NOSUCHHOST;
 		return -1;
 	}
@@ -1039,6 +1041,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 		case EAI_AGAIN:
 			continue;
 		case EAI_NONAME:
+			upslogx(LOG_WARNING, "%s: Host not found: '%s'", __func__, NUT_STRARG(host));
 			ups->upserror = UPSCLI_ERR_NOSUCHHOST;
 			return -1;
 		case EAI_MEMORY:
@@ -1197,7 +1200,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 		} else if (tryssl && ret == 0) {
 			if (certverify != 0) {
 				upslogx(LOG_NOTICE, "Can not connect to NUT server %s in SSL and "
-				"certificate is needed, disconnect", host);
+					"certificate is needed, disconnect", host);
 				upscli_disconnect(ups);
 				return -1;
 			}
@@ -1662,7 +1665,21 @@ int upscli_splitaddr(const char *buf, char **hostname, uint16_t *port)
 		return -1;
 	}
 
+	s = strchr(tmp, '@');
+
+	/* someone passed a "@hostname" string? */
+	if (s) {
+		fprintf(stderr, "upscli_splitaddr: wrong call? "
+			"Got upsname@hostname[:port] string where "
+			"only hostname[:port] was expected: %s\n", buf);
+		/* let it pass, but probably fail later */
+	}
+
 	if (*tmp == '[') {
+		/* NOTE: Brackets are required for colon-separated IPv6
+		 * addresses, to differentiate from a port number. For
+		 * example, `[1234:5678]:3493` would seem right.
+		 */
 		if (strchr(tmp, ']') == NULL) {
 			fprintf(stderr, "upscli_splitaddr: missing closing bracket in [domain literal]\n");
 			return -1;

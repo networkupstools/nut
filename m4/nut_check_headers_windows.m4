@@ -208,3 +208,41 @@ AC_DEFUN([NUT_CHECK_HEADER_WS2TCPIP], [
   esac
   AM_CONDITIONAL(HAVE_WS2TCPIP_H, test "x$nut_cv_header_ws2tcpip_h" = xyes)
 ])
+
+dnl NUT_CHECK_HEADER_IPHLPAPI
+dnl -------------------------------------------------
+dnl Check for compilable and valid iphlpapi.h header
+
+AC_DEFUN([NUT_CHECK_HEADER_IPHLPAPI], [
+  AC_REQUIRE([NUT_CHECK_HEADER_WINSOCK2])dnl
+  AC_CACHE_CHECK([for iphlpapi.h], [nut_cv_header_iphlpapi_h], [
+    AC_LANG_PUSH([C])
+    AC_COMPILE_IFELSE([
+      AC_LANG_PROGRAM([[
+#undef inline
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#include <winsock2.h>
+#include <iphlpapi.h>
+      ]],[[
+        PIP_ADAPTER_ADDRESSES pAddresses = NULL;
+        IP_ADAPTER_PREFIX *pPrefix = NULL;
+        PIP_ADAPTER_INFO pAdapter = NULL;
+      ]])
+    ],[
+      nut_cv_header_iphlpapi_h="yes"
+    ],[
+      nut_cv_header_iphlpapi_h="no"
+    ])
+    AC_LANG_POP([C])
+  ])
+  AS_CASE([$nut_cv_header_iphlpapi_h],
+    [yes], [
+      AC_DEFINE_UNQUOTED(HAVE_IPHLPAPI_H, 1,
+        [Define to 1 if you have the iphlpapi.h header file.])
+      ]
+  )
+  AM_CONDITIONAL(HAVE_IPHLPAPI_H, test "x$nut_cv_header_iphlpapi_h" = xyes)
+])

@@ -1018,6 +1018,9 @@ void upsdrv_makevartable(void)
 	addvar(VAR_FLAG, "disable_fix_report_desc",
 		"Set to disable fix-ups for broken USB encoding, etc. which we apply by default on certain vendors/products");
 
+	addvar(VAR_FLAG, "powercom_sdcmd_byte_order_fallback",
+		"Set to use legacy byte order for Powercom HID shutdown commands. Either it was wrong forever, or some older devices/firmwares had it the other way around");
+
 #if !((defined SHUT_MODE) && SHUT_MODE)
 	addvar(VAR_VALUE, "subdriver", "Explicit USB HID subdriver selection");
 

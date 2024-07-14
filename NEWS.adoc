@@ -95,6 +95,10 @@ https://github.com/networkupstools/nut/milestone/11
      series (largely guessing, feedback and PRs for adaptation to actual
      string values reported by devices via USB are welcome), so these devices
      would now report `battery.voltage` and `battery.voltage.nominal`. [#2380]
+   * `powercom-hid` subdriver sent UPS shutdown commands in wrong byte order,
+     at least for devices currently in the field. A toggle was added to set
+     the old behavior (if some devices do need it), while a fix is applied
+     by default: `powercom_sdcmd_byte_order_fallback`. [PR #2480]
 
  - bicker_ser: added new driver for Bicker 12/24Vdc UPS via RS-232 serial
    communication protocol, which supports any UPS shipped with the PSZ-1053
@@ -129,6 +133,33 @@ https://github.com/networkupstools/nut/milestone/11
      exiting (and/or start-up has aborted due to configuration or run-time
      issues). Warning about "world readable" files clarified. [#2417]
 
+ - nut-scanner:
+   * the tool relies on dynamic loading of shared objects (library files)
+     orchestrated at run-time rather than pre-compiled, to avoid excessively
+     huge package footprints. This however relies on knowing (or sufficiently
+     safely guessing) the library file names to use, and short `libname.so`
+     is not ubiquitously available. With the new `m4` macro `AX_REALPATH_LIB`
+     we can store and try to use the file name which was present on the build
+     system, while we search for a suitable library. [#2431]
++
+NOTE: Currently both the long and short names for `libupsclient` should be
+installed.
+   * fixed support for IPv6 addresses (passed in square brackets) for both
+     `-s` start/`-e` end command-line options, and for `-m cidr/mask` option.
+     [issue #2512, PR #2518]
+   * newly added support to scan several IP addresses (single or ranges)
+     with the same call, by repeating command-line options; also `-m auto{,4,6}`
+     can be specified (once) to select IP (all, IPv4, IPv6) address ranges of
+     configured local network interfaces.
+     An `/ADDRLEN` suffix can be added to the option, to filter out discovered
+     subnets with too many bits available for the host address part (avoiding
+     millions of scans in the extreme cases).
+     [issue #2244, issue #2511, PR #2509, PR #2513, PR #2517]
+   * implemented parallel scanning for IPMI bus, otherwise default scan for
+     all supported buses with `-m auto` takes unbearably long. [#2523]
+   * bumped version of `libnutscan` to 2.5.2, it now includes a few more
+     methods and symbols from `libcommon`. [issue #2244, PR #2509]
+
  - common code:
    * introduced a `NUT_DEBUG_SYSLOG` environment variable to tweak activation
      of syslog message emission (and related detachment of `stderr` when
@@ -161,10 +192,17 @@ https://github.com/networkupstools/nut/milestone/11
    selected formatting strings with variable-argument list methods (typically
    used with log printing, `dstate` setting, etc.) [#2450]
 
+ - added `scripts/valgrind` with a helper script and suppression file to
+   ignore common third-party problems. [#2511]
+
  - revised `nut.exe` (the NUT for Windows wrapper for all-in-one service)
    to be more helpful with command-line use (report that it failed to start
    as a service, have a help message, pass debug verbosity to launched NUT
    programs...) and add a man page for it. [issue #2432, PR #2446]
+
+ - the `PyNUTClient` module should no longer rely on presence of a `telnetlib`
+   module in the build or execution environment (deprecated in Python 3.11,
+   removed since Python 3.13). [#2183]
 
  - enabled installation of built single-file PDF and HTML (including man page
    renditions) under the configured `docdir`. It seems previously they were
@@ -182,7 +220,11 @@ https://github.com/networkupstools/nut/milestone/11
  - added a `common/Makefile.am` build product for a new internal library
    `libcommonstr.la` which allows a smaller selection of helper methods
    for tools like `nut-scanner` which do not need the full `libcommon.la`
-   nor `libcommonclient.la`. [#2478]
+   nor `libcommonclient.la`. [#2478, #2491]
+
+ - added a `drivers/Makefile.am` build product for a new internal library
+   `libserial-nutscan.la` to simplify `tools/nut-scanner/Makefile.am` recipes.
+   [#2490]
 
  - build of `snmp-ups` and `netxml-ups` drivers now explicitly brings linker
    dependency on chosen SSL libraries. [#2479]
@@ -195,6 +237,11 @@ https://github.com/networkupstools/nut/milestone/11
    they should be able to parse common simple use-cases but not certain types
    of more complex configurations (e.g. some line patterns that involve too
    many double-quote characters) which are valid for NUT proper. [#657]
+
+ - NUT CI farm build recipes, documentation and some `m4`/`configure.ac`
+   sources updated to handle a much larger build scope on MacOS. Also
+   migrated the builders to Apple Silicon from x86 (deprecated by CircleCI).
+   [#2502]
 
 
 Release notes for NUT 2.8.2 - what's new since 2.8.1
