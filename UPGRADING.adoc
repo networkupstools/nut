@@ -26,6 +26,11 @@ Changes from 2.8.2 to 2.8.3
 
 - PLANNED: Keep track of any further API clean-up?
 
+- `usbhid-ups` subdriver `PowerCOM HID` subdriver sent UPS `shutdown` and
+  `stayoff` commands in wrong byte order, at least for devices currently
+  in the field. Driver now sends the commands in a way that satisfies new
+  devices; just in case a flag toggle `powercom_sdcmd_byte_order_fallback`
+  was added to set the old behavior (if some devices do need it). [PR #2480]
 
 - Enabled installation of built PDF and HTML (including man page renditions)
   files under the configured `docdir`. It seems previously they were only
