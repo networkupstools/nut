@@ -132,7 +132,8 @@ endif
 #   libdir='//lib'
 CLEANFILES += libupsclient-version.h
 libupsclient-version.h: libupsclient.la
-	@SOFILE_LIBUPSCLIENT="`grep -E '^dlname' '$?' | sed -e 's/^[^=]*=//' -e 's/^\"\\(.*\\)\"/\\1/' -e 's/^'"'"'\\(.*\\)'"'"'/\\1/'`" \
+	@dlname_filter() { sed -e 's/^[^=]*=//' -e 's/^"\(.*\)"$$/\1/' -e 's/^'"'"'\(.*\)'"'"'$$/\1/' ; }; \
+	 SOFILE_LIBUPSCLIENT="`grep -E '^dlname' '$?' | dlname_filter`" \
 	 || SOFILE_LIBUPSCLIENT="" ; \
 	 if [ x"$${SOFILE_LIBUPSCLIENT-}" = x ] ; then \
 	    printf "#ifdef SOFILE_LIBUPSCLIENT\n# undef SOFILE_LIBUPSCLIENT\n#endif\n\n" ; \
