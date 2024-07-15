@@ -292,6 +292,7 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 	long	masklen_hosts_limit = 8;
 	char	*s = NULL;
 	int	errno_saved;
+	size_t	auto_subnets_found = 0;
 
 #ifdef HAVE_GETIFADDRS
 	/* NOTE: this ifdef is more precise than ifdef WIN32; assuming
@@ -310,8 +311,8 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 	 * https://stackoverflow.com/questions/41139561/find-ip-address-of-the-machine-in-c/41151132#41151132
 	 */
 
-	#define WIN32_GAA_WORKING_BUFFER_SIZE	15000
-	#define WIN32_GAA_MAX_TRIES	3
+#	define WIN32_GAA_WORKING_BUFFER_SIZE	15000
+#	define WIN32_GAA_MAX_TRIES	3
 
 	DWORD	dwRetVal = 0;
 
@@ -925,6 +926,8 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 					nutscan_add_ip_range(&ip_ranges_list, start_ip, end_ip);
 					start_ip = NULL;
 					end_ip = NULL;
+
+					auto_subnets_found++;
 				}	/* else AF_UNIX or a dozen other types we do not care about here */
 			}
 		}
@@ -945,7 +948,12 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 	}
 #endif
 
-	upsdebugx(3, "Finished %s('%s')", __func__, arg_addr);
+	if (!auto_subnets_found) {
+		upsdebugx(0, "WARNING: A '-m auto*' request selected no subnets!\n"
+			"Please check for reasons with higher debug verbosity (up to 6).");
+	}
+	upsdebugx(3, "Finished %s('%s'), selected %" PRIuSIZE " subnets automatically",
+		__func__, arg_addr, auto_subnets_found);
 }
 
 static void show_usage(void)

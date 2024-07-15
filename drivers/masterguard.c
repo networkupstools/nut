@@ -164,7 +164,7 @@ static void parseFlags( char *flags )
  ********************************************************************/
 static void query1( char *buf )
 {
-	#define WORDMAXLEN 255
+#	define WORDMAXLEN 255
 	char    value[WORDMAXLEN];
 	char    word[WORDMAXLEN];
 	char    *newPOS;
@@ -238,7 +238,7 @@ static void query1( char *buf )
  ********************************************************************/
 static void query3( char *buf )
 {
-	#define WORDMAXLEN 255
+#	define WORDMAXLEN 255
 	char    value[WORDMAXLEN];
 	char    word[WORDMAXLEN];
 	char    *newPOS;

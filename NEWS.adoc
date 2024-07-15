@@ -142,8 +142,8 @@ https://github.com/networkupstools/nut/milestone/11
      we can store and try to use the file name which was present on the build
      system, while we search for a suitable library. [#2431]
 +
-NOTE: Currently both the long and short names for `libupsclient` should be
-installed.
+NOTE: A different but functionally equivalent trick is done for `libupsclient`
+during a NUT build.
    * fixed support for IPv6 addresses (passed in square brackets) for both
      `-s` start/`-e` end command-line options, and for `-m cidr/mask` option.
      [issue #2512, PR #2518]
@@ -157,7 +157,7 @@ installed.
      [issue #2244, issue #2511, PR #2509, PR #2513, PR #2517]
    * implemented parallel scanning for IPMI bus, otherwise default scan for
      all supported buses with `-m auto` takes unbearably long. [#2523]
-   * bumped version of `libnutscan` to 2.5.2, it now includes a few more
+   * bumped version of `libnutscan` to 2.6.0, it now includes a few more
      methods and symbols from `libcommon`. [issue #2244, PR #2509]
 
  - common code:
