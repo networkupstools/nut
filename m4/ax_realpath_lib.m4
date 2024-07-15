@@ -59,7 +59,7 @@ AC_DEFUN([AX_REALPATH_LIB],
                     [*mingw*],  [myLIBNAME="${myLIBNAME}.dll"],
                     [*darwin*], [myLIBNAME="${myLIBNAME}.dylib"],
                     [*hpux*|*hp?ux*], [
-                                 dnl # See detailed comments in nutscan-init.c
+                                 dnl # See detailed comments in nut_platform.h
                                  myLIBNAME="${myLIBNAME}.sl"
                                 ],[myLIBNAME="${myLIBNAME}.so"])
             ]

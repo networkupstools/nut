@@ -29,6 +29,11 @@
 	/** Apple OS based on Mach ukernel */
 #	define NUT_PLATFORM_APPLE_MACH
 
+	/* https://stackoverflow.com/a/2339910/4715872 */
+#	ifndef SOEXT
+#		define SOEXT ".dylib"
+#	endif
+
 #	include <TargetConditionals.h>
 
 #	if (defined TARGET_OS_EMBEDDED)
@@ -64,6 +69,10 @@
 	/** Windows */
 #	define NUT_PLATFORM_MS_WINDOWS
 
+#	ifndef SOEXT
+#		define SOEXT ".dll"
+#	endif
+
 #	if (defined NTDDI_WIN8 && NTDDI_VERSION >= NTDDI_WIN8)
 		/** Windows 8 */
 #		define NUT_PLATFORM_MS_WINDOWS8
@@ -94,6 +103,22 @@
 #	if (defined __hpux)
 		/** Hewlett-Packard HP-UX (implies \ref NUT_PLATFORM_UNIX) */
 #		define NUT_PLATFORM_HPUX
+
+		/* Note: depending on CPU arch and OS version, library file
+		 * name patterns here could have been "*.so" as well.
+		 * E.g. per
+		 * https://community.hpe.com/t5/operating-system-hp-ux/so-and-sl-files/td-p/3780528
+		 *   *.sl are used in PA-RISC (11.11)
+		 *   *.so shared libraries are used in HP-UX 11.20 and upwards.
+		 * Integrity (Itanium-based) HPUX can use *.sl as well,
+		 * but it is not recommended, see ld(1) under -lx:
+		 *   https://web.archive.org/web/20090925153446/http://docs.hp.com/en/B2355-60103/ld.1.html
+		 */
+		/* FIXME: May want to detect better the CPU or OS version
+		 *  to decide the SOEXT here*/
+#		ifndef SOEXT
+#			define SOEXT ".sl"
+#		endif
 #	endif
 #	if (defined _AIX)
 		/** AIX (implies \ref NUT_PLATFORM_UNIX) */
@@ -119,6 +144,11 @@
 #			define NUT_PLATFORM_NETBSD
 #		endif
 #	endif
+#endif
+
+/* not WIN32, not MACOS, not HPUX... */
+#ifndef SOEXT
+#	define SOEXT ".so"
 #endif
 
 #endif  /* NUT_PLATFORM_H_SEEN */
