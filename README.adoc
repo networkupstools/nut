@@ -212,7 +212,7 @@ alive and in need of power protection, they should be able to get it.
 =====
 If you like how the NUT project helps protect your systems from power
 outages, please consider sponsoring or at least "starring" it on GitHub at
-https://github.com/networkupstools/nut/ -- these stars are among metrics
+https://github.com/networkupstools/nut/ - these stars are among metrics
 which the larger potential sponsors consider when choosing how to help
 FOSS projects. Keeping the lights shining in such a large non-regression
 build matrix is a big undertaking!
