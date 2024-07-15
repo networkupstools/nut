@@ -50,8 +50,21 @@
 #else
 # ifdef NUT_PLATFORM_APPLE_OSX
 #  define SOEXT ".dylib"
-# else	/* not WIN32, not MACOS */
-#  define SOEXT ".so"
+# else
+#  ifdef NUT_PLATFORM_HPUX
+    /* Note: depending on CPU arch and OS version, library file name
+     * patterns here could have been "*.so" as well. E.g. per
+     * https://community.hpe.com/t5/operating-system-hp-ux/so-and-sl-files/td-p/3780528
+     *   *.sl are used in PA-RISC (11.11)
+     *   *.so shared libraries are used in HP-UX 11.20 and upwards.
+     * Integrity (Itanium-based) HPUX can use *.sl as well, but it
+     * is not recommended, see ld(1) under -lx:
+     *   https://web.archive.org/web/20090925153446/http://docs.hp.com/en/B2355-60103/ld.1.html
+     */
+#   define SOEXT ".sl"
+#  else	/* not WIN32, not MACOS, not HPUX */
+#   define SOEXT ".so"
+#  endif
 # endif
 #endif
 
