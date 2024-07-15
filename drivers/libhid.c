@@ -47,10 +47,10 @@
 
 /* Communication layers and drivers (USB and MGE SHUT) */
 #if (defined SHUT_MODE) && SHUT_MODE
-	#include "libshut.h"
+#	include "libshut.h"
 	communication_subdriver_t *comm_driver = &shut_subdriver;
 #else	/* !SHUT_MODE => USB */
-	#include "nut_libusb.h"
+#	include "nut_libusb.h"
 	communication_subdriver_t *comm_driver = &usb_subdriver;
 #endif	/* SHUT_MODE / USB */
 

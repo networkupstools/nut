@@ -62,25 +62,25 @@
 
 /* WA for Solaris/i386 bug: non-blocking connect sets errno to ENOENT */
 #if (defined NUT_PLATFORM_SOLARIS)
-	#define SOLARIS_i386_NBCONNECT_ENOENT(status) ( (!strcmp("i386", CPU_TYPE)) ? (ENOENT == (status)) : 0 )
+#	define SOLARIS_i386_NBCONNECT_ENOENT(status) ( (!strcmp("i386", CPU_TYPE)) ? (ENOENT == (status)) : 0 )
 #else
-	#define SOLARIS_i386_NBCONNECT_ENOENT(status) (0)
+#	define SOLARIS_i386_NBCONNECT_ENOENT(status) (0)
 #endif  /* end of Solaris/i386 WA for non-blocking connect */
 
 /* WA for AIX bug: non-blocking connect sets errno to 0 */
 #if (defined NUT_PLATFORM_AIX)
-	#define AIX_NBCONNECT_0(status) (0 == (status))
+#	define AIX_NBCONNECT_0(status) (0 == (status))
 #else
-	#define AIX_NBCONNECT_0(status) (0)
+#	define AIX_NBCONNECT_0(status) (0)
 #endif  /* end of AIX WA for non-blocking connect */
 
 #ifdef WITH_NSS
-	#include <prerror.h>
-	#include <prinit.h>
-	#include <pk11func.h>
-	#include <prtypes.h>
-	#include <ssl.h>
-	#include <private/pprio.h>
+#	include <prerror.h>
+#	include <prinit.h>
+#	include <pk11func.h>
+#	include <prtypes.h>
+#	include <ssl.h>
+#	include <private/pprio.h>
 #endif /* WITH_NSS */
 
 #define UPSCLIENT_MAGIC 0x19980308

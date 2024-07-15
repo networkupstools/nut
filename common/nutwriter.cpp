@@ -555,7 +555,7 @@ NutWriter::status_t UpsmonConfigWriter::writeConfig(const UpsmonConfiguration & 
 	 *  \param  arg        Directive argument
 	 *  \param  quote_arg  Boolean flag; check to quote the argument
 	 */
-	#define UPSMON_DIRECTIVEX(name, arg_t, arg, quote_arg) \
+#	define UPSMON_DIRECTIVEX(name, arg_t, arg, quote_arg) \
 		CONFIG_DIRECTIVEX(name, arg_t, arg, quote_arg)
 
 /* The "false" arg in macro below evaluates to `if (false) ...` after
@@ -631,7 +631,7 @@ NutWriter::status_t UpsmonConfigWriter::writeConfig(const UpsmonConfiguration & 
 # pragma GCC diagnostic pop
 #endif
 
-	#undef UPSMON_DIRECTIVEX
+#	undef UPSMON_DIRECTIVEX
 
 	// Certificate identity
 	if (config.certIdent.set()) {
@@ -735,7 +735,7 @@ NutWriter::status_t UpsdConfigWriter::writeConfig(const UpsdConfiguration & conf
 	 *  \param  arg_t      Directive argument implementation type
 	 *  \param  arg        Directive argument
 	 */
-	#define UPSD_DIRECTIVEX(name, arg_t, arg) \
+#	define UPSD_DIRECTIVEX(name, arg_t, arg) \
 		CONFIG_DIRECTIVEX(name, arg_t, arg, false)
 
 /* The "false" arg in macro below evaluates to `if (false) ...` after
@@ -769,7 +769,7 @@ NutWriter::status_t UpsdConfigWriter::writeConfig(const UpsdConfiguration & conf
 # pragma GCC diagnostic pop
 #endif
 
-	#undef UPSD_DIRECTIVEX
+#	undef UPSD_DIRECTIVEX
 
 	// Certificate identity
 	if (config.certIdent.set()) {

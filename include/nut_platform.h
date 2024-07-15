@@ -27,26 +27,26 @@
 /* Apple Mac OS X, iOS and Darwin */
 #if (defined __APPLE__ && defined __MACH__)
 	/** Apple OS based on Mach ukernel */
-	#define NUT_PLATFORM_APPLE_MACH
+#	define NUT_PLATFORM_APPLE_MACH
 
-	#include <TargetConditionals.h>
+#	include <TargetConditionals.h>
 
-	#if (defined TARGET_OS_EMBEDDED)
+#	if (defined TARGET_OS_EMBEDDED)
 		/** iOS (implies \ref NUT_PLATFORM_APPLE_MACH) */
-		#define NUT_PLATFORM_APPLE_IOS
-	#endif
-	#if (defined TARGET_IPHONE_SIMULATOR)
+#		define NUT_PLATFORM_APPLE_IOS
+#	endif
+#	if (defined TARGET_IPHONE_SIMULATOR)
 		/** iOS simulator (implies \ref NUT_PLATFORM_APPLE_MACH) */
-		#define NUT_PLATFORM_APPLE_IOS_SIMULATOR
-	#endif
-	#if (defined TARGET_OS_IPHONE)
+#		define NUT_PLATFORM_APPLE_IOS_SIMULATOR
+#	endif
+#	if (defined TARGET_OS_IPHONE)
 		/** iPhone (implies \ref NUT_PLATFORM_APPLE_MACH) */
-		#define NUT_PLATFORM_APPLE_IPHONE
-	#endif
-	#if (defined TARGET_OS_MAC)
+#		define NUT_PLATFORM_APPLE_IPHONE
+#	endif
+#	if (defined TARGET_OS_MAC)
 		/** Mac OS X (implies \ref NUT_PLATFORM_APPLE_MACH) */
-		#define NUT_PLATFORM_APPLE_OSX
-	#endif
+#		define NUT_PLATFORM_APPLE_OSX
+#	endif
 #endif
 
 /*
@@ -56,69 +56,69 @@
  * Remove if no longer necessary
  */
 #if (defined _AIX && !defined __unix__)
-	#define __unix__
+#	define __unix__
 #endif
 
 /* Microsoft Windows */
 #if (defined _WIN32 || defined _WIN64)
 	/** Windows */
-	#define NUT_PLATFORM_MS_WINDOWS
+#	define NUT_PLATFORM_MS_WINDOWS
 
-	#if (defined NTDDI_WIN8 && NTDDI_VERSION >= NTDDI_WIN8)
+#	if (defined NTDDI_WIN8 && NTDDI_VERSION >= NTDDI_WIN8)
 		/** Windows 8 */
-		#define NUT_PLATFORM_MS_WINDOWS8
-	#endif
+#		define NUT_PLATFORM_MS_WINDOWS8
+#	endif
 
 /* UNIX */
 /* Note that Apple OSX doesn't define __unix__ nor __unix; are they ashamed or something? */
 #elif (defined __unix__ || defined __unix || defined NUT_PLATFORM_APPLE_MACH)
-	#include <sys/param.h>
-	#include <unistd.h>
+#	include <sys/param.h>
+#	include <unistd.h>
 
 	/** UNIX */
-	#define NUT_PLATFORM_UNIX
+#	define NUT_PLATFORM_UNIX
 
-	#if (defined _POSIX_VERSION)
+#	if (defined _POSIX_VERSION)
 		/** POSIX (implies \ref NUT_PLATFORM_UNIX), expands to POSIX version */
-		#define NUT_PLATFORM_POSIX _POSIX_VERSION
-	#endif
+#		define NUT_PLATFORM_POSIX _POSIX_VERSION
+#	endif
 
-	#if (defined __linux__)
+#	if (defined __linux__)
 		/** Linux (implies \ref NUT_PLATFORM_UNIX) */
-		#define NUT_PLATFORM_LINUX
-	#endif
-	#if (defined __sun && defined __SVR4)
+#		define NUT_PLATFORM_LINUX
+#	endif
+#	if (defined __sun && defined __SVR4)
 		/** Solaris (implies \ref NUT_PLATFORM_UNIX) */
-		#define NUT_PLATFORM_SOLARIS
-	#endif
-	#if (defined __hpux)
+#		define NUT_PLATFORM_SOLARIS
+#	endif
+#	if (defined __hpux)
 		/** Hewlett-Packard HP-UX (implies \ref NUT_PLATFORM_UNIX) */
-		#define NUT_PLATFORM_HPUX
-	#endif
-	#if (defined _AIX)
+#		define NUT_PLATFORM_HPUX
+#	endif
+#	if (defined _AIX)
 		/** AIX (implies \ref NUT_PLATFORM_UNIX) */
-		#define NUT_PLATFORM_AIX
-	#endif
+#		define NUT_PLATFORM_AIX
+#	endif
 
 	/* Note that BSD is defined in sys/param.h */
-	#if (defined BSD)
+#	if (defined BSD)
 		/** BSD (implies \ref NUT_PLATFORM_UNIX) */
-		#define NUT_PLATFORM_BSD
+#		define NUT_PLATFORM_BSD
 
-		#if (defined __DragonFly__)
+#		if (defined __DragonFly__)
 			/** DragonFly (implies \ref NUT_PLATFORM_UNIX, \ref NUT_PLATFORM_BSD) */
-			#define NUT_PLATFORM_DRAGONFLY
-		#elif (defined __FreeBSD__)
+#			define NUT_PLATFORM_DRAGONFLY
+#		elif (defined __FreeBSD__)
 			/** FreeBSD (implies \ref NUT_PLATFORM_UNIX, \ref NUT_PLATFORM_BSD) */
-			#define NUT_PLATFORM_FREEBSD
-		#elif (defined __OpenBSD__)
+#			define NUT_PLATFORM_FREEBSD
+#		elif (defined __OpenBSD__)
 			/** OpenBSD (implies \ref NUT_PLATFORM_UNIX, \ref NUT_PLATFORM_BSD) */
-			#define NUT_PLATFORM_OPENBSD
-		#elif (defined __NetBSD__)
+#			define NUT_PLATFORM_OPENBSD
+#		elif (defined __NetBSD__)
 			/** NetBSD (implies \ref NUT_PLATFORM_UNIX, \ref NUT_PLATFORM_BSD) */
-			#define NUT_PLATFORM_NETBSD
-		#endif
-	#endif
+#			define NUT_PLATFORM_NETBSD
+#		endif
+#	endif
 #endif
 
 #endif  /* NUT_PLATFORM_H_SEEN */

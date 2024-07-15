@@ -27,10 +27,10 @@
 #include <sys/types.h>
 
 #ifndef STRFY0
-	#define STRFY0(x) #x
+#	define STRFY0(x) #x
 #endif
 #ifndef STRFY
-	#define STRFY(x) STRFY0(x)
+#	define STRFY(x) STRFY0(x)
 #endif
 
 #define SYSFS_HWMON_DIR                     "/sys/class/hwmon"

@@ -310,8 +310,8 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 	 * https://stackoverflow.com/questions/41139561/find-ip-address-of-the-machine-in-c/41151132#41151132
 	 */
 
-	#define WIN32_GAA_WORKING_BUFFER_SIZE	15000
-	#define WIN32_GAA_MAX_TRIES	3
+#	define WIN32_GAA_WORKING_BUFFER_SIZE	15000
+#	define WIN32_GAA_MAX_TRIES	3
 
 	DWORD	dwRetVal = 0;
 

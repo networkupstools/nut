@@ -47,22 +47,22 @@
 
 /* note: QX_USB/QX_SERIAL set through Makefile */
 #ifdef QX_USB
-	#include "nut_libusb.h" /* also includes "usb-common.h" */
+#	include "nut_libusb.h" /* also includes "usb-common.h" */
 
-	#ifdef QX_SERIAL
-		#define DRIVER_NAME	"Generic Q* USB/Serial driver"
-	#else
-		#define	DRIVER_NAME	"Generic Q* USB driver"
-	#endif	/* QX_SERIAL */
+#	ifdef QX_SERIAL
+#		define DRIVER_NAME	"Generic Q* USB/Serial driver"
+#	else
+#		define	DRIVER_NAME	"Generic Q* USB driver"
+#	endif	/* QX_SERIAL */
 #else
-	#define DRIVER_NAME	"Generic Q* Serial driver"
+#	define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
 #define DRIVER_VERSION	"0.36"
 
 #ifdef QX_SERIAL
-	#include "serial.h"
-	#define SER_WAIT_SEC	1	/* 3 seconds for Best UPS */
+#	include "serial.h"
+#	define SER_WAIT_SEC	1	/* 3 seconds for Best UPS */
 #endif	/* QX_SERIAL */
 
 #include "nutdrv_qx.h"
@@ -2871,7 +2871,7 @@ void	upsdrv_shutdown(void)
 }
 
 #ifdef QX_USB
-	#ifndef TESTING
+#	ifndef TESTING
 		static const struct {
 			const char	*name;
 			int		(*command)(const char *cmd, char *buf, size_t buflen);
@@ -2890,7 +2890,7 @@ void	upsdrv_shutdown(void)
 			{ "armac", &armac_command },
 			{ NULL, NULL }
 		};
-	#endif
+#	endif
 #endif
 
 
@@ -3193,13 +3193,13 @@ void	upsdrv_initups(void)
 /* Serial */
 #ifdef QX_SERIAL
 
-	#ifdef QX_USB
+#	ifdef QX_USB
 	if (!is_usb) {
-	#else
+#	else
 	{ /* scoping */
-	#endif	/* QX_USB */
+#	endif	/* QX_USB */
 
-	#ifndef TESTING
+#	ifndef TESTING
 
 		const struct {
 			const char	*val;
@@ -3260,13 +3260,13 @@ void	upsdrv_initups(void)
 		/* Allow some time to settle for the cablepower */
 		usleep(100000);
 
-	#endif	/* TESTING */
+#	endif	/* TESTING */
 
-	#ifdef QX_USB
+#	ifdef QX_USB
 	} else {	/* is_usb */
-	#else
+#	else
 	} /* end of scoping */
-	#endif	/* QX_USB */
+#	endif	/* QX_USB */
 
 #endif	/* QX_SERIAL */
 
@@ -3529,7 +3529,7 @@ static ssize_t	qx_command(const char *cmd, char *buf, size_t buflen)
 # endif
 #endif
 
-	#if WITH_LIBUSB_0_1			/* limit to libusb 0.1 implementation */
+#	if WITH_LIBUSB_0_1			/* limit to libusb 0.1 implementation */
 		case -EPERM:		/* Operation not permitted */
 			fatal_with_errno(EXIT_FAILURE, "Permissions problem");
 #ifndef HAVE___ATTRIBUTE__NORETURN
@@ -3542,7 +3542,7 @@ static ssize_t	qx_command(const char *cmd, char *buf, size_t buflen)
 #  pragma GCC diagnostic pop
 # endif
 #endif
-	#endif	/* WITH_LIBUSB_0_1 */
+#	endif	/* WITH_LIBUSB_0_1 */
 
 		case LIBUSB_ERROR_PIPE:	/* Broken pipe */
 			if (usb_clear_halt(udev, 0x81) == 0) {
