@@ -40,19 +40,19 @@
 #include "nut_stdint.h"
 
 #ifdef WITH_NSS
-	#include <pk11pub.h>
-	#include <prinit.h>
-	#include <private/pprio.h>
+#	include <pk11pub.h>
+#	include <prinit.h>
+#	include <private/pprio.h>
 #if defined(NSS_VMAJOR) && (NSS_VMAJOR > 3 || (NSS_VMAJOR == 3 && defined(NSS_VMINOR) && NSS_VMINOR >= 39))
-	#include <keyhi.h>
-	#include <keythi.h>
+#	include <keyhi.h>
+#	include <keythi.h>
 #else
-	#include <key.h>
-	#include <keyt.h>
+#	include <key.h>
+#	include <keyt.h>
 #endif /* NSS before 3.39 */
-	#include <secerr.h>
-	#include <sslerr.h>
-	#include <sslproto.h>
+#	include <secerr.h>
+#	include <sslerr.h>
+#	include <sslproto.h>
 #endif /* WITH_NSS */
 
 char	*certfile = NULL;

@@ -53,12 +53,15 @@ AC_DEFUN([AX_REALPATH_LIB],
         dnl # Primarily we care to know dynamically linked (shared object)
         dnl # files, so inject the extension to the presumed base name
         AS_CASE(["${myLIBNAME}"],
-            [*.so*|*.a|*.o|*.lo|*.la|*.dll|*.dll.a|*.lib|*.dylib], [],
+            [*.so*|*.a|*.o|*.lo|*.la|*.dll|*.dll.a|*.lib|*.dylib|*.sl], [],
             [
                 AS_CASE(["${target_os}"],
                     [*mingw*],  [myLIBNAME="${myLIBNAME}.dll"],
                     [*darwin*], [myLIBNAME="${myLIBNAME}.dylib"],
-                                [myLIBNAME="${myLIBNAME}.so"])
+                    [*hpux*|*hp?ux*], [
+                                 dnl # See detailed comments in nut_platform.h
+                                 myLIBNAME="${myLIBNAME}.sl"
+                                ],[myLIBNAME="${myLIBNAME}.so"])
             ]
         )
 
@@ -67,7 +70,7 @@ AC_DEFUN([AX_REALPATH_LIB],
                 dnl Alas, the portable solution with sed is to avoid
                 dnl parentheses and pipe chars, got too many different
                 dnl ways to escape them in the wild
-                myLIBNAME_LD="`echo "$myLIBNAME" | sed -e 's/^lib/-l/' -e 's/\.dll$//' -e 's/\.dll\.a$//' -e 's/\.a$//' -e 's/\.o$//' -e 's/\.la$//' -e 's/\.lo$//' -e 's/\.lib$//' -e 's/\.dylib$//' -e 's/\.so\..*$//' -e 's/\.so//'`"
+                myLIBNAME_LD="`echo "$myLIBNAME" | sed -e 's/^lib/-l/' -e 's/\.dll$//' -e 's/\.dll\.a$//' -e 's/\.a$//' -e 's/\.o$//' -e 's/\.la$//' -e 's/\.lo$//' -e 's/\.lib$//' -e 's/\.dylib$//' -e 's/\.so\..*$//' -e 's/\.so//' -e 's/\.sl\..*$//' -e 's/\.sl//'`"
             ], [myLIBNAME_LD="-l$myLIBNAME"]    dnl best-effort...
         )
 

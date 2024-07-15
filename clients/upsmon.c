@@ -206,7 +206,7 @@ static void wall(const char *text)
 	fprintf(wf, "%s\n", text);
 	pclose(wf);
 #else
-	#define MESSAGE_CMD "message.exe"
+#	define MESSAGE_CMD "message.exe"
 	char * command;
 
 	/* first +1 is for the space between message and text

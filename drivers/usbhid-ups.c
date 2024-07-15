@@ -49,21 +49,21 @@
 
 #if !((defined SHUT_MODE) && SHUT_MODE)
 	/* explore stub goes first, others alphabetically */
-	#include "explore-hid.h"
-	#include "apc-hid.h"
-	#include "arduino-hid.h"
-	#include "belkin-hid.h"
-	#include "cps-hid.h"
-	#include "delta_ups-hid.h"
-	#include "ever-hid.h"
-	#include "idowell-hid.h"
-	#include "legrand-hid.h"
-	#include "liebert-hid.h"
-	#include "openups-hid.h"
-	#include "powercom-hid.h"
-	#include "powervar-hid.h"
-	#include "salicru-hid.h"
-	#include "tripplite-hid.h"
+#	include "explore-hid.h"
+#	include "apc-hid.h"
+#	include "arduino-hid.h"
+#	include "belkin-hid.h"
+#	include "cps-hid.h"
+#	include "delta_ups-hid.h"
+#	include "ever-hid.h"
+#	include "idowell-hid.h"
+#	include "legrand-hid.h"
+#	include "liebert-hid.h"
+#	include "openups-hid.h"
+#	include "powercom-hid.h"
+#	include "powervar-hid.h"
+#	include "salicru-hid.h"
+#	include "tripplite-hid.h"
 #endif	/* !SHUT_MODE => USB */
 
 /* Reference list of available subdrivers */

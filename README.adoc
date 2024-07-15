@@ -217,7 +217,9 @@ which the larger potential sponsors consider when choosing how to help
 FOSS projects. Keeping the lights shining in such a large non-regression
 build matrix is a big undertaking!
 
-image:https://api.star-history.com/svg?repos=networkupstools/nut&type=Date[link="https://star-history.com/#networkupstools/nut&Date" alt="Star History Chart"]
+ifndef::pdf_format[]
+image:https://api.star-history.com/svg?repos=networkupstools/nut&type=Date[link="https://star-history.com/#networkupstools/nut&Date" alt="NUT GitHub Star History Chart"]
+endif::pdf_format[]
 
 See <<acknowledgements-ci-ops,acknowledgements of organizations which help
 with NUT CI and other daily operations>> for an overview of the shared effort.
