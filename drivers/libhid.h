@@ -1,6 +1,6 @@
 /*!
  * @file libhid.h
- * @brief HID Library - User API
+ * @brief NUT HID Library - User API
  *
  * @author Copyright (C) 2003 - 2007
  *      Arnaud Quette <arnaud.quette@free.fr> && <arnaud.quette@mgeups.com>

@@ -1,6 +1,6 @@
 /*!
  * @file libhid.c
- * @brief HID Library - User API (Generic HID Access using MGE HIDParser)
+ * @brief NUT HID Library - User API (Generic HID Access using MGE HIDParser)
  *
  * @author Copyright (C) 2003 - 2007
  *	Arnaud Quette <arnaud.quette@free.fr> && <arnaud.quette@mgeups.com>
