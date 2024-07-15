@@ -37,6 +37,11 @@
 #include "nut_platform.h"
 #include "nut_stdint.h"
 
+/* Note: generated during build in $(top_builddir)/clients/
+ * and should be ensured to be here at the right moment by
+ * the nut-scanner Makefile. */
+#include "libupsclient-version.h"
+
 #ifdef WIN32
 # if defined HAVE_WINSOCK2_H && HAVE_WINSOCK2_H
 #  include <winsock2.h>
@@ -542,12 +547,22 @@ void nutscan_init(void)
 #endif	/* WITH_FREEIPMI */
 
 /* start of libupsclient for "old NUT" (vs. Avahi) protocol - unconditional */
+#ifdef SOFILE_LIBUPSCLIENT
+	if (!libname) {
+		libname = get_libname(SOFILE_LIBUPSCLIENT);
+	}
+#endif	/* SOFILE_LIBUPSCLIENT */
 	if (!libname) {
 		libname = get_libname("libupsclient" SOEXT);
 	}
+#ifdef SOPATH_LIBUPSCLIENT
+	if (!libname) {
+		libname = get_libname(SOPATH_LIBUPSCLIENT);
+	}
+#endif	/* SOPATH_LIBUPSCLIENT */
 #ifdef WIN32
-	/* TODO: Detect DLL name at build time, or rename it at install time? */
-	/* e.g. see clients/Makefile.am for version-info value */
+	/* NOTE: Normally we should detect DLL name at build time,
+	 * see clients/Makefile.am for libupsclient-version.h */
 	if (!libname) {
 		libname = get_libname("libupsclient-6" SOEXT);
 	}
@@ -566,6 +581,11 @@ void nutscan_init(void)
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
 			"trying to load it with libtool default resolver",
 			__func__, "NUT Client library");
+#ifdef SOFILE_LIBUPSCLIENT
+		if (!nutscan_avail_nut) {
+			nutscan_avail_xml_http = nutscan_load_upsclient_library(SOFILE_LIBUPSCLIENT);
+		}
+#endif	/* SOFILE_LIBUPSCLIENT */
 		nutscan_avail_nut = nutscan_load_upsclient_library("libupsclient" SOEXT);
 #ifdef WIN32
 		if (!nutscan_avail_nut) {
@@ -575,6 +595,11 @@ void nutscan_init(void)
 			nutscan_avail_nut = nutscan_load_upsclient_library("libupsclient-3" SOEXT);
 		}
 #endif	/* WIN32 */
+#ifdef SOPATH_LIBUPSCLIENT
+		if (!nutscan_avail_nut) {
+			nutscan_avail_xml_http = nutscan_load_upsclient_library(SOPATH_LIBUPSCLIENT);
+		}
+#endif	/* SOFILE_LIBUPSCLIENT */
 	}
 	upsdebugx(1, "%s: %s to load the library for %s",
 		__func__, nutscan_avail_nut ? "succeeded" : "failed", "NUT Client library");
