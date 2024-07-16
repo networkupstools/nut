@@ -48,6 +48,7 @@ Makefile.in
 /ltmain.sh
 /missing
 /test-driver
+*-contentchecked
 *-spellchecked
 *-prepped
 *.usage-report

@@ -141,7 +141,7 @@ metadata about recently published package revisions:
 
 :; apt-get install \
     ccache time \
-    git python perl curl \
+    git perl curl \
     make autoconf automake libltdl-dev libtool \
     valgrind \
     cppcheck \
@@ -151,6 +151,10 @@ metadata about recently published package revisions:
 # NOTE: Older Debian-like distributions may lack a "libtool-bin"
 :; apt-get install \
     libtool-bin
+
+# See comments below, python version and package naming depends on distro
+:; apt-get install \
+    python
 
 # NOTE: For python, you may eventually have to specify a variant like this
 # (numbers depending on default or additional packages of your distro):
@@ -350,12 +354,16 @@ drivers in distro packaging of NUT. Resolution and doc PRs are welcome.
 :; yum install \
     ccache time \
     file \
-    git python perl curl \
+    git perl curl \
     make autoconf automake libtool-ltdl-devel libtool \
     valgrind \
     cppcheck \
     pkgconfig \
     gcc gcc-c++ clang
+
+# See comments below, python version and package naming depends on distro
+:; yum install \
+    python
 
 # NOTE: For python, you may eventually have to specify a variant like this
 # (numbers depending on default or additional packages of your distro):
@@ -700,12 +708,16 @@ below.
 
 ------
 :; pkg install \
-    git python perl5 curl \
+    git perl5 curl \
     gmake autoconf automake autotools libltdl libtool \
     valgrind \
     cppcheck \
     pkgconf \
     gcc clang
+
+# See comments below, python version and package naming depends on distro
+:; pkg install \
+    python
 
 # NOTE: For python, you may eventually have to specify a variant like this
 # (numbers depending on default or additional packages of your distro):
@@ -833,12 +845,16 @@ default site.
 :; pkg_add sudo bash mc wget rsync
 
 :; pkg_add \
-    git python curl \
+    git curl \
     gmake autoconf automake libltdl libtool \
     valgrind \
     cppcheck \
     pkgconf \
     gcc clang
+
+# See comments below, python version and package naming depends on distro
+:; pkg_add \
+    python
 
 # NOTE: For python, you may eventually have to specify a variant like this
 # (numbers depending on default or additional packages of your distro):
@@ -973,11 +989,15 @@ you can work around by `make MKDIRPROG="mkdir -p" install -j 8` for example.
 
 ------
 :; pkgin install \
-    git python27 python39 perl curl \
+    git perl curl \
     make gmake autoconf automake libltdl libtool \
     cppcheck \
     pkgconf \
     gcc7 clang
+
+# See comments below, python version and package naming depends on distro
+:; apt-get install \
+    python27 python39
 
 ;; ( cd /usr/pkg/bin && ( ln -fs python2.7 python2 ; ln -fs python3.9 python3 ) )
 # You can find a list of what is (pre-)installed with:

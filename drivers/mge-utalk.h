@@ -173,10 +173,10 @@ static const double multiplier[4][8] = {
 
 /* use explicit booleans */
 #ifdef FALSE
-	#undef FALSE
+#	undef FALSE
 #endif /* FALSE */
 #ifdef TRUE
-	#undef TRUE
+#	undef TRUE
 #endif /* TRUE */
 typedef enum ebool { FALSE=0, TRUE } bool_t;
 

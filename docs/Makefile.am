@@ -1,9 +1,37 @@
 # Network UPS Tools: main docs
 
+# FIXME: There is a lot of shell-scripting below which gets processed by
+# whatever system shell there is. While bash handles expressions like
+#   VAL="`cmd "some params"`"
+# in a way that "some params" are a single token passed to "cmd" as an
+# argument, and the stdout of such command execution is collected into a
+# single-token string as "VAL" (even if with white-spaces). Some other
+# shells, e.g. "ksh" seems to actively dislike unbalanced double-quotes
+# inside the backticks (e.g. matched in some grep/sed regexes below),
+# although generally the approach works for such "VAL" assignments too.
+# Note that the newer "$(...)" syntax is not portable, older shells
+# have no idea about it, and it is cumbersome with `make` substitution.
+# Keep a lookout with multi-platform NUT CI jobs, and try to use single
+# quotes where possible (e.g. where pre-expanded `make` variables are
+# involved - so shell should not process them again anyway).
+
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 EXTRA_DIST =
 
-all: doc
+# Note: "doc" ensures the `configure`-specified list of documents we actually
+# want, while the default generated "all: all-am" target historically causes
+# some but not all of these targets to get built (e.g. ChangeLog html/pdf is
+# usually not made there). Post-processing "doc" as part of "all" helps
+# ensure that we do not rebuild stuff in vain during parallel builds (where
+# "all-am" and "doc" would be unordered parallel goals of the "all" target)
+# while getting those further goals achieved eventually in the default build.
+# Crucially, this allows to make sure "ChangeLog(.adoc*)" files have been
+# generated once (can take a looong while), settled into place, and only then
+# we revisit them for html/pdf rendering (another long while) without randomly
+# confusing the system with new timestamps and needless regenerations later on.
+all:
+	@echo "  DOC-FOLLOW-UP	Basic 'make $@' in `pwd` is done, following up with 'make doc' to ensure complex document types"
+	+@$(MAKE) $(AM_MAKEFLAGS) doc
 
 # Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
 #EGREP = egrep
@@ -185,13 +213,90 @@ check-pdf: $(ASCIIDOC_PDF)
 	    echo "FAILED PDF sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
 	fi; echo "PASSED PDF sanity check"; exit 0
 
+# Regarding ChangeLog check: sometimes asciidoc gives up early
+# (we have megabytes of text and thousands of sections here).
+# In some cases, the intermediate XML is broken and a2x=>xmllint
+# notices it. In others, it is truncated at just the right place
+# structurally and leads to a short HTML with only part of the
+# expected contents. We should no longer have several processes
+# trying to create the files involved (or rather do so atomically
+# and rename into final path, in case we still have competition
+# here); earlier when several generators appended to the same
+# file we could have several copies overlaid, with one of the
+# document's copies starting mid-sentence of another.
+# The two expected mentions are in the table of contents and
+# in the eventual section. Checking for first/second entries,
+# and not exactly two mentions, should allow to catch the case
+# of overlapping documents. Checking for the last entry allows
+# to catch incomplete parses, where asciidoc gave up early.
+# NOTE: No dependencies, avoids (re-)generation and log messages.
+ChangeLog.html-contentchecked:
+	@FAILED=""; \
+	 if [ -s '$(top_builddir)/ChangeLog' ] && [ -s ChangeLog.html ] ; then \
+	    SECOND_ENTRY="`grep -E '^[0-9]' '$(top_builddir)/ChangeLog' | head -2 | tail -1 | sed 's/ *[\"<].*//'`" || SECOND_ENTRY="" ; \
+	    FIRST_ENTRY="`grep -E '^[0-9]' '$(top_builddir)/ChangeLog' | head -1 | sed 's/ *[\"<].*//'`" || FIRST_ENTRY="" ; \
+	    LAST_ENTRY="`grep -E '^[0-9]' '$(top_builddir)/ChangeLog' | tail -1 | sed 's/ *[\"<].*//'`" || LAST_ENTRY="" ; \
+	    if [ -n "$${FIRST_ENTRY}" ] ; then \
+	        N="`grep -cE "title.*$${FIRST_ENTRY}" 'ChangeLog.html'`" ; \
+	        if [ 2 != "$${N}" ] ; then \
+	            echo "FAILED ChangeLog.html check: does not contain expected first entry exactly twice (huge doc, must have got aborted mid-way): $${FIRST_ENTRY} (seen $$N times)" >&2 ; \
+	            if [ -z "$$FAILED" ] ; then \
+	                echo "Expected size over 3MB (for common builds):" >&2 ; \
+	                ls -la "ChangeLog.html" '$(top_builddir)/ChangeLog'* >&2 ; \
+	                FAILED="ChangeLog.html" ; \
+	            fi ; \
+	        fi ; \
+	    fi; \
+	    if [ -n "$${SECOND_ENTRY}" ] ; then \
+	        N="`grep -cE "title.*$${SECOND_ENTRY}" 'ChangeLog.html'`" ; \
+	        if [ 2 != "$${N}" ] ; then \
+	            echo "FAILED ChangeLog.html check: does not contain expected second entry exactly twice (huge doc, must have got aborted mid-way): $${SECOND_ENTRY} (seen $$N times)" >&2 ; \
+	            if [ -z "$$FAILED" ] ; then \
+	                echo "Expected size over 3MB (for common builds):" >&2 ; \
+	                ls -la "ChangeLog.html" '$(top_builddir)/ChangeLog'* >&2 ; \
+	                FAILED="ChangeLog.html" ; \
+	            fi ; \
+	        fi ; \
+	    fi; \
+	    if [ -n "$${LAST_ENTRY}" ] ; then \
+	        N="`grep -cE "title.*$${LAST_ENTRY}" 'ChangeLog.html'`" ; \
+	        if [ 2 != "$${N}" ] ; then \
+	            echo "FAILED ChangeLog.html check: does not contain expected last entry exactly twice (huge doc, must have got aborted mid-way): $${LAST_ENTRY} (seen $$N times)" >&2 ; \
+	            if [ -z "$$FAILED" ] ; then \
+	                echo "Expected size over 3MB (for common builds):" >&2 ; \
+	                ls -la "ChangeLog.html" '$(top_builddir)/ChangeLog'* >&2 ; \
+	                FAILED="ChangeLog.html" ; \
+	            fi ; \
+	        fi ; \
+	    fi; \
+	    if [ x"$$FAILED" = x ] ; then \
+	        echo "PASSED $@" >&2 ; \
+	        exit 0 ; \
+	    fi ; \
+	    if [ x"$$FAILED" != x ] && [ -s '$(top_builddir)/ChangeLog.adoc' ] \
+	    && [ "`head -1 $(top_builddir)/ChangeLog.adoc`" = "=== Failed to generate the ChangeLog" ] \
+	    ; then \
+	        FAILED="" ; \
+	    fi; \
+	 fi; \
+	 if [ x"$$FAILED" = x ] ; then \
+	    echo "SKIPPED $@ because input files were not available" >&2 ; \
+	    exit 0 ; \
+	 fi ; \
+	 exit 1
+
 check-html-single: $(ASCIIDOC_HTML_SINGLE)
-	@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
-	for F in $(ASCIIDOC_HTML_SINGLE) ; do \
+	+@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
+	 for F in $(ASCIIDOC_HTML_SINGLE) ; do \
 	    test -s "$$F" && { file "$$F" | $(EGREP) -i '(XML|HTML.*document)' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
-	done; if test -n "$$FAILED" ; then \
+	    case "$$F" in \
+	        *ChangeLog*) if [ -s '$(top_builddir)/ChangeLog' ] ; then \
+	                $(MAKE) $(AM_MAKEFLAGS) "`basename "$$F"`"-contentchecked || FAILED="$$FAILED $$F" ; \
+	            fi ;; \
+	    esac ; \
+	 done; if test -n "$$FAILED" ; then \
 	    echo "FAILED HTML-single sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
-	fi; echo "PASSED HTML-single sanity check"; exit 0
+	 fi; echo "PASSED HTML-single sanity check"; exit 0
 
 check-html-chunked: $(ASCIIDOC_HTML_CHUNKED)
 	@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
@@ -217,7 +322,7 @@ check-man all-man man-man all-html html-man:
 man:
 	+cd $(abs_top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile all
 
-CLEANFILES = *.xml *.html *.pdf *-spellchecked docbook-xsl.css docinfo.xml.in.tmp
+CLEANFILES = *.xml *.html *.pdf *-spellchecked *-contentchecked docbook-xsl.css docinfo.xml.in.tmp
 CLEANFILES += $(top_builddir)/INSTALL.nut $(top_builddir)/UPGRADING $(top_builddir)/NEWS $(top_builddir)/ChangeLog.adoc $(top_builddir)/README
 CLEANFILES += $(top_builddir)/*.adoc-parsed *.adoc-parsed
 
@@ -252,9 +357,11 @@ DOCBUILD_CONVERT_GITHUB_LINKS = { \
 .adoc.adoc-parsed:
 	@$(DOCBUILD_CONVERT_GITHUB_LINKS)
 
+$(top_builddir)/ChangeLog.adoc-parsed: $(top_builddir)/ChangeLog.adoc
+
 dummy:
 $(top_builddir)/ChangeLog: dummy
-	+@echo "  DOC-CHANGELOG-GENERATE	$@ : call parent Makefile" \
+	@+echo "  DOC-CHANGELOG-GENERATE-WRAPPER	$@ : call parent Makefile to decide if (re-)generation is needed" \
 	 && cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # BSD Make dislikes the path resolution here and does not always populate "$<"
@@ -267,6 +374,14 @@ else !WITH_PDF_NONASCII_TITLES
 A2X_ASCII_IDS = ":ascii-ids:\n"
 endif !WITH_PDF_NONASCII_TITLES
 
+# Probably due to the web of makefiles and an overwhelmed job server in some
+# implementations, during parallel builds we can end up scheduling several
+# threads creating this asciidoc (and adoc-parsed later). This step only
+# costs a few seconds, however the updated timestamp may cause new HTML/PDF
+# builds which cost a lot more. Below we try a few ways to detect a build
+# already running and bail out early if the file exists. Otherwise we bite
+# the bullet and spend a few seconds, and then re-check if another thread
+# did exist and finished first.
 $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	@INPUT="$?"; \
 	 test -n "$${INPUT}" || INPUT="$$(top_builddir)/ChangeLog" ; \
@@ -277,6 +392,8 @@ $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	     test -n "$@" && { printf '=== Failed to generate the ChangeLog\n\n%s\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n' "$${MSG}" > "$@" ; } ; \
 	     exit ; \
 	 } ; \
+	 W=10 ; while [ "$${W}" -gt 0 ] && find '$@.tmp.'* '$@' -newer "$${INPUT}" 2>/dev/null >/dev/null ; do sleep 1 ; W="`expr $$W - 1`"; done ; touch "$@.tmp.$$$$"; \
+	 if [ x"`find '$@' -newer "$${INPUT}" 2>/dev/null`" != x ] ; then echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : SKIP (keep existing)"; rm -f "$@.tmp.$$$$"; exit 0 ; fi ; \
 	 echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@" \
 	 && printf "ifdef::txt[]\n== Very detailed Change Log\n"$(A2X_ASCII_IDS)"endif::txt[]\n\n" > "$@.tmp.$$$$" \
 	 && TABCHAR="`printf '\t'`" \
@@ -290,7 +407,8 @@ $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	        -e 's,\[\[\([^]]*\)\]\],[\1],g' \
 	        -e 's,^\(\s\s*\)\([0-9]\),\1{empty}\2,g' \
 	   < "$${INPUT}" >> "$@.tmp.$$$$" \
-	 && mv -f "$@.tmp.$$$$" "$@"
+	 && if [ x"`find '$@' -newer "$${INPUT}" 2>/dev/null`" != x ] ; then echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : SKIP (keep recently born competitor)"; rm -f "$@.tmp.$$$$"; \
+	    else mv -f "$@.tmp.$$$$" "$@" ; fi
 
 # Add other directory deps (not for local EXTRA_DIST) and generated contents
 FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS) $(SHARED_DEPS) \
@@ -408,18 +526,33 @@ DOCBUILD_END = { \
 
 *.html: common.xsl xhtml.xsl
 .txt-prepped.html:
-	@A2X_OUTDIR="tmp/html-single.$(@F).$$$$" ; \
+	+@A2X_OUTDIR="tmp/html-single.$(@F).$$$$" ; \
 	 echo "  DOC-HTML Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
-	 $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl "$(<D)/`basename "$(<F)" -prepped`" || RES=$$? ; \
-	 $(DOCBUILD_END) ; exit $$RES
+	 $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl "$(<D)/`basename '$(<F)' -prepped`" || RES=$$? ; \
+	 $(DOCBUILD_END) ; \
+	 case "$(@F)" in \
+	    *ChangeLog*) if [ -s '$(top_builddir)/ChangeLog' ] ; then \
+	            $(MAKE) $(AM_MAKEFLAGS) "`basename '$(@F)'`"-contentchecked || RES=$$? ; \
+	            if [ "$$RES" != 0 ] ; then \
+	                echo "  DOC-HTML Generating $@ (retry once)" >&2; \
+	                rm -f "$@"; \
+	                A2X_OUTDIR="tmp/html-single.$(@F).$$$$-retry" ; \
+	                $(DOCBUILD_BEGIN) ; RES=0; rm -f "`basename '$(@F)'`"-contentchecked || true ; \
+	                $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl "$(<D)/`basename '$(<F)' -prepped`" || RES=$$? ; \
+	                $(DOCBUILD_END) ; \
+	                $(MAKE) $(AM_MAKEFLAGS) "`basename '$(@F)'`"-contentchecked || RES=$$? ; \
+	            fi ; \
+	        fi ;; \
+	 esac ; \
+	 exit $$RES
 
 *.chunked: common.xsl chunked.xsl
 .txt-prepped.chunked:
 	@A2X_OUTDIR="tmp/html-chunked.$(@F).$$$$" ; \
 	 echo "  DOC-HTML-CHUNKED Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
-	 $(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl "$(<D)/`basename "$(<F)" -prepped`" || RES=$$? ; \
+	 $(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl "$(<D)/`basename '$(<F)' -prepped`" || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
 # Note: non-HTML a2x modes may ignore the destination directory
@@ -428,7 +561,7 @@ DOCBUILD_END = { \
 	@A2X_OUTDIR="tmp/pdf.$(@F).$$$$" ; \
 	 echo "  DOC-PDF  Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
-	 $(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 "$(<D)/`basename "$(<F)" -prepped`" || RES=$$? ; \
+	 $(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 "$(<D)/`basename '$(<F)' -prepped`" || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
 # Used below for spellcheck and for .prep-src-docs
@@ -519,12 +652,12 @@ $(SPELLCHECK_BUILDDIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_SRCDIR)/
 		/*) ;; \
 		*/*)	if [ x"$${REPORT_SRCDIR}" = x ] ; then \
 				echo EMPTY >$(SPELLCHECK_RECIPE_DEBUG_STREAM) ; \
-				REPORT_SRCDIR="`dirname "$(SPELLCHECK_SRC_ONE)"`"; \
+				REPORT_SRCDIR="`dirname '$(SPELLCHECK_SRC_ONE)'`"; \
 			else \
-				echo "APPEND: SPELLCHECK_SRCDIR='$(SPELLCHECK_SRCDIR)' SPELLCHECK_SRC_ONE='$(SPELLCHECK_SRC_ONE)' dirname='`dirname "$(SPELLCHECK_SRC_ONE)"`'" >$(SPELLCHECK_RECIPE_DEBUG_STREAM) ; \
-				REPORT_SRCDIR="$${REPORT_SRCDIR}/`dirname "$(SPELLCHECK_SRC_ONE)"`"; \
+				echo "APPEND: SPELLCHECK_SRCDIR='$(SPELLCHECK_SRCDIR)' SPELLCHECK_SRC_ONE='$(SPELLCHECK_SRC_ONE)' dirname='`dirname '$(SPELLCHECK_SRC_ONE)'`'" >$(SPELLCHECK_RECIPE_DEBUG_STREAM) ; \
+				REPORT_SRCDIR="$${REPORT_SRCDIR}/`dirname '$(SPELLCHECK_SRC_ONE)'`"; \
 			fi ; \
-			REPORT_SRC_ONE="`basename "$(SPELLCHECK_SRC_ONE)"`"; \
+			REPORT_SRC_ONE="`basename '$(SPELLCHECK_SRC_ONE)'`"; \
 			;; \
 		*) ;; \
 	 esac; \
@@ -540,7 +673,7 @@ $(SPELLCHECK_BUILDDIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_SRCDIR)/
 		*)  REPORT_SRCDIR="$${REPORT_SRCDIR}/" ;; \
 	 esac ; \
 	 echo "  ASPELL   Spell checking on $${REPORT_PREFIX}$${REPORT_SRCDIR}$${REPORT_SRC_ONE}"; \
-	 OUT="`(sed 's,^\(.*\)$$, \1,' | $(ASPELL) -a $(ASPELL_NUT_TEXMODE_ARGS) $(ASPELL_NUT_COMMON_ARGS) 2>&1) < "$(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE)"`" \
+	 OUT="`(sed 's,^\(.*\)$$, \1,' | $(ASPELL) -a $(ASPELL_NUT_TEXMODE_ARGS) $(ASPELL_NUT_COMMON_ARGS) 2>&1) < '$(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE)'`" \
 		&& { if test -n "$$OUT" ; then OUT="`echo "$$OUT" | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' `" ; fi; \
 		     test -z "$$OUT" ; } \
 		|| { RES=$$? ; \
@@ -597,7 +730,7 @@ spellcheck-sortdict: $(abs_builddir)/$(NUT_SPELL_DICT).sorted
 $(abs_builddir)/$(NUT_SPELL_DICT).sorted: $(abs_srcdir)/$(NUT_SPELL_DICT)
 	@cp -pf $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting
 	@LANG=$(ASPELL_ENV_LANG); LC_ALL=$(ASPELL_ENV_LANG); export LANG; export LC_ALL; ( \
-	    WORDLIST="`tail -n +2 < "$?" | sort | uniq`"; \
+	    WORDLIST="`tail -n +2 < '$(?)' | sort | uniq`"; \
 	    WORDCOUNT="`echo "$$WORDLIST" | wc -l`"; \
 	    head -1 < "$?" | while read P L C E ; do echo "$$P $$L $$WORDCOUNT $$E"; break; done ; \
 	    echo "$$WORDLIST"; \
@@ -691,7 +824,7 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC)
 	    COUNT=0; \
 	    for F in $(PREP_SRC) ; do \
 	        case "$$F" in \
-	            /*) F="`echo "$$F" | sed "s#^$(abs_top_srcdir)/*#./#"`"; \
+	            /*) F="`echo "$$F" | sed 's#^$(abs_top_srcdir)/*#./#'`"; \
 	                if test x"$${linkroot}" = x"$(abs_builddir)" ; then \
 	                    linkroot="$(abs_top_builddir)" ; \
 	                    cd "$(abs_top_builddir)" ; \
@@ -717,7 +850,7 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC)
 	    linksrcroot="$(abs_srcdir)" ; \
 	    for F in `echo $(PREP_SRC) | tr ' ' '\n' | sort -n | uniq` ; do \
 	        case "$$F" in \
-	            /*) F="`echo "$$F" | sed "s#^$(abs_top_srcdir)/*#./#"`"; \
+	            /*) F="`echo "$$F" | sed 's#^$(abs_top_srcdir)/*#./#'`"; \
 	                if test x"$${linkroot}" = x"$(abs_builddir)" ; then \
 	                    linkroot="$(abs_top_builddir)" ; \
 	                    linksrcroot="$(abs_top_srcdir)" ; \
@@ -728,7 +861,7 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC)
 	        D="`dirname "$$F"`" ; \
 	        $(MKDIR_P) "$${linkroot}/$$D" || { rm -f "$@.working" ; exit 1 ; } ; \
 	        if ! test -s "$${linkroot}/$$F" && test -s "$${linksrcroot}/$$F" ; then \
-	            echo "  LN     '$${linksrcroot}/$$F' => '$${linkroot}/$$F' (PWD = '`pwd`')" >&2 ; \
+	            echo "  LN     '$${linksrcroot}/$$F' => '$${linkroot}/$$F' (PWD = '`pwd`')" ; \
 	            ln -fs "$${linksrcroot}/$$F" "$${linkroot}/$$F" || { rm -f "$@.working" ; exit 1 ; } ; \
 	            COUNT="`expr $$COUNT + 1`" ; \
 	        fi ; \
@@ -746,7 +879,7 @@ clean-local:
 	$(AM_V_at)rm -rf *.chunked *.bak tmp
 	$(AM_V_at)for F in $(PREP_SRC) ; do \
 	        case "$$F" in \
-	            /*) F="`echo "$$F" | sed "s#^$(abs_top_srcdir)/*#./#"`"; cd "$(abs_top_builddir)" ;; \
+	            /*) F="`echo "$$F" | sed 's#^$(abs_top_srcdir)/*#./#'`"; cd "$(abs_top_builddir)" ;; \
 	        esac ; \
 	        if test x"$(abs_srcdir)" != x"$(abs_builddir)" ; then \
 	            if test -L "$$F" || test -h "$$F" ; then \

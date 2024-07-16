@@ -2,6 +2,7 @@
 
    Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
    Copyright (C) 2012  Arnaud Quette <arnaud.quette@free.fr>
+   Copyright (C) 2020-2024  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -217,10 +218,22 @@ static void clean_exit(void)
 
 int main(int argc, char **argv)
 {
-	int	i;
+	int	i = 0;
 	uint16_t	port;
 	int	varlist = 0, clientlist = 0, verbose = 0;
 	const char	*prog = xbasename(argv[0]);
+	char	*s = NULL;
+
+	/* NOTE: Caller must `export NUT_DEBUG_LEVEL` to see debugs for upsc
+	 * and NUT methods called from it. This line aims to just initialize
+	 * the subsystem, and set initial timestamp. Debugging the client is
+	 * primarily of use to developers, so is not exposed via `-D` args.
+	 */
+	s = getenv("NUT_DEBUG_LEVEL");
+	if (s && str_to_int(s, &i, 10) && i > 0) {
+		nut_debug_level = i;
+	}
+	upsdebugx(1, "Starting NUT client: %s", prog);
 
 	while ((i = getopt(argc, argv, "+hlLcV")) != -1) {
 
@@ -267,6 +280,8 @@ int main(int argc, char **argv)
 			fatalx(EXIT_FAILURE, "Error: invalid UPS definition.\nRequired format: upsname[@hostname[:port]]");
 		}
 	}
+	upsdebugx(1, "upsname='%s' hostname='%s' port='%" PRIu16 "'",
+		NUT_STRARG(upsname), NUT_STRARG(hostname), port);
 
 	ups = xmalloc(sizeof(*ups));
 
@@ -275,18 +290,22 @@ int main(int argc, char **argv)
 	}
 
 	if (varlist) {
+		upsdebugx(1, "Calling list_upses()");
 		list_upses(verbose);
 		exit(EXIT_SUCCESS);
 	}
 
 	if (clientlist) {
+		upsdebugx(1, "Calling list_clients()");
 		list_clients(upsname);
 		exit(EXIT_SUCCESS);
 	}
 
 	if (argc > 1) {
+		upsdebugx(1, "Calling printvar(%s)", argv[1]);
 		printvar(argv[1]);
 	} else {
+		upsdebugx(1, "Calling list_vars()");
 		list_vars();
 	}
 

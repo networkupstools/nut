@@ -25,6 +25,9 @@ EXTRA_DIST = \
     upower/95-upower-hid.rules \
     usb_resetter/README.adoc \
     usb_resetter/nut-driver.service \
+    valgrind/README.adoc \
+    valgrind/.valgrind.supp \
+    valgrind/valgrind.sh \
     Windows/halt.c \
     Windows/Makefile
 
@@ -36,7 +39,7 @@ if WITH_NEON
 endif
 endif
 
-SPELLCHECK_SRC = README.adoc RedHat/README.adoc usb_resetter/README.adoc
+SPELLCHECK_SRC = README.adoc RedHat/README.adoc usb_resetter/README.adoc valgrind/README.adoc
 
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension.
 # We also have to export some variables that may be tainted by relative

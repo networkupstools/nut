@@ -213,7 +213,7 @@ static void SendCmdToSerial(unsigned char *Buff, size_t Len)
 
 static unsigned char * CmdSerial(unsigned char *OutBuffer, size_t Len, unsigned char *RetBuffer)
 {
-	#define TMP_BUFF_LEN	1024
+#	define TMP_BUFF_LEN	1024
 	unsigned char InpBuff[TMP_BUFF_LEN+1] ;
 	unsigned char TmpBuff[3] ;
 	int i, ErrCode ;

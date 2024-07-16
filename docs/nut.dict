@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3215 utf-8
+personal_ws-1.1 en 3228 utf-8
 AAC
 AAS
 ABI
@@ -11,6 +11,7 @@ ACPresent
 ADDR
 ADDRCONFIG
 ADDRINFO
+ADDRLEN
 ADELSYSTEM
 ADK
 ADKK
@@ -759,6 +760,7 @@ NetInvent
 NetPro
 NetServer
 NetUps
+NetXML
 Netman
 NetworkUPSTools
 Neus
@@ -982,6 +984,7 @@ REPLBATT
 REQSSL
 RETPCT
 REXX
+RISC
 RK
 RMCARD
 RMCPplus
@@ -1708,6 +1711,7 @@ cts
 ctypes
 cua
 cuaa
+curr
 customizations
 cvt
 cwd
@@ -2113,11 +2117,14 @@ ipp
 ippon
 ipv
 ipxe
+irl
+irliter
 isDefault
 isbmex
 ish
 iso
 isolator
+iter
 ivtscd
 jNUT
 jNut
@@ -2394,6 +2401,7 @@ nd
 nds
 netcat
 netclient
+netmask
 netserver
 netsh
 netsnmp
@@ -2617,6 +2625,7 @@ pts
 pty
 pulizzi
 pw
+pwd
 pwmib
 px
 pxW
@@ -2724,6 +2733,7 @@ screenshot
 screenshots
 scriptname
 sd
+sdcmd
 sddelay
 sdk
 sdl
@@ -2856,6 +2866,7 @@ strcpy
 strdup
 strerror
 strftime
+stringify
 strlen
 strnlen
 strptime
@@ -2879,9 +2890,11 @@ sublicenses
 submodule
 submodules
 subnet
+subnets
 subtree
 sudo
 suid
+suppressions
 suseconds
 sv
 svc

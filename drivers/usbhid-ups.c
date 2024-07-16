@@ -29,7 +29,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.54"
+#define DRIVER_VERSION	"0.55"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
@@ -49,21 +49,21 @@
 
 #if !((defined SHUT_MODE) && SHUT_MODE)
 	/* explore stub goes first, others alphabetically */
-	#include "explore-hid.h"
-	#include "apc-hid.h"
-	#include "arduino-hid.h"
-	#include "belkin-hid.h"
-	#include "cps-hid.h"
-	#include "delta_ups-hid.h"
-	#include "ever-hid.h"
-	#include "idowell-hid.h"
-	#include "legrand-hid.h"
-	#include "liebert-hid.h"
-	#include "openups-hid.h"
-	#include "powercom-hid.h"
-	#include "powervar-hid.h"
-	#include "salicru-hid.h"
-	#include "tripplite-hid.h"
+#	include "explore-hid.h"
+#	include "apc-hid.h"
+#	include "arduino-hid.h"
+#	include "belkin-hid.h"
+#	include "cps-hid.h"
+#	include "delta_ups-hid.h"
+#	include "ever-hid.h"
+#	include "idowell-hid.h"
+#	include "legrand-hid.h"
+#	include "liebert-hid.h"
+#	include "openups-hid.h"
+#	include "powercom-hid.h"
+#	include "powervar-hid.h"
+#	include "salicru-hid.h"
+#	include "tripplite-hid.h"
 #endif	/* !SHUT_MODE => USB */
 
 /* Reference list of available subdrivers */
@@ -1017,6 +1017,9 @@ void upsdrv_makevartable(void)
 
 	addvar(VAR_FLAG, "disable_fix_report_desc",
 		"Set to disable fix-ups for broken USB encoding, etc. which we apply by default on certain vendors/products");
+
+	addvar(VAR_FLAG, "powercom_sdcmd_byte_order_fallback",
+		"Set to use legacy byte order for Powercom HID shutdown commands. Either it was wrong forever, or some older devices/firmwares had it the other way around");
 
 #if !((defined SHUT_MODE) && SHUT_MODE)
 	addvar(VAR_VALUE, "subdriver", "Explicit USB HID subdriver selection");
