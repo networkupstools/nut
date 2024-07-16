@@ -18,7 +18,20 @@
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 EXTRA_DIST =
 
-all: doc
+# Note: "doc" ensures the `configure`-specified list of documents we actually
+# want, while the default generated "all: all-am" target historically causes
+# some but not all of these targets to get built (e.g. ChangeLog html/pdf is
+# usually not made there). Post-processing "doc" as part of "all" helps
+# ensure that we do not rebuild stuff in vain during parallel builds (where
+# "all-am" and "doc" would be unordered parallel goals of the "all" target)
+# while getting those further goals achieved eventually in the default build.
+# Crucially, this allows to make sure "ChangeLog(.adoc*)" files have been
+# generated once (can take a looong while), settled into place, and only then
+# we revisit them for html/pdf rendering (another long while) without randomly
+# confusing the system with new timestamps and needless regenerations later on.
+all:
+	@echo "  DOC-FOLLOW-UP	Basic 'make $@' in `pwd` is done, following up with 'make doc' to ensure complex document types"
+	+@$(MAKE) $(AM_MAKEFLAGS) doc
 
 # Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
 #EGREP = egrep
@@ -256,9 +269,21 @@ ChangeLog.html-contentchecked:
 	            fi ; \
 	        fi ; \
 	    fi; \
-	 else \
+	    if [ x"$$FAILED" = x ] ; then \
+	        echo "PASSED $@" >&2 ; \
+	        exit 0 ; \
+	    fi ; \
+	    if [ x"$$FAILED" != x ] && [ -s '$(top_builddir)/ChangeLog.adoc' ] \
+	    && [ "`head -1 $(top_builddir)/ChangeLog.adoc`" = "=== Failed to generate the ChangeLog" ] \
+	    ; then \
+	        FAILED="" ; \
+	    fi; \
+	 fi; \
+	 if [ x"$$FAILED" = x ] ; then \
 	    echo "SKIPPED $@ because input files were not available" >&2 ; \
-	 fi
+	    exit 0 ; \
+	 fi ; \
+	 exit 1
 
 check-html-single: $(ASCIIDOC_HTML_SINGLE)
 	+@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
@@ -332,6 +357,8 @@ DOCBUILD_CONVERT_GITHUB_LINKS = { \
 .adoc.adoc-parsed:
 	@$(DOCBUILD_CONVERT_GITHUB_LINKS)
 
+$(top_builddir)/ChangeLog.adoc-parsed: $(top_builddir)/ChangeLog.adoc
+
 dummy:
 $(top_builddir)/ChangeLog: dummy
 	@+echo "  DOC-CHANGELOG-GENERATE-WRAPPER	$@ : call parent Makefile to decide if (re-)generation is needed" \
@@ -347,6 +374,14 @@ else !WITH_PDF_NONASCII_TITLES
 A2X_ASCII_IDS = ":ascii-ids:\n"
 endif !WITH_PDF_NONASCII_TITLES
 
+# Probably due to the web of makefiles and an overwhelmed job server in some
+# implementations, during parallel builds we can end up scheduling several
+# threads creating this asciidoc (and adoc-parsed later). This step only
+# costs a few seconds, however the updated timestamp may cause new HTML/PDF
+# builds which cost a lot more. Below we try a few ways to detect a build
+# already running and bail out early if the file exists. Otherwise we bite
+# the bullet and spend a few seconds, and then re-check if another thread
+# did exist and finished first.
 $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	@INPUT="$?"; \
 	 test -n "$${INPUT}" || INPUT="$$(top_builddir)/ChangeLog" ; \
@@ -357,6 +392,8 @@ $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	     test -n "$@" && { printf '=== Failed to generate the ChangeLog\n\n%s\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n' "$${MSG}" > "$@" ; } ; \
 	     exit ; \
 	 } ; \
+	 W=10 ; while [ "$${W}" -gt 0 ] && find '$@.tmp.'* '$@' -newer "$${INPUT}" 2>/dev/null >/dev/null ; do sleep 1 ; W="`expr $$W - 1`"; done ; touch "$@.tmp.$$$$"; \
+	 if [ x"`find '$@' -newer "$${INPUT}" 2>/dev/null`" != x ] ; then echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : SKIP (keep existing)"; rm -f "$@.tmp.$$$$"; exit 0 ; fi ; \
 	 echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@" \
 	 && printf "ifdef::txt[]\n== Very detailed Change Log\n"$(A2X_ASCII_IDS)"endif::txt[]\n\n" > "$@.tmp.$$$$" \
 	 && TABCHAR="`printf '\t'`" \
@@ -370,7 +407,8 @@ $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	        -e 's,\[\[\([^]]*\)\]\],[\1],g' \
 	        -e 's,^\(\s\s*\)\([0-9]\),\1{empty}\2,g' \
 	   < "$${INPUT}" >> "$@.tmp.$$$$" \
-	 && mv -f "$@.tmp.$$$$" "$@"
+	 && if [ x"`find '$@' -newer "$${INPUT}" 2>/dev/null`" != x ] ; then echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : SKIP (keep recently born competitor)"; rm -f "$@.tmp.$$$$"; \
+	    else mv -f "$@.tmp.$$$$" "$@" ; fi
 
 # Add other directory deps (not for local EXTRA_DIST) and generated contents
 FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS) $(SHARED_DEPS) \

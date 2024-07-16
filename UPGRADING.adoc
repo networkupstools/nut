@@ -38,6 +38,13 @@ Changes from 2.8.2 to 2.8.3
   pages which are delivered automatically. Packaging recipes can likely
   be simplified now. [#2445]
 
+- A `CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR` setting was added (for `make`
+  calls and used by `tools/gitlog2changelog.py.in` script), and it defaults
+  to `true` allowing for better ordered documents at the cost of some memory
+  during document generation. Resource-constrained builders (working from
+  a Git workspace, not tarball archives) may have to set it to `false` when
+  calling `make` for NUT. [#2510]
+
 - NUT products like `nut-scanner`, which dynamically load shared libraries
   at run-time without persistent pre-linking, should now know the library
   file names that were present during build (likely encumbered with version
