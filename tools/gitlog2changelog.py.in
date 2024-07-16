@@ -190,7 +190,14 @@ for line in fin:
     # All of the parts of the commit have been found - write out the entry
     if authorFound and dateFound and messageFound and filesFound:
         # First the author line, only outputted if it is the first for that
-        # author on this day
+        # author on this day.
+        # WARNING: In case of git rebase commit shuffling, merges of dormant
+        # branches, etc. we are not guaranteed to have all dates in the list
+        # nicely ordered. In fact, the same date+author can be repeated if
+        # there were commits with other metadata in git history between those
+        # (e.g. many PRs from a few authors merged during one day). While we
+        # could cache each section by authorLine and only output in the end,
+        # it can require a lot of memory - so by default we do not.
         authorLine = date + "  " + author
         if len(prevAuthorLine) == 0:
             fout.write(authorLine + "\n\n")
