@@ -256,9 +256,21 @@ ChangeLog.html-contentchecked:
 	            fi ; \
 	        fi ; \
 	    fi; \
-	 else \
+	    if [ x"$$FAILED" = x ] ; then \
+	        echo "PASSED $@" >&2 ; \
+	        exit 0 ; \
+	    fi ; \
+	    if [ x"$$FAILED" != x ] && [ -s '$(top_builddir)/ChangeLog.adoc' ] \
+	    && [ "`head -1 $(top_builddir)/ChangeLog.adoc`" = "=== Failed to generate the ChangeLog" ] \
+	    ; then \
+	        FAILED="" ; \
+	    fi; \
+	 fi; \
+	 if [ x"$$FAILED" = x ] ; then \
 	    echo "SKIPPED $@ because input files were not available" >&2 ; \
-	 fi
+	    exit 0 ; \
+	 fi ; \
+	 exit 1
 
 check-html-single: $(ASCIIDOC_HTML_SINGLE)
 	+@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
