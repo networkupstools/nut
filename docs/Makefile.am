@@ -18,7 +18,20 @@
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 EXTRA_DIST =
 
-all: doc
+# Note: "doc" ensures the `configure`-specified list of documents we actually
+# want, while the default generated "all: all-am" target historically causes
+# some but not all of these targets to get built (e.g. ChangeLog html/pdf is
+# usually not made there). Post-processing "doc" as part of "all" helps
+# ensure that we do not rebuild stuff in vain during parallel builds (where
+# "all-am" and "doc" would be unordered parallel goals of the "all" target)
+# while getting those further goals achieved eventually in the default build.
+# Crucially, this allows to make sure "ChangeLog(.adoc*)" files have been
+# generated once (can take a looong while), settled into place, and only then
+# we revisit them for html/pdf rendering (another long while) without randomly
+# confusing the system with new timestamps and needless regenerations later on.
+all:
+	@echo "  DOC-FOLLOW-UP	Basic 'make $@' in `pwd` is done, following up with 'make doc' to ensure complex document types"
+	+@$(MAKE) $(AM_MAKEFLAGS) doc
 
 # Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
 #EGREP = egrep
