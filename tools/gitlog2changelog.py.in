@@ -187,6 +187,7 @@ for line in fin:
                 files = files + ", " + fileList[0].strip()
             else:
                 files = fileList[0].strip()
+
     # All of the parts of the commit have been found - write out the entry
     if authorFound and dateFound and messageFound and filesFound:
         # First the author line, only outputted if it is the first for that
@@ -208,7 +209,7 @@ for line in fin:
 
         # Assemble the actual commit message line(s) and limit the line length
         # to 80 characters.
-        # Avoid printing same (or equivalen) filename lists twice, if commit
+        # Avoid printing same (or equivalent) filename lists twice, if commit
         # message starts with them.
         if message.startswith(files + ":"):
             commitLine = "* " + message
