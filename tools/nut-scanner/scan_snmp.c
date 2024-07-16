@@ -21,6 +21,7 @@
 /*! \file scan_snmp.c
     \brief detect NUT supported SNMP devices
     \author Frederic Bohe <FredericBohe@Eaton.com>
+    \author Jim Klimov <EvgenyKlimov@Eaton.com>
     \author Arnaud Quette <ArnaudQuette@Eaton.com>
     \author Jim Klimov <EvgenyKlimov@eaton.com>
 */
@@ -1111,15 +1112,13 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 	sem_t   semaphore_scantype_inst;
 	sem_t * semaphore_scantype = &semaphore_scantype_inst;
 # endif /* HAVE_SEMAPHORE */
-  pthread_t thread;
+	pthread_t thread;
 	nutscan_thread_t * thread_array = NULL;
 	size_t thread_count = 0, i;
 # if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE)
 	size_t  max_threads_scantype = max_threads_netsnmp;
 # endif
-#endif /* HAVE_PTHREAD */
 
-#ifdef HAVE_PTHREAD
 	pthread_mutex_init(&dev_mutex, NULL);
 
 # ifdef HAVE_SEMAPHORE
@@ -1186,6 +1185,7 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 		upsdebugx(1, "Failed to enable numeric OIDs resolution");
 	}
 
+	/* Initialize the SNMP library */
 	init_snmp_once();
 
 	ip_str = nutscan_ip_ranges_iter_init(&ip, irl);
