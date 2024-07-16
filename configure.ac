@@ -698,6 +698,9 @@ AX_C_PRAGMAS
 AX_C___ATTRIBUTE__
 AX_C_PRINTF_STRING_NULL
 
+dnl Check if the system provides a boolean type and how it is spelled
+NUT_CHECK_BOOL
+
 dnl All current systems provide time.h; it need not be checked for.
 dnl Not all systems provide sys/time.h, but those that do, all allow
 dnl you to include it and time.h simultaneously.
