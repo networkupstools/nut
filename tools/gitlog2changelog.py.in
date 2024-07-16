@@ -187,7 +187,14 @@ for line in fin:
         continue
     # Extract the actual commit message for this commit
     elif authorFound and dateFound and messageFound is False:
-        # Find the commit message if we can
+        # Find the commit message if we can (including the optional
+        # details after the title and a blank line)
+        # FIXME: Detect end of message by /^#/ to allow for longer essays
+        #  in the detailed comments part?
+        # FIXME: Some such comments include asciidoc-ish markup, notably
+        #  bullet lists - do not concatenate those into one block but do
+        #  actually pass them as sub-lists (indented, and perhaps not
+        #  starting with an asterisk which we use for this document).
         if len(line) == fin_chop:
             if messageNL:
                 messageFound = True
