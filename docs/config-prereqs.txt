@@ -979,7 +979,7 @@ you can work around by `make MKDIRPROG="mkdir -p" install -j 8` for example.
     gcc7 clang
 
 # See comments below, python version and package naming depends on distro
-:; apt-get install \
+:; pkgin install \
     python27 python39
 
 ;; ( cd /usr/pkg/bin && ( ln -fs python2.7 python2 ; ln -fs python3.9 python3 ) )
