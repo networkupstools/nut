@@ -5,7 +5,7 @@ dnl do the checking only once.
 
 AC_DEFUN([NUT_CHECK_PKGCONFIG],
 [
-AS_IF([test -z "${nut_have_pkg_config_seen}"], [
+  AS_IF([test -z "${nut_have_pkg_config_seen}"], [
 	nut_have_pkg_config_seen=yes
 
 	dnl Note that PKG_CONFIG may be a filename, path,
@@ -83,8 +83,15 @@ AS_IF([test -z "${nut_have_pkg_config_seen}"], [
 		 PKG_CONFIG="false"
 		],
 		[AS_IF([test x"$have_PKG_CONFIG_MACROS" = xno],
-			[AC_MSG_WARN([pkg-config macros are needed to look for further dependencies, but in some cases pkg-config program can be used directly])]
-		)]
+			[AC_MSG_WARN([pkg-config macros are needed to look for further dependencies, but in some cases pkg-config program can be used directly])])
+
+		 AC_MSG_CHECKING([for pkg-config envvar PKG_CONFIG_PATH (if passed to configure script)])
+		 AC_MSG_RESULT([${PKG_CONFIG_PATH}])
+
+		 AC_MSG_CHECKING([for pkg-config reported pc_path])
+		 myPKG_CONFIG_PC_PATH="`pkg-config --variable pc_path pkg-config`" || myPKG_CONFIG_PC_PATH=""
+		 AC_MSG_RESULT([${myPKG_CONFIG_PC_PATH}])
+		]
 	)
 
   ]) dnl if nut_have_pkg_config_seen
