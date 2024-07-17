@@ -782,9 +782,11 @@ SEMLIBS=""
 AC_CHECK_HEADER([semaphore.h],
     [AC_DEFINE([HAVE_SEMAPHORE_H], [1],
         [Define to 1 if you have <sys/semaphore.h>.])
-     AC_MSG_CHECKING([for sem_t, sem_init() and sem_destroy()])
+
      AC_LANG_PUSH([C])
-     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+
+     AC_MSG_CHECKING([for sem_t, sem_init() and sem_destroy()])
+     AX_RUN_OR_LINK_IFELSE([AC_LANG_PROGRAM([
 #include <semaphore.h>
 ],
 [sem_t semaphore;
@@ -795,7 +797,7 @@ sem_destroy(&semaphore);
 ]
         )],
         [AC_DEFINE([HAVE_SEMAPHORE], [1],
-            [Define to 1 if you have <sys/semaphore.h> with usable sem_t sem_init() and sem_destroy().])
+            [Define to 1 if you have <sys/semaphore.h> with usable sem_t, sem_init() and sem_destroy() for unnamed semaphores.])
          AC_MSG_RESULT([ok])
 
 	 dnl Solaris 8 builds complain about indirect dependency involved:
