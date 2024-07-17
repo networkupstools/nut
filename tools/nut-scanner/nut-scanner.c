@@ -78,8 +78,10 @@
  * following practical investigation summarized at
  *   https://github.com/networkupstools/nut/pull/1158
  * and probably means the usual stdin/stdout/stderr triplet
+ * Another +1 is for NetSNMP which wants to open MIB files,
+ * potential per-host configuration files, etc.
  */
-#   define RESERVE_FD_COUNT 3
+#   define RESERVE_FD_COUNT 4
 #  endif /* HAVE_SYS_RESOURCE_H */
 # endif  /* HAVE_PTHREAD_TRYJOIN || HAVE_SEMAPHORE_UNNAMED || HAVE_SEMAPHORE_NAMED */
 #endif   /* HAVE_PTHREAD */
