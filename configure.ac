@@ -796,7 +796,7 @@ sem_destroy(&semaphore);
  * normally check for non-zero meaning to look in errno */
 ]
         )],
-        [AC_DEFINE([HAVE_SEMAPHORE], [1],
+        [AC_DEFINE([HAVE_SEMAPHORE_UNNAMED], [1],
             [Define to 1 if you have <sys/semaphore.h> with usable sem_t, sem_init() and sem_destroy() for unnamed semaphores.])
          AC_MSG_RESULT([ok])
 
