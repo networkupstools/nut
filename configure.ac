@@ -808,6 +808,32 @@ sem_destroy(&semaphore);
         ],
         [AC_MSG_RESULT([no])]
      )
+
+     AC_MSG_CHECKING([for sem_t, sem_open() and sem_close()])
+     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#include <semaphore.h>
+],
+[sem_t *semaphore = sem_open("/s", O_CREAT, 0644, 4);
+if (semaphore != SEM_FAILED)
+    sem_close(semaphore);
+/* Do not care about actual return value in this test,
+ * normally check for non-zero meaning to look in errno */
+]
+        )],
+        [AC_DEFINE([HAVE_SEMAPHORE_NAMED], [1],
+            [Define to 1 if you have <sys/semaphore.h> with usable sem_t, sem_open() and sem_close() for named semaphores.])
+         AC_MSG_RESULT([ok])
+
+	 dnl TODO: Check if this does apply for named semaphores too:
+	 dnl Solaris 8 builds complain about indirect dependency involved:
+	 dnl   sem_open   nut_scanner-nut-scanner.o
+	 dnl   (symbol belongs to implicit dependency /usr/lib/librt.so.1)
+
+	 AC_CHECK_LIB(rt, sem_open, SEMLIBS="-lrt")
+        ],
+        [AC_MSG_RESULT([no])]
+     )
+
      AC_LANG_POP([C])
     ]
 )
