@@ -1272,7 +1272,7 @@ nutscan_device_t * nutscan_scan_ip_range_snmp(nutscan_ip_range_list_t * irl,
 					if (!thread_array[i].active) continue;
 
 					pthread_mutex_lock(&threadcount_mutex);
-					upsdebugx(3, "%s: Trying to join thread #%i...", __func__, i);
+					upsdebugx(3, "%s: Trying to join thread #%" PRIuSIZE "...", __func__, i);
 					ret = pthread_tryjoin_np(thread_array[i].thread, NULL);
 					switch (ret) {
 						case ESRCH:     /* No thread with the ID thread could be found - already "joined"? */
