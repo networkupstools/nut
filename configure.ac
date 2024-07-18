@@ -908,8 +908,11 @@ AC_MSG_CHECKING([for at least one timegm implementation])
 AS_IF([test x"${ac_cv_func_timegm}-${ac_cv_func__mkgmtime}" = "xno-no"], [
 	AC_MSG_RESULT([no])
 	AC_MSG_WARN([Required C library routine timegm nor _mkgmtime was not found])
+	AC_DEFINE_UNQUOTED([WANT_TIMEGM_FALLBACK], [1], [Defined if we want to use timegm_fallback()])
+	AM_CONDITIONAL([WANT_TIMEGM_FALLBACK], [true])
 	],[
 	AC_MSG_RESULT([yes])
+	AM_CONDITIONAL([WANT_TIMEGM_FALLBACK], [false])
 	])
 
 AC_LANG_PUSH([C])
