@@ -63,13 +63,14 @@
 # include "wincompat.h"
 #endif
 
+#include "nut_stdint.h"
+
 #ifdef HAVE_PTHREAD
 # include <pthread.h>
 # if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
 #  include <semaphore.h>
 # endif
 # if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
-#  include "nut_stdint.h"
 #  ifdef HAVE_SYS_RESOURCE_H
 #   include <sys/resource.h> /* for getrlimit() and struct rlimit */
 #   include <errno.h>
