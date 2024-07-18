@@ -229,6 +229,11 @@ check-pdf: $(ASCIIDOC_PDF)
 # and not exactly two mentions, should allow to catch the case
 # of overlapping documents. Checking for the last entry allows
 # to catch incomplete parses, where asciidoc gave up early.
+# NOTE: Technically it may be more than two, if the author and
+# date were used several times in the original ChangeLog file
+# (either with different e-mails, or if different author's work
+# is interleaved during the day, e.g. many PRs merged, and no
+# CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR=true setting was in place.
 # NOTE: No dependencies, avoids (re-)generation and log messages.
 ChangeLog.html-contentchecked:
 	@FAILED=""; \
@@ -237,9 +242,12 @@ ChangeLog.html-contentchecked:
 	    FIRST_ENTRY="`grep -E '^[0-9]' '$(top_builddir)/ChangeLog' | head -1 | sed 's/ *[\"<].*//'`" || FIRST_ENTRY="" ; \
 	    LAST_ENTRY="`grep -E '^[0-9]' '$(top_builddir)/ChangeLog' | tail -1 | sed 's/ *[\"<].*//'`" || LAST_ENTRY="" ; \
 	    if [ -n "$${FIRST_ENTRY}" ] ; then \
+	        O="`grep -cE "^$${FIRST_ENTRY}" '$(top_builddir)/ChangeLog'`" ; \
 	        N="`grep -cE "title.*$${FIRST_ENTRY}" 'ChangeLog.html'`" ; \
-	        if [ 2 != "$${N}" ] ; then \
-	            echo "FAILED ChangeLog.html check: does not contain expected first entry exactly twice (huge doc, must have got aborted mid-way): $${FIRST_ENTRY} (seen $$N times)" >&2 ; \
+	        MIN="`expr $${O} + 1`"     && [ "$${MIN}" -gt 0 ] 2>/dev/null || MIN=1 ; \
+	        MAX="`expr $${O} + $${O}`" && [ "$${MAX}" -gt 2 ] 2>/dev/null || MAX=2 ; \
+	        if [ "$${N}" -lt "$${MIN}" ] || [ "$${N}" -gt "$${MAX}" ]; then \
+	            echo "FAILED ChangeLog.html check: does not contain expected first entry the right amount of times (huge doc, must have got aborted mid-way): $${FIRST_ENTRY} (seen $${N} times, expected between $${MIN} and $${MAX})" >&2 ; \
 	            if [ -z "$$FAILED" ] ; then \
 	                echo "Expected size over 3MB (for common builds):" >&2 ; \
 	                ls -la "ChangeLog.html" '$(top_builddir)/ChangeLog'* >&2 ; \
@@ -248,9 +256,12 @@ ChangeLog.html-contentchecked:
 	        fi ; \
 	    fi; \
 	    if [ -n "$${SECOND_ENTRY}" ] ; then \
+	        O="`grep -cE "^$${SECOND_ENTRY}" '$(top_builddir)/ChangeLog'`" ; \
 	        N="`grep -cE "title.*$${SECOND_ENTRY}" 'ChangeLog.html'`" ; \
-	        if [ 2 != "$${N}" ] ; then \
-	            echo "FAILED ChangeLog.html check: does not contain expected second entry exactly twice (huge doc, must have got aborted mid-way): $${SECOND_ENTRY} (seen $$N times)" >&2 ; \
+	        MIN="`expr $${O} + 1`"     && [ "$${MIN}" -gt 0 ] 2>/dev/null || MIN=1 ; \
+	        MAX="`expr $${O} + $${O}`" && [ "$${MAX}" -gt 2 ] 2>/dev/null || MAX=2 ; \
+	        if [ "$${N}" -lt "$${MIN}" ] || [ "$${N}" -gt "$${MAX}" ]; then \
+	            echo "FAILED ChangeLog.html check: does not contain expected second entry the right amount of times (huge doc, must have got aborted mid-way): $${SECOND_ENTRY} (seen $${N} times, expected between $${MIN} and $${MAX})" >&2 ; \
 	            if [ -z "$$FAILED" ] ; then \
 	                echo "Expected size over 3MB (for common builds):" >&2 ; \
 	                ls -la "ChangeLog.html" '$(top_builddir)/ChangeLog'* >&2 ; \
@@ -259,9 +270,12 @@ ChangeLog.html-contentchecked:
 	        fi ; \
 	    fi; \
 	    if [ -n "$${LAST_ENTRY}" ] ; then \
+	        O="`grep -cE "^$${LAST_ENTRY}" '$(top_builddir)/ChangeLog'`" ; \
 	        N="`grep -cE "title.*$${LAST_ENTRY}" 'ChangeLog.html'`" ; \
-	        if [ 2 != "$${N}" ] ; then \
-	            echo "FAILED ChangeLog.html check: does not contain expected last entry exactly twice (huge doc, must have got aborted mid-way): $${LAST_ENTRY} (seen $$N times)" >&2 ; \
+	        MIN="`expr $${O} + 1`"     && [ "$${MIN}" -gt 0 ] 2>/dev/null || MIN=1 ; \
+	        MAX="`expr $${O} + $${O}`" && [ "$${MAX}" -gt 2 ] 2>/dev/null || MAX=2 ; \
+	        if [ "$${N}" -lt "$${MIN}" ] || [ "$${N}" -gt "$${MAX}" ]; then \
+	            echo "FAILED ChangeLog.html check: does not contain expected last entry the right amount of times (huge doc, must have got aborted mid-way): $${LAST_ENTRY} (seen $${N} times, expected between $${MIN} and $${MAX})" >&2 ; \
 	            if [ -z "$$FAILED" ] ; then \
 	                echo "Expected size over 3MB (for common builds):" >&2 ; \
 	                ls -la "ChangeLog.html" '$(top_builddir)/ChangeLog'* >&2 ; \
