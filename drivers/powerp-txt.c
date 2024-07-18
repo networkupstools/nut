@@ -36,7 +36,7 @@
 
 #include <ctype.h>
 
-#define POWERPANEL_TEXT_VERSION "Powerpanel-Text 0.6"
+#define POWERPANEL_TEXT_VERSION	"Powerpanel-Text 0.60"
 
 typedef struct {
 	float          i_volt;

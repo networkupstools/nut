@@ -1562,6 +1562,7 @@ bitmask
 bitness
 bitnesses
 bn
+bool
 boolean
 bootable
 bp
