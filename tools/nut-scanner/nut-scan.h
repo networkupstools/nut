@@ -73,6 +73,15 @@
 # if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
 #  include <semaphore.h>
 # endif
+
+# ifdef HAVE_SEMAPHORE_NAMED
+#  ifdef HAVE_FCNTL_H
+#   include <fcntl.h>           /* For O_* constants with sem_open() */
+#  endif
+#  ifdef SYS_STAT_H
+#   include <sys/stat.h>        /* For mode constants */
+#  endif
+# endif
 #endif
 
 #ifdef __cplusplus
