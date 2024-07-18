@@ -879,7 +879,7 @@ dnl# 	[], [AC_MSG_WARN([Required C library routine not found; try adding __EXTEN
 dnl These appear with CFLAGS="-std=c99 -D_POSIX_C_SOURCE=200112L":
 dnl# Methods below currently do not cause build errors for C99+ modes so are
 dnl# not tested as thoroughly as those further below:
-AC_CHECK_FUNCS(strtok_r fileno sigemptyset sigaction,
+AC_CHECK_FUNCS(strtof strtok_r fileno sigemptyset sigaction,
 	[], [AC_MSG_WARN([Required C library routine not found; try adding -D_POSIX_C_SOURCE=200112L])])
 
 dnl For these we have a fallback implementation via the other,
