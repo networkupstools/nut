@@ -1525,6 +1525,7 @@ dnl https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-get
 dnl https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-getadaptersinfo (before Windows XP; not recommended later)
 dnl Must check in global context, to have it not-defined where appropriate too
 NUT_CHECK_HEADER_IPHLPAPI
+AC_CHECK_HEADERS_ONCE([ifaddrs.h netinet/in.h net/if.h])
 AC_CHECK_FUNCS([getifaddrs], [], [
     AS_CASE([${target_os}],
         [*mingw*], [

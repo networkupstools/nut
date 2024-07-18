@@ -44,7 +44,9 @@
 #ifndef WIN32
 # include <arpa/inet.h>
 # include <netinet/in.h>
-# include <ifaddrs.h>
+# ifdef HAVE_IFADDRS_H
+#  include <ifaddrs.h>
+# endif
 # include <netdb.h>
 # include <sys/ioctl.h>
 # include <net/if.h>
@@ -346,6 +348,7 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 
 	upsdebugx(3, "Entering %s('%s')", __func__, arg_addr);
 
+#if defined HAVE_GETIFADDRS || (defined WIN32 && (defined HAVE_GETADAPTERSINFO || defined HAVE_GETADAPTERSADDRESSES))
 	/* Is this a `-m auto<something_optional>` mode? */
 	if (!strncmp(arg_addr, "auto", 4)) {
 		/* TODO: Maybe split later, to allow separate
@@ -421,6 +424,7 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 			*auto_nets_ptr = auto_nets;
 		}
 	}
+#endif	/* HAVE_GETIFADDRS || HAVE_GETADAPTERSINFO || HAVE_GETADAPTERSADDRESSES */
 
 	if (auto_nets < 0) {
 		/* not a supported `-m auto*` pattern => is `-m cidr` */
@@ -434,6 +438,7 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 		return;
 	}
 
+#if defined HAVE_GETIFADDRS || (defined WIN32 && (defined HAVE_GETADAPTERSINFO || defined HAVE_GETADAPTERSADDRESSES))
 	/* Handle `-m auto*` modes below */
 #ifdef HAVE_GETIFADDRS
 	upsdebugx(4, "%s: using getifaddrs()", __func__);
@@ -957,6 +962,11 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 	}
 	upsdebugx(3, "Finished %s('%s'), selected %" PRIuSIZE " subnets automatically",
 		__func__, arg_addr, auto_subnets_found);
+#else	/* not (HAVE_GETIFADDRS || ( WIN32 && (HAVE_GETADAPTERSINFO || HAVE_GETADAPTERSADDRESSES))) */
+	fatalx(EXIT_FAILURE,
+		"Have no way to query local interface addresses on this "
+		"platform, please run without the '-m auto*' options!");
+#endif	/* HAVE_GETIFADDRS || ( WIN32 && (HAVE_GETADAPTERSINFO || HAVE_GETADAPTERSADDRESSES)) */
 }
 
 static void show_usage(void)
@@ -1016,7 +1026,7 @@ static void show_usage(void)
 	printf("  -e, --end_ip <IP address>: Last IP address to scan.\n");
 	printf("  -m, --mask_cidr <IP address/mask>: Give a range of IP using CIDR notation.\n");
 	printf("  -m, --mask_cidr auto: Detect local IP address(es) and scan corresponding subnet(s).\n");
-#ifdef WIN32
+#if !(defined HAVE_GETIFADDRS || (defined WIN32 && (defined HAVE_GETADAPTERSINFO || defined HAVE_GETADAPTERSADDRESSES)))
 	printf("                        (Currently not implemented for this platform)\n");
 #endif
 	printf("  -m, --mask_cidr auto4/auto6: Likewise, limiting to IPv4 or IPv6 interfaces.\n");
