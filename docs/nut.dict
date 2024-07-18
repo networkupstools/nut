@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3191 utf-8
+personal_ws-1.1 en 3194 utf-8
 AAC
 AAS
 ABI
@@ -207,6 +207,7 @@ CodingStyle
 Collver
 Colombier
 Comfo
+CommandLineTools
 ConfigVoltage
 ConnectUPS
 Corbelli
@@ -1363,6 +1364,7 @@ Wrede
 XAU
 XC
 XCP
+XCode
 XLA
 XOFF
 XON
