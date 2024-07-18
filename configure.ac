@@ -788,6 +788,25 @@ AC_CHECK_HEADER([semaphore.h],
         [Define to 1 if you have <sys/semaphore.h>.])
 
      AC_LANG_PUSH([C])
+     myLIBS="${LIBS}"
+     LIBS=""
+     SEMLIBS_LRT=""
+
+     dnl Solaris 8 builds complain about indirect dependency involved:
+     dnl   sem_init   nut_scanner-nut-scanner.o
+     dnl   (symbol belongs to implicit dependency /usr/lib/librt.so.1)
+     AC_SEARCH_LIBS([sem_init], [pthread], [], [
+	unset ac_cv_search_sem_init
+	AC_SEARCH_LIBS([sem_init], [pthread], [SEMLIBS_LRT=" -lrt"], [], [-lrt])])
+     AC_SEARCH_LIBS([sem_open], [pthread], [], [
+	unset ac_cv_search_sem_open
+	AC_SEARCH_LIBS([sem_open], [pthread], [SEMLIBS_LRT=" -lrt"], [], [-lrt])])
+
+     AS_CASE([${ac_cv_search_sem_init}], [no*], [], [SEMLIBS="${ac_cv_search_sem_init}"])
+     AS_CASE([${ac_cv_search_sem_open}], [no*], [], ["${SEMLIBS}"], [], [SEMLIBS="${ac_cv_search_sem_open}"])
+     SEMLIBS="${SEMLIBS}${SEMLIBS_LRT}"
+
+     LIBS="${SEMLIBS}"
 
      AC_MSG_CHECKING([for sem_t, sem_init() and sem_destroy()])
      AX_RUN_OR_LINK_IFELSE([AC_LANG_PROGRAM([
@@ -803,12 +822,6 @@ sem_destroy(&semaphore);
         [AC_DEFINE([HAVE_SEMAPHORE_UNNAMED], [1],
             [Define to 1 if you have <sys/semaphore.h> with usable sem_t, sem_init() and sem_destroy() for unnamed semaphores.])
          AC_MSG_RESULT([ok])
-
-	 dnl Solaris 8 builds complain about indirect dependency involved:
-	 dnl   sem_init   nut_scanner-nut-scanner.o
-	 dnl   (symbol belongs to implicit dependency /usr/lib/librt.so.1)
-
-	 AC_CHECK_LIB(rt, sem_init, SEMLIBS="-lrt")
         ],
         [AC_MSG_RESULT([no])]
      )
@@ -833,17 +846,11 @@ if (semaphore != SEM_FAILED)
         [AC_DEFINE([HAVE_SEMAPHORE_NAMED], [1],
             [Define to 1 if you have <sys/semaphore.h> with usable sem_t, sem_open() and sem_close() for named semaphores.])
          AC_MSG_RESULT([ok])
-
-	 dnl TODO: Check if this does apply for named semaphores too:
-	 dnl Solaris 8 builds complain about indirect dependency involved:
-	 dnl   sem_open   nut_scanner-nut-scanner.o
-	 dnl   (symbol belongs to implicit dependency /usr/lib/librt.so.1)
-
-	 AC_CHECK_LIB(rt, sem_open, SEMLIBS="-lrt")
         ],
         [AC_MSG_RESULT([no])]
      )
 
+     LIBS="${myLIBS}"
      AC_LANG_POP([C])
     ]
 )
