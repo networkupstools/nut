@@ -587,7 +587,7 @@ endif WITH_DMF
 CLEANFILES += dmf-reindex$(EXEEXT)
 DMF_REINDEX = $(abs_top_builddir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp
 dmf-reindex:
-	+cd $(abs_top_builddir)/tools/nut-scanner/ && $(MAKE) nut-scanner-reindex-dmfsnmp
+	+cd $(abs_top_builddir)/tools/nut-scanner/ && $(MAKE) $(AM_MAKEFLAGS) nut-scanner-reindex-dmfsnmp
 	$(LN_S_R) $(abs_top_builddir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp dmf-reindex
 #endif
 
