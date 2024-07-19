@@ -1523,7 +1523,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             # e.g. distcheck-light, distcheck-valgrind, cppcheck, maybe
             # others later, as defined in Makefile.am:
             BUILD_TGT="`echo "$BUILD_TYPE" | sed 's,^default-tgt:,,'`"
-            echo "`date`: Starting the sequential build attempt for singular target $BUILD_TGT..."
+            if [ -n "${PARMAKE_FLAGS}" ]; then
+                echo "`date`: Starting the parallel build attempt for singular target $BUILD_TGT..."
+            else
+                echo "`date`: Starting the sequential build attempt for singular target $BUILD_TGT..."
+            fi
 
             # Note: Makefile.am already sets some default DISTCHECK_CONFIGURE_FLAGS
             # that include DISTCHECK_FLAGS if provided
