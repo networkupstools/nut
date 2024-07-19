@@ -103,15 +103,15 @@ DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
  --with-pynut=app --with-nut_monitor=force
 
 distcheck-light:
-	+$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_FLAGS)" distcheck
+	+$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_FLAGS)" distcheck
 
 distcheck-light-man:
-	+$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_MAN_FLAGS)" distcheck
+	+$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_MAN_FLAGS)" distcheck
 
 # Make a distcheck (and check in particular) with enabled valgrind and debug info
 memcheck distcheck-valgrind:
 	@echo "See also scripts/valgrind in NUT sources for a helper tool"
-	+$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_VALGRIND_FLAGS)" distcheck
+	+$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_VALGRIND_FLAGS)" distcheck
 
 distcheck-dmf-features-REGEN_NO:
 	+$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_REGEN_NO_FLAGS)" distcheck || 	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_REGEN_NO_FLAGS" >&2; exit $$RES; }
