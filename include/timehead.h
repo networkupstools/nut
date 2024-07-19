@@ -1,8 +1,8 @@
 /* timehead.h - from the autoconf docs: sanely include the right time headers everywhere
 
-   Copyright (C) 2001  Russell Kroll <rkroll@exploits.org>
-	2005	Arnaud Quette <arnaud.quette@free.fr>
-	2020	Jim Klimov <jimklimov@gmail.com>
+   Copyright (C) 2001	Russell Kroll <rkroll@exploits.org>
+	2005	 	Arnaud Quette <arnaud.quette@free.fr>
+	2020-2024	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -77,7 +77,12 @@ static inline struct tm *gmtime_r( const time_t *timer, struct tm *buf ) {
 # ifdef HAVE__MKGMTIME
 #  define timegm(tm) _mkgmtime(tm)
 # else
-# error "No fallback implementation for timegm"
+#  ifdef WANT_TIMEGM_FALLBACK
+	/* use an implementation from fallbacks in NUT codebase */
+#   define timegm(tm) timegm_fallback(tm)
+#  else
+#   error "No fallback implementation for timegm"
+#  endif
 # endif
 #endif
 

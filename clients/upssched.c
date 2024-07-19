@@ -43,17 +43,17 @@
 
 #include <sys/types.h>
 #ifndef WIN32
-#include <sys/wait.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <netinet/in.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <poll.h>
+# include <sys/wait.h>
+# include <sys/socket.h>
+# include <sys/un.h>
+# include <netinet/in.h>
+# include <unistd.h>
+# include <fcntl.h>
+# include <poll.h>
 #else
-#include "wincompat.h"
-#include <winsock2.h>
-#include <ws2tcpip.h>
+# include "wincompat.h"
+# include <winsock2.h>
+# include <ws2tcpip.h>
 #endif
 
 #include "upssched.h"
@@ -75,7 +75,7 @@ static const	char	*upsname, *notify_type;
 
 #ifdef WIN32
 static OVERLAPPED connect_overlapped;
-#define BUF_LEN 512
+# define BUF_LEN 512
 #endif
 
 #define PARENT_STARTED		-2
@@ -361,7 +361,7 @@ static TYPE_FD open_sock(void)
 
 	/* Wait for a connection */
 	ConnectNamedPipe(fd,&connect_overlapped);
-#endif
+#endif /* WIN32 */
 
 	return fd;
 }
@@ -486,7 +486,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 
 		return 0;	/* failed */
 	}
-#endif
+#endif /* WIN32 */
 
 	return 1;	/* OK */
 }
@@ -499,9 +499,9 @@ static TYPE_FD conn_add(TYPE_FD sockfd)
 	int	ret;
 	conn_t	*tmp, *last;
 	struct	sockaddr_un	saddr;
-#if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED)
+# if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED)
 	int			salen;
-#else
+# else
 	socklen_t	salen;
 #endif
 
@@ -629,7 +629,7 @@ static TYPE_FD conn_add(TYPE_FD sockfd)
 	upsdebugx(3, "new connection on handle %p", acc);
 
 	pconf_init(&conn->ctx, NULL);
-#endif
+#endif /* WIN32 */
 
 	return acc;
 }
@@ -757,7 +757,8 @@ static int sock_read(conn_t *conn)
 		/* Restart async read */
 		memset(conn->buf,0,sizeof(conn->buf));
 		ReadFile(conn->fd,conn->buf,1,NULL,&(conn->read_overlapped));
-#endif
+#endif /* WIN32 */
+
 		ret = pconf_char(&conn->ctx, ch);
 
 		if (ret == 0)	/* nothing to parse yet */
@@ -819,7 +820,7 @@ static void start_daemon(TYPE_FD lockfd)
 	/* child */
 
 	/* make fds 0-2 (typically) point somewhere defined */
-#ifdef HAVE_DUP2
+# ifdef HAVE_DUP2
 	/* system can close (if needed) and (re-)open a specific FD number */
 	if (1) { /* scoping */
 		TYPE_FD devnull = open("/dev/null", O_RDWR);
@@ -840,8 +841,8 @@ static void start_daemon(TYPE_FD lockfd)
 
 		close(devnull);
 	}
-#else
-# ifdef HAVE_DUP
+# else /* not HAVE_DUP2 */
+#  ifdef HAVE_DUP
 	/* opportunistically duplicate to the "lowest-available" FD number */
 	close(STDIN_FILENO);
 	if (open("/dev/null", O_RDWR) != STDIN_FILENO)
@@ -858,7 +859,7 @@ static void start_daemon(TYPE_FD lockfd)
 		if (dup(STDIN_FILENO) != STDERR_FILENO)
 			fatal_with_errno(EXIT_FAILURE, "dup /dev/null as STDERR");
 	}
-# else
+#  else /* not HAVE_DUP */
 	close(STDIN_FILENO);
 	if (open("/dev/null", O_RDWR) != STDIN_FILENO)
 		fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDIN");
@@ -874,8 +875,8 @@ static void start_daemon(TYPE_FD lockfd)
 		if (open("/dev/null", O_RDWR) != STDERR_FILENO)
 			fatal_with_errno(EXIT_FAILURE, "re-open /dev/null as STDERR");
 	}
-# endif
-#endif
+#  endif /* not HAVE_DUP */
+# endif /* not HAVE_DUP2 */
 
 	pipefd = open_sock();
 
@@ -1052,7 +1053,7 @@ static void start_daemon(TYPE_FD lockfd)
 
 		checktimers();
 	}
-#endif
+#endif /* WIN32 */
 }
 
 /* --- 'client' functions --- */
@@ -1104,7 +1105,7 @@ static TYPE_FD try_connect(void)
 	if (VALID_FD(pipefd))
 		return pipefd;
 
-#endif
+#endif /* WIN32 */
 
 	return ERROR_FD;
 }
@@ -1293,7 +1294,7 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 			CloseHandle(pipefd);
 			continue;
 		}
-#endif
+#endif /* WIN32 */
 
 		if (!strncmp(buf, "OK", 2))
 			return;		/* success */

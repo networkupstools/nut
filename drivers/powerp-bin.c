@@ -32,10 +32,11 @@
 
 #include "powerp-bin.h"
 #include "nut_stdint.h"
+#include "nut_float.h"
 
 #include <math.h>
 
-#define POWERPANEL_BIN_VERSION "Powerpanel-Binary 0.50"
+#define POWERPANEL_BIN_VERSION	"Powerpanel-Binary 0.61"
 
 typedef struct {
 	unsigned char	start;

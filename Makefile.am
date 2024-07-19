@@ -260,7 +260,7 @@ check-NIT check-NIT-devel:
 ###
 check-scripts-syntax:
 	@echo 'NOTE: modern bash complains about scripts using backticks (warning not error), which we ignore in NUT codebase for portability reasons: `...` obsolete, use $$(...)'
-	@RUNBASH=bash; if [ -x /bin/bash ]; then RUNBASH=/bin/bash ; else if [ -x /usr/bin/env ] ; then RUNBASH="/usr/bin/env bash"; fi; fi ; \
+	@RUNBASH=bash; if [ -x /bin/bash ] && /bin/bash -c 'echo $${BASH_VERSION}' | grep -E '^[456789]\.' ; then RUNBASH=/bin/bash ; else if [ -x /usr/bin/env ] ; then RUNBASH="/usr/bin/env bash"; fi; fi ; \
 	 for F in `git ls-files || find . -type f` ; do \
 	    case "`file "$$F"`" in \
 	        *"Bourne-Again shell script"*) ( set -x ; $$RUNBASH -n "$$F" ; ) ;; \
@@ -359,7 +359,11 @@ endif
 # repo configuration, or submodules). But this is a Git-crawling target
 # anyway, and in the worst case (Git's design changes) we would spend a
 # bit of time researching the FS in vain, and go on to re-generate the
-# ChangeLog when maybe we should not have - oh well:
+# ChangeLog when maybe we should not have - oh well.
+# WARNING: The CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR=true mode here is
+# default to allow for prettier documentation, but it can require too much
+# memory for weaker build systems. Set it to false when calling make there.
+CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR_ENVVAR = true
 $(abs_top_builddir)/ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	@cd $(abs_top_srcdir) && \
 	    if test -e .git ; then \
@@ -369,7 +373,9 @@ $(abs_top_builddir)/ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	            echo "Using still-valid ChangeLog file generated earlier from same revision of Git source metadata in '$${NUT_GITDIR}'" >&2 ; \
 	        else \
 	            echo "  DOC-CHANGELOG-GENERATE        $@" ; \
-	            CHANGELOG_FILE="$@" $(WITH_PDF_NONASCII_TITLES_ENVVAR) $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) || { \
+	            CHANGELOG_FILE="$@" $(WITH_PDF_NONASCII_TITLES_ENVVAR) \
+	            CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR="$(CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR_ENVVAR)" \
+	              $(abs_top_builddir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) || { \
 	                echo "  DOC-CHANGELOG-GENERATE        $@ : FAILED (non-fatal)" >&2 ; \
 	                printf "gitlog2changelog.py failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; \
 	            } ; \

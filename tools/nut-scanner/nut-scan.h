@@ -70,8 +70,17 @@
 #ifdef HAVE_PTHREAD
 # include <pthread.h>
 
-# ifdef HAVE_SEMAPHORE
+# if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
 #  include <semaphore.h>
+# endif
+
+# ifdef HAVE_SEMAPHORE_NAMED
+#  ifdef HAVE_FCNTL_H
+#   include <fcntl.h>           /* For O_* constants with sem_open() */
+#  endif
+#  ifdef SYS_STAT_H
+#   include <sys/stat.h>        /* For mode constants */
+#  endif
 # endif
 #endif
 
@@ -82,8 +91,23 @@ extern "C" {
 #endif
 
 #ifdef HAVE_PTHREAD
-# if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE)
+# if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
 extern size_t max_threads, curr_threads, max_threads_netxml, max_threads_oldnut, max_threads_netsnmp, max_threads_ipmi;
+# endif
+
+# if defined HAVE_SEMAPHORE_UNNAMED
+#  define REPORT_SEM_INIT_METHOD	"sem_init"
+# elif defined HAVE_SEMAPHORE_NAMED
+#  define REPORT_SEM_INIT_METHOD	"sem_open"
+# endif
+
+# ifdef HAVE_SEMAPHORE_NAMED
+#  define SEMNAME_TOPLEVEL	"/libnutscan-toplevel-bus-scans"
+#  define SEMNAME_NETXML	"/libnutscan-netxml"
+#  define SEMNAME_UPSCLIENT	"/libnutscan-upsclient"
+#  define SEMNAME_EATON_SERIAL	"/libnutscan-eaton-serial"
+#  define SEMNAME_SNMP		"/libnutscan-snmp"
+#  define SEMNAME_IPMI		"/libnutscan-ipmi"
 # endif
 
 # ifdef HAVE_PTHREAD_TRYJOIN
@@ -185,10 +209,11 @@ nutscan_device_t * nutscan_scan_ip_range_ipmi(nutscan_ip_range_list_t * irl, nut
 nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_list);
 
 #ifdef HAVE_PTHREAD
-# ifdef HAVE_SEMAPHORE
+# if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
 /* Expose shared libnutscan semaphore for overall thread count
  * limited across different scanning methods (protocols/media): */
 sem_t * nutscan_semaphore(void);
+void nutscan_semaphore_set(sem_t *s);
 # endif
 #endif
 

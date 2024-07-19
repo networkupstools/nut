@@ -476,6 +476,11 @@ set | sort -n """
                     // so exclude systems which have e.g. gcc-4.2.1 which claims
                     // type range comparison warnings despite pragma fencing.
                     // gcc-4.8.x on CentOS 7 and Ubuntu 14.04 looks already okay.
+                    + [[~/OS_DISTRO=macos/]]
+                    // MacOS (at least agents prepared with HomeBrew packages)
+                    // requires a few pkg-config and CFLAGS pre-sets which are
+                    // done in ci_build.sh and defeat the purpose of this stage.
+                    // So it is easier and more honest to just skip it.
                 ], body)
             }, // getParStages
         //'bodyParStages': {}

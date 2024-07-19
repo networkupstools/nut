@@ -183,6 +183,10 @@ during a NUT build.
      variable support was added to optionally disable this verification.
      Also the NUT daemons should request to double-check against their
      run-time process name (if it can be detected). [issue #2463]
+   * introduced `m4` macros to check during `configure` phase for the
+     platform, and a `nut_bool.h` header with `nut_bool_t` type to use
+     during build, to avoid the numerous definitions of Boolean types
+     and values (or macros) in the NUT codebase. [issue #1176, issue #31]
 
  - various recipe, documentation and source files were revised to address
    respective warnings issued by the new generations of analysis tools.
@@ -217,6 +221,15 @@ during a NUT build.
  - added a `make distcheck-light-man` recipe to require verification that the
    manual page files can be built using the prepared "tarball" archive. [#2473]
 
+ - revised the documentation building recipes, with the goal to avoid building
+   the `ChangeLog` products and their intermediate files more than once (but
+   still react to `git` metadata changes during development), and to sanity
+   check the resulting final document (currently only for `html-single` mode).
+   As part of this, the `CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR` setting was
+   added (for `make` calls and used by `tools/gitlog2changelog.py.in` script),
+   and it defaults to `true` allowing for better ordered documents at the cost
+   of some memory during document generation. [#2510]
+
  - added a `common/Makefile.am` build product for a new internal library
    `libcommonstr.la` which allows a smaller selection of helper methods
    for tools like `nut-scanner` which do not need the full `libcommon.la`
@@ -237,6 +250,9 @@ during a NUT build.
    they should be able to parse common simple use-cases but not certain types
    of more complex configurations (e.g. some line patterns that involve too
    many double-quote characters) which are valid for NUT proper. [#657]
+
+ - Cross-builds using only a host implementation of `pkg-config` program
+   should now ignore host `*.pc` files and avoid confusion.
 
  - NUT CI farm build recipes, documentation and some `m4`/`configure.ac`
    sources updated to handle a much larger build scope on MacOS. Also
