@@ -419,13 +419,13 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 	int  current_port_nb;
 
 #ifdef HAVE_PTHREAD
-# ifdef HAVE_SEMAPHORE
+# if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
 	sem_t * semaphore = nutscan_semaphore();
 	/* TODO? Port semaphore_scantype / max_threads_scantype
 	 *  from sibling sources? We do not have that many serial
 	 *  ports to care much, usually... right?
 	 */
-# endif /* HAVE_SEMAPHORE */
+# endif /* HAVE_SEMAPHORE_UNNAMED || HAVE_SEMAPHORE_NAMED */
 	pthread_t thread;
 	nutscan_thread_t * thread_array = NULL;
 	size_t thread_count = 0, i;
@@ -467,7 +467,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 		 * for below in pthread_join()...
 		 */
 
-# ifdef HAVE_SEMAPHORE
+# if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
 		/* Just wait for someone to free a semaphored slot,
 		 * if none are available, and then/otherwise grab one
 		 */
@@ -506,7 +506,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 					if (!thread_array[i].active) continue;
 
 					pthread_mutex_lock(&threadcount_mutex);
-					upsdebugx(3, "%s: Trying to join thread #%i...", __func__, i);
+					upsdebugx(3, "%s: Trying to join thread #%" PRIuSIZE "...", __func__, i);
 					ret = pthread_tryjoin_np(thread_array[i].thread, NULL);
 					switch (ret) {
 						case ESRCH:     /* No thread with the ID thread could be found - already "joined"? */
@@ -547,7 +547,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 		/* NOTE: No change to default "pass" in this ifdef:
 		 * if we got to this line, we have a slot to use */
 #  endif /* HAVE_PTHREAD_TRYJOIN */
-# endif  /* HAVE_SEMAPHORE */
+# endif  /* HAVE_SEMAPHORE_UNNAMED || HAVE_SEMAPHORE_NAMED */
 #endif   /* HAVE_PTHREAD */
 
 		if (pass) {
@@ -586,7 +586,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 			current_port_nb++;
 		} else { /* if not pass -- all slots busy */
 #ifdef HAVE_PTHREAD
-# ifdef HAVE_SEMAPHORE
+# if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
 			/* Wait for all current scans to complete */
 			if (thread_array != NULL) {
 				upsdebugx (2, "%s: Running too many scanning threads (%"
@@ -619,7 +619,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 #  ifdef HAVE_PTHREAD_TRYJOIN
 			/* TODO: Move the wait-loop for TRYJOIN here? */
 #  endif /* HAVE_PTHREAD_TRYJOIN */
-# endif  /* HAVE_SEMAPHORE */
+# endif  /* HAVE_SEMAPHORE_UNNAMED || HAVE_SEMAPHORE_NAMED */
 #endif   /* HAVE_PTHREAD */
 		} /* if: could we "pass" or not? */
 	} /* while */
@@ -638,7 +638,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 					__func__, ret);
 			}
 			thread_array[i].active = FALSE;
-# ifdef HAVE_SEMAPHORE
+# if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
 			sem_post(semaphore);
 # else
 #  ifdef HAVE_PTHREAD_TRYJOIN
@@ -653,7 +653,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 			}
 			pthread_mutex_unlock(&threadcount_mutex);
 #  endif /* HAVE_PTHREAD_TRYJOIN */
-# endif /* HAVE_SEMAPHORE */
+# endif /* HAVE_SEMAPHORE_UNNAMED || HAVE_SEMAPHORE_NAMED */
 		}
 		free(thread_array);
 		upsdebugx(2, "%s: all threads freed", __func__);

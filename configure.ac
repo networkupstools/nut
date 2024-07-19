@@ -698,17 +698,21 @@ AX_C_PRAGMAS
 AX_C___ATTRIBUTE__
 AX_C_PRINTF_STRING_NULL
 
+dnl Check if the system provides a boolean type and how it is spelled
+NUT_CHECK_BOOL
+
 dnl All current systems provide time.h; it need not be checked for.
 dnl Not all systems provide sys/time.h, but those that do, all allow
 dnl you to include it and time.h simultaneously.
 dnl NUT codebase provides the include/timehead.h to wrap these nuances.
-AC_CHECK_HEADERS_ONCE([sys/time.h time.h sys/types.h sys/socket.h netdb.h])
+AC_CHECK_HEADERS_ONCE([sys/time.h time.h sys/types.h])
 dnl ###obsolete### AC_HEADER_TIME
 AS_IF([test "$ac_cv_header_sys_time_h" = yes],
     [AC_DEFINE([TIME_WITH_SYS_TIME],[1],[Define to 1 if you can safely include both <sys/time.h>
          and <time.h>.  This macro is deemed obsolete by autotools.])
     ], [])
 
+AC_CHECK_HEADERS_ONCE([fcntl.h sys/stat.h sys/socket.h netdb.h])
 AC_CHECK_FUNCS(flock lockf fcvt fcvtl dup dup2 abs_val abs)
 
 AC_CHECK_HEADER([float.h],
@@ -782,9 +786,30 @@ SEMLIBS=""
 AC_CHECK_HEADER([semaphore.h],
     [AC_DEFINE([HAVE_SEMAPHORE_H], [1],
         [Define to 1 if you have <sys/semaphore.h>.])
-     AC_MSG_CHECKING([for sem_t, sem_init() and sem_destroy()])
+
      AC_LANG_PUSH([C])
-     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+     myLIBS="${LIBS}"
+     LIBS=""
+     SEMLIBS_LRT=""
+
+     dnl Solaris 8 builds complain about indirect dependency involved:
+     dnl   sem_init   nut_scanner-nut-scanner.o
+     dnl   (symbol belongs to implicit dependency /usr/lib/librt.so.1)
+     AC_SEARCH_LIBS([sem_init], [pthread], [], [
+	unset ac_cv_search_sem_init
+	AC_SEARCH_LIBS([sem_init], [pthread], [SEMLIBS_LRT=" -lrt"], [], [-lrt])])
+     AC_SEARCH_LIBS([sem_open], [pthread], [], [
+	unset ac_cv_search_sem_open
+	AC_SEARCH_LIBS([sem_open], [pthread], [SEMLIBS_LRT=" -lrt"], [], [-lrt])])
+
+     AS_CASE([${ac_cv_search_sem_init}], [no*], [], [SEMLIBS="${ac_cv_search_sem_init}"])
+     AS_CASE([${ac_cv_search_sem_open}], [no*], [], ["${SEMLIBS}"], [], [SEMLIBS="${ac_cv_search_sem_open}"])
+     SEMLIBS="${SEMLIBS}${SEMLIBS_LRT}"
+
+     LIBS="${SEMLIBS}"
+
+     AC_MSG_CHECKING([for sem_t, sem_init() and sem_destroy()])
+     AX_RUN_OR_LINK_IFELSE([AC_LANG_PROGRAM([
 #include <semaphore.h>
 ],
 [sem_t semaphore;
@@ -794,18 +819,38 @@ sem_destroy(&semaphore);
  * normally check for non-zero meaning to look in errno */
 ]
         )],
-        [AC_DEFINE([HAVE_SEMAPHORE], [1],
-            [Define to 1 if you have <sys/semaphore.h> with usable sem_t sem_init() and sem_destroy().])
+        [AC_DEFINE([HAVE_SEMAPHORE_UNNAMED], [1],
+            [Define to 1 if you have <sys/semaphore.h> with usable sem_t, sem_init() and sem_destroy() for unnamed semaphores.])
          AC_MSG_RESULT([ok])
-
-	 dnl Solaris 8 builds complain about indirect dependency involved:
-	 dnl   sem_init   nut_scanner-nut-scanner.o
-	 dnl   (symbol belongs to implicit dependency /usr/lib/librt.so.1)
-
-	 AC_CHECK_LIB(rt, sem_init, SEMLIBS="-lrt")
         ],
         [AC_MSG_RESULT([no])]
      )
+
+     AC_MSG_CHECKING([for sem_t, sem_open() and sem_close()])
+     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#include <semaphore.h>
+#ifdef HAVE_FCNTL_H
+# include <fcntl.h>           /* For O_* constants */
+#endif
+#ifdef SYS_STAT_H
+# include <sys/stat.h>        /* For mode constants */
+#endif
+],
+[sem_t *semaphore = sem_open("/s", O_CREAT, 0644, 4);
+if (semaphore != SEM_FAILED)
+    sem_close(semaphore);
+/* Do not care about actual return value in this test,
+ * normally check for non-zero meaning to look in errno */
+]
+        )],
+        [AC_DEFINE([HAVE_SEMAPHORE_NAMED], [1],
+            [Define to 1 if you have <sys/semaphore.h> with usable sem_t, sem_open() and sem_close() for named semaphores.])
+         AC_MSG_RESULT([ok])
+        ],
+        [AC_MSG_RESULT([no])]
+     )
+
+     LIBS="${myLIBS}"
      AC_LANG_POP([C])
     ]
 )
@@ -834,7 +879,7 @@ dnl# 	[], [AC_MSG_WARN([Required C library routine not found; try adding __EXTEN
 dnl These appear with CFLAGS="-std=c99 -D_POSIX_C_SOURCE=200112L":
 dnl# Methods below currently do not cause build errors for C99+ modes so are
 dnl# not tested as thoroughly as those further below:
-AC_CHECK_FUNCS(strtok_r fileno sigemptyset sigaction,
+AC_CHECK_FUNCS(strtof strtok_r fileno sigemptyset sigaction,
 	[], [AC_MSG_WARN([Required C library routine not found; try adding -D_POSIX_C_SOURCE=200112L])])
 
 dnl For these we have a fallback implementation via the other,
@@ -863,8 +908,11 @@ AC_MSG_CHECKING([for at least one timegm implementation])
 AS_IF([test x"${ac_cv_func_timegm}-${ac_cv_func__mkgmtime}" = "xno-no"], [
 	AC_MSG_RESULT([no])
 	AC_MSG_WARN([Required C library routine timegm nor _mkgmtime was not found])
+	AC_DEFINE_UNQUOTED([WANT_TIMEGM_FALLBACK], [1], [Defined if we want to use timegm_fallback()])
+	AM_CONDITIONAL([WANT_TIMEGM_FALLBACK], [true])
 	],[
 	AC_MSG_RESULT([yes])
+	AM_CONDITIONAL([WANT_TIMEGM_FALLBACK], [false])
 	])
 
 AC_LANG_PUSH([C])
@@ -1477,6 +1525,7 @@ dnl https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-get
 dnl https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-getadaptersinfo (before Windows XP; not recommended later)
 dnl Must check in global context, to have it not-defined where appropriate too
 NUT_CHECK_HEADER_IPHLPAPI
+AC_CHECK_HEADERS_ONCE([ifaddrs.h netinet/in.h net/if.h])
 AC_CHECK_FUNCS([getifaddrs], [], [
     AS_CASE([${target_os}],
         [*mingw*], [

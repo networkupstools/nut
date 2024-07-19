@@ -465,10 +465,12 @@ static void setuptcp(stype_t *server)
 			fatal_with_errno(EXIT_FAILURE, "setuptcp: setsockopt");
 		}
 
+#ifdef IPV6_V6ONLY
 		/* Ordinarily we request that IPv6 listeners handle only IPv6
 		 * and not IPv4 mapped addresses - if the OS would honour that.
 		 * TOTHINK: Does any platform need `#ifdef IPV6_V6ONLY` given
 		 * that we apparently already have AF_INET6 OS support everywhere?
+		 * YES: Solaris 8 has IPv6 but not this symbol.
 		 */
 		if (ai->ai_family == AF_INET6) {
 			if (setsockopt(sock_fd, IPPROTO_IPV6, IPV6_V6ONLY, (void *)&one, sizeof(one)) != 0) {
@@ -476,6 +478,7 @@ static void setuptcp(stype_t *server)
 				/* ack, ignore */
 			}
 		}
+#endif
 
 		if (bind(sock_fd, ai->ai_addr, ai->ai_addrlen) < 0) {
 			upsdebug_with_errno(3, "setuptcp: bind");

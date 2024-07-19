@@ -39,7 +39,7 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
-/* #include <math.h> */
+/* #include "nut_float.h" */
 #include "libhid.h"
 #include "hidparser.h"
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
