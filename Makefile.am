@@ -546,7 +546,7 @@ install-dirs:
 	@echo "Warning: 'make install-dirs' is deprecated."
 	@echo "Use 'make installdirs' instead."
 	@echo $(WARN)
-	+$(MAKE) installdirs
+	+$(MAKE) $(AM_MAKEFLAGS) installdirs
 cgi build-cgi install-cgi install-cgi-dir install-cgi-bin \
 install-cgi-man install-cgi-conf install-cgi-html: 
 	@echo "Error: 'make $@' no longer exists."
