@@ -1041,6 +1041,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             # * /usr/local on macos x86
             # * /opt/homebrew on macos Apple Silicon
             if [ -n "${HOMEBREW_PREFIX-}" -a -d "${HOMEBREW_PREFIX-}" ]; then
+                echo "Homebrew: export general pkg-config location and C/C++/LD flags for the platform"
                 SYS_PKG_CONFIG_PATH="${HOMEBREW_PREFIX}/lib/pkgconfig"
                 CFLAGS="${CFLAGS-} -Wno-poison-system-directories -Wno-deprecated-declarations -isystem ${HOMEBREW_PREFIX}/include -I${HOMEBREW_PREFIX}/include"
                 #CPPFLAGS="${CPPFLAGS-} -Wno-poison-system-directories -Wno-deprecated-declarations -isystem ${HOMEBREW_PREFIX}/include -I${HOMEBREW_PREFIX}/include"
@@ -1051,8 +1052,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 # so explicit args are needed
                 checkFSobj="${HOMEBREW_PREFIX}/opt/net-snmp/lib/pkgconfig"
                 if [ -d "$checkFSobj" -a ! -e "${HOMEBREW_PREFIX}/lib/pkgconfig/netsnmp.pc" ] ; then
-                    echo "Homebrew: export flags for Net-SNMP"
+                    echo "Homebrew: export pkg-config location for Net-SNMP"
                     SYS_PKG_CONFIG_PATH="$SYS_PKG_CONFIG_PATH:$checkFSobj"
+                    #echo "Homebrew: export flags for Net-SNMP"
                     #CONFIG_OPTS+=("--with-snmp-includes=-isystem ${HOMEBREW_PREFIX}/opt/net-snmp/include -I${HOMEBREW_PREFIX}/opt/net-snmp/include")
                     #CONFIG_OPTS+=("--with-snmp-libs=-L${HOMEBREW_PREFIX}/opt/net-snmp/lib")
                 fi
