@@ -44,7 +44,9 @@
 #ifndef WIN32
 # include <arpa/inet.h>
 # include <netinet/in.h>
-# include <ifaddrs.h>
+# ifdef HAVE_IFADDRS_H
+#  include <ifaddrs.h>
+# endif
 # include <netdb.h>
 # include <sys/ioctl.h>
 # include <net/if.h>
@@ -63,13 +65,14 @@
 # include "wincompat.h"
 #endif
 
+#include "nut_stdint.h"
+
 #ifdef HAVE_PTHREAD
 # include <pthread.h>
-# ifdef HAVE_SEMAPHORE
+# if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
 #  include <semaphore.h>
 # endif
-# if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE)
-#  include "nut_stdint.h"
+# if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
 #  ifdef HAVE_SYS_RESOURCE_H
 #   include <sys/resource.h> /* for getrlimit() and struct rlimit */
 #   include <errno.h>
@@ -78,10 +81,12 @@
  * following practical investigation summarized at
  *   https://github.com/networkupstools/nut/pull/1158
  * and probably means the usual stdin/stdout/stderr triplet
+ * Another +1 is for NetSNMP which wants to open MIB files,
+ * potential per-host configuration files, etc.
  */
-#   define RESERVE_FD_COUNT 3
+#   define RESERVE_FD_COUNT 4
 #  endif /* HAVE_SYS_RESOURCE_H */
-# endif  /* HAVE_PTHREAD_TRYJOIN || HAVE_SEMAPHORE */
+# endif  /* HAVE_PTHREAD_TRYJOIN || HAVE_SEMAPHORE_UNNAMED || HAVE_SEMAPHORE_NAMED */
 #endif   /* HAVE_PTHREAD */
 
 #include "nut-scan.h"
@@ -378,6 +383,7 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 
 	upsdebugx(3, "Entering %s('%s')", __func__, arg_addr);
 
+#if defined HAVE_GETIFADDRS || (defined WIN32 && (defined HAVE_GETADAPTERSINFO || defined HAVE_GETADAPTERSADDRESSES))
 	/* Is this a `-m auto<something_optional>` mode? */
 	if (!strncmp(arg_addr, "auto", 4)) {
 		/* TODO: Maybe split later, to allow separate
@@ -453,6 +459,7 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 			*auto_nets_ptr = auto_nets;
 		}
 	}
+#endif	/* HAVE_GETIFADDRS || HAVE_GETADAPTERSINFO || HAVE_GETADAPTERSADDRESSES */
 
 	if (auto_nets < 0) {
 		/* not a supported `-m auto*` pattern => is `-m cidr` */
@@ -466,6 +473,7 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 		return;
 	}
 
+#if defined HAVE_GETIFADDRS || (defined WIN32 && (defined HAVE_GETADAPTERSINFO || defined HAVE_GETADAPTERSADDRESSES))
 	/* Handle `-m auto*` modes below */
 #ifdef HAVE_GETIFADDRS
 	upsdebugx(4, "%s: using getifaddrs()", __func__);
@@ -989,6 +997,11 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 	}
 	upsdebugx(3, "Finished %s('%s'), selected %" PRIuSIZE " subnets automatically",
 		__func__, arg_addr, auto_subnets_found);
+#else	/* not (HAVE_GETIFADDRS || ( WIN32 && (HAVE_GETADAPTERSINFO || HAVE_GETADAPTERSADDRESSES))) */
+	fatalx(EXIT_FAILURE,
+		"Have no way to query local interface addresses on this "
+		"platform, please run without the '-m auto*' options!");
+#endif	/* HAVE_GETIFADDRS || ( WIN32 && (HAVE_GETADAPTERSINFO || HAVE_GETADAPTERSADDRESSES)) */
 }
 
 static void show_usage(void)
@@ -1045,7 +1058,7 @@ static void show_usage(void)
 
 	printf("  -E, --eaton_serial <serial ports list>: Scan serial Eaton devices (XCP, SHUT and Q1).\n");
 
-#if (defined HAVE_PTHREAD) && ( (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE) )
+#if (defined HAVE_PTHREAD) && ( (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED) )
 	printf("  -T, --thread <max number of threads>: Limit the amount of scanning threads running simultaneously (default: %" PRIuSIZE ").\n", max_threads);
 #else
 	printf("  -T, --thread <max number of threads>: Limit the amount of scanning threads running simultaneously (not implemented in this build: no pthread support)\n");
@@ -1061,7 +1074,7 @@ static void show_usage(void)
 	printf("  -e, --end_ip <IP address>: Last IP address to scan.\n");
 	printf("  -m, --mask_cidr <IP address/mask>: Give a range of IP using CIDR notation.\n");
 	printf("  -m, --mask_cidr auto: Detect local IP address(es) and scan corresponding subnet(s).\n");
-#ifdef WIN32
+#if !(defined HAVE_GETIFADDRS || (defined WIN32 && (defined HAVE_GETADAPTERSINFO || defined HAVE_GETADAPTERSADDRESSES)))
 	printf("                        (Currently not implemented for this platform)\n");
 #endif
 	printf("  -m, --mask_cidr auto4/auto6: Likewise, limiting to IPv4 or IPv6 interfaces.\n");
@@ -1212,11 +1225,11 @@ int main(int argc, char *argv[])
 	void (*display_func)(nutscan_device_t * device);
 	int ret_code = EXIT_SUCCESS;
 #ifdef HAVE_PTHREAD
-# ifdef HAVE_SEMAPHORE
+# if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
 	sem_t	*current_sem;
 # endif
 #endif
-#if (defined HAVE_PTHREAD) && ( (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE) ) && (defined HAVE_SYS_RESOURCE_H)
+#if (defined HAVE_PTHREAD) && ( (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED) ) && (defined HAVE_SYS_RESOURCE_H)
 	struct rlimit nofile_limit;
 
 	/* Limit the max scanning thread count by the amount of allowed open
@@ -1245,7 +1258,7 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-#endif /* HAVE_PTHREAD && ( HAVE_PTHREAD_TRYJOIN || HAVE_SEMAPHORE ) && HAVE_SYS_RESOURCE_H */
+#endif	/* HAVE_PTHREAD && ( HAVE_PTHREAD_TRYJOIN || HAVE_SEMAPHORE_UNNAMED || HAVE_SEMAPHORE_NAMED ) && HAVE_SYS_RESOURCE_H */
 
 	memset(&snmp_sec, 0, sizeof(snmp_sec));
 	memset(&ipmi_sec, 0, sizeof(ipmi_sec));
@@ -1500,7 +1513,7 @@ int main(int argc, char *argv[])
 				port = strdup(optarg);
 				break;
 			case 'T': {
-#if (defined HAVE_PTHREAD) && ( (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE) )
+#if (defined HAVE_PTHREAD) && ( (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED) )
 				char* endptr;
 				long val = strtol(optarg, &endptr, 10);
 				/* With endptr we check that no chars were left in optarg
@@ -1644,21 +1657,40 @@ display_help:
 	}
 
 #ifdef HAVE_PTHREAD
-# if (defined HAVE_PTHREAD_TRYJOIN) && (defined HAVE_SEMAPHORE)
-	upsdebugx(1, "Parallel scan support: HAVE_PTHREAD && HAVE_PTHREAD_TRYJOIN && HAVE_SEMAPHORE");
+	{	/* scoping for the string */
+#  if defined HAVE_SEMAPHORE_UNNAMED
+		char * semsuf = "_UNNAMED";
+#  elif defined HAVE_SEMAPHORE_NAMED
+		char * semsuf = "_NAMED";
+#  else
+		char * semsuf = "*";
+#  endif
+		NUT_UNUSED_VARIABLE(semsuf);	/* just in case */
+
+# if (defined HAVE_PTHREAD_TRYJOIN) && ((defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED))
+		upsdebugx(1, "Parallel scan support: HAVE_PTHREAD && HAVE_PTHREAD_TRYJOIN && HAVE_SEMAPHORE%s", semsuf);
 # elif (defined HAVE_PTHREAD_TRYJOIN)
-	upsdebugx(1, "Parallel scan support: HAVE_PTHREAD && HAVE_PTHREAD_TRYJOIN && !HAVE_SEMAPHORE");
-# elif (defined HAVE_SEMAPHORE)
-	upsdebugx(1, "Parallel scan support: HAVE_PTHREAD && !HAVE_PTHREAD_TRYJOIN && HAVE_SEMAPHORE");
+		upsdebugx(1, "Parallel scan support: HAVE_PTHREAD && HAVE_PTHREAD_TRYJOIN && !HAVE_SEMAPHORE*");
+# elif (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
+		upsdebugx(1, "Parallel scan support: HAVE_PTHREAD && !HAVE_PTHREAD_TRYJOIN && HAVE_SEMAPHORE%s", semsuf);
 # else
-	upsdebugx(1, "Parallel scan support: HAVE_PTHREAD && !HAVE_PTHREAD_TRYJOIN && !HAVE_SEMAPHORE");
+		upsdebugx(1, "Parallel scan support: HAVE_PTHREAD && !HAVE_PTHREAD_TRYJOIN && !HAVE_SEMAPHORE*");
 # endif
-# ifdef HAVE_SEMAPHORE
+	}
+
+# if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
 	/* FIXME: Currently sem_init already done on nutscan-init for lib need.
 	   We need to destroy it before re-init. We currently can't change "sem value"
 	   on lib (need to be thread safe). */
 	current_sem = nutscan_semaphore();
+#  ifdef HAVE_SEMAPHORE_UNNAMED
 	sem_destroy(current_sem);
+#  elif defined HAVE_SEMAPHORE_NAMED
+	if (current_sem) {
+		sem_unlink(SEMNAME_TOPLEVEL);
+		sem_close(current_sem);
+	}
+#  endif
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
 #pragma GCC diagnostic push
 #endif
@@ -1678,15 +1710,27 @@ display_help:
 #pragma GCC diagnostic pop
 #endif
 		fprintf(stderr, "\n\n"
-			"WARNING: Limiting max_threads to range acceptable for sem_init()\n\n");
+			"WARNING: Limiting max_threads to range acceptable for "
+			REPORT_SEM_INIT_METHOD "()\n\n");
 		max_threads = UINT_MAX - 1;
 	}
 
 	upsdebugx(1, "Parallel scan support: max_threads=%" PRIuSIZE, max_threads);
+#  ifdef HAVE_SEMAPHORE_UNNAMED
 	if (sem_init(current_sem, 0, (unsigned int)max_threads)) {
 		/* Show this one to end-users so they know */
-		upsdebug_with_errno(0, "Parallel scan support: sem_init() failed");
+		upsdebug_with_errno(0, "Parallel scan support: " REPORT_SEM_INIT_METHOD "() failed");
 	}
+#  elif defined HAVE_SEMAPHORE_NAMED
+	/* FIXME: Do we need O_EXCL here? */
+	if (SEM_FAILED == (current_sem = sem_open(SEMNAME_TOPLEVEL, O_CREAT, 0644, (unsigned int)max_threads))) {
+		/* Show this one to end-users so they know */
+		upsdebug_with_errno(0, "Parallel scan support: " REPORT_SEM_INIT_METHOD "() failed");
+		current_sem = NULL;
+	}
+	nutscan_semaphore_set(current_sem);
+#  endif
+
 # endif
 #else
 	upsdebugx(1, "Parallel scan support: !HAVE_PTHREAD");
@@ -1975,8 +2019,14 @@ display_help:
 	nutscan_free_device(dev[TYPE_EATON_SERIAL]);
 
 #ifdef HAVE_PTHREAD
-# ifdef HAVE_SEMAPHORE
+# ifdef HAVE_SEMAPHORE_UNNAMED
 	sem_destroy(nutscan_semaphore());
+# elif defined HAVE_SEMAPHORE_NAMED
+	if (nutscan_semaphore()) {
+		sem_unlink(SEMNAME_TOPLEVEL);
+		sem_close(nutscan_semaphore());
+		nutscan_semaphore_set(NULL);
+	}
 # endif
 #endif
 

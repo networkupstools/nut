@@ -183,6 +183,10 @@ during a NUT build.
      variable support was added to optionally disable this verification.
      Also the NUT daemons should request to double-check against their
      run-time process name (if it can be detected). [issue #2463]
+   * introduced `m4` macros to check during `configure` phase for the
+     platform, and a `nut_bool.h` header with `nut_bool_t` type to use
+     during build, to avoid the numerous definitions of Boolean types
+     and values (or macros) in the NUT codebase. [issue #1176, issue #31]
 
  - various recipe, documentation and source files were revised to address
    respective warnings issued by the new generations of analysis tools.
@@ -242,6 +246,9 @@ during a NUT build.
    they should be able to parse common simple use-cases but not certain types
    of more complex configurations (e.g. some line patterns that involve too
    many double-quote characters) which are valid for NUT proper. [#657]
+
+ - Cross-builds using only a host implementation of `pkg-config` program
+   should now ignore host `*.pc` files and avoid confusion.
 
  - NUT CI farm build recipes, documentation and some `m4`/`configure.ac`
    sources updated to handle a much larger build scope on MacOS. Also

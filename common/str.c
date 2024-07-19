@@ -630,6 +630,33 @@ int str_ends_with(const char *s, const char *suff) {
 	return (slen >= sufflen) && (!memcmp(s + slen - sufflen, suff, sufflen));
 }
 
+#ifndef HAVE_STRTOF
+# include <errno.h>
+# include <stdio.h>
+float strtof(const char *nptr, char **endptr)
+{
+	double d;
+	int i;
+
+	if (!nptr || !*nptr) {
+		errno = EINVAL;
+		return 0;
+	}
+
+	i = sscanf(nptr, "%f", &d);
+	if (i < 1) {
+		errno = EINVAL;
+		return 0;
+	}
+
+	if (endptr) {
+		*endptr = (char*)nptr + i;
+	}
+
+	return (float)d;
+}
+#endif
+
 /* Based on code by "mmdemirbas" posted "Jul 9 '12 at 11:41" to forum page
  * http://stackoverflow.com/questions/8465006/how-to-concatenate-2-strings-in-c
  * This concatenates the given number of strings into one freshly allocated

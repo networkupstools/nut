@@ -45,6 +45,9 @@ endif !BUILDING_IN_TREE
 $(top_builddir)/include/nut_version.h:
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
+# FIXME: If we maintain some of those helper libs as subsets of the others
+# (strictly), maybe build the lowest common denominator only and link the
+# bigger scopes with it (rinse and repeat)?
 libcommon_la_SOURCES = state.c str.c upsconf.c
 libcommonclient_la_SOURCES = state.c str.c
 
@@ -94,6 +97,15 @@ else !HAVE_STRSEP
   libcommonstr_la_SOURCES += strsep.c
   libcommonclient_la_SOURCES += strsep.c
 endif !HAVE_STRSEP
+
+if WANT_TIMEGM_FALLBACK
+  # fall back to simple implem
+  libcommon_la_SOURCES += timegm_fallback.c
+  libcommonstr_la_SOURCES += timegm_fallback.c
+  libcommonclient_la_SOURCES += timegm_fallback.c
+else !WANT_TIMEGM_FALLBACK
+  EXTRA_DIST += timegm_fallback.c
+endif !WANT_TIMEGM_FALLBACK
 
 if HAVE_WINDOWS
   libnutwincompat_la_SOURCES = wincompat.c $(top_srcdir)/include/wincompat.h

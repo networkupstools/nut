@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3228 utf-8
+personal_ws-1.1 en 3232 utf-8
 AAC
 AAS
 ABI
@@ -207,6 +207,7 @@ CodingStyle
 Collver
 Colombier
 Comfo
+CommandLineTools
 ConfigVoltage
 ConnectUPS
 Corbelli
@@ -597,6 +598,7 @@ LOADPCT
 LOCKFN
 LOCKNAME
 LOTRANS
+LTS
 LUA
 LVM
 LYONN
@@ -1371,6 +1373,7 @@ Wrede
 XAU
 XC
 XCP
+XCode
 XLA
 XOFF
 XON
@@ -1571,6 +1574,7 @@ bitmask
 bitness
 bitnesses
 bn
+bool
 boolean
 bootable
 bp
