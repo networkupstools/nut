@@ -157,17 +157,17 @@ static info_lkp_t cps_battcharge[] = {
 
 static const char *cps_battstatus_fun(double value)
 {
-    static char	buf[8];
+	static char	buf[8];
 
-    /* assumes `UPS.PowerSummary.FullChargeCapacity` is in %, which should be for */
-    /* UPSes that conform to the USB HID spec, given how we read `battery.charge` */
-    snprintf(buf, sizeof(buf), "%.0f%%", value);
+	/* assumes `UPS.PowerSummary.FullChargeCapacity` is in %, which should be for */
+	/* UPSes that conform to the USB HID spec, given how we read `battery.charge` */
+	snprintf(buf, sizeof(buf), "%.0f%%", value);
 
-    return buf;
+	return buf;
 }
 
 static info_lkp_t cps_battstatus[] = {
-        { 0, NULL, &cps_battstatus_fun, NULL }
+	{ 0, NULL, &cps_battstatus_fun, NULL }
 };
 
 /* --------------------------------------------------------------- */
