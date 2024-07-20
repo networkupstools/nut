@@ -170,12 +170,21 @@ static info_lkp_t cps_battstatus[] = {
 	{ 0, NULL, &cps_battstatus_fun, NULL }
 };
 
+static info_lkp_t cps_sensitivity_info[] = {
+	{ 0, "low", NULL, NULL },
+	{ 1, "normal", NULL, NULL },
+	{ 2, "high", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
 /* --------------------------------------------------------------- */
 /*      Vendor-specific usage table */
 /* --------------------------------------------------------------- */
 
 /* CPS usage table */
 static usage_lkp_t cps_usage_lkp[] = {
+	{ "CPSFirmwareVersion", 0xff0100d0 },
+	{ "CPSInputSensitivity",    0xff010043 },
 	{  NULL, 0x0 }
 };
 
@@ -224,6 +233,7 @@ static hid_info_t cps_hid2nut[] = {
   { "ups.timer.start", 0, 0, "UPS.Output.DelayBeforeStartup", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
   { "ups.timer.shutdown", 0, 0, "UPS.Output.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
   { "ups.timer.reboot", 0, 0, "UPS.Output.DelayBeforeReboot", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
+  { "ups.firmware", 0, 0, "UPS.PowerSummary.CPSFirmwareVersion", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
 
   /* Special case: ups.status & ups.alarm */
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, online_info },
@@ -244,6 +254,7 @@ static hid_info_t cps_hid2nut[] = {
   /* used by CP1350EPFCLCD */
   { "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Output.LowVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
   { "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Output.HighVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+  { "input.sensitivity", ST_FLAG_RW | ST_FLAG_STRING, 0, "UPS.Output.CPSInputSensitivity", NULL, "%s", HU_FLAG_SEMI_STATIC | HU_FLAG_ENUM, cps_sensitivity_info },
 
   /* Output page */
   { "output.frequency", 0, 0, "UPS.Output.Frequency", NULL, "%.1f", 0, NULL },
