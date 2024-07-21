@@ -84,16 +84,20 @@ DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
  --with-devd-dir='$${prefix}/etc/devd'			\
  --with-pynut=app --with-nut_monitor=force
 
+# Note: trickery with prefix below is needed to expand it from
+# DISTCHECK_CONFIGURE_FLAGS defaults defined above in a manner
+# that is meaningful for sub-make program (gets stripped away
+# otherwise and breaks custom distchecks).
 distcheck-light:
-	+$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_FLAGS)" distcheck
+	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_FLAGS)" distcheck
 
 distcheck-light-man:
-	+$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_MAN_FLAGS)" distcheck
+	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_MAN_FLAGS)" distcheck
 
 # Make a distcheck (and check in particular) with enabled valgrind and debug info
 memcheck distcheck-valgrind:
 	@echo "See also scripts/valgrind in NUT sources for a helper tool"
-	+$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_VALGRIND_FLAGS)" distcheck
+	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_VALGRIND_FLAGS)" distcheck
 
 # workaround the dist generated files that are also part of the distribution
 # Note that distcleancheck is disabled for now, while waiting for a proper
@@ -458,7 +462,7 @@ install-dirs:
 	@echo "Warning: 'make install-dirs' is deprecated."
 	@echo "Use 'make installdirs' instead."
 	@echo $(WARN)
-	+$(MAKE) installdirs
+	+$(MAKE) $(AM_MAKEFLAGS) installdirs
 cgi build-cgi install-cgi install-cgi-dir install-cgi-bin \
 install-cgi-man install-cgi-conf install-cgi-html: 
 	@echo "Error: 'make $@' no longer exists."
