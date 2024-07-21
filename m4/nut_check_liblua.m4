@@ -21,31 +21,31 @@ if test -z "${nut_have_lua_seen}"; then
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"
 	LIBS_ORIG="${LIBS}"
-        CFLAGS=""
-        LIBS=""
+	CFLAGS=""
+	LIBS=""
 
-        LUA_PKGNAME=""
+	LUA_PKGNAME=""
 
 	AS_IF([test x"$have_PKG_CONFIG" = xyes],
 		[dnl See which version of the lua library (if any) is installed
 		 dnl FIXME : Support detection of cflags/ldflags below by legacy
 		 dnl discovery if pkgconfig is not there
 		 AC_MSG_CHECKING(for liblua version via pkg-config (5.1 minimum required))
-                 for V in lua lua5 lua-5 \
-                    lua51 lua5.1 lua-51 lua-5.1 \
-                    lua52 lua5.2 lua-52 lua-5.2 \
-                    lua53 lua5.3 lua-53 lua-5.3 \
-                    lua54 lua5.4 lua-54 lua-5.4 \
-                    lua55 lua5.5 lua-55 lua-5.5 \
-                 ; do
-                    LUA_VERSION="`$PKG_CONFIG --silence-errors --modversion "$V" 2>/dev/null`"
-                    if test "$?" != "0" -o -z "${LUA_VERSION}"; then
-                        LUA_VERSION="none"
-                    else
-                        LUA_PKGNAME="$V"
-                        break
-                    fi
-                 done
+		 for V in lua lua5 lua-5 \
+		    lua51 lua5.1 lua-51 lua-5.1 \
+		    lua52 lua5.2 lua-52 lua-5.2 \
+		    lua53 lua5.3 lua-53 lua-5.3 \
+		    lua54 lua5.4 lua-54 lua-5.4 \
+		    lua55 lua5.5 lua-55 lua-5.5 \
+		 ; do
+			LUA_VERSION="`$PKG_CONFIG --silence-errors --modversion "$V" 2>/dev/null`"
+			if test "$?" != "0" -o -z "${LUA_VERSION}"; then
+				LUA_VERSION="none"
+			else
+				LUA_PKGNAME="$V"
+				break
+			fi
+		 done
 		 AC_MSG_RESULT(${LUA_VERSION} found)
 		],
 		[LUA_VERSION="none"
@@ -102,10 +102,10 @@ if test -z "${nut_have_lua_seen}"; then
 	fi
 
 	if test "${nut_have_lua}" = "yes"; then
-                dnl AC_MSG_NOTICE([DEBUG: LUA:      CFLAGS='${CFLAGS}'])
-                dnl AC_MSG_NOTICE([DEBUG: LUA: LUA_INCLUDE='${LUA_INCLUDE}'])
-                dnl AC_MSG_NOTICE([DEBUG: LUA:        LIBS='${LIBS}'])
-                dnl AC_MSG_NOTICE([DEBUG: LUA:     LUA_LIB='${LUA_LIB}'])
+		dnl AC_MSG_NOTICE([DEBUG: LUA:      CFLAGS='${CFLAGS}'])
+		dnl AC_MSG_NOTICE([DEBUG: LUA: LUA_INCLUDE='${LUA_INCLUDE}'])
+		dnl AC_MSG_NOTICE([DEBUG: LUA:        LIBS='${LIBS}'])
+		dnl AC_MSG_NOTICE([DEBUG: LUA:     LUA_LIB='${LUA_LIB}'])
 		AS_IF([test x"${CFLAGS}" != x], [LIBLUA_CFLAGS="${CFLAGS}"], [LIBLUA_CFLAGS="${LUA_INCLUDE}"])
 		AS_IF([test x"${LIBS}" != x], [LIBLUA_LIBS="${LIBS}"], [LIBLUA_LIBS="${LUA_LIB}"])
 

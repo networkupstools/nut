@@ -110,15 +110,13 @@ TODO List:
 
 
 #include "main.h"
-#include <math.h>       /* For ldexp() */
-#include <float.h>      /*for FLT_MAX */
-
-#include "nut_stdint.h" /* for uint8_t, uint16_t, uint32_t, ... */
+#include "nut_float.h"	/* For ldexp(), FLT_MAX */
+#include "nut_stdint.h"	/* for uint8_t, uint16_t, uint32_t, ... */
 #include "bcmxcp_io.h"
 #include "bcmxcp.h"
 
-#define DRIVER_NAME    "BCMXCP UPS driver"
-#define DRIVER_VERSION "0.34"
+#define DRIVER_NAME	"BCMXCP UPS driver"
+#define DRIVER_VERSION	"0.35"
 
 #define MAX_NUT_NAME_LENGTH 128
 #define NUT_OUTLET_POSITION   7

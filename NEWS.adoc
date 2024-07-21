@@ -95,6 +95,10 @@ https://github.com/networkupstools/nut/milestone/11
      series (largely guessing, feedback and PRs for adaptation to actual
      string values reported by devices via USB are welcome), so these devices
      would now report `battery.voltage` and `battery.voltage.nominal`. [#2380]
+   * `powercom-hid` subdriver sent UPS shutdown commands in wrong byte order,
+     at least for devices currently in the field. A toggle was added to set
+     the old behavior (if some devices do need it), while a fix is applied
+     by default: `powercom_sdcmd_byte_order_fallback`. [PR #2480]
 
  - bicker_ser: added new driver for Bicker 12/24Vdc UPS via RS-232 serial
    communication protocol, which supports any UPS shipped with the PSZ-1053
@@ -138,8 +142,23 @@ https://github.com/networkupstools/nut/milestone/11
      we can store and try to use the file name which was present on the build
      system, while we search for a suitable library. [#2431]
 +
-NOTE: Currently both the long and short names for `libupsclient` should be
-installed.
+NOTE: A different but functionally equivalent trick is done for `libupsclient`
+during a NUT build.
+   * fixed support for IPv6 addresses (passed in square brackets) for both
+     `-s` start/`-e` end command-line options, and for `-m cidr/mask` option.
+     [issue #2512, PR #2518]
+   * newly added support to scan several IP addresses (single or ranges)
+     with the same call, by repeating command-line options; also `-m auto{,4,6}`
+     can be specified (once) to select IP (all, IPv4, IPv6) address ranges of
+     configured local network interfaces.
+     An `/ADDRLEN` suffix can be added to the option, to filter out discovered
+     subnets with too many bits available for the host address part (avoiding
+     millions of scans in the extreme cases).
+     [issue #2244, issue #2511, PR #2509, PR #2513, PR #2517]
+   * implemented parallel scanning for IPMI bus, otherwise default scan for
+     all supported buses with `-m auto` takes unbearably long. [#2523]
+   * bumped version of `libnutscan` to 2.6.0, it now includes a few more
+     methods and symbols from `libcommon`. [issue #2244, PR #2509]
 
  - common code:
    * introduced a `NUT_DEBUG_SYSLOG` environment variable to tweak activation
@@ -164,10 +183,19 @@ installed.
      variable support was added to optionally disable this verification.
      Also the NUT daemons should request to double-check against their
      run-time process name (if it can be detected). [issue #2463]
+   * introduced `m4` macros to check during `configure` phase for the
+     platform, and a `nut_bool.h` header with `nut_bool_t` type to use
+     during build, to avoid the numerous definitions of Boolean types
+     and values (or macros) in the NUT codebase. [issue #1176, issue #31]
+   * custom `distcheck-something` targets did not inherit `DISTCHECK_FLAGS`
+     properly. [#2541]
 
  - various recipe, documentation and source files were revised to address
    respective warnings issued by the new generations of analysis tools.
    [#823, #2437, link:https://github.com/networkupstools/nut-website/issues/52[nut-website issue #52]]
+
+ - added `scripts/valgrind` with a helper script and suppression file to
+   ignore common third-party problems. [#2511]
 
  - revised `nut.exe` (the NUT for Windows wrapper for all-in-one service)
    to be more helpful with command-line use (report that it failed to start
@@ -191,6 +219,15 @@ installed.
  - added a `make distcheck-light-man` recipe to require verification that the
    manual page files can be built using the prepared "tarball" archive. [#2473]
 
+ - revised the documentation building recipes, with the goal to avoid building
+   the `ChangeLog` products and their intermediate files more than once (but
+   still react to `git` metadata changes during development), and to sanity
+   check the resulting final document (currently only for `html-single` mode).
+   As part of this, the `CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR` setting was
+   added (for `make` calls and used by `tools/gitlog2changelog.py.in` script),
+   and it defaults to `true` allowing for better ordered documents at the cost
+   of some memory during document generation. [#2510]
+
  - added a `common/Makefile.am` build product for a new internal library
    `libcommonstr.la` which allows a smaller selection of helper methods
    for tools like `nut-scanner` which do not need the full `libcommon.la`
@@ -211,6 +248,9 @@ installed.
    they should be able to parse common simple use-cases but not certain types
    of more complex configurations (e.g. some line patterns that involve too
    many double-quote characters) which are valid for NUT proper. [#657]
+
+ - Cross-builds using only a host implementation of `pkg-config` program
+   should now ignore host `*.pc` files and avoid confusion.
 
  - NUT CI farm build recipes, documentation and some `m4`/`configure.ac`
    sources updated to handle a much larger build scope on MacOS. Also

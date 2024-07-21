@@ -132,12 +132,12 @@
 
 #include "main.h"
 #include "nut_libusb.h"
-#include <math.h>
+#include "nut_float.h"
 #include <ctype.h>
 #include "usb-common.h"
 
 #define DRIVER_NAME	"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.36"
+#define DRIVER_VERSION	"0.37"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {

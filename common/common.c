@@ -3092,6 +3092,9 @@ void nut_prepare_search_paths(void) {
 				dupe = 1;
 #if HAVE_DECL_REALPATH
 				free((char *)dirname);
+				/* Have some valid value, for kicks (likely
+				 * to be ignored in the code path below) */
+				dirname = search_paths_builtin[i];
 #endif
 				break;
 			}
@@ -3102,10 +3105,17 @@ void nut_prepare_search_paths(void) {
 				"existing unique directory: %s",
 				__func__, count_filtered, dirname);
 #if !HAVE_DECL_REALPATH
+			/* Make a copy of table entry, else we have
+			 * a dynamic result of realpath() made above.
+			 */
 			dirname = (const char *)xstrdup(dirname);
 #endif
 			filtered_search_paths[count_filtered++] = dirname;
-		}
+		}	/* else: dirname was freed above (for realpath)
+			 * or is a reference to the table entry; no need
+			 * to free() it either way */
+
+		closedir(dp);
 	}
 
 	/* If we mangled this before, forget the old result: */
@@ -3198,24 +3208,33 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 	char *libname_path = NULL, *libname_alias = NULL;
 	char current_test_path[LARGEBUF];
 
+	upsdebugx(3, "%s('%s', %" PRIuSIZE ", '%s', %i): Entering method...",
+		__func__, base_libname, base_libname_length, dirname, index);
+
 	memset(current_test_path, 0, LARGEBUF);
 
 	if ((dp = opendir(dirname)) == NULL) {
 		if (index >= 0) {
-			upsdebugx(5,"NOT looking for lib %s in unreachable directory #%d : %s",
-				base_libname, index, dirname);
+			upsdebugx(5, "%s: NOT looking for lib %s in "
+				"unreachable directory #%d : %s",
+				__func__, base_libname, index, dirname);
 		} else {
-			upsdebugx(5,"NOT looking for lib %s in unreachable directory : %s",
-				base_libname, dirname);
+			upsdebugx(5, "%s: NOT looking for lib %s in "
+				"unreachable directory : %s",
+				__func__, base_libname, dirname);
 		}
 		return NULL;
 	}
 
 	if (index >= 0) {
-		upsdebugx(2,"Looking for lib %s in directory #%d : %s", base_libname, index, dirname);
+		upsdebugx(4, "%s: Looking for lib %s in directory #%d : %s",
+			__func__, base_libname, index, dirname);
 	} else {
-		upsdebugx(2,"Looking for lib %s in directory : %s", base_libname, dirname);
+		upsdebugx(4, "%s: Looking for lib %s in directory : %s",
+			__func__, base_libname, dirname);
 	}
+
+	/* TODO: Try a quick stat() first? */
 	while ((dirp = readdir(dp)) != NULL)
 	{
 #if !HAVE_DECL_REALPATH
@@ -3223,7 +3242,8 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 #endif
 		int compres;
 
-		upsdebugx(5,"Comparing lib %s with dirpath entry %s", base_libname, dirp->d_name);
+		upsdebugx(5, "%s: Comparing lib %s with dirpath entry %s",
+			__func__, base_libname, dirp->d_name);
 		compres = strncmp(dirp->d_name, base_libname, base_libname_length);
 		if (compres == 0) {
 			/* avoid "*.dll.a", ".so.1.2.3" etc. */
@@ -3252,7 +3272,8 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 				for (p = current_test_path; *p != '\0' && (p - current_test_path) < LARGEBUF; p++) {
 					if (*p == '/') *p = '\\';
 				}
-				upsdebugx(3, "%s: WIN32: re-checking with %s", __func__, current_test_path);
+				upsdebugx(4, "%s: WIN32: re-checking with %s",
+					__func__, current_test_path);
 				if (stat(current_test_path, &st) == 0) {
 					if (st.st_size > 0) {
 						libname_path = xstrdup(current_test_path);
@@ -3265,7 +3286,8 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 				 * original dir, and no threading at this moment, to be safe!)
 				 * https://stackoverflow.com/a/66096983/4715872
 				 */
-				upsdebugx(3, "%s: WIN32: re-checking with %s", __func__, current_test_path + 2);
+				upsdebugx(4, "%s: WIN32: re-checking with %s",
+					__func__, current_test_path + 2);
 				if (stat(current_test_path + 2, &st) == 0) {
 					if (st.st_size > 0) {
 						libname_path = xstrdup(current_test_path + 2);
@@ -3275,9 +3297,9 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 # endif /* WIN32 */
 #endif  /* HAVE_DECL_REALPATH */
 
-			upsdebugx(2,"Candidate path for lib %s is %s (realpath %s)",
+			upsdebugx(2, "Candidate path for lib %s is %s (realpath %s)",
 				base_libname, current_test_path,
-				(libname_path!=NULL)?libname_path:"NULL");
+				NUT_STRARG(libname_path));
 			if (libname_path != NULL)
 				break;
 		}
@@ -3309,11 +3331,18 @@ static char * get_libname_in_pathset(const char* base_libname, size_t base_libna
 	char *onedir = NULL;
 	char* pathset_tmp;
 
+	upsdebugx(3, "%s('%s', %" PRIuSIZE ", '%s', %i): Entering method...",
+		__func__, base_libname, base_libname_length,
+		NUT_STRARG(pathset),
+		counter ? *counter : -1);
+
 	if (!pathset || *pathset == '\0')
 		return NULL;
 
 	/* First call to tokenization passes the string, others pass NULL */
 	pathset_tmp = xstrdup(pathset);
+	upsdebugx(4, "%s: Looking for lib %s in a colon-separated path set",
+		__func__, base_libname);
 	while (NULL != (onedir = strtok( (onedir ? NULL : pathset_tmp), ":" ))) {
 		libname_path = get_libname_in_dir(base_libname, base_libname_length, onedir, (*counter)++);
 		if (libname_path != NULL)
@@ -3326,6 +3355,8 @@ static char * get_libname_in_pathset(const char* base_libname, size_t base_libna
 	pathset_tmp = xstrdup(pathset);
 	if (!libname_path) {
 		onedir = NULL; /* probably is NULL already, but better ensure this */
+		upsdebugx(4, "%s: WIN32: Looking for lib %s in a semicolon-separated path set",
+			__func__, base_libname);
 		while (NULL != (onedir = strtok( (onedir ? NULL : pathset_tmp), ";" ))) {
 			libname_path = get_libname_in_dir(base_libname, base_libname_length, onedir, (*counter)++);
 			if (libname_path != NULL)
@@ -3347,16 +3378,21 @@ char * get_libname(const char* base_libname)
 	size_t base_libname_length = strlen(base_libname);
 	struct stat	st;
 
+	upsdebugx(3, "%s('%s'): Entering method...", __func__, base_libname);
+
 	/* First, check for an exact hit by absolute/relative path
 	 * if `base_libname` includes path separator character(s) */
 	if (xbasename(base_libname) != base_libname) {
+		upsdebugx(4, "%s: Looking for lib %s by exact hit...",
+			__func__, base_libname);
 #if HAVE_DECL_REALPATH
 		/* allocates the buffer we free() later */
 		libname_path = realpath(base_libname, NULL);
 		if (libname_path != NULL) {
 			if (stat(libname_path, &st) == 0) {
 				if (st.st_size > 0) {
-					upsdebugx(2, "Looking for lib %s, found by exact hit", base_libname);
+					upsdebugx(2, "Looking for lib %s, found by exact hit",
+						base_libname);
 					goto found;
 				}
 			}
@@ -3371,7 +3407,8 @@ char * get_libname(const char* base_libname)
 		if (stat(base_libname, &st) == 0) {
 			if (st.st_size > 0) {
 				libname_path = xstrdup(base_libname);
-				upsdebugx(2, "Looking for lib %s, found by exact hit", base_libname);
+				upsdebugx(2, "Looking for lib %s, found by exact hit",
+					base_libname);
 				goto found;
 			}
 		}
@@ -3380,25 +3417,36 @@ char * get_libname(const char* base_libname)
 	/* Normally these envvars should not be set, but if the user insists,
 	 * we should prefer the override... */
 #ifdef BUILD_64
+	upsdebugx(4, "%s: Looking for lib %s by path-set LD_LIBRARY_PATH_64...",
+		__func__, base_libname);
 	libname_path = get_libname_in_pathset(base_libname, base_libname_length, getenv("LD_LIBRARY_PATH_64"), &counter);
 	if (libname_path != NULL) {
-		upsdebugx(2, "Looking for lib %s, found in LD_LIBRARY_PATH_64", base_libname);
+		upsdebugx(2, "Looking for lib %s, found in LD_LIBRARY_PATH_64",
+			base_libname);
 		goto found;
 	}
 #else
+	upsdebugx(4, "%s: Looking for lib %s by path-set LD_LIBRARY_PATH_32...",
+		__func__, base_libname);
 	libname_path = get_libname_in_pathset(base_libname, base_libname_length, getenv("LD_LIBRARY_PATH_32"), &counter);
 	if (libname_path != NULL) {
-		upsdebugx(2, "Looking for lib %s, found in LD_LIBRARY_PATH_32", base_libname);
+		upsdebugx(2, "Looking for lib %s, found in LD_LIBRARY_PATH_32",
+			base_libname);
 		goto found;
 	}
 #endif
 
+	upsdebugx(4, "%s: Looking for lib %s by path-set LD_LIBRARY_PATH...",
+		__func__, base_libname);
 	libname_path = get_libname_in_pathset(base_libname, base_libname_length, getenv("LD_LIBRARY_PATH"), &counter);
 	if (libname_path != NULL) {
-		upsdebugx(2, "Looking for lib %s, found in LD_LIBRARY_PATH", base_libname);
+		upsdebugx(2, "Looking for lib %s, found in LD_LIBRARY_PATH",
+			base_libname);
 		goto found;
 	}
 
+	upsdebugx(4, "%s: Looking for lib %s by search_paths[]...",
+		__func__, base_libname);
 	for (index = 0 ; (search_paths[index] != NULL) && (libname_path == NULL) ; index++)
 	{
 		libname_path = get_libname_in_dir(base_libname, base_libname_length, search_paths[index], counter++);
@@ -3413,17 +3461,23 @@ char * get_libname(const char* base_libname)
 	if (!libname_path) {
 		/* First check near the EXE (if executing it from another
 		 * working directory) */
+		upsdebugx(4, "%s: WIN32: Looking for lib %s near EXE...",
+			__func__, base_libname);
 		libname_path = get_libname_in_dir(base_libname, base_libname_length, getfullpath(NULL), counter++);
 	}
 
 # ifdef PATH_LIB
 	if (!libname_path) {
+		upsdebugx(4, "%s: WIN32: Looking for lib %s via PATH_LIB...",
+			__func__, base_libname);
 		libname_path = get_libname_in_dir(base_libname, base_libname_length, getfullpath(PATH_LIB), counter++);
 	}
 # endif
 
 	if (!libname_path) {
 		/* Resolve "lib" dir near the one with current executable ("bin" or "sbin") */
+		upsdebugx(4, "%s: WIN32: Looking for lib %s in a 'lib' dir near EXE...",
+			__func__, base_libname);
 		libname_path = get_libname_in_dir(base_libname, base_libname_length, getfullpath("/../lib"), counter++);
 	}
 #endif  /* WIN32 so far */
@@ -3432,13 +3486,15 @@ char * get_libname(const char* base_libname)
 	/* Windows-specific: DLLs can be provided by common "PATH" envvar,
 	 * at lowest search priority though (after EXE dir, system, etc.) */
 	if (!libname_path) {
-		upsdebugx(2, "Looking for lib %s in PATH", base_libname);
+		upsdebugx(4, "%s: WIN32: Looking for lib %s in PATH",
+			__func__, base_libname);
 		libname_path = get_libname_in_pathset(base_libname, base_libname_length, getenv("PATH"), &counter);
 	}
 #endif  /* WIN32 */
 
 found:
-	upsdebugx(1,"Looking for lib %s, found %s", base_libname, (libname_path!=NULL)?libname_path:"NULL");
+	upsdebugx(1, "Looking for lib %s, found %s",
+		base_libname, NUT_STRARG(libname_path));
 	return libname_path;
 }
 

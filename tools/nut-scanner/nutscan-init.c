@@ -2,7 +2,7 @@
  *  Copyright (C) 2011 - 2024 Arnaud Quette (Design and part of implementation)
  *  Copyright (C) 2011 - 2021 EATON
  *  Copyright (C) 2016 - 2021 Jim Klimov <EvgenyKlimov@eaton.com>
- *  Copyright (C) 2022 - 2024 Jim Klimov <jimklimov+nut@gmail.com>
+ *  Copyright (C) 2021 - 2024 Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -35,14 +35,16 @@
 #include <string.h>
 #include "nut-scan.h"
 #include "nut_platform.h"
+#include "nut_stdint.h"
+
+/* Note: generated during build in $(top_builddir)/clients/
+ * and should be ensured to be here at the right moment by
+ * the nut-scanner Makefile. */
+#include "libupsclient-version.h"
 
 #ifdef WIN32
-# define SOEXT ".dll"
-#else
-# ifdef NUT_PLATFORM_APPLE_OSX
-#  define SOEXT ".dylib"
-# else	/* not WIN32, not MACOS */
-#  define SOEXT ".so"
+# if defined HAVE_WINSOCK2_H && HAVE_WINSOCK2_H
+#  include <winsock2.h>
 # endif
 #endif
 
@@ -57,15 +59,22 @@ int nutscan_avail_snmp = 0;
 int nutscan_avail_usb = 0;
 int nutscan_avail_xml_http = 0;
 
+/* Methods defined in scan_*.c source files */
 int nutscan_load_usb_library(const char *libname_path);
+int nutscan_unload_usb_library(void);
 int nutscan_load_snmp_library(const char *libname_path);
+int nutscan_unload_snmp_library(void);
 int nutscan_load_neon_library(const char *libname_path);
+int nutscan_unload_neon_library(void);
 int nutscan_load_avahi_library(const char *libname_path);
+int nutscan_unload_avahi_library(void);
 int nutscan_load_ipmi_library(const char *libname_path);
+int nutscan_unload_ipmi_library(void);
 int nutscan_load_upsclient_library(const char *libname_path);
+int nutscan_unload_upsclient_library(void);
 
 #ifdef HAVE_PTHREAD
-# ifdef HAVE_SEMAPHORE
+# ifdef HAVE_SEMAPHORE_UNNAMED
 /* Shared by library consumers, exposed by nutscan_semaphore() below */
 static sem_t semaphore;
 
@@ -73,13 +82,33 @@ sem_t * nutscan_semaphore(void)
 {
 	return &semaphore;
 }
-# endif /* HAVE_SEMAPHORE */
+
+void nutscan_semaphore_set(sem_t *s)
+{
+	NUT_UNUSED_VARIABLE(s);
+}
+# elif defined HAVE_SEMAPHORE_NAMED
+/* Shared by library consumers, exposed by nutscan_semaphore() below.
+ * Methods like sem_open() return the pointer and sem_close() frees its data.
+ */
+static sem_t *semaphore = NULL;	/* TOTHINK: maybe SEM_FAILED? */
+
+sem_t * nutscan_semaphore(void)
+{
+	return semaphore;
+}
+
+void nutscan_semaphore_set(sem_t *s)
+{
+	semaphore = s;
+}
+# endif /* HAVE_SEMAPHORE_UNNAMED || HAVE_SEMAPHORE_NAMED */
 
 # ifdef HAVE_PTHREAD_TRYJOIN
 pthread_mutex_t threadcount_mutex;
 # endif
 
-# if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE)
+# if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
 /* We have 3 networked scan types: nut, snmp, xml,
  * and users typically give their /24 subnet as "-m" arg.
  * With some systems having a 1024 default (u)limit to
@@ -102,8 +131,9 @@ size_t max_threads_netsnmp = 0; /* 10240; */
 	 * Still, some practical limit can be useful (configurable?)
 	 * Here 0 means to not apply any special limit (beside max_threads).
 	 */
+size_t max_threads_ipmi = 0;	/* limits not yet known */
 
-# endif  /* HAVE_PTHREAD_TRYJOIN || HAVE_SEMAPHORE */
+# endif  /* HAVE_PTHREAD_TRYJOIN || HAVE_SEMAPHORE_UNNAMED || HAVE_SEMAPHORE_NAMED */
 
 #endif /* HAVE_PTHREAD */
 
@@ -120,6 +150,13 @@ void nutscan_init(void)
 {
 	char *libname = NULL;
 
+#ifdef WIN32
+	/* Required ritual before calling any socket functions */
+	WSADATA WSAdata;
+	WSAStartup(2,&WSAdata);
+	atexit((void(*)(void))WSACleanup);
+#endif
+
 	/* Optional filter to not walk things twice */
 	nut_prepare_search_paths();
 
@@ -131,7 +168,7 @@ void nutscan_init(void)
  * and the more naive but portable methods be an
  * if-else proposition? At least when initializing?
  */
-# ifdef HAVE_SEMAPHORE
+# if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
 	/* NOTE: This semaphore may get re-initialized in nut-scanner program
 	 * after parsing command-line arguments. It calls nutscan_init() before
 	 * parsing CLI, to know about available libs and to set defaults below.
@@ -155,11 +192,24 @@ void nutscan_init(void)
 #pragma GCC diagnostic pop
 #endif
 		upsdebugx(1,
-			"WARNING: %s: Limiting max_threads to range acceptable for sem_init()",
+			"WARNING: %s: Limiting max_threads to range acceptable for " REPORT_SEM_INIT_METHOD "()",
 			__func__);
 		max_threads = UINT_MAX - 1;
 	}
-	sem_init(&semaphore, 0, (unsigned int)max_threads);
+
+	upsdebugx(1, "%s: Parallel scan support: max_threads=%" PRIuSIZE,
+		__func__, max_threads);
+#  ifdef HAVE_SEMAPHORE_UNNAMED
+	if (sem_init(&semaphore, 0, (unsigned int)max_threads)) {
+		upsdebug_with_errno(4, "%s: Parallel scan support: " REPORT_SEM_INIT_METHOD "() failed", __func__);
+	}
+#  elif defined HAVE_SEMAPHORE_NAMED
+	/* FIXME: Do we need O_EXCL here? */
+	if (SEM_FAILED == (semaphore = sem_open(SEMNAME_TOPLEVEL, O_CREAT, 0644, (unsigned int)max_threads))) {
+		upsdebug_with_errno(4, "%s: Parallel scan support: " REPORT_SEM_INIT_METHOD "() failed", __func__);
+		semaphore = NULL;
+	}
+#  endif
 # endif
 
 # ifdef HAVE_PTHREAD_TRYJOIN
@@ -525,12 +575,22 @@ void nutscan_init(void)
 #endif	/* WITH_FREEIPMI */
 
 /* start of libupsclient for "old NUT" (vs. Avahi) protocol - unconditional */
+#ifdef SOFILE_LIBUPSCLIENT
+	if (!libname) {
+		libname = get_libname(SOFILE_LIBUPSCLIENT);
+	}
+#endif	/* SOFILE_LIBUPSCLIENT */
 	if (!libname) {
 		libname = get_libname("libupsclient" SOEXT);
 	}
+#ifdef SOPATH_LIBUPSCLIENT
+	if (!libname) {
+		libname = get_libname(SOPATH_LIBUPSCLIENT);
+	}
+#endif	/* SOPATH_LIBUPSCLIENT */
 #ifdef WIN32
-	/* TODO: Detect DLL name at build time, or rename it at install time? */
-	/* e.g. see clients/Makefile.am for version-info value */
+	/* NOTE: Normally we should detect DLL name at build time,
+	 * see clients/Makefile.am for libupsclient-version.h */
 	if (!libname) {
 		libname = get_libname("libupsclient-6" SOEXT);
 	}
@@ -549,6 +609,11 @@ void nutscan_init(void)
 		upsdebugx(1, "%s: get_libname() did not resolve libname for %s, "
 			"trying to load it with libtool default resolver",
 			__func__, "NUT Client library");
+#ifdef SOFILE_LIBUPSCLIENT
+		if (!nutscan_avail_nut) {
+			nutscan_avail_xml_http = nutscan_load_upsclient_library(SOFILE_LIBUPSCLIENT);
+		}
+#endif	/* SOFILE_LIBUPSCLIENT */
 		nutscan_avail_nut = nutscan_load_upsclient_library("libupsclient" SOEXT);
 #ifdef WIN32
 		if (!nutscan_avail_nut) {
@@ -558,6 +623,11 @@ void nutscan_init(void)
 			nutscan_avail_nut = nutscan_load_upsclient_library("libupsclient-3" SOEXT);
 		}
 #endif	/* WIN32 */
+#ifdef SOPATH_LIBUPSCLIENT
+		if (!nutscan_avail_nut) {
+			nutscan_avail_xml_http = nutscan_load_upsclient_library(SOPATH_LIBUPSCLIENT);
+		}
+#endif	/* SOFILE_LIBUPSCLIENT */
 	}
 	upsdebugx(1, "%s: %s to load the library for %s",
 		__func__, nutscan_avail_nut ? "succeeded" : "failed", "NUT Client library");
@@ -567,34 +637,79 @@ void nutscan_init(void)
 /* start of "NUT Simulation" - unconditional */
 /* no need for additional library */
 	nutscan_avail_nut_simulation = 1;
+}
 
+/* Return 0 on success, -1 on error e.g. "was not loaded";
+ * other values may be possible if lt_dlclose() errors set them;
+ * visible externally to scan_* modules */
+int nutscan_unload_library(int *avail, lt_dlhandle *pdl_handle, char **libpath);
+int nutscan_unload_library(int *avail, lt_dlhandle *pdl_handle, char **libpath)
+{
+	int ret = -1;
+
+	if (avail == NULL || pdl_handle == NULL) {
+		upsdebugx(1, "%s: called with bad inputs, no-op", __func__);
+		return -2;
+	}
+
+	/* never tried/already unloaded */
+	if (*pdl_handle == NULL) {
+		goto end;
+	}
+
+	/* if previous init failed */
+	if (*pdl_handle == (void *)1) {
+		goto end;
+	}
+
+	if (*avail == 0) {
+		upsdebugx(1, "%s: Asked to unload a module %p "
+			"for %s but our flag says it is not loaded",
+			__func__, (void *)(*pdl_handle),
+			(libpath && *libpath && **libpath)
+			? *libpath
+			: "<unidentified module>");
+	}
+
+	/* init has already been done */
+	if (libpath && *libpath && **libpath) {
+		upsdebugx(1, "%s: unloading module %s",
+			__func__, *libpath);
+	}
+	ret = lt_dlclose(*pdl_handle);
+	lt_dlexit();
+
+end:
+	*pdl_handle = NULL;
+	*avail = 0;
+
+	if (libpath && *libpath) {
+		free(*libpath);
+		*libpath = NULL;
+	}
+
+	return ret;
 }
 
 void nutscan_free(void)
 {
-	if (nutscan_avail_usb) {
-		lt_dlexit();
-	}
-	if (nutscan_avail_snmp) {
-		lt_dlexit();
-	}
-	if (nutscan_avail_xml_http) {
-		lt_dlexit();
-	}
-	if (nutscan_avail_avahi) {
-		lt_dlexit();
-	}
-	if (nutscan_avail_ipmi) {
-		lt_dlexit();
-	}
-	if (nutscan_avail_nut) {
-		lt_dlexit();
-	}
+	nutscan_unload_usb_library();
+	nutscan_unload_snmp_library();
+	nutscan_unload_neon_library();
+	nutscan_unload_avahi_library();
+	nutscan_unload_ipmi_library();
+	nutscan_unload_upsclient_library();
 
 #ifdef HAVE_PTHREAD
 /* TOTHINK: See comments near mutex/semaphore init code above */
-# ifdef HAVE_SEMAPHORE
+# ifdef HAVE_SEMAPHORE_UNNAMED
 	sem_destroy(nutscan_semaphore());
+# elif defined HAVE_SEMAPHORE_NAMED
+	if (nutscan_semaphore()) {
+		sem_unlink(SEMNAME_TOPLEVEL);
+		sem_close(nutscan_semaphore());
+		nutscan_semaphore_set(NULL);
+	}
 # endif
 
 # ifdef HAVE_PTHREAD_TRYJOIN

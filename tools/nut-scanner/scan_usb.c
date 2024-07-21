@@ -1,5 +1,6 @@
 /*
  *  Copyright (C) 2011-2016 - EATON
+ *  Copyright (C) 2020-2024 - Jim Klimov <jimklimov+nut@gmail.com> - support and modernization of codebase
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,7 +26,11 @@
 #include "common.h"
 #include "nut-scan.h"
 
+/* externally visible to nutscan-init */
+int nutscan_unload_usb_library(void);
+
 #ifdef WITH_USB
+
 #include "upsclient.h"
 #include "nutscan-usb.h"
 #include <stdio.h>
@@ -35,6 +40,8 @@
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
+static char *dl_saved_libname = NULL;
+
 static int (*nut_usb_close)(libusb_device_handle *dev);
 static int (*nut_usb_get_string_simple)(libusb_device_handle *dev, int index,
 		char *buf, size_t buflen);
@@ -42,10 +49,10 @@ static int (*nut_usb_get_string_simple)(libusb_device_handle *dev, int index,
 
 /* Compatibility layer between libusb 0.1 and 1.0 */
 #if WITH_LIBUSB_1_0
- #define USB_INIT_SYMBOL "libusb_init"
- #define USB_OPEN_SYMBOL "libusb_open"
- #define USB_CLOSE_SYMBOL "libusb_close"
- #define USB_STRERROR_SYMBOL "libusb_strerror"
+# define USB_INIT_SYMBOL "libusb_init"
+# define USB_OPEN_SYMBOL "libusb_open"
+# define USB_CLOSE_SYMBOL "libusb_close"
+# define USB_STRERROR_SYMBOL "libusb_strerror"
  static int (*nut_usb_open)(libusb_device *dev, libusb_device_handle **handle);
  static int (*nut_usb_init)(libusb_context **ctx);
  static void (*nut_usb_exit)(libusb_context *ctx);
@@ -58,10 +65,10 @@ static int (*nut_usb_get_string_simple)(libusb_device_handle *dev, int index,
  static int (*nut_usb_get_device_descriptor)(libusb_device *dev,
 	struct libusb_device_descriptor *desc);
 #else /* => WITH_LIBUSB_0_1 */
- #define USB_INIT_SYMBOL "usb_init"
- #define USB_OPEN_SYMBOL "usb_open"
- #define USB_CLOSE_SYMBOL "usb_close"
- #define USB_STRERROR_SYMBOL "usb_strerror"
+# define USB_INIT_SYMBOL "usb_init"
+# define USB_OPEN_SYMBOL "usb_open"
+# define USB_CLOSE_SYMBOL "usb_close"
+# define USB_STRERROR_SYMBOL "usb_strerror"
  static libusb_device_handle * (*nut_usb_open)(struct usb_device *dev);
  static void (*nut_usb_init)(void);
  static int (*nut_usb_find_busses)(void);
@@ -74,7 +81,16 @@ static int (*nut_usb_get_string_simple)(libusb_device_handle *dev, int index,
  static char * (*nut_usb_strerror)(void);
 #endif /* WITH_LIBUSB_1_0 */
 
-/* return 0 on error; visible externally */
+/* Return 0 on success, -1 on error e.g. "was not loaded";
+ * other values may be possible if lt_dlclose() errors set them;
+ * visible externally */
+int nutscan_unload_library(int *avail, lt_dlhandle *pdl_handle, char **libpath);
+int nutscan_unload_usb_library(void)
+{
+	return nutscan_unload_library(&nutscan_avail_usb, &dl_handle, &dl_saved_libname);
+}
+
+/* Return 0 on error; visible externally */
 int nutscan_load_usb_library(const char *libname_path);
 int nutscan_load_usb_library(const char *libname_path)
 {
@@ -88,12 +104,12 @@ int nutscan_load_usb_library(const char *libname_path)
 	}
 
 	if (libname_path == NULL) {
-		fprintf(stderr, "USB library not found. USB search disabled.\n");
+		upsdebugx(0, "USB library not found. USB search disabled.");
 		return 0;
 	}
 
 	if (lt_dlinit() != 0) {
-		fprintf(stderr, "Error initializing lt_init\n");
+		upsdebugx(0, "%s: Error initializing lt_dlinit", __func__);
 		return 0;
 	}
 
@@ -102,7 +118,9 @@ int nutscan_load_usb_library(const char *libname_path)
 			dl_error = lt_dlerror();
 			goto err;
 	}
-	lt_dlerror();      /* Clear any existing error */
+
+	/* Clear any existing error */
+	lt_dlerror();
 
 	*(void **) (&nut_usb_init) = lt_dlsym(dl_handle, USB_INIT_SYMBOL);
 	if ((dl_error = lt_dlerror()) != NULL) {
@@ -165,10 +183,10 @@ int nutscan_load_usb_library(const char *libname_path)
 	*(void **) (&nut_usb_get_port_number) = lt_dlsym(dl_handle,
 					"libusb_get_port_number");
 	if ((dl_error = lt_dlerror()) != NULL) {
-			fprintf(stderr,
+			upsdebugx(0, "WARNING: %s: "
 				"While loading USB library (%s), failed to find libusb_get_port_number() : %s. "
-				"The \"busport\" USB matching option will be disabled.\n",
-				libname_path, dl_error);
+				"The \"busport\" USB matching option will be disabled.",
+				__func__, libname_path, dl_error);
 			nut_usb_get_port_number = NULL;
 	}
 
@@ -217,14 +235,22 @@ int nutscan_load_usb_library(const char *libname_path)
 	}
 #endif /* WITH_LIBUSB_1_0 */
 
+	if (dl_saved_libname)
+		free(dl_saved_libname);
+	dl_saved_libname = xstrdup(libname_path);
+
 	return 1;
 
 err:
-	fprintf(stderr,
-		"Cannot load USB library (%s) : %s. USB search disabled.\n",
+	upsdebugx(0,
+		"Cannot load USB library (%s) : %s. USB search disabled.",
 		libname_path, dl_error);
 	dl_handle = (void *)1;
 	lt_dlexit();
+	if (dl_saved_libname) {
+		free(dl_saved_libname);
+		dl_saved_libname = NULL;
+	}
 	return 0;
 }
 /* end of dynamic link library stuff */
@@ -422,9 +448,12 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 #if WITH_LIBUSB_1_0
 				ret = (*nut_usb_open)(dev, &udev);
 				if (!udev || ret != LIBUSB_SUCCESS) {
-					fprintf(stderr, "Failed to open device "
-						"bus '%s' device/port '%s' bus/port '%s', skipping: %s\n",
-						busname, device_port, bus_port,
+					upsdebugx(0, "WARNING: %s: "
+						"Failed to open device "
+						"bus '%s' device/port '%s' "
+						"bus/port '%s', skipping: %s",
+						__func__, busname,
+						device_port, bus_port,
 						(*nut_usb_strerror)(ret));
 
 					/* Note: closing is not applicable
@@ -446,9 +475,10 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 				udev = (*nut_usb_open)(dev);
 				if (!udev) {
 					/* TOTHINK: any errno or similar to test? */
-					fprintf(stderr, "Failed to open device "
-						"bus '%s' device/port '%s', skipping: %s\n",
-						busname, device_port,
+					upsdebugx(0, "WARNING: %s: "
+						"Failed to open device "
+						"bus '%s' device/port '%s', skipping: %s",
+						__func__, busname, device_port,
 						(*nut_usb_strerror)());
 					continue;
 				}
@@ -528,8 +558,7 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 
 				nut_dev = nutscan_new_device();
 				if (nut_dev == NULL) {
-					fprintf(stderr,
-						"Memory allocation error\n");
+					upsdebugx(0, "%s: Memory allocation error", __func__);
 					nutscan_free_device(current_nut_dev);
 					free(serialnumber);
 					free(device_name);
@@ -661,4 +690,9 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 	return NULL;
 }
 
+
+int nutscan_unload_usb_library(void)
+{
+	return 0;
+}
 #endif /* WITH_USB */

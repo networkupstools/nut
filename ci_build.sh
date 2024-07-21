@@ -553,8 +553,10 @@ configure_nut() {
       echo "=== CC='$CC' CXX='$CXX' CPP='$CPP'"
       [ -z "${CI_SHELL_IS_FLAKY-}" ] || echo "=== CI_SHELL_IS_FLAKY='$CI_SHELL_IS_FLAKY'"
       $CI_TIME $CONFIGURE_SCRIPT "${CONFIG_OPTS[@]}" \
+      && echo "$0: configure phase complete (0)" >&2 \
       && return 0 \
       || { RES_CFG=$?
+        echo "$0: configure phase complete ($RES_CFG)" >&2
         echo "FAILED ($RES_CFG) to configure nut, will dump config.log in a second to help troubleshoot CI" >&2
         echo "    (or press Ctrl+C to abort now if running interactively)" >&2
         sleep 5
@@ -586,6 +588,12 @@ build_to_only_catch_errors_target() {
 
     # Sub-shells to avoid crashing with "unhandled" faults in "set -e" mode:
     ( echo "`date`: Starting the parallel build attempt (quietly to build what we can) for '$@' ..."; \
+      if [ -n "$PARMAKE_FLAGS" ]; then
+        echo "For parallel builds, '$PARMAKE_FLAGS' options would be used"
+      fi
+      if [ -n "$MAKEFLAGS" ]; then
+        echo "Generally, MAKEFLAGS='$MAKEFLAGS' options would be passed"
+      fi
       ( case "${CI_PARMAKE_VERBOSITY}" in
         silent)
           # Note: stderr would still expose errors and warnings (needed for
@@ -1033,6 +1041,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             # * /usr/local on macos x86
             # * /opt/homebrew on macos Apple Silicon
             if [ -n "${HOMEBREW_PREFIX-}" -a -d "${HOMEBREW_PREFIX-}" ]; then
+                echo "Homebrew: export general pkg-config location and C/C++/LD flags for the platform"
                 SYS_PKG_CONFIG_PATH="${HOMEBREW_PREFIX}/lib/pkgconfig"
                 CFLAGS="${CFLAGS-} -Wno-poison-system-directories -Wno-deprecated-declarations -isystem ${HOMEBREW_PREFIX}/include -I${HOMEBREW_PREFIX}/include"
                 #CPPFLAGS="${CPPFLAGS-} -Wno-poison-system-directories -Wno-deprecated-declarations -isystem ${HOMEBREW_PREFIX}/include -I${HOMEBREW_PREFIX}/include"
@@ -1043,8 +1052,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 # so explicit args are needed
                 checkFSobj="${HOMEBREW_PREFIX}/opt/net-snmp/lib/pkgconfig"
                 if [ -d "$checkFSobj" -a ! -e "${HOMEBREW_PREFIX}/lib/pkgconfig/netsnmp.pc" ] ; then
-                    echo "Homebrew: export flags for Net-SNMP"
+                    echo "Homebrew: export pkg-config location for Net-SNMP"
                     SYS_PKG_CONFIG_PATH="$SYS_PKG_CONFIG_PATH:$checkFSobj"
+                    #echo "Homebrew: export flags for Net-SNMP"
                     #CONFIG_OPTS+=("--with-snmp-includes=-isystem ${HOMEBREW_PREFIX}/opt/net-snmp/include -I${HOMEBREW_PREFIX}/opt/net-snmp/include")
                     #CONFIG_OPTS+=("--with-snmp-libs=-L${HOMEBREW_PREFIX}/opt/net-snmp/lib")
                 fi
@@ -1513,7 +1523,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             # e.g. distcheck-light, distcheck-valgrind, cppcheck, maybe
             # others later, as defined in Makefile.am:
             BUILD_TGT="`echo "$BUILD_TYPE" | sed 's,^default-tgt:,,'`"
-            echo "`date`: Starting the sequential build attempt for singular target $BUILD_TGT..."
+            if [ -n "${PARMAKE_FLAGS}" ]; then
+                echo "`date`: Starting the parallel build attempt for singular target $BUILD_TGT..."
+            else
+                echo "`date`: Starting the sequential build attempt for singular target $BUILD_TGT..."
+            fi
 
             # Note: Makefile.am already sets some default DISTCHECK_CONFIGURE_FLAGS
             # that include DISTCHECK_FLAGS if provided
@@ -2129,11 +2143,23 @@ bindings)
         CONFIG_OPTS+=("--with-python=${PYTHON}")
     fi
 
-    ${CONFIGURE_SCRIPT} "${CONFIG_OPTS[@]}"
+    RES_CFG=0
+    ${CONFIGURE_SCRIPT} "${CONFIG_OPTS[@]}" \
+    || RES_CFG=$?
+    echo "$0: configure phase complete ($RES_CFG)" >&2
+    [ x"$RES_CFG" = x0 ] || exit $RES_CFG
 
     # NOTE: Currently parallel builds are expected to succeed (as far
     # as recipes are concerned), and the builds without a BUILD_TYPE
     # are aimed at developer iterations so not tweaking verbosity.
+    echo "Configuration finished, starting make" >&2
+    if [ -n "$PARMAKE_FLAGS" ]; then
+        echo "For parallel builds, '$PARMAKE_FLAGS' options would be used" >&2
+    fi
+    if [ -n "$MAKEFLAGS" ]; then
+        echo "Generally, MAKEFLAGS='$MAKEFLAGS' options would be passed" >&2
+    fi
+
     #$MAKE all || \
     $MAKE $PARMAKE_FLAGS all || exit
     if [ "${CI_SKIP_CHECK}" != true ] ; then $MAKE check || exit ; fi
