@@ -51,6 +51,10 @@ if WITH_AUGLENS
 
  auglenstests_DATA = \
     tests/test_nut.aug
+else
+ EXTRA_DIST += \
+    nuthostsconf.aug.in  nutupsconf.aug.in   nutupsdusers.aug.in   nutupsschedconf.aug.in \
+    nutnutconf.aug.in    nutupsdconf.aug.in  nutupsmonconf.aug.in  nutupssetconf.aug.in
 endif
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp

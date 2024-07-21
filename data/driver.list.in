@@ -254,6 +254,7 @@
 "Cyber Power Systems"	"ups"	"3"	"CP1500AVRLCD"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"3"	"CP850PFCLCD"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/605
 "Cyber Power Systems"	"ups"	"3"	"CP1350PFCLCD"	"USB"	"usbhid-ups"	# https://alioth-lists.debian.net/pipermail/nut-upsuser/2023-October/013441.html
+"Cyber Power Systems"	"ups"	"3"	"CP1350EPFCLCD"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"3"	"CP1500PFCLCD"	"USB"	"usbhid-ups"	# https://www.cyberpowersystems.com/product/ups/cp1500pfclcd/ https://github.com/networkupstools/nut/issues/520
 "Cyber Power Systems"	"ups"	"3"	"CPJ500"	"USB"	"usbhid-ups"	# https://www.cyberpower.com/jp/ja/product/sku/cpj500#downloads https://github.com/networkupstools/nut/issues/1403
 "Cyber Power Systems"	"ups"	"3"	"CP900AVR"	"USB"	"usbhid-ups"

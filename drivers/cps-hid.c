@@ -4,6 +4,7 @@
  *  2003 - 2008 Arnaud Quette <arnaud.quette@free.fr>
  *  2005 - 2006 Peter Selinger <selinger@users.sourceforge.net>
  *  2020 - 2024 Jim Klimov <jimklimov+nut@gmail.com>
+ *  2024        Alejandro González <me@alegon.dev>
  *
  *  Note: this subdriver was initially generated as a "stub" by the
  *  gen-usbhid-subdriver script. It must be customized.
@@ -31,7 +32,7 @@
 #include "cps-hid.h"
 #include "usb-common.h"
 
-#define CPS_HID_VERSION      "CyberPower HID 0.80"
+#define CPS_HID_VERSION      "CyberPower HID 0.81"
 
 /* Cyber Power Systems */
 #define CPS_VENDORID 0x0764
@@ -77,7 +78,7 @@ static usb_device_id_t cps_usb_device_table[] = {
 	{ USB_DEVICE(CPS_VENDORID, 0x0005), NULL },
 	/* Dynex DX-800U?, CP1200AVR/BC1200D, CP825AVR-G, CP1000AVRLCD, CP1000PFCLCD, CP1500C, CP550HG, etc. */
 	{ USB_DEVICE(CPS_VENDORID, 0x0501), &cps_battery_scale },
-	/* OR2200LCDRM2U, OR700LCDRM1U, PR6000LCDRTXL5U */
+	/* OR2200LCDRM2U, OR700LCDRM1U, PR6000LCDRTXL5U, CP1350EPFCLCD */
 	{ USB_DEVICE(CPS_VENDORID, 0x0601), NULL },
 
 	/* Cyber Energy branded devices by CPS */
@@ -154,12 +155,36 @@ static info_lkp_t cps_battcharge[] = {
 	{ 0, NULL, &cps_battcharge_fun, NULL }
 };
 
+static const char *cps_battstatus_fun(double value)
+{
+	static char	buf[8];
+
+	/* assumes `UPS.PowerSummary.FullChargeCapacity` is in %, which should be for */
+	/* UPSes that conform to the USB HID spec, given how we read `battery.charge` */
+	snprintf(buf, sizeof(buf), "%.0f%%", value);
+
+	return buf;
+}
+
+static info_lkp_t cps_battstatus[] = {
+	{ 0, NULL, &cps_battstatus_fun, NULL }
+};
+
+static info_lkp_t cps_sensitivity_info[] = {
+	{ 0, "low", NULL, NULL },
+	{ 1, "normal", NULL, NULL },
+	{ 2, "high", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
 /* --------------------------------------------------------------- */
 /*      Vendor-specific usage table */
 /* --------------------------------------------------------------- */
 
 /* CPS usage table */
 static usage_lkp_t cps_usage_lkp[] = {
+	{ "CPSFirmwareVersion", 0xff0100d0 },
+	{ "CPSInputSensitivity",    0xff010043 },
 	{  NULL, 0x0 }
 };
 
@@ -180,7 +205,6 @@ static hid_info_t cps_hid2nut[] = {
   { "unmapped.ups.powersummary.designcapacity", 0, 0, "UPS.PowerSummary.DesignCapacity", NULL, "%.0f", 0, NULL },
   { "unmapped.ups.powersummary.capacitygranularity1", 0, 0, "UPS.PowerSummary.CapacityGranularity1", NULL, "%.0f", 0, NULL },
   { "unmapped.ups.powersummary.capacitygranularity2", 0, 0, "UPS.PowerSummary.CapacityGranularity2", NULL, "%.0f", 0, NULL },
-  { "unmapped.ups.powersummary.fullchargecapacity", 0, 0, "UPS.PowerSummary.FullChargeCapacity", NULL, "%.0f", 0, NULL },
 #endif	/* if WITH_UNMAPPED_DATA_POINTS */
 
   /* Battery page */
@@ -194,17 +218,22 @@ static hid_info_t cps_hid2nut[] = {
   { "battery.runtime.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.RemainingTimeLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
   { "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%.0f", 0, NULL },
   { "battery.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, "%s", 0, cps_battvolt },
+  { "battery.status", 0, 0, "UPS.PowerSummary.FullChargeCapacity", NULL, "%s", 0, cps_battstatus },
 
   /* UPS page */
   { "ups.load", 0, 0, "UPS.Output.PercentLoad", NULL, "%.0f", 0, NULL },
   { "ups.beeper.status", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", 0, beeper_info },
   { "ups.test.result", 0, 0, "UPS.Output.Test", NULL, "%s", 0, test_read_info },
+  { "ups.power", 0, 0, "UPS.Output.ApparentPower", NULL, "%.0f", 0, NULL },
+  { "ups.power.nominal", 0, 0, "UPS.Output.ConfigApparentPower", NULL, "%.0f", 0, NULL },
+  { "ups.realpower", 0, 0, "UPS.Output.ActivePower", NULL, "%.0f", 0, NULL },
   { "ups.realpower.nominal", 0, 0, "UPS.Output.ConfigActivePower", NULL, "%.0f", 0, NULL },
   { "ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Output.DelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_FLAG_ABSENT, NULL},
   { "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Output.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_FLAG_ABSENT, NULL},
   { "ups.timer.start", 0, 0, "UPS.Output.DelayBeforeStartup", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
   { "ups.timer.shutdown", 0, 0, "UPS.Output.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
   { "ups.timer.reboot", 0, 0, "UPS.Output.DelayBeforeReboot", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
+  { "ups.firmware", 0, 0, "UPS.PowerSummary.CPSFirmwareVersion", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
 
   /* Special case: ups.status & ups.alarm */
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, online_info },
@@ -222,6 +251,10 @@ static hid_info_t cps_hid2nut[] = {
   { "input.voltage", 0, 0, "UPS.Input.Voltage", NULL, "%.1f", 0, NULL },
   { "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.LowVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
   { "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.HighVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+  /* used by CP1350EPFCLCD */
+  { "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Output.LowVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+  { "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Output.HighVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+  { "input.sensitivity", ST_FLAG_RW | ST_FLAG_STRING, 0, "UPS.Output.CPSInputSensitivity", NULL, "%s", HU_FLAG_SEMI_STATIC | HU_FLAG_ENUM, cps_sensitivity_info },
 
   /* Output page */
   { "output.frequency", 0, 0, "UPS.Output.Frequency", NULL, "%.1f", 0, NULL },
