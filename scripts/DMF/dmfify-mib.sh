@@ -119,6 +119,7 @@ export CC CFLAGS CC_ENV
 # Avoid "cpp" directly as it may be too "traditional"
 [ -n "${CPP-}" ] || CPP="$CC -E" ### CPP="`command -v cpp`"
 CPP_ENV=""
+CPP_WITH_ARGS=false
 if [ -n "${CPP-}" ] ; then
     case "$CPP" in
         "$CC -E") # exact hit
@@ -147,8 +148,11 @@ if [ -n "${CPP-}" ] ; then
         /*) ;;
         *)  CPP="`command -v "$CPP"`" ;;
     esac
+    case "$CPP" in
+        *" "*|*"	"*) $CPP --help >/dev/null 2>/dev/null && CPP_WITH_ARGS=true;;
+    esac
 fi
-[ -n "${CPP}" ] && [ -x "$CPP" ] || die 2 "Can not find a C preprocessor: '$CPP'"
+[ -n "${CPP}" ] && ( [ -x "$CPP" ] || $CPP_WITH_ARGS ) || die 2 "Can not find a C preprocessor: '$CPP' (for CC='$CC')"
 export CPP CPPFLAGS CPP_ENV
 
 if [ "$1" == "--skip-sanity-check" ]; then
