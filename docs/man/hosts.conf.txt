@@ -14,6 +14,12 @@ linkman:upsimage.cgi[8]) use this file to determine if they are allowed to
 talk to a host.  This keeps random visitors from using your web server
 to annoy others by creating outgoing connections.
 
+IMPORTANT NOTES
+---------------
+
+* Contents of this file should be pure ASCII (character codes
+  not in range would be ignored with a warning message).
+
 DIRECTIVES
 ----------
 
