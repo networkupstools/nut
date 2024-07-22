@@ -178,17 +178,18 @@ static void get_type(nut_ctype_t *client, const char *upsname, const char *var)
 
 	/* Sanity-check current contents */
 	if (node->val && *(node->val)) {
-		char	*s;
-		float	f;
+		char	*s = NULL;
+		double	d;
 		long	l;
-		int	i, ok = 1;
+		int	ok = 1;
 		size_t	len = strlen(node->val);
 
 		errno = 0;
-		i = sscanf(node->val, "%f", &f);
-		if (i < 1 || (uintmax_t)i > (uintmax_t)(len + 1) || errno || *(s = node->val + i) != '\0') {
-			upsdebugx(3, "%s: UPS[%s] variable %s is a NUMBER but not a float: %s",
+		if (!str_to_double_strict(node->val, &d, 10)) {
+			upsdebugx(3, "%s: UPS[%s] variable %s is a NUMBER but not a double: %s",
 				__func__, upsname, var, node->val);
+			upsdebugx(4, "%s: val=%f len=%" PRIuSIZE " errno=%d *s=%c (0x%02x)",
+				__func__, d, len, errno, s ? *s : 'z', s ? *s : 255);
 			ok = 0;
 		}
 
@@ -196,10 +197,11 @@ static void get_type(nut_ctype_t *client, const char *upsname, const char *var)
 			/* did not parse as a float... range issues or NaN? */
 			errno = 0;
 			ok = 1;
-			i = sscanf(node->val, "%ld", &l);
-			if (i < 1 || (uintmax_t)i > (uintmax_t)(len + 1) || errno || *(s = node->val + i) != '\0') {
+			if (!str_to_long_strict(node->val, &l, 10)) {
 				upsdebugx(3, "%s: UPS[%s] variable %s is a NUMBER but not a long int: %s",
 					__func__, upsname, var, node->val);
+				upsdebugx(4, "%s: val=%ld len=%" PRIuSIZE " errno=%d *s=%c (0x%02x)",
+					__func__, l, len, errno, s ? *s : '*', s ? *s : 255);
 				ok = 0;
 			}
 		}
