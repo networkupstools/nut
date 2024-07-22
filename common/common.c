@@ -1201,7 +1201,7 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 {
 #ifndef WIN32
 	int	ret, cpn1 = -10, cpn2 = -10;
-	char	*current_progname = NULL;
+	char	*current_progname = NULL, *procname = NULL;
 
 	/* TOTHINK: What about containers where a NUT daemon *is* the only process
 	 * and is the PID=1 of the container (recycle if dead)? */
@@ -1214,9 +1214,12 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 	}
 
 	ret = 0;
-	if (progname) {
+	if (!checkprocname_ignored(__func__))
+		procname = getprocname(pid);
+
+	if (procname && progname) {
 		/* Check against some expected (often built-in) name */
-		if (!(cpn1 = checkprocname(pid, progname))) {
+		if (!(cpn1 = compareprocname(pid, procname, progname))) {
 			/* Did not match expected (often built-in) name */
 			ret = -1;
 		} else {
@@ -1229,13 +1232,13 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 	}
 	/* if (cpn1 == -3) => NUT_IGNORE_CHECKPROCNAME=true */
 	/* if (cpn1 == -1) => could not determine name of PID... retry just in case? */
-	if (ret <= 0 && check_current_progname && cpn1 != -3) {
+	if (procname && ret <= 0 && check_current_progname && cpn1 != -3) {
 		/* NOTE: This could be optimized a bit by pre-finding the procname
 		 * of "pid" and re-using it, but this is not a hot enough code path
 		 * to bother much.
 		 */
 		current_progname = getprocname(getpid());
-		if (current_progname && (cpn2 = checkprocname(pid, current_progname))) {
+		if (current_progname && (cpn2 = compareprocname(pid, procname, current_progname))) {
 			if (cpn2 > 0) {
 				/* Matched current process as asked, ok to proceed */
 				ret = 2;
@@ -1253,17 +1256,23 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 	}
 
 	/* if ret == 0, ok to proceed - not asked for any sanity checks;
-	 * if ret > 0 we had some definitive match above
+	 * if ret > 0, ok to proceed - we had some definitive match above;
+	 * if ret < 0, NOT OK to proceed - we had some definitive fault above
 	 */
 	if (ret < 0) {
 		upsdebugx(1,
 			"%s: ran at least one check, and all such checks "
 			"found a process name for PID %" PRIuMAX " and "
-			"failed to match: expected progname='%s' (res=%d), "
-			"current progname='%s' (res=%d)",
+			"failed to match: "
+			"found procname='%s', "
+			"expected progname='%s' (res=%d%s), "
+			"current progname='%s' (res=%d%s)",
 			__func__, (uintmax_t)pid,
+			NUT_STRARG(procname),
 			NUT_STRARG(progname), cpn1,
-			NUT_STRARG(current_progname), cpn2);
+			(cpn1 == -10 ? ": did not check" : ""),
+			NUT_STRARG(current_progname), cpn2,
+			(cpn2 == -10 ? ": did not check" : ""));
 
 		if (nut_debug_level > 0 || nut_sendsignal_debug_level > 1) {
 			switch (ret) {
@@ -1314,12 +1323,23 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 			current_progname = NULL;
 		}
 
+		if (procname) {
+			free(procname);
+			procname = NULL;
+		}
+
 		/* Logged or not, sanity-check was requested and failed */
 		return -1;
 	}
+
 	if (current_progname) {
 		free(current_progname);
 		current_progname = NULL;
+	}
+
+	if (procname) {
+		free(procname);
+		procname = NULL;
 	}
 
 	/* see if this is going to work first - does the process exist,
