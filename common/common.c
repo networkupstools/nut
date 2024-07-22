@@ -919,10 +919,11 @@ size_t parseprogbasename(char *buf, size_t buflen, const char *progname, size_t 
 	return progbasenamelen;
 }
 
-int checkprocname(pid_t pid, const char *progname)
+int compareprocname(pid_t pid, const char *procname, const char *progname)
 {
-	/* If we can determine the binary path name of the specified "pid",
+	/* Given the binary path name of (presumably) a running process,
 	 * check if it matches the assumed name of the current program.
+	 * The "pid" value is used in log reporting.
 	 * Returns:
 	 *	-3	Skipped because NUT_IGNORE_CHECKPROCNAME is set
 	 *	-2	Could not parse a program name (ok to proceed,
@@ -932,9 +933,10 @@ int checkprocname(pid_t pid, const char *progname)
 	 *	0	Process name identified, does not seem to match
 	 *	1+	Process name identified, and seems to match with
 	 *		varying precision
-	 * Generally speaking, if (checkprocname(...)) then ok to proceed
+	 * Generally speaking, if (compareprocname(...)) then ok to proceed
 	 */
-	char	*procname = NULL, *s;
+
+	char	*s;
 	int	ret = -127;
 	size_t	procbasenamelen = 0, progbasenamelen = 0;
 	/* Track where the last dot is in the basename; 0 means none */
@@ -954,7 +956,6 @@ int checkprocname(pid_t pid, const char *progname)
 		}
 	}
 
-	procname = getprocname(pid);
 	if (!procname || !progname) {
 		ret = -1;
 		goto finish;
@@ -1087,6 +1088,46 @@ finish:
 			ret = -127;
 			break;
 	}
+
+	return ret;
+}
+
+int checkprocname(pid_t pid, const char *progname)
+{
+	/* If we can determine the binary path name of the specified "pid",
+	 * check if it matches the assumed name of the current program.
+	 * Returns: same as compareprocname()
+	 * Generally speaking, if (checkprocname(...)) then ok to proceed
+	 */
+	char	*procname = NULL, *s;
+	int	ret = 0;
+
+	/* Quick skip before drilling into getprocname() */
+	if ((s = getenv("NUT_IGNORE_CHECKPROCNAME"))) {
+		/* FIXME: Make server/conf.c::parse_boolean() reusable */
+		if ( (!strcasecmp(s, "true")) || (!strcasecmp(s, "on")) || (!strcasecmp(s, "yes")) || (!strcasecmp(s, "1"))) {
+			upsdebugx(1, "%s: skipping because caller set NUT_IGNORE_CHECKPROCNAME", __func__);
+			ret = -3;
+			goto finish;
+		}
+	}
+
+	if (!progname) {
+		ret = -1;
+		goto finish;
+	}
+
+	procname = getprocname(pid);
+	if (!procname) {
+		ret = -1;
+		goto finish;
+	}
+
+	ret = compareprocname(pid, procname, progname);
+
+finish:
+	if (procname)
+		free(procname);
 
 	return ret;
 }
