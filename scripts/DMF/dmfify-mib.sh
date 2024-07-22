@@ -87,6 +87,7 @@ fi
 # The pycparser uses GCC-compatible flags
 [ -n "${CC-}" ] || CC="`command -v gcc`"
 CC_ENV=""
+CC_WITH_ARGS=false
 if [ -n "${CC-}" ] ; then
     case "$CC" in
         *" "*|*\t*) # args inside? prefixed envvars?
@@ -112,8 +113,11 @@ if [ -n "${CC-}" ] ; then
         /*) ;;
         *)  CC="`command -v "$CC"`" ;;
     esac
+    case "$CC" in
+        *" "*|*"	"*) $CC --help >/dev/null 2>/dev/null && CC_WITH_ARGS=true;;
+    esac
 fi
-[ -n "${CC}" ] && [ -x "$CC" ] || die 2 "Can not find (G)CC: '$CC'"
+[ -n "${CC}" ] && ( [ -x "$CC" ] || $CC_WITH_ARGS ) || die 2 "Can not find (G)CC: '$CC'"
 export CC CFLAGS CC_ENV
 
 # Avoid "cpp" directly as it may be too "traditional"
@@ -149,6 +153,8 @@ if [ -n "${CPP-}" ] ; then
         *)  CPP="`command -v "$CPP"`" ;;
     esac
     case "$CPP" in
+        # FIXME: Make CPP single-token and prepend args to CPPFLAGS (if any)
+        # Issue: some `/usr/bin/env gcc -E` would make "CPP=/usr/bin/env"...
         *" "*|*"	"*) $CPP --help >/dev/null 2>/dev/null && CPP_WITH_ARGS=true;;
     esac
 fi
