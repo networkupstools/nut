@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3194 utf-8
+personal_ws-1.1 en 3197 utf-8
 AAC
 AAS
 ABI
@@ -305,6 +305,7 @@ EL
 ELCD
 EMI
 EMP
+EMPDT
 ENDFOR
 ENV
 EOC
@@ -1593,6 +1594,7 @@ cStandard
 cablepower
 calloc
 cb
+cbe
 cbi
 cbl
 ccache
@@ -1600,6 +1602,7 @@ cd
 cdc
 cdf
 cee
+cef
 centos
 cerr
 certfile
