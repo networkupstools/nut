@@ -24,6 +24,7 @@
 #include "state.h"
 #include "desc.h"
 #include "neterr.h"
+#include "nut_stdint.h"
 
 #include "netget.h"
 
@@ -173,6 +174,55 @@ static void get_type(nut_ctype_t *client, const char *upsname, const char *var)
 	if (!(node->flags & ST_FLAG_NUMBER)) {
 		upsdebugx(3, "%s: assuming that UPS[%s] variable %s which has no type flag is a NUMBER",
 			__func__, upsname, var);
+	}
+
+	/* Sanity-check current contents */
+	if (node->val && *(node->val)) {
+		char	*s;
+		float	f;
+		long	l;
+		int	i, ok = 1;
+		size_t	len = strlen(node->val);
+
+		errno = 0;
+		i = sscanf(node->val, "%f", &f);
+		if (i < 1 || (uintmax_t)i > (uintmax_t)(len + 1) || errno || *(s = node->val + i) != '\0') {
+			upsdebugx(3, "%s: UPS[%s] variable %s is a NUMBER but not a float: %s",
+				__func__, upsname, var, node->val);
+			ok = 0;
+		}
+
+		if (!ok) {
+			/* did not parse as a float... range issues or NaN? */
+			errno = 0;
+			ok = 1;
+			i = sscanf(node->val, "%ld", &l);
+			if (i < 1 || (uintmax_t)i > (uintmax_t)(len + 1) || errno || *(s = node->val + i) != '\0') {
+				upsdebugx(3, "%s: UPS[%s] variable %s is a NUMBER but not a long int: %s",
+					__func__, upsname, var, node->val);
+				ok = 0;
+			}
+		}
+
+		if (!ok && !(node->flags & ST_FLAG_NUMBER)) {
+			upsdebugx(3, "%s: assuming UPS[%s] variable %s is a STRING after all, by contents; "
+				"value='%s' len='%" PRIuSIZE "' aux='%ld'",
+				__func__, upsname, var, node->val, len, node->aux);
+
+			sendback(client, "%s STRING:%ld\n", buf, node->aux);
+			return;
+		}
+
+		if (!ok) {
+			/* FIXME: Should this return an error?
+			 * Value was explicitly flagged as a NUMBER but is not by content.
+			 * Note that state_addinfo() does not sanity-check; but
+			 * netset.c::set_var() does though (for protocol clients).
+			 */
+			upslogx(LOG_WARNING, "%s: UPS[%s] variable %s is flagged as a NUMBER but is not "
+				"by contents (please report as a bug to NUT project)): %s",
+				__func__, upsname, var, node->val);
+		}
 	}
 
 	sendback(client, "%s NUMBER\n", buf);
