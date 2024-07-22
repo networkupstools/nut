@@ -138,6 +138,19 @@ static void get_type(nut_ctype_t *client, const char *upsname, const char *var)
 
 	snprintf(buf, sizeof(buf), "TYPE %s %s", upsname, var);
 
+	if (node->flags & ST_FLAG_IMMUTABLE) {
+#if DEBUG
+		/* Properly exposing this needs also an update to
+		 * docs/net-protocol.txt (promote the paragraph
+		 * provided as a note currently) and to the NUT RFC
+		 * https://www.rfc-editor.org/info/rfc9271
+		 */
+		snprintfcat(buf, sizeof(buf), " IMMUTABLE");
+#endif
+		upsdebugx(3, "%s: UPS[%s] variable %s is IMMUTABLE",
+			__func__, upsname, var);
+	}
+
 	if (node->flags & ST_FLAG_RW)
 		snprintfcat(buf, sizeof(buf), " RW");
 
