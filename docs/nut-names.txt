@@ -273,6 +273,9 @@ input: Incoming line/power information
 | input.current.low.critical  | Low critical threshold (A)        | 2
 | input.current.high.warning  | High warning threshold (A)        | 10
 | input.current.high.critical | High critical threshold (A)       | 12
+| input.feed.color            | Color of the input feed
+                                (opaque string)                   | 3831236
+| input.feed.desc             | Description of the input feed     | Feed A
 | input.frequency             | Input line frequency (Hz)         | 60.00
 | input.frequency.nominal     | Nominal input line
                                 frequency (Hz)                    | 60
@@ -543,16 +546,28 @@ above in the Time and Date format chapter.
 ambient: Conditions from external probe equipment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-NOTE: multiple sensors can be exposed using the indexed notation.
-'ambient.*', without index or using '0', relates to the embedded sensor.
-For example: 'ambient.temperature' represent the embedded sensor temperature.
-Other sensors (external, communication card, ...) can use indexes
-from '1' to 'n'. For example: 'ambient.1.temperature' for the first external
-sensor temperature.
+NOTE: *n* stands for the sensors index. A special case is "ambient.0" which is
+equivalent to "ambient" (without index), and represents the default sensor of
+the device.  This is not to be confused with the device embedded sensor, which
+is published as 'ups.temperature'.  The most important data is "ambient.count",
+used to iterate over the whole set of outlets.
+For more information, refer to the NUT sensors management notes chapter
+of the user manual.
 
 [options="header"]
 |==================================================================================
 | Name                                | Description                 | Example value
+| ambient.count                       | Total number of sensors     | 2
+| ambient.n.name                      | Ambient sensor name         | sensor 1
+| ambient.n.id                        | Ambient sensor identifier
+                                        (opaque string)             | 80f09325-2838-5637-b62a-cef9cbe2747
+| ambient.n.address                   | Ambient sensor address
+                                        (opaque string)             | 1
+| ambient.n.parent.serial             | Ambient sensor parent serial number
+                                        (opaque string)             | U603E34000
+| ambient.n.mfr                       | Ambient sensor manufacturer | EATON
+| ambient.n.model                     | Ambient sensor model        | EMPDT1H1C2
+| ambient.n.firmware                  | Ambient sensor firmware     | 01.03.0011
 | ambient.n.present                   | Ambient sensor presence     | yes
 | ambient.n.temperature               | Ambient temperature
                                         (degrees C)                 | 25.40
@@ -600,8 +615,16 @@ sensor temperature.
                                         seen (percent)              | 13
 | ambient.n.contacts.x.status         | State of the dry contact
                                         sensor x                    | open
+| ambient.n.contacts.x.config         | Configuration of the dry
+                                        contact sensor x            | normal-open
+| ambient.n.contacts.x.name           | Name of the dry contact
+                                        sensor x                    | smoke-detector1
 |==================================================================================
 
+NOTE:
+- ambient.n.contacts.x.status may either be the raw status ('open' or 'closed'),
+or may relate to ambient.n.contacts.x.config. In this case, the value can be
+'active' or 'inactive'.
 
 outlet: Smart outlet management
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -685,8 +708,9 @@ outlet collection apply to outlet.group, especially for the indexing 'n'
 and "outlet.group.count".
 
 Most of the data published for outlets also apply to outlet.group,
-including: id, name (similar as outlet "desc"), status, current and
-voltage (including status, alarm and thresholds).
+including: id, name (similar as outlet "desc"), color, status, current and
+voltage (including status, alarm and thresholds). Other actions and settings
+also apply ({delay,timer}.{shutdown,start})
 
 Some specific data to outlet groups exists:
 
@@ -700,6 +724,8 @@ Some specific data to outlet groups exists:
 | outlet.group.n.phase           | Electrical phase to which the
                                    physical outlet group (Gang) is
                                    connected to                   | L1
+| outlet.group.n.input           | Input to which an outlet group
+                                   is connected                   | 1
 |=================================================================================
 
 Example:

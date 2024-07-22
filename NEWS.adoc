@@ -192,6 +192,8 @@ during a NUT build.
    * custom `distcheck-something` targets did not inherit `DISTCHECK_FLAGS`
      properly. [#2541]
 
+ - updated `docs/nut-names.txt` with items defined by 42ITy NUT fork. [#2339]
+
  - various recipe, documentation and source files were revised to address
    respective warnings issued by the new generations of analysis tools.
    [#823, #2437, link:https://github.com/networkupstools/nut-website/issues/52[nut-website issue #52]]
