@@ -62,6 +62,8 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 
 	/* make sure this variable is writable (RW) */
 	if ((sstate_getflags(ups, var) & ST_FLAG_RW) == 0) {
+		upsdebugx(3, "%s: UPS [%s]: value of %s is read-only",
+			__func__, ups->name, var);
 		send_err(client, NUT_ERR_READONLY);
 		return;
 	}
@@ -87,6 +89,8 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 		 * even on architectures with a moderate INTMAX
 		 */
 		if (aux < (int) strlen(newval)) {
+			upsdebugx(3, "%s: UPS [%s]: Not a value fitting in STRING:%ld %s: %s",
+				__func__, ups->name, aux, var, newval);
 			send_err(client, NUT_ERR_TOO_LONG);
 			return;
 		}
@@ -109,6 +113,9 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 		}
 
 		if (!found) {
+			/* Not a value known in the pre-defined enumeration */
+			upsdebugx(3, "%s: UPS [%s]: Not a value known in ENUM %s: %s",
+				__func__, ups->name, var, newval);
 			send_err(client, NUT_ERR_INVALID_VALUE);
 			return;
 		}
@@ -132,6 +139,9 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 		}
 
 		if (!found) {
+			/* Not in range */
+			upsdebugx(3, "%s: UPS [%s]: Not a value fitting in RANGE %s: %s",
+				__func__, ups->name, var, newval);
 			send_err(client, NUT_ERR_INVALID_VALUE);
 			return;
 		}
