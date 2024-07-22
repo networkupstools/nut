@@ -178,7 +178,6 @@ static void get_type(nut_ctype_t *client, const char *upsname, const char *var)
 
 	/* Sanity-check current contents */
 	if (node->val && *(node->val)) {
-		char	*s = NULL;
 		double	d;
 		long	l;
 		int	ok = 1;
@@ -186,10 +185,10 @@ static void get_type(nut_ctype_t *client, const char *upsname, const char *var)
 
 		errno = 0;
 		if (!str_to_double_strict(node->val, &d, 10)) {
-			upsdebugx(3, "%s: UPS[%s] variable %s is a NUMBER but not a double: %s",
+			upsdebugx(3, "%s: UPS[%s] variable %s is a NUMBER but not (exclusively) a double: %s",
 				__func__, upsname, var, node->val);
-			upsdebugx(4, "%s: val=%f len=%" PRIuSIZE " errno=%d *s=%c (0x%02x)",
-				__func__, d, len, errno, s ? *s : 'z', s ? *s : 255);
+			upsdebug_with_errno(4, "%s: val=%f len=%" PRIuSIZE,
+				__func__, d, len);
 			ok = 0;
 		}
 
@@ -198,10 +197,10 @@ static void get_type(nut_ctype_t *client, const char *upsname, const char *var)
 			errno = 0;
 			ok = 1;
 			if (!str_to_long_strict(node->val, &l, 10)) {
-				upsdebugx(3, "%s: UPS[%s] variable %s is a NUMBER but not a long int: %s",
+				upsdebugx(3, "%s: UPS[%s] variable %s is a NUMBER but not (exclusively) a long int: %s",
 					__func__, upsname, var, node->val);
-				upsdebugx(4, "%s: val=%ld len=%" PRIuSIZE " errno=%d *s=%c (0x%02x)",
-					__func__, l, len, errno, s ? *s : '*', s ? *s : 255);
+				upsdebug_with_errno(4, "%s: val=%ld len=%" PRIuSIZE,
+					__func__, l, len);
 				ok = 0;
 			}
 		}
