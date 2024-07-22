@@ -986,7 +986,7 @@ int compareprocname(pid_t pid, const char *procname, const char *progname)
 	}
 
 	/* First quickly try for an exact hit of base names */
-	if (progbasenamelen == procbasenamelen && progbasenamedot == procbasenamedot && !strcmp(procname, progname)) {
+	if (progbasenamelen == procbasenamelen && progbasenamedot == procbasenamedot && !strcmp(procbasename, progbasename)) {
 		ret = 2;
 		goto finish;
 	}
