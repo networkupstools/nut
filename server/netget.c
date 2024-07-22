@@ -205,6 +205,15 @@ static void get_type(nut_ctype_t *client, const char *upsname, const char *var)
 			}
 		}
 
+#if DEBUG
+		/* Need to figure out an "aux" value here (length of current
+		 * string at least?) and propagate the flag into where netset
+		 * would see it. Maybe this sanity-check should move into the
+		 * core state.c logic, so dstate setting would already remember
+		 * the defaulted flag (and maybe set another to clarify it is
+		 * a guess). Currently that code does not concern itself with
+		 * sanity-checks, it seems!
+		 */
 		if (!ok && !(node->flags & ST_FLAG_NUMBER)) {
 			upsdebugx(3, "%s: assuming UPS[%s] variable %s is a STRING after all, by contents; "
 				"value='%s' len='%" PRIuSIZE "' aux='%ld'",
@@ -213,6 +222,7 @@ static void get_type(nut_ctype_t *client, const char *upsname, const char *var)
 			sendback(client, "%s STRING:%ld\n", buf, node->aux);
 			return;
 		}
+#endif
 
 		if (!ok) {
 			/* FIXME: Should this return an error?
