@@ -4,6 +4,7 @@
 	2003	Russell Kroll <rkroll@exploits.org>
 	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
 	2012	Arnaud Quette <arnaud.quette@free.fr>
+	2020-2024	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -295,6 +296,7 @@ int state_setinfo(st_tree_t **nptr, const char *var, const char *val)
 
 		/* changes should be ignored */
 		if (node->flags & ST_FLAG_IMMUTABLE) {
+			upsdebugx(6, "%s: not changing immutable variable [%s]", __func__, var);
 			return 0;	/* no change */
 		}
 
