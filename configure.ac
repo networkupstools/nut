@@ -4979,13 +4979,13 @@ if test "${want_regenerate_dmf_snmp}" != no ; then
 					cat "${CURDIR}/confdefs.h" >> config.h && \
 					echo "#define _AUTOTEST_CONDEFS_H 1" >> config.h && \
 					echo "#endif" >> config.h && \
-				CFLAGS="-I${OUTDIR}" "$DMFDIR/dmfify-mib.sh" "${SRCDIR}/drivers/apc-ats-mib.c" && \
+				CFLAGS="-I${OUTDIR} ${LIBNETSNMP_CFLAGS}" "$DMFDIR/dmfify-mib.sh" "${SRCDIR}/drivers/apc-ats-mib.c" && \
 				test -s "./apc-ats-mib.dmf" \
 				|| { can_generate_dmf_snmp="no: ERROR: Failed compilation of a test C to DMF parse run"; false; } && \
 			  for F in "${SRCDIR}/drivers/"*-mib.c ; do \
 				test -s "$F" || continue; \
 				echo "Test if we can nut_cpp parse '$F'" >&2; \
-				"$DMFDIR/nut_cpp" "-I${OUTDIR}" "-I${SRCDIR}/drivers" "-I${SRCDIR}/include" "$F" > /dev/null \
+				"$DMFDIR/nut_cpp" "-I${OUTDIR}" "-I${SRCDIR}/drivers" "-I${SRCDIR}/include" ${LIBNETSNMP_CFLAGS} "$F" > /dev/null \
 				|| { can_generate_dmf_snmp="no: ERROR: Failed nut_cpp parse of a test C to DMF for '$F'"; false ; break; } \
 			  done ; } ; \
 		}

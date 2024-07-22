@@ -20,6 +20,14 @@ DMFSNMP_LKP_FUN_FLAGS = -DWITH_SNMP_LKP_FUN_DUMMY=1 -DWITH_SNMP_LKP_FUN=1
 DMFTOOLS_CFLAGS += $(DMFTOOLS_ADD_FLAGS)
 DMFTOOLS_CPPFLAGS += $(DMFTOOLS_ADD_FLAGS)
 
+# For platforms where libnetsnmp is provided in a non-default location,
+# we need its headers to build code (for dmfify-mib.sh conversions at
+# least).
+# FIXME: These flags include a lot of settings like optimization; filtering
+# out just the include paths and maybe defines/undefines could be useful.
+DMFTOOLS_CFLAGS += $(LIBNETSNMP_CFLAGS)
+DMFTOOLS_CPPFLAGS += $(LIBNETSNMP_CFLAGS)
+
 DISTCLEANFILES =
 DISTCLEANDIRS =
 MAINTAINERCLEANFILES =
