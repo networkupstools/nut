@@ -137,6 +137,11 @@ https://github.com/networkupstools/nut/milestone/11
    * `upsd_cleanup()` is now traced, to more easily see that the daemon is
      exiting (and/or start-up has aborted due to configuration or run-time
      issues). Warning about "world readable" files clarified. [#2417]
+   * sanity-check `NUMBER` values that they actually resolve as a `float`
+     or `long int`; report an un-flagged type as `STRING` if not (previously
+     blindly defaulted to `NUMBER` always). Debug-print presence of the
+     `IMMUTABLE` flag in `netget.c::get_type()`, and actually consider it
+     in the `netset.c::set_var()` method to abort early. [#266]
 
  - nut-scanner:
    * the tool relies on dynamic loading of shared objects (library files)

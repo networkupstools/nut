@@ -66,6 +66,16 @@ Changes from 2.8.2 to 2.8.3
   and one structure (`nutscan_ipmi_t`) updated in a (hopefully) backwards
   compatible manner. [PR #2523, issue #2244 and numerous PRs for it]
 
+- The `netset.c::set_var()` was updated to consider the `IMMUTABLE` flag on
+  values to reject writing into them quickly. This is currently expected
+  to only impact `override.*` values in vanilla NUT codebase. [#266]
+
+- The `netset.c::get_type()` was updated to sanity-check `NUMBER`-flagged
+  values that the strings actually resolve into `float` or `long int`
+  values. Some codebase does not flag its values properly and warnings
+  can be emitted (to be reported for upstream NUT to fix these use-cases).
+  [#266]
+
 - Internal API change for `sendsignalpid()` and `sendsignalfn()` methods,
   which can impact NUT forks which build using `libcommon.la` and similar
   libraries.  Added new last argument with `const char *progname` (may be
