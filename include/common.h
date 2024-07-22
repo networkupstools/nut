@@ -262,7 +262,10 @@ int checkprocname(pid_t pid, const char *progname);
  * Generally speaking, if (compareprocname(...)) then ok to proceed
  */
 int compareprocname(pid_t pid, const char *procname, const char *progname);
-
+/* Helper for the above methods and some others. If it returns true (1),
+ * work about PID-name comparison should be quickly skipped.
+ */
+int checkprocname_ignored(const char *caller);
 
 /* write a pid file - <name> is a full pathname *or* just the program name */
 void writepid(const char *name);

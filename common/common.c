@@ -919,6 +919,21 @@ size_t parseprogbasename(char *buf, size_t buflen, const char *progname, size_t 
 	return progbasenamelen;
 }
 
+int checkprocname_ignored(const char *caller)
+{
+	char	*s = NULL;
+
+	if ((s = getenv("NUT_IGNORE_CHECKPROCNAME"))) {
+		/* FIXME: Make server/conf.c::parse_boolean() reusable */
+		if ( (!strcasecmp(s, "true")) || (!strcasecmp(s, "on")) || (!strcasecmp(s, "yes")) || (!strcasecmp(s, "1"))) {
+			upsdebugx(1, "%s for %s: skipping because caller set NUT_IGNORE_CHECKPROCNAME", __func__, NUT_STRARG(caller));
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 int compareprocname(pid_t pid, const char *procname, const char *progname)
 {
 	/* Given the binary path name of (presumably) a running process,
@@ -936,7 +951,6 @@ int compareprocname(pid_t pid, const char *procname, const char *progname)
 	 * Generally speaking, if (compareprocname(...)) then ok to proceed
 	 */
 
-	char	*s;
 	int	ret = -127;
 	size_t	procbasenamelen = 0, progbasenamelen = 0;
 	/* Track where the last dot is in the basename; 0 means none */
@@ -947,13 +961,9 @@ int compareprocname(pid_t pid, const char *procname, const char *progname)
 	char	procbasename[PATH_MAX], progbasename[PATH_MAX];
 #endif
 
-	if ((s = getenv("NUT_IGNORE_CHECKPROCNAME"))) {
-		/* FIXME: Make server/conf.c::parse_boolean() reusable */
-		if ( (!strcasecmp(s, "true")) || (!strcasecmp(s, "on")) || (!strcasecmp(s, "yes")) || (!strcasecmp(s, "1"))) {
-			upsdebugx(1, "%s: skipping because caller set NUT_IGNORE_CHECKPROCNAME", __func__);
-			ret = -3;
-			goto finish;
-		}
+	if (checkprocname_ignored(__func__)) {
+		ret = -3;
+		goto finish;
 	}
 
 	if (!procname || !progname) {
@@ -1099,17 +1109,13 @@ int checkprocname(pid_t pid, const char *progname)
 	 * Returns: same as compareprocname()
 	 * Generally speaking, if (checkprocname(...)) then ok to proceed
 	 */
-	char	*procname = NULL, *s;
+	char	*procname = NULL;
 	int	ret = 0;
 
 	/* Quick skip before drilling into getprocname() */
-	if ((s = getenv("NUT_IGNORE_CHECKPROCNAME"))) {
-		/* FIXME: Make server/conf.c::parse_boolean() reusable */
-		if ( (!strcasecmp(s, "true")) || (!strcasecmp(s, "on")) || (!strcasecmp(s, "yes")) || (!strcasecmp(s, "1"))) {
-			upsdebugx(1, "%s: skipping because caller set NUT_IGNORE_CHECKPROCNAME", __func__);
-			ret = -3;
-			goto finish;
-		}
+	if (checkprocname_ignored(__func__)) {
+		ret = -3;
+		goto finish;
 	}
 
 	if (!progname) {
