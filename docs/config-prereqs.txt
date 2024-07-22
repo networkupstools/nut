@@ -863,6 +863,11 @@ default site.
 #   :; pkg_add python-3.6.6p1 py3-pip
 # although you might succeed specifying shorter names and the packager
 # will offer a list of matching variants (as it does for "python" above).
+# Installation of `pip*` packages also suggests (optionally) setting one
+# as system default to call simply as `pip` (generally to be aligned with
+# your choice of default `python`):
+#   :; ln -sf /usr/local/bin/pip2.7 /usr/local/bin/pip
+#   :; ln -sf /usr/local/bin/pip3.6 /usr/local/bin/pip
 # NOTE: "perl" is not currently a package, but seemingly part of base OS.
 # You can find a list of what is (pre-)installed with:
 #   :; pkg_info | grep -Ei 'perl|python'
@@ -949,6 +954,17 @@ or `pkgconf` (so guessing of flags is left to administrator -- TBD in NUT
 
 Note the lack of `pkg-config` also precludes `libcppunit` tests, although
 they also tend to mis-compile/mis-link with GCC (while CLANG seems okay).
+
+For DMF, additionally `pkg_add` `py-pip` or `py3-pip` as detailed above,
+(or both -- matching your installed Python distribution chosen for NUT
+build(s)), and use it to install the `pycparser` module, e.g.:
+------
+:; pip2.7 install pycparser
+
+### and/or
+
+:; pip3.6 install pycparser
+------
 
 NetBSD 9.2
 ~~~~~~~~~~
