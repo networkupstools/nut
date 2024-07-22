@@ -5083,6 +5083,13 @@ NUT_REPORT_FEATURE([enable regeneration of DMF collection of mappings for nut-sc
 AM_CONDITIONAL([WITH_REGENERATE_DMF_NUTSCAN], [test "${with_regenerate_dmf_nutscan}" = "yes"])
 
 
+dnl Macro supported since aclocal-1.11:
+nutcond_have_xmllint=false
+m4_ifdef([AM_COND_IF],
+	[AM_COND_IF([HAVE_XMLLINT], [nutcond_have_xmllint=true])],
+	[AS_IF([test x"${XMLLINT}" != "x"], [nutcond_have_xmllint=true])]
+)
+
 with_xmllint_dmf_snmp=auto
 AC_MSG_CHECKING(whether to validate DMF SNMP mapping files against XML schema)
 AC_ARG_WITH(dmfsnmp-validate,
@@ -5090,7 +5097,7 @@ AC_ARG_WITH(dmfsnmp-validate,
 [
 	case "${withval}" in
 	yes)
-		AM_COND_IF([HAVE_XMLLINT], [
+		AS_IF([$nutcond_have_xmllint], [
 			AC_MSG_RESULT(yes)
 			with_xmllint_dmf_snmp=yes
 		], [
@@ -5111,7 +5118,7 @@ AC_ARG_WITH(dmfsnmp-validate,
 
 AS_IF([test x"${with_xmllint_dmf_snmp}" = xauto], [
 	with_xmllint_dmf_snmp=no
-	AM_COND_IF([HAVE_XMLLINT], [AS_IF([test x"${with_regenerate_dmf_snmp}" = xyes], [with_xmllint_dmf_snmp=yes])])
+	AS_IF([$nutcond_have_xmllint], [AS_IF([test x"${with_regenerate_dmf_snmp}" = xyes], [with_xmllint_dmf_snmp=yes])])
 	AC_MSG_RESULT([${with_xmllint_dmf_snmp}])
 ])
 
@@ -5127,7 +5134,7 @@ AC_ARG_WITH(dmfnutscan-validate,
 [
 	case "${withval}" in
 	yes)
-		AM_COND_IF([HAVE_XMLLINT], [
+		AS_IF([$nutcond_have_xmllint], [
 			AC_MSG_RESULT(yes)
 			with_xmllint_dmf_nutscan=yes
 		], [
@@ -5148,7 +5155,7 @@ AC_ARG_WITH(dmfnutscan-validate,
 
 AS_IF([test x"${with_xmllint_dmf_nutscan}" = xauto], [
 	with_xmllint_dmf_nutscan=no
-	AM_COND_IF([HAVE_XMLLINT], [AS_IF([test x"${with_regenerate_dmf_nutscan}" = xyes], [with_xmllint_dmf_nutscan=yes])])
+	AS_IF([$nutcond_have_xmllint], [AS_IF([test x"${with_regenerate_dmf_nutscan}" = xyes], [with_xmllint_dmf_nutscan=yes])])
 	AC_MSG_RESULT([${with_regenerate_dmf_nutscan}])
 ])
 
