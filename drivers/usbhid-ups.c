@@ -1461,6 +1461,11 @@ void possibly_supported(const char *mfr, HIDDevice_t *arghd)
 "'-x productid=%04x' option. Please report your results to the NUT user's\n"
 "mailing list <nut-upsuser@lists.alioth.debian.org>.\n",
 	mfr, arghd->VendorID, arghd->ProductID, arghd->ProductID);
+
+	if (arghd->VendorID == 0x06da) {
+		upsdebugx(0,
+"Please note that this Vendor ID is also known in devices supported by nutdrv_qx");
+	}
 }
 
 /* Update ups_status to remember this status item. Interpretation is
