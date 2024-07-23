@@ -188,12 +188,12 @@ alist.c : $(top_srcdir)/common/alist.c
 
 CLEANFILES += $(noinst_PROGRAMS) \
 	$(builddir)/$(DMFSNMP_RES_SUBDIR)/*.o \
-	$(builddir)/$(DMFSNMP_RES_SUBDIR)/*.dmf.tmp \
-	$(builddir)/$(DMFSNMP_RES_SUBDIR)/*.json.tmp \
+	$(builddir)/$(DMFSNMP_RES_SUBDIR)/*.dmf.tmp* \
+	$(builddir)/$(DMFSNMP_RES_SUBDIR)/*.json.tmp* \
 	$(builddir)/$(DMFSNMP_RES_SUBDIR)/*_TEST.c \
 	$(builddir)/$(DMFSNMP_RES_SUBDIR)/*_TEST.exe \
-	$(builddir)/*.dmf.tmp \
-	$(builddir)/*.json.tmp \
+	$(builddir)/*.dmf.tmp* \
+	$(builddir)/*.json.tmp* \
 	$(builddir)/*_TEST.c \
 	$(builddir)/*_TEST.exe
 
