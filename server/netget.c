@@ -158,7 +158,7 @@ static void get_type(nut_ctype_t *client, const char *upsname, const char *var)
 	 * numeric value */
 
 	if (!(node->flags & ST_FLAG_NUMBER)) {
-		upsdebugx(3, "%s: assuming UPS[%s] variable %s is a NUMBER",
+		upsdebugx(3, "%s: assuming that UPS[%s] variable %s which has no type flag is a NUMBER",
 			__func__, upsname, var);
 	}
 
