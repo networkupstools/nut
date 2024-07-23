@@ -22,6 +22,12 @@ the UPS and drives its late-shutdown power-off command in an emergency.
 Additionally, other optional configuration values can be set in this
 file.
 
+IMPORTANT NOTES
+---------------
+
+* Contents of this file should be pure ASCII (character codes
+  not in range would be ignored with a warning message).
+
 CONFIGURATION DIRECTIVES
 ------------------------
 
