@@ -192,6 +192,11 @@ CLEANFILES += $(noinst_PROGRAMS) \
 	$(builddir)/$(DMFSNMP_RES_SUBDIR)/*.json.tmp* \
 	$(builddir)/$(DMFSNMP_RES_SUBDIR)/*_TEST.c \
 	$(builddir)/$(DMFSNMP_RES_SUBDIR)/*_TEST.exe \
+	$(builddir)/$(DMFNUTSCAN_RES_SUBDIR)/*.o \
+	$(builddir)/$(DMFNUTSCAN_RES_SUBDIR)/*.dmf.tmp* \
+	$(builddir)/$(DMFNUTSCAN_RES_SUBDIR)/*.json.tmp* \
+	$(builddir)/$(DMFNUTSCAN_RES_SUBDIR)/*_TEST.c \
+	$(builddir)/$(DMFNUTSCAN_RES_SUBDIR)/*_TEST.exe \
 	$(builddir)/*.dmf.tmp* \
 	$(builddir)/*.json.tmp* \
 	$(builddir)/*_TEST.c \
