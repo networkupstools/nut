@@ -91,6 +91,9 @@ https://github.com/networkupstools/nut/milestone/11
  - usbhid-ups updates:
    * Support of the `onlinedischarge_log_throttle_hovercharge` in the NUT
      v2.8.2 release was found to be incomplete. [#2423, follow-up to #2215]
+   * General suggestion from `possibly_supported()` message method for devices
+     with VendorID=`0x06da` (Phoenixtec), seen in some models supported by
+     MGE HID or Liebert HID, updated to suggest trying `nutdrv_qx`. [#334]
    * MGE HID list of `mge_model_names[]` was extended for Eaton 5PX and 5SC
      series (largely guessing, feedback and PRs for adaptation to actual
      string values reported by devices via USB are welcome), so these devices
@@ -191,6 +194,8 @@ during a NUT build.
      and values (or macros) in the NUT codebase. [issue #1176, issue #31]
    * custom `distcheck-something` targets did not inherit `DISTCHECK_FLAGS`
      properly. [#2541]
+
+ - updated `docs/nut-names.txt` with items defined by 42ITy NUT fork. [#2339]
 
  - various recipe, documentation and source files were revised to address
    respective warnings issued by the new generations of analysis tools.

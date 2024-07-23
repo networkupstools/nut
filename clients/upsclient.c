@@ -1015,7 +1015,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 	ups->fd = -1;
 
 	if (!host) {
-		upslogx(LOG_WARNING, "%s: Host not found: '%s'", __func__, NUT_STRARG(host));
+		upslogx(LOG_WARNING, "%s: Host not specified", __func__);
 		ups->upserror = UPSCLI_ERR_NOSUCHHOST;
 		return -1;
 	}

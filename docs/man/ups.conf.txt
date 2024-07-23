@@ -48,6 +48,11 @@ Here is another example, when connecting a serial UPS on Windows:
 		port = "\\\\.\\COM10"
 		desc = "UPS on a Windows machine"
 
+IMPORTANT NOTES
+---------------
+
+* Contents of this file should be pure ASCII (character codes
+  not in range would be ignored with a warning message).
 
 GLOBAL DIRECTIVES
 -----------------

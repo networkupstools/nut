@@ -282,7 +282,7 @@ static void send_to_all(const char *fmt, ...)
 
 		result = WriteFile (conn->fd, buf, buflen, &bytesWritten, NULL);
 		if( result == 0 ) {
-			upsdebugx(2, "write failed on handle %p, disconnecting", conn->fd);
+			upsdebugx(2, "%s: write failed on handle %p, disconnecting", __func__, conn->fd);
 			sock_disconnect(conn);
 			continue;
 		}
@@ -301,7 +301,7 @@ static void send_to_all(const char *fmt, ...)
 				"handle %p failed (ret=%" PRIiSIZE "), disconnecting: %s",
 				__func__, buflen, conn->fd, ret, strerror(errno));
 #endif
-			upsdebugx(6, "failed write: %s", buf);
+			upsdebugx(6, "%s: failed write: %s", __func__, buf);
 
 			sock_disconnect(conn);
 
@@ -427,7 +427,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 			"handle %p failed (ret=%" PRIiSIZE "), disconnecting: %s",
 			__func__, buflen, conn->fd, ret, strerror(errno));
 #endif
-		upsdebugx(6, "failed write: %s", buf);
+		upsdebugx(6, "%s: failed write: %s", __func__, buf);
 		sock_disconnect(conn);
 
 		/* TOTHINK: Maybe fallback elsewhere in other cases? */
@@ -475,7 +475,7 @@ static void sock_connect(TYPE_FD sock)
 	fd = accept(sock, (struct sockaddr *) &sa, &salen);
 
 	if (INVALID_FD(fd)) {
-		upslog_with_errno(LOG_ERR, "accept on unix fd failed");
+		upslog_with_errno(LOG_ERR, "%s: accept on unix fd failed", __func__);
 		return;
 	}
 
@@ -491,7 +491,7 @@ static void sock_connect(TYPE_FD sock)
 		ret = fcntl(fd, F_GETFL, 0);
 
 		if (ret < 0) {
-			upslog_with_errno(LOG_ERR, "fcntl get on unix fd failed");
+			upslog_with_errno(LOG_ERR, "%s: fcntl get on unix fd failed", __func__);
 			close(fd);
 			return;
 		}
@@ -499,7 +499,7 @@ static void sock_connect(TYPE_FD sock)
 		ret = fcntl(fd, F_SETFL, ret | O_NDELAY);
 
 		if (ret < 0) {
-			upslog_with_errno(LOG_ERR, "fcntl set O_NDELAY on unix fd failed");
+			upslog_with_errno(LOG_ERR, "%s: fcntl set O_NDELAY on unix fd failed", __func__);
 			close(fd);
 			return;
 		}
@@ -581,9 +581,9 @@ static void sock_connect(TYPE_FD sock)
 	connhead = conn;
 
 #ifndef WIN32
-	upsdebugx(3, "new connection on fd %d", fd);
+	upsdebugx(3, "%s: new connection on fd %d", __func__, fd);
 #else
-	upsdebugx(3, "new connection on handle %p", sock);
+	upsdebugx(3, "%s: new connection on handle %p", __func__, sock);
 #endif
 
 }
@@ -685,8 +685,8 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 	char *sockfn = pipename;	/* Just for the report below; not a global var in WIN32 builds */
 #endif
 
-	upsdebugx(6, "Driver on %s is now handling %s with %" PRIuSIZE " args",
-		sockfn, numarg ? arg[0] : "<skipped: no command>", numarg);
+	upsdebugx(6, "%s: Driver on %s is now handling %s with %" PRIuSIZE " args",
+		__func__, sockfn, numarg ? arg[0] : "<skipped: no command>", numarg);
 
 	if (numarg < 1) {
 		return 0;
@@ -1037,9 +1037,9 @@ char * dstate_init(const char *prog, const char *devname)
 	sockfd = sock_open(sockname);
 
 #ifndef WIN32
-	upsdebugx(2, "dstate_init: sock %s open on fd %d", sockname, sockfd);
+	upsdebugx(2, "%s: sock %s open on fd %d", __func__, sockname, sockfd);
 #else
-	upsdebugx(2, "dstate_init: sock %s open on handle %p", sockname, sockfd);
+	upsdebugx(2, "%s: sock %s open on handle %p", __func__, sockname, sockfd);
 #endif
 
 	/* NOTE: Caller must free this string */
@@ -1112,7 +1112,7 @@ int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
 			break;
 
 		default:
-			upslog_with_errno(LOG_ERR, "select unix sockets failed");
+			upslog_with_errno(LOG_ERR, "%s: select unix sockets failed", __func__);
 		}
 
 		return overrun;
@@ -1189,7 +1189,7 @@ int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
 	}
 
 	if (ret == WAIT_FAILED) {
-		upslog_with_errno(LOG_ERR, "waitfor failed");
+		upslog_with_errno(LOG_ERR, "%s: waitfor failed", __func__);
 		return overrun;
 	}
 
@@ -1460,7 +1460,7 @@ void dstate_setaux(const char *var, long aux)
 	sttmp = state_tree_find(dtree_root, var);
 
 	if (!sttmp) {
-		upslogx(LOG_ERR, "dstate_setaux: base variable (%s) does not exist", var);
+		upslogx(LOG_ERR, "%s: base variable (%s) does not exist", __func__, var);
 		return;
 	}
 
