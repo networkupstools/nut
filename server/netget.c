@@ -140,7 +140,7 @@ static void get_type(nut_ctype_t *client, const char *upsname, const char *var)
 	snprintf(buf, sizeof(buf), "TYPE %s %s", upsname, var);
 
 	if (node->flags & ST_FLAG_IMMUTABLE) {
-#if DEBUG
+#if defined DEBUG && DEBUG
 		/* Properly exposing this needs also an update to
 		 * docs/net-protocol.txt (promote the paragraph
 		 * provided as a note currently) and to the NUT RFC
@@ -205,7 +205,7 @@ static void get_type(nut_ctype_t *client, const char *upsname, const char *var)
 			}
 		}
 
-#if DEBUG
+#if defined DEBUG && DEBUG
 		/* Need to figure out an "aux" value here (length of current
 		 * string at least?) and propagate the flag into where netset
 		 * would see it. Maybe this sanity-check should move into the
