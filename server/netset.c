@@ -56,6 +56,11 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 	val = sstate_getinfo(ups, var);
 
 	if (!val) {
+		/* Technically, this includes state tree entries
+		 * with a defined name but null value so far.
+		 * FIXME? Use sstate_getnode() to differentiate
+		 *  the cases? Any practical use for this?
+		 */
 		send_err(client, NUT_ERR_VAR_NOT_SUPPORTED);
 		return;
 	}
