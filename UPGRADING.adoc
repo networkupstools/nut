@@ -38,6 +38,14 @@ Changes from 2.8.2 to 2.8.3
   pages which are delivered automatically. Packaging recipes can likely
   be simplified now. [#2445]
 
+- A `NUT_DEBUG_SYSLOG` environment variable was introduced to tweak activation
+  of syslog message emission (and related detachment of `stderr` when daemons
+  are backgrounding), which can be useful for systemd service units. It can be
+  set via `nut.conf` file for all standard consumers, or patched/dropped-in to
+  systemd unit definitions specifically (less recommended, but may be easier
+  to package). The positive effect would be avoiding duplicate logging as both
+  `syslog` and `stderr` ending up in the same journal. [#2394]
+
 - A `CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR` setting was added (for `make`
   calls and used by `tools/gitlog2changelog.py.in` script), and it defaults
   to `true` allowing for better ordered documents at the cost of some memory
