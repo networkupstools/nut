@@ -185,7 +185,7 @@ static void get_type(nut_ctype_t *client, const char *upsname, const char *var)
 
 		errno = 0;
 		if (!str_to_double_strict(node->val, &d, 10)) {
-			upsdebugx(3, "%s: UPS[%s] variable %s is a NUMBER but not (exclusively) a double: %s",
+			upsdebugx(3, "%s: UPS[%s] variable %s is flagged a NUMBER but not (exclusively) a double: %s",
 				__func__, upsname, var, node->val);
 			upsdebug_with_errno(4, "%s: val=%f len=%" PRIuSIZE,
 				__func__, d, len);
@@ -197,7 +197,7 @@ static void get_type(nut_ctype_t *client, const char *upsname, const char *var)
 			errno = 0;
 			ok = 1;
 			if (!str_to_long_strict(node->val, &l, 10)) {
-				upsdebugx(3, "%s: UPS[%s] variable %s is a NUMBER but not (exclusively) a long int: %s",
+				upsdebugx(3, "%s: UPS[%s] variable %s is flagged a NUMBER but not (exclusively) a long int: %s",
 					__func__, upsname, var, node->val);
 				upsdebug_with_errno(4, "%s: val=%ld len=%" PRIuSIZE,
 					__func__, l, len);
