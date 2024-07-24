@@ -228,6 +228,7 @@ dmfify_c_file() {
             logmsg_error "Could not parse '${cmib}' into '${ABS_BUILDDIR}/${mib}.dmf'"
         fi
         logmsg_error "You can inspect a copy of the intermediate result in '${mib}.json.tmp', '${mib}.dmf.tmp' and '${mib}_TEST.c' located in '${ABS_BUILDDIR}/', '${_SCRIPT_DIR}' and/or '`pwd`'"
+        logmsg_error "To troubleshoot 'nut_cpp' errors, export DEBUG_NUT_CPP=true and check resulting 'temp-cpp-filt.tmp' (see README-NUT-DMF.txt for more details)"
         return $ERRCODE; }
 
     sed 's,^<nut>,\<nut version="'"${XSD_DMFSNMP_VERSION}"'" xmlns="'"${XSD_DMFSNMP_XMLNS}"'"\>,' < "${ABS_BUILDDIR}/${mib}.dmf.tmp" > "${ABS_BUILDDIR}/${mib}.dmf" \
