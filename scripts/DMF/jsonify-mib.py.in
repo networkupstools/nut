@@ -385,30 +385,28 @@ def s_info2c (fout, jsinfo):
         print ("\nstatic info_lkp_t %s_TEST[] = {" % key, file=fout)
         gotfun = 0
         for key, value, fun_vp2s, nuf_s2l, fun_s2l, nuf_vp2s in widen_tuples(jsinfo [key],6):
-            if nuf_vp2s is None:
-                if fun_s2l is None:
-                    if nuf_s2l is None:
-                        if fun_vp2s is None:
-                            # No NULLs in the end, because depending on macro value
-                            # WITH_SNMP_LKP_FUN info_lkp_t can have more or less fields
-                            print ("    { %d, \"%s\" }," % (key, value), file=fout)
-                        else:
-                            # No quotation for fun/nuf names!
-                            print ("    { %d, \"%s\", %s }," % (key, value, fun_vp2s), file=fout)
-                            gotfun = 1
-                    else:
-                            print ("    { %d, \"%s\", %s, %s }," % (key, value, fun_vp2s, nuf_s2l), file=fout)
-                            gotfun = 1
-                else:
-                            print ("    { %d, \"%s\", %s, %s, %s }," % (key, value, fun_vp2s, nuf_s2l, fun_s2l), file=fout)
-                            gotfun = 1
+            if nuf_vp2s is None and \
+                    fun_s2l is None and \
+                    nuf_s2l is None and \
+                    fun_vp2s is None:
+                            # Depending on macro value WITH_SNMP_LKP_FUN, the info_lkp_t
+                            # structure can have more or less fields. Any needed NULLs
+                            # in the end should be covered by info_lkp_default() macro
+                            # in snmp-ups.h
+                            print ("    info_lkp_default( %d, \"%s\" )," % (key, value), file=fout)
             else:
-                print ("    { %d, \"%s\", %s, %s, %s, %s }," % (key, value, fun_vp2s, nuf_s2l, fun_s2l, nuf_vp2s), file=fout)
-                gotfun = 1
-        if gotfun == 0:
-            print ("    { 0, NULL }\n};\n", file=fout)
-        else:
-            print ("    { 0, NULL, NULL, NULL, NULL, NULL }\n};\n", file=fout)
+                            # No quotation for fun/nuf names!
+                            print ("    { %d, \"%s\", %s, %s, %s, %s }," % (
+                                key, value,
+                                "NULL" if fun_vp2s is None else fun_vp2s,
+                                "NULL" if nuf_s2l  is None else nuf_s2l,
+                                "NULL" if fun_s2l  is None else fun_s2l,
+                                "NULL" if nuf_vp2s is None else nuf_vp2s
+                                ), file=fout)
+                            gotfun = 1
+
+        print ("\n    /* end of structure. */\n    info_lkp_sentinel", file=fout)
+        print ("};", file=fout)
 
 def s_snmp2c (fout, js, name):
     print ("\nstatic snmp_info_t %s_TEST[] = {" % name, file=fout)
@@ -429,9 +427,13 @@ def s_snmp2c (fout, js, name):
 
 #        if pinfo ["setvar"] != "NULL":
 #            pinfo ["setvar"] = '&' + pinfo ["setvar"]
-#        print ('    { "%(info_type)s", %(info_flags)d, %(info_len)f, %(OID)s, %(dfl)s, %(flags)d, %(oid2info)s, %(setvar)s},' % pinfo, file=fout)
-        print ('    { "%(info_type)s", %(info_flags)d, %(info_len)f, %(OID)s, %(dfl)s, %(flags)d, %(oid2info)s},' % pinfo, file=fout)
-    print ("    { NULL, 0, 0, NULL, NULL, 0, NULL }", file=fout)
+#        print ('    { "%(info_type)s", %(info_flags)d, %(info_len)f, %(OID)s, %(dfl)s, %(flags)d, %(oid2info)s, %(setvar)s },' % pinfo, file=fout)
+#        print ('    { "%(info_type)s", %(info_flags)d, %(info_len)f, %(OID)s, %(dfl)s, %(flags)d, %(oid2info)s },' % pinfo, file=fout)
+        print ('    snmp_info_default( "%(info_type)s", %(info_flags)d, %(info_len)f, %(OID)s, %(dfl)s, %(flags)d, %(oid2info)s ),' % pinfo, file=fout)
+
+#    print ("    { NULL, 0, 0, NULL, NULL, 0, NULL }", file=fout)
+    print ("\n    /* end of structure. */\n    snmp_info_sentinel", file=fout)
+
     print ("};", file=fout)
 
 def s_mib2nut (fout, js, name):
