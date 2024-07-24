@@ -58,7 +58,7 @@ perl -0pe 's/\n([^#].*)\n;/\n$1;\n/g' | \
 sed \
     -e 's/__asm_*'"${SPACETAB}"'*(.*)'"${SPACETAB}"'*;/;/g' \
     -e 's/__asm_*'"${SPACETAB}"'*(.*)'"${SPACETAB}"'*$/ /g' \
-    -e 's/__attribute__'"${SPACETAB}"'*((['"${SPACETAB}"'*__[A-Za-z0-9_-]*__'"${SPACETAB}"'*([^()]*)))'"${SPACETAB}"'*/ /g' \
+    -e 's/__attribute__'"${SPACETAB}"'*(('"${SPACETAB}"'*__[A-Za-z0-9_-]*__'"${SPACETAB}"'*([^()]*)))'"${SPACETAB}"'*/ /g' \
     -e 's/__attribute__'"${SPACETAB}"'*((__aligned__([^()]*([^()]*))))'"${SPACETAB}"'*/ /g' \
     -e 's/__attribute__'"${SPACETAB}"'*((aligned([0-9]*)))'"${SPACETAB}"'*/ /g' \
     -e 's/__attribute__'"${SPACETAB}"'*((alloc_size([0-9]*)))'"${SPACETAB}"'*/ /g' \
