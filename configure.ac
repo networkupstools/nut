@@ -16,7 +16,7 @@ dnl If the NUT codebase in this workspace is being developed and rebuilt
 dnl without reconfiguration, detailed version in the binaries will differ
 dnl (that one comes from the NUT_VERSION_MACRO from nut_version.h file).
 (command -v git >/dev/null 2>/dev/null) \
-&& NUT_SOURCE_GITREV="`(git describe --tags --match 'v[0-9]*.[0-9]*.[0-9]' --exclude '*-signed' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' 2>/dev/null || git describe --tags --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' --exclude '*Windows*' --exclude '*IPM*' 2>/dev/null ) | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,'`" \
+&& NUT_SOURCE_GITREV="`(git describe --tags --match 'v@<:@0-9@:>@*.@<:@0-9@:>@*.@<:@0-9@:>@' --exclude '*-signed' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' 2>/dev/null || git describe --tags --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' --exclude '*Windows*' --exclude '*IPM*' 2>/dev/null ) | sed -e 's/^v\(@<:@0-9@:>@\)/\1/' -e 's,^.*/,,'`" \
 || NUT_SOURCE_GITREV=""
 
 dnl Gitrev-based build identifier which can be used for e.g. PyPI uploads:
