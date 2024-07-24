@@ -94,5 +94,10 @@ a single file until you like the results:
 NOTE: The pre-processed file saved with `DEBUG_NUT_CPP=true` may appear
 as `dmfsnmp/temp-cpp-filt.tmp`.
 
+Also take a look at lines debug-logged as `PREPROCESS: (...)` with the
+actually used call to the preprocessor (before scripted filtering):
+you can copy-paste that command and store a copy of preprocessed-only
+file to investigate the differences imposed by our script.
+
 Hope this helps,
 Jim Klimov
