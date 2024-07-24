@@ -275,6 +275,7 @@ if WITH_REGENERATE_DMF_SNMP
 	    test -d "$${ABS_OUTDIR}" -a -w "$${ABS_OUTDIR}" || $(MKDIR_P) "$${ABS_OUTDIR}" || exit ; \
 	    ( cd "$(@D)" && \
 	      LANG=C LC_ALL=C TZ=UTC \
+	      CC='$(CC)' CXX='$(CXX)' CPP='$(CPP)' LD='$(LD)' \
 	      CFLAGS="$(DMFTOOLS_CFLAGS) $(AM_CFLAGS)" \
 	      LDFLAGSx="$(abs_top_builddir)/common/libcommon.la $(abs_top_builddir)/drivers/dstate.o" \
 	      CPPFLAGS="$(DMFTOOLS_CPPFLAGS) $(CPPFLAGS) $(AM_CPPFLAGS)" \
@@ -295,6 +296,8 @@ $(DMFGEN_SANITY_VALIDATED): dmfgen-sanity
 
 dmfgen-sanity: $(srcdir)/dmfify-mib.sh
 	@DEBUG="$(V)"; export DEBUG; \
+	 CC='$(CC)'; CXX='$(CXX)'; CPP='$(CPP)'; LD='$(LD)'; \
+	 export CC CXX CPP LD ; \
 	 if $(abs_srcdir)/dmfify-mib.sh --sanity-check ; then \
 	    echo "Sanity-checked the low-level ability to generate DMF files - OK" >&2; \
 	    test -f "$(DMFGEN_SANITY_VALIDATED)" || touch $(DMFGEN_SANITY_VALIDATED); \
