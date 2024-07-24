@@ -88,8 +88,11 @@ a single file until you like the results:
 
 ----
 :; ( cd scripts/DMF && rm -f apc* dmfsnmp/apc-mib.dmf && \
-     make V=1 jsonify-mib.py dmfsnmp/apc-mib.dmf )
+     make V=1 DEBUG_NUT_CPP=true jsonify-mib.py dmfsnmp/apc-mib.dmf )
 ----
+
+NOTE: The pre-processed file saved with `DEBUG_NUT_CPP=true` may appear
+as `dmfsnmp/temp-cpp-filt.tmp`.
 
 Hope this helps,
 Jim Klimov
