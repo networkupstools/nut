@@ -495,6 +495,7 @@ bool strneq (const char* x, const char* y);
 
 inline bool streq (const char* x, const char* y)
 {
+    int cmp;
     if (!x && !y)
         return true;
     if (!x || !y) {
@@ -502,7 +503,7 @@ inline bool streq (const char* x, const char* y)
             fprintf(stderr, "\\nDEBUG: strEQ(): One compared string (but not both) is NULL:\\n\\t%%s\\n\\t%%s\\n\\n", x ? x : "<NULL>" , y ? y : "<NULL>");
         return false;
         }
-    int cmp = strcmp (x, y);
+    cmp = strcmp (x, y);
     if (cmp != 0) {
         if (do_debug)
             fprintf(stderr, "\\nDEBUG: strEQ(): Strings not equal (%%i):\\n\\t%%s\\n\\t%%s\\n\\n", cmp, x, y);
@@ -512,6 +513,7 @@ inline bool streq (const char* x, const char* y)
 
 inline bool strneq (const char* x, const char* y)
 {
+    int cmp;
     if (!x && !y) {
         if (do_debug)
             fprintf(stderr, "\\nDEBUG: strNEQ(): Both compared strings are NULL\\n");
@@ -520,7 +522,7 @@ inline bool strneq (const char* x, const char* y)
     if (!x || !y) {
         return true;
         }
-    int cmp = strcmp (x, y);
+    cmp = strcmp (x, y);
     if (cmp == 0) {
         if (do_debug)
             fprintf(stderr, "\\nDEBUG: strNEQ(): Strings are equal (%%i):\\n\\t%%s\\n\\t%%s\\n\\n", cmp, x, y);
