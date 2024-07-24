@@ -94,8 +94,10 @@ sed \
     -e 's/'"${SPACETAB}"'_Noreturn'"${SPACETAB}"'/ /g' \
     -e 's/^_Noreturn'"${SPACETAB}"'/ /g' \
     -e 's/__NORETURN_*//g' \
-    -e 's/__builtin_va_list/int/g'
+    -e 's/__builtin_va_list/int/g' \
+| grep -E -v 'typedef [^;]* float;'
 } # // end of do_filter()
+
 
 # Repeat same filter a few times to strip appearing blank lines and trailing semicolons
 $CPP $CFLAGS $CPPFLAGS "${@}" | \
