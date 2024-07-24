@@ -15,11 +15,11 @@ dnl the PDF documentation revision history via docs/docinfo.xml.in).
 dnl If the NUT codebase in this workspace is being developed and rebuilt
 dnl without reconfiguration, detailed version in the binaries will differ
 dnl (that one comes from the NUT_VERSION_MACRO from nut_version.h file).
-(command -v git >/dev/null 2>/dev/null) \
-&& NUT_SOURCE_GITREV="`(git describe --tags --match 'v@<:@0-9@:>@*.@<:@0-9@:>@*.@<:@0-9@:>@' --exclude '*-signed' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' 2>/dev/null || git describe --tags --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' --exclude '*Windows*' --exclude '*IPM*' 2>/dev/null ) | sed -e 's/^v\(@<:@0-9@:>@\)/\1/' -e 's,^.*/,,'`" \
-|| NUT_SOURCE_GITREV=""
+dnl # Example:   NUT_SOURCE_GITREV='2.8.2.695.1-696-g0e00f0777'
+NUT_SOURCE_GITREV="`${srcdir}/tools/gitlog2version.sh`"
 
 dnl Gitrev-based build identifier which can be used for e.g. PyPI uploads:
+dnl # Example:   NUT_SOURCE_GITREV_NUMERIC='2.8.2.695.1.696'
 NUT_SOURCE_GITREV_NUMERIC="`echo "${NUT_SOURCE_GITREV}" | sed -e 's/^v//' -e 's/-g.*$//' -e 's/-/./g'`"
 
 dnl Note: except for experiments, do not pass this into config.h - use
