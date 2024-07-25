@@ -2103,7 +2103,9 @@ void nut_report_config_flags(void)
 	 * Depending on amount of configuration tunables involved by a particular
 	 * build of NUT, the string can be quite long (over 1KB).
 	 */
+#if 0
 	const char *acinit_ver = NULL;
+#endif
 	/* Pass these as variables to avoid warning about never reaching one
 	 * of compiled codepaths: */
 	const char *compiler_ver = CC_VERSION;
@@ -2113,6 +2115,7 @@ void nut_report_config_flags(void)
 	if (nut_debug_level < 1)
 		return;
 
+#if 0
 	/* Only report git revision if NUT_VERSION_MACRO in nut_version.h aka
 	 * UPS_VERSION here is remarkably different from PACKAGE_VERSION from
 	 * configure.ac AC_INIT() -- which may be e.g. "2.8.0.1" although some
@@ -2122,9 +2125,6 @@ void nut_report_config_flags(void)
 	 * in case of rebuilds while developers are locally iterating -- this
 	 * may be disabled for faster local iterations at a cost of a little lie).
 	 */
-	/* FIXME: Make use of NUT_VERSION_SEMVER_MACRO and
-	 *   NUT_VERSION_IS_RELEASE ? "release" : "development iteration"
-	 */
 	if (PACKAGE_VERSION && UPS_VERSION &&
 		(strlen(UPS_VERSION) < 12 || !strstr(UPS_VERSION, PACKAGE_VERSION))
 	) {
@@ -2133,7 +2133,14 @@ void nut_report_config_flags(void)
 		 * especially embedders, tend to place their product IDs here),
 		 * or if PACKAGE_VERSION *is NOT* a substring of it: */
 		acinit_ver = PACKAGE_VERSION;
+/*
+		// Triplet that was printed below:
+		(acinit_ver ? " (release/snapshot of " : ""),
+		(acinit_ver ? acinit_ver : ""),
+		(acinit_ver ? ")" : ""),
+*/
 	}
+#endif
 
 	/* NOTE: If changing wording here, keep in sync with configure.ac logic
 	 * looking for CONFIG_FLAGS_DEPLOYED via "configured with flags:" string!
@@ -2155,9 +2162,9 @@ void nut_report_config_flags(void)
 			difftime(now.tv_sec, upslog_start.tv_sec),
 			(long)(now.tv_usec - upslog_start.tv_usec),
 			UPS_VERSION,
-			(acinit_ver ? " (release/snapshot of " : ""),
-			(acinit_ver ? acinit_ver : ""),
-			(acinit_ver ? ")" : ""),
+			NUT_VERSION_IS_RELEASE ? " release" : " (development iteration after ",
+			NUT_VERSION_IS_RELEASE ? "" : NUT_VERSION_SEMVER_MACRO,
+			NUT_VERSION_IS_RELEASE ? "" : ")",
 			(compiler_ver && *compiler_ver != '\0' ? " built with " : ""),
 			(compiler_ver && *compiler_ver != '\0' ? compiler_ver : ""),
 			(compiler_ver && *compiler_ver != '\0' ? " and" : ""),
@@ -2174,9 +2181,9 @@ void nut_report_config_flags(void)
 	if (xbit_test(upslog_flags, UPSLOG_SYSLOG))
 		syslog(LOG_DEBUG, "Network UPS Tools version %s%s%s%s%s%s%s %s%s",
 			UPS_VERSION,
-			(acinit_ver ? " (release/snapshot of " : ""),
-			(acinit_ver ? acinit_ver : ""),
-			(acinit_ver ? ")" : ""),
+			NUT_VERSION_IS_RELEASE ? " release" : " (development iteration after ",
+			NUT_VERSION_IS_RELEASE ? "" : NUT_VERSION_SEMVER_MACRO,
+			NUT_VERSION_IS_RELEASE ? "" : ")",
 			(compiler_ver && *compiler_ver != '\0' ? " built with " : ""),
 			(compiler_ver && *compiler_ver != '\0' ? compiler_ver : ""),
 			(compiler_ver && *compiler_ver != '\0' ? " and" : ""),
