@@ -36,6 +36,16 @@ dnl (that one comes from the NUT_VERSION_MACRO from nut_version.h file).
 dnl # Example:   NUT_SOURCE_GITREV='2.8.2.695.1-696-g0e00f0777'
 NUT_SOURCE_GITREV="`WANT_VER=DESC50 "${srcdir}/tools/gitlog2version.sh" 2>/dev/null`"
 
+dnl A true/false (literally) response that can be used for prettier messages
+dnl emitted by NUT code.
+NUT_SOURCE_GITREV_IS_RELEASE="`WANT_VER=IS_RELEASE "${srcdir}/tools/gitlog2version.sh" 2>/dev/null`"
+AS_IF([$NUT_SOURCE_GITREV_IS_RELEASE], [NUT_SOURCE_GITREV_DEVREL="release"], [NUT_SOURCE_GITREV_DEVREL="development iteration"])
+
+dnl Semantic version of most-recent NUT release this code is derived from.
+dnl It may equal the NUT_SOURCE_GITREV and NUT_SOURCE_GITREV_NUMERIC, but
+dnl this situation is only expected if NUT_SOURCE_GITREV_IS_RELEASE==true.
+NUT_SOURCE_GITREV_SEMVER="`WANT_VER=SEMVER "${srcdir}/tools/gitlog2version.sh" 2>/dev/null`"
+
 dnl Gitrev-based build identifier which can be used for e.g. PyPI uploads:
 dnl # Example:   NUT_SOURCE_GITREV_NUMERIC='2.8.2.695.1.696'
 dnl #   NUT_SOURCE_GITREV_NUMERIC="`echo "${NUT_SOURCE_GITREV}" | sed -e 's/^v//' -e 's/-g.*$//' -e 's/-/./g'`"
@@ -102,7 +112,10 @@ AC_CONFIG_SRCDIR(server/upsd.c)
 AC_CONFIG_MACRO_DIR([m4])
 AS_IF([test x"${NUT_SOURCE_GITREV}" = x],
     [echo "Network UPS Tools version ${PACKAGE_VERSION}"],
-    [echo "Network UPS Tools version ${PACKAGE_VERSION} (${NUT_SOURCE_GITREV})"])
+    [AS_IF([test x"${NUT_SOURCE_GITREV}" = x"${PACKAGE_VERSION}"],
+        [echo "Network UPS Tools version ${PACKAGE_VERSION} ${NUT_SOURCE_GITREV_DEVREL}"],
+        [echo "Network UPS Tools version ${PACKAGE_VERSION} (${NUT_SOURCE_GITREV}) ${NUT_SOURCE_GITREV_DEVREL}"])
+    ])
 AC_CANONICAL_TARGET
 NUT_CHECK_OS
 NUT_STASH_WARNINGS
@@ -697,7 +710,10 @@ NUT_ARG_ENABLE([keep_nut_report_feature],
 
 AS_IF([test x"${NUT_SOURCE_GITREV}" = x],
     [NUT_REPORT([configured version], [${PACKAGE_VERSION}])],
-    [NUT_REPORT([configured version], [${PACKAGE_VERSION} (${NUT_SOURCE_GITREV})])])
+    [AS_IF([test x"${NUT_SOURCE_GITREV}" = x"${PACKAGE_VERSION}"],
+        [NUT_REPORT([configured version], [${PACKAGE_VERSION} ${NUT_SOURCE_GITREV_DEVREL}])],
+        [NUT_REPORT([configured version], [${PACKAGE_VERSION} (${NUT_SOURCE_GITREV}) ${NUT_SOURCE_GITREV_DEVREL}])])
+    ])
 
 dnl Note: the compiler/pragma/attr methods below are custom for NUT codebase:
 NUT_COMPILER_FAMILY
@@ -4705,6 +4721,8 @@ AC_SUBST(TREE_VERSION)
 AC_SUBST(NUT_NETVERSION)
 AC_SUBST(FORCE_NUT_VERSION)
 AC_SUBST(NUT_SOURCE_GITREV)
+AC_SUBST(NUT_SOURCE_GITREV_IS_RELEASE)
+AC_SUBST(NUT_SOURCE_GITREV_SEMVER)
 AC_SUBST(NUT_SOURCE_GITREV_NUMERIC)
 AC_SUBST(LIBSSL_CFLAGS)
 AC_SUBST(LIBSSL_LIBS)
