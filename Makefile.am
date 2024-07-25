@@ -250,6 +250,15 @@ maintainer-asciidocs:
 check-NIT check-NIT-devel:
 	+cd $(builddir)/tests/NIT && $(MAKE) $(AM_MAKEFLAGS) $@
 
+VERSION_DEFAULT: dummy-stamp
+	@abs_top_srcdir='$(abs_top_srcdir)' ; \
+	 abs_top_builddir='$(abs_top_builddir)' ; \
+	 export abs_top_srcdir ; export abs_top_builddir ; \
+	 WANT_VER=UPDATE_FILE '$(abs_top_srcdir)/tools/gitlog2version.sh'
+
+CLEANFILES += VERSION_DEFAULT.tmp
+EXTRA_DIST += VERSION_DEFAULT
+
 # This target adds syntax-checking for committed shell script files,
 # to avoid surprises and delays in finding fatal typos after packaging
 ###

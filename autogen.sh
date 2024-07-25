@@ -24,6 +24,8 @@ else
 	DEBUG=false
 fi
 
+WANT_VER=UPDATE_FILE "`dirname $0`"/tools/gitlog2version.sh
+
 if [ -n "${PYTHON-}" ] ; then
 	# May be a name/path of binary, or one with args - check both
 	(command -v "$PYTHON") \
