@@ -668,8 +668,8 @@ check_gitignore() {
     # and git diff; note that filenames starting with a dot should be
     # reported by `git status -- '*'` and not hidden.
     [ -n "${FILE_GLOB-}" ] || FILE_GLOB="'*'"
-    # Always filter these names away; note: no extra quoting here:
-    FILE_GLOB_EXCLUDE=":!.ci*.log* :!VERSION_DEFAULT"
+    # Always filter these names away:
+    FILE_GLOB_EXCLUDE="':!.ci*.log*' ':!VERSION_DEFAULT'"
     [ -n "${GIT_ARGS-}" ] || GIT_ARGS='' # e.g. GIT_ARGS="--ignored"
     # Display contents of the diff?
     # (Helps copy-paste from CI logs to source to amend quickly)
