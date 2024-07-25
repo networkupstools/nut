@@ -62,7 +62,7 @@ static int upsnotify_report_verbosity = -1;
 
 /* the reason we define UPS_VERSION as a static string, rather than a
 	macro, is to make dependency tracking easier (only common.o depends
-	on nut_version_macro.h), and also to prevent all sources from
+	on nut_version.h), and also to prevent all sources from
 	having to be recompiled each time the version changes (they only
 	need to be re-linked). */
 #include "nut_version.h"
@@ -2121,6 +2121,9 @@ void nut_report_config_flags(void)
 	 * as decided when generating nut_version.h (and if it was re-generated
 	 * in case of rebuilds while developers are locally iterating -- this
 	 * may be disabled for faster local iterations at a cost of a little lie).
+	 */
+	/* FIXME: Make use of NUT_VERSION_SEMVER_MACRO and
+	 *   NUT_VERSION_IS_RELEASE ? "release" : "development iteration"
 	 */
 	if (PACKAGE_VERSION && UPS_VERSION &&
 		(strlen(UPS_VERSION) < 12 || !strstr(UPS_VERSION, PACKAGE_VERSION))
