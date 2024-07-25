@@ -1543,7 +1543,12 @@ int main(int argc, char *argv[])
 				quiet = 1;
 				break;
 			case 'V':
-				printf("Network UPS Tools - %s\n", NUT_VERSION_MACRO);
+				printf("Network UPS Tools - %s %s%s%s\n",
+					NUT_VERSION_MACRO,
+					NUT_VERSION_IS_RELEASE ? "release" : "(development iteration after ",
+					NUT_VERSION_IS_RELEASE ? "" : NUT_VERSION_SEMVER_MACRO,
+					NUT_VERSION_IS_RELEASE ? "" : ")"
+				);
 				nut_report_config_flags();
 				exit(EXIT_SUCCESS);
 			case 'a':
