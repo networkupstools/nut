@@ -47,8 +47,9 @@
 # By legacy convention, 3-digit "semver" was for NUT releases, and
 # a nominal "semver.1" for any development snapshots afterwards.
 [ -n "${DEFAULT_VERSION-}" ] || DEFAULT_VERSION='2.8.2.1'
+NUT_WEBSITE="https://networkupstools.org/"
 
-getver() (
+getver() {
     # NOTE: The chosen trunk branch must be up to date (may be "origin/master"
     # or "upstream/master", etc.) for resulting version discovery to make sense.
     [ x"${TRUNK-}" != x ] || TRUNK=master
@@ -79,20 +80,73 @@ getver() (
     VER5="${TAG#v}.`git log --oneline "${TAG}..${BASE}" | wc -l | tr -d ' '`.`git log --oneline "${TRUNK}..HEAD" | wc -l | tr -d ' '`"
     DESC5="${VER5}${SUFFIX}"
 
-    # Strip trailing zeroes for trunk snapshots and releases
+    # Strip up to two trailing zeroes for trunk snapshots and releases
     VER50="`echo "${VER5}" | sed -e 's/\.0$//' -e 's/\.0$//'`"
     DESC50="${VER50}${SUFFIX}"
+
+    # Leave exactly 3 components
+    SEMVER="`echo "${VER5}" | sed -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\..*$/\1/'`"
+    # FIXME? Add ".0" up to 3 components?
 
     # Debug
     echo "DESC='${DESC}' => TAG='${TAG}' + SUFFIX='${SUFFIX}'; BASE='${BASE}' => VER5='${VER5}' => VER50='${VER50}' => DESC50='${DESC50}'" >&2
 
-    # echo "${DESC5}"
-    echo "${DESC50}"
-)
+    case "${WANT_VER-}" in
+        "DESC5")	echo "${DESC5}" ;;
+        "DESC50")	echo "${DESC50}" ;;
+        "VER5") 	echo "${VER5}" ;;
+        "VER50")	echo "${VER50}" ;;
+        "SEMVER")	echo "${SEMVER}" ;;
+        "IS_RELEASE")	[ x"${SEMVER}" = x"${VER50}" ] && echo true || echo false ;;
+        "TAG")  	echo "${TAG}" ;;
+        "SUFFIX")	echo "${SUFFIX}" ;;
+        "BASE") 	echo "${BASE}" ;;
+        "URL")
+            if [ x"${SEMVER}" = x"${VER50}" ] ; then
+                echo "${NUT_WEBSITE}historic/v${SEMVER}/index.html"
+            else
+                echo "${NUT_WEBSITE}"
+            fi
+            ;;
+        *)		echo "${DESC50}" ;;
+    esac
+}
 
 if (command -v git && git rev-parse --show-toplevel) >/dev/null 2>/dev/null ; then
     getver
     exit
 fi
 
-echo "${DEFAULT_VERSION-}"
+DEFAULT_VERSION_DOTS="`echo "${DEFAULT_VERSION}" | sed 's/[^.]*//g' | tr -d '\n' | wc -c`"
+DEFAULT_VERSION5_DOTS="${DEFAULT_VERSION_DOTS}"
+DEFAULT_VERSION5="${DEFAULT_VERSION}"
+while [ "${DEFAULT_VERSION5_DOTS}" -lt 4 ] ; do
+    DEFAULT_VERSION5="${DEFAULT_VERSION5}.0"
+    DEFAULT_VERSION5_DOTS="`expr $DEFAULT_VERSION5_DOTS + 1`"
+done
+
+DEFAULT_VERSION3_DOTS="${DEFAULT_VERSION_DOTS}"
+DEFAULT_VERSION3="${DEFAULT_VERSION}"
+while [ "${DEFAULT_VERSION3_DOTS}" -lt 2 ] ; do
+    DEFAULT_VERSION3="${DEFAULT_VERSION3}.0"
+    DEFAULT_VERSION3_DOTS="`expr $DEFAULT_VERSION3_DOTS + 1`"
+done
+while [ "${DEFAULT_VERSION3_DOTS}" -gt 2 ] ; do
+    DEFAULT_VERSION3="`echo "${DEFAULT_VERSION3}" | sed 's,\.[0-9][0-9]*$,,'`"
+    DEFAULT_VERSION3_DOTS="`expr $DEFAULT_VERSION3_DOTS - 1`"
+done
+
+if [ x"${DEFAULT_VERSION3}" = x"${DEFAULT_VERSION}" ] ; then
+    NUT_WEBSITE="${NUT_WEBSITE}historic/v${DEFAULT_VERSION3}/index.html"
+fi
+
+case "${WANT_VER-}" in
+    "DESC5"|"VER5")	echo "${DEFAULT_VERSION5}" ;;
+    "DESC50"|"VER50")	echo "${DEFAULT_VERSION}" ;;
+    "SUFFIX"|"BASE")	echo "" ;;
+    "SEMVER")	echo "${DEFAULT_VERSION3}" ;;
+    "IS_RELEASE")	[ x"${DEFAULT_VERSION3}" = x"${DEFAULT_VERSION}" ] && echo true || echo false ;;
+    "TAG")	echo "v${DEFAULT_VERSION3}" ;;
+    "URL")	echo "${NUT_WEBSITE}" ;;
+    *)		echo "${DEFAULT_VERSION}" ;;
+esac
