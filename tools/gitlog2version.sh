@@ -47,9 +47,10 @@
 # By legacy convention, 3-digit "semver" was for NUT releases, and
 # a nominal "semver.1" for any development snapshots afterwards.
 [ -n "${DEFAULT_VERSION-}" ] || DEFAULT_VERSION='2.8.2.1'
-NUT_WEBSITE="https://networkupstools.org/"
+[ -n "${NUT_WEBSITE-}" ] || NUT_WEBSITE="https://networkupstools.org/"
+[ x"${PREFER_GIT-}" = xfalse ] || PREFER_GIT=true
 
-getver() {
+getver_git() {
     # NOTE: The chosen trunk branch must be up to date (may be "origin/master"
     # or "upstream/master", etc.) for resulting version discovery to make sense.
     [ x"${TRUNK-}" != x ] || TRUNK=master
@@ -87,10 +88,47 @@ getver() {
     # Leave exactly 3 components
     SEMVER="`echo "${VER5}" | sed -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\..*$/\1/'`"
     # FIXME? Add ".0" up to 3 components?
+}
 
+getver_default() {
+    DEFAULT_VERSION_DOTS="`echo "${DEFAULT_VERSION}" | sed 's/[^.]*//g' | tr -d '\n' | wc -c`"
+
+    # Ensure at least 4 dots (5 presumed-numeric components)
+    DEFAULT_VERSION5_DOTS="${DEFAULT_VERSION_DOTS}"
+    DEFAULT_VERSION5="${DEFAULT_VERSION}"
+    while [ "${DEFAULT_VERSION5_DOTS}" -lt 4 ] ; do
+        DEFAULT_VERSION5="${DEFAULT_VERSION5}.0"
+        DEFAULT_VERSION5_DOTS="`expr $DEFAULT_VERSION5_DOTS + 1`"
+    done
+
+    # Truncate/extend to exactly 2 dots (3 presumed-numeric components)
+    DEFAULT_VERSION3_DOTS="${DEFAULT_VERSION_DOTS}"
+    DEFAULT_VERSION3="${DEFAULT_VERSION}"
+    while [ "${DEFAULT_VERSION3_DOTS}" -lt 2 ] ; do
+        DEFAULT_VERSION3="${DEFAULT_VERSION3}.0"
+        DEFAULT_VERSION3_DOTS="`expr $DEFAULT_VERSION3_DOTS + 1`"
+    done
+    while [ "${DEFAULT_VERSION3_DOTS}" -gt 2 ] ; do
+        DEFAULT_VERSION3="`echo "${DEFAULT_VERSION3}" | sed 's,\.[0-9][0-9]*$,,'`"
+        DEFAULT_VERSION3_DOTS="`expr $DEFAULT_VERSION3_DOTS - 1`"
+    done
+
+    DESC5="${DEFAULT_VERSION5}"
+    DESC50="${DEFAULT_VERSION}"
+    VER5="${DEFAULT_VERSION5}"
+    VER50="${DEFAULT_VERSION}"
+    SUFFIX=""
+    BASE=""
+    SEMVER="${DEFAULT_VERSION3}"
+    TAG="v${DEFAULT_VERSION3}"
+}
+
+report_debug() {
     # Debug
     echo "DESC='${DESC}' => TAG='${TAG}' + SUFFIX='${SUFFIX}'; BASE='${BASE}' => VER5='${VER5}' => VER50='${VER50}' => DESC50='${DESC50}'" >&2
+}
 
+report_output() {
     case "${WANT_VER-}" in
         "DESC5")	echo "${DESC5}" ;;
         "DESC50")	echo "${DESC50}" ;;
@@ -102,6 +140,8 @@ getver() {
         "SUFFIX")	echo "${SUFFIX}" ;;
         "BASE") 	echo "${BASE}" ;;
         "URL")
+            # Clarify the project website URL - particularly historically
+            # frozen snapshots made for releases
             if [ x"${SEMVER}" = x"${VER50}" ] ; then
                 echo "${NUT_WEBSITE}historic/v${SEMVER}/index.html"
             else
@@ -112,41 +152,16 @@ getver() {
     esac
 }
 
-if (command -v git && git rev-parse --show-toplevel) >/dev/null 2>/dev/null ; then
-    getver
-    exit
+DESC=""
+if $PREFER_GIT ; then
+    if (command -v git && git rev-parse --show-toplevel) >/dev/null 2>/dev/null ; then
+        getver_git || DESC=""
+    fi
 fi
 
-DEFAULT_VERSION_DOTS="`echo "${DEFAULT_VERSION}" | sed 's/[^.]*//g' | tr -d '\n' | wc -c`"
-DEFAULT_VERSION5_DOTS="${DEFAULT_VERSION_DOTS}"
-DEFAULT_VERSION5="${DEFAULT_VERSION}"
-while [ "${DEFAULT_VERSION5_DOTS}" -lt 4 ] ; do
-    DEFAULT_VERSION5="${DEFAULT_VERSION5}.0"
-    DEFAULT_VERSION5_DOTS="`expr $DEFAULT_VERSION5_DOTS + 1`"
-done
-
-DEFAULT_VERSION3_DOTS="${DEFAULT_VERSION_DOTS}"
-DEFAULT_VERSION3="${DEFAULT_VERSION}"
-while [ "${DEFAULT_VERSION3_DOTS}" -lt 2 ] ; do
-    DEFAULT_VERSION3="${DEFAULT_VERSION3}.0"
-    DEFAULT_VERSION3_DOTS="`expr $DEFAULT_VERSION3_DOTS + 1`"
-done
-while [ "${DEFAULT_VERSION3_DOTS}" -gt 2 ] ; do
-    DEFAULT_VERSION3="`echo "${DEFAULT_VERSION3}" | sed 's,\.[0-9][0-9]*$,,'`"
-    DEFAULT_VERSION3_DOTS="`expr $DEFAULT_VERSION3_DOTS - 1`"
-done
-
-if [ x"${DEFAULT_VERSION3}" = x"${DEFAULT_VERSION}" ] ; then
-    NUT_WEBSITE="${NUT_WEBSITE}historic/v${DEFAULT_VERSION3}/index.html"
+if [ x"$DESC" = x ]; then
+    getver_default
 fi
 
-case "${WANT_VER-}" in
-    "DESC5"|"VER5")	echo "${DEFAULT_VERSION5}" ;;
-    "DESC50"|"VER50")	echo "${DEFAULT_VERSION}" ;;
-    "SUFFIX"|"BASE")	echo "" ;;
-    "SEMVER")	echo "${DEFAULT_VERSION3}" ;;
-    "IS_RELEASE")	[ x"${DEFAULT_VERSION3}" = x"${DEFAULT_VERSION}" ] && echo true || echo false ;;
-    "TAG")	echo "v${DEFAULT_VERSION3}" ;;
-    "URL")	echo "${NUT_WEBSITE}" ;;
-    *)		echo "${DEFAULT_VERSION}" ;;
-esac
+report_debug
+report_output
