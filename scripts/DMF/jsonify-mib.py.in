@@ -540,7 +540,7 @@ inline bool strneq (const char* x, const char* y)
 
     # generate test function
     print ("""
-int main () {
+int main (void) {
     size_t i = 0;
     char *s;
 
