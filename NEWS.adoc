@@ -61,6 +61,20 @@ https://github.com/networkupstools/nut/milestone/11
      bug is ancient, it took recent development to hit it as a practical
      regression. [issue #1904, issue #2484]
 
+ - development iterations of NUT should now identify with not only the semantic
+   version of a preceding release, but with git-derived information about the
+   amount of iterations that followed (if available): the three-number "semver"
+   would be seen on release snapshots, while other builds would expose the
+   added components: one with the amount of commits on the main development
+   trunk since the preceding release which are ancestors of the built code
+   base, and in case of feature development branches -- another component
+   with the amount of commits unique to this branch (which are not part of
+   the development trunk). This allows to produce more relevant (monotonously
+   growing) version identifiers for packages and similar artifacts, with more
+   meaningful upgrades via development snapshots, eventually. A copy of the
+   current version information would be embedded into "dist" archives as a
+   `VERSION_DEFAULT` file. [#1949]
+
  - drivers, `upsd`, `upsmon`: reduce "scary noise" about failure to `fopen()`
    the PID file (which most of the time means that no previous instance of
    the daemon was running to potentially conflict with), especially useless

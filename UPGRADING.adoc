@@ -26,6 +26,16 @@ Changes from 2.8.2 to 2.8.3
 
 - PLANNED: Keep track of any further API clean-up?
 
+- NUT development snapshots can now have more version components than the
+  standard semantic versioning triplet, optionally adding the amount of
+  commits on the development trunk since previous release, and the amount
+  of commits on a feature branch that are unique to it.  Release artifacts
+  that have zeroes in both positions would have them stripped and still
+  have the standard "semver" exposed, but the development snapshots can
+  now be more reasonably upgraded with automated tooling. A copy of the
+  current version information would be embedded into "dist" archives as
+  a `VERSION_DEFAULT` file, so it can be used without git. [issue #1949]
+
 - `usbhid-ups` subdriver `PowerCOM HID` subdriver sent UPS `shutdown` and
   `stayoff` commands in wrong byte order, at least for devices currently
   in the field. Driver now sends the commands in a way that satisfies new
