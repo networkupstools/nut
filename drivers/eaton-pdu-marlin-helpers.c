@@ -51,7 +51,7 @@
 # ifdef upsdebugx
 #  undef upsdebugx
 # endif
-# define upsdebugx(...) {while(0);}
+# define upsdebugx(...) do {} while(0)
 #endif
 
 /* Take string "unitsPresent" (ex: "0,3,4,5"), and count the amount
