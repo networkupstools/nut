@@ -99,5 +99,24 @@ actually used call to the preprocessor (before scripted filtering):
 you can copy-paste that command and store a copy of preprocessed-only
 file to investigate the differences imposed by our script.
 
+==== Hacking into `pycparser`
+
+In complex cases you can edit your copy of `pycparser::ply/yacc.py`
+method `parse`, to default its parameter `debug=True`. Note that this
+generates many megabytes of detailed logs, and a parsing session can
+take several minutes. Don't forget to change it back afterwards.
+
+----
+:; ( cd scripts/DMF && rm -f apc* dmfsnmp/apc-mib.dmf && \
+     make V=1 DEBUG_NUT_CPP=true jsonify-mib.py dmfsnmp/apc-mib.dmf ) \
+     > parse-debug.log 2>&1
+----
+
+NOTE: Unfortunately there does not seem to be a way to just pass this
+parameter with the code path used in `jsonify-mib.py` calling `parse_file`:
+their `__init__.py` method `parse_file()` takes (or spawns) a `parser` and
+launches it without a `debuglevel` argument (seen in `c_parser.py` method
+`parse()`). Maybe we should make a copy in our script and extend it...
+
 Hope this helps,
 Jim Klimov
