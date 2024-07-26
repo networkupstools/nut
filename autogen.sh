@@ -178,6 +178,7 @@ fi
 
 [ "$AUTOTOOL_RES" = 0 ] && [ -s configure ] && [ -x configure ] \
 || { cat << EOF
+----------------------------------------------------------------------
 FAILED: did not generate an executable configure script!
 
 # Note: on some systems "autoreconf", "automake" et al are dispatcher
@@ -189,6 +190,7 @@ FAILED: did not generate an executable configure script!
 # check the configure.ac line it refers to and un-comment (or comment away)
 # the third argument for AM_SILENT_RULES check, or comment away the whole
 # "ifdef" block if your autotools still would not grok it.
+----------------------------------------------------------------------
 EOF
 	exit 1
 } >&2
@@ -217,15 +219,20 @@ else
 	CONFIG_SHELL="`head -1 configure | sed 's,^#!,,'`"
 fi
 
-# NOTE: Unquoted, may be multi-token
+# NOTE: Unquoted CONFIG_SHELL, may be multi-token
 $CONFIG_SHELL -n configure 2>/dev/null >/dev/null \
-|| { echo "FAILED: configure script did not pass shell interpreter syntax checks with $CONFIG_SHELL" >&2
+|| {
+	echo "----------------------------------------------------------------------" >&2
+	echo "FAILED: configure script did not pass shell interpreter syntax checks with $CONFIG_SHELL" >&2
 	echo "NOTE: If you are using an older OS release, try executing the script with" >&2
 	echo "a more functional shell implementation (dtksh, bash, dash...)" >&2
 	echo "You can re-run this script with a CONFIG_SHELL in environment" >&2
+	echo "----------------------------------------------------------------------" >&2
 	exit 1
 }
 
+echo "----------------------------------------------------------------------"
 echo "SUCCESS: The generated configure script passed shell interpreter syntax checks"
 echo "Please proceed by running './configure --with-many-desired-options'"
 echo "For details check './configure --help' or docs/configure.txt in NUT sources"
+echo "----------------------------------------------------------------------"
