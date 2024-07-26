@@ -104,19 +104,32 @@ file to investigate the differences imposed by our script.
 In complex cases you can edit your copy of `pycparser::ply/yacc.py`
 method `parse`, to default its parameter `debug=True`. Note that this
 generates many megabytes of detailed logs, and a parsing session can
-take several minutes. Don't forget to change it back afterwards.
+take tens of minutes.
+
+A better alternative is to inject logging of tokens into `parseopt_notrack()`
+(yes there are warning comments that it is generated and the change would be
+lost... upon rebuild of `pycparser` itself). Add the following line just
+after the block which assigns `lookahead = ...` from one or another data
+source (for some reasons, this prints a few duplicate lines per token, so
+we use `uniq` below to get a better readable output):
+----
+            sys.stderr.write("[D] %s\n" % str(lookahead))
+----
+
+Either way, don't forget to change it back afterwards.
 
 ----
 :; ( cd scripts/DMF && rm -f apc* dmfsnmp/apc-mib.dmf && \
      make V=1 DEBUG_NUT_CPP=true jsonify-mib.py dmfsnmp/apc-mib.dmf ) \
-     > parse-debug.log 2>&1
+     | uniq > parse-debug.log 2>&1
 ----
 
 NOTE: Unfortunately there does not seem to be a way to just pass this
 parameter with the code path used in `jsonify-mib.py` calling `parse_file`:
 their `__init__.py` method `parse_file()` takes (or spawns) a `parser` and
 launches it without a `debuglevel` argument (seen in `c_parser.py` method
-`parse()`). Maybe we should make a copy in our script and extend it...
+`parse()`). Experiments to make a copy of that method in our script and
+extend it were not as fruitful as the hacked-in line documented above...
 
 Hope this helps,
 Jim Klimov
