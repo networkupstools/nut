@@ -667,7 +667,9 @@ check_gitignore() {
     # Shell-glob filename pattern for points of interest to git status
     # and git diff; note that filenames starting with a dot should be
     # reported by `git status -- '*'` and not hidden.
-    [ -n "${FILE_GLOB-}" ] || FILE_GLOB='*'
+    [ -n "${FILE_GLOB-}" ] || FILE_GLOB="'*'"
+    # Always filter these names away:
+    FILE_GLOB_EXCLUDE="':!.ci*.log*'"
     [ -n "${GIT_ARGS-}" ] || GIT_ARGS='' # e.g. GIT_ARGS="--ignored"
     # Display contents of the diff?
     # (Helps copy-paste from CI logs to source to amend quickly)
@@ -682,12 +684,11 @@ check_gitignore() {
 
     # One invocation should report to log if there was any discrepancy
     # to report in the first place (GITOUT may be empty without error):
-    GITOUT="`git status $GIT_ARGS -s -- "${FILE_GLOB}"`" \
+    GITOUT="`git status $GIT_ARGS -s -- ${FILE_GLOB} ${FILE_GLOB_EXCLUDE}`" \
     || { echo "WARNING: Could not query git repo while in `pwd`" >&2 ; GITOUT=""; }
 
     if [ -n "${GITOUT-}" ] ; then
         echo "$GITOUT" \
-        | grep -E -v '^.. \.ci.*\.log.*' \
         | grep -E "${FILE_REGEX}"
     else
         echo "Got no output and no errors querying git repo while in `pwd`: seems clean" >&2
@@ -695,12 +696,12 @@ check_gitignore() {
     echo "==="
 
     # Another invocation checks that there was nothing to complain about:
-    if [ -n "`git status $GIT_ARGS -s "${FILE_GLOB}" | grep -E -v '^.. \.ci.*\.log.*' | grep -E "^.. ${FILE_REGEX}"`" ] \
+    if [ -n "`git status $GIT_ARGS -s ${FILE_GLOB} ${FILE_GLOB_EXCLUDE} | grep -E "^.. ${FILE_REGEX}"`" ] \
     && [ "$CI_REQUIRE_GOOD_GITIGNORE" != false ] \
     ; then
         echo "FATAL: There are changes in $FILE_DESCR files listed above - tracked sources should be updated in the PR (even if generated - not all builders can do so), and build products should be added to a .gitignore file, everything made should be cleaned and no tracked files should be removed! You can 'export CI_REQUIRE_GOOD_GITIGNORE=false' if appropriate." >&2
         if [ "$GIT_DIFF_SHOW" = true ]; then
-            PAGER=cat git diff -- "${FILE_GLOB}" || true
+            PAGER=cat git diff -- ${FILE_GLOB} ${FILE_GLOB_EXCLUDE} || true
         fi
         echo "==="
         return 1
@@ -1083,7 +1084,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     fi
                 fi
             else
-                echo "WARNING: It seems you are building on MacOS, but HOMEBREW_PREFIX is not set or valid; it can help with auto-detection of some features!"
+                echo "WARNING: It seems you are building on MacOS, but HOMEBREW_PREFIX is not set or valid."
+                echo 'If you do use this build system, try running   eval "$(brew shellenv)"'
+                echo "in your terminal or shell profile, it can help with auto-detection of some features!"
             fi
             ;;
     esac

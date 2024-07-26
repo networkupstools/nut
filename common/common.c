@@ -1018,6 +1018,12 @@ int compareprocname(pid_t pid, const char *procname, const char *progname)
 	}
 #endif
 
+	/* TOTHINK: Developer builds wrapped with libtool may be prefixed
+	 * by "lt-" in the filename. Should we re-enter (or wrap around)
+	 * this search with a set of variants with/without the prefix on
+	 * both sides?..
+	 */
+
 	/* Nothing above has matched */
 	ret = 0;
 
