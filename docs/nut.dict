@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3197 utf-8
+personal_ws-1.1 en 3198 utf-8
 AAC
 AAS
 ABI
@@ -2751,6 +2751,7 @@ sfr
 sgml
 sgs
 sha
+shellenv
 shm
 shutdownArguments
 shutdowncmd

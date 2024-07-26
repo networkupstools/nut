@@ -1366,6 +1366,16 @@ setup, and https://brew.sh if you want to install it on your MacOS system
 depending on architecture -- see https://docs.brew.sh/Installation for more
 details; find via `brew config | grep HOMEBREW_PREFIX: | awk '{print $2}'`).
 
+NOTE: The quickest pre-configuration for `ci_build.sh` integration with this
+non-default build system would be to add this line into your shell profile:
+----
+eval "$(brew shellenv)"
+----
+
+NOTE: Homebrew is not the only build/packaging system available for MacOS,
+so NUT scripts do not make any assumptions nor try to find a build system
+they were not told about (via `HOMEBREW_PREFIX` in this case).
+
 Currently known dependencies for basic build include:
 ----
 # Optional for a quick spin:
