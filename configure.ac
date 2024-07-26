@@ -5292,7 +5292,16 @@ AS_CASE(["${CONFIG_CXXFLAGS}"],
 AS_CASE(["${nut_with_debuginfo_C}"],
     [yes], [
         AS_IF([test x"${CLANGCC}" = x"yes" -o x"${GCC}" = x"yes"], [
-            CFLAGS="${CFLAGS} -O0 -g3 -gdwarf-2"
+            dnl Where we can enable debug, minimize the optimizations.
+            dnl On some platforms LIBNETSNMP_CFLAGS or some such defines
+            dnl _FORTIFY_SOURCE=N which in turn "requires compiling with
+            dnl optimization", so we can not disable it in CFLAGS applied
+            dnl in the end of each and every build command line (highest
+            dnl priority). However, CPPFLAGS are before (making these
+            dnl lines an implementation-dependent hack)...
+            dnl AS_IF([set | grep -E 'FORTIFY_SOURCE'], [], [CFLAGS="${CFLAGS} -O0"])
+            CPPFLAGS="${CPPFLAGS} -O0"
+            CFLAGS="${CFLAGS} -g3 -gdwarf-2"
             ],[nut_with_debuginfo_C="Unknown C compiler, not adding options"]
         )],
     dnl # [no]: By default we do not add debug info
@@ -5305,7 +5314,9 @@ AS_CASE(["${nut_with_debuginfo_C}"],
 AS_CASE(["${nut_with_debuginfo_CXX}"],
     [yes], [
         AS_IF([test "x$CLANGXX" = xyes -o "x$GXX" = xyes], [
-            dnl Where we can enable debug, minimize the optimizations
+            dnl Where we can enable debug, minimize the optimizations.
+            dnl NOTE: Concerns for -O0 behavior commented above are about C code,
+            dnl not seen (yet) with C++.
             CXXFLAGS="${CXXFLAGS} -O0 -g3 -gdwarf-2"
             dnl Use same settings for CPPUNIT tests (they bump their own by default)
             CPPUNIT_NUT_CXXFLAGS=""
