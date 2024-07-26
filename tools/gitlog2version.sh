@@ -93,9 +93,16 @@ getver_git() {
     ALL_TAGS_ARG=""
     if [ x"${ALL_TAGS-}" = xtrue ] ; then ALL_TAGS_ARG="--tags" ; fi
 
-    DESC="`git describe $ALL_TAGS_ARG --match 'v[0-9]*.[0-9]*.[0-9]' --exclude '*-signed' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' --exclude '*Windows*' --exclude '*IPM*' --always`"
+    # Praises to old gits and the new, who may --exclude:
+    # NOTE: "--always" should not be needed in NUT repos,
+    # but may help other projects who accept such scheme:
+    # it tells git to return a commit hash if no tag is matched.
+    DESC="`git describe $ALL_TAGS_ARG --match 'v[0-9]*.[0-9]*.[0-9]' --exclude '*-signed' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' --exclude '*Windows*' --exclude '*IPM*' --always 2>/dev/null`" \
+    && [ -n "${DESC}" ] \
+    || DESC="`git describe $ALL_TAGS_ARG | grep -Ev '(rc|-signed|alpha|beta|Windows|IPM)' | grep -E 'v[0-9]*.[0-9]*.[0-9]'`"
     # Old stripper (also for possible refspec parts like "tags/"):
     #   echo "${DESC}" | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,'
+    if [ x"${DESC}" = x ] ; then echo "$0: FAILED to 'git describe' this codebase" >&2 ; return ; fi
 
     # Nearest (annotated by default) tag preceding the HEAD in history:
     TAG="`echo "${DESC}" | sed 's/-[0-9][0-9]*-g[0-9a-fA-F][0-9a-fA-F]*$//'`"
