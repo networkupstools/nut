@@ -167,6 +167,13 @@ fi >&2
 [ -f NEWS ] || { echo "Please see NEWS.adoc for actual contents" > NEWS; }
 [ -f README ] || { echo "Please see README.adoc for actual contents" > README; }
 
+echo "----------------------------------------------------------------------"
+echo "Please note that on some systems the routine below can complain that "
+echo "  > configure.ac: warning: AC_INIT: not a literal: m4_esyscmd_s(...)"
+echo "but still does the right thing about PACKAGE_VERSION and PACKAGE_URL settings."
+echo "Please post an issue in NUT bug tracker with platform details if it does not."
+echo "----------------------------------------------------------------------"
+
 echo "Calling autoreconf..."
 AUTOTOOL_RES=0
 if $DEBUG ; then
