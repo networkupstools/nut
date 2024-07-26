@@ -21,7 +21,7 @@ import os
 import traceback
 import re
 
-from pycparser import c_parser, c_ast, preprocess_file, CParser
+from pycparser import c_parser, c_ast, parse_file
 
 __doc__ = """
 Parses the mib description and prints all the snmp_info_t and info_lkp_t
@@ -39,50 +39,6 @@ ABS_BUILDDIR = os.environ.get("ABS_BUILDDIR", None)
 
 # TODO:
 #   - read the file to find and prints the comments
-
-def parse_file_with_debug(filename, use_cpp=False, cpp_path='cpp', cpp_args='',
-               parser=None, debuglevel=0):
-    """ NOTE: Copied from pycparser __init__.py, with addition of debuglevel handling.
-
-
-        Parse a C file using pycparser.
-
-        filename:
-            Name of the file you want to parse.
-
-        use_cpp:
-            Set to True if you want to execute the C pre-processor
-            on the file prior to parsing it.
-
-        cpp_path:
-            If use_cpp is True, this is the path to 'cpp' on your
-            system. If no path is provided, it attempts to just
-            execute 'cpp', so it must be in your PATH.
-
-        cpp_args:
-            If use_cpp is True, set this to the command line arguments strings
-            to cpp. Be careful with quotes - it's best to pass a raw string
-            (r'') here. For example:
-            r'-I../utils/fake_libc_include'
-            If several arguments are required, pass a list of strings.
-
-        parser:
-            Optional parser object to be used instead of the default CParser
-
-        When successful, an AST is returned. ParseError can be
-        thrown if the file doesn't parse successfully.
-
-        Errors from cpp will be printed out.
-    """
-    if use_cpp:
-        text = preprocess_file(filename, cpp_path, cpp_args)
-    else:
-        with io.open(filename) as f:
-            text = f.read()
-
-    if parser is None:
-        parser = CParser()
-    return parser.parse(text, filename)
 
 def warn (msg):
     if os.environ.get("DEBUG", "") in ["yes", "1"]:
@@ -687,17 +643,16 @@ except KeyError:
     gcc_cppflags = []
 
 def parse_ast(source):
-    info ("CALL parse_file_with_debug(): %s with %s %s" % (source, s_cpp_path (), (["-I"+drivers_dir, "-I"+include_dir] + gcc_cppflags)))
+    info ("CALL parse_file(): %s with %s %s" % (source, s_cpp_path (), (["-I"+drivers_dir, "-I"+include_dir] + gcc_cppflags)))
     try:
         ### NOTE: If 'nut-cpp' fails here and returns exit code != 0 alone,
         ### there is no exception; so to abort pycparser we also print some
         ### invalid C pragma so the parser does die early.
-        ast = parse_file_with_debug (
+        ast = parse_file (
             source,
             use_cpp=True,
             cpp_path=s_cpp_path (),
-            cpp_args=["-I"+drivers_dir, "-I"+include_dir] + gcc_cppflags,
-            debuglevel=(1 if os.environ.get("DEBUG_NUT_PYCPARSER", "false") == "true" else 0)
+            cpp_args=["-I"+drivers_dir, "-I"+include_dir] + gcc_cppflags
             )
         if not isinstance(ast, c_ast.FileAST):
             raise RuntimeError("Got a not c_ast.FileAST instance after parsing %s" % source)
