@@ -91,6 +91,7 @@ sed \
     -e 's/_*_Nullable//g' \
     -e 's/_*_Nonnull//g' \
     -e 's/_Thread_local//g' \
+    -e 's/'"${SPACETAB}"'__thread'"${SPACETAB}"'/ /g' \
     -e 's/__extension__//g' \
     -e 's/'"${SPACETAB}"'_Noreturn'"${SPACETAB}"'/ /g' \
     -e 's/^_Noreturn'"${SPACETAB}"'/ /g' \
