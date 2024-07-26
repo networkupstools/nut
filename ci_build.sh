@@ -1084,7 +1084,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     fi
                 fi
             else
-                echo "WARNING: It seems you are building on MacOS, but HOMEBREW_PREFIX is not set or valid; it can help with auto-detection of some features!"
+                echo "WARNING: It seems you are building on MacOS, but HOMEBREW_PREFIX is not set or valid."
+                echo 'If you do use this build system, try running   eval "$(brew shellenv)"'
+                echo "in your terminal or shell profile, it can help with auto-detection of some features!"
             fi
             ;;
     esac
