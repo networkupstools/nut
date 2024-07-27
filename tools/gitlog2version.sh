@@ -18,6 +18,8 @@
 #
 ############################################################################
 #
+# For setup check NUT_VERSION* in script source.
+#
 # Helper script to determine the project version in a manner similar to
 # what `git describe` produces, but with added numbers after the common
 # triplet of semantically versioned numbers:   X.Y.Z.T.B(-C-gHASH)
@@ -67,40 +69,40 @@ fi
 # workspace itself (e.g. when we build from release tarballs in
 # a git-tracked repository of distro recipes, do not use that
 # distro's own versions for NUT).
-if [ -z "${DEFAULT_VERSION-}" -a -s "${abs_top_builddir}/VERSION_DEFAULT" ] ; then
+if [ -z "${NUT_VERSION_DEFAULT-}" -a -s "${abs_top_builddir}/VERSION_DEFAULT" ] ; then
     . "${abs_top_builddir}/VERSION_DEFAULT" || exit
-    [ x"${PREFER_GIT-}" = xtrue ] || { [ -e "${abs_top_srcdir}/.git" ] || PREFER_GIT=false ; }
+    [ x"${NUT_VERSION_PREFER_GIT-}" = xtrue ] || { [ -e "${abs_top_srcdir}/.git" ] || NUT_VERSION_PREFER_GIT=false ; }
 fi
 
-if [ -z "${DEFAULT_VERSION-}" -a -s "${abs_top_srcdir}/VERSION_DEFAULT" ] ; then
+if [ -z "${NUT_VERSION_DEFAULT-}" -a -s "${abs_top_srcdir}/VERSION_DEFAULT" ] ; then
     . "${abs_top_srcdir}/VERSION_DEFAULT" || exit
-    [ x"${PREFER_GIT-}" = xtrue ] || { [ -e "${abs_top_srcdir}/.git" ] || PREFER_GIT=false ; }
+    [ x"${NUT_VERSION_PREFER_GIT-}" = xtrue ] || { [ -e "${abs_top_srcdir}/.git" ] || NUT_VERSION_PREFER_GIT=false ; }
 fi
 
 # Fallback default, to be updated only during release cycle
-[ -n "${DEFAULT_VERSION-}" ] || DEFAULT_VERSION='2.8.2.1'
+[ -n "${NUT_VERSION_DEFAULT-}" ] || NUT_VERSION_DEFAULT='2.8.2.1'
 
 # Default website paths, extended for historic sub-sites for a release
 [ -n "${NUT_WEBSITE-}" ] || NUT_WEBSITE="https://networkupstools.org/"
 
 # Must be "true" or "false" exactly, interpreted as such below:
-[ x"${PREFER_GIT-}" = xfalse ] || { [ -e "${abs_top_srcdir}/.git" ] && PREFER_GIT=true || PREFER_GIT=false ; }
+[ x"${NUT_VERSION_PREFER_GIT-}" = xfalse ] || { [ -e "${abs_top_srcdir}/.git" ] && NUT_VERSION_PREFER_GIT=true || NUT_VERSION_PREFER_GIT=false ; }
 
 getver_git() {
     # NOTE: The chosen trunk branch must be up to date (may be "origin/master"
     # or "upstream/master", etc.) for resulting version discovery to make sense.
-    [ x"${TRUNK-}" != x ] || TRUNK=master
+    [ x"${NUT_VERSION_GIT_TRUNK-}" != x ] || NUT_VERSION_GIT_TRUNK=master
 
     # How much of the known trunk history is in current HEAD?
     # e.g. all of it when we are on that branch or PR made from its tip,
     # some of it if looking at a historic snapshot, or nothing if looking
     # at the tagged commit (it is the merge base for itself and any of
     # its descendants):
-    BASE="`git merge-base HEAD "${TRUNK}"`"
+    BASE="`git merge-base HEAD "${NUT_VERSION_GIT_TRUNK}"`"
 
     # By default, only annotated tags are considered
     ALL_TAGS_ARG=""
-    if [ x"${ALL_TAGS-}" = xtrue ] ; then ALL_TAGS_ARG="--tags" ; fi
+    if [ x"${NUT_VERSION_GIT_ALL_TAGS-}" = xtrue ] ; then ALL_TAGS_ARG="--tags" ; fi
 
     # Praises to old gits and the new, who may --exclude:
     # NOTE: "--always" should not be needed in NUT repos,
@@ -121,7 +123,7 @@ getver_git() {
     SUFFIX="`echo "${DESC}" | sed 's/^.*\(-[0-9][0-9]*-g[0-9a-fA-F][0-9a-fA-F]*\)$/\1/'`" && [ x"${SUFFIX}" != x"${TAG}" ] || SUFFIX=""
 
     # 5-digit version, note we strip leading "v" from the expected TAG value
-    VER5="${TAG#v}.`git log --oneline "${TAG}..${BASE}" | wc -l | tr -d ' '`.`git log --oneline "${TRUNK}..HEAD" | wc -l | tr -d ' '`"
+    VER5="${TAG#v}.`git log --oneline "${TAG}..${BASE}" | wc -l | tr -d ' '`.`git log --oneline "${NUT_VERSION_GIT_TRUNK}..HEAD" | wc -l | tr -d ' '`"
     DESC5="${VER5}${SUFFIX}"
 
     # Strip up to two trailing zeroes for trunk snapshots and releases
@@ -134,36 +136,36 @@ getver_git() {
 }
 
 getver_default() {
-    DEFAULT_VERSION_DOTS="`echo "${DEFAULT_VERSION}" | sed 's/[^.]*//g' | tr -d '\n' | wc -c`"
+    NUT_VERSION_DEFAULT_DOTS="`echo "${NUT_VERSION_DEFAULT}" | sed 's/[^.]*//g' | tr -d '\n' | wc -c`"
 
     # Ensure at least 4 dots (5 presumed-numeric components)
-    DEFAULT_VERSION5_DOTS="${DEFAULT_VERSION_DOTS}"
-    DEFAULT_VERSION5="${DEFAULT_VERSION}"
-    while [ "${DEFAULT_VERSION5_DOTS}" -lt 4 ] ; do
-        DEFAULT_VERSION5="${DEFAULT_VERSION5}.0"
-        DEFAULT_VERSION5_DOTS="`expr $DEFAULT_VERSION5_DOTS + 1`"
+    NUT_VERSION_DEFAULT5_DOTS="${NUT_VERSION_DEFAULT_DOTS}"
+    NUT_VERSION_DEFAULT5="${NUT_VERSION_DEFAULT}"
+    while [ "${NUT_VERSION_DEFAULT5_DOTS}" -lt 4 ] ; do
+        NUT_VERSION_DEFAULT5="${NUT_VERSION_DEFAULT5}.0"
+        NUT_VERSION_DEFAULT5_DOTS="`expr $NUT_VERSION_DEFAULT5_DOTS + 1`"
     done
 
     # Truncate/extend to exactly 2 dots (3 presumed-numeric components)
-    DEFAULT_VERSION3_DOTS="${DEFAULT_VERSION_DOTS}"
-    DEFAULT_VERSION3="${DEFAULT_VERSION}"
-    while [ "${DEFAULT_VERSION3_DOTS}" -lt 2 ] ; do
-        DEFAULT_VERSION3="${DEFAULT_VERSION3}.0"
-        DEFAULT_VERSION3_DOTS="`expr $DEFAULT_VERSION3_DOTS + 1`"
+    NUT_VERSION_DEFAULT3_DOTS="${NUT_VERSION_DEFAULT_DOTS}"
+    NUT_VERSION_DEFAULT3="${NUT_VERSION_DEFAULT}"
+    while [ "${NUT_VERSION_DEFAULT3_DOTS}" -lt 2 ] ; do
+        NUT_VERSION_DEFAULT3="${NUT_VERSION_DEFAULT3}.0"
+        NUT_VERSION_DEFAULT3_DOTS="`expr $NUT_VERSION_DEFAULT3_DOTS + 1`"
     done
-    while [ "${DEFAULT_VERSION3_DOTS}" -gt 2 ] ; do
-        DEFAULT_VERSION3="`echo "${DEFAULT_VERSION3}" | sed 's,\.[0-9][0-9]*$,,'`"
-        DEFAULT_VERSION3_DOTS="`expr $DEFAULT_VERSION3_DOTS - 1`"
+    while [ "${NUT_VERSION_DEFAULT3_DOTS}" -gt 2 ] ; do
+        NUT_VERSION_DEFAULT3="`echo "${NUT_VERSION_DEFAULT3}" | sed 's,\.[0-9][0-9]*$,,'`"
+        NUT_VERSION_DEFAULT3_DOTS="`expr $NUT_VERSION_DEFAULT3_DOTS - 1`"
     done
 
-    DESC5="${DEFAULT_VERSION5}"
-    DESC50="${DEFAULT_VERSION}"
-    VER5="${DEFAULT_VERSION5}"
-    VER50="${DEFAULT_VERSION}"
+    DESC5="${NUT_VERSION_DEFAULT5}"
+    DESC50="${NUT_VERSION_DEFAULT}"
+    VER5="${NUT_VERSION_DEFAULT5}"
+    VER50="${NUT_VERSION_DEFAULT}"
     SUFFIX=""
     BASE=""
-    SEMVER="${DEFAULT_VERSION3}"
-    TAG="v${DEFAULT_VERSION3}"
+    SEMVER="${NUT_VERSION_DEFAULT3}"
+    TAG="v${NUT_VERSION_DEFAULT3}"
 }
 
 report_debug() {
@@ -172,7 +174,7 @@ report_debug() {
 }
 
 report_output() {
-    case "${WANT_VER-}" in
+    case "${NUT_VERSION_QUERY-}" in
         "DESC5")	echo "${DESC5}" ;;
         "DESC50")	echo "${DESC50}" ;;
         "VER5") 	echo "${VER5}" ;;
@@ -199,7 +201,7 @@ report_output() {
                 cp -f "${abs_top_srcdir}/VERSION_DEFAULT" "${abs_top_builddir}/VERSION_DEFAULT" || exit
             fi
 
-            echo "DEFAULT_VERSION='${DESC50}'" > "${abs_top_builddir}/VERSION_DEFAULT.tmp" || exit
+            echo "NUT_VERSION_DEFAULT='${DESC50}'" > "${abs_top_builddir}/VERSION_DEFAULT.tmp" || exit
             if cmp "${abs_top_builddir}/VERSION_DEFAULT.tmp" "${abs_top_builddir}/VERSION_DEFAULT" >/dev/null 2>/dev/null ; then
                 rm -f "${abs_top_builddir}/VERSION_DEFAULT.tmp"
             else
@@ -212,7 +214,7 @@ report_output() {
 }
 
 DESC=""
-if $PREFER_GIT ; then
+if $NUT_VERSION_PREFER_GIT ; then
     if (command -v git && git rev-parse --show-toplevel) >/dev/null 2>/dev/null ; then
         getver_git || DESC=""
     fi

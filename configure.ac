@@ -24,9 +24,9 @@ dnl Oddly, autoconf-2.69 on CentOS 7 both complains that AC INIT argument
 dnl is not a literal, and does contain expected values in the generated
 dnl script and include/config.h. A "pure" m4 solution would be quieter.
 AC_INIT([nut],
-    m4_esyscmd_s([WANT_VER=VER50 "`dirname "$0"`/tools/gitlog2version.sh" 2>/dev/null]),
+    m4_esyscmd_s([NUT_VERSION_QUERY=VER50 "`dirname "$0"`/tools/gitlog2version.sh" 2>/dev/null]),
     [https://github.com/networkupstools/nut/issues],[nut],
-    m4_esyscmd_s([WANT_VER=URL "`dirname "$0"`/tools/gitlog2version.sh" 2>/dev/null]))
+    m4_esyscmd_s([NUT_VERSION_QUERY=URL "`dirname "$0"`/tools/gitlog2version.sh" 2>/dev/null]))
 dnl See docs/maintainer-guide.txt about releases - updating the version
 dnl above is a small part of the consistent ritual!
 
@@ -37,17 +37,17 @@ dnl If the NUT codebase in this workspace is being developed and rebuilt
 dnl without reconfiguration, detailed version in the binaries will differ
 dnl (that one comes from the NUT_VERSION_MACRO from nut_version.h file).
 dnl # Example:   NUT_SOURCE_GITREV='2.8.2.695.1-696-g0e00f0777'
-NUT_SOURCE_GITREV="`WANT_VER=DESC50 "${srcdir}/tools/gitlog2version.sh" 2>/dev/null`"
+NUT_SOURCE_GITREV="`NUT_VERSION_QUERY=DESC50 "${srcdir}/tools/gitlog2version.sh" 2>/dev/null`"
 
 dnl A true/false (literally) response that can be used for prettier messages
 dnl emitted by NUT code.
-NUT_SOURCE_GITREV_IS_RELEASE="`WANT_VER=IS_RELEASE "${srcdir}/tools/gitlog2version.sh" 2>/dev/null`"
+NUT_SOURCE_GITREV_IS_RELEASE="`NUT_VERSION_QUERY=IS_RELEASE "${srcdir}/tools/gitlog2version.sh" 2>/dev/null`"
 AS_IF([$NUT_SOURCE_GITREV_IS_RELEASE], [NUT_SOURCE_GITREV_DEVREL="release"], [NUT_SOURCE_GITREV_DEVREL="development iteration"])
 
 dnl Semantic version of most-recent NUT release this code is derived from.
 dnl It may equal the NUT_SOURCE_GITREV and NUT_SOURCE_GITREV_NUMERIC, but
 dnl this situation is only expected if NUT_SOURCE_GITREV_IS_RELEASE==true.
-NUT_SOURCE_GITREV_SEMVER="`WANT_VER=SEMVER "${srcdir}/tools/gitlog2version.sh" 2>/dev/null`"
+NUT_SOURCE_GITREV_SEMVER="`NUT_VERSION_QUERY=SEMVER "${srcdir}/tools/gitlog2version.sh" 2>/dev/null`"
 
 dnl Gitrev-based build identifier which can be used for e.g. PyPI uploads:
 dnl # Example:   NUT_SOURCE_GITREV_NUMERIC='2.8.2.695.1.696'
