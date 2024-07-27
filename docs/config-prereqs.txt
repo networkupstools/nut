@@ -133,6 +133,20 @@ actual package source versions on both Debian 8 "Jessie" and
 Debian 11 "Buster").
 ======
 
+[NOTE]
+.FUN NOTE
+======
+For development on the road (or a native ARM build) you can use the
+link:https://termux.dev/en/[Termux] project on Android. It provides
+a sufficiently Debian-like operating environment for all intents and
+purposes, but you may have to use their `pkg` wrapper instead of `apt`
+tooling directly.
+
+You would need at least a couple of gigabytes available on the internal
+phone storage though, especially if using `ccache` or setting up cross
+builds.
+======
+
 Debian-like package installations commonly start with an update of
 metadata about recently published package revisions:
 
