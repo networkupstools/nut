@@ -34,7 +34,10 @@ Changes from 2.8.2 to 2.8.3
   have the standard "semver" exposed, but the development snapshots can
   now be more reasonably upgraded with automated tooling. A copy of the
   current version information would be embedded into "dist" archives as
-  a `VERSION_DEFAULT` file, so it can be used without git. [issue #1949]
+  a `VERSION_DEFAULT` file, so it can be used without git. Certain distros
+  can benefit from a `VERSION_FORCED` file or a `NUT_VERSION_FORCED`
+  environment variable exported from their build system, e.g. via
+  `echo NUT_VERSION_FORCED=1.1.1 > VERSION_FORCED`. [issue #1949]
 
 - `usbhid-ups` subdriver `PowerCOM HID` subdriver sent UPS `shutdown` and
   `stayoff` commands in wrong byte order, at least for devices currently

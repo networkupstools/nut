@@ -69,6 +69,16 @@ fi
 # workspace itself (e.g. when we build from release tarballs in
 # a git-tracked repository of distro recipes, do not use that
 # distro's own versions for NUT).
+# Embedded distros that hack a NUT version are not encouraged to, but
+# can, use a VERSION_FORCED variable or file with higher priority.
+if [ -s "${abs_top_srcdir}/VERSION_FORCED" ] ; then
+    . "${abs_top_srcdir}/VERSION_FORCED" || exit
+fi
+if [ -n "${NUT_VERSION_FORCED-}" ] ; then
+    NUT_VERSION_DEFAULT="${NUT_VERSION_FORCED-}"
+    NUT_VERSION_PREFER_GIT=false
+fi
+
 if [ -z "${NUT_VERSION_DEFAULT-}" -a -s "${abs_top_builddir}/VERSION_DEFAULT" ] ; then
     . "${abs_top_builddir}/VERSION_DEFAULT" || exit
     [ x"${NUT_VERSION_PREFER_GIT-}" = xtrue ] || { [ -e "${abs_top_srcdir}/.git" ] || NUT_VERSION_PREFER_GIT=false ; }

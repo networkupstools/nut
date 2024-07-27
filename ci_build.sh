@@ -669,7 +669,7 @@ check_gitignore() {
     # reported by `git status -- '*'` and not hidden.
     [ -n "${FILE_GLOB-}" ] || FILE_GLOB="'*'"
     # Always filter these names away:
-    FILE_GLOB_EXCLUDE="':!.ci*.log*' ':!VERSION_DEFAULT'"
+    FILE_GLOB_EXCLUDE="':!.ci*.log*' ':!VERSION_DEFAULT' ':!VERSION_FORCED'"
     [ -n "${GIT_ARGS-}" ] || GIT_ARGS='' # e.g. GIT_ARGS="--ignored"
     # Display contents of the diff?
     # (Helps copy-paste from CI logs to source to amend quickly)
