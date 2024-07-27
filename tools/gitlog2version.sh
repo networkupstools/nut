@@ -70,9 +70,17 @@ fi
 # a git-tracked repository of distro recipes, do not use that
 # distro's own versions for NUT).
 # Embedded distros that hack a NUT version are not encouraged to, but
-# can, use a VERSION_FORCED variable or file with higher priority.
+# can, use a NUT_VERSION_FORCED variable or a VERSION_FORCED file with
+# higher priority than auto-detection attempts. Unfortunately, some
+# appliances tag all software the same with their firmware version;
+# if this is required, a (NUT_)VERSION_FORCED_SEMVER envvar or file can
+# help identify the actual NUT release version triplet used on the box.
+# Please use it, it immensely helps with community troubleshooting!
 if [ -s "${abs_top_srcdir}/VERSION_FORCED" ] ; then
     . "${abs_top_srcdir}/VERSION_FORCED" || exit
+fi
+if [ -s "${abs_top_srcdir}/VERSION_FORCED_SEMVER" ] ; then
+    . "${abs_top_srcdir}/VERSION_FORCED_SEMVER" || exit
 fi
 if [ -n "${NUT_VERSION_FORCED-}" ] ; then
     NUT_VERSION_DEFAULT="${NUT_VERSION_FORCED-}"
@@ -141,7 +149,11 @@ getver_git() {
     DESC50="${VER50}${SUFFIX}"
 
     # Leave exactly 3 components
-    SEMVER="`echo "${VER5}" | sed -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\..*$/\1/'`"
+    if [ -n "${NUT_VERSION_FORCED_SEMVER-}" ] ; then
+        SEMVER="${NUT_VERSION_FORCED_SEMVER-}"
+    else
+        SEMVER="`echo "${VER5}" | sed -e 's/^\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\..*$/\1/'`"
+    fi
     # FIXME? Add ".0" up to 3 components?
 }
 
@@ -174,7 +186,11 @@ getver_default() {
     VER50="${NUT_VERSION_DEFAULT}"
     SUFFIX=""
     BASE=""
-    SEMVER="${NUT_VERSION_DEFAULT3}"
+    if [ -n "${NUT_VERSION_FORCED_SEMVER-}" ] ; then
+        SEMVER="${NUT_VERSION_FORCED_SEMVER-}"
+    else
+        SEMVER="${NUT_VERSION_DEFAULT3}"
+    fi
     TAG="v${NUT_VERSION_DEFAULT3}"
 }
 

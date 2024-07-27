@@ -37,7 +37,12 @@ Changes from 2.8.2 to 2.8.3
   a `VERSION_DEFAULT` file, so it can be used without git. Certain distros
   can benefit from a `VERSION_FORCED` file or a `NUT_VERSION_FORCED`
   environment variable exported from their build system, e.g. via
-  `echo NUT_VERSION_FORCED=1.1.1 > VERSION_FORCED`. [issue #1949]
+  `echo NUT_VERSION_FORCED=1.1.1 > VERSION_FORCED`. Unfortunately, some
+  appliances tag all software the same with their firmware version;
+  if this is required, a (NUT_)VERSION_FORCED_SEMVER envvar or file can
+  help identify the actual NUT release version triplet used on the box.
+  Please use it, it immensely helps with community troubleshooting!
+  [issue #1949]
 
 - `usbhid-ups` subdriver `PowerCOM HID` subdriver sent UPS `shutdown` and
   `stayoff` commands in wrong byte order, at least for devices currently

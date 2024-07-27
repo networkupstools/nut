@@ -46,6 +46,7 @@ Makefile.in
 /UPGRADING
 /VERSION_DEFAULT
 /VERSION_FORCED
+/VERSION_FORCED_SEMVER
 /install-sh
 /libtool
 /ltmain.sh
