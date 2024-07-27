@@ -24,9 +24,9 @@ dnl Oddly, autoconf-2.69 on CentOS 7 both complains that AC INIT argument
 dnl is not a literal, and does contain expected values in the generated
 dnl script and include/config.h. A "pure" m4 solution would be quieter.
 AC_INIT([nut],
-    [m4_esyscmd_s([WANT_VER=VER50 "`dirname "$0"`/tools/gitlog2version.sh" 2>/dev/null])],
+    m4_esyscmd_s([WANT_VER=VER50 "`dirname "$0"`/tools/gitlog2version.sh" 2>/dev/null]),
     [https://github.com/networkupstools/nut/issues],[nut],
-    [m4_esyscmd_s([WANT_VER=URL "`dirname "$0"`/tools/gitlog2version.sh" 2>/dev/null])])
+    m4_esyscmd_s([WANT_VER=URL "`dirname "$0"`/tools/gitlog2version.sh" 2>/dev/null]))
 dnl See docs/maintainer-guide.txt about releases - updating the version
 dnl above is a small part of the consistent ritual!
 
