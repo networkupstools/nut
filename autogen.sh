@@ -24,6 +24,8 @@ else
 	DEBUG=false
 fi
 
+NUT_VERSION_QUERY=UPDATE_FILE "`dirname $0`"/tools/gitlog2version.sh
+
 if [ -n "${PYTHON-}" ] ; then
 	# May be a name/path of binary, or one with args - check both
 	(command -v "$PYTHON") \
@@ -164,6 +166,18 @@ fi >&2
 # is tracked as a NEWS.adoc for us however.
 [ -f NEWS ] || { echo "Please see NEWS.adoc for actual contents" > NEWS; }
 [ -f README ] || { echo "Please see README.adoc for actual contents" > README; }
+
+# Try to serve a fresh one at least when we remake from scratch like this
+# Note to not do it forcefully during `configure` or rebuild
+rm -f include/nut_version.h || true
+
+echo "----------------------------------------------------------------------"
+echo "Please note that on some systems the routine below can complain that "
+echo "  > configure.ac: warning: AC_INIT: not a literal: m4_esyscmd_s(...)"
+echo "but still does the right thing about PACKAGE_VERSION and PACKAGE_URL settings."
+echo "Check if your distro provides an 'autoconf-archive' package anf if it helps."
+echo "Please post an issue in NUT bug tracker with platform details if it does not."
+echo "----------------------------------------------------------------------"
 
 echo "Calling autoreconf..."
 AUTOTOOL_RES=0

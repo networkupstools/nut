@@ -62,7 +62,7 @@ static int upsnotify_report_verbosity = -1;
 
 /* the reason we define UPS_VERSION as a static string, rather than a
 	macro, is to make dependency tracking easier (only common.o depends
-	on nut_version_macro.h), and also to prevent all sources from
+	on nut_version.h), and also to prevent all sources from
 	having to be recompiled each time the version changes (they only
 	need to be re-linked). */
 #include "nut_version.h"
@@ -2103,7 +2103,9 @@ void nut_report_config_flags(void)
 	 * Depending on amount of configuration tunables involved by a particular
 	 * build of NUT, the string can be quite long (over 1KB).
 	 */
+#if 0
 	const char *acinit_ver = NULL;
+#endif
 	/* Pass these as variables to avoid warning about never reaching one
 	 * of compiled codepaths: */
 	const char *compiler_ver = CC_VERSION;
@@ -2113,6 +2115,7 @@ void nut_report_config_flags(void)
 	if (nut_debug_level < 1)
 		return;
 
+#if 0
 	/* Only report git revision if NUT_VERSION_MACRO in nut_version.h aka
 	 * UPS_VERSION here is remarkably different from PACKAGE_VERSION from
 	 * configure.ac AC_INIT() -- which may be e.g. "2.8.0.1" although some
@@ -2130,7 +2133,14 @@ void nut_report_config_flags(void)
 		 * especially embedders, tend to place their product IDs here),
 		 * or if PACKAGE_VERSION *is NOT* a substring of it: */
 		acinit_ver = PACKAGE_VERSION;
+/*
+		// Triplet that was printed below:
+		(acinit_ver ? " (release/snapshot of " : ""),
+		(acinit_ver ? acinit_ver : ""),
+		(acinit_ver ? ")" : ""),
+*/
 	}
+#endif
 
 	/* NOTE: If changing wording here, keep in sync with configure.ac logic
 	 * looking for CONFIG_FLAGS_DEPLOYED via "configured with flags:" string!
@@ -2147,14 +2157,28 @@ void nut_report_config_flags(void)
 		now.tv_sec -= 1;
 	}
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+	/* NOTE: Some compilers deduce that macro-based decisions about
+	 * NUT_VERSION_IS_RELEASE make one of codepaths unreachable in
+	 * a particular build. So we pragmatically handwave this away.
+	 */
 	if (xbit_test(upslog_flags, UPSLOG_STDERR)) {
 		fprintf(stderr, "%4.0f.%06ld\t[D1] Network UPS Tools version %s%s%s%s%s%s%s %s%s\n",
 			difftime(now.tv_sec, upslog_start.tv_sec),
 			(long)(now.tv_usec - upslog_start.tv_usec),
 			UPS_VERSION,
-			(acinit_ver ? " (release/snapshot of " : ""),
-			(acinit_ver ? acinit_ver : ""),
-			(acinit_ver ? ")" : ""),
+			NUT_VERSION_IS_RELEASE ? " release" : " (development iteration after ",
+			NUT_VERSION_IS_RELEASE ? "" : NUT_VERSION_SEMVER_MACRO,
+			NUT_VERSION_IS_RELEASE ? "" : ")",
 			(compiler_ver && *compiler_ver != '\0' ? " built with " : ""),
 			(compiler_ver && *compiler_ver != '\0' ? compiler_ver : ""),
 			(compiler_ver && *compiler_ver != '\0' ? " and" : ""),
@@ -2168,18 +2192,25 @@ void nut_report_config_flags(void)
 
 	/* NOTE: May be ignored or truncated by receiver if that syslog server
 	 * (and/or OS sender) does not accept messages of such length */
-	if (xbit_test(upslog_flags, UPSLOG_SYSLOG))
+	if (xbit_test(upslog_flags, UPSLOG_SYSLOG)) {
 		syslog(LOG_DEBUG, "Network UPS Tools version %s%s%s%s%s%s%s %s%s",
 			UPS_VERSION,
-			(acinit_ver ? " (release/snapshot of " : ""),
-			(acinit_ver ? acinit_ver : ""),
-			(acinit_ver ? ")" : ""),
+			NUT_VERSION_IS_RELEASE ? " release" : " (development iteration after ",
+			NUT_VERSION_IS_RELEASE ? "" : NUT_VERSION_SEMVER_MACRO,
+			NUT_VERSION_IS_RELEASE ? "" : ")",
 			(compiler_ver && *compiler_ver != '\0' ? " built with " : ""),
 			(compiler_ver && *compiler_ver != '\0' ? compiler_ver : ""),
 			(compiler_ver && *compiler_ver != '\0' ? " and" : ""),
 			(config_flags && *config_flags != '\0' ? "configured with flags: " : "configured all by default guesswork"),
 			(config_flags && *config_flags != '\0' ? config_flags : "")
 		);
+	}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 }
 
 static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
