@@ -167,6 +167,10 @@ fi >&2
 [ -f NEWS ] || { echo "Please see NEWS.adoc for actual contents" > NEWS; }
 [ -f README ] || { echo "Please see README.adoc for actual contents" > README; }
 
+# Try to serve a fresh one at least when we remake from scratch like this
+# Note to not do it forcefully during `configure` or rebuild
+rm -f include/nut_version.h || true
+
 echo "----------------------------------------------------------------------"
 echo "Please note that on some systems the routine below can complain that "
 echo "  > configure.ac: warning: AC_INIT: not a literal: m4_esyscmd_s(...)"
