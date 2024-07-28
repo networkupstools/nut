@@ -118,7 +118,11 @@ MAINTAINER SANDBOX (to be completed and pushed)
 * commit these finishing touches
 
 * bump the release identification:
-** update version to <exact incremented version> (ex: 2.8.0) in `configure.ac`
+** update the fallback `NUT_DEFAULT_VERSION` in `tools/gitlog2version.sh` to
+   <exact incremented version> (ex: `2.8.0`)
+*** Experiment if still needed: update version to <exact incremented version>
+    (ex: 2.8.0) in `configure.ac`, or if the script bump above + git tagging
+    would suffice:
 ----
 :; git commit -sm 'configure.ac: update AC_INIT for NUT v2.8.0 release`
 ----
@@ -166,7 +170,10 @@ MAINTAINER SANDBOX (to be completed and pushed)
   then) to store the source tarball, checksum and signature files
 
 * post-release update of the "in-development" codebase:
-** maybe update nut/configure.ac version to <incremented version>.1 (ex: 2.8.0.1)
+** update the fallback `NUT_DEFAULT_VERSION` in `tools/gitlog2version.sh` to
+   <incremented version>.1 (ex: `2.8.0.1`)
+*** maybe update nut/configure.ac version to <incremented version>.1
+    (ex: `2.8.0.1`):
 ----
 :; git commit -sm 'configure.ac: bump AC_INIT to development version 2.8.0.1'
 ----
