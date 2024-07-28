@@ -290,12 +290,18 @@ static void apc_ser_diff(struct termios *tioset, struct termios *tioget)
 	 */
 
 	for (i = 0; i < SIZEOF_ARRAY(tio); i++) {
-		upsdebugx(1, "tc%cetattr(): gfmt1:cflag=%x:iflag=%x:lflag=%x:oflag=%x:", dir[i],
-				(unsigned int) tio[i]->c_cflag, (unsigned int) tio[i]->c_iflag,
-				(unsigned int) tio[i]->c_lflag, (unsigned int) tio[i]->c_oflag);
+		upsdebugx(1,
+			"%s: tc%cetattr(): gfmt1:cflag=%x:iflag=%x:lflag=%x:oflag=%x:",
+			__func__, dir[i],
+			(unsigned int) tio[i]->c_cflag, (unsigned int) tio[i]->c_iflag,
+			(unsigned int) tio[i]->c_lflag, (unsigned int) tio[i]->c_oflag);
 		for (cp = cchars1; cp->name; ++cp)
-			upsdebugx(1, "\t%s=%x:", cp->name, tio[i]->c_cc[cp->sub]);
-		upsdebugx(1, "\tispeed=%d:ospeed=%d", (int) cfgetispeed(tio[i]), (int) cfgetospeed(tio[i]));
+			upsdebugx(1, "%s: \t%s=%x:",
+				__func__, cp->name, tio[i]->c_cc[cp->sub]);
+		upsdebugx(1, "%s: \tispeed=%d:ospeed=%d",
+			__func__,
+			(int) cfgetispeed(tio[i]),
+			(int) cfgetospeed(tio[i]));
 	}
 }
 
@@ -1016,7 +1022,8 @@ static void apc_getcaps(int qco)
 
 	if (temp[0] != '#') {
 		upslogx(LOG_WARNING, "unknown capability start char [%c] !", temp[0]);
-		upsdebugx(1, "please report this caps string: %s", temp);
+		upsdebugx(1, "%s: please report this caps string: %s",
+			__func__, temp);
 		return;
 	}
 
@@ -1075,7 +1082,8 @@ static void apc_getcaps(int qco)
 
 		/* mark this as writable */
 		if (valid) {
-			upsdebugx(1, "%s [%s(%c)] - capability supported", vt->name, prtchr(cmd), loc);
+			upsdebugx(1, "%s: %s [%s(%c)] - capability supported",
+				__func__, vt->name, prtchr(cmd), loc);
 
 			dstate_setflags(vt->name, ST_FLAG_RW);
 
@@ -1217,7 +1225,8 @@ static int firmware_table_lookup(void)
 	unsigned int i, j;
 	char buf[APC_LBUF];
 
-	upsdebugx(1, "attempting firmware lookup using [%s]", prtchr(APC_FW_OLD));
+	upsdebugx(1, "%s: attempting firmware lookup using [%s]",
+		__func__, prtchr(APC_FW_OLD));
 
 	apc_flush(0);
 	if (apc_write(APC_FW_OLD) != 1)
@@ -1230,7 +1239,8 @@ static int firmware_table_lookup(void)
 	 * firmware version, we attempt that only if 'V' doesn't work.
 	 */
 	if (!ret || !strcmp(buf, "NA")) {
-		upsdebugx(1, "attempting firmware lookup using [%s]", prtchr(APC_FW_NEW));
+		upsdebugx(1, "%s: attempting firmware lookup using [%s]",
+			__func__, prtchr(APC_FW_NEW));
 
 		if (apc_write(APC_FW_NEW) != 1)
 			return 0;
@@ -1238,12 +1248,12 @@ static int firmware_table_lookup(void)
 			return 0;
 	}
 
-	upsdebugx(1, "detected firmware version: %s", buf);
+	upsdebugx(1, "%s: detected firmware version: %s", __func__, buf);
 
 	/* this will be reworked if we get a lot of these things */
 	if (!strcmp(buf, "451.2.I")) {
 		/* quirk_capability_overflow */
-		upsdebugx(1, "WARN: quirky firmware !");
+		upsdebugx(1, "%s: WARN: quirky firmware !", __func__);
 		return 2;
 	}
 
@@ -1261,7 +1271,8 @@ static int firmware_table_lookup(void)
 	for (i = 0; apc_compattab[i].firmware != NULL; i++) {
 		if (!strcmp(apc_compattab[i].firmware, buf)) {
 
-			upsdebugx(1, "matched firmware: %s", apc_compattab[i].firmware);
+			upsdebugx(1, "%s: matched firmware: %s",
+				__func__, apc_compattab[i].firmware);
 
 			/* magic ? */
 			if (strspn(apc_compattab[i].firmware, "05")) {
@@ -1271,7 +1282,9 @@ static int firmware_table_lookup(void)
 			}
 
 			/* matched - run the cmdchars from the table */
-			upsdebugx(1, "parsing out supported cmds and vars");
+			upsdebugx(1,
+				"%s: parsing out supported cmds and vars",
+				__func__);
 			for (j = 0; j < strlen(apc_compattab[i].cmdchars); j++)
 				protocol_verify((const unsigned char)(apc_compattab[i].cmdchars[j]));
 			deprecate_vars();
@@ -1299,7 +1312,8 @@ static int getbaseinfo(void)
 		/* found compat */
 		return 1;
 
-	upsdebugx(1, "attempting var/cmdset lookup using [%s]", prtchr(APC_CMDSET));
+	upsdebugx(1, "%s: attempting var/cmdset lookup using [%s]",
+		__func__, prtchr(APC_CMDSET));
 	/*
 	 * Initially we ask the UPS what commands it takes. If this fails we are
 	 * going to need an alternate strategy - we can deal with that if it
@@ -1319,7 +1333,7 @@ static int getbaseinfo(void)
 		return 1;
 	}
 
-	upsdebugx(1, "parsing out supported cmds/vars");
+	upsdebugx(1, "%s: parsing out supported cmds/vars", __func__);
 	/*
 	 * returned set is verified for validity above, so just extract
 	 * what's interesting for us
@@ -1338,7 +1352,7 @@ static int getbaseinfo(void)
 
 	/* if capabilities are supported, add them here */
 	if (strchr(cmds, APC_CAPS)) {
-		upsdebugx(1, "parsing out caps");
+		upsdebugx(1, "%s: parsing out caps", __func__);
 		apc_getcaps(qco);
 	}
 	return 1;
@@ -1536,7 +1550,9 @@ static int sdcmd_CS(const void *foo)
 	if ((val = getval("cshdelay")))
 		cshd = (strtod(val, NULL) * 1000000);
 
-	upsdebugx(1, "%s: issuing CS 'hack' [%s+%s] with %2.1f sec delay", __func__, prtchr(APC_CMD_SIMPWF), prtchr(APC_CMD_SOFTDOWN), (double)cshd / 1000000);
+	upsdebugx(1, "%s: issuing CS 'hack' [%s+%s] with %2.1f sec delay",
+		__func__, prtchr(APC_CMD_SIMPWF), prtchr(APC_CMD_SOFTDOWN),
+		(double)cshd / 1000000);
 	if (ups_status & APC_STAT_OL) {
 		apc_flush(0);
 		upsdebugx(1, "%s: issuing [%s]", __func__, prtchr(APC_CMD_SIMPWF));
@@ -1584,7 +1600,7 @@ static int sdcmd_AT(const void *str)
 	temp[sizeof(temp) - 1] = '\0';
 
 	upsdebugx(1, "%s: issuing [%s] with %ld minutes of additional wake-up delay",
-			__func__, prtchr(APC_CMD_GRACEDOWN), strtol(awd, NULL, 10)*6);
+		__func__, prtchr(APC_CMD_GRACEDOWN), strtol(awd, NULL, 10)*6);
 
 	apc_flush(0);
 	ret = apc_write_long(temp);
@@ -2195,7 +2211,8 @@ void upsdrv_initinfo(void)
 	if (!(pser = dstate_getinfo("ups.serial")))
 		pser = "unknown serial";
 
-	upsdebugx(1, "detected %s [%s] on %s", pmod, pser, device_path);
+	upsdebugx(1, "%s: detected %s [%s] on %s",
+		__func__, pmod, pser, device_path);
 
 	setuphandlers();
 	/*
@@ -2224,7 +2241,8 @@ void upsdrv_updateinfo(void)
 			return;
 
 		/* become aggressive after a few tries */
-		upsdebugx(1, "%s: nudging UPS with 'Y', iteration #%d ...", __func__, last_worked);
+		upsdebugx(1, "%s: nudging UPS with 'Y', iteration #%d ...",
+			__func__, last_worked);
 		if (!smartmode(1))
 			return;
 
