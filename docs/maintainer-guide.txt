@@ -153,9 +153,9 @@ MAINTAINER SANDBOX (to be completed and pushed)
    make -j 8 spellcheck && \
    make -j 8 distcheck
 ----
-* create a GPG-signed tag v<incremented version> (ex: v2.8.0):
+* create an annotated GPG-signed tag v<incremented version> (ex: `v2.8.0`):
 ----
-:; git tag -sm 'Release NUT v2.8.0' v2.8.0
+:; git tag -asm 'Release NUT v2.8.0' v2.8.0
 ----
 ** in case of second thoughts, `git tag -d v2.8.0` and retry later
 ** try to avoid adding signed tags later (ex. v2.8.0-signed) to avoid the
