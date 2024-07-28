@@ -63,6 +63,7 @@
 #undef PACKAGE_STRING
 #undef PACKAGE_TARNAME
 #undef PACKAGE_BUGREPORT
+#undef PACKAGE_URL
 
 #include "eaton-pdu-marlin-helpers.h"
 #include "eaton-pdu-marlin-helpers.c"
