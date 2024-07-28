@@ -9,6 +9,9 @@
 #
 # ---
 #
+# NOTE: Contents of this file should be pure ASCII (character codes
+# not in range would be ignored with a warning message).
+#
 # This is where you configure all the UPSes that this system will be
 # monitoring directly.  These are usually attached to serial ports, but
 # USB devices and SNMP devices are also supported.

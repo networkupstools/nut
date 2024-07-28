@@ -2,6 +2,9 @@
 #
 # This file contains passwords, so keep it secure.
 #
+# NOTE: Contents of this file should be pure ASCII (character codes
+# not in range would be ignored with a warning message).
+#
 # A minimal configuration should include at least one MONITOR instruction,
 # MINSUPPLIES (may be 0 if this system is only monitoring other NUT servers),
 # and a POWERDOWNFLAG if this machine is a "primary" system connected to

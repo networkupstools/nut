@@ -3,6 +3,9 @@
 # This file is used to control the CGI programs.  If you have not
 # installed them, you may safely ignore or delete this file.
 #
+# NOTE: Contents of this file should be pure ASCII (character codes
+# not in range would be ignored with a warning message).
+#
 # -----------------------------------------------------------------------
 #
 # upsstats will use the list of MONITOR entries when displaying the

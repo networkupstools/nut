@@ -61,6 +61,20 @@ https://github.com/networkupstools/nut/milestone/11
      bug is ancient, it took recent development to hit it as a practical
      regression. [issue #1904, issue #2484]
 
+ - development iterations of NUT should now identify with not only the semantic
+   version of a preceding release, but with git-derived information about the
+   amount of iterations that followed (if available): the three-number "semver"
+   would be seen on release snapshots, while other builds would expose the
+   added components: one with the amount of commits on the main development
+   trunk since the preceding release which are ancestors of the built code
+   base, and in case of feature development branches -- another component
+   with the amount of commits unique to this branch (which are not part of
+   the development trunk). This allows to produce more relevant (monotonously
+   growing) version identifiers for packages and similar artifacts, with more
+   meaningful upgrades via development snapshots, eventually. A copy of the
+   current version information would be embedded into "dist" archives as a
+   `VERSION_DEFAULT` file. [#1949]
+
  - drivers, `upsd`, `upsmon`: reduce "scary noise" about failure to `fopen()`
    the PID file (which most of the time means that no previous instance of
    the daemon was running to potentially conflict with), especially useless
@@ -91,6 +105,9 @@ https://github.com/networkupstools/nut/milestone/11
  - usbhid-ups updates:
    * Support of the `onlinedischarge_log_throttle_hovercharge` in the NUT
      v2.8.2 release was found to be incomplete. [#2423, follow-up to #2215]
+   * General suggestion from `possibly_supported()` message method for devices
+     with VendorID=`0x06da` (Phoenixtec), seen in some models supported by
+     MGE HID or Liebert HID, updated to suggest trying `nutdrv_qx`. [#334]
    * MGE HID list of `mge_model_names[]` was extended for Eaton 5PX and 5SC
      series (largely guessing, feedback and PRs for adaptation to actual
      string values reported by devices via USB are welcome), so these devices
@@ -99,6 +116,8 @@ https://github.com/networkupstools/nut/milestone/11
      at least for devices currently in the field. A toggle was added to set
      the old behavior (if some devices do need it), while a fix is applied
      by default: `powercom_sdcmd_byte_order_fallback`. [PR #2480]
+   * `cps-hid` subdriver now supports more variables, as available on e.g.
+     CP1350EPFCLCD model. [PR #2540]
 
  - bicker_ser: added new driver for Bicker 12/24Vdc UPS via RS-232 serial
    communication protocol, which supports any UPS shipped with the PSZ-1053
@@ -189,6 +208,8 @@ during a NUT build.
      and values (or macros) in the NUT codebase. [issue #1176, issue #31]
    * custom `distcheck-something` targets did not inherit `DISTCHECK_FLAGS`
      properly. [#2541]
+
+ - updated `docs/nut-names.txt` with items defined by 42ITy NUT fork. [#2339]
 
  - various recipe, documentation and source files were revised to address
    respective warnings issued by the new generations of analysis tools.

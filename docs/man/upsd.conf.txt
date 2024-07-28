@@ -14,6 +14,12 @@ miscellaneous configuration values.  This file contains details on
 access controls, so keep it secure.  Ideally, only the upsd process
 should be able to read it.
 
+IMPORTANT NOTES
+---------------
+
+* Contents of this file should be pure ASCII (character codes
+  not in range would be ignored with a warning message).
+
 CONFIGURATION DIRECTIVES
 ------------------------
 

@@ -133,6 +133,20 @@ actual package source versions on both Debian 8 "Jessie" and
 Debian 11 "Buster").
 ======
 
+[NOTE]
+.FUN NOTE
+======
+For development on the road (or a native ARM build) you can use the
+link:https://termux.dev/en/[Termux] project on Android. It provides
+a sufficiently Debian-like operating environment for all intents and
+purposes, but you may have to use their `pkg` wrapper instead of `apt`
+tooling directly.
+
+You would need at least a couple of gigabytes available on the internal
+phone storage though, especially if using `ccache` or setting up cross
+builds.
+======
+
 Debian-like package installations commonly start with an update of
 metadata about recently published package revisions:
 
@@ -1387,6 +1401,16 @@ setup, and https://brew.sh if you want to install it on your MacOS system
 (note that its default packaged locations known as `HOMEBREW_PREFIX` differ
 depending on architecture -- see https://docs.brew.sh/Installation for more
 details; find via `brew config | grep HOMEBREW_PREFIX: | awk '{print $2}'`).
+
+NOTE: The quickest pre-configuration for `ci_build.sh` integration with this
+non-default build system would be to add this line into your shell profile:
+----
+eval "$(brew shellenv)"
+----
+
+NOTE: Homebrew is not the only build/packaging system available for MacOS,
+so NUT scripts do not make any assumptions nor try to find a build system
+they were not told about (via `HOMEBREW_PREFIX` in this case).
 
 Currently known dependencies for basic build include:
 ----

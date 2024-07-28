@@ -1615,7 +1615,32 @@ int main(int argc, char *argv[])
 				quiet = 1;
 				break;
 			case 'V':
-				printf("Network UPS Tools - %s\n", NUT_VERSION_MACRO);
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+				/* NOTE: Some compilers deduce that macro-based decisions about
+				 * NUT_VERSION_IS_RELEASE make one of codepaths unreachable in
+				 * a particular build. So we pragmatically handwave this away.
+				 */
+				printf("Network UPS Tools - %s %s%s%s\n",
+					NUT_VERSION_MACRO,
+					NUT_VERSION_IS_RELEASE ? "release" : "(development iteration after ",
+					NUT_VERSION_IS_RELEASE ? "" : NUT_VERSION_SEMVER_MACRO,
+					NUT_VERSION_IS_RELEASE ? "" : ")"
+				);
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 				nut_report_config_flags();
 				exit(EXIT_SUCCESS);
 			case 'a':

@@ -1283,7 +1283,7 @@ static int shut_control_msg(
 				__func__, data_size);
 			return -1;
 		}
-		if (data_size > 0x0F) {
+		if (data_size > 0x0F || data_size > sizeof(shut_pkt) - 2) {
 			upsdebugx(1, "%s: WARNING: data_size %" PRI_NUT_USB_CTRL_CHARBUFSIZE
 				" may be too large for SHUT packet?",
 				__func__, data_size);
@@ -1293,7 +1293,7 @@ static int shut_control_msg(
 		}
 		shut_pkt[1] = (unsigned char)(data_size<<4) + (unsigned char)data_size;
 		if ( (requesttype == REQUEST_TYPE_SET_REPORT) && (remaining_size < 8) )
-			memcpy(&shut_pkt[2], bytes, data_size); /* we need to send ctrl.data  */
+			memcpy(&shut_pkt[2], bytes, data_size > sizeof(shut_pkt) - 2 ? sizeof(shut_pkt) - 2 : data_size); /* we need to send ctrl.data  */
 		else
 			memcpy(&shut_pkt[2], &ctrl, 8);
 		shut_pkt[(data_size+3) - 1] = shut_checksum(&shut_pkt[2], (unsigned char)data_size);
