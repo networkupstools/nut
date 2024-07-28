@@ -429,7 +429,7 @@ def s_snmp2c (fout, js, name):
 #            pinfo ["setvar"] = '&' + pinfo ["setvar"]
 #        print ('    { "%(info_type)s", %(info_flags)d, %(info_len)f, %(OID)s, %(dfl)s, %(flags)d, %(oid2info)s, %(setvar)s },' % pinfo, file=fout)
 #        print ('    { "%(info_type)s", %(info_flags)d, %(info_len)f, %(OID)s, %(dfl)s, %(flags)d, %(oid2info)s },' % pinfo, file=fout)
-        print ('    snmp_info_default( "%(info_type)s", %(info_flags)d, %(info_len)f, %(OID)s, %(dfl)s, %(flags)d, %(oid2info)s ),' % pinfo, file=fout)
+        print ('    snmp_info_default( "%(info_type)s", %(info_flags)d, %(info_len)f, %(OID)s, %(dfl)s, %(flags)dUL, %(oid2info)s ),' % pinfo, file=fout)
 
 #    print ("    { NULL, 0, 0, NULL, NULL, 0, NULL }", file=fout)
     print ("\n    /* end of structure. */\n    snmp_info_sentinel", file=fout)
