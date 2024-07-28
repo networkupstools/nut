@@ -269,7 +269,7 @@ if WITH_REGENERATE_DMF_SNMP
   DMFGEN_CMD = ( \
 	if test x"$(V)" = x1 ; then echo "[D] abs_top_builddir='$(abs_top_builddir)' abs_top_srcdir='$(abs_top_srcdir)' top_builddir='$(top_builddir)' top_srcdir='$(top_srcdir)' builddir='$(builddir)' srcdir='$(srcdir)' PWD='`pwd`'" >&2 ; fi ; \
 	if test x"$${ABS_OUTDIR-}" = x ; then ABS_OUTDIR="`pwd`" ; fi ; export ABS_OUTDIR ; \
-	echo "  DMFIFY '$$CMIBFILE' => '$@' (PWD='`pwd`', actual ABS_OUTDIR='$${ABS_OUTDIR}')" >&2 ; \
+	echo "  DMFIFY '$$CMIBFILE' => '$@' (PWD='`pwd`', actual ABS_OUTDIR='$${ABS_OUTDIR}')" ; \
 	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)" || exit ; \
 	if test -f "$(DMFGEN_SANITY_VALIDATED)" ; then \
 	    test -d "$${ABS_OUTDIR}" -a -w "$${ABS_OUTDIR}" || $(MKDIR_P) "$${ABS_OUTDIR}" || exit ; \
@@ -332,7 +332,7 @@ DMFLNK_CMD = ( \
 	if [ x"$(V)" = x1 ] ; then \
 		echo "  LN     '$$DMFFILE_DIR$$DMFFILE' => '$$DMFLINK' (PWD = '`pwd`', IN='$?', IN_ALL='$^', OUT='$@')" >&2 ; \
 	else \
-		echo "  LN     '$$DMFFILE_DIR$$DMFFILE' => '$$DMFLINK'" >&2 ; \
+		echo "  LN     '$$DMFFILE_DIR$$DMFFILE' => '$$DMFLINK'" ; \
 	fi ; \
 	test -f "$$DMFFILE_DIR$$DMFFILE" || { echo "`date`: 1. File '$$DMFFILE_DIR$$DMFFILE' not found yet, sleeping a bit" >&2; sleep 5 ; sync; } ; \
 	test -f "$$DMFFILE_DIR$$DMFFILE" || { echo "`date`: 2. File '$$DMFFILE_DIR$$DMFFILE' not found yet, sleeping a bit" >&2; sleep 10 ; sync; } ; \
@@ -372,7 +372,7 @@ $(abs_builddir)/$(DMFSNMP_RES_SUBDIR)/.uptodate: $(dmfsnmpres_DMFS)
 				S*|K*) ;; \
 				*) N="$(abs_builddir)/$(DMFSNMP_RES_SUBDIR)/$$B"; \
 					if [ -s "$$F" ] && [ ! -s "$$N" ] ; then \
-						echo "  CP    $$F => $$N" >&2 ; \
+						echo "  CP    $$F => $$N" ; \
 						$(MKDIR_P) "$(abs_builddir)/$(DMFSNMP_RES_SUBDIR)" && \
 						cp -f "$$F" "$$N" || exit ; \
 					fi ;; \
@@ -426,7 +426,7 @@ $(abs_top_builddir)/scripts/DMF/$(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf: $(
 		F="$(abs_srcdir)/$(DMFNUTSCAN_RES_SUBDIR)/$(@F)"; \
 		N="$(abs_builddir)/$(DMFNUTSCAN_RES_SUBDIR)/$(@F)"; \
 		if [ -s "$$F" ] && [ ! -s "$$N" ] ; then \
-			echo "  CP    $$F => $$N" >&2 && \
+			echo "  CP    $$F => $$N" && \
 			$(MKDIR_P) "$(abs_builddir)/$(DMFNUTSCAN_RES_SUBDIR)" && \
 			cp -f "$$F" "$$N" || { ls -la "$$F" "$$N" ; exit 1; } ; \
 		fi; \
