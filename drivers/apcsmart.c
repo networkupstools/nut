@@ -4,6 +4,7 @@
  * Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
  *           (C) 2000  Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk>
  *           (C) 2011+ Michal Soltys <soltys@ziu.info>
+ *           (C) 2024  Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,7 +37,7 @@
 #include "apcsmart_tabs.h"
 
 #define DRIVER_NAME	"APC Smart protocol driver"
-#define DRIVER_VERSION	"3.33"
+#define DRIVER_VERSION	"3.34"
 
 #ifdef WIN32
 # ifndef ECANCELED
@@ -148,6 +149,8 @@ static const char *convert_data(apc_vartab_t *vt, const char *upsval)
 	static char temp[APC_LBUF];
 	long tval;
 
+	memset(temp, '\0', sizeof(temp));
+
 	/* this should never happen */
 	if (strlen(upsval) >= sizeof(temp)) {
 		upslogx(LOG_CRIT, "%s: the length of [%s] is too big", __func__, vt->name);
@@ -166,7 +169,8 @@ static const char *convert_data(apc_vartab_t *vt, const char *upsval)
 		case APC_F_SECONDS:
 		case APC_F_LEAVE:
 			/* no conversion for any of these */
-			strcpy(temp, upsval);
+			strncpy(temp, upsval, sizeof(temp) - 1);
+			temp[sizeof(temp) - 1] = '\0';
 			return temp;
 
 		case APC_F_HOURS:
@@ -193,14 +197,16 @@ static const char *convert_data(apc_vartab_t *vt, const char *upsval)
 				case 'O': return "no transfers yet since turnon";
 				case 'S': return "simulated power failure or UPS test";
 				default:
-					  strcpy(temp, upsval);
-					  return temp;
+					strncpy(temp, upsval, sizeof(temp) - 1);
+					temp[sizeof(temp) - 1] = '\0';
+					return temp;
 			}
 	}
 
 	/* this should never happen */
 	upslogx(LOG_CRIT, "%s: unable to convert [%s]", __func__, vt->name);
-	strcpy(temp, upsval);
+	strncpy(temp, upsval, sizeof(temp) - 1);
+	temp[sizeof(temp) - 1] = '\0';
 	return temp;
 }
 
@@ -695,7 +701,9 @@ static void apc_dstate_delinfo(apc_vartab_t *vt, int skip)
 		return;
 	}
 
-	strcpy(name, vt->name);
+	memset(name, '\0', vt->nlen0);
+	strncpy(name, vt->name, vt->nlen0 - 1);
+	name[vt->nlen0 - 1] = '\0';
 	nidx = strstr(name,".0.") + 1;
 
 	for (c = skip; c < vt->cnt; c++) {
@@ -711,6 +719,7 @@ static void apc_dstate_setinfo(apc_vartab_t *vt, const char *upsval)
 {
 	char *name, *nidx;
 	char *temp, *vidx[APC_PACK_MAX], *com, *curr;
+	size_t upsvallen = strlen(upsval);
 	int c;
 
 	/* standard not packed var */
@@ -724,18 +733,23 @@ static void apc_dstate_setinfo(apc_vartab_t *vt, const char *upsval)
 		return;
 	}
 
-	if ( !(temp = xmalloc(sizeof(char) * (strlen(upsval) + 1))) ) {
+	if ( !(temp = xmalloc(sizeof(char) * (upsvallen + 2))) ) {
+		/* +2 seems like an overkill, but helps hush compiler warnings */
 		upslogx(LOG_ERR, "apc_dstate_setinfo() failed to allocate buffer");
 		free(name);
 		return;
 	}
 
 	/* we have to set proper name for dstate_setinfo() calls */
-	strcpy(name, vt->name);
+	memset(name, '\0', vt->nlen0);
+	strncpy(name, vt->name, vt->nlen0 - 1);
+	name[vt->nlen0 - 1] = '\0';
 	nidx = strstr(name,".0.") + 1;
 
 	/* split the value string */
-	strcpy(temp, upsval);
+	memset(temp, '\0', upsvallen + 2);
+	strncpy(temp, upsval, upsvallen + 1);
+	temp[upsvallen] = '\0';
 	curr = temp;
 	c = 0;
 	do {
@@ -1239,7 +1253,9 @@ static int firmware_table_lookup(void)
 		 * through 'b'; see:
 		 * http://article.gmane.org/gmane.comp.monitoring.nut.user/7762
 		 */
-		strcpy(buf, "set\1");
+		memset(buf, '\0', sizeof(buf));
+		strncpy(buf, "set\1", sizeof(buf) - 1);
+		buf[sizeof(buf) - 1] = '\0';
 	}
 
 	for (i = 0; apc_compattab[i].firmware != NULL; i++) {
@@ -1551,6 +1567,8 @@ static int sdcmd_AT(const void *str)
 	const char *awd = str;
 	char temp[APC_SBUF], *ptr;
 
+	memset(temp, '\0', sizeof(temp));
+
 	if (!awd)
 		awd = "000";
 
@@ -1562,7 +1580,8 @@ static int sdcmd_AT(const void *str)
 	for (i = cnt; i < padto ; i++) {
 		*ptr++ = '0';
 	}
-	strcpy(ptr, awd);
+	strncpy(ptr, awd, sizeof(temp) - (ptr - temp) - 1);
+	temp[sizeof(temp) - 1] = '\0';
 
 	upsdebugx(1, "%s: issuing [%s] with %ld minutes of additional wake-up delay",
 			__func__, prtchr(APC_CMD_GRACEDOWN), strtol(awd, NULL, 10)*6);
@@ -1852,6 +1871,8 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 		return STAT_SET_FAILED;
 	}
 
+	memset(temp, '\0', sizeof(temp));
+
 	apc_flush(SER_AA);
 	if (apc_write((const unsigned char)vt->cmd) != 1)
 		return STAT_SET_FAILED;
@@ -1871,7 +1892,8 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 
 	/* length sanitized above */
 	temp[0] = APC_NEXTVAL;
-	strcpy(temp + 1, val);
+	strncpy(temp + 1, val, sizeof(temp) - 1);
+	temp[sizeof(temp) - 1] = '\0';
 	ptr = temp + strlen(temp);
 	for (i = strlen(val); i < APC_STRLEN; i++)
 		*ptr++ = '\015'; /* pad with CRs */
