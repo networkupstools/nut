@@ -87,7 +87,7 @@ static int (*sdlist[])(const void *) = {
 /*
  * note: both lookup functions MUST be used after variable detection is
  * completed - that is after deprecate_vars() call; the general reason for this
- * is 1:n and n:1 nut <-> apc mappings, which are not determined prior to the
+ * is 1:n and n:1 NUT <-> APC mappings, which are not determined prior to the
  * detection
  */
 static apc_vartab_t *vt_lookup_char(char cmdchar)
@@ -207,7 +207,7 @@ static const char *convert_data(apc_vartab_t *vt, const char *upsval)
 /* report differences if tcsetattr != tcgetattr, return otherwise */
 
 /*
- * Aix compatible names
+ * AIX compatible names
  */
 #if defined(VWERSE) && !defined(VWERASE)
 #define VWERASE VWERSE
@@ -276,7 +276,7 @@ static void apc_ser_diff(struct termios *tioset, struct termios *tioget)
 	upslogx(LOG_NOTICE, "%s: device reports different attributes than requested", device_path);
 
 	/*
-	 * According to the manual the most common problem is mis-matched
+	 * According to the manual the most common problem is mismatched
 	 * combinations of input and output baud rates. If the combination is
 	 * not supported then neither are changed. This should not be a
 	 * problem here since we set them both to the same extremely common
@@ -441,7 +441,7 @@ static void alert_handler(char ch)
 }
 
 /*
- * we need a tiny bit different processing due to '*' and canonical mode; the
+ * we need a tiny bit different processing due to "*" and canonical mode; the
  * function is subtly different from generic ser_get_line_alert()
  */
 #define apc_read(b, l, f) apc_read_i(b, l, f, __func__, __LINE__)
@@ -506,10 +506,10 @@ static ssize_t apc_read_i(char *buf, size_t buflen, int flags, const char *fn, u
 				ser_comm_fail("serial port read timeout: %u(%s)", ln, fn);
 			return ret;
 		}
-		/* ok, timeout is acceptable */
+		/* ok, timeout is acceptable... */
 		if (ret == 0 && (flags & SER_TO)) {
 			/*
-			 * but it doesn't imply ser_comm_good
+			 * ...but it doesn't imply ser_comm_good
 			 *
 			 * for example we might be in comm_fail condition,
 			 * trying to "nudge" the UPS with some command
@@ -535,17 +535,18 @@ static ssize_t apc_read_i(char *buf, size_t buflen, int flags, const char *fn, u
 				return (ssize_t)count;
 			}
 			/*
-			 * '*' is set as a secondary EOL; convert to 'OK' only as a
-			 * reply to shutdown command in sdok(); otherwise next
-			 * select_read() will continue normally
+			 * "*" is set as a secondary EOL; convert to "OK" only
+			 * as a reply to shutdown command in sdok(); otherwise
+			 * next select_read() will continue normally
 			 */
 			if ((flags & SER_HA) && temp[i] == '*') {
 				/*
-				 * a bit paranoid, but remember '*' is not real EOL;
-				 * there could be some firmware in existence, that
-				 * would send both string: 'OK\n' and alert: '*'.
-				 * Just in case, try to flush the input with small 1 sec.
-				 * timeout
+				 * a bit paranoid, but remember that "*" is not
+				 * real EOL; there could be some firmware in
+				 * existence, which would send both string:
+				 * "OK\n" and alert: "*".
+				 * Just in case, try to flush the input with a
+				 * small 1 sec timeout.
 				 */
 				memset(buf, '\0', buflen);
 				errno = 0;
@@ -589,9 +590,9 @@ static ssize_t apc_write_i(unsigned char code, const char *fn, unsigned int ln)
 
 	ret = ser_send_char(upsfd, code);
 	/*
-	 * Formally any write() sould never return 0, if the count != 0. For
+	 * Formally any write() should never return 0, if the count != 0. For
 	 * the sake of handling any obscure nonsense, we consider such return
-	 * as a failure - thus <= condition; either way, LE is pretty hard
+	 * as a failure - thus <= condition; either way, LE is a pretty hard
 	 * condition hardly ever happening;
 	 */
 	if (ret <= 0)
@@ -603,7 +604,7 @@ static ssize_t apc_write_i(unsigned char code, const char *fn, unsigned int ln)
 /*
  * We have to watch out for NA, here;
  * This is generally safe, as otherwise we will just timeout. The reason we do
- * it, is that under certain conditions an ups might respond with NA for
+ * it, is that under certain conditions an UPS might respond with NA for
  * something it would normally handle (e.g. calling @ while being in powered
  * off or hibernated state. If we keep sending the "arguments" after getting
  * NA, they will be interpreted as commands, which is quite a bug :)
@@ -677,7 +678,7 @@ static void apc_flush(int flags)
 	}
 }
 
-/* apc specific wrappers around set/del info - to handle "packed" variables */
+/* APC specific wrappers around set/del info - to handle "packed" variables */
 static void apc_dstate_delinfo(apc_vartab_t *vt, int skip)
 {
 	char *name, *nidx;
@@ -905,10 +906,10 @@ static int var_verify(apc_vartab_t *vt)
 }
 
 /*
- * This function iterates over vartab, deprecating nut<->apc 1:n and n:1
+ * This function iterates over vartab, deprecating NUT<->APC 1:n and n:1
  * variables. We prefer earliest present variable. All the other ones must be
  * marked as not present (which implies deprecation).
- * This pass is requried after completion of all protocol_verify() and/or
+ * This pass is required after completion of all protocol_verify() and/or
  * legacy_verify() calls.
  */
 static void deprecate_vars(void)
@@ -978,7 +979,7 @@ static void apc_getcaps(int qco)
 
 	/*
 	 * note - apc_read() needs larger timeout grace (not a problem w.r.t.
-	 * to nut's timing, as it's done only during setup) and different
+	 * to NUT's timing, as it's done only during setup) and different
 	 * ignore set due to certain characters like '#' being received
 	 */
 	ret = apc_read(temp, sizeof(temp), SER_CC|SER_TO);
@@ -1118,7 +1119,7 @@ static void protocol_verify(unsigned char cmd)
 		return;
 
 	/*
-	 * loop necessary for apc:nut 1:n cases (e.g. T -> device.uptime,
+	 * loop necessary for APC:NUT 1:n cases (e.g. T -> device.uptime,
 	 * ambient.0.temperature)
 	 */
 	found = 0;
@@ -1134,7 +1135,7 @@ static void protocol_verify(unsigned char cmd)
 
 	/*
 	 * see if it's a command
-	 * loop necessary for apc:nut 1:n cases (e.g. D -> calibrate.start,
+	 * loop necessary for APC:NUT 1:n cases (e.g. D -> calibrate.start,
 	 * calibrate.stop)
 	 */
 	found = 0;
@@ -1162,7 +1163,7 @@ static void oldapcsetup(void)
 {
 	/*
 	 * note: battery.date and ups.id make little sense here, as
-	 * that would imply writability and this is an *old* apc psu
+	 * that would imply writability and this is an *old* APC UPS
 	 */
 	legacy_verify("ups.temperature");
 	legacy_verify("ups.load");
@@ -1183,19 +1184,19 @@ static void oldapcsetup(void)
 	if (vt_lookup_name("output.current"))
 		dstate_setinfo("ups.model", "Matrix-UPS");
 	else {
-		/* really old models don't support ups.model (apc: 0x01) */
+		/* really old models don't support ups.model (APC: 0x01) */
 		if (!vt_lookup_name("ups.model"))
 			/* force the model name */
 			dstate_setinfo("ups.model", "Smart-UPS");
 	}
 
 	/*
-	 * If we have come down this path then we dont do capabilities and
+	 * If we have come down this path then we don't do capabilities and
 	 * other shiny features.
 	 */
 }
 
-/* some hardware is a special case - hotwire the list of cmdchars */
+/* some hardware is a special case - hot-wire the list of cmdchars */
 static int firmware_table_lookup(void)
 {
 	ssize_t ret;
@@ -1345,7 +1346,7 @@ static int do_cal(int start)
 
 	/* if we can't check the current calibration status, bail out */
 	if ((ret < 1) || (!strcmp(temp, "NA"))) {
-		upslogx(LOG_WARNING, "%s", "runtime calibration state undeterminable");
+		upslogx(LOG_WARNING, "%s", "runtime calibration state can not be determined");
 		return STAT_INSTCMD_HANDLED;		/* FUTURE: failure */
 	}
 
@@ -1429,7 +1430,7 @@ static int smartmode(void)
 /*
  * get the UPS talking to us in smart mode
  * note: this is weird overkill, but possibly excused due to some obscure
- * hardware/firmware combinations; simpler version commmented out above, for
+ * hardware/firmware combinations; simpler version commented out above, for
  * now let's keep minimally adjusted old one
  */
 static int smartmode(int cnt)
@@ -1444,7 +1445,7 @@ static int smartmode(int cnt)
 		if (apc_write(APC_GOSMART) != 1)
 			return 0;
 
-		/* timeout here is intented */
+		/* timeout here is intended */
 		ret = apc_read(temp, sizeof(temp), SER_TO|SER_D1);
 		if (ret > 0 && !strcmp(temp, "SM"))
 			return 1;	/* success */
@@ -1463,8 +1464,8 @@ static int smartmode(int cnt)
 }
 
 /*
- * all shutdown commands should respond with 'OK' or '*'
- * apc_read() handles conversion to 'OK' so we care only about that one
+ * all shutdown commands should respond with "OK" or "*"
+ * apc_read() handles conversion to "OK" so we care only about that one
  * ign allows for timeout without assuming an error
  */
 static int sdok(int ign)
@@ -1473,7 +1474,7 @@ static int sdok(int ign)
 	char temp[APC_SBUF];
 
 	/*
-	 * older upses on failed commands might just timeout, we cut down
+	 * older UPSes on failed commands might just timeout, we cut down
 	 * timeout grace though
 	 * furthermore, command 'Z' will not reply with anything
 	 */
@@ -1563,7 +1564,7 @@ static int sdcmd_AT(const void *str)
 	}
 	strcpy(ptr, awd);
 
-	upsdebugx(1, "%s: issuing [%s] with %ld minutes of additional wakeup delay",
+	upsdebugx(1, "%s: issuing [%s] with %ld minutes of additional wake-up delay",
 			__func__, prtchr(APC_CMD_GRACEDOWN), strtol(awd, NULL, 10)*6);
 
 	apc_flush(0);
@@ -1586,7 +1587,7 @@ static int sdcmd_AT(const void *str)
 	/*
 	 * "tricky" part - we tried @nn variation and it (unsurprisingly)
 	 * failed; we have to abort the sequence with something bogus to have
-	 * the clean state; newer upses will respond with 'NO', older will be
+	 * the clean state; newer UPSes will respond with "NO", older will be
 	 * silent (YMMV);
 	 */
 	apc_write(APC_GOSMART);
@@ -1626,7 +1627,7 @@ static int sdcmd_Z(const void *foo)
 		return STAT_INSTCMD_FAILED;
 	}
 
-	/* note: ups will not reply anything after this command */
+	/* note: UPS will not reply anything after this command */
 	return sdok(1);
 }
 
@@ -1777,7 +1778,7 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 
 	ptr = convert_data(vt, orig);
 
-	/* suppress redundant changes - easier on the eeprom */
+	/* suppress redundant changes - easier on the EEPROM */
 	if (!strcmp(ptr, val)) {
 		upslogx(LOG_INFO, "%s: ignoring SET %s='%s' (unchanged value)",
 			__func__, vt->name, val);
@@ -1860,7 +1861,7 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 	if ((ret < 1) || (!strcmp(temp, "NA")))
 		return STAT_SET_FAILED;
 
-	/* suppress redundant changes - easier on the eeprom */
+	/* suppress redundant changes - easier on the EEPROM */
 	if (!strcmp(temp, val)) {
 		upslogx(LOG_INFO, "%s: ignoring SET %s='%s' (unchanged value)",
 			__func__, vt->name, val);
@@ -1933,7 +1934,7 @@ static int do_loadon(void)
 		return STAT_INSTCMD_FAILED;
 
 	/*
-	 * ups will not reply anything after this command, but might
+	 * UPS will not reply anything after this command, but might
 	 * generate brief OVER condition (which will be corrected on
 	 * the next status update)
 	 */
@@ -1942,7 +1943,7 @@ static int do_loadon(void)
 	return STAT_INSTCMD_HANDLED;
 }
 
-/* actually send the instcmd's char to the ups */
+/* actually send the instcmd's char to the UPS */
 static int do_cmd(const apc_cmdtab_t *ct)
 {
 	ssize_t ret;
@@ -2085,7 +2086,7 @@ void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE, "ttymode", "tty discipline selection");
 	addvar(VAR_VALUE, "cable", "alternate cable (940-0095B) selection");
-	addvar(VAR_VALUE, "awd", "hard hibernate's additional wakeup delay");
+	addvar(VAR_VALUE, "awd", "hard hibernate's additional wake-up delay");
 	addvar(VAR_VALUE, "sdtype", "simple shutdown method");
 	addvar(VAR_VALUE, "advorder", "advanced shutdown control");
 	addvar(VAR_VALUE, "cshdelay", "CS hack delay");
@@ -2105,7 +2106,7 @@ void upsdrv_initups(void)
 	char *val;
 	apc_vartab_t *ptr;
 
-	/* sanitize awd (additional waekup delay of '@' command) */
+	/* sanitize awd (additional wake-up delay of '@' command) */
 	if ((val = getval("awd")) && !rexhlp(APC_AWDFMT, val)) {
 			fatalx(EXIT_FAILURE, "invalid value (%s) for option 'awd'", val);
 	}
@@ -2164,7 +2165,7 @@ void upsdrv_initinfo(void)
 			);
 	}
 
-	/* manufacturer ID - hardcoded in this particular module */
+	/* manufacturer ID - hard-coded in this particular module */
 	dstate_setinfo("ups.mfr", "APC");
 
 	if (!(pmod = dstate_getinfo("ups.model")))
@@ -2189,7 +2190,7 @@ void upsdrv_updateinfo(void)
 	int all;
 	time_t now;
 
-	/* try to wake up a dead ups once in awhile */
+	/* try to wake up a dead UPS once in awhile */
 	if (dstate_is_stale()) {
 		if (!last_worked)
 			upsdebugx(1, "%s: %s", __func__, "comm lost");
@@ -2201,7 +2202,7 @@ void upsdrv_updateinfo(void)
 			return;
 
 		/* become aggressive after a few tries */
-		upsdebugx(1, "%s: nudging ups with 'Y', iteration #%d ...", __func__, last_worked);
+		upsdebugx(1, "%s: nudging UPS with 'Y', iteration #%d ...", __func__, last_worked);
 		if (!smartmode(1))
 			return;
 
