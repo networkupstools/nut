@@ -638,6 +638,9 @@ static int st_tree_dump_conn(st_tree_t *node, conn_t *conn)
 		/* build the list */
 		snprintf(flist, sizeof(flist), "%s", node->var);
 
+		if (node->flags & ST_FLAG_IMMUTABLE) {
+			snprintfcat(flist, sizeof(flist), " IMMUTABLE");
+		}
 		if (node->flags & ST_FLAG_RW) {
 			snprintfcat(flist, sizeof(flist), " RW");
 		}

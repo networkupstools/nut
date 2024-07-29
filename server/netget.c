@@ -24,6 +24,7 @@
 #include "state.h"
 #include "desc.h"
 #include "neterr.h"
+#include "nut_stdint.h"
 
 #include "netget.h"
 
@@ -138,6 +139,19 @@ static void get_type(nut_ctype_t *client, const char *upsname, const char *var)
 
 	snprintf(buf, sizeof(buf), "TYPE %s %s", upsname, var);
 
+	if (node->flags & ST_FLAG_IMMUTABLE) {
+#if defined DEBUG && DEBUG
+		/* Properly exposing this needs also an update to
+		 * docs/net-protocol.txt (promote the paragraph
+		 * provided as a note currently) and to the NUT RFC
+		 * https://www.rfc-editor.org/info/rfc9271
+		 */
+		snprintfcat(buf, sizeof(buf), " IMMUTABLE");
+#endif
+		upsdebugx(3, "%s: UPS[%s] variable %s is IMMUTABLE",
+			__func__, upsname, var);
+	}
+
 	if (node->flags & ST_FLAG_RW)
 		snprintfcat(buf, sizeof(buf), " RW");
 
@@ -160,6 +174,66 @@ static void get_type(nut_ctype_t *client, const char *upsname, const char *var)
 	if (!(node->flags & ST_FLAG_NUMBER)) {
 		upsdebugx(3, "%s: assuming that UPS[%s] variable %s which has no type flag is a NUMBER",
 			__func__, upsname, var);
+	}
+
+	/* Sanity-check current contents */
+	if (node->val && *(node->val)) {
+		double	d;
+		long	l;
+		int	ok = 1;
+		size_t	len = strlen(node->val);
+
+		errno = 0;
+		if (!str_to_double_strict(node->val, &d, 10)) {
+			upsdebugx(3, "%s: UPS[%s] variable %s is flagged a NUMBER but not (exclusively) a double: %s",
+				__func__, upsname, var, node->val);
+			upsdebug_with_errno(4, "%s: val=%f len=%" PRIuSIZE,
+				__func__, d, len);
+			ok = 0;
+		}
+
+		if (!ok) {
+			/* did not parse as a float... range issues or NaN? */
+			errno = 0;
+			ok = 1;
+			if (!str_to_long_strict(node->val, &l, 10)) {
+				upsdebugx(3, "%s: UPS[%s] variable %s is flagged a NUMBER but not (exclusively) a long int: %s",
+					__func__, upsname, var, node->val);
+				upsdebug_with_errno(4, "%s: val=%ld len=%" PRIuSIZE,
+					__func__, l, len);
+				ok = 0;
+			}
+		}
+
+#if defined DEBUG && DEBUG
+		/* Need to figure out an "aux" value here (length of current
+		 * string at least?) and propagate the flag into where netset
+		 * would see it. Maybe this sanity-check should move into the
+		 * core state.c logic, so dstate setting would already remember
+		 * the defaulted flag (and maybe set another to clarify it is
+		 * a guess). Currently that code does not concern itself with
+		 * sanity-checks, it seems!
+		 */
+		if (!ok && !(node->flags & ST_FLAG_NUMBER)) {
+			upsdebugx(3, "%s: assuming UPS[%s] variable %s is a STRING after all, by contents; "
+				"value='%s' len='%" PRIuSIZE "' aux='%ld'",
+				__func__, upsname, var, node->val, len, node->aux);
+
+			sendback(client, "%s STRING:%ld\n", buf, node->aux);
+			return;
+		}
+#endif
+
+		if (!ok) {
+			/* FIXME: Should this return an error?
+			 * Value was explicitly flagged as a NUMBER but is not by content.
+			 * Note that state_addinfo() does not sanity-check; but
+			 * netset.c::set_var() does though (for protocol clients).
+			 */
+			upslogx(LOG_WARNING, "%s: UPS[%s] variable %s is flagged as a NUMBER but is not "
+				"by contents (please report as a bug to NUT project)): %s",
+				__func__, upsname, var, node->val);
+		}
 	}
 
 	sendback(client, "%s NUMBER\n", buf);

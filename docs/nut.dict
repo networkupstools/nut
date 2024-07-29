@@ -2380,8 +2380,10 @@ nd
 nds
 netcat
 netclient
+netget
 netmask
 netserver
+netset
 netsh
 netsnmp
 netvision

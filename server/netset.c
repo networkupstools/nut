@@ -152,6 +152,16 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 		}
 	}
 
+	/* FIXME: Consider null/non-null values for strings
+	 *  See note on sstate_getnode() idea above.
+	 */
+	if (sstate_getflags(ups, var) & ST_FLAG_IMMUTABLE) {
+		upsdebugx(3, "%s: UPS [%s]: value of %s is already set and immutable",
+			__func__, ups->name, var);
+		send_err(client, NUT_ERR_READONLY);
+		return;
+	}
+
 	/* must be OK now */
 
 	snprintf(cmd, sizeof(cmd), "SET %s \"%s\"",

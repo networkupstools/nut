@@ -112,7 +112,7 @@ flags are supported.  Also note that they are not crammed together in
 
 This also replaces any previous flags for a given variable.
 
-Currently supported flags include `RW`, `STRING` and `NUMBER`
+Currently supported flags include `IMMUTABLE`, `RW`, `STRING` and `NUMBER`
 (detailed in the NUT Network Protocol documentation); unrecognized values
 are quietly ignored.
 

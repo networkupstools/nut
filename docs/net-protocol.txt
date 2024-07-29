@@ -156,6 +156,11 @@ exponents, and comma for thousands separator are forbidden.
 For example: "1200.20" is valid, while "1,200.20" and "1200,20" and "1.2e4"
 are invalid.
 
+Also note that internally NUT programs can flag variables as 'IMMUTABLE':
+a value of such variable can not be changed after it was initially set
+(this is used e.g. for "override" settings where the device is known to
+provide bogus readings).  The flag is not currently exposed with `GET`
+commands, but can be a reason for a `SET` to fail.
 
 This replaces the old "VARTYPE" command.
 
