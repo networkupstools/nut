@@ -2231,14 +2231,27 @@ void upsdrv_updateinfo(void)
 
 	/* try to wake up a dead UPS once in awhile */
 	if (dstate_is_stale()) {
+		char temp[LARGEBUF];
+		size_t count = 0;
+
 		if (!last_worked)
 			upsdebugx(1, "%s: %s", __func__, "comm lost");
 
 		/* reset this so a full update runs when the UPS returns */
 		last_full = 0;
 
-		/* Do not flood the device (and our logs) with retry attempts */
-		usleep(1000000);
+		/* Flush the buffer in case it helps,
+		 * or sleep 1 sec if buffer is empty */
+		while (select_read(upsfd, temp, sizeof(temp), 1, 0) > 0) {
+			count++;
+		}
+		errno = 0;
+
+		if (!count) {
+			/* Do not flood the device (and our logs, below)
+			 * with retry attempts */
+			usleep(1000000);
+		}
 
 		if (++last_worked < 10)
 			return;
