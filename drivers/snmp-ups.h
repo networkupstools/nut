@@ -137,6 +137,10 @@
 #undef PACKAGE_TARNAME
 #endif
 
+#ifdef PACKAGE_URL
+#undef PACKAGE_URL
+#endif
+
 #ifdef HAVE_DMALLOC_H
 #undef HAVE_DMALLOC_H
 #endif

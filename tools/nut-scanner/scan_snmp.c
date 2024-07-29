@@ -68,6 +68,10 @@ int nutscan_unload_snmp_library(void);
 # undef PACKAGE_TARNAME
 #endif
 
+#ifdef PACKAGE_URL
+# undef PACKAGE_URL
+#endif
+
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNUSED_PARAMETER)
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wunused-parameter"

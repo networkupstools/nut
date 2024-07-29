@@ -14,6 +14,7 @@
 /_install_pkgprotodir/
 Makefile
 Makefile.in
+
 ## Parent directory only
 /aclocal.m4
 /ar-lib
@@ -43,6 +44,9 @@ Makefile.in
 /README
 /TODO
 /UPGRADING
+/VERSION_DEFAULT
+/VERSION_FORCED
+/VERSION_FORCED_SEMVER
 /install-sh
 /libtool
 /ltmain.sh

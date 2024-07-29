@@ -62,7 +62,7 @@ static int upsnotify_report_verbosity = -1;
 
 /* the reason we define UPS_VERSION as a static string, rather than a
 	macro, is to make dependency tracking easier (only common.o depends
-	on nut_version_macro.h), and also to prevent all sources from
+	on nut_version.h), and also to prevent all sources from
 	having to be recompiled each time the version changes (they only
 	need to be re-linked). */
 #if defined DMFREINDEXER_MAKECHECK && DMFREINDEXER_MAKECHECK
@@ -924,10 +924,26 @@ size_t parseprogbasename(char *buf, size_t buflen, const char *progname, size_t 
 	return progbasenamelen;
 }
 
-int checkprocname(pid_t pid, const char *progname)
+int checkprocname_ignored(const char *caller)
 {
-	/* If we can determine the binary path name of the specified "pid",
+	char	*s = NULL;
+
+	if ((s = getenv("NUT_IGNORE_CHECKPROCNAME"))) {
+		/* FIXME: Make server/conf.c::parse_boolean() reusable */
+		if ( (!strcasecmp(s, "true")) || (!strcasecmp(s, "on")) || (!strcasecmp(s, "yes")) || (!strcasecmp(s, "1"))) {
+			upsdebugx(1, "%s for %s: skipping because caller set NUT_IGNORE_CHECKPROCNAME", __func__, NUT_STRARG(caller));
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+int compareprocname(pid_t pid, const char *procname, const char *progname)
+{
+	/* Given the binary path name of (presumably) a running process,
 	 * check if it matches the assumed name of the current program.
+	 * The "pid" value is used in log reporting.
 	 * Returns:
 	 *	-3	Skipped because NUT_IGNORE_CHECKPROCNAME is set
 	 *	-2	Could not parse a program name (ok to proceed,
@@ -937,9 +953,9 @@ int checkprocname(pid_t pid, const char *progname)
 	 *	0	Process name identified, does not seem to match
 	 *	1+	Process name identified, and seems to match with
 	 *		varying precision
-	 * Generally speaking, if (checkprocname(...)) then ok to proceed
+	 * Generally speaking, if (compareprocname(...)) then ok to proceed
 	 */
-	char	*procname = NULL, *s;
+
 	int	ret = -127;
 	size_t	procbasenamelen = 0, progbasenamelen = 0;
 	/* Track where the last dot is in the basename; 0 means none */
@@ -950,16 +966,11 @@ int checkprocname(pid_t pid, const char *progname)
 	char	procbasename[PATH_MAX], progbasename[PATH_MAX];
 #endif
 
-	if ((s = getenv("NUT_IGNORE_CHECKPROCNAME"))) {
-		/* FIXME: Make server/conf.c::parse_boolean() reusable */
-		if ( (!strcasecmp(s, "true")) || (!strcasecmp(s, "on")) || (!strcasecmp(s, "yes")) || (!strcasecmp(s, "1"))) {
-			upsdebugx(1, "%s: skipping because caller set NUT_IGNORE_CHECKPROCNAME", __func__);
-			ret = -3;
-			goto finish;
-		}
+	if (checkprocname_ignored(__func__)) {
+		ret = -3;
+		goto finish;
 	}
 
-	procname = getprocname(pid);
 	if (!procname || !progname) {
 		ret = -1;
 		goto finish;
@@ -980,7 +991,7 @@ int checkprocname(pid_t pid, const char *progname)
 	}
 
 	/* First quickly try for an exact hit of base names */
-	if (progbasenamelen == procbasenamelen && progbasenamedot == procbasenamedot && !strcmp(procname, progname)) {
+	if (progbasenamelen == procbasenamelen && progbasenamedot == procbasenamedot && !strcmp(procbasename, progbasename)) {
 		ret = 2;
 		goto finish;
 	}
@@ -1011,6 +1022,12 @@ int checkprocname(pid_t pid, const char *progname)
 		}
 	}
 #endif
+
+	/* TOTHINK: Developer builds wrapped with libtool may be prefixed
+	 * by "lt-" in the filename. Should we re-enter (or wrap around)
+	 * this search with a set of variants with/without the prefix on
+	 * both sides?..
+	 */
 
 	/* Nothing above has matched */
 	ret = 0;
@@ -1096,6 +1113,42 @@ finish:
 	return ret;
 }
 
+int checkprocname(pid_t pid, const char *progname)
+{
+	/* If we can determine the binary path name of the specified "pid",
+	 * check if it matches the assumed name of the current program.
+	 * Returns: same as compareprocname()
+	 * Generally speaking, if (checkprocname(...)) then ok to proceed
+	 */
+	char	*procname = NULL;
+	int	ret = 0;
+
+	/* Quick skip before drilling into getprocname() */
+	if (checkprocname_ignored(__func__)) {
+		ret = -3;
+		goto finish;
+	}
+
+	if (!progname) {
+		ret = -1;
+		goto finish;
+	}
+
+	procname = getprocname(pid);
+	if (!procname) {
+		ret = -1;
+		goto finish;
+	}
+
+	ret = compareprocname(pid, procname, progname);
+
+finish:
+	if (procname)
+		free(procname);
+
+	return ret;
+}
+
 #ifdef WIN32
 /* In WIN32 all non binaries files (namely configuration and PID files)
    are retrieved relative to the path of the binary itself.
@@ -1159,7 +1212,7 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 {
 #ifndef WIN32
 	int	ret, cpn1 = -10, cpn2 = -10;
-	char	*current_progname = NULL;
+	char	*current_progname = NULL, *procname = NULL;
 
 	/* TOTHINK: What about containers where a NUT daemon *is* the only process
 	 * and is the PID=1 of the container (recycle if dead)? */
@@ -1172,9 +1225,12 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 	}
 
 	ret = 0;
-	if (progname) {
+	if (!checkprocname_ignored(__func__))
+		procname = getprocname(pid);
+
+	if (procname && progname) {
 		/* Check against some expected (often built-in) name */
-		if (!(cpn1 = checkprocname(pid, progname))) {
+		if (!(cpn1 = compareprocname(pid, procname, progname))) {
 			/* Did not match expected (often built-in) name */
 			ret = -1;
 		} else {
@@ -1187,13 +1243,13 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 	}
 	/* if (cpn1 == -3) => NUT_IGNORE_CHECKPROCNAME=true */
 	/* if (cpn1 == -1) => could not determine name of PID... retry just in case? */
-	if (ret <= 0 && check_current_progname && cpn1 != -3) {
+	if (procname && ret <= 0 && check_current_progname && cpn1 != -3) {
 		/* NOTE: This could be optimized a bit by pre-finding the procname
 		 * of "pid" and re-using it, but this is not a hot enough code path
 		 * to bother much.
 		 */
 		current_progname = getprocname(getpid());
-		if (current_progname && (cpn2 = checkprocname(pid, current_progname))) {
+		if (current_progname && (cpn2 = compareprocname(pid, procname, current_progname))) {
 			if (cpn2 > 0) {
 				/* Matched current process as asked, ok to proceed */
 				ret = 2;
@@ -1211,17 +1267,23 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 	}
 
 	/* if ret == 0, ok to proceed - not asked for any sanity checks;
-	 * if ret > 0 we had some definitive match above
+	 * if ret > 0, ok to proceed - we had some definitive match above;
+	 * if ret < 0, NOT OK to proceed - we had some definitive fault above
 	 */
 	if (ret < 0) {
 		upsdebugx(1,
 			"%s: ran at least one check, and all such checks "
 			"found a process name for PID %" PRIuMAX " and "
-			"failed to match: expected progname='%s' (res=%d), "
-			"current progname='%s' (res=%d)",
+			"failed to match: "
+			"found procname='%s', "
+			"expected progname='%s' (res=%d%s), "
+			"current progname='%s' (res=%d%s)",
 			__func__, (uintmax_t)pid,
+			NUT_STRARG(procname),
 			NUT_STRARG(progname), cpn1,
-			NUT_STRARG(current_progname), cpn2);
+			(cpn1 == -10 ? ": did not check" : ""),
+			NUT_STRARG(current_progname), cpn2,
+			(cpn2 == -10 ? ": did not check" : ""));
 
 		if (nut_debug_level > 0 || nut_sendsignal_debug_level > 1) {
 			switch (ret) {
@@ -1272,12 +1334,23 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 			current_progname = NULL;
 		}
 
+		if (procname) {
+			free(procname);
+			procname = NULL;
+		}
+
 		/* Logged or not, sanity-check was requested and failed */
 		return -1;
 	}
+
 	if (current_progname) {
 		free(current_progname);
 		current_progname = NULL;
+	}
+
+	if (procname) {
+		free(procname);
+		procname = NULL;
 	}
 
 	/* see if this is going to work first - does the process exist,
@@ -2035,7 +2108,9 @@ void nut_report_config_flags(void)
 	 * Depending on amount of configuration tunables involved by a particular
 	 * build of NUT, the string can be quite long (over 1KB).
 	 */
+#if 0
 	const char *acinit_ver = NULL;
+#endif
 	/* Pass these as variables to avoid warning about never reaching one
 	 * of compiled codepaths: */
 	const char *compiler_ver = CC_VERSION;
@@ -2045,6 +2120,7 @@ void nut_report_config_flags(void)
 	if (nut_debug_level < 1)
 		return;
 
+#if 0
 	/* Only report git revision if NUT_VERSION_MACRO in nut_version.h aka
 	 * UPS_VERSION here is remarkably different from PACKAGE_VERSION from
 	 * configure.ac AC_INIT() -- which may be e.g. "2.8.0.1" although some
@@ -2062,7 +2138,14 @@ void nut_report_config_flags(void)
 		 * especially embedders, tend to place their product IDs here),
 		 * or if PACKAGE_VERSION *is NOT* a substring of it: */
 		acinit_ver = PACKAGE_VERSION;
+/*
+		// Triplet that was printed below:
+		(acinit_ver ? " (release/snapshot of " : ""),
+		(acinit_ver ? acinit_ver : ""),
+		(acinit_ver ? ")" : ""),
+*/
 	}
+#endif
 
 	/* NOTE: If changing wording here, keep in sync with configure.ac logic
 	 * looking for CONFIG_FLAGS_DEPLOYED via "configured with flags:" string!
@@ -2079,14 +2162,28 @@ void nut_report_config_flags(void)
 		now.tv_sec -= 1;
 	}
 
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+	/* NOTE: Some compilers deduce that macro-based decisions about
+	 * NUT_VERSION_IS_RELEASE make one of codepaths unreachable in
+	 * a particular build. So we pragmatically handwave this away.
+	 */
 	if (xbit_test(upslog_flags, UPSLOG_STDERR)) {
 		fprintf(stderr, "%4.0f.%06ld\t[D1] Network UPS Tools version %s%s%s%s%s%s%s %s%s\n",
 			difftime(now.tv_sec, upslog_start.tv_sec),
 			(long)(now.tv_usec - upslog_start.tv_usec),
 			UPS_VERSION,
-			(acinit_ver ? " (release/snapshot of " : ""),
-			(acinit_ver ? acinit_ver : ""),
-			(acinit_ver ? ")" : ""),
+			NUT_VERSION_IS_RELEASE ? " release" : " (development iteration after ",
+			NUT_VERSION_IS_RELEASE ? "" : NUT_VERSION_SEMVER_MACRO,
+			NUT_VERSION_IS_RELEASE ? "" : ")",
 			(compiler_ver && *compiler_ver != '\0' ? " built with " : ""),
 			(compiler_ver && *compiler_ver != '\0' ? compiler_ver : ""),
 			(compiler_ver && *compiler_ver != '\0' ? " and" : ""),
@@ -2100,18 +2197,25 @@ void nut_report_config_flags(void)
 
 	/* NOTE: May be ignored or truncated by receiver if that syslog server
 	 * (and/or OS sender) does not accept messages of such length */
-	if (xbit_test(upslog_flags, UPSLOG_SYSLOG))
+	if (xbit_test(upslog_flags, UPSLOG_SYSLOG)) {
 		syslog(LOG_DEBUG, "Network UPS Tools version %s%s%s%s%s%s%s %s%s",
 			UPS_VERSION,
-			(acinit_ver ? " (release/snapshot of " : ""),
-			(acinit_ver ? acinit_ver : ""),
-			(acinit_ver ? ")" : ""),
+			NUT_VERSION_IS_RELEASE ? " release" : " (development iteration after ",
+			NUT_VERSION_IS_RELEASE ? "" : NUT_VERSION_SEMVER_MACRO,
+			NUT_VERSION_IS_RELEASE ? "" : ")",
 			(compiler_ver && *compiler_ver != '\0' ? " built with " : ""),
 			(compiler_ver && *compiler_ver != '\0' ? compiler_ver : ""),
 			(compiler_ver && *compiler_ver != '\0' ? " and" : ""),
 			(config_flags && *config_flags != '\0' ? "configured with flags: " : "configured all by default guesswork"),
 			(config_flags && *config_flags != '\0' ? config_flags : "")
 		);
+	}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
 }
 
 static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
