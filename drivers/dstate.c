@@ -1545,11 +1545,46 @@ void status_init(void)
 	memset(status_buf, 0, sizeof(status_buf));
 }
 
+/* check if a status element has been set, return 0 if not, 1 if yes
+ * (considering a whole-word token in temporary status_buf) */
+int status_get(const char *buf)
+{
+	char	*s = NULL;
+	size_t	offset = 0, buflen = 0;
+
+	if (!buf || !*buf || !*status_buf)
+		return 0;
+
+	s = strstr(status_buf, buf);
+	buflen = strlen(buf);
+
+	/* not found */
+	if (!s)
+		return 0;
+
+	offset = status_buf - s;
+	if (offset == 0 || status_buf[offset - 1] == ' ') {
+		/* We have hit the start of token */
+		if (s[buflen] == '\0' || s[buflen] == ' ') {
+			/* And we have hit the end of token */
+			return 1;
+		}
+	}
+
+	/* buf was a substring of some other token */
+	return 0;
+}
+
 /* add a status element */
 void status_set(const char *buf)
 {
 	if (ignorelb && !strcasecmp(buf, "LB")) {
 		upsdebugx(2, "%s: ignoring LB flag from device", __func__);
+		return;
+	}
+
+	if (status_get(buf)) {
+		upsdebugx(2, "%s: status was already set: %s", __func__, buf);
 		return;
 	}
 

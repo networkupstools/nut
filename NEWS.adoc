@@ -208,6 +208,8 @@ during a NUT build.
      and values (or macros) in the NUT codebase. [issue #1176, issue #31]
    * custom `distcheck-something` targets did not inherit `DISTCHECK_FLAGS`
      properly. [#2541]
+   * added `status_get()` in NUT driver state API, to check if a status
+     token string had been set recently, and to avoid duplicate settings.
 
  - updated `docs/nut-names.txt` with items defined by 42ITy NUT fork. [#2339]
 
