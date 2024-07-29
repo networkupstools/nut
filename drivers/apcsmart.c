@@ -2290,6 +2290,9 @@ void upsdrv_updateinfo(void)
 			return;
 		}
 
+		if (last_worked > 10)
+			upslogx(LOG_WARNING, "%s: recovered the connection", __func__);
+		upsdebugx(1, "%s: recovered the connection", __func__);
 		last_worked = 0;
 	}
 
