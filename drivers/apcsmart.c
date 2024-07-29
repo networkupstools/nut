@@ -2237,6 +2237,9 @@ void upsdrv_updateinfo(void)
 		/* reset this so a full update runs when the UPS returns */
 		last_full = 0;
 
+		/* Do not flood the device (and our logs) with retry attempts */
+		usleep(1000000);
+
 		if (++last_worked < 10)
 			return;
 
