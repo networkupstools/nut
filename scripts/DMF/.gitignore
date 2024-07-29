@@ -3,8 +3,8 @@ dmf-reindex
 dmf-lua-test
 dmf-fun-test
 *.o
-*.json.tmp
-*.dmf.tmp
+*.json.tmp*
+*.dmf.tmp*
 */S*_*.dmf
 */.uptodate
 */.validated

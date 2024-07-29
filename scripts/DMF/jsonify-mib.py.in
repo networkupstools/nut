@@ -385,30 +385,28 @@ def s_info2c (fout, jsinfo):
         print ("\nstatic info_lkp_t %s_TEST[] = {" % key, file=fout)
         gotfun = 0
         for key, value, fun_vp2s, nuf_s2l, fun_s2l, nuf_vp2s in widen_tuples(jsinfo [key],6):
-            if nuf_vp2s is None:
-                if fun_s2l is None:
-                    if nuf_s2l is None:
-                        if fun_vp2s is None:
-                            # No NULLs in the end, because depending on macro value
-                            # WITH_SNMP_LKP_FUN info_lkp_t can have more or less fields
-                            print ("    { %d, \"%s\" }," % (key, value), file=fout)
-                        else:
-                            # No quotation for fun/nuf names!
-                            print ("    { %d, \"%s\", %s }," % (key, value, fun_vp2s), file=fout)
-                            gotfun = 1
-                    else:
-                            print ("    { %d, \"%s\", %s, %s }," % (key, value, fun_vp2s, nuf_s2l), file=fout)
-                            gotfun = 1
-                else:
-                            print ("    { %d, \"%s\", %s, %s, %s }," % (key, value, fun_vp2s, nuf_s2l, fun_s2l), file=fout)
-                            gotfun = 1
+            if nuf_vp2s is None and \
+                    fun_s2l is None and \
+                    nuf_s2l is None and \
+                    fun_vp2s is None:
+                            # Depending on macro value WITH_SNMP_LKP_FUN, the info_lkp_t
+                            # structure can have more or less fields. Any needed NULLs
+                            # in the end should be covered by info_lkp_default() macro
+                            # in snmp-ups.h
+                            print ("    info_lkp_default( %d, \"%s\" )," % (key, value), file=fout)
             else:
-                print ("    { %d, \"%s\", %s, %s, %s, %s }," % (key, value, fun_vp2s, nuf_s2l, fun_s2l, nuf_vp2s), file=fout)
-                gotfun = 1
-        if gotfun == 0:
-            print ("    { 0, NULL }\n};\n", file=fout)
-        else:
-            print ("    { 0, NULL, NULL, NULL, NULL, NULL }\n};\n", file=fout)
+                            # No quotation for fun/nuf names!
+                            print ("    { %d, \"%s\", %s, %s, %s, %s }," % (
+                                key, value,
+                                "NULL" if fun_vp2s is None else fun_vp2s,
+                                "NULL" if nuf_s2l  is None else nuf_s2l,
+                                "NULL" if fun_s2l  is None else fun_s2l,
+                                "NULL" if nuf_vp2s is None else nuf_vp2s
+                                ), file=fout)
+                            gotfun = 1
+
+        print ("\n    /* end of structure. */\n    info_lkp_sentinel", file=fout)
+        print ("};", file=fout)
 
 def s_snmp2c (fout, js, name):
     print ("\nstatic snmp_info_t %s_TEST[] = {" % name, file=fout)
@@ -429,9 +427,13 @@ def s_snmp2c (fout, js, name):
 
 #        if pinfo ["setvar"] != "NULL":
 #            pinfo ["setvar"] = '&' + pinfo ["setvar"]
-#        print ('    { "%(info_type)s", %(info_flags)d, %(info_len)f, %(OID)s, %(dfl)s, %(flags)d, %(oid2info)s, %(setvar)s},' % pinfo, file=fout)
-        print ('    { "%(info_type)s", %(info_flags)d, %(info_len)f, %(OID)s, %(dfl)s, %(flags)d, %(oid2info)s},' % pinfo, file=fout)
-    print ("    { NULL, 0, 0, NULL, NULL, 0, NULL }", file=fout)
+#        print ('    { "%(info_type)s", %(info_flags)d, %(info_len)f, %(OID)s, %(dfl)s, %(flags)d, %(oid2info)s, %(setvar)s },' % pinfo, file=fout)
+#        print ('    { "%(info_type)s", %(info_flags)d, %(info_len)f, %(OID)s, %(dfl)s, %(flags)d, %(oid2info)s },' % pinfo, file=fout)
+        print ('    snmp_info_default( "%(info_type)s", %(info_flags)d, %(info_len)f, %(OID)s, %(dfl)s, %(flags)dUL, %(oid2info)s ),' % pinfo, file=fout)
+
+#    print ("    { NULL, 0, 0, NULL, NULL, 0, NULL }", file=fout)
+    print ("\n    /* end of structure. */\n    snmp_info_sentinel", file=fout)
+
     print ("};", file=fout)
 
 def s_mib2nut (fout, js, name):
@@ -466,6 +468,8 @@ def s_json2c (fout, MIB_name, js):
 #include "main.h"
 #include "snmp-ups.h"
 
+#include "nut_float.h"
+
 // for setvar field
 int input_phases, output_phases, bypass_phases;
 
@@ -483,10 +487,16 @@ int input_phases, output_phases, bypass_phases;
 // Replicate what drivers/main.c exports
 int do_synchronous = 0;
 
+/* Just in case some builds do not refer to it, declare as non-static */
+extern int do_debug;
 int do_debug = 1;
+bool streq (const char* x, const char* y);
+bool strneq (const char* x, const char* y);
 
-static inline bool streq (const char* x, const char* y)
+
+inline bool streq (const char* x, const char* y)
 {
+    int cmp;
     if (!x && !y)
         return true;
     if (!x || !y) {
@@ -494,7 +504,7 @@ static inline bool streq (const char* x, const char* y)
             fprintf(stderr, "\\nDEBUG: strEQ(): One compared string (but not both) is NULL:\\n\\t%%s\\n\\t%%s\\n\\n", x ? x : "<NULL>" , y ? y : "<NULL>");
         return false;
         }
-    int cmp = strcmp (x, y);
+    cmp = strcmp (x, y);
     if (cmp != 0) {
         if (do_debug)
             fprintf(stderr, "\\nDEBUG: strEQ(): Strings not equal (%%i):\\n\\t%%s\\n\\t%%s\\n\\n", cmp, x, y);
@@ -502,8 +512,9 @@ static inline bool streq (const char* x, const char* y)
     return cmp == 0;
 }
 
-static inline bool strneq (const char* x, const char* y)
+inline bool strneq (const char* x, const char* y)
 {
+    int cmp;
     if (!x && !y) {
         if (do_debug)
             fprintf(stderr, "\\nDEBUG: strNEQ(): Both compared strings are NULL\\n");
@@ -512,7 +523,7 @@ static inline bool strneq (const char* x, const char* y)
     if (!x || !y) {
         return true;
         }
-    int cmp = strcmp (x, y);
+    cmp = strcmp (x, y);
     if (cmp == 0) {
         if (do_debug)
             fprintf(stderr, "\\nDEBUG: strNEQ(): Strings are equal (%%i):\\n\\t%%s\\n\\t%%s\\n\\n", cmp, x, y);
@@ -530,7 +541,7 @@ static inline bool strneq (const char* x, const char* y)
 
     # generate test function
     print ("""
-int main () {
+int main (void) {
     size_t i = 0;
     char *s;
 
@@ -579,15 +590,15 @@ int main () {
             fprintf (stderr, "[%%zi] ", i);
         assert (streq (%(k)s [i].info_type, %(k)s_TEST [i].info_type));
         assert (%(k)s [i].info_flags == %(k)s_TEST [i].info_flags);
-        assert (%(k)s [i].info_len == %(k)s_TEST [i].info_len);
+        assert (d_equal(%(k)s [i].info_len, %(k)s_TEST [i].info_len));
         assert (streq (%(k)s [i].OID, %(k)s_TEST [i].OID));
         assert (streq (%(k)s [i].dfl, %(k)s_TEST [i].dfl));
         assert (%(k)s [i].flags == %(k)s_TEST [i].flags);
         if (%(k)s [i].oid2info != %(k)s_TEST [i].oid2info) {
             if (do_debug)
-                fprintf (stderr, "%(k)s[%%zi].oid2info     =<%%p>\\n", i, %(k)s[i].oid2info);
+                fprintf (stderr, "%(k)s[%%zi].oid2info     =<%%p>\\n", i, (void*)%(k)s[i].oid2info);
             if (do_debug)
-                fprintf (stderr, "%(k)s_TEST[%%zi].oid2info=<%%p>\\n", i, %(k)s_TEST[i].oid2info);
+                fprintf (stderr, "%(k)s_TEST[%%zi].oid2info=<%%p>\\n", i, (void*)%(k)s_TEST[i].oid2info);
             return 1;
         }
         // assert (%(k)s [i].setvar == %(k)s_TEST [i].setvar);

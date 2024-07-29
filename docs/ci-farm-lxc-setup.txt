@@ -642,7 +642,7 @@ For contrast, a "real" build agent's set of labels, depending on
 presence or known lack of some capabilities, looks something like this:
 ------
 doc-builder nut-builder nut-builder:alldrv
-nut-builder:DMF NUT_BUILD_CAPS=drivers:all
+nut-builder:DMF NUT_BUILD_CAPS=drivers:DMF
 NUT_BUILD_CAPS=docs:man NUT_BUILD_CAPS=docs:all
 NUT_BUILD_CAPS=drivers:all NUT_BUILD_CAPS=cppunit=no
 OS_FAMILY=bsd OS_DISTRO=freebsd12 GCCVER=10 CLANGVER=10

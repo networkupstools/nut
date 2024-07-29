@@ -5007,6 +5007,7 @@ if test "${want_regenerate_dmf_snmp}" != no ; then
 		test -d "$OUTDIR" && OUTDIR="$(cd "${OUTDIR}" && pwd)" && \
 		if ! test "${DEBUG_CONFIGURE_AC-}" = true ; then trap "cd '${CURDIR}' && rm -rf '${OUTDIR}'" 0 1 2 3 15 ; fi && \
 		if test -z "${srcdir}" -o "${srcdir}" = . ; then SRCDIR="${CURDIR}"; else SRCDIR="$(cd "${srcdir}" && pwd)"; fi && \
+		export CC CXX CPP LD CFLAGS CPPFLAGS LDFLAGS ; \
 		DMFDIR="$(cd "${SRCDIR}/scripts/DMF" && pwd)" && \
 		{	cd "${DMFDIR}" && \
 				echo "Test if we can use dmfify-mib.sh (got suitable environment)" >&2 && \
@@ -5019,13 +5020,13 @@ if test "${want_regenerate_dmf_snmp}" != no ; then
 					cat "${CURDIR}/confdefs.h" >> config.h && \
 					echo "#define _AUTOTEST_CONDEFS_H 1" >> config.h && \
 					echo "#endif" >> config.h && \
-				CFLAGS="-I${OUTDIR}" "$DMFDIR/dmfify-mib.sh" "${SRCDIR}/drivers/apc-ats-mib.c" && \
+				CFLAGS="-I${OUTDIR} ${LIBNETSNMP_CFLAGS}" "$DMFDIR/dmfify-mib.sh" "${SRCDIR}/drivers/apc-ats-mib.c" && \
 				test -s "./apc-ats-mib.dmf" \
 				|| { can_generate_dmf_snmp="no: ERROR: Failed compilation of a test C to DMF parse run"; false; } && \
 			  for F in "${SRCDIR}/drivers/"*-mib.c ; do \
 				test -s "$F" || continue; \
 				echo "Test if we can nut_cpp parse '$F'" >&2; \
-				"$DMFDIR/nut_cpp" "-I${OUTDIR}" "-I${SRCDIR}/drivers" "-I${SRCDIR}/include" "$F" > /dev/null \
+				"$DMFDIR/nut_cpp" "-I${OUTDIR}" "-I${SRCDIR}/drivers" "-I${SRCDIR}/include" ${LIBNETSNMP_CFLAGS} "$F" > /dev/null \
 				|| { can_generate_dmf_snmp="no: ERROR: Failed nut_cpp parse of a test C to DMF for '$F'"; false ; break; } \
 			  done ; } ; \
 		}
@@ -5123,6 +5124,13 @@ NUT_REPORT_FEATURE([enable regeneration of DMF collection of mappings for nut-sc
 AM_CONDITIONAL([WITH_REGENERATE_DMF_NUTSCAN], [test "${with_regenerate_dmf_nutscan}" = "yes"])
 
 
+dnl Macro supported since aclocal-1.11:
+nutcond_have_xmllint=false
+m4_ifdef([AM_COND_IF],
+	[AM_COND_IF([HAVE_XMLLINT], [nutcond_have_xmllint=true])],
+	[AS_IF([test x"${XMLLINT}" != "x"], [nutcond_have_xmllint=true])]
+)
+
 with_xmllint_dmf_snmp=auto
 AC_MSG_CHECKING(whether to validate DMF SNMP mapping files against XML schema)
 AC_ARG_WITH(dmfsnmp-validate,
@@ -5130,13 +5138,13 @@ AC_ARG_WITH(dmfsnmp-validate,
 [
 	case "${withval}" in
 	yes)
-		if test -n "${XMLLINT}"; then
+		AS_IF([$nutcond_have_xmllint], [
 			AC_MSG_RESULT(yes)
 			with_xmllint_dmf_snmp=yes
-		else
+		], [
 			AC_MSG_RESULT([no (xmllint not available)])
 			AC_MSG_ERROR([Can not validate DMF schema: got the request, but got no tools])
-		fi
+		])
 		;;
 	auto) with_xmllint_dmf_snmp=auto ;;
 	no)
@@ -5149,15 +5157,11 @@ AC_ARG_WITH(dmfsnmp-validate,
 	esac
 ], [])
 
-if test "${with_xmllint_dmf_snmp}" = auto; then
-	if test "${with_regenerate_dmf_snmp}" = yes -a -n "${XMLLINT}"; then
-		AC_MSG_RESULT(yes)
-		with_xmllint_dmf_snmp=yes
-	else
-		with_xmllint_dmf_snmp=no
-		AC_MSG_RESULT(no)
-	fi
-fi
+AS_IF([test x"${with_xmllint_dmf_snmp}" = xauto], [
+	with_xmllint_dmf_snmp=no
+	AS_IF([$nutcond_have_xmllint], [AS_IF([test x"${with_regenerate_dmf_snmp}" = xyes], [with_xmllint_dmf_snmp=yes])])
+	AC_MSG_RESULT([${with_xmllint_dmf_snmp}])
+])
 
 NUT_REPORT_FEATURE([enable validation of DMF SNMP mapping files against XML schema using XMLLINT], [${with_xmllint_dmf_snmp}], [],
 				[WITH_VALIDATE_DMF_SNMP], [enable validation of DMF for snmp-ups])
@@ -5171,13 +5175,13 @@ AC_ARG_WITH(dmfnutscan-validate,
 [
 	case "${withval}" in
 	yes)
-		if test -n "${XMLLINT}"; then
+		AS_IF([$nutcond_have_xmllint], [
 			AC_MSG_RESULT(yes)
 			with_xmllint_dmf_nutscan=yes
-		else
+		], [
 			AC_MSG_RESULT([no (xmllint not available)])
 			AC_MSG_ERROR([Can not validate DMF schema: got the request, but got no tools])
-		fi
+		])
 		;;
 	auto) with_xmllint_dmf_nutscan=auto ;;
 	no)
@@ -5190,19 +5194,18 @@ AC_ARG_WITH(dmfnutscan-validate,
 	esac
 ], [])
 
-if test "${with_xmllint_dmf_nutscan}" = auto; then
-	if test "${with_regenerate_dmf_nutscan}" = yes -a -n "${XMLLINT}"; then
-		AC_MSG_RESULT(yes)
-		with_xmllint_dmf_nutscan=yes
-	else
-		with_xmllint_dmf_nutscan=no
-		AC_MSG_RESULT(no)
-	fi
-fi
+AS_IF([test x"${with_xmllint_dmf_nutscan}" = xauto], [
+	with_xmllint_dmf_nutscan=no
+	AS_IF([$nutcond_have_xmllint], [AS_IF([test x"${with_regenerate_dmf_nutscan}" = xyes], [with_xmllint_dmf_nutscan=yes])])
+	AC_MSG_RESULT([${with_regenerate_dmf_nutscan}])
+])
 
 NUT_REPORT_FEATURE([enable validation of DMF collection of mappings for nut-scanner SNMP mode against XML schema using XMLLINT], [${with_xmllint_dmf_nutscan}], [],
 				[WITH_VALIDATE_DMF_NUTSCAN], [enable validation of DMF for nut-scanner])
 AM_CONDITIONAL([WITH_VALIDATE_DMF_NUTSCAN], [test "${with_xmllint_dmf_nutscan}" = "yes"])
+
+dnl ----------------------------------------------------------------------
+dnl Let NUT codebase know about platform specifics (for debug printouts etc.)
 
 if test -n "${host_alias}" ; then
 	NUT_REPORT_TARGET(AUTOTOOLS_HOST_ALIAS, "${host_alias}", [host env spec we run on])

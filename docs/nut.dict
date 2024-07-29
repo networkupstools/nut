@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3234 utf-8
+personal_ws-1.1 en 3246 utf-8
 AAC
 AAS
 ABI
@@ -395,6 +395,7 @@ GES
 GETADDRINFO
 GID
 GND
+GNUMakefile
 GNUmakefile
 GObject
 GPIO
@@ -1357,6 +1358,7 @@ Waldie
 WantedBy
 WatchdogSec
 Waveshare
+Wcolor
 WebFreak
 Werror
 Weverything
@@ -1508,6 +1510,7 @@ autodetection
 autogen
 automagically
 automake
+automake'ing
 autopoint
 autoreconf
 autorestart
@@ -1746,6 +1749,7 @@ debian
 debootstrap
 debouncing
 debuginfo
+debuglevel
 deci
 decrement
 decrypt
@@ -1913,6 +1917,7 @@ filename
 filenames
 filesystem
 filesystems
+filt
 firewalling
 firmwares
 fmt
@@ -2266,6 +2271,7 @@ login
 logins
 logout
 logrotate
+lookahead
 lookup
 loopback
 lowbatt
@@ -2347,6 +2353,7 @@ mips
 mirrorlist
 mis
 misconfigured
+mk
 mkdir
 mmZ
 mmap
@@ -2452,6 +2459,7 @@ notifyflags
 notifyme
 notifymsg
 notifytype
+notrack
 notransferoids
 novendor
 nowait
@@ -2525,6 +2533,7 @@ param
 parsability
 parsable
 parseconf
+parseopt
 parsers
 passname
 passphrase
@@ -2604,6 +2613,7 @@ preLaunchTask
 prepend
 prepended
 preprocess
+preprocessed
 preprocessing
 preprocessor
 prerelease
@@ -2620,6 +2630,7 @@ proc
 productid
 prog
 progname
+prototyped
 prtconf
 ps
 psu
@@ -3218,6 +3229,7 @@ xxxx
 xxxxAP
 xz
 xzf
+yacc
 yaml
 yml
 youruid

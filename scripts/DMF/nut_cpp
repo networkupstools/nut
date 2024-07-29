@@ -57,7 +57,9 @@ sed \
 perl -0pe 's/\n([^#].*)\n;/\n$1;\n/g' | \
 sed \
     -e 's/__asm_*'"${SPACETAB}"'*(.*)'"${SPACETAB}"'*;/;/g' \
-    -e 's/__attribute__'"${SPACETAB}"'*((['"${SPACETAB}"'*__[A-Za-z0-9_-]*__'"${SPACETAB}"'*([^()]*)))'"${SPACETAB}"'*/ /g' \
+    -e 's/__asm_*'"${SPACETAB}"'*(.*)'"${SPACETAB}"'*$/ /g' \
+    -e 's/(__typeof_*'"${SPACETAB}"'*([^()]*))'"${SPACETAB}"'*/ /g' \
+    -e 's/__attribute__'"${SPACETAB}"'*(('"${SPACETAB}"'*__[A-Za-z0-9_-]*__'"${SPACETAB}"'*([^()]*)))'"${SPACETAB}"'*/ /g' \
     -e 's/__attribute__'"${SPACETAB}"'*((__aligned__([^()]*([^()]*))))'"${SPACETAB}"'*/ /g' \
     -e 's/__attribute__'"${SPACETAB}"'*((aligned([0-9]*)))'"${SPACETAB}"'*/ /g' \
     -e 's/__attribute__'"${SPACETAB}"'*((alloc_size([0-9]*)))'"${SPACETAB}"'*/ /g' \
@@ -69,6 +71,7 @@ sed \
     -e 's/__attribute__'"${SPACETAB}"'*((availability([^()]*"[^"]*"'"${SPACETAB}"'*"[^"]*")))'"${SPACETAB}"'*/ /g' \
     -e 's/__attribute__'"${SPACETAB}"'*((__availability__([^()]*"[^"]*")))'"${SPACETAB}"'*/ /g' \
     -e 's/__attribute__'"${SPACETAB}"'*((__deprecated__("[^"]*")))'"${SPACETAB}"'*/ /g' \
+    -e 's/__attribute__'"${SPACETAB}"'*((__warning__'"${SPACETAB}"'*('"${SPACETAB}"'*"[^"]*"'"${SPACETAB}"'*"[^"]*")))'"${SPACETAB}"'*/ /g' \
     -e 's/__attribute__'"${SPACETAB}"'*__DARWIN_ALIAS([^()]*)'"${SPACETAB}"'*/ /g' \
     -e 's/__inline__/inline/g' \
     -e 's/__signed__/signed/g' \
@@ -88,12 +91,15 @@ sed \
     -e 's/_*_Nullable//g' \
     -e 's/_*_Nonnull//g' \
     -e 's/_Thread_local//g' \
+    -e 's/'"${SPACETAB}"'__thread'"${SPACETAB}"'/ /g' \
     -e 's/__extension__//g' \
     -e 's/'"${SPACETAB}"'_Noreturn'"${SPACETAB}"'/ /g' \
     -e 's/^_Noreturn'"${SPACETAB}"'/ /g' \
     -e 's/__NORETURN_*//g' \
-    -e 's/__builtin_va_list/int/g'
+    -e 's/__builtin_va_list/int/g' \
+| grep -E -v 'typedef [^;]* float;'
 } # // end of do_filter()
+
 
 # Repeat same filter a few times to strip appearing blank lines and trailing semicolons
 $CPP $CFLAGS $CPPFLAGS "${@}" | \

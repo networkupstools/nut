@@ -20,6 +20,14 @@ DMFSNMP_LKP_FUN_FLAGS = -DWITH_SNMP_LKP_FUN_DUMMY=1 -DWITH_SNMP_LKP_FUN=1
 DMFTOOLS_CFLAGS += $(DMFTOOLS_ADD_FLAGS)
 DMFTOOLS_CPPFLAGS += $(DMFTOOLS_ADD_FLAGS)
 
+# For platforms where libnetsnmp is provided in a non-default location,
+# we need its headers to build code (for dmfify-mib.sh conversions at
+# least).
+# FIXME: These flags include a lot of settings like optimization; filtering
+# out just the include paths and maybe defines/undefines could be useful.
+DMFTOOLS_CFLAGS += $(LIBNETSNMP_CFLAGS)
+DMFTOOLS_CPPFLAGS += $(LIBNETSNMP_CFLAGS)
+
 DISTCLEANFILES =
 DISTCLEANDIRS =
 MAINTAINERCLEANFILES =
@@ -180,12 +188,17 @@ alist.c : $(top_srcdir)/common/alist.c
 
 CLEANFILES += $(noinst_PROGRAMS) \
 	$(builddir)/$(DMFSNMP_RES_SUBDIR)/*.o \
-	$(builddir)/$(DMFSNMP_RES_SUBDIR)/*.dmf.tmp \
-	$(builddir)/$(DMFSNMP_RES_SUBDIR)/*.json.tmp \
+	$(builddir)/$(DMFSNMP_RES_SUBDIR)/*.dmf.tmp* \
+	$(builddir)/$(DMFSNMP_RES_SUBDIR)/*.json.tmp* \
 	$(builddir)/$(DMFSNMP_RES_SUBDIR)/*_TEST.c \
 	$(builddir)/$(DMFSNMP_RES_SUBDIR)/*_TEST.exe \
-	$(builddir)/*.dmf.tmp \
-	$(builddir)/*.json.tmp \
+	$(builddir)/$(DMFNUTSCAN_RES_SUBDIR)/*.o \
+	$(builddir)/$(DMFNUTSCAN_RES_SUBDIR)/*.dmf.tmp* \
+	$(builddir)/$(DMFNUTSCAN_RES_SUBDIR)/*.json.tmp* \
+	$(builddir)/$(DMFNUTSCAN_RES_SUBDIR)/*_TEST.c \
+	$(builddir)/$(DMFNUTSCAN_RES_SUBDIR)/*_TEST.exe \
+	$(builddir)/*.dmf.tmp* \
+	$(builddir)/*.json.tmp* \
 	$(builddir)/*_TEST.c \
 	$(builddir)/*_TEST.exe
 
@@ -256,13 +269,14 @@ if WITH_REGENERATE_DMF_SNMP
   DMFGEN_CMD = ( \
 	if test x"$(V)" = x1 ; then echo "[D] abs_top_builddir='$(abs_top_builddir)' abs_top_srcdir='$(abs_top_srcdir)' top_builddir='$(top_builddir)' top_srcdir='$(top_srcdir)' builddir='$(builddir)' srcdir='$(srcdir)' PWD='`pwd`'" >&2 ; fi ; \
 	if test x"$${ABS_OUTDIR-}" = x ; then ABS_OUTDIR="`pwd`" ; fi ; export ABS_OUTDIR ; \
-	echo "  DMFIFY '$$CMIBFILE' => '$@' (PWD='`pwd`', actual ABS_OUTDIR='$${ABS_OUTDIR}')" >&2 ; \
+	echo "  DMFIFY '$$CMIBFILE' => '$@' (PWD='`pwd`', actual ABS_OUTDIR='$${ABS_OUTDIR}')" ; \
 	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)" || exit ; \
 	if test -f "$(DMFGEN_SANITY_VALIDATED)" ; then \
 	    test -d "$${ABS_OUTDIR}" -a -w "$${ABS_OUTDIR}" || $(MKDIR_P) "$${ABS_OUTDIR}" || exit ; \
 	    ( cd "$(@D)" && \
 	      LANG=C LC_ALL=C TZ=UTC \
-	      CFLAGS="$(DMFTOOLS_CFLAGS) $(AM_CFLAGS)" \
+	      CC='$(CC)' CXX='$(CXX)' CPP='$(CPP)' LD='$(LD)' \
+	      CFLAGS="$(DMFTOOLS_CFLAGS) $(CFLAGS) $(AM_CFLAGS)" \
 	      LDFLAGSx="$(abs_top_builddir)/common/libcommon.la $(abs_top_builddir)/drivers/dstate.o" \
 	      CPPFLAGS="$(DMFTOOLS_CPPFLAGS) $(CPPFLAGS) $(AM_CPPFLAGS)" \
 	      ABS_BUILDDIR="$(abs_builddir)" \
@@ -282,6 +296,8 @@ $(DMFGEN_SANITY_VALIDATED): dmfgen-sanity
 
 dmfgen-sanity: $(srcdir)/dmfify-mib.sh
 	@DEBUG="$(V)"; export DEBUG; \
+	 CC='$(CC)'; CXX='$(CXX)'; CPP='$(CPP)'; LD='$(LD)'; \
+	 export CC CXX CPP LD ; \
 	 if $(abs_srcdir)/dmfify-mib.sh --sanity-check ; then \
 	    echo "Sanity-checked the low-level ability to generate DMF files - OK" >&2; \
 	    test -f "$(DMFGEN_SANITY_VALIDATED)" || touch $(DMFGEN_SANITY_VALIDATED); \
@@ -316,7 +332,7 @@ DMFLNK_CMD = ( \
 	if [ x"$(V)" = x1 ] ; then \
 		echo "  LN     '$$DMFFILE_DIR$$DMFFILE' => '$$DMFLINK' (PWD = '`pwd`', IN='$?', IN_ALL='$^', OUT='$@')" >&2 ; \
 	else \
-		echo "  LN     '$$DMFFILE_DIR$$DMFFILE' => '$$DMFLINK'" >&2 ; \
+		echo "  LN     '$$DMFFILE_DIR$$DMFFILE' => '$$DMFLINK'" ; \
 	fi ; \
 	test -f "$$DMFFILE_DIR$$DMFFILE" || { echo "`date`: 1. File '$$DMFFILE_DIR$$DMFFILE' not found yet, sleeping a bit" >&2; sleep 5 ; sync; } ; \
 	test -f "$$DMFFILE_DIR$$DMFFILE" || { echo "`date`: 2. File '$$DMFFILE_DIR$$DMFFILE' not found yet, sleeping a bit" >&2; sleep 10 ; sync; } ; \
@@ -356,7 +372,7 @@ $(abs_builddir)/$(DMFSNMP_RES_SUBDIR)/.uptodate: $(dmfsnmpres_DMFS)
 				S*|K*) ;; \
 				*) N="$(abs_builddir)/$(DMFSNMP_RES_SUBDIR)/$$B"; \
 					if [ -s "$$F" ] && [ ! -s "$$N" ] ; then \
-						echo "  CP    $$F => $$N" >&2 ; \
+						echo "  CP    $$F => $$N" ; \
 						$(MKDIR_P) "$(abs_builddir)/$(DMFSNMP_RES_SUBDIR)" && \
 						cp -f "$$F" "$$N" || exit ; \
 					fi ;; \
@@ -410,7 +426,7 @@ $(abs_top_builddir)/scripts/DMF/$(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf: $(
 		F="$(abs_srcdir)/$(DMFNUTSCAN_RES_SUBDIR)/$(@F)"; \
 		N="$(abs_builddir)/$(DMFNUTSCAN_RES_SUBDIR)/$(@F)"; \
 		if [ -s "$$F" ] && [ ! -s "$$N" ] ; then \
-			echo "  CP    $$F => $$N" >&2 && \
+			echo "  CP    $$F => $$N" && \
 			$(MKDIR_P) "$(abs_builddir)/$(DMFNUTSCAN_RES_SUBDIR)" && \
 			cp -f "$$F" "$$N" || { ls -la "$$F" "$$N" ; exit 1; } ; \
 		fi; \
@@ -729,6 +745,31 @@ dmf-fun-test:
 run-dmf-fun-test:
 	@echo "  SKIP   DMF support was not enabled or detected during project configuration, can not run test programs" >&2
 endif !WITH_DMF
+
+SPELLCHECK_SRC = README-NUT-DMF.txt
+EXTRA_DIST += $(SPELLCHECK_SRC)
+
+# NOTE: Due to portability, we do not use a GNU percent-wildcard extension.
+# We also have to export some variables that may be tainted by relative
+# paths when parsing the other makefile (e.g. MKDIR_P that may be defined
+# via expanded $(top_builddir)/install-sh):
+#%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+#       +$(MAKE) $(AM_MAKEFLAGS) -s -f $(top_builddir)/docs/Makefile MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+# NOTE: Portable suffix rules do not allow prerequisites, so we shim them here
+# by a wildcard target in case the make implementation can put the two together.
+*-spellchecked: Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
+
+.sample.sample-spellchecked:
+	+$(MAKE) $(AM_MAKEFLAGS) -s -f $(top_builddir)/docs/Makefile MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+.in.in-spellchecked:
+	+$(MAKE) $(AM_MAKEFLAGS) -s -f $(top_builddir)/docs/Makefile MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+spellcheck spellcheck-interactive spellcheck-sortdict:
+	+$(MAKE) $(AM_MAKEFLAGS) -f $(top_builddir)/docs/Makefile MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC="$(SPELLCHECK_SRC)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+
+CLEANFILES += *-spellchecked
 
 dummy:
 
