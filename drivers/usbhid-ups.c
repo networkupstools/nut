@@ -205,6 +205,34 @@ static int onlinedischarge_log_throttle_charge = -1;
  */
 static int onlinedischarge_log_throttle_hovercharge = 100;
 
+/**
+ * Per https://github.com/networkupstools/nut/issues/2347 some
+ * APC BXnnnnMI devices made (flashed?) in 2023-2024 irregularly
+ * but frequently spew a series of state changes:
+ * * (maybe OL+DISCHRG),
+ * * LB,
+ * * RB,
+ * * <all ok>
+ * within a couple of seconds. If this tunable is positive, we
+ * would only report the device states on the bus if they persist
+ * that long (or more), only then assuming they reflect a real
+ * problematic state and not some internal calibration.
+ */
+static int lbrb_log_delay_sec = 0;
+/**
+ * By default we only act on (lbrb_log_delay_sec>0) when the device
+ * is in calibration mode of whatever nature (directly reported or
+ * assumed from other flag combos). With this flag we do not check
+ * for calibration and only look at LB + RB timestamps.
+ */
+static int lbrb_log_delay_without_calibrating = 0;
+/**
+ * When did we last enter the situation? (if more than lbrb_log_delay_sec
+ * ago, then set the device status and emit the message)
+ */
+static time_t last_lb_start = 0;
+static time_t last_rb_start = 0;
+
 /* support functions */
 static hid_info_t *find_nut_info(const char *varname);
 static hid_info_t *find_hid_info(const HIDData_t *hiddata);
@@ -1024,6 +1052,12 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "onlinedischarge_log_throttle_hovercharge",
 		"Set to throttle log messages about discharging while online (only if battery.charge is under this value)");
 
+	addvar(VAR_VALUE, "lbrb_log_delay_sec",
+		"Set to delay status-setting (and log messages) about device in LB or LB+RB state");
+
+	addvar(VAR_FLAG, "lbrb_log_delay_without_calibrating",
+		"Set to apply lbrb_log_delay_sec even if device is not calibrating");
+
 	addvar(VAR_FLAG, "disable_fix_report_desc",
 		"Set to disable fix-ups for broken USB encoding, etc. which we apply by default on certain vendors/products");
 
@@ -1374,6 +1408,46 @@ void upsdrv_initups(void)
 		} else {
 			onlinedischarge_log_throttle_hovercharge = ipv;
 		}
+	}
+
+	val = getval("lbrb_log_delay_sec");
+	if (val) {
+		int ipv = atoi(val);
+		if ((ipv == 0 && strcmp("0", val)) || (ipv < 0)) {
+			lbrb_log_delay_sec = 3;
+			upslogx(LOG_WARNING,
+				"Warning: invalid value for "
+				"lbrb_log_delay_sec: %s, "
+				"defaulting to %d",
+				val, lbrb_log_delay_sec);
+		} else {
+			lbrb_log_delay_sec = ipv;
+		}
+	} else {
+		/* Activate APC BXnnnnMI tweaks, for details see
+		 * https://github.com/networkupstools/nut/issues/2347
+		 */
+		size_t	productLen = hd->Product ? strlen(hd->Product) : 0;
+
+		/* FIXME: Consider also ups.mfr.date as 2023 or newer?
+		 * Eventually up to some year this gets fixed?
+		 */
+		if (hd->Vendor
+		&&  productLen > 6	/* BXnnnMI at least */
+		&&  (!strcmp(hd->Vendor, "APC") || !strcmp(hd->Vendor, "American Power Conversion"))
+		&&  (strstr(hd->Product, " BX") || strstr(hd->Product, "BX") == hd->Product)
+		&&  (hd->Product[productLen - 2] == 'M' && hd->Product[productLen - 1] == 'I')
+		) {
+			lbrb_log_delay_sec = 3;
+			upslogx(LOG_INFO, "Defaulting lbrb_log_delay_sec=%d "
+				"for %s model %s",
+				lbrb_log_delay_sec,
+				hd->Vendor, hd->Product);
+		}
+	}
+
+	if (testvar("lbrb_log_delay_without_calibrating")) {
+		lbrb_log_delay_without_calibrating = 1;
 	}
 
 	if (testvar("disable_fix_report_desc")) {
@@ -2017,6 +2091,8 @@ static void status_set_CAL(void)
    status. */
 static void ups_status_set(void)
 {
+	int	isCalibrating = 0;
+
 	if (ups_status & STATUS(VRANGE)) {
 		dstate_setinfo("input.transfer.reason", "input voltage out of range");
 	} else if (ups_status & STATUS(FRANGE)) {
@@ -2199,6 +2275,8 @@ static void ups_status_set(void)
 		status_set("OL");
 	}
 
+	isCalibrating = status_get("CAL");
+
 	if ((ups_status & STATUS(DISCHRG)) &&
 		!(ups_status & STATUS(DEPLETED))) {
 		status_set("DISCHRG");		/* discharging */
@@ -2208,13 +2286,58 @@ static void ups_status_set(void)
 		status_set("CHRG");		/* charging */
 	}
 	if (ups_status & (STATUS(LOWBATT) | STATUS(TIMELIMITEXP) | STATUS(SHUTDOWNIMM))) {
-		status_set("LB");		/* low battery */
+		if (lbrb_log_delay_sec < 1
+		|| (!isCalibrating && !lbrb_log_delay_without_calibrating)
+		|| !(ups_status & STATUS(ONLINE))	/* assume actual power failure, do not delay */
+		) {
+			/* Quick and easy decision */
+			status_set("LB");		/* low battery */
+		} else {
+			time_t	now;
+			time(&now);
+
+			if (!last_lb_start) {
+				last_lb_start = now;
+			} else {
+				if (difftime(now, last_lb_start) > lbrb_log_delay_sec) {
+					/* Patience expired */
+					status_set("LB");	/* low battery */
+				} else {
+					upsdebugx(2, "%s: throttling LB status due to lbrb_log_delay_sec", __func__);
+				}
+			}
+		}
+	} else {
+		last_lb_start = 0;
 	}
 	if (ups_status & STATUS(OVERLOAD)) {
 		status_set("OVER");		/* overload */
 	}
 	if (ups_status & STATUS(REPLACEBATT)) {
-		status_set("RB");		/* replace batt */
+		if (lbrb_log_delay_sec < 1
+		|| (!isCalibrating && !lbrb_log_delay_without_calibrating)
+		|| !last_lb_start	/* Calibration ended (not LB anymore) */
+		|| !(ups_status & STATUS(ONLINE))	/* assume actual power failure, do not delay */
+		) {
+			/* Quick and easy decision */
+			status_set("RB");		/* replace batt */
+		} else {
+			time_t	now;
+			time(&now);
+
+			if (!last_rb_start) {
+				last_rb_start = now;
+			} else {
+				if (difftime(now, last_rb_start) > lbrb_log_delay_sec) {
+					/* Patience expired */
+					status_set("RB");	/* replace batt */
+				} else {
+					upsdebugx(2, "%s: throttling RB status due to lbrb_log_delay_sec", __func__);
+				}
+			}
+		}
+	} else {
+		last_rb_start = 0;
 	}
 	if (ups_status & STATUS(TRIM)) {
 		status_set("TRIM");		/* SmartTrim */
@@ -2229,7 +2352,7 @@ static void ups_status_set(void)
 		status_set("OFF");		/* ups is off */
 	}
 
-	if (!status_get("CAL")) {
+	if (!isCalibrating) {
 		if (last_calibration_start) {
 			time(&last_calibration_finish);
 			upsdebugx(2, "%s: calibration is no longer in place, took %f sec",
