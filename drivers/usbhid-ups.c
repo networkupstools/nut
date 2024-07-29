@@ -29,7 +29,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.55"
+#define DRIVER_VERSION	"0.56"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
@@ -141,6 +141,15 @@ bool_t use_interrupt_pipe = FALSE;
 static size_t interrupt_pipe_EIO_count = 0; /* How many times we had I/O errors since last reconnect? */
 static time_t lastpoll; /* Timestamp the last polling */
 hid_dev_handle_t udev = HID_DEV_HANDLE_CLOSED;
+
+/**
+ * Track when calibration started, whether known from UPS status flags
+ * or interpreted from OL&DISCHRG combo on some devices (see below).
+ * The last_calibration_start is reset to 0 when the status becomes
+ * inactive, and last_calibration_finish is incremented every time.
+ */
+static time_t last_calibration_start = 0;
+static time_t last_calibration_finish = 0;
 
 /**
  * CyberPower UT series sometime need a bit of help deciding their online status.
@@ -1967,6 +1976,43 @@ unsigned ups_status_get(void)
 	return ups_status;
 }
 
+/** Helper to both status_set("CAL") and track last_calibration_start timestamp */
+static void status_set_CAL(void)
+{
+	/* Note: dstate tokens can only be set, not cleared; a
+	 * dstate_init() wipes the whole internal buffer though. */
+	int	wasSet = status_get("CAL");
+	time_t	now;
+
+	time(&now);
+
+	/* A few sanity checks */
+	if (wasSet) {
+		if (!last_calibration_start) {
+			upsdebugx(2, "%s: status was already set but not time-stamped: CAL", __func__);
+		} else {
+			upsdebugx(2, "%s: status was already set %f sec ago : CAL",
+				__func__, difftime(now, last_calibration_start));
+		}
+	} else {
+		if (last_calibration_finish) {
+			upsdebugx(2, "%s: starting a new calibration, last one finished %f sec ago",
+				__func__, difftime(now, last_calibration_finish));
+		} else {
+			upsdebugx(2, "%s: starting a new calibration, first in this driver's lifetime",
+				__func__);
+		}
+	}
+
+	if (!last_calibration_start) {
+		last_calibration_start = now;
+	}
+
+	if (!wasSet) {
+		status_set("CAL");		/* calibration */
+	}
+}
+
 /* Convert the local status information to NUT format and set NUT
    status. */
 static void ups_status_set(void)
@@ -1986,7 +2032,7 @@ static void ups_status_set(void)
 	 * raise FSD urgently. So we first let upsmon know it is just a drill.
 	 */
 	if (ups_status & STATUS(CALIB)) {
-		status_set("CAL");		/* calibration */
+		status_set_CAL();		/* calibration */
 	}
 
 	if ((!(ups_status & STATUS(DISCHRG))) && (
@@ -2009,7 +2055,7 @@ static void ups_status_set(void)
 		/* if online but discharging */
 		if (onlinedischarge_calibration) {
 			/* if we treat OL+DISCHRG as calibrating */
-			status_set("CAL");	/* calibration */
+			status_set_CAL();	/* calibration */
 		}
 
 		if (onlinedischarge_onbattery) {
@@ -2181,6 +2227,15 @@ static void ups_status_set(void)
 	}
 	if (ups_status & STATUS(OFF)) {
 		status_set("OFF");		/* ups is off */
+	}
+
+	if (!status_get("CAL")) {
+		if (last_calibration_start) {
+			time(&last_calibration_finish);
+			upsdebugx(2, "%s: calibration is no longer in place, took %f sec",
+				__func__, difftime(last_calibration_finish, last_calibration_start));
+		}
+		last_calibration_start = 0;
 	}
 }
 
