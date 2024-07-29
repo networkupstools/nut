@@ -2257,10 +2257,38 @@ void upsdrv_updateinfo(void)
 			return;
 
 		/* become aggressive after a few tries */
+		if (!(last_worked % 60)) {
+			upslogx(LOG_WARNING, "Trying to reconnect to the UPS");
+			dstate_setinfo("driver.state", "reconnect.trying");
+
+			upsdebugx(1, "%s: call upsdrv_cleanup", __func__);
+			/* dstate_setinfo("driver.state", "cleanup.upsdrv"); */
+			upsdrv_cleanup();
+
+			upsdebugx(1, "%s: sleep 5 sec", __func__);
+			usleep(5000000);
+
+			upsdebugx(1, "%s: call upsdrv_initups", __func__);
+			/* dstate_setinfo("driver.state", "init.device"); */
+			upsdrv_initups();
+
+			upsdebugx(1, "%s: call upsdrv_initinfo", __func__);
+			/* dstate_setinfo("driver.state", "init.info"); */
+			upsdrv_initinfo();
+
+			upsdebugx(1, "%s: call upsdrv_updateinfo", __func__);
+			dstate_setinfo("driver.state", "reconnect.updateinfo");
+			/* dstate_setinfo("driver.state", "init.updateinfo"); */
+			upsdrv_updateinfo();
+
+			dstate_setinfo("driver.state", "init.quiet");
+		}
+
 		upsdebugx(1, "%s: nudging UPS with 'Y', iteration #%d ...",
 			__func__, last_worked);
-		if (!smartmode(1))
+		if (!smartmode(1)) {
 			return;
+		}
 
 		last_worked = 0;
 	}
