@@ -101,6 +101,9 @@ https://github.com/networkupstools/nut/milestone/11
  - apcsmart updates:
    * Revised code to use `strncpy()` and avoid potential overflows that are
      possible with `strcpy()` used before. [PR #2564]
+   * Lost communications led to a logging flood, should not anymore.
+     In fact, the driver should try fully reconnecting upon getting into
+     a prolonged data stale condition. [issue #704, PR #2564]
 
  - added Visench C1K (using serial port converter with USB ID `1a86:7523`)
    as known supported by `nutdrv_qx` (Megatec protocol) since at least
