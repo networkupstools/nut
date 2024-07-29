@@ -118,31 +118,38 @@ memcheck distcheck-valgrind:
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_VALGRIND_FLAGS)" distcheck
 
 distcheck-dmf-features-REGEN_NO:
-	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_REGEN_NO_FLAGS)" distcheck || 	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_REGEN_NO_FLAGS" >&2; exit $$RES; }
+	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_REGEN_NO_FLAGS)" distcheck \
+	 || { RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_REGEN_NO_FLAGS" >&2; exit $$RES; }
 	echo "PASSED $@ suite!"
 
 distcheck-dmf-features-LTDL_YES:
-	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_LTDL_YES_FLAGS)" distcheck || 	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_LTDL_YES_FLAGS" >&2; exit $$RES; }
+	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_LTDL_YES_FLAGS)" distcheck \
+	 || { RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_LTDL_YES_FLAGS" >&2; exit $$RES; }
 	echo "PASSED $@ suite!"
 
 distcheck-dmf-features-LTDL_NO:
-	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_LTDL_NO_FLAGS)" distcheck ||  	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_LTDL_NO_FLAGS" >&2; exit $$RES; }
+	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_LTDL_NO_FLAGS)" distcheck \
+	 || { RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_LTDL_NO_FLAGS" >&2; exit $$RES; }
 	echo "PASSED $@ suite!"
 
 distcheck-dmf-features-LUA_YES:
-	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_LUA_YES_FLAGS)" distcheck ||  	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_LUA_YES_FLAGS" >&2; exit $$RES; }
+	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_LUA_YES_FLAGS)" distcheck \
+	 || { RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_LUA_YES_FLAGS" >&2; exit $$RES; }
 	echo "PASSED $@ suite!"
 
 distcheck-dmf-features-LUA_YESNO:
-	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_LUA_YESNO_FLAGS)" distcheck ||	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_LUA_YESNO_FLAGS" >&2; exit $$RES; }
+	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_LUA_YESNO_FLAGS)" distcheck \
+	 || { RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_LUA_YESNO_FLAGS" >&2; exit $$RES; }
 	echo "PASSED $@ suite!"
 
 distcheck-dmf-features-LUA_NO:
-	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_LUA_NO_FLAGS)" distcheck ||   	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_LUA_NO_FLAGS" >&2; exit $$RES; }
+	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_LUA_NO_FLAGS)" distcheck \
+	 || { RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_LUA_NO_FLAGS" >&2; exit $$RES; }
 	echo "PASSED $@ suite!"
 
 distcheck-dmf-features-REGEN_YES:
-	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_REGEN_YES_FLAGS)" distcheck ||	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_REGEN_YES_FLAGS" >&2; exit $$RES; }
+	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_REGEN_YES_FLAGS)" distcheck \
+	 || { RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_REGEN_YES_FLAGS" >&2; exit $$RES; }
 	echo "PASSED $@ suite!"
 
 # Intentionally done as one rule, to avoid parallelization and conflicts
@@ -159,11 +166,13 @@ distcheck-dmf-features:
 # Just test the common useful case of enabling (requiring) everything
 # related to DMF at once
 distcheck-dmf-all-yes:
-	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_DMF_ALL)" distcheck ||	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_ALL" >&2; exit $$RES; }
+	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_DMF_ALL)" distcheck \
+	 || { RES=$$? ; echo "FAILED with DISTCHECK_DMF_ALL" >&2; exit $$RES; }
 	echo "PASSED $@ suite!"
 
 distcheck-dmf-no:
-	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_DMF_NO)" distcheck ||	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_NO" >&2; exit $$RES; }
+	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_DMF_NO)" distcheck \
+	 || { RES=$$? ; echo "FAILED with DISTCHECK_DMF_NO" >&2; exit $$RES; }
 	echo "PASSED $@ suite!"
 
 distcheck-dmf-warnings:
@@ -332,6 +341,26 @@ maintainer-asciidocs:
 
 check-NIT check-NIT-devel:
 	+cd $(builddir)/tests/NIT && $(MAKE) $(AM_MAKEFLAGS) $@
+
+VERSION_DEFAULT: dummy-stamp
+	@abs_top_srcdir='$(abs_top_srcdir)' ; \
+	 abs_top_builddir='$(abs_top_builddir)' ; \
+	 export abs_top_srcdir ; export abs_top_builddir ; \
+	 NUT_VERSION_QUERY=UPDATE_FILE '$(abs_top_srcdir)/tools/gitlog2version.sh'
+
+CLEANFILES += VERSION_DEFAULT.tmp
+EXTRA_DIST += VERSION_DEFAULT
+
+# Best-effort delivery for (overly?) customized distros, e.g. via
+#   echo NUT_VERSION_FORCED_SEMVER=1.1.1 > VERSION_FORCED_SEMVER
+dist-hook:
+	for D in "$(abs_top_srcdir)" "$(abs_top_builddir)" ; do \
+	    for F in VERSION_FORCED VERSION_FORCED_SEMVER ; do \
+	        if [ -s "$$D/$$F" ] ; then \
+	            cat "$$D/$$F" > "$(top_distdir)/$$F" || true ; \
+	        fi ; \
+	    done ; \
+	done
 
 # This target adds syntax-checking for committed shell script files,
 # to avoid surprises and delays in finding fatal typos after packaging

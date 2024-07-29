@@ -269,7 +269,9 @@ void dparam_setinfo(const char *var, const char *val)
 {
 	char	vtmp[SMALLBUF];
 
-	/* store these in dstate for debugging and other help */
+	/* store these in dstate for debugging and other help
+	 * note these are not immutable since we can reload
+	 */
 	if (val) {
 		snprintf(vtmp, sizeof(vtmp), "driver.parameter.%s", var);
 		dstate_setinfo(vtmp, "%s", val);
@@ -304,6 +306,10 @@ void storeval(const char *var, char *val)
 		/* NOTE: No regard for VAR_SENSITIVE here */
 		dstate_setinfo(var+9, "%s", val);
 		dstate_setflags(var+9, ST_FLAG_IMMUTABLE);
+
+		/* note these are not immutable since we can reload
+		 * although the effect of this is questionable (FIXME)
+		 */
 		dparam_setinfo(var, val);
 		return;
 	}

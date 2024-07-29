@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3244 utf-8
+personal_ws-1.1 en 3246 utf-8
 AAC
 AAS
 ABI
@@ -2764,6 +2764,7 @@ securityLevel
 securityName
 sed
 selftest
+semver
 sendback
 sendline
 sendmail
@@ -2791,6 +2792,7 @@ sfr
 sgml
 sgs
 sha
+shellenv
 shm
 shutdownArguments
 shutdowncmd

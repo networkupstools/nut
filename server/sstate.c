@@ -45,24 +45,24 @@ static int parse_args(upstype_t *ups, size_t numargs, char **arg)
 		return 0;
 
 	if (!strcasecmp(arg[0], "PONG")) {
-		upsdebugx(3, "Got PONG from UPS [%s]", ups->name);
+		upsdebugx(3, "%s: Got PONG from UPS [%s]", __func__, ups->name);
 		return 1;
 	}
 
 	if (!strcasecmp(arg[0], "DUMPDONE")) {
-		upsdebugx(3, "UPS [%s]: dump is done", ups->name);
+		upsdebugx(3, "%s: UPS [%s]: dump is done", __func__, ups->name);
 		ups->dumpdone = 1;
 		return 1;
 	}
 
 	if (!strcasecmp(arg[0], "DATASTALE")) {
-		upsdebugx(3, "UPS [%s]: data is STALE now", ups->name);
+		upsdebugx(3, "%s: UPS [%s]: data is STALE now", __func__, ups->name);
 		ups->data_ok = 0;
 		return 1;
 	}
 
 	if (!strcasecmp(arg[0], "DATAOK")) {
-		upsdebugx(3, "UPS [%s]: data is NOT STALE now", ups->name);
+		upsdebugx(3, "%s: UPS [%s]: data is NOT STALE now", __func__, ups->name);
 		ups->data_ok = 1;
 		return 1;
 	}
@@ -125,7 +125,7 @@ static int parse_args(upstype_t *ups, size_t numargs, char **arg)
 	/* TRACKING <id> <status> */
 	if (!strcasecmp(arg[0], "TRACKING")) {
 		tracking_set(arg[1], arg[2]);
-		upsdebugx(1, "TRACKING: ID %s status %s", arg[1], arg[2]);
+		upsdebugx(1, "%s: TRACKING: ID %s status %s", __func__, arg[1], arg[2]);
 
 		/* log actual result of instcmd / setvar */
 		if (strncmp(arg[2], "PENDING", 7) != 0) {
@@ -163,7 +163,7 @@ static void sendping(upstype_t *ups)
 		return;
 	}
 
-	upsdebugx(3, "Pinging UPS [%s]", ups->name);
+	upsdebugx(3, "%s: Pinging UPS [%s]", __func__, ups->name);
 
 #ifndef WIN32
 	ret = write(ups->sock_fd, cmd, cmdlen);
@@ -239,7 +239,7 @@ TYPE_FD sstate_connect(upstype_t *ups)
 	ret = fcntl(fd, F_GETFL, 0);
 
 	if (ret < 0) {
-		upslog_with_errno(LOG_ERR, "fcntl get on UPS [%s] failed", ups->name);
+		upslog_with_errno(LOG_ERR, "%s: fcntl get on UPS [%s] failed", __func__, ups->name);
 		close(fd);
 		return ERROR_FD;
 	}
@@ -247,7 +247,7 @@ TYPE_FD sstate_connect(upstype_t *ups)
 	ret = fcntl(fd, F_SETFL, ret | O_NDELAY);
 
 	if (ret < 0) {
-		upslog_with_errno(LOG_ERR, "fcntl set O_NDELAY on UPS [%s] failed", ups->name);
+		upslog_with_errno(LOG_ERR, "%s: fcntl set O_NDELAY on UPS [%s] failed", __func__, ups->name);
 		close(fd);
 		return ERROR_FD;
 	}
@@ -449,7 +449,7 @@ int sstate_dead(upstype_t *ups, int arg_maxage)
 
 	/* an unconnected ups is always dead */
 	if ((!ups) || INVALID_FD(ups->sock_fd)) {
-		upsdebugx(3, "sstate_dead: connection to driver socket for UPS [%s] lost", ups->name);
+		upsdebugx(3, "%s: connection to driver socket for UPS [%s] lost", __func__, ups->name);
 		return 1;	/* dead */
 	}
 
@@ -464,14 +464,14 @@ int sstate_dead(upstype_t *ups, int arg_maxage)
 		sendping(ups);
 
 	if (elapsed > arg_maxage) {
-		upsdebugx(3, "sstate_dead: didn't hear from driver for UPS [%s] for %g seconds (max %d)",
-					ups->name, elapsed, arg_maxage);
+		upsdebugx(3, "%s: didn't hear from driver for UPS [%s] for %g seconds (max %d)",
+			__func__, ups->name, elapsed, arg_maxage);
 		return 1;	/* dead */
 	}
 
 	/* ignore DATAOK/DATASTALE unless the dump is done */
 	if ((ups->dumpdone) && (!ups->data_ok)) {
-		upsdebugx(3, "sstate_dead: driver for UPS [%s] says data is stale", ups->name);
+		upsdebugx(3, "%s: driver for UPS [%s] says data is stale", __func__, ups->name);
 		return 1;	/* dead */
 	}
 

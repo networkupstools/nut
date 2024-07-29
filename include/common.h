@@ -257,7 +257,15 @@ size_t parseprogbasename(char *buf, size_t buflen, const char *progname, size_t 
  * Generally speaking, if (checkprocname(...)) then ok to proceed
  */
 int checkprocname(pid_t pid, const char *progname);
-
+/* compareprocname() does the bulk of work for checkprocname()
+ * and returns same values. The "pid" argument is used for logging.
+ * Generally speaking, if (compareprocname(...)) then ok to proceed
+ */
+int compareprocname(pid_t pid, const char *procname, const char *progname);
+/* Helper for the above methods and some others. If it returns true (1),
+ * work about PID-name comparison should be quickly skipped.
+ */
+int checkprocname_ignored(const char *caller);
 
 /* write a pid file - <name> is a full pathname *or* just the program name */
 void writepid(const char *name);

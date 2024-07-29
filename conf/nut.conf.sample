@@ -14,6 +14,8 @@
 #  You MUST NOT use spaces around the equal sign!
 #  Practical support for this file and its settings currently varies between
 #  various OS packages and NUT sample scripts, but should converge over time.
+#  Contents of this file should be pure ASCII (character codes not in range
+#  would be ignored with a warning message).
 #
 # See also: `man nut.conf` (usually in Manual pages Section 5,
 #           for Configuration files)

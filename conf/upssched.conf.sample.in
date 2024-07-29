@@ -1,5 +1,8 @@
 # Network UPS Tools - upssched.conf sample file
 #
+# NOTE: Contents of this file should be pure ASCII (character codes
+# not in range would be ignored with a warning message).
+#
 # ============================================================================
 #
 # CMDSCRIPT <scriptname>
