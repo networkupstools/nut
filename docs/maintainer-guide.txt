@@ -119,7 +119,9 @@ MAINTAINER SANDBOX (to be completed and pushed)
 
 * bump the release identification:
 ** update the fallback `NUT_DEFAULT_VERSION` in `tools/gitlog2version.sh` to
-   <exact incremented version> (ex: `2.8.0`)
+   <exact incremented version> (ex: `2.8.0`), and provide the `VERSION_FORCED`
+   and `VERSION_FORCED_SEMVER` files (to same effect but more explicitly and
+   visibly) to be added to the `dist` archive tarball file
 *** Experiment if still needed: update version to <exact incremented version>
     (ex: 2.8.0) in `configure.ac`, or if the script bump above + git tagging
     would suffice:
@@ -171,7 +173,8 @@ MAINTAINER SANDBOX (to be completed and pushed)
 
 * post-release update of the "in-development" codebase:
 ** update the fallback `NUT_DEFAULT_VERSION` in `tools/gitlog2version.sh` to
-   <incremented version>.1 (ex: `2.8.0.1`)
+   <incremented version>.1 (ex: `2.8.0.1`); remove the `VERSION_FORCED`
+   and `VERSION_FORCED_SEMVER` files
 *** maybe update nut/configure.ac version to <incremented version>.1
     (ex: `2.8.0.1`):
 ----
