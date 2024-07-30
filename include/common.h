@@ -200,6 +200,10 @@ extern const char *UPS_VERSION;
 /** @brief Default timeout (in seconds) for retrieving the result of a `TRACKING`-enabled operation (e.g. `INSTCMD`, `SET VAR`). */
 #define DEFAULT_TRACKING_TIMEOUT	10
 
+/* Based on NUT_QUIET_INIT_BANNER envvar (present and empty or "true")
+ * hide the NUT tool name+version banners; show them by default */
+int banner_is_disabled(void);
+
 /* Normally we can (attempt to) use the syslog or Event Log (WIN32),
  * but environment variable NUT_DEBUG_SYSLOG allows to bypass it, and
  * perhaps keep daemons logging to stderr (e.g. in NUT Integration Test

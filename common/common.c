@@ -189,6 +189,26 @@ int syslog_is_disabled(void)
 	return value;
 }
 
+int banner_is_disabled(void)
+{
+	static int value = -1;
+
+	if (value < 0) {
+		char *s = getenv("NUT_QUIET_INIT_BANNER");
+		/* Envvar present and empty or true-ish means NUT tool name+version
+		 * banners disabled by the setting: default is enabled (inversed per
+		 * method name) */
+		value = 0;
+		if (s) {
+			if (*s == '\0' || !strcasecmp(s, "true") || strcmp(s, "1")) {
+				value = 1;
+			}
+		}
+	}
+
+	return value;
+}
+
 /* enable writing upslog_with_errno() and upslogx() type messages to
    the syslog */
 void syslogbit_set(void)

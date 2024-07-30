@@ -140,3 +140,10 @@ MODE=none
 # they have initialized SSL support -- or, loudly, failed to initialize
 # as it was not configured on this system.
 #NUT_QUIET_INIT_SSL=true
+
+# Optionally suppress NUT tool name and version banner (normally shown in most
+# NUT programs unilaterally, before processing any CLI options and possibly
+# failing due to that).
+# NOT recommended for services due to adverse troubleshooting impact, but may
+# be helpful in shell profiles or scripts which process NUT tool outputs.
+#NUT_QUIET_INIT_BANNER=true
