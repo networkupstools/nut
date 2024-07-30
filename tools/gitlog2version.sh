@@ -122,13 +122,19 @@ getver_git() {
     ALL_TAGS_ARG=""
     if [ x"${NUT_VERSION_GIT_ALL_TAGS-}" = xtrue ] ; then ALL_TAGS_ARG="--tags" ; fi
 
-    # Praises to old gits and the new, who may --exclude:
-    # NOTE: "--always" should not be needed in NUT repos,
-    # but may help other projects who accept such scheme:
+    # NOTE: "--always" should not be needed in NUT repos normally,
+    # but may help other projects who accept such scheme and script:
     # it tells git to return a commit hash if no tag is matched.
-    DESC="`git describe $ALL_TAGS_ARG --match 'v[0-9]*.[0-9]*.[0-9]' --exclude '*-signed' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' --exclude '*Windows*' --exclude '*IPM*' --always 2>/dev/null`" \
+    # It may still be needed on CI systems which only fetch the
+    # commit they build and no branch names or tags (minimizing the
+    # traffic, storage and general potential for creative errors).
+    ALWAYS_DESC_ARG=""
+    if [ x"${NUT_VERSION_GIT_ALWAYS_DESC-}" = xtrue ] ; then ALWAYS_DESC_ARG="--always" ; fi
+
+    # Praises to old gits and the new, who may --exclude:
+    DESC="`git describe $ALL_TAGS_ARG $ALWAYS_DESC_ARG --match 'v[0-9]*.[0-9]*.[0-9]' --exclude '*-signed' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' --exclude '*Windows*' --exclude '*IPM*' 2>/dev/null`" \
     && [ -n "${DESC}" ] \
-    || DESC="`git describe $ALL_TAGS_ARG | grep -Ev '(rc|-signed|alpha|beta|Windows|IPM)' | grep -E 'v[0-9]*.[0-9]*.[0-9]'`"
+    || DESC="`git describe $ALL_TAGS_ARG $ALWAYS_DESC_ARG | grep -Ev '(rc|-signed|alpha|beta|Windows|IPM)' | grep -E 'v[0-9]*.[0-9]*.[0-9]'`"
     # Old stripper (also for possible refspec parts like "tags/"):
     #   echo "${DESC}" | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,'
     if [ x"${DESC}" = x ] ; then echo "$0: FAILED to 'git describe' this codebase" >&2 ; return ; fi
