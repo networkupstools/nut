@@ -130,3 +130,13 @@ MODE=none
 # platforms without such a framework and not expecting one, although nagging
 # your favourite OS or contributing development to make it better is also a way.
 #NUT_QUIET_INIT_UPSNOTIFY=true
+
+##############################################################################
+# Variables that can be helpful more for tool scripting than service daemons
+##############################################################################
+
+# Optionally prevent `libupsclient` consumers (notoriously `upsc`, maybe
+# also `dummy-ups` driver or `nut-scanner` tool) from reporting whether
+# they have initialized SSL support -- or, loudly, failed to initialize
+# as it was not configured on this system.
+#NUT_QUIET_INIT_SSL=true
