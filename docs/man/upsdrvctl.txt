@@ -11,7 +11,7 @@ SYNOPSIS
 
 *upsdrvctl* -h
 
-*upsdrvctl* ['OPTIONS'] {start | stop | shutdown} ['ups']
+*upsdrvctl* ['OPTIONS'] {start | stop | shutdown | status} ['ups']
 
 *upsdrvctl* ['OPTIONS'] {list | -l} ['ups']
 
@@ -135,6 +135,10 @@ here and managed in other commands).
 NOTE: The tool name and NUT version banner line is also printed to `stdout`
 before any other processing. This can be suppressed by `NUT_QUIET_INIT_BANNER`
 environment variable (exported by caller and empty or "true").
+
+*status*::
+Similar to `list`, but reports more information -- also the driver name, the
+PID if it is running, and result of a signal probe to check it is responding.
 
 *-c* 'command'::
 Send 'command' to the background process as a signal.  Valid commands

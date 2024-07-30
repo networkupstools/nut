@@ -98,7 +98,7 @@ https://github.com/networkupstools/nut/milestone/11
  - Extended `upsdrvctl` with a `list` operation (or `-l` option) to report
    manageable device configuration names (possible `<ups>` arguments to
    `start`, `stop` etc. operations), or to confirm a single name that it
-   is known. [#2567]
+   is known, and a `status` operation for more information. [#2567]
 
  - riello_ser updates:
    * added `localcalculation` option to compute `battery.runtime` and

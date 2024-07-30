@@ -807,11 +807,37 @@ static void forkexec(char *const argv[], const ups_t *ups)
 
 static void list_driver(const ups_t *ups)
 {
+	/* Just a short report: one config section name per line */
+	printf("%s\n", ups->upsname);
+}
+
+static void status_driver(const ups_t *ups)
+{
 	/* TODO: Options (global static) for details of configuration like
 	 * the driver name, serial, etc. or even current life-cycle status
 	 * (e.g. valid PID existence, data query via socket protocol...)
 	 */
-	printf("%s\n", ups->upsname);
+	char	pidfn[SMALLBUF];
+	int	cmdret, nsdl = nut_upsdrvquery_debug_level;
+
+	/* TODO: Hush the fopen(pidfile) message but let "real errors" be seen,
+	 * but currently our probe is limited to checking the PID file to gauge
+	 * running processes */
+	/* nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_KILL_SIG0PING - 1; */
+#ifndef WIN32
+	snprintf(pidfn, sizeof(pidfn), "%s/%s-%s.pid", altpidpath(), ups->driver, ups->upsname);
+	cmdret = sendsignalfn(pidfn, 0, ups->driver, 1);
+#else
+	snprintf(pidfn, sizeof(pidfn), "%s-%s", ups->driver, ups->upsname);
+	cmdret = sendsignal(pidfn, 0, 1);
+#endif
+
+	printf("%s\t%s\t%s\n",
+		ups->upsname, ups->driver,
+		cmdret ? "STOPPED" : "RUNNING"
+		);
+
+	nut_upsdrvquery_debug_level = nsdl;
 }
 
 static void start_driver(const ups_t *ups)
@@ -967,7 +993,7 @@ static void help(const char *progname)
 static void help(const char *arg_progname)
 {
 	printf("Starts and stops UPS drivers via ups.conf.\n\n");
-	printf("usage: %s [OPTIONS] (start | stop | shutdown) [<ups>]\n\n", arg_progname);
+	printf("usage: %s [OPTIONS] (start | stop | shutdown | status) [<ups>]\n\n", arg_progname);
 	printf("usage: %s [OPTIONS] (list | -l) [<ups>]\n\n", arg_progname);
 	printf("usage: %s [OPTIONS] -c <command> [<ups>]\n\n", arg_progname);
 
@@ -1019,11 +1045,13 @@ static void help(const char *arg_progname)
 
 	printf("\nDriver life cycle options:\n");
 	printf("  start			start all UPS drivers in ups.conf\n");
-	printf("  start	<ups>		only start driver for UPS <ups>\n");
+	printf("  start <ups>		only start driver for UPS <ups>\n");
 	printf("  stop			stop all UPS drivers in ups.conf\n");
 	printf("  stop <ups>		only stop driver for UPS <ups>\n");
 	printf("  shutdown		shutdown all UPS drivers in ups.conf\n");
 	printf("  shutdown <ups>	only shutdown UPS <ups>\n");
+	printf("  status		query status for all UPS drivers in ups.conf\n");
+	printf("  status <ups>		only query status for driver for UPS <ups>\n");
 
 	exit(EXIT_SUCCESS);
 }
@@ -1100,7 +1128,7 @@ static void send_all_drivers(void (*command_func)(const ups_t *))
 	exec_error = 0;
 	exec_timeout = 0;
 
-	if (command_func == &list_driver) {
+	if (command_func == &list_driver || command_func == &status_driver) {
 		while (ups) {
 			command_func(ups);
 			ups = ups->next;
@@ -1356,6 +1384,10 @@ int main(int argc, char **argv)
 		} else
 		if (!strcmp(argv[0], "list")) {
 			command = &list_driver;
+			command_name = argv[0];
+		} else
+		if (!strcmp(argv[0], "status")) {
+			command = &status_driver;
 			command_name = argv[0];
 		}
 		lastarg = 1;
