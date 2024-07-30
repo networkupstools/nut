@@ -191,6 +191,9 @@ static void signal_driver_cmd(const ups_t *ups,
 )
 {
 #ifndef WIN32
+/* TODO: implement WIN32: https://github.com/networkupstools/nut/issues/1916
+ * Currently the codepath is not implemented below
+ */
 	char	pidfn[SMALLBUF];
 #endif
 	int	ret;
