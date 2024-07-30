@@ -130,7 +130,7 @@ getver_git() {
     || DESC="`git describe $ALL_TAGS_ARG $ALWAYS_DESC_ARG | grep -Ev '(rc|-signed|alpha|beta|Windows|IPM)' | grep -E 'v[0-9]*.[0-9]*.[0-9]'`"
     # Old stripper (also for possible refspec parts like "tags/"):
     #   echo "${DESC}" | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,'
-    if [ x"${DESC}" = x ] ; then echo "$0: FAILED to 'git describe' this codebase" >&2 ; return ; fi
+    if [ x"${DESC}" = x ] ; then echo "$0: FAILED to 'git describe' this codebase" >&2 ; return 1 ; fi
 
     # How much of the known trunk history is in current HEAD?
     # e.g. all of it when we are on that branch or PR made from its tip,
@@ -138,7 +138,7 @@ getver_git() {
     # at the tagged commit (it is the merge base for itself and any of
     # its descendants):
     BASE="`git merge-base HEAD "${NUT_VERSION_GIT_TRUNK}"`" || BASE=""
-    if [ x"${BASE}" = x ] ; then echo "$0: FAILED to get a git merge-base of this codebase vs. '${NUT_VERSION_GIT_TRUNK}'" >&2 ; DESC=""; return ; fi
+    if [ x"${BASE}" = x ] ; then echo "$0: FAILED to get a git merge-base of this codebase vs. '${NUT_VERSION_GIT_TRUNK}'" >&2 ; DESC=""; return  1; fi
 
     # Nearest (annotated by default) tag preceding the HEAD in history:
     TAG="`echo "${DESC}" | sed 's/-[0-9][0-9]*-g[0-9a-fA-F][0-9a-fA-F]*$//'`"
