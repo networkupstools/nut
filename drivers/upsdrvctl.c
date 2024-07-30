@@ -802,6 +802,15 @@ static void forkexec(char *const argv[], const ups_t *ups)
 #endif
 }
 
+static void list_driver(const ups_t *ups)
+{
+	/* TODO: Options (global static) for details of configuration like
+	 * the driver name, serial, etc. or even current life-cycle status
+	 * (e.g. valid PID existence, data query via socket protocol...)
+	 */
+	printf("%s\n", ups->upsname);
+}
+
 static void start_driver(const ups_t *ups)
 {
 	char	*argv[10];
@@ -956,6 +965,7 @@ static void help(const char *arg_progname)
 {
 	printf("Starts and stops UPS drivers via ups.conf.\n\n");
 	printf("usage: %s [OPTIONS] (start | stop | shutdown) [<ups>]\n\n", arg_progname);
+	printf("usage: %s [OPTIONS] (list | -l) [<ups>]\n\n", arg_progname);
 	printf("usage: %s [OPTIONS] -c <command> [<ups>]\n\n", arg_progname);
 
 	printf("Common options:\n");
@@ -968,6 +978,10 @@ static void help(const char *arg_progname)
 	printf("  -F			driver stays foregrounded even if no debugging is enabled\n");
 	printf("  -FF			driver stays foregrounded and still saves the PID file\n");
 	printf("  -B			driver(s) stay backgrounded even if debugging is bumped\n");
+
+	printf("\nListing known driver(s):\n");
+	printf("  -l | list		list all device driver confgurations that can be managed\n");
+	printf("  -l | list <ups>	only try to list the specified device driver confgurations (error if unresolved)\n");
 
 	printf("\nSignalling a running driver:\n");
 	printf("  -c <command>		send <command> via signal to running driver(s)\n");
@@ -1082,6 +1096,17 @@ static void send_all_drivers(void (*command_func)(const ups_t *))
 
 	exec_error = 0;
 	exec_timeout = 0;
+
+	if (command_func == &list_driver) {
+		while (ups) {
+			command_func(ups);
+			ups = ups->next;
+		}
+
+		fflush(stdout);
+		return;
+	}
+
 	if (command_func != &shutdown_driver) {
 		ups = upstable;
 
@@ -1177,7 +1202,7 @@ int main(int argc, char **argv)
 	fflush(stdout);
 
 	prog = argv[0];
-	while ((i = getopt(argc, argv, "+htu:r:DdFBVc:")) != -1) {
+	while ((i = getopt(argc, argv, "+htu:r:DdFBVc:l")) != -1) {
 		switch(i) {
 			case 'r':
 				pt_root = optarg;
@@ -1274,6 +1299,9 @@ int main(int argc, char **argv)
 					signal_flag, optarg);
 #endif	/* WIN32 */
 				break;
+			case 'l':
+				command = &list_driver;
+				break;
 			case 'h':
 			default:
 				help(prog);
@@ -1319,6 +1347,8 @@ int main(int argc, char **argv)
 			"pass its current debug level to the launched driver, and '-B' keeps it backgrounded.\n");
 	}
 
+	/* Note: argv is incremented above, so [0] is currently the next
+	 * CLI keyword after options */
 	if (!command) {
 		if (!strcmp(argv[0], "start")) {
 			command = &start_driver;
@@ -1328,6 +1358,9 @@ int main(int argc, char **argv)
 		} else
 		if (!strcmp(argv[0], "shutdown")) {
 			command = &shutdown_driver;
+		} else
+		if (!strcmp(argv[0], "list")) {
+			command = &list_driver;
 		}
 		lastarg = 1;
 	}
