@@ -1193,7 +1193,7 @@ static void exit_cleanup(void)
 int main(int argc, char **argv)
 {
 	int	i, lastarg = 0;
-	char	*prog;
+	char	*prog, *command_name = NULL;
 
 	printf("Network UPS Tools - UPS driver controller %s\n",
 		UPS_VERSION);
@@ -1245,6 +1245,7 @@ int main(int argc, char **argv)
 						"sent with option -%c. Try -h for help.", i);
 				}
 				command = &signal_driver;
+				command_name = "signal";
 
 				if (!strncmp(optarg, "reload-or-error", strlen(optarg))) {
 					signal_flag = SIGCMD_RELOAD_OR_ERROR;
@@ -1299,6 +1300,7 @@ int main(int argc, char **argv)
 				break;
 			case 'l':
 				command = &list_driver;
+				command_name = "list";
 				break;
 			case 'h':
 			default:
@@ -1350,15 +1352,19 @@ int main(int argc, char **argv)
 	if (!command) {
 		if (!strcmp(argv[0], "start")) {
 			command = &start_driver;
+			command_name = argv[0];
 		} else
 		if (!strcmp(argv[0], "stop")) {
 			command = &stop_driver;
+			command_name = argv[0];
 		} else
 		if (!strcmp(argv[0], "shutdown")) {
 			command = &shutdown_driver;
+			command_name = argv[0];
 		} else
 		if (!strcmp(argv[0], "list")) {
 			command = &list_driver;
+			command_name = argv[0];
 		}
 		lastarg = 1;
 	}
@@ -1386,13 +1392,13 @@ int main(int argc, char **argv)
 		}
 
 		upsdebugx(1, "upsdrvctl commanding all drivers (%d found): %s",
-			upscount, (pt_cmd ? pt_cmd : NUT_STRARG(argv[lastarg])));
+			upscount, (pt_cmd ? pt_cmd : NUT_STRARG(command_name)));
 		send_all_drivers(command);
 	} else
 	if (argc == (lastarg + 1)) {
 		upscount = 1;
 		upsdebugx(1, "upsdrvctl commanding one driver (%s): %s",
-			argv[lastarg], (pt_cmd ? pt_cmd : NUT_STRARG(argv[lastarg - 1])));
+			argv[lastarg], (pt_cmd ? pt_cmd : NUT_STRARG(command_name)));
 		send_one_driver(command, argv[lastarg]);
 	} else {
 		fatalx(EXIT_FAILURE, "Error: extra arguments left on command line\n"
