@@ -122,6 +122,11 @@ Optional, defaults to `0`. This setting controls the default debugging message
 verbosity passed to NUT daemons. As an environment variable, its priority sits
 between that of 'DEBUG_MIN' setting of a driver and the command-line options.
 
+*NUT_DEBUG_PID*::
+Optionally add current process ID to tags with debug-level identifiers.
+This may be useful when many NUT daemons write to the same console or log
+file, such as in containers/plugins for Home Assistant, storage appliances...
+
 *NUT_DEBUG_SYSLOG*::
 Optional, unset by default.
 Normally NUT can (attempt to) use the syslog or Event Log (WIN32), but the
