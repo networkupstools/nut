@@ -111,13 +111,6 @@ getver_git() {
     # or "upstream/master", etc.) for resulting version discovery to make sense.
     [ x"${NUT_VERSION_GIT_TRUNK-}" != x ] || NUT_VERSION_GIT_TRUNK=master
 
-    # How much of the known trunk history is in current HEAD?
-    # e.g. all of it when we are on that branch or PR made from its tip,
-    # some of it if looking at a historic snapshot, or nothing if looking
-    # at the tagged commit (it is the merge base for itself and any of
-    # its descendants):
-    BASE="`git merge-base HEAD "${NUT_VERSION_GIT_TRUNK}"`"
-
     # By default, only annotated tags are considered
     ALL_TAGS_ARG=""
     if [ x"${NUT_VERSION_GIT_ALL_TAGS-}" = xtrue ] ; then ALL_TAGS_ARG="--tags" ; fi
@@ -138,6 +131,14 @@ getver_git() {
     # Old stripper (also for possible refspec parts like "tags/"):
     #   echo "${DESC}" | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,'
     if [ x"${DESC}" = x ] ; then echo "$0: FAILED to 'git describe' this codebase" >&2 ; return ; fi
+
+    # How much of the known trunk history is in current HEAD?
+    # e.g. all of it when we are on that branch or PR made from its tip,
+    # some of it if looking at a historic snapshot, or nothing if looking
+    # at the tagged commit (it is the merge base for itself and any of
+    # its descendants):
+    BASE="`git merge-base HEAD "${NUT_VERSION_GIT_TRUNK}"`" || BASE=""
+    if [ x"${BASE}" = x ] ; then echo "$0: FAILED to get a git merge-base of this codebase vs. '${NUT_VERSION_GIT_TRUNK}'" >&2 ; DESC=""; return ; fi
 
     # Nearest (annotated by default) tag preceding the HEAD in history:
     TAG="`echo "${DESC}" | sed 's/-[0-9][0-9]*-g[0-9a-fA-F][0-9a-fA-F]*$//'`"
