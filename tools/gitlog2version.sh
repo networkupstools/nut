@@ -249,7 +249,7 @@ report_output() {
 DESC=""
 if $NUT_VERSION_PREFER_GIT ; then
     if (command -v git && git rev-parse --show-toplevel) >/dev/null 2>/dev/null ; then
-        getver_git || DESC=""
+        getver_git || { echo "$0: Fall back to pre-set default version information" >&2 ; DESC=""; }
     fi
 fi
 
