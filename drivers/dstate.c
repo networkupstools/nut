@@ -706,18 +706,32 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 		return 1;
 	}
 
-	if (!strcasecmp(arg[0], "DUMPALL")) {
+	if (!strcasecmp(arg[0], "DUMPALL") || !strcasecmp(arg[0], "DUMPSTATUS") || (!strcasecmp(arg[0], "DUMPVALUE") && numarg > 1)) {
 		/* first thing: the staleness flag (see also below) */
 		if ((stale == 1) && !send_to_one(conn, "DATASTALE\n")) {
 			return 1;
 		}
 
-		if (!st_tree_dump_conn(dtree_root, conn)) {
-			return 1;
-		}
+		if (!strcasecmp(arg[0], "DUMPALL")) {
+			if (!st_tree_dump_conn(dtree_root, conn)) {
+				return 1;
+			}
 
-		if (!cmd_dump_conn(conn)) {
-			return 1;
+			if (!cmd_dump_conn(conn)) {
+				return 1;
+			}
+		} else {
+			/* A cheaper version of the dump */
+			char	*varname = (!strcasecmp(arg[0], "DUMPSTATUS") ? "ups.status" : (numarg > 1 ? arg[1] : NULL));
+			st_tree_t	*sttmp = (varname ? state_tree_find(dtree_root, varname) : NULL);
+
+			if (!sttmp) {
+				upsdebugx(1, "%s: %s was requested but currently no %s is known",
+					__func__, arg[0], NUT_STRARG(varname));
+			} else {
+				if (!st_tree_dump_conn_one_node(sttmp, conn))
+					return 1;
+			}
 		}
 
 		if ((stale == 0) && !send_to_one(conn, "DATAOK\n")) {
