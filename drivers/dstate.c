@@ -588,23 +588,10 @@ static void sock_connect(TYPE_FD sock)
 
 }
 
-static int st_tree_dump_conn(st_tree_t *node, conn_t *conn)
+static int st_tree_dump_conn_one_node(st_tree_t *node, conn_t *conn)
 {
-	int	ret;
 	enum_t	*etmp;
 	range_t	*rtmp;
-
-	if (!node) {
-		return 1;	/* not an error */
-	}
-
-	if (node->left) {
-		ret = st_tree_dump_conn(node->left, conn);
-
-		if (!ret) {
-			return 0;	/* write failed in the child */
-		}
-	}
 
 	if (!send_to_one(conn, "SETINFO %s \"%s\"\n", node->var, node->val)) {
 		return 0;	/* write failed, bail out */
@@ -652,6 +639,28 @@ static int st_tree_dump_conn(st_tree_t *node, conn_t *conn)
 			return 0;
 		}
 	}
+
+	return 1;	/* everything's OK here ... */
+}
+
+static int st_tree_dump_conn(st_tree_t *node, conn_t *conn)
+{
+	int	ret;
+
+	if (!node) {
+		return 1;	/* not an error */
+	}
+
+	if (node->left) {
+		ret = st_tree_dump_conn(node->left, conn);
+
+		if (!ret) {
+			return 0;	/* write failed in the child */
+		}
+	}
+
+	if (!st_tree_dump_conn_one_node(node, conn))
+		return 0;	/* one of writes failed, bail out */
 
 	if (node->right) {
 		return st_tree_dump_conn(node->right, conn);
