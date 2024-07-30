@@ -101,7 +101,7 @@ fi
 [ -n "${NUT_VERSION_DEFAULT-}" ] || NUT_VERSION_DEFAULT='2.8.2.1'
 
 # Default website paths, extended for historic sub-sites for a release
-[ -n "${NUT_WEBSITE-}" ] || NUT_WEBSITE="https://networkupstools.org/"
+[ -n "${NUT_WEBSITE-}" ] || NUT_WEBSITE="https://www.networkupstools.org/"
 
 # Must be "true" or "false" exactly, interpreted as such below:
 [ x"${NUT_VERSION_PREFER_GIT-}" = xfalse ] || { [ -e "${abs_top_srcdir}/.git" ] && NUT_VERSION_PREFER_GIT=true || NUT_VERSION_PREFER_GIT=false ; }
