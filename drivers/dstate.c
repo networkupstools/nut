@@ -701,8 +701,12 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 		return 0;
 	}
 
-	if (!strcasecmp(arg[0], "DUMPALL")) {
+	if (!strcasecmp(arg[0], "GETPID")) {
+		send_to_one(conn, "PID %" PRIiMAX "\n", (intmax_t)getpid());
+		return 1;
+	}
 
+	if (!strcasecmp(arg[0], "DUMPALL")) {
 		/* first thing: the staleness flag (see also below) */
 		if ((stale == 1) && !send_to_one(conn, "DATASTALE\n")) {
 			return 1;

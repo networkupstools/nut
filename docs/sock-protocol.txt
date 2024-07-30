@@ -130,6 +130,19 @@ DELCMD
 
 	DELCMD load.on
 
+PID
+~~~
+
+	PID <id>
+
+	PID 12345
+
+	PID "StrangeOS process identifier"
+
+Response to `GETPID` query, where we serve platform-specific process
+identifier. On POSIX and many other platforms this would be a numeric
+value, but most generally it should be treated as an opaque string.
+
 DUMPDONE
 ~~~~~~~~
 
@@ -239,6 +252,14 @@ NOTE:
 * "TRACKING <id>" can be provided to track commands execution status, if
 TRACKING was set to ON on upsd. In this case, driver will later return
 the execution status, using TRACKING.
+
+GETPID
+~~~~~~
+
+The server (or sibling driver instances, or `upsdrvctl` tool) can use
+this to request the platform-specific process identifier of the driver
+process. On POSIX and many other platforms this would be a numeric value,
+but most generally it should be treated as an opaque string.
 
 DUMPALL
 ~~~~~~~
