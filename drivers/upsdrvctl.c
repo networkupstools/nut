@@ -1088,10 +1088,10 @@ static void send_one_driver(void (*command_func)(const ups_t *), const char *arg
 /* walk UPS table and send command to all UPSes according to sdorder */
 static void send_all_drivers(void (*command_func)(const ups_t *))
 {
-	ups_t	*ups;
+	ups_t	*ups = upstable;
 	int	i;
 
-	if (!upstable)
+	if (!ups)
 		fatalx(EXIT_FAILURE, "Error: no UPS definitions found in ups.conf");
 
 	exec_error = 0;
@@ -1108,7 +1108,7 @@ static void send_all_drivers(void (*command_func)(const ups_t *))
 	}
 
 	if (command_func != &shutdown_driver) {
-		ups = upstable;
+		/* e.g. start_driver or stop_driver */
 
 		/* Only warn when relevant - got more than one device to start */
 		if (command_func == &start_driver
@@ -1142,8 +1142,6 @@ static void send_all_drivers(void (*command_func)(const ups_t *))
 
 	/* Orderly processing of shutdowns */
 	for (i = 0; i <= maxsdorder; i++) {
-		ups = upstable;
-
 		while (ups) {
 			if (ups->sdorder == i)
 				command_func(ups);
