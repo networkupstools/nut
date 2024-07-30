@@ -1339,19 +1339,6 @@ int main(int argc, char **argv)
 			nut_debug_level = 2;
 	}
 
-	if (nut_debug_level_passthrough == 0) {
-		upsdebugx(2, "\n"
-			"If you're not a NUT core developer, chances are that you're told to enable debugging\n"
-			"to see why a driver isn't working for you. We're sorry for the confusion, but this is\n"
-			"the 'upsdrvctl' wrapper, not the driver you're interested in.\n\n"
-			"Below you'll find one or more lines starting with 'exec:' followed by an absolute\n"
-			"path to the driver binary and some command line option. This is what the driver\n"
-			"starts and you need to copy and paste that line and append the debug flags to that\n"
-			"line (less the 'exec:' prefix).\n\n"
-			"Alternately, provide an additional '-d' (lower-case) parameter to 'upsdrvctl' to\n"
-			"pass its current debug level to the launched driver, and '-B' keeps it backgrounded.\n");
-	}
-
 	/* Note: argv is incremented above, so [0] is currently the next
 	 * CLI keyword after options */
 	if (!command) {
@@ -1376,6 +1363,19 @@ int main(int argc, char **argv)
 
 	if (!command)
 		fatalx(EXIT_FAILURE, "Error: unrecognized command [%s]", argv[0]);
+
+	if (nut_debug_level_passthrough == 0 && (command == &start_driver || command == &shutdown_driver)) {
+		upsdebugx(2, "\n"
+			"If you're not a NUT core developer, chances are that you're told to enable debugging\n"
+			"to see why a driver isn't working for you. We're sorry for the confusion, but this is\n"
+			"the 'upsdrvctl' wrapper, not the driver you're interested in.\n\n"
+			"Below you'll find one or more lines starting with 'exec:' followed by an absolute\n"
+			"path to the driver binary and some command line option. This is what the driver\n"
+			"starts and you need to copy and paste that line and append the debug flags to that\n"
+			"line (less the 'exec:' prefix).\n\n"
+			"Alternately, provide an additional '-d' (lower-case) parameter to 'upsdrvctl' to\n"
+			"pass its current debug level to the launched driver, and '-B' keeps it backgrounded.\n");
+	}
 
 #ifndef WIN32
 	driverpath = xstrdup(DRVPATH);	/* set default */
