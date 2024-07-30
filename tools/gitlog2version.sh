@@ -259,3 +259,8 @@ fi
 
 report_debug
 report_output
+
+# Set exit code based on availability of default version info data point
+# Not empty means good
+# TOTHINK: consider the stdout of report_output() instead?
+[ x"${DESC50}" != x ]
