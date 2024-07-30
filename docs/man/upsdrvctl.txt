@@ -133,7 +133,8 @@ readable, or does not define any device sections (whose names are reported
 here and managed in other commands).
 
 NOTE: The tool name and NUT version banner line is also printed to `stdout`
-before any other processing.
+before any other processing. This can be suppressed by `NUT_QUIET_INIT_BANNER`
+environment variable (exported by caller and empty or "true").
 
 *-c* 'command'::
 Send 'command' to the background process as a signal.  Valid commands

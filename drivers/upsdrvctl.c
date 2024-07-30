@@ -1195,9 +1195,11 @@ int main(int argc, char **argv)
 	int	i, lastarg = 0;
 	char	*prog, *command_name = NULL;
 
-	printf("Network UPS Tools - UPS driver controller %s\n",
-		UPS_VERSION);
-	fflush(stdout);
+	if (!banner_is_disabled()) {
+		printf("Network UPS Tools - UPS driver controller %s\n",
+			UPS_VERSION);
+		fflush(stdout);
+	}
 
 	prog = argv[0];
 	while ((i = getopt(argc, argv, "+htu:r:DdFBVc:l")) != -1) {
