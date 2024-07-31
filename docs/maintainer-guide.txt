@@ -118,7 +118,13 @@ MAINTAINER SANDBOX (to be completed and pushed)
 * commit these finishing touches
 
 * bump the release identification:
-** update version to <exact incremented version> (ex: 2.8.0) in `configure.ac`
+** update the fallback `NUT_DEFAULT_VERSION` in `tools/gitlog2version.sh` to
+   <exact incremented version> (ex: `2.8.0`), and provide the `VERSION_FORCED`
+   and `VERSION_FORCED_SEMVER` files (to same effect but more explicitly and
+   visibly) to be added to the `dist` archive tarball file
+*** Experiment if still needed: update version to <exact incremented version>
+    (ex: 2.8.0) in `configure.ac`, or if the script bump above + git tagging
+    would suffice:
 ----
 :; git commit -sm 'configure.ac: update AC_INIT for NUT v2.8.0 release`
 ----
@@ -149,9 +155,9 @@ MAINTAINER SANDBOX (to be completed and pushed)
    make -j 8 spellcheck && \
    make -j 8 distcheck
 ----
-* create a GPG-signed tag v<incremented version> (ex: v2.8.0):
+* create an annotated GPG-signed tag v<incremented version> (ex: `v2.8.0`):
 ----
-:; git tag -sm 'Release NUT v2.8.0' v2.8.0
+:; git tag -asm 'Release NUT v2.8.0' v2.8.0
 ----
 ** in case of second thoughts, `git tag -d v2.8.0` and retry later
 ** try to avoid adding signed tags later (ex. v2.8.0-signed) to avoid the
@@ -166,7 +172,11 @@ MAINTAINER SANDBOX (to be completed and pushed)
   then) to store the source tarball, checksum and signature files
 
 * post-release update of the "in-development" codebase:
-** maybe update nut/configure.ac version to <incremented version>.1 (ex: 2.8.0.1)
+** update the fallback `NUT_DEFAULT_VERSION` in `tools/gitlog2version.sh` to
+   <incremented version>.1 (ex: `2.8.0.1`); remove the `VERSION_FORCED`
+   and `VERSION_FORCED_SEMVER` files
+*** maybe update nut/configure.ac version to <incremented version>.1
+    (ex: `2.8.0.1`):
 ----
 :; git commit -sm 'configure.ac: bump AC_INIT to development version 2.8.0.1'
 ----
@@ -217,6 +227,8 @@ MAINTAINER SANDBOX (to be completed and pushed)
   to happen from a prepared maintainer's operating environment.
 
 * announce on mailing list, IRC, etc.
+
+* update https://en.wikipedia.org/wiki/Network_UPS_Tools
 
 * create a GitHub issue label for the new release, e.g. at
   https://github.com/networkupstools/nut/labels?q=impact :

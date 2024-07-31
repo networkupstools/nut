@@ -91,6 +91,15 @@ https://github.com/networkupstools/nut/milestone/11
    command for a protocol equivalent of sending a `SIGTERM`, e.g. when
    a newer instance of the driver program tries to start. [#1903, #2392]
 
+ - A new `NUT_QUIET_INIT_BANNER` envvar (presence or "true" value) can now
+   prevent the tool name and NUT version banner from being unilaterally
+   printed out when NUT programs start. [issues #1789 vs. #316]
+
+ - Extended `upsdrvctl` with a `list` operation (or `-l` option) to report
+   manageable device configuration names (possible `<ups>` arguments to
+   `start`, `stop` etc. operations), or to confirm a single name that it
+   is known, and a `status` operation for more information. [#2567]
+
  - riello_ser updates:
    * added `localcalculation` option to compute `battery.runtime` and
      `battery.charge` if the device provides bogus values [issue #2390,

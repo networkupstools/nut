@@ -101,7 +101,7 @@ fi
 [ -n "${NUT_VERSION_DEFAULT-}" ] || NUT_VERSION_DEFAULT='2.8.2.1'
 
 # Default website paths, extended for historic sub-sites for a release
-[ -n "${NUT_WEBSITE-}" ] || NUT_WEBSITE="https://networkupstools.org/"
+[ -n "${NUT_WEBSITE-}" ] || NUT_WEBSITE="https://www.networkupstools.org/"
 
 # Must be "true" or "false" exactly, interpreted as such below:
 [ x"${NUT_VERSION_PREFER_GIT-}" = xfalse ] || { [ -e "${abs_top_srcdir}/.git" ] && NUT_VERSION_PREFER_GIT=true || NUT_VERSION_PREFER_GIT=false ; }
@@ -109,29 +109,54 @@ fi
 getver_git() {
     # NOTE: The chosen trunk branch must be up to date (may be "origin/master"
     # or "upstream/master", etc.) for resulting version discovery to make sense.
-    [ x"${NUT_VERSION_GIT_TRUNK-}" != x ] || NUT_VERSION_GIT_TRUNK=master
+    if [ x"${NUT_VERSION_GIT_TRUNK-}" = x ] ; then
+        # Find the newest info, it may be in a fetched branch
+        # not yet checked out locally (or long not updated)
+        for T in master `git branch -a 2>/dev/null | grep -E '^ *remotes/[^ ]*/master$'` origin/master upstream/master ; do
+            git log -1 "$T" 2>/dev/null >/dev/null || continue
+            if [ x"${NUT_VERSION_GIT_TRUNK-}" = x ] ; then
+                NUT_VERSION_GIT_TRUNK="$T"
+            else
+                # T is strictly same or newer
+                # Assume no deviations from the one true path in a master branch
+                git merge-base --is-ancestor "${NUT_VERSION_GIT_TRUNK}" "${T}" 2>/dev/null >/dev/null \
+                && NUT_VERSION_GIT_TRUNK="$T"
+            fi
+        done
+        if [ x"${NUT_VERSION_GIT_TRUNK-}" = x ] ; then
+            echo "$0: FAILED to discover a NUT_VERSION_GIT_TRUNK in this workspace" >&2
+            return 1
+        fi
+    fi
+
+    # By default, only annotated tags are considered
+    ALL_TAGS_ARG=""
+    if [ x"${NUT_VERSION_GIT_ALL_TAGS-}" = xtrue ] ; then ALL_TAGS_ARG="--tags" ; fi
+
+    # NOTE: "--always" should not be needed in NUT repos normally,
+    # but may help other projects who accept such scheme and script:
+    # it tells git to return a commit hash if no tag is matched.
+    # It may still be needed on CI systems which only fetch the
+    # commit they build and no branch names or tags (minimizing the
+    # traffic, storage and general potential for creative errors).
+    ALWAYS_DESC_ARG=""
+    if [ x"${NUT_VERSION_GIT_ALWAYS_DESC-}" = xtrue ] ; then ALWAYS_DESC_ARG="--always" ; fi
+
+    # Praises to old gits and the new, who may --exclude:
+    DESC="`git describe $ALL_TAGS_ARG $ALWAYS_DESC_ARG --match 'v[0-9]*.[0-9]*.[0-9]' --exclude '*-signed' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' --exclude '*Windows*' --exclude '*IPM*' 2>/dev/null`" \
+    && [ -n "${DESC}" ] \
+    || DESC="`git describe $ALL_TAGS_ARG $ALWAYS_DESC_ARG | grep -Ev '(rc|-signed|alpha|beta|Windows|IPM)' | grep -E 'v[0-9]*.[0-9]*.[0-9]'`"
+    # Old stripper (also for possible refspec parts like "tags/"):
+    #   echo "${DESC}" | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,'
+    if [ x"${DESC}" = x ] ; then echo "$0: FAILED to 'git describe' this codebase" >&2 ; return 1 ; fi
 
     # How much of the known trunk history is in current HEAD?
     # e.g. all of it when we are on that branch or PR made from its tip,
     # some of it if looking at a historic snapshot, or nothing if looking
     # at the tagged commit (it is the merge base for itself and any of
     # its descendants):
-    BASE="`git merge-base HEAD "${NUT_VERSION_GIT_TRUNK}"`"
-
-    # By default, only annotated tags are considered
-    ALL_TAGS_ARG=""
-    if [ x"${NUT_VERSION_GIT_ALL_TAGS-}" = xtrue ] ; then ALL_TAGS_ARG="--tags" ; fi
-
-    # Praises to old gits and the new, who may --exclude:
-    # NOTE: "--always" should not be needed in NUT repos,
-    # but may help other projects who accept such scheme:
-    # it tells git to return a commit hash if no tag is matched.
-    DESC="`git describe $ALL_TAGS_ARG --match 'v[0-9]*.[0-9]*.[0-9]' --exclude '*-signed' --exclude '*rc*' --exclude '*alpha*' --exclude '*beta*' --exclude '*Windows*' --exclude '*IPM*' --always 2>/dev/null`" \
-    && [ -n "${DESC}" ] \
-    || DESC="`git describe $ALL_TAGS_ARG | grep -Ev '(rc|-signed|alpha|beta|Windows|IPM)' | grep -E 'v[0-9]*.[0-9]*.[0-9]'`"
-    # Old stripper (also for possible refspec parts like "tags/"):
-    #   echo "${DESC}" | sed -e 's/^v\([0-9]\)/\1/' -e 's,^.*/,,'
-    if [ x"${DESC}" = x ] ; then echo "$0: FAILED to 'git describe' this codebase" >&2 ; return ; fi
+    BASE="`git merge-base HEAD "${NUT_VERSION_GIT_TRUNK}"`" || BASE=""
+    if [ x"${BASE}" = x ] ; then echo "$0: FAILED to get a git merge-base of this codebase vs. '${NUT_VERSION_GIT_TRUNK}'" >&2 ; DESC=""; return  1; fi
 
     # Nearest (annotated by default) tag preceding the HEAD in history:
     TAG="`echo "${DESC}" | sed 's/-[0-9][0-9]*-g[0-9a-fA-F][0-9a-fA-F]*$//'`"
@@ -196,7 +221,7 @@ getver_default() {
 
 report_debug() {
     # Debug
-    echo "DESC='${DESC}' => TAG='${TAG}' + SUFFIX='${SUFFIX}'; BASE='${BASE}' => VER5='${VER5}' => VER50='${VER50}' => DESC50='${DESC50}'" >&2
+    echo "TRUNK='${NUT_VERSION_GIT_TRUNK-}'; BASE='${BASE}'; DESC='${DESC}' => TAG='${TAG}' + SUFFIX='${SUFFIX}' => VER5='${VER5}' => VER50='${VER50}' => DESC50='${DESC50}'" >&2
 }
 
 report_output() {
@@ -242,7 +267,7 @@ report_output() {
 DESC=""
 if $NUT_VERSION_PREFER_GIT ; then
     if (command -v git && git rev-parse --show-toplevel) >/dev/null 2>/dev/null ; then
-        getver_git || DESC=""
+        getver_git || { echo "$0: Fall back to pre-set default version information" >&2 ; DESC=""; }
     fi
 fi
 
@@ -252,3 +277,8 @@ fi
 
 report_debug
 report_output
+
+# Set exit code based on availability of default version info data point
+# Not empty means good
+# TOTHINK: consider the stdout of report_output() instead?
+[ x"${DESC50}" != x ]

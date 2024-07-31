@@ -259,6 +259,17 @@ VERSION_DEFAULT: dummy-stamp
 CLEANFILES += VERSION_DEFAULT.tmp
 EXTRA_DIST += VERSION_DEFAULT
 
+# Best-effort delivery for (overly?) customized distros, e.g. via
+#   echo NUT_VERSION_FORCED_SEMVER=1.1.1 > VERSION_FORCED_SEMVER
+dist-hook:
+	for D in "$(abs_top_srcdir)" "$(abs_top_builddir)" ; do \
+	    for F in VERSION_FORCED VERSION_FORCED_SEMVER ; do \
+	        if [ -s "$$D/$$F" ] ; then \
+	            cat "$$D/$$F" > "$(top_distdir)/$$F" || true ; \
+	        fi ; \
+	    done ; \
+	done
+
 # This target adds syntax-checking for committed shell script files,
 # to avoid surprises and delays in finding fatal typos after packaging
 ###

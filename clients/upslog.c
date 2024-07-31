@@ -439,7 +439,10 @@ int main(int argc, char **argv)
 	logformat = DEFAULT_LOGFORMAT;
 	user = RUN_AS_USER;
 
-	printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
+	if (!banner_is_disabled()) {
+		printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
+		fflush(stdout);
+	}
 
 	while ((i = getopt(argc, argv, "+hs:l:i:f:u:Vp:FBm:")) != -1) {
 		switch(i) {
