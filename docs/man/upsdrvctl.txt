@@ -155,8 +155,8 @@ protocol):
                          name corresponds to driver, etc.); `STOPPED` if PID
                          was parsed but not running or has a wrong program
                          name; "N/A" if failed to parse it or no PID file
-        *PF_PID*;;       PID of driver according to PID file (if any), or
-                         `-1` on error
+        *PF_PID*;;       PID of driver according to PID file (if any), or some
+                         negative values upon errors (as defined in `common.c`)
         *S_RESPONSIVE*;; `RESPONSIVE` if `PING`/`PONG` during socket protocol
                          session setup succeeded; `NOT_RESPONSIVE` otherwise
         *S_PID*;;        PID of driver according to `GETPID` active query
