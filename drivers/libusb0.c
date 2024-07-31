@@ -542,6 +542,10 @@ static int libusb_open(usb_dev_handle **udevp,
 
 			nut_usb_set_altinterface(udev);
 
+			/* Did the driver provide a callback method for any further
+			 * device acceptance checks (e.g. when same ID is supported
+			 * by several sub-drivers, differing by vendor/model strings)?
+			 */
 			if (!callback) {
 				return 1;
 			}
