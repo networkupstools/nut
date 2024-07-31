@@ -863,7 +863,6 @@ static void status_driver(const ups_t *ups)
 
 			if (upsdrvquery_write(conn, "GETPID\n") >= 0
 			&&  (qretPid = upsdrvquery_read_timeout(conn, tv)) >= 1
-			&&  conn->buf
 			&&  (!strncmp(conn->buf, "PID ", 4))
 			) {
 				size_t	l;
@@ -884,7 +883,6 @@ static void status_driver(const ups_t *ups)
 
 			if (upsdrvquery_write(conn, "DUMPSTATUS\n") >= 0
 			&&  (qretStatus = upsdrvquery_read_timeout(conn, tv)) >= 1
-			&&  conn->buf
 			) {
 				char	*buf;
 
