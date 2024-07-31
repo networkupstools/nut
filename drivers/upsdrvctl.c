@@ -819,7 +819,7 @@ static void status_driver(const ups_t *ups)
 	 */
 	static int	headerShown = 0;
 	char	pidfn[SMALLBUF], bufPid[LARGEBUF], *pidStrFromSocket = NULL, bufStatus[LARGEBUF], *statusStrFromSocket = NULL;
-	int	cmdret = -1, qretPing = -1, qretPid = -1, qretStatus = -1, nsdl = nut_upsdrvquery_debug_level;
+	int	cmdret = -1, qretPing = -1, qretPid = -1, qretStatus = -1, nudl = nut_upsdrvquery_debug_level, nsdl = nut_sendsignal_debug_level;
 	pid_t	pidFromFile = -1;
 	struct timeval	tv;
 	udq_pipe_conn_t	*conn;
@@ -842,7 +842,10 @@ static void status_driver(const ups_t *ups)
 	cmdret = sendsignal(pidfn, 0, 1);
 #endif
 
+	/* Hush the fopen(socketfile) in upsdrvquery_connect_drvname_upsname() */
+	nut_upsdrvquery_debug_level = 0;
 	conn = upsdrvquery_connect_drvname_upsname(ups->driver, ups->upsname);
+	nut_upsdrvquery_debug_level = nudl;
 
 	if (conn && VALID_FD(conn->sockfd)) {
 		/* Post the query and wait for reply */
@@ -942,7 +945,7 @@ static void status_driver(const ups_t *ups)
 		((qretStatus == STAT_INSTCMD_HANDLED) ? NUT_STRARG(statusStrFromSocket) : "")
 		);
 
-	nut_upsdrvquery_debug_level = nsdl;
+	nut_sendsignal_debug_level = nsdl;
 }
 
 static void start_driver(const ups_t *ups)
