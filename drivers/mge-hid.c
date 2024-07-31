@@ -1152,11 +1152,17 @@ static models_name_t mge_model_names [] =
 	 * https://github.com/networkupstools/nut/issues/2380
 	 * https://github.com/networkupstools/nut/issues/2492
 	 */
-	{ "unknown",  "2000",  EATON_9E, "9E2000 (presumed)" },	/* https://github.com/networkupstools/nut/issues/1925#issuecomment-1609262963 */
 	{ "Eaton 9E", "2000",  EATON_9E, "9E2000" },
 	{ "Eaton 9E", "2000i", EATON_9E, "9E2000i" },
 	{ "Eaton 9E", "3000",  EATON_9E, "9E3000" },
 	{ "Eaton 9E", "3000i", EATON_9E, "9E3000i" },
+
+	/* https://github.com/networkupstools/nut/issues/1925#issuecomment-1609262963
+	 * if we failed to get iManufacturer, iProduct and iSerialNumber but saw
+	 * the UPS.Flow.[4].ConfigApparentPower (the "2000" or "3000" part here)
+	 */
+	{ "unknown",  "2000",  EATON_9E, "9E2000i (presumed)" },
+	{ "unknown",  "3000",  EATON_9E, "9E3000i (presumed)" },
 
 	/* Pulsar M models */
 	{ "PULSAR M", "2200", MGE_PULSAR_M_2200, NULL },
