@@ -1154,13 +1154,18 @@ static models_name_t mge_model_names [] =
 	 */
 	{ "Eaton 9E", "1000",  EATON_9E, "9E1000" },
 	{ "Eaton 9E", "1000i", EATON_9E, "9E1000i" },
+	{ "Eaton 9E", "1000iau", EATON_9E, "9E1000iau" },
 	{ "Eaton 9E", "1000ir", EATON_9E, "9E1000ir" },
 	{ "Eaton 9E", "2000",  EATON_9E, "9E2000" },
 	{ "Eaton 9E", "2000i", EATON_9E, "9E2000i" },
+	{ "Eaton 9E", "2000iau", EATON_9E, "9E2000iau" },
 	{ "Eaton 9E", "2000ir", EATON_9E, "9E2000ir" },
 	{ "Eaton 9E", "3000",  EATON_9E, "9E3000" },
 	{ "Eaton 9E", "3000i", EATON_9E, "9E3000i" },
+	{ "Eaton 9E", "3000iau", EATON_9E, "9E3000iau" },
 	{ "Eaton 9E", "3000ir", EATON_9E, "9E3000ir" },
+	{ "Eaton 9E", "3000ixl", EATON_9E, "9E3000ixl" },
+	{ "Eaton 9E", "3000ixlau", EATON_9E, "9E3000ixlau" },
 
 	/* https://github.com/networkupstools/nut/issues/1925#issuecomment-1609262963
 	 * if we failed to get iManufacturer, iProduct and iSerialNumber but saw
