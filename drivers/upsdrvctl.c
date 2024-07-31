@@ -915,6 +915,12 @@ static void status_driver(const ups_t *ups)
 		}
 	}
 
+	upsdrvquery_close(conn);
+	if (conn) {
+		free(conn);
+		conn = NULL;
+	}
+
 	printf("%s\t%s\t%s\t%" PRIiMAX "\t%s\t%s\t%s\n",
 		ups->upsname, ups->driver,
 		(pidFromFile < 0 ? "N/A" : (cmdret ? "STOPPED" : "RUNNING")),
