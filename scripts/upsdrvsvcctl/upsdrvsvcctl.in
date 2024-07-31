@@ -1,6 +1,7 @@
 #!/bin/sh
 #
 # Copyright (C) 2016-2018 Eaton
+# Copyright (C) 2020-2024 Jim Klimov <jimklimov+nut@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -91,10 +92,21 @@ usage: $0 [OPTIONS] list [<ups>]
                 	to list the mapping of service instances to device sections
   list <ups>    	(optionally return the service instance name for one device)
 
+usage: $0 [OPTIONS] status [<ups>]
+  status        	report run-time status for each driver in ups.conf
+  status <ups>  	(optionally return the status info only for one device)
+                	Fields: UPSNAME UPSDRV PF_RUNNING PF_PID S_RESPONSIVE S_PID S_STATUS
+                	(PF_* = according to PID file, if any; S_* = via socket protocol)
 usage: $0 [OPTIONS] show-config [<ups>]
   show-config <ups>	output config section from ups.conf for device <ups>
   show-config   	...or all devices if no <ups> argument was passed
 EOF
+
+# TODO:
+#  status        	call $ENUMERATOR
+#                	to list the mapping of service instances to device sections
+#                	and report run-time status for each one
+
 }
 
 ACTION=""
@@ -131,6 +143,13 @@ while [ $# -gt 0 ]; do
             else
                 eval $ENUMERATOR --show-all-configs ; exit $?
             fi
+            ;;
+        status)
+            # TODO: Add info about service units
+            echo "NOTE: Action '$1' is not implemented via services currently, will call upsdrvctl" >&2
+            RES=0
+            @SBINDIR@/upsdrvctl status $2 || RES=$?
+            exit $RES
             ;;
         start|stop)
             ACTION="$1"

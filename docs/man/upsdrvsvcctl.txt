@@ -127,6 +127,11 @@ by using the 'maxretry' and 'retrydelay' options - see linkman:ups.conf[5].
 *stop*::
 Stop the UPS driver(s).
 
+*status*::
+Query run-time status of all configured devices (or one specified device).
+Currently defers work to linkman:upsdrvctl[8], and does not report service
+unit information.
+
 *upsdrvsvcctl* also supports further operations for troubleshooting the
 mapping of NUT driver section names to the service instance names (which
 may differ due to limitations of various systems).
