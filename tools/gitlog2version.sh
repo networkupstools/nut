@@ -109,7 +109,25 @@ fi
 getver_git() {
     # NOTE: The chosen trunk branch must be up to date (may be "origin/master"
     # or "upstream/master", etc.) for resulting version discovery to make sense.
-    [ x"${NUT_VERSION_GIT_TRUNK-}" != x ] || NUT_VERSION_GIT_TRUNK=master
+    if [ x"${NUT_VERSION_GIT_TRUNK-}" = x ] ; then
+        # Find the newest info, it may be in a fetched branch
+        # not yet checked out locally (or long not updated)
+        for T in master `git branch -a 2>/dev/null | grep -E '^ *remotes/[^ ]*/master$'` origin/master upstream/master ; do
+            git log -1 "$T" 2>/dev/null >/dev/null || continue
+            if [ x"${NUT_VERSION_GIT_TRUNK-}" = x ] ; then
+                NUT_VERSION_GIT_TRUNK="$T"
+            else
+                # T is strictly same or newer
+                # Assume no deviations from the one true path in a master branch
+                git merge-base --is-ancestor "${NUT_VERSION_GIT_TRUNK}" "${T}" 2>/dev/null >/dev/null \
+                && NUT_VERSION_GIT_TRUNK="$T"
+            fi
+        done
+        if [ x"${NUT_VERSION_GIT_TRUNK-}" = x ] ; then
+            echo "$0: FAILED to discover a NUT_VERSION_GIT_TRUNK in this workspace" >&2
+            return 1
+        fi
+    fi
 
     # By default, only annotated tags are considered
     ALL_TAGS_ARG=""
@@ -203,7 +221,7 @@ getver_default() {
 
 report_debug() {
     # Debug
-    echo "DESC='${DESC}' => TAG='${TAG}' + SUFFIX='${SUFFIX}'; BASE='${BASE}' => VER5='${VER5}' => VER50='${VER50}' => DESC50='${DESC50}'" >&2
+    echo "TRUNK='${NUT_VERSION_GIT_TRUNK-}'; BASE='${BASE}'; DESC='${DESC}' => TAG='${TAG}' + SUFFIX='${SUFFIX}' => VER5='${VER5}' => VER50='${VER50}' => DESC50='${DESC50}'" >&2
 }
 
 report_output() {
