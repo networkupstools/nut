@@ -9,11 +9,16 @@
 #
 # IMPORTANT NOTES:
 #  This file is intended to be sourced by standard POSIX shell scripts
-#  (so there is no guaranteed `export VAR=VAL` syntax) and additionally
-#  by systemd on Linux (no guaranteed expansion of variables).
+#  (so there is no guaranteed `export VAR=VAL` syntax, while you may need
+#  to `export VAR` when sourcing it into init-scripts, for propagation to
+#  NUT programs eventually), and additionally by systemd on Linux (with no
+#  guaranteed expansion of variables -- only verbatim assignments).
+#
 #  You MUST NOT use spaces around the equal sign!
+#
 #  Practical support for this file and its settings currently varies between
 #  various OS packages and NUT sample scripts, but should converge over time.
+#
 #  Contents of this file should be pure ASCII (character codes not in range
 #  would be ignored with a warning message).
 #
