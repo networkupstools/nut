@@ -817,24 +817,111 @@ static void status_driver(const ups_t *ups)
 	 * the driver name, serial, etc. or even current life-cycle status
 	 * (e.g. valid PID existence, data query via socket protocol...)
 	 */
-	char	pidfn[SMALLBUF];
-	int	cmdret, nsdl = nut_upsdrvquery_debug_level;
+	char	pidfn[SMALLBUF], bufPid[LARGEBUF], *pidStrFromSocket = NULL, bufStatus[LARGEBUF], *statusStrFromSocket = NULL;
+	int	cmdret = -1, qretPing = -1, qretPid = -1, qretStatus = -1, nsdl = nut_upsdrvquery_debug_level;
+	pid_t	pidFromFile = -1;
+	struct timeval	tv;
+	udq_pipe_conn_t	*conn;
 
-	/* TODO: Hush the fopen(pidfile) message but let "real errors" be seen,
-	 * but currently our probe is limited to checking the PID file to gauge
-	 * running processes */
-	/* nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_KILL_SIG0PING - 1; */
+	if (!ups) {
+		upsdebugx(1, "%s: skip due to ups==null", __func__);
+		return;
+	}
+
+	/* Hush the fopen(pidfile) message but let "real errors" be seen */
+	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_KILL_SIG0PING - 1;
 #ifndef WIN32
 	snprintf(pidfn, sizeof(pidfn), "%s/%s-%s.pid", altpidpath(), ups->driver, ups->upsname);
-	cmdret = sendsignalfn(pidfn, 0, ups->driver, 1);
+	pidFromFile = parsepidfile(pidfn);
+	if (pidFromFile >= 0) {                                                                                                                                                                                                                       /* this method actively reports errors, if any */
+		cmdret = sendsignalpid(pidFromFile, 0, ups->driver, 1);
+	}
 #else
 	snprintf(pidfn, sizeof(pidfn), "%s-%s", ups->driver, ups->upsname);
 	cmdret = sendsignal(pidfn, 0, 1);
 #endif
 
-	printf("%s\t%s\t%s\n",
+	conn = upsdrvquery_connect_drvname_upsname(ups->driver, ups->upsname);
+
+	if (conn && VALID_FD(conn->sockfd)) {
+		/* Post the query and wait for reply */
+		/* FIXME: coordinate with pollfreq? */
+		tv.tv_sec = 3;
+		tv.tv_usec = 0;
+
+		memset(bufPid, 0, sizeof(bufPid));
+
+		/* Involves a PING/PONG check, and more;
+		 * returns -1 on error */
+		qretPing = upsdrvquery_prepare(conn, tv);
+
+		if (qretPing >= 0) {
+			qretPing = STAT_INSTCMD_HANDLED;
+
+			/* No TRACKING in queries below */
+			memset(bufPid, 0, sizeof(bufPid));
+
+			if (upsdrvquery_write(conn, "GETPID\n") >= 0
+			&&  (qretPid = upsdrvquery_read_timeout(conn, tv)) >= 1
+			&&  conn->buf
+			&&  (!strncmp(conn->buf, "PID ", 4))
+			) {
+				size_t	l;
+				snprintf(bufPid, sizeof(bufPid), "%s", conn->buf + 4);
+				l = strlen(bufPid);
+				pidStrFromSocket = bufPid;
+				if (bufPid[l - 1] == '\n')
+					bufPid[l - 1] = '\0';
+				qretPid = STAT_INSTCMD_HANDLED;
+			} else {
+				/* query failed or returned not a PID<something> */
+				qretPid = -1;
+			}
+		}
+
+		if (qretPid == STAT_INSTCMD_HANDLED) {
+			memset(bufStatus, 0, sizeof(bufStatus));
+
+			if (upsdrvquery_write(conn, "DUMPSTATUS\n") >= 0
+			&&  (qretStatus = upsdrvquery_read_timeout(conn, tv)) >= 1
+			&&  conn->buf
+			) {
+				char	*buf;
+
+				/* save before strtok mangles it */
+				snprintf(bufStatus, sizeof(bufStatus), "%s", conn->buf);
+
+				for (buf = strtok(bufStatus, "\n"); buf; buf = strtok(NULL, "\n")) {
+					if (statusStrFromSocket) {
+						/* New loop, NUL byte was set if needed */
+						break;
+					}
+
+					if (!strncmp(buf, "SETINFO ups.status ", 19)) {
+						statusStrFromSocket = buf + 19;
+						qretStatus = STAT_INSTCMD_HANDLED;
+						/* continue to loop, to clear '\n' to '\0' */
+					}
+
+					if (!strncmp(buf, "DUMPDONE\n", 9)) {
+						/* New loop, NUL byte was set if needed */
+						break;
+					}
+				}
+			} else {
+				/* query failed or did not return SETINFO ups.status ... */
+				qretStatus = -1;
+			}
+		}
+	}
+
+	printf("%s\t%s\t%s\t%" PRIiMAX "\t%s\t%s\t%s\n",
 		ups->upsname, ups->driver,
-		cmdret ? "STOPPED" : "RUNNING"
+		(pidFromFile < 0 ? "N/A" : (cmdret ? "STOPPED" : "RUNNING")),
+		(intmax_t)(pidFromFile),
+		((qretPing == STAT_INSTCMD_HANDLED) ? "RESPONSIVE" : "NOT_RESPONSIVE"),
+		(pidStrFromSocket ? pidStrFromSocket : "N/A"),
+		((qretStatus == STAT_INSTCMD_HANDLED) ? NUT_STRARG(statusStrFromSocket) : "")
 		);
 
 	nut_upsdrvquery_debug_level = nsdl;
@@ -1052,6 +1139,8 @@ static void help(const char *arg_progname)
 	printf("  shutdown <ups>	only shutdown UPS <ups>\n");
 	printf("  status		query status for all UPS drivers in ups.conf\n");
 	printf("  status <ups>		only query status for driver for UPS <ups>\n");
+	printf("              		Fields: UPSNAME UPSDRV PF_RUNNING PF_PID S_RESPONSIVE S_PID S_STATUS\n");
+	printf("              		(PF_* = according to PID file, if any; S_* = via socket protocol)\n");
 
 	exit(EXIT_SUCCESS);
 }
