@@ -817,6 +817,7 @@ static void status_driver(const ups_t *ups)
 	 * the driver name, serial, etc. or even current life-cycle status
 	 * (e.g. valid PID existence, data query via socket protocol...)
 	 */
+	static int	headerShown = 0;
 	char	pidfn[SMALLBUF], bufPid[LARGEBUF], *pidStrFromSocket = NULL, bufStatus[LARGEBUF], *statusStrFromSocket = NULL;
 	int	cmdret = -1, qretPing = -1, qretPid = -1, qretStatus = -1, nsdl = nut_upsdrvquery_debug_level;
 	pid_t	pidFromFile = -1;
@@ -917,6 +918,19 @@ static void status_driver(const ups_t *ups)
 	if (conn) {
 		free(conn);
 		conn = NULL;
+	}
+
+	if (!headerShown) {
+		printf("%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+			"UPSNAME",
+			"UPSDRV",
+			"PF_RUNNING",
+			"PF_PID",
+			"S_RESPONSIVE",
+			"S_PID",
+			"S_STATUS"
+			);
+		headerShown = 1;
 	}
 
 	printf("%s\t%s\t%s\t%" PRIiMAX "\t%s\t%s\t%s\n",

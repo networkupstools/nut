@@ -139,7 +139,14 @@ environment variable (exported by caller and empty or "true").
 *status*::
 Similar to `list`, but reports more information -- also the driver name, the
 PID if it is running, and result of a signal probe to check it is responding.
+The `NUT_QUIET_INIT_BANNER` suppression can be helpful for scripted parsing.
+If there is anything to print (at least one device is known), the first line
+of status report would be the heading with column names:
 
+	:; NUT_QUIET_INIT_BANNER=true upsdrvctl status
+	UPSNAME UPSDRV  PF_RUNNING      PF_PID  S_RESPONSIVE    S_PID   S_STATUS
+	dummy   dummy-ups       N/A     -3      NOT_RESPONSIVE  N/A
+	eco650  usbhid-ups      RUNNING 3559207 RESPONSIVE      3559207 "OL"
 	UPS2    dummy-ups       RUNNING 31455   RESPONSIVE      31455   "OL BOOST"
 
 Values are TAB-separated. Any complex string values would be encased in
