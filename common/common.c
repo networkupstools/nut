@@ -189,6 +189,26 @@ int syslog_is_disabled(void)
 	return value;
 }
 
+int banner_is_disabled(void)
+{
+	static int value = -1;
+
+	if (value < 0) {
+		char *s = getenv("NUT_QUIET_INIT_BANNER");
+		/* Envvar present and empty or true-ish means NUT tool name+version
+		 * banners disabled by the setting: default is enabled (inversed per
+		 * method name) */
+		value = 0;
+		if (s) {
+			if (*s == '\0' || !strcasecmp(s, "true") || strcmp(s, "1")) {
+				value = 1;
+			}
+		}
+	}
+
+	return value;
+}
+
 /* enable writing upslog_with_errno() and upslogx() type messages to
    the syslog */
 void syslogbit_set(void)
@@ -1411,17 +1431,15 @@ pid_t parsepid(const char *buf)
 	return pid;
 }
 
-/* open pidfn, get the pid, then send it sig
+/* open pidfn, get the pid;
  * returns negative codes for errors, or
- * zero for a successfully sent signal
+ * zero for a successfully discovered value
  */
-#ifndef WIN32
-int sendsignalfn(const char *pidfn, int sig, const char *progname, int check_current_progname)
+pid_t parsepidfile(const char *pidfn)
 {
 	char	buf[SMALLBUF];
 	FILE	*pidf;
 	pid_t	pid = -1;
-	int	ret = -1;
 
 	pidf = fopen(pidfn, "r");
 	if (!pidf) {
@@ -1441,7 +1459,9 @@ int sendsignalfn(const char *pidfn, int sig, const char *progname, int check_cur
 		fclose(pidf);
 		return -2;
 	}
-	/* TOTHINK: Original code only closed pidf before
+
+	/* TOTHINK: Original sendsignalfn code (which this
+	 * was extracted from) only closed pidf before
 	 * exiting the method, on error or "normally".
 	 * Why not here? Do we want an (exclusive?) hold
 	 * on it while being active in the method?
@@ -1450,12 +1470,26 @@ int sendsignalfn(const char *pidfn, int sig, const char *progname, int check_cur
 	/* this method actively reports errors, if any */
 	pid = parsepid(buf);
 
+	fclose(pidf);
+
+	return pid;
+}
+
+/* open pidfn, get the pid, then send it sig
+ * returns negative codes for errors, or
+ * zero for a successfully sent signal
+ */
+#ifndef WIN32
+int sendsignalfn(const char *pidfn, int sig, const char *progname, int check_current_progname)
+{
+	int	ret = -1;
+	pid_t	pid = parsepidfile(pidfn);
+
 	if (pid >= 0) {
 		/* this method actively reports errors, if any */
 		ret = sendsignalpid(pid, sig, progname, check_current_progname);
 	}
 
-	fclose(pidf);
 	return ret;
 }
 

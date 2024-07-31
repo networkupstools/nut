@@ -2908,8 +2908,10 @@ int main(int argc, char *argv[])
 	}
 #endif
 
-	printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
-	fflush(stdout);
+	if (!banner_is_disabled()) {
+		printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
+		fflush(stdout);
+	}
 
 	/* if no configuration file is specified on the command line, use default */
 	configfile = xmalloc(SMALLBUF);

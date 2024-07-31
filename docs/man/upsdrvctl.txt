@@ -11,7 +11,9 @@ SYNOPSIS
 
 *upsdrvctl* -h
 
-*upsdrvctl* ['OPTIONS'] {start | stop | shutdown} ['ups']
+*upsdrvctl* ['OPTIONS'] {start | stop | shutdown | status} ['ups']
+
+*upsdrvctl* ['OPTIONS'] {list | -l} ['ups']
 
 *upsdrvctl* ['OPTIONS'] -c COMMAND ['ups']
 
@@ -81,6 +83,9 @@ this mode (not saved by default when staying in foreground).
 Drivers will run in the background, regardless of debugging settings,
 as set by *-D* and passed-through by *-d* options.
 
+*-l*::
+Alias for `list` command.
+
 COMMANDS
 --------
 
@@ -117,6 +122,55 @@ to lose power.
 NOTE: refer to linkman:ups.conf[5] for using the *nowait* parameter.
 It can be overridden by `NUT_IGNORE_NOWAIT` environment variable
 (e.g. used to work around certain issues with systemd otherwise).
+
+*list*::
+Without a further argument, report all currently known device configuration
+names to `stdout`, one per line. With an argument, also try to report that
+name, but exit with an error code if that name is not known.
+
+NOTE: The tool would exit with an error if `ups.conf` file is not found,
+readable, or does not define any device sections (whose names are reported
+here and managed in other commands).
+
+NOTE: The tool name and NUT version banner line is also printed to `stdout`
+before any other processing. This can be suppressed by `NUT_QUIET_INIT_BANNER`
+environment variable (exported by caller and empty or "true").
+
+*status*::
+Similar to `list`, but reports more information -- also the driver name, the
+PID if it is running, and result of a signal probe to check it is responding.
+The `NUT_QUIET_INIT_BANNER` suppression can be helpful for scripted parsing.
+If there is anything to print (at least one device is known), the first line
+of status report would be the heading with column names:
+
+	:; NUT_QUIET_INIT_BANNER=true upsdrvctl status
+	UPSNAME UPSDRV  PF_RUNNING      PF_PID  S_RESPONSIVE    S_PID   S_STATUS
+	dummy   dummy-ups       N/A     -3      NOT_RESPONSIVE  N/A
+	eco650  usbhid-ups      RUNNING 3559207 RESPONSIVE      3559207 "OL"
+	UPS2    dummy-ups       RUNNING 31455   RESPONSIVE      31455   "OL BOOST"
+
+Values are TAB-separated. Any complex string values would be encased in
+double-quotes.
+
+Fields reported (`PF_*` = according to PID file, if any; `S_*` = via socket
+protocol):
+
+        *UPSNAME*;;      driver section configuration name
+        *UPSDRV*;;       driver program name per `ups.conf`
+        *PF_RUNNING*;;   `RUNNING` if `PF_PID` is valid (PID file existed,
+                         PID was parsed out of it and found running, program
+                         name corresponds to driver, etc.); `STOPPED` if PID
+                         was parsed but not running or has a wrong program
+                         name; "N/A" if failed to parse it or no PID file
+        *PF_PID*;;       PID of driver according to PID file (if any), or some
+                         negative values upon errors (as defined in `common.c`)
+        *S_RESPONSIVE*;; `RESPONSIVE` if `PING`/`PONG` during socket protocol
+                         session setup succeeded; `NOT_RESPONSIVE` otherwise
+        *S_PID*;;        PID of driver according to `GETPID` active query
+        *S_STATUS*;;     Value of `ups.status` variable
+
+This mode does not discover drivers that are not in `ups.conf` (e.g. started
+manually for experiments with many `-x` CLI options).
 
 *-c* 'command'::
 Send 'command' to the background process as a signal.  Valid commands
