@@ -295,15 +295,22 @@ pid_t get_max_pid_t(void);
  * -1 for error, or zero for a successfully sent signal */
 int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_progname);
 
-/* open <pidfn>, get the pid, then send it <sig>
+/* open <pidfn> and get the pid
+ * returns zero or more for successfully retrieved value,
+ * negative for errors:
+ * -3   PID file not found
+ * -2   PID file not parsable
+ */
+pid_t parsepidfile(const char *pidfn);
+
+#ifndef WIN32
+/* use parsepidfile() to get the pid, then send it <sig>
  * returns zero for successfully sent signal,
  * negative for errors:
  * -3   PID file not found
  * -2   PID file not parsable
  * -1   Error sending signal
- */
-#ifndef WIN32
-/* open <pidfn>, get the pid, then send it <sig>
+ *
  * if executable process with that pid has suitable progname
  * (specified or that of the current process, depending on args:
  * most daemons request to check_current_progname for their other
