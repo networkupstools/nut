@@ -142,6 +142,9 @@ PID if it is running, and result of a signal probe to check it is responding.
 
 	UPS2    dummy-ups       RUNNING 31455   RESPONSIVE      31455   "OL BOOST"
 
+Values are TAB-separated. Any complex string values would be encased in
+double-quotes.
+
 Fields reported (`PF_*` = according to PID file, if any; `S_*` = via socket
 protocol):
 
@@ -158,8 +161,6 @@ protocol):
                          session setup succeeded; `NOT_RESPONSIVE` otherwise
         *S_PID*;;        PID of driver according to `GETPID` active query
         *S_STATUS*;;     Value of `ups.status` variable
-
-Any complex string values would be encased in double-quotes.
 
 This mode does not discover drivers that are not in `ups.conf` (e.g. started
 manually for experiments with many `-x` CLI options).
