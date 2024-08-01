@@ -161,16 +161,18 @@ while [ $# -gt 0 ]; do
             # Use a common approach below, even if we only got one instance name from list()
             if [ -n "$2" ] && [ -n "${SVCINSTS}" ] ; then SVCINSTS="${SVCINSTS}	$2" ; fi
 
+            # Accomodate svc:/system/power/nut-driver:dummy (SMF)
+            # or         nut-driver@dummy.service           (systemd)
             case "$SERVICE_FRAMEWORK" in
-                smf) SVC_STATE_WIDTH="11" ;;
-                systemd) SVC_STATE_WIDTH="23" ;;
+                smf) SVC_NAME_WIDTH="39" ; SVC_STATE_WIDTH="11" ;;
+                systemd) SVC_NAME_WIDTH="30" ; SVC_STATE_WIDTH="23" ;;
             esac
 
             echo "$STATUSES" | ( COUNT=0; while IFS='' read LINE ; do
                 COUNT="`expr $COUNT + 1`"
                 if [ "$COUNT" = 1 ] ; then
                     # Header line
-                    printf '%-30s\t%'"${SVC_STATE_WIDTH}"'s\t%s\n' "SVC_NAME" "SVC_STATE" "$LINE"
+                    printf '%-'"${SVC_NAME_WIDTH}"'s\t%'"${SVC_STATE_WIDTH}"'s\t%s\n' "SVC_NAME" "SVC_STATE" "$LINE"
                     continue
                 fi
                 DEV_NAME="`echo "$LINE" | awk '{print $1}'`"
@@ -224,7 +226,7 @@ while [ $# -gt 0 ]; do
                             ;;
                     esac
                 fi
-                printf '%-30s\t%'"${SVC_STATE_WIDTH}"'s\t%s\n' "$SVC_NAME" "$SVC_STATE" "$LINE"
+                printf '%-'"${SVC_NAME_WIDTH}"'s\t%'"${SVC_STATE_WIDTH}"'s\t%s\n' "$SVC_NAME" "$SVC_STATE" "$LINE"
             done )
             exit $RES
             ;;
