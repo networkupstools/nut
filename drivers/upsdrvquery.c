@@ -180,6 +180,20 @@ void upsdrvquery_close(udq_pipe_conn_t *conn) {
 	if (!conn)
 		return;
 
+	if (VALID_FD(conn->sockfd)) {
+		int	nudl = nut_upsdrvquery_debug_level;
+		ssize_t ret;
+		upsdebugx(5, "%s: closing driver socket, try to say goodbye", __func__);
+		ret = upsdrvquery_write(conn, "LOGOUT\n");
+		if (7 <= ret) {
+			upsdebugx(5, "%s: okay", __func__);
+			usleep(1000000);
+		} else {
+			upsdebugx(5, "%s: must have been closed on the other side", __func__);
+		}
+		nut_upsdrvquery_debug_level = nudl;
+	}
+
 #ifndef WIN32
 	if (VALID_FD(conn->sockfd))
 		close(conn->sockfd);
