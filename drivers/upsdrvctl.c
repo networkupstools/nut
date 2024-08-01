@@ -820,10 +820,11 @@ static void status_driver(const ups_t *ups)
 	static int	headerShown = 0;
 #ifndef WIN32
 	char	pidfn[SMALLBUF];
+	int	cmdret = -1;
 #endif
 	char	bufPid[LARGEBUF], *pidStrFromSocket = NULL,
 		bufStatus[LARGEBUF], *statusStrFromSocket = NULL;
-	int	cmdret = -1,
+	int	pidAlive = -1,
 		qretPing = -1, qretPid = -1, qretStatus = -1,
 		nudl = nut_upsdrvquery_debug_level,
 		nsdl = nut_sendsignal_debug_level;
@@ -843,9 +844,12 @@ static void status_driver(const ups_t *ups)
 	pidFromFile = parsepidfile(pidfn);
 	if (pidFromFile >= 0) {                                                                                                                                                                                                                       /* this method actively reports errors, if any */
 		cmdret = sendsignalpid(pidFromFile, 0, ups->driver, 1);
+		/* returns zero for a successfully sent signal */
+		if (cmdret == 0)
+			pidAlive = 1;
 	}
-	upsdebugx(4, "%s: pidfn=%s pidFromFile=%" PRIiMAX " cmdret=%d",
-		__func__, pidfn, (intmax_t)pidFromFile, cmdret);
+	upsdebugx(4, "%s: pidfn=%s pidFromFile=%" PRIiMAX " cmdret=%d pidAlive=%d",
+		__func__, pidfn, (intmax_t)pidFromFile, cmdret, pidAlive);
 #else
 /*	// FIXME: We actually have no probing signals over pipe so far,
 	// and sending 0 (NULL here) is proven unsafe
@@ -961,16 +965,18 @@ static void status_driver(const ups_t *ups)
 			"from Socket Protocol; check if it is alive instead",
 			__func__);
 
-		cmdret = checkprocname(pidFromSocket, ups->driver);
-	} else if (cmdret < 0 && pidFromSocket >= 0 && (pidFromFile != pidFromSocket)) {
+		pidAlive = checkprocname(pidFromSocket, ups->driver);
+		upsdebugx(4, "%s: pidFromSocket=%" PRIiMAX " pidAlive=%d",
+			__func__, (intmax_t)pidFromSocket, pidAlive);
+	} else if (pidAlive < 0 && pidFromSocket >= 0 && (pidFromFile != pidFromSocket)) {
 		upsdebugx(3, "%s: PID value was available from a file, but was "
 			"not found running or valid; another one is available "
 			"from Socket Protocol; check if it is alive instead",
 			__func__);
 
-		cmdret = checkprocname(pidFromSocket, ups->driver);
-		upsdebugx(4, "%s: pidFromSocket=%" PRIiMAX " cmdret=%d",
-			__func__, (intmax_t)pidFromSocket, cmdret);
+		pidAlive = checkprocname(pidFromSocket, ups->driver);
+		upsdebugx(4, "%s: pidFromSocket=%" PRIiMAX " pidAlive=%d",
+			__func__, (intmax_t)pidFromSocket, pidAlive);
 	}
 
 	/* Complete any cached (error) writes before the next lines,
@@ -992,10 +998,18 @@ static void status_driver(const ups_t *ups)
 		headerShown = 1;
 	}
 
+	upsdebugx(2, "%s: raw values: pidAlive=%d "
+		"pidFromFile=%" PRIiMAX " pidFromSocket=%" PRIiMAX " "
+		"qretPing=%d qretPid=%d qretStatus=%d",
+		__func__, pidAlive,
+		(intmax_t)(pidFromFile), (intmax_t)(pidFromSocket),
+		qretPing, qretPid, qretStatus
+		);
+
 	printf("%-11s\t%11s\t%s\t%" PRIiMAX "\t%s\t%s\t%s\n",
 		ups->upsname, ups->driver,
-		((pidFromFile < 0 && pidFromSocket < 0) || (cmdret < 0)
-		 ? "N/A" : (cmdret > 0 ? "RUNNING" : "STOPPED")),
+		((pidFromFile < 0 && pidFromSocket < 0) || (pidAlive < 0)
+		 ? "N/A" : (pidAlive > 0 ? "RUNNING" : "STOPPED")),
 		(intmax_t)(pidFromFile),
 		((qretPing == STAT_INSTCMD_HANDLED) ? "RESPONSIVE" : "NOT_RESPONSIVE"),
 		(pidStrFromSocket ? pidStrFromSocket : "N/A"),
