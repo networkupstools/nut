@@ -576,6 +576,7 @@ static void sock_connect(TYPE_FD sock)
 
 	conn->nobroadcast = 0;
 	conn->readzero = 0;
+	conn->closing = 0;
 	pconf_init(&conn->ctx, NULL);
 
 	if (connhead) {
@@ -709,14 +710,15 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 	if (!strcasecmp(arg[0], "LOGOUT")) {
 		send_to_one(conn, "OK Goodbye\n");
 #ifndef WIN32
-		upsdebugx(2, "%s: received LOGOUT on socket %d, disconnecting", __func__, (int)conn->fd);
+		upsdebugx(2, "%s: received LOGOUT on socket %d, will be disconnecting", __func__, (int)conn->fd);
 #else
-		upsdebugx(2, "%s: received LOGOUT on handle %p, disconnecting", __func__, conn->fd);
+		upsdebugx(2, "%s: received LOGOUT on handle %p, will be disconnecting", __func__, conn->fd);
 #endif
 		/* Let the system flush the reply somehow (or the other
 		 * side to just see it) before we drop the pipe */
 		usleep(1000000);
-		sock_disconnect(conn);
+		/* err on the safe side, and actually close/free conn separately */
+		conn->closing = 1;
 		upsdebugx(4, "%s: LOGOUT processing finished", __func__);
 		return 2;
 	}
@@ -1011,7 +1013,8 @@ static void sock_read(conn_t *conn)
 				}
 			} else if (ret_arg == 2) {
 				/* closed by LOGOUT processing, conn is free()'d */
-				upsdebugx(1, "%s: returning early, socket is not valid anymore", __func__);
+				if (i < ret)
+					upsdebugx(1, "%s: returning early, socket may be not valid anymore", __func__);
 				return;
 			}
 
@@ -1105,13 +1108,12 @@ int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
 {
 	int	maxfd = 0; /* Unidiomatic use vs. "sockfd" below, which is "int" on non-WIN32 */
 	int	overrun = 0;
-	conn_t	*conn;
+	conn_t	*conn, *cnext;
 	struct timeval	now;
 
 #ifndef WIN32
 	int	ret;
 	fd_set	rfds;
-	conn_t	*cnext;
 
 	FD_ZERO(&rfds);
 	FD_SET(sockfd, &rfds);
@@ -1181,8 +1183,14 @@ int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
 
 		if (FD_ISSET(conn->fd, &rfds)) {
 			sock_read(conn);
-			/* Note: do not use "conn" after loop,
-			 * it may be freed by LOGOUT */
+		}
+	}
+
+	for (conn = connhead; conn; conn = cnext) {
+		cnext = conn->next;
+
+		if (conn->closing) {
+			sock_disconnect(conn);
 		}
 	}
 
@@ -1264,8 +1272,14 @@ int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
 	else {
 		if (conn != NULL) {
 			sock_read(conn);
-			/* Note: do not use "conn" after this,
-			 * it may be freed by LOGOUT */
+		}
+	}
+
+	for (conn = connhead; conn; conn = cnext) {
+		cnext = conn->next;
+
+		if (conn->closing) {
+			sock_disconnect(conn);
 		}
 	}
 
