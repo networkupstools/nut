@@ -162,6 +162,14 @@ This is sent in response to a PING from the server.  It is only used as
 a sanity check to make sure that the driver has not gotten stuck
 somewhere.
 
+OK
+~~
+
+	OK Goodbye
+
+This is sent in response to a LOGOUT from the server (or more likely from
+a sibling driver or `upsdrvctl` program).
+
 DATAOK
 ~~~~~~
 
@@ -311,6 +319,17 @@ enables that -- unless disabled by providing an optional zero or negative
 numeric argument. Note that initial default is to receive everything, so
 this command may be useful for connections that disabled broadcasts at
 some point.
+
+LOGOUT
+~~~~~~
+
+Primarily used by communications between driver processes and/or `upsdrvctl`,
+this command allows clients to gracefully close connection to the NUT driver
+which acts as the server on the socket/pipe, avoiding noisy logs about sudden
+disconnection.
+
+	LOGOUT
+	OK Goodbye
 
 Design notes
 ------------
