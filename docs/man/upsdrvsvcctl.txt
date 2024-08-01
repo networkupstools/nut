@@ -61,7 +61,13 @@ OPTIONS
 -------
 
 *-h*::
-Display the help text.
+Display the help text, including the built-in version of the script.
+
+*-V*::
+Display the version of NUT binaries (calling *upsdrvctl -V*), which
+normally should not differ much from the built-in version of the script
+shown in help. But with custom builds everything is possible, so it may
+be useful to know.
 
 *-t*::
 Enable testing mode. Testing mode makes upsdrvsvcctl display the actions
