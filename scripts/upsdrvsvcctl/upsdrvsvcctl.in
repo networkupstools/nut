@@ -36,19 +36,18 @@ CMDARG=""
 # Note: some frameworks separate the commands for acting and for reporting
 CMDREPORT=""
 CMDREPORTARG=""
-ENUMERATOR=""
 case "$SERVICE_FRAMEWORK" in
     smf) CMD="/usr/sbin/svcadm"
         CMDREPORT="/usr/bin/svcs"
-        ENUMERATOR="@NUT_LIBEXECDIR@/nut-driver-enumerator.sh"
+        [ -n "${ENUMERATOR-}" ] && export ENUMERATOR || ENUMERATOR="@NUT_LIBEXECDIR@/nut-driver-enumerator.sh"
         ;;
     systemd) CMD="/bin/systemctl"
         CMDREPORT="${CMD}"
-        ENUMERATOR="@NUT_LIBEXECDIR@/nut-driver-enumerator.sh"
+        [ -n "${ENUMERATOR-}" ] && export ENUMERATOR || ENUMERATOR="@NUT_LIBEXECDIR@/nut-driver-enumerator.sh"
         ;;
     *)  echo "Unrecognized SERVICE_FRAMEWORK: $SERVICE_FRAMEWORK" >&2 ; exit ;;
 esac
-UPSDRVCTL='@SBINDIR@/upsdrvctl'
+[ -n "${UPSDRVCTL-}" ] && export UPSDRVCTL || UPSDRVCTL='@SBINDIR@/upsdrvctl'
 PACKAGE_VERSION='@PACKAGE_VERSION@'
 
 usage() {
