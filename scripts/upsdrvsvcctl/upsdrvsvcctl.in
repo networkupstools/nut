@@ -43,7 +43,7 @@ case "$SERVICE_FRAMEWORK" in
         ;;
     *)  echo "Unrecognized SERVICE_FRAMEWORK: $SERVICE_FRAMEWORK" >&2 ; exit ;;
 esac
-
+UPSDRVCTL='@SBINDIR@/upsdrvctl'
 
 usage() {
     # Note: version header differs from UPS_VERSION in binaries that
@@ -148,7 +148,7 @@ while [ $# -gt 0 ]; do
             # TODO: Add info about service units
             echo "NOTE: Action '$1' is not implemented via services currently, will call upsdrvctl" >&2
             RES=0
-            @SBINDIR@/upsdrvctl status $2 || RES=$?
+            "${UPSDRVCTL}" status $2 || RES=$?
             exit $RES
             ;;
         start|stop)
@@ -163,7 +163,7 @@ while [ $# -gt 0 ]; do
             echo "Stopping the driver service instance(s) to release exclusive resources, if any..." >&2
             RES=0
             $0 stop $2
-            @SBINDIR@/upsdrvctl shutdown $2 || RES=$?
+            "${UPSDRVCTL}" shutdown $2 || RES=$?
             echo "Starting the driver service instance(s) so they can reconnect when the UPS returns..." >&2
             $0 start $2
             exit $RES
