@@ -149,30 +149,38 @@ If there is anything to print (at least one device is known), the first line
 of status report would be the heading with column names:
 
 	:; NUT_QUIET_INIT_BANNER=true upsdrvctl status
-	UPSNAME UPSDRV  PF_RUNNING      PF_PID  S_RESPONSIVE    S_PID   S_STATUS
-	dummy   dummy-ups       N/A     -3      NOT_RESPONSIVE  N/A
-	eco650  usbhid-ups      RUNNING 3559207 RESPONSIVE      3559207 "OL"
-	UPS2    dummy-ups       RUNNING 31455   RESPONSIVE      31455   "OL BOOST"
+	UPSNAME              UPSDRV  RUNNING PF_PID  S_RESPONSIVE    S_PID   S_STATUS
+	dummy             dummy-ups  N/A     -3      NOT_RESPONSIVE  N/A
+	eco650           usbhid-ups  RUNNING 3559207 RESPONSIVE      3559207 "OL"
+	UPS2              dummy-ups  RUNNING 31455   RESPONSIVE      31455   "OL BOOST"
 
-Values are TAB-separated. Any complex string values would be encased in
-double-quotes.
+Values are TAB-separated, but UPSNAME and UPSDRV may be padded by spaces
+on the right and on the left respectively. Any complex string values would
+be encased in double-quotes.
 
 Fields reported (`PF_*` = according to PID file, if any; `S_*` = via socket
 protocol):
 
         *UPSNAME*;;      driver section configuration name
         *UPSDRV*;;       driver program name per `ups.conf`
-        *PF_RUNNING*;;   `RUNNING` if `PF_PID` is valid (PID file existed,
-                         PID was parsed out of it and found running, program
-                         name corresponds to driver, etc.); `STOPPED` if PID
-                         was parsed but not running or has a wrong program
-                         name; "N/A" if failed to parse it or no PID file
+        *RUNNING*;;      `RUNNING` if `PF_PID` or `S_PID` is valid,
+                         `STOPPED` if at least one PID value was parsed but
+                         none was found running with a correct program name;
+                         `N/A` if no PID file/socket reply or failed to parse.
+                         First the PID file is consulted, but it may be absent
+                         either due to command-line parameters of daemons, or
+                         due to platform (WIN32). If no PID value was found and
+                         confirmed this way, we fall back to checking the PID
+                         reported via protocol (if available and different).
         *PF_PID*;;       PID of driver according to PID file (if any), or some
                          negative values upon errors (as defined in `common.c`)
+                         including an absent PID file, invalid contents, or
+                         unsupported platform for this mechanism (e.g. WIN32)
         *S_RESPONSIVE*;; `RESPONSIVE` if `PING`/`PONG` during socket protocol
                          session setup succeeded; `NOT_RESPONSIVE` otherwise
-        *S_PID*;;        PID of driver according to `GETPID` active query
-        *S_STATUS*;;     Value of `ups.status` variable
+        *S_PID*;;        PID of driver according to `GETPID` active query,
+                         or `N/A` if the query failed
+        *S_STATUS*;;     Quoted value of `ups.status` variable
 
 This mode does not discover drivers that are not in `ups.conf` (e.g. started
 manually for experiments with many `-x` CLI options).
