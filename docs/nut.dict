@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3201 utf-8
+personal_ws-1.1 en 3205 utf-8
 AAC
 AAS
 ABI
@@ -263,6 +263,8 @@ DTE
 DTrace
 DUMPALL
 DUMPDONE
+DUMPSTATUS
+DUMPVALUE
 DWAKE
 DWITH
 DX
@@ -393,6 +395,7 @@ GC
 GCCVER
 GES
 GETADDRINFO
+GETPID
 GID
 GND
 GNUmakefile
@@ -1176,6 +1179,7 @@ Stanislav
 StatePath
 Stefano
 Stimits
+StrangeOS
 SuSE
 Suatoni
 Sublicensing

@@ -1766,7 +1766,9 @@ int main(int argc, char **argv)
 
 	open_syslog(progname);
 
-	upsdrv_banner();
+	if (!banner_is_disabled()) {
+		upsdrv_banner();
+	}
 
 	if (upsdrv_info.status == DRV_EXPERIMENTAL) {
 		printf("Warning: This is an experimental driver.\n");

@@ -100,6 +100,16 @@ Changes from 2.8.2 to 2.8.3
   Also the NUT daemons should request to double-check against their
   run-time process name (if it can be detected). [issue #2463]
 
+- More environment variable support was added to NUT programs, primarily
+  aimed at wrappers such as init scripts and service unit definitions,
+  allowing to tweak what (and whether) they write into debug traces, and
+  so "make noise" or "bring invaluable insights" to logs or terminal;
+  they can generally be used for services and init scripts via `nut.conf`:
+  * See `NUT_IGNORE_CHECKPROCNAME` and `NUT_DEBUG_SYSLOG` above. [#1915]
+  * A `NUT_QUIET_INIT_BANNER` envvar (presence or "true" value) prevents
+    tool name and NUT version banner from being printed out when programs
+    start. [issues #1789 vs. #316]
+
 
 Changes from 2.8.1 to 2.8.2
 ---------------------------
