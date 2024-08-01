@@ -11,7 +11,7 @@ SYNOPSIS
 
 *upsdrvsvcctl* -h
 
-*upsdrvsvcctl* ['OPTIONS'] {start | stop } ['ups']
+*upsdrvsvcctl* ['OPTIONS'] {start | stop | status} ['ups']
 
 DESCRIPTION
 -----------
@@ -135,8 +135,11 @@ Stop the UPS driver(s).
 
 *status*::
 Query run-time status of all configured devices (or one specified device).
-Currently defers work to linkman:upsdrvctl[8], and does not report service
-unit information.
+Currently defers work to linkman:upsdrvctl[8], to list known device
+configurations and their driver daemon details (PID, responsiveness,
+`ups.status`) and to linkman:nut-driver-enumerator[8] to map device
+names to service unit instances to report their names and states in
+the service management framework.
 
 *upsdrvsvcctl* also supports further operations for troubleshooting the
 mapping of NUT driver section names to the service instance names (which

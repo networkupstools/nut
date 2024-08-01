@@ -33,12 +33,17 @@ fi
 VERB=""
 CMD=""
 CMDARG=""
+# Note: some frameworks separate the commands for acting and for reporting
+CMDREPORT=""
+CMDREPORTARG=""
 ENUMERATOR=""
 case "$SERVICE_FRAMEWORK" in
     smf) CMD="/usr/sbin/svcadm"
+        CMDREPORT="/usr/bin/svcs"
         ENUMERATOR="@NUT_LIBEXECDIR@/nut-driver-enumerator.sh"
         ;;
     systemd) CMD="/bin/systemctl"
+        CMDREPORT="${CMD}"
         ENUMERATOR="@NUT_LIBEXECDIR@/nut-driver-enumerator.sh"
         ;;
     *)  echo "Unrecognized SERVICE_FRAMEWORK: $SERVICE_FRAMEWORK" >&2 ; exit ;;
@@ -97,19 +102,18 @@ usage: $0 [OPTIONS] list [<ups>]
 
 usage: $0 [OPTIONS] status [<ups>]
   status        	report run-time status for each driver in ups.conf
+                	and call $ENUMERATOR
+                	to list the mapping of service instances to device sections
+                	and report run-time status for each one that was matched
   status <ups>  	(optionally return the status info only for one device)
-                	Fields: UPSNAME UPSDRV PF_RUNNING PF_PID S_RESPONSIVE S_PID S_STATUS
-                	(PF_* = according to PID file, if any; S_* = via socket protocol)
+                	Fields: SVC_NAME SVC_STATE UPSNAME UPSDRV RUNNING PF_PID S_RESPONSIVE S_PID S_STATUS
+                	(SVC_* according to service management framework; and
+                	PF_* = according to PID file, if any; S_* = via socket
+                	protocol -- as defined by upsdrvctl)
 usage: $0 [OPTIONS] show-config [<ups>]
   show-config <ups>	output config section from ups.conf for device <ups>
   show-config   	...or all devices if no <ups> argument was passed
 EOF
-
-# TODO:
-#  status        	call $ENUMERATOR
-#                	to list the mapping of service instances to device sections
-#                	and report run-time status for each one
-
 }
 
 ACTION=""
@@ -148,10 +152,81 @@ while [ $# -gt 0 ]; do
             fi
             ;;
         status)
-            # TODO: Add info about service units
-            echo "NOTE: Action '$1' is not implemented via services currently, will call upsdrvctl" >&2
             RES=0
-            "${UPSDRVCTL}" status $2 || RES=$?
+            STATUSES="`NUT_QUIET_INIT_BANNER=true "${UPSDRVCTL}" status $2`" || RES=$?
+            if [ x"${STATUSES}" = x ]; then
+                exit $RES
+            fi
+
+            SVCINSTS="`$0 list $2`" || RES=$?
+            # Use a common approach below, even if we only got one instance name from list()
+            if [ -n "$2" ] && [ -n "${SVCINSTS}" ] ; then SVCINSTS="${SVCINSTS}	$2" ; fi
+
+            case "$SERVICE_FRAMEWORK" in
+                smf) SVC_STATE_WIDTH="11" ;;
+                systemd) SVC_STATE_WIDTH="23" ;;
+            esac
+
+            echo "$STATUSES" | ( COUNT=0; while IFS='' read LINE ; do
+                COUNT="`expr $COUNT + 1`"
+                if [ "$COUNT" = 1 ] ; then
+                    # Header line
+                    printf '%-30s\t%'"${SVC_STATE_WIDTH}"'s\t%s\n' "SVC_NAME" "SVC_STATE" "$LINE"
+                    continue
+                fi
+                DEV_NAME="`echo "$LINE" | awk '{print $1}'`"
+                SVC_NAME="`echo "$SVCINSTS" | awk '($NF == "'"${DEV_NAME}"'") {print $1}'`" && [ -n "$SVC_NAME" ] || SVC_NAME="N/A"
+                if [ x"$SVC_NAME" = "N/A" ]; then
+                    SVC_STATE="N/A"
+                else
+                    case "$SERVICE_FRAMEWORK" in
+                        smf) SVC_STATE="`$CMDREPORT -Hostate ${SVC_NAME} 2>/dev/null`" \
+                            && [ -n "$SVC_STATE" ] && [ 1 = `echo "$SVC_STATE" | wc -l` ] \
+                            || SVC_STATE="N/A"
+                            ;;
+                        systemd) SVC_STATE=""
+                            CMDRES=0
+                            OUT="`$CMDREPORT is-enabled "${SVC_NAME}" 2>/dev/null`" || CMDRES=$?
+                            if [ x"$OUT" != x ] ; then SVC_STATE="${OUT}" ; else
+                                [ 0 = "$CMDRES" ] && SVC_STATE="enabled" || SVC_STATE="disabled"
+                            fi
+                            # At this point we should have some value, so others below
+                            # may be or not be suffixed with a comma.
+
+                            # The masked unit state has no separate query in some (all?)
+                            # systemd versions and can be reported as part of the above
+                            CMDRES=0
+                            OUT="`$CMDREPORT is-masked "${SVC_NAME}" 2>/dev/null`" || CMDRES=$?
+                            if [ x"$OUT" != x ] ; then
+                                if [ x"${SVC_STATE}" != xmasked ] && [ x"${SVC_STATE}" != x"${OUT}" ] ; then
+                                    SVC_STATE="${SVC_STATE},${OUT}"
+                                fi
+                            else
+                                [ 0 = "$CMDRES" ] && SVC_STATE="${SVC_STATE},masked" || true
+                            fi
+
+                            CMDRES=0
+                            OUT="`$CMDREPORT is-active "${SVC_NAME}" 2>/dev/null`" || CMDRES=$?
+                            if [ x"$OUT" != x ] ; then
+                                SVC_STATE="${SVC_STATE},${OUT}"
+                            else
+                                [ 0 = "$CMDRES" ] && SVC_STATE="${SVC_STATE},active" || true
+                            fi
+
+                            CMDRES=0
+                            OUT="`$CMDREPORT is-failed "${SVC_NAME}" 2>/dev/null`" || CMDRES=$?
+                            if [ x"$OUT" != x ] ; then
+                                if [ x"${OUT}" != xactive ] && [ x"${OUT}" != xinactive ] ; then
+                                    SVC_STATE="${SVC_STATE},${OUT}"
+                                fi
+                            else
+                                [ 0 = "$CMDRES" ] && SVC_STATE="${SVC_STATE},failed" || true
+                            fi
+                            ;;
+                    esac
+                fi
+                printf '%-30s\t%'"${SVC_STATE_WIDTH}"'s\t%s\n' "$SVC_NAME" "$SVC_STATE" "$LINE"
+            done )
             exit $RES
             ;;
         start|stop)
