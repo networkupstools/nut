@@ -92,8 +92,9 @@ void net_help(nut_ctype_t *client, size_t numarg, const char **arg)
 		return;
 	}
 
-	sendback(client, "Commands: HELP VER GET LIST SET INSTCMD LOGIN LOGOUT"
-		" USERNAME PASSWORD STARTTLS\n");
+	sendback(client, "Commands: HELP VER PROTVER GET LIST SET INSTCMD"
+		" LOGIN LOGOUT USERNAME PASSWORD STARTTLS\n");
+	/* Not exposed: PRIMARY/MASTER FSD */
 }
 
 void net_fsd(nut_ctype_t *client, size_t numarg, const char **arg)

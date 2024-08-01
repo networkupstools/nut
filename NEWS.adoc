@@ -217,6 +217,8 @@ during a NUT build.
      and values (or macros) in the NUT codebase. [issue #1176, issue #31]
    * custom `distcheck-something` targets did not inherit `DISTCHECK_FLAGS`
      properly. [#2541]
+   * local socket/pipe protocol introduced a `LOGOUT` command for cleaner
+     disconnection handling. [#2572]
 
  - updated `docs/nut-names.txt` with items defined by 42ITy NUT fork. [#2339]
 
