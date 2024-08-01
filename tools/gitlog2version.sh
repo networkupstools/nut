@@ -111,8 +111,11 @@ getver_git() {
     # or "upstream/master", etc.) for resulting version discovery to make sense.
     if [ x"${NUT_VERSION_GIT_TRUNK-}" = x ] ; then
         # Find the newest info, it may be in a fetched branch
-        # not yet checked out locally (or long not updated)
-        for T in master `git branch -a 2>/dev/null | grep -E '^ *remotes/[^ ]*/master$'` origin/master upstream/master ; do
+        # not yet checked out locally (or long not updated).
+        # Currently we repeat the likely branch names in the
+        # end, so that if they exist and are still newest -
+        # those are the names to report.
+        for T in master `git branch -a 2>/dev/null | grep -E '^ *remotes/[^ ]*/master$'` origin/master upstream/master master ; do
             git log -1 "$T" 2>/dev/null >/dev/null || continue
             if [ x"${NUT_VERSION_GIT_TRUNK-}" = x ] ; then
                 NUT_VERSION_GIT_TRUNK="$T"
