@@ -224,7 +224,7 @@ getver_default() {
 
 report_debug() {
     # Debug
-    echo "TRUNK='${NUT_VERSION_GIT_TRUNK-}'; BASE='${BASE}'; DESC='${DESC}' => TAG='${TAG}' + SUFFIX='${SUFFIX}' => VER5='${VER5}' => VER50='${VER50}' => DESC50='${DESC50}'" >&2
+    echo "SEMVER=${SEMVER}; TRUNK='${NUT_VERSION_GIT_TRUNK-}'; BASE='${BASE}'; DESC='${DESC}' => TAG='${TAG}' + SUFFIX='${SUFFIX}' => VER5='${VER5}' => VER50='${VER50}' => DESC50='${DESC50}'" >&2
 }
 
 report_output() {
