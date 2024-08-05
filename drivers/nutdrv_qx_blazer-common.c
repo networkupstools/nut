@@ -242,16 +242,6 @@ int	blazer_process_setvar(item_t *item, char *value, const size_t valuelen)
 /* Preprocess instant commands */
 int	blazer_process_command(item_t *item, char *value, const size_t valuelen)
 {
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-
 	if (!strcasecmp(item->info_type, "shutdown.return")) {
 
 		/* Sn: Shutdown after n minutes and then turn on when mains is back
@@ -264,7 +254,7 @@ int	blazer_process_command(item_t *item, char *value, const size_t valuelen)
 		 * (thus the default of ondelay=3 mins) */
 
 		long	offdelay = strtol(dstate_getinfo("ups.delay.shutdown"), NULL, 10),
-				ondelay  = strtol(dstate_getinfo("ups.delay.start"), NULL, 10) / 60;
+			ondelay  = strtol(dstate_getinfo("ups.delay.start"), NULL, 10) / 60;
 		char	buf[SMALLBUF] = "";
 
 		if (ondelay <= 0) {
@@ -303,7 +293,7 @@ int	blazer_process_command(item_t *item, char *value, const size_t valuelen)
 
 		}
 
-		snprintf(value, valuelen, item->command, buf);
+		snprintf_dynamic(value, valuelen, item->command, "%s", buf);
 
 	} else if (!strcasecmp(item->info_type, "shutdown.stayoff")) {
 
@@ -326,7 +316,7 @@ int	blazer_process_command(item_t *item, char *value, const size_t valuelen)
 			snprintf(buf, sizeof(buf), "%02ld", offdelay / 60);
 		}
 
-		snprintf(value, valuelen, item->command, buf);
+		snprintf_dynamic(value, valuelen, item->command, "%s", buf);
 
 	} else if (!strcasecmp(item->info_type, "test.battery.start")) {
 
@@ -339,7 +329,25 @@ int	blazer_process_command(item_t *item, char *value, const size_t valuelen)
 
 		delay = delay / 60;
 
-		snprintf(value, valuelen, item->command, delay);
+		/* In various mapping tables, "%02d" is prevalent; actual
+		 * value is range-checked above to fit into a typical int
+		 */
+		if (validate_formatting_string(item->command, "%d", NUT_DYNAMICFORMATTING_DEBUG_LEVEL_SILENT) >= 0) {
+			/* The most likely case, should not cause much overhead */
+			snprintf_dynamic(value, valuelen, item->command, "%d", (int)delay);
+		} else {
+			if (validate_formatting_string(item->command, "", NUT_DYNAMICFORMATTING_DEBUG_LEVEL_SILENT) >= 0) {
+				/* A few mappings seem to just request the test
+				 * without parameters, so the second check is
+				 * for that eventuality
+				 */
+				snprintf(value, valuelen, "%s", item->command);
+			} else {
+				/* Finally try the actual long int (complaining
+				 * with default verbosity==1 if a bad fit) */
+				snprintf_dynamic(value, valuelen, item->command, "%ld", delay);
+			}
+		}
 
 	} else {
 
@@ -347,10 +355,6 @@ int	blazer_process_command(item_t *item, char *value, const size_t valuelen)
 		return -1;
 
 	}
-
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
 
 	return 0;
 }

@@ -2328,6 +2328,7 @@ mirrorlist
 mis
 misconfigured
 mkdir
+mkstr
 mmZ
 mmap
 mn
@@ -3123,6 +3124,8 @@ vivo
 vo
 voltronic
 vscode
+vsnprintf
+vsnprintfcat
 wDescriptorLength
 waitbeforereconnect
 wakeup

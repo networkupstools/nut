@@ -51,7 +51,7 @@
 #include "timehead.h"   /* fallback gmtime_r() variants if needed (e.g. some WIN32) */
 
 #define DRIVER_NAME	"NUT Huawei UPS2000 (1kVA-3kVA) RS-232 Modbus driver"
-#define DRIVER_VERSION	"0.06"
+#define DRIVER_VERSION	"0.07"
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define MODBUS_SLAVE_ID 1
@@ -627,20 +627,8 @@ static int ups2000_update_info(void)
 			return 1;
 		}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-		dstate_setinfo(ups2000_var[i].name, ups2000_var[i].fmt,
-			       (float) val / ups2000_var[i].scaling);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+		dstate_setinfo_dynamic(ups2000_var[i].name, ups2000_var[i].fmt,
+			"%f", (float) val / ups2000_var[i].scaling);
 	}
 	return 0;
 }

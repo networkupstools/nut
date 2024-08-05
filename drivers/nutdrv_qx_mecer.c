@@ -25,7 +25,7 @@
 
 #include "nutdrv_qx_mecer.h"
 
-#define MECER_VERSION "Mecer 0.08"
+#define MECER_VERSION "Mecer 0.09"
 
 /* Support functions */
 static int	mecer_claim(void);
@@ -215,19 +215,7 @@ static int	voltronic_p98_protocol(item_t *item, char *value, const size_t valuel
 		return -1;
 	}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-	snprintf(value, valuelen, item->dfl, "Voltronic Power P98");
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	snprintf_dynamic(value, valuelen, item->dfl, "%s", "Voltronic Power P98");
 
 	return 0;
 }
@@ -274,19 +262,7 @@ static int	mecer_process_test_battery(item_t *item, char *value, const size_t va
 
 	}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-	snprintf(value, valuelen, item->command, buf);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+	snprintf_dynamic(value, valuelen, item->command, "%s", buf);
 
 	return 0;
 }

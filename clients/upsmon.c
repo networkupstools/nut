@@ -378,21 +378,12 @@ static void do_notify(const utype_t *ups, int ntype)
 		if (notifylist[i].type == ntype) {
 			upsdebugx(2, "%s: ntype 0x%04x (%s)", __func__, ntype,
 				notifylist[i].name);
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
-#pragma GCC diagnostic ignored "-Wformat-security"
-#endif
-			snprintf(msg, sizeof(msg),
+
+			snprintf_dynamic(msg, sizeof(msg),
 				notifylist[i].msg ? notifylist[i].msg : notifylist[i].stockmsg,
+				"%s",
 				ups ? ups->sys : "");
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
-#pragma GCC diagnostic pop
-#endif
+
 			notify(msg, notifylist[i].flags, notifylist[i].name,
 				upsname);
 
