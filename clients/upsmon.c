@@ -2627,9 +2627,9 @@ static void help(const char *arg_progname)
 		/* printf("\n"); */
 	}
 
-	printf("Monitors UPS servers and may initiate shutdown if necessary.\n\n");
+	printf("NUT client which monitors UPS servers and may initiate shutdown if necessary.\n");
 
-	printf("usage: %s [OPTIONS]\n\n", arg_progname);
+	printf("\nusage: %s [OPTIONS]\n\n", arg_progname);
 	printf("  -c <cmd>	send command to running process\n");
 	printf("		commands:\n");
 	printf("		 - fsd: shutdown all primary-mode UPSes (use with caution)\n");

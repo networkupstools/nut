@@ -1811,9 +1811,9 @@ static void help(const char *arg_progname)
 
 static void help(const char *arg_progname)
 {
-	printf("Network server for UPS data.\n\n");
-	printf("usage: %s [OPTIONS]\n", arg_progname);
+	printf("NUT network data server for UPS monitoring and management.\n");
 
+	printf("\nusage: %s [OPTIONS]\n", arg_progname);
 	printf("\n");
 	printf("  -c <command>	send <command> via signal to background process\n");
 	printf("		commands:\n");

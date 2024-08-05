@@ -37,14 +37,13 @@ static UPSCONN_t	*ups = NULL;
 static void usage(const char *prog)
 {
 	printf("Network UPS Tools upsc %s\n\n", UPS_VERSION);
+	printf("NUT read-only client program to display UPS variables.\n");
 
-	printf("usage: %s -l | -L [<hostname>[:port]]\n", prog);
+	printf("\nusage: %s -l | -L [<hostname>[:port]]\n", prog);
 	printf("       %s <ups> [<variable>]\n", prog);
 	printf("       %s -c <ups>\n", prog);
 
-	printf("\nDemo program to display UPS variables.\n\n");
-
-	printf("First form (lists UPSes):\n");
+	printf("\nFirst form (lists UPSes):\n");
 	printf("  -l         - lists each UPS on <hostname>, one per line.\n");
 	printf("  -L         - lists each UPS followed by its description (from ups.conf).\n");
 	printf("               Default hostname: localhost\n");

@@ -48,10 +48,11 @@ struct list_t {
 static void usage(const char *prog)
 {
 	printf("Network UPS Tools upscmd %s\n\n", UPS_VERSION);
-	printf("usage: %s [-h]\n", prog);
+	printf("NUT administration client program to initiate instant commands on UPS hardware.\n");
+
+	printf("\nusage: %s [-h]\n", prog);
 	printf("       %s [-l <ups>]\n", prog);
 	printf("       %s [-u <username>] [-p <password>] [-w] [-t <timeout>] <ups> <command> [<value>]\n\n", prog);
-	printf("Administration program to initiate instant commands on UPS hardware.\n");
 	printf("\n");
 	printf("  -h		display this help text\n");
 	printf("  -V		display the version of this software\n");

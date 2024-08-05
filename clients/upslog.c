@@ -144,7 +144,7 @@ static void help(const char *prog)
 
 static void help(const char *prog)
 {
-	printf("UPS status logger.\n");
+	printf("NUT read-only client program - UPS status logger.\n");
 
 	printf("\nusage: %s [OPTIONS]\n", prog);
 	printf("\n");
