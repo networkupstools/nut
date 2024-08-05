@@ -200,6 +200,14 @@ extern const char *UPS_VERSION;
 /** @brief Default timeout (in seconds) for retrieving the result of a `TRACKING`-enabled operation (e.g. `INSTCMD`, `SET VAR`). */
 #define DEFAULT_TRACKING_TIMEOUT	10
 
+/* Returns a pointer to static internal char[] buffer with current value
+ * of NUT_VERSION_MACRO (aka char* UPS_VERSION) and its layman description
+ * (e.g. a "release" or "development iteration after" a certain semantically
+ * versioned release). Returns UPS_VERSION if failed to construct a better
+ * description. Either way, should not be free()'d by caller and does not
+ * have an end-of-line char of its own. */
+const char *describe_NUT_VERSION_once(void);
+
 /* Based on NUT_QUIET_INIT_BANNER envvar (present and empty or "true")
  * hide the NUT tool name+version banners; show them by default */
 int banner_is_disabled(void);

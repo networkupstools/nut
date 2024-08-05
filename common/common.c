@@ -209,6 +209,52 @@ int banner_is_disabled(void)
 	return value;
 }
 
+const char *describe_NUT_VERSION_once(void)
+{
+	static char	buf[LARGEBUF];
+	static const char	*printed = NULL;
+
+	if (printed)
+		return printed;
+
+	memset(buf, 0, sizeof(buf));
+
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+	/* NOTE: Some compilers deduce that macro-based decisions about
+	 * NUT_VERSION_IS_RELEASE make one of codepaths unreachable in
+	 * a particular build. So we pragmatically handwave this away.
+	 */
+	if (1 < snprintf(buf, sizeof(buf),
+		"%s %s%s%s",
+		NUT_VERSION_MACRO,
+		NUT_VERSION_IS_RELEASE ? "release" : "(development iteration after ",
+		NUT_VERSION_IS_RELEASE ? "" : NUT_VERSION_SEMVER_MACRO,
+		NUT_VERSION_IS_RELEASE ? "" : ")"
+	)) {
+		printed = buf;
+	} else {
+		upslogx(LOG_WARNING, "%s: failed to report detailed NUT version", __func__);
+		printed = UPS_VERSION;
+	}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
+
+	return printed;
+}
+
 int print_banner_once(const char *prog, int even_if_disabled)
 {
 	static int	printed = 0;
