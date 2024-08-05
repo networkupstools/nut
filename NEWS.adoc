@@ -93,7 +93,7 @@ https://github.com/networkupstools/nut/milestone/11
 
  - A new `NUT_QUIET_INIT_BANNER` envvar (presence or "true" value) can now
    prevent the tool name and NUT version banner from being unilaterally
-   printed out when NUT programs start. [issues #1789 vs. #316]
+   printed out when NUT programs start. [issues #1789 vs. #316; #2573]
 
  - Extended `upsdrvctl` with a `list` operation (or `-l` option) to report
    manageable device configuration names (possible `<ups>` arguments to
