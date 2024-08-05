@@ -46,8 +46,10 @@ char * strptime(const char *buf, const char *fmt, struct tm *tm);
 
 #if !(defined HAVE_LOCALTIME_R && HAVE_LOCALTIME_R) && !(defined HAVE_DECL_LOCALTIME_R && HAVE_DECL_LOCALTIME_R)
 # if (defined HAVE_LOCALTIME_S && HAVE_LOCALTIME_S) || (defined HAVE_DECL_LOCALTIME_S && HAVE_DECL_LOCALTIME_S)
-/* A bit of a silly trick, but should help on MSYS2 builds it seems */
-#  define localtime_r(timer, buf) localtime_s(timer, buf)
+/* A bit of a silly trick, but should help on MSYS2 builds it seems
+ *  errno_t localtime_s(struct tm *_Tm, const time_t *_Time)
+ */
+#  define localtime_r(timer, buf) (localtime_s(buf, timer) ? NULL : buf)
 # else
 #  include <string.h> /* memcpy */
 static inline struct tm *localtime_r( const time_t *timer, struct tm *buf ) {
@@ -61,7 +63,8 @@ static inline struct tm *localtime_r( const time_t *timer, struct tm *buf ) {
 
 #if !(defined HAVE_GMTIME_R && HAVE_GMTIME_R) && !(defined HAVE_DECL_GMTIME_R && HAVE_DECL_GMTIME_R)
 # if (defined HAVE_GMTIME_S && HAVE_GMTIME_S) || (defined HAVE_DECL_GMTIME_S && HAVE_DECL_GMTIME_S)
-#  define gmtime_r(timer, buf) gmtime_s(timer, buf)
+/* See comment above */
+#  define gmtime_r(timer, buf) (gmtime_s(buf, timer) ? NULL : buf)
 # else
 #  include <string.h> /* memcpy */
 static inline struct tm *gmtime_r( const time_t *timer, struct tm *buf ) {
