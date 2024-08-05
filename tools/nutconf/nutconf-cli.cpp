@@ -59,8 +59,11 @@ class Usage {
 
 	public:
 
-	/** Print usage */
+	/** Print version and usage to stderr */
 	static void print(const std::string & bin);
+
+	/** Print version info to stdout */
+	static void printVersion(const std::string & bin);
 
 };  // end of class usage
 
@@ -68,6 +71,8 @@ class Usage {
 const char * Usage::s_text[] = {
 	"    -h  -help",
 	"    --help                              Display this help and exit",
+	"    -V",
+	"    --version                           Display tool version on stdout and exit",
 	"    --autoconfigure                     Perform automatic configuration",
 	"    --is-configured                     Checks whether NUT is configured",
 	"    --local <directory>                 Sets configuration directory",
@@ -167,9 +172,23 @@ const char * Usage::s_text[] = {
 	"",
 };
 
+/**
+ * Print version info to stdout (like other NUT tools)
+ */
+void Usage::printVersion(const std::string & bin) {
+	std::cout
+		<< "Network UPS Tools " << bin
+		<< " " << describe_NUT_VERSION_once() << std::endl;
+}
 
+/**
+ * Print help text (including version info) to stderr
+ */
 void Usage::print(const std::string & bin) {
 	std::cerr
+		<< "Network UPS Tools " << bin
+		<< " " << describe_NUT_VERSION_once() << std::endl
+		<< std::endl
 		<< "Usage: " << bin << " [OPTIONS]" << std::endl
 		<< std::endl
 		<< "OPTIONS:" << std::endl;
@@ -3096,6 +3115,13 @@ static int mainx(int argc, char * const argv[]) {
 	// Usage
 	if (options.exists("help") || options.existsSingle("h")) {
 		Usage::print(prog);
+
+		::exit(0);
+	}
+
+	// Usage
+	if (options.exists("version") || options.existsSingle("V")) {
+		Usage::printVersion(prog);
 
 		::exit(0);
 	}
