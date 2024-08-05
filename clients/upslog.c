@@ -144,7 +144,8 @@ static void help(const char *prog)
 
 static void help(const char *prog)
 {
-	printf("UPS status logger.\n");
+	print_banner_once(prog, 2);
+	printf("NUT read-only client program - UPS status logger.\n");
 
 	printf("\nusage: %s [OPTIONS]\n", prog);
 	printf("\n");
@@ -439,10 +440,7 @@ int main(int argc, char **argv)
 	logformat = DEFAULT_LOGFORMAT;
 	user = RUN_AS_USER;
 
-	if (!banner_is_disabled()) {
-		printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
-		fflush(stdout);
-	}
+	print_banner_once(prog, 0);
 
 	while ((i = getopt(argc, argv, "+hs:l:i:f:u:Vp:FBm:")) != -1) {
 		switch(i) {
@@ -508,6 +506,9 @@ int main(int argc, char **argv)
 				break;
 
 			case 'V':
+				/* just show the version and optional
+				 * CONFIG_FLAGS banner if available */
+				print_banner_once(prog, 1);
 				nut_report_config_flags();
 				exit(EXIT_SUCCESS);
 

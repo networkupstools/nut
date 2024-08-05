@@ -1172,7 +1172,9 @@ static void help(const char *progname)
 
 static void help(const char *arg_progname)
 {
-	printf("Starts and stops UPS drivers via ups.conf.\n\n");
+	print_banner_once(arg_progname, 2);
+	printf("UPS driver controller: Starts and stops UPS drivers via ups.conf.\n\n");
+
 	printf("usage: %s [OPTIONS] (start | stop | shutdown | status) [<ups>]\n\n", arg_progname);
 	printf("usage: %s [OPTIONS] (list | -l) [<ups>]\n\n", arg_progname);
 	printf("usage: %s [OPTIONS] -c <command> [<ups>]\n\n", arg_progname);
@@ -1406,15 +1408,14 @@ static void exit_cleanup(void)
 int main(int argc, char **argv)
 {
 	int	i, lastarg = 0;
-	char	*prog, *command_name = NULL;
-
-	if (!banner_is_disabled()) {
-		printf("Network UPS Tools - UPS driver controller %s\n",
-			UPS_VERSION);
-		fflush(stdout);
-	}
+	char	*prog, *command_name = NULL, progdesc[LARGEBUF];
 
 	prog = argv[0];
+
+	/* Historically special banner*/
+	snprintf(progdesc, sizeof(progdesc), "%s - UPS driver controller", xbasename(prog));
+	print_banner_once(progdesc, 0);
+
 	while ((i = getopt(argc, argv, "+htu:r:DdFBVc:l")) != -1) {
 		switch(i) {
 			case 'r':
@@ -1430,6 +1431,10 @@ int main(int argc, char **argv)
 				break;
 
 			case 'V':
+				/* just show the version and optional
+				 * CONFIG_FLAGS banner if available */
+				print_banner_once(progdesc, 1);
+				nut_report_config_flags();
 				exit(EXIT_SUCCESS);
 
 			case 'D':
@@ -1519,6 +1524,7 @@ int main(int argc, char **argv)
 				break;
 			case 'h':
 			default:
+				/* not progdesc, shows details of its own */
 				help(prog);
 		}
 	}

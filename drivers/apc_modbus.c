@@ -17,11 +17,13 @@
  */
 
 #include "main.h"
+
 #if defined NUT_MODBUS_HAS_USB
-#include "nut_libusb.h"
-#include "libhid.h"
-#include "hidparser.h"
+# include "nut_libusb.h"
+# include "libhid.h"
+# include "hidparser.h"
 #endif /* defined NUT_MODBUS_HAS_USB */
+
 #include "timehead.h"
 #include "nut_stdint.h"
 #include "apc_modbus.h"
@@ -777,9 +779,9 @@ static int _apc_modbus_date_from_nut(const char *value, uint16_t *output, size_t
 	}
 
 	memset(&tm_struct, 0, sizeof(tm_struct));
-    if (strptime(value, "%Y-%m-%d", &tm_struct) == NULL) {
-        return 0;
-    }
+	if (strptime(value, "%Y-%m-%d", &tm_struct) == NULL) {
+		return 0;
+	}
 
 	if ((epoch_time = timegm(&tm_struct)) == -1) {
 		return 0;
