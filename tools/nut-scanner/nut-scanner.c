@@ -969,10 +969,11 @@ static void handle_arg_cidr(const char *arg_addr, int *auto_nets_ptr)
 #endif	/* HAVE_GETIFADDRS || ( WIN32 && (HAVE_GETADAPTERSINFO || HAVE_GETADAPTERSADDRESSES)) */
 }
 
-static void show_usage(void)
+static void show_usage(const char *arg_progname)
 {
 /* NOTE: This code uses `nutscan_avail_*` global vars from nutscan-init.c */
-	puts("nut-scanner : utility for detection of available power devices.\n");
+	print_banner_once(arg_progname, 2);
+	puts("NUT utility for detection of available power devices.\n");
 
 	nut_report_config_flags();
 
@@ -1158,6 +1159,7 @@ static void show_usage(void)
 
 int main(int argc, char *argv[])
 {
+	const char	*progname = xbasename(argv[0]);
 	nutscan_snmp_t snmp_sec;
 	nutscan_ipmi_t ipmi_sec;
 	nutscan_xml_t  xml_sec;
@@ -1545,7 +1547,7 @@ int main(int argc, char *argv[])
 			case 'V':
 				/* just show the version and optional
 				 * CONFIG_FLAGS banner if available */
-				print_banner_once("nut-scanner", 1);
+				print_banner_once(progname, 1);
 				nut_report_config_flags();
 				exit(EXIT_SUCCESS);
 			case 'a':
@@ -1574,7 +1576,7 @@ int main(int argc, char *argv[])
 			case 'h':
 			default:
 display_help:
-				show_usage();
+				show_usage(progname);
 				if ((opt_ret != 'h') || (ret_code != EXIT_SUCCESS))
 					fprintf(stderr, "\n\n"
 						"WARNING: Some error has occurred while processing 'nut-scanner' command-line\n"
