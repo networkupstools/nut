@@ -933,7 +933,7 @@ dnl These appear with CFLAGS="-std=c99 -D_POSIX_C_SOURCE=200112L":
 dnl# Methods below currently do not cause build errors for C99+ modes so are
 dnl# not tested as thoroughly as those further below:
 AC_CHECK_FUNCS(strtof strtok_r fileno sigemptyset sigaction,
-	[], [AC_MSG_WARN([Required C library routine not found; try adding -D_POSIX_C_SOURCE=200112L])])
+	[], [AC_MSG_WARN([Required C library routine not found by linker; try adding -D_POSIX_C_SOURCE=200112L])])
 
 dnl For these we have a fallback implementation via the other,
 dnl if at least one is available, so initial check is quiet.
@@ -944,7 +944,7 @@ AC_CHECK_FUNCS(localtime_r localtime_s gmtime_r gmtime_s timegm _mkgmtime,
 AC_MSG_CHECKING([for at least one gmtime implementation])
 AS_IF([test x"${ac_cv_func_gmtime_s}-${ac_cv_func_gmtime_r}" = "xno-no"], [
 	AC_MSG_RESULT([no])
-	AC_MSG_WARN([Required C library routine gmtime_s nor gmtime_r was not found; try adding -D_POSIX_C_SOURCE=200112L and/or -D_POSIX_THREAD_SAFE_FUNCTIONS=200112L])
+	AC_MSG_WARN([Required C library routine gmtime_s nor gmtime_r was not found by linker; try adding -D_POSIX_C_SOURCE=200112L and/or -D_POSIX_THREAD_SAFE_FUNCTIONS=200112L])
 	],[
 	AC_MSG_RESULT([yes])
 	])
@@ -952,7 +952,7 @@ AS_IF([test x"${ac_cv_func_gmtime_s}-${ac_cv_func_gmtime_r}" = "xno-no"], [
 AC_MSG_CHECKING([for at least one localtime implementation])
 AS_IF([test x"${ac_cv_func_localtime_s}-${ac_cv_func_localtime_r}" = "xno-no"], [
 	AC_MSG_RESULT([no])
-	AC_MSG_WARN([Required C library routine localtime_s nor localtime_r was not found; try adding -D_POSIX_C_SOURCE=200112L and/or -D_POSIX_THREAD_SAFE_FUNCTIONS=200112L])
+	AC_MSG_WARN([Required C library routine localtime_s nor localtime_r was not found by linker; try adding -D_POSIX_C_SOURCE=200112L and/or -D_POSIX_THREAD_SAFE_FUNCTIONS=200112L])
 	],[
 	AC_MSG_RESULT([yes])
 	])
@@ -960,7 +960,7 @@ AS_IF([test x"${ac_cv_func_localtime_s}-${ac_cv_func_localtime_r}" = "xno-no"], 
 AC_MSG_CHECKING([for at least one timegm implementation])
 AS_IF([test x"${ac_cv_func_timegm}-${ac_cv_func__mkgmtime}" = "xno-no"], [
 	AC_MSG_RESULT([no])
-	AC_MSG_WARN([Required C library routine timegm nor _mkgmtime was not found])
+	AC_MSG_WARN([Required C library routine timegm nor _mkgmtime was not found by linker])
 	AC_DEFINE_UNQUOTED([WANT_TIMEGM_FALLBACK], [1], [Defined if we want to use timegm_fallback()])
 	AM_CONDITIONAL([WANT_TIMEGM_FALLBACK], [true])
 	],[
