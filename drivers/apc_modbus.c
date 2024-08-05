@@ -17,11 +17,13 @@
  */
 
 #include "main.h"
+
 #if defined NUT_MODBUS_HAS_USB
-#include "nut_libusb.h"
-#include "libhid.h"
-#include "hidparser.h"
+# include "nut_libusb.h"
+# include "libhid.h"
+# include "hidparser.h"
 #endif /* defined NUT_MODBUS_HAS_USB */
+
 #include "timehead.h"
 #include "nut_stdint.h"
 #include "apc_modbus.h"
