@@ -16,9 +16,11 @@
 #	DEBUG_SLEEP=60	to sleep after tests, with driver+server running
 #	NUT_DEBUG_MIN=3	to set (minimum) debug level for drivers, upsd...
 #	NUT_PORT=12345	custom port for upsd to listen and clients to query
+#	NUT_FOREGROUND_WITH_PID=true	default foregrounding is without
+#			PID files, this option tells daemons to save them
 #
 # Common sandbox run for testing goes from NUT root build directory like:
-#	DEBUG_SLEEP=600 NUT_PORT=12345 NIT_CASE=testcase_sandbox_start_drivers_after_upsd make check-NIT &
+#	DEBUG_SLEEP=600 NUT_PORT=12345 NIT_CASE=testcase_sandbox_start_drivers_after_upsd NUT_FOREGROUND_WITH_PID=true make check-NIT &
 #
 # Design note: written with dumbed-down POSIX shell syntax, to
 # properly work in whatever different OSes have (bash, dash,
@@ -46,6 +48,9 @@ export NUT_DEBUG_SYSLOG
 
 NUT_DEBUG_PID="true"
 export NUT_DEBUG_PID
+
+ARG_FG="-F"
+if [ x"${NUT_FOREGROUND_WITH_PID-}" = xtrue ] ; then ARG_FG="-FF" ; fi
 
 log_separator() {
     echo "" >&2
@@ -645,7 +650,7 @@ PASSED=0
 testcase_upsd_no_configs_at_all() {
     log_separator
     log_info "[testcase_upsd_no_configs_at_all] Test UPSD without configs at all"
-    upsd -F
+    upsd ${ARG_FG}
     if [ "$?" = 0 ]; then
         log_error "[testcase_upsd_no_configs_at_all] upsd should fail without configs"
         FAILED="`expr $FAILED + 1`"
@@ -660,7 +665,7 @@ testcase_upsd_no_configs_driver_file() {
     log_separator
     log_info "[testcase_upsd_no_configs_driver_file] Test UPSD without driver config file"
     generatecfg_upsd_trivial
-    upsd -F
+    upsd ${ARG_FG}
     if [ "$?" = 0 ]; then
         log_error "[testcase_upsd_no_configs_driver_file] upsd should fail without driver config file"
         FAILED="`expr $FAILED + 1`"
@@ -676,7 +681,7 @@ testcase_upsd_no_configs_in_driver_file() {
     log_info "[testcase_upsd_no_configs_in_driver_file] Test UPSD without drivers defined in config file"
     generatecfg_upsd_trivial
     generatecfg_ups_trivial
-    upsd -F
+    upsd ${ARG_FG}
     if [ "$?" = 0 ]; then
         log_error "[testcase_upsd_no_configs_in_driver_file] upsd should fail without drivers defined in config file"
         FAILED="`expr $FAILED + 1`"
@@ -694,7 +699,7 @@ upsd_start_loop() {
         return 0
     fi
 
-    upsd -F &
+    upsd ${ARG_FG} &
     PID_UPSD="$!"
     log_debug "[${TESTCASE}] Tried to start UPSD as PID $PID_UPSD"
     sleep 2
@@ -724,7 +729,7 @@ upsd_start_loop() {
         log_warn "[${TESTCASE}] Port ${NUT_PORT} is ${PORT_WORD}listening and UPSD PID $PID_UPSD is not alive, will sleep and retry"
 
         sleep 10
-        upsd -F &
+        upsd ${ARG_FG} &
         PID_UPSD="$!"
         log_warn "[${TESTCASE}] Tried to start UPSD again, now as PID $PID_UPSD"
         sleep 5
@@ -871,17 +876,17 @@ sandbox_start_drivers() {
     sandbox_generate_configs
 
     log_info "Starting dummy-ups driver(s) for sandbox"
-    #upsdrvctl -F start dummy &
-    dummy-ups -a dummy -F &
+    #upsdrvctl ${ARG_FG} start dummy &
+    dummy-ups -a dummy ${ARG_FG} &
     PID_DUMMYUPS="$!"
     log_debug "Tried to start dummy-ups driver for 'dummy' as PID $PID_DUMMYUPS"
 
     if [ x"${TOP_SRCDIR}" != x ]; then
-        dummy-ups -a UPS1 -F &
+        dummy-ups -a UPS1 ${ARG_FG} &
         PID_DUMMYUPS1="$!"
         log_debug "Tried to start dummy-ups driver for 'UPS1' as PID $PID_DUMMYUPS1"
 
-        dummy-ups -a UPS2 -F &
+        dummy-ups -a UPS2 ${ARG_FG} &
         PID_DUMMYUPS2="$!"
         log_debug "Tried to start dummy-ups driver for 'UPS2' as PID $PID_DUMMYUPS2"
     fi
@@ -969,7 +974,7 @@ testcase_sandbox_start_upsd_after_drivers() {
 
     # Not calling upsd_start_loop() here, before drivers
     # If the server starts, fine; if not - we retry below
-    upsd -F &
+    upsd ${ARG_FG} &
     PID_UPSD="$!"
     log_debug "[testcase_sandbox_start_upsd_after_drivers] Tried to start UPSD as PID $PID_UPSD"
 
@@ -1424,7 +1429,7 @@ upsmon_start_loop() {
         return 0
     fi
 
-    upsmon -F &
+    upsmon ${ARG_FG} &
     PID_UPSMON="$!"
     log_debug "[${TESTCASE}] Tried to start UPSMON as PID $PID_UPSMON"
     sleep 2
