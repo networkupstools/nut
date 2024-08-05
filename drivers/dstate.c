@@ -203,6 +203,7 @@ static TYPE_FD sock_open(const char *fn)
 static void sock_disconnect(conn_t *conn)
 {
 #ifndef WIN32
+	upsdebugx(3, "%s: disconnecting socket %d", __func__, (int)conn->fd);
 	close(conn->fd);
 #else
 	/* FIXME not sure if this is the right way to close a connection */
@@ -210,11 +211,14 @@ static void sock_disconnect(conn_t *conn)
 		CloseHandle(conn->read_overlapped.hEvent);
 		conn->read_overlapped.hEvent = INVALID_HANDLE_VALUE;
 	}
+	upsdebugx(3, "%s: disconnecting named pipe handle %p", __func__, conn->fd);
 	DisconnectNamedPipe(conn->fd);
 #endif
 
+	upsdebugx(5, "%s: finishing parsing context", __func__);
 	pconf_finish(&conn->ctx);
 
+	upsdebugx(5, "%s: relinking the chain of connections", __func__);
 	if (conn->prev) {
 		conn->prev->next = conn->next;
 	} else {
@@ -227,6 +231,7 @@ static void sock_disconnect(conn_t *conn)
 		/* conntail = conn->prev; */
 	}
 
+	upsdebugx(5, "%s: freeing the conn object", __func__);
 	free(conn);
 }
 
@@ -571,6 +576,7 @@ static void sock_connect(TYPE_FD sock)
 
 	conn->nobroadcast = 0;
 	conn->readzero = 0;
+	conn->closing = 0;
 	pconf_init(&conn->ctx, NULL);
 
 	if (connhead) {
@@ -699,6 +705,22 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 
 	if (numarg < 1) {
 		return 0;
+	}
+
+	if (!strcasecmp(arg[0], "LOGOUT")) {
+		send_to_one(conn, "OK Goodbye\n");
+#ifndef WIN32
+		upsdebugx(2, "%s: received LOGOUT on socket %d, will be disconnecting", __func__, (int)conn->fd);
+#else
+		upsdebugx(2, "%s: received LOGOUT on handle %p, will be disconnecting", __func__, conn->fd);
+#endif
+		/* Let the system flush the reply somehow (or the other
+		 * side to just see it) before we drop the pipe */
+		usleep(1000000);
+		/* err on the safe side, and actually close/free conn separately */
+		conn->closing = 1;
+		upsdebugx(4, "%s: LOGOUT processing finished", __func__);
+		return 2;
 	}
 
 	if (!strcasecmp(arg[0], "GETPID")) {
@@ -901,6 +923,7 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 static void sock_read(conn_t *conn)
 {
 	ssize_t	ret, i;
+	int	ret_arg = -1;
 
 #ifndef WIN32
 	char	buf[SMALLBUF];
@@ -979,7 +1002,8 @@ static void sock_read(conn_t *conn)
 			continue;
 
 		case 1: /* try to use it, and complain about unknown commands */
-			if (!sock_arg(conn, conn->ctx.numargs, conn->ctx.arglist)) {
+			ret_arg = sock_arg(conn, conn->ctx.numargs, conn->ctx.arglist);
+			if (!ret_arg) {
 				size_t	arg;
 
 				upslogx(LOG_INFO, "Unknown command on socket: ");
@@ -987,7 +1011,13 @@ static void sock_read(conn_t *conn)
 				for (arg = 0; arg < conn->ctx.numargs && arg < INT_MAX; arg++) {
 					upslogx(LOG_INFO, "arg %d: %s", (int)arg, conn->ctx.arglist[arg]);
 				}
+			} else if (ret_arg == 2) {
+				/* closed by LOGOUT processing, conn is free()'d */
+				if (i < ret)
+					upsdebugx(1, "%s: returning early, socket may be not valid anymore", __func__);
+				return;
 			}
+
 			continue;
 
 		default: /* nothing parsed */
@@ -1078,13 +1108,12 @@ int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
 {
 	int	maxfd = 0; /* Unidiomatic use vs. "sockfd" below, which is "int" on non-WIN32 */
 	int	overrun = 0;
-	conn_t	*conn;
+	conn_t	*conn, *cnext;
 	struct timeval	now;
 
 #ifndef WIN32
 	int	ret;
 	fd_set	rfds;
-	conn_t	*cnext;
 
 	FD_ZERO(&rfds);
 	FD_SET(sockfd, &rfds);
@@ -1154,6 +1183,14 @@ int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
 
 		if (FD_ISSET(conn->fd, &rfds)) {
 			sock_read(conn);
+		}
+	}
+
+	for (conn = connhead; conn; conn = cnext) {
+		cnext = conn->next;
+
+		if (conn->closing) {
+			sock_disconnect(conn);
 		}
 	}
 
@@ -1235,6 +1272,14 @@ int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
 	else {
 		if (conn != NULL) {
 			sock_read(conn);
+		}
+	}
+
+	for (conn = connhead; conn; conn = cnext) {
+		cnext = conn->next;
+
+		if (conn->closing) {
+			sock_disconnect(conn);
 		}
 	}
 

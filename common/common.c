@@ -1412,8 +1412,10 @@ pid_t parsepid(const char *buf)
 	pid_t	pid = -1;
 	intmax_t	_pid;
 
+	errno = 0;
 	if (!buf) {
 		upsdebugx(6, "%s: called with NULL input", __func__);
+		errno = EINVAL;
 		return pid;
 	}
 
@@ -1422,6 +1424,8 @@ pid_t parsepid(const char *buf)
 	if (_pid <= get_max_pid_t()) {
 		pid = (pid_t)_pid;
 	} else {
+		errno = ERANGE;
+
 		if (nut_debug_level > 0 || nut_sendsignal_debug_level > 0)
 			upslogx(LOG_NOTICE,
 				"Received a pid number too big for a pid_t: %"

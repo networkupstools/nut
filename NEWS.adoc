@@ -222,6 +222,9 @@ during a NUT build.
      properly. [#2541]
    * added `status_get()` in NUT driver state API, to check if a status
      token string had been set recently, and to avoid duplicate settings.
+     [PR #2565]
+   * local socket/pipe protocol introduced a `LOGOUT` command for cleaner
+     disconnection handling. [#2572]
 
  - updated `docs/nut-names.txt` with items defined by 42ITy NUT fork. [#2339]
 

@@ -177,8 +177,29 @@ udq_pipe_conn_t *upsdrvquery_connect_drvname_upsname(const char *drvname, const 
 }
 
 void upsdrvquery_close(udq_pipe_conn_t *conn) {
+#ifdef WIN32
+	int	loggedOut = 0;
+#endif  /* WIN32 */
+
 	if (!conn)
 		return;
+
+	if (VALID_FD(conn->sockfd)) {
+		int	nudl = nut_upsdrvquery_debug_level;
+		ssize_t ret;
+		upsdebugx(5, "%s: closing driver socket, try to say goodbye", __func__);
+		ret = upsdrvquery_write(conn, "LOGOUT\n");
+		if (7 <= ret) {
+			upsdebugx(5, "%s: okay", __func__);
+#ifdef WIN32
+			loggedOut = 1;
+#endif  /* WIN32 */
+			usleep(1000000);
+		} else {
+			upsdebugx(5, "%s: must have been closed on the other side", __func__);
+		}
+		nut_upsdrvquery_debug_level = nudl;
+	}
 
 #ifndef WIN32
 	if (VALID_FD(conn->sockfd))
@@ -190,7 +211,7 @@ void upsdrvquery_close(udq_pipe_conn_t *conn) {
 	memset(&(conn->overlapped), 0, sizeof(conn->overlapped));
 
 	if (VALID_FD(conn->sockfd)) {
-		if (DisconnectNamedPipe(conn->sockfd) == 0) {
+		if (DisconnectNamedPipe(conn->sockfd) == 0 && !loggedOut) {
 			if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_CONNECT)
 				upslogx(LOG_ERR,
 					"DisconnectNamedPipe error : %d",
