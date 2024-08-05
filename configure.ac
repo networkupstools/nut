@@ -752,6 +752,19 @@ AS_IF([test "$ac_cv_header_sys_time_h" = yes],
          and <time.h>.  This macro is deemed obsolete by autotools.])
     ], [])
 
+CODE_TIMEINCL="
+#ifdef TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
+"
+
 AC_CHECK_HEADERS_ONCE([fcntl.h sys/stat.h sys/socket.h netdb.h])
 AC_CHECK_FUNCS(flock lockf fcvt fcvtl dup dup2 abs_val abs)
 
@@ -1053,16 +1066,7 @@ AC_CACHE_CHECK([for strptime(s1,s2,tm)],
     [ac_cv_func_strptime],
     [AX_RUN_OR_LINK_IFELSE(
         [AC_LANG_PROGRAM([$CODE_STRINGINCL
-#ifdef TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
+$CODE_TIMEINCL
 ],
             [struct tm tm;
 char *date = "12/30/1999";
@@ -1082,16 +1086,7 @@ AC_CACHE_CHECK([for clock_gettime(CLOCK_MONOTONIC,ts)],
     [ac_cv_func_clock_gettime],
     [AX_RUN_OR_LINK_IFELSE(
         [AC_LANG_PROGRAM([$CODE_STRINGINCL
-#ifdef TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
+$CODE_TIMEINCL
 ],
             [struct timespec monoclock_ts;
 int got_monoclock = clock_gettime(CLOCK_MONOTONIC, &monoclock_ts);
