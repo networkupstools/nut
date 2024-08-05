@@ -355,7 +355,9 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 #if WITH_LIBUSB_1_0
 	if ((*nut_usb_init)(NULL) < 0) {
 		(*nut_usb_exit)(NULL);
-		fatal_with_errno(EXIT_FAILURE, "Failed to init libusb 1.0");
+		upsdebug_with_errno(0, "Failed to init libusb 1.0");
+		/* nutscan_avail_usb = 0; */
+		return NULL;
 	}
 #else  /* => WITH_LIBUSB_0_1 */
 	(*nut_usb_init)();
@@ -367,7 +369,9 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 	devcount = (*nut_usb_get_device_list)(NULL, &devlist);
 	if (devcount <= 0) {
 		(*nut_usb_exit)(NULL);
-		fatal_with_errno(EXIT_FAILURE, "No USB device found");
+		upsdebug_with_errno(0, "No USB device found");
+		/* nutscan_avail_usb = 0; */
+		return NULL;
 	}
 
 	for (i = 0; i < devcount; i++) {
@@ -387,7 +391,9 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 		if (busname == NULL) {
 			(*nut_usb_free_device_list)(devlist, 1);
 			(*nut_usb_exit)(NULL);
-			fatal_with_errno(EXIT_FAILURE, "Out of memory");
+			upsdebug_with_errno(0, "%s: Out of memory", __func__);
+			/* nutscan_avail_usb = 0; */
+			return NULL;
 		}
 		snprintf(busname, 4, "%03d", bus_num);
 
@@ -395,7 +401,9 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 		if (device_port == NULL) {
 			(*nut_usb_free_device_list)(devlist, 1);
 			(*nut_usb_exit)(NULL);
-			fatal_with_errno(EXIT_FAILURE, "Out of memory");
+			upsdebug_with_errno(0, "%s: Out of memory", __func__);
+			/* nutscan_avail_usb = 0; */
+			return NULL;
 		} else {
 			uint8_t device_addr = (*nut_usb_get_device_address)(dev);
 			if (device_addr > 0) {
@@ -410,7 +418,9 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 			if (bus_port == NULL) {
 				(*nut_usb_free_device_list)(devlist, 1);
 				(*nut_usb_exit)(NULL);
-				fatal_with_errno(EXIT_FAILURE, "Out of memory");
+				upsdebug_with_errno(0, "%s: Out of memory", __func__);
+				/* nutscan_avail_usb = 0; */
+				return NULL;
 			} else {
 				uint8_t port_num = (*nut_usb_get_port_number)(dev);
 				if (port_num > 0) {
@@ -502,7 +512,9 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 							(*nut_usb_free_device_list)(devlist, 1);
 							(*nut_usb_exit)(NULL);
 #endif	/* WITH_LIBUSB_1_0 */
-							fatal_with_errno(EXIT_FAILURE, "Out of memory");
+							upsdebug_with_errno(0, "%s: Out of memory", __func__);
+							/* nutscan_avail_usb = 0; */
+							return NULL;
 						}
 					}
 				}
@@ -526,7 +538,9 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 							(*nut_usb_free_device_list)(devlist, 1);
 							(*nut_usb_exit)(NULL);
 #endif	/* WITH_LIBUSB_1_0 */
-							fatal_with_errno(EXIT_FAILURE, "Out of memory");
+							upsdebug_with_errno(0, "%s: Out of memory", __func__);
+							/* nutscan_avail_usb = 0; */
+							return NULL;
 						}
 					}
 				}
@@ -551,7 +565,9 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 							(*nut_usb_free_device_list)(devlist, 1);
 							(*nut_usb_exit)(NULL);
 #endif	/* WITH_LIBUSB_1_0 */
-							fatal_with_errno(EXIT_FAILURE, "Out of memory");
+							upsdebug_with_errno(0, "%s: Out of memory", __func__);
+							/* nutscan_avail_usb = 0; */
+							return NULL;
 						}
 					}
 				}
