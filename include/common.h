@@ -204,6 +204,18 @@ extern const char *UPS_VERSION;
  * hide the NUT tool name+version banners; show them by default */
 int banner_is_disabled(void);
 
+/* Some NUT programs have historically printed their banner at start-up
+ * always, and so did not print one in help()/usage() or handling `-V`
+ * like others did. Now that we have NUT_QUIET_INIT_BANNER, we need a
+ * way to print that banner (regardless of the flag in some cases).
+ * The "even_if_disabled" should be 0 for initial banner of those
+ * programs (so the envvar would hide it), 1 -V case and 2 in -h case
+ * (for a blank line after). As before, the banner is printed to stdout.
+ * Returns the result of printf() involved. Remembers to not print again
+ * if the earlier printf() was successful.
+ */
+int print_banner_once(const char *prog, int even_if_disabled);
+
 /* Normally we can (attempt to) use the syslog or Event Log (WIN32),
  * but environment variable NUT_DEBUG_SYSLOG allows to bypass it, and
  * perhaps keep daemons logging to stderr (e.g. in NUT Integration Test

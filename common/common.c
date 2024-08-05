@@ -209,6 +209,26 @@ int banner_is_disabled(void)
 	return value;
 }
 
+int print_banner_once(const char *prog, int even_if_disabled)
+{
+	static int	printed = 0;
+	static int	ret = -1;
+
+	if (printed)
+		return ret;
+
+	if (!banner_is_disabled() || even_if_disabled) {
+		ret = printf("Network UPS Tools %s %s%s\n",
+			prog, UPS_VERSION,
+			even_if_disabled == 2 ? "\n" : "");
+		fflush(stdout);
+		if (ret > 0)
+			printed = 1;
+	}
+
+	return ret;
+}
+
 /* enable writing upslog_with_errno() and upslogx() type messages to
    the syslog */
 void syslogbit_set(void)
