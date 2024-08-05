@@ -2850,6 +2850,7 @@ strerror
 strftime
 stringify
 strlen
+strncpy
 strnlen
 strptime
 struct
