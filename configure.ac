@@ -942,25 +942,25 @@ AC_CHECK_FUNCS(localtime_r localtime_s gmtime_r gmtime_s timegm _mkgmtime,
 	[], [])
 
 AC_MSG_CHECKING([for at least one gmtime implementation])
-AS_IF([test x"${ac_cv_func_gmtime_s}-${ac_cv_func_gmtime_r}" = "xno-no"], [
+AS_IF([test x"${ac_cv_func_gmtime_s}-${ac_cv_func_gmtime_r}" = "xno-no" && test x"${ac_cv_have_decl_gmtime_s}-${ac_cv_have_decl_gmtime_r}" = "xno-no"], [
 	AC_MSG_RESULT([no])
-	AC_MSG_WARN([Required C library routine gmtime_s nor gmtime_r was not found by linker; try adding -D_POSIX_C_SOURCE=200112L and/or -D_POSIX_THREAD_SAFE_FUNCTIONS=200112L])
+	AC_MSG_WARN([Required C library routine gmtime_s nor gmtime_r was not found by linker nor in headers; try adding -D_POSIX_C_SOURCE=200112L and/or -D_POSIX_THREAD_SAFE_FUNCTIONS=200112L])
 	],[
 	AC_MSG_RESULT([yes])
 	])
 
 AC_MSG_CHECKING([for at least one localtime implementation])
-AS_IF([test x"${ac_cv_func_localtime_s}-${ac_cv_func_localtime_r}" = "xno-no"], [
+AS_IF([test x"${ac_cv_func_localtime_s}-${ac_cv_func_localtime_r}" = "xno-no" && test x"${ac_cv_have_decl_localtime_s}-${ac_cv_have_decl_localtime_r}" = "xno-no"], [
 	AC_MSG_RESULT([no])
-	AC_MSG_WARN([Required C library routine localtime_s nor localtime_r was not found by linker; try adding -D_POSIX_C_SOURCE=200112L and/or -D_POSIX_THREAD_SAFE_FUNCTIONS=200112L])
+	AC_MSG_WARN([Required C library routine localtime_s nor localtime_r was not found by linker nor in headers; try adding -D_POSIX_C_SOURCE=200112L and/or -D_POSIX_THREAD_SAFE_FUNCTIONS=200112L])
 	],[
 	AC_MSG_RESULT([yes])
 	])
 
 AC_MSG_CHECKING([for at least one timegm implementation])
-AS_IF([test x"${ac_cv_func_timegm}-${ac_cv_func__mkgmtime}" = "xno-no"], [
+AS_IF([test x"${ac_cv_func_timegm}-${ac_cv_func__mkgmtime}" = "xno-no" && test x"${ac_cv_have_decl_timegm}-${ac_cv_have_decl__mkgmtime}" = "xno-no"], [
 	AC_MSG_RESULT([no])
-	AC_MSG_WARN([Required C library routine timegm nor _mkgmtime was not found by linker])
+	AC_MSG_WARN([Required C library routine timegm nor _mkgmtime was not found by linker nor in headers])
 	AC_DEFINE_UNQUOTED([WANT_TIMEGM_FALLBACK], [1], [Defined if we want to use timegm_fallback()])
 	AM_CONDITIONAL([WANT_TIMEGM_FALLBACK], [true])
 	],[
