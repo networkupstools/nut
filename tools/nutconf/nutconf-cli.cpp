@@ -33,10 +33,10 @@ extern "C" {
  * for C++ code (here for common printing of version banner)? */
 #include "common.h"
 #if (defined WITH_NUTSCANNER)
-#include "nut-scan.h"
-#include "nutscan-init.h"
-#include "nutscan-device.h"
-#endif  // defined WITH_NUTSCANNER
+# include "nut-scan.h"
+# include "nutscan-init.h"
+# include "nutscan-device.h"
+#endif	/* WITH_NUTSCANNER */
 }
 
 #include <iostream>
