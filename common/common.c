@@ -265,7 +265,7 @@ int print_banner_once(const char *prog, int even_if_disabled)
 
 	if (!banner_is_disabled() || even_if_disabled) {
 		ret = printf("Network UPS Tools %s %s%s\n",
-			prog, UPS_VERSION,
+			prog, describe_NUT_VERSION_once(),
 			even_if_disabled == 2 ? "\n" : "");
 		fflush(stdout);
 		if (ret > 0)
