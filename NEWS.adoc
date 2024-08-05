@@ -60,6 +60,8 @@ https://github.com/networkupstools/nut/milestone/11
      sockets and a tight polling loop that hogged CPU. While the underlying
      bug is ancient, it took recent development to hit it as a practical
      regression. [issue #1904, issue #2484]
+   * Fallback `localtime_r()` and `gmtime_r()` for some platform builds where
+     a `*_s()` variant was available was not handled correctly. [PR #2583]
 
  - development iterations of NUT should now identify with not only the semantic
    version of a preceding release, but with git-derived information about the
