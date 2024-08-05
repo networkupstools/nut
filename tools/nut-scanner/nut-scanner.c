@@ -32,7 +32,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include "nut_version.h"
 #include <unistd.h>
 #include <string.h>
 
