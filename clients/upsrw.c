@@ -47,7 +47,7 @@ struct list_t {
 
 static void usage(const char *prog)
 {
-	printf("Network UPS Tools %s %s\n\n", prog, UPS_VERSION);
+	print_banner_once(prog, 2);
 	printf("NUT administration client program to set variables within UPS hardware.\n");
 
 	printf("\nusage: %s [-h]\n", prog);
@@ -669,7 +669,9 @@ int main(int argc, char **argv)
 			tracking_enabled = 1;
 			break;
 		case 'V':
-			printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
+			/* just show the version and optional
+			 * CONFIG_FLAGS banner if available */
+			print_banner_once(prog, 1);
 			nut_report_config_flags();
 			exit(EXIT_SUCCESS);
 		case 'h':

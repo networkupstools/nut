@@ -180,6 +180,11 @@ static void help_msg(void)
 {
 	vartab_t	*tmp;
 
+	if (banner_is_disabled()) {
+		/* Was not printed at start of main() */
+		upsdrv_banner();
+	}
+
 	nut_report_config_flags();
 
 	printf("\nusage: %s (-a <id>|-s <id>) [OPTIONS]\n", progname);
@@ -1934,7 +1939,12 @@ int main(int argc, char **argv)
 				group_from_cmdline = 1;
 				break;
 			case 'V':
-				/* already printed the banner for program name */
+				/* just show the version and optional
+				 * CONFIG_FLAGS banner if available */
+				if (banner_is_disabled()) {
+					/* Was not printed at start of main() */
+					upsdrv_banner();
+				}
 				nut_report_config_flags();
 				exit(EXIT_SUCCESS);
 			case 'x':

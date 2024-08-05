@@ -47,7 +47,7 @@ struct list_t {
 
 static void usage(const char *prog)
 {
-	printf("Network UPS Tools upscmd %s\n\n", UPS_VERSION);
+	print_banner_once(prog, 2);
 	printf("NUT administration client program to initiate instant commands on UPS hardware.\n");
 
 	printf("\nusage: %s [-h]\n", prog);
@@ -313,12 +313,11 @@ int main(int argc, char **argv)
 			break;
 
 		case 'V':
+			/* just show the version and optional
+			 * CONFIG_FLAGS banner if available */
+			print_banner_once(prog, 1);
 			nut_report_config_flags();
-
-			fatalx(EXIT_SUCCESS, "Network UPS Tools upscmd %s", UPS_VERSION);
-#ifndef HAVE___ATTRIBUTE__NORETURN
-			exit(EXIT_SUCCESS);	/* Should not get here in practice, but compiler is afraid we can fall through */
-#endif
+			exit(EXIT_SUCCESS);
 
 		case 'h':
 		default:

@@ -1543,6 +1543,8 @@ int main(int argc, char *argv[])
 				quiet = 1;
 				break;
 			case 'V':
+				/* just show the version and optional
+				 * CONFIG_FLAGS banner if available */
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
 #pragma GCC diagnostic push
 #endif
