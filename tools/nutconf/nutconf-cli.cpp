@@ -29,6 +29,9 @@
 #include "nutstream.hpp"
 
 extern "C" {
+/* FIXME? Is it counter-intentional to use our C common library
+ * for C++ code (here for common printing of version banner)? */
+#include "common.h"
 #if (defined WITH_NUTSCANNER)
 #include "nut-scan.h"
 #include "nutscan-init.h"
@@ -3085,12 +3088,14 @@ static void scanSerialDevices(const NutConfOptions & options) {
  *  \return 0 always (exits on error)
  */
 static int mainx(int argc, char * const argv[]) {
+	const char	*prog = xbasename(argv[0]);
+
 	// Get options
 	NutConfOptions options(argv, argc);
 
 	// Usage
 	if (options.exists("help") || options.existsSingle("h")) {
-		Usage::print(argv[0]);
+		Usage::print(prog);
 
 		::exit(0);
 	}
