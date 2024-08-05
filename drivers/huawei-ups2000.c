@@ -51,7 +51,7 @@
 #include "timehead.h"   /* fallback gmtime_r() variants if needed (e.g. some WIN32) */
 
 #define DRIVER_NAME	"NUT Huawei UPS2000 (1kVA-3kVA) RS-232 Modbus driver"
-#define DRIVER_VERSION	"0.06"
+#define DRIVER_VERSION	"0.07"
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define MODBUS_SLAVE_ID 1
@@ -1858,7 +1858,7 @@ static time_t time_seek(time_t t, int seconds)
 	if (!t)
 		fatalx(EXIT_FAILURE, "time_seek() failed!");
 
-	if (!gmtime_r(&t, &time_tm))
+	if (gmtime_r(&t, &time_tm) == NULL)
 		fatalx(EXIT_FAILURE, "time_seek() failed!");
 
 	time_tm.tm_sec += seconds;
