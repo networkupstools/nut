@@ -1939,6 +1939,14 @@ int main(int argc, char **argv)
 				group_from_cmdline = 1;
 				break;
 			case 'V':
+				/* Avoid the verbose message about
+				 * driver daemon state integration
+				 * with a service management framework
+				 * like systemd, as not too relevant
+				 * to program version reporting here
+				 * (only seen with non-zero debug) */
+				setenv("NUT_QUIET_INIT_UPSNOTIFY", "yes", 0);
+
 				/* just show the version and optional
 				 * CONFIG_FLAGS banner if available */
 				if (banner_is_disabled()) {
