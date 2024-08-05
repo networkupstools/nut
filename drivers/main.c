@@ -139,7 +139,9 @@ void upsdrv_banner (void)
 {
 	int i;
 
-	printf("Network UPS Tools - %s %s (%s)\n", upsdrv_info.name, upsdrv_info.version, UPS_VERSION);
+	printf("Network UPS Tools driver %s - %s %s\n",
+		describe_NUT_VERSION_once(),
+		upsdrv_info.name, upsdrv_info.version);
 
 	/* process sub driver(s) information */
 	for (i = 0; upsdrv_info.subdrv_info[i]; i++) {
