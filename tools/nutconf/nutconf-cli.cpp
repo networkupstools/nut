@@ -108,6 +108,9 @@ const char * Usage::s_text[] = {
 	"                                        specified multiple times to set multiple users",
 	"    --add-user <spec>                   Same as --set-user, but keeps existing users",
 	"                                        The two options are mutually exclusive",
+	/* FIXME: Alias as "-D"? Is this the same as nut_debug_level
+	 * NOTE: upsdebugx() not used here directly (yet?), though we
+	 * could setenv() the envvar for libnutscan perhaps? */
 	"    -v",
 	"    --verbose                           Increase verbosity of output one level",
 	"                                        May be specified multiple times",
