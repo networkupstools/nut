@@ -44,8 +44,8 @@ extern "C" {
 char * strptime(const char *buf, const char *fmt, struct tm *tm);
 #endif
 
-#ifndef HAVE_LOCALTIME_R
-# ifdef HAVE_LOCALTIME_S
+#if !(defined HAVE_LOCALTIME_R && HAVE_LOCALTIME_R) && !(defined HAVE_DECL_LOCALTIME_R && HAVE_DECL_LOCALTIME_R)
+# if (defined HAVE_LOCALTIME_S && HAVE_LOCALTIME_S) || (defined HAVE_DECL_LOCALTIME_S && HAVE_DECL_LOCALTIME_S)
 /* A bit of a silly trick, but should help on MSYS2 builds it seems */
 #  define localtime_r(timer, buf) localtime_s(timer, buf)
 # else
@@ -59,8 +59,8 @@ static inline struct tm *localtime_r( const time_t *timer, struct tm *buf ) {
 # endif
 #endif
 
-#ifndef HAVE_GMTIME_R
-# ifdef HAVE_GMTIME_S
+#if !(defined HAVE_GMTIME_R && HAVE_GMTIME_R) && !(defined HAVE_DECL_GMTIME_R && HAVE_DECL_GMTIME_R)
+# if (defined HAVE_GMTIME_S && HAVE_GMTIME_S) || (defined HAVE_DECL_GMTIME_S && HAVE_DECL_GMTIME_S)
 #  define gmtime_r(timer, buf) gmtime_s(timer, buf)
 # else
 #  include <string.h> /* memcpy */
@@ -73,8 +73,8 @@ static inline struct tm *gmtime_r( const time_t *timer, struct tm *buf ) {
 # endif
 #endif
 
-#ifndef HAVE_TIMEGM
-# ifdef HAVE__MKGMTIME
+#if !(defined HAVE_TIMEGM && HAVE_TIMEGM) && !(defined HAVE_DECL_TIMEGM && HAVE_DECL_TIMEGM)
+# if (defined HAVE__MKGMTIME && HAVE__MKGMTIME) || (defined HAVE_DECL__MKGMTIME && HAVE_DECL__MKGMTIME)
 #  define timegm(tm) _mkgmtime(tm)
 # else
 #  ifdef WANT_TIMEGM_FALLBACK

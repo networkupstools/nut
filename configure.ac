@@ -938,8 +938,12 @@ AC_CHECK_FUNCS(strtof strtok_r fileno sigemptyset sigaction,
 dnl For these we have a fallback implementation via the other,
 dnl if at least one is available, so initial check is quiet.
 dnl This typically pops up in POSIX vs. Windows builds:
-AC_CHECK_FUNCS(localtime_r localtime_s gmtime_r gmtime_s timegm _mkgmtime,
-	[], [])
+dnl Reminder: the former checks for declarations in headers,
+dnl the latter checks if known libraries suffice for linker.
+dnl Might need AC_CHECK_LIBS as well to populate the list with
+dnl known variants?
+AC_CHECK_DECLS([localtime_r, localtime_s, gmtime_r, gmtime_s, timegm, _mkgmtime], [], [], [$CODE_TIMEINCL])
+AC_CHECK_FUNCS(localtime_r localtime_s gmtime_r gmtime_s timegm _mkgmtime, [], [])
 
 AC_MSG_CHECKING([for at least one gmtime implementation])
 AS_IF([test x"${ac_cv_func_gmtime_s}-${ac_cv_func_gmtime_r}" = "xno-no" && test x"${ac_cv_have_decl_gmtime_s}-${ac_cv_have_decl_gmtime_r}" = "xno-no"], [
