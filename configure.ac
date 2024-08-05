@@ -944,7 +944,7 @@ AC_CHECK_FUNCS(localtime_r localtime_s gmtime_r gmtime_s timegm _mkgmtime,
 AC_MSG_CHECKING([for at least one gmtime implementation])
 AS_IF([test x"${ac_cv_func_gmtime_s}-${ac_cv_func_gmtime_r}" = "xno-no"], [
 	AC_MSG_RESULT([no])
-	AC_MSG_WARN([Required C library routine gmtime_s nor gmtime_r was not found; try adding -D_POSIX_C_SOURCE=200112L])
+	AC_MSG_WARN([Required C library routine gmtime_s nor gmtime_r was not found; try adding -D_POSIX_C_SOURCE=200112L and/or -D_POSIX_THREAD_SAFE_FUNCTIONS=200112L])
 	],[
 	AC_MSG_RESULT([yes])
 	])
@@ -952,7 +952,7 @@ AS_IF([test x"${ac_cv_func_gmtime_s}-${ac_cv_func_gmtime_r}" = "xno-no"], [
 AC_MSG_CHECKING([for at least one localtime implementation])
 AS_IF([test x"${ac_cv_func_localtime_s}-${ac_cv_func_localtime_r}" = "xno-no"], [
 	AC_MSG_RESULT([no])
-	AC_MSG_WARN([Required C library routine localtime_s nor localtime_r was not found; try adding -D_POSIX_C_SOURCE=200112L])
+	AC_MSG_WARN([Required C library routine localtime_s nor localtime_r was not found; try adding -D_POSIX_C_SOURCE=200112L and/or -D_POSIX_THREAD_SAFE_FUNCTIONS=200112L])
 	],[
 	AC_MSG_RESULT([yes])
 	])
