@@ -200,9 +200,29 @@ extern const char *UPS_VERSION;
 /** @brief Default timeout (in seconds) for retrieving the result of a `TRACKING`-enabled operation (e.g. `INSTCMD`, `SET VAR`). */
 #define DEFAULT_TRACKING_TIMEOUT	10
 
+/* Returns a pointer to static internal char[] buffer with current value
+ * of NUT_VERSION_MACRO (aka char* UPS_VERSION) and its layman description
+ * (e.g. a "release" or "development iteration after" a certain semantically
+ * versioned release). Returns UPS_VERSION if failed to construct a better
+ * description. Either way, should not be free()'d by caller and does not
+ * have an end-of-line char of its own. */
+const char *describe_NUT_VERSION_once(void);
+
 /* Based on NUT_QUIET_INIT_BANNER envvar (present and empty or "true")
  * hide the NUT tool name+version banners; show them by default */
 int banner_is_disabled(void);
+
+/* Some NUT programs have historically printed their banner at start-up
+ * always, and so did not print one in help()/usage() or handling `-V`
+ * like others did. Now that we have NUT_QUIET_INIT_BANNER, we need a
+ * way to print that banner (regardless of the flag in some cases).
+ * The "even_if_disabled" should be 0 for initial banner of those
+ * programs (so the envvar would hide it), 1 -V case and 2 in -h case
+ * (for a blank line after). As before, the banner is printed to stdout.
+ * Returns the result of printf() involved. Remembers to not print again
+ * if the earlier printf() was successful.
+ */
+int print_banner_once(const char *prog, int even_if_disabled);
 
 /* Normally we can (attempt to) use the syslog or Event Log (WIN32),
  * but environment variable NUT_DEBUG_SYSLOG allows to bypass it, and

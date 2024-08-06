@@ -752,6 +752,19 @@ AS_IF([test "$ac_cv_header_sys_time_h" = yes],
          and <time.h>.  This macro is deemed obsolete by autotools.])
     ], [])
 
+CODE_TIMEINCL="
+#ifdef TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
+"
+
 AC_CHECK_HEADERS_ONCE([fcntl.h sys/stat.h sys/socket.h netdb.h])
 AC_CHECK_FUNCS(flock lockf fcvt fcvtl dup dup2 abs_val abs)
 
@@ -920,34 +933,38 @@ dnl These appear with CFLAGS="-std=c99 -D_POSIX_C_SOURCE=200112L":
 dnl# Methods below currently do not cause build errors for C99+ modes so are
 dnl# not tested as thoroughly as those further below:
 AC_CHECK_FUNCS(strtof strtok_r fileno sigemptyset sigaction,
-	[], [AC_MSG_WARN([Required C library routine not found; try adding -D_POSIX_C_SOURCE=200112L])])
+	[], [AC_MSG_WARN([Required C library routine not found by linker; try adding -D_POSIX_C_SOURCE=200112L])])
 
 dnl For these we have a fallback implementation via the other,
 dnl if at least one is available, so initial check is quiet.
 dnl This typically pops up in POSIX vs. Windows builds:
-AC_CHECK_FUNCS(localtime_r localtime_s gmtime_r gmtime_s timegm _mkgmtime,
-	[], [])
+dnl Reminder: the former checks for declarations in headers,
+dnl the latter checks if known libraries suffice for linker.
+dnl Might need AC_CHECK_LIBS as well to populate the list with
+dnl known variants?
+AC_CHECK_DECLS([localtime_r, localtime_s, gmtime_r, gmtime_s, timegm, _mkgmtime], [], [], [$CODE_TIMEINCL])
+AC_CHECK_FUNCS(localtime_r localtime_s gmtime_r gmtime_s timegm _mkgmtime, [], [])
 
 AC_MSG_CHECKING([for at least one gmtime implementation])
-AS_IF([test x"${ac_cv_func_gmtime_s}-${ac_cv_func_gmtime_r}" = "xno-no"], [
+AS_IF([test x"${ac_cv_func_gmtime_s}-${ac_cv_func_gmtime_r}" = "xno-no" && test x"${ac_cv_have_decl_gmtime_s}-${ac_cv_have_decl_gmtime_r}" = "xno-no"], [
 	AC_MSG_RESULT([no])
-	AC_MSG_WARN([Required C library routine gmtime_s nor gmtime_r was not found; try adding -D_POSIX_C_SOURCE=200112L])
+	AC_MSG_WARN([Required C library routine gmtime_s nor gmtime_r was not found by linker nor in headers; try adding -D_POSIX_C_SOURCE=200112L and/or -D_POSIX_THREAD_SAFE_FUNCTIONS=200112L])
 	],[
 	AC_MSG_RESULT([yes])
 	])
 
 AC_MSG_CHECKING([for at least one localtime implementation])
-AS_IF([test x"${ac_cv_func_localtime_s}-${ac_cv_func_localtime_r}" = "xno-no"], [
+AS_IF([test x"${ac_cv_func_localtime_s}-${ac_cv_func_localtime_r}" = "xno-no" && test x"${ac_cv_have_decl_localtime_s}-${ac_cv_have_decl_localtime_r}" = "xno-no"], [
 	AC_MSG_RESULT([no])
-	AC_MSG_WARN([Required C library routine localtime_s nor localtime_r was not found; try adding -D_POSIX_C_SOURCE=200112L])
+	AC_MSG_WARN([Required C library routine localtime_s nor localtime_r was not found by linker nor in headers; try adding -D_POSIX_C_SOURCE=200112L and/or -D_POSIX_THREAD_SAFE_FUNCTIONS=200112L])
 	],[
 	AC_MSG_RESULT([yes])
 	])
 
 AC_MSG_CHECKING([for at least one timegm implementation])
-AS_IF([test x"${ac_cv_func_timegm}-${ac_cv_func__mkgmtime}" = "xno-no"], [
+AS_IF([test x"${ac_cv_func_timegm}-${ac_cv_func__mkgmtime}" = "xno-no" && test x"${ac_cv_have_decl_timegm}-${ac_cv_have_decl__mkgmtime}" = "xno-no"], [
 	AC_MSG_RESULT([no])
-	AC_MSG_WARN([Required C library routine timegm nor _mkgmtime was not found])
+	AC_MSG_WARN([Required C library routine timegm nor _mkgmtime was not found by linker nor in headers])
 	AC_DEFINE_UNQUOTED([WANT_TIMEGM_FALLBACK], [1], [Defined if we want to use timegm_fallback()])
 	AM_CONDITIONAL([WANT_TIMEGM_FALLBACK], [true])
 	],[
@@ -1053,16 +1070,7 @@ AC_CACHE_CHECK([for strptime(s1,s2,tm)],
     [ac_cv_func_strptime],
     [AX_RUN_OR_LINK_IFELSE(
         [AC_LANG_PROGRAM([$CODE_STRINGINCL
-#ifdef TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
+$CODE_TIMEINCL
 ],
             [struct tm tm;
 char *date = "12/30/1999";
@@ -1082,16 +1090,7 @@ AC_CACHE_CHECK([for clock_gettime(CLOCK_MONOTONIC,ts)],
     [ac_cv_func_clock_gettime],
     [AX_RUN_OR_LINK_IFELSE(
         [AC_LANG_PROGRAM([$CODE_STRINGINCL
-#ifdef TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
+$CODE_TIMEINCL
 ],
             [struct timespec monoclock_ts;
 int got_monoclock = clock_gettime(CLOCK_MONOTONIC, &monoclock_ts);

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3205 utf-8
+personal_ws-1.1 en 3206 utf-8
 AAC
 AAS
 ABI
@@ -1960,6 +1960,7 @@ gitk
 gitlab
 gmail
 gmake
+gmtime
 gnuplot
 gnutls
 google

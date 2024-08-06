@@ -702,7 +702,7 @@ static void WINAPI SvcMain(DWORD argc, LPTSTR *argv)
 
 static void help(const char *arg_progname)
 {
-	printf("Network UPS Tools %s %s\n\n", arg_progname, UPS_VERSION);
+	print_banner_once(arg_progname, 2);
 
 	printf("NUT for Windows all-in-one wrapper for driver(s), data server and monitoring client\n");
 	printf("including shutdown and power-off handling (where supported). All together they rely\n");
@@ -778,8 +778,9 @@ int main(int argc, char **argv)
 				nut_debug_level++;
 				break;
 			case 'V':
-				/* also show the optional CONFIG_FLAGS banner if available */
-				printf("Network UPS Tools %s %s\n", progname, UPS_VERSION);
+				/* just show the version and optional
+				 * CONFIG_FLAGS banner if available */
+				print_banner_once(progname, 1);
 				nut_report_config_flags();
 				return EXIT_SUCCESS;
 			case 'h':

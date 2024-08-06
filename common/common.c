@@ -209,6 +209,72 @@ int banner_is_disabled(void)
 	return value;
 }
 
+const char *describe_NUT_VERSION_once(void)
+{
+	static char	buf[LARGEBUF];
+	static const char	*printed = NULL;
+
+	if (printed)
+		return printed;
+
+	memset(buf, 0, sizeof(buf));
+
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+	/* NOTE: Some compilers deduce that macro-based decisions about
+	 * NUT_VERSION_IS_RELEASE make one of codepaths unreachable in
+	 * a particular build. So we pragmatically handwave this away.
+	 */
+	if (1 < snprintf(buf, sizeof(buf),
+		"%s %s%s%s",
+		NUT_VERSION_MACRO,
+		NUT_VERSION_IS_RELEASE ? "release" : "(development iteration after ",
+		NUT_VERSION_IS_RELEASE ? "" : NUT_VERSION_SEMVER_MACRO,
+		NUT_VERSION_IS_RELEASE ? "" : ")"
+	)) {
+		printed = buf;
+	} else {
+		upslogx(LOG_WARNING, "%s: failed to report detailed NUT version", __func__);
+		printed = UPS_VERSION;
+	}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
+
+	return printed;
+}
+
+int print_banner_once(const char *prog, int even_if_disabled)
+{
+	static int	printed = 0;
+	static int	ret = -1;
+
+	if (printed)
+		return ret;
+
+	if (!banner_is_disabled() || even_if_disabled) {
+		ret = printf("Network UPS Tools %s %s%s\n",
+			prog, describe_NUT_VERSION_once(),
+			even_if_disabled == 2 ? "\n" : "");
+		fflush(stdout);
+		if (ret > 0)
+			printed = 1;
+	}
+
+	return ret;
+}
+
 /* enable writing upslog_with_errno() and upslogx() type messages to
    the syslog */
 void syslogbit_set(void)
@@ -2195,28 +2261,11 @@ void nut_report_config_flags(void)
 		now.tv_sec -= 1;
 	}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic ignored "-Wunreachable-code"
-#endif
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunreachable-code"
-#endif
-	/* NOTE: Some compilers deduce that macro-based decisions about
-	 * NUT_VERSION_IS_RELEASE make one of codepaths unreachable in
-	 * a particular build. So we pragmatically handwave this away.
-	 */
 	if (xbit_test(upslog_flags, UPSLOG_STDERR)) {
-		fprintf(stderr, "%4.0f.%06ld\t[D1] Network UPS Tools version %s%s%s%s%s%s%s %s%s\n",
+		fprintf(stderr, "%4.0f.%06ld\t[D1] Network UPS Tools version %s%s%s%s %s%s\n",
 			difftime(now.tv_sec, upslog_start.tv_sec),
 			(long)(now.tv_usec - upslog_start.tv_usec),
-			UPS_VERSION,
-			NUT_VERSION_IS_RELEASE ? " release" : " (development iteration after ",
-			NUT_VERSION_IS_RELEASE ? "" : NUT_VERSION_SEMVER_MACRO,
-			NUT_VERSION_IS_RELEASE ? "" : ")",
+			describe_NUT_VERSION_once(),
 			(compiler_ver && *compiler_ver != '\0' ? " built with " : ""),
 			(compiler_ver && *compiler_ver != '\0' ? compiler_ver : ""),
 			(compiler_ver && *compiler_ver != '\0' ? " and" : ""),
@@ -2231,11 +2280,8 @@ void nut_report_config_flags(void)
 	/* NOTE: May be ignored or truncated by receiver if that syslog server
 	 * (and/or OS sender) does not accept messages of such length */
 	if (xbit_test(upslog_flags, UPSLOG_SYSLOG)) {
-		syslog(LOG_DEBUG, "Network UPS Tools version %s%s%s%s%s%s%s %s%s",
-			UPS_VERSION,
-			NUT_VERSION_IS_RELEASE ? " release" : " (development iteration after ",
-			NUT_VERSION_IS_RELEASE ? "" : NUT_VERSION_SEMVER_MACRO,
-			NUT_VERSION_IS_RELEASE ? "" : ")",
+		syslog(LOG_DEBUG, "Network UPS Tools version %s%s%s%s %s%s",
+			describe_NUT_VERSION_once(),
 			(compiler_ver && *compiler_ver != '\0' ? " built with " : ""),
 			(compiler_ver && *compiler_ver != '\0' ? compiler_ver : ""),
 			(compiler_ver && *compiler_ver != '\0' ? " and" : ""),
@@ -2243,12 +2289,6 @@ void nut_report_config_flags(void)
 			(config_flags && *config_flags != '\0' ? config_flags : "")
 		);
 	}
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic pop
-#endif
 }
 
 static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
