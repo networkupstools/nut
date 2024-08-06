@@ -214,7 +214,11 @@ UPS status flags like on line (OL) and on battery (OB) live in
 ups.status.  Don't manipulate this by hand.  There are functions which
 will do this for you.
 
-	status_init() -- before doing anything else
+	status_init()   -- before doing anything else (clear internal buffers,
+	                   etc.)
+
+	status_get(val) -- optionally check if a status word had been set
+	                   since the most-recent status_init()
 
 	status_set(val) -- add a status word (OB, OL, etc)
 
