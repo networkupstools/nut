@@ -1440,9 +1440,13 @@ void upsdrv_initups(void)
 		) {
 			lbrb_log_delay_sec = 3;
 			upslogx(LOG_INFO, "Defaulting lbrb_log_delay_sec=%d "
-				"for %s model %s",
+				"for %s model %s%s",
 				lbrb_log_delay_sec,
-				hd->Vendor, hd->Product);
+				hd->Vendor, hd->Product,
+				testvar("lbrb_log_delay_without_calibrating")
+				? "" : "; consider also setting the "
+				"lbrb_log_delay_without_calibrating "
+				"flag in your configuration");
 		}
 	}
 
