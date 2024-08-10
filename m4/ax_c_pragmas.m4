@@ -1194,7 +1194,11 @@ return 0;
   )
   unset myWARN_CFLAGS
 
-  AS_IF([test "$ax_cv__printf_string_null" = "yes"],[
+  NUT_ARG_ENABLE([NUT_STRARG-always],
+    [Enable NUT_STRARG macro to handle NULL string printing even if system libraries seem to support it natively],
+    [no])
+
+  AS_IF([test "$ax_cv__printf_string_null" = "yes" && test x"$nut_enable_NUT_STRARG_always" != xyes],[
     AM_CONDITIONAL([REQUIRE_NUT_STRARG], [false])
     AC_DEFINE([REQUIRE_NUT_STRARG], [0],
       [Define to 0 if your libc can printf("%s", NULL) sanely, or to 1 if your libc requires workarounds to print NULL values.])
