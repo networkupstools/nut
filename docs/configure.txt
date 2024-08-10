@@ -437,12 +437,14 @@ which generated them from data walks, but developers did not rename yet
 to NUT mappings conforming to `docs/nut-names.txt` standards. Production
 driver builds must not include any non-standard names.
 
-	--enable-NUT_STRARG-always (default: no)
+	--enable-NUT_STRARG-always (default: auto)
 
 Enable the `NUT_STRARG` macro (to handle `NULL` string printing) even
-if the system libraries seem to safely support this behavior natively.
+if the system libraries seem to safely support this behavior natively?
 This flag should primarily help against overly zealous static analysis
-tools in recent compiler generations.
+tools in recent compiler generations.  The `auto` value enables the flag
+for certain compiler versions known to complain about some of our use
+cases -- even though those seem to be false positives.
 
 
 I want it all!
