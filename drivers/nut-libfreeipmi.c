@@ -1069,6 +1069,8 @@ int nut_ipmi_get_sensors_status(IPMIDevice_t *ipmi_dev)
 					str_count++;
 				}
 				break;
+			default:
+				break;
 		}
 	}
 
@@ -1091,6 +1093,8 @@ int nut_ipmi_get_sensors_status(IPMIDevice_t *ipmi_dev)
 			case PSU_POWER_FAILURE:
 				status_set("OFF");
 				retval = 0;
+				break;
+			default:
 				break;
 		}
 

@@ -555,6 +555,9 @@ finish:
 
 		case  0:	/* value may not be (re-)applied, but it may not have been required */
 			break;
+
+		default:
+			break;
 	}
 
 	upsdebugx(6, "%s: verdict for (re)loading var=%s value: %d",
@@ -647,6 +650,9 @@ finish:
 			break;
 
 		case  0:	/* value may not be (re-)applied, but it may not have been required */
+			break;
+
+		default:
 			break;
 	}
 
@@ -1701,6 +1707,8 @@ int main(int argc, char **argv)
 			case 'd':
 				dump_data = atoi(optarg);
 				break;
+			default:
+				break;
 		}
 	}
 	/* Reset the index, read argv[1] next time (loop below)
@@ -1965,7 +1973,8 @@ int main(int argc, char **argv)
 				exit(EXIT_SUCCESS);
 			default:
 				fatalx(EXIT_FAILURE,
-					"Error: unknown option -%c. Try -h for help.", i);
+					"Error: unknown option -%c. Try -h for help.",
+					(char)i);
 		}
 	}
 

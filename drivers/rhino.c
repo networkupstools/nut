@@ -464,6 +464,9 @@ CommReceive(const unsigned char *bufptr, ssize_t size)
 			break;
 		}
 
+		default:
+			break;
+
 	}
 
 	Waiting = 0;

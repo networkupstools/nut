@@ -1669,6 +1669,9 @@ static int mge_claim(HIDDevice_t *hd) {
 
 				/* Let liebert-hid grab this */
 				return 0;
+
+			default:
+				break;
 		}
 
 		return 1;

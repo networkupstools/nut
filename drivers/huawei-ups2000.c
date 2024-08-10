@@ -1035,6 +1035,9 @@ static int ups2000_update_alarm(void)
 				case ALARM_CLEAR_DEPENDING:
 					upslogx(loglevel, "This alarm is auto or manual cleared "
 							  "depending on the specific problem.");
+					break;
+				default:
+					break;
 				}
 
 				ups2000_alarm[i].active = 1;

@@ -286,6 +286,9 @@ static void us_serialize(int op)
 			ret = read(pipefd[0], &ch, 1);
 			close(pipefd[0]);
 			break;
+
+		default:
+			break;
 	}
 }
 #endif
@@ -1531,6 +1534,11 @@ int main(int argc, char **argv)
 				/* just show the optional CONFIG_FLAGS banner */
 				nut_report_config_flags();
 				exit(EXIT_SUCCESS);
+
+			default:
+				fatalx(EXIT_FAILURE,
+					"Error: unknown option -%c. Try -h for help.",
+					(char)i);
 		}
 	}
 

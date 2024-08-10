@@ -485,6 +485,9 @@ static void parse_char(PCONF_CTX_t *ctx)
 		case STATE_COLLECTLITERAL:
 			ctx->state = collectliteral(ctx);
 			break;
+
+		default:
+			break;
 	}	/* switch */
 }
 

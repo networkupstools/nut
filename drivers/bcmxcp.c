@@ -1158,6 +1158,8 @@ void init_ext_vars(void)
 						dstate_setaux("battery.packs", 1);
 						break;
 
+			default:
+						break;
 		}
 	}
 }
@@ -2096,6 +2098,8 @@ static int instcmd(const char *cmdname, const char *extra)
 				cbuf[2] = 0x2;
 				break;                  /*mute beeper*/
 				}
+			default:
+				break;
 		}
 		cbuf[3] = 0x0;          /*padding*/
 

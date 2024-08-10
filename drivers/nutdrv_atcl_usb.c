@@ -440,6 +440,9 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 				case -2:
 					upsdebugx(4, "matcher: unspecified error");
 					goto next_device;
+
+				default:
+					break;
 				}
 			}
 #ifdef HAVE_LIBUSB_SET_AUTO_DETACH_KERNEL_DRIVER

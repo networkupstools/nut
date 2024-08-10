@@ -221,6 +221,10 @@ during a NUT build.
      properly. [#2541]
    * local socket/pipe protocol introduced a `LOGOUT` command for cleaner
      disconnection handling. [#2572]
+   * codebase adapted to the liking of `clang-18` and newer revisions of
+     `gcc-13`+ whose static analyzers on NUT CI farm complained about some
+     imperfections after adding newer OS revisions to the population of
+     build agents. [#2585, #2588]
 
  - updated `docs/nut-names.txt` with items defined by 42ITy NUT fork. [#2339]
 
