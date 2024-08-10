@@ -189,6 +189,9 @@ during a NUT build.
      all supported buses with `-m auto` takes unbearably long. [#2523]
    * bumped version of `libnutscan` to 2.6.0, it now includes a few more
      methods and symbols from `libcommon`. [issue #2244, PR #2509]
+   * do not actively suggest `vendor(id)`, `product(id)`, and `serial` options
+     for `bcmxcp_usb`, `richcomm_usb` and `nutdrv_atcl_usb` drivers for now
+     [#1763, #1764, #1768, #2580]
 
  - common code:
    * introduced a `NUT_DEBUG_SYSLOG` environment variable to tweak activation

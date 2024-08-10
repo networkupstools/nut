@@ -1202,8 +1202,7 @@ return 0;
   dnl alleged formatting string overflow (seems like a false
   dnl positive in that case). Require the full macro there
   dnl by default.
-  AC_MSG_NOTICE([CC_VERSION='$CC_VERSION'])
-  set -x
+  dnl AC_MSG_NOTICE([CC_VERSION='$CC_VERSION'])
   AS_IF([test x"$nut_enable_NUT_STRARG_always" = xauto], [
     nut_enable_NUT_STRARG_always=no
     AS_IF([test "${CLANGCC}" = "yes"], [
@@ -1232,8 +1231,6 @@ dnl        )
       [Define to 0 if your libc can printf("%s", NULL) sanely, or to 1 if your libc requires workarounds to print NULL values.])
     AC_MSG_WARN([Your C library requires workarounds to print NULL values; if something crashes with a segmentation fault (especially during verbose debug) - that may be why])
   ])
-
-set +x
 
   AC_LANG_POP([C])
 fi

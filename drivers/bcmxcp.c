@@ -2218,6 +2218,10 @@ void upsdrv_help(void)
 /* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {
+	/* NOTE: The USB variant of this driver currently does not
+	 * involve nut_usb_addvars() method like others do. When
+	 * fixing, see also tools/nut-scanner/scan_usb.c "exceptions".
+	 */
 	addvar(VAR_VALUE, "shutdown_delay", "Specify shutdown delay (seconds)");
 	addvar(VAR_VALUE, "baud_rate", "Specify communication speed (ex: 9600)");
 }
