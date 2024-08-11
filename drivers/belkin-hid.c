@@ -665,6 +665,9 @@ static int belkin_claim(HIDDevice_t *hd)
 			}
 			possibly_supported("Liebert", hd);
 			return 0;
+
+		default:
+			break;
 		}
 		return 0;
 

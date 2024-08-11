@@ -523,6 +523,12 @@ int main(int argc, char **argv)
 			case 'B':
 				foreground = 0;
 				break;
+
+			default:
+				fatalx(EXIT_FAILURE,
+					"Error: unknown option -%c. Try -h for help.",
+					(char)i);
+
 		}
 	}
 

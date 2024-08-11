@@ -490,6 +490,9 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 				case -2:
 					upsdebugx(4, "matcher: unspecified error");
 					goto next_device;
+
+				default:
+					break;
 				}
 			}
 #ifdef HAVE_LIBUSB_SET_AUTO_DETACH_KERNEL_DRIVER
@@ -743,6 +746,7 @@ void upsdrv_makevartable(void)
 {
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
 	/* TODO: Uncomment while addressing https://github.com/networkupstools/nut/issues/1768
-	nut_usb_addvars();
+	 * When fixing, see also tools/nut-scanner/scan_usb.c "exceptions".
+	 * nut_usb_addvars();
 	*/
 }

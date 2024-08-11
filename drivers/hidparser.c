@@ -350,6 +350,9 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 			/* can't handle long items, but should at least skip them */
 			pParser->Pos += (uint8_t)(pParser->Value & 0xff);
 			break;
+
+		default:
+			break;
 		}
 	} /* while ((Found < 0) && (pParser->Pos < pParser->ReportDescSize)) */
 

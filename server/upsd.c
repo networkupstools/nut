@@ -1323,6 +1323,8 @@ char *tracking_get(const char *id)
 			return "ERR INVALID-ARGUMENT";
 		case STAT_FAILED:
 			return "ERR FAILED";
+		default:
+			break;
 		}
 	}
 

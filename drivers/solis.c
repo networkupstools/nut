@@ -799,8 +799,10 @@ static void get_base_info(void) {
 		Model = "Solis 3.0";
 		break;
 	case 16:
-	  Model = "Microsol Back-Ups BZ1200-BR";
-	  break;
+		Model = "Microsol Back-Ups BZ1200-BR";
+		break;
+	default:
+		break;
 	}
 
 	/* if( isprogram ) */

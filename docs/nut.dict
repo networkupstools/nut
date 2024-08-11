@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3204 utf-8
+personal_ws-1.1 en 3205 utf-8
 AAC
 AAS
 ABI
@@ -1106,6 +1106,7 @@ STI
 STIME
 STO
 STP
+STRARG
 SUNWlibusbugen
 SUNWugen
 SUNWusb

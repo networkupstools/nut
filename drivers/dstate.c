@@ -106,6 +106,9 @@ static void sock_fail(const char *fn)
 		printf(" - rm %s\n\n", dflt_statepath());
 		printf(" - mkdir %s\n", dflt_statepath());
 		break;
+
+	default:
+		break;
 	}
 
 	/*

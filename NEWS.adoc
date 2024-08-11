@@ -189,6 +189,9 @@ during a NUT build.
      all supported buses with `-m auto` takes unbearably long. [#2523]
    * bumped version of `libnutscan` to 2.6.0, it now includes a few more
      methods and symbols from `libcommon`. [issue #2244, PR #2509]
+   * do not actively suggest `vendor(id)`, `product(id)`, and `serial` options
+     for `bcmxcp_usb`, `richcomm_usb` and `nutdrv_atcl_usb` drivers for now
+     [#1763, #1764, #1768, #2580]
 
  - common code:
    * introduced a `NUT_DEBUG_SYSLOG` environment variable to tweak activation
@@ -221,6 +224,10 @@ during a NUT build.
      properly. [#2541]
    * local socket/pipe protocol introduced a `LOGOUT` command for cleaner
      disconnection handling. [#2572]
+   * codebase adapted to the liking of `clang-18` and newer revisions of
+     `gcc-13`+ whose static analyzers on NUT CI farm complained about some
+     imperfections after adding newer OS revisions to the population of
+     build agents. [#2585, #2588]
 
  - updated `docs/nut-names.txt` with items defined by 42ITy NUT fork. [#2339]
 
