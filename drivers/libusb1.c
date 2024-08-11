@@ -33,7 +33,7 @@
 #include "nut_stdint.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.48"
+#define USB_DRIVER_VERSION	"0.49"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -601,6 +601,74 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 
 		nut_usb_set_altinterface(udev);
 
+		/* If libusb failed to identify the device strings earlier,
+		 * can we do that after claiming the interface? Just try...
+		 * Note that we succeeded so far, meaning these strings were
+		 * not among matching criteria. But they can be important for
+		 * our drivers (e.g. per-model tweaks) and pretty reporting
+		 * of certain `device.*` and/or `ups.*` data points.
+		 */
+		if (!curDevice->Vendor) {
+			retries = MAX_RETRY;
+			while (retries > 0) {
+				ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iManufacturer,
+					(unsigned char*)string, sizeof(string));
+				if (ret > 0) {
+					curDevice->Vendor = strdup(string);
+					if (curDevice->Vendor == NULL) {
+						libusb_free_device_list(devlist, 1);
+						fatal_with_errno(EXIT_FAILURE, "Out of memory");
+					}
+					break;
+				}
+				retries--;
+				upsdebugx(1, "%s get iManufacturer failed, retrying...", __func__);
+			}
+			upsdebugx(2, "- Manufacturer: %s", curDevice->Vendor ? curDevice->Vendor : "unknown");
+		}
+
+		if (!curDevice->Product) {
+			retries = MAX_RETRY;
+			while (retries > 0) {
+				ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iProduct,
+					(unsigned char*)string, sizeof(string));
+				if (ret > 0) {
+					curDevice->Product = strdup(string);
+					if (curDevice->Product == NULL) {
+						libusb_free_device_list(devlist, 1);
+						fatal_with_errno(EXIT_FAILURE, "Out of memory");
+					}
+					break;
+				}
+				retries--;
+				upsdebugx(1, "%s get iProduct failed, retrying...", __func__);
+			}
+			upsdebugx(2, "- Product: %s", curDevice->Product ? curDevice->Product : "unknown");
+		}
+
+		if (!curDevice->Serial) {
+			retries = MAX_RETRY;
+			while (retries > 0) {
+				ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iSerialNumber,
+					(unsigned char*)string, sizeof(string));
+				if (ret > 0) {
+					curDevice->Serial = strdup(string);
+					if (curDevice->Serial == NULL) {
+						libusb_free_device_list(devlist, 1);
+						fatal_with_errno(EXIT_FAILURE, "Out of memory");
+					}
+					break;
+				}
+				retries--;
+				upsdebugx(1, "%s get iSerialNumber failed, retrying...", __func__);
+			}
+			upsdebugx(2, "- Serial Number: %s", curDevice->Serial ? curDevice->Serial : "unknown");
+		}
+
+		/* Did the driver provide a callback method for any further
+		 * device acceptance checks (e.g. when same ID is supported
+		 * by several sub-drivers, differing by vendor/model strings)?
+		 */
 		if (!callback) {
 			libusb_free_config_descriptor(conf_desc);
 			libusb_free_device_list(devlist, 1);
