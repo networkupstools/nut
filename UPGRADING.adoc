@@ -110,6 +110,12 @@ Changes from 2.8.2 to 2.8.3
     tool name and NUT version banner from being printed out when programs
     start. [issues #1789 vs. #316]
 
+- A `configure` script option to `--enable-NUT_STRARG-always` was added
+  to enable the `NUT_STRARG` macro (to handle `NULL` string printing)
+  even if system libraries seem to safely support this behavior natively.
+  This should primarily help against overly zealous static analysis tools
+  in recent compiler generations. [#2585]
+
 
 Changes from 2.8.1 to 2.8.2
 ---------------------------

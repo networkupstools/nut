@@ -757,6 +757,9 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 
 		case LIBUSB_ERROR_TIMEOUT:	/* Connection timed out */
 			break;
+
+		default:
+			break;
 		}
 
 		if (ret < 0) {

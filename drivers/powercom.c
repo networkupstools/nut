@@ -669,6 +669,7 @@ static float load_level(void)
 				case 1000:
 				case 1500:
 				case 2000: return raw_data[UPS_LOAD]*110.0/load1000i[voltage];
+				default: break;
 			}
 		}
 	} else if (!strcmp(types[type].name, "KIN")) {

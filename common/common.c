@@ -1407,6 +1407,9 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 							(uintmax_t)pid);
 					}
 					break;
+
+				default:
+					break;
 			}
 		}
 

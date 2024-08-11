@@ -106,6 +106,8 @@ etapro_get_response(const char *resp_type)
 	case 'T':
 		dstate_setinfo("ups.mfr.date", "%s", cp + 2);
 		return 0;
+	default:
+		break;
 	}
 	/* Handle all other responses as hexadecimal numbers.  */
 	val = 0;

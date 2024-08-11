@@ -1493,6 +1493,8 @@ void upsdrv_updateinfo(void)
 				case '0':
 					dstate_setinfo("input.frequency.nominal", "%d", 50);
 					break;
+				default:
+					break;
 			}
 		}
 

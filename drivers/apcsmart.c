@@ -196,6 +196,9 @@ static const char *convert_data(apc_vartab_t *vt, const char *upsval)
 					  strcpy(temp, upsval);
 					  return temp;
 			}
+
+		default:
+			break;
 	}
 
 	/* this should never happen */

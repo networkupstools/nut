@@ -602,36 +602,87 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 				}
 				nut_dev->port = strdup("auto");
 
-				sprintf(string, "%04X", VendorID);
-				nutscan_add_option_to_device(nut_dev,
-					"vendorid",
-					string);
-
-				sprintf(string, "%04X", ProductID);
-				nutscan_add_option_to_device(nut_dev,
-					"productid",
-					string);
-
-				if (device_name) {
+				/* FIXME: https://github.com/networkupstools/nut/pull/1763
+				 * and linked issues: some drivers do not use
+				 * the common nut_usb_addvars() method, and
+				 * do not otherwise support these options:
+				 */
+				if (strncmp(driver_name, "bcmxcp_usb", 10)
+				 && strncmp(driver_name, "richcomm_usb", 12)
+				 && strncmp(driver_name, "nutdrv_atcl_usb", 15)
+				) {
+					sprintf(string, "%04X", VendorID);
 					nutscan_add_option_to_device(nut_dev,
-						"product",
-						device_name);
-					free(device_name);
-					device_name = NULL;
-				}
+						"vendorid",
+						string);
 
-				if (serialnumber) {
+					sprintf(string, "%04X", ProductID);
 					nutscan_add_option_to_device(nut_dev,
-						"serial",
-						serialnumber);
-					free(serialnumber);
-					serialnumber = NULL;
+						"productid",
+						string);
+
+					if (device_name) {
+						nutscan_add_option_to_device(nut_dev,
+							"product",
+							device_name);
+						free(device_name);
+						device_name = NULL;
+					}
+
+					if (serialnumber) {
+						nutscan_add_option_to_device(nut_dev,
+							"serial",
+							serialnumber);
+						free(serialnumber);
+						serialnumber = NULL;
+					}
+				} else {
+					sprintf(string, "%04X", VendorID);
+					nutscan_add_commented_option_to_device(nut_dev,
+						"vendorid",
+						string,
+						"");
+
+					sprintf(string, "%04X", ProductID);
+					nutscan_add_commented_option_to_device(nut_dev,
+						"productid",
+						string,
+						"");
+
+					if (device_name) {
+						nutscan_add_commented_option_to_device(nut_dev,
+							"product",
+							device_name,
+							"");
+						free(device_name);
+						device_name = NULL;
+					}
+
+					if (serialnumber) {
+						nutscan_add_commented_option_to_device(nut_dev,
+							"serial",
+							serialnumber,
+							"");
+						free(serialnumber);
+						serialnumber = NULL;
+					}
 				}
 
 				if (vendor_name) {
-					nutscan_add_option_to_device(nut_dev,
-						"vendor",
-						vendor_name);
+					/* NOTE: nutdrv_atcl_usb recognizes
+					 * "vendor" but not other opts */
+					if (strncmp(driver_name, "bcmxcp_usb", 10)
+					 && strncmp(driver_name, "richcomm_usb", 12)
+					) {
+						nutscan_add_option_to_device(nut_dev,
+							"vendor",
+							vendor_name);
+					} else {
+						nutscan_add_commented_option_to_device(nut_dev,
+							"vendor",
+							vendor_name,
+							"");
+					}
 					free(vendor_name);
 					vendor_name = NULL;
 				}
