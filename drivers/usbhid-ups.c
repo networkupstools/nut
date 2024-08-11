@@ -1424,7 +1424,7 @@ void upsdrv_initups(void)
 			lbrb_log_delay_sec = ipv;
 		}
 	} else {
-		/* Activate APC BXnnnnMI tweaks, for details see
+		/* Activate APC BXnnnMI/BXnnnnMI tweaks, for details see
 		 * https://github.com/networkupstools/nut/issues/2347
 		 */
 		size_t	productLen = hd->Product ? strlen(hd->Product) : 0;
@@ -1438,15 +1438,55 @@ void upsdrv_initups(void)
 		&&  (strstr(hd->Product, " BX") || strstr(hd->Product, "BX") == hd->Product)
 		&&  (hd->Product[productLen - 2] == 'M' && hd->Product[productLen - 1] == 'I')
 		) {
+			int	got_lbrb_log_delay_without_calibrating = testvar("lbrb_log_delay_without_calibrating"),
+				got_onlinedischarge_calibration = testvar("onlinedischarge_calibration"),
+				got_onlinedischarge_log_throttle_sec = testvar("onlinedischarge_log_throttle_sec");
+
 			lbrb_log_delay_sec = 3;
+
 			upslogx(LOG_INFO, "Defaulting lbrb_log_delay_sec=%d "
-				"for %s model %s%s",
+				"for %s model %s%s%s%s%s%s%s%s%s%s",
 				lbrb_log_delay_sec,
 				hd->Vendor, hd->Product,
-				testvar("lbrb_log_delay_without_calibrating")
-				? "" : "; consider also setting the "
-				"lbrb_log_delay_without_calibrating "
-				"flag in your configuration");
+
+				!got_lbrb_log_delay_without_calibrating
+				|| !got_onlinedischarge_calibration
+				|| !got_onlinedischarge_log_throttle_sec
+				? "; consider also setting the " : "",
+
+				!got_lbrb_log_delay_without_calibrating
+				? "lbrb_log_delay_without_calibrating " : "",
+
+				!got_lbrb_log_delay_without_calibrating
+				&& (!got_onlinedischarge_calibration
+				 || !got_onlinedischarge_log_throttle_sec)
+				? "and/or " : "",
+
+				!got_onlinedischarge_calibration
+				? "onlinedischarge_calibration " : "",
+
+				(!got_lbrb_log_delay_without_calibrating
+				|| !got_onlinedischarge_calibration )
+				&& !got_onlinedischarge_log_throttle_sec
+				? "and/or " : "",
+
+				!got_onlinedischarge_log_throttle_sec
+				? "onlinedischarge_log_throttle_sec " : "",
+
+				!got_lbrb_log_delay_without_calibrating
+				|| !got_onlinedischarge_calibration
+				|| !got_onlinedischarge_log_throttle_sec
+				? "flag" : "",
+
+				2 > ( got_lbrb_log_delay_without_calibrating
+				    + got_onlinedischarge_calibration
+				    + got_onlinedischarge_log_throttle_sec)
+				? "(s)" : "",
+
+				!got_lbrb_log_delay_without_calibrating
+				|| !got_onlinedischarge_calibration
+				|| !got_onlinedischarge_log_throttle_sec
+				? " in your configuration" : "");
 		}
 	}
 
