@@ -1294,7 +1294,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     CONFIG_OPTS+=("--with-cgi=auto")
                 fi
             else
-                CONFIG_OPTS+=("--with-cgi=auto")
+                if [ "${CANBUILD_LIBGD_CGI-}" = "no" ] ; then
+                    CONFIG_OPTS+=("--without-cgi")
+                else
+                    CONFIG_OPTS+=("--with-cgi=auto")
+                fi
             fi
             ;;
         "default-alldrv:no-distcheck")
