@@ -50,7 +50,7 @@
 # endif
 #endif
 
-#define MGE_HID_VERSION		"MGE HID 1.47"
+#define MGE_HID_VERSION		"MGE HID 1.48"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -131,7 +131,8 @@ typedef enum {
 		MGE_PULSAR_M_2200,
 		MGE_PULSAR_M_3000,
 		MGE_PULSAR_M_3000_XL,
-	EATON_5P = 0x500			/* Eaton 5P / 5PX / 5SC series */
+	EATON_5P = 0x500,			/* Eaton 5P / 5PX / 5SC series */
+	EATON_9E = 0x900			/* Eaton 9E entry-level series */
 } models_type_t;
 
 /* Default to line-interactive or online (ie, not offline).
@@ -489,6 +490,7 @@ static const char *mge_battery_voltage_nominal_fun(double value)
 
 	case MGE_PULSAR_M:
 	case EATON_5P:
+	case EATON_9E:	/* Presumably per https://github.com/networkupstools/nut/issues/1925#issuecomment-1562342854 */
 		break;
 
 	default:
@@ -514,6 +516,7 @@ static const char *mge_battery_voltage_fun(double value)
 	case MGE_EVOLUTION:
 	case MGE_PULSAR_M:
 	case EATON_5P:
+	case EATON_9E:	/* Presumably per https://github.com/networkupstools/nut/issues/1925#issuecomment-1562342854 */
 		break;
 
 	default:
@@ -1144,6 +1147,34 @@ static models_name_t mge_model_names [] =
 	{ "Eaton 5SC", "2200", EATON_5P, NULL },
 	{ "Eaton 5SC", "3000", EATON_5P, NULL },
 
+	/* Eaton 9E entry-level series per discussions in
+	 * https://github.com/networkupstools/nut/issues/1925
+	 * https://github.com/networkupstools/nut/issues/2380
+	 * https://github.com/networkupstools/nut/issues/2492
+	 */
+	{ "Eaton 9E", "1000",  EATON_9E, "9E1000" },
+	{ "Eaton 9E", "1000i", EATON_9E, "9E1000i" },
+	{ "Eaton 9E", "1000iau", EATON_9E, "9E1000iau" },
+	{ "Eaton 9E", "1000ir", EATON_9E, "9E1000ir" },
+	{ "Eaton 9E", "2000",  EATON_9E, "9E2000" },
+	{ "Eaton 9E", "2000i", EATON_9E, "9E2000i" },
+	{ "Eaton 9E", "2000iau", EATON_9E, "9E2000iau" },
+	{ "Eaton 9E", "2000ir", EATON_9E, "9E2000ir" },
+	{ "Eaton 9E", "3000",  EATON_9E, "9E3000" },
+	{ "Eaton 9E", "3000i", EATON_9E, "9E3000i" },
+	{ "Eaton 9E", "3000iau", EATON_9E, "9E3000iau" },
+	{ "Eaton 9E", "3000ir", EATON_9E, "9E3000ir" },
+	{ "Eaton 9E", "3000ixl", EATON_9E, "9E3000ixl" },
+	{ "Eaton 9E", "3000ixlau", EATON_9E, "9E3000ixlau" },
+
+	/* https://github.com/networkupstools/nut/issues/1925#issuecomment-1609262963
+	 * if we failed to get iManufacturer, iProduct and iSerialNumber but saw
+	 * the UPS.Flow.[4].ConfigApparentPower (the "2000" or "3000" part here)
+	 */
+	{ "unknown",  "1000",  EATON_9E, "9E1000i (presumed)" },
+	{ "unknown",  "2000",  EATON_9E, "9E2000i (presumed)" },
+	{ "unknown",  "3000",  EATON_9E, "9E3000i (presumed)" },
+
 	/* Pulsar M models */
 	{ "PULSAR M", "2200", MGE_PULSAR_M_2200, NULL },
 	{ "PULSAR M", "3000", MGE_PULSAR_M_3000, NULL },
@@ -1669,6 +1700,9 @@ static int mge_claim(HIDDevice_t *hd) {
 
 				/* Let liebert-hid grab this */
 				return 0;
+
+			default:
+				break;
 		}
 
 		return 1;

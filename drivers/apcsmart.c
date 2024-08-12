@@ -201,6 +201,9 @@ static const char *convert_data(apc_vartab_t *vt, const char *upsval)
 					temp[sizeof(temp) - 1] = '\0';
 					return temp;
 			}
+
+		default:
+			break;
 	}
 
 	/* this should never happen */

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3204 utf-8
+personal_ws-1.1 en 3209 utf-8
 AAC
 AAS
 ABI
@@ -100,6 +100,7 @@ BTS
 BTV
 BUFRD
 BUZ
+BXnnnnMI
 BYP
 BZ
 BZOFF
@@ -981,6 +982,7 @@ README
 REALPATH
 REDi
 REFREPO
+REPLACEBATT
 REPLBATT
 REQSSL
 RETPCT
@@ -1106,6 +1108,7 @@ STI
 STIME
 STO
 STP
+STRARG
 SUNWlibusbugen
 SUNWugen
 SUNWusb
@@ -1959,6 +1962,7 @@ gitk
 gitlab
 gmail
 gmake
+gmtime
 gnuplot
 gnutls
 google
@@ -2148,6 +2152,7 @@ labcd
 lan
 langid
 lasaine
+lbrb
 ld
 ldd
 le

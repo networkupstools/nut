@@ -209,6 +209,9 @@ static void ups_ident(void)
 		case 5:
 			highvolt = atof(ptr);
 			break;
+
+		default:
+			break;
 		}
 
 		ptr = strtok(NULL, ",");

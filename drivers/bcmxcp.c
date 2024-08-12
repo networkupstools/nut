@@ -1158,6 +1158,8 @@ void init_ext_vars(void)
 						dstate_setaux("battery.packs", 1);
 						break;
 
+			default:
+						break;
 		}
 	}
 }
@@ -2096,6 +2098,8 @@ static int instcmd(const char *cmdname, const char *extra)
 				cbuf[2] = 0x2;
 				break;                  /*mute beeper*/
 				}
+			default:
+				break;
 		}
 		cbuf[3] = 0x0;          /*padding*/
 
@@ -2214,6 +2218,10 @@ void upsdrv_help(void)
 /* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {
+	/* NOTE: The USB variant of this driver currently does not
+	 * involve nut_usb_addvars() method like others do. When
+	 * fixing, see also tools/nut-scanner/scan_usb.c "exceptions".
+	 */
 	addvar(VAR_VALUE, "shutdown_delay", "Specify shutdown delay (seconds)");
 	addvar(VAR_VALUE, "baud_rate", "Specify communication speed (ex: 9600)");
 }

@@ -1323,6 +1323,8 @@ char *tracking_get(const char *id)
 			return "ERR INVALID-ARGUMENT";
 		case STAT_FAILED:
 			return "ERR FAILED";
+		default:
+			break;
 		}
 	}
 
@@ -1811,9 +1813,10 @@ static void help(const char *arg_progname)
 
 static void help(const char *arg_progname)
 {
-	printf("Network server for UPS data.\n\n");
-	printf("usage: %s [OPTIONS]\n", arg_progname);
+	print_banner_once(arg_progname, 2);
+	printf("NUT network data server for UPS monitoring and management.\n");
 
+	printf("\nusage: %s [OPTIONS]\n", arg_progname);
 	printf("\n");
 	printf("  -c <command>	send <command> via signal to background process\n");
 	printf("		commands:\n");
@@ -1935,10 +1938,7 @@ int main(int argc, char **argv)
 	/* set up some things for later */
 	snprintf(pidfn, sizeof(pidfn), "%s/%s.pid", altpidpath(), progname);
 
-	if (!banner_is_disabled()) {
-		printf("Network UPS Tools %s %s\n", progname, UPS_VERSION);
-		fflush(stdout);
-	}
+	print_banner_once(progname, 0);
 
 	while ((i = getopt(argc, argv, "+h46p:qr:i:fu:Vc:P:DFB")) != -1) {
 		switch (i) {
@@ -1964,9 +1964,10 @@ int main(int argc, char **argv)
 				break;
 
 			case 'V':
-				/* Note - we already printed the banner for program name */
+				/* just show the version and optional
+				 * CONFIG_FLAGS banner if available */
+				print_banner_once(progname, 1);
 				nut_report_config_flags();
-
 				exit(EXIT_SUCCESS);
 
 			case 'c':

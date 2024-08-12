@@ -346,6 +346,8 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 		upslog_with_errno(LOG_ERR, "Unknown return value from SSL_accept");
 		ssl_error(client->ssl, ret);
 		break;
+	default:
+		break;
 	}
 
 #elif defined(WITH_NSS) /* WITH_OPENSSL */

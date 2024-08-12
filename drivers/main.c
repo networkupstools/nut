@@ -139,7 +139,9 @@ void upsdrv_banner (void)
 {
 	int i;
 
-	printf("Network UPS Tools - %s %s (%s)\n", upsdrv_info.name, upsdrv_info.version, UPS_VERSION);
+	printf("Network UPS Tools driver %s - %s %s\n",
+		describe_NUT_VERSION_once(),
+		upsdrv_info.name, upsdrv_info.version);
 
 	/* process sub driver(s) information */
 	for (i = 0; upsdrv_info.subdrv_info[i]; i++) {
@@ -179,6 +181,11 @@ static void forceshutdown(void)
 static void help_msg(void)
 {
 	vartab_t	*tmp;
+
+	if (banner_is_disabled()) {
+		/* Was not printed at start of main() */
+		upsdrv_banner();
+	}
 
 	nut_report_config_flags();
 
@@ -548,6 +555,9 @@ finish:
 
 		case  0:	/* value may not be (re-)applied, but it may not have been required */
 			break;
+
+		default:
+			break;
 	}
 
 	upsdebugx(6, "%s: verdict for (re)loading var=%s value: %d",
@@ -640,6 +650,9 @@ finish:
 			break;
 
 		case  0:	/* value may not be (re-)applied, but it may not have been required */
+			break;
+
+		default:
 			break;
 	}
 
@@ -1694,6 +1707,8 @@ int main(int argc, char **argv)
 			case 'd':
 				dump_data = atoi(optarg);
 				break;
+			default:
+				break;
 		}
 	}
 	/* Reset the index, read argv[1] next time (loop below)
@@ -1934,7 +1949,20 @@ int main(int argc, char **argv)
 				group_from_cmdline = 1;
 				break;
 			case 'V':
-				/* already printed the banner for program name */
+				/* Avoid the verbose message about
+				 * driver daemon state integration
+				 * with a service management framework
+				 * like systemd, as not too relevant
+				 * to program version reporting here
+				 * (only seen with non-zero debug) */
+				setenv("NUT_QUIET_INIT_UPSNOTIFY", "yes", 0);
+
+				/* just show the version and optional
+				 * CONFIG_FLAGS banner if available */
+				if (banner_is_disabled()) {
+					/* Was not printed at start of main() */
+					upsdrv_banner();
+				}
 				nut_report_config_flags();
 				exit(EXIT_SUCCESS);
 			case 'x':
@@ -1945,7 +1973,8 @@ int main(int argc, char **argv)
 				exit(EXIT_SUCCESS);
 			default:
 				fatalx(EXIT_FAILURE,
-					"Error: unknown option -%c. Try -h for help.", i);
+					"Error: unknown option -%c. Try -h for help.",
+					(char)i);
 		}
 	}
 

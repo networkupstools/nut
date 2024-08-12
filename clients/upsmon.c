@@ -2627,9 +2627,10 @@ static void help(const char *arg_progname)
 		/* printf("\n"); */
 	}
 
-	printf("Monitors UPS servers and may initiate shutdown if necessary.\n\n");
+	print_banner_once(arg_progname, 2);
+	printf("NUT client which monitors UPS servers and may initiate shutdown if necessary.\n");
 
-	printf("usage: %s [OPTIONS]\n\n", arg_progname);
+	printf("\nusage: %s [OPTIONS]\n\n", arg_progname);
 	printf("  -c <cmd>	send command to running process\n");
 	printf("		commands:\n");
 	printf("		 - fsd: shutdown all primary-mode UPSes (use with caution)\n");
@@ -2908,10 +2909,7 @@ int main(int argc, char *argv[])
 	}
 #endif
 
-	if (!banner_is_disabled()) {
-		printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
-		fflush(stdout);
-	}
+	print_banner_once(prog, 0);
 
 	/* if no configuration file is specified on the command line, use default */
 	configfile = xmalloc(SMALLBUF);
@@ -2973,7 +2971,9 @@ int main(int argc, char *argv[])
 				run_as_user = xstrdup(optarg);
 				break;
 			case 'V':
-				/* just show the optional CONFIG_FLAGS banner */
+				/* just show the version and optional
+				 * CONFIG_FLAGS banner if available */
+				print_banner_once(prog, 1);
 				nut_report_config_flags();
 				exit(EXIT_SUCCESS);
 			case '4':

@@ -50,6 +50,13 @@ Changes from 2.8.2 to 2.8.3
   devices; just in case a flag toggle `powercom_sdcmd_byte_order_fallback`
   was added to set the old behavior (if some devices do need it). [PR #2480]
 
+- Added support for `lbrb_log_delay_sec=N` setting to delay propagation of
+  `LB` or `LB+RB` state (buggy with APC BXnnnnMI devices/firmwares issued
+  circa 2023-2024 which flood the logs with spurious LOWBATT and REPLACEBATT
+  events). This may work better for some devices when combined with flags
+  like `onlinedischarge_calibration` and `lbrb_log_delay_without_calibrating`.
+  [#2347]
+
 - Enabled installation of built PDF and HTML (including man page renditions)
   files under the configured `docdir`. It seems previously they were only
   built (if requested) but not installed via `make`, unlike the common man
@@ -109,6 +116,12 @@ Changes from 2.8.2 to 2.8.3
   * A `NUT_QUIET_INIT_BANNER` envvar (presence or "true" value) prevents
     tool name and NUT version banner from being printed out when programs
     start. [issues #1789 vs. #316]
+
+- A `configure` script option to `--enable-NUT_STRARG-always` was added
+  to enable the `NUT_STRARG` macro (to handle `NULL` string printing)
+  even if system libraries seem to safely support this behavior natively.
+  This should primarily help against overly zealous static analysis tools
+  in recent compiler generations. [#2585]
 
 
 Changes from 2.8.1 to 2.8.2
