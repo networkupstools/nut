@@ -1438,9 +1438,9 @@ void upsdrv_initups(void)
 		&&  (strstr(hd->Product, " BX") || strstr(hd->Product, "BX") == hd->Product)
 		&&  (hd->Product[productLen - 2] == 'M' && hd->Product[productLen - 1] == 'I')
 		) {
-			int	got_lbrb_log_delay_without_calibrating = testvar("lbrb_log_delay_without_calibrating"),
-				got_onlinedischarge_calibration = testvar("onlinedischarge_calibration"),
-				got_onlinedischarge_log_throttle_sec = testvar("onlinedischarge_log_throttle_sec");
+			int	got_lbrb_log_delay_without_calibrating = testvar("lbrb_log_delay_without_calibrating") ? 1 : 0,
+				got_onlinedischarge_calibration = testvar("onlinedischarge_calibration") ? 1 : 0,
+				got_onlinedischarge_log_throttle_sec = testvar("onlinedischarge_log_throttle_sec") ? 1 : 0;
 
 			lbrb_log_delay_sec = 3;
 
