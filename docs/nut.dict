@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3205 utf-8
+personal_ws-1.1 en 3208 utf-8
 AAC
 AAS
 ABI
@@ -100,6 +100,7 @@ BTS
 BTV
 BUFRD
 BUZ
+BXnnnnMI
 BYP
 BZ
 BZOFF
@@ -981,6 +982,7 @@ README
 REALPATH
 REDi
 REFREPO
+REPLACEBATT
 REPLBATT
 REQSSL
 RETPCT
@@ -2150,6 +2152,7 @@ labcd
 lan
 langid
 lasaine
+lbrb
 ld
 ldd
 le

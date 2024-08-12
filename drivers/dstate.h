@@ -101,6 +101,10 @@ int dstate_is_stale(void);
 /* clean out the temp space for a new pass */
 void status_init(void);
 
+/* check if a status element has been set, return 0 if not, 1 if yes
+ * (considering a whole-word token in temporary status_buf) */
+int status_get(const char *buf);
+
 /* add a status element */
 void status_set(const char *buf);
 
