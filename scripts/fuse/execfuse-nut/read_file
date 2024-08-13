@@ -26,6 +26,15 @@ case "$1" in
         upsc "$UPS" "$VARNAME"
         exit $?
         ;;
+    /client-version)
+        if [ x"$NUT_DEBUG_FUSE" = xtrue ] ; then
+            #echo "+upsc '$UPS' '$VARNAME'" >&2
+            set -x
+        fi
+        command -v upsc
+        NUT_DEBUG_LEVEL=6 upsc -V
+        exit $?
+        ;;
 esac
 
 exit 1

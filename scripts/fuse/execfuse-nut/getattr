@@ -32,6 +32,9 @@ case "$1" in
         # UPSSRV
         D="`basename "$1"`"
         ;;
+    /client-version)
+        F="$1"
+        ;;
     *)
         ;;
 esac
