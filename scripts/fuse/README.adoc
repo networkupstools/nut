@@ -1,0 +1,83 @@
+NUT access via FUSE
+===================
+
+After a discussion with friends about the
+link:https://en.wikipedia.org/wiki/Filesystem_in_Userspace[FUSE] technology
+an idea resurfaced, to have NUT readings available as filesystem objects.
+
+Previously this was vaguely envisioned as a sort of `/dev/shm` on Linux or
+equivalent on other OSes (where SHM is available with a filesystem API).
+But FUSE being more portable, it is actually a better bet for this approach.
+
+* https://github.com/networkupstools/nut/issues/2591
+
+NUT access via execfuse
+~~~~~~~~~~~~~~~~~~~~~~~
+
+For a proof-of-concept, the link:https://github.com/vi/execfuse[execfuse]
+seemed appropriate. It is a daemon which knows to call user-provided programs
+to handle certain filesystem API requests. Essentially, shell scripts exposed
+as a file system!
+
+Sure, it is not very efficient or perhaps even secure, but for quick and dirty
+experiments it proved to be great! Relatively easy to debug the new code by
+saving log files, and quick to iterate by editing the shell scripts (no need
+to rebuild and restart a daemon).
+
+Installation:
+
+----
+:; git clone https://github.com/vi/execfuse
+:; cd execfuse
+:; make
+----
+
+That's about it, an `execfuse` binary should appear.
+
+To run with the PoC scripts here, assuming a built NUT in `~/nut` location:
+
+----
+:; mkdir /tmp/nut-fuse
+:; PATH="$HOME/nut/clients:$PATH" \
+   ./execfuse "$HOME/nut/scripts/fuse/execfuse-nut" /tmp/nut-fuse
+----
+
+Then as you walk the `/tmp/nut-fuse` location, you would see a sub-directory
+called `by-server` under which a `localhost:3493` is exposed and any token
+(even if not visible) can be accessed with the naive assumption that it is
+a hostname/IP address and an optional port.
+
+Either way, this token is also treated as a directory, assuming it is a
+device name known to the data server `upsd` on that host. In fact, this
+directory would be populated by `upsc -l` of that host(:port) automatically.
+
+Each device represented this way is also a "directory", with "files" in it
+populated by `upsc` queries to list the currently known variables, and file
+contents populated by `upsc` queries for that variable name at that device
+on that server.
+
+Example data walk:
+
+----
+:; grep -rH /tmp/nut-fuse/localhost/dummy
+/tmp/nut-fuse/localhost/dummy/battery.charge:100
+/tmp/nut-fuse/localhost/dummy/battery.charge.low:20
+/tmp/nut-fuse/localhost/dummy/battery.runtime:1456
+/tmp/nut-fuse/localhost/dummy/battery.type:PbAc
+...
+----
+
+Eventually, to stop this experiment:
+
+----
+:; fusermount -u /tmp/nut-fuse
+----
+
+As far as a PoC goes, this is already a fun and quickly achieved result,
+although for production use something like a FUSE-capable `upsmon`-like
+client would be needed both for efficiency (to avoid dozens of process
+forks and networked queries to get each reading), and to deal with security
+somehow (for a shot at `upsrw` and `upscmd` equivalents).
+
+Hope this helps get the real development going,
+Jim Klimov
