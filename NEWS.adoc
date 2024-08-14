@@ -312,6 +312,9 @@ during a NUT build.
    migrated the builders to Apple Silicon from x86 (deprecated by CircleCI).
    [#2502]
 
+ - Introduced a simple experiment to expose NUT client readings as filesystem
+   objects via FUSE, in `scripts/fuse/execfuse-nut` now. [#2591]
+
 
 Release notes for NUT 2.8.2 - what's new since 2.8.1
 ----------------------------------------------------
