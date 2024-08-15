@@ -33,7 +33,7 @@ Installation:
 ----
 :; git clone https://github.com/vi/execfuse
 :; cd execfuse
-:; make
+:; make && ls -la execfuse
 ----
 
 That's about it, an `execfuse` binary should appear.
