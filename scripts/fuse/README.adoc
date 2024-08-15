@@ -41,7 +41,7 @@ That's about it, an `execfuse` binary should appear.
 To run with the PoC scripts here, assuming a built NUT in `~/nut` location:
 
 ----
-:; mkdir /tmp/nut-fuse
+:; mkdir -p /tmp/nut-fuse
 :; PATH="$HOME/nut/clients:$PATH" \
    ./execfuse "$HOME/nut/scripts/fuse/execfuse-nut" /tmp/nut-fuse
 ----
