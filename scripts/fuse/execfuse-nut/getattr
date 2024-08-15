@@ -32,7 +32,7 @@ case "$1" in
         # UPSSRV
         D="`basename "$1"`"
         ;;
-    /client-version)
+    /client-location|/client-version)
         F="$1"
         ;;
     *)
