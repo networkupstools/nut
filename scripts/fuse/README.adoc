@@ -91,6 +91,9 @@ Eventually, to stop this experiment:
 
 ----
 :; fusermount -u /tmp/nut-fuse
+
+# Or if user-land programs are missing, like in "macfuse@dev", just `umount`:
+:; umount /tmp/nut-fuse
 ----
 
 As far as a PoC goes, this is already a fun and quickly achieved result,
