@@ -38,7 +38,28 @@ Installation:
 
 That's about it, an `execfuse` binary should appear.
 
-To run with the PoC scripts here, assuming a built NUT in `~/nut` location:
+NOTE: Examples below assume a built NUT in `~/nut` location, and a temporary
+mount point in `/tmp/nut-fuse`.
+
+You can also prepare an enviroment using NUT Integration Tests (NIT) scripts:
+----
+:; ( cd ~/nut && DEBUG_SLEEP=600 make check-NIT ) &
+
+# ...wait a few seconds for it to say the sandbox is ready
+:; . "${HOME}/nut/tests/NIT/tmp/etc/NIT.env"
+----
+
+Before mounting the FUSE file system, you can also request to debug the PoC
+scripts:
+----
+:; NUT_DEBUG_FUSE=true
+:; export NUT_DEBUG_FUSE
+
+# After running some queries, so the log-files to watch appear:
+:; tail -F /tmp/nut-debug-fuse-*.log &
+----
+
+To run with the PoC scripts here:
 
 ----
 :; mkdir -p /tmp/nut-fuse

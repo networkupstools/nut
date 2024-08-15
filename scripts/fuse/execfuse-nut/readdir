@@ -37,7 +37,12 @@ case "$1" in
         ;;
     /by-server)
         print_dots
-        printf 'ino=1 mode=drwxr-xr-x nlink=16 uid=0 gid=0 rdev=0 size=16 blksize=512 blocks=1 atime=0 mtime=0 ctime=0 %s\0' "localhost:3493"
+        printf 'ino=1 mode=drwxr-xr-x nlink=16 uid=0 gid=0 rdev=0 size=16 blksize=512 blocks=1 atime=0 mtime=0 ctime=0 %s\0' "localhost"
+        # Primarily this is a value arranged by `make check-NIT`:
+        set -x
+        if [ -n "${NUT_PORT-}" ] && [ x"${NUT_PORT}" != x3493 ]; then
+            printf 'ino=1 mode=drwxr-xr-x nlink=16 uid=0 gid=0 rdev=0 size=16 blksize=512 blocks=1 atime=0 mtime=0 ctime=0 %s\0' "localhost:${NUT_PORT}"
+        fi
         ;;
     /by-server/*/*/*) # Don't want subdirs here
         exit 2 # ENOENT
