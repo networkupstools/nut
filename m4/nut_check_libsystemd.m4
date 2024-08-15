@@ -101,7 +101,12 @@ if test -z "${nut_have_libsystemd_seen}"; then
 		AC_CHECK_FUNCS(sd_booted sd_watchdog_enabled sd_notify_barrier)
 		LIBSYSTEMD_CFLAGS="${CFLAGS}"
 		LIBSYSTEMD_LIBS="${LIBS}"
-	])
+
+		dnl Since systemd 183: https://systemd.io/INHIBITOR_LOCKS/
+		dnl TODO: Which header?
+		nut_have_libsystemd_inhibitor=yes
+		AC_CHECK_FUNCS(Inhibit PrepareForSleep, [], [nut_have_libsystemd_inhibitor=no])
+	], [nut_have_libsystemd_inhibitor=no])
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"
