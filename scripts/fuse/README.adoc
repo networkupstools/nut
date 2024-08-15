@@ -101,10 +101,13 @@ total 23
 drwxr-xr-x  16 root root  4096 Jan  1  1970 .
 drwxrwxrwt 154 root root 20480 Aug 13 23:55 ..
 drwxr-xr-x  16 root root  4096 Jan  1  1970 by-server
+-r--r--r--   1 root root     0 Jan  1  1970 client-location
 -r--r--r--   1 root root     0 Jan  1  1970 client-version
 
-:; cat /tmp/nut-fuse/client-version
+:; cat /tmp/nut-fuse/client-location
 /home/abuild/nut/clients/upsc
+
+:; cat /tmp/nut-fuse/client-version
 Network UPS Tools upsc 2.8.2.901.2-903-g533aa7eaf (development iteration after 2.8.2)
 ----
 
