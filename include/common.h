@@ -364,6 +364,13 @@ const char * rootpidpath(void);
 /* Die with a standard message if socket filename is too long */
 void check_unix_socket_filename(const char *fn);
 
+/* Provide integration for systemd inhibitor interface (where available,
+ * dummy code otherwise) implementing the pseudo-code example from
+ * https://systemd.io/INHIBITOR_LOCKS/
+ * TODO: Potentially extensible to other frameworks with similar concepts?..
+ */
+TYPE_FD Inhibit(const char *arg_what, const char *arg_who, const char *arg_why, const char *arg_mode);
+
 /* Send (daemon) state-change notifications to an
  * external service management framework such as systemd.
  * State types below are initially loosely modeled after

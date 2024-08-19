@@ -43,6 +43,92 @@
 # include <sys/stat.h>
 #endif
 
+#if (defined WITH_LIBSYSTEMD_INHIBITOR) && (defined WITH_LIBSYSTEMD && WITH_LIBSYSTEMD) && (defined WITH_LIBSYSTEMD_INHIBITOR && WITH_LIBSYSTEMD_INHIBITOR) && !(defined(WITHOUT_LIBSYSTEMD) && (WITHOUT_LIBSYSTEMD))
+#  ifdef HAVE_SYSTEMD_SD_BUS_H
+#   include <systemd/sd-bus.h>
+#  endif
+/* Code below is inspired by https://systemd.io/INHIBITOR_LOCKS/ docs, and
+ * https://github.com/systemd/systemd/issues/34004 discussion which pointed
+ * to https://github.com/systemd/systemd/blob/main/src/login/inhibit.c tool
+ * and https://github.com/systemd/systemd/blob/main/src/basic/errno-util.h etc.
+ * and https://www.freedesktop.org/software/systemd/man/latest/sd_bus_call_method.html
+ */
+static int RET_NERRNO(int ret) {
+	if (ret < 0) {
+		if (errno > 0)
+			return -EINVAL;
+		return -errno;
+	}
+
+	return ret;
+}
+
+#define _cleanup_(f)	__attribute__((cleanup(f)))
+#define SDBUS_DEST	"org.freedesktop.systemd1"
+#define SDBUS_PATH	"/org/freedesktop/systemd1"
+#define SDBUS_IFACE	"org.freedesktop.systemd1.Manager"
+
+TYPE_FD Inhibit(const char *arg_what, const char *arg_who, const char *arg_why, const char *arg_mode)
+{
+	_cleanup_(sd_bus_flush_close_unrefp) sd_bus	*bus = NULL;
+	_cleanup_(sd_bus_error_free) sd_bus_error	error = SD_BUS_ERROR_NULL;
+	_cleanup_(sd_bus_message_unrefp) sd_bus_message	*reply = NULL;
+	int	r;
+	TYPE_FD	fd = ERROR_FD;
+
+	/* Not found in public headers:
+	bool	arg_ask_password = true;
+	(void) polkit_agent_open_if_enabled(BUS_TRANSPORT_LOCAL, arg_ask_password);
+	 */
+
+	r = sd_bus_open_system(&bus);
+	if (r < 0) {
+		upsdebugx(0, "%s: Failed to acquire bus (%d): %s",
+			__func__, r, strerror(-r));
+		return r;
+	}
+
+	r = sd_bus_call_method(bus, SDBUS_DEST, SDBUS_PATH, SDBUS_IFACE, "Inhibit", &error, &reply, "ssss", arg_what, arg_who, arg_why, arg_mode);
+	if (r < 0) {
+		upsdebugx(0, "%s: sd_bus_call_method() failed (%d): %s",
+			__func__, r, strerror(-r));
+		return r;
+	}
+
+	r = sd_bus_message_read_basic(reply, SD_BUS_TYPE_UNIX_FD, &fd);
+	if (r < 0) {
+		upsdebugx(0, "%s: sd_bus_message_read_basic() failed (%d): %s",
+			__func__, r, strerror(-r));
+		return r;
+	}
+
+	/* NOTE: F_DUPFD_CLOEXEC is in POSIX.1-2008 (Linux 2.6.24); seek out
+	 * an alternative sequence of options if needed on older systems */
+	r = RET_NERRNO(fcntl(fd, F_DUPFD_CLOEXEC, 3));
+	if (r < 0) {
+		upsdebugx(0, "%s: fcntl() failed (%d): %s",
+			__func__, r, strerror(-r));
+		return fd;
+	}
+
+	return r;
+}
+
+#else	/* not WITH_LIBSYSTEMD_INHIBITOR */
+
+TYPE_FD Inhibit(const char *arg_what, const char *arg_who, const char *arg_why, const char *arg_mode)
+{
+	NUT_UNUSED_VARIABLE(arg_what);
+	NUT_UNUSED_VARIABLE(arg_who);
+	NUT_UNUSED_VARIABLE(arg_why);
+	NUT_UNUSED_VARIABLE(arg_mode);
+
+	upsdebugx(6, "%s: Not implemented on this platform", __func__);
+	return ERROR_FD;
+}
+
+#endif	/* not WITH_LIBSYSTEMD_INHIBITOR */
+
 #ifdef WITH_LIBSYSTEMD
 # include <systemd/sd-daemon.h>
 /* upsnotify() debug-logs its reports; a watchdog ping is something we
