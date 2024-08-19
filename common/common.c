@@ -127,6 +127,11 @@ static int open_sdbus_once(const char *caller) {
 		atexit(close_sdbus_once);
 	}
 
+	if (systemd_bus) {
+		/* second arg for (bool)arg_ask_password - 0 for the non-interactive daemon */
+		sd_bus_set_allow_interactive_authorization(systemd_bus, 0);
+	}
+
 	return r;
 }
 
