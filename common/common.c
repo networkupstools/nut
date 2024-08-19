@@ -63,6 +63,11 @@ static int RET_NERRNO(int ret) {
 	return ret;
 }
 
+/* FIXME: Pedantically speaking, the attribute is assumed supported by GCC
+ *  and CLANG; practically - not sure if we have platforms with sufficiently
+ *  new libsystemd (its headers and example code also use this) and older or
+ *  different compilers. This can be addressed a bit more clumsily directly,
+ *  but we only want to do so if needed in real life. */
 #define _cleanup_(f)	__attribute__((cleanup(f)))
 #define SDBUS_DEST	"org.freedesktop.systemd1"
 #define SDBUS_PATH	"/org/freedesktop/systemd1"
