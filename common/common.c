@@ -100,7 +100,7 @@ static int open_sdbus_once(const char *caller) {
 	if (systemd_bus)
 		return r;
 
-	r = sd_bus_open_system(&systemd_bus);
+	r = sd_bus_open_system_with_description(&systemd_bus, "Bus connection for Network UPS Tools sleep/suspend/hibernate handling");
 	if (r < 0 || !systemd_bus) {
 		if (r >= 0) {
 			if (!faultReported)
