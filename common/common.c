@@ -140,8 +140,8 @@ static int upsnotify_reported_disabled_systemd = 0;
 /* Define this to 1 for lots of spam at debug level 6, and ignoring WATCHDOG_PID
  * so trying to post reports anyway if WATCHDOG_USEC is valid */
 #  define DEBUG_SYSTEMD_WATCHDOG 0
-# endif
-#endif
+# endif	/* DEBUG_SYSTEMD_WATCHDOG */
+#endif	/* WITH_LIBSYSTEMD */
 /* Similarly for only reporting once if the notification subsystem is not built-in */
 static int upsnotify_reported_disabled_notech = 0;
 static int upsnotify_report_verbosity = -1;
@@ -1969,7 +1969,7 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 			"skipped for libcommonclient build, "
 			"will not spam more about it", __func__, state);
 	upsnotify_reported_disabled_systemd = 1;
-# else
+# else	/* not WITHOUT_LIBSYSTEMD */
 	if (!getenv("NOTIFY_SOCKET")) {
 		if (!upsnotify_reported_disabled_systemd)
 			upsdebugx(upsnotify_report_verbosity,
@@ -2117,7 +2117,7 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 								"(%" PRIu64 "msec remain)",
 								__func__, postit, to);
 					}
-#   endif
+#   endif	/* HAVE_SD_WATCHDOG_ENABLED */
 
 					if (postit < 1) {
 						char *s = getenv("WATCHDOG_USEC");

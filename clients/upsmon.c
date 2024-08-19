@@ -152,7 +152,7 @@ static	sigset_t nut_upsmon_sigmask;
 
 #ifdef HAVE_SYSTEMD
 # define SERVICE_UNIT_NAME "nut-monitor.service"
-#endif
+#endif	/* HAVE_SYSTEMD */
 
 /* Users can pass a -D[...] option to enable debugging.
  * For the service tracing purposes, also the upsmon.conf
@@ -3122,11 +3122,11 @@ int main(int argc, char *argv[])
 					(oldpid < 0 ? " or add '-P $PID' argument" : ""));
 				break;
 			}
-# else
+# else	/* not HAVE_SYSTEMD */
 			if (oldpid < 0) {
 				upslogx(LOG_NOTICE, "Try to add '-P $PID' argument");
 			}
-# endif
+# endif	/* not HAVE_SYSTEMD */
 #endif	/* not WIN32 */
 		}
 
