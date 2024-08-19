@@ -4076,6 +4076,7 @@ NUT_REPORT_FEATURE([build with tighter systemd support], [${with_libsystemd}], [
 nut_with_libsystemd_inhibitor=0
 AS_IF([test x"${with_libsystemd}" = xyes && test x"${nut_have_libsystemd_inhibitor}" = xyes], [nut_with_libsystemd_inhibitor=1])
 AC_DEFINE_UNQUOTED(WITH_LIBSYSTEMD_INHIBITOR, [${nut_with_libsystemd_inhibitor}], [Define as 1 if we can use systemd inhibitor interface here])
+AM_CONDITIONAL([WITH_LIBSYSTEMD_INHIBITOR], [test x"${nut_with_libsystemd_inhibitor}" = x1])
 
 dnl
 dnl Tests for CppUnit availability and usability (will be built if we can,

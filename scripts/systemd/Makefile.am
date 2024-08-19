@@ -14,8 +14,12 @@ systemdsystemunit_DATA = \
         nut-monitor.service \
         nut-server.service  \
         nut-driver.target   \
-        nut-sleep.service   \
         nut.target
+
+if !WITH_LIBSYSTEMD_INHIBITOR
+systemdsystemunit_DATA += \
+        nut-sleep.service
+endif !WITH_LIBSYSTEMD_INHIBITOR
 
 systemdtmpfiles_DATA = \
         nut-common-tmpfiles.conf
@@ -28,7 +32,7 @@ libexec_SCRIPTS = ../upsdrvsvcctl/nut-driver-enumerator.sh
 
 sbin_SCRIPTS = ../upsdrvsvcctl/upsdrvsvcctl
 
-else
+else !HAVE_SYSTEMD
 EXTRA_DIST += \
 	nut-driver@.service.in nut-monitor.service.in nut-sleep.service \
 	nut-server.service.in nutshutdown.in nut-driver.target nut.target \
@@ -38,7 +42,7 @@ EXTRA_DIST += \
 	nut-driver-enumerator-daemon.service.in
 
 # NOTE: Do not EXTRA_DIST nut-common-tmpfiles.conf.in - it is generated per build
-endif
+endif !HAVE_SYSTEMD
 
 SPELLCHECK_SRC = README.adoc
 
