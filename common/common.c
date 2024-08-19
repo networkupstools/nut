@@ -103,7 +103,11 @@ static int open_sdbus_once(const char *caller) {
 	if (systemd_bus)
 		return r;
 
+# if defined HAVE_SD_BUS_OPEN_SYSTEM_WITH_DESCRIPTION && HAVE_SD_BUS_OPEN_SYSTEM_WITH_DESCRIPTION
 	r = sd_bus_open_system_with_description(&systemd_bus, "Bus connection for Network UPS Tools sleep/suspend/hibernate handling");
+# else
+	r = sd_bus_open_system(&systemd_bus);
+# endif
 	if (r < 0 || !systemd_bus) {
 		if (r >= 0) {
 			if (!faultReported)
@@ -128,6 +132,13 @@ static int open_sdbus_once(const char *caller) {
 	}
 
 	if (systemd_bus) {
+# if !(defined HAVE_SD_BUS_OPEN_SYSTEM_WITH_DESCRIPTION && HAVE_SD_BUS_OPEN_SYSTEM_WITH_DESCRIPTION)
+#  if defined HAVE_SD_BUS_SET_DESCRIPTION && HAVE_SD_BUS_SET_DESCRIPTION
+		if (sd_bus_set_description(systemd_bus, "Bus connection for Network UPS Tools sleep/suspend/hibernate handling") < 0)
+			upsdebugx(1, "%s: failed to sd_bus_set_description(), oh well", __func__);
+#  endif
+# endif
+
 		/* second arg for (bool)arg_ask_password - 0 for the non-interactive daemon */
 		sd_bus_set_allow_interactive_authorization(systemd_bus, 0);
 	}

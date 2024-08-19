@@ -113,6 +113,8 @@ if test -z "${nut_have_libsystemd_seen}"; then
 			dnl NOTE: In practice we use "p"-suffixed sd_bus_flush_close_unrefp
 			dnl  and sd_bus_message_unrefp methods prepared by a macro in sd-bus.h
 			AC_CHECK_FUNCS([sd_bus_flush_close_unref sd_bus_message_unref sd_bus_error_free], [], [nut_have_libsystemd_inhibitor=no])
+			dnl Optional methods: nicer with them, can do without
+			AC_CHECK_FUNCS([sd_bus_open_system_with_description sd_bus_set_description])
 			dnl For inhibitor per se, we do not have to read containers:
 			dnl AC_CHECK_FUNCS([sd_bus_message_enter_container sd_bus_message_exit_container])
 		])
