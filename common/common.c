@@ -263,25 +263,39 @@ int isPreparingForSleep(void)
 
 TYPE_FD Inhibit(const char *arg_what, const char *arg_who, const char *arg_why, const char *arg_mode)
 {
+	static int	reported = 0;
 	NUT_UNUSED_VARIABLE(arg_what);
 	NUT_UNUSED_VARIABLE(arg_who);
 	NUT_UNUSED_VARIABLE(arg_why);
 	NUT_UNUSED_VARIABLE(arg_mode);
 
-	upsdebugx(6, "%s: Not implemented on this platform", __func__);
+	if (!reported) {
+		upsdebugx(6, "%s: Not implemented on this platform", __func__);
+		reported = 1;
+	}
 	return ERROR_FD;
 }
 
 int isPreparingForSleep(void)
 {
-	upsdebugx(6, "%s: Not implemented on this platform", __func__);
+	static int	reported = 0;
+
+	if (!reported) {
+		upsdebugx(6, "%s: Not implemented on this platform", __func__);
+		reported = 1;
+	}
 	return -1;
 }
 
 void Uninhibit(TYPE_FD *fd_ptr)
 {
+	static int	reported = 0;
 	NUT_UNUSED_VARIABLE(fd_ptr);
-	upsdebugx(6, "%s: Not implemented on this platform", __func__);
+
+	if (!reported) {
+		upsdebugx(6, "%s: Not implemented on this platform", __func__);
+		reported = 1;
+	}
 }
 
 #endif	/* not WITH_LIBSYSTEMD_INHIBITOR */
