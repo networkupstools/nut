@@ -110,7 +110,7 @@ static int open_sdbus_once(const char *caller) {
 			r = -EINVAL;
 		} else {
 			if (!faultReported)
-				upsdebugx(0, "%s: Failed to acquire bus for %s() (%d): %s",
+				upsdebugx(1, "%s: Failed to acquire bus for %s() (%d): %s",
 					__func__, NUT_STRARG(caller), r, strerror(-r));
 		}
 		faultReported = 1;
@@ -159,7 +159,7 @@ TYPE_FD Inhibit(const char *arg_what, const char *arg_who, const char *arg_why, 
 
 		r = sd_bus_call_method(systemd_bus, SDBUS_DEST, SDBUS_PATH, SDBUS_IFACE, "Inhibit", &error, &reply, "ssss", arg_what, arg_who, arg_why, arg_mode);
 		if (r < 0) {
-			upsdebugx(0, "%s: sd_bus_call_method() failed (%d): %s",
+			upsdebugx(1, "%s: sd_bus_call_method() failed (%d): %s",
 				__func__, r, strerror(-r));
 			return r;
 		} else {
@@ -170,7 +170,7 @@ TYPE_FD Inhibit(const char *arg_what, const char *arg_who, const char *arg_why, 
 
 	r = sd_bus_message_read_basic(reply, SD_BUS_TYPE_UNIX_FD, &fd);
 	if (r < 0) {
-		upsdebugx(0, "%s: sd_bus_message_read_basic() failed (%d): %s",
+		upsdebugx(1, "%s: sd_bus_message_read_basic() failed (%d): %s",
 			__func__, r, strerror(-r));
 		return r;
 	}
@@ -179,7 +179,7 @@ TYPE_FD Inhibit(const char *arg_what, const char *arg_who, const char *arg_why, 
 	 * an alternative sequence of options if needed on older systems */
 	r = RET_NERRNO(fcntl(fd, F_DUPFD_CLOEXEC, 3));
 	if (r < 0) {
-		upsdebugx(0, "%s: fcntl() failed (%d): %s",
+		upsdebugx(1, "%s: fcntl() failed (%d): %s",
 			__func__, r, strerror(-r));
 		return fd;
 	}
@@ -234,7 +234,7 @@ int isPreparingForSleep(void)
 
 		r = sd_bus_get_property_trivial(systemd_bus, SDBUS_DEST, SDBUS_PATH, SDBUS_IFACE, "PreparingForSleep", &error, 'b', &val);
 		if (r < 0) {
-			upsdebugx(0, "%s: sd_bus_get_property_trivial() failed (%d): %s",
+			upsdebugx(1, "%s: sd_bus_get_property_trivial() failed (%d): %s",
 				__func__, r, strerror(-r));
 			return r;
 		} else {
