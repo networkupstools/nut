@@ -2882,6 +2882,26 @@ static void check_parent(void)
 	upslogx(LOG_ALERT, "Parent died - shutdown impossible");
 }
 
+static void init_Inhibitor(const char *prog)
+{
+	static int	sleep_inhibitor_fail_reported = 0;
+
+	if (INVALID_FD(sleep_inhibitor_fd)) {
+		/* See https://www.freedesktop.org/software/systemd/man/latest/org.freedesktop.login1.html
+		 * and https://systemd.io/INHIBITOR_LOCKS/ documentation about option values.
+		 */
+		sleep_inhibitor_fd = Inhibit("sleep", prog, "Careful handling of OS sleep with regard to power device monitoring", "delay");
+		if (VALID_FD(sleep_inhibitor_fd)) {
+			sleep_inhibitor_fail_reported = 0;
+		} else {
+			if (!sleep_inhibitor_fail_reported) {
+				upslogx(LOG_WARNING, "%s: failed to initialize OS integration for sleep inhibitor", prog);
+			}
+			sleep_inhibitor_fail_reported = 1;
+		}
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	const char	*prog = xbasename(argv[0]);
@@ -3227,13 +3247,7 @@ int main(int argc, char *argv[])
 		utype_t	*ups;
 		int	sleep_inhibitor_status = -2;
 
-		if (INVALID_FD(sleep_inhibitor_fd)) {
-			/* See https://www.freedesktop.org/software/systemd/man/latest/org.freedesktop.login1.html
-			 * and https://systemd.io/INHIBITOR_LOCKS/ documentation about option values.
-			 */
-			sleep_inhibitor_fd = Inhibit("sleep", prog, "Careful handling of OS sleep with regard to power device monitoring", "delay");
-		}
-
+		init_Inhibitor(prog);
 		upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
 
 		/* check flags from signal handlers */
@@ -3288,16 +3302,16 @@ int main(int argc, char *argv[])
 				upslogx(LOG_INFO, "%s: Processing OS wake-up after sleep", prog);
 				upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
 
-				if (INVALID_FD(sleep_inhibitor_fd)) {
-					sleep_inhibitor_fd = Inhibit("sleep", prog, "Careful handling of OS sleep with regard to power device monitoring", "delay");
-				}
-
 				upsnotify(NOTIFY_STATE_RELOADING, NULL);
+				init_Inhibitor(prog);
+
 				reload_conf();
+
 				for (ups = firstups; ups != NULL; ups = ups->next) {
 					ups->status = 0;
 					ups->lastpoll = 0;
 				}
+
 				upsnotify(NOTIFY_STATE_READY, NULL);
 				upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
 
