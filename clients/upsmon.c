@@ -154,6 +154,11 @@ static	sigset_t nut_upsmon_sigmask;
 # define SERVICE_UNIT_NAME "nut-monitor.service"
 #endif	/* HAVE_SYSTEMD */
 
+/* If we successfully use Inhibit() to be notified about
+ * the OS going to sleep, this is the messenger variable:
+ */
+static TYPE_FD	sleep_inhibitor_fd = ERROR_FD;
+
 /* Users can pass a -D[...] option to enable debugging.
  * For the service tracing purposes, also the upsmon.conf
  * can define a debug_min value in the global section,
@@ -3220,12 +3225,39 @@ int main(int argc, char *argv[])
 
 	while (exit_flag == 0) {
 		utype_t	*ups;
+		int	sleep_inhibitor_status = -2;
+
+		if (INVALID_FD(sleep_inhibitor_fd)) {
+			/* See https://www.freedesktop.org/software/systemd/man/latest/org.freedesktop.login1.html
+			 * and https://systemd.io/INHIBITOR_LOCKS/ documentation about option values.
+			 */
+			sleep_inhibitor_fd = Inhibit("sleep", prog, "Careful handling of OS sleep with regard to power device monitoring", "delay");
+		}
 
 		upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
 
 		/* check flags from signal handlers */
 		if (userfsd)
 			forceshutdown();
+
+		switch ((sleep_inhibitor_status = isPreparingForSleep())) {
+			case 1:	/* Preparing for sleep */
+				upslogx(LOG_INFO, "%s: Processing OS going to sleep", prog);
+				Uninhibit(&sleep_inhibitor_fd);
+				break;
+
+			case 0:	/* Waking up */
+				upslogx(LOG_INFO, "%s: Processing OS wake-up after sleep", prog);
+				if (INVALID_FD(sleep_inhibitor_fd)) {
+					sleep_inhibitor_fd = Inhibit("sleep", prog, "Careful handling of OS sleep with regard to power device monitoring", "delay");
+				}
+				set_reload_flag(1);
+				break;
+
+			case -1:	/* Same as before */
+			default:	/* Odd... */
+				break;
+		}
 
 		if (reload_flag) {
 			upsnotify(NOTIFY_STATE_RELOADING, NULL);
