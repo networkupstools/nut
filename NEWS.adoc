@@ -167,6 +167,10 @@ https://github.com/networkupstools/nut/milestone/11
      (deemed to be a stale UPS, meaning lost communications during critical
      state, so must go down ASAP). While not as elegant as native systemd
      "inhibitor interface" support, this approach does work. [#1833, #1070]
+   * Introduced support for the "inhibitor interface" as well (should be
+     available on systems with systemd version 183 or newer) for a better
+     handling of the time jump specifically in the `upsmon` client via new
+     `Inhibit()` method in `common.c`. [#1070]
 
  - gamatronic driver revised for safer memory operations; this was reported
    to have fixed a Segmentation Fault seen in earlier NUT releases with
