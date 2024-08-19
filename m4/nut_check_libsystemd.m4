@@ -96,6 +96,7 @@ if test -z "${nut_have_libsystemd_seen}"; then
 	AC_CHECK_HEADERS(systemd/sd-daemon.h, [nut_have_libsystemd=yes], [nut_have_libsystemd=no], [AC_INCLUDES_DEFAULT])
 	AC_CHECK_FUNCS(sd_notify, [], [nut_have_libsystemd=no])
 
+	nut_have_libsystemd_inhibitor=no
 	AS_IF([test x"${nut_have_libsystemd}" = x"yes"], [
 		dnl Check for additional feature support in library (optional)
 		AC_CHECK_FUNCS(sd_booted sd_watchdog_enabled sd_notify_barrier)
@@ -103,10 +104,15 @@ if test -z "${nut_have_libsystemd_seen}"; then
 		LIBSYSTEMD_LIBS="${LIBS}"
 
 		dnl Since systemd 183: https://systemd.io/INHIBITOR_LOCKS/
-		dnl TODO: Which header?
-		nut_have_libsystemd_inhibitor=yes
-		AC_CHECK_FUNCS(Inhibit PrepareForSleep, [], [nut_have_libsystemd_inhibitor=no])
-	], [nut_have_libsystemd_inhibitor=no])
+		AS_IF([test "$SYSTEMD_VERSION" -ge 183], [
+			nut_have_libsystemd_inhibitor=yes
+			AC_CHECK_HEADERS(systemd/sd-bus.h, [], [nut_have_libsystemd_inhibitor=no], [AC_INCLUDES_DEFAULT])
+			AC_CHECK_FUNCS([sd_bus_call_method sd_bus_message_read_basic sd_bus_message_enter_container sd_bus_message_exit_container sd_bus_default_system], [], [nut_have_libsystemd_inhibitor=no])
+		])
+
+		AC_MSG_CHECKING(for libsystemd inhibitor interface support)
+		AC_MSG_RESULT([${nut_have_libsystemd_inhibitor}])
+	])
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"
