@@ -24,12 +24,12 @@
 
 #include <sys/stat.h>
 #ifndef WIN32
-#include <sys/wait.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <fcntl.h>
+# include <sys/wait.h>
+# include <sys/socket.h>
+# include <unistd.h>
+# include <fcntl.h>
 #else
-#include <wincompat.h>
+# include <wincompat.h>
 #endif
 
 #include "nut_stdint.h"
@@ -39,7 +39,7 @@
 #include "timehead.h"
 
 #ifdef HAVE_STDARG_H
-#include <stdarg.h>
+# include <stdarg.h>
 #endif
 
 static	char	*shutdowncmd = NULL, *notifycmd = NULL;
