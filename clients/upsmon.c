@@ -3240,29 +3240,73 @@ int main(int argc, char *argv[])
 		if (userfsd)
 			forceshutdown();
 
-		switch ((sleep_inhibitor_status = isPreparingForSleep())) {
-			case 1:	/* Preparing for sleep */
-				upslogx(LOG_INFO, "%s: Processing OS going to sleep", prog);
-				Uninhibit(&sleep_inhibitor_fd);
-				break;
-
-			case 0:	/* Waking up */
-				upslogx(LOG_INFO, "%s: Processing OS wake-up after sleep", prog);
-				if (INVALID_FD(sleep_inhibitor_fd)) {
-					sleep_inhibitor_fd = Inhibit("sleep", prog, "Careful handling of OS sleep with regard to power device monitoring", "delay");
-				}
-				set_reload_flag(1);
-				break;
-
-			case -1:	/* Same as before */
-			default:	/* Odd... */
-				break;
-		}
-
 		if (reload_flag) {
 			upsnotify(NOTIFY_STATE_RELOADING, NULL);
 			reload_conf();
 			upsnotify(NOTIFY_STATE_READY, NULL);
+		}
+
+		sleep_inhibitor_status = isPreparingForSleep();
+		if (sleep_inhibitor_status == 1) {
+			/* Preparing for sleep */
+			upslogx(LOG_INFO, "%s: Processing OS going to sleep", prog);
+			Uninhibit(&sleep_inhibitor_fd);
+
+			upsnotify(NOTIFY_STATE_RELOADING, NULL);
+			upsdebugx(0, "%s: Dozing off until system tells us otherwise; send a SIGHUP or SIGTERM to break the loop manually", prog);
+			while ((sleep_inhibitor_status = isPreparingForSleep()) == -1 && !reload_flag && !exit_flag) {
+				usleep(1000000);
+			}
+			if (nut_debug_level == 0) {
+				upsdebugx(0, "%s: Dozing off finished", prog);
+			} else {
+				upsdebugx(0, "%s: Dozing off finished: sleep_inhibitor_status=%d reload_flag=%d exit_flag=%d",
+					prog, sleep_inhibitor_status, reload_flag, exit_flag);
+			}
+
+			/*... when sleep_inhibitor_status has changed (to 0 after waking up?),
+			 * go to switch/case below. Or after a user signal, skip on... */
+			upsnotify(NOTIFY_STATE_READY, NULL);
+			upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
+
+			if (exit_flag)
+				break;
+
+			if (reload_flag && sleep_inhibitor_status != 0) {
+				upslogx(LOG_WARNING, "%s: OS was last known to be preparing for sleep, and we were "
+					"interrupted by a reload signal. If the sleep does happen later, the system might "
+					"shut down after wake-up if UPS info is stale after a known critical power state!",
+					prog);
+				upsnotify(NOTIFY_STATE_RELOADING, NULL);
+				reload_conf();
+				upsnotify(NOTIFY_STATE_READY, NULL);
+			}
+		}	/*... else go to switch/case below */
+
+		switch (sleep_inhibitor_status) {
+			case 0:	/* Waking up */
+				upslogx(LOG_INFO, "%s: Processing OS wake-up after sleep", prog);
+				upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
+
+				if (INVALID_FD(sleep_inhibitor_fd)) {
+					sleep_inhibitor_fd = Inhibit("sleep", prog, "Careful handling of OS sleep with regard to power device monitoring", "delay");
+				}
+
+				upsnotify(NOTIFY_STATE_RELOADING, NULL);
+				reload_conf();
+				for (ups = firstups; ups != NULL; ups = ups->next) {
+					ups->status = 0;
+					ups->lastpoll = 0;
+				}
+				upsnotify(NOTIFY_STATE_READY, NULL);
+				upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
+
+				break;
+
+			case  1:	/* Handled above */
+			case -1:	/* Same as before */
+			default:	/* Odd... */
+				break;
 		}
 
 		for (ups = firstups; ups != NULL; ups = ups->next)
