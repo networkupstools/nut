@@ -68,9 +68,35 @@ static int RET_NERRNO(int ret) {
 #define SDBUS_PATH	"/org/freedesktop/systemd1"
 #define SDBUS_IFACE	"org.freedesktop.systemd1.Manager"
 
+static /*_cleanup_(sd_bus_flush_close_unrefp)*/ sd_bus	*systemd_bus = NULL;
+
+static int open_sdbus_once(const char *caller) {
+	int	r = 1;
+
+	errno = 0;
+	if (systemd_bus)
+		return r;
+
+	r = sd_bus_open_system(&systemd_bus);
+	if (r < 0 || !systemd_bus) {
+		if (r >= 0) {
+			upsdebugx(1, "%s: Failed to acquire bus for %s(): "
+				"got null pointer and %d exit-code; setting EINVAL",
+				__func__, NUT_STRARG(caller), r);
+			r = -EINVAL;
+		} else {
+			upsdebugx(0, "%s: Failed to acquire bus for %s() (%d): %s",
+				__func__, NUT_STRARG(caller), r, strerror(-r));
+		}
+	} else {
+		upsdebugx(1, "%s: succeeded for %s", __func__, NUT_STRARG(caller));
+	}
+
+	return r;
+}
+
 TYPE_FD Inhibit(const char *arg_what, const char *arg_who, const char *arg_why, const char *arg_mode)
 {
-	_cleanup_(sd_bus_flush_close_unrefp) sd_bus	*bus = NULL;
 	_cleanup_(sd_bus_error_free) sd_bus_error	error = SD_BUS_ERROR_NULL;
 	_cleanup_(sd_bus_message_unrefp) sd_bus_message	*reply = NULL;
 	int	r;
@@ -81,14 +107,13 @@ TYPE_FD Inhibit(const char *arg_what, const char *arg_who, const char *arg_why, 
 	(void) polkit_agent_open_if_enabled(BUS_TRANSPORT_LOCAL, arg_ask_password);
 	 */
 
-	r = sd_bus_open_system(&bus);
+	r = open_sdbus_once(__func__);
 	if (r < 0) {
-		upsdebugx(0, "%s: Failed to acquire bus (%d): %s",
-			__func__, r, strerror(-r));
+		/* Errors, if any, reported above */
 		return r;
 	}
 
-	r = sd_bus_call_method(bus, SDBUS_DEST, SDBUS_PATH, SDBUS_IFACE, "Inhibit", &error, &reply, "ssss", arg_what, arg_who, arg_why, arg_mode);
+	r = sd_bus_call_method(systemd_bus, SDBUS_DEST, SDBUS_PATH, SDBUS_IFACE, "Inhibit", &error, &reply, "ssss", arg_what, arg_who, arg_why, arg_mode);
 	if (r < 0) {
 		upsdebugx(0, "%s: sd_bus_call_method() failed (%d): %s",
 			__func__, r, strerror(-r));
