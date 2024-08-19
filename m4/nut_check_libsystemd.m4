@@ -104,10 +104,14 @@ if test -z "${nut_have_libsystemd_seen}"; then
 		LIBSYSTEMD_LIBS="${LIBS}"
 
 		dnl Since systemd 183: https://systemd.io/INHIBITOR_LOCKS/
-		AS_IF([test "$SYSTEMD_VERSION" -ge 183], [
+		dnl ...or 221: https://www.freedesktop.org/software/systemd/man/latest/sd_bus_call_method.html
+		dnl and some bits even later (e.g. message container reading)
+		AS_IF([test "$SYSTEMD_VERSION" -ge 221], [
 			nut_have_libsystemd_inhibitor=yes
 			AC_CHECK_HEADERS(systemd/sd-bus.h, [], [nut_have_libsystemd_inhibitor=no], [AC_INCLUDES_DEFAULT])
-			AC_CHECK_FUNCS([sd_bus_call_method sd_bus_message_read_basic sd_bus_message_enter_container sd_bus_message_exit_container sd_bus_default_system], [], [nut_have_libsystemd_inhibitor=no])
+			AC_CHECK_FUNCS([sd_bus_call_method sd_bus_message_read_basic sd_bus_open_system sd_bus_default_system], [], [nut_have_libsystemd_inhibitor=no])
+			dnl For inhibitor per se, we do not have to read containers:
+			dnl AC_CHECK_FUNCS([sd_bus_message_enter_container sd_bus_message_exit_container])
 		])
 
 		AC_MSG_CHECKING(for libsystemd inhibitor interface support)
