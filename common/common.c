@@ -70,7 +70,25 @@ static int RET_NERRNO(int ret) {
 
 static /*_cleanup_(sd_bus_flush_close_unrefp)*/ sd_bus	*systemd_bus = NULL;
 
+static void close_sdbus_once(void) {
+	/* Per https://manpages.debian.org/testing/libsystemd-dev/sd_bus_flush_close_unrefp.3.en.html
+	 * these end-of-life methods do not tell us if we succeeded or failed
+	 * closing the bus connection in any manner, so we here also do not.
+	 */
+
+	if (!systemd_bus) {
+		errno = 0;
+		return;
+	}
+
+	upsdebugx(1, "%s: trying", __func__);
+	errno = 0;
+	sd_bus_flush_close_unrefp(&systemd_bus);
+	systemd_bus = NULL;
+}
+
 static int open_sdbus_once(const char *caller) {
+	static int	openedOnce = 0;
 	int	r = 1;
 
 	errno = 0;
@@ -90,6 +108,11 @@ static int open_sdbus_once(const char *caller) {
 		}
 	} else {
 		upsdebugx(1, "%s: succeeded for %s", __func__, NUT_STRARG(caller));
+	}
+
+	if (systemd_bus && !openedOnce) {
+		openedOnce = 1;
+		atexit(close_sdbus_once);
 	}
 
 	return r;
@@ -115,9 +138,25 @@ TYPE_FD Inhibit(const char *arg_what, const char *arg_who, const char *arg_why, 
 
 	r = sd_bus_call_method(systemd_bus, SDBUS_DEST, SDBUS_PATH, SDBUS_IFACE, "Inhibit", &error, &reply, "ssss", arg_what, arg_who, arg_why, arg_mode);
 	if (r < 0) {
-		upsdebugx(0, "%s: sd_bus_call_method() failed (%d): %s",
+		upsdebugx(1, "%s: sd_bus_call_method() failed (%d) once, will retry D-Bus connection: %s",
 			__func__, r, strerror(-r));
-		return r;
+
+		close_sdbus_once();
+		r = open_sdbus_once(__func__);
+		if (r < 0) {
+			/* Errors, if any, reported above */
+			return r;
+		}
+
+		r = sd_bus_call_method(systemd_bus, SDBUS_DEST, SDBUS_PATH, SDBUS_IFACE, "Inhibit", &error, &reply, "ssss", arg_what, arg_who, arg_why, arg_mode);
+		if (r < 0) {
+			upsdebugx(0, "%s: sd_bus_call_method() failed (%d): %s",
+				__func__, r, strerror(-r));
+			return r;
+		} else {
+			upsdebugx(1, "%s: reconnection to D-Bus helped with sd_bus_call_method()",
+				__func__);
+		}
 	}
 
 	r = sd_bus_message_read_basic(reply, SD_BUS_TYPE_UNIX_FD, &fd);
