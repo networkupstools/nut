@@ -44,6 +44,13 @@ Changes from 2.8.2 to 2.8.3
   Please use it, it immensely helps with community troubleshooting!
   [issue #1949]
 
+- `upsmon` should now integrate natively with systemd-driven OS sleep events
+  (built with systemd version 221 or newer "inhibitor interface"), so various
+  hacks previously packaged into `/usr/lib/systemd/system-sleep/` scripts or
+  units requiring/conflicting with the `sleep.target` may be obsolete.
+  For fallback with older systemd, a `nut-sleep.service` is provided now.
+  [#1070, #2596, #2597]
+
 - `usbhid-ups` subdriver `PowerCOM HID` subdriver sent UPS `shutdown` and
   `stayoff` commands in wrong byte order, at least for devices currently
   in the field. Driver now sends the commands in a way that satisfies new
