@@ -93,7 +93,7 @@ static void close_sdbus_once(void) {
 }
 
 static int open_sdbus_once(const char *caller) {
-	static int	openedOnce = 0;
+	static int	openedOnce = 0, faultReported = 0;
 	int	r = 1;
 
 	errno = 0;
@@ -103,16 +103,20 @@ static int open_sdbus_once(const char *caller) {
 	r = sd_bus_open_system(&systemd_bus);
 	if (r < 0 || !systemd_bus) {
 		if (r >= 0) {
-			upsdebugx(1, "%s: Failed to acquire bus for %s(): "
-				"got null pointer and %d exit-code; setting EINVAL",
-				__func__, NUT_STRARG(caller), r);
+			if (!faultReported)
+				upsdebugx(1, "%s: Failed to acquire bus for %s(): "
+					"got null pointer and %d exit-code; setting EINVAL",
+					__func__, NUT_STRARG(caller), r);
 			r = -EINVAL;
 		} else {
-			upsdebugx(0, "%s: Failed to acquire bus for %s() (%d): %s",
-				__func__, NUT_STRARG(caller), r, strerror(-r));
+			if (!faultReported)
+				upsdebugx(0, "%s: Failed to acquire bus for %s() (%d): %s",
+					__func__, NUT_STRARG(caller), r, strerror(-r));
 		}
+		faultReported = 1;
 	} else {
 		upsdebugx(1, "%s: succeeded for %s", __func__, NUT_STRARG(caller));
+		faultReported = 0;
 	}
 
 	if (systemd_bus && !openedOnce) {
