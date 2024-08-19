@@ -235,6 +235,8 @@ dnl # not configure time.
 dnl AC_DEFINE_UNQUOTED(UPS_VERSION, "${PACKAGE_VERSION}", [NUT version])
 
 dnl However, automatically define the tree version (mostly for AC_SUBST)
+dnl FIXME: This just picks first 3 chars, assuming single-digit components
+dnl  separated by a dot:
 TREE_VERSION="`echo ${PACKAGE_VERSION} | awk '{ print substr($0,1,3) }'`"
 AC_DEFINE_UNQUOTED(TREE_VERSION, "${TREE_VERSION}", [NUT tree version])
 
