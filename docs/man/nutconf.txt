@@ -107,6 +107,12 @@ Notification types are:
 - 'REPLBATT' (UPS battery needs replacing)
 - 'NOCOMM' (device is unavailable)
 - 'NOPARENT' (upsmon parent process died, shutdown is impossible)
+- 'CAL' (calibration in progress)
+- 'NOTCAL' (calibration finished)
+- 'OFF' (UPS is administratively OFF or asleep, should wake up on command)
+- 'NOTOFF' (UPS is no longer administratively OFF or asleep)
+- 'BYPASS' (on bypass = powered, not protecting)
+- 'NOTBYPASS' (no longer on bypass)
 
  ::
 Notification flags:
