@@ -14,12 +14,13 @@ systemdsystemunit_DATA = \
         nut-monitor.service \
         nut-server.service  \
         nut-driver.target   \
+        nut-sleep.service   \
         nut.target
 
 systemdtmpfiles_DATA = \
         nut-common-tmpfiles.conf
 
-EXTRA_DIST += nut-driver.target nut.target
+EXTRA_DIST += nut-driver.target nut.target nut-sleep.service
 
 systemdshutdown_SCRIPTS = nutshutdown
 
@@ -29,7 +30,7 @@ sbin_SCRIPTS = ../upsdrvsvcctl/upsdrvsvcctl
 
 else
 EXTRA_DIST += \
-	nut-driver@.service.in nut-monitor.service.in \
+	nut-driver@.service.in nut-monitor.service.in nut-sleep.service \
 	nut-server.service.in nutshutdown.in nut-driver.target nut.target \
 	nut-driver-enumerator.path.in nut-driver-enumerator.service.in \
 	nut-driver-enumerator-daemon-activator.path.in \

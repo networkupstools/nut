@@ -158,6 +158,16 @@ https://github.com/networkupstools/nut/milestone/11
    * added an `OBLBDURATION` (seconds) setting to optionally delay raising
      the alarm for immediate shutdown in critical situation. [#321]
 
+ - More systemd integration:
+   * Introduced a `nut-sleep.service` unit which stops `nut.target` when a
+     system sleep was requested, and starts it when the sleep is finished.
+     This helps avoid NUT shutting down a woken-up system just because its
+     power state was critical before the sleep (called as a `SHUTDOWNCMD`
+     implementation by the end-user), and a next-read timestamp was not seen
+     (deemed to be a stale UPS, meaning lost communications during critical
+     state, so must go down ASAP). While not as elegant as native systemd
+     "inhibitor interface" support, this approach does work. [#1833, #1070]
+
  - gamatronic driver revised for safer memory operations; this was reported
    to have fixed a Segmentation Fault seen in earlier NUT releases with
    some of the devices supported by this driver. [#2427]
