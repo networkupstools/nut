@@ -204,6 +204,9 @@ TYPE_FD Inhibit(const char *arg_what, const char *arg_who, const char *arg_why, 
 		if (r < 0) {
 			upsdebugx(1, "%s: sd_bus_call_method() failed (%d): %s",
 				__func__, r, strerror(-r));
+			if (error.message && *(error.message))
+				upsdebugx(2, "%s: details from libsystemd: %s",
+					__func__, error.message);
 			return r;
 		} else {
 			upsdebugx(1, "%s: reconnection to D-Bus helped with sd_bus_call_method()",
@@ -275,6 +278,9 @@ int isPreparingForSleep(void)
 		if (r < 0) {
 			upsdebugx(1, "%s: sd_bus_get_property_trivial() failed (%d): %s",
 				__func__, r, strerror(-r));
+			if (error.message && *(error.message))
+				upsdebugx(2, "%s: details from libsystemd: %s",
+					__func__, error.message);
 			return r;
 		} else {
 			upsdebugx(1, "%s: reconnection to D-Bus helped with sd_bus_get_property_trivial()",
