@@ -69,9 +69,12 @@ static int RET_NERRNO(int ret) {
  *  different compilers. This can be addressed a bit more clumsily directly,
  *  but we only want to do so if needed in real life. */
 #define _cleanup_(f)	__attribute__((cleanup(f)))
-#define SDBUS_DEST	"org.freedesktop.systemd1"
-#define SDBUS_PATH	"/org/freedesktop/systemd1"
-#define SDBUS_IFACE	"org.freedesktop.systemd1.Manager"
+
+/* The "bus_login_mgr" definition per
+ * https://github.com/systemd/systemd/blob/4cf7a676af9a79ff418227d8ff488dfca6f243ab/src/shared/bus-locator.c#L24 */
+#define SDBUS_DEST	"org.freedesktop.login1"
+#define SDBUS_PATH	"/org/freedesktop/login1"
+#define SDBUS_IFACE	"org.freedesktop.login1.Manager"
 
 static /*_cleanup_(sd_bus_flush_close_unrefp)*/ sd_bus	*systemd_bus = NULL;
 
