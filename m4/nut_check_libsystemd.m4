@@ -109,7 +109,7 @@ if test -z "${nut_have_libsystemd_seen}"; then
 		AS_IF([test "$SYSTEMD_VERSION" -ge 221], [
 			nut_have_libsystemd_inhibitor=yes
 			AC_CHECK_HEADERS(systemd/sd-bus.h, [], [nut_have_libsystemd_inhibitor=no], [AC_INCLUDES_DEFAULT])
-			AC_CHECK_FUNCS([sd_bus_call_method sd_bus_message_read_basic sd_bus_open_system sd_bus_default_system], [], [nut_have_libsystemd_inhibitor=no])
+			AC_CHECK_FUNCS([sd_bus_call_method sd_bus_message_read_basic sd_bus_open_system sd_bus_default_system sd_bus_get_property_trivial], [], [nut_have_libsystemd_inhibitor=no])
 			dnl NOTE: In practice we use "p"-suffixed sd_bus_flush_close_unrefp
 			dnl  and sd_bus_message_unrefp methods prepared by a macro in sd-bus.h
 			AC_CHECK_FUNCS([sd_bus_flush_close_unref sd_bus_message_unref sd_bus_error_free], [], [nut_have_libsystemd_inhibitor=no])

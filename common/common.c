@@ -183,6 +183,78 @@ TYPE_FD Inhibit(const char *arg_what, const char *arg_who, const char *arg_why, 
 	return r;
 }
 
+void Uninhibit(TYPE_FD *fd_ptr)
+{
+	if (!fd_ptr)
+		return;
+	if (INVALID_FD(*fd_ptr))
+		return;
+
+	/* Closing the socket allows systemd to proceed (we un-inhibit our lock on system
+	 * life-cycle handling). After waking up, we should Inhibit() anew, if needed.
+	 */
+	close(*fd_ptr);
+	*fd_ptr = ERROR_FD;
+}
+
+int isPreparingForSleep(void)
+{
+	static int32_t	prev = -1;
+	int32_t	val = 0;	/* 4-byte int expected for SD_BUS_TYPE_BOOLEAN aka 'b' */
+	int	r;
+	_cleanup_(sd_bus_error_free) sd_bus_error	error = SD_BUS_ERROR_NULL;
+
+	r = open_sdbus_once(__func__);
+	if (r < 0) {
+		/* Errors, if any, reported above */
+		return r;
+	}
+
+	/* @org.freedesktop.DBus.Property.EmitsChangedSignal("false")
+	 *     readonly b PreparingForSleep = ...;
+	 * https://www.freedesktop.org/software/systemd/man/latest/org.freedesktop.login1.html
+	 * https://www.freedesktop.org/software/systemd/man/latest/sd_bus_set_property.html
+	 * https://www.freedesktop.org/software/systemd/man/latest/sd_bus_message_append.html (data types)
+	 */
+	r = sd_bus_get_property_trivial(systemd_bus, SDBUS_DEST, SDBUS_PATH, SDBUS_IFACE, "PreparingForSleep", &error, SD_BUS_TYPE_BOOLEAN, &val);
+	if (r < 0) {
+		upsdebugx(1, "%s: sd_bus_get_property_trivial() failed (%d) once, will retry D-Bus connection: %s",
+			__func__, r, strerror(-r));
+
+		close_sdbus_once();
+		r = open_sdbus_once(__func__);
+		if (r < 0) {
+			/* Errors, if any, reported above */
+			return r;
+		}
+
+		r = sd_bus_get_property_trivial(systemd_bus, SDBUS_DEST, SDBUS_PATH, SDBUS_IFACE, "PreparingForSleep", &error, 'b', &val);
+		if (r < 0) {
+			upsdebugx(0, "%s: sd_bus_get_property_trivial() failed (%d): %s",
+				__func__, r, strerror(-r));
+			return r;
+		} else {
+			upsdebugx(1, "%s: reconnection to D-Bus helped with sd_bus_get_property_trivial()",
+				__func__);
+		}
+	}
+
+	if (val == prev) {
+		/* Unchanged */
+		return -1;
+	}
+
+	/* First run and not immediately going to sleep, assume unchanged (no-op for upsmon et al) */
+	if (prev < 0 && !val) {
+		prev = val;
+		return -1;
+	}
+
+	/* 0 or 1 */
+	prev = val;
+	return val;
+}
+
 #else	/* not WITH_LIBSYSTEMD_INHIBITOR */
 
 TYPE_FD Inhibit(const char *arg_what, const char *arg_who, const char *arg_why, const char *arg_mode)
@@ -194,6 +266,18 @@ TYPE_FD Inhibit(const char *arg_what, const char *arg_who, const char *arg_why, 
 
 	upsdebugx(6, "%s: Not implemented on this platform", __func__);
 	return ERROR_FD;
+}
+
+int isPreparingForSleep(void)
+{
+	upsdebugx(6, "%s: Not implemented on this platform", __func__);
+	return -1;
+}
+
+void Uninhibit(TYPE_FD *fd_ptr)
+{
+	NUT_UNUSED_VARIABLE(fd_ptr);
+	upsdebugx(6, "%s: Not implemented on this platform", __func__);
 }
 
 #endif	/* not WITH_LIBSYSTEMD_INHIBITOR */

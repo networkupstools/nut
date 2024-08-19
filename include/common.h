@@ -370,6 +370,14 @@ void check_unix_socket_filename(const char *fn);
  * TODO: Potentially extensible to other frameworks with similar concepts?..
  */
 TYPE_FD Inhibit(const char *arg_what, const char *arg_who, const char *arg_why, const char *arg_mode);
+/* Let the service management framework proceed with its sleep mode */
+void Uninhibit(TYPE_FD *fd_ptr);
+/* Check once if the system plans to sleep or is waking up:
+ *  -1	Same reply as before, whatever it was
+ *   0	(false) Just after the sleep, at least as a bus signal
+ *   1	(true) Before the sleep - we must process and un-block it
+ */
+int isPreparingForSleep(void);
 
 /* Send (daemon) state-change notifications to an
  * external service management framework such as systemd.
