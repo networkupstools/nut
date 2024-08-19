@@ -106,6 +106,9 @@ typedef struct {
 #define NOTIFY_BYPASS	14	/* UPS is administratively on bypass    */
 #define NOTIFY_NOTBYPASS	15	/* UPS is not anymore administratively on bypass    */
 
+#define NOTIFY_SUSPEND_STARTING	30	/* OS is entering sleep/suspend/hibernate slumber mode, and we know it   */
+#define NOTIFY_SUSPEND_FINISHED	31	/* OS just finished sleep/suspend/hibernate slumber mode, and we know it */
+
 /* notify flag values */
 
 #define NOTIFY_IGNORE  (1 << 0)        /* don't do anything                */
@@ -150,6 +153,10 @@ static struct {
 	{ NOTIFY_NOTOFF,   "NOTOFF",   NULL, "UPS %s: no longer administratively OFF or asleep", NOTIFY_DEFAULT },
 	{ NOTIFY_BYPASS,   "BYPASS",   NULL, "UPS %s: on bypass (powered, not protecting)", NOTIFY_DEFAULT },
 	{ NOTIFY_NOTBYPASS,"NOTBYPASS",NULL, "UPS %s: no longer on bypass", NOTIFY_DEFAULT },
+
+	{ NOTIFY_SUSPEND_STARTING, "SUSPEND_STARTING", NULL, "OS is entering sleep/suspend/hibernate mode", NOTIFY_DEFAULT },
+	{ NOTIFY_SUSPEND_FINISHED, "SUSPEND_FINISHED", NULL, "OS just finished sleep/suspend/hibernate mode, de-activating obsolete UPS readings to avoid an unfortunate shutdown", NOTIFY_DEFAULT },
+
 	{ 0, NULL, NULL, NULL, 0 }
 };
 

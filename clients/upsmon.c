@@ -3264,6 +3264,7 @@ int main(int argc, char *argv[])
 		sleep_inhibitor_status = isPreparingForSleep();
 		if (sleep_inhibitor_status == 1) {
 			/* Preparing for sleep */
+			do_notify(NULL, NOTIFY_SUSPEND_STARTING);
 			upslogx(LOG_INFO, "%s: Processing OS going to sleep", prog);
 			Uninhibit(&sleep_inhibitor_fd);
 
@@ -3300,6 +3301,7 @@ int main(int argc, char *argv[])
 
 		switch (sleep_inhibitor_status) {
 			case 0:	/* Waking up */
+				do_notify(NULL, NOTIFY_SUSPEND_FINISHED);
 				upslogx(LOG_INFO, "%s: Processing OS wake-up after sleep", prog);
 				upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
 
