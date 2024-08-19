@@ -2892,6 +2892,7 @@ static void init_Inhibitor(const char *prog)
 		 */
 		sleep_inhibitor_fd = Inhibit("sleep", prog, "Careful handling of OS sleep with regard to power device monitoring", "delay");
 		if (VALID_FD(sleep_inhibitor_fd)) {
+			upslogx(LOG_INFO, "%s: initialized OS integration for sleep inhibitor", prog);
 			sleep_inhibitor_fail_reported = 0;
 		} else {
 			if (!sleep_inhibitor_fail_reported) {
