@@ -235,6 +235,8 @@ dnl # not configure time.
 dnl AC_DEFINE_UNQUOTED(UPS_VERSION, "${PACKAGE_VERSION}", [NUT version])
 
 dnl However, automatically define the tree version (mostly for AC_SUBST)
+dnl FIXME: This just picks first 3 chars, assuming single-digit components
+dnl  separated by a dot:
 TREE_VERSION="`echo ${PACKAGE_VERSION} | awk '{ print substr($0,1,3) }'`"
 AC_DEFINE_UNQUOTED(TREE_VERSION, "${TREE_VERSION}", [NUT tree version])
 
@@ -675,6 +677,10 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         test -n "${CONFIG_CXXFLAGS-}" || CONFIG_CXXFLAGS=" "
         export CONFIG_CFLAGS
         export CONFIG_CXXFLAGS
+
+        AC_MSG_NOTICE([Moving config.log of the original invocation to config.log.inplace-outer just before exec...])
+        mv -f config.log config.log.inplace-outer || true
+
         eval exec "$0" $CONFIG_FLAGS_DEPLOYED $CONFIG_FLAGS --disable-inplace-runtime
     ],[
         AC_MSG_NOTICE([No CONFIG_FLAGS were reported or discovered from existing NUT deployment (if any); restarting script for a clean run])
@@ -685,6 +691,10 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         test -n "${CONFIG_CXXFLAGS-}" || CONFIG_CXXFLAGS=" "
         export CONFIG_CFLAGS
         export CONFIG_CXXFLAGS
+
+        AC_MSG_NOTICE([Moving config.log of the original invocation to config.log.inplace-outer just before exec...])
+        mv -f config.log config.log.inplace-outer || true
+
         AC_MSG_NOTICE([exec "$0" $CONFIG_FLAGS --disable-inplace-runtime])
         eval exec "$0" $CONFIG_FLAGS --disable-inplace-runtime
     ])
@@ -1298,6 +1308,8 @@ if test "$as_ln_s" = "ln -s" ; then
     if test x"${_abs_srcdir}" = x"${_abs_builddir}" ; then
         LN_S_R="ln"
     else
+        dnl NOTE: Here we check equality of the file systems by the
+        dnl devices they are mounted from (first column in df output):
         _fs_srcdir="`df "${_abs_srcdir}" | tail -1 | awk '{print $1}'`" || fs_srcdir="XXXs"
         _fs_builddir="`df "${_abs_builddir}" | tail -1 | awk '{print $1}'`" || fs_builddir="XXXb"
         dnl AC_MSG_NOTICE([_fs_srcdir='${_fs_srcdir}' _fs_builddir='${_fs_builddir}'])

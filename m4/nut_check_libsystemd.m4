@@ -13,21 +13,41 @@ if test -z "${nut_have_libsystemd_seen}"; then
 	CFLAGS_ORIG="${CFLAGS}"
 	LIBS_ORIG="${LIBS}"
 
+	SYSTEMD_VERSION="none"
+
+	AC_CHECK_TOOL(SYSTEMCTL, systemctl, none)
+
 	AS_IF([test x"$have_PKG_CONFIG" = xyes],
 		[dnl See which version of the systemd library (if any) is installed
 		 dnl FIXME : Support detection of cflags/ldflags below by legacy
 		 dnl discovery if pkgconfig is not there
 		 AC_MSG_CHECKING(for libsystemd version via pkg-config)
 		 SYSTEMD_VERSION="`$PKG_CONFIG --silence-errors --modversion libsystemd 2>/dev/null`"
-		 if test "$?" != "0" -o -z "${SYSTEMD_VERSION}"; then
-		    SYSTEMD_VERSION="none"
-		 fi
+		 AS_IF([test "$?" != "0" -o -z "${SYSTEMD_VERSION}"], [
+			SYSTEMD_VERSION="none"
+		 ])
 		 AC_MSG_RESULT(${SYSTEMD_VERSION} found)
-		],
-		[SYSTEMD_VERSION="none"
-		 AC_MSG_NOTICE([can not check libsystemd settings via pkg-config])
 		]
 	)
+
+	AS_IF([test x"${SYSTEMD_VERSION}" = xnone], [
+		 AS_IF([test x"${SYSTEMCTL}" != xnone], [
+			AC_MSG_CHECKING(for libsystemd version via systemctl)
+			dnl NOTE: Unlike the configure.ac file, in a "pure"
+			dnl m4 script like this one, we have to escape the
+			dnl dollar-number references (in awk below) lest they
+			dnl get seen as m4 function positional parameters.
+			SYSTEMD_VERSION="`LANG=C LC_ALL=C ${SYSTEMCTL} --version | grep -E '^systemd@<:@ \t@:>@*@<:@0-9@:>@@<:@0-9@:>@*' | awk '{print ''$''2}'`" \
+			&& test -n "${SYSTEMD_VERSION}" \
+			|| SYSTEMD_VERSION="none"
+			AC_MSG_RESULT(${SYSTEMD_VERSION} found)
+		 ])
+		]
+	)
+
+	AS_IF([test x"${SYSTEMD_VERSION}" = xnone], [
+		AC_MSG_NOTICE([can not check libsystemd settings via pkg-config nor systemctl])
+	])
 
 	AC_MSG_CHECKING(for libsystemd cflags)
 	AC_ARG_WITH(libsystemd-includes,
