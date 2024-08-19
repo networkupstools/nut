@@ -677,6 +677,10 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         test -n "${CONFIG_CXXFLAGS-}" || CONFIG_CXXFLAGS=" "
         export CONFIG_CFLAGS
         export CONFIG_CXXFLAGS
+
+        AC_MSG_NOTICE([Moving config.log of the original invocation to config.log.inplace-outer just before exec...])
+        mv -f config.log config.log.inplace-outer || true
+
         eval exec "$0" $CONFIG_FLAGS_DEPLOYED $CONFIG_FLAGS --disable-inplace-runtime
     ],[
         AC_MSG_NOTICE([No CONFIG_FLAGS were reported or discovered from existing NUT deployment (if any); restarting script for a clean run])
@@ -687,6 +691,10 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         test -n "${CONFIG_CXXFLAGS-}" || CONFIG_CXXFLAGS=" "
         export CONFIG_CFLAGS
         export CONFIG_CXXFLAGS
+
+        AC_MSG_NOTICE([Moving config.log of the original invocation to config.log.inplace-outer just before exec...])
+        mv -f config.log config.log.inplace-outer || true
+
         AC_MSG_NOTICE([exec "$0" $CONFIG_FLAGS --disable-inplace-runtime])
         eval exec "$0" $CONFIG_FLAGS --disable-inplace-runtime
     ])
