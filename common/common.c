@@ -127,6 +127,50 @@ static int open_sdbus_once(const char *caller) {
 	return r;
 }
 
+static int would_reopen_sdbus(int r) {
+	if (r >= 0)
+		return 0;
+
+	switch (-r) {
+		/* Rule out issues that would not clear themselves (e.g. not stale connections) */
+		case ENOENT:
+		case EPERM:
+		case EACCES:
+			return 0;
+	}
+
+	return 1;
+}
+
+static int reopen_sdbus_once(int r, const char *caller, const char *purpose)
+{
+	if (r >= 0)
+		return r;
+
+	switch (-r) {
+		/* Rule out issues that would not clear themselves (e.g. not stale connections) */
+		case ENOENT:
+		case EPERM:
+		case EACCES:
+			break;
+
+		/* An "Invalid request descriptor" might fit this bill */
+		default:
+			upsdebugx(1, "%s for %s() for %s failed (%d) once, will retry D-Bus connection: %s",
+				__func__, caller, purpose, r, strerror(-r));
+
+			close_sdbus_once();
+			r = open_sdbus_once(caller);
+			if (r < 0) {
+				/* Errors, if any, reported above */
+				return r;
+			}
+			break;
+	}
+
+	return r;
+}
+
 TYPE_FD Inhibit(const char *arg_what, const char *arg_who, const char *arg_why, const char *arg_mode)
 {
 	_cleanup_(sd_bus_error_free) sd_bus_error	error = SD_BUS_ERROR_NULL;
@@ -147,17 +191,13 @@ TYPE_FD Inhibit(const char *arg_what, const char *arg_who, const char *arg_why, 
 
 	r = sd_bus_call_method(systemd_bus, SDBUS_DEST, SDBUS_PATH, SDBUS_IFACE, "Inhibit", &error, &reply, "ssss", arg_what, arg_who, arg_why, arg_mode);
 	if (r < 0) {
-		upsdebugx(1, "%s: sd_bus_call_method() failed (%d) once, will retry D-Bus connection: %s",
-			__func__, r, strerror(-r));
+		if (would_reopen_sdbus(r)) {
+			if ((r = reopen_sdbus_once(r, __func__, "sd_bus_call_method()")) < 0)
+				return r;
 
-		close_sdbus_once();
-		r = open_sdbus_once(__func__);
-		if (r < 0) {
-			/* Errors, if any, reported above */
-			return r;
+			r = sd_bus_call_method(systemd_bus, SDBUS_DEST, SDBUS_PATH, SDBUS_IFACE, "Inhibit", &error, &reply, "ssss", arg_what, arg_who, arg_why, arg_mode);
 		}
 
-		r = sd_bus_call_method(systemd_bus, SDBUS_DEST, SDBUS_PATH, SDBUS_IFACE, "Inhibit", &error, &reply, "ssss", arg_what, arg_who, arg_why, arg_mode);
 		if (r < 0) {
 			upsdebugx(1, "%s: sd_bus_call_method() failed (%d): %s",
 				__func__, r, strerror(-r));
@@ -222,17 +262,13 @@ int isPreparingForSleep(void)
 	 */
 	r = sd_bus_get_property_trivial(systemd_bus, SDBUS_DEST, SDBUS_PATH, SDBUS_IFACE, "PreparingForSleep", &error, SD_BUS_TYPE_BOOLEAN, &val);
 	if (r < 0) {
-		upsdebugx(1, "%s: sd_bus_get_property_trivial() failed (%d) once, will retry D-Bus connection: %s",
-			__func__, r, strerror(-r));
+		if (would_reopen_sdbus(r)) {
+			if ((r = reopen_sdbus_once(r, __func__, "sd_bus_get_property_trivial()")) < 0)
+				return r;
 
-		close_sdbus_once();
-		r = open_sdbus_once(__func__);
-		if (r < 0) {
-			/* Errors, if any, reported above */
-			return r;
+			r = sd_bus_get_property_trivial(systemd_bus, SDBUS_DEST, SDBUS_PATH, SDBUS_IFACE, "PreparingForSleep", &error, 'b', &val);
 		}
 
-		r = sd_bus_get_property_trivial(systemd_bus, SDBUS_DEST, SDBUS_PATH, SDBUS_IFACE, "PreparingForSleep", &error, 'b', &val);
 		if (r < 0) {
 			upsdebugx(1, "%s: sd_bus_get_property_trivial() failed (%d): %s",
 				__func__, r, strerror(-r));
