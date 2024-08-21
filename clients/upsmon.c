@@ -3302,7 +3302,9 @@ int main(int argc, char *argv[])
 		}	/*... else go to switch/case below */
 
 		switch (sleep_inhibitor_status) {
-			case 0:	/* Waking up */
+			case 0:	{ /* Waking up */
+				time_t	now;
+
 				do_notify(NULL, NOTIFY_SUSPEND_FINISHED);
 				upslogx(LOG_INFO, "%s: Processing OS wake-up after sleep", prog);
 				upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
@@ -3312,14 +3314,16 @@ int main(int argc, char *argv[])
 
 				reload_conf();
 
+				time(&now);
 				for (ups = firstups; ups != NULL; ups = ups->next) {
 					ups->status = 0;
-					ups->lastpoll = 0;
+					ups->lastpoll = now;
 				}
 
 				upsnotify(NOTIFY_STATE_READY, NULL);
 				upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
 
+				}	/* scoping for "now" */
 				break;
 
 			case  1:	/* Handled above */
