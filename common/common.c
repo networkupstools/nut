@@ -236,29 +236,33 @@ TYPE_FD Inhibit(const char *arg_what, const char *arg_who, const char *arg_why, 
 		} else {
 			/* Permissions for the privileged operation... did it ever succeed? */
 			if (isSupported_Inhibit < 0) {
+				upsdebugx(1, "%s: %s() failed seemingly due to permissions, marking %s as not supported",
+					__func__, "sd_bus_call_method", "Inhibit");
 				isSupported_Inhibit = 0;
 				isSupported_Inhibit_errno = r;
 			}
 		}
 
 		if (r < 0) {
-			upsdebugx(1, "%s: sd_bus_call_method() failed (%d): %s",
-				__func__, r, strerror(-r));
+			upsdebugx(1, "%s: %s() failed (%d): %s",
+				__func__, "sd_bus_call_method", r, strerror(-r));
 			if (error.message && *(error.message))
 				upsdebugx(2, "%s: details from libsystemd: %s",
 					__func__, error.message);
 			return r;
 		} else {
-			upsdebugx(1, "%s: reconnection to D-Bus helped with sd_bus_call_method()",
-				__func__);
+			upsdebugx(1, "%s: reconnection to D-Bus helped with %s()",
+				__func__, "sd_bus_call_method");
 		}
 	}
 
 	r = sd_bus_message_read_basic(reply, SD_BUS_TYPE_UNIX_FD, &fd);
 	if (r < 0) {
-		upsdebugx(1, "%s: sd_bus_message_read_basic() failed (%d): %s",
-			__func__, r, strerror(-r));
+		upsdebugx(1, "%s: %s() failed (%d): %s",
+			__func__, "sd_bus_message_read_basic", r, strerror(-r));
 		if (isSupported_Inhibit < 0 && !would_reopen_sdbus(r)) {
+			upsdebugx(1, "%s: %s() failed seemingly due to permissions, marking %s as not supported",
+				__func__, "sd_bus_message_read_basic", "Inhibit");
 			isSupported_Inhibit = 0;
 			isSupported_Inhibit_errno = r;
 		}
@@ -328,21 +332,23 @@ int isPreparingForSleep(void)
 			r = sd_bus_get_property_trivial(systemd_bus, SDBUS_DEST, SDBUS_PATH, SDBUS_IFACE, "PreparingForSleep", &error, 'b', &val);
 		} else {
 			if (isSupported_PreparingForSleep < 0) {
+				upsdebugx(1, "%s: %s() failed seemingly due to permissions, marking %s as not supported",
+					__func__, "sd_bus_get_property_trivial", "PreparingForSleep");
 				isSupported_PreparingForSleep = 0;
 				isSupported_PreparingForSleep_errno = r;
 			}
 		}
 
 		if (r < 0) {
-			upsdebugx(1, "%s: sd_bus_get_property_trivial() failed (%d): %s",
-				__func__, r, strerror(-r));
+			upsdebugx(1, "%s: %s() failed (%d): %s",
+				__func__, "sd_bus_get_property_trivial", r, strerror(-r));
 			if (error.message && *(error.message))
 				upsdebugx(2, "%s: details from libsystemd: %s",
 					__func__, error.message);
 			return r;
 		} else {
-			upsdebugx(1, "%s: reconnection to D-Bus helped with sd_bus_get_property_trivial()",
-				__func__);
+			upsdebugx(1, "%s: reconnection to D-Bus helped with %s()",
+				__func__, "sd_bus_get_property_trivial");
 		}
 	}
 
