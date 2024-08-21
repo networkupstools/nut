@@ -158,6 +158,7 @@ static	sigset_t nut_upsmon_sigmask;
  * the OS going to sleep, this is the messenger variable:
  */
 static TYPE_FD	sleep_inhibitor_fd = ERROR_FD;
+static int	sleep_inhibitor_status = -2;
 
 /* Users can pass a -D[...] option to enable debugging.
  * For the service tracing purposes, also the upsmon.conf
@@ -2885,6 +2886,7 @@ static void check_parent(void)
 static void init_Inhibitor(const char *prog)
 {
 	static int	sleep_inhibitor_fail_reported = 0;
+	static int	sleep_status_ability_reported = 0;
 
 	if (INVALID_FD(sleep_inhibitor_fd)) {
 		/* See https://www.freedesktop.org/software/systemd/man/latest/org.freedesktop.login1.html
@@ -2900,13 +2902,25 @@ static void init_Inhibitor(const char *prog)
 			}
 			sleep_inhibitor_fail_reported = 1;
 		}
+
+		if (!sleep_status_ability_reported && isPreparingForSleepSupported()) {
+			/* At this point isSupported may be -1 (unknown yet),
+			 * make a query to be sure */
+			sleep_inhibitor_status = isPreparingForSleep();
+			if (isPreparingForSleepSupported()) {
+				upslogx(LOG_INFO, "%s: initialized OS integration for sleep/wake monitoring", prog);
+			} else {
+				upslogx(LOG_INFO, "%s: failed to initialize OS integration for sleep/wake monitoring", prog);
+			}
+			sleep_status_ability_reported = 1;
+		}
 	}
 }
 
 int main(int argc, char *argv[])
 {
 	const char	*prog = xbasename(argv[0]);
-	int	i, cmdret = -1, checking_flag = 0, foreground = -1, sleep_inhibitor_status = -2;
+	int	i, cmdret = -1, checking_flag = 0, foreground = -1;
 
 #ifndef WIN32
 	pid_t	oldpid = -1;
