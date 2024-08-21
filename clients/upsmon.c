@@ -3343,8 +3343,13 @@ int main(int argc, char *argv[])
 				break;
 		}
 
-		for (ups = firstups; ups != NULL; ups = ups->next)
+		for (ups = firstups; ups != NULL; ups = ups->next) {
+			if (isPreparingForSleepSupported() && (sleep_inhibitor_status = isPreparingForSleep()) == 1) {
+				upsdebugx(2, "Aborting UPS polling sub-loop because OS isPreparingForSleep");
+				goto end_loop_cycle;
+			}
 			pollups(ups);
+		}
 
 		recalc();
 
@@ -3374,6 +3379,7 @@ int main(int argc, char *argv[])
 			}
 			if (sleep_inhibitor_status == 1) {
 				upsdebugx(2, "Aborting polling delay between main loop cycles because OS isPreparingForSleep");
+				goto end_loop_cycle;
 			}
 		} else {
 			/* sleep tight */
@@ -3442,6 +3448,10 @@ int main(int argc, char *argv[])
 			}
 		}
 #endif
+
+end_loop_cycle:
+		/* No-op to avoid a warning about label at end of compound statement */
+		(void)1;
 	}
 
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
