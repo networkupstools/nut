@@ -268,6 +268,8 @@ PID_DUMMYUPS=""
 PID_DUMMYUPS1=""
 PID_DUMMYUPS2=""
 
+# Stash it for some later decisions
+TESTDIR_CALLER="${TESTDIR-}"
 [ -n "${TESTDIR-}" ] || TESTDIR="$BUILDDIR/tmp"
 if [ `echo "${TESTDIR}" | wc -c` -gt 80 ]; then
     # Technically the limit is sizeof(sockaddr.sun_path) for complete socket
@@ -297,6 +299,8 @@ if [ x"${TESTDIR}" = x ] ; then
     else
         if [ -d /dev/shm ] && [ -w /dev/shm ]; then TMPDIR=/dev/shm ; else TMPDIR=/tmp ; fi
     fi
+    log_warn "Will now mktemp a TESTDIR under '${TMPDIR}'. It will be wiped when the NIT script exits."
+    log_warn "If you want a pre-determined location, pre-export a usable TESTDIR value."
     TESTDIR="`mktemp -d "${TMPDIR}/nit-tmp.$$.XXXXXX"`" || die "Failed to mktemp"
     if [ "`id -u`" = 0 ]; then
         # Cah be protected as 0700 by default
@@ -310,6 +314,9 @@ else
     esac
 fi
 log_info "Using '$TESTDIR' for generated configs and state files"
+if [ x"${TESTDIR_CALLER}" = x"${TESTDIR}" ] && [ x"${TESTDIR}" != x"$BUILDDIR/tmp" ] ; then
+    log_warn "A caller-provided location is used, it would not be automatically removed after tests nor by 'make clean'"
+fi
 
 mkdir -p "${TESTDIR}/etc" "${TESTDIR}/run" && chmod 750 "${TESTDIR}/run" \
 || die "Failed to create temporary FS structure for the NIT"
@@ -333,7 +340,7 @@ stop_daemons() {
     PID_DUMMYUPS2=""
 }
 
-trap 'RES=$?; case "${NIT_CASE}" in generatecfg_*|is*) ;; *) stop_daemons; if [ "${TESTDIR}" != "${BUILDDIR}/tmp" ] ; then rm -rf "${TESTDIR}"; fi ;; esac; exit $RES;' 0 1 2 3 15
+trap 'RES=$?; case "${NIT_CASE}" in generatecfg_*|is*) ;; *) stop_daemons; if [ x"${TESTDIR}" != x"${BUILDDIR}/tmp" ] && [ x"${TESTDIR}" != x"$TESTDIR_CALLER" ] ; then rm -rf "${TESTDIR}"; fi ;; esac; exit $RES;' 0 1 2 3 15
 
 NUT_STATEPATH="${TESTDIR}/run"
 NUT_PIDPATH="${TESTDIR}/run"
@@ -1620,6 +1627,11 @@ if [ -n "${DEBUG_SLEEP-}" ] ; then
     cat "$NUT_CONFPATH/NIT.env"
     log_separator
     log_info "See above about important variables from the test sandbox and a way to 'source' them into your shell"
+
+    if [ x"${TESTDIR_CALLER}" != x"${TESTDIR}" ] && [ x"${TESTDIR}" != x"$BUILDDIR/tmp" ] ; then
+        log_warn "A temporary random TESTDIR location is used, it would be automatically removed after this script exits!"
+    fi
+
     log_info "You may want to press Ctrl+Z now and command 'bg' to the shell, if you did not start '$0 &' backgrounded already"
     log_info "To kill the script early, return it to foreground with 'fg' and press Ctrl+C, or 'kill -2 \$PID_NIT_SCRIPT' (kill -2 $$)"
 
