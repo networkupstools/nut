@@ -3248,7 +3248,9 @@ int main(int argc, char *argv[])
 		utype_t	*ups;
 		int	sleep_inhibitor_status = -2;
 
-		init_Inhibitor(prog);
+		if (isInhibitSupported())
+			init_Inhibitor(prog);
+
 		upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
 
 		/* check flags from signal handlers */
@@ -3261,8 +3263,10 @@ int main(int argc, char *argv[])
 			upsnotify(NOTIFY_STATE_READY, NULL);
 		}
 
-		sleep_inhibitor_status = isPreparingForSleep();
-		upsdebugx(5, "sleep_inhibitor_status=%d", sleep_inhibitor_status);
+		if (isPreparingForSleepSupported()) {
+			sleep_inhibitor_status = isPreparingForSleep();
+			upsdebugx(5, "sleep_inhibitor_status=%d", sleep_inhibitor_status);
+		}
 		if (sleep_inhibitor_status == 1) {
 			/* Preparing for sleep */
 			do_notify(NULL, NOTIFY_SUSPEND_STARTING);
@@ -3329,6 +3333,7 @@ int main(int argc, char *argv[])
 
 			case  1:	/* Handled above */
 			case -1:	/* Same as before */
+			case -2:	/* !isPreparingForSleepSupported() */
 			default:	/* Odd... */
 				break;
 		}
