@@ -77,6 +77,8 @@ static int RET_NERRNO(int ret) {
 #define SDBUS_IFACE	"org.freedesktop.login1.Manager"
 
 static /*_cleanup_(sd_bus_flush_close_unrefp)*/ sd_bus	*systemd_bus = NULL;
+static int	isSupported_Inhibit = -1, isSupported_Inhibit_errno = 0;
+static int	isSupported_PreparingForSleep = -1, isSupported_PreparingForSleep_errno = 0;
 
 static void close_sdbus_once(void) {
 	/* Per https://manpages.debian.org/testing/libsystemd-dev/sd_bus_flush_close_unrefp.3.en.html
@@ -190,12 +192,28 @@ static int reopen_sdbus_once(int r, const char *caller, const char *purpose)
 	return r;
 }
 
+int isInhibitSupported(void)
+{
+	return isSupported_Inhibit;
+}
+
+int isPreparingForSleepSupported(void)
+{
+	return isSupported_PreparingForSleep;
+}
+
 TYPE_FD Inhibit(const char *arg_what, const char *arg_who, const char *arg_why, const char *arg_mode)
 {
 	_cleanup_(sd_bus_error_free) sd_bus_error	error = SD_BUS_ERROR_NULL;
 	_cleanup_(sd_bus_message_unrefp) sd_bus_message	*reply = NULL;
 	int	r;
 	TYPE_FD	fd = ERROR_FD;
+
+	if (isSupported_Inhibit == 0) {
+		/* Already determined that we can not use it, e.g. due to perms */
+		errno = isSupported_Inhibit_errno;
+		return -errno;
+	}
 
 	/* Not found in public headers:
 	bool	arg_ask_password = true;
@@ -215,6 +233,12 @@ TYPE_FD Inhibit(const char *arg_what, const char *arg_who, const char *arg_why, 
 				return r;
 
 			r = sd_bus_call_method(systemd_bus, SDBUS_DEST, SDBUS_PATH, SDBUS_IFACE, "Inhibit", &error, &reply, "ssss", arg_what, arg_who, arg_why, arg_mode);
+		} else {
+			/* Permissions for the privileged operation... did it ever succeed? */
+			if (isSupported_Inhibit < 0) {
+				isSupported_Inhibit = 0;
+				isSupported_Inhibit_errno = r;
+			}
 		}
 
 		if (r < 0) {
@@ -234,8 +258,15 @@ TYPE_FD Inhibit(const char *arg_what, const char *arg_who, const char *arg_why, 
 	if (r < 0) {
 		upsdebugx(1, "%s: sd_bus_message_read_basic() failed (%d): %s",
 			__func__, r, strerror(-r));
+		if (isSupported_Inhibit < 0 && !would_reopen_sdbus(r)) {
+			isSupported_Inhibit = 0;
+			isSupported_Inhibit_errno = r;
+		}
 		return r;
 	}
+
+	/* Data query succeeded, so it is supported */
+	isSupported_Inhibit = 1;
 
 	/* NOTE: F_DUPFD_CLOEXEC is in POSIX.1-2008 (Linux 2.6.24); seek out
 	 * an alternative sequence of options if needed on older systems */
@@ -270,6 +301,12 @@ int isPreparingForSleep(void)
 	int	r;
 	_cleanup_(sd_bus_error_free) sd_bus_error	error = SD_BUS_ERROR_NULL;
 
+	if (isSupported_PreparingForSleep == 0) {
+		/* Already determined that we can not use it, e.g. due to perms */
+		errno = isSupported_PreparingForSleep_errno;
+		return -errno;
+	}
+
 	r = open_sdbus_once(__func__);
 	if (r < 0) {
 		/* Errors, if any, reported above */
@@ -289,6 +326,11 @@ int isPreparingForSleep(void)
 				return r;
 
 			r = sd_bus_get_property_trivial(systemd_bus, SDBUS_DEST, SDBUS_PATH, SDBUS_IFACE, "PreparingForSleep", &error, 'b', &val);
+		} else {
+			if (isSupported_PreparingForSleep < 0) {
+				isSupported_PreparingForSleep = 0;
+				isSupported_PreparingForSleep_errno = r;
+			}
 		}
 
 		if (r < 0) {
@@ -303,6 +345,9 @@ int isPreparingForSleep(void)
 				__func__);
 		}
 	}
+
+	/* Data query succeeded, so it is supported */
+	isSupported_PreparingForSleep = 1;
 
 	if (val == prev) {
 		/* Unchanged */
@@ -321,6 +366,16 @@ int isPreparingForSleep(void)
 }
 
 #else	/* not WITH_LIBSYSTEMD_INHIBITOR */
+
+int isInhibitSupported(void)
+{
+	return 0;
+}
+
+int isPreparingForSleepSupported(void)
+{
+	return 0;
+}
 
 TYPE_FD Inhibit(const char *arg_what, const char *arg_who, const char *arg_why, const char *arg_mode)
 {

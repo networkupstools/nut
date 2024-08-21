@@ -379,6 +379,16 @@ void Uninhibit(TYPE_FD *fd_ptr);
  */
 int isPreparingForSleep(void);
 
+/* A couple of methods to reflect built-in (absent) or run-time (it depends)
+ * support for monitoring that the OS goes to sleep and wakes up, and if we
+ * can "inhibit" that going to sleep in order to do some house-keeping first.
+ * -1 = do not know yet
+ *  0 = not supported, do not bother asking in daemon loops
+ *  1 = seems supported
+ */
+int isInhibitSupported(void);
+int isPreparingForSleepSupported(void);
+
 /* Send (daemon) state-change notifications to an
  * external service management framework such as systemd.
  * State types below are initially loosely modeled after
