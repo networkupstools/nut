@@ -3412,6 +3412,9 @@ int main(int argc, char *argv[])
 					upsdebugx(2, "It seems we have slept without warning or the system clock was changed");
 					if (sleep_inhibitor_status < 0)
 						sleep_inhibitor_status = 0;	/* behave as woken up */
+				} else if (dt < 0) {
+					upsdebugx(2, "It seems the system clock was changed into the past");
+					sleep_inhibitor_status = 0;	/* behave as woken up */
 				}
 			}
 			if (sleep_inhibitor_status >= 0) {
@@ -3421,13 +3424,18 @@ int main(int argc, char *argv[])
 		} else {
 			/* sleep tight */
 			time_t	start, now;
+			double	dt = 0;
 
 			time(&start);
 			sleep(sleepval);
 			time(&now);
 
-			if (difftime(now, start) > (sleepval + 5)) {
+			dt = difftime(now, start);
+			if (dt > (sleepval + 5)) {
 				upsdebugx(2, "It seems we have slept without warning or the system clock was changed");
+				sleep_inhibitor_status = 0;	/* behave as woken up */
+			} else if (dt < 0) {
+				upsdebugx(2, "It seems the system clock was changed into the past");
 				sleep_inhibitor_status = 0;	/* behave as woken up */
 			}
 		}
