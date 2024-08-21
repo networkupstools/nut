@@ -8,6 +8,8 @@
 # but could be refactored for better maintainability and generic
 # approach. Part of the goal was to let this script set up the
 # sandbox to run tests which could be defined in other files.
+# To speed up this practical developer-testing aspect, you can just
+# `make check-NIT-sandbox{,-devel}` (optionally with custom DEBUG_SLEEP).
 #
 # WARNING: Current working directory when starting the script should be
 # the location where it may create temporary data (e.g. the BUILDDIR).
