@@ -3387,7 +3387,7 @@ int main(int argc, char *argv[])
 		}
 #else
 		maxhandle = 0;
-		memset(&handles,0,sizeof(handles));
+		memset(&handles, 0, sizeof(handles));
 
 		/* Wait on the read IO of each connections */
 		/* TODO: Windows suspend/hibernate tracking might fit here
@@ -3402,7 +3402,7 @@ int main(int argc, char *argv[])
 		handles[maxhandle] = pipe_connection_overlapped.hEvent;
 		maxhandle++;
 
-		ret = WaitForMultipleObjects(maxhandle,handles,FALSE,sleepval*1000);
+		ret = WaitForMultipleObjects(maxhandle, handles, FALSE, sleepval*1000);
 
 		if (ret == WAIT_FAILED) {
 			upslogx(LOG_ERR, "Wait failed");
@@ -3414,8 +3414,8 @@ int main(int argc, char *argv[])
 		}
 
 		/* Retrieve the signaled connection */
-		for(conn = pipe_connhead; conn != NULL; conn = conn->next) {
-			if( conn->overlapped.hEvent == handles[ret-WAIT_OBJECT_0]) {
+		for (conn = pipe_connhead; conn != NULL; conn = conn->next) {
+			if (conn->overlapped.hEvent == handles[ret-WAIT_OBJECT_0]) {
 				break;
 			}
 		}
@@ -3425,8 +3425,8 @@ int main(int argc, char *argv[])
 		}
 		/* one of the read event handle has been signaled */
 		else {
-			if( conn != NULL) {
-				if ( pipe_ready(conn) ) {
+			if (conn != NULL) {
+				if (pipe_ready(conn)) {
 					if (!strncmp(conn->buf, SIGCMD_FSD, sizeof(SIGCMD_FSD))) {
 						user_fsd(1);
 					}
@@ -3440,7 +3440,7 @@ int main(int argc, char *argv[])
 					}
 
 					else {
-						upslogx(LOG_ERR,"Unknown signal");
+						upslogx(LOG_ERR, "Unknown signal");
 					}
 
 					pipe_disconnect(conn);
