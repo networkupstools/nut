@@ -2906,7 +2906,7 @@ static void init_Inhibitor(const char *prog)
 int main(int argc, char *argv[])
 {
 	const char	*prog = xbasename(argv[0]);
-	int	i, cmdret = -1, checking_flag = 0, foreground = -1;
+	int	i, cmdret = -1, checking_flag = 0, foreground = -1, sleep_inhibitor_status = -2;
 
 #ifndef WIN32
 	pid_t	oldpid = -1;
@@ -3246,7 +3246,6 @@ int main(int argc, char *argv[])
 
 	while (exit_flag == 0) {
 		utype_t	*ups;
-		int	sleep_inhibitor_status = -2;
 
 		if (isInhibitSupported())
 			init_Inhibitor(prog);
@@ -3264,7 +3263,13 @@ int main(int argc, char *argv[])
 		}
 
 		if (isPreparingForSleepSupported()) {
-			sleep_inhibitor_status = isPreparingForSleep();
+			if (sleep_inhibitor_status != 1) {
+				/* We may be coming fresh from an aborted loop
+				 * cycle with *its* finding of pending OS sleep;
+				 * do not lose that knowledge by reading "same
+				 * as before" (-1) with another query here! */
+				sleep_inhibitor_status = isPreparingForSleep();
+			}
 			upsdebugx(5, "sleep_inhibitor_status=%d", sleep_inhibitor_status);
 		}
 		if (sleep_inhibitor_status == 1) {
@@ -3351,12 +3356,38 @@ int main(int argc, char *argv[])
 		/* reap children that have exited */
 		waitpid(-1, NULL, WNOHANG);
 
-		sleep(sleepval);
+		if (isPreparingForSleepSupported()) {
+			time_t	start, now;
+			double	dt = 0;
+
+			time(&start);
+			time(&now);
+			sleep_inhibitor_status = -2;
+
+			while (sleep_inhibitor_status != 1 && dt < sleepval) {
+				sleep(1);
+				sleep_inhibitor_status = isPreparingForSleep();
+				time(&now);
+				dt = difftime(now, start);
+				upsdebugx(7, "start=%" PRIiMAX " now=%" PRIiMAX " dt=%g sleepval=%u sleep_inhibitor_status=%d",
+					start, now, dt, sleepval, sleep_inhibitor_status);
+			}
+			if (sleep_inhibitor_status == 1) {
+				upsdebugx(2, "Aborting polling delay between main loop cycles because OS isPreparingForSleep");
+			}
+		} else {
+			/* sleep tight */
+			sleep(sleepval);
+		}
 #else
 		maxhandle = 0;
 		memset(&handles,0,sizeof(handles));
 
 		/* Wait on the read IO of each connections */
+		/* TODO: Windows suspend/hibernate tracking might fit here
+		 *  if we add a file handle to watch for... something, and
+		 *  so wake up quickly to skip the up-to-sleepval delay.
+		 */
 		for (conn = pipe_connhead; conn; conn = conn->next) {
 			handles[maxhandle] = conn->overlapped.hEvent;
 			maxhandle++;
