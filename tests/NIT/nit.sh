@@ -1626,7 +1626,7 @@ if [ -n "${DEBUG_SLEEP-}" ] ; then
     log_separator
     cat "$NUT_CONFPATH/NIT.env"
     log_separator
-    log_info "See above about important variables from the test sandbox and a way to 'source' them into your shell"
+    log_info "See above about important variables from the test sandbox and a way to 'source' them into your shell, e.g.: . '$NUT_CONFPATH/NIT.env'"
 
     if [ x"${TESTDIR_CALLER}" != x"${TESTDIR}" ] && [ x"${TESTDIR}" != x"$BUILDDIR/tmp" ] ; then
         log_warn "A temporary random TESTDIR location is used, it would be automatically removed after this script exits!"
