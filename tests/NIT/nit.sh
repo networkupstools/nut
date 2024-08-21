@@ -307,10 +307,18 @@ if [ x"${TESTDIR}" = x ] ; then
         chmod ugo+rx "${TESTDIR}"
     fi
 else
+    NUT_CONFPATH="${TESTDIR}/etc"
+    if [ -e "${NUT_CONFPATH}/NIT.env-sandbox-ready" ] ; then
+        log_warn "'${NUT_CONFPATH}/NIT.env-sandbox-ready' exists, do you have another instance of the script still running with same configs?"
+        sleep 3
+    fi
+
     # NOTE: Keep in sync with NIT_CASE handling and the exit-trap below
     case "${NIT_CASE}" in
         generatecfg_*|is*) ;;
-        *) rm -rf "${TESTDIR}" || true ;;
+        *)
+            rm -rf "${TESTDIR}" || true
+            ;;
     esac
 fi
 log_info "Using '$TESTDIR' for generated configs and state files"
@@ -340,13 +348,19 @@ stop_daemons() {
     PID_DUMMYUPS2=""
 }
 
-trap 'RES=$?; case "${NIT_CASE}" in generatecfg_*|is*) ;; *) stop_daemons; if [ x"${TESTDIR}" != x"${BUILDDIR}/tmp" ] && [ x"${TESTDIR}" != x"$TESTDIR_CALLER" ] ; then rm -rf "${TESTDIR}"; fi ;; esac; exit $RES;' 0 1 2 3 15
+trap 'RES=$?; case "${NIT_CASE}" in generatecfg_*|is*) ;; *) stop_daemons; if [ x"${TESTDIR}" != x"${BUILDDIR}/tmp" ] && [ x"${TESTDIR}" != x"$TESTDIR_CALLER" ] ; then rm -rf "${TESTDIR}" ; else rm -f "${NUT_CONFPATH}/NIT.env-sandbox-ready" ; fi ;; esac; exit $RES;' 0 1 2 3 15
 
 NUT_STATEPATH="${TESTDIR}/run"
 NUT_PIDPATH="${TESTDIR}/run"
 NUT_ALTPIDPATH="${TESTDIR}/run"
 NUT_CONFPATH="${TESTDIR}/etc"
 export NUT_STATEPATH NUT_PIDPATH NUT_ALTPIDPATH NUT_CONFPATH
+
+if [ -e "${NUT_CONFPATH}/NIT.env-sandbox-ready" ] ; then
+    log_warn "'${NUT_CONFPATH}/NIT.env-sandbox-ready' exists, do you have another instance of the script still running?"
+    sleep 3
+fi
+rm -f "${NUT_CONFPATH}/NIT.env-sandbox-ready" || true
 
 # TODO: Find a portable way to (check and) grab a random unprivileged port?
 if [ -n "${NUT_PORT-}" ] && [ "$NUT_PORT" -gt 0 ] && [ "$NUT_PORT" -lt 65536 ] ; then
@@ -1634,6 +1648,9 @@ if [ -n "${DEBUG_SLEEP-}" ] ; then
 
     log_info "You may want to press Ctrl+Z now and command 'bg' to the shell, if you did not start '$0 &' backgrounded already"
     log_info "To kill the script early, return it to foreground with 'fg' and press Ctrl+C, or 'kill -2 \$PID_NIT_SCRIPT' (kill -2 $$)"
+
+    log_info "Remember that in shell/scripting you can probe for '${NUT_CONFPATH}/NIT.env-sandbox-ready' which only appears at this moment"
+    touch "${NUT_CONFPATH}/NIT.env-sandbox-ready"
 
     sleep "${DEBUG_SLEEP}"
     log_info "Sleep finished"
