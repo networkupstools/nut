@@ -427,7 +427,7 @@ log_info "Using NUT_PORT=${NUT_PORT} for this test run"
 # the values when fallback is used. If this is a
 # problem on any platform (Win/Mac and spaces in
 # paths?) please investigate and fix accordingly.
-set | grep -E '^(NUT_|TESTPASS_|TESTDIR|LD_LIBRARY_PATH|DEBUG|PATH).*=' \
+set | grep -E '^(NUT_|TESTDIR|LD_LIBRARY_PATH|DEBUG|PATH).*=' \
 | while IFS='=' read K V ; do
     case "$K" in
         LD_LIBRARY_PATH_CLIENT|LD_LIBRARY_PATH_ORIG|PATH_*|NUT_PORT_*|TESTDIR_*)
@@ -1630,7 +1630,7 @@ if [ -n "${DEBUG_SLEEP-}" ] ; then
     log_info "Sleeping now as asked (for ${DEBUG_SLEEP} seconds starting `date -u`), so you can play with the driver and server running"
     log_info "Populated environment variables for this run into a file so you can source them: . '$NUT_CONFPATH/NIT.env'"
     printf "PID_NIT_SCRIPT='%s'\nexport PID_NIT_SCRIPT\n" "$$" >> "$NUT_CONFPATH/NIT.env"
-    set | grep -E '^PID_[^ =]*='"'?[0-9][0-9]*'?$" | while IFS='=' read K V ; do
+    set | grep -E '^TESTPASS_|PID_[^ =]*='"'?[0-9][0-9]*'?$" | while IFS='=' read K V ; do
         V="`echo "$V" | tr -d "'"`"
         # Dummy comment to reset syntax highlighting due to ' quote above
         if [ -n "$V" ] ; then
