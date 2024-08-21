@@ -3371,6 +3371,8 @@ int main(int argc, char *argv[])
 			default:	/* Odd... */
 				break;
 		}
+		/* Reset the value, regardless of support */
+		sleep_inhibitor_status = -2;
 
 		for (ups = firstups; ups != NULL; ups = ups->next) {
 			if (isPreparingForSleepSupported() && (sleep_inhibitor_status = isPreparingForSleep()) >= 0) {
@@ -3391,7 +3393,7 @@ int main(int argc, char *argv[])
 		waitpid(-1, NULL, WNOHANG);
 
 		if (isPreparingForSleepSupported()) {
-			time_t	start, now;
+			time_t	start, now, prev;
 			double	dt = 0;
 
 			time(&start);
@@ -3399,12 +3401,18 @@ int main(int argc, char *argv[])
 			sleep_inhibitor_status = -2;
 
 			while (sleep_inhibitor_status != 1 && dt < sleepval) {
+				prev = now;
 				sleep(1);
 				sleep_inhibitor_status = isPreparingForSleep();
 				time(&now);
 				dt = difftime(now, start);
 				upsdebugx(7, "start=%" PRIiMAX " now=%" PRIiMAX " dt=%g sleepval=%u sleep_inhibitor_status=%d",
 					start, now, dt, sleepval, sleep_inhibitor_status);
+				if (dt > (sleepval + 5) || difftime(now, prev) > 5) {
+					upsdebugx(2, "It seems we have slept without warning or the system clock was changed");
+					if (sleep_inhibitor_status < 0)
+						sleep_inhibitor_status = 0;	/* behave as woken up */
+				}
 			}
 			if (sleep_inhibitor_status >= 0) {
 				upsdebugx(2, "Aborting polling delay between main loop cycles because OS is preparing for sleep or just woke up");
@@ -3412,7 +3420,16 @@ int main(int argc, char *argv[])
 			}
 		} else {
 			/* sleep tight */
+			time_t	start, now;
+
+			time(&start);
 			sleep(sleepval);
+			time(&now);
+
+			if (difftime(now, start) > (sleepval + 5)) {
+				upsdebugx(2, "It seems we have slept without warning or the system clock was changed");
+				sleep_inhibitor_status = 0;	/* behave as woken up */
+			}
 		}
 #else
 		maxhandle = 0;
