@@ -3400,7 +3400,7 @@ int main(int argc, char *argv[])
 			time(&now);
 			sleep_inhibitor_status = -2;
 
-			while (sleep_inhibitor_status != 1 && dt < sleepval) {
+			while (sleep_inhibitor_status < 0 && dt < sleepval) {
 				prev = now;
 				sleep(1);
 				sleep_inhibitor_status = isPreparingForSleep();
