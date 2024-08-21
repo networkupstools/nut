@@ -26,9 +26,9 @@ check-NIT: $(abs_srcdir)/nit.sh
 # Make sure pre-requisites for NIT are fresh as we iterate
 check-NIT-devel: $(abs_srcdir)/nit.sh
 	+@cd .. && ( $(MAKE) $(AM_MAKEFLAGS) -s cppnit$(EXEEXT) || echo "OPTIONAL C++ test client test will be skipped" )
-	+@cd "$(top_builddir)/clients" && $(MAKE) $(AM_MAKEFLAGS) -s upsc$(EXEEXT) upsrw$(EXEEXT) upsmon$(EXEEXT)
-	+@cd "$(top_builddir)/server" && $(MAKE) $(AM_MAKEFLAGS) -s upsd$(EXEEXT)
-	+@cd "$(top_builddir)/drivers" && $(MAKE) $(AM_MAKEFLAGS) -s dummy-ups$(EXEEXT)
+	+@cd "$(top_builddir)/clients" && $(MAKE) $(AM_MAKEFLAGS) -s upsc$(EXEEXT) upscmd$(EXEEXT) upsrw$(EXEEXT) upsmon$(EXEEXT)
+	+@cd "$(top_builddir)/server" && $(MAKE) $(AM_MAKEFLAGS) -s upsd$(EXEEXT) sockdebug$(EXEEXT)
+	+@cd "$(top_builddir)/drivers" && $(MAKE) $(AM_MAKEFLAGS) -s dummy-ups$(EXEEXT) upsdrvctl$(EXEEXT)
 	+@$(MAKE) $(AM_MAKEFLAGS) check-NIT
 
 check-NIT-sandbox: $(abs_srcdir)/nit.sh
