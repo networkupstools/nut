@@ -3277,12 +3277,27 @@ int main(int argc, char *argv[])
 		}
 
 		if (isPreparingForSleepSupported()) {
-			if (sleep_inhibitor_status != 1) {
-				/* We may be coming fresh from an aborted loop
-				 * cycle with *its* finding of pending OS sleep;
-				 * do not lose that knowledge by reading "same
-				 * as before" (-1) with another query here! */
+			if (sleep_inhibitor_status < 0) {
+				/* We may be coming fresh from an aborted loop cycle
+				 * with *its* finding of pending or finished OS sleep;
+				 * do not lose that knowledge by just reading "same as
+				 * before" (-1) with another query here! */
 				sleep_inhibitor_status = isPreparingForSleep();
+			} else if (!isInhibitSupported()) {
+				/* We can monitor OS sleep/wake changes, but could not
+				 * get an inhibition lock to sync this behavior nicely
+				 * (e.g. due to lacking permissions to get such lock).
+				 * Our information may be obsolete (e.g. we saw the
+				 * beginning of OS sleep, but by the time we got
+				 * to this line - we have already woken up) */
+				int	new_sleep_inhibitor_status = isPreparingForSleep();
+				if (new_sleep_inhibitor_status >= 0 && sleep_inhibitor_status != new_sleep_inhibitor_status) {
+					upsdebugx(2, "We had previously learned sleep_inhibitor_status=%d "
+						"in a hastily aborted older loop cycle, but by the time "
+						"we got to handle it - the current value is %d",
+						sleep_inhibitor_status, new_sleep_inhibitor_status);
+					sleep_inhibitor_status = new_sleep_inhibitor_status;
+				}
 			}
 			upsdebugx(5, "sleep_inhibitor_status=%d", sleep_inhibitor_status);
 		}
@@ -3358,8 +3373,8 @@ int main(int argc, char *argv[])
 		}
 
 		for (ups = firstups; ups != NULL; ups = ups->next) {
-			if (isPreparingForSleepSupported() && (sleep_inhibitor_status = isPreparingForSleep()) == 1) {
-				upsdebugx(2, "Aborting UPS polling sub-loop because OS isPreparingForSleep");
+			if (isPreparingForSleepSupported() && (sleep_inhibitor_status = isPreparingForSleep()) >= 0) {
+				upsdebugx(2, "Aborting UPS polling sub-loop because OS is preparing for sleep or just woke up");
 				goto end_loop_cycle;
 			}
 			pollups(ups);
@@ -3391,8 +3406,8 @@ int main(int argc, char *argv[])
 				upsdebugx(7, "start=%" PRIiMAX " now=%" PRIiMAX " dt=%g sleepval=%u sleep_inhibitor_status=%d",
 					start, now, dt, sleepval, sleep_inhibitor_status);
 			}
-			if (sleep_inhibitor_status == 1) {
-				upsdebugx(2, "Aborting polling delay between main loop cycles because OS isPreparingForSleep");
+			if (sleep_inhibitor_status >= 0) {
+				upsdebugx(2, "Aborting polling delay between main loop cycles because OS is preparing for sleep or just woke up");
 				goto end_loop_cycle;
 			}
 		} else {
