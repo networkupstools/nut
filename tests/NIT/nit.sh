@@ -20,6 +20,9 @@
 #	NUT_PORT=12345	custom port for upsd to listen and clients to query
 #	NUT_FOREGROUND_WITH_PID=true	default foregrounding is without
 #			PID files, this option tells daemons to save them
+#	TESTDIR=/tmp/nut-NIT	to propose a location for "etc" and "run"
+#			mock locations (under some circumstances, the
+#			script can anyway choose to `mktemp` another)
 #
 # Common sandbox run for testing goes from NUT root build directory like:
 #	DEBUG_SLEEP=600 NUT_PORT=12345 NIT_CASE=testcase_sandbox_start_drivers_after_upsd NUT_FOREGROUND_WITH_PID=true make check-NIT &
@@ -265,18 +268,40 @@ PID_DUMMYUPS=""
 PID_DUMMYUPS1=""
 PID_DUMMYUPS2=""
 
-TESTDIR="$BUILDDIR/tmp"
-# Technically the limit is sizeof(sockaddr.sun_path) for complete socket
-# pathname, which varies 104-108 chars max on systems seen in CI farm;
-# we reserve 17 chars for "/dummy-ups-dummy" longest filename.
-if [ `echo "$TESTDIR" | wc -c` -gt 80 ]; then
-    log_info "'$TESTDIR' is too long to store AF_UNIX socket files, will mktemp"
+[ -n "${TESTDIR-}" ] || TESTDIR="$BUILDDIR/tmp"
+if [ `echo "${TESTDIR}" | wc -c` -gt 80 ]; then
+    # Technically the limit is sizeof(sockaddr.sun_path) for complete socket
+    # pathname, which varies 104-108 chars max on systems seen in CI farm;
+    # we reserve 17 chars for "/dummy-ups-dummy" longest filename.
+    log_info "'${TESTDIR}' is too long to store AF_UNIX socket files, will mktemp"
+    TESTDIR=""
+else
+    if [ "`id -u`" = 0 ]; then
+        case "${TESTDIR}" in
+            "${HOME}"/*)
+                log_info "Test script was started by 'root' and '${TESTDIR}' seems to be under its home, will mktemp so unprivileged daemons may access their configs, pipes and PID files"
+                TESTDIR=""
+                ;;
+        esac
+    else
+        if ! mkdir -p "${TESTDIR}" || ! [ -w "${TESTDIR}" ] ; then
+            log_info "'${TESTDIR}' could not be created/used, will mktemp"
+            TESTDIR=""
+        fi
+    fi
+fi
+
+if [ x"${TESTDIR}" = x ] ; then
     if ( [ -n "${TMPDIR-}" ] && [ -d "${TMPDIR-}" ] && [ -w "${TMPDIR-}" ] ) ; then
         :
     else
         if [ -d /dev/shm ] && [ -w /dev/shm ]; then TMPDIR=/dev/shm ; else TMPDIR=/tmp ; fi
     fi
     TESTDIR="`mktemp -d "${TMPDIR}/nit-tmp.$$.XXXXXX"`" || die "Failed to mktemp"
+    if [ "`id -u`" = 0 ]; then
+        # Cah be protected as 0700 by default
+        chmod ugo+rx "${TESTDIR}"
+    fi
 else
     # NOTE: Keep in sync with NIT_CASE handling and the exit-trap below
     case "${NIT_CASE}" in
