@@ -3262,6 +3262,7 @@ int main(int argc, char *argv[])
 		}
 
 		sleep_inhibitor_status = isPreparingForSleep();
+		upsdebugx(5, "sleep_inhibitor_status=%d", sleep_inhibitor_status);
 		if (sleep_inhibitor_status == 1) {
 			/* Preparing for sleep */
 			do_notify(NULL, NOTIFY_SUSPEND_STARTING);
@@ -3297,6 +3298,7 @@ int main(int argc, char *argv[])
 				reload_conf();
 				upsnotify(NOTIFY_STATE_READY, NULL);
 			}
+			upsdebugx(5, "sleep_inhibitor_status=%d (after dozing off)", sleep_inhibitor_status);
 		}	/*... else go to switch/case below */
 
 		switch (sleep_inhibitor_status) {
