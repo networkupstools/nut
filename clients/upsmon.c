@@ -3312,13 +3312,14 @@ int main(int argc, char *argv[])
 				upsnotify(NOTIFY_STATE_RELOADING, NULL);
 				init_Inhibitor(prog);
 
-				reload_conf();
-
 				time(&now);
 				for (ups = firstups; ups != NULL; ups = ups->next) {
 					ups->status = 0;
 					ups->lastpoll = now;
 				}
+
+				set_reload_flag(1);
+				reload_conf();
 
 				upsnotify(NOTIFY_STATE_READY, NULL);
 				upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
