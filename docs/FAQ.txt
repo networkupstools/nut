@@ -281,6 +281,13 @@ with 'upsdrvsvcctl resync' and then manage those with commands like
 'upsdrvsvcctl stop' and 'upsdrvsvcctl start' (note that on other
 systems this tool may be not pre-installed via packaging).
 
+In fact, service instances prepared by the `nut-driver-enumerator` script
+and service based on contents of your `ups.conf` file and automatically
+maintained by the respective framework can conflict with manual execution
+of drivers, so `upsdrvctl` would emit a warning in NUT builds with that
+capability (can be silenced by exporting a `NUT_QUIET_INIT_NDE_WARNING`
+environment variable with any value).
+
 *Answer 2*
 
 Some USB UPS devices have unreliable USB to serial interfaces.
