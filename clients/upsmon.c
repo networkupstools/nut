@@ -3407,7 +3407,7 @@ int main(int argc, char *argv[])
 				time(&now);
 				dt = difftime(now, start);
 				upsdebugx(7, "start=%" PRIiMAX " now=%" PRIiMAX " dt=%g sleepval=%u sleep_inhibitor_status=%d",
-					start, now, dt, sleepval, sleep_inhibitor_status);
+					(intmax_t)start, (intmax_t)now, dt, sleepval, sleep_inhibitor_status);
 				if (dt > (sleepval + 5) || difftime(now, prev) > 5) {
 					upsdebugx(2, "It seems we have slept without warning or the system clock was changed");
 					if (sleep_inhibitor_status < 0)
