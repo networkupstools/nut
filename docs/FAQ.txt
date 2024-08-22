@@ -321,7 +321,8 @@ remembers the 'last state' when the UPS restarts.
 One solution is to change your shutdown scripts so you never reach
 that point.  You *want* the system to die without reaching the
 part where the kernel tells it to shut down.  A possible script
-might look like this:
+might look like this (see `scripts/systemd/nutshutdown` in NUT
+sources for a more streamlined and modern variant):
 
 ------
 	# other shutdown stuff here (mount -o remount,ro ...)
