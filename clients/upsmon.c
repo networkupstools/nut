@@ -3260,6 +3260,11 @@ int main(int argc, char *argv[])
 
 	while (exit_flag == 0) {
 		utype_t	*ups;
+		time_t	start, end, now;
+#ifndef WIN32
+		time_t	prev;
+#endif
+		double	dt = 0;
 
 		if (isInhibitSupported())
 			init_Inhibitor(prog);
@@ -3340,9 +3345,7 @@ int main(int argc, char *argv[])
 		}	/*... else go to switch/case below */
 
 		switch (sleep_inhibitor_status) {
-			case 0:	{ /* Waking up */
-				time_t	now;
-
+			case 0:	/* Waking up */
 				do_notify(NULL, NOTIFY_SUSPEND_FINISHED);
 				upslogx(LOG_INFO, "%s: Processing OS wake-up after sleep", prog);
 				upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
@@ -3362,7 +3365,6 @@ int main(int argc, char *argv[])
 				upsnotify(NOTIFY_STATE_READY, NULL);
 				upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
 
-				}	/* scoping for "now" */
 				break;
 
 			case  1:	/* Handled above */
@@ -3392,13 +3394,10 @@ int main(int argc, char *argv[])
 		/* reap children that have exited */
 		waitpid(-1, NULL, WNOHANG);
 
+		time(&start);
 		if (isPreparingForSleepSupported()) {
-			time_t	start, now, prev;
-			double	dt = 0;
-
-			time(&start);
-			time(&now);
 			sleep_inhibitor_status = -2;
+			now = start;
 
 			while (sleep_inhibitor_status < 0 && dt < sleepval) {
 				prev = now;
@@ -3417,28 +3416,16 @@ int main(int argc, char *argv[])
 					sleep_inhibitor_status = 0;	/* behave as woken up */
 				}
 			}
+
 			if (sleep_inhibitor_status >= 0) {
 				upsdebugx(2, "Aborting polling delay between main loop cycles because OS is preparing for sleep or just woke up");
 				goto end_loop_cycle;
 			}
 		} else {
 			/* sleep tight */
-			time_t	start, now;
-			double	dt = 0;
-
-			time(&start);
 			sleep(sleepval);
-			time(&now);
-
-			dt = difftime(now, start);
-			if (dt > (sleepval + 5)) {
-				upsdebugx(2, "It seems we have slept without warning or the system clock was changed");
-				sleep_inhibitor_status = 0;	/* behave as woken up */
-			} else if (dt < 0) {
-				upsdebugx(2, "It seems the system clock was changed into the past");
-				sleep_inhibitor_status = 0;	/* behave as woken up */
-			}
 		}
+		time(&end);
 #else
 		maxhandle = 0;
 		memset(&handles, 0, sizeof(handles));
@@ -3456,7 +3443,9 @@ int main(int argc, char *argv[])
 		handles[maxhandle] = pipe_connection_overlapped.hEvent;
 		maxhandle++;
 
+		time(&start);
 		ret = WaitForMultipleObjects(maxhandle, handles, FALSE, sleepval*1000);
+		time(&end);
 
 		if (ret == WAIT_FAILED) {
 			upslogx(LOG_ERR, "Wait failed");
@@ -3502,6 +3491,19 @@ int main(int argc, char *argv[])
 			}
 		}
 #endif
+
+		/* General-purpose handling of time jumps for OSes/run-times
+		 * without NUT direct support for suspend/inhibit */
+		dt = difftime(end, start);
+		if (dt > (sleepval + 5)) {
+			upsdebugx(2, "It seems we have slept without warning or the system clock was changed");
+			if (sleep_inhibitor_status < 0)
+				sleep_inhibitor_status = 0;	/* behave as woken up */
+		} else if (dt < 0) {
+			upsdebugx(2, "It seems the system clock was changed into the past");
+			if (sleep_inhibitor_status < 0)
+				sleep_inhibitor_status = 0;	/* behave as woken up */
+		}
 
 end_loop_cycle:
 		/* No-op to avoid a warning about label at end of compound statement */
