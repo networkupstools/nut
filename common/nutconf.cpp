@@ -1316,6 +1316,10 @@ UpsmonConfiguration::NotifyType UpsmonConfiguration::NotifyTypeFromString(const 
 		return NOTIFY_BYPASS;
 	else if(str=="NOTBYPASS")
 		return NOTIFY_NOTBYPASS;
+	else if(str=="SUSPEND_STARTING")
+		return NOTIFY_SUSPEND_STARTING;
+	else if(str=="SUSPEND_FINISHED")
+		return NOTIFY_SUSPEND_FINISHED;
 	else
 		return NOTIFY_TYPE_MAX;
 }

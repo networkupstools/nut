@@ -8,6 +8,8 @@
 # but could be refactored for better maintainability and generic
 # approach. Part of the goal was to let this script set up the
 # sandbox to run tests which could be defined in other files.
+# To speed up this practical developer-testing aspect, you can just
+# `make check-NIT-sandbox{,-devel}` (optionally with custom DEBUG_SLEEP).
 #
 # WARNING: Current working directory when starting the script should be
 # the location where it may create temporary data (e.g. the BUILDDIR).
@@ -18,6 +20,9 @@
 #	NUT_PORT=12345	custom port for upsd to listen and clients to query
 #	NUT_FOREGROUND_WITH_PID=true	default foregrounding is without
 #			PID files, this option tells daemons to save them
+#	TESTDIR=/tmp/nut-NIT	to propose a location for "etc" and "run"
+#			mock locations (under some circumstances, the
+#			script can anyway choose to `mktemp` another)
 #
 # Common sandbox run for testing goes from NUT root build directory like:
 #	DEBUG_SLEEP=600 NUT_PORT=12345 NIT_CASE=testcase_sandbox_start_drivers_after_upsd NUT_FOREGROUND_WITH_PID=true make check-NIT &
@@ -267,26 +272,63 @@ PID_DUMMYUPS=""
 PID_DUMMYUPS1=""
 PID_DUMMYUPS2=""
 
-TESTDIR="$BUILDDIR/tmp"
-# Technically the limit is sizeof(sockaddr.sun_path) for complete socket
-# pathname, which varies 104-108 chars max on systems seen in CI farm;
-# we reserve 17 chars for "/dummy-ups-dummy" longest filename.
-if [ `echo "$TESTDIR" | wc -c` -gt 80 ]; then
-    log_info "'$TESTDIR' is too long to store AF_UNIX socket files, will mktemp"
+# Stash it for some later decisions
+TESTDIR_CALLER="${TESTDIR-}"
+[ -n "${TESTDIR-}" ] || TESTDIR="$BUILDDIR/tmp"
+if [ `echo "${TESTDIR}" | wc -c` -gt 80 ]; then
+    # Technically the limit is sizeof(sockaddr.sun_path) for complete socket
+    # pathname, which varies 104-108 chars max on systems seen in CI farm;
+    # we reserve 17 chars for "/dummy-ups-dummy" longest filename.
+    log_info "'${TESTDIR}' is too long to store AF_UNIX socket files, will mktemp"
+    TESTDIR=""
+else
+    if [ "`id -u`" = 0 ]; then
+        case "${TESTDIR}" in
+            "${HOME}"/*)
+                log_info "Test script was started by 'root' and '${TESTDIR}' seems to be under its home, will mktemp so unprivileged daemons may access their configs, pipes and PID files"
+                TESTDIR=""
+                ;;
+        esac
+    else
+        if ! mkdir -p "${TESTDIR}" || ! [ -w "${TESTDIR}" ] ; then
+            log_info "'${TESTDIR}' could not be created/used, will mktemp"
+            TESTDIR=""
+        fi
+    fi
+fi
+
+if [ x"${TESTDIR}" = x ] ; then
     if ( [ -n "${TMPDIR-}" ] && [ -d "${TMPDIR-}" ] && [ -w "${TMPDIR-}" ] ) ; then
         :
     else
         if [ -d /dev/shm ] && [ -w /dev/shm ]; then TMPDIR=/dev/shm ; else TMPDIR=/tmp ; fi
     fi
+    log_warn "Will now mktemp a TESTDIR under '${TMPDIR}'. It will be wiped when the NIT script exits."
+    log_warn "If you want a pre-determined location, pre-export a usable TESTDIR value."
     TESTDIR="`mktemp -d "${TMPDIR}/nit-tmp.$$.XXXXXX"`" || die "Failed to mktemp"
+    if [ "`id -u`" = 0 ]; then
+        # Cah be protected as 0700 by default
+        chmod ugo+rx "${TESTDIR}"
+    fi
 else
+    NUT_CONFPATH="${TESTDIR}/etc"
+    if [ -e "${NUT_CONFPATH}/NIT.env-sandbox-ready" ] ; then
+        log_warn "'${NUT_CONFPATH}/NIT.env-sandbox-ready' exists, do you have another instance of the script still running with same configs?"
+        sleep 3
+    fi
+
     # NOTE: Keep in sync with NIT_CASE handling and the exit-trap below
     case "${NIT_CASE}" in
         generatecfg_*|is*) ;;
-        *) rm -rf "${TESTDIR}" || true ;;
+        *)
+            rm -rf "${TESTDIR}" || true
+            ;;
     esac
 fi
 log_info "Using '$TESTDIR' for generated configs and state files"
+if [ x"${TESTDIR_CALLER}" = x"${TESTDIR}" ] && [ x"${TESTDIR}" != x"$BUILDDIR/tmp" ] ; then
+    log_warn "A caller-provided location is used, it would not be automatically removed after tests nor by 'make clean'"
+fi
 
 mkdir -p "${TESTDIR}/etc" "${TESTDIR}/run" && chmod 750 "${TESTDIR}/run" \
 || die "Failed to create temporary FS structure for the NIT"
@@ -310,13 +352,19 @@ stop_daemons() {
     PID_DUMMYUPS2=""
 }
 
-trap 'RES=$?; case "${NIT_CASE}" in generatecfg_*|is*) ;; *) stop_daemons; if [ "${TESTDIR}" != "${BUILDDIR}/tmp" ] ; then rm -rf "${TESTDIR}"; fi ;; esac; exit $RES;' 0 1 2 3 15
+trap 'RES=$?; case "${NIT_CASE}" in generatecfg_*|is*) ;; *) stop_daemons; if [ x"${TESTDIR}" != x"${BUILDDIR}/tmp" ] && [ x"${TESTDIR}" != x"$TESTDIR_CALLER" ] ; then rm -rf "${TESTDIR}" ; else rm -f "${NUT_CONFPATH}/NIT.env-sandbox-ready" ; fi ;; esac; exit $RES;' 0 1 2 3 15
 
 NUT_STATEPATH="${TESTDIR}/run"
 NUT_PIDPATH="${TESTDIR}/run"
 NUT_ALTPIDPATH="${TESTDIR}/run"
 NUT_CONFPATH="${TESTDIR}/etc"
 export NUT_STATEPATH NUT_PIDPATH NUT_ALTPIDPATH NUT_CONFPATH
+
+if [ -e "${NUT_CONFPATH}/NIT.env-sandbox-ready" ] ; then
+    log_warn "'${NUT_CONFPATH}/NIT.env-sandbox-ready' exists, do you have another instance of the script still running?"
+    sleep 3
+fi
+rm -f "${NUT_CONFPATH}/NIT.env-sandbox-ready" || true
 
 # TODO: Find a portable way to (check and) grab a random unprivileged port?
 if [ -n "${NUT_PORT-}" ] && [ "$NUT_PORT" -gt 0 ] && [ "$NUT_PORT" -lt 65536 ] ; then
@@ -383,10 +431,10 @@ log_info "Using NUT_PORT=${NUT_PORT} for this test run"
 # the values when fallback is used. If this is a
 # problem on any platform (Win/Mac and spaces in
 # paths?) please investigate and fix accordingly.
-set | grep -E '^(NUT_|LD_LIBRARY_PATH|DEBUG|PATH).*=' \
+set | grep -E '^(NUT_|TESTDIR|LD_LIBRARY_PATH|DEBUG|PATH).*=' \
 | while IFS='=' read K V ; do
     case "$K" in
-        LD_LIBRARY_PATH_CLIENT|LD_LIBRARY_PATH_ORIG|PATH_*|NUT_PORT_*)
+        LD_LIBRARY_PATH_CLIENT|LD_LIBRARY_PATH_ORIG|PATH_*|NUT_PORT_*|TESTDIR_*)
             continue
             ;;
         DEBUG_SLEEP|PATH|LD_LIBRARY_PATH*) printf '### ' ;;
@@ -1586,7 +1634,7 @@ if [ -n "${DEBUG_SLEEP-}" ] ; then
     log_info "Sleeping now as asked (for ${DEBUG_SLEEP} seconds starting `date -u`), so you can play with the driver and server running"
     log_info "Populated environment variables for this run into a file so you can source them: . '$NUT_CONFPATH/NIT.env'"
     printf "PID_NIT_SCRIPT='%s'\nexport PID_NIT_SCRIPT\n" "$$" >> "$NUT_CONFPATH/NIT.env"
-    set | grep -E '^PID_[^ =]*='"'?[0-9][0-9]*'?$" | while IFS='=' read K V ; do
+    set | grep -E '^TESTPASS_|PID_[^ =]*='"'?[0-9][0-9]*'?$" | while IFS='=' read K V ; do
         V="`echo "$V" | tr -d "'"`"
         # Dummy comment to reset syntax highlighting due to ' quote above
         if [ -n "$V" ] ; then
@@ -1596,9 +1644,17 @@ if [ -n "${DEBUG_SLEEP-}" ] ; then
     log_separator
     cat "$NUT_CONFPATH/NIT.env"
     log_separator
-    log_info "See above about important variables from the test sandbox and a way to 'source' them into your shell"
+    log_info "See above about important variables from the test sandbox and a way to 'source' them into your shell, e.g.: . '$NUT_CONFPATH/NIT.env'"
+
+    if [ x"${TESTDIR_CALLER}" != x"${TESTDIR}" ] && [ x"${TESTDIR}" != x"$BUILDDIR/tmp" ] ; then
+        log_warn "A temporary random TESTDIR location is used, it would be automatically removed after this script exits!"
+    fi
+
     log_info "You may want to press Ctrl+Z now and command 'bg' to the shell, if you did not start '$0 &' backgrounded already"
     log_info "To kill the script early, return it to foreground with 'fg' and press Ctrl+C, or 'kill -2 \$PID_NIT_SCRIPT' (kill -2 $$)"
+
+    log_info "Remember that in shell/scripting you can probe for '${NUT_CONFPATH}/NIT.env-sandbox-ready' which only appears at this moment"
+    touch "${NUT_CONFPATH}/NIT.env-sandbox-ready"
 
     sleep "${DEBUG_SLEEP}"
     log_info "Sleep finished"

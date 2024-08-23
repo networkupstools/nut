@@ -333,9 +333,14 @@ POWERDOWNFLAG "@POWERDOWNFLAG@"
 # NOTIFYMSG BYPASS	"UPS %s: on bypass (powered, not protecting)"
 # NOTIFYMSG NOTBYPASS	"UPS %s: no longer on bypass"
 #
-# Note that %s is replaced with the identifier of the UPS in question.
+# A few messages not directly related to UPS events are also available:
 #
-# Possible values for <notify type>:
+# NOTIFYMSG SUSPEND_STARTING	"OS is entering sleep/suspend/hibernate mode"
+# NOTIFYMSG SUSPEND_FINISHED	"OS just finished sleep/suspend/hibernate mode, de-activating obsolete UPS readings to avoid an unfortunate shutdown"
+#
+# Note that %s (where used) is replaced with the identifier of the UPS in question.
+#
+# Meanings of some possible values for <notify type>:
 #
 # ONLINE   : UPS is back online
 # ONBATT   : UPS is on battery
@@ -374,6 +379,9 @@ POWERDOWNFLAG "@POWERDOWNFLAG@"
 # NOTIFYFLAG NOTOFF	SYSLOG+WALL
 # NOTIFYFLAG BYPASS	SYSLOG+WALL
 # NOTIFYFLAG NOTBYPASS	SYSLOG+WALL
+#
+# NOTIFYFLAG SUSPEND_STARTING	SYSLOG+WALL
+# NOTIFYFLAG SUSPEND_FINISHED	SYSLOG+WALL
 #
 # Possible values for the flags:
 #

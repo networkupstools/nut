@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3210 utf-8
+personal_ws-1.1 en 3214 utf-8
 AAC
 AAS
 ABI
@@ -1206,6 +1206,7 @@ TCIOFLUSH
 TCSANOW
 TEMPC
 TEMPF
+TESTPASS
 TGS
 TIMELEFT
 TIOCM
@@ -2376,6 +2377,9 @@ mysecurityname
 myups
 myupsname
 nLogic
+nMONITOR
+nPOWERDOWNFLAG
+nSHUTDOWNCMD
 nabcd
 nameserver
 namespace
