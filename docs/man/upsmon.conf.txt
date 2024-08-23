@@ -275,6 +275,11 @@ BYPASS;; UPS on bypass (powered, not protecting)
 
 NOTBYPASS;; UPS no longer on bypass
 
+SUSPEND_STARTING;; OS is entering sleep/suspend/hibernate mode
+
+SUSPEND_FINISHED;; OS just finished sleep/suspend/hibernate mode,
+de-activating obsolete UPS readings to avoid an unfortunate shutdown
+
 *NOTIFYFLAG* 'type' 'flag'[+'flag']...::
 
 By default, upsmon sends walls global messages to all logged in users)

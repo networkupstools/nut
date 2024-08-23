@@ -147,13 +147,15 @@ if test -z "${nut_have_libgd_seen}"; then
 		AX_RUN_OR_LINK_IFELSE([AC_LANG_PROGRAM([
 #include <gd.h>
 #include <gdfontmb.h>
+#include <stdio.h>
 ],
 [
+FILE *tmpf = tmpfile();
 gdImagePtr im = gdImageCreate(64, 128);
 int back_color = gdImageColorAllocate(im, 255, 128, 32);
 gdImageFilledRectangle(im, 0, 0, 64, 128, back_color);
 gdImageColorTransparent(im, back_color);
-gdImagePng(im, stdout);
+gdImagePng(im, tmpf ? tmpf : stderr);
 gdImageDestroy(im);
 ]
 		)], [], [nut_have_libgd=no])

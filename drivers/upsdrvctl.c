@@ -1630,6 +1630,26 @@ int main(int argc, char **argv)
 			"(common options should be before a command and UPS name)");
 	}
 
+#if (defined(WITH_SOLARIS_SMF) && WITH_SOLARIS_SMF) || (defined(HAVE_SYSTEMD) && HAVE_SYSTEMD)
+	if (!getenv("NUT_QUIET_INIT_NDE_WARNING")
+	&&  (command == &start_driver || command == &stop_driver || command == &shutdown_driver)
+	) {
+# if (defined(WITH_SOLARIS_SMF) && WITH_SOLARIS_SMF)
+		char *fwk = "SMF";
+# else
+#  if (defined(HAVE_SYSTEMD) && HAVE_SYSTEMD)
+		char *fwk = "systemd";
+#  endif
+# endif
+		upslogx(LOG_WARNING, "WARNING: %s was called directly on a system with %s support.\n"
+			"    Please consider using 'upsdrvsvcctl' instead, to avoid conflicts with\n"
+			"    nut-driver service instances prepared by 'nut-driver-enumerator'!",
+			prog, fwk);
+		upsdebugx(1, "For more details see https://github.com/networkupstools/nut/wiki/nut%%E2%%80%%90driver%%E2%%80%%90enumerator-(NDE)");
+		upsdebugx(1, "To silence this warning export NUT_QUIET_INIT_NDE_WARNING with any value");
+	}
+#endif
+
 	/* Note that the numeric value here is not precise (it reflects
 	 * the number of "timeouts" which grows with amount of drivers
 	 * and retries. Below we re-check each driver to convert the

@@ -281,6 +281,13 @@ with 'upsdrvsvcctl resync' and then manage those with commands like
 'upsdrvsvcctl stop' and 'upsdrvsvcctl start' (note that on other
 systems this tool may be not pre-installed via packaging).
 
+In fact, service instances prepared by the `nut-driver-enumerator` script
+and service based on contents of your `ups.conf` file and automatically
+maintained by the respective framework can conflict with manual execution
+of drivers, so `upsdrvctl` would emit a warning in NUT builds with that
+capability (can be silenced by exporting a `NUT_QUIET_INIT_NDE_WARNING`
+environment variable with any value).
+
 *Answer 2*
 
 Some USB UPS devices have unreliable USB to serial interfaces.
@@ -314,7 +321,8 @@ remembers the 'last state' when the UPS restarts.
 One solution is to change your shutdown scripts so you never reach
 that point.  You *want* the system to die without reaching the
 part where the kernel tells it to shut down.  A possible script
-might look like this:
+might look like this (see `scripts/systemd/nutshutdown` in NUT
+sources for a more streamlined and modern variant):
 
 ------
 	# other shutdown stuff here (mount -o remount,ro ...)

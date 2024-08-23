@@ -235,6 +235,8 @@ dnl # not configure time.
 dnl AC_DEFINE_UNQUOTED(UPS_VERSION, "${PACKAGE_VERSION}", [NUT version])
 
 dnl However, automatically define the tree version (mostly for AC_SUBST)
+dnl FIXME: This just picks first 3 chars, assuming single-digit components
+dnl  separated by a dot:
 TREE_VERSION="`echo ${PACKAGE_VERSION} | awk '{ print substr($0,1,3) }'`"
 AC_DEFINE_UNQUOTED(TREE_VERSION, "${TREE_VERSION}", [NUT tree version])
 
@@ -675,6 +677,10 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         test -n "${CONFIG_CXXFLAGS-}" || CONFIG_CXXFLAGS=" "
         export CONFIG_CFLAGS
         export CONFIG_CXXFLAGS
+
+        AC_MSG_NOTICE([Moving config.log of the original invocation to config.log.inplace-outer just before exec...])
+        mv -f config.log config.log.inplace-outer || true
+
         eval exec "$0" $CONFIG_FLAGS_DEPLOYED $CONFIG_FLAGS --disable-inplace-runtime
     ],[
         AC_MSG_NOTICE([No CONFIG_FLAGS were reported or discovered from existing NUT deployment (if any); restarting script for a clean run])
@@ -685,6 +691,10 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         test -n "${CONFIG_CXXFLAGS-}" || CONFIG_CXXFLAGS=" "
         export CONFIG_CFLAGS
         export CONFIG_CXXFLAGS
+
+        AC_MSG_NOTICE([Moving config.log of the original invocation to config.log.inplace-outer just before exec...])
+        mv -f config.log config.log.inplace-outer || true
+
         AC_MSG_NOTICE([exec "$0" $CONFIG_FLAGS --disable-inplace-runtime])
         eval exec "$0" $CONFIG_FLAGS --disable-inplace-runtime
     ])
@@ -1298,6 +1308,8 @@ if test "$as_ln_s" = "ln -s" ; then
     if test x"${_abs_srcdir}" = x"${_abs_builddir}" ; then
         LN_S_R="ln"
     else
+        dnl NOTE: Here we check equality of the file systems by the
+        dnl devices they are mounted from (first column in df output):
         _fs_srcdir="`df "${_abs_srcdir}" | tail -1 | awk '{print $1}'`" || fs_srcdir="XXXs"
         _fs_builddir="`df "${_abs_builddir}" | tail -1 | awk '{print $1}'`" || fs_builddir="XXXb"
         dnl AC_MSG_NOTICE([_fs_srcdir='${_fs_srcdir}' _fs_builddir='${_fs_builddir}'])
@@ -3790,8 +3802,8 @@ if test x"$solarissmf" = xauto ; then
 	fi
 fi
 AC_MSG_RESULT([${solarissmf}])
-AM_CONDITIONAL(WITH_SOLARIS_SMF, test x"$solarissmf" = x"yes")
-NUT_REPORT([consider basic SMF support], [${solarissmf}])
+NUT_REPORT_FEATURE([consider basic SMF support], [${solarissmf}], [],
+					[WITH_SOLARIS_SMF], [Define to consider basic SMF support (provide units and configuration files)])
 
 
 AC_MSG_CHECKING(whether to install Solaris SVR4 (legacy) init-script files)
@@ -4061,6 +4073,10 @@ AS_IF([test x"${with_libsystemd}" = xyes && test x"${SYSTEMD_SUPPORTS_DAEMON_TYP
 NUT_REPORT_FEATURE([build with tighter systemd support], [${with_libsystemd}], [],
 	[WITH_LIBSYSTEMD], [Define to build with tighter systemd support (sd_notify etc)])
 
+nut_with_libsystemd_inhibitor=0
+AS_IF([test x"${with_libsystemd}" = xyes && test x"${nut_have_libsystemd_inhibitor}" = xyes], [nut_with_libsystemd_inhibitor=1])
+AC_DEFINE_UNQUOTED(WITH_LIBSYSTEMD_INHIBITOR, [${nut_with_libsystemd_inhibitor}], [Define as 1 if we can use systemd inhibitor interface here])
+AM_CONDITIONAL([WITH_LIBSYSTEMD_INHIBITOR], [test x"${nut_with_libsystemd_inhibitor}" = x1])
 
 dnl
 dnl Tests for CppUnit availability and usability (will be built if we can,

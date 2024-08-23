@@ -27,8 +27,14 @@ whenever possible.
 When used properly, upsdrvctl lets you maintain identical startup
 scripts across multiple systems with different UPS configurations.
 
-Note: For operating systems with service management frameworks, such as
+NOTE: For operating systems with service management frameworks, such as
 Solaris SMF or Linux systemd, the *upsdrvsvcctl* may be a better choice.
+In fact, service instances prepared by linkman:nut-driver-enumerator[8]
+based on contents of your linkman:ups.conf[5] file and automatically
+maintained by the respective framework can conflict with manual execution
+of drivers, so this tool would emit a warning in NUT builds with that
+capability (can be silenced by exporting a `NUT_QUIET_INIT_NDE_WARNING`
+environment variable with any value).
 
 OPTIONS
 -------
@@ -244,7 +250,8 @@ background.
 SEE ALSO
 --------
 
-linkman:upsdrvsvcctl[8], linkman:nutupsdrv[8], linkman:upsd[8], linkman:ups.conf[5]
+linkman:upsdrvsvcctl[8], linkman:nut-driver-enumerator[8],
+linkman:nutupsdrv[8], linkman:upsd[8], linkman:ups.conf[5]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
