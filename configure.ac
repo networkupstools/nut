@@ -3802,8 +3802,8 @@ if test x"$solarissmf" = xauto ; then
 	fi
 fi
 AC_MSG_RESULT([${solarissmf}])
-AM_CONDITIONAL(WITH_SOLARIS_SMF, test x"$solarissmf" = x"yes")
-NUT_REPORT([consider basic SMF support], [${solarissmf}])
+NUT_REPORT_FEATURE([consider basic SMF support], [${solarissmf}], [],
+					[WITH_SOLARIS_SMF], [Define to consider basic SMF support (provide units and configuration files)])
 
 
 AC_MSG_CHECKING(whether to install Solaris SVR4 (legacy) init-script files)

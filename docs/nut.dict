@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3213 utf-8
+personal_ws-1.1 en 3214 utf-8
 AAC
 AAS
 ABI
@@ -2461,6 +2461,7 @@ nutdevN
 nutdrv
 nutmon
 nutscan
+nutshutdown
 nutsrv
 nutupsdrv
 nutvalue

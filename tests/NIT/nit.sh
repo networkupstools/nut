@@ -54,6 +54,10 @@ export NUT_DEBUG_SYSLOG
 NUT_DEBUG_PID="true"
 export NUT_DEBUG_PID
 
+# Just keep upsdrvctl quiet if used in test builds or with the sandbox
+NUT_QUIET_INIT_NDE_WARNING="true"
+export NUT_QUIET_INIT_NDE_WARNING
+
 ARG_FG="-F"
 if [ x"${NUT_FOREGROUND_WITH_PID-}" = xtrue ] ; then ARG_FG="-FF" ; fi
 
