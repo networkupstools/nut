@@ -364,6 +364,31 @@ const char * rootpidpath(void);
 /* Die with a standard message if socket filename is too long */
 void check_unix_socket_filename(const char *fn);
 
+/* Provide integration for systemd inhibitor interface (where available,
+ * dummy code otherwise) implementing the pseudo-code example from
+ * https://systemd.io/INHIBITOR_LOCKS/
+ * TODO: Potentially extensible to other frameworks with similar concepts?..
+ */
+TYPE_FD Inhibit(const char *arg_what, const char *arg_who, const char *arg_why, const char *arg_mode);
+/* Let the service management framework proceed with its sleep mode */
+void Uninhibit(TYPE_FD *fd_ptr);
+/* Check once if the system plans to sleep or is waking up:
+ *  -1	Same reply as before, whatever it was
+ *   0	(false) Just after the sleep, at least as a bus signal
+ *   1	(true) Before the sleep - we must process and un-block it
+ */
+int isPreparingForSleep(void);
+
+/* A couple of methods to reflect built-in (absent) or run-time (it depends)
+ * support for monitoring that the OS goes to sleep and wakes up, and if we
+ * can "inhibit" that going to sleep in order to do some house-keeping first.
+ * -1 = do not know yet
+ *  0 = not supported, do not bother asking in daemon loops
+ *  1 = seems supported
+ */
+int isInhibitSupported(void);
+int isPreparingForSleepSupported(void);
+
 /* Send (daemon) state-change notifications to an
  * external service management framework such as systemd.
  * State types below are initially loosely modeled after

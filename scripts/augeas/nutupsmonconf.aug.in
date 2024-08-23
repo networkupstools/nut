@@ -123,6 +123,8 @@ let upsmon_notify_type = "ONLINE"
 			| "NOTOFF"
 			| "BYPASS"
 			| "NOTBYPASS"
+			| "SUSPEND_STARTING"
+			| "SUSPEND_FINISHED"
 
 let upsmon_notify = [ del_spc . key "NOTIFYMSG" . sep_spc
                          . [ label "type" . store upsmon_notify_type . sep_spc ]

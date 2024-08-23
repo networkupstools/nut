@@ -247,7 +247,7 @@ maintainer-asciidocs:
 	  fi; \
 	 )
 
-check-NIT check-NIT-devel:
+check-NIT check-NIT-devel check-NIT-sandbox check-NIT-sandbox-devel:
 	+cd $(builddir)/tests/NIT && $(MAKE) $(AM_MAKEFLAGS) $@
 
 VERSION_DEFAULT: dummy-stamp

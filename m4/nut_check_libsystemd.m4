@@ -96,11 +96,31 @@ if test -z "${nut_have_libsystemd_seen}"; then
 	AC_CHECK_HEADERS(systemd/sd-daemon.h, [nut_have_libsystemd=yes], [nut_have_libsystemd=no], [AC_INCLUDES_DEFAULT])
 	AC_CHECK_FUNCS(sd_notify, [], [nut_have_libsystemd=no])
 
+	nut_have_libsystemd_inhibitor=no
 	AS_IF([test x"${nut_have_libsystemd}" = x"yes"], [
 		dnl Check for additional feature support in library (optional)
 		AC_CHECK_FUNCS(sd_booted sd_watchdog_enabled sd_notify_barrier)
 		LIBSYSTEMD_CFLAGS="${CFLAGS}"
 		LIBSYSTEMD_LIBS="${LIBS}"
+
+		dnl Since systemd 183: https://systemd.io/INHIBITOR_LOCKS/
+		dnl ...or 221: https://www.freedesktop.org/software/systemd/man/latest/sd_bus_call_method.html
+		dnl and some bits even later (e.g. message container reading)
+		AS_IF([test "$SYSTEMD_VERSION" -ge 221], [
+			nut_have_libsystemd_inhibitor=yes
+			AC_CHECK_HEADERS(systemd/sd-bus.h, [], [nut_have_libsystemd_inhibitor=no], [AC_INCLUDES_DEFAULT])
+			AC_CHECK_FUNCS([sd_bus_call_method sd_bus_message_read_basic sd_bus_open_system sd_bus_default_system sd_bus_get_property_trivial], [], [nut_have_libsystemd_inhibitor=no])
+			dnl NOTE: In practice we use "p"-suffixed sd_bus_flush_close_unrefp
+			dnl  and sd_bus_message_unrefp methods prepared by a macro in sd-bus.h
+			AC_CHECK_FUNCS([sd_bus_flush_close_unref sd_bus_message_unref sd_bus_error_free], [], [nut_have_libsystemd_inhibitor=no])
+			dnl Optional methods: nicer with them, can do without
+			AC_CHECK_FUNCS([sd_bus_open_system_with_description sd_bus_set_description])
+			dnl For inhibitor per se, we do not have to read containers:
+			dnl AC_CHECK_FUNCS([sd_bus_message_enter_container sd_bus_message_exit_container])
+		])
+
+		AC_MSG_CHECKING(for libsystemd inhibitor interface support)
+		AC_MSG_RESULT([${nut_have_libsystemd_inhibitor}])
 	])
 
 	dnl restore original CFLAGS and LIBS

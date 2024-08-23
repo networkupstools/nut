@@ -178,6 +178,13 @@ UPS on bypass (powered, not protecting).
 *NOTBYPASS*::
 UPS no longer on bypass.
 
+*SUSPEND_STARTING*::
+OS is entering sleep/suspend/hibernate mode.
+
+*SUSPEND_FINISHED*::
+OS just finished sleep/suspend/hibernate mode, de-activating
+obsolete UPS readings to avoid an unfortunate shutdown.
+
 
 NOTIFY COMMAND
 --------------
