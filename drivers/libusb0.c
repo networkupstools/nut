@@ -542,58 +542,6 @@ static int libusb_open(usb_dev_handle **udevp,
 
 			nut_usb_set_altinterface(udev);
 
-			/* If libusb failed to identify the device strings earlier,
-			 * can we do that after claiming the interface? Just try...
-			 * Note that we succeeded so far, meaning these strings were
-			 * not among matching criteria. But they can be important for
-			 * our drivers (e.g. per-model tweaks) and pretty reporting
-			 * of certain `device.*` and/or `ups.*` data points.
-			 */
-			if (!curDevice->Vendor) {
-				retries = MAX_RETRY;
-				while (retries > 0) {
-					ret = usb_get_string_simple(udev, dev->descriptor.iManufacturer,
-						string, sizeof(string));
-					if (ret > 0) {
-						curDevice->Vendor = xstrdup(string);
-						break;
-					}
-					retries--;
-					upsdebugx(1, "%s get iManufacturer failed, retrying...", __func__);
-				}
-				upsdebugx(2, "- Manufacturer: %s", curDevice->Vendor ? curDevice->Vendor : "unknown");
-			}
-
-			if (!curDevice->Product) {
-				retries = MAX_RETRY;
-				while (retries > 0) {
-					ret = usb_get_string_simple(udev, dev->descriptor.iProduct,
-						string, sizeof(string));
-					if (ret > 0) {
-						curDevice->Product = xstrdup(string);
-						break;
-					}
-					retries--;
-					upsdebugx(1, "%s get iProduct failed, retrying...", __func__);
-				}
-				upsdebugx(2, "- Product: %s", curDevice->Product ? curDevice->Product : "unknown");
-			}
-
-			if (!curDevice->Serial) {
-				retries = MAX_RETRY;
-				while (retries > 0) {
-					ret = usb_get_string_simple(udev, dev->descriptor.iSerialNumber,
-						string, sizeof(string));
-					if (ret > 0) {
-						curDevice->Serial = xstrdup(string);
-						break;
-					}
-					retries--;
-					upsdebugx(1, "%s get iSerialNumber failed, retrying...", __func__);
-				}
-				upsdebugx(2, "- Serial Number: %s", curDevice->Serial ? curDevice->Serial : "unknown");
-			}
-
 			/* Did the driver provide a callback method for any further
 			 * device acceptance checks (e.g. when same ID is supported
 			 * by several sub-drivers, differing by vendor/model strings)?
