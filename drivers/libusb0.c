@@ -50,7 +50,6 @@ upsdrv_info_t comm_upsdrv_info = {
 };
 
 #define MAX_REPORT_SIZE         0x1800
-#define MAX_RETRY               3
 
 #if (!HAVE_STRCASESTR) && (HAVE_STRSTR && HAVE_STRLWR && HAVE_STRDUP)
 /* Only used in this file of all NUT codebase, so not in str.{c,h}
@@ -203,7 +202,9 @@ static int libusb_open(usb_dev_handle **udevp,
 		USBDevice_t *hd, usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen)
 	)
 {
+#ifdef HAVE_USB_DETACH_KERNEL_DRIVER_NP
 	int retries;
+#endif
 	usb_ctrl_charbufsize rdlen1, rdlen2; /* report descriptor length, method 1+2 */
 	USBDeviceMatcher_t *m;
 	struct usb_device *dev;
@@ -396,44 +397,26 @@ static int libusb_open(usb_dev_handle **udevp,
 #endif
 
 			if (dev->descriptor.iManufacturer) {
-				retries = MAX_RETRY;
-				while (retries > 0) {
-					ret = usb_get_string_simple(udev, dev->descriptor.iManufacturer,
-						string, sizeof(string));
-					if (ret > 0) {
-						curDevice->Vendor = xstrdup(string);
-						break;
-					}
-					retries--;
-					upsdebugx(1, "%s get iManufacturer failed, retrying...", __func__);
+				ret = usb_get_string_simple(udev, dev->descriptor.iManufacturer,
+					string, sizeof(string));
+				if (ret > 0) {
+					curDevice->Vendor = xstrdup(string);
 				}
 			}
 
 			if (dev->descriptor.iProduct) {
-				retries = MAX_RETRY;
-				while (retries > 0) {
-					ret = usb_get_string_simple(udev, dev->descriptor.iProduct,
-						string, sizeof(string));
-					if (ret > 0) {
-						curDevice->Product = xstrdup(string);
-						break;
-					}
-					retries--;
-					upsdebugx(1, "%s get iProduct failed, retrying...", __func__);
+				ret = usb_get_string_simple(udev, dev->descriptor.iProduct,
+					string, sizeof(string));
+				if (ret > 0) {
+					curDevice->Product = xstrdup(string);
 				}
 			}
 
 			if (dev->descriptor.iSerialNumber) {
-				retries = MAX_RETRY;
-				while (retries > 0) {
-					ret = usb_get_string_simple(udev, dev->descriptor.iSerialNumber,
-						string, sizeof(string));
-					if (ret > 0) {
-						curDevice->Serial = xstrdup(string);
-						break;
-					}
-					retries--;
-					upsdebugx(1, "%s get iSerialNumber failed, retrying...", __func__);
+				ret = usb_get_string_simple(udev, dev->descriptor.iSerialNumber,
+					string, sizeof(string));
+				if (ret > 0) {
+					curDevice->Serial = xstrdup(string);
 				}
 			}
 
@@ -489,11 +472,10 @@ static int libusb_open(usb_dev_handle **udevp,
 			/* this method requires at least libusb 0.1.8:
 			 * it force device claiming by unbinding
 			 * attached driver... From libhid */
-			retries = MAX_RETRY;
 #ifdef WIN32
 			usb_set_configuration(udev, 1);
 #endif
-
+			retries = 3;
 			while ((ret = usb_claim_interface(udev, usb_subdriver.hid_rep_index)) < 0) {
 				upsdebugx(2, "failed to claim USB device: %s",
 					usb_strerror());
