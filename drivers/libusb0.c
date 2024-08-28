@@ -59,7 +59,7 @@ upsdrv_info_t comm_upsdrv_info = {
 static char *strcasestr(const char *haystack, const char *needle);
 #endif
 
-static void libusb_close(usb_dev_handle *udev);
+static void nut_libusb_close(usb_dev_handle *udev);
 
 /*! Add USB-related driver variables with addvar() and dstate_setinfo().
  * This removes some code duplication across the USB drivers.
@@ -196,7 +196,7 @@ static int nut_usb_set_altinterface(usb_dev_handle *udev)
  * is accepted, or < 1 if not. If it isn't accepted, the next device
  * (if any) will be tried, until there are no more devices left.
  */
-static int libusb_open(usb_dev_handle **udevp,
+static int nut_libusb_open(usb_dev_handle **udevp,
 	USBDevice_t *curDevice, USBDeviceMatcher_t *matcher,
 	int (*callback)(usb_dev_handle *udev,
 		USBDevice_t *hd, usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen)
@@ -314,7 +314,7 @@ static int libusb_open(usb_dev_handle **udevp,
 
 #ifndef __linux__ /* SUN_LIBUSB (confirmed to work on Solaris and FreeBSD) */
 	/* Causes a double free corruption in linux if device is detached! */
-	libusb_close(*udevp);
+	nut_libusb_close(*udevp);
 #endif
 
 	upsdebugx(3, "usb_busses=%p", (void*)usb_busses);
@@ -739,7 +739,7 @@ static int libusb_open(usb_dev_handle **udevp,
  * Error handler for usb_get/set_* functions. Return value > 0 success,
  * 0 unknown or temporary failure (ignored), < 0 permanent failure (reconnect)
  */
-static int libusb_strerror(const int ret, const char *desc)
+static int nut_libusb_strerror(const int ret, const char *desc)
 {
 	if (ret > 0) {
 		return ret;
@@ -786,10 +786,10 @@ static int libusb_strerror(const int ret, const char *desc)
  */
 
 /* Expected evaluated types for the API:
- * static int libusb_get_report(usb_dev_handle *udev,
+ * static int nut_libusb_get_report(usb_dev_handle *udev,
  *	int ReportId, unsigned char *raw_buf, int ReportSize)
  */
-static int libusb_get_report(
+static int nut_libusb_get_report(
 	usb_dev_handle *udev,
 	usb_ctrl_repindex ReportId,
 	usb_ctrl_charbuf raw_buf,
@@ -797,7 +797,7 @@ static int libusb_get_report(
 {
 	int	ret;
 
-	upsdebugx(4, "Entering libusb_get_report");
+	upsdebugx(4, "Entering nut_libusb_get_report");
 
 	if (!udev) {
 		return 0;
@@ -819,14 +819,14 @@ static int libusb_get_report(
 		return 0;
 	}
 
-	return libusb_strerror(ret, __func__);
+	return nut_libusb_strerror(ret, __func__);
 }
 
 /* Expected evaluated types for the API:
- * static int libusb_set_report(usb_dev_handle *udev,
+ * static int nut_libusb_set_report(usb_dev_handle *udev,
  *	int ReportId, unsigned char *raw_buf, int ReportSize)
  */
-static int libusb_set_report(
+static int nut_libusb_set_report(
 	usb_dev_handle *udev,
 	usb_ctrl_repindex ReportId,
 	usb_ctrl_charbuf raw_buf,
@@ -854,14 +854,14 @@ static int libusb_set_report(
 		return 0;
 	}
 
-	return libusb_strerror(ret, __func__);
+	return nut_libusb_strerror(ret, __func__);
 }
 
 /* Expected evaluated types for the API:
- * static int libusb_get_string(usb_dev_handle *udev,
+ * static int nut_libusb_get_string(usb_dev_handle *udev,
  *	int StringIdx, char *buf, int buflen)
  */
-static int libusb_get_string(
+static int nut_libusb_get_string(
 	usb_dev_handle *udev,
 	usb_ctrl_strindex StringIdx,
 	char *buf,
@@ -895,17 +895,17 @@ static int libusb_get_string(
 			"actual buf length is %" PRIuSIZE, __func__, len);
 		/* if (len) */
 			return len;
-		/* else may log "libusb_get_string: Success" and return 0 below */
+		/* else may log "nut_libusb_get_string: Success" and return 0 below */
 	}
 
-	return libusb_strerror(ret, __func__);
+	return nut_libusb_strerror(ret, __func__);
 }
 
 /* Expected evaluated types for the API:
- * static int libusb_get_interrupt(usb_dev_handle *udev,
+ * static int nut_libusb_get_interrupt(usb_dev_handle *udev,
  *	unsigned char *buf, int bufsize, int timeout)
  */
-static int libusb_get_interrupt(
+static int nut_libusb_get_interrupt(
 	usb_dev_handle *udev,
 	usb_ctrl_charbuf buf,
 	usb_ctrl_charbufsize bufsize,
@@ -929,10 +929,10 @@ static int libusb_get_interrupt(
 		ret = usb_clear_halt(udev, 0x81);
 	}
 
-	return libusb_strerror(ret, __func__);
+	return nut_libusb_strerror(ret, __func__);
 }
 
-static void libusb_close(usb_dev_handle *udev)
+static void nut_libusb_close(usb_dev_handle *udev)
 {
 	if (!udev) {
 		return;
@@ -979,12 +979,12 @@ err:
 usb_communication_subdriver_t usb_subdriver = {
 	USB_DRIVER_NAME,
 	USB_DRIVER_VERSION,
-	libusb_open,
-	libusb_close,
-	libusb_get_report,
-	libusb_set_report,
-	libusb_get_string,
-	libusb_get_interrupt,
+	nut_libusb_open,
+	nut_libusb_close,
+	nut_libusb_get_report,
+	nut_libusb_set_report,
+	nut_libusb_get_string,
+	nut_libusb_get_interrupt,
 	LIBUSB_DEFAULT_CONF_INDEX,
 	LIBUSB_DEFAULT_INTERFACE,
 	LIBUSB_DEFAULT_DESC_INDEX,
