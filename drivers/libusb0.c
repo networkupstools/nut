@@ -397,26 +397,32 @@ static int libusb_open(usb_dev_handle **udevp,
 #endif
 
 			if (dev->descriptor.iManufacturer) {
-				ret = usb_get_string_simple(udev, dev->descriptor.iManufacturer,
+				ret = nut_usb_get_string(udev, dev->descriptor.iManufacturer,
 					string, sizeof(string));
 				if (ret > 0) {
 					curDevice->Vendor = xstrdup(string);
+				} else {
+					upsdebugx(1, "%s: get Manufacturer string failed", __func__);
 				}
 			}
 
 			if (dev->descriptor.iProduct) {
-				ret = usb_get_string_simple(udev, dev->descriptor.iProduct,
+				ret = nut_usb_get_string(udev, dev->descriptor.iProduct,
 					string, sizeof(string));
 				if (ret > 0) {
 					curDevice->Product = xstrdup(string);
+				} else {
+					upsdebugx(1, "%s: get Product string failed", __func__);
 				}
 			}
 
 			if (dev->descriptor.iSerialNumber) {
-				ret = usb_get_string_simple(udev, dev->descriptor.iSerialNumber,
+				ret = nut_usb_get_string(udev, dev->descriptor.iSerialNumber,
 					string, sizeof(string));
 				if (ret > 0) {
 					curDevice->Serial = xstrdup(string);
+				} else {
+					upsdebugx(1, "%s: get Serial Number string failed", __func__);
 				}
 			}
 
@@ -876,7 +882,7 @@ static int libusb_get_string(
 # pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
 #endif
 	/*
-	 * usb.h:int  usb_get_string_simple(usb_dev_handle *dev, int index,
+	 * usb.h:int  nut_usb_get_string(usb_dev_handle *dev, int index,
 	 * usb.h-         char *buf, size_t buflen);
 	 */
 	if (!udev
@@ -889,7 +895,7 @@ static int libusb_get_string(
 		return -1;
 	}
 
-	ret = usb_get_string_simple(udev, StringIdx, buf, (size_t)buflen);
+	ret = nut_usb_get_string(udev, StringIdx, buf, (size_t)buflen);
 
 #ifdef WIN32
 	errno = -ret;
@@ -899,7 +905,7 @@ static int libusb_get_string(
 	 * logging below - also tends to happen */
 	if (ret == 0) {
 		size_t len = strlen(buf);
-		upsdebugx(2, "%s: usb_get_string_simple() returned "
+		upsdebugx(2, "%s: nut_usb_get_string() returned "
 			"0 (might be just success code), "
 			"actual buf length is %" PRIuSIZE, __func__, len);
 		/* if (len) */

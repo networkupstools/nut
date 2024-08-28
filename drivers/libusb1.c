@@ -391,38 +391,44 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		curDevice->bcdDevice = dev_desc.bcdDevice;
 
 		if (dev_desc.iManufacturer) {
-			ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iManufacturer,
-				(unsigned char*)string, sizeof(string));
+			ret = nut_usb_get_string(udev, dev_desc.iManufacturer,
+				string, sizeof(string));
 			if (ret > 0) {
 				curDevice->Vendor = strdup(string);
 				if (curDevice->Vendor == NULL) {
 					libusb_free_device_list(devlist, 1);
 					fatal_with_errno(EXIT_FAILURE, "Out of memory");
 				}
+			} else {
+				upsdebugx(1, "%s: get Manufacturer string failed", __func__);
 			}
 		}
 
 		if (dev_desc.iProduct) {
-			ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iProduct,
-				(unsigned char*)string, sizeof(string));
+			ret = nut_usb_get_string(udev, dev_desc.iProduct,
+				string, sizeof(string));
 			if (ret > 0) {
 				curDevice->Product = strdup(string);
 				if (curDevice->Product == NULL) {
 					libusb_free_device_list(devlist, 1);
 					fatal_with_errno(EXIT_FAILURE, "Out of memory");
 				}
+			} else {
+				upsdebugx(1, "%s: get Product string failed", __func__);
 			}
 		}
 
 		if (dev_desc.iSerialNumber) {
-			ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iSerialNumber,
-				(unsigned char*)string, sizeof(string));
+			ret = nut_usb_get_string(udev, dev_desc.iSerialNumber,
+				string, sizeof(string));
 			if (ret > 0) {
 				curDevice->Serial = strdup(string);
 				if (curDevice->Serial == NULL) {
 					libusb_free_device_list(devlist, 1);
 					fatal_with_errno(EXIT_FAILURE, "Out of memory");
 				}
+			} else {
+				upsdebugx(1, "%s: get Serial Number string failed", __func__);
 			}
 		}
 
@@ -1007,14 +1013,14 @@ static int nut_libusb_get_string(
 		return -1;
 	}
 
-	ret = libusb_get_string_descriptor_ascii(udev, (uint8_t)StringIdx,
-		(unsigned char*)buf, (int)buflen);
+	ret = nut_usb_get_string(udev, (uint8_t)StringIdx,
+		buf, (int)buflen);
 
 	/** 0 can be seen as an empty string, or as LIBUSB_SUCCESS for
 	 * logging below - also tends to happen */
 	if (ret == 0) {
 		size_t len = strlen(buf);
-		upsdebugx(2, "%s: libusb_get_string_descriptor_ascii() returned "
+		upsdebugx(2, "%s: nut_usb_get_string() returned "
 			"0 (might be just LIBUSB_SUCCESS code), "
 			"actual buf length is %" PRIuSIZE, __func__, len);
 		/* if (len) */
