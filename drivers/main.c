@@ -2681,6 +2681,7 @@ sockname_ownership_finished:
 			upslogx(LOG_WARNING, "Running as foreground process, not saving a PID file");
 	}
 
+	/* May already be set by parsed configuration flag, only set default if not: */
 	if (dstate_getinfo("driver.flag.allow_killpower") == NULL)
 		dstate_setinfo("driver.flag.allow_killpower", "0");
 
