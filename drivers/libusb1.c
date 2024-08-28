@@ -981,7 +981,7 @@ static int nut_libusb_set_report(
 
 /* Expected evaluated types for the API:
  * static int nut_libusb_get_string(libusb_device_handle *udev,
- *	int StringIdx, char *buf, int buflen)
+ *	uint8_t StringIdx, unsigned char *buf, uint16_t buflen)
  */
 static int nut_libusb_get_string(
 	libusb_device_handle *udev,

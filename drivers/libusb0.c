@@ -859,7 +859,7 @@ static int libusb_set_report(
 
 /* Expected evaluated types for the API:
  * static int libusb_get_string(usb_dev_handle *udev,
- *	int StringIdx, char *buf, size_t buflen)
+ *	int StringIdx, char *buf, int buflen)
  */
 static int libusb_get_string(
 	usb_dev_handle *udev,
