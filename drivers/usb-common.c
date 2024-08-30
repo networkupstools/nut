@@ -419,7 +419,7 @@ static int nut_usb_get_string_descriptor(
 	char *buf,
 	size_t buflen)
 {
-	int ret;
+	int ret = -1;
 	int retries = 3;
 
 	while (retries--) {
