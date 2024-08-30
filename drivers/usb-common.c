@@ -441,7 +441,7 @@ int nut_usb_get_string(
 	char *buf,
 	size_t buflen)
 {
-	int ret;
+	int ret = -1;
 	char buffer[255];
 	int langid;
 	int len;
