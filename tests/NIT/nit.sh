@@ -36,6 +36,19 @@
 #
 # License: GPLv2+
 
+if [ -z "${BASH_VERSION-}" ] \
+&& (command -v bash) \
+&& [ x"${DEBUG_NONBASH-}" != xtrue ] \
+; then
+    # FIXME: detect and pass -x/-v options?
+    echo "WARNING: Re-execing in BASH (export DEBUG_NONBASH=true to avoid)" >&2
+    exec bash $0 "$@"
+fi
+
+if [ -n "${BASH_VERSION-}" ]; then
+    eval `echo "set -o pipefail"`
+fi
+
 TZ=UTC
 LANG=C
 LC_ALL=C
