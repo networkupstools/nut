@@ -138,13 +138,6 @@ isBusy_NUT_PORT() {
     && log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is busy per lsof" \
     && return
 
-    # Not busy... or no tools to confirm?
-    if (command -v netstat || command -v sockstat || command -v ss || command -v lsof) 2>/dev/null >/dev/null ; then
-        # at least one tool is present, so not busy
-        log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is not busy per netstat, sockstat, ss or lsof"
-        return 1
-    fi
-
     # If the current shell interpreter is bash, it can do a bit of networking:
     if [ -n "${BASH_VERSION-}" ]; then
         # NOTE: Probing host names we use in upsd.conf
@@ -164,6 +157,13 @@ isBusy_NUT_PORT() {
             return 1
         ) && return 0
         log_warn "isBusy_NUT_PORT() tried with BASH-specific query, and port does not seem busy (or something else errored out)"
+    fi
+
+    # Not busy... or no tools to confirm? (or no perms, or no lsof plugin)?
+    if (command -v netstat || command -v sockstat || command -v ss || command -v lsof) 2>/dev/null >/dev/null ; then
+        # at least one tool is present, so not busy
+        log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is not busy per netstat, sockstat, ss or lsof"
+        return 1
     fi
 
     # Assume not busy to not preclude testing in 100% of the cases
