@@ -61,6 +61,8 @@ export NUT_QUIET_INIT_NDE_WARNING
 ARG_FG="-F"
 if [ x"${NUT_FOREGROUND_WITH_PID-}" = xtrue ] ; then ARG_FG="-FF" ; fi
 
+TABCHAR="`printf '\t'`"
+
 log_separator() {
     echo "" >&2
     echo "================================" >&2
@@ -128,7 +130,7 @@ isBusy_NUT_PORT() {
         return 1
     fi
 
-    (netstat -an || sockstat -l || ss -tn || ss -n) 2>/dev/null | grep -E "[:.]${NUT_PORT}(\t| |\$)" > /dev/null \
+    (netstat -an || sockstat -l || ss -tn || ss -n) 2>/dev/null | grep -E "[:.]${NUT_PORT}(${TABCHAR}| |\$)" > /dev/null \
     && log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is busy per netstat, sockstat or ss" \
     && return
 
