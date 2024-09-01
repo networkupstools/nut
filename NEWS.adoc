@@ -62,6 +62,8 @@ https://github.com/networkupstools/nut/milestone/11
      regression. [issue #1904, issue #2484]
    * Fallback `localtime_r()` and `gmtime_r()` for some platform builds where
      a `*_s()` variant was available was not handled correctly. [PR #2583]
+   * A recently introduced `allow_killpower` did not actually work as an
+     `ups.conf` flag (only as a protocol command). [issue #2605, PR #2606]
 
  - development iterations of NUT should now identify with not only the semantic
    version of a preceding release, but with git-derived information about the
