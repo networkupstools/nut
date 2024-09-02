@@ -36,6 +36,19 @@
 #
 # License: GPLv2+
 
+if [ -z "${BASH_VERSION-}" ] \
+&& (command -v bash) \
+&& [ x"${DEBUG_NONBASH-}" != xtrue ] \
+; then
+    # FIXME: detect and pass -x/-v options?
+    echo "WARNING: Re-execing in BASH (export DEBUG_NONBASH=true to avoid)" >&2
+    exec bash $0 "$@"
+fi
+
+if [ -n "${BASH_VERSION-}" ]; then
+    eval `echo "set -o pipefail"`
+fi
+
 TZ=UTC
 LANG=C
 LC_ALL=C
@@ -60,6 +73,8 @@ export NUT_QUIET_INIT_NDE_WARNING
 
 ARG_FG="-F"
 if [ x"${NUT_FOREGROUND_WITH_PID-}" = xtrue ] ; then ARG_FG="-FF" ; fi
+
+TABCHAR="`printf '\t'`"
 
 log_separator() {
     echo "" >&2
@@ -108,7 +123,7 @@ isBusy_NUT_PORT() {
     [ -n "${NUT_PORT}" ] || return
 
     log_debug "isBusy_NUT_PORT() Trying to report if NUT_PORT=${NUT_PORT} is used"
-    if [ -e /proc/net/tcp ] || [ -e /proc/net/tcp6 ]; then
+    if [ -r /proc/net/tcp ] || [ -r /proc/net/tcp6 ]; then
         # Assume Linux - hex-encoded
         # IPv4:
         #   sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
@@ -128,20 +143,13 @@ isBusy_NUT_PORT() {
         return 1
     fi
 
-    (netstat -an || sockstat -l || ss -tn || ss -n) 2>/dev/null | grep -E "[:.]${NUT_PORT}(\t| |\$)" > /dev/null \
+    (netstat -an || sockstat -l || ss -tn || ss -n) 2>/dev/null | grep -E "[:.]${NUT_PORT}(${TABCHAR}| |\$)" > /dev/null \
     && log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is busy per netstat, sockstat or ss" \
     && return
 
     (lsof -i :"${NUT_PORT}") 2>/dev/null \
     && log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is busy per lsof" \
     && return
-
-    # Not busy... or no tools to confirm?
-    if (command -v netstat || command -v sockstat || command -v ss || command -v lsof) 2>/dev/null >/dev/null ; then
-        # at least one tool is present, so not busy
-        log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is not busy per netstat, sockstat, ss or lsof"
-        return 1
-    fi
 
     # If the current shell interpreter is bash, it can do a bit of networking:
     if [ -n "${BASH_VERSION-}" ]; then
@@ -162,6 +170,13 @@ isBusy_NUT_PORT() {
             return 1
         ) && return 0
         log_warn "isBusy_NUT_PORT() tried with BASH-specific query, and port does not seem busy (or something else errored out)"
+    fi
+
+    # Not busy... or no tools to confirm? (or no perms, or no lsof plugin)?
+    if (command -v netstat || command -v sockstat || command -v ss || command -v lsof) 2>/dev/null >/dev/null ; then
+        # at least one tool is present, so not busy
+        log_debug "isBusy_NUT_PORT() found that NUT_PORT=${NUT_PORT} is not busy per netstat, sockstat, ss or lsof"
+        return 1
     fi
 
     # Assume not busy to not preclude testing in 100% of the cases
