@@ -158,6 +158,15 @@ https://github.com/networkupstools/nut/milestone/11
    reading an empty string or getting a success code `0` from libusb.
    This difference should now be better logged, and not into syslog. [#2399]
 
+ - USB drivers can benefit from a new `nut_usb_get_string()` method which
+   can do a fallback `en_US` query for devices which report a broken "langid"
+   language identifier value. This notably manifested in inability to query
+   device Manufacturer, Model and Serial Number values with some buggy device
+   firmware or hardware. [PR #2604, issues #1925, #414]
+   * Currently this was tested to fix certain device discovery with `usbhid-ups`.
+   * More work may be needed for other USB-capable drivers and general code to
+     collect readings and data points, and for `nut-scanner`.
+
  - Introduced a new driver concept for interaction with OS-reported hardware
    monitoring readings. Currently instantiated as `hwmon_ina219` specifically
    made for Texas Instruments INA219 chip as exposed in the Linux "hwmon"
