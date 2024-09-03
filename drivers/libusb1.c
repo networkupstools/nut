@@ -119,7 +119,7 @@ static inline int matches(USBDeviceMatcher_t *matcher, USBDevice_t *device) {
  * devices from working on Mac OS X (presumably the OS is already setting
  * altinterface to 0).
  */
-static int nut_usb_set_altinterface(libusb_device_handle *udev)
+static int nut_libusb_set_altinterface(libusb_device_handle *udev)
 {
 	int altinterface = 0, ret = 0;
 	char *alt_string, *endp = NULL;
@@ -588,7 +588,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		upsdebugx(2, "Claimed interface %d successfully",
 			usb_subdriver.hid_rep_index);
 
-		nut_usb_set_altinterface(udev);
+		nut_libusb_set_altinterface(udev);
 
 		/* Did the driver provide a callback method for any further
 		 * device acceptance checks (e.g. when same ID is supported
