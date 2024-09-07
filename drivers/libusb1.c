@@ -152,7 +152,7 @@ static int nut_libusb_set_altinterface(libusb_device_handle *udev)
 	return ret;
 }
 
-static void nut_usb_subdriver_defaults(usb_communication_subdriver_t *subdriver)
+static void nut_libusb_subdriver_defaults(usb_communication_subdriver_t *subdriver)
 {
 	if (!getval("usb_config_index"))
 		subdriver->usb_config_index = LIBUSB_DEFAULT_CONF_INDEX;
@@ -810,7 +810,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 				libusb_release_interface(udev, usb_subdriver.hid_rep_index); */
 			libusb_close(udev);
 			/* reset any parameters modified by unmatched drivers back to defaults */
-			nut_usb_subdriver_defaults(&usb_subdriver);
+			nut_libusb_subdriver_defaults(&usb_subdriver);
 	}
 
 	*udevp = NULL;
