@@ -67,11 +67,13 @@ static long	offdelay = 120, ondelay = 30;
 static PCONF_CTX_t	sock_ctx;
 static time_t	last_poll = 0, last_heard = 0,
 		last_ping = 0;
+
 #ifndef WIN32
-static time_t last_connfail = 0;
+/* TODO: Why not built in WIN32? */
+static time_t	last_connfail = 0;
 #else
-static char	read_buf[SMALLBUF];
-static OVERLAPPED read_overlapped;
+static char     	read_buf[SMALLBUF];
+static OVERLAPPED	read_overlapped;
 #endif
 
 static int instcmd(const char *cmdname, const char *extra);
@@ -168,11 +170,11 @@ static int parse_args(size_t numargs, char **arg)
 static TYPE_FD sstate_connect(void)
 {
 	TYPE_FD	fd;
+	const char	*dumpcmd = "DUMPALL\n";
 
 #ifndef WIN32
 	ssize_t	ret;
 	int	len;
-	const char	*dumpcmd = "DUMPALL\n";
 	struct sockaddr_un	sa;
 
 	memset(&sa, '\0', sizeof(sa));
@@ -248,7 +250,6 @@ static TYPE_FD sstate_connect(void)
 	/* continued below... */
 #else /* WIN32 */
 	char		pipename[SMALLBUF];
-	const char	*dumpcmd = "DUMPALL\n";
 	BOOL		result = FALSE;
 
 	snprintf(pipename, sizeof(pipename), "\\\\.\\pipe\\%s/%s", dflt_statepath(), device_path);
@@ -338,7 +339,7 @@ static int sstate_sendline(const char *buf)
 	DWORD bytesWritten = 0;
 	BOOL  result = FALSE;
 
-	result = WriteFile (upsfd,buf,strlen(buf),&bytesWritten,NULL);
+	result = WriteFile (upsfd, buf, strlen(buf), &bytesWritten, NULL);
 
 	if (result == 0) {
 		ret = 0;
@@ -373,13 +374,13 @@ static int sstate_readline(void)
 	if (ret < 0) {
 		switch(errno)
 		{
-		case EINTR:
-		case EAGAIN:
-			return 0;
+			case EINTR:
+			case EAGAIN:
+				return 0;
 
-		default:
-			upslog_with_errno(LOG_WARNING, "Read from UPS [%s] failed", device_path);
-			return -1;
+			default:
+				upslog_with_errno(LOG_WARNING, "Read from UPS [%s] failed", device_path);
+				return -1;
 		}
 	}
 #else
@@ -398,19 +399,19 @@ static int sstate_readline(void)
 
 		switch (pconf_char(&sock_ctx, buf[i]))
 		{
-		case 1:
-			if (parse_args(sock_ctx.numargs, sock_ctx.arglist)) {
-				time(&last_heard);
-			}
-			continue;
+			case 1:
+				if (parse_args(sock_ctx.numargs, sock_ctx.arglist)) {
+					time(&last_heard);
+				}
+				continue;
 
-		case 0:
-			continue;	/* haven't gotten a line yet */
+			case 0:
+				continue;	/* haven't gotten a line yet */
 
-		default:
-			/* parse error */
-			upslogx(LOG_NOTICE, "Parse error on sock: %s", sock_ctx.errmsg);
-			return -1;
+			default:
+				/* parse error */
+				upslogx(LOG_NOTICE, "Parse error on sock: %s", sock_ctx.errmsg);
+				return -1;
 		}
 	}
 

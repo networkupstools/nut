@@ -28,8 +28,8 @@
 #include <sys/un.h>
 #endif
 
-#define DRIVER_NAME	"clone outlet UPS Driver"
-#define DRIVER_VERSION	"0.04"
+#define DRIVER_NAME	"Clone outlet UPS driver"
+#define DRIVER_VERSION	"0.05"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -69,12 +69,12 @@ static int	dumpdone = 0;
 static PCONF_CTX_t	sock_ctx;
 static time_t	last_heard = 0, last_ping = 0;
 
-#ifdef WIN32
-static char     	read_buf[SMALLBUF];
-static OVERLAPPED	read_overlapped;
-#else
+#ifndef WIN32
 /* TODO: Why not built in WIN32? */
 static time_t	last_connfail = 0;
+#else
+static char     	read_buf[SMALLBUF];
+static OVERLAPPED	read_overlapped;
 #endif
 
 static int parse_args(size_t numargs, char **arg)
@@ -154,11 +154,11 @@ static int parse_args(size_t numargs, char **arg)
 static TYPE_FD sstate_connect(void)
 {
 	TYPE_FD	fd;
+	const char	*dumpcmd = "DUMPALL\n";
 
 #ifndef WIN32
 	ssize_t	ret;
 	int	len;
-	const char	*dumpcmd = "DUMPALL\n";
 	struct sockaddr_un	sa;
 
 	memset(&sa, '\0', sizeof(sa));
@@ -234,7 +234,6 @@ static TYPE_FD sstate_connect(void)
 	/* continued below... */
 #else /* WIN32 */
 	char		pipename[SMALLBUF];
-	const char	*dumpcmd = "DUMPALL\n";
 	BOOL		result = FALSE;
 
 	snprintf(pipename, sizeof(pipename), "\\\\.\\pipe\\%s/%s", dflt_statepath(), device_path);
@@ -324,12 +323,12 @@ static int sstate_sendline(const char *buf)
 	DWORD bytesWritten = 0;
 	BOOL  result = FALSE;
 
-	result = WriteFile (upsfd,buf,strlen(buf),&bytesWritten,NULL);
+	result = WriteFile (upsfd, buf, strlen(buf), &bytesWritten, NULL);
 
-	if( result == 0 ) {
+	if (result == 0) {
 		ret = 0;
 	}
-	else  {
+	else {
 		ret = (int)bytesWritten;
 	}
 #endif
