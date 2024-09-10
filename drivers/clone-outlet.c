@@ -29,7 +29,7 @@
 #endif
 
 #define DRIVER_NAME	"Clone outlet UPS driver"
-#define DRIVER_VERSION	"0.05"
+#define DRIVER_VERSION	"0.06"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -80,7 +80,7 @@ static OVERLAPPED	read_overlapped;
 static int parse_args(size_t numargs, char **arg)
 {
 	if (numargs < 1) {
-		return 0;
+		goto skip_out;
 	}
 
 	if (!strcasecmp(arg[0], "PONG")) {
@@ -105,7 +105,7 @@ static int parse_args(size_t numargs, char **arg)
 	}
 
 	if (numargs < 2) {
-		return 0;
+		goto skip_out;
 	}
 
 	/* DELINFO <var> */
@@ -115,7 +115,7 @@ static int parse_args(size_t numargs, char **arg)
 	}
 
 	if (numargs < 3) {
-		return 0;
+		goto skip_out;
 	}
 
 	/* SETINFO <varname> <value> */
@@ -145,6 +145,24 @@ static int parse_args(size_t numargs, char **arg)
 
 		dstate_setinfo(arg[1], "%s", arg[2]);
 		return 1;
+	}
+
+skip_out:
+	if (nut_debug_level > 0) {
+		char	buf[LARGEBUF];
+		size_t	i;
+		int	len = -1;
+
+		memset(buf, 0, sizeof(buf));
+		for (i = 0; i < numargs; i++) {
+			len = snprintfcat(buf, sizeof(buf), "[%s] ", arg[i]);
+		}
+		if (len > 0) {
+			buf[len - 1] = '\0';
+		}
+
+		upsdebugx(3, "%s: ignored protocol line with %" PRIuSIZE " keyword(s): %s",
+			__func__, numargs, numargs < 1 ? "<empty>" : buf);
 	}
 
 	return 0;

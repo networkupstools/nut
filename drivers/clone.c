@@ -31,7 +31,7 @@
 #endif
 
 #define DRIVER_NAME	"Clone UPS driver"
-#define DRIVER_VERSION	"0.05"
+#define DRIVER_VERSION	"0.06"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -65,8 +65,7 @@ static int	dumpdone = 0, online = 1, outlet = 1;
 static long	offdelay = 120, ondelay = 30;
 
 static PCONF_CTX_t	sock_ctx;
-static time_t	last_poll = 0, last_heard = 0,
-		last_ping = 0;
+static time_t	last_poll = 0, last_heard = 0, last_ping = 0;
 
 #ifndef WIN32
 /* TODO: Why not built in WIN32? */
@@ -82,7 +81,7 @@ static int instcmd(const char *cmdname, const char *extra);
 static int parse_args(size_t numargs, char **arg)
 {
 	if (numargs < 1) {
-		return 0;
+		goto skip_out;
 	}
 
 	if (!strcasecmp(arg[0], "PONG")) {
@@ -107,7 +106,7 @@ static int parse_args(size_t numargs, char **arg)
 	}
 
 	if (numargs < 2) {
-		return 0;
+		goto skip_out;
 	}
 
 	/* DELINFO <var> */
@@ -117,7 +116,7 @@ static int parse_args(size_t numargs, char **arg)
 	}
 
 	if (numargs < 3) {
-		return 0;
+		goto skip_out;
 	}
 
 	/* SETINFO <varname> <value> */
@@ -161,6 +160,24 @@ static int parse_args(size_t numargs, char **arg)
 
 		dstate_setinfo(arg[1], "%s", arg[2]);
 		return 1;
+	}
+
+skip_out:
+	if (nut_debug_level > 0) {
+		char	buf[LARGEBUF];
+		size_t	i;
+		int	len = -1;
+
+		memset(buf, 0, sizeof(buf));
+		for (i = 0; i < numargs; i++) {
+			len = snprintfcat(buf, sizeof(buf), "[%s] ", arg[i]);
+		}
+		if (len > 0) {
+			buf[len - 1] = '\0';
+		}
+
+		upsdebugx(3, "%s: ignored protocol line with %" PRIuSIZE " keyword(s): %s",
+			__func__, numargs, numargs < 1 ? "<empty>" : buf);
 	}
 
 	return 0;
