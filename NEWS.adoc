@@ -129,6 +129,10 @@ https://github.com/networkupstools/nut/milestone/11
    as known supported by `nutdrv_qx` (Megatec protocol) since at least
    NUT v2.7.4 release [#2395]
 
+ - bicker_ser: added new driver for Bicker 12/24Vdc UPS via RS-232 serial
+   communication protocol, which supports any UPS shipped with the PSZ-1053
+   extension module. [PR #2448]
+
  - usbhid-ups updates:
    * Support of the `onlinedischarge_log_throttle_hovercharge` in the NUT
      v2.8.2 release was found to be incomplete. [#2423, follow-up to #2215]
@@ -149,10 +153,6 @@ https://github.com/networkupstools/nut/milestone/11
      by default: `powercom_sdcmd_byte_order_fallback`. [PR #2480]
    * `cps-hid` subdriver now supports more variables, as available on e.g.
      CP1350EPFCLCD model. [PR #2540]
-
- - bicker_ser: added new driver for Bicker 12/24Vdc UPS via RS-232 serial
-   communication protocol, which supports any UPS shipped with the PSZ-1053
-   extension module. [PR #2448]
 
  - USB drivers could log `(nut_)libusb_get_string: Success` due to either
    reading an empty string or getting a success code `0` from libusb.

@@ -653,6 +653,10 @@ ASPELL_OUT_NOTERRORS = (^[ \t]*[\*\@]|^$$)
 SPELLCHECK_RECIPE_DEBUG_STREAM = /dev/null
 #SPELLCHECK_RECIPE_DEBUG_STREAM = &2
 
+# Note: if we do an interactive spell-check, it updates "nut.dict"
+# timestamp even if contents remain. If the caller left a copy of
+# the file as "$(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting",
+# and the dictionary was not in fact modified, restore the timestamp.
 $(SPELLCHECK_BUILDDIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE) $(abs_top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 	@LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	 if test x"$(SPELLCHECK_SRC_ONE)" = x ; then echo "SKIP: Bogus spellcheck call for empty target filename (with make target $@ from `pwd`)" >&2 ; exit 0; fi; \
@@ -686,7 +690,15 @@ $(SPELLCHECK_BUILDDIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_SRCDIR)/
 		*/) ;; \
 		*)  REPORT_SRCDIR="$${REPORT_SRCDIR}/" ;; \
 	 esac ; \
-	 echo "  ASPELL   Spell checking on $${REPORT_PREFIX}$${REPORT_SRCDIR}$${REPORT_SRC_ONE}"; \
+	 if [ x"$(SPELLCHECK_INTERACTIVE)" = xtrue ] ; then \
+		echo "  ASPELL   Spell checking (interactively) on $${REPORT_PREFIX}$${REPORT_SRCDIR}$${REPORT_SRC_ONE}"; \
+		LANG=$(ASPELL_ENV_LANG) LC_ALL=$(ASPELL_ENV_LANG) $(ASPELL) check $(ASPELL_NUT_COMMON_ARGS) '$(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE)' || exit ; \
+		if [ -s $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting ] && [ -s $(abs_srcdir)/$(NUT_SPELL_DICT) ] && diff $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting >/dev/null ; then \
+			touch -r $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting $(abs_srcdir)/$(NUT_SPELL_DICT) ; \
+		fi ; \
+	 else \
+		echo "  ASPELL   Spell checking on $${REPORT_PREFIX}$${REPORT_SRCDIR}$${REPORT_SRC_ONE}"; \
+	 fi ; \
 	 OUT="`(sed 's,^\(.*\)$$, \1,' | $(ASPELL) -a $(ASPELL_NUT_TEXMODE_ARGS) $(ASPELL_NUT_COMMON_ARGS) 2>&1) < '$(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE)'`" \
 		&& { if test -n "$$OUT" ; then OUT="`echo "$$OUT" | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' `" ; fi; \
 		     test -z "$$OUT" ; } \
@@ -757,17 +769,33 @@ $(abs_builddir)/$(NUT_SPELL_DICT).sorted: $(abs_srcdir)/$(NUT_SPELL_DICT)
 
 DISTCLEANFILES = $(NUT_SPELL_DICT).bak-pre-sorting .$(NUT_SPELL_DICT).sorted $(NUT_SPELL_DICT).sorted
 
+# NOTE: In "make SPELLCHECK_INTERACTIVE=true ${docsrc}-spellchecked",
+# after an interactive "aspell check" we follow-up by a run of usual
+# non-interactive spell-checker to verify that the developer actually
+# has fixed all of the files that the tool had concerns about, and
+# that the touch-file is updated if the file is okay (to speed up
+# any future re-runs). We also must update all relevant *-spellchecked
+# touch-files after "make spellcheck-sortdict" which updates "nut.dict"
+# file which is a prerequisite for docs checks.
 spellcheck-interactive: 
-	@FAILED="" ; for docsrc in $(SPELLCHECK_SRC); do \
-		echo "Spell checking on $(SPELLCHECK_SRCDIR)/$$docsrc"; \
-		LANG=$(ASPELL_ENV_LANG) LC_ALL=$(ASPELL_ENV_LANG) $(ASPELL) check $(ASPELL_NUT_COMMON_ARGS) $(SPELLCHECK_SRCDIR)/$$docsrc || \
-			FAILED="$$FAILED $(SPELLCHECK_SRCDIR)/$$docsrc"; \
-	done ; \
-	if test -n "$$FAILED" ; then \
+	@cp -pf $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting
+	+@FAILED="" ; for docsrc in $(SPELLCHECK_SRC); do \
+		if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
+			echo "ASPELL (INTERACTIVE) MAKEFILE DEBUG: Will see from `pwd` if '$(SPELLCHECK_SRCDIR)/$${docsrc}-spellchecked' is up to date" >&2; \
+		else true ; fi ; \
+		$(MAKE) $(AM_MAKEFLAGS) -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_INTERACTIVE="true" SPELLCHECK_SRC="" SPELLCHECK_SRC_ONE="$${docsrc}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" \
+		|| FAILED="$$FAILED $(SPELLCHECK_SRCDIR)/$$docsrc"; \
+	 done ; \
+	 if test -n "$$FAILED" ; then \
 		echo "FAILED interactive spellcheck for the following sources (relative to `pwd`) using custom dictionary file '$(NUT_SPELL_DICT)': $$FAILED" >&2 ; \
 		exit 1; \
-	fi ; exit 0
-	+$(MAKE) $(AM_MAKEFLAGS) spellcheck-sortdict
+	 fi ; \
+	 $(MAKE) $(AM_MAKEFLAGS) spellcheck-sortdict || exit ; \
+	 for docsrc in $(SPELLCHECK_SRC); do \
+		if test -e "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" ; then \
+			touch "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" ; \
+		fi ; \
+	 done
 	@echo "------------------------------------------------------------------------"; \
 	 echo "Custom dictionary file $(NUT_SPELL_DICT) may have been updated now."; \
 	 echo "Use e.g. 'git add -p docs/$(NUT_SPELL_DICT) && git checkout -- docs/$(NUT_SPELL_DICT) && make spellcheck-sortdict && git add -p docs/$(NUT_SPELL_DICT)'"; \
