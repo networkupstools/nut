@@ -291,6 +291,18 @@ input: Incoming line/power information
                                 transfer point (V)                | 230
 | input.transfer.trim.high    | High voltage trimming
                                 transfer point (V)                | 240
+| input.transfer.eco.low      | Low voltage ECO
+                                transfer point (V)                | 218
+| input.transfer.bypass.low   | Low voltage Bypass
+                                transfer point (V)                | 184
+| input.transfer.eco.high     | High voltage ECO
+                                transfer point (V)                | 241
+| input.transfer.bypass.high  | High voltage Bypass
+                                transfer point (V)                | 264
+| input.transfer.frequency.   | Frequency range Bypass
+  bypass.range                  transfer point (percent Hz)       | 10
+| input.transfer.frequency.   | Frequency range ECO transfer
+  eco.range                     point (percent Hz)                | 5
 | input.load                  | Load on (ePDU) input (percent
                                 of full)                          | 25
 | input.realpower             | Current sum value of all (ePDU)
