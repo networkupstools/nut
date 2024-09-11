@@ -168,13 +168,12 @@ AC_DEFUN([AX_REALPATH_LIB],
             AX_REALPATH([${myLIBPATH}], [myLIBPATH_REAL])
             AC_MSG_RESULT(${myLIBPATH_REAL})
             $2="${myLIBPATH_REAL}"
-            ],[
+        ],[
             AC_MSG_RESULT([not found])
             $2="$3"
-            ])
-        ],
-        [AC_MSG_WARN([Compiler not detected as GCC/CLANG-compatible, skipping REALPATH_LIB($1)])
-         $2="$3"
-        ]
-    )
+        ])
+    ],
+    [AC_MSG_WARN([Compiler not detected as GCC/CLANG-compatible, skipping REALPATH_LIB($1)])
+     $2="$3"
+    ])
 ])
