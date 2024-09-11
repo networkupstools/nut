@@ -1,7 +1,9 @@
 /*
-* clone.c: UPS driver clone
+* clone.c: clone an UPS, treating its outlet as if it were an UPS
+*          (with shutdown INSTCMD support)
 *
 * Copyright (C) 2009 - Arjen de Korte <adkorte-guest@alioth.debian.org>
+* Copyright (C) 2024 - Jim Klimov <jimklimov+nut@gmail.com>
 *
 * This program is free software; you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
