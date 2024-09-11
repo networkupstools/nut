@@ -153,6 +153,11 @@ https://github.com/networkupstools/nut/milestone/11
      by default: `powercom_sdcmd_byte_order_fallback`. [PR #2480]
    * `cps-hid` subdriver now supports more variables, as available on e.g.
      CP1350EPFCLCD model. [PR #2540]
+   * USB parameters (per `usb_communication_subdriver_t`) are now set back to
+     their default values during enumeration after probing each subdriver.
+     Having an unrelated device connected with a VID:PID matching the
+     `arduino-hid` subdriver prevented use of an actual `usb-hid` device due to
+     changes made to this struct during probe. [#2611]
 
  - USB drivers could log `(nut_)libusb_get_string: Success` due to either
    reading an empty string or getting a success code `0` from libusb.
@@ -171,6 +176,10 @@ https://github.com/networkupstools/nut/milestone/11
      `nutdrv_atcl_usb`) and for general code to collect string readings and
      other data points, and to configure the fallback locale or choose one
      if several are served by the device. [issues #2613, #2614, #2615]
+
+ - USB drivers should now be more likely to succeed with iterative detection
+   of an UPS interface on a composite USB device or when looking at devices
+   with non-default interface/endpoint/config numbers. [PR #2611]
 
  - Introduced a new driver concept for interaction with OS-reported hardware
    monitoring readings. Currently instantiated as `hwmon_ina219` specifically

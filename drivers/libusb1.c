@@ -152,6 +152,20 @@ static int nut_libusb_set_altinterface(libusb_device_handle *udev)
 	return ret;
 }
 
+static void nut_libusb_subdriver_defaults(usb_communication_subdriver_t *subdriver)
+{
+	if (!getval("usb_config_index"))
+		subdriver->usb_config_index = LIBUSB_DEFAULT_CONF_INDEX;
+	if (!getval("usb_hid_rep_index"))
+		subdriver->hid_rep_index = LIBUSB_DEFAULT_INTERFACE;
+	if (!getval("usb_hid_desc_index"))
+		subdriver->hid_desc_index = LIBUSB_DEFAULT_DESC_INDEX;
+	if (!getval("usb_hid_ep_in"))
+		subdriver->hid_ep_in = LIBUSB_DEFAULT_HID_EP_IN;
+	if (!getval("usb_hid_ep_out"))
+		subdriver->hid_ep_out = LIBUSB_DEFAULT_HID_EP_OUT;
+}
+
 /* On success, fill in the curDevice structure and return the report
  * descriptor length. On failure, return -1.
  * Note: When callback is not NULL, the report descriptor will be
@@ -795,6 +809,8 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			/* if (if_claimed)
 				libusb_release_interface(udev, usb_subdriver.hid_rep_index); */
 			libusb_close(udev);
+			/* reset any parameters modified by unmatched drivers back to defaults */
+			nut_libusb_subdriver_defaults(&usb_subdriver);
 	}
 
 	*udevp = NULL;
