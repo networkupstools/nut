@@ -71,7 +71,9 @@ UPS manufacturers
 
 [[Eaton]]
 * link:http://powerquality.eaton.com[Eaton], has been the main NUT supporter in
-the past, between 2007 and 2011, continuing MGE UPS SYSTEMS efforts.
+the past, between 2007 and 2011, continuing MGE UPS SYSTEMS efforts. In 2022,
+the Eaton NUT-based companion software bundle sources developed (pre-?)2013-2018
+were contributed and re-licensed to become part of NUT.
 As such, Eaton has been:
   - providing extensive technical documents (Eaton protocols library),
   - providing units to developers of NUT and related projects,

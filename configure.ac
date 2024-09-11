@@ -314,12 +314,32 @@ htmldir='${prefix}/html'
 htmldocdir='${docdir}/html-doc'
 htmlmandir='${docdir}/html-man'
 pkgconfigdir='${libdir}/pkgconfig'
-auglensdir='/usr/share/augeas/lenses/dist'
-if test ! -d "${auglensdir}"; then
-   auglensdir='/usr/share/augeas/lenses'
-   if test ! -d "${auglensdir}"; then
-      auglensdir=''
-   fi
+
+dnl Detection of augeas lens dirs is a bit troublesome, since
+dnl they (if present) reside in location not controlled by NUT.
+dnl Try detecting based on build parameters, or fall back to
+dnl hard-coded default location (may break e.g. distcheck).
+dnl Note it would not work too well for "/usr/local/ups" :)
+auglensdir='${datarootdir}/augeas/lenses/dist'
+conftemp="${auglensdir}"
+eval conftemp=\"${conftemp}\"
+eval conftemp=\"${conftemp}\"
+
+if test ! -d "${conftemp}"; then
+    auglensdir='${datarootdir}/augeas/lenses'
+    conftemp="${auglensdir}"
+    eval conftemp=\"${conftemp}\"
+    eval conftemp=\"${conftemp}\"
+
+    if test ! -d "${conftemp}"; then
+        auglensdir='/usr/share/augeas/lenses/dist'
+        if test ! -d "${auglensdir}"; then
+            auglensdir='/usr/share/augeas/lenses'
+            if test ! -d "${auglensdir}"; then
+                auglensdir=''
+            fi
+        fi
+    fi
 fi
 
 dnl ### NUT_CHECK_LIBREGEX ### Detect below as part of libusb etc.
