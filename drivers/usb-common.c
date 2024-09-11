@@ -416,7 +416,10 @@ void warn_if_bad_usb_port_filename(const char *fn) {
  */
 #define MAX_STRING_DESC_TRIES 3
 
-/* API neutral, handles retries */
+/* API neutral, handles retries.
+ * Note for future development: a variant of this code is adapted into
+ * tools/nut-scanner/scan_usb.c - please keep in sync if changing here.
+ */
 static int nut_usb_get_string_descriptor(
 	usb_dev_handle *udev,
 	int StringIdx,
@@ -439,7 +442,10 @@ static int nut_usb_get_string_descriptor(
 	return ret;
 }
 
-/* API neutral, assumes en_US if langid descriptor is broken */
+/* API neutral, assumes en_US if langid descriptor is broken.
+ * Note for future development: a variant of this code is adapted into
+ * tools/nut-scanner/scan_usb.c - please keep in sync if changing here.
+ */
 int nut_usb_get_string(
 	usb_dev_handle *udev,
 	int StringIdx,
