@@ -166,9 +166,11 @@ https://github.com/networkupstools/nut/milestone/11
    * Currently this was tested to fix certain device discovery with `usbhid-ups`;
      should also apply out of the box to same discovery logic in `blazer_usb`,
      `nutdrv_qx`, `riello_usb` and `tripplite_usb` drivers.
+   * Also applied to `nut-scanner` and `libnutscan`. [issue #2615]
    * More work may be needed for other USB-capable drivers (`richcomm_usb`,
      `nutdrv_atcl_usb`) and for general code to collect string readings and
-     other data points, and for `nut-scanner`.
+     other data points, and to configure the fallback locale or choose one
+     if several are served by the device. [issues #2613, #2614, #2615]
 
  - Introduced a new driver concept for interaction with OS-reported hardware
    monitoring readings. Currently instantiated as `hwmon_ina219` specifically
