@@ -69,7 +69,7 @@ static struct {
 static int	dumpdone = 0;
 
 static PCONF_CTX_t	sock_ctx;
-static time_t	last_heard = 0, last_ping = 0;
+static time_t	last_poll = 0, last_heard = 0, last_ping = 0;
 
 #ifndef WIN32
 /* TODO: Why not built in WIN32? */
@@ -468,6 +468,18 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
+	time_t	now = time(NULL);
+	double	d;
+
+	/* Throttle tight loops to avoid CPU burn, e.g. when the socket to driver
+	 * is not in fact connected, so a select() somewhere is not waiting much */
+	if (last_poll > 0 && (d = difftime(now, last_poll)) < 1.0) {
+		upsdebugx(5, "%s: too little time (%g sec) has passed since last cycle, throttling",
+			__func__, d);
+		usleep(500000);
+		now = time(NULL);
+	}
+
 	if (sstate_dead(15)) {
 		sstate_disconnect();
 		extrafd = upsfd = sstate_connect();
@@ -493,6 +505,8 @@ void upsdrv_updateinfo(void)
 
 	upsdebugx(3, "%s: power state not critical", getval("prefix"));
 	dstate_setinfo("ups.status", "%s", ups.status);
+
+	last_poll = now;
 }
 
 

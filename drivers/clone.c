@@ -576,6 +576,16 @@ void upsdrv_initinfo(void)
 void upsdrv_updateinfo(void)
 {
 	time_t	now = time(NULL);
+	double	d;
+
+	/* Throttle tight loops to avoid CPU burn, e.g. when the socket to driver
+	 * is not in fact connected, so a select() somewhere is not waiting much */
+	if (last_poll > 0 && (d = difftime(now, last_poll)) < 1.0) {
+		upsdebugx(5, "%s: too little time (%g sec) has passed since last cycle, throttling",
+			__func__, d);
+		usleep(500000);
+		now = time(NULL);
+	}
 
 	if (sstate_dead(15)) {
 		sstate_disconnect();
