@@ -607,7 +607,7 @@ install-win-bundle-thirdparty:
 	        echo "   DLL->cgi       $$D" 2>&1 ; \
 	        ln -f '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
 	    done ; \
-	 ) || exit
+	 ) || exit ; \
 	 (  if test x"$(libexecdir)" = x"$(bindir)" ; then exit 0 ; fi ; \
 	    if test x"$(libexecdir)" = x"$(sbindir)" ; then exit 0 ; fi ; \
 	    if test x"$(libexecdir)" = x"$(driverexecdir)" ; then exit 0 ; fi ; \
@@ -618,7 +618,7 @@ install-win-bundle-thirdparty:
 	        echo "   DLL->libexec   $$D" 2>&1 ; \
 	        ln -f '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
 	    done ; \
-	 ) || exit ; \
+	 ) || exit
 	@echo "CHECKING if any executable files were installed to locations other than those covered by this recipe, so might not have needed DLLs bundled near them" >&2 ; \
 	 relbindir="`echo './$(bindir)/' | sed 's,//*,/,g'`" ; \
 	 relsbindir="`echo './$(sbindir)/' | sed 's,//*,/,g'`" ; \
