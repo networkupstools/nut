@@ -1,20 +1,20 @@
-CLONE(8)
-========
+CLONE-OUTLET(8)
+===============
 
 NAME
 ----
 
-clone - clone an UPS, treating its outlet as if it were an UPS (with shutdown INSTCMD support)
+clone-outlet - clone an UPS, treating its outlet as if it were an UPS (monitoring only)
 
 SYNOPSIS
 --------
 
-*clone* -h
+*clone-outlet* -h
 
-*clone* -a 'UPS_NAME' ['OPTIONS']
+*clone-outlet* -a 'UPS_NAME' ['OPTIONS']
 
 NOTE: This man page only documents the specific features of the
-clone driver.  For information about the core driver, see
+clone-outlet driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 DESCRIPTION
@@ -22,10 +22,10 @@ DESCRIPTION
 
 This driver, which sits on top of another driver socket, allows users to group
 clients to a particular outlet of a device and deal with this output as if it
-were a normal UPS.  Unlike the linkman:clone-outlet[8] driver, this driver
-represents a manageable device for that can be used both for monitoring and
-for client computer and UPS/ePDU outlet shutdowns (it supports sending
-relevant instant commands during run time).
+were a normal UPS.  Unlike the linkman:clone[8] driver or linkman:dummy-ups[8]
+in repeater mode, this driver represents a read-only device for monitoring and
+shutdowns (it does not accept setting any values or sending instant commands
+during run time).
 
 Unlike linkman:dummy-ups[8], this driver does not require a running `upsd`
 data server nor use the networked NUT protocol to talk to the "real" driver
@@ -77,40 +77,11 @@ Required. The standard NUT driver `port` setting, here it provides the name
 of the local Unix socket (or named Windows pipe) for connection to the "real"
 driver.
 
-*load.off*='command'::
-Recommended.  Set the command on the "real" UPS driver that will be used to
-switch off the outlet.  You need both *load.off* and *load.on* in
-order to power cycle the outlet.  Otherwise, shutting down the clients
-powered by an outlet is a one way street (see <<_important,IMPORTANT>>).
-
-*load.on*='command'::
-Recommended.  Set the command on the "real" UPS driver that will be used to
-switch on the outlet.  You need both *load.off* and *load.on* in
-order to power cycle the outlet.  Otherwise, shutting down the clients
-powered by an outlet is a one way street (see <<_important,IMPORTANT>>).
-
-*load.status*='value'::
-Recommended.  Set the variable on the "real" UPS driver that will be used
-to indicate the outlet status (i.e. on/off).  If not specified, the clone
-driver will attempt to keep track of the outlet status, but this is less
-reliable.
-
-*offdelay*='num'::
-Set the timer (in seconds) before the outlet is turned off after the
-shutdown condition (+OB LB+) for this outlet is met or a command to shutdown
-was issued.  Defaults to 120 seconds.
-
-*ondelay*='num'::
-Set the timer (in seconds) for the outlet to switch on in case the power
-returns after the outlet has been switched off.  Defaults to 30 seconds.
-
-*mincharge*='value'::
-Set the remaining battery level when the clone UPS switches to LB
-(percent).
-
-*minruntime*='value'::
-Set the remaining battery runtime when the clone UPS switches to LB
-(seconds).
+*prefix*='outlet.N'::
+Required. Specify the outlet prefix as known on the original driver.
+The subset of data points reported by the "real" UPS driver for the actual device
+on this prefix would be reported as data points of the virtual UPS maintained by
+this driver.
 
 IMPLEMENTATION
 --------------
@@ -125,48 +96,39 @@ is using. For example:
      port = auto
 
   [clone-outlet-1]
-     driver = clone
+     driver = clone-outlet
      port = usbhid-ups-realups
-     load.on = outlet.1.load.on
-     load.off = outlet.1.load.off
-     load.status = outlet.1.status
+     prefix = outlet.1
      desc = "Outlet 1 of the Real UPS"
      [...]
 ------
 
-This driver supports instant commands to initiate a forced shutdown for
-`upsmon` or similar clients which `MONITOR` this virtual UPS device, if
-the outlet status is currently 'on' and no other shutdown was initiated
-yet (setting the virtual UPS shutdown delay timer to `offdelay` and
-issuing an FSD via `ups.status`):
+The driver internally interprets "real" driver's information about shutdown
+delay and shutdown timer, whole UPS status and this outlet's status, and
+relays other data points as they were.
 
-* `shutdown.return` -- power the outlet back on after `ondelay`;
-* `shutdown.stayoff` -- keep the outlet 'off'.
+If the outlet supports and reports a delayed power-off, the virtual UPS would
+issue an FSD via `ups.status` for its clients to shut down safely.
 
-Such commands are propagated to the "real" driver using the NUT socket
-protocol (using command names specified in the `load.off` and `load.on`
-driver configuration options), if the shutdown or start timers are set
-at the moment, or if the "real" device is not "online" and its known
-battery charge or runtime are below the configured "low" thresholds.
+In more detail:
 
-The outlet status is determined using the name specified by the
-`load.status` driver option if set, or is just assumed by latest
-completed shutdown/start operation (using unknown outlet number).
+Given the (required) `prefix` value such as `outlet.1`, the driver would
+specifically keep track of `<prefix>.status`, `<prefix>.delay.shutdown`,
+and `<prefix>.timer.shutdown` data points reported by the "real" driver.
+Numeric values of the `*.shutdown` readings would be noted by this driver,
+and the boolean outlet status ("off" or otherwise) will be remembered.
+These values will also be re-published by this driver "as is".
 
-The driver does not support a common NUT device shutdown operation as
-such (`clone -k` just prints an error and bails out).
+The `ups.status` from the "real" driver would be remembered, but not
+re-published by this driver immediately. Instead, it would be published
+during regular "update info" loop cycles either:
 
-This driver also supports setting certain NUT variables at run-time:
+* with the "OFF" state added (if `<prefix>.status` indicates the outlet
+  is "off"),
+* or with the "FSD" state prepended (if `<prefix>.timer.shutdown` is
+  non-negative and does not exceed the `<prefix>.delay.shutdown` value),
+* or "as is" if the outlet power state is "not critical".
 
-* `battery.charge.low` -- see `mincharge` in driver options;
-* `battery.runtime.low` -- see `minruntime` in driver options.
-
-Compared to the "real" driver's readings, this driver also adds
-(or overrides) the following data points: `ups.delay.shutdown`,
-`ups.delay.start`, `ups.timer.shutdown` and `ups.timer.start`.
-It keeps track of "real" driver's values of `battery.charge` and
-`battery.runtime` (actual current readings) to decide on automated
-outlet shutdown later on.
 
 IMPORTANT
 ---------
@@ -187,13 +149,14 @@ CAVEATS
 
 The clone UPS will follow the status on the real UPS driver.  You can only
 make the clone UPS shutdown earlier than the real UPS driver, not later.
-If the real UPS driver initiates a shutdown, the clone UPS driver will
-immediately follow.
+If the real UPS driver initiates a shutdown, the clone-outlet UPS driver
+will immediately follow.
 
 Be aware that the commands to shutdown/restart an outlet on the real UPS
 drivers are not affected, so if you tell the real UPS driver to shutdown
-the outlet of the clone UPS driver, your clients will lose power without
-warning.
+the outlet of the clone UPS driver immediately, your clients will lose
+power without warning. A delayed outlet power-off should propagate as FSD,
+and the delay should be sufficiently long to allow for client shutdowns.
 
 If you use service management frameworks like systemd or SMF to manage the
 dependencies between driver instances and other units, then you may have
@@ -216,7 +179,7 @@ SEE ALSO
 linkman:upscmd[1],
 linkman:upsrw[1],
 linkman:ups.conf[5],
-linkman:clone-outlet[8],
+linkman:clone[8],
 linkman:nutupsdrv[8]
 
 Dummy driver:

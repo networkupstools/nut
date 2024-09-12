@@ -416,7 +416,10 @@ void warn_if_bad_usb_port_filename(const char *fn) {
  */
 #define MAX_STRING_DESC_TRIES 3
 
-/* API neutral, handles retries */
+/* API neutral, handles retries.
+ * Note for future development: a variant of this code is adapted into
+ * tools/nut-scanner/scan_usb.c - please keep in sync if changing here.
+ */
 static int nut_usb_get_string_descriptor(
 	usb_dev_handle *udev,
 	int StringIdx,
@@ -433,13 +436,16 @@ static int nut_usb_get_string_descriptor(
 			break;
 		} else if (tries) {
 			upsdebugx(1, "%s: string descriptor %d request failed, retrying...", __func__, StringIdx);
-			usleep(50000); /* 50 ms, might help in some cases */
+			usleep(50000);	/* 50 ms, might help in some cases */
 		}
 	}
 	return ret;
 }
 
-/* API neutral, assumes en_US if langid descriptor is broken */
+/* API neutral, assumes en_US if langid descriptor is broken.
+ * Note for future development: a variant of this code is adapted into
+ * tools/nut-scanner/scan_usb.c - please keep in sync if changing here.
+ */
 int nut_usb_get_string(
 	usb_dev_handle *udev,
 	int StringIdx,
@@ -480,13 +486,13 @@ int nut_usb_get_string(
 
 	/* translate simple UTF-16LE to 8-bit */
 	len = ret < (int)buflen ? ret : (int)buflen;
-	len = len / 2 - 1; // 16-bit characters, without header
-	len = len < (int)buflen - 1 ? len : (int)buflen - 1; // reserve for null terminator
+	len = len / 2 - 1;	/* 16-bit characters, without header */
+	len = len < (int)buflen - 1 ? len : (int)buflen - 1;	/* reserve for null terminator */
 	for (i = 0; i < len; i++) {
 		if (buffer[2 + i * 2 + 1] == 0)
 			buf[i] = buffer[2 + i * 2];
 		else
-			buf[i] = '?'; // not decoded
+			buf[i] = '?';	/* not decoded */
 	}
 	buf[i] = '\0';
 

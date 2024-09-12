@@ -282,11 +282,16 @@ Clone driver:
 ~~~~~~~~~~~~~
 
 The "repeater" mode of 'dummy-ups' driver is in some ways similar to the
-'clone' driver, which sits on top of another driver socket, and allows
-users to group clients to a particular outlet of a device and deal with
-this output as if it were a normal UPS.
+'clone' and 'clone-outlet' drivers, which sit on top of another driver
+socket (or named Windows pipe) locally, and allow users to group clients
+to a particular outlet of a device and deal with this output as if it
+were a normal UPS.  Notably, in this mode the 'dummy-ups' driver is a
+client to the networked NUT protocol and can relay information of local
+or remotely served devices, and requires a running NUT data server 'upsd'
+to represent the "real" device for this to work.
 
-linkman:clone[8]
+linkman:clone[8],
+linkman:clone-outlet[8]
 
 Internet Resources:
 ~~~~~~~~~~~~~~~~~~~

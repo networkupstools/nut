@@ -549,7 +549,8 @@ if HAVE_WINDOWS
 # Then hardlink libraries for sbin... (alternative: all bins in one dir)
 # TOTHINK: Are there more dirs to consider? So far we cover bindir, sbindir and
 # driverexecdir (e.g. some Linux distros place drivers to /lib/nut while tools
-# and daemons are in /usr/bin and /usr/sbin), and cgiexecdir; anything else?..
+# and daemons are in /usr/bin and /usr/sbin), and cgiexecdir, and occasional
+# helpers like "sockdebug.exe" in libexecdir; anything else?..
 # Note we hold existance of cgiexecdir as optional, but the name is expected to
 # be defined. Other dirs are "just assumed" to exist (that we are not packaging
 # some NUT build without drivers/tools/daemons). Subject to change if needed.
@@ -575,7 +576,7 @@ install-win-bundle-thirdparty:
 	 (  cd '$(DESTDIR)' || exit ; \
 	    DESTDIR="" '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
-	        echo "   DLL->bin   $$D" 2>&1 ; \
+	        echo "   DLL->bin       $$D" 2>&1 ; \
 	        cp -pf "$$D" './$(bindir)/' ; \
 	    done ; \
 	 ) || exit ; \
@@ -583,7 +584,7 @@ install-win-bundle-thirdparty:
 	    cd '$(DESTDIR)/$(sbindir)' || exit ; \
 	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
-	        echo "   DLL->sbin  $$D" 2>&1 ; \
+	        echo "   DLL->sbin      $$D" 2>&1 ; \
 	        ln -f '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
 	    done ; \
 	 ) || exit ; \
@@ -592,7 +593,7 @@ install-win-bundle-thirdparty:
 	    cd '$(DESTDIR)/$(driverexecdir)' || exit ; \
 	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
-	        echo "   DLL->drv   $$D" 2>&1 ; \
+	        echo "   DLL->drv       $$D" 2>&1 ; \
 	        ln -f '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
 	    done ; \
 	 ) || exit ; \
@@ -603,7 +604,18 @@ install-win-bundle-thirdparty:
 	    cd '$(DESTDIR)/$(cgiexecdir)' || exit ; \
 	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
 	    | while read D ; do \
-	        echo "   DLL->cgi   $$D" 2>&1 ; \
+	        echo "   DLL->cgi       $$D" 2>&1 ; \
+	        ln -f '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
+	    done ; \
+	 ) || exit ; \
+	 (  if test x"$(libexecdir)" = x"$(bindir)" ; then exit 0 ; fi ; \
+	    if test x"$(libexecdir)" = x"$(sbindir)" ; then exit 0 ; fi ; \
+	    if test x"$(libexecdir)" = x"$(driverexecdir)" ; then exit 0 ; fi ; \
+	    if test x"$(libexecdir)" = x"$(cgiexecdir)" ; then exit 0 ; fi ; \
+	    cd '$(DESTDIR)/$(libexecdir)' || exit ; \
+	    '$(abs_top_srcdir)/scripts/Windows/dllldd.sh' dllldddir . \
+	    | while read D ; do \
+	        echo "   DLL->libexec   $$D" 2>&1 ; \
 	        ln -f '$(DESTDIR)/$(bindir)'/"`basename "$$D"`" ./ ; \
 	    done ; \
 	 ) || exit
@@ -612,9 +624,10 @@ install-win-bundle-thirdparty:
 	 relsbindir="`echo './$(sbindir)/' | sed 's,//*,/,g'`" ; \
 	 reldriverexecdir="`echo './$(driverexecdir)/' | sed 's,//*,/,g'`" ; \
 	 relcgiexecdir="`echo './$(cgiexecdir)/' | sed 's,//*,/,g'`" ; \
+	 rellibexecdir="`echo './$(libexecdir)/' | sed 's,//*,/,g'`" ; \
 	 cd '$(DESTDIR)' || exit ; \
 	 find . -type f | grep -Ei '\.(exe|dll)$$' \
-	 | grep -vE "^($${relbindir}|$${relsbindir}|$${reldriverexecdir}|$${relcgiexecdir})" \
+	 | grep -vE "^($${relbindir}|$${relsbindir}|$${reldriverexecdir}|$${relcgiexecdir}|$${rellibexecdir})" \
 	 | ( RES=0 ; while IFS= read LINE ; do echo "$$LINE" ; RES=1; done; exit $$RES )
 
 else
