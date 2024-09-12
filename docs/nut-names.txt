@@ -319,6 +319,32 @@ input: Incoming line/power information
                                 sources (degrees)                 | 181
 |=================================================================================
 
+[NOTE]
+.Input Voltage Hysteresis
+======
+The input voltage hysteresis concept refers to a specific behavior related
+to how some UPS models can handle changes in input voltage.
+
+When the UPS is running normally (powered by utility or generator), it
+maintains a steady output voltage for your critical equipment.  But what
+if the input voltage "wiggles" a bit due to fluctuations or other minor
+disturbances?
+
+Rapid switching between UPS protection modes (utility power to battery
+and vice versa) can stress both the UPS and its connected devices.
+
+So, some UPS models set up thresholds: If the input voltage drops below
+a certain "Low" level, the UPS won't immediately switch to battery mode.
+Instead, it waits until it is sure the voltage stays consistently low
+for a bit. Similarly, if the input voltage rises above another threshold
+(the "High" level), the UPS won't rush back to normal mode. It waits for
+stability.
+
+By introducing hysteresis, such an UPS avoids unnecessary toggling, ensuring
+smoother transitions and better protection for your sensitive and expensive
+gear.
+======
+
 output: Outgoing power/inverter information
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
