@@ -299,13 +299,13 @@ input: Incoming line/power information
                                 transfer point (V)                | 241
 | input.transfer.bypass.high  | High voltage Bypass
                                 transfer point (V)                | 264
-| input.transfer.frequency.   | Frequency range Bypass transfer
-  bypass.range                  point (percent Hz) of nominal     | 10
-| input.transfer.frequency.   | Frequency range ECO transfer
-  eco.range                     point (percent Hz) of nominal     | 5
+| input.transfer.frequency.bypass.range | Frequency range Bypass transfer
+                                point (percent of nominal Hz)     | 10
+| input.transfer.frequency.eco.range    | Frequency range ECO transfer
+                                point (percent of nominal Hz)     | 5
 | input.transfer.hysteresys   | Hysteresys (threshold of
-                              | switching to modes) voltage
-                              | transfer point (V)                | 10
+                                switching to modes) voltage
+                                transfer point (V)                | 10
 | input.load                  | Load on (ePDU) input (percent
                                 of full)                          | 25
 | input.realpower             | Current sum value of all (ePDU)
