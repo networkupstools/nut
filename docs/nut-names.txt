@@ -303,9 +303,8 @@ input: Incoming line/power information
                                 point (percent of nominal Hz)     | 10
 | input.transfer.frequency.eco.range    | Frequency range ECO transfer
                                 point (percent of nominal Hz)     | 5
-| input.transfer.hysteresis   | Hysteresis (threshold of
-                                switching to modes) voltage
-                                transfer point (V)                | 10
+| input.transfer.hysteresis   | Threshold of switching protection modes,
+                                voltage transfer point (V)        | 10
 | input.load                  | Load on (ePDU) input (percent
                                 of full)                          | 25
 | input.realpower             | Current sum value of all (ePDU)
