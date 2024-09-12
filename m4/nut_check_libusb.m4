@@ -88,9 +88,13 @@ if test -z "${nut_have_libusb_seen}"; then
 		 AS_IF([test x"${LIBUSB_0_1_VERSION}" != xnone], [
 			AS_CASE(["${target_os}"],
 				[*mingw*], [
-					AC_MSG_NOTICE([mingw builds prefer libusb-0.1(-compat) if available])
-					LIBUSB_VERSION="${LIBUSB_0_1_VERSION}"
-					nut_usb_lib="(libusb-0.1)"
+					AS_IF([test x"$build" = x"$host"], [
+						AC_MSG_NOTICE([mingw/MSYS2 native builds prefer libusb-0.1(-compat) over libusb-1.0 if both are available])
+						LIBUSB_VERSION="${LIBUSB_0_1_VERSION}"
+						nut_usb_lib="(libusb-0.1)"
+						],[
+						AC_MSG_NOTICE([mingw cross-builds prefer libusb-1.0 over libusb-0.1(-compat) if both are available])
+						])
 					])
 				]
 			)
@@ -371,14 +375,48 @@ if test -z "${nut_have_libusb_seen}"; then
 	dnl with some value.
 	AS_IF([test "${nut_with_usb}" = "yes" && test "${nut_usb_lib}" = "(libusb-1.0)"],
 		[AC_DEFINE([WITH_LIBUSB_1_0], [1],
-			[Define to 1 for version 1.0 of the libusb (via pkg-config).])],
+			[Define to 1 for version 1.0 of the libusb (via pkg-config).])
+
+		 dnl Help ltdl if we can (nut-scanner etc.)
+		 for TOKEN in $LIBS ; do
+			AS_CASE(["${TOKEN}"],
+				[-l*usb*], [
+					AX_REALPATH_LIB([${TOKEN}], [SOPATH_LIBUSB1], [])
+					AS_IF([test -n "${SOPATH_LIBUSB1}" && test -s "${SOPATH_LIBUSB1}"], [
+						AC_DEFINE_UNQUOTED([SOPATH_LIBUSB1],["${SOPATH_LIBUSB1}"],[Path to dynamic library on build system])
+						SOFILE_LIBUSB1="`basename "$SOPATH_LIBUSB1"`"
+						AC_DEFINE_UNQUOTED([SOFILE_LIBUSB1],["${SOFILE_LIBUSB1}"],[Base file name of dynamic library on build system])
+						break
+					])
+				]
+			)
+		 done
+		 unset TOKEN
+                ],
 		[AC_DEFINE([WITH_LIBUSB_1_0], [0],
 			[Define to 1 for version 1.0 of the libusb (via pkg-config).])]
 	)
 
 	AS_IF([test "${nut_with_usb}" = "yes" && test "${nut_usb_lib}" = "(libusb-0.1)" -o "${nut_usb_lib}" = "(libusb-0.1-config)"],
 		[AC_DEFINE([WITH_LIBUSB_0_1], [1],
-			[Define to 1 for version 0.1 of the libusb (via pkg-config or libusb-config).])],
+			[Define to 1 for version 0.1 of the libusb (via pkg-config or libusb-config).])
+
+		 dnl Help ltdl if we can (nut-scanner etc.)
+		 for TOKEN in $LIBS ; do
+			AS_CASE(["${TOKEN}"],
+				[-l*usb*], [
+					AX_REALPATH_LIB([${TOKEN}], [SOPATH_LIBUSB0], [])
+					AS_IF([test -n "${SOPATH_LIBUSB0}" && test -s "${SOPATH_LIBUSB0}"], [
+						AC_DEFINE_UNQUOTED([SOPATH_LIBUSB0],["${SOPATH_LIBUSB0}"],[Path to dynamic library on build system])
+						SOFILE_LIBUSB0="`basename "$SOPATH_LIBUSB0"`"
+						AC_DEFINE_UNQUOTED([SOFILE_LIBUSB0],["${SOFILE_LIBUSB0}"],[Base file name of dynamic library on build system])
+						break
+					])
+				]
+			)
+		 done
+		 unset TOKEN
+                ],
 		[AC_DEFINE([WITH_LIBUSB_0_1], [0],
 			[Define to 1 for version 0.1 of the libusb (via pkg-config or libusb-config).])]
 	)

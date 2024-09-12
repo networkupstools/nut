@@ -1,5 +1,5 @@
 # Network UPS Tools (NUT) systemd integration
-# Copyright (C) 2011-2023 by NUT contirbutors
+# Copyright (C) 2011-2024 by NUT contirbutors
 # Distributed under the terms of GPLv2+
 # See https://networkupstools.org/
 # and https://github.com/networkupstools/nut/
@@ -26,6 +26,17 @@ Type=oneshot
 # Non-blocking systemd message posting should not take long,
 # or should be aborted and retried if it does (system bugs)
 TimeoutStartSec=10s
+# If some process is writing the ups.conf file, it can be interpreted in
+# some conditions by .path unit as many events requiring it to start -
+# and eventually this gets throttled as a quickly started-restarted unit.
+# While it should be permitted for manual start (likely .path trigger too)
+# after interval expiration, this might race-condition to not detect some
+# latest update into the configuration file if it happens after the main
+# script loop has slurped intermediate state of device config.
+# Note: Using the older but still supported Service/StartLimitInterval
+# see https://lists.freedesktop.org/archives/systemd-devel/2017-July/039255.html
+# for broader compatibility.
+StartLimitInterval=0
 ExecStart=/bin/systemctl reload-or-restart --no-block nut-driver-enumerator-daemon.service
 
 [Install]

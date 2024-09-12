@@ -3,6 +3,7 @@
 
     Copyright (C)
         2012	Vaclav Krpec  <VaclavKrpec@Eaton.com>
+        2024	Jim Klimov <jimklimov+nut@gmail.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -29,7 +30,7 @@
 #include <list>
 #include <map>
 #include <cassert>
-
+#include <typeinfo>
 
 /**
  *  \brief  NUT configuration directive generator
@@ -64,6 +65,50 @@
 	} while (0)
 
 
+/**
+ *  \brief  Shell (envvar) configuration directive generator
+ *
+ *  The macro is used to simplify generation of
+ *  nut.conf file directives.
+ *
+ *  IMPORTANT NOTE:
+ *  In case of writing error, the macro causes immediate
+ *  return from the calling function (propagating the writing status).
+ *
+ *  \param  name       Directive name
+ *  \param  arg_t      Directive argument implementation type
+ *  \param  arg        Directive argument
+ *  \param  quote_arg  Boolean flag; check to quote the argument
+ */
+// NOTE: Due to this being a macro applied to any argument type,
+// implementation for e.g. bool handling jumps through hoops like
+// stringification and back. FIXME: working optimization welcome.
+#define SHELL_CONFIG_DIRECTIVEX(name, arg_t, arg, quote_arg) \
+	do { \
+		if ((arg).set()) { \
+			const arg_t & arg_val = (arg); \
+			std::stringstream ss; \
+			ss << name << '='; \
+			if (quote_arg) \
+				ss << '\''; \
+			if (typeid(arg_val) == typeid(bool&)) { \
+				std::stringstream ssb; \
+				ssb << arg_val; \
+				std::string sb = ssb.str(); \
+				if ("1" == sb) { ss << "true"; } \
+				else if ("0" == sb) { ss << "false"; } \
+				else { ss << arg_val; } \
+			} else \
+				ss << arg_val; \
+			if (quote_arg) \
+				ss << '\''; \
+			status_t status = writeDirective(ss.str()); \
+			if (NUTW_OK != status) \
+				return status; \
+		} \
+	} while (0)
+
+
 namespace nut {
 
 
@@ -71,10 +116,18 @@ namespace nut {
  * error: 'ClassName' has no out-of-line virtual method definitions; its vtable
  *   will be emitted in every translation unit [-Werror,-Wweak-vtables]
  */
-NutConfigWriter::~NutConfigWriter() {}
-NutConfConfigWriter::~NutConfConfigWriter() {}
-UpsmonConfigWriter::~UpsmonConfigWriter() {}
-UpsdConfigWriter::~UpsdConfigWriter() {}
+NutConfigWriter::~NutConfigWriter() {}	// generic interface/base class
+// Flat-config classes:
+NutConfConfigWriter::~NutConfConfigWriter() {}	// nut.conf, shell format
+UpsmonConfigWriter::~UpsmonConfigWriter() {}	// upsmon.conf
+UpsdConfigWriter::~UpsdConfigWriter() {}		// upsd.conf
+// Structured-config classes R/W is handled via GenericConfiguration:
+//	UpsConfiguration:		ups.conf
+//	UpsdUsersConfiguration:	upsd.users
+// Not handled currently:
+//	xxx:	upssched.conf
+//	xxx:	upsset.conf
+//	xxx:	hosts.conf
 
 // End-of-Line separators (arch. dependent)
 
@@ -95,6 +148,62 @@ const std::string & NutWriter::eol(LF);
 
 const std::string GenericConfigWriter::s_default_section_entry_indent("\t");
 const std::string GenericConfigWriter::s_default_section_entry_separator(" = ");
+
+
+/**
+ *  \brief  NSS certificate identity serializer
+ *
+ *  \param  ident  Certificate identity object
+ *
+ *  \return Serialized certificate identity
+ */
+static std::string serializeCertIdent(const nut::CertIdent & ident) {
+	std::stringstream directive;
+	const std::string & val1 = (ident.certName), val2 = (ident.certDbPass);
+
+	directive << "CERTIDENT \"" << val1 << "\" \"" << val2 << "\"";
+
+	return directive.str();
+}
+
+
+/**
+ *  \brief  NSS certificate-protected host info serializer
+ *
+ *  \param  certHost  Certificate-protected host info object
+ *
+ *  \return Serialized certificate-protected host info
+ */
+static std::string serializeCertHost(const nut::CertHost & certHost) {
+	std::stringstream directive;
+	const std::string & val1 = (certHost.host), val2 = (certHost.certName);
+
+	directive << "CERTHOST \"" << val1 << "\" \"" << val2 << "\"";
+
+	// Spec says to write these as 0/1 integers
+	nut::BoolInt bi;
+	int i;
+	// NOTE: After copy-assignments below (which inherit original strictness),
+	// need to add relaxed mode for 0/1 as false/true handling:
+	//bi.bool01 = true;
+
+	// Avoid static analysis concerns that the internal _value
+	// "may be used uninitialized in this function" (ETOOSMART):
+	bi = false;
+
+	// Assumed to be set() - exception otherwise
+	bi = certHost.certVerify;
+	bi.bool01 = true;
+	i = bi;
+	directive << " " << i;
+
+	bi = certHost.forceSsl;
+	bi.bool01 = true;
+	i = bi;
+	directive << " " << i;
+
+	return directive.str();
+}
 
 
 NutWriter::status_t NutWriter::writeEachLine(const std::string & str, const std::string & pref) {
@@ -145,11 +254,10 @@ NutWriter::status_t SectionlessConfigWriter::writeSectionName(const std::string 
 
 
 NutWriter::status_t NutConfConfigWriter::writeConfig(const NutConfiguration & config) {
-	status_t status;
-
 	// Mode
 	// TBD: How should I serialize an unknown mode?
 	if (config.mode.set()) {
+		status_t status;
 		std::string mode_str;
 
 		NutConfiguration::NutMode mode = config.mode;
@@ -181,6 +289,31 @@ NutWriter::status_t NutConfConfigWriter::writeConfig(const NutConfiguration & co
 			case NutConfiguration::MODE_MANUAL:
 				mode_str = "manual";
 				break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+			default:
+				/* Must not occur. */
+				break;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 		}
 
 		status = writeDirective("MODE=" + mode_str);
@@ -188,6 +321,31 @@ NutWriter::status_t NutConfConfigWriter::writeConfig(const NutConfiguration & co
 		if (NUTW_OK != status)
 			return status;
 	}
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+	SHELL_CONFIG_DIRECTIVEX("ALLOW_NO_DEVICE",		bool,			config.allowNoDevice,	false);
+	SHELL_CONFIG_DIRECTIVEX("ALLOW_NOT_ALL_LISTENERS",	bool,		config.allowNotAllListeners,	false);
+	SHELL_CONFIG_DIRECTIVEX("UPSD_OPTIONS",			std::string,	config.upsdOptions,		true);
+	SHELL_CONFIG_DIRECTIVEX("UPSMON_OPTIONS",		std::string,	config.upsmonOptions,	true);
+	SHELL_CONFIG_DIRECTIVEX("POWEROFF_WAIT",		unsigned int,	config.poweroffWait,	false);
+	SHELL_CONFIG_DIRECTIVEX("POWEROFF_QUIET",		bool,			config.poweroffQuiet,	false);
+	SHELL_CONFIG_DIRECTIVEX("NUT_DEBUG_LEVEL",		int,			config.debugLevel,		false);
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+# pragma GCC diagnostic pop
+#endif
 
 	return NUTW_OK;
 }
@@ -240,6 +398,14 @@ const NotifyFlagsStrings::TypeStrings NotifyFlagsStrings::type_str = {
 	"REPLBATT",	// NOTIFY_REPLBATT
 	"NOCOMM",	// NOTIFY_NOCOMM
 	"NOPARENT",	// NOTIFY_NOPARENT
+	"CAL\t",	// NOTIFY_CAL (including padding)
+	"NOTCAL",	// NOTIFY_NOTCAL
+	"OFF\t",	// NOTIFY_OFF (including padding)
+	"NOTOFF",	// NOTIFY_NOTOFF
+	"BYPASS",	// NOTIFY_BYPASS
+	"NOTBYPASS",	// NOTIFY_NOTBYPASS
+	"SUSPEND_STARTING",	// NOTIFY_SUSPEND_STARTING
+	"SUSPEND_FINISHED",	// NOTIFY_SUSPEND_FINISHED
 };
 
 
@@ -391,8 +557,9 @@ static std::string serializeMonitor(const UpsmonConfiguration::Monitor & monitor
 	// Username & password
 	directive << monitor.username << ' ' << monitor.password << ' ';
 
-	// Master/slave
-	directive << (monitor.isMaster ? "master" : "slave");
+	// Primary/secondary (legacy master/slave)
+	directive << (monitor.isPrimary ? "primary" : "secondary");
+	/* NUT v2.7.4 and older: directive << (monitor.isPrimary ? "master" : "slave");*/
 
 	return directive.str();
 }
@@ -415,7 +582,7 @@ NutWriter::status_t UpsmonConfigWriter::writeConfig(const UpsmonConfiguration & 
 	 *  \param  arg        Directive argument
 	 *  \param  quote_arg  Boolean flag; check to quote the argument
 	 */
-	#define UPSMON_DIRECTIVEX(name, arg_t, arg, quote_arg) \
+#	define UPSMON_DIRECTIVEX(name, arg_t, arg, quote_arg) \
 		CONFIG_DIRECTIVEX(name, arg_t, arg, quote_arg)
 
 /* The "false" arg in macro below evaluates to `if (false) ...` after
@@ -431,14 +598,55 @@ NutWriter::status_t UpsmonConfigWriter::writeConfig(const UpsmonConfiguration & 
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Wunreachable-code"
 #endif
-	UPSMON_DIRECTIVEX("RUN_AS_USER",    std::string,  config.runAsUser,      false);
+	UPSMON_DIRECTIVEX("DEBUG_MIN",      int,          config.debugMin,       false);
+	UPSMON_DIRECTIVEX("RUN_AS_USER",    std::string,  config.runAsUser,      true);
 	UPSMON_DIRECTIVEX("SHUTDOWNCMD",    std::string,  config.shutdownCmd,    true);
 	UPSMON_DIRECTIVEX("NOTIFYCMD",      std::string,  config.notifyCmd,      true);
-	UPSMON_DIRECTIVEX("POWERDOWNFLAG",  std::string,  config.powerDownFlag,  false);
+	UPSMON_DIRECTIVEX("POWERDOWNFLAG",  std::string,  config.powerDownFlag,  true);
 	UPSMON_DIRECTIVEX("MINSUPPLIES",    unsigned int, config.minSupplies,    false);
-	UPSMON_DIRECTIVEX("POLLFREQ",       unsigned int, config.poolFreq,       false);
-	UPSMON_DIRECTIVEX("POLLFREQALERT",  unsigned int, config.poolFreqAlert,  false);
-	UPSMON_DIRECTIVEX("HOSTSYNC",       unsigned int, config.hotSync,        false);
+	UPSMON_DIRECTIVEX("POLLFREQ",       unsigned int, config.pollFreq,       false);
+	UPSMON_DIRECTIVEX("POLLFREQALERT",  unsigned int, config.pollFreqAlert,  false);
+	UPSMON_DIRECTIVEX("POLLFAIL_LOG_THROTTLE_MAX", int, config.pollFailLogThrottleMax,  false);
+	UPSMON_DIRECTIVEX("OFFDURATION",    int,          config.offDuration,    false);
+	UPSMON_DIRECTIVEX("OBLBDURATION",   int,          config.oblbDuration,   false);
+	UPSMON_DIRECTIVEX("SHUTDOWNEXIT",   nut::BoolInt, config.shutdownExit,   false);
+
+	UPSMON_DIRECTIVEX("CERTPATH",       std::string,  config.certPath,       true);
+
+	// Spec says to write these as 0/1 integers
+	// and the macro requires Settable<>
+	// Mumbo-jumbo below for guaranteed casting to int
+	nut::BoolInt bi, bi2;
+	Settable<nut::BoolInt> bis;
+	int i;
+	// NOTE: After copy-assignments below (which inherit original strictness),
+	// need to add relaxed mode for 0/1 as false/true handling:
+	// bi.bool01 = true;
+	bi2.bool01 = false;	// strict mode for 0/1 as int handling
+	// Avoid static analysis concerns that the internal _value
+	// "may be used uninitialized in this function" (ETOOSMART):
+	bi = false;
+	bi2 = false;
+
+	if (config.certVerify.set()) {
+		bi = config.certVerify;
+		bi.bool01 = true;
+		i = bi;
+		bi2 = i;
+		bis = bi2;
+		UPSMON_DIRECTIVEX("CERTVERIFY",     nut::BoolInt, bis,                   false);
+	}
+
+	if (config.forceSsl.set()) {
+		bi = config.forceSsl;
+		bi.bool01 = true;
+		i = bi;
+		bi2 = i;
+		bis = bi2;
+		UPSMON_DIRECTIVEX("FORCESSL",       nut::BoolInt, bis,                   false);
+	}
+
+	UPSMON_DIRECTIVEX("HOSTSYNC",       unsigned int, config.hostSync,       false);
 	UPSMON_DIRECTIVEX("DEADTIME",       unsigned int, config.deadTime,       false);
 	UPSMON_DIRECTIVEX("RBWARNTIME",     unsigned int, config.rbWarnTime,     false);
 	UPSMON_DIRECTIVEX("NOCOMMWARNTIME", unsigned int, config.noCommWarnTime, false);
@@ -450,7 +658,29 @@ NutWriter::status_t UpsmonConfigWriter::writeConfig(const UpsmonConfiguration & 
 # pragma GCC diagnostic pop
 #endif
 
-	#undef UPSMON_DIRECTIVEX
+#	undef UPSMON_DIRECTIVEX
+
+	// Certificate identity
+	if (config.certIdent.set()) {
+		std::string directive = serializeCertIdent(config.certIdent);
+
+		status_t status = writeDirective(directive);
+
+		if (NUTW_OK != status)
+			return status;
+	}
+
+	// Remote host(s) protected by specific certificates on their listeners
+	std::list<nut::CertHost>::const_iterator la_iter = config.certHosts.begin();
+
+	for (; la_iter != config.certHosts.end(); ++la_iter) {
+		std::string directive = serializeCertHost(*la_iter);
+
+		status_t status = writeDirective(directive);
+
+		if (NUTW_OK != status)
+			return status;
+	}
 
 	UpsmonConfiguration::NotifyType type;
 
@@ -532,7 +762,7 @@ NutWriter::status_t UpsdConfigWriter::writeConfig(const UpsdConfiguration & conf
 	 *  \param  arg_t      Directive argument implementation type
 	 *  \param  arg        Directive argument
 	 */
-	#define UPSD_DIRECTIVEX(name, arg_t, arg) \
+#	define UPSD_DIRECTIVEX(name, arg_t, arg) \
 		CONFIG_DIRECTIVEX(name, arg_t, arg, false)
 
 /* The "false" arg in macro below evaluates to `if (false) ...` after
@@ -548,10 +778,17 @@ NutWriter::status_t UpsdConfigWriter::writeConfig(const UpsdConfiguration & conf
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Wunreachable-code"
 #endif
-	UPSD_DIRECTIVEX("MAXAGE",    unsigned int, config.maxAge);
-	UPSD_DIRECTIVEX("MAXCONN",   unsigned int, config.maxConn);
-	UPSD_DIRECTIVEX("STATEPATH", std::string,  config.statePath);
-	UPSD_DIRECTIVEX("CERTFILE",  std::string,  config.certFile);
+	UPSD_DIRECTIVEX("DEBUG_MIN",                int,          config.debugMin);
+	UPSD_DIRECTIVEX("MAXAGE",                   unsigned int, config.maxAge);
+	UPSD_DIRECTIVEX("MAXCONN",                  unsigned int, config.maxConn);
+	UPSD_DIRECTIVEX("TRACKINGDELAY",            unsigned int, config.trackingDelay);
+	UPSD_DIRECTIVEX("ALLOW_NO_DEVICE",          bool,         config.allowNoDevice);
+	UPSD_DIRECTIVEX("ALLOW_NOT_ALL_LISTENERS",  bool,         config.allowNotAllListeners);
+	UPSD_DIRECTIVEX("DISABLE_WEAK_SSL",         bool,         config.disableWeakSsl);
+	CONFIG_DIRECTIVEX("STATEPATH",              std::string,  config.statePath, true);
+	CONFIG_DIRECTIVEX("CERTFILE",               std::string,  config.certFile, true);
+	CONFIG_DIRECTIVEX("CERTPATH",               std::string,  config.certPath, true);
+	UPSD_DIRECTIVEX("CERTREQUEST",              unsigned int, config.certRequestLevel);
 #ifdef __clang__
 # pragma clang diagnostic pop
 #endif
@@ -559,7 +796,17 @@ NutWriter::status_t UpsdConfigWriter::writeConfig(const UpsdConfiguration & conf
 # pragma GCC diagnostic pop
 #endif
 
-	#undef UPSD_DIRECTIVEX
+#	undef UPSD_DIRECTIVEX
+
+	// Certificate identity
+	if (config.certIdent.set()) {
+		std::string directive = serializeCertIdent(config.certIdent);
+
+		status_t status = writeDirective(directive);
+
+		if (NUTW_OK != status)
+			return status;
+	}
 
 	// Listen addresses
 	std::list<UpsdConfiguration::Listen>::const_iterator la_iter = config.listens.begin();

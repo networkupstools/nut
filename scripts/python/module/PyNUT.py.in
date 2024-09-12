@@ -55,8 +55,20 @@
 # 2023-01-18 Jim Klimov <jimklimov+nut@gmail.com> - Version 1.6.0
 #            Added CheckUPSAvailable() method originally by Michal Hlavinka
 #            from 2013-01-07 RedHat/Fedora packaging
+#
+# 2024-07-01 Jim Klimov <jimklimov+nut@gmail.com> - Version 1.7.0
+#            Re-arranged dependency on telnetlib module (deprecated/removed
+#            since Python 3.11/3.13), so we can fall back on a privately
+#            stashed copy until a better solution is developed.
+#
 
-import telnetlib
+try:
+    import telnetlib
+except ModuleNotFoundError:
+    import os
+    if "true" == os.getenv('DEBUG', 'false'):
+        print( "[DEBUG] Fall back to private copy of telnetlib for PyNUTClient\n" )
+    import nut_telnetlib as telnetlib
 
 class PyNUTError( Exception ) :
     """ Base class for custom exceptions """
@@ -73,8 +85,8 @@ class PyNUTClient :
     __timeout     = None
     __srv_handler = None
 
-    __version     = "1.6.0"
-    __release     = "2023-01-18"
+    __version     = "1.7.0"
+    __release     = "2024-07-01"
 
 
     def __init__( self, host="127.0.0.1", port=3493, login=None, password=None, debug=False, timeout=5 ) :

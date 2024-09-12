@@ -114,6 +114,13 @@ are:
 	           which can not be applied "on the fly" (may fail for
 	           critical changes like run-time user/group accounts)
 /////////
+	*exit*;;   tell the currently running driver instance to just exit
+	           (so an external caller like the new driver instance, or
+	           the systemd or SMF frameworks would start another copy)
+
+With recent NUT releases, such commands can be sent using the Unix socket
+for driver-server interaction. As a fallback, like older releases, signals
+can be sent to the old driver instance's PID (where possible).
 
 *-P* 'pid'::
 Send the command signal above using specified PID number, rather than

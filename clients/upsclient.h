@@ -18,27 +18,27 @@
 */
 
 #ifndef UPSCLIENT_H_SEEN
-#define UPSCLIENT_H_SEEN
+#define UPSCLIENT_H_SEEN 1
 
 #ifdef WITH_OPENSSL
-	#include <openssl/err.h>
-	#include <openssl/ssl.h>
+#	include <openssl/err.h>
+#	include <openssl/ssl.h>
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
-	#include <nss.h>
-	#include <ssl.h>
+#	include <nss.h>
+#	include <ssl.h>
 #endif  /* WITH_OPENSSL | WITH_NSS */
 
 /* Not including nut_stdint.h because this is part of end-user API */
 #if defined HAVE_INTTYPES_H
-	#include <inttypes.h>
+#	include <inttypes.h>
 #endif
 
 #if defined HAVE_STDINT_H
-	#include <stdint.h>
+#	include <stdint.h>
 #endif
 
 #if defined HAVE_LIMITS_H
-	#include <limits.h>
+#	include <limits.h>
 #endif
 
 /* Not including NUT timehead.h because this is part of end-user API */
@@ -51,6 +51,10 @@
 # else
 #  include <time.h>
 # endif
+#endif
+
+#if defined HAVE_SYS_TYPES_H
+# include <sys/types.h>
 #endif
 
 #ifdef __cplusplus

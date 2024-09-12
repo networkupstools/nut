@@ -3,6 +3,7 @@
    Copyright (C)
 	2002	Russell Kroll <rkroll@exploits.org>
 	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2020 - 2024	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -61,25 +62,25 @@
 
 /* WA for Solaris/i386 bug: non-blocking connect sets errno to ENOENT */
 #if (defined NUT_PLATFORM_SOLARIS)
-	#define SOLARIS_i386_NBCONNECT_ENOENT(status) ( (!strcmp("i386", CPU_TYPE)) ? (ENOENT == (status)) : 0 )
+#	define SOLARIS_i386_NBCONNECT_ENOENT(status) ( (!strcmp("i386", CPU_TYPE)) ? (ENOENT == (status)) : 0 )
 #else
-	#define SOLARIS_i386_NBCONNECT_ENOENT(status) (0)
+#	define SOLARIS_i386_NBCONNECT_ENOENT(status) (0)
 #endif  /* end of Solaris/i386 WA for non-blocking connect */
 
 /* WA for AIX bug: non-blocking connect sets errno to 0 */
 #if (defined NUT_PLATFORM_AIX)
-	#define AIX_NBCONNECT_0(status) (0 == (status))
+#	define AIX_NBCONNECT_0(status) (0 == (status))
 #else
-	#define AIX_NBCONNECT_0(status) (0)
+#	define AIX_NBCONNECT_0(status) (0)
 #endif  /* end of AIX WA for non-blocking connect */
 
 #ifdef WITH_NSS
-	#include <prerror.h>
-	#include <prinit.h>
-	#include <pk11func.h>
-	#include <prtypes.h>
-	#include <ssl.h>
-	#include <private/pprio.h>
+#	include <prerror.h>
+#	include <prinit.h>
+#	include <pk11func.h>
+#	include <prtypes.h>
+#	include <ssl.h>
+#	include <private/pprio.h>
 #endif /* WITH_NSS */
 
 #define UPSCLIENT_MAGIC 0x19980308
@@ -619,6 +620,9 @@ const char *upscli_strerror(UPSCONN_t *ups)
 			upscli_errlist[ups->upserror].str,
 			ups->pc_ctx.errmsg);
 		return ups->errbuf;
+
+	default:
+		break;
 	}
 
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
@@ -1024,6 +1028,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 	ups->fd = -1;
 
 	if (!host) {
+		upslogx(LOG_WARNING, "%s: Host not specified", __func__);
 		ups->upserror = UPSCLI_ERR_NOSUCHHOST;
 		return -1;
 	}
@@ -1049,6 +1054,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 		case EAI_AGAIN:
 			continue;
 		case EAI_NONAME:
+			upslogx(LOG_WARNING, "%s: Host not found: '%s'", __func__, NUT_STRARG(host));
 			ups->upserror = UPSCLI_ERR_NOSUCHHOST;
 			return -1;
 		case EAI_MEMORY:
@@ -1056,6 +1062,8 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 			return -1;
 		case EAI_SYSTEM:
 			ups->syserrno = errno;
+			break;
+		default:
 			break;
 		}
 
@@ -1207,7 +1215,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 		} else if (tryssl && ret == 0) {
 			if (certverify != 0) {
 				upslogx(LOG_NOTICE, "Can not connect to NUT server %s in SSL and "
-				"certificate is needed, disconnect", host);
+					"certificate is needed, disconnect", host);
 				upscli_disconnect(ups);
 				return -1;
 			}
@@ -1686,7 +1694,21 @@ int upscli_splitaddr(const char *buf, char **hostname, uint16_t *port)
 		return -1;
 	}
 
+	s = strchr(tmp, '@');
+
+	/* someone passed a "@hostname" string? */
+	if (s) {
+		fprintf(stderr, "upscli_splitaddr: wrong call? "
+			"Got upsname@hostname[:port] string where "
+			"only hostname[:port] was expected: %s\n", buf);
+		/* let it pass, but probably fail later */
+	}
+
 	if (*tmp == '[') {
+		/* NOTE: Brackets are required for colon-separated IPv6
+		 * addresses, to differentiate from a port number. For
+		 * example, `[1234:5678]:3493` would seem right.
+		 */
 		if (strchr(tmp, ']') == NULL) {
 			fprintf(stderr, "upscli_splitaddr: missing closing bracket in [domain literal]\n");
 			return -1;

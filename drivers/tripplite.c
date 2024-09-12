@@ -113,11 +113,11 @@
 #include "serial.h"
 #include "tripplite.h"
 #include "nut_stdint.h"
-#include <math.h>
+#include "nut_float.h"
 #include <ctype.h>
 
 #define DRIVER_NAME	"Tripp-Lite SmartUPS driver"
-#define DRIVER_VERSION	"0.94"
+#define DRIVER_VERSION	"0.96"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {

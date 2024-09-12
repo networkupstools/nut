@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # NOTE: bash syntax (non-POSIX script) is used below!
 #
@@ -24,7 +24,7 @@ DLLLDD_SOURCED=true . "${SCRIPTDIR}/dllldd.sh"
 
 # This should match the tarball and directory name,
 # if a stable version is used:
-[ -n "$VER_OPT" ] || VER_OPT=2.8.1
+[ -n "$VER_OPT" ] || VER_OPT=2.8.2
 DEBUG=true
 
 # default to 32bits build
@@ -105,8 +105,11 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 	# Note: _WIN32_WINNT>=0x0600 is needed for inet_ntop in mingw headers
 	# and the value 0xffff is anyway forced into some components at least
 	# by netsnmp cflags.
-	export CFLAGS+=" -D_POSIX=1 -D_POSIX_C_SOURCE=200112L -I${ARCH_PREFIX}/include/ -D_WIN32_WINNT=0xffff"
-	export CXXFLAGS+=" -D_POSIX=1 -D_POSIX_C_SOURCE=200112L -I${ARCH_PREFIX}/include/ -D_WIN32_WINNT=0xffff"
+	# _POSIX_THREAD_SAFE_FUNCTIONS whould help with localtime_r() gmtime_r()
+	# on recent mingw releases (as of 2019), per
+	# https://stackoverflow.com/questions/18551409/localtime-r-support-on-mingw
+	export CFLAGS+=" -D_POSIX=1 -D_POSIX_C_SOURCE=200112L -D_POSIX_THREAD_SAFE_FUNCTIONS=200112L -I${ARCH_PREFIX}/include/ -D_WIN32_WINNT=0xffff"
+	export CXXFLAGS+=" -D_POSIX=1 -D_POSIX_C_SOURCE=200112L -D_POSIX_THREAD_SAFE_FUNCTIONS=200112L -I${ARCH_PREFIX}/include/ -D_WIN32_WINNT=0xffff"
 	export LDFLAGS+=" -L${ARCH_PREFIX}/lib/"
 
 	KEEP_NUT_REPORT_FEATURE_FLAG=""
@@ -116,18 +119,34 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 
 	# Note: installation prefix here is "/" and desired INSTALL_DIR
 	# location is passed to `make install` as DESTDIR below.
+	# FIXME: Implement support for --without-pkg-config in m4 and use it
+	RES_CFG=0
 	$CONFIGURE_SCRIPT $HOST_FLAG $BUILD_FLAG --prefix=/ \
 	    $KEEP_NUT_REPORT_FEATURE_FLAG \
 	    PKG_CONFIG_PATH="${ARCH_PREFIX}/lib/pkgconfig" \
-	    --without-pkg-config --with-all=auto \
+	    --with-all=auto \
+	    --with-doc="man=auto html-single=auto html-chunked=skip pdf=skip" \
 	    --without-systemdsystemunitdir \
 	    --with-pynut=app \
 	    --with-augeas-lenses-dir=/augeas-lenses \
 	    --enable-Werror \
-	|| exit
-	echo "$0: configure phase complete ($?)" >&2
+	|| RES_CFG=$?
+	echo "$0: configure phase complete ($RES_CFG)" >&2
+	[ x"$RES_CFG" = x0 ] || exit $RES_CFG
 
+	echo "Configuration finished, starting make" >&2
+	if [ -n "$PARMAKE_FLAGS" ]; then
+		echo "For parallel builds, '$PARMAKE_FLAGS' options would be used" >&2
+	fi
+	if [ -n "$MAKEFLAGS" ]; then
+		echo "Generally, MAKEFLAGS='$MAKEFLAGS' options would be passed" >&2
+	fi
+
+	# FIXME: parameterize ${MAKE} ?
 	make 1>/dev/null || exit
+	make doc 1>/dev/null || exit
+	make -k man-man html-man 1>/dev/null || true
+	(cd docs && make check) 1>/dev/null || exit
 	echo "$0: build phase complete ($?)" >&2
 
 	if [ "x$INSTALL_WIN_BUNDLE" = xtrue ] ; then
@@ -152,7 +171,7 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 		# on a modern Windows one could go to their installed "sbin" to
 		#   mklink .\libupsclient-3.dll ..\bin\libupsclient-3.dll
 		(cd "$INSTALL_DIR/bin" && ln libupsclient*.dll ../sbin/)
-		(cd "$INSTALL_DIR/cgi-bin" && ln ../bin/libupsclient*.dll ./) \
+		(cd "$INSTALL_DIR/cgi-bin" 2>/dev/null && ln ../bin/libupsclient*.dll ./) \
 		|| echo "NOTE: FAILED to process OPTIONAL cgi-bin directory; was NUT CGI enabled?" >&2
 
 		echo "NOTE: Adding third-party dependency libraries for each installed program" >&2
@@ -172,7 +191,7 @@ if [ "$cmd" == "all64" ] || [ "$cmd" == "b64" ] || [ "$cmd" == "all32" ] || [ "$
 		(cd "$INSTALL_DIR/sbin" && { DESTDIR="$INSTALL_DIR" dllldddir . | while read D ; do ln -f ../bin/"`basename "$D"`" ./ ; done ; } ) || true
 
 		# Hardlink libraries for cgi-bin if present:
-		(cd "$INSTALL_DIR/cgi-bin" && { DESTDIR="$INSTALL_DIR" dllldddir . | while read D ; do ln -f ../bin/"`basename "$D"`" ./ ; done ; } ) \
+		(cd "$INSTALL_DIR/cgi-bin" 2>/dev/null && { DESTDIR="$INSTALL_DIR" dllldddir . | while read D ; do ln -f ../bin/"`basename "$D"`" ./ ; done ; } ) \
 		|| echo "NOTE: FAILED to process OPTIONAL cgi-bin directory; was NUT CGI enabled?" >&2
 	fi
 

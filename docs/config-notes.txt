@@ -25,7 +25,7 @@ Generalities
 All configuration files within this package are parsed with a common
 state machine, which means they all can use a number of extras described here.
 
-First, most of the programs use an uppercase word to declare a
+First, most of the programs use an upper-case word to declare a
 configuration directive.  This may be something like MONITOR, NOTIFYCMD,
 or ACCESS.  The case does matter here.  "monitor" won't be recognized.
 

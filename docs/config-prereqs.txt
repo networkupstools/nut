@@ -21,9 +21,27 @@ Some of the below are alternatives, e.g. compiler toolkits (gcc vs. clang)
 or SSL implementations (OpenSSL vs Mozilla NSS) -- no problem installing
 both, at a disk space cost.
 
-NOTE: Some NUT branches may need additional or different software versions
+[NOTE]
+======
+Some NUT branches may need additional or different software versions
 that are not yet included into `master` branch dependencies, e.g. the DMF
-(Dynamic Mapping Files) sub-project needs LUA 5.1.
+(Dynamic Mapping Files) sub-project needs LUA 5.1 for build and run-time,
+and some Python modules for build, e.g. using OS packaging or custom call
+to `pip install pycparser`.
+
+In case your system still provides a Python 2.x environment (and for some
+reason you want to use it instead of Python 3.x), but does not anymore
+provide a `pip` nor `pycparser` packages for it, you may need to use an
+external bootstrap first, e.g.:
+
+------
+# Fetch get-pip.py for python 2.7
+:; curl https://bootstrap.pypa.io/pip/2.7/get-pip.py --output get-pip.py
+:; python2 get-pip.py
+:; python2 -m pip --version
+:; python2 -m pip install pycparser
+------
+======
 
 More packages and/or system setup may be needed to actually run NUT with
 all features enabled; chapters below concern just with building it.
@@ -115,6 +133,20 @@ actual package source versions on both Debian 8 "Jessie" and
 Debian 11 "Buster").
 ======
 
+[NOTE]
+.FUN NOTE
+======
+For development on the road (or a native ARM build) you can use the
+link:https://termux.dev/en/[Termux] project on Android. It provides
+a sufficiently Debian-like operating environment for all intents and
+purposes, but you may have to use their `pkg` wrapper instead of `apt`
+tooling directly.
+
+You would need at least a couple of gigabytes available on the internal
+phone storage though, especially if using `ccache` or setting up cross
+builds.
+======
+
 Debian-like package installations commonly start with an update of
 metadata about recently published package revisions:
 
@@ -123,7 +155,7 @@ metadata about recently published package revisions:
 
 :; apt-get install \
     ccache time \
-    git python perl curl \
+    git perl curl \
     make autoconf automake libltdl-dev libtool \
     valgrind \
     cppcheck \
@@ -133,6 +165,10 @@ metadata about recently published package revisions:
 # NOTE: Older Debian-like distributions may lack a "libtool-bin"
 :; apt-get install \
     libtool-bin
+
+# See comments below, python version and package naming depends on distro
+:; apt-get install \
+    python
 
 # NOTE: For python, you may eventually have to specify a variant like this
 # (numbers depending on default or additional packages of your distro):
@@ -320,12 +356,16 @@ drivers in distro packaging of NUT. Resolution and doc PRs are welcome.
 :; yum install \
     ccache time \
     file \
-    git python perl curl \
+    git perl curl \
     make autoconf automake libtool-ltdl-devel libtool \
     valgrind \
     cppcheck \
     pkgconfig \
     gcc gcc-c++ clang
+
+# See comments below, python version and package naming depends on distro
+:; yum install \
+    python
 
 # NOTE: For python, you may eventually have to specify a variant like this
 # (numbers depending on default or additional packages of your distro):
@@ -670,12 +710,16 @@ below.
 
 ------
 :; pkg install \
-    git python perl5 curl \
+    git perl5 curl \
     gmake autoconf automake autotools libltdl libtool \
     valgrind \
     cppcheck \
     pkgconf \
     gcc clang
+
+# See comments below, python version and package naming depends on distro
+:; pkg install \
+    python
 
 # NOTE: For python, you may eventually have to specify a variant like this
 # (numbers depending on default or additional packages of your distro):
@@ -699,7 +743,7 @@ below.
 
 :; pkg install \
     cppunit \
-    openssl nss \
+    nss \
     augeas \
     libmodbus \
     neon \
@@ -707,6 +751,15 @@ below.
     powerman \
     freeipmi \
     avahi
+
+# NOTE: At least on FreeBSD 12, system-provided crypto exists and is used
+# by libnetsnmp, libneon, etc. - but is not marked as a package. Conversely,
+# the openssl-1.1.1k (as of this writing) can be installed as a package into
+# /usr/local/lib and then causes linking conflicts. The core system-provided
+# build of openssl does include headers and is useful for NUT build "as is".
+# ONLY INSTALL THIS PACKAGE IF REQUIRED (may get problems to rectify later):
+:; test -e /lib/libcrypto.so -a -e /usr/lib/libssl.so || \
+   pkg install openssl
 
 :; pkg install \
     lua51
@@ -789,18 +842,22 @@ default site.
 :; pkg_add sudo bash mc wget rsync
 
 :; pkg_add \
-    git python curl \
+    git curl \
     gmake autoconf automake libltdl libtool \
     valgrind \
     cppcheck \
     pkgconf \
     gcc clang
 
+# See comments below, python version and package naming depends on distro
+:; pkg_add \
+    python
+
 # NOTE: For python, you may eventually have to specify a variant like this
 # (numbers depending on default or additional packages of your distro):
-#   :; pkg_add python-2.7.15p0
+#   :; pkg_add python-2.7.15p0 py-pip
 # and/or:
-#   :; pkg_add python-3.6.6p1
+#   :; pkg_add python-3.6.6p1 py3-pip
 # although you might succeed specifying shorter names and the packager
 # will offer a list of matching variants (as it does for "python" above).
 # NOTE: "perl" is not currently a package, but seemingly part of base OS.
@@ -825,16 +882,23 @@ default site.
     openssl nss \
     augeas \
     libusb1 \
-    neon \
     net-snmp \
     avahi
+
+# For netxml-ups driver the library should suffice; however for nut-scanner
+# you may currently require to add a `libneon.so` symlink (the package seems
+# to only deliver a numbered SO library name), e.g.:
+:; pkg_add neon && \
+   if ! test -s /usr/local/lib/libneon.so ; then
+    ln -s "`cd /usr/local/lib && ls -1 libneon.so.* | sort -n | tail -1`" /usr/local/lib/libneon.so
+   fi
 
 # Select a LUA-5.1 (or possibly 5.2?) version
 :; pkg_add \
     lua
 
 :; pkg_add \
-    dash ksh93
+    bash dash ksh93
 
 :; pkg_add \
     argp-standalone \
@@ -922,11 +986,15 @@ you can work around by `make MKDIRPROG="mkdir -p" install -j 8` for example.
 
 ------
 :; pkgin install \
-    git python27 python39 perl curl \
+    git perl curl \
     make gmake autoconf automake libltdl libtool \
     cppcheck \
     pkgconf \
     gcc7 clang
+
+# See comments below, python version and package naming depends on distro
+:; pkgin install \
+    python27 python39
 
 ;; ( cd /usr/pkg/bin && ( ln -fs python2.7 python2 ; ln -fs python3.9 python3 ) )
 # You can find a list of what is (pre-)installed with:
@@ -1307,7 +1375,20 @@ for compilers, and Homebrew community packaging for dependencies (including
 `bash` since the system one is too old for `ci_build.sh` script syntax).
 
 See `.travis.yml` and `.circleci/config.yml` for practical details of the
-setup.
+setup, and https://brew.sh if you want to install it on your MacOS system
+(note that its default packaged locations known as `HOMEBREW_PREFIX` differ
+depending on architecture -- see https://docs.brew.sh/Installation for more
+details; find via `brew config | grep HOMEBREW_PREFIX: | awk '{print $2}'`).
+
+NOTE: The quickest pre-configuration for `ci_build.sh` integration with this
+non-default build system would be to add this line into your shell profile:
+----
+eval "$(brew shellenv)"
+----
+
+NOTE: Homebrew is not the only build/packaging system available for MacOS,
+so NUT scripts do not make any assumptions nor try to find a build system
+they were not told about (via `HOMEBREW_PREFIX` in this case).
 
 Currently known dependencies for basic build include:
 ----
@@ -1315,17 +1396,48 @@ Currently known dependencies for basic build include:
 :; HOMEBREW_NO_AUTO_UPDATE=1; export HOMEBREW_NO_AUTO_UPDATE
 
 # Required:
-:; brew install ccache bash libtool pkg-config gd libusb neon net-snmp openssl
+:; brew install ccache bash libtool binutils autoconf automake git m4 \
+        pkg-config aspell asciidoc docbook-xsl cppunit gd \
+        libusb neon net-snmp \
+        nss openssl \
+        libmodbus freeipmi powerman
 ----
+
+NOTE: for `asciidoc`/`a2x` to work, you should `export XML_CATALOG_FILES` with
+the location of packaged resources (`${HOMEBREW_PREFIX}/etc/xml/catalog`).
+On one test system, man page builds spewed warnings like
+`<unknown>:1: SyntaxWarning: invalid escape sequence '\S'`
+but seemed to produce reasonable results otherwise.
 
 Note that ccache is installed in a different location than expected by default
 in the `ci_build.sh` script, so if your system allows to add the symbolic link
-to `/usr/local/opt/ccache/libexec` as `/usr/lib/ccache` -- please do so as the
-easiest way out. Alternatively, to prepare building sessions with `ci_build.sh`
-you can:
+to `/opt/homebrew/opt/ccache/libexec` (`/usr/local/opt/ccache/libexec` on x86)
+as `/usr/lib/ccache` -- please do so as the easiest way out.
+
+Alternatively, to prepare building sessions with `ci_build.sh` you can:
 ----
-:; export CI_CCACHE_SYMLINKDIR="/usr/local/opt/ccache/libexec"
+:; export CI_CCACHE_SYMLINKDIR="/opt/homebrew/opt/ccache/libexec"
+
+### ...or for x86 builders:
+#:; export CI_CCACHE_SYMLINKDIR="/usr/local/opt/ccache/libexec"
 ----
+
+NOTE: For Jenkins agents, also need to `brew install --cask temurin@21`
+for JRE/JDK 21. Java 17 or 21 (an LTS) is required to run Jenkins agents
+after summer 2024.
+
+Note that you would have to create symbolic links to version-numbered names
+of compilers, e.g. `clang-14` and `clang++-14` in both `/usr/local/bin`
+(pointing to `/bin/clang(++)` and in the `ccache` location prepared above
+(pointing to `../bin/ccache`), and repeat that in locations prepared by
+XCode installation such as `/Library/Developer/CommandLineTools/usr/bin/`
+and `/usr/local/Homebrew/Library/Homebrew/shims/mac/super/` just as
+`ln -s clang{,-14} ; ln -s clang++{,-14}`.  Apparently `clang` is the
+only compiler available; various names of `gcc*` are links to the same
+binaries.
+
+WARNING: Take care to *NOT* symlink a `clang-cpp(-14)` which is not a
+name recognized by XCode dispatcher program, so requests to it freeze.
 
 
 Windows builds

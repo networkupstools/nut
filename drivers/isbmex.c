@@ -22,12 +22,12 @@
 
 #include "main.h"
 #include "serial.h"
+#include "nut_float.h"	/* For sqrt() */
 
-#include <math.h>		/* for sqrt */
 #include <string.h>
 
 #define DRIVER_NAME	"ISBMEX UPS driver"
-#define DRIVER_VERSION	"0.08"
+#define DRIVER_VERSION	"0.10"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {

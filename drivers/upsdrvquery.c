@@ -2,7 +2,7 @@
                    tracked until a response arrives, returning
                    that line and closing a connection
 
-   Copyright (C) 2023  Jim Klimov <jimklimov+nut@gmail.com>
+   Copyright (C) 2023-2024  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -39,6 +39,19 @@
 #include "upsdrvquery.h"
 #include "nut_stdint.h"
 
+/* Normally the upsdrvquery*() methods call upslogx() to report issues
+ * such as failed fopen() of Unix socket file, or a dialog timeout or
+ * different error.
+ * In a few cases we call these methods opportunistically, and so if
+ * they fail - we do not care enough to raise a lot of "scary noise";
+ * the caller can take care of logging as/if needed.
+ * This variable and its values are a bit of internal detail between
+ * certain NUT programs to hush the low-level reports when they are
+ * not being otherwise debugged (e.g. nut_debug_level < 1).
+ * Default value allows all those messages to appear.
+ */
+int nut_upsdrvquery_debug_level = NUT_UPSDRVQUERY_DEBUG_LEVEL_DEFAULT;
+
 udq_pipe_conn_t *upsdrvquery_connect(const char *sockfn) {
 	udq_pipe_conn_t	*conn = (udq_pipe_conn_t*)xcalloc(1, sizeof(udq_pipe_conn_t));
 
@@ -54,13 +67,15 @@ udq_pipe_conn_t *upsdrvquery_connect(const char *sockfn) {
 	conn->sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
 
 	if (conn->sockfd < 0) {
-		upslog_with_errno(LOG_ERR, "open socket");
+		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_CONNECT)
+			upslog_with_errno(LOG_ERR, "open socket");
 		free(conn);
 		return NULL;
 	}
 
 	if (connect(conn->sockfd, (struct sockaddr *) &sa, sizeof(sa)) < 0) {
-		upslog_with_errno(LOG_ERR, "connect to driver socket at %s", sockfn);
+		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_CONNECT)
+			upslog_with_errno(LOG_ERR, "connect to driver socket at %s", sockfn);
 		close(conn->sockfd);
 		free(conn);
 		return NULL;
@@ -68,14 +83,16 @@ udq_pipe_conn_t *upsdrvquery_connect(const char *sockfn) {
 
 	ret = fcntl(conn->sockfd, F_GETFL, 0);
 	if (ret < 0) {
-		upslog_with_errno(LOG_ERR, "fcntl get on driver socket %s failed", sockfn);
+		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_CONNECT)
+			upslog_with_errno(LOG_ERR, "fcntl get on driver socket %s failed", sockfn);
 		close(conn->sockfd);
 		free(conn);
 		return NULL;
 	}
 
 	if (fcntl(conn->sockfd, F_SETFL, ret | O_NDELAY) < 0) {
-		upslog_with_errno(LOG_ERR, "fcntl set O_NDELAY on driver socket %s failed", sockfn);
+		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_CONNECT)
+			upslog_with_errno(LOG_ERR, "fcntl set O_NDELAY on driver socket %s failed", sockfn);
 		close(conn->sockfd);
 		free(conn);
 		return NULL;
@@ -84,7 +101,8 @@ udq_pipe_conn_t *upsdrvquery_connect(const char *sockfn) {
 	BOOL	result = WaitNamedPipe(sockfn, NMPWAIT_USE_DEFAULT_WAIT);
 
 	if (result == FALSE) {
-		upslog_with_errno(LOG_ERR, "WaitNamedPipe : %d\n", GetLastError());
+		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_CONNECT)
+			upslog_with_errno(LOG_ERR, "WaitNamedPipe : %d\n", GetLastError());
 		return NULL;
 	}
 
@@ -99,7 +117,8 @@ udq_pipe_conn_t *upsdrvquery_connect(const char *sockfn) {
 			NULL);          /* no template file */
 
 	if (conn->sockfd == INVALID_HANDLE_VALUE) {
-		upslog_with_errno(LOG_ERR, "CreateFile : %d\n", GetLastError());
+		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_CONNECT)
+			upslog_with_errno(LOG_ERR, "CreateFile : %d\n", GetLastError());
 		free(conn);
 		return NULL;
 	}
@@ -114,7 +133,8 @@ udq_pipe_conn_t *upsdrvquery_connect(const char *sockfn) {
 	);
 
 	if (conn->overlapped.hEvent == NULL) {
-		upslogx(LOG_ERR, "Can't create event for reading event log");
+		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_CONNECT)
+			upslogx(LOG_ERR, "Can't create event for reading event log");
 		free(conn);
 		return NULL;
 	}
@@ -138,26 +158,48 @@ udq_pipe_conn_t *upsdrvquery_connect(const char *sockfn) {
 }
 
 udq_pipe_conn_t *upsdrvquery_connect_drvname_upsname(const char *drvname, const char *upsname) {
-	char	pidfn[SMALLBUF];
+	char	sockname[SMALLBUF];
 #ifndef WIN32
 	struct stat     fs;
-	snprintf(pidfn, sizeof(pidfn), "%s/%s-%s",
+	snprintf(sockname, sizeof(sockname), "%s/%s-%s",
 		dflt_statepath(), drvname, upsname);
-	check_unix_socket_filename(pidfn);
-	if (stat(pidfn, &fs)) {
-		upslog_with_errno(LOG_ERR, "Can't open %s", pidfn);
+	check_unix_socket_filename(sockname);
+	if (stat(sockname, &fs)) {
+		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_CONNECT)
+			upslog_with_errno(LOG_ERR, "Can't open %s", sockname);
 		return NULL;
 	}
 #else
-	snprintf(pidfn, sizeof(pidfn), "\\\\.\\pipe\\%s-%s", drvname, upsname);
+	snprintf(sockname, sizeof(sockname), "\\\\.\\pipe\\%s-%s", drvname, upsname);
 #endif  /* WIN32 */
 
-	return upsdrvquery_connect(pidfn);
+	return upsdrvquery_connect(sockname);
 }
 
 void upsdrvquery_close(udq_pipe_conn_t *conn) {
+#ifdef WIN32
+	int	loggedOut = 0;
+#endif  /* WIN32 */
+
 	if (!conn)
 		return;
+
+	if (VALID_FD(conn->sockfd)) {
+		int	nudl = nut_upsdrvquery_debug_level;
+		ssize_t ret;
+		upsdebugx(5, "%s: closing driver socket, try to say goodbye", __func__);
+		ret = upsdrvquery_write(conn, "LOGOUT\n");
+		if (7 <= ret) {
+			upsdebugx(5, "%s: okay", __func__);
+#ifdef WIN32
+			loggedOut = 1;
+#endif  /* WIN32 */
+			usleep(1000000);
+		} else {
+			upsdebugx(5, "%s: must have been closed on the other side", __func__);
+		}
+		nut_upsdrvquery_debug_level = nudl;
+	}
 
 #ifndef WIN32
 	if (VALID_FD(conn->sockfd))
@@ -169,10 +211,11 @@ void upsdrvquery_close(udq_pipe_conn_t *conn) {
 	memset(&(conn->overlapped), 0, sizeof(conn->overlapped));
 
 	if (VALID_FD(conn->sockfd)) {
-		if (DisconnectNamedPipe(conn->sockfd) == 0) {
-			upslogx(LOG_ERR,
-				"DisconnectNamedPipe error : %d",
-				(int)GetLastError());
+		if (DisconnectNamedPipe(conn->sockfd) == 0 && !loggedOut) {
+			if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_CONNECT)
+				upslogx(LOG_ERR,
+					"DisconnectNamedPipe error : %d",
+					(int)GetLastError());
 		}
 		CloseHandle(conn->sockfd);
 	}
@@ -196,7 +239,8 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 #endif
 
 	if (!conn || INVALID_FD(conn->sockfd)) {
-		upslog_with_errno(LOG_ERR, "socket not initialized");
+		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_CONNECT)
+			upslog_with_errno(LOG_ERR, "socket not initialized");
 		return -1;
 	}
 
@@ -205,7 +249,8 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 	FD_SET(conn->sockfd, &rfds);
 
 	if (select(conn->sockfd + 1, &rfds, NULL, NULL, &tv) < 0) {
-		upslog_with_errno(LOG_ERR, "select with socket");
+		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_DIALOG)
+			upslog_with_errno(LOG_ERR, "select with socket");
 		/* upsdrvquery_close(conn); */
 		return -1;
 	}
@@ -219,7 +264,8 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 	ret = read(conn->sockfd, conn->buf, sizeof(conn->buf));
 #else
 /*
-	upslog_with_errno(LOG_ERR, "Support for this platform is not currently implemented");
+	if (nut_debug_level > 0 || nut_upsdrvquery_debug_level > 0)
+		upslog_with_errno(LOG_ERR, "Support for this platform is not currently implemented");
 	return -1;
 */
 
@@ -333,7 +379,8 @@ ssize_t upsdrvquery_write(udq_pipe_conn_t *conn, const char *buf) {
 	upsdebugx(5, "%s: write to driver socket: %s", __func__, buf);
 
 	if (!conn || INVALID_FD(conn->sockfd)) {
-		upslog_with_errno(LOG_ERR, "socket not initialized");
+		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_CONNECT)
+			upslog_with_errno(LOG_ERR, "socket not initialized");
 		return -1;
 	}
 
@@ -341,7 +388,8 @@ ssize_t upsdrvquery_write(udq_pipe_conn_t *conn, const char *buf) {
 	ret = write(conn->sockfd, buf, buflen);
 
 	if (ret < 0 || ret != (int)buflen) {
-		upslog_with_errno(LOG_ERR, "Write to socket %d failed", conn->sockfd);
+		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_DIALOG)
+			upslog_with_errno(LOG_ERR, "Write to socket %d failed", conn->sockfd);
 		goto socket_error;
 	}
 
@@ -349,7 +397,8 @@ ssize_t upsdrvquery_write(udq_pipe_conn_t *conn, const char *buf) {
 #else
 	result = WriteFile(conn->sockfd, buf, buflen, &bytesWritten, NULL);
 	if (result == 0 || bytesWritten != (DWORD)buflen) {
-		upslog_with_errno(LOG_ERR, "Write to handle %p failed", conn->sockfd);
+		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_DIALOG)
+			upslog_with_errno(LOG_ERR, "Write to handle %p failed", conn->sockfd);
 		goto socket_error;
 	}
 
@@ -433,7 +482,8 @@ ssize_t upsdrvquery_prepare(udq_pipe_conn_t *conn, struct timeval tv) {
 	if (upsdrvquery_read_timeout(conn, tv) < 1)
 		goto socket_error;
 	if (strcmp(conn->buf, "ON")) {
-		upslog_with_errno(LOG_ERR, "Driver does not have TRACKING support enabled");
+		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_DIALOG)
+			upslog_with_errno(LOG_ERR, "Driver does not have TRACKING support enabled");
 		goto socket_error;
 	}
 */

@@ -132,12 +132,12 @@
 
 #include "main.h"
 #include "nut_libusb.h"
-#include <math.h>
+#include "nut_float.h"
 #include <ctype.h>
 #include "usb-common.h"
 
 #define DRIVER_NAME	"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.35"
+#define DRIVER_VERSION	"0.38"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -1492,6 +1492,8 @@ void upsdrv_updateinfo(void)
 					break;
 				case '0':
 					dstate_setinfo("input.frequency.nominal", "%d", 50);
+					break;
+				default:
 					break;
 			}
 		}

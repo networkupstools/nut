@@ -22,6 +22,8 @@ EGREP = grep -E
 
 all:
 
+all-am-local all-local: $(abs_top_builddir)/docs/man/.prep-src-docs
+
 # Base configuration and client manpages, always installed
 SRC_CONF_PAGES = \
 	nut.conf.txt \
@@ -85,6 +87,13 @@ MAN_CLIENT_PAGES = \
 	upssched.8
 endif WITH_MANS
 
+if HAVE_WINDOWS
+SRC_CLIENT_PAGES += nut.exe.txt
+if WITH_MANS
+MAN_CLIENT_PAGES += nut.exe.8
+endif WITH_MANS
+endif HAVE_WINDOWS
+
 man8_MANS = $(MAN_CLIENT_PAGES)
 
 HTML_CLIENT_MANS = \
@@ -99,6 +108,10 @@ HTML_CLIENT_MANS = \
 	upsmon.html \
 	upsrw.html \
 	upssched.html
+
+if HAVE_WINDOWS
+HTML_CLIENT_MANS += nut.exe.html
+endif HAVE_WINDOWS
 
 SRC_TOOL_PAGES = nut-scanner.txt nut-recorder.txt nutconf.txt
 
@@ -185,6 +198,12 @@ SRC_DEV_PAGES = \
 	nutscan_display_ups_conf_with_sanity_check.txt \
 	nutscan_display_ups_conf.txt \
 	nutscan_display_parsable.txt \
+	nutscan_init_ip_ranges.txt \
+	nutscan_free_ip_ranges.txt \
+	nutscan_stringify_ip_ranges.txt \
+	nutscan_add_ip_range.txt \
+	nutscan_ip_ranges_iter_init.txt \
+	nutscan_ip_ranges_iter_inc.txt \
 	nutscan_cidr_to_ip.txt \
 	nutscan_new_device.txt \
 	nutscan_free_device.txt \
@@ -303,6 +322,12 @@ MAN3_DEV_PAGES = \
 	nutscan_display_ups_conf_with_sanity_check.3 \
 	nutscan_display_ups_conf.3 \
 	nutscan_display_parsable.3 \
+	nutscan_init_ip_ranges.3 \
+	nutscan_free_ip_ranges.3 \
+	nutscan_stringify_ip_ranges.3 \
+	nutscan_add_ip_range.3 \
+	nutscan_ip_ranges_iter_init.3 \
+	nutscan_ip_ranges_iter_inc.3 \
 	nutscan_cidr_to_ip.3 \
 	nutscan_new_device.3 \
 	nutscan_free_device.3 \
@@ -312,13 +337,25 @@ MAN3_DEV_PAGES = \
 	nutscan_get_serial_ports_list.3 \
 	nutscan_init.3
 
+# Alias page for one text describing two commands:
 upscli_readline_timeout.3: upscli_readline.3
 	touch $@
 
 upscli_sendline_timeout.3: upscli_sendline.3
 	touch $@
 
-# Alias page for one text describing two commands:
+nutscan_scan_ip_range_snmp.3: nutscan_scan_snmp.3
+	touch $@
+
+nutscan_scan_ip_range_xml_http.3: nutscan_scan_xml_http_range.3
+	touch $@
+
+nutscan_scan_ip_range_nut.3: nutscan_scan_nut.3
+	touch $@
+
+nutscan_scan_ip_range_ipmi.3: nutscan_scan_ipmi.3
+	touch $@
+
 nutscan_add_commented_option_to_device.3: nutscan_add_option_to_device.3
 	touch $@
 
@@ -378,6 +415,12 @@ HTML_DEV_MANS = \
 	nutscan_display_ups_conf_with_sanity_check.html \
 	nutscan_display_ups_conf.html \
 	nutscan_display_parsable.html \
+	nutscan_init_ip_ranges.html \
+	nutscan_free_ip_ranges.html \
+	nutscan_stringify_ip_ranges.html \
+	nutscan_add_ip_range.html \
+	nutscan_ip_ranges_iter_init.html \
+	nutscan_ip_ranges_iter_inc.html \
 	nutscan_cidr_to_ip.html \
 	nutscan_new_device.html \
 	nutscan_free_device.html \
@@ -392,7 +435,31 @@ HTML_DEV_MANS = \
 # Can't make this work on all make implementations at once, so disabled for now
 # Anyway it would be the same man-like page for several functions
 HTML_DEV_MANS_FICTION = \
+	upscli_readline_timeout.html \
+	upscli_sendline_timeout.html \
+	nutscan_scan_ip_range_snmp.html \
+	nutscan_scan_ip_range_xml_http.html \
+	nutscan_scan_ip_range_nut.html \
+	nutscan_scan_ip_range_ipmi.html \
 	nutscan_add_commented_option_to_device.html
+
+upscli_readline_timeout.html: upscli_readline.html
+	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+
+upscli_sendline_timeout.html: upscli_sendline.html
+	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+
+nutscan_scan_ip_range_snmp.html: nutscan_scan_snmp.html
+	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+
+nutscan_scan_ip_range_xml_http.html: nutscan_scan_xml_http_range.html
+	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+
+nutscan_scan_ip_range_nut.html: nutscan_scan_nut.html
+	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
+
+nutscan_scan_ip_range_ipmi.html: nutscan_scan_ipmi.html
+	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
 
 nutscan_add_commented_option_to_device.html: nutscan_add_option_to_device.html
 	test -n "$?" -a -s "$@" && rm -f $@ && ln -s $? $@
@@ -417,9 +484,11 @@ SRC_SERIAL_PAGES = \
 	bestuferrups.txt	\
 	bestups.txt 	\
 	bestfcom.txt	\
+	bicker_ser.txt	\
 	blazer-common.txt	\
 	blazer_ser.txt	\
-	clone.txt \
+	clone.txt	\
+	clone-outlet.txt	\
 	dummy-ups.txt	\
 	etapro.txt	\
 	everups.txt	\
@@ -464,8 +533,10 @@ MAN_SERIAL_PAGES = \
 	bestuferrups.8	\
 	bestups.8 	\
 	bestfcom.8	\
+	bicker_ser.8	\
 	blazer_ser.8	\
-	clone.8 \
+	clone.8	\
+	clone-outlet.8	\
 	dummy-ups.8	\
 	etapro.8	\
 	everups.8	\
@@ -513,8 +584,10 @@ HTML_SERIAL_MANS = \
 	bestuferrups.html	\
 	bestups.html 	\
 	bestfcom.html	\
+	bicker_ser.html	\
 	blazer_ser.html	\
-	clone.html \
+	clone.html	\
+	clone-outlet.html	\
 	dummy-ups.html	\
 	etapro.html	\
 	everups.html	\
@@ -709,17 +782,17 @@ HTML_MODBUS_MANS = phoenixcontact_modbus.html \
 endif ! SOME_DRIVERS
 
 # (--with-linux_i2c)
-SRC_LINUX_I2C_PAGES = asem.txt pijuice.txt
+SRC_LINUX_I2C_PAGES = asem.txt pijuice.txt hwmon_ina219.txt
 if ! SOME_DRIVERS
 if WITH_MANS
-MAN_LINUX_I2C_PAGES = asem.8 pijuice.8
+MAN_LINUX_I2C_PAGES = asem.8 pijuice.8 hwmon_ina219.8
 endif WITH_MANS
 
 if WITH_LINUX_I2C
 man8_MANS += $(MAN_LINUX_I2C_PAGES)
 endif WITH_LINUX_I2C
 
-HTML_LINUX_I2C_MANS = asem.html pijuice.html
+HTML_LINUX_I2C_MANS = asem.html pijuice.html hwmon_ina219.html
 endif ! SOME_DRIVERS
 
 # (--with-gpio)
@@ -831,6 +904,16 @@ HTML_MANS = \
 	$(HTML_MODBUS_MANS) \
 	$(HTML_LINUX_I2C_MANS) \
 	$(HTML_GPIO_MANS)
+
+# htmlmandir is set by autoconf/automake
+htmlman_DATA =
+if WITH_HTML_SINGLE
+htmlman_DATA += $(HTML_MANS)
+else !WITH_HTML_SINGLE
+if WITH_HTML_CHUNKED
+htmlman_DATA += $(HTML_MANS)
+endif WITH_HTML_CHUNKED
+endif !WITH_HTML_SINGLE
 
 # Note: target documents, except nutupsdrv.txt itself, start the
 # list of drivers with `- linkman:nutupsdrv[8]` entry
@@ -950,7 +1033,7 @@ CLEANFILES = *-spellchecked .prep-src-docs *-prepped
 
 SUFFIXES = .txt-prepped .txt .html .1 .3 .5 .8
 
-# For builds with allowed installation of prebuild man pages, check that
+# For builds with allowed installation of prebuilt man pages, check that
 # they exist in sources (make would pull them automatically as a fallback
 # from failed lookup in build products). For builds that require rebuild
 # of man pages, abort with error if build product is missing.
@@ -1123,7 +1206,7 @@ endif !HAVE_ASCIIDOC
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension.
 # We also have to export some variables that may be tainted by relative
 # paths when parsing the other makefile (e.g. MKDIR_P that may be defined
-# via expanded $(top_builddir)/install_sh):
+# via expanded $(top_builddir)/install-sh):
 #%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 #	+$(MAKE) -s -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 

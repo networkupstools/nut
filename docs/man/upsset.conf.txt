@@ -13,6 +13,12 @@ This file only does one job--it lets you convince linkman:upsset.cgi[8]
 that your system's CGI directory is secure.  The program will not run
 until this file has been properly defined.
 
+IMPORTANT NOTES
+---------------
+
+* Contents of this file should be pure ASCII (character codes
+  not in range would be ignored with a warning message).
+
 SECURITY REQUIREMENTS
 ---------------------
 

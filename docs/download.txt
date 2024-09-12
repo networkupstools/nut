@@ -146,7 +146,7 @@ link:https://github.com/networkupstools/nut/wiki/Links-to-distribution-packaging
     * link:https://cgit.freebsd.org/ports/tree/sysutils/nut-devel[FreeBSD package recipe (devel)],
       link:https://cgit.freebsd.org/ports/tree/sysutils/nut[FreeBSD package recipe]
       and link:http://www.FreeBSD.org/cgi/ports.cgi?query=^nut-&amp;stype=name[FreeBSD package overview]
-    * link:cvsweb.netbsd.org/bsdweb.cgi/pkgsrc/sysutils/ups-nut/[NetBSD recipe] and link:http://pkgsrc.se/sysutils/ups-nut[NetBSD package overview]
+    * link:http://cvsweb.netbsd.org/bsdweb.cgi/pkgsrc/sysutils/ups-nut/[NetBSD recipe] and link:https://pkgsrc.se/sysutils/ups-nut[NetBSD package overview]
     * link:http://cvsweb.openbsd.org/cgi-bin/cvsweb/ports/sysutils/nut/[OpenBSD recipe]
     * link:https://github.com/freenas/iocage-ports/tree/master/sysutils/nut[FreeNAS iocage-ports recipe],
       link:http://doc.freenas.org/9.3/freenas_services.html#ups[FreeNAS 9.3 docs on UPS integration]

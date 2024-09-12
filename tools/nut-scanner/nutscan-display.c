@@ -1,6 +1,6 @@
 /*
  *  Copyright (C) 2011 - EATON
- *  2023 - Jim Klimov <jimklimov+nut@gmail.com>
+ *  Copyright (C) 2020-2024 - Jim Klimov <jimklimov+nut@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -261,9 +261,9 @@ void nutscan_display_sanity_check_serial(nutscan_device_t * device)
 	 */
 
 	/* Reserve enough slots for all-unique serials */
-	map = calloc(sizeof(keyval_strings_t), listlen);
+	map = calloc(listlen, sizeof(keyval_strings_t));
 	if (map == NULL) {
-		fprintf(stderr, "%s: Memory allocation error, skipped\n", __func__);
+		upsdebugx(0, "%s: Memory allocation error, skipped", __func__);
 		return;
 	}
 
@@ -317,7 +317,7 @@ void nutscan_display_sanity_check_serial(nutscan_device_t * device)
 					count++;
 					if (count != (i + 1) || count > listlen) {
 						/* Should never get here, but just in case... */
-						fprintf(stderr, "%s: Loop overflow, skipped\n", __func__);
+						upsdebugx(0, "%s: Loop overflow, skipped", __func__);
 						upsdebugx(3, "%s: count=%" PRIuSIZE " i=%" PRIuSIZE " listlen%" PRIuSIZE,
 							__func__, count, i, listlen);
 						goto exit;

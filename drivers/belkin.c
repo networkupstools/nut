@@ -29,7 +29,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Belkin Smart protocol driver"
-#define DRIVER_VERSION	"0.26"
+#define DRIVER_VERSION	"0.27"
 
 static ssize_t init_communication(void);
 static ssize_t get_belkin_reply(char *buf);

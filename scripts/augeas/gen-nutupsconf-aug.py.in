@@ -1,5 +1,7 @@
 #!@PYTHON@
-#   Copyright (C) 2010 - Arnaud Quette <arnaud.quette@gmail.com>
+#   Copyright (C)
+#     2010 -        Arnaud Quette <arnaud.quette@gmail.com>
+#     2020 - 2024   Jim Klimov <jimklimov+nut@gmail.com>
 #
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -50,7 +52,7 @@ def grep(string,list):
 		match = expr.search(text)
 		if match != None:
 			# Exclude comments
-			exprComment = re.compile('(/\*([^*]|(\*+[^*/]))*\*+/)|(//.*)')
+			exprComment = re.compile(r'(/\*([^*]|(\*+[^*/]))*\*+/)|(//.*)')
 			if (exprComment.search(match.string) == None):
 				matchList.append(match.string)
 
@@ -80,7 +82,7 @@ if __name__ == '__main__':
 		if filename not in Exceptionlist:
 			fd = codecs.open(filename, encoding='utf-8')
 			# 1.3/ Grep for the "addvar(..." pattern
-			matchResults = grep ('.*addvar[\ ]*\(.*(VAR_FLAG|VAR_VALUE)*,.*', fd)
+			matchResults = grep (r'.*addvar[\ ]*\(.*(VAR_FLAG|VAR_VALUE)*,.*', fd)
 
 			# 1.4/ Extract variable names
 			for line in matchResults:

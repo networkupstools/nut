@@ -31,7 +31,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Generic contact-closure UPS driver"
-#define DRIVER_VERSION	"1.39"
+#define DRIVER_VERSION	"1.40"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {

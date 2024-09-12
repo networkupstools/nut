@@ -114,7 +114,7 @@ if test -z "${nut_have_aspell_seen}"; then
 		AS_IF([test -n "$ASPELL_FILTER_TEX_PATH" -a -d "$ASPELL_FILTER_TEX_PATH"], [ASPELL_NUT_TEXMODE_ARGS="--filter-path='${ASPELL_FILTER_TEX_PATH}' ${ASPELL_NUT_TEXMODE_ARGS}"])
 		ASPELL_NUT_COMMON_ARGS="-d en -a"
 		dnl Using "eval" to handle quotes, in case of funny paths
-		out0="`LANG=C; LC_ALL=C; export LANG; export LC_ALL; exec -- 2>&1; set -x; echo test | eval ${ASPELL} ${ASPELL_NUT_TEXMODE_ARGS} ${ASPELL_NUT_COMMON_ARGS}`"; res0=$?
+		out0="`LANG=C; LC_ALL=C; export LANG; export LC_ALL; ( set -x; echo test | eval ${ASPELL} ${ASPELL_NUT_TEXMODE_ARGS} ${ASPELL_NUT_COMMON_ARGS} ) 2>&1`"; res0=$?
 		AS_IF([test x"$res0" != x0], [
 			AC_MSG_NOTICE([FAILED CMD: ${ASPELL} ${ASPELL_NUT_TEXMODE_ARGS} ${ASPELL_NUT_COMMON_ARGS}])
 			AC_MSG_NOTICE([aspell result ($res0) and output: $out0])
@@ -126,7 +126,7 @@ if test -z "${nut_have_aspell_seen}"; then
 				AC_MSG_RESULT(no)
 				AC_MSG_CHECKING([if detected aspell configuration works with built-in paths (tweaked one finds wrong binary modules)])
 				ASPELL_NUT_TEXMODE_ARGS="-t"
-				out0="`LANG=C; LC_ALL=C; export LANG; export LC_ALL; exec -- 2>&1; set -x; echo test | eval ${ASPELL} ${ASPELL_NUT_TEXMODE_ARGS} ${ASPELL_NUT_COMMON_ARGS}`"; res0=$?
+				out0="`LANG=C; LC_ALL=C; export LANG; export LC_ALL; ( set -x; echo test | eval ${ASPELL} ${ASPELL_NUT_TEXMODE_ARGS} ${ASPELL_NUT_COMMON_ARGS} ) 2>&1`"; res0=$?
 				AS_IF([test x"$res0" = x0], [ASPELL_FILTER_TEX_PATH=""], [
 					AC_MSG_NOTICE([FAILED CMD: ${ASPELL} ${ASPELL_NUT_TEXMODE_ARGS} ${ASPELL_NUT_COMMON_ARGS}])
 					AC_MSG_NOTICE([aspell result ($res0) and output: $out0])

@@ -1,5 +1,5 @@
 #ifndef NUT_MAIN_H_SEEN
-#define NUT_MAIN_H_SEEN
+#define NUT_MAIN_H_SEEN 1
 
 #include "common.h"
 #include "upsconf.h"
@@ -131,6 +131,7 @@ void setup_signals(void);
 #ifndef WIN32
 # define SIGCMD_RELOAD                  SIGHUP
 /* not a signal, so negative; relies on socket protocol */
+# define SIGCMD_EXIT                    -SIGTERM
 # define SIGCMD_RELOAD_OR_ERROR         -SIGCMD_RELOAD
 # define SIGCMD_RELOAD_OR_EXIT          SIGUSR1
 /* // FIXME: Implement this self-recycling in drivers (keeping the PID):
@@ -153,6 +154,7 @@ void setup_signals(void);
 # endif
 #else
 /* FIXME: handle WIN32 builds for other signals too */
+# define SIGCMD_EXIT                    "driver.exit"
 # define SIGCMD_RELOAD_OR_ERROR         "driver.reload-or-error"
 #endif	/* WIN32 */
 

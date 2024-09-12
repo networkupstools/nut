@@ -1,6 +1,9 @@
 /* upsdrvctl.c - UPS driver controller
 
-   Copyright (C) 2001  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+   2001		Russell Kroll <rkroll@exploits.org>
+   2005 - 2017	Arnaud Quette <arnaud.quette@free.fr>
+   2017 - 2024	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -188,37 +191,56 @@ static void signal_driver_cmd(const ups_t *ups,
 )
 {
 #ifndef WIN32
+/* TODO: implement WIN32: https://github.com/networkupstools/nut/issues/1916
+ * Currently the codepath is not implemented below
+ */
 	char	pidfn[SMALLBUF];
 #endif
 	int	ret;
 
 #ifndef WIN32
-	if (cmd == SIGCMD_RELOAD_OR_ERROR)
+	if (cmd == SIGCMD_RELOAD_OR_ERROR || cmd == SIGCMD_EXIT)
 #else
-	if (cmd && !strcmp(cmd, SIGCMD_RELOAD_OR_ERROR))
+	if (cmd && (!strcmp(cmd, SIGCMD_RELOAD_OR_ERROR) || !strcmp(cmd, SIGCMD_EXIT)))
 #endif
 	{
 		/* not a signal, use socket protocol */
-		char buf[LARGEBUF];
+		char buf[LARGEBUF], cmdbuf[LARGEBUF];
 		struct timeval	tv;
+		char *cmdname = NULL;
 
-		upsdebugx(1, "Signalling UPS [%s]: %s",
-			ups->upsname, "driver.reload-or-error");
+#ifndef WIN32
+		if (cmd == SIGCMD_RELOAD_OR_ERROR)
+#else
+		if (!strcmp(cmd, SIGCMD_RELOAD_OR_ERROR))
+#endif
+			cmdname = "reload-or-error";
+		else
+#ifndef WIN32
+		if (cmd == SIGCMD_EXIT)
+#else
+		if (!strcmp(cmd, SIGCMD_EXIT))
+#endif
+			cmdname = "exit";
 
-		if (testmode)
+		upsdebugx(1, "Signalling UPS [%s]: driver.%s",
+			ups->upsname, NUT_STRARG(cmdname));
+
+		if (testmode || !cmdname)
 			return;
 
 		/* Post the query and wait for reply */
 		/* FIXME: coordinate with pollfreq? */
 		tv.tv_sec = 15;
 		tv.tv_usec = 0;
+		snprintf(cmdbuf, sizeof(cmdbuf), "INSTCMD driver.%s\n", cmdname);
 		ret = upsdrvquery_oneshot(ups->driver, ups->upsname,
-			"INSTCMD driver.reload-or-error\n",
-			buf, sizeof(buf), &tv);
+			cmdbuf, buf, sizeof(buf), &tv);
 		if (ret < 0) {
 			goto socket_error;
 		} else {
-			upslogx(LOG_INFO, "Request to reload-or-error returned code %d", ret);
+			upslogx(LOG_INFO, "Request for driver to %s returned code %d",
+				cmdname, ret);
 			if (ret != STAT_INSTCMD_HANDLED)
 				exec_error++;
 			/* TODO: Propagate "ret" to caller, eventually CLI exit-code? */
@@ -233,7 +255,7 @@ socket_error:
 	}
 
 #ifndef WIN32
-/* TODO: implement WIN32 */
+/* TODO: implement WIN32: https://github.com/networkupstools/nut/issues/1916 */
 /* handle generally signalling the UPS */
 	/* Real signals */
 #ifndef WIN32
@@ -281,11 +303,13 @@ socket_error:
 	if (testmode)
 		return;
 
+	/* Hush the fopen(pidfile) message but let "real errors" be seen */
+	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_KILL_SIG0PING - 1;
 #ifndef WIN32
 	if (ups->pid == -1) {
-		ret = sendsignalfn(pidfn, cmd);
+		ret = sendsignalfn(pidfn, cmd, ups->driver, 0);
 	} else {
-		ret = sendsignalpid(ups->pid, cmd);
+		ret = sendsignalpid(ups->pid, cmd, ups->driver, 0);
 		/* reap zombie if this child died */
 		if (waitpid(ups->pid, NULL, WNOHANG) == ups->pid) {
 			upslog_with_errno(LOG_WARNING,
@@ -294,14 +318,16 @@ socket_error:
 		}
 	}
 #else
-	ret = sendsignal(pidfn, cmd);
+	ret = sendsignal(pidfn, cmd, 0);
 #endif
+	/* Restore the signal errors verbosity */
+	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_DEFAULT;
 
 	if (ret < 0) {
 		upslog_with_errno(LOG_ERR, "Signalling %s failed: %d", pidfn, ret);
 		exec_error++;
 	}
-#endif	/* WIN32 */
+#endif	/* WIN32: https://github.com/networkupstools/nut/issues/1916 */
 }
 
 /* handle generally signalling the UPS with recently raised signal */
@@ -353,60 +379,63 @@ static void stop_driver(const ups_t *ups)
 	if (testmode)
 		return;
 
+	/* Hush the fopen(pidfile) message but let "real errors" be seen */
+	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_KILL_SIG0PING - 1;
+
 #ifndef WIN32
 	if (ups->pid == -1) {
-		ret = sendsignalfn(pidfn, SIGTERM);
+		ret = sendsignalfn(pidfn, SIGTERM, ups->driver, 0);
 	} else {
-		ret = sendsignalpid(ups->pid, SIGTERM);
+		ret = sendsignalpid(ups->pid, SIGTERM, ups->driver, 0);
 		/* reap zombie if this child died */
 		if (waitpid(ups->pid, NULL, WNOHANG) == ups->pid) {
-			return;
+			goto clean_return;
 		}
 	}
 #else
-	ret = sendsignal(pidfn, COMMAND_STOP);
+	ret = sendsignal(pidfn, COMMAND_STOP, 0);
 #endif
 
 	if (ret < 0) {
 #ifndef WIN32
 		upsdebugx(2, "SIGTERM to %s failed, retrying with SIGKILL", pidfn);
 		if (ups->pid == -1) {
-			ret = sendsignalfn(pidfn, SIGKILL);
+			ret = sendsignalfn(pidfn, SIGKILL, ups->driver, 0);
 		} else {
-			ret = sendsignalpid(ups->pid, SIGKILL);
+			ret = sendsignalpid(ups->pid, SIGKILL, ups->driver, 0);
 			/* reap zombie if this child died */
 			if (waitpid(ups->pid, NULL, WNOHANG) == ups->pid) {
-				return;
+				goto clean_return;
 			}
 		}
 #else
 		upsdebugx(2, "Stopping %s failed, retrying again", pidfn);
-		ret = sendsignal(pidfn, COMMAND_STOP);
+		ret = sendsignal(pidfn, COMMAND_STOP, 0);
 #endif
 		if (ret < 0) {
 			upslog_with_errno(LOG_ERR, "Stopping %s failed", pidfn);
 			exec_error++;
-			return;
+			goto clean_return;
 		}
 	}
 
 	for (i = 0; i < 5 ; i++) {
 #ifndef WIN32
 		if (ups->pid == -1) {
-			ret = sendsignalfn(pidfn, 0);
+			ret = sendsignalfn(pidfn, 0, ups->driver, 0);
 		} else {
 			/* reap zombie if this child died */
 			if (waitpid(ups->pid, NULL, WNOHANG) == ups->pid) {
-					return;
+				goto clean_return;
 			}
-			ret = sendsignalpid(ups->pid, 0);
+			ret = sendsignalpid(ups->pid, 0, ups->driver, 0);
 		}
 #else
-		ret = sendsignalfn(pidfn, 0);
+		ret = sendsignalfn(pidfn, 0, ups->driver, 0);
 #endif
 		if (ret != 0) {
 			upsdebugx(2, "Sending signal to %s failed, driver is finally down or wrongly owned", pidfn);
-			return;
+			goto clean_return;
 		}
 		sleep(1);
 	}
@@ -414,32 +443,32 @@ static void stop_driver(const ups_t *ups)
 #ifndef WIN32
 	upslog_with_errno(LOG_ERR, "Stopping %s failed, retrying harder", pidfn);
 	if (ups->pid == -1) {
-		ret = sendsignalfn(pidfn, SIGKILL);
+		ret = sendsignalfn(pidfn, SIGKILL, ups->driver, 0);
 	} else {
 		/* reap zombie if this child died */
 		if (waitpid(ups->pid, NULL, WNOHANG) == ups->pid) {
-			return;
+			goto clean_return;
 		}
-		ret = sendsignalpid(ups->pid, SIGKILL);
+		ret = sendsignalpid(ups->pid, SIGKILL, ups->driver, 0);
 	}
 #else
 	upslog_with_errno(LOG_ERR, "Stopping %s failed, retrying again", pidfn);
-	ret = sendsignal(pidfn, COMMAND_STOP);
+	ret = sendsignal(pidfn, COMMAND_STOP, 0);
 #endif
 	if (ret == 0) {
 		for (i = 0; i < 5 ; i++) {
 #ifndef WIN32
 			if (ups->pid == -1) {
-				ret = sendsignalfn(pidfn, 0);
+				ret = sendsignalfn(pidfn, 0, ups->driver, 0);
 			} else {
 				/* reap zombie if this child died */
 				if (waitpid(ups->pid, NULL, WNOHANG) == ups->pid) {
-					return;
+					goto clean_return;
 				}
-				ret = sendsignalpid(ups->pid, 0);
+				ret = sendsignalpid(ups->pid, 0, ups->driver, 0);
 			}
 #else
-			ret = sendsignalfn(pidfn, 0);
+			ret = sendsignalfn(pidfn, 0, ups->driver, 0);
 #endif
 			if (ret != 0) {
 				upsdebugx(2, "Sending signal to %s failed, driver is finally down or wrongly owned", pidfn);
@@ -449,7 +478,7 @@ static void stop_driver(const ups_t *ups)
 				if (ups->pid == -1) {
 					unlink(pidfn);
 				}
-				return;
+				goto clean_return;
 			}
 			sleep(1);
 		}
@@ -457,6 +486,10 @@ static void stop_driver(const ups_t *ups)
 
 	upslog_with_errno(LOG_ERR, "Stopping %s failed", pidfn);
 	exec_error++;
+
+clean_return:
+	/* Restore the signal errors verbosity */
+	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_DEFAULT;
 }
 
 void set_exit_flag(const int sig)
@@ -492,7 +525,7 @@ static void reset_signal_flag(void)
 }
 
 #ifndef WIN32
-/* TODO: Equivalent for WIN32 - see SIGCMD_RELOAD in upd and upsmon */
+/* TODO: Equivalent for WIN32 - see SIGCMD_RELOAD in upsd and upsmon */
 static void set_reload_flag(const
 #ifndef WIN32
 	int
@@ -515,6 +548,10 @@ static void set_reload_flag(const
 			reload_flag = 3;
 			break;
 # endif
+
+		case SIGCMD_EXIT:	/* Not even a signal, but a socket protocol action */
+			reload_flag = 15;
+			break;
 
 		case SIGCMD_RELOAD:     /* SIGHUP */
 		case SIGCMD_RELOAD_OR_ERROR:	/* Not even a signal, but a socket protocol action */
@@ -768,6 +805,221 @@ static void forkexec(char *const argv[], const ups_t *ups)
 #endif
 }
 
+static void list_driver(const ups_t *ups)
+{
+	/* Just a short report: one config section name per line */
+	printf("%s\n", ups->upsname);
+}
+
+static void status_driver(const ups_t *ups)
+{
+	/* TODO: Options (global static) for details of configuration like
+	 * the driver name, serial, etc. or even current life-cycle status
+	 * (e.g. valid PID existence, data query via socket protocol...)
+	 */
+	static int	headerShown = 0;
+#ifndef WIN32
+	char	pidfn[SMALLBUF];
+	int	cmdret = -1;
+#endif
+	char	bufPid[LARGEBUF], *pidStrFromSocket = NULL,
+		bufStatus[LARGEBUF], *statusStrFromSocket = NULL;
+	int	pidAlive = -1,
+		qretPing = -1, qretPid = -1, qretStatus = -1,
+		nudl = nut_upsdrvquery_debug_level,
+		nsdl = nut_sendsignal_debug_level;
+	pid_t	pidFromFile = -1, pidFromSocket = -1;
+	struct timeval	tv;
+	udq_pipe_conn_t	*conn;
+
+	if (!ups) {
+		upsdebugx(1, "%s: skip due to ups==null", __func__);
+		return;
+	}
+
+	/* Hush the fopen(pidfile) message but let "real errors" be seen */
+	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_KILL_SIG0PING - 1;
+#ifndef WIN32
+	snprintf(pidfn, sizeof(pidfn), "%s/%s-%s.pid", altpidpath(), ups->driver, ups->upsname);
+	pidFromFile = parsepidfile(pidfn);
+	if (pidFromFile >= 0) {                                                                                                                                                                                                                       /* this method actively reports errors, if any */
+		cmdret = sendsignalpid(pidFromFile, 0, ups->driver, 1);
+		/* returns zero for a successfully sent signal */
+		if (cmdret == 0)
+			pidAlive = 1;
+	}
+	upsdebugx(4, "%s: pidfn=%s pidFromFile=%" PRIiMAX " cmdret=%d pidAlive=%d",
+		__func__, pidfn, (intmax_t)pidFromFile, cmdret, pidAlive);
+#else
+/*	// FIXME: We actually have no probing signals over pipe so far,
+	// and sending 0 (NULL here) is proven unsafe
+	// Instead we will try below with PID learned from pipe
+	snprintf(pidfn, sizeof(pidfn), "%s-%s", ups->driver, ups->upsname);
+	cmdret = sendsignal(pidfn, COMMAND_RELOAD, 1);
+	upsdebugx(4, "%s: pipe pidfn=%s cmdret=%d", __func__, pidfn, cmdret);
+ */
+#endif
+
+	/* Hush the fopen(socketfile) in upsdrvquery_connect_drvname_upsname() */
+	nut_upsdrvquery_debug_level = 0;
+	conn = upsdrvquery_connect_drvname_upsname(ups->driver, ups->upsname);
+	nut_upsdrvquery_debug_level = nudl;
+
+	if (conn && VALID_FD(conn->sockfd)) {
+		upsdebugx(3, "%s: connected", __func__);
+		/* Post the query and wait for reply */
+		/* FIXME: coordinate with pollfreq? */
+		tv.tv_sec = 3;
+		tv.tv_usec = 0;
+
+		memset(bufPid, 0, sizeof(bufPid));
+
+		/* Involves a PING/PONG check, and more;
+		 * returns -1 on error */
+		upsdebugx(3, "%s: upsdrvquery_prepare", __func__);
+		qretPing = upsdrvquery_prepare(conn, tv);
+
+		if (qretPing >= 0) {
+			qretPing = STAT_INSTCMD_HANDLED;
+
+			/* No TRACKING in queries below */
+			memset(bufPid, 0, sizeof(bufPid));
+
+			upsdebugx(3, "%s: upsdrvquery_write GETPID", __func__);
+			if (upsdrvquery_write(conn, "GETPID\n") >= 0
+			&&  (qretPid = upsdrvquery_read_timeout(conn, tv)) >= 1
+			&&  (!strncmp(conn->buf, "PID ", 4))
+			) {
+				size_t	l;
+				upsdebugx(4, "%s: upsdrvquery_read GETPID", __func__);
+				snprintf(bufPid, sizeof(bufPid), "%s", conn->buf + 4);
+				upsdebugx(4, "%s: upsdrvquery_read GETPID 2", __func__);
+				l = strlen(bufPid);
+				pidStrFromSocket = bufPid;
+				if (bufPid[l - 1] == '\n')
+					bufPid[l - 1] = '\0';
+				qretPid = STAT_INSTCMD_HANDLED;
+				pidFromSocket = parsepid(pidStrFromSocket);
+				if (errno != 0)
+					pidFromSocket = -1;
+			} else {
+				/* query failed or returned not a PID<something> */
+				qretPid = -1;
+			}
+		}
+
+		if (qretPid == STAT_INSTCMD_HANDLED) {
+			memset(bufStatus, 0, sizeof(bufStatus));
+#ifdef WIN32
+			/* Allow a new read to happen later */
+			conn->newread = 1;
+#endif
+
+			upsdebugx(3, "%s: upsdrvquery_write DUMPSTATUS", __func__);
+			if (upsdrvquery_write(conn, "DUMPSTATUS\n") >= 0
+			&&  (qretStatus = upsdrvquery_read_timeout(conn, tv)) >= 1
+			) {
+				char	*buf;
+
+				upsdebugx(4, "%s: upsdrvquery_read DUMPSTATUS", __func__);
+				/* save before strtok mangles it */
+				snprintf(bufStatus, sizeof(bufStatus), "%s", conn->buf);
+
+				upsdebugx(4, "%s: upsdrvquery_read DUMPSTATUS 2", __func__);
+				for (buf = strtok(bufStatus, "\n"); buf; buf = strtok(NULL, "\n")) {
+					if (statusStrFromSocket) {
+						/* New loop, NUL byte was set if needed */
+						break;
+					}
+
+					if (!strncmp(buf, "SETINFO ups.status ", 19)) {
+						statusStrFromSocket = buf + 19;
+						qretStatus = STAT_INSTCMD_HANDLED;
+						/* continue to loop, to clear '\n' to '\0' */
+					}
+
+					if (!strncmp(buf, "DUMPDONE\n", 9)) {
+						/* New loop, NUL byte was set if needed */
+						break;
+					}
+				}
+			} else {
+				/* query failed or did not return SETINFO ups.status ... */
+				qretStatus = -1;
+			}
+		}
+	} else {
+		upsdebugx(3, "%s: not connected", __func__);
+	}
+
+	upsdebugx(3, "%s: close socket", __func__);
+	upsdrvquery_close(conn);
+	if (conn) {
+		upsdebugx(4, "%s: free socket", __func__);
+		free(conn);
+		conn = NULL;
+	}
+
+	if (pidFromFile < 0 && pidFromSocket >= 0) {
+		upsdebugx(3, "%s: PID was not available from a file, but was "
+			"from Socket Protocol; check if it is alive instead",
+			__func__);
+
+		pidAlive = checkprocname(pidFromSocket, ups->driver);
+		upsdebugx(4, "%s: pidFromSocket=%" PRIiMAX " pidAlive=%d",
+			__func__, (intmax_t)pidFromSocket, pidAlive);
+	} else if (pidAlive < 0 && pidFromSocket >= 0 && (pidFromFile != pidFromSocket)) {
+		upsdebugx(3, "%s: PID value was available from a file, but was "
+			"not found running or valid; another one is available "
+			"from Socket Protocol; check if it is alive instead",
+			__func__);
+
+		pidAlive = checkprocname(pidFromSocket, ups->driver);
+		upsdebugx(4, "%s: pidFromSocket=%" PRIiMAX " pidAlive=%d",
+			__func__, (intmax_t)pidFromSocket, pidAlive);
+	}
+
+	/* Complete any cached (error) writes before the next lines,
+	 * more so on WIN32 */
+	fflush(stderr);
+	fflush(stdout);
+	usleep(1000);
+
+	if (!headerShown) {
+		printf("%-11s\t%11s\t%s\t%s\t%s\t%s\t%s\n",
+			"UPSNAME",
+			"UPSDRV",
+			"RUNNING",
+			"PF_PID",
+			"S_RESPONSIVE",
+			"S_PID",
+			"S_STATUS"
+			);
+		headerShown = 1;
+	}
+
+	upsdebugx(2, "%s: raw values: pidAlive=%d "
+		"pidFromFile=%" PRIiMAX " pidFromSocket=%" PRIiMAX " "
+		"qretPing=%d qretPid=%d qretStatus=%d",
+		__func__, pidAlive,
+		(intmax_t)(pidFromFile), (intmax_t)(pidFromSocket),
+		qretPing, qretPid, qretStatus
+		);
+
+	printf("%-11s\t%11s\t%s\t%" PRIiMAX "\t%s\t%s\t%s\n",
+		ups->upsname, ups->driver,
+		((pidFromFile < 0 && pidFromSocket < 0) || (pidAlive < 0)
+		 ? "N/A" : (pidAlive > 0 ? "RUNNING" : "STOPPED")),
+		(intmax_t)(pidFromFile),
+		((qretPing == STAT_INSTCMD_HANDLED) ? "RESPONSIVE" : "NOT_RESPONSIVE"),
+		(pidStrFromSocket ? pidStrFromSocket : "N/A"),
+		((qretStatus == STAT_INSTCMD_HANDLED) ? NUT_STRARG(statusStrFromSocket) : "")
+		);
+	fflush(stdout);
+
+	nut_sendsignal_debug_level = nsdl;
+}
+
 static void start_driver(const ups_t *ups)
 {
 	char	*argv[10];
@@ -920,8 +1172,11 @@ static void help(const char *progname)
 
 static void help(const char *arg_progname)
 {
-	printf("Starts and stops UPS drivers via ups.conf.\n\n");
-	printf("usage: %s [OPTIONS] (start | stop | shutdown) [<ups>]\n\n", arg_progname);
+	print_banner_once(arg_progname, 2);
+	printf("UPS driver controller: Starts and stops UPS drivers via ups.conf.\n\n");
+
+	printf("usage: %s [OPTIONS] (start | stop | shutdown | status) [<ups>]\n\n", arg_progname);
+	printf("usage: %s [OPTIONS] (list | -l) [<ups>]\n\n", arg_progname);
 	printf("usage: %s [OPTIONS] -c <command> [<ups>]\n\n", arg_progname);
 
 	printf("Common options:\n");
@@ -935,11 +1190,15 @@ static void help(const char *arg_progname)
 	printf("  -FF			driver stays foregrounded and still saves the PID file\n");
 	printf("  -B			driver(s) stay backgrounded even if debugging is bumped\n");
 
-	printf("Signalling a running driver:\n");
+	printf("\nListing known driver(s):\n");
+	printf("  -l | list		list all device driver confgurations that can be managed\n");
+	printf("  -l | list <ups>	only try to list the specified device driver confgurations (error if unresolved)\n");
+
+	printf("\nSignalling a running driver:\n");
 	printf("  -c <command>		send <command> via signal to running driver(s)\n");
 	printf("              		supported commands:\n");
 #ifndef WIN32
-/* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
+/* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds: https://github.com/networkupstools/nut/issues/1916 */
 	printf("              		- data-dump: if the driver still has STDOUT attached (maybe\n");
 	printf("              		  to log), dump its currently collected information there\n");
 	printf("              		- reload: re-read configuration files, ignoring changed\n");
@@ -952,7 +1211,7 @@ static void help(const char *arg_progname)
 	printf("              		  based on that count, so the caller can decide the fate of\n");
 	printf("              		  the currently running driver instance\n");
 #ifndef WIN32
-/* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
+/* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds: https://github.com/networkupstools/nut/issues/1916 */
 # ifdef SIGCMD_RELOAD_OR_RESTART
 	printf("              		- reload-or-restart: re-read configuration files (close the\n");
 	printf("              		  old driver instance device connection if needed, and have\n");
@@ -962,14 +1221,21 @@ static void help(const char *arg_progname)
 	printf("              		  driver instance if needed, so an external caller like the\n");
 	printf("              		  systemd or SMF frameworks would start another copy)\n");
 #endif /* WIN32 */
+	printf("              		- exit: tell the currently running driver instance to just exit\n");
+	printf("              		  (so an external caller like the new driver instance, or the\n");
+	printf("              		  systemd or SMF frameworks would start another copy)\n");
 
-	printf("Driver life cycle options:\n");
+	printf("\nDriver life cycle options:\n");
 	printf("  start			start all UPS drivers in ups.conf\n");
-	printf("  start	<ups>		only start driver for UPS <ups>\n");
+	printf("  start <ups>		only start driver for UPS <ups>\n");
 	printf("  stop			stop all UPS drivers in ups.conf\n");
 	printf("  stop <ups>		only stop driver for UPS <ups>\n");
 	printf("  shutdown		shutdown all UPS drivers in ups.conf\n");
 	printf("  shutdown <ups>	only shutdown UPS <ups>\n");
+	printf("  status		query status for all UPS drivers in ups.conf\n");
+	printf("  status <ups>		only query status for driver for UPS <ups>\n");
+	printf("              		Fields: UPSNAME UPSDRV RUNNING PF_PID S_RESPONSIVE S_PID S_STATUS\n");
+	printf("              		(PF_* = according to PID file, if any; S_* = via socket protocol)\n");
 
 	exit(EXIT_SUCCESS);
 }
@@ -1037,16 +1303,27 @@ static void send_one_driver(void (*command_func)(const ups_t *), const char *arg
 /* walk UPS table and send command to all UPSes according to sdorder */
 static void send_all_drivers(void (*command_func)(const ups_t *))
 {
-	ups_t	*ups;
+	ups_t	*ups = upstable;
 	int	i;
 
-	if (!upstable)
+	if (!ups)
 		fatalx(EXIT_FAILURE, "Error: no UPS definitions found in ups.conf");
 
 	exec_error = 0;
 	exec_timeout = 0;
+
+	if (command_func == &list_driver || command_func == &status_driver) {
+		while (ups) {
+			command_func(ups);
+			ups = ups->next;
+		}
+
+		fflush(stdout);
+		return;
+	}
+
 	if (command_func != &shutdown_driver) {
-		ups = upstable;
+		/* e.g. start_driver or stop_driver */
 
 		/* Only warn when relevant - got more than one device to start */
 		if (command_func == &start_driver
@@ -1080,8 +1357,6 @@ static void send_all_drivers(void (*command_func)(const ups_t *))
 
 	/* Orderly processing of shutdowns */
 	for (i = 0; i <= maxsdorder; i++) {
-		ups = upstable;
-
 		while (ups) {
 			if (ups->sdorder == i)
 				command_func(ups);
@@ -1133,13 +1408,15 @@ static void exit_cleanup(void)
 int main(int argc, char **argv)
 {
 	int	i, lastarg = 0;
-	char	*prog;
-
-	printf("Network UPS Tools - UPS driver controller %s\n",
-		UPS_VERSION);
+	char	*prog, *command_name = NULL, progdesc[LARGEBUF];
 
 	prog = argv[0];
-	while ((i = getopt(argc, argv, "+htu:r:DdFBVc:")) != -1) {
+
+	/* Historically special banner*/
+	snprintf(progdesc, sizeof(progdesc), "%s - UPS driver controller", xbasename(prog));
+	print_banner_once(progdesc, 0);
+
+	while ((i = getopt(argc, argv, "+htu:r:DdFBVc:l")) != -1) {
 		switch(i) {
 			case 'r':
 				pt_root = optarg;
@@ -1154,6 +1431,10 @@ int main(int argc, char **argv)
 				break;
 
 			case 'V':
+				/* just show the version and optional
+				 * CONFIG_FLAGS banner if available */
+				print_banner_once(progdesc, 1);
+				nut_report_config_flags();
 				exit(EXIT_SUCCESS);
 
 			case 'D':
@@ -1184,12 +1465,17 @@ int main(int argc, char **argv)
 						"sent with option -%c. Try -h for help.", i);
 				}
 				command = &signal_driver;
+				command_name = "signal";
 
 				if (!strncmp(optarg, "reload-or-error", strlen(optarg))) {
 					signal_flag = SIGCMD_RELOAD_OR_ERROR;
 				}
+				else
+				if (!strncmp(optarg, "exit", strlen(optarg))) {
+					signal_flag = SIGCMD_EXIT;
+				}
 #ifndef WIN32
-/* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
+/* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds: https://github.com/networkupstools/nut/issues/1916 */
 				else
 				if (!strncmp(optarg, "dump", strlen(optarg))) {
 					signal_flag = SIGCMD_DATA_DUMP;
@@ -1208,7 +1494,7 @@ int main(int argc, char **argv)
 				if (!strncmp(optarg, "reload-or-exit", strlen(optarg))) {
 					signal_flag = SIGCMD_RELOAD_OR_EXIT;
 				}
-#endif	/* WIN32 */
+#endif	/* WIN32: https://github.com/networkupstools/nut/issues/1916 */
 
 				/* bad command given */
 				if (!signal_flag) {
@@ -1218,17 +1504,27 @@ int main(int argc, char **argv)
 
 				pt_cmd = optarg;
 #ifndef WIN32
-				upsdebugx(1, "Will send signal %d (%s) for command '%s' "
-					"to already-running driver (if any) and exit",
-					signal_flag, strsignal(signal_flag), optarg);
+				if (signal_flag > 0)
+					upsdebugx(1, "Will send signal %d (%s) for command '%s' "
+						"to already-running driver (if any) and exit",
+						signal_flag, strsignal(signal_flag), optarg);
+				else
+					upsdebugx(1, "Will send request for command '%s' (internal code %d) "
+						"to already-running driver (if any) and exit",
+						optarg, signal_flag);
 #else
 				upsdebugx(1, "Will send request '%s' for command '%s' "
 					"to already-running driver (if any) and exit",
 					signal_flag, optarg);
 #endif	/* WIN32 */
 				break;
+			case 'l':
+				command = &list_driver;
+				command_name = "list";
+				break;
 			case 'h':
 			default:
+				/* not progdesc, shows details of its own */
 				help(prog);
 		}
 	}
@@ -1259,7 +1555,36 @@ int main(int argc, char **argv)
 			nut_debug_level = 2;
 	}
 
-	if (nut_debug_level_passthrough == 0) {
+	/* Note: argv is incremented above, so [0] is currently the next
+	 * CLI keyword after options */
+	if (!command) {
+		if (!strcmp(argv[0], "start")) {
+			command = &start_driver;
+			command_name = argv[0];
+		} else
+		if (!strcmp(argv[0], "stop")) {
+			command = &stop_driver;
+			command_name = argv[0];
+		} else
+		if (!strcmp(argv[0], "shutdown")) {
+			command = &shutdown_driver;
+			command_name = argv[0];
+		} else
+		if (!strcmp(argv[0], "list")) {
+			command = &list_driver;
+			command_name = argv[0];
+		} else
+		if (!strcmp(argv[0], "status")) {
+			command = &status_driver;
+			command_name = argv[0];
+		}
+		lastarg = 1;
+	}
+
+	if (!command)
+		fatalx(EXIT_FAILURE, "Error: unrecognized command [%s]", argv[0]);
+
+	if (nut_debug_level_passthrough == 0 && (command == &start_driver || command == &shutdown_driver)) {
 		upsdebugx(2, "\n"
 			"If you're not a NUT core developer, chances are that you're told to enable debugging\n"
 			"to see why a driver isn't working for you. We're sorry for the confusion, but this is\n"
@@ -1271,22 +1596,6 @@ int main(int argc, char **argv)
 			"Alternately, provide an additional '-d' (lower-case) parameter to 'upsdrvctl' to\n"
 			"pass its current debug level to the launched driver, and '-B' keeps it backgrounded.\n");
 	}
-
-	if (!command) {
-		if (!strcmp(argv[0], "start")) {
-			command = &start_driver;
-		} else
-		if (!strcmp(argv[0], "stop")) {
-			command = &stop_driver;
-		} else
-		if (!strcmp(argv[0], "shutdown")) {
-			command = &shutdown_driver;
-		}
-		lastarg = 1;
-	}
-
-	if (!command)
-		fatalx(EXIT_FAILURE, "Error: unrecognized command [%s]", argv[0]);
 
 #ifndef WIN32
 	driverpath = xstrdup(DRVPATH);	/* set default */
@@ -1308,18 +1617,38 @@ int main(int argc, char **argv)
 		}
 
 		upsdebugx(1, "upsdrvctl commanding all drivers (%d found): %s",
-			upscount, (pt_cmd ? pt_cmd : NUT_STRARG(argv[lastarg])));
+			upscount, (pt_cmd ? pt_cmd : NUT_STRARG(command_name)));
 		send_all_drivers(command);
 	} else
 	if (argc == (lastarg + 1)) {
 		upscount = 1;
 		upsdebugx(1, "upsdrvctl commanding one driver (%s): %s",
-			argv[lastarg], (pt_cmd ? pt_cmd : NUT_STRARG(argv[lastarg - 1])));
+			argv[lastarg], (pt_cmd ? pt_cmd : NUT_STRARG(command_name)));
 		send_one_driver(command, argv[lastarg]);
 	} else {
 		fatalx(EXIT_FAILURE, "Error: extra arguments left on command line\n"
 			"(common options should be before a command and UPS name)");
 	}
+
+#if (defined(WITH_SOLARIS_SMF) && WITH_SOLARIS_SMF) || (defined(HAVE_SYSTEMD) && HAVE_SYSTEMD)
+	if (!getenv("NUT_QUIET_INIT_NDE_WARNING")
+	&&  (command == &start_driver || command == &stop_driver || command == &shutdown_driver)
+	) {
+# if (defined(WITH_SOLARIS_SMF) && WITH_SOLARIS_SMF)
+		char *fwk = "SMF";
+# else
+#  if (defined(HAVE_SYSTEMD) && HAVE_SYSTEMD)
+		char *fwk = "systemd";
+#  endif
+# endif
+		upslogx(LOG_WARNING, "WARNING: %s was called directly on a system with %s support.\n"
+			"    Please consider using 'upsdrvsvcctl' instead, to avoid conflicts with\n"
+			"    nut-driver service instances prepared by 'nut-driver-enumerator'!",
+			prog, fwk);
+		upsdebugx(1, "For more details see https://github.com/networkupstools/nut/wiki/nut%%E2%%80%%90driver%%E2%%80%%90enumerator-(NDE)");
+		upsdebugx(1, "To silence this warning export NUT_QUIET_INIT_NDE_WARNING with any value");
+	}
+#endif
 
 	/* Note that the numeric value here is not precise (it reflects
 	 * the number of "timeouts" which grows with amount of drivers

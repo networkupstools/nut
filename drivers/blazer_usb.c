@@ -37,7 +37,7 @@
 #endif
 
 #define DRIVER_NAME	"Megatec/Q1 protocol USB driver"
-#define DRIVER_VERSION	"0.17"
+#define DRIVER_VERSION	"0.20"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -137,6 +137,9 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 			break;
 
 		case LIBUSB_ERROR_TIMEOUT: /** Operation or Connection timed out */
+			break;
+
+		default:
 			break;
 		}
 

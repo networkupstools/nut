@@ -16,6 +16,17 @@
     -->
   <!-- AUTOINSERT LOCATION -->
   <revision>
+    <revnumber>2.8.2</revnumber>
+    <date>2024-04-01</date>
+    <authorinitials>JK</authorinitials>
+    <revremark>
+        Some changes to docs and recipes, libnutscan API and functionality.
+        Added nutconf (library and tool). Fixed some regressions and added
+        improvements for certain new device series.
+    </revremark>
+  </revision>
+
+  <revision>
     <revnumber>2.8.1</revnumber>
     <date>2023-10-31</date>
     <authorinitials>JK</authorinitials>

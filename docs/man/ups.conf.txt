@@ -48,6 +48,11 @@ Here is another example, when connecting a serial UPS on Windows:
 		port = "\\\\.\\COM10"
 		desc = "UPS on a Windows machine"
 
+IMPORTANT NOTES
+---------------
+
+* Contents of this file should be pure ASCII (character codes
+  not in range would be ignored with a warning message).
 
 GLOBAL DIRECTIVES
 -----------------
@@ -271,6 +276,21 @@ date.  However, this redundant call to `usb_set_altinterface()` prevents
 certain UPSes from working on Mac OS X. If your UPS requires explicitly setting
 the alternate interface, include this flag, and email the nut-upsdev list with
 details about your UPS and operating system.
+
+*usb_config_index*::
+*usb_hid_rep_index*::
+*usb_hid_desc_index*::
+*usb_hid_ep_in*::
+*usb_hid_ep_out*::
+
+Optional.  Force use of specific interface, endpoint, descriptor index etc.
+numbers, rather than defaulting to 0 (rarely other values in certain drivers
+for some devices known to use non-zero numbers). Specified as a hexadecimal
+number.
++
+As a rule of thumb for `usb_hid_desc_index` discovery, you can see larger
+`wDescriptorLength` values (roughly 600+ bytes) in reports of `lsusb` or
+similar tools.
 
 *default.<variable>*::
 

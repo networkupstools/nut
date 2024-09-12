@@ -9,6 +9,9 @@
 #
 # ---
 #
+# NOTE: Contents of this file should be pure ASCII (character codes
+# not in range would be ignored with a warning message).
+#
 # This is where you configure all the UPSes that this system will be
 # monitoring directly.  These are usually attached to serial ports, but
 # USB devices and SNMP devices are also supported.
@@ -171,6 +174,15 @@ maxretry = 3
 #           the call to initialize; others however can get stuck due to it -
 #           so it is not called by default. Yet others can be composite
 #           devices which use a non-zero interface to represent the UPS.
+#
+# usb_config_index=hexnum, usb_hid_rep_index=hexnum,
+# usb_hid_desc_index=hexnum, usb_hid_ep_in=hexnum, usb_hid_ep_out=hexnum:
+#           OPTIONAL. Force use of specific interface, endpoint, descriptor
+#           index etc. numbers, rather than defaulting to 0 (rarely other
+#           values in certain drivers for some devices known to use non-zero
+#           numbers). As a rule of thumb for `usb_hid_desc_index` discovery,
+#           you can see larger `wDescriptorLength` values (roughly 600+ bytes)
+#           in reports of `lsusb` or similar tools.
 #
 # default.<variable>: OPTIONAL. Set a default value for <variable> which is
 #           used in case the UPS doesn't provide a value, but which will be

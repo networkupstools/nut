@@ -30,12 +30,22 @@ EXTRA_DIST = \
 	solcmn/solaris_init	\
 	solcmn/ipp-os-shutdown.conf.sample
 
+# Originally an Eaton license was used, changed along with donation of sources
+# to NUT project. Having the file name populated helps keep the scripts as is.
+common_EN/license.txt: $(top_srcdir)/LICENSE-GPL2
+	$(MKDIR_P) '$(@D)'
+	cp -pf '$?' '$@'
+
 SPELLCHECK_SRC = README.adoc common/README_ipp-os-shutdown.adoc
+
+nut:
+	rm -f "$@"
+	$(LN_S) $(top_srcdir) "$@"
 
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension.
 # We also have to export some variables that may be tainted by relative
 # paths when parsing the other makefile (e.g. MKDIR_P that may be defined
-# via expanded $(top_builddir)/install_sh):
+# via expanded $(top_builddir)/install-sh):
 #%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 #	+$(MAKE) -s -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
@@ -52,6 +62,10 @@ SPELLCHECK_SRC = README.adoc common/README_ipp-os-shutdown.adoc
 spellcheck spellcheck-interactive spellcheck-sortdict:
 	+$(MAKE) -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC="$(SPELLCHECK_SRC)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
-CLEANFILES = *-spellchecked
+CLEANFILES = *-spellchecked */*-spellchecked common_EN/license.txt
+
+# Remove "nut" if it is a symlink to the source tree
+clean-local:
+	if test -L nut || test -h nut ; then rm -f nut ; fi
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp

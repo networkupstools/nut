@@ -174,7 +174,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION	"1.30"
+#define DRIVER_VERSION	"1.31"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -259,8 +259,10 @@ void upsdrv_initinfo(void)
 			&& !(su_info_p->flags & SU_OUTLET_GROUP))
 		{
 			/* first check that this OID actually exists */
+
 			/* FIXME: daisychain commands support! */
 			su_addcmd(su_info_p);
+
 /*
 			if (nut_snmp_get(su_info_p->OID) != NULL) {
 				dstate_addcmd(su_info_p->info_type);
@@ -610,6 +612,7 @@ void upsdrv_initups(void)
 		}
 		printf("\nOverall this driver has loaded %d MIB-to-NUT mapping tables\n", i);
 		exit(EXIT_SUCCESS);
+		/* fatalx(EXIT_FAILURE, "Marking the exit code as failure since the driver is not started now"); */
 	}
 
 	/* init SNMP library, etc... */
@@ -1143,7 +1146,6 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 		if (!response) {
 			break;
 		}
-
 
 		if (!((status == STAT_SUCCESS) && (response->errstat == SNMP_ERR_NOERROR))) {
 			if (mibname == NULL) {
@@ -2921,8 +2923,9 @@ bool_t daisychain_init(void)
 			if (devices_count == -1) {
 #endif /* WITH_SNMP_LKP_FUN */
 
-				if (nut_snmp_get_int(su_info_p->OID, &devices_count) == TRUE)
+				if (nut_snmp_get_int(su_info_p->OID, &devices_count) == TRUE) {
 					upsdebugx(1, "There are %ld device(s) present", devices_count);
+				}
 				else
 				{
 					upsdebugx(1, "Error: can't get the number of device(s) present!");
@@ -3312,7 +3315,7 @@ bool_t snmp_ups_walk(int mode)
 
 #ifdef COUNT_ITERATIONS
 			/* check stale elements only on each PN_STALE_RETRY iteration. */
-	 		if ((su_info_p->flags & SU_FLAG_STALE) &&
+			if ((su_info_p->flags & SU_FLAG_STALE) &&
 					(iterations % SU_STALE_RETRY) != 0)
 				continue;
 #endif

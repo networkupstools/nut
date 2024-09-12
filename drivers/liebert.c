@@ -27,7 +27,7 @@
 #include "attribute.h"
 
 #define DRIVER_NAME	"Liebert MultiLink UPS driver"
-#define DRIVER_VERSION	"1.04"
+#define DRIVER_VERSION	"1.05"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {

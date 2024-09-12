@@ -3,6 +3,7 @@
 
     Copyright (C)
         2012	Emilien Kia <emilien.kia@gmail.com>
+        2024	Jim Klimov <jimklimov+nut@gmail.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -55,15 +56,30 @@ NutParser::~NutParser() {}
 template <typename T>
 Settable<T> StringToSettableNumber(const std::string & src)
 {
-	std::stringstream ss(src);
-	T result;
-	if(ss >> result)
-	{
-		return Settable<T>(result);
-	}
-	else
-	{
-		return Settable<T>();
+	if (typeid(T) == typeid(bool)) {
+		static const Settable<T> b0(false);
+		static const Settable<T> b1(true);
+
+		// See also: GenericConfiguration::str2bool()
+		// FIXME: Can these two methods be merged?
+		if ("true" == src) return b1;
+		if ("on"   == src) return b1;
+		if ("1"    == src) return b1;
+		if ("yes"  == src) return b1;
+		if ("ok"   == src) return b1;
+
+		return b0;
+	} else {
+		std::stringstream ss(src);
+		T result;
+		if(ss >> result)
+		{
+			return Settable<T>(result);
+		}
+		else
+		{
+			return Settable<T>();
+		}
 	}
 }
 
@@ -96,44 +112,53 @@ void NutParser::setOptions(unsigned int options, bool set)
 	}
 }
 
-char NutParser::get() {
+char NutParser::get()
+{
 	if (_pos >= _buffer.size())
 		return 0;
 	else
 		return _buffer[_pos++];
 }
 
-char NutParser::peek() {
+char NutParser::peek()
+{
 	return _buffer[_pos];
 }
 
-size_t NutParser::getPos()const {
+size_t NutParser::getPos()const
+{
 	return _pos;
 }
 
-void NutParser::setPos(size_t pos) {
+void NutParser::setPos(size_t pos)
+{
 	_pos = pos;
 }
 
-char NutParser::charAt(size_t pos)const {
+char NutParser::charAt(size_t pos)const
+{
 	return _buffer[pos];
 }
 
-void NutParser::pushPos() {
+void NutParser::pushPos()
+{
 	_stack.push_back(_pos);
 }
 
-size_t NutParser::popPos() {
+size_t NutParser::popPos()
+{
 	size_t pos = _stack.back();
 	_stack.pop_back();
 	return pos;
 }
 
-void NutParser::rewind() {
+void NutParser::rewind()
+{
 	_pos = popPos();
 }
 
-void NutParser::back() {
+void NutParser::back()
+{
 	if (_pos > 0)
 		--_pos;
 }
@@ -144,7 +169,8 @@ void NutParser::back() {
  *             | '\\' ( __SPACES__ | '\\' | '\"' | '#' )
  * TODO: accept "\t", "\s", "\r", "\n" ??
  */
-std::string NutParser::parseCHARS() {
+std::string NutParser::parseCHARS()
+{
 	bool escaped = false; // Is char escaped ?
 	std::string res; // Stored string
 
@@ -180,7 +206,8 @@ std::string NutParser::parseCHARS() {
  *             | '\\' ( '\\' | '\"' )
  * TODO: accept "\t", "\s", "\r", "\n" ??
  */
-std::string NutParser::parseSTRCHARS() {
+std::string NutParser::parseSTRCHARS()
+{
 	bool escaped = false; // Is char escaped ?
 	std::string str; // Stored string
 
@@ -213,7 +240,8 @@ std::string NutParser::parseSTRCHARS() {
 /** Parse a string source for getting the next token, ignoring spaces.
  * \return Token type.
  */
-NutParser::Token NutParser::parseToken() {
+NutParser::Token NutParser::parseToken()
+{
 
 	/** Lexical parsing machine state enumeration.*/
 	typedef enum {
@@ -387,7 +415,8 @@ NutParser::Token NutParser::parseToken() {
 	return token;
 }
 
-std::list<NutParser::Token> NutParser::parseLine() {
+std::list<NutParser::Token> NutParser::parseLine()
+{
 	std::list<NutParser::Token> res;
 
 	while (true) {
@@ -410,6 +439,30 @@ std::list<NutParser::Token> NutParser::parseLine() {
 			case Token::TOKEN_NONE:
 			case Token::TOKEN_EOL:
 				return res;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+			default:
+				/* Must not occur. */
+				break;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 		}
 	}
 }
@@ -419,19 +472,23 @@ std::list<NutParser::Token> NutParser::parseLine() {
 //
 
 NutConfigParser::NutConfigParser(const char* buffer, unsigned int options) :
-NutParser(buffer, options) {
+NutParser(buffer, options)
+{
 }
 
 NutConfigParser::NutConfigParser(const std::string& buffer, unsigned int options) :
-NutParser(buffer, options) {
+NutParser(buffer, options)
+{
 }
 
-void NutConfigParser::parseConfig(BaseConfiguration* config) {
+void NutConfigParser::parseConfig(BaseConfiguration* config)
+{
 	NUT_UNUSED_VARIABLE(config);
 	parseConfig();
 }
 
-void NutConfigParser::parseConfig() {
+void NutConfigParser::parseConfig()
+{
 	onParseBegin();
 
 	enum ConfigParserState {
@@ -670,6 +727,9 @@ void NutConfigParser::parseConfig() {
 						break;
 				}
 				break;
+
+			default:
+				break;
 		}
 	}
 
@@ -695,6 +755,8 @@ void NutConfigParser::parseConfig() {
 		case CPS_DEFAULT:
 			/* TOTHINK: no-op? */
 			break;
+		default:
+			break;
 	}
 #ifdef __clang__
 #pragma clang diagnostic pop
@@ -713,23 +775,31 @@ void NutConfigParser::parseConfig() {
 //
 
 DefaultConfigParser::DefaultConfigParser(const char* buffer) :
-NutConfigParser(buffer) {
+NutConfigParser(buffer)
+{
 }
 
 DefaultConfigParser::DefaultConfigParser(const std::string& buffer) :
-NutConfigParser(buffer) {
+NutConfigParser(buffer)
+{
 }
 
-void DefaultConfigParser::onParseBegin() {
+void DefaultConfigParser::onParseBegin()
+{
 	// Start with empty section (i.e. global one)
 	_section.clear();
 }
 
-void DefaultConfigParser::onParseComment(const std::string& /*comment*/) {
+void DefaultConfigParser::onParseComment(
+		const std::string& /*comment*/)
+{
 	// Comments are ignored for now
 }
 
-void DefaultConfigParser::onParseSectionName(const std::string& sectionName, const std::string& /*comment*/) {
+void DefaultConfigParser::onParseSectionName(
+		const std::string& sectionName,
+		const std::string& /*comment*/)
+{
 	// Comments are ignored for now
 
 	// Process current section.
@@ -742,7 +812,12 @@ void DefaultConfigParser::onParseSectionName(const std::string& sectionName, con
 	_section.name = sectionName;
 }
 
-void DefaultConfigParser::onParseDirective(const std::string& directiveName, char /*sep*/, const ConfigParamList& values, const std::string& /*comment*/) {
+void DefaultConfigParser::onParseDirective(
+		const std::string& directiveName,
+		char /*sep*/,
+		const ConfigParamList& values,
+		const std::string& /*comment*/)
+{
 	// Comments are ignored for now
 	// Separator has no specific semantic in this context
 
@@ -753,7 +828,8 @@ void DefaultConfigParser::onParseDirective(const std::string& directiveName, cha
 	// TODO Can probably be optimized.
 }
 
-void DefaultConfigParser::onParseEnd() {
+void DefaultConfigParser::onParseEnd()
+{
 	// Process current (last) section
 	if (!_section.empty()) {
 		onParseSection(_section);
@@ -766,11 +842,13 @@ void DefaultConfigParser::onParseEnd() {
 // GenericConfigSection
 //
 
-bool GenericConfigSection::empty()const {
+bool GenericConfigSection::empty()const
+{
 	return name.empty() && entries.empty();
 }
 
-void GenericConfigSection::clear() {
+void GenericConfigSection::clear()
+{
 	name.clear();
 	entries.clear();
 }
@@ -976,7 +1054,52 @@ void GenericConfiguration::setStr(
 }
 
 
-long long int GenericConfiguration::getInt(const std::string & section, const std::string & entry, long long int val) const
+bool GenericConfiguration::getBool(
+		const std::string & section,
+		const std::string & entry,
+		bool                val) const
+{
+		std::string s = getStr(section, entry);
+		if (s.empty())
+			return val;
+		return str2bool(s);
+}
+
+
+bool GenericConfiguration::getFlag(
+		const std::string & section,
+		const std::string & entry) const
+{
+	ConfigParamList params;
+
+	if (!get(section, entry, params))
+		return false;
+
+	// Flag - if exists then "true"
+	return true;
+}
+
+
+void GenericConfiguration::setFlag(
+		const std::string & section,
+		const std::string & entry,
+		bool                val)
+{
+	ConfigParamList param;
+
+	if (val) {
+		param.push_back("true");
+		set(section, entry, param);
+	} else {
+		remove(section, entry);
+	}
+}
+
+
+long long int GenericConfiguration::getInt(
+		const std::string & section,
+		const std::string & entry,
+		long long int val) const
 {
 	ConfigParamList params;
 
@@ -995,7 +1118,10 @@ long long int GenericConfiguration::getInt(const std::string & section, const st
 }
 
 
-void GenericConfiguration::setInt(const std::string & section, const std::string & entry, long long int val)
+void GenericConfiguration::setInt(
+		const std::string & section,
+		const std::string & entry,
+		long long int val)
 {
 	std::stringstream val_str;
 	val_str << val;
@@ -1004,11 +1130,114 @@ void GenericConfiguration::setInt(const std::string & section, const std::string
 }
 
 
+long long int GenericConfiguration::getIntHex(
+		const std::string & section,
+		const std::string & entry,
+		long long int val) const
+{
+	ConfigParamList params;
+
+	if (!get(section, entry, params))
+		return val;
+
+	if (params.empty())
+		return val;
+
+	// TBD: What if there are multiple values?
+	std::string s = params.front();
+	size_t foundPos = s.rfind("0x", 0);
+	if (foundPos == std::string::npos || foundPos != 0) {
+		// Add the prefix for hex conversion
+		s = "0x" + s;
+	}
+	std::stringstream val_str;
+	val_str << std::hex << s;
+
+	// Output into int type
+	val_str >> std::hex >> val;
+
+	return val;
+}
+
+
+void GenericConfiguration::setIntHex(
+		const std::string & section,
+		const std::string & entry,
+		long long int val)
+{
+	std::stringstream val_str;
+
+	// Note NUT v2.8.1 introduced these as "hexnum" values,
+	// but the strtoul() underneath knows to strip "0x" for
+	// base16 conversions - so can we write them either way:
+
+	// https://stackoverflow.com/a/61060765/4715872
+	// << std::showbase for "0x" in saved printouts
+	val_str << std::nouppercase << std::hex << val;
+
+	set(section, entry, ConfigParamList(1, val_str.str()));
+}
+
+
+double GenericConfiguration::getDouble(
+		const std::string & section,
+		const std::string & entry,
+		double val) const
+{
+	ConfigParamList params;
+
+	if (!get(section, entry, params))
+		return val;
+
+	if (params.empty())
+		return val;
+
+	// TBD: What if there are multiple values?
+	std::stringstream val_str(params.front());
+
+	val_str >> val;
+
+	return val;
+}
+
+
+void GenericConfiguration::setDouble(
+		const std::string & section,
+		const std::string & entry,
+		double val)
+{
+	std::stringstream val_str;
+	val_str << val;
+
+	set(section, entry, ConfigParamList(1, val_str.str()));
+}
+
+
+nut::BoolInt GenericConfiguration::getBoolInt(
+		const std::string & section,
+		const std::string & entry,
+		nut::BoolInt val) const
+{
+	ConfigParamList params;
+
+	if (!get(section, entry, params))
+		return val;
+
+	if (params.empty())
+		return val;
+
+	// TBD: What if there are multiple values?
+	nut::BoolInt bi(params.front());
+
+	return bi;
+}
+
+
 bool GenericConfiguration::str2bool(const std::string & str)
 {
 	if ("true" == str) return true;
 	if ("on"   == str) return true;
-	if ("1"	== str) return true;
+	if ("1"    == str) return true;
 	if ("yes"  == str) return true;
 	if ("ok"   == str) return true;
 
@@ -1075,6 +1304,22 @@ UpsmonConfiguration::NotifyType UpsmonConfiguration::NotifyTypeFromString(const 
 		return NOTIFY_NOCOMM;
 	else if(str=="NOPARENT")
 		return NOTIFY_NOPARENT;
+	else if(str=="CAL")
+		return NOTIFY_CAL;
+	else if(str=="NOTCAL")
+		return NOTIFY_NOTCAL;
+	else if(str=="OFF")
+		return NOTIFY_OFF;
+	else if(str=="NOTOFF")
+		return NOTIFY_NOTOFF;
+	else if(str=="BYPASS")
+		return NOTIFY_BYPASS;
+	else if(str=="NOTBYPASS")
+		return NOTIFY_NOTBYPASS;
+	else if(str=="SUSPEND_STARTING")
+		return NOTIFY_SUSPEND_STARTING;
+	else if(str=="SUSPEND_FINISHED")
+		return NOTIFY_SUSPEND_FINISHED;
 	else
 		return NOTIFY_TYPE_MAX;
 }
@@ -1150,7 +1395,16 @@ void UpsmonConfigParser::onParseDirective(const std::string& directiveName, char
 
 	if(_config)
 	{
-		if(directiveName == "RUN_AS_USER")
+		if(!(::strcasecmp(directiveName.c_str(), "DEBUG_MIN")))
+		{
+			// NOTE: We allow DEBUG_MIN in any casing as it can be copy-pasted
+			// between different configs and they use different historic casing
+			if(values.size()>0)
+			{
+				_config->debugMin = StringToSettableNumber<int>(values.front());
+			}
+		}
+		else if(directiveName == "RUN_AS_USER")
 		{
 			if(values.size()>0)
 			{
@@ -1177,7 +1431,7 @@ void UpsmonConfigParser::onParseDirective(const std::string& directiveName, char
 				monitor.powerValue = StringToSettableNumber<unsigned int>(*it++);
 				monitor.username = *it++;
 				monitor.password = *it++;
-				monitor.isMaster = (*it) == "master";
+				monitor.isPrimary = (*it) == "primary";	// master for NUT v2.7.4 and older
 				_config->monitors.push_back(monitor);
 			}
 		}
@@ -1206,21 +1460,98 @@ void UpsmonConfigParser::onParseDirective(const std::string& directiveName, char
 		{
 			if(values.size()>0)
 			{
-				_config->poolFreq = StringToSettableNumber<unsigned int>(values.front());
+				_config->pollFreq = StringToSettableNumber<unsigned int>(values.front());
 			}
 		}
 		else if(directiveName == "POLLFREQALERT")
 		{
 			if(values.size()>0)
 			{
-				_config->poolFreqAlert = StringToSettableNumber<unsigned int>(values.front());
+				_config->pollFreqAlert = StringToSettableNumber<unsigned int>(values.front());
+			}
+		}
+		else if(directiveName == "POLLFAIL_LOG_THROTTLE_MAX")
+		{
+			if(values.size()>0)
+			{
+				_config->pollFailLogThrottleMax = StringToSettableNumber<int>(values.front());
+			}
+		}
+		else if(directiveName == "OFFDURATION")
+		{
+			if(values.size()>0)
+			{
+				_config->offDuration = StringToSettableNumber<int>(values.front());
+			}
+		}
+		else if(directiveName == "OBLBDURATION")
+		{
+			if(values.size()>0)
+			{
+				_config->oblbDuration = StringToSettableNumber<int>(values.front());
+			}
+		}
+		else if(directiveName == "SHUTDOWNEXIT")
+		{
+			if(values.size()>0)
+			{
+				nut::BoolInt bi;
+				bi << values.front();
+				_config->shutdownExit = bi;
+			}
+		}
+		else if(directiveName == "CERTPATH")
+		{
+			if(values.size()>0)
+			{
+				_config->certPath = values.front();
+			}
+		}
+		else if(directiveName == "CERTIDENT")
+		{
+			if(values.size()==2)
+			{
+				_config->certIdent.certName = values.front();
+				_config->certIdent.certDbPass = (*(++values.begin()));
+			}
+		}
+		else if(directiveName == "CERTHOST")
+		{
+			if(values.size()==4)
+			{
+				nut::CertHost certHost;
+				ConfigParamList::const_iterator it = values.begin();
+				certHost.host       = *it++;
+				certHost.certName   = *it++;
+				certHost.certVerify = *it++;
+				certHost.forceSsl   = *it++;
+
+				_config->certHosts.push_back(certHost);
+			}
+		}
+		else if(directiveName == "CERTVERIFY")
+		{
+			if(values.size()>0)
+			{
+				nut::BoolInt bi;
+				bi << values.front();
+				_config->certVerify = bi;
+			}
+		}
+		else if(directiveName == "FORCESSL")
+		{
+			if(values.size()>0)
+			{
+				nut::BoolInt bi;
+				bi << values.front();
+				_config->forceSsl = bi;
 			}
 		}
 		else if(directiveName == "HOSTSYNC")
 		{
 			if(values.size()>0)
 			{
-				_config->hotSync = StringToSettableNumber<unsigned int>(values.front());
+				_config->hostSync = StringToSettableNumber<unsigned int>(values.front());
 			}
 		}
 		else if(directiveName == "DEADTIME")
@@ -1400,16 +1731,70 @@ void NutConfConfigParser::onParseDirective(const std::string& directiveName, cha
 {
 	// Comments are ignored for now
 	// NOTE: although sep must be '=', sep is not verified.
-	if(_config && directiveName=="MODE" && values.size()==1)
+	if(_config)
 	{
-		std::string val = values.front();
-		NutConfiguration::NutMode mode = NutConfiguration::NutModeFromString(val);
-		if(mode != NutConfiguration::MODE_UNKNOWN)
-			_config->mode = mode;
-	}
-	else
-	{
-		// TODO WTF with errors ?
+		if(directiveName == "MODE")
+		{
+			if (values.size()==1) {
+				std::string val = values.front();
+				NutConfiguration::NutMode mode = NutConfiguration::NutModeFromString(val);
+				if(mode != NutConfiguration::MODE_UNKNOWN)
+					_config->mode = mode;
+			}
+		}
+		else if(directiveName == "ALLOW_NO_DEVICE")
+		{
+			if(values.size()>0)
+			{
+				_config->allowNoDevice = StringToSettableNumber<bool>(values.front());
+			}
+		}
+		else if(directiveName == "ALLOW_NOT_ALL_LISTENERS")
+		{
+			if(values.size()>0)
+			{
+				_config->allowNotAllListeners = StringToSettableNumber<bool>(values.front());
+			}
+		}
+		else if(directiveName == "UPSD_OPTIONS")
+		{
+			if(values.size()>0)
+			{
+				_config->upsdOptions = values.front();
+			}
+		}
+		else if(directiveName == "UPSMON_OPTIONS")
+		{
+			if(values.size()>0)
+			{
+				_config->upsmonOptions = values.front();
+			}
+		}
+		else if(directiveName == "POWEROFF_WAIT")
+		{
+			if(values.size()>0)
+			{
+				_config->poweroffWait = StringToSettableNumber<unsigned int>(values.front());
+			}
+		}
+		else if(directiveName == "POWEROFF_QUIET")
+		{
+			if(values.size()>0)
+			{
+				_config->poweroffQuiet = StringToSettableNumber<bool>(values.front());
+			}
+		}
+		else if(directiveName == "NUT_DEBUG_LEVEL")
+		{
+			if(values.size()>0)
+			{
+				_config->debugLevel = StringToSettableNumber<int>(values.front());
+			}
+		}
+		else
+		{
+			// TODO WTF with errors ?
+		}
 	}
 }
 
@@ -1508,7 +1893,16 @@ void UpsdConfigParser::onParseDirective(const std::string& directiveName, char s
 
 	if(_config)
 	{
-		if(directiveName == "MAXAGE")
+		if(!(::strcasecmp(directiveName.c_str(), "DEBUG_MIN")))
+		{
+			// NOTE: We allow DEBUG_MIN in any casing as it can be copy-pasted
+			// between different configs and they use different historic casing
+			if(values.size()>0)
+			{
+				_config->debugMin = StringToSettableNumber<int>(values.front());
+			}
+		}
+		else if(directiveName == "MAXAGE")
 		{
 			if(values.size()>0)
 			{
@@ -1529,11 +1923,61 @@ void UpsdConfigParser::onParseDirective(const std::string& directiveName, char s
 				_config->maxConn = StringToSettableNumber<unsigned int>(values.front());
 			}
 		}
+		else if(directiveName == "TRACKINGDELAY")
+		{
+			if(values.size()>0)
+			{
+				_config->trackingDelay = StringToSettableNumber<unsigned int>(values.front());
+			}
+		}
+		else if(directiveName == "ALLOW_NO_DEVICE")
+		{
+			if(values.size()>0)
+			{
+				_config->allowNoDevice = StringToSettableNumber<bool>(values.front());
+			}
+		}
+		else if(directiveName == "ALLOW_NOT_ALL_LISTENERS")
+		{
+			if(values.size()>0)
+			{
+				_config->allowNotAllListeners = StringToSettableNumber<bool>(values.front());
+			}
+		}
+		else if(directiveName == "DISABLE_WEAK_SSL")
+		{
+			if(values.size()>0)
+			{
+				_config->allowNotAllListeners = StringToSettableNumber<bool>(values.front());
+			}
+		}
 		else if(directiveName == "CERTFILE")
 		{
 			if(values.size()>0)
 			{
 				_config->certFile = values.front();
+			}
+		}
+		else if(directiveName == "CERTPATH")
+		{
+			if(values.size()>0)
+			{
+				_config->certPath = values.front();
+			}
+		}
+		else if(directiveName == "CERTIDENT")
+		{
+			if(values.size()==2)
+			{
+				_config->certIdent.certName = values.front();
+				_config->certIdent.certDbPass = (*(++values.begin()));
+			}
+		}
+		else if(directiveName == "CERTREQUEST")
+		{
+			if(values.size()>0)
+			{
+				_config->certRequestLevel = StringToSettableNumber<unsigned int>(values.front());
 			}
 		}
 		else if(directiveName == "LISTEN")
@@ -1570,11 +2014,11 @@ UpsdUsersConfiguration::upsmon_mode_t UpsdUsersConfiguration::getUpsmonMode() co
 {
 	std::string mode_str = getStr("upsmon", "upsmon");
 
-	if ("master" == mode_str)
-		return UPSMON_MASTER;
+	if ("primary" == mode_str || "master" == mode_str)
+		return UPSMON_PRIMARY;
 
-	if ("slave" == mode_str)
-		return UPSMON_SLAVE;
+	if ("secondary" == mode_str || "slave" == mode_str)
+		return UPSMON_SECONDARY;
 
 	return UPSMON_UNDEF;
 }
@@ -1584,7 +2028,8 @@ void UpsdUsersConfiguration::setUpsmonMode(upsmon_mode_t mode)
 {
 	assert(UPSMON_UNDEF != mode);
 
-	setStr("upsmon", "upsmon", (UPSMON_MASTER == mode ? "master" : "slave"));
+	setStr("upsmon", "upsmon", (UPSMON_PRIMARY == mode ? "primary" : "secondary"));
+	/* NUT v2.7.4 and older: setStr("upsmon", "upsmon", (UPSMON_PRIMARY == mode ? "master" : "slave")); */
 }
 
 

@@ -118,6 +118,9 @@ static const char *convert_data(apc_vartab_t *cmd_entry, const char *upsval)
 				case 'S': return "simulated power failure or UPS test";
 				default: return upsval;
 			}
+
+		default:
+			break;
 	}
 
 	upslogx(LOG_NOTICE, "Unable to handle conversion of %s", cmd_entry->name);

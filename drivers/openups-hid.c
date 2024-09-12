@@ -63,6 +63,8 @@ static void *get_voltage_multiplier(USBDevice_t *device)
 			ccharge_scale = 0.1; /* unverified */
 			cdischarge_scale = 0.1; /* unverified */
 			break;
+		default:
+			break;
 	}
 
 	upsdebugx(1, "vin_scale = %g; vout_scale = %g\n", vin_scale, vout_scale);

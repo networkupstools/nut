@@ -1,9 +1,37 @@
 # Network UPS Tools: main docs
 
+# FIXME: There is a lot of shell-scripting below which gets processed by
+# whatever system shell there is. While bash handles expressions like
+#   VAL="`cmd "some params"`"
+# in a way that "some params" are a single token passed to "cmd" as an
+# argument, and the stdout of such command execution is collected into a
+# single-token string as "VAL" (even if with white-spaces). Some other
+# shells, e.g. "ksh" seems to actively dislike unbalanced double-quotes
+# inside the backticks (e.g. matched in some grep/sed regexes below),
+# although generally the approach works for such "VAL" assignments too.
+# Note that the newer "$(...)" syntax is not portable, older shells
+# have no idea about it, and it is cumbersome with `make` substitution.
+# Keep a lookout with multi-platform NUT CI jobs, and try to use single
+# quotes where possible (e.g. where pre-expanded `make` variables are
+# involved - so shell should not process them again anyway).
+
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 EXTRA_DIST =
 
-all: doc
+# Note: "doc" ensures the `configure`-specified list of documents we actually
+# want, while the default generated "all: all-am" target historically causes
+# some but not all of these targets to get built (e.g. ChangeLog html/pdf is
+# usually not made there). Post-processing "doc" as part of "all" helps
+# ensure that we do not rebuild stuff in vain during parallel builds (where
+# "all-am" and "doc" would be unordered parallel goals of the "all" target)
+# while getting those further goals achieved eventually in the default build.
+# Crucially, this allows to make sure "ChangeLog(.adoc*)" files have been
+# generated once (can take a looong while), settled into place, and only then
+# we revisit them for html/pdf rendering (another long while) without randomly
+# confusing the system with new timestamps and needless regenerations later on.
+all:
+	@echo "  DOC-FOLLOW-UP	Basic 'make $@' in `pwd` is done, following up with 'make doc' to ensure complex document types"
+	+@$(MAKE) $(AM_MAKEFLAGS) doc
 
 # Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
 #EGREP = egrep
@@ -88,6 +116,7 @@ ALL_TXT_SRC = nut-names.txt daisychain.txt \
  release-notes.txt ChangeLog.txt solaris-usb.txt
 
 ASPELL_FILTER_PATH = @ASPELL_FILTER_PATH@
+# NOTE: This can be set by caller such as nut-website builder:
 NUT_SPELL_DICT = nut.dict
 EXTRA_DIST += $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
  $(IMAGE_LOGO_FILES) $(IMAGE_LOGO_FILES_JENKINS_NUT) $(CABLES_IMAGES) $(NUT_SPELL_DICT) \
@@ -121,7 +150,7 @@ ASCIIDOC_PDF = user-manual.pdf \
 	FAQ.pdf
 
 SUBDIRS = man cables
-SUFFIXES = .txt .html .pdf -spellchecked .txt-prepped
+SUFFIXES = .txt .html .pdf .txt-spellchecked .txt-prepped
 
 # This list is defined by configure script choices and options:
 CHECK_LOCAL_TARGETS = @DOC_CHECK_LIST@
@@ -131,6 +160,7 @@ endif WITH_SPELLCHECK
 check-local: $(CHECK_LOCAL_TARGETS)
 
 # Make sure sources are there for out-of-tree builds:
+all-local all-am-local \
 @DOC_BUILD_LIST@ $(ASCIIDOC_PDF) $(ASCIIDOC_HTML_SINGLE) $(ASCIIDOC_HTML_CHUNKED): $(abs_top_builddir)/docs/.prep-src-docs
 
 # This list is defined by configure script choices and options:
@@ -144,10 +174,35 @@ all-docs: docs
 
 check-docs: check-pdf check-html-single check-html-chunked check-man
 
+# Not called by default, but handy for maintainers to check which words
+# in the custom dictionary are used or not by the current NUT codebase.
+# Note that historically many words were added to facilitate rendition
+# of the nut-website (long ago splintered from main nut repository),
+# but since recently it has a way to track its own additions to the
+# dictionary file. This code should help populate it as well, and keep
+# only relevant entries in the appropriate corner of the sources.
+# Note this can take 5-10 minutes!
+spellcheck-report-dict-usage: $(NUT_SPELL_DICT).usage-report
+
 pdf: $(ASCIIDOC_PDF)
 # also build the HTML manpages with these targets
 html-single: $(ASCIIDOC_HTML_SINGLE)
 html-chunked: $(ASCIIDOC_HTML_CHUNKED)
+
+# htmldocdir and pdfdir are set by autoconf/automake
+htmldoc_DATA =
+if WITH_HTML_SINGLE
+htmldoc_DATA += $(ASCIIDOC_HTML_SINGLE)
+endif
+# FIXME: Install tools refuse to work with directories in this context
+# and html-chunked documentation has a separate tree per document.
+# Maybe an "(un)install-data-local" or "install-data-hook" for this?
+#if WITH_HTML_CHUNKED
+#htmldoc_DATA += $(ASCIIDOC_HTML_CHUNKED)
+#endif
+if WITH_PDFS
+pdf_DATA = $(ASCIIDOC_PDFS)
+endif
 
 # the "for" loops might better use $^ but it might be not portable
 check-pdf: $(ASCIIDOC_PDF)
@@ -158,13 +213,104 @@ check-pdf: $(ASCIIDOC_PDF)
 	    echo "FAILED PDF sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
 	fi; echo "PASSED PDF sanity check"; exit 0
 
+# Regarding ChangeLog check: sometimes asciidoc gives up early
+# (we have megabytes of text and thousands of sections here).
+# In some cases, the intermediate XML is broken and a2x=>xmllint
+# notices it. In others, it is truncated at just the right place
+# structurally and leads to a short HTML with only part of the
+# expected contents. We should no longer have several processes
+# trying to create the files involved (or rather do so atomically
+# and rename into final path, in case we still have competition
+# here); earlier when several generators appended to the same
+# file we could have several copies overlaid, with one of the
+# document's copies starting mid-sentence of another.
+# The two expected mentions are in the table of contents and
+# in the eventual section. Checking for first/second entries,
+# and not exactly two mentions, should allow to catch the case
+# of overlapping documents. Checking for the last entry allows
+# to catch incomplete parses, where asciidoc gave up early.
+# NOTE: Technically it may be more than two, if the author and
+# date were used several times in the original ChangeLog file
+# (either with different e-mails, or if different author's work
+# is interleaved during the day, e.g. many PRs merged, and no
+# CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR=true setting was in place.
+# NOTE: No dependencies, avoids (re-)generation and log messages.
+ChangeLog.html-contentchecked:
+	@FAILED=""; \
+	 if [ -s '$(top_builddir)/ChangeLog' ] && [ -s ChangeLog.html ] ; then \
+	    SECOND_ENTRY="`grep -E '^[0-9]' '$(top_builddir)/ChangeLog' | head -2 | tail -1 | sed 's/ *[\"<].*//'`" || SECOND_ENTRY="" ; \
+	    FIRST_ENTRY="`grep -E '^[0-9]' '$(top_builddir)/ChangeLog' | head -1 | sed 's/ *[\"<].*//'`" || FIRST_ENTRY="" ; \
+	    LAST_ENTRY="`grep -E '^[0-9]' '$(top_builddir)/ChangeLog' | tail -1 | sed 's/ *[\"<].*//'`" || LAST_ENTRY="" ; \
+	    if [ -n "$${FIRST_ENTRY}" ] ; then \
+	        O="`grep -cE "^$${FIRST_ENTRY}" '$(top_builddir)/ChangeLog'`" ; \
+	        N="`grep -cE "title.*$${FIRST_ENTRY}" 'ChangeLog.html'`" ; \
+	        MIN="`expr $${O} + 1`"     && [ "$${MIN}" -gt 0 ] 2>/dev/null || MIN=1 ; \
+	        MAX="`expr $${O} + $${O}`" && [ "$${MAX}" -gt 2 ] 2>/dev/null || MAX=2 ; \
+	        if [ "$${N}" -lt "$${MIN}" ] || [ "$${N}" -gt "$${MAX}" ]; then \
+	            echo "FAILED ChangeLog.html check: does not contain expected first entry the right amount of times (huge doc, must have got aborted mid-way): $${FIRST_ENTRY} (seen $${N} times, expected between $${MIN} and $${MAX})" >&2 ; \
+	            if [ -z "$$FAILED" ] ; then \
+	                echo "Expected size over 3MB (for common builds):" >&2 ; \
+	                ls -la "ChangeLog.html" '$(top_builddir)/ChangeLog'* >&2 ; \
+	                FAILED="ChangeLog.html" ; \
+	            fi ; \
+	        fi ; \
+	    fi; \
+	    if [ -n "$${SECOND_ENTRY}" ] ; then \
+	        O="`grep -cE "^$${SECOND_ENTRY}" '$(top_builddir)/ChangeLog'`" ; \
+	        N="`grep -cE "title.*$${SECOND_ENTRY}" 'ChangeLog.html'`" ; \
+	        MIN="`expr $${O} + 1`"     && [ "$${MIN}" -gt 0 ] 2>/dev/null || MIN=1 ; \
+	        MAX="`expr $${O} + $${O}`" && [ "$${MAX}" -gt 2 ] 2>/dev/null || MAX=2 ; \
+	        if [ "$${N}" -lt "$${MIN}" ] || [ "$${N}" -gt "$${MAX}" ]; then \
+	            echo "FAILED ChangeLog.html check: does not contain expected second entry the right amount of times (huge doc, must have got aborted mid-way): $${SECOND_ENTRY} (seen $${N} times, expected between $${MIN} and $${MAX})" >&2 ; \
+	            if [ -z "$$FAILED" ] ; then \
+	                echo "Expected size over 3MB (for common builds):" >&2 ; \
+	                ls -la "ChangeLog.html" '$(top_builddir)/ChangeLog'* >&2 ; \
+	                FAILED="ChangeLog.html" ; \
+	            fi ; \
+	        fi ; \
+	    fi; \
+	    if [ -n "$${LAST_ENTRY}" ] ; then \
+	        O="`grep -cE "^$${LAST_ENTRY}" '$(top_builddir)/ChangeLog'`" ; \
+	        N="`grep -cE "title.*$${LAST_ENTRY}" 'ChangeLog.html'`" ; \
+	        MIN="`expr $${O} + 1`"     && [ "$${MIN}" -gt 0 ] 2>/dev/null || MIN=1 ; \
+	        MAX="`expr $${O} + $${O}`" && [ "$${MAX}" -gt 2 ] 2>/dev/null || MAX=2 ; \
+	        if [ "$${N}" -lt "$${MIN}" ] || [ "$${N}" -gt "$${MAX}" ]; then \
+	            echo "FAILED ChangeLog.html check: does not contain expected last entry the right amount of times (huge doc, must have got aborted mid-way): $${LAST_ENTRY} (seen $${N} times, expected between $${MIN} and $${MAX})" >&2 ; \
+	            if [ -z "$$FAILED" ] ; then \
+	                echo "Expected size over 3MB (for common builds):" >&2 ; \
+	                ls -la "ChangeLog.html" '$(top_builddir)/ChangeLog'* >&2 ; \
+	                FAILED="ChangeLog.html" ; \
+	            fi ; \
+	        fi ; \
+	    fi; \
+	    if [ x"$$FAILED" = x ] ; then \
+	        echo "PASSED $@" >&2 ; \
+	        exit 0 ; \
+	    fi ; \
+	    if [ x"$$FAILED" != x ] && [ -s '$(top_builddir)/ChangeLog.adoc' ] \
+	    && [ "`head -1 $(top_builddir)/ChangeLog.adoc`" = "=== Failed to generate the ChangeLog" ] \
+	    ; then \
+	        FAILED="" ; \
+	    fi; \
+	 fi; \
+	 if [ x"$$FAILED" = x ] ; then \
+	    echo "SKIPPED $@ because input files were not available" >&2 ; \
+	    exit 0 ; \
+	 fi ; \
+	 exit 1
+
 check-html-single: $(ASCIIDOC_HTML_SINGLE)
-	@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
-	for F in $(ASCIIDOC_HTML_SINGLE) ; do \
+	+@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
+	 for F in $(ASCIIDOC_HTML_SINGLE) ; do \
 	    test -s "$$F" && { file "$$F" | $(EGREP) -i '(XML|HTML.*document)' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
-	done; if test -n "$$FAILED" ; then \
+	    case "$$F" in \
+	        *ChangeLog*) if [ -s '$(top_builddir)/ChangeLog' ] ; then \
+	                $(MAKE) $(AM_MAKEFLAGS) "`basename "$$F"`"-contentchecked || FAILED="$$FAILED $$F" ; \
+	            fi ;; \
+	    esac ; \
+	 done; if test -n "$$FAILED" ; then \
 	    echo "FAILED HTML-single sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
-	fi; echo "PASSED HTML-single sanity check"; exit 0
+	 fi; echo "PASSED HTML-single sanity check"; exit 0
 
 check-html-chunked: $(ASCIIDOC_HTML_CHUNKED)
 	@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
@@ -185,12 +331,12 @@ check-html-chunked: $(ASCIIDOC_HTML_CHUNKED)
 # chosen during configure script execution. The "all-man" and "all-html"
 # rules build everything documented.
 check-man all-man man-man all-html html-man:
-	+cd $(top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile $@
+	+cd $(abs_top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile $@
 
 man:
-	+cd $(top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile all
+	+cd $(abs_top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile all
 
-CLEANFILES = *.xml *.html *.pdf *-spellchecked docbook-xsl.css docinfo.xml.in.tmp
+CLEANFILES = *.xml *.html *.pdf *-spellchecked *-contentchecked docbook-xsl.css docinfo.xml.in.tmp
 CLEANFILES += $(top_builddir)/INSTALL.nut $(top_builddir)/UPGRADING $(top_builddir)/NEWS $(top_builddir)/ChangeLog.adoc $(top_builddir)/README
 CLEANFILES += $(top_builddir)/*.adoc-parsed *.adoc-parsed
 
@@ -218,21 +364,38 @@ DOCBUILD_FILTER_GITHUB_LINKS = { \
 # The $< is okay here, it is used in a suffix rule below
 DOCBUILD_CONVERT_GITHUB_LINKS = { \
     echo "  DOC-ASCIIDOC-GITHUB-LINKS    Parsing GitHub link patterns $< => $@"; \
-    cat "$<" | $(DOCBUILD_FILTER_GITHUB_LINKS) > "$@.tmp" \
-    && mv -f "$@.tmp" "$@" \
+    cat "$<" | $(DOCBUILD_FILTER_GITHUB_LINKS) > "$@.tmp.$$$$" \
+    && mv -f "$@.tmp.$$$$" "$@" \
 ; }
 
 .adoc.adoc-parsed:
 	@$(DOCBUILD_CONVERT_GITHUB_LINKS)
 
-$(top_builddir)/ChangeLog:
-	+@echo "  DOC-CHANGELOG-GENERATE	$@" \
+$(top_builddir)/ChangeLog.adoc-parsed: $(top_builddir)/ChangeLog.adoc
+
+dummy:
+$(top_builddir)/ChangeLog: dummy
+	@+echo "  DOC-CHANGELOG-GENERATE-WRAPPER	$@ : call parent Makefile to decide if (re-)generation is needed" \
 	 && cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
 # BSD Make dislikes the path resolution here and does not always populate "$<"
 # (and claims why: "Using $< in a non-suffix rule context is a GNUmake idiom"),
 # but it has a "$?" for "list of dependencies that are newer than the target".
 # For more details see https://man.freebsd.org/cgi/man.cgi
+if WITH_PDF_NONASCII_TITLES
+A2X_ASCII_IDS =
+else !WITH_PDF_NONASCII_TITLES
+A2X_ASCII_IDS = ":ascii-ids:\n"
+endif !WITH_PDF_NONASCII_TITLES
+
+# Probably due to the web of makefiles and an overwhelmed job server in some
+# implementations, during parallel builds we can end up scheduling several
+# threads creating this asciidoc (and adoc-parsed later). This step only
+# costs a few seconds, however the updated timestamp may cause new HTML/PDF
+# builds which cost a lot more. Below we try a few ways to detect a build
+# already running and bail out early if the file exists. Otherwise we bite
+# the bullet and spend a few seconds, and then re-check if another thread
+# did exist and finished first.
 $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	@INPUT="$?"; \
 	 test -n "$${INPUT}" || INPUT="$$(top_builddir)/ChangeLog" ; \
@@ -240,11 +403,13 @@ $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	 || { \
 	     MSG="FAILED to resolve input or output filename with this make implementation, or input was not generated!"; \
 	     echo "  DOC-CHANGELOG-ASCIIDOC	SKIP: $${MSG}" >&2; \
-	     test -n "$@" && echo "$${MSG}" > "$@" ; \
+	     test -n "$@" && { printf '=== Failed to generate the ChangeLog\n\n%s\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n' "$${MSG}" > "$@" ; } ; \
 	     exit ; \
 	 } ; \
+	 W=10 ; while [ "$${W}" -gt 0 ] && find '$@.tmp.'* '$@' -newer "$${INPUT}" 2>/dev/null >/dev/null ; do sleep 1 ; W="`expr $$W - 1`"; done ; touch "$@.tmp.$$$$"; \
+	 if [ x"`find '$@' -newer "$${INPUT}" 2>/dev/null`" != x ] ; then echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : SKIP (keep existing)"; rm -f "$@.tmp.$$$$"; exit 0 ; fi ; \
 	 echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@" \
-	 && printf "ifdef::txt[]\n== Very detailed Change Log\nendif::txt[]\n\n" > "$@.tmp" \
+	 && printf "ifdef::txt[]\n== Very detailed Change Log\n"$(A2X_ASCII_IDS)"endif::txt[]\n\n" > "$@.tmp.$$$$" \
 	 && TABCHAR="`printf '\t'`" \
 	 && $(SED) \
 	        -e 's,^\([0-9a-zA-Z]\),=== \1,' \
@@ -255,8 +420,9 @@ $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	        -e 's,^\([ '"$${TABCHAR}"'].*\)\([~|^]\),\1\\\2,g' \
 	        -e 's,\[\[\([^]]*\)\]\],[\1],g' \
 	        -e 's,^\(\s\s*\)\([0-9]\),\1{empty}\2,g' \
-	   < "$${INPUT}" >> "$@.tmp" \
-	 && mv -f "$@.tmp" "$@"
+	   < "$${INPUT}" >> "$@.tmp.$$$$" \
+	 && if [ x"`find '$@' -newer "$${INPUT}" 2>/dev/null`" != x ] ; then echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : SKIP (keep recently born competitor)"; rm -f "$@.tmp.$$$$"; \
+	    else mv -f "$@.tmp.$$$$" "$@" ; fi
 
 # Add other directory deps (not for local EXTRA_DIST) and generated contents
 FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS) $(SHARED_DEPS) \
@@ -303,7 +469,7 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) \
 # As of version 8.6.9 it lies, and the argument is required for our distcheck
 # (and does affect PDF builds, as found during work on collision-avoidance -
 # true with at least asciidoc/a2x versions 9.0.0rc2).
-# For more details see issues https://github.com/asciidoc/asciidoc/issues/44
+# For more details see issues https://web.archive.org/web/20201207082352/https://github.com/asciidoc/asciidoc/issues/44
 # and https://github.com/networkupstools/nut/pull/281 (in short, attempts
 # to "fix" this warning broke NUT build). If this is to be retried later, see
 # https://github.com/networkupstools/nut/pull/281/commits/fe17861c4ea12679b3ebfefa8a6d692d79d99f2d
@@ -374,18 +540,33 @@ DOCBUILD_END = { \
 
 *.html: common.xsl xhtml.xsl
 .txt-prepped.html:
-	@A2X_OUTDIR="tmp/html-single.$(@F).$$$$" ; \
+	+@A2X_OUTDIR="tmp/html-single.$(@F).$$$$" ; \
 	 echo "  DOC-HTML Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
-	 $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl "$(<D)/`basename "$(<F)" -prepped`" || RES=$$? ; \
-	 $(DOCBUILD_END) ; exit $$RES
+	 $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl "$(<D)/`basename '$(<F)' -prepped`" || RES=$$? ; \
+	 $(DOCBUILD_END) ; \
+	 case "$(@F)" in \
+	    *ChangeLog*) if [ -s '$(top_builddir)/ChangeLog' ] ; then \
+	            $(MAKE) $(AM_MAKEFLAGS) "`basename '$(@F)'`"-contentchecked || RES=$$? ; \
+	            if [ "$$RES" != 0 ] ; then \
+	                echo "  DOC-HTML Generating $@ (retry once)" >&2; \
+	                rm -f "$@"; \
+	                A2X_OUTDIR="tmp/html-single.$(@F).$$$$-retry" ; \
+	                $(DOCBUILD_BEGIN) ; RES=0; rm -f "`basename '$(@F)'`"-contentchecked || true ; \
+	                $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl "$(<D)/`basename '$(<F)' -prepped`" || RES=$$? ; \
+	                $(DOCBUILD_END) ; \
+	                $(MAKE) $(AM_MAKEFLAGS) "`basename '$(@F)'`"-contentchecked || RES=$$? ; \
+	            fi ; \
+	        fi ;; \
+	 esac ; \
+	 exit $$RES
 
 *.chunked: common.xsl chunked.xsl
 .txt-prepped.chunked:
 	@A2X_OUTDIR="tmp/html-chunked.$(@F).$$$$" ; \
 	 echo "  DOC-HTML-CHUNKED Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
-	 $(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl "$(<D)/`basename "$(<F)" -prepped`" || RES=$$? ; \
+	 $(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl "$(<D)/`basename '$(<F)' -prepped`" || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
 # Note: non-HTML a2x modes may ignore the destination directory
@@ -394,7 +575,7 @@ DOCBUILD_END = { \
 	@A2X_OUTDIR="tmp/pdf.$(@F).$$$$" ; \
 	 echo "  DOC-PDF  Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
-	 $(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 "$(<D)/`basename "$(<F)" -prepped`" || RES=$$? ; \
+	 $(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 "$(<D)/`basename '$(<F)' -prepped`" || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
 # Used below for spellcheck and for .prep-src-docs
@@ -472,6 +653,10 @@ ASPELL_OUT_NOTERRORS = (^[ \t]*[\*\@]|^$$)
 SPELLCHECK_RECIPE_DEBUG_STREAM = /dev/null
 #SPELLCHECK_RECIPE_DEBUG_STREAM = &2
 
+# Note: if we do an interactive spell-check, it updates "nut.dict"
+# timestamp even if contents remain. If the caller left a copy of
+# the file as "$(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting",
+# and the dictionary was not in fact modified, restore the timestamp.
 $(SPELLCHECK_BUILDDIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE) $(abs_top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 	@LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	 if test x"$(SPELLCHECK_SRC_ONE)" = x ; then echo "SKIP: Bogus spellcheck call for empty target filename (with make target $@ from `pwd`)" >&2 ; exit 0; fi; \
@@ -485,12 +670,12 @@ $(SPELLCHECK_BUILDDIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_SRCDIR)/
 		/*) ;; \
 		*/*)	if [ x"$${REPORT_SRCDIR}" = x ] ; then \
 				echo EMPTY >$(SPELLCHECK_RECIPE_DEBUG_STREAM) ; \
-				REPORT_SRCDIR="`dirname "$(SPELLCHECK_SRC_ONE)"`"; \
+				REPORT_SRCDIR="`dirname '$(SPELLCHECK_SRC_ONE)'`"; \
 			else \
-				echo "APPEND: SPELLCHECK_SRCDIR='$(SPELLCHECK_SRCDIR)' SPELLCHECK_SRC_ONE='$(SPELLCHECK_SRC_ONE)' dirname='`dirname "$(SPELLCHECK_SRC_ONE)"`'" >$(SPELLCHECK_RECIPE_DEBUG_STREAM) ; \
-				REPORT_SRCDIR="$${REPORT_SRCDIR}/`dirname "$(SPELLCHECK_SRC_ONE)"`"; \
+				echo "APPEND: SPELLCHECK_SRCDIR='$(SPELLCHECK_SRCDIR)' SPELLCHECK_SRC_ONE='$(SPELLCHECK_SRC_ONE)' dirname='`dirname '$(SPELLCHECK_SRC_ONE)'`'" >$(SPELLCHECK_RECIPE_DEBUG_STREAM) ; \
+				REPORT_SRCDIR="$${REPORT_SRCDIR}/`dirname '$(SPELLCHECK_SRC_ONE)'`"; \
 			fi ; \
-			REPORT_SRC_ONE="`basename "$(SPELLCHECK_SRC_ONE)"`"; \
+			REPORT_SRC_ONE="`basename '$(SPELLCHECK_SRC_ONE)'`"; \
 			;; \
 		*) ;; \
 	 esac; \
@@ -505,8 +690,16 @@ $(SPELLCHECK_BUILDDIR)/$(SPELLCHECK_SRC_ONE)-spellchecked: $(SPELLCHECK_SRCDIR)/
 		*/) ;; \
 		*)  REPORT_SRCDIR="$${REPORT_SRCDIR}/" ;; \
 	 esac ; \
-	 echo "  ASPELL   Spell checking on $${REPORT_PREFIX}$${REPORT_SRCDIR}$${REPORT_SRC_ONE}"; \
-	 OUT="`(sed 's,^\(.*\)$$, \1,' | $(ASPELL) -a $(ASPELL_NUT_TEXMODE_ARGS) $(ASPELL_NUT_COMMON_ARGS) 2>&1) < "$(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE)"`" \
+	 if [ x"$(SPELLCHECK_INTERACTIVE)" = xtrue ] ; then \
+		echo "  ASPELL   Spell checking (interactively) on $${REPORT_PREFIX}$${REPORT_SRCDIR}$${REPORT_SRC_ONE}"; \
+		LANG=$(ASPELL_ENV_LANG) LC_ALL=$(ASPELL_ENV_LANG) $(ASPELL) check $(ASPELL_NUT_COMMON_ARGS) '$(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE)' || exit ; \
+		if [ -s $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting ] && [ -s $(abs_srcdir)/$(NUT_SPELL_DICT) ] && diff $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting >/dev/null ; then \
+			touch -r $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting $(abs_srcdir)/$(NUT_SPELL_DICT) ; \
+		fi ; \
+	 else \
+		echo "  ASPELL   Spell checking on $${REPORT_PREFIX}$${REPORT_SRCDIR}$${REPORT_SRC_ONE}"; \
+	 fi ; \
+	 OUT="`(sed 's,^\(.*\)$$, \1,' | $(ASPELL) -a $(ASPELL_NUT_TEXMODE_ARGS) $(ASPELL_NUT_COMMON_ARGS) 2>&1) < '$(SPELLCHECK_SRCDIR)/$(SPELLCHECK_SRC_ONE)'`" \
 		&& { if test -n "$$OUT" ; then OUT="`echo "$$OUT" | $(EGREP) -b -v '$(ASPELL_OUT_NOTERRORS)' `" ; fi; \
 		     test -z "$$OUT" ; } \
 		|| { RES=$$? ; \
@@ -536,7 +729,7 @@ spellcheck:
 	 done ; \
 	 if test -n "$$FAILED" ; then \
 		echo "=====================================================================" ; \
-		echo "FAILED automatic spellcheck for the following sources (relative to `pwd`): $$FAILED" ; \
+		echo "FAILED automatic spellcheck for the following sources (relative to `pwd`) using custom dictionary file '$(NUT_SPELL_DICT)': $$FAILED" ; \
 		echo "=====================================================================" ; \
 		echo "Please 'cd $(abs_top_builddir) && make spellcheck-interactive'"; \
 		echo "to either fix document sources or update the dictionary of accepted"; \
@@ -563,7 +756,7 @@ spellcheck-sortdict: $(abs_builddir)/$(NUT_SPELL_DICT).sorted
 $(abs_builddir)/$(NUT_SPELL_DICT).sorted: $(abs_srcdir)/$(NUT_SPELL_DICT)
 	@cp -pf $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting
 	@LANG=$(ASPELL_ENV_LANG); LC_ALL=$(ASPELL_ENV_LANG); export LANG; export LC_ALL; ( \
-	    WORDLIST="`tail -n +2 < "$?" | sort | uniq`"; \
+	    WORDLIST="`tail -n +2 < '$(?)' | sort | uniq`"; \
 	    WORDCOUNT="`echo "$$WORDLIST" | wc -l`"; \
 	    head -1 < "$?" | while read P L C E ; do echo "$$P $$L $$WORDCOUNT $$E"; break; done ; \
 	    echo "$$WORDLIST"; \
@@ -576,34 +769,86 @@ $(abs_builddir)/$(NUT_SPELL_DICT).sorted: $(abs_srcdir)/$(NUT_SPELL_DICT)
 
 DISTCLEANFILES = $(NUT_SPELL_DICT).bak-pre-sorting .$(NUT_SPELL_DICT).sorted $(NUT_SPELL_DICT).sorted
 
+# NOTE: In "make SPELLCHECK_INTERACTIVE=true ${docsrc}-spellchecked",
+# after an interactive "aspell check" we follow-up by a run of usual
+# non-interactive spell-checker to verify that the developer actually
+# has fixed all of the files that the tool had concerns about, and
+# that the touch-file is updated if the file is okay (to speed up
+# any future re-runs). We also must update all relevant *-spellchecked
+# touch-files after "make spellcheck-sortdict" which updates "nut.dict"
+# file which is a prerequisite for docs checks.
 spellcheck-interactive: 
-	@FAILED="" ; for docsrc in $(SPELLCHECK_SRC); do \
-		echo "Spell checking on $(SPELLCHECK_SRCDIR)/$$docsrc"; \
-		LANG=$(ASPELL_ENV_LANG) LC_ALL=$(ASPELL_ENV_LANG) $(ASPELL) check $(ASPELL_NUT_COMMON_ARGS) $(SPELLCHECK_SRCDIR)/$$docsrc || \
-			FAILED="$$FAILED $(SPELLCHECK_SRCDIR)/$$docsrc"; \
-	done ; \
-	if test -n "$$FAILED" ; then \
-		echo "FAILED interactive spellcheck for the following sources (relative to `pwd`): $$FAILED" >&2 ; \
+	@cp -pf $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting
+	+@FAILED="" ; for docsrc in $(SPELLCHECK_SRC); do \
+		if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
+			echo "ASPELL (INTERACTIVE) MAKEFILE DEBUG: Will see from `pwd` if '$(SPELLCHECK_SRCDIR)/$${docsrc}-spellchecked' is up to date" >&2; \
+		else true ; fi ; \
+		$(MAKE) $(AM_MAKEFLAGS) -s -f "$(abs_top_builddir)/docs/Makefile" SPELLCHECK_INTERACTIVE="true" SPELLCHECK_SRC="" SPELLCHECK_SRC_ONE="$${docsrc}" SPELLCHECK_BUILDDIR="$(SPELLCHECK_BUILDDIR)" SPELLCHECK_SRCDIR="$(SPELLCHECK_SRCDIR)" "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" \
+		|| FAILED="$$FAILED $(SPELLCHECK_SRCDIR)/$$docsrc"; \
+	 done ; \
+	 if test -n "$$FAILED" ; then \
+		echo "FAILED interactive spellcheck for the following sources (relative to `pwd`) using custom dictionary file '$(NUT_SPELL_DICT)': $$FAILED" >&2 ; \
 		exit 1; \
-	fi ; exit 0
-	+$(MAKE) $(AM_MAKEFLAGS) spellcheck-sortdict
+	 fi ; \
+	 $(MAKE) $(AM_MAKEFLAGS) spellcheck-sortdict || exit ; \
+	 for docsrc in $(SPELLCHECK_SRC); do \
+		if test -e "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" ; then \
+			touch "$(SPELLCHECK_BUILDDIR)/$${docsrc}-spellchecked" ; \
+		fi ; \
+	 done
 	@echo "------------------------------------------------------------------------"; \
 	 echo "Custom dictionary file $(NUT_SPELL_DICT) may have been updated now."; \
-	 echo "Use 'git add -p docs/$(NUT_SPELL_DICT) && git checkout -- docs/$(NUT_SPELL_DICT) && make spellcheck-sortdict && git add -p docs/$(NUT_SPELL_DICT)'"; \
+	 echo "Use e.g. 'git add -p docs/$(NUT_SPELL_DICT) && git checkout -- docs/$(NUT_SPELL_DICT) && make spellcheck-sortdict && git add -p docs/$(NUT_SPELL_DICT)'"; \
 	 echo "to review changes (please DO NOT REMOVE LINES that aspell chose to drop,"; \
 	 echo "because other systems might not know these words in their system dictionaries)"; \
 	 echo "------------------------------------------------------------------------"
 
 else !HAVE_ASPELL
-# This rule woulf probably just fail; normally with no ASPELL there are no callers for it
+# This rule would probably just fail; normally with no ASPELL there are no callers for it
 */*-spellchecked *-spellchecked: Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
-	@echo "  SKIP-ASPELL   $@ : Documentation spell check not available since 'aspell' was not found." >&2
+	@echo "  SKIP-ASPELL   $@ : Documentation spell check not available since 'aspell' was not found (or missing its English dictionary)." >&2
 spellcheck:
-	@echo "Documentation spell check not available since 'aspell' was not found."
+	@echo "Documentation spell check not available since 'aspell' was not found (or missing its English dictionary)."
 spellcheck-interactive:
-	@echo "Documentation spell check not available since 'aspell' was not found."
+	@echo "Documentation spell check not available since 'aspell' was not found (or missing its English dictionary)."
 endif !HAVE_ASPELL
 
+# Note that NUT_SPELL_DICT may be an include snippet without the header line.
+# To exclude files like `docs/nut.dict` or `nut-website.dict(.addons)` from
+# the usage lookups, we assume that a `*.dict*` pattern fits any used names.
+# Entries prefixed with '+++' mean something used in NUT sources in context
+# that aspell is likely to treat as a word (standalone or surrounded by certain
+# chars); otherwise in entries prefixed with '---' we print hit counts and
+# contents (if any, ending with '^^^') for the character pattern across the
+# whole Git-tracked codebase (case-insensitively for good measure).
+# Note this can take 5-10 minutes!
+# TOTHINK: Constrain to (caller-specified or default) SPELLCHECK_SRC?
+$(NUT_SPELL_DICT).usage-report: $(NUT_SPELL_DICT)
+	@echo "Preparing $@"; \
+	 LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
+	 grep -v -E '^personal_ws' < $? \
+	 | while read W ; do ( \
+		cd "$(abs_top_srcdir)" || exit ; \
+		git grep -q "$$W" -- ':!*.dict*' || git grep -qE "[0-9_,./\ -]$$W[0-9_,./\ -]" -- ':!*.dict*' ) \
+		&& echo "+++ $$W" \
+		|| ( \
+			HITS_CS="`git grep "$$W" -- ':!*.dict*'`" || true; \
+			HITS_CI="`git grep -i "$$W" -- ':!*.dict*'`" || true; \
+			if [ -n "$$HITS_CS" ] ; then HITC_CS="`echo "$$HITS_CS" | wc -l`" ; else HITC_CS=0; fi; \
+			if [ -n "$$HITS_CI" ] ; then HITC_CI="`echo "$$HITS_CI" | wc -l`" ; else HITC_CI=0; fi; \
+			printf '%s (%d case-sensitive/%d case-insensitive)\n' "--- $$W" "$$HITC_CS" "$$HITC_CI"; \
+			if [ "$$HITC_CS" != 0 ] ; then echo "$$HITS_CS" ; echo "^^^"; else \
+				if [ "$$HITC_CI" != 0 ] ; then echo "$$HITS_CI" ; echo "^^^"; fi; \
+			fi; \
+		); \
+	 done > "$@.tmp.$$$$" \
+	 && test -f "$@.tmp.$$$$" \
+	 && mv -f "$@.tmp.$$$$" "$@"
+	@echo "Reporting words from $? possibly not used in current inspected code base revision under $(abs_top_srcdir)" >&2 ; \
+	 grep -E '^--- ' < "$@" | grep '(0 ' || echo "SUCCESS: None found"
+
+CLEANFILES += $(NUT_SPELL_DICT).usage-report.tmp
+MAINTAINERCLEANFILES += $(NUT_SPELL_DICT).usage-report
 
 # When building out-of-tree, be sure to have all asciidoc resources
 # under the same dir structure (tool limitation)
@@ -621,7 +866,7 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC)
 	    COUNT=0; \
 	    for F in $(PREP_SRC) ; do \
 	        case "$$F" in \
-	            /*) F="`echo "$$F" | sed "s#^$(abs_top_srcdir)/*#./#"`"; \
+	            /*) F="`echo "$$F" | sed 's#^$(abs_top_srcdir)/*#./#'`"; \
 	                if test x"$${linkroot}" = x"$(abs_builddir)" ; then \
 	                    linkroot="$(abs_top_builddir)" ; \
 	                    cd "$(abs_top_builddir)" ; \
@@ -647,7 +892,7 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC)
 	    linksrcroot="$(abs_srcdir)" ; \
 	    for F in `echo $(PREP_SRC) | tr ' ' '\n' | sort -n | uniq` ; do \
 	        case "$$F" in \
-	            /*) F="`echo "$$F" | sed "s#^$(abs_top_srcdir)/*#./#"`"; \
+	            /*) F="`echo "$$F" | sed 's#^$(abs_top_srcdir)/*#./#'`"; \
 	                if test x"$${linkroot}" = x"$(abs_builddir)" ; then \
 	                    linkroot="$(abs_top_builddir)" ; \
 	                    linksrcroot="$(abs_top_srcdir)" ; \
@@ -658,7 +903,7 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC)
 	        D="`dirname "$$F"`" ; \
 	        $(MKDIR_P) "$${linkroot}/$$D" || { rm -f "$@.working" ; exit 1 ; } ; \
 	        if ! test -s "$${linkroot}/$$F" && test -s "$${linksrcroot}/$$F" ; then \
-	            echo "  LN     '$${linksrcroot}/$$F' => '$${linkroot}/$$F' (PWD = '`pwd`')" >&2 ; \
+	            echo "  LN     '$${linksrcroot}/$$F' => '$${linkroot}/$$F' (PWD = '`pwd`')" ; \
 	            ln -fs "$${linksrcroot}/$$F" "$${linkroot}/$$F" || { rm -f "$@.working" ; exit 1 ; } ; \
 	            COUNT="`expr $$COUNT + 1`" ; \
 	        fi ; \
@@ -676,7 +921,7 @@ clean-local:
 	$(AM_V_at)rm -rf *.chunked *.bak tmp
 	$(AM_V_at)for F in $(PREP_SRC) ; do \
 	        case "$$F" in \
-	            /*) F="`echo "$$F" | sed "s#^$(abs_top_srcdir)/*#./#"`"; cd "$(abs_top_builddir)" ;; \
+	            /*) F="`echo "$$F" | sed 's#^$(abs_top_srcdir)/*#./#'`"; cd "$(abs_top_builddir)" ;; \
 	        esac ; \
 	        if test x"$(abs_srcdir)" != x"$(abs_builddir)" ; then \
 	            if test -L "$$F" || test -h "$$F" ; then \

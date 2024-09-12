@@ -55,7 +55,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"ETA PRO driver"
-#define DRIVER_VERSION	"0.06"
+#define DRIVER_VERSION	"0.07"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -106,6 +106,8 @@ etapro_get_response(const char *resp_type)
 	case 'T':
 		dstate_setinfo("ups.mfr.date", "%s", cp + 2);
 		return 0;
+	default:
+		break;
 	}
 	/* Handle all other responses as hexadecimal numbers.  */
 	val = 0;

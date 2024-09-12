@@ -100,13 +100,13 @@ static int match_function_exact(USBDevice_t *hd, void *privdata)
 	}
 #endif
 #if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
-  #ifdef DEBUG_EXACT_MATCH_BUSPORT
+# ifdef DEBUG_EXACT_MATCH_BUSPORT
 	if (strcmp_null(hd->BusPort, data->BusPort) != 0) {
 		upsdebugx(2, "%s: failed match of %s: %s != %s",
 		    __func__, "BusPort", hd->BusPort, data->BusPort);
 		return 0;
 	}
-  #endif
+# endif
 #endif
 #ifdef DEBUG_EXACT_MATCH_DEVICE
 	if (strcmp_null(hd->Device, data->Device) != 0) {
@@ -153,6 +153,13 @@ int USBNewExactMatcher(USBDeviceMatcher_t **matcher, USBDevice_t *hd)
 #ifdef DEBUG_EXACT_MATCH_DEVICE
 	data->Device = hd->Device ? strdup(hd->Device) : NULL;
 #endif
+
+	/* NOTE: Callers must pre-initialize to NULL! */
+	if (matcher && *matcher) {
+		free(*matcher);
+		*matcher = NULL;
+	}
+
 	*matcher = m;
 
 	return 0;
@@ -334,6 +341,12 @@ int USBNewRegexMatcher(USBDeviceMatcher_t **matcher, char **regex, int cflags)
 		}
 	}
 
+	/* NOTE: Callers must pre-initialize to NULL! */
+	if (matcher && *matcher) {
+		free(*matcher);
+		*matcher = NULL;
+	}
+
 	*matcher = m;
 
 	return 0;
@@ -396,4 +409,92 @@ void warn_if_bad_usb_port_filename(const char *fn) {
 		"for USB devices to avoid confusion.",
 		__func__, fn);
 	return;
+}
+
+/* Retries were introduced for "Tripp Lite" devices, see
+ * https://github.com/networkupstools/nut/issues/414
+ */
+#define MAX_STRING_DESC_TRIES 3
+
+/* API neutral, handles retries.
+ * Note for future development: a variant of this code is adapted into
+ * tools/nut-scanner/scan_usb.c - please keep in sync if changing here.
+ */
+static int nut_usb_get_string_descriptor(
+	usb_dev_handle *udev,
+	int StringIdx,
+	int langid,
+	char *buf,
+	size_t buflen)
+{
+	int ret = -1;
+	int tries = MAX_STRING_DESC_TRIES;
+
+	while (tries--) {
+		ret = usb_get_string(udev, (usb_ctrl_strindex)StringIdx, langid, (usb_ctrl_charbuf)buf, buflen);
+		if (ret >= 0) {
+			break;
+		} else if (tries) {
+			upsdebugx(1, "%s: string descriptor %d request failed, retrying...", __func__, StringIdx);
+			usleep(50000);	/* 50 ms, might help in some cases */
+		}
+	}
+	return ret;
+}
+
+/* API neutral, assumes en_US if langid descriptor is broken.
+ * Note for future development: a variant of this code is adapted into
+ * tools/nut-scanner/scan_usb.c - please keep in sync if changing here.
+ */
+int nut_usb_get_string(
+	usb_dev_handle *udev,
+	int StringIdx,
+	char *buf,
+	size_t buflen)
+{
+	int ret;
+	char buffer[255];
+	int langid;
+	int len;
+	int i;
+
+	if (!udev || StringIdx < 1 || StringIdx > 255) {
+		return -1;
+	}
+
+	/* request langid descriptor */
+	ret = nut_usb_get_string_descriptor(udev, 0, 0, buffer, 4);
+	if (ret < 0)
+		return ret;
+
+	if (ret == 4 && buffer[0] >= 4 && buffer[1] == USB_DT_STRING) {
+		langid = buffer[2] | (buffer[3] << 8);
+	} else {
+		upsdebugx(1, "%s: Broken language identifier, assuming en_US", __func__);
+		langid = 0x0409;
+	}
+
+	/* retrieve string in preferred language */
+	ret = nut_usb_get_string_descriptor(udev, StringIdx, langid, buffer, sizeof(buffer));
+	if (ret < 0) {
+#ifdef WIN32
+		/* only for libusb0 ? */
+		errno = -ret;
+#endif
+		return ret;
+	}
+
+	/* translate simple UTF-16LE to 8-bit */
+	len = ret < (int)buflen ? ret : (int)buflen;
+	len = len / 2 - 1;	/* 16-bit characters, without header */
+	len = len < (int)buflen - 1 ? len : (int)buflen - 1;	/* reserve for null terminator */
+	for (i = 0; i < len; i++) {
+		if (buffer[2 + i * 2 + 1] == 0)
+			buf[i] = buffer[2 + i * 2];
+		else
+			buf[i] = '?';	/* not decoded */
+	}
+	buf[i] = '\0';
+
+	return len;
 }

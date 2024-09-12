@@ -554,7 +554,7 @@ void blazer_makevartable(void)
 	addvar(VAR_FLAG, "norating", "Skip reading rating information from UPS");
 	addvar(VAR_FLAG, "novendor", "Skip reading vendor information from UPS");
 
-	addvar(VAR_FLAG, "protocol", "Preselect communication protocol (skip autodetection)");
+	addvar(VAR_VALUE, "protocol", "Preselect communication protocol (skip autodetection)");
 }
 
 

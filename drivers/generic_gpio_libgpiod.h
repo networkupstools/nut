@@ -21,7 +21,7 @@
  */
 
 #ifndef GENERIC_GPIO_LIBGPIOD_H_SEEN
-#define GENERIC_GPIO_LIBGPIOD_H_SEEN
+#define GENERIC_GPIO_LIBGPIOD_H_SEEN 1
 
 #include <gpiod.h>
 

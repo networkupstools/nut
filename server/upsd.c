@@ -5,6 +5,7 @@
 	2008		Arjen de Korte <adkorte-guest@alioth.debian.org>
 	2011 - 2012	Arnaud Quette <arnaud.quette.free.fr>
 	2019 		Eaton (author: Arnaud Quette <ArnaudQuette@eaton.com>)
+	2020 - 2024	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -191,6 +192,8 @@ upstype_t *get_ups_ptr(const char *name)
 	upstype_t	*tmp;
 
 	if (!name) {
+		upsdebugx(3, "%s: not a valid UPS: <null>",
+			__func__);
 		return NULL;
 	}
 
@@ -200,6 +203,8 @@ upstype_t *get_ups_ptr(const char *name)
 		}
 	}
 
+	upsdebugx(3, "%s: not a valid UPS: %s",
+		__func__, NUT_STRARG(name));
 	return NULL;
 }
 
@@ -460,10 +465,12 @@ static void setuptcp(stype_t *server)
 			fatal_with_errno(EXIT_FAILURE, "setuptcp: setsockopt");
 		}
 
+#ifdef IPV6_V6ONLY
 		/* Ordinarily we request that IPv6 listeners handle only IPv6
 		 * and not IPv4 mapped addresses - if the OS would honour that.
 		 * TOTHINK: Does any platform need `#ifdef IPV6_V6ONLY` given
 		 * that we apparently already have AF_INET6 OS support everywhere?
+		 * YES: Solaris 8 has IPv6 but not this symbol.
 		 */
 		if (ai->ai_family == AF_INET6) {
 			if (setsockopt(sock_fd, IPPROTO_IPV6, IPV6_V6ONLY, (void *)&one, sizeof(one)) != 0) {
@@ -471,6 +478,7 @@ static void setuptcp(stype_t *server)
 				/* ack, ignore */
 			}
 		}
+#endif
 
 		if (bind(sock_fd, ai->ai_addr, ai->ai_addrlen) < 0) {
 			upsdebug_with_errno(3, "setuptcp: bind");
@@ -1088,6 +1096,8 @@ static void driver_free(void)
 
 static void upsd_cleanup(void)
 {
+	upsdebugx(1, "%s: starting the end-game", __func__);
+
 	if (strlen(pidfn) > 0) {
 		unlink(pidfn);
 	}
@@ -1117,6 +1127,8 @@ static void upsd_cleanup(void)
 		CloseHandle(mutex);
 	}
 #endif
+
+	upsdebugx(1, "%s: finished", __func__);
 }
 
 static void poll_reload(void)
@@ -1311,6 +1323,8 @@ char *tracking_get(const char *id)
 			return "ERR INVALID-ARGUMENT";
 		case STAT_FAILED:
 			return "ERR FAILED";
+		default:
+			break;
 		}
 	}
 
@@ -1799,9 +1813,10 @@ static void help(const char *arg_progname)
 
 static void help(const char *arg_progname)
 {
-	printf("Network server for UPS data.\n\n");
-	printf("usage: %s [OPTIONS]\n", arg_progname);
+	print_banner_once(arg_progname, 2);
+	printf("NUT network data server for UPS monitoring and management.\n");
 
+	printf("\nusage: %s [OPTIONS]\n", arg_progname);
 	printf("\n");
 	printf("  -c <command>	send <command> via signal to background process\n");
 	printf("		commands:\n");
@@ -1875,7 +1890,7 @@ void check_perms(const char *fn)
 
 	/* include the x bit here in case we check a directory */
 	if (st.st_mode & (S_IROTH | S_IXOTH)) {
-		upslogx(LOG_WARNING, "%s is world readable", fn);
+		upslogx(LOG_WARNING, "WARNING: %s is world readable (hope you don't have passwords there)", fn);
 	}
 #else
 	NUT_UNUSED_VARIABLE(fn);
@@ -1923,7 +1938,7 @@ int main(int argc, char **argv)
 	/* set up some things for later */
 	snprintf(pidfn, sizeof(pidfn), "%s/%s.pid", altpidpath(), progname);
 
-	printf("Network UPS Tools %s %s\n", progname, UPS_VERSION);
+	print_banner_once(progname, 0);
 
 	while ((i = getopt(argc, argv, "+h46p:qr:i:fu:Vc:P:DFB")) != -1) {
 		switch (i) {
@@ -1949,9 +1964,10 @@ int main(int argc, char **argv)
 				break;
 
 			case 'V':
-				/* Note - we already printed the banner for program name */
+				/* just show the version and optional
+				 * CONFIG_FLAGS banner if available */
+				print_banner_once(progname, 1);
 				nut_report_config_flags();
-
 				exit(EXIT_SUCCESS);
 
 			case 'c':
@@ -2031,20 +2047,22 @@ int main(int argc, char **argv)
 	 * for probing whether a competing older instance of this program
 	 * is running (error if it is).
 	 */
+	/* Hush the fopen(pidfile) message but let "real errors" be seen */
+	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_KILL_SIG0PING - 1;
 #ifndef WIN32
 	/* If cmd == 0 we are starting and check if a previous instance
 	 * is running by sending signal '0' (i.e. 'kill <pid> 0' equivalent)
 	 */
 
 	if (oldpid < 0) {
-		cmdret = sendsignalfn(pidfn, cmd);
+		cmdret = sendsignalfn(pidfn, cmd, progname, 1);
 	} else {
-		cmdret = sendsignalpid(oldpid, cmd);
+		cmdret = sendsignalpid(oldpid, cmd, progname, 1);
 	}
 #else	/* if WIN32 */
 	if (cmd) {
 		/* Command the running daemon, it should be there */
-		cmdret = sendsignal(UPSD_PIPE_NAME, cmd);
+		cmdret = sendsignal(UPSD_PIPE_NAME, cmd, 1);
 	} else {
 		/* Starting new daemon, check for competition */
 		mutex = CreateMutex(NULL, TRUE, UPSD_PIPE_NAME);
@@ -2084,7 +2102,7 @@ int main(int argc, char **argv)
 		 */
 		upslogx(LOG_WARNING, "Could not %s PID file '%s' "
 			"to see if previous upsd instance is "
-			"already running!",
+			"already running or not!",
 			(cmdret == -3 ? "find" : "parse"),
 			pidfn);
 		break;
@@ -2137,6 +2155,9 @@ int main(int argc, char **argv)
 
 		exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
 	}
+
+	/* Restore the signal errors verbosity */
+	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_DEFAULT;
 
 	argc -= optind;
 	argv += optind;

@@ -2,7 +2,7 @@
                    tracked until a response arrives, returning
                    that line and closing a connection
 
-   Copyright (C) 2023  Jim Klimov <jimklimov+nut@gmail.com>
+   Copyright (C) 2023-2024  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 */
 
 #ifndef NUT_UPSDRVQUERY_H_SEEN
-#define NUT_UPSDRVQUERY_H_SEEN
+#define NUT_UPSDRVQUERY_H_SEEN 1
 
 #include "common.h"	/* TYPE_FD etc. */
 #include "timehead.h"
@@ -47,5 +47,12 @@ ssize_t upsdrvquery_request(udq_pipe_conn_t *conn, struct timeval tv, const char
 
 /* if buf != NULL, last reply is copied there */
 ssize_t upsdrvquery_oneshot(const char *drvname, const char *upsname, const char *query, char *buf, const size_t bufsz, struct timeval *tv);
+
+/* Internal toggle for some NUT programs that deal with Unix socket chatter.
+ * For a detailed rationale comment see upsdrvquery.c */
+extern int nut_upsdrvquery_debug_level;
+#define NUT_UPSDRVQUERY_DEBUG_LEVEL_DEFAULT	6
+#define NUT_UPSDRVQUERY_DEBUG_LEVEL_CONNECT	5
+#define NUT_UPSDRVQUERY_DEBUG_LEVEL_DIALOG	4
 
 #endif	/* NUT_UPSDRVQUERY_H_SEEN */

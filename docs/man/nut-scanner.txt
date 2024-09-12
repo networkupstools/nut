@@ -78,37 +78,65 @@ an 'end IP'. See specific SNMP OPTIONS for community and security settings.
 
 *-M* | *--xml_scan*::
 Scan XML/HTTP devices. Can broadcast a network message on the current network
-interfaces to retrieve XML/HTTP capable devices. No IP required in this mode.
+interface(s) to retrieve XML/HTTP capable devices. No IP required in this mode.
+If IP address ranges are specified, they would be scanned instead of a broadcast.
 
 *-O* | *--oldnut_scan*::
 Scan NUT devices (i.e. upsd daemon) on IP ranging from 'start IP' to 'end IP'.
 
 *-n* | *--nut_simulation_scan*::
-Scan NUT simulated devices (.dev files in $CONFPATH).
+Scan NUT simulated devices (`.dev` files in `$NUT_CONFPATH`).
 
 *-A* | *--avahi_scan*::
-Scan NUT servers using Avahi request on the current network interfaces.
-No IP required.
+Scan NUT servers using Avahi request on the current network interface(s).
+No IP address options are required or used.
 
 *-I* | *--ipmi_scan*::
 Scan NUT compatible power supplies available via IPMI on the current host,
-or over the network.
+or over the network if IP address ranges are specified.
 
 *-E* | *--eaton_serial* 'serial ports'::
 Scan Eaton devices (XCP and SHUT) available via serial bus on the current host.
 This option must be requested explicitly, even for a complete scan.
 'serial ports' can be expressed in various forms:
-
++
 - 'auto' to scan all serial ports.
 - a single character indicating a port number ('0' (zero) for /dev/ttyS0 and
-/dev/ttyUSB0 on Linux, '1' for COM1 on Windows, 'a' for /dev/ttya on Solaris...)
+  /dev/ttyUSB0 on Linux, '1' for COM1 on Windows, 'a' for /dev/ttya on Solaris...)
 - a range of N characters, hyphen separated, describing the range of
-ports using 'X-Y', where X and Y are characters referring to the port number.
+  ports using 'X-Y', where X and Y are characters referring to the port number.
 - a single port name.
 - a list of ports name, coma separated, like '/dev/ttyS1,/dev/ttyS4'.
 
 NETWORK OPTIONS
 ---------------
+
+NOTE: The networked buses (such as SNMP, NetXML, IPMI and "Old NUT") allow to
+specify several IP (IPv4 or IPv6) address ranges, down to individual single
+IP addresses.  Normally a new range is specified by a set of one `-s` and one
+`-e` options following each other (in any order).  Lone or consecutive `-s` or
+`-e` options present on the command line would translate to single-IP queries.
+Also a `-m` option squashed between two `-s` and `-e` options would be a new
+range, turning those two into single-IP queries.  This feature does not by
+itself recombine "neighboring" addresses into one range, nor even check for
+duplicate or overlapping specifications.
++
+Also note that some buses require IP address(es) to scan, and others have a
+different behavior when exactly no addresses are specified (it is not currently
+possible to mix the two behaviors in one invocation of the `nut-scanner` tool).
++
+A single-address range may be a host name which would be resolved into one IP
+address by the system resolver. A CIDR using a host name and netmask length
+would be resolved into an IP address and subjected to the mask application,
+to query hosts "near" the named one.
++
+Finally note that currently even if multi-threaded support is available, each
+range specification is a separate fan-out of queries constrained by the timeout.
+Requests to scan many single IP addresses will take a while to complete, much
+longer than if they were a single range.  This will be hopefully fixed in later
+releases.
+
+NOTE: Colon-separated IPv6 addresses must be passed in square brackets.
 
 *-t* | *--timeout* 'timeout'::
 Set the network timeout in seconds. Default timeout is 5 seconds.
@@ -124,7 +152,20 @@ If this parameter is omitted, only the 'start IP' is scanned. If 'end IP' is
 less than 'start IP', both parameters are internally permuted.
 
 *-m* | *--mask_cidr* 'IP address/mask'::
-Set a range of IP using CIDR notation.
+Set a range of IP addresses by using CIDR notation.
++
+A special form `-m auto` allows `nut-scanner` to detect local IP address(es)
+and scan corresponding subnet(s) on supported platforms, and `-m auto4` or
+`-m auto6` limits the selected addresses to IPv4 and IPv6 respectively. Only
+the first "auto*" request would be honoured, others ignored with a warning.
++
+An `/ADDRLEN` suffix can be added to the option, to filter out discovered
+subnets with too many bits available for the host address part (avoiding
+millions of scans in the extreme cases).  For example, if your IPv4 LAN's
+network range is `10.2.3.0/24`, its address part is `(32-24)=8`. Note that
+while this is applied to IPv6 networks also, their typical `/64` subnets
+are not likely to have a NUT/SNMP/NetXML/... server *that* close nearby
+(in addressing terms), for a tight filter to find them. Default is `8`.
 
 NUT DEVICE OPTION
 -----------------
@@ -220,14 +261,20 @@ MISCELLANEOUS OPTIONS
 Display NUT version.
 
 *-a* | *--available*::
-Display available bus that can be scanned, depending on how the nut-scanner
-binary program has been compiled. (OLDNUT, USB, SNMP, XML, AVAHI, IPMI).
+Display available buses that can be scanned, depending on how the nut-scanner
+binary program has been compiled. (e.g. OLDNUT, USB, SNMP, XML, AVAHI, IPMI).
 
 *-q* | *--quiet*::
 Display only scan result. No information on currently scanned bus is displayed.
 
 *-D* | *--nut_debug_level*::
 Raise the debugging level.  Use this multiple times to see more details.
+
+NOTE: The level of debugging needed depends both on nut-scanner and the
+problem you're trying to diagnose.  Therefore, first explain the problem you
+have with `nut-scanner` to a developer/maintainer, before sending them debugging
+output.  More often than not, if you just pick a level, the output may be
+either too limited or too verbose to be of any use.
 
 EXAMPLES
 --------

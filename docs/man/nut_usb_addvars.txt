@@ -109,3 +109,34 @@ If you must really know *which* one, it will not!
 Force redundant call to `usb_set_altinterface()`, especially if needed
 for devices serving multiple USB roles where the UPS is not represented
 by the interface number `0` (default).
+
+*usb_config_index*::
+*usb_hid_rep_index*::
+*usb_hid_desc_index*::
+*usb_hid_ep_in*::
+*usb_hid_ep_out*::
+
+Force use of specific interface, endpoint, descriptor index etc. numbers,
+rather than defaulting to 0 (rarely other values in certain drivers for
+some devices known to use non-zero numbers). Specified as a hexadecimal
+number.
++
+As a rule of thumb for `usb_hid_desc_index` discovery, you can see larger
+`wDescriptorLength` values (roughly 600+ bytes) in reports of `lsusb` or
+similar tools.
+
+[NOTE]
+======
+Run-time troubleshooting of USB-capable NUT drivers can involve not only
+raising the common NUT debug verbosity (e.g. using the `DEBUG_MIN` setting
+in linkman:ups.conf[5] or protocol commands to change the `driver.debug`
+value), but may also benefit from LibUSB specific debugging.
+
+For the latter, currently you would have to export the environment variable
+`LIBUSB_DEBUG` before starting a NUT driver (may be set and "exported" via
+linkman:nut.conf[5]), to a numeric value such as `4` ("All messages are
+emitted"). For more details, including the currently supported values, see:
+
+* https://libusb.sourceforge.io/api-1.0/
+* https://libusb.sourceforge.io/api-1.0/group__libusb__lib.html
+======

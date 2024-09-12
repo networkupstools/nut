@@ -22,6 +22,9 @@
 #include <sys/ioctl.h>
 #include "nut_stdint.h"
 
+#define DRIVER_NAME                         "PiJuice UPS driver"
+#define DRIVER_VERSION                      "0.12"
+
 /*
  * Linux I2C userland is a bit of a mess until distros refresh to
  * the i2c-tools 4.x release that profides i2c/smbus.h for userspace
@@ -216,9 +219,6 @@ static inline __u8* i2c_smbus_read_i2c_block_data(int file, __u8 command, __u8 l
 #define LOW_BATTERY_THRESHOLD               25.0
 #define HIGH_BATTERY_THRESHOLD              75.0
 #define NOMINAL_BATTERY_VOLTAGE             4.18
-
-#define DRIVER_NAME                         "PiJuice UPS driver"
-#define DRIVER_VERSION                      "0.11"
 
 static uint8_t i2c_address    = 0x14;
 static uint8_t shutdown_delay = 30;

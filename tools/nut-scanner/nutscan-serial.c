@@ -42,7 +42,7 @@
 #define SERIAL_PORT_PREFIX "/dev/tty"
 #endif
 
-#define ERR_OUT_OF_BOUND "Serial port range out of bound (must be 0 to 9 or a to z depending on your system)\n"
+#define ERR_OUT_OF_BOUND "Serial port range out of bound (must be 0 to 9 or a to z depending on your system)"
 
 typedef struct {
 	char * name;
@@ -108,7 +108,7 @@ static char ** add_port(char ** list, char * port)
 	/*+1 for the terminal NULL */
 	res = realloc(list, sizeof(char*) * (count + 1 + 1));
 	if (res == NULL) {
-		upsdebugx(1, "%s: Failed to realloc port list", __func__);
+		upsdebugx(0, "%s: Failed to realloc port list", __func__);
 		return list;
 	}
 	res[count] = strdup(port);
@@ -146,7 +146,7 @@ char ** nutscan_get_serial_ports_list(const char *ports_range)
 		if ((list_sep_ptr = strchr(range, '-')) != NULL) {
 			tok = strtok_r(range, "-", &saveptr);
 			if (tok[1] != 0) {
-				fprintf(stderr, ERR_OUT_OF_BOUND);
+				upsdebugx(0, "%s", ERR_OUT_OF_BOUND);
 				free(range);
 				return NULL;
 			}
@@ -154,7 +154,7 @@ char ** nutscan_get_serial_ports_list(const char *ports_range)
 			tok = strtok_r(NULL, "-", &saveptr);
 			if (tok != NULL) {
 				if (tok[1] != 0) {
-					fprintf(stderr, ERR_OUT_OF_BOUND);
+					upsdebugx(0, "%s", ERR_OUT_OF_BOUND);
 					free(range);
 					return NULL;
 				}

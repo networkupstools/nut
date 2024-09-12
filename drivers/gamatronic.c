@@ -33,7 +33,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Gamatronic UPS driver"
-#define DRIVER_VERSION	"0.04"
+#define DRIVER_VERSION	"0.06"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -53,13 +53,23 @@ upsdrv_info_t upsdrv_info = {
 #define SER_WAIT_SEC	1	/* allow 3.0 sec for ser_get calls */
 #define SER_WAIT_USEC	0
 
+/* Reasons for this number are lost in history; protocol docs at
+ * https://networkupstools.org/protocols/sec-protocol.html and
+ * https://networkupstools.org/protocols/us9003.html specify 128
+ * bytes as the max data length in a message; +5 chars for meta
+ * data and +1 for `\0` termination yields maybe 134 as the limit.
+ */
+/* FIXME: Some methods get a buffer and assume its length.
+ * This should normally be a parameter! */
+#define GAMATRONIC_BUF_LEN	140
+
 static int sec_upsrecv (char *buf)
 {
 	char lenbuf[4];
 	int ret;
 
-	ser_get_line(upsfd, buf, 140, ENDCHAR, IGNCHARS,SER_WAIT_SEC, SER_WAIT_USEC);
-	if (buf[0] ==  SEC_MSG_STARTCHAR) {
+	ser_get_line(upsfd, buf, GAMATRONIC_BUF_LEN, ENDCHAR, IGNCHARS, SER_WAIT_SEC, SER_WAIT_USEC);
+	if (buf[0] == SEC_MSG_STARTCHAR) {
 		switch (buf[1]) {
 			case SEC_NAK:
 				return(-1);
@@ -69,11 +79,24 @@ static int sec_upsrecv (char *buf)
 				strncpy(lenbuf, buf+2, 3);
 				lenbuf[3] = '\0';
 				ret = atoi(lenbuf);
+				if (ret > GAMATRONIC_BUF_LEN) {
+					upslogx(1, "%s: got a longer response message "
+						"than expected for protocol: %d (%s) > %d",
+						__func__, ret, lenbuf, GAMATRONIC_BUF_LEN);
+					ret = GAMATRONIC_BUF_LEN;
+				}
 				if (ret > 0) {
-					strcpy(buf,buf+5);
+					/* Note: ser_get_line() returns a
+					 * safely zero-terminated string */
+					memmove(buf, buf+5, (GAMATRONIC_BUF_LEN - 5));
 					return(ret);
 				}
-				else return (-2);
+
+				/* else (ret <= 0) : */
+				upslogx(1, "%s: invalid response message length: %s",
+					__func__, lenbuf);
+				return (-2);
+
 			default:
 				return(-2);
 		}
@@ -84,7 +107,7 @@ static int sec_upsrecv (char *buf)
 
 static ssize_t sec_cmd(const char mode, const char *command, char *msgbuf, ssize_t *buflen)
 {
-	char msg[140];
+	char msg[GAMATRONIC_BUF_LEN];
 	ssize_t ret;
 
 	memset(msg, 0, sizeof(msg));
@@ -201,7 +224,7 @@ static void update_pseudovars( void )
 static void sec_poll ( int pollflag ) {
 	ssize_t msglen;
 	int f, q;
-	char retbuf[140], *n, *r;
+	char retbuf[GAMATRONIC_BUF_LEN], *n, *r;
 
 	for (q=0; q<SEC_QUERYLIST_LEN; q++) {
 		if (sec_querylist[q].command == NULL) break;
@@ -348,7 +371,7 @@ void upsdrv_makevartable(void)
 
 static void setup_serial(const char *port)
 {
-	char temp[140];
+	char temp[GAMATRONIC_BUF_LEN];
 	int i;
 	ssize_t ret;
 

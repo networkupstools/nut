@@ -3,11 +3,11 @@
 # Export certain values for ccache which NUT ci_build.sh can customize,
 # to facilitate developer iteration re-runs of "make" later.
 # At least GNU and BSD make implementations are okay with this syntax.
-@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_NAMESPACE=@CCACHE_NAMESPACE@
-@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_BASEDIR=@CCACHE_BASEDIR@
-@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_DIR=@CCACHE_DIR@
-@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_PATH=@CCACHE_PATH@
-@NUT_AM_MAKE_CAN_EXPORT@export PATH=@PATH_DURING_CONFIGURE@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_NAMESPACE@export CCACHE_NAMESPACE=@CCACHE_NAMESPACE@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_BASEDIR@export CCACHE_BASEDIR=@CCACHE_BASEDIR@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_DIR@export CCACHE_DIR=@CCACHE_DIR@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export CCACHE_PATH=@CCACHE_PATH@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export PATH=@PATH_DURING_CONFIGURE@
 
 SUBDIRS = . NIT
 
@@ -16,6 +16,7 @@ all: $(TESTS)
 EXTRA_DIST = nut-driver-enumerator-test.sh nut-driver-enumerator-test--ups.conf
 
 TESTS =
+noinst_LTLIBRARIES =
 CLEANFILES = *.trs *.log
 
 AM_CFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/drivers
@@ -56,6 +57,10 @@ TESTS += nuttimetest
 nuttimetest_SOURCES = nuttimetest.c
 nuttimetest_LDADD = $(top_builddir)/common/libcommon.la
 
+TESTS += nutbooltest
+nutbooltest_SOURCES = nutbooltest.c
+#nutbooltest_LDADD = $(top_builddir)/common/libcommon.la
+
 # Separate the .deps of other dirs from this one
 LINKED_SOURCE_FILES = hidparser.c
 
@@ -65,7 +70,19 @@ hidparser.c: $(top_srcdir)/drivers/hidparser.c
 	test -s "$@" || ln -s -f "$(top_srcdir)/drivers/hidparser.c" "$@"
 
 if WITH_USB
-TESTS += getvaluetest
+TESTS += getvaluetest getexponenttest-belkin-hid
+
+# We only need to call a few methods, not use the whole source - so
+# not linking it as a getvaluetest_SOURCE file (has too many deps):
+noinst_LTLIBRARIES += libdriverstubusb.la
+nodist_libdriverstubusb_la_SOURCES = driver-stub-usb.c
+libdriverstubusb_la_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
+#libdriverstubusb_la_LIBADD = $(top_builddir)/common/libcommon.la
+
+getexponenttest-belkin-hid.c: $(top_srcdir)/drivers/belkin-hid.c
+getexponenttest_belkin_hid_SOURCES = getexponenttest-belkin-hid.c
+getexponenttest_belkin_hid_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
+getexponenttest_belkin_hid_LDADD = $(top_builddir)/common/libcommon.la libdriverstubusb.la
 
 getvaluetest_SOURCES = getvaluetest.c
 nodist_getvaluetest_SOURCES = hidparser.c
@@ -75,6 +92,7 @@ getvaluetest_LDADD = $(top_builddir)/common/libcommon.la
 else !WITH_USB
 EXTRA_DIST += getvaluetest.c hidparser.c
 endif !WITH_USB
+EXTRA_DIST += driver-stub-usb.c
 
 if WITH_GPIO
 TESTS += gpiotest
@@ -101,6 +119,7 @@ EXTRA_DIST += generic_gpio_utest.h generic_gpio_test.txt
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/drivers/libdummy_mockdrv.la \
 $(top_builddir)/common/libnutconf.la \
+$(top_builddir)/common/libcommonclient.la \
 $(top_builddir)/common/libcommon.la: dummy
 	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
@@ -128,7 +147,7 @@ check_PROGRAMS += cppnit
 
 if WITH_VALGRIND
 check-local: $(check_PROGRAMS)
-	RES=0; for P in $^ ; do $(VALGRIND) ./$$P || { RES=$$? ; echo "FAILED: $(VALGRIND) ./$$P" >&2; }; done; exit $$RES
+	RES=0; for P in $? ; do $(VALGRIND) ./$$P || { RES=$$? ; echo "FAILED: $(VALGRIND) ./$$P" >&2; }; done; exit $$RES
 endif WITH_VALGRIND
 
 cppunittest_CXXFLAGS = $(AM_CXXFLAGS) $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CPPUNIT_NUT_CXXFLAGS) $(CXXFLAGS)

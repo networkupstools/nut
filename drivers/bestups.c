@@ -29,7 +29,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Best UPS driver"
-#define DRIVER_VERSION	"1.08"
+#define DRIVER_VERSION	"1.09"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -208,6 +208,9 @@ static void ups_ident(void)
 
 		case 5:
 			highvolt = atof(ptr);
+			break;
+
+		default:
 			break;
 		}
 

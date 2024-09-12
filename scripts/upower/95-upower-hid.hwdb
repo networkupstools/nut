@@ -153,7 +153,9 @@ usb:v0D9Fp00A6*
  UPOWER_VENDOR=PowerCOM
 
 # Liebert
+usb:v10AFp0000*
 usb:v10AFp0001*
+usb:v10AFp0002*
 usb:v10AFp0004*
 usb:v10AFp0008*
  UPOWER_BATTERY_TYPE=ups

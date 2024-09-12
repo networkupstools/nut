@@ -16,10 +16,15 @@ systemdsystemunit_DATA = \
         nut-driver.target   \
         nut.target
 
+if !WITH_LIBSYSTEMD_INHIBITOR
+systemdsystemunit_DATA += \
+        nut-sleep.service
+endif !WITH_LIBSYSTEMD_INHIBITOR
+
 systemdtmpfiles_DATA = \
         nut-common-tmpfiles.conf
 
-EXTRA_DIST += nut-driver.target nut.target
+EXTRA_DIST += nut-driver.target nut.target nut-sleep.service
 
 systemdshutdown_SCRIPTS = nutshutdown
 
@@ -27,9 +32,9 @@ libexec_SCRIPTS = ../upsdrvsvcctl/nut-driver-enumerator.sh
 
 sbin_SCRIPTS = ../upsdrvsvcctl/upsdrvsvcctl
 
-else
+else !HAVE_SYSTEMD
 EXTRA_DIST += \
-	nut-driver@.service.in nut-monitor.service.in \
+	nut-driver@.service.in nut-monitor.service.in nut-sleep.service \
 	nut-server.service.in nutshutdown.in nut-driver.target nut.target \
 	nut-driver-enumerator.path.in nut-driver-enumerator.service.in \
 	nut-driver-enumerator-daemon-activator.path.in \
@@ -37,14 +42,14 @@ EXTRA_DIST += \
 	nut-driver-enumerator-daemon.service.in
 
 # NOTE: Do not EXTRA_DIST nut-common-tmpfiles.conf.in - it is generated per build
-endif
+endif !HAVE_SYSTEMD
 
 SPELLCHECK_SRC = README.adoc
 
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension.
 # We also have to export some variables that may be tainted by relative
 # paths when parsing the other makefile (e.g. MKDIR_P that may be defined
-# via expanded $(top_builddir)/install_sh):
+# via expanded $(top_builddir)/install-sh):
 #%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 #	+$(MAKE) -s -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 

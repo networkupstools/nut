@@ -3,11 +3,11 @@
 # Export certain values for ccache which NUT ci_build.sh can customize,
 # to facilitate developer iteration re-runs of "make" later.
 # At least GNU and BSD make implementations are okay with this syntax.
-@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_NAMESPACE=@CCACHE_NAMESPACE@
-@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_BASEDIR=@CCACHE_BASEDIR@
-@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_DIR=@CCACHE_DIR@
-@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_PATH=@CCACHE_PATH@
-@NUT_AM_MAKE_CAN_EXPORT@export PATH=@PATH_DURING_CONFIGURE@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_NAMESPACE@export CCACHE_NAMESPACE=@CCACHE_NAMESPACE@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_BASEDIR@export CCACHE_BASEDIR=@CCACHE_BASEDIR@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_DIR@export CCACHE_DIR=@CCACHE_DIR@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export CCACHE_PATH=@CCACHE_PATH@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export PATH=@PATH_DURING_CONFIGURE@
 
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/common/libcommon.la \
@@ -57,7 +57,7 @@ SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
  gamatronic genericups isbmex liebert liebert-esp2 masterguard metasys	\
  mge-utalk microdowell microsol-apc mge-shut oneac optiups powercom rhino 	\
  safenet nutdrv_siemens-sitop solis tripplite tripplitesu upscode2 victronups powerpanel \
- blazer_ser ivtscd apcsmart apcsmart-old riello_ser sms_ser
+ blazer_ser ivtscd apcsmart apcsmart-old riello_ser sms_ser bicker_ser
 SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
  blazer_usb richcomm_usb riello_usb \
@@ -68,7 +68,7 @@ SERIAL_USB_DRIVERLIST = \
 NEONXML_DRIVERLIST = netxml-ups
 MACOSX_DRIVERLIST = macosx-ups
 MODBUS_DRIVERLIST = phoenixcontact_modbus generic_modbus huawei-ups2000 socomec_jbus adelsystem_cbi apc_modbus invt_modbus
-LINUX_I2C_DRIVERLIST = asem pijuice
+LINUX_I2C_DRIVERLIST = asem pijuice hwmon_ina219
 POWERMAN_DRIVERLIST = powerman-pdu
 IPMI_DRIVERLIST = nut-ipmipsu
 GPIO_DRIVERLIST = generic_gpio_libgpiod
@@ -186,6 +186,8 @@ riello_ser_SOURCES = riello.c riello_ser.c
 riello_ser_LDADD = $(LDADD) -lm
 sms_ser_SOURCES = sms_ser.c
 sms_ser_LDADD = $(LDADD) -lm
+bicker_ser_SOURCES = bicker_ser.c
+bicker_ser_LDADD = $(LDADD) -lm
 
 # non-serial drivers: these use custom LDADD and/or CFLAGS
 
@@ -273,9 +275,23 @@ snmp_ups_CFLAGS = $(AM_CFLAGS)
 snmp_ups_CFLAGS += $(LIBNETSNMP_CFLAGS)
 snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS) -lm
 
+if WITH_SSL
+if !WITH_OPENSSL
+  snmp_ups_CFLAGS += -UNETSNMP_USE_OPENSSL
+endif !WITH_OPENSSL
+  snmp_ups_CFLAGS += $(LIBSSL_CFLAGS)
+  snmp_ups_LDADD += $(LIBSSL_LIBS)
+endif WITH_SSL
+
 # NEON XML/HTTP
 netxml_ups_SOURCES = netxml-ups.c mge-xml.c
 netxml_ups_LDADD = $(LDADD_DRIVERS) $(LIBNEON_LIBS)
+netxml_ups_CFLAGS = $(AM_CFLAGS)
+
+if WITH_SSL
+  netxml_ups_CFLAGS += $(LIBSSL_CFLAGS)
+  netxml_ups_LDADD += $(LIBSSL_LIBS)
+endif
 
 # Powerman
 powerman_pdu_SOURCES = powerman-pdu.c
@@ -334,6 +350,8 @@ asem_LDADD = $(LDADD_DRIVERS) $(LIBI2C_LIBS)
 asem_SOURCES = asem.c
 pijuice_LDADD = $(LDADD_DRIVERS) $(LIBI2C_LIBS)
 pijuice_SOURCES = pijuice.c
+hwmon_ina219_LDADD = $(LDADD_DRIVERS)
+hwmon_ina219_SOURCES = hwmon_ina219.c
 
 # GPIO drivers
 generic_gpio_libgpiod_SOURCES = generic_gpio_common.c generic_gpio_libgpiod.c
@@ -365,7 +383,8 @@ nutdrv_qx_SOURCES += $(NUTDRV_QX_SUBDRIVERS)
 # tracking (which is automatic), but to ensure these files are
 # distributed by "make dist".
 
-dist_noinst_HEADERS = apc-mib.h apc-iem-mib.h apc-hid.h arduino-hid.h baytech-mib.h bcmxcp.h bcmxcp_ser.h	\
+dist_noinst_HEADERS = \
+ apc_modbus.h apc-mib.h apc-iem-mib.h apc-hid.h arduino-hid.h baytech-mib.h bcmxcp.h bcmxcp_ser.h	\
  bcmxcp_io.h belkin.h belkin-hid.h bestpower-mib.h blazer.h cps-hid.h dstate.h	\
  dummy-ups.h explore-hid.h gamatronic.h genericups.h	\
  generic_gpio_common.h generic_gpio_libgpiod.h	\
@@ -394,6 +413,7 @@ dist_noinst_HEADERS = apc-mib.h apc-iem-mib.h apc-hid.h arduino-hid.h baytech-mi
 # for object files. This library is used during the build process,
 # and is not meant to be installed.
 EXTRA_LTLIBRARIES = libdummy.la libdummy_serial.la libdummy_upsdrvquery.la
+
 libdummy_la_SOURCES = main.c dstate.c
 libdummy_la_LDFLAGS = -no-undefined -static
 libdummy_serial_la_SOURCES = serial.c
@@ -408,6 +428,14 @@ EXTRA_LTLIBRARIES += libdummy_mockdrv.la
 libdummy_mockdrv_la_SOURCES = main.c dstate.c
 libdummy_mockdrv_la_CFLAGS = $(AM_CFLAGS) -DDRIVERS_MAIN_WITHOUT_MAIN=1
 libdummy_mockdrv_la_LDFLAGS = -static $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la
+
+# Also define a library with serial-port UPS routines needed for nut-scanner
+noinst_LTLIBRARIES = libserial-nutscan.la
+
+libserial_nutscan_la_SOURCES = serial.c bcmxcp_ser.c
+libserial_nutscan_la_LDFLAGS =
+libserial_nutscan_la_LIBADD = $(SERLIBS)
+libserial_nutscan_la_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/clients -I$(top_srcdir)/include -I$(top_srcdir)/drivers
 
 dummy:
 

@@ -36,7 +36,7 @@ static subdriver_t *subdriver[] = {
 };
 
 #define DRIVER_NAME	"CyberPower text/binary protocol UPS driver"
-#define DRIVER_VERSION	"0.29"
+#define DRIVER_VERSION	"0.30"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {

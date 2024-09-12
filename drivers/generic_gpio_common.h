@@ -21,7 +21,7 @@
  */
 
 #ifndef GENERIC_GPIO_COMMON_H_SEEN
-#define GENERIC_GPIO_COMMON_H_SEEN
+#define GENERIC_GPIO_COMMON_H_SEEN 1
 
 #include <stdlib.h>
 #include <regex.h>

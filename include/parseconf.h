@@ -24,15 +24,15 @@
 
 /* Not including nut_stdint.h because this is part of end-user API */
 #if defined HAVE_INTTYPES_H
-	#include <inttypes.h>
+#	include <inttypes.h>
 #endif
 
 #if defined HAVE_STDINT_H
-	#include <stdint.h>
+#	include <stdint.h>
 #endif
 
 #if defined HAVE_LIMITS_H
-	#include <limits.h>
+#	include <limits.h>
 #endif
 
 #ifdef __cplusplus

@@ -217,6 +217,10 @@ which the larger potential sponsors consider when choosing how to help
 FOSS projects. Keeping the lights shining in such a large non-regression
 build matrix is a big undertaking!
 
+ifndef::pdf_format[]
+image:https://api.star-history.com/svg?repos=networkupstools/nut&type=Date[link="https://star-history.com/#networkupstools/nut&Date" alt="NUT GitHub Star History Chart"]
+endif::pdf_format[]
+
 See <<acknowledgements-ci-ops,acknowledgements of organizations which help
 with NUT CI and other daily operations>> for an overview of the shared effort.
 =====
@@ -825,8 +829,9 @@ endif::env-github[]
   preview tarballs with binaries).
 
 | image:images/ci/DO_Powered_by_Badge_blue_140pxW.png[alt="DigitalOcean logo",width="140",height="29",link="https://www.digitalocean.com/?refcode=d2fbf2b9e082&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge"]
-| The link:https://www.digitalocean.com/?refcode=d2fbf2b9e082&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge[DigitalOcean] droplets allow us to host
-  NUT CI farm build agents, and eventually re-house the Jenkins controller too.
+| The link:https://www.digitalocean.com/?refcode=d2fbf2b9e082&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge[DigitalOcean]
+  droplets allow us to host NUT CI farm Jenkins controller and the build agents
+  for multiple operating systems.
 
 | image:images/ci/gandi-ar21.png[alt="Gandi.Net logo",width="120",height="60",link="https://www.gandi.net/"]
 | link:https://www.gandi.net/[Gandi.Net] took up the costs of NUT DNS hosting.

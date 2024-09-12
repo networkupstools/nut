@@ -86,7 +86,7 @@ check-local: $(SOLARIS_CHECK_TARGETS)
 
 check-local-solaris-smf: $(SOLARIS_SMF_MANIFESTS)
 	@[ -x /usr/sbin/svccfg ] || { echo "WARNING : Target $@ skipped due to absent /usr/sbin/svccfg" >&2; return 0; } ; \
-	 RES=0 ; for F in $^ ; do \
+	 RES=0 ; for F in $? ; do \
 	    echo "  SVCCFG-VALIDATE  $$F"; \
 	    /usr/sbin/svccfg validate "$$F" || RES=$$? ; \
 	 done; exit $$RES
@@ -96,7 +96,7 @@ SPELLCHECK_SRC = README.adoc
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension.
 # We also have to export some variables that may be tainted by relative
 # paths when parsing the other makefile (e.g. MKDIR_P that may be defined
-# via expanded $(top_builddir)/install_sh):
+# via expanded $(top_builddir)/install-sh):
 #%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 #	+$(MAKE) -s -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 

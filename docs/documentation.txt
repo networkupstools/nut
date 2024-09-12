@@ -23,7 +23,7 @@ ifndef::website[]
 - link:https://www.networkupstools.org/ddl/index.html#_supported_devices[Devices Dumps Library (DDL)]: Provides information on how devices are supported; see also link:https://www.networkupstools.org/stable-hcl.html[the HCL]
 - link:../solaris-usb.html[Notes on NUT monitoring of USB devices in Solaris and related operating systems]
 endif::website[]
-- link:https://github.com/networkupstools/ConfigExamples/releases/latest[NUT Configuration Examples] book maintained by Roger Price
+- link:https://github.com/networkupstools/ConfigExamples/releases/latest/download/ConfigExamples.pdf[NUT Configuration Examples] book maintained by Roger Price
 - link:https://github.com/networkupstools/nut/wiki[NUT GitHub Wiki]
 
 Developer Documentation
@@ -96,7 +96,11 @@ These are general information about UPS, PDU, ATS, PSU and SCD:
 
 These are writeups by users of the software.
 
-- link:http://rogerprice.org/NUT.html[NUT Setup with openSUSE] '(Roger Price)'
+- link:http://rogerprice.org/NUT[NUT Configuration Examples and helper scripts]
+  '(Roger Price)' (sources replicated in NUT GitHub organization as
+  link:https://github.com/networkupstools/ConfigExamples[ConfigExamples],
+  link:https://github.com/networkupstools/TLS-UPSmon[TLS-UPSmon],
+  and link:https://github.com/networkupstools/TLS-Shims[TLS-Shims])
 - link:http://www.dimat.unina2.it/LCS/MonitoraggioUpsNutUbuntu10-eng.htm[Deploying NUT on an Ubuntu 10.04 cluster] '(Stefano Angelone)'
 - link:http://blog.shadypixel.com/monitoring-a-ups-with-nut-on-debian-or-ubuntu-linux[Monitoring a UPS with nut on Debian or Ubuntu Linux] '(Avery Fay)'
 - link:http://linux.developpez.com/cours/upsusb/[Installation et gestion d'un UPS USB en réseau sous linux] '(Olivier Van Hoof, french)'

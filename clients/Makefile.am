@@ -3,13 +3,14 @@
 # Export certain values for ccache which NUT ci_build.sh can customize,
 # to facilitate developer iteration re-runs of "make" later.
 # At least GNU and BSD make implementations are okay with this syntax.
-@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_NAMESPACE=@CCACHE_NAMESPACE@
-@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_BASEDIR=@CCACHE_BASEDIR@
-@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_DIR=@CCACHE_DIR@
-@NUT_AM_MAKE_CAN_EXPORT@export CCACHE_PATH=@CCACHE_PATH@
-@NUT_AM_MAKE_CAN_EXPORT@export PATH=@PATH_DURING_CONFIGURE@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_NAMESPACE@export CCACHE_NAMESPACE=@CCACHE_NAMESPACE@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_BASEDIR@export CCACHE_BASEDIR=@CCACHE_BASEDIR@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_DIR@export CCACHE_DIR=@CCACHE_DIR@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export CCACHE_PATH=@CCACHE_PATH@
+@NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export PATH=@PATH_DURING_CONFIGURE@
 
 EXTRA_DIST =
+CLEANFILES =
 
 # nutclient.cpp for some legacy reason (maybe initial detached development?)
 # optionally includes "common.h" with the NUT build setup - and this option
@@ -116,6 +117,31 @@ if HAVE_WINDOWS
   # Many versions of MingW seem to fail to build non-static DLL without this
   libupsclient_la_LDFLAGS += -no-undefined
 endif
+
+# ./clients/libupsclient.la samples (partial!) on...
+# Linux:
+#   # The name that we can dlopen(3).
+#   dlname='libupsclient.so.6'
+#   # Names of this library.
+#   library_names='libupsclient.so.6.0.1 libupsclient.so.6 libupsclient.so'
+#   # Directory that this library needs to be installed in:
+#   libdir='/usr/local/ups/lib'
+# WIN32:
+#   dlname='libupsclient-6.dll'
+#   library_names='libupsclient.dll.a'
+#   libdir='//lib'
+CLEANFILES += libupsclient-version.h
+libupsclient-version.h: libupsclient.la
+	@dlname_filter() { sed -e 's/^[^=]*=//' -e 's/^"\(.*\)"$$/\1/' -e 's/^'"'"'\(.*\)'"'"'$$/\1/' ; }; \
+	 SOFILE_LIBUPSCLIENT="`grep -E '^dlname' '$?' | dlname_filter`" \
+	 || SOFILE_LIBUPSCLIENT="" ; \
+	 if [ x"$${SOFILE_LIBUPSCLIENT-}" = x ] ; then \
+	    printf "#ifdef SOFILE_LIBUPSCLIENT\n# undef SOFILE_LIBUPSCLIENT\n#endif\n\n" ; \
+	    printf "#ifdef SOPATH_LIBUPSCLIENT\n# undef SOPATH_LIBUPSCLIENT\n#endif\n\n" ; \
+	 else \
+	    printf "#ifndef SOFILE_LIBUPSCLIENT\n# define SOFILE_LIBUPSCLIENT \"%s\"\n#endif\n\n" "$${SOFILE_LIBUPSCLIENT}" ; \
+	    printf "#ifndef SOPATH_LIBUPSCLIENT\n# define SOPATH_LIBUPSCLIENT \"%s/%s\"\n#endif\n\n" "@LIBDIR@" "$${SOFILE_LIBUPSCLIENT}" ; \
+	 fi > "$@"
 
 if HAVE_CXX11
 # libnutclient version information and build

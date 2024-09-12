@@ -48,7 +48,7 @@
 #include "timehead.h"
 
 #define DRIVER_NAME	"Microsol Solis UPS driver"
-#define DRIVER_VERSION	"0.69"
+#define DRIVER_VERSION	"0.70"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -799,8 +799,10 @@ static void get_base_info(void) {
 		Model = "Solis 3.0";
 		break;
 	case 16:
-	  Model = "Microsol Back-Ups BZ1200-BR";
-	  break;
+		Model = "Microsol Back-Ups BZ1200-BR";
+		break;
+	default:
+		break;
 	}
 
 	/* if( isprogram ) */

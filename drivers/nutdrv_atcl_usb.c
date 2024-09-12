@@ -28,7 +28,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"'ATCL FOR UPS' USB driver"
-#define DRIVER_VERSION	"1.17"
+#define DRIVER_VERSION	"1.18"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -440,6 +440,9 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 				case -2:
 					upsdebugx(4, "matcher: unspecified error");
 					goto next_device;
+
+				default:
+					break;
 				}
 			}
 #ifdef HAVE_LIBUSB_SET_AUTO_DETACH_KERNEL_DRIVER
@@ -686,6 +689,7 @@ void upsdrv_makevartable(void)
 {
 	/* NOTE: This driver uses a very custom device matching method,
 	 * so does not involve nut_usb_addvars() method like others do.
+	 * When fixing, see also tools/nut-scanner/scan_usb.c "exceptions".
 	 */
 	addvar(VAR_VALUE, "vendor", "USB vendor string (or NULL if none)");
 }

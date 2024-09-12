@@ -6,6 +6,7 @@
  *   2005-2006 Peter Selinger <selinger@users.sourceforge.net>
  *   2007-2009 Arjen de Korte <adkorte-guest@alioth.debian.org>
  *   2016      Eaton / Arnaud Quette <ArnaudQuette@Eaton.com>
+ *   2020-2024 Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program was sponsored by MGE UPS SYSTEMS, and now Eaton
  *
@@ -28,7 +29,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.52"
+#define DRIVER_VERSION	"0.57"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
@@ -48,21 +49,21 @@
 
 #if !((defined SHUT_MODE) && SHUT_MODE)
 	/* explore stub goes first, others alphabetically */
-	#include "explore-hid.h"
-	#include "apc-hid.h"
-	#include "arduino-hid.h"
-	#include "belkin-hid.h"
-	#include "cps-hid.h"
-	#include "delta_ups-hid.h"
-	#include "ever-hid.h"
-	#include "idowell-hid.h"
-	#include "legrand-hid.h"
-	#include "liebert-hid.h"
-	#include "openups-hid.h"
-	#include "powercom-hid.h"
-	#include "powervar-hid.h"
-	#include "salicru-hid.h"
-	#include "tripplite-hid.h"
+#	include "explore-hid.h"
+#	include "apc-hid.h"
+#	include "arduino-hid.h"
+#	include "belkin-hid.h"
+#	include "cps-hid.h"
+#	include "delta_ups-hid.h"
+#	include "ever-hid.h"
+#	include "idowell-hid.h"
+#	include "legrand-hid.h"
+#	include "liebert-hid.h"
+#	include "openups-hid.h"
+#	include "powercom-hid.h"
+#	include "powervar-hid.h"
+#	include "salicru-hid.h"
+#	include "tripplite-hid.h"
 #endif	/* !SHUT_MODE => USB */
 
 /* Reference list of available subdrivers */
@@ -142,6 +143,15 @@ static time_t lastpoll; /* Timestamp the last polling */
 hid_dev_handle_t udev = HID_DEV_HANDLE_CLOSED;
 
 /**
+ * Track when calibration started, whether known from UPS status flags
+ * or interpreted from OL&DISCHRG combo on some devices (see below).
+ * The last_calibration_start is reset to 0 when the status becomes
+ * inactive, and last_calibration_finish is incremented every time.
+ */
+static time_t last_calibration_start = 0;
+static time_t last_calibration_finish = 0;
+
+/**
  * CyberPower UT series sometime need a bit of help deciding their online status.
  * This quirk is to enable the special handling of OL & DISCHRG at the same time
  * as being OB (on battery power/no mains power). Enabled by device config flag.
@@ -194,6 +204,34 @@ static int onlinedischarge_log_throttle_charge = -1;
  * they try to prolong battery life by not over-charging it).
  */
 static int onlinedischarge_log_throttle_hovercharge = 100;
+
+/**
+ * Per https://github.com/networkupstools/nut/issues/2347 some
+ * APC BXnnnnMI devices made (flashed?) in 2023-2024 irregularly
+ * but frequently spew a series of state changes:
+ * * (maybe OL+DISCHRG),
+ * * LB,
+ * * RB,
+ * * <all ok>
+ * within a couple of seconds. If this tunable is positive, we
+ * would only report the device states on the bus if they persist
+ * that long (or more), only then assuming they reflect a real
+ * problematic state and not some internal calibration.
+ */
+static int lbrb_log_delay_sec = 0;
+/**
+ * By default we only act on (lbrb_log_delay_sec>0) when the device
+ * is in calibration mode of whatever nature (directly reported or
+ * assumed from other flag combos). With this flag we do not check
+ * for calibration and only look at LB + RB timestamps.
+ */
+static int lbrb_log_delay_without_calibrating = 0;
+/**
+ * When did we last enter the situation? (if more than lbrb_log_delay_sec
+ * ago, then set the device status and emit the message)
+ */
+static time_t last_lb_start = 0;
+static time_t last_rb_start = 0;
 
 /* support functions */
 static hid_info_t *find_nut_info(const char *varname);
@@ -551,6 +589,22 @@ static const char *divide_by_10_conversion_fun(double value)
 /* FIXME? Do we need an inverse "nuf()" here? */
 info_lkp_t divide_by_10_conversion[] = {
 	{ 0, NULL, divide_by_10_conversion_fun, NULL }
+};
+
+/* returns statically allocated string - must not use it again before
+   done with result! */
+static const char *divide_by_100_conversion_fun(double value)
+{
+       static char buf[20];
+
+       snprintf(buf, sizeof(buf), "%0.1f", value * 0.01);
+
+       return buf;
+}
+
+/* FIXME? Do we need an inverse "nuf()" here? */
+info_lkp_t divide_by_100_conversion[] = {
+       { 0, NULL, divide_by_100_conversion_fun, NULL }
 };
 
 /* returns statically allocated string - must not use it again before
@@ -997,9 +1051,18 @@ void upsdrv_makevartable(void)
 
 	addvar(VAR_VALUE, "onlinedischarge_log_throttle_hovercharge",
 		"Set to throttle log messages about discharging while online (only if battery.charge is under this value)");
-	
+
+	addvar(VAR_VALUE, "lbrb_log_delay_sec",
+		"Set to delay status-setting (and log messages) about device in LB or LB+RB state");
+
+	addvar(VAR_FLAG, "lbrb_log_delay_without_calibrating",
+		"Set to apply lbrb_log_delay_sec even if device is not calibrating");
+
 	addvar(VAR_FLAG, "disable_fix_report_desc",
 		"Set to disable fix-ups for broken USB encoding, etc. which we apply by default on certain vendors/products");
+
+	addvar(VAR_FLAG, "powercom_sdcmd_byte_order_fallback",
+		"Set to use legacy byte order for Powercom HID shutdown commands. Either it was wrong forever, or some older devices/firmwares had it the other way around");
 
 #if !((defined SHUT_MODE) && SHUT_MODE)
 	addvar(VAR_VALUE, "subdriver", "Explicit USB HID subdriver selection");
@@ -1047,9 +1110,9 @@ void upsdrv_updateinfo(void)
 
 		upsdebugx(1, "Got to reconnect!");
 		if (use_interrupt_pipe == TRUE && interrupt_pipe_EIO_count > 0) {
-			upsdebugx(0, "\nReconnecting. If you saw \"nut_libusb_get_interrupt: Input/Output Error\" "
+			upsdebugx(0, "Reconnecting. If you saw \"nut_libusb_get_interrupt: Input/Output Error\" "
 				"or similar message in the log above, try setting \"pollonly\" flag in \"ups.conf\" "
-				"options section for this driver!\n");
+				"options section for this driver!");
 		}
 
 		if (!reconnect_ups()) {
@@ -1332,6 +1395,105 @@ void upsdrv_initups(void)
 		}
 	}
 
+	val = getval("onlinedischarge_log_throttle_hovercharge");
+	if (val) {
+		int ipv = atoi(val);
+		if (ipv < 1 || ipv > 100) {
+			onlinedischarge_log_throttle_hovercharge = 100;
+			upslogx(LOG_WARNING,
+				"Warning: invalid value for "
+				"onlinedischarge_log_throttle_hovercharge: %s, "
+				"defaulting to %d",
+				val, onlinedischarge_log_throttle_hovercharge);
+		} else {
+			onlinedischarge_log_throttle_hovercharge = ipv;
+		}
+	}
+
+	val = getval("lbrb_log_delay_sec");
+	if (val) {
+		int ipv = atoi(val);
+		if ((ipv == 0 && strcmp("0", val)) || (ipv < 0)) {
+			lbrb_log_delay_sec = 3;
+			upslogx(LOG_WARNING,
+				"Warning: invalid value for "
+				"lbrb_log_delay_sec: %s, "
+				"defaulting to %d",
+				val, lbrb_log_delay_sec);
+		} else {
+			lbrb_log_delay_sec = ipv;
+		}
+	} else {
+		/* Activate APC BXnnnMI/BXnnnnMI tweaks, for details see
+		 * https://github.com/networkupstools/nut/issues/2347
+		 */
+		size_t	productLen = hd->Product ? strlen(hd->Product) : 0;
+
+		/* FIXME: Consider also ups.mfr.date as 2023 or newer?
+		 * Eventually up to some year this gets fixed?
+		 */
+		if (hd->Vendor
+		&&  productLen > 6	/* BXnnnMI at least */
+		&&  (!strcmp(hd->Vendor, "APC") || !strcmp(hd->Vendor, "American Power Conversion"))
+		&&  (strstr(hd->Product, " BX") || strstr(hd->Product, "BX") == hd->Product)
+		&&  (hd->Product[productLen - 2] == 'M' && hd->Product[productLen - 1] == 'I')
+		) {
+			int	got_lbrb_log_delay_without_calibrating = testvar("lbrb_log_delay_without_calibrating") ? 1 : 0,
+				got_onlinedischarge_calibration = testvar("onlinedischarge_calibration") ? 1 : 0,
+				got_onlinedischarge_log_throttle_sec = testvar("onlinedischarge_log_throttle_sec") ? 1 : 0;
+
+			lbrb_log_delay_sec = 3;
+
+			upslogx(LOG_INFO, "Defaulting lbrb_log_delay_sec=%d "
+				"for %s model %s%s%s%s%s%s%s%s%s%s",
+				lbrb_log_delay_sec,
+				hd->Vendor, hd->Product,
+
+				!got_lbrb_log_delay_without_calibrating
+				|| !got_onlinedischarge_calibration
+				|| !got_onlinedischarge_log_throttle_sec
+				? "; consider also setting the " : "",
+
+				!got_lbrb_log_delay_without_calibrating
+				? "lbrb_log_delay_without_calibrating " : "",
+
+				!got_lbrb_log_delay_without_calibrating
+				&& (!got_onlinedischarge_calibration
+				 || !got_onlinedischarge_log_throttle_sec)
+				? "and/or " : "",
+
+				!got_onlinedischarge_calibration
+				? "onlinedischarge_calibration " : "",
+
+				(!got_lbrb_log_delay_without_calibrating
+				|| !got_onlinedischarge_calibration )
+				&& !got_onlinedischarge_log_throttle_sec
+				? "and/or " : "",
+
+				!got_onlinedischarge_log_throttle_sec
+				? "onlinedischarge_log_throttle_sec " : "",
+
+				!got_lbrb_log_delay_without_calibrating
+				|| !got_onlinedischarge_calibration
+				|| !got_onlinedischarge_log_throttle_sec
+				? "flag" : "",
+
+				2 > ( got_lbrb_log_delay_without_calibrating
+				    + got_onlinedischarge_calibration
+				    + got_onlinedischarge_log_throttle_sec)
+				? "(s)" : "",
+
+				!got_lbrb_log_delay_without_calibrating
+				|| !got_onlinedischarge_calibration
+				|| !got_onlinedischarge_log_throttle_sec
+				? " in your configuration" : "");
+		}
+	}
+
+	if (testvar("lbrb_log_delay_without_calibrating")) {
+		lbrb_log_delay_without_calibrating = 1;
+	}
+
 	if (testvar("disable_fix_report_desc")) {
 		disable_fix_report_desc = 1;
 	}
@@ -1426,6 +1588,11 @@ void possibly_supported(const char *mfr, HIDDevice_t *arghd)
 "'-x productid=%04x' option. Please report your results to the NUT user's\n"
 "mailing list <nut-upsuser@lists.alioth.debian.org>.\n",
 	mfr, arghd->VendorID, arghd->ProductID, arghd->ProductID);
+
+	if (arghd->VendorID == 0x06da) {
+		upsdebugx(0,
+"Please note that this Vendor ID is also known in devices supported by nutdrv_qx");
+	}
 }
 
 /* Update ups_status to remember this status item. Interpretation is
@@ -1927,10 +2094,49 @@ unsigned ups_status_get(void)
 	return ups_status;
 }
 
+/** Helper to both status_set("CAL") and track last_calibration_start timestamp */
+static void status_set_CAL(void)
+{
+	/* Note: dstate tokens can only be set, not cleared; a
+	 * dstate_init() wipes the whole internal buffer though. */
+	int	wasSet = status_get("CAL");
+	time_t	now;
+
+	time(&now);
+
+	/* A few sanity checks */
+	if (wasSet) {
+		if (!last_calibration_start) {
+			upsdebugx(2, "%s: status was already set but not time-stamped: CAL", __func__);
+		} else {
+			upsdebugx(2, "%s: status was already set %f sec ago : CAL",
+				__func__, difftime(now, last_calibration_start));
+		}
+	} else {
+		if (last_calibration_finish) {
+			upsdebugx(2, "%s: starting a new calibration, last one finished %f sec ago",
+				__func__, difftime(now, last_calibration_finish));
+		} else {
+			upsdebugx(2, "%s: starting a new calibration, first in this driver's lifetime",
+				__func__);
+		}
+	}
+
+	if (!last_calibration_start) {
+		last_calibration_start = now;
+	}
+
+	if (!wasSet) {
+		status_set("CAL");		/* calibration */
+	}
+}
+
 /* Convert the local status information to NUT format and set NUT
    status. */
 static void ups_status_set(void)
 {
+	int	isCalibrating = 0;
+
 	if (ups_status & STATUS(VRANGE)) {
 		dstate_setinfo("input.transfer.reason", "input voltage out of range");
 	} else if (ups_status & STATUS(FRANGE)) {
@@ -1946,7 +2152,7 @@ static void ups_status_set(void)
 	 * raise FSD urgently. So we first let upsmon know it is just a drill.
 	 */
 	if (ups_status & STATUS(CALIB)) {
-		status_set("CAL");		/* calibration */
+		status_set_CAL();		/* calibration */
 	}
 
 	if ((!(ups_status & STATUS(DISCHRG))) && (
@@ -1954,8 +2160,8 @@ static void ups_status_set(void)
 		|| onlinedischarge_log_throttle_charge != -1
 	)) {
 		upsdebugx(1,
-			"%s: seems that UPS [%s] was in OL+DISCHRG state, "
-			"but no longer is now.",
+			"%s: seems that UPS [%s] was in OL+DISCHRG state "
+			"previously, but no is longer discharging now.",
 			__func__, upsname);
 		onlinedischarge_log_throttle_timestamp = 0;
 		onlinedischarge_log_throttle_charge = -1;
@@ -1969,7 +2175,7 @@ static void ups_status_set(void)
 		/* if online but discharging */
 		if (onlinedischarge_calibration) {
 			/* if we treat OL+DISCHRG as calibrating */
-			status_set("CAL");	/* calibration */
+			status_set_CAL();	/* calibration */
 		}
 
 		if (onlinedischarge_onbattery) {
@@ -1995,23 +2201,38 @@ static void ups_status_set(void)
 			/* First disable, then enable if OK for noise*/
 			do_logmsg = 0;
 
-			/* Time or not, did the charge change since last log? */
+			/* Time or not, did the charge change since last log?
+			 * Reminder: "onlinedischarge_log_throttle_charge" is
+			 * the last-reported charge in OL+DISCHRG situation,
+			 * as the battery remainder trickles down and we only
+			 * report the changes (throttling the message stream).
+			 * The "onlinedischarge_log_throttle_hovercharge" lets
+			 * us ignore sufficiently high battery charges, where
+			 * the user configuration (or defaults at 100%) tell
+			 * us this is just about the battery not accepting the
+			 * external power *all* the time so its charge "hovers"
+			 * (typically between 90%-100%) to benefit the chemical
+			 * process back-end of the battery and its life time.
+			 */
 			if ((s = dstate_getinfo("battery.charge"))) {
-				/* NOTE: "0" may mean a conversion error: */
+				/* NOTE: exact "0" may mean a conversion error: */
 				current_charge = atoi(s);
 				if (current_charge > 0
 				&&  current_charge != onlinedischarge_log_throttle_charge
 				) {
 					/* Charge has changed, but is it
 					 * now low enough to worry? */
-					if (onlinedischarge_log_throttle_hovercharge
-					    < onlinedischarge_log_throttle_charge
+					if (current_charge
+					    < onlinedischarge_log_throttle_hovercharge
 					) {
 						upsdebugx(3, "%s: current "
 							"battery.charge=%d is under "
-							"onlinedischarge_log_throttle_charge=%d",
+							"onlinedischarge_log_throttle_hovercharge=%d "
+							"(previous onlinedischarge_log_throttle_charge=%d): %s",
 							__func__, current_charge,
-							onlinedischarge_log_throttle_charge);
+							onlinedischarge_log_throttle_hovercharge,
+							onlinedischarge_log_throttle_charge,
+							(current_charge > onlinedischarge_log_throttle_charge ? "charging" : "draining"));
 						do_logmsg = 1;
 					} else {
 						/* All seems OK, don't spam log
@@ -2020,9 +2241,12 @@ static void ups_status_set(void)
 						upsdebugx(5, "%s: current "
 							"battery.charge=%d "
 							"is okay compared to "
-							"onlinedischarge_log_throttle_charge=%d",
+							"onlinedischarge_log_throttle_hovercharge=%d "
+							"(previous onlinedischarge_log_throttle_charge=%d): %s",
 							__func__, current_charge,
-							onlinedischarge_log_throttle_charge);
+							onlinedischarge_log_throttle_hovercharge,
+							onlinedischarge_log_throttle_charge,
+							(current_charge > onlinedischarge_log_throttle_charge ? "charging" : "draining"));
 					}
 				}
 			} else {
@@ -2057,6 +2281,7 @@ static void ups_status_set(void)
 		}
 
 		if (do_logmsg) {
+			/* If OL+DISCHRG, and not-throttled against log spam */
 			char	msg_charge[LARGEBUF];
 			msg_charge[0] = '\0';
 
@@ -2075,9 +2300,10 @@ static void ups_status_set(void)
 				} else {
 					snprintf(msg_charge, sizeof(msg_charge),
 						"Battery charge changed from %d to %d "
-						"since last such report. ",
+						"since last such report (%s). ",
 						onlinedischarge_log_throttle_charge,
-						current_charge);
+						current_charge,
+						(current_charge > onlinedischarge_log_throttle_charge ? "charging" : "draining"));
 				}
 				onlinedischarge_log_throttle_charge = current_charge;
 			}
@@ -2093,6 +2319,8 @@ static void ups_status_set(void)
 		status_set("OL");
 	}
 
+	isCalibrating = status_get("CAL");
+
 	if ((ups_status & STATUS(DISCHRG)) &&
 		!(ups_status & STATUS(DEPLETED))) {
 		status_set("DISCHRG");		/* discharging */
@@ -2102,13 +2330,58 @@ static void ups_status_set(void)
 		status_set("CHRG");		/* charging */
 	}
 	if (ups_status & (STATUS(LOWBATT) | STATUS(TIMELIMITEXP) | STATUS(SHUTDOWNIMM))) {
-		status_set("LB");		/* low battery */
+		if (lbrb_log_delay_sec < 1
+		|| (!isCalibrating && !lbrb_log_delay_without_calibrating)
+		|| !(ups_status & STATUS(ONLINE))	/* assume actual power failure, do not delay */
+		) {
+			/* Quick and easy decision */
+			status_set("LB");		/* low battery */
+		} else {
+			time_t	now;
+			time(&now);
+
+			if (!last_lb_start) {
+				last_lb_start = now;
+			} else {
+				if (difftime(now, last_lb_start) > lbrb_log_delay_sec) {
+					/* Patience expired */
+					status_set("LB");	/* low battery */
+				} else {
+					upsdebugx(2, "%s: throttling LB status due to lbrb_log_delay_sec", __func__);
+				}
+			}
+		}
+	} else {
+		last_lb_start = 0;
 	}
 	if (ups_status & STATUS(OVERLOAD)) {
 		status_set("OVER");		/* overload */
 	}
 	if (ups_status & STATUS(REPLACEBATT)) {
-		status_set("RB");		/* replace batt */
+		if (lbrb_log_delay_sec < 1
+		|| (!isCalibrating && !lbrb_log_delay_without_calibrating)
+		|| !last_lb_start	/* Calibration ended (not LB anymore) */
+		|| !(ups_status & STATUS(ONLINE))	/* assume actual power failure, do not delay */
+		) {
+			/* Quick and easy decision */
+			status_set("RB");		/* replace batt */
+		} else {
+			time_t	now;
+			time(&now);
+
+			if (!last_rb_start) {
+				last_rb_start = now;
+			} else {
+				if (difftime(now, last_rb_start) > lbrb_log_delay_sec) {
+					/* Patience expired */
+					status_set("RB");	/* replace batt */
+				} else {
+					upsdebugx(2, "%s: throttling RB status due to lbrb_log_delay_sec", __func__);
+				}
+			}
+		}
+	} else {
+		last_rb_start = 0;
 	}
 	if (ups_status & STATUS(TRIM)) {
 		status_set("TRIM");		/* SmartTrim */
@@ -2121,6 +2394,15 @@ static void ups_status_set(void)
 	}
 	if (ups_status & STATUS(OFF)) {
 		status_set("OFF");		/* ups is off */
+	}
+
+	if (!isCalibrating) {
+		if (last_calibration_start) {
+			time(&last_calibration_finish);
+			upsdebugx(2, "%s: calibration is no longer in place, took %f sec",
+				__func__, difftime(last_calibration_finish, last_calibration_start));
+		}
+		last_calibration_start = 0;
 	}
 }
 

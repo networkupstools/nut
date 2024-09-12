@@ -25,7 +25,7 @@
  */
 
 #ifndef UPSD_H_SEEN
-#define UPSD_H_SEEN
+#define UPSD_H_SEEN 1
 
 #include "attribute.h"
 

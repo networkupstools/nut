@@ -5,6 +5,10 @@
 
         Author: Vaclav Krpec  <VaclavKrpec@Eaton.com>
 
+    Copyright (C) 2024 NUT Community
+
+        Author: Jim Klimov  <jimklimov+nut@gmail.com>
+
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
@@ -810,7 +814,11 @@ void Signal::HandlerThread<H>::quit()
 
 
 template <class H>
-Signal::HandlerThread<H>::~HandlerThread<H>()
+Signal::HandlerThread<H>::~HandlerThread
+#if (defined __clang__)
+	<H>
+#endif
+()
 #if (defined __cplusplus) && (__cplusplus < 201100)
 	throw(std::runtime_error)
 #endif

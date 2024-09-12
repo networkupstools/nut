@@ -70,6 +70,7 @@ NUT_MONITOR_COMMON = \
 	app/locale/ru/LC_MESSAGES/NUT-Monitor.mo
 
 PYNUT_COMMON = \
+	module/nut_telnetlib.py \
 	module/README.adoc
 
 # Note: we both distribute and install the generated *.mo translation files
@@ -129,17 +130,20 @@ ACT_MSGFMT = { \
 	rm -f "$${OUTFILE}.tmpsrc" ; \
 }
 
-app/locale/fr/LC_MESSAGES/NUT-Monitor.mo: app/locale/fr/fr.po
+app/locale/fr/LC_MESSAGES/NUT-Monitor.mo: $(abs_builddir)/app/locale/fr/LC_MESSAGES/NUT-Monitor.mo
+$(abs_builddir)/app/locale/fr/LC_MESSAGES/NUT-Monitor.mo: app/locale/fr/fr.po
 	@$(MKDIR_P) "$(builddir)/app/locale/fr/LC_MESSAGES"
-	SRCFILE="$^"; OUTFILE="$@"; $(ACT_MSGFMT)
+	SRCFILE="$?"; OUTFILE="$@"; $(ACT_MSGFMT)
 
-app/locale/it/LC_MESSAGES/NUT-Monitor.mo: app/locale/it/it.po
+app/locale/it/LC_MESSAGES/NUT-Monitor.mo: $(abs_builddir)/app/locale/it/LC_MESSAGES/NUT-Monitor.mo
+$(abs_builddir)/app/locale/it/LC_MESSAGES/NUT-Monitor.mo: app/locale/it/it.po
 	@$(MKDIR_P) "$(builddir)/app/locale/it/LC_MESSAGES"
-	SRCFILE="$^"; OUTFILE="$@"; $(ACT_MSGFMT)
+	SRCFILE="$?"; OUTFILE="$@"; $(ACT_MSGFMT)
 
-app/locale/ru/LC_MESSAGES/NUT-Monitor.mo: app/locale/ru/ru.po
+app/locale/ru/LC_MESSAGES/NUT-Monitor.mo: $(abs_builddir)/app/locale/ru/LC_MESSAGES/NUT-Monitor.mo
+$(abs_builddir)/app/locale/ru/LC_MESSAGES/NUT-Monitor.mo: app/locale/ru/ru.po
 	@$(MKDIR_P) "$(builddir)/app/locale/ru/LC_MESSAGES"
-	SRCFILE="$^"; OUTFILE="$@"; $(ACT_MSGFMT)
+	SRCFILE="$?"; OUTFILE="$@"; $(ACT_MSGFMT)
 endif HAVE_MSGFMT
 
 if WITH_NUT_MONITOR_PY2GTK2
@@ -199,7 +203,7 @@ SPELLCHECK_SRC = \
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension.
 # We also have to export some variables that may be tainted by relative
 # paths when parsing the other makefile (e.g. MKDIR_P that may be defined
-# via expanded $(top_builddir)/install_sh):
+# via expanded $(top_builddir)/install-sh):
 #%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 #	+$(MAKE) -s -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 

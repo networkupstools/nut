@@ -83,10 +83,10 @@
 #include "main.h"
 #include "serial.h"
 #include "powercom.h"
-#include "math.h"
+#include "nut_float.h"
 
 #define DRIVER_NAME	"PowerCom protocol UPS driver"
-#define DRIVER_VERSION	"0.21"
+#define DRIVER_VERSION	"0.23"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -669,6 +669,7 @@ static float load_level(void)
 				case 1000:
 				case 1500:
 				case 2000: return raw_data[UPS_LOAD]*110.0/load1000i[voltage];
+				default: break;
 			}
 		}
 	} else if (!strcmp(types[type].name, "KIN")) {

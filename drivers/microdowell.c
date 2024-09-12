@@ -44,7 +44,7 @@
 #define MAX_SHUTDOWN_DELAY_LEN 5
 
 #define DRIVER_NAME	"MICRODOWELL UPS driver"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_VERSION	"0.04"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -213,7 +213,7 @@ static void SendCmdToSerial(unsigned char *Buff, size_t Len)
 
 static unsigned char * CmdSerial(unsigned char *OutBuffer, size_t Len, unsigned char *RetBuffer)
 {
-	#define TMP_BUFF_LEN	1024
+#	define TMP_BUFF_LEN	1024
 	unsigned char InpBuff[TMP_BUFF_LEN+1] ;
 	unsigned char TmpBuff[3] ;
 	int i, ErrCode ;
