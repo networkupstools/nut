@@ -22,6 +22,7 @@ https://github.com/networkupstools/nut/milestone/9
    the driver binaries to be built once and data mappings to be loaded
    and modernized on the fly [Ported from 42ITy project]
 
+ - (expected) Added support for Liebert GXE Series UPS. [#2629]
 
 PLANNED: Release notes for NUT 2.8.3 - what's new since 2.8.2
 -------------------------------------------------------------
