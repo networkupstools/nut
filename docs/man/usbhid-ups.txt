@@ -76,6 +76,14 @@ expression.
 NOTE: When using this option, it is mandatory to also specify the *vendorid*
 and *productid* matching parameters.
 
+*lowbatt*='num'::
+Set the percentage at which the UPS will consider the battery charge as
+critically low, possibly resulting in a forced shutdown (FSD) situation.
++
+This value is typically dictated by the UPS device, although there is a
+fallback default value of 30 (in percent). Overriding this value can be
+helpful when the UPS sets this value to a lower percentage than intended.
+
 *offdelay*='num'::
 Set the timer before the UPS is turned off after the kill power command is
 sent (via the *-k* switch).
