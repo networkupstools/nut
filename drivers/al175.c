@@ -713,7 +713,7 @@ static int tx(const char *dmsg, /*const*/ raw_data_t frame)
 
 	err = ser_send_buf(upsfd, frame.begin, frame_len );
 	if (err==-1) {
-		upslogx(LOG_ERR, "failed to send frame to PRS: %s", strerror(errno));
+		upslog_with_errno(LOG_ERR, "failed to send frame to PRS");
 		return -1;
 	}
 

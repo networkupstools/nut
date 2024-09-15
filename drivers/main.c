@@ -2058,7 +2058,7 @@ int main(int argc, char **argv)
 				NULL, 0, &tv);
 
 			if (cmdret < 0) {
-				upsdebugx(1, "Socket dialog with the other driver instance: %s", strerror(errno));
+				upsdebug_with_errno(1, "Socket dialog with the other driver instance");
 			} else {
 				upslogx(LOG_INFO, "Request to killpower via running driver returned code %" PRIiSIZE, cmdret);
 				if (cmdret == 0)
@@ -2353,17 +2353,15 @@ int main(int argc, char **argv)
 			int	sigret;
 
 			if ((sigret = stat(pidfnbuf, &st)) != 0) {
-				upsdebugx(1, "PID file %s not found; stat() returned %d (errno=%d): %s",
-					pidfnbuf, sigret, errno, strerror(errno));
+				upsdebug_with_errno(1, "PID file %s not found; stat() returned %d", pidfnbuf, sigret);
 				break;
 			}
 
 			upslogx(LOG_WARNING, "Duplicate driver instance detected (PID file %s exists)! Terminating other driver!", pidfnbuf);
 
 			if ((sigret = sendsignalfn(pidfnbuf, SIGTERM, progname, 1) != 0)) {
-				upsdebugx(1, "Can't send signal to PID, assume invalid PID file %s; "
-					"sendsignalfn() returned %d (errno=%d): %s",
-					pidfnbuf, sigret, errno, strerror(errno));
+				upsdebug_with_errno(1, "Can't send signal to PID, assume invalid PID file %s; "
+					"sendsignalfn() returned %d", pidfnbuf, sigret);
 				break;
 			}
 
@@ -2546,10 +2544,7 @@ int main(int argc, char **argv)
 				user, group, sockname);
 
 			if (grp == NULL) {
-				upsdebugx(1, "WARNING: could not resolve "
-					"group name '%s' (%i): %s",
-					group, errno, strerror(errno)
-				);
+				upsdebug_with_errno(1, "WARNING: could not resolve group name '%s'", group);
 				allOk = 0;
 				goto sockname_ownership_finished;
 			} else {
@@ -2557,19 +2552,15 @@ int main(int argc, char **argv)
 				mode_t mode;
 
 				if (INVALID_FD((fd = open(sockname, O_RDWR | O_APPEND)))) {
-					upsdebugx(1, "WARNING: opening socket file for stat/chown failed "
-						"(%i), which is rather typical for Unix socket handling: %s",
-						errno, strerror(errno)
-					);
+					upsdebug_with_errno(1, "WARNING: opening socket file for stat/chown failed,"
+						" which is rather typical for Unix socket handling");
 					allOk = 0;
 				}
 
 				if ((VALID_FD(fd) && fstat(fd, &statbuf))
 				||  (INVALID_FD(fd) && stat(sockname, &statbuf))
 				) {
-					upsdebugx(1, "WARNING: stat for chown of socket file failed (%i): %s",
-						errno, strerror(errno)
-					);
+					upsdebug_with_errno(1, "WARNING: stat for chown of socket file failed");
 					allOk = 0;
 					if (INVALID_FD(fd)) {
 						/* Can not proceed with ops below */
@@ -2582,9 +2573,7 @@ int main(int argc, char **argv)
 					if ((VALID_FD(fd) && fchown(fd, statbuf.st_uid, grp->gr_gid))
 					||  (INVALID_FD(fd) && chown(sockname, statbuf.st_uid, grp->gr_gid))
 					) {
-						upsdebugx(1, "WARNING: chown of socket file failed (%i): %s",
-							errno, strerror(errno)
-						);
+						upsdebug_with_errno(1, "WARNING: chown of socket file failed");
 						allOk = 0;
 					}
 				}
@@ -2595,9 +2584,7 @@ int main(int argc, char **argv)
 				) {
 					/* Logically we'd fail chown above if file
 					 * does not exist or is not accessible */
-					upsdebugx(1, "WARNING: stat for chmod of socket file failed (%i): %s",
-						errno, strerror(errno)
-					);
+					upsdebug_with_errno(1, "WARNING: stat for chmod of socket file failed");
 					allOk = 0;
 				} else {
 					/* chmod g+rw sockname */
@@ -2607,9 +2594,7 @@ int main(int argc, char **argv)
 					if ((VALID_FD(fd) && fchmod(fd, mode))
 					|| (INVALID_FD(fd) && chmod(sockname, mode))
 					) {
-						upsdebugx(1, "WARNING: chmod of socket file failed (%i): %s",
-							errno, strerror(errno)
-						);
+						upsdebug_with_errno(1, "WARNING: chmod of socket file failed");
 						allOk = 0;
 					}
 				}
