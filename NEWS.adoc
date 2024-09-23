@@ -22,7 +22,6 @@ https://github.com/networkupstools/nut/milestone/9
    the driver binaries to be built once and data mappings to be loaded
    and modernized on the fly [Ported from 42ITy project]
 
-
 PLANNED: Release notes for NUT 2.8.3 - what's new since 2.8.2
 -------------------------------------------------------------
 
@@ -132,6 +131,9 @@ https://github.com/networkupstools/nut/milestone/11
  - bicker_ser: added new driver for Bicker 12/24Vdc UPS via RS-232 serial
    communication protocol, which supports any UPS shipped with the PSZ-1053
    extension module. [PR #2448]
+
+ - liebert-gxe: added new driver with support for Liebert GXE Series UPS
+   (serial or USB posing as a serial port). [#2629]
 
  - usbhid-ups updates:
    * Support of the `onlinedischarge_log_throttle_hovercharge` in the NUT

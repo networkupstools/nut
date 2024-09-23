@@ -497,6 +497,7 @@ SRC_SERIAL_PAGES = \
 	isbmex.txt	\
 	ivtscd.txt	\
 	liebert.txt	\
+	liebert-gxe.txt	\
 	liebert-esp2.txt	\
 	masterguard.txt	\
 	metasys.txt	\
@@ -545,6 +546,7 @@ MAN_SERIAL_PAGES = \
 	isbmex.8	\
 	ivtscd.8	\
 	liebert.8	\
+	liebert-gxe.8	\
 	liebert-esp2.8	\
 	masterguard.8	\
 	metasys.8	\
@@ -596,6 +598,7 @@ HTML_SERIAL_MANS = \
 	isbmex.html	\
 	ivtscd.html	\
 	liebert.html	\
+	liebert-gxe.html\
 	liebert-esp2.html	\
 	masterguard.html	\
 	metasys.html	\
