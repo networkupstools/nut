@@ -455,7 +455,7 @@ void upsdrv_initinfo(void)
 	}
 
 	if (ret <= 0)
-		fatal_with_errno(EXIT_FAILURE, "gxe: failed reading response");
+		fatal_with_errno(EXIT_FAILURE, "liebert-gxe: failed reading response");
 
 	/* UPS Name, 10 bytes */
 	ydn23_substr_from_hex(databuf, 11, YDN23_FRAME_REG(recvframe, 0), 20);
@@ -503,7 +503,7 @@ void upsdrv_initups(void)
 
 void upsdrv_shutdown(void)
 {
-	upslogx(LOG_INFO, "GXE UPS can't fully shutdown, NOOP");
+	upslogx(LOG_INFO, "Liebert GXE UPS can't fully shutdown, NOOP");
 }
 
 void upsdrv_cleanup(void)
