@@ -20,7 +20,7 @@
 /* BACKGROUND: YDN23 (YD/T1363) is a serial protocol standarized by China
    Communications Standards Association. The biggest adpoter is Emerson Network
    Power. And, in fact, Emerson Network Power did involve in the drafting.
-   
+
    The protocol is identified as `Dian4 Zong3 Xie2 Yi4' in Chinese and rarely
    referred as `YDN23' or `YD/T1363' in English documents. The standard is
    written in Chinese, identified as YD/T 1363.3-2014 (also YD∕T 1363.3-2023),
@@ -62,11 +62,11 @@
 #include "serial.h"
 
 #ifndef htole16
-#ifdef WORDS_BIGENDIAN
-#define htole16(x) ((((x) >> 8) | ((x) << 8)))
-#else  /* WORDS_BIGENDIAN */
-#define htole16(x) (x)
-#endif	/* WORDS_BIGENDIAN */
+# ifdef WORDS_BIGENDIAN
+# define htole16(x) ((((x) >> 8) | ((x) << 8)))
+#else	/* WORDS_BIGENDIAN */
+# define htole16(x) (x)
+# endif	/* WORDS_BIGENDIAN */
 #endif	/* htole16 */
 
 /* X_F: Float-point Data, X_D: Fixed-point Data */
@@ -119,7 +119,7 @@ static const char YDN23_COMMANDS[YDN23_CMD_LAST][4] = {
 };
 
 #ifndef YDN23_FRAME_INFO_SIZE
-#define YDN23_FRAME_INFO_SIZE 128
+# define YDN23_FRAME_INFO_SIZE 128
 #endif	/* YDN23_FRAME_INFO_SIZE */
 
 static const char *YDN23_RTN_VALS[] = {
@@ -133,18 +133,18 @@ static const char *YDN23_RTN_VALS[] = {
 };
 
 #define YDN23_RTN_TO_STR(rtn)							\
-  (((size_t) rtn) < sizeof(YDN23_RTN_VALS)/sizeof(*YDN23_RTN_VALS) ? YDN23_RTN_VALS[(rtn)] : "Unknown RTN")
+	(((size_t) rtn) < sizeof(YDN23_RTN_VALS)/sizeof(*YDN23_RTN_VALS) ? YDN23_RTN_VALS[(rtn)] : "Unknown RTN")
 
 #pragma pack(push, 1)
 struct ydn23_frame {
-	char SOI;		/* Start of Infomation, 0x7e */
-	char VER[2];		/* Protocol Version */
-	char ADR[2];		/* Device Address */
-	char CID[4];		/* Command ID 1&2 */
-	char LEN[4];		/* Message Length, LCHKSUM &LENID */
-	char INFO[YDN23_FRAME_INFO_SIZE]; /* Command Info, Data Info */
-	char CHKSUM[4];			  /* Checksum */
-	char EOI;			  /* End of Infomation, 0x0d */
+	char	SOI;		/* Start of Infomation, 0x7e */
+	char	VER[2];		/* Protocol Version */
+	char	ADR[2];		/* Device Address */
+	char	CID[4];		/* Command ID 1&2 */
+	char	LEN[4];		/* Message Length, LCHKSUM &LENID */
+	char	INFO[YDN23_FRAME_INFO_SIZE]; /* Command Info, Data Info */
+	char	CHKSUM[4];	/* Checksum */
+	char	EOI;		/* End of Infomation, 0x0d */
 
 	size_t infolen;
 };
@@ -152,10 +152,10 @@ struct ydn23_frame {
 
 static inline void ydn23_lchecksum(uint16_t dlen, char *out)
 {
-	uint8_t lenchk = 0;
-	uint16_t lelen = htole16(dlen);
+	uint8_t	lenchk = 0;
+	uint16_t	lelen = htole16(dlen);
 	/* GCC complains uint16_t fits 7-bytes buffer, store here. */
-	char fbuf[7];
+	char	fbuf[7];
 
 	/* Sum all four 4 bits */
 	lenchk += lelen & 0x000f;
@@ -172,10 +172,10 @@ static inline void ydn23_lchecksum(uint16_t dlen, char *out)
 
 static inline void ydn23_checksum(const char *buf, size_t len, char* out)
 {
-	size_t i;
-	uint32_t sum = 0;
+	size_t	i;
+	uint32_t	sum = 0;
 	/* GCC complains uint16_t fits 7-bytes buffer, store here. */
-	char fbuf[7];
+	char	fbuf[7];
 
 	for (i = 0; i < len; i++)
 		sum += buf[i];
@@ -196,7 +196,7 @@ static inline void ydn23_checksum(const char *buf, size_t len, char* out)
 
 static inline int ydn23_val_from_hex(char *buf, size_t dlen)
 {
-	char valbuf[16];
+	char	valbuf[16];
 
 	if (dlen > 15)
 		return 0;
@@ -206,11 +206,13 @@ static inline int ydn23_val_from_hex(char *buf, size_t dlen)
 	return strtol(valbuf, NULL, 16);
 }
 
-static inline void ydn23_substr_from_hex(char *substr, size_t len,
-					 char *dbuf, size_t dlen)
+static inline void ydn23_substr_from_hex(
+	char *substr, size_t len,
+	char *dbuf, size_t dlen)
 {
-	int val;
-	size_t i;
+	int	val;
+	size_t	i;
+
 	for (i = 0; i < dlen; i += 2) {
 		val = ydn23_val_from_hex(dbuf+i, 2);
 		if (val == 0x20) {
@@ -221,16 +223,18 @@ static inline void ydn23_substr_from_hex(char *substr, size_t len,
 			break;
 		substr[i/2] = val;
 	}
+
 	substr[i/2] = '\0';
 	upslogx(LOG_DEBUG, "ydn23_substr_from_hex: %s", substr);
 }
 
-static inline void ydn23_frame_init(struct ydn23_frame *frame,
-				    enum YDN23_COMMAND_ID cmdi,
-				    const char *ver,
-				    const char *addr,
-				    const char *dptr,
-				    size_t dlen)
+static inline void ydn23_frame_init(
+	struct ydn23_frame *frame,
+	enum YDN23_COMMAND_ID cmdi,
+	const char *ver,
+	const char *addr,
+	const char *dptr,
+	size_t dlen)
 {
 	if (dlen > YDN23_FRAME_INFO_SIZE) {
 		upslogx(LOG_WARNING,
@@ -256,7 +260,7 @@ static inline void ydn23_frame_init(struct ydn23_frame *frame,
 
 static inline int ydn23_frame_send(TYPE_FD_SER fd, struct ydn23_frame *frame)
 {
-	int ret;
+	int	ret;
 
 	ser_flush_io(fd);
 
@@ -286,11 +290,12 @@ static inline int ydn23_frame_send(TYPE_FD_SER fd, struct ydn23_frame *frame)
 	return ret;
 }
 
-static inline int ydn23_frame_read(TYPE_FD_SER fd, struct ydn23_frame *frame,
-				   time_t d_sec, useconds_t d_usec)
+static inline int ydn23_frame_read(
+	TYPE_FD_SER fd, struct ydn23_frame *frame,
+	time_t d_sec, useconds_t d_usec)
 {
-	char clearlen[5];
-	int ret, rtn;
+	char	clearlen[5];
+	int	ret, rtn;
 
 	clearlen[4] = '\0';
 	YDN23_FRAME_CLEAR(frame);
@@ -325,9 +330,9 @@ static inline int ydn23_frame_read(TYPE_FD_SER fd, struct ydn23_frame *frame,
 	}
 
 	memcpy(frame->CHKSUM, frame->INFO + frame->infolen,
-	       ((char *) &frame->infolen) - frame->CHKSUM);
+		((char *) &frame->infolen) - frame->CHKSUM);
 	memset(frame->INFO + frame->infolen, 0,
-	       ((char *) &frame->infolen) - frame->CHKSUM);
+		((char *) &frame->infolen) - frame->CHKSUM);
 
 	ydn23_checksum(frame->VER, frame->CHKSUM - frame->VER, clearlen);
 	if (memcmp(clearlen, frame->CHKSUM, sizeof(frame->CHKSUM))) {
