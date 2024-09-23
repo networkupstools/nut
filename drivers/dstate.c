@@ -301,13 +301,13 @@ static void send_to_all(const char *fmt, ...)
 
 		if ((ret < 1) || (ret != (ssize_t)buflen)) {
 #ifndef WIN32
-			upsdebugx(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
-				"socket %d failed (ret=%" PRIiSIZE "), disconnecting: %s",
-				__func__, buflen, (int)conn->fd, ret, strerror(errno));
+			upsdebug_with_errno(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
+				"socket %d failed (ret=%" PRIiSIZE "), disconnecting.",
+				__func__, buflen, (int)conn->fd, ret);
 #else
-			upsdebugx(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
-				"handle %p failed (ret=%" PRIiSIZE "), disconnecting: %s",
-				__func__, buflen, conn->fd, ret, strerror(errno));
+			upsdebug_with_errno(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
+				"handle %p failed (ret=%" PRIiSIZE "), disconnecting.",
+				__func__, buflen, conn->fd, ret);
 #endif
 			upsdebugx(6, "%s: failed write: %s", __func__, buf);
 
@@ -394,19 +394,13 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	if (ret < 0) {
 		/* Hacky bugfix: throttle down for upsd to read that */
 #ifndef WIN32
-		upsdebugx(1, "%s: had to throttle down to retry "
-			"writing %" PRIiSIZE " bytes to socket %d "
-			"(ret=%" PRIiSIZE ", errno=%d, strerror=%s): %s",
-			__func__, buflen, (int)conn->fd,
-			ret, errno, strerror(errno),
-			buf);
+		upsdebug_with_errno(1, "%s: had to throttle down to retry "
+			"writing %" PRIiSIZE " bytes to socket %d (ret=%" PRIiSIZE ") : %s",
+			__func__, buflen, (int)conn->fd, ret, buf);
 #else
-		upsdebugx(1, "%s: had to throttle down to retry "
-			"writing %" PRIiSIZE " bytes to handle %p "
-			"(ret=%" PRIiSIZE ", errno=%d, strerror=%s): %s",
-			__func__, buflen, conn->fd,
-			ret, errno, strerror(errno),
-			buf);
+		upsdebug_with_errno(1, "%s: had to throttle down to retry "
+			"writing %" PRIiSIZE " bytes to handle %p (ret=%" PRIiSIZE ") : %s",
+			__func__, buflen, conn->fd, ret, buf);
 #endif
 		usleep(200);
 #ifndef WIN32
@@ -427,13 +421,13 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 
 	if ((ret < 1) || (ret != (ssize_t)buflen)) {
 #ifndef WIN32
-		upsdebugx(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
-			"socket %d failed (ret=%" PRIiSIZE "), disconnecting: %s",
-			__func__, buflen, (int)conn->fd, ret, strerror(errno));
+		upsdebug_with_errno(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
+			"socket %d failed (ret=%" PRIiSIZE "), disconnecting.",
+			__func__, buflen, (int)conn->fd, ret);
 #else
-		upsdebugx(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
-			"handle %p failed (ret=%" PRIiSIZE "), disconnecting: %s",
-			__func__, buflen, conn->fd, ret, strerror(errno));
+		upsdebug_with_errno(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
+			"handle %p failed (ret=%" PRIiSIZE "), disconnecting.",
+			__func__, buflen, conn->fd, ret);
 #endif
 		upsdebugx(6, "%s: failed write: %s", __func__, buf);
 		sock_disconnect(conn);

@@ -143,7 +143,7 @@ static int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 		err = usb_bulk_write(udev, 0x2, (usb_ctrl_charbuf) USB_buff_pom, 8, 1000);
 
 		if (err < 0) {
-			upsdebugx(3, "USB: Send_USB_Packet: send_usb_packet, err = %d %s ", err, strerror(errno));
+			upsdebug_with_errno(3, "USB: Send_USB_Packet: send_usb_packet, err = %d %s ", err, nut_usb_strerror(err));
 			return err;
 		}
 		ussleep(USB_WRITE_DELAY);
@@ -173,7 +173,7 @@ static int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 		err = usb_bulk_write(udev, 0x2, (usb_ctrl_charbuf) USB_buff_pom, 8, 1000);
 
 		if (err < 0) {
-			upsdebugx(3, "USB: Send_USB_Packet: send_usb_packet, err = %d %s ", err, strerror(errno));
+			upsdebug_with_errno(3, "USB: Send_USB_Packet: send_usb_packet, err = %d %s ", err, nut_usb_strerror(err));
 			return err;
 		}
 		ussleep(USB_WRITE_DELAY);
@@ -201,7 +201,7 @@ static int Get_USB_Packet(uint8_t *buffer)
 		upsdebugx(3, "read: %02X %02X %02X %02X %02X %02X %02X %02X", inBuf[0], inBuf[1], inBuf[2], inBuf[3], inBuf[4], inBuf[5], inBuf[6], inBuf[7]);
 
 	if (err < 0){
-		upsdebugx(3, "USB: Get_USB_Packet: send_usb_packet, err = %d %s ", err, strerror(errno));
+		upsdebug_with_errno(3, "USB: Get_USB_Packet: send_usb_packet, err = %d %s ", err, nut_usb_strerror(err));
 		return err;
 	}
 

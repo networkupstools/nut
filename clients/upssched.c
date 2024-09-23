@@ -692,8 +692,8 @@ static int sock_read(conn_t *conn)
 		ret = read(conn->fd, &ch, 1);
 
 		if (ret > 0)
-			upsdebugx(6, "read() from fd %d returned %" PRIiSIZE " (bytes): '%c'; errno=%d: %s",
-				conn->fd, ret, ch, errno, strerror(errno));
+			upsdebug_with_errno(6, "read() from fd %d returned %" PRIiSIZE " (bytes): '%c'",
+				conn->fd, ret, ch);
 
 		if (ret < 1) {
 
@@ -723,15 +723,13 @@ static int sock_read(conn_t *conn)
 				|| (poll(&pfd, 1, 0) <= 0)
 				||  errno
 				) {
-					upsdebugx(4, "read() from fd %d returned 0; errno=%d: %s",
-						conn->fd, errno, strerror(errno));
+					upsdebug_with_errno(4, "read() from fd %d returned 0", conn->fd);
 					return -1;	/* connection closed, probably */
 				}
 				if (i == (US_MAX_READ - 1)) {
-					upsdebugx(4, "read() from fd %d returned 0 "
+					upsdebug_with_errno(4, "read() from fd %d returned 0 "
 						"too many times in a row, aborting "
-						"sock_read(); errno=%d: %s",
-						conn->fd, errno, strerror(errno));
+						"sock_read()", conn->fd);
 					return -1;	/* connection closed, probably */
 				}
 				continue;
@@ -783,10 +781,8 @@ static int sock_read(conn_t *conn)
 		return 1;	/* we did some work */
 	}
 
-	upsdebugx(6, "sock_read() from fd %d returned nothing "
-		"(maybe still collecting the command line); "
-		"errno=%d: %s",
-		conn->fd, errno, strerror(errno));
+	upsdebug_with_errno(6, "sock_read() from fd %d returned nothing "
+		"(maybe still collecting the command line); ", conn->fd);
 
 	return 0;	/* fell out without parsing anything */
 }
@@ -1241,7 +1237,7 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 			switch(ret_s) {
 				/* select error */
 				case -1:
-					upslogx(LOG_DEBUG, "parent select error: %s", strerror(errno));
+					upslog_with_errno(LOG_DEBUG, "parent select error");
 					break;
 
 				/* nothing to read */
