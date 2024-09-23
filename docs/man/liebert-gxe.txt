@@ -36,7 +36,7 @@ EXTRA ARGUMENTS
 This driver supports the following optional settings in linkman:ups.conf[5]:
 
 *addr=*'num'::
-Set the address of the UPS - 01 (default) ~ 99.
+Set the address of the UPS -- 01 (default) ~ 99.
 
 *retry=*'num'::
 Set the max times of read failures. (UPS sometimes ignores the incoming
