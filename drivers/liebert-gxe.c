@@ -26,16 +26,17 @@
 #define DRIVER_NAME	"Liebert GXE Series UPS driver"
 #define DRIVER_VERSION	"0.01"
 
-#define PROBE_RETRIES   3
+#define PROBE_RETRIES	3
 #define DEFAULT_STALE_RETRIES	3
 
-#define DATAFLAG_WARN_MASK (1)
-#define DATAFLAG_ONOFF_MASK (1 << 4)
+#define DATAFLAG_WARN_MASK	(1)
+#define DATAFLAG_ONOFF_MASK	(1 << 4)
 
-static char *devaddr = NULL;
+/* Populated in upsdrv_initups() to default or user setting */
+static char	*devaddr = NULL;
 
-static int stale_retries = DEFAULT_STALE_RETRIES;
-static int stale_retry = DEFAULT_STALE_RETRIES;
+static int	stale_retries = DEFAULT_STALE_RETRIES;
+static int	stale_retry = DEFAULT_STALE_RETRIES;
 
 #define TRY_STALE()							\
 	if ((stale_retry--) > 0)					\
@@ -93,10 +94,10 @@ upsdrv_info_t upsdrv_info = {
 
 static int instcmd(const char *cmdname, const char *extra)
 {
-	enum YDN23_COMMAND_ID cmd = YDN23_REMOTE_COMMAND;
-	struct ydn23_frame sendframe, recvframe;
-	int retry, ret, len = 4;
-	char *data = NULL;
+	enum YDN23_COMMAND_ID	cmd = YDN23_REMOTE_COMMAND;
+	struct ydn23_frame	sendframe, recvframe;
+	int	retry, ret, len = 4;
+	char	*data = NULL;
 
 	if (!strcasecmp(cmdname, "test.battery.start"))
 		data = "1002";
@@ -114,7 +115,8 @@ static int instcmd(const char *cmdname, const char *extra)
 	ydn23_frame_init(&sendframe, cmd, devaddr, "21", data, len);
 	for (retry = 0; retry < PROBE_RETRIES; retry++) {
 		ret = ydn23_frame_send(upsfd, &sendframe);
-		if (ret <= 0) continue;
+		if (ret <= 0)
+			continue;
 
 		ret = ydn23_frame_read(upsfd, &recvframe, 2, 0);
 		if (ret > 0) {
@@ -129,15 +131,16 @@ static int instcmd(const char *cmdname, const char *extra)
 
 static void upsdrv_updateinfo_onoff(void)
 {
-	int retry, ret = -1, dflag, pwrval, rectval;
-	struct ydn23_frame sendframe, frame;
+	int	retry, ret = -1, dflag, pwrval, rectval;
+	struct ydn23_frame	sendframe, frame;
 
 	ydn23_frame_init(&sendframe, YDN23_GET_ONOFF_DATA,
-			 "21", devaddr, NULL, 0);
+		"21", devaddr, NULL, 0);
 
 	for (retry = 0; retry < PROBE_RETRIES; retry++) {
 		ret = ydn23_frame_send(upsfd, &sendframe);
-		if (ret <= 0) continue;
+		if (ret <= 0)
+			continue;
 		ret = ydn23_frame_read(upsfd, &frame, 2, 0);
 		if (ret > 0)
 			break;
@@ -172,7 +175,8 @@ static void upsdrv_updateinfo_onoff(void)
 		status_set("OL");
 	else if (pwrval == 0x02)
 		status_set("OL BYPASS");
-	else upslogx(LOG_WARNING, "unknown ups state: %x %x", pwrval, rectval);
+	else
+		upslogx(LOG_WARNING, "unknown ups state: %x %x", pwrval, rectval);
 
 	status_commit();
 
@@ -211,15 +215,16 @@ static void upsdrv_updateinfo_onoff(void)
 
 static void upsdrv_updateinfo_analog(void)
 {
-	struct ydn23_frame sendframe, frame;
-	int retry, ret = -1, dflag, volt;
+	struct ydn23_frame	sendframe, frame;
+	int	retry, ret = -1, dflag, volt;
 
 	ydn23_frame_init(&sendframe, YDN23_GET_ANALOG_DATA_D,
-			 "21", devaddr, NULL, 0);
+		"21", devaddr, NULL, 0);
 
 	for (retry = 0; retry < PROBE_RETRIES; retry++) {
 		ret = ydn23_frame_send(upsfd, &sendframe);
-		if (ret <= 0) continue;
+		if (ret <= 0)
+			continue;
 		ret = ydn23_frame_read(upsfd, &frame, 2, 0);
 		if (ret > 0)
 			break;
@@ -260,46 +265,47 @@ static void upsdrv_updateinfo_analog(void)
 	}
 
 	dstate_setinfo("input.voltage", "%.02f",
-		       ydn23_val_from_hex(YDN23_FRAME_REG(frame, 1), 4)/100.0f);
+		ydn23_val_from_hex(YDN23_FRAME_REG(frame, 1), 4)/100.0f);
 	/* Field 4, AC_OUT VOLTAGE */
 	dstate_setinfo("output.voltage", "%.02f",
-		       ydn23_val_from_hex(YDN23_FRAME_REG(frame, 7), 4)/100.0f);
+		ydn23_val_from_hex(YDN23_FRAME_REG(frame, 7), 4)/100.0f);
 	/* Field 7, AC_OUT CURRENT */
 	dstate_setinfo("output.current", "%.02f",
-		       ydn23_val_from_hex(YDN23_FRAME_REG(frame, 13), 4)/100.0f);
+		ydn23_val_from_hex(YDN23_FRAME_REG(frame, 13), 4)/100.0f);
 	/* Field 10, DC VOLTAGE */
 	dstate_setinfo("battery.voltage", "%.02f",
-		       ydn23_val_from_hex(YDN23_FRAME_REG(frame, 19), 4)/100.0f);
+		ydn23_val_from_hex(YDN23_FRAME_REG(frame, 19), 4)/100.0f);
 	/* Field 11, AC_OUT FREQUENCY */
 	dstate_setinfo("output.frequency", "%.02f",
-		       ydn23_val_from_hex(YDN23_FRAME_REG(frame, 21), 4)/100.0f);
+		ydn23_val_from_hex(YDN23_FRAME_REG(frame, 21), 4)/100.0f);
 	/* Field 15, AC_IN FREQUENCY */
 	dstate_setinfo("input.frequency", "%.02f",
-		       ydn23_val_from_hex(YDN23_FRAME_REG(frame, 27), 4)/100.0f);
+		ydn23_val_from_hex(YDN23_FRAME_REG(frame, 27), 4)/100.0f);
 	/* Field 18, AC_OUT REALPOWER, kW */
 	dstate_setinfo("ups.realpower", "%d",
-		       ydn23_val_from_hex(YDN23_FRAME_REG(frame, 33), 4)*10);
+		ydn23_val_from_hex(YDN23_FRAME_REG(frame, 33), 4)*10);
 	/* Field 19, AC_OUT POWER, kVA */
 	dstate_setinfo("ups.power", "%d",
-		       ydn23_val_from_hex(YDN23_FRAME_REG(frame, 35), 4)*10);
+		ydn23_val_from_hex(YDN23_FRAME_REG(frame, 35), 4)*10);
 	/* Field 22, BATTERY BACKUP TIME, Min */
 	dstate_setinfo("battery.runtime.low", "%.2f",
-		       ydn23_val_from_hex(YDN23_FRAME_REG(frame, 41), 4)/100.0f*60.0f);
+		ydn23_val_from_hex(YDN23_FRAME_REG(frame, 41), 4)/100.0f*60.0f);
 
 	dstate_dataok();
 }
 
 static void upsdrv_updateinfo_sysparam(void)
 {
-	struct ydn23_frame sendframe, frame;
-	int retry, ret = -1;
+	struct ydn23_frame	sendframe, frame;
+	int	retry, ret = -1;
 
 	ydn23_frame_init(&sendframe, YDN23_GET_SYS_PARAM_D,
-			 "21", devaddr, NULL, 0);
+		"21", devaddr, NULL, 0);
 
 	for (retry = 0; retry < PROBE_RETRIES; retry++) {
 		ret = ydn23_frame_send(upsfd, &sendframe);
-		if (ret <= 0) continue;
+		if (ret <= 0)
+			continue;
 		ret = ydn23_frame_read(upsfd, &frame, 2, 0);
 		if (ret > 0)
 			break;
@@ -316,36 +322,37 @@ static void upsdrv_updateinfo_sysparam(void)
 
 	/* Field 6, Nominal Voltage */
 	dstate_setinfo("output.voltage.nominal", "%d",
-		       ydn23_val_from_hex(YDN23_FRAME_REG(frame, 9), 4));
+		ydn23_val_from_hex(YDN23_FRAME_REG(frame, 9), 4));
 	/* Field 7, Nominal Frequency */
 	dstate_setinfo("output.frequency.nominal", "%d",
-		       ydn23_val_from_hex(YDN23_FRAME_REG(frame, 11), 4));
+		ydn23_val_from_hex(YDN23_FRAME_REG(frame, 11), 4));
 	/* Field 10, Bypass Working Voltage Max, ALWAYS 115% */
 	if (ydn23_val_from_hex(YDN23_FRAME_REG(frame, 17), 4) == 1)
 		dstate_setinfo("input.transfer.bypass.high", "%f",
-			       ydn23_val_from_hex(YDN23_FRAME_REG(frame, 9), 4)*1.15f);
+			ydn23_val_from_hex(YDN23_FRAME_REG(frame, 9), 4)*1.15f);
 	/* Field 11, Bypass Working Voltage Min, Volt */
 	if (ydn23_val_from_hex(YDN23_FRAME_REG(frame, 19), 4) == 1)
 		dstate_setinfo("input.transfer.bypass.low", "%d", 120);
 	/* Field 21, Battery Test Interval, per 3 mons */
 	dstate_setinfo("ups.test.interval", "%lu",
-		       (long) ydn23_val_from_hex(YDN23_FRAME_REG(frame, 39), 4)*3*108000);
+		(long) ydn23_val_from_hex(YDN23_FRAME_REG(frame, 39), 4)*3*108000);
 
 	dstate_dataok();
 }
 
 static void upsdrv_updateinfo_warning(void)
 {
-	struct ydn23_frame sendframe, frame;
-	int retry, ret = -1, val;
-	size_t i;
+	struct ydn23_frame	sendframe, frame;
+	int	retry, ret = -1, val;
+	size_t	i;
 
 	ydn23_frame_init(&sendframe, YDN23_GET_WARNING_DATA,
-			 "21", devaddr, NULL, 0);
+		"21", devaddr, NULL, 0);
 
 	for (retry = 0; retry < PROBE_RETRIES; retry++) {
 		ret = ydn23_frame_send(upsfd, &sendframe);
-		if (ret <= 0) continue;
+		if (ret <= 0)
+			continue;
 		ret = ydn23_frame_read(upsfd, &frame, 2, 0);
 		if (ret > 0)
 			break;
@@ -439,16 +446,17 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_initinfo(void)
 {
-	struct ydn23_frame sendframe, recvframe;
-	char databuf[11];
-	int retry, ret = -1;
+	struct ydn23_frame	sendframe, recvframe;
+	char	databuf[11];
+	int	retry, ret = -1;
 
 	ydn23_frame_init(&sendframe, YDN23_GET_VENDOR_INFO,
-			 "21", devaddr, NULL, 0);
+		"21", devaddr, NULL, 0);
 
 	for (retry = 0; retry < PROBE_RETRIES; retry++) {
 		ret = ydn23_frame_send(upsfd, &sendframe);
-		if (ret <= 0) continue;
+		if (ret <= 0)
+			continue;
 		ret = ydn23_frame_read(upsfd, &recvframe, 2, 0);
 		if (ret > 0)
 			break;
