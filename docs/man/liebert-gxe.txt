@@ -23,6 +23,10 @@ SUPPORTED HARDWARE
 Tested to work on the following units:
 
 * Liebert GXE 01k00TS1101C00
++
+NOTE: This UPS has an RS-232 port and a USB port. The USB port has an
+ACM interface which functions as a serial port for the host operating
+system. Both ports can be used managing the device.
 
 This is an experimental driver.  You have been warned.
 
