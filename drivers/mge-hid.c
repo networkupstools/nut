@@ -871,10 +871,11 @@ static info_lkp_t eaton_converter_online_info[] = {
 /* Eaton / MGE HID usage table */
 static usage_lkp_t mge_usage_lkp[] = {
 	{ "Undefined",				0xffff0000 },
-	{ "STS",				0xffff0001 },
+	{ "STS",					0xffff0001 },
 	{ "Environment",			0xffff0002 },
-	{ "Statistic",			0xffff0003 },
+	{ "Statistic",				0xffff0003 },
 	{ "StatisticSystem",		0xffff0004 },
+	{ "USB",					0xffff0005 },
 	/* 0xffff0005-0xffff000f	=>	Reserved */
 	{ "Phase",				0xffff0010 },
 	{ "PhaseID",				0xffff0011 },
@@ -1014,8 +1015,12 @@ static usage_lkp_t mge_usage_lkp[] = {
 	{ "Reset",			0xffff00ad },
 	{ "WatchdogReset",			0xffff00ae },
 	/* 0xffff00af-0xffff00df	=>	Reserved */
+	{ "iDesignator",			0xffff00ba },
 	{ "COPIBridge",				0xffff00e0 },
-	/* 0xffff00e1-0xffff00ef	=>	Reserved */
+	{ "Gateway",				0xffff00e1 },
+	{ "System",					0xffff00e5 },
+	{ "Status",					0xffff00e9 },
+	/* 0xffff00ee-0xffff00ef	=>	Reserved */
 	{ "iModel",				0xffff00f0 },
 	{ "iVersion",				0xffff00f1 },
 	{ "iTechnicalLevel",		0xffff00f2 },
@@ -1253,6 +1258,7 @@ static hid_info_t mge_hid2nut[] =
 	/* Device collection */
 	/* Just declared to call *hid2info */
 	{ "device.country", ST_FLAG_STRING, 20, "UPS.PowerSummary.Country", NULL, "Europe", HU_FLAG_STATIC, eaton_check_country_info },
+	/* { "device.usb.version", ST_FLAG_STRING, 20, "UPS.System.USB.iVersion", NULL, NULL, HU_FLAG_STATIC, <FIXME> },*/
 
 	/* Battery page */
 	{ "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", 0, NULL },
@@ -1287,6 +1293,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.PresentStatus.Used", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_legacy_info }, */
 	/* This data is the actual ABM status information */
 	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.Mode", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_status_info },
+	/* FIXME: should better use UPS.BatterySystem.Charger.Status */
 
 	/* UPS page */
 	{ "ups.efficiency", 0, 0, "UPS.PowerConverter.Output.Efficiency", NULL, "%.0f", 0, NULL },
@@ -1476,6 +1483,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.1.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[2].OutletID", NULL, "PowerShare Outlet 1", HU_FLAG_ABSENT, NULL },
 	{ "outlet.1.switchable", 0, 0, "UPS.OutletSystem.Outlet.[2].PresentStatus.Switchable", NULL, "%s", HU_FLAG_STATIC, yes_no_info },
 	{ "outlet.1.status", 0, 0, "UPS.OutletSystem.Outlet.[2].PresentStatus.SwitchOn/Off", NULL, "%s", 0, on_off_info },
+	/* FIXME: should better use UPS.OutletSystem.Outlet.[1].Status? */
 	/* For low end models, with 1 non backup'ed outlet */
 	{ "outlet.1.status", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, "%s", 0, on_off_info },
 	/* FIXME: change to outlet.1.battery.charge.low, as in mge-xml.c?! */
@@ -1486,6 +1494,8 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.1.realpower", 0, 0, "UPS.OutletSystem.Outlet.[2].ActivePower", NULL, "%.0f", 0, NULL },
 	{ "outlet.1.current", 0, 0, "UPS.OutletSystem.Outlet.[2].Current", NULL, "%.2f", 0, NULL },
 	{ "outlet.1.powerfactor", 0, 0, "UPS.OutletSystem.Outlet.[2].PowerFactor", NULL, "%.2f", 0, NULL }, /* "%s", 0, mge_powerfactor_conversion }, */
+	/* 0: The outlet is not ECO controlled. / 1 : The outlet is ECO controlled. => Readonly! use some yes_no_info
+		{ "outlet.1.ecocontrol", 0, 0, "UPS.OutletSystem.Outlet.[2].ECOControl", NULL, "%.2f", 0, NULL },*/
 	/* Second outlet */
 	{ "outlet.2.id", 0, 0, "UPS.OutletSystem.Outlet.[3].OutletID", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 	{ "outlet.2.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[3].OutletID", NULL, "PowerShare Outlet 2", HU_FLAG_ABSENT, NULL },
@@ -1495,6 +1505,7 @@ static hid_info_t mge_hid2nut[] =
 	/* Generic version (RO) for other models */
 	{ "outlet.2.switchable", 0, 0, "UPS.OutletSystem.Outlet.[3].PresentStatus.Switchable", NULL, "%s", 0, yes_no_info },
 	{ "outlet.2.status", 0, 0, "UPS.OutletSystem.Outlet.[3].PresentStatus.SwitchOn/Off", NULL, "%s", 0, on_off_info },
+	/* FIXME: should better use UPS.OutletSystem.Outlet.[1].Status? */
 	{ "outlet.2.autoswitch.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet.[3].RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "outlet.2.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[3].ShutdownTimer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "outlet.2.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[3].StartupTimer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
@@ -1502,6 +1513,8 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.2.realpower", 0, 0, "UPS.OutletSystem.Outlet.[3].ActivePower", NULL, "%.0f", 0, NULL },
 	{ "outlet.2.current", 0, 0, "UPS.OutletSystem.Outlet.[3].Current", NULL, "%.2f", 0, NULL },
 	{ "outlet.2.powerfactor", 0, 0, "UPS.OutletSystem.Outlet.[3].PowerFactor", NULL, "%.2f", 0, NULL }, /* "%s", 0, mge_powerfactor_conversion }, */
+	/* 0: The outlet is not ECO controlled. / 1 : The outlet is ECO controlled. => Readonly! use some yes_no_info
+		{ "outlet.2.ecocontrol", 0, 0, "UPS.OutletSystem.Outlet.[3].ECOControl", NULL, "%.2f", 0, NULL },*/
 
 	/* instant commands. */
 	/* splited into subset while waiting for extradata support
