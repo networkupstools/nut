@@ -120,6 +120,11 @@ static const valtab_t 	yes_no_info[] = {
 	{ NULL, 0 }
 };
 
+static const valtab_t 	outlet_eco_yes_no_info[] = {
+	{ "The outlet is ECO controlled", 2 }, { "The outlet is not ECO controlled", 0 },
+	{ NULL, 0 }
+};
+
 /* Older models report the model in a numeric format 'rOnn' */
 static const struct {
 	const char	*val;

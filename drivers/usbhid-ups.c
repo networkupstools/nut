@@ -490,6 +490,12 @@ info_lkp_t yes_no_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
+info_lkp_t outlet_eco_yes_no_info[] = {
+	{ 0, "The outlet is not ECO controlled", NULL, NULL },
+	{ 1, "The outlet is ECO controlled", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
 info_lkp_t on_off_info[] = {
 	{ 0, "off", NULL, NULL },
 	{ 1, "on", NULL, NULL },
