@@ -411,7 +411,7 @@ static const char *yes_no_info(const char *arg_val)
 	}
 }
 
-static const char *outlet_eco_yes_no_info(const char *arg_val)
+static const char *outlet_eco_yes_no_info(const char *arg_val) /* not shure if needed here ?*/
 {
 	switch(arg_val[0])
 	{

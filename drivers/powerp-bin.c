@@ -120,7 +120,7 @@ static const valtab_t 	yes_no_info[] = {
 	{ NULL, 0 }
 };
 
-static const valtab_t 	outlet_eco_yes_no_info[] = {
+static const valtab_t 	outlet_eco_yes_no_info[] = {       /* not shure if needed here ?*/
 	{ "The outlet is ECO controlled", 2 }, { "The outlet is not ECO controlled", 0 },
 	{ NULL, 0 }
 };
