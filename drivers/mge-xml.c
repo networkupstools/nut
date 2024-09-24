@@ -1115,6 +1115,7 @@ static xml_info_t mge_xml2nut[] = {
 	{ "outlet.1.id", 0, 0, "UPS.OutletSystem.Outlet[2].OutletID", 0, 0, NULL },
 	{ "outlet.1.desc", 0, 0, "UPS.OutletSystem.Outlet[2].iName", 0, 0, NULL },
 	{ "outlet.1.switchable", 0, 0, "UPS.OutletSystem.Outlet[2].PresentStatus.Switchable", 0, 0, yes_no_info },
+	{ "outlet.1.ecocontrol", 0, 0, "UPS.OutletSystem.Outlet.[2].ECOControl", 0, 0, outlet_eco_yes_no_info},
 	{ "outlet.1.status", 0, 0, "UPS.OutletSystem.Outlet[2].PresentStatus.SwitchOnOff", 0, 0, on_off_info },
 	/* For low end models, with 1 non backup'ed outlet */
 	{ "outlet.1.status", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", 0, 0, NULL }, /* on_off_info */
