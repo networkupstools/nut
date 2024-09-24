@@ -1533,7 +1533,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.2.current", 0, 0, "UPS.OutletSystem.Outlet.[3].Current", NULL, "%.2f", 0, NULL },
 	{ "outlet.2.powerfactor", 0, 0, "UPS.OutletSystem.Outlet.[3].PowerFactor", NULL, "%.2f", 0, NULL }, /* "%s", 0, mge_powerfactor_conversion }, */
 	/* 0: The outlet is not ECO controlled. / 1 : The outlet is ECO controlled. => Readonly! use some yes_no_info */
-	{ "outlet.2.ecocontrol", 0, 0, "UPS.OutletSystem.Outlet.[3].ECOControl", NULL, "%.2f", 0, NULL },
+	{ "outlet.2.ecocontrol", 0, 0, "UPS.OutletSystem.Outlet.[3].ECOControl", NULL, "%s", HU_FLAG_SEMI_STATIC, eco_pegasus_yes_no_info},
 
 	/* instant commands. */
 	/* splited into subset while waiting for extradata support
