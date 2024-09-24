@@ -689,6 +689,12 @@ static info_lkp_t pegasus_yes_no_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
+static info_lkp_t eco_pegasus_yes_no_info[] = {
+	{ 0, "The outlet is not ECO controlled", pegasus_yes_no_info_fun, pegasus_yes_no_info_nuf },
+	{ 1, "The outlet is ECO controlled", pegasus_yes_no_info_fun, pegasus_yes_no_info_nuf },
+	{ 0, NULL, NULL, NULL }
+};
+
 /* Determine country using UPS.PowerSummary.Country.
  * If not present:
  * 		if PowerConverter.Output.Voltage >= 200 => "Europe"
@@ -862,6 +868,13 @@ static const char *eaton_converter_online_fun(double value)
 static info_lkp_t eaton_converter_online_info[] = {
 	{ 0, "dummy", eaton_converter_online_fun, NULL },
 	{ 0, NULL, NULL, NULL }
+};
+
+static info_lkp_t eaton_outlet_status_enable_disable_info[] = {
+    { 0, "not powered", NULL, NULL },
+    { 1, "not protected", NULL, NULL },
+    { 2, "protected", NULL, NULL },
+    { 0, NULL, NULL, NULL }
 };
 
 /* --------------------------------------------------------------- */
@@ -1259,8 +1272,8 @@ static hid_info_t mge_hid2nut[] =
 	/* Just declared to call *hid2info */
 	{ "device.country", ST_FLAG_STRING, 20, "UPS.PowerSummary.Country", NULL, "Europe", HU_FLAG_STATIC, eaton_check_country_info },
 	{ "device.usb.version", ST_FLAG_STRING, 20, "UPS.System.USB.iVersion", NULL, NULL, HU_FLAG_STATIC, stringid_conversion }, /* FIXME */
-	{ "device.usb.mode", ST_FLAG_STRING, 20, "UPS.System.USB.Mode", NULL, NULL, HU_FLAG_STATIC, stringid_conversion }, /* FIXME */
-	{ "device.gateway.power.rate", ST_FLAG_STRING, 20, "UPS.System.Gateway.PowerRate", NULL, NULL, HU_FLAG_STATIC, stringid_conversion }, /* FIXME */
+	/* { "device.usb.mode", ST_FLAG_STRING, 20, "UPS.System.USB.Mode", NULL, NULL, HU_FLAG_STATIC, stringid_conversion }, /* not a string (1 to set in bootloader ) */
+	/*{ "device.gateway.power.rate", ST_FLAG_STRING, 20, "UPS.System.Gateway.PowerRate", NULL, NULL, HU_FLAG_STATIC, stringid_conversion }, /* not a string (level of power provided by the UPS to the network card */
 	
 	/* Battery page */
 	{ "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", 0, NULL },
@@ -1294,8 +1307,10 @@ static hid_info_t mge_hid2nut[] =
 	/* Refer to Note 1 (This point will need more clarification!)
 	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.PresentStatus.Used", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_legacy_info }, */
 	/* This data is the actual ABM status information */
+	{ "battery.charger.mode", 0, 0, "UPS.BatterySystem.Charger.Mode", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_status_info }, /* needs both ? from https://github.com/networkupstools/nut/pull/2637#discussion_r1772730590 */
 	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.Status", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_status_info },
-	/* FIXME: should better use UPS.BatterySystem.Charger.Status */
+	/* FIXME: should better use UPS.BatterySystem.Charger.Status should work on 9E Models */
+	 
 
 	/* UPS page */
 	{ "ups.efficiency", 0, 0, "UPS.PowerConverter.Output.Efficiency", NULL, "%.0f", 0, NULL },
@@ -1485,8 +1500,9 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.1.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[2].OutletID", NULL, "PowerShare Outlet 1", HU_FLAG_ABSENT, NULL },
 	{ "outlet.1.switchable", 0, 0, "UPS.OutletSystem.Outlet.[2].PresentStatus.Switchable", NULL, "%s", HU_FLAG_STATIC, yes_no_info },
 	/* FIXME: should better use UPS.OutletSystem.Outlet.[1].Status? */
-	{ "outlet.1.status", 0, 0, "UPS.OutletSystem.Outlet.[1].Status", NULL, "%s", 0, on_off_info },	
-	{ "outlet.1.designator", 0, 0, "UPS.OutletSystem.Outlet.[1].iDesignator", NULL, "%s", 0, on_off_info }, /* needs to check  */
+	{ "outlet.1.switch.status", 0, 0, "UPS.OutletSystem.Outlet.[2].PresentStatus.SwitchOn/Off", NULL, "%s", 0, on_off_info },
+	{ "outlet.1.status", 0, 0, "UPS.OutletSystem.Outlet.[1].Status", NULL, "%s", 0, eaton_outlet_status_enable_disable_info },
+	{ "outlet.1.designator", 0, 0, "UPS.OutletSystem.Outlet.[1].iDesignator", NULL, NULL, HU_FLAG_STATIC, stringid_conversion }, /* FIXME */
 	/* For low end models, with 1 non backup'ed outlet */
 	{ "outlet.1.status", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, "%s", 0, on_off_info },
 	/* FIXME: change to outlet.1.battery.charge.low, as in mge-xml.c?! */
@@ -1498,7 +1514,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.1.current", 0, 0, "UPS.OutletSystem.Outlet.[2].Current", NULL, "%.2f", 0, NULL },
 	{ "outlet.1.powerfactor", 0, 0, "UPS.OutletSystem.Outlet.[2].PowerFactor", NULL, "%.2f", 0, NULL }, /* "%s", 0, mge_powerfactor_conversion }, */
 	/* 0: The outlet is not ECO controlled. / 1 : The outlet is ECO controlled. => Readonly! use some yes_no_info */
-	{ "outlet.1.ecocontrol", 0, 0, "UPS.OutletSystem.Outlet.[2].ECOControl", NULL, "%.2f", 0, NULL },
+	{ "outlet.1.ecocontrol", 0, 0, "UPS.OutletSystem.Outlet.[2].ECOControl", NULL, "%s", HU_FLAG_SEMI_STATIC, eco_pegasus_yes_no_info},
 	/* Second outlet */
 	{ "outlet.2.id", 0, 0, "UPS.OutletSystem.Outlet.[3].OutletID", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 	{ "outlet.2.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[3].OutletID", NULL, "PowerShare Outlet 2", HU_FLAG_ABSENT, NULL },
@@ -1507,7 +1523,8 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.2.switchable", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet.[3].PresentStatus.Switchable", NULL, "%s", HU_FLAG_SEMI_STATIC, pegasus_yes_no_info },
 	/* Generic version (RO) for other models */
 	{ "outlet.2.switchable", 0, 0, "UPS.OutletSystem.Outlet.[3].PresentStatus.Switchable", NULL, "%s", 0, yes_no_info },
-	{ "outlet.2.status", 0, 0, "UPS.OutletSystem.Outlet.[1].Status", NULL, "%s", 0, on_off_info },	
+	{ "outlet.2.status", 0, 0, "UPS.OutletSystem.Outlet.[1].Status", NULL, "%s", 0, on_off_info },
+	/* FIXME: should better use UPS.OutletSystem.Outlet.[1].Status? */
 	{ "outlet.2.autoswitch.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet.[3].RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "outlet.2.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[3].ShutdownTimer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "outlet.2.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[3].StartupTimer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
