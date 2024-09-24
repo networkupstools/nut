@@ -689,20 +689,6 @@ static info_lkp_t pegasus_yes_no_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
-static const char *outlet_eco_yes_no_info(const char *arg_val)
-{
-	switch(arg_val[0])
-	{
-	case '1':
-		return "The outlet is ECO controlled";
-	case '0':
-		return "The outlet is not ECO controlled";
-	default:
-		upsdebugx(2, "%s: unexpected value [%s]", __func__, arg_val);
-		return "<unknown>";
-	}
-}
-
 /* Determine country using UPS.PowerSummary.Country.
  * If not present:
  * 		if PowerConverter.Output.Voltage >= 200 => "Europe"
