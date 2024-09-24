@@ -307,6 +307,15 @@ value (such as 10 seconds). This should solve the issue.
 Note that if you increase "pollinterval" beyond 10 or 15 seconds, you might
 also want to increase "pollfreq" by the same factor.
 
+With certain devices and operating systems, notably MGE/Eaton USB Vendor ID
+(`0x0463`) on some versions of the Linux kernel, you might encounter poor
+interaction with the "USB HID quirk" mechanism, which precludes Linux from
+seeing the device as a `hid-generic` first, to hand it over to a NUT driver
+later. For more details, see the NUT FAQ document. This particular quirk can
+be tuned with a kernel boot parameter (via GRUB etc.):
+
+        usbhid.quirks=0x0463:0xffff:0x08
+
 Got EPERM: Operation not permitted upon driver startup
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
