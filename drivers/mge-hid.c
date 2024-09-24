@@ -689,12 +689,6 @@ static info_lkp_t pegasus_yes_no_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
-static info_lkp_t outlet_eco_yes_no_info[] = {
-	{ 0, "The outlet is not ECO controlled", pegasus_yes_no_info_fun, pegasus_yes_no_info_nuf },
-	{ 1, "The outlet is ECO controlled", pegasus_yes_no_info_fun, pegasus_yes_no_info_nuf },
-	{ 0, NULL, NULL, NULL }
-};
-
 /* Determine country using UPS.PowerSummary.Country.
  * If not present:
  * 		if PowerConverter.Output.Voltage >= 200 => "Europe"
@@ -1533,7 +1527,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.2.current", 0, 0, "UPS.OutletSystem.Outlet.[3].Current", NULL, "%.2f", 0, NULL },
 	{ "outlet.2.powerfactor", 0, 0, "UPS.OutletSystem.Outlet.[3].PowerFactor", NULL, "%.2f", 0, NULL }, /* "%s", 0, mge_powerfactor_conversion }, */
 	/* 0: The outlet is not ECO controlled. / 1 : The outlet is ECO controlled. => Readonly! use some yes_no_info */
-	{ "outlet.2.ecocontrol", 0, 0, "UPS.OutletSystem.Outlet.[3].ECOControl", NULL, "%s", HU_FLAG_SEMI_STATIC, eco_pegasus_yes_no_info},
+	{ "outlet.2.ecocontrol", 0, 0, "UPS.OutletSystem.Outlet.[3].ECOControl", NULL, "%s", HU_FLAG_SEMI_STATIC, outlet_eco_yes_no_info},
 
 	/* instant commands. */
 	/* splited into subset while waiting for extradata support
