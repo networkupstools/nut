@@ -656,6 +656,7 @@
 
 "Liebert"	"ups"	"2"	"ITON 600VA"	""	"blazer_ser"
 "Liebert"	"ups"	"5"	"UPStation GXT2"	"contact-closure cable"	"liebert"
+"Liebert"	"ups"	"4"	"GXE 1-3kVA"   		"Serial"	"liebert-gxe (experimental)"
 "Liebert"	"ups"	"1"	"GXT2-3000RT230"	""	"liebert-esp2 (experimental)"
 "Liebert"	"ups"	"3"	"PowerSure Personal XT"	"USB"	"usbhid-ups"
 "Liebert"	"ups"	"3"	"PowerSure PSA"	"USB"	"usbhid-ups"
