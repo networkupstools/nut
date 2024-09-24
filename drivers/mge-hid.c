@@ -1272,8 +1272,8 @@ static hid_info_t mge_hid2nut[] =
 	/* Just declared to call *hid2info */
 	{ "device.country", ST_FLAG_STRING, 20, "UPS.PowerSummary.Country", NULL, "Europe", HU_FLAG_STATIC, eaton_check_country_info },
 	{ "device.usb.version", ST_FLAG_STRING, 20, "UPS.System.USB.iVersion", NULL, NULL, HU_FLAG_STATIC, stringid_conversion }, /* FIXME */
-	/* { "device.usb.mode", ST_FLAG_STRING, 20, "UPS.System.USB.Mode", NULL, NULL, HU_FLAG_STATIC, stringid_conversion }, /* not a string (1 to set in bootloader ) */
-	/*{ "device.gateway.power.rate", ST_FLAG_STRING, 20, "UPS.System.Gateway.PowerRate", NULL, NULL, HU_FLAG_STATIC, stringid_conversion }, /* not a string (level of power provided by the UPS to the network card */
+	/* { "device.usb.mode", ST_FLAG_STRING, 20, "UPS.System.USB.Mode", NULL, NULL, HU_FLAG_STATIC, stringid_conversion }, */ /* not useful ,not a string (1 to set in bootloader ) */
+	/*{ "device.gateway.power.rate", ST_FLAG_STRING, 20, "UPS.System.Gateway.PowerRate", NULL, NULL, HU_FLAG_STATIC, stringid_conversion }, */  /* not useful , not a string (level of power provided by the UPS to the network card */
 	
 	/* Battery page */
 	{ "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", 0, NULL },
