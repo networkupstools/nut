@@ -699,7 +699,7 @@ static info_lkp_t outlet_eco_yes_no_info[] = {
 static info_lkp_t eaton_input_mode_info[] = {
 { 0, "normal", NULL, NULL },
 { 1, "high-efficiency", NULL, NULL },
-{ 2, "ESS", NULL, NULL }, /* makes sense for UPS that implements this mode */
+{ 2, "ESS", NULL, NULL }, /* Energy Saver System, makes sense for UPS that implements this mode */
 { 0, NULL, NULL, NULL }
 };
 
