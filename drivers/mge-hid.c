@@ -689,6 +689,12 @@ static info_lkp_t pegasus_yes_no_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
+static info_lkp_t outlet_eco_yes_no_info[] = {
+	{ 0, "The outlet is not ECO controlled", NULL, NULL },
+	{ 1, "The outlet is ECO controlled", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
 /* Determine country using UPS.PowerSummary.Country.
  * If not present:
  * 		if PowerConverter.Output.Voltage >= 200 => "Europe"
