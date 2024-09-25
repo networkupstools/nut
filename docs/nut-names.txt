@@ -695,6 +695,8 @@ of the user manual.
                                    (on/off)                    | on
 | outlet.n.status                | Outlet switch status
                                    (on/off)                    | on
+| outlet.n.protect.status        | Outlet protection status
+                                   (0-2)                       | protected
 | outlet.n.alarm                 | Alarms for outlets and PDU,
                                    published in ups.alarm      | outlet 1 low
                                                                  voltage warning
