@@ -695,6 +695,14 @@ static info_lkp_t outlet_eco_yes_no_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
+/* High Efficiency (aka ECO) mode */
+static info_lkp_t eaton_input_mode_info[] = {
+{ 0, "normal", NULL, NULL },
+{ 1, "high-efficiency", NULL, NULL },
+{ 2, "ESS", NULL, NULL }, /* makes sense for UPS that implements this mode */
+{ 0, NULL, NULL, NULL }
+};
+
 /* Determine country using UPS.PowerSummary.Country.
  * If not present:
  * 		if PowerConverter.Output.Voltage >= 200 => "Europe"
@@ -1462,8 +1470,8 @@ static hid_info_t mge_hid2nut[] =
 	{ "input.bypass.frequency", 0, 0, "UPS.PowerConverter.Input.[2].Frequency", NULL, "%.1f", 0, NULL },
 	{ "input.bypass.frequency.nominal", 0, 0, "UPS.Flow.[2].ConfigFrequency", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 
-	/* ECO(HE) Mode switch , maybe better = outlet.5.switchable ? */
-	{ "input.eco.switchable", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[5].Switchable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	/* ECO(HE) Mode switch */
+	{ "input.eco.switchable", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[5].Switchable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_mode_info },
 
 	/* Output page */
 	{ "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", NULL, "%.1f", 0, NULL },
