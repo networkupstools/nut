@@ -1,4 +1,4 @@
-/*  impuls_magnetic_mib.c - (ietf-mib.c + fix for upsload)  - data to monitor SNMP UPS (RFC 1628 compliant) with NUT
+/*  impuls_magnetic_mib.c - (ietf-mib.c + fix for upsload for IMPULSE SNMP-card for 1-10kVA UPS)  - data to monitor SNMP UPS (RFC 1628 compliant) with NUT
  *
  *  Copyright (C) 2002-2006
  *  2012-2024   Sergei Kartavtsev <sergega@me.com>
