@@ -70,6 +70,7 @@
 #include "eaton-pdu-nlogic-mib.h"
 #include "eaton-ups-pwnm2-mib.h"
 #include "eaton-ups-pxg-mib.h"
+#include "impuls-magnetic-mib.h"
 
 /* Address API change */
 #if ( ! NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol ) && ( ! defined usmAESPrivProtocol )
@@ -133,6 +134,7 @@ static mib2nut_info_t *mib2nut[] = {
 	 */
 	&tripplite_ietf,	/* This struct comes from : ietf-mib.c */
 	&ietf,				/* This struct comes from : ietf-mib.c */
+	&impuls_magnetic,	/* This struct comes from : impuls_magnetic.c for fix upsload oid and works only manualy selected*/
 	/* end of structure. */
 	NULL
 };
