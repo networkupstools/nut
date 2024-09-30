@@ -92,6 +92,7 @@ extern info_lkp_t trim_info[];
 extern info_lkp_t boost_info[];
 extern info_lkp_t bypass_auto_info[];
 extern info_lkp_t bypass_manual_info[];
+extern info_lkp_t eco_mode_info[];
 extern info_lkp_t off_info[];
 extern info_lkp_t calibration_info[];
 extern info_lkp_t nobattery_info[];
