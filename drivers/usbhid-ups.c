@@ -373,9 +373,8 @@ info_lkp_t bypass_manual_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 info_lkp_t eco_mode_info[] = {
-	{ 0, "normal", NULL, NULL },
-    { 1, "high-efficiency", NULL, NULL },
-    { 2, "ESS", NULL, NULL }, /* makes sense for UPS that implements this mode */
+	{ 1, "ecomode", NULL, NULL },
+    { 0, "!ecomode", NULL, NULL },
     { 0, NULL, NULL, NULL }
 };
 /* note: this value is reverted (0=set, 1=not set). We report "being
@@ -2401,6 +2400,9 @@ static void ups_status_set(void)
 	}
 	if (ups_status & (STATUS(BYPASSAUTO) | STATUS(BYPASSMAN))) {
 		status_set("BYPASS");		/* on bypass */
+	}
+		if (ups_status & (STATUS(ECOMODE)) {
+		status_set("ECO");		/* on ECO Mode */
 	}
 	if (ups_status & STATUS(OFF)) {
 		status_set("OFF");		/* ups is off */
