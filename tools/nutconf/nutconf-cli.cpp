@@ -29,11 +29,14 @@
 #include "nutstream.hpp"
 
 extern "C" {
+/* FIXME? Is it counter-intentional to use our C common library
+ * for C++ code (here for common printing of version banner)? */
+#include "common.h"
 #if (defined WITH_NUTSCANNER)
-#include "nut-scan.h"
-#include "nutscan-init.h"
-#include "nutscan-device.h"
-#endif  // defined WITH_NUTSCANNER
+# include "nut-scan.h"
+# include "nutscan-init.h"
+# include "nutscan-device.h"
+#endif	/* WITH_NUTSCANNER */
 }
 
 #include <iostream>
@@ -56,8 +59,11 @@ class Usage {
 
 	public:
 
-	/** Print usage */
+	/** Print version and usage to stderr */
 	static void print(const std::string & bin);
+
+	/** Print version info to stdout */
+	static void printVersion(const std::string & bin);
 
 };  // end of class usage
 
@@ -65,6 +71,8 @@ class Usage {
 const char * Usage::s_text[] = {
 	"    -h  -help",
 	"    --help                              Display this help and exit",
+	"    -V",
+	"    --version                           Display tool version on stdout and exit",
 	"    --autoconfigure                     Perform automatic configuration",
 	"    --is-configured                     Checks whether NUT is configured",
 	"    --local <directory>                 Sets configuration directory",
@@ -100,6 +108,9 @@ const char * Usage::s_text[] = {
 	"                                        specified multiple times to set multiple users",
 	"    --add-user <spec>                   Same as --set-user, but keeps existing users",
 	"                                        The two options are mutually exclusive",
+	/* FIXME: Alias as "-D"? Is this the same as nut_debug_level
+	 * NOTE: upsdebugx() not used here directly (yet?), though we
+	 * could setenv() the envvar for libnutscan perhaps? */
 	"    -v",
 	"    --verbose                           Increase verbosity of output one level",
 	"                                        May be specified multiple times",
@@ -133,7 +144,7 @@ const char * Usage::s_text[] = {
 	"    <ups_ID> <driver> <port> [<key>=<value>]*",
 	"Notification types:",
 	"    ONLINE, ONBATT, LOWBATT, FSD, COMMOK, COMMBAD, SHUTDOWN, REPLBATT, NOCOMM, NOPARENT,",
-	"    CAL, NOTCAL, OFF, NOTOFF, BYPASS, NOTBYPASS",
+	"    CAL, NOTCAL, OFF, NOTOFF, BYPASS, NOTBYPASS, SUSPEND_STARTING, SUSPEND_FINISHED",
 	"Notification flags:",
 	"    SYSLOG, WALL, EXEC, IGNORE",
 	"User specification:",
@@ -164,9 +175,23 @@ const char * Usage::s_text[] = {
 	"",
 };
 
+/**
+ * Print version info to stdout (like other NUT tools)
+ */
+void Usage::printVersion(const std::string & bin) {
+	std::cout
+		<< "Network UPS Tools " << bin
+		<< " " << describe_NUT_VERSION_once() << std::endl;
+}
 
+/**
+ * Print help text (including version info) to stderr
+ */
 void Usage::print(const std::string & bin) {
 	std::cerr
+		<< "Network UPS Tools " << bin
+		<< " " << describe_NUT_VERSION_once() << std::endl
+		<< std::endl
 		<< "Usage: " << bin << " [OPTIONS]" << std::endl
 		<< std::endl
 		<< "OPTIONS:" << std::endl;
@@ -3085,12 +3110,21 @@ static void scanSerialDevices(const NutConfOptions & options) {
  *  \return 0 always (exits on error)
  */
 static int mainx(int argc, char * const argv[]) {
+	const char	*prog = xbasename(argv[0]);
+
 	// Get options
 	NutConfOptions options(argv, argc);
 
 	// Usage
 	if (options.exists("help") || options.existsSingle("h")) {
-		Usage::print(argv[0]);
+		Usage::print(prog);
+
+		::exit(0);
+	}
+
+	// Usage
+	if (options.exists("version") || options.existsSingle("V")) {
+		Usage::printVersion(prog);
 
 		::exit(0);
 	}

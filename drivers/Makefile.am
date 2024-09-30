@@ -54,7 +54,7 @@ endif
 NUTSW_DRIVERLIST = dummy-ups clone clone-outlet apcupsd-ups skel
 SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
  bestfortress bestuferrups bestups etapro everups 	\
- gamatronic genericups isbmex liebert liebert-esp2 masterguard metasys	\
+ gamatronic genericups isbmex liebert liebert-esp2 liebert-gxe masterguard metasys	\
  mge-utalk microdowell microsol-apc mge-shut oneac optiups powercom rhino 	\
  safenet nutdrv_siemens-sitop solis tripplite tripplitesu upscode2 victronups powerpanel \
  blazer_ser ivtscd apcsmart apcsmart-old riello_ser sms_ser bicker_ser
@@ -160,6 +160,7 @@ isbmex_LDADD = $(LDADD) -lm
 ivtscd_SOURCES = ivtscd.c
 liebert_SOURCES = liebert.c
 liebert_esp2_SOURCES = liebert-esp2.c
+liebert_gxe_SOURCES = liebert-gxe.c
 masterguard_SOURCES = masterguard.c
 metasys_SOURCES = metasys.c
 metasys_LDADD = $(LDADD) -lm
@@ -427,7 +428,7 @@ dist_noinst_HEADERS = \
  xppc-mib.h huawei-mib.h eaton-ats16-nmc-mib.h eaton-ats16-nm2-mib.h apc-ats-mib.h raritan-px2-mib.h eaton-ats30-mib.h \
  apc-pdu-mib.h apc-epdu-mib.h ever-hid.h eaton-pdu-genesis2-mib.h eaton-pdu-marlin-mib.h eaton-pdu-marlin-helpers.h \
  eaton-pdu-pulizzi-mib.h eaton-pdu-revelation-mib.h emerson-avocent-pdu-mib.h eaton-ups-pwnm2-mib.h eaton-ups-pxg-mib.h legrand-hid.h \
- hpe-pdu-mib.h hpe-pdu3-cis-mib.h powervar-hid.h delta_ups-hid.h generic_modbus.h salicru-hid.h adelsystem_cbi.h eaton-pdu-nlogic-mib.h
+ hpe-pdu-mib.h hpe-pdu3-cis-mib.h powervar-hid.h delta_ups-hid.h generic_modbus.h salicru-hid.h adelsystem_cbi.h eaton-pdu-nlogic-mib.h ydn23.h
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,

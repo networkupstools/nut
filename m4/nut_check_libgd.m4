@@ -142,6 +142,28 @@ if test -z "${nut_have_libgd_seen}"; then
 	])
 
 	if test "${nut_have_libgd}" = "yes"; then
+		AC_MSG_CHECKING([whether we can build, link and/or run a program with libgd])
+		AC_LANG_PUSH([C])
+		AX_RUN_OR_LINK_IFELSE([AC_LANG_PROGRAM([
+#include <gd.h>
+#include <gdfontmb.h>
+#include <stdio.h>
+],
+[
+FILE *tmpf = tmpfile();
+gdImagePtr im = gdImageCreate(64, 128);
+int back_color = gdImageColorAllocate(im, 255, 128, 32);
+gdImageFilledRectangle(im, 0, 0, 64, 128, back_color);
+gdImageColorTransparent(im, back_color);
+gdImagePng(im, tmpf ? tmpf : stderr);
+gdImageDestroy(im);
+]
+		)], [], [nut_have_libgd=no])
+		AC_LANG_POP([C])
+		AC_MSG_RESULT([${nut_have_libgd}])
+	fi
+
+	if test "${nut_have_libgd}" = "yes"; then
 		AC_DEFINE(HAVE_LIBGD, 1, [Define if you have Boutell's libgd installed])
 		LIBGD_CFLAGS="${CFLAGS}"
 		LIBGD_LDFLAGS="${LDFLAGS} ${LIBS}"

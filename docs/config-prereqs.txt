@@ -1439,6 +1439,9 @@ Currently known dependencies for basic build include:
         libusb neon net-snmp \
         nss openssl \
         libmodbus freeipmi powerman
+
+# Recommended:
+:; brew install curl wget midnight-commander
 ----
 
 NOTE: for `asciidoc`/`a2x` to work, you should `export XML_CATALOG_FILES` with

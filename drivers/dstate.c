@@ -106,6 +106,9 @@ static void sock_fail(const char *fn)
 		printf(" - rm %s\n\n", dflt_statepath());
 		printf(" - mkdir %s\n", dflt_statepath());
 		break;
+
+	default:
+		break;
 	}
 
 	/*
@@ -203,6 +206,7 @@ static TYPE_FD sock_open(const char *fn)
 static void sock_disconnect(conn_t *conn)
 {
 #ifndef WIN32
+	upsdebugx(3, "%s: disconnecting socket %d", __func__, (int)conn->fd);
 	close(conn->fd);
 #else
 	/* FIXME not sure if this is the right way to close a connection */
@@ -210,11 +214,14 @@ static void sock_disconnect(conn_t *conn)
 		CloseHandle(conn->read_overlapped.hEvent);
 		conn->read_overlapped.hEvent = INVALID_HANDLE_VALUE;
 	}
+	upsdebugx(3, "%s: disconnecting named pipe handle %p", __func__, conn->fd);
 	DisconnectNamedPipe(conn->fd);
 #endif
 
+	upsdebugx(5, "%s: finishing parsing context", __func__);
 	pconf_finish(&conn->ctx);
 
+	upsdebugx(5, "%s: relinking the chain of connections", __func__);
 	if (conn->prev) {
 		conn->prev->next = conn->next;
 	} else {
@@ -227,6 +234,7 @@ static void sock_disconnect(conn_t *conn)
 		/* conntail = conn->prev; */
 	}
 
+	upsdebugx(5, "%s: freeing the conn object", __func__);
 	free(conn);
 }
 
@@ -293,13 +301,13 @@ static void send_to_all(const char *fmt, ...)
 
 		if ((ret < 1) || (ret != (ssize_t)buflen)) {
 #ifndef WIN32
-			upsdebugx(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
-				"socket %d failed (ret=%" PRIiSIZE "), disconnecting: %s",
-				__func__, buflen, (int)conn->fd, ret, strerror(errno));
+			upsdebug_with_errno(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
+				"socket %d failed (ret=%" PRIiSIZE "), disconnecting.",
+				__func__, buflen, (int)conn->fd, ret);
 #else
-			upsdebugx(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
-				"handle %p failed (ret=%" PRIiSIZE "), disconnecting: %s",
-				__func__, buflen, conn->fd, ret, strerror(errno));
+			upsdebug_with_errno(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
+				"handle %p failed (ret=%" PRIiSIZE "), disconnecting.",
+				__func__, buflen, conn->fd, ret);
 #endif
 			upsdebugx(6, "%s: failed write: %s", __func__, buf);
 
@@ -386,19 +394,13 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	if (ret < 0) {
 		/* Hacky bugfix: throttle down for upsd to read that */
 #ifndef WIN32
-		upsdebugx(1, "%s: had to throttle down to retry "
-			"writing %" PRIiSIZE " bytes to socket %d "
-			"(ret=%" PRIiSIZE ", errno=%d, strerror=%s): %s",
-			__func__, buflen, (int)conn->fd,
-			ret, errno, strerror(errno),
-			buf);
+		upsdebug_with_errno(1, "%s: had to throttle down to retry "
+			"writing %" PRIiSIZE " bytes to socket %d (ret=%" PRIiSIZE ") : %s",
+			__func__, buflen, (int)conn->fd, ret, buf);
 #else
-		upsdebugx(1, "%s: had to throttle down to retry "
-			"writing %" PRIiSIZE " bytes to handle %p "
-			"(ret=%" PRIiSIZE ", errno=%d, strerror=%s): %s",
-			__func__, buflen, conn->fd,
-			ret, errno, strerror(errno),
-			buf);
+		upsdebug_with_errno(1, "%s: had to throttle down to retry "
+			"writing %" PRIiSIZE " bytes to handle %p (ret=%" PRIiSIZE ") : %s",
+			__func__, buflen, conn->fd, ret, buf);
 #endif
 		usleep(200);
 #ifndef WIN32
@@ -419,13 +421,13 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 
 	if ((ret < 1) || (ret != (ssize_t)buflen)) {
 #ifndef WIN32
-		upsdebugx(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
-			"socket %d failed (ret=%" PRIiSIZE "), disconnecting: %s",
-			__func__, buflen, (int)conn->fd, ret, strerror(errno));
+		upsdebug_with_errno(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
+			"socket %d failed (ret=%" PRIiSIZE "), disconnecting.",
+			__func__, buflen, (int)conn->fd, ret);
 #else
-		upsdebugx(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
-			"handle %p failed (ret=%" PRIiSIZE "), disconnecting: %s",
-			__func__, buflen, conn->fd, ret, strerror(errno));
+		upsdebug_with_errno(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
+			"handle %p failed (ret=%" PRIiSIZE "), disconnecting.",
+			__func__, buflen, conn->fd, ret);
 #endif
 		upsdebugx(6, "%s: failed write: %s", __func__, buf);
 		sock_disconnect(conn);
@@ -571,6 +573,7 @@ static void sock_connect(TYPE_FD sock)
 
 	conn->nobroadcast = 0;
 	conn->readzero = 0;
+	conn->closing = 0;
 	pconf_init(&conn->ctx, NULL);
 
 	if (connhead) {
@@ -588,23 +591,10 @@ static void sock_connect(TYPE_FD sock)
 
 }
 
-static int st_tree_dump_conn(st_tree_t *node, conn_t *conn)
+static int st_tree_dump_conn_one_node(st_tree_t *node, conn_t *conn)
 {
-	int	ret;
 	enum_t	*etmp;
 	range_t	*rtmp;
-
-	if (!node) {
-		return 1;	/* not an error */
-	}
-
-	if (node->left) {
-		ret = st_tree_dump_conn(node->left, conn);
-
-		if (!ret) {
-			return 0;	/* write failed in the child */
-		}
-	}
 
 	if (!send_to_one(conn, "SETINFO %s \"%s\"\n", node->var, node->val)) {
 		return 0;	/* write failed, bail out */
@@ -653,6 +643,28 @@ static int st_tree_dump_conn(st_tree_t *node, conn_t *conn)
 		}
 	}
 
+	return 1;	/* everything's OK here ... */
+}
+
+static int st_tree_dump_conn(st_tree_t *node, conn_t *conn)
+{
+	int	ret;
+
+	if (!node) {
+		return 1;	/* not an error */
+	}
+
+	if (node->left) {
+		ret = st_tree_dump_conn(node->left, conn);
+
+		if (!ret) {
+			return 0;	/* write failed in the child */
+		}
+	}
+
+	if (!st_tree_dump_conn_one_node(node, conn))
+		return 0;	/* one of writes failed, bail out */
+
 	if (node->right) {
 		return st_tree_dump_conn(node->right, conn);
 	}
@@ -692,19 +704,53 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 		return 0;
 	}
 
-	if (!strcasecmp(arg[0], "DUMPALL")) {
+	if (!strcasecmp(arg[0], "LOGOUT")) {
+		send_to_one(conn, "OK Goodbye\n");
+#ifndef WIN32
+		upsdebugx(2, "%s: received LOGOUT on socket %d, will be disconnecting", __func__, (int)conn->fd);
+#else
+		upsdebugx(2, "%s: received LOGOUT on handle %p, will be disconnecting", __func__, conn->fd);
+#endif
+		/* Let the system flush the reply somehow (or the other
+		 * side to just see it) before we drop the pipe */
+		usleep(1000000);
+		/* err on the safe side, and actually close/free conn separately */
+		conn->closing = 1;
+		upsdebugx(4, "%s: LOGOUT processing finished", __func__);
+		return 2;
+	}
 
+	if (!strcasecmp(arg[0], "GETPID")) {
+		send_to_one(conn, "PID %" PRIiMAX "\n", (intmax_t)getpid());
+		return 1;
+	}
+
+	if (!strcasecmp(arg[0], "DUMPALL") || !strcasecmp(arg[0], "DUMPSTATUS") || (!strcasecmp(arg[0], "DUMPVALUE") && numarg > 1)) {
 		/* first thing: the staleness flag (see also below) */
 		if ((stale == 1) && !send_to_one(conn, "DATASTALE\n")) {
 			return 1;
 		}
 
-		if (!st_tree_dump_conn(dtree_root, conn)) {
-			return 1;
-		}
+		if (!strcasecmp(arg[0], "DUMPALL")) {
+			if (!st_tree_dump_conn(dtree_root, conn)) {
+				return 1;
+			}
 
-		if (!cmd_dump_conn(conn)) {
-			return 1;
+			if (!cmd_dump_conn(conn)) {
+				return 1;
+			}
+		} else {
+			/* A cheaper version of the dump */
+			char	*varname = (!strcasecmp(arg[0], "DUMPSTATUS") ? "ups.status" : (numarg > 1 ? arg[1] : NULL));
+			st_tree_t	*sttmp = (varname ? state_tree_find(dtree_root, varname) : NULL);
+
+			if (!sttmp) {
+				upsdebugx(1, "%s: %s was requested but currently no %s is known",
+					__func__, arg[0], NUT_STRARG(varname));
+			} else {
+				if (!st_tree_dump_conn_one_node(sttmp, conn))
+					return 1;
+			}
 		}
 
 		if ((stale == 0) && !send_to_one(conn, "DATAOK\n")) {
@@ -874,6 +920,7 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 static void sock_read(conn_t *conn)
 {
 	ssize_t	ret, i;
+	int	ret_arg = -1;
 
 #ifndef WIN32
 	char	buf[SMALLBUF];
@@ -952,7 +999,8 @@ static void sock_read(conn_t *conn)
 			continue;
 
 		case 1: /* try to use it, and complain about unknown commands */
-			if (!sock_arg(conn, conn->ctx.numargs, conn->ctx.arglist)) {
+			ret_arg = sock_arg(conn, conn->ctx.numargs, conn->ctx.arglist);
+			if (!ret_arg) {
 				size_t	arg;
 
 				upslogx(LOG_INFO, "Unknown command on socket: ");
@@ -960,7 +1008,13 @@ static void sock_read(conn_t *conn)
 				for (arg = 0; arg < conn->ctx.numargs && arg < INT_MAX; arg++) {
 					upslogx(LOG_INFO, "arg %d: %s", (int)arg, conn->ctx.arglist[arg]);
 				}
+			} else if (ret_arg == 2) {
+				/* closed by LOGOUT processing, conn is free()'d */
+				if (i < ret)
+					upsdebugx(1, "%s: returning early, socket may be not valid anymore", __func__);
+				return;
 			}
+
 			continue;
 
 		default: /* nothing parsed */
@@ -1051,13 +1105,12 @@ int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
 {
 	int	maxfd = 0; /* Unidiomatic use vs. "sockfd" below, which is "int" on non-WIN32 */
 	int	overrun = 0;
-	conn_t	*conn;
+	conn_t	*conn, *cnext;
 	struct timeval	now;
 
 #ifndef WIN32
 	int	ret;
 	fd_set	rfds;
-	conn_t	*cnext;
 
 	FD_ZERO(&rfds);
 	FD_SET(sockfd, &rfds);
@@ -1127,6 +1180,14 @@ int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
 
 		if (FD_ISSET(conn->fd, &rfds)) {
 			sock_read(conn);
+		}
+	}
+
+	for (conn = connhead; conn; conn = cnext) {
+		cnext = conn->next;
+
+		if (conn->closing) {
+			sock_disconnect(conn);
 		}
 	}
 
@@ -1208,6 +1269,14 @@ int dstate_poll_fds(struct timeval timeout, TYPE_FD arg_extrafd)
 	else {
 		if (conn != NULL) {
 			sock_read(conn);
+		}
+	}
+
+	for (conn = connhead; conn; conn = cnext) {
+		cnext = conn->next;
+
+		if (conn->closing) {
+			sock_disconnect(conn);
 		}
 	}
 
@@ -1545,11 +1614,46 @@ void status_init(void)
 	memset(status_buf, 0, sizeof(status_buf));
 }
 
+/* check if a status element has been set, return 0 if not, 1 if yes
+ * (considering a whole-word token in temporary status_buf) */
+int status_get(const char *buf)
+{
+	char	*s = NULL;
+	size_t	offset = 0, buflen = 0;
+
+	if (!buf || !*buf || !*status_buf)
+		return 0;
+
+	s = strstr(status_buf, buf);
+	buflen = strlen(buf);
+
+	/* not found */
+	if (!s)
+		return 0;
+
+	offset = status_buf - s;
+	if (offset == 0 || status_buf[offset - 1] == ' ') {
+		/* We have hit the start of token */
+		if (s[buflen] == '\0' || s[buflen] == ' ') {
+			/* And we have hit the end of token */
+			return 1;
+		}
+	}
+
+	/* buf was a substring of some other token */
+	return 0;
+}
+
 /* add a status element */
 void status_set(const char *buf)
 {
 	if (ignorelb && !strcasecmp(buf, "LB")) {
 		upsdebugx(2, "%s: ignoring LB flag from device", __func__);
+		return;
+	}
+
+	if (status_get(buf)) {
+		upsdebugx(2, "%s: status was already set: %s", __func__, buf);
 		return;
 	}
 

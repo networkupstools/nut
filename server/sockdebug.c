@@ -123,6 +123,9 @@ static void read_sock(int fd)
 			case -1:
 				printf("Parse error: [%s]\n", sock_ctx.errmsg);
 				break;
+
+			default:
+				break;
 		}
 	}
 }

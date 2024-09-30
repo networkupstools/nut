@@ -137,7 +137,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME	"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.37"
+#define DRIVER_VERSION	"0.38"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -1492,6 +1492,8 @@ void upsdrv_updateinfo(void)
 					break;
 				case '0':
 					dstate_setinfo("input.frequency.nominal", "%d", 50);
+					break;
+				default:
 					break;
 			}
 		}

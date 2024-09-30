@@ -228,6 +228,8 @@ MAINTAINER SANDBOX (to be completed and pushed)
 
 * announce on mailing list, IRC, etc.
 
+* update https://en.wikipedia.org/wiki/Network_UPS_Tools
+
 * create a GitHub issue label for the new release, e.g. at
   https://github.com/networkupstools/nut/labels?q=impact :
 ----

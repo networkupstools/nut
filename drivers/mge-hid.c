@@ -50,7 +50,7 @@
 # endif
 #endif
 
-#define MGE_HID_VERSION		"MGE HID 1.47"
+#define MGE_HID_VERSION		"MGE HID 1.49"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -131,7 +131,8 @@ typedef enum {
 		MGE_PULSAR_M_2200,
 		MGE_PULSAR_M_3000,
 		MGE_PULSAR_M_3000_XL,
-	EATON_5P = 0x500			/* Eaton 5P / 5PX / 5SC series */
+	EATON_5P = 0x500,			/* Eaton 5P / 5PX / 5SC series */
+	EATON_9E = 0x900			/* Eaton 9E entry-level series */
 } models_type_t;
 
 /* Default to line-interactive or online (ie, not offline).
@@ -489,6 +490,7 @@ static const char *mge_battery_voltage_nominal_fun(double value)
 
 	case MGE_PULSAR_M:
 	case EATON_5P:
+	case EATON_9E:	/* Presumably per https://github.com/networkupstools/nut/issues/1925#issuecomment-1562342854 */
 		break;
 
 	default:
@@ -514,6 +516,7 @@ static const char *mge_battery_voltage_fun(double value)
 	case MGE_EVOLUTION:
 	case MGE_PULSAR_M:
 	case EATON_5P:
+	case EATON_9E:	/* Presumably per https://github.com/networkupstools/nut/issues/1925#issuecomment-1562342854 */
 		break;
 
 	default:
@@ -992,7 +995,7 @@ static usage_lkp_t mge_usage_lkp[] = {
 	{ "DataValid",				0xffff0099 },
 	{ "ToggleTimer",				0xffff009a },
 	{ "BypassTransferDelay",		0xffff009b },
-	{ "HysteresysVoltageTransfer",	0xffff009c },
+	{ "HysteresisVoltageTransfer",		0xffff009c },
 	{ "SlewRate",					0xffff009d },
 	/* 0xffff009e-0xffff009f	=>	Reserved */
 	{ "PDU",					0xffff00a0 },
@@ -1143,6 +1146,34 @@ static models_name_t mge_model_names [] =
 	{ "Eaton 5SC", "1500", EATON_5P, NULL },
 	{ "Eaton 5SC", "2200", EATON_5P, NULL },
 	{ "Eaton 5SC", "3000", EATON_5P, NULL },
+
+	/* Eaton 9E entry-level series per discussions in
+	 * https://github.com/networkupstools/nut/issues/1925
+	 * https://github.com/networkupstools/nut/issues/2380
+	 * https://github.com/networkupstools/nut/issues/2492
+	 */
+	{ "Eaton 9E", "1000",  EATON_9E, "9E1000" },
+	{ "Eaton 9E", "1000i", EATON_9E, "9E1000i" },
+	{ "Eaton 9E", "1000iau", EATON_9E, "9E1000iau" },
+	{ "Eaton 9E", "1000ir", EATON_9E, "9E1000ir" },
+	{ "Eaton 9E", "2000",  EATON_9E, "9E2000" },
+	{ "Eaton 9E", "2000i", EATON_9E, "9E2000i" },
+	{ "Eaton 9E", "2000iau", EATON_9E, "9E2000iau" },
+	{ "Eaton 9E", "2000ir", EATON_9E, "9E2000ir" },
+	{ "Eaton 9E", "3000",  EATON_9E, "9E3000" },
+	{ "Eaton 9E", "3000i", EATON_9E, "9E3000i" },
+	{ "Eaton 9E", "3000iau", EATON_9E, "9E3000iau" },
+	{ "Eaton 9E", "3000ir", EATON_9E, "9E3000ir" },
+	{ "Eaton 9E", "3000ixl", EATON_9E, "9E3000ixl" },
+	{ "Eaton 9E", "3000ixlau", EATON_9E, "9E3000ixlau" },
+
+	/* https://github.com/networkupstools/nut/issues/1925#issuecomment-1609262963
+	 * if we failed to get iManufacturer, iProduct and iSerialNumber but saw
+	 * the UPS.Flow.[4].ConfigApparentPower (the "2000" or "3000" part here)
+	 */
+	{ "unknown",  "1000",  EATON_9E, "9E1000i (presumed)" },
+	{ "unknown",  "2000",  EATON_9E, "9E2000i (presumed)" },
+	{ "unknown",  "3000",  EATON_9E, "9E3000i (presumed)" },
 
 	/* Pulsar M models */
 	{ "PULSAR M", "2200", MGE_PULSAR_M_2200, NULL },
@@ -1373,11 +1404,18 @@ static hid_info_t mge_hid2nut[] =
 	{ "input.frequency.nominal", 0, 0, "UPS.Flow.[1].ConfigFrequency", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 	/* same as "input.transfer.boost.low" */
 	{ "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.LowVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "input.transfer.eco.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.LowVoltageEcoTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "input.transfer.bypass.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.LowVoltageBypassTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },	
 	{ "input.transfer.boost.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.LowVoltageBoostTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.transfer.boost.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.HighVoltageBoostTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.transfer.trim.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.LowVoltageBuckTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	/* same as "input.transfer.trim.high" */
 	{ "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.HighVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "input.transfer.eco.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.HighVoltageEcoTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "input.transfer.bypass.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.HighVoltageBypassTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "input.transfer.frequency.bypass.range", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.FrequencyRangeBypassTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "input.transfer.frequency.eco.range", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.FrequencyRangeEcoTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "input.transfer.hysteresis", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.HysteresisVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.transfer.trim.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.HighVoltageBuckTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.sensitivity", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerConverter.Output.SensitivityMode", NULL, "%s", HU_FLAG_SEMI_STATIC, mge_sensitivity_info },
 	{ "input.voltage.extended", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.ExtendedVoltageMode", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
@@ -1670,6 +1708,9 @@ static int mge_claim(HIDDevice_t *hd) {
 
 				/* Let liebert-hid grab this */
 				return 0;
+
+			default:
+				break;
 		}
 
 		return 1;

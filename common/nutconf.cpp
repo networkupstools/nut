@@ -439,6 +439,30 @@ std::list<NutParser::Token> NutParser::parseLine()
 			case Token::TOKEN_NONE:
 			case Token::TOKEN_EOL:
 				return res;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+			default:
+				/* Must not occur. */
+				break;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 		}
 	}
 }
@@ -703,6 +727,9 @@ void NutConfigParser::parseConfig()
 						break;
 				}
 				break;
+
+			default:
+				break;
 		}
 	}
 
@@ -727,6 +754,8 @@ void NutConfigParser::parseConfig()
 			break;
 		case CPS_DEFAULT:
 			/* TOTHINK: no-op? */
+			break;
+		default:
 			break;
 	}
 #ifdef __clang__
@@ -1287,6 +1316,10 @@ UpsmonConfiguration::NotifyType UpsmonConfiguration::NotifyTypeFromString(const 
 		return NOTIFY_BYPASS;
 	else if(str=="NOTBYPASS")
 		return NOTIFY_NOTBYPASS;
+	else if(str=="SUSPEND_STARTING")
+		return NOTIFY_SUSPEND_STARTING;
+	else if(str=="SUSPEND_FINISHED")
+		return NOTIFY_SUSPEND_FINISHED;
 	else
 		return NOTIFY_TYPE_MAX;
 }

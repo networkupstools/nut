@@ -33,7 +33,7 @@
 #include "nut_stdint.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.48"
+#define USB_DRIVER_VERSION	"0.49"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -45,7 +45,6 @@ upsdrv_info_t comm_upsdrv_info = {
 };
 
 #define MAX_REPORT_SIZE         0x1800
-#define MAX_RETRY               3
 
 static void nut_libusb_close(libusb_device_handle *udev);
 
@@ -120,7 +119,7 @@ static inline int matches(USBDeviceMatcher_t *matcher, USBDevice_t *device) {
  * devices from working on Mac OS X (presumably the OS is already setting
  * altinterface to 0).
  */
-static int nut_usb_set_altinterface(libusb_device_handle *udev)
+static int nut_libusb_set_altinterface(libusb_device_handle *udev)
 {
 	int altinterface = 0, ret = 0;
 	char *alt_string, *endp = NULL;
@@ -153,6 +152,20 @@ static int nut_usb_set_altinterface(libusb_device_handle *udev)
 	return ret;
 }
 
+static void nut_libusb_subdriver_defaults(usb_communication_subdriver_t *subdriver)
+{
+	if (!getval("usb_config_index"))
+		subdriver->usb_config_index = LIBUSB_DEFAULT_CONF_INDEX;
+	if (!getval("usb_hid_rep_index"))
+		subdriver->hid_rep_index = LIBUSB_DEFAULT_INTERFACE;
+	if (!getval("usb_hid_desc_index"))
+		subdriver->hid_desc_index = LIBUSB_DEFAULT_DESC_INDEX;
+	if (!getval("usb_hid_ep_in"))
+		subdriver->hid_ep_in = LIBUSB_DEFAULT_HID_EP_IN;
+	if (!getval("usb_hid_ep_out"))
+		subdriver->hid_ep_out = LIBUSB_DEFAULT_HID_EP_OUT;
+}
+
 /* On success, fill in the curDevice structure and return the report
  * descriptor length. On failure, return -1.
  * Note: When callback is not NULL, the report descriptor will be
@@ -167,7 +180,9 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		USBDevice_t *hd, usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen)
 	)
 {
+#if (defined HAVE_LIBUSB_DETACH_KERNEL_DRIVER) || (defined HAVE_LIBUSB_DETACH_KERNEL_DRIVER_NP)
 	int retries;
+#endif
 	/* libusb-1.0 usb_ctrl_charbufsize is uint16_t and we
 	 * want the rdlen vars signed - so taking a wider type */
 	int32_t rdlen1, rdlen2; /* report descriptor length, method 1+2 */
@@ -390,56 +405,44 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		curDevice->bcdDevice = dev_desc.bcdDevice;
 
 		if (dev_desc.iManufacturer) {
-			retries = MAX_RETRY;
-			while (retries > 0) {
-				ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iManufacturer,
-					(unsigned char*)string, sizeof(string));
-				if (ret > 0) {
-					curDevice->Vendor = strdup(string);
-					if (curDevice->Vendor == NULL) {
-						libusb_free_device_list(devlist, 1);
-						fatal_with_errno(EXIT_FAILURE, "Out of memory");
-					}
-					break;
+			ret = nut_usb_get_string(udev, dev_desc.iManufacturer,
+				string, sizeof(string));
+			if (ret > 0) {
+				curDevice->Vendor = strdup(string);
+				if (curDevice->Vendor == NULL) {
+					libusb_free_device_list(devlist, 1);
+					fatal_with_errno(EXIT_FAILURE, "Out of memory");
 				}
-				retries--;
-				upsdebugx(1, "%s get iManufacturer failed, retrying...", __func__);
+			} else {
+				upsdebugx(1, "%s: get Manufacturer string failed", __func__);
 			}
 		}
 
 		if (dev_desc.iProduct) {
-			retries = MAX_RETRY;
-			while (retries > 0) {
-				ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iProduct,
-					(unsigned char*)string, sizeof(string));
-				if (ret > 0) {
-					curDevice->Product = strdup(string);
-					if (curDevice->Product == NULL) {
-						libusb_free_device_list(devlist, 1);
-						fatal_with_errno(EXIT_FAILURE, "Out of memory");
-					}
-					break;
+			ret = nut_usb_get_string(udev, dev_desc.iProduct,
+				string, sizeof(string));
+			if (ret > 0) {
+				curDevice->Product = strdup(string);
+				if (curDevice->Product == NULL) {
+					libusb_free_device_list(devlist, 1);
+					fatal_with_errno(EXIT_FAILURE, "Out of memory");
 				}
-				retries--;
-				upsdebugx(1, "%s get iProduct failed, retrying...", __func__);
+			} else {
+				upsdebugx(1, "%s: get Product string failed", __func__);
 			}
 		}
 
 		if (dev_desc.iSerialNumber) {
-			retries = MAX_RETRY;
-			while (retries > 0) {
-				ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iSerialNumber,
-					(unsigned char*)string, sizeof(string));
-				if (ret > 0) {
-					curDevice->Serial = strdup(string);
-					if (curDevice->Serial == NULL) {
-						libusb_free_device_list(devlist, 1);
-						fatal_with_errno(EXIT_FAILURE, "Out of memory");
-					}
-					break;
+			ret = nut_usb_get_string(udev, dev_desc.iSerialNumber,
+				string, sizeof(string));
+			if (ret > 0) {
+				curDevice->Serial = strdup(string);
+				if (curDevice->Serial == NULL) {
+					libusb_free_device_list(devlist, 1);
+					fatal_with_errno(EXIT_FAILURE, "Out of memory");
 				}
-				retries--;
-				upsdebugx(1, "%s get iSerialNumber failed, retrying...", __func__);
+			} else {
+				upsdebugx(1, "%s: get Serial Number string failed", __func__);
 			}
 		}
 
@@ -532,12 +535,12 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 #if (defined HAVE_LIBUSB_DETACH_KERNEL_DRIVER) || (defined HAVE_LIBUSB_DETACH_KERNEL_DRIVER_NP)
 		/* Then, try the explicit detach method.
 		 * This function is available on FreeBSD 10.1-10.3 */
-		retries = MAX_RETRY;
 #ifdef WIN32
 		/* TODO: Align with libusb1 - initially from Windows branch made against libusb0 */
 		libusb_set_configuration(udev, 1);
 #endif
 
+		retries = 3;
 		while ((ret = libusb_claim_interface(udev, usb_subdriver.hid_rep_index)) != LIBUSB_SUCCESS) {
 			upsdebugx(2, "failed to claim USB device: %s",
 				libusb_strerror((enum libusb_error)ret));
@@ -599,8 +602,12 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		upsdebugx(2, "Claimed interface %d successfully",
 			usb_subdriver.hid_rep_index);
 
-		nut_usb_set_altinterface(udev);
+		nut_libusb_set_altinterface(udev);
 
+		/* Did the driver provide a callback method for any further
+		 * device acceptance checks (e.g. when same ID is supported
+		 * by several sub-drivers, differing by vendor/model strings)?
+		 */
 		if (!callback) {
 			libusb_free_config_descriptor(conf_desc);
 			libusb_free_device_list(devlist, 1);
@@ -802,6 +809,8 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			/* if (if_claimed)
 				libusb_release_interface(udev, usb_subdriver.hid_rep_index); */
 			libusb_close(udev);
+			/* reset any parameters modified by unmatched drivers back to defaults */
+			nut_libusb_subdriver_defaults(&usb_subdriver);
 	}
 
 	*udevp = NULL;
@@ -988,7 +997,7 @@ static int nut_libusb_set_report(
 
 /* Expected evaluated types for the API:
  * static int nut_libusb_get_string(libusb_device_handle *udev,
- *	int StringIdx, char *buf, int buflen)
+ *	uint8_t StringIdx, unsigned char *buf, uint16_t buflen)
  */
 static int nut_libusb_get_string(
 	libusb_device_handle *udev,
@@ -998,36 +1007,18 @@ static int nut_libusb_get_string(
 {
 	int ret;
 
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
-# pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
-# pragma GCC diagnostic ignored "-Wtype-limits"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
-# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
-# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
-#endif
-	if (!udev
-	|| StringIdx < 0 || (uintmax_t)StringIdx > UINT8_MAX
-	|| buflen < 0 || (uintmax_t)buflen > (uintmax_t)INT_MAX
-	) {
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
-# pragma GCC diagnostic pop
-#endif
+	if (!udev || StringIdx < 1 || buflen < 1) {
 		return -1;
 	}
 
-	ret = libusb_get_string_descriptor_ascii(udev, (uint8_t)StringIdx,
-		(unsigned char*)buf, (int)buflen);
+	ret = nut_usb_get_string(udev, (uint8_t)StringIdx,
+		buf, (int)buflen);
 
 	/** 0 can be seen as an empty string, or as LIBUSB_SUCCESS for
 	 * logging below - also tends to happen */
 	if (ret == 0) {
 		size_t len = strlen(buf);
-		upsdebugx(2, "%s: libusb_get_string_descriptor_ascii() returned "
+		upsdebugx(2, "%s: nut_usb_get_string() returned "
 			"0 (might be just LIBUSB_SUCCESS code), "
 			"actual buf length is %" PRIuSIZE, __func__, len);
 		/* if (len) */

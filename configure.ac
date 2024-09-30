@@ -235,6 +235,8 @@ dnl # not configure time.
 dnl AC_DEFINE_UNQUOTED(UPS_VERSION, "${PACKAGE_VERSION}", [NUT version])
 
 dnl However, automatically define the tree version (mostly for AC_SUBST)
+dnl FIXME: This just picks first 3 chars, assuming single-digit components
+dnl  separated by a dot:
 TREE_VERSION="`echo ${PACKAGE_VERSION} | awk '{ print substr($0,1,3) }'`"
 AC_DEFINE_UNQUOTED(TREE_VERSION, "${TREE_VERSION}", [NUT tree version])
 
@@ -312,12 +314,32 @@ htmldir='${prefix}/html'
 htmldocdir='${docdir}/html-doc'
 htmlmandir='${docdir}/html-man'
 pkgconfigdir='${libdir}/pkgconfig'
-auglensdir='/usr/share/augeas/lenses/dist'
-if test ! -d "${auglensdir}"; then
-   auglensdir='/usr/share/augeas/lenses'
-   if test ! -d "${auglensdir}"; then
-      auglensdir=''
-   fi
+
+dnl Detection of augeas lens dirs is a bit troublesome, since
+dnl they (if present) reside in location not controlled by NUT.
+dnl Try detecting based on build parameters, or fall back to
+dnl hard-coded default location (may break e.g. distcheck).
+dnl Note it would not work too well for "/usr/local/ups" :)
+auglensdir='${datarootdir}/augeas/lenses/dist'
+conftemp="${auglensdir}"
+eval conftemp=\"${conftemp}\"
+eval conftemp=\"${conftemp}\"
+
+if test ! -d "${conftemp}"; then
+    auglensdir='${datarootdir}/augeas/lenses'
+    conftemp="${auglensdir}"
+    eval conftemp=\"${conftemp}\"
+    eval conftemp=\"${conftemp}\"
+
+    if test ! -d "${conftemp}"; then
+        auglensdir='/usr/share/augeas/lenses/dist'
+        if test ! -d "${auglensdir}"; then
+            auglensdir='/usr/share/augeas/lenses'
+            if test ! -d "${auglensdir}"; then
+                auglensdir=''
+            fi
+        fi
+    fi
 fi
 
 dnl ### NUT_CHECK_LIBREGEX ### Detect below as part of libusb etc.
@@ -675,6 +697,10 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         test -n "${CONFIG_CXXFLAGS-}" || CONFIG_CXXFLAGS=" "
         export CONFIG_CFLAGS
         export CONFIG_CXXFLAGS
+
+        AC_MSG_NOTICE([Moving config.log of the original invocation to config.log.inplace-outer just before exec...])
+        mv -f config.log config.log.inplace-outer || true
+
         eval exec "$0" $CONFIG_FLAGS_DEPLOYED $CONFIG_FLAGS --disable-inplace-runtime
     ],[
         AC_MSG_NOTICE([No CONFIG_FLAGS were reported or discovered from existing NUT deployment (if any); restarting script for a clean run])
@@ -685,6 +711,10 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         test -n "${CONFIG_CXXFLAGS-}" || CONFIG_CXXFLAGS=" "
         export CONFIG_CFLAGS
         export CONFIG_CXXFLAGS
+
+        AC_MSG_NOTICE([Moving config.log of the original invocation to config.log.inplace-outer just before exec...])
+        mv -f config.log config.log.inplace-outer || true
+
         AC_MSG_NOTICE([exec "$0" $CONFIG_FLAGS --disable-inplace-runtime])
         eval exec "$0" $CONFIG_FLAGS --disable-inplace-runtime
     ])
@@ -751,6 +781,19 @@ AS_IF([test "$ac_cv_header_sys_time_h" = yes],
     [AC_DEFINE([TIME_WITH_SYS_TIME],[1],[Define to 1 if you can safely include both <sys/time.h>
          and <time.h>.  This macro is deemed obsolete by autotools.])
     ], [])
+
+CODE_TIMEINCL="
+#ifdef TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
+"
 
 AC_CHECK_HEADERS_ONCE([fcntl.h sys/stat.h sys/socket.h netdb.h])
 AC_CHECK_FUNCS(flock lockf fcvt fcvtl dup dup2 abs_val abs)
@@ -920,34 +963,38 @@ dnl These appear with CFLAGS="-std=c99 -D_POSIX_C_SOURCE=200112L":
 dnl# Methods below currently do not cause build errors for C99+ modes so are
 dnl# not tested as thoroughly as those further below:
 AC_CHECK_FUNCS(strtof strtok_r fileno sigemptyset sigaction,
-	[], [AC_MSG_WARN([Required C library routine not found; try adding -D_POSIX_C_SOURCE=200112L])])
+	[], [AC_MSG_WARN([Required C library routine not found by linker; try adding -D_POSIX_C_SOURCE=200112L])])
 
 dnl For these we have a fallback implementation via the other,
 dnl if at least one is available, so initial check is quiet.
 dnl This typically pops up in POSIX vs. Windows builds:
-AC_CHECK_FUNCS(localtime_r localtime_s gmtime_r gmtime_s timegm _mkgmtime,
-	[], [])
+dnl Reminder: the former checks for declarations in headers,
+dnl the latter checks if known libraries suffice for linker.
+dnl Might need AC_CHECK_LIBS as well to populate the list with
+dnl known variants?
+AC_CHECK_DECLS([localtime_r, localtime_s, gmtime_r, gmtime_s, timegm, _mkgmtime], [], [], [$CODE_TIMEINCL])
+AC_CHECK_FUNCS(localtime_r localtime_s gmtime_r gmtime_s timegm _mkgmtime, [], [])
 
 AC_MSG_CHECKING([for at least one gmtime implementation])
-AS_IF([test x"${ac_cv_func_gmtime_s}-${ac_cv_func_gmtime_r}" = "xno-no"], [
+AS_IF([test x"${ac_cv_func_gmtime_s}-${ac_cv_func_gmtime_r}" = "xno-no" && test x"${ac_cv_have_decl_gmtime_s}-${ac_cv_have_decl_gmtime_r}" = "xno-no"], [
 	AC_MSG_RESULT([no])
-	AC_MSG_WARN([Required C library routine gmtime_s nor gmtime_r was not found; try adding -D_POSIX_C_SOURCE=200112L])
+	AC_MSG_WARN([Required C library routine gmtime_s nor gmtime_r was not found by linker nor in headers; try adding -D_POSIX_C_SOURCE=200112L and/or -D_POSIX_THREAD_SAFE_FUNCTIONS=200112L])
 	],[
 	AC_MSG_RESULT([yes])
 	])
 
 AC_MSG_CHECKING([for at least one localtime implementation])
-AS_IF([test x"${ac_cv_func_localtime_s}-${ac_cv_func_localtime_r}" = "xno-no"], [
+AS_IF([test x"${ac_cv_func_localtime_s}-${ac_cv_func_localtime_r}" = "xno-no" && test x"${ac_cv_have_decl_localtime_s}-${ac_cv_have_decl_localtime_r}" = "xno-no"], [
 	AC_MSG_RESULT([no])
-	AC_MSG_WARN([Required C library routine localtime_s nor localtime_r was not found; try adding -D_POSIX_C_SOURCE=200112L])
+	AC_MSG_WARN([Required C library routine localtime_s nor localtime_r was not found by linker nor in headers; try adding -D_POSIX_C_SOURCE=200112L and/or -D_POSIX_THREAD_SAFE_FUNCTIONS=200112L])
 	],[
 	AC_MSG_RESULT([yes])
 	])
 
 AC_MSG_CHECKING([for at least one timegm implementation])
-AS_IF([test x"${ac_cv_func_timegm}-${ac_cv_func__mkgmtime}" = "xno-no"], [
+AS_IF([test x"${ac_cv_func_timegm}-${ac_cv_func__mkgmtime}" = "xno-no" && test x"${ac_cv_have_decl_timegm}-${ac_cv_have_decl__mkgmtime}" = "xno-no"], [
 	AC_MSG_RESULT([no])
-	AC_MSG_WARN([Required C library routine timegm nor _mkgmtime was not found])
+	AC_MSG_WARN([Required C library routine timegm nor _mkgmtime was not found by linker nor in headers])
 	AC_DEFINE_UNQUOTED([WANT_TIMEGM_FALLBACK], [1], [Defined if we want to use timegm_fallback()])
 	AM_CONDITIONAL([WANT_TIMEGM_FALLBACK], [true])
 	],[
@@ -1053,16 +1100,7 @@ AC_CACHE_CHECK([for strptime(s1,s2,tm)],
     [ac_cv_func_strptime],
     [AX_RUN_OR_LINK_IFELSE(
         [AC_LANG_PROGRAM([$CODE_STRINGINCL
-#ifdef TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
+$CODE_TIMEINCL
 ],
             [struct tm tm;
 char *date = "12/30/1999";
@@ -1082,16 +1120,7 @@ AC_CACHE_CHECK([for clock_gettime(CLOCK_MONOTONIC,ts)],
     [ac_cv_func_clock_gettime],
     [AX_RUN_OR_LINK_IFELSE(
         [AC_LANG_PROGRAM([$CODE_STRINGINCL
-#ifdef TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
+$CODE_TIMEINCL
 ],
             [struct timespec monoclock_ts;
 int got_monoclock = clock_gettime(CLOCK_MONOTONIC, &monoclock_ts);
@@ -1299,6 +1328,8 @@ if test "$as_ln_s" = "ln -s" ; then
     if test x"${_abs_srcdir}" = x"${_abs_builddir}" ; then
         LN_S_R="ln"
     else
+        dnl NOTE: Here we check equality of the file systems by the
+        dnl devices they are mounted from (first column in df output):
         _fs_srcdir="`df "${_abs_srcdir}" | tail -1 | awk '{print $1}'`" || fs_srcdir="XXXs"
         _fs_builddir="`df "${_abs_builddir}" | tail -1 | awk '{print $1}'`" || fs_builddir="XXXb"
         dnl AC_MSG_NOTICE([_fs_srcdir='${_fs_srcdir}' _fs_builddir='${_fs_builddir}'])
@@ -3826,8 +3857,8 @@ if test x"$solarissmf" = xauto ; then
 	fi
 fi
 AC_MSG_RESULT([${solarissmf}])
-AM_CONDITIONAL(WITH_SOLARIS_SMF, test x"$solarissmf" = x"yes")
-NUT_REPORT([consider basic SMF support], [${solarissmf}])
+NUT_REPORT_FEATURE([consider basic SMF support], [${solarissmf}], [],
+					[WITH_SOLARIS_SMF], [Define to consider basic SMF support (provide units and configuration files)])
 
 
 AC_MSG_CHECKING(whether to install Solaris SVR4 (legacy) init-script files)
@@ -4097,6 +4128,10 @@ AS_IF([test x"${with_libsystemd}" = xyes && test x"${SYSTEMD_SUPPORTS_DAEMON_TYP
 NUT_REPORT_FEATURE([build with tighter systemd support], [${with_libsystemd}], [],
 	[WITH_LIBSYSTEMD], [Define to build with tighter systemd support (sd_notify etc)])
 
+nut_with_libsystemd_inhibitor=0
+AS_IF([test x"${with_libsystemd}" = xyes && test x"${nut_have_libsystemd_inhibitor}" = xyes], [nut_with_libsystemd_inhibitor=1])
+AC_DEFINE_UNQUOTED(WITH_LIBSYSTEMD_INHIBITOR, [${nut_with_libsystemd_inhibitor}], [Define as 1 if we can use systemd inhibitor interface here])
+AM_CONDITIONAL([WITH_LIBSYSTEMD_INHIBITOR], [test x"${nut_with_libsystemd_inhibitor}" = x1])
 
 dnl
 dnl Tests for CppUnit availability and usability (will be built if we can,

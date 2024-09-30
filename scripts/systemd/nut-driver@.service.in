@@ -1,5 +1,5 @@
 # Network UPS Tools (NUT) systemd integration
-# Copyright (C) 2011-2023 by NUT contirbutors
+# Copyright (C) 2011-2024 by NUT contirbutors
 # Distributed under the terms of GPLv2+
 # See https://networkupstools.org/
 # and https://github.com/networkupstools/nut/
@@ -47,6 +47,7 @@ PartOf=nut-driver.target
 
 [Service]
 Environment=NUT_IGNORE_NOWAIT=true
+Environment=NUT_QUIET_INIT_NDE_WARNING=true
 EnvironmentFile=-@CONFPATH@/nut.conf
 SyslogIdentifier=%N
 ExecStartPre=-@SYSTEMD_TMPFILES_PROGRAM@ --create @systemdtmpfilesdir@/nut-common-tmpfiles.conf

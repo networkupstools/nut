@@ -1194,7 +1194,34 @@ return 0;
   )
   unset myWARN_CFLAGS
 
-  AS_IF([test "$ax_cv__printf_string_null" = "yes"],[
+  NUT_ARG_ENABLE([NUT_STRARG-always],
+    [Enable NUT_STRARG macro to handle NULL string printing even if system libraries seem to support it natively],
+    [auto])
+
+  dnl gcc-13.2.0 and gcc-13.3.0 were seen to complain about
+  dnl alleged formatting string overflow (seems like a false
+  dnl positive in that case). Require the full macro there
+  dnl by default.
+  dnl AC_MSG_NOTICE([CC_VERSION='$CC_VERSION'])
+  AS_IF([test x"$nut_enable_NUT_STRARG_always" = xauto], [
+    nut_enable_NUT_STRARG_always=no
+    AS_IF([test "${CLANGCC}" = "yes"], [
+        true dnl no-op at the moment
+dnl        AS_CASE(["$CC_VERSION"],
+dnl            [*" "18.*], [nut_enable_NUT_STRARG_always=yes]
+dnl        )
+        ],[
+        AS_IF([test "${GCC}" = "yes"], [
+            AS_CASE(["$CC_VERSION"],
+                [*" "13.*], [nut_enable_NUT_STRARG_always=yes]
+            )
+        ])
+    ])
+    AS_IF([test x"$nut_enable_NUT_STRARG_always" = xyes],
+        [AC_MSG_NOTICE([Automatically enabled NUT_STRARG-always due to compiler version used])])
+  ])
+
+  AS_IF([test "$ax_cv__printf_string_null" = "yes" && test x"$nut_enable_NUT_STRARG_always" != xyes],[
     AM_CONDITIONAL([REQUIRE_NUT_STRARG], [false])
     AC_DEFINE([REQUIRE_NUT_STRARG], [0],
       [Define to 0 if your libc can printf("%s", NULL) sanely, or to 1 if your libc requires workarounds to print NULL values.])

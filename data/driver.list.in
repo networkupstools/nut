@@ -79,6 +79,7 @@
 "APC"	"ups"	"3"	"Back-UPS BF500"	"USB"	"usbhid-ups"
 "APC"	"ups"	"3"	"BACK-UPS XS LCD"	"USB"	"usbhid-ups"
 "APC"	"ups"	"3"	"Back-UPS XS 1000M (Back-UPS Pro 1000, Model BX1000M)"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/139
+"APC"	"ups"	"3"	"Back-UPS BX****MI Series (may need tweaks since 2023)"	"USB"	"usbhid-ups lbrb_log_delay_sec=N lbrb_log_delay_without_calibrating onlinedischarge_calibration"	# https://github.com/networkupstools/nut/issues/2347
 "APC"	"ups"	"3"	"SMC2200BI-BR"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/557
 "APC"	"ups"	"3"	"Smart-UPS (USB)"	"USB"	"usbhid-ups"
 "APC"	"ups"	"3"	"Smart-UPS 750 (SMT750I, USB)"	"USB"	"usbhid-ups"
@@ -362,6 +363,7 @@
 "Eaton"	"ups"	"5"	"5S"	"USB port"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"5SC"	"USB port"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"5P"	"USB port"	"usbhid-ups"
+"Eaton"	"ups"	"5"	"9E"	"USB port"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"9SX"	"USB port"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"9PX"	"USB port"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"9PX Split Phase 6/8/10 kVA"	"USB port"	"usbhid-ups"
@@ -654,6 +656,7 @@
 
 "Liebert"	"ups"	"2"	"ITON 600VA"	""	"blazer_ser"
 "Liebert"	"ups"	"5"	"UPStation GXT2"	"contact-closure cable"	"liebert"
+"Liebert"	"ups"	"4"	"GXE 1-3kVA"   		"Serial"	"liebert-gxe (experimental)"
 "Liebert"	"ups"	"1"	"GXT2-3000RT230"	""	"liebert-esp2 (experimental)"
 "Liebert"	"ups"	"3"	"PowerSure Personal XT"	"USB"	"usbhid-ups"
 "Liebert"	"ups"	"3"	"PowerSure PSA"	"USB"	"usbhid-ups"
