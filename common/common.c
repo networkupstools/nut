@@ -43,6 +43,385 @@
 # include <sys/stat.h>
 #endif
 
+#if (defined WITH_LIBSYSTEMD_INHIBITOR) && (defined WITH_LIBSYSTEMD && WITH_LIBSYSTEMD) && (defined WITH_LIBSYSTEMD_INHIBITOR && WITH_LIBSYSTEMD_INHIBITOR) && !(defined(WITHOUT_LIBSYSTEMD) && (WITHOUT_LIBSYSTEMD))
+#  ifdef HAVE_SYSTEMD_SD_BUS_H
+#   include <systemd/sd-bus.h>
+#  endif
+/* Code below is inspired by https://systemd.io/INHIBITOR_LOCKS/ docs, and
+ * https://github.com/systemd/systemd/issues/34004 discussion which pointed
+ * to https://github.com/systemd/systemd/blob/main/src/login/inhibit.c tool
+ * and https://github.com/systemd/systemd/blob/main/src/basic/errno-util.h etc.
+ * and https://www.freedesktop.org/software/systemd/man/latest/sd_bus_call_method.html
+ */
+static int RET_NERRNO(int ret) {
+	if (ret < 0) {
+		if (errno > 0)
+			return -EINVAL;
+		return -errno;
+	}
+
+	return ret;
+}
+
+/* FIXME: Pedantically speaking, the attribute is assumed supported by GCC
+ *  and CLANG; practically - not sure if we have platforms with sufficiently
+ *  new libsystemd (its headers and example code also use this) and older or
+ *  different compilers. This can be addressed a bit more clumsily directly,
+ *  but we only want to do so if needed in real life. */
+#define _cleanup_(f)	__attribute__((cleanup(f)))
+
+/* The "bus_login_mgr" definition per
+ * https://github.com/systemd/systemd/blob/4cf7a676af9a79ff418227d8ff488dfca6f243ab/src/shared/bus-locator.c#L24 */
+#define SDBUS_DEST	"org.freedesktop.login1"
+#define SDBUS_PATH	"/org/freedesktop/login1"
+#define SDBUS_IFACE	"org.freedesktop.login1.Manager"
+
+static /*_cleanup_(sd_bus_flush_close_unrefp)*/ sd_bus	*systemd_bus = NULL;
+static int	isSupported_Inhibit = -1, isSupported_Inhibit_errno = 0;
+static int	isSupported_PreparingForSleep = -1, isSupported_PreparingForSleep_errno = 0;
+
+static void close_sdbus_once(void) {
+	/* Per https://manpages.debian.org/testing/libsystemd-dev/sd_bus_flush_close_unrefp.3.en.html
+	 * these end-of-life methods do not tell us if we succeeded or failed
+	 * closing the bus connection in any manner, so we here also do not.
+	 */
+
+	if (!systemd_bus) {
+		errno = 0;
+		return;
+	}
+
+	upsdebugx(1, "%s: trying", __func__);
+	errno = 0;
+	sd_bus_flush_close_unrefp(&systemd_bus);
+	systemd_bus = NULL;
+}
+
+static int open_sdbus_once(const char *caller) {
+	static int	openedOnce = 0, faultReported = 0;
+	int	r = 1;
+
+	errno = 0;
+	if (systemd_bus)
+		return r;
+
+# if defined HAVE_SD_BUS_OPEN_SYSTEM_WITH_DESCRIPTION && HAVE_SD_BUS_OPEN_SYSTEM_WITH_DESCRIPTION
+	r = sd_bus_open_system_with_description(&systemd_bus, "Bus connection for Network UPS Tools sleep/suspend/hibernate handling");
+# else
+	r = sd_bus_open_system(&systemd_bus);
+# endif
+	if (r < 0 || !systemd_bus) {
+		if (r >= 0) {
+			if (!faultReported)
+				upsdebugx(1, "%s: Failed to acquire bus for %s(): "
+					"got null pointer and %d exit-code; setting EINVAL",
+					__func__, NUT_STRARG(caller), r);
+			r = -EINVAL;
+		} else {
+			if (!faultReported)
+				upsdebugx(1, "%s: Failed to acquire bus for %s() (%d): %s",
+					__func__, NUT_STRARG(caller), r, strerror(-r));
+		}
+		faultReported = 1;
+	} else {
+		upsdebugx(1, "%s: succeeded for %s", __func__, NUT_STRARG(caller));
+		faultReported = 0;
+	}
+
+	if (systemd_bus && !openedOnce) {
+		openedOnce = 1;
+		atexit(close_sdbus_once);
+	}
+
+	if (systemd_bus) {
+# if !(defined HAVE_SD_BUS_OPEN_SYSTEM_WITH_DESCRIPTION && HAVE_SD_BUS_OPEN_SYSTEM_WITH_DESCRIPTION)
+#  if defined HAVE_SD_BUS_SET_DESCRIPTION && HAVE_SD_BUS_SET_DESCRIPTION
+		if (sd_bus_set_description(systemd_bus, "Bus connection for Network UPS Tools sleep/suspend/hibernate handling") < 0)
+			upsdebugx(1, "%s: failed to sd_bus_set_description(), oh well", __func__);
+#  endif
+# endif
+
+		/* second arg for (bool)arg_ask_password - 0 for the non-interactive daemon */
+		sd_bus_set_allow_interactive_authorization(systemd_bus, 0);
+	}
+
+	return r;
+}
+
+static int would_reopen_sdbus(int r) {
+	if (r >= 0)
+		return 0;
+
+	switch (-r) {
+		/* Rule out issues that would not clear themselves (e.g. not stale connections) */
+		case ENOENT:
+		case EPERM:
+		case EACCES:
+			return 0;
+	}
+
+	return 1;
+}
+
+static int reopen_sdbus_once(int r, const char *caller, const char *purpose)
+{
+	if (r >= 0)
+		return r;
+
+	switch (-r) {
+		/* Rule out issues that would not clear themselves (e.g. not stale connections) */
+		case ENOENT:
+		case EPERM:
+		case EACCES:
+			break;
+
+		/* An "Invalid request descriptor" might fit this bill */
+		default:
+			upsdebugx(1, "%s for %s() for %s failed (%d) once, will retry D-Bus connection: %s",
+				__func__, caller, purpose, r, strerror(-r));
+
+			close_sdbus_once();
+			r = open_sdbus_once(caller);
+			if (r < 0) {
+				/* Errors, if any, reported above */
+				return r;
+			}
+			break;
+	}
+
+	return r;
+}
+
+int isInhibitSupported(void)
+{
+	return isSupported_Inhibit;
+}
+
+int isPreparingForSleepSupported(void)
+{
+	return isSupported_PreparingForSleep;
+}
+
+TYPE_FD Inhibit(const char *arg_what, const char *arg_who, const char *arg_why, const char *arg_mode)
+{
+	_cleanup_(sd_bus_error_free) sd_bus_error	error = SD_BUS_ERROR_NULL;
+	_cleanup_(sd_bus_message_unrefp) sd_bus_message	*reply = NULL;
+	int	r;
+	TYPE_FD	fd = ERROR_FD;
+
+	if (isSupported_Inhibit == 0) {
+		/* Already determined that we can not use it, e.g. due to perms */
+		errno = isSupported_Inhibit_errno;
+		return -errno;
+	}
+
+	/* Not found in public headers:
+	bool	arg_ask_password = true;
+	(void) polkit_agent_open_if_enabled(BUS_TRANSPORT_LOCAL, arg_ask_password);
+	 */
+
+	r = open_sdbus_once(__func__);
+	if (r < 0) {
+		/* Errors, if any, reported above */
+		return r;
+	}
+
+	r = sd_bus_call_method(systemd_bus, SDBUS_DEST, SDBUS_PATH, SDBUS_IFACE, "Inhibit", &error, &reply, "ssss", arg_what, arg_who, arg_why, arg_mode);
+	if (r < 0) {
+		if (would_reopen_sdbus(r)) {
+			if ((r = reopen_sdbus_once(r, __func__, "sd_bus_call_method()")) < 0)
+				return r;
+
+			r = sd_bus_call_method(systemd_bus, SDBUS_DEST, SDBUS_PATH, SDBUS_IFACE, "Inhibit", &error, &reply, "ssss", arg_what, arg_who, arg_why, arg_mode);
+		} else {
+			/* Permissions for the privileged operation... did it ever succeed? */
+			if (isSupported_Inhibit < 0) {
+				upsdebugx(1, "%s: %s() failed seemingly due to permissions, marking %s as not supported",
+					__func__, "sd_bus_call_method", "Inhibit");
+				isSupported_Inhibit = 0;
+				isSupported_Inhibit_errno = r;
+			}
+		}
+
+		if (r < 0) {
+			upsdebugx(1, "%s: %s() failed (%d): %s",
+				__func__, "sd_bus_call_method", r, strerror(-r));
+			if (error.message && *(error.message))
+				upsdebugx(2, "%s: details from libsystemd: %s",
+					__func__, error.message);
+			return r;
+		} else {
+			upsdebugx(1, "%s: reconnection to D-Bus helped with %s()",
+				__func__, "sd_bus_call_method");
+		}
+	}
+
+	r = sd_bus_message_read_basic(reply, SD_BUS_TYPE_UNIX_FD, &fd);
+	if (r < 0) {
+		upsdebugx(1, "%s: %s() failed (%d): %s",
+			__func__, "sd_bus_message_read_basic", r, strerror(-r));
+		if (isSupported_Inhibit < 0 && !would_reopen_sdbus(r)) {
+			upsdebugx(1, "%s: %s() failed seemingly due to permissions, marking %s as not supported",
+				__func__, "sd_bus_message_read_basic", "Inhibit");
+			isSupported_Inhibit = 0;
+			isSupported_Inhibit_errno = r;
+		}
+		return r;
+	}
+
+	/* Data query succeeded, so it is supported */
+	isSupported_Inhibit = 1;
+
+	/* NOTE: F_DUPFD_CLOEXEC is in POSIX.1-2008 (Linux 2.6.24); seek out
+	 * an alternative sequence of options if needed on older systems */
+	r = RET_NERRNO(fcntl(fd, F_DUPFD_CLOEXEC, 3));
+	if (r < 0) {
+		upsdebugx(1, "%s: fcntl() failed (%d): %s",
+			__func__, r, strerror(-r));
+		return fd;
+	}
+
+	return r;
+}
+
+void Uninhibit(TYPE_FD *fd_ptr)
+{
+	if (!fd_ptr)
+		return;
+	if (INVALID_FD(*fd_ptr))
+		return;
+
+	/* Closing the socket allows systemd to proceed (we un-inhibit our lock on system
+	 * life-cycle handling). After waking up, we should Inhibit() anew, if needed.
+	 */
+	close(*fd_ptr);
+	*fd_ptr = ERROR_FD;
+}
+
+int isPreparingForSleep(void)
+{
+	static int32_t	prev = -1;
+	int32_t	val = 0;	/* 4-byte int expected for SD_BUS_TYPE_BOOLEAN aka 'b' */
+	int	r;
+	_cleanup_(sd_bus_error_free) sd_bus_error	error = SD_BUS_ERROR_NULL;
+
+	if (isSupported_PreparingForSleep == 0) {
+		/* Already determined that we can not use it, e.g. due to perms */
+		errno = isSupported_PreparingForSleep_errno;
+		return -errno;
+	}
+
+	r = open_sdbus_once(__func__);
+	if (r < 0) {
+		/* Errors, if any, reported above */
+		return r;
+	}
+
+	/* @org.freedesktop.DBus.Property.EmitsChangedSignal("false")
+	 *     readonly b PreparingForSleep = ...;
+	 * https://www.freedesktop.org/software/systemd/man/latest/org.freedesktop.login1.html
+	 * https://www.freedesktop.org/software/systemd/man/latest/sd_bus_set_property.html
+	 * https://www.freedesktop.org/software/systemd/man/latest/sd_bus_message_append.html (data types)
+	 */
+	r = sd_bus_get_property_trivial(systemd_bus, SDBUS_DEST, SDBUS_PATH, SDBUS_IFACE, "PreparingForSleep", &error, SD_BUS_TYPE_BOOLEAN, &val);
+	if (r < 0) {
+		if (would_reopen_sdbus(r)) {
+			if ((r = reopen_sdbus_once(r, __func__, "sd_bus_get_property_trivial()")) < 0)
+				return r;
+
+			r = sd_bus_get_property_trivial(systemd_bus, SDBUS_DEST, SDBUS_PATH, SDBUS_IFACE, "PreparingForSleep", &error, 'b', &val);
+		} else {
+			if (isSupported_PreparingForSleep < 0) {
+				upsdebugx(1, "%s: %s() failed seemingly due to permissions, marking %s as not supported",
+					__func__, "sd_bus_get_property_trivial", "PreparingForSleep");
+				isSupported_PreparingForSleep = 0;
+				isSupported_PreparingForSleep_errno = r;
+			}
+		}
+
+		if (r < 0) {
+			upsdebugx(1, "%s: %s() failed (%d): %s",
+				__func__, "sd_bus_get_property_trivial", r, strerror(-r));
+			if (error.message && *(error.message))
+				upsdebugx(2, "%s: details from libsystemd: %s",
+					__func__, error.message);
+			return r;
+		} else {
+			upsdebugx(1, "%s: reconnection to D-Bus helped with %s()",
+				__func__, "sd_bus_get_property_trivial");
+		}
+	}
+
+	/* Data query succeeded, so it is supported */
+	isSupported_PreparingForSleep = 1;
+
+	if (val == prev) {
+		/* Unchanged */
+		return -1;
+	}
+
+	/* First run and not immediately going to sleep, assume unchanged (no-op for upsmon et al) */
+	if (prev < 0 && !val) {
+		prev = val;
+		return -1;
+	}
+
+	/* 0 or 1 */
+	prev = val;
+	return val;
+}
+
+#else	/* not WITH_LIBSYSTEMD_INHIBITOR */
+
+int isInhibitSupported(void)
+{
+	return 0;
+}
+
+int isPreparingForSleepSupported(void)
+{
+	return 0;
+}
+
+TYPE_FD Inhibit(const char *arg_what, const char *arg_who, const char *arg_why, const char *arg_mode)
+{
+	static int	reported = 0;
+	NUT_UNUSED_VARIABLE(arg_what);
+	NUT_UNUSED_VARIABLE(arg_who);
+	NUT_UNUSED_VARIABLE(arg_why);
+	NUT_UNUSED_VARIABLE(arg_mode);
+
+	if (!reported) {
+		upsdebugx(6, "%s: Not implemented on this platform", __func__);
+		reported = 1;
+	}
+	return ERROR_FD;
+}
+
+int isPreparingForSleep(void)
+{
+	static int	reported = 0;
+
+	if (!reported) {
+		upsdebugx(6, "%s: Not implemented on this platform", __func__);
+		reported = 1;
+	}
+	return -1;
+}
+
+void Uninhibit(TYPE_FD *fd_ptr)
+{
+	static int	reported = 0;
+	NUT_UNUSED_VARIABLE(fd_ptr);
+
+	if (!reported) {
+		upsdebugx(6, "%s: Not implemented on this platform", __func__);
+		reported = 1;
+	}
+}
+
+#endif	/* not WITH_LIBSYSTEMD_INHIBITOR */
+
 #ifdef WITH_LIBSYSTEMD
 # include <systemd/sd-daemon.h>
 /* upsnotify() debug-logs its reports; a watchdog ping is something we
@@ -54,8 +433,8 @@ static int upsnotify_reported_disabled_systemd = 0;
 /* Define this to 1 for lots of spam at debug level 6, and ignoring WATCHDOG_PID
  * so trying to post reports anyway if WATCHDOG_USEC is valid */
 #  define DEBUG_SYSTEMD_WATCHDOG 0
-# endif
-#endif
+# endif	/* DEBUG_SYSTEMD_WATCHDOG */
+#endif	/* WITH_LIBSYSTEMD */
 /* Similarly for only reporting once if the notification subsystem is not built-in */
 static int upsnotify_reported_disabled_notech = 0;
 static int upsnotify_report_verbosity = -1;
@@ -192,6 +571,92 @@ int syslog_is_disabled(void)
 	}
 
 	return value;
+}
+
+int banner_is_disabled(void)
+{
+	static int value = -1;
+
+	if (value < 0) {
+		char *s = getenv("NUT_QUIET_INIT_BANNER");
+		/* Envvar present and empty or true-ish means NUT tool name+version
+		 * banners disabled by the setting: default is enabled (inversed per
+		 * method name) */
+		value = 0;
+		if (s) {
+			if (*s == '\0' || !strcasecmp(s, "true") || strcmp(s, "1")) {
+				value = 1;
+			}
+		}
+	}
+
+	return value;
+}
+
+const char *describe_NUT_VERSION_once(void)
+{
+	static char	buf[LARGEBUF];
+	static const char	*printed = NULL;
+
+	if (printed)
+		return printed;
+
+	memset(buf, 0, sizeof(buf));
+
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+	/* NOTE: Some compilers deduce that macro-based decisions about
+	 * NUT_VERSION_IS_RELEASE make one of codepaths unreachable in
+	 * a particular build. So we pragmatically handwave this away.
+	 */
+	if (1 < snprintf(buf, sizeof(buf),
+		"%s %s%s%s",
+		NUT_VERSION_MACRO,
+		NUT_VERSION_IS_RELEASE ? "release" : "(development iteration after ",
+		NUT_VERSION_IS_RELEASE ? "" : NUT_VERSION_SEMVER_MACRO,
+		NUT_VERSION_IS_RELEASE ? "" : ")"
+	)) {
+		printed = buf;
+	} else {
+		upslogx(LOG_WARNING, "%s: failed to report detailed NUT version", __func__);
+		printed = UPS_VERSION;
+	}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+#pragma GCC diagnostic pop
+#endif
+
+	return printed;
+}
+
+int print_banner_once(const char *prog, int even_if_disabled)
+{
+	static int	printed = 0;
+	static int	ret = -1;
+
+	if (printed)
+		return ret;
+
+	if (!banner_is_disabled() || even_if_disabled) {
+		ret = printf("Network UPS Tools %s %s%s\n",
+			prog, describe_NUT_VERSION_once(),
+			even_if_disabled == 2 ? "\n" : "");
+		fflush(stdout);
+		if (ret > 0)
+			printed = 1;
+	}
+
+	return ret;
 }
 
 /* enable writing upslog_with_errno() and upslogx() type messages to
@@ -1326,6 +1791,9 @@ int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_pr
 							(uintmax_t)pid);
 					}
 					break;
+
+				default:
+					break;
 			}
 		}
 
@@ -1397,8 +1865,10 @@ pid_t parsepid(const char *buf)
 	pid_t	pid = -1;
 	intmax_t	_pid;
 
+	errno = 0;
 	if (!buf) {
 		upsdebugx(6, "%s: called with NULL input", __func__);
+		errno = EINVAL;
 		return pid;
 	}
 
@@ -1407,6 +1877,8 @@ pid_t parsepid(const char *buf)
 	if (_pid <= get_max_pid_t()) {
 		pid = (pid_t)_pid;
 	} else {
+		errno = ERANGE;
+
 		if (nut_debug_level > 0 || nut_sendsignal_debug_level > 0)
 			upslogx(LOG_NOTICE,
 				"Received a pid number too big for a pid_t: %"
@@ -1416,17 +1888,15 @@ pid_t parsepid(const char *buf)
 	return pid;
 }
 
-/* open pidfn, get the pid, then send it sig
+/* open pidfn, get the pid;
  * returns negative codes for errors, or
- * zero for a successfully sent signal
+ * zero for a successfully discovered value
  */
-#ifndef WIN32
-int sendsignalfn(const char *pidfn, int sig, const char *progname, int check_current_progname)
+pid_t parsepidfile(const char *pidfn)
 {
 	char	buf[SMALLBUF];
 	FILE	*pidf;
 	pid_t	pid = -1;
-	int	ret = -1;
 
 	pidf = fopen(pidfn, "r");
 	if (!pidf) {
@@ -1446,7 +1916,9 @@ int sendsignalfn(const char *pidfn, int sig, const char *progname, int check_cur
 		fclose(pidf);
 		return -2;
 	}
-	/* TOTHINK: Original code only closed pidf before
+
+	/* TOTHINK: Original sendsignalfn code (which this
+	 * was extracted from) only closed pidf before
 	 * exiting the method, on error or "normally".
 	 * Why not here? Do we want an (exclusive?) hold
 	 * on it while being active in the method?
@@ -1455,12 +1927,26 @@ int sendsignalfn(const char *pidfn, int sig, const char *progname, int check_cur
 	/* this method actively reports errors, if any */
 	pid = parsepid(buf);
 
+	fclose(pidf);
+
+	return pid;
+}
+
+/* open pidfn, get the pid, then send it sig
+ * returns negative codes for errors, or
+ * zero for a successfully sent signal
+ */
+#ifndef WIN32
+int sendsignalfn(const char *pidfn, int sig, const char *progname, int check_current_progname)
+{
+	int	ret = -1;
+	pid_t	pid = parsepidfile(pidfn);
+
 	if (pid >= 0) {
 		/* this method actively reports errors, if any */
 		ret = sendsignalpid(pid, sig, progname, check_current_progname);
 	}
 
-	fclose(pidf);
 	return ret;
 }
 
@@ -1781,7 +2267,7 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 			"skipped for libcommonclient build, "
 			"will not spam more about it", __func__, state);
 	upsnotify_reported_disabled_systemd = 1;
-# else
+# else	/* not WITHOUT_LIBSYSTEMD */
 	if (!getenv("NOTIFY_SOCKET")) {
 		if (!upsnotify_reported_disabled_systemd)
 			upsdebugx(upsnotify_report_verbosity,
@@ -1929,7 +2415,7 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 								"(%" PRIu64 "msec remain)",
 								__func__, postit, to);
 					}
-#   endif
+#   endif	/* HAVE_SD_WATCHDOG_ENABLED */
 
 					if (postit < 1) {
 						char *s = getenv("WATCHDOG_USEC");
@@ -2162,28 +2648,11 @@ void nut_report_config_flags(void)
 		now.tv_sec -= 1;
 	}
 
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic ignored "-Wunreachable-code"
-#endif
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunreachable-code"
-#endif
-	/* NOTE: Some compilers deduce that macro-based decisions about
-	 * NUT_VERSION_IS_RELEASE make one of codepaths unreachable in
-	 * a particular build. So we pragmatically handwave this away.
-	 */
 	if (xbit_test(upslog_flags, UPSLOG_STDERR)) {
-		fprintf(stderr, "%4.0f.%06ld\t[D1] Network UPS Tools version %s%s%s%s%s%s%s %s%s\n",
+		fprintf(stderr, "%4.0f.%06ld\t[D1] Network UPS Tools version %s%s%s%s %s%s\n",
 			difftime(now.tv_sec, upslog_start.tv_sec),
 			(long)(now.tv_usec - upslog_start.tv_usec),
-			UPS_VERSION,
-			NUT_VERSION_IS_RELEASE ? " release" : " (development iteration after ",
-			NUT_VERSION_IS_RELEASE ? "" : NUT_VERSION_SEMVER_MACRO,
-			NUT_VERSION_IS_RELEASE ? "" : ")",
+			describe_NUT_VERSION_once(),
 			(compiler_ver && *compiler_ver != '\0' ? " built with " : ""),
 			(compiler_ver && *compiler_ver != '\0' ? compiler_ver : ""),
 			(compiler_ver && *compiler_ver != '\0' ? " and" : ""),
@@ -2198,11 +2667,8 @@ void nut_report_config_flags(void)
 	/* NOTE: May be ignored or truncated by receiver if that syslog server
 	 * (and/or OS sender) does not accept messages of such length */
 	if (xbit_test(upslog_flags, UPSLOG_SYSLOG)) {
-		syslog(LOG_DEBUG, "Network UPS Tools version %s%s%s%s%s%s%s %s%s",
-			UPS_VERSION,
-			NUT_VERSION_IS_RELEASE ? " release" : " (development iteration after ",
-			NUT_VERSION_IS_RELEASE ? "" : NUT_VERSION_SEMVER_MACRO,
-			NUT_VERSION_IS_RELEASE ? "" : ")",
+		syslog(LOG_DEBUG, "Network UPS Tools version %s%s%s%s %s%s",
+			describe_NUT_VERSION_once(),
 			(compiler_ver && *compiler_ver != '\0' ? " built with " : ""),
 			(compiler_ver && *compiler_ver != '\0' ? compiler_ver : ""),
 			(compiler_ver && *compiler_ver != '\0' ? " and" : ""),
@@ -2210,12 +2676,6 @@ void nut_report_config_flags(void)
 			(config_flags && *config_flags != '\0' ? config_flags : "")
 		);
 	}
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
-#pragma GCC diagnostic pop
-#endif
 }
 
 static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)

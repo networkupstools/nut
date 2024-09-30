@@ -13,21 +13,41 @@ if test -z "${nut_have_libsystemd_seen}"; then
 	CFLAGS_ORIG="${CFLAGS}"
 	LIBS_ORIG="${LIBS}"
 
+	SYSTEMD_VERSION="none"
+
+	AC_CHECK_TOOL(SYSTEMCTL, systemctl, none)
+
 	AS_IF([test x"$have_PKG_CONFIG" = xyes],
 		[dnl See which version of the systemd library (if any) is installed
 		 dnl FIXME : Support detection of cflags/ldflags below by legacy
 		 dnl discovery if pkgconfig is not there
 		 AC_MSG_CHECKING(for libsystemd version via pkg-config)
 		 SYSTEMD_VERSION="`$PKG_CONFIG --silence-errors --modversion libsystemd 2>/dev/null`"
-		 if test "$?" != "0" -o -z "${SYSTEMD_VERSION}"; then
-		    SYSTEMD_VERSION="none"
-		 fi
+		 AS_IF([test "$?" != "0" -o -z "${SYSTEMD_VERSION}"], [
+			SYSTEMD_VERSION="none"
+		 ])
 		 AC_MSG_RESULT(${SYSTEMD_VERSION} found)
-		],
-		[SYSTEMD_VERSION="none"
-		 AC_MSG_NOTICE([can not check libsystemd settings via pkg-config])
 		]
 	)
+
+	AS_IF([test x"${SYSTEMD_VERSION}" = xnone], [
+		 AS_IF([test x"${SYSTEMCTL}" != xnone], [
+			AC_MSG_CHECKING(for libsystemd version via systemctl)
+			dnl NOTE: Unlike the configure.ac file, in a "pure"
+			dnl m4 script like this one, we have to escape the
+			dnl dollar-number references (in awk below) lest they
+			dnl get seen as m4 function positional parameters.
+			SYSTEMD_VERSION="`LANG=C LC_ALL=C ${SYSTEMCTL} --version | grep -E '^systemd@<:@ \t@:>@*@<:@0-9@:>@@<:@0-9@:>@*' | awk '{print ''$''2}'`" \
+			&& test -n "${SYSTEMD_VERSION}" \
+			|| SYSTEMD_VERSION="none"
+			AC_MSG_RESULT(${SYSTEMD_VERSION} found)
+		 ])
+		]
+	)
+
+	AS_IF([test x"${SYSTEMD_VERSION}" = xnone], [
+		AC_MSG_NOTICE([can not check libsystemd settings via pkg-config nor systemctl])
+	])
 
 	AC_MSG_CHECKING(for libsystemd cflags)
 	AC_ARG_WITH(libsystemd-includes,
@@ -76,11 +96,31 @@ if test -z "${nut_have_libsystemd_seen}"; then
 	AC_CHECK_HEADERS(systemd/sd-daemon.h, [nut_have_libsystemd=yes], [nut_have_libsystemd=no], [AC_INCLUDES_DEFAULT])
 	AC_CHECK_FUNCS(sd_notify, [], [nut_have_libsystemd=no])
 
+	nut_have_libsystemd_inhibitor=no
 	AS_IF([test x"${nut_have_libsystemd}" = x"yes"], [
 		dnl Check for additional feature support in library (optional)
 		AC_CHECK_FUNCS(sd_booted sd_watchdog_enabled sd_notify_barrier)
 		LIBSYSTEMD_CFLAGS="${CFLAGS}"
 		LIBSYSTEMD_LIBS="${LIBS}"
+
+		dnl Since systemd 183: https://systemd.io/INHIBITOR_LOCKS/
+		dnl ...or 221: https://www.freedesktop.org/software/systemd/man/latest/sd_bus_call_method.html
+		dnl and some bits even later (e.g. message container reading)
+		AS_IF([test "$SYSTEMD_VERSION" -ge 221], [
+			nut_have_libsystemd_inhibitor=yes
+			AC_CHECK_HEADERS(systemd/sd-bus.h, [], [nut_have_libsystemd_inhibitor=no], [AC_INCLUDES_DEFAULT])
+			AC_CHECK_FUNCS([sd_bus_call_method sd_bus_message_read_basic sd_bus_open_system sd_bus_default_system sd_bus_get_property_trivial], [], [nut_have_libsystemd_inhibitor=no])
+			dnl NOTE: In practice we use "p"-suffixed sd_bus_flush_close_unrefp
+			dnl  and sd_bus_message_unrefp methods prepared by a macro in sd-bus.h
+			AC_CHECK_FUNCS([sd_bus_flush_close_unref sd_bus_message_unref sd_bus_error_free], [], [nut_have_libsystemd_inhibitor=no])
+			dnl Optional methods: nicer with them, can do without
+			AC_CHECK_FUNCS([sd_bus_open_system_with_description sd_bus_set_description])
+			dnl For inhibitor per se, we do not have to read containers:
+			dnl AC_CHECK_FUNCS([sd_bus_message_enter_container sd_bus_message_exit_container])
+		])
+
+		AC_MSG_CHECKING(for libsystemd inhibitor interface support)
+		AC_MSG_RESULT([${nut_have_libsystemd_inhibitor}])
 	])
 
 	dnl restore original CFLAGS and LIBS

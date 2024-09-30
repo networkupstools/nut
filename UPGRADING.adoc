@@ -44,11 +44,25 @@ Changes from 2.8.2 to 2.8.3
   Please use it, it immensely helps with community troubleshooting!
   [issue #1949]
 
+- `upsmon` should now integrate natively with systemd-driven OS sleep events
+  (built with systemd version 221 or newer "inhibitor interface"), so various
+  hacks previously packaged into `/usr/lib/systemd/system-sleep/` scripts or
+  units requiring/conflicting with the `sleep.target` may be obsolete.
+  For fallback with older systemd, a `nut-sleep.service` is provided now.
+  [#1070, #2596, #2597]
+
 - `usbhid-ups` subdriver `PowerCOM HID` subdriver sent UPS `shutdown` and
   `stayoff` commands in wrong byte order, at least for devices currently
   in the field. Driver now sends the commands in a way that satisfies new
   devices; just in case a flag toggle `powercom_sdcmd_byte_order_fallback`
   was added to set the old behavior (if some devices do need it). [PR #2480]
+
+- Added support for `lbrb_log_delay_sec=N` setting to delay propagation of
+  `LB` or `LB+RB` state (buggy with APC BXnnnnMI devices/firmwares issued
+  circa 2023-2024 which flood the logs with spurious LOWBATT and REPLACEBATT
+  events). This may work better for some devices when combined with flags
+  like `onlinedischarge_calibration` and `lbrb_log_delay_without_calibrating`.
+  [#2347]
 
 - Enabled installation of built PDF and HTML (including man page renditions)
   files under the configured `docdir`. It seems previously they were only
@@ -99,6 +113,22 @@ Changes from 2.8.2 to 2.8.3
   variable support was added to optionally disable this verification.
   Also the NUT daemons should request to double-check against their
   run-time process name (if it can be detected). [issue #2463]
+
+- More environment variable support was added to NUT programs, primarily
+  aimed at wrappers such as init scripts and service unit definitions,
+  allowing to tweak what (and whether) they write into debug traces, and
+  so "make noise" or "bring invaluable insights" to logs or terminal;
+  they can generally be used for services and init scripts via `nut.conf`:
+  * See `NUT_IGNORE_CHECKPROCNAME` and `NUT_DEBUG_SYSLOG` above. [#1915]
+  * A `NUT_QUIET_INIT_BANNER` envvar (presence or "true" value) prevents
+    tool name and NUT version banner from being printed out when programs
+    start. [issues #1789 vs. #316]
+
+- A `configure` script option to `--enable-NUT_STRARG-always` was added
+  to enable the `NUT_STRARG` macro (to handle `NULL` string printing)
+  even if system libraries seem to safely support this behavior natively.
+  This should primarily help against overly zealous static analysis tools
+  in recent compiler generations. [#2585]
 
 
 Changes from 2.8.1 to 2.8.2

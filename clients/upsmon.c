@@ -24,12 +24,12 @@
 
 #include <sys/stat.h>
 #ifndef WIN32
-#include <sys/wait.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <fcntl.h>
+# include <sys/wait.h>
+# include <sys/socket.h>
+# include <unistd.h>
+# include <fcntl.h>
 #else
-#include <wincompat.h>
+# include <wincompat.h>
 #endif
 
 #include "nut_stdint.h"
@@ -39,7 +39,7 @@
 #include "timehead.h"
 
 #ifdef HAVE_STDARG_H
-#include <stdarg.h>
+# include <stdarg.h>
 #endif
 
 static	char	*shutdowncmd = NULL, *notifycmd = NULL;
@@ -152,7 +152,13 @@ static	sigset_t nut_upsmon_sigmask;
 
 #ifdef HAVE_SYSTEMD
 # define SERVICE_UNIT_NAME "nut-monitor.service"
-#endif
+#endif	/* HAVE_SYSTEMD */
+
+/* If we successfully use Inhibit() to be notified about
+ * the OS going to sleep, this is the messenger variable:
+ */
+static TYPE_FD	sleep_inhibitor_fd = ERROR_FD;
+static int	sleep_inhibitor_status = -2;
 
 /* Users can pass a -D[...] option to enable debugging.
  * For the service tracing purposes, also the upsmon.conf
@@ -2627,9 +2633,10 @@ static void help(const char *arg_progname)
 		/* printf("\n"); */
 	}
 
-	printf("Monitors UPS servers and may initiate shutdown if necessary.\n\n");
+	print_banner_once(arg_progname, 2);
+	printf("NUT client which monitors UPS servers and may initiate shutdown if necessary.\n");
 
-	printf("usage: %s [OPTIONS]\n\n", arg_progname);
+	printf("\nusage: %s [OPTIONS]\n\n", arg_progname);
 	printf("  -c <cmd>	send command to running process\n");
 	printf("		commands:\n");
 	printf("		 - fsd: shutdown all primary-mode UPSes (use with caution)\n");
@@ -2876,6 +2883,40 @@ static void check_parent(void)
 	upslogx(LOG_ALERT, "Parent died - shutdown impossible");
 }
 
+static void init_Inhibitor(const char *prog)
+{
+	static int	sleep_inhibitor_fail_reported = 0;
+	static int	sleep_status_ability_reported = 0;
+
+	if (INVALID_FD(sleep_inhibitor_fd)) {
+		/* See https://www.freedesktop.org/software/systemd/man/latest/org.freedesktop.login1.html
+		 * and https://systemd.io/INHIBITOR_LOCKS/ documentation about option values.
+		 */
+		sleep_inhibitor_fd = Inhibit("sleep", prog, "Careful handling of OS sleep with regard to power device monitoring", "delay");
+		if (VALID_FD(sleep_inhibitor_fd)) {
+			upslogx(LOG_INFO, "%s: initialized OS integration for sleep inhibitor", prog);
+			sleep_inhibitor_fail_reported = 0;
+		} else {
+			if (!sleep_inhibitor_fail_reported) {
+				upslogx(LOG_WARNING, "%s: failed to initialize OS integration for sleep inhibitor", prog);
+			}
+			sleep_inhibitor_fail_reported = 1;
+		}
+
+		if (!sleep_status_ability_reported && isPreparingForSleepSupported()) {
+			/* At this point isSupported may be -1 (unknown yet),
+			 * make a query to be sure */
+			sleep_inhibitor_status = isPreparingForSleep();
+			if (isPreparingForSleepSupported()) {
+				upslogx(LOG_INFO, "%s: initialized OS integration for sleep/wake monitoring", prog);
+			} else {
+				upslogx(LOG_INFO, "%s: failed to initialize OS integration for sleep/wake monitoring", prog);
+			}
+			sleep_status_ability_reported = 1;
+		}
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	const char	*prog = xbasename(argv[0]);
@@ -2908,8 +2949,7 @@ int main(int argc, char *argv[])
 	}
 #endif
 
-	printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
-	fflush(stdout);
+	print_banner_once(prog, 0);
 
 	/* if no configuration file is specified on the command line, use default */
 	configfile = xmalloc(SMALLBUF);
@@ -2971,7 +3011,9 @@ int main(int argc, char *argv[])
 				run_as_user = xstrdup(optarg);
 				break;
 			case 'V':
-				/* just show the optional CONFIG_FLAGS banner */
+				/* just show the version and optional
+				 * CONFIG_FLAGS banner if available */
+				print_banner_once(prog, 1);
 				nut_report_config_flags();
 				exit(EXIT_SUCCESS);
 			case '4':
@@ -3120,11 +3162,11 @@ int main(int argc, char *argv[])
 					(oldpid < 0 ? " or add '-P $PID' argument" : ""));
 				break;
 			}
-# else
+# else	/* not HAVE_SYSTEMD */
 			if (oldpid < 0) {
 				upslogx(LOG_NOTICE, "Try to add '-P $PID' argument");
 			}
-# endif
+# endif	/* not HAVE_SYSTEMD */
 #endif	/* not WIN32 */
 		}
 
@@ -3218,6 +3260,14 @@ int main(int argc, char *argv[])
 
 	while (exit_flag == 0) {
 		utype_t	*ups;
+		time_t	start, end, now;
+#ifndef WIN32
+		time_t	prev;
+#endif
+		double	dt = 0;
+
+		if (isInhibitSupported())
+			init_Inhibitor(prog);
 
 		upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
 
@@ -3231,8 +3281,108 @@ int main(int argc, char *argv[])
 			upsnotify(NOTIFY_STATE_READY, NULL);
 		}
 
-		for (ups = firstups; ups != NULL; ups = ups->next)
+		if (isPreparingForSleepSupported()) {
+			if (sleep_inhibitor_status < 0) {
+				/* We may be coming fresh from an aborted loop cycle
+				 * with *its* finding of pending or finished OS sleep;
+				 * do not lose that knowledge by just reading "same as
+				 * before" (-1) with another query here! */
+				sleep_inhibitor_status = isPreparingForSleep();
+			} else if (!isInhibitSupported()) {
+				/* We can monitor OS sleep/wake changes, but could not
+				 * get an inhibition lock to sync this behavior nicely
+				 * (e.g. due to lacking permissions to get such lock).
+				 * Our information may be obsolete (e.g. we saw the
+				 * beginning of OS sleep, but by the time we got
+				 * to this line - we have already woken up) */
+				int	new_sleep_inhibitor_status = isPreparingForSleep();
+				if (new_sleep_inhibitor_status >= 0 && sleep_inhibitor_status != new_sleep_inhibitor_status) {
+					upsdebugx(2, "We had previously learned sleep_inhibitor_status=%d "
+						"in a hastily aborted older loop cycle, but by the time "
+						"we got to handle it - the current value is %d",
+						sleep_inhibitor_status, new_sleep_inhibitor_status);
+					sleep_inhibitor_status = new_sleep_inhibitor_status;
+				}
+			}
+			upsdebugx(5, "sleep_inhibitor_status=%d", sleep_inhibitor_status);
+		}
+		if (sleep_inhibitor_status == 1) {
+			/* Preparing for sleep */
+			do_notify(NULL, NOTIFY_SUSPEND_STARTING);
+			upslogx(LOG_INFO, "%s: Processing OS going to sleep", prog);
+			Uninhibit(&sleep_inhibitor_fd);
+
+			upsnotify(NOTIFY_STATE_RELOADING, NULL);
+			upsdebugx(0, "%s: Dozing off until system tells us otherwise; send a SIGHUP or SIGTERM to break the loop manually", prog);
+			while ((sleep_inhibitor_status = isPreparingForSleep()) == -1 && !reload_flag && !exit_flag) {
+				usleep(1000000);
+			}
+			if (nut_debug_level == 0) {
+				upsdebugx(0, "%s: Dozing off finished", prog);
+			} else {
+				upsdebugx(0, "%s: Dozing off finished: sleep_inhibitor_status=%d reload_flag=%d exit_flag=%d",
+					prog, sleep_inhibitor_status, reload_flag, exit_flag);
+			}
+
+			/*... when sleep_inhibitor_status has changed (to 0 after waking up?),
+			 * go to switch/case below. Or after a user signal, skip on... */
+			upsnotify(NOTIFY_STATE_READY, NULL);
+			upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
+
+			if (exit_flag)
+				break;
+
+			if (reload_flag && sleep_inhibitor_status != 0) {
+				upslogx(LOG_WARNING, "%s: OS was last known to be preparing for sleep, and we were "
+					"interrupted by a reload signal. If the sleep does happen later, the system might "
+					"shut down after wake-up if UPS info is stale after a known critical power state!",
+					prog);
+				upsnotify(NOTIFY_STATE_RELOADING, NULL);
+				reload_conf();
+				upsnotify(NOTIFY_STATE_READY, NULL);
+			}
+			upsdebugx(5, "sleep_inhibitor_status=%d (after dozing off)", sleep_inhibitor_status);
+		}	/*... else go to switch/case below */
+
+		switch (sleep_inhibitor_status) {
+			case 0:	/* Waking up */
+				do_notify(NULL, NOTIFY_SUSPEND_FINISHED);
+				upslogx(LOG_INFO, "%s: Processing OS wake-up after sleep", prog);
+				upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
+
+				upsnotify(NOTIFY_STATE_RELOADING, NULL);
+				init_Inhibitor(prog);
+
+				time(&now);
+				for (ups = firstups; ups != NULL; ups = ups->next) {
+					ups->status = 0;
+					ups->lastpoll = now;
+				}
+
+				set_reload_flag(1);
+				reload_conf();
+
+				upsnotify(NOTIFY_STATE_READY, NULL);
+				upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
+
+				break;
+
+			case  1:	/* Handled above */
+			case -1:	/* Same as before */
+			case -2:	/* !isPreparingForSleepSupported() */
+			default:	/* Odd... */
+				break;
+		}
+		/* Reset the value, regardless of support */
+		sleep_inhibitor_status = -2;
+
+		for (ups = firstups; ups != NULL; ups = ups->next) {
+			if (isPreparingForSleepSupported() && (sleep_inhibitor_status = isPreparingForSleep()) >= 0) {
+				upsdebugx(2, "Aborting UPS polling sub-loop because OS is preparing for sleep or just woke up");
+				goto end_loop_cycle;
+			}
 			pollups(ups);
+		}
 
 		recalc();
 
@@ -3244,12 +3394,47 @@ int main(int argc, char *argv[])
 		/* reap children that have exited */
 		waitpid(-1, NULL, WNOHANG);
 
-		sleep(sleepval);
+		time(&start);
+		if (isPreparingForSleepSupported()) {
+			sleep_inhibitor_status = -2;
+			now = start;
+
+			while (sleep_inhibitor_status < 0 && dt < sleepval) {
+				prev = now;
+				sleep(1);
+				sleep_inhibitor_status = isPreparingForSleep();
+				time(&now);
+				dt = difftime(now, start);
+				upsdebugx(7, "start=%" PRIiMAX " now=%" PRIiMAX " dt=%g sleepval=%u sleep_inhibitor_status=%d",
+					(intmax_t)start, (intmax_t)now, dt, sleepval, sleep_inhibitor_status);
+				if (dt > (sleepval + 5) || difftime(now, prev) > 5) {
+					upsdebugx(2, "It seems we have slept without warning or the system clock was changed");
+					if (sleep_inhibitor_status < 0)
+						sleep_inhibitor_status = 0;	/* behave as woken up */
+				} else if (dt < 0) {
+					upsdebugx(2, "It seems the system clock was changed into the past");
+					sleep_inhibitor_status = 0;	/* behave as woken up */
+				}
+			}
+
+			if (sleep_inhibitor_status >= 0) {
+				upsdebugx(2, "Aborting polling delay between main loop cycles because OS is preparing for sleep or just woke up");
+				goto end_loop_cycle;
+			}
+		} else {
+			/* sleep tight */
+			sleep(sleepval);
+		}
+		time(&end);
 #else
 		maxhandle = 0;
-		memset(&handles,0,sizeof(handles));
+		memset(&handles, 0, sizeof(handles));
 
 		/* Wait on the read IO of each connections */
+		/* TODO: Windows suspend/hibernate tracking might fit here
+		 *  if we add a file handle to watch for... something, and
+		 *  so wake up quickly to skip the up-to-sleepval delay.
+		 */
 		for (conn = pipe_connhead; conn; conn = conn->next) {
 			handles[maxhandle] = conn->overlapped.hEvent;
 			maxhandle++;
@@ -3258,7 +3443,9 @@ int main(int argc, char *argv[])
 		handles[maxhandle] = pipe_connection_overlapped.hEvent;
 		maxhandle++;
 
-		ret = WaitForMultipleObjects(maxhandle,handles,FALSE,sleepval*1000);
+		time(&start);
+		ret = WaitForMultipleObjects(maxhandle, handles, FALSE, sleepval*1000);
+		time(&end);
 
 		if (ret == WAIT_FAILED) {
 			upslogx(LOG_ERR, "Wait failed");
@@ -3270,8 +3457,8 @@ int main(int argc, char *argv[])
 		}
 
 		/* Retrieve the signaled connection */
-		for(conn = pipe_connhead; conn != NULL; conn = conn->next) {
-			if( conn->overlapped.hEvent == handles[ret-WAIT_OBJECT_0]) {
+		for (conn = pipe_connhead; conn != NULL; conn = conn->next) {
+			if (conn->overlapped.hEvent == handles[ret-WAIT_OBJECT_0]) {
 				break;
 			}
 		}
@@ -3281,8 +3468,8 @@ int main(int argc, char *argv[])
 		}
 		/* one of the read event handle has been signaled */
 		else {
-			if( conn != NULL) {
-				if ( pipe_ready(conn) ) {
+			if (conn != NULL) {
+				if (pipe_ready(conn)) {
 					if (!strncmp(conn->buf, SIGCMD_FSD, sizeof(SIGCMD_FSD))) {
 						user_fsd(1);
 					}
@@ -3296,7 +3483,7 @@ int main(int argc, char *argv[])
 					}
 
 					else {
-						upslogx(LOG_ERR,"Unknown signal");
+						upslogx(LOG_ERR, "Unknown signal");
 					}
 
 					pipe_disconnect(conn);
@@ -3304,6 +3491,23 @@ int main(int argc, char *argv[])
 			}
 		}
 #endif
+
+		/* General-purpose handling of time jumps for OSes/run-times
+		 * without NUT direct support for suspend/inhibit */
+		dt = difftime(end, start);
+		if (dt > (sleepval + 5)) {
+			upsdebugx(2, "It seems we have slept without warning or the system clock was changed");
+			if (sleep_inhibitor_status < 0)
+				sleep_inhibitor_status = 0;	/* behave as woken up */
+		} else if (dt < 0) {
+			upsdebugx(2, "It seems the system clock was changed into the past");
+			if (sleep_inhibitor_status < 0)
+				sleep_inhibitor_status = 0;	/* behave as woken up */
+		}
+
+end_loop_cycle:
+		/* No-op to avoid a warning about label at end of compound statement */
+		(void)1;
 	}
 
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);

@@ -325,7 +325,7 @@ void upsdrv_shutdown(void)
 	while ((rval = upscmd("load.off", NULL)) != STAT_INSTCMD_HANDLED && cnt > 0) {
 		rval = gettimeofday(&start, NULL);
 		if (rval < 0) {
-			upslogx(LOG_ERR, "upscmd: gettimeofday: %s", strerror(errno));
+			upslog_with_errno(LOG_ERR, "upscmd: gettimeofday");
 		}
 
 		/* wait for an increasing time interval before sending shutdown command */
@@ -548,7 +548,7 @@ long time_elapsed(struct timeval *start)
 
 	rval = gettimeofday(&end, NULL);
 	if (rval < 0) {
-		upslogx(LOG_ERR, "time_elapsed: %s", strerror(errno));
+		upslog_with_errno(LOG_ERR, "time_elapsed");
 	}
 	if (start->tv_usec < end.tv_usec) {
 		suseconds_t nsec = (end.tv_usec - start->tv_usec) / 1000000 + 1;
@@ -597,7 +597,7 @@ int upscmd(const char *cmd, const char *arg)
 			if (FSD_pulse_duration != NOTUSED && rval == STAT_INSTCMD_HANDLED) {
 				rval = gettimeofday(&start, NULL);
 				if (rval < 0) {
-					upslogx(LOG_ERR, "upscmd: gettimeofday: %s", strerror(errno));
+					upslog_with_errno(LOG_ERR, "upscmd: gettimeofday");
 				}
 
 				/* wait for FSD_pulse_duration ms */

@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# Simple PoC of NUT client as a FUSE mountable filesystem
+# Requires https://github.com/vi/execfuse
+# Copyright (C) 2024 by Jim Klimov <jimklimov+nut@gmail.com>
+# Licensed GPLv2+ as NUT codebase
+
+if [ x"$NUT_DEBUG_FUSE" = xtrue ] ; then
+    exec 2>"/tmp/nut-debug-fuse-`basename $0`.log"
+    echo "ARGS($#, $0): 1='$1' 2='$2' @='$@'" >&2
+fi
+
+#PATH="~/nut/clients:$PATH"
+#export PATH
+
+case "$1" in
+    /by-server/*/*/*/*) # Don't want subdirs here
+        ;;
+    /by-server/*/*/*)
+        VARNAME="`basename "$1"`"
+        UPS="`echo "$1" | sed 's,^/by-server/\([^/]*\)/\([^/]*\)/'"$VARNAME"'$,\2@\1,'`"
+        if [ x"$NUT_DEBUG_FUSE" = xtrue ] ; then
+            #echo "+upsc '$UPS' '$VARNAME'" >&2
+            set -x
+        fi
+        upsc "$UPS" "$VARNAME"
+        exit $?
+        ;;
+    /client-location)
+        command -v upsc
+        exit $?
+        ;;
+    /client-version)
+        if [ x"$NUT_DEBUG_FUSE" = xtrue ] ; then
+            #echo "+upsc '$UPS' '$VARNAME'" >&2
+            set -x
+        fi
+        NUT_DEBUG_LEVEL=6 upsc -V
+        exit $?
+        ;;
+esac
+
+exit 1

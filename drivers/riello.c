@@ -86,6 +86,8 @@ uint16_t riello_calc_CRC(uint8_t type, uint8_t *buff, uint16_t size, uint8_t che
 					CRC_Word += buff[i];
 			}
 			break;
+		default:
+			break;
 	}
 	return(CRC_Word);
 }
@@ -125,6 +127,8 @@ uint8_t riello_test_crc(uint8_t type, uint8_t *buff, uint16_t size, uint8_t chec
 			suma += (buff[size-2]-0x30);
 			if (suma != CRC_Word)
 				return(1);
+			break;
+		default:
 			break;
 	}
 	return(0);
@@ -944,6 +948,8 @@ uint8_t riello_header(uint8_t type, uint8_t a, uint8_t* length)
 			if ((buf_ptr_length==0) && (LAST_DATA[5]>0x20) && (LAST_DATA[4]==0x2))
 				return(1);
 			break;
+		default:
+			break;
 	}
 	return(0);
 }
@@ -963,6 +969,8 @@ uint8_t riello_tail(uint8_t type, uint8_t length)
 			if (LAST_DATA[5] == 0x03)
 				return(1);
 			break;
+		default:
+			break;
 	}
 	return(0);
 }
@@ -973,6 +981,8 @@ uint8_t riello_test_nak(uint8_t type, uint8_t* buffer)
 		case DEV_RIELLOGPSER:
 			if (buffer[3] == 0x15)
 				return(1);
+			break;
+		default:
 			break;
 	}
 	return(0);

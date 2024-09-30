@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3246 utf-8
+personal_ws-1.1 en 3267 utf-8
 AAC
 AAS
 ABI
@@ -100,6 +100,7 @@ BTS
 BTV
 BUFRD
 BUZ
+BXnnnnMI
 BYP
 BZ
 BZOFF
@@ -263,6 +264,8 @@ DTE
 DTrace
 DUMPALL
 DUMPDONE
+DUMPSTATUS
+DUMPVALUE
 DWAKE
 DWITH
 DX
@@ -393,6 +396,7 @@ GC
 GCCVER
 GES
 GETADDRINFO
+GETPID
 GID
 GND
 GNUMakefile
@@ -983,6 +987,7 @@ README
 REALPATH
 REDi
 REFREPO
+REPLACEBATT
 REPLBATT
 REQSSL
 RETPCT
@@ -1109,6 +1114,7 @@ STI
 STIME
 STO
 STP
+STRARG
 SUNWlibusbugen
 SUNWugen
 SUNWusb
@@ -1181,6 +1187,7 @@ Stanislav
 StatePath
 Stefano
 Stimits
+StrangeOS
 SuSE
 Suatoni
 Sublicensing
@@ -1207,6 +1214,7 @@ TEMPC
 TEMPF
 TESTEDFILE
 TESTEDINDEX
+TESTPASS
 TGS
 TIMELEFT
 TIOCM
@@ -1393,6 +1401,7 @@ Xfer
 Xlinker
 Xpert
 Xups
+YDN
 YQ
 YV
 YY
@@ -1409,6 +1418,7 @@ Zaika
 Zampieri
 Zawadzki
 ZeroMQ
+Zhile
 abandonware
 abcd
 ablerex
@@ -1889,6 +1899,7 @@ everyone's
 everything's
 evilhack
 exe
+execfuse
 executables
 executeCommand
 execve
@@ -1981,8 +1992,10 @@ gitk
 gitlab
 gmail
 gmake
+gmtime
 gnuplot
 gnutls
+goodspeed
 google
 goto
 gotos
@@ -2000,6 +2013,7 @@ guesstimation
 guez
 gufw
 gui
+gxe
 gz
 gzip
 hal
@@ -2171,6 +2185,7 @@ labcd
 lan
 langid
 lasaine
+lbrb
 ld
 ldd
 le
@@ -2299,6 +2314,7 @@ mDNS
 mS
 macaddr
 macosx
+mailo
 mailx
 mainFrame
 maintainer's
@@ -2398,6 +2414,9 @@ mysecurityname
 myups
 myupsname
 nLogic
+nMONITOR
+nPOWERDOWNFLAG
+nSHUTDOWNCMD
 nabcd
 nameserver
 namespace
@@ -2480,6 +2499,7 @@ nutdevN
 nutdrv
 nutmon
 nutscan
+nutshutdown
 nutsrv
 nutupsdrv
 nutvalue
@@ -2885,6 +2905,7 @@ strerror
 strftime
 stringify
 strlen
+strncpy
 strnlen
 strptime
 struct

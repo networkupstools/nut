@@ -50,7 +50,6 @@ upsdrv_info_t comm_upsdrv_info = {
 };
 
 #define MAX_REPORT_SIZE         0x1800
-#define MAX_RETRY               3
 
 #if (!HAVE_STRCASESTR) && (HAVE_STRSTR && HAVE_STRLWR && HAVE_STRDUP)
 /* Only used in this file of all NUT codebase, so not in str.{c,h}
@@ -60,7 +59,7 @@ upsdrv_info_t comm_upsdrv_info = {
 static char *strcasestr(const char *haystack, const char *needle);
 #endif
 
-static void libusb_close(usb_dev_handle *udev);
+static void nut_libusb_close(usb_dev_handle *udev);
 
 /*! Add USB-related driver variables with addvar() and dstate_setinfo().
  * This removes some code duplication across the USB drivers.
@@ -155,7 +154,7 @@ static inline int matches(USBDeviceMatcher_t *matcher, USBDevice_t *device) {
  * devices from working on Mac OS X (presumably the OS is already setting
  * altinterface to 0).
  */
-static int nut_usb_set_altinterface(usb_dev_handle *udev)
+static int nut_libusb_set_altinterface(usb_dev_handle *udev)
 {
 	int altinterface = 0, ret = 0;
 	char *alt_string, *endp = NULL;
@@ -187,6 +186,20 @@ static int nut_usb_set_altinterface(usb_dev_handle *udev)
 	return ret;
 }
 
+static void nut_libusb_subdriver_defaults(usb_communication_subdriver_t *subdriver)
+{
+	if (!getval("usb_config_index"))
+		subdriver->usb_config_index = LIBUSB_DEFAULT_CONF_INDEX;
+	if (!getval("usb_hid_rep_index"))
+		subdriver->hid_rep_index = LIBUSB_DEFAULT_INTERFACE;
+	if (!getval("usb_hid_desc_index"))
+		subdriver->hid_desc_index = LIBUSB_DEFAULT_DESC_INDEX;
+	if (!getval("usb_hid_ep_in"))
+		subdriver->hid_ep_in = LIBUSB_DEFAULT_HID_EP_IN;
+	if (!getval("usb_hid_ep_out"))
+		subdriver->hid_ep_out = LIBUSB_DEFAULT_HID_EP_OUT;
+}
+
 #define usb_control_msg         typesafe_control_msg
 
 /* On success, fill in the curDevice structure and return the report
@@ -197,13 +210,15 @@ static int nut_usb_set_altinterface(usb_dev_handle *udev)
  * is accepted, or < 1 if not. If it isn't accepted, the next device
  * (if any) will be tried, until there are no more devices left.
  */
-static int libusb_open(usb_dev_handle **udevp,
+static int nut_libusb_open(usb_dev_handle **udevp,
 	USBDevice_t *curDevice, USBDeviceMatcher_t *matcher,
 	int (*callback)(usb_dev_handle *udev,
 		USBDevice_t *hd, usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen)
 	)
 {
+#ifdef HAVE_USB_DETACH_KERNEL_DRIVER_NP
 	int retries;
+#endif
 	usb_ctrl_charbufsize rdlen1, rdlen2; /* report descriptor length, method 1+2 */
 	USBDeviceMatcher_t *m;
 	struct usb_device *dev;
@@ -313,7 +328,7 @@ static int libusb_open(usb_dev_handle **udevp,
 
 #ifndef __linux__ /* SUN_LIBUSB (confirmed to work on Solaris and FreeBSD) */
 	/* Causes a double free corruption in linux if device is detached! */
-	libusb_close(*udevp);
+	nut_libusb_close(*udevp);
 #endif
 
 	upsdebugx(3, "usb_busses=%p", (void*)usb_busses);
@@ -396,44 +411,32 @@ static int libusb_open(usb_dev_handle **udevp,
 #endif
 
 			if (dev->descriptor.iManufacturer) {
-				retries = MAX_RETRY;
-				while (retries > 0) {
-					ret = usb_get_string_simple(udev, dev->descriptor.iManufacturer,
-						string, sizeof(string));
-					if (ret > 0) {
-						curDevice->Vendor = xstrdup(string);
-						break;
-					}
-					retries--;
-					upsdebugx(1, "%s get iManufacturer failed, retrying...", __func__);
+				ret = nut_usb_get_string(udev, dev->descriptor.iManufacturer,
+					string, sizeof(string));
+				if (ret > 0) {
+					curDevice->Vendor = xstrdup(string);
+				} else {
+					upsdebugx(1, "%s: get Manufacturer string failed", __func__);
 				}
 			}
 
 			if (dev->descriptor.iProduct) {
-				retries = MAX_RETRY;
-				while (retries > 0) {
-					ret = usb_get_string_simple(udev, dev->descriptor.iProduct,
-						string, sizeof(string));
-					if (ret > 0) {
-						curDevice->Product = xstrdup(string);
-						break;
-					}
-					retries--;
-					upsdebugx(1, "%s get iProduct failed, retrying...", __func__);
+				ret = nut_usb_get_string(udev, dev->descriptor.iProduct,
+					string, sizeof(string));
+				if (ret > 0) {
+					curDevice->Product = xstrdup(string);
+				} else {
+					upsdebugx(1, "%s: get Product string failed", __func__);
 				}
 			}
 
 			if (dev->descriptor.iSerialNumber) {
-				retries = MAX_RETRY;
-				while (retries > 0) {
-					ret = usb_get_string_simple(udev, dev->descriptor.iSerialNumber,
-						string, sizeof(string));
-					if (ret > 0) {
-						curDevice->Serial = xstrdup(string);
-						break;
-					}
-					retries--;
-					upsdebugx(1, "%s get iSerialNumber failed, retrying...", __func__);
+				ret = nut_usb_get_string(udev, dev->descriptor.iSerialNumber,
+					string, sizeof(string));
+				if (ret > 0) {
+					curDevice->Serial = xstrdup(string);
+				} else {
+					upsdebugx(1, "%s: get Serial Number string failed", __func__);
 				}
 			}
 
@@ -489,11 +492,10 @@ static int libusb_open(usb_dev_handle **udevp,
 			/* this method requires at least libusb 0.1.8:
 			 * it force device claiming by unbinding
 			 * attached driver... From libhid */
-			retries = MAX_RETRY;
 #ifdef WIN32
 			usb_set_configuration(udev, 1);
 #endif
-
+			retries = 3;
 			while ((ret = usb_claim_interface(udev, usb_subdriver.hid_rep_index)) < 0) {
 				upsdebugx(2, "failed to claim USB device: %s",
 					usb_strerror());
@@ -540,8 +542,12 @@ static int libusb_open(usb_dev_handle **udevp,
 #endif
 			/* if_claimed = 1; */
 
-			nut_usb_set_altinterface(udev);
+			nut_libusb_set_altinterface(udev);
 
+			/* Did the driver provide a callback method for any further
+			 * device acceptance checks (e.g. when same ID is supported
+			 * by several sub-drivers, differing by vendor/model strings)?
+			 */
 			if (!callback) {
 				return 1;
 			}
@@ -719,6 +725,8 @@ static int libusb_open(usb_dev_handle **udevp,
 			/* if (if_claimed)
 				usb_release_interface(udev, 0); */
 			usb_close(udev);
+			/* reset any parameters modified by unmatched drivers back to defaults */
+			nut_libusb_subdriver_defaults(&usb_subdriver);
 		}
 	}
 
@@ -747,7 +755,7 @@ static int libusb_open(usb_dev_handle **udevp,
  * Error handler for usb_get/set_* functions. Return value > 0 success,
  * 0 unknown or temporary failure (ignored), < 0 permanent failure (reconnect)
  */
-static int libusb_strerror(const int ret, const char *desc)
+static int nut_libusb_strerror(const int ret, const char *desc)
 {
 	if (ret > 0) {
 		return ret;
@@ -794,10 +802,10 @@ static int libusb_strerror(const int ret, const char *desc)
  */
 
 /* Expected evaluated types for the API:
- * static int libusb_get_report(usb_dev_handle *udev,
+ * static int nut_libusb_get_report(usb_dev_handle *udev,
  *	int ReportId, unsigned char *raw_buf, int ReportSize)
  */
-static int libusb_get_report(
+static int nut_libusb_get_report(
 	usb_dev_handle *udev,
 	usb_ctrl_repindex ReportId,
 	usb_ctrl_charbuf raw_buf,
@@ -805,7 +813,7 @@ static int libusb_get_report(
 {
 	int	ret;
 
-	upsdebugx(4, "Entering libusb_get_report");
+	upsdebugx(4, "Entering nut_libusb_get_report");
 
 	if (!udev) {
 		return 0;
@@ -827,14 +835,14 @@ static int libusb_get_report(
 		return 0;
 	}
 
-	return libusb_strerror(ret, __func__);
+	return nut_libusb_strerror(ret, __func__);
 }
 
 /* Expected evaluated types for the API:
- * static int libusb_set_report(usb_dev_handle *udev,
+ * static int nut_libusb_set_report(usb_dev_handle *udev,
  *	int ReportId, unsigned char *raw_buf, int ReportSize)
  */
-static int libusb_set_report(
+static int nut_libusb_set_report(
 	usb_dev_handle *udev,
 	usb_ctrl_repindex ReportId,
 	usb_ctrl_charbuf raw_buf,
@@ -862,14 +870,14 @@ static int libusb_set_report(
 		return 0;
 	}
 
-	return libusb_strerror(ret, __func__);
+	return nut_libusb_strerror(ret, __func__);
 }
 
 /* Expected evaluated types for the API:
- * static int libusb_get_string(usb_dev_handle *udev,
- *	int StringIdx, char *buf, size_t buflen)
+ * static int nut_libusb_get_string(usb_dev_handle *udev,
+ *	int StringIdx, char *buf, int buflen)
  */
-static int libusb_get_string(
+static int nut_libusb_get_string(
 	usb_dev_handle *udev,
 	usb_ctrl_strindex StringIdx,
 	char *buf,
@@ -877,33 +885,18 @@ static int libusb_get_string(
 {
 	int ret;
 
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
-# pragma GCC diagnostic push
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
-# pragma GCC diagnostic ignored "-Wtype-limits"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
-# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
-#endif
-#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
-# pragma GCC diagnostic ignored "-Wtautological-unsigned-zero-compare"
-#endif
 	/*
-	 * usb.h:int  usb_get_string_simple(usb_dev_handle *dev, int index,
+	 * usb.h:int  nut_usb_get_string(usb_dev_handle *dev, int index,
 	 * usb.h-         char *buf, size_t buflen);
 	 */
 	if (!udev
-	|| StringIdx < 0 || (uintmax_t)StringIdx > INT_MAX
-	|| buflen < 0 || (uintmax_t)buflen > (uintmax_t)SIZE_MAX
+	|| StringIdx < 1 || StringIdx > 255
+	|| buflen < 1
 	) {
-#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
-# pragma GCC diagnostic pop
-#endif
 		return -1;
 	}
 
-	ret = usb_get_string_simple(udev, StringIdx, buf, (size_t)buflen);
+	ret = nut_usb_get_string(udev, StringIdx, buf, (size_t)buflen);
 
 #ifdef WIN32
 	errno = -ret;
@@ -913,22 +906,22 @@ static int libusb_get_string(
 	 * logging below - also tends to happen */
 	if (ret == 0) {
 		size_t len = strlen(buf);
-		upsdebugx(2, "%s: usb_get_string_simple() returned "
+		upsdebugx(2, "%s: nut_usb_get_string() returned "
 			"0 (might be just success code), "
 			"actual buf length is %" PRIuSIZE, __func__, len);
 		/* if (len) */
 			return len;
-		/* else may log "libusb_get_string: Success" and return 0 below */
+		/* else may log "nut_libusb_get_string: Success" and return 0 below */
 	}
 
-	return libusb_strerror(ret, __func__);
+	return nut_libusb_strerror(ret, __func__);
 }
 
 /* Expected evaluated types for the API:
- * static int libusb_get_interrupt(usb_dev_handle *udev,
+ * static int nut_libusb_get_interrupt(usb_dev_handle *udev,
  *	unsigned char *buf, int bufsize, int timeout)
  */
-static int libusb_get_interrupt(
+static int nut_libusb_get_interrupt(
 	usb_dev_handle *udev,
 	usb_ctrl_charbuf buf,
 	usb_ctrl_charbufsize bufsize,
@@ -952,10 +945,10 @@ static int libusb_get_interrupt(
 		ret = usb_clear_halt(udev, 0x81);
 	}
 
-	return libusb_strerror(ret, __func__);
+	return nut_libusb_strerror(ret, __func__);
 }
 
-static void libusb_close(usb_dev_handle *udev)
+static void nut_libusb_close(usb_dev_handle *udev)
 {
 	if (!udev) {
 		return;
@@ -1002,12 +995,12 @@ err:
 usb_communication_subdriver_t usb_subdriver = {
 	USB_DRIVER_NAME,
 	USB_DRIVER_VERSION,
-	libusb_open,
-	libusb_close,
-	libusb_get_report,
-	libusb_set_report,
-	libusb_get_string,
-	libusb_get_interrupt,
+	nut_libusb_open,
+	nut_libusb_close,
+	nut_libusb_get_report,
+	nut_libusb_set_report,
+	nut_libusb_get_string,
+	nut_libusb_get_interrupt,
 	LIBUSB_DEFAULT_CONF_INDEX,
 	LIBUSB_DEFAULT_INTERFACE,
 	LIBUSB_DEFAULT_DESC_INDEX,

@@ -76,6 +76,14 @@ expression.
 NOTE: When using this option, it is mandatory to also specify the *vendorid*
 and *productid* matching parameters.
 
+*lowbatt*='num'::
+Set the percentage at which the UPS will consider the battery charge as
+critically low, possibly resulting in a forced shutdown (FSD) situation.
++
+This value is typically dictated by the UPS device, although there is a
+fallback default value of 30 (in percent). Overriding this value can be
+helpful when the UPS sets this value to a lower percentage than intended.
+
 *offdelay*='num'::
 Set the timer before the UPS is turned off after the kill power command is
 sent (via the *-k* switch).
@@ -159,6 +167,20 @@ log message throttling description above.  This option adds a concept of UPS
 not forcing it to be fully charged all the time.  As long as the current value
 of `battery.charge` remains at or above this threshold percentage (default 100),
 the `OL+DISCHRG` message logging is not triggered by variations of the charge.
+
+*lbrb_log_delay_sec*='num'::
+Set to delay status-setting (and log messages) about device entering `LB` or
+`LB+RB` state.
++
+Some APC BXnnnnMI device models or firmware versions (reportedly 2023-2024)
+frequently report low battery, replace battery, and all ok within a couple
+of seconds, sometimes but not always preceded by OL+DISCHRG (presumably
+calibration). This setting lets the driver ignore short-lived states and
+only pay attention if they persist longer than this setting (and the device
+power state is `OL`).
+
+*lbrb_log_delay_without_calibrating*::
+Set to apply `lbrb_log_delay_sec` even if device is not calibrating.
 
 *disable_fix_report_desc*::
 Set to disable fix-ups for broken USB encoding, etc. which we apply by default
@@ -284,6 +306,15 @@ value (such as 10 seconds). This should solve the issue.
 
 Note that if you increase "pollinterval" beyond 10 or 15 seconds, you might
 also want to increase "pollfreq" by the same factor.
+
+With certain devices and operating systems, notably MGE/Eaton USB Vendor ID
+(`0x0463`) on some versions of the Linux kernel, you might encounter poor
+interaction with the "USB HID quirk" mechanism, which precludes Linux from
+seeing the device as a `hid-generic` first, to hand it over to a NUT driver
+later. For more details, see the NUT FAQ document. This particular quirk can
+be tuned with a kernel boot parameter (via GRUB etc.):
+
+        usbhid.quirks=0x0463:0xffff:0x08
 
 Got EPERM: Operation not permitted upon driver startup
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

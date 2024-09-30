@@ -200,6 +200,30 @@ extern const char *UPS_VERSION;
 /** @brief Default timeout (in seconds) for retrieving the result of a `TRACKING`-enabled operation (e.g. `INSTCMD`, `SET VAR`). */
 #define DEFAULT_TRACKING_TIMEOUT	10
 
+/* Returns a pointer to static internal char[] buffer with current value
+ * of NUT_VERSION_MACRO (aka char* UPS_VERSION) and its layman description
+ * (e.g. a "release" or "development iteration after" a certain semantically
+ * versioned release). Returns UPS_VERSION if failed to construct a better
+ * description. Either way, should not be free()'d by caller and does not
+ * have an end-of-line char of its own. */
+const char *describe_NUT_VERSION_once(void);
+
+/* Based on NUT_QUIET_INIT_BANNER envvar (present and empty or "true")
+ * hide the NUT tool name+version banners; show them by default */
+int banner_is_disabled(void);
+
+/* Some NUT programs have historically printed their banner at start-up
+ * always, and so did not print one in help()/usage() or handling `-V`
+ * like others did. Now that we have NUT_QUIET_INIT_BANNER, we need a
+ * way to print that banner (regardless of the flag in some cases).
+ * The "even_if_disabled" should be 0 for initial banner of those
+ * programs (so the envvar would hide it), 1 -V case and 2 in -h case
+ * (for a blank line after). As before, the banner is printed to stdout.
+ * Returns the result of printf() involved. Remembers to not print again
+ * if the earlier printf() was successful.
+ */
+int print_banner_once(const char *prog, int even_if_disabled);
+
 /* Normally we can (attempt to) use the syslog or Event Log (WIN32),
  * but environment variable NUT_DEBUG_SYSLOG allows to bypass it, and
  * perhaps keep daemons logging to stderr (e.g. in NUT Integration Test
@@ -291,15 +315,22 @@ pid_t get_max_pid_t(void);
  * -1 for error, or zero for a successfully sent signal */
 int sendsignalpid(pid_t pid, int sig, const char *progname, int check_current_progname);
 
-/* open <pidfn>, get the pid, then send it <sig>
+/* open <pidfn> and get the pid
+ * returns zero or more for successfully retrieved value,
+ * negative for errors:
+ * -3   PID file not found
+ * -2   PID file not parsable
+ */
+pid_t parsepidfile(const char *pidfn);
+
+#ifndef WIN32
+/* use parsepidfile() to get the pid, then send it <sig>
  * returns zero for successfully sent signal,
  * negative for errors:
  * -3   PID file not found
  * -2   PID file not parsable
  * -1   Error sending signal
- */
-#ifndef WIN32
-/* open <pidfn>, get the pid, then send it <sig>
+ *
  * if executable process with that pid has suitable progname
  * (specified or that of the current process, depending on args:
  * most daemons request to check_current_progname for their other
@@ -332,6 +363,31 @@ const char * rootpidpath(void);
 
 /* Die with a standard message if socket filename is too long */
 void check_unix_socket_filename(const char *fn);
+
+/* Provide integration for systemd inhibitor interface (where available,
+ * dummy code otherwise) implementing the pseudo-code example from
+ * https://systemd.io/INHIBITOR_LOCKS/
+ * TODO: Potentially extensible to other frameworks with similar concepts?..
+ */
+TYPE_FD Inhibit(const char *arg_what, const char *arg_who, const char *arg_why, const char *arg_mode);
+/* Let the service management framework proceed with its sleep mode */
+void Uninhibit(TYPE_FD *fd_ptr);
+/* Check once if the system plans to sleep or is waking up:
+ *  -1	Same reply as before, whatever it was
+ *   0	(false) Just after the sleep, at least as a bus signal
+ *   1	(true) Before the sleep - we must process and un-block it
+ */
+int isPreparingForSleep(void);
+
+/* A couple of methods to reflect built-in (absent) or run-time (it depends)
+ * support for monitoring that the OS goes to sleep and wakes up, and if we
+ * can "inhibit" that going to sleep in order to do some house-keeping first.
+ * -1 = do not know yet
+ *  0 = not supported, do not bother asking in daemon loops
+ *  1 = seems supported
+ */
+int isInhibitSupported(void);
+int isPreparingForSleepSupported(void);
 
 /* Send (daemon) state-change notifications to an
  * external service management framework such as systemd.

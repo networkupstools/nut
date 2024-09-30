@@ -23,6 +23,7 @@ Makefile.in
 /ChangeLog.adoc
 /config.guess
 /config.log
+/config.log.inplace-outer
 /config.status
 /config.sub
 /config.h

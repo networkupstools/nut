@@ -475,7 +475,7 @@ if [ -z "${CANBUILD_LIBGD_CGI-}" ]; then
 
     # NUT CI farm with Jenkins can build it; Travis could not
     [[ "$CI_OS_NAME" = "freebsd" ]] && CANBUILD_LIBGD_CGI=yes \
-    || [[ "$TRAVIS_OS_NAME" = "freebsd" ]] && CANBUILD_LIBGD_CGI=no
+    || { [[ "$TRAVIS_OS_NAME" = "freebsd" ]] && CANBUILD_LIBGD_CGI=no ; }
 
     # See also below for some compiler-dependent decisions
 fi
@@ -712,6 +712,45 @@ check_gitignore() {
         return 1
     fi
     return 0
+}
+
+consider_cleanup_shortcut() {
+    # Note: modern auto(re)conf requires pkg-config to generate the configure
+    # script, so to stage the situation of building without one (as if on an
+    # older system) we have to remove it when we already have the script.
+    # This matches the use-case of distro-building from release tarballs that
+    # include all needed pre-generated files to rely less on OS facilities.
+    DO_REGENERATE=false
+    if [ x"${CI_REGENERATE}" = xtrue ] ; then
+        echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because CI_REGENERATE='${CI_REGENERATE}'"
+        DO_REGENERATE=true
+    fi
+
+    if [ -s Makefile ]; then
+        if [ -n "`find "${SCRIPTDIR}" -name configure.ac -newer "${CI_BUILDDIR}"/configure`" ] \
+        || [ -n "`find "${SCRIPTDIR}" -name '*.m4' -newer "${CI_BUILDDIR}"/configure`" ] \
+        || [ -n "`find "${SCRIPTDIR}" -name Makefile.am -newer "${CI_BUILDDIR}"/Makefile`" ] \
+        || [ -n "`find "${SCRIPTDIR}" -name Makefile.in -newer "${CI_BUILDDIR}"/Makefile`" ] \
+        || [ -n "`find "${SCRIPTDIR}" -name Makefile.am -newer "${CI_BUILDDIR}"/Makefile.in`" ] \
+        ; then
+            # Avoid reconfiguring just for the sake of distclean
+            echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because recipes changed"
+            DO_REGENERATE=true
+        fi
+    fi
+
+    # When itertating configure.ac or m4 sources, we can end up with an
+    # existing but useless scropt file - nuke it and restart from scratch!
+    if [ -s "${CI_BUILDDIR}"/configure ] ; then
+        if ! sh -n "${CI_BUILDDIR}"/configure 2>/dev/null ; then
+            echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because current configure script syntax is broken"
+            DO_REGENERATE=true
+        fi
+    fi
+
+    if $DO_REGENERATE ; then
+        rm -f "${CI_BUILDDIR}"/Makefile "${CI_BUILDDIR}"/configure "${CI_BUILDDIR}"/include/config.h "${CI_BUILDDIR}"/include/config.h.in "${CI_BUILDDIR}"'/include/config.h.in~'
+    fi
 }
 
 can_clean_check() {
@@ -1305,7 +1344,11 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     CONFIG_OPTS+=("--with-cgi=auto")
                 fi
             else
-                CONFIG_OPTS+=("--with-cgi=auto")
+                if [ "${CANBUILD_LIBGD_CGI-}" = "no" ] ; then
+                    CONFIG_OPTS+=("--without-cgi")
+                else
+                    CONFIG_OPTS+=("--with-cgi=auto")
+                fi
             fi
             ;;
         "default-alldrv:no-distcheck")
@@ -1455,38 +1498,13 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         CONFIG_OPTS+=("--with-debuginfo=${BUILD_DEBUGINFO}")
     fi
 
-    # Note: modern auto(re)conf requires pkg-config to generate the configure
-    # script, so to stage the situation of building without one (as if on an
-    # older system) we have to remove it when we already have the script.
-    # This matches the use-case of distro-building from release tarballs that
-    # include all needed pre-generated files to rely less on OS facilities.
-    if [ -s Makefile ]; then
-        if [ -n "`find "${SCRIPTDIR}" -name configure.ac -newer "${CI_BUILDDIR}"/configure`" ] \
-        || [ -n "`find "${SCRIPTDIR}" -name '*.m4' -newer "${CI_BUILDDIR}"/configure`" ] \
-        || [ -n "`find "${SCRIPTDIR}" -name Makefile.am -newer "${CI_BUILDDIR}"/Makefile`" ] \
-        || [ -n "`find "${SCRIPTDIR}" -name Makefile.in -newer "${CI_BUILDDIR}"/Makefile`" ] \
-        || [ -n "`find "${SCRIPTDIR}" -name Makefile.am -newer "${CI_BUILDDIR}"/Makefile.in`" ] \
-        ; then
-            # Avoid reconfiguring for the sake of distclean
-            echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because recipes changed"
-            rm -f "${CI_BUILDDIR}"/Makefile "${CI_BUILDDIR}"/configure
-        fi
-    fi
-
-    # When itertating configure.ac or m4 sources, we can end up with an
-    # existing but useless scropt file - nuke it and restart from scratch!
-    if [ -s "${CI_BUILDDIR}"/configure ] ; then
-        if ! sh -n "${CI_BUILDDIR}"/configure 2>/dev/null ; then
-            echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because current configure script syntax is broken"
-            rm -f "${CI_BUILDDIR}"/Makefile "${CI_BUILDDIR}"/configure
-        fi
-    fi
+    consider_cleanup_shortcut
 
     if [ -s Makefile ]; then
         # Let initial clean-up be at default verbosity
 
         # Handle Ctrl+C with helpful suggestions:
-        trap 'echo "!!! If clean-up looped remaking the configure script for maintainer-clean, try to:"; echo "    rm -f Makefile configure ; $0 $SCRIPT_ARGS"' 2
+        trap 'echo "!!! If clean-up looped remaking the configure script for maintainer-clean, try to:"; echo "    rm -f Makefile configure include/config.h* ; $0 $SCRIPT_ARGS"' 2
 
         echo "=== Starting initial clean-up (from old build products)"
         case "$MAKE_FLAGS $MAKE_FLAGS_CLEAN" in
@@ -2080,27 +2098,8 @@ bindings)
     fi
 
     cd "${SCRIPTDIR}"
-    if [ -s Makefile ]; then
-        if [ -n "`find "${SCRIPTDIR}" -name configure.ac -newer "${CI_BUILDDIR}"/configure`" ] \
-        || [ -n "`find "${SCRIPTDIR}" -name '*.m4' -newer "${CI_BUILDDIR}"/configure`" ] \
-        || [ -n "`find "${SCRIPTDIR}" -name Makefile.am -newer "${CI_BUILDDIR}"/Makefile`" ] \
-        || [ -n "`find "${SCRIPTDIR}" -name Makefile.in -newer "${CI_BUILDDIR}"/Makefile`" ] \
-        || [ -n "`find "${SCRIPTDIR}" -name Makefile.am -newer "${CI_BUILDDIR}"/Makefile.in`" ] \
-        ; then
-            # Avoid reconfiguring for the sake of distclean
-            echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because recipes changed"
-            rm -f "${CI_BUILDDIR}"/Makefile "${CI_BUILDDIR}"/configure
-        fi
-    fi
 
-    # When itertating configure.ac or m4 sources, we can end up with an
-    # existing but useless scropt file - nuke it and restart from scratch!
-    if [ -s "${CI_BUILDDIR}"/configure ] ; then
-        if ! sh -n "${CI_BUILDDIR}"/configure 2>/dev/null ; then
-            echo "=== Starting initial clean-up (from old build products): TAKING SHORTCUT because current configure script syntax is broken"
-            rm -f "${CI_BUILDDIR}"/Makefile "${CI_BUILDDIR}"/configure
-        fi
-    fi
+    consider_cleanup_shortcut
 
     if [ -s Makefile ]; then
         # Help developers debug:

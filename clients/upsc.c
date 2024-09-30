@@ -36,15 +36,14 @@ static UPSCONN_t	*ups = NULL;
 
 static void usage(const char *prog)
 {
-	printf("Network UPS Tools upsc %s\n\n", UPS_VERSION);
+	print_banner_once(prog, 2);
+	printf("NUT read-only client program to display UPS variables.\n");
 
-	printf("usage: %s -l | -L [<hostname>[:port]]\n", prog);
+	printf("\nusage: %s -l | -L [<hostname>[:port]]\n", prog);
 	printf("       %s <ups> [<variable>]\n", prog);
 	printf("       %s -c <ups>\n", prog);
 
-	printf("\nDemo program to display UPS variables.\n\n");
-
-	printf("First form (lists UPSes):\n");
+	printf("\nFirst form (lists UPSes):\n");
 	printf("  -l         - lists each UPS on <hostname>, one per line.\n");
 	printf("  -L         - lists each UPS followed by its description (from ups.conf).\n");
 	printf("               Default hostname: localhost\n");
@@ -251,12 +250,11 @@ int main(int argc, char **argv)
 			break;
 
 		case 'V':
+			/* just show the version and optional
+			 * CONFIG_FLAGS banner if available */
+			print_banner_once(prog, 1);
 			nut_report_config_flags();
-
-			fatalx(EXIT_SUCCESS, "Network UPS Tools upsc %s", UPS_VERSION);
-#ifndef HAVE___ATTRIBUTE__NORETURN
-			exit(EXIT_SUCCESS);	/* Should not get here in practice, but compiler is afraid we can fall through */
-#endif
+			exit(EXIT_SUCCESS);
 
 		case 'h':
 		default:

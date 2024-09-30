@@ -58,7 +58,7 @@
 #	define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.36"
+#define DRIVER_VERSION	"0.37"
 
 #ifdef QX_SERIAL
 #	include "serial.h"
@@ -756,6 +756,9 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 			break;
 
 		case LIBUSB_ERROR_TIMEOUT:	/* Connection timed out */
+			break;
+
+		default:
 			break;
 		}
 

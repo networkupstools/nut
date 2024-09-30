@@ -18,6 +18,11 @@
  license as Perl itself. That is to say either GPL version 1 or (at your option)
  any later version, or the "Artistic License".
 
+ The scripts/installer contents were donated to the Network UPS Tools project
+ by Eaton in 2022, including the license change from the one originally used
+ with their software companion to terms of the open-source project (that is,
+ GPL version 2 or newer).
+
  Several fallback implementations for methods absent from standard library of
  an end-user's current build platform are derived from source code available
  under the two-clause BSD license (common/strptime.c, common/strnlen.c)

@@ -289,6 +289,31 @@ NutWriter::status_t NutConfConfigWriter::writeConfig(const NutConfiguration & co
 			case NutConfiguration::MODE_MANUAL:
 				mode_str = "manual";
 				break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+			default:
+				/* Must not occur. */
+				break;
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 		}
 
 		status = writeDirective("MODE=" + mode_str);
@@ -379,6 +404,8 @@ const NotifyFlagsStrings::TypeStrings NotifyFlagsStrings::type_str = {
 	"NOTOFF",	// NOTIFY_NOTOFF
 	"BYPASS",	// NOTIFY_BYPASS
 	"NOTBYPASS",	// NOTIFY_NOTBYPASS
+	"SUSPEND_STARTING",	// NOTIFY_SUSPEND_STARTING
+	"SUSPEND_FINISHED",	// NOTIFY_SUSPEND_FINISHED
 };
 
 
