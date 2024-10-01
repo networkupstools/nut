@@ -2402,7 +2402,7 @@ static void ups_status_set(void)
 	if (ups_status & (STATUS(BYPASSAUTO) | STATUS(BYPASSMAN))) {
 		status_set("BYPASS");		/* on bypass */
 	}
-		if (ups_status & STATUS(ECOMODE)) {
+	if (ups_status & STATUS(ECOMODE)) {
 		status_set("ECO");		/* on ECO Mode */
 	}
 	if (ups_status & STATUS(OFF)) {
