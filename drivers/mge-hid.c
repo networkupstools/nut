@@ -1397,6 +1397,8 @@ static hid_info_t mge_hid2nut[] =
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[2].PresentStatus.Used", NULL, NULL, 0, bypass_auto_info }, /* Automatic bypass */
 	/* NOTE: entry [3] is above as mge_onbatt_info */
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[4].PresentStatus.Used", NULL, NULL, 0, bypass_manual_info }, /* Manual bypass */
+	/* NOTE: needs to be tested */
+	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[5].PresentStatus.Used", NULL, NULL, 0, eco_mode_info }, /* ECO/HE Mode */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.FanFailure", NULL, NULL, 0, fanfail_info },
 	{ "BOOL", 0, 0, "UPS.BatterySystem.Battery.PresentStatus.Present", NULL, NULL, 0, nobattery_info },
 	{ "BOOL", 0, 0, "UPS.BatterySystem.Charger.PresentStatus.InternalFailure", NULL, NULL, 0, chargerfail_info },

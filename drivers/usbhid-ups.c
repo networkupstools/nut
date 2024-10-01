@@ -373,8 +373,9 @@ info_lkp_t bypass_manual_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 info_lkp_t eco_mode_info[] = {
-	{ 1, "ecomode", NULL, NULL },
-    { 0, "!ecomode", NULL, NULL },
+	{ 0, "normal", NULL, NULL },
+    { 1, "high-efficiency", NULL, NULL },
+    { 2, "ESS", NULL, NULL }, /* makes sense for UPS that implements this mode */
     { 0, NULL, NULL, NULL }
 };
 /* note: this value is reverted (0=set, 1=not set). We report "being
