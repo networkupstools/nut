@@ -156,6 +156,19 @@ troubleshooting a deployment, without impacting foreground or background
 running mode directly. Command-line option `-D` can only increase this
 verbosity level.
 
+*LIBUSB_DEBUG* 'INTEGER'::
+
+Optional.  For run-time troubleshooting of USB-capable NUT drivers,
+you can specify verbosity of LibUSB specific debugging as a numeric
+value such as `4` ("All messages are emitted").  Should not have any
+practical impact on other NUT drivers.
++
+For more details, including the currently supported values for your
+version of the library, see e.g.:
+
+* https://libusb.sourceforge.io/api-1.0/
+* https://libusb.sourceforge.io/api-1.0/group__libusb__lib.html
+
 UPS FIELDS
 ----------
 
@@ -324,6 +337,18 @@ troubleshooting a deployment, without impacting foreground or background
 running mode directly.  If the global `debug_min` is also set, this
 driver-level setting overrides it.  Command-line option `-D` can only
 increase this verbosity level.
+
+*LIBUSB_DEBUG* 'INTEGER'::
+
+Optional.  For run-time troubleshooting of USB-capable NUT drivers,
+you can specify verbosity of LibUSB specific debugging as a numeric
+value such as `4` ("All messages are emitted").
++
+For more details, including the currently supported values for your
+version of the library, see e.g.:
+
+* https://libusb.sourceforge.io/api-1.0/
+* https://libusb.sourceforge.io/api-1.0/group__libusb__lib.html
 
 INTEGRATION
 -----------

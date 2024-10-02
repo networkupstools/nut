@@ -191,6 +191,11 @@ https://github.com/networkupstools/nut/milestone/11
    of an UPS interface on a composite USB device or when looking at devices
    with non-default interface/endpoint/config numbers. [PR #2611]
 
+ - USB drivers should now accept a `LIBUSB_DEBUG=INTEGER` setting in `ups.conf`
+   (as well as an environment variable that can be generally set via `nut.conf`
+   or service unit methods or init script), to enable troubleshooting of LibUSB
+   itself. [issue #2616]
+
  - Introduced a new driver concept for interaction with OS-reported hardware
    monitoring readings. Currently instantiated as `hwmon_ina219` specifically
    made for Texas Instruments INA219 chip as exposed in the Linux "hwmon"
