@@ -1064,13 +1064,35 @@ static int main_arg(char *var, char *val)
 	 * Note: during reload_flag!=0 handling this is reset to -1, to
 	 * catch commented-away settings, so not checking previous value.
 	 */
-	if (!strcmp(var, "debug_min")) {
+	if (!strcasecmp(var, "debug_min")) {
 		int lvl = -1; /* typeof common/common.c: int nut_debug_level */
 		if ( str_to_int (val, &lvl, 10) && lvl >= 0 ) {
 			nut_debug_level_driver = lvl;
 		} else {
 			upslogx(LOG_INFO, "WARNING : Invalid debug_min value found in ups.conf for the driver");
 		}
+		return 1;	/* handled */
+	}
+
+	if (!strcmp(var, "LIBUSB_DEBUG")) {
+		int lvl = -1; /* https://libusb.sourceforge.io/api-1.0/group__libusb__lib.html#ga2d6144203f0fc6d373677f6e2e89d2d2 */
+		int msglvl = 1;
+		char buf[SMALLBUF], *s = getenv("LIBUSB_DEBUG");
+
+		if (!str_to_int(val, &lvl, 10) || lvl < 0) {
+			lvl = 4;
+			upslogx(LOG_INFO, "WARNING : Invalid LIBUSB_DEBUG value found in ups.conf for the driver, defaulting to %d", lvl);
+		}
+		if (nut_debug_level < 1 && nut_debug_level_driver < 1 && nut_debug_level_global < 1)
+			msglvl = 0;
+
+		if (s)
+			upsdebugx(msglvl, "Old value of LIBUSB_DEBUG=%s in envvars", s);
+
+		snprintf(buf, sizeof(buf), "%d", lvl);
+		upsdebugx(msglvl, "Enabling LIBUSB_DEBUG=%s from ups.conf", buf);
+		setenv("LIBUSB_DEBUG", buf, 1);
+
 		return 1;	/* handled */
 	}
 
@@ -1189,13 +1211,35 @@ static void do_global_args(const char *var, const char *val)
 	 * Note: during reload_flag!=0 handling this is reset to -1, to
 	 * catch commented-away settings, so not checking previous value.
 	 */
-	if (!strcmp(var, "debug_min")) {
+	if (!strcasecmp(var, "debug_min")) {
 		int lvl = -1; /* typeof common/common.c: int nut_debug_level */
 		if ( str_to_int (val, &lvl, 10) && lvl >= 0 ) {
 			nut_debug_level_global = lvl;
 		} else {
 			upslogx(LOG_INFO, "WARNING : Invalid debug_min value found in ups.conf global settings");
 		}
+
+		return;
+	}
+
+	if (!strcmp(var, "LIBUSB_DEBUG")) {
+		int lvl = -1; /* https://libusb.sourceforge.io/api-1.0/group__libusb__lib.html#ga2d6144203f0fc6d373677f6e2e89d2d2 */
+		int msglvl = 1;
+		char *s = getenv("LIBUSB_DEBUG");
+
+		if (!str_to_int(val, &lvl, 10) || lvl < 0) {
+			lvl = 4;
+			upslogx(LOG_INFO, "WARNING : Invalid LIBUSB_DEBUG value found in ups.conf for the driver, defaulting to %d", lvl);
+		}
+		if (nut_debug_level < 1 && nut_debug_level_driver < 1 && nut_debug_level_global < 1)
+			msglvl = 0;
+
+		if (s)
+			upsdebugx(msglvl, "Old value of LIBUSB_DEBUG=%s in envvars", s);
+
+		snprintf(buf, sizeof(buf), "%d", lvl);
+		upsdebugx(msglvl, "Enabling LIBUSB_DEBUG=%s from ups.conf", buf);
+		setenv("LIBUSB_DEBUG", buf, 1);
 
 		return;
 	}
