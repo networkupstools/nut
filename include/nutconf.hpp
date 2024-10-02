@@ -1667,6 +1667,7 @@ public:
 	inline bool getNoWait()            const { return getFlag("nowait"); }
 
 	inline long long int getDebugMin()      const { return getInt("debug_min"); }
+	inline long long int getLibusbDebug()   const { return getInt("LIBUSB_DEBUG"); }
 	inline long long int getMaxRetry()      const { return getInt("maxretry"); }
 	inline long long int getMaxStartDelay() const { return getInt("maxstartdelay"); }
 	inline long long int getPollInterval()  const { return getInt("pollinterval", 5); }  // TODO: check the default
@@ -1681,6 +1682,7 @@ public:
 	inline void setNoWait(bool val = true)              { setFlag("nowait",    val); }
 
 	inline void setDebugMin(long long int num)          { setInt("debug_min",     num); }
+	inline void setLibusbDebug(long long int num)       { setInt("LIBUSB_DEBUG",  num); }
 	inline void setMaxRetry(long long int num)          { setInt("maxretry",      num); }
 	inline void setMaxStartDelay(long long int delay)   { setInt("maxstartdelay", delay); }
 	inline void setPollInterval(long long int interval) { setInt("pollinterval",  interval); }
@@ -1848,6 +1850,7 @@ public:
 	inline long long int getDaysOff(const std::string & ups)                   const { return getInt(ups, "daysoff"); }             // CHECKME
 	inline long long int getDaySweek(const std::string & ups)                  const { return getInt(ups, "daysweek"); }            // CHECKME
 	inline long long int getDebugMin(const std::string & ups)                  const { return getInt(ups, "debug_min"); }
+	inline long long int getLibusbDebug(const std::string & ups)               const { return getInt(ups, "LIBUSB_DEBUG"); }
 	inline long long int getFrequency(const std::string & ups)                 const { return getInt(ups, "frequency"); }           // CHECKME
 	inline long long int getHourOff(const std::string & ups)                   const { return getInt(ups, "houroff"); }             // CHECKME
 	inline long long int getHourOn(const std::string & ups)                    const { return getInt(ups, "houron"); }              // CHECKME
@@ -2061,6 +2064,7 @@ public:
 	inline void setDaysOff(const std::string & ups, long long int daysoff)                    { setInt(ups, "daysoff",             daysoff); }      // CHECKME
 	inline void setDaysWeek(const std::string & ups, long long int daysweek)                  { setInt(ups, "daysweek",            daysweek); }     // CHECKME
 	inline void setDebugMin(const std::string & ups, long long int val)                       { setInt(ups, "debug_min",           val); }
+	inline void setLibusbDebug(const std::string & ups, long long int val)                    { setInt(ups, "LIBUSB_DEBUG",        val); }
 	inline void setFrequency(const std::string & ups, long long int frequency)                { setInt(ups, "frequency",           frequency); }    // CHECKME
 	inline void setHourOff(const std::string & ups, long long int houroff)                    { setInt(ups, "houroff",             houroff); }      // CHECKME
 	inline void setHourOn(const std::string & ups, long long int houron)                      { setInt(ups, "houron",              houron); }       // CHECKME

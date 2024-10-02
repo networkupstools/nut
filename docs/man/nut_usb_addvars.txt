@@ -125,18 +125,21 @@ As a rule of thumb for `usb_hid_desc_index` discovery, you can see larger
 `wDescriptorLength` values (roughly 600+ bytes) in reports of `lsusb` or
 similar tools.
 
-[NOTE]
-======
+*LIBUSB_DEBUG =* 'INTEGER'::
+
 Run-time troubleshooting of USB-capable NUT drivers can involve not only
 raising the common NUT debug verbosity (e.g. using the `DEBUG_MIN` setting
 in linkman:ups.conf[5] or protocol commands to change the `driver.debug`
 value), but may also benefit from LibUSB specific debugging.
-
-For the latter, currently you would have to export the environment variable
-`LIBUSB_DEBUG` before starting a NUT driver (may be set and "exported" via
-linkman:nut.conf[5]), to a numeric value such as `4` ("All messages are
-emitted"). For more details, including the currently supported values, see:
++
+For the latter, you can set the `LIBUSB_DEBUG` driver option; alternatively
+you can classically export the environment variable `LIBUSB_DEBUG` before
+starting a NUT driver program (may be set and "exported" in driver init
+script or service method, perhaps via linkman:nut.conf[5]), to a numeric
+value such as `4` ("All messages are emitted").
++
+For more details, including the currently supported values for your version
+of the library, see e.g.:
 
 * https://libusb.sourceforge.io/api-1.0/
 * https://libusb.sourceforge.io/api-1.0/group__libusb__lib.html
-======

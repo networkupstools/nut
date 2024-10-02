@@ -1074,6 +1074,28 @@ static int main_arg(char *var, char *val)
 		return 1;	/* handled */
 	}
 
+	if (!strcmp(var, "LIBUSB_DEBUG")) {
+		int lvl = -1; /* https://libusb.sourceforge.io/api-1.0/group__libusb__lib.html#ga2d6144203f0fc6d373677f6e2e89d2d2 */
+		int msglvl = 1;
+		char buf[SMALLBUF], *s = getenv("LIBUSB_DEBUG");
+
+		if (!str_to_int(val, &lvl, 10) || lvl < 0) {
+			lvl = 4;
+			upslogx(LOG_INFO, "WARNING : Invalid LIBUSB_DEBUG value found in ups.conf for the driver, defaulting to %d", lvl);
+		}
+		if (nut_debug_level < 1 && nut_debug_level_driver < 1 && nut_debug_level_global < 1)
+			msglvl = 0;
+
+		if (s)
+			upsdebugx(msglvl, "Old value of LIBUSB_DEBUG=%s in envvars", s);
+
+		snprintf(buf, sizeof(buf), "%d", lvl);
+		upsdebugx(msglvl, "Enabling LIBUSB_DEBUG=%s from ups.conf", buf);
+		setenv("LIBUSB_DEBUG", buf, 1);
+
+		return 1;	/* handled */
+	}
+
 	return 0;	/* unhandled, pass it through to the driver */
 }
 
@@ -1196,6 +1218,28 @@ static void do_global_args(const char *var, const char *val)
 		} else {
 			upslogx(LOG_INFO, "WARNING : Invalid debug_min value found in ups.conf global settings");
 		}
+
+		return;
+	}
+
+	if (!strcmp(var, "LIBUSB_DEBUG")) {
+		int lvl = -1; /* https://libusb.sourceforge.io/api-1.0/group__libusb__lib.html#ga2d6144203f0fc6d373677f6e2e89d2d2 */
+		int msglvl = 1;
+		char *s = getenv("LIBUSB_DEBUG");
+
+		if (!str_to_int(val, &lvl, 10) || lvl < 0) {
+			lvl = 4;
+			upslogx(LOG_INFO, "WARNING : Invalid LIBUSB_DEBUG value found in ups.conf for the driver, defaulting to %d", lvl);
+		}
+		if (nut_debug_level < 1 && nut_debug_level_driver < 1 && nut_debug_level_global < 1)
+			msglvl = 0;
+
+		if (s)
+			upsdebugx(msglvl, "Old value of LIBUSB_DEBUG=%s in envvars", s);
+
+		snprintf(buf, sizeof(buf), "%d", lvl);
+		upsdebugx(msglvl, "Enabling LIBUSB_DEBUG=%s from ups.conf", buf);
+		setenv("LIBUSB_DEBUG", buf, 1);
 
 		return;
 	}
