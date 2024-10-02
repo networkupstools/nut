@@ -20,24 +20,32 @@ https://github.com/networkupstools/nut/milestone/9
 
  - (expected) Dynamic Mapping Files (DMF) feature supported, to allow
    the driver binaries to be built once and data mappings to be loaded
-   and modernized on the fly [Ported from 42ITy project]
+   and modernized on the fly (porting from 42ITy project)
 
-PLANNED: Release notes for NUT 2.8.3 - what's new since 2.8.2
--------------------------------------------------------------
+ - (expected) Porting of reference packaging from 42ITy project
 
-https://github.com/networkupstools/nut/milestone/11
+ - (expected) Porting of patches suggested by different distribution packages
+
+ - (expected) C code clean-up/consistency (string format security, work with
+   Boolean values, string to number conversions, etc. in the same manner)
 
  - (expected) clean-up of libusb API variants support [#300 and follow-ups]
 
  - (expected) CI automation for coding style
 
+ - (expected) CI automation for driver flags and variables to be certainly
+   documented, handled in augeas lenses, nutconf classes, etc.
+
  - (expected) CI automation for use of data points in drivers that conform
    to patterns defined in link:docs/nut-names.txt[]
 
- - (expected) Porting of performance and bug fixes from 42ITy project
+ - (expected) Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0+
 
- - (expected) Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0
 
+PLANNED: Release notes for NUT 2.8.3 - what's new since 2.8.2
+-------------------------------------------------------------
+
+https://github.com/networkupstools/nut/milestone/11
 
  - Fix fallout of development in NUT v2.8.0 and/or v2.8.1 and/or v2.8.2:
    * Move of `NUT_DEBUG_LEVEL` and "-D" CLI option handling to start of
