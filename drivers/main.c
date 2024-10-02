@@ -1064,7 +1064,7 @@ static int main_arg(char *var, char *val)
 	 * Note: during reload_flag!=0 handling this is reset to -1, to
 	 * catch commented-away settings, so not checking previous value.
 	 */
-	if (!strcmp(var, "debug_min")) {
+	if (!strcasecmp(var, "debug_min")) {
 		int lvl = -1; /* typeof common/common.c: int nut_debug_level */
 		if ( str_to_int (val, &lvl, 10) && lvl >= 0 ) {
 			nut_debug_level_driver = lvl;
@@ -1189,7 +1189,7 @@ static void do_global_args(const char *var, const char *val)
 	 * Note: during reload_flag!=0 handling this is reset to -1, to
 	 * catch commented-away settings, so not checking previous value.
 	 */
-	if (!strcmp(var, "debug_min")) {
+	if (!strcasecmp(var, "debug_min")) {
 		int lvl = -1; /* typeof common/common.c: int nut_debug_level */
 		if ( str_to_int (val, &lvl, 10) && lvl >= 0 ) {
 			nut_debug_level_global = lvl;
