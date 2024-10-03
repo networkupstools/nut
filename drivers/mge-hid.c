@@ -1482,7 +1482,7 @@ static hid_info_t mge_hid2nut[] =
 	/* ECO(HE) Mode switch */
 	{ "input.eco.switchable", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[5].Switchable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_mode_info },
 
-		/* ECO(HE) Mode switch */
+	/* Auto Bypass Mode switch */
 	{ "input.bypass.switchable", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[2].Switchable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_bypass_mode_info },
 
 	/* Output page */
