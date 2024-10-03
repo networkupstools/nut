@@ -703,6 +703,13 @@ static info_lkp_t eaton_input_mode_info[] = {
     { 0, NULL, NULL, NULL }
 };
 
+/* Automatic Bypass mode */
+static info_lkp_t eaton_input_bypass_mode_info[] = {
+    { 0, "normal", NULL, NULL },
+    { 1, "auto-bypass", NULL, NULL },    
+    { 0, NULL, NULL, NULL }
+};
+
 /* Determine country using UPS.PowerSummary.Country.
  * If not present:
  * 		if PowerConverter.Output.Voltage >= 200 => "Europe"
@@ -1475,6 +1482,9 @@ static hid_info_t mge_hid2nut[] =
 	/* ECO(HE) Mode switch */
 	{ "input.eco.switchable", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[5].Switchable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_mode_info },
 
+		/* ECO(HE) Mode switch */
+	{ "input.bypass.switchable", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[2].Switchable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_bypass_mode_info },
+
 	/* Output page */
 	{ "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", NULL, "%.1f", 0, NULL },
 	{ "output.L1-N.voltage", 0, 0, "UPS.PowerConverter.Output.Phase.[1].Voltage", NULL, "%.1f", 0, NULL },
@@ -1584,8 +1594,8 @@ static hid_info_t mge_hid2nut[] =
 	{ "essmode.disable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "0", HU_TYPE_CMD, NULL },
 
 	/* Command to switch Automatic Bypass Mode */ /* Needs to check */
-	{ "bypass.disable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "0", HU_TYPE_CMD, NULL },
-	{ "bypass.enable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "1", HU_TYPE_CMD, NULL },
+	{ "bypass.disable", 0, 0, "UPS.PowerConverter.Input.[2].Switchable", NULL, "0", HU_TYPE_CMD, NULL },
+	{ "bypass.enable", 0, 0, "UPS.PowerConverter.Input.[2].Switchable", NULL, "1", HU_TYPE_CMD, NULL },
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
