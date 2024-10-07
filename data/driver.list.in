@@ -900,6 +900,8 @@
 "Mustek"	"ups"	"2"	"Yukai PowerMust"	"1000 USB (PID: 5161)"	"blazer_usb"
 "Mustek"	"ups"	"2"	"Various"	""	"blazer_ser"
 
+"NetVision"	"ups"	"3"	"U4BC02CB00NY100"	""	"snmp-ups"	# https://github.com/networkupstools/nut/issues/1732
+
 "Neus"	"ups"	"2"	"400va / 600va"	""	"blazer_ser"
 
 "NHS Sistemas de Energia"	"ups"	"5"	"Expert C Online 6000"	""	"gamatronic"	# http://www.nhs.com.br/produtos_interna/id/TWpFeQ==
