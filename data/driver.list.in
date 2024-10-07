@@ -1211,6 +1211,8 @@
 
 "Sysgration"	"ups"	"2"	"UPGUARDS Pro650"	""	"blazer_ser"
 
+"Techly"	"ups"	"2"	"1000VA"	"USB"	"nutdrv_qx (very little data available with subdriver/protocol=hunnox)"	# https://github.com/networkupstools/nut/issues/2651
+
 "Tecnoware"	"ups"	"2"	"Easy Power 1200"	""	"blazer_ser"
 "Tecnoware"	"ups"	"2"	"UPS ERA LCD 0.65"	"USB"	"blazer_usb langid_fix=0x409"
 "Tecnoware"	"ups"	"2"	"UPS ERA PLUS 1100"	"USB"	"blazer_usb"	# https://www.tecnoware.com/Prodotti/FGCERAPL1100/ups-era-plus-1100.aspx https://github.com/networkupstools/nut/issues/747
