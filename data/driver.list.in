@@ -1011,6 +1011,8 @@
 "PowerMan"	"ups"	"2"	"RealSmart 1000"	""	"blazer_ser"
 "PowerMan"	"ups"	"1"	"BackPro"	""	"genericups upstype=4"
 
+"Powermatic"	"ups"	"2"	"Cleanline L-1000C"	"USB"	"nutdrv_qx"	# https://alioth-lists.debian.net/pipermail/nut-upsdev/2024-September/008015.html
+
 "PowerShield"	"ups"	"2"	"Defender 1200VA"	"USB"	"blazer_usb"
 
 "PowerTech"	"ups"	"1"	"Comp1000"	"DTR cable power"	"genericups upstype=3"
