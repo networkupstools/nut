@@ -37,6 +37,9 @@
 #
 # The entry may be followed by comments. Be sure to not use double-quotes there!
 
+"2E"	"ups"	"2"	"PS1000L"	"USB"	"nutdrv_qx"	# https://github.com/networkupstools/nut-ddl/issues/41
+"2E"	"ups"	"2"	"PS1000L"	"serial"	"nutdrv_qx"	# https://github.com/networkupstools/nut-ddl/issues/41
+
 "Ablerex"	"ups"	"2"	"625L"	"USB"	"blazer_usb"
 "Ablerex"	"ups"	"2"	"Hope Office 400/600"	""	"blazer_ser"
 "Ablerex"	"ups"	"2"	"MARS MS3000RT"	""	"blazer_ser"
