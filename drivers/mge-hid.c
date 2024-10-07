@@ -703,10 +703,24 @@ static info_lkp_t eaton_input_mode_info[] = {
     { 0, NULL, NULL, NULL }
 };
 
-/* Automatic Bypass mode */
-static info_lkp_t eaton_input_bypass_mode_info[] = {
-    { 0, "normal", NULL, NULL },
-    { 1, "bypassauto", NULL, NULL },    
+/* Automatic Bypass mode On */
+static info_lkp_t eaton_input_bypass_mode_on_info[] = {
+    { 0, "not used", NULL, NULL },
+    { 1, "bypassOn", NULL, NULL },    
+    { 0, NULL, NULL, NULL }
+};
+
+/* Automatic Bypass mode Off */
+static info_lkp_t eaton_input_bypass_mode_off_info[] = {
+    { 0, "not used", NULL, NULL },
+    { 1, "bypassOff", NULL, NULL },    
+    { 0, NULL, NULL, NULL }
+};
+
+/* Forced Transfer Enable needs for Automatic Bypass mode */
+static info_lkp_t eaton_input_transfer_on_off_info[] = {
+    { 0, "disabled", NULL, NULL },
+    { 1, "enabled", NULL, NULL },    
     { 0, NULL, NULL, NULL }
 };
 
@@ -1457,6 +1471,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "input.transfer.frequency.bypass.range", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.FrequencyRangeBypassTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.transfer.frequency.eco.range", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.FrequencyRangeEcoTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.transfer.hysteresis", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.HysteresisVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+    { "input.transfer.forced.enabled", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[2].ForcedTransferEnable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_transfer_on_off_info },
 	{ "input.transfer.trim.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.HighVoltageBuckTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.sensitivity", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerConverter.Output.SensitivityMode", NULL, "%s", HU_FLAG_SEMI_STATIC, mge_sensitivity_info },
 	{ "input.voltage.extended", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.ExtendedVoltageMode", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
@@ -1482,9 +1497,12 @@ static hid_info_t mge_hid2nut[] =
 	/* ECO(HE) Mode switch */
 	{ "input.eco.switchable", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[5].Switchable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_mode_info },
 
-	/* Auto Bypass Mode switch */ /* Needs more testing */
-	{ "input.bypass.switchable", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[2].Switchable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_bypass_mode_info },
-
+	/* Auto Bypass Mode on/off */ /* Needs more testing */
+	/* needs check this variable */
+	/* { "input.bypass.switchable", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[2].Switchable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_bypass_mode_info }, */
+	{ "input.bypass.switch.on", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[2].SwitchOnControl", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_bypass_mode_on_info },
+	{ "input.bypass.switch.off", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[2].SwitchOffControl", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_bypass_mode_off_info },
+	
 	/* Output page */
 	{ "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", NULL, "%.1f", 0, NULL },
 	{ "output.L1-N.voltage", 0, 0, "UPS.PowerConverter.Output.Phase.[1].Voltage", NULL, "%.1f", 0, NULL },
@@ -1593,9 +1611,9 @@ static hid_info_t mge_hid2nut[] =
 	{ "essmode.enable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "2", HU_TYPE_CMD, NULL },
 	{ "essmode.disable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "0", HU_TYPE_CMD, NULL },
 
-	/* Command to switch Automatic Bypass Mode */ /* Needs to check */
-	{ "bypass.disable", 0, 0, "UPS.PowerConverter.Input.[2].Switchable", NULL, "0", HU_TYPE_CMD, NULL },
-	{ "bypass.enable", 0, 0, "UPS.PowerConverter.Input.[2].Switchable", NULL, "1", HU_TYPE_CMD, NULL },
+	/* Command to switch Automatic Bypass Mode On/Off*/ /* Needs to check */
+	{ "bypass.on", 0, 0, "UPS.PowerConverter.Input.[2].SwitchOnControl", NULL, "1", HU_TYPE_CMD, NULL },
+	{ "bypass.off", 0, 0, "UPS.PowerConverter.Input.[2].SwitchOffControl", NULL, "1", HU_TYPE_CMD, NULL },
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
