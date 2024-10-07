@@ -74,6 +74,7 @@
 "APC"	"ups"	"1"	"Smart-UPS"	""	"apcsmart"
 "APC"	"ups"	"1"	"Smart-UPS SMT/SMX/SURTD"	"Microlink models with RJ45 socket - they *require* AP9620 SmartSlot expansion card and smart cable"	"apcsmart"
 "APC"	"ups"	"3"	"Back-UPS Pro USB"	"USB"	"usbhid-ups"
+"APC"	"ups"	"3"	"Back-UPS BK650M2-CH"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/1970
 "APC"	"ups"	"3"	"Back-UPS (USB)"	"USB"	"usbhid-ups"
 "APC"	"ups"	"3"	"Back-UPS CS USB"	"USB"	"usbhid-ups"
 "APC"	"ups"	"3"	"Back-UPS RS USB"	"USB"	"usbhid-ups"
