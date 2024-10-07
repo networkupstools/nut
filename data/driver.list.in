@@ -104,6 +104,7 @@
 "APC"	"ups"	"1"	"Back-UPS RS 500"	"custom non-USB cable"	"genericups upstype=20"
 "APC"	"ups"	"3"	"Smart-UPS SUA 1000"	""	"snmp-ups"
 "APC"	"ups"	"3"	"Smart-UPS 3000"	""	"snmp-ups"
+"APC"	"ups"	"3"	"Smart-UPS 5000 RM (SUA5000RMI5U)"	""	"snmp-ups"
 "APC"	"ups"	"3"	"Smart-UPS RT XL"	"AP9618 SNMP monitoring card"	"snmp-ups"
 "APC"	"ups"	"3"	"(various)"	"AP9618 SNMP monitoring card"	"snmp-ups"
 "APC"	"ups"	"3"	"(various)"	"AP9630 SNMP monitoring card"	"snmp-ups privProtocol=AES"
