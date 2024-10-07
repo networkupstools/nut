@@ -1464,7 +1464,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "input.transfer.frequency.bypass.range", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.FrequencyRangeBypassTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.transfer.frequency.eco.range", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.FrequencyRangeEcoTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.transfer.hysteresis", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.HysteresisVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
-    /* needs for Bypass Switch On/Off */
+    /* input.transfer.forced = 1 needs for Bypass Switch On/Off */
 	{ "input.transfer.forced", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[2].ForcedTransferEnable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_enable_disable_info },
 	{ "input.transfer.trim.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.HighVoltageBuckTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.sensitivity", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerConverter.Output.SensitivityMode", NULL, "%s", HU_FLAG_SEMI_STATIC, mge_sensitivity_info },
