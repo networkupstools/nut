@@ -79,6 +79,7 @@
 "APC"	"ups"	"3"	"Back-UPS RS USB"	"USB"	"usbhid-ups"
 "APC"	"ups"	"3"	"Back-UPS LS USB"	"USB"	"usbhid-ups"
 "APC"	"ups"	"3"	"Back-UPS ES/CyberFort 350"	"USB"	"usbhid-ups"
+"APC"	"ups"	"3"	"Back-UPS ES 850G2"	"USB"	"usbhid-ups"
 "APC"	"ups"	"3"	"Back-UPS BF500"	"USB"	"usbhid-ups"
 "APC"	"ups"	"3"	"BACK-UPS XS LCD"	"USB"	"usbhid-ups"
 "APC"	"ups"	"3"	"Back-UPS XS 1000M (Back-UPS Pro 1000, Model BX1000M)"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/139
