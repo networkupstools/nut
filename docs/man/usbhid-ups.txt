@@ -93,7 +93,8 @@ The default value is 20 (in seconds). Usually this *must be lower* than
 +
 Note that many Cyber Power Systems (CPS) models tend to divide this delay by
 60 and round down, so the minimum advisable value is 60 to avoid powering off
-immediately after NUT sends the shutdown command to the UPS.
+immediately after NUT sends the shutdown command to the UPS. More details
+below.
 
 *ondelay*='num'::
 Set the timer for the UPS to switch on in case the power returns after the
@@ -346,6 +347,12 @@ UPS cuts power too soon
 Note that many Cyber Power Systems (CPS) models tend to divide `offdelay`
 by 60 and round down, so the minimum advisable value is 60 (seconds) to avoid
 powering off immediately after NUT sends the shutdown command to the UPS.
+
+For many Cyberpower UPSs, `offdelay` must be set to `0` for normal behavior
+(the load is restored when AC power returns).  Setting `offdelay` above `0`
+will restart the UPS load *regardless of whether or not power has returned*,
+and setting `offdelay` below `0` will disable the auto-power-on function of
+the UPS, keeping the load off even when power returns.
 
 UPS does not set battery.charge.low but says OK
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
