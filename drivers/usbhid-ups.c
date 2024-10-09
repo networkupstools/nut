@@ -2094,7 +2094,7 @@ static void ups_alarm_set(void)
 		alarm_set("Manual bypass mode!");
 	}
 	if (ups_status & STATUS(ECOMODE)) {
-		alarm_set("HE/ECO mode!");
+		alarm_set("ECO(HE) mode!");
 	}
 }
 
