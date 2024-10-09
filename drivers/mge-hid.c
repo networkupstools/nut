@@ -1605,8 +1605,8 @@ static hid_info_t mge_hid2nut[] =
 	{ "essmode.disable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "0", HU_TYPE_CMD, NULL },
 
 	/* Command to switch Automatic Bypass Mode On/Off */
-	{ "bypass.on", 0, 0, "UPS.PowerConverter.Input.[2].SwitchOnControl", NULL, "1", HU_TYPE_CMD, NULL },
-	{ "bypass.off", 0, 0, "UPS.PowerConverter.Input.[2].SwitchOffControl", NULL, "1", HU_TYPE_CMD, NULL },
+	{ "bypass.start", 0, 0, "UPS.PowerConverter.Input.[2].SwitchOnControl", NULL, "1", HU_TYPE_CMD, NULL },
+	{ "bypass.stop", 0, 0, "UPS.PowerConverter.Input.[2].SwitchOffControl", NULL, "1", HU_TYPE_CMD, NULL },
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
