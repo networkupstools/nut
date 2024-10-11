@@ -731,11 +731,11 @@ static const char *eaton_input_bypass_check_range(double value)
         log_error("Failed to get values");
         return NULL; // Handle the error appropriately
     }
-
-    double bypass_voltage = strtod(bypass_voltage_str);
-    double bypass_low = strtod(bypass_low_str);
-    double bypass_high = strtod(bypass_high_str);
-    double out_nominal = strtod(out_nominal_str);
+    
+    str_to_double(bypass_voltage_str, &bypass_voltage, 10);
+	str_to_double(bypass_low_str, &bypass_low, 10);
+	str_to_double(bypass_high_str, &bypass_high, 10);
+	str_to_double(out_nominal_str, &out_nominal, 10);
 
     // Check if user-defined limits are available and within valid range
     if ((bypass_low > 0 && bypass_high > 0) &&
