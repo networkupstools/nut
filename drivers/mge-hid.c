@@ -703,20 +703,6 @@ static info_lkp_t eaton_input_mode_info[] = {
     { 0, NULL, NULL, NULL }
 };
 
-/* Automatic Bypass mode On */
-static info_lkp_t eaton_input_bypass_mode_on_info[] = {
-    { 0, "not used", NULL, NULL },
-    { 1, "bypassOn", eaton_input_bypass_check_range, NULL },    
-    { 0, NULL, NULL, NULL }
-};
-
-/* Automatic Bypass mode Off */
-static info_lkp_t eaton_input_bypass_mode_off_info[] = {
-    { 0, "not used", NULL, NULL },
-    { 1, "bypassOff", NULL, NULL },    
-    { 0, NULL, NULL, NULL }
-};
-
 // Function to check if the current bypass voltage is within the configured limits
 static const char *eaton_input_bypass_check_range(double value)
 {
@@ -725,6 +711,7 @@ static const char *eaton_input_bypass_check_range(double value)
     const char* bypass_low_str = dstate_getinfo("input.transfer.bypass.low");
     const char* bypass_high_str = dstate_getinfo("input.transfer.bypass.high");
     const char* out_nominal_str = dstate_getinfo("output.voltage.nominal");
+	NUT_UNUSED_VARIABLE(value);
 
     if (bypass_voltage_str == NULL || bypass_low_str == NULL || bypass_high_str == NULL || out_nominal_str == NULL) {        
 		upsdebugx(1, "Failed to get values", __func__);
@@ -756,6 +743,20 @@ static const char *eaton_input_bypass_check_range(double value)
         return NULL; // Do not enter bypass mode
     }
 }
+
+/* Automatic Bypass mode On */
+static info_lkp_t eaton_input_bypass_mode_on_info[] = {
+    { 0, "not used", NULL, NULL },
+    { 1, "bypassOn", eaton_input_bypass_check_range, NULL },    
+    { 0, NULL, NULL, NULL }
+};
+
+/* Automatic Bypass mode Off */
+static info_lkp_t eaton_input_bypass_mode_off_info[] = {
+    { 0, "not used", NULL, NULL },
+    { 1, "bypassOff", NULL, NULL },    
+    { 0, NULL, NULL, NULL }
+};
 
 /* Determine country using UPS.PowerSummary.Country.
  * If not present:
