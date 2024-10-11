@@ -706,7 +706,7 @@ static info_lkp_t eaton_input_mode_info[] = {
 /* Automatic Bypass mode On */
 static info_lkp_t eaton_input_bypass_mode_on_info[] = {
     { 0, "not used", NULL, NULL },
-    { 1, "bypassOn", eaton_check_bypass_range, NULL },    
+    { 1, "bypassOn", eaton_input_bypass_check_range, NULL },    
     { 0, NULL, NULL, NULL }
 };
 
@@ -719,7 +719,7 @@ static info_lkp_t eaton_input_bypass_mode_off_info[] = {
 
 // Function to check if the current bypass voltage is within the configured limits
 // Function to check if the current bypass voltage is within the configured limits
-static const char *eaton_check_bypass_range(const char *value)
+static const char *eaton_input_bypass_check_range(void)
 {
     // Get the bypass voltage and transfer points
     const char* bypass_voltage_str = dstate_getinfo("input.bypass.voltage", NULL);
