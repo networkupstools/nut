@@ -2093,9 +2093,9 @@ static void ups_alarm_set(void)
 	if (ups_status & STATUS(BYPASSMAN)) {
 		alarm_set("Manual bypass mode!");
 	}
-	if (ups_status & STATUS(ECOMODE)) {
+	/*if (ups_status & STATUS(ECOMODE)) {
 		alarm_set("ECO(HE) mode!");
-	}
+	}*/ /* disable alarm for eco as we dont want raise alarm ? */ 
 }
 
 /* Return the current value of ups_status */
