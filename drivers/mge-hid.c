@@ -710,16 +710,29 @@ static const char *eaton_input_bypass_check_range(double value)
     double bypass_low;
     double bypass_high;
     double out_nominal;
+	double bypass_frequency;
+    double frequency_range;
+	double lower_frequency_limit;
+	double upper_frequency_limit;
+	double out_frequency_nominal;
 
-	// Get the bypass voltage and transfer points
+
+	// Get the bypass voltage/frequency and transfer points
     const char* bypass_voltage_str = dstate_getinfo("input.bypass.voltage");
     const char* bypass_low_str = dstate_getinfo("input.transfer.bypass.low");
     const char* bypass_high_str = dstate_getinfo("input.transfer.bypass.high");
     const char* out_nominal_str = dstate_getinfo("output.voltage.nominal");
+	const char* bypass_frequency_str = dstate_getinfo("input.bypass.frequency");
+    const char* frequency_range_str = dstate_getinfo("input.transfer.frequency.bypass.range");
+    const char* out_nominal_frequency_str = dstate_getinfo("output.frequency.nominal");
+
 	NUT_UNUSED_VARIABLE(value);
 
-    if (bypass_voltage_str == NULL || bypass_low_str == NULL || bypass_high_str == NULL || out_nominal_str == NULL) {
-		upsdebugx(1, "Failed to get values: %s, %s, %s, %s", bypass_voltage_str, bypass_low_str, bypass_high_str, out_nominal_str);
+    if (bypass_voltage_str == NULL || bypass_low_str == NULL || bypass_high_str == NULL || out_nominal_str == NULL ||
+        bypass_frequency_str == NULL || frequency_range_str == NULL) {
+        upsdebugx(1, "Failed to get values: %s, %s, %s, %s, %s, %s", 
+                  bypass_voltage_str, bypass_low_str, bypass_high_str, out_nominal_str,
+                  bypass_frequency_str, frequency_range_str);
         return NULL; // Handle the error appropriately
     }
 
@@ -727,17 +740,27 @@ static const char *eaton_input_bypass_check_range(double value)
 	str_to_double(bypass_low_str, &bypass_low, 10);
 	str_to_double(bypass_high_str, &bypass_high, 10);
 	str_to_double(out_nominal_str, &out_nominal, 10);
+	str_to_double(bypass_frequency_str, &bypass_frequency, 10);
+    str_to_double(frequency_range_str, &frequency_range, 10);
+	str_to_double(out_nominal_frequency_str, &out_frequency_nominal, 10);
 
-    // Check if user-defined limits are available and within valid range
+    // Set the frequency limit
+    lower_frequency_limit = out_frequency_nominal - (out_frequency_nominal / 100 * frequency_range);
+    upper_frequency_limit = out_frequency_nominal + (out_frequency_nominal / 100 * frequency_range);
+
+	// Check if user-defined limits are available and within valid range
     if ((bypass_low > 0 && bypass_high > 0) &&
-        (bypass_voltage >= bypass_low && bypass_voltage <= bypass_high)) {
+        (bypass_voltage >= bypass_low && bypass_voltage <= bypass_high) &&
+		(bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)) {
         return "bypassOn"; // Enter bypass mode
     }
 
     // Default values if user-defined limits are not available or out of range
     // 20% below nominal output voltage
     // 15% above nominal output voltage
-    if (bypass_voltage >= out_nominal * 0.8 && bypass_voltage <= out_nominal * 1.15) {
+	// 10% below/above output frequency nominal
+    if ((bypass_voltage >= out_nominal * 0.8 && bypass_voltage <= out_nominal * 1.15) &&
+	   (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)) {
         return "bypassOn"; // Enter bypass mode
     } else {
         return NULL; // Do not enter bypass mode
