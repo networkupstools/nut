@@ -718,14 +718,14 @@ static info_lkp_t eaton_input_bypass_mode_off_info[] = {
 };
 
 // Function to check if the current bypass voltage is within the configured limits
-static const char *eaton_check_bypass_range(double value)
+// Function to check if the current bypass voltage is within the configured limits
+static const char *eaton_check_bypass_range(const char *value)
 {
     // Get the bypass voltage and transfer points
     const char* bypass_voltage_str = dstate_getinfo("input.bypass.voltage", NULL);
     const char* bypass_low_str = dstate_getinfo("input.transfer.bypass.low", NULL);
     const char* bypass_high_str = dstate_getinfo("input.transfer.bypass.high", NULL);
-    const char* out_nominal_str = dstate_getinfo("output.voltage.nominal", NULL),
-	NUT_UNUSED_VARIABLE(value);
+    const char* out_nominal_str = dstate_getinfo("output.voltage.nominal", NULL);
 
     if (bypass_voltage_str == NULL || bypass_low_str == NULL || bypass_high_str == NULL || out_nominal_str == NULL) {
         log_error("Failed to get values");
@@ -733,19 +733,17 @@ static const char *eaton_check_bypass_range(double value)
     }
 
     double bypass_voltage = strtod(bypass_voltage_str);
-	double bypass_low = strtod(bypass_low_str);
+    double bypass_low = strtod(bypass_low_str);
     double bypass_high = strtod(bypass_high_str);
     double out_nominal = strtod(out_nominal_str);
 
-    // Check if the bypass voltage is within the range
+    // Check if user-defined limits are available and within valid range
     if ((bypass_low > 0 && bypass_high > 0) &&
         (bypass_voltage >= bypass_low && bypass_voltage <= bypass_high)) {
         return "bypassOn"; // Enter bypass mode
-    } else {
-        return NULL; // Do not enter bypass mode
     }
 
-    // Default values if user-defined limits are not available
+    // Default values if user-defined limits are not available or out of range
     // 20% below nominal output voltage
     // 15% above nominal output voltage
     if (bypass_voltage >= out_nominal * 0.8 && bypass_voltage <= out_nominal * 1.15) {
