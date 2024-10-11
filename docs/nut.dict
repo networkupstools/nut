@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3220 utf-8
+personal_ws-1.1 en 3225 utf-8
 AAC
 AAS
 ABI
@@ -320,6 +320,7 @@ EPFCLCD
 EPO
 EPS
 ESC
+ESS
 ESV
 ESXi
 ETIME
@@ -1600,6 +1601,8 @@ bullseye
 busport
 busybox
 bv
+bypassOff
+bypassOn
 cStandard
 cablepower
 calloc
@@ -1836,6 +1839,7 @@ ePDUs
 eaton
 ec
 eco
+ecomode
 edb
 editorconfig
 edl
@@ -1864,6 +1868,7 @@ epdu
 eq
 errno
 esac
+essmode
 esupssmart
 et
 etapro
