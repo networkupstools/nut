@@ -719,13 +719,13 @@ static info_lkp_t eaton_input_bypass_mode_off_info[] = {
 
 // Function to check if the current bypass voltage is within the configured limits
 // Function to check if the current bypass voltage is within the configured limits
-static const char *eaton_input_bypass_check_range(void)
+static const char *eaton_input_bypass_check_range(double value)
 {
     // Get the bypass voltage and transfer points
-    const char* bypass_voltage_str = dstate_getinfo("input.bypass.voltage", NULL);
-    const char* bypass_low_str = dstate_getinfo("input.transfer.bypass.low", NULL);
-    const char* bypass_high_str = dstate_getinfo("input.transfer.bypass.high", NULL);
-    const char* out_nominal_str = dstate_getinfo("output.voltage.nominal", NULL);
+    const char* bypass_voltage_str = dstate_getinfo("input.bypass.voltage");
+    const char* bypass_low_str = dstate_getinfo("input.transfer.bypass.low");
+    const char* bypass_high_str = dstate_getinfo("input.transfer.bypass.high");
+    const char* out_nominal_str = dstate_getinfo("output.voltage.nominal");
 
     if (bypass_voltage_str == NULL || bypass_low_str == NULL || bypass_high_str == NULL || out_nominal_str == NULL) {
         log_error("Failed to get values");
