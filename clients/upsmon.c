@@ -189,7 +189,9 @@ static int flag_isset(int num, int flag)
 
 static int try_restore_pollfreq(utype_t *ups) {
 	/* Use relaxed pollfreq if we are not in a hardware
-	 * power state that is prone to UPS disappearance */
+	 * power state that is prone to UPS disappearance.
+	 * Note: ECO mode not considered easily fatal here!
+	 */
 	if (!flag_isset(ups->status, ST_ONBATT | ST_OFF | ST_BYPASS | ST_CAL)) {
 		sleepval = pollfreq;
 		return 1;
@@ -713,6 +715,42 @@ static void ups_is_notbypass(utype_t *ups)
 	}
 }
 
+static void ups_is_eco(utype_t *ups)
+{
+	if (flag_isset(ups->status, ST_ECO)) {	/* no change */
+		upsdebugx(4, "%s: %s (no change)", __func__, ups->sys);
+		return;
+	}
+
+	/* For example, Eaton defines ECO (High Efficiency) mode
+	 * as a sort of hardware-monitored bypass with switch-over
+	 * under 10ms into Online mode in case of troubles, instead
+	 * of always running in dual-conversion mode (wasteful, safe).
+	 * No reason to monitor it closely on NUT side.
+	 */
+	/*sleepval = pollfreqalert;*/	/* bump up polling frequency */
+
+	ups->ecostate = 1;	/* if we lose comms, consider it AWOL */
+
+	upsdebugx(3, "%s: %s (first time)", __func__, ups->sys);
+
+	/* must have changed from !ECO to ECO, so notify */
+
+	do_notify(ups, NOTIFY_ECO);
+	setflag(&ups->status, ST_ECO);
+}
+
+static void ups_is_noteco(utype_t *ups)
+{
+	/* Called when ECO is NOT among known states */
+	ups->ecostate = 0;
+	if (flag_isset(ups->status, ST_ECO)) {	/* actual change */
+		do_notify(ups, NOTIFY_NOTECO);
+		clearflag(&ups->status, ST_ECO);
+		try_restore_pollfreq(ups);
+	}
+}
+
 static void ups_on_batt(utype_t *ups)
 {
 	if (flag_isset(ups->status, ST_ONBATT)) { 	/* no change */
@@ -1092,6 +1130,7 @@ static int is_ups_critical(utype_t *ups)
 	time(&now);
 
 	if (ups->commstate == 0) {
+		/* Note: ECO mode not considered easily fatal here */
 		if (flag_isset(ups->status, ST_CAL)) {
 			upslogx(LOG_WARNING,
 				"UPS [%s] was last known to be calibrating "
@@ -1298,6 +1337,7 @@ static void recalc(void)
 		 * whether this is really the best thing to do is undecided  */
 
 		/* crit = (FSD) || (OB & LB) > HOSTSYNC seconds || (OFF || BYPASS) && nocomms */
+		/* Note: ECO mode not considered easily fatal here */
 		if (is_ups_critical(ups))
 			upsdebugx(1, "Critical UPS: %s", ups->sys);
 		else
@@ -1396,6 +1436,10 @@ static void drop_connection(utype_t *ups)
 
 	if(flag_isset(ups->status, ST_CAL))
 		upsdebugx(2, "Disconnected UPS [%s] was last seen in status CAL, this UPS might be considered critical later.", ups->sys);
+
+	/* Note: ECO mode not considered easily fatal here */
+	if(ups->ecostate == 1 || flag_isset(ups->status, ST_ECO))
+		upsdebugx(2, "Disconnected UPS [%s] was last seen in status ECO.", ups->sys);
 
 	ups->commstate = 0;
 
@@ -2347,6 +2391,8 @@ static void parse_status(utype_t *ups, char *status)
 		ups_is_notoff(ups);
 	if (!strstr(status, "BYPASS"))
 		ups_is_notbypass(ups);
+	if (!strstr(status, "ECO"))
+		ups_is_noteco(ups);
 
 	statword = status;
 
@@ -2372,6 +2418,8 @@ static void parse_status(utype_t *ups, char *status)
 			ups_is_off(ups);
 		if (!strcasecmp(statword, "BYPASS"))
 			ups_is_bypass(ups);
+		if (!strcasecmp(statword, "ECO"))
+			ups_is_eco(ups);
 		/* do it last to override any possible OL */
 		if (!strcasecmp(statword, "FSD"))
 			ups_fsd(ups);
