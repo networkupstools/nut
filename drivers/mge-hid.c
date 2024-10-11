@@ -703,7 +703,7 @@ static info_lkp_t eaton_input_mode_info[] = {
     { 0, NULL, NULL, NULL }
 };
 
-// Function to check if the current bypass voltage is within the configured limits
+// Function to check if the current bypass voltage/frequency is within the configured limits
 static const char *eaton_input_bypass_check_range(double value)
 {
     double bypass_voltage;
