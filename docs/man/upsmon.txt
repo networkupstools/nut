@@ -178,6 +178,20 @@ UPS on bypass (powered, not protecting).
 *NOTBYPASS*::
 UPS no longer on bypass.
 
+*ECO*::
+UPS in ECO or similar mode (as defined and named by vendor); other
+names include High Efficiency mode and Energy Saver System.
++
+For example, Eaton docs define High Efficiency mode as a sort of
+hardware-monitored bypass with switch-over under 10ms into Online
+mode in case of troubles (so what was known as Line-Interactive
+in the older days), which can be *chosen* instead of always running
+in a dual-conversion mode (safer, but more wasteful and with a toll
+on battery life). Older devices only implemented one or the other.
+
+*NOTECO*::
+UPS no longer in ECO mode (see above).
+
 *SUSPEND_STARTING*::
 OS is entering sleep/suspend/hibernate mode.
 
