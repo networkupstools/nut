@@ -718,7 +718,7 @@ static const char *eaton_input_bypass_check_range(double value)
     double bypass_high;
     double out_nominal;
 
-    if (bypass_voltage_str == NULL || bypass_low_str == NULL || bypass_high_str == NULL || out_nominal_str == NULL) {        
+    if (bypass_voltage_str == NULL || bypass_low_str == NULL || bypass_high_str == NULL || out_nominal_str == NULL) {
 		upsdebugx(1, "Failed to get values: %s, %p, %p, %p", __func__, bypass_voltage_str, bypass_low_str, bypass_high_str, out_nominal_str);
         return NULL; // Handle the error appropriately
     }
