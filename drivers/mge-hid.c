@@ -718,7 +718,6 @@ static info_lkp_t eaton_input_bypass_mode_off_info[] = {
 };
 
 // Function to check if the current bypass voltage is within the configured limits
-// Function to check if the current bypass voltage is within the configured limits
 static const char *eaton_input_bypass_check_range(double value)
 {
     // Get the bypass voltage and transfer points
@@ -727,8 +726,8 @@ static const char *eaton_input_bypass_check_range(double value)
     const char* bypass_high_str = dstate_getinfo("input.transfer.bypass.high");
     const char* out_nominal_str = dstate_getinfo("output.voltage.nominal");
 
-    if (bypass_voltage_str == NULL || bypass_low_str == NULL || bypass_high_str == NULL || out_nominal_str == NULL) {
-        log_error("Failed to get values");
+    if (bypass_voltage_str == NULL || bypass_low_str == NULL || bypass_high_str == NULL || out_nominal_str == NULL) {        
+		upsdebugx(1, "Failed to get values", __func__);
         return NULL; // Handle the error appropriately
     }
 
