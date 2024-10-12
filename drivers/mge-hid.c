@@ -721,7 +721,7 @@ static const char *eaton_input_eco_mode_check_range(double value)
 
     if (eco_low_str == NULL || eco_high_str == NULL || bypass_voltage_str == NULL || bypass_frequency_str == NULL ||
         out_nominal_str == NULL || out_nominal_frequency_str == NULL || frequency_range_str == NULL) {
-        upsdebugx(1, "Failed to get values: %s, %s, %s, %s, %s, %s",
+        upsdebugx(1, "Failed to get values: %s, %s, %s, %s, %s, %s, %s",
                   eco_low_str, eco_high_str,  bypass_voltage_str, bypass_frequency_str, out_nominal_str,
                   out_nominal_frequency_str, frequency_range_str);
         return NULL; /* Handle the error appropriately */
