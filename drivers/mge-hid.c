@@ -761,14 +761,14 @@ static const char *eaton_input_eco_mode_check_range(double value)
 	   (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)) {
         return "ecoModeOn"; /* Enter Eco mode */
     } else {
-        return NULL; // Do not enter Eco mode
+        return NULL; /* Do not enter Eco mode */
     }
 }
 
 /* High Efficiency (aka ECO) mode */
 static info_lkp_t eaton_input_mode_info[] = {
     { 0, "normal", NULL, NULL },
-    { 1, "ecoModeOn", eaton_input_eco_mode_check_range, NULL },
+    { 1, "ecoModeOn", eaton_input_eco_mode_check_range, NULL }, /* NOTE: "ecomode" = checked and working fine */
     { 2, "ESS", NULL, NULL }, /* Energy Saver System, makes sense for UPS that implements this mode */
     { 0, NULL, NULL, NULL }
 };
