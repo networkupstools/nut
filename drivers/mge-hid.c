@@ -695,10 +695,80 @@ static info_lkp_t outlet_eco_yes_no_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
+/* Function to check if the current High Efficiency (aka ECO) mode voltage/frequency is within the configured limits */
+static const char *eaton_input_eco_mode_check_range(double value)
+{
+    double bypass_voltage;
+	double eco_low;
+    double eco_high;
+    double out_nominal;
+    double out_frequency_nominal;
+	double bypass_frequency;
+    double frequency_range;
+    double lower_frequency_limit;
+    double upper_frequency_limit;
+
+    /* Get the Eco mode voltage/frequency and transfer points */
+	const char* bypass_voltage_str = dstate_getinfo("input.bypass.voltage");
+    const char* eco_low_str = dstate_getinfo("input.transfer.eco.low");
+    const char* eco_high_str = dstate_getinfo("input.transfer.eco.high");
+    const char* out_nominal_str = dstate_getinfo("output.voltage.nominal");
+    const char* out_nominal_frequency_str = dstate_getinfo("output.frequency.nominal");
+    const char* frequency_range_str = dstate_getinfo("input.transfer.frequency.eco.range");
+	const char* bypass_frequency_str = dstate_getinfo("input.bypass.frequency");
+
+    NUT_UNUSED_VARIABLE(value);
+
+    if (eco_low_str == NULL || eco_high_str == NULL || bypass_voltage_str == NULL || bypass_frequency_str == NULL ||
+        out_nominal_str == NULL || out_nominal_frequency_str == NULL || frequency_range_str == NULL) {
+        upsdebugx(1, "Failed to get values: %s, %s, %s, %s, %s, %s",
+                  eco_low_str, eco_high_str,  bypass_voltage_str, bypass_frequency_str, out_nominal_str,
+                  out_nominal_frequency_str, frequency_range_str);
+        return NULL; /* Handle the error appropriately */
+    }
+
+    str_to_double(bypass_voltage_str, &bypass_voltage, 10);
+	str_to_double(eco_low_str, &eco_low, 10);
+    str_to_double(eco_high_str, &eco_high, 10);
+    str_to_double(out_nominal_str, &out_nominal, 10);
+    str_to_double(out_nominal_frequency_str, &out_frequency_nominal, 10);
+    str_to_double(frequency_range_str, &frequency_range, 10);
+	str_to_double(bypass_frequency_str, &bypass_frequency, 10);
+
+    /* Set the frequency limit */
+    lower_frequency_limit = out_nominal - (out_nominal / 100 * frequency_range);
+    upper_frequency_limit = out_nominal + (out_nominal / 100 * frequency_range);
+
+    /* Check if user-defined limits are available and within valid range */
+    if ((eco_low > 0 && eco_high > 0) && (frequency_range > 0) &&
+        (bypass_voltage >= eco_low && bypass_voltage <= eco_high) &&
+        (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)) {
+        return "ecoModeOn"; /* Enter Eco mode */
+    }
+
+    /* Default values if user-defined limits are not available or out of range
+       5% below nominal output voltage
+       5% above nominal output voltage
+       5% below/above output frequency nominal */
+
+    /* Set the frequency limit to 5% if frequency_range = 0 */
+	if (frequency_range <= 0){
+       lower_frequency_limit = out_frequency_nominal - (out_frequency_nominal / 100 * 5);
+       upper_frequency_limit = out_frequency_nominal + (out_frequency_nominal / 100 * 5);
+	}
+
+    if ((bypass_voltage >= out_nominal * 0.95 && bypass_voltage <= out_nominal * 1.05) &&
+	   (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)) {
+        return "ecoModeOn"; /* Enter Eco mode */
+    } else {
+        return NULL; // Do not enter Eco mode
+    }
+}
+
 /* High Efficiency (aka ECO) mode */
 static info_lkp_t eaton_input_mode_info[] = {
     { 0, "normal", NULL, NULL },
-    { 1, "ecomode", eaton_input_eco_mode_check_range, NULL },
+    { 1, "ecoModeOn", eaton_input_eco_mode_check_range, NULL },
     { 2, "ESS", NULL, NULL }, /* Energy Saver System, makes sense for UPS that implements this mode */
     { 0, NULL, NULL, NULL }
 };
@@ -729,10 +799,10 @@ static const char *eaton_input_bypass_check_range(double value)
 	NUT_UNUSED_VARIABLE(value);
 
     if (bypass_voltage_str == NULL || bypass_low_str == NULL || bypass_high_str == NULL || out_nominal_str == NULL ||
-        bypass_frequency_str == NULL || frequency_range_str == NULL) {
-        upsdebugx(1, "Failed to get values: %s, %s, %s, %s, %s, %s", 
+        bypass_frequency_str == NULL || frequency_range_str == NULL || out_nominal_frequency_str == NULL) {
+        upsdebugx(1, "Failed to get values: %s, %s, %s, %s, %s, %s, %s", 
                   bypass_voltage_str, bypass_low_str, bypass_high_str, out_nominal_str,
-                  bypass_frequency_str, frequency_range_str);
+                  bypass_frequency_str, frequency_range_str, out_nominal_frequency_str);
         return NULL; /* Handle the error appropriately */
     }
 
