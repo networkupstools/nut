@@ -698,12 +698,12 @@ static info_lkp_t outlet_eco_yes_no_info[] = {
 /* High Efficiency (aka ECO) mode */
 static info_lkp_t eaton_input_mode_info[] = {
     { 0, "normal", NULL, NULL },
-    { 1, "ecomode", NULL, NULL },
+    { 1, "ecomode", eaton_input_eco_mode_check_range, NULL },
     { 2, "ESS", NULL, NULL }, /* Energy Saver System, makes sense for UPS that implements this mode */
     { 0, NULL, NULL, NULL }
 };
 
-// Function to check if the current bypass voltage/frequency is within the configured limits
+/* Function to check if the current bypass voltage/frequency is within the configured limits */
 static const char *eaton_input_bypass_check_range(double value)
 {
     double bypass_voltage;
@@ -717,7 +717,7 @@ static const char *eaton_input_bypass_check_range(double value)
 	double out_frequency_nominal;
 
 
-	// Get the bypass voltage/frequency and transfer points
+	/* Get the bypass voltage/frequency and transfer points */
     const char* bypass_voltage_str = dstate_getinfo("input.bypass.voltage");
     const char* bypass_low_str = dstate_getinfo("input.transfer.bypass.low");
     const char* bypass_high_str = dstate_getinfo("input.transfer.bypass.high");
@@ -733,7 +733,7 @@ static const char *eaton_input_bypass_check_range(double value)
         upsdebugx(1, "Failed to get values: %s, %s, %s, %s, %s, %s", 
                   bypass_voltage_str, bypass_low_str, bypass_high_str, out_nominal_str,
                   bypass_frequency_str, frequency_range_str);
-        return NULL; // Handle the error appropriately
+        return NULL; /* Handle the error appropriately */
     }
 
     str_to_double(bypass_voltage_str, &bypass_voltage, 10);
@@ -744,23 +744,23 @@ static const char *eaton_input_bypass_check_range(double value)
     str_to_double(frequency_range_str, &frequency_range, 10);
 	str_to_double(out_nominal_frequency_str, &out_frequency_nominal, 10);
 
-    // Set the frequency limit
+    /* Set the frequency limit */
     lower_frequency_limit = out_frequency_nominal - (out_frequency_nominal / 100 * frequency_range);
     upper_frequency_limit = out_frequency_nominal + (out_frequency_nominal / 100 * frequency_range);
 
-	// Check if user-defined limits are available and within valid range
+	/* Check if user-defined limits are available and within valid range */
     if ((bypass_low > 0 && bypass_high > 0) && (frequency_range > 0) &&
         (bypass_voltage >= bypass_low && bypass_voltage <= bypass_high) &&
 		(bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)) {
-        return "bypassOn"; // Enter bypass mode
+        return "bypassOn"; /* Enter bypass mode */
     }
 
-    // Default values if user-defined limits are not available or out of range
-    // 20% below nominal output voltage
-    // 15% above nominal output voltage
-	// 10% below/above output frequency nominal
+    /* Default values if user-defined limits are not available or out of range
+       20% below nominal output voltage
+       15% above nominal output voltage
+	   10% below/above output frequency nominal */
 
-    // Set the frequency limit to 10% if frequency_range = 0
+    /* Set the frequency limit to 10% if frequency_range = 0 */
 	if (frequency_range <= 0){
        lower_frequency_limit = out_frequency_nominal - (out_frequency_nominal / 100 * 10);
        upper_frequency_limit = out_frequency_nominal + (out_frequency_nominal / 100 * 10);
@@ -768,9 +768,9 @@ static const char *eaton_input_bypass_check_range(double value)
 
     if ((bypass_voltage >= out_nominal * 0.8 && bypass_voltage <= out_nominal * 1.15) &&
 	   (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)) {
-        return "bypassOn"; // Enter bypass mode
+        return "bypassOn"; /* Enter bypass mode */
     } else {
-        return NULL; // Do not enter bypass mode
+        return NULL; /* Do not enter bypass mode */
     }
 }
 
