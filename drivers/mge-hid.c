@@ -814,27 +814,26 @@ static const char *eaton_input_bypass_check_range(double value)
     str_to_double(frequency_range_str, &frequency_range, 10);
 	str_to_double(out_nominal_frequency_str, &out_frequency_nominal, 10);
 
-    /* Set the frequency limit */
-    lower_frequency_limit = out_frequency_nominal - (out_frequency_nominal / 100 * frequency_range);
-    upper_frequency_limit = out_frequency_nominal + (out_frequency_nominal / 100 * frequency_range);
-
-	/* Check if user-defined limits are available and within valid range */
-    if ((bypass_low > 0 && bypass_high > 0) && (frequency_range > 0) &&
-        (bypass_voltage >= bypass_low && bypass_voltage <= bypass_high) &&
-		(bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)) {
-        return "bypassOn"; /* Enter bypass mode */
-    }
-
     /* Default values if user-defined limits are not available or out of range
        20% below nominal output voltage
        15% above nominal output voltage
 	   10% below/above output frequency nominal */
 
-    /* Set the frequency limit to 10% if frequency_range = 0 */
-	if (frequency_range <= 0){
-       lower_frequency_limit = out_frequency_nominal - (out_frequency_nominal / 100 * 10);
-       upper_frequency_limit = out_frequency_nominal + (out_frequency_nominal / 100 * 10);
-	}
+	/* Set the frequency limit */
+    if (frequency_range > 0) {
+        lower_frequency_limit = out_frequency_nominal - (out_frequency_nominal / 100 * frequency_range);
+        upper_frequency_limit = out_frequency_nominal + (out_frequency_nominal / 100 * frequency_range);
+    } else {
+        lower_frequency_limit = out_frequency_nominal - (out_frequency_nominal / 100 * 10);
+        upper_frequency_limit = out_frequency_nominal + (out_frequency_nominal / 100 * 10);
+    }
+
+	/* Check if user-defined limits are available and within valid range */
+    if ((bypass_low > 0 && bypass_high > 0) &&
+        (bypass_voltage >= bypass_low && bypass_voltage <= bypass_high) &&
+		(bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)) {
+        return "bypassOn"; /* Enter bypass mode */
+    }
 
     if ((bypass_voltage >= out_nominal * 0.8 && bypass_voltage <= out_nominal * 1.15) &&
 	   (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)) {
