@@ -735,29 +735,29 @@ static const char *eaton_input_eco_mode_check_range(double value)
     str_to_double(frequency_range_str, &frequency_range, 10);
 	str_to_double(bypass_frequency_str, &bypass_frequency, 10);
 
-    /* Set the frequency limit */
-    lower_frequency_limit = out_nominal - (out_nominal / 100 * frequency_range);
-    upper_frequency_limit = out_nominal + (out_nominal / 100 * frequency_range);
-
-    /* Check if user-defined limits are available and within valid range */
-    if ((eco_low > 0 && eco_high > 0) && (frequency_range > 0) &&
-        (bypass_voltage >= eco_low && bypass_voltage <= eco_high) &&
-        (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)) {
-        return "ecoModeOn"; /* Enter Eco mode */
-    }
-
     /* Default values if user-defined limits are not available or out of range
        5% below nominal output voltage
        5% above nominal output voltage
        5% below/above output frequency nominal */
+ 
+    /* Set the frequency limit */
+    if (frequency_range > 0) {
+        lower_frequency_limit = out_frequency_nominal - (out_frequency_nominal / 100 * frequency_range);
+        upper_frequency_limit = out_frequency_nominal + (out_frequency_nominal / 100 * frequency_range);
+    } else {
+        lower_frequency_limit = out_frequency_nominal - (out_frequency_nominal / 100 * 5);
+        upper_frequency_limit = out_frequency_nominal + (out_frequency_nominal / 100 * 5);
+    }
 
-    /* Set the frequency limit to 5% if frequency_range = 0 */
-	if (frequency_range <= 0){
-       lower_frequency_limit = out_frequency_nominal - (out_frequency_nominal / 100 * 5);
-       upper_frequency_limit = out_frequency_nominal + (out_frequency_nominal / 100 * 5);
-	}
-
-    if ((bypass_voltage >= out_nominal * 0.95 && bypass_voltage <= out_nominal * 1.05) &&
+    /* Check if user-defined limits are available and within valid range */
+    if ((eco_low > 0 && eco_high > 0) &&
+        (bypass_voltage >= eco_low && bypass_voltage <= eco_high) &&
+        (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)) {
+        return "ecoModeOn"; /* Enter Eco mode */
+    }
+    
+    /* Default values if user-defined limits are not available or out of range */
+	if ((bypass_voltage >= out_nominal * 0.95 && bypass_voltage <= out_nominal * 1.05) &&
 	   (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)) {
         return "ecoModeOn"; /* Enter Eco mode */
     } else {
