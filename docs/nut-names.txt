@@ -706,8 +706,9 @@ of the user manual.
                                                                  voltage warning
 | outlet.n.switchable            | Outlet switch ability
                                    (yes/no)                    | yes
-| outlet.n.ecocontrol            | Outlet High Efficiency
-                                   (aka ECO) control info (0-1)| The outlet is not ECO controlled
+| outlet.n.ecocontrol            | Master Outlet used to
+                                   automatically power off the
+                                   slave outlets               | The outlet is not ECO controlled
 | outlet.n.autoswitch.charge.low | Remaining battery level to
                                    power off this outlet
                                    (percent)                   | 80
