@@ -753,13 +753,13 @@ static const char *eaton_input_eco_mode_check_range(double value)
     if ((eco_low > 0 && eco_high > 0) &&
         (bypass_voltage >= eco_low && bypass_voltage <= eco_high) &&
         (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)) {
-        return "ecoModeOn"; /* Enter Eco mode */
+        return "ecoMode"; /* Enter Eco mode */
     }
     
     /* Default values if user-defined limits are not available or out of range */
 	if ((bypass_voltage >= out_nominal * 0.95 && bypass_voltage <= out_nominal * 1.05) &&
 	   (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)) {
-        return "ecoModeOn"; /* Enter Eco mode */
+        return "ecoMode"; /* Enter Eco mode */
     } else {
         return NULL; /* Do not enter Eco mode */
     }
@@ -768,7 +768,7 @@ static const char *eaton_input_eco_mode_check_range(double value)
 /* High Efficiency (aka ECO) mode */
 static info_lkp_t eaton_input_mode_info[] = {
     { 0, "normal", NULL, NULL },
-    { 1, "ecoModeOn", eaton_input_eco_mode_check_range, NULL }, /* NOTE: "ecomode" = checked and working fine */
+    { 1, "ecoMode", eaton_input_eco_mode_check_range, NULL }, /* NOTE: "ecomode" = checked and working fine */
     { 2, "ESS", NULL, NULL }, /* Energy Saver System, makes sense for UPS that implements this mode */
     { 0, NULL, NULL, NULL }
 };
@@ -832,12 +832,12 @@ static const char *eaton_input_bypass_check_range(double value)
     if ((bypass_low > 0 && bypass_high > 0) &&
         (bypass_voltage >= bypass_low && bypass_voltage <= bypass_high) &&
 		(bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)) {
-        return "bypassOn"; /* Enter bypass mode */
+        return "On"; /* Enter bypass mode */
     }
 
     if ((bypass_voltage >= out_nominal * 0.8 && bypass_voltage <= out_nominal * 1.15) &&
 	   (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)) {
-        return "bypassOn"; /* Enter bypass mode */
+        return "On"; /* Enter bypass mode */
     } else {
         return NULL; /* Do not enter bypass mode */
     }
@@ -845,15 +845,15 @@ static const char *eaton_input_bypass_check_range(double value)
 
 /* Automatic Bypass mode On */
 static info_lkp_t eaton_input_bypass_mode_on_info[] = {
-    { 0, "not used", NULL, NULL },
-    { 1, "bypassOn", eaton_input_bypass_check_range, NULL },    
+    { 0, "disabled", NULL, NULL },
+    { 1, "On", eaton_input_bypass_check_range, NULL },    
     { 0, NULL, NULL, NULL }
 };
 
 /* Automatic Bypass mode Off */
 static info_lkp_t eaton_input_bypass_mode_off_info[] = {
-    { 0, "not used", NULL, NULL },
-    { 1, "bypassOff", NULL, NULL },    
+    { 0, "disabled", NULL, NULL },
+    { 1, "Off", NULL, NULL },    
     { 0, NULL, NULL, NULL }
 };
 
