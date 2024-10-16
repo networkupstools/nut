@@ -402,8 +402,42 @@ static const char *eaton_abm_chrg_dischrg_fun(double value)
 	return mge_scratch_buf;
 }
 
+/* Used to process ABM flags, for ups.status (CHRG/DISCHRG/RB) */
+static const char *eaton_abm_chrg_dischrg_status_fun(double value)
+{
+	/* Don't process if ABM is disabled */
+	if (advanced_battery_monitoring == ABM_DISABLED)
+		return NULL;
+
+	switch ((long)value)
+	{
+	case 1: /* charging status */
+	case 2: /* floating status */
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
+		break;
+	case 4:
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "dischrg");
+		break;
+	case 6: /* ABM Charger Disabled */
+	case 3: /* resting, nothing to publish! (?) */
+	case 5: /* Undefined - ABM is not activated */
+	default:
+		/* Return NULL, not to get the value published! */
+		return NULL;
+	}
+
+	upsdebugx(2, "ABM CHRG/DISCHRG legacy string status (ups.status): %s", mge_scratch_buf);
+
+	return mge_scratch_buf;
+}
+
 static info_lkp_t eaton_abm_chrg_dischrg_info[] = {
 	{ 1, "dummy", eaton_abm_chrg_dischrg_fun, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
+static info_lkp_t eaton_abm_chrg_dischrg_status_info[] = {
+	{ 1, "dummy", eaton_abm_chrg_dischrg_status_fun, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 
@@ -1604,6 +1638,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Charging", NULL, NULL, HU_FLAG_QUICK_POLL, eaton_charging_info },
 	/* And this one when ABM is enabled (same as battery.charger.mode) */
 	{ "BOOL", 0, 0, "UPS.BatterySystem.Charger.Mode", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_chrg_dischrg_info },
+	{ "BOOL", 0, 0, "UPS.BatterySystem.Charger.Status", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_chrg_dischrg_status_info },
 	/* FIXME: on Dell, the above requires an "AND" with "UPS.BatterySystem.Charger.Mode = 1" */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL, NULL, HU_FLAG_QUICK_POLL, lowbatt_info },
 	/* Output overload, Level 1 (FIXME: add the level?) */
