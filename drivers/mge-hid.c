@@ -224,16 +224,16 @@ static long round (LDOUBLE value)
 static const char *eaton_abm_enabled_fun(double value)
 {
 	int advanced_battery_monitoring_val;
-	advanced_battery_monitoring = value;
 	const char *advanced_battery_monitoring_str = dstate_getinfo("battery.charger.type");
 
+	advanced_battery_monitoring = value;
 	str_to_int(advanced_battery_monitoring_str, &advanced_battery_monitoring_val, 10);
 
 	if (advanced_battery_monitoring_str)
-		{
-			advanced_battery_monitoring = advanced_battery_monitoring_val;
-			upsdebugx(2, "ABM is %s", (advanced_battery_monitoring == 4) ? "enabled" : "disabled");
-		}
+	{
+		advanced_battery_monitoring = advanced_battery_monitoring_val;
+		upsdebugx(2, "ABM is %s", (advanced_battery_monitoring == 4) ? "enabled" : "disabled");
+	}
 	else
 		upsdebugx(2, "ABM is %s", (advanced_battery_monitoring == 1) ? "enabled" : "disabled");
 
