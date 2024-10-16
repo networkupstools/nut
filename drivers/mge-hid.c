@@ -225,7 +225,10 @@ static const char *eaton_abm_enabled_fun(double value)
 {
 	advanced_battery_monitoring = value;
 
-	upsdebugx(2, "ABM is %s", (advanced_battery_monitoring==1)?"enabled":"disabled");
+	if (dstate_getinfo("battery.charger.status"))
+		upsdebugx(2, "ABM is %s", (advanced_battery_monitoring == 4) ? "enabled" : "disabled");
+	else
+		upsdebugx(2, "ABM is %s", (advanced_battery_monitoring == 1) ? "enabled" : "disabled");
 
 	/* Return NULL, not to get the value published! */
 	return NULL;
@@ -233,22 +236,6 @@ static const char *eaton_abm_enabled_fun(double value)
 
 static info_lkp_t eaton_abm_enabled_info[] = {
 	{ 0, "dummy", eaton_abm_enabled_fun, NULL },
-	{ 0, NULL, NULL, NULL }
-};
-
-/* Used to store internally if ABM is enabled or not */
-static const char *eaton_abm_status_enabled_fun(double value)
-{
-	advanced_battery_monitoring = value;
-
-	upsdebugx(2, "ABM is %s", (advanced_battery_monitoring==4)?"enabled":"disabled");
-
-	/* Return NULL, not to get the value published! */
-	return NULL;
-}
-
-static info_lkp_t eaton_abm_status_enabled_info[] = {
-	{ 0, "dummy", eaton_abm_status_enabled_fun, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 
@@ -271,40 +258,68 @@ static info_lkp_t eaton_abm_enabled_legacy_info[] = {
 };
 #endif /* if 0 */
 
-/* Used to process ABM flags, for battery.charger.abm.status */
-static const char *eaton_abm_mode_fun(double value)
+/* Used to process ABM flags, for battery.charger.status */
+static const char *eaton_abm_fun(double value)
 {
 	/* Don't process if ABM is disabled */
 	if (advanced_battery_monitoring == ABM_DISABLED) {
 		/* Clear any previously published data, in case
 		 * the user has switched off ABM */
-		dstate_delinfo("battery.charger.abm.status");
+		dstate_delinfo("battery.charger.status");
 		return NULL;
 	}
 
 	upsdebugx(2, "ABM numeric status: %i", (int)value);
 
-	switch ((long)value)
+	if (dstate_getinfo("battery.charger.status"))
 	{
-	case 1:
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "charging");
-		break;
-	case 2:
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "discharging");
-		break;
-	case 3:
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "floating");
-		break;
-	case 4:
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "resting");
-		break;
-	case 6: /* ABM Charger Disabled */
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "off");
-		break;
-	case 5: /* Undefined - ABM is not activated */
-	default:
-		/* Return NULL, not to get the value published! */
-		return NULL;
+		switch ((long)value)
+		{
+		case 1:
+			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "charging");
+			break;
+		case 2:
+			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "floating");
+			break;
+		case 3:
+			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "resting");
+			break;
+		case 4:
+			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "discharging");
+			break;
+		case 6: /* ABM Charger Disabled */
+			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "off");
+			break;
+		case 5: /* Undefined - ABM is not activated */
+		default:
+			/* Return NULL, not to get the value published! */
+			return NULL;
+		}		
+	}
+	else
+	{
+		switch ((long)value)
+		{
+		case 1:
+			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "charging");
+			break;
+		case 2:
+			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "discharging");
+			break;
+		case 3:
+			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "floating");
+			break;
+		case 4:
+			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "resting");
+			break;
+		case 6: /* ABM Charger Disabled */
+			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "off");
+			break;
+		case 5: /* Undefined - ABM is not activated */
+		default:
+			/* Return NULL, not to get the value published! */
+			return NULL;
+		}
 	}
 
 	upsdebugx(2, "ABM string status: %s", mge_scratch_buf);
@@ -312,54 +327,8 @@ static const char *eaton_abm_mode_fun(double value)
 	return mge_scratch_buf;
 }
 
-/* Used to process ABM flags, for battery.charger.abm.status */
-static const char *eaton_abm_status_fun(double value)
-{
-	/* Don't process if ABM is disabled */
-	if (advanced_battery_monitoring == ABM_DISABLED) {
-		/* Clear any previously published data, in case
-		 * the user has switched off ABM */
-		dstate_delinfo("battery.charger.abm.status");
-		return NULL;
-	}
-
-	upsdebugx(2, "ABM numeric status: %i", (int)value);
-
-	switch ((long)value)
-	{
-	case 1:
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "charging");
-		break;
-	case 2:
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "floating");
-		break;
-	case 3:
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "resting");
-		break;
-	case 4:
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "discharging");
-		break;
-	case 6: /* ABM Charger Disabled */
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "off");
-		break;
-	case 5: /* Undefined - ABM is not activated */
-	default:
-		/* Return NULL, not to get the value published! */
-		return NULL;
-	}
-
-	upsdebugx(2, "ABM string status: %s", mge_scratch_buf);
-
-	return mge_scratch_buf;
-}
-
-static info_lkp_t eaton_abm_mode_info[] = {
-	{ 1, "dummy", eaton_abm_mode_fun, NULL },
-	{ 0, NULL, NULL, NULL }
-};
-
-static info_lkp_t eaton_abm_status_info[] = {
-	{ 1, "dummy", eaton_abm_status_fun, NULL },
+static info_lkp_t eaton_abm_info[] = {
+	{ 1, "dummy", eaton_abm_fun, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 
@@ -1571,14 +1540,14 @@ static hid_info_t mge_hid2nut[] =
 	/* ABM (Advanced Battery Monitoring) processing
 	 * Must be processed before the BOOL status */
 	/* Not published, just to store in internal var. advanced_battery_monitoring */
-	{ "battery.charger.abm.status", 0, 0, "UPS.BatterySystem.Charger.ABMEnable", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_info },
-	{ "battery.charger.abm.status", 0, 0, "UPS.BatterySystem.Charger.Status", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_status_enabled_info },
+	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.ABMEnable", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_info },
+	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.Status", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_info },
 	/* Same as the one above, but for legacy units */
 	/* Refer to Note 1 (This point will need more clarification!)
 	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.PresentStatus.Used", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_legacy_info }, */
 	/* This data is the actual ABM status information */
-	{ "battery.charger.mode", 0, 0, "UPS.BatterySystem.Charger.Mode", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_mode_info }, /* needs both ? from https://github.com/networkupstools/nut/pull/2637#discussion_r1772730590 */
-	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.Status", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_status_info }, /* checked on Eaton 9E Model */
+	{ "battery.charger.mode", 0, 0, "UPS.BatterySystem.Charger.Mode", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_info }, /* needs both ? from https://github.com/networkupstools/nut/pull/2637#discussion_r1772730590 */
+	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.Status", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_info }, /* checked on Eaton 9E Model */
     { "battery.charger.type", 0, 0, "UPS.BatterySystem.Charger.ChargerType", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_charger_type_info },
 	/* FIXME: should better use UPS.BatterySystem.Charger.Status should work on 9E Models */
 	 
