@@ -236,6 +236,22 @@ static info_lkp_t eaton_abm_enabled_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
+/* Used to store internally if ABM is enabled or not */
+static const char *eaton_abm_status_enabled_fun(double value)
+{
+	advanced_battery_monitoring = value;
+
+	upsdebugx(2, "ABM is %s", (advanced_battery_monitoring==4)?"enabled":"disabled");
+
+	/* Return NULL, not to get the value published! */
+	return NULL;
+}
+
+static info_lkp_t eaton_abm_status_enabled_info[] = {
+	{ 0, "dummy", eaton_abm_status_enabled_fun, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
 /* Note 1: This point will need more clarification! */
 # if 0
 /* Used to store internally if ABM is enabled or not (for legacy units) */
@@ -296,14 +312,14 @@ static const char *eaton_abm_mode_fun(double value)
 	return mge_scratch_buf;
 }
 
-/* Used to process ABM flags, for battery.charger.status */
+/* Used to process ABM flags, for battery.charger.abm.status */
 static const char *eaton_abm_status_fun(double value)
 {
 	/* Don't process if ABM is disabled */
 	if (advanced_battery_monitoring == ABM_DISABLED) {
 		/* Clear any previously published data, in case
 		 * the user has switched off ABM */
-		dstate_delinfo("battery.charger.status");
+		dstate_delinfo("battery.charger.abm.status");
 		return NULL;
 	}
 
@@ -1522,6 +1538,7 @@ static hid_info_t mge_hid2nut[] =
 	 * Must be processed before the BOOL status */
 	/* Not published, just to store in internal var. advanced_battery_monitoring */
 	{ "battery.charger.abm.status", 0, 0, "UPS.BatterySystem.Charger.ABMEnable", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_info },
+	{ "battery.charger.abm.status", 0, 0, "UPS.BatterySystem.Charger.Status", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_status_enabled_info },
 	/* Same as the one above, but for legacy units */
 	/* Refer to Note 1 (This point will need more clarification!)
 	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.PresentStatus.Used", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_legacy_info }, */
