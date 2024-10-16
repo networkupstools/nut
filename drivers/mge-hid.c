@@ -318,10 +318,10 @@ static const char *eaton_abm_status_fun(double value)
 		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "floating");
 		break;
 	case 3:
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", ""); discharging
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "resting");
 		break;
 	case 4:
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "discharging"); resting
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "discharging");
 		break;
 	case 6: /* ABM Charger Disabled */
 		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "off");
