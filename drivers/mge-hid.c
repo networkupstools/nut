@@ -157,13 +157,14 @@ static char		mge_scratch_buf[20];
 /* ABM - Advanced Battery Monitoring
  ***********************************
  * Synthesis table
- * HID data                                   |             Charger in ABM mode             | Charger in Constant mode
- * UPS.BatterySystem.Charger.ABMEnable        |                      1                      |            0
- * UPS.PowerSummary.PresentStatus.ACPresent   |           On utility          | On battery  | On utility | On battery
- * Charger ABM mode                           | Charging | Floating | Resting | Discharging | Disabled   | Disabled
- * UPS.BatterySystem.Charger.Mode             |     1    |    3     |   4     |      2      |     6      |    6
- * UPS.PowerSummary.PresentStatus.Charging    |     1    |    1     |   1     |      0      |     1      |    0
- * UPS.PowerSummary.PresentStatus.Discharging |     0    |    0     |   0     |      1      |     0      |    1
+ * HID data                                   |             Charger in ABM mode             | Charger in Constant mode | Error | Good |
+ * UPS.BatterySystem.Charger.ABMEnable        |                      1                      |            0             |       |      |
+ * UPS.PowerSummary.PresentStatus.ACPresent   |           On utility          | On battery  | On utility | On battery  |       |      |
+ * Charger ABM mode                           | Charging | Floating | Resting | Discharging | Disabled   | Disabled    |       |      |
+ * UPS.BatterySystem.Charger.Mode             |     1    |    3     |   4     |      2      |     6      |    6        |       |      |
+ * UPS.BatterySystem.Charger.Status           |     1    |    2     |   3     |      4      |     6      |    6        |   0   |   1  |
+ * UPS.PowerSummary.PresentStatus.Charging    |     1    |    1     |   1     |      0      |     1      |    0        |       |      |
+ * UPS.PowerSummary.PresentStatus.Discharging |     0    |    0     |   0     |      1      |     0      |    1        |       |      |
  *
  * Notes (from David G. Miller) to understand ABM status:
  * When supporting ABM, when a UPS powers up or returns from battery, or
@@ -254,14 +255,14 @@ static info_lkp_t eaton_abm_enabled_legacy_info[] = {
 };
 #endif /* if 0 */
 
-/* Used to process ABM flags, for battery.charger.status */
+/* Used to process ABM flags, for battery.charger.abm.status */
 static const char *eaton_abm_mode_fun(double value)
 {
 	/* Don't process if ABM is disabled */
 	if (advanced_battery_monitoring == ABM_DISABLED) {
 		/* Clear any previously published data, in case
 		 * the user has switched off ABM */
-		dstate_delinfo("battery.charger.status");
+		dstate_delinfo("battery.charger.abm.status");
 		return NULL;
 	}
 
@@ -314,13 +315,13 @@ static const char *eaton_abm_status_fun(double value)
 		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "charging");
 		break;
 	case 2:
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "discharging");
-		break;
-	case 3:
 		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "floating");
 		break;
+	case 3:
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", ""); discharging
+		break;
 	case 4:
-		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "resting");
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "discharging"); resting
 		break;
 	case 6: /* ABM Charger Disabled */
 		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "off");
