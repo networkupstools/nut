@@ -214,7 +214,7 @@ https://github.com/networkupstools/nut/milestone/11
    [issue #2657, PR #2658]
    * Updated documentation, end-user clients (CGI, NUT-Monitor UI);
    * Updated `upsmon` client with ability to report entering and exiting
-     the ECO mode if reported by the driver;
+     the ALARM status if reported by the driver;
    * Updated `upsmon` client with setting to toggle whether an `ALARM`
      status can prompt the UPS to become critical in certain situations;
 
