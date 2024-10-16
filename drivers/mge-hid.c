@@ -255,6 +255,47 @@ static info_lkp_t eaton_abm_enabled_legacy_info[] = {
 #endif /* if 0 */
 
 /* Used to process ABM flags, for battery.charger.status */
+static const char *eaton_abm_mode_fun(double value)
+{
+	/* Don't process if ABM is disabled */
+	if (advanced_battery_monitoring == ABM_DISABLED) {
+		/* Clear any previously published data, in case
+		 * the user has switched off ABM */
+		dstate_delinfo("battery.charger.status");
+		return NULL;
+	}
+
+	upsdebugx(2, "ABM numeric status: %i", (int)value);
+
+	switch ((long)value)
+	{
+	case 1:
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "charging");
+		break;
+	case 2:
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "discharging");
+		break;
+	case 3:
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "floating");
+		break;
+	case 4:
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "resting");
+		break;
+	case 6: /* ABM Charger Disabled */
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "off");
+		break;
+	case 5: /* Undefined - ABM is not activated */
+	default:
+		/* Return NULL, not to get the value published! */
+		return NULL;
+	}
+
+	upsdebugx(2, "ABM string status: %s", mge_scratch_buf);
+
+	return mge_scratch_buf;
+}
+
+/* Used to process ABM flags, for battery.charger.status */
 static const char *eaton_abm_status_fun(double value)
 {
 	/* Don't process if ABM is disabled */
@@ -294,6 +335,11 @@ static const char *eaton_abm_status_fun(double value)
 
 	return mge_scratch_buf;
 }
+
+static info_lkp_t eaton_abm_mode_info[] = {
+	{ 1, "dummy", eaton_abm_mode_fun, NULL },
+	{ 0, NULL, NULL, NULL }
+};
 
 static info_lkp_t eaton_abm_status_info[] = {
 	{ 1, "dummy", eaton_abm_status_fun, NULL },
@@ -1474,13 +1520,13 @@ static hid_info_t mge_hid2nut[] =
 	/* ABM (Advanced Battery Monitoring) processing
 	 * Must be processed before the BOOL status */
 	/* Not published, just to store in internal var. advanced_battery_monitoring */
-	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.ABMEnable", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_info },
+	{ "battery.charger.abm.status", 0, 0, "UPS.BatterySystem.Charger.ABMEnable", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_info },
 	/* Same as the one above, but for legacy units */
 	/* Refer to Note 1 (This point will need more clarification!)
 	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.PresentStatus.Used", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_legacy_info }, */
 	/* This data is the actual ABM status information */
-	{ "battery.charger.mode", 0, 0, "UPS.BatterySystem.Charger.Mode", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_status_info }, /* needs both ? from https://github.com/networkupstools/nut/pull/2637#discussion_r1772730590 */
-	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.Status", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_status_info },
+	{ "battery.charger.mode", 0, 0, "UPS.BatterySystem.Charger.Mode", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_mode_info }, /* needs both ? from https://github.com/networkupstools/nut/pull/2637#discussion_r1772730590 */
+	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.Status", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_status_info }, /* checked on Eaton 9E Model */
     { "battery.charger.type", 0, 0, "UPS.BatterySystem.Charger.ChargerType", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_charger_type_info },
 	/* FIXME: should better use UPS.BatterySystem.Charger.Status should work on 9E Models */
 	 
@@ -1538,7 +1584,7 @@ static hid_info_t mge_hid2nut[] =
 	/* These 2 ones are used when ABM is disabled */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, eaton_discharging_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Charging", NULL, NULL, HU_FLAG_QUICK_POLL, eaton_charging_info },
-	/* And this one when ABM is enabled (same as battery.charger.status) */
+	/* And this one when ABM is enabled (same as battery.charger.mode) */
 	{ "BOOL", 0, 0, "UPS.BatterySystem.Charger.Mode", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_chrg_dischrg_info },
 	/* FIXME: on Dell, the above requires an "AND" with "UPS.BatterySystem.Charger.Mode = 1" */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL, NULL, HU_FLAG_QUICK_POLL, lowbatt_info },
