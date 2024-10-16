@@ -300,6 +300,16 @@ static info_lkp_t eaton_abm_status_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
+static info_lkp_t eaton_charger_type_info[] = {
+	{ 0, "None", NULL, NULL },
+	{ 1, "Extended (CLA)", NULL, NULL },
+	{ 2, "Large extension", NULL, NULL },
+	{ 3, "Extra large extension (XL)", NULL, NULL },
+	{ 4, "ABM", NULL, NULL },
+	{ 5, "Constant Charge (CC)", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
 /* Used to process ABM flags, for ups.status (CHRG/DISCHRG/RB) */
 static const char *eaton_abm_chrg_dischrg_fun(double value)
 {
@@ -1471,6 +1481,7 @@ static hid_info_t mge_hid2nut[] =
 	/* This data is the actual ABM status information */
 	{ "battery.charger.mode", 0, 0, "UPS.BatterySystem.Charger.Mode", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_status_info }, /* needs both ? from https://github.com/networkupstools/nut/pull/2637#discussion_r1772730590 */
 	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.Status", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_status_info },
+    { "battery.charger.type", 0, 0, "UPS.BatterySystem.Charger.ChargerType", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_charger_type_info },
 	/* FIXME: should better use UPS.BatterySystem.Charger.Status should work on 9E Models */
 	 
 
