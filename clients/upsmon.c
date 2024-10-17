@@ -1142,15 +1142,23 @@ static int is_ups_critical(utype_t *ups)
 			return 1;
 		}
 
-		if ((ups->alarmstate == 1
-		|| flag_isset(ups->status, ST_ALARM)) && alarmcritical == 1) {
-			upslogx(LOG_WARNING,
-				"UPS [%s] was last known to be in an ALARM state "
-				"and currently is not communicating, assuming dead. "
-				"If this is in error and happens more frequently, "
-				"consider disabling the upsmon 'ALARMCRITICAL' option.",
-				ups->sys);
-			return 1;
+		if (ups->alarmstate == 1
+		|| flag_isset(ups->status, ST_ALARM)) {
+			if (alarmcritical == 1) {
+				upslogx(LOG_WARNING,
+					"UPS [%s] was last known to be in an ALARM state "
+					"and currently is not communicating, assuming dead. "
+					"If this is in error and causes unwanted shutdowns, "
+					"consider disabling the upsmon ALARMCRITICAL option.",
+					ups->sys);
+				return 1;
+			} else {
+				upsdebugx(1,
+					"UPS [%s] was last known to be in an ALARM state "
+					"and currently is not communicating. It is not assumed "
+					"dead as the upsmon ALARMCRITICAL option was disabled.",
+					ups->sys);
+			}
 		}
 
 		if (ups->offstate == 1
@@ -1438,8 +1446,12 @@ static void drop_connection(utype_t *ups)
 	if(ups->bypassstate == 1 || flag_isset(ups->status, ST_BYPASS))
 		upsdebugx(2, "Disconnected UPS [%s] was last seen in status BYPASS, this UPS might be considered critical later.", ups->sys);
 
-	if(ups->alarmstate == 1 || flag_isset(ups->status, ST_ALARM))
-		upsdebugx(2, "Disconnected UPS [%s] was last seen in status ALARM, this UPS might be considered critical later.", ups->sys);
+	if (ups->alarmstate == 1 || flag_isset(ups->status, ST_ALARM)) {
+		if (alarmcritical == 1)
+			upsdebugx(2, "Disconnected UPS [%s] was last seen in status ALARM, this UPS might be considered critical later.", ups->sys);
+		else
+			upsdebugx(2, "Disconnected UPS [%s] was last seen in status ALARM.", ups->sys);
+	}
 
 	if(flag_isset(ups->status, ST_CAL))
 		upsdebugx(2, "Disconnected UPS [%s] was last seen in status CAL, this UPS might be considered critical later.", ups->sys);
