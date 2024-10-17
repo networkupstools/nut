@@ -218,6 +218,7 @@ lxc.arch = x86_64
 Also note the container/system naming without underscore in "x86_64" --
    the deployed system discards the character when assigning its hostname.
    Using "amd64" is another reasonable choice here.
++
 ** For Arch Linux you would need `pacman` tools on the host system, so see
    https://wiki.archlinux.org/title/Install_Arch_Linux_from_existing_Linux#Using_pacman_from_the_host_system
    for details.
@@ -254,6 +255,7 @@ Also note the container/system naming without underscore in "x86_64" --
 +
 You will also need `pacstrap` and Debian `arch-install-scripts` package
 does not deliver it. It is however simply achieved:
++
 ------
 :; git clone https://github.com/archlinux/arch-install-scripts
 :; cd arch-install-scripts
@@ -264,6 +266,7 @@ does not deliver it. It is however simply achieved:
 It will also want an `/etc/pacman.d/mirrorlist` which you can populate for
 your geographic location from https://archlinux.org/mirrorlist/ service,
 or just fetch them all (don't forget to uncomment some `Server =` lines):
++
 ------
 :; mkdir -p /etc/pacman.d/
 :; curl https://archlinux.org/mirrorlist/all/ > /etc/pacman.d/mirrorlist
@@ -272,6 +275,7 @@ or just fetch them all (don't forget to uncomment some `Server =` lines):
 And to reference it from your host `/etc/pacman.conf` by un-commenting the
 `[core]` section and `Include` instruction, as well as adding `[community]`
 and `[extra]` sections with same reference, e.g.:
++
 ------
 [core]
 ### SigLevel = Never
@@ -290,6 +294,7 @@ Include = /etc/pacman.d/mirrorlist
 ------
 +
 And just then you can proceed with LXC:
++
 ------
 :; lxc-create -P /srv/libvirt/rootfs \
     -n jenkins-archlinux-amd64 -t archlinux -- \
@@ -302,6 +307,7 @@ so I had to run `pacman-key --init; pacman-key --refresh-keys` on the
 host itself. Even so, `lxc-create` complained about updating some keyring
 entries and I had to go one by one picking key servers (serving different
 metadata) like this:
++
 ------
 :; pacman-key --keyserver keyserver.ubuntu.com --recv-key 6D1655C14CE1C13E
 ------
@@ -557,17 +563,20 @@ Troubleshooting
 ------
 Failed to create symlink /sys/fs/cgroup/net_cls: Operation not permitted
 ------
++
 A: According to https://bugzilla.redhat.com/show_bug.cgi?id=1770763
    (skip to the end for summary) this can happen when a newer Linux
    host system with `cgroupsv2` capabilities runs an older guest distro
    which only knows about `cgroupsv1`, such as when hosting a CentOS 7
    container on a Debian 11 server.
++
 ** One workaround is to ensure that the guest `systemd` does not try to
    "join" host facilities, by setting an explicit empty list for that:
 +
 ------
 :; echo 'JoinControllers=' >> "$ALTROOT/etc/systemd/system.conf"
 ------
++
 ** Another approach is to upgrade `systemd` related packages in the guest
    container. This may require additional "backport" repositories or
    similar means, possibly maintained not by distribution itself but by
