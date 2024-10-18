@@ -231,9 +231,7 @@ static long round (LDOUBLE value)
 /* Used to store internally if ABM is enabled or not */
 static const char *eaton_abm_enabled_fun(double value)
 {
-	advanced_battery_monitoring = value;
-
-	advanced_battery_type = value;
+	advanced_battery_monitoring = value;	
 
 	if (advanced_battery_monitoring == ABM_ENABLED_TYPE)
 	{
@@ -350,7 +348,7 @@ static const char *eaton_abm_charger_type_fun(double value)
 	if (value == ABM_ENABLED_TYPE)
 	{
         /* Set ABM flag for battery.charger.type */
-		advanced_battery_monitoring == ABM_ENABLED_TYPE
+		advanced_battery_monitoring == ABM_ENABLED_TYPE;
 		upsdebugx(2, "ABM numeric status: %i", (int)value);
 
 		return "ABM";
