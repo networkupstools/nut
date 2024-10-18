@@ -231,18 +231,32 @@ static long round (LDOUBLE value)
 /* Used to store internally if ABM is enabled or not */
 static const char *eaton_abm_enabled_fun(double value)
 {
-	advanced_battery_monitoring = value;	
+	advanced_battery_monitoring = value;
 
-	if (advanced_battery_monitoring == ABM_ENABLED_TYPE)
-	{
-		upsdebugx(2, "ABM is %s", (advanced_battery_monitoring == 4) ? "enabled" : "disabled");
-	}
-	else
-		upsdebugx(2, "ABM is %s", (advanced_battery_monitoring == 1) ? "enabled" : "disabled");
+	upsdebugx(2, "ABM is %s", (advanced_battery_monitoring==1)?"enabled":"disabled");
 
 	/* Return NULL, not to get the value published! */
 	return NULL;
 }
+
+/* Used to store internally if ABM is enabled or not */
+static const char *eaton_abm_enabled_type_fun(double value)
+{
+	advanced_battery_monitoring = value;
+
+    if (advanced_battery_type == ABM_CHARGER_NO_TYPE)
+    	advanced_battery_type = ABM_CHARGER_TYPE;
+
+	upsdebugx(2, "ABM is %s", (advanced_battery_monitoring == 4) ? "enabled" : "disabled");
+
+	/* Return NULL, not to get the value published! */
+	return NULL;
+}
+
+static info_lkp_t eaton_abm_enabled_type_info[] = {
+	{ 0, "dummy", eaton_abm_enabled_type_fun, NULL },
+	{ 0, NULL, NULL, NULL }
+};
 
 static info_lkp_t eaton_abm_enabled_info[] = {
 	{ 0, "dummy", eaton_abm_enabled_fun, NULL },
@@ -281,7 +295,8 @@ static const char *eaton_abm_status_fun(double value)
 
 	upsdebugx(2, "ABM numeric status: %i", (int)value);
 
-	if (advanced_battery_monitoring == ABM_ENABLED_TYPE)
+	/* if we have battery.charger.type for 9E Models and others */
+	if (advanced_battery_type == ABM_CHARGER_TYPE)
 	{
 		switch ((long)value)
 		{
@@ -347,15 +362,15 @@ static const char *eaton_abm_charger_type_fun(double value)
 {
 	if (value == ABM_ENABLED_TYPE)
 	{
-        /* Set ABM flag for battery.charger.type */
+		/* Set ABM flag for battery.charger.type */
 		advanced_battery_monitoring == ABM_ENABLED_TYPE;
 		upsdebugx(2, "ABM numeric status: %i", (int)value);
 
 		return "ABM";
 	}
-	
+
 	// Handle the case when value is not equal to ABM_ENABLED_TYPE
-    return NULL; // or some other appropriate action
+	return NULL; // or some other appropriate action
 };
 
 static info_lkp_t eaton_charger_type_info[] = {
@@ -375,7 +390,8 @@ static const char *eaton_abm_chrg_dischrg_fun(double value)
 	if (advanced_battery_monitoring == ABM_DISABLED)
 		return NULL;
 
-	if (advanced_battery_monitoring == ABM_ENABLED_TYPE)
+	/* if we have battery.charger.type for 9E Models and others */
+	if (advanced_battery_type == ABM_CHARGER_TYPE)
 	{
 		switch ((long)value)
 		{
@@ -1557,7 +1573,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "battery.charger.type", 0, 0, "UPS.BatterySystem.Charger.ChargerType", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_charger_type_info },
 	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.ABMEnable", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_info },
 	/* Same as above but for 9E Models that using ChargerType instead and other units that has ABM when .ChargerType=4 */
-	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.ChargerType", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_info },
+	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.ChargerType", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_type_info },
 	/* Same as the one above, but for legacy units */
 	/* Refer to Note 1 (This point will need more clarification!)
 	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.PresentStatus.Used", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_legacy_info }, */
