@@ -275,7 +275,7 @@ static const char *eaton_abm_status_fun(double value)
 
 	upsdebugx(2, "ABM numeric status: %i", (int)value);
 
-	if (advanced_battery_monitoring == ABM_ENABLED_TYPE)
+	if (dstate_getinfo("battery.charger.type"))
 	{
 		switch ((long)value)
 		{
@@ -353,7 +353,7 @@ static const char *eaton_abm_chrg_dischrg_fun(double value)
 	if (advanced_battery_monitoring == ABM_DISABLED)
 		return NULL;
 
-	if (advanced_battery_monitoring == ABM_ENABLED_TYPE)
+	if (dstate_getinfo("battery.charger.type"))
 	{
 		switch ((long)value)
 		{
