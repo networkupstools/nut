@@ -239,6 +239,11 @@ static const char *eaton_abm_enabled_fun(double value)
 	return NULL;
 }
 
+static info_lkp_t eaton_abm_enabled_info[] = {
+	{ 0, "dummy", eaton_abm_enabled_fun, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
 /* Used to store internally if ABM is enabled or not */
 static const char *eaton_abm_enabled_type_fun(double value)
 {
@@ -247,6 +252,7 @@ static const char *eaton_abm_enabled_type_fun(double value)
 	if (advanced_battery_type == ABM_CHARGER_NO_TYPE)
 	{
 		advanced_battery_type = ABM_CHARGER_TYPE;
+		upsdebugx(2, "Set Charger Type numeric status: %i", advanced_battery_type);
 	}	
 
 	upsdebugx(2, "ABM is %s", (advanced_battery_monitoring == 4) ? "enabled" : "disabled");
@@ -257,11 +263,6 @@ static const char *eaton_abm_enabled_type_fun(double value)
 
 static info_lkp_t eaton_abm_enabled_type_info[] = {
 	{ 0, "dummy", eaton_abm_enabled_type_fun, NULL },
-	{ 0, NULL, NULL, NULL }
-};
-
-static info_lkp_t eaton_abm_enabled_info[] = {
-	{ 0, "dummy", eaton_abm_enabled_fun, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 
@@ -1644,7 +1645,7 @@ static hid_info_t mge_hid2nut[] =
 	/* These 2 ones are used when ABM is disabled */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, eaton_discharging_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Charging", NULL, NULL, HU_FLAG_QUICK_POLL, eaton_charging_info },
-	/* And this one when ABM is enabled (same as battery.charger.mode) */
+	/* And this one when ABM is enabled (same as battery.charger.status) */
 	{ "BOOL", 0, 0, "UPS.BatterySystem.Charger.Mode", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_chrg_dischrg_info },
 	{ "BOOL", 0, 0, "UPS.BatterySystem.Charger.Status", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_chrg_dischrg_info },
 	/* FIXME: on Dell, the above requires an "AND" with "UPS.BatterySystem.Charger.Mode = 1" */
