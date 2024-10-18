@@ -197,6 +197,12 @@ static char		mge_scratch_buf[20];
 #define			ABM_ENABLED      1
 /* Same as above but for 9E Models that using "x.ChargerType" instead and other units that has ABM when x.ChargerType = 4 */
 #define			ABM_ENABLED_TYPE 4
+/* Define if we have battery.charger.type for 9E Models and others */
+#define			ABM_CHARGER_NO_TYPE -1
+#define			ABM_CHARGER_TYPE 5
+
+/* Internal flag to process battery status (CHRG/DISCHRG) and ABM */
+static int advanced_battery_type = ABM_CHARGER_NO_TYPE;
 
 /* Internal flag to process battery status (CHRG/DISCHRG) and ABM */
 static int advanced_battery_monitoring = ABM_UNKNOWN;
@@ -227,7 +233,9 @@ static const char *eaton_abm_enabled_fun(double value)
 {
 	advanced_battery_monitoring = value;
 
-	if (dstate_getinfo("battery.charger.type"))
+	advanced_battery_type = value;
+
+	if (advanced_battery_monitoring == ABM_ENABLED_TYPE)
 	{
 		upsdebugx(2, "ABM is %s", (advanced_battery_monitoring == 4) ? "enabled" : "disabled");
 	}
@@ -275,7 +283,7 @@ static const char *eaton_abm_status_fun(double value)
 
 	upsdebugx(2, "ABM numeric status: %i", (int)value);
 
-	if (dstate_getinfo("battery.charger.type"))
+	if (advanced_battery_monitoring == ABM_ENABLED_TYPE)
 	{
 		switch ((long)value)
 		{
@@ -347,6 +355,9 @@ static const char *eaton_abm_charger_type_fun(double value)
 
 		return "ABM";
 	}
+	
+	// Handle the case when value is not equal to ABM_ENABLED_TYPE
+    return NULL; // or some other appropriate action
 };
 
 static info_lkp_t eaton_charger_type_info[] = {
@@ -366,7 +377,7 @@ static const char *eaton_abm_chrg_dischrg_fun(double value)
 	if (advanced_battery_monitoring == ABM_DISABLED)
 		return NULL;
 
-	if (dstate_getinfo("battery.charger.type"))
+	if (advanced_battery_monitoring == ABM_ENABLED_TYPE)
 	{
 		switch ((long)value)
 		{
