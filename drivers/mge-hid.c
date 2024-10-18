@@ -227,7 +227,7 @@ static const char *eaton_abm_enabled_fun(double value)
 {
 	advanced_battery_monitoring = value;
 
-	if (advanced_battery_monitoring == ABM_ENABLED_TYPE)
+	if (dstate_getinfo("battery.charger.type"))
 	{
 		upsdebugx(2, "ABM is %s", (advanced_battery_monitoring == 4) ? "enabled" : "disabled");
 	}
