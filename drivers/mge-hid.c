@@ -373,7 +373,7 @@ static const char *eaton_abm_charger_type_fun(double value)
 
     /* Handle the case when value is not equal to ABM_ENABLED_TYPE or some other appropriate action */
 	return NULL;
-};
+}
 
 static info_lkp_t eaton_charger_type_info[] = {
 	{ 0, "None", NULL, NULL },
