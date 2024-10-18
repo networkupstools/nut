@@ -244,8 +244,10 @@ static const char *eaton_abm_enabled_type_fun(double value)
 {
 	advanced_battery_monitoring = value;
 
-    if (advanced_battery_type == ABM_CHARGER_NO_TYPE)
-    	advanced_battery_type = ABM_CHARGER_TYPE;
+	if (advanced_battery_type == ABM_CHARGER_NO_TYPE)
+	{
+		advanced_battery_type = ABM_CHARGER_TYPE;
+	}	
 
 	upsdebugx(2, "ABM is %s", (advanced_battery_monitoring == 4) ? "enabled" : "disabled");
 
@@ -363,14 +365,14 @@ static const char *eaton_abm_charger_type_fun(double value)
 	if (value == ABM_ENABLED_TYPE)
 	{
 		/* Set ABM flag for battery.charger.type */
-		advanced_battery_monitoring == ABM_ENABLED_TYPE;
+		advanced_battery_monitoring = ABM_ENABLED_TYPE;
 		upsdebugx(2, "ABM numeric status: %i", (int)value);
 
 		return "ABM";
 	}
 
-	// Handle the case when value is not equal to ABM_ENABLED_TYPE
-	return NULL; // or some other appropriate action
+    /* Handle the case when value is not equal to ABM_ENABLED_TYPE or some other appropriate action */
+	return NULL;
 };
 
 static info_lkp_t eaton_charger_type_info[] = {
