@@ -192,9 +192,11 @@ static char		mge_scratch_buf[20];
  * discharging.
  */
 
-#define			ABM_UNKNOWN  -1
-#define			ABM_DISABLED  0
-#define			ABM_ENABLED   1
+#define			ABM_UNKNOWN     -1
+#define			ABM_DISABLED     0
+#define			ABM_ENABLED      1
+/* Same as above but for 9E Models that using "x.ChargerType" instead and other units that has ABM when x.ChargerType = 4 */
+#define			ABM_ENABLED_TYPE 4
 
 /* Internal flag to process battery status (CHRG/DISCHRG) and ABM */
 static int advanced_battery_monitoring = ABM_UNKNOWN;
@@ -225,7 +227,7 @@ static const char *eaton_abm_enabled_fun(double value)
 {
 	advanced_battery_monitoring = value;
 
-	if (dstate_getinfo("battery.charger.type"))
+	if (advanced_battery_monitoring == ABM_ENABLED_TYPE)
 	{
 		upsdebugx(2, "ABM is %s", (advanced_battery_monitoring == 4) ? "enabled" : "disabled");
 	}
@@ -273,7 +275,7 @@ static const char *eaton_abm_status_fun(double value)
 
 	upsdebugx(2, "ABM numeric status: %i", (int)value);
 
-	if (dstate_getinfo("battery.charger.type"))
+	if (advanced_battery_monitoring == ABM_ENABLED_TYPE)
 	{
 		switch ((long)value)
 		{
@@ -351,7 +353,7 @@ static const char *eaton_abm_chrg_dischrg_fun(double value)
 	if (advanced_battery_monitoring == ABM_DISABLED)
 		return NULL;
 
-	if (dstate_getinfo("battery.charger.type"))
+	if (advanced_battery_monitoring == ABM_ENABLED_TYPE)
 	{
 		switch ((long)value)
 		{
@@ -1531,15 +1533,20 @@ static hid_info_t mge_hid2nut[] =
 	 * Must be processed before the BOOL status */
 	/* Not published, just to store in internal var. advanced_battery_monitoring */
 	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.ABMEnable", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_info },
+	/* Same as above but for 9E Models that using ChargerType instead and other units that has ABM when .ChargerType=4 */
 	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.ChargerType", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_info },
 	/* Same as the one above, but for legacy units */
 	/* Refer to Note 1 (This point will need more clarification!)
 	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.PresentStatus.Used", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_legacy_info }, */
 	/* This data is the actual ABM status information */
-	{ "battery.charger.mode", 0, 0, "UPS.BatterySystem.Charger.Mode", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_status_info }, /* needs both ? from https://github.com/networkupstools/nut/pull/2637#discussion_r1772730590 */
-	{ "battery.charger.mode", 0, 0, "UPS.BatterySystem.Charger.Status", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_status_info }, /* checked on Eaton 9E Model */
+
+	/* NOTE: 9E Model and some other using ("UPS.BatterySystem.Charger.Status" and "UPS.BatterySystem.Charger.ChargerType")
+	 * instead of ("UPS.BatterySystem.Charger.ABMEnable" and "UPS.BatterySystem.Charger.Mode") */
+
+	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.Mode", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_status_info }, /* needs both ? from https://github.com/networkupstools/nut/pull/2637#discussion_r1772730590 */
+	/* Same as above but for 9E Models that using "x.Status" instead and other units */
+	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.Status", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_status_info }, /* checked on Eaton 9E Model */
     { "battery.charger.type", 0, 0, "UPS.BatterySystem.Charger.ChargerType", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_charger_type_info },
-	/* FIXME: should better use UPS.BatterySystem.Charger.Status should work on 9E Models */
 	 
 
 	/* UPS page */
