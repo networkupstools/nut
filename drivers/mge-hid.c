@@ -362,7 +362,9 @@ static info_lkp_t eaton_abm_status_info[] = {
 /* Used to process ABM flag, for battery.charger.type */
 static const char *eaton_abm_charger_type_fun(double value)
 {
-	if (value == ABM_ENABLED_TYPE)
+	int abm_charger_type = value;
+
+	if (abm_charger_type == ABM_ENABLED_TYPE)
 	{
 		/* Set ABM flag for battery.charger.type */
 		advanced_battery_monitoring = ABM_ENABLED_TYPE;
