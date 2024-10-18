@@ -336,12 +336,25 @@ static info_lkp_t eaton_abm_status_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
+/* Used to process ABM flag, for battery.charger.type */
+static const char *eaton_abm_charger_type_fun(double value)
+{
+	if (value == ABM_ENABLED_TYPE)
+	{
+        /* Set ABM flag for battery.charger.type */
+		advanced_battery_monitoring == ABM_ENABLED_TYPE
+		upsdebugx(2, "ABM numeric status: %i", (int)value);
+
+		return "ABM";
+	}
+};
+
 static info_lkp_t eaton_charger_type_info[] = {
 	{ 0, "None", NULL, NULL },
 	{ 1, "Extended (CLA)", NULL, NULL },
 	{ 2, "Large extension", NULL, NULL },
 	{ 3, "Extra large extension (XL)", NULL, NULL },
-	{ 4, "ABM", NULL, NULL },
+	{ 4, "ABM", eaton_abm_charger_type_fun, NULL },
 	{ 5, "Constant Charge (CC)", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
 };
@@ -1532,6 +1545,7 @@ static hid_info_t mge_hid2nut[] =
 	/* ABM (Advanced Battery Monitoring) processing
 	 * Must be processed before the BOOL status */
 	/* Not published, just to store in internal var. advanced_battery_monitoring */
+	{ "battery.charger.type", 0, 0, "UPS.BatterySystem.Charger.ChargerType", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_charger_type_info },
 	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.ABMEnable", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_info },
 	/* Same as above but for 9E Models that using ChargerType instead and other units that has ABM when .ChargerType=4 */
 	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.ChargerType", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_info },
@@ -1546,8 +1560,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.Mode", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_status_info }, /* needs both ? from https://github.com/networkupstools/nut/pull/2637#discussion_r1772730590 */
 	/* Same as above but for 9E Models that using "x.Status" instead and other units */
 	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.Status", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_status_info }, /* checked on Eaton 9E Model */
-    { "battery.charger.type", 0, 0, "UPS.BatterySystem.Charger.ChargerType", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_charger_type_info },
-	 
+ 
 
 	/* UPS page */
 	{ "ups.efficiency", 0, 0, "UPS.PowerConverter.Output.Efficiency", NULL, "%.0f", 0, NULL },
