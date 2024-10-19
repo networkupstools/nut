@@ -249,11 +249,19 @@ static const char *eaton_abm_enabled_type_fun(double value)
 {
 	advanced_battery_monitoring = value;
 
+	/* If not initialized Set ABM Charger Type */
 	if (advanced_battery_type == ABM_CHARGER_NO_TYPE)
 	{
 		advanced_battery_type = ABM_CHARGER_TYPE;
 		upsdebugx(2, "Set Charger Type numeric status: %i", advanced_battery_type);
-	}	
+	}
+
+	/* If Charger Type value is not ABM set ABM variable as disabled */
+	if (advanced_battery_monitoring != ABM_ENABLED_TYPE)
+	{
+		advanced_battery_monitoring = ABM_DISABLED;
+		upsdebugx(2, "ABM charger type status: %i", advanced_battery_monitoring);
+	}
 
 	upsdebugx(2, "ABM is %s", (advanced_battery_monitoring == 4) ? "enabled" : "disabled");
 
