@@ -201,7 +201,7 @@ static char		mge_scratch_buf[20];
 #define			ABM_CHARGER_NO_TYPE -1
 #define			ABM_CHARGER_TYPE 5
 
-/* Internal flag to process battery status (CHRG/DISCHRG) and ABM */
+/* Internal flag to process battery.charger.type for 9E Models and others */
 static int advanced_battery_type = ABM_CHARGER_NO_TYPE;
 
 /* Internal flag to process battery status (CHRG/DISCHRG) and ABM */
