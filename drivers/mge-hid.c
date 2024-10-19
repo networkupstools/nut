@@ -369,7 +369,7 @@ static const char *eaton_abm_charger_type_fun(double value)
 	{
 		/* Set ABM flag for battery.charger.type */
 		advanced_battery_monitoring = ABM_ENABLED_TYPE;
-		upsdebugx(2, "ABM numeric status: %i", (int)value);
+		upsdebugx(2, "ABM charger type status: %i", (int)value);
 
 		return "ABM";
 	}
