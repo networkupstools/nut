@@ -201,8 +201,15 @@ static char		mge_scratch_buf[20];
 #define			ABM_CHARGER_NO_TYPE -1
 #define			ABM_CHARGER_TYPE 5
 
+/* Define if we have battery.charger.staus by "x.ABMEnable and "x.Mode" */
+#define			ABM_CHARGER_NO_MODE -1
+#define			ABM_CHARGER_MODE 5
+
 /* Internal flag to process battery.charger.type for 9E Models and others */
 static int advanced_battery_type = ABM_CHARGER_NO_TYPE;
+
+/* Internal flag to process battery.charger.status by "x.ABMEnable and "x.Mode" */
+static int advanced_battery_mode = ABM_CHARGER_NO_MODE;
 
 /* Internal flag to process battery status (CHRG/DISCHRG) and ABM */
 static int advanced_battery_monitoring = ABM_UNKNOWN;
@@ -232,6 +239,13 @@ static long round (LDOUBLE value)
 static const char *eaton_abm_enabled_fun(double value)
 {
 	advanced_battery_monitoring = value;
+	
+	/* If not initialized Set ABM Charger Mode */
+	if (advanced_battery_mode == ABM_CHARGER_NO_MODE)
+	{
+		advanced_battery_mode = ABM_CHARGER_MODE;
+		upsdebugx(2, "Set Charger Mode numeric status: %i", advanced_battery_mode);
+	}
 
 	upsdebugx(2, "ABM is %s", (advanced_battery_monitoring==1)?"enabled":"disabled");
 
@@ -247,6 +261,7 @@ static info_lkp_t eaton_abm_enabled_info[] = {
 /* Used to store internally if ABM is enabled or not */
 static const char *eaton_abm_enabled_type_fun(double value)
 {
+	int advanced_battery_monitoring_old = advanced_battery_monitoring;
 	advanced_battery_monitoring = value;
 
 	/* If not initialized Set ABM Charger Type */
@@ -256,11 +271,20 @@ static const char *eaton_abm_enabled_type_fun(double value)
 		upsdebugx(2, "Set Charger Type numeric status: %i", advanced_battery_type);
 	}
 
-	/* If Charger Type value is not ABM set ABM variable as disabled */
-	if (advanced_battery_monitoring != ABM_ENABLED_TYPE)
+	/* If Charger Type value is not ABM set ABM variable as disabled also check
+	 * if not runned `eaton_abm_enabled_fun()` befor this func for not owerwrite ABM variable flag */
+
+	if ((advanced_battery_monitoring != ABM_ENABLED_TYPE) && (advanced_battery_mode != ABM_CHARGER_MODE))
 	{
 		advanced_battery_monitoring = ABM_DISABLED;
 		upsdebugx(2, "Set ABM variable to disabled, charger type status: %i", advanced_battery_monitoring);
+	}
+    
+	/* If ABM is already set in `eaton_abm_enabled_fun()`, do not overwrite */
+	if (advanced_battery_mode == ABM_CHARGER_MODE)
+	{
+		upsdebugx(2, "ABM variable already was set to charger type status: %i", advanced_battery_monitoring_old);
+		return NULL;
 	}
 
 	upsdebugx(2, "ABM is %s", (advanced_battery_monitoring == 4) ? "enabled" : "disabled");
