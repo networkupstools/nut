@@ -276,7 +276,10 @@ static const char *eaton_abm_enabled_type_fun(double value)
 
 	if ((advanced_battery_monitoring != ABM_ENABLED_TYPE) && (advanced_battery_mode != ABM_CHARGER_MODE))
 	{
-		advanced_battery_monitoring = ABM_UNKNOWN; /* ABM_DISABLED or ABM_UNKNOWN ? */
+		/* NOTE: ABM_DISABLED or ABM_UNKNOWN ?
+		 * ABM_DISABLED - when no ABM only Constant Charge, then no battery.charger.status will be avalible
+		 * ABM_UNKNOWN - like was in original code when no ABM only Constant Charge, then battery.charger.status will be avalible */
+		advanced_battery_monitoring = ABM_DISABLED;
 		upsdebugx(2, "Set ABM variable to disabled, charger type status: %i", advanced_battery_monitoring);
 	}
     
