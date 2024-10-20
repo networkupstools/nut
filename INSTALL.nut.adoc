@@ -630,8 +630,9 @@ You can jump directly to the <<Configuration_notes,NUT configuration>>
 if you need to revise the settings for your new NUT version, take advantage
 of new configuration options, etc.
 
-Check the linksrcdoc:NEWS[] and linksrcdoc:UPGRADING[] files in your checked-out
-Git workspace to review features that should be present in your new build.
+Check the {linksrcdoc}NEWS.adoc[] and {linksrcdoc}UPGRADING.adoc[] files
+in your checked-out Git workspace to review features that should be present
+in your new build.
 
 [[Installing_packages]]
 Installing from packages
