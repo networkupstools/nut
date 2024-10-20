@@ -222,8 +222,8 @@ Also note the container/system naming without underscore in "x86_64" --
 ** For Arch Linux you would need `pacman` tools on the host system, so see
    https://wiki.archlinux.org/title/Install_Arch_Linux_from_existing_Linux#Using_pacman_from_the_host_system
    for details.
-   On a Debian/Ubuntu host (assumed ready for NUT builds per
-   linkdoc:user-manual[Prerequisites for building NUT on different OSes,Config_Prereqs,docs/config-prereqs.txt]
+   On a Debian/Ubuntu host, assumed ready for NUT builds per
+   linkdoc:user-manual[Prerequisites for building NUT on different OSes,Config_Prereqs,docs/config-prereqs.txt],
    it would start like this:
 +
 ------
