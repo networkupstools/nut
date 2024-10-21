@@ -277,11 +277,11 @@ static const char *eaton_abm_enabled_type_fun(double value)
 
 	if ((advanced_battery_monitoring != ABM_ENABLED_TYPE) && (advanced_battery_mode != ABM_CHARGER_MODE))
 	{
-		/* NOTE: ABM_DISABLED or ABM_UNKNOWN - when no ABM only Constant Charge (CC)?
-		 * ABM_DISABLED - then no battery.charger.status will be avalible
+		/* NOTE: ABM_DISABLED or ABM_UNKNOWN - when no ABM only Constant Charge (CC) when ABM_CHARGER_TYPE ?
+		 * ABM_DISABLED - then no battery.charger.status will be avalible also no ups.status updates becouse L331 ?
 		 * ABM_UNKNOWN - like was in original code then battery.charger.status will be avalible */
-		advanced_battery_monitoring = ABM_DISABLED;
-		upsdebugx(2, "Set ABM variable to disabled, charger type status: %i", advanced_battery_monitoring);
+		advanced_battery_monitoring = ABM_UNKNOWN;
+		upsdebugx(2, "Set ABM variable to unknown, charger type status: %i", advanced_battery_monitoring);
 	}
     
 	/* If ABM is already set in `eaton_abm_enabled_fun()`, do not overwrite */
@@ -428,7 +428,7 @@ static info_lkp_t eaton_charger_type_info[] = {
 static const char *eaton_abm_chrg_dischrg_fun(double value)
 {
 	/* Don't process if ABM is disabled */
-	if (advanced_battery_monitoring == ABM_DISABLED)
+	if ((advanced_battery_monitoring == ABM_DISABLED) || (advanced_battery_monitoring == ABM_UNKNOWN))
 		return NULL;
 
 	/* if we have battery.charger.type for 9E Models and others */
@@ -1613,7 +1613,7 @@ static hid_info_t mge_hid2nut[] =
 	/* Not published, just to store in internal var. advanced_battery_monitoring */
 	{ "battery.charger.type", 0, 0, "UPS.BatterySystem.Charger.ChargerType", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_charger_type_info },
 	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.ABMEnable", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_info },
-	/* Same as above but for 9E Models that using ChargerType instead and other units that has ABM when .ChargerType=4 */
+	/* Same as above but for 9E Models that using x.ChargerType instead and other units that has ABM when x.ChargerType = 4 */
 	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.ChargerType", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_type_info },
 	/* Same as the one above, but for legacy units */
 	/* Refer to Note 1 (This point will need more clarification!)
