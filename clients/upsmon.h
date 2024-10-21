@@ -36,6 +36,7 @@
 #define ST_CAL         (1 << 7)       /* UPS calibration in progress (CAL)        */
 #define ST_OFF         (1 << 8)       /* UPS is administratively off or asleep (OFF) */
 #define ST_BYPASS      (1 << 9)       /* UPS is on bypass so not protecting       */
+#define ST_ALARM       (1 << 10)      /* UPS has at least one active alarm        */
 
 /* required contents of flag file */
 #define SDMAGIC "upsmon-shutdown-file"
@@ -68,6 +69,8 @@ typedef struct {
 	int	offstate;		/* fire on a 0->1 transition, may	*/
 					/* be delayed vs. seeing OFF state	*/
 	int	bypassstate;		/* fire on a 0->1 transition;	*/
+					/* delays not implemented now	*/
+	int	alarmstate;		/* fire on a 0->1 transition;	*/
 					/* delays not implemented now	*/
 
 	/* see detailed comment for pollfail_log_throttle_max in upsmon.c
@@ -105,6 +108,8 @@ typedef struct {
 #define NOTIFY_NOTOFF	13	/* UPS is not anymore administratively OFF or asleep*/
 #define NOTIFY_BYPASS	14	/* UPS is administratively on bypass    */
 #define NOTIFY_NOTBYPASS	15	/* UPS is not anymore administratively on bypass    */
+#define NOTIFY_ALARM	16	/* UPS has at least one active alarm    */
+#define NOTIFY_NOTALARM	17	/* UPS has no active alarms    */
 
 #define NOTIFY_SUSPEND_STARTING	30	/* OS is entering sleep/suspend/hibernate slumber mode, and we know it   */
 #define NOTIFY_SUSPEND_FINISHED	31	/* OS just finished sleep/suspend/hibernate slumber mode, and we know it */
@@ -153,6 +158,8 @@ static struct {
 	{ NOTIFY_NOTOFF,   "NOTOFF",   NULL, "UPS %s: no longer administratively OFF or asleep", NOTIFY_DEFAULT },
 	{ NOTIFY_BYPASS,   "BYPASS",   NULL, "UPS %s: on bypass (powered, not protecting)", NOTIFY_DEFAULT },
 	{ NOTIFY_NOTBYPASS,"NOTBYPASS",NULL, "UPS %s: no longer on bypass", NOTIFY_DEFAULT },
+	{ NOTIFY_ALARM,    "ALARM",    NULL, "UPS %s is in an alarm state (has active alarms)", NOTIFY_DEFAULT },
+	{ NOTIFY_NOTALARM, "NOTALARM", NULL, "UPS %s is no longer in an alarm state (no active alarms)", NOTIFY_DEFAULT },
 
 	{ NOTIFY_SUSPEND_STARTING, "SUSPEND_STARTING", NULL, "OS is entering sleep/suspend/hibernate mode", NOTIFY_DEFAULT },
 	{ NOTIFY_SUSPEND_FINISHED, "SUSPEND_FINISHED", NULL, "OS just finished sleep/suspend/hibernate mode, de-activating obsolete UPS readings to avoid an unfortunate shutdown", NOTIFY_DEFAULT },

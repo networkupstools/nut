@@ -20,24 +20,32 @@ https://github.com/networkupstools/nut/milestone/9
 
  - (expected) Dynamic Mapping Files (DMF) feature supported, to allow
    the driver binaries to be built once and data mappings to be loaded
-   and modernized on the fly [Ported from 42ITy project]
+   and modernized on the fly (porting from 42ITy project)
 
-PLANNED: Release notes for NUT 2.8.3 - what's new since 2.8.2
--------------------------------------------------------------
+ - (expected) Porting of reference packaging from 42ITy project
 
-https://github.com/networkupstools/nut/milestone/11
+ - (expected) Porting of patches suggested by different distribution packages
+
+ - (expected) C code clean-up/consistency (string format security, work with
+   Boolean values, string to number conversions, etc. in the same manner)
 
  - (expected) clean-up of libusb API variants support [#300 and follow-ups]
 
  - (expected) CI automation for coding style
 
+ - (expected) CI automation for driver flags and variables to be certainly
+   documented, handled in augeas lenses, nutconf classes, etc.
+
  - (expected) CI automation for use of data points in drivers that conform
    to patterns defined in link:docs/nut-names.txt[]
 
- - (expected) Porting of performance and bug fixes from 42ITy project
+ - (expected) Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0+
 
- - (expected) Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0
 
+PLANNED: Release notes for NUT 2.8.3 - what's new since 2.8.2
+-------------------------------------------------------------
+
+https://github.com/networkupstools/nut/milestone/11
 
  - Fix fallout of development in NUT v2.8.0 and/or v2.8.1 and/or v2.8.2:
    * Move of `NUT_DEBUG_LEVEL` and "-D" CLI option handling to start of
@@ -149,6 +157,8 @@ https://github.com/networkupstools/nut/milestone/11
      series (largely guessing, feedback and PRs for adaptation to actual
      string values reported by devices via USB are welcome), so these devices
      would now report `battery.voltage` and `battery.voltage.nominal`. [#2380]
+   * Added `ups.beeper.status` support for Masterpower MF-UPS650VA using the
+     MGE HID subdriver. [#2662]
    * `powercom-hid` subdriver sent UPS shutdown commands in wrong byte order,
      at least for devices currently in the field. A toggle was added to set
      the old behavior (if some devices do need it), while a fix is applied
@@ -183,12 +193,32 @@ https://github.com/networkupstools/nut/milestone/11
    of an UPS interface on a composite USB device or when looking at devices
    with non-default interface/endpoint/config numbers. [PR #2611]
 
+ - USB drivers should now accept a `LIBUSB_DEBUG=INTEGER` setting in `ups.conf`
+   (as well as an environment variable that can be generally set via `nut.conf`
+   or service unit methods or init script), to enable troubleshooting of LibUSB
+   itself. [issue #2616]
+
  - Introduced a new driver concept for interaction with OS-reported hardware
    monitoring readings. Currently instantiated as `hwmon_ina219` specifically
    made for Texas Instruments INA219 chip as exposed in the Linux "hwmon"
    subsystem of its "sysfs" interface (and talking I2C under the hood), this
    approach seems to have good potential to expand into covering more devices
    and perhaps platforms. [#2430]
+
+ - Introduced handling for the `ALARM` status, which already existed as a
+   common denominator for devices seen with active `ups.alarm` variables.
+   UPS devices in an `ALARM` status are generally considered volatile and
+   may be considered critical/dead by the `upsmon` client earlier than in
+   other statuses (e.g. in no-communication situations). It has to be noted
+   that there is no common standard for what constitutes an alarm and such
+   alarm states were also previously observed for less severe reasons. This
+   depends on the manufacturer/device-specific implementation in the driver.
+   [issue #2657, PR #2658]
+   * Updated documentation, end-user clients (CGI, NUT-Monitor UI);
+   * Updated `upsmon` client with ability to report entering and exiting
+     the ALARM status if reported by the driver;
+   * Updated `upsmon` client with setting to toggle whether an `ALARM`
+     status can prompt the UPS to become critical in certain situations;
 
  - upsmon:
    * it was realized that the `POWERDOWNFLAG` must be explicitly set in the

@@ -49,6 +49,7 @@ color: Gold;
 line-height: 24px;
 }
 
+/* For Customizable Theme plugin: */
 .logo {
 background: url("/userContent/layout/DO_Powered_by_Badge_blue_140pxW.png");
   background-repeat: no-repeat;
@@ -57,6 +58,17 @@ background: url("/userContent/layout/DO_Powered_by_Badge_blue_140pxW.png");
   background-origin: content-box;
   padding-right: 14px;
   /* Glue to the search box, to hide DO logo plank color gap with background on the right side */
+}
+
+/* For Customizable Header plugin: */
+.custom-header__title {
+background: url("/userContent/layout/DO_Powered_by_Badge_blue_140pxW.png");
+  background-repeat: no-repeat;
+/*  background-attachment: fixed; */
+  background-position: right;
+  background-origin: content-box;
+/*  padding-right: 14px; */
+  /* Glue to the search box, to hide FH logo plank color gap with background on the right side */
 }
 
 /* Match/contrast color of DigitalOcean logo */

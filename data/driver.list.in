@@ -37,6 +37,9 @@
 #
 # The entry may be followed by comments. Be sure to not use double-quotes there!
 
+"2E"	"ups"	"2"	"PS1000L"	"USB"	"nutdrv_qx"	# https://github.com/networkupstools/nut-ddl/issues/41
+"2E"	"ups"	"2"	"PS1000L"	"serial"	"nutdrv_qx"	# https://github.com/networkupstools/nut-ddl/issues/41
+
 "Ablerex"	"ups"	"2"	"625L"	"USB"	"blazer_usb"
 "Ablerex"	"ups"	"2"	"Hope Office 400/600"	""	"blazer_ser"
 "Ablerex"	"ups"	"2"	"MARS MS3000RT"	""	"blazer_ser"
@@ -71,11 +74,13 @@
 "APC"	"ups"	"1"	"Smart-UPS"	""	"apcsmart"
 "APC"	"ups"	"1"	"Smart-UPS SMT/SMX/SURTD"	"Microlink models with RJ45 socket - they *require* AP9620 SmartSlot expansion card and smart cable"	"apcsmart"
 "APC"	"ups"	"3"	"Back-UPS Pro USB"	"USB"	"usbhid-ups"
+"APC"	"ups"	"3"	"Back-UPS BK650M2-CH"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/1970
 "APC"	"ups"	"3"	"Back-UPS (USB)"	"USB"	"usbhid-ups"
 "APC"	"ups"	"3"	"Back-UPS CS USB"	"USB"	"usbhid-ups"
 "APC"	"ups"	"3"	"Back-UPS RS USB"	"USB"	"usbhid-ups"
 "APC"	"ups"	"3"	"Back-UPS LS USB"	"USB"	"usbhid-ups"
 "APC"	"ups"	"3"	"Back-UPS ES/CyberFort 350"	"USB"	"usbhid-ups"
+"APC"	"ups"	"3"	"Back-UPS ES 850G2"	"USB"	"usbhid-ups"
 "APC"	"ups"	"3"	"Back-UPS BF500"	"USB"	"usbhid-ups"
 "APC"	"ups"	"3"	"BACK-UPS XS LCD"	"USB"	"usbhid-ups"
 "APC"	"ups"	"3"	"Back-UPS XS 1000M (Back-UPS Pro 1000, Model BX1000M)"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/139
@@ -100,6 +105,7 @@
 "APC"	"ups"	"1"	"Back-UPS RS 500"	"custom non-USB cable"	"genericups upstype=20"
 "APC"	"ups"	"3"	"Smart-UPS SUA 1000"	""	"snmp-ups"
 "APC"	"ups"	"3"	"Smart-UPS 3000"	""	"snmp-ups"
+"APC"	"ups"	"3"	"Smart-UPS 5000 RM (SUA5000RMI5U)"	""	"snmp-ups"
 "APC"	"ups"	"3"	"Smart-UPS RT XL"	"AP9618 SNMP monitoring card"	"snmp-ups"
 "APC"	"ups"	"3"	"(various)"	"AP9618 SNMP monitoring card"	"snmp-ups"
 "APC"	"ups"	"3"	"(various)"	"AP9630 SNMP monitoring card"	"snmp-ups privProtocol=AES"
@@ -658,6 +664,7 @@
 "Liebert"	"ups"	"5"	"UPStation GXT2"	"contact-closure cable"	"liebert"
 "Liebert"	"ups"	"4"	"GXE 1-3kVA"   		"Serial"	"liebert-gxe (experimental)"
 "Liebert"	"ups"	"1"	"GXT2-3000RT230"	""	"liebert-esp2 (experimental)"
+"Liebert"	"ups"	"3"	"GXT4-1500RT120"	"USB"	"usbhid-ups"	# https://alioth-lists.debian.net/pipermail/nut-upsdev/2024-September/008013.html
 "Liebert"	"ups"	"3"	"PowerSure Personal XT"	"USB"	"usbhid-ups"
 "Liebert"	"ups"	"3"	"PowerSure PSA"	"USB"	"usbhid-ups"
 "Liebert"	"ups"	"3"	"PowerSure PSA 500"	"USB"	"usbhid-ups"
@@ -894,6 +901,8 @@
 "Mustek"	"ups"	"2"	"Yukai PowerMust"	"1000 USB (PID: 5161)"	"blazer_usb"
 "Mustek"	"ups"	"2"	"Various"	""	"blazer_ser"
 
+"NetVision"	"ups"	"3"	"U4BC02CB00NY100"	""	"snmp-ups"	# https://github.com/networkupstools/nut/issues/1732
+
 "Neus"	"ups"	"2"	"400va / 600va"	""	"blazer_ser"
 
 "NHS Sistemas de Energia"	"ups"	"5"	"Expert C Online 6000"	""	"gamatronic"	# http://www.nhs.com.br/produtos_interna/id/TWpFeQ==
@@ -1006,6 +1015,8 @@
 "PowerMan"	"ups"	"2"	"RealSmart 800"	""	"blazer_ser"
 "PowerMan"	"ups"	"2"	"RealSmart 1000"	""	"blazer_ser"
 "PowerMan"	"ups"	"1"	"BackPro"	""	"genericups upstype=4"
+
+"Powermatic"	"ups"	"2"	"Cleanline L-1000C"	"USB"	"nutdrv_qx"	# https://alioth-lists.debian.net/pipermail/nut-upsdev/2024-September/008015.html
 
 "PowerShield"	"ups"	"2"	"Defender 1200VA"	"USB"	"blazer_usb"
 
@@ -1207,6 +1218,8 @@
 "Syndome"	"ups"	"3"	"Atom LCD-1000"	"USB"	"usbhid-ups" # https://github.com/networkupstools/nut/issues/483
 
 "Sysgration"	"ups"	"2"	"UPGUARDS Pro650"	""	"blazer_ser"
+
+"Techly"	"ups"	"2"	"1000VA"	"USB"	"nutdrv_qx (very little data available with subdriver/protocol=hunnox)"	# https://github.com/networkupstools/nut/issues/2651
 
 "Tecnoware"	"ups"	"2"	"Easy Power 1200"	""	"blazer_ser"
 "Tecnoware"	"ups"	"2"	"UPS ERA LCD 0.65"	"USB"	"blazer_usb langid_fix=0x409"

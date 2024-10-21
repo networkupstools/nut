@@ -123,6 +123,8 @@ let upsmon_notify_type = "ONLINE"
 			| "NOTOFF"
 			| "BYPASS"
 			| "NOTBYPASS"
+			| "ALARM"
+			| "NOTALARM"
 			| "SUSPEND_STARTING"
 			| "SUSPEND_FINISHED"
 

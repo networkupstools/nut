@@ -82,8 +82,8 @@
 # Set maxretry to 3 by default, this should mitigate race with slow devices:
 maxretry = 3
 
-# These directives can be set outside and inside a driver definition, with
-# slightly different meanings per context:
+# These directives can be set outside and inside a driver definition,
+# sometimes with slightly different meanings per context:
 #
 # maxstartdelay: OPTIONAL.  This can be set as a global variable
 #                above your first UPS definition and it can also be
@@ -110,6 +110,13 @@ maxretry = 3
 #              background running mode. If both the global and driver level
 #              `debug_min` are set, the driver-level setting takes precedence.
 #              Command-line option `-D` can only increase this verbosity level.
+#
+# LIBUSB_DEBUG: OPTIONAL.  For run-time troubleshooting of USB-capable NUT
+#                drivers, you can specify the verbosity of LibUSB specific
+#                debugging as a numeric value such as `4` ("All messages
+#                are emitted").  Should not have any practical impact on
+#                other NUT drivers. For more details, see the library's
+#                documentation at e.g. https://libusb.sourceforge.io/api-1.0/
 #
 # user, group: OPTIONAL. Overrides the compiled-in (also global-section,
 #                when used in driver section) default unprivileged user/group
