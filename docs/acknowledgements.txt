@@ -8,8 +8,14 @@ This project is the result of years of work by many individuals and companies.
 Many people have written or tweaked the software; the drivers, clients, server
 and documentation have all received valuable attention from numerous sources.
 
-Many of them are listed within the source code, AUTHORS file, release notes,
-and mailing list archives, but some prefer to be anonymous.
+Many of them are listed within the source code, linksrcdoc:AUTHORS[] file,
+release notes, and mailing list archives, but some prefer to be anonymous.
+
+Companies and organizations that have helped with various aspects of project
+infrastructure are listed in linksingledoc:user-manual[Acknowledgements of
+organizations which help with NUT CI and other daily
+operations,acknowledgements-ci-ops,README.adoc].
+
 This software would not be possible without their help.
 
 

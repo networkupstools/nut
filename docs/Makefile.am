@@ -70,6 +70,7 @@ IMAGE_LOGO_FILES = \
 	images/ci/OC_logo_merged_140x26.png
 
 IMAGE_LOGO_FILES_JENKINS_NUT = \
+	images/ci/ci-root.css \
 	images/ci/jenkins-nut-large-256px.png \
 	images/ci/jenkins-nut-large-squared.png \
 	images/ci/jenkins-nut-large.pdn \
