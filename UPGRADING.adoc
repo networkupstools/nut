@@ -51,6 +51,16 @@ Changes from 2.8.2 to 2.8.3
   For fallback with older systemd, a `nut-sleep.service` is provided now.
   [#1070, #2596, #2597]
 
+- Handling of per-UPS `ALARM` state was introduced to `upsmon`, allowing it
+  to optionally treat it as a factor in deciding that the device is in a
+  "critical" state (polled more often, assumed dead if communications are
+  lost). Since it is up to devices and their NUT drivers what they would
+  raise as an alarm (might be something as mundane as ECO mode being active),
+  some alarms can contribute to unwanted/early shutdowns. For this reason
+  a `0|1` setting `ALARMCRITICAL` was introduced into `upsmon.conf` (default
+  is `1`), for such users to be able to prevent their `upsmon` from treating
+  the `ALARM` status as overly severe when it is not in fact. [#2658]
+
 - `usbhid-ups` subdriver `PowerCOM HID` subdriver sent UPS `shutdown` and
   `stayoff` commands in wrong byte order, at least for devices currently
   in the field. Driver now sends the commands in a way that satisfies new

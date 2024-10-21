@@ -118,6 +118,9 @@ static	int	reload_flag = 0;
 	/* set after SIGINT, SIGQUIT, or SIGTERM */
 static	int	exit_flag = 0;
 
+	/* set if ALARM status can cause UPS to become critical (e.g. when no-comms) */
+static	int	alarmcritical = 1;
+
 	/* userid for unprivileged process when using fork mode */
 static	char	*run_as_user = NULL;
 
@@ -190,7 +193,7 @@ static int flag_isset(int num, int flag)
 static int try_restore_pollfreq(utype_t *ups) {
 	/* Use relaxed pollfreq if we are not in a hardware
 	 * power state that is prone to UPS disappearance */
-	if (!flag_isset(ups->status, ST_ONBATT | ST_OFF | ST_BYPASS | ST_CAL)) {
+	if (!flag_isset(ups->status, ST_ONBATT | ST_OFF | ST_BYPASS | ST_ALARM | ST_CAL)) {
 		sleepval = pollfreq;
 		return 1;
 	}
@@ -713,6 +716,36 @@ static void ups_is_notbypass(utype_t *ups)
 	}
 }
 
+static void ups_is_alarm(utype_t *ups)
+{
+	if (flag_isset(ups->status, ST_ALARM)) { 	/* no change */
+		upsdebugx(4, "%s: %s (no change)", __func__, ups->sys);
+		return;
+	}
+
+	sleepval = pollfreqalert;	/* bump up polling frequency */
+
+	ups->alarmstate = 1;	/* if we lose comms, consider it AWOL */
+
+	upsdebugx(3, "%s: %s (first time)", __func__, ups->sys);
+
+	/* must have changed from !ALARM to ALARM, so notify */
+
+	do_notify(ups, NOTIFY_ALARM);
+	setflag(&ups->status, ST_ALARM);
+}
+
+static void ups_is_notalarm(utype_t *ups)
+{
+	/* Called when ALARM is NOT among known states */
+	ups->alarmstate = 0;
+	if (flag_isset(ups->status, ST_ALARM)) {	/* actual change */
+		do_notify(ups, NOTIFY_NOTALARM);
+		clearflag(&ups->status, ST_ALARM);
+		try_restore_pollfreq(ups);
+	}
+}
+
 static void ups_on_batt(utype_t *ups)
 {
 	if (flag_isset(ups->status, ST_ONBATT)) { 	/* no change */
@@ -1109,6 +1142,25 @@ static int is_ups_critical(utype_t *ups)
 			return 1;
 		}
 
+		if (ups->alarmstate == 1
+		|| flag_isset(ups->status, ST_ALARM)) {
+			if (alarmcritical == 1) {
+				upslogx(LOG_WARNING,
+					"UPS [%s] was last known to be in an ALARM state "
+					"and currently is not communicating, assuming dead. "
+					"If this is in error and causes unwanted shutdowns, "
+					"consider disabling the upsmon ALARMCRITICAL option.",
+					ups->sys);
+				return 1;
+			} else {
+				upsdebugx(1,
+					"UPS [%s] was last known to be in an ALARM state "
+					"and currently is not communicating. It is not assumed "
+					"dead as the upsmon ALARMCRITICAL option was disabled.",
+					ups->sys);
+			}
+		}
+
 		if (ups->offstate == 1
 		|| (offdurationtime >= 0 && flag_isset(ups->status, ST_OFF))) {
 			upslogx(LOG_WARNING,
@@ -1297,7 +1349,7 @@ static void recalc(void)
 		 * this means a UPS we've never heard from is assumed OL     *
 		 * whether this is really the best thing to do is undecided  */
 
-		/* crit = (FSD) || (OB & LB) > HOSTSYNC seconds || (OFF || BYPASS) && nocomms */
+		/* crit = (FSD) || (OB & LB) > HOSTSYNC seconds || (CAL || BYPASS || ALARM || OFF) && nocomms */
 		if (is_ups_critical(ups))
 			upsdebugx(1, "Critical UPS: %s", ups->sys);
 		else
@@ -1393,6 +1445,13 @@ static void drop_connection(utype_t *ups)
 
 	if(ups->bypassstate == 1 || flag_isset(ups->status, ST_BYPASS))
 		upsdebugx(2, "Disconnected UPS [%s] was last seen in status BYPASS, this UPS might be considered critical later.", ups->sys);
+
+	if (ups->alarmstate == 1 || flag_isset(ups->status, ST_ALARM)) {
+		if (alarmcritical == 1)
+			upsdebugx(2, "Disconnected UPS [%s] was last seen in status ALARM, this UPS might be considered critical later.", ups->sys);
+		else
+			upsdebugx(2, "Disconnected UPS [%s] was last seen in status ALARM.", ups->sys);
+	}
 
 	if(flag_isset(ups->status, ST_CAL))
 		upsdebugx(2, "Disconnected UPS [%s] was last seen in status CAL, this UPS might be considered critical later.", ups->sys);
@@ -1917,6 +1976,12 @@ static int parse_conf_arg(size_t numargs, char **arg)
 		return 1;
 	}
 
+	/* ALARMCRITICAL (0|1) */
+	if (!strcmp(arg[0], "ALARMCRITICAL")) {
+		alarmcritical = atoi(arg[1]);
+		return 1;
+	}
+
 	/* DEBUG_MIN (NUM) */
 	/* debug_min (NUM) also acceptable, to be on par with ups.conf */
 	if (!strcasecmp(arg[0], "DEBUG_MIN")) {
@@ -2347,6 +2412,8 @@ static void parse_status(utype_t *ups, char *status)
 		ups_is_notoff(ups);
 	if (!strstr(status, "BYPASS"))
 		ups_is_notbypass(ups);
+	if (!strstr(status, "ALARM"))
+		ups_is_notalarm(ups);
 
 	statword = status;
 
@@ -2372,6 +2439,8 @@ static void parse_status(utype_t *ups, char *status)
 			ups_is_off(ups);
 		if (!strcasecmp(statword, "BYPASS"))
 			ups_is_bypass(ups);
+		if (!strcasecmp(statword, "ALARM"))
+			ups_is_alarm(ups);
 		/* do it last to override any possible OL */
 		if (!strcasecmp(statword, "FSD"))
 			ups_fsd(ups);

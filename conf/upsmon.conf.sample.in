@@ -332,6 +332,8 @@ POWERDOWNFLAG "@POWERDOWNFLAG@"
 # NOTIFYMSG NOTOFF	"UPS %s: no longer administratively OFF or asleep"
 # NOTIFYMSG BYPASS	"UPS %s: on bypass (powered, not protecting)"
 # NOTIFYMSG NOTBYPASS	"UPS %s: no longer on bypass"
+# NOTIFYMSG ALARM	"UPS %s is in an alarm state (has active alarms)"
+# NOTIFYMSG NOTALARM	"UPS %s is no longer in an alarm state (no active alarms)"
 #
 # A few messages not directly related to UPS events are also available:
 #
@@ -379,6 +381,8 @@ POWERDOWNFLAG "@POWERDOWNFLAG@"
 # NOTIFYFLAG NOTOFF	SYSLOG+WALL
 # NOTIFYFLAG BYPASS	SYSLOG+WALL
 # NOTIFYFLAG NOTBYPASS	SYSLOG+WALL
+# NOTIFYFLAG ALARM	SYSLOG+WALL
+# NOTIFYFLAG NOTALARM	SYSLOG+WALL
 #
 # NOTIFYFLAG SUSPEND_STARTING	SYSLOG+WALL
 # NOTIFYFLAG SUSPEND_FINISHED	SYSLOG+WALL
@@ -492,6 +496,25 @@ NOCOMMWARNTIME 300
 # to disconnect.
 
 FINALDELAY 5
+
+# --------------------------------------------------------------------------
+# ALARMCRITICAL - an ALARM status can cause the UPS to become critical
+# ALARMCRITICAL 1
+#
+# Some drivers implement handling device-/manufacturer-specific UPS alarms.
+# Such alarms would generally be raised for severe UPS device conditions,
+# but were also seen for mundane conditions such as an active HE/ECO mode.
+#
+# By default a device in an ALARM status is considered to be in a volatile
+# state and e.g. loss of connection will result in the UPS being considered
+# critical/dead, possibly resulting in shutdown depending on 'MINSUPPLIES'.
+#
+# If this behavior is unwanted (due to mundane device states raising ALARM
+# and false shutdowns occurring as a side-effect), 'ALARMCRITICAL 0' can be
+# set to disable this behavior and treat 'ALARM' as any regular UPS status.
+#
+
+ALARMCRITICAL 1
 
 # --------------------------------------------------------------------------
 # CERTPATH - path to certificates (database directory or directory with CA's)

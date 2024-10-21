@@ -205,6 +205,21 @@ https://github.com/networkupstools/nut/milestone/11
    approach seems to have good potential to expand into covering more devices
    and perhaps platforms. [#2430]
 
+ - Introduced handling for the `ALARM` status, which already existed as a
+   common denominator for devices seen with active `ups.alarm` variables.
+   UPS devices in an `ALARM` status are generally considered volatile and
+   may be considered critical/dead by the `upsmon` client earlier than in
+   other statuses (e.g. in no-communication situations). It has to be noted
+   that there is no common standard for what constitutes an alarm and such
+   alarm states were also previously observed for less severe reasons. This
+   depends on the manufacturer/device-specific implementation in the driver.
+   [issue #2657, PR #2658]
+   * Updated documentation, end-user clients (CGI, NUT-Monitor UI);
+   * Updated `upsmon` client with ability to report entering and exiting
+     the ALARM status if reported by the driver;
+   * Updated `upsmon` client with setting to toggle whether an `ALARM`
+     status can prompt the UPS to become critical in certain situations;
+
  - upsmon:
    * it was realized that the `POWERDOWNFLAG` must be explicitly set in the
      configuration file, there is no built-in default in the binary program
