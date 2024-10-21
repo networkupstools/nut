@@ -1320,6 +1320,10 @@ UpsmonConfiguration::NotifyType UpsmonConfiguration::NotifyTypeFromString(const 
 		return NOTIFY_ECO;
 	else if(str=="NOTECO")
 		return NOTIFY_NOTECO;
+	else if(str=="ALARM")
+		return NOTIFY_ALARM;
+	else if(str=="NOTALARM")
+		return NOTIFY_NOTALARM;
 	else if(str=="SUSPEND_STARTING")
 		return NOTIFY_SUSPEND_STARTING;
 	else if(str=="SUSPEND_FINISHED")

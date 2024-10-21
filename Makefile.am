@@ -206,11 +206,36 @@ INSTALL.nut UPGRADING NEWS README:
 # definitions), to apply them into the committed document sources.
 # Not bothering about with "make dist" constraints etc. - changes
 # the contents of srcdir directly and intentionally.
+# NOTE: There is a problem with `printf '%s' "${LINE}"` (double-quoted)
+# that causes backslashes to be treated as escape characters, and
+# shell replacements with `${VAR/pat/sub}` are not really portable.
+# To address this, we use the pure POSIX shell `replace_all()`
+# method suggested at https://stackoverflow.com/a/75037170/4715872
+# WARNING: It may succumb to lines ending with asterisk however!
+MAINTAINER_ASCIIDOCS_RECIPE_DEBUG_STREAM = /dev/null
+#MAINTAINER_ASCIIDOCS_RECIPE_DEBUG_STREAM = &2
+
 maintainer-asciidocs:
 	@USEDREV="`git log -1 --oneline --pretty=format:'%h (%cs) %s' docs/asciidoc-vars.conf`" || exit ; \
 	 USEDREV_NOSUBJ="`git log -1 --oneline --pretty=format:'%h (%cs)' docs/asciidoc-vars.conf`" || exit ; \
 	 echo "$@: Updating asciidoc text sources with docs/asciidoc-vars.conf as of commit: $${USEDREV}"; \
 	 echo "//GH_MARKUP_1095_INCLUDE_BEGIN//$${USEDREV}" > docs/asciidoc-vars.conf.lastrev.tmp || exit ; \
+	 replace_all() { \
+	   case "$$1" in *"$$2"*) ;; *) echo "$$1" ; return ;; esac ; \
+	   RIGHT="$$1" ; R=''; \
+	   while [ -n "$$RIGHT" ]; do \
+	    echo "LEFT='$$LEFT' RIGHT='$$RIGHT' => R='$$R'" >$(MAINTAINER_ASCIIDOCS_RECIPE_DEBUG_STREAM) ; \
+	    LEFT="$${RIGHT%%$$2*}" ; \
+	    echo "=> LEFT='$$LEFT'" >$(MAINTAINER_ASCIIDOCS_RECIPE_DEBUG_STREAM) ; \
+	    if [ x"$$LEFT" = x"$$RIGHT" ]; then \
+	        R="$$R$$RIGHT" ; \
+	        return ; \
+	    fi ; \
+	    R="$$R$$LEFT$$3" ; \
+	    RIGHT="$${RIGHT#*$$2}" ; \
+	  done ; \
+	  echo "$$R" ; \
+	 } ; \
 	 find . -name '*.adoc' -or -name '*.txt' | ( \
 	  FILES=""; \
 	  while read F ; do \
@@ -223,7 +248,7 @@ maintainer-asciidocs:
 	            "//GH_MARKUP_1095_INCLUDE_BEGIN"*) EXT="2.tmp" ; continue ;; \
 	            "//GH_MARKUP_1095_INCLUDE_END"*|"////GH_MARKUP_1095_INCLUDE_END"*) EXT="3.tmp" ; continue ;; \
 	        esac ; \
-	        printf '%s\n' "$${LINE}" >> "$${F}.$${EXT}" || exit ; \
+	        printf '%s\n' "`replace_all "$${LINE}" '\\' '''\\'`" >> "$${F}.$${EXT}" || exit ; \
 	    done < "$$F" || { echo "$@: FAILED injection for $${F}" >&2; exit 1; } ; \
 	    if test -s "$${F}.2.tmp" && test -z "`diff "$${F}.2.tmp" docs/asciidoc-vars.conf | tr -d '\n'`" ; then \
 	        rm -f "$${F}"*.tmp ; \

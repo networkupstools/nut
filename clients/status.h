@@ -46,6 +46,7 @@ static struct {
 	{ "CAL",	"CALIBRATION",		1	},
 	{ "BYPASS",	"BYPASS",		2	},
 	{ "ECO",	"ECO",			1	},
+	{ "ALARM",	"ALARM",		2	},
 	{ NULL,		NULL,			0	}
 };
 

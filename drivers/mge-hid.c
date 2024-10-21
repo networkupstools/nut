@@ -50,7 +50,7 @@
 # endif
 #endif
 
-#define MGE_HID_VERSION		"MGE HID 1.49"
+#define MGE_HID_VERSION		"MGE HID 1.51"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -240,7 +240,7 @@ static long round (LDOUBLE value)
 static const char *eaton_abm_enabled_fun(double value)
 {
 	advanced_battery_monitoring = value;
-	
+
 	/* If not initialized Set ABM Charger Mode */
 	if (advanced_battery_mode == ABM_CHARGER_NO_MODE)
 	{
@@ -283,7 +283,7 @@ static const char *eaton_abm_enabled_type_fun(double value)
 		advanced_battery_monitoring = ABM_UNKNOWN;
 		upsdebugx(2, "Set ABM variable to unknown, charger type status: %i", advanced_battery_monitoring);
 	}
-    
+
 	/* If ABM is already set in `eaton_abm_enabled_fun()`, do not overwrite */
 	if (advanced_battery_mode == ABM_CHARGER_MODE)
 	{
@@ -358,7 +358,7 @@ static const char *eaton_abm_status_fun(double value)
 		default:
 			/* Return NULL, not to get the value published! */
 			return NULL;
-		}		
+		}
 	}
 	else
 	{
@@ -886,7 +886,7 @@ static const char *eaton_input_eco_mode_check_range(double value)
        5% below nominal output voltage
        5% above nominal output voltage
        5% below/above output frequency nominal */
- 
+
     /* Set the frequency limit */
     if (frequency_range > 0) {
         lower_frequency_limit = out_frequency_nominal - (out_frequency_nominal / 100 * frequency_range);
@@ -902,7 +902,7 @@ static const char *eaton_input_eco_mode_check_range(double value)
         (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)) {
         return "ECO"; /* Enter Eco mode */
     }
-    
+
     /* Default values if user-defined limits are not available or out of range */
 	if ((bypass_voltage >= out_nominal * 0.95 && bypass_voltage <= out_nominal * 1.05) &&
 	   (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)) {
@@ -947,7 +947,7 @@ static const char *eaton_input_bypass_check_range(double value)
 
     if (bypass_voltage_str == NULL || bypass_low_str == NULL || bypass_high_str == NULL || out_nominal_str == NULL ||
         bypass_frequency_str == NULL || frequency_range_str == NULL || out_nominal_frequency_str == NULL) {
-        upsdebugx(1, "Failed to get values: %s, %s, %s, %s, %s, %s, %s", 
+        upsdebugx(1, "Failed to get values: %s, %s, %s, %s, %s, %s, %s",
                   bypass_voltage_str, bypass_low_str, bypass_high_str, out_nominal_str,
                   bypass_frequency_str, frequency_range_str, out_nominal_frequency_str);
         return NULL; /* Handle the error appropriately */
@@ -993,14 +993,14 @@ static const char *eaton_input_bypass_check_range(double value)
 /* Automatic Bypass mode on */
 static info_lkp_t eaton_input_bypass_mode_on_info[] = {
     { 0, "disabled", NULL, NULL },
-    { 1, "on", eaton_input_bypass_check_range, NULL },    
+    { 1, "on", eaton_input_bypass_check_range, NULL },
     { 0, NULL, NULL, NULL }
 };
 
 /* Automatic Bypass mode Off */
 static info_lkp_t eaton_input_bypass_mode_off_info[] = {
     { 0, "disabled", NULL, NULL },
-    { 1, "off", NULL, NULL },    
+    { 1, "off", NULL, NULL },
     { 0, NULL, NULL, NULL }
 };
 
@@ -1583,7 +1583,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "device.usb.version", ST_FLAG_STRING, 20, "UPS.System.USB.iVersion", NULL, NULL, HU_FLAG_STATIC, stringid_conversion }, /* FIXME */
 	/* { "device.usb.mode", ST_FLAG_STRING, 20, "UPS.System.USB.Mode", NULL, NULL, HU_FLAG_STATIC, stringid_conversion }, */ /* not useful ,not a string (1 to set in bootloader ) */
 	/*{ "device.gateway.power.rate", ST_FLAG_STRING, 20, "UPS.System.Gateway.PowerRate", NULL, NULL, HU_FLAG_STATIC, stringid_conversion }, */  /* not useful , not a string (level of power provided by the UPS to the network card */
-	
+
 	/* Battery page */
 	{ "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", 0, NULL },
 	{ "battery.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerSummary.RemainingCapacityLimitSetting", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
@@ -1626,7 +1626,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.Mode", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_status_info }, /* needs both ? from https://github.com/networkupstools/nut/pull/2637#discussion_r1772730590 */
 	/* Same as above but for 9E Models that using "x.Status" instead and other units */
 	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.Status", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_status_info }, /* checked on Eaton 9E Model */
- 
+
 
 	/* UPS page */
 	{ "ups.efficiency", 0, 0, "UPS.PowerConverter.Output.Efficiency", NULL, "%.0f", 0, NULL },
@@ -1644,6 +1644,7 @@ static hid_info_t mge_hid2nut[] =
 	 * Only the first valid one will be used */
 	{ "ups.beeper.status", 0 ,0, "UPS.BatterySystem.Battery.AudibleAlarmControl", NULL, "%s", HU_FLAG_SEMI_STATIC, beeper_info },
 	{ "ups.beeper.status", 0 ,0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", HU_FLAG_SEMI_STATIC, beeper_info },
+	{ "ups.beeper.status", 0 ,0, "UPS.AudibleAlarmControl", NULL, "%s", HU_FLAG_SEMI_STATIC, beeper_info },   //yonesmit - support for Masterpower MF-UPS650VA
 	{ "ups.temperature", 0, 0, "UPS.PowerSummary.Temperature", NULL, "%s", 0, kelvin_celsius_conversion },
 	{ "ups.power", 0, 0, "UPS.PowerConverter.Output.ApparentPower", NULL, "%.0f", 0, NULL },
 	{ "ups.L1.power", 0, 0, "UPS.PowerConverter.Output.Phase.[1].ApparentPower", NULL, "%.0f", 0, NULL },
@@ -1789,9 +1790,9 @@ static hid_info_t mge_hid2nut[] =
 	/* Auto Bypass Mode on/off */
 	/* needs check this variable, maybe "Bypass switch ability" like Qualify bypass */
 	/* { "input.bypass.switchable", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[2].Switchable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_bypass_mode_info }, */
-	{ "input.bypass.switch.on", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[2].SwitchOnControl", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_bypass_mode_on_info },	
+	{ "input.bypass.switch.on", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[2].SwitchOnControl", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_bypass_mode_on_info },
 	{ "input.bypass.switch.off", ST_FLAG_RW | ST_FLAG_STRING, 12, "UPS.PowerConverter.Input.[2].SwitchOffControl", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_bypass_mode_off_info },
-	
+
 	/* Output page */
 	{ "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", NULL, "%.1f", 0, NULL },
 	{ "output.L1-N.voltage", 0, 0, "UPS.PowerConverter.Output.Phase.[1].Voltage", NULL, "%.1f", 0, NULL },
@@ -1829,7 +1830,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.1.id", 0, 0, "UPS.OutletSystem.Outlet.[2].OutletID", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 	{ "outlet.1.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[2].OutletID", NULL, "PowerShare Outlet 1", HU_FLAG_ABSENT, NULL },
 	{ "outlet.1.switchable", 0, 0, "UPS.OutletSystem.Outlet.[2].PresentStatus.Switchable", NULL, "%s", HU_FLAG_STATIC, yes_no_info },
-	/* FIXME: should better use UPS.OutletSystem.Outlet.[1].Status? */	
+	/* FIXME: should better use UPS.OutletSystem.Outlet.[1].Status? */
 	{ "outlet.1.status", 0, 0, "UPS.OutletSystem.Outlet.[2].PresentStatus.SwitchOn/Off", NULL, "%s", 0, on_off_info },
 	{ "outlet.1.protect.status", 0, 0, "UPS.OutletSystem.Outlet.[1].Status", NULL, "%s", 0, eaton_outlet_protection_status_info },
 	{ "outlet.1.designator", 0, 0, "UPS.OutletSystem.Outlet.[1].iDesignator", NULL, NULL, HU_FLAG_STATIC, stringid_conversion }, /* FIXME */
@@ -1887,6 +1888,8 @@ static hid_info_t mge_hid2nut[] =
 	{ "beeper.disable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "1", HU_TYPE_CMD, NULL },
 	{ "beeper.enable", 0, 0, "UPS.BatterySystem.Battery.AudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },
 	{ "beeper.enable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },
+	{ "beeper.disable", 0, 0, "UPS.AudibleAlarmControl", NULL, "1", HU_TYPE_CMD, NULL }, //yonesmit - support for Masterpower MF-UPS650VA
+	{ "beeper.enable", 0, 0, "UPS.AudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },  //yonesmit - support for Masterpower MF-UPS650VA
 
 	/* Command for the outlet collection */
 	{ "outlet.1.load.off", 0, 0, "UPS.OutletSystem.Outlet.[2].DelayBeforeShutdown", NULL, "0", HU_TYPE_CMD, NULL },

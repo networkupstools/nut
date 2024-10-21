@@ -292,6 +292,22 @@ the Interrupt In transfers if they are known not to work.
 KNOWN ISSUES AND BUGS
 ---------------------
 
+UPS reports 65535 sec (or 18:12:15) of battery.runtime capability
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+From a number of reports, it seems that some devices either can not report
+more than a 16-bit unsigned value in the standard field for remaining run
+time (vendor extended fields may exist but be unknown to the mapping tables
+in your current NUT driver build), or return `-1` for error and that gets
+treated as an unsigned 16-bit 65535 value.
+
+According to some issue discussions, passing a battery test (calibration)
+can help the UPS re-estimate the time more correctly.
+
+This problem may also be linked to a very lightly loaded large-capacity UPS.
+In some cases vendor documentation explicitly states that runtime calculation
+is not reliable with loads under e.g. 10%.
+
 Repetitive timeout and staleness
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
