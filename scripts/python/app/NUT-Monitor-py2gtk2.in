@@ -788,6 +788,7 @@ class gui_updater( threading.Thread ) :
         # Define a dict containing different UPS status
         status_mapper = { "LB"     : "<span color=\"#BB0000\"><b>%s</b></span>" % _("Low batteries"),
                           "RB"     : "<span color=\"#FF0000\"><b>%s</b></span>" % _("Replace batteries !"),
+                          "ALARM"  : "<span color=\"#FF0000\"><b>%s</b></span>" % _("Active alarms !"),
                           "BYPASS" : "<span color=\"#BB0000\">Bypass</span> <i>%s</i>" % _("(no battery protection)"),
                           "ECO"    : _("In ECO mode (as defined by vendor)"),
                           "CAL"    : _("Performing runtime calibration"),

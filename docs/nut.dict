@@ -22,6 +22,7 @@ AES
 AFE
 AGM
 AIX
+ALARMCRITICAL
 ALTROOT
 AMETEK
 APC's
@@ -641,6 +642,7 @@ MDigest
 MEC
 MEGATAEC
 MERCHANTABILITY
+MF
 MH
 MIBs
 MIMode
@@ -678,6 +680,7 @@ Martinezgarza
 Martín
 Marzouk
 Massimo
+Masterpower
 Matthijs
 MaxLinear
 McKinnon
@@ -738,6 +741,7 @@ NONBLOCK
 NONUT
 NOP
 NOPARENT
+NOTALARM
 NOTBYPASS
 NOTCAL
 NOTECO
@@ -2239,6 +2243,7 @@ lifecycle
 linevoltage
 linkdoc
 linksingledoc
+linksrcdoc
 linux
 linuxdoc
 lipo
@@ -2897,6 +2902,7 @@ subnet
 subnets
 subtree
 sudo
+suggestsrcdoc
 suid
 suppressions
 suseconds
