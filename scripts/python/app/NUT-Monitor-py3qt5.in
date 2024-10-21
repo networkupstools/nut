@@ -831,6 +831,7 @@ class gui_updater :
         # Define a dict containing different UPS status
         status_mapper = { b"LB"     : "<font color=\"#BB0000\"><b>%s</b></font>" % _("Low batteries"),
                           b"RB"     : "<font color=\"#FF0000\"><b>%s</b></font>" % _("Replace batteries !"),
+                          b"ALARM"  : "<font color=\"#FF0000\"><b>%s</b></font>" % _("Active alarms !"),
                           b"BYPASS" : "<font color=\"#BB0000\">Bypass</font> <i>%s</i>" % _("(no battery protection)"),
                           b"CAL"    : _("Performing runtime calibration"),
                           b"OFF"    : "<font color=\"#000090\">%s</font> <i>(%s)</i>" % ( _("Offline"), _("not providing power to the load") ),
