@@ -249,7 +249,7 @@ static const char *eaton_abm_enabled_fun(double value)
 		upsdebugx(2, "Set Charger Mode numeric status: %i", advanced_battery_mode);
 	}
 
-	upsdebugx(2, "ABM is %i", (advanced_battery_monitoring==1)?"enabled":"disabled");
+	upsdebugx(2, "ABM is %s", (advanced_battery_monitoring==1)?"enabled":"disabled");
 
 	/* Return NULL, not to get the value published! */
 	return NULL;
@@ -388,7 +388,7 @@ static const char *eaton_abm_status_fun(double value)
 	}
 
 	upsdebugx(2, "ABM string status: %s", mge_scratch_buf);
-	upsdebugx(2, "ABM is %s", advanced_battery_monitoring);
+	upsdebugx(2, "ABM is %i", advanced_battery_monitoring);
 
 	return mge_scratch_buf;
 }
