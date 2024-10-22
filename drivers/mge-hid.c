@@ -195,8 +195,9 @@ static char		mge_scratch_buf[20];
 #define			ABM_UNKNOWN     -1
 #define			ABM_DISABLED     0
 #define			ABM_ENABLED      1
-/* Same as above but for 9E Models that using "x.ChargerType" and "x.Status"
- * instead of other units that has ABM by "x.ABMEnable and "x.Mode" */
+/* Same as above but for Eaton 9E Models that using "x.ChargerType=5" and "x.Status=2"
+ * instead of other units that has ABM by "x.ABMEnable and "x.Mode"
+ * NOTE: Eaton 5P logs unit has "x.ABMEnable=1 and "x.Mode=4","x.ChargerType=4" and "x.Status=19?" */
 #define			ABM_ENABLED_TYPE 4
 /* Define if we have battery.charger.type for 9E Models and others */
 #define			ABM_CHARGER_NO_TYPE -1
@@ -334,8 +335,8 @@ static const char *eaton_abm_status_fun(double value)
 
 	upsdebugx(2, "ABM numeric status: %i", (int)value);
 
-	/* if we have battery.charger.type for 9E Models and others */
-	if (advanced_battery_type == ABM_CHARGER_TYPE)
+	/* if we have battery.charger.type for 9E Models and others but not "x.ABMEnable and "x.Mode"? */
+	if ((advanced_battery_type == ABM_CHARGER_TYPE) && (advanced_battery_mode != ABM_CHARGER_MODE))
 	{
 		switch ((long)value)
 		{
@@ -387,6 +388,7 @@ static const char *eaton_abm_status_fun(double value)
 	}
 
 	upsdebugx(2, "ABM string status: %s", mge_scratch_buf);
+	upsdebugx(2, "ABM is %s", advanced_battery_monitoring);
 
 	return mge_scratch_buf;
 }
@@ -428,16 +430,27 @@ static info_lkp_t eaton_charger_type_info[] = {
 static const char *eaton_abm_chrg_dischrg_fun(double value)
 {
 	/* Don't process if ABM is disabled */
-	if ((advanced_battery_monitoring == ABM_DISABLED) || (advanced_battery_monitoring == ABM_UNKNOWN))
+	if (advanced_battery_monitoring == ABM_DISABLED)
 		return NULL;
 
-	/* if we have battery.charger.type for 9E Models and others */
-	if (advanced_battery_type == ABM_CHARGER_TYPE)
+	/* if we have battery.charger.type for 9E Models and others but not "x.ABMEnable and "x.Mode"? */
+	if ((advanced_battery_type == ABM_CHARGER_TYPE) && (advanced_battery_mode != ABM_CHARGER_MODE))
 	{
 		switch ((long)value)
 		{
-		case 1: /* charging status */
-		case 2: /* floating status */
+		case 1: /* charging status, FIXME: 9E Model no chrg when battery.charge < 100 */
+			if (advanced_battery_monitoring == ABM_UNKNOWN)
+			{
+				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
+				break;
+			}
+		case 2: /* floating status, FIXME: 9E Model chrg not stop after battery.charge = 100 */ */
+			if (advanced_battery_monitoring == ABM_UNKNOWN)
+			{
+				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "!chrg");
+				break;
+			}
+			/* charging status, floating status */
 			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
 			break;
 		case 4:
