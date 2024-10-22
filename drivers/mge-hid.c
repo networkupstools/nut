@@ -438,11 +438,11 @@ static const char *eaton_abm_chrg_dischrg_fun(double value)
 	{
 		switch ((long)value)
 		{
-		case 1: /* charging status, FIXME: 9E Model no chrg when battery.charge < 100 */
+		case 1: /* charging status, FIXME: 9E Model - no chrg in ups.status when battery.charge < 100 */
 			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
 			break;
 
-		case 2: /* floating status, FIXME: 9E Model chrg not stop after battery.charge = 100 */
+		case 2: /* floating status, FIXME: 9E Model - chrg not stop in ups.status after battery.charge = 100 */
 			if (advanced_battery_monitoring == ABM_UNKNOWN)
 			{
 				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "!chrg");
@@ -454,9 +454,17 @@ static const char *eaton_abm_chrg_dischrg_fun(double value)
 				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
 				break;
 			}
-		case 4:
-			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "dischrg");
-			break;
+		case 4: /* discharging status, FIXME: 9E Model - remove dischrg in ups.status when on battery */
+			if (advanced_battery_monitoring == ABM_UNKNOWN)
+			{
+				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "!dischrg");
+				break;
+			}
+			else
+			{
+				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "dischrg");
+				break;
+			}
 		case 6: /* ABM Charger Disabled */
 		case 3: /* resting, nothing to publish! (?) */
 		case 5: /* Undefined - ABM is not activated */
