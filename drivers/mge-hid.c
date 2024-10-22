@@ -439,17 +439,9 @@ static const char *eaton_abm_chrg_dischrg_fun(double value)
 		switch ((long)value)
 		{
 		case 1: /* charging status, FIXME: 9E Model no chrg when battery.charge < 100 */
-			if (advanced_battery_monitoring == ABM_UNKNOWN)
-			{
-				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
-				break;
-			}
-			else
-			{
-				/* charging status, floating status */
-				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
-				break;
-			}
+			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
+			break;
+
 		case 2: /* floating status, FIXME: 9E Model chrg not stop after battery.charge = 100 */
 			if (advanced_battery_monitoring == ABM_UNKNOWN)
 			{
