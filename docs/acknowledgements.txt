@@ -13,14 +13,8 @@ release notes, and mailing list archives, but some prefer to be anonymous.
 
 Companies and organizations that have helped with various aspects of project
 infrastructure are listed in
-ifdef::chunked_format[]
 linkdoc:user-manual[Acknowledgements of organizations which help with NUT CI
-and other daily operations,Overview.html#acknowledgements-ci-ops,README.adoc].
-endif::chunked_format[]
-ifndef::chunked_format[]
-linkdoc:user-manual[Acknowledgements of organizations which help with NUT CI
-and other daily operations,acknowledgements-ci-ops,README.adoc].
-endif::chunked_format[]
+and other daily operations,acknowledgements-ci-ops,README.adoc,Overview].
 
 This software would not be possible without their help.
 
