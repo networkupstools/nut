@@ -268,6 +268,7 @@ snmp_ups_SOURCES = snmp-ups.c snmp-ups-helpers.c \
  emerson-avocent-pdu-mib.c \
  hpe-pdu-mib.c hpe-pdu3-cis-mib.c huawei-mib.c \
  ietf-mib.c \
+ impuls-magnetic-mib.c \
  mge-mib.c \
  netvision-mib.c \
  raritan-pdu-mib.c raritan-px2-mib.c \
@@ -384,7 +385,7 @@ dist_noinst_HEADERS = \
  bcmxcp_io.h belkin.h belkin-hid.h bestpower-mib.h blazer.h cps-hid.h dstate.h	\
  dummy-ups.h explore-hid.h gamatronic.h genericups.h	\
  generic_gpio_common.h generic_gpio_libgpiod.h	\
- hidparser.h hidtypes.h ietf-mib.h libhid.h libshut.h nut_libusb.h liebert-hid.h	\
+ hidparser.h hidtypes.h ietf-mib.h impuls-magnetic-mib.h libhid.h libshut.h nut_libusb.h liebert-hid.h	\
  main.h mge-hid.h mge-mib.h mge-utalk.h		\
  mge-xml.h microdowell.h microsol-apc.h microsol-common.h netvision-mib.h netxml-ups.h nut-ipmi.h oneac.h		\
  powercom.h powerpanel.h powerp-bin.h powerp-txt.h raritan-pdu-mib.h	\
