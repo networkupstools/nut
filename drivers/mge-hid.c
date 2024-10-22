@@ -444,15 +444,24 @@ static const char *eaton_abm_chrg_dischrg_fun(double value)
 				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
 				break;
 			}
+			else
+			{
+				/* charging status, floating status */
+				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
+				break;
+			}
 		case 2: /* floating status, FIXME: 9E Model chrg not stop after battery.charge = 100 */
 			if (advanced_battery_monitoring == ABM_UNKNOWN)
 			{
 				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "!chrg");
 				break;
 			}
-			/* charging status, floating status */
-			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
-			break;
+			else
+			{
+				/* charging status, floating status */
+				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
+				break;
+			}
 		case 4:
 			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "dischrg");
 			break;
