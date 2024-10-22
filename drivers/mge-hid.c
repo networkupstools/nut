@@ -249,7 +249,7 @@ static const char *eaton_abm_enabled_fun(double value)
 		upsdebugx(2, "Set Charger Mode numeric status: %i", advanced_battery_mode);
 	}
 
-	upsdebugx(2, "ABM is %s", (advanced_battery_monitoring==1)?"enabled":"disabled");
+	upsdebugx(2, "ABM is %i", (advanced_battery_monitoring==1)?"enabled":"disabled");
 
 	/* Return NULL, not to get the value published! */
 	return NULL;
@@ -444,7 +444,7 @@ static const char *eaton_abm_chrg_dischrg_fun(double value)
 				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
 				break;
 			}
-		case 2: /* floating status, FIXME: 9E Model chrg not stop after battery.charge = 100 */ */
+		case 2: /* floating status, FIXME: 9E Model chrg not stop after battery.charge = 100 */
 			if (advanced_battery_monitoring == ABM_UNKNOWN)
 			{
 				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "!chrg");
