@@ -198,7 +198,7 @@ static char		mge_scratch_buf[20];
 
 /* Some untis like Eaton 9E Models that using "x.ChargerType=5" and "x.Status=2"
  * instead of other units that has ABM by "x.ABMEnable and "x.Mode".
- * NOTE: Eaton 5P logs unit has "x.ABMEnable=1 and "x.Mode=4","x.ChargerType=4" and "x.Status=19?" */
+ * NOTE: Eaton 5P unit has "x.ABMEnable=1 and "x.Mode=4","x.ChargerType=4" and "x.Status=19?" */
 #define			ABM_ENABLED_TYPE 4
 
 /* Define if we have battery.charger.type.status for 9E Models and others */
