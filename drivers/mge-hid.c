@@ -195,22 +195,24 @@ static char		mge_scratch_buf[20];
 #define			ABM_UNKNOWN     -1
 #define			ABM_DISABLED     0
 #define			ABM_ENABLED      1
-/* Same as above but for Eaton 9E Models that using "x.ChargerType=5" and "x.Status=2"
- * instead of other units that has ABM by "x.ABMEnable and "x.Mode"
- * NOTE: Eaton 5P logs unit has "x.ABMEnable=1 and "x.Mode=4","x.ChargerType=4" and "x.Status=19?" */
-#define			ABM_ENABLED_TYPE_MODE 4
-/* Define if we have battery.charger.type for 9E Models and others */
-#define			ABM_CHARGER_NO_TYPE -1
-#define			ABM_CHARGER_TYPE 1
 
-/* Define if we have battery.charger.staus by "x.ABMEnable and "x.Mode" */
+/* Some untis like Eaton 9E Models that using "x.ChargerType=5" and "x.Status=2"
+ * instead of other units that has ABM by "x.ABMEnable and "x.Mode".
+ * NOTE: Eaton 5P logs unit has "x.ABMEnable=1 and "x.Mode=4","x.ChargerType=4" and "x.Status=19?" */
+#define			ABM_ENABLED_TYPE 4
+
+/* Define if we have battery.charger.type.status for 9E Models and others */
+#define			ABM_CHARGER_NO_STATUS -1
+#define			ABM_CHARGER_STATUS 1
+
+/* Define if we have battery.charger.mode.staus by "x.ABMEnable and "x.Mode" */
 #define			ABM_CHARGER_NO_MODE -1
 #define			ABM_CHARGER_MODE 1
 
-/* Internal flag to process battery.charger.type for 9E Models and others */
-static int advanced_battery_type = ABM_CHARGER_NO_TYPE;
+/* Internal flag to process battery.charger.type.status for 9E Models and others */
+static int advanced_battery_status = ABM_CHARGER_NO_STATUS;
 
-/* Internal flag to process battery.charger.status by "x.ABMEnable and "x.Mode" */
+/* Internal flag to process battery.charger.mode.status by "x.ABMEnable and "x.Mode" */
 static int advanced_battery_mode = ABM_CHARGER_NO_MODE;
 
 /* Internal flag to process battery status (CHRG/DISCHRG) and ABM */
@@ -253,18 +255,19 @@ static info_lkp_t eaton_abm_enabled_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
-/* Used to store internally if ABM and ABM Charger Mode is enabled or not */
+/* Used to store internally if ABM Charger Mode was not enabled */
 static const char *eaton_abm_enabled_mode_fun(double value)
 {	
-	int abm_charger_type = value;
+	int abm_charger_mode = value;
 
 	/* If not initialized Set ABM Charger Mode */
 	if (advanced_battery_mode == ABM_CHARGER_NO_MODE)
 	{
 		advanced_battery_mode = ABM_CHARGER_MODE;
-		upsdebugx(2, "Set Charger Mode numeric status: %i", advanced_battery_mode);
-		upsdebugx(2, "ABM Mode is %s", (abm_charger_type == 4) ? "enabled" : "disabled");
+		upsdebugx(2, "Set Charger Mode numeric status: %i", advanced_battery_mode);		
 	}
+
+	upsdebugx(2, "ABM Mode is %i", abm_charger_mode);
 
 	/* Return NULL, not to get the value published! */
 	return NULL;
@@ -275,47 +278,26 @@ static info_lkp_t eaton_abm_enabled_mode_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
-/* Used to store internally if ABM and ABM Charger Type is enabled or not */
-static const char *eaton_abm_enabled_type_fun(double value)
-{
-	int advanced_battery_monitoring_old = advanced_battery_monitoring;
-	int abm_charger_type = value;
+/* Used to store internally if ABM Charger Status was not enabled */
+static const char *eaton_abm_enabled_status_fun(double value)
+{	
+	int abm_charger_status = value;
 
-	/* If not initialized Set ABM Charger Type */
-	if (advanced_battery_type == ABM_CHARGER_NO_TYPE)
+	/* If not initialized Set ABM Charger Status */
+	if (advanced_battery_status == ABM_CHARGER_NO_STATUS)
 	{
-		advanced_battery_type = ABM_CHARGER_TYPE;
-		upsdebugx(2, "Set Charger Type numeric status: %i", advanced_battery_type);
-		upsdebugx(2, "ABM Type is %s", (abm_charger_type == 4) ? "enabled" : "disabled");
+		advanced_battery_status = ABM_CHARGER_STATUS;
+		upsdebugx(2, "Set Charger Status numeric status: %i", advanced_battery_status);		
 	}
-
-	/* If Charger Type value is not ABM set ABM variable as disabled also check
-	 * if not runned `eaton_abm_enabled_fun()` befor this func for not owerwrite ABM variable flag */
-
-	if ((abm_charger_type != ABM_ENABLED_TYPE_MODE) && (advanced_battery_mode != ABM_CHARGER_MODE))
-	{
-		/* NOTE: ABM_DISABLED or ABM_UNKNOWN - when no ABM only Constant Charge (CC) when ABM_CHARGER_TYPE ?
-		 * ABM_DISABLED - then no battery.charger.status will be avalible also no ups.status updates becouse L331 ?
-		 * ABM_UNKNOWN - like was in original code then battery.charger.status will be avalible */
-		advanced_battery_monitoring = ABM_UNKNOWN;
-		upsdebugx(2, "Set ABM variable to unknown, ABM charger type status: %i", advanced_battery_monitoring);
-	}
-
-	/* If ABM is already set in `eaton_abm_enabled_fun()`, do not overwrite */
-	if (advanced_battery_mode == ABM_CHARGER_MODE)
-	{
-		upsdebugx(2, "ABM variable already was set to charger mode status: %i", advanced_battery_monitoring_old);
-		return NULL;
-	}
-
-	upsdebugx(2, "ABM Type is %s", (abm_charger_type == 4) ? "enabled" : "disabled");
+	
+	upsdebugx(2, "ABM Status is %i", abm_charger_status);
 
 	/* Return NULL, not to get the value published! */
 	return NULL;
 }
 
-static info_lkp_t eaton_abm_enabled_type_info[] = {
-	{ 0, "dummy", eaton_abm_enabled_type_fun, NULL },
+static info_lkp_t eaton_abm_enabled_status_info[] = {
+	{ 0, "dummy", eaton_abm_enabled_status_fun, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 
@@ -351,8 +333,8 @@ static const char *eaton_abm_status_fun(double value)
 
 	upsdebugx(2, "ABM numeric status: %i", (int)value);
 
-	/* if we have battery.charger.type for 9E Models and others but not "x.ABMEnable and "x.Mode"? */
-	if ((advanced_battery_type == ABM_CHARGER_TYPE) && (advanced_battery_mode != ABM_CHARGER_MODE))
+	/* if we have "x.Status" for 9E Models and others but not "x.Mode" */
+	if ((advanced_battery_status == ABM_CHARGER_STATUS) && (advanced_battery_mode != ABM_CHARGER_MODE))
 	{
 		switch ((long)value)
 		{
@@ -419,11 +401,11 @@ static const char *eaton_abm_charger_type_fun(double value)
 {
 	int abm_charger_type = value;
 
-	if (abm_charger_type == ABM_ENABLED_TYPE_MODE)
+	if (abm_charger_type == ABM_ENABLED_TYPE)
 	{
 		/* Set ABM flag for battery.charger.type */
-		advanced_battery_monitoring = ABM_ENABLED_TYPE_MODE;
-		upsdebugx(2, "ABM charger type status: %i", (int)value);
+		advanced_battery_monitoring = ABM_ENABLED_TYPE;
+		upsdebugx(2, "ABM charger type: %i", (int)value);
 
 		return "ABM";
 	}
@@ -449,8 +431,8 @@ static const char *eaton_abm_chrg_dischrg_fun(double value)
 	if (advanced_battery_monitoring == ABM_DISABLED)
 		return NULL;
 
-	/* if we have battery.charger.type for 9E Models and others but not "x.ABMEnable and "x.Mode"? */
-	if ((advanced_battery_type == ABM_CHARGER_TYPE) && (advanced_battery_mode != ABM_CHARGER_MODE))
+	/* if we have "x.Status" for 9E Models and others but not "x.Mode" */
+	if ((advanced_battery_status == ABM_CHARGER_STATUS) && (advanced_battery_mode != ABM_CHARGER_MODE))
 	{
 		switch ((long)value)
 		{
@@ -1648,12 +1630,14 @@ static hid_info_t mge_hid2nut[] =
 	{ "battery.energysave.realpower", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Input.[3].ConfigActivePower", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	/* ABM (Advanced Battery Monitoring) processing
 	 * Must be processed before the BOOL status */
-	/* Not published, just to store in internal var. advanced_battery_monitoring */
+	/* Used to process ABM flag, for battery.charger.type */
 	{ "battery.charger.type", 0, 0, "UPS.BatterySystem.Charger.ChargerType", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_charger_type_info },
+	/* Not published, just to store in internal var. advanced_battery_monitoring */
 	{ "battery.charger.abm.status", 0, 0, "UPS.BatterySystem.Charger.ABMEnable", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_info },
+	/* Used to store internally if ABM Charger Mode was not enabled */
 	{ "battery.charger.mode.status", 0, 0, "UPS.BatterySystem.Charger.Mode", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_mode_info },
-	/* Same as above but for 9E Models that using x.ChargerType instead and other units that has ABM when x.ChargerType = 4 */
-	{ "battery.charger.type.status", 0, 0, "UPS.BatterySystem.Charger.ChargerType", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_type_info },
+	/* Used to store internally if ABM Charger Status was not enabled */
+	{ "battery.charger.type.status", 0, 0, "UPS.BatterySystem.Charger.Status", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_status_info },
 	/* Same as the one above, but for legacy units */
 	/* Refer to Note 1 (This point will need more clarification!)
 	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.PresentStatus.Used", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_legacy_info }, */
