@@ -404,6 +404,8 @@ const NotifyFlagsStrings::TypeStrings NotifyFlagsStrings::type_str = {
 	"NOTOFF",	// NOTIFY_NOTOFF
 	"BYPASS",	// NOTIFY_BYPASS
 	"NOTBYPASS",	// NOTIFY_NOTBYPASS
+	"ECO\t",	// NOTIFY_ECO (including padding)
+	"NOTECO",	// NOTIFY_NOTECO
 	"ALARM",	// NOTIFY_ALARM
 	"NOTALARM",	// NOTIFY_NOTALARM
 	"SUSPEND_STARTING",	// NOTIFY_SUSPEND_STARTING

@@ -321,6 +321,7 @@ EPFCLCD
 EPO
 EPS
 ESC
+ESS
 ESV
 ESXi
 ETIME
@@ -743,6 +744,7 @@ NOPARENT
 NOTALARM
 NOTBYPASS
 NOTCAL
+NOTECO
 NOTIFYCMD
 NOTIFYFLAG
 NOTIFYFLAGS
@@ -1604,6 +1606,8 @@ bullseye
 busport
 busybox
 bv
+bypassOff
+bypassOn
 cStandard
 cablepower
 calloc
@@ -1840,6 +1844,7 @@ ePDUs
 eaton
 ec
 eco
+ecomode
 edb
 editorconfig
 edl
@@ -1868,6 +1873,7 @@ epdu
 eq
 errno
 esac
+essmode
 esupssmart
 et
 etapro
