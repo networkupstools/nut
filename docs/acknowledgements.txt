@@ -118,6 +118,10 @@ link:http://www.microdowell.com/fra/download.html[Linux / Unix].
 * link:http://pcmups.com.tw[Powercom], through Alexey Morozov, has provided
 link:ups-protocols.html[extensive information] on its USB/HID devices, along
 with development units.
++
+They also have a link:https://www.upspowercom.com/Support-NUT.jsp[page
+suggesting NUT] as the software to support a wide range of their USB HID
+capable models.
 
 * link:http://www.riello-ups.com[Riello UPS], through Massimo Zampieri, has
 provided link:ups-protocols.html[all protocols information]. Elio Parisi has
