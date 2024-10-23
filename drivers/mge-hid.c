@@ -171,10 +171,10 @@ static char		mge_scratch_buf[20];
  * ends the ABM rest mode, it enters charge mode.
  * Some UPSs run a different charger reference voltage during charge mode
  * but all the newer models should not be doing that, but basically once
- * the battery voltage reaches the charger reference level (should be 2.3
- * volts/cell), the charger is considered in float mode.  Some UPSs will not
- * annunciate float mode until the charger power starts falling from the maximum
- * level indicating the battery is truly at the float voltage or in float mode.
+ * the battery voltage reaches the charger reference level
+ * (should be 2.3 volts/cell) = 13.8v battery(6 cells), the charger is considered in float mode.
+ * Some UPSs will not annunciate float mode until the charger power starts falling from
+ * the maximum level indicating the battery is truly at the float voltage or in float mode.
  * The %charge level is based on battery voltage and the charge mode timer
  * (should be 48 hours) and some UPSs add in a value that's related to charger
  * power output.  So you can have UPS that enters float mode with anywhere
