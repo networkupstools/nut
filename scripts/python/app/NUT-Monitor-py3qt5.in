@@ -833,6 +833,7 @@ class gui_updater :
                           b"RB"     : "<font color=\"#FF0000\"><b>%s</b></font>" % _("Replace batteries !"),
                           b"ALARM"  : "<font color=\"#FF0000\"><b>%s</b></font>" % _("Active alarms !"),
                           b"BYPASS" : "<font color=\"#BB0000\">Bypass</font> <i>%s</i>" % _("(no battery protection)"),
+                          b"ECO"    : _("In ECO mode (as defined by vendor)"),
                           b"CAL"    : _("Performing runtime calibration"),
                           b"OFF"    : "<font color=\"#000090\">%s</font> <i>(%s)</i>" % ( _("Offline"), _("not providing power to the load") ),
                           b"OVER"   : "<font color=\"#BB0000\">%s</font> <i>(%s)</i>" % ( _("Overloaded !"), _("there is too much load for device") ),

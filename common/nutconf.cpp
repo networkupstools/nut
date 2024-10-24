@@ -1316,6 +1316,10 @@ UpsmonConfiguration::NotifyType UpsmonConfiguration::NotifyTypeFromString(const 
 		return NOTIFY_BYPASS;
 	else if(str=="NOTBYPASS")
 		return NOTIFY_NOTBYPASS;
+	else if(str=="ECO")
+		return NOTIFY_ECO;
+	else if(str=="NOTECO")
+		return NOTIFY_NOTECO;
 	else if(str=="ALARM")
 		return NOTIFY_ALARM;
 	else if(str=="NOTALARM")

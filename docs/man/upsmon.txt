@@ -178,6 +178,20 @@ UPS on bypass (powered, not protecting).
 *NOTBYPASS*::
 UPS no longer on bypass.
 
+*ECO*::
+UPS in ECO or similar mode (as defined and named by vendor); other
+names include High Efficiency mode and Energy Saver System.
++
+For example, Eaton docs define High Efficiency mode as a sort of
+hardware-monitored bypass with switch-over under 10ms into Online
+mode in case of troubles (so what was known as Line-Interactive
+in the older days), which can be *chosen* instead of always running
+in a dual-conversion mode (safer, but more wasteful and with a toll
+on battery life). Older devices only implemented one or the other.
+
+*NOTECO*::
+UPS no longer in ECO mode (see above).
+
 *ALARM*::
 UPS is in an alarm state (has active alarms).
 
@@ -508,15 +522,15 @@ implementations throughout the various UPS drivers and generally anytime
 that a "ups.alarm" variable is seen reported by the specific UPS driver.
 
 Alarms can be acted upon by the user using the "ALARM" and "NOTALARM" notifiers,
-which are reported by the "upsmon" when the "ALARM" status occurs or disappears.
+which are reported by the `upsmon` when the "ALARM" status occurs or disappears.
 
-As alarms raised by the UPS are usually severe in nature, the "upsmon" watches
+As alarms raised by the UPS are usually severe in nature, the `upsmon` watches
 a UPS in such a state more closely, bumping up the polling frequency as needed.
 
-When connection loss occurs in such an alarm state, the "upsmon" will by default
+When connection loss occurs in such an alarm state, the `upsmon` will by default
 consider the volatile UPS as critical/dead and this may lead to false shutdowns
 if the actual alarm was in fact mundane in nature (e.g. caused by a HE/ECO mode).
-This can be changed by utilizing the "ALARMCRITICAL" setting within "upsmon.conf".
+This can be changed by utilizing the `ALARMCRITICAL` setting within `upsmon.conf`.
 
 RELOADING NUANCES
 -----------------
