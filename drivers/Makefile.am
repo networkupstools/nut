@@ -55,7 +55,7 @@ NUTSW_DRIVERLIST = dummy-ups clone clone-outlet apcupsd-ups skel
 SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
  bestfortress bestuferrups bestups etapro everups 	\
  gamatronic genericups isbmex liebert liebert-esp2 liebert-gxe masterguard metasys	\
- mge-utalk microdowell microsol-apc mge-shut oneac optiups powercom rhino 	\
+ mge-utalk microdowell microsol-apc mge-shut oneac optiups powercom powervar-c rhino \
  safenet nutdrv_siemens-sitop solis tripplite tripplitesu upscode2 victronups powerpanel \
  blazer_ser ivtscd apcsmart apcsmart-old riello_ser sms_ser bicker_ser
 SNMP_DRIVERLIST = snmp-ups
@@ -171,6 +171,7 @@ powercom_SOURCES = powercom.c
 powercom_LDADD = $(LDADD) -lm
 powerpanel_SOURCES = powerpanel.c powerp-bin.c powerp-txt.c
 powerpanel_LDADD = $(LDADD) -lm
+powervar_c_SOURCES = powervar-c.c
 rhino_SOURCES = rhino.c
 rhino_LDADD = $(LDADD) -lm
 safenet_SOURCES = safenet.c
@@ -387,7 +388,7 @@ dist_noinst_HEADERS = \
  hidparser.h hidtypes.h ietf-mib.h libhid.h libshut.h nut_libusb.h liebert-hid.h	\
  main.h mge-hid.h mge-mib.h mge-utalk.h		\
  mge-xml.h microdowell.h microsol-apc.h microsol-common.h netvision-mib.h netxml-ups.h nut-ipmi.h oneac.h		\
- powercom.h powerpanel.h powerp-bin.h powerp-txt.h raritan-pdu-mib.h	\
+ powercom.h powerpanel.h powerp-bin.h powerp-txt.h powervar-c.h raritan-pdu-mib.h	\
  safenet.h serial.h sms_ser.h snmp-ups.h solis.h tripplite.h tripplite-hid.h 			\
  upshandler.h usb-common.h usbhid-ups.h powercom-hid.h compaq-mib.h idowell-hid.h \
  apcsmart.h apcsmart_tabs.h apcsmart-old.h apcupsd-ups.h cyberpower-mib.h riello.h openups-hid.h \
