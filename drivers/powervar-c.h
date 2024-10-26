@@ -25,6 +25,8 @@
 /*misc stuff*/
 #define BUFFSIZE		512
 #define SUBBUFFSIZE		48
+#define UPDREQSIZE		3
+
 #define ENDCHAR			'\r'
 #define CHAR_EQ			'='
 #define IGNCHARS 		"\n"
