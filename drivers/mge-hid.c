@@ -238,7 +238,7 @@ static long round (LDOUBLE value)
 /* Used to store internally if ABM is enabled or not */
 static const char *eaton_abm_enabled_fun(double value)
 {
-	int abm_enabled_value = value;
+	int abm_enabled_value = (int)value;
 
 	advanced_battery_monitoring = abm_enabled_value;
 
@@ -256,7 +256,7 @@ static info_lkp_t eaton_abm_enabled_info[] = {
 /* ABM Path: UPS.BatterySystem.Charger.Mode (battery.charger.mode.status) */
 static const char *eaton_abm_path_mode_fun(double value)
 {
-	int abm_path_mode_value = value;
+	int abm_path_mode_value = (int)value;
 
 	/* If not yet initialized set ABM path to ABM_PATH_MODE */
 	if (advanced_battery_path == ABM_PATH_UNKNOWN)
@@ -279,7 +279,7 @@ static info_lkp_t eaton_abm_path_mode_info[] = {
 /* ABM Path: UPS.BatterySystem.Charger.Status (battery.charger.type.status) */
 static const char *eaton_abm_path_status_fun(double value)
 {
-	int abm_path_status_value = value;
+	int abm_path_status_value = (int)value;
 
 	/* If not yet initialized set ABM path to ABM_PATH_STATUS */
 	if (advanced_battery_path == ABM_PATH_UNKNOWN)
@@ -321,7 +321,7 @@ static info_lkp_t eaton_abm_enabled_legacy_info[] = {
 /* Used to process ABM status values (for battery.charger.status) */
 static const char *eaton_abm_status_fun(double value)
 {
-	int abm_status_value = value;
+	int abm_status_value = (int)value;
 
 	/* Don't process if ABM is unknown or disabled */
 	if (advanced_battery_monitoring == ABM_UNKNOWN || advanced_battery_monitoring == ABM_DISABLED) {
@@ -400,13 +400,13 @@ static info_lkp_t eaton_abm_status_info[] = {
 /* Used to process another type of enabled ABM (by battery.charger.type) */
 static const char *eaton_abm_charger_type_fun(double value)
 {
-	int abm_charger_type = value;
+	int abm_charger_type = (int)value;
 
 	if (abm_charger_type == ABM_ENABLED_TYPE)
 	{
 		/* Set ABM to enabled when encountering ABM-enabled battery.charger.type */
 		advanced_battery_monitoring = ABM_ENABLED_TYPE;
-		upsdebugx(2, "ABM charger type: %i", (int)value);
+		upsdebugx(2, "ABM charger type: %i", abm_charger_type);
 
 		return "ABM";
 	}
@@ -428,7 +428,7 @@ static info_lkp_t eaton_charger_type_info[] = {
 /* Used to process ABM status flags, for ups.status (CHRG/DISCHRG/RB) */
 static const char *eaton_abm_chrg_dischrg_fun(double value)
 {
-	int abm_chrg_dischrg_value = value;
+	int abm_chrg_dischrg_value = (int)value;
 
 	/* Don't process if ABM is unknown or disabled */
 	if (advanced_battery_monitoring == ABM_UNKNOWN || advanced_battery_monitoring == ABM_DISABLED)
