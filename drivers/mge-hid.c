@@ -196,11 +196,6 @@ static char		mge_scratch_buf[20];
 #define			ABM_DISABLED     0
 #define			ABM_ENABLED      1
 
-/* Some untis like Eaton 9E Models that using "x.ChargerType=5" and "x.Status=2"
- * instead of other units that has ABM by "x.ABMEnable and "x.Mode".
- * NOTE: Eaton 5P unit has "x.ABMEnable=1 and "x.Mode=4","x.ChargerType=4" and "x.Status=19?" */
-#define			ABM_ENABLED_TYPE 4
-
 /* Define internal flags to process the different ABM paths as seen in HID:
  * ABM_PATH_STATUS --> UPS.BatterySystem.Charger.Status
  * ABM_PATH_MODE --> UPS.BatterySystem.Charger.Mode */
@@ -332,7 +327,7 @@ static const char *eaton_abm_status_fun(double value)
 	}
 
 	/* ABM Path: UPS.BatterySystem.Charger.Status (battery.charger.type.status)
-	 * as seen with 9E devices (and possibly others): */
+	 * as seen with 9 series devices (and possibly others): */
 	if (advanced_battery_path == ABM_PATH_STATUS)
 	{
 		switch (abm_status_value)
@@ -397,30 +392,12 @@ static info_lkp_t eaton_abm_status_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
-/* Used to process another type of enabled ABM (by battery.charger.type) */
-static const char *eaton_abm_charger_type_fun(double value)
-{
-	int abm_charger_type = (int)value;
-
-	if (abm_charger_type == ABM_ENABLED_TYPE)
-	{
-		/* Set ABM to enabled when encountering ABM-enabled battery.charger.type */
-		advanced_battery_monitoring = ABM_ENABLED_TYPE;
-		upsdebugx(2, "ABM charger type: %i", abm_charger_type);
-
-		return "ABM";
-	}
-
-    /* Do not publish in other cases */
-	return NULL;
-}
-
 static info_lkp_t eaton_charger_type_info[] = {
 	{ 0, "None", NULL, NULL },
 	{ 1, "Extended (CLA)", NULL, NULL },
 	{ 2, "Large extension", NULL, NULL },
 	{ 3, "Extra large extension (XL)", NULL, NULL },
-	{ 4, "ABM", eaton_abm_charger_type_fun, NULL },
+	{ 4, "ABM", NULL, NULL },
 	{ 5, "Constant Charge (CC)", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
 };
@@ -435,19 +412,19 @@ static const char *eaton_abm_chrg_dischrg_fun(double value)
 		return NULL;
 
 	/* ABM Path: UPS.BatterySystem.Charger.Status (battery.charger.type.status)
-	 * as seen with 9E devices (and possibly others): */
+	 * as seen with 9 series devices (and possibly others): */
 	if (advanced_battery_path == ABM_PATH_STATUS)
 	{
 		switch (abm_chrg_dischrg_value)
 		{
-			case 1: /* charging status, FIXME: 9E Model - no chrg in ups.status when battery.charge < 100 */
+			case 1: /* charging status */
 				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
 				break;
-			case 2: /* floating status, FIXME: 9E Model - chrg not stop in ups.status after battery.charge = 100 */
+			case 2: /* floating status */
 				/* charging status, floating status */
 				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
 				break;
-			case 4: /* discharging status, FIXME: 9E Model - remove dischrg in ups.status when on battery */
+			case 4: /* discharging status */
 				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "dischrg");
 				break;
 			case 6: /* ABM Charger Disabled */
@@ -1623,27 +1600,27 @@ static hid_info_t mge_hid2nut[] =
 	/* ABM (Advanced Battery Monitoring) processing
 	 * Must be processed before the BOOL status */
 
-	/* battery.charger.type can have another type of ABM enabled, can be overriden later by UPS.BatterySystem.Charger.ABMEnable */
-	{ "battery.charger.type", 0, 0, "UPS.BatterySystem.Charger.ChargerType", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_charger_type_info },
-	/* Not published, just to store in internal var. advanced_battery_monitoring */
+	/* Not published, just to store internally if ABM is enabled or disabled */
 	{ "battery.charger.abm.status", 0, 0, "UPS.BatterySystem.Charger.ABMEnable", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_info },
 
-	/* Process two different ABM paths (each of which expose different values for other HID variables)
-	 * NOTE: 9E Model and some other using ("UPS.BatterySystem.Charger.Status" and "UPS.BatterySystem.Charger.ChargerType")
-	 * instead of ("UPS.BatterySystem.Charger.ABMEnable" and "UPS.BatterySystem.Charger.Mode") */
+	/*
+	 * Process two different ABM paths (each of which expose different values for CHRG/DISCHRG in ABM-enabled paths)
+	*/
 
-	/* Not published, just used to store internal ABM path */
+	/* Not published, used to internally decide and store taken ABM path */
 	{ "battery.charger.mode.status", 0, 0, "UPS.BatterySystem.Charger.Mode", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_path_mode_info },
 	{ "battery.charger.type.status", 0, 0, "UPS.BatterySystem.Charger.Status", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_path_status_info },
 
-	/* Actual published ABM status for respective ABM path */
+	/* Published ABM status for the respective taken ABM path */
 	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.Mode", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_status_info },
 	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.Status", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_status_info },
 
 	/* Same as the one above, but for legacy units */
 	/* Refer to Note 1 (This point will need more clarification!)
 	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.PresentStatus.Used", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_legacy_info }, */
-	/* This data is the actual ABM status information */
+
+	/* Published battery charger type (can be ABM, CC, ...) */
+	{ "battery.charger.type", 0, 0, "UPS.BatterySystem.Charger.ChargerType", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_charger_type_info },
 
 	/* UPS page */
 	{ "ups.efficiency", 0, 0, "UPS.PowerConverter.Output.Efficiency", NULL, "%.0f", 0, NULL },
