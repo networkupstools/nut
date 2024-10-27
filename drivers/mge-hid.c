@@ -201,19 +201,15 @@ static char		mge_scratch_buf[20];
  * NOTE: Eaton 5P unit has "x.ABMEnable=1 and "x.Mode=4","x.ChargerType=4" and "x.Status=19?" */
 #define			ABM_ENABLED_TYPE 4
 
-/* Define if we have battery.charger.type.status for 9E Models and others */
-#define			ABM_CHARGER_NO_STATUS -1
-#define			ABM_CHARGER_STATUS 1
+/* Define if we have battery.charger.type.status or battery.charger.mode.staus enabled when paths avalible */
+#define			ABM_CHARGER_UNKNOWN -1
+#define			ABM_CHARGER_ENABLED 1
 
-/* Define if we have battery.charger.mode.staus by "x.ABMEnable and "x.Mode" */
-#define			ABM_CHARGER_NO_MODE -1
-#define			ABM_CHARGER_MODE 1
+/* Internal flag to process battery.charger.type.status "x.Status" */
+static int abm_charger_table_status = ABM_CHARGER_UNKNOWN;
 
-/* Internal flag to process battery.charger.type.status for 9E Models and others */
-static int advanced_battery_status = ABM_CHARGER_NO_STATUS;
-
-/* Internal flag to process battery.charger.mode.status by "x.ABMEnable and "x.Mode" */
-static int advanced_battery_mode = ABM_CHARGER_NO_MODE;
+/* Internal flag to process battery.charger.mode.status "x.Mode" */
+static int abm_charger_table_mode = ABM_CHARGER_UNKNOWN;
 
 /* Internal flag to process battery status (CHRG/DISCHRG) and ABM */
 static int advanced_battery_monitoring = ABM_UNKNOWN;
@@ -261,10 +257,10 @@ static const char *eaton_abm_enabled_mode_fun(double value)
 	int abm_charger_mode = value;
 
 	/* If not initialized Set ABM Charger Mode */
-	if (advanced_battery_mode == ABM_CHARGER_NO_MODE)
+	if (abm_charger_table_mode == ABM_CHARGER_UNKNOWN)
 	{
-		advanced_battery_mode = ABM_CHARGER_MODE;
-		upsdebugx(2, "Set Charger Mode numeric status: %i", advanced_battery_mode);		
+		abm_charger_table_mode = ABM_CHARGER_ENABLED;
+		upsdebugx(2, "Set Charger Mode numeric status: %i", abm_charger_table_mode);		
 	}
 
 	upsdebugx(2, "ABM Mode is %i", abm_charger_mode);
@@ -284,10 +280,10 @@ static const char *eaton_abm_enabled_status_fun(double value)
 	int abm_charger_status = value;
 
 	/* If not initialized Set ABM Charger Status */
-	if (advanced_battery_status == ABM_CHARGER_NO_STATUS)
+	if (abm_charger_table_status == ABM_CHARGER_UNKNOWN)
 	{
-		advanced_battery_status = ABM_CHARGER_STATUS;
-		upsdebugx(2, "Set Charger Status numeric status: %i", advanced_battery_status);		
+		abm_charger_table_status = ABM_CHARGER_ENABLED;
+		upsdebugx(2, "Set Charger Status numeric status: %i", abm_charger_table_status);		
 	}
 	
 	upsdebugx(2, "ABM Status is %i", abm_charger_status);
@@ -334,7 +330,7 @@ static const char *eaton_abm_status_fun(double value)
 	upsdebugx(2, "ABM numeric status: %i", (int)value);
 
 	/* if we have "x.Status" for 9E Models and others but not "x.Mode" */
-	if ((advanced_battery_status == ABM_CHARGER_STATUS) && (advanced_battery_mode != ABM_CHARGER_MODE))
+	if ((abm_charger_table_status == ABM_CHARGER_ENABLED) && (abm_charger_table_mode != ABM_CHARGER_ENABLED))
 	{
 		switch ((long)value)
 		{
@@ -432,7 +428,7 @@ static const char *eaton_abm_chrg_dischrg_fun(double value)
 		return NULL;
 
 	/* if we have "x.Status" for 9E Models and others but not "x.Mode" */
-	if ((advanced_battery_status == ABM_CHARGER_STATUS) && (advanced_battery_mode != ABM_CHARGER_MODE))
+	if ((abm_charger_table_status == ABM_CHARGER_ENABLED) && (abm_charger_table_mode != ABM_CHARGER_ENABLED))
 	{
 		switch ((long)value)
 		{
