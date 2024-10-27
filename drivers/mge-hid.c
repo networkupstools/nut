@@ -1633,15 +1633,14 @@ static hid_info_t mge_hid2nut[] =
 
 	/* NOTE: 9E Model and some other using ("UPS.BatterySystem.Charger.Status" and "UPS.BatterySystem.Charger.ChargerType")
 	 * instead of ("UPS.BatterySystem.Charger.ABMEnable" and "UPS.BatterySystem.Charger.Mode") */
-	
-	/* Not published, just to store in internal var. abm_charger_table_mode, ABM charger flag if the path exist */	
+
+	/* Not published, just to store in internal var. abm_charger_table_mode, ABM charger table flag if the path exist */	
 	{ "battery.charger.mode.status", 0, 0, "UPS.BatterySystem.Charger.Mode", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_mode_info },
-	/* Not published, just to store in internal var. abm_charger_table_status, ABM charger flag if the path exist */
+	/* Not published, just to store in internal var. abm_charger_table_status, ABM charger table flag if the path exist */
 	{ "battery.charger.type.status", 0, 0, "UPS.BatterySystem.Charger.Status", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_status_info },
 	/* Same as the one above, but for legacy units */
 	/* Refer to Note 1 (This point will need more clarification!)
-	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.PresentStatus.Used", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_legacy_info }, */
-	/* This data is the actual ABM status information */	
+	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.PresentStatus.Used", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_legacy_info }, */	
 
     /* Actual published ABM charger status for respective ABM path */ 
 	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.Mode", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_status_info }, /* needs both ? from https://github.com/networkupstools/nut/pull/2637#discussion_r1772730590 */	
