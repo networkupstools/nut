@@ -201,7 +201,7 @@ static char		mge_scratch_buf[20];
  * NOTE: Eaton 5P unit has "x.ABMEnable=1 and "x.Mode=4","x.ChargerType=4" and "x.Status=19?" */
 #define			ABM_ENABLED_TYPE 4
 
-/* Define if we have battery.charger.type.status or battery.charger.mode.staus enabled when paths avalible */
+/* Define if we have battery.charger.type.status or battery.charger.mode.status enabled when paths avalible */
 #define			ABM_CHARGER_UNKNOWN -1
 #define			ABM_CHARGER_ENABLED 1
 
