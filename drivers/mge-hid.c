@@ -235,9 +235,21 @@ static const char *eaton_abm_enabled_fun(double value)
 {
 	int abm_enabled_value = (int)value;
 
-	advanced_battery_monitoring = abm_enabled_value;
-
-	upsdebugx(2, "ABM overall status numeric value is %i", abm_enabled_value);
+	switch (abm_enabled_value)
+	{
+		case ABM_DISABLED:
+			advanced_battery_monitoring = ABM_DISABLED;
+			upsdebugx(2, "ABM status is: disabled (%i)", abm_enabled_value);
+			break;
+		case ABM_ENABLED:
+			advanced_battery_monitoring = ABM_ENABLED;
+			upsdebugx(2, "ABM status is: enabled (%i)", abm_enabled_value);
+			break;
+		default:
+			advanced_battery_monitoring = ABM_UNKNOWN;
+			upsdebugx(2, "ABM status is: unknown (%i)", abm_enabled_value);
+			break;
+	}
 
 	/* Return NULL, not to get the value published! */
 	return NULL;
@@ -257,10 +269,8 @@ static const char *eaton_abm_path_mode_fun(double value)
 	if (advanced_battery_path == ABM_PATH_UNKNOWN)
 	{
 		advanced_battery_path = ABM_PATH_MODE;
-		upsdebugx(2, "Set ABM path to: ABM_PATH_MODE (%i)", advanced_battery_path);
+		upsdebugx(2, "Set ABM path to: ABM_PATH_MODE (%i)", abm_path_mode_value);
 	}
-
-	upsdebugx(2, "ABM_PATH_MODE numeric value is: %i", abm_path_mode_value);
 
 	/* Return NULL, not to get the value published! */
 	return NULL;
@@ -280,10 +290,8 @@ static const char *eaton_abm_path_status_fun(double value)
 	if (advanced_battery_path == ABM_PATH_UNKNOWN)
 	{
 		advanced_battery_path = ABM_PATH_STATUS;
-		upsdebugx(2, "Set ABM path to: ABM_PATH_STATUS (%i)", advanced_battery_path);
+		upsdebugx(2, "Set ABM path to: ABM_PATH_STATUS (%i)", abm_path_status_value);
 	}
-
-	upsdebugx(2, "ABM_PATH_STATUS numeric value is: %i", abm_path_status_value);
 
 	/* Return NULL, not to get the value published! */
 	return NULL;
@@ -381,8 +389,7 @@ static const char *eaton_abm_status_fun(double value)
 		}
 	}
 
-	upsdebugx(2, "ABM charger numeric status is: %i", abm_status_value);
-	upsdebugx(2, "ABM charger string status: %s", mge_scratch_buf);
+	upsdebugx(2, "ABM charger status is: %s (%i)", mge_scratch_buf, abm_status_value);
 
 	return mge_scratch_buf;
 }
@@ -459,7 +466,7 @@ static const char *eaton_abm_chrg_dischrg_fun(double value)
 		}
 	}
 
-	upsdebugx(2, "ABM chrg/dischrg numeric value is: %i", abm_chrg_dischrg_value);
+	upsdebugx(2, "ABM charger flag is: %s (%i)", mge_scratch_buf, abm_chrg_dischrg_value);
 
 	return mge_scratch_buf;
 }
