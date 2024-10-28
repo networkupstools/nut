@@ -265,8 +265,8 @@ static const char *eaton_abm_path_mode_fun(double value)
 {
 	int abm_path_mode_value = (int)value;
 
-	/* If not yet initialized set ABM path to ABM_PATH_MODE */
-	if (advanced_battery_path == ABM_PATH_UNKNOWN)
+	/* If ABM_ENABLED and not yet initialized set ABM path to ABM_PATH_MODE */
+	if (advanced_battery_monitoring == ABM_ENABLED && advanced_battery_path == ABM_PATH_UNKNOWN)
 	{
 		advanced_battery_path = ABM_PATH_MODE;
 		upsdebugx(2, "Set ABM path to: ABM_PATH_MODE (%i)", abm_path_mode_value);
@@ -286,8 +286,8 @@ static const char *eaton_abm_path_status_fun(double value)
 {
 	int abm_path_status_value = (int)value;
 
-	/* If not yet initialized set ABM path to ABM_PATH_STATUS */
-	if (advanced_battery_path == ABM_PATH_UNKNOWN)
+	/* If ABM_ENABLED and not yet initialized set ABM path to ABM_PATH_STATUS */
+	if (advanced_battery_monitoring == ABM_ENABLED && advanced_battery_path == ABM_PATH_UNKNOWN)
 	{
 		advanced_battery_path = ABM_PATH_STATUS;
 		upsdebugx(2, "Set ABM path to: ABM_PATH_STATUS (%i)", abm_path_status_value);
@@ -321,7 +321,7 @@ static info_lkp_t eaton_abm_enabled_legacy_info[] = {
 };
 #endif /* if 0 */
 
-/* Used to process ABM status values (for battery.charger.status) */
+/* Used to process ABM status text (for battery.charger.status) */
 static const char *eaton_abm_status_fun(double value)
 {
 	int abm_status_value = (int)value;
@@ -335,7 +335,7 @@ static const char *eaton_abm_status_fun(double value)
 	}
 
 	/* ABM Path: UPS.BatterySystem.Charger.Status (battery.charger.type.status)
-	 * as seen with 9 series devices (and possibly others): */
+	 * as more recent and seen with 9 series devices (and possibly others): */
 	if (advanced_battery_path == ABM_PATH_STATUS)
 	{
 		switch (abm_status_value)
@@ -409,7 +409,7 @@ static info_lkp_t eaton_charger_type_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
-/* Used to process ABM status flags, for ups.status (CHRG/DISCHRG/RB) */
+/* Used to process ABM status flags, for ups.status (CHRG/DISCHRG) */
 static const char *eaton_abm_chrg_dischrg_fun(double value)
 {
 	int abm_chrg_dischrg_value = (int)value;
@@ -419,7 +419,7 @@ static const char *eaton_abm_chrg_dischrg_fun(double value)
 		return NULL;
 
 	/* ABM Path: UPS.BatterySystem.Charger.Status (battery.charger.type.status)
-	 * as seen with 9 series devices (and possibly others): */
+	 * as more recent and seen with 9 series devices (and possibly others): */
 	if (advanced_battery_path == ABM_PATH_STATUS)
 	{
 		switch (abm_chrg_dischrg_value)
@@ -428,7 +428,6 @@ static const char *eaton_abm_chrg_dischrg_fun(double value)
 				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
 				break;
 			case 2: /* floating status */
-				/* charging status, floating status */
 				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
 				break;
 			case 4: /* discharging status */
@@ -454,7 +453,7 @@ static const char *eaton_abm_chrg_dischrg_fun(double value)
 			case 3: /* floating status */
 				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
 				break;
-			case 2:
+			case 2: /* discharging status */
 				snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "dischrg");
 				break;
 			case 6: /* ABM Charger Disabled */
