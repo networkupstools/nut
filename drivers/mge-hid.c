@@ -197,10 +197,9 @@ static char		mge_scratch_buf[20];
 #define			ABM_DISABLED     0
 #define			ABM_ENABLED      1
 
-/* Some untis like Eaton 9E Models that using "x.ChargerType=5" and "x.Status=2"
+/* NOTE: Some untis like Eaton 9E Models that using "x.ChargerType=5" and "x.Status=2"
  * instead of other units that has ABM by "x.ABMEnable and "x.Mode".
- * NOTE: Eaton 5P unit has "x.ABMEnable=1 and "x.Mode=4","x.ChargerType=4" and "x.Status=19?" */
-#define			ABM_ENABLED_TYPE 4
+ * Eaton 5P unit has "x.ABMEnable=1 and "x.Mode=4","x.ChargerType=4" and "x.Status=19?" */
 
 /* Define if we have battery.charger.type.status or battery.charger.mode.status enabled when paths avalible */
 #define			ABM_CHARGER_UNKNOWN -1
@@ -393,30 +392,12 @@ static info_lkp_t eaton_abm_status_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
-/* Used to process ABM flag, for battery.charger.type */
-static const char *eaton_abm_charger_type_fun(double value)
-{
-	int abm_charger_type = value;
-
-	if (abm_charger_type == ABM_ENABLED_TYPE)
-	{
-		/* Set ABM flag for battery.charger.type */
-		advanced_battery_monitoring = ABM_ENABLED_TYPE;
-		upsdebugx(2, "ABM charger type: %i", (int)value);
-
-		return "ABM";
-	}
-
-    /* Handle the case when value is not equal to ABM_ENABLED_TYPE_MODE or some other appropriate action */
-	return NULL;
-}
-
 static info_lkp_t eaton_charger_type_info[] = {
 	{ 0, "None", NULL, NULL },
 	{ 1, "Extended (CLA)", NULL, NULL },
 	{ 2, "Large extension", NULL, NULL },
 	{ 3, "Extra large extension (XL)", NULL, NULL },
-	{ 4, "ABM", eaton_abm_charger_type_fun, NULL },
+	{ 4, "ABM", NULL, NULL },
 	{ 5, "Constant Charge (CC)", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
 };
