@@ -1174,6 +1174,10 @@ Typical tooling would include:
     freeipmi \
     avahi
 
+# With 2024.04, some packages were split for development vs. run-time:
+:; pkg install \
+    system/library/mozilla-nss/header-nss
+
 :; pkg install \
     lua
 
