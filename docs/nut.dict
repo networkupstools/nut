@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3235 utf-8
+personal_ws-1.1 en 3236 utf-8
 AAC
 AAS
 ABI
@@ -2465,6 +2465,7 @@ novendor
 nowait
 nowarn
 np
+nspr
 nss
 nuget
 num
