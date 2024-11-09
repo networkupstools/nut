@@ -1044,7 +1044,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         CANBUILD_LIBGD_CGI=no
                         ;;
                     *)
-                        case "$ARCH$BITS" in
+                        case "${ARCH}${BITS}${ARCH_BITS}" in
                             *64*) ;;
                             *)
                                 # GCC-7 (maybe other older compilers) could default
@@ -1073,7 +1073,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     SYS_PKG_CONFIG_PATH="/usr/lib/32/pkgconfig:/usr/lib/pkgconfig:/usr/lib/i86pc/pkgconfig:/usr/lib/i386/pkgconfig:/usr/lib/sparcv7/pkgconfig"
                     ;;
                 *)
-                    case "$ARCH$BITS" in
+                    case "${ARCH}${BITS}${ARCH_BITS}" in
                         *64*)
                             SYS_PKG_CONFIG_PATH="/usr/lib/64/pkgconfig:/usr/lib/amd64/pkgconfig:/usr/lib/sparcv9/pkgconfig:/usr/lib/pkgconfig"
                             ;;
