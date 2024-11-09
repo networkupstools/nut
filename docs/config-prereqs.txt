@@ -1174,6 +1174,8 @@ Typical tooling would include:
     freeipmi \
     avahi
 
+# NOTE: Until https://github.com/networkupstools/nut/issues/2674 is solved,
+# using Mozilla NSS is problematic on Solaris-derived platforms.
 # With 2024.04, some packages were split for development vs. run-time
 # and/or based on architecture:
 :; pkg install \
@@ -1279,6 +1281,19 @@ Note you may need not just the "Core" IPS package publisher, but also the
 
 :; pkg install \
     net-snmp
+
+# For crypto-enabled builds:
+:; pkg install \
+    openssl-3
+
+# NOTE: Until https://github.com/networkupstools/nut/issues/2674 is solved,
+# using Mozilla NSS is problematic on Solaris-derived platforms.
+# By r151046, some packages were split for development vs. run-time;
+# to provide support for Mozilla NSS, you need libraries and headers:
+:; pkg install \
+    system/library/mozilla-nss \
+    system/library/mozilla-nss/header-nss \
+    library/nspr library/nspr/header-nspr
 
 # NOTE: For python, some suitable version should be available since `pkg(5)`
 # tool is written in it. You may specify an additional variant like this
