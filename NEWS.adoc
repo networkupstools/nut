@@ -334,6 +334,16 @@ during a NUT build.
    respective warnings issued by the new generations of analysis tools.
    [#823, #2437, link:https://github.com/networkupstools/nut-website/issues/52[nut-website issue #52]]
 
+ - fixed `configure` script to use default (target-specific) values of
+   `CFLAGS`, `LIBS` etc. when probing relevant settings for each third-party
+   dependency; as a consequence, on systems that support building for many
+   targets, we check relevant build-ability for that target and not for the
+   building system itself. [issue #2673, PR #2675]
+
+ - fixed dynamic linking of Mozilla NSS on systems like Solaris/illumos,
+   where the shared objects are not packaged into the common RPATH.
+   [issue #2674, PR #2675]
+
  - added `scripts/valgrind` with a helper script and suppression file to
    ignore common third-party problems. [#2511]
 
