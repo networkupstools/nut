@@ -91,6 +91,10 @@ if test -z "${nut_have_libopenssl_seen}"; then
 		LIBSSL_CFLAGS="${depCFLAGS}"
 		LIBSSL_LIBS="${depLIBS}"
 		LIBSSL_REQUIRES="${depREQUIRES}"
+
+		dnl # See tools/nut-scanner/Makefile.am and also
+		dnl # nut_check_libnss.m4 if there are custom RPATHs
+		LIBSSL_LDFLAGS_RPATH=""
 	fi
 
 	unset depCFLAGS

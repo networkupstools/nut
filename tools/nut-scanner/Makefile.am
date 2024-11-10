@@ -114,9 +114,21 @@ nut_scanner_CFLAGS = \
 			-I$(top_builddir)/include -I$(top_srcdir)/include
 nut_scanner_LDADD = libnutscan.la
 
+# Hack to allow correct RPATH/RUNPATH like /usr/lib/mps/64 (Mozilla NSS)
+# to be used on Solaris/illumos and similar platforms. For more details,
+# see https://github.com/networkupstools/nut/issues/2674 but in short -
+# we know the libs and options from pkg-config, and then they are well
+# embedded into libnutscan.la, and then the -R/some/path options are
+# chopped away by libtool when linking the program (while for some reason
+# it adds the libraries wanted by libnutscan.la directly as libs wanted
+# by the program, and ALSO they have a link chain through the shared lib).
+# I'd argue this is a libtool bug, but here's a workaround that works...
+nut_scanner_LDFLAGS =
+
 if WITH_SSL
   libnutscan_la_CFLAGS += $(LIBSSL_CFLAGS)
   libnutscan_la_LIBADD += $(LIBSSL_LIBS)
+  nut_scanner_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH)
 endif WITH_SSL
 if WITH_USB
   libnutscan_la_CFLAGS += $(LIBUSB_CFLAGS)

@@ -95,6 +95,15 @@ if test -z "${nut_have_libnss_seen}"; then
 		LIBSSL_CFLAGS="${depCFLAGS}"
 		LIBSSL_LIBS="${depLIBS}"
 		LIBSSL_REQUIRES="${depREQUIRES}"
+
+		dnl # See tools/nut-scanner/Makefile.am
+		dnl # FIXME: Handle "-R /path" tokens, are they anywhere?
+		LIBSSL_LDFLAGS_RPATH=""
+		for TOKEN in ${LIBSSL_LIBS} ; do
+			case "$TOKEN" in
+				-R*) LIBSSL_LDFLAGS_RPATH="$LIBSSL_LDFLAGS_RPATH $TOKEN" ;;
+			esac
+		done
 	fi
 
 	unset depCFLAGS
