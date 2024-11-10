@@ -153,8 +153,11 @@ if test -z "${nut_have_libgd_seen}"; then
 FILE *tmpf = tmpfile();
 gdImagePtr im = gdImageCreate(64, 128);
 int back_color = gdImageColorAllocate(im, 255, 128, 32);
+int scale_num_color = gdImageColorAllocate(im, 0, 128, 128);
 gdImageFilledRectangle(im, 0, 0, 64, 128, back_color);
 gdImageColorTransparent(im, back_color);
+/* this may invoke fontconfig/freetype or equivalen dependencies of libgd: */
+gdImageString(im, gdFontMediumBold, 4, 16, (unsigned char *)"Test Label", scale_num_color);
 gdImagePng(im, tmpf ? tmpf : stderr);
 gdImageDestroy(im);
 ]
