@@ -15,6 +15,11 @@ if test -z "${nut_have_libgd_seen}"; then
 	CFLAGS=""
 	LDFLAGS=""
 	LIBS=""
+	depCFLAGS=""
+	depLDFLAGS=""
+	depLIBS=""
+
+	dnl ### AC_MSG_NOTICE([LIBGD (before): CFLAGS_ORIG="${CFLAGS_ORIG}" CXXFLAGS_ORIG="${CXXFLAGS_ORIG}" CPPFLAGS_ORIG="${CPPFLAGS_ORIG}" LDFLAGS_ORIG="${LDFLAGS_ORIG}" LIBS_ORIG="${LIBS_ORIG}"])
 
 	AS_IF([test x"$have_PKG_CONFIG" = xyes],
 		[AC_MSG_CHECKING(for gd version via pkg-config)
@@ -30,15 +35,15 @@ if test -z "${nut_have_libgd_seen}"; then
 	)
 
 	AS_IF([test x"$GD_VERSION" != xnone],
-		[CFLAGS="`$PKG_CONFIG --silence-errors --cflags gdlib 2>/dev/null`"
-		 LIBS="`$PKG_CONFIG --silence-errors --libs gdlib 2>/dev/null`"
+		[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags gdlib 2>/dev/null`"
+		 depLIBS="`$PKG_CONFIG --silence-errors --libs gdlib 2>/dev/null`"
 		],
 		[dnl Initial defaults. These are only used if gdlib-config is
 		 dnl unusable and the user fails to pass better values in --with
 		 dnl arguments
-		 CFLAGS=""
-		 LDFLAGS="-L/usr/X11R6/lib"
-		 LIBS="-lgd -lpng -lz -ljpeg -lfreetype -lm -lXpm -lX11"
+		 depCFLAGS=""
+		 depLDFLAGS="-L/usr/X11R6/lib"
+		 depLIBS="-lgd -lpng -lz -ljpeg -lfreetype -lm -lXpm -lX11"
 
 		 dnl By default seek in PATH
 		 AC_PATH_PROGS([GDLIB_CONFIG], [gdlib-config], [none])
@@ -75,9 +80,9 @@ if test -z "${nut_have_libgd_seen}"; then
 			AC_MSG_WARN([[If gd detection fails, upgrade gd or use --with-gd-includes and --with-gd-libs]])
 			;;
 		 *)
-			CFLAGS="`${GDLIB_CONFIG} --includes 2>/dev/null`"
-			LDFLAGS="`${GDLIB_CONFIG} --ldflags 2>/dev/null`"
-			LIBS="`${GDLIB_CONFIG} --libs 2>/dev/null`"
+			depCFLAGS="`${GDLIB_CONFIG} --includes 2>/dev/null`"
+			depLDFLAGS="`${GDLIB_CONFIG} --ldflags 2>/dev/null`"
+			depLIBS="`${GDLIB_CONFIG} --libs 2>/dev/null`"
 			;;
 		 esac
 		]
@@ -93,11 +98,11 @@ if test -z "${nut_have_libgd_seen}"; then
 			AC_MSG_ERROR(invalid option --with(out)-gd-includes - see docs/configure.txt)
 			;;
 		*)
-			CFLAGS="${withval}"
+			depCFLAGS="${withval}"
 			;;
 		esac
 	], [])
-	AC_MSG_RESULT([${CFLAGS}])
+	AC_MSG_RESULT([${depCFLAGS}])
 
 	AC_MSG_CHECKING(for gd library flags)
 	AC_ARG_WITH(gd-libs,
@@ -108,36 +113,48 @@ if test -z "${nut_have_libgd_seen}"; then
 			AC_MSG_ERROR(invalid option --with(out)-gd-libs - see docs/configure.txt)
 			;;
 		*)
-			LDFLAGS="${withval}"
-			LIBS=""
+			depLDFLAGS="${withval}"
+			depLIBS=""
 			;;
 		esac
 	], [])
-	AC_MSG_RESULT([${LDFLAGS} ${LIBS}])
+	AC_MSG_RESULT([${depLDFLAGS} ${depLIBS}])
 
 	dnl check if gd is usable
+	CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
+	LDFLAGS="${LDFLAGS_ORIG} ${depLDFLAGS}"
+	LIBS="${LIBS_ORIG} ${depLIBS}"
 	AC_CHECK_HEADERS(gd.h gdfontmb.h, [nut_have_libgd=yes], [nut_have_libgd=no], [AC_INCLUDES_DEFAULT])
 	AC_SEARCH_LIBS(gdImagePng, gd, [], [
 		dnl If using pkg-config, query additionally for Libs.private
 		dnl to pull -L/usr/X11R6/lib or whatever current OS wants
 		AC_MSG_CHECKING([for more gd library flags])
 		AS_IF([test -n "${with_gd_libs}" || test x"$have_PKG_CONFIG" != xyes], [nut_have_libgd=no], [
-			_LIBS_PRIVATE="`$PKG_CONFIG --silence-errors --libs gdlib --static 2>/dev/null`"
-			AS_IF([test -z "${_LIBS_PRIVATE}"], [nut_have_libgd=no], [
+			depLIBS_PRIVATE="`$PKG_CONFIG --silence-errors --libs gdlib --static 2>/dev/null`"
+			AS_IF([test -z "${depLIBS_PRIVATE}"], [nut_have_libgd=no], [
 				AC_MSG_CHECKING([with gdlib.pc Libs.private])
-				LDFLAGS="$LDFLAGS $_LIBS_PRIVATE"
+				depLDFLAGS="$depLDFLAGS $depLIBS_PRIVATE"
 				unset ac_cv_search_gdImagePng
+				LDFLAGS="${LDFLAGS_ORIG} ${depLDFLAGS}"
 				AC_SEARCH_LIBS(gdImagePng, gd, [nut_have_libgd=yes], [nut_have_libgd=no])
 			])
-			unset _LIBS_PRIVATE
+			unset depLIBS_PRIVATE
 			dnl At least mingw 32-bit builds of the DLL seem to not
 			dnl tell the linker how to get from GD to PNG lib
 			AS_IF([test x"$nut_have_libgd" = xno], [
 				AC_MSG_CHECKING([with explicit -lpng in the loop])
-				LDFLAGS="$LDFLAGS -lgd"
+				depLDFLAGS="$depLDFLAGS -lgd"
 				unset ac_cv_search_gdImagePng
+				LDFLAGS="${LDFLAGS_ORIG} ${depLDFLAGS}"
 				AC_SEARCH_LIBS(gdImagePng, png png16, [nut_have_libgd=yes], [nut_have_libgd=no])
 			])
+		])
+	])
+
+	dnl Collect possibly updated dependencies after AC SEARCH LIBS:
+	AS_IF([test x"${LIBS}" != x"${LIBS_ORIG} ${depLIBS}"], [
+		AS_IF([test x = x"${LIBS_ORIG}"], [depLIBS="$LIBS"], [
+			depLIBS="`echo "$LIBS" | sed -e 's|'"${LIBS_ORIG}"'| |' -e 's|^ *||' -e 's| *$||'`"
 		])
 	])
 
@@ -168,9 +185,13 @@ gdImageDestroy(im);
 
 	if test "${nut_have_libgd}" = "yes"; then
 		AC_DEFINE(HAVE_LIBGD, 1, [Define if you have Boutell's libgd installed])
-		LIBGD_CFLAGS="${CFLAGS}"
-		LIBGD_LDFLAGS="${LDFLAGS} ${LIBS}"
+		LIBGD_CFLAGS="${depCFLAGS}"
+		LIBGD_LDFLAGS="${depLDFLAGS} ${depLIBS}"
 	fi
+
+	unset depCFLAGS
+	unset depLDFLAGS
+	unset depLIBS
 
 	dnl put back the original versions
 	CFLAGS="${CFLAGS_ORIG}"
