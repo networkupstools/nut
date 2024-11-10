@@ -22,6 +22,8 @@ if test -z "${nut_have_libusb_seen}"; then
 	LIBS_ORIG="${LIBS}"
 	CFLAGS=""
 	LIBS=""
+	depCFLAGS=""
+	depLIBS=""
 
 	dnl Magic-format string to hold chosen libusb version and its config-source
 	nut_usb_lib=""
@@ -154,22 +156,22 @@ if test -z "${nut_have_libusb_seen}"; then
 	dnl and *then* pick one set of values to use?
 	AS_CASE([${nut_usb_lib}],
 		["(libusb-1.0)"], [
-			CFLAGS="`$PKG_CONFIG --silence-errors --cflags libusb-1.0 2>/dev/null`"
-			LIBS="`$PKG_CONFIG --silence-errors --libs libusb-1.0 2>/dev/null`"
+			depCFLAGS="`$PKG_CONFIG --silence-errors --cflags libusb-1.0 2>/dev/null`"
+			depLIBS="`$PKG_CONFIG --silence-errors --libs libusb-1.0 2>/dev/null`"
 			],
 		["(libusb-0.1)"], [
-			CFLAGS="`$PKG_CONFIG --silence-errors --cflags libusb 2>/dev/null`"
-			LIBS="`$PKG_CONFIG --silence-errors --libs libusb 2>/dev/null`"
+			depCFLAGS="`$PKG_CONFIG --silence-errors --cflags libusb 2>/dev/null`"
+			depLIBS="`$PKG_CONFIG --silence-errors --libs libusb 2>/dev/null`"
 			],
 		["(libusb-0.1-config)"], [
-			CFLAGS="`$LIBUSB_CONFIG --cflags 2>/dev/null`"
-			LIBS="`$LIBUSB_CONFIG --libs 2>/dev/null`"
+			depCFLAGS="`$LIBUSB_CONFIG --cflags 2>/dev/null`"
+			depLIBS="`$LIBUSB_CONFIG --libs 2>/dev/null`"
 			],
 		[dnl default, for other versions or "none"
 			AC_MSG_WARN([Defaulting libusb configuration])
 			LIBUSB_VERSION="none"
-			CFLAGS=""
-			LIBS="-lusb"
+			depCFLAGS=""
+			depLIBS="-lusb"
 		]
 	)
 
@@ -184,11 +186,11 @@ if test -z "${nut_have_libusb_seen}"; then
 				AC_MSG_ERROR(invalid option --with(out)-usb-includes - see docs/configure.txt)
 			],
 			[dnl default
-				CFLAGS="${withval}"
+				depCFLAGS="${withval}"
 			]
 		)
 	], [])
-	AC_MSG_RESULT([${CFLAGS}])
+	AC_MSG_RESULT([${depCFLAGS}])
 
 	AC_MSG_CHECKING(for libusb ldflags)
 	AC_ARG_WITH(usb-libs,
@@ -199,16 +201,18 @@ if test -z "${nut_have_libusb_seen}"; then
 				AC_MSG_ERROR(invalid option --with(out)-usb-libs - see docs/configure.txt)
 			],
 			[dnl default
-				LIBS="${withval}"
+				depLIBS="${withval}"
 			]
 		)
 	], [])
-	AC_MSG_RESULT([${LIBS}])
+	AC_MSG_RESULT([${depLIBS}])
 
 	dnl TODO: Consult chosen nut_usb_lib value and/or nut_with_usb argument
 	dnl (with "auto" we may use a 0.1 if present and working while a 1.0 is
 	dnl present but useless)
 	dnl Check if libusb is usable
+	CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
+	LIBS="${LIBS_ORIG} ${depLIBS}"
 	AC_LANG_PUSH([C])
 	if test -n "${LIBUSB_VERSION}"; then
 		dnl Test specifically for libusb-1.0 via pkg-config, else fall back below
@@ -262,16 +266,18 @@ if test -z "${nut_have_libusb_seen}"; then
 				dnl paths, but not the pkg-config or libusb-config data
 				AS_IF([test "${nut_have_libusb}" = "yes" && test "$LIBUSB_VERSION" = "none" && test -z "$LIBS" -o x"$LIBS" = x"-lusb" ],
 					[AC_MSG_CHECKING([if libusb is just present in path])
-					 LIBS="-L/usr/lib -L/usr/local/lib -lusb"
+					 depLIBS="-L/usr/lib -L/usr/local/lib -lusb"
 					 dnl TODO: Detect bitness for trying /mingw32 or /usr/$ARCH as well?
 					 dnl This currently caters to mingw-w64-x86_64-libusb-win32 of MSYS2:
 					 AS_CASE(["${target_os}"],
-						[*mingw*], [LIBS="-L/mingw64/lib $LIBS"])
+						[*mingw*], [depLIBS="-L/mingw64/lib $depLIBS"])
 					 unset ac_cv_func_usb_init || true
+					 LIBS="${LIBS_ORIG} ${depLIBS}"
 					 AC_CHECK_FUNCS(usb_init, [], [
 						AC_MSG_CHECKING([if libusb0 is just present in path])
-						LIBS="$LIBS"0
+						depLIBS="$depLIBS"0
 						unset ac_cv_func_usb_init || true
+						LIBS="${LIBS_ORIG} ${depLIBS}"
 						AC_CHECK_FUNCS(usb_init, [nut_usb_lib="(libusb-0.1)"], [nut_have_libusb=no])
 						])
 					 AC_MSG_RESULT([${nut_have_libusb}])
@@ -313,18 +319,27 @@ if test -z "${nut_have_libusb_seen}"; then
 			[solaris2.1*], [
 				AC_MSG_CHECKING([for Solaris 10 / 11 specific configuration for usb drivers])
 				AC_SEARCH_LIBS(nanosleep, rt)
-				LIBS="-R/usr/sfw/lib ${LIBS}"
+				dnl Collect possibly updated dependencies after AC SEARCH LIBS:
+				AS_IF([test x"${LIBS}" != x"${LIBS_ORIG} ${depLIBS}"], [
+					AS_IF([test x = x"${LIBS_ORIG}"], [depLIBS="$LIBS"], [
+						depLIBS="`echo "$LIBS" | sed -e 's|'"${LIBS_ORIG}"'| |' -e 's|^ *||' -e 's| *$||'`"
+					])
+				])
+				depLIBS="-R/usr/sfw/lib ${depLIBS}"
 				dnl FIXME: Sun's libusb doesn't support timeout (so blocks notification)
 				dnl and need to call libusb close upon reconnection
 				dnl TODO: Somehow test for susceptible versions?
 				AC_DEFINE(SUN_LIBUSB, 1, [Define to 1 for Sun version of the libusb.])
 				SUN_LIBUSB=1
-				AC_MSG_RESULT([${LIBS}])
+				AC_MSG_RESULT([${depLIBS}])
 				],
 			[hpux11*], [
-				CFLAGS="${CFLAGS} -lpthread"
+				depCFLAGS="${depCFLAGS} -lpthread"
 				]
 		)
+
+		CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
+		LIBS="${LIBS_ORIG} ${depLIBS}"
 
 		dnl AC_MSG_CHECKING([for libusb bus port support])
 		dnl Per https://github.com/networkupstools/nut/issues/2043#issuecomment-1721856494 :
@@ -344,8 +359,8 @@ if test -z "${nut_have_libusb_seen}"; then
 	])
 
 	AS_IF([test "${nut_have_libusb}" = "yes"], [
-		LIBUSB_CFLAGS="${CFLAGS}"
-		LIBUSB_LIBS="${LIBS}"
+		LIBUSB_CFLAGS="${depCFLAGS}"
+		LIBUSB_LIBS="${depLIBS}"
 	], [
 		AS_CASE(["${nut_with_usb}"],
 			[no|auto], [],
@@ -378,7 +393,7 @@ if test -z "${nut_have_libusb_seen}"; then
 			[Define to 1 for version 1.0 of the libusb (via pkg-config).])
 
 		 dnl Help ltdl if we can (nut-scanner etc.)
-		 for TOKEN in $LIBS ; do
+		 for TOKEN in $depLIBS ; do
 			AS_CASE(["${TOKEN}"],
 				[-l*usb*], [
 					AX_REALPATH_LIB([${TOKEN}], [SOPATH_LIBUSB1], [])
@@ -392,7 +407,7 @@ if test -z "${nut_have_libusb_seen}"; then
 			)
 		 done
 		 unset TOKEN
-                ],
+		],
 		[AC_DEFINE([WITH_LIBUSB_1_0], [0],
 			[Define to 1 for version 1.0 of the libusb (via pkg-config).])]
 	)
@@ -402,7 +417,7 @@ if test -z "${nut_have_libusb_seen}"; then
 			[Define to 1 for version 0.1 of the libusb (via pkg-config or libusb-config).])
 
 		 dnl Help ltdl if we can (nut-scanner etc.)
-		 for TOKEN in $LIBS ; do
+		 for TOKEN in $depLIBS ; do
 			AS_CASE(["${TOKEN}"],
 				[-l*usb*], [
 					AX_REALPATH_LIB([${TOKEN}], [SOPATH_LIBUSB0], [])
@@ -416,10 +431,13 @@ if test -z "${nut_have_libusb_seen}"; then
 			)
 		 done
 		 unset TOKEN
-                ],
+		],
 		[AC_DEFINE([WITH_LIBUSB_0_1], [0],
 			[Define to 1 for version 0.1 of the libusb (via pkg-config or libusb-config).])]
 	)
+
+	unset depCFLAGS
+	unset depLIBS
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"
