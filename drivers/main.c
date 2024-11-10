@@ -38,7 +38,11 @@
 /* data which may be useful to the drivers */
 TYPE_FD	upsfd = ERROR_FD;
 
-char		*device_path = NULL;
+/* Cached values of dstate_getinfo("driver.parameter.port")
+ * and dstate_getinfo("driver.parameter.sdcommands") - set
+ * during their assignment when reading program parameters
+ * from CLI or config file. */
+char		*device_path = NULL, *device_sdcommands = NULL;
 const char	*progname = NULL, *upsname = NULL, *device_name = NULL;
 
 /* may be set by the driver to wake up while in dstate_poll_fds */
@@ -665,7 +669,7 @@ finish:
 
 /* Similar to testvar_reloadable() above which is for addvar*() defined
  * entries, but for less streamlined stuff defined right here in main.c.
- * See if <var> (by <arg> name saved in dstate) can be (re-)loaded now:
+ * See if <var> (by <infoname> saved in dstate) can be (re-)loaded now:
  * either it is reloadable by parameter definition, or no value has been
  * saved into it yet (<oldval> is NULL).
  * Returns "-1" if nothing needs to be done and that is not a failure
@@ -739,6 +743,77 @@ void addvar_reloadable(int vartype, const char *name, const char *desc)
 void addvar(int vartype, const char *name, const char *desc)
 {
 	do_addvar(vartype, name, desc, 0);
+}
+
+/* Try each instant command in the comma-separated list of
+ * sdcmds, until the first one that reports it was handled.
+ * Returns STAT_INSTCMD_HANDLED if one of those was accepted
+ * by the device, or STAT_INSTCMD_INVALID if none succeeded.
+ * If cmdused is not NULL, it is populated by the command
+ * string which succeeded (or NULL if none), and the caller
+ * should free() it eventually.
+ */
+int do_loop_shutdown_commands(const char *sdcmds, char **cmdused) {
+	int	cmdret = STAT_INSTCMD_UNKNOWN;
+	char	*buf = NULL, *s = NULL;
+
+	upsdebugx(1, "%s(%s)...", __func__, NUT_STRARG(sdcmds));
+
+	if (cmdused)
+		*cmdused = NULL;
+
+	if (!sdcmds || !*sdcmds) {
+		upsdebugx(1, "This driver or its configuration did not pass any instant commands to run");
+		goto done;
+	}
+
+	if (upsh.instcmd == NULL) {
+		upsdebugx(1, "This driver does not implement INSTCMD support");
+		goto done;
+	}
+
+	buf = xstrdup(sdcmds);
+	while ((s = strtok(s == NULL ? buf : NULL, ",")) != NULL) {
+		if (!*s)
+			continue;
+		if ((cmdret = upsh.instcmd(s, NULL)) == STAT_INSTCMD_HANDLED) {
+			/* Shutdown successful */
+			if (cmdused)
+				*cmdused = xstrdup(s);
+			upsdebugx(1, "%s(): command '%s' was handled successfully", __func__, NUT_STRARG(s));
+			goto done;
+		}
+	}
+
+done:
+	if (buf)
+		free(buf);
+	if (cmdret != STAT_INSTCMD_HANDLED)
+		cmdret = STAT_INSTCMD_INVALID;
+	upsdebugx(1, "%s(%s): %d", __func__, NUT_STRARG(sdcmds), cmdret);
+	return cmdret;
+}
+
+/* Use driver-provided sdcmds_default, unless a custom driver parameter value
+ * "sdcommands" is set - then use it instead. Call do_loop_shutdown_commands()
+ * for actual work; return STAT_INSTCMD_HANDLED or STAT_INSTCMD_HANDLED as
+ * applicable; if caller-provided cmdused is not NULL, populate it with the
+ * command that was used successfully (if any).
+ */
+int loop_shutdown_commands(const char *sdcmds_default, char **cmdused) {
+	const char	*sdcmds_custom = device_sdcommands;
+
+	/* Belts and suspenders... */
+	if (!sdcmds_custom)
+		sdcmds_custom = dstate_getinfo("driver.parameter.sdcommands");
+
+	if (sdcmds_custom) {
+		upsdebugx(1, "%s: call do_loop_shutdown_commands() with custom sdcommands", __func__);
+		return do_loop_shutdown_commands(sdcmds_custom, cmdused);
+	} else {
+		upsdebugx(1, "%s: call do_loop_shutdown_commands() with driver-default sdcommands", __func__);
+		return do_loop_shutdown_commands(sdcmds_default, cmdused);
+	}
 }
 
 /* handle instant commands common for all drivers */
@@ -1057,6 +1132,16 @@ static int main_arg(char *var, char *val)
 	/* only for upsd (at the moment) - ignored here */
 	if (!strcmp(var, "desc"))
 		return 1;	/* handled */
+
+	if (!strcmp(var, "sdcommands")) {
+		if (testinfo_reloadable(var, "driver.parameter.sdcommands", val, 1) > 0) {
+			if (device_sdcommands)
+				free(device_sdcommands);
+			device_sdcommands = xstrdup(val);
+			dstate_setinfo("driver.parameter.sdcommands", "%s", val);
+		}
+		return 1;	/* handled */
+	}
 
 	/* Allow each driver to specify its minimal debugging level -
 	 * admins can set more with command-line args, but can't set

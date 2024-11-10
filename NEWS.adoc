@@ -314,6 +314,17 @@ during a NUT build.
      for `bcmxcp_usb`, `richcomm_usb` and `nutdrv_atcl_usb` drivers for now
      [#1763, #1764, #1768, #2580]
 
+ - all drivers should now support the optional `sdcommands` setting with
+   a site-local list of instant commands to handle `upsdrv_shutdown()`,
+   which may be useful in cases when the driver's built-in commands
+   (or their order) do not meet the goals of particular NUT deployment.
+   This can also help with shutdown endgame testing, using a mock command like
+   starting the beeper (where supported) to verify that the UPS communications
+   happen as expected, without compromising the load connected to the UPS.
++
+NOTE: during this overhaul, many older drivers got their first ever supported
+INSTCMD such as `shutdown.return`, `shutdown.stayoff` or `load.off`. [#2670]
+
  - common code:
    * introduced a `NUT_DEBUG_SYSLOG` environment variable to tweak activation
      of syslog message emission (and related detachment of `stderr` when

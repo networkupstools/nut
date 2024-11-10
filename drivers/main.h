@@ -12,7 +12,7 @@
 
 /* public functions & variables from main.c */
 extern const char	*progname, *upsname, *device_name;
-extern char		*device_path;
+extern char		*device_path, *device_sdcommands;
 extern int		broken_driver, experimental_driver, do_lock_port, exit_flag;
 extern TYPE_FD		upsfd, extrafd;
 extern time_t	poll_interval;
@@ -29,6 +29,24 @@ void upsdrv_cleanup(void);	/* free any resources before shutdown */
 void set_exit_flag(int sig);
 
 /* --- details for the variable/value sharing --- */
+
+/* Try each instant command in the comma-separated list of
+ * sdcmds, until the first one that reports it was handled.
+ * Returns STAT_INSTCMD_HANDLED if one of those was accepted
+ * by the device, or STAT_INSTCMD_INVALID if none succeeded.
+ * If cmdused is not NULL, it is populated by the command
+ * string which succeeded (or NULL if none), and the caller
+ * should free() it eventually.
+ */
+int do_loop_shutdown_commands(const char *sdcmds, char **cmdused);
+
+/* Use driver-provided sdcmds_default, unless a custom driver parameter value
+ * "sdcommands" is set - then use it instead. Call do_loop_shutdown_commands()
+ * for actual work; return STAT_INSTCMD_HANDLED or STAT_INSTCMD_HANDLED as
+ * applicable; if caller-provided cmdused is not NULL, populate it with the
+ * command that was used successfully (if any).
+ */
+int loop_shutdown_commands(const char *sdcmds_default, char **cmdused);
 
 /* handle instant commands common for all drivers
  * (returns STAT_INSTCMD_* state values per enum in upshandler.h)
