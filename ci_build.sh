@@ -1045,7 +1045,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         ;;
                     *)
                         case "${ARCH}${BITS}${ARCH_BITS}" in
-                            *64*) ;;
+                            *64*|*sparcv9*) ;;
                             *)
                                 # GCC-7 (maybe other older compilers) could default
                                 # to 32-bit builds, and the 32-bit libfontconfig.so
@@ -1055,6 +1055,14 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                                 CANBUILD_LIBGD_CGI=auto
                                 ;;
                         esac
+                        ;;
+                esac
+            else
+                case "${ARCH}${BITS}${ARCH_BITS}" in
+                    *64*|*sparcv9*) ;;
+                    *)
+                        echo "WARNING: Seems we are running with $COMPILER_FAMILY on $CI_OS_NAME, which last had known issues with libgd on non-64-bit builds; making CGI optional for this build"
+                        CANBUILD_LIBGD_CGI=auto
                         ;;
                 esac
             fi
