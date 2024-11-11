@@ -700,8 +700,8 @@ available to the NUT CI farm:
   Filesystem for the `abuild` account may be or not be shared with the host.
 
 * Java can not run in the container (crashes on emulated CPU, or is too old
-  in the agent container's distro -- currently Jenkins requires JRE 8+, but
-  eventually will require 11+) => the agent would run on the host, and then
+  in the agent container's distro -- currently Jenkins requires JRE 17+, but
+  eventually will require 21+) => the agent would run on the host, and then
   the host would `ssh` or `chroot` (networking not required, but bind-mount
   of `/home/abuild` and maybe other paths from host would be needed) called
   for executing `sh` steps in the container environment. Either way, home
@@ -710,6 +710,20 @@ available to the NUT CI farm:
 
 * Java is inefficient in the container (operations like un-stashing the source
   succeed but take minutes instead of seconds) => either of the above
+
+NOTE: As time moves on and Jenkins core and its plugins get updated, support
+for some older run-time features of the build agents can get removed (e.g.
+older Java releases, older Git tooling). While there are projects like Temurin
+that provide Java builds for older systems, at some point a switch to "Jenkins
+agent on new host going into older build container" approach can become
+unavoidable. One clue to look at in build logs is failure messages like:
+
+----
+Caused by: java.lang.UnsupportedClassVersionError:
+  hudson/slaves/SlaveComputer$SlaveVersion has been compiled by a more
+  recent version of the Java Runtime (class file version 61.0), this version
+  of the Java Runtime only recognizes class file versions up to 55.0
+----
 
 Using Jenkins SSH Build Agents
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
