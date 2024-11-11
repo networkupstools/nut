@@ -101,9 +101,16 @@ if test -z "${nut_have_libnss_seen}"; then
 		LIBSSL_LDFLAGS_RPATH=""
 		for TOKEN in ${LIBSSL_LIBS} ; do
 			case "$TOKEN" in
-				-R*) LIBSSL_LDFLAGS_RPATH="$LIBSSL_LDFLAGS_RPATH $TOKEN" ;;
+			-R*)
+				LIBSSL_LDFLAGS_RPATH="$LIBSSL_LDFLAGS_RPATH $TOKEN"
+				dnl ### LIBSSL_LDFLAGS_RPATH="$LIBSSL_LDFLAGS_RPATH -Wl,runpath,`echo $TOKEN | sed 's,^-R *,,'`"
+				LIBSSL_LDFLAGS_RPATH="$LIBSSL_LDFLAGS_RPATH -Wl,-rpath,`echo $TOKEN | sed 's,^-R *,,'`"
+				;;
 			esac
 		done
+dnl		if test x"$LIBSSL_LDFLAGS_RPATH" != x ; then
+dnl			LIBSSL_LDFLAGS_RPATH="--enable-new-dtags $LIBSSL_LDFLAGS_RPATH"
+dnl		fi
 	fi
 
 	unset depCFLAGS
