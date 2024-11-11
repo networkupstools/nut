@@ -123,7 +123,7 @@ nut_scanner_LDADD = libnutscan.la
 # it adds the libraries wanted by libnutscan.la directly as libs wanted
 # by the program, and ALSO they have a link chain through the shared lib).
 # I'd argue this is a libtool bug, but here's a workaround that works...
-nut_scanner_LDFLAGS =
+nut_scanner_LDFLAGS = $(AM_LDFLAGS)
 
 if WITH_SSL
   libnutscan_la_CFLAGS += $(LIBSSL_CFLAGS)
