@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3226 utf-8
+personal_ws-1.1 en 3235 utf-8
 AAC
 AAS
 ABI
@@ -47,6 +47,7 @@ Ablerex
 AcceptEnv
 ActivePower
 AdMiN
+Adoptium
 Affero
 Agrain
 Albanese
@@ -314,6 +315,7 @@ ENDFOR
 ENV
 EOC
 EOF
+EOL
 EOLed
 EPEL
 EPERM
@@ -1160,6 +1162,8 @@ Sistem
 Sistemas
 SlackPack
 Slackware
+SlaveComputer
+SlaveVersion
 SmartBoost
 SmartNUT
 SmartOnline
@@ -1238,6 +1242,7 @@ Technorama
 Tecnoware
 Tefft
 Telecom
+Temurin
 Teurlings
 Thanos
 Thecus
@@ -1895,6 +1900,7 @@ extradata
 fabula
 facto
 fallthrough
+fasttrack
 fatalx
 fc
 fcb
@@ -1969,6 +1975,7 @@ getopt
 gettext
 gettextize
 getvar
+gif
 gitcache
 github
 gitignore
@@ -2027,12 +2034,14 @@ hpe
 hpux
 href
 htaccess
+htm
 html
 htmlpath
 http
 httpd
 https
 huawei
+hudson
 hunnox
 hwdb
 hwmon

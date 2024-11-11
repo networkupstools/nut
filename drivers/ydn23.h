@@ -159,9 +159,9 @@ static inline void ydn23_lchecksum(uint16_t dlen, char *out)
 
 	/* Sum all four 4 bits */
 	lenchk += lelen & 0x000f;
-	lenchk += lelen & 0x00f0;
-	lenchk += lelen & 0x0f00;
-	lenchk += lelen & 0xf000;
+	lenchk += (lelen & 0x00f0) >> 4;
+	lenchk += (lelen & 0x0f00) >> 8;
+	lenchk += (lelen & 0xf000) >> 12;
 
 	lenchk %= 16;
 	lenchk = ~lenchk + 1;
