@@ -60,7 +60,7 @@ SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
  blazer_ser ivtscd apcsmart apcsmart-old riello_ser sms_ser bicker_ser
 SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
- blazer_usb richcomm_usb riello_usb \
+ blazer_usb richcomm_usb riello_usb powervar-cu \
  nutdrv_atcl_usb
 USB_DRIVERLIST = $(USB_LIBUSB_DRIVERLIST)
 SERIAL_USB_DRIVERLIST = \
@@ -225,10 +225,14 @@ LIBUSB_IMPL = libusb1.c
 endif
 USBHID_UPS_SUBDRIVERS = apc-hid.c arduino-hid.c belkin-hid.c cps-hid.c explore-hid.c \
  liebert-hid.c mge-hid.c powercom-hid.c tripplite-hid.c idowell-hid.c \
- openups-hid.c powervar-hid.c delta_ups-hid.c ever-hid.c legrand-hid.c salicru-hid.c
+ openups-hid.c powervar-hid.c delta_ups-hid.c ever-hid.c \
+ legrand-hid.c salicru-hid.c
 usbhid_ups_SOURCES = usbhid-ups.c libhid.c $(LIBUSB_IMPL) hidparser.c	\
  usb-common.c $(USBHID_UPS_SUBDRIVERS)
 usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
+
+powervar_cu_SOURCES = powervar-cu.c $(LIBUSB_IMPL) usb-common.c
+powervar_cu_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
 tripplite_usb_SOURCES = tripplite_usb.c $(LIBUSB_IMPL) usb-common.c
 tripplite_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
