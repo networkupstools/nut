@@ -159,6 +159,7 @@ static char		mge_scratch_buf[20];
  * Synthesis table
  * HID data                                   |             Charger in ABM mode             | Charger in Constant mode | Error | Good |
  * UPS.BatterySystem.Charger.ABMEnable        |                      1                      |            0             |       |      |
+ * UPS.BatterySystem.Charger.ChargerType      |                      4                      |            5             |       |      |
  * UPS.PowerSummary.PresentStatus.ACPresent   |           On utility          | On battery  | On utility | On battery  |       |      |
  * Charger ABM mode                           | Charging | Floating | Resting | Discharging | Disabled   | Disabled    |       |      |
  * UPS.BatterySystem.Charger.Mode             |     1    |    3     |   4     |      2      |     6      |    6        |       |      |
