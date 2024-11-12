@@ -2344,6 +2344,13 @@ fi
 NUT_REPORT_DRIVER([build Modbus driver], [${nut_with_modbus}], [],
 					[WITH_MODBUS], [Define to enable Modbus support])
 
+AS_IF([test "${nut_with_modbus}" != "no"], [
+	dnl Only display this detail when building modbus at all
+	dnl Config definition NUT_MODBUS_HAS_USB is set in the
+	dnl detection method (if nut_have_libmodbus_usb=="yes")
+	NUT_REPORT_DRV([build Modbus driver with RTU USB support], [${nut_have_libmodbus_usb}])
+])
+
 dnl ----------------------------------------------------------------------
 dnl Check for with-ipmi, and --with-freeipmi (or --with-openipmi)
 dnl Only one can be enabled at a time, with a preference for FreeIPMI
