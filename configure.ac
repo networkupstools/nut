@@ -2269,7 +2269,7 @@ getspeed(&baudrate);
         [AC_MSG_RESULT([no])])
 ])
 
-NUT_REPORT_FEATURE([build serial drivers], [${nut_with_serial}], [],
+NUT_REPORT_DRIVER([build serial drivers], [${nut_with_serial}], [],
 					[WITH_SERIAL], [Define to enable serial support])
 
 dnl ----------------------------------------------------------------------
@@ -2279,7 +2279,7 @@ dnl Note: there is no libusb-config script (and variable) for libusb-1.0
 AM_CONDITIONAL(WITH_LIBUSB_1_0, test "${nut_usb_lib}" = "(libusb-1.0)")
 AM_CONDITIONAL(WITH_LIBUSB_0_1, test "${nut_usb_lib}" = "(libusb-0.1)" -o "${nut_usb_lib}" = "(libusb-0.1-config)")
 
-NUT_REPORT_FEATURE([build USB drivers], [${nut_with_usb}], [${nut_usb_lib}],
+NUT_REPORT_DRIVER([build USB drivers], [${nut_with_usb}], [${nut_usb_lib}],
 					[WITH_USB], [Define to enable USB support])
 
 dnl ----------------------------------------------------------------------
@@ -2294,7 +2294,7 @@ if test "${nut_with_neon}" != "no"; then
    nut_with_neon="${nut_have_neon}"
 fi
 
-NUT_REPORT_FEATURE([build neon based XML driver], [${nut_with_neon}], [],
+NUT_REPORT_DRIVER([build neon based XML driver], [${nut_with_neon}], [],
 					[WITH_NEON], [Define to enable Neon HTTP support])
 AM_CONDITIONAL([HAVE_NEON], [test "${nut_have_neon}" = "yes"])
 
@@ -2326,7 +2326,7 @@ if test "${nut_with_powerman}" != "no"; then
    nut_with_powerman="${nut_have_libpowerman}"
 fi
 
-NUT_REPORT_FEATURE([build Powerman PDU client driver], [${nut_with_powerman}], [],
+NUT_REPORT_DRIVER([build Powerman PDU client driver], [${nut_with_powerman}], [],
 					[WITH_LIBPOWERMAN], [Define to enable Powerman PDU support])
 
 dnl ----------------------------------------------------------------------
@@ -2341,8 +2341,9 @@ if test "${nut_with_modbus}" != "no"; then
    nut_with_modbus="${nut_have_libmodbus}"
 fi
 
-NUT_REPORT_FEATURE([build Modbus driver], [${nut_with_modbus}], [],
-                                       [WITH_MODBUS], [Define to enable Modbus support])
+NUT_REPORT_DRIVER([build Modbus driver], [${nut_with_modbus}], [],
+					[WITH_MODBUS], [Define to enable Modbus support])
+
 dnl ----------------------------------------------------------------------
 dnl Check for with-ipmi, and --with-freeipmi (or --with-openipmi)
 dnl Only one can be enabled at a time, with a preference for FreeIPMI
@@ -2398,7 +2399,7 @@ if test "${nut_with_ipmi}" != "no"; then
 fi
 
 
-NUT_REPORT_FEATURE([build IPMI driver], [${nut_with_ipmi}], [${nut_ipmi_lib}],
+NUT_REPORT_DRIVER([build IPMI driver], [${nut_with_ipmi}], [${nut_ipmi_lib}],
 					[WITH_IPMI], [Define to enable IPMI support])
 
 dnl Note: we still have to manually enable complementary AC_DEFINEs (see above)
@@ -2418,7 +2419,7 @@ if test "${nut_with_gpio}" != "no"; then
    nut_with_gpio="${nut_have_gpio}"
 fi
 
-NUT_REPORT_FEATURE([build GPIO driver], [${nut_with_gpio}], [${nut_gpio_lib}],
+NUT_REPORT_DRIVER([build GPIO driver], [${nut_with_gpio}], [${nut_gpio_lib}],
 					[WITH_GPIO], [Define to enable GPIO support])
 
 dnl ----------------------------------------------------------------------
@@ -2438,7 +2439,7 @@ if test "${nut_with_macosx_ups}" != no; then
    fi
 fi
 
-NUT_REPORT_FEATURE([build Mac OS X meta-driver],
+NUT_REPORT_DRIVER([build Mac OS X meta-driver],
 			[${nut_with_macosx_ups}], [${nut_macosx_ups_lib}],
 			[WITH_MACOSX], [Define to enable Mac OS X meta-driver])
 
@@ -2510,7 +2511,7 @@ if test "${nut_with_linux_i2c}" != no; then
             ;;
     esac
 fi
-NUT_REPORT_FEATURE(
+NUT_REPORT_DRIVER(
     [build i2c based drivers],
     [${nut_with_linux_i2c}],
     [],
@@ -2587,7 +2588,7 @@ if test x"${nut_with_nut_scanner}" = x"auto"; then
     nut_with_nut_scanner="${nut_with_libltdl}"
 fi
 
-NUT_REPORT_FEATURE([build nut-scanner], [${nut_with_nut_scanner}], [],
+NUT_REPORT_PROGRAM([build nut-scanner], [${nut_with_nut_scanner}], [],
 					[WITH_NUT_SCANNER], [Define to enable nut-scanner tool support])
 
 dnl ----------------------------------------------------------------------
@@ -2609,7 +2610,7 @@ if test "${nut_with_cgi}" != "no"; then
    nut_with_cgi="${nut_have_libgd}"
 fi
 
-NUT_REPORT_FEATURE([build CGI programs], [${nut_with_cgi}], [],
+NUT_REPORT_PROGRAM([build CGI programs], [${nut_with_cgi}], [],
 					[WITH_CGI], [Define to enable CGI (HTTP) support])
 
 
@@ -2919,10 +2920,10 @@ if test "${nut_with_pynut}" = force ; then
     fi
 fi
 
-NUT_REPORT_FEATURE([install NUT-Monitor desktop application], [${nut_with_nut_monitor}], [],
+NUT_REPORT_PROGRAM([install NUT-Monitor desktop application], [${nut_with_nut_monitor}], [],
 					[WITH_NUT_MONITOR], [Define to enable NUT-Monitor desktop application installation])
 
-NUT_REPORT_FEATURE([install PyNUT binding module], [${nut_with_pynut}], [],
+NUT_REPORT_PROGRAM([install PyNUT binding module], [${nut_with_pynut}], [],
 					[WITH_PYNUT], [Define to enable PyNUT module installation])
 
 dnl One or both of these may be installed:
@@ -4276,7 +4277,7 @@ AS_CASE(["${nut_with_nutconf}"],
 AC_MSG_RESULT(${nut_with_nutconf})
 
 AM_CONDITIONAL(WITH_NUTCONF, test "${nut_with_nutconf}" = "yes")
-NUT_REPORT_FEATURE([build and install the nutconf tool (experimental, may lack support for recent NUT options)],
+NUT_REPORT_PROGRAM([build and install the nutconf tool (experimental, may lack support for recent NUT options)],
 					[${nut_with_nutconf}], [],
 					[WITH_NUTCONF], [Define to enable nutconf tool support])
 
@@ -4649,9 +4650,9 @@ else
    nut_have_libnetsnmp_static="no"
 fi
 
-NUT_REPORT_FEATURE([build SNMP drivers], [${nut_with_snmp}], [],
+NUT_REPORT_DRIVER([build SNMP drivers], [${nut_with_snmp}], [],
 					[WITH_SNMP], [Define to enable SNMP support])
-NUT_REPORT_FEATURE([build SNMP drivers with statically linked lib(net)snmp], [${nut_have_libnetsnmp_static}], [],
+NUT_REPORT_DRIVER([build SNMP drivers with statically linked lib(net)snmp], [${nut_have_libnetsnmp_static}], [],
 					[WITH_SNMP_STATIC], [Define to use SNMP support with a statically linked libnetsnmp])
 
 

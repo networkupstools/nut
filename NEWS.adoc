@@ -378,6 +378,11 @@ during a NUT build.
    and it defaults to `true` allowing for better ordered documents at the cost
    of some memory during document generation. [#2510]
 
+ - lines in first section of NUT configuration report (can optionally remain as
+   `config.nut_report_feature.log` and be installed into shared documentation
+   of a NUT package) are now better grouped as miscellaneous features and
+   detection results, then drivers and programs/tools. [#2676]
+
  - added a `common/Makefile.am` build product for a new internal library
    `libcommonstr.la` which allows a smaller selection of helper methods
    for tools like `nut-scanner` which do not need the full `libcommon.la`
