@@ -1761,21 +1761,26 @@ AC_ARG_WITH(modbus+usb,
 	dnl Explicit request to build apc_modbus with both modbus and usb
 	dnl support specified on command line implies we want them present
 	dnl together too by default
-	dnl FIXME: Extend to checking --with-drivers including apc_modbus?
-	if test x"${with_usb}" = xyes -a x"${with_modbus}" = xyes; then
-		case x"${with_driver}" in
-			*apc_modbus*)
+	dnl FIXME: Extend to --with-drivers=all or that would not be
+	dnl  a least-surprise breakage for packagers?
+	case x"${with_drivers}" in
+		*apc_modbus*)
+			dnl Note: defaulting of with_modbus=yes will be handled
+			dnl below by --with-drivers
+			if test x"${with_usb}" = xyes ; then
 				nut_with_modbus_and_usb="yes"
-				AC_MSG_WARN([Treating explicit requests to build apc_modbus with both modbus and usb as building --with-modbus+usb=yes])
-				;;
-			*)
-				if test x"${with_modbus_includes}" != x -a x"${with_modbus_libs}" != x ; then
-					nut_with_modbus_and_usb="yes"
-					AC_MSG_WARN([Treating explicit requests to build NUT with both modbus (with custom includes and libs) and usb as building --with-modbus+usb=yes])
-				fi
-				;;
-		esac
-	fi
+				AC_MSG_WARN([Treating explicit requests to build apc_modbus and toe libusb as building --with-modbus+usb=yes])
+			fi
+			;;
+		*)
+			if test x"${with_usb}" = xyes -a x"${with_modbus}" = xyes \
+			     -a x"${with_modbus_includes}" != x -a x"${with_modbus_libs}" != x \
+			; then
+				nut_with_modbus_and_usb="yes"
+				AC_MSG_WARN([Treating explicit requests to build NUT with both modbus (with custom includes and libs) and usb as building --with-modbus+usb=yes])
+			fi
+			;;
+	esac
 ])
 
 

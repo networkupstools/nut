@@ -397,8 +397,8 @@ during a NUT build.
 
  - introduced `configure --with-modbus+usb` option to require an USB-capable
    libmodbus, and defaulted a couple of specific situations as if this was
-   required (implicitly): `configure --with-modbus --with-usb`
-   and either `--with-drivers=*apc_modbus*`
+   required (implicitly): `configure --with-modbus --with-usb` and
+   either `--with-drivers=*apc_modbus*` (actually implies `--with-modbus`)
    or `--with-modbus-includes=... --with-modbus-libs=...`
    as a way to avoid surprises with custom NUT builds aiming to have an
    USB-capable `apc_modbus` driver (currently this requires a custom-built
