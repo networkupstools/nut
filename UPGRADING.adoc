@@ -134,6 +134,16 @@ Changes from 2.8.2 to 2.8.3
     tool name and NUT version banner from being printed out when programs
     start. [issues #1789 vs. #316]
 
+- A `configure` script option to build `--with-modbus+usb` was added to
+  let the caller insist on the use of USB-capable libmodbus (or fail the
+  NUT build attempt). Certain build arguments can default this option to
+  become enabled (implicitly): `configure --with-modbus --with-usb`
+  and either `--with-drivers=*apc_modbus*`
+  or `--with-modbus-includes=... --with-modbus-libs=...`
+  as a way to avoid surprises with custom NUT builds aiming to have an
+  USB-capable `apc_modbus` driver (currently this requires a custom-built
+  libmodbus, can be a static build to avoid conflicts with OS). [#2666]
+
 - A `configure` script option to `--enable-NUT_STRARG-always` was added
   to enable the `NUT_STRARG` macro (to handle `NULL` string printing)
   even if system libraries seem to safely support this behavior natively.

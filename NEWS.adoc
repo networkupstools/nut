@@ -395,6 +395,16 @@ during a NUT build.
  - build of `snmp-ups` and `netxml-ups` drivers now explicitly brings linker
    dependency on chosen SSL libraries. [#2479]
 
+ - introduced `configure --with-modbus+usb` option to require an USB-capable
+   libmodbus, and defaulted a couple of specific situations as if this was
+   required (implicitly): `configure --with-modbus --with-usb`
+   and either `--with-drivers=*apc_modbus*`
+   or `--with-modbus-includes=... --with-modbus-libs=...`
+   as a way to avoid surprises with custom NUT builds aiming to have an
+   USB-capable `apc_modbus` driver (currently this requires a custom-built
+   libmodbus). Also fixed (re-)detection of libmodbus RTU USB support with
+   static libmodbus builds. [#2666]
+
  - brought keyword dictionaries of `nutconf` and `augeas` NUT configuration
    file parsers up to date; restored automated checks for `augeas` lenses.
    [issue #657, issue #2294]
