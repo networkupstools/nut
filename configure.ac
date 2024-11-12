@@ -1731,6 +1731,55 @@ dnl to embed into scripts and Make rules
 NUT_CHECK_PYTHON_DEFAULT
 
 dnl ----------------------------------------------------------------------
+dnl Check for "require Modbus with USB support" situation before we mangle
+dnl caller-provided with_* values below (by --with-drivers and --with-all)
+
+nut_with_modbus_and_usb=auto
+AC_ARG_WITH(modbus+usb,
+	AS_HELP_STRING([--with-modbus+usb],
+	[Require Modbus with USB support (auto)]),
+[
+	case "${withval}" in
+	no)
+		dnl # AC_MSG_ERROR(invalid option --without-modbus+usb - see docs/configure.txt)
+		AC_MSG_NOTICE([Treating --without-modbus+usb as not-requiring that used libmodbus supports RTU USB])
+		nut_with_modbus_and_usb="no"
+		;;
+	auto)
+		nut_with_modbus_and_usb="auto"
+		;;
+	yes|'')
+		if test -z "${with_usb}"; then with_usb="${withval}"; fi
+		if test -z "${with_modbus}"; then with_modbus="${withval}"; fi
+		nut_with_modbus_and_usb="yes"
+		;;
+	*)
+		AC_MSG_ERROR(invalid option --with-modbus+usb='${withval}' - see docs/configure.txt)
+		;;
+	esac
+], [
+	dnl Explicit request to build apc_modbus with both modbus and usb
+	dnl support specified on command line implies we want them present
+	dnl together too by default
+	dnl FIXME: Extend to checking --with-drivers including apc_modbus?
+	if test x"${with_usb}" = xyes -a x"${with_modbus}" = xyes; then
+		case x"${with_driver}" in
+			*apc_modbus*)
+				nut_with_modbus_and_usb="yes"
+				AC_MSG_WARN([Treating explicit requests to build apc_modbus with both modbus and usb as building --with-modbus+usb=yes])
+				;;
+			*)
+				if test x"${with_modbus_includes}" != x -a x"${with_modbus_libs}" != x ; then
+					nut_with_modbus_and_usb="yes"
+					AC_MSG_WARN([Treating explicit requests to build NUT with both modbus (with custom includes and libs) and usb as building --with-modbus+usb=yes])
+				fi
+				;;
+		esac
+	fi
+])
+
+
+dnl ----------------------------------------------------------------------
 dnl check for --with-drivers=all (or --with-drivers=name[,name...]) flag
 dnl Note: a few drivers are NUT software constructs (NUTSW_DRIVERLIST)
 dnl e.g. dummy-ups, clone and clone-outlet; they do not have a separate
@@ -2335,6 +2384,10 @@ dnl checks related to --with-modbus
 dnl ${nut_with_modbus}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_modbus}" = "yes" -a "${nut_have_libmodbus}" != "yes"; then
    AC_MSG_ERROR([modbus library not found, required for Modbus drivers])
+fi
+
+if test "${nut_with_modbus_and_usb}" = "yes" -a "${nut_have_libmodbus_usb}" != "yes"; then
+   AC_MSG_ERROR([modbus library variant with RTU USB support not found, required for USB-capable Modbus drivers])
 fi
 
 if test "${nut_with_modbus}" != "no"; then

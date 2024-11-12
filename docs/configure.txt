@@ -189,6 +189,21 @@ Build and install modbus (Serial, TCP) drivers (default: auto-detect)
 
 Note that you need to install libmodbus development package or files.
 
+	--with-modbus+usb
+
+Require a variant of libmodbus with RTU USB support. This feature is
+currently not available in upstream project or OS distribution packages,
+so your NUT build environment should provide a prerequisite build of
+https://github.com/networkupstools/libmodbus/tree/rtu_usb (may be a
+static library build, used from a temporary installation prefix location,
+to avoid potential conflicts with the OS packaged shared library).
+
+At the time of this writing, such constraint can be desirable for the
+linkman:apc_modbus[8] driver which supports different communication media.
+
+For more details please see
+https://github.com/networkupstools/nut/wiki/APC-UPS-with-Modbus-protocol
+
 Manual selection of drivers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
