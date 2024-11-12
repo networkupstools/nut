@@ -33,7 +33,11 @@
 
 #include <modbus.h>
 
-#define DRIVER_NAME "NUT APC Modbus driver"
+#if defined NUT_MODBUS_HAS_USB
+# define DRIVER_NAME "NUT APC Modbus driver with USB support"
+#else
+# define DRIVER_NAME "NUT APC Modbus driver without USB support"
+#endif
 #define DRIVER_VERSION "0.10"
 
 #if defined NUT_MODBUS_HAS_USB
