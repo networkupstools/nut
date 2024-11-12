@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3235 utf-8
+personal_ws-1.1 en 3237 utf-8
 AAC
 AAS
 ABI
@@ -1003,6 +1003,7 @@ RMXL
 RNF
 RNG
 ROF
+RPATH
 RPC
 RPMdrake
 RPT
@@ -2471,6 +2472,7 @@ novendor
 nowait
 nowarn
 np
+nspr
 nss
 nuget
 num

@@ -196,9 +196,11 @@ bicker_ser_LDADD = $(LDADD) -lm
 dummy_ups_SOURCES = dummy-ups.c
 dummy_ups_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/clients
 dummy_ups_LDADD = $(LDADD_DRIVERS) $(top_builddir)/clients/libupsclient.la
+dummy_ups_LDFLAGS = $(AM_LDFLAGS)
 if WITH_SSL
   dummy_ups_CFLAGS += $(LIBSSL_CFLAGS)
   dummy_ups_LDADD += $(LIBSSL_LIBS)
+  dummy_ups_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH)
 endif
 
 # Clone drivers (in NUTSW_DRIVERLIST)
@@ -275,6 +277,7 @@ snmp_ups_SOURCES = snmp-ups.c snmp-ups-helpers.c \
 snmp_ups_CFLAGS = $(AM_CFLAGS)
 snmp_ups_CFLAGS += $(LIBNETSNMP_CFLAGS)
 snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS) -lm
+snmp_ups_LDFLAGS = $(AM_LDFLAGS)
 
 if WITH_SSL
 if !WITH_OPENSSL
@@ -282,16 +285,19 @@ if !WITH_OPENSSL
 endif !WITH_OPENSSL
   snmp_ups_CFLAGS += $(LIBSSL_CFLAGS)
   snmp_ups_LDADD += $(LIBSSL_LIBS)
+  snmp_ups_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH)
 endif WITH_SSL
 
 # NEON XML/HTTP
 netxml_ups_SOURCES = netxml-ups.c mge-xml.c
 netxml_ups_LDADD = $(LDADD_DRIVERS) $(LIBNEON_LIBS)
 netxml_ups_CFLAGS = $(AM_CFLAGS)
+netxml_ups_LDFLAGS = $(AM_LDFLAGS)
 
 if WITH_SSL
   netxml_ups_CFLAGS += $(LIBSSL_CFLAGS)
   netxml_ups_LDADD += $(LIBSSL_LIBS)
+  netxml_ups_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH)
 endif
 
 # Powerman
