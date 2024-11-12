@@ -1043,6 +1043,27 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         echo "WARNING: Seems we are running with gcc-4.x or older on $CI_OS_NAME, which last had known issues with libgd; disabling CGI for this build"
                         CANBUILD_LIBGD_CGI=no
                         ;;
+                    *)
+                        case "${ARCH}${BITS}${ARCH_BITS}" in
+                            *64*|*sparcv9*) ;;
+                            *)
+                                # GCC-7 (maybe other older compilers) could default
+                                # to 32-bit builds, and the 32-bit libfontconfig.so
+                                # and libfreetype.so are absent for some years now
+                                # (while libgd.so still claims to exist).
+                                echo "WARNING: Seems we are running with gcc on $CI_OS_NAME, which last had known issues with libgd on non-64-bit builds; making CGI optional for this build"
+                                CANBUILD_LIBGD_CGI=auto
+                                ;;
+                        esac
+                        ;;
+                esac
+            else
+                case "${ARCH}${BITS}${ARCH_BITS}" in
+                    *64*|*sparcv9*) ;;
+                    *)
+                        echo "WARNING: Seems we are running with $COMPILER_FAMILY on $CI_OS_NAME, which last had known issues with libgd on non-64-bit builds; making CGI optional for this build"
+                        CANBUILD_LIBGD_CGI=auto
+                        ;;
                 esac
             fi
         fi
@@ -1060,7 +1081,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     SYS_PKG_CONFIG_PATH="/usr/lib/32/pkgconfig:/usr/lib/pkgconfig:/usr/lib/i86pc/pkgconfig:/usr/lib/i386/pkgconfig:/usr/lib/sparcv7/pkgconfig"
                     ;;
                 *)
-                    case "$ARCH$BITS" in
+                    case "${ARCH}${BITS}${ARCH_BITS}" in
                         *64*)
                             SYS_PKG_CONFIG_PATH="/usr/lib/64/pkgconfig:/usr/lib/amd64/pkgconfig:/usr/lib/sparcv9/pkgconfig:/usr/lib/pkgconfig"
                             ;;
@@ -1323,7 +1344,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             if [ "${CANBUILD_LIBGD_CGI-}" != "no" ] && [ "${BUILD_LIBGD_CGI-}" != "auto" ]  ; then
                 # Currently --with-all implies this, but better be sure to
                 # really build everything we can to be certain it builds:
-                if $PKG_CONFIG --exists libgd || $PKG_CONFIG --exists libgd2 || $PKG_CONFIG --exists libgd3 || $PKG_CONFIG --exists gdlib || $PKG_CONFIG --exists gd ; then
+                if [ "${CANBUILD_LIBGD_CGI-}" != "auto" ] && (
+                   $PKG_CONFIG --exists libgd || $PKG_CONFIG --exists libgd2 || $PKG_CONFIG --exists libgd3 || $PKG_CONFIG --exists gdlib || $PKG_CONFIG --exists gd 
+                ) ; then
                     CONFIG_OPTS+=("--with-cgi=yes")
                 else
                     # Note: CI-wise, our goal IS to test as much as we can
