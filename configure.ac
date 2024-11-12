@@ -2334,21 +2334,21 @@ dnl checks related to --with-modbus
 
 dnl ${nut_with_modbus}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_modbus}" = "yes" -a "${nut_have_libmodbus}" != "yes"; then
-   AC_MSG_ERROR([modbus library not found, required for Modbus driver])
+   AC_MSG_ERROR([modbus library not found, required for Modbus drivers])
 fi
 
 if test "${nut_with_modbus}" != "no"; then
    nut_with_modbus="${nut_have_libmodbus}"
 fi
 
-NUT_REPORT_DRIVER([build Modbus driver], [${nut_with_modbus}], [],
+NUT_REPORT_DRIVER([build Modbus drivers], [${nut_with_modbus}], [],
 					[WITH_MODBUS], [Define to enable Modbus support])
 
 AS_IF([test "${nut_with_modbus}" != "no"], [
 	dnl Only display this detail when building modbus at all
 	dnl Config definition NUT_MODBUS_HAS_USB is set in the
 	dnl detection method (if nut_have_libmodbus_usb=="yes")
-	NUT_REPORT_DRV([build Modbus driver with RTU USB support], [${nut_have_libmodbus_usb}])
+	NUT_REPORT_DRV([build Modbus drivers with RTU USB support], [${nut_have_libmodbus_usb}])
 ])
 
 dnl ----------------------------------------------------------------------
