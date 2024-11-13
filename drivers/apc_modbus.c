@@ -33,7 +33,11 @@
 
 #include <modbus.h>
 
-#define DRIVER_NAME "NUT APC Modbus driver"
+#if defined NUT_MODBUS_HAS_USB
+# define DRIVER_NAME "NUT APC Modbus driver with USB support"
+#else
+# define DRIVER_NAME "NUT APC Modbus driver without USB support"
+#endif
 #define DRIVER_VERSION "0.10"
 
 #if defined NUT_MODBUS_HAS_USB
@@ -1579,8 +1583,10 @@ void upsdrv_makevartable(void)
 #endif /* defined NUT_MODBUS_HAS_USB */
 
 #if defined NUT_MODBUS_HAS_USB
+	upsdebugx(1, "This build of the driver is USB-capable; also Serial and TCP Modbus RTU are supported");
 	addvar(VAR_VALUE, "porttype", "Modbus port type (serial, tcp, usb, default=usb)");
 #else
+	upsdebugx(1, "This build of the driver is not USB-capable, only Serial and TCP Modbus RTU are supported");
 	addvar(VAR_VALUE, "porttype", "Modbus port type (serial, tcp, default=serial)");
 #endif /* defined NUT_MODBUS_HAS_USB */
 	addvar(VAR_VALUE, "slaveid", "Modbus slave id (default=1)");
