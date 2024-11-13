@@ -140,7 +140,8 @@ For development on the road (or a native ARM build) you can use the
 link:https://termux.dev/en/[Termux] project on Android. It provides
 a sufficiently Debian-like operating environment for all intents and
 purposes, but you may have to use their `pkg` wrapper instead of `apt`
-tooling directly.
+tooling directly, and `ldd` may be in a package separate from `binutils`,
+but otherwise the Debian/Ubuntu oriented lists of packages below apply.
 
 You would need at least a couple of gigabytes available on the internal
 phone storage though, especially if using `ccache` or setting up cross
@@ -156,7 +157,7 @@ metadata about recently published package revisions:
 :; apt-get install \
     ccache time \
     git perl curl \
-    make autoconf automake libltdl-dev libtool \
+    make autoconf automake libltdl-dev libtool binutils \
     valgrind \
     cppcheck \
     pkg-config \
