@@ -1731,6 +1731,60 @@ dnl to embed into scripts and Make rules
 NUT_CHECK_PYTHON_DEFAULT
 
 dnl ----------------------------------------------------------------------
+dnl Check for "require Modbus with USB support" situation before we mangle
+dnl caller-provided with_* values below (by --with-drivers and --with-all)
+
+nut_with_modbus_and_usb=auto
+AC_ARG_WITH(modbus+usb,
+	AS_HELP_STRING([--with-modbus+usb],
+	[Require Modbus with USB support (auto)]),
+[
+	case "${withval}" in
+	no)
+		dnl # AC_MSG_ERROR(invalid option --without-modbus+usb - see docs/configure.txt)
+		AC_MSG_NOTICE([Treating --without-modbus+usb as not-requiring that used libmodbus supports RTU USB])
+		nut_with_modbus_and_usb="no"
+		;;
+	auto)
+		nut_with_modbus_and_usb="auto"
+		;;
+	yes|'')
+		if test -z "${with_usb}"; then with_usb="${withval}"; fi
+		if test -z "${with_modbus}"; then with_modbus="${withval}"; fi
+		nut_with_modbus_and_usb="yes"
+		;;
+	*)
+		AC_MSG_ERROR(invalid option --with-modbus+usb='${withval}' - see docs/configure.txt)
+		;;
+	esac
+], [
+	dnl Explicit request to build apc_modbus with both modbus and usb
+	dnl support specified on command line implies we want them present
+	dnl together too by default
+	dnl FIXME: Extend to --with-drivers=all or that would not be
+	dnl  a least-surprise breakage for packagers?
+	case x"${with_drivers}" in
+		*apc_modbus*)
+			dnl Note: defaulting of with_modbus=yes will be handled
+			dnl below by --with-drivers
+			if test x"${with_usb}" = xyes ; then
+				nut_with_modbus_and_usb="yes"
+				AC_MSG_WARN([Treating explicit requests to build apc_modbus and toe libusb as building --with-modbus+usb=yes])
+			fi
+			;;
+		*)
+			if test x"${with_usb}" = xyes -a x"${with_modbus}" = xyes \
+			     -a x"${with_modbus_includes}" != x -a x"${with_modbus_libs}" != x \
+			; then
+				nut_with_modbus_and_usb="yes"
+				AC_MSG_WARN([Treating explicit requests to build NUT with both modbus (with custom includes and libs) and usb as building --with-modbus+usb=yes])
+			fi
+			;;
+	esac
+])
+
+
+dnl ----------------------------------------------------------------------
 dnl check for --with-drivers=all (or --with-drivers=name[,name...]) flag
 dnl Note: a few drivers are NUT software constructs (NUTSW_DRIVERLIST)
 dnl e.g. dummy-ups, clone and clone-outlet; they do not have a separate
@@ -2269,7 +2323,7 @@ getspeed(&baudrate);
         [AC_MSG_RESULT([no])])
 ])
 
-NUT_REPORT_FEATURE([build serial drivers], [${nut_with_serial}], [],
+NUT_REPORT_DRIVER([build serial drivers], [${nut_with_serial}], [],
 					[WITH_SERIAL], [Define to enable serial support])
 
 dnl ----------------------------------------------------------------------
@@ -2279,7 +2333,7 @@ dnl Note: there is no libusb-config script (and variable) for libusb-1.0
 AM_CONDITIONAL(WITH_LIBUSB_1_0, test "${nut_usb_lib}" = "(libusb-1.0)")
 AM_CONDITIONAL(WITH_LIBUSB_0_1, test "${nut_usb_lib}" = "(libusb-0.1)" -o "${nut_usb_lib}" = "(libusb-0.1-config)")
 
-NUT_REPORT_FEATURE([build USB drivers], [${nut_with_usb}], [${nut_usb_lib}],
+NUT_REPORT_DRIVER([build USB drivers], [${nut_with_usb}], [${nut_usb_lib}],
 					[WITH_USB], [Define to enable USB support])
 
 dnl ----------------------------------------------------------------------
@@ -2294,7 +2348,7 @@ if test "${nut_with_neon}" != "no"; then
    nut_with_neon="${nut_have_neon}"
 fi
 
-NUT_REPORT_FEATURE([build neon based XML driver], [${nut_with_neon}], [],
+NUT_REPORT_DRIVER([build neon based XML driver], [${nut_with_neon}], [],
 					[WITH_NEON], [Define to enable Neon HTTP support])
 AM_CONDITIONAL([HAVE_NEON], [test "${nut_have_neon}" = "yes"])
 
@@ -2326,7 +2380,7 @@ if test "${nut_with_powerman}" != "no"; then
    nut_with_powerman="${nut_have_libpowerman}"
 fi
 
-NUT_REPORT_FEATURE([build Powerman PDU client driver], [${nut_with_powerman}], [],
+NUT_REPORT_DRIVER([build Powerman PDU client driver], [${nut_with_powerman}], [],
 					[WITH_LIBPOWERMAN], [Define to enable Powerman PDU support])
 
 dnl ----------------------------------------------------------------------
@@ -2334,15 +2388,27 @@ dnl checks related to --with-modbus
 
 dnl ${nut_with_modbus}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_modbus}" = "yes" -a "${nut_have_libmodbus}" != "yes"; then
-   AC_MSG_ERROR([modbus library not found, required for Modbus driver])
+   AC_MSG_ERROR([modbus library not found, required for Modbus drivers])
+fi
+
+if test "${nut_with_modbus_and_usb}" = "yes" -a "${nut_have_libmodbus_usb}" != "yes"; then
+   AC_MSG_ERROR([modbus library variant with RTU USB support not found, required for USB-capable Modbus drivers])
 fi
 
 if test "${nut_with_modbus}" != "no"; then
    nut_with_modbus="${nut_have_libmodbus}"
 fi
 
-NUT_REPORT_FEATURE([build Modbus driver], [${nut_with_modbus}], [],
-                                       [WITH_MODBUS], [Define to enable Modbus support])
+NUT_REPORT_DRIVER([build Modbus drivers], [${nut_with_modbus}], [],
+					[WITH_MODBUS], [Define to enable Modbus support])
+
+AS_IF([test "${nut_with_modbus}" != "no"], [
+	dnl Only display this detail when building modbus at all
+	dnl Config definition NUT_MODBUS_HAS_USB is set in the
+	dnl detection method (if nut_have_libmodbus_usb=="yes")
+	NUT_REPORT_DRV([build Modbus drivers with RTU USB support], [${nut_have_libmodbus_usb}])
+])
+
 dnl ----------------------------------------------------------------------
 dnl Check for with-ipmi, and --with-freeipmi (or --with-openipmi)
 dnl Only one can be enabled at a time, with a preference for FreeIPMI
@@ -2398,7 +2464,7 @@ if test "${nut_with_ipmi}" != "no"; then
 fi
 
 
-NUT_REPORT_FEATURE([build IPMI driver], [${nut_with_ipmi}], [${nut_ipmi_lib}],
+NUT_REPORT_DRIVER([build IPMI driver], [${nut_with_ipmi}], [${nut_ipmi_lib}],
 					[WITH_IPMI], [Define to enable IPMI support])
 
 dnl Note: we still have to manually enable complementary AC_DEFINEs (see above)
@@ -2418,7 +2484,7 @@ if test "${nut_with_gpio}" != "no"; then
    nut_with_gpio="${nut_have_gpio}"
 fi
 
-NUT_REPORT_FEATURE([build GPIO driver], [${nut_with_gpio}], [${nut_gpio_lib}],
+NUT_REPORT_DRIVER([build GPIO driver], [${nut_with_gpio}], [${nut_gpio_lib}],
 					[WITH_GPIO], [Define to enable GPIO support])
 
 dnl ----------------------------------------------------------------------
@@ -2438,7 +2504,7 @@ if test "${nut_with_macosx_ups}" != no; then
    fi
 fi
 
-NUT_REPORT_FEATURE([build Mac OS X meta-driver],
+NUT_REPORT_DRIVER([build Mac OS X meta-driver],
 			[${nut_with_macosx_ups}], [${nut_macosx_ups_lib}],
 			[WITH_MACOSX], [Define to enable Mac OS X meta-driver])
 
@@ -2510,7 +2576,7 @@ if test "${nut_with_linux_i2c}" != no; then
             ;;
     esac
 fi
-NUT_REPORT_FEATURE(
+NUT_REPORT_DRIVER(
     [build i2c based drivers],
     [${nut_with_linux_i2c}],
     [],
@@ -2587,7 +2653,7 @@ if test x"${nut_with_nut_scanner}" = x"auto"; then
     nut_with_nut_scanner="${nut_with_libltdl}"
 fi
 
-NUT_REPORT_FEATURE([build nut-scanner], [${nut_with_nut_scanner}], [],
+NUT_REPORT_PROGRAM([build nut-scanner], [${nut_with_nut_scanner}], [],
 					[WITH_NUT_SCANNER], [Define to enable nut-scanner tool support])
 
 dnl ----------------------------------------------------------------------
@@ -2609,7 +2675,7 @@ if test "${nut_with_cgi}" != "no"; then
    nut_with_cgi="${nut_have_libgd}"
 fi
 
-NUT_REPORT_FEATURE([build CGI programs], [${nut_with_cgi}], [],
+NUT_REPORT_PROGRAM([build CGI programs], [${nut_with_cgi}], [],
 					[WITH_CGI], [Define to enable CGI (HTTP) support])
 
 
@@ -2919,10 +2985,10 @@ if test "${nut_with_pynut}" = force ; then
     fi
 fi
 
-NUT_REPORT_FEATURE([install NUT-Monitor desktop application], [${nut_with_nut_monitor}], [],
+NUT_REPORT_PROGRAM([install NUT-Monitor desktop application], [${nut_with_nut_monitor}], [],
 					[WITH_NUT_MONITOR], [Define to enable NUT-Monitor desktop application installation])
 
-NUT_REPORT_FEATURE([install PyNUT binding module], [${nut_with_pynut}], [],
+NUT_REPORT_PROGRAM([install PyNUT binding module], [${nut_with_pynut}], [],
 					[WITH_PYNUT], [Define to enable PyNUT module installation])
 
 dnl One or both of these may be installed:
@@ -4276,7 +4342,7 @@ AS_CASE(["${nut_with_nutconf}"],
 AC_MSG_RESULT(${nut_with_nutconf})
 
 AM_CONDITIONAL(WITH_NUTCONF, test "${nut_with_nutconf}" = "yes")
-NUT_REPORT_FEATURE([build and install the nutconf tool (experimental, may lack support for recent NUT options)],
+NUT_REPORT_PROGRAM([build and install the nutconf tool (experimental, may lack support for recent NUT options)],
 					[${nut_with_nutconf}], [],
 					[WITH_NUTCONF], [Define to enable nutconf tool support])
 
@@ -4649,9 +4715,9 @@ else
    nut_have_libnetsnmp_static="no"
 fi
 
-NUT_REPORT_FEATURE([build SNMP drivers], [${nut_with_snmp}], [],
+NUT_REPORT_DRIVER([build SNMP drivers], [${nut_with_snmp}], [],
 					[WITH_SNMP], [Define to enable SNMP support])
-NUT_REPORT_FEATURE([build SNMP drivers with statically linked lib(net)snmp], [${nut_have_libnetsnmp_static}], [],
+NUT_REPORT_DRIVER([build SNMP drivers with statically linked lib(net)snmp], [${nut_have_libnetsnmp_static}], [],
 					[WITH_SNMP_STATIC], [Define to use SNMP support with a statically linked libnetsnmp])
 
 
@@ -4764,6 +4830,7 @@ AC_SUBST(NUT_SOURCE_GITREV_SEMVER)
 AC_SUBST(NUT_SOURCE_GITREV_NUMERIC)
 AC_SUBST(LIBSSL_CFLAGS)
 AC_SUBST(LIBSSL_LIBS)
+AC_SUBST(LIBSSL_LDFLAGS_RPATH)
 AC_SUBST(LIBSSL_REQUIRES)
 AC_SUBST(LIBGD_CFLAGS)
 AC_SUBST(LIBGD_LDFLAGS)
@@ -4993,6 +5060,11 @@ dnl #        #define SIG_IGN (void (*)())1
 dnl #        extern void (*signal(int, void (*)(int)))(int);
 dnl #    (NUT signal handler methods do have the int signal number)
 dnl #    This is currently quiesced for clang-17; better solutions are welcome.
+dnl # -Wno-nullable-to-nonnull-conversion -- newer system headers are tagged
+dnl #    with hints about _Nullable vs. _Nonnull pointers. The general idea
+dnl #    is respectable for memory safety and could be addressed for true old
+dnl #    C99 toolkits and current language spec e.g. with macros... later.
+dnl #    Currently it is more like whack-a-mole as distros update headers.
 AS_CASE(["${nut_enable_warnings}"],
     [all], [
         CFLAGS="${CFLAGS} -Wall"
@@ -5003,8 +5075,8 @@ AS_CASE(["${nut_enable_warnings}"],
         CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
         ],
     [clang-medium], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-conversion -Wno-incompatible-pointer-types-discards-qualifiers -Wno-incompatible-function-pointer-types-strict"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-global-constructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-conversion -Wno-incompatible-pointer-types-discards-qualifiers -Wno-incompatible-function-pointer-types-strict -Wno-nullable-to-nonnull-conversion"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-global-constructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-nullable-to-nonnull-conversion"
         ],
     [clang-minimal], [
         CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Wno-documentation -Wno-documentation-unknown-command -fcomment-block-commands=retval"

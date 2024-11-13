@@ -334,6 +334,16 @@ during a NUT build.
    respective warnings issued by the new generations of analysis tools.
    [#823, #2437, link:https://github.com/networkupstools/nut-website/issues/52[nut-website issue #52]]
 
+ - fixed `configure` script to use default (target-specific) values of
+   `CFLAGS`, `LIBS` etc. when probing relevant settings for each third-party
+   dependency; as a consequence, on systems that support building for many
+   targets, we check relevant build-ability for that target and not for the
+   building system itself. [issue #2673, PR #2675]
+
+ - fixed dynamic linking of Mozilla NSS on systems like Solaris/illumos,
+   where the shared objects are not packaged into the common RPATH.
+   [issue #2674, PR #2675]
+
  - added `scripts/valgrind` with a helper script and suppression file to
    ignore common third-party problems. [#2511]
 
@@ -368,6 +378,11 @@ during a NUT build.
    and it defaults to `true` allowing for better ordered documents at the cost
    of some memory during document generation. [#2510]
 
+ - lines in first section of NUT configuration report (can optionally remain as
+   `config.nut_report_feature.log` and be installed into shared documentation
+   of a NUT package) are now better grouped as miscellaneous features and
+   detection results, then drivers and programs/tools. [#2676]
+
  - added a `common/Makefile.am` build product for a new internal library
    `libcommonstr.la` which allows a smaller selection of helper methods
    for tools like `nut-scanner` which do not need the full `libcommon.la`
@@ -379,6 +394,16 @@ during a NUT build.
 
  - build of `snmp-ups` and `netxml-ups` drivers now explicitly brings linker
    dependency on chosen SSL libraries. [#2479]
+
+ - introduced `configure --with-modbus+usb` option to require an USB-capable
+   libmodbus, and defaulted a couple of specific situations as if this was
+   required (implicitly): `configure --with-modbus --with-usb` and
+   either `--with-drivers=*apc_modbus*` (actually implies `--with-modbus`)
+   or `--with-modbus-includes=... --with-modbus-libs=...`
+   as a way to avoid surprises with custom NUT builds aiming to have an
+   USB-capable `apc_modbus` driver (currently this requires a custom-built
+   libmodbus). Also fixed (re-)detection of libmodbus RTU USB support with
+   static libmodbus builds. [#2666]
 
  - brought keyword dictionaries of `nutconf` and `augeas` NUT configuration
    file parsers up to date; restored automated checks for `augeas` lenses.
