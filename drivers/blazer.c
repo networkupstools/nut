@@ -853,6 +853,12 @@ void upsdrv_shutdown(void)
 {
 	int	retry;
 
+	/* FIXME: Make a name for default original shutdown */
+	if (device_sdcommands) {
+		loop_shutdown_commands(NULL, NULL);
+		return;
+	}
+
 	/* Stop pending shutdowns */
 	for (retry = 1; retry <= MAXTRIES; retry++) {
 
@@ -876,10 +882,12 @@ void upsdrv_shutdown(void)
 		}
 
 		upslogx(LOG_ERR, "Shutting down in %ld seconds", offdelay);
+		/* FIXME: Should the UPS shutdown mean the driver shutdown? */
 		set_exit_flag(-2);	/* EXIT_SUCCESS */
 		return;
 	}
 
 	upslogx(LOG_ERR, "Shutdown failed!");
+	/* FIXME: Should the UPS shutdown mean the driver shutdown? */
 	set_exit_flag(-1);
 }
