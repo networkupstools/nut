@@ -33,7 +33,7 @@
 #endif
 
 #define DRIVER_NAME	"Clone UPS driver"
-#define DRIVER_VERSION	"0.06"
+#define DRIVER_VERSION	"0.07"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -661,8 +661,17 @@ void upsdrv_updateinfo(void)
 void upsdrv_shutdown(void)
 {
 	/* replace with a proper shutdown function */
-	upslogx(LOG_ERR, "shutdown not supported");
-	set_exit_flag(-1);
+
+	/* NOTE: User-provided commands may be something other
+	 * than actual shutdown, e.g. a beeper to test that the
+	 * INSTCMD happened such and when expected without
+	 * impacting the load fed by the UPS.
+	 */
+	if (loop_shutdown_commands(NULL, NULL) != STAT_INSTCMD_HANDLED) {
+		upslogx(LOG_ERR, "shutdown not supported");
+		/* FIXME: Should the UPS shutdown mean the driver shutdown? */
+		set_exit_flag(-1);
+	}
 }
 
 
