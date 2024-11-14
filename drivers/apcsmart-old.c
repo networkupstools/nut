@@ -25,7 +25,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"APC Smart protocol driver (old)"
-#define DRIVER_VERSION	"2.33"
+#define DRIVER_VERSION	"2.34"
 
 static upsdrv_info_t table_info = {
 	"APC command table",
@@ -1066,6 +1066,12 @@ void upsdrv_shutdown(void)
 	char	temp[32];
 	ssize_t	ret;
 	long	status;
+
+	/* FIXME: Make a name for default original shutdown */
+	if (device_sdcommands) {
+		loop_shutdown_commands(NULL, NULL);
+		return;
+	}
 
 	if (!smartmode())
 		upsdebugx(1, "SM detection failed. Trying a shutdown command anyway");
