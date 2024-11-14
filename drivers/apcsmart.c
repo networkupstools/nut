@@ -37,7 +37,7 @@
 #include "apcsmart_tabs.h"
 
 #define DRIVER_NAME	"APC Smart protocol driver"
-#define DRIVER_VERSION	"3.34"
+#define DRIVER_VERSION	"3.35"
 
 #ifdef WIN32
 # ifndef ECANCELED
@@ -1754,6 +1754,12 @@ static void upsdrv_shutdown_advanced(void)
 void upsdrv_shutdown(void)
 {
 	char temp[APC_LBUF];
+
+	/* FIXME: Make a name for default original shutdown */
+	if (device_sdcommands) {
+		loop_shutdown_commands(NULL, NULL);
+		return;
+	}
 
 	if (!smartmode(1))
 		upslogx(LOG_WARNING, "%s: %s", __func__, "setting SmartMode failed !");
