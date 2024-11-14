@@ -30,7 +30,7 @@
 #include <timehead.h>
 
 #define DRIVER_NAME "NUT ADELSYSTEM DC-UPS CB/CBI driver"
-#define DRIVER_VERSION "0.03"
+#define DRIVER_VERSION "0.04"
 
 /* variables */
 static modbus_t *mbctx = NULL;							/* modbus memory context */
@@ -49,6 +49,7 @@ static uint32_t mod_resp_to_us = MODRESP_TIMEOUT_us;	/* set the modbus response 
 static uint32_t mod_byte_to_s = MODBYTE_TIMEOUT_s;		/* set the modbus byte time out (us) */
 static uint32_t mod_byte_to_us = MODBYTE_TIMEOUT_us;	/* set the modbus byte time out (us) */
 
+static char	handling_upsdrv_shutdown = 0;
 
 /* initialize alarm structs */
 void alrminit(void);
@@ -192,6 +193,11 @@ void upsdrv_initinfo(void)
 
 	/* register instant commands */
 	dstate_addcmd("load.off");
+
+	/* FIXME: Check with the device what this instcmd
+	 * (nee upsdrv_shutdown() contents) actually does!
+	 */
+	dstate_addcmd("shutdown.stayoff");
 
 	/* set callback for instant commands */
 	upsh.instcmd = upscmd;
@@ -464,33 +470,8 @@ void upsdrv_updateinfo(void)
 /* shutdown UPS */
 void upsdrv_shutdown(void)
 {
-	int rval;
-	int cnt = FSD_REPEAT_CNT;	 /* shutdown repeat counter */
-	struct timeval start;
-	long etime;
-
-	/* retry sending shutdown command on error */
-	while ((rval = upscmd("load.off", NULL)) != STAT_INSTCMD_HANDLED && cnt > 0) {
-		rval = gettimeofday(&start, NULL);
-		if (rval < 0) {
-			upslog_with_errno(LOG_ERR, "upscmd: gettimeofday");
-		}
-
-		/* wait for an increasing time interval before sending shutdown command */
-		while ((etime = time_elapsed(&start)) < ( FSD_REPEAT_INTRV / cnt));
-		upsdebugx(2, "ERROR: load.off failed, wait for %lims, retries left: %d\n", etime, cnt - 1);
-		cnt--;
-	}
-	switch (rval) {
-		case STAT_INSTCMD_FAILED:
-		case STAT_INSTCMD_INVALID:
-			fatalx(EXIT_FAILURE, "shutdown failed");
-		case STAT_INSTCMD_UNKNOWN:
-			fatalx(EXIT_FAILURE, "shutdown not supported");
-		default:
-			break;
-	}
-	upslogx(LOG_INFO, "shutdown command executed");
+	handling_upsdrv_shutdown = 1;
+	loop_shutdown_commands("shutdown.stayoff", NULL);
 }
 
 /* print driver usage info */
@@ -831,6 +812,41 @@ int upscmd(const char *cmd, const char *arg)
 		} else {
 			upsdebugx(2, "load.off: addr: 0x%x, data: %d", regs[FSD].xaddr, data);
 			rval = STAT_INSTCMD_HANDLED;
+		}
+	} else if (!strcasecmp(cmd, "shutdown.stayoff")) {
+		/* FIXME: Which one is this actually -
+		 * "shutdown.stayoff" or "shutdown.return"? */
+		int cnt = FSD_REPEAT_CNT;	 /* shutdown repeat counter */
+		struct timeval start;
+		long etime;
+
+		/* retry sending shutdown command on error */
+		while ((rval = upscmd("load.off", NULL)) != STAT_INSTCMD_HANDLED && cnt > 0) {
+			rval = gettimeofday(&start, NULL);
+			if (rval < 0) {
+				upslog_with_errno(LOG_ERR, "upscmd: gettimeofday");
+			}
+
+			/* wait for an increasing time interval before sending shutdown command */
+			while ((etime = time_elapsed(&start)) < ( FSD_REPEAT_INTRV / cnt));
+			upsdebugx(2, "ERROR: load.off failed, wait for %lims, retries left: %d\n", etime, cnt - 1);
+			cnt--;
+		}
+		switch (rval) {
+			case STAT_INSTCMD_FAILED:
+			case STAT_INSTCMD_INVALID:
+				if (handling_upsdrv_shutdown)
+					fatalx(EXIT_FAILURE, "shutdown failed");
+				upslog_with_errno(LOG_ERR, "instcmd: %s failed", cmd);
+				break;
+			case STAT_INSTCMD_UNKNOWN:
+				if (handling_upsdrv_shutdown)
+					fatalx(EXIT_FAILURE, "shutdown not supported");
+				upslog_with_errno(LOG_ERR, "instcmd: %s not supported", cmd);
+				break;
+			default:
+				upslogx(LOG_INFO, "shutdown command executed");
+				break;
 		}
 	} else {
 		upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmd, arg);
