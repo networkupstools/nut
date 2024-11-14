@@ -69,7 +69,7 @@
 /* --------------------------------------------------------------- */
 
 #define DRIVER_NAME	"MGE UPS SYSTEMS/U-Talk driver"
-#define DRIVER_VERSION	"0.96"
+#define DRIVER_VERSION	"0.97"
 
 
 /* driver description structure */
@@ -475,10 +475,54 @@ void upsdrv_updateinfo(void)
 
 /* --------------------------------------------------------------- */
 
+/* See comment in method below */
+static char	handling_instcmd_shutdown = 0;
 void upsdrv_shutdown(void)
 {
-	char buf[BUFFLEN];
-	/*  static time_t lastcmd = 0; */
+	char	buf[BUFFLEN];
+	/* static time_t	lastcmd = 0; */
+
+	/* We can enter this method either by handling of INSTCMD (whether it
+	 * was called by user, or by ourselves here via loop method), or by
+	 * handling of `drivername -k`. Avoid infinite loops with this flag
+	 * here and with handling_instcmd_shutdown above.
+	 */
+	static char	already_shutting_down = 0;
+
+	if (!handling_instcmd_shutdown
+	 && !already_shutting_down
+	 && device_sdcommands
+	) {
+		char	*cmdstr = NULL;
+		int	cmdret = -1;
+
+		already_shutting_down = 1;
+		handling_instcmd_shutdown = -1;
+		/* NOTE: User-provided commands may be something other
+		 * than actual shutdown, e.g. a beeper to test that the
+		 * INSTCMD happened such and when expected without
+		 * impacting the load fed by the UPS.
+		 */
+		cmdret = loop_shutdown_commands(NULL, &cmdstr);
+		if (cmdret != STAT_INSTCMD_HANDLED) {
+			upslogx(LOG_WARNING, "Failed to command the UPS to '%s'", NUT_STRARG(cmdstr));
+			if (cmdstr)
+				free(cmdstr);
+		}
+
+		/* Reset the flags if not going down */
+		already_shutting_down = 0;
+		handling_instcmd_shutdown = 0;
+		return;
+	}
+	/* just in case */
+	already_shutting_down = 1;
+
+	/* Here we are if handling explicit INSTCMD to shut down,
+	 * or this method was called and works to handle default
+	 * "sdcommands", or is recursively called with a custom
+	 * value of "sdcommands" pointing here.
+	 */
 	memset(buf, 0, sizeof(buf));
 
 	if (sdtype == SD_RETURN) {
@@ -488,8 +532,8 @@ void upsdrv_shutdown(void)
 		upslogx(LOG_INFO, "UPS response to Automatic Restart was %s", buf);
 	}
 
-	/* Only call the effective shutoff if restart is ok */
-	/* or if we need only a stayoff... */
+	/* Only call the effective shutoff if restart is ok,
+	 * or if we need (caller asked for) only a stayoff... */
 	if (!strcmp(buf, "OK") || (sdtype == SD_STAYOFF)) {
 		/* shutdown UPS */
 		mge_command(buf, sizeof(buf), "Sx 0");
@@ -498,6 +542,7 @@ void upsdrv_shutdown(void)
 	}
 /*	if(strcmp(buf, "OK")) */
 
+	/* FIXME: Should the UPS shutdown mean the driver shutdown? */
 	/* call the cleanup to disable/close the comm link */
 	upsdrv_cleanup();
 }
@@ -545,12 +590,16 @@ int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "shutdown.stayoff"))
 	{
 		sdtype = SD_STAYOFF;
+		if (!handling_instcmd_shutdown)
+			handling_instcmd_shutdown = 1;
 		upsdrv_shutdown();
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.return"))
 	{
 		sdtype = SD_RETURN;
+		if (!handling_instcmd_shutdown)
+			handling_instcmd_shutdown = 1;
 		upsdrv_shutdown();
 	}
 
