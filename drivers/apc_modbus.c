@@ -38,7 +38,7 @@
 #else
 # define DRIVER_NAME "NUT APC Modbus driver without USB support"
 #endif
-#define DRIVER_VERSION "0.10"
+#define DRIVER_VERSION "0.11"
 
 #if defined NUT_MODBUS_HAS_USB
 
@@ -1569,6 +1569,16 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* FIXME: Make a name for default original shutdown */
+	if (device_sdcommands) {
+		loop_shutdown_commands(NULL, NULL);
+		return;
+	}
+
+	/* FIXME: Make a name for default original shutdown:
+	 *  got no direct equivalent in apc_modbus_command_map[]
+	 *  used for instcmd above
+	 */
 	modbus_write_register(modbus_ctx, APC_MODBUS_OUTLETCOMMAND_BF_REG, APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_SHUTDOWN | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_MAIN_OUTLET_GROUP);
 }
 
