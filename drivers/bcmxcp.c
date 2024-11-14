@@ -116,7 +116,7 @@ TODO List:
 #include "bcmxcp.h"
 
 #define DRIVER_NAME	"BCMXCP UPS driver"
-#define DRIVER_VERSION	"0.35"
+#define DRIVER_VERSION	"0.36"
 
 #define MAX_NUT_NAME_LENGTH 128
 #define NUT_OUTLET_POSITION   7
@@ -1950,19 +1950,15 @@ void upsdrv_shutdown(void)
 {
 	upsdebugx(1, "upsdrv_shutdown...");
 
-	/* Try to shutdown with delay */
-	if (instcmd("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
-		/* Shutdown successful */
-		return;
-	}
-
-	/* If the above doesn't work, try shutdown.stayoff */
-	if (instcmd("shutdown.stayoff", NULL) == STAT_INSTCMD_HANDLED) {
+	/* First try to shutdown with delay;
+	 * if the above doesn't work, try shutdown.stayoff */
+	if (loop_shutdown_commands("shutdown.return,shutdown.stayoff", NULL) == STAT_INSTCMD_HANDLED) {
 		/* Shutdown successful */
 		return;
 	}
 
 	upslogx(LOG_ERR, "Shutdown failed!");
+	/* FIXME: Should the UPS shutdown mean the driver shutdown? */
 	set_exit_flag(-1);
 }
 
