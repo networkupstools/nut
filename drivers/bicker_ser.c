@@ -108,7 +108,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Bicker serial protocol"
-#define DRIVER_VERSION	"0.02"
+#define DRIVER_VERSION	"0.03"
 
 #define BICKER_SOH	0x01
 #define BICKER_EOT	0x04
@@ -862,14 +862,22 @@ void upsdrv_shutdown(void)
 {
 	int retry;
 
+	/* FIXME: Make a name for default original shutdown */
+	if (device_sdcommands) {
+		loop_shutdown_commands(NULL, NULL);
+		return;
+	}
+
 	for (retry = 1; retry <= BICKER_RETRIES; retry++) {
 		if (bicker_shutdown() > 0) {
+			/* FIXME: Should the UPS shutdown mean the driver shutdown? */
 			set_exit_flag(-2);	/* EXIT_SUCCESS */
 			return;
 		}
 	}
 
 	upslogx(LOG_ERR, "Shutdown failed!");
+	/* FIXME: Should the UPS shutdown mean the driver shutdown? */
 	set_exit_flag(-1);
 }
 
