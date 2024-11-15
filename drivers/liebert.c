@@ -27,7 +27,7 @@
 #include "attribute.h"
 
 #define DRIVER_NAME	"Liebert MultiLink UPS driver"
-#define DRIVER_VERSION	"1.05"
+#define DRIVER_VERSION	"1.06"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -47,7 +47,14 @@ void upsdrv_shutdown(void)
 
 	/* worse yet: stock cables don't support shutdown at all */
 
+	/* FIXME: Make a name for default original shutdown */
+	if (device_sdcommands) {
+		loop_shutdown_commands(NULL, NULL);
+		return;
+	}
+
 	upslogx(LOG_ERR, "shutdown not supported");
+	/* FIXME: Should the UPS shutdown mean the driver shutdown? */
 	set_exit_flag(-1);
 }
 
