@@ -25,7 +25,7 @@
 #include "attribute.h"
 
 #define DRIVER_NAME	"IVT Solar Controller driver"
-#define DRIVER_VERSION	"0.05"
+#define DRIVER_VERSION	"0.06"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -183,8 +183,13 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	while (1) {
+	/* FIXME: Make a name for default original shutdown */
+	if (device_sdcommands) {
+		loop_shutdown_commands(NULL, NULL);
+		return;
+	}
 
+	while (1) {
 		if (ivt_status() < 7) {
 			continue;
 		}
