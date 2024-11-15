@@ -83,7 +83,7 @@ static int sec_upsrecv (char *buf)
 				lenbuf[3] = '\0';
 				ret = atoi(lenbuf);
 				if (ret > GAMATRONIC_BUF_LEN) {
-					upslogx(1, "%s: got a longer response message "
+					upsdebugx(1, "%s: got a longer response message "
 						"than expected for protocol: %d (%s) > %d",
 						__func__, ret, lenbuf, GAMATRONIC_BUF_LEN);
 					ret = GAMATRONIC_BUF_LEN;
@@ -96,7 +96,7 @@ static int sec_upsrecv (char *buf)
 				}
 
 				/* else (ret <= 0) : */
-				upslogx(1, "%s: invalid response message length: %s",
+				upsdebugx(1, "%s: invalid response message length: %s",
 					__func__, lenbuf);
 				return (-2);
 
