@@ -33,7 +33,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Gamatronic UPS driver"
-#define DRIVER_VERSION	"0.06"
+#define DRIVER_VERSION	"0.07"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -62,6 +62,9 @@ upsdrv_info_t upsdrv_info = {
 /* FIXME: Some methods get a buffer and assume its length.
  * This should normally be a parameter! */
 #define GAMATRONIC_BUF_LEN	140
+
+/* Forward decls */
+static int instcmd(const char *cmdname, const char *extra);
 
 static int sec_upsrecv (char *buf)
 {
@@ -312,6 +315,12 @@ void upsdrv_initinfo(void)
 	sec_poll(FLAG_POLLONCE);
 
 	printf("UPS: %s %s\n", dstate_getinfo("ups.mfr"), dstate_getinfo("ups.model"));
+
+	/* commands ----------------------------------------------- */
+	dstate_addcmd("shutdown.return");
+
+	/* install handlers */
+	upsh.instcmd = instcmd;
 }
 
 void upsdrv_updateinfo(void)
@@ -326,34 +335,41 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	ssize_t msglen;
-	char msgbuf[SMALLBUF];
-
-	msglen = snprintf(msgbuf, sizeof(msgbuf), "-1");
-	sec_cmd(SEC_SETCMD, SEC_SHUTDOWN, msgbuf, &msglen);
-
-	msglen = snprintf(msgbuf, sizeof(msgbuf), "1");
-	sec_cmd(SEC_SETCMD, SEC_AUTORESTART, msgbuf, &msglen);
-
-	msglen = snprintf(msgbuf, sizeof(msgbuf), "2");
-	sec_cmd(SEC_SETCMD, SEC_SHUTTYPE,msgbuf, &msglen);
-
-	msglen = snprintf(msgbuf, sizeof(msgbuf), "5");
-	sec_cmd(SEC_SETCMD, SEC_SHUTDOWN, msgbuf, &msglen);
+	loop_shutdown_commands("shutdown.return", NULL);
 }
 
-/*
+static
 int instcmd(const char *cmdname, const char *extra)
 {
+/*
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
 		ser_send_buf(upsfd, ...);
 		return STAT_INSTCMD_HANDLED;
 	}
+*/
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	if (!strcasecmp(cmdname, "shutdown.return")) {
+		ssize_t msglen;
+		char msgbuf[SMALLBUF];
+
+		msglen = snprintf(msgbuf, sizeof(msgbuf), "-1");
+		sec_cmd(SEC_SETCMD, SEC_SHUTDOWN, msgbuf, &msglen);
+
+		msglen = snprintf(msgbuf, sizeof(msgbuf), "1");
+		sec_cmd(SEC_SETCMD, SEC_AUTORESTART, msgbuf, &msglen);
+
+		msglen = snprintf(msgbuf, sizeof(msgbuf), "2");
+		sec_cmd(SEC_SETCMD, SEC_SHUTTYPE,msgbuf, &msglen);
+
+		msglen = snprintf(msgbuf, sizeof(msgbuf), "5");
+		sec_cmd(SEC_SETCMD, SEC_SHUTDOWN, msgbuf, &msglen);
+
+		return STAT_INSTCMD_HANDLED;
+	}
+
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
-*/
 
 void upsdrv_help(void)
 {
