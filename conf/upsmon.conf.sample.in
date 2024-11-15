@@ -332,6 +332,8 @@ POWERDOWNFLAG "@POWERDOWNFLAG@"
 # NOTIFYMSG NOTOFF	"UPS %s: no longer administratively OFF or asleep"
 # NOTIFYMSG BYPASS	"UPS %s: on bypass (powered, not protecting)"
 # NOTIFYMSG NOTBYPASS	"UPS %s: no longer on bypass"
+# NOTIFYMSG ECO		"UPS %s: in ECO mode (as defined by vendor)"
+# NOTIFYMSG NOTECO	"UPS %s: no longer in ECO mode (as defined by vendor)"
 # NOTIFYMSG ALARM	"UPS %s is in an alarm state (has active alarms)"
 # NOTIFYMSG NOTALARM	"UPS %s is no longer in an alarm state (no active alarms)"
 #
@@ -381,6 +383,8 @@ POWERDOWNFLAG "@POWERDOWNFLAG@"
 # NOTIFYFLAG NOTOFF	SYSLOG+WALL
 # NOTIFYFLAG BYPASS	SYSLOG+WALL
 # NOTIFYFLAG NOTBYPASS	SYSLOG+WALL
+# NOTIFYFLAG ECO	SYSLOG+WALL
+# NOTIFYFLAG NOTECO	SYSLOG+WALL
 # NOTIFYFLAG ALARM	SYSLOG+WALL
 # NOTIFYFLAG NOTALARM	SYSLOG+WALL
 #

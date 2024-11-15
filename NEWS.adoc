@@ -205,6 +205,19 @@ https://github.com/networkupstools/nut/milestone/11
    approach seems to have good potential to expand into covering more devices
    and perhaps platforms. [#2430]
 
+ - Introduced `ECO` status concept for "ECO mode" (or "High Efficiency" mode,
+   or "Energy Saver System"...) as named and defined by hardware vendors.
+   One common aspect is that this is a balance of electrical efficiency vs.
+   robust outage protection (which may be overkill for IT equipment whose
+   PSU can survive several milliseconds on capacitors alone) which can be
+   selected at run-time.  Previously such choice was made at the time of
+   purchase, with the UPSes only supporting some one protection strategy.
+   [issue #2495, PR #2637]
+   * Updated documentation, end-user clients (CGI, NUT-Monitor UI);
+   * Updated `upsmon` client with ability to report entering and exiting
+     the ECO mode if reported by the driver;
+   * Initial implementation for Eaton devices with `usbhid-ups` driver.
+
  - Introduced handling for the `ALARM` status, which already existed as a
    common denominator for devices seen with active `ups.alarm` variables.
    UPS devices in an `ALARM` status are generally considered volatile and
@@ -218,7 +231,7 @@ https://github.com/networkupstools/nut/milestone/11
    * Updated `upsmon` client with ability to report entering and exiting
      the ALARM status if reported by the driver;
    * Updated `upsmon` client with setting to toggle whether an `ALARM`
-     status can prompt the UPS to become critical in certain situations;
+     status can prompt the UPS to become critical in certain situations.
 
  - upsmon:
    * it was realized that the `POWERDOWNFLAG` must be explicitly set in the

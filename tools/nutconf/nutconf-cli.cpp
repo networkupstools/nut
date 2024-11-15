@@ -144,7 +144,7 @@ const char * Usage::s_text[] = {
 	"    <ups_ID> <driver> <port> [<key>=<value>]*",
 	"Notification types:",
 	"    ONLINE, ONBATT, LOWBATT, FSD, COMMOK, COMMBAD, SHUTDOWN, REPLBATT, NOCOMM, NOPARENT,",
-	"    CAL, NOTCAL, OFF, NOTOFF, BYPASS, NOTBYPASS, ALARM, NOTALARM,",
+	"    CAL, NOTCAL, OFF, NOTOFF, BYPASS, NOTBYPASS, ECO, NOTECO, ALARM, NOTALARM,",
 	"    SUSPEND_STARTING, SUSPEND_FINISHED",
 	"Notification flags:",
 	"    SYSLOG, WALL, EXEC, IGNORE",

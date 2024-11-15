@@ -36,7 +36,8 @@
 #define ST_CAL         (1 << 7)       /* UPS calibration in progress (CAL)        */
 #define ST_OFF         (1 << 8)       /* UPS is administratively off or asleep (OFF) */
 #define ST_BYPASS      (1 << 9)       /* UPS is on bypass so not protecting       */
-#define ST_ALARM       (1 << 10)      /* UPS has at least one active alarm        */
+#define ST_ECO         (1 << 10)      /* UPS is in ECO (High Efficiency) mode or similar tweak, e.g. Energy Saver System mode */
+#define ST_ALARM       (1 << 11)      /* UPS has at least one active alarm        */
 
 /* required contents of flag file */
 #define SDMAGIC "upsmon-shutdown-file"
@@ -70,6 +71,8 @@ typedef struct {
 					/* be delayed vs. seeing OFF state	*/
 	int	bypassstate;		/* fire on a 0->1 transition;	*/
 					/* delays not implemented now	*/
+	int	ecostate;		/* fire on a 0->1 transition;	*/
+					/* delays not implemented now	*/
 	int	alarmstate;		/* fire on a 0->1 transition;	*/
 					/* delays not implemented now	*/
 
@@ -96,7 +99,7 @@ typedef struct {
 #define NOTIFY_ONBATT	1	/* UPS went on battery                  */
 #define NOTIFY_LOWBATT	2	/* UPS went to low battery              */
 #define NOTIFY_FSD	3	/* Primary upsmon set FSD flag          */
-#define NOTIFY_COMMOK	4	/* Communication established	            */
+#define NOTIFY_COMMOK	4	/* Communication established            */
 #define NOTIFY_COMMBAD	5	/* Communication lost                   */
 #define NOTIFY_SHUTDOWN	6	/* System shutdown in progress          */
 #define NOTIFY_REPLBATT	7	/* UPS battery needs to be replaced     */
@@ -108,8 +111,10 @@ typedef struct {
 #define NOTIFY_NOTOFF	13	/* UPS is not anymore administratively OFF or asleep*/
 #define NOTIFY_BYPASS	14	/* UPS is administratively on bypass    */
 #define NOTIFY_NOTBYPASS	15	/* UPS is not anymore administratively on bypass    */
-#define NOTIFY_ALARM	16	/* UPS has at least one active alarm    */
-#define NOTIFY_NOTALARM	17	/* UPS has no active alarms    */
+#define NOTIFY_ECO	16	/* UPS is in ECO mode or similar        */
+#define NOTIFY_NOTECO	17	/* UPS is not anymore in ECO mode or similar */
+#define NOTIFY_ALARM	18	/* UPS has at least one active alarm    */
+#define NOTIFY_NOTALARM	19	/* UPS has no active alarms    */
 
 #define NOTIFY_SUSPEND_STARTING	30	/* OS is entering sleep/suspend/hibernate slumber mode, and we know it   */
 #define NOTIFY_SUSPEND_FINISHED	31	/* OS just finished sleep/suspend/hibernate slumber mode, and we know it */
@@ -158,6 +163,8 @@ static struct {
 	{ NOTIFY_NOTOFF,   "NOTOFF",   NULL, "UPS %s: no longer administratively OFF or asleep", NOTIFY_DEFAULT },
 	{ NOTIFY_BYPASS,   "BYPASS",   NULL, "UPS %s: on bypass (powered, not protecting)", NOTIFY_DEFAULT },
 	{ NOTIFY_NOTBYPASS,"NOTBYPASS",NULL, "UPS %s: no longer on bypass", NOTIFY_DEFAULT },
+	{ NOTIFY_ECO,      "ECO",      NULL, "UPS %s: in ECO mode (as defined by vendor)", NOTIFY_DEFAULT },
+	{ NOTIFY_NOTECO,   "NOTECO",   NULL, "UPS %s: no longer in ECO mode", NOTIFY_DEFAULT },
 	{ NOTIFY_ALARM,    "ALARM",    NULL, "UPS %s is in an alarm state (has active alarms)", NOTIFY_DEFAULT },
 	{ NOTIFY_NOTALARM, "NOTALARM", NULL, "UPS %s is no longer in an alarm state (no active alarms)", NOTIFY_DEFAULT },
 

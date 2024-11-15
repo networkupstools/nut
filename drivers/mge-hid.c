@@ -50,7 +50,7 @@
 # endif
 #endif
 
-#define MGE_HID_VERSION		"MGE HID 1.50"
+#define MGE_HID_VERSION		"MGE HID 1.51"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -689,6 +689,188 @@ static info_lkp_t pegasus_yes_no_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
+static info_lkp_t outlet_eco_yes_no_info[] = {
+	{ 0, "The outlet is not ECO controlled", NULL, NULL },
+	{ 1, "The outlet is ECO controlled", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
+/* Function to check if the current High Efficiency (aka ECO) mode voltage/frequency is within the configured limits */
+static const char *eaton_input_eco_mode_check_range(double value)
+{
+	double bypass_voltage;
+	double eco_low;
+	double eco_high;
+	double out_nominal;
+	double out_frequency_nominal;
+	double bypass_frequency;
+	double frequency_range;
+	double lower_frequency_limit;
+	double upper_frequency_limit;
+
+	/* Get the Eco mode voltage/frequency and transfer points */
+	const char* bypass_voltage_str = dstate_getinfo("input.bypass.voltage");
+	const char* eco_low_str = dstate_getinfo("input.transfer.eco.low");
+	const char* eco_high_str = dstate_getinfo("input.transfer.eco.high");
+	const char* out_nominal_str = dstate_getinfo("output.voltage.nominal");
+	const char* out_nominal_frequency_str = dstate_getinfo("output.frequency.nominal");
+	const char* frequency_range_str = dstate_getinfo("input.transfer.frequency.eco.range");
+	const char* bypass_frequency_str = dstate_getinfo("input.bypass.frequency");
+
+	NUT_UNUSED_VARIABLE(value);
+
+	if (eco_low_str == NULL || eco_high_str == NULL
+	 || bypass_voltage_str == NULL || bypass_frequency_str == NULL
+	 || out_nominal_str == NULL || out_nominal_frequency_str == NULL
+	 || frequency_range_str == NULL
+	) {
+		upsdebugx(1, "Failed to get values: %s, %s, %s, %s, %s, %s, %s",
+			eco_low_str, eco_high_str,
+			bypass_voltage_str, bypass_frequency_str,
+			out_nominal_str, out_nominal_frequency_str,
+			frequency_range_str);
+		return NULL; /* Handle the error appropriately */
+	}
+
+	str_to_double(bypass_voltage_str, &bypass_voltage, 10);
+	str_to_double(eco_low_str, &eco_low, 10);
+	str_to_double(eco_high_str, &eco_high, 10);
+	str_to_double(out_nominal_str, &out_nominal, 10);
+	str_to_double(out_nominal_frequency_str, &out_frequency_nominal, 10);
+	str_to_double(frequency_range_str, &frequency_range, 10);
+	str_to_double(bypass_frequency_str, &bypass_frequency, 10);
+
+	/* Default values if user-defined limits are not available or out of range
+	   5% below nominal output voltage
+	   5% above nominal output voltage
+	   5% below/above output frequency nominal
+	 */
+
+	/* Set the frequency limit */
+	if (frequency_range > 0) {
+		lower_frequency_limit = out_frequency_nominal - (out_frequency_nominal / 100 * frequency_range);
+		upper_frequency_limit = out_frequency_nominal + (out_frequency_nominal / 100 * frequency_range);
+	} else {
+		lower_frequency_limit = out_frequency_nominal - (out_frequency_nominal / 100 * 5);
+		upper_frequency_limit = out_frequency_nominal + (out_frequency_nominal / 100 * 5);
+	}
+
+	/* Check if user-defined limits are available and within valid range */
+	if ((eco_low > 0 && eco_high > 0)
+	 && (bypass_voltage >= eco_low && bypass_voltage <= eco_high)
+	 && (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)
+	) {
+		return "ECO"; /* Enter Eco mode */
+	}
+
+	/* Default values if user-defined limits are not available or out of range */
+	if ((bypass_voltage >= out_nominal * 0.95 && bypass_voltage <= out_nominal * 1.05)
+	 && (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)
+	) {
+		return "ECO"; /* Enter Eco mode */
+	} else {
+		return NULL; /* Do not enter Eco mode */
+	}
+}
+
+/* High Efficiency (aka ECO) mode */
+static info_lkp_t eaton_input_mode_info[] = {
+	{ 0, "normal", NULL, NULL },
+	{ 1, "ECO", eaton_input_eco_mode_check_range, NULL }, /* NOTE: "ecomode" = checked and working fine */
+	{ 2, "ESS", NULL, NULL }, /* Energy Saver System, makes sense for UPS that implements this mode */
+	{ 0, NULL, NULL, NULL }
+};
+
+/* Function to check if the current bypass voltage/frequency is within the configured limits */
+static const char *eaton_input_bypass_check_range(double value)
+{
+	double bypass_voltage;
+	double bypass_low;
+	double bypass_high;
+	double out_nominal;
+	double bypass_frequency;
+	double frequency_range;
+	double lower_frequency_limit;
+	double upper_frequency_limit;
+	double out_frequency_nominal;
+
+
+	/* Get the bypass voltage/frequency and transfer points */
+	const char* bypass_voltage_str = dstate_getinfo("input.bypass.voltage");
+	const char* bypass_low_str = dstate_getinfo("input.transfer.bypass.low");
+	const char* bypass_high_str = dstate_getinfo("input.transfer.bypass.high");
+	const char* out_nominal_str = dstate_getinfo("output.voltage.nominal");
+	const char* bypass_frequency_str = dstate_getinfo("input.bypass.frequency");
+	const char* frequency_range_str = dstate_getinfo("input.transfer.frequency.bypass.range");
+	const char* out_nominal_frequency_str = dstate_getinfo("output.frequency.nominal");
+
+	NUT_UNUSED_VARIABLE(value);
+
+	if (bypass_voltage_str == NULL || bypass_low_str == NULL
+	 || bypass_high_str == NULL || out_nominal_str == NULL
+	 || bypass_frequency_str == NULL || frequency_range_str == NULL
+	 || out_nominal_frequency_str == NULL
+	) {
+		upsdebugx(1, "Failed to get values: %s, %s, %s, %s, %s, %s, %s",
+			bypass_voltage_str, bypass_low_str, bypass_high_str, out_nominal_str,
+			bypass_frequency_str, frequency_range_str, out_nominal_frequency_str);
+		return NULL; /* Handle the error appropriately */
+	}
+
+	str_to_double(bypass_voltage_str, &bypass_voltage, 10);
+	str_to_double(bypass_low_str, &bypass_low, 10);
+	str_to_double(bypass_high_str, &bypass_high, 10);
+	str_to_double(out_nominal_str, &out_nominal, 10);
+	str_to_double(bypass_frequency_str, &bypass_frequency, 10);
+	str_to_double(frequency_range_str, &frequency_range, 10);
+	str_to_double(out_nominal_frequency_str, &out_frequency_nominal, 10);
+
+	/* Default values if user-defined limits are not available or out of range
+	   20% below nominal output voltage
+	   15% above nominal output voltage
+	   10% below/above output frequency nominal
+	 */
+
+	/* Set the frequency limit */
+	if (frequency_range > 0) {
+		lower_frequency_limit = out_frequency_nominal - (out_frequency_nominal / 100 * frequency_range);
+		upper_frequency_limit = out_frequency_nominal + (out_frequency_nominal / 100 * frequency_range);
+	} else {
+		lower_frequency_limit = out_frequency_nominal - (out_frequency_nominal / 100 * 10);
+		upper_frequency_limit = out_frequency_nominal + (out_frequency_nominal / 100 * 10);
+	}
+
+	/* Check if user-defined limits are available and within valid range */
+	if ((bypass_low > 0 && bypass_high > 0)
+	 && (bypass_voltage >= bypass_low && bypass_voltage <= bypass_high)
+	 && (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)
+	) {
+		return "on"; /* Enter bypass mode */
+	}
+
+	if ((bypass_voltage >= out_nominal * 0.8 && bypass_voltage <= out_nominal * 1.15)
+	 && (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)
+	) {
+		return "on"; /* Enter bypass mode */
+	} else {
+		return NULL; /* Do not enter bypass mode */
+	}
+}
+
+/* Automatic Bypass mode on */
+static info_lkp_t eaton_input_bypass_mode_on_info[] = {
+	{ 0, "disabled", NULL, NULL },
+	{ 1, "on", eaton_input_bypass_check_range, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
+/* Automatic Bypass mode Off */
+static info_lkp_t eaton_input_bypass_mode_off_info[] = {
+	{ 0, "disabled", NULL, NULL },
+	{ 1, "off", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
 /* Determine country using UPS.PowerSummary.Country.
  * If not present:
  * 		if PowerConverter.Output.Voltage >= 200 => "Europe"
@@ -864,6 +1046,13 @@ static info_lkp_t eaton_converter_online_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
+static info_lkp_t eaton_outlet_protection_status_info[] = {
+	{ 0, "not powered", NULL, NULL },
+	{ 1, "not protected", NULL, NULL },
+	{ 2, "protected", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
 /* --------------------------------------------------------------- */
 /*      Vendor-specific usage table */
 /* --------------------------------------------------------------- */
@@ -871,10 +1060,11 @@ static info_lkp_t eaton_converter_online_info[] = {
 /* Eaton / MGE HID usage table */
 static usage_lkp_t mge_usage_lkp[] = {
 	{ "Undefined",				0xffff0000 },
-	{ "STS",				0xffff0001 },
+	{ "STS",					0xffff0001 },
 	{ "Environment",			0xffff0002 },
-	{ "Statistic",			0xffff0003 },
+	{ "Statistic",				0xffff0003 },
 	{ "StatisticSystem",		0xffff0004 },
+	{ "USB",					0xffff0005 },
 	/* 0xffff0005-0xffff000f	=>	Reserved */
 	{ "Phase",				0xffff0010 },
 	{ "PhaseID",				0xffff0011 },
@@ -1014,8 +1204,12 @@ static usage_lkp_t mge_usage_lkp[] = {
 	{ "Reset",			0xffff00ad },
 	{ "WatchdogReset",			0xffff00ae },
 	/* 0xffff00af-0xffff00df	=>	Reserved */
+	{ "iDesignator",			0xffff00ba },
 	{ "COPIBridge",				0xffff00e0 },
-	/* 0xffff00e1-0xffff00ef	=>	Reserved */
+	{ "Gateway",				0xffff00e1 },
+	{ "System",					0xffff00e5 },
+	{ "Status",					0xffff00e9 },
+	/* 0xffff00ee-0xffff00ef	=>	Reserved */
 	{ "iModel",				0xffff00f0 },
 	{ "iVersion",				0xffff00f1 },
 	{ "iTechnicalLevel",		0xffff00f2 },
@@ -1253,6 +1447,9 @@ static hid_info_t mge_hid2nut[] =
 	/* Device collection */
 	/* Just declared to call *hid2info */
 	{ "device.country", ST_FLAG_STRING, 20, "UPS.PowerSummary.Country", NULL, "Europe", HU_FLAG_STATIC, eaton_check_country_info },
+	{ "device.usb.version", ST_FLAG_STRING, 20, "UPS.System.USB.iVersion", NULL, NULL, HU_FLAG_STATIC, stringid_conversion }, /* FIXME */
+	/* { "device.usb.mode", ST_FLAG_STRING, 20, "UPS.System.USB.Mode", NULL, NULL, HU_FLAG_STATIC, stringid_conversion }, */ /* not useful ,not a string (1 to set in bootloader ) */
+	/*{ "device.gateway.power.rate", ST_FLAG_STRING, 20, "UPS.System.Gateway.PowerRate", NULL, NULL, HU_FLAG_STATIC, stringid_conversion }, */  /* not useful , not a string (level of power provided by the UPS to the network card */
 
 	/* Battery page */
 	{ "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", 0, NULL },
@@ -1366,6 +1563,8 @@ static hid_info_t mge_hid2nut[] =
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[2].PresentStatus.Used", NULL, NULL, 0, bypass_auto_info }, /* Automatic bypass */
 	/* NOTE: entry [3] is above as mge_onbatt_info */
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[4].PresentStatus.Used", NULL, NULL, 0, bypass_manual_info }, /* Manual bypass */
+	/* NOTE: needs to be tested */
+	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[5].PresentStatus.Used", NULL, NULL, 0, eco_mode_info }, /* ECO/HE Mode */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.FanFailure", NULL, NULL, 0, fanfail_info },
 	{ "BOOL", 0, 0, "UPS.BatterySystem.Battery.PresentStatus.Present", NULL, NULL, 0, nobattery_info },
 	{ "BOOL", 0, 0, "UPS.BatterySystem.Charger.PresentStatus.InternalFailure", NULL, NULL, 0, chargerfail_info },
@@ -1406,7 +1605,7 @@ static hid_info_t mge_hid2nut[] =
 	/* same as "input.transfer.boost.low" */
 	{ "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.LowVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.transfer.eco.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.LowVoltageEcoTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
-	{ "input.transfer.bypass.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.LowVoltageBypassTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },	
+	{ "input.transfer.bypass.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.LowVoltageBypassTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.transfer.boost.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.LowVoltageBoostTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.transfer.boost.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.HighVoltageBoostTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.transfer.trim.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.LowVoltageBuckTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
@@ -1417,6 +1616,8 @@ static hid_info_t mge_hid2nut[] =
 	{ "input.transfer.frequency.bypass.range", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.FrequencyRangeBypassTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.transfer.frequency.eco.range", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.FrequencyRangeEcoTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.transfer.hysteresis", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.HysteresisVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	/* input.transfer.forced = 1 needs for Bypass Switch On/Off */
+	{ "input.transfer.forced", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[2].ForcedTransferEnable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_enable_disable_info },
 	{ "input.transfer.trim.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.HighVoltageBuckTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.sensitivity", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerConverter.Output.SensitivityMode", NULL, "%s", HU_FLAG_SEMI_STATIC, mge_sensitivity_info },
 	{ "input.voltage.extended", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.ExtendedVoltageMode", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
@@ -1438,6 +1639,15 @@ static hid_info_t mge_hid2nut[] =
 	{ "input.bypass.current.nominal", 0, 0, "UPS.Flow.[2].ConfigCurrent", NULL, "%.2f", HU_FLAG_STATIC, NULL },
 	{ "input.bypass.frequency", 0, 0, "UPS.PowerConverter.Input.[2].Frequency", NULL, "%.1f", 0, NULL },
 	{ "input.bypass.frequency.nominal", 0, 0, "UPS.Flow.[2].ConfigFrequency", NULL, "%.0f", HU_FLAG_STATIC, NULL },
+
+	/* ECO(HE) Mode switch */
+	{ "input.eco.switchable", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[5].Switchable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_mode_info },
+
+	/* Auto Bypass Mode on/off */
+	/* needs check this variable, maybe "Bypass switch ability" like Qualify bypass */
+	/* { "input.bypass.switchable", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[2].Switchable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_bypass_mode_info }, */
+	{ "input.bypass.switch.on", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[2].SwitchOnControl", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_bypass_mode_on_info },
+	{ "input.bypass.switch.off", ST_FLAG_RW | ST_FLAG_STRING, 12, "UPS.PowerConverter.Input.[2].SwitchOffControl", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_bypass_mode_off_info },
 
 	/* Output page */
 	{ "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", NULL, "%.1f", 0, NULL },
@@ -1476,7 +1686,10 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.1.id", 0, 0, "UPS.OutletSystem.Outlet.[2].OutletID", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 	{ "outlet.1.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[2].OutletID", NULL, "PowerShare Outlet 1", HU_FLAG_ABSENT, NULL },
 	{ "outlet.1.switchable", 0, 0, "UPS.OutletSystem.Outlet.[2].PresentStatus.Switchable", NULL, "%s", HU_FLAG_STATIC, yes_no_info },
+	/* FIXME: should better use UPS.OutletSystem.Outlet.[1].Status? */
 	{ "outlet.1.status", 0, 0, "UPS.OutletSystem.Outlet.[2].PresentStatus.SwitchOn/Off", NULL, "%s", 0, on_off_info },
+	{ "outlet.1.protect.status", 0, 0, "UPS.OutletSystem.Outlet.[1].Status", NULL, "%s", 0, eaton_outlet_protection_status_info },
+	{ "outlet.1.designator", 0, 0, "UPS.OutletSystem.Outlet.[1].iDesignator", NULL, NULL, HU_FLAG_STATIC, stringid_conversion }, /* FIXME */
 	/* For low end models, with 1 non backup'ed outlet */
 	{ "outlet.1.status", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, "%s", 0, on_off_info },
 	/* FIXME: change to outlet.1.battery.charge.low, as in mge-xml.c?! */
@@ -1487,6 +1700,8 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.1.realpower", 0, 0, "UPS.OutletSystem.Outlet.[2].ActivePower", NULL, "%.0f", 0, NULL },
 	{ "outlet.1.current", 0, 0, "UPS.OutletSystem.Outlet.[2].Current", NULL, "%.2f", 0, NULL },
 	{ "outlet.1.powerfactor", 0, 0, "UPS.OutletSystem.Outlet.[2].PowerFactor", NULL, "%.2f", 0, NULL }, /* "%s", 0, mge_powerfactor_conversion }, */
+	/* 0: The outlet is not ECO controlled. / 1 : The outlet is ECO controlled. => Readonly! use some yes_no_info */
+	{ "outlet.1.ecocontrol", 0, 0, "UPS.OutletSystem.Outlet.[2].ECOControl", NULL, "%s", HU_FLAG_SEMI_STATIC, outlet_eco_yes_no_info},
 	/* Second outlet */
 	{ "outlet.2.id", 0, 0, "UPS.OutletSystem.Outlet.[3].OutletID", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 	{ "outlet.2.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[3].OutletID", NULL, "PowerShare Outlet 2", HU_FLAG_ABSENT, NULL },
@@ -1496,6 +1711,8 @@ static hid_info_t mge_hid2nut[] =
 	/* Generic version (RO) for other models */
 	{ "outlet.2.switchable", 0, 0, "UPS.OutletSystem.Outlet.[3].PresentStatus.Switchable", NULL, "%s", 0, yes_no_info },
 	{ "outlet.2.status", 0, 0, "UPS.OutletSystem.Outlet.[3].PresentStatus.SwitchOn/Off", NULL, "%s", 0, on_off_info },
+	{ "outlet.2.protect.status", 0, 0, "UPS.OutletSystem.Outlet.[3].Status", NULL, "%s", 0, eaton_outlet_protection_status_info },
+	/* FIXME: should better use UPS.OutletSystem.Outlet.[1].Status? */
 	{ "outlet.2.autoswitch.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet.[3].RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "outlet.2.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[3].ShutdownTimer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "outlet.2.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[3].StartupTimer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
@@ -1503,6 +1720,8 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.2.realpower", 0, 0, "UPS.OutletSystem.Outlet.[3].ActivePower", NULL, "%.0f", 0, NULL },
 	{ "outlet.2.current", 0, 0, "UPS.OutletSystem.Outlet.[3].Current", NULL, "%.2f", 0, NULL },
 	{ "outlet.2.powerfactor", 0, 0, "UPS.OutletSystem.Outlet.[3].PowerFactor", NULL, "%.2f", 0, NULL }, /* "%s", 0, mge_powerfactor_conversion }, */
+	/* 0: The outlet is not ECO controlled. / 1 : The outlet is ECO controlled. => Readonly! use some yes_no_info */
+	{ "outlet.2.ecocontrol", 0, 0, "UPS.OutletSystem.Outlet.[3].ECOControl", NULL, "%s", HU_FLAG_SEMI_STATIC, outlet_eco_yes_no_info},
 
 	/* instant commands. */
 	/* splited into subset while waiting for extradata support
@@ -1533,6 +1752,16 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.1.load.on", 0, 0, "UPS.OutletSystem.Outlet.[2].DelayBeforeStartup", NULL, "0", HU_TYPE_CMD, NULL },
 	{ "outlet.2.load.off", 0, 0, "UPS.OutletSystem.Outlet.[3].DelayBeforeShutdown", NULL, "0", HU_TYPE_CMD, NULL },
 	{ "outlet.2.load.on", 0, 0, "UPS.OutletSystem.Outlet.[3].DelayBeforeStartup", NULL, "0", HU_TYPE_CMD, NULL },
+
+	/* Command to switch ECO Mode */
+	{ "ecomode.disable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "0", HU_TYPE_CMD, NULL },
+	{ "ecomode.enable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "1", HU_TYPE_CMD, NULL },
+	{ "essmode.enable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "2", HU_TYPE_CMD, NULL },
+	{ "essmode.disable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "0", HU_TYPE_CMD, NULL },
+
+	/* Command to switch Automatic Bypass Mode On/Off */
+	{ "bypass.start", 0, 0, "UPS.PowerConverter.Input.[2].SwitchOnControl", NULL, "1", HU_TYPE_CMD, NULL },
+	{ "bypass.stop", 0, 0, "UPS.PowerConverter.Input.[2].SwitchOffControl", NULL, "1", HU_TYPE_CMD, NULL },
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
@@ -1594,7 +1823,7 @@ static char *get_model_name(const char *iProduct, const char *iModel)
 		 * buffer definitions below
 		 */
 		if ((intmax_t)len > (intmax_t)sizeof(buf)
-		|| (intmax_t)(strnlen(iProduct, SMALLBUF) + strnlen(iModel, SMALLBUF) + 1 + 1)
+		|| ((intmax_t)(strnlen(iProduct, SMALLBUF) + strnlen(iModel, SMALLBUF) + 1 + 1))
 		    > (intmax_t)sizeof(buf)
 		) {
 			upsdebugx(1, "%s: extracted iProduct+iModel value was truncated", __func__);
