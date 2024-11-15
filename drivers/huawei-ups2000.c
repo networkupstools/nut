@@ -51,7 +51,7 @@
 #include "timehead.h"   /* fallback gmtime_r() variants if needed (e.g. some WIN32) */
 
 #define DRIVER_NAME	"NUT Huawei UPS2000 (1kVA-3kVA) RS-232 Modbus driver"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.08"
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define MODBUS_SLAVE_ID 1
@@ -1803,10 +1803,11 @@ void upsdrv_shutdown(void)
 {
 	int r;
 
-	r = instcmd("shutdown.reboot", "");
+	r = loop_shutdown_commands("shutdown.reboot", NULL);
 	if (r != STAT_INSTCMD_HANDLED) {
 		upslogx(LOG_ERR, "upsdrv_shutdown failed!");
-		set_exit_flag(-1);
+		if (!device_sdcommands)
+			set_exit_flag(-1);
 	}
 }
 
