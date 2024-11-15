@@ -31,7 +31,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Generic contact-closure UPS driver"
-#define DRIVER_VERSION	"1.40"
+#define DRIVER_VERSION	"1.41"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -312,8 +312,15 @@ void upsdrv_shutdown(void)
 {
 	int	flags, ret;
 
+	/* FIXME: Make a name for default original shutdown */
+	if (device_sdcommands) {
+		loop_shutdown_commands(NULL, NULL);
+		return;
+	}
+
 	if (upstype == -1) {
 		upslogx(LOG_ERR, "No upstype set - see help text / man page!");
+		/* FIXME: Should the UPS shutdown mean the driver shutdown? */
 		set_exit_flag(-1);
 	        return;
 	}
@@ -322,6 +329,7 @@ void upsdrv_shutdown(void)
 
 	if (flags == -1) {
 		upslogx(LOG_ERR, "No shutdown command defined for this model!");
+		/* FIXME: Should the UPS shutdown mean the driver shutdown? */
 		set_exit_flag(-1);
 	        return;
 	}
@@ -340,6 +348,7 @@ void upsdrv_shutdown(void)
 
 		if (ret != 0) {
 			upslog_with_errno(LOG_ERR, "tcsendbreak");
+			/* FIXME: Should the UPS shutdown mean the driver shutdown? */
 			set_exit_flag(-1);
 		}
 
@@ -354,6 +363,7 @@ void upsdrv_shutdown(void)
 
 	if (ret != 0) {
 		upslog_with_errno(LOG_ERR, "ioctl TIOCMSET");
+		/* FIXME: Should the UPS shutdown mean the driver shutdown? */
 		set_exit_flag(-1);
 	        return;
 	}
@@ -434,8 +444,8 @@ void upsdrv_initups(void)
 	}
 
 	/*
-	 See if the user wants to override the output signal definitions
-	 this must be done here, since we might go to upsdrv_shutdown()
+	 See if the user wants to override the output signal definitions?
+	 This must be done here, since we might go to upsdrv_shutdown()
 	 immediately. Input signal definition override is handled in
 	 upsdrv_initinfo()
 	 */
