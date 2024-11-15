@@ -24,7 +24,7 @@
 #include "ydn23.h"
 
 #define DRIVER_NAME	"Liebert GXE Series UPS driver"
-#define DRIVER_VERSION	"0.01"
+#define DRIVER_VERSION	"0.02"
 
 #define PROBE_RETRIES	3
 #define DEFAULT_STALE_RETRIES	3
@@ -511,6 +511,13 @@ void upsdrv_initups(void)
 
 void upsdrv_shutdown(void)
 {
+	/* FIXME: Make a name for default original shutdown */
+	if (device_sdcommands) {
+		loop_shutdown_commands(NULL, NULL);
+		return;
+	}
+
+	/* FIXME: There seems to be instcmd(load.off), why not that? */
 	upslogx(LOG_INFO, "Liebert GXE UPS can't fully shutdown, NOOP");
 }
 
