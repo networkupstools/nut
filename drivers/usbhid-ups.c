@@ -1095,6 +1095,7 @@ void upsdrv_makevartable(void)
 }
 
 #define	MAX_EVENT_NUM	32
+#define NO_EVENTS	0
 
 void upsdrv_updateinfo(void)
 {
@@ -1151,6 +1152,7 @@ void upsdrv_updateinfo(void)
 #if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
 		case -EPERM:		/* Operation not permitted */
 #endif
+		case NO_EVENTS:              /* No HID Events */
 		case LIBUSB_ERROR_NO_DEVICE: /* No such device */
 		case LIBUSB_ERROR_ACCESS:    /* Permission denied */
 #if WITH_LIBUSB_0_1         /* limit to libusb 0.1 implementation */
