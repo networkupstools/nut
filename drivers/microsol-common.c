@@ -754,6 +754,12 @@ void upsdrv_updateinfo(void)
  */
 void upsdrv_shutdown(void)
 {
+	/* FIXME: Make a name for default original shutdown */
+	if (device_sdcommands) {
+		loop_shutdown_commands(NULL, NULL);
+		return;
+	}
+
 	if (!line_unpowered) {	/* on line */
 		upslogx(LOG_NOTICE, "On line, sending power cycle command...");
 		ser_send_char(upsfd, CMD_SHUTRET);
