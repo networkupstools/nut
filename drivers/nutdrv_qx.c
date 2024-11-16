@@ -58,7 +58,7 @@
 #	define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.37"
+#define DRIVER_VERSION	"0.38"
 
 #ifdef QX_SERIAL
 #	include "serial.h"
@@ -2774,6 +2774,15 @@ void	upsdrv_shutdown(void)
 	const char	*val;
 
 	upsdebugx(1, "%s...", __func__);
+
+	/* FIXME: Make a name for default original shutdown
+	 * and note this common "sdcommands" feature can
+	 * replace tunables used below ("stayoff" etc).
+	 */
+	if (device_sdcommands) {
+		loop_shutdown_commands(NULL, NULL);
+		return;
+	}
 
 	/* Get user-defined delays */
 
