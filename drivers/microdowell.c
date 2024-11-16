@@ -44,7 +44,7 @@
 #define MAX_SHUTDOWN_DELAY_LEN 5
 
 #define DRIVER_NAME	"MICRODOWELL UPS driver"
-#define DRIVER_VERSION	"0.04"
+#define DRIVER_VERSION	"0.05"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -948,6 +948,12 @@ void upsdrv_shutdown(void)
 	unsigned char InpBuff[260] ;
 	unsigned char *p ;
 	unsigned char BatteryFlag=0 ;
+
+	/* FIXME: Make a name for default original shutdown */
+	if (device_sdcommands) {
+		loop_shutdown_commands(NULL, NULL);
+		return;
+	}
 
 	OutBuff[0] = CMD_GET_STATUS ;   /* get UPS status */
 	if ((p = CmdSerial(OutBuff, LEN_GET_STATUS, InpBuff)) != NULL)
