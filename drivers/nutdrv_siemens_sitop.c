@@ -56,7 +56,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Siemens SITOP UPS500 series driver"
-#define DRIVER_VERSION	"0.05"
+#define DRIVER_VERSION	"0.06"
 
 #define RX_BUFFER_SIZE 100
 
@@ -248,8 +248,9 @@ void upsdrv_updateinfo(void) {
 }
 
 void upsdrv_shutdown(void) {
-	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
-	instcmd("shutdown.return", NULL);
+	/* by default, tell the UPS to shut down,
+	 * then return - DO NOT SLEEP HERE */
+	loop_shutdown_commands("shutdown.return", NULL);
 }
 
 
