@@ -90,7 +90,7 @@ https://github.com/networkupstools/nut/milestone/11
    with service management frameworks, etc.) was a bit cryptic when it reported
    a *failure to notify* (e.g. when not running as a service currently), fixed
    now to report human-friendly text instead of internal enum codes. Follow-up
-   to [PR #1590, PR #2136]
+   to [issue #1590, PR #1777, PR #2136]
 
  - drivers, `upsd`, `upsmon`: reduce "scary noise" about failure to `fopen()`
    the PID file (which most of the time means that no previous instance of
