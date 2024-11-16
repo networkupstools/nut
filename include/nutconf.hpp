@@ -1861,6 +1861,7 @@ public:
 	inline long long int getI2C_address(const std::string & ups)               const { return getInt(ups, "i2c_address"); }
 	inline long long int getIdleLoad(const std::string & ups)                  const { return getInt(ups, "idleload"); }            // CHECKME
 	inline long long int getInputTimeout(const std::string & ups)              const { return getInt(ups, "input_timeout"); }       // CHECKME
+	inline long long int getInterruptPipeNoEventsTolerance(const std::string & ups)       const { return getInt(ups, "interrupt_pipe_no_events_tolerance"); }
 	inline long long int getInterruptSize(const std::string & ups)             const { return getInt(ups, "interruptsize"); }
 	inline long long int getLineVoltage(const std::string & ups)               const { return getInt(ups, "linevoltage"); }         // CHECKME
 	inline long long int getLoadpercentage(const std::string & ups)            const { return getInt(ups, "loadPercentage"); }      // CHECKME
@@ -2075,6 +2076,7 @@ public:
 	inline void setI2C_address(const std::string & ups, long long int val)                    { setInt(ups, "i2c_address",         val); }
 	inline void setIdleLoad(const std::string & ups, long long int idleload)                  { setInt(ups, "idleload",            idleload); }     // CHECKME
 	inline void setInputTimeout(const std::string & ups, long long int timeout)               { setInt(ups, "input_timeout",       timeout); }      // CHECKME
+	inline void setInterruptPipeNoEventsTolerance(const std::string & ups, long long int val) { setInt(ups, "interrupt_pipe_no_events_tolerance", val); }
 	inline void setInterruptSize(const std::string & ups, long long int val)                  { setInt(ups, "interruptsize",       val); }
 	inline void setLineVoltage(const std::string & ups, long long int linevoltage)            { setInt(ups, "linevoltage",         linevoltage); }  // CHECKME
 	inline void setLoadpercentage(const std::string & ups, long long int load)                { setInt(ups, "loadPercentage",      load); }         // CHECKME
