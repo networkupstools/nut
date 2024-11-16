@@ -1198,6 +1198,11 @@ void upsdrv_updateinfo(void)
 			upsdebugx(1, "Got %i HID objects...", (evtCount >= 0) ? evtCount : 0);
 			if (evtCount > 0)
 				interrupt_pipe_no_events_count = 0;
+			else
+				upsdebugx(1, "Got unhandled result from HIDGetEvents(): %i\n"
+					"Please report it to NUT developers, with an 'upsc' output for your device,\n"
+					"versions of NUT and libusb used, and verbose driver debug log if possible.",
+					evtCount);
 			break;
 		}
 	} else {
