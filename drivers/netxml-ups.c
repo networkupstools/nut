@@ -42,7 +42,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"network XML UPS"
-#define DRIVER_VERSION	"0.46"
+#define DRIVER_VERSION	"0.47"
 
 /** *_OBJECT query multi-part body boundary */
 #define FORM_POST_BOUNDARY "NUT-NETXML-UPS-OBJECTS"
@@ -414,6 +414,15 @@ void upsdrv_shutdown(void) {
 	object_query_t *resp = NULL;
 	object_query_t *req  = NULL;
 
+	/* FIXME: Make a name for default original shutdown
+	 * in particular to make it one of the options and
+	 * call protocol cleanup below, if needed.
+	 */
+	if (device_sdcommands) {
+		loop_shutdown_commands(NULL, NULL);
+		return;
+	}
+
 	/* Pragmatic do { ... } while (0) loop allowing break to cleanup */
 	do {
 		/* Create SET_OBJECT request */
@@ -453,6 +462,7 @@ void upsdrv_shutdown(void) {
 
 	if (STAT_SET_HANDLED != status) {
 		upslogx(LOG_ERR, "Shutdown failed: %d", status);
+		/* FIXME: Should the UPS shutdown mean the driver shutdown? */
 		set_exit_flag(-1);
 	}
 }
