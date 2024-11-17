@@ -2163,6 +2163,51 @@ double difftimespec(struct timespec x, struct timespec y)
 }
 #endif	/* HAVE_CLOCK_GETTIME && HAVE_CLOCK_MONOTONIC */
 
+/* Help avoid cryptic "upsnotify: notify about state 4 with libsystemd:"
+ * (with only numeric codes) below */
+const char *str_upsnotify_state(upsnotify_state_t state) {
+	switch (state) {
+		case NOTIFY_STATE_READY:
+			return "NOTIFY_STATE_READY";
+		case NOTIFY_STATE_READY_WITH_PID:
+			return "NOTIFY_STATE_READY_WITH_PID";
+		case NOTIFY_STATE_RELOADING:
+			return "NOTIFY_STATE_RELOADING";
+		case NOTIFY_STATE_STOPPING:
+			return "NOTIFY_STATE_STOPPING";
+		case NOTIFY_STATE_STATUS:
+			/* Send a text message per "fmt" below */
+			return "NOTIFY_STATE_STATUS";
+		case NOTIFY_STATE_WATCHDOG:
+			/* Ping the framework that we are still alive */
+			return "NOTIFY_STATE_WATCHDOG";
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+		default:
+			/* Must not occur. */
+			return "NOTIFY_STATE_UNDEFINED";
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
+	}
+}
+
 /* Send (daemon) state-change notifications to an
  * external service management framework such as systemd
  */
@@ -2256,20 +2301,27 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 # if defined(WITHOUT_LIBSYSTEMD) && (WITHOUT_LIBSYSTEMD)
 	NUT_UNUSED_VARIABLE(buf);
 	NUT_UNUSED_VARIABLE(msglen);
-	if (!upsnotify_reported_disabled_systemd)
+	if (!upsnotify_reported_disabled_systemd) {
 		upsdebugx(upsnotify_report_verbosity,
-			"%s: notify about state %i with libsystemd: "
+			"%s: notify about state %s with libsystemd: "
 			"skipped for libcommonclient build, "
-			"will not spam more about it", __func__, state);
+			"will not spam more about it",
+			__func__, str_upsnotify_state(state));
+		upsdebugx(1, "On systems without service units, "
+			"consider `export NUT_QUIET_INIT_UPSNOTIFY=true`");
+	}
 	upsnotify_reported_disabled_systemd = 1;
 # else	/* not WITHOUT_LIBSYSTEMD */
 	if (!getenv("NOTIFY_SOCKET")) {
-		if (!upsnotify_reported_disabled_systemd)
+		if (!upsnotify_reported_disabled_systemd) {
 			upsdebugx(upsnotify_report_verbosity,
-				"%s: notify about state %i with libsystemd: "
-				"was requested, but not running as a service unit now, "
-				"will not spam more about it",
-				__func__, state);
+				"%s: notify about state %s with libsystemd: "
+				"was requested, but not running as a service "
+				"unit now, will not spam more about it",
+				__func__, str_upsnotify_state(state));
+			upsdebugx(1, "On systems without service units, "
+				"consider `export NUT_QUIET_INIT_UPSNOTIFY=true`");
+		}
 		upsnotify_reported_disabled_systemd = 1;
 	} else {
 #  ifdef HAVE_SD_NOTIFY
@@ -2299,7 +2351,9 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 #   if ! DEBUG_SYSTEMD_WATCHDOG
 		if (state != NOTIFY_STATE_WATCHDOG || !upsnotify_reported_watchdog_systemd)
 #   endif
-			upsdebugx(6, "%s: notify about state %i with libsystemd: use sd_notify()", __func__, state);
+			upsdebugx(6, "%s: notify about state %s with "
+				"libsystemd: use sd_notify()",
+				__func__, str_upsnotify_state(state));
 
 		/* https://www.freedesktop.org/software/systemd/man/sd_notify.html */
 		if (msglen) {
@@ -2536,7 +2590,9 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 
 #  else	/* not HAVE_SD_NOTIFY: */
 		/* FIXME: Try to fork and call systemd-notify helper program */
-		upsdebugx(6, "%s: notify about state %i with libsystemd: lacking sd_notify()", __func__, state);
+		upsdebugx(6, "%s: notify about state %s with "
+			"libsystemd: lacking sd_notify()",
+			__func__, str_upsnotify_state(state));
 		ret = -127;
 #  endif	/* HAVE_SD_NOTIFY */
 	}
@@ -2556,15 +2612,17 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 		if (ret == -127) {
 			if (!upsnotify_reported_disabled_notech)
 				upsdebugx(upsnotify_report_verbosity,
-					"%s: failed to notify about state %i: "
+					"%s: failed to notify about state %s: "
 					"no notification tech defined, "
 					"will not spam more about it",
-					__func__, state);
+					__func__, str_upsnotify_state(state));
+			upsdebugx(1, "On systems without service units, "
+				"consider `export NUT_QUIET_INIT_UPSNOTIFY=true`");
 			upsnotify_reported_disabled_notech = 1;
 		} else {
 			upsdebugx(6,
-				"%s: failed to notify about state %i",
-				__func__, state);
+				"%s: failed to notify about state %s",
+				__func__, str_upsnotify_state(state));
 		}
 	}
 
@@ -2574,6 +2632,8 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 		upsdebugx(upsnotify_report_verbosity,
 			"%s: logged the systemd watchdog situation once, "
 			"will not spam more about it", __func__);
+		upsdebugx(1, "On systems without service units, "
+			"consider `export NUT_QUIET_INIT_UPSNOTIFY=true`");
 		upsnotify_reported_watchdog_systemd = 1;
 	}
 # endif
