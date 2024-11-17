@@ -123,6 +123,15 @@ If this flag is set, the driver will not use Interrupt In transfers during the
 shorter "pollinterval" cycles (not recommended, but needed if these reports
 are broken on your UPS).
 
+*interrupt_pipe_no_events_tolerance*='num'::
+Set the tolerance for how many times in a row could we have "Got 0 HID objects"
+when using USB interrupt mode?  This may normally be due to a device having
+nothing urgent to report, so the default value is `-1` and this situation is
+not handled in any way specially.  However with some devices this was seen
+in conjunction with a frozen controller, where only a driver reconnection
+restored the data exchange (e.g. APC BXnnnnMI) -- in such cases you may want
+to use a reasonable non-negative value here.
+
 *onlinedischarge_battery*::
 If this flag is set, the driver will treat `OL+DISCHRG` status as
 offline/on-battery.
