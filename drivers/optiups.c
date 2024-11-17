@@ -28,7 +28,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Opti-UPS driver"
-#define DRIVER_VERSION "1.05"
+#define DRIVER_VERSION "1.06"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -300,7 +300,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 	else if (!strcasecmp(cmdname, "shutdown.stop"))
 	{
-		/* Aborts a shutdown that is couting down via the Cs command */
+		/* Aborts a shutdown that is counting down via the Cs command */
 		optiquery( "Cs-0000001" );
 		return STAT_INSTCMD_HANDLED;
 	}
@@ -542,8 +542,15 @@ void upsdrv_shutdown(void)
 
 	/* If get no response, assume on battery & battery low */
 	long s = OPTISBIT_ON_BATTERY_POWER | OPTISBIT_LOW_BATTERY;
+	ssize_t r;
 
-	ssize_t r = optiquery( "AG" );
+	/* FIXME: Make a name for default original shutdown */
+	if (device_sdcommands) {
+		loop_shutdown_commands(NULL, NULL);
+		return;
+	}
+
+	r = optiquery( "AG" );
 	if ( r < 1 )
 	{
 		upslogx(LOG_ERR, "can't retrieve ups status during shutdown" );
