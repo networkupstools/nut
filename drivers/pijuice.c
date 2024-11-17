@@ -23,7 +23,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME                         "PiJuice UPS driver"
-#define DRIVER_VERSION                      "0.12"
+#define DRIVER_VERSION                      "0.13"
 
 /*
  * Linux I2C userland is a bit of a mess until distros refresh to
@@ -45,6 +45,9 @@
 #  endif
 # endif
 #endif
+
+/* Forward decls */
+static int instcmd(const char *cmdname, const char *extra);
 
 /*
  * i2c-tools pre-4.0 has a userspace header with a name that conflicts
@@ -798,6 +801,15 @@ void upsdrv_initinfo(void)
 	get_i2c_address();
 	get_battery_profile();
 	get_battery_profile_ext();
+
+	/* commands ----------------------------------------------- */
+	/* FIXME: Check with the device what our instcmd
+	 * (nee upsdrv_shutdown() contents) actually does!
+	 */
+	dstate_addcmd("shutdown.stayoff");
+
+	/* install handlers */
+	upsh.instcmd = instcmd;
 }
 
 void upsdrv_updateinfo(void)
@@ -817,9 +829,32 @@ void upsdrv_updateinfo(void)
 	dstate_dataok();
 }
 
+/* handler for commands to be sent to UPS */
+static
+int instcmd(const char *cmdname, const char *extra)
+{
+	NUT_UNUSED_VARIABLE(extra);
+
+	/* FIXME: Which one is this - "load.off",
+	 * "shutdown.stayoff" or "shutdown.return"? */
+
+	/* Shutdown UPS */
+	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		set_power_off();
+
+		return STAT_INSTCMD_HANDLED;
+	}
+
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	return STAT_INSTCMD_UNKNOWN;
+}
+
 void upsdrv_shutdown(void)
 {
-	set_power_off();
+	/* FIXME: Check with the device what our instcmd
+	 * (nee upsdrv_shutdown() contents) actually does!
+	 */
+	loop_shutdown_commands("shutdown.stayoff", NULL);
 }
 
 void upsdrv_help(void)
