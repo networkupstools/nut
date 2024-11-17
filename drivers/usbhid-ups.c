@@ -29,7 +29,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.57"
+#define DRIVER_VERSION	"0.58"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
@@ -139,6 +139,18 @@ bool_t use_interrupt_pipe = TRUE;
 bool_t use_interrupt_pipe = FALSE;
 #endif
 static size_t interrupt_pipe_EIO_count = 0; /* How many times we had I/O errors since last reconnect? */
+
+/**
+ * How many times do we tolerate having "0 HID objects" in a row?
+ * Default -1 means indefinitely, but when some controllers hang,
+ * this is a clue that we want to fully restart the connection.
+ */
+static long interrupt_pipe_no_events_tolerance = -1;
+/* How many times did we actually have "Got 0 HID objects" in a row? */
+static long interrupt_pipe_no_events_count = 0;
+/* How HIDGetEvents() below reports no events found */
+#define	NUT_LIBUSB_CODE_NO_EVENTS	0
+
 static time_t lastpoll; /* Timestamp the last polling */
 hid_dev_handle_t udev = HID_DEV_HANDLE_CLOSED;
 
@@ -1044,6 +1056,8 @@ void upsdrv_makevartable(void)
 
 	addvar(VAR_FLAG, "pollonly", "Don't use interrupt pipe, only use polling");
 
+	addvar(VAR_VALUE, "interrupt_pipe_no_events_tolerance", "How many times in a row do we tolerate \"Got 0 HID objects\" from USB interrupts?");
+
 	addvar(VAR_FLAG, "onlinedischarge",
 		"Set to treat discharging while online as being offline/on-battery (DEPRECATED, use onlinedischarge_onbattery)");
 
@@ -1095,7 +1109,6 @@ void upsdrv_makevartable(void)
 }
 
 #define	MAX_EVENT_NUM	32
-#define NO_EVENTS	0
 
 void upsdrv_updateinfo(void)
 {
@@ -1131,6 +1144,7 @@ void upsdrv_updateinfo(void)
 
 		hd = &curDevice;
 		interrupt_pipe_EIO_count = 0;
+		interrupt_pipe_no_events_count = 0;
 
 		if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
 			hd = NULL;
@@ -1149,10 +1163,19 @@ void upsdrv_updateinfo(void)
 		case LIBUSB_ERROR_BUSY:      /* Device or resource busy */
 			upslog_with_errno(LOG_CRIT, "Got disconnected by another driver");
 			goto fallthrough_reconnect;
+		case NUT_LIBUSB_CODE_NO_EVENTS:	/* No HID Events */
+			interrupt_pipe_no_events_count++;
+			upsdebugx(1, "Got 0 HID objects (%ld times in a row, tolerance is %ld)...",
+				interrupt_pipe_no_events_count, interrupt_pipe_no_events_tolerance);
+			if (interrupt_pipe_no_events_tolerance >= 0
+			 && interrupt_pipe_no_events_tolerance < interrupt_pipe_no_events_count
+			) {
+				goto fallthrough_reconnect;
+			}
+			break;
 #if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
 		case -EPERM:		/* Operation not permitted */
 #endif
-		case NO_EVENTS:              /* No HID Events */
 		case LIBUSB_ERROR_NO_DEVICE: /* No such device */
 		case LIBUSB_ERROR_ACCESS:    /* Permission denied */
 #if WITH_LIBUSB_0_1         /* limit to libusb 0.1 implementation */
@@ -1173,6 +1196,13 @@ void upsdrv_updateinfo(void)
 			return;
 		default:
 			upsdebugx(1, "Got %i HID objects...", (evtCount >= 0) ? evtCount : 0);
+			if (evtCount > 0)
+				interrupt_pipe_no_events_count = 0;
+			else
+				upsdebugx(1, "Got unhandled result from HIDGetEvents(): %i\n"
+					"Please report it to NUT developers, with an 'upsc' output for your device,\n"
+					"versions of NUT and libusb used, and verbose driver debug log if possible.",
+					evtCount);
 			break;
 		}
 	} else {
@@ -1272,6 +1302,15 @@ void upsdrv_initinfo(void)
 	if (testvar("pollonly")) {
 		use_interrupt_pipe = FALSE;
 	}
+
+	val = getval("interrupt_pipe_no_events_tolerance");
+	if (!val || !str_to_long(val, &interrupt_pipe_no_events_tolerance, 10)) {
+		interrupt_pipe_no_events_tolerance = -1;
+		if (val)
+			upslogx(LOG_WARNING, "Invalid setting for interrupt_pipe_no_events_tolerance: '%s', defaulting to %ld",
+				val, interrupt_pipe_no_events_tolerance);
+	}
+	dstate_setinfo("driver.parameter.interrupt_pipe_no_events_tolerance", "%ld", interrupt_pipe_no_events_tolerance);
 
 	time(&lastpoll);
 

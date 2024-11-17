@@ -86,6 +86,12 @@ https://github.com/networkupstools/nut/milestone/11
    current version information would be embedded into "dist" archives as a
    `VERSION_DEFAULT` file. [#1949]
 
+ - the `upsnotify()` common code introduced in recent NUT releases (integrating
+   with service management frameworks, etc.) was a bit cryptic when it reported
+   a *failure to notify* (e.g. when not running as a service currently), fixed
+   now to report human-friendly text instead of internal enum codes. Follow-up
+   to [issue #1590, PR #1777, PR #2136]
+
  - drivers, `upsd`, `upsmon`: reduce "scary noise" about failure to `fopen()`
    the PID file (which most of the time means that no previous instance of
    the daemon was running to potentially conflict with), especially useless
@@ -146,10 +152,12 @@ https://github.com/networkupstools/nut/milestone/11
  - usbhid-ups updates:
    * Support of the `onlinedischarge_log_throttle_hovercharge` in the NUT
      v2.8.2 release was found to be incomplete. [#2423, follow-up to #2215]
-   * Prevent UPS Lockup on "0 HID Objects" by reconnecting on stale data.
-     Note that while some devices just report information upon subsequent
-     poll, others (APC BXnnnnMI) were seen to lock up until full connection
-     restart. [#2671]
+   * Added support for `interrupt_pipe_no_events_tolerance=N` setting to
+     optionally prevent UPS lockup, indicated by continuous "Got 0 HID Objects"
+     situation as a clue, by reconnecting on stale data.  Note that while some
+     devices just report information upon subsequent poll and just have nothing
+     urgent to declare with an USB interrupt, others (e.g. APC BXnnnnMI) were
+     seen to lock up until a full connection restart. [#2671, #2681]
    * Added support for `lbrb_log_delay_sec=N` setting to delay propagation of
      `LB` or `LB+RB` state (buggy with APC BXnnnnMI devices circa 2023-2024).
      This may work better with flags like `onlinedischarge_calibration` and
