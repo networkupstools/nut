@@ -774,9 +774,9 @@ static const char *eaton_input_eco_mode_check_range(double value)
 }
 
 /* High Efficiency (aka ECO) mode */
-static info_lkp_t eaton_input_mode_info[] = {
+static info_lkp_t eaton_input_eco_mode_on_off_info[] = {
 	{ 0, "normal", NULL, NULL },
-	{ 1, "ECO", eaton_input_eco_mode_check_range, NULL }, /* NOTE: "ecomode" = checked and working fine */
+	{ 1, "ECO", eaton_input_eco_mode_check_range, NULL }, /* NOTE: "ecomode" = tested on 9E model and working fine */
 	{ 2, "ESS", NULL, NULL }, /* Energy Saver System, makes sense for UPS that implements this mode (93PM G2, 9395P) */
 	{ 0, NULL, NULL, NULL }
 };
@@ -864,7 +864,7 @@ static info_lkp_t eaton_input_bypass_mode_on_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
-/* Automatic Bypass mode Off */
+/* Automatic Bypass mode off (switch on inverter) */
 static info_lkp_t eaton_input_bypass_mode_off_info[] = {
 	{ 0, "disabled", NULL, NULL },
 	{ 1, "off", NULL, NULL },
@@ -1641,7 +1641,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "input.bypass.frequency.nominal", 0, 0, "UPS.Flow.[2].ConfigFrequency", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 
 	/* ECO(HE) Mode switch */
-	{ "input.eco.switchable", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[5].Switchable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_mode_info },
+	{ "input.eco.switchable", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[5].Switchable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_eco_mode_on_off_info },
 
 	/* Auto Bypass Mode on/off */
 	/* needs check this variable, maybe "Bypass switch ability" like Qualify bypass */
@@ -1755,7 +1755,7 @@ static hid_info_t mge_hid2nut[] =
 
 	/* Command to switch ECO Mode */
 	{ "ecomode.disable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "0", HU_TYPE_CMD, NULL },
-	{ "ecomode.enable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "1", HU_TYPE_CMD, eaton_input_mode_info },
+	{ "ecomode.enable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "1", HU_TYPE_CMD, eaton_input_eco_mode_on_off_info },
 	{ "essmode.enable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "2", HU_TYPE_CMD, NULL },
 	{ "essmode.disable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "0", HU_TYPE_CMD, NULL },
 
