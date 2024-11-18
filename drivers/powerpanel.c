@@ -104,6 +104,12 @@ void upsdrv_shutdown(void)
 {
 	int	i, ret = -1;
 
+	/* FIXME: Make a name for default original shutdown */
+	if (device_sdcommands) {
+		loop_shutdown_commands(NULL, NULL);
+		return;
+	}
+
 	/*
 	 * Try to shutdown with delay and automatic reboot if the power
 	 * returned in the mean time (newer models support this).
