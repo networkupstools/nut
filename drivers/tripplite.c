@@ -117,7 +117,7 @@
 #include <ctype.h>
 
 #define DRIVER_NAME	"Tripp-Lite SmartUPS driver"
-#define DRIVER_VERSION	"0.96"
+#define DRIVER_VERSION	"0.97"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -378,7 +378,7 @@ void upsdrv_initinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	soft_shutdown();
+	loop_shutdown_commands("shutdown.return", NULL);
 }
 
 void upsdrv_updateinfo(void)
