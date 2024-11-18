@@ -126,7 +126,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"Tripp Lite SmartOnline driver"
-#define DRIVER_VERSION	"0.08"
+#define DRIVER_VERSION	"0.09"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -847,6 +847,12 @@ void upsdrv_updateinfo(void)
 void upsdrv_shutdown(void)
 {
 	char parm[20];
+
+	/* FIXME: Make a name for default original shutdown */
+	if (device_sdcommands) {
+		loop_shutdown_commands(NULL, NULL);
+		return;
+	}
 
 	if (!init_comm())
 		printf("Status failed.  Assuming it's on battery and trying a shutdown anyway.\n");
