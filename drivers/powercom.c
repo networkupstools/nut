@@ -298,7 +298,7 @@ static void shutdown_halt(void)
 	upslogx(LOG_INFO, "Shutdown (stayoff) initiated.");
 
 	/* FIXME: Should the UPS shutdown mean the driver shutdown? */
-	set_exit_flag(-2);	/* EXIT_SUCCESS */
+	set_exit_flag(EF_EXIT_SUCCESS);
 }
 
 static void shutdown_ret(void)
@@ -311,7 +311,7 @@ static void shutdown_ret(void)
 	upslogx(LOG_INFO, "Shutdown (return) initiated.");
 
 	/* FIXME: Should the UPS shutdown mean the driver shutdown? */
-	set_exit_flag(-2);	/* EXIT_SUCCESS */
+	set_exit_flag(EF_EXIT_SUCCESS);
 }
 
 /* registered instant commands */

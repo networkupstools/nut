@@ -200,7 +200,8 @@ void upsdrv_shutdown(void)
 
 		/* Hmmm, why was this an exit-case before? fatalx(EXIT_SUCCESS...) */
 		upslogx(LOG_ERR, "Power is back!");
-		set_exit_flag(-2);	/* EXIT_SUCCESS */
+		/* FIXME: Should the UPS shutdown mean the driver shutdown? */
+		set_exit_flag(EF_EXIT_SUCCESS);
 		return;
 	}
 }

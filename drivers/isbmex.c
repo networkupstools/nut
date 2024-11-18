@@ -382,7 +382,7 @@ int instcmd(const char *cmdname, const char *extra)
 /*
 		upslogx(LOG_ERR, "Shutdown only supported with the Generic Driver, type 6 and special cable");
 		//upslogx(LOG_ERR, "shutdown not supported");
-		set_exit_flag(-1);
+		set_exit_flag(EF_EXIT_FAILURE);
 */
 		int i;
 		for(i=0;i<=5;i++)

@@ -642,12 +642,12 @@ int upscmd(const char *cmd, const char *arg)
 			case STAT_INSTCMD_INVALID:
 				upslogx(LOG_ERR, "shutdown failed");
 				if (handling_upsdrv_shutdown)
-					set_exit_flag(-1);
+					set_exit_flag(EF_EXIT_FAILURE);
 				return rval;
 			case STAT_INSTCMD_UNKNOWN:
 				upslogx(LOG_ERR, "shutdown not supported");
 				if (handling_upsdrv_shutdown)
-					set_exit_flag(-1);
+					set_exit_flag(EF_EXIT_FAILURE);
 				return rval;
 			default:
 				upslogx(LOG_INFO, "shutdown command executed");

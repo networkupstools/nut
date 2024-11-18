@@ -2792,7 +2792,8 @@ void	upsdrv_shutdown(void)
 	/* Don't know what happened */
 	if (!item) {
 		upslogx(LOG_ERR, "Unable to set start delay");
-		set_exit_flag(-1);
+		/* FIXME: Should the UPS shutdown mean the driver shutdown? */
+		set_exit_flag(EF_EXIT_FAILURE);
 		return;
 	}
 
@@ -2807,7 +2808,8 @@ void	upsdrv_shutdown(void)
 
 	if (val && setvar(item->info_type, val) != STAT_SET_HANDLED) {
 		upslogx(LOG_ERR, "Start delay '%s' out of range", val);
-		set_exit_flag(-1);
+		/* FIXME: Should the UPS shutdown mean the driver shutdown? */
+		set_exit_flag(EF_EXIT_FAILURE);
 		return;
 	}
 
@@ -2817,7 +2819,8 @@ void	upsdrv_shutdown(void)
 	/* Don't know what happened */
 	if (!item) {
 		upslogx(LOG_ERR, "Unable to set shutdown delay");
-		set_exit_flag(-1);
+		/* FIXME: Should the UPS shutdown mean the driver shutdown? */
+		set_exit_flag(EF_EXIT_FAILURE);
 		return;
 	}
 
@@ -2832,7 +2835,8 @@ void	upsdrv_shutdown(void)
 
 	if (val && setvar(item->info_type, val) != STAT_SET_HANDLED) {
 		upslogx(LOG_ERR, "Shutdown delay '%s' out of range", val);
-		set_exit_flag(-1);
+		/* FIXME: Should the UPS shutdown mean the driver shutdown? */
+		set_exit_flag(EF_EXIT_FAILURE);
 		return;
 	}
 
@@ -2874,12 +2878,14 @@ void	upsdrv_shutdown(void)
 
 		upslogx(LOG_ERR, "Shutting down in %s seconds",
 			dstate_getinfo("ups.delay.shutdown"));
-		set_exit_flag(-2);	/* EXIT_SUCCESS */
+		/* FIXME: Should the UPS shutdown mean the driver shutdown? */
+		set_exit_flag(EF_EXIT_SUCCESS);
 		return;
 	}
 
 	upslogx(LOG_ERR, "Shutdown failed!");
-	set_exit_flag(-1);
+	/* FIXME: Should the UPS shutdown mean the driver shutdown? */
+	set_exit_flag(EF_EXIT_FAILURE);
 }
 
 #ifdef QX_USB

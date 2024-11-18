@@ -871,14 +871,14 @@ void upsdrv_shutdown(void)
 	for (retry = 1; retry <= BICKER_RETRIES; retry++) {
 		if (bicker_shutdown() > 0) {
 			/* FIXME: Should the UPS shutdown mean the driver shutdown? */
-			set_exit_flag(-2);	/* EXIT_SUCCESS */
+			set_exit_flag(EF_EXIT_SUCCESS);
 			return;
 		}
 	}
 
 	upslogx(LOG_ERR, "Shutdown failed!");
 	/* FIXME: Should the UPS shutdown mean the driver shutdown? */
-	set_exit_flag(-1);
+	set_exit_flag(EF_EXIT_FAILURE);
 }
 
 void upsdrv_help(void)

@@ -180,7 +180,7 @@ static void forceshutdown(void)
 	upsdrv_shutdown();
 
 	/* the driver always exits here, to not block probable ongoing shutdown */
-	exit(exit_flag == -1 ? EXIT_FAILURE : EXIT_SUCCESS);
+	exit(exit_flag == EF_EXIT_FAILURE ? EXIT_FAILURE : EXIT_SUCCESS);
 }
 
 /* this function only prints the usage message; it does not call exit() */
@@ -1715,7 +1715,7 @@ static void set_reload_flag(
 			reload_flag = 15;
 			break;
 */
-			set_exit_flag(-2);
+			set_exit_flag(EF_EXIT_SUCCESS);
 			return;
 
 		case SIGCMD_RELOAD:	/* SIGHUP */
@@ -1732,7 +1732,7 @@ static void set_reload_flag(
 		/* reload what we can, log what needs a restart so skipped */
 		reload_flag = 1;
 	} else if (sig && !strcmp(sig, SIGCMD_EXIT)) {
-		set_exit_flag(-2);
+		set_exit_flag(EF_EXIT_SUCCESS);
 		return;
 	} else {
 		/* non-fatal reload as a fallback */
