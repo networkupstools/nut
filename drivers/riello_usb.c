@@ -36,7 +36,7 @@
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello USB driver"
-#define DRIVER_VERSION	"0.13"
+#define DRIVER_VERSION	"0.14"
 
 #define DEFAULT_OFFDELAY   5  /*!< seconds (max 0xFF) */
 #define DEFAULT_BOOTDELAY  5  /*!< seconds (max 0xFF) */
@@ -1137,6 +1137,12 @@ void upsdrv_shutdown(void)
 	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
 	int retry;
 
+	/* FIXME: Make a name for default original shutdown */
+	if (device_sdcommands) {
+		loop_shutdown_commands(NULL, NULL);
+		return;
+	}
+
 	/* maybe try to detect the UPS here, but try a shutdown even if
 	 it doesn't respond at first if possible */
 
@@ -1151,7 +1157,8 @@ void upsdrv_shutdown(void)
 	/* OB: the load must remain off until the power returns */
 
 	for (retry = 1; retry <= MAXTRIES; retry++) {
-
+		/* By default, abort a previously requested shutdown
+		 * (if any) and schedule a new one from this moment. */
 		if (riello_instcmd("shutdown.stop", NULL) != STAT_INSTCMD_HANDLED) {
 			continue;
 		}
@@ -1161,11 +1168,13 @@ void upsdrv_shutdown(void)
 		}
 
 		upslogx(LOG_ERR, "Shutting down");
+		/* FIXME: Should the UPS shutdown mean the driver shutdown? */
 		set_exit_flag(-2);	/* EXIT_SUCCESS */
 		return;
 	}
 
 	upslogx(LOG_ERR, "Shutdown failed!");
+	/* FIXME: Should the UPS shutdown mean the driver shutdown? */
 	set_exit_flag(-1);
 }
 
