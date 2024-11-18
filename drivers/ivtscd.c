@@ -191,6 +191,12 @@ void upsdrv_shutdown(void)
 		return;
 	}
 
+	/* FIXME: This driver (and solar device?) does not seem to
+	 *  really support a shutdown. It also blocks in this method
+	 *  until battery.voltage.act becomes(?) greater than nominal,
+	 *  meaning power is back, and then exits the driver.
+	 *  All in all, looks odd.
+	 */
 	while (1) {
 		if (ivt_status() < 7) {
 			continue;
