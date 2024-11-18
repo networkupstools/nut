@@ -560,6 +560,15 @@ extern int optind;
 #	define setegid(x) setresgid(-1,x,-1)    /* Works for HP-UX 10.20 */
 #endif
 
+/* Several NUT programs define their set_exit_flag(int) methods
+ * which accept a signal code or similar parameter. Commonly they
+ * also accept a few negative values summarized below, to just
+ * exit (typically after completing a processing loop) with one
+ * of C standard exit codes.
+ */
+#define EF_EXIT_FAILURE	-1	/* eventually exit(EXIT_FAILURE); */
+#define EF_EXIT_SUCCESS	-2	/* eventually exit(EXIT_SUCCESS); */
+
 #ifdef WIN32
 /* FIXME : this might not be the optimal mapping between syslog and ReportEvent*/
 #define LOG_ERR 	EVENTLOG_ERROR_TYPE

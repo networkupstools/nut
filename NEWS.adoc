@@ -363,6 +363,8 @@ INSTCMD such as `shutdown.return`, `shutdown.stayoff` or `load.off`. [#2670]
      `gcc-13`+ whose static analyzers on NUT CI farm complained about some
      imperfections after adding newer OS revisions to the population of
      build agents. [#2585, #2588]
+   * defined `EF_EXIT_SUCCESS` and `EF_EXIT_FAILURE` in `include/common.h`
+     to avoid magic numbers in code like `set_exit_flag(-2)`. [#2670]
 
  - updated `docs/nut-names.txt` with items defined by 42ITy NUT fork. [#2339]
 
