@@ -29,7 +29,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.58"
+#define DRIVER_VERSION	"0.59"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
@@ -987,27 +987,23 @@ int setvar(const char *varname, const char *val)
 
 void upsdrv_shutdown(void)
 {
-	upsdebugx(1, "upsdrv_shutdown...");
+	char	*cmd_used = NULL;
 
-	/* Try to shutdown with delay */
-	if (instcmd("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
-		/* Shutdown successful */
-		return;
-	}
+	upsdebugx(1, "%s...", __func__);
 
-	/* If the above doesn't work, try shutdown.reboot */
-	if (instcmd("shutdown.reboot", NULL) == STAT_INSTCMD_HANDLED) {
-		/* Shutdown successful */
-		return;
-	}
-
-	/* If the above doesn't work, try load.off.delay */
-	if (instcmd("load.off.delay", NULL) == STAT_INSTCMD_HANDLED) {
-		/* Shutdown successful */
+	/* By default:
+	 * - Try to shutdown with delay
+	 * - If the above doesn't work, try shutdown.reboot
+	 * - If the above doesn't work, try load.off.delay
+	 * - Finally, try shutdown.stayoff
+	 */
+	if (loop_shutdown_commands("shutdown.return,shutdown.reboot,load.off.delay,shutdown.stayoff", &cmd_used) == STAT_INSTCMD_HANDLED) {
+		upslogx(LOG_INFO, "Shutdown successful with '%s'", NUT_STRARG(cmd_used));
 		return;
 	}
 
 	upslogx(LOG_ERR, "Shutdown failed!");
+	/* FIXME: Should the UPS shutdown mean the driver shutdown? */
 	set_exit_flag(-1);
 }
 
