@@ -370,6 +370,8 @@ int instcmd(const char *cmdname, const char *extra)
 	/* Shutdown UPS */
 	if (!strcasecmp(cmdname, "shutdown.stayoff"))
 	{
+		int i;
+
 		/* shutdown is supported on models with
 		 * contact closure. Some ISB models with serial
 		 * support support contact closure, some don't.
@@ -382,10 +384,11 @@ int instcmd(const char *cmdname, const char *extra)
 /*
 		upslogx(LOG_ERR, "Shutdown only supported with the Generic Driver, type 6 and special cable");
 		//upslogx(LOG_ERR, "shutdown not supported");
-		set_exit_flag(EF_EXIT_FAILURE);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
 */
-		int i;
-		for(i=0;i<=5;i++)
+
+		for (i = 0; i <= 5; i++)
 		{
 			ser_send_char(upsfd, '#');
 			usleep(50000);
@@ -403,7 +406,9 @@ void upsdrv_shutdown(void)
 	/* FIXME: Check with the device what our instcmd
 	 * (nee upsdrv_shutdown() contents) actually does!
 	 */
-	loop_shutdown_commands("shutdown.stayoff", NULL);
+	int	ret = loop_shutdown_commands("shutdown.stayoff", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 void upsdrv_help(void)

@@ -868,11 +868,13 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	unsigned char command[10], answer[10];
+	unsigned char	command[10], answer[10];
 
 	/* FIXME: Make a name for default original shutdown */
 	if (device_sdcommands) {
-		loop_shutdown_commands(NULL, NULL);
+		int	ret = loop_shutdown_commands(NULL, NULL);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 		return;
 	}
 

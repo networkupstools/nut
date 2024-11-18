@@ -297,8 +297,8 @@ static void shutdown_halt(void)
 	ser_send_char (upsfd, types[type].shutdown_arguments.delay[1]);
 	upslogx(LOG_INFO, "Shutdown (stayoff) initiated.");
 
-	/* FIXME: Should the UPS shutdown mean the driver shutdown? */
-	set_exit_flag(EF_EXIT_SUCCESS);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_SUCCESS);
 }
 
 static void shutdown_ret(void)
@@ -310,8 +310,8 @@ static void shutdown_ret(void)
 	ser_send_char (upsfd, types[type].shutdown_arguments.delay[1]);
 	upslogx(LOG_INFO, "Shutdown (return) initiated.");
 
-	/* FIXME: Should the UPS shutdown mean the driver shutdown? */
-	set_exit_flag(EF_EXIT_SUCCESS);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_SUCCESS);
 }
 
 /* registered instant commands */
@@ -844,12 +844,16 @@ void upsdrv_updateinfo(void)
 /* shutdown UPS */
 void upsdrv_shutdown(void)
 {
+	int	ret = -1;
+
 	if (!device_sdcommands) {
 		/* default: power down the attached load immediately */
 		printf("Forced UPS shutdown (and wait for power)...\n");
 	}
 
-	loop_shutdown_commands("shutdown.return", NULL);
+	ret = loop_shutdown_commands("shutdown.return", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 /* initialize UPS */

@@ -343,7 +343,9 @@ upsdrv_updateinfo(void)
 void
 upsdrv_shutdown(void)
 {
-	loop_shutdown_commands("shutdown.return", NULL);
+	int	ret = loop_shutdown_commands("shutdown.return", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 void

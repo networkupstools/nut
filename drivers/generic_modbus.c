@@ -47,8 +47,6 @@ static uint32_t mod_resp_to_us = MODRESP_TIMEOUT_us;       /* set the modbus res
 static uint32_t mod_byte_to_s = MODBYTE_TIMEOUT_s;         /* set the modbus byte time out (us) */
 static uint32_t mod_byte_to_us = MODBYTE_TIMEOUT_us;       /* set the modbus byte time out (us) */
 
-static char	handling_upsdrv_shutdown = 0;
-
 /* get config vars set by -x or defined in ups.conf driver section */
 void get_config_vars(void);
 
@@ -335,8 +333,9 @@ void upsdrv_shutdown(void)
 	 * used for these devices.
 	 */
 
-	handling_upsdrv_shutdown = 1;
-	loop_shutdown_commands("shutdown.stayoff", NULL);
+	int	ret = loop_shutdown_commands("shutdown.stayoff", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 /* print driver usage info */
@@ -641,16 +640,18 @@ int upscmd(const char *cmd, const char *arg)
 			case STAT_INSTCMD_FAILED:
 			case STAT_INSTCMD_INVALID:
 				upslogx(LOG_ERR, "shutdown failed");
-				if (handling_upsdrv_shutdown)
+				if (handling_upsdrv_shutdown > 0)
 					set_exit_flag(EF_EXIT_FAILURE);
 				return rval;
 			case STAT_INSTCMD_UNKNOWN:
 				upslogx(LOG_ERR, "shutdown not supported");
-				if (handling_upsdrv_shutdown)
+				if (handling_upsdrv_shutdown > 0)
 					set_exit_flag(EF_EXIT_FAILURE);
 				return rval;
 			default:
 				upslogx(LOG_INFO, "shutdown command executed");
+				if (handling_upsdrv_shutdown > 0)
+					set_exit_flag(EF_EXIT_SUCCESS);
 				break;
 		}
 	} else {

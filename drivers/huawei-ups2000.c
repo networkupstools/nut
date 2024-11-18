@@ -1806,7 +1806,7 @@ void upsdrv_shutdown(void)
 	r = loop_shutdown_commands("shutdown.reboot", NULL);
 	if (r != STAT_INSTCMD_HANDLED) {
 		upslogx(LOG_ERR, "upsdrv_shutdown failed!");
-		if (!device_sdcommands)
+		if (handling_upsdrv_shutdown > 0)
 			set_exit_flag(EF_EXIT_FAILURE);
 	}
 }

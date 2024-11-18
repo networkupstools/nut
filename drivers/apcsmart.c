@@ -1753,11 +1753,13 @@ static void upsdrv_shutdown_advanced(void)
 /* power down the attached load immediately */
 void upsdrv_shutdown(void)
 {
-	char temp[APC_LBUF];
+	char	temp[APC_LBUF];
 
 	/* FIXME: Make a name for default original shutdown */
 	if (device_sdcommands) {
-		loop_shutdown_commands(NULL, NULL);
+		int	ret = loop_shutdown_commands(NULL, NULL);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 		return;
 	}
 

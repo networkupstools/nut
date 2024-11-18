@@ -207,7 +207,9 @@ int instcmd(const char *cmdname, const char *extra)
 
 void upsdrv_shutdown(void)
 {
-	loop_shutdown_commands("load.off", NULL);
+	int	ret = loop_shutdown_commands("load.off", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 void upsdrv_help(void)

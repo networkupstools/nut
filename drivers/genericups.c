@@ -314,14 +314,16 @@ void upsdrv_shutdown(void)
 
 	/* FIXME: Make a name for default original shutdown */
 	if (device_sdcommands) {
-		loop_shutdown_commands(NULL, NULL);
+		int ret = loop_shutdown_commands(NULL, NULL);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 		return;
 	}
 
 	if (upstype == -1) {
 		upslogx(LOG_ERR, "No upstype set - see help text / man page!");
-		/* FIXME: Should the UPS shutdown mean the driver shutdown? */
-		set_exit_flag(EF_EXIT_FAILURE);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
 	        return;
 	}
 
@@ -329,8 +331,8 @@ void upsdrv_shutdown(void)
 
 	if (flags == -1) {
 		upslogx(LOG_ERR, "No shutdown command defined for this model!");
-		/* FIXME: Should the UPS shutdown mean the driver shutdown? */
-		set_exit_flag(EF_EXIT_FAILURE);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
 	        return;
 	}
 
@@ -339,7 +341,8 @@ void upsdrv_shutdown(void)
 #ifndef WIN32
 #ifndef HAVE_TCSENDBREAK
 		upslogx(LOG_ERR, "Need to send a BREAK, but don't have tcsendbreak!");
-		set_exit_flag(EF_EXIT_FAILURE);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
 	        return;
 #endif
 #endif
@@ -348,8 +351,8 @@ void upsdrv_shutdown(void)
 
 		if (ret != 0) {
 			upslog_with_errno(LOG_ERR, "tcsendbreak");
-			/* FIXME: Should the UPS shutdown mean the driver shutdown? */
-			set_exit_flag(EF_EXIT_FAILURE);
+			if (handling_upsdrv_shutdown > 0)
+				set_exit_flag(EF_EXIT_FAILURE);
 		}
 
 		return;
@@ -363,8 +366,8 @@ void upsdrv_shutdown(void)
 
 	if (ret != 0) {
 		upslog_with_errno(LOG_ERR, "ioctl TIOCMSET");
-		/* FIXME: Should the UPS shutdown mean the driver shutdown? */
-		set_exit_flag(EF_EXIT_FAILURE);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
 	        return;
 	}
 

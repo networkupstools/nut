@@ -10,12 +10,13 @@
 #include "wincompat.h"
 #endif
 
-/* public functions & variables from main.c */
+/* public functions & variables from main.c, documented in detail there */
 extern const char	*progname, *upsname, *device_name;
 extern char		*device_path, *device_sdcommands;
-extern int		broken_driver, experimental_driver, do_lock_port, exit_flag;
+extern int		broken_driver, experimental_driver,
+			do_lock_port, exit_flag, handling_upsdrv_shutdown;
 extern TYPE_FD		upsfd, extrafd;
-extern time_t	poll_interval;
+extern time_t		poll_interval;
 
 /* functions & variables required in each driver */
 void upsdrv_initups(void);	/* open connection to UPS, fail if not found */

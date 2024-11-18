@@ -855,19 +855,19 @@ void upsdrv_shutdown(void)
 
 	/* FIXME: Make a name for default original shutdown */
 	if (device_sdcommands) {
-		loop_shutdown_commands(NULL, NULL);
+		int ret = loop_shutdown_commands(NULL, NULL);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 		return;
 	}
 
 	/* Stop pending shutdowns */
 	for (retry = 1; retry <= MAXTRIES; retry++) {
-
 		if (blazer_instcmd("shutdown.stop", NULL) != STAT_INSTCMD_HANDLED) {
 			continue;
 		}
 
 		break;
-
 	}
 
 	if (retry > MAXTRIES) {
@@ -876,18 +876,17 @@ void upsdrv_shutdown(void)
 
 	/* Shutdown */
 	for (retry = 1; retry <= MAXTRIES; retry++) {
-
 		if (blazer_instcmd("shutdown.return", NULL) != STAT_INSTCMD_HANDLED) {
 			continue;
 		}
 
 		upslogx(LOG_ERR, "Shutting down in %ld seconds", offdelay);
-		/* FIXME: Should the UPS shutdown mean the driver shutdown? */
-		set_exit_flag(EF_EXIT_SUCCESS);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_SUCCESS);
 		return;
 	}
 
 	upslogx(LOG_ERR, "Shutdown failed!");
-	/* FIXME: Should the UPS shutdown mean the driver shutdown? */
-	set_exit_flag(EF_EXIT_FAILURE);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }

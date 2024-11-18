@@ -944,14 +944,16 @@ void upsdrv_initinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	unsigned char OutBuff[20] ;
-	unsigned char InpBuff[260] ;
-	unsigned char *p ;
-	unsigned char BatteryFlag=0 ;
+	unsigned char	OutBuff[20];
+	unsigned char	InpBuff[260];
+	unsigned char	*p;
+	unsigned char	BatteryFlag = 0;
 
 	/* FIXME: Make a name for default original shutdown */
 	if (device_sdcommands) {
-		loop_shutdown_commands(NULL, NULL);
+		int	ret = loop_shutdown_commands(NULL, NULL);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 		return;
 	}
 

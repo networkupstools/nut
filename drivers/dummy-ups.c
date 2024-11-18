@@ -391,8 +391,8 @@ void upsdrv_shutdown(void)
 	 */
 	if (loop_shutdown_commands(NULL, NULL) != STAT_INSTCMD_HANDLED) {
 		upslogx(LOG_ERR, "shutdown not supported");
-		/* FIXME: Should the UPS shutdown mean the driver shutdown? */
-		set_exit_flag(EF_EXIT_FAILURE);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
 	}
 }
 

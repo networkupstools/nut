@@ -368,12 +368,14 @@ void upsdrv_shutdown(void)
 	 */
 	if (loop_shutdown_commands("shutdown.return,shutdown.reboot,load.off.delay,shutdown.stayoff", &cmd_used) == STAT_INSTCMD_HANDLED) {
 		upslogx(LOG_INFO, "Shutdown successful with '%s'", NUT_STRARG(cmd_used));
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_SUCCESS);
 		return;
 	}
 
 	upslogx(LOG_ERR, "Shutdown failed!");
-	/* FIXME: Should the UPS shutdown mean the driver shutdown? */
-	set_exit_flag(EF_EXIT_FAILURE);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 void upsdrv_help(void)

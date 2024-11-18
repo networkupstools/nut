@@ -553,19 +553,25 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	char reply[8];
+	char	reply[8];
 
 	/* FIXME: Make a name for default original shutdown */
 	if (device_sdcommands) {
-		loop_shutdown_commands(NULL, NULL);
+		int	ret = loop_shutdown_commands(NULL, NULL);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 		return;
 	}
 
 	if(!(do_command(cmd_setOutOffMode, reply, 8) != -1) &&
 	    (do_command(cmd_setOutOffDelay, reply, 8) != -1) &&
 	    (do_command(cmd_sysLoadKey, reply, 6) != -1) &&
-	    (do_command(cmd_shutdown, reply, 8) != -1))
-			upslogx(LOG_ERR, "Failed to shutdown UPS");
+	    (do_command(cmd_shutdown, reply, 8) != -1)
+	) {
+		upslogx(LOG_ERR, "Failed to shutdown UPS");
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
+	}
 }
 
 static int instcmd(const char *cmdname, const char *extra)

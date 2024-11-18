@@ -106,7 +106,9 @@ void upsdrv_shutdown(void)
 
 	/* FIXME: Make a name for default original shutdown */
 	if (device_sdcommands) {
-		loop_shutdown_commands(NULL, NULL);
+		ret = loop_shutdown_commands(NULL, NULL);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 		return;
 	}
 
@@ -124,7 +126,6 @@ void upsdrv_shutdown(void)
 	 * we can't read status or it is telling us we're on battery.
 	 */
 	for (i = 0; i < MAXTRIES; i++) {
-
 		ret = subdriver[mode]->updateinfo();
 		if (ret >= 0) {
 			break;

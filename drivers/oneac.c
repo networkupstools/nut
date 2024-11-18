@@ -821,7 +821,9 @@ void upsdrv_shutdown(void)
 	 *  implemented in instcmd() here nominally (not sure if named
 	 *  correctly - better re-check on hardware).
 	 */
-	loop_shutdown_commands("shutdown.reboot", NULL);
+	int	ret = loop_shutdown_commands("shutdown.reboot", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 void upsdrv_help(void)

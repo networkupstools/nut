@@ -514,9 +514,13 @@ static int upsdrv_setvar (const char *var, const char * data) {
  */
 void upsdrv_shutdown(void)
 {
+	int	ret = -1;
+
 	upsdebugx(2, "%s: begin", __func__);
 
-	loop_shutdown_commands("shutdown.return", NULL);
+	ret = loop_shutdown_commands("shutdown.return", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 
 	upsdebugx(2, "%s: end", __func__);
 }

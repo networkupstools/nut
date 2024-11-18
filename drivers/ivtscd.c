@@ -185,7 +185,9 @@ void upsdrv_shutdown(void)
 {
 	/* FIXME: Make a name for default original shutdown */
 	if (device_sdcommands) {
-		loop_shutdown_commands(NULL, NULL);
+		int	ret = loop_shutdown_commands(NULL, NULL);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 		return;
 	}
 
@@ -200,8 +202,8 @@ void upsdrv_shutdown(void)
 
 		/* Hmmm, why was this an exit-case before? fatalx(EXIT_SUCCESS...) */
 		upslogx(LOG_ERR, "Power is back!");
-		/* FIXME: Should the UPS shutdown mean the driver shutdown? */
-		set_exit_flag(EF_EXIT_SUCCESS);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_SUCCESS);
 		return;
 	}
 }

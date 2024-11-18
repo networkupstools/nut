@@ -51,6 +51,19 @@ TYPE_FD	extrafd = ERROR_FD;
 static HANDLE	mutex = INVALID_HANDLE_VALUE;
 #endif
 
+/* Set by INSTCMD to killpower or by running `drivername -k` to
+ * help differentiate calls into upsdrv_shutdown() and further
+ * into instcmd() implementations that set UPS power state as
+ * needing the driver to set_exit_flag() or not. Values:
+ *   -1	Do not exit even if killing power (e.g. when shutting
+ *	down an UPS that we only monitor, but are not fed from
+ *	and not shutting down THIS system). TODO: Ways to set.
+ *    0	Default do not exit (routinely handling an INSTCMD like
+ *	"shutdown.return")
+ *    1	Exit (set when this driver is killing power)
+ */
+int	handling_upsdrv_shutdown = 0;
+
 /* for ser_open */
 int	do_lock_port = 1;
 
@@ -176,10 +189,17 @@ static void forceshutdown(void)
 {
 	upslogx(LOG_NOTICE, "Initiating UPS shutdown");
 
+	/* NOTE: This is currently called exclusively as `drivername -k`
+	 *  CLI argument handling, so we exit afterwards and do not care
+	 *  about possible `handling_upsdrv_shutdown = -1` use-cases here.
+	 */
+	handling_upsdrv_shutdown = 1;
+
 	/* the driver must not block in this function */
 	upsdrv_shutdown();
 
-	/* the driver always exits here, to not block probable ongoing shutdown */
+	/* the driver always exits here, to
+	 * not block probable ongoing shutdown */
 	exit(exit_flag == EF_EXIT_FAILURE ? EXIT_FAILURE : EXIT_SUCCESS);
 }
 
@@ -836,6 +856,8 @@ int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 			upslogx(LOG_WARNING, "Requesting UPS [%s] to power off, "
 				"as/if handled by its driver by default (may exit), "
 				"due to socket protocol request", NUT_STRARG(upsname));
+			if (handling_upsdrv_shutdown == 0)
+				handling_upsdrv_shutdown = 1;
 			upsdrv_shutdown();
 			return STAT_INSTCMD_HANDLED;
 		} else {

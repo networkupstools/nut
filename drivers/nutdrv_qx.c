@@ -2780,7 +2780,9 @@ void	upsdrv_shutdown(void)
 	 * replace tunables used below ("stayoff" etc).
 	 */
 	if (device_sdcommands) {
-		loop_shutdown_commands(NULL, NULL);
+		int ret = loop_shutdown_commands(NULL, NULL);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 		return;
 	}
 
@@ -2792,8 +2794,8 @@ void	upsdrv_shutdown(void)
 	/* Don't know what happened */
 	if (!item) {
 		upslogx(LOG_ERR, "Unable to set start delay");
-		/* FIXME: Should the UPS shutdown mean the driver shutdown? */
-		set_exit_flag(EF_EXIT_FAILURE);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
 		return;
 	}
 
@@ -2808,8 +2810,8 @@ void	upsdrv_shutdown(void)
 
 	if (val && setvar(item->info_type, val) != STAT_SET_HANDLED) {
 		upslogx(LOG_ERR, "Start delay '%s' out of range", val);
-		/* FIXME: Should the UPS shutdown mean the driver shutdown? */
-		set_exit_flag(EF_EXIT_FAILURE);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
 		return;
 	}
 
@@ -2819,8 +2821,8 @@ void	upsdrv_shutdown(void)
 	/* Don't know what happened */
 	if (!item) {
 		upslogx(LOG_ERR, "Unable to set shutdown delay");
-		/* FIXME: Should the UPS shutdown mean the driver shutdown? */
-		set_exit_flag(EF_EXIT_FAILURE);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
 		return;
 	}
 
@@ -2835,14 +2837,13 @@ void	upsdrv_shutdown(void)
 
 	if (val && setvar(item->info_type, val) != STAT_SET_HANDLED) {
 		upslogx(LOG_ERR, "Shutdown delay '%s' out of range", val);
-		/* FIXME: Should the UPS shutdown mean the driver shutdown? */
-		set_exit_flag(EF_EXIT_FAILURE);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
 		return;
 	}
 
 	/* Stop pending shutdowns */
 	if (find_nut_info("shutdown.stop", QX_FLAG_CMD, QX_FLAG_SKIP)) {
-
 		for (retry = 1; retry <= MAXTRIES; retry++) {
 
 			if (instcmd("shutdown.stop", NULL) != STAT_INSTCMD_HANDLED) {
@@ -2856,36 +2857,30 @@ void	upsdrv_shutdown(void)
 		if (retry > MAXTRIES) {
 			upslogx(LOG_NOTICE, "No shutdown pending");
 		}
-
 	}
 
 	/* Shutdown */
 	for (retry = 1; retry <= MAXTRIES; retry++) {
-
 		if (testvar("stayoff")) {
-
 			if (instcmd("shutdown.stayoff", NULL) != STAT_INSTCMD_HANDLED) {
 				continue;
 			}
-
 		} else {
-
 			if (instcmd("shutdown.return", NULL) != STAT_INSTCMD_HANDLED) {
 				continue;
 			}
-
 		}
 
 		upslogx(LOG_ERR, "Shutting down in %s seconds",
 			dstate_getinfo("ups.delay.shutdown"));
-		/* FIXME: Should the UPS shutdown mean the driver shutdown? */
-		set_exit_flag(EF_EXIT_SUCCESS);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_SUCCESS);
 		return;
 	}
 
 	upslogx(LOG_ERR, "Shutdown failed!");
-	/* FIXME: Should the UPS shutdown mean the driver shutdown? */
-	set_exit_flag(EF_EXIT_FAILURE);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 #ifdef QX_USB
