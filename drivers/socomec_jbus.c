@@ -31,7 +31,7 @@
 #include <modbus.h>
 
 #define DRIVER_NAME	"Socomec jbus driver"
-#define DRIVER_VERSION	"0.08"
+#define DRIVER_VERSION	"0.09"
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define MODBUS_SLAVE_ID 1
@@ -429,8 +429,17 @@ void upsdrv_updateinfo(void)
 void upsdrv_shutdown(void)
 {
 	/* replace with a proper shutdown function */
-	upslogx(LOG_ERR, "shutdown not supported");
-	set_exit_flag(-1);
+
+	/* NOTE: User-provided commands may be something other
+	 * than actual shutdown, e.g. a beeper to test that the
+	 * INSTCMD happened such and when expected without
+	 * impacting the load fed by the UPS.
+	 */
+	if (loop_shutdown_commands(NULL, NULL) != STAT_INSTCMD_HANDLED) {
+		upslogx(LOG_ERR, "shutdown not supported");
+		/* FIXME: Should the UPS shutdown mean the driver shutdown? */
+		set_exit_flag(-1);
+	}
 }
 
 void upsdrv_help(void)
