@@ -137,7 +137,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME	"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.38"
+#define DRIVER_VERSION	"0.39"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -1261,7 +1261,7 @@ void upsdrv_initinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	soft_shutdown();
+	loop_shutdown_commands("shutdown.return", NULL);
 }
 
 void upsdrv_updateinfo(void)
