@@ -86,7 +86,7 @@
 #include "nut_float.h"
 
 #define DRIVER_NAME	"PowerCom protocol UPS driver"
-#define DRIVER_VERSION	"0.23"
+#define DRIVER_VERSION	"0.24"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -297,6 +297,7 @@ static void shutdown_halt(void)
 	ser_send_char (upsfd, types[type].shutdown_arguments.delay[1]);
 	upslogx(LOG_INFO, "Shutdown (stayoff) initiated.");
 
+	/* FIXME: Should the UPS shutdown mean the driver shutdown? */
 	set_exit_flag(-2);	/* EXIT_SUCCESS */
 }
 
@@ -309,6 +310,7 @@ static void shutdown_ret(void)
 	ser_send_char (upsfd, types[type].shutdown_arguments.delay[1]);
 	upslogx(LOG_INFO, "Shutdown (return) initiated.");
 
+	/* FIXME: Should the UPS shutdown mean the driver shutdown? */
 	set_exit_flag(-2);	/* EXIT_SUCCESS */
 }
 
@@ -842,9 +844,12 @@ void upsdrv_updateinfo(void)
 /* shutdown UPS */
 void upsdrv_shutdown(void)
 {
-	/* power down the attached load immediately */
-	printf("Forced UPS shutdown (and wait for power)...\n");
-	shutdown_ret();
+	if (!device_sdcommands) {
+		/* default: power down the attached load immediately */
+		printf("Forced UPS shutdown (and wait for power)...\n");
+	}
+
+	loop_shutdown_commands("shutdown.return", NULL);
 }
 
 /* initialize UPS */
