@@ -41,7 +41,7 @@
 #include "safenet.h"
 
 #define DRIVER_NAME	"Generic SafeNet UPS driver"
-#define DRIVER_VERSION	"1.81"
+#define DRIVER_VERSION	"1.82"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -421,6 +421,12 @@ void upsdrv_shutdown(void)
 {
 	int	retry = 3;
 
+	/* FIXME: Make a name for default original shutdown */
+	if (device_sdcommands) {
+		loop_shutdown_commands(NULL, NULL);
+		return;
+	}
+
 	/*
 	 * Since we may have arrived here before the hardware is initialized,
 	 * try to initialize it here.
@@ -435,6 +441,7 @@ void upsdrv_shutdown(void)
 		}
 
 		upslogx(LOG_ERR, "SafeNet protocol compatible UPS not found on %s", device_path);
+		/* FIXME: Should the UPS shutdown mean the driver shutdown? */
 		set_exit_flag(-1);
 		return;
 	}
