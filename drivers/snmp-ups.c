@@ -174,7 +174,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION	"1.31"
+#define DRIVER_VERSION	"1.32"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -353,31 +353,26 @@ void upsdrv_shutdown(void)
 	 * a limitation (on some platforms) of the interface/media
 	 * used for these devices.
 	 */
+	char	*cmd_used = NULL;
 
 	upsdebugx(1, "%s...", __func__);
 
 	/* set shutdown and autostart delay */
 	set_delays();
 
-	/* Try to shutdown with delay */
-	if (su_instcmd("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
-		/* Shutdown successful */
-		return;
-	}
-
-	/* If the above doesn't work, try shutdown.reboot */
-	if (su_instcmd("shutdown.reboot", NULL) == STAT_INSTCMD_HANDLED) {
-		/* Shutdown successful */
-		return;
-	}
-
-	/* If the above doesn't work, try load.off.delay */
-	if (su_instcmd("load.off.delay", NULL) == STAT_INSTCMD_HANDLED) {
-		/* Shutdown successful */
+	/* By default:
+	 * - Try to shutdown with delay
+	 * - If the above doesn't work, try shutdown.reboot
+	 * - If the above doesn't work, try load.off.delay
+	 * - Finally, try shutdown.stayoff
+	 */
+	if (loop_shutdown_commands("shutdown.return,shutdown.reboot,load.off.delay,shutdown.stayoff", &cmd_used) == STAT_INSTCMD_HANDLED) {
+		upslogx(LOG_INFO, "Shutdown successful with '%s'", NUT_STRARG(cmd_used));
 		return;
 	}
 
 	upslogx(LOG_ERR, "Shutdown failed!");
+	/* FIXME: Should the UPS shutdown mean the driver shutdown? */
 	set_exit_flag(-1);
 }
 
