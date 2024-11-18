@@ -342,13 +342,17 @@ void upsdrv_updateinfo(void)
 void upsdrv_shutdown(void)
 {
 	/*
-	This driver will probably never support this. In order to
-	be any use, the driver should be called near the end of
-	the system halt script. By that time we in all likelyhood
-	we won't have network capabilities anymore, so we could
-	never send this command to the UPS. This is not an error,
-	but a limitation of the interface used.
-	*/
+	 * WARNING:
+	 * This driver will probably never support this properly:
+	 * In order to be of any use, the driver should be called
+	 * near the end of the system halt script (or a service
+	 * management framework's equivalent, if any). By that
+	 * time we, in all likelyhood, won't have basic network
+	 * capabilities anymore, so we could never send this
+	 * command to the UPS. This is not an error, but rather
+	 * a limitation (on some platforms) of the interface/media
+	 * used for these devices.
+	 */
 
 	upsdebugx(1, "%s...", __func__);
 
