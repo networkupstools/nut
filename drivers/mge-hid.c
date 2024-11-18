@@ -769,6 +769,13 @@ static const char *eaton_input_eco_mode_check_range(double value)
 	) {
 		return "ECO"; /* Enter Eco mode */
 	} else {
+		/* Condensed debug messages for out of range voltage and frequency */
+		if (bypass_voltage < eco_low || bypass_voltage > eco_high) {
+			upsdebugx(1, "Bypass voltage out of transfer ECO limits: %.2f V", bypass_voltage);
+		}
+		if (bypass_frequency < lower_frequency_limit || bypass_frequency > upper_frequency_limit) {
+			upsdebugx(1, "Bypass frequency out of transfer ECO limits: %.2f Hz", bypass_frequency);
+		}
 		return NULL; /* Do not enter Eco mode */
 	}
 }
@@ -853,6 +860,13 @@ static const char *eaton_input_bypass_check_range(double value)
 	) {
 		return "on"; /* Enter bypass mode */
 	} else {
+		/* Condensed debug messages for out of range voltage and frequency */
+		if (bypass_voltage < bypass_low || bypass_voltage > bypass_high) {
+			upsdebugx(1, "Bypass voltage out of transfer bypass limits: %.2f V", bypass_voltage);
+		}
+		if (bypass_frequency < lower_frequency_limit || bypass_frequency > upper_frequency_limit) {
+			upsdebugx(1, "Bypass frequency out of transfer bypass limits: %.2f Hz", bypass_frequency);
+		}
 		return NULL; /* Do not enter bypass mode */
 	}
 }
