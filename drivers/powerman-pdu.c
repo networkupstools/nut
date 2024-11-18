@@ -23,7 +23,7 @@
 #include <libpowerman.h>	/* pm_err_t and other beasts */
 
 #define DRIVER_NAME	"Powerman PDU client driver"
-#define DRIVER_VERSION	"0.14"
+#define DRIVER_VERSION	"0.15"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -135,12 +135,21 @@ void upsdrv_initinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	/* FIXME: shutdown all outlets? */
-	upslogx(LOG_ERR, "shutdown not supported");
-	set_exit_flag(-1);
+	/* replace with a proper shutdown function */
 
-	/* OL: this must power cycle the load if possible */
-	/* OB: the load must remain off until the power returns */
+	/* NOTE: User-provided commands may be something other
+	 * than actual shutdown, e.g. a beeper to test that the
+	 * INSTCMD happened such and when expected without
+	 * impacting the load fed by the UPS.
+	 */
+	if (loop_shutdown_commands(NULL, NULL) != STAT_INSTCMD_HANDLED) {
+		/* FIXME: shutdown all outlets? */
+		/* OL: this must power cycle the load if possible */
+		/* OB: the load must remain off until the power returns */
+		upslogx(LOG_ERR, "shutdown not supported");
+		/* FIXME: Should the UPS shutdown mean the driver shutdown? */
+		set_exit_flag(-1);
+	}
 }
 
 /*
