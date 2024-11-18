@@ -49,6 +49,14 @@ int do_loop_shutdown_commands(const char *sdcmds, char **cmdused);
  */
 int loop_shutdown_commands(const char *sdcmds_default, char **cmdused);
 
+/*
+ * Effectively call loop_shutdown_commands("shutdown.default") (which in turn
+ * probably calls some other INSTCMD, but may be using a more custom logic),
+ * and report how that went.
+ * Depending on run-time circumstances, probably set_exit_flag() too.
+ */
+int upsdrv_shutdown_default(const char *sdcmds_default, char **cmdused);
+
 /* handle instant commands common for all drivers
  * (returns STAT_INSTCMD_* state values per enum in upshandler.h)
  */

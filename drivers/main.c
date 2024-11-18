@@ -771,7 +771,8 @@ void addvar(int vartype, const char *name, const char *desc)
  * by the device, or STAT_INSTCMD_INVALID if none succeeded.
  * If cmdused is not NULL, it is populated by the command
  * string which succeeded (or NULL if none), and the caller
- * should free() it eventually.
+ * should free() it eventually. This method also frees any
+ * non-NULL *cmdused, so it should be pre-initialized to NULL.
  */
 int do_loop_shutdown_commands(const char *sdcmds, char **cmdused) {
 	int	cmdret = STAT_INSTCMD_UNKNOWN;
@@ -779,8 +780,11 @@ int do_loop_shutdown_commands(const char *sdcmds, char **cmdused) {
 
 	upsdebugx(1, "%s(%s)...", __func__, NUT_STRARG(sdcmds));
 
-	if (cmdused)
+	if (cmdused) {
+		if (*cmdused)
+			free(*cmdused);
 		*cmdused = NULL;
+	}
 
 	if (!sdcmds || !*sdcmds) {
 		upsdebugx(1, "This driver or its configuration did not pass any instant commands to run");
@@ -798,7 +802,15 @@ int do_loop_shutdown_commands(const char *sdcmds, char **cmdused) {
 			continue;
 		if ((cmdret = upsh.instcmd(s, NULL)) == STAT_INSTCMD_HANDLED) {
 			/* Shutdown successful */
-			if (cmdused)
+
+			/* Note: If we are handling "shutdown.default" here,
+			 * it is anticipated that it calls some other INSTCMD
+			 * as the implementation, and that could set a value
+			 * which we actually want to keep and tell the caller.
+			 * We had freed *cmdused above, so it if is not empty
+			 * here - something during the handling populated it.
+			 */
+			if (cmdused && !(*cmdused))
 				*cmdused = xstrdup(s);
 			upsdebugx(1, "%s(): command '%s' was handled successfully", __func__, NUT_STRARG(s));
 			goto done;
@@ -834,6 +846,44 @@ int loop_shutdown_commands(const char *sdcmds_default, char **cmdused) {
 		upsdebugx(1, "%s: call do_loop_shutdown_commands() with driver-default sdcommands", __func__);
 		return do_loop_shutdown_commands(sdcmds_default, cmdused);
 	}
+}
+
+/* Common and default implementation of upsdrv_shutdown() in most drivers,
+ * unless they do something that can not be made instcmd("shutdown.default")
+ */
+int upsdrv_shutdown_default(const char *sdcmds_default, char **cmdused) {
+	char	*sdcmd_used = NULL;
+	int	sdret = loop_shutdown_commands(
+			sdcmds_default ? sdcmds_default : "shutdown.default",
+			&sdcmd_used);
+
+	if (cmdused) {
+		if (*cmdused)
+			free(*cmdused);
+		*cmdused = NULL;
+	}
+
+	if (sdret == STAT_INSTCMD_HANDLED) {
+		upslogx(LOG_INFO, "UPS [%s]: shutdown request was successful with '%s'",
+			NUT_STRARG(upsname), NUT_STRARG(sdcmd_used));
+
+		/* Pass it up to caller? */
+		if (cmdused) {
+			*cmdused = sdcmd_used;
+		} else {
+			if (sdcmd_used)
+				free(sdcmd_used);
+		}
+	} else if (!upsh.instcmd) {
+		upslogx(LOG_ERR, "UPS [%s]: shutdown not supported", NUT_STRARG(upsname));
+	} else {
+		upslogx(LOG_ERR, "UPS [%s]: shutdown request(s) failed", NUT_STRARG(upsname));
+	}
+
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(sdret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
+
+	return sdret;
 }
 
 /* handle instant commands common for all drivers */

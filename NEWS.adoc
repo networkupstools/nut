@@ -328,7 +328,9 @@ it is getting set at all in "killpower" vs. other cases, based on new
 `handling_upsdrv_shutdown` internal flag.
 +
 NOTE: during this overhaul, many older drivers got their first ever supported
-INSTCMD such as `shutdown.return`, `shutdown.stayoff` or `load.off`. [#2670]
+INSTCMD such as `shutdown.return`, `shutdown.stayoff` or `load.off`. Default
+logic that was previously the content of `upsdrv_shutdown()` methods was often
+relocated into new `shutdown.default` INSTCMD definitions. [#2670]
 
  - common code:
    * introduced a `NUT_DEBUG_SYSLOG` environment variable to tweak activation
