@@ -778,8 +778,22 @@ void addvar(int vartype, const char *name, const char *desc)
 int do_loop_shutdown_commands(const char *sdcmds, char **cmdused) {
 	int	cmdret = STAT_INSTCMD_UNKNOWN;
 	char	*buf = NULL, *s = NULL;
+	static int	call_depth = 0;
 
-	upsdebugx(1, "%s(%s)...", __func__, NUT_STRARG(sdcmds));
+	call_depth++;
+	upsdebugx(1, "Starting %s(%s), call depth %d...",
+		__func__, NUT_STRARG(sdcmds), call_depth);
+
+	if (call_depth > MAX_SDCOMMANDS_DEPTH) {
+		/* Might get here e.g. if someone were to call
+		 * upsdrv_shutdown_sdcommands_or_default() along
+		 * an implementation code path from upsdrv_shutdown()
+		 * with sdcmds=="shutdown.default"?.. */
+		fatalx(EXIT_FAILURE, "Shutdown handlers for UPS [%s] are "
+			"too deeply nested, this seems to be either "
+			"a NUT programming error or a mis-configuration "
+			"of your 'sdcommands' setting", NUT_STRARG(upsname));
+	}	
 
 	if (cmdused) {
 		if (*cmdused)
@@ -845,7 +859,11 @@ done:
 		free(buf);
 	if (cmdret != STAT_INSTCMD_HANDLED)
 		cmdret = STAT_INSTCMD_INVALID;
-	upsdebugx(1, "%s(%s): %d", __func__, NUT_STRARG(sdcmds), cmdret);
+
+	upsdebugx(1, "Ending %s(%s), call depth %d: return-code %d",
+		__func__, NUT_STRARG(sdcmds), call_depth, cmdret);
+	call_depth--;
+
 	return cmdret;
 }
 

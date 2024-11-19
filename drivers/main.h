@@ -40,6 +40,7 @@ void set_exit_flag(int sig);
  * should free() it eventually.
  */
 int do_loop_shutdown_commands(const char *sdcmds, char **cmdused);
+#define	MAX_SDCOMMANDS_DEPTH	15
 
 /* Use driver-provided sdcmds_default, unless a custom driver parameter value
  * "sdcommands" is set - then use it instead. Call do_loop_shutdown_commands()
