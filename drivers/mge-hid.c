@@ -266,6 +266,12 @@ static const char *eaton_abm_path_mode_fun(double value)
 {
 	int abm_path_mode_value = (int)value;
 
+	/* If unknown/disabled ABM, reset ABM path to give UPS a chance to use another once re-enabled */
+	if(advanced_battery_monitoring == ABM_UNKNOWN || advanced_battery_monitoring == ABM_DISABLED) {
+		advanced_battery_path = ABM_PATH_UNKNOWN;
+		return NULL;
+	}
+
 	/* If ABM_ENABLED and not yet initialized set ABM path to ABM_PATH_MODE */
 	if (advanced_battery_monitoring == ABM_ENABLED && advanced_battery_path == ABM_PATH_UNKNOWN)
 	{
@@ -286,6 +292,12 @@ static info_lkp_t eaton_abm_path_mode_info[] = {
 static const char *eaton_abm_path_status_fun(double value)
 {
 	int abm_path_status_value = (int)value;
+
+	/* If unknown/disabled ABM, reset ABM path to give UPS a chance to use another once re-enabled */
+	if(advanced_battery_monitoring == ABM_UNKNOWN || advanced_battery_monitoring == ABM_DISABLED) {
+		advanced_battery_path = ABM_PATH_UNKNOWN;
+		return NULL;
+	}
 
 	/* If ABM_ENABLED and not yet initialized set ABM path to ABM_PATH_STATUS */
 	if (advanced_battery_monitoring == ABM_ENABLED && advanced_battery_path == ABM_PATH_UNKNOWN)
