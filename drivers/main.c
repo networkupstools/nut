@@ -187,7 +187,7 @@ static void forceshutdown(void)
 
 static void forceshutdown(void)
 {
-	upslogx(LOG_NOTICE, "Initiating UPS shutdown");
+	upslogx(LOG_NOTICE, "Initiating UPS [%s] shutdown", upsname);
 
 	/* NOTE: This is currently called exclusively as `drivername -k`
 	 *  CLI argument handling, so we exit afterwards and do not care
@@ -195,8 +195,9 @@ static void forceshutdown(void)
 	 */
 	handling_upsdrv_shutdown = 1;
 
-	/* the driver must not block in this function */
-	upsdrv_shutdown();
+	/* the driver must not block in this function (calling INSTCMD from
+	 * `sdcommands` passed by user, or upsdrv_shutdown() by default */
+	upsdrv_shutdown_sdcommands_or_default(NULL, NULL);
 
 	/* the driver always exits here, to
 	 * not block probable ongoing shutdown */
@@ -954,7 +955,7 @@ int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 				"due to socket protocol request", NUT_STRARG(upsname));
 			if (handling_upsdrv_shutdown == 0)
 				handling_upsdrv_shutdown = 1;
-			upsdrv_shutdown();
+			upsdrv_shutdown_sdcommands_or_default(NULL, NULL);
 			return STAT_INSTCMD_HANDLED;
 		} else {
 			upslogx(LOG_WARNING, "Got socket protocol request for UPS [%s] "
