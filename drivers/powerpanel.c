@@ -102,15 +102,10 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	int	i, ret = -1;
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
 
-	/* FIXME: Make a name for default original shutdown */
-	if (device_sdcommands) {
-		ret = loop_shutdown_commands(NULL, NULL);
-		if (handling_upsdrv_shutdown > 0)
-			set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
-		return;
-	}
+	int	i, ret = -1;
 
 	/*
 	 * Try to shutdown with delay and automatic reboot if the power

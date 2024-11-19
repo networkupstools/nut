@@ -2769,22 +2769,18 @@ int	setvar(const char *varname, const char *val)
 /* Try to shutdown the UPS */
 void	upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	int		retry;
 	item_t		*item;
 	const char	*val;
 
 	upsdebugx(1, "%s...", __func__);
 
-	/* FIXME: Make a name for default original shutdown
-	 * and note this common "sdcommands" feature can
+	/* FIXME: Use common "sdcommands" feature to
 	 * replace tunables used below ("stayoff" etc).
 	 */
-	if (device_sdcommands) {
-		int ret = loop_shutdown_commands(NULL, NULL);
-		if (handling_upsdrv_shutdown > 0)
-			set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
-		return;
-	}
 
 	/* Get user-defined delays */
 

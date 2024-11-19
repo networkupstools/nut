@@ -468,6 +468,9 @@ void upsdrv_updateinfo(void)
 /* shutdown UPS */
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/*
 	 * WARNING: When using RTU TCP, this driver will probably
 	 * never support shutdowns properly, except on some systems:
@@ -480,7 +483,7 @@ void upsdrv_shutdown(void)
 	 * a limitation (on some platforms) of the interface/media
 	 * used for these devices.
 	 */
-	int	ret = loop_shutdown_commands("shutdown.stayoff", NULL);
+	int	ret = do_loop_shutdown_commands("shutdown.stayoff", NULL);
 	if (handling_upsdrv_shutdown > 0)
 		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }

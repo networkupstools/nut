@@ -1569,6 +1569,9 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/*
 	 * WARNING: When using RTU TCP, this driver will probably
 	 * never support shutdowns properly, except on some systems:
@@ -1582,19 +1585,15 @@ void upsdrv_shutdown(void)
 	 * used for these devices.
 	 */
 
-	/* FIXME: Make a name for default original shutdown */
-	if (device_sdcommands) {
-		int	ret = loop_shutdown_commands(NULL, NULL);
-		if (handling_upsdrv_shutdown > 0)
-			set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
-		return;
-	}
-
-	/* FIXME: Make a name for default original shutdown:
-	 *  got no direct equivalent in apc_modbus_command_map[]
-	 *  used for instcmd above
+	/* FIXME: got no direct equivalent in apc_modbus_command_map[]
+	 *  used for instcmd above. Investigate if we can add this
+	 *  combo into that map and name it as an INSTCMD to call by
+	 *  this driver's standard approach.
 	 */
-	modbus_write_register(modbus_ctx, APC_MODBUS_OUTLETCOMMAND_BF_REG, APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_SHUTDOWN | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_MAIN_OUTLET_GROUP);
+	modbus_write_register(modbus_ctx,
+		APC_MODBUS_OUTLETCOMMAND_BF_REG,
+		APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_SHUTDOWN | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_MAIN_OUTLET_GROUP
+	);
 }
 
 void upsdrv_help(void)

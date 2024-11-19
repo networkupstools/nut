@@ -310,15 +310,10 @@ static void set_ups_type(void)
 /* power down the attached load immediately */
 void upsdrv_shutdown(void)
 {
-	int	flags, ret;
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
 
-	/* FIXME: Make a name for default original shutdown */
-	if (device_sdcommands) {
-		int ret = loop_shutdown_commands(NULL, NULL);
-		if (handling_upsdrv_shutdown > 0)
-			set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
-		return;
-	}
+	int	flags, ret;
 
 	if (upstype == -1) {
 		upslogx(LOG_ERR, "No upstype set - see help text / man page!");

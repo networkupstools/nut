@@ -1166,6 +1166,9 @@ void upsdrv_updateinfo(void)
 /* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/* Note: this UPS cannot (apparently) be put into "soft
 	   shutdown" mode; thus the -k option should not normally be
 	   used; instead, a workaround using the "-x wait" option
@@ -1182,14 +1185,6 @@ void upsdrv_shutdown(void)
 	   option instead, as suggested on the belkinunv(8) man
 	   page.
 	 */
-
-	/* FIXME: Make a name for default original shutdown */
-	if (device_sdcommands) {
-		int	ret = loop_shutdown_commands(NULL, NULL);
-		if (handling_upsdrv_shutdown > 0)
-			set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
-		return;
-	}
 
 	upslogx(LOG_WARNING,
 		"You are using the -k option, which is broken for this driver.\n"

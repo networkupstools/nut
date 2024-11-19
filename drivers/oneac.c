@@ -814,6 +814,9 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/* FIXME: before loop_shutdown_commands(), code directly called
 	 *  here was identical to "shutdown.reboot", while the driver
 	 *  shutdown should more reasonably be "shutdown.return" (when
@@ -821,7 +824,7 @@ void upsdrv_shutdown(void)
 	 *  implemented in instcmd() here nominally (not sure if named
 	 *  correctly - better re-check on hardware).
 	 */
-	int	ret = loop_shutdown_commands("shutdown.reboot", NULL);
+	int	ret = do_loop_shutdown_commands("shutdown.reboot", NULL);
 	if (handling_upsdrv_shutdown > 0)
 		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }

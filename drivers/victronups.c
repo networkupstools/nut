@@ -498,13 +498,8 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	/* FIXME: Make a name for default original shutdown */
-	if (device_sdcommands) {
-		int	ret = loop_shutdown_commands(NULL, NULL);
-		if (handling_upsdrv_shutdown > 0)
-			set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
-		return;
-	}
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
 
 	ser_send(upsfd, "vCc0!%c", ENDCHAR);
 	usleep(UPS_DELAY);

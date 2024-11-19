@@ -514,11 +514,14 @@ static int upsdrv_setvar (const char *var, const char * data) {
  */
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	int	ret = -1;
 
 	upsdebugx(2, "%s: begin", __func__);
 
-	ret = loop_shutdown_commands("shutdown.return", NULL);
+	ret = do_loop_shutdown_commands("shutdown.return", NULL);
 	if (handling_upsdrv_shutdown > 0)
 		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 

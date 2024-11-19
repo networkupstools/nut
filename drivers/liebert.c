@@ -43,17 +43,12 @@ upsdrv_info_t upsdrv_info = {
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/* XXX: replace with a proper shutdown function (raise DTR) */
 
 	/* worse yet: stock cables don't support shutdown at all */
-
-	/* FIXME: Make a name for default original shutdown */
-	if (device_sdcommands) {
-		int ret = loop_shutdown_commands(NULL, NULL);
-		if (handling_upsdrv_shutdown > 0)
-			set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
-		return;
-	}
 
 	upslogx(LOG_ERR, "shutdown not supported");
 	if (handling_upsdrv_shutdown > 0)

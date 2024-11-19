@@ -133,6 +133,9 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/*
 	 * WARNING: When using RTU TCP, this driver will probably
 	 * never support shutdowns properly, except on some systems:
@@ -147,17 +150,9 @@ void upsdrv_shutdown(void)
 	 */
 
 	/* replace with a proper shutdown function */
-
-	/* NOTE: User-provided commands may be something other
-	 * than actual shutdown, e.g. a beeper to test that the
-	 * INSTCMD happened such and when expected without
-	 * impacting the load fed by the UPS.
-	 */
-	if (loop_shutdown_commands(NULL, NULL) != STAT_INSTCMD_HANDLED) {
-		upslogx(LOG_ERR, "shutdown not supported");
-		if (handling_upsdrv_shutdown > 0)
-			set_exit_flag(EF_EXIT_FAILURE);
-	}
+	upslogx(LOG_ERR, "shutdown not supported");
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 void upsdrv_help(void)

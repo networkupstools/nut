@@ -987,6 +987,9 @@ int setvar(const char *varname, const char *val)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	char	*cmd_used = NULL;
 
 	upsdebugx(1, "%s...", __func__);
@@ -997,7 +1000,7 @@ void upsdrv_shutdown(void)
 	 * - If the above doesn't work, try load.off.delay
 	 * - Finally, try shutdown.stayoff
 	 */
-	if (loop_shutdown_commands("shutdown.return,shutdown.reboot,load.off.delay,shutdown.stayoff", &cmd_used) == STAT_INSTCMD_HANDLED) {
+	if (do_loop_shutdown_commands("shutdown.return,shutdown.reboot,load.off.delay,shutdown.stayoff", &cmd_used) == STAT_INSTCMD_HANDLED) {
 		upslogx(LOG_INFO, "Shutdown successful with '%s'", NUT_STRARG(cmd_used));
 		if (handling_upsdrv_shutdown > 0)
 			set_exit_flag(EF_EXIT_SUCCESS);

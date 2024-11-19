@@ -537,22 +537,16 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/* OL: this must power cycle the load if possible */
 	/* OB: the load must remain off until the power returns */
 
 	/* If get no response, assume on battery & battery low */
 	long	s = OPTISBIT_ON_BATTERY_POWER | OPTISBIT_LOW_BATTERY;
-	ssize_t		r;
 
-	/* FIXME: Make a name for default original shutdown */
-	if (device_sdcommands) {
-		int	ret = loop_shutdown_commands(NULL, NULL);
-		if (handling_upsdrv_shutdown > 0)
-			set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
-		return;
-	}
-
-	r = optiquery( "AG" );
+	ssize_t		r = optiquery( "AG" );
 	if ( r < 1 )
 	{
 		upslogx(LOG_ERR, "can't retrieve ups status during shutdown" );

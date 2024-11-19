@@ -1063,17 +1063,12 @@ static void upsdrv_shutdown_advanced(long status)
 /* power down the attached load immediately */
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	char	temp[32];
 	ssize_t	ret;
 	long	status;
-
-	/* FIXME: Make a name for default original shutdown */
-	if (device_sdcommands) {
-		int	sdret = loop_shutdown_commands(NULL, NULL);
-		if (handling_upsdrv_shutdown > 0)
-			set_exit_flag(sdret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
-		return;
-	}
 
 	if (!smartmode())
 		upsdebugx(1, "SM detection failed. Trying a shutdown command anyway");

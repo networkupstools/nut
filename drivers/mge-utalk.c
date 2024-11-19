@@ -475,10 +475,11 @@ void upsdrv_updateinfo(void)
 
 /* --------------------------------------------------------------- */
 
-/* See comment in method below */
-static char	handling_instcmd_shutdown = 0;
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	char	buf[BUFFLEN];
 	/* static time_t	lastcmd = 0; */
 
@@ -489,33 +490,9 @@ void upsdrv_shutdown(void)
 	 */
 	static char	already_shutting_down = 0;
 
-	if (!handling_instcmd_shutdown
-	 && !already_shutting_down
-	 && device_sdcommands
-	) {
-		char	*cmdstr = NULL;
-		int	cmdret = -1;
-
-		already_shutting_down = 1;
-		handling_instcmd_shutdown = -1;
-		/* NOTE: User-provided commands may be something other
-		 * than actual shutdown, e.g. a beeper to test that the
-		 * INSTCMD happened such and when expected without
-		 * impacting the load fed by the UPS.
-		 */
-		cmdret = loop_shutdown_commands(NULL, &cmdstr);
-		if (cmdret != STAT_INSTCMD_HANDLED) {
-			upslogx(LOG_WARNING, "Failed to command the UPS to '%s'", NUT_STRARG(cmdstr));
-			if (cmdstr)
-				free(cmdstr);
-		}
-
-		/* Reset the flags if not going down */
-		already_shutting_down = 0;
-		handling_instcmd_shutdown = 0;
+	if (already_shutting_down)
 		return;
-	}
-	/* just in case */
+
 	already_shutting_down = 1;
 
 	/* Here we are if handling explicit INSTCMD to shut down,
@@ -542,9 +519,13 @@ void upsdrv_shutdown(void)
 	}
 /*	if(strcmp(buf, "OK")) */
 
-	/* FIXME: Should the UPS shutdown mean the driver shutdown? */
-	/* call the cleanup to disable/close the comm link */
-	upsdrv_cleanup();
+	if (handling_upsdrv_shutdown > 0) {
+		/* call the cleanup to disable/close the comm link */
+		upsdrv_cleanup();
+	} else {
+		/* Reset the flags if driver is not going down */
+		already_shutting_down = 0;
+	}
 }
 
 /* --------------------------------------------------------------- */
@@ -590,16 +571,12 @@ int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "shutdown.stayoff"))
 	{
 		sdtype = SD_STAYOFF;
-		if (!handling_instcmd_shutdown)
-			handling_instcmd_shutdown = 1;
 		upsdrv_shutdown();
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.return"))
 	{
 		sdtype = SD_RETURN;
-		if (!handling_instcmd_shutdown)
-			handling_instcmd_shutdown = 1;
 		upsdrv_shutdown();
 	}
 

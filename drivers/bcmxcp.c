@@ -1948,11 +1948,14 @@ float calculate_ups_load(const unsigned char *answer)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	upsdebugx(1, "upsdrv_shutdown...");
 
 	/* First try to shutdown with delay;
 	 * if the above doesn't work, try shutdown.stayoff */
-	if (loop_shutdown_commands("shutdown.return,shutdown.stayoff", NULL) == STAT_INSTCMD_HANDLED) {
+	if (do_loop_shutdown_commands("shutdown.return,shutdown.stayoff", NULL) == STAT_INSTCMD_HANDLED) {
 		/* Shutdown successful */
 		if (handling_upsdrv_shutdown > 0)
 			set_exit_flag(EF_EXIT_SUCCESS);

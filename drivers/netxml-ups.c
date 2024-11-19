@@ -394,6 +394,9 @@ void upsdrv_updateinfo(void)
 }
 
 void upsdrv_shutdown(void) {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/*
 	 * WARNING:
 	 * This driver will probably never support this properly:
@@ -405,6 +408,11 @@ void upsdrv_shutdown(void) {
 	 * command to the UPS. This is not an error, but rather
 	 * a limitation (on some platforms) of the interface/media
 	 * used for these devices.
+	 */
+
+	/* FIXME: Make a name for default original shutdown
+	 * in particular to make it one of the options and
+	 * call protocol cleanup below, if needed.
 	 */
 
 	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
@@ -426,17 +434,6 @@ void upsdrv_shutdown(void) {
 
 	object_query_t *resp = NULL;
 	object_query_t *req  = NULL;
-
-	/* FIXME: Make a name for default original shutdown
-	 * in particular to make it one of the options and
-	 * call protocol cleanup below, if needed.
-	 */
-	if (device_sdcommands) {
-		int ret = loop_shutdown_commands(NULL, NULL);
-		if (handling_upsdrv_shutdown > 0)
-			set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
-		return;
-	}
 
 	/* Pragmatic do { ... } while (0) loop allowing break to cleanup */
 	do {

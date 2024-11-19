@@ -749,16 +749,8 @@ void upsdrv_updateinfo(void)
 /* power down the attached load immediately */
 void upsdrv_shutdown(void)
 {
-	/* FIXME: Make a name for default original shutdown;
-	 * note that currently it just does "shutdown.stayoff"
-	 * in both cases, just with different logged messages.
-	 */
-	if (device_sdcommands) {
-		int	ret = loop_shutdown_commands(NULL, NULL);
-		if (handling_upsdrv_shutdown > 0)
-			set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
-		return;
-	}
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
 
 	/* basic idea: find out line status and send appropriate command */
 	/* on line: send normal shutdown, ups will return by itself on utility */

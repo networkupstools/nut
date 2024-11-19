@@ -1801,10 +1801,11 @@ static int ups2000_update_timers(void)
 
 void upsdrv_shutdown(void)
 {
-	int r;
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
 
-	r = loop_shutdown_commands("shutdown.reboot", NULL);
-	if (r != STAT_INSTCMD_HANDLED) {
+	int ret = do_loop_shutdown_commands("shutdown.reboot", NULL);
+	if (ret != STAT_INSTCMD_HANDLED) {
 		upslogx(LOG_ERR, "upsdrv_shutdown failed!");
 		if (handling_upsdrv_shutdown > 0)
 			set_exit_flag(EF_EXIT_FAILURE);
