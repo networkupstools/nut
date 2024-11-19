@@ -902,6 +902,12 @@ int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 		cmdname, extra, NUT_STRARG(upsname), buf);
 
 	if (!strcmp(cmdname, "driver.killpower")) {
+		/* An implementation of `drivername -k` requested from
+		 * the running and connected driver instance by protocol
+		 * over local Unix socket or pipe, primarily intended
+		 * for (emergency) FSD use-cases and so with a fail-safe
+		 * flag involved.
+		 */
 		if (!strcmp("1", dstate_getinfo("driver.flag.allow_killpower"))) {
 			upslogx(LOG_WARNING, "Requesting UPS [%s] to power off, "
 				"as/if handled by its driver by default (may exit), "
@@ -2221,7 +2227,7 @@ int main(int argc, char **argv)
 
 	/* Only switch to statepath if we're not powering off
 	 * or not just dumping data (for discovery) */
-	/* This avoids case where ie /var is unmounted already */
+	/* This avoids case where i.e. /var is unmounted already */
 #ifndef WIN32
 	if ((!do_forceshutdown) && (!dump_data)) {
 		if (chdir(dflt_statepath()))
@@ -2869,7 +2875,8 @@ sockname_ownership_finished:
 			upslogx(LOG_WARNING, "Running as foreground process, not saving a PID file");
 	}
 
-	/* May already be set by parsed configuration flag, only set default if not: */
+	/* May already be set by parsed configuration flag,
+	 * only set default if not: */
 	if (dstate_getinfo("driver.flag.allow_killpower") == NULL)
 		dstate_setinfo("driver.flag.allow_killpower", "0");
 
