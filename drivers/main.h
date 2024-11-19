@@ -62,6 +62,10 @@ int upsdrv_shutdown_sdcommands_or_default(const char *sdcmds_default, char **cmd
  */
 int main_instcmd(const char *cmdname, const char *extra, conn_t *conn);
 
+/* handle instant commands common for all drivers - fallback for common
+ * command names that could be implemented in a driver but were not */
+int main_instcmd_fallback(const char *cmdname, const char *extra, conn_t *conn);
+
 /* handle setting variables common for all drivers
  * (returns STAT_SET_* state values per enum in upshandler.h)
  */

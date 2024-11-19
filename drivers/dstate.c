@@ -847,15 +847,26 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 		if (upsh.instcmd) {
 			ret = upsh.instcmd(cmdname, cmdparam);
 
-			/* send back execution result if requested */
-			if (cmdid)
-				send_tracking(conn, cmdid, ret);
+			if (ret != STAT_INSTCMD_UNKNOWN) {
+				/* send back execution result if requested */
+				if (cmdid)
+					send_tracking(conn, cmdid, ret);
 
-			/* The command was handled, status is a separate consideration */
-			return 1;
-		}
+				/* The command was handled, status is a separate consideration */
+				return 1;
+			} /* else try other handler(s) */
+		} /* else try other handler(s) */
 
-		upslogx(LOG_NOTICE, "Got INSTCMD, but driver lacks a handler");
+		/* Finally try the fallback handler shared by all drivers */
+		ret = main_instcmd_fallback(cmdname, cmdparam, conn);
+		/* send back execution result if requested */
+		if (cmdid)
+			send_tracking(conn, cmdid, ret);
+
+		if (ret == STAT_INSTCMD_UNKNOWN)
+			upslogx(LOG_NOTICE,
+				"Got INSTCMD '%s', but driver lacks a handler",
+				NUT_STRARG(cmdname));
 		return 1;
 	}
 
