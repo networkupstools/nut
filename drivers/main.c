@@ -947,9 +947,8 @@ int upsdrv_shutdown_sdcommands_or_default(const char *sdcmds_default, char **cmd
 	return sdret;
 }
 
-/* handle instant commands common for all drivers - fallback for common
- * command names that could be implemented in a driver but were not */
-int main_instcmd_fallback(const char *cmdname, const char *extra, conn_t *conn) {
+/* handle instant commands common for all drivers */
+int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 	char buf[SMALLBUF];
 	if (conn)
 #ifndef WIN32
@@ -980,29 +979,6 @@ int main_instcmd_fallback(const char *cmdname, const char *extra, conn_t *conn) 
 		upsdrv_shutdown();
 		return STAT_INSTCMD_HANDLED;
 	}
-
-	/* By default, the driver-specific values are
-	 * unknown to shared standard handler */
-	upsdebugx(2, "shared %s() does not handle command %s, "
-		"proceeding to driver-specific handler",
-		__func__, cmdname);
-	return STAT_INSTCMD_UNKNOWN;
-}
-
-/* handle instant commands common for all drivers */
-int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
-	char buf[SMALLBUF];
-	if (conn)
-#ifndef WIN32
-		snprintf(buf, sizeof(buf), "socket %d", conn->fd);
-#else
-		snprintf(buf, sizeof(buf), "handle %p", conn->fd);
-#endif
-	else
-		snprintf(buf, sizeof(buf), "(null)");
-
-	upsdebugx(2, "entering main_instcmd(%s, %s) for [%s] on %s",
-		cmdname, extra, NUT_STRARG(upsname), buf);
 
 	if (!strcmp(cmdname, "driver.killpower")) {
 		/* An implementation of `drivername -k` requested from

@@ -127,11 +127,6 @@ void upsdrv_shutdown(void)
 /*
 static int instcmd(const char *cmdname, const char *extra)
 {
-	if (!strcasecmp(cmdname, "shutdown.default")) {
-		// optional custom implementation - but we
-		// prefer to code upsdrv_shutdown() directly
-	}
-
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
 		ser_send_buf(upsfd, ...);
 		return STAT_INSTCMD_HANDLED;
