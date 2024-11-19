@@ -807,6 +807,7 @@ int do_loop_shutdown_commands(const char *sdcmds, char **cmdused) {
 	}
 
 	if (upsh.instcmd == NULL) {
+		/* FIXME: support main_instcmd() too? */
 		upsdebugx(1, "This driver does not implement INSTCMD support");
 
 		/* ...but the default one we can short-circuit without
@@ -837,7 +838,15 @@ int do_loop_shutdown_commands(const char *sdcmds, char **cmdused) {
 	while ((s = strtok(s == NULL ? buf : NULL, ",")) != NULL) {
 		if (!*s)
 			continue;
-		if ((cmdret = upsh.instcmd(s, NULL)) == STAT_INSTCMD_HANDLED) {
+
+		if (!strcmp(s, "shutdown.default")) {
+			upsdrv_shutdown();
+			cmdret = STAT_INSTCMD_HANDLED;
+		} else {
+			cmdret = upsh.instcmd(s, NULL);
+		}
+
+		if (cmdret == STAT_INSTCMD_HANDLED) {
 			/* Shutdown successful */
 
 			/* Note: If we are handling "shutdown.default" here,
