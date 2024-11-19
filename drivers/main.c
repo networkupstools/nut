@@ -881,6 +881,11 @@ int loop_shutdown_commands(const char *sdcmds_default, char **cmdused) {
 		sdcmds_custom = dstate_getinfo("driver.parameter.sdcommands");
 
 	if (sdcmds_custom) {
+		/* NOTE: User-provided commands may be something other
+		 * than actual shutdown, e.g. a beeper to test that the
+		 * INSTCMD happened such and when expected without
+		 * impacting the load fed by the UPS.
+		 */
 		upsdebugx(1, "%s: call do_loop_shutdown_commands() with custom sdcommands", __func__);
 		return do_loop_shutdown_commands(sdcmds_custom, cmdused);
 	} else {
@@ -889,8 +894,23 @@ int loop_shutdown_commands(const char *sdcmds_default, char **cmdused) {
 	}
 }
 
-/* Common and default implementation of upsdrv_shutdown() in most drivers,
- * unless they do something that can not be made instcmd("shutdown.default")
+/* Since NUT v2.8.3 updated driver model, here we typically call the
+ * user-provided list of `sdcommands` (if any), or the caller-provided
+ * list (hard-coded in a driver), or the default implementation as
+ * "shutdown.default" (usually ends up as upsdrv_shutdown()) if nothing
+ * else was requested by the configuration and call chain.
+ * Any of these call chains, especially the default one, in turn may
+ * call instcmd() for whatever practical action is needed (unless the
+ * default logic is all-custom implemented in upsdrv_shutdown()), and
+ * reports the result (including the case of lacking a registered
+ * upsh.instcmd handler).
+ *
+ * A practical shutdown implementation logic would be coded
+ * in instcmd("shutdown.default") and may be structured like
+ * detailed by comments in skel.c::upsdrv_shutdown(), or can
+ * just call a fitting other instcmd (typically "shutdown.stayoff",
+ * "shutdown.return" or "load.off") -- possibly chosen by current
+ * on-line/on-battery state.
  */
 int upsdrv_shutdown_sdcommands_or_default(const char *sdcmds_default, char **cmdused) {
 	char	*sdcmd_used = NULL;
