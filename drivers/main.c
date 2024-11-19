@@ -901,6 +901,24 @@ int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 	upsdebugx(2, "entering main_instcmd(%s, %s) for [%s] on %s",
 		cmdname, extra, NUT_STRARG(upsname), buf);
 
+	if (!strcmp(cmdname, "shutdown.default")) {
+		/* Call the default implementation of UPS shutdown as
+		 * an instant command, should not halt nor exit the
+		 * driver program, so a subsequent power-on command
+		 * may be possible (depending on driver and device).
+		 * May well be implemented as recursion into "load.off",
+		 * "shutdown.return" or "shutdown.stayoff" - possibly
+		 * with a choice which one to call made at run-time,
+		 * but in some drivers may involve logic not equal to
+		 * any one of those other command implementations.
+		 * Primarily intended to be a choice among `sdcommands`,
+		 * called by default if none were passed (or this one
+		 * was passed explicitly).
+		 */
+		upsdrv_shutdown();
+		return STAT_INSTCMD_HANDLED;
+	}
+
 	if (!strcmp(cmdname, "driver.killpower")) {
 		/* An implementation of `drivername -k` requested from
 		 * the running and connected driver instance by protocol
@@ -2691,6 +2709,10 @@ int main(int argc, char **argv)
 	/* get the base data established before allowing connections */
 	dstate_setinfo("driver.state", "init.info");
 	upsdrv_initinfo();
+
+	/* Register a way to call upsdrv_shutdown() among `sdcommands` */
+	dstate_addcmd("shutdown.default");
+
 	/* Note: a few drivers also call their upsdrv_updateinfo() during
 	 * their upsdrv_initinfo(), possibly to impact the initialization */
 	dstate_setinfo("driver.state", "init.updateinfo");
