@@ -1017,7 +1017,9 @@ int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 				"due to socket protocol request", NUT_STRARG(upsname));
 			if (handling_upsdrv_shutdown == 0)
 				handling_upsdrv_shutdown = 1;
+			dstate_setinfo("driver.state", "fsd.killpower");
 			upsdrv_shutdown_sdcommands_or_default(NULL, NULL);
+			dstate_setinfo("driver.state", "quiet");
 			return STAT_INSTCMD_HANDLED;
 		} else {
 			upslogx(LOG_WARNING, "Got socket protocol request for UPS [%s] "
@@ -2775,9 +2777,6 @@ int main(int argc, char **argv)
 		fatalx(EXIT_FAILURE, "Fatal error: broken driver. It probably needs to be converted.\n");
 	}
 
-	if (do_forceshutdown)
-		forceshutdown();
-
 	/* publish the top-level data: version numbers, driver name */
 	dstate_setinfo("driver.version", "%s", UPS_VERSION);
 	dstate_setinfo("driver.version.internal", "%s", upsdrv_info.version);
@@ -2797,6 +2796,11 @@ int main(int argc, char **argv)
 
 	/* Register a way to call upsdrv_shutdown() among `sdcommands` */
 	dstate_addcmd("shutdown.default");
+
+	if (do_forceshutdown) {
+		dstate_setinfo("driver.state", "fsd.killpower");
+		forceshutdown();
+	}
 
 	/* Note: a few drivers also call their upsdrv_updateinfo() during
 	 * their upsdrv_initinfo(), possibly to impact the initialization */
