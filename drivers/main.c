@@ -873,7 +873,7 @@ int loop_shutdown_commands(const char *sdcmds_default, char **cmdused) {
 /* Common and default implementation of upsdrv_shutdown() in most drivers,
  * unless they do something that can not be made instcmd("shutdown.default")
  */
-int upsdrv_shutdown_default(const char *sdcmds_default, char **cmdused) {
+int upsdrv_shutdown_sdcommands_or_default(const char *sdcmds_default, char **cmdused) {
 	char	*sdcmd_used = NULL;
 	int	sdret = loop_shutdown_commands(
 			sdcmds_default ? sdcmds_default : "shutdown.default",

@@ -55,7 +55,7 @@ int loop_shutdown_commands(const char *sdcmds_default, char **cmdused);
  * and report how that went.
  * Depending on run-time circumstances, probably set_exit_flag() too.
  */
-int upsdrv_shutdown_default(const char *sdcmds_default, char **cmdused);
+int upsdrv_shutdown_sdcommands_or_default(const char *sdcmds_default, char **cmdused);
 
 /* handle instant commands common for all drivers
  * (returns STAT_INSTCMD_* state values per enum in upshandler.h)
