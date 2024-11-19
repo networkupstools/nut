@@ -879,8 +879,8 @@ Instant commands
 | test.system.start        | Start a system test
 | calibrate.start          | Start runtime calibration
 | calibrate.stop           | Stop runtime calibration
-| bypass.start             | Put the UPS in bypass mode
-| bypass.stop              | Take the UPS out of bypass mode
+| bypass.start             | Put the UPS in Bypass mode
+| bypass.stop              | Take the UPS out of Bypass mode
 | ecomode.enable           | Put UPS in High Efficiency (aka ECO) mode
 | ecomode.disable          | Take the UPS out of High Efficiency (aka ECO) mode
 | essmode.enable           | Put UPS in Energy Saver System (aka ESS) mode
