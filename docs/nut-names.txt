@@ -313,7 +313,7 @@ input: Incoming line/power information
                                 overload (enabled or disabled)    | enabled
 | input.transfer.bypass.outlimits | Rule for auto transfer on Bypass when
                                 out of tolerance (enabled or disabled)
-								                                  |enabled
+								                                  | enabled
 | input.bypass.switchable     | Input auto transfer on Bypass when overload
                                 or out of tolerance (enabled or disabled)
 								                                  | enabled
