@@ -144,7 +144,7 @@ typedef enum {
 	BYPASSAUTO,	/* on automatic bypass */
 	BYPASSMAN,	/* on manual/service bypass */
 	ECOMODE,    /* High Efficiency (aka ECO Mode) */
-	ESSMODE,    /* Energy Saver System */
+	ESSMODE,    /* Energy Saver System Mode */
 	OFF,		/* ups is off */
 	CALIB,		/* calibration */
 	OVERHEAT,	/* overheat; Belkin, TrippLite */
