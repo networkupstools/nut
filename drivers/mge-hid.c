@@ -783,7 +783,7 @@ static const char *eaton_input_eco_mode_check_range(double value)
 /* High Efficiency (aka ECO) mode */
 static info_lkp_t eaton_input_eco_mode_on_off_info[] = {
 	{ 0, "normal", NULL, NULL },
-	{ 1, "ECO", eaton_input_eco_mode_check_range, NULL }, /* NOTE: "ecomode" = tested on 9E model and working fine */
+	{ 1, "ECO", eaton_input_eco_mode_check_range, NULL }, /* NOTE: "ECO" = tested on 9E model and working fine */
 	{ 2, "ESS", NULL, NULL }, /* Energy Saver System, makes sense for UPS that implements this mode (93PM G2, 9395P) */
 	{ 0, NULL, NULL, NULL }
 };
@@ -1769,13 +1769,13 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.2.load.off", 0, 0, "UPS.OutletSystem.Outlet.[3].DelayBeforeShutdown", NULL, "0", HU_TYPE_CMD, NULL },
 	{ "outlet.2.load.on", 0, 0, "UPS.OutletSystem.Outlet.[3].DelayBeforeStartup", NULL, "0", HU_TYPE_CMD, NULL },
 
-	/* Command to switch ECO Mode */
+	/* Command to switch ECO(HE) Mode */
 	{ "ecomode.disable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "0", HU_TYPE_CMD, NULL },
 	{ "ecomode.enable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "1", HU_TYPE_CMD, eaton_input_eco_mode_on_off_info },
 	{ "essmode.enable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "2", HU_TYPE_CMD, NULL },
 	{ "essmode.disable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "0", HU_TYPE_CMD, NULL },
 
-	/* Command to switch Automatic Bypass Mode On/Off */
+	/* Command to switch Automatic Bypass Mode on/off */
 	{ "bypass.start", 0, 0, "UPS.PowerConverter.Input.[2].SwitchOnControl", NULL, "1", HU_TYPE_CMD, eaton_input_bypass_mode_on_info },
 	{ "bypass.stop", 0, 0, "UPS.PowerConverter.Input.[2].SwitchOffControl", NULL, "1", HU_TYPE_CMD, NULL },
 
