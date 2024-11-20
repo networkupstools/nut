@@ -307,7 +307,7 @@ input: Incoming line/power information
                                 point (percent of nominal Hz)     | 5
 | input.transfer.hysteresis   | Threshold of switching protection modes,
                                 voltage transfer point (V)        | 10
-| input.transfer.forced       | Input forced transfer modes
+| input.transfer.bypass.forced | Input forced transfer modes
                                 (enabled or disabled)             | enabled
 | input.transfer.bypass.overload | Rule for auto transfer on Bypass when
                                 overload (enabled or disabled)    | enabled
