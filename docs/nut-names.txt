@@ -303,7 +303,7 @@ input: Incoming line/power information
                                 transfer point (V)                | 264
 | input.transfer.frequency.bypass.range | Frequency range Bypass transfer
                                 point (percent of nominal Hz)     | 10
-| input.transfer.frequency.eco.range    | Frequency range ECO transfer
+| input.transfer.frequency.eco.range | Frequency range ECO transfer
                                 point (percent of nominal Hz)     | 5
 | input.transfer.hysteresis   | Threshold of switching protection modes,
                                 voltage transfer point (V)        | 10
