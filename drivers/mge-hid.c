@@ -1655,10 +1655,10 @@ static hid_info_t mge_hid2nut[] =
 	{ "input.bypass.frequency", 0, 0, "UPS.PowerConverter.Input.[2].Frequency", NULL, "%.1f", 0, NULL },
 	{ "input.bypass.frequency.nominal", 0, 0, "UPS.Flow.[2].ConfigFrequency", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 
-	/* ECO(HE) Mode switch, to use when input.bypass.switch.on is on */
+	/* ECO(HE), ESS Mode switch, to use when 'input.bypass.switch.on' is on */
 	{ "input.eco.switchable", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[5].Switchable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_eco_mode_on_off_info },
 
-	/* Auto Bypass Mode on/off, to use when input.transfer.bypass.forced is enabled */
+	/* Auto Bypass Mode on/off, to use when 'input.transfer.bypass.forced' is enabled */
 	{ "input.bypass.switch.on", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[2].SwitchOnControl", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_bypass_mode_on_info },
 	{ "input.bypass.switch.off", ST_FLAG_RW | ST_FLAG_STRING, 12, "UPS.PowerConverter.Input.[2].SwitchOffControl", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_bypass_mode_off_info },
 
@@ -1769,7 +1769,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.2.load.off", 0, 0, "UPS.OutletSystem.Outlet.[3].DelayBeforeShutdown", NULL, "0", HU_TYPE_CMD, NULL },
 	{ "outlet.2.load.on", 0, 0, "UPS.OutletSystem.Outlet.[3].DelayBeforeStartup", NULL, "0", HU_TYPE_CMD, NULL },
 
-	/* Command to switch ECO(HE) Mode */
+	/* Command to switch ECO(HE), ESS Mode */
 	{ "ecomode.disable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "0", HU_TYPE_CMD, NULL },
 	{ "ecomode.enable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "1", HU_TYPE_CMD, eaton_input_eco_mode_on_off_info },
 	{ "essmode.enable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "2", HU_TYPE_CMD, NULL },
