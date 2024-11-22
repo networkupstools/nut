@@ -1009,17 +1009,19 @@ static info_lkp_t eaton_input_eco_mode_on_off_info[] = {
 static const char *eaton_input_eco_mode_auto_on_fun(double value)
 {
 
-	const char *bypass_switch_off_str = dstate_getinfo("input.bypass.switch.off");
+	 /* const char *bypass_switch_off_str = dstate_getinfo("input.bypass.switch.off"); */
 	const char *bypass_switch_on_str = dstate_getinfo("input.bypass.switch.on");
 	const char *eco_switchable_str = dstate_getinfo("input.eco.switchable");
 
+	NUT_UNUSED_VARIABLE(value);
+
 	/* Check if input.bypass.switch.on is disabled and set it to 'on' */
-	if (bypass_switch_on_str != "on") {
+    if (strcmp(bypass_switch_on_str, "off") == 0) {
 		dstate_setinfo("input.bypass.switch.on", "on");
 	}
 
 	/* Check if input.eco.switchable is normal and set it to 'ECO' */
-	if (eco_switchable_str == "normal") {
+   if (strcmp(eco_switchable_str, "normal") == 0) { 
 		dstate_setinfo("input.eco.switchable", "ECO");
 	}
 
