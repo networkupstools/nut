@@ -1022,7 +1022,10 @@ static const char *eaton_input_eco_mode_auto_on_fun(double value)
 	if (eco_switchable_str == "normal") {
 		dstate_setinfo("input.eco.switchable", "ECO");
 	}
-		return NULL;
+
+	/* NOT FINISHED YET */
+
+	return NULL;
 }
 
 /* High Efficiency (aka ECO) mode for auto start command */
