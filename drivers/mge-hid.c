@@ -1005,6 +1005,18 @@ static info_lkp_t eaton_input_eco_mode_on_off_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
+static const char *eaton_input_eco_mode_auto_on_fun(double value)
+{
+   
+
+}
+
+/* High Efficiency (aka ECO) mode for auto start command */
+static eaton_input_eco_mode_auto_on_info[] = {
+	{ 1, "dummy", eaton_input_eco_mode_auto_on_fun, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
 /* Function to check if the current Bypass transfer voltage/frequency is within the configured limits */
 static const char *eaton_input_bypass_check_range(double value)
 {
@@ -2076,6 +2088,8 @@ static hid_info_t mge_hid2nut[] =
 	{ "ecomode.enable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "1", HU_TYPE_CMD, eaton_input_eco_mode_on_off_info },
 	{ "essmode.enable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "2", HU_TYPE_CMD, NULL },
 	{ "essmode.disable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "0", HU_TYPE_CMD, NULL },
+    /* Command to switch ECO(HE) Mode with switch to Automatic Bypass Mode on befor */
+	{ "ecomode.auto.start", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "1", HU_TYPE_CMD, eaton_input_eco_mode_auto_on_info },
 
 	/* Command to switch Automatic Bypass Mode on/off */
 	{ "bypass.start", 0, 0, "UPS.PowerConverter.Input.[2].SwitchOnControl", NULL, "1", HU_TYPE_CMD, eaton_input_bypass_mode_on_info },
