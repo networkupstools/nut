@@ -1005,14 +1005,28 @@ static info_lkp_t eaton_input_eco_mode_on_off_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
+/* Function to start ECO(HE) Mode automaticly instead manually start Bypass and then start ECO(HE) Mode */
 static const char *eaton_input_eco_mode_auto_on_fun(double value)
 {
-   
 
+	const char *bypass_switch_off_str = dstate_getinfo("input.bypass.switch.off");
+	const char *bypass_switch_on_str = dstate_getinfo("input.bypass.switch.on");
+	const char *eco_switchable_str = dstate_getinfo("input.eco.switchable");
+
+	/* Check if input.bypass.switch.on is disabled and set it to 'on' */
+	if (bypass_switch_on_str != "on") {
+		dstate_setinfo("input.bypass.switch.on", "on");
+	}
+
+	/* Check if input.eco.switchable is normal and set it to 'ECO' */
+	if (eco_switchable_str == "normal") {
+		dstate_setinfo("input.eco.switchable", "ECO");
+	}
+		return NULL;
 }
 
 /* High Efficiency (aka ECO) mode for auto start command */
-static eaton_input_eco_mode_auto_on_info[] = {
+static info_lkp_t eaton_input_eco_mode_auto_on_info[] = {
 	{ 1, "dummy", eaton_input_eco_mode_auto_on_fun, NULL },
 	{ 0, NULL, NULL, NULL }
 };
