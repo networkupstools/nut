@@ -1020,28 +1020,27 @@ static const char *eaton_input_eco_mode_auto_on_fun(double value)
 		if (strcmp(check_bypass_result, "on")) {
 		  dstate_setinfo("input.bypass.switch.on", "on");
 		}
-		else{
+		else {
 		  return NULL;
 		}
-	}
-	else {
+	} else {
 		upsdebugx(1, "Bypass switch on state is: %s , must be disabled befor switch on", bypass_switch_on_str);
 	    return NULL;
-		}
+	}
 
 	/* Check if input.eco.switchable is normal and set it to 'ECO' */
    if (strcmp(eco_switchable_str, "normal")) {
 	    check_eco_result = eaton_input_eco_mode_check_range(value);
 		if (strcmp(check_eco_result, "ECO")) {
 		  dstate_setinfo("input.eco.switchable", "ECO");
+		}
         else {
 		  return NULL;
 		}
+	} else {
+		upsdebugx(1, "ECO switch state is: %s , must be normal befor switch to ECO", eco_switchable_str);
+		return NULL;
 	}
-	else {
-		  upsdebugx(1, "ECO switch state is: %s , must be normal befor switch to ECO", eco_switchable_str);
-		  return NULL;
-		}
 
 	/* NOT FINISHED YET */
 
