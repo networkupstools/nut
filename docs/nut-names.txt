@@ -946,6 +946,7 @@ Instant commands
 | bypass.stop              | Take the UPS out of Bypass mode
 | ecomode.enable           | Put UPS in High Efficiency (aka ECO) mode
 | ecomode.disable          | Take the UPS out of High Efficiency (aka ECO) mode
+| ecomode.start.auto       | Put UPS in Bypass mode then High Efficiency (aka ECO) mode
 | essmode.enable           | Put UPS in Energy Saver System (aka ESS) mode
 | essmode.disable          | Take the UPS out of Energy Saver System (aka ESS) mode
 | reset.input.minmax       | Reset minimum and maximum input voltage status
