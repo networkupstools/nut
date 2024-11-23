@@ -1142,6 +1142,8 @@ static const char *eaton_input_eco_mode_auto_on_fun(double value)
 	const char *bypass_switch_on_str = dstate_getinfo("input.bypass.switch.on");
 	const char *eco_switchable_str = dstate_getinfo("input.eco.switchable");
 
+	NUT_UNUSED_VARIABLE(value);
+
 	/* Check if input.bypass.switch.on is disabled and set it to 'on' */
     if (strcmp(bypass_switch_on_str, "disabled")) {
 	    setvar("input.bypass.switch.on", "on");
