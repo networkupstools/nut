@@ -1138,20 +1138,13 @@ static info_lkp_t eaton_input_bypass_mode_off_info[] = {
 /* Function to start ECO(HE) Mode automaticly instead manually start Bypass and then start ECO(HE) Mode */
 static const char *eaton_input_eco_mode_auto_on_fun(double value)
 {
-    const char *check_eco_result;
-	const char *check_bypass_result;
 	const char *bypass_switch_off_str = dstate_getinfo("input.bypass.switch.off");
 	const char *bypass_switch_on_str = dstate_getinfo("input.bypass.switch.on");
 	const char *eco_switchable_str = dstate_getinfo("input.eco.switchable");
 
 	/* Check if input.bypass.switch.on is disabled and set it to 'on' */
     if (strcmp(bypass_switch_on_str, "disabled")) {
-	    check_bypass_result = eaton_input_bypass_check_range(value);
-		if (strcmp(check_bypass_result, "on")) {
-		  setvar("input.bypass.switch.on", "on");
-		} else {
-		  return NULL;
-		}
+	    setvar("input.bypass.switch.on", "on");
 	} else {
 		upsdebugx(1, "Bypass switch on state is: %s , must be disabled befor switch on", bypass_switch_on_str);
 	    return NULL;
@@ -1159,12 +1152,7 @@ static const char *eaton_input_eco_mode_auto_on_fun(double value)
 
 	/* Check if input.eco.switchable is normal and set it to 'ECO' */
     if (strcmp(eco_switchable_str, "normal")) {
-	    check_eco_result = eaton_input_eco_mode_check_range(value);
-		if (strcmp(check_eco_result, "ECO")) {
-		  setvar("input.eco.switchable", "ECO");
-		} else {
-		  return NULL;
-		}
+        setvar("input.eco.switchable", "ECO");
 	} else {
 		upsdebugx(1, "ECO switch state is: %s , must be normal befor switch to ECO", eco_switchable_str);
 		return NULL;
