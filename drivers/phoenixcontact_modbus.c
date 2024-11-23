@@ -29,8 +29,8 @@
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define MODBUS_SLAVE_ID 192
 
-#define OLD_UPS 0
-#define NEW_UPS 1
+#define QUINT_UPS 0
+#define QUINT4_UPS 1
 
 /* Variables */
 static modbus_t *modbus_ctx = NULL;
@@ -54,7 +54,7 @@ void upsdrv_initinfo(void)
 	upsdebugx(2, "upsdrv_initinfo");
 
 	dstate_setinfo("device.mfr", "Phoenix Contact");
-	
+
 	/* upsh.instcmd = instcmd; */
 	/* upsh.setvar = setvar; */
 
@@ -64,20 +64,22 @@ void upsdrv_initinfo(void)
 
 	if (FWVersion == 544)
 	{
-		UPSModel = OLD_UPS;
+		UPSModel = QUINT_UPS;
 		dstate_setinfo("device.model", "QUINT-UPS/24DC OLD");
 	}
 	else if (FWVersion == 305)
 	{
-		UPSModel = NEW_UPS;
+		UPSModel = QUINT4_UPS;
 		dstate_setinfo("device.model", "QUINT-UPS/24DC NEW");
 	}
+
+	dstate_setinfo("ups.firmware", "%d", FWVersion);
 }
 
 void upsdrv_updateinfo(void)
 {
 	uint16_t tab_reg[64];
-	
+
 	errcount = 0;
 
 	upsdebugx(2, "upsdrv_updateinfo");
@@ -85,21 +87,27 @@ void upsdrv_updateinfo(void)
 	uint16_t actual_code_functions;
 	uint16_t actual_alarms = 0;
 	uint16_t actual_alarms1 = 0;
+	uint32_t alarms_word;
+	uint16_t battery_voltage;
+	uint16_t battery_temperature;
+	uint16_t battery_runtime;
+	uint16_t battery_capacity;
+	uint16_t output_current;
 
 	switch (UPSModel)
 	{
-	case NEW_UPS:
-		
+	case QUINT4_UPS:
+
 		mrir(modbus_ctx, 0x2000, 1, &actual_code_functions);
 
-		tab_reg[0] = CHECK_BIT(actual_code_functions, 2); //battery mode is the 2nd bit of the register 0x2000
-		tab_reg[2] = CHECK_BIT(actual_code_functions, 5); //battery charging is the 5th bit of the register 0x2000
-				
+		tab_reg[0] = CHECK_BIT(actual_code_functions, 2); /* Battery mode is the 2nd bit of the register 0x2000 */
+		tab_reg[2] = CHECK_BIT(actual_code_functions, 5); /* Battery charging is the 5th bit of the register 0x2000 */
+
 		mrir(modbus_ctx, 0x3001, 1, &actual_alarms1);
 
-		tab_reg[1] = CHECK_BIT(actual_alarms1, 2); //battery discharged is the 2nd bit of the register 0x3001
+		tab_reg[1] = CHECK_BIT(actual_alarms1, 2); /* Battery discharged is the 2nd bit of the register 0x3001 */
 		break;
-	case OLD_UPS:
+	case QUINT_UPS:
 
 		mrir(modbus_ctx, 29697, 3, tab_reg); /* LB is actually called "shutdown event" on this ups */
 		break;
@@ -124,53 +132,47 @@ void upsdrv_updateinfo(void)
 
 	switch (UPSModel)
 	{
-	case NEW_UPS:
+	case QUINT4_UPS:
 
 		mrir(modbus_ctx, 0x2006, 1, tab_reg);
 		break;
-	case OLD_UPS:
+	case QUINT_UPS:
 
 		mrir(modbus_ctx, 29745, 1, tab_reg);
 		break;
 	default:
 		break;
 	}
-	
+
 	dstate_setinfo("output.voltage", "%d", (int) (tab_reg[0] / 1000));
 
 	switch (UPSModel)
 	{
-	case NEW_UPS:
+	case QUINT4_UPS:
 
 		mrir(modbus_ctx, 0x200F, 1, tab_reg);
 		break;
-	case OLD_UPS:
+	case QUINT_UPS:
 
 		mrir(modbus_ctx, 29749, 5, tab_reg);
 		break;
 	default:
 		break;
 	}
-		
+
 	dstate_setinfo("battery.charge", "%d", tab_reg[0]);
 	/* dstate_setinfo("battery.runtime",tab_reg[1]*60); */ /* also reported on this address, but less accurately */
 
-	uint16_t battery_voltage;
-	uint16_t battery_temperature;
-	uint16_t battery_runtime;
-	uint16_t battery_capacity;
-	uint16_t output_current;
-
 	switch (UPSModel)
 	{
-	case NEW_UPS:
-				
+	case QUINT4_UPS:
+
 		mrir(modbus_ctx, 0x200A, 1, &battery_voltage);
 		tab_reg[0] = battery_voltage;
-				
+
 		mrir(modbus_ctx, 0x200D, 1, &battery_temperature);
 		tab_reg[1] = battery_temperature;
-				
+
 		mrir(modbus_ctx, 0x2010, 1, &battery_runtime);
 		tab_reg[3] = battery_runtime;
 
@@ -181,14 +183,14 @@ void upsdrv_updateinfo(void)
 		tab_reg[6] = output_current;
 
 		break;
-	case OLD_UPS:
+	case QUINT_UPS:
 
 		mrir(modbus_ctx, 29792, 10, tab_reg);
 		break;
 	default:
 		break;
 	}
-	
+
 	dstate_setinfo("battery.voltage", "%f", (double) (tab_reg[0]) / 1000.0);
 	dstate_setinfo("battery.temperature", "%d", tab_reg[1] - 273);
 	dstate_setinfo("battery.runtime", "%d", tab_reg[3]);
@@ -196,14 +198,12 @@ void upsdrv_updateinfo(void)
 	dstate_setinfo("output.current", "%f", (double) (tab_reg[6]) / 1000.0);
 
 	/* ALARMS */
-	
-	alarm_init();
 
-	uint32_t alarms_word;
+	alarm_init();
 
 	switch (UPSModel)
 	{
-	case NEW_UPS:
+	case QUINT4_UPS:
 
 		tab_reg[0] = 0;
 		actual_alarms = 0;
@@ -244,11 +244,10 @@ void upsdrv_updateinfo(void)
 			alarm_set("Low Battery (Service)");
 
 		break;
-	case OLD_UPS:
+	case QUINT_UPS:
 
 		mrir(modbus_ctx, 29840, 1, tab_reg);
 
-		
 		if (CHECK_BIT(tab_reg[0], 4) && CHECK_BIT(tab_reg[0], 5))
 			alarm_set("End of life (Resistance)");
 		if (CHECK_BIT(tab_reg[0], 6))
@@ -307,17 +306,17 @@ void upsdrv_initups(void)
 {
 	int r;
 	upsdebugx(2, "upsdrv_initups");
-	
+
 	modbus_ctx = modbus_new_rtu(device_path, 115200, 'E', 8, 1);
 	if (modbus_ctx == NULL)
 		fatalx(EXIT_FAILURE, "Unable to create the libmodbus context");
-	
+
 	r = modbus_set_slave(modbus_ctx, MODBUS_SLAVE_ID);	/* slave ID */
 	if (r < 0) {
 		modbus_free(modbus_ctx);
 		fatalx(EXIT_FAILURE, "Invalid modbus slave ID %d",MODBUS_SLAVE_ID);
 	}
-	
+
 	if (modbus_connect(modbus_ctx) == -1) {
 		modbus_free(modbus_ctx);
 		fatalx(EXIT_FAILURE, "modbus_connect: unable to connect: %s", modbus_strerror(errno));
