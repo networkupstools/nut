@@ -87,7 +87,6 @@ void upsdrv_updateinfo(void)
 	uint16_t actual_code_functions;
 	uint16_t actual_alarms = 0;
 	uint16_t actual_alarms1 = 0;
-	uint32_t alarms_word;
 	uint16_t battery_voltage;
 	uint16_t battery_temperature;
 	uint16_t battery_runtime;
@@ -209,38 +208,37 @@ void upsdrv_updateinfo(void)
 		actual_alarms = 0;
 		actual_alarms1 = 0;
 
-		alarms_word = 0;
+		mrir(modbus_ctx, 0x3000, 1, &actual_alarms);
+		mrir(modbus_ctx, 0x3000, 1, &actual_alarms1);
 
-		mrir(modbus_ctx, 0x3000, 2, &alarms_word);
-
-		if (CHECK_BIT(alarms_word, 10) && CHECK_BIT(alarms_word, 10))
+		if (CHECK_BIT(actual_alarms, 9) && CHECK_BIT(actual_alarms, 9))
 			alarm_set("End of life (Resistance)");
 
-		if (CHECK_BIT(alarms_word, 16))
+		if (CHECK_BIT(actual_alarms1, 0))
 			alarm_set("End of life (Time)");
 
-		if (CHECK_BIT(alarms_word, 10))
+		if (CHECK_BIT(actual_alarms, 10))
 			alarm_set("End of life (Voltage)");
 
-		if (CHECK_BIT(alarms_word, 3))
+		if (CHECK_BIT(actual_alarms, 3))
 			alarm_set("No Battery");
 
-		if (CHECK_BIT(alarms_word, 5))
+		if (CHECK_BIT(actual_alarms, 5))
 			alarm_set("Inconsistent technology");
 
-		if (CHECK_BIT(alarms_word, 24))
+		if (CHECK_BIT(actual_alarms1, 8))
 			alarm_set("Overload Cutoff");
 
-		if (CHECK_BIT(alarms_word, 19))
+		if (CHECK_BIT(actual_alarms1, 3))
 			alarm_set("Low Battery (Voltage)");
 
-		if (CHECK_BIT(alarms_word, 20))
+		if (CHECK_BIT(actual_alarms1, 4))
 			alarm_set("Low Battery (Charge)");
 
-		if (CHECK_BIT(alarms_word, 21))
+		if (CHECK_BIT(actual_alarms1, 5))
 			alarm_set("Low Battery (Time)");
 
-		if (CHECK_BIT(alarms_word, 30))
+		if (CHECK_BIT(actual_alarms1, 14))
 			alarm_set("Low Battery (Service)");
 
 		break;
