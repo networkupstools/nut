@@ -1135,39 +1135,42 @@ static info_lkp_t eaton_input_bypass_mode_off_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
-/* Function to start ECO(HE) Mode automaticly instead manually start Bypass and then start ECO(HE) Mode */
+/* Function to start ECO(HE) Mode automatically instead of manually starting Bypass and then ECO(HE) Mode */
 static const char *eaton_input_eco_mode_auto_on_fun(double value)
 {
-	const char *bypass_switch_off_str = dstate_getinfo("input.bypass.switch.off");
-	const char *bypass_switch_on_str = dstate_getinfo("input.bypass.switch.on");
-	const char *eco_switchable_str = dstate_getinfo("input.eco.switchable");
+	const char *bypass_switch_off_str = NULL;
+	const char *bypass_switch_on_str = NULL;
+	const char *eco_switchable_str = NULL;
 
 	NUT_UNUSED_VARIABLE(value);
 
 	/* Check if input.bypass.switch.on is disabled and set it to 'on' */
+	bypass_switch_on_str = dstate_getinfo("input.bypass.switch.on");
     if (strcmp(bypass_switch_on_str, "disabled")) {
 	    setvar("input.bypass.switch.on", "on");
 	} else {
-		upsdebugx(1, "Bypass switch on state is: %s , must be disabled befor switch on", bypass_switch_on_str);
+		upsdebugx(1, "Bypass switch on state is: %s , must be disabled before switching on", bypass_switch_on_str);
 	    return NULL;
 	}
 
 	/* Check if input.eco.switchable is normal and set it to 'ECO' */
+	eco_switchable_str = dstate_getinfo("input.eco.switchable");
     if (strcmp(eco_switchable_str, "normal")) {
         setvar("input.eco.switchable", "ECO");
 	} else {
-		upsdebugx(1, "ECO switch state is: %s , must be normal befor switch to ECO", eco_switchable_str);
+		upsdebugx(1, "ECO switch state is: %s , must be normal before switching to ECO", eco_switchable_str);
 		return NULL;
 	}
 
     /* Check if input.bypass.switch.off is disabled and set it to 'off' */
+	bypass_switch_off_str = dstate_getinfo("input.bypass.switch.off");
     if (strcmp(bypass_switch_off_str, "disabled")) {
         setvar("input.bypass.switch.off", "off");
 	} else {
-		upsdebugx(1, "Bypass switch off state is: %s , must be disabled befor switch off", bypass_switch_off_str);
+		upsdebugx(1, "Bypass switch off state is: %s , must be disabled before switching off", bypass_switch_off_str);
 	    return NULL;
 	}
-	upsdebugx(1, "%s: ECO Mode was enabled after switched to Bypass Mode", __func__);
+	upsdebugx(1, "%s: ECO Mode was enabled after switching to Bypass Mode", __func__);
 	return NULL;
 }
 
