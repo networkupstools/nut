@@ -64,12 +64,12 @@ void upsdrv_initinfo(void)
 	if (FWVersion == 544)
 	{
 		UPSModel = QUINT_UPS;
-		dstate_setinfo("device.model", "QUINT-UPS/24DC OLD");
+		dstate_setinfo("device.model", "QUINT-UPS/24DC");
 	}
 	else if (FWVersion == 305)
 	{
 		UPSModel = QUINT4_UPS;
-		dstate_setinfo("device.model", "QUINT-UPS/24DC NEW");
+		dstate_setinfo("device.model", "QUINT4-UPS/24DC");
 	}
 
 	dstate_setinfo("ups.firmware", "%d", FWVersion);
