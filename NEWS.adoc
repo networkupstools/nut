@@ -450,6 +450,8 @@ during a NUT build.
  - Introduced a simple experiment to expose NUT client readings as filesystem
    objects via FUSE, in `scripts/fuse/execfuse-nut` now. [#2591]
 
+ - Introduced Phoenix Contact QUINT4-UPS/24DC management (only new modbus addresses). [#2689]
+
 
 Release notes for NUT 2.8.2 - what's new since 2.8.1
 ----------------------------------------------------
