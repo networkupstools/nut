@@ -32,7 +32,7 @@
 typedef enum
 {
 	QUINT_UPS,
-	QUINT4_UPS;
+	QUINT4_UPS
 } models;
 
 /* Variables */
