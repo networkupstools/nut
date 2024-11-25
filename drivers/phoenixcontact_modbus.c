@@ -29,8 +29,11 @@
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define MODBUS_SLAVE_ID 192
 
-#define QUINT_UPS 0
-#define QUINT4_UPS 1
+typedef enum
+{
+	QUINT_UPS,
+	QUINT4_UPS;
+} models;
 
 /* Variables */
 static modbus_t *modbus_ctx = NULL;
@@ -38,7 +41,15 @@ static int errcount = 0;
 
 static int mrir(modbus_t * arg_ctx, int addr, int nb, uint16_t * dest);
 
-static uint16_t UPSModel;
+static models UPSModel;
+
+/*
+	For the QUINT ups (first implementation of the driver) the modbus addresses
+	are reported in dec format,for the QUINT4 ups they are reported in hex format.
+	The difference is caused from the way they are reported in the datasheet,
+	keeping them in the same format as the datasheet make more simple the maintenence 
+	of the driver avoiding conversions while coding.
+*/
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
