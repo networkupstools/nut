@@ -38,7 +38,7 @@ static int errcount = 0;
 
 static int mrir(modbus_t * arg_ctx, int addr, int nb, uint16_t * dest);
 
-uint16_t UPSModel;
+static uint16_t UPSModel;
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -51,14 +51,13 @@ upsdrv_info_t upsdrv_info = {
 
 void upsdrv_initinfo(void)
 {
+	uint16_t FWVersion;
 	upsdebugx(2, "upsdrv_initinfo");
 
 	dstate_setinfo("device.mfr", "Phoenix Contact");
 
 	/* upsh.instcmd = instcmd; */
-	/* upsh.setvar = setvar; */
-
-	uint16_t FWVersion;
+	/* upsh.setvar = setvar; */	
 
 	mrir(modbus_ctx, 0x0004, 1, &FWVersion);
 
@@ -79,11 +78,6 @@ void upsdrv_initinfo(void)
 void upsdrv_updateinfo(void)
 {
 	uint16_t tab_reg[64];
-
-	errcount = 0;
-
-	upsdebugx(2, "upsdrv_updateinfo");
-
 	uint16_t actual_code_functions;
 	uint16_t actual_alarms = 0;
 	uint16_t actual_alarms1 = 0;
@@ -92,6 +86,10 @@ void upsdrv_updateinfo(void)
 	uint16_t battery_runtime;
 	uint16_t battery_capacity;
 	uint16_t output_current;
+
+	errcount = 0;
+
+	upsdebugx(2, "upsdrv_updateinfo");
 
 	switch (UPSModel)
 	{
