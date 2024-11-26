@@ -346,22 +346,20 @@ static pkt_data lastpktdata = {
     0xFE  // end_marker
 };
 
-int  get_bit_in_position(void *ptr, size_t size, int bit_position,int invertorder) {
+int get_bit_in_position(void *ptr, size_t size, int bit_position,int invertorder) {
     unsigned char *byte_ptr = (unsigned char *)ptr;
     int retval = -2;
+    size_t byte_index;
+    size_t bit_index;
     
     if (bit_position >= size * 8) {
         return -3; // Invalid Position
     }
 
-    size_t byte_index = bit_position / 8;
-    size_t bit_index = bit_position % 8;
-    
-    retval = (byte_ptr[byte_index] >> (7 - bit_index)) & 1 ? 1 : 0;
     if (invertorder == 0)
        retval = (byte_ptr[byte_index] >> (7 - bit_index)) & 1 ? 1 : 0;
     else
-        retval = (byte_ptr[byte_index] >> (7 - bit_index)) & 0 ? 1 : 1;
+       retval = (byte_ptr[byte_index] >> (7 - bit_index)) & 1 ? 0 : 1;
     return retval;
 }
 
@@ -1850,111 +1848,109 @@ void upsdrv_updateinfo(void) {
                                         dstate_setinfo("battery.charger.status","%s","RESTING");
                                 }
                                 // Now, creating a structure called NHS, 
-                                dstate_setinfo("nhs.lastpkthw.header", "%u", lastpkthwinfo.header);
-                                dstate_setinfo("nhs.lastpkthw.size", "%u", lastpkthwinfo.size);
-                                dstate_setinfo("nhs.lastpkthw.type", "%c", lastpkthwinfo.type);
-                                dstate_setinfo("nhs.lastpkthw.model", "%u", lastpkthwinfo.model);
-                                dstate_setinfo("nhs.lastpkthw.hardwareversion", "%u", lastpkthwinfo.hardwareversion);
-                                dstate_setinfo("nhs.lastpkthw.softwareversion", "%u", lastpkthwinfo.softwareversion);
-                                dstate_setinfo("nhs.lastpkthw.configuration", "%u", lastpkthwinfo.configuration);
+                                dstate_setinfo("nhs.hw.header", "%u", lastpkthwinfo.header);
+                                dstate_setinfo("nhs.hw.size", "%u", lastpkthwinfo.size);
+                                dstate_setinfo("nhs.hw.type", "%c", lastpkthwinfo.type);
+                                dstate_setinfo("nhs.hw.model", "%u", lastpkthwinfo.model);
+                                dstate_setinfo("nhs.hw.hardwareversion", "%u", lastpkthwinfo.hardwareversion);
+                                dstate_setinfo("nhs.hw.softwareversion", "%u", lastpkthwinfo.softwareversion);
+                                dstate_setinfo("nhs.hw.configuration", "%u", lastpkthwinfo.configuration);
                                 for (int i = 0; i < 5; i++) {
                                     // Reusing variable
-                                    sprintf(alarm,"nhs.lastpkthw.configuration_array_p%d",i);
+                                    sprintf(alarm,"nhs.hw.configuration_array_p%d",i);
                                     dstate_setinfo(alarm, "%u", lastpkthwinfo.configuration_array[i]);
                                 }
-                                dstate_setinfo("nhs.lastpkthw.c_oem_mode", "%s", lastpkthwinfo.c_oem_mode ? "true" : "false");
-                                dstate_setinfo("nhs.lastpkthw.c_buzzer_disable", "%s", lastpkthwinfo.c_buzzer_disable ? "true" : "false");
-                                dstate_setinfo("nhs.lastpkthw.c_potmin_disable", "%s", lastpkthwinfo.c_potmin_disable ? "true" : "false");
-                                dstate_setinfo("nhs.lastpkthw.c_rearm_enable", "%s", lastpkthwinfo.c_rearm_enable ? "true" : "false");
-                                dstate_setinfo("nhs.lastpkthw.c_bootloader_enable", "%s", lastpkthwinfo.c_bootloader_enable ? "true" : "false");
-                                dstate_setinfo("nhs.lastpkthw.numbatteries", "%u", lastpkthwinfo.numbatteries);
-                                dstate_setinfo("nhs.lastpkthw.undervoltagein120V", "%u", lastpkthwinfo.undervoltagein120V);
-                                dstate_setinfo("nhs.lastpkthw.overvoltagein120V", "%u", lastpkthwinfo.overvoltagein120V);
-                                dstate_setinfo("nhs.lastpkthw.undervoltagein220V", "%u", lastpkthwinfo.undervoltagein220V);
-                                dstate_setinfo("nhs.lastpkthw.overvoltagein220V", "%u", lastpkthwinfo.overvoltagein220V);
-                                dstate_setinfo("nhs.lastpkthw.tensionout120V", "%u", lastpkthwinfo.tensionout120V);
-                                dstate_setinfo("nhs.lastpkthw.tensionout220V", "%u", lastpkthwinfo.tensionout220V);
-                                dstate_setinfo("nhs.lastpkthw.statusval", "%u", lastpkthwinfo.statusval);
+                                dstate_setinfo("nhs.hw.c_oem_mode", "%s", lastpkthwinfo.c_oem_mode ? "true" : "false");
+                                dstate_setinfo("nhs.hw.c_buzzer_disable", "%s", lastpkthwinfo.c_buzzer_disable ? "true" : "false");
+                                dstate_setinfo("nhs.hw.c_potmin_disable", "%s", lastpkthwinfo.c_potmin_disable ? "true" : "false");
+                                dstate_setinfo("nhs.hw.c_rearm_enable", "%s", lastpkthwinfo.c_rearm_enable ? "true" : "false");
+                                dstate_setinfo("nhs.hw.c_bootloader_enable", "%s", lastpkthwinfo.c_bootloader_enable ? "true" : "false");
+                                dstate_setinfo("nhs.hw.numbatteries", "%u", lastpkthwinfo.numbatteries);
+                                dstate_setinfo("nhs.hw.undervoltagein120V", "%u", lastpkthwinfo.undervoltagein120V);
+                                dstate_setinfo("nhs.hw.overvoltagein120V", "%u", lastpkthwinfo.overvoltagein120V);
+                                dstate_setinfo("nhs.hw.undervoltagein220V", "%u", lastpkthwinfo.undervoltagein220V);
+                                dstate_setinfo("nhs.hw.overvoltagein220V", "%u", lastpkthwinfo.overvoltagein220V);
+                                dstate_setinfo("nhs.hw.tensionout120V", "%u", lastpkthwinfo.tensionout120V);
+                                dstate_setinfo("nhs.hw.tensionout220V", "%u", lastpkthwinfo.tensionout220V);
+                                dstate_setinfo("nhs.hw.statusval", "%u", lastpkthwinfo.statusval);
                                 for (int i = 0; i < 6; i++) {
                                     // Reusing variable
-                                    sprintf(alarm,"nhs.lastpkthw.status_p%d",i);
+                                    sprintf(alarm,"nhs.hw.status_p%d",i);
                                     dstate_setinfo(alarm, "%u", lastpkthwinfo.status[i]);
                                 }
-                                dstate_setinfo("nhs.lastpkthw.s_220V_in", "%s", lastpkthwinfo.s_220V_in ? "true" : "false");
-                                dstate_setinfo("nhs.lastpkthw.s_220V_out", "%s", lastpkthwinfo.s_220V_out ? "true" : "false");
-                                dstate_setinfo("nhs.lastpkthw.s_sealed_battery", "%s", lastpkthwinfo.s_sealed_battery ? "true" : "false");
-                                dstate_setinfo("nhs.lastpkthw.s_show_out_tension", "%s", lastpkthwinfo.s_show_out_tension ? "true" : "false");
-                                dstate_setinfo("nhs.lastpkthw.s_show_temperature", "%s", lastpkthwinfo.s_show_temperature ? "true" : "false");
-                                dstate_setinfo("nhs.lastpkthw.s_show_charger_current", "%s", lastpkthwinfo.s_show_charger_current ? "true" : "false");
-                                dstate_setinfo("nhs.lastpkthw.chargercurrent", "%u", lastpkthwinfo.chargercurrent);
-                                dstate_setinfo("nhs.lastpkthw.checksum", "%u", lastpkthwinfo.checksum);
-                                dstate_setinfo("nhs.lastpkthw.checksum_calculated", "%u", lastpkthwinfo.checksum_calc);
-                                dstate_setinfo("nhs.lastpkthw.checksum_ok", "%s", lastpkthwinfo.checksum_ok ? "true" : "false");
-                                dstate_setinfo("nhs.lastpkthw.serial", "%s", lastpkthwinfo.serial);
-                                dstate_setinfo("nhs.lastpkthw.year", "%u", lastpkthwinfo.year);
-                                dstate_setinfo("nhs.lastpkthw.month", "%u", lastpkthwinfo.month);
-                                dstate_setinfo("nhs.lastpkthw.wday", "%u", lastpkthwinfo.wday);
-                                dstate_setinfo("nhs.lastpkthw.hour", "%u", lastpkthwinfo.hour);
-                                dstate_setinfo("nhs.lastpkthw.minute", "%u", lastpkthwinfo.minute);
-                                dstate_setinfo("nhs.lastpkthw.second", "%u", lastpkthwinfo.second);
-                                dstate_setinfo("nhs.lastpkthw.alarmyear", "%u", lastpkthwinfo.alarmyear);
-                                dstate_setinfo("nhs.lastpkthw.alarmmonth", "%u", lastpkthwinfo.alarmmonth);
-                                dstate_setinfo("nhs.lastpkthw.alarmwday", "%u", lastpkthwinfo.alarmwday);
-                                dstate_setinfo("nhs.lastpkthw.alarmday", "%u", lastpkthwinfo.alarmday);
-                                dstate_setinfo("nhs.lastpkthw.alarmhour", "%u", lastpkthwinfo.alarmhour);
-                                dstate_setinfo("nhs.lastpkthw.alarmminute", "%u", lastpkthwinfo.alarmminute);
-                                dstate_setinfo("nhs.lastpkthw.alarmsecond", "%u", lastpkthwinfo.alarmsecond);
-                                dstate_setinfo("nhs.lastpkthw.end_marker", "%u", lastpkthwinfo.end_marker);
+                                dstate_setinfo("nhs.hw.s_220V_in", "%s", lastpkthwinfo.s_220V_in ? "true" : "false");
+                                dstate_setinfo("nhs.hw.s_220V_out", "%s", lastpkthwinfo.s_220V_out ? "true" : "false");
+                                dstate_setinfo("nhs.hw.s_sealed_battery", "%s", lastpkthwinfo.s_sealed_battery ? "true" : "false");
+                                dstate_setinfo("nhs.hw.s_show_out_tension", "%s", lastpkthwinfo.s_show_out_tension ? "true" : "false");
+                                dstate_setinfo("nhs.hw.s_show_temperature", "%s", lastpkthwinfo.s_show_temperature ? "true" : "false");
+                                dstate_setinfo("nhs.hw.s_show_charger_current", "%s", lastpkthwinfo.s_show_charger_current ? "true" : "false");
+                                dstate_setinfo("nhs.hw.chargercurrent", "%u", lastpkthwinfo.chargercurrent);
+                                dstate_setinfo("nhs.hw.checksum", "%u", lastpkthwinfo.checksum);
+                                dstate_setinfo("nhs.hw.checksum_ok", "%s", lastpkthwinfo.checksum_ok ? "true" : "false");
+                                dstate_setinfo("nhs.hw.serial", "%s", lastpkthwinfo.serial);
+                                dstate_setinfo("nhs.hw.year", "%u", lastpkthwinfo.year);
+                                dstate_setinfo("nhs.hw.month", "%u", lastpkthwinfo.month);
+                                dstate_setinfo("nhs.hw.wday", "%u", lastpkthwinfo.wday);
+                                dstate_setinfo("nhs.hw.hour", "%u", lastpkthwinfo.hour);
+                                dstate_setinfo("nhs.hw.minute", "%u", lastpkthwinfo.minute);
+                                dstate_setinfo("nhs.hw.second", "%u", lastpkthwinfo.second);
+                                dstate_setinfo("nhs.hw.alarmyear", "%u", lastpkthwinfo.alarmyear);
+                                dstate_setinfo("nhs.hw.alarmmonth", "%u", lastpkthwinfo.alarmmonth);
+                                dstate_setinfo("nhs.hw.alarmwday", "%u", lastpkthwinfo.alarmwday);
+                                dstate_setinfo("nhs.hw.alarmday", "%u", lastpkthwinfo.alarmday);
+                                dstate_setinfo("nhs.hw.alarmhour", "%u", lastpkthwinfo.alarmhour);
+                                dstate_setinfo("nhs.hw.alarmminute", "%u", lastpkthwinfo.alarmminute);
+                                dstate_setinfo("nhs.hw.alarmsecond", "%u", lastpkthwinfo.alarmsecond);
+                                dstate_setinfo("nhs.hw.end_marker", "%u", lastpkthwinfo.end_marker);
 
                                 // Data packet
-                                dstate_setinfo("nhs.lastpktdata.header", "%u", lastpktdata.header);
-                                dstate_setinfo("nhs.lastpktdata.length", "%u", lastpktdata.length);
-                                dstate_setinfo("nhs.lastpktdata.packet_type", "%c", lastpktdata.packet_type);
-                                dstate_setinfo("nhs.lastpktdata.vacinrms_high", "%u", lastpktdata.vacinrms_high);
-                                dstate_setinfo("nhs.lastpktdata.vacinrms_low", "%u", lastpktdata.vacinrms_low);
-                                dstate_setinfo("nhs.lastpktdata.vacinrms", "%.2f", lastpktdata.vacinrms);
-                                dstate_setinfo("nhs.lastpktdata.vdcmed_high", "%u", lastpktdata.vdcmed_high);
-                                dstate_setinfo("nhs.lastpktdata.vdcmed_low", "%u", lastpktdata.vdcmed_low);
-                                dstate_setinfo("nhs.lastpktdata.vdcmed", "%.2f", lastpktdata.vdcmed);
-                                dstate_setinfo("nhs.lastpktdata.vdcmed_real", "%.2f", lastpktdata.vdcmed_real);
-                                dstate_setinfo("nhs.lastpktdata.potrms", "%u", lastpktdata.potrms);
-                                dstate_setinfo("nhs.lastpktdata.vacinrmsmin_high", "%u", lastpktdata.vacinrmsmin_high);
-                                dstate_setinfo("nhs.lastpktdata.vacinrmsmin_low", "%u", lastpktdata.vacinrmsmin_low);
-                                dstate_setinfo("nhs.lastpktdata.vacinrmsmin", "%.2f", lastpktdata.vacinrmsmin);
-                                dstate_setinfo("nhs.lastpktdata.vacinrmsmax_high", "%u", lastpktdata.vacinrmsmax_high);
-                                dstate_setinfo("nhs.lastpktdata.vacinrmsmax_low", "%u", lastpktdata.vacinrmsmax_low);
-                                dstate_setinfo("nhs.lastpktdata.vacinrmsmax", "%.2f", lastpktdata.vacinrmsmax);
-                                dstate_setinfo("nhs.lastpktdata.vacoutrms_high", "%u", lastpktdata.vacoutrms_high);
-                                dstate_setinfo("nhs.lastpktdata.vacoutrms_low", "%u", lastpktdata.vacoutrms_low);
-                                dstate_setinfo("nhs.lastpktdata.vacoutrms", "%.2f", lastpktdata.vacoutrms);
-                                dstate_setinfo("nhs.lastpktdata.tempmed_high", "%u", lastpktdata.tempmed_high);
-                                dstate_setinfo("nhs.lastpktdata.tempmed_low", "%u", lastpktdata.tempmed_low);
-                                dstate_setinfo("nhs.lastpktdata.tempmed", "%.2f", lastpktdata.tempmed);
-                                dstate_setinfo("nhs.lastpktdata.tempmed_real", "%.2f", lastpktdata.tempmed_real);
-                                dstate_setinfo("nhs.lastpktdata.icarregrms", "%u", lastpktdata.icarregrms);
-                                dstate_setinfo("nhs.lastpktdata.icarregrms_real", "%u", lastpktdata.icarregrms_real);
-                                dstate_setinfo("nhs.lastpktdata.battery_tension", "%.2f", lastpktdata.battery_tension);
-                                dstate_setinfo("nhs.lastpktdata.perc_output", "%u", lastpktdata.perc_output);
-                                dstate_setinfo("nhs.lastpktdata.statusval", "%u", lastpktdata.statusval);
+                                dstate_setinfo("nhs.data.header", "%u", lastpktdata.header);
+                                dstate_setinfo("nhs.data.length", "%u", lastpktdata.length);
+                                dstate_setinfo("nhs.data.packet_type", "%c", lastpktdata.packet_type);
+                                dstate_setinfo("nhs.data.vacinrms_high", "%u", lastpktdata.vacinrms_high);
+                                dstate_setinfo("nhs.data.vacinrms_low", "%u", lastpktdata.vacinrms_low);
+                                dstate_setinfo("nhs.data.vacinrms", "%.2f", lastpktdata.vacinrms);
+                                dstate_setinfo("nhs.data.vdcmed_high", "%u", lastpktdata.vdcmed_high);
+                                dstate_setinfo("nhs.data.vdcmed_low", "%u", lastpktdata.vdcmed_low);
+                                dstate_setinfo("nhs.data.vdcmed", "%.2f", lastpktdata.vdcmed);
+                                dstate_setinfo("nhs.data.vdcmed_real", "%.2f", lastpktdata.vdcmed_real);
+                                dstate_setinfo("nhs.data.potrms", "%u", lastpktdata.potrms);
+                                dstate_setinfo("nhs.data.vacinrmsmin_high", "%u", lastpktdata.vacinrmsmin_high);
+                                dstate_setinfo("nhs.data.vacinrmsmin_low", "%u", lastpktdata.vacinrmsmin_low);
+                                dstate_setinfo("nhs.data.vacinrmsmin", "%.2f", lastpktdata.vacinrmsmin);
+                                dstate_setinfo("nhs.data.vacinrmsmax_high", "%u", lastpktdata.vacinrmsmax_high);
+                                dstate_setinfo("nhs.data.vacinrmsmax_low", "%u", lastpktdata.vacinrmsmax_low);
+                                dstate_setinfo("nhs.data.vacinrmsmax", "%.2f", lastpktdata.vacinrmsmax);
+                                dstate_setinfo("nhs.data.vacoutrms_high", "%u", lastpktdata.vacoutrms_high);
+                                dstate_setinfo("nhs.data.vacoutrms_low", "%u", lastpktdata.vacoutrms_low);
+                                dstate_setinfo("nhs.data.vacoutrms", "%.2f", lastpktdata.vacoutrms);
+                                dstate_setinfo("nhs.data.tempmed_high", "%u", lastpktdata.tempmed_high);
+                                dstate_setinfo("nhs.data.tempmed_low", "%u", lastpktdata.tempmed_low);
+                                dstate_setinfo("nhs.data.tempmed", "%.2f", lastpktdata.tempmed);
+                                dstate_setinfo("nhs.data.tempmed_real", "%.2f", lastpktdata.tempmed_real);
+                                dstate_setinfo("nhs.data.icarregrms", "%u", lastpktdata.icarregrms);
+                                dstate_setinfo("nhs.data.icarregrms_real", "%u", lastpktdata.icarregrms_real);
+                                dstate_setinfo("nhs.data.battery_tension", "%.2f", lastpktdata.battery_tension);
+                                dstate_setinfo("nhs.data.perc_output", "%u", lastpktdata.perc_output);
+                                dstate_setinfo("nhs.data.statusval", "%u", lastpktdata.statusval);
                                 for (int i = 0; i < 8; i++) {
                                     // Reusing variable
-                                    sprintf(alarm,"nhs.lastpktdata.status_p%d",i);
+                                    sprintf(alarm,"nhs.data.status_p%d",i);
                                     dstate_setinfo(alarm, "%u", lastpktdata.status[i]);
                                 }
-                                dstate_setinfo("nhs.lastpktdata.nominaltension", "%u", lastpktdata.nominaltension);
-                                dstate_setinfo("nhs.lastpktdata.timeremain", "%.2f", lastpktdata.timeremain);
-                                dstate_setinfo("nhs.lastpktdata.s_battery_mode", "%s", lastpktdata.s_battery_mode ? "true" : "false");
-                                dstate_setinfo("nhs.lastpktdata.s_battery_low", "%s", lastpktdata.s_battery_low ? "true" : "false");
-                                dstate_setinfo("nhs.lastpktdata.s_network_failure", "%s", lastpktdata.s_network_failure ? "true" : "false");
-                                dstate_setinfo("nhs.lastpktdata.s_fast_network_failure", "%s", lastpktdata.s_fast_network_failure ? "true" : "false");
-                                dstate_setinfo("nhs.lastpktdata.s_220_in", "%s", lastpktdata.s_220_in ? "true" : "false");
-                                dstate_setinfo("nhs.lastpktdata.s_220_out", "%s", lastpktdata.s_220_out ? "true" : "false");
-                                dstate_setinfo("nhs.lastpktdata.s_bypass_on", "%s", lastpktdata.s_bypass_on ? "true" : "false");
-                                dstate_setinfo("nhs.lastpktdata.s_charger_on", "%s", lastpktdata.s_charger_on ? "true" : "false");
-                                dstate_setinfo("nhs.lastpktdata.checksum", "%u", lastpktdata.checksum);
-                                dstate_setinfo("nhs.lastpktdata.checksum_calculated", "%u", lastpktdata.checksum_calc);
-                                dstate_setinfo("nhs.lastpktdata.checksum_ok", "%s", lastpktdata.checksum_ok ? "true" : "false");
-                                dstate_setinfo("nhs.lastpktdata.end_marker", "%u", lastpktdata.end_marker);
+                                dstate_setinfo("nhs.data.nominaltension", "%u", lastpktdata.nominaltension);
+                                dstate_setinfo("nhs.data.timeremain", "%.2f", lastpktdata.timeremain);
+                                dstate_setinfo("nhs.data.s_battery_mode", "%s", lastpktdata.s_battery_mode ? "true" : "false");
+                                dstate_setinfo("nhs.data.s_battery_low", "%s", lastpktdata.s_battery_low ? "true" : "false");
+                                dstate_setinfo("nhs.data.s_network_failure", "%s", lastpktdata.s_network_failure ? "true" : "false");
+                                dstate_setinfo("nhs.data.s_fast_network_failure", "%s", lastpktdata.s_fast_network_failure ? "true" : "false");
+                                dstate_setinfo("nhs.data.s_220_in", "%s", lastpktdata.s_220_in ? "true" : "false");
+                                dstate_setinfo("nhs.data.s_220_out", "%s", lastpktdata.s_220_out ? "true" : "false");
+                                dstate_setinfo("nhs.data.s_bypass_on", "%s", lastpktdata.s_bypass_on ? "true" : "false");
+                                dstate_setinfo("nhs.data.s_charger_on", "%s", lastpktdata.s_charger_on ? "true" : "false");
+                                dstate_setinfo("nhs.data.checksum", "%u", lastpktdata.checksum);
+                                dstate_setinfo("nhs.data.checksum_ok", "%s", lastpktdata.checksum_ok ? "true" : "false");
+                                dstate_setinfo("nhs.data.end_marker", "%u", lastpktdata.end_marker);
                                 dstate_setinfo("nhs.param.va", "%u", va);
                                 dstate_setinfo("nhs.param.pf", "%f", pf);
                                 dstate_setinfo("nhs.param.ah", "%u", ah);
