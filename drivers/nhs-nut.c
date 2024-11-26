@@ -349,8 +349,8 @@ static pkt_data lastpktdata = {
 int get_bit_in_position(void *ptr, size_t size, int bit_position,int invertorder) {
     unsigned char *byte_ptr = (unsigned char *)ptr;
     int retval = -2;
-    size_t byte_index;
-    size_t bit_index;
+    size_t byte_index = bit_position / 8;
+    size_t bit_index = bit_position % 8;
     
     if (bit_position >= size * 8) {
         return -3; // Invalid Position
@@ -1606,7 +1606,7 @@ void upsdrv_updateinfo(void) {
     float pf = 0;
     int bcharge = 0;
     int min_input_power = 0;
-    
+    double tempodecorrido = 0.0;
     upsinfo ups;
 
     upsdebugx(1,"Start updateinfo()");
@@ -1633,7 +1633,6 @@ void upsdrv_updateinfo(void) {
                 datapacket_index++;
                 if (chr == 0xFE) { // DataPacket 
                     upsdebugx(1,"DATAPACKET INDEX IS %d",datapacket_index);
-                    double tempodecorrido = 0.0;
                     time_t now = time(NULL);
                     if (lastdp != 0) {
                         tempodecorrido = difftime(now, lastdp);
@@ -2004,8 +2003,8 @@ void upsdrv_updateinfo(void) {
                 if (checktime > max_checktime)
                     checktime = max_checktime;
                 else {
-                    upsdebugx(1,"Increase checktime to %d",checktime + 10000);
-                    checktime = checktime + 10000;
+                    upsdebugx(1,"Increase checktime to %d",checktime + 100000);
+                    checktime = checktime + 100000;
                 }
                 usleep(checktime);
             } // end else
