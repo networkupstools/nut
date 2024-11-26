@@ -769,15 +769,22 @@ static const char *eaton_input_eco_mode_check_range(double value)
 	) {
 		return "ECO"; /* Enter Eco mode */
 	} else {
+		/* Condensed debug messages for out of range voltage and frequency */
+		if (bypass_voltage < eco_low || bypass_voltage > eco_high) {
+			upsdebugx(1, "Bypass voltage out of transfer ECO limits: %.1f V", bypass_voltage);
+		}
+		if (bypass_frequency < lower_frequency_limit || bypass_frequency > upper_frequency_limit) {
+			upsdebugx(1, "Bypass frequency out of transfer ECO limits: %.1f Hz", bypass_frequency);
+		}
 		return NULL; /* Do not enter Eco mode */
 	}
 }
 
-/* High Efficiency (aka ECO) mode */
-static info_lkp_t eaton_input_mode_info[] = {
+/* High Efficiency (aka ECO) mode, Energy Saver System (aka ESS) mode makes sense for UPS like (93PM G2, 9395P) */
+static info_lkp_t eaton_input_eco_mode_on_off_info[] = {
 	{ 0, "normal", NULL, NULL },
-	{ 1, "ECO", eaton_input_eco_mode_check_range, NULL }, /* NOTE: "ecomode" = checked and working fine */
-	{ 2, "ESS", NULL, NULL }, /* Energy Saver System, makes sense for UPS that implements this mode (93PM G2, 9395P) */
+	{ 1, "ECO", eaton_input_eco_mode_check_range, NULL }, /* NOTE: "ECO" = tested on 9E model and working fine */
+	{ 2, "ESS", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 
@@ -853,6 +860,13 @@ static const char *eaton_input_bypass_check_range(double value)
 	) {
 		return "on"; /* Enter bypass mode */
 	} else {
+		/* Condensed debug messages for out of range voltage and frequency */
+		if (bypass_voltage < bypass_low || bypass_voltage > bypass_high) {
+			upsdebugx(1, "Bypass voltage out of transfer bypass limits: %.1f V", bypass_voltage);
+		}
+		if (bypass_frequency < lower_frequency_limit || bypass_frequency > upper_frequency_limit) {
+			upsdebugx(1, "Bypass frequency out of transfer bypass limits: %.1f Hz", bypass_frequency);
+		}
 		return NULL; /* Do not enter bypass mode */
 	}
 }
@@ -864,10 +878,55 @@ static info_lkp_t eaton_input_bypass_mode_on_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
-/* Automatic Bypass mode Off */
+/* Automatic Bypass mode off (switch on inverter) */
 static info_lkp_t eaton_input_bypass_mode_off_info[] = {
 	{ 0, "disabled", NULL, NULL },
 	{ 1, "off", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
+/* Function to start ECO(HE) Mode automatically instead of manually starting Bypass and then ECO(HE) Mode */
+static const char *eaton_input_eco_mode_auto_on_fun(double value)
+{
+	const char *bypass_switch_off_str = NULL;
+	const char *bypass_switch_on_str = NULL;
+	const char *eco_switchable_str = NULL;
+
+	NUT_UNUSED_VARIABLE(value);
+
+	/* Check if input.bypass.switch.on is disabled and set it to 'on' */
+	bypass_switch_on_str = dstate_getinfo("input.bypass.switch.on");
+    if (!strcmp(bypass_switch_on_str, "disabled")) {
+	    setvar("input.bypass.switch.on", "on");
+	} else {
+		upsdebugx(1, "Bypass switch on state is: %s , must be disabled before switching on", bypass_switch_on_str);
+	    return NULL;
+	}
+
+	/* Check if input.eco.switchable is normal and set it to 'ECO' */
+	eco_switchable_str = dstate_getinfo("input.eco.switchable");
+    if (!strcmp(eco_switchable_str, "normal")) {
+        setvar("input.eco.switchable", "ECO");
+	} else {
+		upsdebugx(1, "ECO switch state is: %s , must be normal before switching to ECO", eco_switchable_str);
+		return NULL;
+	}
+
+    /* Check if input.bypass.switch.off is disabled and set it to 'off' */
+	bypass_switch_off_str = dstate_getinfo("input.bypass.switch.off");
+    if (!strcmp(bypass_switch_off_str, "disabled")) {
+        setvar("input.bypass.switch.off", "off");
+	} else {
+		upsdebugx(1, "Bypass switch off state is: %s , must be disabled before switching off", bypass_switch_off_str);
+	    return NULL;
+	}
+	upsdebugx(1, "%s: ECO Mode was enabled after switching to Bypass Mode", __func__);
+	return NULL;
+}
+
+/* High Efficiency (aka ECO) mode for auto start command */
+static info_lkp_t eaton_input_eco_mode_auto_on_info[] = {
+	{ 1, "dummy", eaton_input_eco_mode_auto_on_fun, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 
@@ -1563,8 +1622,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[2].PresentStatus.Used", NULL, NULL, 0, bypass_auto_info }, /* Automatic bypass */
 	/* NOTE: entry [3] is above as mge_onbatt_info */
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[4].PresentStatus.Used", NULL, NULL, 0, bypass_manual_info }, /* Manual bypass */
-	/* NOTE: needs to be tested */
-	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[5].PresentStatus.Used", NULL, NULL, 0, eco_mode_info }, /* ECO/HE Mode */
+	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[5].PresentStatus.Used", NULL, NULL, 0, eco_mode_info }, /* ECO(HE), ESS Mode */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.FanFailure", NULL, NULL, 0, fanfail_info },
 	{ "BOOL", 0, 0, "UPS.BatterySystem.Battery.PresentStatus.Present", NULL, NULL, 0, nobattery_info },
 	{ "BOOL", 0, 0, "UPS.BatterySystem.Charger.PresentStatus.InternalFailure", NULL, NULL, 0, chargerfail_info },
@@ -1616,8 +1674,9 @@ static hid_info_t mge_hid2nut[] =
 	{ "input.transfer.frequency.bypass.range", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.FrequencyRangeBypassTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.transfer.frequency.eco.range", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.FrequencyRangeEcoTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.transfer.hysteresis", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.HysteresisVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
-	/* input.transfer.forced = 1 needs for Bypass Switch On/Off */
-	{ "input.transfer.forced", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[2].ForcedTransferEnable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_enable_disable_info },
+	{ "input.transfer.bypass.forced", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[2].ForcedTransferEnable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_enable_disable_info },
+	{ "input.transfer.bypass.overload", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[2].OverloadTransferEnable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_enable_disable_info },
+    { "input.transfer.bypass.outlimits", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[2].OutOfToleranceTransferEnable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_enable_disable_info },
 	{ "input.transfer.trim.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.HighVoltageBuckTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.sensitivity", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerConverter.Output.SensitivityMode", NULL, "%s", HU_FLAG_SEMI_STATIC, mge_sensitivity_info },
 	{ "input.voltage.extended", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.ExtendedVoltageMode", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
@@ -1640,14 +1699,15 @@ static hid_info_t mge_hid2nut[] =
 	{ "input.bypass.frequency", 0, 0, "UPS.PowerConverter.Input.[2].Frequency", NULL, "%.1f", 0, NULL },
 	{ "input.bypass.frequency.nominal", 0, 0, "UPS.Flow.[2].ConfigFrequency", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 
-	/* ECO(HE) Mode switch */
-	{ "input.eco.switchable", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[5].Switchable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_mode_info },
+	/* ECO(HE), ESS Mode switch, to use when 'input.bypass.switch.on' is on */
+	{ "input.eco.switchable", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[5].Switchable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_eco_mode_on_off_info },
 
-	/* Auto Bypass Mode on/off */
-	/* needs check this variable, maybe "Bypass switch ability" like Qualify bypass */
-	/* { "input.bypass.switchable", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[2].Switchable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_bypass_mode_info }, */
+	/* Auto Bypass Mode on/off, to use when 'input.transfer.bypass.forced' is enabled */
 	{ "input.bypass.switch.on", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[2].SwitchOnControl", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_bypass_mode_on_info },
 	{ "input.bypass.switch.off", ST_FLAG_RW | ST_FLAG_STRING, 12, "UPS.PowerConverter.Input.[2].SwitchOffControl", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_input_bypass_mode_off_info },
+
+	/* Transfer on automatic Bypass switch with rules 'input.transfer.bypass.overload' and 'input.transfer.bypass.outlimits' */
+	{ "input.bypass.switchable", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerConverter.Input.[2].Switchable", NULL, "%.0f", HU_FLAG_SEMI_STATIC, eaton_enable_disable_info },
 
 	/* Output page */
 	{ "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", NULL, "%.1f", 0, NULL },
@@ -1753,13 +1813,15 @@ static hid_info_t mge_hid2nut[] =
 	{ "outlet.2.load.off", 0, 0, "UPS.OutletSystem.Outlet.[3].DelayBeforeShutdown", NULL, "0", HU_TYPE_CMD, NULL },
 	{ "outlet.2.load.on", 0, 0, "UPS.OutletSystem.Outlet.[3].DelayBeforeStartup", NULL, "0", HU_TYPE_CMD, NULL },
 
-	/* Command to switch ECO Mode */
+	/* Command to switch ECO(HE), ESS Mode */
 	{ "ecomode.disable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "0", HU_TYPE_CMD, NULL },
-	{ "ecomode.enable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "1", HU_TYPE_CMD, eaton_input_mode_info },
+	{ "ecomode.enable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "1", HU_TYPE_CMD, eaton_input_eco_mode_on_off_info },
 	{ "essmode.enable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "2", HU_TYPE_CMD, NULL },
 	{ "essmode.disable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "0", HU_TYPE_CMD, NULL },
+    /* Command to switch ECO(HE) Mode with switch to Automatic Bypass Mode on befor */
+	{ "ecomode.start.auto", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "1", HU_TYPE_CMD, eaton_input_eco_mode_auto_on_info },
 
-	/* Command to switch Automatic Bypass Mode On/Off */
+	/* Command to switch Automatic Bypass Mode on/off */
 	{ "bypass.start", 0, 0, "UPS.PowerConverter.Input.[2].SwitchOnControl", NULL, "1", HU_TYPE_CMD, eaton_input_bypass_mode_on_info },
 	{ "bypass.stop", 0, 0, "UPS.PowerConverter.Input.[2].SwitchOffControl", NULL, "1", HU_TYPE_CMD, NULL },
 
