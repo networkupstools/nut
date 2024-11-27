@@ -45,21 +45,21 @@
         3) Download NUT source code OR use apt-source to download source from your distribution (in case of debian/ubuntu). How to do it? apt-get source nut, apt-get build-dep nut, make your alterations in code (follow the steps above), dpkg-buildpackage -us -uc, dpkg -i <your new package>        * ./autogen.sh
         4) ./autogen.sh
         5) ./ci_build.sh
-        6) ./configure $COMPILEFLAGS --with-dev 
+        6) ./configure $COMPILEFLAGS --with-dev
         7) cd drivers
         8) make (to generate nut_version.h)
-        
+
         If you can use debian / ubuntu packages to do that:
             1) apt-get source nut
             2) apt-get build-dep nut
             3) extract flags to correct compilation with COMPILEFLAGS=$(make -f debian/rules -pn | grep '^DEB_CONFIGURE_EXTRA_FLAGS' | sed 's/^DEB_CONFIGURE_EXTRA_FLAGS := //') on root source directory
             4) Follow steps 4 to 8 earlier (ignore errors if you can only compile to use the driver with actual nut compiled debian instalation, it's only to generate nut_version.h)
             5) back to root nut source directory, then dpkg-buildpackage -us -uc
-            6) dpkg -i <your new package>        
+            6) dpkg -i <your new package>
 
         * gcc -g -O0 -o nhs-nut nhs-nut.c main.c dstate.c serial.c ../common/common.c ../common/parseconf.c ../common/state.c ../common/str.c ../common/upsconf.c -I../include -lm
         * upsdrvquery.c (optional)
-        * copy nhs-nut to nut driver's directory and test  
+        * copy nhs-nut to nut driver's directory and test
     To debug:
         * clang --analyze nhs-nut.c
         * cppcheck nhs-nut.c
@@ -177,7 +177,7 @@ typedef struct {
     unsigned int end_marker;
 } pkt_hwinfo;
 
-// Struct that contain the 
+// Struct that contain the
 typedef struct {
     unsigned int header;
     unsigned int length;
@@ -353,7 +353,7 @@ int get_bit_in_position(void *ptr, size_t size, size_t bit_position, int inverto
     int retval = -2;
     size_t byte_index = bit_position / 8;
     size_t bit_index = bit_position % 8;
-    
+
     if (bit_position >= size * 8) {
         return -3; // Invalid Position
     }
@@ -539,7 +539,7 @@ int openfd(const char * porta, int BAUDRATE) {
         done = B2400;
     }
 
-    
+
 
     tty.c_cflag &= ~PARENB; // Disable Parity
     tty.c_cflag &= ~CSTOPB; // 1 stop bit
@@ -692,7 +692,7 @@ pkt_data mount_datapacket(unsigned char * datapacket, int size, double tempodeco
     // 25 units = 750mA, then 1 unit = 30mA
     pktdata.icarregrms_real = pktdata.icarregrms * 30;
     pktdata.statusval = datapacket[17];
-    for (i = 0; i < 8; i++) 
+    for (i = 0; i < 8; i++)
         pktdata.status[i] = get_bit_in_position(&datapacket[17],sizeof(datapacket[17]),i,0);
     // I don't know WHY, but bit order is INVERTED here. Discovered on clyra's github python implementation
     // TODO: check if ANOTHER VARIABLES (like hardware array bits) have same problem. I won't have so much equipment to test these, then we need help to test more
@@ -1670,7 +1670,7 @@ void upsdrv_updateinfo(void) {
             if (datapacketstart) {
                 datapacket[datapacket_index] = chr;
                 datapacket_index++;
-                if (chr == 0xFE) { // DataPacket 
+                if (chr == 0xFE) { // DataPacket
                     upsdebugx(1,"DATAPACKET INDEX IS %d",datapacket_index);
                     time_t now = time(NULL);
                     if (lastdp != 0) {
@@ -1678,7 +1678,7 @@ void upsdrv_updateinfo(void) {
                     }
                     lastdp = now;
                     // if size is 18 or 50, maybe a answer packet. Then check if doesn't have already a packet processed. We don't need to read all times these information. Can be a corrupted packet too.
-                    if (((datapacket_index == 18) || (datapacket_index == 50)) && (!lastpkthwinfo.checksum_ok)) { 
+                    if (((datapacket_index == 18) || (datapacket_index == 50)) && (!lastpkthwinfo.checksum_ok)) {
                        lastpkthwinfo = mount_hwinfo(datapacket, datapacket_index);
                     } // end if
                     else {
@@ -1721,7 +1721,7 @@ void upsdrv_updateinfo(void) {
                                 FSD     -- Forced Shutdown (restricted use, see the note below) */
 
                                 // Decision Chain
-                                // First we check if system is on battery or not                                
+                                // First we check if system is on battery or not
                                 upsdebugx(1,"Set UPS status as OFF and start checking. s_battery_mode is %d",lastpktdata.s_battery_mode);
                                 if (lastpkthwinfo.s_220V_in) {
                                     upsdebugx(1,"I'm on 220v IN!. My overvoltage is %d",lastpkthwinfo.undervoltagein220V);
@@ -1769,16 +1769,16 @@ void upsdrv_updateinfo(void) {
                                         } // end if
                                         else {
                                             // Energy is below limit. Nobreak problably in battery mode
-                                            if (lastpktdata.s_battery_low) 
+                                            if (lastpktdata.s_battery_low)
                                                 dstate_setinfo("ups.status","%s","LB");
                                             else {
                                                 // or network failure
-                                                dstate_setinfo("ups.status","%s","OB");    
+                                                dstate_setinfo("ups.status","%s","OB");
                                             } // end else
                                         } // end else
                                     } // end else
                                 } // end else
-                                
+
                                 alarm[0] = '\0';
                                 numbat = get_numbat();
                                 if (numbat == 0)
@@ -1883,13 +1883,13 @@ void upsdrv_updateinfo(void) {
                                 dstate_setinfo("battery.temperature","%u",(unsigned int)round(lastpktdata.tempmed_real));
                                 dstate_setinfo("battery.packs","%u",numbat);
                                 // We will calculate autonomy in seconds
-                                
+
                                 // Autonomy calculation in NHS nobreaks is a rocket science. Some are one, some are other. I'll do my best to put one that works in 4 models that I have here.
-                                // That result is IN HOURS. We need to convert it on seconds    
+                                // That result is IN HOURS. We need to convert it on seconds
                                 //autonomy_secs = (int)round((ah / (vpower / lastpktdata.vdcmed_real)) * 3600);
                                 autonomy_secs = (ah / lastpktdata.vdcmed_real) * 3600;
                                 //upsdebugx(1,"(numbat * lastpktdata.vdcmed_real * va * pf) / ((lastpktdata.potrms * va * pf) / 100.0) = (%d * %0.2f * %d * %0.2f) / ((%d * %d * %0.2f) / 100.0) --> %0.2f",numbat,lastpktdata.vdcmed_real,va,pf,lastpktdata.potrms,va,pf,autonomy_secs);
-                                // That result is IN HOURS. We need to convert it on seconds    
+                                // That result is IN HOURS. We need to convert it on seconds
 
                                 dstate_setinfo("battery.runtime","%u",autonomy_secs);
                                 dstate_setinfo("battery.runtime.low","%u",30);
@@ -1901,7 +1901,7 @@ void upsdrv_updateinfo(void) {
                                     else
                                         dstate_setinfo("battery.charger.status","%s","RESTING");
                                 }
-                                // Now, creating a structure called NHS, 
+                                // Now, creating a structure called NHS,
                                 dstate_setinfo("nhs.hw.header", "%u", lastpkthwinfo.header);
                                 dstate_setinfo("nhs.hw.size", "%u", lastpkthwinfo.size);
                                 dstate_setinfo("nhs.hw.type", "%c", lastpkthwinfo.type);
@@ -2122,5 +2122,4 @@ void upsdrv_help(void) {
 //int main(int argc, char **argv) {
 //    upsdrv_info.version = "1.0";
 //    upsdrv_initinfo();
-//} 
-
+//}
