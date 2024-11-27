@@ -237,6 +237,8 @@ typedef struct {
 static const unsigned int string_initialization_long[9] = {0xFF, 0x09, 0x53, 0x83, 0x00, 0x00, 0x00, 0xDF, 0xFE};
 static const unsigned int string_initialization_short[9] = {0xFF, 0x09, 0x53, 0x03, 0x00, 0x00, 0x00, 0x5F, 0xFE};
 
+static int debug_pkt_data = 0, debug_pkt_hwinfo = 0, debug_pkt_raw = 0;
+
 static int serial_fd = -1;
 static unsigned char chr;
 static int datapacket_index = 0;
@@ -398,6 +400,9 @@ static int get_bit_in_position(void *ptr, size_t size, size_t bit_position, int 
 }
 
 static void print_pkt_hwinfo(pkt_hwinfo data) {
+    if (!debug_pkt_hwinfo)
+        return;
+
     upsdebugx(1,"Header: %u", data.header);
     upsdebugx(1,"Size: %u", data.size);
     upsdebugx(1,"Type: %c", data.type);
@@ -465,6 +470,9 @@ static void print_pkt_hwinfo(pkt_hwinfo data) {
 }
 
 static void print_pkt_data(pkt_data data) {
+    if (!debug_pkt_data)
+        return;
+
     upsdebugx(1,"Header: %u", data.header);
     upsdebugx(1,"Length: %u", data.length);
     upsdebugx(1,"Packet Type: %c", data.packet_type);
@@ -620,6 +628,10 @@ static unsigned char calculate_checksum(unsigned char *pacote, int inicio, int f
 
 static void pdatapacket(unsigned char * datapkt, int size) {
     int i = 0;
+
+    if (!debug_pkt_raw)
+        return;
+
     if (datapkt != NULL) {
         upsdebugx(1,"Received Datapacket: ");
         for (i = 0; i < size; i++) {
@@ -760,9 +772,10 @@ static pkt_data mount_datapacket(unsigned char * datapkt, int size, double tempo
         } // end if
     } // end if
 
-    NUT_UNUSED_VARIABLE(size);
-    //pdatapacket(datapkt,size);
-    //print_pkt_data(pktdata);
+    if (debug_pkt_data) {
+        pdatapacket(datapkt, size);
+        print_pkt_data(pktdata);
+    }
 
     return pktdata;
 }
@@ -878,8 +891,11 @@ static pkt_hwinfo mount_hwinfo(unsigned char *datapkt, int size) {
     if (pkthwinfo.checksum == checksum)
         pkthwinfo.checksum_ok = true;
 
-    print_pkt_hwinfo(pkthwinfo);
-    pdatapacket(datapkt,size);
+    if (debug_pkt_hwinfo) {
+        pdatapacket(datapkt, size);
+        print_pkt_hwinfo(pkthwinfo);
+    }
+
     return pkthwinfo;
 }
 
@@ -2130,6 +2146,15 @@ void upsdrv_cleanup(void) {
 
 void upsdrv_initups(void) {
     upsdebugx(1,"Start initups()");
+
+    /* Process optional configuration flags */
+    if (getval("debug_pkt_raw"))
+        debug_pkt_raw = 1;
+    if (getval("debug_pkt_data"))
+        debug_pkt_data = 1;
+    if (getval("debug_pkt_hwinfo"))
+        debug_pkt_hwinfo = 1;
+
     upsdrv_initinfo();
     upsdebugx(1,"End initups()");
 }
@@ -2166,6 +2191,10 @@ void upsdrv_makevartable(void) {
 
     snprintf(help, sizeof(help), "Battery Voltage (override default value). Default is %0.2f", DEFAULTBATV);
     addvar(VAR_VALUE, "vbat", help);
+
+    addvar(VAR_FLAG, "debug_pkt_raw", "Enable debug logging of packet bytes");
+    addvar(VAR_FLAG, "debug_pkt_data", "Enable debug logging of data packet decoding");
+    addvar(VAR_FLAG, "debug_pkt_hwinfo", "Enable debug logging of hwinfo packet decoding");
 }
 
 void upsdrv_help(void) {

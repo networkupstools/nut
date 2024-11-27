@@ -58,6 +58,15 @@ Num Batteries (override value from nobreak).
 *vbat*='num'::
 Battery Voltage (default: 12.00).
 
+*debug_pkt_raw*::
+Optional flag to enable debug logging of packet bytes.
+
+*debug_pkt_data*::
+Optional flag to enable debug logging of data packet decoding.
+
+*debug_pkt_hwinfo*::
+Optional flag to enable debug logging of hwinfo packet decoding.
+
 AUTHORS
 -------
 
