@@ -3,7 +3,9 @@
  *
  *
  * Copyright (C) 2024 - Lucas Willian Bocchi <lucas@lucas.inf.br>
- * Initial Release
+ *     Initial Release (as nhs-nut.c)
+ * Copyright (C) 2024 - Jim Klimov <jimklimov+nut@gmail.com>
+ *     Codebase adjusted to NUT standards
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
