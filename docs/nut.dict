@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3255 utf-8
+personal_ws-1.1 en 3256 utf-8
 AAC
 AAS
 ABI
@@ -2783,6 +2783,7 @@ sendmail
 sendsignal
 sendsignalfn
 sendsignalpid
+senoidal
 sequentialized
 ser
 seria
