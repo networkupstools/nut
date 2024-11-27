@@ -24,6 +24,7 @@
 #include "main.h"
 #include "common.h"
 #include "nut_stdint.h"
+#include "nut_float.h"
 #include "serial.h"
 #include <stdio.h>
 #include <linux/serial.h>
@@ -1870,7 +1871,7 @@ void upsdrv_updateinfo(void) {
                                 dstate_setinfo("input.voltage.minimum","%0.2f",lastpktdata.vacinrmsmax);
                                 vin_underv = lastpkthwinfo.s_220V_in ? lastpkthwinfo.undervoltagein220V : lastpkthwinfo.undervoltagein120V;
                                 vin_overv = lastpkthwinfo.s_220V_in ? lastpkthwinfo.overvoltagein220V : lastpkthwinfo.overvoltagein120V;
-                                perc = get_vin_perc("vin_low_warn_perc") == get_vin_perc("vin_low_crit_perc") ?  2 : 1;
+                                perc = f_equal(get_vin_perc("vin_low_warn_perc"), get_vin_perc("vin_low_crit_perc")) ?  2 : 1;
                                 vin_low_warn = vin_underv + (vin_underv * ((get_vin_perc("vin_low_warn_perc") * perc) / 100.0));
                                 dstate_setinfo("input.voltage.low.warning","%0.2f",calculated);
                                 vin_low_crit = vin_underv + (vin_underv * (get_vin_perc("vin_low_crit_perc") / 100.0));
