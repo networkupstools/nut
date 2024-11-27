@@ -660,6 +660,8 @@ pkt_data mount_datapacket(unsigned char * datapacket, int size, double tempodeco
         0xFE                     // end_marker
     };
 
+    NUT_UNUSED_VARIABLE(tempodecorrido);
+
     pktdata.length = (int)datapacket[1];
     pktdata.packet_type = datapacket[2];
     pktdata.vacinrms_high = (int)datapacket[3];
@@ -722,8 +724,11 @@ pkt_data mount_datapacket(unsigned char * datapacket, int size, double tempodeco
                 pktdata.perc_output = 100;
         } // end if
     } // end if
+
+    NUT_UNUSED_VARIABLE(size);
     //pdatapacket(datapacket,size);
     //print_pkt_data(pktdata);
+
     return pktdata;
 }
 
