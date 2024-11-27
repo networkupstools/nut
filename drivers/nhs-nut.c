@@ -778,6 +778,7 @@ pkt_hwinfo mount_hwinfo(unsigned char *datapacket, int size) {
         0,                        // second
         0,                        // alarmyear
         0,                        // alarmmonth
+        0,                        // alarmwday
         0,                        // alarmday
         0,                        // alarmhour
         0,                        // alarmminute
