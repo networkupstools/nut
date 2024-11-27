@@ -356,13 +356,17 @@ static pkt_data lastpktdata = {
 /* internal methods */
 static int get_bit_in_position(void *ptr, size_t size, size_t bit_position, int invertorder);
 static float createfloat(int integer, int decimal);
+#if 0
 static char * strtolow(char* s);
+#endif
 
 static unsigned char calculate_checksum(unsigned char *pacote, int inicio, int fim);
 static float calculate_efficiency(float vacoutrms, float vacinrms);
 
 static int openfd(const char * portarg, int BAUDRATE);
+#if 0
 static int write_serial(int fd, const char * dados, int size);
+#endif
 static int write_serial_int(int fd, const unsigned int * data, int size);
 
 static void print_pkt_hwinfo(pkt_hwinfo data);
@@ -899,6 +903,7 @@ static pkt_hwinfo mount_hwinfo(unsigned char *datapkt, int size) {
     return pkthwinfo;
 }
 
+#if 0
 static int write_serial(int fd, const char * dados, int size) {
     if (fd > 0) {
         ssize_t bytes_written = write(fd, dados, size);
@@ -911,6 +916,7 @@ static int write_serial(int fd, const char * dados, int size) {
     else
         return fd;
 }
+#endif
 
 static int write_serial_int(int fd, const unsigned int * data, int size) {
     if (fd > 0) {
@@ -936,10 +942,12 @@ static int write_serial_int(int fd, const unsigned int * data, int size) {
         return fd;
 }
 
+#if 0
 static char * strtolow(char* s) {
-  for(char *p=s; *p; p++) *p=tolower(*p);
-  return s;
+    for(char *p=s; *p; p++) *p=tolower(*p);
+    return s;
 }
+#endif
 
 static upsinfo getupsinfo(unsigned int upscode) {
     upsinfo data;
