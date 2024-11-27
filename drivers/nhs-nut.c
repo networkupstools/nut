@@ -806,7 +806,7 @@ pkt_hwinfo mount_hwinfo(unsigned char *datapacket, int size) {
     pkthwinfo.tensionout120V = (int)datapacket[12];
     pkthwinfo.tensionout220V = (int)datapacket[13];
     pkthwinfo.statusval = datapacket[14];
-    for (i = 0; i < 8; i++)
+    for (i = 0; i < 6; i++)
         pkthwinfo.status[i] = get_bit_in_position(&datapacket[14],sizeof(datapacket[14]),i,0);
     // TODO: check if ANOTHER VARIABLES (like hardware array bits) have same problem. I won't have so much equipment to test these, then we need help to test more
     pkthwinfo.s_220V_in = (bool)pkthwinfo.status[0];
