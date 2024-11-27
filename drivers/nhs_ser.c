@@ -897,11 +897,12 @@ static int write_serial_int(int serial_fd, const unsigned int * data, int size) 
     uint8_t message[size];
     int i = 0;
     if (serial_fd > 0) {
+        ssize_t bytes_written;
         for (i = 0; i < size; i++) {
             message[i] = (uint8_t)data[i];
             //upsdebugx(1,"%d %c %u %d %c %u",message[i],message[i],data[i],data[i]);
         }
-        ssize_t bytes_written = write(serial_fd, message,size);
+        bytes_written = write(serial_fd, message,size);
         if (bytes_written < 0)
             return -1;
         if (tcdrain(serial_fd) != 0)
@@ -1702,8 +1703,8 @@ void upsdrv_updateinfo(void) {
                 datapacket[datapacket_index] = chr;
                 datapacket_index++;
                 if (chr == 0xFE) { // DataPacket
-                    upsdebugx(1,"DATAPACKET INDEX IS %d",datapacket_index);
                     time_t now = time(NULL);
+                    upsdebugx(1,"DATAPACKET INDEX IS %d",datapacket_index);
                     if (lastdp != 0) {
                         tempodecorrido = difftime(now, lastdp);
                     }
