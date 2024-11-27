@@ -2103,30 +2103,30 @@ void upsdrv_makevartable(void) {
 
     addvar(VAR_VALUE, "baud", "Baud Rate from port");
 
-    addvar(VAR_VALUE,"ah","Battery discharge capacity in Ampere/hour");
+    addvar(VAR_VALUE, "ah", "Battery discharge capacity in Ampere/hour");
 
-    addvar(VAR_VALUE,"va","Nobreak NOMINAL POWER in VA");
+    addvar(VAR_VALUE, "va", "Nobreak NOMINAL POWER in VA");
 
-    sprintf(help,"Power Factor to use in calculations of battery time, default is %0.2f",DEFAULTPF);
-    addvar(VAR_VALUE,"pf",help);
+    snprintf(help, sizeof(help), "Power Factor to use in calculations of battery time, default is %0.2f", DEFAULTPF);
+    addvar(VAR_VALUE, "pf", help);
 
-    sprintf(help,"Voltage In Percentage to calculate warning low level. Default is %0.2f",DEFAULLTPERC);
-    addvar(VAR_VALUE,"vin_low_warn_perc",help);
+    snprintf(help, sizeof(help), "Voltage In Percentage to calculate warning low level. Default is %0.2f", DEFAULLTPERC);
+    addvar(VAR_VALUE, "vin_low_warn_perc", help);
 
-    sprintf(help,"Voltage In Percentage to calculate critical low level. Default is %0.2f",DEFAULLTPERC);
-    addvar(VAR_VALUE,"vin_low_crit_perc",help);
+    snprintf(help, sizeof(help), "Voltage In Percentage to calculate critical low level. Default is %0.2f", DEFAULLTPERC);
+    addvar(VAR_VALUE, "vin_low_crit_perc", help);
 
-    sprintf(help,"Voltage In Percentage to calculate warning high level. Default is %0.2f",DEFAULLTPERC);
-    addvar(VAR_VALUE,"vin_high_warn_perc",help);
+    snprintf(help, sizeof(help), "Voltage In Percentage to calculate warning high level. Default is %0.2f", DEFAULLTPERC);
+    addvar(VAR_VALUE, "vin_high_warn_perc", help);
 
-    sprintf(help,"Voltage In Percentage to calculate critical high level. Default is %0.2f",DEFAULLTPERC);
-    addvar(VAR_VALUE,"vin_high_crit_perc",help);
+    snprintf(help, sizeof(help), "Voltage In Percentage to calculate critical high level. Default is %0.2f", DEFAULLTPERC);
+    addvar(VAR_VALUE, "vin_high_crit_perc", help);
 
-    sprintf(help,"Num Batteries (override value from nobreak)");
-    addvar(VAR_VALUE,"numbatteries",help);
+    snprintf(help, sizeof(help), "Num Batteries (override value from nobreak)");
+    addvar(VAR_VALUE, "numbatteries", help);
 
-    sprintf(help,"Battery Voltage (override default value. Default is %0.2f",DEFAULTBATV);
-    addvar(VAR_VALUE,"vbat",help);
+    snprintf(help, sizeof(help), "Battery Voltage (override default value. Default is %0.2f", DEFAULTBATV);
+    addvar(VAR_VALUE, "vbat", help);
 }
 
 void upsdrv_help(void) {
