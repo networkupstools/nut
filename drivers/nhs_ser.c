@@ -1715,7 +1715,7 @@ void upsdrv_updateinfo(void) {
     if ((serial_fd <= 0) && (i < retries)) {
         upsdebugx(1,"Serial problem...");
         while (serial_fd <= 0) {
-            serial_fd = openfd(DEFAULTPORT,2400);
+            serial_fd = openfd(porta,baudrate);
             upsdebugx(1,"Trying to reopen serial...");
             usleep(checktime);
             retries++;
