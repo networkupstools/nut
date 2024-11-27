@@ -61,7 +61,7 @@
         * upsdrvquery.c (optional)
         * copy nhs_ser to nut driver's directory and test
     To debug:
-        * clang --analyze nhs_ser.c
+        * clang --analyze -I../include nhs_ser.c
         * cppcheck nhs_ser.c
         * upsdrvctl -D start
         * nhs_ser -a <id> -D
