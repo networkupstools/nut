@@ -68,7 +68,7 @@ VARDESC input.transfer.low.max "greatest settable low voltage transfer point (V)
 VARDESC input.transfer.high.min "smallest settable high voltage transfer point (V)"
 VARDESC input.transfer.high.max "greatest settable high voltage transfer point (V)"
 VARDESC input.eco.switchable "Input High Efficiency (aka ECO) mode switch"
-VARDESC input.transfer.bypass.forced "Input forced auto Bypass transfer modes (enabled or disabled)"
+VARDESC input.transfer.bypass.forced "Input forced auto Bypass switch (on/off) transfer modes (enabled or disabled)"
 VARDESC input.transfer.bypass.overload "Rule for auto transfer on Bypass when overload (enabled or disabled)"
 VARDESC input.transfer.bypass.outlimits "Rule for auto transfer on Bypass when out of tolerance (enabled or disabled)"
 VARDESC input.bypass.switchable "Input auto transfer on Bypass when overload or out of tolerance (enabled or disabled)"
