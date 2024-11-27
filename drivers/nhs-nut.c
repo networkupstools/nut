@@ -2072,10 +2072,11 @@ void upsdrv_updateinfo(void) {
 
 void upsdrv_shutdown(void) {
     upsdebugx(1,"Start shutdown()");
-    if (serial_fd != -1) {
-        close(serial_fd);
-        serial_fd = -1;
-    }
+
+    /* replace with a proper shutdown function */
+    upslogx(LOG_ERR, "shutdown not supported");
+    set_exit_flag(-1);
+
     upsdebugx(1,"Driver shutdown");
 }
 
