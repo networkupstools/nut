@@ -356,15 +356,15 @@ static char * strtolow(char* s);
 static unsigned char calculate_checksum(unsigned char *pacote, int inicio, int fim);
 static float calculate_efficiency(float vacoutrms, float vacinrms);
 
-static int openfd(const char * porta, int BAUDRATE);
+static int openfd(const char * portarg, int BAUDRATE);
 static int write_serial(int serial_fd, const char * dados, int size);
 static int write_serial_int(int serial_fd, const unsigned int * data, int size);
 
 static void print_pkt_hwinfo(pkt_hwinfo data);
 static void print_pkt_data(pkt_data data);
-static void pdatapacket(unsigned char * datapacket, int size);
-static pkt_data mount_datapacket(unsigned char * datapacket, int size, double tempodecorrido, pkt_hwinfo pkt_upsinfo);
-static pkt_hwinfo mount_hwinfo(unsigned char *datapacket, int size);
+static void pdatapacket(unsigned char * datapkt, int size);
+static pkt_data mount_datapacket(unsigned char * datapkt, int size, double tempodecorrido, pkt_hwinfo pkt_upsinfo);
+static pkt_hwinfo mount_hwinfo(unsigned char *datapkt, int size);
 static upsinfo getupsinfo(unsigned int upscode);
 
 static unsigned int get_va(int equipment);
@@ -516,27 +516,28 @@ static void print_pkt_data(pkt_data data) {
     upsdebugx(1,"End Marker: %u", data.end_marker);
 }
 
-static int openfd(const char * porta, int BAUDRATE) {
+/* FIXME: Replace with NUT ser_open() and ser_set_speed() */
+static int openfd(const char * portarg, int BAUDRATE) {
     long unsigned int i = 0;
     int done = 0;
     struct termios tty;
     struct serial_struct serial;
 
 
-    //int fd = ser_open(porta);
-    int fd = open(porta, O_RDWR | O_NOCTTY | O_SYNC);
+    //int fd = ser_open(portarg);
+    int fd = open(portarg, O_RDWR | O_NOCTTY | O_SYNC);
     if (fd < 0) {
-        upsdebugx(1, "Erro on open %s", porta);
+        upsdebugx(1, "Error on open %s", portarg);
         return -1;
     }
     if (tcflush(fd, TCIOFLUSH) != 0) {
-        upsdebugx(1, "Error on flush data on %s", porta);
+        upsdebugx(1, "Error on flush data on %s", portarg);
         return -1;
     }
 
 
     if (tcgetattr(fd, &tty) != 0) {
-        upsdebugx(1, "Erro on set termios values to  %s", porta);
+        upsdebugx(1, "Error on set termios values to  %s", portarg);
         close(fd);
         return -1;
     }
@@ -599,7 +600,7 @@ static int openfd(const char * porta, int BAUDRATE) {
     cfsetospeed(&tty, done);
 
     if (tcsetattr(fd, TCSANOW, &tty) != 0) {
-        upsdebugx(1, "Error on tcsetattr on port %s", porta);
+        upsdebugx(1, "Error on tcsetattr on port %s", portarg);
         close(fd);
         return -1;
     }
@@ -614,12 +615,12 @@ static unsigned char calculate_checksum(unsigned char *pacote, int inicio, int f
     return soma & 0xFF;
 }
 
-static void pdatapacket(unsigned char * datapacket,int size) {
+static void pdatapacket(unsigned char * datapkt, int size) {
     int i = 0;
-    if (datapacket != NULL) {
+    if (datapkt != NULL) {
         upsdebugx(1,"Received Datapacket: ");
         for (i = 0; i < size; i++) {
-            upsdebugx(1,"\tPosition %d -- 0x%02X -- Decimal %d -- Char %c", i, datapacket[i], datapacket[i], datapacket[i]);
+            upsdebugx(1,"\tPosition %d -- 0x%02X -- Decimal %d -- Char %c", i, datapkt[i], datapkt[i], datapkt[i]);
         }
     }
 }
@@ -640,7 +641,7 @@ static unsigned int get_vbat() {
     }
 }
 
-static pkt_data mount_datapacket(unsigned char * datapacket, int size, double tempodecorrido,pkt_hwinfo pkt_upsinfo)  {
+static pkt_data mount_datapacket(unsigned char * datapkt, int size, double tempodecorrido,pkt_hwinfo pkt_upsinfo)  {
     int i = 0;
     unsigned int vbat = 0;
     unsigned char checksum = 0x00;
@@ -693,37 +694,37 @@ static pkt_data mount_datapacket(unsigned char * datapacket, int size, double te
 
     NUT_UNUSED_VARIABLE(tempodecorrido);
 
-    pktdata.length = (int)datapacket[1];
-    pktdata.packet_type = datapacket[2];
-    pktdata.vacinrms_high = (int)datapacket[3];
-    pktdata.vacinrms_low = (int)datapacket[4];
+    pktdata.length = (int)datapkt[1];
+    pktdata.packet_type = datapkt[2];
+    pktdata.vacinrms_high = (int)datapkt[3];
+    pktdata.vacinrms_low = (int)datapkt[4];
     pktdata.vacinrms = createfloat(pktdata.vacinrms_high,pktdata.vacinrms_low);
-    pktdata.vdcmed_high = (int)datapacket[5];
-    pktdata.vdcmed_low = (int)datapacket[6];
+    pktdata.vdcmed_high = (int)datapkt[5];
+    pktdata.vdcmed_low = (int)datapkt[6];
     pktdata.vdcmed = createfloat(pktdata.vdcmed_high,pktdata.vdcmed_low);
     pktdata.vdcmed_real = pktdata.vdcmed;
     if (pktdata.vdcmed_low == 0)
         pktdata.vdcmed_real = pktdata.vdcmed / 10;
-    pktdata.potrms = (int)datapacket[7];
-    pktdata.vacinrmsmin_high = (int)datapacket[8];
-    pktdata.vacinrmsmin_low = (int)datapacket[9];
+    pktdata.potrms = (int)datapkt[7];
+    pktdata.vacinrmsmin_high = (int)datapkt[8];
+    pktdata.vacinrmsmin_low = (int)datapkt[9];
     pktdata.vacinrmsmin = createfloat(pktdata.vacinrmsmin_high,pktdata.vacinrmsmin_low);
-    pktdata.vacinrmsmax_high = (int)datapacket[10];
-    pktdata.vacinrmsmax_low = (int)datapacket[11];
+    pktdata.vacinrmsmax_high = (int)datapkt[10];
+    pktdata.vacinrmsmax_low = (int)datapkt[11];
     pktdata.vacinrmsmax = createfloat(pktdata.vacinrmsmax_high,pktdata.vacinrmsmax_low);
-    pktdata.vacoutrms_high = (int)datapacket[12];
-    pktdata.vacoutrms_low = (int)datapacket[13];
+    pktdata.vacoutrms_high = (int)datapkt[12];
+    pktdata.vacoutrms_low = (int)datapkt[13];
     pktdata.vacoutrms = createfloat(pktdata.vacoutrms_high,pktdata.vacoutrms_low);
-    pktdata.tempmed_high = (int)datapacket[14];
-    pktdata.tempmed_low = (int)datapacket[15];
+    pktdata.tempmed_high = (int)datapkt[14];
+    pktdata.tempmed_low = (int)datapkt[15];
     pktdata.tempmed = createfloat(pktdata.tempmed_high,pktdata.tempmed_low);
     pktdata.tempmed_real = pktdata.tempmed;
-    pktdata.icarregrms = (int)datapacket[16];
+    pktdata.icarregrms = (int)datapkt[16];
     // 25 units = 750mA, then 1 unit = 30mA
     pktdata.icarregrms_real = pktdata.icarregrms * 30;
-    pktdata.statusval = datapacket[17];
+    pktdata.statusval = datapkt[17];
     for (i = 0; i < 8; i++)
-        pktdata.status[i] = get_bit_in_position(&datapacket[17],sizeof(datapacket[17]),i,0);
+        pktdata.status[i] = get_bit_in_position(&datapkt[17],sizeof(datapkt[17]),i,0);
     // I don't know WHY, but bit order is INVERTED here. Discovered on clyra's github python implementation
     // TODO: check if ANOTHER VARIABLES (like hardware array bits) have same problem. I won't have so much equipment to test these, then we need help to test more
     pktdata.s_battery_mode = (bool)pktdata.status[7];
@@ -735,8 +736,8 @@ static pkt_data mount_datapacket(unsigned char * datapacket, int size, double te
     pktdata.s_bypass_on = (bool)pktdata.status[1];
     pktdata.s_charger_on = (bool)pktdata.status[0];
     // Position 18 mean status, but I won't discover what's it
-    pktdata.checksum = datapacket[19];
-    checksum = calculate_checksum(datapacket,1,18);
+    pktdata.checksum = datapkt[19];
+    checksum = calculate_checksum(datapkt,1,18);
     pktdata.checksum_calc = checksum;
     if (pktdata.checksum == checksum)
         pktdata.checksum_ok = true;
@@ -757,13 +758,13 @@ static pkt_data mount_datapacket(unsigned char * datapacket, int size, double te
     } // end if
 
     NUT_UNUSED_VARIABLE(size);
-    //pdatapacket(datapacket,size);
+    //pdatapacket(datapkt,size);
     //print_pkt_data(pktdata);
 
     return pktdata;
 }
 
-static pkt_hwinfo mount_hwinfo(unsigned char *datapacket, int size) {
+static pkt_hwinfo mount_hwinfo(unsigned char *datapkt, int size) {
     int i = 0;
     unsigned char checksum = 0x00;
     pkt_hwinfo pkthwinfo = {
@@ -816,30 +817,30 @@ static pkt_hwinfo mount_hwinfo(unsigned char *datapacket, int size) {
         0xFE                      // end_marker
     };
 
-    pkthwinfo.size = (int)datapacket[1];
-    pkthwinfo.type = datapacket[2];
-    pkthwinfo.model = (int)datapacket[3];
-    pkthwinfo.hardwareversion = (int)datapacket[4];
-    pkthwinfo.softwareversion = (int)datapacket[5];
-    pkthwinfo.configuration = datapacket[6];
+    pkthwinfo.size = (int)datapkt[1];
+    pkthwinfo.type = datapkt[2];
+    pkthwinfo.model = (int)datapkt[3];
+    pkthwinfo.hardwareversion = (int)datapkt[4];
+    pkthwinfo.softwareversion = (int)datapkt[5];
+    pkthwinfo.configuration = datapkt[6];
     for (i = 0; i < 5; i++)
-        pkthwinfo.configuration_array[i] = get_bit_in_position(&datapacket[6],sizeof(datapacket[6]),i,0);
+        pkthwinfo.configuration_array[i] = get_bit_in_position(&datapkt[6],sizeof(datapkt[6]),i,0);
     // TODO: check if ANOTHER VARIABLES (like hardware array bits) have same problem. I won't have so much equipment to test these, then we need help to test more
     pkthwinfo.c_oem_mode = (bool)pkthwinfo.configuration_array[0];
     pkthwinfo.c_buzzer_disable = (bool)pkthwinfo.configuration_array[1];
     pkthwinfo.c_potmin_disable = (bool)pkthwinfo.configuration_array[2];
     pkthwinfo.c_rearm_enable = (bool)pkthwinfo.configuration_array[3];
     pkthwinfo.c_bootloader_enable = (bool)pkthwinfo.configuration_array[4];
-    pkthwinfo.numbatteries = (int)datapacket[7];
-    pkthwinfo.undervoltagein120V = (int)datapacket[8];
-    pkthwinfo.overvoltagein120V = (int)datapacket[9];
-    pkthwinfo.undervoltagein220V = (int)datapacket[10];
-    pkthwinfo.overvoltagein220V = (int)datapacket[11];
-    pkthwinfo.tensionout120V = (int)datapacket[12];
-    pkthwinfo.tensionout220V = (int)datapacket[13];
-    pkthwinfo.statusval = datapacket[14];
+    pkthwinfo.numbatteries = (int)datapkt[7];
+    pkthwinfo.undervoltagein120V = (int)datapkt[8];
+    pkthwinfo.overvoltagein120V = (int)datapkt[9];
+    pkthwinfo.undervoltagein220V = (int)datapkt[10];
+    pkthwinfo.overvoltagein220V = (int)datapkt[11];
+    pkthwinfo.tensionout120V = (int)datapkt[12];
+    pkthwinfo.tensionout220V = (int)datapkt[13];
+    pkthwinfo.statusval = datapkt[14];
     for (i = 0; i < 6; i++)
-        pkthwinfo.status[i] = get_bit_in_position(&datapacket[14],sizeof(datapacket[14]),i,0);
+        pkthwinfo.status[i] = get_bit_in_position(&datapkt[14],sizeof(datapkt[14]),i,0);
     // TODO: check if ANOTHER VARIABLES (like hardware array bits) have same problem. I won't have so much equipment to test these, then we need help to test more
     pkthwinfo.s_220V_in = (bool)pkthwinfo.status[0];
     pkthwinfo.s_220V_out = (bool)pkthwinfo.status[1];
@@ -847,35 +848,35 @@ static pkt_hwinfo mount_hwinfo(unsigned char *datapacket, int size) {
     pkthwinfo.s_show_out_tension = (bool)pkthwinfo.status[3];
     pkthwinfo.s_show_temperature = (bool)pkthwinfo.status[4];
     pkthwinfo.s_show_charger_current = (bool)pkthwinfo.status[5];
-    pkthwinfo.chargercurrent = (int)datapacket[15];
+    pkthwinfo.chargercurrent = (int)datapkt[15];
     if (pkthwinfo.size > 18) {
         for (i = 0; i < 16; i++)
-            pkthwinfo.serial[i] = datapacket[16 + i];
-        pkthwinfo.year = datapacket[32];
-        pkthwinfo.month = datapacket[33];
-        pkthwinfo.wday = datapacket[34];
-        pkthwinfo.hour = datapacket[35];
-        pkthwinfo.minute = datapacket[36];
-        pkthwinfo.second = datapacket[37];
-        pkthwinfo.alarmyear = datapacket[38];
-        pkthwinfo.alarmmonth = datapacket[39];
-        pkthwinfo.alarmday = datapacket[40];
-        pkthwinfo.alarmhour = datapacket[41];
-        pkthwinfo.alarmminute = datapacket[42];
-        pkthwinfo.alarmsecond = datapacket[43];
-        pkthwinfo.checksum = datapacket[48];
-        checksum = calculate_checksum(datapacket,1,47);
+            pkthwinfo.serial[i] = datapkt[16 + i];
+        pkthwinfo.year = datapkt[32];
+        pkthwinfo.month = datapkt[33];
+        pkthwinfo.wday = datapkt[34];
+        pkthwinfo.hour = datapkt[35];
+        pkthwinfo.minute = datapkt[36];
+        pkthwinfo.second = datapkt[37];
+        pkthwinfo.alarmyear = datapkt[38];
+        pkthwinfo.alarmmonth = datapkt[39];
+        pkthwinfo.alarmday = datapkt[40];
+        pkthwinfo.alarmhour = datapkt[41];
+        pkthwinfo.alarmminute = datapkt[42];
+        pkthwinfo.alarmsecond = datapkt[43];
+        pkthwinfo.checksum = datapkt[48];
+        checksum = calculate_checksum(datapkt,1,47);
     } // end if
     else {
-        pkthwinfo.checksum = datapacket[16];
-        checksum = calculate_checksum(datapacket,1,15);
+        pkthwinfo.checksum = datapkt[16];
+        checksum = calculate_checksum(datapkt,1,15);
     }
     pkthwinfo.checksum_calc = checksum;
     if (pkthwinfo.checksum == checksum)
         pkthwinfo.checksum_ok = true;
 
     print_pkt_hwinfo(pkthwinfo);
-    pdatapacket(datapacket,size);
+    pdatapacket(datapkt,size);
     return pkthwinfo;
 }
 
@@ -1680,7 +1681,7 @@ void upsdrv_updateinfo(void) {
 
     upsdebugx(1,"Start updateinfo()");
     if ((serial_fd <= 0) && (i < retries)) {
-        upsdebugx(1,"Serial problem..");
+        upsdebugx(1,"Serial problem...");
         while (serial_fd <= 0) {
             serial_fd = openfd(DEFAULTPORT,2400);
             upsdebugx(1,"Trying to reopen serial...");
@@ -1939,7 +1940,7 @@ void upsdrv_updateinfo(void) {
                                 dstate_setinfo("nhs.hw.hardwareversion", "%u", lastpkthwinfo.hardwareversion);
                                 dstate_setinfo("nhs.hw.softwareversion", "%u", lastpkthwinfo.softwareversion);
                                 dstate_setinfo("nhs.hw.configuration", "%u", lastpkthwinfo.configuration);
-                                for (int i = 0; i < 5; i++) {
+                                for (i = 0; i < 5; i++) {
                                     // Reusing variable
                                     sprintf(alarm,"nhs.hw.configuration_array_p%d",i);
                                     dstate_setinfo(alarm, "%u", lastpkthwinfo.configuration_array[i]);
@@ -1957,7 +1958,7 @@ void upsdrv_updateinfo(void) {
                                 dstate_setinfo("nhs.hw.tensionout120V", "%u", lastpkthwinfo.tensionout120V);
                                 dstate_setinfo("nhs.hw.tensionout220V", "%u", lastpkthwinfo.tensionout220V);
                                 dstate_setinfo("nhs.hw.statusval", "%u", lastpkthwinfo.statusval);
-                                for (int i = 0; i < 6; i++) {
+                                for (i = 0; i < 6; i++) {
                                     // Reusing variable
                                     sprintf(alarm,"nhs.hw.status_p%d",i);
                                     dstate_setinfo(alarm, "%u", lastpkthwinfo.status[i]);
@@ -2018,7 +2019,7 @@ void upsdrv_updateinfo(void) {
                                 dstate_setinfo("nhs.data.battery_tension", "%0.2f", lastpktdata.battery_tension);
                                 dstate_setinfo("nhs.data.perc_output", "%u", lastpktdata.perc_output);
                                 dstate_setinfo("nhs.data.statusval", "%u", lastpktdata.statusval);
-                                for (int i = 0; i < 8; i++) {
+                                for (i = 0; i < 8; i++) {
                                     // Reusing variable
                                     sprintf(alarm,"nhs.data.status_p%d",i);
                                     dstate_setinfo(alarm, "%u", lastpktdata.status[i]);
