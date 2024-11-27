@@ -71,9 +71,10 @@
 #define DEFAULTBAUD 2400
 #define DEFAULTPORT "/dev/ttyACM0"
 #define DEFAULTPF 0.9
-#define DEFAULLTPERC 2
+#define DEFAULLTPERC 2.0
 #define DATAPACKETSIZE 100
-#define DEFAULTBATV 12
+#define DEFAULTBATV 12.0
+
 #define DRIVER_NAME "NHS Nobreak Drivers"
 #define DRIVER_VERSION  "0.1"
 #define MANUFACTURER "NHS Sistemas Eletronicos LTDA"
