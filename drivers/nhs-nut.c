@@ -690,7 +690,7 @@ pkt_data mount_datapacket(unsigned char * datapacket, int size, double tempodeco
     pktdata.tempmed_real = pktdata.tempmed;
     pktdata.icarregrms = (int)datapacket[16];
     // 25 units = 750mA, then 1 unit = 30mA
-    pktdata.icarregrms_real = pktdata.icarregrms_real = pktdata.icarregrms * 30;
+    pktdata.icarregrms_real = pktdata.icarregrms * 30;
     pktdata.statusval = datapacket[17];
     for (i = 0; i < 8; i++) 
         pktdata.status[i] = get_bit_in_position(&datapacket[17],sizeof(datapacket[17]),i,0);
