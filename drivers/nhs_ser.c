@@ -1890,7 +1890,7 @@ void upsdrv_updateinfo(void) {
                                 dstate_setinfo("ups.power","%0.2f",vpower);
                                 dstate_setinfo("ups.power.nominal","%u",va);
                                 dstate_setinfo("ups.realpower","%ld",lrint(round(vpower)));
-                                dstate_setinfo("ups.realpower.nominal","%ld",lrint(round(va * pf)));
+                                dstate_setinfo("ups.realpower.nominal","%ld",lrint(round((double)va * (double)pf)));
                                 dstate_setinfo("ups.beeper.status","%d",!lastpkthwinfo.c_buzzer_disable);
                                 dstate_setinfo("input.voltage","%0.2f",lastpktdata.vacinrms);
                                 dstate_setinfo("input.voltage.maximum","%0.2f",lastpktdata.vacinrmsmin);
