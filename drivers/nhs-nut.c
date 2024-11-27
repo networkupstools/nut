@@ -372,13 +372,16 @@ void print_pkt_hwinfo(pkt_hwinfo data) {
     upsdebugx(1,"Hardware Version: %u", data.hardwareversion);
     upsdebugx(1,"Software Version: %u", data.softwareversion);
     upsdebugx(1,"Configuration: %u", data.configuration);
+
     upsdebugx(1,"Configuration Array: ");
+    upsdebugx(1,"-----");
     for (int i = 0; i < 5; i++) {
         int retorno = get_bit_in_position(&data.configuration,sizeof(data.configuration),i,0);
         upsdebugx(1,"Binary value is %d",retorno);
         upsdebugx(1,"%u ", data.configuration_array[i]);
     }
-    upsdebugx(1,"");
+    upsdebugx(1,"-----");
+
     upsdebugx(1,"OEM Mode: %s", data.c_oem_mode ? "true" : "false");
     upsdebugx(1,"Buzzer Disable: %s", data.c_buzzer_disable ? "true" : "false");
     upsdebugx(1,"Potmin Disable: %s", data.c_potmin_disable ? "true" : "false");
@@ -394,11 +397,13 @@ void print_pkt_hwinfo(pkt_hwinfo data) {
     upsdebugx(1,"Status Value: %u", data.statusval);
 
     upsdebugx(1,"Status: ");
+    upsdebugx(1,"-----");
     for (int i = 0; i < 6; i++) {
         upsdebugx(1,"Binary value is %d",get_bit_in_position(&data.statusval,sizeof(data.statusval),i,0));
         upsdebugx(1,"status %d --> %u ", i, data.status[i]);
     }
-    upsdebugx(1,"");
+    upsdebugx(1,"-----");
+
     upsdebugx(1,"220V In: %s", data.s_220V_in ? "true" : "false");
     upsdebugx(1,"220V Out: %s", data.s_220V_out ? "true" : "false");
     upsdebugx(1,"Sealed Battery: %s", data.s_sealed_battery ? "true" : "false");
@@ -456,12 +461,15 @@ void print_pkt_data(pkt_data data) {
     upsdebugx(1,"Battery Tension: %0.2f", data.battery_tension);
     upsdebugx(1,"Perc Output: %u", data.perc_output);
     upsdebugx(1,"Status Value: %u", data.statusval);
+
     upsdebugx(1,"Status: ");
+    upsdebugx(1,"-----");
     for (int i = 0; i < 8; i++) {
         upsdebugx(1,"Binary value is %d",get_bit_in_position(&data.statusval,sizeof(data.statusval),i,0));
         upsdebugx(1,"status %d --> %u ", i, data.status[i]);
     }
-    upsdebugx(1,"");
+    upsdebugx(1,"-----");
+
     upsdebugx(1,"Nominal Tension: %u", data.nominaltension);
     upsdebugx(1,"Time Remain: %0.2f", data.timeremain);
     upsdebugx(1,"Battery Mode: %s", data.s_battery_mode ? "true" : "false");
