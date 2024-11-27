@@ -97,7 +97,7 @@ typedef struct {
     const char * description; // Description
 } baud_rate_t;
 
-baud_rate_t baud_rates[] = {
+static baud_rate_t baud_rates[] = {
     { B50,      50,      "50 bps" },
     { B75,      75,      "75 bps" },
     { B110,     110,     "110 bps" },
@@ -231,8 +231,8 @@ typedef struct {
     unsigned int VA;
 } upsinfo;
 
-const unsigned int string_initialization_long[9] = {0xFF, 0x09, 0x53, 0x83, 0x00, 0x00, 0x00, 0xDF, 0xFE};
-const unsigned int string_initialization_short[9] = {0xFF, 0x09, 0x53, 0x03, 0x00, 0x00, 0x00, 0x5F, 0xFE};
+static const unsigned int string_initialization_long[9] = {0xFF, 0x09, 0x53, 0x83, 0x00, 0x00, 0x00, 0xDF, 0xFE};
+static const unsigned int string_initialization_short[9] = {0xFF, 0x09, 0x53, 0x03, 0x00, 0x00, 0x00, 0x5F, 0xFE};
 
 static int serial_fd = -1;
 static unsigned char chr;
@@ -348,7 +348,36 @@ static pkt_data lastpktdata = {
     0xFE  // end_marker
 };
 
-int get_bit_in_position(void *ptr, size_t size, size_t bit_position, int invertorder) {
+/* internal methods */
+static int get_bit_in_position(void *ptr, size_t size, size_t bit_position, int invertorder);
+static float createfloat(int integer, int decimal);
+static char * strtolow(char* s);
+
+static unsigned char calculate_checksum(unsigned char *pacote, int inicio, int fim);
+static float calculate_efficiency(float vacoutrms, float vacinrms);
+
+static int openfd(const char * porta, int BAUDRATE);
+static int write_serial(int serial_fd, const char * dados, int size);
+static int write_serial_int(int serial_fd, const unsigned int * data, int size);
+
+static void print_pkt_hwinfo(pkt_hwinfo data);
+static void print_pkt_data(pkt_data data);
+static void pdatapacket(unsigned char * datapacket, int size);
+static pkt_data mount_datapacket(unsigned char * datapacket, int size, double tempodecorrido, pkt_hwinfo pkt_upsinfo);
+static pkt_hwinfo mount_hwinfo(unsigned char *datapacket, int size);
+static upsinfo getupsinfo(unsigned int upscode);
+
+static unsigned int get_va(int equipment);
+static unsigned int get_vbat(void);
+static float get_pf(void);
+static unsigned int get_ah(void);
+static float get_vin_perc(char * var);
+static unsigned int get_numbat(void);
+
+
+/* method implementations */
+
+static int get_bit_in_position(void *ptr, size_t size, size_t bit_position, int invertorder) {
     unsigned char *byte_ptr = (unsigned char *)ptr;
     int retval = -2;
     size_t byte_index = bit_position / 8;
@@ -365,7 +394,7 @@ int get_bit_in_position(void *ptr, size_t size, size_t bit_position, int inverto
     return retval;
 }
 
-void print_pkt_hwinfo(pkt_hwinfo data) {
+static void print_pkt_hwinfo(pkt_hwinfo data) {
     upsdebugx(1,"Header: %u", data.header);
     upsdebugx(1,"Size: %u", data.size);
     upsdebugx(1,"Type: %c", data.type);
@@ -432,7 +461,7 @@ void print_pkt_hwinfo(pkt_hwinfo data) {
     upsdebugx(1,"End Marker: %u", data.end_marker);
 }
 
-void print_pkt_data(pkt_data data) {
+static void print_pkt_data(pkt_data data) {
     upsdebugx(1,"Header: %u", data.header);
     upsdebugx(1,"Length: %u", data.length);
     upsdebugx(1,"Packet Type: %c", data.packet_type);
@@ -487,7 +516,7 @@ void print_pkt_data(pkt_data data) {
     upsdebugx(1,"End Marker: %u", data.end_marker);
 }
 
-int openfd(const char * porta, int BAUDRATE) {
+static int openfd(const char * porta, int BAUDRATE) {
     long unsigned int i = 0;
     int done = 0;
     struct termios tty;
@@ -524,6 +553,7 @@ int openfd(const char * porta, int BAUDRATE) {
         }
         i++;
     }
+
     // if done is 0, no one speed has selected, then use default
     if (done == 0) {
             while ((i < NUM_BAUD_RATES) && (done == 0)) {
@@ -534,11 +564,11 @@ int openfd(const char * porta, int BAUDRATE) {
             i++;
         }
     }
+
     if (done == 0) {
         upsdebugx(1,"Baud rate not found, using default %d",DEFAULTBAUD);
         done = B2400;
     }
-
 
 
     tty.c_cflag &= ~PARENB; // Disable Parity
@@ -576,7 +606,7 @@ int openfd(const char * porta, int BAUDRATE) {
     return fd;
 }
 
-unsigned char calculate_checksum(unsigned char *pacote, int inicio, int fim) {
+static unsigned char calculate_checksum(unsigned char *pacote, int inicio, int fim) {
     int soma = 0;
     for (int i = inicio; i <= fim; i++) {
         soma += pacote[i];
@@ -584,7 +614,7 @@ unsigned char calculate_checksum(unsigned char *pacote, int inicio, int fim) {
     return soma & 0xFF;
 }
 
-void pdatapacket(unsigned char * datapacket,int size) {
+static void pdatapacket(unsigned char * datapacket,int size) {
     int i = 0;
     if (datapacket != NULL) {
         upsdebugx(1,"Received Datapacket: ");
@@ -594,13 +624,13 @@ void pdatapacket(unsigned char * datapacket,int size) {
     }
 }
 
-float createfloat(int integer, int decimal) {
+static float createfloat(int integer, int decimal) {
     char flt[1024];
     sprintf(flt,"%d.%d",integer,decimal);
     return atof(flt);
 }
 
-unsigned int get_vbat() {
+static unsigned int get_vbat() {
     char * v = getval("vbat");
     if (v) {
         return atoi(v);
@@ -610,7 +640,7 @@ unsigned int get_vbat() {
     }
 }
 
-pkt_data mount_datapacket(unsigned char * datapacket, int size, double tempodecorrido,pkt_hwinfo pkt_upsinfo)  {
+static pkt_data mount_datapacket(unsigned char * datapacket, int size, double tempodecorrido,pkt_hwinfo pkt_upsinfo)  {
     int i = 0;
     unsigned int vbat = 0;
     unsigned char checksum = 0x00;
@@ -733,7 +763,7 @@ pkt_data mount_datapacket(unsigned char * datapacket, int size, double tempodeco
     return pktdata;
 }
 
-pkt_hwinfo mount_hwinfo(unsigned char *datapacket, int size) {
+static pkt_hwinfo mount_hwinfo(unsigned char *datapacket, int size) {
     int i = 0;
     unsigned char checksum = 0x00;
     pkt_hwinfo pkthwinfo = {
@@ -849,7 +879,7 @@ pkt_hwinfo mount_hwinfo(unsigned char *datapacket, int size) {
     return pkthwinfo;
 }
 
-int write_serial(int serial_fd, const char * dados, int size) {
+static int write_serial(int serial_fd, const char * dados, int size) {
     if (serial_fd > 0) {
         ssize_t bytes_written = write(serial_fd, dados, size);
         if (bytes_written < 0)
@@ -862,7 +892,7 @@ int write_serial(int serial_fd, const char * dados, int size) {
         return serial_fd;
 }
 
-int write_serial_int(int serial_fd, const unsigned int * data, int size) {
+static int write_serial_int(int serial_fd, const unsigned int * data, int size) {
     uint8_t message[size];
     int i = 0;
     if (serial_fd > 0) {
@@ -881,12 +911,12 @@ int write_serial_int(int serial_fd, const unsigned int * data, int size) {
         return serial_fd;
 }
 
-char * strtolow(char* s) {
+static char * strtolow(char* s) {
   for(char *p=s; *p; p++) *p=tolower(*p);
   return s;
 }
 
-upsinfo getupsinfo(unsigned int upscode) {
+static upsinfo getupsinfo(unsigned int upscode) {
     upsinfo data;
     switch(upscode) {
         case 1:
@@ -1546,7 +1576,7 @@ upsinfo getupsinfo(unsigned int upscode) {
     return data;
 }
 
-unsigned int get_va(int equipment) {
+static unsigned int get_va(int equipment) {
     upsinfo ups;
     char * va = getval("va");
     ups = getupsinfo(equipment);
@@ -1560,7 +1590,7 @@ unsigned int get_va(int equipment) {
     }
 }
 
-float get_pf() {
+static float get_pf(void) {
     char * pf = getval("pf");
     if (pf)
         return atof(pf);
@@ -1568,7 +1598,7 @@ float get_pf() {
         return DEFAULTPF;
 }
 
-unsigned int get_ah() {
+static unsigned int get_ah(void) {
     char * ah = getval("ah");
     if (ah)
         return (unsigned int)atoi(ah);
@@ -1576,7 +1606,7 @@ unsigned int get_ah() {
         fatalx(EXIT_FAILURE,"Please set AH (Ampere Hour) value to your battery's equipment in ups.conf.");
 }
 
-float get_vin_perc(char * var) {
+static float get_vin_perc(char * var) {
     char * perc = getval(var);
     if (perc)
         return atof(perc);
@@ -1608,11 +1638,11 @@ void upsdrv_initinfo(void) {
     upsdebugx(1,"End initinfo()");
 }
 
-float calculate_efficiency(float vacoutrms, float vacinrms) {
+static float calculate_efficiency(float vacoutrms, float vacinrms) {
     return (vacoutrms * vacinrms) / 100.0;
 }
 
-unsigned int get_numbat() {
+static unsigned int get_numbat(void) {
     char * nb = getval("numbat");
     unsigned int retval = 0;
     if (nb)
