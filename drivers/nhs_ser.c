@@ -360,8 +360,8 @@ static unsigned char calculate_checksum(unsigned char *pacote, int inicio, int f
 static float calculate_efficiency(float vacoutrms, float vacinrms);
 
 static int openfd(const char * portarg, int BAUDRATE);
-static int write_serial(int serial_fd, const char * dados, int size);
-static int write_serial_int(int serial_fd, const unsigned int * data, int size);
+static int write_serial(int fd, const char * dados, int size);
+static int write_serial_int(int fd, const unsigned int * data, int size);
 
 static void print_pkt_hwinfo(pkt_hwinfo data);
 static void print_pkt_data(pkt_data data);
@@ -883,21 +883,21 @@ static pkt_hwinfo mount_hwinfo(unsigned char *datapkt, int size) {
     return pkthwinfo;
 }
 
-static int write_serial(int serial_fd, const char * dados, int size) {
-    if (serial_fd > 0) {
-        ssize_t bytes_written = write(serial_fd, dados, size);
+static int write_serial(int fd, const char * dados, int size) {
+    if (fd > 0) {
+        ssize_t bytes_written = write(fd, dados, size);
         if (bytes_written < 0)
-                return -1;
-        if (tcdrain(serial_fd) != 0)
-           return -2;
+            return -1;
+        if (tcdrain(fd) != 0)
+            return -2;
         return size;
     }
     else
-        return serial_fd;
+        return fd;
 }
 
-static int write_serial_int(int serial_fd, const unsigned int * data, int size) {
-    if (serial_fd > 0) {
+static int write_serial_int(int fd, const unsigned int * data, int size) {
+    if (fd > 0) {
         ssize_t bytes_written;
         uint8_t *message = NULL;
         int i = 0;
@@ -907,17 +907,17 @@ static int write_serial_int(int serial_fd, const unsigned int * data, int size) 
             message[i] = (uint8_t)data[i];
             //upsdebugx(1,"%d %c %u %d %c %u",message[i],message[i],data[i],data[i]);
         }
-        bytes_written = write(serial_fd, message,size);
+        bytes_written = write(fd, message, size);
         free(message);
 
         if (bytes_written < 0)
             return -1;
-        if (tcdrain(serial_fd) != 0)
-           return -2;
+        if (tcdrain(fd) != 0)
+            return -2;
         return i;
     }
     else
-        return serial_fd;
+        return fd;
 }
 
 static char * strtolow(char* s) {
