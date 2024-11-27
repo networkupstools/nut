@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3248 utf-8
+personal_ws-1.1 en 3255 utf-8
 AAC
 AAS
 ABI
@@ -129,6 +129,7 @@ BlackOut
 BladeUPS
 BlueOcean
 Bo
+Bocchi
 Bohe
 Borns
 Borri
@@ -1379,6 +1380,7 @@ Wextra
 WhizBang
 WiX
 Wikipedia
+Willian
 WinMerge
 WinNUT
 WinPower
@@ -1714,6 +1716,7 @@ cpqpower
 cpsups
 cr
 crestfactor
+crit
 criticality
 crlf
 cron
@@ -2449,6 +2452,7 @@ nn
 nnn
 noAuthNoPriv
 nobody's
+nobreak
 nobt
 nodev
 nodownload
@@ -2482,6 +2486,7 @@ nuget
 num
 numOfBytesFromUPS
 numa
+numbatteries
 numlogins
 numq
 nutclient
@@ -2562,6 +2567,7 @@ pe
 peasy
 peername
 pem
+perc
 perl
 pfSense
 pfexec
@@ -3147,6 +3153,7 @@ variadic
 varlow
 varname
 varvalue
+vbat
 vbatt
 vc
 vendorid
