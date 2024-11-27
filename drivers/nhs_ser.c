@@ -1,5 +1,5 @@
 /*
- * nhs-nut.c - NUT support for NHS Nobreaks, senoidal line
+ * nhs_ser.c - NUT support for NHS Nobreaks, senoidal line
  *
  *
  * Copyright (C) 2024 - Lucas Willian Bocchi <lucas@lucas.inf.br>
@@ -57,14 +57,14 @@
             5) back to root nut source directory, then dpkg-buildpackage -us -uc
             6) dpkg -i <your new package>
 
-        * gcc -g -O0 -o nhs-nut nhs-nut.c main.c dstate.c serial.c ../common/common.c ../common/parseconf.c ../common/state.c ../common/str.c ../common/upsconf.c -I../include -lm
+        * gcc -g -O0 -o nhs_ser nhs_ser.c main.c dstate.c serial.c ../common/common.c ../common/parseconf.c ../common/state.c ../common/str.c ../common/upsconf.c -I../include -lm
         * upsdrvquery.c (optional)
-        * copy nhs-nut to nut driver's directory and test
+        * copy nhs_ser to nut driver's directory and test
     To debug:
-        * clang --analyze nhs-nut.c
-        * cppcheck nhs-nut.c
+        * clang --analyze nhs_ser.c
+        * cppcheck nhs_ser.c
         * upsdrvctl -D start
-        * nhs-nut -a <id> -D
+        * nhs_ser -a <id> -D
         * upsd -D
 */
 

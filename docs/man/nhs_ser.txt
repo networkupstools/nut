@@ -1,26 +1,26 @@
-NHS-NUT(8)
+NHS_SER(8)
 ==========
 
 NAME
 ----
 
-nhs-nut - driver for NHS Nobreak devices with serial port
+nhs_ser - driver for NHS Nobreak devices with serial port
 
 SYNOPSIS
 --------
 
-*nhs-nut* -h
+*nhs_ser* -h
 
-*nhs-nut* -a 'UPS_NAME' ['OPTIONS']
+*nhs_ser* -a 'UPS_NAME' ['OPTIONS']
 
 NOTE: This man page only documents the hardware-specific features of the
-*nhs-nut* driver.  For information about the core driver, see
+*nhs_ser* driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
 
-*nhs-nut* supports numerous UPS models made by NHS Sistemas Eletronicos LTDA
+*nhs_ser* supports numerous UPS models made by NHS Sistemas Eletronicos LTDA
 and marketed in Brazil. They feature a serial port and a binary wire protocol.
 
 EXTRA ARGUMENTS
