@@ -720,7 +720,7 @@ pkt_data mount_datapacket(unsigned char * datapacket, int size, double tempodeco
         pktdata.nominaltension = vbat * pkt_upsinfo.numbatteries;
         if (pktdata.nominaltension > 0) {
             pktdata.perc_output = (pktdata.battery_tension * 100) / pktdata.nominaltension;
-            if (pktdata.perc_output > 100);
+            if (pktdata.perc_output > 100)
                 pktdata.perc_output = 100;
         } // end if
     } // end if
