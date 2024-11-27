@@ -76,7 +76,7 @@
 #define DEFAULTBATV 12.0
 
 #define DRIVER_NAME "NHS Nobreak Drivers"
-#define DRIVER_VERSION  "0.1"
+#define DRIVER_VERSION  "0.01"
 #define MANUFACTURER "NHS Sistemas Eletronicos LTDA"
 
 /* driver description structure */
