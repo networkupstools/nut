@@ -1676,7 +1676,7 @@ void upsdrv_updateinfo(void) {
     float calculated = 0;
     float vpower = 0;
     float pf = 0;
-    int bcharge = 0;
+    long bcharge = 0;
     int min_input_power = 0;
     double tempodecorrido = 0.0;
     unsigned int numbat = 0;
@@ -1862,8 +1862,8 @@ void upsdrv_updateinfo(void) {
                                     minpower = vpower;
                                 dstate_setinfo("ups.power","%0.2f",vpower);
                                 dstate_setinfo("ups.power.nominal","%u",va);
-                                dstate_setinfo("ups.realpower","%d",(int)round(vpower));
-                                dstate_setinfo("ups.realpower.nominal","%d",(int)round(va * pf));
+                                dstate_setinfo("ups.realpower","%ld",lrint(round(vpower)));
+                                dstate_setinfo("ups.realpower.nominal","%ld",lrint(round(va * pf)));
                                 dstate_setinfo("ups.beeper.status","%d",!lastpkthwinfo.c_buzzer_disable);
                                 dstate_setinfo("input.voltage","%0.2f",lastpktdata.vacinrms);
                                 dstate_setinfo("input.voltage.maximum","%0.2f",lastpktdata.vacinrmsmin);
@@ -1904,19 +1904,19 @@ void upsdrv_updateinfo(void) {
                                     minpowerperc = lastpktdata.potrms;
                                 dstate_setinfo("power.maximum.percent","%u",maxpowerperc);
                                 dstate_setinfo("power.minimum.percent","%u",minpowerperc);
-                                dstate_setinfo("realpower","%u",(unsigned int)round(vpower));
-                                dstate_setinfo("power","%u",(unsigned int)round(va * (lastpktdata.potrms / 100.0)));
-                                bcharge = (int)round((lastpktdata.vdcmed_real * 100) / 12.0);
+                                dstate_setinfo("realpower","%ld",lrint(round(vpower)));
+                                dstate_setinfo("power","%ld",lrint(round(va * (lastpktdata.potrms / 100.0))));
+                                bcharge = lrint(round((lastpktdata.vdcmed_real * 100) / 12.0));
                                 if (bcharge > 100)
                                     bcharge = 100;
-                                dstate_setinfo("battery.charge","%d",bcharge);
+                                dstate_setinfo("battery.charge","%ld",bcharge);
                                 dstate_setinfo("battery.voltage","%0.2f",lastpktdata.vdcmed_real);
                                 dstate_setinfo("battery.voltage.nominal","%u",vbat);
                                 dstate_setinfo("battery.capacity","%u",ah);
                                 dstate_setinfo("battery.capacity.nominal","%0.2f",(float)ah * pf);
                                 dstate_setinfo("battery.current","%0.2f",abat);
                                 dstate_setinfo("battery.current.total","%0.2f",(float)abat * numbat);
-                                dstate_setinfo("battery.temperature","%u",(unsigned int)round(lastpktdata.tempmed_real));
+                                dstate_setinfo("battery.temperature","%ld",lrint(round(lastpktdata.tempmed_real)));
                                 dstate_setinfo("battery.packs","%u",numbat);
                                 // We will calculate autonomy in seconds
 
