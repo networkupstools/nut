@@ -894,15 +894,19 @@ static int write_serial(int serial_fd, const char * dados, int size) {
 }
 
 static int write_serial_int(int serial_fd, const unsigned int * data, int size) {
-    uint8_t message[size];
-    int i = 0;
     if (serial_fd > 0) {
         ssize_t bytes_written;
+        uint8_t *message = NULL;
+        int i = 0;
+
+        message = xcalloc(size, sizeof(uint8_t));
         for (i = 0; i < size; i++) {
             message[i] = (uint8_t)data[i];
             //upsdebugx(1,"%d %c %u %d %c %u",message[i],message[i],data[i],data[i]);
         }
         bytes_written = write(serial_fd, message,size);
+        free(message);
+
         if (bytes_written < 0)
             return -1;
         if (tcdrain(serial_fd) != 0)
