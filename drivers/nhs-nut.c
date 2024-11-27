@@ -2107,7 +2107,7 @@ void upsdrv_makevartable(void) {
 
     addvar(VAR_VALUE, "va", "Nobreak NOMINAL POWER in VA");
 
-    snprintf(help, sizeof(help), "Power Factor to use in calculations of battery time, default is %0.2f", DEFAULTPF);
+    snprintf(help, sizeof(help), "Power Factor to use in calculations of battery time. Default is %0.2f", DEFAULTPF);
     addvar(VAR_VALUE, "pf", help);
 
     snprintf(help, sizeof(help), "Voltage In Percentage to calculate warning low level. Default is %0.2f", DEFAULLTPERC);
@@ -2125,7 +2125,7 @@ void upsdrv_makevartable(void) {
     snprintf(help, sizeof(help), "Num Batteries (override value from nobreak)");
     addvar(VAR_VALUE, "numbatteries", help);
 
-    snprintf(help, sizeof(help), "Battery Voltage (override default value. Default is %0.2f", DEFAULTBATV);
+    snprintf(help, sizeof(help), "Battery Voltage (override default value). Default is %0.2f", DEFAULTBATV);
     addvar(VAR_VALUE, "vbat", help);
 }
 
