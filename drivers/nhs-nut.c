@@ -348,7 +348,7 @@ static pkt_data lastpktdata = {
     0xFE  // end_marker
 };
 
-int get_bit_in_position(void *ptr, size_t size, int bit_position,int invertorder) {
+int get_bit_in_position(void *ptr, size_t size, size_t bit_position, int invertorder) {
     unsigned char *byte_ptr = (unsigned char *)ptr;
     int retval = -2;
     size_t byte_index = bit_position / 8;
