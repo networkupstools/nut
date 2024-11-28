@@ -1709,6 +1709,7 @@ void upsdrv_updateinfo(void) {
     unsigned int numbat = 0;
     unsigned int vbat = 0;
     float abat = 0;
+    float actual_current = 0;
     upsinfo ups;
 
     upsdebugx(1,"Start updateinfo()");
@@ -1945,14 +1946,18 @@ void upsdrv_updateinfo(void) {
                                 dstate_setinfo("battery.current.total","%0.2f",(float)abat * numbat);
                                 dstate_setinfo("battery.temperature","%ld",lrint(round(lastpktdata.tempmed_real)));
                                 dstate_setinfo("battery.packs","%u",numbat);
-                                // We will calculate autonomy in seconds
+                                /* We will calculate autonomy in seconds 
+                                autonomy_secs = (ah / lastpktdata.vdcmed_real) * 3600; 
+                                Maybe wrong, too.
+                                People says that the correct calculation is
 
-                                // Autonomy calculation in NHS nobreaks is a rocket science. Some are one, some are other. I'll do my best to put one that works in 4 models that I have here.
+                                Battery Amp-Hour / (Power in Watts / battery voltage)
+                                
+                                Is that correct? I don't know. I'll use it for now.
+                                  */
                                 // That result is IN HOURS. We need to convert it on seconds
-                                //autonomy_secs = (int)round((ah / (vpower / lastpktdata.vdcmed_real)) * 3600);
-                                autonomy_secs = (ah / lastpktdata.vdcmed_real) * 3600;
-                                //upsdebugx(1,"(numbat * lastpktdata.vdcmed_real * va * pf) / ((lastpktdata.potrms * va * pf) / 100.0) = (%d * %0.2f * %d * %0.2f) / ((%d * %d * %0.2f) / 100.0) --> %0.2f",numbat,lastpktdata.vdcmed_real,va,pf,lastpktdata.potrms,va,pf,autonomy_secs);
-                                // That result is IN HOURS. We need to convert it on seconds
+                                actual_current = vpower / vbat; /* Current consumption in A*/
+                                autonomy_secs = (ah / actual_current) * 3600;
 
                                 dstate_setinfo("battery.runtime","%u",autonomy_secs);
                                 dstate_setinfo("battery.runtime.low","%u",30);
