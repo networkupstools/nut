@@ -132,7 +132,7 @@ typedef enum {
 		MGE_PULSAR_M_3000,
 		MGE_PULSAR_M_3000_XL,
 	EATON_5P = 0x500,			/* Eaton 5P / 5PX / 5SC series */
-	EATON_9E = 0x900			/* Eaton 9E entry-level / 9SX series */
+	EATON_9E = 0x900			/* Eaton 9E entry-level / 9SX / 9PX series */
 } models_type_t;
 
 /* Default to line-interactive or online (ie, not offline).
