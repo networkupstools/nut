@@ -828,7 +828,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 	}
 	else
 	if (count_open_errors > 0
-	||  count_open_errors == count_open_EACCESS
+	&&  count_open_errors == count_open_EACCESS
 	) {
 		upslogx(LOG_WARNING,
 			"libusb1: Could not open any HID devices: "
