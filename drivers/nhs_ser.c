@@ -1933,7 +1933,7 @@ void upsdrv_updateinfo(void) {
                                 dstate_setinfo("power.minimum.percent","%u",minpowerperc);
                                 dstate_setinfo("realpower","%ld",lrint(round(vpower)));
                                 dstate_setinfo("power","%ld",lrint(round(va * (lastpktdata.potrms / 100.0))));
-                                bcharge = lrint(round((lastpktdata.vdcmed_real * 100) / 12.0));
+                                bcharge = lrint(round((lastpktdata.vdcmed_real * 100) / vbat));
                                 if (bcharge > 100)
                                     bcharge = 100;
                                 dstate_setinfo("battery.charge","%ld",bcharge);
