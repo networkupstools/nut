@@ -1373,17 +1373,17 @@ static models_name_t mge_model_names [] =
 	 * https://github.com/networkupstools/nut/issues/2685
 	 * https://www.eaton.com/gb/en-gb/site-search.html.searchTerm$9sx.tabs$all.html
      */
-	{ "Eaton 9SX", "700i", EATON_9E, "9SX700I" },
-	{ "Eaton 9SX", "1000i", EATON_9E, "9SX1000I" },
-	{ "Eaton 9SX", "1000IM", EATON_9E, "9SX1000IM" },
-	{ "Eaton 9SX", "1500i", EATON_9E, "9SX1500I" },
-	{ "Eaton 9SX", "2000i", EATON_9E, "9SX2000I" },
-	{ "Eaton 9SX", "3000i", EATON_9E, "9SX3000I" },
-	{ "Eaton 9SX", "3000IM", EATON_9E, "9SX3000IM" },
-	{ "Eaton 9SX", "1000IR", EATON_9E, "9SX1000IR" },
-	{ "Eaton 9SX", "1500IR", EATON_9E, "9SX1500IR" },
-	{ "Eaton 9SX", "2000IR", EATON_9E, "9SX2000IR" },
-	{ "Eaton 9SX", "3000IR", EATON_9E, "9SX3000IR" },
+	{ "Eaton 9SX", "700i", EATON_9E, "9SX700i" },
+	{ "Eaton 9SX", "1000i", EATON_9E, "9SX1000i" },
+	{ "Eaton 9SX", "1000im", EATON_9E, "9SX1000im" },
+	{ "Eaton 9SX", "1500i", EATON_9E, "9SX1500i" },
+	{ "Eaton 9SX", "2000i", EATON_9E, "9SX2000i" },
+	{ "Eaton 9SX", "3000i", EATON_9E, "9SX3000i" },
+	{ "Eaton 9SX", "3000im", EATON_9E, "9SX3000im" },
+	{ "Eaton 9SX", "1000ir", EATON_9E, "9SX1000ir" },
+	{ "Eaton 9SX", "1500ir", EATON_9E, "9SX1500ir" },
+	{ "Eaton 9SX", "2000ir", EATON_9E, "9SX2000ir" },
+	{ "Eaton 9SX", "3000ir", EATON_9E, "9SX3000ir" },
 
 	/* Pulsar M models */
 	{ "PULSAR M", "2200", MGE_PULSAR_M_2200, NULL },
