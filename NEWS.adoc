@@ -376,6 +376,9 @@ during a NUT build.
  - added `scripts/valgrind` with a helper script and suppression file to
    ignore common third-party problems. [#2511]
 
+ - when drivers dump collected data (during troubleshooting), flush `stdout`
+   buffer immediately for sane logging (especially on Windows). [PR #2699]
+
  - revised `nut.exe` (the NUT for Windows wrapper for all-in-one service)
    to be more helpful with command-line use (report that it failed to start
    as a service, have a help message, pass debug verbosity to launched NUT
