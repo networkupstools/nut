@@ -1385,6 +1385,18 @@ static models_name_t mge_model_names [] =
 	{ "Eaton 9SX", "2000ir", EATON_9E, "9SX2000ir" },
 	{ "Eaton 9SX", "3000ir", EATON_9E, "9SX3000ir" },
 
+	/* Eaton 9PX series
+	 * https://www.eaton.com/gb/en-gb/site-search.html.searchTerm$9px.tabs$all.html
+     */
+    { "Eaton 9PX", "1000irt2u", EATON_9E, "9px1000irt2u" },
+	{ "Eaton 9PX", "1500irt2u", EATON_9E, "9px1500irt2u" },
+	{ "Eaton 9PX", "1500irtm", EATON_9E, "9px1500irtm" },
+	{ "Eaton 9PX", "2200irt2u", EATON_9E, "9px2200irt2u" },
+	{ "Eaton 9PX", "2200irt3u", EATON_9E, "9px2200irt3u" },
+	{ "Eaton 9PX", "3000irt2u", EATON_9E, "9px3000irt2u" },
+	{ "Eaton 9PX", "3000irt3u", EATON_9E, "9px3000irt3u" },
+	{ "Eaton 9PX", "3000irtm", EATON_9E, "9px3000irtm" },
+
 	/* Pulsar M models */
 	{ "PULSAR M", "2200", MGE_PULSAR_M_2200, NULL },
 	{ "PULSAR M", "3000", MGE_PULSAR_M_3000, NULL },
