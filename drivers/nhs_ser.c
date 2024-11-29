@@ -522,17 +522,17 @@ static int openfd(const char * portarg, int BAUDRATE) {
 	int	fd = open(portarg, O_RDWR | O_NOCTTY | O_SYNC);
 
 	if (fd < 0) {
-		upsdebugx(1, "Error on open %s", portarg);
+		upsdebugx(1, "%s: Error on open %s", __func__, portarg);
 		return -1;
 	}
 
 	if (tcflush(fd, TCIOFLUSH) != 0) {
-		upsdebugx(1, "Error on flush data on %s", portarg);
+		upsdebugx(1, "%s: Error on flush data on %s", __func__, portarg);
 		return -1;
 	}
 
 	if (tcgetattr(fd, &tty) != 0) {
-		upsdebugx(1, "Error on set termios values to  %s", portarg);
+		upsdebugx(1, "%s: Error on set termios values to %s", __func__, portarg);
 		close(fd);
 		return -1;
 	}
@@ -545,7 +545,10 @@ static int openfd(const char * portarg, int BAUDRATE) {
 	while ((i < NUM_BAUD_RATES) && (done == 0)) {
 		if (baud_rates[i].speed == BAUDRATE) {
 			done = baud_rates[i].rate;
-			upsdebugx(1, "Baud selecionado: %d -- %s", baud_rates[i].speed, baud_rates[i].description);
+			upsdebugx(1, "%s: Baud rate selected by user: %d -- %s",
+				__func__,
+				baud_rates[i].speed,
+				baud_rates[i].description);
 		}
 		i++;
 	}
@@ -555,7 +558,10 @@ static int openfd(const char * portarg, int BAUDRATE) {
 		while ((i < NUM_BAUD_RATES) && (done == 0)) {
 			if (baud_rates[i].speed == DEFAULTBAUD) {
 				done = baud_rates[i].rate;
-				upsdebugx(1, "Baud selecionado: %d -- %s", baud_rates[i].speed, baud_rates[i].description);
+				upsdebugx(1, "%s: Baud rate selected by default: %d -- %s",
+					__func__,
+					baud_rates[i].speed,
+					baud_rates[i].description);
 			}
 			i++;
 		}
@@ -563,7 +569,7 @@ static int openfd(const char * portarg, int BAUDRATE) {
 
 	/* Wrong macro? */
 	if (done == 0) {
-		upsdebugx(1, "Baud rate not found, using default %d", DEFAULTBAUD);
+		upsdebugx(1, "%s: Baud rate not found, using default %d", __func__, DEFAULTBAUD);
 		done = B2400;
 	}
 
@@ -598,7 +604,7 @@ static int openfd(const char * portarg, int BAUDRATE) {
 	cfsetospeed(&tty, done);
 
 	if (tcsetattr(fd, TCSANOW, &tty) != 0) {
-		upsdebugx(1, "Error on tcsetattr on port %s", portarg);
+		upsdebugx(1, "%s: Error on tcsetattr on port %s", __func__, portarg);
 		close(fd);
 		return -1;
 	}
@@ -1653,9 +1659,12 @@ static float get_vin_perc(char * var) {
 void upsdrv_initinfo(void) {
 	char	*b = getval("baud");
 
-	upsdebugx(1, "Port is %s and baud_rate is %s", device_path, b);
-	baudrate = DEFAULTBAUD;
 	upsdebugx(3, "%s: starting...", __func__);
+
+	baudrate = DEFAULTBAUD;
+
+	upsdebugx(1, "%s: Port is %s and baud_rate is %s", __func__, device_path, b);
+
 	if (b)
 		baudrate = atoi(b);
 	if (device_path) {
@@ -1667,7 +1676,7 @@ void upsdrv_initinfo(void) {
 		if (serial_fd == -1)
 			fatalx(EXIT_FAILURE, "Unable to open port %s with baud %d", porta, baudrate);
 		else {
-			upsdebugx(1, "Communication started on port %s, baud rate %d. Calling updateinfo()", porta, baudrate);
+			upsdebugx(1, "%s: Communication started on port %s, baud rate %d. Calling updateinfo()", __func__, porta, baudrate);
 		}
 	}
 	else
@@ -1719,10 +1728,10 @@ void upsdrv_updateinfo(void) {
 
 	upsdebugx(3, "%s: starting...", __func__);
 	if ((serial_fd <= 0) && (i < retries)) {
-		upsdebugx(1, "Serial problem...");
+		upsdebugx(1, "%s: Serial port communications problem", __func__);
 		while (serial_fd <= 0) {
 			serial_fd = openfd(porta, baudrate);
-			upsdebugx(1, "Trying to reopen serial...");
+			upsdebugx(1, "%s: Trying to reopen serial...", __func__);
 			usleep(checktime);
 			retries++;
 		}
@@ -2162,12 +2171,12 @@ void upsdrv_updateinfo(void) {
 				}	/* end else */
 			}	/* end else */
 			if (bwritten < 0) {
-				upsdebugx(1, "Problem to write data to %s", porta);
+				upsdebugx(1, "%s: Problem to write data to %s", __func__, porta);
 				if (bwritten == -1) {
-					upsdebugx(1, "Data problem");
+					upsdebugx(1, "%s: Data problem", __func__);
 				}
 				if (bwritten == -2) {
-					upsdebugx(1, "Flush problem");
+					upsdebugx(1, "%s: Flush problem", __func__);
 				}
 				close(serial_fd);
 				serial_fd = -1;
