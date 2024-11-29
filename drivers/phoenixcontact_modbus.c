@@ -135,7 +135,6 @@ void upsdrv_updateinfo(void)
 	switch (UPSModel)
 	{
 	case QUINT4_UPS:
-
 		mrir(modbus_ctx, 0x2000, 1, &actual_code_functions);
 
 		tab_reg[0] = CHECK_BIT(actual_code_functions, 2); /* Battery mode is the 2nd bit of the register 0x2000 */
@@ -146,10 +145,10 @@ void upsdrv_updateinfo(void)
 		tab_reg[1] = CHECK_BIT(actual_alarms1, 2); /* Battery discharged is the 2nd bit of the register 0x3001 */
 		break;
 	case QUINT_UPS:
-
 		mrir(modbus_ctx, 29697, 3, tab_reg); /* LB is actually called "shutdown event" on this ups */
 		break;
 	default:
+		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
 		break;
 	}	
 
@@ -171,14 +170,13 @@ void upsdrv_updateinfo(void)
 	switch (UPSModel)
 	{
 	case QUINT4_UPS:
-
 		mrir(modbus_ctx, 0x2006, 1, tab_reg);
 		break;
 	case QUINT_UPS:
-
 		mrir(modbus_ctx, 29745, 1, tab_reg);
 		break;
 	default:
+		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
 		break;
 	}
 
@@ -187,14 +185,13 @@ void upsdrv_updateinfo(void)
 	switch (UPSModel)
 	{
 	case QUINT4_UPS:
-
 		mrir(modbus_ctx, 0x200F, 1, tab_reg);
 		break;
 	case QUINT_UPS:
-
 		mrir(modbus_ctx, 29749, 5, tab_reg);
 		break;
 	default:
+		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
 		break;
 	}
 
@@ -204,7 +201,6 @@ void upsdrv_updateinfo(void)
 	switch (UPSModel)
 	{
 	case QUINT4_UPS:
-
 		mrir(modbus_ctx, 0x200A, 1, &battery_voltage);
 		tab_reg[0] = battery_voltage;
 
@@ -222,10 +218,10 @@ void upsdrv_updateinfo(void)
 
 		break;
 	case QUINT_UPS:
-
 		mrir(modbus_ctx, 29792, 10, tab_reg);
 		break;
 	default:
+		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
 		break;
 	}
 
@@ -242,7 +238,6 @@ void upsdrv_updateinfo(void)
 	switch (UPSModel)
 	{
 	case QUINT4_UPS:
-
 		tab_reg[0] = 0;
 		actual_alarms = 0;
 		actual_alarms1 = 0;
@@ -282,7 +277,6 @@ void upsdrv_updateinfo(void)
 
 		break;
 	case QUINT_UPS:
-
 		mrir(modbus_ctx, 29840, 1, tab_reg);
 
 		if (CHECK_BIT(tab_reg[0], 4) && CHECK_BIT(tab_reg[0], 5))
@@ -310,6 +304,7 @@ void upsdrv_updateinfo(void)
 			alarm_set("Low Battery (Service)");
 		break;
 	default:
+		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
 		break;
 	}
 
