@@ -38,9 +38,11 @@
                 /* All enum cases defined as of the time of coding
                  * have been covered above. Handle later definitions,
                  * memory corruptions and buggy inputs below...
+				 *
+				 * default:
+                 * 		fatalx(EXIT_FAILURE, "no suitable definition found!");
                  */
-                default:
-                        fatalx(EXIT_FAILURE, "no suitable definition found!");
+                
 #ifdef __clang__
 # pragma clang diagnostic pop
 #endif
