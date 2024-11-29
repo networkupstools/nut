@@ -1090,7 +1090,7 @@ static int nut_libusb_get_interrupt(
 		) {
 			return -1;
 		}
-		ret = (usb_ctrl_charbufsize)bufsize;
+		ret = (usb_ctrl_charbufsize)tmpbufsize;
 	}
 
 	return nut_libusb_strerror(ret, __func__);
