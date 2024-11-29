@@ -512,7 +512,6 @@ SRC_SERIAL_PAGES = \
 	powerpanel.txt	\
 	rhino.txt		\
 	riello_ser.txt	\
-	nhs_ser.txt \
 	sms_ser.txt \
 	safenet.txt	\
 	solis.txt		\
@@ -521,6 +520,12 @@ SRC_SERIAL_PAGES = \
 	upscode2.txt	\
 	victronups.txt	\
 	apcupsd-ups.txt
+
+if HAVE_LINUX_SERIAL_H
+# Temporary, until ported to more OSes
+SRC_SERIAL_PAGES += \
+	nhs_ser.txt
+endif HAVE_LINUX_SERIAL_H
 
 if ! SOME_DRIVERS
 if WITH_MANS
@@ -562,7 +567,6 @@ MAN_SERIAL_PAGES = \
 	powerpanel.8	\
 	rhino.8		\
 	riello_ser.8	\
-	nhs_ser.8 \
 	sms_ser.8 \
 	safenet.8	\
 	solis.8		\
@@ -571,7 +575,15 @@ MAN_SERIAL_PAGES = \
 	upscode2.8	\
 	victronups.8	\
 	apcupsd-ups.8
+
+if HAVE_LINUX_SERIAL_H
+# Temporary, until ported to more OSes
+MAN_SERIAL_PAGES += \
+	nhs_ser.8
+endif HAVE_LINUX_SERIAL_H
+
 endif WITH_MANS
+
 
 if WITH_SERIAL
 man8_MANS +=  $(MAN_SERIAL_PAGES)
@@ -615,7 +627,6 @@ HTML_SERIAL_MANS = \
 	powerpanel.html	\
 	rhino.html		\
 	riello_ser.html	\
-	nhs_ser.html \
 	sms_ser.html \
 	safenet.html	\
 	solis.html		\
@@ -624,6 +635,13 @@ HTML_SERIAL_MANS = \
 	upscode2.html	\
 	victronups.html	\
 	apcupsd-ups.html
+
+if HAVE_LINUX_SERIAL_H
+# Temporary, until ported to more OSes
+HTML_SERIAL_MANS += \
+	nhs_ser.html
+endif HAVE_LINUX_SERIAL_H
+
 endif ! SOME_DRIVERS
 
 # (--with-snmp)

@@ -23,6 +23,9 @@ SUPPORTED HARDWARE
 *nhs_ser* supports numerous UPS models made by NHS Sistemas Eletronicos LTDA
 and marketed in Brazil. They feature a serial port and a binary wire protocol.
 
+NOTE: Currently this driver only builds on Linux. This is expected to change
+in future revisions of the code.
+
 EXTRA ARGUMENTS
 ---------------
 

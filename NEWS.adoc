@@ -151,7 +151,7 @@ https://github.com/networkupstools/nut/milestone/11
 
  - nhs_ser: added new driver for numerous NHS Nobreaks, senoidal line -- UPS
    models with serial port, made by NHS Sistemas Eletronicos LTDA and popular
-   in Brazil. [#2692]
+   in Brazil. Currently this driver only builds on Linux. [#2692]
 
  - usbhid-ups updates:
    * Support of the `onlinedischarge_log_throttle_hovercharge` in the NUT
