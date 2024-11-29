@@ -1879,6 +1879,8 @@ void upsdrv_updateinfo(void) {
 								if (lastpktdata.s_network_failure)
 									snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
 										"|NETWORK FAILURE|");
+
+								/* FIXME: Really same criteria in these 3? */
 								if (lastpktdata.s_fast_network_failure)
 									snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
 										"|FAST NETWORK FAILURE|");
@@ -1888,6 +1890,7 @@ void upsdrv_updateinfo(void) {
 								if (lastpktdata.s_fast_network_failure)
 									snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
 										"|220v OUT|");
+
 								if (lastpktdata.s_bypass_on)
 									snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
 										"|BYPASS ON|");
