@@ -707,6 +707,8 @@ static const char *eaton_input_eco_mode_check_range(double value)
     double frequency_range_transfer;
     double lower_frequency_limit;
     double upper_frequency_limit;
+	double lower_voltage_limit;
+    double upper_voltage_limit;
 
     /* Get the ECO mode voltage/frequency and transfer points */
     const char* bypass_voltage_str = dstate_getinfo("input.bypass.voltage");
@@ -760,30 +762,33 @@ static const char *eaton_input_eco_mode_check_range(double value)
         lower_frequency_limit = out_frequency_nominal - (out_frequency_nominal / 100 * frequency_range_transfer);
         upper_frequency_limit = out_frequency_nominal + (out_frequency_nominal / 100 * frequency_range_transfer);
     } else {
+	/* Set default values if user-defined limits are not available or out of range */	
         lower_frequency_limit = out_frequency_nominal - (out_frequency_nominal / 100 * 5);
 		upper_frequency_limit = out_frequency_nominal + (out_frequency_nominal / 100 * 5);
     }
 
-    /* Check if user-defined limits are available and within valid range */
-    if ((eco_low_transfer > 0 && eco_high_transfer > 0)
-        && (bypass_voltage >= eco_low_transfer && bypass_voltage <= eco_high_transfer)
-        && (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)
-    ) {
-        return "ECO"; /* Enter ECO mode */
+    /* Set the voltage limit */
+	if (eco_low_transfer > 0 && eco_high_transfer > 0) {
+	    lower_voltage_limit = eco_low_transfer;
+        upper_voltage_limit = eco_high_transfer;
+	} else {	
+	/* Set default values if user-defined limits are not available or out of range */
+        lower_voltage_limit = out_voltage_nominal * 0.95;
+        upper_voltage_limit = out_voltage_nominal * 1.05;
     }
 
-    /* Default values if user-defined limits are not available or out of range */
-    if ((bypass_voltage >= out_voltage_nominal * 0.95 && bypass_voltage <= out_voltage_nominal * 1.05)
+    /* Check if limits are within valid range */
+	if ((bypass_voltage >= lower_voltage_limit && bypass_voltage <= upper_voltage_limit)
         && (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)
     ) {
         return "ECO"; /* Enter ECO mode */
     } else {
-        /* Condensed debug messages for out of range voltage and frequency */
-        if (bypass_voltage < eco_low_transfer || bypass_voltage > eco_high_transfer) {
-            upsdebugx(1, "Bypass voltage out of transfer ECO limits: %.1f V", bypass_voltage);
+    /* Condensed debug messages for out of range voltage and frequency */
+        if (bypass_voltage < lower_voltage_limit || bypass_voltage > upper_voltage_limit) {            
+			upsdebugx(1, "Input Bypass voltage is outside ECO transfer limits: %.1f V", bypass_voltage);
         }
         if (bypass_frequency < lower_frequency_limit || bypass_frequency > upper_frequency_limit) {
-            upsdebugx(1, "Bypass frequency out of transfer ECO limits: %.1f Hz", bypass_frequency);
+            upsdebugx(1, "Input Bypass frequency is outside ECO transfer limits: %.1f Hz", bypass_frequency);
         }
         return NULL; /* Do not enter ECO mode */
     }
