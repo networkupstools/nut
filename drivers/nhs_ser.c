@@ -1752,7 +1752,7 @@ void upsdrv_updateinfo(void) {
 				datapacket_index++;
 				if (chr == 0xFE) {	/* DataPacket */
 					time_t	now = time(NULL);
-					upsdebugx(1, "DATAPACKET INDEX IS %d", datapacket_index);
+					upsdebugx(4, "DATAPACKET INDEX IS %d", datapacket_index);
 					if (lastdp != 0) {
 						tempodecorrido = difftime(now, lastdp);
 					}
@@ -1774,17 +1774,17 @@ void upsdrv_updateinfo(void) {
 					datapacketstart = false;
 					if (lastpktdata.checksum_ok) {
 						/* checksum is OK, then use it to set values */
-						upsdebugx(1, "Data Packet seems be OK");
+						upsdebugx(4, "Data Packet seems be OK");
 						if (lastpkthwinfo.size == 0)
-							upsdebugx(1, "Pkt HWINFO is not OK. See if will be requested next time!");
+							upsdebugx(2, "Pkt HWINFO is not OK. See if will be requested next time!");
 						else {
 							if (lastpkthwinfo.checksum_ok) {
-								upsdebugx(1, "Pkt HWINFO is OK. Model is %d, hwversion is %d and swversion is %d", lastpkthwinfo.model, lastpkthwinfo.hardwareversion, lastpkthwinfo.softwareversion);
+								upsdebugx(4, "Pkt HWINFO is OK. Model is %d, hwversion is %d and swversion is %d", lastpkthwinfo.model, lastpkthwinfo.hardwareversion, lastpkthwinfo.softwareversion);
 								/* We need to set data on NUT with data
 								 * that I believe that I can calculate.
 								 * Now setting data on NUT */
 								ups = getupsinfo(lastpkthwinfo.model);
-								upsdebugx(1, "UPS Struct data: Code %d Model %s VA %d", ups.upscode, ups.upsdesc, ups.VA);
+								upsdebugx(4, "UPS Struct data: Code %d Model %s VA %d", ups.upscode, ups.upsdesc, ups.VA);
 								dstate_setinfo("device.model", "%s", ups.upsdesc);
 								dstate_setinfo("device.mfr", "%s", MANUFACTURER);
 								dstate_setinfo("device.serial", "%s", lastpkthwinfo.serial);
@@ -1810,22 +1810,22 @@ void upsdrv_updateinfo(void) {
 								/* Decision Chain commented below */
 
 								/* First we check if system is on battery or not */
-								upsdebugx(1, "Set UPS status as OFF and start checking. s_battery_mode is %d", lastpktdata.s_battery_mode);
+								upsdebugx(4, "Set UPS status as OFF and start checking. s_battery_mode is %d", lastpktdata.s_battery_mode);
 								if (lastpkthwinfo.s_220V_in) {
-									upsdebugx(1, "I'm on 220v IN!. My overvoltage is %d", lastpkthwinfo.undervoltagein220V);
+									upsdebugx(4, "I'm on 220v IN!. My overvoltage is %d", lastpkthwinfo.undervoltagein220V);
 									min_input_power = lastpkthwinfo.undervoltagein220V;
 								}
 								else {
-									upsdebugx(1, "I'm on 120v IN!. My overvoltage is %d", lastpkthwinfo.undervoltagein120V);
+									upsdebugx(4, "I'm on 120v IN!. My overvoltage is %d", lastpkthwinfo.undervoltagein120V);
 									min_input_power = lastpkthwinfo.undervoltagein120V;
 								}
 								if (lastpktdata.s_battery_mode) {
 									/* ON BATTERY */
-									upsdebugx(1, "UPS is on Battery Mode");
+									upsdebugx(4, "UPS is on Battery Mode");
 									dstate_setinfo("ups.status", "%s", "OB");
 									if (lastpktdata.s_battery_low) {
 										/* If battery is LOW, warn user! */
-										upsdebugx(1, "UPS is on Battery Mode and in Low Battery State");
+										upsdebugx(4, "UPS is on Battery Mode and in Low Battery State");
 										dstate_setinfo("ups.status", "%s", "LB");
 									}	/* end if */
 								}	/* end if */
@@ -1833,7 +1833,7 @@ void upsdrv_updateinfo(void) {
 									/* Check if MAINS (power) is not preset.
 									 * Well, we can check pkt_data.s_network_failure too... */
 									if ((lastpktdata.vacinrms <= min_input_power) || (lastpktdata.s_network_failure)) {
-										upsdebugx(1, "UPS has power-in value %0.2f "
+										upsdebugx(4, "UPS has power-in value %0.2f "
 											"and min_input_power is %d, "
 											"or network is in failure. Network failure is %d",
 											lastpktdata.vacinrms,
@@ -1847,18 +1847,18 @@ void upsdrv_updateinfo(void) {
 										 * If MAINS is less than or equal to min_input_power,
 										 * then the UPS goes to BATTERY */
 										if (lastpktdata.vacinrms > min_input_power) {
-											upsdebugx(1, "UPS is on MAINS");
+											upsdebugx(4, "UPS is on MAINS");
 											if (lastpktdata.s_charger_on) {
-												upsdebugx(1, "UPS Charging...");
+												upsdebugx(4, "UPS Charging...");
 												dstate_setinfo("ups.status", "%s", "CHRG");
 											}
 											else {
 												if ((lastpktdata.s_network_failure) || (lastpktdata.s_fast_network_failure)) {
-													upsdebugx(1, "UPS is on battery mode because network failure or fast network failure");
+													upsdebugx(4, "UPS is on battery mode because network failure or fast network failure");
 													dstate_setinfo("ups.status", "%s", "OB");
 												}	/* end if */
 												else {
-													upsdebugx(1, "All is OK. UPS is on ONLINE!");
+													upsdebugx(4, "All is OK. UPS is on ONLINE!");
 													dstate_setinfo("ups.status", "%s", "OL");
 												}	/* end else */
 											}	/* end else */
@@ -1880,7 +1880,7 @@ void upsdrv_updateinfo(void) {
 								if (numbat == 0)
 									numbat = lastpkthwinfo.numbatteries;
 								else
-									upsdebugx(1, "Number of batteries is set to %d", numbat);
+									upsdebugx(4, "Number of batteries is set to %d", numbat);
 								vbat = get_vbat();
 								ah = get_ah();
 
@@ -2135,7 +2135,7 @@ void upsdrv_updateinfo(void) {
 								dstate_dataok();
 							}	/* end if */
 							else
-								upsdebugx(1, "Checksum of pkt_hwinfo is corrupted or not initialized. Waiting for new request...");
+								upsdebugx(4, "Checksum of pkt_hwinfo is corrupted or not initialized. Waiting for new request...");
 						}	/* end else */
 					}	/* end if */
 				}	/* end if */
@@ -2148,25 +2148,25 @@ void upsdrv_updateinfo(void) {
 		 * FIXME: move (semi)static info discovery to upsdrv_initinfo() or so
 		 */
 		if (!lastpkthwinfo.checksum_ok) {
-			upsdebugx(1, "pkt_hwinfo loss -- Requesting");
+			upsdebugx(4, "pkt_hwinfo loss -- Requesting");
 			/* If size == 0, packet maybe not initizated,
 			 * then send an initialization packet to obtain data.
 			 * Send two times the extended initialization string,
 			 * but, on fail, try randomly send extended or normal.
 			 */
 			if (send_extended < 6) {
-				upsdebugx(1, "Sending extended initialization packet. Try %d", send_extended+1);
+				upsdebugx(4, "Sending extended initialization packet. Try %d", send_extended+1);
 				bwritten = write_serial_int(serial_fd, string_initialization_long, 9);
 				send_extended++;
 			}	/* end if */
 			else {
 				/* randomly send */
 				if (rand() % 2 == 0) {
-					upsdebugx(1, "Sending long initialization packet");
+					upsdebugx(4, "Sending long initialization packet");
 					bwritten = write_serial_int(serial_fd, string_initialization_long, 9);
 				}	/* end if */
 				else {
-					upsdebugx(1, "Sending short initialization packet");
+					upsdebugx(4, "Sending short initialization packet");
 					bwritten = write_serial_int(serial_fd, string_initialization_short, 9);
 				}	/* end else */
 			}	/* end else */
@@ -2185,7 +2185,7 @@ void upsdrv_updateinfo(void) {
 				if (checktime > max_checktime)
 					checktime = max_checktime;
 				else {
-					upsdebugx(1, "Increase checktime to %d", checktime + 100000);
+					upsdebugx(3, "Increase checktime to %d", checktime + 100000);
 					checktime = checktime + 100000;
 				}
 				usleep(checktime);
