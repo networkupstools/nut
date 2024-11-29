@@ -381,70 +381,72 @@ static void print_pkt_hwinfo(pkt_hwinfo data) {
 	if (!debug_pkt_hwinfo)
 		return;
 
-	upsdebugx(1, "Header: %u", data.header);
-	upsdebugx(1, "Size: %u", data.size);
-	upsdebugx(1, "Type: %c", data.type);
-	upsdebugx(1, "Model: %u", data.model);
-	upsdebugx(1, "Hardware Version: %u", data.hardwareversion);
-	upsdebugx(1, "Software Version: %u", data.softwareversion);
-	upsdebugx(1, "Configuration: %u", data.configuration);
+	upsdebugx(1, "%s: logging packet details at debug verbosity 5 or more", __func__);
 
-	upsdebugx(1, "Configuration Array: ");
-	upsdebugx(1, "-----");
+	upsdebugx(5, "Header: %u", data.header);
+	upsdebugx(5, "Size: %u", data.size);
+	upsdebugx(5, "Type: %c", data.type);
+	upsdebugx(5, "Model: %u", data.model);
+	upsdebugx(5, "Hardware Version: %u", data.hardwareversion);
+	upsdebugx(5, "Software Version: %u", data.softwareversion);
+	upsdebugx(5, "Configuration: %u", data.configuration);
+
+	upsdebugx(5, "Configuration Array: ");
+	upsdebugx(5, "-----");
 	for (i = 0; i < 5; i++) {
 		int	retorno = get_bit_in_position(&data.configuration, sizeof(data.configuration), i, 0);
-		upsdebugx(1, "Binary value is %d", retorno);
-		upsdebugx(1, "%u ", data.configuration_array[i]);
+		upsdebugx(5, "Binary value is %d", retorno);
+		upsdebugx(5, "%u ", data.configuration_array[i]);
 	}
-	upsdebugx(1, "-----");
+	upsdebugx(5, "-----");
 
-	upsdebugx(1, "OEM Mode: %s", data.c_oem_mode ? "true" : "false");
-	upsdebugx(1, "Buzzer Disable: %s", data.c_buzzer_disable ? "true" : "false");
-	upsdebugx(1, "Potmin Disable: %s", data.c_potmin_disable ? "true" : "false");
-	upsdebugx(1, "Rearm Enable: %s", data.c_rearm_enable ? "true" : "false");
-	upsdebugx(1, "Bootloader Enable: %s", data.c_bootloader_enable ? "true" : "false");
-	upsdebugx(1, "Number of Batteries: %u", data.numbatteries);
-	upsdebugx(1, "Undervoltage In 120V: %u", data.undervoltagein120V);
-	upsdebugx(1, "Overvoltage In 120V: %u", data.overvoltagein120V);
-	upsdebugx(1, "Undervoltage In 220V: %u", data.undervoltagein220V);
-	upsdebugx(1, "Overvoltage In 220V: %u", data.overvoltagein220V);
-	upsdebugx(1, "Tension Out 120V: %u", data.tensionout120V);
-	upsdebugx(1, "Tension Out 220V: %u", data.tensionout220V);
-	upsdebugx(1, "Status Value: %u", data.statusval);
+	upsdebugx(5, "OEM Mode: %s", data.c_oem_mode ? "true" : "false");
+	upsdebugx(5, "Buzzer Disable: %s", data.c_buzzer_disable ? "true" : "false");
+	upsdebugx(5, "Potmin Disable: %s", data.c_potmin_disable ? "true" : "false");
+	upsdebugx(5, "Rearm Enable: %s", data.c_rearm_enable ? "true" : "false");
+	upsdebugx(5, "Bootloader Enable: %s", data.c_bootloader_enable ? "true" : "false");
+	upsdebugx(5, "Number of Batteries: %u", data.numbatteries);
+	upsdebugx(5, "Undervoltage In 120V: %u", data.undervoltagein120V);
+	upsdebugx(5, "Overvoltage In 120V: %u", data.overvoltagein120V);
+	upsdebugx(5, "Undervoltage In 220V: %u", data.undervoltagein220V);
+	upsdebugx(5, "Overvoltage In 220V: %u", data.overvoltagein220V);
+	upsdebugx(5, "Tension Out 120V: %u", data.tensionout120V);
+	upsdebugx(5, "Tension Out 220V: %u", data.tensionout220V);
+	upsdebugx(5, "Status Value: %u", data.statusval);
 
-	upsdebugx(1, "Status: ");
-	upsdebugx(1, "-----");
+	upsdebugx(5, "Status: ");
+	upsdebugx(5, "-----");
 	for (i = 0; i < 6; i++) {
-		upsdebugx(1, "Binary value is %d", get_bit_in_position(&data.statusval, sizeof(data.statusval), i, 0));
-		upsdebugx(1, "status %d --> %u ", i, data.status[i]);
+		upsdebugx(5, "Binary value is %d", get_bit_in_position(&data.statusval, sizeof(data.statusval), i, 0));
+		upsdebugx(5, "status %d --> %u ", i, data.status[i]);
 	}
-	upsdebugx(1, "-----");
+	upsdebugx(5, "-----");
 
-	upsdebugx(1, "220V In: %s", data.s_220V_in ? "true" : "false");
-	upsdebugx(1, "220V Out: %s", data.s_220V_out ? "true" : "false");
-	upsdebugx(1, "Sealed Battery: %s", data.s_sealed_battery ? "true" : "false");
-	upsdebugx(1, "Show Out Tension: %s", data.s_show_out_tension ? "true" : "false");
-	upsdebugx(1, "Show Temperature: %s", data.s_show_temperature ? "true" : "false");
-	upsdebugx(1, "Show Charger Current: %s", data.s_show_charger_current ? "true" : "false");
-	upsdebugx(1, "Charger Current: %u", data.chargercurrent);
-	upsdebugx(1, "Checksum: %u", data.checksum);
-	upsdebugx(1, "Checksum Calc: %u", data.checksum_calc);
-	upsdebugx(1, "Checksum OK: %s", data.checksum_ok ? "true" : "false");
-	upsdebugx(1, "Serial: %s", data.serial);
-	upsdebugx(1, "Year: %u", data.year);
-	upsdebugx(1, "Month: %u", data.month);
-	upsdebugx(1, "Weekday: %u", data.wday);
-	upsdebugx(1, "Hour: %u", data.hour);
-	upsdebugx(1, "Minute: %u", data.minute);
-	upsdebugx(1, "Second: %u", data.second);
-	upsdebugx(1, "Alarm Year: %u", data.alarmyear);
-	upsdebugx(1, "Alarm Month: %u", data.alarmmonth);
-	upsdebugx(1, "Alarm Weekday: %u", data.alarmwday);
-	upsdebugx(1, "Alarm Day: %u", data.alarmday);
-	upsdebugx(1, "Alarm Hour: %u", data.alarmhour);
-	upsdebugx(1, "Alarm Minute: %u", data.alarmminute);
-	upsdebugx(1, "Alarm Second: %u", data.alarmsecond);
-	upsdebugx(1, "End Marker: %u", data.end_marker);
+	upsdebugx(5, "220V In: %s", data.s_220V_in ? "true" : "false");
+	upsdebugx(5, "220V Out: %s", data.s_220V_out ? "true" : "false");
+	upsdebugx(5, "Sealed Battery: %s", data.s_sealed_battery ? "true" : "false");
+	upsdebugx(5, "Show Out Tension: %s", data.s_show_out_tension ? "true" : "false");
+	upsdebugx(5, "Show Temperature: %s", data.s_show_temperature ? "true" : "false");
+	upsdebugx(5, "Show Charger Current: %s", data.s_show_charger_current ? "true" : "false");
+	upsdebugx(5, "Charger Current: %u", data.chargercurrent);
+	upsdebugx(5, "Checksum: %u", data.checksum);
+	upsdebugx(5, "Checksum Calc: %u", data.checksum_calc);
+	upsdebugx(5, "Checksum OK: %s", data.checksum_ok ? "true" : "false");
+	upsdebugx(5, "Serial: %s", data.serial);
+	upsdebugx(5, "Year: %u", data.year);
+	upsdebugx(5, "Month: %u", data.month);
+	upsdebugx(5, "Weekday: %u", data.wday);
+	upsdebugx(5, "Hour: %u", data.hour);
+	upsdebugx(5, "Minute: %u", data.minute);
+	upsdebugx(5, "Second: %u", data.second);
+	upsdebugx(5, "Alarm Year: %u", data.alarmyear);
+	upsdebugx(5, "Alarm Month: %u", data.alarmmonth);
+	upsdebugx(5, "Alarm Weekday: %u", data.alarmwday);
+	upsdebugx(5, "Alarm Day: %u", data.alarmday);
+	upsdebugx(5, "Alarm Hour: %u", data.alarmhour);
+	upsdebugx(5, "Alarm Minute: %u", data.alarmminute);
+	upsdebugx(5, "Alarm Second: %u", data.alarmsecond);
+	upsdebugx(5, "End Marker: %u", data.end_marker);
 }
 
 static void print_pkt_data(pkt_data data) {
@@ -453,58 +455,60 @@ static void print_pkt_data(pkt_data data) {
 	if (!debug_pkt_data)
 		return;
 
-	upsdebugx(1, "Header: %u", data.header);
-	upsdebugx(1, "Length: %u", data.length);
-	upsdebugx(1, "Packet Type: %c", data.packet_type);
-	upsdebugx(1, "Vacin RMS High: %u", data.vacinrms_high);
-	upsdebugx(1, "Vacin RMS Low: %u", data.vacinrms_low);
-	upsdebugx(1, "Vacin RMS: %0.2f", data.vacinrms);
-	upsdebugx(1, "VDC Med High: %u", data.vdcmed_high);
-	upsdebugx(1, "VDC Med Low: %u", data.vdcmed_low);
-	upsdebugx(1, "VDC Med: %0.2f", data.vdcmed);
-	upsdebugx(1, "VDC Med Real: %0.2f", data.vdcmed_real);
-	upsdebugx(1, "Pot RMS: %u", data.potrms);
-	upsdebugx(1, "Vacin RMS Min High: %u", data.vacinrmsmin_high);
-	upsdebugx(1, "Vacin RMS Min Low: %u", data.vacinrmsmin_low);
-	upsdebugx(1, "Vacin RMS Min: %0.2f", data.vacinrmsmin);
-	upsdebugx(1, "Vacin RMS Max High: %u", data.vacinrmsmax_high);
-	upsdebugx(1, "Vacin RMS Max Low: %u", data.vacinrmsmax_low);
-	upsdebugx(1, "Vacin RMS Max: %0.2f", data.vacinrmsmax);
-	upsdebugx(1, "Vac Out RMS High: %u", data.vacoutrms_high);
-	upsdebugx(1, "Vac Out RMS Low: %u", data.vacoutrms_low);
-	upsdebugx(1, "Vac Out RMS: %0.2f", data.vacoutrms);
-	upsdebugx(1, "Temp Med High: %u", data.tempmed_high);
-	upsdebugx(1, "Temp Med Low: %u", data.tempmed_low);
-	upsdebugx(1, "Temp Med: %0.2f", data.tempmed);
-	upsdebugx(1, "Temp Med Real: %0.2f", data.tempmed_real);
-	upsdebugx(1, "Icar Reg RMS: %u", data.icarregrms);
-	upsdebugx(1, "Icar Reg RMS Real: %u", data.icarregrms_real);
-	upsdebugx(1, "Battery Tension: %0.2f", data.battery_tension);
-	upsdebugx(1, "Perc Output: %u", data.perc_output);
-	upsdebugx(1, "Status Value: %u", data.statusval);
+	upsdebugx(1, "%s: logging packet details at debug verbosity 5 or more", __func__);
 
-	upsdebugx(1, "Status: ");
-	upsdebugx(1, "-----");
+	upsdebugx(5, "Header: %u", data.header);
+	upsdebugx(5, "Length: %u", data.length);
+	upsdebugx(5, "Packet Type: %c", data.packet_type);
+	upsdebugx(5, "Vacin RMS High: %u", data.vacinrms_high);
+	upsdebugx(5, "Vacin RMS Low: %u", data.vacinrms_low);
+	upsdebugx(5, "Vacin RMS: %0.2f", data.vacinrms);
+	upsdebugx(5, "VDC Med High: %u", data.vdcmed_high);
+	upsdebugx(5, "VDC Med Low: %u", data.vdcmed_low);
+	upsdebugx(5, "VDC Med: %0.2f", data.vdcmed);
+	upsdebugx(5, "VDC Med Real: %0.2f", data.vdcmed_real);
+	upsdebugx(5, "Pot RMS: %u", data.potrms);
+	upsdebugx(5, "Vacin RMS Min High: %u", data.vacinrmsmin_high);
+	upsdebugx(5, "Vacin RMS Min Low: %u", data.vacinrmsmin_low);
+	upsdebugx(5, "Vacin RMS Min: %0.2f", data.vacinrmsmin);
+	upsdebugx(5, "Vacin RMS Max High: %u", data.vacinrmsmax_high);
+	upsdebugx(5, "Vacin RMS Max Low: %u", data.vacinrmsmax_low);
+	upsdebugx(5, "Vacin RMS Max: %0.2f", data.vacinrmsmax);
+	upsdebugx(5, "Vac Out RMS High: %u", data.vacoutrms_high);
+	upsdebugx(5, "Vac Out RMS Low: %u", data.vacoutrms_low);
+	upsdebugx(5, "Vac Out RMS: %0.2f", data.vacoutrms);
+	upsdebugx(5, "Temp Med High: %u", data.tempmed_high);
+	upsdebugx(5, "Temp Med Low: %u", data.tempmed_low);
+	upsdebugx(5, "Temp Med: %0.2f", data.tempmed);
+	upsdebugx(5, "Temp Med Real: %0.2f", data.tempmed_real);
+	upsdebugx(5, "Icar Reg RMS: %u", data.icarregrms);
+	upsdebugx(5, "Icar Reg RMS Real: %u", data.icarregrms_real);
+	upsdebugx(5, "Battery Tension: %0.2f", data.battery_tension);
+	upsdebugx(5, "Perc Output: %u", data.perc_output);
+	upsdebugx(5, "Status Value: %u", data.statusval);
+
+	upsdebugx(5, "Status: ");
+	upsdebugx(5, "-----");
 	for (i = 0; i < 8; i++) {
-		upsdebugx(1, "Binary value is %d", get_bit_in_position(&data.statusval, sizeof(data.statusval), i, 0));
-		upsdebugx(1, "status %d --> %u ", i, data.status[i]);
+		upsdebugx(5, "Binary value is %d", get_bit_in_position(&data.statusval, sizeof(data.statusval), i, 0));
+		upsdebugx(5, "status %d --> %u ", i, data.status[i]);
 	}
-	upsdebugx(1, "-----");
+	upsdebugx(5, "-----");
 
-	upsdebugx(1, "Nominal Tension: %u", data.nominaltension);
-	upsdebugx(1, "Time Remain: %0.2f", data.timeremain);
-	upsdebugx(1, "Battery Mode: %s", data.s_battery_mode ? "true" : "false");
-	upsdebugx(1, "Battery Low: %s", data.s_battery_low ? "true" : "false");
-	upsdebugx(1, "Network Failure: %s", data.s_network_failure ? "true" : "false");
-	upsdebugx(1, "Fast Network Failure: %s", data.s_fast_network_failure ? "true" : "false");
-	upsdebugx(1, "220 In: %s", data.s_220_in ? "true" : "false");
-	upsdebugx(1, "220 Out: %s", data.s_220_out ? "true" : "false");
-	upsdebugx(1, "Bypass On: %s", data.s_bypass_on ? "true" : "false");
-	upsdebugx(1, "Charger On: %s", data.s_charger_on ? "true" : "false");
-	upsdebugx(1, "Checksum: %u", data.checksum);
-	upsdebugx(1, "Checksum Calc: %u", data.checksum_calc);
-	upsdebugx(1, "Checksum OK: %s", data.checksum_ok ? "true" : "false");
-	upsdebugx(1, "End Marker: %u", data.end_marker);
+	upsdebugx(5, "Nominal Tension: %u", data.nominaltension);
+	upsdebugx(5, "Time Remain: %0.2f", data.timeremain);
+	upsdebugx(5, "Battery Mode: %s", data.s_battery_mode ? "true" : "false");
+	upsdebugx(5, "Battery Low: %s", data.s_battery_low ? "true" : "false");
+	upsdebugx(5, "Network Failure: %s", data.s_network_failure ? "true" : "false");
+	upsdebugx(5, "Fast Network Failure: %s", data.s_fast_network_failure ? "true" : "false");
+	upsdebugx(5, "220 In: %s", data.s_220_in ? "true" : "false");
+	upsdebugx(5, "220 Out: %s", data.s_220_out ? "true" : "false");
+	upsdebugx(5, "Bypass On: %s", data.s_bypass_on ? "true" : "false");
+	upsdebugx(5, "Charger On: %s", data.s_charger_on ? "true" : "false");
+	upsdebugx(5, "Checksum: %u", data.checksum);
+	upsdebugx(5, "Checksum Calc: %u", data.checksum_calc);
+	upsdebugx(5, "Checksum OK: %s", data.checksum_ok ? "true" : "false");
+	upsdebugx(5, "End Marker: %u", data.end_marker);
 }
 
 /* FIXME: Replace with NUT ser_open() and ser_set_speed() */
@@ -617,9 +621,11 @@ static void pdatapacket(unsigned char * datapkt, int size) {
 		return;
 
 	if (datapkt != NULL) {
-		upsdebugx(1, "Received Datapacket: ");
+		/* FIXME: convert to upsdebug_hex()? */
+		upsdebugx(1, "%s: logging received data packet bytes at debug verbosity 5 or more", __func__);
+
 		for (i = 0; i < size; i++) {
-			upsdebugx(1, "\tPosition %d -- 0x%02X -- Decimal %d -- Char %c", i, datapkt[i], datapkt[i], datapkt[i]);
+			upsdebugx(5, "\tPosition %d -- 0x%02X -- Decimal %d -- Char %c", i, datapkt[i], datapkt[i], datapkt[i]);
 		}
 	}
 }
@@ -921,7 +927,7 @@ static int write_serial_int(int fd, const unsigned int * data, int size) {
 		message = xcalloc(size, sizeof(uint8_t));
 		for (i = 0; i < size; i++) {
 			message[i] = (uint8_t)data[i];
-			/* //upsdebugx(1, "%d %c %u %d %c %u", message[i], message[i], data[i], data[i]); */
+			/* //upsdebugx(5, "%d %c %u %d %c %u", message[i], message[i], data[i], data[i]); */
 		}
 		bytes_written = write(fd, message, size);
 		free(message);
