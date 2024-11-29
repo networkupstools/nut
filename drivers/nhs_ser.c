@@ -626,7 +626,7 @@ static void pdatapacket(unsigned char * datapkt, int size) {
 
 static float createfloat(int integer, int decimal) {
 	char	flt[1024];
-	sprintf(flt, "%d.%d", integer, decimal);
+	snprintf(flt, sizeof(flt), "%d.%d", integer, decimal);
 	return atof(flt);
 }
 
@@ -2010,7 +2010,7 @@ void upsdrv_updateinfo(void) {
 								dstate_setinfo("nhs.hw.configuration", "%u", lastpkthwinfo.configuration);
 								for (i = 0; i < 5; i++) {
 									/* Reusing variable */
-									sprintf(alarm, "nhs.hw.configuration_array_p%d", i);
+									snprintf(alarm, sizeof(alarm), "nhs.hw.configuration_array_p%d", i);
 									dstate_setinfo(alarm, "%u", lastpkthwinfo.configuration_array[i]);
 								}
 								dstate_setinfo("nhs.hw.c_oem_mode", "%s", lastpkthwinfo.c_oem_mode ? "true" : "false");
@@ -2028,7 +2028,7 @@ void upsdrv_updateinfo(void) {
 								dstate_setinfo("nhs.hw.statusval", "%u", lastpkthwinfo.statusval);
 								for (i = 0; i < 6; i++) {
 									/* Reusing variable */
-									sprintf(alarm, "nhs.hw.status_p%d", i);
+									snprintf(alarm, sizeof(alarm), "nhs.hw.status_p%d", i);
 									dstate_setinfo(alarm, "%u", lastpkthwinfo.status[i]);
 								}
 								dstate_setinfo("nhs.hw.s_220V_in", "%s", lastpkthwinfo.s_220V_in ? "true" : "false");
@@ -2089,7 +2089,7 @@ void upsdrv_updateinfo(void) {
 								dstate_setinfo("nhs.data.statusval", "%u", lastpktdata.statusval);
 								for (i = 0; i < 8; i++) {
 									/* Reusing variable */
-									sprintf(alarm, "nhs.data.status_p%d", i);
+									snprintf(alarm, sizeof(alarm), "nhs.data.status_p%d", i);
 									dstate_setinfo(alarm, "%u", lastpktdata.status[i]);
 								}
 								dstate_setinfo("nhs.data.nominaltension", "%u", lastpktdata.nominaltension);
