@@ -1649,7 +1649,7 @@ void upsdrv_initinfo(void) {
 
 	upsdebugx(1, "Port is %s and baud_rate is %s", device_path, b);
 	baudrate = DEFAULTBAUD;
-	upsdebugx(1, "Start initinfo()");
+	upsdebugx(3, "%s: starting...", __func__);
 	if (b)
 		baudrate = atoi(b);
 	if (device_path) {
@@ -1666,7 +1666,7 @@ void upsdrv_initinfo(void) {
 	}
 	else
 		fatalx(EXIT_FAILURE, "Unable to define port and baud");
-	upsdebugx(1, "End initinfo()");
+	upsdebugx(3, "%s: finished", __func__);
 }
 
 static float calculate_efficiency(float vacoutrms, float vacinrms) {
@@ -1711,7 +1711,7 @@ void upsdrv_updateinfo(void) {
 	float	actual_current = 0;
 	upsinfo	ups;
 
-	upsdebugx(1, "Start updateinfo()");
+	upsdebugx(3, "%s: starting...", __func__);
 	if ((serial_fd <= 0) && (i < retries)) {
 		upsdebugx(1, "Serial problem...");
 		while (serial_fd <= 0) {
@@ -2177,11 +2177,11 @@ void upsdrv_updateinfo(void) {
 			}	/* end else */
 		}	/* end if */
 	}	/* end else */
-	upsdebugx(1, "End updateinfo()");
+	upsdebugx(3, "%s: finished", __func__);
 }
 
 void upsdrv_shutdown(void) {
-	upsdebugx(1, "Start shutdown()");
+	upsdebugx(3, "%s: starting...", __func__);
 
 	/* replace with a proper shutdown function */
 	upslogx(LOG_ERR, "shutdown not supported");
@@ -2191,18 +2191,18 @@ void upsdrv_shutdown(void) {
 }
 
 void upsdrv_cleanup(void) {
-	upsdebugx(1, "Start cleanup()");
+	upsdebugx(3, "%s: starting...", __func__);
 
 	if (serial_fd != -1) {
 		close(serial_fd);
 		serial_fd = -1;
 	}
 
-	upsdebugx(1, "End cleanup()");
+	upsdebugx(3, "%s: finished", __func__);
 }
 
 void upsdrv_initups(void) {
-	upsdebugx(1, "Start initups()");
+	upsdebugx(3, "%s: starting...", __func__);
 
 	/* Process optional configuration flags */
 	if (getval("debug_pkt_raw"))
@@ -2213,7 +2213,7 @@ void upsdrv_initups(void) {
 		debug_pkt_hwinfo = 1;
 
 	upsdrv_initinfo();
-	upsdebugx(1, "End initups()");
+	upsdebugx(3, "%s: finished", __func__);
 }
 
 void upsdrv_makevartable(void) {
