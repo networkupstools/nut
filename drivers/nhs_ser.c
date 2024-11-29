@@ -1806,10 +1806,15 @@ void upsdrv_updateinfo(void) {
                                     } // end if
                                 } // end if
                                 else {
-                                    // Check if MAINS (power) is not preset. Well, we can check pkt_data.s_network_failure too...
+                                    /* Check if MAINS (power) is not preset.
+                                     * Well, we can check pkt_data.s_network_failure too... */
                                     if ((lastpktdata.vacinrms <= min_input_power) || (lastpktdata.s_network_failure)) {
-                                        sprintf(alarm,"UPS have power in %0.2f value and min_input_power is %d or network is in failure. Network failure is %d",lastpktdata.vacinrms,min_input_power,lastpktdata.s_network_failure);
-                                        upsdebugx(1,"%s",alarm);
+                                        upsdebugx(1, "UPS has power-in value %0.2f "
+                                            "and min_input_power is %d, "
+                                            "or network is in failure. Network failure is %d",
+                                            lastpktdata.vacinrms,
+                                            min_input_power,
+                                            lastpktdata.s_network_failure);
                                         dstate_setinfo("ups.status","%s","DISCHRG");
                                     } // end if
                                     else {
