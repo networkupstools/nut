@@ -950,655 +950,655 @@ static upsinfo getupsinfo(unsigned int upscode) {
 	switch (upscode) {
 		case 1:
 			data.upscode = 1;
-			strcpy(data.upsdesc, "NHS COMPACT PLUS");
+			strncpy(data.upsdesc, "NHS COMPACT PLUS", sizeof(data.upsdesc));
 			data.VA = 1000;
 			break;
 
 		case 2:
 			data.upscode = 2;
-			strcpy(data.upsdesc, "NHS COMPACT PLUS SENOIDAL");
+			strncpy(data.upsdesc, "NHS COMPACT PLUS SENOIDAL", sizeof(data.upsdesc));
 			data.VA = 1000;
 			break;
 
 		case 3:
 			data.upscode = 3;
-			strcpy(data.upsdesc, "NHS COMPACT PLUS RACK");
+			strncpy(data.upsdesc, "NHS COMPACT PLUS RACK", sizeof(data.upsdesc));
 			data.VA = 1000;
 			break;
 
 		case 4:
 			data.upscode = 4;
-			strcpy(data.upsdesc, "NHS PREMIUM PDV");
+			strncpy(data.upsdesc, "NHS PREMIUM PDV", sizeof(data.upsdesc));
 			data.VA = 1500;
 			break;
 
 		case 5:
 			data.upscode = 5;
-			strcpy(data.upsdesc, "NHS PREMIUM PDV SENOIDAL");
+			strncpy(data.upsdesc, "NHS PREMIUM PDV SENOIDAL", sizeof(data.upsdesc));
 			data.VA = 1500;
 			break;
 
 		case 6:
 			data.upscode = 6;
-			strcpy(data.upsdesc, "NHS PREMIUM 1500VA");
+			strncpy(data.upsdesc, "NHS PREMIUM 1500VA", sizeof(data.upsdesc));
 			data.VA = 1500;
 			break;
 
 		case 7:
 			data.upscode = 7;
-			strcpy(data.upsdesc, "NHS PREMIUM 2200VA");
+			strncpy(data.upsdesc, "NHS PREMIUM 2200VA", sizeof(data.upsdesc));
 			data.VA = 2200;
 			break;
 
 		case 8:
 			data.upscode = 8;
-			strcpy(data.upsdesc, "NHS PREMIUM SENOIDAL");
+			strncpy(data.upsdesc, "NHS PREMIUM SENOIDAL", sizeof(data.upsdesc));
 			data.VA = 1500;
 			break;
 
 		case 9:
 			data.upscode = 9;
-			strcpy(data.upsdesc, "NHS LASER 2600VA");
+			strncpy(data.upsdesc, "NHS LASER 2600VA", sizeof(data.upsdesc));
 			data.VA = 2600;
 			break;
 
 		case 10:
 			data.upscode = 10;
-			strcpy(data.upsdesc, "NHS LASER 3300VA");
+			strncpy(data.upsdesc, "NHS LASER 3300VA", sizeof(data.upsdesc));
 			data.VA = 3300;
 			break;
 
 		case 11:
 			data.upscode = 11;
-			strcpy(data.upsdesc, "NHS LASER 2600VA ISOLADOR");
+			strncpy(data.upsdesc, "NHS LASER 2600VA ISOLADOR", sizeof(data.upsdesc));
 			data.VA = 2600;
 			break;
 
 		case 12:
 			data.upscode = 12;
-			strcpy(data.upsdesc, "NHS LASER SENOIDAL");
+			strncpy(data.upsdesc, "NHS LASER SENOIDAL", sizeof(data.upsdesc));
 			data.VA = 2600;
 			break;
 
 		case 13:
 			data.upscode = 13;
-			strcpy(data.upsdesc, "NHS LASER ON-LINE");
+			strncpy(data.upsdesc, "NHS LASER ON-LINE", sizeof(data.upsdesc));
 			data.VA = 2600;
 			break;
 
 		case 15:
 			data.upscode = 15;
-			strcpy(data.upsdesc, "NHS COMPACT PLUS 2003");
+			strncpy(data.upsdesc, "NHS COMPACT PLUS 2003", sizeof(data.upsdesc));
 			data.VA = 1000;
 			break;
 
 		case 16:
 			data.upscode = 16;
-			strcpy(data.upsdesc, "COMPACT PLUS SENOIDAL 2003");
+			strncpy(data.upsdesc, "COMPACT PLUS SENOIDAL 2003", sizeof(data.upsdesc));
 			data.VA = 1000;
 			break;
 
 		case 17:
 			data.upscode = 17;
-			strcpy(data.upsdesc, "COMPACT PLUS RACK 2003");
+			strncpy(data.upsdesc, "COMPACT PLUS RACK 2003", sizeof(data.upsdesc));
 			data.VA = 1000;
 			break;
 
 		case 18:
 			data.upscode = 18;
-			strcpy(data.upsdesc, "PREMIUM PDV 2003");
+			strncpy(data.upsdesc, "PREMIUM PDV 2003", sizeof(data.upsdesc));
 			data.VA = 1500;
 			break;
 
 		case 19:
 			data.upscode = 19;
-			strcpy(data.upsdesc, "PREMIUM PDV SENOIDAL 2003");
+			strncpy(data.upsdesc, "PREMIUM PDV SENOIDAL 2003", sizeof(data.upsdesc));
 			data.VA = 1500;
 			break;
 
 		case 20:
 			data.upscode = 20;
-			strcpy(data.upsdesc, "PREMIUM 1500VA 2003");
+			strncpy(data.upsdesc, "PREMIUM 1500VA 2003", sizeof(data.upsdesc));
 			data.VA = 1500;
 			break;
 
 		case 21:
 			data.upscode = 21;
-			strcpy(data.upsdesc, "PREMIUM 2200VA 2003");
+			strncpy(data.upsdesc, "PREMIUM 2200VA 2003", sizeof(data.upsdesc));
 			data.VA = 2200;
 			break;
 
 		case 22:
 			data.upscode = 22;
-			strcpy(data.upsdesc, "PREMIUM SENOIDAL 2003");
+			strncpy(data.upsdesc, "PREMIUM SENOIDAL 2003", sizeof(data.upsdesc));
 			data.VA = 1500;
 			break;
 
 		case 23:
 			data.upscode = 23;
-			strcpy(data.upsdesc, "LASER 2600VA 2003");
+			strncpy(data.upsdesc, "LASER 2600VA 2003", sizeof(data.upsdesc));
 			data.VA = 2600;
 			break;
 
 		case 24:
 			data.upscode = 24;
-			strcpy(data.upsdesc, "LASER 3300VA 2003");
+			strncpy(data.upsdesc, "LASER 3300VA 2003", sizeof(data.upsdesc));
 			data.VA = 3300;
 			break;
 
 		case 25:
 			data.upscode = 25;
-			strcpy(data.upsdesc, "LASER 2600VA ISOLADOR 2003");
+			strncpy(data.upsdesc, "LASER 2600VA ISOLADOR 2003", sizeof(data.upsdesc));
 			data.VA = 2600;
 			break;
 
 		case 26:
 			data.upscode = 26;
-			strcpy(data.upsdesc, "LASER SENOIDAL 2003");
+			strncpy(data.upsdesc, "LASER SENOIDAL 2003", sizeof(data.upsdesc));
 			data.VA = 2600;
 			break;
 
 		case 27:
 			data.upscode = 27;
-			strcpy(data.upsdesc, "PDV ONLINE 2003");
+			strncpy(data.upsdesc, "PDV ONLINE 2003", sizeof(data.upsdesc));
 			data.VA = 1500;
 			break;
 
 		case 28:
 			data.upscode = 28;
-			strcpy(data.upsdesc, "LASER ONLINE 2003");
+			strncpy(data.upsdesc, "LASER ONLINE 2003", sizeof(data.upsdesc));
 			data.VA = 3300;
 			break;
 
 		case 29:
 			data.upscode = 29;
-			strcpy(data.upsdesc, "EXPERT ONLINE 2003");
+			strncpy(data.upsdesc, "EXPERT ONLINE 2003", sizeof(data.upsdesc));
 			data.VA = 5000;
 			break;
 
 		case 30:
 			data.upscode = 30;
-			strcpy(data.upsdesc, "MINI 2");
+			strncpy(data.upsdesc, "MINI 2", sizeof(data.upsdesc));
 			data.VA = 500;
 			break;
 
 		case 31:
 			data.upscode = 31;
-			strcpy(data.upsdesc, "COMPACT PLUS 2");
+			strncpy(data.upsdesc, "COMPACT PLUS 2", sizeof(data.upsdesc));
 			data.VA = 1000;
 			break;
 
 		case 32:
 			data.upscode = 32;
-			strcpy(data.upsdesc, "LASER ON-LINE");
+			strncpy(data.upsdesc, "LASER ON-LINE", sizeof(data.upsdesc));
 			data.VA = 2600;
 			break;
 
 		case 33:
 			data.upscode = 33;
-			strcpy(data.upsdesc, "PDV SENOIDAL 1500VA");
+			strncpy(data.upsdesc, "PDV SENOIDAL 1500VA", sizeof(data.upsdesc));
 			data.VA = 1500;
 			break;
 
 		case 34:
 			data.upscode = 34;
-			strcpy(data.upsdesc, "PDV SENOIDAL 1000VA");
+			strncpy(data.upsdesc, "PDV SENOIDAL 1000VA", sizeof(data.upsdesc));
 			data.VA = 1000;
 			break;
 
 		case 36:
 			data.upscode = 36;
-			strcpy(data.upsdesc, "LASER ONLINE 3750VA");
+			strncpy(data.upsdesc, "LASER ONLINE 3750VA", sizeof(data.upsdesc));
 			data.VA = 3750;
 			break;
 
 		case 37:
 			data.upscode = 37;
-			strcpy(data.upsdesc, "LASER ONLINE 5000VA");
+			strncpy(data.upsdesc, "LASER ONLINE 5000VA", sizeof(data.upsdesc));
 			data.VA = 5000;
 			break;
 
 		case 38:
 			data.upscode = 38;
-			strcpy(data.upsdesc, "PREMIUM SENOIDAL 2000VA");
+			strncpy(data.upsdesc, "PREMIUM SENOIDAL 2000VA", sizeof(data.upsdesc));
 			data.VA = 2000;
 			break;
 
 		case 39:
 			data.upscode = 39;
-			strcpy(data.upsdesc, "LASER SENOIDAL 3500VA");
+			strncpy(data.upsdesc, "LASER SENOIDAL 3500VA", sizeof(data.upsdesc));
 			data.VA = 3500;
 			break;
 
 		case 40:
 			data.upscode = 40;
-			strcpy(data.upsdesc, "PREMIUM PDV 1200VA");
+			strncpy(data.upsdesc, "PREMIUM PDV 1200VA", sizeof(data.upsdesc));
 			data.VA = 1200;
 			break;
 
 		case 41:
 			data.upscode = 41;
-			strcpy(data.upsdesc, "PREMIUM 1500VA");
+			strncpy(data.upsdesc, "PREMIUM 1500VA", sizeof(data.upsdesc));
 			data.VA = 1500;
 			break;
 
 		case 42:
 			data.upscode = 42;
-			strcpy(data.upsdesc, "PREMIUM 2200VA");
+			strncpy(data.upsdesc, "PREMIUM 2200VA", sizeof(data.upsdesc));
 			data.VA = 2200;
 			break;
 
 		case 43:
 			data.upscode = 43;
-			strcpy(data.upsdesc, "LASER 2600VA");
+			strncpy(data.upsdesc, "LASER 2600VA", sizeof(data.upsdesc));
 			data.VA = 2600;
 			break;
 
 		case 44:
 			data.upscode = 44;
-			strcpy(data.upsdesc, "LASER 3300VA");
+			strncpy(data.upsdesc, "LASER 3300VA", sizeof(data.upsdesc));
 			data.VA = 3300;
 			break;
 
 		case 45:
 			data.upscode = 45;
-			strcpy(data.upsdesc, "COMPACT PLUS SENOIDAL 700VA");
+			strncpy(data.upsdesc, "COMPACT PLUS SENOIDAL 700VA", sizeof(data.upsdesc));
 			data.VA = 700;
 			break;
 
 		case 46:
 			data.upscode = 46;
-			strcpy(data.upsdesc, "PREMIUM ONLINE 2000VA");
+			strncpy(data.upsdesc, "PREMIUM ONLINE 2000VA", sizeof(data.upsdesc));
 			data.VA = 2000;
 			break;
 
 		case 47:
 			data.upscode = 47;
-			strcpy(data.upsdesc, "EXPERT ONLINE 10000VA");
+			strncpy(data.upsdesc, "EXPERT ONLINE 10000VA", sizeof(data.upsdesc));
 			data.VA = 10000;
 			break;
 
 		case 48:
 			data.upscode = 48;
-			strcpy(data.upsdesc, "LASER SENOIDAL 4200VA");
+			strncpy(data.upsdesc, "LASER SENOIDAL 4200VA", sizeof(data.upsdesc));
 			data.VA = 4200;
 			break;
 
 		case 49:
 			data.upscode = 49;
-			strcpy(data.upsdesc, "NHS COMPACT PLUS EXTENDIDO 1500VA");
+			strncpy(data.upsdesc, "NHS COMPACT PLUS EXTENDIDO 1500VA", sizeof(data.upsdesc));
 			data.VA = 1500;
 			break;
 
 		case 50:
 			data.upscode = 50;
-			strcpy(data.upsdesc, "LASER ONLINE 6000VA");
+			strncpy(data.upsdesc, "LASER ONLINE 6000VA", sizeof(data.upsdesc));
 			data.VA = 6000;
 			break;
 
 		case 51:
 			data.upscode = 51;
-			strcpy(data.upsdesc, "LASER EXT 3300VA");
+			strncpy(data.upsdesc, "LASER EXT 3300VA", sizeof(data.upsdesc));
 			data.VA = 3300;
 			break;
 
 		case 52:
 			data.upscode = 52;
-			strcpy(data.upsdesc, "NHS COMPACT PLUS 1200VA");
+			strncpy(data.upsdesc, "NHS COMPACT PLUS 1200VA", sizeof(data.upsdesc));
 			data.VA = 1200;
 			break;
 
 		case 53:
 			data.upscode = 53;
-			strcpy(data.upsdesc, "LASER SENOIDAL 3000VA GII");
+			strncpy(data.upsdesc, "LASER SENOIDAL 3000VA GII", sizeof(data.upsdesc));
 			data.VA = 3000;
 			break;
 
 		case 54:
 			data.upscode = 54;
-			strcpy(data.upsdesc, "LASER SENOIDAL 3500VA GII");
+			strncpy(data.upsdesc, "LASER SENOIDAL 3500VA GII", sizeof(data.upsdesc));
 			data.VA = 3500;
 			break;
 
 		case 55:
 			data.upscode = 55;
-			strcpy(data.upsdesc, "LASER SENOIDAL 4200VA GII");
+			strncpy(data.upsdesc, "LASER SENOIDAL 4200VA GII", sizeof(data.upsdesc));
 			data.VA = 4200;
 			break;
 
 		case 56:
 			data.upscode = 56;
-			strcpy(data.upsdesc, "LASER ONLINE 3000VA");
+			strncpy(data.upsdesc, "LASER ONLINE 3000VA", sizeof(data.upsdesc));
 			data.VA = 3000;
 			break;
 
 		case 57:
 			data.upscode = 57;
-			strcpy(data.upsdesc, "LASER ONLINE 3750VA");
+			strncpy(data.upsdesc, "LASER ONLINE 3750VA", sizeof(data.upsdesc));
 			data.VA = 3750;
 			break;
 
 		case 58:
 			data.upscode = 58;
-			strcpy(data.upsdesc, "LASER ONLINE 5000VA");
+			strncpy(data.upsdesc, "LASER ONLINE 5000VA", sizeof(data.upsdesc));
 			data.VA = 5000;
 			break;
 
 		case 59:
 			data.upscode = 59;
-			strcpy(data.upsdesc, "LASER ONLINE 6000VA");
+			strncpy(data.upsdesc, "LASER ONLINE 6000VA", sizeof(data.upsdesc));
 			data.VA = 6000;
 			break;
 
 		case 60:
 			data.upscode = 60;
-			strcpy(data.upsdesc, "PREMIUM ONLINE 2000VA");
+			strncpy(data.upsdesc, "PREMIUM ONLINE 2000VA", sizeof(data.upsdesc));
 			data.VA = 2000;
 			break;
 
 		case 61:
 			data.upscode = 61;
-			strcpy(data.upsdesc, "PREMIUM ONLINE 1500VA");
+			strncpy(data.upsdesc, "PREMIUM ONLINE 1500VA", sizeof(data.upsdesc));
 			data.VA = 1500;
 			break;
 
 		case 62:
 			data.upscode = 62;
-			strcpy(data.upsdesc, "PREMIUM ONLINE 1200VA");
+			strncpy(data.upsdesc, "PREMIUM ONLINE 1200VA", sizeof(data.upsdesc));
 			data.VA = 1200;
 			break;
 
 		case 63:
 			data.upscode = 63;
-			strcpy(data.upsdesc, "COMPACT PLUS II MAX 1400VA");
+			strncpy(data.upsdesc, "COMPACT PLUS II MAX 1400VA", sizeof(data.upsdesc));
 			data.VA = 1400;
 			break;
 
 		case 64:
 			data.upscode = 64;
-			strcpy(data.upsdesc, "PREMIUM PDV MAX 2200VA");
+			strncpy(data.upsdesc, "PREMIUM PDV MAX 2200VA", sizeof(data.upsdesc));
 			data.VA = 2200;
 			break;
 
 		case 65:
 			data.upscode = 65;
-			strcpy(data.upsdesc, "PREMIUM PDV 3000VA");
+			strncpy(data.upsdesc, "PREMIUM PDV 3000VA", sizeof(data.upsdesc));
 			data.VA = 3000;
 			break;
 
 		case 66:
 			data.upscode = 66;
-			strcpy(data.upsdesc, "PREMIUM SENOIDAL 2200VA GII");
+			strncpy(data.upsdesc, "PREMIUM SENOIDAL 2200VA GII", sizeof(data.upsdesc));
 			data.VA = 2200;
 			break;
 
 		case 67:
 			data.upscode = 67;
-			strcpy(data.upsdesc, "LASER PRIME SENOIDAL 3200VA GII");
+			strncpy(data.upsdesc, "LASER PRIME SENOIDAL 3200VA GII", sizeof(data.upsdesc));
 			data.VA = 3200;
 			break;
 
 		case 68:
 			data.upscode = 68;
-			strcpy(data.upsdesc, "PREMIUM RACK ONLINE 3000VA");
+			strncpy(data.upsdesc, "PREMIUM RACK ONLINE 3000VA", sizeof(data.upsdesc));
 			data.VA = 3000;
 			break;
 
 		case 69:
 			data.upscode = 69;
-			strcpy(data.upsdesc, "PREMIUM ONLINE 3000VA");
+			strncpy(data.upsdesc, "PREMIUM ONLINE 3000VA", sizeof(data.upsdesc));
 			data.VA = 3000;
 			break;
 
 		case 70:
 			data.upscode = 70;
-			strcpy(data.upsdesc, "LASER ONLINE 4000VA");
+			strncpy(data.upsdesc, "LASER ONLINE 4000VA", sizeof(data.upsdesc));
 			data.VA = 4000;
 			break;
 
 		case 71:
 			data.upscode = 71;
-			strcpy(data.upsdesc, "LASER ONLINE 7500VA");
+			strncpy(data.upsdesc, "LASER ONLINE 7500VA", sizeof(data.upsdesc));
 			data.VA = 7500;
 			break;
 
 		case 72:
 			data.upscode = 72;
-			strcpy(data.upsdesc, "LASER ONLINE BIFASICO 5000VA");
+			strncpy(data.upsdesc, "LASER ONLINE BIFASICO 5000VA", sizeof(data.upsdesc));
 			data.VA = 5000;
 			break;
 
 		case 73:
 			data.upscode = 73;
-			strcpy(data.upsdesc, "LASER ONLINE BIFASICO 6000VA");
+			strncpy(data.upsdesc, "LASER ONLINE BIFASICO 6000VA", sizeof(data.upsdesc));
 			data.VA = 6000;
 			break;
 
 		case 74:
 			data.upscode = 74;
-			strcpy(data.upsdesc, "LASER ONLINE BIFASICO 7500VA");
+			strncpy(data.upsdesc, "LASER ONLINE BIFASICO 7500VA", sizeof(data.upsdesc));
 			data.VA = 7500;
 			break;
 
 		case 75:
 			data.upscode = 75;
-			strcpy(data.upsdesc, "NHS MINI ST");
+			strncpy(data.upsdesc, "NHS MINI ST", sizeof(data.upsdesc));
 			data.VA = 500;
 			break;
 
 		case 76:
 			data.upscode = 76;
-			strcpy(data.upsdesc, "NHS MINI 120");
+			strncpy(data.upsdesc, "NHS MINI 120", sizeof(data.upsdesc));
 			data.VA = 120;
 			break;
 
 		case 77:
 			data.upscode = 77;
-			strcpy(data.upsdesc, "NHS MINI BIVOLT");
+			strncpy(data.upsdesc, "NHS MINI BIVOLT", sizeof(data.upsdesc));
 			data.VA = 500;
 			break;
 
 		case 78:
 			data.upscode = 78;
-			strcpy(data.upsdesc, "PDV 600");
+			strncpy(data.upsdesc, "PDV 600", sizeof(data.upsdesc));
 			data.VA = 600;
 			break;
 
 		case 79:
 			data.upscode = 79;
-			strcpy(data.upsdesc, "NHS MINI MAX");
+			strncpy(data.upsdesc, "NHS MINI MAX", sizeof(data.upsdesc));
 			data.VA = 500;
 			break;
 
 		case 80:
 			data.upscode = 80;
-			strcpy(data.upsdesc, "NHS MINI EXT");
+			strncpy(data.upsdesc, "NHS MINI EXT", sizeof(data.upsdesc));
 			data.VA = 500;
 			break;
 
 		case 81:
 			data.upscode = 81;
-			strcpy(data.upsdesc, "NHS AUTONOMY PDV 4T");
+			strncpy(data.upsdesc, "NHS AUTONOMY PDV 4T", sizeof(data.upsdesc));
 			data.VA = 4000;
 			break;
 
 		case 82:
 			data.upscode = 82;
-			strcpy(data.upsdesc, "NHS AUTONOMY PDV 8T");
+			strncpy(data.upsdesc, "NHS AUTONOMY PDV 8T", sizeof(data.upsdesc));
 			data.VA = 8000;
 			break;
 
 		case 83:
 			data.upscode = 83;
-			strcpy(data.upsdesc, "NHS COMPACT PLUS RACK 1200VA");
+			strncpy(data.upsdesc, "NHS COMPACT PLUS RACK 1200VA", sizeof(data.upsdesc));
 			data.VA = 1200;
 			break;
 
 		case 84:
 			data.upscode = 84;
-			strcpy(data.upsdesc, "PDV SENOIDAL ISOLADOR 1500VA");
+			strncpy(data.upsdesc, "PDV SENOIDAL ISOLADOR 1500VA", sizeof(data.upsdesc));
 			data.VA = 1500;
 			break;
 
 		case 85:
 			data.upscode = 85;
-			strcpy(data.upsdesc, "NHS PDV RACK 1500VA");
+			strncpy(data.upsdesc, "NHS PDV RACK 1500VA", sizeof(data.upsdesc));
 			data.VA = 1500;
 			break;
 
 		case 86:
 			data.upscode = 86;
-			strcpy(data.upsdesc, "NHS PDV 1400VA S GII");
+			strncpy(data.upsdesc, "NHS PDV 1400VA S GII", sizeof(data.upsdesc));
 			data.VA = 1400;
 			break;
 
 		case 87:
 			data.upscode = 87;
-			strcpy(data.upsdesc, "PDV SENOIDAL ISOLADOR 1500VA");
+			strncpy(data.upsdesc, "PDV SENOIDAL ISOLADOR 1500VA", sizeof(data.upsdesc));
 			data.VA = 1500;
 			break;
 
 		case 88:
 			data.upscode = 88;
-			strcpy(data.upsdesc, "LASER PRIME SENOIDAL ISOLADOR 2000VA");
+			strncpy(data.upsdesc, "LASER PRIME SENOIDAL ISOLADOR 2000VA", sizeof(data.upsdesc));
 			data.VA = 2000;
 			break;
 
 		case 89:
 			data.upscode = 89;
-			strcpy(data.upsdesc, "PREMIUM SENOIDAL 2400VA GII");
+			strncpy(data.upsdesc, "PREMIUM SENOIDAL 2400VA GII", sizeof(data.upsdesc));
 			data.VA = 2400;
 			break;
 
 		case 90:
 			data.upscode = 90;
-			strcpy(data.upsdesc, "NHS PDV 1400VA S 8T GII");
+			strncpy(data.upsdesc, "NHS PDV 1400VA S 8T GII", sizeof(data.upsdesc));
 			data.VA = 1400;
 			break;
 
 		case 91:
 			data.upscode = 91;
-			strcpy(data.upsdesc, "PREMIUM ONLINE 2000VA");
+			strncpy(data.upsdesc, "PREMIUM ONLINE 2000VA", sizeof(data.upsdesc));
 			data.VA = 2000;
 			break;
 
 		case 92:
 			data.upscode = 92;
-			strcpy(data.upsdesc, "LASER PRIME ONLINE 2200VA");
+			strncpy(data.upsdesc, "LASER PRIME ONLINE 2200VA", sizeof(data.upsdesc));
 			data.VA = 2200;
 			break;
 
 		case 93:
 			data.upscode = 93;
-			strcpy(data.upsdesc, "PREMIUM RACK ONLINE 2200VA");
+			strncpy(data.upsdesc, "PREMIUM RACK ONLINE 2200VA", sizeof(data.upsdesc));
 			data.VA = 2200;
 			break;
 
 		case 94:
 			data.upscode = 94;
-			strcpy(data.upsdesc, "PREMIUM SENOIDAL 2400VA GII");
+			strncpy(data.upsdesc, "PREMIUM SENOIDAL 2400VA GII", sizeof(data.upsdesc));
 			data.VA = 2400;
 			break;
 
 		case 95:
 			data.upscode = 95;
-			strcpy(data.upsdesc, "LASER ONLINE 10000VA");
+			strncpy(data.upsdesc, "LASER ONLINE 10000VA", sizeof(data.upsdesc));
 			data.VA = 10000;
 			break;
 
 		case 96:
 			data.upscode = 96;
-			strcpy(data.upsdesc, "LASER ONLINE BIFASICO 10000VA");
+			strncpy(data.upsdesc, "LASER ONLINE BIFASICO 10000VA", sizeof(data.upsdesc));
 			data.VA = 10000;
 			break;
 
 		case 97:
 			data.upscode = 97;
-			strcpy(data.upsdesc, "LASER SENOIDAL 3300VA GII");
+			strncpy(data.upsdesc, "LASER SENOIDAL 3300VA GII", sizeof(data.upsdesc));
 			data.VA = 3300;
 			break;
 
 		case 98:
 			data.upscode = 98;
-			strcpy(data.upsdesc, "LASER SENOIDAL 2600VA GII");
+			strncpy(data.upsdesc, "LASER SENOIDAL 2600VA GII", sizeof(data.upsdesc));
 			data.VA = 2600;
 			break;
 
 		case 99:
 			data.upscode = 99;
-			strcpy(data.upsdesc, "PREMIUM SENOIDAL 3000VA GII");
+			strncpy(data.upsdesc, "PREMIUM SENOIDAL 3000VA GII", sizeof(data.upsdesc));
 			data.VA = 3000;
 			break;
 
 		case 100:
 			data.upscode = 100;
-			strcpy(data.upsdesc, "PREMIUM SENOIDAL 2200VA GII");
+			strncpy(data.upsdesc, "PREMIUM SENOIDAL 2200VA GII", sizeof(data.upsdesc));
 			data.VA = 2200;
 			break;
 
 		case 101:
 			data.upscode = 101;
-			strcpy(data.upsdesc, "LASER ONLINE BIFASICO 4000VA");
+			strncpy(data.upsdesc, "LASER ONLINE BIFASICO 4000VA", sizeof(data.upsdesc));
 			data.VA = 4000;
 			break;
 
 		case 102:
 			data.upscode = 102;
-			strcpy(data.upsdesc, "LASER ONLINE 12000VA");
+			strncpy(data.upsdesc, "LASER ONLINE 12000VA", sizeof(data.upsdesc));
 			data.VA = 12000;
 			break;
 
 		case 103:
 			data.upscode = 103;
-			strcpy(data.upsdesc, "LASER ONLINE 8000VA");
+			strncpy(data.upsdesc, "LASER ONLINE 8000VA", sizeof(data.upsdesc));
 			data.VA = 8000;
 			break;
 
 		case 104:
 			data.upscode = 104;
-			strcpy(data.upsdesc, "PDV SENOIDAL ISOLADOR 1000VA");
+			strncpy(data.upsdesc, "PDV SENOIDAL ISOLADOR 1000VA", sizeof(data.upsdesc));
 			data.VA = 1000;
 			break;
 
 		case 105:
 			data.upscode = 105;
-			strcpy(data.upsdesc, "MINI SENOIDAL 500VA");
+			strncpy(data.upsdesc, "MINI SENOIDAL 500VA", sizeof(data.upsdesc));
 			data.VA = 500;
 			break;
 
 		case 106:
 			data.upscode = 106;
-			strcpy(data.upsdesc, "LASER SENOIDAL 5000VA GII");
+			strncpy(data.upsdesc, "LASER SENOIDAL 5000VA GII", sizeof(data.upsdesc));
 			data.VA = 5000;
 			break;
 
 		case 107:
 			data.upscode = 107;
-			strcpy(data.upsdesc, "COMPACT PLUS SENOIDAL 1000VA");
+			strncpy(data.upsdesc, "COMPACT PLUS SENOIDAL 1000VA", sizeof(data.upsdesc));
 			data.VA = 1000;
 			break;
 
 		case 108:
 			data.upscode = 108;
-			strcpy(data.upsdesc, "QUAD_COM 80A");
+			strncpy(data.upsdesc, "QUAD_COM 80A", sizeof(data.upsdesc));
 			data.VA = 0;
 			break;
 
 		case 109:
 			data.upscode = 109;
-			strcpy(data.upsdesc, "LASER ONLINE 5000VA");
+			strncpy(data.upsdesc, "LASER ONLINE 5000VA", sizeof(data.upsdesc));
 			data.VA = 5000;
 			break;
 
 		case 113:
 			data.upscode = 113;
-			strcpy(data.upsdesc, "PDV SENOIDAL ISOLADOR 700VA");
+			strncpy(data.upsdesc, "PDV SENOIDAL ISOLADOR 700VA", sizeof(data.upsdesc));
 			data.VA = 700;
 			break;
 
 		default:
 			data.upscode = -1;
-			strcpy(data.upsdesc, "NHS UNKNOWN");
+			strncpy(data.upsdesc, "NHS UNKNOWN", sizeof(data.upsdesc));
 			data.VA = 0;
 			break;
 	}
