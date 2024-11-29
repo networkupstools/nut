@@ -49,7 +49,7 @@
 #define DEFAULTBAUD	2400
 #define DEFAULTPORT	"/dev/ttyACM0"
 #define DEFAULTPF	0.9
-#define DEFAULLTPERC	2.0
+#define DEFAULTPERC	2.0
 #define DATAPACKETSIZE	100
 #define DEFAULTBATV	12.0
 
@@ -1631,7 +1631,7 @@ static float get_vin_perc(char * var) {
     if (perc)
         return atof(perc);
     else
-        return DEFAULLTPERC;
+        return DEFAULTPERC;
 }
 
 void upsdrv_initinfo(void) {
@@ -2214,16 +2214,16 @@ void upsdrv_makevartable(void) {
     snprintf(help, sizeof(help), "Power Factor to use in calculations of battery time. Default is %0.2f", DEFAULTPF);
     addvar(VAR_VALUE, "pf", help);
 
-    snprintf(help, sizeof(help), "Voltage In Percentage to calculate warning low level. Default is %0.2f", DEFAULLTPERC);
+    snprintf(help, sizeof(help), "Voltage In Percentage to calculate warning low level. Default is %0.2f", DEFAULTPERC);
     addvar(VAR_VALUE, "vin_low_warn_perc", help);
 
-    snprintf(help, sizeof(help), "Voltage In Percentage to calculate critical low level. Default is %0.2f", DEFAULLTPERC);
+    snprintf(help, sizeof(help), "Voltage In Percentage to calculate critical low level. Default is %0.2f", DEFAULTPERC);
     addvar(VAR_VALUE, "vin_low_crit_perc", help);
 
-    snprintf(help, sizeof(help), "Voltage In Percentage to calculate warning high level. Default is %0.2f", DEFAULLTPERC);
+    snprintf(help, sizeof(help), "Voltage In Percentage to calculate warning high level. Default is %0.2f", DEFAULTPERC);
     addvar(VAR_VALUE, "vin_high_warn_perc", help);
 
-    snprintf(help, sizeof(help), "Voltage In Percentage to calculate critical high level. Default is %0.2f", DEFAULLTPERC);
+    snprintf(help, sizeof(help), "Voltage In Percentage to calculate critical high level. Default is %0.2f", DEFAULTPERC);
     addvar(VAR_VALUE, "vin_high_crit_perc", help);
 
     snprintf(help, sizeof(help), "Num Batteries (override value from nobreak)");
