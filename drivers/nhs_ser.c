@@ -1848,7 +1848,6 @@ void upsdrv_updateinfo(void) {
                                     } // end else
                                 } // end else
 
-                                alarm[0] = '\0';
                                 numbat = get_numbat();
                                 if (numbat == 0)
                                     numbat = lastpkthwinfo.numbatteries;
@@ -1856,23 +1855,32 @@ void upsdrv_updateinfo(void) {
                                     upsdebugx(1,"Number of batteries is set to %d",numbat);
                                 vbat = get_vbat();
                                 ah = get_ah();
-                                // Set all alarms possible
+
+                                /* Set all alarms possible */
+                                alarm[0] = '\0';
                                 if (lastpktdata.s_battery_mode)
-                                    sprintf(alarm,"%s","|UPS IN BATTERY MODE|");
+                                    snprintf(alarm, sizeof(alarm), "%s", "|UPS IN BATTERY MODE|");
                                 if (lastpktdata.s_battery_low)
-                                    sprintf(alarm,"%s %s",alarm,"|UPS IN BATTERY MODE|");
+                                    snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
+                                        "|UPS IN BATTERY MODE|");
                                 if (lastpktdata.s_network_failure)
-                                    sprintf(alarm,"%s %s",alarm,"|NETWORK FAILURE|");
+                                    snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
+                                        "|NETWORK FAILURE|");
                                 if (lastpktdata.s_fast_network_failure)
-                                    sprintf(alarm,"%s %s",alarm,"|FAST NETWORK FAILURE|");
+                                    snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
+                                        "|FAST NETWORK FAILURE|");
                                 if (lastpktdata.s_fast_network_failure)
-                                    sprintf(alarm,"%s %s",alarm,"|220v IN|");
+                                    snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
+                                        "|220v IN|");
                                 if (lastpktdata.s_fast_network_failure)
-                                    sprintf(alarm,"%s %s",alarm,"|220v OUT|");
+                                    snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
+                                        "|220v OUT|");
                                 if (lastpktdata.s_bypass_on)
-                                    sprintf(alarm,"%s %s",alarm,"|BYPASS ON|");
+                                    snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
+                                        "|BYPASS ON|");
                                 if (lastpktdata.s_charger_on)
-                                    sprintf(alarm,"%s %s",alarm,"|CHARGER ON|");
+                                    snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
+                                        "|CHARGER ON|");
                                 dstate_setinfo("ups.alarm","%s",alarm);
                                 dstate_setinfo("ups.model","%s",ups.upsdesc);
                                 dstate_setinfo("ups.mfr","%s",MANUFACTURER);
