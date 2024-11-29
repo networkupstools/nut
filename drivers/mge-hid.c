@@ -721,18 +721,27 @@ static const char *eaton_input_eco_mode_check_range(double value)
 
 
 
+    if (bypass_voltage_str == NULL || bypass_frequency_str == NULL
+    || out_voltage_nominal_str == NULL || out_frequency_nominal_str == NULL) {
+    upsdebugx(1, "Failed to get values: %s, %s, %s, %s",
+        bypass_voltage_str ? bypass_voltage_str : "input.bypass.voltage = NULL",
+        bypass_frequency_str ? bypass_frequency_str : "input.bypass.frequency = NULL",
+        out_voltage_nominal_str ? out_voltage_nominal_str : "output.voltage.nominal = NULL",
+        out_frequency_nominal_str ? out_frequency_nominal_str : "output.frequency.nominal = NULL");
+    return NULL; /* Handle the error appropriately */
+}
+    /* In case we dont have ECO transfer limit variables but still have ability to enter Bypass/ECO modes,
+	 * will use default limits later in code.
+	 * Possibly like reported by debug log for 9SX1000i https://github.com/networkupstools/nut/issues/2685
+	 */
     if (eco_low_transfer_str == NULL || eco_high_transfer_str == NULL
-        || bypass_voltage_str == NULL || bypass_frequency_str == NULL
-        || out_voltage_nominal_str == NULL || out_frequency_nominal_str == NULL
-		|| frequency_range_transfer_str == NULL
-		) {
-        upsdebugx(1, "Failed to get values: %s, %s, %s, %s, %s, %s, %s",
-            eco_low_transfer_str, eco_high_transfer_str,
-            bypass_voltage_str, bypass_frequency_str,
-            out_voltage_nominal_str, out_frequency_nominal_str,
-			frequency_range_transfer_str);
-        return NULL; /* Handle the error appropriately */
-    }
+    || frequency_range_transfer_str == NULL) {
+    upsdebugx(1, "Failed to get values: %s, %s, %s",
+        eco_low_transfer_str ? eco_low_transfer_str : "eco.low.transfer = NULL",
+        eco_high_transfer_str ? eco_high_transfer_str : "eco.high.transfer = NULL",
+        frequency_range_transfer_str ? frequency_range_transfer_str : "frequency.range.transfer = NULL");
+    /* Not return NULL, We will use default values for limits */
+}
 
     str_to_double(bypass_voltage_str, &bypass_voltage, 10);
     str_to_double(eco_low_transfer_str, &eco_low_transfer, 10);
@@ -762,14 +771,14 @@ static const char *eaton_input_eco_mode_check_range(double value)
         && (bypass_voltage >= eco_low_transfer && bypass_voltage <= eco_high_transfer)
         && (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)
     ) {
-        return "ECO"; /* Enter Eco mode */
+        return "ECO"; /* Enter ECO mode */
     }
 
     /* Default values if user-defined limits are not available or out of range */
     if ((bypass_voltage >= out_voltage_nominal * 0.95 && bypass_voltage <= out_voltage_nominal * 1.05)
         && (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)
     ) {
-        return "ECO"; /* Enter Eco mode */
+        return "ECO"; /* Enter ECO mode */
     } else {
         /* Condensed debug messages for out of range voltage and frequency */
         if (bypass_voltage < eco_low_transfer || bypass_voltage > eco_high_transfer) {
@@ -778,7 +787,7 @@ static const char *eaton_input_eco_mode_check_range(double value)
         if (bypass_frequency < lower_frequency_limit || bypass_frequency > upper_frequency_limit) {
             upsdebugx(1, "Bypass frequency out of transfer ECO limits: %.1f Hz", bypass_frequency);
         }
-        return NULL; /* Do not enter Eco mode */
+        return NULL; /* Do not enter ECO mode */
     }
 }
 
@@ -857,7 +866,7 @@ static const char *eaton_input_bypass_check_range(double value)
         return "on"; /* Enter bypass mode */
     }
 
-	/* Check if default limits are within valid range */
+	/* Default values if user-defined limits are not available or out of range */
     if ((bypass_voltage >= out_voltage_nominal * 0.8 && bypass_voltage <= out_voltage_nominal * 1.15)
         && (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)
 		) {
