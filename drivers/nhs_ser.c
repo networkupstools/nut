@@ -376,6 +376,8 @@ static int get_bit_in_position(void *ptr, size_t size, size_t bit_position, int 
 }
 
 static void print_pkt_hwinfo(pkt_hwinfo data) {
+    int i = 0;
+
     if (!debug_pkt_hwinfo)
         return;
 
@@ -389,7 +391,7 @@ static void print_pkt_hwinfo(pkt_hwinfo data) {
 
     upsdebugx(1,"Configuration Array: ");
     upsdebugx(1,"-----");
-    for (int i = 0; i < 5; i++) {
+    for (i = 0; i < 5; i++) {
         int retorno = get_bit_in_position(&data.configuration,sizeof(data.configuration),i,0);
         upsdebugx(1,"Binary value is %d",retorno);
         upsdebugx(1,"%u ", data.configuration_array[i]);
@@ -412,7 +414,7 @@ static void print_pkt_hwinfo(pkt_hwinfo data) {
 
     upsdebugx(1,"Status: ");
     upsdebugx(1,"-----");
-    for (int i = 0; i < 6; i++) {
+    for (i = 0; i < 6; i++) {
         upsdebugx(1,"Binary value is %d",get_bit_in_position(&data.statusval,sizeof(data.statusval),i,0));
         upsdebugx(1,"status %d --> %u ", i, data.status[i]);
     }
@@ -446,6 +448,8 @@ static void print_pkt_hwinfo(pkt_hwinfo data) {
 }
 
 static void print_pkt_data(pkt_data data) {
+    int i = 0;
+
     if (!debug_pkt_data)
         return;
 
@@ -481,7 +485,7 @@ static void print_pkt_data(pkt_data data) {
 
     upsdebugx(1,"Status: ");
     upsdebugx(1,"-----");
-    for (int i = 0; i < 8; i++) {
+    for (i = 0; i < 8; i++) {
         upsdebugx(1,"Binary value is %d",get_bit_in_position(&data.statusval,sizeof(data.statusval),i,0));
         upsdebugx(1,"status %d --> %u ", i, data.status[i]);
     }
@@ -596,8 +600,9 @@ static int openfd(const char * portarg, int BAUDRATE) {
 }
 
 static unsigned char calculate_checksum(unsigned char *pacote, int inicio, int fim) {
-    int soma = 0;
-    for (int i = inicio; i <= fim; i++) {
+    int soma = 0, i = 0;
+
+    for (i = inicio; i <= fim; i++) {
         soma += pacote[i];
     }
     return soma & 0xFF;
