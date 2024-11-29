@@ -149,6 +149,8 @@ void upsdrv_updateinfo(void)
 
 		mrir(modbus_ctx, 29697, 3, tab_reg); /* LB is actually called "shutdown event" on this ups */
 		break;
+	default:
+		break;
 	}	
 
 	status_init();
@@ -176,6 +178,8 @@ void upsdrv_updateinfo(void)
 
 		mrir(modbus_ctx, 29745, 1, tab_reg);
 		break;
+	default:
+		break;
 	}
 
 	dstate_setinfo("output.voltage", "%d", (int) (tab_reg[0] / 1000));
@@ -189,6 +193,8 @@ void upsdrv_updateinfo(void)
 	case QUINT_UPS:
 
 		mrir(modbus_ctx, 29749, 5, tab_reg);
+		break;
+	default:
 		break;
 	}
 
@@ -218,6 +224,8 @@ void upsdrv_updateinfo(void)
 	case QUINT_UPS:
 
 		mrir(modbus_ctx, 29792, 10, tab_reg);
+		break;
+	default:
 		break;
 	}
 
@@ -300,6 +308,8 @@ void upsdrv_updateinfo(void)
 			alarm_set("Low Battery (Time)");
 		if (CHECK_BIT(tab_reg[0], 16))
 			alarm_set("Low Battery (Service)");
+		break;
+	default:
 		break;
 	}
 
