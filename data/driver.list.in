@@ -586,8 +586,16 @@
 "Ippon"	"ups"	"2"	"Back Comfo Pro II 650/850/1050"	"USB"	"blazer_usb (experimental)"
 "Ippon"	"ups"	"2"	"Smart Power Pro 1000/1400/2000"	""	"blazer_ser"
 "Ippon"	"ups"	"2"	"Smart Power Pro 1000/1400/2000"	"USB"	"blazer_usb (experimental)"
-"Ippon"	"ups"	"2"	"Smart Power Pro II 1200/1600/2200"	"USB"	"usbhid-ups"
-"Ippon"	"ups"	"2"	"Smart Power Pro II Euro 1200/1600/2200"	"USB"	"usbhid-ups"
+"Ippon"	"ups"	"2"	"Smart Power Pro II 1200/1600/2200"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/2702 https://github.com/networkupstools/nut/issues/701
+"Ippon"	"ups"	"2"	"Smart Power Pro II Euro 1200/1600/2200"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/2702 https://github.com/networkupstools/nut/issues/701
+"Ippon"	"ups"	"2"	"Pacific 1000/2000/3000"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/2702
+"Ippon"	"ups"	"2"	"Ampere 1000/1500/2000/3000 bl"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/2702
+"Ippon"	"ups"	"2"	"Innova RTB 1000/1500/2000/3000"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/2702
+"Ippon"	"ups"	"2"	"Innova TBE 1000/2000/3000"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/2702
+"Ippon"	"ups"	"2"	"Innova TB 1000/2000/3000"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/2702
+"Ippon"	"ups"	"2"	"Back Power Pro II 500/600/800"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/2702
+"Ippon"	"ups"	"2"	"Back Power Pro II Euro 650/850"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/2702
+"Ippon"	"ups"	"2"	"Kirpich 650/850/1050"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/2702
 "Ippon"	"ups"	"2"	"Smart Winner 750/1000/1500/2000/3000"	""	"blazer_ser"
 "Ippon"	"ups"	"2"	"Smart Winner 750/1000/1500/2000/3000"	"USB"	"blazer_usb (experimental)"
 "Ippon"	"ups"	"2"	"(various)"	""	"blazer_ser"

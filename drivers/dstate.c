@@ -2088,6 +2088,11 @@ void dstate_dump(void)
 	upsdebugx(3, "Entering %s", __func__);
 
 	node = (const st_tree_t *)dstate_getroot();
+	fflush(stderr);
 
 	dstate_tree_dump(node);
+
+	/* Make sure it lands in one piece and is logged where called */
+	fflush(stdout);
+	fflush(stderr);
 }
