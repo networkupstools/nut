@@ -49,7 +49,30 @@ import optparse
 import configparser
 import locale
 import gettext
-import PyNUT
+
+# Try local development/accompanying packaging first,
+# then system installation
+sys_path_orig = sys.path.copy()
+try:
+	# Try "module" path relative to this program script:
+	mod_path = os.path.sep.join([
+		os.path.dirname(os.path.abspath(os.path.realpath(__file__))),
+		"..", "module"])
+	### sys.stderr.write("[D] mod_path: %s\n" % mod_path)
+	if os.path.isfile(os.path.sep.join([mod_path, "PyNUT.py"])):
+		# Insert into the system path at index 1 to ensure that it
+		# resolves after the main script but before anything else:
+		sys.path.insert(1, mod_path)
+		### sys.stderr.write("[D] sys.path: %s\n" % sys.path)
+
+	# Try our chances with the default or augmented path
+	import PyNUT
+except Exception as ignored:
+	# ModuleNotFoundError, path/parsing, et al
+	# Try our chances with the default path:
+	sys.path = sys_path_orig
+	### sys.stderr.write("[D2] sys.path: %s\n" % sys.path)
+	import PyNUT
 
 
 class interface :
