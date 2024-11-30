@@ -132,7 +132,7 @@ typedef enum {
 		MGE_PULSAR_M_3000,
 		MGE_PULSAR_M_3000_XL,
 	EATON_5P = 0x500,			/* Eaton 5P / 5PX / 5SC series */
-	EATON_9E = 0x900			/* Eaton 9E entry-level series */
+	EATON_9E = 0x900			/* Eaton 9E entry-level / 9SX / 9PX series */
 } models_type_t;
 
 /* Default to line-interactive or online (ie, not offline).
@@ -1368,6 +1368,34 @@ static models_name_t mge_model_names [] =
 	{ "unknown",  "1000",  EATON_9E, "9E1000i (presumed)" },
 	{ "unknown",  "2000",  EATON_9E, "9E2000i (presumed)" },
 	{ "unknown",  "3000",  EATON_9E, "9E3000i (presumed)" },
+
+	/* Eaton 9SX series per discussions in
+	 * https://github.com/networkupstools/nut/issues/2685
+	 * https://www.eaton.com/gb/en-gb/site-search.html.searchTerm$9sx.tabs$all.html
+     */
+	{ "Eaton 9SX", "700i", EATON_9E, "9SX700i" },
+	{ "Eaton 9SX", "1000i", EATON_9E, "9SX1000i" },
+	{ "Eaton 9SX", "1000im", EATON_9E, "9SX1000im" },
+	{ "Eaton 9SX", "1500i", EATON_9E, "9SX1500i" },
+	{ "Eaton 9SX", "2000i", EATON_9E, "9SX2000i" },
+	{ "Eaton 9SX", "3000i", EATON_9E, "9SX3000i" },
+	{ "Eaton 9SX", "3000im", EATON_9E, "9SX3000im" },
+	{ "Eaton 9SX", "1000ir", EATON_9E, "9SX1000ir" },
+	{ "Eaton 9SX", "1500ir", EATON_9E, "9SX1500ir" },
+	{ "Eaton 9SX", "2000ir", EATON_9E, "9SX2000ir" },
+	{ "Eaton 9SX", "3000ir", EATON_9E, "9SX3000ir" },
+
+	/* Eaton 9PX series
+	 * https://www.eaton.com/gb/en-gb/site-search.html.searchTerm$9px.tabs$all.html
+     */
+    { "Eaton 9PX", "1000irt2u", EATON_9E, "9px1000irt2u" },
+	{ "Eaton 9PX", "1500irt2u", EATON_9E, "9px1500irt2u" },
+	{ "Eaton 9PX", "1500irtm", EATON_9E, "9px1500irtm" },
+	{ "Eaton 9PX", "2200irt2u", EATON_9E, "9px2200irt2u" },
+	{ "Eaton 9PX", "2200irt3u", EATON_9E, "9px2200irt3u" },
+	{ "Eaton 9PX", "3000irt2u", EATON_9E, "9px3000irt2u" },
+	{ "Eaton 9PX", "3000irt3u", EATON_9E, "9px3000irt3u" },
+	{ "Eaton 9PX", "3000irtm", EATON_9E, "9px3000irtm" },
 
 	/* Pulsar M models */
 	{ "PULSAR M", "2200", MGE_PULSAR_M_2200, NULL },
