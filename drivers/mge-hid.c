@@ -935,6 +935,7 @@ static const char *eaton_input_eco_mode_check_range(double value)
 	if ((bypass_voltage >= lower_voltage_limit && bypass_voltage <= upper_voltage_limit)
         && (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)
     ) {
+		upsdebugx(1, "%s: Entering ECO mode due to input conditions being within the transfer limits.", __func__);
         return "ECO"; /* Enter ECO mode */
     } else {
     /* Condensed debug messages for out of range voltage and frequency */
@@ -981,7 +982,7 @@ static const char *eaton_input_bypass_check_range(double value)
     const char* out_frequency_nominal_str = dstate_getinfo("output.frequency.nominal");
 
 	NUT_UNUSED_VARIABLE(value);
- 
+
 	if (bypass_voltage_str == NULL || bypass_frequency_str == NULL
     || out_voltage_nominal_str == NULL || out_frequency_nominal_str == NULL) {
     upsdebugx(1, "Failed to get values: %s, %s, %s, %s",
@@ -994,7 +995,7 @@ static const char *eaton_input_bypass_check_range(double value)
     /* In case we dont have Bypass transfer limit variables but still have ability to enter Bypass mode */
 	if (bypass_low_transfer_str == NULL || bypass_high_transfer_str == NULL
 	|| frequency_range_transfer_str == NULL) {
-	upsdebugx(1, "Failed to get values: %s, %s, %s",	
+	upsdebugx(1, "Failed to get values: %s, %s, %s",
         bypass_low_transfer_str ? bypass_low_transfer_str : "input.transfer.bypass.low = NULL",
 		bypass_high_transfer_str ? bypass_high_transfer_str : "input.transfer.bypass.high = NULL",
 		frequency_range_transfer_str ? frequency_range_transfer_str : "input.transfer.frequency.bypass.range = NULL");
@@ -1039,6 +1040,7 @@ static const char *eaton_input_bypass_check_range(double value)
     if ((bypass_voltage >= lower_voltage_limit && bypass_voltage <= upper_voltage_limit)
         && (bypass_frequency >= lower_frequency_limit && bypass_frequency <= upper_frequency_limit)
 		) {
+		upsdebugx(1, "%s: Entering Bypass mode due to input conditions being within the transfer limits.", __func__);
         return "on"; /* Enter Bypass mode */
     } else {
         /* Condensed debug messages for out of range voltage and frequency */
