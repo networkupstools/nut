@@ -762,7 +762,7 @@ static const char *eaton_input_eco_mode_check_range(double value)
         lower_frequency_limit = out_frequency_nominal - (out_frequency_nominal / 100 * frequency_range_transfer);
         upper_frequency_limit = out_frequency_nominal + (out_frequency_nominal / 100 * frequency_range_transfer);
     } else {
-	/* Set default values if user-defined limits are not available or out of range */	
+	/* Set default values if user-defined limits are not available or out of range */
         lower_frequency_limit = out_frequency_nominal - (out_frequency_nominal / 100 * 5);
 		upper_frequency_limit = out_frequency_nominal + (out_frequency_nominal / 100 * 5);
     }
@@ -771,7 +771,7 @@ static const char *eaton_input_eco_mode_check_range(double value)
 	if (eco_low_transfer > 0 && eco_high_transfer > 0) {
 	    lower_voltage_limit = eco_low_transfer;
         upper_voltage_limit = eco_high_transfer;
-	} else {	
+	} else {
 	/* Set default values if user-defined limits are not available or out of range */
         lower_voltage_limit = out_voltage_nominal * 0.95;
         upper_voltage_limit = out_voltage_nominal * 1.05;
@@ -784,7 +784,7 @@ static const char *eaton_input_eco_mode_check_range(double value)
         return "ECO"; /* Enter ECO mode */
     } else {
     /* Condensed debug messages for out of range voltage and frequency */
-        if (bypass_voltage < lower_voltage_limit || bypass_voltage > upper_voltage_limit) {            
+        if (bypass_voltage < lower_voltage_limit || bypass_voltage > upper_voltage_limit) {
 			upsdebugx(1, "Input Bypass voltage is outside ECO transfer limits: %.1f V", bypass_voltage);
         }
         if (bypass_frequency < lower_frequency_limit || bypass_frequency > upper_frequency_limit) {
@@ -827,18 +827,25 @@ static const char *eaton_input_bypass_check_range(double value)
     const char* out_frequency_nominal_str = dstate_getinfo("output.frequency.nominal");
 
 	NUT_UNUSED_VARIABLE(value);
-
-    if (bypass_voltage_str == NULL || bypass_low_transfer_str == NULL
-        || bypass_high_transfer_str == NULL || out_voltage_nominal_str == NULL
-        || bypass_frequency_str == NULL || frequency_range_transfer_str == NULL
-        || out_frequency_nominal_str == NULL
-		) {
-        upsdebugx(1, "Failed to get values: %s, %s, %s, %s, %s, %s, %s",
-            bypass_voltage_str, bypass_low_transfer_str, bypass_high_transfer_str,
-            out_voltage_nominal_str, bypass_frequency_str, frequency_range_transfer_str,
-            out_frequency_nominal_str);
-        return NULL; /* Handle the error appropriately */
-    }
+ 
+	if (bypass_voltage_str == NULL || bypass_frequency_str == NULL
+    || out_voltage_nominal_str == NULL || out_frequency_nominal_str == NULL) {
+    upsdebugx(1, "Failed to get values: %s, %s, %s, %s",
+        bypass_voltage_str ? bypass_voltage_str : "input.bypass.voltage = NULL",
+        bypass_frequency_str ? bypass_frequency_str : "input.bypass.frequency = NULL",
+        out_voltage_nominal_str ? out_voltage_nominal_str : "output.voltage.nominal = NULL",
+        out_frequency_nominal_str ? out_frequency_nominal_str : "output.frequency.nominal = NULL");
+    return NULL; /* Handle the error appropriately */
+}
+    /* In case we dont have Bypass transfer limit variables but still have ability to enter Bypass mode */
+	if (bypass_low_transfer_str == NULL || bypass_high_transfer_str == NULL
+	|| frequency_range_transfer_str == NULL) {
+	upsdebugx(1, "Failed to get values: %s, %s, %s",	
+        bypass_low_transfer_str ? bypass_low_transfer_str : "input.transfer.bypass.low = NULL",
+		bypass_high_transfer_str ? bypass_high_transfer_str : "input.transfer.bypass.high = NULL",
+		frequency_range_transfer_str ? frequency_range_transfer_str : "input.transfer.frequency.bypass.range = NULL");
+    /* Not return NULL, We will use default values for limits */
+}
 
     str_to_double(bypass_voltage_str, &bypass_voltage, 10);
     str_to_double(bypass_low_transfer_str, &bypass_low_transfer, 10);
