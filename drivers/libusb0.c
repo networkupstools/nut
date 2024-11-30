@@ -38,7 +38,7 @@
 #endif
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 0.1)"
-#define USB_DRIVER_VERSION	"0.48"
+#define USB_DRIVER_VERSION	"0.50"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -730,6 +730,7 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 		}
 	}
 
+	/* If we got here, we did not return a successfully chosen device above */
 	*udevp = NULL;
 	upsdebugx(2, "libusb0: No appropriate HID device found");
 	fflush(stdout);
@@ -737,7 +738,7 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 	if (count_open_attempts == 0) {
 		upslogx(LOG_WARNING,
 			"libusb0: Could not open any HID devices: "
-			"no USB buses found");
+			"no USB buses (or devices) found");
 	}
 	else
 	if (count_open_errors > 0
@@ -746,6 +747,13 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 		upslogx(LOG_WARNING,
 			"libusb0: Could not open any HID devices: "
 			"insufficient permissions on everything");
+		if (count_open_attempts > count_open_errors) {
+			upslogx(LOG_WARNING,
+				"libusb0: except %d devices "
+				"tried but not matching the "
+				"requested criteria",
+				count_open_attempts - count_open_errors);
+		}
 	}
 
 	return -1;
