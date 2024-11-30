@@ -642,7 +642,7 @@ static float createfloat(int integer, int decimal) {
 	return atof(flt);
 }
 
-static unsigned int get_vbat() {
+static unsigned int get_vbat(void) {
 	char	*v = getval("vbat");
 	if (v) {
 		return atoi(v);
