@@ -737,9 +737,9 @@ static const char *eaton_input_eco_mode_check_range(double value)
     if (eco_low_transfer_str == NULL || eco_high_transfer_str == NULL
     || frequency_range_transfer_str == NULL) {
     upsdebugx(1, "Failed to get values: %s, %s, %s",
-        eco_low_transfer_str ? eco_low_transfer_str : "eco.low.transfer = NULL",
-        eco_high_transfer_str ? eco_high_transfer_str : "eco.high.transfer = NULL",
-        frequency_range_transfer_str ? frequency_range_transfer_str : "frequency.range.transfer = NULL");
+        eco_low_transfer_str ? eco_low_transfer_str : "input.transfer.eco.low = NULL",
+        eco_high_transfer_str ? eco_high_transfer_str : "input.transfer.eco.high = NULL",
+        frequency_range_transfer_str ? frequency_range_transfer_str : "input.transfer.frequency.eco.range = NULL");
     /* Not return NULL, We will use default values for limits */
 }
 
