@@ -29,11 +29,27 @@
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define MODBUS_SLAVE_ID 192
 
+typedef enum
+{
+	QUINT_UPS,
+	QUINT4_UPS
+} models;
+
 /* Variables */
 static modbus_t *modbus_ctx = NULL;
 static int errcount = 0;
 
 static int mrir(modbus_t * arg_ctx, int addr, int nb, uint16_t * dest);
+
+static models UPSModel;
+
+/*
+	For the QUINT ups (first implementation of the driver) the modbus addresses
+	are reported in dec format,for the QUINT4 ups they are reported in hex format.
+	The difference is caused from the way they are reported in the datasheet,
+	keeping them in the same format as the datasheet make more simple the maintenence 
+	of the driver avoiding conversions while coding.
+*/
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -46,24 +62,90 @@ upsdrv_info_t upsdrv_info = {
 
 void upsdrv_initinfo(void)
 {
+	uint16_t FWVersion;
 	upsdebugx(2, "upsdrv_initinfo");
 
 	dstate_setinfo("device.mfr", "Phoenix Contact");
-	dstate_setinfo("device.model", "QUINT-UPS/24DC");
 
 	/* upsh.instcmd = instcmd; */
-	/* upsh.setvar = setvar; */
+	/* upsh.setvar = setvar; */	
+
+	mrir(modbus_ctx, 0x0004, 1, &FWVersion);
+
+	if (FWVersion == 544)
+	{
+		UPSModel = QUINT_UPS;
+		dstate_setinfo("device.model", "QUINT-UPS/24DC");
+	}
+	else if (FWVersion == 305)
+	{
+		UPSModel = QUINT4_UPS;
+		dstate_setinfo("device.model", "QUINT4-UPS/24DC");
+	}
+
+	dstate_setinfo("ups.firmware", "%d", FWVersion);
 }
 
 void upsdrv_updateinfo(void)
 {
 	uint16_t tab_reg[64];
+	uint16_t actual_code_functions;
+	uint16_t actual_alarms = 0;
+	uint16_t actual_alarms1 = 0;
+	uint16_t battery_voltage;
+	uint16_t battery_temperature;
+	uint16_t battery_runtime;
+	uint16_t battery_capacity;
+	uint16_t output_current;
 
 	errcount = 0;
 
 	upsdebugx(2, "upsdrv_updateinfo");
 
-	mrir(modbus_ctx, 29697, 3, tab_reg);
+	switch (UPSModel)
+	{
+	case QUINT4_UPS:
+		mrir(modbus_ctx, 0x2000, 1, &actual_code_functions);
+
+		tab_reg[0] = CHECK_BIT(actual_code_functions, 2); /* Battery mode is the 2nd bit of the register 0x2000 */
+		tab_reg[2] = CHECK_BIT(actual_code_functions, 5); /* Battery charging is the 5th bit of the register 0x2000 */
+
+		mrir(modbus_ctx, 0x3001, 1, &actual_alarms1);
+
+		tab_reg[1] = CHECK_BIT(actual_alarms1, 2); /* Battery discharged is the 2nd bit of the register 0x3001 */
+		break;
+	case QUINT_UPS:
+		mrir(modbus_ctx, 29697, 3, tab_reg); /* LB is actually called "shutdown event" on this ups */
+		break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+                /* All enum cases defined as of the time of coding
+                 * have been covered above. Handle later definitions,
+                 * memory corruptions and buggy inputs below...
+		 */
+	default:
+		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
+	}
 
 	status_init();
 
@@ -77,17 +159,142 @@ void upsdrv_updateinfo(void)
 	}
 
 	if (tab_reg[1]) {
-		status_set("LB");	/* LB is actually called "shutdown event" on this ups */
+		status_set("LB");	
 	}
 
-	mrir(modbus_ctx, 29745, 1, tab_reg);
+	switch (UPSModel)
+	{
+	case QUINT4_UPS:
+		mrir(modbus_ctx, 0x2006, 1, tab_reg);
+		break;
+	case QUINT_UPS:
+		mrir(modbus_ctx, 29745, 1, tab_reg);
+		break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+                /* All enum cases defined as of the time of coding
+                 * have been covered above. Handle later definitions,
+                 * memory corruptions and buggy inputs below...
+		 */
+	default:
+		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
+	}
+
 	dstate_setinfo("output.voltage", "%d", (int) (tab_reg[0] / 1000));
 
-	mrir(modbus_ctx, 29749, 5, tab_reg);
+	switch (UPSModel)
+	{
+	case QUINT4_UPS:
+		mrir(modbus_ctx, 0x200F, 1, tab_reg);
+		break;
+	case QUINT_UPS:
+		mrir(modbus_ctx, 29749, 5, tab_reg);
+		break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+                /* All enum cases defined as of the time of coding
+                 * have been covered above. Handle later definitions,
+                 * memory corruptions and buggy inputs below...
+		 */
+	default:
+		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
+	}
+
 	dstate_setinfo("battery.charge", "%d", tab_reg[0]);
 	/* dstate_setinfo("battery.runtime",tab_reg[1]*60); */ /* also reported on this address, but less accurately */
 
-	mrir(modbus_ctx, 29792, 10, tab_reg);
+	switch (UPSModel)
+	{
+	case QUINT4_UPS:
+		mrir(modbus_ctx, 0x200A, 1, &battery_voltage);
+		tab_reg[0] = battery_voltage;
+
+		mrir(modbus_ctx, 0x200D, 1, &battery_temperature);
+		tab_reg[1] = battery_temperature;
+
+		mrir(modbus_ctx, 0x2010, 1, &battery_runtime);
+		tab_reg[3] = battery_runtime;
+
+		mrir(modbus_ctx, 0x4211, 1, &battery_capacity);
+		tab_reg[8] = battery_capacity;
+
+		mrir(modbus_ctx, 0x2007, 1, &output_current);
+		tab_reg[6] = output_current;
+
+		break;
+	case QUINT_UPS:
+		mrir(modbus_ctx, 29792, 10, tab_reg);
+		break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+                /* All enum cases defined as of the time of coding
+                 * have been covered above. Handle later definitions,
+                 * memory corruptions and buggy inputs below...
+		 */
+	default:
+		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
+	}
+
 	dstate_setinfo("battery.voltage", "%f", (double) (tab_reg[0]) / 1000.0);
 	dstate_setinfo("battery.temperature", "%d", tab_reg[1] - 273);
 	dstate_setinfo("battery.runtime", "%d", tab_reg[3]);
@@ -95,31 +302,106 @@ void upsdrv_updateinfo(void)
 	dstate_setinfo("output.current", "%f", (double) (tab_reg[6]) / 1000.0);
 
 	/* ALARMS */
-	mrir(modbus_ctx, 29840, 1, tab_reg);
+
 	alarm_init();
-	if (CHECK_BIT(tab_reg[0], 4) && CHECK_BIT(tab_reg[0], 5))
-		alarm_set("End of life (Resistance)");
-	if (CHECK_BIT(tab_reg[0], 6))
-		alarm_set("End of life (Time)");
-	if (CHECK_BIT(tab_reg[0], 7))
-		alarm_set("End of life (Voltage)");
-	if (CHECK_BIT(tab_reg[0], 9))
-		alarm_set("No Battery");
-	if (CHECK_BIT(tab_reg[0], 10))
-		alarm_set("Inconsistent technology");
-	if (CHECK_BIT(tab_reg[0], 11))
-		alarm_set("Overload Cutoff");
-	/* We don't use those low-battery indicators below.
-	 * No info or configuration exists for those alarm low-bat
-	 */
-	if (CHECK_BIT(tab_reg[0], 12))
-		alarm_set("Low Battery (Voltage)");
-	if (CHECK_BIT(tab_reg[0], 13))
-		alarm_set("Low Battery (Charge)");
-	if (CHECK_BIT(tab_reg[0], 14))
-		alarm_set("Low Battery (Time)");
-	if (CHECK_BIT(tab_reg[0], 16))
-		alarm_set("Low Battery (Service)");
+
+	switch (UPSModel)
+	{
+	case QUINT4_UPS:
+		tab_reg[0] = 0;
+		actual_alarms = 0;
+		actual_alarms1 = 0;
+
+		mrir(modbus_ctx, 0x3000, 1, &actual_alarms);
+		mrir(modbus_ctx, 0x3000, 1, &actual_alarms1);
+
+		if (CHECK_BIT(actual_alarms, 9) && CHECK_BIT(actual_alarms, 9))
+			alarm_set("End of life (Resistance)");
+
+		if (CHECK_BIT(actual_alarms1, 0))
+			alarm_set("End of life (Time)");
+
+		if (CHECK_BIT(actual_alarms, 10))
+			alarm_set("End of life (Voltage)");
+
+		if (CHECK_BIT(actual_alarms, 3))
+			alarm_set("No Battery");
+
+		if (CHECK_BIT(actual_alarms, 5))
+			alarm_set("Inconsistent technology");
+
+		if (CHECK_BIT(actual_alarms1, 8))
+			alarm_set("Overload Cutoff");
+
+		if (CHECK_BIT(actual_alarms1, 3))
+			alarm_set("Low Battery (Voltage)");
+
+		if (CHECK_BIT(actual_alarms1, 4))
+			alarm_set("Low Battery (Charge)");
+
+		if (CHECK_BIT(actual_alarms1, 5))
+			alarm_set("Low Battery (Time)");
+
+		if (CHECK_BIT(actual_alarms1, 14))
+			alarm_set("Low Battery (Service)");
+
+		break;
+	case QUINT_UPS:
+		mrir(modbus_ctx, 29840, 1, tab_reg);
+
+		if (CHECK_BIT(tab_reg[0], 4) && CHECK_BIT(tab_reg[0], 5))
+			alarm_set("End of life (Resistance)");
+		if (CHECK_BIT(tab_reg[0], 6))
+			alarm_set("End of life (Time)");
+		if (CHECK_BIT(tab_reg[0], 7))
+			alarm_set("End of life (Voltage)");
+		if (CHECK_BIT(tab_reg[0], 9))
+			alarm_set("No Battery");
+		if (CHECK_BIT(tab_reg[0], 10))
+			alarm_set("Inconsistent technology");
+		if (CHECK_BIT(tab_reg[0], 11))
+			alarm_set("Overload Cutoff");
+		/* We don't use those low-battery indicators below.
+		 * No info or configuration exists for those alarm low-bat
+		 */
+		if (CHECK_BIT(tab_reg[0], 12))
+			alarm_set("Low Battery (Voltage)");
+		if (CHECK_BIT(tab_reg[0], 13))
+			alarm_set("Low Battery (Charge)");
+		if (CHECK_BIT(tab_reg[0], 14))
+			alarm_set("Low Battery (Time)");
+		if (CHECK_BIT(tab_reg[0], 16))
+			alarm_set("Low Battery (Service)");
+		break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+                /* All enum cases defined as of the time of coding
+                 * have been covered above. Handle later definitions,
+                 * memory corruptions and buggy inputs below...
+		 */
+	default:
+		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
+	}
 
 	if (errcount == 0) {
 		alarm_commit();

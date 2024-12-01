@@ -5,8 +5,11 @@ This chapter will present the process of creating a new driver to support
 another device.
 
 Since NUT already supports many major power device protocols through
-several generic drivers (genericups, usbhid-ups, snmp-ups, blazer_* and
-nutdrv_qx), creation of new drivers has become rare.
+several generic drivers (`genericups`, `usbhid-ups`, `snmp-ups`, `blazer_*`
+and `nutdrv_qx`), creation of new drivers has become rare.
+
+NOTE: We have yet to unify modbus drivers under same umbrella like `nutdrv_qx`
+covering the Megatec Qx protocol family.
 
 So most of the time, this process will be limited to completing one of these
 generic drivers.
