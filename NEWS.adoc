@@ -210,6 +210,10 @@ https://github.com/networkupstools/nut/milestone/11
    or service unit methods or init script), to enable troubleshooting of LibUSB
    itself. [issue #2616]
 
+ - USB drivers should now not log "insufficient permissions on everything" alone
+   when some devices were accessible but just did not match -- clarify that case
+   in the next line, when applicable. [PR #2699]
+
  - Introduced a new driver concept for interaction with OS-reported hardware
    monitoring readings. Currently instantiated as `hwmon_ina219` specifically
    made for Texas Instruments INA219 chip as exposed in the Linux "hwmon"
@@ -374,6 +378,9 @@ during a NUT build.
 
  - added `scripts/valgrind` with a helper script and suppression file to
    ignore common third-party problems. [#2511]
+
+ - when drivers dump collected data (during troubleshooting), flush `stdout`
+   buffer immediately for sane logging (especially on Windows). [PR #2699]
 
  - revised `nut.exe` (the NUT for Windows wrapper for all-in-one service)
    to be more helpful with command-line use (report that it failed to start

@@ -1143,6 +1143,63 @@ or access something outside their scope will throw a warning or even
 fail to compile in some cases.  This is what we want.
 
 
+Switch case vs. default vs. enum
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+NUT codebase often uses the `switch/case/case.../default` construct to handle
+conditional situations expressed by discrete numeric values (the `case value:`
+labels). Different compilers and their different warning settings require
+different rules to be satisfied, and those are sometimes at odds:
+
+* a `switch` should definitively handle all cases, so must have a `default`
+  label -- this works well for general numeric variables;
+* an `enum`'s valid values are known at compile time, and each must be handled
+  explicitly (even if implemented as many `case value:` labels preceding the
+  same code block), so...
+* ...a `default` label is redundant (should never be reachable) in a `switch`
+  that handles all `enum` values -- but this notion is a head-on crash vs. the
+  first rule above.
+
+Ultimately, some cases require the wall of `pragma` directives below against
+warnings at this spot, and we use the `default` label handling to be sure,
+as the least-worst solution (ultra-long lines wrapped for readability in this
+document):
+
+----
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) \
+ && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) \
+   || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+                /* All enum cases defined as of the time of coding
+                 * have been covered above. Handle later definitions,
+                 * memory corruptions and buggy inputs below...
+                 */
+                default:
+                        fatalx(EXIT_FAILURE, "no suitable definition found!");
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) \
+ && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) \
+   || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
+----
+
+
 Switch case fall-through
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
