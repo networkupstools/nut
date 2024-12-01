@@ -279,6 +279,9 @@ https://github.com/networkupstools/nut/milestone/11
    to have fixed a Segmentation Fault seen in earlier NUT releases with
    some of the devices supported by this driver. [#2427]
 
+ - phoenixcontact_modbus driver: Introduced Phoenix Contact QUINT4-UPS/24DC
+   management (only new modbus addresses). [#2689]
+
  - upsd:
    * `upsd_cleanup()` is now traced, to more easily see that the daemon is
      exiting (and/or start-up has aborted due to configuration or run-time
@@ -449,8 +452,6 @@ during a NUT build.
 
  - Introduced a simple experiment to expose NUT client readings as filesystem
    objects via FUSE, in `scripts/fuse/execfuse-nut` now. [#2591]
-
- - Introduced Phoenix Contact QUINT4-UPS/24DC management (only new modbus addresses). [#2689]
 
 
 Release notes for NUT 2.8.2 - what's new since 2.8.1
