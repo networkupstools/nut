@@ -882,9 +882,10 @@ static const char *eaton_input_eco_mode_check_range(double value)
         bypass_frequency_str ? bypass_frequency_str : "input.bypass.frequency = NULL",
         out_voltage_nominal_str ? out_voltage_nominal_str : "output.voltage.nominal = NULL",
         out_frequency_nominal_str ? out_frequency_nominal_str : "output.frequency.nominal = NULL");
-    /* Disable ECO mode switching */
+    /* Disable ECO mode switching, do not enter ECO mode */	
 	dstate_setinfo("input.eco.switchable", "normal");
-	return NULL; /* Do not enter ECO mode */
+	upsdebugx(1, "%s: Disable ECO mode due to missing input/output variables.", __func__);
+	return NULL;
 }
     /* In case we dont have ECO transfer limit variables but still have ability to enter Bypass/ECO modes,
 	 * will use default limits later in code.
@@ -947,9 +948,10 @@ static const char *eaton_input_eco_mode_check_range(double value)
         if (bypass_frequency < lower_frequency_limit || bypass_frequency > upper_frequency_limit) {
             upsdebugx(1, "Input Bypass frequency is outside ECO transfer limits: %.1f Hz", bypass_frequency);
         }
-        /* Disable ECO mode switching */
+        /* Disable ECO mode switching, do not enter ECO mode */
 	    dstate_setinfo("input.eco.switchable", "normal");
-	    return NULL; /* Do not enter ECO mode */
+		upsdebugx(1, "%s: Disable ECO mode due to input conditions being outside the transfer limits.", __func__);
+	    return NULL;
     }
 }
 
@@ -994,9 +996,10 @@ static const char *eaton_input_bypass_check_range(double value)
         bypass_frequency_str ? bypass_frequency_str : "input.bypass.frequency = NULL",
         out_voltage_nominal_str ? out_voltage_nominal_str : "output.voltage.nominal = NULL",
         out_frequency_nominal_str ? out_frequency_nominal_str : "output.frequency.nominal = NULL");
-    /* Disable Bypass mode switching */
+    /* Disable Bypass mode switching, do not enter Bypass mode */
 	dstate_setinfo("input.bypass.switch.on", "disabled");
-    return NULL; /* Do not enter Bypass mode */
+	upsdebugx(1, "%s: Disable Bypass mode due to missing input/output variables.", __func__);
+    return NULL;
 }
     /* In case we dont have Bypass transfer limit variables but still have ability to enter Bypass mode */
 	if (bypass_low_transfer_str == NULL || bypass_high_transfer_str == NULL
@@ -1056,9 +1059,10 @@ static const char *eaton_input_bypass_check_range(double value)
         if (bypass_frequency < lower_frequency_limit || bypass_frequency > upper_frequency_limit) {
             upsdebugx(1, "Input Bypass frequency is outside Bypass transfer limits: %.1f Hz", bypass_frequency);
         }
-		/* Disable Bypass mode switching */
+		/* Disable Bypass mode switching, do not enter Bypass mode */
 	    dstate_setinfo("input.bypass.switch.on", "disabled");
-        return NULL; /* Do not enter Bypass mode */
+		upsdebugx(1, "%s: Disable Bypass mode due to input conditions being outside the transfer limits.", __func__);
+        return NULL;
     }
 }
 
