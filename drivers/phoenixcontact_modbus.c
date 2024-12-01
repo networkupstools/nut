@@ -149,7 +149,6 @@ void upsdrv_updateinfo(void)
 		break;
 	default:
 		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
-		break;
 	}	
 
 	status_init();
@@ -177,7 +176,6 @@ void upsdrv_updateinfo(void)
 		break;
 	default:
 		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
-		break;
 	}
 
 	dstate_setinfo("output.voltage", "%d", (int) (tab_reg[0] / 1000));
@@ -192,7 +190,6 @@ void upsdrv_updateinfo(void)
 		break;
 	default:
 		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
-		break;
 	}
 
 	dstate_setinfo("battery.charge", "%d", tab_reg[0]);
@@ -222,7 +219,6 @@ void upsdrv_updateinfo(void)
 		break;
 	default:
 		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
-		break;
 	}
 
 	dstate_setinfo("battery.voltage", "%f", (double) (tab_reg[0]) / 1000.0);
@@ -305,7 +301,6 @@ void upsdrv_updateinfo(void)
 		break;
 	default:
 		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
-		break;
 	}
 
 	if (errcount == 0) {
