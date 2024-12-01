@@ -159,7 +159,6 @@ static char		mge_scratch_buf[20];
  * Synthesis table
  * HID data                                   |             Charger in ABM mode             | Charger in Constant mode | Error | Good |
  * UPS.BatterySystem.Charger.ABMEnable        |                      1                      |            0             |       |      |
- * UPS.BatterySystem.Charger.ChargerType      |                      4                      |            5             |       |      |
  * UPS.PowerSummary.PresentStatus.ACPresent   |           On utility          | On battery  | On utility | On battery  |       |      |
  * Charger ABM mode                           | Charging | Floating | Resting | Discharging | Disabled   | Disabled    |       |      |
  * UPS.BatterySystem.Charger.Mode             |     1    |    3     |   4     |      2      |     6      |    6        |       |      |
@@ -168,6 +167,7 @@ static char		mge_scratch_buf[20];
  * UPS.PowerSummary.PresentStatus.Discharging |     0    |    0     |   0     |      1      |     0      |    1        |       |      |
  *
  * Notes (from David G. Miller) to understand ABM status:
+ *
  * When supporting ABM, when a UPS powers up or returns from battery, or
  * ends the ABM rest mode, it enters charge mode.
  * Some UPSs run a different charger reference voltage during charge mode
@@ -191,7 +191,29 @@ static char		mge_scratch_buf[20];
  * reporting "off" in the ABM charger status.
  * Of course when delivering load power from the battery, the ABM status is
  * discharging.
- */
+ *
+ * UPS.BatterySystem.Charger.ChargerType:
+ *
+ * This HID path has been seen to denote the charger type of the UPS.
+ * At present it is unclear whether deductions about ABM being enabled
+ * should be made from it, even though it seems to be changing when a
+ * UPS that is ABM-capable is manually enabling and disabling its ABM.
+ * For example, the Eaton 5P850I has been seen with a ChargerType of 0
+ * when having ABM disabled, and ChargerType of 4 when ABM was enabled.
+ * According to the known values, however, the ChargerType should have
+ * either remained the same (if only to display general charger ability)
+ * or changed to ChargerType of 5 (for constant charge mode) - and not 0:
+ *
+ * { 0, "None", NULL, NULL },
+ * { 1, "Extended (CLA)", NULL, NULL },
+ * { 2, "Large extension", NULL, NULL },
+ * { 3, "Extra large extension (XL)", NULL, NULL },
+ * { 4, "ABM", NULL, NULL },
+ * { 5, "Constant Charge (CC)", NULL, NULL },
+ *
+ * For this reason, ABM being enabled remains controlled only through the
+ * one HID path known to be consistent: UPS.BatterySystem.Charger.ABMEnable
+*/
 
 #define			ABM_UNKNOWN     -1
 #define			ABM_DISABLED     0
@@ -267,7 +289,7 @@ static const char *eaton_abm_path_mode_fun(double value)
 	int abm_path_mode_value = (int)value;
 
 	/* If unknown/disabled ABM, reset ABM path to give UPS a chance to use another once re-enabled */
-	if(advanced_battery_monitoring == ABM_UNKNOWN || advanced_battery_monitoring == ABM_DISABLED) {
+	if (advanced_battery_monitoring == ABM_UNKNOWN || advanced_battery_monitoring == ABM_DISABLED) {
 		advanced_battery_path = ABM_PATH_UNKNOWN;
 		return NULL;
 	}
@@ -294,7 +316,7 @@ static const char *eaton_abm_path_status_fun(double value)
 	int abm_path_status_value = (int)value;
 
 	/* If unknown/disabled ABM, reset ABM path to give UPS a chance to use another once re-enabled */
-	if(advanced_battery_monitoring == ABM_UNKNOWN || advanced_battery_monitoring == ABM_DISABLED) {
+	if (advanced_battery_monitoring == ABM_UNKNOWN || advanced_battery_monitoring == ABM_DISABLED) {
 		advanced_battery_path = ABM_PATH_UNKNOWN;
 		return NULL;
 	}
@@ -2026,7 +2048,7 @@ static char *get_model_name(const char *iProduct, const char *iModel)
 
 	/* Search for device type and formatting rules */
 	for (model = mge_model_names; model->iProduct; model++) {
-		if(model->name) {
+		if (model->name) {
 			upsdebugx(2, "comparing with: %s", model->name);
 		}
 		else {
