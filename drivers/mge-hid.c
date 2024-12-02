@@ -905,7 +905,7 @@ static const char *eaton_input_eco_mode_check_range(double value)
 			bypass_frequency_str ? bypass_frequency_str : "input.bypass.frequency = NULL",
 			out_voltage_nominal_str ? out_voltage_nominal_str : "output.voltage.nominal = NULL",
 			out_frequency_nominal_str ? out_frequency_nominal_str : "output.frequency.nominal = NULL");
-		/* Disable ECO mode switching, do not enter ECO mode */	
+		/* Disable ECO mode switching, do not enter ECO mode */
 		dstate_setinfo("input.eco.switchable", "normal");
 		upsdebugx(1, "%s: Disable ECO mode due to missing input/output variables.", __func__);
 		return NULL;
