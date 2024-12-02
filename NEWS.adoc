@@ -71,6 +71,12 @@ https://github.com/networkupstools/nut/milestone/11
      a `*_s()` variant was available was not handled correctly. [PR #2583]
    * A recently introduced `allow_killpower` did not actually work as an
      `ups.conf` flag (only as a protocol command). [issue #2605, PR #2606]
+   * The ability of two copies of the driver program to talk to each other
+     with `upsdrvquery.c` code was not complete for the case of indefinite
+     `select()` wait timeout. Now `upsdrvquery_read_timeout()` fixed private
+     use of `struct timeval={-1,-1}` as a trigger to `select(..., NULL)`,
+     as logged in one part of code and not handled in the other, for the
+     indefinite wait [#1922, #2392, #2686, #2670]
 
  - development iterations of NUT should now identify with not only the semantic
    version of a preceding release, but with git-derived information about the

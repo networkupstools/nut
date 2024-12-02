@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3247 utf-8
+personal_ws-1.1 en 3249 utf-8
 AAC
 AAS
 ABI
@@ -2977,6 +2977,7 @@ timehead
 timername
 timestamp
 timeticks
+timeval
 tios
 tmp
 tmpfiles
@@ -3075,6 +3076,7 @@ upsdebugx
 upsdev
 upsdrv
 upsdrvctl
+upsdrvquery
 upsdrvsvcctl
 upserror
 upsfetch
