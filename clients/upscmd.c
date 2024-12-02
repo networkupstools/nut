@@ -195,6 +195,9 @@ static void do_cmd(char **argv, const int argc)
 	) {
 		/* reply as usual */
 		fprintf(stderr, "%s\n", buf);
+		upsdebugx(1, "%s: 'OK' only means the NUT data server accepted the request as valid, "
+			"but as we did not wait for result, we do not know if it was handled in fact.",
+			__func__);
 		return;
 	}
 
