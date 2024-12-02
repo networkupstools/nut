@@ -900,11 +900,17 @@ static const char *eaton_input_eco_mode_check_range(double value)
 	if (bypass_voltage_str == NULL || bypass_frequency_str == NULL
 	 || out_voltage_nominal_str == NULL || out_frequency_nominal_str == NULL
 	) {
-		upsdebugx(1, "Failed to get values: %s, %s, %s, %s",
-			bypass_voltage_str ? bypass_voltage_str : "input.bypass.voltage = NULL",
-			bypass_frequency_str ? bypass_frequency_str : "input.bypass.frequency = NULL",
-			out_voltage_nominal_str ? out_voltage_nominal_str : "output.voltage.nominal = NULL",
-			out_frequency_nominal_str ? out_frequency_nominal_str : "output.frequency.nominal = NULL");
+		upsdebugx(2, "%s: Failed to get values: "
+			"input.bypass.voltage = %s, "
+			"input.bypass.frequency = %s, "
+			"output.voltage.nominal = %s, "
+			"output.frequency.nominal = %s",
+			__func__,
+			NUT_STRARG(bypass_voltage_str),
+			NUT_STRARG(bypass_frequency_str),
+			NUT_STRARG(out_voltage_nominal_str),
+			NUT_STRARG(out_frequency_nominal_str));
+
 		/* Disable ECO mode switching, do not enter ECO mode */
 		dstate_setinfo("input.eco.switchable", "normal");
 		upsdebugx(1, "%s: Disable ECO mode due to missing input/output variables.", __func__);
@@ -918,11 +924,15 @@ static const char *eaton_input_eco_mode_check_range(double value)
 	if (eco_low_transfer_str == NULL || eco_high_transfer_str == NULL
 	 || frequency_range_transfer_str == NULL
 	) {
-		upsdebugx(1, "Failed to get values: %s, %s, %s",
-			eco_low_transfer_str ? eco_low_transfer_str : "input.transfer.eco.low = NULL",
-			eco_high_transfer_str ? eco_high_transfer_str : "input.transfer.eco.high = NULL",
-			frequency_range_transfer_str ? frequency_range_transfer_str : "input.transfer.frequency.eco.range = NULL");
-		/* Not return NULL, We will use default values for limits */
+		upsdebugx(2, "%s: Failed to get values: "
+			"input.transfer.eco.low = %s, "
+			"input.transfer.eco.high = %s, "
+			"input.transfer.frequency.eco.range = %s",
+			__func__,
+			NUT_STRARG(eco_low_transfer_str),
+			NUT_STRARG(eco_high_transfer_str),
+			NUT_STRARG(frequency_range_transfer_str));
+		/* Do not return NULL here, we will use default values for limits */
 	}
 
 	str_to_double(bypass_voltage_str, &bypass_voltage, 10);
@@ -1017,11 +1027,17 @@ static const char *eaton_input_bypass_check_range(double value)
 	if (bypass_voltage_str == NULL || bypass_frequency_str == NULL
 	 || out_voltage_nominal_str == NULL || out_frequency_nominal_str == NULL
 	) {
-		upsdebugx(1, "Failed to get values: %s, %s, %s, %s",
-			bypass_voltage_str ? bypass_voltage_str : "input.bypass.voltage = NULL",
-			bypass_frequency_str ? bypass_frequency_str : "input.bypass.frequency = NULL",
-			out_voltage_nominal_str ? out_voltage_nominal_str : "output.voltage.nominal = NULL",
-			out_frequency_nominal_str ? out_frequency_nominal_str : "output.frequency.nominal = NULL");
+		upsdebugx(2, "%s: Failed to get values: "
+			"input.bypass.voltage = %s, "
+			"input.bypass.frequency = %s, "
+			"output.voltage.nominal = %s, "
+			"output.frequency.nominal = %s",
+			__func__,
+			NUT_STRARG(bypass_voltage_str),
+			NUT_STRARG(bypass_frequency_str),
+			NUT_STRARG(out_voltage_nominal_str),
+			NUT_STRARG(out_frequency_nominal_str));
+
 		/* Disable Bypass mode switching, do not enter Bypass mode */
 		dstate_setinfo("input.bypass.switch.on", "disabled");
 		upsdebugx(1, "%s: Disable Bypass mode due to missing input/output variables.", __func__);
@@ -1032,11 +1048,15 @@ static const char *eaton_input_bypass_check_range(double value)
 	if (bypass_low_transfer_str == NULL || bypass_high_transfer_str == NULL
 	 || frequency_range_transfer_str == NULL
 	) {
-		upsdebugx(1, "Failed to get values: %s, %s, %s",
-			bypass_low_transfer_str ? bypass_low_transfer_str : "input.transfer.bypass.low = NULL",
-			bypass_high_transfer_str ? bypass_high_transfer_str : "input.transfer.bypass.high = NULL",
-			frequency_range_transfer_str ? frequency_range_transfer_str : "input.transfer.frequency.bypass.range = NULL");
-		/* Not return NULL, We will use default values for limits */
+		upsdebugx(2, "%s: Failed to get values: "
+			"input.transfer.bypass.low = %s, "
+			"input.transfer.bypass.high = %s, "
+			"input.transfer.frequency.bypass.range = %s",
+			__func__,
+			NUT_STRARG(bypass_low_transfer_str),
+			NUT_STRARG(bypass_high_transfer_str),
+			NUT_STRARG(frequency_range_transfer_str));
+		/* Do not return NULL here, we will use default values for limits */
 	}
 
 	str_to_double(bypass_voltage_str, &bypass_voltage, 10);
