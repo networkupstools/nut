@@ -227,10 +227,10 @@ static char		mge_scratch_buf[20];
 #define			ABM_PATH_MODE      1
 
 /* Internal flag to process battery status (CHRG/DISCHRG) and ABM */
-static int advanced_battery_monitoring = ABM_UNKNOWN;
+static int	advanced_battery_monitoring = ABM_UNKNOWN;
 
 /* Internal flag to process the different ABM paths as seen in HID */
-static int advanced_battery_path = ABM_PATH_UNKNOWN;
+static int	advanced_battery_path = ABM_PATH_UNKNOWN;
 
 /* TODO: Lifted from strptime.c... maybe should externalize the fallback?
  * NOTE: HAVE_DECL_* are always defined, 0 or 1. Many other flags are not.
@@ -242,7 +242,7 @@ static long round (double value)
 static long round (LDOUBLE value)
 # endif
 {
-	long intpart;
+	long	intpart;
 
 	intpart = (long)value;
 	value = value - intpart;
@@ -256,7 +256,7 @@ static long round (LDOUBLE value)
 /* Used to store internally if ABM is enabled or not */
 static const char *eaton_abm_enabled_fun(double value)
 {
-	int abm_enabled_value = (int)value;
+	int	abm_enabled_value = (int)value;
 
 	switch (abm_enabled_value)
 	{
@@ -286,7 +286,7 @@ static info_lkp_t eaton_abm_enabled_info[] = {
 /* ABM Path: UPS.BatterySystem.Charger.Mode (battery.charger.mode.status) */
 static const char *eaton_abm_path_mode_fun(double value)
 {
-	int abm_path_mode_value = (int)value;
+	int	abm_path_mode_value = (int)value;
 
 	/* If unknown/disabled ABM, reset ABM path to give UPS a chance to use another once re-enabled */
 	if (advanced_battery_monitoring == ABM_UNKNOWN || advanced_battery_monitoring == ABM_DISABLED) {
@@ -313,7 +313,7 @@ static info_lkp_t eaton_abm_path_mode_info[] = {
 /* ABM Path: UPS.BatterySystem.Charger.Status (battery.charger.type.status) */
 static const char *eaton_abm_path_status_fun(double value)
 {
-	int abm_path_status_value = (int)value;
+	int	abm_path_status_value = (int)value;
 
 	/* If unknown/disabled ABM, reset ABM path to give UPS a chance to use another once re-enabled */
 	if (advanced_battery_monitoring == ABM_UNKNOWN || advanced_battery_monitoring == ABM_DISABLED) {
@@ -359,7 +359,7 @@ static info_lkp_t eaton_abm_enabled_legacy_info[] = {
 /* Used to process ABM status text (for battery.charger.status) */
 static const char *eaton_abm_status_fun(double value)
 {
-	int abm_status_value = (int)value;
+	int	abm_status_value = (int)value;
 
 	/* Don't process if ABM is unknown or disabled */
 	if (advanced_battery_monitoring == ABM_UNKNOWN || advanced_battery_monitoring == ABM_DISABLED) {
@@ -447,7 +447,7 @@ static info_lkp_t eaton_charger_type_info[] = {
 /* Used to process ABM status flags, for ups.status (CHRG/DISCHRG) */
 static const char *eaton_abm_chrg_dischrg_fun(double value)
 {
-	int abm_chrg_dischrg_value = (int)value;
+	int	abm_chrg_dischrg_value = (int)value;
 
 	/* Don't process if ABM is unknown or disabled */
 	if (advanced_battery_monitoring == ABM_UNKNOWN || advanced_battery_monitoring == ABM_DISABLED)
@@ -586,7 +586,7 @@ static const char *mge_date_conversion_fun(double value)
 
 static const char *mge_time_conversion_fun(double value)
 {
-	time_t sec = value;
+	time_t	sec = value;
 	struct tm	tmbuf;
 
 	if (strftime(mge_scratch_buf, sizeof(mge_scratch_buf), "%H:%M:%S", localtime_r(&sec, &tmbuf)) == 8) {
@@ -874,24 +874,24 @@ static info_lkp_t outlet_eco_yes_no_info[] = {
 /* Function to check if the current High Efficiency (aka ECO) mode voltage/frequency is within the configured limits */
 static const char *eaton_input_eco_mode_check_range(double value)
 {
-	double bypass_voltage;
-	double eco_low;
-	double eco_high;
-	double out_nominal;
-	double out_frequency_nominal;
-	double bypass_frequency;
-	double frequency_range;
-	double lower_frequency_limit;
-	double upper_frequency_limit;
+	double	bypass_voltage;
+	double	eco_low;
+	double	eco_high;
+	double	out_nominal;
+	double	out_frequency_nominal;
+	double	bypass_frequency;
+	double	frequency_range;
+	double	lower_frequency_limit;
+	double	upper_frequency_limit;
 
 	/* Get the Eco mode voltage/frequency and transfer points */
-	const char* bypass_voltage_str = dstate_getinfo("input.bypass.voltage");
-	const char* eco_low_str = dstate_getinfo("input.transfer.eco.low");
-	const char* eco_high_str = dstate_getinfo("input.transfer.eco.high");
-	const char* out_nominal_str = dstate_getinfo("output.voltage.nominal");
-	const char* out_nominal_frequency_str = dstate_getinfo("output.frequency.nominal");
-	const char* frequency_range_str = dstate_getinfo("input.transfer.frequency.eco.range");
-	const char* bypass_frequency_str = dstate_getinfo("input.bypass.frequency");
+	const char	*bypass_voltage_str = dstate_getinfo("input.bypass.voltage");
+	const char	*eco_low_str = dstate_getinfo("input.transfer.eco.low");
+	const char	*eco_high_str = dstate_getinfo("input.transfer.eco.high");
+	const char	*out_nominal_str = dstate_getinfo("output.voltage.nominal");
+	const char	*out_nominal_frequency_str = dstate_getinfo("output.frequency.nominal");
+	const char	*frequency_range_str = dstate_getinfo("input.transfer.frequency.eco.range");
+	const char	*bypass_frequency_str = dstate_getinfo("input.bypass.frequency");
 
 	NUT_UNUSED_VARIABLE(value);
 
@@ -917,9 +917,9 @@ static const char *eaton_input_eco_mode_check_range(double value)
 	str_to_double(bypass_frequency_str, &bypass_frequency, 10);
 
 	/* Default values if user-defined limits are not available or out of range
-	   5% below nominal output voltage
-	   5% above nominal output voltage
-	   5% below/above output frequency nominal
+	 * 5% below nominal output voltage
+	 * 5% above nominal output voltage
+	 * 5% below/above output frequency nominal
 	 */
 
 	/* Set the frequency limit */
@@ -960,25 +960,25 @@ static info_lkp_t eaton_input_mode_info[] = {
 /* Function to check if the current bypass voltage/frequency is within the configured limits */
 static const char *eaton_input_bypass_check_range(double value)
 {
-	double bypass_voltage;
-	double bypass_low;
-	double bypass_high;
-	double out_nominal;
-	double bypass_frequency;
-	double frequency_range;
-	double lower_frequency_limit;
-	double upper_frequency_limit;
-	double out_frequency_nominal;
+	double	bypass_voltage;
+	double	bypass_low;
+	double	bypass_high;
+	double	out_nominal;
+	double	bypass_frequency;
+	double	frequency_range;
+	double	lower_frequency_limit;
+	double	upper_frequency_limit;
+	double	out_frequency_nominal;
 
 
 	/* Get the bypass voltage/frequency and transfer points */
-	const char* bypass_voltage_str = dstate_getinfo("input.bypass.voltage");
-	const char* bypass_low_str = dstate_getinfo("input.transfer.bypass.low");
-	const char* bypass_high_str = dstate_getinfo("input.transfer.bypass.high");
-	const char* out_nominal_str = dstate_getinfo("output.voltage.nominal");
-	const char* bypass_frequency_str = dstate_getinfo("input.bypass.frequency");
-	const char* frequency_range_str = dstate_getinfo("input.transfer.frequency.bypass.range");
-	const char* out_nominal_frequency_str = dstate_getinfo("output.frequency.nominal");
+	const char	*bypass_voltage_str = dstate_getinfo("input.bypass.voltage");
+	const char	*bypass_low_str = dstate_getinfo("input.transfer.bypass.low");
+	const char	*bypass_high_str = dstate_getinfo("input.transfer.bypass.high");
+	const char	*out_nominal_str = dstate_getinfo("output.voltage.nominal");
+	const char	*bypass_frequency_str = dstate_getinfo("input.bypass.frequency");
+	const char	*frequency_range_str = dstate_getinfo("input.transfer.frequency.bypass.range");
+	const char	*out_nominal_frequency_str = dstate_getinfo("output.frequency.nominal");
 
 	NUT_UNUSED_VARIABLE(value);
 
@@ -1002,9 +1002,9 @@ static const char *eaton_input_bypass_check_range(double value)
 	str_to_double(out_nominal_frequency_str, &out_frequency_nominal, 10);
 
 	/* Default values if user-defined limits are not available or out of range
-	   20% below nominal output voltage
-	   15% above nominal output voltage
-	   10% below/above output frequency nominal
+	 * 20% below nominal output voltage
+	 * 15% above nominal output voltage
+	 * 10% below/above output frequency nominal
 	 */
 
 	/* Set the frequency limit */
@@ -1095,7 +1095,8 @@ static info_lkp_t eaton_input_eco_mode_auto_on_info[] = {
 /* Determine country using UPS.PowerSummary.Country.
  * If not present:
  * 		if PowerConverter.Output.Voltage >= 200 => "Europe"
- * 		else default to "US" */
+ * 		else default to "US"
+ */
 static const char *eaton_check_country_fun(double value)
 {
 	country_code = value;
@@ -1112,13 +1113,13 @@ static info_lkp_t eaton_check_country_info[] = {
  * compute a realpower approximation using available data */
 static const char *eaton_compute_realpower_fun(double value)
 {
-	const char *str_ups_load = dstate_getinfo("ups.load");
-	const char *str_power_nominal = dstate_getinfo("ups.power.nominal");
-	const char *str_powerfactor = dstate_getinfo("output.powerfactor");
-	float powerfactor = 0.80;
-	int power_nominal = 0;
-	int ups_load = 0;
-	double realpower = 0;
+	const char	*str_ups_load = dstate_getinfo("ups.load");
+	const char	*str_power_nominal = dstate_getinfo("ups.power.nominal");
+	const char	*str_powerfactor = dstate_getinfo("output.powerfactor");
+	float	powerfactor = 0.80;
+	int	power_nominal = 0;
+	int	ups_load = 0;
+	double	realpower = 0;
 	NUT_UNUSED_VARIABLE(value);
 
 	if (str_power_nominal && str_ups_load) {
@@ -1254,7 +1255,7 @@ static info_lkp_t nominal_output_voltage_info[] = {
 /* Limit reporting "online / !online" to when "!off" */
 static const char *eaton_converter_online_fun(double value)
 {
-	unsigned ups_status = ups_status_get();
+	unsigned	ups_status = ups_status_get();
 
 	if (ups_status & STATUS(OFF))
 		return NULL;
@@ -1593,7 +1594,7 @@ static models_name_t mge_model_names [] =
 	/* Eaton 9SX series per discussions in
 	 * https://github.com/networkupstools/nut/issues/2685
 	 * https://www.eaton.com/gb/en-gb/site-search.html.searchTerm$9sx.tabs$all.html
-     */
+	 */
 	{ "Eaton 9SX", "700i", EATON_9E, "9SX700i" },
 	{ "Eaton 9SX", "1000i", EATON_9E, "9SX1000i" },
 	{ "Eaton 9SX", "1000im", EATON_9E, "9SX1000im" },
@@ -1608,8 +1609,8 @@ static models_name_t mge_model_names [] =
 
 	/* Eaton 9PX series
 	 * https://www.eaton.com/gb/en-gb/site-search.html.searchTerm$9px.tabs$all.html
-     */
-    { "Eaton 9PX", "1000irt2u", EATON_9E, "9px1000irt2u" },
+	 */
+	{ "Eaton 9PX", "1000irt2u", EATON_9E, "9px1000irt2u" },
 	{ "Eaton 9PX", "1500irt2u", EATON_9E, "9px1500irt2u" },
 	{ "Eaton 9PX", "1500irtm", EATON_9E, "9px1500irtm" },
 	{ "Eaton 9PX", "2200irt2u", EATON_9E, "9px2200irt2u" },
@@ -1991,8 +1992,8 @@ static hid_info_t mge_hid2nut[] =
 
 	/* instant commands. */
 	/* splited into subset while waiting for extradata support
-	* ie: test.battery.start quick
-	*/
+	 * ie: test.battery.start quick
+	 */
 	{ "test.battery.start.quick", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "1", HU_TYPE_CMD, NULL },
 	{ "test.battery.start.deep", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "2", HU_TYPE_CMD, NULL },
 	{ "test.battery.stop", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "3", HU_TYPE_CMD, NULL },
@@ -2081,7 +2082,7 @@ static char *get_model_name(const char *iProduct, const char *iModel)
 #pragma GCC diagnostic ignored "-Wformat-truncation"
 #endif
 		/* NOTE: We intentionally limit the amount of bytes reported */
-		int len = snprintf(buf, sizeof(buf), "%s %s", iProduct, iModel);
+		int	len = snprintf(buf, sizeof(buf), "%s %s", iProduct, iModel);
 
 		if (len < 0) {
 			upsdebugx(1, "%s: got an error while extracting iProduct+iModel value", __func__);
@@ -2149,7 +2150,7 @@ static int mge_claim(HIDDevice_t *hd) {
 	NUT_UNUSED_VARIABLE(hd);
 	return 1;
 #else	/* !SHUT_MODE => USB */
-	int status = is_usb_device_supported(mge_usb_device_table, hd);
+	int	status = is_usb_device_supported(mge_usb_device_table, hd);
 
 	switch (status) {
 
