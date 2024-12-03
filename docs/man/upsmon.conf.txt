@@ -284,6 +284,12 @@ ALARM;; UPS has one or more active alarms (check ups.alarm)
 
 NOTALARM;; UPS is no longer in an alarm state (no active alarms)
 
+OTHER;; UPS has at least one unclassified `ups.status` token;
+for this notification, the `message` can contain a second `%s` placeholder
+to substitute the current collection of such tokens.
+
+NOTOTHER;; UPS has no unclassified status tokens anymore
+
 SUSPEND_STARTING;; OS is entering sleep/suspend/hibernate mode
 
 SUSPEND_FINISHED;; OS just finished sleep/suspend/hibernate mode,

@@ -337,6 +337,14 @@ POWERDOWNFLAG "@POWERDOWNFLAG@"
 # NOTIFYMSG ALARM	"UPS %s: one or more active alarms (check ups.alarm)"
 # NOTIFYMSG NOTALARM	"UPS %s is no longer in an alarm state (no active alarms)"
 #
+# Special handling is provided for surprise tokens seen in ups.status, which
+# are not in the standard NUT dictionary (but some drivers are known to use);
+# note that unlike other formatting strings, the "OTHER" one has two string
+# placeholders "%s" (it is safe to use one, leaving just the UPS name, or none):
+#
+# NOTIFYMSG OTHER	"UPS %s: has at least one unclassified status token: [%s]"
+# NOTIFYMSG NOTOTHER	"UPS %s has no unclassified status tokens anymore"
+#
 # A few messages not directly related to UPS events are also available:
 #
 # NOTIFYMSG SUSPEND_STARTING	"OS is entering sleep/suspend/hibernate mode"

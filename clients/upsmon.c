@@ -1728,6 +1728,7 @@ static void addups(int reloading, const char *sys, const char *pvs,
 
 	tmp->pw = xstrdup(pw);
 	tmp->status = 0;
+	tmp->status_tokens = NULL;
 	tmp->retain = 1;
 
 	/* ignore initial COMMOK and ONLINE by default */
@@ -2465,8 +2466,9 @@ static int try_connect(utype_t *ups)
 /* deal with the contents of STATUS or ups.status for this ups */
 static void parse_status(utype_t *ups, char *status)
 {
-	char	*statword, *ptr;
-	int	handled_stat_words = 0;
+	char	*statword, *ptr, other_stat_words[SMALLBUF];
+	int	handled_stat_words = 0, changed_other_stat_words = 0;
+	st_tree_timespec_t	st_start;
 
 	clear_alarm();
 
@@ -2499,6 +2501,9 @@ static void parse_status(utype_t *ups, char *status)
 		ups_is_notalarm(ups);
 
 	statword = status;
+	/* Track what status tokens we no longer see */
+	state_get_timestamp(&st_start);
+	other_stat_words[0] = '\0';
 
 	/* split up the status words and parse each one separately */
 	while (statword != NULL) {
@@ -2562,19 +2567,100 @@ static void parse_status(utype_t *ups, char *status)
 		 || !strcasecmp(statword, "TRIM")
 		 || !strcasecmp(statword, "BOOST")
 		) {
+			/* FIXME: Do we want these logged similar to OTHERs? */
 			upsdebugx(4, "Known and ignored status token: [%s]", statword);
 			handled++;
 		}
 
 		if (!handled) {
+			/* NOTE: Could just state_getinfo() but then
+			 *  to refresh the timestamp we'd need to walk
+			 *  it again. So replicating a bit of that code. */
+			st_tree_t	*sttmp = (ups->status_tokens ? state_tree_find(ups->status_tokens, statword) : NULL);
+
 			/* Driver reported something non-standard? */
-			upsdebugx(1, "WARNING: Unexpected status token: [%s]", statword);
-			/* FIXME: Define a notification type like "OTHER" to report the un-handled status */
+			upsdebugx(4, "Unexpected status token: [%s]", statword);
+
+			snprintfcat(other_stat_words,
+				sizeof(other_stat_words), "%s%s",
+				*other_stat_words ? " " : "",
+				statword);
+
+			/* Part of our job is to update the timestamp,
+			 * so we can report which tokens disappeared
+			 * and eject them from the list.
+			 *
+			 * The recorded value currently does not matter.
+			 *
+			 * FIXME: Use the value as e.g. "0"/"1" and
+			 *  maybe the state->aux as counter, to track
+			 *  and report that the non-standard token
+			 *  was seen more than once?
+			 */
+			if (sttmp) {
+				/* Start from the discovered node to shortcut to
+				 * (static) st_tree_node_refresh_timestamp(sttmp)
+				 * and complete the info-setting quickly.
+				 */
+				state_setinfo(&sttmp, statword, "1");
+			} else {
+				/* This token was not seen last time => new state
+				 * Handle with a notification type "OTHER"
+				 * to report the new un-handled status. */
+				changed_other_stat_words++;
+				upsdebugx(5, "Unexpected status token: [%s]: appeared", statword);
+				state_setinfo(&(ups->status_tokens), statword, "1");
+			}
 		}
 
 		update_crittimer(ups);
 
 		statword = ptr;
+	}
+
+	if (ups->status_tokens) {
+		st_tree_t	*node = ups->status_tokens, *sttmp = node;
+
+		/* Scroll to the leftmost entry for alphanumeric sorted processing */
+		while (sttmp) {
+			node = sttmp;
+			sttmp = sttmp->left;
+		}
+
+		/* Go from left to right, on a freeing spree if need be */
+		while (node) {
+			sttmp = node->right;
+			if (st_tree_node_compare_timestamp(node, &st_start) < 0) {
+				upsdebugx(5, "Unexpected status token: [%s]: disappeared",
+					NUT_STRARG(node->var));
+				changed_other_stat_words++;
+
+				/* whatever is on the left, hang it off current right */
+				if (node->right) {
+					node->right->left = node->left;	/* May be NULL*/
+				}
+				/* whatever is on the right, hang it off current left */
+				if (node->left) {
+					node->left->right = node->right;	/* May be NULL*/
+				}
+				/* forget the neighbors before dropping the "tree" */
+				node->right = NULL;
+				node->left = NULL;
+
+				state_infofree(node);
+			}
+			node = sttmp;
+		}
+	}
+
+	if (changed_other_stat_words) {
+		if (*other_stat_words) {
+			do_notify(ups, NOTIFY_OTHER, other_stat_words);
+		} else {
+			do_notify(ups, NOTIFY_NOTOTHER, NULL);
+			state_infofree(ups->status_tokens);
+			ups->status_tokens = NULL;
+		}
 	}
 
 	upsdebugx(3, "Handled %d status tokens", handled_stat_words);

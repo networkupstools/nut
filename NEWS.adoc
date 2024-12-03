@@ -268,6 +268,9 @@ https://github.com/networkupstools/nut/milestone/11
    * revised internal `do_notify()` method to support formatting strings
      with two `%s` placeholders, to use if certain use-cases pass any extra
      information (e.g. not just "we have alarms" but their values too). [#415]
+   * introduced handling for "unknown" `ups.status` tokens, reporting them
+     as "OTHER" notification type (whenever the set of such tokens appears
+     or changes) or "NOTOTHER" when they disappear. [#415]
 
  - More systemd integration:
    * Introduced a `nut-sleep.service` unit which stops `nut.target` when a
