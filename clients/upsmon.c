@@ -377,7 +377,7 @@ static void notify(const char *notice, int flags, const char *ntype,
 #endif
 }
 
-static void do_notify(const utype_t *ups, int ntype)
+static void do_notify(const utype_t *ups, int ntype, const char *extra)
 {
 	int	i;
 	char	msg[SMALLBUF], *upsname = NULL;
@@ -388,6 +388,9 @@ static void do_notify(const utype_t *ups, int ntype)
 
 	for (i = 0; notifylist[i].name != NULL; i++) {
 		if (notifylist[i].type == ntype) {
+			const char	*msgfmt = (notifylist[i].msg ? notifylist[i].msg : notifylist[i].stockmsg);
+			char	*s = strstr(msgfmt, "%s");
+
 			upsdebugx(2, "%s: ntype 0x%04x (%s)", __func__, ntype,
 				notifylist[i].name);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
@@ -399,9 +402,33 @@ static void do_notify(const utype_t *ups, int ntype)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
-			snprintf(msg, sizeof(msg),
-				notifylist[i].msg ? notifylist[i].msg : notifylist[i].stockmsg,
-				ups ? ups->sys : "");
+			if (s) {
+				/* FIXME: Check user inputs to rule out
+				 *  any *OTHER* formatting characters.
+				 *  NOTE: Not addressing now, PR pending
+				 *  and queued for NUT v2.8.4 */
+
+				/* Got at least one "%s" */
+				if (strstr(s + 1, "%s")) {
+					/* Got a second "%s" */
+					/* FIXME: if (extra != NULL) and we
+					 *  only have one "%s", plaster another
+					 *  to "msgfmt" and follow this path?
+					 */
+					snprintf(msg, sizeof(msg),
+						msgfmt,
+						upsname ? upsname : "",
+						NUT_STRARG(extra));
+				} else {
+					snprintf(msg, sizeof(msg),
+						msgfmt,
+						upsname ? upsname : "");
+				}
+			} else {
+				/* No "%s" in this msgfmt! e.g. NOTIFY_NOPARENT,
+				 * SUSPEND_STARTING, SUSPEND_FINISHED ... */
+				snprintf(msg, sizeof(msg), "%s", msgfmt);
+			}
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
@@ -598,7 +625,7 @@ static void ups_is_alive(utype_t *ups)
 
 	/* only notify for 0->1 transitions (to ignore the first connect) */
 	if (ups->commstate == 0)
-		do_notify(ups, NOTIFY_COMMOK);
+		do_notify(ups, NOTIFY_COMMOK, NULL);
 
 	ups->commstate = 1;
 }
@@ -613,7 +640,7 @@ static void ups_is_gone(utype_t *ups)
 		ups->commstate = 0;
 
 		/* COMMBAD is the initial loss of communications */
-		do_notify(ups, NOTIFY_COMMBAD);
+		do_notify(ups, NOTIFY_COMMBAD, NULL);
 		return;
 	}
 
@@ -626,7 +653,7 @@ static void ups_is_gone(utype_t *ups)
 	/* now only complain if we haven't lately */
 	if ((now - ups->lastncwarn) > nocommwarntime) {
 		/* NOCOMM indicates a persistent condition */
-		do_notify(ups, NOTIFY_NOCOMM);
+		do_notify(ups, NOTIFY_NOCOMM, NULL);
 		ups->lastncwarn = now;
 	}
 }
@@ -673,7 +700,7 @@ static void ups_is_off(utype_t *ups)
 	upsdebugx(3, "%s: %s (first time)", __func__, ups->sys);
 
 	/* must have changed from !OFF to OFF, so notify */
-	do_notify(ups, NOTIFY_OFF);
+	do_notify(ups, NOTIFY_OFF, NULL);
 	setflag(&ups->status, ST_OFF);
 }
 
@@ -683,7 +710,7 @@ static void ups_is_notoff(utype_t *ups)
 	ups->offsince = 0;
 	ups->offstate = 0;
 	if (flag_isset(ups->status, ST_OFF)) {	/* actual change */
-		do_notify(ups, NOTIFY_NOTOFF);
+		do_notify(ups, NOTIFY_NOTOFF, NULL);
 		clearflag(&ups->status, ST_OFF);
 		try_restore_pollfreq(ups);
 	}
@@ -704,7 +731,7 @@ static void ups_is_bypass(utype_t *ups)
 
 	/* must have changed from !BYPASS to BYPASS, so notify */
 
-	do_notify(ups, NOTIFY_BYPASS);
+	do_notify(ups, NOTIFY_BYPASS, NULL);
 	setflag(&ups->status, ST_BYPASS);
 }
 
@@ -713,7 +740,7 @@ static void ups_is_notbypass(utype_t *ups)
 	/* Called when BYPASS is NOT among known states */
 	ups->bypassstate = 0;
 	if (flag_isset(ups->status, ST_BYPASS)) {	/* actual change */
-		do_notify(ups, NOTIFY_NOTBYPASS);
+		do_notify(ups, NOTIFY_NOTBYPASS, NULL);
 		clearflag(&ups->status, ST_BYPASS);
 		try_restore_pollfreq(ups);
 	}
@@ -740,7 +767,11 @@ static void ups_is_eco(utype_t *ups)
 
 	/* must have changed from !ECO to ECO, so notify */
 
-	do_notify(ups, NOTIFY_ECO);
+	/* FIXME: Dig in driver/vendor specific info points to discern
+	 *  ECO, HE, ESS, ABM and other fancy words, with optional extra
+	 *  string argument?
+	 */
+	do_notify(ups, NOTIFY_ECO, NULL);
 	setflag(&ups->status, ST_ECO);
 }
 
@@ -749,7 +780,7 @@ static void ups_is_noteco(utype_t *ups)
 	/* Called when ECO is NOT among known states */
 	ups->ecostate = 0;
 	if (flag_isset(ups->status, ST_ECO)) {	/* actual change */
-		do_notify(ups, NOTIFY_NOTECO);
+		do_notify(ups, NOTIFY_NOTECO, NULL);
 		clearflag(&ups->status, ST_ECO);
 		try_restore_pollfreq(ups);
 	}
@@ -771,7 +802,10 @@ static void ups_is_alarm(utype_t *ups)
 
 	/* must have changed from !ALARM to ALARM, so notify */
 
-	do_notify(ups, NOTIFY_ALARM);
+	/* FIXME: Pass `ups.status` string as the extra argument,
+	 *  so if the formatting string allows - it is detailed
+	 *  in the notification. */
+	do_notify(ups, NOTIFY_ALARM, NULL);
 	setflag(&ups->status, ST_ALARM);
 }
 
@@ -780,7 +814,7 @@ static void ups_is_notalarm(utype_t *ups)
 	/* Called when ALARM is NOT among known states */
 	ups->alarmstate = 0;
 	if (flag_isset(ups->status, ST_ALARM)) {	/* actual change */
-		do_notify(ups, NOTIFY_NOTALARM);
+		do_notify(ups, NOTIFY_NOTALARM, NULL);
 		clearflag(&ups->status, ST_ALARM);
 		try_restore_pollfreq(ups);
 	}
@@ -801,7 +835,7 @@ static void ups_on_batt(utype_t *ups)
 
 	/* must have changed from OL to OB, so notify */
 
-	do_notify(ups, NOTIFY_ONBATT);
+	do_notify(ups, NOTIFY_ONBATT, NULL);
 	setflag(&ups->status, ST_ONBATT);
 	clearflag(&ups->status, ST_ONLINE);
 }
@@ -819,7 +853,7 @@ static void ups_on_line(utype_t *ups)
 
 	/* ignore the first OL at startup, otherwise send the notifier */
 	if (ups->linestate != -1)
-		do_notify(ups, NOTIFY_ONLINE);
+		do_notify(ups, NOTIFY_ONLINE, NULL);
 
 	ups->linestate = 1;
 
@@ -857,7 +891,7 @@ static void doshutdown(void)
 	upslogx(LOG_CRIT, "Executing automatic power-fail shutdown");
 	wall("Executing automatic power-fail shutdown\n");
 
-	do_notify(NULL, NOTIFY_SHUTDOWN);
+	do_notify(NULL, NOTIFY_SHUTDOWN, NULL);
 
 	sleep(finaldelay);
 
@@ -1418,7 +1452,7 @@ static void ups_low_batt(utype_t *ups)
 
 	/* must have changed from !LB to LB, so notify */
 
-	do_notify(ups, NOTIFY_LOWBATT);
+	do_notify(ups, NOTIFY_LOWBATT, NULL);
 	setflag(&ups->status, ST_LOWBATT);
 }
 
@@ -1429,7 +1463,7 @@ static void upsreplbatt(utype_t *ups)
 	time(&now);
 
 	if ((now - ups->lastrbwarn) > rbwarntime) {
-		do_notify(ups, NOTIFY_REPLBATT);
+		do_notify(ups, NOTIFY_REPLBATT, NULL);
 		ups->lastrbwarn = now;
 	}
 }
@@ -1445,7 +1479,7 @@ static void ups_is_cal(utype_t *ups)
 
 	/* must have changed from !CAL to CAL, so notify */
 
-	do_notify(ups, NOTIFY_CAL);
+	do_notify(ups, NOTIFY_CAL, NULL);
 	setflag(&ups->status, ST_CAL);
 }
 
@@ -1453,7 +1487,7 @@ static void ups_is_notcal(utype_t *ups)
 {
 	/* Called when CAL is NOT among known states */
 	if (flag_isset(ups->status, ST_CAL)) {	/* actual change */
-		do_notify(ups, NOTIFY_NOTCAL);
+		do_notify(ups, NOTIFY_NOTCAL, NULL);
 		clearflag(&ups->status, ST_CAL);
 		try_restore_pollfreq(ups);
 	}
@@ -1470,7 +1504,7 @@ static void ups_fsd(utype_t *ups)
 
 	/* must have changed from !FSD to FSD, so notify */
 
-	do_notify(ups, NOTIFY_FSD);
+	do_notify(ups, NOTIFY_FSD, NULL);
 	setflag(&ups->status, ST_FSD);
 }
 
@@ -3041,7 +3075,7 @@ static void check_parent(void)
 		return;
 
 	lastwarn = now;
-	do_notify(NULL, NOTIFY_NOPARENT);
+	do_notify(NULL, NOTIFY_NOPARENT, NULL);
 
 	/* also do this in case the notifier isn't being effective */
 	upslogx(LOG_ALERT, "Parent died - shutdown impossible");
@@ -3472,7 +3506,7 @@ int main(int argc, char *argv[])
 		}
 		if (sleep_inhibitor_status == 1) {
 			/* Preparing for sleep */
-			do_notify(NULL, NOTIFY_SUSPEND_STARTING);
+			do_notify(NULL, NOTIFY_SUSPEND_STARTING, NULL);
 			upslogx(LOG_INFO, "%s: Processing OS going to sleep", prog);
 			Uninhibit(&sleep_inhibitor_fd);
 
@@ -3510,7 +3544,7 @@ int main(int argc, char *argv[])
 
 		switch (sleep_inhibitor_status) {
 			case 0:	/* Waking up */
-				do_notify(NULL, NOTIFY_SUSPEND_FINISHED);
+				do_notify(NULL, NOTIFY_SUSPEND_FINISHED, NULL);
 				upslogx(LOG_INFO, "%s: Processing OS wake-up after sleep", prog);
 				upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
 

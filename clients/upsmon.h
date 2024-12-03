@@ -166,6 +166,12 @@ static struct {
 	{ NOTIFY_NOTBYPASS,"NOTBYPASS",NULL, "UPS %s: no longer on bypass", NOTIFY_DEFAULT },
 	{ NOTIFY_ECO,      "ECO",      NULL, "UPS %s: in ECO mode (as defined by vendor)", NOTIFY_DEFAULT },
 	{ NOTIFY_NOTECO,   "NOTECO",   NULL, "UPS %s: no longer in ECO mode", NOTIFY_DEFAULT },
+
+	/* FIXME: Remember the ups.alarm value and report it here,
+	 *  maybe optionally - e.g. check if the "ALARM" formatting
+	 *  string has actually one or two "%s" placeholders inside.
+	 *  Do issue a new notification if ups.alarm value changes.
+	 */
 	{ NOTIFY_ALARM,    "ALARM",    NULL, "UPS %s: one or more active alarms (check ups.alarm)", NOTIFY_DEFAULT },
 	{ NOTIFY_NOTALARM, "NOTALARM", NULL, "UPS %s is no longer in an alarm state (no active alarms)", NOTIFY_DEFAULT },
 
