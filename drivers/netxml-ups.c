@@ -42,7 +42,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"network XML UPS"
-#define DRIVER_VERSION	"0.46"
+#define DRIVER_VERSION	"0.47"
 
 /** *_OBJECT query multi-part body boundary */
 #define FORM_POST_BOUNDARY "NUT-NETXML-UPS-OBJECTS"
@@ -1020,7 +1020,7 @@ static void netxml_status_set(void)
 	if (STATUS_BIT(OVERLOAD)) {
 		status_set("OVER");		/* overload */
 	}
-	if (STATUS_BIT(REPLACEBATT)) {
+	if (STATUS_BIT(REPLACEBATT) || STATUS_BIT(NOBATTERY)) {
 		status_set("RB");		/* replace batt */
 	}
 	if (STATUS_BIT(TRIM)) {
