@@ -176,6 +176,9 @@ static int nut_debug_level_global = -1;
  */
 static int nut_debug_level_args = 0;
 
+/* pre-declare internal methods */
+static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize);
+
 static void setflag(int *val, int flag)
 {
 	*val |= flag;
@@ -788,11 +791,26 @@ static void ups_is_noteco(utype_t *ups)
 
 static void ups_is_alarm(utype_t *ups)
 {
+	/* Track the earlier reported string, re-notify if needed */
+	static char	alarms_prev[SMALLBUF];
 	char	alarms[SMALLBUF];
 
 	if (flag_isset(ups->status, ST_ALARM)) { 	/* potentially no change */
-		/* TODO: add device.alarm.count */
-		upsdebugx(4, "%s: %s (no change)", __func__, ups->sys);
+		/* TODO: add device.alarm.count? */
+		if (get_var(ups, "alarm", alarms, sizeof(alarms)) == 0) {
+			if (!strcmp(alarms_prev, alarms)) {
+				upsdebugx(4, "%s: %s (no change)", __func__, ups->sys);
+			} else {
+				upsdebugx(4, "%s: %s: updated ups.alarm value is %s",
+					__func__, ups->sys, alarms);
+				strncpy(alarms_prev, alarms, sizeof(alarms_prev));
+				/* FIXME: Check for two "%s" placeholders? */
+				do_notify(ups, NOTIFY_ALARM, alarms);
+			}
+		} else {
+			upsdebugx(4, "%s: %s: still on alarm, failed to get current ups.alarm value",
+				__func__, ups->sys);
+		}
 		return;
 	}
 
@@ -804,15 +822,20 @@ static void ups_is_alarm(utype_t *ups)
 
 	/* must have changed from !ALARM to ALARM, so notify */
 
-	/* FIXME: Track the earlier reported string, re-notify */
 	/* Pass `ups.status` string as the extra argument,
 	 * so if the formatting string allows - it is detailed
 	 * in the notification. */
 	if (get_var(ups, "alarm", alarms, sizeof(alarms)) == 0) {
+		upsdebugx(4, "%s: %s: current ups.alarm value is %s",
+			__func__, ups->sys, alarms);
 		do_notify(ups, NOTIFY_ALARM, alarms);
 	} else {
+		upsdebugx(4, "%s: %s: failed to get current ups.alarm value",
+			__func__, ups->sys);
 		do_notify(ups, NOTIFY_ALARM, NULL);
+		alarms[0] = '\0';
 	}
+	strncpy(alarms_prev, alarms, sizeof(alarms_prev));
 	setflag(&ups->status, ST_ALARM);
 }
 
