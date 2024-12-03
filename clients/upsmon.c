@@ -2432,6 +2432,7 @@ static int try_connect(utype_t *ups)
 static void parse_status(utype_t *ups, char *status)
 {
 	char	*statword, *ptr;
+	int	handled_stat_words = 0;
 
 	clear_alarm();
 
@@ -2467,38 +2468,82 @@ static void parse_status(utype_t *ups, char *status)
 
 	/* split up the status words and parse each one separately */
 	while (statword != NULL) {
+		int	handled = 0;
+
 		ptr = strchr(statword, ' ');
 		if (ptr)
 			*ptr++ = '\0';
 
 		upsdebugx(3, "parsing: [%s]", statword);
+		handled_stat_words++;
 
-		if (!strcasecmp(statword, "OL"))
+		/* Keep in sync with "Status data" chapter of docs/new-drivers.txt */
+		if (!strcasecmp(statword, "OL")) {
 			ups_on_line(ups);
-		if (!strcasecmp(statword, "OB"))
+			handled++;
+		}
+		else if (!strcasecmp(statword, "OB")) {
 			ups_on_batt(ups);
-		if (!strcasecmp(statword, "LB"))
+			handled++;
+		}
+		else if (!strcasecmp(statword, "LB")) {
 			ups_low_batt(ups);
-		if (!strcasecmp(statword, "RB"))
+			handled++;
+		}
+		else if (!strcasecmp(statword, "RB")) {
 			upsreplbatt(ups);
-		if (!strcasecmp(statword, "CAL"))
+			handled++;
+		}
+		else if (!strcasecmp(statword, "CAL")) {
 			ups_is_cal(ups);
-		if (!strcasecmp(statword, "OFF"))
+			handled++;
+		}
+		else if (!strcasecmp(statword, "OFF")) {
 			ups_is_off(ups);
-		if (!strcasecmp(statword, "BYPASS"))
+			handled++;
+		}
+		else if (!strcasecmp(statword, "BYPASS")) {
 			ups_is_bypass(ups);
-		if (!strcasecmp(statword, "ECO"))
+			handled++;
+		}
+		else if (!strcasecmp(statword, "ECO")) {
 			ups_is_eco(ups);
-		if (!strcasecmp(statword, "ALARM"))
+			handled++;
+		}
+		else if (!strcasecmp(statword, "ALARM")) {
 			ups_is_alarm(ups);
+			handled++;
+		}
 		/* do it last to override any possible OL */
-		if (!strcasecmp(statword, "FSD"))
+		else if (!strcasecmp(statword, "FSD")) {
 			ups_fsd(ups);
+			handled++;
+		}
+		/* Known standard status tokens, some being obsoleted, no upsmon reaction assigned */
+		else if (
+		    !strcasecmp(statword, "HB")
+		 || !strcasecmp(statword, "CHRG")
+		 || !strcasecmp(statword, "DISCHRG")
+		 || !strcasecmp(statword, "OVER")
+		 || !strcasecmp(statword, "TRIM")
+		 || !strcasecmp(statword, "BOOST")
+		) {
+			upsdebugx(4, "Known and ignored status token: [%s]", statword);
+			handled++;
+		}
+
+		if (!handled) {
+			/* Driver reported something non-standard? */
+			upsdebugx(1, "WARNING: Unexpected status token: [%s]", statword);
+			/* FIXME: Define a notification type like "OTHER" to report the un-handled status */
+		}
 
 		update_crittimer(ups);
 
 		statword = ptr;
 	}
+
+	upsdebugx(3, "Handled %d status tokens", handled_stat_words);
 }
 
 /* see what the status of the UPS is and handle any changes */
