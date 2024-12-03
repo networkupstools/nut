@@ -788,6 +788,8 @@ static void ups_is_noteco(utype_t *ups)
 
 static void ups_is_alarm(utype_t *ups)
 {
+	char	alarms[SMALLBUF];
+
 	if (flag_isset(ups->status, ST_ALARM)) { 	/* potentially no change */
 		/* TODO: add device.alarm.count */
 		upsdebugx(4, "%s: %s (no change)", __func__, ups->sys);
@@ -802,10 +804,15 @@ static void ups_is_alarm(utype_t *ups)
 
 	/* must have changed from !ALARM to ALARM, so notify */
 
-	/* FIXME: Pass `ups.status` string as the extra argument,
-	 *  so if the formatting string allows - it is detailed
-	 *  in the notification. */
-	do_notify(ups, NOTIFY_ALARM, NULL);
+	/* FIXME: Track the earlier reported string, re-notify */
+	/* Pass `ups.status` string as the extra argument,
+	 * so if the formatting string allows - it is detailed
+	 * in the notification. */
+	if (get_var(ups, "alarm", alarms, sizeof(alarms)) == 0) {
+		do_notify(ups, NOTIFY_ALARM, alarms);
+	} else {
+		do_notify(ups, NOTIFY_ALARM, NULL);
+	}
 	setflag(&ups->status, ST_ALARM);
 }
 
@@ -1062,6 +1069,14 @@ static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize)
 		query[0] = "VAR";
 		query[1] = ups->upsname;
 		query[2] = "ups.status";
+		numq = 3;
+	}
+
+	if (!strcmp(var, "alarm")) {
+		/* Opaque string */
+		query[0] = "VAR";
+		query[1] = ups->upsname;
+		query[2] = "ups.alarm";
 		numq = 3;
 	}
 
