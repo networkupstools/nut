@@ -27,25 +27,25 @@
  *
  */
 
-//#include "config.h"		/* Must be first */
-//#include <libusb-1.0/libusb.h>
-
-
 #include "main.h"
 #include "nut_stdint.h"
-//#include "nut_libusb.h"
-//#include "nut_float.h"
-//#include <ctype.h>
+#include "nut_libusb.h"
+
 #include "usb-common.h"
-//#include "powervar-c.h"
 
 
 /* Prototypes to allow setting pointer before function is defined */
 int setcmd(const char* varname, const char* setvalue);
 int instcmd(const char *cmdname, const char *extra);
+static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *reply, size_t reply_len);
+static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize);
+
+/* Two drivers include the following. Provide some identifier for differences */
+#define PVAR_USB	1	/* This is the USB comm driver */
+#include "powervar-cx.h"	/* Common driver variables and functions */
 
 #define DRIVER_NAME	"Powervar-CU UPS driver"
-#define DRIVER_VERSION	"0.01"
+#define DRIVER_VERSION	"0.02"
 
 /* USB comm stuff here */
 #define POWERVAR_VENDORID	0x4234
@@ -55,8 +55,7 @@ static USBDevice_t curDevice;
 static USBDeviceMatcher_t *reopen_matcher = NULL;
 static USBDeviceMatcher_t *regex_matcher = NULL;
 static usb_dev_handle *udev;
-//static usb_communication_subdriver_t *comm_driver = &usb_subdriver;
-//static usb_communication_subdriver_t *comm_driver = 0;
+static usb_communication_subdriver_t *comm_driver = &usb_subdriver;
 
 /* USB IDs device table */
 static usb_device_id_t powervar_usb_device_table[] = {
@@ -79,19 +78,21 @@ static int subdriver_match_func(USBDevice_t *arghd, void *privdata)
 	 */
 	/* hd = arghd; */
 
+	printf ("In subdriver_match_func...");
+
 	switch (is_usb_device_supported(powervar_usb_device_table, arghd))
 	{
 		case SUPPORTED:
+			printf ("SUPPORTED\n");
 			return 1;
 
 		case POSSIBLY_SUPPORTED:
-			/* by default, reject, unless the productid option is given */
-			if (getval("productid")) {
-				return 1;
-			}
+			printf ("POSSIBLY_SUPPORTED\n");
 			return 0;
 
 		case NOT_SUPPORTED:
+			printf ("NOT_SUPPORTED\n");
+			return 0;
 		default:
 			return 0;
 	}
@@ -104,12 +105,16 @@ static USBDeviceMatcher_t subdriver_matcher = {
 	NULL
 };
 
-static enum pvar_model_t {
+/* static enum pvar_model_t {
 	PVAR_UNDEFINED = 0,
 	PVAR_GTS,
 	PVAR_UPM,
-	PVAR_DYNAMIC			/* If we can define one in the config file */
+*/
+//	PVAR_DYNAMIC			/* If we can define one in the config file */
+/*
 } pvar_model = PVAR_UNDEFINED;
+ */
+
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -120,86 +125,315 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
-/* Serial comm stuff here */
-#define SECS 0			/* Serial function wait time*/
-#define USEC 500000		/* Rest of serial function wait time*/
 
-#define COMM_TRIES	3	/* Serial retries before "stale" */
+/* USB comm stuff here */
+#define MAX_SEND_TRIES 10
+//#define SEND_WAIT_SEC 0
+//#define SEND_WAIT_NSEC (1000*1000*100)
 
-/* Common CUSPP stuff here */
-//static char UpsFamily [SUBBUFFSIZE];		/* Hold family that was found */
-//static char UpsProtVersion [SUBBUFFSIZE];	/* Hold protocol version string */
+#define MAX_RECV_TRIES 10
 
-/* Dynamic CUSPP response information positions (0 = data not available) */
-/* static uint8_t byPIDProtPos = 0;
-static uint8_t byPIDVerPos = 0;
 
-static uint8_t byUIDManufPos = 0;
-static uint8_t byUIDModelPos = 0;
-static uint8_t byUIDSwverPos = 0;
-static uint8_t byUIDSernumPos = 0;
-static uint8_t byUIDFamilyPos = 0;
-static uint8_t byUIDMfgdtPos = 0;
-static uint8_t byUIDCSWVERPos = 0;
 
-static uint8_t byBATStatusPos = 0;
-static uint8_t byBATTmleftPos = 0;
-static uint8_t byBATEstcrgPos = 0;
-static uint8_t byBATVoltPos = 0;
-static uint8_t byBATTempPos = 0;
 
-static uint8_t byINPStatusPos = 0;
-static uint8_t byINPFreqPos = 0;
-static uint8_t byINPVoltPos = 0;
-static uint8_t byINPAmpPos = 0;
-static uint8_t byINPMaxvltPos = 0;
-static uint8_t byINPMinvltPos = 0;
+int match_by_something(usb_dev_handle *argudev, USBDevice_t *arghd, usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen)
+{
+	#define BIG_BUFFER	512
 
-static uint8_t byOUTSourcePos = 0;
-static uint8_t byOUTFreqPos = 0;
-static uint8_t byOUTVoltPos = 0;
-static uint8_t byOUTAmpPos = 0;
-static uint8_t byOUTPercntPos = 0;
+	int i, ret = 0;
+	unsigned char reply[BIG_BUFFER];
 
-static uint8_t bySYSInvoltPos = 0;
-static uint8_t bySYSInfrqPos = 0;
-static uint8_t bySYSOutvltPos = 0;
-static uint8_t bySYSOutfrqPos = 0;
-static uint8_t bySYSBatdtePos = 0;
-static uint8_t bySYSOvrlodPos = 0;
-static uint8_t bySYSOutvaPos = 0;
+	NUT_UNUSED_VARIABLE(argudev);
+	NUT_UNUSED_VARIABLE(arghd);
+	NUT_UNUSED_VARIABLE(rdbuf);
+	NUT_UNUSED_VARIABLE(rdlen);
+//	usb_ctrl_charbufsize sz;
 
-static uint8_t bySETAudiblPos = 0;
-static uint8_t bySETAtosrtPos = 0;
-static uint8_t bySETOffdlyPos = 0;
-static uint8_t bySETOffstpPos = 0;
-static uint8_t bySETSrtdlyPos = 0;
-static uint8_t bySETRstinpPos = 0;
-static uint8_t bySETRsttmpPos = 0;
+	printf ("In 'match_by_something'\n");
 
-static uint8_t byALMOnbatPos = 0;
-static uint8_t byALMLowbatPos = 0;
-static uint8_t byALMBadbatPos = 0;
-static uint8_t byALMTempPos = 0;
-static uint8_t byALMOvrlodPos = 0;
-static uint8_t byALMTstbadPos = 0;
-static uint8_t byALMTestngPos = 0;
-static uint8_t byALMChngbtPos = 0;
+	ret = send_cmd((unsigned char*)"PID", 3, reply, BIG_BUFFER);
 
-static uint8_t byTSTTimermPos = 0;
-static uint8_t byTSTAbortPos = 0;
-static uint8_t byTSTBatqckPos = 0;
-static uint8_t byTSTBatdepPos = 0;
-static uint8_t byTSTBatrunPos = 0;
-static uint8_t byTSTBtemtyPos = 0;
-static uint8_t byTSTDispPos = 0;
+	for (i = 0; i < BIG_BUFFER ; i++)
+	{
+		if (reply[i] == ENDCHAR)
+		{
+			break;
+		}
+	}
+
+	reply[i] = 0;
+	reply[i+1] = 0;		/* Force trailing null? */
+	upsdebugx(3, "'send_cmd' returned '%s', with ret: %d", reply, ret);
+	reply[i] = ENDCHAR;
+
+	if (GetSubstringPosition ((const char*)reply, "CUSPP") == 1)
+	{
+		upsdebugx(3, "UPM CUSPP device found!");
+	}
+
+
+	/* Unit ID might not be supported by all models: */
+/*	ret = send_cmd(u_msg, sizeof(u_msg), u_value, sizeof(u_value) - 1);
+	if (ret <= 0) {
+		upslogx(LOG_INFO, "Unit ID not retrieved (not available on all models)");
+	} else {
  */
+		/* Translating from two bytes (unsigned chars), so via uint16_t */
+/*		unit_id = (uint16_t)((uint16_t)(u_value[1]) << 8) | (uint16_t)(u_value[2]);
+		upsdebugx(1, "Retrieved Unit ID: %ld", unit_id);
+	}
+
+ 	if (rdlen)
+	{
+		printf ("Showing rdbuf...\n");
+
+		for (sz = 0 ; sz <= rdlen ; sz++)
+		{
+			printf ("%c", rdbuf[0] > 32 ? rdbuf[0] : '.');
+		}
+
+		printf ("\nDone showing rdbuf.\n");
+	}
+ */
+
+	return 1;
+
+
+/* 	char *value = getval("upsid");
+	long config_unit_id = 0;
+	ssize_t ret;
+	unsigned char u_msg[] = "U";
+	unsigned char u_value[9];
+
+	NUT_UNUSED_VARIABLE(argudev);
+	NUT_UNUSED_VARIABLE(arghd);
+	NUT_UNUSED_VARIABLE(rdbuf);
+	NUT_UNUSED_VARIABLE(rdlen);
+ */
+	/* If upsid is not defined in the config, return 1 (null behavior - match any device),
+	 * otherwise read it from the device and match against what was asked in ups.conf */
+/* 	if (value == NULL) {
+		return 1;
+	} else {
+		config_unit_id = atol(value);
+	}
+ */
+	/* Read ups id from the device */
+//	if (tl_model != TRIPP_LITE_OMNIVS && tl_model != TRIPP_LITE_SMART_0004) {
+		/* Unit ID might not be supported by all models: */
+/* 		ret = send_cmd(u_msg, sizeof(u_msg), u_value, sizeof(u_value) - 1);
+		if (ret <= 0) {
+			upslogx(LOG_INFO, "Unit ID not retrieved (not available on all models)");
+		} else {
+ */			/* Translating from two bytes (unsigned chars), so via uint16_t */
+/* 			unit_id = (uint16_t)((uint16_t)(u_value[1]) << 8) | (uint16_t)(u_value[2]);
+			upsdebugx(1, "Retrieved Unit ID: %ld", unit_id);
+		}
+	}
+
+ */	/* Check if the ups ids match */
+/* 	if (config_unit_id == unit_id) {
+		upsdebugx(1, "Retrieved Unit ID (%ld) matches the configured one (%ld)",
+			unit_id, config_unit_id);
+		return 1;
+	} else {
+		upsdebugx(1, "Retrieved Unit ID (%ld) does not match the configured one (%ld). "
+			"Do you have several compatible UPSes? Otherwise, please check if the ID "
+			"was set in the previous life of your device (can use upsrw to set another"
+			"value).", unit_id, config_unit_id);
+		return 0;
+	}
+ */
+}
+
 
 /***********************************
  * USB communication functions     *
  **********************************/
 
+/*!@brief Send a command to the UPS, and wait for a reply.
+ *
+ * All of the UPS commands are challenge-response. If a command does not have
+ * anything to return, it simply returns the '?'' character.
+ *
+ * @param[in] msg	Command string, minus the ':' or CR
+ * @param[in] msg_len	Use strlen(msg),
+ * @param[out] reply	Reply (but check return code for validity)
+ * @param[out] reply_len (currently unused)
+ *
+ * @return number of chars in reply, excluding terminating NUL
+ * @return 0 if command was not accepted
+ */
 
+static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *reply, size_t reply_len)
+{
+	#define USB_RESPONSE_SIZE	8
+
+	unsigned char buffer_out[40];
+	unsigned char response_in[USB_RESPONSE_SIZE + 2];
+	int ret = 0, done = 0;
+//	int recv_try = 0, send_try = 0;
+	size_t i = 0;
+	size_t j = 0;
+
+	upsdebugx(3, "send_cmd(msg='%s', msg_len=%u)", msg, (unsigned)msg_len);
+
+	/* Clear buffer areas */
+	for(i = 0; i < 40; i++) buffer_out[i] = '\0';
+	for(i = 0; i < reply_len; i++) reply[i] = '\0';
+	for(i = 0; i < (USB_RESPONSE_SIZE + 2) ; i++) response_in[i] = '\0';
+
+	/* Move command into USB buffer and add terminating character */
+	for(i = 0; i < msg_len; i++)
+	{
+		buffer_out[i] = msg[i];
+	}
+
+	buffer_out[i] = ENDCHAR;
+
+
+//	for(send_try=0; !done && send_try < MAX_SEND_TRIES; send_try++) {
+
+//		upsdebugx(6, "send_cmd send_try %d", send_try+1);
+
+		ret = comm_driver->set_report(udev, 0,
+			(usb_ctrl_charbuf)buffer_out,
+			(usb_ctrl_charbufsize)sizeof(buffer_out));
+
+		upsdebugx(5, "set_report ret:   %d", ret);
+
+		if(ret != sizeof(buffer_out)) {
+			upslogx(1, "libusb_set_report() returned %d instead of %" PRIuSIZE,
+				ret, sizeof(buffer_out));
+// **Should be ok			return ret;
+		}
+
+#if ! defined(__FreeBSD__)
+		usleep(1000*100); /* TODO: nanosleep */
+#endif
+
+/*  		for(recv_try=0; !done && recv_try < MAX_RECV_TRIES; recv_try++) {
+			upsdebugx(7, "send_cmd recv_try %d", recv_try+1);
+*/
+
+
+		for (i = 0 ; (done == 0) && (i < reply_len) ; )
+		{
+			upsdebugx(5, "Receive Loop: %ld", i);
+
+ 			ret = comm_driver->get_interrupt(udev,
+				(usb_ctrl_charbuf)response_in,
+				(usb_ctrl_charbufsize) USB_RESPONSE_SIZE,
+				(usb_ctrl_timeout_msec) 1000);
+
+			upsdebugx(4, "Response: '%s'", response_in);
+
+			if (ret > 0)
+			{
+				for (j=0 ; j < USB_RESPONSE_SIZE ; j++)
+				{
+					reply[i] = response_in[j];
+
+					if (response_in[j] == ENDCHAR)
+					{
+						upsdebugx(5, "<CR> found.");
+						done = 1;
+						break;
+					}
+
+					i++;
+				}
+
+				/* Clear response buffer for next chunk */
+				for(j = 0; j < USB_RESPONSE_SIZE ; j++) response_in[j] = '\0';
+			}
+			else
+			{
+				upsdebugx(5, "Unexpected return value: %d", ret);
+				break;
+			}
+		}
+
+
+
+/* 			ret = comm_driver->get_report(udev, 8,
+				(usb_ctrl_charbuf)reply,
+				(usb_ctrl_charbufsize) reply_len);
+ */
+
+
+/*			if(ret != sizeof(buffer_out)) {
+				upslogx(1, "libusb_get_get_report() returned %d instead of %u while sending %s",
+					ret, (unsigned)sizeof(buffer_out), buffer_out );
+			}
+			done = (ret == sizeof(buffer_out)) && (buffer_out[1] == reply[0]);
+		}
+ */
+//	}
+
+/* 	if(ret == sizeof(buffer_out)) {
+		upsdebugx(5, "send_cmd: received %s (%s)", hexascdump(reply, sizeof(buffer_out)),
+				done ? "OK" : "bad");
+	}
+ */
+//	upsdebugx(((send_try > 2) || (recv_try > 2)) ? 3 : 6,
+//			"send_cmd: send_try = %d, recv_try = %d\n", send_try, recv_try);
+
+//	return done ? sizeof(buffer_out) : 0;
+
+	return i;
+
+}
+
+
+/* TBD, make for USB */
+
+#define RETRIES 4
+static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
+{
+	/* This is a stub only. Bulk below need to re-work for USB */
+	NUT_UNUSED_VARIABLE(chBuff);
+	NUT_UNUSED_VARIABLE(BuffSize);
+	return 0;	/* Good comms */
+}
+
+/*	int Retries = RETRIES;
+	ssize_t return_val;
+
+	do
+	{
+		return_val = ser_get_line(upsfd, chBuff, BuffSize, ENDCHAR, IGNCHARS, SECS, USEC);
+
+		if (return_val > 0)
+		{
+			break;
+		}
+
+		upsdebugx (3, "!PowervarGetResponse retry (%" PRIiSIZE ", %d)...", return_val, Retries);
+
+	} while (--Retries > 0);
+
+	upsdebugx (4,"PowervarGetResponse buffer: %s",chBuff);
+
+	if (Retries == 0)
+	{
+		upsdebugx (2,"!!PowervarGetResponse timeout...");
+*/
+//		return_val = 1;					/* Comms error */
+ /* 	}
+	else
+	{
+		if (Retries < RETRIES)
+		{
+			upsdebugx (2,"PowervarGetResponse recovered (%d)...", Retries);
+		}
+*/
+//		return_val = 0;					/* Good comms */
+/*	}
+
+	return return_val;
+}
+ */
 
 /***************************************
  * CUSPP string handling functions     *
@@ -215,7 +449,7 @@ static uint8_t byTSTDispPos = 0;
 
 void upsdrv_initups(void)
 {
-	printf ("In upsdrv_initups\n");
+	upsdebugx(2, "In upsdrv_initups");
 
  	char *regex_array[USBMATCHER_REGEXP_ARRAY_LIMIT];
 //	char *value;
@@ -223,25 +457,46 @@ void upsdrv_initups(void)
 
 	warn_if_bad_usb_port_filename(device_path);
 
-	printf ("After 'warn-if-bad...'\n");
-
 	/* process the UPS selection options */
 	regex_array[0] = NULL; /* handled by USB IDs device table */
 	regex_array[1] = getval("productid");
+//	regex_array[1] = NULL;
 	regex_array[2] = getval("vendor"); /* vendor string */
 	regex_array[3] = getval("product"); /* product string */
-	regex_array[4] = getval("serial"); /* probably won't see this */
+	regex_array[4] = getval("serial");
 	regex_array[5] = NULL;
 	regex_array[6] = getval("device");
 	regex_array[7] = NULL;
 
+	upsdebugx(3, "B4 RegexMatcher (%ld)", (long)regex_matcher);
+
+	r = USBNewRegexMatcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
+	if (r==-1) {
+		fatal_with_errno(EXIT_FAILURE, "USBNewRegexMatcher");
+	} else if (r) {
+		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[r]);
+	}
+
+	upsdebugx(3, "After RegexMatcher (%ld)", (long)regex_matcher);
+
+	/* link the matchers */
+	regex_matcher->next = &subdriver_matcher;
+
+	upsdebugx(2, "Trying to open device...)");
+
+	/* Search for the first supported UPS matching the regular expression */
+	r = comm_driver->open_dev(&udev, &curDevice, regex_matcher, match_by_something);
+	if (r < 1) {
+		fatalx(EXIT_FAILURE, "No matching USB/HID UPS found");
+	}
+
+	hd = &curDevice;
+
+	upslogx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
+
 //	hd = nutusb_open("USB");
 
-	printf ("B4 'is_usb_device...'\n");
-
 	r = is_usb_device_supported (powervar_usb_device_table, hd);
-
-	printf ("After 'is_usb_device...'\n");
 
 	if (r < 0)
 	{
@@ -252,58 +507,17 @@ void upsdrv_initups(void)
 		upsdebugx (3, "supported: r is %d.", r);
 	}
 
-	/* process the UPS selection options */
-	regex_array[0] = NULL; /* handled by USB IDs device table */
-	regex_array[1] = getval("productid");
-	regex_array[2] = getval("vendor"); /* vendor string */
-	regex_array[3] = getval("product"); /* product string */
-	regex_array[4] = getval("serial"); /* probably won't see this */
-	regex_array[5] = getval("bus");
-	regex_array[6] = getval("device");
-
-
-
-
-//	r = USBNewRegexMatcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
-//	if (r==-1) {
-//		fatal_with_errno(EXIT_FAILURE, "USBNewRegexMatcher");
-//	} else if (r) {
-//		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[r]);
-//	}
-
-
-
-	/* Keep moving this down below things that work and the next thing being tried */
-	fatalx(EXIT_FAILURE, "[%s] USB Development exit.\n", "Move Me");
-
-
-
-
-	/* link the matchers */
-//	regex_matcher->next = &subdriver_matcher;
-
-	/* Search for the first supported UPS matching the regular
-	 * expression */
-//	r = comm_driver->open_dev(&udev, &curDevice, regex_matcher, match_by_unitid);
-//	r = comm_driver->open_dev(&udev, &curDevice, regex_matcher, 0);
-//	if (r < 1) {
-//		fatalx(EXIT_FAILURE, "No matching USB/HID UPS found");
-//	}
-
-//	hd = &curDevice;
-
-//	upslogx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
-
-//	dstate_setinfo("ups.vendorid", "%04x", hd->VendorID);
-//	dstate_setinfo("ups.productid", "%04x", hd->ProductID);
+	upsdebugx(3, "VendorID: %04x", hd->VendorID);
+	upsdebugx(3, "ProductID: %04x", hd->ProductID);
 
 	/* create a new matcher for later reopening */
-//	r = USBNewExactMatcher(&reopen_matcher, hd);
-//	if (r) {
-//		fatal_with_errno(EXIT_FAILURE, "USBNewExactMatcher");
-//	}
+	r = USBNewExactMatcher(&reopen_matcher, hd);
+	if (r) {
+		fatal_with_errno(EXIT_FAILURE, "USBNewExactMatcher");
+	}
+
 	/* link the two matchers */
-//	reopen_matcher->next = regex_matcher;
+	reopen_matcher->next = regex_matcher;
 
 	sleep (1);
 }
@@ -320,7 +534,12 @@ void upsdrv_initinfo(void)
 
 	printf ("In upsdrv_initinfo\n");
 
-	fatalx(EXIT_FAILURE, "[%s] Not a UPS that handles CUSPP\n", "USB TEST");
+//	fatalx(EXIT_FAILURE, "[%s] Not a UPS that handles CUSPP\n", "USB TEST");
+
+	/* Keep moving this down below things that work and the next thing being tried */
+//	comm_driver->close_dev(udev);
+//	fatalx(EXIT_FAILURE, "[%s] USB Development exit.\n", "Move Me");
+
 
 }
 
@@ -369,6 +588,11 @@ void upsdrv_updateinfo(void)
 //	uint8_t byBadBat = 0;		    /* Keep flag for 'RB' logic */
 //	char chC;			    /* Character being worked with */
 //	int timevalue;
+
+	printf ("In upsdrv_updateinfo\n");
+
+	/* Keep moving this down below things that work and the next thing being tried */
+	fatalx(EXIT_FAILURE, "[%s] USB Development exit.\n", "Move Me");
 
 		status_init();
 		alarm_init();
@@ -422,7 +646,19 @@ void upsdrv_help(void)
 
 void upsdrv_cleanup(void)
 {
-//	ser_close(upsfd, device_path);
+	upsdebugx(2, "In upsdrv_cleanup");
+
+	comm_driver->close_dev(udev);
+	USBFreeExactMatcher(reopen_matcher);
+	USBFreeRegexMatcher(regex_matcher);
+	free(curDevice.Vendor);
+	free(curDevice.Product);
+	free(curDevice.Serial);
+	free(curDevice.Bus);
+	free(curDevice.Device);
+#if (defined WITH_USB_BUSPORT) && (WITH_USB_BUSPORT)
+	free(curDevice.BusPort);
+#endif
 }
 
 void upsdrv_makevartable(void)

@@ -1,8 +1,5 @@
 /*vim ts=4*/
-/* powervar-c.c - Serial driver for Powervar UPM UPS using CUSPP.
- *
- * Supported Powervar UPS families in this driver:
- * UPM (All)
+/* powervar-cx.c - Common items for Powervar UPS CUSPP drivers.
  *
  * Copyright (C)
  *     2024 by Bill Elliot <bill@wreassoc.com>
@@ -22,42 +19,138 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  * History:
- * - 2 October 2024.  Bill Elliot
- * Used pieces of oneac.c driver to get jump-started.
+ * - 2 December 2024.  Bill Elliot
+ * Breaking out common items for serial and USB drivers. This file is not
+ *  intended to be compiled as a stand-alone file but is to be included
+ *  into the driver files that need it.
  *
  */
 
-//#include "config.h"		/* Must be first */
+#ifndef NUT_POWERVAR_CX_H_SEEN
+#define NUT_POWERVAR_CX_H_SEEN 1
 
-#include "main.h"
-#include "serial.h"
-#include "powervar-c.h"
-#include "nut_stdint.h"
-
-
-/* Prototypes to allow setting pointer before function is defined */
-int setcmd(const char* varname, const char* setvalue);
+/* Prototypes for calls that may be prior to function definition */
+static void GetInitFormatAndOrData (const char* sReq, char* sF, const size_t sFSize, char* sD, const size_t sDSize);
+static uint8_t GetUPSData (const char* sReq, char* sD, const size_t sDSize);
 int instcmd(const char *cmdname, const char *extra);
+int setcmd(const char* varname, const char* setvalue);
 
-#define DRIVER_NAME	"Powervar-C UPS driver"
-#define DRIVER_VERSION	"0.01"
-
-/* driver description structure */
-upsdrv_info_t upsdrv_info = {
-	DRIVER_NAME,
-	DRIVER_VERSION,
-	"Bill Elliot <bill@wreassoc.com>",
-	DRV_EXPERIMENTAL,
-	{ NULL }
-};
-
-/* Serial comm stuff here */
-#define SECS 0			/* Serial function wait time*/
-#define USEC 500000		/* Rest of serial function wait time*/
-
-#define COMM_TRIES	3	/* Serial retries before "stale" */
 
 /* Common CUSPP stuff here */
+
+/*misc stuff*/
+#define BUFFSIZE		512
+#define SUBBUFFSIZE		48
+#define STDREQSIZE		3	/* Length of all primary requests */
+
+/* For use in some instant commands...if requested */
+#define DEFAULT_BAT_TEST_TIME 	"10"	/* TST.BATRUN */
+#define DEFAULT_DISP_TEST_TIME	"10"	/* TST.DISP */
+
+#define ENDCHAR			'\r'
+#define CHAR_EQ			'='
+#define IGNCHARS 		"\n"
+#define COMMAND_END 		"\r\n"
+#define FORMAT_TAIL		".FORMAT"
+#define DATADELIM		";"
+#define FRMTDELIM		";."
+
+
+/*Information requests -- CUSPP*/
+
+/*Anticipated FAMILY responses*/
+#define FAMILY_GTS		"GTS"
+#define FAMILY_UPM		"UPM"
+
+/* Some common substrings */
+#define X_STATUS_SUB		"STATUS"
+#define X_VOLT_SUB		"VOLT"
+#define X_FREQ_SUB		"FREQ"
+#define X_AMP_SUB		"AMP"
+#define X_TEMP_SUB		"TEMP"
+#define X_OVRLOD_SUB		"OVRLOD"
+
+/* Now individual request substrings */
+#define PID_REQ			"PID"
+#define PID_VER_SUB		"VER"
+#define PID_PROT_SUB		"PROT"
+#define PID_PROT_DATA		"CUSPP"
+
+#define UID_REQ			"UID"
+#define UID_MANUF_SUB		"MANUF"
+#define UID_MODEL_SUB		"MODEL"
+#define UID_SWVER_SUB		"SWVER"
+#define UID_SERNUM_SUB		"SERNUM"
+#define UID_FAMILY_SUB		"FAMILY"
+#define UID_MFGDT_SUB		"MFGDT"
+#define UID_CSWVER_SUB		"CSWVER"
+
+#define BAT_REQ			"BAT"
+#define BAT_TMLEFT_SUB		"TMLEFT"
+#define BAT_ESTCRG_SUB		"ESTCRG"
+#define BAT_TEMP_SUB		"TEMP"
+
+#define INP_FMT_REQ		"INP"
+#define INP_DATA_REQ		"INP.1"
+#define INP_MAXVLT_SUB		"MAXVLT"
+#define INP_MINVLT_SUB		"MINVLT"
+
+#define OUT_REQ			"OUT"
+#define OUT_SOURCE_SUB		"SOURCE"
+#define OUT_PERCNT_SUB		"PERCNT"
+
+#define SYS_REQ			"SYS"
+#define SYS_INVOLT_SUB		"INVOLT"
+#define SYS_INFRQ_SUB		"INFRQ"
+#define SYS_OUTVLT_SUB		"OUTVLT"
+#define SYS_OUTFRQ_SUB		"OUTFRQ"
+#define SYS_BATDTE_SUB		"BATDTE"
+#define SYS_OUTVA_SUB		"OUTVA"
+
+#define SET_REQ			"SET"
+#define SET_AUDIBL_SUB		"AUDIBL"
+#define SET_ATOSRT_SUB		"ATOSRT"
+#define SET_OFFDLY_SUB		"OFFDLY"
+#define SET_SRTDLY_SUB		"SRTDLY"
+#define SET_OFFSTP_SUB		"OFFSTP"
+#define SET_RSTINP_SUB		"RSTINP"
+#define SET_RSTTMP_SUB		"RSTTMP"
+
+#define ALM_REQ			"ALM"
+#define ALM_ONBAT_SUB		"ONBAT"
+#define ALM_LOWBAT_SUB		"LOWBAT"
+#define ALM_BADBAT_SUB		"BADBAT"
+#define ALM_TSTBAD_SUB		"TSTBAD"
+#define ALM_TESTNG_SUB		"TESTNG"
+#define ALM_CHNGBT_SUB		"CHNGBT"
+
+#define TST_REQ			"TST"
+#define TST_TIMERM_SUB		"TIMERM"
+#define TST_ABORT_SUB		"ABORT"
+#define TST_BATQCK_SUB		"BATQCK"
+#define TST_BATDEP_SUB		"BATDEP"
+#define TST_BATRUN_SUB		"BATRUN"
+#define TST_BTEMTY_SUB		"BTEMTY"
+#define TST_DISP_SUB		"DISP"
+
+/* Control requests */
+#define TST_BATQCK_REQ		"TST.BATQCK.W=1"
+#define TST_BATDEP_REQ		"TST.BATDEP.W=1"
+#define TST_BATRUN_REQ		"TST.BATRUN.W="
+#define TST_ABORT_REQ		"TST.ABORT.W=1"
+#define TST_DISP_REQ		"TST.DISP.W="
+
+#define SET_OFFNOW_REQ		"SET.OFFNOW.W=1"
+#define SET_OFFDLY_REQ		"SET.OFFDLY.W="
+#define SET_SRTDLY_REQ		"SET.SRTDLY.W="
+#define SET_OFFON_REQ		"SET.OFFON.W="
+#define SET_OFFSTP_REQ		"SET.OFFSTP.W=1"
+#define SET_AUDIBL_REQ		"SET.AUDIBL.W="
+#define SET_ATOSRT_REQ		"SET.ATOSRT.W="
+#define SET_RSTINP_REQ		"SET.RSTINP.W=1"
+
+/* Common CUSPP variables here */
+
 static char UpsFamily [SUBBUFFSIZE];		/* Hold family that was found */
 static char UpsProtVersion [SUBBUFFSIZE];	/* Hold protocol version string */
 
@@ -125,52 +218,10 @@ static uint8_t byTSTBatrunPos = 0;
 static uint8_t byTSTBtemtyPos = 0;
 static uint8_t byTSTDispPos = 0;
 
-/**************************************
- * Serial communication functions     *
- *************************************/
 
-/* Since an installed network card may slightly delay responses from
- *  the UPS allow for a repeat of the get request.
- */
-#define RETRIES 4
-static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
-{
-	int Retries = RETRIES;		/* x/2 seconds max with 500000 USEC */
-	ssize_t return_val;
-
-	do
-	{
-		return_val = ser_get_line(upsfd, chBuff, BuffSize, ENDCHAR, IGNCHARS, SECS, USEC);
-
-		if (return_val > 0)
-		{
-			break;
-		}
-
-		upsdebugx (3, "!PowervarGetResponse retry (%" PRIiSIZE ", %d)...", return_val, Retries);
-
-	} while (--Retries > 0);
-
-	upsdebugx (4,"PowervarGetResponse buffer: %s",chBuff);
-
-	if (Retries == 0)
-	{
-		upsdebugx (2,"!!PowervarGetResponse timeout...");
-		return_val = 1;					/* Comms error */
-	}
-	else
-	{
-		if (Retries < RETRIES)
-		{
-			upsdebugx (2,"PowervarGetResponse recovered (%d)...", Retries);
-		}
-
-		return_val = 0;					/* Good comms */
-	}
-
-	return return_val;
-}
-
+/******************************************
+ * Functions for getting strings from UPS *
+ ******************************************/
 
 /* Get the FORMAT and/or data for the requested CUSPP group.
    This is used during initialization to establish the substring position values
@@ -179,12 +230,15 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
 */
 static void GetInitFormatAndOrData (const char* sReq, char* sF, const size_t sFSize, char* sD, const size_t sDSize)
 {
+	printf ("GetInitFormatAndOrData: upsfd: %d\n", upsfd);
 	if (sF)
 	{
 		/* Get sReq format response */
 		upsdebugx (2, "Requesting %s.FORMAT", sReq);
 
+#if defined PVAR_SERIAL
 		ser_send(upsfd, "%s%s%c", sReq, FORMAT_TAIL, ENDCHAR);
+#endif
 
 		if(PowervarGetResponse (sF, sFSize))
 		{
@@ -208,7 +262,9 @@ static void GetInitFormatAndOrData (const char* sReq, char* sF, const size_t sFS
 		/* Get sReq data */
 		upsdebugx (2, "Requesting %s data", sReq);
 
+#if defined PVAR_SERIAL
 		ser_send(upsfd,"%s%c", sReq, ENDCHAR);
+#endif
 
 		if(PowervarGetResponse (sD, sDSize))
 		{
@@ -241,7 +297,9 @@ uint8_t byReturn = 1;		/* Set up for good return, '1' is bad */
 	/* Get sReq data */
 	upsdebugx (2, "Requesting %s update", sReq);
 
+#if defined PVAR_SERIAL
 	ser_send(upsfd,"%s%c", sReq, ENDCHAR);
+#endif
 
 	if((PowervarGetResponse (sD, sDSize) != 0) || (strncmp(sReq, sD, STDREQSIZE) != 0))
 	{
@@ -252,9 +310,10 @@ uint8_t byReturn = 1;		/* Set up for good return, '1' is bad */
 	return byReturn;
 }
 
+
 /***************************************
  * CUSPP string handling functions     *
- **************************************/
+ ***************************************/
 
 /* This function parses responses to pull the desired substring from the buffer.
  * SubPosition is normal counting (start with 1 not 0).
@@ -312,7 +371,7 @@ uint Pos;			/* Token position down-counter */
 	}
 	else
 	{
-		upsdebugx (4,"Position parameter was zero!");
+		upsdebugx (4,"GetSubstringFromBuffer: Position parameter was zero!");
 	}
 
 	return RetVal;
@@ -350,7 +409,7 @@ char* chTok;
 			if (strcmp (chTok, chSub) == 0)
 			{
 				uiReturn = uiPos;
-				upsdebugx (3,"Found substring \"%s\" at position: %d.", chSub, uiReturn);
+				upsdebugx (3,"GetSubstringPosition: Found substring \"%s\" at position: %d.", chSub, uiReturn);
 				break;
 			}
 
@@ -362,42 +421,23 @@ char* chTok;
 
 	if (uiReturn == 0)
 	{
-		upsdebugx (3,"Substring was not found!");
+		upsdebugx (3,"GetSubstringPosition: Substring was not found!");
 	}
 
 	return uiReturn;
 }
 
 
+/*****************************************
+ * Common portions of standard functions *
+ *****************************************/
 
-/****************************************************************
- * Below are the primary commands that are called by main       *
- ***************************************************************/
-
-void upsdrv_initups(void)
+void PvarCommon_Initinfo (void)
 {
-	/* Serial comm init here */
-	upsfd = ser_open(device_path);
-	ser_set_speed(upsfd, device_path, B9600);
-
-	/*get the UPS in the right frame of mind*/
-	ser_send_pace(upsfd, 100, "%s", COMMAND_END);
-	ser_send_pace(upsfd, 100, "%s", COMMAND_END);
-	sleep (1);
-}
-
-/* TBD, Implement commands based on capability of the found UPS. */
-/* TBD, Finish implementation of available data */
-void upsdrv_initinfo(void)
-{
-//	int i, j, k;
 	int Vlts = 1;
 	char sFBuff[BUFFSIZE];
 	char sDBuff[BUFFSIZE];
 	char SubBuff[SUBBUFFSIZE];
-
-	/* Get serial port ready */
-	ser_flush_in(upsfd,"",0);
 
 	/* First, try to get UPM PID.FORMAT response. All UPSs with CUSPP should reply
 	 *  to this request so we can confirm that it is a Powervar UPS.
@@ -507,7 +547,6 @@ void upsdrv_initinfo(void)
 
 	/* TBD, Put this in the log?? */
 	printf ("Found a %s UPS with serial number %s\n", UpsFamily, SubBuff);
-
 
 	/* Get BAT format and populate needed data string positions... */
 	GetInitFormatAndOrData(BAT_REQ, sFBuff, sizeof(sFBuff), 0, 0);
@@ -663,12 +702,11 @@ void upsdrv_initinfo(void)
 		byTSTBtemtyPos = GetSubstringPosition (sFBuff, TST_BTEMTY_SUB);
 		byTSTDispPos = GetSubstringPosition (sFBuff, TST_DISP_SUB);
 	}
-}
 
 /*
-	Stuff to follow up on realated to implementation for init
+	Stuff to follow up on realated to implementation for initinfo
 
-	 Shutdown delay in seconds...can be changed by user
+	Shutdown delay in seconds...can be changed by user
 	dstate_setinfo("ups.delay.shutdown", "%s", getval("offdelay"));
 
 	dstate_setflags("ups.delay.shutdown", ST_FLAG_STRING | ST_FLAG_RW);
@@ -701,8 +739,10 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("input.transfer.high.max", "%3d", j);
 */
 
-/* This function is called regularly for data updates. */
-void upsdrv_updateinfo(void)
+}
+
+
+void PvarCommon_Updateinfo (void)
 {
 	char sData[BUFFSIZE];
 	char SubString[SUBBUFFSIZE];
@@ -711,13 +751,12 @@ void upsdrv_updateinfo(void)
 	char chC;			    /* Character being worked with */
 	int timevalue;
 
-	/* Get serial port ready */
-	ser_flush_in(upsfd,"",0);
-
-	/* Get output data first... */
+	/* Get output data first... to see if we are still talking. */
 	if (GetUPSData (OUT_REQ, sData, sizeof (sData)) == 0)
 	{
+#if defined PVAR_SERIAL
 		ser_comm_fail("Powervar UPS Comm failure on port %s", device_path);
+#endif
 		dstate_datastale ();
 		return;
 	}
@@ -976,8 +1015,6 @@ void upsdrv_updateinfo(void)
 	status_commit();
 
 	dstate_dataok();
-	ser_comm_good();
-}
 
 /* Items to look into more for implementation:
 
@@ -999,159 +1036,6 @@ void upsdrv_updateinfo(void)
 
 */
 
-/**********************************************************
- * Powervar support functions for NUT command calls       *
- *********************************************************/
-
-static void do_battery_test(void)
-{
-	if (byTSTBatrunPos)
-	{
-		char buffer[32];
-
-		if (getval("battesttime") == NULL)
-		{
-			snprintf(buffer, 3, "%s", DEFAULT_BAT_TEST_TIME);
-		}
-		else
-		{
-			snprintf(buffer, 6, "%s", getval("battesttime"));
-		}
-
-		ser_send(upsfd, "%s%s%s", TST_BATRUN_REQ, buffer, COMMAND_END);
-	}
 }
 
-/**************************************
- * Handlers for NUT command calls     *
- *************************************/
-
-void upsdrv_help(void)
-{
-	printf("\n---------\nNOTE:\n");
-	printf("You must set the UPS interface card DIP switch to 9600 BPS\n");
-}
-
-void upsdrv_cleanup(void)
-{
-	ser_close(upsfd, device_path);
-}
-
-void upsdrv_makevartable(void)
-{
-	addvar(VAR_VALUE, "battesttime", "Change battery test time from the 10 second default.");
-
-	addvar(VAR_VALUE, "disptesttime", "Change display test time from the 10 second default.");
-
-	addvar(VAR_VALUE, "offdelay", "Change shutdown delay time from 0 second default.");
-}
-
-void upsdrv_shutdown(void)
-{
-//	ser_send(upsfd, "%s", SHUTDOWN);
-}
-
-int instcmd(const char *cmdname, const char *extra)
-{
-//	int i;
-	char buffer [10];
-
-	upsdebugx(2, "In instcmd with %s and extra %s.", cmdname, extra);
-
-	if (!strcasecmp(cmdname, "test.battery.start.quick"))
-	{
-		if (byTSTBatqckPos)
-		{
-			do_battery_test();
-			return STAT_INSTCMD_HANDLED;
-		}
-	}
-
-	if (!strcasecmp(cmdname, "test.battery.start.deep"))
-	{
-		if (byTSTBatdepPos)
-		{
-			ser_send(upsfd, "%s%s", TST_BATDEP_REQ, COMMAND_END);
-			return STAT_INSTCMD_HANDLED;
-		}
-	}
-
-	if (!strcasecmp(cmdname, "test.battery.stop"))
-	{
-		if (byTSTAbortPos)
-		{
-			ser_send(upsfd, "%s%s", TST_ABORT_REQ, COMMAND_END);
-			return STAT_INSTCMD_HANDLED;
-		}
-	}
-
-	if (!strcasecmp(cmdname, "reset.input.minmax"))
-	{
-		if (bySETRstinpPos)
-		{
-			ser_send(upsfd, "%s%s", SET_RSTINP_REQ, COMMAND_END);
-			return STAT_INSTCMD_HANDLED;
-		}
-	}
-
-	if (!strcasecmp(cmdname, "beeper.enable"))
-	{
-		if (bySETAudiblPos)
-		{
-			ser_send(upsfd, "%s%c%s", SET_AUDIBL_REQ, '1', COMMAND_END);
-			return STAT_INSTCMD_HANDLED;
-		}
-	}
-
-	if (!strcasecmp(cmdname, "beeper.disable"))
-	{
-		if (bySETAudiblPos)
-		{
-			ser_send(upsfd, "%s%c%s", SET_AUDIBL_REQ, '0', COMMAND_END);
-			return STAT_INSTCMD_HANDLED;
-		}
-	}
-
-	if (!strcasecmp(cmdname, "beeper.mute"))
-	{
-		if (bySETAudiblPos)
-		{
-			ser_send(upsfd, "%s%c%s", SET_AUDIBL_REQ, '2', COMMAND_END);
-			return STAT_INSTCMD_HANDLED;
-		}
-	}
-
-	if (!strcasecmp(cmdname, "test.panel.start"))
-	{
-		if (byTSTDispPos)
-		{
-
-			if (getval("disptesttime") == NULL)
-			{
-				snprintf(buffer, 2, "1");
-			}
-			else
-			{
-				snprintf(buffer, 4, "%s", getval("disptesttime"));
-			}
-
-			ser_send(upsfd,"%s%s%s", TST_DISP_REQ, buffer, COMMAND_END);
-			return STAT_INSTCMD_HANDLED;
-		}
-	}
-
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
-	return STAT_INSTCMD_UNKNOWN;
-}
-
-
-int setcmd(const char* varname, const char* setvalue)
-{
-	upsdebugx(2, "In setcmd for %s with %s...", varname, setvalue);
-
-
-
-	upslogx(LOG_NOTICE, "setcmd: unknown command [%s]", varname);
-
-	return STAT_SET_UNKNOWN;
-}
+#endif	/* !NUT_POWERVAR_CX_H_SEEN */
