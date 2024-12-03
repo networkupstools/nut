@@ -334,7 +334,8 @@ POWERDOWNFLAG "@POWERDOWNFLAG@"
 # NOTIFYMSG NOTBYPASS	"UPS %s: no longer on bypass"
 # NOTIFYMSG ECO		"UPS %s: in ECO mode (as defined by vendor)"
 # NOTIFYMSG NOTECO	"UPS %s: no longer in ECO mode (as defined by vendor)"
-# NOTIFYMSG ALARM	"UPS %s: one or more active alarms (check ups.alarm)"
+# NOTIFYMSG ALARM	"UPS %s: one or more active alarms: [%s]"
+# or NOTIFYMSG ALARM	"UPS %s: one or more active alarms (check ups.alarm)"
 # NOTIFYMSG NOTALARM	"UPS %s is no longer in an alarm state (no active alarms)"
 #
 # Special handling is provided for surprise tokens seen in ups.status, which
