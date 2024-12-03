@@ -48,6 +48,8 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize);
 #define DRIVER_VERSION	"0.02"
 
 /* USB comm stuff here */
+
+/* Powervar */
 #define POWERVAR_VENDORID	0x4234
 
 static USBDevice_t *hd = NULL;
@@ -126,7 +128,6 @@ upsdrv_info_t upsdrv_info = {
 };
 
 
-/* USB comm stuff here */
 #define MAX_SEND_TRIES 10
 //#define SEND_WAIT_SEC 0
 //#define SEND_WAIT_NSEC (1000*1000*100)
