@@ -334,7 +334,7 @@ POWERDOWNFLAG "@POWERDOWNFLAG@"
 # NOTIFYMSG NOTBYPASS	"UPS %s: no longer on bypass"
 # NOTIFYMSG ECO		"UPS %s: in ECO mode (as defined by vendor)"
 # NOTIFYMSG NOTECO	"UPS %s: no longer in ECO mode (as defined by vendor)"
-# NOTIFYMSG ALARM	"UPS %s is in an alarm state (has active alarms)"
+# NOTIFYMSG ALARM	"UPS %s: one or more active alarms (check ups.alarm)"
 # NOTIFYMSG NOTALARM	"UPS %s is no longer in an alarm state (no active alarms)"
 #
 # A few messages not directly related to UPS events are also available:
@@ -356,6 +356,7 @@ POWERDOWNFLAG "@POWERDOWNFLAG@"
 # REPLBATT : The UPS battery is bad and needs to be replaced
 # NOCOMM   : A UPS is unavailable (can't be contacted for monitoring)
 # NOPARENT : The process that shuts down the system has died (shutdown impossible)
+# ALARM    : UPS has one or more alarms (look at "ups.alarm" for details)
 
 # --------------------------------------------------------------------------
 # NOTIFYFLAG - change behavior of upsmon when NOTIFY events occur

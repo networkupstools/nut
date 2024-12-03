@@ -3,6 +3,7 @@
    Copyright (C)
      2000  Russell Kroll <rkroll@exploits.org>
      2012  Arnaud Quette <arnaud.quette.free.fr>
+     2017  Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
      2020-2024  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
@@ -165,7 +166,7 @@ static struct {
 	{ NOTIFY_NOTBYPASS,"NOTBYPASS",NULL, "UPS %s: no longer on bypass", NOTIFY_DEFAULT },
 	{ NOTIFY_ECO,      "ECO",      NULL, "UPS %s: in ECO mode (as defined by vendor)", NOTIFY_DEFAULT },
 	{ NOTIFY_NOTECO,   "NOTECO",   NULL, "UPS %s: no longer in ECO mode", NOTIFY_DEFAULT },
-	{ NOTIFY_ALARM,    "ALARM",    NULL, "UPS %s is in an alarm state (has active alarms)", NOTIFY_DEFAULT },
+	{ NOTIFY_ALARM,    "ALARM",    NULL, "UPS %s: one or more active alarms (check ups.alarm)", NOTIFY_DEFAULT },
 	{ NOTIFY_NOTALARM, "NOTALARM", NULL, "UPS %s is no longer in an alarm state (no active alarms)", NOTIFY_DEFAULT },
 
 	{ NOTIFY_SUSPEND_STARTING, "SUSPEND_STARTING", NULL, "OS is entering sleep/suspend/hibernate mode", NOTIFY_DEFAULT },

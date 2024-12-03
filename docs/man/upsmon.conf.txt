@@ -280,7 +280,7 @@ for more details see linkman:upsmon[8].
 
 NOTECO;; UPS no longer in ECO mode (see above)
 
-ALARM;; UPS is in an alarm state (has active alarms)
+ALARM;; UPS has one or more active alarms (check ups.alarm)
 
 NOTALARM;; UPS is no longer in an alarm state (no active alarms)
 

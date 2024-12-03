@@ -3,6 +3,7 @@
    Copyright (C)
      1998  Russell Kroll <rkroll@exploits.org>
      2012  Arnaud Quette <arnaud.quette.free.fr>
+     2017  Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
      2020-2024  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
@@ -756,7 +757,8 @@ static void ups_is_noteco(utype_t *ups)
 
 static void ups_is_alarm(utype_t *ups)
 {
-	if (flag_isset(ups->status, ST_ALARM)) { 	/* no change */
+	if (flag_isset(ups->status, ST_ALARM)) { 	/* potentially no change */
+		/* TODO: add device.alarm.count */
 		upsdebugx(4, "%s: %s (no change)", __func__, ups->sys);
 		return;
 	}
