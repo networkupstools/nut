@@ -600,13 +600,22 @@ void * Signal::HandlerThread<H>::main(void * comm_pipe_read_end) {
 		FD_SET(rfd, &rfds);
 
 		// Poll on signal pipe
-		// Note that direct blocking read could be also used;
-		// however, select allows timeout specification
-		// which might come handy...
+		// Note that a straightforward blocking read could be
+		// also used.  However, select allows specifying a
+		// timeout, which could be useful in the future (but
+		// is not used in the current code).
 		int fdno = ::select(FD_SETSIZE, &rfds, nullptr, nullptr, nullptr);
 
-		// TBD: Die or recover on error?
+		// -1 is an error, but EINTR means the system call was
+		// interrupted.  System calls are expected to be
+		// interrupted on signal delivery; some systems
+		// restart them, and some don't.  Getting EINTR is
+		// therefore not actually an error, and the standard
+		// approach is to retry.
 		if (-1 == fdno) {
+			if (errno == EINTR)
+				continue;
+
 			std::stringstream e;
 
 			e << "Poll on communication pipe read end ";
@@ -633,6 +642,12 @@ void * Signal::HandlerThread<H>::main(void * comm_pipe_read_end) {
 			throw std::runtime_error(e.str());
 		}
 
+		// POSIX probably does not prohibit reading some but
+		// not all of the multibyte message.  However, it is
+		// unlikely that an implementation using write and
+		// read on int-sized or smaller objects will split
+		// them.  For now our strategy is to hope this does
+		// not happen.
 		assert(sizeof(word) == read_out);
 
 		command_t command = static_cast<command_t>(word);

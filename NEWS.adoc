@@ -149,6 +149,10 @@ https://github.com/networkupstools/nut/milestone/11
  - liebert-gxe: added new driver with support for Liebert GXE Series UPS
    (serial or USB posing as a serial port). [#2629]
 
+ - nhs_ser: added new driver for numerous NHS Nobreaks, senoidal line -- UPS
+   models with serial port, made by NHS Sistemas Eletronicos LTDA and popular
+   in Brazil. Currently this driver only builds on Linux. [#2692]
+
  - `usbhid-ups` and `netxml-ups` updated to handle "No battery installed!"
    alarm also to set the `RB` (Replace Battery) value in `ups.status`.
    This may cause dual triggering of notifications (as an `ALARM` generally
