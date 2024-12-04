@@ -303,14 +303,23 @@ input: Incoming line/power information
                                 transfer point (V)                | 264
 | input.transfer.frequency.bypass.range | Frequency range Bypass transfer
                                 point (percent of nominal Hz)     | 10
-| input.transfer.frequency.eco.range    | Frequency range ECO transfer
+| input.transfer.frequency.eco.range | Frequency range ECO transfer
                                 point (percent of nominal Hz)     | 5
 | input.transfer.hysteresis   | Threshold of switching protection modes,
                                 voltage transfer point (V)        | 10
-| input.transfer.forced       | Input forced transfer modes
+| input.transfer.bypass.forced | Rule for allow auto Bypass switch
+                                (on/off) transfer modes
                                 (enabled or disabled)             | enabled
-| input.bypass.switch.on      | Put the UPS in bypass mode        | on
-| input.bypass.switch.off     | Take the UPS out of bypass mode   | disabled
+| input.transfer.bypass.overload | Rule for auto transfer on Bypass when
+                                overload (enabled or disabled)    | enabled
+| input.transfer.bypass.outlimits | Rule for auto transfer on Bypass when
+                                out of tolerance (enabled or disabled)
+								                                  | enabled
+| input.bypass.switchable     | Input auto transfer on Bypass when overload
+                                or out of tolerance (enabled or disabled)
+								                                  | enabled
+| input.bypass.switch.on      | Put the UPS in Bypass mode        | on
+| input.bypass.switch.off     | Take the UPS out of Bypass mode   | disabled
 | input.load                  | Load on (ePDU) input (percent
                                 of full)                          | 25
 | input.realpower             | Current sum value of all (ePDU)
@@ -871,8 +880,8 @@ Instant commands
 | test.system.start        | Start a system test
 | calibrate.start          | Start runtime calibration
 | calibrate.stop           | Stop runtime calibration
-| bypass.start             | Put the UPS in bypass mode
-| bypass.stop              | Take the UPS out of bypass mode
+| bypass.start             | Put the UPS in Bypass mode
+| bypass.stop              | Take the UPS out of Bypass mode
 | ecomode.enable           | Put UPS in High Efficiency (aka ECO) mode
 | ecomode.disable          | Take the UPS out of High Efficiency (aka ECO) mode
 | essmode.enable           | Put UPS in Energy Saver System (aka ESS) mode

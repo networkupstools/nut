@@ -293,6 +293,7 @@ static status_lkp_t status_info[] = {
 	{ "bypassauto", STATUS(BYPASSAUTO) },
 	{ "bypassman", STATUS(BYPASSMAN) },
 	{ "ecomode", STATUS(ECOMODE) },
+	{ "essmode", STATUS(ESSMODE) },
 	{ "off", STATUS(OFF) },
 	{ "cal", STATUS(CALIB) },
 	{ "overheat", STATUS(OVERHEAT) },
@@ -387,7 +388,7 @@ info_lkp_t bypass_manual_info[] = {
 info_lkp_t eco_mode_info[] = {
 	{ 0, "normal", NULL, NULL },
     { 1, "ecomode", NULL, NULL },
-    { 2, "ESS", NULL, NULL }, /* makes sense for UPS that implements this mode */
+    { 2, "essmode", NULL, NULL },
     { 0, NULL, NULL, NULL }
 };
 /* note: this value is reverted (0=set, 1=not set). We report "being
@@ -2136,7 +2137,7 @@ static void ups_alarm_set(void)
 	}
 	/*if (ups_status & STATUS(ECOMODE)) {
 		alarm_set("ECO(HE) mode!");
-	}*/ /* disable alarm for eco as we dont want raise alarm ? */ 
+	}*/ /* disable alarm for eco as we dont want raise alarm ? */
 }
 
 /* Return the current value of ups_status */
@@ -2444,7 +2445,10 @@ static void ups_status_set(void)
 		status_set("BYPASS");		/* on bypass */
 	}
 	if (ups_status & STATUS(ECOMODE)) {
-		status_set("ECO");		/* on ECO Mode */
+		status_set("ECO");		/* on ECO(HE) Mode */
+	}
+	if (ups_status & STATUS(ESSMODE)) {
+		status_set("ESS");		/* on ESS Mode */
 	}
 	if (ups_status & STATUS(OFF)) {
 		status_set("OFF");		/* ups is off */
