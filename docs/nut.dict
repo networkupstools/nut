@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3249 utf-8
+personal_ws-1.1 en 3262 utf-8
 AAC
 AAS
 ABI
@@ -129,6 +129,7 @@ BlackOut
 BladeUPS
 BlueOcean
 Bo
+Bocchi
 Bohe
 Borns
 Borri
@@ -338,6 +339,7 @@ Effekta
 Egys
 Ekkehard
 Electrys
+Eletronicos
 Elio
 Elizarov
 Eltek
@@ -605,6 +607,7 @@ LOADPCT
 LOCKFN
 LOCKNAME
 LOTRANS
+LTDA
 LTS
 LUA
 LVM
@@ -777,6 +780,7 @@ Neus
 Niels
 Niklas
 Niro
+Nobreak
 Nobreaks
 Nom
 NotePad
@@ -1377,6 +1381,7 @@ Wextra
 WhizBang
 WiX
 Wikipedia
+Willian
 WinMerge
 WinNUT
 WinPower
@@ -1713,6 +1718,7 @@ cpqpower
 cpsups
 cr
 crestfactor
+crit
 criticality
 crlf
 cron
@@ -2047,6 +2053,7 @@ huawei
 hudson
 hunnox
 hwdb
+hwinfo
 hwmon
 hwmonX
 hypervisor
@@ -2436,6 +2443,7 @@ newvictronups
 nf
 ng
 nhnl
+nhs
 nielchiano
 nitram
 nl
@@ -2447,6 +2455,7 @@ nn
 nnn
 noAuthNoPriv
 nobody's
+nobreak
 nobt
 nodev
 nodownload
@@ -2480,6 +2489,7 @@ nuget
 num
 numOfBytesFromUPS
 numa
+numbatteries
 numlogins
 numq
 nutclient
@@ -2560,6 +2570,7 @@ pe
 peasy
 peername
 pem
+perc
 perl
 pfSense
 pfexec
@@ -2776,6 +2787,7 @@ sendmail
 sendsignal
 sendsignalfn
 sendsignalpid
+senoidal
 sequentialized
 ser
 seria
@@ -3148,6 +3160,7 @@ variadic
 varlow
 varname
 varvalue
+vbat
 vbatt
 vc
 vendorid

@@ -795,6 +795,10 @@ CODE_TIMEINCL="
 #endif
 "
 
+dnl TEMPORARY to allow certain linux-only buildable drivers
+AC_CHECK_HEADERS_ONCE([linux/serial.h])
+AM_CONDITIONAL(HAVE_LINUX_SERIAL_H, test x"${ac_cv_header_linux_serial_h}" = xyes)
+
 AC_CHECK_HEADERS_ONCE([fcntl.h sys/stat.h sys/socket.h netdb.h])
 AC_CHECK_FUNCS(flock lockf fcvt fcvtl dup dup2 abs_val abs)
 
