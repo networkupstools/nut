@@ -2208,6 +2208,21 @@ const char *str_upsnotify_state(upsnotify_state_t state) {
 	}
 }
 
+static void upsnotify_suggest_NUT_QUIET_INIT_UPSNOTIFY_once(void) {
+	static	int reported = 0;
+
+	if (reported)
+		return;
+
+	reported = 1;
+
+	if (getenv("NUT_QUIET_INIT_UPSNOTIFY"))
+		return;
+
+	upsdebugx(1, "On systems without service units, "
+		"consider `export NUT_QUIET_INIT_UPSNOTIFY=true`");
+}
+
 /* Send (daemon) state-change notifications to an
  * external service management framework such as systemd
  */
@@ -2307,9 +2322,9 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 			"skipped for libcommonclient build, "
 			"will not spam more about it",
 			__func__, str_upsnotify_state(state));
-		upsdebugx(1, "On systems without service units, "
-			"consider `export NUT_QUIET_INIT_UPSNOTIFY=true`");
+		upsnotify_suggest_NUT_QUIET_INIT_UPSNOTIFY_once();
 	}
+
 	upsnotify_reported_disabled_systemd = 1;
 # else	/* not WITHOUT_LIBSYSTEMD */
 	if (!getenv("NOTIFY_SOCKET")) {
@@ -2319,8 +2334,7 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 				"was requested, but not running as a service "
 				"unit now, will not spam more about it",
 				__func__, str_upsnotify_state(state));
-			upsdebugx(1, "On systems without service units, "
-				"consider `export NUT_QUIET_INIT_UPSNOTIFY=true`");
+			upsnotify_suggest_NUT_QUIET_INIT_UPSNOTIFY_once();
 		}
 		upsnotify_reported_disabled_systemd = 1;
 	} else {
@@ -2616,9 +2630,8 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 					"no notification tech defined, "
 					"will not spam more about it",
 					__func__, str_upsnotify_state(state));
-			upsdebugx(1, "On systems without service units, "
-				"consider `export NUT_QUIET_INIT_UPSNOTIFY=true`");
 			upsnotify_reported_disabled_notech = 1;
+			upsnotify_suggest_NUT_QUIET_INIT_UPSNOTIFY_once();
 		} else {
 			upsdebugx(6,
 				"%s: failed to notify about state %s",
@@ -2632,9 +2645,8 @@ int upsnotify(upsnotify_state_t state, const char *fmt, ...)
 		upsdebugx(upsnotify_report_verbosity,
 			"%s: logged the systemd watchdog situation once, "
 			"will not spam more about it", __func__);
-		upsdebugx(1, "On systems without service units, "
-			"consider `export NUT_QUIET_INIT_UPSNOTIFY=true`");
 		upsnotify_reported_watchdog_systemd = 1;
+		upsnotify_suggest_NUT_QUIET_INIT_UPSNOTIFY_once();
 	}
 # endif
 #endif
