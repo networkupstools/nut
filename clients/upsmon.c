@@ -3717,6 +3717,7 @@ int main(int argc, char *argv[])
 		waitpid(-1, NULL, WNOHANG);
 
 		time(&start);
+		upsdebugx(4, "Beginning %u-sec delay between main loop cycles", sleepval);
 		if (isPreparingForSleepSupported()) {
 			sleep_inhibitor_status = -2;
 			now = start;
@@ -3724,22 +3725,27 @@ int main(int argc, char *argv[])
 			while (sleep_inhibitor_status < 0 && dt < sleepval && !exit_flag) {
 				prev = now;
 				sleep(1);
+				/* WARNING: This call can take several seconds itself
+				 * on some systems */
 				sleep_inhibitor_status = isPreparingForSleep();
 				time(&now);
 				dt = difftime(now, start);
 				upsdebugx(7, "start=%" PRIiMAX " now=%" PRIiMAX " dt=%g sleepval=%u sleep_inhibitor_status=%d",
 					(intmax_t)start, (intmax_t)now, dt, sleepval, sleep_inhibitor_status);
 				if (dt > (sleepval + 5) || difftime(now, prev) > 5) {
-					upsdebugx(2, "It seems we have slept without warning or the system clock was changed");
+					upsdebugx(2, "It seems we have slept without warning or the system clock was changed (while in delay between main loop cycles)");
 					if (sleep_inhibitor_status < 0)
 						sleep_inhibitor_status = 0;	/* behave as woken up */
 				} else if (dt < 0) {
-					upsdebugx(2, "It seems the system clock was changed into the past");
+					upsdebugx(2, "It seems the system clock was changed into the past (while in delay between main loop cycles)");
 					sleep_inhibitor_status = 0;	/* behave as woken up */
 				}
 			}
 
 			if (sleep_inhibitor_status >= 0) {
+				time(&end);
+				upsdebugx(4, "%u-sec delay between main loop cycles finished, took %" PRIiMAX,
+					sleepval, (intmax_t)difftime(end, start));
 				upsdebugx(2, "Aborting polling delay between main loop cycles because OS is preparing for sleep or just woke up");
 				goto end_loop_cycle;
 			}
@@ -3752,6 +3758,8 @@ int main(int argc, char *argv[])
 			sleep(sleepval);
 		}
 		time(&end);
+		upsdebugx(4, "%u-sec delay between main loop cycles finished, took %" PRIiMAX,
+			sleepval, (intmax_t)difftime(end, start));
 #else
 		maxhandle = 0;
 		memset(&handles, 0, sizeof(handles));
@@ -3770,8 +3778,11 @@ int main(int argc, char *argv[])
 		maxhandle++;
 
 		time(&start);
+		upsdebugx(4, "Beginning %u-sec delay between main loop cycles", sleepval);
 		ret = WaitForMultipleObjects(maxhandle, handles, FALSE, sleepval*1000);
 		time(&end);
+		upsdebugx(4, "%u-sec delay between main loop cycles finished, took %" PRIiMAX,
+			sleepval, (intmax_t)difftime(end, start));
 
 		if (ret == WAIT_FAILED) {
 			upslogx(LOG_ERR, "Wait failed");
