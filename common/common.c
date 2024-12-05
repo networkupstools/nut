@@ -79,6 +79,9 @@ static int RET_NERRNO(int ret) {
 static /*_cleanup_(sd_bus_flush_close_unrefp)*/ sd_bus	*systemd_bus = NULL;
 static int	isSupported_Inhibit = -1, isSupported_Inhibit_errno = 0;
 static int	isSupported_PreparingForSleep = -1, isSupported_PreparingForSleep_errno = 0;
+/* We can end up forking after opening the SD BUS (e.g. for notifications
+ * from upsmon) - only the original process should close its own connection */
+static pid_t	sdbusOpenedByPID = 0;
 
 static void close_sdbus_once(void) {
 	/* Per https://manpages.debian.org/testing/libsystemd-dev/sd_bus_flush_close_unrefp.3.en.html
@@ -88,6 +91,13 @@ static void close_sdbus_once(void) {
 
 	if (!systemd_bus) {
 		errno = 0;
+		return;
+	}
+
+	if (sdbusOpenedByPID && sdbusOpenedByPID != getpid()) {
+		upsdebugx(3, "%s: skip actual closing (not our connection, likely parent's, just forget it)", __func__);
+		errno = 0;
+		systemd_bus = NULL;
 		return;
 	}
 
@@ -126,6 +136,10 @@ static int open_sdbus_once(const char *caller) {
 	} else {
 		upsdebugx(1, "%s: succeeded for %s", __func__, NUT_STRARG(caller));
 		faultReported = 0;
+
+		/* track if we are still the process who owns the bus connection
+		 * by the time we get to close it */
+		sdbusOpenedByPID = getpid();
 	}
 
 	if (systemd_bus && !openedOnce) {
