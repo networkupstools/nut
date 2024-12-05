@@ -31,6 +31,7 @@
 
 typedef enum
 {
+	NONE,
 	QUINT_UPS,
 	QUINT4_UPS
 } models;
@@ -41,7 +42,7 @@ static int errcount = 0;
 
 static int mrir(modbus_t * arg_ctx, int addr, int nb, uint16_t * dest);
 
-static models UPSModel;
+static models UPSModel = NONE;
 
 /*
 	For the QUINT ups (first implementation of the driver) the modbus addresses
@@ -117,7 +118,9 @@ void upsdrv_updateinfo(void)
 	case QUINT_UPS:
 		mrir(modbus_ctx, 29697, 3, tab_reg); /* LB is actually called "shutdown event" on this ups */
 		break;
-
+	case NONE:
+		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
+		break;
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
 #endif
@@ -170,7 +173,9 @@ void upsdrv_updateinfo(void)
 	case QUINT_UPS:
 		mrir(modbus_ctx, 29745, 1, tab_reg);
 		break;
-
+	case NONE:
+		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
+		break;
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
 #endif
@@ -210,7 +215,9 @@ void upsdrv_updateinfo(void)
 	case QUINT_UPS:
 		mrir(modbus_ctx, 29749, 5, tab_reg);
 		break;
-
+	case NONE:
+		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
+		break;
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
 #endif
@@ -265,7 +272,9 @@ void upsdrv_updateinfo(void)
 	case QUINT_UPS:
 		mrir(modbus_ctx, 29792, 10, tab_reg);
 		break;
-
+	case NONE:
+		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
+		break;
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
 #endif
@@ -373,7 +382,9 @@ void upsdrv_updateinfo(void)
 		if (CHECK_BIT(tab_reg[0], 16))
 			alarm_set("Low Battery (Service)");
 		break;
-
+	case NONE:
+		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
+		break;
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
 #endif
