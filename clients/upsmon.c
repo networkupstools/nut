@@ -3582,11 +3582,13 @@ int main(int argc, char *argv[])
 
 	while (exit_flag == 0) {
 		utype_t	*ups;
-		time_t	start, end, now;
+		time_t	ttNow;
+		struct timeval	start, end, now;
 #ifndef WIN32
-		time_t	prev;
+		struct timeval	prev;
 #endif
 		double	dt = 0;
+		int	sleep_overhead_tolerance = 5;
 
 		if (isInhibitSupported())
 			init_Inhibitor(prog);
@@ -3675,10 +3677,11 @@ int main(int argc, char *argv[])
 				upsnotify(NOTIFY_STATE_RELOADING, NULL);
 				init_Inhibitor(prog);
 
-				time(&now);
+				gettimeofday(&now, NULL);
+				time(&ttNow);
 				for (ups = firstups; ups != NULL; ups = ups->next) {
 					ups->status = 0;
-					ups->lastpoll = now;
+					ups->lastpoll = ttNow;
 				}
 
 				set_reload_flag(1);
@@ -3716,23 +3719,36 @@ int main(int argc, char *argv[])
 		/* reap children that have exited */
 		waitpid(-1, NULL, WNOHANG);
 
-		time(&start);
+		gettimeofday(&start, NULL);
 		upsdebugx(4, "Beginning %u-sec delay between main loop cycles", sleepval);
 		if (isPreparingForSleepSupported()) {
 			sleep_inhibitor_status = -2;
+			/* talking to sdbus and/or many short sleeps
+			 * on congested systems can take time */
+			sleep_overhead_tolerance = 15;
 			now = start;
 
 			while (sleep_inhibitor_status < 0 && dt < sleepval && !exit_flag) {
 				prev = now;
-				sleep(1);
+				upsdebugx(7, "delay between main loop cycles: before sleep 1...");
 				/* WARNING: This call can take several seconds itself
-				 * on some systems */
+				 * on some systems, seen e.g. with Ubuntu in WSL after
+				 * the PC spent some life-time sleeping */
+				sleep(1);
+				upsdebugx(7, "delay between main loop cycles: after sleep 1...");
 				sleep_inhibitor_status = isPreparingForSleep();
-				time(&now);
-				dt = difftime(now, start);
-				upsdebugx(7, "start=%" PRIiMAX " now=%" PRIiMAX " dt=%g sleepval=%u sleep_inhibitor_status=%d",
-					(intmax_t)start, (intmax_t)now, dt, sleepval, sleep_inhibitor_status);
-				if (dt > (sleepval + 5) || difftime(now, prev) > 5) {
+				upsdebugx(7, "delay between main loop cycles: after isPreparingForSleep()...");
+				gettimeofday(&now, NULL);
+				dt = difftimeval(now, start);
+				upsdebugx(7, "start=%" PRIiMAX ".%06" PRIiMAX
+					" prev=%" PRIiMAX ".%06" PRIiMAX
+					" now=%" PRIiMAX ".%06" PRIiMAX
+					" dt=%.06f sleepval=%u sleep_inhibitor_status=%d",
+					(intmax_t)start.tv_sec, (intmax_t)start.tv_usec,
+					(intmax_t)prev.tv_sec, (intmax_t)prev.tv_usec,
+					(intmax_t)now.tv_sec, (intmax_t)now.tv_usec,
+					dt, sleepval, sleep_inhibitor_status);
+				if (dt > (sleepval + sleep_overhead_tolerance) || difftimeval(now, prev) > sleep_overhead_tolerance) {
 					upsdebugx(2, "It seems we have slept without warning or the system clock was changed (while in delay between main loop cycles)");
 					if (sleep_inhibitor_status < 0)
 						sleep_inhibitor_status = 0;	/* behave as woken up */
@@ -3743,9 +3759,9 @@ int main(int argc, char *argv[])
 			}
 
 			if (sleep_inhibitor_status >= 0) {
-				time(&end);
-				upsdebugx(4, "%u-sec delay between main loop cycles finished, took %" PRIiMAX,
-					sleepval, (intmax_t)difftime(end, start));
+				gettimeofday(&end, NULL);
+				upsdebugx(4, "%u-sec delay between main loop cycles finished, took %.06f",
+					sleepval, difftimeval(end, start));
 				upsdebugx(2, "Aborting polling delay between main loop cycles because OS is preparing for sleep or just woke up");
 				goto end_loop_cycle;
 			}
@@ -3757,9 +3773,9 @@ int main(int argc, char *argv[])
 			/* sleep tight */
 			sleep(sleepval);
 		}
-		time(&end);
-		upsdebugx(4, "%u-sec delay between main loop cycles finished, took %" PRIiMAX,
-			sleepval, (intmax_t)difftime(end, start));
+		gettimeofday(&end, NULL);
+		upsdebugx(4, "%u-sec delay between main loop cycles finished, took %.06f",
+			sleepval, difftimeval(end, start));
 #else
 		maxhandle = 0;
 		memset(&handles, 0, sizeof(handles));
@@ -3777,12 +3793,12 @@ int main(int argc, char *argv[])
 		handles[maxhandle] = pipe_connection_overlapped.hEvent;
 		maxhandle++;
 
-		time(&start);
+		gettimeofday(&start, NULL);
 		upsdebugx(4, "Beginning %u-sec delay between main loop cycles", sleepval);
 		ret = WaitForMultipleObjects(maxhandle, handles, FALSE, sleepval*1000);
-		time(&end);
-		upsdebugx(4, "%u-sec delay between main loop cycles finished, took %" PRIiMAX,
-			sleepval, (intmax_t)difftime(end, start));
+		gettimeofday(&end, NULL);
+		upsdebugx(4, "%u-sec delay between main loop cycles finished, took %.06f",
+			sleepval, difftimeval(end, start));
 
 		if (ret == WAIT_FAILED) {
 			upslogx(LOG_ERR, "Wait failed");
@@ -3831,8 +3847,8 @@ int main(int argc, char *argv[])
 
 		/* General-purpose handling of time jumps for OSes/run-times
 		 * without NUT direct support for suspend/inhibit */
-		dt = difftime(end, start);
-		if (dt > (sleepval + 5)) {
+		dt = difftimeval(end, start);
+		if (dt > (sleepval + sleep_overhead_tolerance)) {
 			upsdebugx(2, "It seems we have slept without warning or the system clock was changed");
 			if (sleep_inhibitor_status < 0)
 				sleep_inhibitor_status = 0;	/* behave as woken up */
