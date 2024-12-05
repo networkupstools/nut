@@ -3721,7 +3721,7 @@ int main(int argc, char *argv[])
 			sleep_inhibitor_status = -2;
 			now = start;
 
-			while (sleep_inhibitor_status < 0 && dt < sleepval) {
+			while (sleep_inhibitor_status < 0 && dt < sleepval && !exit_flag) {
 				prev = now;
 				sleep(1);
 				sleep_inhibitor_status = isPreparingForSleep();
@@ -3743,6 +3743,10 @@ int main(int argc, char *argv[])
 				upsdebugx(2, "Aborting polling delay between main loop cycles because OS is preparing for sleep or just woke up");
 				goto end_loop_cycle;
 			}
+
+			/* NOTE: if exit_flag was raised in sleep-loop above,
+			 * so we aborted it, we end soon after ifdef/endif,
+			 * and so not handling here specially */
 		} else {
 			/* sleep tight */
 			sleep(sleepval);
