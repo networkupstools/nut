@@ -2681,7 +2681,13 @@ static void parse_status(utype_t *ups, char *status)
 				if (node->left) {
 					node->left->right = node->right;	/* May be NULL*/
 				}
-				/* forget the neighbors before dropping the "tree" */
+
+				if (node == ups->status_tokens) {
+					ups->status_tokens = node->left ? node->left : node->right;
+				}
+
+				/* forget the neighbors before dropping the remaining
+				 * "tree" of one node */
 				node->right = NULL;
 				node->left = NULL;
 
@@ -2696,8 +2702,12 @@ static void parse_status(utype_t *ups, char *status)
 			do_notify(ups, NOTIFY_OTHER, other_stat_words);
 		} else {
 			do_notify(ups, NOTIFY_NOTOTHER, NULL);
-			state_infofree(ups->status_tokens);
-			ups->status_tokens = NULL;
+
+			/* No words remain, drop the tree if still there */
+			if (ups->status_tokens) {
+				state_infofree(ups->status_tokens);
+				ups->status_tokens = NULL;
+			}
 		}
 	}
 
