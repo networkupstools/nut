@@ -308,6 +308,8 @@ int isPreparingForSleep(void)
 	if (isSupported_PreparingForSleep == 0) {
 		/* Already determined that we can not use it, e.g. due to perms */
 		errno = isSupported_PreparingForSleep_errno;
+		upsdebug_with_errno(8, "%s: isSupported_PreparingForSleep=%d",
+			__func__, isSupported_PreparingForSleep);
 		return -errno;
 	}
 
@@ -357,16 +359,19 @@ int isPreparingForSleep(void)
 
 	if (val == prev) {
 		/* Unchanged */
+		upsdebugx(8, "%s: state unchanged", __func__);
 		return -1;
 	}
 
 	/* First run and not immediately going to sleep, assume unchanged (no-op for upsmon et al) */
 	if (prev < 0 && !val) {
 		prev = val;
+		upsdebugx(8, "%s: state unchanged (assumed): first run and not immediately going to sleep", __func__);
 		return -1;
 	}
 
 	/* 0 or 1 */
+	upsdebugx(8, "%s: state changed): %" PRIi32 " -> %" PRIi32, __func__, prev, val);
 	prev = val;
 	return val;
 }
