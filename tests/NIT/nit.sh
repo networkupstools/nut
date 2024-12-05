@@ -571,12 +571,25 @@ updatecfg_upsmon_supplies() {
 generatecfg_upsmon_trivial() {
     # Populate the configs for the run
     rm -f "$NUT_STATEPATH/upsmon.sd.log"
-    (  echo 'MINSUPPLIES 0' > "$NUT_CONFPATH/upsmon.conf" || exit
-       echo 'SHUTDOWNCMD "echo \"`date`: TESTING_DUMMY_SHUTDOWN_NOW\" | tee \"'"$NUT_STATEPATH"'/upsmon.sd.log\" "' >> "$NUT_CONFPATH/upsmon.conf" || exit
+    (   echo 'MINSUPPLIES 0' > "$NUT_CONFPATH/upsmon.conf" || exit
+        echo 'SHUTDOWNCMD "echo \"`date`: TESTING_DUMMY_SHUTDOWN_NOW\" | tee \"'"$NUT_STATEPATH"'/upsmon.sd.log\" "' >> "$NUT_CONFPATH/upsmon.conf" || exit
 
-       if [ -n "${NUT_DEBUG_MIN-}" ] ; then
-           echo "DEBUG_MIN ${NUT_DEBUG_MIN}" >> "$NUT_CONFPATH/upsmon.conf" || exit
-       fi
+        if [ -x "${TOP_SRCDIR-}/scripts/misc/notifyme-debug" ] ; then
+            echo "NOTIFYCMD \"TEMPDIR='${NUT_STATEPATH}' ${TOP_SRCDIR-}/scripts/misc/notifyme-debug\"" >> "$NUT_CONFPATH/upsmon.conf" || exit
+
+            # NOTE: "SYSLOG" typically ends up in console log of the NIT run and
+            # "EXEC" goes to a log file like tests/NIT/tmp/run/notifyme-399.log
+            if [ -s "${TOP_SRCDIR-}/conf/upsmon.conf.sample.in" ] ; then
+                grep -E '# NOTIFYFLAG .*SYSLOG\+WALL$' \
+                < "${TOP_SRCDIR-}/conf/upsmon.conf.sample.in" \
+                | sed 's,^# \(NOTIFYFLAG[^A-Z_]*[A-Z_]*\)[^A-Z_]*SYSLOG.*$,\1\tEXEC+SYSLOG,' \
+                >> "$NUT_CONFPATH/upsmon.conf" || exit
+            fi
+        fi
+
+        if [ -n "${NUT_DEBUG_MIN-}" ] ; then
+            echo "DEBUG_MIN ${NUT_DEBUG_MIN}" >> "$NUT_CONFPATH/upsmon.conf" || exit
+        fi
     ) || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
 
     if [ "`id -u`" = 0 ]; then
