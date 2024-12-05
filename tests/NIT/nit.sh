@@ -1172,15 +1172,23 @@ testcase_sandbox_upsc_query_timer() {
     OUT2="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT2"
     OUT3=""
     OUT4=""
+    OUT5=""
+
+    # The SUT may be busy, or dummy-ups can have a loop delay
+    # (pollfreq) after reading the file before wrapping around
     if [ x"$OUT1" = x"$OUT2" ]; then
         sleep 3
         OUT3="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT3"
         if [ x"$OUT2" = x"$OUT3" ]; then
             sleep 3
             OUT4="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT4"
+            if [ x"$OUT3" = x"$OUT4" ]; then
+                sleep 8
+                OUT5="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT4"
+            fi
         fi
     fi
-    if echo "$OUT1$OUT2$OUT3$OUT4" | grep "OB" && echo "$OUT1$OUT2$OUT3$OUT4" | grep "OL" ; then
+    if echo "$OUT1$OUT2$OUT3$OUT4$OUT5" | grep "OB" && echo "$OUT1$OUT2$OUT3$OUT4$OUT5" | grep "OL" ; then
         log_info "[testcase_sandbox_upsc_query_timer] PASSED: ups.status flips over time"
         PASSED="`expr $PASSED + 1`"
     else
