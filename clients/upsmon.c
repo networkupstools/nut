@@ -299,7 +299,7 @@ static void notify(const char *notice, int flags, const char *ntype,
 #endif
 
 	upsdebugx(6, "%s: sending notification for [%s]: type %s with flags 0x%04x: %s",
-		__func__, upsname, ntype, flags, notice);
+		__func__, upsname ? upsname : "upsmon itself", ntype, flags, notice);
 
 	if (flag_isset(flags, NOTIFY_IGNORE)) {
 		upsdebugx(6, "%s: NOTIFY_IGNORE", __func__);
