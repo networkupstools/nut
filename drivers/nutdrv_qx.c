@@ -71,6 +71,7 @@
 /* Include all known subdrivers */
 #include "nutdrv_qx_bestups.h"
 #include "nutdrv_qx_hunnox.h"
+#include "nutdrv_qx_innovart31.h"
 #include "nutdrv_qx_mecer.h"
 #include "nutdrv_qx_megatec.h"
 #include "nutdrv_qx_megatec-old.h"
@@ -97,6 +98,7 @@ static subdriver_t	*subdriver_list[] = {
 	&masterguard_subdriver,
 	&hunnox_subdriver,
 	&ablerex_subdriver,
+	&innovart31_subdriver,
 	/* Fallback Q1 subdriver */
 	&q1_subdriver,
 	NULL
