@@ -1768,7 +1768,8 @@ static void addups(int reloading, const char *sys, const char *pvs,
 		tmp = tmp->next;
 	}
 
-	tmp = xmalloc(sizeof(utype_t));
+	tmp = xcalloc(1, sizeof(utype_t));
+	/* TOTHINK: init (UPSCONN_t)tmp->conn struct fields too? */
 	tmp->sys = xstrdup(sys);
 	tmp->pv = pv;
 
@@ -1782,9 +1783,13 @@ static void addups(int reloading, const char *sys, const char *pvs,
 	tmp->status_tokens = NULL;
 	tmp->retain = 1;
 
-	/* ignore initial COMMOK and ONLINE by default */
+	/* ignore initial COMMOK, ONLINE, etc. by default */
 	tmp->commstate = -1;
 	tmp->linestate = -1;
+	tmp->offstate = -1;
+	tmp->bypassstate = -1;
+	tmp->ecostate = -1;
+	tmp->alarmstate = -1;
 
 	/* forget poll-failure logging throttling */
 	tmp->pollfail_log_throttle_count = -1;
@@ -1794,6 +1799,9 @@ static void addups(int reloading, const char *sys, const char *pvs,
 	tmp->lastnoncrit = 0;
 	tmp->lastrbwarn = 0;
 	tmp->lastncwarn = 0;
+
+	tmp->offsince = 0;
+	tmp->oblbsince = 0;
 
 	if (   (!strcasecmp(managerialOption, "primary"))
 	    || (!strcasecmp(managerialOption, "master"))  ) {
