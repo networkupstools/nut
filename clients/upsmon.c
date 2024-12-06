@@ -2344,6 +2344,14 @@ static void ups_free(utype_t *ups)
 	free(ups->hostname);
 	free(ups->un);
 	free(ups->pw);
+
+	/* We usually free and nullify these as we have no use for them,
+	 * but if something remains (had active alert etc.) - do it here: */
+	if (ups->status_tokens) {
+		state_infofree(ups->status_tokens);
+		ups->status_tokens = NULL;
+	}
+
 	free(ups);
 }
 
