@@ -280,9 +280,17 @@ for more details see linkman:upsmon[8].
 
 NOTECO;; UPS no longer in ECO mode (see above)
 
-ALARM;; UPS is in an alarm state (has active alarms)
+ALARM;; UPS has one or more active alarms (check ups.alarm);
+for this notification, the `message` can contain a second `%s` placeholder
+to substitute the current value of `ups.alarm`.
 
 NOTALARM;; UPS is no longer in an alarm state (no active alarms)
+
+OTHER;; UPS has at least one unclassified `ups.status` token;
+for this notification, the `message` can contain a second `%s` placeholder
+to substitute the current collection of such tokens.
+
+NOTOTHER;; UPS has no unclassified status tokens anymore
 
 SUSPEND_STARTING;; OS is entering sleep/suspend/hibernate mode
 

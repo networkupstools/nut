@@ -1,12 +1,17 @@
 #!/bin/sh
 
-# This is a sample NUT notification script aimed to aid debugging of upsmon
-# behavior. It creates or appends to a log file named per user ID in the
-# temporary location with an entry per line like this:
+# This is a sample NUT notification script aimed to aid debugging of
+# `upsmon` behavior, as its NOTIFYCMD (as specified in upsmon.conf).
+# This script creates or appends to a log file named per user ID in
+# the specified or default temporary location with an entry per line
+# like this:
 #   Sat Apr  6 17:23:06 UTC 2024    [uid=77(nut) gid=77(nut) groups=77(nut)]        COMMBAD [eco650]:        Communications with UPS eco650 lost     (1 tokens)
 #   Sat Apr  6 17:28:01 UTC 2024    [uid=77(nut) gid=77(nut) groups=77(nut)]        NOCOMM  [eco650]:        UPS eco650 is unavailable       (1 tokens)
 #
 # Copyright (C) 2023-2024 by Jim Klimov <jimklimov+nut@gmail.com>
 # Licensed under the terms of the Network UPS Tools source license (GPLv2+)
 
-printf '%s\t[%s]\t%s\t[%s]:\t%s\t(%s tokens)\n' "`date -u`" "`id`" "${NOTIFYTYPE-}" "${UPSNAME-}" "$*" "$#" >> "/tmp/notifyme-`id -u`.log"
+[ -n "${TEMPDIR-}" ] || TEMPDIR="${TMPDIR-}"
+[ -n "${TEMPDIR-}" ] || { [ -d "/dev/shm" && TEMPDIR="/dev/shm" || TEMPDIR="/tmp" ; }
+
+printf '%s\t[%s]\t%s\t[%s]:\t%s\t(%s tokens)\n' "`date -u`" "`id`" "${NOTIFYTYPE-}" "${UPSNAME-}" "$*" "$#" >> "${TEMPDIR}/notifyme-`id -u`.log"

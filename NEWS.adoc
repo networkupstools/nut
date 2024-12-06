@@ -153,6 +153,12 @@ https://github.com/networkupstools/nut/milestone/11
    models with serial port, made by NHS Sistemas Eletronicos LTDA and popular
    in Brazil. Currently this driver only builds on Linux. [#2692]
 
+ - `usbhid-ups` and `netxml-ups` updated to handle "No battery installed!"
+   alarm also to set the `RB` (Replace Battery) value in `ups.status`.
+   This may cause dual triggering of notifications (as an `ALARM` generally
+   and as an important `REPLBATT` status in particular) in `upsmon`, but
+   better safe than sorry. [#415]
+
  - usbhid-ups updates:
    * Support of the `onlinedischarge_log_throttle_hovercharge` in the NUT
      v2.8.2 release was found to be incomplete. [#2423, follow-up to #2215]
@@ -246,7 +252,7 @@ https://github.com/networkupstools/nut/milestone/11
    that there is no common standard for what constitutes an alarm and such
    alarm states were also previously observed for less severe reasons. This
    depends on the manufacturer/device-specific implementation in the driver.
-   [issue #2657, PR #2658]
+   [issues #415, #2657, PR #2658]
    * Updated documentation, end-user clients (CGI, NUT-Monitor UI);
    * Updated `upsmon` client with ability to report entering and exiting
      the ALARM status if reported by the driver;
@@ -261,6 +267,14 @@ https://github.com/networkupstools/nut/milestone/11
      from templates). [issue #321, PR #2383]
    * added an `OBLBDURATION` (seconds) setting to optionally delay raising
      the alarm for immediate shutdown in critical situation. [#321]
+   * optimized `parse_status()` by not checking further strings if we had
+     a match; report unexpected tokens in debug log. [#415]
+   * revised internal `do_notify()` method to support formatting strings
+     with two `%s` placeholders, to use if certain use-cases pass any extra
+     information (e.g. not just "we have alarms" but their values too). [#415]
+   * introduced handling for "unknown" `ups.status` tokens, reporting them
+     as "OTHER" notification type (whenever the set of such tokens appears
+     or changes) or "NOTOTHER" when they disappear. [#415]
 
  - More systemd integration:
    * Introduced a `nut-sleep.service` unit which stops `nut.target` when a

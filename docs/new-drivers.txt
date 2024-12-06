@@ -244,9 +244,20 @@ Possible values for status_set:
 	BOOST   -- UPS is boosting incoming voltage
 	FSD     -- Forced Shutdown (restricted use, see the note below)
 
-Anything else will not be recognized by the usual clients.  Coordinate
-with the nut-upsdev list before creating something new, since there will be
-duplication and ugliness otherwise.
+Anything else will not be recognized by the usual clients expecting a
+particular NUT standard release.  New tokens may appear over time, but
+driver developers should coordinate with the nut-upsdev list before creating
+something new, since there will be duplication and ugliness otherwise.
+It is possible that eventually, due to hardware and software design evolution,
+some concepts would be superseded by others.  Fundamental meanings of the
+flags listed above should not change (but these flags may become no longer
+issued by the current NUT drivers; then may still be used e.g. in forks or
+older packaged builds).
+
+Clients however MUST accept any space-separated tokens in `ups.status`
+without error or crash, and MUST treat those defined above with the
+ascribed meanings, but MAY ignore unidentified tokens (quietly by default,
+or acknowledge the skip with a debug log message).
 
 [NOTE]
 ==============================================================================
