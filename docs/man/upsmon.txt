@@ -193,10 +193,16 @@ on battery life). Older devices only implemented one or the other.
 UPS no longer in ECO mode (see above).
 
 *ALARM*::
-UPS is in an alarm state (has active alarms).
+UPS has one or more active alarms (look at `ups.alarm` for details).
 
 *NOTALARM*::
 UPS is no longer in an alarm state (no active alarms).
+
+*OTHER*::
+UPS has at least one unclassified status token.
+
+*NOTOTHER*::
+UPS has no unclassified status tokens anymore.
 
 *SUSPEND_STARTING*::
 OS is entering sleep/suspend/hibernate mode.

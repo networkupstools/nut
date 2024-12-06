@@ -29,7 +29,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.58"
+#define DRIVER_VERSION	"0.59"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
@@ -2409,7 +2409,7 @@ static void ups_status_set(void)
 	if (ups_status & STATUS(OVERLOAD)) {
 		status_set("OVER");		/* overload */
 	}
-	if (ups_status & STATUS(REPLACEBATT)) {
+	if ((ups_status & STATUS(REPLACEBATT)) || (ups_status & STATUS(NOBATTERY))) {
 		if (lbrb_log_delay_sec < 1
 		|| (!isCalibrating && !lbrb_log_delay_without_calibrating)
 		|| !last_lb_start	/* Calibration ended (not LB anymore) */

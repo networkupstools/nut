@@ -127,6 +127,8 @@ let upsmon_notify_type = "ONLINE"
 			| "NOTECO"
 			| "ALARM"
 			| "NOTALARM"
+			| "OTHER"
+			| "NOTOTHER"
 			| "SUSPEND_STARTING"
 			| "SUSPEND_FINISHED"
 
