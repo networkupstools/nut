@@ -1593,6 +1593,17 @@ static void redefine_ups(utype_t *ups, unsigned int pv, const char *un,
 	ups->retain = 1;
 
 	if (ups->pv != pv) {
+		/* TOCHECK: We start a config loading loop with totalpv=0
+		 * initially or in reload_conf(), and ignore duplicates
+		 * in addups() unless reloading. If we reload a config
+		 * with two definitions of same ups->sys name, will their
+		 * power values be not ignored and add up? Should we
+		 * subtract the older value from totalpv here? How do
+		 * we differentiate (cookie?) first seeing an ups->sys
+		 * which we knew about earlier during a reload_conf()
+		 * from seeing it again? This is a somewhat rare case
+		 * of self-inflicted pain, if it does even happen :)
+		 */
 		upslogx(LOG_INFO, "UPS [%s]: redefined power value to %d",
 			ups->sys, pv);
 		ups->pv = pv;
@@ -1669,7 +1680,8 @@ static void redefine_ups(utype_t *ups, unsigned int pv, const char *un,
 	/* secondary|slave -> primary|master */
 	if ( (   (!strcasecmp(managerialOption, "primary"))
 	      || (!strcasecmp(managerialOption, "master"))  )
-	     && (!flag_isset(ups->status, ST_PRIMARY)) ) {
+	     && (!flag_isset(ups->status, ST_PRIMARY))
+	) {
 		upslogx(LOG_INFO, "UPS [%s]: redefined as a primary", ups->sys);
 		setflag(&ups->status, ST_PRIMARY);
 
@@ -1681,7 +1693,8 @@ static void redefine_ups(utype_t *ups, unsigned int pv, const char *un,
 	/* primary|master -> secondary|slave */
 	if ( (   (!strcasecmp(managerialOption, "secondary"))
 	      || (!strcasecmp(managerialOption, "slave"))  )
-	     && (flag_isset(ups->status, ST_PRIMARY)) ) {
+	     && (flag_isset(ups->status, ST_PRIMARY))
+	) {
 		upslogx(LOG_INFO, "UPS [%s]: redefined as a secondary", ups->sys);
 		clearflag(&ups->status, ST_PRIMARY);
 		return;
