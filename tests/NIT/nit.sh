@@ -23,6 +23,8 @@
 #	TESTDIR=/tmp/nut-NIT	to propose a location for "etc" and "run"
 #			mock locations (under some circumstances, the
 #			script can anyway choose to `mktemp` another)
+#	NUT_DEBUG_UPSMON_NOTIFY_SYSLOG=false	To *disable* upsmon
+#			notifications spilling to the script's console.
 #
 # Common sandbox run for testing goes from NUT root build directory like:
 #	DEBUG_SLEEP=600 NUT_PORT=12345 NIT_CASE=testcase_sandbox_start_drivers_after_upsd NUT_FOREGROUND_WITH_PID=true make check-NIT &
@@ -574,15 +576,23 @@ generatecfg_upsmon_trivial() {
     (   echo 'MINSUPPLIES 0' > "$NUT_CONFPATH/upsmon.conf" || exit
         echo 'SHUTDOWNCMD "echo \"`date`: TESTING_DUMMY_SHUTDOWN_NOW\" | tee \"'"$NUT_STATEPATH"'/upsmon.sd.log\" "' >> "$NUT_CONFPATH/upsmon.conf" || exit
 
+        NOTIFYTGT=""
         if [ -x "${TOP_SRCDIR-}/scripts/misc/notifyme-debug" ] ; then
             echo "NOTIFYCMD \"TEMPDIR='${NUT_STATEPATH}' ${TOP_SRCDIR-}/scripts/misc/notifyme-debug\"" >> "$NUT_CONFPATH/upsmon.conf" || exit
 
             # NOTE: "SYSLOG" typically ends up in console log of the NIT run and
             # "EXEC" goes to a log file like tests/NIT/tmp/run/notifyme-399.log
+            NOTIFYTGT="EXEC"
+        fi
+        if [ x"$NUT_DEBUG_UPSMON_NOTIFY_SYSLOG" != xfalse ] ; then
+            [ -n "${NOTIFYTGT}" ] && NOTIFYTGT="${NOTIFYTGT}+SYSLOG" || NOTIFYTGT="SYSLOG"
+        fi
+
+        if [ -n "${NOTIFYTGT}" ]; then
             if [ -s "${TOP_SRCDIR-}/conf/upsmon.conf.sample.in" ] ; then
                 grep -E '# NOTIFYFLAG .*SYSLOG\+WALL$' \
                 < "${TOP_SRCDIR-}/conf/upsmon.conf.sample.in" \
-                | sed 's,^# \(NOTIFYFLAG[^A-Z_]*[A-Z_]*\)[^A-Z_]*SYSLOG.*$,\1\tEXEC+SYSLOG,' \
+                | sed 's,^# \(NOTIFYFLAG[^A-Z_]*[A-Z_]*\)[^A-Z_]*SYSLOG.*$,\1\t'"${NOTIFYTGT}"',' \
                 >> "$NUT_CONFPATH/upsmon.conf" || exit
             fi
         fi
