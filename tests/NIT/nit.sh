@@ -1698,6 +1698,7 @@ if [ -n "${DEBUG_SLEEP-}" ] ; then
 
     log_info "You may want to press Ctrl+Z now and command 'bg' to the shell, if you did not start '$0 &' backgrounded already"
     log_info "To kill the script early, return it to foreground with 'fg' and press Ctrl+C, or 'kill -2 \$PID_NIT_SCRIPT' (kill -2 $$)"
+    log_info "To trace built programs, check scripts/valgrind/README.adoc and LD_LIBRARY_PATH for this build"
 
     log_info "Remember that in shell/scripting you can probe for '${NUT_CONFPATH}/NIT.env-sandbox-ready' which only appears at this moment"
     touch "${NUT_CONFPATH}/NIT.env-sandbox-ready"
