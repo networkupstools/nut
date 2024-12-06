@@ -2376,6 +2376,7 @@ static void upsmon_cleanup(void)
 	free(shutdowncmd);
 	free(notifycmd);
 	free(powerdownflag);
+	free(configfile);
 
 	for (i = 0; notifylist[i].name != NULL; i++) {
 		free(notifylist[i].msg);
