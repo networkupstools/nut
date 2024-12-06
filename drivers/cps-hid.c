@@ -32,7 +32,7 @@
 #include "cps-hid.h"
 #include "usb-common.h"
 
-#define CPS_HID_VERSION      "CyberPower HID 0.81"
+#define CPS_HID_VERSION      "CyberPower HID 0.82"
 
 /* Cyber Power Systems */
 #define CPS_VENDORID 0x0764
@@ -234,6 +234,7 @@ static hid_info_t cps_hid2nut[] = {
   { "ups.timer.shutdown", 0, 0, "UPS.Output.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
   { "ups.timer.reboot", 0, 0, "UPS.Output.DelayBeforeReboot", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
   { "ups.firmware", 0, 0, "UPS.PowerSummary.CPSFirmwareVersion", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
+  { "ups.temperature", 0, 0, "UPS.PowerSummary.Temperature", NULL, "%s", 0, kelvin_celsius_conversion },
 
   /* Special case: ups.status & ups.alarm */
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, online_info },

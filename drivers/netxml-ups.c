@@ -1042,7 +1042,7 @@ static void netxml_status_set(void)
 	if (STATUS_BIT(OVERLOAD)) {
 		status_set("OVER");		/* overload */
 	}
-	if (STATUS_BIT(REPLACEBATT)) {
+	if (STATUS_BIT(REPLACEBATT) || STATUS_BIT(NOBATTERY)) {
 		status_set("RB");		/* replace batt */
 	}
 	if (STATUS_BIT(TRIM)) {

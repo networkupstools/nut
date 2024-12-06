@@ -1324,6 +1324,10 @@ UpsmonConfiguration::NotifyType UpsmonConfiguration::NotifyTypeFromString(const 
 		return NOTIFY_ALARM;
 	else if(str=="NOTALARM")
 		return NOTIFY_NOTALARM;
+	else if(str=="OTHER")
+		return NOTIFY_OTHER;
+	else if(str=="NOTOTHER")
+		return NOTIFY_NOTOTHER;
 	else if(str=="SUSPEND_STARTING")
 		return NOTIFY_SUSPEND_STARTING;
 	else if(str=="SUSPEND_FINISHED")

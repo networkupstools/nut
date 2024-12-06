@@ -334,8 +334,17 @@ POWERDOWNFLAG "@POWERDOWNFLAG@"
 # NOTIFYMSG NOTBYPASS	"UPS %s: no longer on bypass"
 # NOTIFYMSG ECO		"UPS %s: in ECO mode (as defined by vendor)"
 # NOTIFYMSG NOTECO	"UPS %s: no longer in ECO mode (as defined by vendor)"
-# NOTIFYMSG ALARM	"UPS %s is in an alarm state (has active alarms)"
+# NOTIFYMSG ALARM	"UPS %s: one or more active alarms: [%s]"
+# or NOTIFYMSG ALARM	"UPS %s: one or more active alarms (check ups.alarm)"
 # NOTIFYMSG NOTALARM	"UPS %s is no longer in an alarm state (no active alarms)"
+#
+# Special handling is provided for surprise tokens seen in ups.status, which
+# are not in the standard NUT dictionary (but some drivers are known to use);
+# note that unlike other formatting strings, the "OTHER" one has two string
+# placeholders "%s" (it is safe to use one, leaving just the UPS name, or none):
+#
+# NOTIFYMSG OTHER	"UPS %s: has at least one unclassified status token: [%s]"
+# NOTIFYMSG NOTOTHER	"UPS %s has no unclassified status tokens anymore"
 #
 # A few messages not directly related to UPS events are also available:
 #
@@ -356,6 +365,7 @@ POWERDOWNFLAG "@POWERDOWNFLAG@"
 # REPLBATT : The UPS battery is bad and needs to be replaced
 # NOCOMM   : A UPS is unavailable (can't be contacted for monitoring)
 # NOPARENT : The process that shuts down the system has died (shutdown impossible)
+# ALARM    : UPS has one or more alarms (look at "ups.alarm" for details)
 
 # --------------------------------------------------------------------------
 # NOTIFYFLAG - change behavior of upsmon when NOTIFY events occur
@@ -387,6 +397,9 @@ POWERDOWNFLAG "@POWERDOWNFLAG@"
 # NOTIFYFLAG NOTECO	SYSLOG+WALL
 # NOTIFYFLAG ALARM	SYSLOG+WALL
 # NOTIFYFLAG NOTALARM	SYSLOG+WALL
+#
+# NOTIFYFLAG OTHER	SYSLOG+WALL
+# NOTIFYFLAG NOTOTHER	SYSLOG+WALL
 #
 # NOTIFYFLAG SUSPEND_STARTING	SYSLOG+WALL
 # NOTIFYFLAG SUSPEND_FINISHED	SYSLOG+WALL
