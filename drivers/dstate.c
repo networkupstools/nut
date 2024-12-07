@@ -855,7 +855,16 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 			return 1;
 		}
 
-		upslogx(LOG_NOTICE, "Got INSTCMD, but driver lacks a handler");
+		if (cmdparam) {
+			upslogx(LOG_NOTICE,
+				"Got INSTCMD '%s' '%s', but driver lacks a handler",
+				NUT_STRARG(cmdname), NUT_STRARG(cmdparam));
+		} else {
+			upslogx(LOG_NOTICE,
+				"Got INSTCMD '%s', but driver lacks a handler",
+				NUT_STRARG(cmdname));
+		}
+
 		return 1;
 	}
 

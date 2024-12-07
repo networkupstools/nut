@@ -71,6 +71,12 @@ https://github.com/networkupstools/nut/milestone/11
      a `*_s()` variant was available was not handled correctly. [PR #2583]
    * A recently introduced `allow_killpower` did not actually work as an
      `ups.conf` flag (only as a protocol command). [issue #2605, PR #2606]
+   * The ability of two copies of the driver program to talk to each other
+     with `upsdrvquery.c` code was not complete for the case of indefinite
+     `select()` wait timeout. Now `upsdrvquery_read_timeout()` fixed private
+     use of `struct timeval={-1,-1}` as a trigger to `select(..., NULL)`,
+     as logged in one part of code and not handled in the other, for the
+     indefinite wait [#1922, #2392, #2686, #2670]
 
  - development iterations of NUT should now identify with not only the semantic
    version of a preceding release, but with git-derived information about the
@@ -338,6 +344,24 @@ during a NUT build.
    * do not actively suggest `vendor(id)`, `product(id)`, and `serial` options
      for `bcmxcp_usb`, `richcomm_usb` and `nutdrv_atcl_usb` drivers for now
      [#1763, #1764, #1768, #2580]
+
+ - all drivers should now support the optional `sdcommands` setting with
+   a site-local list of instant commands to handle `upsdrv_shutdown()`,
+   which may be useful in cases when the driver's built-in commands
+   (or their order) do not meet the goals of particular NUT deployment.
+   This can also help with shutdown endgame testing, using a mock command like
+   starting the beeper (where supported) to verify that the UPS communications
+   happen as expected, without compromising the load connected to the UPS.
++
+Also defined `EF_EXIT_SUCCESS` and `EF_EXIT_FAILURE` in `include/common.h`
+to avoid magic numbers in code like `set_exit_flag(-2)`, and revised whether
+it is getting set at all in "killpower" vs. other cases, based on new
+`handling_upsdrv_shutdown` internal flag.
++
+NOTE: during this overhaul, many older drivers got their first ever supported
+INSTCMD such as `shutdown.return`, `shutdown.stayoff` or `load.off`. Default
+logic that was previously the content of `upsdrv_shutdown()` methods was often
+relocated into new `shutdown.default` INSTCMD definitions. [#2670]
 
  - common code:
    * introduced a `NUT_DEBUG_SYSLOG` environment variable to tweak activation

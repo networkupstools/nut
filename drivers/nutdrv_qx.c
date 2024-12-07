@@ -58,7 +58,7 @@
 #	define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.37"
+#define DRIVER_VERSION	"0.38"
 
 #ifdef QX_SERIAL
 #	include "serial.h"
@@ -2769,11 +2769,18 @@ int	setvar(const char *varname, const char *val)
 /* Try to shutdown the UPS */
 void	upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	int		retry;
 	item_t		*item;
 	const char	*val;
 
 	upsdebugx(1, "%s...", __func__);
+
+	/* FIXME: Use common "sdcommands" feature to
+	 * replace tunables used below ("stayoff" etc).
+	 */
 
 	/* Get user-defined delays */
 
@@ -2783,7 +2790,8 @@ void	upsdrv_shutdown(void)
 	/* Don't know what happened */
 	if (!item) {
 		upslogx(LOG_ERR, "Unable to set start delay");
-		set_exit_flag(-1);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
 		return;
 	}
 
@@ -2798,7 +2806,8 @@ void	upsdrv_shutdown(void)
 
 	if (val && setvar(item->info_type, val) != STAT_SET_HANDLED) {
 		upslogx(LOG_ERR, "Start delay '%s' out of range", val);
-		set_exit_flag(-1);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
 		return;
 	}
 
@@ -2808,7 +2817,8 @@ void	upsdrv_shutdown(void)
 	/* Don't know what happened */
 	if (!item) {
 		upslogx(LOG_ERR, "Unable to set shutdown delay");
-		set_exit_flag(-1);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
 		return;
 	}
 
@@ -2823,13 +2833,13 @@ void	upsdrv_shutdown(void)
 
 	if (val && setvar(item->info_type, val) != STAT_SET_HANDLED) {
 		upslogx(LOG_ERR, "Shutdown delay '%s' out of range", val);
-		set_exit_flag(-1);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
 		return;
 	}
 
 	/* Stop pending shutdowns */
 	if (find_nut_info("shutdown.stop", QX_FLAG_CMD, QX_FLAG_SKIP)) {
-
 		for (retry = 1; retry <= MAXTRIES; retry++) {
 
 			if (instcmd("shutdown.stop", NULL) != STAT_INSTCMD_HANDLED) {
@@ -2843,34 +2853,30 @@ void	upsdrv_shutdown(void)
 		if (retry > MAXTRIES) {
 			upslogx(LOG_NOTICE, "No shutdown pending");
 		}
-
 	}
 
 	/* Shutdown */
 	for (retry = 1; retry <= MAXTRIES; retry++) {
-
 		if (testvar("stayoff")) {
-
 			if (instcmd("shutdown.stayoff", NULL) != STAT_INSTCMD_HANDLED) {
 				continue;
 			}
-
 		} else {
-
 			if (instcmd("shutdown.return", NULL) != STAT_INSTCMD_HANDLED) {
 				continue;
 			}
-
 		}
 
 		upslogx(LOG_ERR, "Shutting down in %s seconds",
 			dstate_getinfo("ups.delay.shutdown"));
-		set_exit_flag(-2);	/* EXIT_SUCCESS */
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_SUCCESS);
 		return;
 	}
 
 	upslogx(LOG_ERR, "Shutdown failed!");
-	set_exit_flag(-1);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 #ifdef QX_USB

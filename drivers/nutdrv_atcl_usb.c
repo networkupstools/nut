@@ -28,7 +28,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"'ATCL FOR UPS' USB driver"
-#define DRIVER_VERSION	"1.18"
+#define DRIVER_VERSION	"1.19"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -64,6 +64,9 @@ static usb_device_id_t atcl_usb_id[] = {
 static usb_dev_handle	*udev = NULL;
 static USBDevice_t	usbdevice;
 static unsigned int	comm_failures = 0;
+
+/* Forward decls */
+static int instcmd(const char *cmdname, const char *extra);
 
 static int device_match_func(USBDevice_t *device, void *privdata)
 {
@@ -582,6 +585,15 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("ups.vendorid", "%04x", usbdevice.VendorID);
 	dstate_setinfo("ups.productid", "%04x", usbdevice.ProductID);
+
+	/* commands ----------------------------------------------- */
+	/* FIXME: Check with the device what our instcmd
+	 * (nee upsdrv_shutdown() contents) actually does!
+	 */
+	dstate_addcmd("shutdown.stayoff");
+
+	/* install handlers */
+	upsh.instcmd = instcmd;
 }
 
 void upsdrv_updateinfo(void)
@@ -641,44 +653,75 @@ void upsdrv_updateinfo(void)
 	status_commit();
 }
 
-/* If the UPS is on battery, it should shut down about 30 seconds after
- * receiving this packet.
- */
+/* handler for commands to be sent to UPS */
+static
+int instcmd(const char *cmdname, const char *extra)
+{
+	NUT_UNUSED_VARIABLE(extra);
+
+	/* FIXME: Which one is this - "load.off",
+	 * "shutdown.stayoff" or "shutdown.return"? */
+
+	/* Shutdown UPS */
+	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+		/* If the UPS is on battery, it should shut down
+		 * about 30 seconds after receiving this packet.
+		 */
+
+		/* Not "const" because this mismatches arg type
+		 * of usb_interrupt_write() */
+		char	shutdown_packet[SHUTDOWN_PACKETSIZE] = { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+		int ret;
+
+		upslogx(LOG_DEBUG,
+			"%s: attempting to call usb_interrupt_write(01 00 00 00 00 00 00 00)",
+			__func__);
+
+		ret = usb_interrupt_write(udev,
+			SHUTDOWN_ENDPOINT, (usb_ctrl_charbuf)shutdown_packet,
+			SHUTDOWN_PACKETSIZE, ATCL_USB_TIMEOUT);
+
+		if (ret <= 0) {
+			upslogx(LOG_NOTICE,
+				"%s: first usb_interrupt_write() failed: %s",
+				__func__,
+				ret ? nut_usb_strerror(ret) : "timeout");
+		}
+
+		/* Totally guessing from the .pcap file here.
+		 * TODO: configurable delay?
+		 */
+		usleep(170*1000);
+
+		ret = usb_interrupt_write(udev,
+			SHUTDOWN_ENDPOINT, (usb_ctrl_charbuf)shutdown_packet,
+			SHUTDOWN_PACKETSIZE, ATCL_USB_TIMEOUT);
+
+		if (ret <= 0) {
+			upslogx(LOG_ERR,
+				"%s: second usb_interrupt_write() failed: %s",
+				__func__,
+				ret ? nut_usb_strerror(ret) : "timeout");
+		}
+
+		return STAT_INSTCMD_HANDLED;
+	}
+
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
+	return STAT_INSTCMD_UNKNOWN;
+}
+
 void upsdrv_shutdown(void)
 {
-	/* Not "const" because this mismatches arg type of usb_interrupt_write() */
-	char	shutdown_packet[SHUTDOWN_PACKETSIZE] = { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-	int ret;
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
 
-	upslogx(LOG_DEBUG,
-		"%s: attempting to call usb_interrupt_write(01 00 00 00 00 00 00 00)",
-		__func__);
-
-	ret = usb_interrupt_write(udev,
-		SHUTDOWN_ENDPOINT, (usb_ctrl_charbuf)shutdown_packet,
-		SHUTDOWN_PACKETSIZE, ATCL_USB_TIMEOUT);
-
-	if (ret <= 0) {
-		upslogx(LOG_NOTICE,
-			"%s: first usb_interrupt_write() failed: %s",
-			__func__,
-			ret ? nut_usb_strerror(ret) : "timeout");
-	}
-
-	/* Totally guessing from the .pcap file here. TODO: configurable delay? */
-	usleep(170*1000);
-
-	ret = usb_interrupt_write(udev,
-		SHUTDOWN_ENDPOINT, (usb_ctrl_charbuf)shutdown_packet,
-		SHUTDOWN_PACKETSIZE, ATCL_USB_TIMEOUT);
-
-	if (ret <= 0) {
-		upslogx(LOG_ERR,
-			"%s: second usb_interrupt_write() failed: %s",
-			__func__,
-			ret ? nut_usb_strerror(ret) : "timeout");
-	}
-
+	/* FIXME: Check with the device what our instcmd
+	 * (nee upsdrv_shutdown() contents) actually does!
+	 */
+	int	ret = do_loop_shutdown_commands("shutdown.stayoff", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 void upsdrv_help(void)

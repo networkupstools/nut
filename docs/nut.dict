@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3260 utf-8
+personal_ws-1.1 en 3263 utf-8
 AAC
 AAS
 ABI
@@ -2765,6 +2765,7 @@ screenshots
 scriptname
 sd
 sdcmd
+sdcommands
 sddelay
 sdk
 sdl
@@ -2989,6 +2990,7 @@ timehead
 timername
 timestamp
 timeticks
+timeval
 tios
 tmp
 tmpfiles
@@ -3087,6 +3089,7 @@ upsdebugx
 upsdev
 upsdrv
 upsdrvctl
+upsdrvquery
 upsdrvsvcctl
 upserror
 upsfetch

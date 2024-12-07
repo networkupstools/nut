@@ -221,6 +221,7 @@ CMDDESC driver.reload-or-exit "Reload running driver configuration from the file
 
 CMDDESC load.off "Turn off the load immediately"
 CMDDESC load.on "Turn on the load immediately"
+CMDDESC shutdown.default "Run the driver-defined UPS shutdown sequence (as opposed to user-configured 'sdcommands')"
 CMDDESC shutdown.return "Turn off the load and return when power is back"
 CMDDESC shutdown.stayoff "Turn off the load and remain off"
 CMDDESC shutdown.stop "Stop a shutdown in progress"

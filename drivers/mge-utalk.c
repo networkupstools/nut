@@ -69,7 +69,7 @@
 /* --------------------------------------------------------------- */
 
 #define DRIVER_NAME	"MGE UPS SYSTEMS/U-Talk driver"
-#define DRIVER_VERSION	"0.96"
+#define DRIVER_VERSION	"0.97"
 
 
 /* driver description structure */
@@ -477,8 +477,29 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	char buf[BUFFLEN];
-	/*  static time_t lastcmd = 0; */
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	char	buf[BUFFLEN];
+	/* static time_t	lastcmd = 0; */
+
+	/* We can enter this method either by handling of INSTCMD (whether it
+	 * was called by user, or by ourselves here via loop method), or by
+	 * handling of `drivername -k`. Avoid infinite loops with this flag
+	 * here and with handling_instcmd_shutdown above.
+	 */
+	static char	already_shutting_down = 0;
+
+	if (already_shutting_down)
+		return;
+
+	already_shutting_down = 1;
+
+	/* Here we are if handling explicit INSTCMD to shut down,
+	 * or this method was called and works to handle default
+	 * "sdcommands", or is recursively called with a custom
+	 * value of "sdcommands" pointing here.
+	 */
 	memset(buf, 0, sizeof(buf));
 
 	if (sdtype == SD_RETURN) {
@@ -488,8 +509,8 @@ void upsdrv_shutdown(void)
 		upslogx(LOG_INFO, "UPS response to Automatic Restart was %s", buf);
 	}
 
-	/* Only call the effective shutoff if restart is ok */
-	/* or if we need only a stayoff... */
+	/* Only call the effective shutoff if restart is ok,
+	 * or if we need (caller asked for) only a stayoff... */
 	if (!strcmp(buf, "OK") || (sdtype == SD_STAYOFF)) {
 		/* shutdown UPS */
 		mge_command(buf, sizeof(buf), "Sx 0");
@@ -498,8 +519,13 @@ void upsdrv_shutdown(void)
 	}
 /*	if(strcmp(buf, "OK")) */
 
-	/* call the cleanup to disable/close the comm link */
-	upsdrv_cleanup();
+	if (handling_upsdrv_shutdown > 0) {
+		/* call the cleanup to disable/close the comm link */
+		upsdrv_cleanup();
+	} else {
+		/* Reset the flags if driver is not going down */
+		already_shutting_down = 0;
+	}
 }
 
 /* --------------------------------------------------------------- */
