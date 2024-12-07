@@ -238,6 +238,11 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 	struct timeval	start, now, presleep;
 #endif
 
+	upsdebugx(5, "%s: tv={sec=%" PRIiMAX ", usec=%06" PRIiMAX "}%s",
+		__func__, (intmax_t)tv.tv_sec, (intmax_t)tv.tv_usec,
+		tv.tv_sec < 0 || tv.tv_usec < 0 ? " (unlimited timeout)" : ""
+		);
+
 	if (!conn || INVALID_FD(conn->sockfd)) {
 		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_CONNECT)
 			upslog_with_errno(LOG_ERR, "socket not initialized");
@@ -248,7 +253,7 @@ ssize_t upsdrvquery_read_timeout(udq_pipe_conn_t *conn, struct timeval tv) {
 	FD_ZERO(&rfds);
 	FD_SET(conn->sockfd, &rfds);
 
-	if (select(conn->sockfd + 1, &rfds, NULL, NULL, &tv) < 0) {
+	if (select(conn->sockfd + 1, &rfds, NULL, NULL, tv.tv_sec < 0 || tv.tv_usec < 0 ? NULL : &tv) < 0) {
 		if (nut_debug_level > 0 || nut_upsdrvquery_debug_level >= NUT_UPSDRVQUERY_DEBUG_LEVEL_DIALOG)
 			upslog_with_errno(LOG_ERR, "select with socket");
 		/* upsdrvquery_close(conn); */

@@ -121,6 +121,9 @@ static void do_set(const char *varname, const char *newval)
 	) {
 		/* reply as usual */
 		fprintf(stderr, "%s\n", buf);
+		upsdebugx(1, "%s: 'OK' only means the NUT data server accepted the request as valid, "
+			"but as we did not wait for result, we do not know if it was handled in fact.",
+			__func__);
 		return;
 	}
 
@@ -641,7 +644,18 @@ int main(int argc, char **argv)
 	int	i;
 	uint16_t	port;
 	const char	*prog = xbasename(argv[0]);
-	char	*password = NULL, *username = NULL, *setvar = NULL;
+	char	*password = NULL, *username = NULL, *setvar = NULL, *s = NULL;
+
+	/* NOTE: Caller must `export NUT_DEBUG_LEVEL` to see debugs for upsc
+	 * and NUT methods called from it. This line aims to just initialize
+	 * the subsystem, and set initial timestamp. Debugging the client is
+	 * primarily of use to developers, so is not exposed via `-D` args.
+	 */
+	s = getenv("NUT_DEBUG_LEVEL");
+	if (s && str_to_int(s, &i, 10) && i > 0) {
+		nut_debug_level = i;
+	}
+	upsdebugx(1, "Starting NUT client: %s", prog);
 
 	while ((i = getopt(argc, argv, "+hls:p:t:u:wV")) != -1) {
 		switch (i)
@@ -717,6 +731,6 @@ int main(int argc, char **argv)
 /* Formal do_upsconf_args implementation to satisfy linker on AIX */
 #if (defined NUT_PLATFORM_AIX)
 void do_upsconf_args(char *upsname, char *var, char *val) {
-        fatalx(EXIT_FAILURE, "INTERNAL ERROR: formal do_upsconf_args called");
+	fatalx(EXIT_FAILURE, "INTERNAL ERROR: formal do_upsconf_args called");
 }
 #endif  /* end of #if (defined NUT_PLATFORM_AIX) */

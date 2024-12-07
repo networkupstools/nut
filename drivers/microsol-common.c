@@ -754,6 +754,9 @@ void upsdrv_updateinfo(void)
  */
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	if (!line_unpowered) {	/* on line */
 		upslogx(LOG_NOTICE, "On line, sending power cycle command...");
 		ser_send_char(upsfd, CMD_SHUTRET);

@@ -861,6 +861,13 @@ Instant commands
 | load.on                  | Turn on the load immediately
 | load.off.delay           | Turn off the load possibly after a delay
 | load.on.delay            | Turn on the load possibly after a delay
+| shutdown.default         | Run default driver-defined (device-specific)
+                             routine, primarily intended for emergency
+                             poweroff performed as part of FSD handling;
+                             often an alias to other `shutdown.*` and/or
+                             `load.off` operations or a chain to try
+                             several of those. See also `sdcommands` in
+                             common driver options.
 | shutdown.return          | Turn off the load possibly after a delay
                              and return when power is back
 | shutdown.stayoff         | Turn off the load possibly after a delay

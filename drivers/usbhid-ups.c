@@ -988,28 +988,29 @@ int setvar(const char *varname, const char *val)
 
 void upsdrv_shutdown(void)
 {
-	upsdebugx(1, "upsdrv_shutdown...");
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
 
-	/* Try to shutdown with delay */
-	if (instcmd("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
-		/* Shutdown successful */
-		return;
-	}
+	char	*cmd_used = NULL;
 
-	/* If the above doesn't work, try shutdown.reboot */
-	if (instcmd("shutdown.reboot", NULL) == STAT_INSTCMD_HANDLED) {
-		/* Shutdown successful */
-		return;
-	}
+	upsdebugx(1, "%s...", __func__);
 
-	/* If the above doesn't work, try load.off.delay */
-	if (instcmd("load.off.delay", NULL) == STAT_INSTCMD_HANDLED) {
-		/* Shutdown successful */
+	/* By default:
+	 * - Try to shutdown with delay
+	 * - If the above doesn't work, try shutdown.reboot
+	 * - If the above doesn't work, try load.off.delay
+	 * - Finally, try shutdown.stayoff
+	 */
+	if (do_loop_shutdown_commands("shutdown.return,shutdown.reboot,load.off.delay,shutdown.stayoff", &cmd_used) == STAT_INSTCMD_HANDLED) {
+		upslogx(LOG_INFO, "Shutdown successful with '%s'", NUT_STRARG(cmd_used));
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_SUCCESS);
 		return;
 	}
 
 	upslogx(LOG_ERR, "Shutdown failed!");
-	set_exit_flag(-1);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 void upsdrv_help(void)

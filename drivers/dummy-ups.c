@@ -2,7 +2,7 @@
 
    Copyright (C)
        2005 - 2015  Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
-       2014 - 2023  Jim Klimov <jimklimov+nut@gmail.com>
+       2014 - 2024  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@
 #include "dummy-ups.h"
 
 #define DRIVER_NAME	"Device simulation and repeater driver"
-#define DRIVER_VERSION	"0.19"
+#define DRIVER_VERSION	"0.20"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info =
@@ -382,9 +382,13 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/* replace with a proper shutdown function */
 	upslogx(LOG_ERR, "shutdown not supported");
-	set_exit_flag(-1);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 static int instcmd(const char *cmdname, const char *extra)

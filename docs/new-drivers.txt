@@ -165,9 +165,10 @@ process.
 This method should not directly `exit()` the driver program (neither
 should it call `fatalx()` nor `fatal_with_errno()` methods).  It can
 `upslogx(LOG_ERR, ...)` or `upslog_with_errno(LOG_ERR, ...)`, and then
-`set_exit_flag(N)` if required (`-1` for `EXIT_FAILURE` and `-2` for
-`EXIT_SUCCESS` which would be handled in the standard driver loop or
-`forceshutdown()` method of `main.c`).
+`set_exit_flag(N)` if required, using values `EF_EXIT_FAILURE` (`-1`)
+for eventual `exit(EXIT_FAILURE)` and `EF_EXIT_SUCCESS` (`-2`) for
+`exit(EXIT_SUCCESS)`, which would be handled in the standard driver
+loop or in `forceshutdown()` method of `main.c`.
 
 Data types
 ----------

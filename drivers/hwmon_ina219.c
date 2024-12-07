@@ -35,8 +35,9 @@
 
 #define SYSFS_HWMON_DIR                     "/sys/class/hwmon"
 #define BATTERY_CHARGE_LOW                  15
+
 #define DRIVER_NAME                         "hwmon-INA219 UPS driver"
-#define DRIVER_VERSION                      "0.01"
+#define DRIVER_VERSION                      "0.02"
 
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
@@ -462,8 +463,13 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	/* replace with a proper shutdown function */
 	upslogx(LOG_ERR, "shutdown not supported");
-	set_exit_flag(-1);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 void upsdrv_help(void)

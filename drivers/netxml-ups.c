@@ -394,6 +394,27 @@ void upsdrv_updateinfo(void)
 }
 
 void upsdrv_shutdown(void) {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	/*
+	 * WARNING:
+	 * This driver will probably never support this properly:
+	 * In order to be of any use, the driver should be called
+	 * near the end of the system halt script (or a service
+	 * management framework's equivalent, if any). By that
+	 * time we, in all likelyhood, won't have basic network
+	 * capabilities anymore, so we could never send this
+	 * command to the UPS. This is not an error, but rather
+	 * a limitation (on some platforms) of the interface/media
+	 * used for these devices.
+	 */
+
+	/* FIXME: Make a name for default original shutdown
+	 * in particular to make it one of the options and
+	 * call protocol cleanup below, if needed.
+	 */
+
 	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
 
 	/* maybe try to detect the UPS here, but try a shutdown even if
@@ -453,7 +474,8 @@ void upsdrv_shutdown(void) {
 
 	if (STAT_SET_HANDLED != status) {
 		upslogx(LOG_ERR, "Shutdown failed: %d", status);
-		set_exit_flag(-1);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
 	}
 }
 

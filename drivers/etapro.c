@@ -55,7 +55,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"ETA PRO driver"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.08"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -65,6 +65,14 @@ upsdrv_info_t upsdrv_info = {
 	DRV_STABLE,
 	{ NULL }
 };
+
+/* TODO: delays should be tunable, the UPS supports max 32767 minutes.  */
+
+/* Shutdown command to off delay in seconds.  */
+#define SHUTDOWN_GRACE_TIME 10
+
+/* Shutdown to return delay in seconds.  */
+#define SHUTDOWN_TO_RETURN_TIME 15
 
 static int
 etapro_get_response(const char *resp_type)
@@ -192,7 +200,8 @@ static int instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
-		upsdrv_shutdown();
+		etapro_set_on_timer(SHUTDOWN_GRACE_TIME + SHUTDOWN_TO_RETURN_TIME);
+		etapro_set_off_timer(SHUTDOWN_GRACE_TIME);
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -331,19 +340,15 @@ upsdrv_updateinfo(void)
 	dstate_dataok();
 }
 
-/* TODO: delays should be tunable, the UPS supports max 32767 minutes.  */
-
-/* Shutdown command to off delay in seconds.  */
-#define SHUTDOWN_GRACE_TIME 10
-
-/* Shutdown to return delay in seconds.  */
-#define SHUTDOWN_TO_RETURN_TIME 15
-
 void
 upsdrv_shutdown(void)
 {
-	etapro_set_on_timer(SHUTDOWN_GRACE_TIME + SHUTDOWN_TO_RETURN_TIME);
-	etapro_set_off_timer(SHUTDOWN_GRACE_TIME);
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	int	ret = do_loop_shutdown_commands("shutdown.return", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 void

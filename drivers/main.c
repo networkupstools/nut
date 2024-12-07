@@ -38,7 +38,11 @@
 /* data which may be useful to the drivers */
 TYPE_FD	upsfd = ERROR_FD;
 
-char		*device_path = NULL;
+/* Cached values of dstate_getinfo("driver.parameter.port")
+ * and dstate_getinfo("driver.parameter.sdcommands") - set
+ * during their assignment when reading program parameters
+ * from CLI or config file. */
+char		*device_path = NULL, *device_sdcommands = NULL;
 const char	*progname = NULL, *upsname = NULL, *device_name = NULL;
 
 /* may be set by the driver to wake up while in dstate_poll_fds */
@@ -46,6 +50,19 @@ TYPE_FD	extrafd = ERROR_FD;
 #ifdef WIN32
 static HANDLE	mutex = INVALID_HANDLE_VALUE;
 #endif
+
+/* Set by INSTCMD to killpower or by running `drivername -k` to
+ * help differentiate calls into upsdrv_shutdown() and further
+ * into instcmd() implementations that set UPS power state as
+ * needing the driver to set_exit_flag() or not. Values:
+ *   -1	Do not exit even if killing power (e.g. when shutting
+ *	down an UPS that we only monitor, but are not fed from
+ *	and not shutting down THIS system). TODO: Ways to set.
+ *    0	Default do not exit (routinely handling an INSTCMD like
+ *	"shutdown.return")
+ *    1	Exit (set when this driver is killing power)
+ */
+int	handling_upsdrv_shutdown = 0;
 
 /* for ser_open */
 int	do_lock_port = 1;
@@ -170,13 +187,21 @@ static void forceshutdown(void)
 
 static void forceshutdown(void)
 {
-	upslogx(LOG_NOTICE, "Initiating UPS shutdown");
+	upslogx(LOG_NOTICE, "Initiating UPS [%s] shutdown", upsname);
 
-	/* the driver must not block in this function */
-	upsdrv_shutdown();
+	/* NOTE: This is currently called exclusively as `drivername -k`
+	 *  CLI argument handling, so we exit afterwards and do not care
+	 *  about possible `handling_upsdrv_shutdown = -1` use-cases here.
+	 */
+	handling_upsdrv_shutdown = 1;
 
-	/* the driver always exits here, to not block probable ongoing shutdown */
-	exit(exit_flag == -1 ? EXIT_FAILURE : EXIT_SUCCESS);
+	/* the driver must not block in this function (calling INSTCMD from
+	 * `sdcommands` passed by user, or upsdrv_shutdown() by default */
+	upsdrv_shutdown_sdcommands_or_default(NULL, NULL);
+
+	/* the driver always exits here, to
+	 * not block probable ongoing shutdown */
+	exit(exit_flag == EF_EXIT_FAILURE ? EXIT_FAILURE : EXIT_SUCCESS);
 }
 
 /* this function only prints the usage message; it does not call exit() */
@@ -665,7 +690,7 @@ finish:
 
 /* Similar to testvar_reloadable() above which is for addvar*() defined
  * entries, but for less streamlined stuff defined right here in main.c.
- * See if <var> (by <arg> name saved in dstate) can be (re-)loaded now:
+ * See if <var> (by <infoname> saved in dstate) can be (re-)loaded now:
  * either it is reloadable by parameter definition, or no value has been
  * saved into it yet (<oldval> is NULL).
  * Returns "-1" if nothing needs to be done and that is not a failure
@@ -741,6 +766,196 @@ void addvar(int vartype, const char *name, const char *desc)
 	do_addvar(vartype, name, desc, 0);
 }
 
+/* Try each instant command in the comma-separated list of
+ * sdcmds, until the first one that reports it was handled.
+ * Returns STAT_INSTCMD_HANDLED if one of those was accepted
+ * by the device, or STAT_INSTCMD_INVALID if none succeeded.
+ * If cmdused is not NULL, it is populated by the command
+ * string which succeeded (or NULL if none), and the caller
+ * should free() it eventually. This method also frees any
+ * non-NULL *cmdused, so it should be pre-initialized to NULL.
+ */
+int do_loop_shutdown_commands(const char *sdcmds, char **cmdused) {
+	int	cmdret = STAT_INSTCMD_UNKNOWN;
+	char	*buf = NULL, *s = NULL;
+	static int	call_depth = 0;
+
+	call_depth++;
+	upsdebugx(1, "Starting %s(%s), call depth %d...",
+		__func__, NUT_STRARG(sdcmds), call_depth);
+
+	if (call_depth > MAX_SDCOMMANDS_DEPTH) {
+		/* Might get here e.g. if someone were to call
+		 * upsdrv_shutdown_sdcommands_or_default() along
+		 * an implementation code path from upsdrv_shutdown()
+		 * with sdcmds=="shutdown.default"?.. */
+		fatalx(EXIT_FAILURE, "Shutdown handlers for UPS [%s] are "
+			"too deeply nested, this seems to be either "
+			"a NUT programming error or a mis-configuration "
+			"of your 'sdcommands' setting", NUT_STRARG(upsname));
+	}	
+
+	if (cmdused) {
+		if (*cmdused)
+			free(*cmdused);
+		*cmdused = NULL;
+	}
+
+	if (!sdcmds || !*sdcmds) {
+		upsdebugx(1, "This driver or its configuration did not pass any instant commands to run");
+		goto done;
+	}
+
+	if (upsh.instcmd == NULL) {
+		/* FIXME: support main_instcmd() too? */
+		upsdebugx(1, "This driver does not implement INSTCMD support");
+
+		/* ...but the default one we can short-circuit without
+		 * registered INSTCMDs (FIXME: loop detection/protection):
+		 */
+		s = strstr(sdcmds, "shutdown.default");
+		if (s) {
+			/* check this is really a sub-string */
+			size_t	cmdlen = strlen("shutdown.default");
+			if (
+				(s == sdcmds || *(s-1) == ',') &&
+				(s[cmdlen] == '\0' || s[cmdlen] == ',')
+			) {
+				upsdebugx(1, "Handle 'shutdown.default' directly, "
+					"ignore other `sdcommands` (if any): %s",
+					sdcmds);
+				upsdrv_shutdown();
+				cmdret = STAT_INSTCMD_HANDLED;
+				/* commented below */
+				if (cmdused && !(*cmdused))
+					*cmdused = xstrdup("shutdown.default");
+			}
+		}
+		goto done;
+	}
+
+	buf = xstrdup(sdcmds);
+	while ((s = strtok(s == NULL ? buf : NULL, ",")) != NULL) {
+		if (!*s)
+			continue;
+
+		if (!strcmp(s, "shutdown.default")) {
+			upsdrv_shutdown();
+			cmdret = STAT_INSTCMD_HANDLED;
+		} else {
+			cmdret = upsh.instcmd(s, NULL);
+		}
+
+		if (cmdret == STAT_INSTCMD_HANDLED) {
+			/* Shutdown successful */
+
+			/* Note: If we are handling "shutdown.default" here,
+			 * it is anticipated that it calls some other INSTCMD
+			 * as the implementation, and that could set a value
+			 * which we actually want to keep and tell the caller.
+			 * We had freed *cmdused above, so it if is not empty
+			 * here - something during the handling populated it.
+			 */
+			if (cmdused && !(*cmdused))
+				*cmdused = xstrdup(s);
+			upsdebugx(1, "%s(): command '%s' was handled successfully", __func__, NUT_STRARG(s));
+			goto done;
+		}
+	}
+
+done:
+	if (buf)
+		free(buf);
+	if (cmdret != STAT_INSTCMD_HANDLED)
+		cmdret = STAT_INSTCMD_INVALID;
+
+	upsdebugx(1, "Ending %s(%s), call depth %d: return-code %d",
+		__func__, NUT_STRARG(sdcmds), call_depth, cmdret);
+	call_depth--;
+
+	return cmdret;
+}
+
+/* Use driver-provided sdcmds_default, unless a custom driver parameter value
+ * "sdcommands" is set - then use it instead. Call do_loop_shutdown_commands()
+ * for actual work; return STAT_INSTCMD_HANDLED or STAT_INSTCMD_HANDLED as
+ * applicable; if caller-provided cmdused is not NULL, populate it with the
+ * command that was used successfully (if any).
+ */
+int loop_shutdown_commands(const char *sdcmds_default, char **cmdused) {
+	const char	*sdcmds_custom = device_sdcommands;
+
+	/* Belts and suspenders... */
+	if (!sdcmds_custom)
+		sdcmds_custom = dstate_getinfo("driver.parameter.sdcommands");
+
+	if (sdcmds_custom) {
+		/* NOTE: User-provided commands may be something other
+		 * than actual shutdown, e.g. a beeper to test that the
+		 * INSTCMD happened such and when expected without
+		 * impacting the load fed by the UPS.
+		 */
+		upsdebugx(1, "%s: call do_loop_shutdown_commands() with custom sdcommands", __func__);
+		return do_loop_shutdown_commands(sdcmds_custom, cmdused);
+	} else {
+		upsdebugx(1, "%s: call do_loop_shutdown_commands() with driver-default sdcommands", __func__);
+		return do_loop_shutdown_commands(sdcmds_default, cmdused);
+	}
+}
+
+/* Since NUT v2.8.3 updated driver model, here we typically call the
+ * user-provided list of `sdcommands` (if any), or the caller-provided
+ * list (hard-coded in a driver), or the default implementation as
+ * "shutdown.default" (usually ends up as upsdrv_shutdown()) if nothing
+ * else was requested by the configuration and call chain.
+ * Any of these call chains, especially the default one, in turn may
+ * call instcmd() for whatever practical action is needed (unless the
+ * default logic is all-custom implemented in upsdrv_shutdown()), and
+ * reports the result (including the case of lacking a registered
+ * upsh.instcmd handler).
+ *
+ * A practical shutdown implementation logic would be coded
+ * in instcmd("shutdown.default") and may be structured like
+ * detailed by comments in skel.c::upsdrv_shutdown(), or can
+ * just call a fitting other instcmd (typically "shutdown.stayoff",
+ * "shutdown.return" or "load.off") -- possibly chosen by current
+ * on-line/on-battery state.
+ */
+int upsdrv_shutdown_sdcommands_or_default(const char *sdcmds_default, char **cmdused) {
+	char	*sdcmd_used = NULL;
+	int	sdret = loop_shutdown_commands(
+			sdcmds_default ? sdcmds_default : "shutdown.default",
+			&sdcmd_used);
+
+	if (cmdused) {
+		if (*cmdused)
+			free(*cmdused);
+		*cmdused = NULL;
+	}
+
+	if (sdret == STAT_INSTCMD_HANDLED) {
+		upslogx(LOG_INFO, "UPS [%s]: shutdown request was successful with '%s'",
+			NUT_STRARG(upsname), NUT_STRARG(sdcmd_used));
+
+		/* Pass it up to caller? */
+		if (cmdused) {
+			*cmdused = sdcmd_used;
+		} else {
+			if (sdcmd_used)
+				free(sdcmd_used);
+		}
+	} else if (!upsh.instcmd) {
+		upslogx(LOG_ERR, "UPS [%s]: shutdown not supported", NUT_STRARG(upsname));
+	} else {
+		upslogx(LOG_ERR, "UPS [%s]: shutdown request(s) failed", NUT_STRARG(upsname));
+	}
+
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(sdret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
+
+	return sdret;
+}
+
 /* handle instant commands common for all drivers */
 int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 	char buf[SMALLBUF];
@@ -756,12 +971,40 @@ int main_instcmd(const char *cmdname, const char *extra, conn_t *conn) {
 	upsdebugx(2, "entering main_instcmd(%s, %s) for [%s] on %s",
 		cmdname, extra, NUT_STRARG(upsname), buf);
 
+	if (!strcmp(cmdname, "shutdown.default")) {
+		/* Call the default implementation of UPS shutdown as
+		 * an instant command, should not halt nor exit the
+		 * driver program, so a subsequent power-on command
+		 * may be possible (depending on driver and device).
+		 * May well be implemented as recursion into "load.off",
+		 * "shutdown.return" or "shutdown.stayoff" - possibly
+		 * with a choice which one to call made at run-time,
+		 * but in some drivers may involve logic not equal to
+		 * any one of those other command implementations.
+		 * Primarily intended to be a choice among `sdcommands`,
+		 * called by default if none were passed (or this one
+		 * was passed explicitly).
+		 */
+		upsdrv_shutdown();
+		return STAT_INSTCMD_HANDLED;
+	}
+
 	if (!strcmp(cmdname, "driver.killpower")) {
+		/* An implementation of `drivername -k` requested from
+		 * the running and connected driver instance by protocol
+		 * over local Unix socket or pipe, primarily intended
+		 * for (emergency) FSD use-cases and so with a fail-safe
+		 * flag involved.
+		 */
 		if (!strcmp("1", dstate_getinfo("driver.flag.allow_killpower"))) {
 			upslogx(LOG_WARNING, "Requesting UPS [%s] to power off, "
 				"as/if handled by its driver by default (may exit), "
 				"due to socket protocol request", NUT_STRARG(upsname));
-			upsdrv_shutdown();
+			if (handling_upsdrv_shutdown == 0)
+				handling_upsdrv_shutdown = 1;
+			dstate_setinfo("driver.state", "fsd.killpower");
+			upsdrv_shutdown_sdcommands_or_default(NULL, NULL);
+			dstate_setinfo("driver.state", "quiet");
 			return STAT_INSTCMD_HANDLED;
 		} else {
 			upslogx(LOG_WARNING, "Got socket protocol request for UPS [%s] "
@@ -1057,6 +1300,16 @@ static int main_arg(char *var, char *val)
 	/* only for upsd (at the moment) - ignored here */
 	if (!strcmp(var, "desc"))
 		return 1;	/* handled */
+
+	if (!strcmp(var, "sdcommands")) {
+		if (testinfo_reloadable(var, "driver.parameter.sdcommands", val, 1) > 0) {
+			if (device_sdcommands)
+				free(device_sdcommands);
+			device_sdcommands = xstrdup(val);
+			dstate_setinfo("driver.parameter.sdcommands", "%s", val);
+		}
+		return 1;	/* handled */
+	}
 
 	/* Allow each driver to specify its minimal debugging level -
 	 * admins can set more with command-line args, but can't set
@@ -1630,7 +1883,7 @@ static void set_reload_flag(
 			reload_flag = 15;
 			break;
 */
-			set_exit_flag(-2);
+			set_exit_flag(EF_EXIT_SUCCESS);
 			return;
 
 		case SIGCMD_RELOAD:	/* SIGHUP */
@@ -1647,7 +1900,7 @@ static void set_reload_flag(
 		/* reload what we can, log what needs a restart so skipped */
 		reload_flag = 1;
 	} else if (sig && !strcmp(sig, SIGCMD_EXIT)) {
-		set_exit_flag(-2);
+		set_exit_flag(EF_EXIT_SUCCESS);
 		return;
 	} else {
 		/* non-fatal reload as a fallback */
@@ -2064,7 +2317,7 @@ int main(int argc, char **argv)
 
 	/* Only switch to statepath if we're not powering off
 	 * or not just dumping data (for discovery) */
-	/* This avoids case where ie /var is unmounted already */
+	/* This avoids case where i.e. /var is unmounted already */
 #ifndef WIN32
 	if ((!do_forceshutdown) && (!dump_data)) {
 		if (chdir(dflt_statepath()))
@@ -2509,9 +2762,6 @@ int main(int argc, char **argv)
 		fatalx(EXIT_FAILURE, "Fatal error: broken driver. It probably needs to be converted.\n");
 	}
 
-	if (do_forceshutdown)
-		forceshutdown();
-
 	/* publish the top-level data: version numbers, driver name */
 	dstate_setinfo("driver.version", "%s", UPS_VERSION);
 	dstate_setinfo("driver.version.internal", "%s", upsdrv_info.version);
@@ -2528,6 +2778,15 @@ int main(int argc, char **argv)
 	/* get the base data established before allowing connections */
 	dstate_setinfo("driver.state", "init.info");
 	upsdrv_initinfo();
+
+	/* Register a way to call upsdrv_shutdown() among `sdcommands` */
+	dstate_addcmd("shutdown.default");
+
+	if (do_forceshutdown) {
+		dstate_setinfo("driver.state", "fsd.killpower");
+		forceshutdown();
+	}
+
 	/* Note: a few drivers also call their upsdrv_updateinfo() during
 	 * their upsdrv_initinfo(), possibly to impact the initialization */
 	dstate_setinfo("driver.state", "init.updateinfo");
@@ -2712,7 +2971,8 @@ sockname_ownership_finished:
 			upslogx(LOG_WARNING, "Running as foreground process, not saving a PID file");
 	}
 
-	/* May already be set by parsed configuration flag, only set default if not: */
+	/* May already be set by parsed configuration flag,
+	 * only set default if not: */
 	if (dstate_getinfo("driver.flag.allow_killpower") == NULL)
 		dstate_setinfo("driver.flag.allow_killpower", "0");
 

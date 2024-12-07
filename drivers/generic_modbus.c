@@ -27,7 +27,7 @@
 #include "nut_stdint.h"
 
 #define DRIVER_NAME "NUT Generic Modbus driver"
-#define DRIVER_VERSION  "0.05"
+#define DRIVER_VERSION  "0.06"
 
 /* variables */
 static modbus_t *mbctx = NULL;                             /* modbus memory context */
@@ -46,7 +46,6 @@ static uint32_t mod_resp_to_s = MODRESP_TIMEOUT_s;         /* set the modbus res
 static uint32_t mod_resp_to_us = MODRESP_TIMEOUT_us;       /* set the modbus response time out (us) */
 static uint32_t mod_byte_to_s = MODBYTE_TIMEOUT_s;         /* set the modbus byte time out (us) */
 static uint32_t mod_byte_to_us = MODBYTE_TIMEOUT_us;       /* set the modbus byte time out (us) */
-
 
 /* get config vars set by -x or defined in ups.conf driver section */
 void get_config_vars(void);
@@ -95,6 +94,11 @@ void upsdrv_initinfo(void) {
 	/* register instant commands */
 	if (sigar[FSD_T].addr != NOTUSED) {
 		dstate_addcmd("load.off");
+
+		/* FIXME: Check with the device what this instcmd
+		 * (nee upsdrv_shutdown() contents) actually does!
+		 */
+		dstate_addcmd("shutdown.stayoff");
 	}
 
 	/* set callback for instant commands */
@@ -316,37 +320,25 @@ void upsdrv_updateinfo(void)
 /* shutdown UPS */
 void upsdrv_shutdown(void)
 {
-	int rval;
-	int cnt = FSD_REPEAT_CNT;    /* shutdown repeat counter */
-	struct timeval start;
-	long etime;
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
 
-	/* retry sending shutdown command on error */
-	while ((rval = upscmd("load.off", NULL)) != STAT_INSTCMD_HANDLED && cnt > 0) {
-		rval = gettimeofday(&start, NULL);
-		if (rval < 0) {
-			upslog_with_errno(LOG_ERR, "upscmd: gettimeofday");
-		}
+	/*
+	 * WARNING: When using RTU TCP, this driver will probably
+	 * never support shutdowns properly, except on some systems:
+	 * In order to be of any use, the driver should be called
+	 * near the end of the system halt script (or a service
+	 * management framework's equivalent, if any). By that
+	 * time we, in all likelyhood, won't have basic network
+	 * capabilities anymore, so we could never send this
+	 * command to the UPS. This is not an error, but rather
+	 * a limitation (on some platforms) of the interface/media
+	 * used for these devices.
+	 */
 
-		/* wait for an increasing time interval before sending shutdown command */
-		while ((etime = time_elapsed(&start)) < ( FSD_REPEAT_INTRV / cnt));
-		upsdebugx(2,"ERROR: load.off failed, wait for %lims, retries left: %d\n", etime, cnt - 1);
-		cnt--;
-	}
-	switch (rval) {
-		case STAT_INSTCMD_FAILED:
-		case STAT_INSTCMD_INVALID:
-			upslogx(LOG_ERR, "shutdown failed");
-			set_exit_flag(-1);
-			return;
-		case STAT_INSTCMD_UNKNOWN:
-			upslogx(LOG_ERR, "shutdown not supported");
-			set_exit_flag(-1);
-			return;
-		default:
-			break;
-	}
-	upslogx(LOG_INFO, "shutdown command executed");
+	int	ret = do_loop_shutdown_commands("shutdown.stayoff", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 /* print driver usage info */
@@ -629,6 +621,41 @@ int upscmd(const char *cmd, const char *arg)
 				arg
 			);
 			rval = STAT_INSTCMD_FAILED;
+		}
+	} else if (!strcasecmp(cmd, "shutdown.stayoff")) {
+		/* FIXME: Which one is this actually -
+		 * "shutdown.stayoff" or "shutdown.return"? */
+		int cnt = FSD_REPEAT_CNT;    /* shutdown repeat counter */
+
+		/* retry sending shutdown command on error */
+		while ((rval = upscmd("load.off", NULL)) != STAT_INSTCMD_HANDLED && cnt > 0) {
+			rval = gettimeofday(&start, NULL);
+			if (rval < 0) {
+				upslog_with_errno(LOG_ERR, "upscmd: gettimeofday");
+			}
+
+			/* wait for an increasing time interval before sending shutdown command */
+			while ((etime = time_elapsed(&start)) < ( FSD_REPEAT_INTRV / cnt));
+			upsdebugx(2,"ERROR: load.off failed, wait for %lims, retries left: %d\n", etime, cnt - 1);
+			cnt--;
+		}
+		switch (rval) {
+			case STAT_INSTCMD_FAILED:
+			case STAT_INSTCMD_INVALID:
+				upslogx(LOG_ERR, "shutdown failed");
+				if (handling_upsdrv_shutdown > 0)
+					set_exit_flag(EF_EXIT_FAILURE);
+				return rval;
+			case STAT_INSTCMD_UNKNOWN:
+				upslogx(LOG_ERR, "shutdown not supported");
+				if (handling_upsdrv_shutdown > 0)
+					set_exit_flag(EF_EXIT_FAILURE);
+				return rval;
+			default:
+				upslogx(LOG_INFO, "shutdown command executed");
+				if (handling_upsdrv_shutdown > 0)
+					set_exit_flag(EF_EXIT_SUCCESS);
+				break;
 		}
 	} else {
 		upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmd, arg);

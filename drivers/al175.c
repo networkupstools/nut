@@ -52,7 +52,7 @@ typedef	uint8_t byte_t;
 
 
 #define DRIVER_NAME	"Eltek AL175/COMLI driver"
-#define DRIVER_VERSION	"0.15"
+#define DRIVER_VERSION	"0.16"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -1267,6 +1267,9 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/* TODO use TOGGLE_PRS_ONOFF for shutdown */
 
 	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
@@ -1276,7 +1279,8 @@ void upsdrv_shutdown(void)
 
 	/* replace with a proper shutdown function */
 	upslogx(LOG_ERR, "shutdown not supported");
-	set_exit_flag(-1);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 
 	/* you may have to check the line status since the commands
 	   for toggling power are frequently different for OL vs. OB */
