@@ -1719,471 +1719,481 @@ void upsdrv_updateinfo(void) {
 	upsinfo	ups;
 
 	upsdebugx(3, "%s: starting...", __func__);
-	if ((serial_fd <= 0) && (i < retries)) {
-		upsdebugx(1, "%s: Serial port communications problem", __func__);
-		while (serial_fd <= 0) {
+
+	/* If comms failed earlier, try to resuscitate */
+	if (serial_fd <= 0) {
+		upsdebugx(1, "%s: Serial port '%s' communications problem",
+			__func__, porta);
+		while (serial_fd <= 0 && i < retries) {
 			serial_fd = openfd(porta, baudrate);
 			upsdebugx(1, "%s: Trying to reopen serial...", __func__);
 			usleep(checktime);
-			retries++;
+			i++;
 		}
 	}
-	else {
-		/* Clean all read buffers to avoid errors:
-		 * To clean OUTPUT buffer is TCOFLUSH.
-		 * To both is TCIOFLUSH.
-		 */
-		/* //tcflush(serial_fd, TCIFLUSH); */
-		chr = '\0';
-		while (read(serial_fd, &chr, 1) > 0) {
-			if (chr == 0xFF) {	/* DataPacket start */
-				datapacketstart = true;
-			}	/* end for */
-			if (datapacketstart) {
-				datapacket[datapacket_index] = chr;
-				datapacket_index++;
-				if (chr == 0xFE) {	/* DataPacket */
-					time_t	now = time(NULL);
-					upsdebugx(4, "DATAPACKET INDEX IS %d", datapacket_index);
-					if (lastdp != 0) {
-						tempodecorrido = difftime(now, lastdp);
-					}
-					lastdp = now;
-					/* If size is 18 or 50, may be an answer packet.
-					 * Then check if doesn't have already a packet processed.
-					 * We don't need to read all times these information.
-					 * Can be a corrupted packet too. */
-					if (((datapacket_index == 18) || (datapacket_index == 50)) && (!lastpkthwinfo.checksum_ok)) {
-					   lastpkthwinfo = mount_hwinfo(datapacket, datapacket_index);
-					}	/* end if */
+	if (serial_fd <= 0) {
+		return;
+	}
+
+	/* Clean all read buffers to avoid errors:
+	 * To clean OUTPUT buffer is TCOFLUSH.
+	 * To both is TCIOFLUSH.
+	 */
+	/* //tcflush(serial_fd, TCIFLUSH); */
+	chr = '\0';
+	while (read(serial_fd, &chr, 1) > 0) {
+		if (chr == 0xFF) {	/* DataPacket start */
+			datapacketstart = true;
+		}	/* end for */
+		if (datapacketstart) {
+			datapacket[datapacket_index] = chr;
+			datapacket_index++;
+			if (chr == 0xFE) {	/* DataPacket */
+				time_t	now = time(NULL);
+				upsdebugx(4, "DATAPACKET INDEX IS %d", datapacket_index);
+				if (lastdp != 0) {
+					tempodecorrido = difftime(now, lastdp);
+				}
+				lastdp = now;
+				/* If size is 18 or 50, may be an answer packet.
+				 * Then check if doesn't have already a packet processed.
+				 * We don't need to read all times these information.
+				 * Can be a corrupted packet too.
+				 */
+				if (((datapacket_index == 18) || (datapacket_index == 50)) && (!lastpkthwinfo.checksum_ok)) {
+				  lastpkthwinfo = mount_hwinfo(datapacket, datapacket_index);
+				}	/* end if */
+				else {
+					if (datapacket_index == 21)
+						lastpktdata = mount_datapacket(datapacket, datapacket_index, tempodecorrido, lastpkthwinfo);
+				}	/* end else */
+				/* Clean datapacket structure to avoid problems */
+				datapacket_index = 0;
+				memset(datapacket, 0, sizeof(datapacket));
+				datapacketstart = false;
+				if (lastpktdata.checksum_ok) {
+					/* checksum is OK, then use it to set values */
+					upsdebugx(4, "Data Packet seems be OK");
+					if (lastpkthwinfo.size == 0)
+						upsdebugx(2, "Pkt HWINFO is not OK. See if will be requested next time!");
 					else {
-						if (datapacket_index == 21)
-							lastpktdata = mount_datapacket(datapacket, datapacket_index, tempodecorrido, lastpkthwinfo);
-					}	/* end else */
-					/* Clean datapacket structure to avoid problems */
-					datapacket_index = 0;
-					memset(datapacket, 0, sizeof(datapacket));
-					datapacketstart = false;
-					if (lastpktdata.checksum_ok) {
-						/* checksum is OK, then use it to set values */
-						upsdebugx(4, "Data Packet seems be OK");
-						if (lastpkthwinfo.size == 0)
-							upsdebugx(2, "Pkt HWINFO is not OK. See if will be requested next time!");
-						else {
-							if (lastpkthwinfo.checksum_ok) {
-								upsdebugx(4, "Pkt HWINFO is OK. Model is %d, hwversion is %d and swversion is %d", lastpkthwinfo.model, lastpkthwinfo.hardwareversion, lastpkthwinfo.softwareversion);
-								/* We need to set data on NUT with data
-								 * that I believe that I can calculate.
-								 * Now setting data on NUT */
-								ups = getupsinfo(lastpkthwinfo.model);
-								upsdebugx(4, "UPS Struct data: Code %d Model %s VA %d", ups.upscode, ups.upsdesc, ups.VA);
-								dstate_setinfo("device.model", "%s", ups.upsdesc);
-								dstate_setinfo("device.mfr", "%s", MANUFACTURER);
-								dstate_setinfo("device.serial", "%s", lastpkthwinfo.serial);
-								dstate_setinfo("device.type", "%s", "ups");
+						if (lastpkthwinfo.checksum_ok) {
+							upsdebugx(4, "Pkt HWINFO is OK. Model is %d, hwversion is %d and swversion is %d", lastpkthwinfo.model, lastpkthwinfo.hardwareversion, lastpkthwinfo.softwareversion);
+							/* We need to set data on NUT with data
+							 * that I believe that I can calculate.
+							 * Now setting data on NUT
+							 */
+							ups = getupsinfo(lastpkthwinfo.model);
+							upsdebugx(4, "UPS Struct data: Code %d Model %s VA %d", ups.upscode, ups.upsdesc, ups.VA);
+							dstate_setinfo("device.model", "%s", ups.upsdesc);
+							dstate_setinfo("device.mfr", "%s", MANUFACTURER);
+							dstate_setinfo("device.serial", "%s", lastpkthwinfo.serial);
+							dstate_setinfo("device.type", "%s", "ups");
 
-								/* Setting UPS Status:
-								 * OL	  -- On line (mains is present): Code below
-								 * OB	  -- On battery (mains is not present) : Code below
-								 * LB	  -- Low battery: Code below
-								 * HB	  -- High battery: NHS doesn't have any variable with that information. Feel free to discover a way to set it
-								 * RB	  -- The battery needs to be replaced: Well, as mentioned, we can write some infos on nobreak fw, on structures like pkt_hwinfo.year, pkt_hwinfo.month, etc. I never found any equipment with these values.
-								 * CHRG	-- The battery is charging: Code below
-								 * DISCHRG -- The battery is discharging (inverter is providing load power): Code Below
-								 * BYPASS  -- UPS bypass circuit is active -- no battery protection is available: It's another PROBLEM, because NHS can work in bypass mode in some models, even if you have sealed batteries on it (without any external battery device). On the moment, i'll won't work with that. Feel free to discover how it work correctly.
-								 * CAL	 -- UPS is currently performing runtime calibration (on battery)
-								 * OFF	 -- UPS is offline and is not supplying power to the load
-								 * OVER	-- UPS is overloaded
-								 * TRIM	-- UPS is trimming incoming voltage (called "buck" in some hardware)
-								 * BOOST   -- UPS is boosting incoming voltage
-								 * FSD	 -- Forced Shutdown (restricted use, see the note below)
-								 */
+							/* Setting UPS Status:
+							 * OL	  -- On line (mains is present): Code below
+							 * OB	  -- On battery (mains is not present) : Code below
+							 * LB	  -- Low battery: Code below
+							 * HB	  -- High battery: NHS doesn't have any variable with that information. Feel free to discover a way to set it
+							 * RB	  -- The battery needs to be replaced: Well, as mentioned, we can write some infos on nobreak fw, on structures like pkt_hwinfo.year, pkt_hwinfo.month, etc. I never found any equipment with these values.
+							 * CHRG	-- The battery is charging: Code below
+							 * DISCHRG -- The battery is discharging (inverter is providing load power): Code Below
+							 * BYPASS  -- UPS bypass circuit is active -- no battery protection is available: It's another PROBLEM, because NHS can work in bypass mode in some models, even if you have sealed batteries on it (without any external battery device). On the moment, i'll won't work with that. Feel free to discover how it work correctly.
+							 * CAL	 -- UPS is currently performing runtime calibration (on battery)
+							 * OFF	 -- UPS is offline and is not supplying power to the load
+							 * OVER	-- UPS is overloaded
+							 * TRIM	-- UPS is trimming incoming voltage (called "buck" in some hardware)
+							 * BOOST   -- UPS is boosting incoming voltage
+							 * FSD	 -- Forced Shutdown (restricted use, see the note below)
+							 */
 
-								/* Decision Chain commented below */
+							/* Decision Chain commented below */
 
-								/* First we check if system is on battery or not */
-								upsdebugx(4, "Set UPS status as OFF and start checking. s_battery_mode is %d", lastpktdata.s_battery_mode);
-								if (lastpkthwinfo.s_220V_in) {
-									upsdebugx(4, "I'm on 220v IN!. My overvoltage is %d", lastpkthwinfo.undervoltagein220V);
-									min_input_power = lastpkthwinfo.undervoltagein220V;
-								}
-								else {
-									upsdebugx(4, "I'm on 120v IN!. My overvoltage is %d", lastpkthwinfo.undervoltagein120V);
-									min_input_power = lastpkthwinfo.undervoltagein120V;
-								}
-								if (lastpktdata.s_battery_mode) {
-									/* ON BATTERY */
-									upsdebugx(4, "UPS is on Battery Mode");
-									dstate_setinfo("ups.status", "%s", "OB");
-									if (lastpktdata.s_battery_low) {
-										/* If battery is LOW, warn user! */
-										upsdebugx(4, "UPS is on Battery Mode and in Low Battery State");
-										dstate_setinfo("ups.status", "%s", "LB");
-									}	/* end if */
+							/* First we check if system is on battery or not */
+							upsdebugx(4, "Set UPS status as OFF and start checking. s_battery_mode is %d", lastpktdata.s_battery_mode);
+							if (lastpkthwinfo.s_220V_in) {
+								upsdebugx(4, "I'm on 220v IN!. My overvoltage is %d", lastpkthwinfo.undervoltagein220V);
+								min_input_power = lastpkthwinfo.undervoltagein220V;
+							}
+							else {
+								upsdebugx(4, "I'm on 120v IN!. My overvoltage is %d", lastpkthwinfo.undervoltagein120V);
+								min_input_power = lastpkthwinfo.undervoltagein120V;
+							}
+							if (lastpktdata.s_battery_mode) {
+								/* ON BATTERY */
+								upsdebugx(4, "UPS is on Battery Mode");
+								dstate_setinfo("ups.status", "%s", "OB");
+								if (lastpktdata.s_battery_low) {
+									/* If battery is LOW, warn user! */
+									upsdebugx(4, "UPS is on Battery Mode and in Low Battery State");
+									dstate_setinfo("ups.status", "%s", "LB");
+								}	/* end if */
+							}	/* end if */
+							else {
+								/* Check if MAINS (power) is not preset.
+								* Well, we can check pkt_data.s_network_failure too... */
+								if ((lastpktdata.vacinrms <= min_input_power) || (lastpktdata.s_network_failure)) {
+									upsdebugx(4, "UPS has power-in value %0.2f "
+										"and min_input_power is %d, "
+										"or network is in failure. Network failure is %d",
+										lastpktdata.vacinrms,
+										min_input_power,
+										lastpktdata.s_network_failure);
+									dstate_setinfo("ups.status", "%s", "DISCHRG");
 								}	/* end if */
 								else {
-									/* Check if MAINS (power) is not preset.
-									 * Well, we can check pkt_data.s_network_failure too... */
-									if ((lastpktdata.vacinrms <= min_input_power) || (lastpktdata.s_network_failure)) {
-										upsdebugx(4, "UPS has power-in value %0.2f "
-											"and min_input_power is %d, "
-											"or network is in failure. Network failure is %d",
-											lastpktdata.vacinrms,
-											min_input_power,
-											lastpktdata.s_network_failure);
-										dstate_setinfo("ups.status", "%s", "DISCHRG");
+									/* MAINS is present. We need to check some situations.
+									 * NHS only charge if have more than min_input_power.
+									 * If MAINS is less than or equal to min_input_power,
+									 * then the UPS goes to BATTERY
+									 */
+									if (lastpktdata.vacinrms > min_input_power) {
+										upsdebugx(4, "UPS is on MAINS");
+										if (lastpktdata.s_charger_on) {
+											upsdebugx(4, "UPS Charging...");
+											dstate_setinfo("ups.status", "%s", "CHRG");
+										}
+										else {
+											if ((lastpktdata.s_network_failure) || (lastpktdata.s_fast_network_failure)) {
+												upsdebugx(4, "UPS is on battery mode because network failure or fast network failure");
+												dstate_setinfo("ups.status", "%s", "OB");
+											}	/* end if */
+											else {
+												upsdebugx(4, "All is OK. UPS is on ONLINE!");
+												dstate_setinfo("ups.status", "%s", "OL");
+											}	/* end else */
+										}	/* end else */
 									}	/* end if */
 									else {
-										/* MAINS is present. We need to check some situations.
-										 * NHS only charge if have more than min_input_power.
-										 * If MAINS is less than or equal to min_input_power,
-										 * then the UPS goes to BATTERY */
-										if (lastpktdata.vacinrms > min_input_power) {
-											upsdebugx(4, "UPS is on MAINS");
-											if (lastpktdata.s_charger_on) {
-												upsdebugx(4, "UPS Charging...");
-												dstate_setinfo("ups.status", "%s", "CHRG");
-											}
-											else {
-												if ((lastpktdata.s_network_failure) || (lastpktdata.s_fast_network_failure)) {
-													upsdebugx(4, "UPS is on battery mode because network failure or fast network failure");
-													dstate_setinfo("ups.status", "%s", "OB");
-												}	/* end if */
-												else {
-													upsdebugx(4, "All is OK. UPS is on ONLINE!");
-													dstate_setinfo("ups.status", "%s", "OL");
-												}	/* end else */
-											}	/* end else */
-										}	/* end if */
+										/* Energy is below limit.
+										* Nobreak is probably in battery mode... */
+										if (lastpktdata.s_battery_low)
+											dstate_setinfo("ups.status", "%s", "LB");
 										else {
-											/* Energy is below limit.
-											 * Nobreak is probably in battery mode... */
-											if (lastpktdata.s_battery_low)
-												dstate_setinfo("ups.status", "%s", "LB");
-											else {
-												/* ...or network failure */
-												dstate_setinfo("ups.status", "%s", "OB");
-											}	/* end else */
+											/* ...or network failure */
+											dstate_setinfo("ups.status", "%s", "OB");
 										}	/* end else */
 									}	/* end else */
 								}	/* end else */
+							}	/* end else */
 
-								numbat = get_numbat();
-								if (numbat == 0)
-									numbat = lastpkthwinfo.numbatteries;
-								else
-									upsdebugx(4, "Number of batteries is set to %d", numbat);
-								vbat = get_vbat();
-								ah = get_ah();
-
-								/* Set all alarms possible */
-								alarm[0] = '\0';
-								if (lastpktdata.s_battery_mode)
-									snprintf(alarm, sizeof(alarm), "%s", "|UPS IN BATTERY MODE|");
-								if (lastpktdata.s_battery_low)
-									snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
-										"|UPS IN BATTERY MODE|");
-								if (lastpktdata.s_network_failure)
-									snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
-										"|NETWORK FAILURE|");
-
-								/* FIXME: Really same criteria in these 3? */
-								if (lastpktdata.s_fast_network_failure)
-									snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
-										"|FAST NETWORK FAILURE|");
-								if (lastpktdata.s_fast_network_failure)
-									snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
-										"|220v IN|");
-								if (lastpktdata.s_fast_network_failure)
-									snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
-										"|220v OUT|");
-
-								if (lastpktdata.s_bypass_on)
-									snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
-										"|BYPASS ON|");
-								if (lastpktdata.s_charger_on)
-									snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
-										"|CHARGER ON|");
-								dstate_setinfo("ups.alarm", "%s", alarm);
-								dstate_setinfo("ups.model", "%s", ups.upsdesc);
-								dstate_setinfo("ups.mfr", "%s", MANUFACTURER);
-								dstate_setinfo("ups.serial", "%s", lastpkthwinfo.serial);
-								dstate_setinfo("ups.firmware", "%u", lastpkthwinfo.softwareversion);
-								/* Setting hardware version here.
-								 * Did not find another place to do this.
-								 * Feel free to correct it.
-								 * FIXME: move to upsdrv_initinfo() or so
-								 */
-								dstate_setinfo("ups.firmware.aux", "%u", lastpkthwinfo.hardwareversion);
-								dstate_setinfo("ups.temperature", "%0.2f", lastpktdata.tempmed_real);
-								dstate_setinfo("ups.load", "%u", lastpktdata.potrms);
-								dstate_setinfo("ups.efficiency", "%0.2f", calculate_efficiency(lastpktdata.vacoutrms, lastpktdata.vacinrms));
-								va = get_va(lastpkthwinfo.model);
-								pf = get_pf();
-								/* vpower is the power in Watts */
-								vpower = ((va * pf) * (lastpktdata.potrms / 100.0));
-								/* abat is the battery's consumption in Amperes */
-								abat = ((vpower / lastpktdata.vdcmed_real) / numbat);
-								if (vpower > maxpower)
-									maxpower = vpower;
-								if (vpower < minpower)
-									minpower = vpower;
-								dstate_setinfo("ups.power", "%0.2f", vpower);
-								dstate_setinfo("ups.power.nominal", "%u", va);
-								dstate_setinfo("ups.realpower", "%ld", lrint(round(vpower)));
-								dstate_setinfo("ups.realpower.nominal", "%ld", lrint(round((double)va * (double)pf)));
-								dstate_setinfo("ups.beeper.status", "%d", !lastpkthwinfo.c_buzzer_disable);
-								dstate_setinfo("input.voltage", "%0.2f", lastpktdata.vacinrms);
-								dstate_setinfo("input.voltage.maximum", "%0.2f", lastpktdata.vacinrmsmin);
-								dstate_setinfo("input.voltage.minimum", "%0.2f", lastpktdata.vacinrmsmax);
-								vin_underv = lastpkthwinfo.s_220V_in ? lastpkthwinfo.undervoltagein220V : lastpkthwinfo.undervoltagein120V;
-								vin_overv = lastpkthwinfo.s_220V_in ? lastpkthwinfo.overvoltagein220V : lastpkthwinfo.overvoltagein120V;
-								perc = f_equal(get_vin_perc("vin_low_warn_perc"), get_vin_perc("vin_low_crit_perc")) ?  2 : 1;
-								vin_low_warn = vin_underv + (vin_underv * ((get_vin_perc("vin_low_warn_perc") * perc) / 100.0));
-								dstate_setinfo("input.voltage.low.warning", "%0.2f", calculated);
-								vin_low_crit = vin_underv + (vin_underv * (get_vin_perc("vin_low_crit_perc") / 100.0));
-								dstate_setinfo("input.voltage.low.critical", "%0.2f", calculated);
-								vin_high_warn = vin_overv + (vin_overv * ((get_vin_perc("vin_high_warn_perc") * perc) / 100.0));
-								dstate_setinfo("input.voltage.high.warning", "%0.2f", calculated);
-								vin_high_crit = vin_overv + (vin_overv * (get_vin_perc("vin_high_crit_perc") / 100.0));
-								dstate_setinfo("input.voltage.high.critical", "%0.2f", calculated);
-								vin = lastpkthwinfo.s_220V_in ? lastpkthwinfo.tensionout220V : lastpkthwinfo.tensionout120V;
-								dstate_setinfo("input.voltage.nominal", "%u", vin);
-								dstate_setinfo("input.transfer.low", "%u", lastpkthwinfo.s_220V_in ? lastpkthwinfo.undervoltagein220V : lastpkthwinfo.undervoltagein120V);
-								dstate_setinfo("input.transfer.high", "%u", lastpkthwinfo.s_220V_in ? lastpkthwinfo.overvoltagein220V : lastpkthwinfo.overvoltagein120V);
-								dstate_setinfo("output.voltage", "%0.2f", lastpktdata.vacoutrms);
-								vout = lastpkthwinfo.s_220V_out ? lastpkthwinfo.tensionout220V : lastpkthwinfo.tensionout120V;
-								dstate_setinfo("output.voltage.nominal", "%u", vout);
-								dstate_setinfo("voltage", "%0.2f", lastpktdata.vacoutrms);
-								dstate_setinfo("voltage.nominal", "%u", vout);
-								dstate_setinfo("voltage.maximum", "%0.2f", lastpktdata.vacinrmsmax);
-								dstate_setinfo("voltage.minimum", "%0.2f", lastpktdata.vacinrmsmin);
-								dstate_setinfo("voltage.low.warning", "%0.2f", vin_low_warn);
-								dstate_setinfo("voltage.low.critical", "%0.2f", vin_low_crit);
-								dstate_setinfo("voltage.high.warning", "%0.2f", vin_high_warn);
-								dstate_setinfo("voltage.high.critical", "%0.2f", vin_high_crit);
-								dstate_setinfo("power", "%0.2f", vpower);
-								dstate_setinfo("power.maximum", "%0.2f", maxpower);
-								dstate_setinfo("power.minimum", "%0.2f", minpower);
-								dstate_setinfo("power.percent", "%u", lastpktdata.potrms);
-								if (lastpktdata.potrms > maxpowerperc)
-									maxpowerperc = lastpktdata.potrms;
-								if (lastpktdata.potrms < minpowerperc)
-									minpowerperc = lastpktdata.potrms;
-								dstate_setinfo("power.maximum.percent", "%u", maxpowerperc);
-								dstate_setinfo("power.minimum.percent", "%u", minpowerperc);
-								dstate_setinfo("realpower", "%ld", lrint(round(vpower)));
-								dstate_setinfo("power", "%ld", lrint(round(va * (lastpktdata.potrms / 100.0))));
-								bcharge = lrint(round((lastpktdata.vdcmed_real * 100) / vbat));
-								if (bcharge > 100)
-									bcharge = 100;
-								dstate_setinfo("battery.charge", "%ld", bcharge);
-								dstate_setinfo("battery.voltage", "%0.2f", lastpktdata.vdcmed_real);
-								dstate_setinfo("battery.voltage.nominal", "%u", vbat);
-								dstate_setinfo("battery.capacity", "%u", ah);
-								dstate_setinfo("battery.capacity.nominal", "%0.2f", (float)ah * pf);
-								dstate_setinfo("battery.current", "%0.2f", abat);
-								dstate_setinfo("battery.current.total", "%0.2f", (float)abat * numbat);
-								dstate_setinfo("battery.temperature", "%ld", lrint(round(lastpktdata.tempmed_real)));
-								dstate_setinfo("battery.packs", "%u", numbat);
-								/* We will calculate autonomy in seconds
-								 *   autonomy_secs = (ah / lastpktdata.vdcmed_real) * 3600;
-								 * Maybe wrong, too.
-								 * People say that the correct calculation is
-								 *
-								 *   Battery Amp-Hour / (Power in Watts / battery voltage)
-								 *
-								 * Is that correct? I don't know. I'll use it for now.
-								 */
-
-								/* That result is IN HOURS. We need to convert it to seconds */
-								actual_current = vpower / vbat;	/* Current consumption in A*/
-								autonomy_secs = (ah / actual_current) * 3600;
-
-								dstate_setinfo("battery.runtime", "%u", autonomy_secs);
-								dstate_setinfo("battery.runtime.low", "%u", 30);
-								if (lastpktdata.s_charger_on)
-									dstate_setinfo("battery.charger.status", "%s", "CHARGING");
-								else {
-									if (lastpktdata.s_battery_mode)
-										dstate_setinfo("battery.charger.status", "%s", "DISCHARGING");
-									else
-										dstate_setinfo("battery.charger.status", "%s", "RESTING");
-								}
-								/* Now, creating a structure called NHS, */
-								dstate_setinfo("experimental.nhs.hw.header", "%u", lastpkthwinfo.header);
-								dstate_setinfo("experimental.nhs.hw.size", "%u", lastpkthwinfo.size);
-								dstate_setinfo("experimental.nhs.hw.type", "%c", lastpkthwinfo.type);
-								dstate_setinfo("experimental.nhs.hw.model", "%u", lastpkthwinfo.model);
-								dstate_setinfo("experimental.nhs.hw.hardwareversion", "%u", lastpkthwinfo.hardwareversion);
-								dstate_setinfo("experimental.nhs.hw.softwareversion", "%u", lastpkthwinfo.softwareversion);
-								dstate_setinfo("experimental.nhs.hw.configuration", "%u", lastpkthwinfo.configuration);
-								for (i = 0; i < 5; i++) {
-									/* Reusing variable */
-									snprintf(alarm, sizeof(alarm), "experimental.nhs.hw.configuration_array_p%d", i);
-									dstate_setinfo(alarm, "%u", lastpkthwinfo.configuration_array[i]);
-								}
-								dstate_setinfo("experimental.nhs.hw.c_oem_mode", "%s", lastpkthwinfo.c_oem_mode ? "true" : "false");
-								dstate_setinfo("experimental.nhs.hw.c_buzzer_disable", "%s", lastpkthwinfo.c_buzzer_disable ? "true" : "false");
-								dstate_setinfo("experimental.nhs.hw.c_potmin_disable", "%s", lastpkthwinfo.c_potmin_disable ? "true" : "false");
-								dstate_setinfo("experimental.nhs.hw.c_rearm_enable", "%s", lastpkthwinfo.c_rearm_enable ? "true" : "false");
-								dstate_setinfo("experimental.nhs.hw.c_bootloader_enable", "%s", lastpkthwinfo.c_bootloader_enable ? "true" : "false");
-								dstate_setinfo("experimental.nhs.hw.numbatteries", "%u", lastpkthwinfo.numbatteries);
-								dstate_setinfo("experimental.nhs.hw.undervoltagein120V", "%u", lastpkthwinfo.undervoltagein120V);
-								dstate_setinfo("experimental.nhs.hw.overvoltagein120V", "%u", lastpkthwinfo.overvoltagein120V);
-								dstate_setinfo("experimental.nhs.hw.undervoltagein220V", "%u", lastpkthwinfo.undervoltagein220V);
-								dstate_setinfo("experimental.nhs.hw.overvoltagein220V", "%u", lastpkthwinfo.overvoltagein220V);
-								dstate_setinfo("experimental.nhs.hw.tensionout120V", "%u", lastpkthwinfo.tensionout120V);
-								dstate_setinfo("experimental.nhs.hw.tensionout220V", "%u", lastpkthwinfo.tensionout220V);
-								dstate_setinfo("experimental.nhs.hw.statusval", "%u", lastpkthwinfo.statusval);
-								for (i = 0; i < 6; i++) {
-									/* Reusing variable */
-									snprintf(alarm, sizeof(alarm), "experimental.nhs.hw.status_p%d", i);
-									dstate_setinfo(alarm, "%u", lastpkthwinfo.status[i]);
-								}
-								dstate_setinfo("experimental.nhs.hw.s_220V_in", "%s", lastpkthwinfo.s_220V_in ? "true" : "false");
-								dstate_setinfo("experimental.nhs.hw.s_220V_out", "%s", lastpkthwinfo.s_220V_out ? "true" : "false");
-								dstate_setinfo("experimental.nhs.hw.s_sealed_battery", "%s", lastpkthwinfo.s_sealed_battery ? "true" : "false");
-								dstate_setinfo("experimental.nhs.hw.s_show_out_tension", "%s", lastpkthwinfo.s_show_out_tension ? "true" : "false");
-								dstate_setinfo("experimental.nhs.hw.s_show_temperature", "%s", lastpkthwinfo.s_show_temperature ? "true" : "false");
-								dstate_setinfo("experimental.nhs.hw.s_show_charger_current", "%s", lastpkthwinfo.s_show_charger_current ? "true" : "false");
-								dstate_setinfo("experimental.nhs.hw.chargercurrent", "%u", lastpkthwinfo.chargercurrent);
-								dstate_setinfo("experimental.nhs.hw.checksum", "%u", lastpkthwinfo.checksum);
-								dstate_setinfo("experimental.nhs.hw.checksum_calc", "%u", lastpkthwinfo.checksum_calc);
-								dstate_setinfo("experimental.nhs.hw.checksum_ok", "%s", lastpkthwinfo.checksum_ok ? "true" : "false");
-								dstate_setinfo("experimental.nhs.hw.serial", "%s", lastpkthwinfo.serial);
-								dstate_setinfo("experimental.nhs.hw.year", "%u", lastpkthwinfo.year);
-								dstate_setinfo("experimental.nhs.hw.month", "%u", lastpkthwinfo.month);
-								dstate_setinfo("experimental.nhs.hw.wday", "%u", lastpkthwinfo.wday);
-								dstate_setinfo("experimental.nhs.hw.hour", "%u", lastpkthwinfo.hour);
-								dstate_setinfo("experimental.nhs.hw.minute", "%u", lastpkthwinfo.minute);
-								dstate_setinfo("experimental.nhs.hw.second", "%u", lastpkthwinfo.second);
-								dstate_setinfo("experimental.nhs.hw.alarmyear", "%u", lastpkthwinfo.alarmyear);
-								dstate_setinfo("experimental.nhs.hw.alarmmonth", "%u", lastpkthwinfo.alarmmonth);
-								dstate_setinfo("experimental.nhs.hw.alarmwday", "%u", lastpkthwinfo.alarmwday);
-								dstate_setinfo("experimental.nhs.hw.alarmday", "%u", lastpkthwinfo.alarmday);
-								dstate_setinfo("experimental.nhs.hw.alarmhour", "%u", lastpkthwinfo.alarmhour);
-								dstate_setinfo("experimental.nhs.hw.alarmminute", "%u", lastpkthwinfo.alarmminute);
-								dstate_setinfo("experimental.nhs.hw.alarmsecond", "%u", lastpkthwinfo.alarmsecond);
-								dstate_setinfo("experimental.nhs.hw.end_marker", "%u", lastpkthwinfo.end_marker);
-
-								/* Data packet */
-								dstate_setinfo("experimental.nhs.data.header", "%u", lastpktdata.header);
-								dstate_setinfo("experimental.nhs.data.length", "%u", lastpktdata.length);
-								dstate_setinfo("experimental.nhs.data.packet_type", "%c", lastpktdata.packet_type);
-								dstate_setinfo("experimental.nhs.data.vacinrms_high", "%u", lastpktdata.vacinrms_high);
-								dstate_setinfo("experimental.nhs.data.vacinrms_low", "%u", lastpktdata.vacinrms_low);
-								dstate_setinfo("experimental.nhs.data.vacinrms", "%0.2f", lastpktdata.vacinrms);
-								dstate_setinfo("experimental.nhs.data.vdcmed_high", "%u", lastpktdata.vdcmed_high);
-								dstate_setinfo("experimental.nhs.data.vdcmed_low", "%u", lastpktdata.vdcmed_low);
-								dstate_setinfo("experimental.nhs.data.vdcmed", "%0.2f", lastpktdata.vdcmed);
-								dstate_setinfo("experimental.nhs.data.vdcmed_real", "%0.2f", lastpktdata.vdcmed_real);
-								dstate_setinfo("experimental.nhs.data.potrms", "%u", lastpktdata.potrms);
-								dstate_setinfo("experimental.nhs.data.vacinrmsmin_high", "%u", lastpktdata.vacinrmsmin_high);
-								dstate_setinfo("experimental.nhs.data.vacinrmsmin_low", "%u", lastpktdata.vacinrmsmin_low);
-								dstate_setinfo("experimental.nhs.data.vacinrmsmin", "%0.2f", lastpktdata.vacinrmsmin);
-								dstate_setinfo("experimental.nhs.data.vacinrmsmax_high", "%u", lastpktdata.vacinrmsmax_high);
-								dstate_setinfo("experimental.nhs.data.vacinrmsmax_low", "%u", lastpktdata.vacinrmsmax_low);
-								dstate_setinfo("experimental.nhs.data.vacinrmsmax", "%0.2f", lastpktdata.vacinrmsmax);
-								dstate_setinfo("experimental.nhs.data.vacoutrms_high", "%u", lastpktdata.vacoutrms_high);
-								dstate_setinfo("experimental.nhs.data.vacoutrms_low", "%u", lastpktdata.vacoutrms_low);
-								dstate_setinfo("experimental.nhs.data.vacoutrms", "%0.2f", lastpktdata.vacoutrms);
-								dstate_setinfo("experimental.nhs.data.tempmed_high", "%u", lastpktdata.tempmed_high);
-								dstate_setinfo("experimental.nhs.data.tempmed_low", "%u", lastpktdata.tempmed_low);
-								dstate_setinfo("experimental.nhs.data.tempmed", "%0.2f", lastpktdata.tempmed);
-								dstate_setinfo("experimental.nhs.data.tempmed_real", "%0.2f", lastpktdata.tempmed_real);
-								dstate_setinfo("experimental.nhs.data.icarregrms", "%u", lastpktdata.icarregrms);
-								dstate_setinfo("experimental.nhs.data.icarregrms_real", "%u", lastpktdata.icarregrms_real);
-								dstate_setinfo("experimental.nhs.data.battery_tension", "%0.2f", lastpktdata.battery_tension);
-								dstate_setinfo("experimental.nhs.data.perc_output", "%u", lastpktdata.perc_output);
-								dstate_setinfo("experimental.nhs.data.statusval", "%u", lastpktdata.statusval);
-								for (i = 0; i < 8; i++) {
-									/* Reusing variable */
-									snprintf(alarm, sizeof(alarm), "experimental.nhs.data.status_p%d", i);
-									dstate_setinfo(alarm, "%u", lastpktdata.status[i]);
-								}
-								dstate_setinfo("experimental.nhs.data.nominaltension", "%u", lastpktdata.nominaltension);
-								dstate_setinfo("experimental.nhs.data.timeremain", "%0.2f", lastpktdata.timeremain);
-								dstate_setinfo("experimental.nhs.data.s_battery_mode", "%s", lastpktdata.s_battery_mode ? "true" : "false");
-								dstate_setinfo("experimental.nhs.data.s_battery_low", "%s", lastpktdata.s_battery_low ? "true" : "false");
-								dstate_setinfo("experimental.nhs.data.s_network_failure", "%s", lastpktdata.s_network_failure ? "true" : "false");
-								dstate_setinfo("experimental.nhs.data.s_fast_network_failure", "%s", lastpktdata.s_fast_network_failure ? "true" : "false");
-								dstate_setinfo("experimental.nhs.data.s_220_in", "%s", lastpktdata.s_220_in ? "true" : "false");
-								dstate_setinfo("experimental.nhs.data.s_220_out", "%s", lastpktdata.s_220_out ? "true" : "false");
-								dstate_setinfo("experimental.nhs.data.s_bypass_on", "%s", lastpktdata.s_bypass_on ? "true" : "false");
-								dstate_setinfo("experimental.nhs.data.s_charger_on", "%s", lastpktdata.s_charger_on ? "true" : "false");
-								dstate_setinfo("experimental.nhs.data.checksum", "%u", lastpktdata.checksum);
-								dstate_setinfo("experimental.nhs.data.checksum_ok", "%s", lastpktdata.checksum_ok ? "true" : "false");
-								dstate_setinfo("experimental.nhs.data.checksum_calc", "%u", lastpktdata.checksum_calc);
-								dstate_setinfo("experimental.nhs.data.end_marker", "%u", lastpktdata.end_marker);
-								dstate_setinfo("experimental.nhs.param.va", "%u", va);
-								dstate_setinfo("experimental.nhs.param.pf", "%0.2f", pf);
-								dstate_setinfo("experimental.nhs.param.ah", "%u", ah);
-								dstate_setinfo("experimental.nhs.param.vin_low_warn_perc", "%0.2f", get_vin_perc("vin_low_warn_perc"));
-								dstate_setinfo("experimental.nhs.param.vin_low_crit_perc", "%0.2f", get_vin_perc("vin_low_crit_perc"));
-								dstate_setinfo("experimental.nhs.param.vin_high_warn_perc", "%0.2f", get_vin_perc("vin_high_warn_perc"));
-								dstate_setinfo("experimental.nhs.param.vin_high_crit_perc", "%0.2f", get_vin_perc("vin_high_crit_perc"));
-
-								dstate_dataok();
-							}	/* end if */
+							numbat = get_numbat();
+							if (numbat == 0)
+								numbat = lastpkthwinfo.numbatteries;
 							else
-								upsdebugx(4, "Checksum of pkt_hwinfo is corrupted or not initialized. Waiting for new request...");
-						}	/* end else */
-					}	/* end if */
-				}	/* end if */
-			}	/* end if */
-		}	/* end if */
+								upsdebugx(4, "Number of batteries is set to %d", numbat);
+							vbat = get_vbat();
+							ah = get_ah();
 
-		/* Now the nobreak read buffer is empty.
-		 * We need a hw info packet to discover several variables,
-		 * like number of batteries, to calculate some data
-		 * FIXME: move (semi)static info discovery to upsdrv_initinfo() or so
-		 */
-		if (!lastpkthwinfo.checksum_ok) {
-			upsdebugx(4, "pkt_hwinfo loss -- Requesting");
-			/* If size == 0, packet maybe not initizated,
-			 * then send an initialization packet to obtain data.
-			 * Send two times the extended initialization string,
-			 * but, on fail, try randomly send extended or normal.
-			 */
-			if (send_extended < 6) {
-				upsdebugx(4, "Sending extended initialization packet. Try %d", send_extended+1);
-				bwritten = write_serial_int(serial_fd, string_initialization_long, 9);
-				send_extended++;
-			}	/* end if */
-			else {
-				/* randomly send */
-				if (rand() % 2 == 0) {
-					upsdebugx(4, "Sending long initialization packet");
-					bwritten = write_serial_int(serial_fd, string_initialization_long, 9);
+							/* Set all alarms possible */
+							alarm[0] = '\0';
+							if (lastpktdata.s_battery_mode)
+								snprintf(alarm, sizeof(alarm), "%s", "|UPS IN BATTERY MODE|");
+							if (lastpktdata.s_battery_low)
+								snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
+									"|UPS IN BATTERY MODE|");
+							if (lastpktdata.s_network_failure)
+								snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
+									"|NETWORK FAILURE|");
+
+							/* FIXME: Really same criteria in these 3? */
+							if (lastpktdata.s_fast_network_failure)
+								snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
+									"|FAST NETWORK FAILURE|");
+							if (lastpktdata.s_fast_network_failure)
+								snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
+									"|220v IN|");
+							if (lastpktdata.s_fast_network_failure)
+								snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
+									"|220v OUT|");
+
+							if (lastpktdata.s_bypass_on)
+								snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
+									"|BYPASS ON|");
+							if (lastpktdata.s_charger_on)
+								snprintfcat(alarm, sizeof(alarm), "%s%s", *alarm ? " " : "",
+									"|CHARGER ON|");
+							dstate_setinfo("ups.alarm", "%s", alarm);
+							dstate_setinfo("ups.model", "%s", ups.upsdesc);
+							dstate_setinfo("ups.mfr", "%s", MANUFACTURER);
+							dstate_setinfo("ups.serial", "%s", lastpkthwinfo.serial);
+							dstate_setinfo("ups.firmware", "%u", lastpkthwinfo.softwareversion);
+							/* Setting hardware version here.
+							 * Did not find another place to do this.
+							 * Feel free to correct it.
+							 * FIXME: move to upsdrv_initinfo() or so
+							 */
+							dstate_setinfo("ups.firmware.aux", "%u", lastpkthwinfo.hardwareversion);
+							dstate_setinfo("ups.temperature", "%0.2f", lastpktdata.tempmed_real);
+							dstate_setinfo("ups.load", "%u", lastpktdata.potrms);
+							dstate_setinfo("ups.efficiency", "%0.2f", calculate_efficiency(lastpktdata.vacoutrms, lastpktdata.vacinrms));
+							va = get_va(lastpkthwinfo.model);
+							pf = get_pf();
+							/* vpower is the power in Watts */
+							vpower = ((va * pf) * (lastpktdata.potrms / 100.0));
+							/* abat is the battery's consumption in Amperes */
+							abat = ((vpower / lastpktdata.vdcmed_real) / numbat);
+							if (vpower > maxpower)
+								maxpower = vpower;
+							if (vpower < minpower)
+								minpower = vpower;
+							dstate_setinfo("ups.power", "%0.2f", vpower);
+							dstate_setinfo("ups.power.nominal", "%u", va);
+							dstate_setinfo("ups.realpower", "%ld", lrint(round(vpower)));
+							dstate_setinfo("ups.realpower.nominal", "%ld", lrint(round((double)va * (double)pf)));
+							dstate_setinfo("ups.beeper.status", "%d", !lastpkthwinfo.c_buzzer_disable);
+							dstate_setinfo("input.voltage", "%0.2f", lastpktdata.vacinrms);
+							dstate_setinfo("input.voltage.maximum", "%0.2f", lastpktdata.vacinrmsmin);
+							dstate_setinfo("input.voltage.minimum", "%0.2f", lastpktdata.vacinrmsmax);
+							vin_underv = lastpkthwinfo.s_220V_in ? lastpkthwinfo.undervoltagein220V : lastpkthwinfo.undervoltagein120V;
+							vin_overv = lastpkthwinfo.s_220V_in ? lastpkthwinfo.overvoltagein220V : lastpkthwinfo.overvoltagein120V;
+							perc = f_equal(get_vin_perc("vin_low_warn_perc"), get_vin_perc("vin_low_crit_perc")) ?  2 : 1;
+							vin_low_warn = vin_underv + (vin_underv * ((get_vin_perc("vin_low_warn_perc") * perc) / 100.0));
+							dstate_setinfo("input.voltage.low.warning", "%0.2f", calculated);
+							vin_low_crit = vin_underv + (vin_underv * (get_vin_perc("vin_low_crit_perc") / 100.0));
+							dstate_setinfo("input.voltage.low.critical", "%0.2f", calculated);
+							vin_high_warn = vin_overv + (vin_overv * ((get_vin_perc("vin_high_warn_perc") * perc) / 100.0));
+							dstate_setinfo("input.voltage.high.warning", "%0.2f", calculated);
+							vin_high_crit = vin_overv + (vin_overv * (get_vin_perc("vin_high_crit_perc") / 100.0));
+							dstate_setinfo("input.voltage.high.critical", "%0.2f", calculated);
+							vin = lastpkthwinfo.s_220V_in ? lastpkthwinfo.tensionout220V : lastpkthwinfo.tensionout120V;
+							dstate_setinfo("input.voltage.nominal", "%u", vin);
+							dstate_setinfo("input.transfer.low", "%u", lastpkthwinfo.s_220V_in ? lastpkthwinfo.undervoltagein220V : lastpkthwinfo.undervoltagein120V);
+							dstate_setinfo("input.transfer.high", "%u", lastpkthwinfo.s_220V_in ? lastpkthwinfo.overvoltagein220V : lastpkthwinfo.overvoltagein120V);
+							dstate_setinfo("output.voltage", "%0.2f", lastpktdata.vacoutrms);
+							vout = lastpkthwinfo.s_220V_out ? lastpkthwinfo.tensionout220V : lastpkthwinfo.tensionout120V;
+							dstate_setinfo("output.voltage.nominal", "%u", vout);
+							dstate_setinfo("voltage", "%0.2f", lastpktdata.vacoutrms);
+							dstate_setinfo("voltage.nominal", "%u", vout);
+							dstate_setinfo("voltage.maximum", "%0.2f", lastpktdata.vacinrmsmax);
+							dstate_setinfo("voltage.minimum", "%0.2f", lastpktdata.vacinrmsmin);
+							dstate_setinfo("voltage.low.warning", "%0.2f", vin_low_warn);
+							dstate_setinfo("voltage.low.critical", "%0.2f", vin_low_crit);
+							dstate_setinfo("voltage.high.warning", "%0.2f", vin_high_warn);
+							dstate_setinfo("voltage.high.critical", "%0.2f", vin_high_crit);
+							dstate_setinfo("power", "%0.2f", vpower);
+							dstate_setinfo("power.maximum", "%0.2f", maxpower);
+							dstate_setinfo("power.minimum", "%0.2f", minpower);
+							dstate_setinfo("power.percent", "%u", lastpktdata.potrms);
+							if (lastpktdata.potrms > maxpowerperc)
+								maxpowerperc = lastpktdata.potrms;
+							if (lastpktdata.potrms < minpowerperc)
+								minpowerperc = lastpktdata.potrms;
+							dstate_setinfo("power.maximum.percent", "%u", maxpowerperc);
+							dstate_setinfo("power.minimum.percent", "%u", minpowerperc);
+							dstate_setinfo("realpower", "%ld", lrint(round(vpower)));
+							dstate_setinfo("power", "%ld", lrint(round(va * (lastpktdata.potrms / 100.0))));
+							bcharge = lrint(round((lastpktdata.vdcmed_real * 100) / vbat));
+							if (bcharge > 100)
+								bcharge = 100;
+							dstate_setinfo("battery.charge", "%ld", bcharge);
+							dstate_setinfo("battery.voltage", "%0.2f", lastpktdata.vdcmed_real);
+							dstate_setinfo("battery.voltage.nominal", "%u", vbat);
+							dstate_setinfo("battery.capacity", "%u", ah);
+							dstate_setinfo("battery.capacity.nominal", "%0.2f", (float)ah * pf);
+							dstate_setinfo("battery.current", "%0.2f", abat);
+							dstate_setinfo("battery.current.total", "%0.2f", (float)abat * numbat);
+							dstate_setinfo("battery.temperature", "%ld", lrint(round(lastpktdata.tempmed_real)));
+							dstate_setinfo("battery.packs", "%u", numbat);
+							/* We will calculate autonomy in seconds
+							 *   autonomy_secs = (ah / lastpktdata.vdcmed_real) * 3600;
+							 * Maybe wrong, too.
+							 * People say that the correct calculation is
+							 *
+							 *   Battery Amp-Hour / (Power in Watts / battery voltage)
+							 *
+							 * Is that correct? I don't know. I'll use it for now.
+							 */
+
+							/* That result is IN HOURS. We need to convert it to seconds */
+							actual_current = vpower / vbat;	/* Current consumption in A*/
+							autonomy_secs = (ah / actual_current) * 3600;
+
+							dstate_setinfo("battery.runtime", "%u", autonomy_secs);
+							dstate_setinfo("battery.runtime.low", "%u", 30);
+							if (lastpktdata.s_charger_on) {
+								dstate_setinfo("battery.charger.status", "%s", "CHARGING");
+							} else {
+								if (lastpktdata.s_battery_mode)
+									dstate_setinfo("battery.charger.status", "%s", "DISCHARGING");
+								else
+									dstate_setinfo("battery.charger.status", "%s", "RESTING");
+							}
+							/* Now, creating a structure called NHS, */
+							dstate_setinfo("experimental.nhs.hw.header", "%u", lastpkthwinfo.header);
+							dstate_setinfo("experimental.nhs.hw.size", "%u", lastpkthwinfo.size);
+							dstate_setinfo("experimental.nhs.hw.type", "%c", lastpkthwinfo.type);
+							dstate_setinfo("experimental.nhs.hw.model", "%u", lastpkthwinfo.model);
+							dstate_setinfo("experimental.nhs.hw.hardwareversion", "%u", lastpkthwinfo.hardwareversion);
+							dstate_setinfo("experimental.nhs.hw.softwareversion", "%u", lastpkthwinfo.softwareversion);
+							dstate_setinfo("experimental.nhs.hw.configuration", "%u", lastpkthwinfo.configuration);
+							for (i = 0; i < 5; i++) {
+								/* Reusing variable */
+								snprintf(alarm, sizeof(alarm), "experimental.nhs.hw.configuration_array_p%d", i);
+								dstate_setinfo(alarm, "%u", lastpkthwinfo.configuration_array[i]);
+							}
+							dstate_setinfo("experimental.nhs.hw.c_oem_mode", "%s", lastpkthwinfo.c_oem_mode ? "true" : "false");
+							dstate_setinfo("experimental.nhs.hw.c_buzzer_disable", "%s", lastpkthwinfo.c_buzzer_disable ? "true" : "false");
+							dstate_setinfo("experimental.nhs.hw.c_potmin_disable", "%s", lastpkthwinfo.c_potmin_disable ? "true" : "false");
+							dstate_setinfo("experimental.nhs.hw.c_rearm_enable", "%s", lastpkthwinfo.c_rearm_enable ? "true" : "false");
+							dstate_setinfo("experimental.nhs.hw.c_bootloader_enable", "%s", lastpkthwinfo.c_bootloader_enable ? "true" : "false");
+							dstate_setinfo("experimental.nhs.hw.numbatteries", "%u", lastpkthwinfo.numbatteries);
+							dstate_setinfo("experimental.nhs.hw.undervoltagein120V", "%u", lastpkthwinfo.undervoltagein120V);
+							dstate_setinfo("experimental.nhs.hw.overvoltagein120V", "%u", lastpkthwinfo.overvoltagein120V);
+							dstate_setinfo("experimental.nhs.hw.undervoltagein220V", "%u", lastpkthwinfo.undervoltagein220V);
+							dstate_setinfo("experimental.nhs.hw.overvoltagein220V", "%u", lastpkthwinfo.overvoltagein220V);
+							dstate_setinfo("experimental.nhs.hw.tensionout120V", "%u", lastpkthwinfo.tensionout120V);
+							dstate_setinfo("experimental.nhs.hw.tensionout220V", "%u", lastpkthwinfo.tensionout220V);
+							dstate_setinfo("experimental.nhs.hw.statusval", "%u", lastpkthwinfo.statusval);
+							for (i = 0; i < 6; i++) {
+								/* Reusing variable */
+								snprintf(alarm, sizeof(alarm), "experimental.nhs.hw.status_p%d", i);
+								dstate_setinfo(alarm, "%u", lastpkthwinfo.status[i]);
+							}
+							dstate_setinfo("experimental.nhs.hw.s_220V_in", "%s", lastpkthwinfo.s_220V_in ? "true" : "false");
+							dstate_setinfo("experimental.nhs.hw.s_220V_out", "%s", lastpkthwinfo.s_220V_out ? "true" : "false");
+							dstate_setinfo("experimental.nhs.hw.s_sealed_battery", "%s", lastpkthwinfo.s_sealed_battery ? "true" : "false");
+							dstate_setinfo("experimental.nhs.hw.s_show_out_tension", "%s", lastpkthwinfo.s_show_out_tension ? "true" : "false");
+							dstate_setinfo("experimental.nhs.hw.s_show_temperature", "%s", lastpkthwinfo.s_show_temperature ? "true" : "false");
+							dstate_setinfo("experimental.nhs.hw.s_show_charger_current", "%s", lastpkthwinfo.s_show_charger_current ? "true" : "false");
+							dstate_setinfo("experimental.nhs.hw.chargercurrent", "%u", lastpkthwinfo.chargercurrent);
+							dstate_setinfo("experimental.nhs.hw.checksum", "%u", lastpkthwinfo.checksum);
+							dstate_setinfo("experimental.nhs.hw.checksum_calc", "%u", lastpkthwinfo.checksum_calc);
+							dstate_setinfo("experimental.nhs.hw.checksum_ok", "%s", lastpkthwinfo.checksum_ok ? "true" : "false");
+							dstate_setinfo("experimental.nhs.hw.serial", "%s", lastpkthwinfo.serial);
+							dstate_setinfo("experimental.nhs.hw.year", "%u", lastpkthwinfo.year);
+							dstate_setinfo("experimental.nhs.hw.month", "%u", lastpkthwinfo.month);
+							dstate_setinfo("experimental.nhs.hw.wday", "%u", lastpkthwinfo.wday);
+							dstate_setinfo("experimental.nhs.hw.hour", "%u", lastpkthwinfo.hour);
+							dstate_setinfo("experimental.nhs.hw.minute", "%u", lastpkthwinfo.minute);
+							dstate_setinfo("experimental.nhs.hw.second", "%u", lastpkthwinfo.second);
+							dstate_setinfo("experimental.nhs.hw.alarmyear", "%u", lastpkthwinfo.alarmyear);
+							dstate_setinfo("experimental.nhs.hw.alarmmonth", "%u", lastpkthwinfo.alarmmonth);
+							dstate_setinfo("experimental.nhs.hw.alarmwday", "%u", lastpkthwinfo.alarmwday);
+							dstate_setinfo("experimental.nhs.hw.alarmday", "%u", lastpkthwinfo.alarmday);
+							dstate_setinfo("experimental.nhs.hw.alarmhour", "%u", lastpkthwinfo.alarmhour);
+							dstate_setinfo("experimental.nhs.hw.alarmminute", "%u", lastpkthwinfo.alarmminute);
+							dstate_setinfo("experimental.nhs.hw.alarmsecond", "%u", lastpkthwinfo.alarmsecond);
+							dstate_setinfo("experimental.nhs.hw.end_marker", "%u", lastpkthwinfo.end_marker);
+
+							/* Data packet */
+							dstate_setinfo("experimental.nhs.data.header", "%u", lastpktdata.header);
+							dstate_setinfo("experimental.nhs.data.length", "%u", lastpktdata.length);
+							dstate_setinfo("experimental.nhs.data.packet_type", "%c", lastpktdata.packet_type);
+							dstate_setinfo("experimental.nhs.data.vacinrms_high", "%u", lastpktdata.vacinrms_high);
+							dstate_setinfo("experimental.nhs.data.vacinrms_low", "%u", lastpktdata.vacinrms_low);
+							dstate_setinfo("experimental.nhs.data.vacinrms", "%0.2f", lastpktdata.vacinrms);
+							dstate_setinfo("experimental.nhs.data.vdcmed_high", "%u", lastpktdata.vdcmed_high);
+							dstate_setinfo("experimental.nhs.data.vdcmed_low", "%u", lastpktdata.vdcmed_low);
+							dstate_setinfo("experimental.nhs.data.vdcmed", "%0.2f", lastpktdata.vdcmed);
+							dstate_setinfo("experimental.nhs.data.vdcmed_real", "%0.2f", lastpktdata.vdcmed_real);
+							dstate_setinfo("experimental.nhs.data.potrms", "%u", lastpktdata.potrms);
+							dstate_setinfo("experimental.nhs.data.vacinrmsmin_high", "%u", lastpktdata.vacinrmsmin_high);
+							dstate_setinfo("experimental.nhs.data.vacinrmsmin_low", "%u", lastpktdata.vacinrmsmin_low);
+							dstate_setinfo("experimental.nhs.data.vacinrmsmin", "%0.2f", lastpktdata.vacinrmsmin);
+							dstate_setinfo("experimental.nhs.data.vacinrmsmax_high", "%u", lastpktdata.vacinrmsmax_high);
+							dstate_setinfo("experimental.nhs.data.vacinrmsmax_low", "%u", lastpktdata.vacinrmsmax_low);
+							dstate_setinfo("experimental.nhs.data.vacinrmsmax", "%0.2f", lastpktdata.vacinrmsmax);
+							dstate_setinfo("experimental.nhs.data.vacoutrms_high", "%u", lastpktdata.vacoutrms_high);
+							dstate_setinfo("experimental.nhs.data.vacoutrms_low", "%u", lastpktdata.vacoutrms_low);
+							dstate_setinfo("experimental.nhs.data.vacoutrms", "%0.2f", lastpktdata.vacoutrms);
+							dstate_setinfo("experimental.nhs.data.tempmed_high", "%u", lastpktdata.tempmed_high);
+							dstate_setinfo("experimental.nhs.data.tempmed_low", "%u", lastpktdata.tempmed_low);
+							dstate_setinfo("experimental.nhs.data.tempmed", "%0.2f", lastpktdata.tempmed);
+							dstate_setinfo("experimental.nhs.data.tempmed_real", "%0.2f", lastpktdata.tempmed_real);
+							dstate_setinfo("experimental.nhs.data.icarregrms", "%u", lastpktdata.icarregrms);
+							dstate_setinfo("experimental.nhs.data.icarregrms_real", "%u", lastpktdata.icarregrms_real);
+							dstate_setinfo("experimental.nhs.data.battery_tension", "%0.2f", lastpktdata.battery_tension);
+							dstate_setinfo("experimental.nhs.data.perc_output", "%u", lastpktdata.perc_output);
+							dstate_setinfo("experimental.nhs.data.statusval", "%u", lastpktdata.statusval);
+							for (i = 0; i < 8; i++) {
+								/* Reusing variable */
+								snprintf(alarm, sizeof(alarm), "experimental.nhs.data.status_p%d", i);
+								dstate_setinfo(alarm, "%u", lastpktdata.status[i]);
+							}
+							dstate_setinfo("experimental.nhs.data.nominaltension", "%u", lastpktdata.nominaltension);
+							dstate_setinfo("experimental.nhs.data.timeremain", "%0.2f", lastpktdata.timeremain);
+							dstate_setinfo("experimental.nhs.data.s_battery_mode", "%s", lastpktdata.s_battery_mode ? "true" : "false");
+							dstate_setinfo("experimental.nhs.data.s_battery_low", "%s", lastpktdata.s_battery_low ? "true" : "false");
+							dstate_setinfo("experimental.nhs.data.s_network_failure", "%s", lastpktdata.s_network_failure ? "true" : "false");
+							dstate_setinfo("experimental.nhs.data.s_fast_network_failure", "%s", lastpktdata.s_fast_network_failure ? "true" : "false");
+							dstate_setinfo("experimental.nhs.data.s_220_in", "%s", lastpktdata.s_220_in ? "true" : "false");
+							dstate_setinfo("experimental.nhs.data.s_220_out", "%s", lastpktdata.s_220_out ? "true" : "false");
+							dstate_setinfo("experimental.nhs.data.s_bypass_on", "%s", lastpktdata.s_bypass_on ? "true" : "false");
+							dstate_setinfo("experimental.nhs.data.s_charger_on", "%s", lastpktdata.s_charger_on ? "true" : "false");
+							dstate_setinfo("experimental.nhs.data.checksum", "%u", lastpktdata.checksum);
+							dstate_setinfo("experimental.nhs.data.checksum_ok", "%s", lastpktdata.checksum_ok ? "true" : "false");
+							dstate_setinfo("experimental.nhs.data.checksum_calc", "%u", lastpktdata.checksum_calc);
+							dstate_setinfo("experimental.nhs.data.end_marker", "%u", lastpktdata.end_marker);
+							dstate_setinfo("experimental.nhs.param.va", "%u", va);
+							dstate_setinfo("experimental.nhs.param.pf", "%0.2f", pf);
+							dstate_setinfo("experimental.nhs.param.ah", "%u", ah);
+							dstate_setinfo("experimental.nhs.param.vin_low_warn_perc", "%0.2f", get_vin_perc("vin_low_warn_perc"));
+							dstate_setinfo("experimental.nhs.param.vin_low_crit_perc", "%0.2f", get_vin_perc("vin_low_crit_perc"));
+							dstate_setinfo("experimental.nhs.param.vin_high_warn_perc", "%0.2f", get_vin_perc("vin_high_warn_perc"));
+							dstate_setinfo("experimental.nhs.param.vin_high_crit_perc", "%0.2f", get_vin_perc("vin_high_crit_perc"));
+
+							dstate_dataok();
+						}	/* end if */
+						else {
+							upsdebugx(4, "Checksum of pkt_hwinfo is corrupted or not initialized. Waiting for new request...");
+						}
+					}	/* end else */
 				}	/* end if */
-				else {
-					upsdebugx(4, "Sending short initialization packet");
-					bwritten = write_serial_int(serial_fd, string_initialization_short, 9);
-				}	/* end else */
-			}	/* end else */
-			if (bwritten < 0) {
-				upsdebugx(1, "%s: Problem to write data to %s", __func__, porta);
-				if (bwritten == -1) {
-					upsdebugx(1, "%s: Data problem", __func__);
-				}
-				if (bwritten == -2) {
-					upsdebugx(1, "%s: Flush problem", __func__);
-				}
-				close(serial_fd);
-				serial_fd = -1;
+			}	/* end if */
+		}	/* end if */
+	}	/* end while read */
+
+	/* Now the nobreak read buffer is empty.
+	 * We need a hw info packet to discover several variables,
+	 * like number of batteries, to calculate some data
+	 * FIXME: move (semi)static info discovery to upsdrv_initinfo() or so
+	 */
+	if (!lastpkthwinfo.checksum_ok) {
+		upsdebugx(4, "pkt_hwinfo loss -- Requesting");
+		/* If size == 0, packet maybe not initizated,
+		 * then send an initialization packet to obtain data.
+		 * Send two times the extended initialization string,
+		 * but, on fail, try randomly send extended or normal.
+		 */
+		if (send_extended < 6) {
+			upsdebugx(4, "Sending extended initialization packet. Try %d", send_extended+1);
+			bwritten = write_serial_int(serial_fd, string_initialization_long, 9);
+			send_extended++;
+		}	/* end if */
+		else {
+			/* randomly send */
+			if (rand() % 2 == 0) {
+				upsdebugx(4, "Sending long initialization packet");
+				bwritten = write_serial_int(serial_fd, string_initialization_long, 9);
 			}	/* end if */
 			else {
-				if (checktime > max_checktime)
-					checktime = max_checktime;
-				else {
-					upsdebugx(3, "Increase checktime to %d", checktime + 100000);
-					checktime = checktime + 100000;
-				}
-				usleep(checktime);
+				upsdebugx(4, "Sending short initialization packet");
+				bwritten = write_serial_int(serial_fd, string_initialization_short, 9);
 			}	/* end else */
+		}	/* end else */
+		if (bwritten < 0) {
+			upsdebugx(1, "%s: Problem to write data to %s", __func__, porta);
+			if (bwritten == -1) {
+				upsdebugx(1, "%s: Data problem", __func__);
+			}
+			if (bwritten == -2) {
+				upsdebugx(1, "%s: Flush problem", __func__);
+			}
+			close(serial_fd);
+			serial_fd = -1;
 		}	/* end if */
-	}	/* end else */
+		else {
+			if (checktime > max_checktime)
+				checktime = max_checktime;
+			else {
+				upsdebugx(3, "Increase checktime to %d", checktime + 100000);
+				checktime = checktime + 100000;
+			}
+			usleep(checktime);
+		}	/* end else */
+	}	/* end if bad checksum */
+
 	upsdebugx(3, "%s: finished", __func__);
 }
 
