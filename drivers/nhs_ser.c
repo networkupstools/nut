@@ -53,6 +53,9 @@
 #define DATAPACKETSIZE	100
 #define DEFAULTBATV	12.0
 
+/* comms revival attempts before declaring them stale */
+#define MAXTRIES	3
+
 /* driver description structure */
 upsdrv_info_t upsdrv_info =
 {
@@ -1691,7 +1694,7 @@ static unsigned int get_numbat(void) {
 
 void upsdrv_updateinfo(void) {
 	/* retries to open port */
-	unsigned int	retries = 3;
+	static unsigned int	retries = 0;
 	unsigned int	i = 0;
 	char	alarm[1024];
 	unsigned int	va = 0;
@@ -1724,15 +1727,33 @@ void upsdrv_updateinfo(void) {
 	if (serial_fd <= 0) {
 		upsdebugx(1, "%s: Serial port '%s' communications problem",
 			__func__, porta);
-		while (serial_fd <= 0 && i < retries) {
-			serial_fd = openfd(porta, baudrate);
+
+		/* Uh oh, got to reconnect! */
+		dstate_setinfo("driver.state", "reconnect.trying");
+
+		while (serial_fd <= 0) {
 			upsdebugx(1, "%s: Trying to reopen serial...", __func__);
+			serial_fd = openfd(porta, baudrate);
+			retries++;
+			/* Try above at least once per main cycle */
+			if (retries >= MAXTRIES)
+				break;
 			usleep(checktime);
-			i++;
 		}
-	}
-	if (serial_fd <= 0) {
-		return;
+
+		if (serial_fd > 0) {
+			if (retries > MAXTRIES) {
+				upslogx(LOG_NOTICE, "Communications with UPS re-established");
+			}
+			retries = 0;
+			dstate_setinfo("driver.state", "quiet");
+		} else {
+			if (retries == MAXTRIES) {
+				upslogx(LOG_WARNING, "Communications with UPS lost: port reopen failed!");
+			}
+			dstate_datastale();
+			return;
+		}
 	}
 
 	/* Clean all read buffers to avoid errors:
@@ -2149,7 +2170,10 @@ void upsdrv_updateinfo(void) {
 	 * like number of batteries, to calculate some data
 	 * FIXME: move (semi)static info discovery to upsdrv_initinfo() or so
 	 */
-	if (!lastpkthwinfo.checksum_ok) {
+	if (lastpkthwinfo.checksum_ok) {
+		/* Refresh the healthy timer */
+		dstate_dataok();
+	} else {
 		upsdebugx(4, "pkt_hwinfo loss -- Requesting");
 		/* If size == 0, packet maybe not initizated,
 		 * then send an initialization packet to obtain data.
