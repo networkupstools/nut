@@ -2915,7 +2915,7 @@ void	upsdrv_help(void)
 	 * are listed in usbsubdriver[] array (just above in this
 	 * source file).
 	 */
-	printf("\nAcceptable values for 'subdriver' via -x or ups.conf in this driver: ");
+	printf("\nAcceptable values for USB 'subdriver' via -x or ups.conf in this driver: ");
 	for (i = 0; usbsubdriver[i].name != NULL; i++) {
 		if (i>0)
 			printf(", ");
@@ -3327,7 +3327,7 @@ void	upsdrv_initups(void)
 
 			if (!regex_array[0] || !regex_array[1]) {
 				fatalx(EXIT_FAILURE,
-					"When specifying a subdriver, "
+					"When specifying a USB 'subdriver', "
 					"'vendorid' and 'productid' are mandatory.");
 			}
 
