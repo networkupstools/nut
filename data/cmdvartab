@@ -187,6 +187,7 @@ VARDESC outlet.1.ecocontrol "Master Outlet used to automatically power off the s
 VARDESC outlet.1.autoswitch.charge.low "Remaining battery level to power off this outlet (percent)"
 VARDESC outlet.1.delay.shutdown "Interval to wait before shutting down this outlet (seconds)"
 VARDESC outlet.1.delay.start "Interval to wait before restarting this outlet (seconds)"
+VARDESC outlet.1.designator "Outlet designator"
 VARDESC outlet.2.id "Outlet system identifier"
 VARDESC outlet.2.desc "Outlet description"
 VARDESC outlet.2.switch "Outlet switch control"
@@ -222,6 +223,7 @@ VARDESC driver.flag.allow_killpower "Safety flip-switch to allow the driver daem
 VARDESC driver.version "Driver version - NUT release"
 VARDESC driver.version.internal "Internal driver version"
 VARDESC driver.version.usb "USB library version"
+VARDESC driver.version.data "Version of the internal data mapping, for generic drivers"
 VARDESC driver.state "Current state in driver's lifecycle"
 
 # FIXME: driver.parameter and driver.flag can have many possible members
