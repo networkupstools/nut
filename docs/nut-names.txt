@@ -536,7 +536,7 @@ battery: Any battery details
                                  to "Warning" state (percent)        | 50
 | battery.charger.status       | Status of the battery charger
                                  (see the note below)                | charging
-| battery.charger.type         | ABM charger type                    | ABM
+| battery.charger.type         | Type of battery charger             | ABM
 | battery.voltage              | Battery voltage (V)                 | 24.84
 | battery.voltage.cell.max     | Maximum battery voltage seen of the
                                  Li-ion cell (V)                     | 3.44

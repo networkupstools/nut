@@ -133,7 +133,7 @@ VARDESC battery.energysave.load "Switch off UPS if on battery and load level low
 VARDESC battery.energysave.delay "Delay before switch off UPS if on battery and load level low (min)"
 VARDESC battery.energysave.realpower "Switch off UPS if on battery and load level lower (Watts)"
 VARDESC battery.charger.status "Battery charger status"
-VARDESC battery.charger.type "ABM charger type"
+VARDESC battery.charger.type "Type of battery charger"
 
 VARDESC ambient.temperature "Ambient temperature (degrees C)"
 VARDESC ambient.temperature.alarm "Ambient temperature alarm is active"
