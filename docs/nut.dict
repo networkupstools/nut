@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3263 utf-8
+personal_ws-1.1 en 3268 utf-8
 AAC
 AAS
 ABI
@@ -2064,6 +2064,7 @@ iDialog
 iDowell
 iManufacturer
 iPlug
+iProduct
 iSerial
 iUSB
 ib
@@ -2107,6 +2108,7 @@ initups
 inline
 inlined
 innotech
+innovart
 inode
 inplace
 installable
@@ -2919,6 +2921,7 @@ subdirectories
 subdirectory
 subdriver
 subdriver's
+subdrivername
 subdrivers
 subdrv
 sublicense
@@ -3128,6 +3131,8 @@ usbhid
 usbif
 usbinfo
 usbmisc
+usbsubdriver
+usbsubdrvname
 usbups
 usbus
 usd
