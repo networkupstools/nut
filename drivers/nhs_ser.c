@@ -1692,36 +1692,10 @@ static unsigned int get_numbat(void) {
 	return retval;
 }
 
-void upsdrv_updateinfo(void) {
+/* Return serial_fd after the reconnection attempt, for easier calls */
+static int reconnect_ups_if_needed(void) {
 	/* retries to open port */
 	static unsigned int	retries = 0;
-	unsigned int	i = 0;
-	char	alarm[1024];
-	unsigned int	va = 0;
-	unsigned int	ah = 0;
-	unsigned int	vin_underv = 0;
-	unsigned int	vin_overv = 0;
-	unsigned int	perc = 0;
-	unsigned int	vin = 0;
-	unsigned int	vout = 0;
-	unsigned int	autonomy_secs = 0;
-	float	vin_low_warn = 0;
-	float	vin_low_crit = 0;
-	float	vin_high_warn = 0;
-	float	vin_high_crit = 0;
-	float	calculated = 0;
-	float	vpower = 0;
-	float	pf = 0;
-	long	bcharge = 0;
-	int	min_input_power = 0;
-	double	tempodecorrido = 0.0;
-	unsigned int	numbat = 0;
-	unsigned int	vbat = 0;
-	float	abat = 0;
-	float	actual_current = 0;
-	upsinfo	ups;
-
-	upsdebugx(3, "%s: starting...", __func__);
 
 	/* If comms failed earlier, try to resuscitate */
 	if (serial_fd <= 0) {
@@ -1752,9 +1726,44 @@ void upsdrv_updateinfo(void) {
 				upslogx(LOG_WARNING, "Communications with UPS lost: port reopen failed!");
 			}
 			dstate_datastale();
-			return;
 		}
 	}
+
+	return serial_fd;
+}
+
+void upsdrv_updateinfo(void) {
+	unsigned int	i = 0;
+	char	alarm[1024];
+	unsigned int	va = 0;
+	unsigned int	ah = 0;
+	unsigned int	vin_underv = 0;
+	unsigned int	vin_overv = 0;
+	unsigned int	perc = 0;
+	unsigned int	vin = 0;
+	unsigned int	vout = 0;
+	unsigned int	autonomy_secs = 0;
+	float	vin_low_warn = 0;
+	float	vin_low_crit = 0;
+	float	vin_high_warn = 0;
+	float	vin_high_crit = 0;
+	float	calculated = 0;
+	float	vpower = 0;
+	float	pf = 0;
+	long	bcharge = 0;
+	int	min_input_power = 0;
+	double	tempodecorrido = 0.0;
+	unsigned int	numbat = 0;
+	unsigned int	vbat = 0;
+	float	abat = 0;
+	float	actual_current = 0;
+	upsinfo	ups;
+
+	upsdebugx(3, "%s: starting...", __func__);
+
+	/* If comms failed earlier, try to resuscitate */
+	if (reconnect_ups_if_needed() <= 0)
+		return;
 
 	/* Clean all read buffers to avoid errors:
 	 * To clean OUTPUT buffer is TCOFLUSH.
