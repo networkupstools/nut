@@ -42,6 +42,7 @@ VARDESC ups.type "UPS type"
 VARDESC ups.start.auto "UPS starts when mains is (re)applied"
 VARDESC ups.start.battery "Allow to start UPS from battery"
 VARDESC ups.start.reboot "UPS reboots when power returns during shutdown delay"
+VARDESC ups.shutdown "Enable or disable UPS shutdown ability (poweroff)"
 
 VARDESC input.voltage "Input voltage (V)"
 VARDESC input.voltage.extended "Extended input voltage range"
@@ -197,8 +198,18 @@ VARDESC outlet.2.autoswitch.charge.low "Remaining battery level to power off thi
 VARDESC outlet.2.delay.shutdown "Interval to wait before shutting down this outlet (seconds)"
 VARDESC outlet.2.delay.start "Interval to wait before restarting this outlet (seconds)"
 
-VARDESC device.part "Device Part Number"
-VARDESC device.mfr "Device Manufacturer"
+VARDESC device.part "Device part number"
+VARDESC device.mfr "Device manufacturer"
+VARDESC device.model "Device model"
+VARDESC device.serial "Device serial number"
+VARDESC device.type "Device type"
+VARDESC device.description "Device description"
+VARDESC device.contact "Device administrator name"
+VARDESC device.location "Device physical location"
+VARDESC device.macaddr "Physical network address of the device"
+VARDESC device.uptime "Device uptime in seconds"
+VARDESC device.count "Total number of daisychained devices"
+VARDESC device.usb.version "Device USB version"
 
 VARDESC server.info "Server information"
 VARDESC server.version "Server version"
@@ -211,6 +222,7 @@ VARDESC driver.flag.allow_killpower "Safety flip-switch to allow the driver daem
 VARDESC driver.version "Driver version - NUT release"
 VARDESC driver.version.internal "Internal driver version"
 VARDESC driver.version.usb "USB library version"
+VARDESC driver.state "Current state in driver's lifecycle"
 
 # FIXME: driver.parameter and driver.flag can have many possible members
 #
