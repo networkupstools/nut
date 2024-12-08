@@ -74,6 +74,8 @@ VARDESC input.transfer.bypass.outlimits "Rule for auto transfer on Bypass when o
 VARDESC input.bypass.switchable "Input auto transfer on Bypass when overload or out of tolerance (enabled or disabled)"
 VARDESC input.bypass.switch.on "Put the UPS in Bypass mode"
 VARDESC input.bypass.switch.off "Take the UPS out of Bypass mode"
+VARDESC input.bypass.voltage "Input bypass voltage (V)"
+VARDESC input.bypass.frequency "Input bypass frequency (Hz)"
 VARDESC input.sensitivity "Input power sensitivity"
 VARDESC input.quality "Input power quality"
 VARDESC input.current "Input current (A)"
@@ -131,6 +133,7 @@ VARDESC battery.energysave.load "Switch off UPS if on battery and load level low
 VARDESC battery.energysave.delay "Delay before switch off UPS if on battery and load level low (min)"
 VARDESC battery.energysave.realpower "Switch off UPS if on battery and load level lower (Watts)"
 VARDESC battery.charger.status "Battery charger status"
+VARDESC battery.charger.type "ABM charger type"
 
 VARDESC ambient.temperature "Ambient temperature (degrees C)"
 VARDESC ambient.temperature.alarm "Ambient temperature alarm is active"
@@ -195,6 +198,7 @@ VARDESC outlet.2.delay.shutdown "Interval to wait before shutting down this outl
 VARDESC outlet.2.delay.start "Interval to wait before restarting this outlet (seconds)"
 
 VARDESC device.part "Device Part Number"
+VARDESC device.mfr "Device Manufacturer"
 
 VARDESC server.info "Server information"
 VARDESC server.version "Server version"

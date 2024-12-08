@@ -320,6 +320,8 @@ input: Incoming line/power information
 								                                  | enabled
 | input.bypass.switch.on      | Put the UPS in Bypass mode        | on
 | input.bypass.switch.off     | Take the UPS out of Bypass mode   | disabled
+| input.bypass.voltage        | Input bypass voltage (V)          | 233
+| input.bypass.frequency      | Input bypass frequency (Hz)       | 50
 | input.load                  | Load on (ePDU) input (percent
                                 of full)                          | 25
 | input.realpower             | Current sum value of all (ePDU)
@@ -534,6 +536,7 @@ battery: Any battery details
                                  to "Warning" state (percent)        | 50
 | battery.charger.status       | Status of the battery charger
                                  (see the note below)                | charging
+| battery.charger.type         | ABM charger type                    | ABM
 | battery.voltage              | Battery voltage (V)                 | 24.84
 | battery.voltage.cell.max     | Maximum battery voltage seen of the
                                  Li-ion cell (V)                     | 3.44
