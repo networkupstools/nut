@@ -1657,30 +1657,22 @@ static float get_vin_perc(char * var) {
 }
 
 void upsdrv_initinfo(void) {
-	char	*b = getval("baud");
+	/* From docs/new-drivers.txt:
+	 * Try to detect what kind of UPS is out there,
+	 * if any, assuming that's possible for your hardware.
+	 * If there is a way to detect that hardware and it
+	 * doesn't appear to be connected, display an error
+	 * and exit. This is the last time your driver is
+	 * allowed to bail out.
+	 * This is usually a good place to create variables
+	 * like `ups.mfr`, `ups.model`, `ups.serial`, register
+	 * instant commands, and other "one time only" items.
+	 */
 
 	upsdebugx(3, "%s: starting...", __func__);
 
-	baudrate = DEFAULTBAUD;
+	/* TODO: Any instant commands? */
 
-	upsdebugx(1, "%s: Port is %s and baud_rate is %s", __func__, device_path, b);
-
-	if (b)
-		baudrate = atoi(b);
-	if (device_path) {
-		if (strcasecmp(device_path, "auto") == 0)
-			strcpy(porta, DEFAULTPORT);
-		else
-			strcpy(porta, device_path);
-		serial_fd = openfd(porta, baudrate);
-		if (serial_fd == -1)
-			fatalx(EXIT_FAILURE, "Unable to open port %s with baud %d", porta, baudrate);
-		else {
-			upsdebugx(1, "%s: Communication started on port %s, baud rate %d. Calling updateinfo()", __func__, porta, baudrate);
-		}
-	}
-	else
-		fatalx(EXIT_FAILURE, "Unable to define port and baud");
 	upsdebugx(3, "%s: finished", __func__);
 }
 
@@ -2217,9 +2209,22 @@ void upsdrv_cleanup(void) {
 }
 
 void upsdrv_initups(void) {
+	/* From docs/new-drivers.txt:
+	 * Open the port (`device_path`) and do any low-level
+	 * things that it may need to start using that port.
+	 * If you have to set DTR or RTS on a serial port,
+	 * do it here.
+	 * Don't do any sort of hardware detection here, since
+	 * you may be quickly going into upsdrv_shutdown next.
+	 */
+
+	char	*b = getval("baud");
+
 	upsdebugx(3, "%s: starting...", __func__);
 
-	/* Process optional configuration flags */
+	/* Process optional configuration flags that may
+	 * impact HW init methods (debug them or not)
+	 */
 	if (getval("debug_pkt_raw"))
 		debug_pkt_raw = 1;
 	if (getval("debug_pkt_data"))
@@ -2227,7 +2232,34 @@ void upsdrv_initups(void) {
 	if (getval("debug_pkt_hwinfo"))
 		debug_pkt_hwinfo = 1;
 
-	upsdrv_initinfo();
+	baudrate = DEFAULTBAUD;
+
+	upsdebugx(1, "%s: Port is %s and baud_rate is %s",
+		__func__, device_path, NUT_STRARG(b));
+
+	if (b)
+		baudrate = atoi(b);
+	if (device_path) {
+		if (strcasecmp(device_path, "auto") == 0)
+			strcpy(porta, DEFAULTPORT);
+		else
+			strcpy(porta, device_path);
+		serial_fd = openfd(porta, baudrate);
+		if (serial_fd == -1)
+			fatalx(EXIT_FAILURE, "Unable to open port %s with baud %d",
+				porta, baudrate);
+		else {
+			upsdebugx(1, "%s: Communication started on port %s, baud rate %d",
+				__func__, porta, baudrate);
+		}
+	}
+	else
+		fatalx(EXIT_FAILURE, "Unable to define port and baud");
+
+	/* If we got here, the port is opened with desired baud rate.
+	 * If not shutting down ASAP, soon we will call upsdrv_initinfo()
+	 * and "infinitely" loop calling upsdrv_updateinfo() afterwards.
+	 */
 	upsdebugx(3, "%s: finished", __func__);
 }
 
