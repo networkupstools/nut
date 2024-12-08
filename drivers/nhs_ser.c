@@ -2284,9 +2284,9 @@ void upsdrv_initups(void) {
 		baudrate = atoi(b);
 	if (device_path) {
 		if (strcasecmp(device_path, "auto") == 0)
-			strcpy(porta, DEFAULTPORT);
+			strncpy(porta, DEFAULTPORT, sizeof(porta) - 1);
 		else
-			strcpy(porta, device_path);
+			strncpy(porta, device_path, sizeof(porta) - 1);
 		serial_fd = openfd(porta, baudrate);
 		if (serial_fd == -1)
 			fatalx(EXIT_FAILURE, "Unable to open port %s with baud %d",
