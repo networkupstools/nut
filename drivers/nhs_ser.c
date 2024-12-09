@@ -1851,10 +1851,15 @@ static void interpret_pkt_data(void) {
 	 * Note that certain points from lastpkthwinfo do play a role
 	 * in decisions here (so maybe two parameters?)
 	 */
+	static unsigned int	va = 0;
+	static unsigned int	ah = 0;
+	static unsigned int	numbat = 0;
+	static unsigned int	vbat = 0;
+	static int	min_input_power = 0;
+	static float	pf = 0;
+
 	int	got_hwinfo = (lastpkthwinfo.checksum_ok && lastpkthwinfo.size > 0);
 	char	alarm[1024];	/* Also used as a general string buffer  */
-	unsigned int	va = 0;
-	unsigned int	ah = 0;
 	unsigned int	vin_underv = 0;
 	unsigned int	vin_overv = 0;
 	unsigned int	perc = 0;
@@ -1866,11 +1871,7 @@ static void interpret_pkt_data(void) {
 	float	vin_high_warn = 0;
 	float	vin_high_crit = 0;
 	float	vpower = 0;
-	float	pf = 0;
 	long	bcharge = 0;
-	int	min_input_power = 0;
-	unsigned int	numbat = 0;
-	unsigned int	vbat = 0;
 	float	abat = 0;
 	float	actual_current = 0;
 
@@ -1923,8 +1924,10 @@ static void interpret_pkt_data(void) {
 			min_input_power = lastpkthwinfo.undervoltagein120V;
 		}
 	} else {
-		min_input_power = 96;
-		upsdebugx(4, "I'm on unknown input!. My undervoltage is default %d", min_input_power);
+		if (!min_input_power) {
+			min_input_power = 96;
+			upsdebugx(4, "I'm on unknown input!. My undervoltage is default %d", min_input_power);
+		}
 	}
 
 	if (lastpktdata.s_battery_mode) {
@@ -1986,20 +1989,26 @@ static void interpret_pkt_data(void) {
 	}	/* end else */
 
 	/* TODO: Report in NUT datapoints (battery.packs etc.),
-	 *  cache in C vars to not re-getval on every loop.
 	 *  Perhaps set in upsdrv_initinfo() and refresh in
 	 *  interpret_pkt_hwinfo() if needed, but not here?
+	 * NOTE: values are cached in static C vars so as to
+	 *  not re-getval on every loop.
 	 */
-	vbat = get_vbat();
-	ah = get_ah();
+	if (!vbat)
+		vbat = get_vbat();
+	if (!ah)
+		ah = get_ah();
 	if (va == 0 && got_hwinfo)
 		va = get_va(lastpkthwinfo.model);
-	pf = get_pf();
-	numbat = get_numbat();
-	if (numbat == 0 && got_hwinfo)
-		numbat = lastpkthwinfo.numbatteries;
-	else
-		upsdebugx(4, "Number of batteries is set to %d", numbat);
+	if (!pf)
+		pf = get_pf();
+	if (!numbat) {
+		numbat = get_numbat();
+		if (numbat == 0 && got_hwinfo)
+			numbat = lastpkthwinfo.numbatteries;
+		else
+			upsdebugx(4, "Number of batteries is set to %d", numbat);
+	}
 
 	/* Set all alarms possible */
 	alarm[0] = '\0';
