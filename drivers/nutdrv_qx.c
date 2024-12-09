@@ -58,7 +58,7 @@
 #	define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.38"
+#define DRIVER_VERSION	"0.39"
 
 #ifdef QX_SERIAL
 #	include "serial.h"
@@ -71,6 +71,7 @@
 /* Include all known subdrivers */
 #include "nutdrv_qx_bestups.h"
 #include "nutdrv_qx_hunnox.h"
+#include "nutdrv_qx_innovart31.h"
 #include "nutdrv_qx_mecer.h"
 #include "nutdrv_qx_megatec.h"
 #include "nutdrv_qx_megatec-old.h"
@@ -97,6 +98,7 @@ static subdriver_t	*subdriver_list[] = {
 	&masterguard_subdriver,
 	&hunnox_subdriver,
 	&ablerex_subdriver,
+	&innovart31_subdriver,
 	/* Fallback Q1 subdriver */
 	&q1_subdriver,
 	NULL
@@ -2913,7 +2915,7 @@ void	upsdrv_help(void)
 	 * are listed in usbsubdriver[] array (just above in this
 	 * source file).
 	 */
-	printf("\nAcceptable values for 'subdriver' via -x or ups.conf in this driver: ");
+	printf("\nAcceptable values for USB 'subdriver' via -x or ups.conf in this driver: ");
 	for (i = 0; usbsubdriver[i].name != NULL; i++) {
 		if (i>0)
 			printf(", ");
@@ -3325,7 +3327,7 @@ void	upsdrv_initups(void)
 
 			if (!regex_array[0] || !regex_array[1]) {
 				fatalx(EXIT_FAILURE,
-					"When specifying a subdriver, "
+					"When specifying a USB 'subdriver', "
 					"'vendorid' and 'productid' are mandatory.");
 			}
 
