@@ -124,7 +124,9 @@ and it doesn't appear to be connected, display an error and exit. This
 is the last time your driver is allowed to bail out.
 
 This is usually a good place to create variables like `ups.mfr`,
-`ups.model`, `ups.serial`, and other "one time only" items.
+`ups.model`, `ups.serial`, determine and declare supported instant
+commands (maybe model-dependent, typically for all devices supported
+by the driver), and other "one time only" items.
 
 upsdrv_updateinfo
 ~~~~~~~~~~~~~~~~~
@@ -739,6 +741,12 @@ Instant commands
 If your hardware and driver can support a command, register it.
 
 	dstate_addcmd("load.on");
+
+Don't forget to define the implementation for such commands in a common
+method, and register that your driver has an instant command handler at
+all -- with a line in `upsdrv_initinfo()` like:
+
+	upsh.instcmd = blazer_instcmd;
 
 Delays and ser_* functions
 --------------------------
