@@ -134,6 +134,7 @@ during a transition period. The ups.* data will then be removed.
 | device.macaddr      | Physical network address of the device     | 68:b5:99:f5:89:27
 | device.uptime       | Device uptime in seconds                   | 1782
 | device.count        | Total number of daisychained devices       | 1
+| device.usb.version  | Device USB version                         | 01.29
 |====================================================================================
 
 [NOTE]
@@ -320,6 +321,8 @@ input: Incoming line/power information
 								                                  | enabled
 | input.bypass.switch.on      | Put the UPS in Bypass mode        | on
 | input.bypass.switch.off     | Take the UPS out of Bypass mode   | disabled
+| input.bypass.voltage        | Input bypass voltage (V)          | 233
+| input.bypass.frequency      | Input bypass frequency (Hz)       | 50
 | input.load                  | Load on (ePDU) input (percent
                                 of full)                          | 25
 | input.realpower             | Current sum value of all (ePDU)
@@ -534,6 +537,7 @@ battery: Any battery details
                                  to "Warning" state (percent)        | 50
 | battery.charger.status       | Status of the battery charger
                                  (see the note below)                | charging
+| battery.charger.type         | Type of battery charger             | ABM
 | battery.voltage              | Battery voltage (V)                 | 24.84
 | battery.voltage.cell.max     | Maximum battery voltage seen of the
                                  Li-ion cell (V)                     | 3.44
@@ -718,6 +722,7 @@ of the user manual.
 | outlet.n.ecocontrol            | Master Outlet used to
                                    automatically power off the
                                    slave outlets               | The outlet is not ECO controlled
+| outlet.n.designator            | Outlet designator           | AC OUTPUT
 | outlet.n.autoswitch.charge.low | Remaining battery level to
                                    power off this outlet
                                    (percent)                   | 80
