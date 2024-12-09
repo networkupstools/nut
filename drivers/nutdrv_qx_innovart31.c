@@ -77,6 +77,7 @@ static item_t	innovart31_qx2nut[] = {
 	 *    0         1         2
 	 */
 
+	/* Common parameters */
 	{ "input.voltage",		0,	NULL,	"Q6\r",	"",	110,	'(',	"",	1,	5,	"%.1f",	0,	NULL,	NULL,	NULL },
 	{ "input.L1-N.voltage",		0,	NULL,	"Q6\r",	"",	110,	'(',	"",	1,	5,	"%.1f",	0,	NULL,	NULL,	NULL },
 	{ "input.L2-N.voltage",		0,	NULL,	"Q6\r",	"",	110,	'(',	"",	7,	11,	"%.1f",	0,	NULL,	NULL,	NULL },
@@ -93,8 +94,8 @@ static item_t	innovart31_qx2nut[] = {
 	{ "ups.temperature",		0,	NULL,	"Q6\r",	"",	110,	'(',	"",	71,	74,	"%.1f",	0,	NULL,	NULL,	NULL },
 	{ "battery.voltage",		0,	NULL,	"Q6\r",	"",	110,	'(',	"",	59,	63,	"%.2f",	0,	NULL,	NULL,	qx_multiply_battvolt },
 	{ "battery.runtime",			0,	NULL,	"Q6\r",	"",	110,	'(',	"",	76,	80,	"%.0f",	0,	NULL,	NULL,	NULL },
-    /* TODO check if needed */
-//	{ "battery.charge",			0,	NULL,	"Q6\r",	"",	110,	'(',	"",	82,	84,	"%.0f",	0,	NULL,	NULL,	NULL },
+	{ "battery.charge",			0,	NULL,	"Q6\r",	"",	110,	'(',	"",	82,	84,	"%.0f",	0,	NULL,	NULL,	NULL },
+
 	/* Status bits */
 	{ "ups.status",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	38,	38,	NULL,	QX_FLAG_QUICK_POLL,	NULL,	NULL,	blazer_process_status_bits },	/* Utility Fail (Immediate) */
 	{ "ups.status",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	39,	39,	NULL,	QX_FLAG_QUICK_POLL,	NULL,	NULL,	blazer_process_status_bits },	/* Battery Low */
@@ -105,6 +106,7 @@ static item_t	innovart31_qx2nut[] = {
 	{ "ups.status",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	44,	44,	NULL,	QX_FLAG_QUICK_POLL,	NULL,	NULL,	blazer_process_status_bits },	/* Shutdown Active */
 	{ "ups.beeper.status",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	45,	45,	"%s",	0,			NULL,	NULL,	blazer_process_status_bits },	/* Beeper status */
 
+	/* Nominal parameters (ratings) */
 	{ "input.voltage.nominal",	0,	NULL,	"F\r",	"",	22,	'#',	"",	1,	5,	"%.0f",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },
 	{ "input.current.nominal",	0,	NULL,	"F\r",	"",	22,	'#',	"",	7,	9,	"%.1f",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },
 	{ "battery.voltage.nominal",	0,	NULL,	"F\r",	"",	22,	'#',	"",	11,	15,	"%.1f",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },
@@ -143,7 +145,7 @@ static testing_t	innovart31_testing[] = {
 	{ "C\r",	"",	-1 }, /* TODO recheck */
 	{ "S02R0005\r",	"",	-1 }, /* TODO recheck */
 	{ "S.5R0000\r",	"",	-1 }, /* TODO recheck */
-	{ "T04\r",	"ACK",	-1 }, /* TODO recheck */
+	{ "T04\r",	"ACK",	-1 },
 	{ "TL\r",	"ACK",	-1 },
 	{ "T\r",	"ACK",	-1 },
 	{ "CT\r",	"ACK",	-1 },
