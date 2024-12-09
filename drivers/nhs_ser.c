@@ -342,20 +342,20 @@ static int openfd(const char * portarg, int BAUDRATE);
 #if 0
 static int write_serial(int fd, const char * dados, int size);
 #endif
-static int write_serial_int(int fd, const unsigned int * data, int size);
+static int write_serial_int(int fd, const unsigned int *data, size_t size);
 
 static void print_pkt_hwinfo(pkt_hwinfo data);
 static void print_pkt_data(pkt_data data);
-static void pdatapacket(unsigned char * datapkt, int size);
-static pkt_data mount_datapacket(unsigned char * datapkt, int size, double tempodecorrido, pkt_hwinfo pkt_upsinfo);
-static pkt_hwinfo mount_hwinfo(unsigned char *datapkt, int size);
+static void pdatapacket(unsigned char *datapkt, size_t size);
+static pkt_data mount_datapacket(unsigned char *datapkt, size_t size, double tempodecorrido, pkt_hwinfo pkt_upsinfo);
+static pkt_hwinfo mount_hwinfo(unsigned char *datapkt, size_t size);
 static upsinfo getupsinfo(unsigned int upscode);
 
 static unsigned int get_va(int equipment);
 static unsigned int get_vbat(void);
 static float get_pf(void);
 static unsigned int get_ah(void);
-static float get_vin_perc(char * var);
+static float get_vin_perc(char *var);
 static unsigned int get_numbat(void);
 
 
@@ -623,8 +623,8 @@ static unsigned char calculate_checksum(unsigned char *pacote, int inicio, int f
 	return (soma & 0xFF);
 }
 
-static void pdatapacket(unsigned char * datapkt, int size) {
-	int	i = 0;
+static void pdatapacket(unsigned char *datapkt, size_t size) {
+	size_t	i = 0;
 
 	if (!debug_pkt_raw)
 		return;
@@ -634,7 +634,7 @@ static void pdatapacket(unsigned char * datapkt, int size) {
 		upsdebugx(1, "%s: logging received data packet bytes at debug verbosity 5 or more", __func__);
 
 		for (i = 0; i < size; i++) {
-			upsdebugx(5, "\tPosition %d -- 0x%02X -- Decimal %d -- Char %c", i, datapkt[i], datapkt[i], datapkt[i]);
+			upsdebugx(5, "\tPosition %" PRIuSIZE " -- 0x%02X -- Decimal %d -- Char %c", i, datapkt[i], datapkt[i], datapkt[i]);
 		}
 	}
 }
@@ -655,8 +655,8 @@ static unsigned int get_vbat(void) {
 	}
 }
 
-static pkt_data mount_datapacket(unsigned char * datapkt, int size, double tempodecorrido, pkt_hwinfo pkt_upsinfo)  {
-	int	i = 0;
+static pkt_data mount_datapacket(unsigned char *datapkt, size_t size, double tempodecorrido, pkt_hwinfo pkt_upsinfo)  {
+	size_t	i = 0;
 	unsigned int	vbat = 0;
 	unsigned char	checksum = 0x00;
 	pkt_data	pktdata = {
@@ -789,8 +789,8 @@ static pkt_data mount_datapacket(unsigned char * datapkt, int size, double tempo
 	return pktdata;
 }
 
-static pkt_hwinfo mount_hwinfo(unsigned char *datapkt, int size) {
-	int	i = 0;
+static pkt_hwinfo mount_hwinfo(unsigned char *datapkt, size_t size) {
+	size_t	i = 0;
 	unsigned char	checksum = 0x00;
 	pkt_hwinfo	pkthwinfo = {
 		0xFF,	/* header */
@@ -913,7 +913,7 @@ static pkt_hwinfo mount_hwinfo(unsigned char *datapkt, int size) {
 }
 
 #if 0
-static int write_serial(int fd, const char * dados, int size) {
+static int write_serial(int fd, const char *dados, size_t size) {
 	if (fd > 0) {
 		ssize_t	bytes_written = write(fd, dados, size);
 		if (bytes_written < 0)
@@ -927,11 +927,11 @@ static int write_serial(int fd, const char * dados, int size) {
 }
 #endif
 
-static int write_serial_int(int fd, const unsigned int * data, int size) {
+static int write_serial_int(int fd, const unsigned int *data, size_t size) {
 	if (fd > 0) {
 		ssize_t	bytes_written;
 		uint8_t	*message = NULL;
-		int	i = 0;
+		size_t	i = 0;
 
 		message = xcalloc(size, sizeof(uint8_t));
 		for (i = 0; i < size; i++) {
