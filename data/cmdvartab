@@ -224,7 +224,7 @@ VARDESC driver.version "Driver version - NUT release"
 VARDESC driver.version.internal "Internal driver version"
 VARDESC driver.version.usb "USB library version"
 VARDESC driver.version.data "Version of the internal data mapping, for generic drivers"
-VARDESC driver.state "Current state in driver's lifecycle"
+VARDESC driver.state "Current state in driver's lifecycle" 
 
 # FIXME: driver.parameter and driver.flag can have many possible members
 #
