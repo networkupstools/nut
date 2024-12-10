@@ -106,6 +106,26 @@ static item_t	innovart31_qx2nut[] = {
 	{ "input.frequency.nominal",	0,	NULL,	"F\r",	"",	22,	'#',	"",	17,	20,	"%.0f",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },
 
 	/*
+	 * > [FW?\r]
+	 * < [05516-1100\r]
+	 *    01234567890
+	 *    0         1
+	 */
+
+	/* Firmware version */
+	{ "ups.firmware",	0,	NULL,	"FW?\r",	"",	0,	0,	"",	0,	0,	"%s",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },
+
+	/*
+	 * > [SASV07?\r]
+	 * < [GASV07DN05K10KB100004      \r]
+	 *    0123456789012345678901234567
+	 *    0         1         2
+	 */
+
+	/* UPS serial number */
+	{ "ups.serial",	0,	NULL,	"SASV07?\r",	"",	28,	0,	"",	7,	0,	"%s",	QX_FLAG_STATIC | QX_FLAG_TRIM,	NULL,	NULL,	NULL },
+
+	/*
 	 * > [Q1\r]
 	 * < [(226.0 195.0 226.0 014 49.0 27.5 30.0 00001000\r]
 	 *    01234567890123456789012345678901234567890123456
@@ -150,6 +170,8 @@ static testing_t	innovart31_testing[] = {
 	{ "WA\r",	"(001.4 000.0 000.0 001.4 000.0 000.0 001.4 001.4 006.5 000.0 000.0 007 00000000\r",	-1 },
 	{ "BPS\r",	"(230.4 000.0 000.0 49.9\r",	-1 },
 	{ "F\r",	"#230.0 087 288.0 50.0\r",	-1 },
+	{ "FW?\r",	"05516-1100\r",	-1 },
+	{ "SASV07?\r",	"GASV07DN05K10KB100004      \r",	-1 },
 	{ "S03\r",	"",	-1 },
 	{ "C\r",	"",	-1 },
 	{ "S02R0005\r",	"",	-1 },
@@ -165,7 +187,7 @@ static testing_t	innovart31_testing[] = {
 /* Subdriver-specific initups */
 static void	innovart31_initups(void)
 {
-	blazer_initups_light(innovart31_qx2nut);
+	blazer_initups(innovart31_qx2nut);
 }
 
 /* Subdriver-specific initinfo */
@@ -179,11 +201,11 @@ static void	innovart31_initinfo(void)
 /* Subdriver interface */
 subdriver_t	innovart31_subdriver = {
 	INNOVART31_VERSION,
-	blazer_claim_light,
+	blazer_claim,
 	innovart31_qx2nut,
 	innovart31_initups,
 	innovart31_initinfo,
-	blazer_makevartable_light,
+	blazer_makevartable,
 	"ACK",
 	"NAK\r",
 #ifdef TESTING
