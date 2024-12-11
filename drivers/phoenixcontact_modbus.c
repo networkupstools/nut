@@ -213,7 +213,7 @@ void upsdrv_updateinfo(void)
 		mrir(modbus_ctx, 29697, 3, tab_reg); /* LB is actually called "shutdown event" on this ups */
 		break;
 	case NONE:
-		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
+		fatalx(EXIT_FAILURE, "Uknown UPS model.");
 		break;
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
@@ -235,7 +235,7 @@ void upsdrv_updateinfo(void)
                  * memory corruptions and buggy inputs below...
 		 */
 	default:
-		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
+		fatalx(EXIT_FAILURE, "Uknown UPS model.");
 #ifdef __clang__
 # pragma clang diagnostic pop
 #endif
@@ -268,7 +268,7 @@ void upsdrv_updateinfo(void)
 		mrir(modbus_ctx, 29745, 1, tab_reg);
 		break;
 	case NONE:
-		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
+		fatalx(EXIT_FAILURE, "Uknown UPS model.");
 		break;
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
@@ -290,7 +290,7 @@ void upsdrv_updateinfo(void)
                  * memory corruptions and buggy inputs below...
 		 */
 	default:
-		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
+		fatalx(EXIT_FAILURE, "Uknown UPS model.");
 #ifdef __clang__
 # pragma clang diagnostic pop
 #endif
@@ -310,7 +310,7 @@ void upsdrv_updateinfo(void)
 		mrir(modbus_ctx, 29749, 5, tab_reg);
 		break;
 	case NONE:
-		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
+		fatalx(EXIT_FAILURE, "Uknown UPS model.");
 		break;
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
@@ -332,7 +332,7 @@ void upsdrv_updateinfo(void)
                  * memory corruptions and buggy inputs below...
 		 */
 	default:
-		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
+		fatalx(EXIT_FAILURE, "Uknown UPS model.");
 #ifdef __clang__
 # pragma clang diagnostic pop
 #endif
@@ -367,7 +367,7 @@ void upsdrv_updateinfo(void)
 		mrir(modbus_ctx, 29792, 10, tab_reg);
 		break;
 	case NONE:
-		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
+		fatalx(EXIT_FAILURE, "Uknown UPS model.");
 		break;
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
@@ -389,7 +389,7 @@ void upsdrv_updateinfo(void)
                  * memory corruptions and buggy inputs below...
 		 */
 	default:
-		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
+		fatalx(EXIT_FAILURE, "Uknown UPS model.");
 #ifdef __clang__
 # pragma clang diagnostic pop
 #endif
@@ -477,7 +477,7 @@ void upsdrv_updateinfo(void)
 			alarm_set("Low Battery (Service)");
 		break;
 	case NONE:
-		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
+		fatalx(EXIT_FAILURE, "Uknown UPS model.");
 		break;
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
@@ -499,7 +499,7 @@ void upsdrv_updateinfo(void)
                  * memory corruptions and buggy inputs below...
 		 */
 	default:
-		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
+		fatalx(EXIT_FAILURE, "Uknown UPS model.");
 #ifdef __clang__
 # pragma clang diagnostic pop
 #endif
