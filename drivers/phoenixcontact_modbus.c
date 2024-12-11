@@ -106,6 +106,12 @@ void upsdrv_initinfo(void)
 	mrir(modbus_ctx, 0x0007, 1, &PartNumber3);
 	mrir(modbus_ctx, 0x0008, 1, &PartNumber4);
 
+	/*	Method provided from Phoenix Conatct to establish the UPS model:
+		Read registers from 0x0005 to 0x0008 and "concatenate" them with the order
+		0x0008 0x0007 0x0006 0x0005 in hex form, convert the obtained number from hex to dec. 
+		The first 7 most significant digits of the number in dec form are the part number of
+		the UPS.*/
+
 	PartNumber = (PartNumber4 * 65536) + PartNumber3;
 	PartNumber = (PartNumber * 65536) + PartNumber2;
 	PartNumber = (PartNumber * 65536) + PartNumber1;
