@@ -214,7 +214,6 @@ void upsdrv_updateinfo(void)
 		break;
 	case NONE:
 		fatalx(EXIT_FAILURE, "Uknown UPS model.");
-		break;
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
 #endif
@@ -269,7 +268,6 @@ void upsdrv_updateinfo(void)
 		break;
 	case NONE:
 		fatalx(EXIT_FAILURE, "Uknown UPS model.");
-		break;
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
 #endif
@@ -311,7 +309,6 @@ void upsdrv_updateinfo(void)
 		break;
 	case NONE:
 		fatalx(EXIT_FAILURE, "Uknown UPS model.");
-		break;
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
 #endif
@@ -368,7 +365,6 @@ void upsdrv_updateinfo(void)
 		break;
 	case NONE:
 		fatalx(EXIT_FAILURE, "Uknown UPS model.");
-		break;
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
 #endif
@@ -478,7 +474,6 @@ void upsdrv_updateinfo(void)
 		break;
 	case NONE:
 		fatalx(EXIT_FAILURE, "Uknown UPS model.");
-		break;
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
 #endif
