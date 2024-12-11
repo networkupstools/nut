@@ -410,7 +410,7 @@ void upsdrv_updateinfo(void)
 		actual_alarms1 = 0;
 
 		mrir(modbus_ctx, 0x3000, 1, &actual_alarms);
-		mrir(modbus_ctx, 0x3000, 1, &actual_alarms1);
+		mrir(modbus_ctx, 0x3001, 1, &actual_alarms1);
 
 		if (CHECK_BIT(actual_alarms, 9) && CHECK_BIT(actual_alarms, 9))
 			alarm_set("End of life (Resistance)");
