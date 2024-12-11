@@ -29,6 +29,12 @@
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define MODBUS_SLAVE_ID 192
 
+#define QUINT_20A_UPS_PARTNUMBER 2320238
+#define QUINT_20A_UPS_DESCRIPTION "QUINT-UPS/24DC/24DC/20"
+
+#define QUINT4_20A_UPS_PARTNUMBER 2907072
+#define QUINT4_20A_UPS_DESCRIPTION "QUINT4-UPS/24DC/24DC/20/USB"
+
 typedef enum
 {
 	NONE,
@@ -64,6 +70,12 @@ upsdrv_info_t upsdrv_info = {
 void upsdrv_initinfo(void)
 {
 	uint16_t FWVersion;
+	uint16_t PartNumber1;
+	uint16_t PartNumber2;
+	uint16_t PartNumber3;
+	uint16_t PartNumber4;
+	uint64_t PartNumber;
+
 	upsdebugx(2, "upsdrv_initinfo");
 
 	dstate_setinfo("device.mfr", "Phoenix Contact");
@@ -72,19 +84,58 @@ void upsdrv_initinfo(void)
 	/* upsh.setvar = setvar; */	
 
 	mrir(modbus_ctx, 0x0004, 1, &FWVersion);
-
-	if (FWVersion == 544)
-	{
-		UPSModel = QUINT_UPS;
-		dstate_setinfo("device.model", "QUINT-UPS/24DC");
-	}
-	else if (FWVersion == 305)
-	{
-		UPSModel = QUINT4_UPS;
-		dstate_setinfo("device.model", "QUINT4-UPS/24DC");
-	}
-
 	dstate_setinfo("ups.firmware", "%d", FWVersion);
+
+	mrir(modbus_ctx, 0x0005, 1, &PartNumber1);
+	mrir(modbus_ctx, 0x0006, 1, &PartNumber2);
+	mrir(modbus_ctx, 0x0007, 1, &PartNumber3);
+	mrir(modbus_ctx, 0x0008, 1, &PartNumber4);
+
+	PartNumber = (PartNumber1 << 48) | (PartNumber2 << 32) | (PartNumber3 << 16) | PartNumber4;
+
+	while(PartNumber > 1000000)
+	{
+		PartNumber /= 10;
+	}
+
+	switch(PartNumber)
+	{
+	case QUINT_20A_UPS_PARTNUMBER:
+		UPSModel = QUINT_UPS;
+		dstate_setinfo("device.model", QUINT_20A_UPS_DESCRIPTION);
+		break;
+	case QUINT4_20A_UPS_PARTNUMBER:
+		UPSModel = QUINT4_UPS;
+		dstate_setinfo("device.model", QUINT4_20A_UPS_DESCRIPTION);
+		break;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+                /* All enum cases defined as of the time of coding
+                 * have been covered above. Handle later definitions,
+                 * memory corruptions and buggy inputs below...
+		 */
+	default:
+		fatalx(EXIT_FAILURE, "Uknown UPS part number.");
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
+	}
 }
 
 void upsdrv_updateinfo(void)
