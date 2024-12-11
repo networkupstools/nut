@@ -91,9 +91,11 @@ void upsdrv_initinfo(void)
 	mrir(modbus_ctx, 0x0007, 1, &PartNumber3);
 	mrir(modbus_ctx, 0x0008, 1, &PartNumber4);
 
-	PartNumber = (PartNumber1 << 48) | (PartNumber2 << 32) | (PartNumber3 << 16) | PartNumber4;
+	PartNumber = (PartNumber4 * 65536) + PartNumber3;
+	PartNumber = (PartNumber * 65536) + PartNumber2;
+	PartNumber = (PartNumber * 65536) + PartNumber1;
 
-	while(PartNumber > 1000000)
+	while(PartNumber > 10000000)
 	{
 		PartNumber /= 10;
 	}
