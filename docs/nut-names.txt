@@ -446,7 +446,8 @@ Valid SPECs
 
 NOTE: For cursory readers -- the following couple of tables lists just the
 short `SPEC` component of the larger `DOMAIN.CONTEXT.SPEC` naming scheme
-for phase-aware values, as discussed in other sections of this chapter.
+for phase-aware values, as discussed in other sections of this chapter just
+above. These are NOT to be used verbatim as complete data-point names!
 
 Valid with/without context (i.e. per phase or aggregated/averaged)
 
