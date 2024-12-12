@@ -2,6 +2,7 @@
  *
  *  Copyright (C)
  *    2017  Spiros Ioannou <sivann@inaccess.com>
+ *    2024  "RikyPlaza"
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,7 +25,7 @@
 #include <modbus.h>
 
 #define DRIVER_NAME	"NUT PhoenixContact Modbus driver"
-#define DRIVER_VERSION	"0.0699"
+#define DRIVER_VERSION	"0.06"
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define MODBUS_SLAVE_ID 192
