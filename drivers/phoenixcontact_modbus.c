@@ -171,7 +171,7 @@ void upsdrv_initinfo(void)
                  * memory corruptions and buggy inputs below...
 		 */
 	default:
-		fatalx(EXIT_FAILURE, "Uknown UPS part number: %llu", PartNumber);
+		fatalx(EXIT_FAILURE, "Uknown UPS part number: " PRIu32, PartNumber);
 #ifdef __clang__
 # pragma clang diagnostic pop
 #endif
