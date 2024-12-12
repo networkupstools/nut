@@ -3,6 +3,7 @@
    Copyright (C)
      2000  Russell Kroll <rkroll@exploits.org>
      2012  Arnaud Quette <arnaud.quette.free.fr>
+     2017  Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
      2020-2024  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
@@ -23,6 +24,8 @@
 #ifndef NUT_UPSMON_H_SEEN
 #define NUT_UPSMON_H_SEEN 1
 
+#include "state.h"
+
 /* flags for ups->status */
 
 #define ST_ONLINE      (1 << 0)       /* UPS is on line (OL)                      */
@@ -38,6 +41,7 @@
 #define ST_BYPASS      (1 << 9)       /* UPS is on bypass so not protecting       */
 #define ST_ECO         (1 << 10)      /* UPS is in ECO (High Efficiency) mode or similar tweak, e.g. Energy Saver System mode */
 #define ST_ALARM       (1 << 11)      /* UPS has at least one active alarm        */
+#define ST_OTHER       (1 << 12)      /* UPS has at least one unclassified status token */
 
 /* required contents of flag file */
 #define SDMAGIC "upsmon-shutdown-file"
@@ -62,6 +66,7 @@ typedef struct {
 	char	*un;			/* username (optional for now)	*/
 	char	*pw;  			/* password from conf		*/
 	int	status;			/* status (see flags above)	*/
+	st_tree_t	*status_tokens;	/* parsed ups.status, mapping each token to whatever value if it is currently set (evicted when not) */
 	int	retain;			/* tracks deletions at reload	*/
 
 	/* handle suppression of COMMOK and ONLINE at startup */
@@ -116,6 +121,10 @@ typedef struct {
 #define NOTIFY_ALARM	18	/* UPS has at least one active alarm    */
 #define NOTIFY_NOTALARM	19	/* UPS has no active alarms    */
 
+/* Special handling below */
+#define NOTIFY_OTHER	28	/* UPS has at least one unclassified status token */
+#define NOTIFY_NOTOTHER	29	/* UPS has no unclassified status tokens anymore */
+
 #define NOTIFY_SUSPEND_STARTING	30	/* OS is entering sleep/suspend/hibernate slumber mode, and we know it   */
 #define NOTIFY_SUSPEND_FINISHED	31	/* OS just finished sleep/suspend/hibernate slumber mode, and we know it */
 
@@ -165,8 +174,20 @@ static struct {
 	{ NOTIFY_NOTBYPASS,"NOTBYPASS",NULL, "UPS %s: no longer on bypass", NOTIFY_DEFAULT },
 	{ NOTIFY_ECO,      "ECO",      NULL, "UPS %s: in ECO mode (as defined by vendor)", NOTIFY_DEFAULT },
 	{ NOTIFY_NOTECO,   "NOTECO",   NULL, "UPS %s: no longer in ECO mode", NOTIFY_DEFAULT },
-	{ NOTIFY_ALARM,    "ALARM",    NULL, "UPS %s is in an alarm state (has active alarms)", NOTIFY_DEFAULT },
+
+	/* NOTE: We remember the ups.alarm value and report it here,
+	 * maybe optionally - e.g. check if the "ALARM" formatting
+	 * string has actually one or two "%s" placeholders inside.
+	 * Do issue a new notification if ups.alarm value changes.
+	 */
+	{ NOTIFY_ALARM,    "ALARM",    NULL, "UPS %s: one or more active alarms: [%s]", NOTIFY_DEFAULT },
 	{ NOTIFY_NOTALARM, "NOTALARM", NULL, "UPS %s is no longer in an alarm state (no active alarms)", NOTIFY_DEFAULT },
+
+	/* Special handling, two string placeholders!
+	 * Reported when status_tokens tree changes (and is not empty in the end) */
+	{ NOTIFY_OTHER,    "OTHER",    NULL, "UPS %s: has at least one unclassified status token: [%s]", NOTIFY_DEFAULT },
+	/* Reported when status_tokens tree becomes empty */
+	{ NOTIFY_NOTOTHER, "NOTOTHER", NULL, "UPS %s has no unclassified status tokens anymore", NOTIFY_DEFAULT },
 
 	{ NOTIFY_SUSPEND_STARTING, "SUSPEND_STARTING", NULL, "OS is entering sleep/suspend/hibernate mode", NOTIFY_DEFAULT },
 	{ NOTIFY_SUSPEND_FINISHED, "SUSPEND_FINISHED", NULL, "OS just finished sleep/suspend/hibernate mode, de-activating obsolete UPS readings to avoid an unfortunate shutdown", NOTIFY_DEFAULT },

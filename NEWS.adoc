@@ -71,6 +71,12 @@ https://github.com/networkupstools/nut/milestone/11
      a `*_s()` variant was available was not handled correctly. [PR #2583]
    * A recently introduced `allow_killpower` did not actually work as an
      `ups.conf` flag (only as a protocol command). [issue #2605, PR #2606]
+   * The ability of two copies of the driver program to talk to each other
+     with `upsdrvquery.c` code was not complete for the case of indefinite
+     `select()` wait timeout. Now `upsdrvquery_read_timeout()` fixed private
+     use of `struct timeval={-1,-1}` as a trigger to `select(..., NULL)`,
+     as logged in one part of code and not handled in the other, for the
+     indefinite wait [#1922, #2392, #2686, #2670]
 
  - development iterations of NUT should now identify with not only the semantic
    version of a preceding release, but with git-derived information about the
@@ -153,6 +159,12 @@ https://github.com/networkupstools/nut/milestone/11
    models with serial port, made by NHS Sistemas Eletronicos LTDA and popular
    in Brazil. Currently this driver only builds on Linux. [#2692]
 
+ - `usbhid-ups` and `netxml-ups` updated to handle "No battery installed!"
+   alarm also to set the `RB` (Replace Battery) value in `ups.status`.
+   This may cause dual triggering of notifications (as an `ALARM` generally
+   and as an important `REPLBATT` status in particular) in `upsmon`, but
+   better safe than sorry. [#415]
+
  - usbhid-ups updates:
    * Support of the `onlinedischarge_log_throttle_hovercharge` in the NUT
      v2.8.2 release was found to be incomplete. [#2423, follow-up to #2215]
@@ -180,7 +192,7 @@ https://github.com/networkupstools/nut/milestone/11
      the old behavior (if some devices do need it), while a fix is applied
      by default: `powercom_sdcmd_byte_order_fallback`. [PR #2480]
    * `cps-hid` subdriver now supports more variables, as available on e.g.
-     CP1350EPFCLCD model. [PR #2540]
+     CP1350EPFCLCD model, including temperature. [PRs #2540, #2711]
    * USB parameters (per `usb_communication_subdriver_t`) are now set back to
      their default values during enumeration after probing each subdriver.
      Having an unrelated device connected with a VID:PID matching the
@@ -246,7 +258,7 @@ https://github.com/networkupstools/nut/milestone/11
    that there is no common standard for what constitutes an alarm and such
    alarm states were also previously observed for less severe reasons. This
    depends on the manufacturer/device-specific implementation in the driver.
-   [issue #2657, PR #2658]
+   [issues #415, #2657, PR #2658]
    * Updated documentation, end-user clients (CGI, NUT-Monitor UI);
    * Updated `upsmon` client with ability to report entering and exiting
      the ALARM status if reported by the driver;
@@ -261,6 +273,14 @@ https://github.com/networkupstools/nut/milestone/11
      from templates). [issue #321, PR #2383]
    * added an `OBLBDURATION` (seconds) setting to optionally delay raising
      the alarm for immediate shutdown in critical situation. [#321]
+   * optimized `parse_status()` by not checking further strings if we had
+     a match; report unexpected tokens in debug log. [#415]
+   * revised internal `do_notify()` method to support formatting strings
+     with two `%s` placeholders, to use if certain use-cases pass any extra
+     information (e.g. not just "we have alarms" but their values too). [#415]
+   * introduced handling for "unknown" `ups.status` tokens, reporting them
+     as "OTHER" notification type (whenever the set of such tokens appears
+     or changes) or "NOTOTHER" when they disappear. [#415]
 
  - More systemd integration:
    * Introduced a `nut-sleep.service` unit which stops `nut.target` when a
@@ -324,6 +344,24 @@ during a NUT build.
    * do not actively suggest `vendor(id)`, `product(id)`, and `serial` options
      for `bcmxcp_usb`, `richcomm_usb` and `nutdrv_atcl_usb` drivers for now
      [#1763, #1764, #1768, #2580]
+
+ - all drivers should now support the optional `sdcommands` setting with
+   a site-local list of instant commands to handle `upsdrv_shutdown()`,
+   which may be useful in cases when the driver's built-in commands
+   (or their order) do not meet the goals of particular NUT deployment.
+   This can also help with shutdown endgame testing, using a mock command like
+   starting the beeper (where supported) to verify that the UPS communications
+   happen as expected, without compromising the load connected to the UPS.
++
+Also defined `EF_EXIT_SUCCESS` and `EF_EXIT_FAILURE` in `include/common.h`
+to avoid magic numbers in code like `set_exit_flag(-2)`, and revised whether
+it is getting set at all in "killpower" vs. other cases, based on new
+`handling_upsdrv_shutdown` internal flag.
++
+NOTE: during this overhaul, many older drivers got their first ever supported
+INSTCMD such as `shutdown.return`, `shutdown.stayoff` or `load.off`. Default
+logic that was previously the content of `upsdrv_shutdown()` methods was often
+relocated into new `shutdown.default` INSTCMD definitions. [#2670]
 
  - common code:
    * introduced a `NUT_DEBUG_SYSLOG` environment variable to tweak activation

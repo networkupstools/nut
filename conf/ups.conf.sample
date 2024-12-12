@@ -160,6 +160,12 @@ maxretry = 3
 #
 #          The default value for this parameter is 0.
 #
+# sdcommands: OPTIONAL.  Comma-separated list of instant command name(s)
+#          to send to the UPS when you request its shutdown.  For more
+#          details about relevant use-cases see the ups.conf manual page.
+#
+#          The default value is built into each driver (where supported).
+#
 #    desc: optional, to keep a note of the UPS purpose, location, etc.
 #
 #  nolock: optional, and not recommended for use in this file.

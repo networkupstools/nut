@@ -115,6 +115,8 @@ Notification types are:
 - 'NOTBYPASS' (no longer on bypass)
 - 'ALARM' (UPS is in an alarm state (has active alarms))
 - 'NOTALARM' (UPS is no longer in an alarm state (no active alarms))
+- 'OTHER' (UPS has at least one unclassified status token)
+- 'NOTOTHER' (UPS has no unclassified status tokens anymore)
 - 'SUSPEND_STARTING' (OS is entering sleep/suspend/hibernate mode)
 - 'SUSPEND_FINISHED' (OS just finished sleep/suspend/hibernate mode)
 

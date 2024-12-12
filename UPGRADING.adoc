@@ -59,7 +59,13 @@ Changes from 2.8.2 to 2.8.3
   some alarms can contribute to unwanted/early shutdowns. For this reason
   a `0|1` setting `ALARMCRITICAL` was introduced into `upsmon.conf` (default
   is `1`), for such users to be able to prevent their `upsmon` from treating
-  the `ALARM` status as overly severe when it is not in fact. [#2658]
+  the `ALARM` status as overly severe when it is not in fact. [#2658, #415]
+
+- `usbhid-ups` and `netxml-ups` updated to handle "No battery installed!"
+  alarm also to set the `RB` (Replace Battery) value in `ups.status`.
+  This may cause dual triggering of notifications (as an `ALARM` generally
+  and as an important `REPLBATT` status in particular) in `upsmon`, but
+  better safe than sorry. [#415]
 
 - `usbhid-ups` subdriver `PowerCOM HID` subdriver sent UPS `shutdown` and
   `stayoff` commands in wrong byte order, at least for devices currently

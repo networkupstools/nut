@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3259 utf-8
+personal_ws-1.1 en 3264 utf-8
 AAC
 AAS
 ABI
@@ -755,6 +755,7 @@ NOTIFYFLAG
 NOTIFYFLAGS
 NOTIFYMSG
 NOTOFF
+NOTOTHER
 NQA
 NTP
 NUT's
@@ -1785,6 +1786,7 @@ desc
 deschis
 descr
 desde
+designator
 dev
 devctl
 devd
@@ -2764,6 +2766,7 @@ screenshots
 scriptname
 sd
 sdcmd
+sdcommands
 sddelay
 sdk
 sdl
@@ -2988,6 +2991,7 @@ timehead
 timername
 timestamp
 timeticks
+timeval
 tios
 tmp
 tmpfiles
@@ -3086,6 +3090,7 @@ upsdebugx
 upsdev
 upsdrv
 upsdrvctl
+upsdrvquery
 upsdrvsvcctl
 upserror
 upsfetch

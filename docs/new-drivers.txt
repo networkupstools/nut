@@ -124,7 +124,9 @@ and it doesn't appear to be connected, display an error and exit. This
 is the last time your driver is allowed to bail out.
 
 This is usually a good place to create variables like `ups.mfr`,
-`ups.model`, `ups.serial`, and other "one time only" items.
+`ups.model`, `ups.serial`, determine and declare supported instant
+commands (maybe model-dependent, typically for all devices supported
+by the driver), and other "one time only" items.
 
 upsdrv_updateinfo
 ~~~~~~~~~~~~~~~~~
@@ -165,9 +167,10 @@ process.
 This method should not directly `exit()` the driver program (neither
 should it call `fatalx()` nor `fatal_with_errno()` methods).  It can
 `upslogx(LOG_ERR, ...)` or `upslog_with_errno(LOG_ERR, ...)`, and then
-`set_exit_flag(N)` if required (`-1` for `EXIT_FAILURE` and `-2` for
-`EXIT_SUCCESS` which would be handled in the standard driver loop or
-`forceshutdown()` method of `main.c`).
+`set_exit_flag(N)` if required, using values `EF_EXIT_FAILURE` (`-1`)
+for eventual `exit(EXIT_FAILURE)` and `EF_EXIT_SUCCESS` (`-2`) for
+`exit(EXIT_SUCCESS)`, which would be handled in the standard driver
+loop or in `forceshutdown()` method of `main.c`.
 
 Data types
 ----------
@@ -244,9 +247,20 @@ Possible values for status_set:
 	BOOST   -- UPS is boosting incoming voltage
 	FSD     -- Forced Shutdown (restricted use, see the note below)
 
-Anything else will not be recognized by the usual clients.  Coordinate
-with the nut-upsdev list before creating something new, since there will be
-duplication and ugliness otherwise.
+Anything else will not be recognized by the usual clients expecting a
+particular NUT standard release.  New tokens may appear over time, but
+driver developers should coordinate with the nut-upsdev list before creating
+something new, since there will be duplication and ugliness otherwise.
+It is possible that eventually, due to hardware and software design evolution,
+some concepts would be superseded by others.  Fundamental meanings of the
+flags listed above should not change (but these flags may become no longer
+issued by the current NUT drivers; then may still be used e.g. in forks or
+older packaged builds).
+
+Clients however MUST accept any space-separated tokens in `ups.status`
+without error or crash, and MUST treat those defined above with the
+ascribed meanings, but MAY ignore unidentified tokens (quietly by default,
+or acknowledge the skip with a debug log message).
 
 [NOTE]
 ==============================================================================
@@ -727,6 +741,12 @@ Instant commands
 If your hardware and driver can support a command, register it.
 
 	dstate_addcmd("load.on");
+
+Don't forget to define the implementation for such commands in a common
+method, and register that your driver has an instant command handler at
+all -- with a line in `upsdrv_initinfo()` like:
+
+	upsh.instcmd = blazer_instcmd;
 
 Delays and ser_* functions
 --------------------------
