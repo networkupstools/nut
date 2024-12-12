@@ -23,6 +23,7 @@
 
 #include "main.h"
 #include <modbus.h>
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"NUT PhoenixContact Modbus driver"
 #define DRIVER_VERSION	"0.06"
@@ -100,7 +101,7 @@ void upsdrv_initinfo(void)
 	/* upsh.setvar = setvar; */
 
 	mrir(modbus_ctx, 0x0004, 1, &FWVersion);
-	dstate_setinfo("ups.firmware", "%d", FWVersion);
+	dstate_setinfo("ups.firmware", "%" PRIu16, FWVersion);
 
 	mrir(modbus_ctx, 0x0005, 1, &PartNumber1);
 	mrir(modbus_ctx, 0x0006, 1, &PartNumber2);
@@ -172,7 +173,7 @@ void upsdrv_initinfo(void)
 		 * memory corruptions and buggy inputs below...
 		 */
 	default:
-		fatalx(EXIT_FAILURE, "Uknown UPS part number: %ju", (uintmax_t)PartNumber);
+		fatalx(EXIT_FAILURE, "Uknown UPS part number: %" PRIu64, PartNumber);
 #ifdef __clang__
 # pragma clang diagnostic pop
 #endif
