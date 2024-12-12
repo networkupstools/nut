@@ -315,12 +315,14 @@ input: Incoming line/power information
                                 overload (enabled or disabled)    | enabled
 | input.transfer.bypass.outlimits | Rule for auto transfer on Bypass when
                                 out of tolerance (enabled or disabled)
-								                                  | enabled
+                                                                  | enabled
 | input.bypass.switchable     | Input auto transfer on Bypass when overload
                                 or out of tolerance (enabled or disabled)
-								                                  | enabled
-| input.bypass.switch.on      | Put the UPS in Bypass mode        | on
-| input.bypass.switch.off     | Take the UPS out of Bypass mode   | disabled
+                                                                  | enabled
+| input.bypass.switch.on      | Automatically put the UPS
+                                in Bypass mode                    | on
+| input.bypass.switch.off     | Automatically take the UPS
+                                out of Bypass mode                | disabled
 | input.bypass.voltage        | Input bypass voltage (V)          | 233
 | input.bypass.frequency      | Input bypass frequency (Hz)       | 50
 | input.load                  | Load on (ePDU) input (percent
