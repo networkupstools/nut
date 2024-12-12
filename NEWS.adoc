@@ -497,7 +497,8 @@ relocated into new `shutdown.default` INSTCMD definitions. [#2670]
  - NUT CI farm build recipes, documentation and some `m4`/`configure.ac`
    sources updated to handle a much larger build scope on MacOS. Also
    migrated the builders to Apple Silicon from x86 (deprecated by CircleCI).
-   [#2502]
+   Disabled `HOMEBREW_NO_AUTO_UPDATE` to gain 40 min per build at cost of
+   slightly older environment. [#2502, #1579]
 
  - Introduced a simple experiment to expose NUT client readings as filesystem
    objects via FUSE, in `scripts/fuse/execfuse-nut` now. [#2591]
