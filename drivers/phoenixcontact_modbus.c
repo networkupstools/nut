@@ -70,7 +70,7 @@ static models UPSModel = NONE;
 	For the QUINT ups (first implementation of the driver) the modbus addresses
 	are reported in dec format,for the QUINT4 ups they are reported in hex format.
 	The difference is caused from the way they are reported in the datasheet,
-	keeping them in the same format as the datasheet make more simple the maintenence 
+	keeping them in the same format as the datasheet make more simple the maintenence
 	of the driver avoiding conversions while coding.
 */
 
@@ -97,7 +97,7 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("device.mfr", "Phoenix Contact");
 
 	/* upsh.instcmd = instcmd; */
-	/* upsh.setvar = setvar; */	
+	/* upsh.setvar = setvar; */
 
 	mrir(modbus_ctx, 0x0004, 1, &FWVersion);
 	dstate_setinfo("ups.firmware", "%d", FWVersion);
@@ -109,7 +109,7 @@ void upsdrv_initinfo(void)
 
 	/*	Method provided from Phoenix Conatct to establish the UPS model:
 		Read registers from 0x0005 to 0x0008 and "concatenate" them with the order
-		0x0008 0x0007 0x0006 0x0005 in hex form, convert the obtained number from hex to dec. 
+		0x0008 0x0007 0x0006 0x0005 in hex form, convert the obtained number from hex to dec.
 		The first 7 most significant digits of the number in dec form are the part number of
 		the UPS.*/
 
@@ -167,9 +167,9 @@ void upsdrv_initinfo(void)
 # pragma clang diagnostic ignored "-Wunreachable-code"
 # pragma clang diagnostic ignored "-Wcovered-switch-default"
 #endif
-                /* All enum cases defined as of the time of coding
-                 * have been covered above. Handle later definitions,
-                 * memory corruptions and buggy inputs below...
+		/* All enum cases defined as of the time of coding
+		 * have been covered above. Handle later definitions,
+		 * memory corruptions and buggy inputs below...
 		 */
 	default:
 		fatalx(EXIT_FAILURE, "Uknown UPS part number: %ju", (uintmax_t)PartNumber);
@@ -230,9 +230,9 @@ void upsdrv_updateinfo(void)
 # pragma clang diagnostic ignored "-Wunreachable-code"
 # pragma clang diagnostic ignored "-Wcovered-switch-default"
 #endif
-                /* All enum cases defined as of the time of coding
-                 * have been covered above. Handle later definitions,
-                 * memory corruptions and buggy inputs below...
+		/* All enum cases defined as of the time of coding
+		 * have been covered above. Handle later definitions,
+		 * memory corruptions and buggy inputs below...
 		 */
 	default:
 		fatalx(EXIT_FAILURE, "Uknown UPS model.");
@@ -256,7 +256,7 @@ void upsdrv_updateinfo(void)
 	}
 
 	if (tab_reg[1]) {
-		status_set("LB");	
+		status_set("LB");
 	}
 
 	switch (UPSModel)
@@ -284,9 +284,9 @@ void upsdrv_updateinfo(void)
 # pragma clang diagnostic ignored "-Wunreachable-code"
 # pragma clang diagnostic ignored "-Wcovered-switch-default"
 #endif
-                /* All enum cases defined as of the time of coding
-                 * have been covered above. Handle later definitions,
-                 * memory corruptions and buggy inputs below...
+		/* All enum cases defined as of the time of coding
+		 * have been covered above. Handle later definitions,
+		 * memory corruptions and buggy inputs below...
 		 */
 	default:
 		fatalx(EXIT_FAILURE, "Uknown UPS model.");
@@ -325,9 +325,9 @@ void upsdrv_updateinfo(void)
 # pragma clang diagnostic ignored "-Wunreachable-code"
 # pragma clang diagnostic ignored "-Wcovered-switch-default"
 #endif
-                /* All enum cases defined as of the time of coding
-                 * have been covered above. Handle later definitions,
-                 * memory corruptions and buggy inputs below...
+		/* All enum cases defined as of the time of coding
+		 * have been covered above. Handle later definitions,
+		 * memory corruptions and buggy inputs below...
 		 */
 	default:
 		fatalx(EXIT_FAILURE, "Uknown UPS model.");
@@ -381,9 +381,9 @@ void upsdrv_updateinfo(void)
 # pragma clang diagnostic ignored "-Wunreachable-code"
 # pragma clang diagnostic ignored "-Wcovered-switch-default"
 #endif
-                /* All enum cases defined as of the time of coding
-                 * have been covered above. Handle later definitions,
-                 * memory corruptions and buggy inputs below...
+		/* All enum cases defined as of the time of coding
+		 * have been covered above. Handle later definitions,
+		 * memory corruptions and buggy inputs below...
 		 */
 	default:
 		fatalx(EXIT_FAILURE, "Uknown UPS model.");
@@ -490,9 +490,9 @@ void upsdrv_updateinfo(void)
 # pragma clang diagnostic ignored "-Wunreachable-code"
 # pragma clang diagnostic ignored "-Wcovered-switch-default"
 #endif
-                /* All enum cases defined as of the time of coding
-                 * have been covered above. Handle later definitions,
-                 * memory corruptions and buggy inputs below...
+		/* All enum cases defined as of the time of coding
+		 * have been covered above. Handle later definitions,
+		 * memory corruptions and buggy inputs below...
 		 */
 	default:
 		fatalx(EXIT_FAILURE, "Uknown UPS model.");
