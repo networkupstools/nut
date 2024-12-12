@@ -127,6 +127,11 @@ jobs:
             - ccache-{{ .Branch }}-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
             - ccache-master-{{ arch }}-{{ .Environment.CIRCLE_JOB }}
 
+      # Help SEMVER look right (optionally)
+      - run:
+          name: "fetch git tags"
+          command: git fetch --tags || true
+
       # Fail fast if we had a problem with prerequisites - this
       # situation would likely impact all build branches anyway.
       # Requires a Personal API token in the building account:
