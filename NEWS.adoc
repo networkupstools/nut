@@ -201,36 +201,34 @@ https://github.com/networkupstools/nut/milestone/11
      `arduino-hid` subdriver prevented use of an actual `usb-hid` device due to
      changes made to this struct during probe. [#2611]
 
- - USB drivers could log `(nut_)libusb_get_string: Success` due to either
-   reading an empty string or getting a success code `0` from libusb.
-   This difference should now be better logged, and not into syslog. [#2399]
-
- - USB drivers can benefit from a new `nut_usb_get_string()` method which
-   can do a fallback `en_US` query for devices which report a broken "langid"
-   language identifier value. This notably manifested in inability to query
-   device Manufacturer, Model and Serial Number values with some buggy device
-   firmware or hardware. [PR #2604, issues #1925, #414]
-   * Currently this was tested to fix certain device discovery with `usbhid-ups`;
-     should also apply out of the box to same discovery logic in `blazer_usb`,
-     `nutdrv_qx`, `riello_usb` and `tripplite_usb` drivers.
-   * Also applied to `nut-scanner` and `libnutscan`. [issue #2615]
-   * More work may be needed for other USB-capable drivers (`richcomm_usb`,
-     `nutdrv_atcl_usb`) and for general code to collect string readings and
-     other data points, and to configure the fallback locale or choose one
-     if several are served by the device. [issues #2613, #2614, #2615]
-
- - USB drivers should now be more likely to succeed with iterative detection
-   of an UPS interface on a composite USB device or when looking at devices
-   with non-default interface/endpoint/config numbers. [PR #2611]
-
- - USB drivers should now accept a `LIBUSB_DEBUG=INTEGER` setting in `ups.conf`
-   (as well as an environment variable that can be generally set via `nut.conf`
-   or service unit methods or init script), to enable troubleshooting of LibUSB
-   itself. [issue #2616]
-
- - USB drivers should now not log "insufficient permissions on everything" alone
-   when some devices were accessible but just did not match -- clarify that case
-   in the next line, when applicable. [PR #2699]
+ - USB-capable drivers generally:
+   * ...could earlier log `(nut_)libusb_get_string: Success` due to either
+     reading an empty string or getting a success code `0` from libusb.
+     This difference should now be better logged, and not into syslog. [#2399]
+   * ...now can benefit from a new `nut_usb_get_string()` method which can do a
+     fallback `en_US` query for devices which report a broken "langid" language
+     identifier value. This notably manifested in inability to query the device
+     Manufacturer, Model and Serial Number values with some buggy device firmware
+     or hardware. [PR #2604, issues #1925, #414]
+     * Currently this was tested to fix certain device discovery with the
+       `usbhid-ups` driver; but should also apply out of the box to same
+       discovery logic in `blazer_usb`, `nutdrv_qx`, `riello_usb` and
+       `tripplite_usb` drivers.
+     * Also applied to `nut-scanner` and `libnutscan`. [issue #2615]
+     * More work may be needed for other USB-capable drivers (`richcomm_usb`,
+       `nutdrv_atcl_usb`) and for general code to collect string readings and
+       other data points, and to configure the fallback locale or choose one
+       if several are served by the device. [issues #2613, #2614, #2615]
+   * ...should now be more likely to succeed with iterative detection
+     of an UPS interface on a composite USB device or when looking at devices
+     with non-default interface/endpoint/config numbers. [PR #2611]
+   * ...should now accept a `LIBUSB_DEBUG=INTEGER` setting in `ups.conf`
+     (as well as an environment variable that can be generally set via
+     `nut.conf` or service unit methods or init script), to enable
+     troubleshooting of LibUSB itself. [issue #2616]
+   * ...should now not log "insufficient permissions on everything" alone when
+     some devices were accessible but just did not match -- clarify that case
+     in the next line, when applicable. [PR #2699]
 
  - Introduced a new driver concept for interaction with OS-reported hardware
    monitoring readings. Currently instantiated as `hwmon_ina219` specifically
