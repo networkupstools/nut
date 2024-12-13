@@ -332,6 +332,7 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 					pParser->Data.LogMax,
 					pParser->Value,
 					pParser->Data.ReportID);
+				pParser->Data.assumed_LogMax = true;
 				pParser->Data.LogMax = (long) pParser->Value;
 			}
 			break;

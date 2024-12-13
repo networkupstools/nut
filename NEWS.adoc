@@ -234,6 +234,8 @@ https://github.com/networkupstools/nut/milestone/11
    * ...should now not log "insufficient permissions on everything" alone when
      some devices were accessible but just did not match -- clarify that case
      in the next line, when applicable. [PR #2699]
+   * ...should now track the fact of `assumed_LogMax` (typically when firmware
+     encoding logic is wrong, and `-1` is resolved by parser). [#1512, #1040]
 
  - Introduced a new driver concept for interaction with OS-reported hardware
    monitoring readings. Currently instantiated as `hwmon_ina219` specifically
