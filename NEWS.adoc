@@ -203,6 +203,9 @@ https://github.com/networkupstools/nut/milestone/11
      by default: `powercom_sdcmd_byte_order_fallback`. [PR #2480]
    * `cps-hid` subdriver now supports more variables, as available on e.g.
      CP1350EPFCLCD model, including temperature. [PRs #2540, #2711]
+   * in `cps-hid` subdriver, `cps_fix_report_desc()` method should now handle
+     mismatched `LogMax` ranges for input and output voltages, whose USB Report
+     Descriptors are wrongly encoded by some firmware versions. [#1512]
    * USB parameters (per `usb_communication_subdriver_t`) are now set back to
      their default values during enumeration after probing each subdriver.
      Having an unrelated device connected with a VID:PID matching the

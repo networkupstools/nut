@@ -327,6 +327,7 @@ static int cps_claim(HIDDevice_t *hd) {
 
 static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 	HIDData_t *pData;
+	int	retval = 0;
 
 	int vendorID = pDev->VendorID;
 	int productID = pDev->ProductID;
@@ -394,19 +395,116 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 						CPS_VOLTAGE_LOGMIN, CPS_VOLTAGE_LOGMAX);
 				}
 
-				return 1;
+				retval = 1;
 			}
 		}
 	}
 
-	/* We did not `return 1` above, so... */
-	upsdebugx(3,
-		"SKIPPED Report Descriptor fix for UPS: "
-		"Vendor: %04x, Product: %04x "
-		"(problematic conditions not matched)",
-		vendorID, productID);
+	if ((pData=FindObject_with_ID_Node(pDesc_arg, 18 /* 0x12 */, USAGE_POW_VOLTAGE))) {
+		HIDData_t *output_pData = pData;
+		long output_logmin = output_pData->LogMin;
+		long output_logmax = output_pData->LogMax;
+		bool output_logmax_assumed = output_pData->assumed_LogMax;
 
-	return 0;
+		if ((pData=FindObject_with_ID_Node(pDesc_arg, 15 /* 0x0F */, USAGE_POW_VOLTAGE))) {
+			HIDData_t *input_pData = pData;
+			long input_logmin = input_pData->LogMin;
+			long input_logmax = input_pData->LogMax;
+			bool input_logmax_assumed = input_pData->assumed_LogMax;
+
+			if ( (output_logmax_assumed || input_logmax_assumed)
+			/* &&   output_logmax != input_logmax */
+			) {
+				/* We often get 0x0F ReportdId LogMax=65535
+				 * and 0x12 ReportdId LogMax=255 because of
+				 * wrong encoding. See e.g. analysis at
+				 * https://github.com/networkupstools/nut/issues/1512#issuecomment-1224652911
+				 */
+				upsdebugx(4, "Original Report Descriptor: output "
+					"LogMin: %ld LogMax: %ld (assumed: %s)",
+					output_logmin, output_logmax,
+					output_logmax_assumed ? "yes" : "no");
+				upsdebugx(4, "Original Report Descriptor: input "
+					"LogMin: %ld LogMax: %ld (assumed: %s)",
+					input_logmin, input_logmax,
+					input_logmax_assumed ? "yes" : "no");
+
+				/* First pass: try our hard-coded limits */
+				if (output_logmax_assumed && output_logmax < CPS_VOLTAGE_LOGMAX) {
+					output_logmax = CPS_VOLTAGE_LOGMAX;
+				}
+
+				if (input_logmax_assumed && input_logmax < CPS_VOLTAGE_LOGMAX) {
+					input_logmax = CPS_VOLTAGE_LOGMAX;
+				}
+
+				/* Second pass: align the two */
+				if (output_logmax_assumed && output_logmax < input_logmax) {
+					output_logmax = input_logmax;
+				} else if (input_logmax_assumed && input_logmax < output_logmax) {
+					input_logmax = output_logmax;
+				}
+
+				/* Second pass: cut off according to bit-size
+				 * of each value */
+				if (input_logmax_assumed
+				 && input_pData->Size > 1
+				 && input_pData->Size <= sizeof(long)*8
+				) {
+					/* Note: values are signed, so limit by
+					 * 2^(size-1)-1, e.g. for "size==16" the
+					 * limit should be "2^15 - 1 = 32767";
+					 * note that in HIDParse() we likely
+					 * set 65535 here in that case.
+					 * Also had to split last "-1" due to
+					 * misfire of "-Werror=parentheses".
+					 */
+					long sizeMax = 2^(input_pData->Size - 1);
+					if (input_logmax >= sizeMax) {
+						input_logmax = sizeMax - 1;
+					}
+				}
+
+				if (output_logmax_assumed
+				 && output_pData->Size > 1
+				 && output_pData->Size <= sizeof(long)*8
+				) {
+					/* See comment above */
+					long sizeMax = 2^(output_pData->Size - 1);
+					if (output_logmax >= sizeMax) {
+						output_logmax = sizeMax - 1;
+					}
+				}
+
+				if (input_logmax != input_pData->LogMax) {
+					upsdebugx(3, "Fixing Report Descriptor: "
+						"set Input Voltage LogMax = %ld",
+						input_logmax);
+					input_pData->LogMax = input_logmax;
+					retval = 1;
+				}
+
+				if (output_logmax != output_pData->LogMax) {
+					upsdebugx(3, "Fixing Report Descriptor: "
+						"set Output Voltage LogMax = %ld",
+						output_logmax);
+					output_pData->LogMax = output_logmax;
+					retval = 1;
+				}
+			}
+		}
+	}
+
+	if (!retval) {
+		/* We did not `return 1` above, so... */
+		upsdebugx(3,
+			"SKIPPED Report Descriptor fix for UPS: "
+			"Vendor: %04x, Product: %04x "
+			"(problematic conditions not matched)",
+			vendorID, productID);
+	}
+
+	return retval;
 }
 
 subdriver_t cps_subdriver = {
