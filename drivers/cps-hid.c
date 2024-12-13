@@ -331,6 +331,11 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 	int vendorID = pDev->VendorID;
 	int productID = pDev->ProductID;
 	if (vendorID != CPS_VENDORID || (productID != 0x0501 && productID != 0x0601)) {
+		upsdebugx(3,
+			"NOT Attempting Report Descriptor fix for UPS: "
+			"Vendor: %04x, Product: %04x "
+			"(vendor/product not matched)",
+			vendorID, productID);
 		return 0;
 	}
 
@@ -390,6 +395,14 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 			}
 		}
 	}
+
+	/* We did not `return 1` above, so... */
+	upsdebugx(3,
+		"SKIPPED Report Descriptor fix for UPS: "
+		"Vendor: %04x, Product: %04x "
+		"(problematic conditions not matched)",
+		vendorID, productID);
+
 	return 0;
 }
 
