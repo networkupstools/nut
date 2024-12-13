@@ -355,13 +355,13 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 	 * pre-defined settings CPS_VOLTAGE_LOGMIN/CPS_VOLTAGE_LOGMAX.
 	 */
 
-	if ((pData=FindObject_with_ID_Node(pDesc_arg, 16, USAGE_POW_HIGH_VOLTAGE_TRANSFER))) {
+	if ((pData=FindObject_with_ID_Node(pDesc_arg, 16 /* 0x10 */, USAGE_POW_HIGH_VOLTAGE_TRANSFER))) {
 		long hvt_logmin = pData->LogMin;
 		long hvt_logmax = pData->LogMax;
 		upsdebugx(4, "Original Report Descriptor: hvt input "
 			"LogMin: %ld LogMax: %ld", hvt_logmin, hvt_logmax);
 
-		if ((pData=FindObject_with_ID_Node(pDesc_arg, 18, USAGE_POW_VOLTAGE))) {
+		if ((pData=FindObject_with_ID_Node(pDesc_arg, 18 /* 0x12 */, USAGE_POW_VOLTAGE))) {
 			long output_logmin = pData->LogMin;
 			long output_logmax = pData->LogMax;
 			upsdebugx(4, "Original Report Descriptor: output "
@@ -375,7 +375,7 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 					"set Output Voltage LogMin = %d, LogMax = %d",
 					CPS_VOLTAGE_LOGMIN, CPS_VOLTAGE_LOGMAX);
 
-				if ((pData=FindObject_with_ID_Node(pDesc_arg, 15, USAGE_POW_VOLTAGE))) {
+				if ((pData=FindObject_with_ID_Node(pDesc_arg, 15 /* 0x0F */, USAGE_POW_VOLTAGE))) {
 					long input_logmin = pData->LogMin;
 					long input_logmax = pData->LogMax;
 					upsdebugx(4, "Original Report Descriptor: input "
