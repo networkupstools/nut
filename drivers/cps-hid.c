@@ -317,9 +317,9 @@ static int cps_claim(HIDDevice_t *hd) {
 	}
 }
 
-/* CPS Models like CP900EPFCLCD/CP1500PFCLCDa return a syntactically legal but incorrect
- * Report Descriptor whereby the Input High Transfer Max/Min values
- * are used for the Output Voltage Usage Item limits.
+/* CPS Models like CP900EPFCLCD/CP1500PFCLCDa return a syntactically
+ * legal but incorrect Report Descriptor whereby the Input High Transfer
+ * Max/Min values are used for the Output Voltage Usage Item limits.
  * Additionally the Input Voltage LogMax is set incorrectly for EU models.
  * This corrects them by finding and applying fixed
  * voltage limits as being more appropriate.
@@ -343,36 +343,47 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 		return 0;
 	}
 
-	upsdebugx(3, "Attempting Report Descriptor fix for UPS: Vendor: %04x, Product: %04x", vendorID, productID);
+	upsdebugx(3, "Attempting Report Descriptor fix for UPS: "
+		"Vendor: %04x, Product: %04x", vendorID, productID);
 
-	/* Apply the fix cautiously by looking for input voltage, high voltage transfer and output voltage report usages.
-	 * If the output voltage log min/max equals high voltage transfer log min/max then the bug is present.
-	 * To fix it Set both the input and output voltages to pre-defined settings.
+	/* Apply the fix cautiously by looking for input voltage,
+	 * high voltage transfer and output voltage report usages.
+	 * If the output voltage log min/max equals high voltage
+	 * transfer log min/max, then the bug is present.
+	 *
+	 * To fix it set both the input and output voltages to our
+	 * pre-defined settings CPS_VOLTAGE_LOGMIN/CPS_VOLTAGE_LOGMAX.
 	 */
 
 	if ((pData=FindObject_with_ID_Node(pDesc_arg, 16, USAGE_POW_HIGH_VOLTAGE_TRANSFER))) {
 		long hvt_logmin = pData->LogMin;
 		long hvt_logmax = pData->LogMax;
-		upsdebugx(4, "Report Descriptor: hvt input LogMin: %ld LogMax: %ld", hvt_logmin, hvt_logmax);
+		upsdebugx(4, "Original Report Descriptor: hvt input "
+			"LogMin: %ld LogMax: %ld", hvt_logmin, hvt_logmax);
 
 		if ((pData=FindObject_with_ID_Node(pDesc_arg, 18, USAGE_POW_VOLTAGE))) {
 			long output_logmin = pData->LogMin;
 			long output_logmax = pData->LogMax;
-			upsdebugx(4, "Report Descriptor: output LogMin: %ld LogMax: %ld",
-					output_logmin, output_logmax);
+			upsdebugx(4, "Original Report Descriptor: output "
+				"LogMin: %ld LogMax: %ld",
+				output_logmin, output_logmax);
 
 			if (hvt_logmin == output_logmin && hvt_logmax == output_logmax) {
 				pData->LogMin = CPS_VOLTAGE_LOGMIN;
 				pData->LogMax = CPS_VOLTAGE_LOGMAX;
-				upsdebugx(3, "Fixing Report Descriptor. Set Output Voltage LogMin = %d, LogMax = %d",
-							CPS_VOLTAGE_LOGMIN , CPS_VOLTAGE_LOGMAX);
+				upsdebugx(3, "Fixing Report Descriptor: "
+					"set Output Voltage LogMin = %d, LogMax = %d",
+					CPS_VOLTAGE_LOGMIN, CPS_VOLTAGE_LOGMAX);
+
 				if ((pData=FindObject_with_ID_Node(pDesc_arg, 15, USAGE_POW_VOLTAGE))) {
 					long input_logmin = pData->LogMin;
 					long input_logmax = pData->LogMax;
-					upsdebugx(4, "Report Descriptor: input LogMin: %ld LogMax: %ld",
-							input_logmin, input_logmax);
-					upsdebugx(3, "Fixing Report Descriptor. Set Input Voltage LogMin = %d, LogMax = %d",
-							CPS_VOLTAGE_LOGMIN , CPS_VOLTAGE_LOGMAX);
+					upsdebugx(4, "Original Report Descriptor: input "
+						"LogMin: %ld LogMax: %ld",
+						input_logmin, input_logmax);
+					upsdebugx(3, "Fixing Report Descriptor: "
+						"set Input Voltage LogMin = %d, LogMax = %d",
+						CPS_VOLTAGE_LOGMIN, CPS_VOLTAGE_LOGMAX);
 				}
 
 				return 1;
