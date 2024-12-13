@@ -386,6 +386,9 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 					upsdebugx(4, "Original Report Descriptor: input "
 						"LogMin: %ld LogMax: %ld",
 						input_logmin, input_logmax);
+
+					pData->LogMin = CPS_VOLTAGE_LOGMIN;
+					pData->LogMax = CPS_VOLTAGE_LOGMAX;
 					upsdebugx(3, "Fixing Report Descriptor: "
 						"set Input Voltage LogMin = %d, LogMax = %d",
 						CPS_VOLTAGE_LOGMIN, CPS_VOLTAGE_LOGMAX);

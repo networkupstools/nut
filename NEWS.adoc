@@ -82,6 +82,9 @@ https://github.com/networkupstools/nut/milestone/11
      its report descriptors were being discovered. Now this flag, as well as
      `interruptsize` and `interruptonly`, are considered before we first try
      to open the USB device handle. [#1575, #1512]
+   * In `cps_fix_report_desc()` we intended to fix-up input and output voltages
+     in certain cases against high voltage transfer, we only fixed-up one of
+     them. [#1245]
 
  - development iterations of NUT should now identify with not only the semantic
    version of a preceding release, but with git-derived information about the
