@@ -420,14 +420,16 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 				 * wrong encoding. See e.g. analysis at
 				 * https://github.com/networkupstools/nut/issues/1512#issuecomment-1224652911
 				 */
-				upsdebugx(4, "Original Report Descriptor: output "
-					"LogMin: %ld LogMax: %ld (assumed: %s)",
+				upsdebugx(4, "Original Report Descriptor: output 0x12 "
+					"LogMin: %ld LogMax: %ld (assumed: %s) Size: %" PRIu8,
 					output_logmin, output_logmax,
-					output_logmax_assumed ? "yes" : "no");
-				upsdebugx(4, "Original Report Descriptor: input "
-					"LogMin: %ld LogMax: %ld (assumed: %s)",
+					output_logmax_assumed ? "yes" : "no",
+					output_pData->Size);
+				upsdebugx(4, "Original Report Descriptor: input 0x0f "
+					"LogMin: %ld LogMax: %ld (assumed: %s) Size: %" PRIu8,
 					input_logmin, input_logmax,
-					input_logmax_assumed ? "yes" : "no");
+					input_logmax_assumed ? "yes" : "no",
+					input_pData->Size);
 
 				/* First pass: try our hard-coded limits */
 				if (output_logmax_assumed && output_logmax < CPS_VOLTAGE_LOGMAX) {
