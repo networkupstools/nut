@@ -88,8 +88,9 @@ helpful when the UPS sets this value to a lower percentage than intended.
 Set the timer before the UPS is turned off after the kill power command is
 sent (via the *-k* switch).
 +
-The default value is 20 (in seconds). Usually this *must be lower* than
-'ondelay', but the driver will *not* warn you upon startup if it isn't.
+The default value is 20 (in seconds), or 60 for CPS devices.
+Usually this *must be lower* than 'ondelay', but the driver will *not* warn
+you upon startup if it isn't.
 +
 Note that many Cyber Power Systems (CPS) models tend to divide this delay by
 60 and round down, so the minimum advisable value is 60 to avoid powering off
@@ -102,11 +103,11 @@ kill power command had been sent, but before the actual switch off. This
 ensures the machines connected to the UPS are, in all cases, rebooted after
 a power failure.
 +
-The default value is 30 (in seconds). Usually this *must be greater*
-than offdelay, but the driver will *not* warn you upon startup if it
-isn't. Some UPSes will restart no matter what, even if the power is
-(still) out at the moment this timer elapses. In that case, you could see
-whether setting `ondelay = -1` in *ups.conf* helps.
+The default value is 30 (in seconds), or 120 for CPS devices.
+Usually this *must be greater* than offdelay, but the driver will *not* warn
+you upon startup if it isn't. Some UPSes will restart no matter what, even
+if the power is (still) out at the moment this timer elapses. In that case,
+you could see whether setting `ondelay = -1` in *ups.conf* helps.
 +
 Note that many CPS models tend to divide this delay by 60 and round down, so
 the minimum advisable value is 120 to allow a short delay between when the UPS

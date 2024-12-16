@@ -1042,13 +1042,13 @@ void upsdrv_makevartable(void)
 	addvar (VAR_VALUE, HU_VAR_LOWBATT, temp);
 
 	snprintf(temp, sizeof(temp),
-		"Set shutdown delay, in seconds (default=%s)",
-		DEFAULT_OFFDELAY);
+		"Set shutdown delay, in seconds (default=%s, or %s for CPS devices)",
+		DEFAULT_OFFDELAY, DEFAULT_OFFDELAY_CPS);
 	addvar(VAR_VALUE, HU_VAR_OFFDELAY, temp);
 
 	snprintf(temp, sizeof(temp),
-		"Set startup delay, in seconds (default=%s)",
-		DEFAULT_ONDELAY);
+		"Set startup delay, in seconds (default=%s, or %s for CPS devices)",
+		DEFAULT_ONDELAY, DEFAULT_ONDELAY_CPS);
 	addvar(VAR_VALUE, HU_VAR_ONDELAY, temp);
 
 	snprintf(temp, sizeof(temp),
@@ -1593,7 +1593,15 @@ void upsdrv_initups(void)
 		/* Retrieve user defined delay settings */
 		val = getval(HU_VAR_ONDELAY);
 		if (val) {
-			dstate_setinfo("ups.delay.start", "%ld", strtol(val, NULL, 10));
+			long	l = strtol(val, NULL, 10);
+#if !((defined SHUT_MODE) && SHUT_MODE)
+			if (subdriver == &cps_subdriver
+			 && (l < 60 || l % 60)
+			) {
+				upslogx(LOG_WARNING, "CPS devices tend to round delays by 60 sec down (ondelay=120 is the suggested minimum; see more in the man page)");
+			}
+#endif
+			dstate_setinfo("ups.delay.start", "%ld", l);
 		}
 	}
 
@@ -1601,7 +1609,17 @@ void upsdrv_initups(void)
 		/* Retrieve user defined delay settings */
 		val = getval(HU_VAR_OFFDELAY);
 		if (val) {
-			dstate_setinfo("ups.delay.shutdown", "%ld", strtol(val, NULL, 10));
+			long	l = strtol(val, NULL, 10);
+#if !((defined SHUT_MODE) && SHUT_MODE)
+			if (subdriver == &cps_subdriver
+			 && (l > 0 && (l < 60 || l % 60))
+			) {
+				/* Note: zero and negative values may
+				 * have special meanings for the firmware */
+				upslogx(LOG_WARNING, "CPS devices tend to round delays by 60 sec down (offdelay=60 is the suggested minimum; see more in the man page)");
+			}
+#endif
+			dstate_setinfo("ups.delay.shutdown", "%ld", l);
 		}
 	}
 

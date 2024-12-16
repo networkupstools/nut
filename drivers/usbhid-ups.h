@@ -53,15 +53,17 @@ extern bool_t	 	use_interrupt_pipe;	/* Set to FALSE if interrupt reports should 
 /* Parameters default values */
 #define DEFAULT_LOWBATT		"30"	/* percentage of battery charge to consider the UPS in low battery state  */
 #define DEFAULT_ONDELAY		"30"	/* Delay between return of utility power */
-					/* and powering up of load, in seconds */
+					/* and powering up of load, in seconds (as string!) */
 					/* CAUTION: ondelay > offdelay */
-#define DEFAULT_OFFDELAY	"20"	/* Delay before power off, in seconds */
+#define DEFAULT_OFFDELAY	"20"	/* Delay before power off, in seconds (as string!) */
 #define DEFAULT_POLLFREQ	30	/* Polling interval, in seconds */
 					/* The driver will wait for Interrupt */
 					/* and do "light poll" in the meantime */
 
 /* Parameters default values for CyberPower HID */
 #define DEFAULT_POLLFREQ_CPS	12	/* Polling interval, in seconds, default for CPS devices */
+#define DEFAULT_ONDELAY_CPS	"120"	/* Delay between return of utility power, default for CPS devices */
+#define DEFAULT_OFFDELAY_CPS	"60"	/* Delay before power off, default for CPS devices */
 
 #ifndef MAX_STRING_SIZE
 #define MAX_STRING_SIZE	128
