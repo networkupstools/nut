@@ -195,6 +195,8 @@ https://github.com/networkupstools/nut/milestone/11
      by default: `powercom_sdcmd_byte_order_fallback`. [PR #2480]
    * `cps-hid` subdriver now supports more variables, as available on e.g.
      CP1350EPFCLCD model, including temperature. [PRs #2540, #2711]
+   * loudly suggest to set `pollonly` flag and default a shorter `pollfreq`
+     for CPS devices, to try avoiding device-driven timeouts. [#1689]
    * USB parameters (per `usb_communication_subdriver_t`) are now set back to
      their default values during enumeration after probing each subdriver.
      Having an unrelated device connected with a VID:PID matching the

@@ -116,7 +116,7 @@ shuts down, and when the power returns.
 Set polling frequency for full updates, in seconds. Compared to the quick
 updates performed every "pollinterval" (the latter option is described in
 linkman:ups.conf[5]), the "pollfreq" interval is for polling the less-critical
-variables.  The default value is 30 (in seconds).
+variables.  The default value is 30 (in seconds), or 12 sec for CPS devices.
 
 *pollonly*::
 If this flag is set, the driver will not use Interrupt In transfers during the
@@ -341,6 +341,11 @@ later. For more details, see the NUT FAQ document. This particular quirk can
 be tuned with a kernel boot parameter (via GRUB etc.):
 
         usbhid.quirks=0x0463:0xffff:0x08
+
+Conversely, some hardware controllers may "fall asleep" when not contacted
+for too long; CPS devices are commonly associated with such behaviour.
+In this case, consider enabling `pollonly` flag and/or keeping `pollfreq`
+and/or `pollinterval` small.
 
 Got EPERM: Operation not permitted upon driver startup
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

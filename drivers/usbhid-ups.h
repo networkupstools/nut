@@ -60,6 +60,9 @@ extern bool_t	 	use_interrupt_pipe;	/* Set to FALSE if interrupt reports should 
 					/* The driver will wait for Interrupt */
 					/* and do "light poll" in the meantime */
 
+/* Parameters default values for CyberPower HID */
+#define DEFAULT_POLLFREQ_CPS	12	/* Polling interval, in seconds, default for CPS devices */
+
 #ifndef MAX_STRING_SIZE
 #define MAX_STRING_SIZE	128
 #endif
