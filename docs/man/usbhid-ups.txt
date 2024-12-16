@@ -111,7 +111,8 @@ you could see whether setting `ondelay = -1` in *ups.conf* helps.
 +
 Note that many CPS models tend to divide this delay by 60 and round down, so
 the minimum advisable value is 120 to allow a short delay between when the UPS
-shuts down, and when the power returns.
+shuts down, and when the power returns. According to support statement (for at
+least some CPS models), "our UPS systems are unable to set up power on delay".
 
 *pollfreq*='num'::
 Set polling frequency for full updates, in seconds. Compared to the quick
