@@ -67,7 +67,7 @@ Changes from 2.8.2 to 2.8.3
   and as an important `REPLBATT` status in particular) in `upsmon`, but
   better safe than sorry. [#415]
 
-- `usbhid-ups` subdriver `PowerCOM HID` subdriver sent UPS `shutdown` and
+- `usbhid-ups` subdriver `PowerCOM HID` seemingly sent UPS `shutdown` and
   `stayoff` commands in wrong byte order, at least for devices currently
   in the field. Driver now sends the commands in a way that satisfies new
   devices; just in case a flag toggle `powercom_sdcmd_byte_order_fallback`
