@@ -1562,6 +1562,7 @@ void upsdrv_initups(void)
 		fatalx(EXIT_FAILURE, "Can't initialize data from HID UPS");
 	}
 
+	/* Set values below from user settings only if supported by UPS */
 	if (dstate_getinfo("battery.charge.low")) {
 		/* Retrieve user defined battery settings */
 		val = getval(HU_VAR_LOWBATT);
@@ -1586,6 +1587,7 @@ void upsdrv_initups(void)
 		}
 	}
 
+	/* Enable instant commands below only if supported by UPS */
 	if (find_nut_info("load.off.delay")) {
 		/* Adds default with a delay value of '0' (= immediate) */
 		dstate_addcmd("load.off");
