@@ -189,6 +189,8 @@ https://github.com/networkupstools/nut/milestone/11
      would now report `battery.voltage` and `battery.voltage.nominal`. [#2380]
    * Added `ups.beeper.status` support for Masterpower MF-UPS650VA using the
      MGE HID subdriver. [#2662]
+   * Added support for `0x09D6:0x0001` devices using the MGE HID subdriver
+     assuming devices made by KSTAR (alternately using MGE vendor ID). [#2661]
    * `powercom-hid` subdriver sent UPS shutdown commands in wrong byte order,
      at least for devices currently in the field. A toggle was added to set
      the old behavior (if some devices do need it), while a fix is applied

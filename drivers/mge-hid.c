@@ -50,7 +50,7 @@
 # endif
 #endif
 
-#define MGE_HID_VERSION		"MGE HID 1.51"
+#define MGE_HID_VERSION		"MGE HID 1.52"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -75,6 +75,9 @@
 
 /* IBM */
 #define IBM_VENDORID		0x04b3
+
+/* KSTAR under Berkeley Varitronics Systems ID */
+#define KSTAR_VENDORID		0x09d6
 
 #if !((defined SHUT_MODE) && SHUT_MODE)
 #include "usb-common.h"
@@ -105,6 +108,10 @@ static usb_device_id_t mge_usb_device_table[] = {
 
 	/* 6000 VA LCD 4U Rack UPS; 5396-1Kx */
 	{ USB_DEVICE(IBM_VENDORID, 0x0001), NULL },
+
+	/* MasterPower MF-UPS650VA under KSTAR vendorid (can also be under MGE)
+	 * MicroPower models were also reported */
+	{ USB_DEVICE(KSTAR_VENDORID, 0x0001), NULL },
 
 	/* Terminating entry */
 	{ 0, 0, NULL }
