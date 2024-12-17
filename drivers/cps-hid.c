@@ -459,12 +459,10 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 					 * note that in HIDParse() we likely
 					 * set 65535 here in that case. See
 					 * also comments there (hidparser.c).
-					 * Also had to split last "-1" due to
-					 * misfire of "-Werror=parentheses".
 					 */
-					long sizeMax = 1L << (input_pData->Size - 1);
-					if (input_logmax >= sizeMax) {
-						input_logmax = sizeMax - 1;
+					long sizeMax = (1L << (input_pData->Size - 1)) - 1;
+					if (input_logmax > sizeMax) {
+						input_logmax = sizeMax;
 					}
 				}
 
@@ -473,9 +471,9 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 				 && output_pData->Size <= sizeof(long)*8
 				) {
 					/* See comment above */
-					long sizeMax = 1L << (output_pData->Size - 1);
-					if (output_logmax >= sizeMax) {
-						output_logmax = sizeMax - 1;
+					long sizeMax = (1L << (output_pData->Size - 1)) - 1;
+					if (output_logmax > sizeMax) {
+						output_logmax = sizeMax;
 					}
 				}
 
