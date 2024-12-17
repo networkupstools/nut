@@ -457,7 +457,8 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 					 * 2^(size-1)-1, e.g. for "size==16" the
 					 * limit should be "2^15 - 1 = 32767";
 					 * note that in HIDParse() we likely
-					 * set 65535 here in that case.
+					 * set 65535 here in that case. See
+					 * also comments there (hidparser.c).
 					 * Also had to split last "-1" due to
 					 * misfire of "-Werror=parentheses".
 					 */
