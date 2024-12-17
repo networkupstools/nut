@@ -2227,6 +2227,15 @@ static int mge_claim(HIDDevice_t *hd) {
 				/* Let liebert-hid grab this */
 				return 0;
 
+			case KSTAR_VENDORID:
+				if (hd->Vendor && strstr(hd->Vendor, "KSTAR")) {
+					return 1;
+				}
+
+				/* So far we only heard of KSTAR using this ID
+				 * in some models (or MGE 0x0463 originally) */
+				return 0;
+
 			default: /* Valid for Eaton */
 				/* by default, reject, unless the productid option is given */
 				if (getval("productid")) {
@@ -2249,6 +2258,15 @@ static int mge_claim(HIDDevice_t *hd) {
 				}
 
 				/* Let liebert-hid grab this */
+				return 0;
+
+			case KSTAR_VENDORID:
+				if (hd->Vendor && strstr(hd->Vendor, "KSTAR")) {
+					return 1;
+				}
+
+				/* So far we only heard of KSTAR using this ID
+				 * in some models (or MGE 0x0463 originally) */
 				return 0;
 
 			default:
