@@ -453,14 +453,18 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 				 && input_pData->Size > 1
 				 && input_pData->Size <= sizeof(long)*8
 				) {
-					/* Note: values are signed, so limit by
-					 * 2^(size-1)-1, e.g. for "size==16" the
-					 * limit should be "2^15 - 1 = 32767";
+					/* Note: usually values are signed, but
+					 * here we are about compensating for
+					 * poorly encoded maximums, so limit by
+					 * 2^(size)-1, e.g. for "size==16" the
+					 * limit should be "2^16 - 1 = 65535";
 					 * note that in HIDParse() we likely
 					 * set 65535 here in that case. See
-					 * also comments there (hidparser.c).
+					 * also comments there (hidparser.c)
+					 * discussing signed/unsigned nuances.
 					 */
-					long sizeMax = (1L << (input_pData->Size - 1)) - 1;
+					/* long sizeMax = (1L << (input_pData->Size - 1)) - 1; */
+					long sizeMax = (1L << (input_pData->Size)) - 1;
 					if (input_logmax > sizeMax) {
 						input_logmax = sizeMax;
 					}
@@ -471,7 +475,8 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 				 && output_pData->Size <= sizeof(long)*8
 				) {
 					/* See comment above */
-					long sizeMax = (1L << (output_pData->Size - 1)) - 1;
+					/* long sizeMax = (1L << (output_pData->Size - 1)) - 1; */
+					long sizeMax = (1L << (output_pData->Size)) - 1;
 					if (output_logmax > sizeMax) {
 						output_logmax = sizeMax;
 					}
