@@ -204,6 +204,24 @@ You can also compile it (where that is still needed) using:
 	:; tar xzf "$DLDIR"/pthreads-w32-2-8-0-release.tar.gz
 	:; cd pthreads-w32-2-8-0-release/
 	:; make -f GNUmakefile "CROSS=$ARCH-" GC-inlined
+
+[NOTE]
+======
+If it complains about
+`pthread.h:307:8: error: redefinition of 'struct timespec'`
+please edit `config.h` to add a `HAVE_STRUCT_TIMESPEC` definition
+and re-run `make`, e.g.:
+
+	:; echo '#define HAVE_STRUCT_TIMESPEC 1' >> config.h
+	:; make -f GNUmakefile "CROSS=$ARCH-" GC-inlined
+
+There may also be some warnings from newer compilers about
+`cast to pointer from integer of different size` -- these are
+presumed inconsequential. You can try a not-"inlined" build instead.
+======
+
+Finally, install the resulting files into locations under `PREFIX`:
+
 	:; sudo cp *.dll ${PREFIX}/pthreads/lib/
 	:; sudo cp *.a ${PREFIX}/lib/
 	:; sudo cp pthread.h sched.h semaphore.h ${PREFIX}/pthreads/include
