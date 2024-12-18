@@ -173,6 +173,9 @@ below, it would be like:
 
 ================================================================================
 
+NOTE: Instructions below use `sudo` to specify operations you may need to run
+with privilege elevation (assuming installation into a `PREFIX=/usr/$ARCH`);
+the majority of operations can be done (recommended) as an unprivileged user.
 
 pthread library
 ^^^^^^^^^^^^^^^
