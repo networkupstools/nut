@@ -317,9 +317,9 @@ static int cps_claim(HIDDevice_t *hd) {
 	}
 }
 
-/* CPS Models like CP900EPFCLCD/CP1500PFCLCDa return a syntactically legal but incorrect
- * Report Descriptor whereby the Input High Transfer Max/Min values
- * are used for the Output Voltage Usage Item limits.
+/* CPS Models like CP900EPFCLCD/CP1500PFCLCDa return a syntactically
+ * legal but incorrect Report Descriptor whereby the Input High Transfer
+ * Max/Min values are used for the Output Voltage Usage Item limits.
  * Additionally the Input Voltage LogMax is set incorrectly for EU models.
  * This corrects them by finding and applying fixed
  * voltage limits as being more appropriate.
@@ -327,10 +327,16 @@ static int cps_claim(HIDDevice_t *hd) {
 
 static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 	HIDData_t *pData;
+	int	retval = 0;
 
 	int vendorID = pDev->VendorID;
 	int productID = pDev->ProductID;
 	if (vendorID != CPS_VENDORID || (productID != 0x0501 && productID != 0x0601)) {
+		upsdebugx(3,
+			"NOT Attempting Report Descriptor fix for UPS: "
+			"Vendor: %04x, Product: %04x "
+			"(vendor/product not matched)",
+			vendorID, productID);
 		return 0;
 	}
 
@@ -343,43 +349,168 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 		return 0;
 	}
 
-	upsdebugx(3, "Attempting Report Descriptor fix for UPS: Vendor: %04x, Product: %04x", vendorID, productID);
+	upsdebugx(3, "Attempting Report Descriptor fix for UPS: "
+		"Vendor: %04x, Product: %04x", vendorID, productID);
 
-	/* Apply the fix cautiously by looking for input voltage, high voltage transfer and output voltage report usages.
-	 * If the output voltage log min/max equals high voltage transfer log min/max then the bug is present.
-	 * To fix it Set both the input and output voltages to pre-defined settings.
+	/* Apply the fix cautiously by looking for input voltage,
+	 * high voltage transfer and output voltage report usages.
+	 * If the output voltage log min/max equals high voltage
+	 * transfer log min/max, then the bug is present.
+	 *
+	 * To fix it set both the input and output voltages to our
+	 * pre-defined settings CPS_VOLTAGE_LOGMIN/CPS_VOLTAGE_LOGMAX.
 	 */
 
-	if ((pData=FindObject_with_ID_Node(pDesc_arg, 16, USAGE_POW_HIGH_VOLTAGE_TRANSFER))) {
+	if ((pData=FindObject_with_ID_Node(pDesc_arg, 16 /* 0x10 */, USAGE_POW_HIGH_VOLTAGE_TRANSFER))) {
 		long hvt_logmin = pData->LogMin;
 		long hvt_logmax = pData->LogMax;
-		upsdebugx(4, "Report Descriptor: hvt input LogMin: %ld LogMax: %ld", hvt_logmin, hvt_logmax);
+		upsdebugx(4, "Original Report Descriptor: hvt input "
+			"LogMin: %ld LogMax: %ld", hvt_logmin, hvt_logmax);
 
-		if ((pData=FindObject_with_ID_Node(pDesc_arg, 18, USAGE_POW_VOLTAGE))) {
+		if ((pData=FindObject_with_ID_Node(pDesc_arg, 18 /* 0x12 */, USAGE_POW_VOLTAGE))) {
 			long output_logmin = pData->LogMin;
 			long output_logmax = pData->LogMax;
-			upsdebugx(4, "Report Descriptor: output LogMin: %ld LogMax: %ld",
-					output_logmin, output_logmax);
+			upsdebugx(4, "Original Report Descriptor: output "
+				"LogMin: %ld LogMax: %ld",
+				output_logmin, output_logmax);
 
 			if (hvt_logmin == output_logmin && hvt_logmax == output_logmax) {
 				pData->LogMin = CPS_VOLTAGE_LOGMIN;
 				pData->LogMax = CPS_VOLTAGE_LOGMAX;
-				upsdebugx(3, "Fixing Report Descriptor. Set Output Voltage LogMin = %d, LogMax = %d",
-							CPS_VOLTAGE_LOGMIN , CPS_VOLTAGE_LOGMAX);
-				if ((pData=FindObject_with_ID_Node(pDesc_arg, 15, USAGE_POW_VOLTAGE))) {
+				upsdebugx(3, "Fixing Report Descriptor: "
+					"set Output Voltage LogMin = %d, LogMax = %d",
+					CPS_VOLTAGE_LOGMIN, CPS_VOLTAGE_LOGMAX);
+
+				if ((pData=FindObject_with_ID_Node(pDesc_arg, 15 /* 0x0F */, USAGE_POW_VOLTAGE))) {
 					long input_logmin = pData->LogMin;
 					long input_logmax = pData->LogMax;
-					upsdebugx(4, "Report Descriptor: input LogMin: %ld LogMax: %ld",
-							input_logmin, input_logmax);
-					upsdebugx(3, "Fixing Report Descriptor. Set Input Voltage LogMin = %d, LogMax = %d",
-							CPS_VOLTAGE_LOGMIN , CPS_VOLTAGE_LOGMAX);
+					upsdebugx(4, "Original Report Descriptor: input "
+						"LogMin: %ld LogMax: %ld",
+						input_logmin, input_logmax);
+
+					pData->LogMin = CPS_VOLTAGE_LOGMIN;
+					pData->LogMax = CPS_VOLTAGE_LOGMAX;
+					upsdebugx(3, "Fixing Report Descriptor: "
+						"set Input Voltage LogMin = %d, LogMax = %d",
+						CPS_VOLTAGE_LOGMIN, CPS_VOLTAGE_LOGMAX);
 				}
 
-				return 1;
+				retval = 1;
 			}
 		}
 	}
-	return 0;
+
+	if ((pData=FindObject_with_ID_Node(pDesc_arg, 18 /* 0x12 */, USAGE_POW_VOLTAGE))) {
+		HIDData_t *output_pData = pData;
+		long output_logmin = output_pData->LogMin;
+		long output_logmax = output_pData->LogMax;
+		bool output_logmax_assumed = output_pData->assumed_LogMax;
+
+		if ((pData=FindObject_with_ID_Node(pDesc_arg, 15 /* 0x0F */, USAGE_POW_VOLTAGE))) {
+			HIDData_t *input_pData = pData;
+			long input_logmin = input_pData->LogMin;
+			long input_logmax = input_pData->LogMax;
+			bool input_logmax_assumed = input_pData->assumed_LogMax;
+
+			if ( (output_logmax_assumed || input_logmax_assumed)
+			/* &&   output_logmax != input_logmax */
+			) {
+				/* We often get 0x0F ReportdId LogMax=65535
+				 * and 0x12 ReportdId LogMax=255 because of
+				 * wrong encoding. See e.g. analysis at
+				 * https://github.com/networkupstools/nut/issues/1512#issuecomment-1224652911
+				 */
+				upsdebugx(4, "Original Report Descriptor: output 0x12 "
+					"LogMin: %ld LogMax: %ld (assumed: %s) Size: %" PRIu8,
+					output_logmin, output_logmax,
+					output_logmax_assumed ? "yes" : "no",
+					output_pData->Size);
+				upsdebugx(4, "Original Report Descriptor: input 0x0f "
+					"LogMin: %ld LogMax: %ld (assumed: %s) Size: %" PRIu8,
+					input_logmin, input_logmax,
+					input_logmax_assumed ? "yes" : "no",
+					input_pData->Size);
+
+				/* First pass: try our hard-coded limits */
+				if (output_logmax_assumed && output_logmax < CPS_VOLTAGE_LOGMAX) {
+					output_logmax = CPS_VOLTAGE_LOGMAX;
+				}
+
+				if (input_logmax_assumed && input_logmax < CPS_VOLTAGE_LOGMAX) {
+					input_logmax = CPS_VOLTAGE_LOGMAX;
+				}
+
+				/* Second pass: align the two */
+				if (output_logmax_assumed && output_logmax < input_logmax) {
+					output_logmax = input_logmax;
+				} else if (input_logmax_assumed && input_logmax < output_logmax) {
+					input_logmax = output_logmax;
+				}
+
+				/* Second pass: cut off according to bit-size
+				 * of each value */
+				if (input_logmax_assumed
+				 && input_pData->Size > 1
+				 && input_pData->Size <= sizeof(long)*8
+				) {
+					/* Note: usually values are signed, but
+					 * here we are about compensating for
+					 * poorly encoded maximums, so limit by
+					 * 2^(size)-1, e.g. for "size==16" the
+					 * limit should be "2^16 - 1 = 65535";
+					 * note that in HIDParse() we likely
+					 * set 65535 here in that case. See
+					 * also comments there (hidparser.c)
+					 * discussing signed/unsigned nuances.
+					 */
+					/* long sizeMax = (1L << (input_pData->Size - 1)) - 1; */
+					long sizeMax = (1L << (input_pData->Size)) - 1;
+					if (input_logmax > sizeMax) {
+						input_logmax = sizeMax;
+					}
+				}
+
+				if (output_logmax_assumed
+				 && output_pData->Size > 1
+				 && output_pData->Size <= sizeof(long)*8
+				) {
+					/* See comment above */
+					/* long sizeMax = (1L << (output_pData->Size - 1)) - 1; */
+					long sizeMax = (1L << (output_pData->Size)) - 1;
+					if (output_logmax > sizeMax) {
+						output_logmax = sizeMax;
+					}
+				}
+
+				if (input_logmax != input_pData->LogMax) {
+					upsdebugx(3, "Fixing Report Descriptor: "
+						"set Input Voltage LogMax = %ld",
+						input_logmax);
+					input_pData->LogMax = input_logmax;
+					retval = 1;
+				}
+
+				if (output_logmax != output_pData->LogMax) {
+					upsdebugx(3, "Fixing Report Descriptor: "
+						"set Output Voltage LogMax = %ld",
+						output_logmax);
+					output_pData->LogMax = output_logmax;
+					retval = 1;
+				}
+			}
+		}
+	}
+
+	if (!retval) {
+		/* We did not `return 1` above, so... */
+		upsdebugx(3,
+			"SKIPPED Report Descriptor fix for UPS: "
+			"Vendor: %04x, Product: %04x "
+			"(problematic conditions not matched)",
+			vendorID, productID);
+	}
+
+	return retval;
 }
 
 subdriver_t cps_subdriver = {
