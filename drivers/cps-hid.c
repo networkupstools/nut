@@ -388,11 +388,16 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 						"LogMin: %ld LogMax: %ld",
 						input_logmin, input_logmax);
 
-					pData->LogMin = CPS_VOLTAGE_LOGMIN;
-					pData->LogMax = CPS_VOLTAGE_LOGMAX;
-					upsdebugx(3, "Fixing Report Descriptor: "
-						"set Input Voltage LogMin = %d, LogMax = %d",
-						CPS_VOLTAGE_LOGMIN, CPS_VOLTAGE_LOGMAX);
+					/* TOTHINK: Should this be still about
+					 * the *HIGH* Voltage Transfer? Or LOW?
+					 */
+					if (hvt_logmin == input_logmin && hvt_logmax == input_logmax) {
+						pData->LogMin = CPS_VOLTAGE_LOGMIN;
+						pData->LogMax = CPS_VOLTAGE_LOGMAX;
+						upsdebugx(3, "Fixing Report Descriptor: "
+							"set Input Voltage LogMin = %d, LogMax = %d",
+							CPS_VOLTAGE_LOGMIN, CPS_VOLTAGE_LOGMAX);
+					}
 				}
 
 				retval = 1;
