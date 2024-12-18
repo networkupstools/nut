@@ -8,7 +8,7 @@ NUT is now also available for the Microsoft Windows platform.
 
 This methodology (and Windows support in general) are currently experimental,
 so pull requests are welcome to tie up some loose ends (add more prerequisites,
-test and fix programs, re-enable some code just commented away by `ifdef`s...)
+test and fix programs, re-enable some code just commented away by `ifdef`'s...)
 
 NOTE: It is possible to prepare a Windows machine with tools and prerequisites
 for building NUT natively, as detailed in `docs/config-prereqs.txt` and easily
@@ -84,22 +84,28 @@ If you use script `./build-mingw-nut.sh` mentioned below, you may skip setting
 these environment variables when building NUT. You would however need to use
 them once (per `ARCH`) to provide the prerequisites below if built from source.
 
-When using the compilation approach, use the following HOST_FLAG, BUILD_FLAG
-and CC, CFLAGS, LDFLAGS and PREFIX:
+When using the compilation approach, you would typically use the following
+`ARCH`, `HOST_FLAG` and `BUILD_FLAG`, as well as `CC`, `CFLAGS`, `LDFLAGS`
+and `PREFIX` values:
 
 - prefer either to
 ------
 :; export ARCH="x86_64-w64-mingw32"
 ------
++
 or
 ------
 :; export ARCH="i686-w64-mingw32"
 ------
-(it can help to open two terminals and copy one ARCH into each
-  and then the lines below into both of them; be sure to use separate
-  directory trees for the unpacked build workspaces)
++
+(it can help to open two terminals and copy one `ARCH` into each
+  and then the other lines below into both of them; be sure to use
+  separate directory trees for the unpacked build workspaces, while
+  you can use the same source tarball download directory for both -- just
+  do not paste the commands simultaneously to avoid downloading in parallel;
+  the `wget -c` used below would skip downloads that are already completed)
 
-- for either-ARCH build environment further set:
+- for either-`ARCH` build environment further set:
 ------
 :; export HOST_FLAG="--host=$ARCH"
 :; PREFIX="/usr/$ARCH"
@@ -167,6 +173,9 @@ below, it would be like:
 
 ================================================================================
 
+NOTE: Instructions below use `sudo` to specify operations you may need to run
+with privilege elevation (assuming installation into a `PREFIX=/usr/$ARCH`);
+the majority of operations can be done (recommended) as an unprivileged user.
 
 pthread library
 ^^^^^^^^^^^^^^^
@@ -194,7 +203,25 @@ You can also compile it (where that is still needed) using:
 	:; cd "$WSDIR"
 	:; tar xzf "$DLDIR"/pthreads-w32-2-8-0-release.tar.gz
 	:; cd pthreads-w32-2-8-0-release/
-	:; make -f GNUmakefile "CROSS=$ARCH-" $BUILD_FLAG GC-inlined
+	:; make -f GNUmakefile "CROSS=$ARCH-" GC-inlined
+
+[NOTE]
+======
+If it complains about
+`pthread.h:307:8: error: redefinition of 'struct timespec'`
+please edit `config.h` to add a `HAVE_STRUCT_TIMESPEC` definition
+and re-run `make`, e.g.:
+
+	:; echo '#define HAVE_STRUCT_TIMESPEC 1' >> config.h
+	:; make -f GNUmakefile "CROSS=$ARCH-" GC-inlined
+
+There may also be some warnings from newer compilers about
+`cast to pointer from integer of different size` -- these are
+presumed inconsequential. You can try a not-"inlined" build instead.
+======
+
+Finally, install the resulting files into locations under `PREFIX`:
+
 	:; sudo cp *.dll ${PREFIX}/pthreads/lib/
 	:; sudo cp *.a ${PREFIX}/lib/
 	:; sudo cp pthread.h sched.h semaphore.h ${PREFIX}/pthreads/include
