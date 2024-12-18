@@ -1042,21 +1042,22 @@ void upsdrv_makevartable(void)
 	addvar (VAR_VALUE, HU_VAR_LOWBATT, temp);
 
 	snprintf(temp, sizeof(temp),
-		"Set shutdown delay, in seconds (default=%s)",
-		DEFAULT_OFFDELAY);
+		"Set shutdown delay, in seconds (default=%s, or %s for CPS devices)",
+		DEFAULT_OFFDELAY, DEFAULT_OFFDELAY_CPS);
 	addvar(VAR_VALUE, HU_VAR_OFFDELAY, temp);
 
 	snprintf(temp, sizeof(temp),
-		"Set startup delay, in seconds (default=%s)",
-		DEFAULT_ONDELAY);
+		"Set startup delay, in seconds (default=%s, or %s for CPS devices)",
+		DEFAULT_ONDELAY, DEFAULT_ONDELAY_CPS);
 	addvar(VAR_VALUE, HU_VAR_ONDELAY, temp);
 
 	snprintf(temp, sizeof(temp),
-		"Set polling frequency, in seconds, to reduce data flow (default=%d)",
-		DEFAULT_POLLFREQ);
+		"Set polling frequency, in seconds, to reduce data flow "
+		"(default=%d, or %d for CPS devices)",
+		DEFAULT_POLLFREQ, DEFAULT_POLLFREQ_CPS);
 	addvar(VAR_VALUE, HU_VAR_POLLFREQ, temp);
 
-	addvar(VAR_FLAG, "pollonly", "Don't use interrupt pipe, only use polling");
+	addvar(VAR_FLAG, "pollonly", "Don't use interrupt pipe, only use polling (recommended for CPS devices)");
 
 	addvar(VAR_VALUE, "interrupt_pipe_no_events_tolerance", "How many times in a row do we tolerate \"Got 0 HID objects\" from USB interrupts?");
 
@@ -1292,10 +1293,20 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("driver.version.data", "%s", subdriver->name);
 
-	/* init polling frequency */
+	/* init polling frequency for full updates */
 	val = getval(HU_VAR_POLLFREQ);
 	if (val) {
 		pollfreq = atoi(val);
+#if !((defined SHUT_MODE) && SHUT_MODE)
+	} else {
+		/* note, there is also 'pollinterval'/poll_interval (C var)
+		 * common delay between main.c loops */
+		if (subdriver == &cps_subdriver) {
+			upslogx(LOG_INFO, "Defaulting '%s' to %d for CPS devices",
+				HU_VAR_POLLFREQ, DEFAULT_POLLFREQ_CPS);
+			pollfreq = DEFAULT_POLLFREQ_CPS;
+		}
+#endif
 	}
 
 	dstate_setinfo("driver.parameter.pollfreq", "%d", pollfreq);
@@ -1303,6 +1314,13 @@ void upsdrv_initinfo(void)
 	/* ignore (broken) interrupt pipe */
 	if (testvar("pollonly")) {
 		use_interrupt_pipe = FALSE;
+#if !((defined SHUT_MODE) && SHUT_MODE)
+	} else {
+		if (subdriver == &cps_subdriver) {
+			upslogx(LOG_WARNING, "You may want to set 'pollonly' "
+				"flag on CPS devices");
+		}
+#endif
 	}
 
 	val = getval("interrupt_pipe_no_events_tolerance");
@@ -1579,7 +1597,15 @@ void upsdrv_initups(void)
 		/* Retrieve user defined delay settings */
 		val = getval(HU_VAR_ONDELAY);
 		if (val) {
-			dstate_setinfo("ups.delay.start", "%ld", strtol(val, NULL, 10));
+			long	l = strtol(val, NULL, 10);
+#if !((defined SHUT_MODE) && SHUT_MODE)
+			if (subdriver == &cps_subdriver
+			 && (l < 60 || l % 60)
+			) {
+				upslogx(LOG_WARNING, "CPS devices tend to round delays by 60 sec down (ondelay=120 is the suggested minimum; see more in the man page)");
+			}
+#endif
+			dstate_setinfo("ups.delay.start", "%ld", l);
 		}
 	}
 
@@ -1587,7 +1613,17 @@ void upsdrv_initups(void)
 		/* Retrieve user defined delay settings */
 		val = getval(HU_VAR_OFFDELAY);
 		if (val) {
-			dstate_setinfo("ups.delay.shutdown", "%ld", strtol(val, NULL, 10));
+			long	l = strtol(val, NULL, 10);
+#if !((defined SHUT_MODE) && SHUT_MODE)
+			if (subdriver == &cps_subdriver
+			 && (l > 0 && (l < 60 || l % 60))
+			) {
+				/* Note: zero and negative values may
+				 * have special meanings for the firmware */
+				upslogx(LOG_WARNING, "CPS devices tend to round delays by 60 sec down (offdelay=60 is the suggested minimum; see more in the man page)");
+			}
+#endif
+			dstate_setinfo("ups.delay.shutdown", "%ld", l);
 		}
 	}
 

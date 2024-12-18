@@ -203,6 +203,11 @@ https://github.com/networkupstools/nut/milestone/11
      by default: `powercom_sdcmd_byte_order_fallback`. [PR #2480]
    * `cps-hid` subdriver now supports more variables, as available on e.g.
      CP1350EPFCLCD model, including temperature. [PRs #2540, #2711]
+   * loudly suggest to set `pollonly` flag and default a shorter `pollfreq`
+     for CPS devices, to try avoiding device-driven timeouts. [#1689]
+     Also adjust default `offdelay` and `ondelay` to reasonable values,
+     and warn the users with CPS devices if their configured values are
+     not multiples of 60. [#432, #1394]
    * in `cps-hid` subdriver, `cps_fix_report_desc()` method should now handle
      mismatched `LogMax` ranges for input and output voltages, whose USB Report
      Descriptors are wrongly encoded by some firmware versions. [#1512]

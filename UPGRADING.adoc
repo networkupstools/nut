@@ -73,6 +73,15 @@ Changes from 2.8.2 to 2.8.3
   devices; just in case a flag toggle `powercom_sdcmd_byte_order_fallback`
   was added to set the old behavior (if some devices do need it). [PR #2480]
 
+- `usbhid-ups` subdriver `CyberPower HID` default `pollfreq` sped up to
+  12 seconds (common default is 30 seconds). Feedback is welcome if this
+  improves connection stability or overwhelms the UPS controller instead.
+  [issue #1689, PR #2718]
+
+- `usbhid-ups` subdriver `CyberPower HID` default `offdelay` is set to 60
+  and `ondelay` to 120 seconds, in accordance with man page suggestions;
+  users with custom settings not divisible by 60 will be loudly warned. [#1394]
+
 - Added support for `lbrb_log_delay_sec=N` setting to delay propagation of
   `LB` or `LB+RB` state (buggy with APC BXnnnnMI devices/firmwares issued
   circa 2023-2024 which flood the logs with spurious LOWBATT and REPLACEBATT
