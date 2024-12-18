@@ -77,6 +77,14 @@ https://github.com/networkupstools/nut/milestone/11
      use of `struct timeval={-1,-1}` as a trigger to `select(..., NULL)`,
      as logged in one part of code and not handled in the other, for the
      indefinite wait [#1922, #2392, #2686, #2670]
+   * The `disable_fix_report_desc` option introduced for `usbhid-ups` driver
+     since NUT v2.8.1 was not applied for early dialog with the device while
+     its report descriptors were being discovered. Now this flag, as well as
+     `interruptsize` and `interruptonly`, are considered before we first try
+     to open the USB device handle. [#1575, #1512]
+   * In `cps_fix_report_desc()` we intended to fix-up input and output voltages
+     in certain cases against high voltage transfer, we only fixed-up one of
+     them. [#1245]
 
  - development iterations of NUT should now identify with not only the semantic
    version of a preceding release, but with git-derived information about the
@@ -200,6 +208,9 @@ https://github.com/networkupstools/nut/milestone/11
      Also adjust default `offdelay` and `ondelay` to reasonable values,
      and warn the users with CPS devices if their configured values are
      not multiples of 60. [#432, #1394]
+   * in `cps-hid` subdriver, `cps_fix_report_desc()` method should now handle
+     mismatched `LogMax` ranges for input and output voltages, whose USB Report
+     Descriptors are wrongly encoded by some firmware versions. [#1512]
    * USB parameters (per `usb_communication_subdriver_t`) are now set back to
      their default values during enumeration after probing each subdriver.
      Having an unrelated device connected with a VID:PID matching the
@@ -234,6 +245,8 @@ https://github.com/networkupstools/nut/milestone/11
    * ...should now not log "insufficient permissions on everything" alone when
      some devices were accessible but just did not match -- clarify that case
      in the next line, when applicable. [PR #2699]
+   * ...should now track the fact of `assumed_LogMax` (typically when firmware
+     encoding logic is wrong, and `-1` is resolved by parser). [#1512, #1040]
 
  - Introduced a new driver concept for interaction with OS-reported hardware
    monitoring readings. Currently instantiated as `hwmon_ina219` specifically

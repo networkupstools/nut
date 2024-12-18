@@ -1417,6 +1417,27 @@ void upsdrv_initups(void)
 	subdriver_matcher->next = regex_matcher;
 #endif /* SHUT_MODE / USB */
 
+	/* First activate the few tweaks which can impact device detection */
+
+	/* Activate Powercom tweaks */
+	if (testvar("interruptonly")) {
+		interrupt_only = 1;
+	}
+
+	val = getval("interruptsize");
+	if (val) {
+		int ipv = atoi(val);
+		if (ipv > 0) {
+			interrupt_size = (unsigned int)ipv;
+		} else {
+			fatalx(EXIT_FAILURE, "Error: invalid interruptsize: %d", ipv);
+		}
+	}
+
+	if (testvar("disable_fix_report_desc")) {
+		disable_fix_report_desc = 1;
+	}
+
 	/* Search for the first supported UPS matching the
 	   regular expression (USB) or device_path (SHUT) */
 	ret = comm_driver->open_dev(&udev, &curDevice, subdriver_matcher, &callback);
@@ -1429,10 +1450,7 @@ void upsdrv_initups(void)
 		hd->Vendor ? hd->Vendor : "unknown",
 		hd->Product ? hd->Product : "unknown");
 
-	/* Activate Powercom tweaks */
-	if (testvar("interruptonly")) {
-		interrupt_only = 1;
-	}
+	/* Later activate the relatively cosmetic tweaks */
 
 	/* Activate Cyberpower/APC tweaks */
 	if (testvar("onlinedischarge") || testvar("onlinedischarge_onbattery")) {
@@ -1560,20 +1578,6 @@ void upsdrv_initups(void)
 
 	if (testvar("lbrb_log_delay_without_calibrating")) {
 		lbrb_log_delay_without_calibrating = 1;
-	}
-
-	if (testvar("disable_fix_report_desc")) {
-		disable_fix_report_desc = 1;
-	}
-
-	val = getval("interruptsize");
-	if (val) {
-		int ipv = atoi(val);
-		if (ipv > 0) {
-			interrupt_size = (unsigned int)ipv;
-		} else {
-			fatalx(EXIT_FAILURE, "Error: invalid interruptsize: %d", ipv);
-		}
 	}
 
 	if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
