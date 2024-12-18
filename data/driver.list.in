@@ -687,6 +687,8 @@
 
 "Masterguard"	"ups"	"1"	"(various)"	""	"masterguard"
 
+"MasterPower"	"ups"	"3"	"MF-UPS650VA"	"USB"	"usbhid-ups"	# https://github.com/networkupstools/nut/issues/2661 - Note there are two VendorID:ProductID for KSTAR making this device
+
 "Maxxtro"	"ups"	"2"	"UPS 600 VA"	"serial port"	"blazer_ser"
 
 "Mecer"	"ups"	"2"	"ME-1000-WTU"	"USB"	"nutdrv_qx"	# http://www.comx-computers.co.za/download/mecer/ME-1000-WTU.pdf
@@ -886,6 +888,7 @@
 "Microline"	"ups"	"2"	"C-Lion Innova Combo 10K/20K (3/1)"	"USB"	"blazer_usb"
 
 "Micropower"	"ups"	"2"	"LCD 1000"	"USB"	"blazer_usb"
+#"Micropower"	"ups"	"3"	"0x09d6:0x0001"	"USB"	"usbhid-ups"	# assuming, per https://github.com/networkupstools/nut/issues/2661 and https://alioth-lists.debian.net/pipermail/nut-upsuser/2023-April/013224.html
 
 "Microsol"	"ups"	"4"	"Solis 1.0"	"1000VA"	"solis"
 "Microsol"	"ups"	"4"	"Solis 1.5"	"1500VA"	"solis"
