@@ -203,7 +203,7 @@ You can also compile it (where that is still needed) using:
 	:; cd "$WSDIR"
 	:; tar xzf "$DLDIR"/pthreads-w32-2-8-0-release.tar.gz
 	:; cd pthreads-w32-2-8-0-release/
-	:; make -f GNUmakefile "CROSS=$ARCH-" $BUILD_FLAG GC-inlined
+	:; make -f GNUmakefile "CROSS=$ARCH-" GC-inlined
 	:; sudo cp *.dll ${PREFIX}/pthreads/lib/
 	:; sudo cp *.a ${PREFIX}/lib/
 	:; sudo cp pthread.h sched.h semaphore.h ${PREFIX}/pthreads/include
