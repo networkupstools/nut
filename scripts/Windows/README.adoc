@@ -284,6 +284,15 @@ libusb
 	:; make
 	:; sudo make install
 
+[NOTE]
+======
+If it complains about
+`libtoolize or glibtoolize was not found! Please install libtool.`
+please edit export the bin folder under PREFIX path:
+
+	:; export PATH=$PREFIX/bin:$PATH
+
+======
 
 zlib
 ^^^^
