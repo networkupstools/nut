@@ -73,29 +73,35 @@ if test -z "${nut_have_libmodbus_seen}"; then
 	CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
 	LIBS="${LIBS_ORIG} ${depLIBS}"
 	AC_CHECK_HEADERS(modbus.h, [nut_have_libmodbus=yes], [nut_have_libmodbus=no], [AC_INCLUDES_DEFAULT])
-	AC_CHECK_FUNCS(modbus_new_rtu, [], [nut_have_libmodbus=no])
-	AC_CHECK_FUNCS(modbus_new_tcp, [], [nut_have_libmodbus=no])
-	AC_CHECK_FUNCS(modbus_set_byte_timeout, [], [nut_have_libmodbus=no])
-	AC_CHECK_FUNCS(modbus_set_response_timeout, [], [nut_have_libmodbus=no])
+	AS_IF([test x"${nut_have_libmodbus}" = xyes ], [
+		AC_CHECK_FUNCS(modbus_new_rtu, [], [nut_have_libmodbus=no])
+		AC_CHECK_FUNCS(modbus_new_tcp, [], [nut_have_libmodbus=no])
+		AC_CHECK_FUNCS(modbus_set_byte_timeout, [], [nut_have_libmodbus=no])
+		AC_CHECK_FUNCS(modbus_set_response_timeout, [], [nut_have_libmodbus=no])
+	])
 
-	AC_CHECK_FUNCS(modbus_new_rtu_usb, [nut_have_libmodbus_usb=yes], [
-		nut_have_libmodbus_usb=no
-		AS_IF([test x"${nut_with_usb}" != xno && test x"${nut_with_modbus}" != xno && test x"${nut_have_libmodbus}" = xyes ], [
-			dnl Retry with LibUSB dependency settings if we
-			dnl know we are not opposed to pulling it in.
-			dnl Static libmodbus builds do not refer to
-			dnl (shared) libusb for example.
-			AC_REQUIRE([NUT_CHECK_LIBUSB])
-			AC_MSG_NOTICE([Retry detection of libmodbus USB support])
-			CFLAGS="$CFLAGS $LIBUSB_CFLAGS"
-			LIBS="$LIBS $LIBUSB_LIBS"
-			unset ac_cv_func_modbus_new_rtu_usb
-			AC_CHECK_FUNCS(modbus_new_rtu_usb, [nut_have_libmodbus_usb=yes], [
-				AS_IF([test x"${nut_with_usb}" = xyes && test x"${nut_with_modbus}" = xyes && test x"${nut_have_libmodbus}" = xyes ], [
-					AC_MSG_WARN([Both --with-modbus and --with-usb were requested, and a libmodbus was found, but it seems to not support USB. You may require a custom build per https://github.com/networkupstools/nut/wiki/APC-UPS-with-Modbus-protocol])
+	AS_IF([test x"${nut_have_libmodbus}" = xyes ], [
+		AC_CHECK_FUNCS(modbus_new_rtu_usb, [nut_have_libmodbus_usb=yes], [
+			nut_have_libmodbus_usb=no
+			AS_IF([test x"${nut_with_usb}" != xno && test x"${nut_with_modbus}" != xno && test x"${nut_have_libmodbus}" = xyes ], [
+				dnl Retry with LibUSB dependency settings if we
+				dnl know we are not opposed to pulling it in.
+				dnl Static libmodbus builds do not refer to
+				dnl (shared) libusb for example.
+				AC_REQUIRE([NUT_CHECK_LIBUSB])
+				AC_MSG_NOTICE([Retry detection of libmodbus USB support])
+				CFLAGS="$CFLAGS $LIBUSB_CFLAGS"
+				LIBS="$LIBS $LIBUSB_LIBS"
+				unset ac_cv_func_modbus_new_rtu_usb
+				AC_CHECK_FUNCS(modbus_new_rtu_usb, [nut_have_libmodbus_usb=yes], [
+					AS_IF([test x"${nut_with_usb}" = xyes && test x"${nut_with_modbus}" = xyes && test x"${nut_have_libmodbus}" = xyes ], [
+						AC_MSG_WARN([Both --with-modbus and --with-usb were requested, and a libmodbus was found, but it seems to not support USB. You may require a custom build per https://github.com/networkupstools/nut/wiki/APC-UPS-with-Modbus-protocol])
+					])
 				])
 			])
 		])
+	], [
+		nut_have_libmodbus_usb=no
 	])
 
 	dnl modbus_set_byte_timeout() and modbus_set_response_timeout()
