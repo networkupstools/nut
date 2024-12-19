@@ -7,7 +7,7 @@ AC_DEFUN([NUT_CHECK_LIBMODBUS],
 [
 if test -z "${nut_have_libmodbus_seen}"; then
 	nut_have_libmodbus_seen=yes
-	NUT_CHECK_PKGCONFIG
+	AC_REQUIRE([NUT_CHECK_PKGCONFIG])
 
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"
@@ -85,7 +85,7 @@ if test -z "${nut_have_libmodbus_seen}"; then
 			dnl know we are not opposed to pulling it in.
 			dnl Static libmodbus builds do not refer to
 			dnl (shared) libusb for example.
-			NUT_CHECK_LIBUSB
+			AC_REQUIRE([NUT_CHECK_LIBUSB])
 			AC_MSG_NOTICE([Retry detection of libmodbus USB support])
 			CFLAGS="$CFLAGS $LIBUSB_CFLAGS"
 			LIBS="$LIBS $LIBUSB_LIBS"
