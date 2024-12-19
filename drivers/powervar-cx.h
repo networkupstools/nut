@@ -236,13 +236,19 @@ static void GetInitFormatAndOrData (const char* sReq, char* sF, const size_t sFS
 		/* Get sReq format response */
 		upsdebugx (2, "Requesting %s.FORMAT", sReq);
 
+
 #if defined PVAR_SERIAL
 		ser_send(upsfd, "%s%s%c", sReq, FORMAT_TAIL, ENDCHAR);
 #endif
+//#elif defined PVAR_USB
+//		ret = send_cmd((unsigned char*)sReq, 3, reply, BIG_BUFFER);
+//
+//		pvarusb_send(hd, const unsigned char *msg, size_t msg_len, unsigned char *reply, size_t reply_len)
+//#endif	/* PVAR_SERIAL */
 
 		if(PowervarGetResponse (sF, sFSize))
 		{
-			fatalx(EXIT_FAILURE, "%s.FORMAT Serial timeout getting UPS data on %s\n", sReq, device_path);
+			fatalx(EXIT_FAILURE, "'%s.FORMAT' timeout getting UPS data on %s\n", sReq, device_path);
 		}
 
 		if ((sF[0] == '?') || (strncmp(sReq, sF, STDREQSIZE) != 0))
@@ -268,7 +274,7 @@ static void GetInitFormatAndOrData (const char* sReq, char* sF, const size_t sFS
 
 		if(PowervarGetResponse (sD, sDSize))
 		{
-			fatalx(EXIT_FAILURE, "%s Serial timeout getting UPS data on %s\n", sReq, device_path);
+			fatalx(EXIT_FAILURE, "'%s' timeout getting UPS data on %s\n", sReq, device_path);
 		}
 
 		if ((sD[0] == '?') || (strncmp(sReq, sD, STDREQSIZE) != 0))

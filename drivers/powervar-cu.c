@@ -6,6 +6,7 @@
  *
  * Copyright (C)
  *     2024 by Bill Elliot <bill@wreassoc.com>
+ *     (USB comm based on various other drivers)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -386,9 +387,6 @@ static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *rep
 
 }
 
-
-/* TBD, make for USB */
-
 #define RETRIES 4
 static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
 {
@@ -398,50 +396,6 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
 	return 0;	/* Good comms */
 }
 
-/*	int Retries = RETRIES;
-	ssize_t return_val;
-
-	do
-	{
-		return_val = ser_get_line(upsfd, chBuff, BuffSize, ENDCHAR, IGNCHARS, SECS, USEC);
-
-		if (return_val > 0)
-		{
-			break;
-		}
-
-		upsdebugx (3, "!PowervarGetResponse retry (%" PRIiSIZE ", %d)...", return_val, Retries);
-
-	} while (--Retries > 0);
-
-	upsdebugx (4,"PowervarGetResponse buffer: %s",chBuff);
-
-	if (Retries == 0)
-	{
-		upsdebugx (2,"!!PowervarGetResponse timeout...");
-*/
-//		return_val = 1;					/* Comms error */
- /* 	}
-	else
-	{
-		if (Retries < RETRIES)
-		{
-			upsdebugx (2,"PowervarGetResponse recovered (%d)...", Retries);
-		}
-*/
-//		return_val = 0;					/* Good comms */
-/*	}
-
-	return return_val;
-}
- */
-
-/***************************************
- * CUSPP string handling functions     *
- **************************************/
-
-
-/* This function finds the position of a substring in a CUSPP Format response. */
 
 
 /****************************************************************
@@ -461,7 +415,6 @@ void upsdrv_initups(void)
 	/* process the UPS selection options */
 	regex_array[0] = NULL; /* handled by USB IDs device table */
 	regex_array[1] = getval("productid");
-//	regex_array[1] = NULL;
 	regex_array[2] = getval("vendor"); /* vendor string */
 	regex_array[3] = getval("product"); /* product string */
 	regex_array[4] = getval("serial");
@@ -495,8 +448,7 @@ void upsdrv_initups(void)
 
 	upslogx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
 
-//	hd = nutusb_open("USB");
-
+	/* TBD, I believe all of this supported stuff can come out */
 	r = is_usb_device_supported (powervar_usb_device_table, hd);
 
 	if (r < 0)
