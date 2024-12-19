@@ -404,6 +404,10 @@ Needed for libneon.
 	:; cd "$WSDIR"
 	:; tar xzf "$DLDIR"/libxml2-v2.9.14.tar.gz
 	:; cd libxml2-v2.9.14
+	:; libtoolize
+	:; aclocal
+	:; autoheader
+	:; autoupdate
 	:; ./autogen.sh --prefix="$PREFIX" $HOST_FLAG --without-python
 	:; make
 	:; sudo make install
