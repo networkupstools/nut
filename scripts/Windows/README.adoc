@@ -279,6 +279,8 @@ libusb
 	:; cd "$WSDIR"
 	:; unzip "$DLDIR"/libusb-compat-0.1-master.zip
 	:; cd libusb-compat-0.1-master
+	:; export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
+	:; export PATH=$PREFIX/bin/:$PATH
 	:; ./bootstrap.sh
 	:; ./configure --prefix="$PREFIX" $HOST_FLAG
 	:; make
