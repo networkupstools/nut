@@ -179,9 +179,7 @@ the majority of operations can be done (recommended) as an unprivileged user.
 
 NOTE: The instrunctions reported below can be saved as shell sctipts and execued
 with the following command (otherwise the change directory commands are not permanent):
-------
-. ./scriptname.sh
-------
+`. ./scriptname.sh`
 
 pthread library
 ^^^^^^^^^^^^^^^
