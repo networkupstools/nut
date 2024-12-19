@@ -8,7 +8,7 @@ AC_DEFUN([NUT_CHECK_LIBOPENSSL],
 [
 if test -z "${nut_have_libopenssl_seen}"; then
 	nut_have_libopenssl_seen=yes
-	NUT_CHECK_PKGCONFIG
+	AC_REQUIRE([NUT_CHECK_PKGCONFIG])
 
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"

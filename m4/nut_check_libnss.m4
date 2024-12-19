@@ -7,7 +7,7 @@ AC_DEFUN([NUT_CHECK_LIBNSS],
 [
 if test -z "${nut_have_libnss_seen}"; then
 	nut_have_libnss_seen=yes
-	NUT_CHECK_PKGCONFIG
+	AC_REQUIRE([NUT_CHECK_PKGCONFIG])
 
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"

@@ -8,7 +8,7 @@ AC_DEFUN([NUT_CHECK_LIBFREEIPMI],
 [
 if test -z "${nut_have_libfreeipmi_seen}"; then
 	nut_have_libfreeipmi_seen=yes
-	NUT_CHECK_PKGCONFIG
+	AC_REQUIRE([NUT_CHECK_PKGCONFIG])
 
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"

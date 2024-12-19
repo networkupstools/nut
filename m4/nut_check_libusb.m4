@@ -12,10 +12,10 @@ AC_DEFUN([NUT_CHECK_LIBUSB],
 [
 if test -z "${nut_have_libusb_seen}"; then
 	nut_have_libusb_seen=yes
-	NUT_CHECK_PKGCONFIG
+	AC_REQUIRE([NUT_CHECK_PKGCONFIG])
 
 	dnl Our USB matching relies on regex abilities
-	NUT_CHECK_LIBREGEX
+	AC_REQUIRE([NUT_CHECK_LIBREGEX])
 
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"

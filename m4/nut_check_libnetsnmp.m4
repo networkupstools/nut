@@ -8,7 +8,7 @@ AC_DEFUN([NUT_CHECK_LIBNETSNMP],
 [
 if test -z "${nut_have_libnetsnmp_seen}"; then
 	nut_have_libnetsnmp_seen=yes
-	NUT_CHECK_PKGCONFIG
+	AC_REQUIRE([NUT_CHECK_PKGCONFIG])
 	AC_LANG_PUSH([C])
 
 	dnl save CFLAGS and LIBS
