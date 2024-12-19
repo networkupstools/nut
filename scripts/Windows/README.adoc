@@ -177,6 +177,12 @@ NOTE: Instructions below use `sudo` to specify operations you may need to run
 with privilege elevation (assuming installation into a `PREFIX=/usr/$ARCH`);
 the majority of operations can be done (recommended) as an unprivileged user.
 
+NOTE: The instrunctions reported below can be saved as shell sctipts and execued with the following command (otherwise the change directory commands are not permanent):
+
+------
+. ./scriptname.sh
+------
+
 pthread library
 ^^^^^^^^^^^^^^^
 
