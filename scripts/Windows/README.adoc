@@ -457,6 +457,10 @@ and/or of the system antivirus interaction?..
 	:; make
 	:; sudo make install
 
+[NOTE]
+======
+If the build is failing on VirtualBox VM please make sure to have installed the VirtualBox Guest Additions.
+======
 
 /////////////////////////////////////////////////////////////////////////////
 WIP - fontconfig not usable yet due to ICU failing to cross-build
