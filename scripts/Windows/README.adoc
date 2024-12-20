@@ -532,6 +532,7 @@ such context, this must be something about STDCALL and/or "extern C"...
 	:; cd "$WSDIR"
 	:; tar xzf "$DLDIR"/libgd-2.3.3.tar.gz
 	:; cd libgd-2.3.3
+	:; export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
 	:; ./configure --prefix="$PREFIX" $HOST_FLAG \
 	    --with-png --with-freetype \
 	    --without-tiff --without-jpeg --without-xpm \
