@@ -609,16 +609,14 @@ the Makefiles for current `install` target definition to run its job without
 `install-docs` part (example posted below).
 
 	#:; ( cd "$DLDIR" && git clone -b fix-mingw-cross https://github.com/jimklimov/neon neon-git )
-	:; ( cd "$DLDIR" && git clone https://github.com/notroj/neon neon-git )
-	:; ( cd "$DLDIR/neon-git" && ./autogen.sh )
 	:; cd "$WSDIR"
-	:; rm -rf neon-git ; mkdir neon-git
-	:; cd neon-git
-	:; "$DLDIR"/neon-git/configure --prefix="$PREFIX" $HOST_FLAG \
-	    --enable-shared --with-ssl=openssl
+	:; git clone https://github.com/notroj/neon
+	:; cd "$WSDIR/neon"
+	:; export PATH=$PREFIX/bin:$PATH
+	:; ./autogen.sh
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG --enable-shared --with-ssl=openssl
 	:; make all docs
-	:; sudo make install \
-	   || sudo make install-lib install-headers install-config install-nls ###install-docs
+	:; sudo make install || sudo make install-lib install-headers install-config install-nls ###install-docs
 
 
 /////////////////////////////////////////////////////////////////////////////
