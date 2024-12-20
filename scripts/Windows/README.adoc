@@ -770,11 +770,11 @@ or, depending on the build environment(s) you have prepared,
 This is also automated for common NUT CI build script, calling it like this:
 ------
 # Try to guess bitness based on ARCH or CFLAGS:
-BUILD_TYPE=cross-windows-mingw ./ci_build.sh
+BUILD_TYPE=cross-windows-mingw ./ci_build.sh --prefix=$PREFIX $HOST_FLAG
 
 # Or specifically:
-BUILD_TYPE=cross-windows-mingw-32 ./ci_build.sh
-BUILD_TYPE=cross-windows-mingw-64 ./ci_build.sh
+BUILD_TYPE=cross-windows-mingw-32 ./ci_build.sh --prefix=$PREFIX $HOST_FLAG
+BUILD_TYPE=cross-windows-mingw-64 ./ci_build.sh --prefix=$PREFIX $HOST_FLAG
 ------
 ======
 
