@@ -289,16 +289,6 @@ libusb
 [NOTE]
 ======
 If it complains about
-`libtoolize or glibtoolize was not found! Please install libtool.`
-please export the bin folder under PREFIX path:
-
-	:; export PATH=$PREFIX/bin:$PATH
-
-======
-
-[NOTE]
-======
-If it complains about
 `syntax error near unexpected toket 'LIBUSB_1_0,'
  'PKG_CHECK_MODULES(LIBUSB_1_0, libusb-1.0 >= 0.9.1)'`
 please install pkgconf:
