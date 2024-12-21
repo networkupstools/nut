@@ -37,6 +37,8 @@ dnl either a filename, or nothing. Adding a bogus filename and chopping it
 dnl off by `dirname` should do the trick.
 dnl NOTE: the resulting NUT_WEBSITE_BASE string does not end with a slash!
 NUT_WEBSITE_BASE="`dirname "${PACKAGE_URL}index.html"`"
+dnl Fallback, no trailing slash!
+[ -n "${NUT_WEBSITE_BASE-}" ] || NUT_WEBSITE_BASE='https://www.networkupstools.org'
 
 dnl Note: this refers to GITREV at the time of configure script running
 dnl primarily for better messaging in the script itself (also to render

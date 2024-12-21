@@ -10,5 +10,12 @@ After=local-fs.target
 # network.target
 PartOf=nut.target
 
+# TODO: Dedicated man pages?
+Documentation=man:ups.conf(5)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/ups.conf.html
+
+Documentation=man:nut.conf(5)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/nut.conf.html
+
 [Install]
 WantedBy=nut.target
