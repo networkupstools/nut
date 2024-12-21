@@ -30,6 +30,14 @@ AC_INIT([nut],
 dnl See docs/maintainer-guide.txt about releases - updating the version
 dnl above is a small part of the consistent ritual!
 
+dnl PACKAGE_URL="https://www.networkupstools.org/" for development iterations
+dnl or "https://www.networkupstools.org/historic/v1.2.3/index.html" for release
+dnl snapshots further set in stone. Either way, there should be a slash and
+dnl either a filename, or nothing. Adding a bogus filename and chopping it
+dnl off by `dirname` should do the trick.
+dnl NOTE: the resulting NUT_WEBSITE_BASE string does not end with a slash!
+NUT_WEBSITE_BASE="`dirname "${PACKAGE_URL}index.html"`"
+
 dnl Note: this refers to GITREV at the time of configure script running
 dnl primarily for better messaging in the script itself (also to render
 dnl the PDF documentation revision history via docs/docinfo.xml.in).
@@ -747,6 +755,8 @@ AS_IF([test x"${NUT_SOURCE_GITREV}" = x],
         [NUT_REPORT([configured version], [${PACKAGE_VERSION} ${NUT_SOURCE_GITREV_DEVREL}])],
         [NUT_REPORT([configured version], [${PACKAGE_VERSION} (${NUT_SOURCE_GITREV}) ${NUT_SOURCE_GITREV_DEVREL}])])
     ])
+NUT_REPORT([Documentation website base URL], [${NUT_WEBSITE_BASE}])
+AC_DEFINE_UNQUOTED([NUT_WEBSITE_BASE], "${NUT_WEBSITE_BASE}", [Documentation website base URL, no trailing slash])
 
 dnl Note: the compiler/pragma/attr methods below are custom for NUT codebase:
 NUT_COMPILER_FAMILY
@@ -4832,6 +4842,7 @@ AC_SUBST(NUT_SOURCE_GITREV)
 AC_SUBST(NUT_SOURCE_GITREV_IS_RELEASE)
 AC_SUBST(NUT_SOURCE_GITREV_SEMVER)
 AC_SUBST(NUT_SOURCE_GITREV_NUMERIC)
+AC_SUBST(NUT_WEBSITE_BASE)
 AC_SUBST(LIBSSL_CFLAGS)
 AC_SUBST(LIBSSL_LIBS)
 AC_SUBST(LIBSSL_LDFLAGS_RPATH)
