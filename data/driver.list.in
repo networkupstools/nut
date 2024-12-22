@@ -508,6 +508,7 @@
 
 "Greencell"	"ups"	"2"	"Micropower 600"	"USB"	"nutdrv_qx"	# https://github.com/networkupstools/nut/issues/1080
 "Greencell"	"ups"	"2"	"Micropower 600"	"USB"	"blazer_usb"	# https://github.com/networkupstools/nut/issues/1080
+"Greencell"	"ups"	"2"	"PowerProof 2000"	"USB"	"nutdrv_qx"	# https://github.com/networkupstools/nut/issues/2727
 
 "Gtec"	"ups"	"2"	"ZP120N-1K / ZP120N-1KS / ZP120N-2K / ZP120N-2KS / ZP120N-3K / ZP120N-3KS"	"USB"	"blazer_usb"
 "Gtec"	"ups"	"2"	"ZP120N-6K / ZP120N-6KS / ZP120N-10K-11 / ZP120N-10KS-11"	"USB"	"blazer_usb"
