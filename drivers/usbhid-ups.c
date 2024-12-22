@@ -1025,9 +1025,7 @@ void upsdrv_help(void)
 			printf(", ");
 		printf("\"%s\"", subdriver_list[i]->name);
 	}
-	printf("\n\n");
-
-	printf("Read The Fine Manual ('man 8 usbhid-ups')\n");
+	printf("\n");
 }
 
 void upsdrv_makevartable(void)

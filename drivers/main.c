@@ -292,6 +292,13 @@ static void help_msg(void)
 	}
 
 	upsdrv_help();
+
+	printf("\nFor more information please ");
+#if defined(WITH_DOCS) && WITH_DOCS
+	printf("Read The Fine Manual ('man %s') and/or ", progname);
+#endif
+	printf("see\n\t%s/docs/man/%s.html\n", NUT_WEBSITE_BASE, progname);
+	printf("Also check documentation and samples of ups.conf\n");
 }
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
 
