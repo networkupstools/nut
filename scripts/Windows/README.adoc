@@ -449,7 +449,7 @@ and/or of the system antivirus interaction?..
 
 [NOTE]
 ======
-If the build is failing on VirtualBox VM please make sure to have installed the VirtualBox Guest Additions.
+If the build is failing on Virtual Box VM please make sure to have installed the Virtual Box Guest Additions.
 ======
 
 /////////////////////////////////////////////////////////////////////////////
