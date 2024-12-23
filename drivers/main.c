@@ -1985,7 +1985,10 @@ int main(int argc, char **argv)
 	pid_t	oldpid = -1;
 #else
 /* FIXME: *actually* handle WIN32 builds too */
-	const char * cmd = NULL;
+	const char	*cmd = NULL;
+
+	const char	*drv_name;
+	char	*dot;
 #endif
 
 	const char optstring[] = "+a:s:kDFBd:hx:Lqr:u:g:Vi:c:"
@@ -2064,12 +2067,11 @@ int main(int argc, char **argv)
 	progname = xbasename(argv[0]);
 
 #ifdef WIN32
-	const char * drv_name;
 	drv_name = xbasename(argv[0]);
 	/* remove trailing .exe */
-	char * dot = strrchr(drv_name,'.');
-	if( dot != NULL ) {
-		if(strcasecmp(dot, ".exe") == 0 ) {
+	dot = strrchr(drv_name,'.');
+	if (dot != NULL) {
+		if (strcasecmp(dot, ".exe") == 0) {
 			progname = strdup(drv_name);
 			char * t = strrchr(progname,'.');
 			*t = 0;
