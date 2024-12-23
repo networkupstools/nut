@@ -62,6 +62,8 @@ static void usage(const char *prog)
 	printf("  -h         - display this help text\n");
 
 	nut_report_config_flags();
+
+	printf("\n%s", suggest_doc_links(prog, NULL));
 }
 
 static void printvar(const char *var)

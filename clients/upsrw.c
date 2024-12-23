@@ -69,6 +69,8 @@ static void usage(const char *prog)
 	printf("Call without -s to show all possible read/write variables (same as -l).\n");
 
 	nut_report_config_flags();
+
+	printf("\n%s", suggest_doc_links(prog, "upsd.users"));
 }
 
 static void clean_exit(void)
