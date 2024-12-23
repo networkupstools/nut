@@ -659,6 +659,43 @@ int print_banner_once(const char *prog, int even_if_disabled)
 	return ret;
 }
 
+const char *suggest_doc_links(const char *progname, const char *progconf) {
+	static char	buf[LARGEBUF];
+
+	buf[0] = '\0';
+
+	if (progname) {
+		char	*s = NULL, buf2[LARGEBUF];
+		size_t	i, max = sizeof(buf2) - 1;
+
+		for (i = 0; progname[i] && i < max; i++) {
+			buf2[i] = tolower(progname[i]);
+		}
+		buf2[i] = '\0';
+		if ((s = strstr(buf2, ".exe")) && strcmp(buf2, "nut.exe"))
+			*s = '\0';
+
+		snprintf(buf, sizeof(buf),
+			"For more information please ");
+#if defined(WITH_DOCS) && WITH_DOCS
+		snprintfcat(buf, sizeof(buf),
+			"Read The Fine Manual ('man %s') and/or ",
+			buf2);
+#endif
+		snprintfcat(buf, sizeof(buf),
+			"see\n\t%s/docs/man/%s.html\n",
+			NUT_WEBSITE_BASE, buf2);
+	}
+
+	if (progconf)
+		snprintfcat(buf, sizeof(buf),
+			"%s check documentation and samples of %s\n",
+			progname ? "Also" : "Please",
+			progconf);
+
+	return buf;
+}
+
 /* enable writing upslog_with_errno() and upslogx() type messages to
    the syslog */
 void syslogbit_set(void)
