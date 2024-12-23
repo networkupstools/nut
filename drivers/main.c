@@ -130,7 +130,8 @@ static int nut_debug_level_protocol = -1;
 #ifndef DRIVERS_MAIN_WITHOUT_MAIN
 /* everything else */
 static char	*pidfn = NULL;
-static int	dump_data = 0; /* Store the update_count requested */
+static int	help_only = 0,
+		dump_data = 0; /* Store the update_count requested */
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
 
 /* pre-declare some private methods used */
@@ -1814,7 +1815,7 @@ static void exit_cleanup(void)
 {
 	dstate_setinfo("driver.state", "cleanup.exit");
 
-	if (!dump_data) {
+	if (!dump_data && !help_only) {
 		upsnotify(NOTIFY_STATE_STOPPING, "exit_cleanup()");
 	}
 
@@ -2010,6 +2011,10 @@ int main(int argc, char **argv)
 				break;
 			case 'd':
 				dump_data = atoi(optarg);
+				break;
+			case 'h':
+				/* Avoid notification at exit */
+				help_only = 1;
 				break;
 			default:
 				break;
