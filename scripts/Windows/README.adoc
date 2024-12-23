@@ -177,6 +177,10 @@ NOTE: Instructions below use `sudo` to specify operations you may need to run
 with privilege elevation (assuming installation into a `PREFIX=/usr/$ARCH`);
 the majority of operations can be done (recommended) as an unprivileged user.
 
+NOTE: The instrunctions reported below can be saved as shell sctipts and execued
+with the following command (otherwise the change directory commands are not permanent):
+`. ./scriptname.sh`
+
 pthread library
 ^^^^^^^^^^^^^^^
 
@@ -222,9 +226,12 @@ presumed inconsequential. You can try a not-"inlined" build instead.
 
 Finally, install the resulting files into locations under `PREFIX`:
 
-	:; sudo cp *.dll ${PREFIX}/pthreads/lib/
-	:; sudo cp *.a ${PREFIX}/lib/
-	:; sudo cp pthread.h sched.h semaphore.h ${PREFIX}/pthreads/include
+	:; sudo mkdir -p $PREFIX/pthreads/lib/
+	:; sudo cp *.dll $PREFIX/pthreads/lib/
+	:; sudo mkdir -p $PREFIX/lib/
+	:; sudo cp *.a $PREFIX/lib/
+	:; sudo mkdir -p $PREFIX/pthreads/include/
+	:; sudo cp pthread.h sched.h semaphore.h $PREFIX/pthreads/include
 
 
 MinGW regex library
@@ -272,11 +279,23 @@ libusb
 	:; cd "$WSDIR"
 	:; unzip "$DLDIR"/libusb-compat-0.1-master.zip
 	:; cd libusb-compat-0.1-master
+	:; export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
+	:; export PATH=$PREFIX/bin/:$PATH
 	:; ./bootstrap.sh
 	:; ./configure --prefix="$PREFIX" $HOST_FLAG
 	:; make
 	:; sudo make install
 
+[NOTE]
+======
+If it complains about
+`syntax error near unexpected toket 'LIBUSB_1_0,'
+ 'PKG_CHECK_MODULES(LIBUSB_1_0, libusb-1.0 >= 0.9.1)'`
+please install pkgconf:
+
+	:; sudo apt-get install pkgconf
+
+======
 
 zlib
 ^^^^
@@ -375,6 +394,10 @@ Needed for libneon.
 	:; cd "$WSDIR"
 	:; tar xzf "$DLDIR"/libxml2-v2.9.14.tar.gz
 	:; cd libxml2-v2.9.14
+	:; libtoolize
+	:; aclocal
+	:; autoheader
+	:; autoupdate
 	:; ./autogen.sh --prefix="$PREFIX" $HOST_FLAG --without-python
 	:; make
 	:; sudo make install
@@ -424,6 +447,10 @@ and/or of the system antivirus interaction?..
 	:; make
 	:; sudo make install
 
+[NOTE]
+======
+If the build is failing on Virtual Box VM please make sure to have installed the Virtual Box Guest Additions.
+======
 
 /////////////////////////////////////////////////////////////////////////////
 WIP - fontconfig not usable yet due to ICU failing to cross-build
@@ -505,6 +532,7 @@ such context, this must be something about STDCALL and/or "extern C"...
 	:; cd "$WSDIR"
 	:; tar xzf "$DLDIR"/libgd-2.3.3.tar.gz
 	:; cd libgd-2.3.3
+	:; export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
 	:; ./configure --prefix="$PREFIX" $HOST_FLAG \
 	    --with-png --with-freetype \
 	    --without-tiff --without-jpeg --without-xpm \
@@ -581,16 +609,14 @@ the Makefiles for current `install` target definition to run its job without
 `install-docs` part (example posted below).
 
 	#:; ( cd "$DLDIR" && git clone -b fix-mingw-cross https://github.com/jimklimov/neon neon-git )
-	:; ( cd "$DLDIR" && git clone https://github.com/notroj/neon neon-git )
-	:; ( cd "$DLDIR/neon-git" && ./autogen.sh )
 	:; cd "$WSDIR"
-	:; rm -rf neon-git ; mkdir neon-git
-	:; cd neon-git
-	:; "$DLDIR"/neon-git/configure --prefix="$PREFIX" $HOST_FLAG \
-	    --enable-shared --with-ssl=openssl
+	:; git clone https://github.com/notroj/neon
+	:; cd "$WSDIR/neon"
+	:; export PATH=$PREFIX/bin:$PATH
+	:; ./autogen.sh
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG --enable-shared --with-ssl=openssl
 	:; make all docs
-	:; sudo make install \
-	   || sudo make install-lib install-headers install-config install-nls ###install-docs
+	:; sudo make install || sudo make install-lib install-headers install-config install-nls ###install-docs
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -744,11 +770,11 @@ or, depending on the build environment(s) you have prepared,
 This is also automated for common NUT CI build script, calling it like this:
 ------
 # Try to guess bitness based on ARCH or CFLAGS:
-BUILD_TYPE=cross-windows-mingw ./ci_build.sh
+BUILD_TYPE=cross-windows-mingw ./ci_build.sh --prefix=$PREFIX $HOST_FLAG
 
 # Or specifically:
-BUILD_TYPE=cross-windows-mingw-32 ./ci_build.sh
-BUILD_TYPE=cross-windows-mingw-64 ./ci_build.sh
+BUILD_TYPE=cross-windows-mingw-32 ./ci_build.sh --prefix=$PREFIX $HOST_FLAG
+BUILD_TYPE=cross-windows-mingw-64 ./ci_build.sh --prefix=$PREFIX $HOST_FLAG
 ------
 ======
 
