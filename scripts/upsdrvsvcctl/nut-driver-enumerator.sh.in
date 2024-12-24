@@ -1768,6 +1768,11 @@ $0 --show-device-config-value DEV KEY [KEY...]
         If several keys or flags are requested, their values are reported
         one per line in the same order (including empty lines for missing
         values); any missing value yields a non-zero exit code.
+
+For more information please Read The Fine Manual ('man nut-driver-enumerator')
+and/or see
+        ${NUT_WEBSITE_BASE}/docs/man/nut-driver-enumerator.html
+Also check documentation of ups.conf and upsdrvsvcctl
 EOF
 }
 
