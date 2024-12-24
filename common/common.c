@@ -665,13 +665,13 @@ const char *suggest_doc_links(const char *progname, const char *progconf) {
 	buf[0] = '\0';
 
 	if (progname) {
-		char	*s = NULL, buf2[LARGEBUF];
-		size_t	i, max = sizeof(buf2) - 1;
+		char	*s = NULL, *buf2 = xstrdup(xbasename(progname));
+		size_t	i;
 
-		for (i = 0; progname[i] && i < max; i++) {
-			buf2[i] = tolower(progname[i]);
+		for (i = 0; buf2[i]; i++) {
+			buf2[i] = tolower(buf2[i]);
 		}
-		buf2[i] = '\0';
+
 		if ((s = strstr(buf2, ".exe")) && strcmp(buf2, "nut.exe"))
 			*s = '\0';
 
@@ -685,6 +685,8 @@ const char *suggest_doc_links(const char *progname, const char *progconf) {
 		snprintfcat(buf, sizeof(buf),
 			"see\n\t%s/docs/man/%s.html\n",
 			NUT_WEBSITE_BASE, buf2);
+
+		free(buf2);
 	}
 
 	if (progconf)
