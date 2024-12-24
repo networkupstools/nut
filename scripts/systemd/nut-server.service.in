@@ -25,6 +25,17 @@ Requires=network.target
 Before=nut-monitor.service
 PartOf=nut.target
 
+Documentation=man:upsd(8)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/upsd.html
+Documentation=man:ups.conf(5)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/ups.conf.html
+Documentation=man:upsd.conf(5)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/upsd.conf.html
+Documentation=man:upsd.users(5)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/upsd.users.html
+Documentation=man:nut.conf(5)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/nut.conf.html
+
 [Service]
 # A busy server can be monitoring a lot of devices as well as replying
 # to many clients. The "infinity" definition is actually capped by OS

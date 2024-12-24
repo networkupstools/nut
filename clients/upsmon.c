@@ -3021,6 +3021,8 @@ static void help(const char *arg_progname)
 
 	nut_report_config_flags();
 
+	printf("\n%s", suggest_doc_links(arg_progname, "upsmon.conf"));
+
 	exit(EXIT_SUCCESS);
 }
 

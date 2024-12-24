@@ -208,6 +208,13 @@ extern const char *UPS_VERSION;
  * have an end-of-line char of its own. */
 const char *describe_NUT_VERSION_once(void);
 
+/* Return a buffer with a (possibly multiline) string that can be printed
+ * as part of program help/usage message. Caller should not free() the buffer.
+ * Optional "progconf" allows to suggest config file(s) to study as well.
+ * NOTE: the string in buffer starts with text and ends with one EOL char.
+ */
+const char *suggest_doc_links(const char *progname, const char *progconf);
+
 /* Based on NUT_QUIET_INIT_BANNER envvar (present and empty or "true")
  * hide the NUT tool name+version banners; show them by default */
 int banner_is_disabled(void);

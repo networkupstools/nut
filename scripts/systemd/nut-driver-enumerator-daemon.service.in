@@ -16,6 +16,15 @@ After=local-fs.target
 Before=nut-driver.target
 PartOf=nut.target
 
+Documentation=man:nut-driver-enumerator(8)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/nut-driver-enumerator.html
+Documentation=man:ups.conf(5)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/ups.conf.html
+Documentation=man:upsdrvsvcctl(8)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/upsdrvsvcctl.html
+Documentation=man:nut.conf(5)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/nut.conf.html
+
 [Service]
 ### Script needs privileges to restart units
 #User=@RUN_AS_USER@

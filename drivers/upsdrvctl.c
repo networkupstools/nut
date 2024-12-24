@@ -1237,6 +1237,11 @@ static void help(const char *arg_progname)
 	printf("              		Fields: UPSNAME UPSDRV RUNNING PF_PID S_RESPONSIVE S_PID S_STATUS\n");
 	printf("              		(PF_* = according to PID file, if any; S_* = via socket protocol)\n");
 
+	printf("\n%s", suggest_doc_links(arg_progname, "ups.conf"));
+#if (defined(WITH_SOLARIS_SMF) && WITH_SOLARIS_SMF) || (defined(HAVE_SYSTEMD) && HAVE_SYSTEMD)
+	printf("NOTE: On this system you should prefer upsdrvsvcctl and nut-driver-enumerator\n");
+#endif
+
 	exit(EXIT_SUCCESS);
 }
 

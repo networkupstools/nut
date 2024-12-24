@@ -200,6 +200,11 @@ void Usage::print(const std::string & bin) {
 	for (size_t i = 0; i < sizeof(s_text) / sizeof(char *); ++i) {
 		std::cerr << s_text[i] << std::endl;
 	}
+
+	std::cerr
+		/* << std::endl // last line of s_text is blank */
+		<< suggest_doc_links(bin.c_str(), nullptr);
+		/* Method output brings its own endl */
 }
 
 

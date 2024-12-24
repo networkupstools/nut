@@ -2921,7 +2921,7 @@ void	upsdrv_help(void)
 			printf(", ");
 		printf("%s", usbsubdriver[i].name);
 	}
-	printf("\n\n");
+	printf("\n");
 # endif	/* QX_USB*/
 
 	/* Protocols are the first token from "name" field in
@@ -2944,10 +2944,8 @@ void	upsdrv_help(void)
 			printf(", ");
 		printf("%s", subdrv_name);
 	}
-	printf("\n\n");
+	printf("\n");
 #endif	/* TESTING */
-
-	printf("Read The Fine Manual ('man 8 nutdrv_qx')\n");
 }
 
 /* Adding flags/vars */

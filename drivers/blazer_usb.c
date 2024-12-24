@@ -579,8 +579,6 @@ void upsdrv_help(void)
 	}
 	printf("\n\n");
 #endif	/* TESTING */
-
-	printf("Read The Fine Manual ('man 8 blazer_usb')\n");
 }
 
 

@@ -24,6 +24,13 @@ Wants=nut-server.service
 #   After=network-online.target
 PartOf=nut.target
 
+Documentation=man:upsmon(8)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/upsmon.html
+Documentation=man:upsmon.conf(5)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/upsmon.conf.html
+Documentation=man:nut.conf(5)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/nut.conf.html
+
 [Service]
 EnvironmentFile=-@CONFPATH@/nut.conf
 SyslogIdentifier=%N

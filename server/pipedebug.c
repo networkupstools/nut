@@ -138,6 +138,9 @@ int main(int argc, char **argv)
 		fprintf(stderr, "usage: %s <pipe name>\n", prog);
 		fprintf(stderr, "       %s apcsmart-com1\n",
 			argv[0]);
+
+		fprintf(stderr, "\n%s", suggest_doc_links(prog, NULL));
+
 		exit(EXIT_SUCCESS);
 	}
 
