@@ -68,6 +68,8 @@ static void usage(const char *prog)
 	printf("  [<value>]	Additional data for command - number of seconds, etc.\n");
 
 	nut_report_config_flags();
+
+	printf("\n%s", suggest_doc_links(prog, "upsd.users"));
 }
 
 static void print_cmd(char *cmdname)

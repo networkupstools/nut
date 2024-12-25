@@ -176,10 +176,9 @@ static void help(const char *prog)
 	printf("format string defaults to:\n");
 	printf("%s\n", DEFAULT_LOGFORMAT);
 
-	printf("\n");
-	printf("See the upslog(8) man page for more information.\n");
-
 	nut_report_config_flags();
+
+	printf("\n%s", suggest_doc_links(prog, NULL));
 
 	exit(EXIT_SUCCESS);
 }

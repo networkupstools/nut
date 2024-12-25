@@ -1,4 +1,4 @@
-/* wininit.c - MS Windows service which replace the init script
+/* wininit.c - MS Windows service which replaces the init script
                (compiled as "nut.exe")
 
    Copyright (C)
@@ -722,6 +722,11 @@ static void help(const char *arg_progname)
 	printf("    -D	Raise debug verbosity (passed to launched NUT programs)\n");
 	printf("    -V	Display NUT version and exit\n");
 	printf("    -h	Display this help and exit\n");	/* also /? but be hush about the one slash */
+
+	printf("\n%s", suggest_doc_links(
+		"nut.exe" /*arg_progname*/,
+		"nut.conf, ups.conf, upsmon.conf, upsd.conf and upsd.users"
+		));
 }
 
 int main(int argc, char **argv)

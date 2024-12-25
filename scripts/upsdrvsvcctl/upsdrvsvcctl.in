@@ -50,6 +50,11 @@ esac
 [ -n "${UPSDRVCTL-}" ] && export UPSDRVCTL || UPSDRVCTL='@SBINDIR@/upsdrvctl'
 PACKAGE_VERSION='@PACKAGE_VERSION@'
 
+# Should be populated by configure script during NUT build:
+NUT_WEBSITE_BASE='@NUT_WEBSITE_BASE@'
+# Fallback, no trailing slash!
+[ -n "${NUT_WEBSITE_BASE-}" ] || NUT_WEBSITE_BASE='https://www.networkupstools.org'
+
 usage() {
     # Note: version header differs from UPS_VERSION in binaries that
     # might also have the git-version suffixed during build time
@@ -112,6 +117,10 @@ usage: $0 [OPTIONS] status [<ups>]
 usage: $0 [OPTIONS] show-config [<ups>]
   show-config <ups>	output config section from ups.conf for device <ups>
   show-config   	...or all devices if no <ups> argument was passed
+
+For more information please Read The Fine Manual ('man upsdrvsvcctl') and/or see
+        ${NUT_WEBSITE_BASE}/docs/man/upsdrvsvcctl.html
+Also check documentation of nut-driver-enumerator and plain old upsdrvctl tools
 EOF
 }
 

@@ -130,7 +130,8 @@ static int nut_debug_level_protocol = -1;
 #ifndef DRIVERS_MAIN_WITHOUT_MAIN
 /* everything else */
 static char	*pidfn = NULL;
-static int	dump_data = 0; /* Store the update_count requested */
+static int	help_only = 0,
+		dump_data = 0; /* Store the update_count requested */
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
 
 /* pre-declare some private methods used */
@@ -292,6 +293,8 @@ static void help_msg(void)
 	}
 
 	upsdrv_help();
+
+	printf("\n%s", suggest_doc_links(progname, "ups.conf"));
 }
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
 
@@ -1812,7 +1815,7 @@ static void exit_cleanup(void)
 {
 	dstate_setinfo("driver.state", "cleanup.exit");
 
-	if (!dump_data) {
+	if (!dump_data && !help_only) {
 		upsnotify(NOTIFY_STATE_STOPPING, "exit_cleanup()");
 	}
 
@@ -1983,7 +1986,10 @@ int main(int argc, char **argv)
 	pid_t	oldpid = -1;
 #else
 /* FIXME: *actually* handle WIN32 builds too */
-	const char * cmd = NULL;
+	const char	*cmd = NULL;
+
+	const char	*drv_name;
+	char	*dot;
 #endif
 
 	const char optstring[] = "+a:s:kDFBd:hx:Lqr:u:g:Vi:c:"
@@ -2005,6 +2011,10 @@ int main(int argc, char **argv)
 				break;
 			case 'd':
 				dump_data = atoi(optarg);
+				break;
+			case 'h':
+				/* Avoid notification at exit */
+				help_only = 1;
 				break;
 			default:
 				break;
@@ -2062,12 +2072,11 @@ int main(int argc, char **argv)
 	progname = xbasename(argv[0]);
 
 #ifdef WIN32
-	const char * drv_name;
 	drv_name = xbasename(argv[0]);
 	/* remove trailing .exe */
-	char * dot = strrchr(drv_name,'.');
-	if( dot != NULL ) {
-		if(strcasecmp(dot, ".exe") == 0 ) {
+	dot = strrchr(drv_name,'.');
+	if (dot != NULL) {
+		if (strcasecmp(dot, ".exe") == 0) {
 			progname = strdup(drv_name);
 			char * t = strrchr(progname,'.');
 			*t = 0;
