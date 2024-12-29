@@ -68,6 +68,17 @@ Optional.  Path name of the directory in which the UPS driver executables
 reside.  If you don't specify this, the programs look in a built-in default
 directory, which is often /usr/local/ups/bin.
 
+*statepath*::
+
+Optional.  Path name of the directory in which the UPS drivers should place
+their state sockets for local communication with `upsd` data server, rather
+than the default location that was compiled into the program, which is often
+/var/state/ups.
++
+Note that the drivers must use the same path as `upsd`.
++
+Environment variable `NUT_STATEPATH` set by caller can override this setting.
+
 *maxstartdelay*::
 
 Optional.  Same as the UPS field of the same name, but this is the
