@@ -78,6 +78,11 @@ used by init-scripts and service unit method scripts.
 
 Tell upsd to look for the driver state sockets in 'path' rather
 than the default that was compiled into the program.
++
+Note that the drivers must use the same path.
++
+Environment variable `NUT_STATEPATH` set by caller (e.g. init script
+or service method) can override this setting.
 
 "LISTEN 'interface' 'port'"::
 
