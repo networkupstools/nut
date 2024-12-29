@@ -110,6 +110,11 @@ Changes from 2.8.2 to 2.8.3
   a Git workspace, not tarball archives) may have to set it to `false` when
   calling `make` for NUT. [#2510]
 
+- Drivers should now be able to set `STATEPATH` via `ups.conf` to match `upsd`
+  custom configuration ability; in fact, the data server would prefer the
+  value from `ups.conf` over the one in `upsd.conf`, if both are present.
+  Note that `NUT_STATEPATH` environment variable trumps both. [issue #694]
+
 - NUT products like `nut-scanner`, which dynamically load shared libraries
   at run-time without persistent pre-linking, should now know the library
   file names that were present during build (likely encumbered with version

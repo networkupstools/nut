@@ -75,7 +75,9 @@ their state sockets for local communication with `upsd` data server, rather
 than the default location that was compiled into the program, which is often
 /var/state/ups.
 +
-Note that the drivers must use the same path as `upsd`.
+Note that the drivers must use the same path as `upsd`, so the data server
+would prefer this setting from `ups.conf` global section, if present, over
+its own in `upsd.conf`.
 +
 Environment variable `NUT_STATEPATH` set by caller can override this setting.
 

@@ -402,7 +402,9 @@ relocated into new `shutdown.default` INSTCMD definitions. [#2670]
      `NUT_PIDPATH` environment variable in certain use-cases (such as
      tests). [#2407]
    * allow drivers to set `STATEPATH` via `ups.conf` to match `upsd`
-     custom configuration ability. [issue #694]
+     custom configuration ability; the data server would prefer the value
+     from `ups.conf` over the one in `upsd.conf`, if both are present.
+     Note that `NUT_STATEPATH` environment variable trumps both. [issue #694]
    * introduced a check for daemons working with PID files to double-check
      that if they can resolve the program name of a running process with
      this identifier, that such name matches the current program (avoid
