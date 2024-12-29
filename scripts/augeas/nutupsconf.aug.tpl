@@ -57,6 +57,7 @@ let ups_fields   = "driver"
                  | "user"
                  | "group"
                  | "debug_min"
+                 | "LIBUSB_DEBUG"
 @SPECIFIC_DRV_VARS@
 
 let ups_entry    = IniFile.indented_entry (ups_global|ups_fields|ups_fields_re) ups_sep ups_comment
