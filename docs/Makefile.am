@@ -365,7 +365,7 @@ DOCBUILD_FILTER_GITHUB_LINKS = { \
 # The $< is okay here, it is used in a suffix rule below
 DOCBUILD_CONVERT_GITHUB_LINKS = { \
     echo "  DOC-ASCIIDOC-GITHUB-LINKS    Parsing GitHub link patterns $< => $@"; \
-    cat "$<" | $(DOCBUILD_FILTER_GITHUB_LINKS) > "$@.tmp.$$$$" \
+    cat '$<' | $(DOCBUILD_FILTER_GITHUB_LINKS) > "$@.tmp.$$$$" \
     && mv -f "$@.tmp.$$$$" "$@" \
 ; }
 
@@ -379,7 +379,7 @@ $(top_builddir)/ChangeLog: dummy
 	@+echo "  DOC-CHANGELOG-GENERATE-WRAPPER	$@ : call parent Makefile to decide if (re-)generation is needed" \
 	 && cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
-# BSD Make dislikes the path resolution here and does not always populate "$<"
+# BSD Make dislikes the path resolution here and does not always populate '$<'
 # (and claims why: "Using $< in a non-suffix rule context is a GNUmake idiom"),
 # but it has a "$?" for "list of dependencies that are newer than the target".
 # For more details see https://man.freebsd.org/cgi/man.cgi
@@ -544,7 +544,7 @@ DOCBUILD_END = { \
 	+@A2X_OUTDIR="tmp/html-single.$(@F).$$$$" ; \
 	 echo "  DOC-HTML Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
-	 $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl "$(<D)/`basename '$(<F)' -prepped`" || RES=$$? ; \
+	 $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl '$<' || RES=$$? ; \
 	 $(DOCBUILD_END) ; \
 	 case "$(@F)" in \
 	    *ChangeLog*) if [ -s '$(top_builddir)/ChangeLog' ] ; then \
@@ -554,7 +554,7 @@ DOCBUILD_END = { \
 	                rm -f "$@"; \
 	                A2X_OUTDIR="tmp/html-single.$(@F).$$$$-retry" ; \
 	                $(DOCBUILD_BEGIN) ; RES=0; rm -f "`basename '$(@F)'`"-contentchecked || true ; \
-	                $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl "$(<D)/`basename '$(<F)' -prepped`" || RES=$$? ; \
+	                $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl '$<' || RES=$$? ; \
 	                $(DOCBUILD_END) ; \
 	                $(MAKE) $(AM_MAKEFLAGS) "`basename '$(@F)'`"-contentchecked || RES=$$? ; \
 	            fi ; \
@@ -567,7 +567,7 @@ DOCBUILD_END = { \
 	@A2X_OUTDIR="tmp/html-chunked.$(@F).$$$$" ; \
 	 echo "  DOC-HTML-CHUNKED Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
-	 $(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl "$(<D)/`basename '$(<F)' -prepped`" || RES=$$? ; \
+	 $(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl '$<' || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
 # Note: non-HTML a2x modes may ignore the destination directory
@@ -576,7 +576,7 @@ DOCBUILD_END = { \
 	@A2X_OUTDIR="tmp/pdf.$(@F).$$$$" ; \
 	 echo "  DOC-PDF  Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
-	 $(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 "$(<D)/`basename '$(<F)' -prepped`" || RES=$$? ; \
+	 $(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 '$<' || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
 # Used below for spellcheck and for .prep-src-docs
@@ -860,9 +860,15 @@ PREP_SRC = $(EXTRA_DIST) $(SPELLCHECK_SRC_DEFAULT)
 # path to locate the sources, so we end up with bogus trees under docs/.
 # Code below tries to detect and truncate this mess, including possible
 # source texts located in/under parent dirs.
+# We also handle man page links (section-aware) for platforms where they
+# differ from common defaults.
 $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC)
 	@cd "$(@D)" || exit ; \
 	 linkroot="$(abs_builddir)" ; \
+	 MAN_SECTIONS_DEFAULT=false ; \
+	 if [ x"$(MAN_SECTION_API)$(MAN_SECTION_CFG)$(MAN_SECTION_CMD_SYS)$(MAN_SECTION_CMD_USR)" = x3581 ] ; then \
+	    MAN_SECTIONS_DEFAULT=true ; \
+	 fi ; \
 	 if test x"$(abs_srcdir)" = x"$(abs_builddir)" ; then \
 	    COUNT=0; \
 	    for F in $(PREP_SRC) ; do \
@@ -873,10 +879,16 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC)
 	                    cd "$(abs_top_builddir)" ; \
 	                fi ;; \
 	        esac ; \
-	        if ! test -e "$${F}-prepped" ; then \
-	            touch "$${F}-prepped" || exit ; \
-	            COUNT="`expr $$COUNT + 1`" ; \
-	        fi ; \
+	        if $$MAN_SECTIONS_DEFAULT ; then \
+	            cat ; \
+	        else \
+	            sed \
+	                -e 's,\(linkman:[^ []*\[\)3\],\1$(MAN_SECTION_API)],g' \
+	                -e 's,\(linkman:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
+	                -e 's,\(linkman:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \
+	                -e 's,\(linkman:[^ []*\[\)1\],\1$(MAN_SECTION_CMD_USR)],g' ; \
+	        fi < "$${F}" > "$${F}-prepped" || exit ; \
+	        COUNT="`expr $$COUNT + 1`" ; \
 	    done ; \
 	    if ! test -e "$@" ; then touch "$@" ; fi ; \
 	 else \
@@ -908,10 +920,17 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC)
 	            ln -fs "$${linksrcroot}/$$F" "$${linkroot}/$$F" || { rm -f "$@.working" ; exit 1 ; } ; \
 	            COUNT="`expr $$COUNT + 1`" ; \
 	        fi ; \
-	        if ! test -e "$${linkroot}/$${F}-prepped" ; then \
-	            touch "$${linkroot}/$${F}-prepped" || { rm -f "$@.working" ; exit 1 ; } ; \
-	            COUNT="`expr $$COUNT + 1`" ; \
-	        fi ; \
+	        if $$MAN_SECTIONS_DEFAULT ; then \
+	            cat ; \
+	        else \
+	            sed \
+	                -e 's,\(linkman:[^ []*\[\)3\],\1$(MAN_SECTION_API)],g' \
+	                -e 's,\(linkman:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
+	                -e 's,\(linkman:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \
+	                -e 's,\(linkman:[^ []*\[\)1\],\1$(MAN_SECTION_CMD_USR)],g' ; \
+	        fi < "$${linkroot}/$${F}" > "$${linkroot}/$${F}-prepped" \
+	        || { rm -f "$@.working" ; exit 1 ; } ; \
+	        COUNT="`expr $$COUNT + 1`" ; \
 	    done ; \
 	 fi ; \
 	 if test "$$COUNT" -gt 0 -o ! -e "$@" ; then touch "$@" ; fi

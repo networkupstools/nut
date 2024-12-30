@@ -1134,7 +1134,7 @@ DOCBUILD_END = { \
 		--attribute builddir="$(abs_builddir)/" \
 		--attribute top_srcdir="$(abs_top_srcdir)/" \
 		--attribute top_builddir="$(abs_top_builddir)/" \
-		-o "$${A2X_OUTDIR}/$(@F)" "$(<D)/`basename "$(<F)" -prepped`" || RES=$$? ; \
+		-o "$${A2X_OUTDIR}/$(@F)" '$<' || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
 ### Prior to Asciidoc ~8.6.$(MAN_SECTION_CMD_SYS), the --destination-dir flag didn't seem to affect the location of the intermediate .xml file.
@@ -1154,28 +1154,28 @@ A2X_MANPAGE_OPTS = --doctype manpage --format manpage $${A2X_VERBOSE} \
 	@A2X_OUTDIR="tmp/man$(MAN_SECTION_CMD_USR).$(@F).$$$$" ; \
 	 echo "  DOC-MAN  Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
-	 $(A2X) $(A2X_MANPAGE_OPTS) "$(<D)/`basename "$(<F)" -prepped`" || RES=$$? ; \
+	 $(A2X) $(A2X_MANPAGE_OPTS) '$<' || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
 .txt-prepped.$(MAN_SECTION_API):
 	@A2X_OUTDIR="tmp/man$(MAN_SECTION_API).$(@F).$$$$" ; \
 	 echo "  DOC-MAN  Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
-	 $(A2X) $(A2X_MANPAGE_OPTS) "$(<D)/`basename "$(<F)" -prepped`" || RES=$$? ; \
+	 $(A2X) $(A2X_MANPAGE_OPTS) '$<' || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
 .txt-prepped.$(MAN_SECTION_CFG):
 	@A2X_OUTDIR="tmp/man$(MAN_SECTION_CFG).$(@F).$$$$" ; \
 	 echo "  DOC-MAN  Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
-	 $(A2X) $(A2X_MANPAGE_OPTS) "$(<D)/`basename "$(<F)" -prepped`" || RES=$$? ; \
+	 $(A2X) $(A2X_MANPAGE_OPTS) '$<' || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
 .txt-prepped.$(MAN_SECTION_CMD_SYS):
 	@A2X_OUTDIR="tmp/man$(MAN_SECTION_CMD_SYS).$(@F).$$$$" ; \
 	 echo "  DOC-MAN  Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
-	 $(A2X) $(A2X_MANPAGE_OPTS) "$(<D)/`basename "$(<F)" -prepped`" || RES=$$? ; \
+	 $(A2X) $(A2X_MANPAGE_OPTS) '$<' || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
 else !HAVE_ASCIIDOC
@@ -1232,13 +1232,13 @@ endif !HAVE_ASCIIDOC
 # paths when parsing the other makefile (e.g. MKDIR_P that may be defined
 # via expanded $(top_builddir)/install-sh):
 #%-spellchecked: % Makefile.am $(top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
-#	+$(MAKE) -s -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+#	+$(MAKE) -s -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE='$<' SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
 # NOTE: Portable suffix rules do not allow prerequisites, so we shim them here
 # by a wildcard target in case the make implementation can put the two together.
 *.txt-spellchecked: Makefile.am $(abs_top_srcdir)/docs/Makefile.am $(abs_srcdir)/$(NUT_SPELL_DICT)
 .txt.txt-spellchecked:
-	+$(MAKE) -s -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE="$<" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
+	+$(MAKE) -s -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC_ONE='$<' SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
 spellcheck spellcheck-interactive spellcheck-sortdict:
 	+$(MAKE) -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC="$(SRC_ALL_PAGES)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
@@ -1255,9 +1255,18 @@ PREP_SRC = $(LINKMAN_INCLUDE_GENERATED) $(SRC_ALL_PAGES) asciidoc.conf
 # path to locate the sources, so we end up with bogus trees under docs/.
 # Code below tries to detect and truncate this mess, including possible
 # source texts located in/under parent dirs.
+# We also handle man page links (section-aware) and titles for platforms
+# where they differ from common defaults. NOTE: Page titles are a line
+# with the title, followed by another with a sequence of "===" characters
+# of same length, give or take one (or so). Currently we do not bother to
+# adjust the second line, as we expect minor length changes like "8"=>"1m".
 $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC)
 	@cd "$(@D)" || exit ; \
 	 linkroot="$(abs_builddir)" ; \
+	 MAN_SECTIONS_DEFAULT=false ; \
+	 if [ x"$(MAN_SECTION_API)$(MAN_SECTION_CFG)$(MAN_SECTION_CMD_SYS)$(MAN_SECTION_CMD_USR)" = x3581 ] ; then \
+	    MAN_SECTIONS_DEFAULT=true ; \
+	 fi ; \
 	 if test x"$(abs_srcdir)" = x"$(abs_builddir)" ; then \
 	    COUNT=0; \
 	    for F in $(PREP_SRC) ; do \
@@ -1268,10 +1277,20 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC)
 	                    cd "$(abs_top_builddir)" ; \
 	                fi ;; \
 	        esac ; \
-	        if ! test -e "$${F}-prepped" ; then \
-	            touch "$${F}-prepped" || exit ; \
-	            COUNT="`expr $$COUNT + 1`" ; \
-	        fi ; \
+	        if $$MAN_SECTIONS_DEFAULT ; then \
+	            cat ; \
+	        else \
+	            sed \
+	                -e 's,\(linkman:[^ []*\[\)3\],\1$(MAN_SECTION_API)],g' \
+	                -e 's,\(linkman:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
+	                -e 's,\(linkman:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \
+	                -e 's,\(linkman:[^ []*\[\)1\],\1$(MAN_SECTION_CMD_USR)],g' \
+	                -e '1 s,\(^.*(\)3)$$,\1$(MAN_SECTION_API)),g' \
+	                -e '1 s,\(^.*(\)5)$$,\1$(MAN_SECTION_CFG)),g' \
+	                -e '1 s,\(^.*(\)8)$$,\1$(MAN_SECTION_CMD_SYS)),g' \
+	                -e '1 s,\(^.*(\)1)$$,\1$(MAN_SECTION_CMD_USR)),g' ; \
+	        fi < "$${F}" > "$${F}-prepped" || exit ; \
+	        COUNT="`expr $$COUNT + 1`" ; \
 	    done ; \
 	 else \
 	    COUNT=30 ; \
@@ -1302,10 +1321,21 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC)
 	            ln -fs "$${linksrcroot}/$$F" "$${linkroot}/$$F" || { rm -f "$@.working" ; exit 1 ; } ; \
 	            COUNT="`expr $$COUNT + 1`" ; \
 	        fi ; \
-	        if ! test -e "$${linkroot}/$${F}-prepped" ; then \
-	            touch "$${linkroot}/$${F}-prepped" || { rm -f "$@.working" ; exit 1 ; } ; \
-	            COUNT="`expr $$COUNT + 1`" ; \
-	        fi ; \
+	        if $$MAN_SECTIONS_DEFAULT ; then \
+	            cat ; \
+	        else \
+	            sed \
+	                -e 's,\(linkman:[^ []*\[\)3\],\1$(MAN_SECTION_API)],g' \
+	                -e 's,\(linkman:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
+	                -e 's,\(linkman:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \
+	                -e 's,\(linkman:[^ []*\[\)1\],\1$(MAN_SECTION_CMD_USR)],g' \
+	                -e '1 s,\(^.*(\)3)$$,\1$(MAN_SECTION_API)),g' \
+	                -e '1 s,\(^.*(\)5)$$,\1$(MAN_SECTION_CFG)),g' \
+	                -e '1 s,\(^.*(\)8)$$,\1$(MAN_SECTION_CMD_SYS)),g' \
+	                -e '1 s,\(^.*(\)1)$$,\1$(MAN_SECTION_CMD_USR)),g' ; \
+	        fi < "$${linkroot}/$${F}" > "$${linkroot}/$${F}-prepped" \
+	        || { rm -f "$@.working" ; exit 1 ; } ; \
+	        COUNT="`expr $$COUNT + 1`" ; \
 	    done ; \
 	 fi ; \
 	 if test "$$COUNT" -gt 0 -o ! -e "$@" ; then touch "$@" ; fi
