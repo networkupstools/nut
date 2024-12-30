@@ -1666,6 +1666,7 @@ public:
 
 	inline std::string getChroot()     const { return getStr("chroot"); }
 	inline std::string getDriverPath() const { return getStr("driverpath"); }
+	inline std::string getStatePath()  const { return getStr("statepath"); }	// FIXME: accept it case-insensitively
 	inline std::string getGroup()      const { return getStr("group"); }
 	inline std::string getSynchronous() const { return getStr("synchronous"); }
 	inline std::string getUser()       const { return getStr("user"); }
@@ -1682,6 +1683,7 @@ public:
 
 	inline void setChroot(const std::string & path)     { setStr("chroot",     path); }
 	inline void setDriverPath(const std::string & path) { setStr("driverpath", path); }
+	inline void setStatePath(const std::string & path)  { setStr("statepath", path); }
 	inline void setGroup(const std::string & group)     { setStr("group",      group); }
 	inline void setSynchronous(const std::string & val) { setStr("synchronous", val); }
 	inline void setUser(const std::string & user)       { setStr("user",       user); }
