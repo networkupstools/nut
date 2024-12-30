@@ -42,6 +42,8 @@ let ups_global   = "chroot"
                  | "user"
                  | "group"
                  | "debug_min"
+                 | "STATEPATH"
+                 | "statepath"
 
 (* This expression did involve a lot of courtship around the parser *)
 let ups_fields_re = /(default|override)\.[^:=#\r\t\n \/]+/
