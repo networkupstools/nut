@@ -44,6 +44,12 @@ Changes from 2.8.2 to 2.8.3
   Please use it, it immensely helps with community troubleshooting!
   [issue #1949]
 
+- Reference packages prepared by `make package` should now separate the
+  `PACKAGE_VERSION` from the platform-dependent prefix by a dash character
+  in the ultimate package file name. Previously they were glued together
+  for some platform targets (HPUX, Solaris). If you had any scripts relying
+  on the older pattern, they may have to be updated.
+
 - `upsmon` should now integrate natively with systemd-driven OS sleep events
   (built with systemd version 221 or newer "inhibitor interface"), so various
   hacks previously packaged into `/usr/lib/systemd/system-sleep/` scripts or

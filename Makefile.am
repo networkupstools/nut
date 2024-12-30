@@ -528,13 +528,13 @@ setver:
 # Clean the dist tarball and packages
 MAINTAINERCLEANFILES_DISTBALL = nut-*.tar.gz
 # HP-UX:
-MAINTAINERCLEANFILES_PACKAGES = NUT_HPUX_package@PACKAGE_VERSION@.depot
+MAINTAINERCLEANFILES_PACKAGES = NUT_HPUX_package@PACKAGE_VERSION@.depot NUT_HPUX_package-@PACKAGE_VERSION@.depot
 # AIX as below, and RedHat-compatible (cover binary and source packages):
 MAINTAINERCLEANFILES_PACKAGES += nut*rpm
 # Debian-compatible (cover binary and source packages):
 MAINTAINERCLEANFILES_PACKAGES += nut*deb
 # Solaris SVR4 package archives:
-MAINTAINERCLEANFILES_PACKAGES += NUT_solaris_*_package@PACKAGE_VERSION@.local.gz
+MAINTAINERCLEANFILES_PACKAGES += NUT_solaris_*_package@PACKAGE_VERSION@.local.gz NUT_solaris_*_package-@PACKAGE_VERSION@.local.gz
 # Newer Solaris IPS (aka "pkg(5)" format archives)
 MAINTAINERCLEANFILES_PACKAGES += *.p5p
 
@@ -548,7 +548,7 @@ package: dist
 	"HP-UX") \
 		( cd scripts/HP-UX && \
 		  $(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$DESTDIR" package && \
-		  mv NUT_HPUX_package.depot $(abs_top_builddir)/NUT_HPUX_package@PACKAGE_VERSION@.depot ) ;; \
+		  mv NUT_HPUX_package.depot $(abs_top_builddir)/NUT_HPUX_package-@PACKAGE_VERSION@.depot ) ;; \
 	"SunOS") \
 		$(MAKE) $(AM_MAKEFLAGS) && \
 		$(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$DESTDIR" install && \
