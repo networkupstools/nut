@@ -147,15 +147,15 @@
 			</common_name>
 			<documentation>
 				<doc_link name='upsd online'		uri='@NUT_WEBSITE_BASE@/docs/man/upsd.html' />
-				<manpage title='upsd'			section='@MAN_SECTION_CMD_SYS@' manpath='/usr/share/man' />
+				<manpage title='upsd'			section='@MAN_SECTION_CMD_SYS@' manpath='@NUT_MANDIR@' />
 				<doc_link name='ups.conf online'	uri='@NUT_WEBSITE_BASE@/docs/man/ups.conf.html' />
-				<manpage title='ups.conf'		section='@MAN_SECTION_CFG@' manpath='/usr/share/man' />
+				<manpage title='ups.conf'		section='@MAN_SECTION_CFG@' manpath='@NUT_MANDIR@' />
 				<doc_link name='upsd.conf online'	uri='@NUT_WEBSITE_BASE@/docs/man/upsd.conf.html' />
-				<manpage title='upsd.conf'		section='@MAN_SECTION_CFG@' manpath='/usr/share/man' />
+				<manpage title='upsd.conf'		section='@MAN_SECTION_CFG@' manpath='@NUT_MANDIR@' />
 				<doc_link name='upsd.users online'	uri='@NUT_WEBSITE_BASE@/docs/man/upsd.users.html' />
-				<manpage title='upsd.users'		section='@MAN_SECTION_CFG@' manpath='/usr/share/man' />
+				<manpage title='upsd.users'		section='@MAN_SECTION_CFG@' manpath='@NUT_MANDIR@' />
 				<doc_link name='nut.conf online'	uri='@NUT_WEBSITE_BASE@/docs/man/nut.conf.html' />
-				<manpage title='nut.conf'		section='@MAN_SECTION_CFG@' manpath='/usr/share/man' />
+				<manpage title='nut.conf'		section='@MAN_SECTION_CFG@' manpath='@NUT_MANDIR@' />
 			</documentation>
 		</template>
 	</service>

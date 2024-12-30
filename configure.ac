@@ -4722,6 +4722,14 @@ NUT_DATADIR="${conftemp}"
 NUT_REPORT_SETTING_PATH([Data file path],
     NUT_DATADIR, "${conftemp}", [Default path for data files])
 
+dnl same for mandir
+conftemp="${mandir}"
+eval conftemp=\"${conftemp}\"
+eval conftemp=\"${conftemp}\"
+NUT_MANDIR="${conftemp}"
+NUT_REPORT_SETTING_PATH([Man page path],
+    NUT_MANDIR, "${conftemp}", [Default path for man page files])
+
 dnl same for bindir
 conftemp="${bindir}"
 eval conftemp=\"${conftemp}\"
@@ -4946,6 +4954,7 @@ AC_SUBST(BINDIR)
 AC_SUBST(LIBDIR)
 AC_SUBST(PKGCONFIGDIR)
 AC_SUBST(NUT_DATADIR, [`eval echo "${NUT_DATADIR}"`])
+AC_SUBST(NUT_MANDIR, [`eval echo "${NUT_MANDIR}"`])
 AC_SUBST(NUT_LIBEXECDIR, [`eval echo "${LIBEXECDIR}"`])
 AC_SUBST(DRVPATH)
 AC_SUBST(SBINDIR)
