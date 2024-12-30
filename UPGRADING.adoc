@@ -47,7 +47,9 @@ Changes from 2.8.2 to 2.8.3
 - Reference packages prepared by `make package` should now separate the
   `PACKAGE_VERSION` from the platform-dependent prefix by a dash character
   in the ultimate package file name. Previously they were glued together
-  for some platform targets (HPUX, Solaris). If you had any scripts relying
+  for some platform targets (HPUX, Solaris). Solaris SVR4 package file names
+  should new differentiate `i386` vs. `amd64` and `sparc` vs. `sparcv9`,
+  depending on `target_cpu` of the build. If you had any scripts relying
   on the older pattern, they may have to be updated.
 
 - `upsmon` should now integrate natively with systemd-driven OS sleep events
