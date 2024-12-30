@@ -482,6 +482,12 @@ relocated into new `shutdown.default` INSTCMD definitions. [#2670]
    and it defaults to `true` allowing for better ordered documents at the cost
    of some memory during document generation. [#2510]
 
+ - updated man page generation with `configure` script options to specify that
+   manual sections on the target platform differ from (Linux-based) defaults
+   hard-coded into page sources; this should allow to simplify NUT packaging
+   recipe maintenance in distributions (no more updating patches for changed
+   or added documentation sources).
+
  - lines in first section of NUT configuration report (can optionally remain as
    `config.nut_report_feature.log` and be installed into shared documentation
    of a NUT package) are now better grouped as miscellaneous features and

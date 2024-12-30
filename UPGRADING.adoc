@@ -52,6 +52,12 @@ Changes from 2.8.2 to 2.8.3
   depending on `target_cpu` of the build. If you had any scripts relying
   on the older pattern, they may have to be updated.
 
+- Updated man page generation with `configure` script options to specify that
+  manual sections on the target platform differ from (Linux-based) defaults
+  hard-coded into page sources; this should allow to simplify NUT packaging
+  recipe maintenance in distributions (no more updating patches for changed
+  or added documentation sources)
+
 - `upsmon` should now integrate natively with systemd-driven OS sleep events
   (built with systemd version 221 or newer "inhibitor interface"), so various
   hacks previously packaged into `/usr/lib/systemd/system-sleep/` scripts or
