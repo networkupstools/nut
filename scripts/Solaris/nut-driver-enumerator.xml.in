@@ -105,10 +105,12 @@
 					</loctext>
 				</common_name>
 				<documentation>
-					<manpage title='upsdrvsvcctl' section='8'
-					manpath='/usr/share/man' />
-					<manpage title='ups.conf' section='5'
-					manpath='/usr/share/man' />
+					<doc_link name='upsdrvsvcctl online'	uri='@NUT_WEBSITE_BASE@/docs/man/upsdrvsvcctl.html' />
+					<manpage title='upsdrvsvcctl'		section='8' manpath='/usr/share/man' />
+					<doc_link name='ups.conf online'	uri='@NUT_WEBSITE_BASE@/docs/man/ups.conf.html' />
+					<manpage title='ups.conf'		section='5' manpath='/usr/share/man' />
+					<doc_link name='nut.conf online'	uri='@NUT_WEBSITE_BASE@/docs/man/nut.conf.html' />
+					<manpage title='nut.conf'		section='5' manpath='/usr/share/man' />
 				</documentation>
 			</template>
 		</instance>
