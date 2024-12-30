@@ -18,6 +18,17 @@ else:
     platform = commands.getoutput('uname -s')
     architecture = commands.getoutput('uname -p')
 
+# Newer python makes this a binary byte stream, convert into string:
+if platform is not str:
+    platform = platform.decode('utf-8')
+
+if architecture is not str:
+    architecture = architecture.decode('utf-8')
+
+# Strip end-of-line, if present:
+platform = platform.strip()
+architecture = architecture.strip()
+
 target_os='@target_os@'.lower()
 target_cpu='@target_cpu@'.lower()
 
@@ -31,6 +42,8 @@ if platform == "SunOS" and architecture == "i386":
 	fp.write("expected_architecture=i386\n")
 elif platform == "SunOS" and architecture == "sparc":
 	fp.write("expected_architecture=sparc\n")
+else:
+	sys.stderr.write("WARNING: Failed to detect expected_architecture! platform='%s' (expected 'SunOS') architecture='%s' (expected 'i386' or 'sparc')!\n" % (platform, architecture))
 
 if 'solaris' in target_os or 'illumos' in target_os:
 	if target_cpu == 'x86_64' or target_cpu == 'amd64':
