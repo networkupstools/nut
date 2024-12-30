@@ -18,7 +18,7 @@ of new releases.
   up the multi-arch Linux LXC container farm for NUT CI]
 
 Some of the below are alternatives, e.g. compiler toolkits (gcc vs. clang)
-or SSL implementations (OpenSSL vs Mozilla NSS) -- no problem installing
+or SSL implementations (OpenSSL vs. Mozilla NSS) -- no problem installing
 both, at a disk space cost.
 
 [NOTE]
@@ -869,7 +869,7 @@ that seems to exceed whatever is available on network mirrors; for example,
 the CD image included `clang` program while it is not available to `pkg_add`,
 at least not via http://ftp.netbsd.hu/mirrors/openbsd/6.5/packages/amd64/
 mirror. The `gcc` version on CD image differed notably from that in the
-networked repository (4.2.x vs 4.9.x).
+networked repository (4.2.x vs. 4.9.x).
 You may have to echo a working base URL (part before "6.5/..." into the
 `/etc/installurl` file, since the old distribution is no longer served by
 default site.
@@ -1515,10 +1515,10 @@ programs.
 
 Further TODO for Windows would include:
 
-* MSVCRT (ubiquitous) vs UCRT (more standards compliant, but since Windows 10)
+* MSVCRT (ubiquitous) vs. UCRT (more standards compliant, but since Windows 10)
   https://docs.microsoft.com/en-us/cpp/porting/upgrade-your-code-to-the-universal-crt?view=msvc-160
 
-* libusb-0.1 vs libusb-1.0
+* libusb-0.1 vs. libusb-1.0
 
 NOTE: Native mingw, MSYS2, etc. builds on Windows are known to suffer from
 interaction with antivirus software which holds executable files open and

@@ -1991,7 +1991,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             done
 
             # TODO: Similar loops for other variations like TESTING,
-            # MGE SHUT vs other serial protocols...
+            # MGE SHUT vs. other serial protocols...
 
             if can_clean_check ; then
                 echo "=== One final try for optional_maintainer_clean_check:"

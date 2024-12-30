@@ -9,8 +9,8 @@
  *  https://github.com/networkupstools/nut/issues/1023
  *
  * Copyright (C)
- *      2021    Nick Briggs <nicholas.h.briggs@gmail.com>
- *      2022    Jim Klimov <jimklimov+nut@gmail.com>
+ *      2021         Nick Briggs <nicholas.h.briggs@gmail.com>
+ *      2022-2024    Jim Klimov <jimklimov+nut@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -153,7 +153,7 @@ static int RunBuiltInTests(char *argv[]) {
 	bufU[1] = (unsigned char)0x01;
 
 	/* Check different conversion methods and hope current build CPU,
-	 * C implementation etc. do not mess up bit-shifting vs rotation,
+	 * C implementation etc. do not mess up bit-shifting vs. rotation,
 	 * zeroing high bits, int type width extension et al. If something
 	 * is mismatched below, the production NUT code may need adaptations
 	 * for that platform to count stuff correctly!

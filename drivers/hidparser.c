@@ -571,7 +571,7 @@ HIDData_t *FindObject_with_ID_Node(HIDDesc_t *pDesc_arg, uint8_t ReportID, HIDNo
 void GetValue(const unsigned char *Buf, HIDData_t *pData, long *pValue)
 {
 	/* Note:  https://github.com/networkupstools/nut/issues/1023
-	   This conversion code can easily be sensitive to 32- vs 64- bit
+	   This conversion code can easily be sensitive to 32- vs. 64- bit
 	   compilation environments.  Consider the possibility of overflow
 	   in 32-bit representations when computing with extreme values,
 	   for example LogMax-LogMin+1.
