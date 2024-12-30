@@ -12,13 +12,13 @@ After=local-fs.target
 Before=nut-driver.target
 PartOf=nut.target
 
-Documentation=man:nut-driver-enumerator(8)
+Documentation=man:nut-driver-enumerator(@MAN_SECTION_CMD_SYS@)
 Documentation=@NUT_WEBSITE_BASE@/docs/man/nut-driver-enumerator.html
-Documentation=man:ups.conf(5)
+Documentation=man:ups.conf(@MAN_SECTION_CFG@)
 Documentation=@NUT_WEBSITE_BASE@/docs/man/ups.conf.html
-Documentation=man:upsdrvsvcctl(8)
+Documentation=man:upsdrvsvcctl(@MAN_SECTION_CMD_SYS@)
 Documentation=@NUT_WEBSITE_BASE@/docs/man/upsdrvsvcctl.html
-Documentation=man:nut.conf(5)
+Documentation=man:nut.conf(@MAN_SECTION_CFG@)
 Documentation=@NUT_WEBSITE_BASE@/docs/man/nut.conf.html
 
 [Path]

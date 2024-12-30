@@ -889,11 +889,11 @@ smf_setDocLink() {
     [ $? = 0 ] && echo "OK" || { echo "FAILED to stash the service property group '${__PG}' for online docs">&2 ; return 1 ; }
 
     # FIXME: Pass resolved $mandir if known
-    __PG="tm_man_${__DRV}8"
+    __PG="tm_man_${__DRV}@MAN_SECTION_CMD_SYS@"
     /usr/sbin/svccfg -s "${__TARGET_FMRI}" delprop "${__PG}" 2>/dev/null || true
     /usr/sbin/svccfg -s "${__TARGET_FMRI}" addpg "${__PG}" template && \
     /usr/sbin/svccfg -s "${__TARGET_FMRI}" setprop "${__PG}/manpath" = "astring:" "/usr/share/man" && \
-    /usr/sbin/svccfg -s "${__TARGET_FMRI}" setprop "${__PG}/section" = "astring:" "8" && \
+    /usr/sbin/svccfg -s "${__TARGET_FMRI}" setprop "${__PG}/section" = "astring:" "@MAN_SECTION_CMD_SYS@" && \
     /usr/sbin/svccfg -s "${__TARGET_FMRI}" setprop "${__PG}/title" = "astring:" "${__DRV}"
     [ $? = 0 ] && echo "OK" || { echo "FAILED to stash the service property group '${__PG}' for local docs">&2 ; return 1 ; }
 
@@ -1051,7 +1051,7 @@ systemd_setDocLink() {
     __DRV="`upsconf_getDriver "$2"`"
     cat > "${PROPFILE}" << EOF
 [Unit]
-Documentation=man:${__DRV}(8)
+Documentation=man:${__DRV}(@MAN_SECTION_CMD_SYS@)
 Documentation=${NUT_WEBSITE_BASE}/docs/man/${__DRV}.html
 EOF
     unset __DRV

@@ -11,10 +11,10 @@ Wants=local-fs.target nut-driver.target nut-server.service nut-monitor.service
 # network.target
 
 # TODO: Dedicated man pages?
-Documentation=man:ups.conf(5)
+Documentation=man:ups.conf(@MAN_SECTION_CFG@)
 Documentation=@NUT_WEBSITE_BASE@/docs/man/ups.conf.html
 
-Documentation=man:nut.conf(5)
+Documentation=man:nut.conf(@MAN_SECTION_CFG@)
 Documentation=@NUT_WEBSITE_BASE@/docs/man/nut.conf.html
 
 [Install]
