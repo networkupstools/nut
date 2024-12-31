@@ -938,6 +938,26 @@ protected:
 		bool                caseSensitive = true) const;
 
 	/**
+	 *  \brief  Configuration string getter
+	 *
+	 *  Empty string is returned if the section or entry doesn't exist.
+	 *
+	 *  \param  section  Section name
+	 *  \param  entry    Entry name (as C char array or string literal)
+	 *  \param  caseSensitive  Use case-sensitive entry name matching? (default: true)
+	 *
+	 *  \return Configuration parameter as string
+	 */
+	std::string getStr(
+		const std::string & section,
+		const char        * entry,
+		bool                caseSensitive = true) const
+	{
+		std::string sEntry{entry};
+		return getStr(section, sEntry, caseSensitive);
+	}
+
+	/**
 	 *  \brief  Global scope configuration string getter
 	 *
 	 *  Empty string is returned if the entry doesn't exist.
