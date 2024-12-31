@@ -810,24 +810,26 @@ protected:
 	 *  \param[in]   section  Section name
 	 *  \param[in]   entry    Entry name
 	 *  \param[out]  params   Configuration parameters
+	 *  \param[in]   caseSensitive  Use case-sensitive entry name matching? (default: true)
 	 *
 	 *  \retval true  if the entry was found
 	 *  \retval false otherwise
 	 */
-	bool get(const std::string & section, const std::string & entry, ConfigParamList & params) const;
+	bool get(const std::string & section, const std::string & entry, ConfigParamList & params, bool caseSensitive = true) const;
 
 	/**
 	 *  \brief  Global scope configuration parameters getter
 	 *
 	 *  \param[in]   entry    Entry name
 	 *  \param[out]  params   Configuration parameters
+	 *  \param[in]   caseSensitive  Use case-sensitive entry name matching? (default: true)
 	 *
 	 *  \retval true  if the entry was found
 	 *  \retval false otherwise
 	 */
-	inline bool get(const std::string & entry, ConfigParamList & params) const
+	inline bool get(const std::string & entry, ConfigParamList & params, bool caseSensitive = true) const
 	{
-		return get("", entry, params);
+		return get("", entry, params, caseSensitive);
 	}
 
 	/**
@@ -926,12 +928,14 @@ protected:
 	 *
 	 *  \param  section  Section name
 	 *  \param  entry    Entry name
+	 *  \param  caseSensitive  Use case-sensitive entry name matching? (default: true)
 	 *
 	 *  \return Configuration parameter as string
 	 */
 	std::string getStr(
 		const std::string & section,
-		const std::string & entry) const;
+		const std::string & entry,
+		bool                caseSensitive = true) const;
 
 	/**
 	 *  \brief  Global scope configuration string getter
@@ -939,12 +943,15 @@ protected:
 	 *  Empty string is returned if the entry doesn't exist.
 	 *
 	 *  \param  entry  Entry name
+	 *  \param  caseSensitive  Use case-sensitive entry name matching? (default: true)
 	 *
 	 *  \return Configuration parameter as string
 	 */
-	inline std::string getStr(const std::string & entry) const
+	inline std::string getStr(
+		const std::string & entry,
+		bool                caseSensitive = true) const
 	{
-		return getStr("", entry);
+		return getStr("", entry, caseSensitive);
 	}
 
 	/**
@@ -1666,7 +1673,7 @@ public:
 
 	inline std::string getChroot()     const { return getStr("chroot"); }
 	inline std::string getDriverPath() const { return getStr("driverpath"); }
-	inline std::string getStatePath()  const { return getStr("statepath"); }	// FIXME: accept it case-insensitively
+	inline std::string getStatePath()  const { return getStr("statepath", false); }	// NOTE: accept it case-insensitively
 	inline std::string getGroup()      const { return getStr("group"); }
 	inline std::string getSynchronous() const { return getStr("synchronous"); }
 	inline std::string getUser()       const { return getStr("user"); }
