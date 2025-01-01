@@ -1,6 +1,7 @@
 # Note: nut-common-tmpfiles.conf.in is also generated, by configure script
 /nut-common-tmpfiles.conf.in
 /nut-common-tmpfiles.conf
+/nut.target
 /nut-driver.service
 /nut-driver@.service
 /nut-monitor.service

@@ -247,7 +247,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 		if (sp && strcmp(sp, arg[1])) {
 			/* Only warn if the two strings are not equal */
 			upslogx(LOG_WARNING,
-				"Ignoring STATEPATH='%s' from configuration file, "
+				"Ignoring STATEPATH='%s' from upsd.conf configuration file, "
 				"in favor of NUT_STATEPATH='%s' environment variable",
 				NUT_STRARG(arg[1]), NUT_STRARG(sp));
 		}
@@ -443,8 +443,26 @@ void do_upsconf_args(char *upsname, char *var, char *val)
 {
 	ups_t	*temp;
 
-	/* no "global" stuff for us */
+	/* almost no "global" stuff for us */
 	if (!upsname) {
+
+		/* STATEPATH <dir> (may be lower-case) */
+		if (!strcasecmp(var, "STATEPATH")) {
+			const char *sp = getenv("NUT_STATEPATH");
+			if (sp && strcmp(sp, val)) {
+				/* Only warn if the two strings are not equal */
+				upslogx(LOG_WARNING,
+					"Ignoring STATEPATH='%s' from ups.conf configuration file, "
+					"in favor of NUT_STATEPATH='%s' environment variable",
+					NUT_STRARG(val), NUT_STRARG(sp));
+			}
+			free(statepath);
+			statepath = xstrdup(sp ? sp : val);
+			/* This setting source keeps priority
+			 * to best match up with the drivers */
+			setenv("NUT_STATEPATH", statepath, 1);
+		}
+
 		return;
 	}
 
