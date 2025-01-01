@@ -1137,7 +1137,7 @@ DOCBUILD_END = { \
 		-o "$${A2X_OUTDIR}/$(@F)" '$<' || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
-### Prior to Asciidoc ~8.6.$(MAN_SECTION_CMD_SYS), the --destination-dir flag didn't seem to affect the location of the intermediate .xml file.
+### Prior to Asciidoc ~8.6.8, the --destination-dir flag didn't seem to affect the location of the intermediate .xml file.
 ### This parameter is currently required; see docs/Makefile.am for more detail.
 A2X_MANPAGE_OPTS = --doctype manpage --format manpage $${A2X_VERBOSE} \
 	--xsltproc-opts="--nonet" \
