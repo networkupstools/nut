@@ -1500,6 +1500,23 @@ static void do_global_args(const char *var, const char *val)
 		return;
 	}
 
+	/* Most ups.conf vars are lower-case, but this one
+	 * is shared with upsd which uses upper-case. */
+	if (!strcasecmp(var, "STATEPATH")) {
+		/* Is there a higher-priority envvar? */
+		char *s = getenv("NUT_STATEPATH");
+		if (s) {
+			if (strcmp(s, val)) {
+				upslogx(LOG_WARNING, "Environment variable NUT_STATEPATH='%s' overrides setting STATEPATH='%s'", s, val);
+			}	/* else be quiet */
+		} else {
+			/* Just let any further consumers of dflt_statepath()
+			 * know the desired value with minimal codebase impact
+			 */
+			setenv("NUT_STATEPATH", val, 1);
+		}
+	}
+
 	/* unrecognized */
 }
 

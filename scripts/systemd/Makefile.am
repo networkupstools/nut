@@ -24,7 +24,7 @@ endif !WITH_LIBSYSTEMD_INHIBITOR
 systemdtmpfiles_DATA = \
         nut-common-tmpfiles.conf
 
-EXTRA_DIST += nut-driver.target nut.target nut-sleep.service
+EXTRA_DIST += nut-driver.target nut-sleep.service
 
 systemdshutdown_SCRIPTS = nutshutdown
 
@@ -35,7 +35,7 @@ sbin_SCRIPTS = ../upsdrvsvcctl/upsdrvsvcctl
 else !HAVE_SYSTEMD
 EXTRA_DIST += \
 	nut-driver@.service.in nut-monitor.service.in nut-sleep.service \
-	nut-server.service.in nutshutdown.in nut-driver.target nut.target \
+	nut-server.service.in nutshutdown.in nut-driver.target nut.target.in \
 	nut-driver-enumerator.path.in nut-driver-enumerator.service.in \
 	nut-driver-enumerator-daemon-activator.path.in \
 	nut-driver-enumerator-daemon-activator.service.in \
