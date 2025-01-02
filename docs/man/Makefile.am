@@ -1326,7 +1326,15 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC)
 	            ln -fs "$${linksrcroot}/$$F" "$${linkroot}/$$F" || { rm -f "$@.working" ; exit 1 ; } ; \
 	            COUNT="`expr $$COUNT + 1`" ; \
 	        fi ; \
-	        if $$MAN_SECTIONS_DEFAULT ; then \
+	        case "$$F" in \
+	            *.txt|*.adoc) IS_TEXT=true ;; \
+	            *.*) IS_TEXT=false ;; \
+	            *) IS_TEXT=true ;; \
+	        esac; \
+	        if $$IS_TEXT ; then \
+	            grep -w linkman "$${linkroot}/$${F}" > /dev/null || IS_TEXT=false ; \
+	        fi ; \
+	        if $$MAN_SECTIONS_DEFAULT || ! $$IS_TEXT ; then \
 	            cat ; \
 	        else \
 	            sed \
