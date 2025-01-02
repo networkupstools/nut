@@ -44,6 +44,7 @@
 #include "nutstream.hpp"
 
 #include <iostream>
+#include <sys/stat.h>
 
 
 namespace nut {
@@ -297,13 +298,20 @@ int Signal::send(Signal::enum_t signame, const std::string & pid_file) {
 
 int NutSignal::send(NutSignal::enum_t signame, const std::string & process) {
 	std::string pid_file;
+	struct stat	st;
 
-	// FIXME: What about ALTPIDPATH (for non-root daemons)
-	// and shouldn't we also consider it (e.g. try/catch)?
 	pid_file += rootpidpath();
 	pid_file += '/';
 	pid_file += process;
 	pid_file += ".pid";
+
+	if (::stat(pid_file.c_str(), &st) != 0) {
+		// Consider ALTPIDPATH (used by non-root daemons)
+		pid_file  = altpidpath();
+		pid_file += '/';
+		pid_file += process;
+		pid_file += ".pid";
+	}
 
 	return Signal::send(signame, pid_file);
 }
