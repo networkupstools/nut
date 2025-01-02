@@ -912,6 +912,11 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC)
 	                    cd "$(abs_top_builddir)" ; \
 	                fi ;; \
 	            "$(srcdir)"/*) F="`echo "$$F" | sed 's#^$(srcdir)/*#./#'`" ;; \
+	            */*) ;; \
+	            *) \
+	                linkroot="$(abs_builddir)" ; \
+	                linksrcroot="$(abs_srcdir)" ; \
+	                cd "$(abs_top_builddir)" ;; \
 	        esac ; \
 	        D="`dirname "$$F"`" ; \
 	        $(MKDIR_P) "$${linkroot}/$$D" || { rm -f "$@.working" ; exit 1 ; } ; \
