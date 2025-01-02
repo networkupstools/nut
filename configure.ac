@@ -3960,11 +3960,17 @@ AC_ARG_WITH([systemdsystemunitdir],
 case "${systemdsystemunitdir}" in
 	yes|auto|"")
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd 2>/dev/null`" && test -n "$systemdsystemunitdir" || systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir libsystemd 2>/dev/null`"],
-			[AS_IF([test "${systemdsystemunitdir}" = yes],
+			[def_systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd 2>/dev/null`" && test -n "$def_systemdsystemunitdir" || \
+			 def_systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir libsystemd 2>/dev/null`" || def_systemdsystemunitdir=""],
+			[def_systemdsystemunitdir=""])
+
+		AS_IF([test x"${def_systemdsystemunitdir}" = x], [
+			AS_IF([test "${systemdsystemunitdir}" = yes],
 				[AC_MSG_ERROR([--with-systemdsystemunitdir=${systemdsystemunitdir} was requested, but PKG_CONFIG could not be queried for the system settings])])
-			 systemdsystemunitdir=""
-			])
+			systemdsystemunitdir=""
+			], [systemdsystemunitdir="${def_systemdsystemunitdir}"])
+
+		unset def_systemdsystemunitdir
 		;;
 	no)
 		systemdsystemunitdir=""
@@ -4002,11 +4008,17 @@ if test -n "${systemdsystemunitdir}"; then
 	case "${systemdshutdowndir}" in
 	yes|auto|"")
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir systemd 2>/dev/null`" && test -n "$systemdshutdowndir" || systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir libsystemd 2>/dev/null`"],
-			[AS_IF([test "${systemdshutdowndir}" = yes],
+			[def_systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir systemd 2>/dev/null`" && test -n "$def_systemdshutdowndir" || \
+			 def_systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir libsystemd 2>/dev/null`" || def_systemdshutdowndir=""],
+			[def_systemdshutdowndir=""])
+
+		AS_IF([test x"${def_systemdshutdowndir}" = x], [
+			AS_IF([test "${systemdshutdowndir}" = yes],
 				[AC_MSG_ERROR([--with-systemdshutdowndir=${systemdshutdowndir} was requested, but PKG_CONFIG could not be queried for the system settings])])
-			 systemdshutdowndir=""
-			])
+			systemdshutdowndir=""
+			], [systemdshutdowndir="${def_systemdshutdowndir}"])
+
+		unset def_systemdshutdowndir
 		;;
 	no)
 		systemdshutdowndir=""
@@ -4035,11 +4047,17 @@ AC_ARG_WITH([systemdtmpfilesdir],
 case "${systemdtmpfilesdir}" in
 	yes|auto|"")
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir systemd 2>/dev/null`" && test -n "$systemdtmpfilesdir" || systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir libsystemd 2>/dev/null`"],
-			[AS_IF([test "${systemdtmpfilesdir}" = yes],
+			[def_systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir systemd 2>/dev/null`" && test -n "$def_systemdtmpfilesdir" || \
+			 def_systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir libsystemd 2>/dev/null`" || def_systemdtmpfilesdir=""],
+			[def_systemdtmpfilesdir=""])
+
+		AS_IF([test x"${def_systemdtmpfilesdir}" = x], [
+			AS_IF([test "${systemdtmpfilesdir}" = yes],
 				[AC_MSG_ERROR([--with-systemdtmpfilesdir=${systemdtmpfilesdir} was requested, but PKG_CONFIG could not be queried for the system settings])])
-			 systemdtmpfilesdir=""
-			])
+			systemdtmpfilesdir=""
+			], [systemdtmpfilesdir="${def_systemdtmpfilesdir}"])
+
+		unset def_systemdtmpfilesdir
 		;;
 	no)
 		systemdtmpfilesdir=""
