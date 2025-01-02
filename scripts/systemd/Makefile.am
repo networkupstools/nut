@@ -39,8 +39,11 @@ sbin_SCRIPTS = ../upsdrvsvcctl/upsdrvsvcctl
 
 else !HAVE_SYSTEMD
 EXTRA_DIST += \
-	nut-driver@.service.in nut-logger.service.in nut-monitor.service.in nut-sleep.service \
-	nut-server.service.in nutshutdown.in nut-driver.target.in nut.target.in nut-systemd.preset \
+	nut.target.in nut-systemd.preset \
+	nut-driver@.service.in nut-driver.target.in \
+	nut-server.service.in \
+	nut-logger.service.in nut-monitor.service.in \
+	nut-sleep.service nutshutdown.in \
 	nut-driver-enumerator.path.in nut-driver-enumerator.service.in \
 	nut-driver-enumerator-daemon-activator.path.in \
 	nut-driver-enumerator-daemon-activator.service.in \
