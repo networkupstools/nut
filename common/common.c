@@ -1684,6 +1684,7 @@ void writepid(const char *name)
 	char	fn[SMALLBUF];
 	FILE	*pidf;
 	mode_t	mask;
+	intmax_t	initial_uid = getuid();
 
 	/* use full path if present, else build filename in PIDPATH */
 	if (*name == '/')
@@ -1693,6 +1694,10 @@ void writepid(const char *name)
 
 	mask = umask(022);
 	pidf = fopen(fn, "w");
+	if (!pidf && initial_uid) {
+		snprintf(fn, sizeof(fn), "%s/%s.pid", altpidpath(), name);
+		pidf = fopen(fn, "w");
+	}
 
 	if (pidf) {
 		intmax_t pid = (intmax_t)getpid();
@@ -2060,9 +2065,17 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 #ifndef WIN32
 int sendsignal(const char *progname, int sig, int check_current_progname)
 {
-	char	fn[SMALLBUF];
+#ifdef UNIX_PATH_MAX
+	char	fn[UNIX_PATH_MAX];
+#else
+	char	fn[PATH_MAX];
+#endif
+	struct stat	st;
 
 	snprintf(fn, sizeof(fn), "%s/%s.pid", rootpidpath(), progname);
+	if (stat(fn, &st) != 0) {
+		snprintf(fn, sizeof(fn), "%s/%s.pid", altpidpath(), progname);
+	}
 
 	return sendsignalfn(fn, sig, progname, check_current_progname);
 }

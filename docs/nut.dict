@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3270 utf-8
+personal_ws-1.1 en 3273 utf-8
 AAC
 AAS
 ABI
@@ -2740,6 +2740,7 @@ roadmap
 rootca
 rootfs
 rootfs'es
+rootpidpath
 rq
 rqt
 rsa
@@ -3215,6 +3216,7 @@ workspaceFolder
 workspaces
 writability
 writeinfo
+writepid
 writeups
 ws
 xAAAA
