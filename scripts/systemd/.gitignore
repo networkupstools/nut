@@ -4,6 +4,7 @@
 /nut.target
 /nut-driver.service
 /nut-driver@.service
+/nut-logger.service
 /nut-monitor.service
 /nut-server.service
 /nutshutdown

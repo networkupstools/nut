@@ -11,6 +11,7 @@ systemdsystemunit_DATA = \
         nut-driver-enumerator-daemon-activator.service \
         nut-driver-enumerator-daemon.service \
         nut-driver@.service \
+        nut-logger.service \
         nut-monitor.service \
         nut-server.service  \
         nut-driver.target   \
@@ -34,7 +35,7 @@ sbin_SCRIPTS = ../upsdrvsvcctl/upsdrvsvcctl
 
 else !HAVE_SYSTEMD
 EXTRA_DIST += \
-	nut-driver@.service.in nut-monitor.service.in nut-sleep.service \
+	nut-driver@.service.in nut-logger.service.in nut-monitor.service.in nut-sleep.service \
 	nut-server.service.in nutshutdown.in nut-driver.target nut.target.in \
 	nut-driver-enumerator.path.in nut-driver-enumerator.service.in \
 	nut-driver-enumerator-daemon-activator.path.in \

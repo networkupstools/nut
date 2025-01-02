@@ -4130,6 +4130,8 @@ AS_IF([test x"${with_libsystemd}" = xyes && test x"${SYSTEMD_SUPPORTS_DAEMON_TYP
 	dnl needed for `upsd -c reload` in legacy scripts and old habits to work:
 	SYSTEMD_DAEMON_ARGS_UPSD="-FF"
 	SYSTEMD_DAEMON_TYPE_UPSD="notify"
+	SYSTEMD_DAEMON_ARGS_UPSLOG="-F"
+	SYSTEMD_DAEMON_TYPE_UPSLOG="notify"
 	SYSTEMD_DAEMON_ARGS_UPSMON="-F"
 	SYSTEMD_DAEMON_TYPE_UPSMON="notify"
 	SYSTEMD_DAEMON_ARGS_DRIVER="-FF"
@@ -4146,29 +4148,36 @@ AS_IF([test x"${with_libsystemd}" = xyes && test x"${SYSTEMD_SUPPORTS_DAEMON_TYP
 	SYSTEMD_DAEMON_NOTIFYACCESS_DRIVER="NotifyAccess=all"
 	dnl Similar for UPSMON with its two processes:
 	SYSTEMD_DAEMON_NOTIFYACCESS_UPSMON="NotifyAccess=all"
-	dnl UPSD is started directly by systemd and do not fork:
+	dnl UPSD is started directly by systemd and does not fork:
 	SYSTEMD_DAEMON_NOTIFYACCESS_UPSD="NotifyAccess=main"
+	dnl Similarly for upslog (per settings above):
+	SYSTEMD_DAEMON_NOTIFYACCESS_UPSLOG="NotifyAccess=main"
 	dnl Note: at this time we do not pre-define watchdog settings,
 	dnl to avoid breaking something by a poorly hardcoded guess.
 	dnl This is something end-users should do for their deployment,
 	dnl especially for drivers
 	SYSTEMD_DAEMON_WATCHDOG_DRIVER="#WatchdogSec=240s"
 	SYSTEMD_DAEMON_WATCHDOG_UPSD="#WatchdogSec=240s"
+	SYSTEMD_DAEMON_WATCHDOG_UPSLOG="#WatchdogSec=240s"
 	SYSTEMD_DAEMON_WATCHDOG_UPSMON="#WatchdogSec=240s"
 	], [
 	dnl "Usual" daemons that happen to be spawned by systemd
 	SYSTEMD_DAEMON_ARGS_UPSD="-F"
 	SYSTEMD_DAEMON_TYPE_UPSD="simple"
+	SYSTEMD_DAEMON_ARGS_UPSLOG="-F"
+	SYSTEMD_DAEMON_TYPE_UPSLOG="simple"
 	SYSTEMD_DAEMON_ARGS_UPSMON="-F"
 	SYSTEMD_DAEMON_TYPE_UPSMON="simple"
 	SYSTEMD_DAEMON_ARGS_DRIVER=""
 	SYSTEMD_DAEMON_TYPE_DRIVER="forking"
 	SYSTEMD_DAEMON_NOTIFYACCESS_DRIVER=""
 	SYSTEMD_DAEMON_NOTIFYACCESS_UPSD=""
+	SYSTEMD_DAEMON_NOTIFYACCESS_UPSLOG=""
 	SYSTEMD_DAEMON_NOTIFYACCESS_UPSMON=""
 	dnl Watchdog should not be configured for not-notifying units, right?
 	SYSTEMD_DAEMON_WATCHDOG_DRIVER="#WatchdogSec=240s"
 	SYSTEMD_DAEMON_WATCHDOG_UPSD="#WatchdogSec=240s"
+	SYSTEMD_DAEMON_WATCHDOG_UPSLOG="#WatchdogSec=240s"
 	SYSTEMD_DAEMON_WATCHDOG_UPSMON="#WatchdogSec=240s"
 	])
 
@@ -4879,14 +4888,18 @@ AC_SUBST(LIBSYSTEMD_CFLAGS)
 AC_SUBST(LIBSYSTEMD_LIBS)
 AC_SUBST(SYSTEMD_DAEMON_ARGS_UPSD)
 AC_SUBST(SYSTEMD_DAEMON_TYPE_UPSD)
+AC_SUBST(SYSTEMD_DAEMON_ARGS_UPSLOG)
+AC_SUBST(SYSTEMD_DAEMON_TYPE_UPSLOG)
 AC_SUBST(SYSTEMD_DAEMON_ARGS_UPSMON)
 AC_SUBST(SYSTEMD_DAEMON_TYPE_UPSMON)
 AC_SUBST(SYSTEMD_DAEMON_ARGS_DRIVER)
 AC_SUBST(SYSTEMD_DAEMON_TYPE_DRIVER)
 AC_SUBST(SYSTEMD_DAEMON_NOTIFYACCESS_DRIVER)
 AC_SUBST(SYSTEMD_DAEMON_NOTIFYACCESS_UPSD)
+AC_SUBST(SYSTEMD_DAEMON_NOTIFYACCESS_UPSLOG)
 AC_SUBST(SYSTEMD_DAEMON_NOTIFYACCESS_UPSMON)
 AC_SUBST(SYSTEMD_DAEMON_WATCHDOG_UPSD)
+AC_SUBST(SYSTEMD_DAEMON_WATCHDOG_UPSLOG)
 AC_SUBST(SYSTEMD_DAEMON_WATCHDOG_UPSMON)
 AC_SUBST(SYSTEMD_DAEMON_WATCHDOG_DRIVER)
 AC_SUBST(SYSTEMD_TMPFILES_PROGRAM)
@@ -5547,6 +5560,7 @@ AC_CONFIG_FILES([
  scripts/systemd/nut.target
  scripts/systemd/nut-common-tmpfiles.conf
  scripts/systemd/nut-driver@.service
+ scripts/systemd/nut-logger.service
  scripts/systemd/nut-monitor.service
  scripts/systemd/nut-server.service
  scripts/systemd/nut-driver-enumerator.service
@@ -5556,6 +5570,7 @@ AC_CONFIG_FILES([
  scripts/systemd/nut-driver-enumerator-daemon-activator.path
  scripts/Solaris/nut-driver-enumerator.xml
  scripts/Solaris/nut-driver.xml
+ scripts/Solaris/nut-logger.xml
  scripts/Solaris/nut-monitor.xml
  scripts/Solaris/nut-server.xml
  scripts/Solaris/nut.xml
@@ -5592,6 +5607,7 @@ m4_foreach_w([SCRIPTFILE], [
  scripts/upsdrvsvcctl/upsdrvsvcctl
  scripts/systemd/nutshutdown
  scripts/Solaris/svc-nut-server
+ scripts/Solaris/svc-nut-logger
  scripts/Solaris/svc-nut-monitor
  scripts/Solaris/precheck.py
  scripts/Solaris/preinstall
