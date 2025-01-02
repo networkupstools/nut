@@ -3998,6 +3998,48 @@ dnl This option is only provided so that make distcheck can override it,
 dnl otherwise we ask pkg-config whenever --with-systemdsystemunitdir is
 dnl given
 
+dnl Similarly for presets (list of svcs enabled/disabled by default)
+AC_MSG_CHECKING(whether to install systemd preset files)
+AC_ARG_WITH([systemdsystempresetdir],
+	[AS_HELP_STRING([--with-systemdsystempresetdir=DIR], [Directory for systemd preset files (auto)])],
+	[systemdsystempresetdir="${withval}"],
+	[systemdsystempresetdir="auto"])
+
+dnl Note: this option is enabled only if systemdsystemunitdir is not trivial
+if test -n "${systemdsystemunitdir}"; then
+	case "${systemdsystempresetdir}" in
+	yes|auto|"")
+		AS_IF([test x"$have_PKG_CONFIG" = xyes],
+			[def_systemdsystempresetdir="`$PKG_CONFIG --variable=systemdsystempresetdir systemd 2>/dev/null`" && test -n "$def_systemdsystempresetdir" || \
+			 def_systemdsystempresetdir="`$PKG_CONFIG --variable=systemdsystempresetdir libsystemd 2>/dev/null`" || def_systemdsystempresetdir=""],
+			[def_systemdsystempresetdir=""])
+
+		AS_IF([test x"${def_systemdsystempresetdir}" = x], [
+			AS_IF([test "${systemdsystempresetdir}" = yes],
+				[AC_MSG_ERROR([--with-systemdsystempresetdir=${systemdsystempresetdir} was requested, but PKG_CONFIG could not be queried for the system settings])])
+			systemdsystempresetdir=""
+			], [systemdsystempresetdir="${def_systemdsystempresetdir}"])
+
+		unset def_systemdsystempresetdir
+		;;
+	no)
+		systemdsystempresetdir=""
+		;;
+	*)
+		AS_IF([test -d "${systemdsystempresetdir}"], [],
+			[AC_MSG_WARN([--with-systemdsystempresetdir='${systemdsystempresetdir}' was requested, but that location does not currently exist in build environment - just so you know...])])
+		;;
+	esac
+fi
+if test "${systemdsystempresetdir}" = "auto" ; then systemdsystempresetdir=""; fi
+if test -n "${systemdsystempresetdir}"; then
+	AC_MSG_RESULT(using ${systemdsystempresetdir})
+	NUT_REPORT_PATH_INTEGRATIONS([Service unit presets for systemd], [${systemdsystempresetdir}])
+else
+	AC_MSG_RESULT(no)
+fi
+
+dnl Similarly for shutdown integration hooks
 AC_MSG_CHECKING(whether to install systemd shutdown files)
 AC_ARG_WITH([systemdshutdowndir],
 	AS_HELP_STRING([--with-systemdshutdowndir=DIR], [Directory for systemd shutdown scripts (auto)]),
@@ -4957,6 +4999,7 @@ AC_SUBST(htmldocdir)
 AC_SUBST(htmlmandir)
 AC_SUBST(pkgconfigdir)
 AC_SUBST(systemdsystemunitdir)
+AC_SUBST(systemdsystempresetdir)
 AC_SUBST(systemdshutdowndir)
 AC_SUBST(systemdtmpfilesdir)
 AC_SUBST(auglensdir)

@@ -738,6 +738,21 @@ settings with pkg-config, or fail configuration if not possible.
 
 Use `--with-systemdsystemunitdir=no` to disable this feature altogether.
 
+	--with-systemdsystempresetdir=PATH
+
+Where to install Linux systemd unit presets (lists of services enabled
+or disabled by default). Useless and harmless on other OSes, including
+Linux distributions without systemd, just adding a little noise to the
+configure script output.
+
+Use `--with-systemdsystempresetdir=auto` (default) to detect the settings
+using pkg-config if possible.
+
+Use `--with-systemdsystempresetdir(=yes)` to require detection of these
+settings with pkg-config, or fail configuration if not possible.
+
+Use `--with-systemdsystempresetdir=no` to disable this feature altogether.
+
 	--with-systemdshutdowndir=PATH
 
 Where to install Linux systemd unit definitions for shutdown handling.
