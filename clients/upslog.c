@@ -157,10 +157,15 @@ static void help(const char *prog)
 	printf("  -F		- stay foregrounded even if logging into a file\n");
 	printf("  -B		- stay backgrounded even if logging to stdout\n");
 	printf("  -p <pidbase>  - Base name for PID file (defaults to \"%s\")\n", prog);
+	printf("                - NOTE: PID file is written regardless of fore/back-grounding\n");
 	printf("  -s <ups>	- Monitor UPS <ups> - <upsname>@<host>[:<port>]\n");
 	printf("        	- Example: -s myups@server\n");
 	printf("  -m <tuple>	- Monitor UPS <ups,logfile>\n");
 	printf("		- Example: -m myups@server,/var/log/myups.log\n");
+	printf("		- NOTE: You can use '-' as logfile for stdout\n");
+	printf("		  and it would not imply foregrounding\n");
+	printf("		- NOTE: '-s ups' and/or '-l file' options are ignored\n");
+	printf("		  if tuples are used, but you can specify many tuples\n");
 	printf("  -u <user>	- Switch to <user> if started as root\n");
 	printf("  -V		- Display the version of this software\n");
 	printf("  -h		- Display this help text\n");
