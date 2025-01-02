@@ -304,6 +304,8 @@ Example valid formats of this flag:
 * `--with-doc=pdf,html-chunked`
 * `--with-doc=man=no,pdf=auto,html-single`
 
+Additional flags with regard to documentation generation include:
+
 	--with-docs-man-section-api=<SN>	(default: 3)
 	--with-docs-man-section-cfg=<SN>	(default: 5)
 	--with-docs-man-section-cmd-sys=<SN>	(default: 8)
@@ -314,6 +316,8 @@ do not match defaults listed above for Library and API, Configuration Files,
 System Management Commands and User Commands sections (e.g. Solaris-derived
 systems might use `--with-docs-man-section-cmd-sys=1m`). This impacts not only
 file names of the manual pages, but also cross-links in generated documents.
+Note that use of these flags does not implicitly enable any `--with-docs=...`
+mode, which should still be specified explicitly.
 
 Python support
 ~~~~~~~~~~~~~~
