@@ -5620,6 +5620,7 @@ AC_CONFIG_FILES([
  scripts/systemd/Makefile
  scripts/systemd/nut.target
  scripts/systemd/nut-common-tmpfiles.conf
+ scripts/systemd/nut-driver.target
  scripts/systemd/nut-driver@.service
  scripts/systemd/nut-logger.service
  scripts/systemd/nut-monitor.service
