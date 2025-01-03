@@ -2003,10 +2003,11 @@ int main(int argc, char **argv)
 	pid_t	oldpid = -1;
 #else
 /* FIXME: *actually* handle WIN32 builds too */
-	const char	*cmd = NULL;
+	const char	* cmd = NULL;
 
-	const char	*drv_name;
-	char	*dot;
+	const char	* drv_name = NULL;
+	char	* dot = NULL;
+	char	name[SMALLBUF];
 #endif
 
 	const char optstring[] = "+a:s:kDFBd:hx:Lqr:u:g:Vi:c:"
@@ -2341,18 +2342,33 @@ int main(int argc, char **argv)
 
 	become_user(new_uid);
 
-	/* Only switch to statepath if we're not powering off
-	 * or not just dumping data (for discovery) */
-	/* This avoids case where i.e. /var is unmounted already */
 #ifndef WIN32
-	if ((!do_forceshutdown) && (!dump_data)) {
-		if (chdir(dflt_statepath()))
+	/* We only need switch to statepath if we're not powering off
+	 * or not just dumping data (for discovery), in particular to
+	 * hold that path from getting unmounted easily while used for
+	 * our local socket file to talk to upsd, or to write the PID
+	 * file (which we do not do when quickly running to shut down
+	 * or dump data).  This check avoids aborting in case where
+	 * i.e. /var is unmounted already during shut down.
+	 */
+	i = chdir(dflt_statepath());
+	if (do_forceshutdown || dump_data) {
+		if (i < 0)
+			upslog_with_errno(LOG_WARNING,
+				"Can't chdir to %s (but we do not require that to %s%s%s)",
+				dflt_statepath(),
+				do_forceshutdown ? "force shutdown" : "",
+				(do_forceshutdown && dump_data) ? " and/or " : "",
+				dump_data ? "dump data" : ""
+				);
+	} else {
+		if (i < 0)
 			fatal_with_errno(EXIT_FAILURE, "Can't chdir to %s", dflt_statepath());
 
 		/* Setup signals to communicate with driver which is destined for a long run. */
 		setup_signals();
 	}
-#endif  /* WIN32 */
+#endif	/* WIN32 */
 
 	if (do_forceshutdown) {
 		/* First try to handle this over socket protocol
@@ -2482,7 +2498,9 @@ int main(int argc, char **argv)
 	/* Hush the fopen(pidfile) message but let "real errors" be seen */
 	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_KILL_SIG0PING - 1;
 
-	if (!cmd && (!do_forceshutdown)) {
+	/* Make sure we have no competitors (note that systemd or SMF might
+	 * revive them and kill us later, though) */
+	if (!cmd || do_forceshutdown) {
 		ssize_t	cmdret = -1;
 		char	buf[LARGEBUF];
 		struct timeval	tv;
@@ -2576,7 +2594,7 @@ int main(int argc, char **argv)
 	 * and to stop a competing older instance. Or to send it a signal
 	 * deliberately.
 	 */
-	if (cmd || ((foreground == 0 || foreground == 2) && (!do_forceshutdown))) {
+	if (cmd || foreground == 0 || foreground == 2 || do_forceshutdown) {
 		char	pidfnbuf[SMALLBUF];
 
 		snprintf(pidfnbuf, sizeof(pidfnbuf), "%s/%s-%s.pid", altpidpath(), progname, upsname);
@@ -2668,9 +2686,9 @@ int main(int argc, char **argv)
 			exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
 		} /* if (cmd) */
 
-		/* Try to prevent that driver is started multiple times. If a PID file */
-		/* already exists, send a TERM signal to the process and try if it goes */
-		/* away. If not, retry a couple of times. */
+		/* Try to prevent that driver is started multiple times. If a PID file
+		 * already exists, send a TERM signal to the process and try if it goes
+		 * away. If not, retry a couple of times. */
 		for (i = 0; i < 3; i++) {
 			struct stat	st;
 			int	sigret;
@@ -2691,7 +2709,7 @@ int main(int argc, char **argv)
 			upsdebugx(1, "Signal sent without errors, allow the other driver instance some time to quit");
 			sleep(5);
 
-			if (exit_flag)
+			if (exit_flag && !do_forceshutdown)
 				fatalx(EXIT_FAILURE, "Got a break signal during attempt to terminate other driver");
 		}
 
@@ -2717,16 +2735,16 @@ int main(int argc, char **argv)
 			}
 		}
 
-		/* Only write pid if we're not just dumping data, for discovery */
-		if (!dump_data) {
+		/* Only write pid if we're not just dumping data, for discovery,
+		 * and not shutting down now (when filesystem may be read-only).
+		 */
+		if (!dump_data && !do_forceshutdown) {
 			pidfn = xstrdup(pidfnbuf);
 			writepid(pidfn);	/* before backgrounding */
 		}
 	}
 #else	/* WIN32 */
-	char	name[SMALLBUF];
-
-	snprintf(name,sizeof(name), "%s-%s",progname,upsname);
+	snprintf(name, sizeof(name), "%s-%s", progname, upsname);
 
 	if (cmd) {
 /* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
@@ -2734,33 +2752,33 @@ int main(int argc, char **argv)
 		fatalx(EXIT_FAILURE, "Signal support not implemented for this platform");
 	}
 
-	mutex = CreateMutex(NULL,TRUE,name);
-	if(mutex == NULL ) {
-		if( GetLastError() != ERROR_ACCESS_DENIED ) {
-			fatalx(EXIT_FAILURE, "Can not create mutex %s : %d.\n",name,(int)GetLastError());
+	mutex = CreateMutex(NULL, TRUE, name);
+	if (mutex == NULL) {
+		if (GetLastError() != ERROR_ACCESS_DENIED) {
+			fatalx(EXIT_FAILURE, "Can not create mutex %s : %d.\n", name, (int)GetLastError());
 		}
 	}
 
 	if (GetLastError() == ERROR_ALREADY_EXISTS || GetLastError() == ERROR_ACCESS_DENIED) {
 		upslogx(LOG_WARNING, "Duplicate driver instance detected! Terminating other driver!");
-		for(i=0;i<10;i++) {
-			DWORD res;
+		for (i = 0; i < 10; i++) {
+			DWORD	res;
 			sendsignal(name, COMMAND_STOP, 1);
-			if(mutex != NULL ) {
-				res = WaitForSingleObject(mutex,1000);
-				if(res==WAIT_OBJECT_0) {
+			if (mutex != NULL) {
+				res = WaitForSingleObject(mutex, 1000);
+				if (res == WAIT_OBJECT_0) {
 					break;
 				}
 			}
 			else {
 				sleep(1);
-				mutex = CreateMutex(NULL,TRUE,name);
-				if(mutex != NULL ) {
+				mutex = CreateMutex(NULL, TRUE, name);
+				if (mutex != NULL) {
 					break;
 				}
 			}
 		}
-		if(i >= 10 ) {
+		if (i >= 10) {
 			fatalx(EXIT_FAILURE, "Can not terminate the previous driver.\n");
 		}
 	}
