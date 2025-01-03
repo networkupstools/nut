@@ -34,7 +34,7 @@
 # ksh, busybox sh...)
 #
 # Copyright
-#	2022-2024 Jim Klimov <jimklimov+nut@gmail.com>
+#	2022-2025 Jim Klimov <jimklimov+nut@gmail.com>
 #
 # License: GPLv2+
 
@@ -356,6 +356,11 @@ if [ "`id -u`" = 0 ]; then
 fi
 
 stop_daemons() {
+    if [ -n "$PID_UPSMON" ] ; then
+        log_info "Stopping test daemons: upsmon via command"
+        upsmon -c stop
+    fi
+
     if [ -n "$PID_UPSD$PID_UPSMON$PID_DUMMYUPS$PID_DUMMYUPS1$PID_DUMMYUPS2" ] ; then
         log_info "Stopping test daemons"
         kill -15 $PID_UPSD $PID_UPSMON $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 2>/dev/null || return 0
