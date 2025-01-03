@@ -2003,10 +2003,11 @@ int main(int argc, char **argv)
 	pid_t	oldpid = -1;
 #else
 /* FIXME: *actually* handle WIN32 builds too */
-	const char	*cmd = NULL;
+	const char	* cmd = NULL;
 
-	const char	*drv_name;
-	char	*dot;
+	const char	* drv_name = NULL;
+	char	* dot = NULL;
+	char	name[SMALLBUF];
 #endif
 
 	const char optstring[] = "+a:s:kDFBd:hx:Lqr:u:g:Vi:c:"
@@ -2352,7 +2353,7 @@ int main(int argc, char **argv)
 		/* Setup signals to communicate with driver which is destined for a long run. */
 		setup_signals();
 	}
-#endif  /* WIN32 */
+#endif	/* WIN32 */
 
 	if (do_forceshutdown) {
 		/* First try to handle this over socket protocol
@@ -2717,16 +2718,16 @@ int main(int argc, char **argv)
 			}
 		}
 
-		/* Only write pid if we're not just dumping data, for discovery */
-		if (!dump_data) {
+		/* Only write pid if we're not just dumping data, for discovery,
+		 * and not shutting down now (when filesystem may be read-only).
+		 */
+		if (!dump_data && !do_forceshutdown) {
 			pidfn = xstrdup(pidfnbuf);
 			writepid(pidfn);	/* before backgrounding */
 		}
 	}
 #else	/* WIN32 */
-	char	name[SMALLBUF];
-
-	snprintf(name,sizeof(name), "%s-%s",progname,upsname);
+	snprintf(name, sizeof(name), "%s-%s", progname, upsname);
 
 	if (cmd) {
 /* FIXME: port event loop from upsd/upsmon to allow messaging fellow drivers in WIN32 builds */
@@ -2734,33 +2735,33 @@ int main(int argc, char **argv)
 		fatalx(EXIT_FAILURE, "Signal support not implemented for this platform");
 	}
 
-	mutex = CreateMutex(NULL,TRUE,name);
-	if(mutex == NULL ) {
-		if( GetLastError() != ERROR_ACCESS_DENIED ) {
-			fatalx(EXIT_FAILURE, "Can not create mutex %s : %d.\n",name,(int)GetLastError());
+	mutex = CreateMutex(NULL, TRUE, name);
+	if (mutex == NULL) {
+		if (GetLastError() != ERROR_ACCESS_DENIED) {
+			fatalx(EXIT_FAILURE, "Can not create mutex %s : %d.\n", name, (int)GetLastError());
 		}
 	}
 
 	if (GetLastError() == ERROR_ALREADY_EXISTS || GetLastError() == ERROR_ACCESS_DENIED) {
 		upslogx(LOG_WARNING, "Duplicate driver instance detected! Terminating other driver!");
-		for(i=0;i<10;i++) {
-			DWORD res;
+		for (i = 0; i < 10; i++) {
+			DWORD	res;
 			sendsignal(name, COMMAND_STOP, 1);
-			if(mutex != NULL ) {
-				res = WaitForSingleObject(mutex,1000);
-				if(res==WAIT_OBJECT_0) {
+			if (mutex != NULL) {
+				res = WaitForSingleObject(mutex, 1000);
+				if (res == WAIT_OBJECT_0) {
 					break;
 				}
 			}
 			else {
 				sleep(1);
-				mutex = CreateMutex(NULL,TRUE,name);
-				if(mutex != NULL ) {
+				mutex = CreateMutex(NULL, TRUE, name);
+				if (mutex != NULL) {
 					break;
 				}
 			}
 		}
-		if(i >= 10 ) {
+		if (i >= 10) {
 			fatalx(EXIT_FAILURE, "Can not terminate the previous driver.\n");
 		}
 	}
