@@ -2498,7 +2498,9 @@ int main(int argc, char **argv)
 	/* Hush the fopen(pidfile) message but let "real errors" be seen */
 	nut_sendsignal_debug_level = NUT_SENDSIGNAL_DEBUG_LEVEL_KILL_SIG0PING - 1;
 
-	if (!cmd && (!do_forceshutdown)) {
+	/* Make sure we have no competitors (note that systemd or SMF might
+	 * revive them and kill us later, though) */
+	if (!cmd || do_forceshutdown) {
 		ssize_t	cmdret = -1;
 		char	buf[LARGEBUF];
 		struct timeval	tv;
@@ -2592,7 +2594,7 @@ int main(int argc, char **argv)
 	 * and to stop a competing older instance. Or to send it a signal
 	 * deliberately.
 	 */
-	if (cmd || ((foreground == 0 || foreground == 2) && (!do_forceshutdown))) {
+	if (cmd || foreground == 0 || foreground == 2 || do_forceshutdown) {
 		char	pidfnbuf[SMALLBUF];
 
 		snprintf(pidfnbuf, sizeof(pidfnbuf), "%s/%s-%s.pid", altpidpath(), progname, upsname);
@@ -2707,7 +2709,7 @@ int main(int argc, char **argv)
 			upsdebugx(1, "Signal sent without errors, allow the other driver instance some time to quit");
 			sleep(5);
 
-			if (exit_flag)
+			if (exit_flag && !do_forceshutdown)
 				fatalx(EXIT_FAILURE, "Got a break signal during attempt to terminate other driver");
 		}
 
