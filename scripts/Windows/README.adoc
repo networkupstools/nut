@@ -228,12 +228,12 @@ presumed inconsequential. You can try a not-"inlined" build instead.
 
 Finally, install the resulting files into locations under `PREFIX`:
 
-	:; sudo mkdir -p $PREFIX/pthreads/lib/
-	:; sudo cp *.dll $PREFIX/pthreads/lib/
-	:; sudo mkdir -p $PREFIX/lib/
-	:; sudo cp *.a $PREFIX/lib/
-	:; sudo mkdir -p $PREFIX/pthreads/include/
-	:; sudo cp pthread.h sched.h semaphore.h $PREFIX/pthreads/include
+	:; sudo mkdir -p "${PREFIX}/pthreads/lib/"
+	:; sudo cp *.dll "${PREFIX}/pthreads/lib/"
+	:; sudo mkdir -p "${PREFIX}/lib/"
+	:; sudo cp *.a "${PREFIX}/lib/"
+	:; sudo mkdir -p "${PREFIX}/pthreads/include/"
+	:; sudo cp pthread.h sched.h semaphore.h "${PREFIX}/pthreads/include/"
 
 
 MinGW regex library
