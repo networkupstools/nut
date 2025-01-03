@@ -81,8 +81,14 @@ dependencies as detailed below.
 ================================================================================
 
 If you use script `./build-mingw-nut.sh` mentioned below, you may skip setting
-these environment variables when building NUT. You would however need to use
-them once (per `ARCH`) to provide the prerequisites below if built from source.
+these environment variables when building NUT itself. You would however need
+to use them once (per `ARCH`) to provide the prerequisites below if they are
+built from source.
+
+The build routines detailed below expect to be run in a terminal (shell per
+`ARCH`) with all these environment variables set once and inherited from one
+component build to another. Should you need to rebuild something, you would
+have to set these variables again in that session.
 
 When using the compilation approach, you would typically use the following
 `ARCH`, `HOST_FLAG` and `BUILD_FLAG`, as well as `CC`, `CFLAGS`, `LDFLAGS`
