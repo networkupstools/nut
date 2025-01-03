@@ -2342,12 +2342,27 @@ int main(int argc, char **argv)
 
 	become_user(new_uid);
 
-	/* Only switch to statepath if we're not powering off
-	 * or not just dumping data (for discovery) */
-	/* This avoids case where i.e. /var is unmounted already */
 #ifndef WIN32
-	if ((!do_forceshutdown) && (!dump_data)) {
-		if (chdir(dflt_statepath()))
+	/* We only need switch to statepath if we're not powering off
+	 * or not just dumping data (for discovery), in particular to
+	 * hold that path from getting unmounted easily while used for
+	 * our local socket file to talk to upsd, or to write the PID
+	 * file (which we do not do when quickly running to shut down
+	 * or dump data).  This check avoids aborting in case where
+	 * i.e. /var is unmounted already during shut down.
+	 */
+	i = chdir(dflt_statepath());
+	if (do_forceshutdown || dump_data) {
+		if (i < 0)
+			upslog_with_errno(LOG_WARNING,
+				"Can't chdir to %s (but we do not require that to %s%s%s)",
+				dflt_statepath(),
+				do_forceshutdown ? "force shutdown" : "",
+				(do_forceshutdown && dump_data) ? " and/or " : "",
+				dump_data ? "dump data" : ""
+				);
+	} else {
+		if (i < 0)
 			fatal_with_errno(EXIT_FAILURE, "Can't chdir to %s", dflt_statepath());
 
 		/* Setup signals to communicate with driver which is destined for a long run. */
