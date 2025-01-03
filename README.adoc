@@ -99,7 +99,7 @@ ifndef::top_builddir[]
 endif::top_builddir[]
 //
 //
-// Address links on GitHub vs docs
+// Address links on GitHub vs. docs
 // (note: 'env-github' attribute is set on GitHub)
 //
 // - when generating docs:

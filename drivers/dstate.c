@@ -1737,7 +1737,7 @@ void alarm_set(const char *buf)
 	if (ret < 0) {
 		/* Should we also try to print the potentially unusable buf?
 		 * Generally - likely not. But if it is short enough...
-		 * Note: LARGEBUF was the original limit mismatched vs alarm_buf
+		 * Note: LARGEBUF was the original limit mismatched vs. alarm_buf
 		 * size before PR #986.
 		 */
 		char	alarm_tmp[LARGEBUF];

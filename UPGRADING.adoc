@@ -44,6 +44,20 @@ Changes from 2.8.2 to 2.8.3
   Please use it, it immensely helps with community troubleshooting!
   [issue #1949]
 
+- Reference packages prepared by `make package` should now separate the
+  `PACKAGE_VERSION` from the platform-dependent prefix by a dash character
+  in the ultimate package file name. Previously they were glued together
+  for some platform targets (HPUX, Solaris). Solaris SVR4 package file names
+  should new differentiate `i386` vs. `amd64` and `sparc` vs. `sparcv9`,
+  depending on `target_cpu` of the build. If you had any scripts relying
+  on the older pattern, they may have to be updated.
+
+- Updated man page generation with `configure` script options to specify that
+  manual sections on the target platform differ from (Linux-based) defaults
+  hard-coded into page sources; this should allow to simplify NUT packaging
+  recipe maintenance in distributions (no more updating patches for changed
+  or added documentation sources)
+
 - `upsmon` should now integrate natively with systemd-driven OS sleep events
   (built with systemd version 221 or newer "inhibitor interface"), so various
   hacks previously packaged into `/usr/lib/systemd/system-sleep/` scripts or
@@ -257,7 +271,7 @@ Changes from 2.8.0 to 2.8.1
 - The `upsd.conf` listing of `LISTEN` addresses was previously inverted
   (the last listed address was applied first), which was counter-intuitive
   and fixed for this release. If user configurations somehow relied on this
-  order (e.g. to prioritize IPv6 vs IPv4 listeners), configuration changes
+  order (e.g. to prioritize IPv6 vs. IPv4 listeners), configuration changes
   may be needed. [#2012]
 
 - The `upsd` configured to listen on IPv6 addresses should handle only

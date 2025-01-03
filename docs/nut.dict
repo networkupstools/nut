@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3270 utf-8
+personal_ws-1.1 en 3274 utf-8
 AAC
 AAS
 ABI
@@ -1486,6 +1486,7 @@ apcsmart
 apctest
 apcupsd
 aphel
+api
 apinames
 appveyor
 ar
@@ -1718,6 +1719,7 @@ cppnit
 cppunit
 cpqpower
 cpsups
+cpu
 cr
 crestfactor
 crit
@@ -2866,6 +2868,7 @@ something's
 sp
 spanish
 sparc
+sparcv
 spectype
 spellcheck
 splitaddr

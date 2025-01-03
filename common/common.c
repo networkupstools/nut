@@ -678,9 +678,15 @@ const char *suggest_doc_links(const char *progname, const char *progconf) {
 		snprintf(buf, sizeof(buf),
 			"For more information please ");
 #if defined(WITH_DOCS) && WITH_DOCS
+		/* FIXME: Currently all NUT tools and drivers are in same
+		 *  man page section for "System Management Programs".
+		 *  If this ever changes (e.g. clients like `upsc` can be
+		 *  a "User Program" just as well), we may need an extra
+		    method argument here.
+		 */
 		snprintfcat(buf, sizeof(buf),
-			"Read The Fine Manual ('man %s') and/or ",
-			buf2);
+			"Read The Fine Manual ('man %s %s') and/or ",
+			MAN_SECTION_CMD_SYS, buf2);
 #endif
 		snprintfcat(buf, sizeof(buf),
 			"see\n\t%s/docs/man/%s.html\n",
