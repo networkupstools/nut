@@ -78,7 +78,8 @@ static void reopen_log(void)
 {
 	for (monhost_ups_current = monhost_ups_anchor;
 	     monhost_ups_current != NULL;
-	     monhost_ups_current = monhost_ups_current->next) {
+	     monhost_ups_current = monhost_ups_current->next
+	) {
 		if (monhost_ups_current->logfile == stdout) {
 			upslogx(LOG_INFO, "logging to stdout");
 			return;
@@ -594,7 +595,8 @@ int main(int argc, char **argv)
 
 	for (monhost_ups_current = monhost_ups_anchor;
 	     monhost_ups_current != NULL;
-	     monhost_ups_current = monhost_ups_current->next) {
+	     monhost_ups_current = monhost_ups_current->next
+	) {
 		printf("logging status of %s to %s (%is intervals)\n",
 			monhost_ups_current->monhost, monhost_ups_current->logfn, interval);
 		if (upscli_splitname(monhost_ups_current->monhost, &(monhost_ups_current->upsname), &(monhost_ups_current->hostname), &(monhost_ups_current->port)) != 0) {
@@ -668,7 +670,8 @@ int main(int argc, char **argv)
 
 		for (monhost_ups_current = monhost_ups_anchor;
 		     monhost_ups_current != NULL;
-		     monhost_ups_current = monhost_ups_current->next) {
+		     monhost_ups_current = monhost_ups_current->next
+		) {
 			ups = monhost_ups_current->ups;	/* XXX Not ideal */
 			upsname = monhost_ups_current->upsname;	/* XXX Not ideal */
 			/* reconnect if necessary */
@@ -690,7 +693,8 @@ int main(int argc, char **argv)
 
 	for (monhost_ups_current = monhost_ups_anchor;
 	     monhost_ups_current != NULL;
-	     monhost_ups_current = monhost_ups_current->next) {
+	     monhost_ups_current = monhost_ups_current->next
+	) {
 
 		if (monhost_ups_current->logfile != stdout)
 			fclose(monhost_ups_current->logfile);
