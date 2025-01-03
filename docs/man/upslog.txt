@@ -22,6 +22,13 @@ variables that interest you, format them, and write them to a file.
 The default format string includes variables that are supported by many
 common UPS models.  See the description below to make your own.
 
+NOTE: Historically this daemon supported logging of data for one UPS system
+(specified by the `-s` option) into one log file name or `stdout` (specified
+by the `-l` option).  Later it allowed to log several devices (each into its
+destination) as specified by multiple `-m tuple` options.  The two modes are
+effectively exclusive of each other (single-UPS options are ignored if tuples
+are also provided).
+
 OPTIONS
 -------
 
@@ -70,6 +77,8 @@ Store the results in this file.
 +
 You can use "-" for stdout, but upslog will remain in the foreground
 by default.
++
+Ignored if you also provide `-m tuple` option(s).
 
 *-F*::
 upslog will run in the foreground, regardless of logging target.
@@ -80,11 +89,25 @@ upslog will run in the background, regardless of logging target.
 *-s* 'ups'::
 Monitor this UPS.  The format for this option is
 +upsname[@hostname[:port]]+.  The default hostname is "localhost".
++
+Ignored if you also provide `-m tuple` option(s).
 
 *-m* 'tuple'::
-Monitor multiple UPSs. The format for this option is a tuple of
-ups and logfile separated by commas. An example would be:
-`upsname@hostname:9999,/var/log/nut/cps.log`
+Monitor multiple UPSs (provided several instances of such option).
++
+Overrides the single-UPS settings passed by `-s` and `-l` options.
++
+The format for this option is a tuple of UPS system and log file
+specification, separated by commas. An example would be:
+----
+upsname@hostname:9999,/var/log/nut/cps.log
+----
++
+Tuples may specify `-` as the logfile, to emit messages on `stdout`
+(e.g. to be collected by the system journal for services).
++
+Use of `stdout` via tuple-based logging specifications does not
+imply that upslog will remain in the foreground by default.
 
 *-u* 'username'::
 

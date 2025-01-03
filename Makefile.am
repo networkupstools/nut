@@ -76,6 +76,7 @@ DISTCHECK_VALGRIND_FLAGS = --with-all=auto --with-ssl=auto --with-doc=skip --wit
 # Note: this rule uses envvar DISTCHECK_FLAGS expanded at run-time
 DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
  --with-systemdsystemunitdir='$${prefix}/lib/systemd/system' \
+ --with-systemdsystempresetdir='$${prefix}/usr/lib/systemd/system-preset' \
  --with-systemdshutdowndir='$${prefix}/lib/systemd/system-shutdown' \
  --with-systemdtmpfilesdir='$${prefix}/usr/lib/tmpfiles.d' \
  --with-augeas-lenses-dir='$${prefix}/usr/share/augeas/lenses'		\

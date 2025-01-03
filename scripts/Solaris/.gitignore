@@ -7,9 +7,11 @@
 /precheck.py
 /preproto.pl
 /svc-nut-server
+/svc-nut-logger
 /svc-nut-monitor
 /nut-driver.xml
 /nut-driver-enumerator.xml
+/nut-logger.xml
 /nut-monitor.xml
 /nut-server.xml
 /nut.xml

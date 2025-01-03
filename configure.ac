@@ -3997,11 +3997,17 @@ AC_ARG_WITH([systemdsystemunitdir],
 case "${systemdsystemunitdir}" in
 	yes|auto|"")
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd 2>/dev/null`" && test -n "$systemdsystemunitdir" || systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir libsystemd 2>/dev/null`"],
-			[AS_IF([test "${systemdsystemunitdir}" = yes],
+			[def_systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd 2>/dev/null`" && test -n "$def_systemdsystemunitdir" || \
+			 def_systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir libsystemd 2>/dev/null`" || def_systemdsystemunitdir=""],
+			[def_systemdsystemunitdir=""])
+
+		AS_IF([test x"${def_systemdsystemunitdir}" = x], [
+			AS_IF([test "${systemdsystemunitdir}" = yes],
 				[AC_MSG_ERROR([--with-systemdsystemunitdir=${systemdsystemunitdir} was requested, but PKG_CONFIG could not be queried for the system settings])])
-			 systemdsystemunitdir=""
-			])
+			systemdsystemunitdir=""
+			], [systemdsystemunitdir="${def_systemdsystemunitdir}"])
+
+		unset def_systemdsystemunitdir
 		;;
 	no)
 		systemdsystemunitdir=""
@@ -4029,6 +4035,48 @@ dnl This option is only provided so that make distcheck can override it,
 dnl otherwise we ask pkg-config whenever --with-systemdsystemunitdir is
 dnl given
 
+dnl Similarly for presets (list of svcs enabled/disabled by default)
+AC_MSG_CHECKING(whether to install systemd preset files)
+AC_ARG_WITH([systemdsystempresetdir],
+	[AS_HELP_STRING([--with-systemdsystempresetdir=DIR], [Directory for systemd preset files (auto)])],
+	[systemdsystempresetdir="${withval}"],
+	[systemdsystempresetdir="auto"])
+
+dnl Note: this option is enabled only if systemdsystemunitdir is not trivial
+if test -n "${systemdsystemunitdir}"; then
+	case "${systemdsystempresetdir}" in
+	yes|auto|"")
+		AS_IF([test x"$have_PKG_CONFIG" = xyes],
+			[def_systemdsystempresetdir="`$PKG_CONFIG --variable=systemdsystempresetdir systemd 2>/dev/null`" && test -n "$def_systemdsystempresetdir" || \
+			 def_systemdsystempresetdir="`$PKG_CONFIG --variable=systemdsystempresetdir libsystemd 2>/dev/null`" || def_systemdsystempresetdir=""],
+			[def_systemdsystempresetdir=""])
+
+		AS_IF([test x"${def_systemdsystempresetdir}" = x], [
+			AS_IF([test "${systemdsystempresetdir}" = yes],
+				[AC_MSG_ERROR([--with-systemdsystempresetdir=${systemdsystempresetdir} was requested, but PKG_CONFIG could not be queried for the system settings])])
+			systemdsystempresetdir=""
+			], [systemdsystempresetdir="${def_systemdsystempresetdir}"])
+
+		unset def_systemdsystempresetdir
+		;;
+	no)
+		systemdsystempresetdir=""
+		;;
+	*)
+		AS_IF([test -d "${systemdsystempresetdir}"], [],
+			[AC_MSG_WARN([--with-systemdsystempresetdir='${systemdsystempresetdir}' was requested, but that location does not currently exist in build environment - just so you know...])])
+		;;
+	esac
+fi
+if test "${systemdsystempresetdir}" = "auto" ; then systemdsystempresetdir=""; fi
+if test -n "${systemdsystempresetdir}"; then
+	AC_MSG_RESULT(using ${systemdsystempresetdir})
+	NUT_REPORT_PATH_INTEGRATIONS([Service unit presets for systemd], [${systemdsystempresetdir}])
+else
+	AC_MSG_RESULT(no)
+fi
+
+dnl Similarly for shutdown integration hooks
 AC_MSG_CHECKING(whether to install systemd shutdown files)
 AC_ARG_WITH([systemdshutdowndir],
 	AS_HELP_STRING([--with-systemdshutdowndir=DIR], [Directory for systemd shutdown scripts (auto)]),
@@ -4039,11 +4087,17 @@ if test -n "${systemdsystemunitdir}"; then
 	case "${systemdshutdowndir}" in
 	yes|auto|"")
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir systemd 2>/dev/null`" && test -n "$systemdshutdowndir" || systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir libsystemd 2>/dev/null`"],
-			[AS_IF([test "${systemdshutdowndir}" = yes],
+			[def_systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir systemd 2>/dev/null`" && test -n "$def_systemdshutdowndir" || \
+			 def_systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir libsystemd 2>/dev/null`" || def_systemdshutdowndir=""],
+			[def_systemdshutdowndir=""])
+
+		AS_IF([test x"${def_systemdshutdowndir}" = x], [
+			AS_IF([test "${systemdshutdowndir}" = yes],
 				[AC_MSG_ERROR([--with-systemdshutdowndir=${systemdshutdowndir} was requested, but PKG_CONFIG could not be queried for the system settings])])
-			 systemdshutdowndir=""
-			])
+			systemdshutdowndir=""
+			], [systemdshutdowndir="${def_systemdshutdowndir}"])
+
+		unset def_systemdshutdowndir
 		;;
 	no)
 		systemdshutdowndir=""
@@ -4072,11 +4126,17 @@ AC_ARG_WITH([systemdtmpfilesdir],
 case "${systemdtmpfilesdir}" in
 	yes|auto|"")
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir systemd 2>/dev/null`" && test -n "$systemdtmpfilesdir" || systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir libsystemd 2>/dev/null`"],
-			[AS_IF([test "${systemdtmpfilesdir}" = yes],
+			[def_systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir systemd 2>/dev/null`" && test -n "$def_systemdtmpfilesdir" || \
+			 def_systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir libsystemd 2>/dev/null`" || def_systemdtmpfilesdir=""],
+			[def_systemdtmpfilesdir=""])
+
+		AS_IF([test x"${def_systemdtmpfilesdir}" = x], [
+			AS_IF([test "${systemdtmpfilesdir}" = yes],
 				[AC_MSG_ERROR([--with-systemdtmpfilesdir=${systemdtmpfilesdir} was requested, but PKG_CONFIG could not be queried for the system settings])])
-			 systemdtmpfilesdir=""
-			])
+			systemdtmpfilesdir=""
+			], [systemdtmpfilesdir="${def_systemdtmpfilesdir}"])
+
+		unset def_systemdtmpfilesdir
 		;;
 	no)
 		systemdtmpfilesdir=""
@@ -4167,6 +4227,8 @@ AS_IF([test x"${with_libsystemd}" = xyes && test x"${SYSTEMD_SUPPORTS_DAEMON_TYP
 	dnl needed for `upsd -c reload` in legacy scripts and old habits to work:
 	SYSTEMD_DAEMON_ARGS_UPSD="-FF"
 	SYSTEMD_DAEMON_TYPE_UPSD="notify"
+	SYSTEMD_DAEMON_ARGS_UPSLOG="-F"
+	SYSTEMD_DAEMON_TYPE_UPSLOG="notify"
 	SYSTEMD_DAEMON_ARGS_UPSMON="-F"
 	SYSTEMD_DAEMON_TYPE_UPSMON="notify"
 	SYSTEMD_DAEMON_ARGS_DRIVER="-FF"
@@ -4183,29 +4245,36 @@ AS_IF([test x"${with_libsystemd}" = xyes && test x"${SYSTEMD_SUPPORTS_DAEMON_TYP
 	SYSTEMD_DAEMON_NOTIFYACCESS_DRIVER="NotifyAccess=all"
 	dnl Similar for UPSMON with its two processes:
 	SYSTEMD_DAEMON_NOTIFYACCESS_UPSMON="NotifyAccess=all"
-	dnl UPSD is started directly by systemd and do not fork:
+	dnl UPSD is started directly by systemd and does not fork:
 	SYSTEMD_DAEMON_NOTIFYACCESS_UPSD="NotifyAccess=main"
+	dnl Similarly for upslog (per settings above):
+	SYSTEMD_DAEMON_NOTIFYACCESS_UPSLOG="NotifyAccess=main"
 	dnl Note: at this time we do not pre-define watchdog settings,
 	dnl to avoid breaking something by a poorly hardcoded guess.
 	dnl This is something end-users should do for their deployment,
 	dnl especially for drivers
 	SYSTEMD_DAEMON_WATCHDOG_DRIVER="#WatchdogSec=240s"
 	SYSTEMD_DAEMON_WATCHDOG_UPSD="#WatchdogSec=240s"
+	SYSTEMD_DAEMON_WATCHDOG_UPSLOG="#WatchdogSec=240s"
 	SYSTEMD_DAEMON_WATCHDOG_UPSMON="#WatchdogSec=240s"
 	], [
 	dnl "Usual" daemons that happen to be spawned by systemd
 	SYSTEMD_DAEMON_ARGS_UPSD="-F"
 	SYSTEMD_DAEMON_TYPE_UPSD="simple"
+	SYSTEMD_DAEMON_ARGS_UPSLOG="-F"
+	SYSTEMD_DAEMON_TYPE_UPSLOG="simple"
 	SYSTEMD_DAEMON_ARGS_UPSMON="-F"
 	SYSTEMD_DAEMON_TYPE_UPSMON="simple"
 	SYSTEMD_DAEMON_ARGS_DRIVER=""
 	SYSTEMD_DAEMON_TYPE_DRIVER="forking"
 	SYSTEMD_DAEMON_NOTIFYACCESS_DRIVER=""
 	SYSTEMD_DAEMON_NOTIFYACCESS_UPSD=""
+	SYSTEMD_DAEMON_NOTIFYACCESS_UPSLOG=""
 	SYSTEMD_DAEMON_NOTIFYACCESS_UPSMON=""
 	dnl Watchdog should not be configured for not-notifying units, right?
 	SYSTEMD_DAEMON_WATCHDOG_DRIVER="#WatchdogSec=240s"
 	SYSTEMD_DAEMON_WATCHDOG_UPSD="#WatchdogSec=240s"
+	SYSTEMD_DAEMON_WATCHDOG_UPSLOG="#WatchdogSec=240s"
 	SYSTEMD_DAEMON_WATCHDOG_UPSMON="#WatchdogSec=240s"
 	])
 
@@ -4924,14 +4993,18 @@ AC_SUBST(LIBSYSTEMD_CFLAGS)
 AC_SUBST(LIBSYSTEMD_LIBS)
 AC_SUBST(SYSTEMD_DAEMON_ARGS_UPSD)
 AC_SUBST(SYSTEMD_DAEMON_TYPE_UPSD)
+AC_SUBST(SYSTEMD_DAEMON_ARGS_UPSLOG)
+AC_SUBST(SYSTEMD_DAEMON_TYPE_UPSLOG)
 AC_SUBST(SYSTEMD_DAEMON_ARGS_UPSMON)
 AC_SUBST(SYSTEMD_DAEMON_TYPE_UPSMON)
 AC_SUBST(SYSTEMD_DAEMON_ARGS_DRIVER)
 AC_SUBST(SYSTEMD_DAEMON_TYPE_DRIVER)
 AC_SUBST(SYSTEMD_DAEMON_NOTIFYACCESS_DRIVER)
 AC_SUBST(SYSTEMD_DAEMON_NOTIFYACCESS_UPSD)
+AC_SUBST(SYSTEMD_DAEMON_NOTIFYACCESS_UPSLOG)
 AC_SUBST(SYSTEMD_DAEMON_NOTIFYACCESS_UPSMON)
 AC_SUBST(SYSTEMD_DAEMON_WATCHDOG_UPSD)
+AC_SUBST(SYSTEMD_DAEMON_WATCHDOG_UPSLOG)
 AC_SUBST(SYSTEMD_DAEMON_WATCHDOG_UPSMON)
 AC_SUBST(SYSTEMD_DAEMON_WATCHDOG_DRIVER)
 AC_SUBST(SYSTEMD_TMPFILES_PROGRAM)
@@ -4972,6 +5045,7 @@ AC_SUBST(htmldocdir)
 AC_SUBST(htmlmandir)
 AC_SUBST(pkgconfigdir)
 AC_SUBST(systemdsystemunitdir)
+AC_SUBST(systemdsystempresetdir)
 AC_SUBST(systemdshutdowndir)
 AC_SUBST(systemdtmpfilesdir)
 AC_SUBST(auglensdir)
@@ -5592,7 +5666,9 @@ AC_CONFIG_FILES([
  scripts/systemd/Makefile
  scripts/systemd/nut.target
  scripts/systemd/nut-common-tmpfiles.conf
+ scripts/systemd/nut-driver.target
  scripts/systemd/nut-driver@.service
+ scripts/systemd/nut-logger.service
  scripts/systemd/nut-monitor.service
  scripts/systemd/nut-server.service
  scripts/systemd/nut-driver-enumerator.service
@@ -5602,6 +5678,7 @@ AC_CONFIG_FILES([
  scripts/systemd/nut-driver-enumerator-daemon-activator.path
  scripts/Solaris/nut-driver-enumerator.xml
  scripts/Solaris/nut-driver.xml
+ scripts/Solaris/nut-logger.xml
  scripts/Solaris/nut-monitor.xml
  scripts/Solaris/nut-server.xml
  scripts/Solaris/nut.xml
@@ -5638,6 +5715,7 @@ m4_foreach_w([SCRIPTFILE], [
  scripts/upsdrvsvcctl/upsdrvsvcctl
  scripts/systemd/nutshutdown
  scripts/Solaris/svc-nut-server
+ scripts/Solaris/svc-nut-logger
  scripts/Solaris/svc-nut-monitor
  scripts/Solaris/precheck.py
  scripts/Solaris/preinstall

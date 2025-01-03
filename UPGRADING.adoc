@@ -44,6 +44,11 @@ Changes from 2.8.2 to 2.8.3
   Please use it, it immensely helps with community troubleshooting!
   [issue #1949]
 
+- When packaging or custom-building for (Linux) distributions with systemd,
+  you can now take advantage of `nut-systemd.preset` file to enable or
+  disable certain NUT units by default; its comments document each choice.
+  [issue #2721]
+
 - Reference packages prepared by `make package` should now separate the
   `PACKAGE_VERSION` from the platform-dependent prefix by a dash character
   in the ultimate package file name. Previously they were glued together

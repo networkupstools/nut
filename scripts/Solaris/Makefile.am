@@ -8,12 +8,14 @@ PYTHON = @PYTHON@
 SOLARIS_SMF_MANIFESTS = \
 	nut.xml \
 	nut-server.xml \
+	nut-logger.xml \
 	nut-monitor.xml \
 	nut-driver.xml \
 	nut-driver-enumerator.xml
 
 SOLARIS_SMF_METHODSCRIPTS = \
 	svc-nut-server \
+	svc-nut-logger \
 	svc-nut-monitor
 
 if WITH_SOLARIS_SMF
