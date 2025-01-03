@@ -78,6 +78,21 @@ You will also need pthread and mingw regex libraries, and other recommended
 dependencies as detailed below.
 
 [NOTE]
+======
+Be sure to install NUT build prerequisites and toolkits, as detailed
+in `docs/config-prereqs.txt` file.
+
+If builds complain similarly to
+----
+syntax error near unexpected token 'LIBUSB_1_0,'
+ 'PKG_CHECK_MODULES(LIBUSB_1_0, libusb-1.0 >= 0.9.1)'
+----
+make sure you have installed `pkgconf`, e.g.:
+
+	# apt-get install pkgconf
+======
+
+[NOTE]
 ================================================================================
 
 If you use script `./build-mingw-nut.sh` mentioned below, you may skip setting
