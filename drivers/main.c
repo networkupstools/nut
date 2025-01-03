@@ -2686,9 +2686,9 @@ int main(int argc, char **argv)
 			exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
 		} /* if (cmd) */
 
-		/* Try to prevent that driver is started multiple times. If a PID file */
-		/* already exists, send a TERM signal to the process and try if it goes */
-		/* away. If not, retry a couple of times. */
+		/* Try to prevent that driver is started multiple times. If a PID file
+		 * already exists, send a TERM signal to the process and try if it goes
+		 * away. If not, retry a couple of times. */
 		for (i = 0; i < 3; i++) {
 			struct stat	st;
 			int	sigret;
