@@ -488,6 +488,12 @@ relocated into new `shutdown.default` INSTCMD definitions. [#2670]
    and it defaults to `true` allowing for better ordered documents at the cost
    of some memory during document generation. [#2510]
 
+ - updated man page generation with `configure` script options to specify that
+   manual sections on the target platform differ from (Linux-based) defaults
+   hard-coded into page sources; this should allow to simplify NUT packaging
+   recipe maintenance in distributions (no more updating patches for changed
+   or added documentation sources).
+
  - lines in first section of NUT configuration report (can optionally remain as
    `config.nut_report_feature.log` and be installed into shared documentation
    of a NUT package) are now better grouped as miscellaneous features and
@@ -1634,7 +1640,7 @@ refer to this change set (too long in the making) as NUT 2.7.5.
      autoconf-2.70 releases in 2020 (also works with 2.69 which was the
      earlier release since 2012)
    * Dynamic library loading used in certain programs and use-cases improved,
-     especially for 64-bit vs 32-bit builds on multiple-bitness OSes
+     especially for 64-bit vs. 32-bit builds on multiple-bitness OSes
    * Logging routines like `upsdebugx()` were refactored as macros so there
      is slightly less overhead when logging is disabled [PRs #685 and #1100]
    * Numerous classes of compilation warnings eradicated, many of those being
@@ -1869,7 +1875,7 @@ Release notes for NUT 2.7.2 - what's new since 2.7.1
    * Emerson Network Power Liebert PSI 1440
    * MicroDowell B.Box LP 500
    * Numeric Digital 800 plus
-   * OptiUPS VS 575C
+   * OptiUPS vs. 575C
    * Tripp Lite SU10KRT3/1X
 
  - FreeDesktop Hardware Abstraction Layer (HAL) support was removed.

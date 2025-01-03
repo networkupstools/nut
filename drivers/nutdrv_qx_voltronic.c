@@ -1009,7 +1009,7 @@ static item_t	voltronic_qx2nut[] = {
 	{ "input.voltage.nominal",	0,	NULL,	"QMD\r",	"",	48,	'(',	"",	32,	34,	"%.1f",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },
 	{ "output.voltage.nominal",	0,	NULL,	"QMD\r",	"",	48,	'(',	"",	36,	38,	"%.1f",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },	/* redundant with value from QRI */
 /*	{ "battery_number",		ST_FLAG_RW,	voltronic_r_batt_numb,	"QMD\r",	"",	48,	'(',	"",	40,	41,	"%d",	QX_FLAG_SEMI_STATIC | QX_FLAG_RANGE | QX_FLAG_NONUT,	NULL,	NULL,	voltronic_batt_numb },	*//* redundant with value from QBV */
-/*	{ "battery.voltage.nominal",	0,	NULL,	"QMD\r",	"",	48,	'(',	"",	43,	46,	"%.1f",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },	*//* as *per battery* vs *per pack* reported by QRI */
+/*	{ "battery.voltage.nominal",	0,	NULL,	"QMD\r",	"",	48,	'(',	"",	43,	46,	"%.1f",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },	*//* as *per battery* vs. *per pack* reported by QRI */
 
 	/* Query UPS for ratings
 	 * > [F\r]

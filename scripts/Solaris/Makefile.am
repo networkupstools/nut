@@ -75,10 +75,16 @@ endif
 	cd $(PROTOTYPE_DIR) && rm -f prototype1
 	cd $(PROTOTYPE_DIR) && ./makelocal.sh
 	cp $(PROTOTYPE_DIR)/*.gz $(builddir)
-	UNAME_P="`uname -p`" && case "$${UNAME_P}" in \
-		i386|sparc) \
-			mv -f NUT_solaris_package.local.gz "$(abs_top_builddir)/NUT_solaris_$${UNAME_P}_package@PACKAGE_VERSION@.local.gz" ;; \
-	esac
+	ISANAME=''; case x"$(target_cpu)" in \
+		xi386|xsparc|xsparcv9|xamd64)	ISANAME='$(target_cpu)' ;; \
+		xx86_64)	ISANAME='amd64' ;; \
+		xi686)	ISANAME='i386' ;; \
+		xsparcv7)ISANAME='sparc' ;; \
+		x) UNAME_P="`uname -p`" && ISANAME="$${UNAME_P}" ;; \
+	esac ; \
+	if [ -n "$${ISANAME}" ] ; then \
+		mv -f NUT_solaris_package.local.gz "$(abs_top_builddir)/NUT_solaris_$${ISANAME}_package-@PACKAGE_VERSION@.local.gz" ; \
+	fi
 
 # TODO: Define support for IPS packaging (provide p5m files and make rules)
 package-solaris-ips:

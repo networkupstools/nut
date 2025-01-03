@@ -231,7 +231,7 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 		/* Now validate XCP frame */
 		/* Check header */
 		if ( my_buf[0] != PW_COMMAND_START_BYTE ) {
-			upsdebugx(2, "get_answer: wrong header 0xab vs %02x", my_buf[0]);
+			upsdebugx(2, "get_answer: wrong header 0xab vs. %02x", my_buf[0]);
 			/* Sometime we read something wrong. bad cables? bad ports? */
 			my_buf = memchr(my_buf, PW_COMMAND_START_BYTE, bytes_read);
 			if (!my_buf)

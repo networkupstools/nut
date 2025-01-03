@@ -38,7 +38,7 @@ dnl off by `dirname` should do the trick.
 dnl NOTE: the resulting NUT_WEBSITE_BASE string does not end with a slash!
 NUT_WEBSITE_BASE="`dirname "${PACKAGE_URL}index.html"`"
 dnl Fallback, no trailing slash!
-[ -n "${NUT_WEBSITE_BASE-}" ] || NUT_WEBSITE_BASE='https://www.networkupstools.org'
+test -n "${NUT_WEBSITE_BASE-}" || NUT_WEBSITE_BASE='https://www.networkupstools.org'
 
 dnl Note: this refers to GITREV at the time of configure script running
 dnl primarily for better messaging in the script itself (also to render
@@ -2130,6 +2130,12 @@ dnl the usual builds can pass by default on systems without asciidoc.
 NUT_ARG_WITH([docs], [build and install documentation (alias to --with-doc)], [man=auto])
 NUT_ARG_WITH([doc], [build and install documentation (see docs/configure.txt for many variants of the option)], [${nut_with_docs}])
 
+dnl NOTE: Sections may be strings, not pure numbers, on some platforms:
+NUT_ARG_WITH([docs-man-section-api], [man page section for library APIs], [3])
+NUT_ARG_WITH([docs-man-section-cfg], [man page section for configuration files], [5])
+NUT_ARG_WITH([docs-man-section-cmd-sys], [man page section for system management commands], [8])
+NUT_ARG_WITH([docs-man-section-cmd-usr], [man page section for user commands], [1])
+
 dnl NOTE: Until X-Mas 2021, the default was "legacy" (now "medium")
 NUT_ARG_ENABLE([warnings],
     [enable warning presets that were picked as useful in maintainership and CI practice (variants include gcc-minimal, gcc-medium, gcc-hard, clang-minimal, clang-medium, clang-hard, all; auto-choosers: hard, medium, minimal, yes=auto='gcc or clang or all at hardcoded default difficulty')],
@@ -3431,6 +3437,37 @@ if echo "${DOC_SKIPBUILD_LIST}" | grep -w "pdf" >/dev/null ; then
 fi
 AM_CONDITIONAL(WITH_PDFS, test "${WITH_PDFS}" = "yes")
 AM_CONDITIONAL(SKIP_PDFS, test "${SKIP_PDFS}" = "yes")
+
+dnl NOTE: Sections may be strings, not pure numbers, on some platforms:
+MAN_SECTION_API="${nut_with_docs_man_section_api}"
+MAN_SECTION_CFG="${nut_with_docs_man_section_cfg}"
+MAN_SECTION_CMD_SYS="${nut_with_docs_man_section_cmd_sys}"
+MAN_SECTION_CMD_USR="${nut_with_docs_man_section_cmd_usr}"
+
+MAN_SECTION_API_BASE="`echo "${MAN_SECTION_API}" | sed 's/^\(@<:@0-9@:>@*\)@<:@^0-9@:>@.*$/\1/'`"
+MAN_SECTION_CFG_BASE="`echo "${MAN_SECTION_CFG}" | sed 's/^\(@<:@0-9@:>@*\)@<:@^0-9@:>@.*$/\1/'`"
+MAN_SECTION_CMD_SYS_BASE="`echo "${MAN_SECTION_CMD_SYS}" | sed 's/^\(@<:@0-9@:>@*\)@<:@^0-9@:>@.*$/\1/'`"
+MAN_SECTION_CMD_USR_BASE="`echo "${MAN_SECTION_CMD_USR}" | sed 's/^\(@<:@0-9@:>@*\)@<:@^0-9@:>@.*$/\1/'`"
+
+AC_DEFINE_UNQUOTED([MAN_SECTION_API], ["${MAN_SECTION_API}"], [man page section for library APIs])
+AC_DEFINE_UNQUOTED([MAN_SECTION_CFG], ["${MAN_SECTION_CFG}"], [man page section for configuration files])
+AC_DEFINE_UNQUOTED([MAN_SECTION_CMD_SYS], ["${MAN_SECTION_CMD_SYS}"], [man page section for system management commands])
+AC_DEFINE_UNQUOTED([MAN_SECTION_CMD_USR], ["${MAN_SECTION_CMD_USR}"], [man page section for user commands])
+
+AC_DEFINE_UNQUOTED([MAN_SECTION_API_BASE], ["${MAN_SECTION_API_BASE}"], [base (number only) man page section for library APIs])
+AC_DEFINE_UNQUOTED([MAN_SECTION_CFG_BASE], ["${MAN_SECTION_CFG_BASE}"], [base (number only) man page section for configuration files])
+AC_DEFINE_UNQUOTED([MAN_SECTION_CMD_SYS_BASE], ["${MAN_SECTION_CMD_SYS_BASE}"], [base (number only) man page section for system management commands])
+AC_DEFINE_UNQUOTED([MAN_SECTION_CMD_USR_BASE], ["${MAN_SECTION_CMD_USR_BASE}"], [base (number only) man page section for user commands])
+
+AC_SUBST(MAN_SECTION_API)
+AC_SUBST(MAN_SECTION_CFG)
+AC_SUBST(MAN_SECTION_CMD_SYS)
+AC_SUBST(MAN_SECTION_CMD_USR)
+
+AC_SUBST(MAN_SECTION_API_BASE)
+AC_SUBST(MAN_SECTION_CFG_BASE)
+AC_SUBST(MAN_SECTION_CMD_SYS_BASE)
+AC_SUBST(MAN_SECTION_CMD_USR_BASE)
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-dev
@@ -4754,6 +4791,14 @@ NUT_DATADIR="${conftemp}"
 NUT_REPORT_SETTING_PATH([Data file path],
     NUT_DATADIR, "${conftemp}", [Default path for data files])
 
+dnl same for mandir
+conftemp="${mandir}"
+eval conftemp=\"${conftemp}\"
+eval conftemp=\"${conftemp}\"
+NUT_MANDIR="${conftemp}"
+NUT_REPORT_SETTING_PATH([Man page path],
+    NUT_MANDIR, "${conftemp}", [Default path for man page files])
+
 dnl same for bindir
 conftemp="${bindir}"
 eval conftemp=\"${conftemp}\"
@@ -4982,6 +5027,7 @@ AC_SUBST(BINDIR)
 AC_SUBST(LIBDIR)
 AC_SUBST(PKGCONFIGDIR)
 AC_SUBST(NUT_DATADIR, [`eval echo "${NUT_DATADIR}"`])
+AC_SUBST(NUT_MANDIR, [`eval echo "${NUT_MANDIR}"`])
 AC_SUBST(NUT_LIBEXECDIR, [`eval echo "${LIBEXECDIR}"`])
 AC_SUBST(DRVPATH)
 AC_SUBST(SBINDIR)

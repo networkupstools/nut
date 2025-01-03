@@ -25,15 +25,15 @@ Requires=network.target
 Before=nut-monitor.service
 PartOf=nut.target
 
-Documentation=man:upsd(8)
+Documentation=man:upsd(@MAN_SECTION_CMD_SYS@)
 Documentation=@NUT_WEBSITE_BASE@/docs/man/upsd.html
-Documentation=man:ups.conf(5)
+Documentation=man:ups.conf(@MAN_SECTION_CFG@)
 Documentation=@NUT_WEBSITE_BASE@/docs/man/ups.conf.html
-Documentation=man:upsd.conf(5)
+Documentation=man:upsd.conf(@MAN_SECTION_CFG@)
 Documentation=@NUT_WEBSITE_BASE@/docs/man/upsd.conf.html
-Documentation=man:upsd.users(5)
+Documentation=man:upsd.users(@MAN_SECTION_CFG@)
 Documentation=@NUT_WEBSITE_BASE@/docs/man/upsd.users.html
-Documentation=man:nut.conf(5)
+Documentation=man:nut.conf(@MAN_SECTION_CFG@)
 Documentation=@NUT_WEBSITE_BASE@/docs/man/nut.conf.html
 
 [Service]

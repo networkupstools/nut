@@ -514,7 +514,7 @@ set | sort -n """
                     dynacfgPipeline.axisCombos_WINDOWS
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
                     [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
@@ -551,7 +551,7 @@ set | sort -n """
                     dynacfgPipeline.axisCombos_WINDOWS
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
@@ -600,7 +600,7 @@ set | sort -n """
                     dynacfgPipeline.axisCombos_WINDOWS
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
@@ -643,7 +643,7 @@ set | sort -n """
                     [~/GCCVER=[01234].+/, ~/BUILD_TYPE=default-alldrv/]
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_STRICT_C
                 ], body)
             }, // getParStages
@@ -681,7 +681,7 @@ set | sort -n """
                     [~/GCCVER=[01234].+/, ~/BUILD_TYPE=default-alldr(v|v:no-distcheck)/]
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_STRICT_C
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
@@ -718,7 +718,7 @@ set | sort -n """
                     [~/GCCVER=[01234].+/, ~/BUILD_TYPE=default-alldrv/]
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
                     [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
@@ -758,7 +758,7 @@ set | sort -n """
                     dynacfgPipeline.axisCombos_WINDOWS
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesLabels': 'replace', 'commonLabelExpr': 'replace', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesLabels': 'replace', 'commonLabelExpr': 'replace', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
                     [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
@@ -806,7 +806,7 @@ set | sort -n """
                     dynacfgPipeline.axisCombos_WINDOWS
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesLabels': 'replace', 'commonLabelExpr': 'replace', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesLabels': 'replace', 'commonLabelExpr': 'replace', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
                     [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
@@ -847,7 +847,7 @@ set | sort -n """
                     [~/BUILD_TYPE=default-withdoc:man/]
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesLabels': 'replace', 'commonLabelExpr': 'replace', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesLabels': 'replace', 'commonLabelExpr': 'replace', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
                     [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
@@ -884,7 +884,7 @@ set | sort -n """
                     dynacfgPipeline.axisCombos_WINDOWS
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
                 ], body)
@@ -921,7 +921,7 @@ set | sort -n """
                     dynacfgPipeline.axisCombos_WINDOWS
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
                     [dynacfgPipeline.axisCombos_COMPILER_NOT_GCC]
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
@@ -955,7 +955,7 @@ set | sort -n """
                     dynacfgPipeline.axisCombos_WINDOWS
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
                     [dynacfgPipeline.axisCombos_COMPILER_GCC]
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
@@ -994,7 +994,7 @@ set | sort -n """
                     [~/OS_FAMILY=.+/]
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace', 'dynamatrixAxesLabels': 'replace', 'commonLabelExpr': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace', 'dynamatrixAxesLabels': 'replace', 'commonLabelExpr': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: [
                     [~/BITS=32/, ~/ARCH_BITS=64/], [~/BITS=64/, ~/ARCH_BITS=32/],
                     [~/CSTDVARIANT=c/],
@@ -1035,7 +1035,7 @@ set | sort -n """
                     [~/BUILD_WARNOPT=hard/]
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C +
                     [dynacfgPipeline.axisCombos_COMPILER_GCC_TOO_OLD]
                     + [dynacfgPipeline.axisCombos_WINDOWS_CROSS]
@@ -1076,7 +1076,7 @@ set | sort -n """
                     [~/BUILD_WARNOPT=hard/]
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C + [
                     [~/COMPILER=GCC/, ~/CSTDVERSION_KEY=(?!89)/]
                     ] +
@@ -1119,7 +1119,7 @@ set | sort -n """
                     dynacfgPipeline.axisCombos_WINDOWS
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT_STRICT_C + [
                     [~/COMPILER=(?!GCC)/]
                     ] +
@@ -1156,7 +1156,7 @@ set | sort -n """
                     [~/BUILD_WARNOPT=hard/]
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT + [
                     dynacfgPipeline.axisCombos_GNU_C,
                     dynacfgPipeline.axisCombos_WINDOWS_CROSS,
@@ -1196,7 +1196,7 @@ set | sort -n """
                     [~/BUILD_WARNOPT=hard/]
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT + [
                     dynacfgPipeline.axisCombos_GNU_C,
                     dynacfgPipeline.axisCombos_WINDOWS_CROSS,
@@ -1233,7 +1233,7 @@ set | sort -n """
                     [~/BUILD_WARNOPT=hard/]
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: dynacfgPipeline.excludeCombos_DEFAULT_CPPUNIT + [
                     dynacfgPipeline.axisCombos_GNU_C,
                     dynacfgPipeline.axisCombos_WINDOWS_CROSS,
@@ -1272,7 +1272,7 @@ set | sort -n """
                     [~/BUILD_WARNOPT=hard/]
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: [
                     dynacfgPipeline.axisCombos_ARCH32x64,
                     dynacfgPipeline.axisCombos_ARCH64x32,
@@ -1316,7 +1316,7 @@ set | sort -n """
                     //[~/BUILD_WARNOPT=hard/]
                     ],
                 runAllowedFailure: true,
-                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs language standards as centrally defined!
+                mergeMode: [ 'excludeCombos': 'merge', 'dynamatrixAxesCommonEnv': 'replace' ], // NOTE: We might want to replace other fields, but excludeCombos must be merged to filter compiler versions vs. language standards as centrally defined!
                 excludeCombos: [
                     dynacfgPipeline.axisCombos_ARCH32x64,
                     dynacfgPipeline.axisCombos_ARCH64x32,

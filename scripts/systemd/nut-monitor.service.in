@@ -24,11 +24,11 @@ Wants=nut-server.service
 #   After=network-online.target
 PartOf=nut.target
 
-Documentation=man:upsmon(8)
+Documentation=man:upsmon(@MAN_SECTION_CMD_SYS@)
 Documentation=@NUT_WEBSITE_BASE@/docs/man/upsmon.html
-Documentation=man:upsmon.conf(5)
+Documentation=man:upsmon.conf(@MAN_SECTION_CFG@)
 Documentation=@NUT_WEBSITE_BASE@/docs/man/upsmon.conf.html
-Documentation=man:nut.conf(5)
+Documentation=man:nut.conf(@MAN_SECTION_CFG@)
 Documentation=@NUT_WEBSITE_BASE@/docs/man/nut.conf.html
 
 [Service]
