@@ -1073,11 +1073,14 @@ CLEANFILES += *.$(MAN_SECTION_CMD_USR) *.$(MAN_SECTION_API) *.$(MAN_SECTION_CFG)
 
 # Working around a2x not friendly to parallelized runs.
 # See more details in the main NUT docs/Makefile.am
+# NOTE: MKDIR_P may be defined via expanded $(top_builddir)/install-sh
+# so should be run from $(abs_builddir) to be safe, as we jump around
+# the build workspace
 DOCBUILD_BEGIN = { \
     if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
         rm -rf "./$${A2X_OUTDIR}" || true ; \
         test -d "$@" && rm -rf "$@" || true ; \
-        $(MKDIR_P) "./$${A2X_OUTDIR}" || exit ; \
+        _CWD="`pwd`" && (cd '$(abs_builddir)' && $(MKDIR_P) "$${_CWD}/$${A2X_OUTDIR}") || exit ; \
         for F in $(LINKMAN_INCLUDE_GENERATED) ; do \
             if [ -s "./$$F" ] ; then ln -f -s "../../$$F" "./$${A2X_OUTDIR}/" ; else \
             if [ -s "$(abs_srcdir)/$$F" ] ; then ln -f -s "$(abs_srcdir)/$$F" "./$${A2X_OUTDIR}/" ; fi ; fi ; \
@@ -1260,6 +1263,9 @@ PREP_SRC = $(LINKMAN_INCLUDE_GENERATED) $(SRC_ALL_PAGES) asciidoc.conf
 # with the title, followed by another with a sequence of "===" characters
 # of same length, give or take one (or so). Currently we do not bother to
 # adjust the second line, as we expect minor length changes like "8"=>"1m".
+# NOTE: MKDIR_P may be defined via expanded $(top_builddir)/install-sh
+# so should be run from $(abs_builddir) to be safe, as we jump around
+# the build workspace
 $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC)
 	@cd "$(@D)" || exit ; \
 	 linkroot="$(abs_builddir)" ; \
@@ -1320,7 +1326,7 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC)
 	                cd "$(abs_top_builddir)" ;; \
 	        esac ; \
 	        D="`dirname "$$F"`" ; \
-	        $(MKDIR_P) "$${linkroot}/$$D" || { rm -f "$@.working" ; exit 1 ; } ; \
+	        (cd '$(abs_builddir)' && $(MKDIR_P) "$${linkroot}/$$D") || { rm -f "$@.working" ; exit 1 ; } ; \
 	        if ! test -e "$${linkroot}/$$F" && test -s "$${linksrcroot}/$$F" ; then \
 	            echo "  LN     '$${linksrcroot}/$$F' => '$${linkroot}/$$F' (PWD = '`pwd`')" >&2 ; \
 	            ln -fs "$${linksrcroot}/$$F" "$${linkroot}/$$F" || { rm -f "$@.working" ; exit 1 ; } ; \

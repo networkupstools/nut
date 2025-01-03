@@ -490,11 +490,15 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) \
 
 # Note we only remove the original target (if present), if it is a directory -
 # e.g. created by "html-chunked" targets.
+
+# NOTE: MKDIR_P may be defined via expanded $(top_builddir)/install-sh
+# so should be run from $(abs_builddir) to be safe, as we jump around
+# the build workspace
 DOCBUILD_BEGIN = { \
     if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
         rm -rf "./$${A2X_OUTDIR}" || true ; \
         test -d "$@" && rm -rf "$@" || true ; \
-        $(MKDIR_P) "./$${A2X_OUTDIR}" || exit ; \
+        _CWD="`pwd`" && (cd '$(abs_builddir)' && $(MKDIR_P) "$${_CWD}/$${A2X_OUTDIR}") || exit ; \
         case "$${A2X_OUTDIR}" in \
             tmp/pdf.*) ln -s ../../images "./$${A2X_OUTDIR}" ;; \
         esac; \
@@ -862,6 +866,9 @@ PREP_SRC = $(EXTRA_DIST) $(SPELLCHECK_SRC_DEFAULT)
 # source texts located in/under parent dirs.
 # We also handle man page links (section-aware) for platforms where they
 # differ from common defaults.
+# NOTE: MKDIR_P may be defined via expanded $(top_builddir)/install-sh
+# so should be run from $(abs_builddir) to be safe, as we jump around
+# the build workspace
 $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC)
 	@cd "$(@D)" || exit ; \
 	 linkroot="$(abs_builddir)" ; \
@@ -919,7 +926,7 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC)
 	                cd "$(abs_top_builddir)" ;; \
 	        esac ; \
 	        D="`dirname "$$F"`" ; \
-	        $(MKDIR_P) "$${linkroot}/$$D" || { rm -f "$@.working" ; exit 1 ; } ; \
+	        (cd '$(abs_builddir)' && $(MKDIR_P) "$${linkroot}/$$D") || { rm -f "$@.working" ; exit 1 ; } ; \
 	        if ! test -s "$${linkroot}/$$F" && test -s "$${linksrcroot}/$$F" ; then \
 	            echo "  LN     '$${linksrcroot}/$$F' => '$${linkroot}/$$F' (PWD = '`pwd`')" ; \
 	            ln -fs "$${linksrcroot}/$$F" "$${linkroot}/$$F" || { rm -f "$@.working" ; exit 1 ; } ; \
