@@ -287,9 +287,9 @@ static void upsdrv_updateinfo_analog(void)
 	/* Field 19, AC_OUT POWER, kVA */
 	dstate_setinfo("ups.power", "%d",
 		ydn23_val_from_hex(YDN23_FRAME_REG(frame, 35), 4)*10);
-	/* Field 22, BATTERY BACKUP TIME, Min */
-	dstate_setinfo("battery.runtime.low", "%.2f",
-		ydn23_val_from_hex(YDN23_FRAME_REG(frame, 41), 4)/100.0f*60.0f);
+	/* Field 22, BATTERY BACKUP TIME, Minutes */
+	dstate_setinfo("battery.runtime", "%d",
+		ydn23_val_from_hex(YDN23_FRAME_REG(frame, 41), 4)*60);
 
 	dstate_dataok();
 }
