@@ -79,6 +79,7 @@ upsc_SOURCES = upsc.c upsclient.h
 upscmd_SOURCES = upscmd.c upsclient.h
 upsrw_SOURCES = upsrw.c upsclient.h
 upslog_SOURCES = upslog.c upsclient.h upslog.h
+upslog_LDADD = $(LDADD_FULL)
 upsmon_SOURCES = upsmon.c upsmon.h upsclient.h
 upsmon_LDADD = $(LDADD_FULL)
 if HAVE_WINDOWS_SOCKETS
