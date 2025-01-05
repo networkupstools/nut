@@ -39,12 +39,14 @@
 #include "timehead.h"
 #include "nut_stdint.h"
 #include "upslog.h"
+#include "str.h"
 
 #ifdef WIN32
 #include "wincompat.h"
 #endif
 
 	static	int	reopen_flag = 0, exit_flag = 0;
+	static	size_t	max_loops = 0;
 	static	char	*upsname;
 	static	UPSCONN_t	*ups;
 
@@ -78,7 +80,8 @@ static void reopen_log(void)
 {
 	for (monhost_ups_current = monhost_ups_anchor;
 	     monhost_ups_current != NULL;
-	     monhost_ups_current = monhost_ups_current->next) {
+	     monhost_ups_current = monhost_ups_current->next
+	) {
 		if (monhost_ups_current->logfile == stdout) {
 			upslogx(LOG_INFO, "logging to stdout");
 			return;
@@ -153,6 +156,7 @@ static void help(const char *prog)
 	printf("  -f <format>	- Log format.  See below for details.\n");
 	printf("		- Use -f \"<format>\" so your shell doesn't break it up.\n");
 	printf("  -i <interval>	- Time between updates, in seconds\n");
+	printf("  -d <count>	- Exit after specified amount of updates\n");
 	printf("  -l <logfile>	- Log file name, or - for stdout (foreground by default)\n");
 	printf("  -F		- stay foregrounded even if logging into a file\n");
 	printf("  -B		- stay backgrounded even if logging to stdout\n");
@@ -434,7 +438,7 @@ static void run_flist(struct monhost_ups *monhost_ups_print)
 int main(int argc, char **argv)
 {
 	int	interval = 30, i, foreground = -1;
-	size_t	monhost_len = 0;
+	size_t	monhost_len = 0, loop_count = 0;
 	const char	*prog = xbasename(argv[0]);
 	time_t	now, nextpoll = 0;
 	const char	*user = NULL;
@@ -446,7 +450,7 @@ int main(int argc, char **argv)
 
 	print_banner_once(prog, 0);
 
-	while ((i = getopt(argc, argv, "+hs:l:i:f:u:Vp:FBm:")) != -1) {
+	while ((i = getopt(argc, argv, "+hs:l:i:d:f:u:Vp:FBm:")) != -1) {
 		switch(i) {
 			case 'h':
 				help(prog);
@@ -499,6 +503,31 @@ int main(int argc, char **argv)
 
 			case 'i':
 				interval = atoi(optarg);
+				break;
+
+			case 'd':
+				{	/* scoping */
+					unsigned long ul = 0;
+					if (str_to_ulong(optarg, &ul, 10)) {
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+# pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
+						if (ul < SIZE_MAX)
+							max_loops = (size_t)ul;
+						else
+							upslogx(LOG_ERR, "Invalid max loops");
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) )
+# pragma GCC diagnostic pop
+#endif
+					} else
+						upslogx(LOG_ERR, "Invalid max loops");
+				}
 				break;
 
 			case 'f':
@@ -594,7 +623,8 @@ int main(int argc, char **argv)
 
 	for (monhost_ups_current = monhost_ups_anchor;
 	     monhost_ups_current != NULL;
-	     monhost_ups_current = monhost_ups_current->next) {
+	     monhost_ups_current = monhost_ups_current->next
+	) {
 		printf("logging status of %s to %s (%is intervals)\n",
 			monhost_ups_current->monhost, monhost_ups_current->logfn, interval);
 		if (upscli_splitname(monhost_ups_current->monhost, &(monhost_ups_current->upsname), &(monhost_ups_current->hostname), &(monhost_ups_current->port)) != 0) {
@@ -668,7 +698,8 @@ int main(int argc, char **argv)
 
 		for (monhost_ups_current = monhost_ups_anchor;
 		     monhost_ups_current != NULL;
-		     monhost_ups_current = monhost_ups_current->next) {
+		     monhost_ups_current = monhost_ups_current->next
+		) {
 			ups = monhost_ups_current->ups;	/* XXX Not ideal */
 			upsname = monhost_ups_current->upsname;	/* XXX Not ideal */
 			/* reconnect if necessary */
@@ -683,6 +714,14 @@ int main(int argc, char **argv)
 				upscli_disconnect(ups);
 			}
 		}
+
+		if (max_loops > 0) {
+			loop_count++;
+			if (loop_count >= max_loops || loop_count > (SIZE_MAX - 1)) {
+				upslogx(LOG_INFO, "%" PRIuSIZE " loops have elapsed", max_loops);
+				exit_flag = 1;
+			}
+		}
 	}
 
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
@@ -690,7 +729,8 @@ int main(int argc, char **argv)
 
 	for (monhost_ups_current = monhost_ups_anchor;
 	     monhost_ups_current != NULL;
-	     monhost_ups_current = monhost_ups_current->next) {
+	     monhost_ups_current = monhost_ups_current->next
+	) {
 
 		if (monhost_ups_current->logfile != stdout)
 			fclose(monhost_ups_current->logfile);

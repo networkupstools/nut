@@ -34,7 +34,7 @@
 # ksh, busybox sh...)
 #
 # Copyright
-#	2022-2024 Jim Klimov <jimklimov+nut@gmail.com>
+#	2022-2025 Jim Klimov <jimklimov+nut@gmail.com>
 #
 # License: GPLv2+
 
@@ -356,6 +356,11 @@ if [ "`id -u`" = 0 ]; then
 fi
 
 stop_daemons() {
+    if [ -n "$PID_UPSMON" ] ; then
+        log_info "Stopping test daemons: upsmon via command"
+        upsmon -c stop
+    fi
+
     if [ -n "$PID_UPSD$PID_UPSMON$PID_DUMMYUPS$PID_DUMMYUPS1$PID_DUMMYUPS2" ] ; then
         log_info "Stopping test daemons"
         kill -15 $PID_UPSD $PID_UPSMON $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 2>/dev/null || return 0
@@ -1189,7 +1194,17 @@ testcase_sandbox_upsc_query_bogus() {
 testcase_sandbox_upsc_query_timer() {
     log_separator
     log_info "[testcase_sandbox_upsc_query_timer] Test that dummy-ups TIMER action changes the reported state"
-    # Driver is set up to flip ups.status every 5 sec, so check every 3
+
+    # Driver is set up to flip ups.status every 5 sec, so check every 3 sec
+    # with upsc, but we can follow with upslog more intensively. New process
+    # launches can lag a lot on very busy SUTs; hopefully still-running ones
+    # are more responsive in this regard.
+    log_info "Starting upslog daemon"
+    rm -f "${NUT_STATEPATH}/upslog-dummy.log" || true
+    # Start as foregrounded always, so we have a PID to kill easily:
+    upslog -F -i 1 -d 30 -m "dummy@localhost:${NUT_PORT},${NUT_STATEPATH}/upslog-dummy.log" &
+    PID_UPSLOG="$!"
+
     # TODO: Any need to convert to runcmd()?
     OUT1="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT1" ; sleep 3
     OUT2="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT2"
@@ -1211,7 +1226,15 @@ testcase_sandbox_upsc_query_timer() {
             fi
         fi
     fi
-    if echo "$OUT1$OUT2$OUT3$OUT4$OUT5" | grep "OB" && echo "$OUT1$OUT2$OUT3$OUT4$OUT5" | grep "OL" ; then
+
+    log_info "Stopping upslog daemon"
+    kill -15 $PID_UPSLOG 2>/dev/null || true
+    wait $PID_UPSLOG || true
+
+    if (grep " [OB] " "${NUT_STATEPATH}/upslog-dummy.log" && grep " [OL] " "${NUT_STATEPATH}/upslog-dummy.log") \
+    || (grep " \[OB\] " "${NUT_STATEPATH}/upslog-dummy.log" && grep " \[OL\] " "${NUT_STATEPATH}/upslog-dummy.log") \
+    || (echo "$OUT1$OUT2$OUT3$OUT4$OUT5" | grep "OB" && echo "$OUT1$OUT2$OUT3$OUT4$OUT5" | grep "OL") \
+    ; then
         log_info "[testcase_sandbox_upsc_query_timer] PASSED: ups.status flips over time"
         PASSED="`expr $PASSED + 1`"
     else
@@ -1219,6 +1242,8 @@ testcase_sandbox_upsc_query_timer() {
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_timer"
     fi
+
+    #rm -f "${NUT_STATEPATH}/upslog-dummy.log" || true
 }
 
 isTestablePython() {
