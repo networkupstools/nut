@@ -220,6 +220,10 @@ https://github.com/networkupstools/nut/milestone/11
    * in `cps-hid` subdriver, `cps_fix_report_desc()` method should now handle
      mismatched `LogMax` ranges for input and output voltages, whose USB Report
      Descriptors are wrongly encoded by some firmware versions. [#1512]
+   * in `cps-hid` subdriver, try to fix frequency scaling based on the values
+     we see from the device and/or configuration overrides (low, nominal, high)
+     so `499.0 Hz` reading that comes from some firmware versions gets reported
+     properly as `49.9Hz`. [#2717]
    * USB parameters (per `usb_communication_subdriver_t`) are now set back to
      their default values during enumeration after probing each subdriver.
      Having an unrelated device connected with a VID:PID matching the
