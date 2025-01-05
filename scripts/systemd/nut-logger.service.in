@@ -23,7 +23,8 @@ Wants=nut-server.service
 #   Requires=network-online.target
 #   After=network-online.target
 PartOf=nut.target
-Before=nut.target ### not enabled by default, but ordered if enabled by user
+### not enabled by default, but ordered if enabled by user:
+Before=nut.target
 
 Documentation=man:upslog(8)
 Documentation=@NUT_WEBSITE_BASE@/docs/man/upslog.html
@@ -40,10 +41,12 @@ EnvironmentFile=-@CONFPATH@/nut.conf
 EnvironmentFile=@CONFPATH@/upslog.conf
 SyslogIdentifier=%N
 ExecStartPre=-@SYSTEMD_TMPFILES_PROGRAM@ --create @systemdtmpfilesdir@/nut-common-tmpfiles.conf
-ExecStartPre=/bin/test -n "${UPSLOG_ARGS-}"
-ExecStart=@SBINDIR@/upslog @SYSTEMD_DAEMON_ARGS_UPSLOG@ $UPSLOG_ARGS
+ExecStartPre=/bin/test -n "${UPSLOG_ARGS}"
+ExecStart=@BINDIR@/upslog @SYSTEMD_DAEMON_ARGS_UPSLOG@ $UPSLOG_ARGS
 # NOTE: SIGHUP is supported to re-open the log file,
-# which is the default systemd ReloadSignal
+# which is the default systemd ReloadSignal (only
+# sent by systemd 253 and newer)
+ExecReload=/bin/kill -HUP $MAINPID
 PIDFile=@PIDPATH@/upslog.pid
 # With this program, the PID file always exists and "kill -TERM" in particular
 # can be used from command-line or some legacy scripts, it causes a clean and

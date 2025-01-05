@@ -309,6 +309,11 @@ https://github.com/networkupstools/nut/milestone/11
      as "OTHER" notification type (whenever the set of such tokens appears
      or changes) or "NOTOTHER" when they disappear. [#415]
 
+ - upslog:
+   * Added support for limiting the loop count. Using in NIT (NUT Integration
+     Test) suite for double profit (checking the tool and fallback in NIT).
+   * Added systemd and SMF service integration. [#1803]
+
  - More systemd integration:
    * Introduced a `nut-sleep.service` unit which stops `nut.target` when a
      system sleep was requested, and starts it when the sleep is finished.

@@ -70,6 +70,10 @@ Changes from 2.8.2 to 2.8.3
   For fallback with older systemd, a `nut-sleep.service` is provided now.
   [#1070, #2596, #2597]
 
+- Added systemd and SMF service integration for `upslog` as a `nut-logger`
+  service (disabled by default, needs a `upslog.conf` file to deliver the
+  `UPSLOG_ARGS=...` setting for actual monitoring and logging). [#1803]
+
 - Handling of per-UPS `ALARM` state was introduced to `upsmon`, allowing it
   to optionally treat it as a factor in deciding that the device is in a
   "critical" state (polled more often, assumed dead if communications are

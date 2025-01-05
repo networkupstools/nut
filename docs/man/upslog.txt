@@ -71,6 +71,11 @@ Wait this many seconds between polls.  This defaults to 30 seconds.
 If you require tighter timing, you should write your own logger using
 the linkman:upsclient[3] library.
 
+*-d* 'count'::
+
+Exit after specified amount of updates.  Default is 0 for infinite loop
+(until interrupted otherwise).
+
 *-l* 'logfile'::
 
 Store the results in this file.
