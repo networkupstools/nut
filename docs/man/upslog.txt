@@ -82,11 +82,15 @@ by default.
 Requires that the `-s <system>` option is also used for the single-system
 logging.  Can be used with the `-m <tuple>`, will be added to the list.
 
+*-D*::
+Raise debugging verbosity level by one; upslog will remain in the foreground
+by default.
+
 *-F*::
 upslog will run in the foreground, regardless of logging target.
 
 *-B*::
-upslog will run in the background, regardless of logging target.
+upslog will run in the background, regardless of logging target or debugging.
 
 *-s* 'ups'::
 Monitor this UPS.  The format for this option is

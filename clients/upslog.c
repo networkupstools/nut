@@ -208,8 +208,9 @@ static void help(const char *prog)
 	printf("  -i <interval>	- Time between updates, in seconds\n");
 	printf("  -d <count>	- Exit after specified amount of updates\n");
 	printf("  -l <logfile>	- Log file name, or - for stdout (foreground by default)\n");
+	printf("  -D		- raise debugging level (and stay foreground by default)\n");
 	printf("  -F		- stay foregrounded even if logging into a file\n");
-	printf("  -B		- stay backgrounded even if logging to stdout\n");
+	printf("  -B		- stay backgrounded even if logging to stdout or debugging\n");
 	printf("  -p <pidbase>  - Base name for PID file (defaults to \"%s\")\n", prog);
 	printf("                - NOTE: PID file is written regardless of fore/back-grounding\n");
 	printf("  -s <ups>	- Monitor UPS <ups> - <upsname>@<host>[:<port>]\n");
@@ -509,13 +510,17 @@ int main(int argc, char **argv)
 
 	print_banner_once(prog, 0);
 
-	while ((i = getopt(argc, argv, "+hs:l:i:d:f:u:Vp:FBm:")) != -1) {
+	while ((i = getopt(argc, argv, "+hDs:l:i:d:f:u:Vp:FBm:")) != -1) {
 		switch(i) {
 			case 'h':
 				help(prog);
 #ifndef HAVE___ATTRIBUTE__NORETURN
 				break;
 #endif
+
+			case 'D':
+				nut_debug_level++;
+				break;
 
 			case 'm': { /* var scope */
 					char *m_arg, *s;
@@ -749,7 +754,7 @@ int main(int argc, char **argv)
 	open_syslog(prog);
 
 	if (foreground < 0) {
-		if (get_logfile("-")) {
+		if (nut_debug_level > 0 || get_logfile("-")) {
 			foreground = 1;
 		} else {
 			foreground = 0;
