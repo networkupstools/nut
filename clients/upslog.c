@@ -47,14 +47,14 @@
 
 	static	int	reopen_flag = 0, exit_flag = 0;
 	static	size_t	max_loops = 0;
-	static	char	*upsname;
-	static	UPSCONN_t	*ups;
+	static	char	*upsname = NULL;
+	static	UPSCONN_t	*ups = NULL;
 
-	static	char *logfn, *monhost;
+	static	char *logfn = NULL, *monhost = NULL;
 #ifndef WIN32
 	static	sigset_t	nut_upslog_sigmask;
 #endif
-	static	char	logbuffer[LARGEBUF], *logformat;
+	static	char	logbuffer[LARGEBUF], *logformat = NULL;
 
 	static	flist_t	*fhead = NULL;
 	struct 	logtarget_t {
