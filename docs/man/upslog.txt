@@ -35,6 +35,8 @@ within this string are:
 
 %%;; Insert a single "%"
 
+%t;; Insert a single TAB character (like `printf("\t")`)
+
 %TIME format%;; Insert the time with strftime formatting
 
 %ETIME%;; Insert the number of seconds, ala time_t.  This is now a

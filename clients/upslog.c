@@ -352,11 +352,21 @@ static void compile_format(void)
 			continue;
 		}
 
+		/* Safe to peek into i+1, at worst would be '\0' */
 		/* if a %%, append % and start over */
 		if (logformat[i+1] == '%') {
 			add_call(print_literal, "%");
 
 			/* make sure we don't parse the second % next time */
+			i++;
+			continue;
+		}
+
+		/* if %t, append a TAB character and start over */
+		if (logformat[i+1] == 't') {
+			add_call(print_literal, "\t");
+
+			/* make sure we don't parse the 't' next time */
 			i++;
 			continue;
 		}
