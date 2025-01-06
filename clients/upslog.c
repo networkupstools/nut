@@ -130,6 +130,10 @@ static void reopen_log(void)
 	     p != NULL;
 	     p = p->next
 	) {
+		/* Never opened, e.g. removed asterisk entry */
+		if (!p->logfile)
+			continue;
+
 		if (p->logfile == stdout) {
 			upslogx(LOG_INFO, "logging to stdout");
 			continue;
@@ -538,6 +542,9 @@ int main(int argc, char **argv)
 					s = xstrdup(optarg);
 					m_arg = s;
 					/* splitting done in common loop below */
+					monhost_ups_current->upsname = NULL;
+					monhost_ups_current->hostname = NULL;
+					monhost_ups_current->port = 0;
 					monhost_ups_current->monhost = xstrdup(strsep(&m_arg, ","));
 					if (!m_arg)
 						fatalx(EXIT_FAILURE, "Argument '-m upsspec,logfile' requires exactly 2 components in the tuple");
@@ -546,6 +553,7 @@ int main(int argc, char **argv)
 #else
 					monhost_ups_current->logtarget = add_logfile(filter_path(strsep(&m_arg, ",")));
 #endif
+					monhost_ups_current->ups = NULL;
 					if (m_arg) /* Had a third comma - also unexpected! */
 						fatalx(EXIT_FAILURE, "Argument '-m upsspec,logfile' requires exactly 2 components in the tuple");
 					free(s);
@@ -680,8 +688,12 @@ int main(int argc, char **argv)
 		monhost_len++;
 
 		/* splitting done in common loop below */
-		monhost_ups_current->monhost = monhost;
+		monhost_ups_current->upsname = NULL;
+		monhost_ups_current->hostname = NULL;
+		monhost_ups_current->port = 0;
+		monhost_ups_current->monhost = xstrdup(monhost);
 		monhost_ups_current->logtarget = add_logfile(logfn);
+		monhost_ups_current->ups = NULL;
 	}
 
 	/* shouldn't happen */
@@ -693,7 +705,7 @@ int main(int argc, char **argv)
 		fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system> -l <logfile>, or use -m <ups,logfile>");
 
 	/* Split the system specs in a common fashion for tuples and legacy args */
-	for (monhost_ups_current = monhost_ups_anchor;
+	for (monhost_ups_current = monhost_ups_anchor, monhost_ups_prev = NULL;
 	     monhost_ups_current != NULL;
 	     monhost_ups_current = monhost_ups_current->next
 	) {
@@ -707,7 +719,121 @@ int main(int argc, char **argv)
 			NUT_STRARG(monhost_ups_current->hostname),
 			monhost_ups_current->port
 			);
+
+		/* Revise the list if some UPS name was an asterisk
+		 * (query the data server) */
+		if (!strcmp(monhost_ups_current->upsname, "*")) {
+			/* following list_upses() from upsc.c */
+			int		ret;
+			size_t	numq, numa, found = 0;
+			const char	*query[4];
+			char		**answer;
+			UPSCONN_t	*conn = NULL;
+
+			query[0] = "UPS";
+			numq = 1;
+
+			upslogx(LOG_INFO, "Querying %s:%" PRIu16 " for currently served devices",
+				NUT_STRARG(monhost_ups_current->hostname),
+				monhost_ups_current->port
+			);
+
+			conn = xmalloc(sizeof(*conn));
+			if (upscli_connect(conn, monhost_ups_current->hostname, monhost_ups_current->port, UPSCLI_CONN_TRYSSL) < 0) {
+				fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(conn));
+			}
+
+			ret = upscli_list_start(conn, numq, query);
+			if (ret < 0) {
+				/* check for an old upsd */
+				if (upscli_upserror(conn) == UPSCLI_ERR_UNKCOMMAND) {
+					fatalx(EXIT_FAILURE, "Error: upsd is too old to support this query");
+				}
+
+				fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(conn));
+			}
+
+			while (upscli_list_next(conn, numq, query, &numa, &answer) == 1) {
+				struct	monhost_ups *mu = NULL;
+				char	buf[LARGEBUF];
+
+				/* UPS <upsname> <description> */
+				if (numa < 3) {
+					fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 3)", numa);
+				}
+
+				found++;
+				upsdebugx(1, "FOUND: %s: %s", answer[1], answer[2]);
+
+				mu = xmalloc(sizeof(struct monhost_ups));
+				snprintf(buf, sizeof(buf), "%s@%s:%" PRIu16,
+					answer[1],
+					monhost_ups_current->hostname,
+					monhost_ups_current->port);
+				mu->monhost = xstrdup(buf);
+				mu->upsname = xstrdup(answer[1]);
+				mu->hostname = xstrdup(monhost_ups_current->hostname);
+				mu->port = monhost_ups_current->port;
+				mu->ups = NULL;
+				mu->logtarget = monhost_ups_current->logtarget;
+				mu->next = monhost_ups_current->next;
+				monhost_ups_current->next = mu;
+				monhost_len++;
+			}
+
+			upscli_disconnect(conn);
+			free(conn);
+			conn = NULL;
+
+			if (!found) {
+				upslogx(LOG_WARNING, "Data server at %s:%" PRIu16
+					" does not currently serve any devices",
+					NUT_STRARG(monhost_ups_current->hostname),
+					monhost_ups_current->port
+				);
+			}
+
+			/* Remove the entry with asterisk */
+			upsdebugx(2, "%s: free strings of asterisky monhost_ups_current", __func__);
+			if (monhost_ups_current->monhost)
+				free(monhost_ups_current->monhost);
+			if (monhost_ups_current->upsname)
+				free(monhost_ups_current->upsname);
+			if (monhost_ups_current->hostname)
+				free(monhost_ups_current->hostname);
+			if (monhost_ups_current->ups)
+				free(monhost_ups_current->ups);
+
+			upsdebugx(2, "%s: detach asterisky monhost_ups_current", __func__);
+			if (monhost_ups_prev) {
+				monhost_ups_prev->next = monhost_ups_current->next;
+				/* monhost_ups_prev remains as it was */
+				free(monhost_ups_current);
+				monhost_ups_current = monhost_ups_prev;
+			} else {
+				/* This is the first entry, anchor */
+				monhost_ups_anchor = monhost_ups_current->next;
+				monhost_ups_prev = NULL;
+				free(monhost_ups_current);
+				monhost_ups_current = monhost_ups_anchor;
+			}
+			monhost_len--;
+
+			if (!monhost_ups_current || !monhost_len) {
+				/* Our list ended up empty,
+				 * no "next" to loop into */
+				fatalx(EXIT_FAILURE, "Queries failed to find anything");
+			}
+		} else {
+			/* No asterisk, usual spec */
+			monhost_ups_prev = monhost_ups_current;
+		}
 	}
+
+	/* might happen if we only queried remote hosts and found nothing,
+	 * just in case we missed something above */
+	if (!monhost_len || !monhost_ups_anchor)
+		fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system> -l <logfile>, or use -m <ups,logfile>");
 
 	/* Report the logged systems, open the log files as needed */
 	for (monhost_ups_current = monhost_ups_anchor;

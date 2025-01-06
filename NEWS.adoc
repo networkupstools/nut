@@ -320,6 +320,8 @@ https://github.com/networkupstools/nut/milestone/11
      and `-l <logfile>`) along with newer tuple(s) for multiple-system logging
      (repeatable `-m <system,logfile>`), previously the single-system options
      were overridden by the tuple(s); now they become part of the list.
+   * The `upsname` in the `system=upsname[@hostname[:port]]` parameter may
+     be an asterisk `*` to query for devices currently served by the hostname.
    * Same log file may safely be used in different logging tuples (it is
      then recommended to use `%UPSHOST%` in a custom formatting string).
    * Fixed printing of `%UPSHOST%` when multiple systems are being logged.
