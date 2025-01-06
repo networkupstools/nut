@@ -1,6 +1,8 @@
 /* upslog - log ups values to a file for later collection and analysis
 
-   Copyright (C) 1998  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+     1998       Russell Kroll <rkroll@exploits.org>
+     2020-2025  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
