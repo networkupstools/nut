@@ -107,8 +107,8 @@ upsname@hostname:9999,/var/log/nut/cps.log
 Tuples may specify `-` as the logfile, to emit messages on `stdout`
 (e.g. to be collected by the system journal for services).
 +
-Use of `stdout` via tuple-based logging specifications does not
-imply that upslog will remain in the foreground by default.
+Use of `stdout` via tuple-based logging specifications also
+implies that upslog will remain in the foreground by default.
 
 *-u* 'username'::
 
@@ -134,6 +134,14 @@ current sleep and log immediately.  This is useful when triggered from a
 entry always exists, even if the power goes away for a period of time shorter
 than that specified by the `-i` argument.
 
+LOG CO-LOCATION
+---------------
+
+It is possible and safe to specify the same log file (including `-` for stdout)
+in several tuples, and it would only be opened or closed once without conflict.
+
+Consider adding `%UPSHOST%` to your custom formatting string to differentiate
+lines corresponding to different systems, when logging them to same target.
 
 LOG ROTATION
 ------------

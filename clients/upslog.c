@@ -57,16 +57,24 @@
 	static	char	logbuffer[LARGEBUF], *logformat;
 
 	static	flist_t	*fhead = NULL;
+	struct 	logtarget_t {
+		char	*logfn;
+		FILE	*logfile;
+		struct 	logtarget_t	*next;
+	};
+	/* FIXME: To be valgrind-clean, free these at exit */
+	static	struct	logtarget_t *logfile_anchor = NULL;
+
 	struct 	monhost_ups {
 		char	*monhost;
-		char	*logfn;
 		char	*upsname;
 		char	*hostname;
 		uint16_t	port;
 		UPSCONN_t	*ups;
-		FILE	*logfile;
+		struct 	logtarget_t	*logtarget;
 		struct	monhost_ups	*next;
 	};
+	/* FIXME: To be valgrind-clean, free these at exit */
 	static	struct	monhost_ups *monhost_ups_anchor = NULL;
 	static	struct	monhost_ups *monhost_ups_current = NULL;
 	static	struct	monhost_ups *monhost_ups_prev = NULL;
@@ -76,22 +84,64 @@
 		"%VAR input.voltage% %VAR ups.load% [%VAR ups.status%] " \
 		"%VAR ups.temperature% %VAR input.frequency%"
 
+static struct logtarget_t *get_logfile(const char *logfn_arg)
+{
+	struct	logtarget_t	*p = NULL;
+
+	if (!logfn_arg || !(*logfn_arg) || !logfile_anchor)
+		return p;
+
+	for (p = logfile_anchor; p != NULL; p = p->next) {
+		if (!strcmp(logfn_arg, p->logfn))
+			return p;
+	}
+
+	/* NULL by now */
+	return p;
+}
+
+static struct logtarget_t *add_logfile(const char *logfn_arg)
+{
+	struct	logtarget_t	*p = get_logfile(logfn_arg);
+
+	if (p)
+		return p;
+
+	/* Ignore bogus additions; FIXME: Error out? */
+	if (!logfn_arg || !(*logfn_arg))
+		return p;
+
+	p = xcalloc(1, sizeof(struct monhost_ups));
+	p->logfn = xstrdup(logfn_arg);
+	p->logfile = NULL;
+
+	/* Inject into the chain, head is as good a place as any */
+	p->next = logfile_anchor;
+	logfile_anchor = p;
+
+	return p;
+}
+
 static void reopen_log(void)
 {
-	for (monhost_ups_current = monhost_ups_anchor;
-	     monhost_ups_current != NULL;
-	     monhost_ups_current = monhost_ups_current->next
+	struct	logtarget_t	*p;
+
+	for (p = logfile_anchor;
+	     p != NULL;
+	     p = p->next
 	) {
-		if (monhost_ups_current->logfile == stdout) {
+		if (p->logfile == stdout) {
 			upslogx(LOG_INFO, "logging to stdout");
-			return;
+			continue;
 		}
 
-		if ((monhost_ups_current->logfile = freopen(
-		    monhost_ups_current->logfn, "a",
-		    monhost_ups_current->logfile)) == NULL)
+		if ((p->logfile = freopen(
+		    p->logfn, "a",
+		    p->logfile)) == NULL
+		) {
 			fatal_with_errno(EXIT_FAILURE,
-				"could not reopen logfile %s", logfn);
+				"could not reopen logfile %s", p->logfn);
+		}
 	}
 }
 
@@ -433,8 +483,8 @@ static void run_flist(struct monhost_ups *monhost_ups_print)
 		tmp = tmp->next;
 	}
 
-	fprintf(monhost_ups_print->logfile, "%s\n", logbuffer);
-	fflush(monhost_ups_print->logfile);
+	fprintf(monhost_ups_print->logtarget->logfile, "%s\n", logbuffer);
+	fflush(monhost_ups_print->logtarget->logfile);
 }
 
 	/* -s <monhost>
@@ -487,9 +537,9 @@ int main(int argc, char **argv)
 					if (!m_arg)
 						fatalx(EXIT_FAILURE, "Argument '-m upsspec,logfile' requires exactly 2 components in the tuple");
 #ifndef WIN32
-					monhost_ups_current->logfn = xstrdup(strsep(&m_arg, ","));
+					monhost_ups_current->logtarget = add_logfile(strsep(&m_arg, ","));
 #else
-					monhost_ups_current->logfn = xstrdup(filter_path(strsep(&m_arg, ",")));
+					monhost_ups_current->logtarget = add_logfile(filter_path(strsep(&m_arg, ",")));
 #endif
 					if (m_arg) /* Had a third comma - also unexpected! */
 						fatalx(EXIT_FAILURE, "Argument '-m upsspec,logfile' requires exactly 2 components in the tuple");
@@ -626,7 +676,7 @@ int main(int argc, char **argv)
 
 		/* splitting done in common loop below */
 		monhost_ups_current->monhost = monhost;
-		monhost_ups_current->logfn = logfn;
+		monhost_ups_current->logtarget = add_logfile(logfn);
 	}
 
 	/* shouldn't happen */
@@ -660,7 +710,11 @@ int main(int argc, char **argv)
 	     monhost_ups_current = monhost_ups_current->next
 	) {
 		printf("logging status of %s to %s (%is intervals)\n",
-			monhost_ups_current->monhost, monhost_ups_current->logfn, interval);
+			monhost_ups_current->monhost,
+			!strcmp(monhost_ups_current->logtarget->logfn, "-")
+			? "stdout"
+			: monhost_ups_current->logtarget->logfn,
+			interval);
 		if (upscli_splitname(monhost_ups_current->monhost, &(monhost_ups_current->upsname), &(monhost_ups_current->hostname), &(monhost_ups_current->port)) != 0) {
 			fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
 		}
@@ -670,14 +724,23 @@ int main(int argc, char **argv)
 			fprintf(stderr, "Warning: initial connect failed: %s\n",
 				upscli_strerror(monhost_ups_current->ups));
 
-		if (strcmp(monhost_ups_current->logfn, "-") == 0)
-			monhost_ups_current->logfile = stdout;
-		else
-			monhost_ups_current->logfile = fopen(monhost_ups_current->logfn, "a");
+		/* we might have several systems logged into same file */
+		if (monhost_ups_current->logtarget->logfile) {
+			if (!strstr(logformat, "%UPSHOST%")) {
+				if (monhost_ups_current->logtarget->logfile != stdout)
+					upslogx(LOG_INFO, "NOTE: File %s is already receiving other logs",
+						monhost_ups_current->logtarget->logfn);
+				upslogx(LOG_INFO, "NOTE: Consider adding %%UPSHOST%% to the log formatting string");
+			}
+		} else {
+			if (strcmp(monhost_ups_current->logtarget->logfn, "-") == 0)
+				monhost_ups_current->logtarget->logfile = stdout;
+			else
+				monhost_ups_current->logtarget->logfile = fopen(monhost_ups_current->logtarget->logfn, "a");
 
-		if (monhost_ups_current->logfile == NULL)
-			fatal_with_errno(EXIT_FAILURE, "could not open logfile %s", logfn);
-
+			if (monhost_ups_current->logtarget->logfile == NULL)
+				fatal_with_errno(EXIT_FAILURE, "could not open logfile %s", monhost_ups_current->logtarget->logfn);
+		}
 	}
 
 	/* now drop root if we have it */
@@ -686,7 +749,7 @@ int main(int argc, char **argv)
 	open_syslog(prog);
 
 	if (foreground < 0) {
-		if (monhost_ups_anchor->logfile == stdout) {
+		if (get_logfile("-")) {
 			foreground = 1;
 		} else {
 			foreground = 0;
@@ -766,9 +829,14 @@ int main(int argc, char **argv)
 	     monhost_ups_current != NULL;
 	     monhost_ups_current = monhost_ups_current->next
 	) {
-
-		if (monhost_ups_current->logfile != stdout)
-			fclose(monhost_ups_current->logfile);
+		/* we might have several systems logged into same file;
+		 * take care to not close stdout though */
+		if (monhost_ups_current->logtarget->logfile
+		&&  monhost_ups_current->logtarget->logfile != stdout
+		) {
+			fclose(monhost_ups_current->logtarget->logfile);
+			monhost_ups_current->logtarget->logfile = NULL;
+		}
 
 		upscli_disconnect(monhost_ups_current->ups);
 	}
