@@ -45,6 +45,7 @@ within this string are:
 %HOST%;; insert the local hostname
 
 %UPSHOST%;; insert the host of the UPS being monitored
+(the `<system>` part of your logging specification, e.g. `ups[@host[:port]]`)
 
 %PID%;; insert the pid of upslog
 

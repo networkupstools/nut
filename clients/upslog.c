@@ -736,6 +736,7 @@ int main(int argc, char **argv)
 		) {
 			ups = monhost_ups_current->ups;	/* XXX Not ideal */
 			upsname = monhost_ups_current->upsname;	/* XXX Not ideal */
+			monhost = monhost_ups_current->monhost;	/* XXX Not ideal */
 			/* reconnect if necessary */
 			if (upscli_fd(ups) < 0) {
 				upscli_connect(ups, monhost_ups_current->hostname, monhost_ups_current->port, 0);

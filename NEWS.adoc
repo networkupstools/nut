@@ -321,6 +321,7 @@ https://github.com/networkupstools/nut/milestone/11
      (repeatable `-m <system,logfile>`), previously the single-system options
      were overridden by the tuple(s); now they become part of the list.
    * A `%t` for a TAB character can now be used in the formatting string.
+   * Fixed printing of `%UPSHOST%` when multiple systems are being logged.
    * Added systemd and SMF service integration. [#1803]
 
  - More systemd integration:
