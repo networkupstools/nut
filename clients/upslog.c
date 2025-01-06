@@ -168,8 +168,7 @@ static void help(const char *prog)
 	printf("		- Example: -m myups@server,/var/log/myups.log\n");
 	printf("		- NOTE: You can use '-' as logfile for stdout\n");
 	printf("		  and it would not imply foregrounding\n");
-	printf("		- NOTE: '-s ups' and/or '-l file' options are ignored\n");
-	printf("		  if tuples are used, but you can specify many tuples\n");
+	printf("		- Unlike one '-s ups -l file' spec, you can specify many tuples\n");
 	printf("  -u <user>	- Switch to <user> if started as root\n");
 	printf("  -V		- Display the version of this software\n");
 	printf("  -h		- Display this help text\n");
@@ -473,6 +472,7 @@ int main(int argc, char **argv)
 					/* Be sure to not mangle original optarg, nor rely on its longevity */
 					s = xstrdup(optarg);
 					m_arg = s;
+					/* splitting done in common loop below */
 					monhost_ups_current->monhost = xstrdup(strsep(&m_arg, ","));
 					if (!m_arg)
 						fatalx(EXIT_FAILURE, "Argument '-m upsspec,logfile' requires exactly 2 components in the tuple");
@@ -483,9 +483,6 @@ int main(int argc, char **argv)
 #endif
 					if (m_arg) /* Had a third comma - also unexpected! */
 						fatalx(EXIT_FAILURE, "Argument '-m upsspec,logfile' requires exactly 2 components in the tuple");
-					if (upscli_splitname(monhost_ups_current->monhost, &(monhost_ups_current->upsname), &(monhost_ups_current->hostname), &(monhost_ups_current->port)) != 0) {
-						fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
-					}
 					free(s);
 				} /* var scope */
 				break;
@@ -596,21 +593,30 @@ int main(int argc, char **argv)
 			snprintfcat(logformat, LARGEBUF, "%s ", argv[i]);
 	}
 
-	if (monhost_ups_anchor == NULL) {
-		if (monhost) {
-			monhost_ups_current = xmalloc(sizeof(struct monhost_ups));
-			monhost_ups_anchor = monhost_ups_current;
-			monhost_ups_current->next = NULL;
-			monhost_ups_current->monhost = monhost;
-			monhost_len = 1;
-		} else {
-			fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system> or -m <ups,logfile>");
-		}
+	/* Do we have the legacy single-monitoring CLI spec? */
+	if (monhost || logfn) {
+		/* Both data points must be defined, no defaults */
+		if (!monhost)
+			fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system> when using -l <file>, or use -m <ups,logfile>");
+		if (!logfn)
+			fatalx(EXIT_FAILURE, "No filename defined for logging - use -l <file> when using -s <system>, or use -m <ups,logfile>");
 
-		if (logfn)
-			monhost_ups_current->logfn = logfn;
-		else
-			fatalx(EXIT_FAILURE, "No filename defined for logging - use -l <file>");
+		/* May be or not be NULL here: */
+		monhost_ups_prev = monhost_ups_current;
+		monhost_ups_current = xmalloc(sizeof(struct monhost_ups));
+		if (monhost_ups_anchor == NULL) {
+			/* Become the single-entry list */
+			monhost_ups_anchor = monhost_ups_current;
+		} else {
+			/* Attach to existing list */
+			monhost_ups_prev->next = monhost_ups_current;
+		}
+		monhost_ups_current->next = NULL;
+		monhost_len++;
+
+		/* splitting done in common loop below */
+		monhost_ups_current->monhost = monhost;
+		monhost_ups_current->logfn = logfn;
 	}
 
 	/* shouldn't happen */
@@ -619,8 +625,26 @@ int main(int argc, char **argv)
 
 	/* shouldn't happen */
 	if (!monhost_len)
-		fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system> or -m <ups,logfile>");
+		fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system> -l <logfile>, or use -m <ups,logfile>");
 
+	/* Split the system specs in a common fashion for tuples and legacy args */
+	for (monhost_ups_current = monhost_ups_anchor;
+	     monhost_ups_current != NULL;
+	     monhost_ups_current = monhost_ups_current->next
+	) {
+		if (upscli_splitname(monhost_ups_current->monhost, &(monhost_ups_current->upsname), &(monhost_ups_current->hostname), &(monhost_ups_current->port)) != 0) {
+			fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
+		}
+
+		upsdebugx(1, "Checking parse of '%s' => '%s' '%s' '%" PRIu16 "'",
+			NUT_STRARG(monhost_ups_current->monhost),
+			NUT_STRARG(monhost_ups_current->upsname),
+			NUT_STRARG(monhost_ups_current->hostname),
+			monhost_ups_current->port
+			);
+	}
+
+	/* Report the logged systems, open the log files as needed */
 	for (monhost_ups_current = monhost_ups_anchor;
 	     monhost_ups_current != NULL;
 	     monhost_ups_current = monhost_ups_current->next
