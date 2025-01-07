@@ -158,6 +158,9 @@ static int would_reopen_sdbus(int r) {
 		case EPERM:
 		case EACCES:
 			return 0;
+
+		default:
+			break;
 	}
 
 	return 1;
