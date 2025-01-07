@@ -4298,7 +4298,7 @@ int match_regex_hex(const regex_t *preg, const int n)
 {
 	char	buf[10];
 
-	snprintf(buf, sizeof(buf), "%04x", n);
+	snprintf(buf, sizeof(buf), "%04x", (unsigned int)n);
 
 	return match_regex(preg, buf);
 }

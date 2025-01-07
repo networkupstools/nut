@@ -94,7 +94,7 @@ void nut_usb_addvars(void)
 	addvar(VAR_VALUE, "usb_hid_ep_out",	"Deeper tuning of USB communications for complex devices");
 
 #ifdef LIBUSB_API_VERSION
-	dstate_setinfo("driver.version.usb", "libusb-%u.%u.%u (API: 0x%x)", v->major, v->minor, v->micro, LIBUSB_API_VERSION);
+	dstate_setinfo("driver.version.usb", "libusb-%u.%u.%u (API: 0x%08X)", v->major, v->minor, v->micro, (unsigned int)LIBUSB_API_VERSION);
 #else  /* no LIBUSB_API_VERSION */
 	dstate_setinfo("driver.version.usb", "libusb-%u.%u.%u", v->major, v->minor, v->micro);
 #endif /* LIBUSB_API_VERSION */
@@ -312,7 +312,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 
 		count_open_attempts++;
 		libusb_get_device_descriptor(device, &dev_desc);
-		upsdebugx(2, "Checking device %" PRIuSIZE " of %" PRIuSIZE " (%04X/%04X)",
+		upsdebugx(2, "Checking device %" PRIuSIZE " of %" PRIiSIZE " (%04X/%04X)",
 			devnum + 1, devcount,
 			dev_desc.idVendor, dev_desc.idProduct);
 
@@ -730,7 +730,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
 # pragma GCC diagnostic pop
 #endif
-			upsdebugx(2, "HID descriptor too long %d (max %u)",
+			upsdebugx(2, "HID descriptor too long %d (max %d)",
 				rdlen, UINT16_MAX);
 			goto next_device;
 		}

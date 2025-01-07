@@ -176,7 +176,9 @@ static void upsdrv_updateinfo_onoff(void)
 	else if (pwrval == 0x02)
 		status_set("OL BYPASS");
 	else
-		upslogx(LOG_WARNING, "unknown ups state: %x %x", pwrval, rectval);
+		upslogx(LOG_WARNING, "unknown ups state: %x %x",
+			(unsigned int)pwrval,
+			(unsigned int)rectval);
 
 	status_commit();
 
@@ -334,7 +336,7 @@ static void upsdrv_updateinfo_sysparam(void)
 	if (ydn23_val_from_hex(YDN23_FRAME_REG(frame, 19), 4) == 1)
 		dstate_setinfo("input.transfer.bypass.low", "%d", 120);
 	/* Field 21, Battery Test Interval, per 3 mons */
-	dstate_setinfo("ups.test.interval", "%lu",
+	dstate_setinfo("ups.test.interval", "%ld",
 		(long) ydn23_val_from_hex(YDN23_FRAME_REG(frame, 39), 4)*3*108000);
 
 	dstate_dataok();
@@ -384,7 +386,7 @@ static void upsdrv_updateinfo_warning(void)
 			alarm_set(gxe_warns[i]);
 			break;
 		default:
-			upslogx(LOG_WARNING, "unexpected warning val %x", val);
+			upslogx(LOG_WARNING, "unexpected warning val %x", (unsigned int)val);
 			break;
 		}
 	}

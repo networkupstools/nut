@@ -130,7 +130,7 @@ etapro_get_response(const char *resp_type)
 }
 
 static void
-etapro_set_on_timer(int seconds)
+etapro_set_on_timer(unsigned int seconds)
 {
 	int x;
 
@@ -144,10 +144,10 @@ etapro_set_on_timer(int seconds)
 			seconds = (seconds + 59) / 60;
 			if (seconds > 0x7fff)
 				seconds = 0x7fff;
-			printf("UPS on in %d minutes\n", seconds);
+			printf("UPS on in %u minutes\n", seconds);
 			seconds |= 0x8000;
 		} else {
-			printf("UPS on in %d seconds\n", seconds);
+			printf("UPS on in %u seconds\n", seconds);
 		}
 
 		ser_send(upsfd, "RN%04X\r", seconds);
@@ -155,11 +155,11 @@ etapro_set_on_timer(int seconds)
 		if (x == 0x20)
 			return;  /* OK */
 	}
-	upslogx(LOG_ERR, "etapro_set_on_timer: error, status=0x%02x", x);
+	upslogx(LOG_ERR, "etapro_set_on_timer: error, status=0x%02x", (unsigned int)x);
 }
 
 static void
-etapro_set_off_timer(int seconds)
+etapro_set_off_timer(unsigned int seconds)
 {
 	int x;
 
@@ -173,10 +173,10 @@ etapro_set_off_timer(int seconds)
 			seconds /= 60;
 			if (seconds > 0x7fff)
 				seconds = 0x7fff;
-			printf("UPS off in %d minutes\n", seconds);
+			printf("UPS off in %u minutes\n", seconds);
 			seconds |= 0x8000;
 		} else {
-			printf("UPS off in %d seconds\n", seconds);
+			printf("UPS off in %u seconds\n", seconds);
 		}
 
 		ser_send(upsfd, "RO%04X\r", seconds);
@@ -184,7 +184,7 @@ etapro_set_off_timer(int seconds)
 		if (x == 0)
 			return;  /* OK */
 	}
-	upslogx(LOG_ERR, "etapro_set_off_timer: error, status=0x%02x", x);
+	upslogx(LOG_ERR, "etapro_set_off_timer: error, status=0x%02x", (unsigned int)x);
 }
 
 static int instcmd(const char *cmdname, const char *extra)

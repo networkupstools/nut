@@ -492,7 +492,8 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 			"NOT Attempting Report Descriptor fix for UPS: "
 			"Vendor: %04x, Product: %04x "
 			"(vendor/product not matched)",
-			vendorID, productID);
+			(unsigned int)vendorID,
+			(unsigned int)productID);
 		return 0;
 	}
 
@@ -501,12 +502,15 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 			"NOT Attempting Report Descriptor fix for UPS: "
 			"Vendor: %04x, Product: %04x "
 			"(got disable_fix_report_desc in config)",
-			vendorID, productID);
+			(unsigned int)vendorID,
+			(unsigned int)productID);
 		return 0;
 	}
 
 	upsdebugx(3, "Attempting Report Descriptor fix for UPS: "
-		"Vendor: %04x, Product: %04x", vendorID, productID);
+		"Vendor: %04x, Product: %04x",
+		(unsigned int)vendorID,
+		(unsigned int)productID);
 
 	/* Apply the fix cautiously by looking for input voltage,
 	 * high voltage transfer and output voltage report usages.
@@ -668,7 +672,8 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 			"SKIPPED Report Descriptor fix for UPS: "
 			"Vendor: %04x, Product: %04x "
 			"(problematic conditions not matched)",
-			vendorID, productID);
+			(unsigned int)vendorID,
+			(unsigned int)productID);
 	}
 
 	return retval;

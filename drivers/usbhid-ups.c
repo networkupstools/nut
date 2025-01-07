@@ -571,7 +571,7 @@ static const char *hex_conversion_fun(double value)
 {
 	static char buf[20];
 
-	snprintf(buf, sizeof(buf), "%08lx", (long)value);
+	snprintf(buf, sizeof(buf), "%08lx", (unsigned long)value);
 
 	return buf;
 }

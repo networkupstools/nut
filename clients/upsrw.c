@@ -62,7 +62,7 @@ static void usage(const char *prog)
 	printf("  -p <password> set password for command authentication\n");
 	printf("  -w            wait for the completion of setting by the driver\n");
 	printf("                and return its actual result from the device\n");
-	printf("  -t <timeout>	set a timeout when using -w (in seconds, default: %u)\n", DEFAULT_TRACKING_TIMEOUT);
+	printf("  -t <timeout>	set a timeout when using -w (in seconds, default: %d)\n", DEFAULT_TRACKING_TIMEOUT);
 	printf("\n");
 	printf("  <ups>         UPS identifier - <upsname>[@<hostname>[:<port>]]\n");
 	printf("\n");

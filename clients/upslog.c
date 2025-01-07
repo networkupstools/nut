@@ -351,7 +351,7 @@ static void do_etime(const char *arg)
 	NUT_UNUSED_VARIABLE(arg);
 
 	time(&tod);
-	snprintfcat(logbuffer, sizeof(logbuffer), "%ld", (unsigned long) tod);
+	snprintfcat(logbuffer, sizeof(logbuffer), "%lu", (unsigned long) tod);
 }
 
 static void print_literal(const char *arg)

@@ -619,7 +619,8 @@ static void comm_receive(const unsigned char *bufptr, size_t size) {
 		for (i = 0 ; i < packet_size-2 ; ++i )
 			CheckSum += RecPack[i];
 		CheckSum = CheckSum % 256;
-		upsdebugx(4, "%s: calculated checksum = 0x%02x, RecPack[23] = 0x%02x", __func__, CheckSum, RecPack[23]);
+		upsdebugx(4, "%s: calculated checksum = 0x%02x, RecPack[23] = 0x%02x",
+			__func__, (unsigned int)CheckSum, RecPack[23]);
 
 		/* clean port: */
 		/* ser_flush_in(upsfd,"",0); */

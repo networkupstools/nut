@@ -443,10 +443,10 @@ static void ups2000_device_identification(void)
 
 		r = str_to_uint_strict(key, &idx, 10);
 		if (!r || idx + 1 > UPS2000_DESC_MAX_FIELDS || idx < 1)
-			fatalx(EXIT_FAILURE, "desc index %d is invalid!", idx);
+			fatalx(EXIT_FAILURE, "desc index %u is invalid!", idx);
 
 		if (strlen(val) + 1 > UPS2000_DESC_MAX_LEN)
-			fatalx(EXIT_FAILURE, "desc field %d too long!", idx);
+			fatalx(EXIT_FAILURE, "desc field %u too long!", idx);
 
 		memcpy(ups2000_desc[idx], val, strlen(val) + 1);
 	}

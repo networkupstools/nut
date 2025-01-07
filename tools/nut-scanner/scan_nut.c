@@ -467,7 +467,7 @@ nutscan_device_t * nutscan_scan_ip_range_nut(nutscan_ip_range_list_t * irl, cons
 			upsdebugx(4, "%s: max_threads_scantype=%" PRIuSIZE
 				" curr_threads=%" PRIuSIZE
 				" thread_count=%" PRIuSIZE
-				" stwST=%d stwS=%d pass=%d",
+				" stwST=%d stwS=%d pass=%u",
 				__func__, max_threads_scantype,
 				curr_threads, thread_count,
 				stwST, stwS, pass

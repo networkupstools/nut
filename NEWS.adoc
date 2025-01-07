@@ -457,6 +457,16 @@ relocated into new `shutdown.default` INSTCMD definitions. [#2670]
      `gcc-13`+ whose static analyzers on NUT CI farm complained about some
      imperfections after adding newer OS revisions to the population of
      build agents. [#2585, #2588]
+   * New checks in `clang-19` brought new findings about mismatched formatting
+     strings and `int`-ish parameters of respective methods.
+     Overall, had to change formatting strings in some cases, variable types
+     in others (e.g. flags or notification types do not make sense as signed)
+     and added casting in a few places that remained, because:
+     - `%x` style formatting requires an `unsigned int` variable
+     - numeric literals and macros are `int` by default
+     - results of math with unsigned types like `uint16_t`, done in some
+       cases, are up-scaled into `int` by default
+     - `char`'s, `unsigned` or not, seem to be also up-scaled into `int`
 
  - updated `docs/nut-names.txt` with items defined by 42ITy NUT fork. [#2339]
 

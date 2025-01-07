@@ -1678,7 +1678,8 @@ int main(int argc, char **argv)
 					"maxstartdelay but now waitpid() returns %" PRIdMAX
 					" and status bits 0x%.*X",
 					tmp->upsname, (intmax_t)tmp->pid,
-					(intmax_t)waitret, (int)(2*sizeof(wstat)), wstat);
+					(intmax_t)waitret, (int)(2*sizeof(wstat)),
+					(unsigned int)wstat);
 
 				if (waitret == tmp->pid) {
 					upsdebugx(1,

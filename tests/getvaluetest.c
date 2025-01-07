@@ -61,7 +61,9 @@ static void PrintBufAndData(uint8_t *buf, size_t bufSize, HIDData_t *pData) {
 	}
 	printf("%02x\"", buf[bufSize - 1]);
 	printf(" offset %u size %u logmin %ld (0x%lx) logmax %ld (0x%lx)",
-		pData->Offset, pData->Size, pData->LogMin, pData->LogMin, pData->LogMax, pData->LogMax);
+		pData->Offset, pData->Size,
+		pData->LogMin, (unsigned long)pData->LogMin,
+		pData->LogMax, (unsigned long)pData->LogMax);
 }
 
 static int RunBuiltInTests(char *argv[]) {
@@ -123,7 +125,7 @@ static int RunBuiltInTests(char *argv[]) {
 
 		GetValue(reportBuf, &data, &value);
 
-		printf("Test #%" PRIiSIZE " ", i + 1);
+		printf("Test #%" PRIuSIZE " ", i + 1);
 		PrintBufAndData(reportBuf, bufSize,  &data);
 		if (value == testData[i].expectedValue) {
 			printf(" value %ld PASS\n", value);

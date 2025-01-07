@@ -193,9 +193,9 @@ static void	innovart31_initups(void)
 /* Subdriver-specific initinfo */
 static void	innovart31_initinfo(void)
 {
-	dstate_setinfo("input.phases", "%u", 3);
-	dstate_setinfo("input.bypass.phases", "%u", 1);
-	dstate_setinfo("output.phases", "%u", 1);
+	dstate_setinfo("input.phases", "%d", 3);
+	dstate_setinfo("input.bypass.phases", "%d", 1);
+	dstate_setinfo("output.phases", "%d", 1);
 }
 
 /* Subdriver interface */
