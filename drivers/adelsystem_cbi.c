@@ -227,7 +227,7 @@ void upsdrv_updateinfo(void)
 	 */
 	rval = get_dev_state(MAIN, &ds);
 	if (rval == -1) {
-	   errcnt++;
+		errcnt++;
 	} else {
 		if (ds->alrm->alrm[MAINS_AVAIL_I].actv) {
 			status_set("OB");
@@ -592,15 +592,15 @@ void reginit(void)
 			 */
 			default:
 				upslogx(LOG_ERR,
-						"Invalid register type %d for register %d",
-						regs[i].type,
-						regs[i].num
+					"Invalid register type %d for register %d",
+					regs[i].type,
+					regs[i].num
 				);
 				upsdebugx(3,
-						  "Invalid register type %d for register %d",
-						  regs[i].type,
-						  regs[i].num
-				);			
+					"Invalid register type %d for register %d",
+					regs[i].type,
+					regs[i].num
+				);
 #ifdef __clang__
 # pragma clang diagnostic pop
 #endif
@@ -609,11 +609,11 @@ void reginit(void)
 #endif
 		}
 		upsdebugx(3,
-				  "reginit: num:%d, type: %d saddr: %d, xaddr: 0x%x",
-				  regs[i].num,
-				  regs[i].type,
-				  regs[i].saddr,
-				  regs[i].xaddr
+			"reginit: num:%d, type: %d saddr: %d, xaddr: 0x%x",
+			regs[i].num,
+			regs[i].type,
+			regs[i].saddr,
+			regs[i].xaddr
 		);
 	}
 }
@@ -627,11 +627,11 @@ int read_all_regs(modbus_t *mb, uint16_t *data)
 	rval = modbus_read_registers(mb, regs[H_REG_STARTIDX].xaddr, MAX_H_REGS, data);
 	if (rval == -1) {
 		upslogx(LOG_ERR,
-				"ERROR:(%s) modbus_read: addr:0x%x, length:%8d, path:%s\n",
-				modbus_strerror(errno),
-				regs[H_REG_STARTIDX].xaddr,
-				MAX_H_REGS,
-				device_path
+			"ERROR:(%s) modbus_read: addr:0x%x, length:%8d, path:%s\n",
+			modbus_strerror(errno),
+			regs[H_REG_STARTIDX].xaddr,
+			MAX_H_REGS,
+			device_path
 		);
 
 		/* on BROKEN PIPE, INVALID CRC and INVALID DATA error try to reconnect */
@@ -703,13 +703,13 @@ int register_read(modbus_t *mb, int addr, regtype_t type, void *data)
 	}
 	if (rval == -1) {
 		upslogx(LOG_ERR,
-				"ERROR:(%s) modbus_read: addr:0x%x, type:%8s, path:%s\n",
-				modbus_strerror(errno),
-				addr,
-				(type == COIL) ? "COIL" :
-				(type == INPUT_B) ? "INPUT_B" :
-				(type == INPUT_R) ? "INPUT_R" : "HOLDING",
-				device_path
+			"ERROR:(%s) modbus_read: addr:0x%x, type:%8s, path:%s\n",
+			modbus_strerror(errno),
+			addr,
+			(type == COIL) ? "COIL" :
+			(type == INPUT_B) ? "INPUT_B" :
+			(type == INPUT_R) ? "INPUT_R" : "HOLDING",
+			device_path
 		);
 
 		/* on BROKEN PIPE, INVALID CRC and INVALID DATA error try to reconnect */
@@ -760,13 +760,13 @@ int register_write(modbus_t *mb, int addr, regtype_t type, void *data)
 	}
 	if (rval == -1) {
 		upslogx(LOG_ERR,
-				"ERROR:(%s) modbus_write: addr:0x%x, type:%8s, path:%s\n",
-				modbus_strerror(errno),
-				addr,
-				(type == COIL) ? "COIL" :
-				(type == INPUT_B) ? "INPUT_B" :
-				(type == INPUT_R) ? "INPUT_R" : "HOLDING",
-				device_path
+			"ERROR:(%s) modbus_write: addr:0x%x, type:%8s, path:%s\n",
+			modbus_strerror(errno),
+			addr,
+			(type == COIL) ? "COIL" :
+			(type == INPUT_B) ? "INPUT_B" :
+			(type == INPUT_R) ? "INPUT_R" : "HOLDING",
+			device_path
 		);
 
 		/* on BROKEN PIPE error try to reconnect */
@@ -815,11 +815,11 @@ int upscmd(const char *cmd, const char *arg)
 		rval = register_write(mbctx, regs[FSD].xaddr, regs[FSD].type, &data);
 		if (rval == -1) {
 			upslogx(2,
-					"ERROR:(%s) modbus_write_register: addr:0x%08x, regtype: %d, path:%s\n",
-					modbus_strerror(errno),
-					regs[FSD].xaddr,
-					regs[FSD].type,
-					device_path
+				"ERROR:(%s) modbus_write_register: addr:0x%08x, regtype: %d, path:%s\n",
+				modbus_strerror(errno),
+				regs[FSD].xaddr,
+				regs[FSD].type,
+				device_path
 			);
 			upslogx(LOG_NOTICE, "load.off: failed (communication error) [%s] [%s]", cmd, arg);
 			rval = STAT_INSTCMD_FAILED;
@@ -900,11 +900,11 @@ int get_dev_state(devreg_t regindx, devstate_t **dvstat)
 		return rval;
 	}
 	upsdebugx(3,
-			  "get_dev_state: num: %d, addr: 0x%x, regtype: %d, data: %d",
-			  num,
-			  addr,
-			  rtype,
-			  reg_val
+		"get_dev_state: num: %d, addr: 0x%x, regtype: %d, data: %d",
+		num,
+		addr,
+		rtype,
+		reg_val
 	);
 #endif
 	/* process register data */
@@ -1392,4 +1392,3 @@ void modbus_reconnect(void)
 
 	dstate_setinfo("driver.state", "quiet");
 }
-
