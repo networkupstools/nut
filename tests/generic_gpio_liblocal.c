@@ -103,13 +103,19 @@ int gpiod_line_event_wait_bulk(struct gpiod_line_bulk *bulk,
 	switch(gStatus%3) {
 		case 0:
 			sleep(2);
-		break;
+			break;
+
 		case 1:
 			sleep(4);
-		break;
+			break;
+
 		case 2:
 			sleep(6);
-		break;
+			break;
+
+		/* Static analysis wants this, we should never get here though, not with %3 above */
+		default:
+			fatalx(EXIT_FAILURE, "%s: Hit impossible default case", __func__);
 	}
 	return 0;
 }
