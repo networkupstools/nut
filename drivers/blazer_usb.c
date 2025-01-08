@@ -629,7 +629,8 @@ void upsdrv_initups(void)
 		}
 		else {
 			langid_fix = (int)u_langid_fix;
-			upsdebugx(2, "language ID workaround enabled (using '0x%x')", langid_fix);
+			upsdebugx(2, "language ID workaround enabled (using '0x%x')",
+				(unsigned int)langid_fix);
 		}
 	}
 
@@ -710,7 +711,9 @@ void upsdrv_initups(void)
 		ret = usb_get_string(udev, 0, 0, (usb_ctrl_charbuf)tbuf, sizeof(tbuf));
 		if (ret >= 4) {
 			langid = (unsigned char)tbuf[2] | ((unsigned char)tbuf[3] << 8);
-			upsdebugx(1, "First supported language ID: 0x%x (please report to the NUT maintainer!)", langid);
+			upsdebugx(1, "First supported language ID: 0x%x "
+				"(please report to the NUT maintainer!)",
+				(unsigned int)langid);
 		}
 	}
 #endif	/* TESTING */

@@ -320,6 +320,18 @@ https://github.com/networkupstools/nut/milestone/11
  - upslog:
    * Added support for limiting the loop count. Using in NIT (NUT Integration
      Test) suite for double profit (checking the tool and fallback in NIT).
+   * If you use the legacy CLI options for single-system logging (`-s <system>`
+     and `-l <logfile>`) along with newer tuple(s) for multiple-system logging
+     (repeatable `-m <system,logfile>`), previously the single-system options
+     were overridden by the tuple(s); now they become part of the list.
+   * The `upsname` in the `system=upsname[@hostname[:port]]` parameter may
+     be an asterisk `*` to query for devices currently served by the hostname.
+   * Same log file may safely be used in different logging tuples (it is
+     then recommended to use `%UPSHOST%` in a custom formatting string).
+   * Fixed printing of `%UPSHOST%` when multiple systems are being logged.
+   * A `%t` for a TAB character can now be used in the formatting string.
+   * Added `-D` for debugging (and foregrounding by default), like with
+     other NUT daemons.
    * Added systemd and SMF service integration. [#1803]
 
  - More systemd integration:
@@ -406,6 +418,8 @@ logic that was previously the content of `upsdrv_shutdown()` methods was often
 relocated into new `shutdown.default` INSTCMD definitions. [#2670]
 
  - common code:
+   * `upscli_splitname()` should now recognize `upsname:port` typos (missing
+     the `@hostname` part) and error out gracefully.
    * introduced a `NUT_DEBUG_SYSLOG` environment variable to tweak activation
      of syslog message emission (and related detachment of `stderr` when
      backgrounding), primarily useful for NIT and perhaps systemd. Most
@@ -447,6 +461,16 @@ relocated into new `shutdown.default` INSTCMD definitions. [#2670]
      `gcc-13`+ whose static analyzers on NUT CI farm complained about some
      imperfections after adding newer OS revisions to the population of
      build agents. [#2585, #2588]
+   * New checks in `clang-19` brought new findings about mismatched formatting
+     strings and `int`-ish parameters of respective methods.
+     Overall, had to change formatting strings in some cases, variable types
+     in others (e.g. flags or notification types do not make sense as signed)
+     and added casting in a few places that remained, because:
+     - `%x` style formatting requires an `unsigned int` variable
+     - numeric literals and macros are `int` by default
+     - results of math with unsigned types like `uint16_t`, done in some
+       cases, are up-scaled into `int` by default
+     - `char`'s, `unsigned` or not, seem to be also up-scaled into `int`
 
  - updated `docs/nut-names.txt` with items defined by 42ITy NUT fork. [#2339]
 

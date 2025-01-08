@@ -1,6 +1,8 @@
 /* upslog - log ups values to a file for later collection and analysis
 
-   Copyright (C) 1998  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+     1998       Russell Kroll <rkroll@exploits.org>
+     2020-2025  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -47,26 +49,34 @@
 
 	static	int	reopen_flag = 0, exit_flag = 0;
 	static	size_t	max_loops = 0;
-	static	char	*upsname;
-	static	UPSCONN_t	*ups;
+	static	char	*upsname = NULL;
+	static	UPSCONN_t	*ups = NULL;
 
-	static	char *logfn, *monhost;
+	static	char *logfn = NULL, *monhost = NULL;
 #ifndef WIN32
 	static	sigset_t	nut_upslog_sigmask;
 #endif
-	static	char	logbuffer[LARGEBUF], *logformat;
+	static	char	logbuffer[LARGEBUF], *logformat = NULL;
 
 	static	flist_t	*fhead = NULL;
+	struct 	logtarget_t {
+		char	*logfn;
+		FILE	*logfile;
+		struct 	logtarget_t	*next;
+	};
+	/* FIXME: To be valgrind-clean, free these at exit */
+	static	struct	logtarget_t *logfile_anchor = NULL;
+
 	struct 	monhost_ups {
 		char	*monhost;
-		char	*logfn;
 		char	*upsname;
 		char	*hostname;
 		uint16_t	port;
 		UPSCONN_t	*ups;
-		FILE	*logfile;
+		struct 	logtarget_t	*logtarget;
 		struct	monhost_ups	*next;
 	};
+	/* FIXME: To be valgrind-clean, free these at exit */
 	static	struct	monhost_ups *monhost_ups_anchor = NULL;
 	static	struct	monhost_ups *monhost_ups_current = NULL;
 	static	struct	monhost_ups *monhost_ups_prev = NULL;
@@ -76,22 +86,68 @@
 		"%VAR input.voltage% %VAR ups.load% [%VAR ups.status%] " \
 		"%VAR ups.temperature% %VAR input.frequency%"
 
+static struct logtarget_t *get_logfile(const char *logfn_arg)
+{
+	struct	logtarget_t	*p = NULL;
+
+	if (!logfn_arg || !(*logfn_arg) || !logfile_anchor)
+		return p;
+
+	for (p = logfile_anchor; p != NULL; p = p->next) {
+		if (!strcmp(logfn_arg, p->logfn))
+			return p;
+	}
+
+	/* NULL by now */
+	return p;
+}
+
+static struct logtarget_t *add_logfile(const char *logfn_arg)
+{
+	struct	logtarget_t	*p = get_logfile(logfn_arg);
+
+	if (p)
+		return p;
+
+	/* Ignore bogus additions; FIXME: Error out? */
+	if (!logfn_arg || !(*logfn_arg))
+		return p;
+
+	p = xcalloc(1, sizeof(struct monhost_ups));
+	p->logfn = xstrdup(logfn_arg);
+	p->logfile = NULL;
+
+	/* Inject into the chain, head is as good a place as any */
+	p->next = logfile_anchor;
+	logfile_anchor = p;
+
+	return p;
+}
+
 static void reopen_log(void)
 {
-	for (monhost_ups_current = monhost_ups_anchor;
-	     monhost_ups_current != NULL;
-	     monhost_ups_current = monhost_ups_current->next
+	struct	logtarget_t	*p;
+
+	for (p = logfile_anchor;
+	     p != NULL;
+	     p = p->next
 	) {
-		if (monhost_ups_current->logfile == stdout) {
+		/* Never opened, e.g. removed asterisk entry */
+		if (!p->logfile)
+			continue;
+
+		if (p->logfile == stdout) {
 			upslogx(LOG_INFO, "logging to stdout");
-			return;
+			continue;
 		}
 
-		if ((monhost_ups_current->logfile = freopen(
-		    monhost_ups_current->logfn, "a",
-		    monhost_ups_current->logfile)) == NULL)
+		if ((p->logfile = freopen(
+		    p->logfn, "a",
+		    p->logfile)) == NULL
+		) {
 			fatal_with_errno(EXIT_FAILURE,
-				"could not reopen logfile %s", logfn);
+				"could not reopen logfile %s", p->logfn);
+		}
 	}
 }
 
@@ -158,8 +214,9 @@ static void help(const char *prog)
 	printf("  -i <interval>	- Time between updates, in seconds\n");
 	printf("  -d <count>	- Exit after specified amount of updates\n");
 	printf("  -l <logfile>	- Log file name, or - for stdout (foreground by default)\n");
+	printf("  -D		- raise debugging level (and stay foreground by default)\n");
 	printf("  -F		- stay foregrounded even if logging into a file\n");
-	printf("  -B		- stay backgrounded even if logging to stdout\n");
+	printf("  -B		- stay backgrounded even if logging to stdout or debugging\n");
 	printf("  -p <pidbase>  - Base name for PID file (defaults to \"%s\")\n", prog);
 	printf("                - NOTE: PID file is written regardless of fore/back-grounding\n");
 	printf("  -s <ups>	- Monitor UPS <ups> - <upsname>@<host>[:<port>]\n");
@@ -168,8 +225,7 @@ static void help(const char *prog)
 	printf("		- Example: -m myups@server,/var/log/myups.log\n");
 	printf("		- NOTE: You can use '-' as logfile for stdout\n");
 	printf("		  and it would not imply foregrounding\n");
-	printf("		- NOTE: '-s ups' and/or '-l file' options are ignored\n");
-	printf("		  if tuples are used, but you can specify many tuples\n");
+	printf("		- Unlike one '-s ups -l file' spec, you can specify many tuples\n");
 	printf("  -u <user>	- Switch to <user> if started as root\n");
 	printf("  -V		- Display the version of this software\n");
 	printf("  -h		- Display this help text\n");
@@ -295,7 +351,7 @@ static void do_etime(const char *arg)
 	NUT_UNUSED_VARIABLE(arg);
 
 	time(&tod);
-	snprintfcat(logbuffer, sizeof(logbuffer), "%ld", (unsigned long) tod);
+	snprintfcat(logbuffer, sizeof(logbuffer), "%lu", (unsigned long) tod);
 }
 
 static void print_literal(const char *arg)
@@ -353,11 +409,21 @@ static void compile_format(void)
 			continue;
 		}
 
+		/* Safe to peek into i+1, at worst would be '\0' */
 		/* if a %%, append % and start over */
 		if (logformat[i+1] == '%') {
 			add_call(print_literal, "%");
 
 			/* make sure we don't parse the second % next time */
+			i++;
+			continue;
+		}
+
+		/* if %t, append a TAB character and start over */
+		if (logformat[i+1] == 't') {
+			add_call(print_literal, "\t");
+
+			/* make sure we don't parse the 't' next time */
 			i++;
 			continue;
 		}
@@ -424,8 +490,8 @@ static void run_flist(struct monhost_ups *monhost_ups_print)
 		tmp = tmp->next;
 	}
 
-	fprintf(monhost_ups_print->logfile, "%s\n", logbuffer);
-	fflush(monhost_ups_print->logfile);
+	fprintf(monhost_ups_print->logtarget->logfile, "%s\n", logbuffer);
+	fflush(monhost_ups_print->logtarget->logfile);
 }
 
 	/* -s <monhost>
@@ -450,13 +516,17 @@ int main(int argc, char **argv)
 
 	print_banner_once(prog, 0);
 
-	while ((i = getopt(argc, argv, "+hs:l:i:d:f:u:Vp:FBm:")) != -1) {
+	while ((i = getopt(argc, argv, "+hDs:l:i:d:f:u:Vp:FBm:")) != -1) {
 		switch(i) {
 			case 'h':
 				help(prog);
 #ifndef HAVE___ATTRIBUTE__NORETURN
 				break;
 #endif
+
+			case 'D':
+				nut_debug_level++;
+				break;
 
 			case 'm': { /* var scope */
 					char *m_arg, *s;
@@ -473,19 +543,21 @@ int main(int argc, char **argv)
 					/* Be sure to not mangle original optarg, nor rely on its longevity */
 					s = xstrdup(optarg);
 					m_arg = s;
+					/* splitting done in common loop below */
+					monhost_ups_current->upsname = NULL;
+					monhost_ups_current->hostname = NULL;
+					monhost_ups_current->port = 0;
 					monhost_ups_current->monhost = xstrdup(strsep(&m_arg, ","));
 					if (!m_arg)
 						fatalx(EXIT_FAILURE, "Argument '-m upsspec,logfile' requires exactly 2 components in the tuple");
 #ifndef WIN32
-					monhost_ups_current->logfn = xstrdup(strsep(&m_arg, ","));
+					monhost_ups_current->logtarget = add_logfile(strsep(&m_arg, ","));
 #else
-					monhost_ups_current->logfn = xstrdup(filter_path(strsep(&m_arg, ",")));
+					monhost_ups_current->logtarget = add_logfile(filter_path(strsep(&m_arg, ",")));
 #endif
+					monhost_ups_current->ups = NULL;
 					if (m_arg) /* Had a third comma - also unexpected! */
 						fatalx(EXIT_FAILURE, "Argument '-m upsspec,logfile' requires exactly 2 components in the tuple");
-					if (upscli_splitname(monhost_ups_current->monhost, &(monhost_ups_current->upsname), &(monhost_ups_current->hostname), &(monhost_ups_current->port)) != 0) {
-						fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
-					}
 					free(s);
 				} /* var scope */
 				break;
@@ -596,21 +668,34 @@ int main(int argc, char **argv)
 			snprintfcat(logformat, LARGEBUF, "%s ", argv[i]);
 	}
 
-	if (monhost_ups_anchor == NULL) {
-		if (monhost) {
-			monhost_ups_current = xmalloc(sizeof(struct monhost_ups));
-			monhost_ups_anchor = monhost_ups_current;
-			monhost_ups_current->next = NULL;
-			monhost_ups_current->monhost = monhost;
-			monhost_len = 1;
-		} else {
-			fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system> or -m <ups,logfile>");
-		}
+	/* Do we have the legacy single-monitoring CLI spec? */
+	if (monhost || logfn) {
+		/* Both data points must be defined, no defaults */
+		if (!monhost)
+			fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system> when using -l <file>, or use -m <ups,logfile>");
+		if (!logfn)
+			fatalx(EXIT_FAILURE, "No filename defined for logging - use -l <file> when using -s <system>, or use -m <ups,logfile>");
 
-		if (logfn)
-			monhost_ups_current->logfn = logfn;
-		else
-			fatalx(EXIT_FAILURE, "No filename defined for logging - use -l <file>");
+		/* May be or not be NULL here: */
+		monhost_ups_prev = monhost_ups_current;
+		monhost_ups_current = xmalloc(sizeof(struct monhost_ups));
+		if (monhost_ups_anchor == NULL) {
+			/* Become the single-entry list */
+			monhost_ups_anchor = monhost_ups_current;
+		} else {
+			/* Attach to existing list */
+			monhost_ups_prev->next = monhost_ups_current;
+		}
+		monhost_ups_current->next = NULL;
+		monhost_len++;
+
+		/* splitting done in common loop below */
+		monhost_ups_current->upsname = NULL;
+		monhost_ups_current->hostname = NULL;
+		monhost_ups_current->port = 0;
+		monhost_ups_current->monhost = xstrdup(monhost);
+		monhost_ups_current->logtarget = add_logfile(logfn);
+		monhost_ups_current->ups = NULL;
 	}
 
 	/* shouldn't happen */
@@ -619,14 +704,150 @@ int main(int argc, char **argv)
 
 	/* shouldn't happen */
 	if (!monhost_len)
-		fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system> or -m <ups,logfile>");
+		fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system> -l <logfile>, or use -m <ups,logfile>");
 
+	/* Split the system specs in a common fashion for tuples and legacy args */
+	for (monhost_ups_current = monhost_ups_anchor, monhost_ups_prev = NULL;
+	     monhost_ups_current != NULL;
+	     monhost_ups_current = monhost_ups_current->next
+	) {
+		if (upscli_splitname(monhost_ups_current->monhost, &(monhost_ups_current->upsname), &(monhost_ups_current->hostname), &(monhost_ups_current->port)) != 0) {
+			fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
+		}
+
+		upsdebugx(1, "Checking parse of '%s' => '%s' '%s' '%" PRIu16 "'",
+			NUT_STRARG(monhost_ups_current->monhost),
+			NUT_STRARG(monhost_ups_current->upsname),
+			NUT_STRARG(monhost_ups_current->hostname),
+			monhost_ups_current->port
+			);
+
+		/* Revise the list if some UPS name was an asterisk
+		 * (query the data server) */
+		if (!strcmp(monhost_ups_current->upsname, "*")) {
+			/* following list_upses() from upsc.c */
+			int		ret;
+			size_t	numq, numa, found = 0;
+			const char	*query[4];
+			char		**answer;
+			UPSCONN_t	*conn = NULL;
+
+			query[0] = "UPS";
+			numq = 1;
+
+			upslogx(LOG_INFO, "Querying %s:%" PRIu16 " for currently served devices",
+				NUT_STRARG(monhost_ups_current->hostname),
+				monhost_ups_current->port
+			);
+
+			conn = xmalloc(sizeof(*conn));
+			if (upscli_connect(conn, monhost_ups_current->hostname, monhost_ups_current->port, UPSCLI_CONN_TRYSSL) < 0) {
+				fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(conn));
+			}
+
+			ret = upscli_list_start(conn, numq, query);
+			if (ret < 0) {
+				/* check for an old upsd */
+				if (upscli_upserror(conn) == UPSCLI_ERR_UNKCOMMAND) {
+					fatalx(EXIT_FAILURE, "Error: upsd is too old to support this query");
+				}
+
+				fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(conn));
+			}
+
+			while (upscli_list_next(conn, numq, query, &numa, &answer) == 1) {
+				struct	monhost_ups *mu = NULL;
+				char	buf[LARGEBUF];
+
+				/* UPS <upsname> <description> */
+				if (numa < 3) {
+					fatalx(EXIT_FAILURE, "Error: insufficient data (got %" PRIuSIZE " args, need at least 3)", numa);
+				}
+
+				found++;
+				upsdebugx(1, "FOUND: %s: %s", answer[1], answer[2]);
+
+				mu = xmalloc(sizeof(struct monhost_ups));
+				snprintf(buf, sizeof(buf), "%s@%s:%" PRIu16,
+					answer[1],
+					monhost_ups_current->hostname,
+					monhost_ups_current->port);
+				mu->monhost = xstrdup(buf);
+				mu->upsname = xstrdup(answer[1]);
+				mu->hostname = xstrdup(monhost_ups_current->hostname);
+				mu->port = monhost_ups_current->port;
+				mu->ups = NULL;
+				mu->logtarget = monhost_ups_current->logtarget;
+				mu->next = monhost_ups_current->next;
+				monhost_ups_current->next = mu;
+				monhost_len++;
+			}
+
+			upscli_disconnect(conn);
+			free(conn);
+			conn = NULL;
+
+			if (!found) {
+				upslogx(LOG_WARNING, "Data server at %s:%" PRIu16
+					" does not currently serve any devices",
+					NUT_STRARG(monhost_ups_current->hostname),
+					monhost_ups_current->port
+				);
+			}
+
+			/* Remove the entry with asterisk */
+			upsdebugx(2, "%s: free strings of asterisky monhost_ups_current", __func__);
+			if (monhost_ups_current->monhost)
+				free(monhost_ups_current->monhost);
+			if (monhost_ups_current->upsname)
+				free(monhost_ups_current->upsname);
+			if (monhost_ups_current->hostname)
+				free(monhost_ups_current->hostname);
+			if (monhost_ups_current->ups)
+				free(monhost_ups_current->ups);
+
+			upsdebugx(2, "%s: detach asterisky monhost_ups_current", __func__);
+			if (monhost_ups_prev) {
+				monhost_ups_prev->next = monhost_ups_current->next;
+				/* monhost_ups_prev remains as it was */
+				free(monhost_ups_current);
+				monhost_ups_current = monhost_ups_prev;
+			} else {
+				/* This is the first entry, anchor */
+				monhost_ups_anchor = monhost_ups_current->next;
+				monhost_ups_prev = NULL;
+				free(monhost_ups_current);
+				monhost_ups_current = monhost_ups_anchor;
+			}
+			monhost_len--;
+
+			if (!monhost_ups_current || !monhost_len) {
+				/* Our list ended up empty,
+				 * no "next" to loop into */
+				fatalx(EXIT_FAILURE, "Queries failed to find anything");
+			}
+		} else {
+			/* No asterisk, usual spec */
+			monhost_ups_prev = monhost_ups_current;
+		}
+	}
+
+	/* might happen if we only queried remote hosts and found nothing,
+	 * just in case we missed something above */
+	if (!monhost_len || !monhost_ups_anchor)
+		fatalx(EXIT_FAILURE, "No UPS defined for monitoring - use -s <system> -l <logfile>, or use -m <ups,logfile>");
+
+	/* Report the logged systems, open the log files as needed */
 	for (monhost_ups_current = monhost_ups_anchor;
 	     monhost_ups_current != NULL;
 	     monhost_ups_current = monhost_ups_current->next
 	) {
 		printf("logging status of %s to %s (%is intervals)\n",
-			monhost_ups_current->monhost, monhost_ups_current->logfn, interval);
+			monhost_ups_current->monhost,
+			!strcmp(monhost_ups_current->logtarget->logfn, "-")
+			? "stdout"
+			: monhost_ups_current->logtarget->logfn,
+			interval);
 		if (upscli_splitname(monhost_ups_current->monhost, &(monhost_ups_current->upsname), &(monhost_ups_current->hostname), &(monhost_ups_current->port)) != 0) {
 			fatalx(EXIT_FAILURE, "Error: invalid UPS definition.  Required format: upsname[@hostname[:port]]\n");
 		}
@@ -636,14 +857,23 @@ int main(int argc, char **argv)
 			fprintf(stderr, "Warning: initial connect failed: %s\n",
 				upscli_strerror(monhost_ups_current->ups));
 
-		if (strcmp(monhost_ups_current->logfn, "-") == 0)
-			monhost_ups_current->logfile = stdout;
-		else
-			monhost_ups_current->logfile = fopen(monhost_ups_current->logfn, "a");
+		/* we might have several systems logged into same file */
+		if (monhost_ups_current->logtarget->logfile) {
+			if (!strstr(logformat, "%UPSHOST%")) {
+				if (monhost_ups_current->logtarget->logfile != stdout)
+					upslogx(LOG_INFO, "NOTE: File %s is already receiving other logs",
+						monhost_ups_current->logtarget->logfn);
+				upslogx(LOG_INFO, "NOTE: Consider adding %%UPSHOST%% to the log formatting string");
+			}
+		} else {
+			if (strcmp(monhost_ups_current->logtarget->logfn, "-") == 0)
+				monhost_ups_current->logtarget->logfile = stdout;
+			else
+				monhost_ups_current->logtarget->logfile = fopen(monhost_ups_current->logtarget->logfn, "a");
 
-		if (monhost_ups_current->logfile == NULL)
-			fatal_with_errno(EXIT_FAILURE, "could not open logfile %s", logfn);
-
+			if (monhost_ups_current->logtarget->logfile == NULL)
+				fatal_with_errno(EXIT_FAILURE, "could not open logfile %s", monhost_ups_current->logtarget->logfn);
+		}
 	}
 
 	/* now drop root if we have it */
@@ -652,7 +882,7 @@ int main(int argc, char **argv)
 	open_syslog(prog);
 
 	if (foreground < 0) {
-		if (monhost_ups_anchor->logfile == stdout) {
+		if (nut_debug_level > 0 || get_logfile("-")) {
 			foreground = 1;
 		} else {
 			foreground = 0;
@@ -702,6 +932,7 @@ int main(int argc, char **argv)
 		) {
 			ups = monhost_ups_current->ups;	/* XXX Not ideal */
 			upsname = monhost_ups_current->upsname;	/* XXX Not ideal */
+			monhost = monhost_ups_current->monhost;	/* XXX Not ideal */
 			/* reconnect if necessary */
 			if (upscli_fd(ups) < 0) {
 				upscli_connect(ups, monhost_ups_current->hostname, monhost_ups_current->port, 0);
@@ -731,9 +962,14 @@ int main(int argc, char **argv)
 	     monhost_ups_current != NULL;
 	     monhost_ups_current = monhost_ups_current->next
 	) {
-
-		if (monhost_ups_current->logfile != stdout)
-			fclose(monhost_ups_current->logfile);
+		/* we might have several systems logged into same file;
+		 * take care to not close stdout though */
+		if (monhost_ups_current->logtarget->logfile
+		&&  monhost_ups_current->logtarget->logfile != stdout
+		) {
+			fclose(monhost_ups_current->logtarget->logfile);
+			monhost_ups_current->logtarget->logfile = NULL;
+		}
 
 		upscli_disconnect(monhost_ups_current->ups);
 	}

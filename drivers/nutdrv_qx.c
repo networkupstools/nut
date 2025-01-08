@@ -937,7 +937,7 @@ static int 	hunnox_protocol(int asking_for)
 
 	switch (hunnox_step) {
 		case 0:
-			upsdebugx(3, "asking for: %02X", 0x00);
+			upsdebugx(3, "asking for: %02X", (unsigned int)0x00);
 			usb_get_string(udev, 0x00,
 				langid_fix_local, (usb_ctrl_charbuf)buf, 1026);
 			usb_get_string(udev, 0x00,
@@ -948,21 +948,21 @@ static int 	hunnox_protocol(int asking_for)
 			break;
 		case 1:
 			if (asking_for != 0x0d) {
-				upsdebugx(3, "asking for: %02X", 0x0d);
+				upsdebugx(3, "asking for: %02X", (unsigned int)0x0d);
 				usb_get_string(udev, 0x0d,
 					langid_fix_local, (usb_ctrl_charbuf)buf, 102);
 			}
 			break;
 		case 2:
 			if (asking_for != 0x03) {
-				upsdebugx(3, "asking for: %02X", 0x03);
+				upsdebugx(3, "asking for: %02X", (unsigned int)0x03);
 				usb_get_string(udev, 0x03,
 					langid_fix_local, (usb_ctrl_charbuf)buf, 102);
 			}
 			break;
 		case 3:
 			if (asking_for != 0x0c) {
-				upsdebugx(3, "asking for: %02X", 0x0c);
+				upsdebugx(3, "asking for: %02X", (unsigned int)0x0c);
 				usb_get_string(udev, 0x0c,
 					langid_fix_local, (usb_ctrl_charbuf)buf, 102);
 			}
@@ -1188,7 +1188,7 @@ static int	fabula_command(const char *cmd, char *buf, size_t buflen)
 
 	}
 
-	upsdebugx(4, "command index: 0x%02x", index);
+	upsdebugx(4, "command index: 0x%02x", (unsigned int)index);
 
 	/* Send command/Read reply */
 	ret = usb_get_string_simple(udev, index, (usb_ctrl_charbuf)buf, buflen);
@@ -1313,7 +1313,7 @@ static int	hunnox_command(const char *cmd, char *buf, size_t buflen)
 
 	}
 
-	upsdebugx(4, "command index: 0x%02x", index);
+	upsdebugx(4, "command index: 0x%02x", (unsigned int)index);
 
 /*	if (hunnox_patch) { */
 		/* Enable lock-step protocol for Hunnox */
@@ -3314,7 +3314,7 @@ void	upsdrv_initups(void)
 				langid_fix = (int)u_langid_fix;
 				upsdebugx(2,
 					"Language ID workaround enabled (using '0x%x')",
-					langid_fix);
+					(unsigned int)langid_fix);
 			}
 		}
 
@@ -3412,7 +3412,7 @@ void	upsdrv_initups(void)
 				upsdebugx(1,
 					"First supported language ID: 0x%x "
 					"(please report to the NUT maintainer!)",
-					langid);
+					(unsigned int)langid);
 			}
 		}
 

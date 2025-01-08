@@ -111,7 +111,7 @@ void upsdrv_updateinfo(void)
 	else
 		ob_ctr++;
 
-	upsdebugx(2, "OB: state %d last %d now %d ctr %d",
+	upsdebugx(2, "OB: state %u last %u now %u ctr %u",
 		ob_state, ob_last, ob, ob_ctr);
 
 	if (ob_ctr >= DEBOUNCE) {
@@ -137,7 +137,7 @@ void upsdrv_updateinfo(void)
 	else
 		lb_ctr++;
 
-	upsdebugx(2, "LB: state %d last %d now %d ctr %d",
+	upsdebugx(2, "LB: state %u last %u now %u ctr %u",
 		lb_state, lb_last, lb, lb_ctr);
 
 	if (lb_ctr >= DEBOUNCE) {

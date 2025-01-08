@@ -158,6 +158,9 @@ static int would_reopen_sdbus(int r) {
 		case EPERM:
 		case EACCES:
 			return 0;
+
+		default:
+			break;
 	}
 
 	return 1;
@@ -2799,7 +2802,7 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 {
 	int	ret, errno_orig = errno;
 	size_t	bufsize = LARGEBUF;
-	char	*buf = xcalloc(sizeof(char), bufsize);
+	char	*buf = xcalloc(bufsize, sizeof(char));
 
 	/* Be pedantic about our limitations */
 	bufsize *= sizeof(char);
@@ -3732,7 +3735,7 @@ void nut_prepare_search_paths(void) {
 	count_builtin = i + 1;	/* +1 for the NULL */
 
 	/* Bytes inside should all be zeroed... */
-	filtered_search_paths = xcalloc(sizeof(const char *), count_builtin);
+	filtered_search_paths = xcalloc(count_builtin, sizeof(const char *));
 
 	/* FIXME: here "count_builtin" means size of filtered_search_paths[]
 	 * and may later be more, if we would consider other data sources */
@@ -4295,7 +4298,7 @@ int match_regex_hex(const regex_t *preg, const int n)
 {
 	char	buf[10];
 
-	snprintf(buf, sizeof(buf), "%04x", n);
+	snprintf(buf, sizeof(buf), "%04x", (unsigned int)n);
 
 	return match_regex(preg, buf);
 }

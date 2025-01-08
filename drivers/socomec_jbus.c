@@ -80,7 +80,7 @@ void upsdrv_initinfo(void)
 
 	if (tab_reg[1]) {
 		upsdebugx(2, "read UPS Power %d (kVA * 10)", tab_reg[1]);
-		dstate_setinfo("ups.power", "%u", tab_reg[1]*100 );
+		dstate_setinfo("ups.power", "%u", (unsigned int)(tab_reg[1]*100) );
 	}
 
 	/* known Socomec Models */
@@ -378,13 +378,13 @@ void upsdrv_updateinfo(void)
 	}
 
 	dstate_setinfo("battery.charge", "%u", tab_reg[4] );
-	dstate_setinfo("battery.capacity", "%u", (tab_reg[5]/10) );
+	dstate_setinfo("battery.capacity", "%u", (unsigned int)(tab_reg[5]/10) );
 	dstate_setinfo("battery.voltage", "%.2f", (double) (tab_reg[20]) / 10);
 	dstate_setinfo("battery.current", "%.2f", (double) (tab_reg[24]) / 10 );
 	dstate_setinfo("battery.runtime", "%u", tab_reg[23] );
 
-	dstate_setinfo("input.bypass.frequency", "%u", (tab_reg[18]/10) );
-	dstate_setinfo("output.frequency", "%u", (tab_reg[19]/10) );
+	dstate_setinfo("input.bypass.frequency", "%u", (unsigned int)(tab_reg[18]/10) );
+	dstate_setinfo("output.frequency", "%u", (unsigned int)(tab_reg[19]/10) );
 
 	if (tab_reg[22] != 0xFFFF) {
 		dstate_setinfo("ambient.1.present", "yes");

@@ -1038,7 +1038,7 @@ void upsdrv_initups(void)
 		}
 		if (!strcmp(modelname, "Unknown"))
 			modelname=buf;
-		upsdebugx(1,"Detected: %s , %dV",buf,linevoltage);
+		upsdebugx(1, "Detected: %s , %uV", buf, linevoltage);
 		if (testvar("nobt") || dstate_getinfo("driver.flag.nobt")) {
 			upslogx(LOG_NOTICE, "nobt flag set, skipping battery test as requested");
 		}

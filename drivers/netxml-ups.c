@@ -637,7 +637,7 @@ void upsdrv_initups(void)
 		uri.port = ne_uri_defaultport(uri.scheme);
 	}
 
-	upsdebugx(1, "using %s://%s port %d", uri.scheme, uri.host, uri.port);
+	upsdebugx(1, "using %s://%s port %u", uri.scheme, uri.host, uri.port);
 
 	session = ne_session_create(uri.scheme, uri.host, uri.port);
 
@@ -870,7 +870,7 @@ static int netxml_alarm_subscribe(const char *page)
 
 	for (ai = ne_addr_first(addr); ai != NULL; ai = ne_addr_next(addr)) {
 
-		upsdebugx(2, "%s: connecting to host %s port %d", __func__, ne_iaddr_print(ai, buf, sizeof(buf)), port);
+		upsdebugx(2, "%s: connecting to host %s port %u", __func__, ne_iaddr_print(ai, buf, sizeof(buf)), port);
 
 #ifndef HAVE_NE_SOCK_CONNECT_TIMEOUT
 		alarm(timeout+1);
@@ -893,7 +893,7 @@ static int netxml_alarm_subscribe(const char *page)
 		return NE_RETRY;
 	}
 
-	snprintf(buf, sizeof(buf), "<Subscription Identification=\"%u\"></Subscription>", secret);
+	snprintf(buf, sizeof(buf), "<Subscription Identification=\"%u\"></Subscription>", (unsigned int)secret);
 	ret = ne_sock_fullwrite(sock, buf, strlen(buf) + 1);
 
 	if (ret != NE_OK) {

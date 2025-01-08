@@ -22,13 +22,6 @@ variables that interest you, format them, and write them to a file.
 The default format string includes variables that are supported by many
 common UPS models.  See the description below to make your own.
 
-NOTE: Historically this daemon supported logging of data for one UPS system
-(specified by the `-s` option) into one log file name or `stdout` (specified
-by the `-l` option).  Later it allowed to log several devices (each into its
-destination) as specified by multiple `-m tuple` options.  The two modes are
-effectively exclusive of each other (single-UPS options are ignored if tuples
-are also provided).
-
 OPTIONS
 -------
 
@@ -42,6 +35,8 @@ within this string are:
 
 %%;; Insert a single "%"
 
+%t;; Insert a single TAB character (like `printf("\t")`)
+
 %TIME format%;; Insert the time with strftime formatting
 
 %ETIME%;; Insert the number of seconds, ala time_t.  This is now a
@@ -50,6 +45,7 @@ within this string are:
 %HOST%;; insert the local hostname
 
 %UPSHOST%;; insert the host of the UPS being monitored
+(the `<system>` part of your logging specification, e.g. `ups[@host[:port]]`)
 
 %PID%;; insert the pid of upslog
 
@@ -83,24 +79,30 @@ Store the results in this file.
 You can use "-" for stdout, but upslog will remain in the foreground
 by default.
 +
-Ignored if you also provide `-m tuple` option(s).
+Requires that the `-s <system>` option is also used for the single-system
+logging.  Can be used with the `-m <tuple>`, will be added to the list.
+
+*-D*::
+Raise debugging verbosity level by one; upslog will remain in the foreground
+by default.
 
 *-F*::
 upslog will run in the foreground, regardless of logging target.
 
 *-B*::
-upslog will run in the background, regardless of logging target.
+upslog will run in the background, regardless of logging target or debugging.
 
 *-s* 'ups'::
 Monitor this UPS.  The format for this option is
 +upsname[@hostname[:port]]+.  The default hostname is "localhost".
 +
-Ignored if you also provide `-m tuple` option(s).
+The upsname may be an asterisk `*` to query UPSes currently served by hostname.
++
+Requires that the `-l <logfile>` option is also used for the single-system
+logging.  Can be used with the `-m <tuple>`, will be added to the list.
 
 *-m* 'tuple'::
 Monitor multiple UPSs (provided several instances of such option).
-+
-Overrides the single-UPS settings passed by `-s` and `-l` options.
 +
 The format for this option is a tuple of UPS system and log file
 specification, separated by commas. An example would be:
@@ -108,11 +110,13 @@ specification, separated by commas. An example would be:
 upsname@hostname:9999,/var/log/nut/cps.log
 ----
 +
+The upsname may be an asterisk `*` to query UPSes currently served by hostname.
++
 Tuples may specify `-` as the logfile, to emit messages on `stdout`
 (e.g. to be collected by the system journal for services).
 +
-Use of `stdout` via tuple-based logging specifications does not
-imply that upslog will remain in the foreground by default.
+Use of `stdout` via tuple-based logging specifications also
+implies that upslog will remain in the foreground by default.
 
 *-u* 'username'::
 
@@ -138,6 +142,14 @@ current sleep and log immediately.  This is useful when triggered from a
 entry always exists, even if the power goes away for a period of time shorter
 than that specified by the `-i` argument.
 
+LOG CO-LOCATION
+---------------
+
+It is possible and safe to specify the same log file (including `-` for stdout)
+in several tuples, and it would only be opened or closed once without conflict.
+
+Consider adding `%UPSHOST%` to your custom formatting string to differentiate
+lines corresponding to different systems, when logging them to same target.
 
 LOG ROTATION
 ------------
@@ -145,6 +157,17 @@ LOG ROTATION
 *upslog* writes its PID to `upslog.pid`, and will reopen the log file if you
 send it a SIGHUP.  This allows it to keep running when the log is rotated
 by an external program.
+
+CAVEATS
+-------
+
+Historically this daemon supported logging of data for one UPS system per run
+(specified by the `-s` option) into one log file name or `stdout` (specified
+by the `-l` option).  Since NUT v2.8.1 it allowed to log several devices (each
+logged into its destination) as specified by multiple `-m tuple` options.
+The two modes were effectively exclusive of each other (single-UPS options
+were ignored if tuples are also provided) until NUT v2.8.3, but single-UPS
+options are added to the list of tuples since that release.
 
 SEE ALSO
 --------

@@ -112,7 +112,7 @@ typedef struct {
 	unsigned int	hardwareversion;
 	unsigned int	softwareversion;
 	unsigned int	configuration;
-	int		configuration_array[5];
+	unsigned int	configuration_array[5];
 	bool		c_oem_mode;
 	bool		c_buzzer_disable;
 	bool		c_potmin_disable;
@@ -126,7 +126,7 @@ typedef struct {
 	unsigned int	tensionout120V;
 	unsigned int	tensionout220V;
 	unsigned int	statusval;
-	int		status[6];
+	unsigned int	status[6];
 	bool		s_220V_in;
 	bool		s_220V_out;
 	bool		s_sealed_battery;
@@ -185,7 +185,7 @@ typedef struct {
 	float		battery_tension;
 	unsigned int	perc_output;
 	unsigned int	statusval;
-	int		status[8];
+	unsigned int	status[8];
 	unsigned int	nominaltension;
 	float		timeremain;
 	bool		s_battery_mode;
@@ -1751,8 +1751,8 @@ static void interpret_pkt_hwinfo(void) {
 	}
 
 	/* checksum is OK, then use it to set values */
-	upsdebugx(4, "Pkt HWINFO is OK. Model code is %d, hwversion is %d "
-		"and swversion is %d",
+	upsdebugx(4, "Pkt HWINFO is OK. Model code is %u, hwversion is %u "
+		"and swversion is %u",
 		lastpkthwinfo.model,
 		lastpkthwinfo.hardwareversion,
 		lastpkthwinfo.softwareversion);
@@ -1762,7 +1762,7 @@ static void interpret_pkt_hwinfo(void) {
 	 * Now setting data on NUT
 	 */
 	ups = getupsinfo(lastpkthwinfo.model);
-	upsdebugx(4, "UPS Struct data: Code %d Model %s VA %d", ups.upscode, ups.upsdesc, ups.VA);
+	upsdebugx(4, "UPS Struct data: Code %u Model %s VA %u", ups.upscode, ups.upsdesc, ups.VA);
 	dstate_setinfo("device.model", "%s", ups.upsdesc);
 	dstate_setinfo("device.mfr", "%s", MANUFACTURER);
 	dstate_setinfo("device.serial", "%s", lastpkthwinfo.serial);
@@ -1797,7 +1797,7 @@ static void interpret_pkt_hwinfo(void) {
 		dstate_setinfo("experimental.nhs.hw.configuration", "%u", lastpkthwinfo.configuration);
 		for (i = 0; i < 5; i++) {
 			/* Reusing variable */
-			snprintf(alarm, sizeof(alarm), "experimental.nhs.hw.configuration_array_p%d", i);
+			snprintf(alarm, sizeof(alarm), "experimental.nhs.hw.configuration_array_p%u", i);
 			dstate_setinfo(alarm, "%u", lastpkthwinfo.configuration_array[i]);
 		}
 		dstate_setinfo("experimental.nhs.hw.c_oem_mode", "%s", lastpkthwinfo.c_oem_mode ? "true" : "false");
@@ -1815,7 +1815,7 @@ static void interpret_pkt_hwinfo(void) {
 		dstate_setinfo("experimental.nhs.hw.statusval", "%u", lastpkthwinfo.statusval);
 		for (i = 0; i < 6; i++) {
 			/* Reusing variable */
-			snprintf(alarm, sizeof(alarm), "experimental.nhs.hw.status_p%d", i);
+			snprintf(alarm, sizeof(alarm), "experimental.nhs.hw.status_p%u", i);
 			dstate_setinfo(alarm, "%u", lastpkthwinfo.status[i]);
 		}
 		dstate_setinfo("experimental.nhs.hw.s_220V_in", "%s", lastpkthwinfo.s_220V_in ? "true" : "false");
@@ -1916,11 +1916,11 @@ static void interpret_pkt_data(void) {
 
 	if (got_hwinfo) {
 		if (lastpkthwinfo.s_220V_in) {
-			upsdebugx(4, "I'm on 220v IN!. My undervoltage is %d", lastpkthwinfo.undervoltagein220V);
+			upsdebugx(4, "I'm on 220v IN!. My undervoltage is %u", lastpkthwinfo.undervoltagein220V);
 			min_input_power = lastpkthwinfo.undervoltagein220V;
 		}
 		else {
-			upsdebugx(4, "I'm on 120v IN!. My undervoltage is %d", lastpkthwinfo.undervoltagein120V);
+			upsdebugx(4, "I'm on 120v IN!. My undervoltage is %u", lastpkthwinfo.undervoltagein120V);
 			min_input_power = lastpkthwinfo.undervoltagein120V;
 		}
 	} else {
@@ -2007,7 +2007,7 @@ static void interpret_pkt_data(void) {
 		if (numbat == 0 && got_hwinfo)
 			numbat = lastpkthwinfo.numbatteries;
 		else
-			upsdebugx(4, "Number of batteries is set to %d", numbat);
+			upsdebugx(4, "Number of batteries is set to %u", numbat);
 	}
 
 	/* Set all alarms possible */
@@ -2123,7 +2123,7 @@ static void interpret_pkt_data(void) {
 	dstate_setinfo("battery.voltage.nominal", "%u", vbat);
 	dstate_setinfo("battery.capacity", "%u", ah);
 	dstate_setinfo("battery.capacity.nominal", "%0.2f", (float)ah * pf);
-	dstate_setinfo("battery.runtime.low", "%u", 30);
+	dstate_setinfo("battery.runtime.low", "%d", 30);
 
 	if (vpower > 0) {
 		/* We will calculate autonomy in seconds
@@ -2192,7 +2192,7 @@ static void interpret_pkt_data(void) {
 		dstate_setinfo("experimental.nhs.data.statusval", "%u", lastpktdata.statusval);
 		for (i = 0; i < 8; i++) {
 			/* Reusing variable */
-			snprintf(alarm, sizeof(alarm), "experimental.nhs.data.status_p%d", i);
+			snprintf(alarm, sizeof(alarm), "experimental.nhs.data.status_p%u", i);
 			dstate_setinfo(alarm, "%u", lastpktdata.status[i]);
 		}
 		dstate_setinfo("experimental.nhs.data.nominaltension", "%u", lastpktdata.nominaltension);
@@ -2320,7 +2320,7 @@ void upsdrv_updateinfo(void) {
 		 * but, on fail, try randomly send extended or normal.
 		 */
 		if (send_extended < 6) {
-			upsdebugx(4, "Sending extended initialization packet. Try %d", send_extended+1);
+			upsdebugx(4, "Sending extended initialization packet. Try %u", send_extended+1);
 			bwritten = write_serial_int(serial_fd, string_initialization_long, 9);
 			send_extended++;
 		}	/* end if */
@@ -2350,7 +2350,7 @@ void upsdrv_updateinfo(void) {
 			if (checktime > max_checktime)
 				checktime = max_checktime;
 			else {
-				upsdebugx(3, "Increase checktime to %d", checktime + 100000);
+				upsdebugx(3, "Increase checktime to %u", checktime + 100000);
 				checktime = checktime + 100000;
 			}
 			usleep(checktime);
