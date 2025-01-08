@@ -349,28 +349,20 @@ CLEANFILES += $(top_builddir)/*.adoc-parsed *.adoc-parsed
 # before rendering into HTML/PDF.
 # Work around some documents that have originally included
 # the asciidoc markup (use double-hash to avoid conversion).
-
-DOCBUILD_FILTER_GITHUB_LINKS = { \
-    $(SED) \
-        -e 's%\(link:https*://github.com/networkupstools/[a-zA-Z0-9./-]*/[1-9][0-9]*/*\[[^]]*\)\#\([1-9][0-9]*\)%\1\#\#\2%g' \
-        -e 's%\(issue\) *\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/nut/issues/\2[\1 \#\#\2]\3%g' \
-        -e 's%\(PR\|pull request\) *\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/nut/pull/\2[\1 \#\#\2]\3%g' \
-        -e 's%\([[ ,]\)\#\([1-9][0-9]*\)\([^0-9]\|$$\)%\1link:https://github.com/networkupstools/nut/issues/\2[\#\#\2]\3%g' \
-        -e 's%\(issue\) networkupstools/\([^ ][^ ]*\)\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/\2/issues/\3[\1 \2\#\#\3]\4%g' \
-        -e 's%\(PR\|pull request\) *networkupstools/\([^ ][^ ]*\)\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/\2/pull/\3[\1 \2\#\#\3]\4%g' \
-        -e 's%\([[ ,]\)networkupstools/\([^ ][^ ]*\)\#\([1-9][0-9]*\)\([^0-9]\|$$\)%\1link:https://github.com/networkupstools/\2/issues/\3[\2\#\#\3]\4%g' \
-        -e 's%\#\(\#[1-9][0-9]*\)%\1%g' \
-; }
-
 # The $< is okay here, it is used in a suffix rule below
-DOCBUILD_CONVERT_GITHUB_LINKS = { \
-    echo "  DOC-ASCIIDOC-GITHUB-LINKS    Parsing GitHub link patterns $< => $@"; \
-    cat '$<' | $(DOCBUILD_FILTER_GITHUB_LINKS) > "$@.tmp.$$$$" \
-    && mv -f "$@.tmp.$$$$" "$@" \
-; }
-
 .adoc.adoc-parsed:
-	@$(DOCBUILD_CONVERT_GITHUB_LINKS)
+	@echo "  DOC-ASCIIDOC-GITHUB-LINKS    Parsing GitHub link patterns $< => $@"; \
+	 cat '$<' | { $(SED) \
+		-e 's%\(link:https*://github.com/networkupstools/[a-zA-Z0-9./-]*/[1-9][0-9]*/*\[[^]]*\)\#\([1-9][0-9]*\)%\1\#\#\2%g' \
+		-e 's%\(issue\) *\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/nut/issues/\2[\1 \#\#\2]\3%g' \
+		-e 's%\(PR\|pull request\) *\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/nut/pull/\2[\1 \#\#\2]\3%g' \
+		-e 's%\([[ ,]\)\#\([1-9][0-9]*\)\([^0-9]\|$$\)%\1link:https://github.com/networkupstools/nut/issues/\2[\#\#\2]\3%g' \
+		-e 's%\(issue\) networkupstools/\([^ ][^ ]*\)\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/\2/issues/\3[\1 \2\#\#\3]\4%g' \
+		-e 's%\(PR\|pull request\) *networkupstools/\([^ ][^ ]*\)\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/\2/pull/\3[\1 \2\#\#\3]\4%g' \
+		-e 's%\([[ ,]\)networkupstools/\([^ ][^ ]*\)\#\([1-9][0-9]*\)\([^0-9]\|$$\)%\1link:https://github.com/networkupstools/\2/issues/\3[\2\#\#\3]\4%g' \
+		-e 's%\#\(\#[1-9][0-9]*\)%\1%g' \
+	 ; } > "$@.tmp.$$$$" \
+	 && mv -f "$@.tmp.$$$$" "$@"
 
 $(top_builddir)/ChangeLog.adoc-parsed: $(top_builddir)/ChangeLog.adoc
 
