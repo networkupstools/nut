@@ -493,9 +493,9 @@ install-bin:
 install-man: install-data-recursive
 	@echo $(WARN)
 	@echo "Warning: 'make install-man' is deprecated."
-	@echo "Use 'cd man; make install' instead."
+	@echo "Use 'cd docs/man; make install' instead."
 	@echo $(WARN)
-	+cd man; $(MAKE) $(AM_MAKEFLAGS) install
+	+cd docs/man; $(MAKE) $(AM_MAKEFLAGS) install
 install-conf:
 	@echo $(WARN)
 	@echo "Warning: 'make install-conf' is deprecated."
