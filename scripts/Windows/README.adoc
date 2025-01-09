@@ -618,6 +618,21 @@ the Makefiles for current `install` target definition to run its job without
 	   || sudo make install-lib install-headers install-config install-nls ###install-docs
 
 
+cppunit
+^^^^^^^
+
+Needed for C++ unit tests (optional, and may be pointless in cross-builds
+where you can not also run the tested binaries built for another platform):
+
+	:; ( cd "$DLDIR" && wget -c http://dev-www.libreoffice.org/src/cppunit-1.15.1.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/cppunit-1.15.1.tar.gz
+	:; cd cppunit-1.15.1
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; make all
+	:; sudo make install
+
+
 /////////////////////////////////////////////////////////////////////////////
 // for avahi
 
