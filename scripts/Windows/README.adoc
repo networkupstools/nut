@@ -808,13 +808,13 @@ release would fare, starting from a git checkout, use this:
 	    (cd scripts/Windows/ && SOURCEMODE=dist ./build-mingw-nut.sh all64)
 
 If everything goes fine, you will find a NUT installation tree in 'nut_install'
-sub-directory. Note the script accepts some parameters e.g. for 32/64 bit build
-targets.
+sub-directory (technically, a symbolic link to `nut_install_${ARCH}` directory).
+Note the script accepts some parameters e.g. for 32/64 bit build targets.
 
 NOTE: For other ways of building and packaging, it might make sense for
-a packaged delivery to also `make install DESTDIR=.../nut_install` from
-the sources of dependency projects built above, or at least to copy the
-built `*.dll` files from `${PREFIX}/bin` to `nut_install/bin`. For those
-dependencies that are listed above, the script does this best-effort
-activity (does not fail if some are missing, but running the programs
-can fail later).
+a packaged delivery to also `make install DESTDIR=.../nut_install_${ARCH}`
+from the sources of dependency projects built above, or at least to copy
+the built `*.dll` files from `${PREFIX}/bin` to `nut_install_${ARCH}/bin`.
+For those dependencies that are listed above, the script does this best-effort
+activity (does not fail if some are missing, but running the programs can fail
+later).
