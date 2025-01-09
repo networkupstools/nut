@@ -11,11 +11,12 @@ so pull requests are welcome to tie up some loose ends (add more prerequisites,
 test and fix programs, re-enable some code just commented away by `ifdef`'s...)
 
 NOTE: It is possible to prepare a Windows machine with tools and prerequisites
-for building NUT natively, as detailed in `docs/config-prereqs.txt` and easily
-handled by NUT common `ci_build.sh` script. Most prerequisites are already
-packaged in that environment, but notably net-snmp is missing -- but can be
-built from source following this document. Possibly, the instructions below
-would converge there over time to keep it simple.
+for building NUT natively, using the MSYS2 environment, as detailed in the
+`docs/config-prereqs.txt` file, and easily handled by NUT common `ci_build.sh`
+script with default parameters. Most prerequisites are already packaged in that
+environment, but notably net-snmp is missing -- however it can be built from
+source following this document. Possibly, the instructions below would converge
+in that document over time to keep it simple.
 
 For additional reference about prerequisite preparation and further ideas for
 the NUT for Windows effort, please see detailed report in the mailing list:
@@ -617,6 +618,21 @@ the Makefiles for current `install` target definition to run its job without
 	   || sudo make install-lib install-headers install-config install-nls ###install-docs
 
 
+cppunit
+^^^^^^^
+
+Needed for C++ unit tests (optional, and may be pointless in cross-builds
+where you can not also run the tested binaries built for another platform):
+
+	:; ( cd "$DLDIR" && wget -c http://dev-www.libreoffice.org/src/cppunit-1.15.1.tar.gz )
+	:; cd "$WSDIR"
+	:; tar xzf "$DLDIR"/cppunit-1.15.1.tar.gz
+	:; cd cppunit-1.15.1
+	:; ./configure --prefix="$PREFIX" $HOST_FLAG
+	:; make all
+	:; sudo make install
+
+
 /////////////////////////////////////////////////////////////////////////////
 // for avahi
 
@@ -792,13 +808,13 @@ release would fare, starting from a git checkout, use this:
 	    (cd scripts/Windows/ && SOURCEMODE=dist ./build-mingw-nut.sh all64)
 
 If everything goes fine, you will find a NUT installation tree in 'nut_install'
-sub-directory. Note the script accepts some parameters e.g. for 32/64 bit build
-targets.
+sub-directory (technically, a symbolic link to `nut_install_${ARCH}` directory).
+Note the script accepts some parameters e.g. for 32/64 bit build targets.
 
 NOTE: For other ways of building and packaging, it might make sense for
-a packaged delivery to also `make install DESTDIR=.../nut_install` from
-the sources of dependency projects built above, or at least to copy the
-built `*.dll` files from `${PREFIX}/bin` to `nut_install/bin`. For those
-dependencies that are listed above, the script does this best-effort
-activity (does not fail if some are missing, but running the programs
-can fail later).
+a packaged delivery to also `make install DESTDIR=.../nut_install_${ARCH}`
+from the sources of dependency projects built above, or at least to copy
+the built `*.dll` files from `${PREFIX}/bin` to `nut_install_${ARCH}/bin`.
+For those dependencies that are listed above, the script does this best-effort
+activity (does not fail if some are missing, but running the programs can fail
+later).
