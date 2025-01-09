@@ -11,11 +11,12 @@ so pull requests are welcome to tie up some loose ends (add more prerequisites,
 test and fix programs, re-enable some code just commented away by `ifdef`'s...)
 
 NOTE: It is possible to prepare a Windows machine with tools and prerequisites
-for building NUT natively, as detailed in `docs/config-prereqs.txt` and easily
-handled by NUT common `ci_build.sh` script. Most prerequisites are already
-packaged in that environment, but notably net-snmp is missing -- but can be
-built from source following this document. Possibly, the instructions below
-would converge there over time to keep it simple.
+for building NUT natively, using the MSYS2 environment, as detailed in the
+`docs/config-prereqs.txt` file, and easily handled by NUT common `ci_build.sh`
+script with default parameters. Most prerequisites are already packaged in that
+environment, but notably net-snmp is missing -- however it can be built from
+source following this document. Possibly, the instructions below would converge
+in that document over time to keep it simple.
 
 For additional reference about prerequisite preparation and further ideas for
 the NUT for Windows effort, please see detailed report in the mailing list:
