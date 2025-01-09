@@ -151,7 +151,7 @@ The Termux distribution as of this writing seems to lack cppunit packages
 but you can build it from https://www.freedesktop.org/wiki/Software/cppunit/
 e.g. `--with-prefix=${HOME}/nut-deps/usr` and `make install` there.
 A custom `PKG_CONFIG_PATH=${HOME}/nut-deps/usr/lib/pkgconfig` would find
-it during NUT build. You may need to use only the static library variant.
+it during NUT build.
 ======
 
 Debian-like package installations commonly start with an update of
