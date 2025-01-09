@@ -4035,6 +4035,8 @@ dnl This option is only provided so that make distcheck can override it,
 dnl otherwise we ask pkg-config whenever --with-systemdsystemunitdir is
 dnl given
 
+AC_PATH_PROG([SYSTEMD_SYSTEMCTL_PROGRAM], [systemctl], [/usr/bin/systemctl])
+
 dnl Similarly for presets (list of svcs enabled/disabled by default)
 AC_MSG_CHECKING(whether to install systemd preset files)
 AC_ARG_WITH([systemdsystempresetdir],
@@ -4075,6 +4077,7 @@ if test -n "${systemdsystempresetdir}"; then
 else
 	AC_MSG_RESULT(no)
 fi
+AM_CONDITIONAL([WITH_SYSTEMD_PRESET], [test x"${systemdsystempresetdir}" != "x"])
 
 dnl Similarly for shutdown integration hooks
 AC_MSG_CHECKING(whether to install systemd shutdown files)
@@ -4115,6 +4118,7 @@ if test -n "${systemdshutdowndir}"; then
 else
 	AC_MSG_RESULT(no)
 fi
+AM_CONDITIONAL([WITH_SYSTEMD_SHUTDOWN], [test x"${systemdshutdowndir}" != "x"])
 
 dnl Note: if (systemd-)tmpfiles tech is present, it can be useful even for
 dnl daemons starting not as systemd units, to pre-create /var/run/nut etc.
@@ -4153,6 +4157,7 @@ if test -n "${systemdtmpfilesdir}"; then
 else
 	AC_MSG_RESULT(no)
 fi
+AM_CONDITIONAL([WITH_SYSTEMD_TMPFILES], [test x"${systemdtmpfilesdir}" != "x"])
 
 dnl What pathname would we embed into unit files ExecStartPre?
 dnl TODO? Any need to make it a --with-... argument?

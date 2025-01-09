@@ -579,6 +579,10 @@ relocated into new `shutdown.default` INSTCMD definitions. [#2670]
  - Introduced a simple experiment to expose NUT client readings as filesystem
    objects via FUSE, in `scripts/fuse/execfuse-nut` now. [#2591]
 
+ - Introduced `make install-as-root` to create directories not directly
+   populated by `make install` and NUT build artifacts, apply permissions
+   and (on some platforms) restart services involved with NUT. [#1298]
+
 
 Release notes for NUT 2.8.2 - what's new since 2.8.1
 ----------------------------------------------------
