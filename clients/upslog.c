@@ -919,15 +919,19 @@ int main(int argc, char **argv)
 			upsname = monhost_ups_current->upsname;	/* XXX Not ideal */
 			monhost = monhost_ups_current->monhost;	/* XXX Not ideal */
 			/* reconnect if necessary */
-			if (upscli_fd(ups) < 0) {
-				upscli_connect(ups, monhost_ups_current->hostname, monhost_ups_current->port, 0);
+			if (upscli_fd(monhost_ups_current->ups) < 0) {
+				upscli_connect(
+					monhost_ups_current->ups,
+					monhost_ups_current->hostname,
+					monhost_ups_current->port,
+					0);
 			}
 
 			run_flist(monhost_ups_current);
 
 			/* don't keep connection open if we don't intend to use it shortly */
 			if (interval > 30) {
-				upscli_disconnect(ups);
+				upscli_disconnect(monhost_ups_current->ups);
 			}
 		}
 
