@@ -306,11 +306,30 @@ Installation
 
 [NOTE]
 =====================================================================
+You should now gain privileges for installing software if necessary, e.g.:
 
-you should now gain privileges for installing software if necessary:
+	su -
 
-	su
+or prefix installation (not build/check!) commands with `sudo`, e.g.:
 
+	sudo make install ...
+=====================================================================
+
+[NOTE]
+=====================================================================
+If you install NUT for direct consumption on the system that has just
+built it from source, you might be aided for some of the steps listed
+and explained below by running (as `root`):
+
+	make install-as-root
+
+This should not only install the software, but also create directories
+such as the state path, assign ownership and access permissions to
+certain directories and sample configuration files which NUT user
+and/or group accounts should be able to read and/or write, and, on
+some platforms, also (re-)start the NUT daemons/services.
+
+See above "System User creation", that should be done first!
 =====================================================================
 
 Install the files to a system level directory:
@@ -328,7 +347,7 @@ have created.
 
 If you are packaging this software, then you will probably want to
 use the DESTDIR variable to redirect the build into another place,
-i.e.:
+also known as a "prototype directory" or a "staging area", i.e.:
 
 	make DESTDIR=/tmp/package install
 	make DESTDIR=/tmp/package install-conf
@@ -337,9 +356,12 @@ i.e.:
 State path creation
 ^^^^^^^^^^^^^^^^^^^
 
+NOTE: See above about `make install-as-root`, if you use that -- skip
+this step here.
+
 Create the state path directory for the driver(s) and server to use
 for storing UPS status data and other auxiliary files, and make it
-group-writable by the group of the system user you created.
+group-writable by the group of the system user you created, e.g.:
 
 	mkdir -p /var/state/ups
 	chmod 0770 /var/state/ups
