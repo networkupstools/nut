@@ -499,6 +499,12 @@ relocated into new `shutdown.default` INSTCMD definitions. [#2670]
    as a service, have a help message, pass debug verbosity to launched NUT
    programs...) and add a man page for it. [issue #2432, PR #2446]
 
+ - the `scripts/Windows/build-mingw-nut.sh` helper script was extended to
+   use `nut_build_${ARCH}` and `nut_install_${ARCH}` directories by default,
+   with the older `nut_build` and `nut_install` short names becoming just a
+   symbolic link to the latest executed build: this should help compare the
+   differences of 32/64-bit builds, without them stepping on each other's toes.
+
  - the `PyNUTClient` module should no longer rely on presence of a `telnetlib`
    module in the build or execution environment (deprecated in Python 3.11,
    removed since Python 3.13). [#2183]
