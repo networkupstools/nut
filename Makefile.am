@@ -583,6 +583,8 @@ endif
 
 # TODO: Actually move this into scripts like Solaris/postinstall
 # using OS-specific `useradd`/`groupadd`, etc.
+# Note that as we stop services, we may be dealing with (older)
+# distros that do not follow current naming in NUT code base.
 install-as-root:
 	@+echo "$@: starting (no-op if not root)" >&2 ; \
 	 case "@target_os@" in *mingw*) exit 0;; esac ; \
