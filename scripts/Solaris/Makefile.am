@@ -61,6 +61,23 @@ SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS = makelocal.sh precheck.py preproto.pl
 SOLARIS_PACKAGE_SVR4_INSTALLSCRIPTS = preinstall postinstall preremove postremove
 SOLARIS_PACKAGE_SVR4_INSTALLDATA = pkginfo
 package-solaris-svr4: $(SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLDATA)
+	ISANAME=''; case x"$(target_cpu)" in \
+		xi386|xsparc|xsparcv9|xamd64)	ISANAME='$(target_cpu)' ;; \
+		xx86_64)	ISANAME='amd64' ;; \
+		xi686)	ISANAME='i386' ;; \
+		xsparcv7)ISANAME='sparc' ;; \
+		x) UNAME_P="`uname -p`" && ISANAME="$${UNAME_P}" ;; \
+	esac ; \
+	ISABITS=32; case x"$${ISANAME}" in \
+		xi386|xsparc)	ISABITS=32 ;; \
+		xsparcv9|xamd64)	ISABITS=64 ;; \
+		x*) echo "WARNING: Unexpected ISANAME='$${ISANAME}'" >&2 ;; \
+	esac; \
+	case x"$${ISABITS}" in \
+		x32)	ISA_PKGNAME="NUT" ;; \
+		x64)	ISA_PKGNAME="NUTx" ;; \
+	esac; \
+	sed -e 's/^PKG="[^"][^"]*"$/PKG="'"$${ISA_PKGNAME}"'"/' -i $(builddir)/pkginfo ; \
 	if test -n "@auglensdir@" && test -d "$(DESTDIR)@auglensdir@" ; then \
 		$(MKDIR_P) "$(DESTDIR)@datadir@/augeas-lenses" && \
 		cd "$(DESTDIR)@auglensdir@" && \
@@ -75,15 +92,8 @@ endif
 	cd $(PROTOTYPE_DIR) && rm -f prototype1
 	cd $(PROTOTYPE_DIR) && ./makelocal.sh
 	cp $(PROTOTYPE_DIR)/*.gz $(builddir)
-	ISANAME=''; case x"$(target_cpu)" in \
-		xi386|xsparc|xsparcv9|xamd64)	ISANAME='$(target_cpu)' ;; \
-		xx86_64)	ISANAME='amd64' ;; \
-		xi686)	ISANAME='i386' ;; \
-		xsparcv7)ISANAME='sparc' ;; \
-		x) UNAME_P="`uname -p`" && ISANAME="$${UNAME_P}" ;; \
-	esac ; \
 	if [ -n "$${ISANAME}" ] ; then \
-		mv -f NUT_solaris_package.local.gz "$(abs_top_builddir)/NUT_solaris_$${ISANAME}_package-@PACKAGE_VERSION@.local.gz" ; \
+		mv -f NUT*_solaris_package.local.gz "$(abs_top_builddir)/$${ISA_PKGNAME}_solaris_$${ISANAME}_package-@PACKAGE_VERSION@.local.gz" ; \
 	fi
 
 # TODO: Define support for IPS packaging (provide p5m files and make rules)
