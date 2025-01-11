@@ -9,6 +9,25 @@ extern "C" {
 /* *INDENT-ON* */
 #endif
 
+/* log targets, defined independently of monitored "systems" below, because
+ * several devices can get logged into the same target (stdout or filename) */
+struct 	logtarget_t {
+	char	*logfn;
+	FILE	*logfile;
+	struct 	logtarget_t	*next;
+};
+
+/* monitored "systems" */
+struct 	monhost_ups_t {
+	char	*monhost;
+	char	*upsname;
+	char	*hostname;
+	uint16_t	port;
+	UPSCONN_t	*ups;
+	struct 	logtarget_t	*logtarget;
+	struct	monhost_ups_t	*next;
+};
+
 /* function list */
 typedef struct flist_s {
 	void	(*fptr)(const char *arg);

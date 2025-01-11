@@ -59,27 +59,12 @@
 	static	char	logbuffer[LARGEBUF], *logformat = NULL;
 
 	static	flist_t	*fhead = NULL;
-	struct 	logtarget_t {
-		char	*logfn;
-		FILE	*logfile;
-		struct 	logtarget_t	*next;
-	};
+
 	/* FIXME: To be valgrind-clean, free these at exit */
 	static	struct	logtarget_t *logfile_anchor = NULL;
-
-	struct 	monhost_ups {
-		char	*monhost;
-		char	*upsname;
-		char	*hostname;
-		uint16_t	port;
-		UPSCONN_t	*ups;
-		struct 	logtarget_t	*logtarget;
-		struct	monhost_ups	*next;
-	};
-	/* FIXME: To be valgrind-clean, free these at exit */
-	static	struct	monhost_ups *monhost_ups_anchor = NULL;
-	static	struct	monhost_ups *monhost_ups_current = NULL;
-	static	struct	monhost_ups *monhost_ups_prev = NULL;
+	static	struct	monhost_ups_t *monhost_ups_anchor = NULL;
+	static	struct	monhost_ups_t *monhost_ups_current = NULL;
+	static	struct	monhost_ups_t *monhost_ups_prev = NULL;
 
 
 #define DEFAULT_LOGFORMAT "%TIME @Y@m@d @H@M@S% %VAR battery.charge% " \
@@ -113,7 +98,7 @@ static struct logtarget_t *add_logfile(const char *logfn_arg)
 	if (!logfn_arg || !(*logfn_arg))
 		return p;
 
-	p = xcalloc(1, sizeof(struct monhost_ups));
+	p = xcalloc(1, sizeof(struct monhost_ups_t));
 	p->logfn = xstrdup(logfn_arg);
 	p->logfile = NULL;
 
@@ -476,7 +461,7 @@ static void compile_format(void)
 }
 
 /* go through the list of functions and call them in order */
-static void run_flist(struct monhost_ups *monhost_ups_print)
+static void run_flist(struct monhost_ups_t *monhost_ups_print)
 {
 	flist_t	*tmp;
 
@@ -532,7 +517,7 @@ int main(int argc, char **argv)
 					char *m_arg, *s;
 
 					monhost_ups_prev = monhost_ups_current;
-					monhost_ups_current = xmalloc(sizeof(struct monhost_ups));
+					monhost_ups_current = xmalloc(sizeof(struct monhost_ups_t));
 					if (monhost_ups_anchor == NULL)
 						monhost_ups_anchor = monhost_ups_current;
 					else
@@ -678,7 +663,7 @@ int main(int argc, char **argv)
 
 		/* May be or not be NULL here: */
 		monhost_ups_prev = monhost_ups_current;
-		monhost_ups_current = xmalloc(sizeof(struct monhost_ups));
+		monhost_ups_current = xmalloc(sizeof(struct monhost_ups_t));
 		if (monhost_ups_anchor == NULL) {
 			/* Become the single-entry list */
 			monhost_ups_anchor = monhost_ups_current;
@@ -756,7 +741,7 @@ int main(int argc, char **argv)
 			}
 
 			while (upscli_list_next(conn, numq, query, &numa, &answer) == 1) {
-				struct	monhost_ups *mu = NULL;
+				struct	monhost_ups_t *mu = NULL;
 				char	buf[LARGEBUF];
 
 				/* UPS <upsname> <description> */
@@ -767,7 +752,7 @@ int main(int argc, char **argv)
 				found++;
 				upsdebugx(1, "FOUND: %s: %s", answer[1], answer[2]);
 
-				mu = xmalloc(sizeof(struct monhost_ups));
+				mu = xmalloc(sizeof(struct monhost_ups_t));
 				snprintf(buf, sizeof(buf), "%s@%s:%" PRIu16,
 					answer[1],
 					monhost_ups_current->hostname,
