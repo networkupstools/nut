@@ -711,7 +711,7 @@ install-as-root:
 				fi ; \
 				echo "$@: Reconfigure nut-driver-enumerator (service instance wrapping)" >&2 ; \
 				@SYSTEMD_SYSTEMCTL_PROGRAM@ restart udev || true ; \
-				$(top_builddir)/scripts/upsdrvsvcctl/nut-driver-enumerator.sh --reconfigure || exit ; \
+				$(top_builddir)/scripts/upsdrvsvcctl/nut-driver-enumerator.sh --reconfigure || { RES=$$?; if [ $$RES != 42 ] ; then exit $$RES ; fi ; } ; \
 				echo "$@: Restart NUT services" >&2 ; \
 				@SYSTEMD_SYSTEMCTL_PROGRAM@ restart nut-driver-enumerator.service nut-monitor.service nut-server.service || exit ; \
 			fi ; \
