@@ -333,6 +333,8 @@ https://github.com/networkupstools/nut/milestone/11
      then recommended to use `%UPSHOST%` in a custom formatting string).
    * Fixed printing of `%UPSHOST%` when multiple systems are being logged.
    * A `%t` for a TAB character can now be used in the formatting string.
+   * Added `-N` to prefix `%UPSHOST%%t` before the format string (whether
+     default or custom). Useful when logging many systems into same target.
    * Added `-D` for debugging (and foregrounding by default), like with
      other NUT daemons.
    * Added systemd and SMF service integration. [#1803]

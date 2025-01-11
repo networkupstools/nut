@@ -194,6 +194,8 @@ static void help(const char *prog)
 
 	printf("  -f <format>	- Log format.  See below for details.\n");
 	printf("		- Use -f \"<format>\" so your shell doesn't break it up.\n");
+	printf("  -N            - Prefix \"%%UPSHOST%%%%t\" before the format (default/custom)");
+	printf("		- Useful when logging many systems into same target.\n");
 	printf("  -i <interval>	- Time between updates, in seconds\n");
 	printf("  -d <count>	- Exit after specified amount of updates\n");
 	printf("  -l <logfile>	- Log file name, or - for stdout (foreground by default)\n");
@@ -493,7 +495,7 @@ static void run_flist(const struct monhost_ups_t *monhost_ups_print)
 
 int main(int argc, char **argv)
 {
-	int	interval = 30, i, foreground = -1;
+	int	interval = 30, i, foreground = -1, prefix_UPSHOST = 0, logformat_allocated = 0;
 	size_t	monhost_len = 0, loop_count = 0;
 	const char	*prog = xbasename(argv[0]);
 	time_t	now, nextpoll = 0;
@@ -508,7 +510,7 @@ int main(int argc, char **argv)
 
 	print_banner_once(prog, 0);
 
-	while ((i = getopt(argc, argv, "+hDs:l:i:d:f:u:Vp:FBm:")) != -1) {
+	while ((i = getopt(argc, argv, "+hDs:l:i:d:Nf:u:Vp:FBm:")) != -1) {
 		switch(i) {
 			case 'h':
 				help(prog);
@@ -598,6 +600,10 @@ int main(int argc, char **argv)
 				logformat = optarg;
 				break;
 
+			case 'N':
+				prefix_UPSHOST = 1;
+				break;
+
 			case 'u':
 				user = optarg;
 				break;
@@ -655,6 +661,7 @@ int main(int argc, char **argv)
 
 		logformat = xmalloc(LARGEBUF);
 		memset(logformat, '\0', LARGEBUF);
+		logformat_allocated = 1;
 
 		for (i = 3; i < argc; i++)
 			snprintfcat(logformat, LARGEBUF, "%s ", argv[i]);
@@ -693,6 +700,23 @@ int main(int argc, char **argv)
 	/* shouldn't happen */
 	if (!logformat)
 		fatalx(EXIT_FAILURE, "No format defined - but this should be impossible");
+
+	if (prefix_UPSHOST) {
+		char	*s = xstrdup(logformat);
+		if (s) {
+			if (!logformat_allocated) {
+				logformat = xmalloc(LARGEBUF);
+				if (!logformat)
+					fatalx(EXIT_FAILURE, "Failed re-allocation to prepend UPSHOST to formatting string");
+				memset(logformat, '\0', LARGEBUF);
+			}
+			snprintf(logformat, LARGEBUF, "%%UPSHOST%%%%t%s", s);
+			free(s);
+		} else {
+			upslogx(LOG_WARNING, "Failed to prepend UPSHOST to formatting string");
+		}
+	}
+	upsdebugx(1, "logformat: %s", logformat);
 
 	/* shouldn't happen */
 	if (!monhost_len)
@@ -855,7 +879,7 @@ int main(int argc, char **argv)
 				if (monhost_ups_current->logtarget->logfile != stdout)
 					upslogx(LOG_INFO, "NOTE: File %s is already receiving other logs",
 						monhost_ups_current->logtarget->logfn);
-				upslogx(LOG_INFO, "NOTE: Consider adding %%UPSHOST%% to the log formatting string");
+				upslogx(LOG_INFO, "NOTE: Consider adding %%UPSHOST%% to the log formatting string, e.g. pass -N on CLI");
 			}
 		} else {
 			if (strcmp(monhost_ups_current->logtarget->logfn, "-") == 0)
@@ -965,6 +989,11 @@ int main(int argc, char **argv)
 		}
 
 		upscli_disconnect(monhost_ups_current->ups);
+	}
+
+	if (logformat_allocated) {
+		free(logformat);
+		logformat = NULL;
 	}
 
 	exit(EXIT_SUCCESS);
