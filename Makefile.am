@@ -583,8 +583,9 @@ endif
 
 # TODO: Actually move this into scripts like Solaris/postinstall
 # using OS-specific `useradd`/`groupadd`, etc.
-install-as-root: install
-	@case "@target_os@" in *mingw*) exit 0;; esac ; \
+install-as-root:
+	@+echo "$@: starting (no-op if not root)" >&2 ; \
+	 case "@target_os@" in *mingw*) exit 0;; esac ; \
 	 if [ x"@host_os@" != x"@build_os@" ]; then exit 0 ; fi ; \
 	 if [ x"@target_os@" != x"@build_os@" ]; then exit 0 ; fi ; \
 	 prefix="@prefix@"; \
@@ -605,7 +606,13 @@ install-as-root: install
 						/usr/bin/svcadm disable -ts $$S || true ; \
 					done ; \
 				fi ; \
-				$(top_builddir)/scripts/Solaris/preremove && \
+				$(top_builddir)/scripts/Solaris/preremove \
+				|| exit ; \
+			fi ; \
+		fi ; \
+		$(MAKE) $(AM_FLAGS) DESTDIR="$(DESTDIR)" install || exit ; \
+		if [ x"$(DESTDIR)" = x -o x"$(DESTDIR)" = x/ ] ; then \
+			if $(WITH_SOLARIS_SMF) || $(WITH_SOLARIS_INIT) ; then \
 				$(top_builddir)/scripts/Solaris/preinstall && \
 				$(top_builddir)/scripts/Solaris/postinstall ; \
 				exit ; \
