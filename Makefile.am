@@ -605,7 +605,7 @@ install-as-root:
 					echo "$@: Stop NUT services, if any" >&2 ; \
 					SMF_ACTIVE="`/usr/bin/svcs -a -Hostate,fmri | grep svc:/system/power/ | grep -v disabled | awk '{print $$2}'`" ; \
 					for S in $$SMF_ACTIVE ; do \
-						/usr/bin/svcadm disable -ts $$S || true ; \
+						/usr/sbin/svcadm disable -ts $$S || true ; \
 					done ; \
 				fi ; \
 				$(top_builddir)/scripts/Solaris/preremove \
