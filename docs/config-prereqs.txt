@@ -1164,7 +1164,7 @@ Typical tooling would include:
 :; pkg install \
     asciidoc libxslt \
     docbook/dtds docbook/dsssl docbook/xsl docbook docbook/sgml-common pygments-39 \
-    graphviz expect graphviz-tcl
+    image/graphviz expect graphviz-tcl
 
 # For CGI graph generation - massive packages (X11):
 :; pkg install \
@@ -1175,9 +1175,9 @@ Typical tooling would include:
     library/augeas python/augeas \
     libusb-1 libusbugen system/library/usb/libusb system/header/header-usb driver/usb/ugen \
     libmodbus \
-    neon \
-    net-snmp \
-    powerman \
+    library/neon \
+    system/management/snmp/net-snmp \
+    system/management/powerman \
     freeipmi \
     avahi
 
@@ -1216,10 +1216,14 @@ filenames, as automated below:
 :; pkg install \
     developer/clang-13 runtime/clang-13
 
+# With OI 2024.04 there's also clang-18 available in the mix:
+:; pkg install \
+    developer/clang-18 runtime/clang-18
+
 # Get clang-cpp-X visible in standard PATH (for CI to reference the right one),
 # and make sure other frontends are exposed with versions (not all OI distro
 # releases have such symlinks packaged right), e.g.:
-:; (cd /usr/bin && for X in 8 9 13 ; do for T in "" "++" "-cpp"; do \
+:; (cd /usr/bin && for X in 8 9 13 18 ; do for T in "" "++" "-cpp"; do \
     ln -fs "../clang/$X.0/bin/clang$T" "clang${T}-${X}" ; \
    done; done)
 
