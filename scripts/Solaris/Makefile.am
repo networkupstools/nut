@@ -77,7 +77,7 @@ package-solaris-svr4: $(SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS) $(SOLARIS_PACKAGE_SV
 		x32)	ISA_PKGNAME="NUT" ;; \
 		x64)	ISA_PKGNAME="NUTx" ;; \
 	esac; \
-	sed -e 's/^PKG="[^"][^"]*"$/PKG="'"$${ISA_PKGNAME}"'"/' -i $(builddir)/pkginfo ; \
+	sed -e 's/^PKG="[^"][^"]*"$$/PKG="'"$${ISA_PKGNAME}"'"/' -i $(builddir)/pkginfo ; \
 	if test -n "@auglensdir@" && test -d "$(DESTDIR)@auglensdir@" ; then \
 		$(MKDIR_P) "$(DESTDIR)@datadir@/augeas-lenses" && \
 		cd "$(DESTDIR)@auglensdir@" && \
