@@ -294,7 +294,20 @@ AS_IF([test x"${GETENT}" != x], [
 	],[
 	AS_IF([test x"${ID}" != x], [
 		PROBE_OS_USER="${ID} -u "
-		PROBE_OS_GROUP="${ID} -g "
+		AS_IF([test -r "/etc/groups"], [
+			dnl FIXME: For command prefix usage like used in this
+			dnl  script, we might be better off defining a shell
+			dnl  function and referring to it. Grep would catch
+			dnl  also user names that have a group as secondary!
+			PROBE_OS_GROUP="cat /etc/groups | grep -w "
+			], [
+			dnl This shows groups of a USER with specified name!
+			dnl But to probe for cases where string names are
+			dnl same (e.g. "nut" or "ups") this might be good
+			dnl enough.
+			PROBE_OS_GROUP="${ID} -g "
+			])
+		AC_MSG_WARN([Can not PROPERLY check existence of group accounts on this system, but can try best-effort])
 		],[
 		AC_MSG_WARN([Can not check existence of user and group accounts on this system])
 		])
@@ -307,7 +320,7 @@ dnl certain other configure options (e.g. "in-place replacement")
 RUN_AS_USER="nobody"
 RUN_AS_GROUP="nobody"
 AS_IF([test -n "`${PROBE_OS_GROUP} nogroup`" && ! test -n "`${PROBE_OS_GROUP} "${RUN_AS_GROUP}"`"],
-    [RUN_AS_GROUP="nogroup"]
+	[RUN_AS_GROUP="nogroup"]
 )
 
 dnl NOTE: NUT legacy default, keep as is for least surprise
