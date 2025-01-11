@@ -622,20 +622,23 @@ install-as-root: install
 			esac ; \
 		done ; \
 		if (command -v chmod) ; then \
-			echo "  CHMOD(0770)   $(DESTDIR)/@STATEPATH@ $(DESTDIR)/@STATEPATH@/upssched" >&2 ; \
-			chmod 0770 "$(DESTDIR)/@STATEPATH@" "$(DESTDIR)/@STATEPATH@/upssched" \
+			echo "  CHMOD(0770)   $(DESTDIR)/@STATEPATH@/upssched" >&2 ; \
+			chmod 0770 "$(DESTDIR)/@STATEPATH@/upssched" \
 			|| exit ; \
-			for D in "@PIDPATH@" "@ALTPIDPATH@" "@ALTSTATEPATH@" ; do \
+			for D in "@STATEPATH@" "@PIDPATH@" "@ALTPIDPATH@" "@ALTSTATEPATH@" ; do \
 				case x"$$D" in \
-				x|x@*) ;; \
+				x|x@*|x/run|x/var/run|x/tmp|x/var/tmp|x/dev/shm|x/etc|x/var|x/usr|x/usr/local|x/usr/local/etc|x/usr/etc) ;; \
 				*)	echo "  CHMOD(0770)   $(DESTDIR)/$$D" >&2 ; \
 					chmod 0770 "$(DESTDIR)/$$D" \
 					|| exit ;; \
 				esac ; \
 			done ; \
-			echo "  CHMOD(0751)   $(DESTDIR)/@CONFPATH@" >&2 ; \
-			chmod 0751 "$(DESTDIR)/@CONFPATH@" \
-			|| exit ; \
+			case x"@CONFPATH@" in \
+				x|x@*|x/run|x/var/run|x/tmp|x/var/tmp|x/dev/shm|x/etc|x/var|x/usr|x/usr/local|x/usr/local/etc|x/usr/etc) ;; \
+				*)	echo "  CHMOD(0751)   $(DESTDIR)/@CONFPATH@" >&2 ; \
+					chmod 0751 "$(DESTDIR)/@CONFPATH@" \
+					|| exit ;; \
+			esac ; \
 			for F in hosts.conf.sample upsstats-single.html.sample upsstats.html.sample upsset.conf.sample ; do \
 				echo "  CHMOD(0644)   CGI: $(DESTDIR)/@CONFPATH@/$$F" >&2 ; \
 				chmod 0644 "$(DESTDIR)/@CONFPATH@/$$F" \
@@ -652,20 +655,23 @@ install-as-root: install
 		if (command -v chown) && test 0 -lt "`id -u '@RUN_AS_USER@'`" \
 		&& ( test 0 -lt "`getent group '@RUN_AS_GROUP@' | awk -F: '{print $$3}'`" || test 0 -lt "`id -g '@RUN_AS_GROUP@'`" ) \
 		; then \
-			echo "  CHOWN(@RUN_AS_USER@:@RUN_AS_GROUP@)   $(DESTDIR)/@STATEPATH@ $(DESTDIR)/@STATEPATH@/upssched" >&2 ; \
-			chown "@RUN_AS_USER@:@RUN_AS_GROUP@" "$(DESTDIR)/@STATEPATH@" "$(DESTDIR)/@STATEPATH@/upssched" \
+			echo "  CHOWN(@RUN_AS_USER@:@RUN_AS_GROUP@)   $(DESTDIR)/@STATEPATH@/upssched" >&2 ; \
+			chown "@RUN_AS_USER@:@RUN_AS_GROUP@" "$(DESTDIR)/@STATEPATH@/upssched" \
 			|| exit ; \
-			for D in "@PIDPATH@" "@ALTPIDPATH@" "@ALTSTATEPATH@" ; do \
+			for D in "@STATEPATH@" "@PIDPATH@" "@ALTPIDPATH@" "@ALTSTATEPATH@" ; do \
 				case x"$$D" in \
-				x|x@*) ;; \
+				x|x@*|x/run|x/var/run|x/tmp|x/var/tmp|x/dev/shm|x/etc|x/var|x/usr|x/usr/local|x/usr/local/etc|x/usr/etc) ;; \
 				*)	echo "  CHOWN(@RUN_AS_USER@:@RUN_AS_GROUP@)   $(DESTDIR)/$$D" >&2 ; \
 					chown "@RUN_AS_USER@:@RUN_AS_GROUP@" "$(DESTDIR)/$$D" \
 					|| exit ;; \
 				esac ; \
 			done ; \
-			echo "  CHOWN(root:@RUN_AS_GROUP@)   $(DESTDIR)/@CONFPATH@" >&2 ; \
-			chown "root:@RUN_AS_GROUP@" "$(DESTDIR)/@CONFPATH@" \
-			|| exit ; \
+			case x"@CONFPATH@" in \
+				x|x@*|x/run|x/var/run|x/tmp|x/var/tmp|x/dev/shm|x/etc|x/var|x/usr|x/usr/local|x/usr/local/etc|x/usr/etc) ;; \
+				*)	echo "  CHOWN(root:@RUN_AS_GROUP@)   $(DESTDIR)/@CONFPATH@" >&2 ; \
+					chown "root:@RUN_AS_GROUP@" "$(DESTDIR)/@CONFPATH@" \
+					|| exit ;; \
+			esac ; \
 			for F in hosts.conf.sample upsstats-single.html.sample upsstats.html.sample upsset.conf.sample ; do \
 				echo "  CHOWN(root:@RUN_AS_GROUP@)   CGI: $(DESTDIR)/@CONFPATH@/$$F" >&2 ; \
 				chown "root:@RUN_AS_GROUP@" "$(DESTDIR)/@CONFPATH@/$$F" \
