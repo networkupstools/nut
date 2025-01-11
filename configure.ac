@@ -463,7 +463,11 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         && test x"${CONFIG_FLAGS_DEPLOYED}" != x \
         || CONFIG_FLAGS_DEPLOYED=""
 
-        NUT_VERSION_DEPLOYED="`"${DEPLOYED_TOOL}" -DV 2>&1 | grep 'configured with flags:' | head -1 | sed 's,^.*Network UPS Tools version \(.*\) configured with flags:.*$,\1,'`" \
+        dnl NOTE: Currntly NUT_VERSION_DEPLOYED is just informative (or a flag
+        dnl that we've "reentered" the configuration script), so we tolerate a
+        dnl better detailed string that is more than just a version, e.g.:
+        dnl   2.8.2.1829-1829-g8f8a4f417 (development iteration after 2.8.2) built with gcc (Debian 10.2.1-6) 10.2.1 20210110
+        NUT_VERSION_DEPLOYED="`"${DEPLOYED_TOOL}" -DV 2>&1 | grep 'configured with flags:' | head -1 | sed -e 's,^.*Network UPS Tools version \(.*\) configured with flags:.*$,\1,' -e 's, and *$,,'`" \
         && test x"${NUT_VERSION_DEPLOYED}" != x \
         || NUT_VERSION_DEPLOYED=""
 
