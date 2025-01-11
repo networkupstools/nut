@@ -49,13 +49,11 @@
 
 	static	int	reopen_flag = 0, exit_flag = 0;
 	static	size_t	max_loops = 0;
-	static	char	*upsname = NULL;
-	static	UPSCONN_t	*ups = NULL;
-
-	static	char *logfn = NULL, *monhost = NULL;
 #ifndef WIN32
 	static	sigset_t	nut_upslog_sigmask;
 #endif
+	/* NOTE: The logbuffer is reused for each loop cycle (each device)
+	 * and the logformat is one for all "systems" in this program run */
 	static	char	logbuffer[LARGEBUF], *logformat = NULL;
 
 	static	flist_t	*fhead = NULL;
@@ -234,11 +232,12 @@ static void help(const char *prog)
 }
 
 /* print current host name */
-static void do_host(const char *arg)
+static void do_host(const char *arg, const struct monhost_ups_t *monhost_ups_print)
 {
 	int	ret;
 	char	hn[LARGEBUF];
 	NUT_UNUSED_VARIABLE(arg);
+	NUT_UNUSED_VARIABLE(monhost_ups_print);
 
 	ret = gethostname(hn, sizeof(hn));
 
@@ -250,26 +249,28 @@ static void do_host(const char *arg)
 	snprintfcat(logbuffer, sizeof(logbuffer), "%s", hn);
 }
 
-static void do_upshost(const char *arg)
+static void do_upshost(const char *arg, const struct monhost_ups_t *monhost_ups_print)
 {
 	NUT_UNUSED_VARIABLE(arg);
 
-	snprintfcat(logbuffer, sizeof(logbuffer), "%s", monhost);
+	snprintfcat(logbuffer, sizeof(logbuffer), "%s", monhost_ups_print->monhost);
 }
 
-static void do_pid(const char *arg)
+static void do_pid(const char *arg, const struct monhost_ups_t *monhost_ups_print)
 {
 	NUT_UNUSED_VARIABLE(arg);
+	NUT_UNUSED_VARIABLE(monhost_ups_print);
 
 	snprintfcat(logbuffer, sizeof(logbuffer), "%ld", (long)getpid());
 }
 
-static void do_time(const char *arg)
+static void do_time(const char *arg, const struct monhost_ups_t *monhost_ups_print)
 {
 	unsigned int	i;
 	char	timebuf[SMALLBUF], *format;
 	time_t	tod;
 	struct tm tmbuf;
+	NUT_UNUSED_VARIABLE(monhost_ups_print);
 
 	format = xstrdup(arg);
 
@@ -286,7 +287,7 @@ static void do_time(const char *arg)
 	free(format);
 }
 
-static void getvar(const char *var)
+static void getvar(const char *var, const struct monhost_ups_t *monhost_ups_print)
 {
 	int	ret;
 	size_t	numq, numa;
@@ -294,11 +295,11 @@ static void getvar(const char *var)
 	char	**answer;
 
 	query[0] = "VAR";
-	query[1] = upsname;
+	query[1] = monhost_ups_print->upsname;
 	query[2] = var;
 	numq = 3;
 
-	ret = upscli_get(ups, numq, query, &numa, &answer);
+	ret = upscli_get(monhost_ups_print->ups, numq, query, &numa, &answer);
 
 	if ((ret < 0) || (numa < numq)) {
 		snprintfcat(logbuffer, sizeof(logbuffer), "NA");
@@ -308,7 +309,7 @@ static void getvar(const char *var)
 	snprintfcat(logbuffer, sizeof(logbuffer), "%s", answer[3]);
 }
 
-static void do_var(const char *arg)
+static void do_var(const char *arg, const struct monhost_ups_t *monhost_ups_print)
 {
 	if ((!arg) || (strlen(arg) < 1)) {
 		snprintfcat(logbuffer, sizeof(logbuffer), "INVALID");
@@ -322,30 +323,33 @@ static void do_var(const char *arg)
 	}
 
 	/* a UPS name is now required */
-	if (!upsname) {
+	if (!monhost_ups_print->upsname) {
 		snprintfcat(logbuffer, sizeof(logbuffer), "INVALID");
 		return;
 	}
 
-	getvar(arg);
+	getvar(arg, monhost_ups_print);
 }
 
-static void do_etime(const char *arg)
+static void do_etime(const char *arg, const struct monhost_ups_t *monhost_ups_print)
 {
 	time_t	tod;
 	NUT_UNUSED_VARIABLE(arg);
+	NUT_UNUSED_VARIABLE(monhost_ups_print);
 
 	time(&tod);
 	snprintfcat(logbuffer, sizeof(logbuffer), "%lu", (unsigned long) tod);
 }
 
-static void print_literal(const char *arg)
+static void print_literal(const char *arg, const struct monhost_ups_t *monhost_ups_print)
 {
+	NUT_UNUSED_VARIABLE(monhost_ups_print);
+
 	snprintfcat(logbuffer, sizeof(logbuffer), "%s", arg);
 }
 
 /* register another parsing function to be called later */
-static void add_call(void (*fptr)(const char *arg), const char *arg)
+static void add_call(void (*fptr)(const char *arg, const struct monhost_ups_t *monhost_ups_print), const char *arg)
 {
 	flist_t	*tmp, *last;
 
@@ -461,7 +465,7 @@ static void compile_format(void)
 }
 
 /* go through the list of functions and call them in order */
-static void run_flist(struct monhost_ups_t *monhost_ups_print)
+static void run_flist(const struct monhost_ups_t *monhost_ups_print)
 {
 	flist_t	*tmp;
 
@@ -470,7 +474,7 @@ static void run_flist(struct monhost_ups_t *monhost_ups_print)
 	memset(logbuffer, 0, sizeof(logbuffer));
 
 	while (tmp) {
-		tmp->fptr(tmp->arg);
+		tmp->fptr(tmp->arg, monhost_ups_print);
 
 		tmp = tmp->next;
 	}
@@ -481,6 +485,7 @@ static void run_flist(struct monhost_ups_t *monhost_ups_print)
 
 	/* -s <monhost>
 	 * -l <log file>
+	 * -m <monhost,logfile>
 	 * -i <interval>
 	 * -f <format>
 	 * -u <username>
@@ -495,6 +500,8 @@ int main(int argc, char **argv)
 	const char	*user = NULL;
 	struct passwd	*new_uid = NULL;
 	const char	*pidfilebase = prog;
+	/* For legacy single-ups -s/-l args: */
+	static	char *logfn = NULL, *monhost = NULL;
 
 	logformat = DEFAULT_LOGFORMAT;
 	user = RUN_AS_USER;
@@ -915,9 +922,6 @@ int main(int argc, char **argv)
 		     monhost_ups_current != NULL;
 		     monhost_ups_current = monhost_ups_current->next
 		) {
-			ups = monhost_ups_current->ups;	/* XXX Not ideal */
-			upsname = monhost_ups_current->upsname;	/* XXX Not ideal */
-			monhost = monhost_ups_current->monhost;	/* XXX Not ideal */
 			/* reconnect if necessary */
 			if (upscli_fd(monhost_ups_current->ups) < 0) {
 				upscli_connect(

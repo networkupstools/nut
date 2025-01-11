@@ -30,24 +30,24 @@ struct 	monhost_ups_t {
 
 /* function list */
 typedef struct flist_s {
-	void	(*fptr)(const char *arg);
+	void	(*fptr)(const char *arg, const struct monhost_ups_t *monhost_ups_print);
 	const	char	*arg;
 	struct flist_s	*next;
 } flist_t;
 
-static void do_host(const char *arg);
-static void do_upshost(const char *arg);
-static void do_pid(const char *arg);
-static void do_time(const char *arg);
-static void do_var(const char *arg);
-static void do_etime(const char *arg);
+static void do_host(const char *arg, const struct monhost_ups_t *monhost_ups_print);
+static void do_upshost(const char *arg, const struct monhost_ups_t *monhost_ups_print);
+static void do_pid(const char *arg, const struct monhost_ups_t *monhost_ups_print);
+static void do_time(const char *arg, const struct monhost_ups_t *monhost_ups_print);
+static void do_var(const char *arg, const struct monhost_ups_t *monhost_ups_print);
+static void do_etime(const char *arg, const struct monhost_ups_t *monhost_ups_print);
 
 /* This is only used in upslog.c, but refers to routines declared here...
  * To move or not to move?..
  */
 static struct {
 	const	char	*name;
-	void	(*func)(const char *arg);
+	void	(*func)(const char *arg, const struct monhost_ups_t *monhost_ups_print);
 }	logcmds[] =
 {
 	{ "HOST",	do_host			},
@@ -56,7 +56,7 @@ static struct {
 	{ "TIME",	do_time			},
 	{ "VAR",	do_var			},
 	{ "ETIME",	do_etime		},
-	{ NULL,		(void(*)(const char*))(NULL)	}
+	{ NULL,		(void(*)(const char*, const struct monhost_ups_t *))(NULL)	}
 };
 
 #ifdef __cplusplus
