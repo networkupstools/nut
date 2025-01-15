@@ -327,6 +327,13 @@ the user you created in the preparation process.
 The suggested configuration is to `chown` it to `root`, `chgrp` it to the
 group you created, then make it readable by the group.
 
+NOTE: If you installed NUT from source and used `make install-as-root`,
+or if your distribution packaging did, the sample configuration files
+would have the suggested ownership and permissions assigned, so if you
+use e.g. `cp -pf upsd.users.sample upsd.users` (as `root`) to start out
+with some annotated comments and adapt that to your deployment, the
+copied files should also get the expected safe permissions.
+
 	chown root:nut upsd.conf upsd.users
 	chmod 0640 upsd.conf upsd.users
 
@@ -659,6 +666,13 @@ Securing upsmon.conf
 The recommended setting is to have it owned by `root:nut`, then make it
 readable by the group and not by the world.  This file contains passwords
 that could be used by an attacker to start a shutdown, so keep it secure.
+
+NOTE: If you installed NUT from source and used `make install-as-root`,
+or if your distribution packaging did, the sample configuration files
+would have the suggested ownership and permissions assigned, so if you
+use e.g. `cp -pf upsmon.conf.sample upsmon.conf` (as `root`) to start out
+with some annotated comments and adapt that to your deployment, the
+copied files should also get the expected safe permissions.
 
 	chown root:nut upsmon.conf
 	chmod 0640 upsmon.conf

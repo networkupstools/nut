@@ -294,7 +294,20 @@ AS_IF([test x"${GETENT}" != x], [
 	],[
 	AS_IF([test x"${ID}" != x], [
 		PROBE_OS_USER="${ID} -u "
-		PROBE_OS_GROUP="${ID} -g "
+		AS_IF([test -r "/etc/groups"], [
+			dnl FIXME: For command prefix usage like used in this
+			dnl  script, we might be better off defining a shell
+			dnl  function and referring to it. Grep would catch
+			dnl  also user names that have a group as secondary!
+			PROBE_OS_GROUP="cat /etc/groups | grep -w "
+			], [
+			dnl This shows groups of a USER with specified name!
+			dnl But to probe for cases where string names are
+			dnl same (e.g. "nut" or "ups") this might be good
+			dnl enough.
+			PROBE_OS_GROUP="${ID} -g "
+			])
+		AC_MSG_WARN([Can not PROPERLY check existence of group accounts on this system, but can try best-effort])
 		],[
 		AC_MSG_WARN([Can not check existence of user and group accounts on this system])
 		])
@@ -307,7 +320,7 @@ dnl certain other configure options (e.g. "in-place replacement")
 RUN_AS_USER="nobody"
 RUN_AS_GROUP="nobody"
 AS_IF([test -n "`${PROBE_OS_GROUP} nogroup`" && ! test -n "`${PROBE_OS_GROUP} "${RUN_AS_GROUP}"`"],
-    [RUN_AS_GROUP="nogroup"]
+	[RUN_AS_GROUP="nogroup"]
 )
 
 dnl NOTE: NUT legacy default, keep as is for least surprise
@@ -463,7 +476,11 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         && test x"${CONFIG_FLAGS_DEPLOYED}" != x \
         || CONFIG_FLAGS_DEPLOYED=""
 
-        NUT_VERSION_DEPLOYED="`"${DEPLOYED_TOOL}" -DV 2>&1 | grep 'configured with flags:' | head -1 | sed 's,^.*Network UPS Tools version \(.*\) configured with flags:.*$,\1,'`" \
+        dnl NOTE: Currntly NUT_VERSION_DEPLOYED is just informative (or a flag
+        dnl that we've "reentered" the configuration script), so we tolerate a
+        dnl better detailed string that is more than just a version, e.g.:
+        dnl   2.8.2.1829-1829-g8f8a4f417 (development iteration after 2.8.2) built with gcc (Debian 10.2.1-6) 10.2.1 20210110
+        NUT_VERSION_DEPLOYED="`"${DEPLOYED_TOOL}" -DV 2>&1 | grep 'configured with flags:' | head -1 | sed -e 's,^.*Network UPS Tools version \(.*\) configured with flags:.*$,\1,' -e 's, and *$,,'`" \
         && test x"${NUT_VERSION_DEPLOYED}" != x \
         || NUT_VERSION_DEPLOYED=""
 
@@ -4035,6 +4052,8 @@ dnl This option is only provided so that make distcheck can override it,
 dnl otherwise we ask pkg-config whenever --with-systemdsystemunitdir is
 dnl given
 
+AC_PATH_PROG([SYSTEMD_SYSTEMCTL_PROGRAM], [systemctl], [/usr/bin/systemctl])
+
 dnl Similarly for presets (list of svcs enabled/disabled by default)
 AC_MSG_CHECKING(whether to install systemd preset files)
 AC_ARG_WITH([systemdsystempresetdir],
@@ -4075,6 +4094,7 @@ if test -n "${systemdsystempresetdir}"; then
 else
 	AC_MSG_RESULT(no)
 fi
+AM_CONDITIONAL([WITH_SYSTEMD_PRESET], [test x"${systemdsystempresetdir}" != "x"])
 
 dnl Similarly for shutdown integration hooks
 AC_MSG_CHECKING(whether to install systemd shutdown files)
@@ -4115,6 +4135,7 @@ if test -n "${systemdshutdowndir}"; then
 else
 	AC_MSG_RESULT(no)
 fi
+AM_CONDITIONAL([WITH_SYSTEMD_SHUTDOWN], [test x"${systemdshutdowndir}" != "x"])
 
 dnl Note: if (systemd-)tmpfiles tech is present, it can be useful even for
 dnl daemons starting not as systemd units, to pre-create /var/run/nut etc.
@@ -4153,6 +4174,7 @@ if test -n "${systemdtmpfilesdir}"; then
 else
 	AC_MSG_RESULT(no)
 fi
+AM_CONDITIONAL([WITH_SYSTEMD_TMPFILES], [test x"${systemdtmpfilesdir}" != "x"])
 
 dnl What pathname would we embed into unit files ExecStartPre?
 dnl TODO? Any need to make it a --with-... argument?
