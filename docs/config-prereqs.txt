@@ -1479,6 +1479,7 @@ NOTE: for `asciidoc`/`a2x` to work, you should `export XML_CATALOG_FILES` with
 the location of packaged resources (`${HOMEBREW_PREFIX}/etc/xml/catalog`).
 On one test system, man page builds spewed warnings like
 `<unknown>:1: SyntaxWarning: invalid escape sequence '\S'`
+due to incompatibility of older asciidoc with new Python syntax requirements,
 but seemed to produce reasonable results otherwise.
 
 Note that ccache is installed in a different location than expected by default
@@ -1498,6 +1499,8 @@ NOTE: For Jenkins agents, also need to `brew install --cask temurin@21`
 for JRE/JDK 21. Java 17 or 21 (an LTS) is required to run Jenkins agents
 after summer 2024.
 
+The compiler is part of Apple's XCode ecosystem. Just try to run `clang`
+in a GUI terminal, and a pop-up will appear offering to install it.
 Note that you would have to create symbolic links to version-numbered names
 of compilers, e.g. `clang-14` and `clang++-14` in both `/usr/local/bin`
 (pointing to `/bin/clang(++)` and in the `ccache` location prepared above
