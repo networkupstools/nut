@@ -60,6 +60,10 @@ The default format string is:
  %VAR ups.load% [%VAR ups.status%] %VAR ups.temperature%
  %VAR input.frequency%
 
+*-N*::
+Prefix `%UPSHOST%%t` before the format string (whether default or custom).
+Useful when logging many systems into same target.
+
 *-i* 'interval'::
 
 Wait this many seconds between polls.  This defaults to 30 seconds.
