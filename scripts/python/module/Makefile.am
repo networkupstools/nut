@@ -86,6 +86,9 @@ upload publish:
 		if test -x "$(srcdir)/$${B}.in" ; then chmod +x "PyNUTClient/$${B}"; fi ; \
 	 done ; \
 	 cp -pf "$(srcdir)/nut_telnetlib.py" PyNUTClient/ || exit ; \
+	 if [ x"$(abs_srcdir)" != x"$(abs_builddir)" ] ; then \
+		cp -pf "$(srcdir)/nut_telnetlib.py" . || exit ; \
+	 fi ; \
 	 cp -pf "$(srcdir)/README.adoc" README.txt || exit ; \
 	 cp -pf "$(top_srcdir)/LICENSE-GPL3" . || exit ; \
 	 echo "from . import PyNUT" > PyNUTClient/__init__.py || exit
