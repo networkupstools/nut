@@ -168,6 +168,8 @@ https://github.com/networkupstools/nut/milestone/11
      as known supported by `nutdrv_qx` (Megatec protocol) since at least
      NUT v2.7.4 release. [#2395]
    * introduced `innovart31` protocol support for Innova RT 3/1 UPSes. [#2712]
+   * extended Voltronic protocol to support longer numbers as remaining
+     `battery.runtime` value. [#2765]
 
  - bicker_ser: added new driver for Bicker 12/24Vdc UPS via RS-232 serial
    communication protocol, which supports any UPS shipped with the PSZ-1053
