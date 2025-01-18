@@ -224,7 +224,7 @@ TYPE_FD sstate_connect(upstype_t *ups)
 			upsdebugx(2, "%s: failed to connect() UNIX socket %s (%s)",
 				__func__, NUT_STRARG(ups->fn), sa.sun_path);
 		} else {
-			char	cwd[PATH_MAX+1];
+			char	cwd[NUT_PATH_MAX+1];
 			upsdebugx(2, "%s: failed to connect() UNIX socket %s (%s/%s)",
 				__func__, NUT_STRARG(ups->fn),
 				getcwd(cwd, sizeof(cwd)), sa.sun_path);
@@ -241,7 +241,7 @@ TYPE_FD sstate_connect(upstype_t *ups)
 			upslog_with_errno(LOG_ERR, "Can't connect to UPS [%s] (%s)",
 				ups->name, ups->fn);
 		} else {
-			char	cwd[PATH_MAX+1];
+			char	cwd[NUT_PATH_MAX+1];
 			upslog_with_errno(LOG_ERR, "Can't connect to UPS [%s] (%s/%s)",
 				ups->name, getcwd(cwd, sizeof(cwd)), ups->fn);
 		}

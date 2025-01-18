@@ -1661,7 +1661,7 @@ finish:
    depending on the .exe path */
 char * getfullpath(char * relative_path)
 {
-	char buf[MAX_PATH];
+	char buf[NUT_PATH_MAX];
 	if ( GetModuleFileName(NULL, buf, sizeof(buf)) == 0 ) {
 		return NULL;
 	}
@@ -1682,7 +1682,7 @@ char * getfullpath(char * relative_path)
 void writepid(const char *name)
 {
 #ifndef WIN32
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX];
 	FILE	*pidf;
 	mode_t	mask;
 
