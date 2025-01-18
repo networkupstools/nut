@@ -1012,11 +1012,7 @@ char * getprocname(pid_t pid)
 	 */
 	char	*procname = NULL;
 	size_t	procnamelen = 0;
-#ifdef UNIX_PATH_MAX
-	char	pathname[UNIX_PATH_MAX];
-#else
-	char	pathname[PATH_MAX];
-#endif
+	char	pathname[NUT_PATH_MAX];
 	struct stat	st;
 
 #ifdef WIN32
@@ -1473,11 +1469,7 @@ int compareprocname(pid_t pid, const char *procname, const char *progname)
 	size_t	procbasenamelen = 0, progbasenamelen = 0;
 	/* Track where the last dot is in the basename; 0 means none */
 	size_t	procbasenamedot = 0, progbasenamedot = 0;
-#ifdef UNIX_PATH_MAX
-	char	procbasename[UNIX_PATH_MAX], progbasename[UNIX_PATH_MAX];
-#else
-	char	procbasename[PATH_MAX], progbasename[PATH_MAX];
-#endif
+	char	procbasename[NUT_PATH_MAX], progbasename[NUT_PATH_MAX];
 
 	if (checkprocname_ignored(__func__)) {
 		ret = -3;
@@ -3088,11 +3080,7 @@ const char * rootpidpath(void)
 /* Die with a standard message if socket filename is too long */
 void check_unix_socket_filename(const char *fn) {
 	size_t len = strlen(fn);
-#ifdef UNIX_PATH_MAX
-	size_t max = UNIX_PATH_MAX;
-#else
-	size_t max = PATH_MAX;
-#endif
+	size_t max = NUT_PATH_MAX;
 #ifndef WIN32
 	struct sockaddr_un	ssaddr;
 	max = sizeof(ssaddr.sun_path);
@@ -3108,6 +3096,8 @@ void check_unix_socket_filename(const char *fn) {
 	 * varying 104-108 bytes (UNIX_PATH_MAX)
 	 * as opposed to PATH_MAX or MAXPATHLEN
 	 * typically of a kilobyte range.
+	 * We define NUT_PATH_MAX as the greatest
+	 * value of them all.
 	 */
 	fatalx(EXIT_FAILURE,
 		"Can't create a unix domain socket: pathname '%s' "
