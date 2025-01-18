@@ -846,7 +846,7 @@ static void parse_line(const char *buf)
 
 static void display_template(const char *tfn)
 {
-	char	fn[SMALLBUF], buf[LARGEBUF];
+	char	fn[NUT_PATH_MAX], buf[LARGEBUF];
 
 	snprintf(fn, sizeof(fn), "%s/%s", confpath(), tfn);
 
@@ -965,7 +965,7 @@ static void upsstats_hosts_err(const char *errmsg)
 
 static void load_hosts_conf(void)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX];
 	PCONF_CTX_t	ctx;
 
 	snprintf(fn, sizeof(fn), "%s/hosts.conf", CONFPATH);

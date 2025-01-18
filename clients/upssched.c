@@ -1439,7 +1439,7 @@ static void upssched_err(const char *errmsg)
 
 static void checkconf(void)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX];
 	PCONF_CTX_t	ctx;
 	int	numerrors = 0;
 

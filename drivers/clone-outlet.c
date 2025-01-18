@@ -253,7 +253,7 @@ static TYPE_FD sstate_connect(void)
 
 	/* continued below... */
 #else /* WIN32 */
-	char		pipename[SMALLBUF];
+	char		pipename[NUT_PATH_MAX];
 	BOOL		result = FALSE;
 
 	snprintf(pipename, sizeof(pipename), "\\\\.\\pipe\\%s/%s", dflt_statepath(), device_path);

@@ -296,10 +296,10 @@ static DWORD shutdown_ups(void)
 /* return 0 on failure */
 static int parse_nutconf(BOOL start_flag)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX];
 	FILE	*nutf;
 	char	buf[SMALLBUF];
-	char	fullname[SMALLBUF];
+	char	fullname[NUT_PATH_MAX];
 
 	snprintf(fn, sizeof(fn), "%s/nut.conf", confpath());
 

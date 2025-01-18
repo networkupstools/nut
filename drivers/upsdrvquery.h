@@ -32,7 +32,7 @@ typedef struct udq_pipe_conn_s {
 	int		newread;	/* Set to 1 to start a new ReadFile, forget old buf */
 #endif	/* WIN32 */
 	char		buf[LARGEBUF];
-	char		sockfn[LARGEBUF];
+	char		sockfn[NUT_PATH_MAX];
 } udq_pipe_conn_t;
 
 udq_pipe_conn_t *upsdrvquery_connect(const char *sockfn);

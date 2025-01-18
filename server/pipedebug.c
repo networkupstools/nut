@@ -40,7 +40,7 @@ static void pipe_arg(int numarg, char **arg)
 static HANDLE pipe_connect(const char *pipefn)
 {
 	HANDLE	fd;
-	char	pipename[SMALLBUF];
+	char	pipename[NUT_PATH_MAX];
 	BOOL	result = FALSE;
 
 	snprintf(pipename, sizeof(pipename), "\\\\.\\pipe\\%s", pipefn);

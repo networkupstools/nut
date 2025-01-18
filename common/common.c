@@ -2061,7 +2061,7 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 #ifndef WIN32
 int sendsignal(const char *progname, int sig, int check_current_progname)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX];
 
 	snprintf(fn, sizeof(fn), "%s/%s.pid", rootpidpath(), progname);
 
@@ -3880,12 +3880,12 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 	DIR *dp;
 	struct dirent *dirp;
 	char *libname_path = NULL, *libname_alias = NULL;
-	char current_test_path[LARGEBUF];
+	char current_test_path[NUT_PATH_MAX];
 
 	upsdebugx(3, "%s('%s', %" PRIuSIZE ", '%s', %i): Entering method...",
 		__func__, base_libname, base_libname_length, dirname, index);
 
-	memset(current_test_path, 0, LARGEBUF);
+	memset(current_test_path, 0, sizeof(current_test_path));
 
 	if ((dp = opendir(dirname)) == NULL) {
 		if (index >= 0) {
@@ -3928,7 +3928,7 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 				continue;
 			}
 
-			snprintf(current_test_path, LARGEBUF, "%s/%s", dirname, dirp->d_name);
+			snprintf(current_test_path, sizeof(current_test_path), "%s/%s", dirname, dirp->d_name);
 #if HAVE_DECL_REALPATH
 			libname_path = realpath(current_test_path, NULL);
 #else

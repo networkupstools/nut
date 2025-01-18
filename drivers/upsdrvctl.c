@@ -194,7 +194,7 @@ static void signal_driver_cmd(const ups_t *ups,
 /* TODO: implement WIN32: https://github.com/networkupstools/nut/issues/1916
  * Currently the codepath is not implemented below
  */
-	char	pidfn[SMALLBUF];
+	char	pidfn[NUT_PATH_MAX];
 #endif
 	int	ret;
 
@@ -338,7 +338,7 @@ static void signal_driver(const ups_t *ups) {
 /* handle sending the signal */
 static void stop_driver(const ups_t *ups)
 {
-	char	pidfn[SMALLBUF];
+	char	pidfn[NUT_PATH_MAX];
 	int	ret, i;
 
 	upsdebugx(1, "Stopping UPS: %s", ups->upsname);
@@ -819,7 +819,7 @@ static void status_driver(const ups_t *ups)
 	 */
 	static int	headerShown = 0;
 #ifndef WIN32
-	char	pidfn[SMALLBUF];
+	char	pidfn[NUT_PATH_MAX];
 	int	cmdret = -1;
 #endif
 	char	bufPid[LARGEBUF], *pidStrFromSocket = NULL,
@@ -1023,7 +1023,7 @@ static void status_driver(const ups_t *ups)
 static void start_driver(const ups_t *ups)
 {
 	char	*argv[10];
-	char	dfn[SMALLBUF], dbg[SMALLBUF];
+	char	dfn[NUT_PATH_MAX], dbg[SMALLBUF];
 	int	ret, arg = 0;
 	int	initial_exec_error = exec_error, initial_exec_timeout = exec_timeout, drv_maxretry = maxretry;
 	struct stat	fs;
@@ -1248,7 +1248,7 @@ static void help(const char *arg_progname)
 static void shutdown_driver(const ups_t *ups)
 {
 	char	*argv[9];
-	char	dfn[SMALLBUF];
+	char	dfn[NUT_PATH_MAX];
 	int	arg = 0;
 
 	upsdebugx(1, "Shutdown UPS: %s", ups->upsname);

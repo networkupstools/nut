@@ -1081,7 +1081,7 @@ static void sock_close(void)
 
 char * dstate_init(const char *prog, const char *devname)
 {
-	char	sockname[SMALLBUF];
+	char	sockname[NUT_PATH_MAX];
 
 #ifndef WIN32
 	/* do this here for now */

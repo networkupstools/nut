@@ -275,7 +275,7 @@ TYPE_FD sstate_connect(upstype_t *ups)
 	}
 
 #else
-	char pipename[SMALLBUF];
+	char pipename[NUT_PATH_MAX];
 	const char	*dumpcmd = "DUMPALL\n";
 	BOOL  result = FALSE;
 	DWORD bytesWritten;
