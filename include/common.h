@@ -544,6 +544,25 @@ char * get_libname(const char* base_libname);
 /** @brief (Minimum) Size that a string must have to hold a UUID4 (i.e. UUID4 length + the terminating null character). */
 #define UUID4_LEN	37
 
+#define NUT_PATH_MAX	SMALLBUF
+#if (defined(PATH_MAX)) && PATH_MAX > NUT_PATH_MAX
+# undef NUT_PATH_MAX
+# define NUT_PATH_MAX	PATH_MAX
+#endif
+#if (defined(MAX_PATH)) && MAX_PATH > NUT_PATH_MAX
+/* PATH_MAX is the POSIX equivalent for Microsoft's MAX_PATH */
+# undef NUT_PATH_MAX
+# define NUT_PATH_MAX	MAX_PATH
+#endif
+#if (defined(UNIX_PATH_MAX)) && UNIX_PATH_MAX > NUT_PATH_MAX
+# undef NUT_PATH_MAX
+# define NUT_PATH_MAX	UNIX_PATH_MAX
+#endif
+#if (defined(MAXPATHLEN)) && MAXPATHLEN > NUT_PATH_MAX
+# undef NUT_PATH_MAX
+# define NUT_PATH_MAX	MAXPATHLEN
+#endif
+
 /* Provide declarations for getopt() global variables */
 
 #ifdef NEED_GETOPT_H
