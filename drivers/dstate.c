@@ -166,6 +166,8 @@ static TYPE_FD sock_open(const char *fn)
 		fatal_with_errno(EXIT_FAILURE, "listen(%d, %d) failed", fd, DS_LISTEN_BACKLOG);
 	}
 
+	upslogx(LOG_INFO, "Listening on socket %s", sockfn);
+
 #else /* WIN32 */
 
 	fd = CreateNamedPipe(
@@ -198,6 +200,9 @@ static TYPE_FD sock_open(const char *fn)
 
 	/* Wait for a connection */
 	ConnectNamedPipe(fd,&connect_overlapped);
+
+	upslogx(LOG_INFO, "Listening on named pipe %s", fn);
+
 #endif
 
 	return fd;
