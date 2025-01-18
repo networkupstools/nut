@@ -137,6 +137,12 @@ https://github.com/networkupstools/nut/milestone/11
    prevent the tool name and NUT version banner from being unilaterally
    printed out when NUT programs start. [issues #1789 vs. #316; #2573]
 
+ - Drivers would now report the socket they are listening on, and server
+   would report full path to the driver socket it tries to connect to.
+   A new `NUT_QUIET_INIT_LISTENER` envvar (presence or "true" value) can
+   prevent the socket name from being unilaterally printed out when NUT
+   drivers start. [#2764]
+
  - The `upsdrvctl` should now warn if executed on systems where NUT was
    built with support for service management frameworks like systemd or SMF,
    so nut-driver service units prepared by `nut-driver-enumerator` would
