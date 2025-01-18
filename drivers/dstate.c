@@ -189,17 +189,17 @@ static TYPE_FD sock_open(const char *fn)
 	}
 
 	/* Prepare an async wait on a connection on the pipe */
-	memset(&connect_overlapped,0,sizeof(connect_overlapped));
+	memset(&connect_overlapped, 0, sizeof(connect_overlapped));
 	connect_overlapped.hEvent = CreateEvent(NULL, /*Security*/
 			FALSE, /* auto-reset*/
 			FALSE, /* inital state = non signaled*/
 			NULL /* no name*/);
-	if(connect_overlapped.hEvent == NULL ) {
+	if (connect_overlapped.hEvent == NULL) {
 		fatal_with_errno(EXIT_FAILURE, "Can't create event");
 	}
 
 	/* Wait for a connection */
-	ConnectNamedPipe(fd,&connect_overlapped);
+	ConnectNamedPipe(fd, &connect_overlapped);
 
 	upslogx(LOG_INFO, "Listening on named pipe %s", fn);
 
@@ -215,7 +215,7 @@ static void sock_disconnect(conn_t *conn)
 	close(conn->fd);
 #else
 	/* FIXME not sure if this is the right way to close a connection */
-	if( conn->read_overlapped.hEvent != INVALID_HANDLE_VALUE) {
+	if (conn->read_overlapped.hEvent != INVALID_HANDLE_VALUE) {
 		CloseHandle(conn->read_overlapped.hEvent);
 		conn->read_overlapped.hEvent = INVALID_HANDLE_VALUE;
 	}
