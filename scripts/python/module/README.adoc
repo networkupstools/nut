@@ -27,7 +27,7 @@ link:https://pypi.org/project/PyNUTClient/[PyNUTClient]
 and so should be installable with `pip` tooling.
 
 Currently the module is regularly tested to work with Python interpreter
-versions 2.7, 3.4, 3.5 and 3.7.
+versions 2.7, 3.4, 3.5, 3.7, 3.11 and 3.13.
 
 [NOTE]
 ======
