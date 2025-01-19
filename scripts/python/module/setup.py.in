@@ -18,6 +18,7 @@ setup(
     name =	"pynutclient",	### "PyNUTClient" lower-cased due to PEP-0625
     version =	'@NUT_SOURCE_GITREV_NUMERIC@',
     author =	"The Network UPS Tools project",
+    license =	"GPL-3.0-or-later",
     license_files =	('LICENSE-GPL3',),
     author_email =	"jimklimov+nut@gmail.com",
     description =	"Python client bindings for NUT",
@@ -39,6 +40,10 @@ setup(
     classifiers = [
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
+        "Intended Audience :: System Administrators",
+        "Topic :: System :: Monitoring",
+        "Topic :: System :: Systems Administration",
+        "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
         "Programming Language :: Python :: 2.6",
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
