@@ -157,7 +157,7 @@ static HANDLE		mutex = INVALID_HANDLE_VALUE;
 static handler_t	*handler = NULL;
 
 	/* pid file */
-static char	pidfn[SMALLBUF];
+static char	pidfn[NUT_PATH_MAX];
 
 	/* set by signal handlers */
 static int	reload_flag = 0, exit_flag = 0;

@@ -280,7 +280,7 @@ void upsdrv_updateinfo(void)
 			/* less stress on the sys */
 			if (ctx == NULL && next_update == -1) {
 				struct stat	fs;
-				char fn[SMALLBUF];
+				char fn[NUT_PATH_MAX];
 
 				prepare_filepath(fn, sizeof(fn));
 
@@ -446,7 +446,7 @@ void upsdrv_initups(void)
 	}
 	else
 	{
-		char fn[SMALLBUF];
+		char fn[NUT_PATH_MAX];
 		mode = MODE_NONE;
 
 		if (val) {
@@ -747,7 +747,7 @@ static void upsconf_err(const char *errmsg)
  */
 static int parse_data_file(TYPE_FD arg_upsfd)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX];
 	char	*ptr, var_value[MAX_STRING_SIZE];
 	size_t	value_args = 0, counter;
 	time_t	now;

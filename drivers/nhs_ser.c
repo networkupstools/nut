@@ -224,7 +224,7 @@ static unsigned int	max_checktime = 6000000;	/* max wait time: 6 seconds */
 static unsigned int	send_extended = 0;
 static int		bwritten = 0;
 static unsigned char	datapacket[DATAPACKETSIZE];
-static char		porta[PATH_MAX] = DEFAULTPORT;
+static char		porta[NUT_PATH_MAX] = DEFAULTPORT;
 static int		baudrate = DEFAULTBAUD;
 static float		minpower = 0;
 static float		maxpower = 0;

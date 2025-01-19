@@ -166,6 +166,9 @@ static TYPE_FD sock_open(const char *fn)
 		fatal_with_errno(EXIT_FAILURE, "listen(%d, %d) failed", fd, DS_LISTEN_BACKLOG);
 	}
 
+	if (!getenv("NUT_QUIET_INIT_LISTENER"))
+		upslogx(LOG_INFO, "Listening on socket %s", sockfn);
+
 #else /* WIN32 */
 
 	fd = CreateNamedPipe(
@@ -187,17 +190,21 @@ static TYPE_FD sock_open(const char *fn)
 	}
 
 	/* Prepare an async wait on a connection on the pipe */
-	memset(&connect_overlapped,0,sizeof(connect_overlapped));
+	memset(&connect_overlapped, 0, sizeof(connect_overlapped));
 	connect_overlapped.hEvent = CreateEvent(NULL, /*Security*/
 			FALSE, /* auto-reset*/
 			FALSE, /* inital state = non signaled*/
 			NULL /* no name*/);
-	if(connect_overlapped.hEvent == NULL ) {
+	if (connect_overlapped.hEvent == NULL) {
 		fatal_with_errno(EXIT_FAILURE, "Can't create event");
 	}
 
 	/* Wait for a connection */
-	ConnectNamedPipe(fd,&connect_overlapped);
+	ConnectNamedPipe(fd, &connect_overlapped);
+
+	if (!getenv("NUT_QUIET_INIT_LISTENER"))
+		upslogx(LOG_INFO, "Listening on named pipe %s", fn);
+
 #endif
 
 	return fd;
@@ -210,7 +217,7 @@ static void sock_disconnect(conn_t *conn)
 	close(conn->fd);
 #else
 	/* FIXME not sure if this is the right way to close a connection */
-	if( conn->read_overlapped.hEvent != INVALID_HANDLE_VALUE) {
+	if (conn->read_overlapped.hEvent != INVALID_HANDLE_VALUE) {
 		CloseHandle(conn->read_overlapped.hEvent);
 		conn->read_overlapped.hEvent = INVALID_HANDLE_VALUE;
 	}
@@ -1074,7 +1081,7 @@ static void sock_close(void)
 
 char * dstate_init(const char *prog, const char *devname)
 {
-	char	sockname[SMALLBUF];
+	char	sockname[NUT_PATH_MAX];
 
 #ifndef WIN32
 	/* do this here for now */

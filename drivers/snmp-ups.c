@@ -4181,7 +4181,7 @@ static void mibconf_err(const char *errmsg)
 /* load *mib.conf into an snmp_info_t structure */
 void read_mibconf(char *mib)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX];
 	PCONF_CTX_t	ctx;
 	int	numerrors = 0;
 

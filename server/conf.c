@@ -357,7 +357,7 @@ static void upsd_conf_err(const char *errmsg)
 
 void load_upsdconf(int reloading)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX];
 	PCONF_CTX_t	ctx;
 	int	numerrors = 0;
 
@@ -497,7 +497,7 @@ void do_upsconf_args(char *upsname, char *var, char *val)
 void upsconf_add(int reloading)
 {
 	ups_t	*tmp = upstable, *next;
-	char	statefn[SMALLBUF];
+	char	statefn[NUT_PATH_MAX];
 
 	if (!tmp) {
 		upslogx(LOG_WARNING, "Warning: no UPS definitions in ups.conf");
@@ -599,7 +599,7 @@ static void delete_ups(upstype_t *target)
 /* see if we can open a file */
 static int check_file(const char *fn)
 {
-	char	chkfn[SMALLBUF];
+	char	chkfn[NUT_PATH_MAX];
 	FILE	*f;
 
 	snprintf(chkfn, sizeof(chkfn), "%s/%s", confpath(), fn);

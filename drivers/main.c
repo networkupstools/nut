@@ -2007,7 +2007,7 @@ int main(int argc, char **argv)
 
 	const char	* drv_name = NULL;
 	char	* dot = NULL;
-	char	name[SMALLBUF];
+	char	name[NUT_PATH_MAX];
 #endif
 
 	const char optstring[] = "+a:s:kDFBd:hx:Lqr:u:g:Vi:c:"
@@ -2595,7 +2595,7 @@ int main(int argc, char **argv)
 	 * deliberately.
 	 */
 	if (cmd || foreground == 0 || foreground == 2 || do_forceshutdown) {
-		char	pidfnbuf[SMALLBUF];
+		char	pidfnbuf[NUT_PATH_MAX];
 
 		snprintf(pidfnbuf, sizeof(pidfnbuf), "%s/%s-%s.pid", altpidpath(), progname, upsname);
 
@@ -3002,7 +3002,7 @@ sockname_ownership_finished:
 		 */
 		case 2:
 			if (!pidfn) {
-				char	pidfnbuf[SMALLBUF];
+				char	pidfnbuf[NUT_PATH_MAX];
 				snprintf(pidfnbuf, sizeof(pidfnbuf), "%s/%s-%s.pid", altpidpath(), progname, upsname);
 				pidfn = xstrdup(pidfnbuf);
 			}
