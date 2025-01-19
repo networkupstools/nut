@@ -57,6 +57,13 @@ Changes from 2.8.2 to 2.8.3
   depending on `target_cpu` of the build. If you had any scripts relying
   on the older pattern, they may have to be updated.
 
+- the PyPI distribution of the `PyNUTClient` module tarball should now use a
+  lower-cased file name (and immediate versioned directory name inside) to
+  match the requirements of link:https://peps.python.org/pep-0625/[PEP-0625].
+  The Python module name (and its directory) should remain camel-cased.
+  OS distribution package recipes that deliver the module separately (e.g.
+  as part of Python ecosystem rather than NUT) may have to adjust. [#2773]
+
 - Updated man page generation with `configure` script options to specify that
   manual sections on the target platform differ from (Linux-based) defaults
   hard-coded into page sources; this should allow to simplify NUT packaging

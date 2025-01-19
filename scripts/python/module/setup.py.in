@@ -15,7 +15,7 @@ with codecs.open(os.path.join(here, "README.txt"), encoding="utf-8") as fh:
     long_description = "\n" + fh.read()
 
 setup(
-    name =	"PyNUTClient",
+    name =	"pynutclient",	### "PyNUTClient" lower-cased due to PEP-0625
     version =	'@NUT_SOURCE_GITREV_NUMERIC@',
     author =	"The Network UPS Tools project",
     license_files =	('LICENSE-GPL3',),

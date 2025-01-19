@@ -4,6 +4,10 @@
 # Note: this Makefile is focused on PyPI publication
 # The usual autotools stuff including clean-up is in parent dir
 # (to allow easier mixing of the module and app, if/when desired)
+#
+# NOTE: Due to PEP-0625, the versioned tarball and directory names
+# must be normalized to lower-case, as achieved by setup.py(.in).
+# The module name remains camel-cased as it always was.
 
 # Non-maintainers can at most generate the source layout for python setuptools
 # (having only shell scripting as a prerequisite suffices for that)
