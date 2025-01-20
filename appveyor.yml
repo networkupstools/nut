@@ -34,6 +34,11 @@ install:
   - cmd: |
         REM Do not give pacman cause for complaints:
         C:\msys64\usr\bin\bash -lc "mkdir -p /var/cache/pacman/pkg; ls -la /"
+        REM FIXME: Since Jan 2025, normal update below fails with the message:
+        REM   installing mingw-w64-i686-gdb (16.1-1) breaks dependency
+        REM   'mingw-w64-i686-gdb=15.2' required by mingw-w64-i686-gdb-multiarch
+        REM Currently we sweep it away by removing the conflicting package:
+        C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -R mingw-w64-i686-gdb-multiarch || true"
   - cmd: |
         REM Core update (in case any core packages are outdated):
         C:\msys64\usr\bin\bash -lc "date -u; pacman --noconfirm -Syuu"

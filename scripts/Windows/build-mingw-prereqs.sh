@@ -1,7 +1,7 @@
 #!/bin/sh
 
-# Copyright (C) 2022-2023 by Jim Klimov <jimklimov+nut@gmail.com>
-# Licensed same as NUT
+# Copyright (C) 2022-2025 by Jim Klimov <jimklimov+nut@gmail.com>
+# Licensed GPLv2+, same as NUT
 #
 # Helper automating the nuances from NUT::scripts/Windows/README.adoc
 # to provide prerequisites needed in semi-native or cross-builds.
@@ -12,8 +12,17 @@
 # TODO: Support `make uninstall` attempts for older versions?..
 
 prepareEnv() {
-	[ -n "${MAKE-}" ] || MAKE="make -j 8"
+	[ -n "${MAKE-}" ] || {
+		(command -v gmake) 2>/dev/null >/dev/null \
+		&& MAKE="gmake" \
+		|| MAKE="make"
+	}
 	export MAKE
+
+	[ -n "${MAKEFLAGS-}" ] || {
+		MAKEFLAGS="-j 8"
+		export MAKEFLAGS
+	}
 
 	if [ -z "${SUDO-}" ] ; then
 		SUDO=" " # avoid reeval
@@ -47,7 +56,7 @@ prepareEnv() {
 
 		# Assumes Ubuntu/Debian with mingw prepared, per README
 		HOST_FLAG="--host=$ARCH"
-        PREFIX="/usr/$ARCH"
+		PREFIX="/usr/$ARCH"
 
 		export ARCH PREFIX
 
@@ -86,7 +95,7 @@ provide_netsnmp() (
 		# Quickly install if prebuilt
 		if [ -d "${WSDIR}/${DEP_DIRNAME}/.inst" ]; then (
 			cd "${WSDIR}/${DEP_DIRNAME}/.inst" || exit
-			(command -v rsync) && $SUDO rsync -avPHK ./ / && exit
+			(command -v rsync) && $SUDO rsync -cavPHK ./ / && exit
 			$SUDO cp -pr ./ / && exit
 			exit 1
 			) && return 0
@@ -94,6 +103,8 @@ provide_netsnmp() (
 
 		# no stashed .inst; any Makefile at least?
 		if [ -s "${WSDIR}/${DEP_DIRNAME}/Makefile" ]; then ( cd "${WSDIR}/${DEP_DIRNAME}" && $SUDO $MAKE install ) && return ; fi
+
+		# Not pre-built, fall through
 	fi
 
 	# (Re-)make and install from scratch
