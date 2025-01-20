@@ -35,40 +35,58 @@ prepareEnv() {
 	if [ -n "${ARCH-}" ] && [ -n "${PREFIX-}" ] ; then
 		[ -n "${WSDIR-}" ] || WSDIR="$DLDIR"/"$ARCH"
 		mkdir -p "$WSDIR" "$DLDIR"
-		return 0
-	fi
-
-	BUILD_FLAG=""
-	HOST_FLAG=""
-	export HOST_FLAG
-	if [ -n "${MSYS2_PATH-}" ]; then
-		# Assume semi-native build for same env
-		ARCH="$MINGW_CHOST"
-		PREFIX="$MINGW_PREFIX"
-		PATH="$PREFIX/bin:$PATH"
-		export ARCH PATH PREFIX
-
-		if ! (command -v sudo) ; then sudo() ( "$@" ) ; fi
 	else
-		# TODO: Select by args, envvars, directory presence...
-		ARCH="x86_64-w64-mingw32"
-		#ARCH="i686-w64-mingw32"
+		BUILD_FLAG=""
+		HOST_FLAG=""
+		export HOST_FLAG
+		if [ -n "${MSYS2_PATH-}" ]; then
+			# Assume semi-native build for same env
+			[ -n "${ARCH-}" ] || ARCH="$MINGW_CHOST"
+			[ -n "${PREFIX-}" ] || PREFIX="$MINGW_PREFIX"
+			PATH="$PREFIX/bin:$PATH"
+			export ARCH PATH PREFIX
 
-		# Assumes Ubuntu/Debian with mingw prepared, per README
-		HOST_FLAG="--host=$ARCH"
-		PREFIX="/usr/$ARCH"
+			if ! (command -v sudo) ; then sudo() ( "$@" ) ; fi
+		else
+			if [ -z "${ARCH-}" ] ; then
+				# TODO: Select by args, envvars, directory presence...
+				ARCH="x86_64-w64-mingw32"
+				#ARCH="i686-w64-mingw32"
+			fi
 
-		export ARCH PREFIX
+			# Assumes Ubuntu/Debian with mingw prepared, per README
+			HOST_FLAG="--host=$ARCH"
+			[ -n "${PREFIX-}" ] || PREFIX="/usr/$ARCH"
 
-		if (command -v dpkg-architecture) ; then
-			BUILD_FLAG="--build=`dpkg-architecture -qDEB_BUILD_GNU_TYPE`"
+			export ARCH PREFIX
+
+			if (command -v dpkg-architecture) ; then
+				BUILD_FLAG="--build=`dpkg-architecture -qDEB_BUILD_GNU_TYPE`"
+			fi
 		fi
 	fi
 
-	CFLAGS="$CFLAGS -D_POSIX=1 -I${PREFIX}/include/"
-	CXXFLAGS="$CXXFLAGS -D_POSIX=1 -I${PREFIX}/include/"
-	LDFLAGS="$LDFLAGS -L${PREFIX}/lib/"
-	PKG_CONFIG_PATH="${PREFIX}"/lib/pkgconfig
+	if [ -z "${ARCH-}" ] || [ -z "${PREFIX-}" ] ; then
+		echo "FAILED to determine ARCH and/or PREFIX!" >&2
+		exit 1
+	fi
+
+	case "$CFLAGS" in
+		*"${PREFIX}/include"*) ;;
+		*) CFLAGS="$CFLAGS -D_POSIX=1 -I${PREFIX}/include/" ;;
+	esac
+	case "$CXXFLAGS" in
+		*"${PREFIX}/include"*) ;;
+		*) CXXFLAGS="$CXXFLAGS -D_POSIX=1 -I${PREFIX}/include/" ;;
+	esac
+	case "$LDFLAGS" in
+		*"${PREFIX}/lib"*) ;;
+		*) LDFLAGS="$LDFLAGS -L${PREFIX}/lib/" ;;
+	esac
+	case "$PKG_CONFIG_PATH" in
+		*"${PREFIX}/lib"*) ;;
+		*) PKG_CONFIG_PATH="${PREFIX}"/lib/pkgconfig ;;
+	esac
 
 	export CFLAGS CXXFLAGS LDFLAGS PKG_CONFIG_PATH
 
