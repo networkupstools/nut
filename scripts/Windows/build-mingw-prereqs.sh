@@ -218,9 +218,11 @@ provide_libmodbus_git() (
 	set -e
 
 	cd "${WSDIR}"
-	# Take care of read-only destdir pieces
-	chmod -R +w "./${DEP_DIRNAME}" || echo ""
-	rm -rf "./${DEP_DIRNAME}" || echo ""
+	if [ -e "./${DEP_DIRNAME}" ] ; then
+		# Take care of read-only destdir pieces
+		chmod -R +w "./${DEP_DIRNAME}" || echo ""
+		rm -rf "./${DEP_DIRNAME}" || echo ""
+	fi
 	mkdir -p "./${DEP_DIRNAME}" || exit
 	cd "./${DEP_DIRNAME}" || exit
 
