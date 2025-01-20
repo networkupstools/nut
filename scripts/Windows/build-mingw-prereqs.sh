@@ -1,7 +1,7 @@
 #!/bin/sh
 
-# Copyright (C) 2022-2023 by Jim Klimov <jimklimov+nut@gmail.com>
-# Licensed same as NUT
+# Copyright (C) 2022-2025 by Jim Klimov <jimklimov+nut@gmail.com>
+# Licensed GPLv2+, same as NUT
 #
 # Helper automating the nuances from NUT::scripts/Windows/README.adoc
 # to provide prerequisites needed in semi-native or cross-builds.
