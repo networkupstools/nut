@@ -6,7 +6,9 @@
 # Helper automating the nuances from NUT::scripts/Windows/README.adoc
 # to provide prerequisites needed in semi-native or cross-builds.
 #
-# NOTE: Currently constrained to providing net-snmp under MSYS2.
+# NOTE: Currently constrained to providing net-snmp under MSYS2
+# (where not packaged/installed) and custom libmodbus from NUT Git.
+#
 # We can not rely on certain common shell facilities like `true`
 # and `false` programs being available (in PATH or at all) so we
 # `echo ""` instead.
