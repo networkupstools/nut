@@ -8,7 +8,8 @@
 #
 # NOTE: Currently constrained to providing net-snmp under MSYS2.
 # We can not rely on certain common shell facilities like `true`
-# and `false` programs being available (in PATH or at all).
+# and `false` programs being available (in PATH or at all) so we
+# `echo ""` instead.
 # TODO: Support `make uninstall` attempts for older versions?..
 
 prepareEnv() {
@@ -216,14 +217,14 @@ provide_libmodbus_git() (
 					echo "Current content in '`pwd`' matches current '${DEP_VERSION}' in '${DEP_GITREPO}'" >&2
 				fi
 			fi
-		} || { chmod -R +w "${DEP_DIRNAME}" || true ; rm -rf "${DEP_DIRNAME}" ; }
+		} || { chmod -R +w "${DEP_DIRNAME}" || echo "" ; rm -rf "${DEP_DIRNAME}" ; }
 	fi
 
 	cd "${DLDIR}"
 	if [ ! -d "${DEP_DIRNAME}/.git" ] ; then
 		echo "FETCH: Clone git workspace in '${DLDIR}/${DEP_DIRNAME}' from '${DEP_VERSION}' in '${DEP_GITREPO}'..." >&2
 		FORCE=true
-		chmod -R +w "${DEP_DIRNAME}" || true
+		chmod -R +w "${DEP_DIRNAME}" || echo ""
 		rm -rf "${DEP_DIRNAME}"
 		git clone "${DEP_GITREPO}" -b "${DEP_VERSION}" "${DEP_DIRNAME}" || exit
 	fi
