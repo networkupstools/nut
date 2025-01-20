@@ -11,6 +11,10 @@
 # and `false` programs being available (in PATH or at all) so we
 # `echo ""` instead.
 # TODO: Support `make uninstall` attempts for older versions?..
+#
+# NOTE: Experimentally can use for prerequisites on other platforms, e.g.
+#   SUDO=" " PREFIX_ROOT="${HOME}/nut-deps-inst" PREFIX="" \
+#   ARCH="`uname -s`-`uname -p`" ./scripts/Windows/build-mingw-prereqs.sh
 
 prepareEnv() {
 	[ -n "${MAKE-}" ] || {
