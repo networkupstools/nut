@@ -12,7 +12,11 @@
 # TODO: Support `make uninstall` attempts for older versions?..
 
 prepareEnv() {
-	[ -n "${MAKE-}" ] || MAKE="make -j 8"
+	[ -n "${MAKE-}" ] || {
+		(command -v gmake) 2>/dev/null >/dev/null \
+		&& MAKE="gmake -j 8" \
+		|| MAKE="make -j 8"
+	}
 	export MAKE
 
 	if [ -z "${SUDO-}" ] ; then
