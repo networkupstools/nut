@@ -159,20 +159,26 @@ provide_libmodbus_git() (
 	cd "${DLDIR}"
 	if [ -d "${DEP_DIRNAME}" ] ; then
 		{
-			# FIXME: Use `git ls-remote {URL|.}` to not modify the local FS if
+			# NOTE: Use `git ls-remote {URL|.}` to not modify the local FS if
 			# there's nothing to change (avoid re-packaging of CI artifact cache)
 			cd "${DEP_DIRNAME}" && \
-			git fetch --tags && \
-			git fetch --all && \
-			git checkout "${DEP_VERSION}" && \
-			_GITDIFF="`git diff "origin/${DEP_VERSION}"`" && \
-			if [ -n "${_GITDIFF}" ] ; then
-				FORCE=true
-				# Ensure rebase etc. or fail
-				git pull || exit
-				./autogen.sh || exit
+			LOCAL_HASH="`git log -1 --format='%H'`" && \
+			OTHER_HASH="`git ls-remote "${DEP_GITREPO}" | grep -E '(refs/(heads|tags)/'"${DEP_VERSION}"'$|^'"${DEP_VERSION}"')'`" && \
+			if [ x"${LOCAL_HASH}" = x"${OTHER_HASH}" ] ; then
+				echo "Current commit in '`pwd`' matches current '${DEP_VERSION}' in '${DEP_GITREPO}'" >&2
 			else
-				:
+				git fetch --tags && \
+				git fetch --all && \
+				git checkout "${DEP_VERSION}" && \
+				_GITDIFF="`git diff "origin/${DEP_VERSION}"`" && \
+				if [ -n "${_GITDIFF}" ] ; then
+					FORCE=true
+					# Ensure rebase etc. or fail
+					git pull || exit
+					./autogen.sh || exit
+				else
+					echo "Current content in '`pwd`' matches current '${DEP_VERSION}' in '${DEP_GITREPO}'" >&2
+				fi
 			fi
 		} || { chmod -R +w "${DEP_DIRNAME}" || true ; rm -rf "${DEP_DIRNAME}" ; }
 	fi
