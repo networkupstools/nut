@@ -14,10 +14,15 @@
 prepareEnv() {
 	[ -n "${MAKE-}" ] || {
 		(command -v gmake) 2>/dev/null >/dev/null \
-		&& MAKE="gmake -j 8" \
-		|| MAKE="make -j 8"
+		&& MAKE="gmake" \
+		|| MAKE="make"
 	}
 	export MAKE
+
+	[ -n "${MAKEFLAGS-}" ] || {
+		MAKEFLAGS="-j 8"
+		export MAKEFLAGS
+	}
 
 	if [ -z "${SUDO-}" ] ; then
 		SUDO=" " # avoid reeval
