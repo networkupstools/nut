@@ -47,7 +47,7 @@ prepareEnv() {
 
 		# Assumes Ubuntu/Debian with mingw prepared, per README
 		HOST_FLAG="--host=$ARCH"
-        PREFIX="/usr/$ARCH"
+		PREFIX="/usr/$ARCH"
 
 		export ARCH PREFIX
 
@@ -86,7 +86,7 @@ provide_netsnmp() (
 		# Quickly install if prebuilt
 		if [ -d "${WSDIR}/${DEP_DIRNAME}/.inst" ]; then (
 			cd "${WSDIR}/${DEP_DIRNAME}/.inst" || exit
-			(command -v rsync) && $SUDO rsync -avPHK ./ / && exit
+			(command -v rsync) && $SUDO rsync -cavPHK ./ / && exit
 			$SUDO cp -pr ./ / && exit
 			exit 1
 			) && return 0
@@ -94,6 +94,8 @@ provide_netsnmp() (
 
 		# no stashed .inst; any Makefile at least?
 		if [ -s "${WSDIR}/${DEP_DIRNAME}/Makefile" ]; then ( cd "${WSDIR}/${DEP_DIRNAME}" && $SUDO $MAKE install ) && return ; fi
+
+		# Not pre-built, fall through
 	fi
 
 	# (Re-)make and install from scratch
