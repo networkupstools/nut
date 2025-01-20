@@ -90,7 +90,10 @@ provide_netsnmp() (
 	set +e
 	if [ x"$FORCE" = x"false" ] ; then
 		# TODO: Check version
-		if pkg-config --exists "$PKGCFG_NAME" ; then return 0 ; fi
+		if pkg-config --exists "$PKGCFG_NAME" ; then
+			echo "SKIP: pkg-config says '$PKGCFG_NAME' exists" >&2
+			return 0
+		fi
 
 		# Quickly install if prebuilt
 		if [ -d "${WSDIR}/${DEP_DIRNAME}/.inst" ]; then (
@@ -98,11 +101,20 @@ provide_netsnmp() (
 			(command -v rsync) && $SUDO rsync -cavPHK ./ / && exit
 			$SUDO cp -pr ./ / && exit
 			exit 1
-			) && return 0
+		) && {
+			echo "INST: (re-)applied '${WSDIR}/${DEP_DIRNAME}/.inst'" >&2
+			return 0
+		}
 		fi
 
 		# no stashed .inst; any Makefile at least?
-		if [ -s "${WSDIR}/${DEP_DIRNAME}/Makefile" ]; then ( cd "${WSDIR}/${DEP_DIRNAME}" && $SUDO $MAKE install ) && return ; fi
+		if [ -s "${WSDIR}/${DEP_DIRNAME}/Makefile" ]; then (
+			cd "${WSDIR}/${DEP_DIRNAME}" && $SUDO $MAKE install
+		) && {
+			echo "INST: ran 'make install' from '${WSDIR}/${DEP_DIRNAME}'" >&2
+			return
+		}
+		fi
 
 		# Not pre-built, fall through
 	fi
@@ -113,14 +125,16 @@ provide_netsnmp() (
 	# Funny ways to fetch from Sourceforge help get the archive,
 	# not the download page... For some reason, this bites CI
 	# builds on Appveyor but not local runs:
+	echo "FETCH: ${DEP_ARCHIVE}..." >&2
 	( cd "$DLDIR" && curl -vL "https://sourceforge.net/projects/${DEP_PRJNAME}/files/${DEP_PRJNAME}/${DEP_VERSION}/${DEP_ARCHIVE}" > "${DEP_ARCHIVE}" ) || \
 	( cd "$DLDIR" && wget -c "https://sourceforge.net/projects/${DEP_PRJNAME}/files/${DEP_PRJNAME}/${DEP_VERSION}/${DEP_ARCHIVE}" -O "${DEP_ARCHIVE}" )
 
-	cd "${WSDIR}"
+	echo "BUILD: '${WSDIR}/${DEP_DIRNAME}'..." >&2
+	cd "${WSDIR}" || exit
 	rm -rf ${DEP_DIRNAME} || echo ""
 
 	tar xzf "$DLDIR/${DEP_ARCHIVE}" || exit
-	cd "./${DEP_DIRNAME}"
+	cd "./${DEP_DIRNAME}" || exit
 
 	yes "" | ./configure --prefix="$PREFIX" --with-default-snmp-version=3 \
 		--disable-agent --disable-daemon --with-sys-contact="" --with-sys-location="" \
@@ -139,6 +153,7 @@ provide_netsnmp() (
 	find ./ -type f -name "*.dll" -o -name "*.dll.a";
 
 	$SUDO $MAKE install
+	echo "INST: ran 'make install' from '${WSDIR}/${DEP_DIRNAME}'" >&2
 )
 
 prepareEnv || exit
