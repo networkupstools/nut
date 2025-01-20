@@ -29,7 +29,7 @@ Note that the file name of the distribution tarball is lower-cased per
 PEP-0625 requirements, while the module name is camel-cased historically.
 
 Currently the module is regularly tested to work with Python interpreter
-versions 2.7, 3.4, 3.5 and 3.7.
+versions 2.7, 3.4, 3.5, 3.7, 3.11 and 3.13.
 
 [NOTE]
 ======
