@@ -140,7 +140,7 @@ provide_netsnmp() (
 		--disable-agent --disable-daemon --with-sys-contact="" --with-sys-location="" \
 		--with-logfile=none --with-persistent-directory="${PREFIX}/var/net-snmp" \
 		--disable-embedded-perl --without-perl-modules --disable-perl-cc-checks \
-		--enable-shared || exit
+		--enable-shared || { cat config.log ; exit 1; }
 
 	$MAKE LDFLAGS="-no-undefined -lws2_32 -lregex -Xlinker --ignore-unresolved-symbol=_app_name_long -Xlinker --ignore-unresolved-symbol=app_name_long" || exit
 
