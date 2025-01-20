@@ -42,7 +42,8 @@ prepareEnv() {
 		if [ -n "${MSYS2_PATH-}" ]; then
 			# Assume semi-native build for same env
 			[ -n "${ARCH-}" ] || ARCH="$MINGW_CHOST"
-			[ -n "${PREFIX-}" ] || PREFIX="$MINGW_PREFIX"
+			[ -n "${PREFIX_ROOT-}" ] || PREFIX_ROOT="/"
+			[ -n "${PREFIX-}" ] || PREFIX="${PREFIX_ROOT}/$MINGW_PREFIX"
 			PATH="$PREFIX/bin:$PATH"
 			export ARCH PATH PREFIX
 
@@ -56,7 +57,8 @@ prepareEnv() {
 
 			# Assumes Ubuntu/Debian with mingw prepared, per README
 			HOST_FLAG="--host=$ARCH"
-			[ -n "${PREFIX-}" ] || PREFIX="/usr/$ARCH"
+			[ -n "${PREFIX_ROOT-}" ] || PREFIX_ROOT="/usr"
+			[ -n "${PREFIX-}" ] || PREFIX="${PREFIX_ROOT}/${ARCH}"
 
 			export ARCH PREFIX
 
