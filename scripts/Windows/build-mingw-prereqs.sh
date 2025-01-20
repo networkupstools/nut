@@ -90,7 +90,10 @@ provide_netsnmp() (
 	set +e
 	if [ x"$FORCE" = x"false" ] ; then
 		# TODO: Check version
-		if pkg-config --exists "$PKGCFG_NAME" ; then return 0 ; fi
+		if pkg-config --exists "$PKGCFG_NAME" ; then
+			echo "SKIP: pkg-config says '$PKGCFG_NAME' exists" >&2
+			return 0
+		fi
 
 		# Quickly install if prebuilt
 		if [ -d "${WSDIR}/${DEP_DIRNAME}/.inst" ]; then (
@@ -98,11 +101,20 @@ provide_netsnmp() (
 			(command -v rsync) && $SUDO rsync -cavPHK ./ / && exit
 			$SUDO cp -pr ./ / && exit
 			exit 1
-			) && return 0
+		) && {
+			echo "INST: (re-)applied '${WSDIR}/${DEP_DIRNAME}/.inst'" >&2
+			return 0
+		}
 		fi
 
 		# no stashed .inst; any Makefile at least?
-		if [ -s "${WSDIR}/${DEP_DIRNAME}/Makefile" ]; then ( cd "${WSDIR}/${DEP_DIRNAME}" && $SUDO $MAKE install ) && return ; fi
+		if [ -s "${WSDIR}/${DEP_DIRNAME}/Makefile" ]; then (
+			cd "${WSDIR}/${DEP_DIRNAME}" && $SUDO $MAKE install
+		) && {
+			echo "INST: ran 'make install' from '${WSDIR}/${DEP_DIRNAME}'" >&2
+			return
+		}
+		fi
 
 		# Not pre-built, fall through
 	fi
@@ -113,14 +125,16 @@ provide_netsnmp() (
 	# Funny ways to fetch from Sourceforge help get the archive,
 	# not the download page... For some reason, this bites CI
 	# builds on Appveyor but not local runs:
+	echo "FETCH: ${DEP_ARCHIVE}..." >&2
 	( cd "$DLDIR" && curl -vL "https://sourceforge.net/projects/${DEP_PRJNAME}/files/${DEP_PRJNAME}/${DEP_VERSION}/${DEP_ARCHIVE}" > "${DEP_ARCHIVE}" ) || \
 	( cd "$DLDIR" && wget -c "https://sourceforge.net/projects/${DEP_PRJNAME}/files/${DEP_PRJNAME}/${DEP_VERSION}/${DEP_ARCHIVE}" -O "${DEP_ARCHIVE}" )
 
-	cd "${WSDIR}"
+	echo "BUILD: '${WSDIR}/${DEP_DIRNAME}'..." >&2
+	cd "${WSDIR}" || exit
 	rm -rf ${DEP_DIRNAME} || echo ""
 
 	tar xzf "$DLDIR/${DEP_ARCHIVE}" || exit
-	cd "./${DEP_DIRNAME}"
+	cd "./${DEP_DIRNAME}" || exit
 
 	yes "" | ./configure --prefix="$PREFIX" --with-default-snmp-version=3 \
 		--disable-agent --disable-daemon --with-sys-contact="" --with-sys-location="" \
@@ -139,6 +153,7 @@ provide_netsnmp() (
 	find ./ -type f -name "*.dll" -o -name "*.dll.a";
 
 	$SUDO $MAKE install
+	echo "INST: ran 'make install' from '${WSDIR}/${DEP_DIRNAME}'" >&2
 )
 
 provide_libmodbus_git() (
@@ -163,10 +178,11 @@ provide_libmodbus_git() (
 			# there's nothing to change (avoid re-packaging of CI artifact cache)
 			cd "${DEP_DIRNAME}" && \
 			LOCAL_HASH="`git log -1 --format='%H'`" && \
-			OTHER_HASH="`git ls-remote "${DEP_GITREPO}" | grep -E '(refs/(heads|tags)/'"${DEP_VERSION}"'$|^'"${DEP_VERSION}"')'`" && \
+			OTHER_HASH="`git ls-remote "${DEP_GITREPO}" | grep -E '(refs/(heads|tags)/'"${DEP_VERSION}"'$|^'"${DEP_VERSION}"')' | awk '{print $1}'`" && \
 			if [ x"${LOCAL_HASH}" = x"${OTHER_HASH}" ] ; then
-				echo "Current commit in '`pwd`' matches current '${DEP_VERSION}' in '${DEP_GITREPO}'" >&2
+				echo "FETCH: Current git commit in '`pwd`' matches current '${DEP_VERSION}' in '${DEP_GITREPO}'" >&2
 			else
+				echo "FETCH: Update git workspace in `pwd`..." >&2
 				git fetch --tags && \
 				git fetch --all && \
 				git checkout "${DEP_VERSION}" && \
@@ -185,19 +201,25 @@ provide_libmodbus_git() (
 
 	cd "${DLDIR}"
 	if [ ! -d "${DEP_DIRNAME}/.git" ] ; then
+		echo "FETCH: Clone git workspace in '${DLDIR}/${DEP_DIRNAME}' from '${DEP_VERSION}' in '${DEP_GITREPO}'..." >&2
 		FORCE=true
 		chmod -R +w "${DEP_DIRNAME}" || true
 		rm -rf "${DEP_DIRNAME}"
 		git clone "${DEP_GITREPO}" -b "${DEP_VERSION}" "${DEP_DIRNAME}" || exit
 	fi
 	if [ ! -s "${DEP_DIRNAME}/configure" ] || [ x"$FORCE" = x"true" ] ; then
+		echo "FETCH: (Re-)bootstrap git workspace in '${DLDIR}/${DEP_DIRNAME}'..." >&2
 		(cd "${DEP_DIRNAME}" && ./autogen.sh) || exit
+		FORCE=true
 	fi
 
 	set +e
 	if [ x"$FORCE" = x"false" ] ; then
-		# TODO: Check version - harder with git rolling
-		#if pkg-config --exists "$PKGCFG_NAME" ; then return 0 ; fi
+		# TODO: Check version - harder with git rolling, so no-op for now
+		if false && pkg-config --exists "$PKGCFG_NAME" ; then
+			echo "SKIP: pkg-config says '$PKGCFG_NAME' exists" >&2
+			return 0
+		fi
 
 		# Quickly install if prebuilt
 		if [ -d "${WSDIR}/${DEP_DIRNAME}/.inst" ]; then (
@@ -205,11 +227,20 @@ provide_libmodbus_git() (
 			(command -v rsync) && $SUDO rsync -cavPHK ./ / && exit
 			$SUDO cp -pr ./ / && exit
 			exit 1
-			) && return 0
+		) && {
+			echo "INST: (re-)applied '${WSDIR}/${DEP_DIRNAME}/.inst'" >&2
+			return 0
+		}
 		fi
 
 		# no stashed .inst; any Makefile at least?
-		if [ -s "${WSDIR}/${DEP_DIRNAME}/Makefile" ]; then ( cd "${WSDIR}/${DEP_DIRNAME}" && $SUDO $MAKE install ) && return ; fi
+		if [ -s "${WSDIR}/${DEP_DIRNAME}/Makefile" ]; then (
+			cd "${WSDIR}/${DEP_DIRNAME}" && $SUDO $MAKE install
+		) && {
+			echo "INST: ran 'make install' from '${WSDIR}/${DEP_DIRNAME}'" >&2
+			return
+		}
+		fi
 
 		# Not pre-built, fall through
 	fi
@@ -217,6 +248,7 @@ provide_libmodbus_git() (
 	# (Re-)make and install from scratch
 	set -e
 
+	echo "BUILD: '${WSDIR}/${DEP_DIRNAME}'..." >&2
 	cd "${WSDIR}"
 	if [ -e "./${DEP_DIRNAME}" ] ; then
 		# Take care of read-only destdir pieces
@@ -240,6 +272,7 @@ provide_libmodbus_git() (
 	find ./ -type f -name "*.dll" -o -name "*.a"
 
 	$SUDO $MAKE install
+	echo "INST: ran 'make install' from '${WSDIR}/${DEP_DIRNAME}'" >&2
 )
 
 prepareEnv || exit
