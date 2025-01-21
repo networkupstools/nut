@@ -158,6 +158,9 @@ provide_netsnmp() (
 
 prepareEnv || exit
 
+echo "Prepared environment for $0:" >&2
+set | grep -E '^(ARCH|PREFIX|PREFIX_ROOT|MAKE|MAKEFLAGS|SUDO|DLDIR|WSDIR|CFLAGS|CXXFLAGS|LDFLAGS|PKG_CONFIG_PATH|BUILD_FLAG|HOST_FLAG|MINGW_CHOST|MINGW_PREFIX|MSYS2_PATH)=' >&2
+
 # TODO: Loop, params, help, etc...
 # For now, let it pass "-f" to the builder
 provide_netsnmp "$@"
