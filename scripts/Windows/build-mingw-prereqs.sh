@@ -330,4 +330,8 @@ set | grep -E '^(ARCH|PREFIX|PREFIX_ROOT|PATH|MAKE|MAKEFLAGS|SUDO|DLDIR|WSDIR|CF
 # TODO: Loop, params, help, etc...
 # For now, let it pass "-f" to the builder
 provide_netsnmp "$@"
+ls -la "${PREFIX}/lib/pkgconfig/netsnmp.pc"
+cat "${PREFIX}/lib/pkgconfig/netsnmp.pc"
 provide_libmodbus_git "$@"
+ls -la "${PREFIX}/lib/pkgconfig/libmodbus.pc"
+cat "${PREFIX}/lib/pkgconfig/libmodbus.pc"
