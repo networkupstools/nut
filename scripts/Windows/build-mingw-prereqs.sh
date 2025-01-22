@@ -153,7 +153,7 @@ provide_netsnmp() (
 	# not the download page... For some reason, this bites CI
 	# builds on Appveyor but not local runs:
 	echo "FETCH: ${DEP_ARCHIVE}..." >&2
-	( cd "$DLDIR" && curl -vL "https://sourceforge.net/projects/${DEP_PRJNAME}/files/${DEP_PRJNAME}/${DEP_VERSION}/${DEP_ARCHIVE}" > "${DEP_ARCHIVE}" ) || \
+	( cd "$DLDIR" && curl -L "https://sourceforge.net/projects/${DEP_PRJNAME}/files/${DEP_PRJNAME}/${DEP_VERSION}/${DEP_ARCHIVE}"  > "${DEP_ARCHIVE}" ) || \
 	( cd "$DLDIR" && wget -c "https://sourceforge.net/projects/${DEP_PRJNAME}/files/${DEP_PRJNAME}/${DEP_VERSION}/${DEP_ARCHIVE}" -O "${DEP_ARCHIVE}" )
 
 	echo "BUILD: '${WSDIR}/${DEP_DIRNAME}'..." >&2
