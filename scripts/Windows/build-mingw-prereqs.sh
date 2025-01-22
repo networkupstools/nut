@@ -51,6 +51,8 @@ prepareEnv() {
 			[ -n "${ARCH-}" ] || ARCH="$MINGW_CHOST"
 			[ -n "${PREFIX_ROOT-}" ] || PREFIX_ROOT="/"
 			[ -n "${PREFIX-}" ] || PREFIX="${PREFIX_ROOT}/$MINGW_PREFIX"
+			# Normalize away extra slashes, they confuse at least MSYS2 tools
+			PREFIX="`echo "${PREFIX}" | sed 's,//*,/,g'`"
 			PATH="$PREFIX/bin:$PATH"
 			export ARCH PATH PREFIX
 
@@ -66,6 +68,7 @@ prepareEnv() {
 			HOST_FLAG="--host=$ARCH"
 			[ -n "${PREFIX_ROOT-}" ] || PREFIX_ROOT="/usr"
 			[ -n "${PREFIX-}" ] || PREFIX="${PREFIX_ROOT}/${ARCH}"
+			PREFIX="`echo "${PREFIX}" | sed 's,//*,/,g'`"
 
 			export ARCH PREFIX
 
