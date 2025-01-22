@@ -2189,6 +2189,8 @@ bindings)
     fi
     echo ""
 
+    # NOTE: Alternative to optional_prepare_ccache()
+    # FIXME: Can these be united and de-duplicated?
     if [ -n "${CI_CCACHE_SYMLINKDIR}" ] && [ -d "${CI_CCACHE_SYMLINKDIR}" ] ; then
         PATH="`echo "$PATH" | sed -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?$,,' -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?$,,'`"
         CCACHE_PATH="$PATH"
@@ -2197,8 +2199,14 @@ bindings)
             echo "INFO: Using ccache via PATH preferring tool names in ${CI_CCACHE_SYMLINKDIR}" >&2
             PATH="${CI_CCACHE_SYMLINKDIR}:$PATH"
             export CCACHE_PATH CCACHE_DIR PATH
+            HAVE_CCACHE=yes
+            mkdir -p "${CCACHE_DIR}"/ || HAVE_CCACHE=no
+        else
+            HAVE_CCACHE=no
         fi
     fi
+
+    optional_prepare_compiler_family
 
     cd "${SCRIPTDIR}"
 
@@ -2228,6 +2236,11 @@ bindings)
         --disable-force-nut-version-header \
         --enable-check-NIT --enable-maintainer-mode)
 
+    detect_platform_PKG_CONFIG_PATH_and_FLAGS
+    if [ -n "$PKG_CONFIG_PATH" ] ; then
+        CONFIG_OPTS+=("PKG_CONFIG_PATH=${PKG_CONFIG_PATH}")
+    fi
+
     # Primarily here to ensure libusb-1.0 use on MSYS2/mingw
     # when 0.1 is available too
     if [ "${CANBUILD_WITH_LIBMODBUS_USB-}" = yes ] ; then
@@ -2252,6 +2265,15 @@ bindings)
     if [ -n "${PYTHON-}" ]; then
         # WARNING: Watch out for whitespaces, not handled here!
         CONFIG_OPTS+=("--with-python=${PYTHON}")
+    fi
+
+    if optional_ensure_ccache ; then
+        # Note: Potentially there can be spaces in entries for multiword
+        # "ccache gcc" here; this should be okay as long as entry expands to
+        # one token when calling shell (may not be the case for distcheck)
+        CONFIG_OPTS+=("CC=${CC}")
+        CONFIG_OPTS+=("CXX=${CXX}")
+        CONFIG_OPTS+=("CPP=${CPP}")
     fi
 
     RES_CFG=0
