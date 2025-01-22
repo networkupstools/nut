@@ -112,8 +112,13 @@ if test -z "${nut_have_libmodbus_seen}"; then
 				dnl know we are not opposed to pulling it in.
 				dnl Static libmodbus builds do not refer to
 				dnl (shared) libusb for example.
+				dnl NOTE: Currently libusb-1.0 is required by
+				dnl libmodbus with rtu_usb additions. By our
+				dnl default, mingw/MSYS2 native builds prefer
+				dnl libusb-0.1(-compat) over libusb-1.0 if
+				dnl both are available - see nut_check_libusb.m4
 				AC_REQUIRE([NUT_CHECK_LIBUSB])
-				AC_MSG_NOTICE([Retry detection of libmodbus USB support])
+				AC_MSG_NOTICE([Retry detection of libmodbus USB support (may require libusb-1.0 specifically)])
 				CFLAGS="$CFLAGS $LIBUSB_CFLAGS"
 				LIBS="$LIBS $LIBUSB_LIBS"
 				unset ac_cv_func_modbus_new_rtu_usb

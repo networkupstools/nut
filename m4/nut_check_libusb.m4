@@ -86,7 +86,9 @@ if test -z "${nut_have_libusb_seen}"; then
 		 nut_usb_lib="(libusb-1.0)"
 		 dnl ...except on Windows, where we support libusb-0.1(-compat)
 		 dnl better so far (allow manual specification though, to let
-		 dnl someone finally develop the on-par support):
+		 dnl someone finally develop the on-par support), see also
+		 dnl https://github.com/networkupstools/nut/issues/1507
+		 dnl Note this may upset detection of libmodbus RTU USB support.
 		 AS_IF([test x"${LIBUSB_0_1_VERSION}" != xnone], [
 			AS_CASE(["${target_os}"],
 				[*mingw*], [
