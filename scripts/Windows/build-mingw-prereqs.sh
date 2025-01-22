@@ -169,7 +169,7 @@ provide_netsnmp() (
 	tar xzf "$DLDIR/${DEP_ARCHIVE}" || exit
 	cd "./${DEP_DIRNAME}" || exit
 
-	yes "" | ./configure --prefix="$PREFIX" --with-default-snmp-version=3 \
+	yes "" | ./configure --prefix="${PREFIX}" --with-default-snmp-version=3 \
 		--disable-agent --disable-daemon --with-sys-contact="" --with-sys-location="" \
 		--with-logfile=none --with-persistent-directory="${PREFIX}/var/net-snmp" \
 		--disable-embedded-perl --without-perl-modules --disable-perl-cc-checks \
