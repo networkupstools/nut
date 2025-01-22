@@ -98,8 +98,8 @@ test_script:
         set MSYSTEM=MINGW64
         REM Start Mingw-based integration and unit checks:
         C:\msys64\usr\bin\bash -lc 'date -u; NUT_STATEPATH="C:\\Users\\appveyor\\AppData\\Local\\Temp\\nut-test"; mkdir -p "${NUT_STATEPATH}"; export NUT_STATEPATH; PATH="/mingw64/bin:$PATH" make -s check || bash -lc "for F in tests/*.log tests/*.trs ; do echo \"===---=== $F :\"; cat \"$F\"; done; exit 1;" '
-        REM Start a Mingw-based documentation spellcheck:
-        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" make -s -j 4 spellcheck'
+        REM Start a Mingw-based documentation spellcheck (note that "make check" above could cover some documents in path of artifact delivery, but maybe not all that we have):
+        C:\msys64\usr\bin\bash -lc 'date -u; PATH="/mingw64/bin:$PATH" make -s -j 8 spellcheck'
 
 
 after_test:
