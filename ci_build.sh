@@ -1076,17 +1076,21 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             case "$CC$CXX$CFLAGS$CXXFLAGS$LDFLAGS" in
                 *-m64*)
                     SYS_PKG_CONFIG_PATH="/usr/lib/64/pkgconfig:/usr/lib/amd64/pkgconfig:/usr/lib/sparcv9/pkgconfig:/usr/lib/pkgconfig"
+                    if [ -d "/opt/ooce/lib/64/pkgconfig" ] ; then SYS_PKG_CONFIG_PATH="/opt/ooce/lib/64/pkgconfig:${SYS_PKG_CONFIG_PATH}" ; fi
                     ;;
                 *-m32*)
                     SYS_PKG_CONFIG_PATH="/usr/lib/32/pkgconfig:/usr/lib/pkgconfig:/usr/lib/i86pc/pkgconfig:/usr/lib/i386/pkgconfig:/usr/lib/sparcv7/pkgconfig"
+                    if [ -d "/opt/ooce/lib/32/pkgconfig" ] ; then SYS_PKG_CONFIG_PATH="/opt/ooce/lib/32/pkgconfig:${SYS_PKG_CONFIG_PATH}" ; fi
                     ;;
                 *)
                     case "${ARCH}${BITS}${ARCH_BITS}" in
                         *64*)
                             SYS_PKG_CONFIG_PATH="/usr/lib/64/pkgconfig:/usr/lib/amd64/pkgconfig:/usr/lib/sparcv9/pkgconfig:/usr/lib/pkgconfig"
+                            if [ -d "/opt/ooce/lib/64/pkgconfig" ] ; then SYS_PKG_CONFIG_PATH="/opt/ooce/lib/64/pkgconfig:${SYS_PKG_CONFIG_PATH}" ; fi
                             ;;
                         *32*)
                             SYS_PKG_CONFIG_PATH="/usr/lib/32/pkgconfig:/usr/lib/pkgconfig:/usr/lib/i86pc/pkgconfig:/usr/lib/i386/pkgconfig:/usr/lib/sparcv7/pkgconfig"
+                            if [ -d "/opt/ooce/lib/32/pkgconfig" ] ; then SYS_PKG_CONFIG_PATH="/opt/ooce/lib/32/pkgconfig:${SYS_PKG_CONFIG_PATH}" ; fi
                             ;;
                     esac
                     ;;
