@@ -81,12 +81,18 @@ if test -z "${nut_have_libmodbus_seen}"; then
 				AC_MSG_NOTICE([Retry detection of libmodbus TCP support with NETLIBS])
 				unset ac_cv_func_modbus_new_tcp
 				LIBS="${LIBS} ${NETLIBS}"
-				AC_CHECK_FUNCS(modbus_new_tcp, [nut_have_libmodbus=yes], [
+				AC_CHECK_FUNCS(modbus_new_tcp, [
+					nut_have_libmodbus=yes
+					depLIBS="${depLIBS} ${NETLIBS}"
+				], [
 					AS_IF([test x"${NETLIBS_GETADDRS-}" != x], [
 						AC_MSG_NOTICE([Retry detection of libmodbus TCP support with NETLIBS and NETLIBS_GETADDRS])
 						unset ac_cv_func_modbus_new_tcp
 						LIBS="${LIBS} ${NETLIBS_GETADDRS}"
-						AC_CHECK_FUNCS(modbus_new_tcp, [nut_have_libmodbus=yes], [nut_have_libmodbus=no])
+						AC_CHECK_FUNCS(modbus_new_tcp, [
+							nut_have_libmodbus=yes
+							depLIBS="${depLIBS} ${NETLIBS} ${NETLIBS_GETADDRS}"
+						], [nut_have_libmodbus=no])
 					])
 				])
 			])
@@ -111,7 +117,11 @@ if test -z "${nut_have_libmodbus_seen}"; then
 				CFLAGS="$CFLAGS $LIBUSB_CFLAGS"
 				LIBS="$LIBS $LIBUSB_LIBS"
 				unset ac_cv_func_modbus_new_rtu_usb
-				AC_CHECK_FUNCS(modbus_new_rtu_usb, [nut_have_libmodbus_usb=yes], [
+				AC_CHECK_FUNCS(modbus_new_rtu_usb, [
+					nut_have_libmodbus_usb=yes
+					depCFLAGS="${depCFLAGS} ${LIBUSB_CFLAGS}"
+					depLIBS="${depLIBS} ${LIBUSB_LIBS}"
+				], [
 					AS_IF([test x"${nut_with_usb}" = xyes && test x"${nut_with_modbus}" = xyes && test x"${nut_have_libmodbus}" = xyes ], [
 						AC_MSG_WARN([Both --with-modbus and --with-usb were requested, and a libmodbus was found, but it seems to not support USB. You may require a custom build per https://github.com/networkupstools/nut/wiki/APC-UPS-with-Modbus-protocol])
 					])
