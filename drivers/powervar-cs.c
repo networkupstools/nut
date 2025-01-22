@@ -38,6 +38,7 @@
 /* Prototypes to allow setting pointer before function is defined */
 int setcmd(const char* varname, const char* setvalue);
 int instcmd(const char *cmdname, const char *extra);
+static size_t SendRequest (const char* sRequest);
 static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize);
 
 /* Two drivers include the following. Provide some identifier for differences */
@@ -66,6 +67,16 @@ upsdrv_info_t upsdrv_info = {
 /*******************************************
  * Serial response communication functions *
  *******************************************/
+
+/* This function is called to send the request to the initialized device. */
+static size_t SendRequest (const char* sRequest)
+{
+	ssize_t Ret;
+
+	Ret = ser_send(upsfd, "%s%c", sRequest, ENDCHAR);
+
+	return (size_t)Ret;
+}
 
 /* Since an installed network card may slightly delay responses from
  *  the UPS allow for a repeat of the get request.
@@ -118,7 +129,8 @@ void upsdrv_initups(void)
 {
 	/* Serial comm init here */
 	upsfd = ser_open(device_path);
-	ser_set_speed(upsfd, device_path, B9600);
+//	ser_set_speed(upsfd, device_path, B9600);
+	ser_set_speed(upsfd, device_path, B115200);
 
 	/*get the UPS in the right frame of mind*/
 	ser_send_pace(upsfd, 100, "%s", COMMAND_END);
@@ -153,7 +165,7 @@ void upsdrv_updateinfo(void)
  * Powervar support functions for NUT command calls       *
  *********************************************************/
 
-static void do_battery_test(void)
+/* static void do_battery_test(void)
 {
 	if (byTSTBatrunPos)
 	{
@@ -171,6 +183,7 @@ static void do_battery_test(void)
 		ser_send(upsfd, "%s%s%s", TST_BATRUN_REQ, buffer, COMMAND_END);
 	}
 }
+ */
 
 /**************************************
  * Handlers for NUT command calls     *
@@ -187,7 +200,7 @@ void upsdrv_cleanup(void)
 	ser_close(upsfd, device_path);
 }
 
-void upsdrv_makevartable(void)
+/* void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE, "battesttime", "Change battery test time from the 10 second default.");
 
@@ -195,113 +208,10 @@ void upsdrv_makevartable(void)
 
 	addvar(VAR_VALUE, "offdelay", "Change shutdown delay time from 0 second default.");
 }
+ */
 
-void upsdrv_shutdown(void)
-{
+//void upsdrv_shutdown(void)
+//{
 //	ser_send(upsfd, "%s", SHUTDOWN);
-}
+//}
 
-int instcmd(const char *cmdname, const char *extra)
-{
-//	int i;
-	char buffer [10];
-
-	upsdebugx(2, "In instcmd with %s and extra %s.", cmdname, extra);
-
-	if (!strcasecmp(cmdname, "test.battery.start.quick"))
-	{
-		if (byTSTBatqckPos)
-		{
-			do_battery_test();
-			return STAT_INSTCMD_HANDLED;
-		}
-	}
-
-	if (!strcasecmp(cmdname, "test.battery.start.deep"))
-	{
-		if (byTSTBatdepPos)
-		{
-			ser_send(upsfd, "%s%s", TST_BATDEP_REQ, COMMAND_END);
-			return STAT_INSTCMD_HANDLED;
-		}
-	}
-
-	if (!strcasecmp(cmdname, "test.battery.stop"))
-	{
-		if (byTSTAbortPos)
-		{
-			ser_send(upsfd, "%s%s", TST_ABORT_REQ, COMMAND_END);
-			return STAT_INSTCMD_HANDLED;
-		}
-	}
-
-	if (!strcasecmp(cmdname, "reset.input.minmax"))
-	{
-		if (bySETRstinpPos)
-		{
-			ser_send(upsfd, "%s%s", SET_RSTINP_REQ, COMMAND_END);
-			return STAT_INSTCMD_HANDLED;
-		}
-	}
-
-	if (!strcasecmp(cmdname, "beeper.enable"))
-	{
-		if (bySETAudiblPos)
-		{
-			ser_send(upsfd, "%s%c%s", SET_AUDIBL_REQ, '1', COMMAND_END);
-			return STAT_INSTCMD_HANDLED;
-		}
-	}
-
-	if (!strcasecmp(cmdname, "beeper.disable"))
-	{
-		if (bySETAudiblPos)
-		{
-			ser_send(upsfd, "%s%c%s", SET_AUDIBL_REQ, '0', COMMAND_END);
-			return STAT_INSTCMD_HANDLED;
-		}
-	}
-
-	if (!strcasecmp(cmdname, "beeper.mute"))
-	{
-		if (bySETAudiblPos)
-		{
-			ser_send(upsfd, "%s%c%s", SET_AUDIBL_REQ, '2', COMMAND_END);
-			return STAT_INSTCMD_HANDLED;
-		}
-	}
-
-	if (!strcasecmp(cmdname, "test.panel.start"))
-	{
-		if (byTSTDispPos)
-		{
-
-			if (getval("disptesttime") == NULL)
-			{
-				snprintf(buffer, 2, "1");
-			}
-			else
-			{
-				snprintf(buffer, 4, "%s", getval("disptesttime"));
-			}
-
-			ser_send(upsfd,"%s%s%s", TST_DISP_REQ, buffer, COMMAND_END);
-			return STAT_INSTCMD_HANDLED;
-		}
-	}
-
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
-	return STAT_INSTCMD_UNKNOWN;
-}
-
-
-int setcmd(const char* varname, const char* setvalue)
-{
-	upsdebugx(2, "In setcmd for %s with %s...", varname, setvalue);
-
-
-
-	upslogx(LOG_NOTICE, "setcmd: unknown command [%s]", varname);
-
-	return STAT_SET_UNKNOWN;
-}
