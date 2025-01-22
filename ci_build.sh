@@ -208,7 +208,7 @@ propose_CI_CCACHE_SYMLINKDIR() {
 ensure_CI_CCACHE_SYMLINKDIR_envvar() {
     # Populate CI_CCACHE_SYMLINKDIR envvar (if not yet populated e.g. by caller)
     # with location of symlinks like "gcc -> ../bin/ccache" to use
-	# NOTE: a caller-provided value of "-" requests the script to NOT use
+    # NOTE: a caller-provided value of "-" requests the script to NOT use
     # a CI_CCACHE_SYMLINKDIR; however ccache may still be used via prefixing
     # to compiler command, if the tool is found in the PATH, e.g. by calling
     # optional_ensure_ccache(), unless you export CI_CCACHE_USE=no also.
@@ -303,7 +303,7 @@ ver_clang() {
 
 optional_prepare_compiler_family() {
     # Populate CC, CXX, CPP envvars according to actual tools used/requested
-	# Remember them as COMPILER_FAMILY
+    # Remember them as COMPILER_FAMILY
     # See also: optional_prepare_ccache(), ensure_CI_CCACHE_SYMLINKDIR_envvar(),
     # optional_prepare_compiler_family()
     COMPILER_FAMILY=""
@@ -666,38 +666,38 @@ fi
 [ -n "$CI_OS_NAME" ] || CI_OS_NAME="$TRAVIS_OS_NAME"
 
 case "${CI_OS_NAME}" in
-	windows*)
-		# At the moment WIN32 builds are quite particular in their
-		# desires, for headers to declare what is needed, and yet
-		# there is currently not much real variation in supportable
-		# build environment (mingw variants). Lest we hardcode
-		# stuff in configure script, define some here:
-		case "$CFLAGS" in
-			*-D_POSIX=*) ;;
-			*) CFLAGS="$CFLAGS -D_POSIX=1" ;;
-		esac
-		case "$CFLAGS" in
-			*-D_POSIX_C_SOURCE=*) ;;
-			*) CFLAGS="$CFLAGS -D_POSIX_C_SOURCE=200112L" ;;
-		esac
-		case "$CFLAGS" in
-			*-D_WIN32_WINNT=*) ;;
-			*) CFLAGS="$CFLAGS -D_WIN32_WINNT=0xffff" ;;
-		esac
+    windows*)
+        # At the moment WIN32 builds are quite particular in their
+        # desires, for headers to declare what is needed, and yet
+        # there is currently not much real variation in supportable
+        # build environment (mingw variants). Lest we hardcode
+        # stuff in configure script, define some here:
+        case "$CFLAGS" in
+            *-D_POSIX=*) ;;
+            *) CFLAGS="$CFLAGS -D_POSIX=1" ;;
+        esac
+        case "$CFLAGS" in
+            *-D_POSIX_C_SOURCE=*) ;;
+            *) CFLAGS="$CFLAGS -D_POSIX_C_SOURCE=200112L" ;;
+        esac
+        case "$CFLAGS" in
+            *-D_WIN32_WINNT=*) ;;
+            *) CFLAGS="$CFLAGS -D_WIN32_WINNT=0xffff" ;;
+        esac
 
-		case "$CXXFLAGS" in
-			*-D_POSIX=*) ;;
-			*) CXXFLAGS="$CXXFLAGS -D_POSIX=1" ;;
-		esac
-		case "$CXXFLAGS" in
-			*-D_POSIX_C_SOURCE=*) ;;
-			*) CXXFLAGS="$CXXFLAGS -D_POSIX_C_SOURCE=200112L" ;;
-		esac
-		case "$CXXFLAGS" in
-			*-D_WIN32_WINNT=*) ;;
-			*) CXXFLAGS="$CXXFLAGS -D_WIN32_WINNT=0xffff" ;;
-		esac
-		;;
+        case "$CXXFLAGS" in
+            *-D_POSIX=*) ;;
+            *) CXXFLAGS="$CXXFLAGS -D_POSIX=1" ;;
+        esac
+        case "$CXXFLAGS" in
+            *-D_POSIX_C_SOURCE=*) ;;
+            *) CXXFLAGS="$CXXFLAGS -D_POSIX_C_SOURCE=200112L" ;;
+        esac
+        case "$CXXFLAGS" in
+            *-D_WIN32_WINNT=*) ;;
+            *) CXXFLAGS="$CXXFLAGS -D_WIN32_WINNT=0xffff" ;;
+        esac
+        ;;
 esac
 
 # Analyze some environmental choices
@@ -872,7 +872,7 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
         else
             PKG_CONFIG_PATH="${OVERRIDE_PKG_CONFIG_PATH}"
         fi
-		return
+        return
     fi
 
     if [ -n "$SYS_PKG_CONFIG_PATH" ] ; then
@@ -1300,10 +1300,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     BUILD_PREFIX="$PWD/tmp"
     INST_PREFIX="$PWD/.inst"
 
-	optional_prepare_ccache
-	ccache_stats "before"
+    optional_prepare_ccache
+    ccache_stats "before"
 
-	optional_prepare_compiler_family
+    optional_prepare_compiler_family
 
     CONFIG_OPTS=()
     COMMON_CFLAGS=""
