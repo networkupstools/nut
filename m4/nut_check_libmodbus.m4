@@ -74,8 +74,26 @@ if test -z "${nut_have_libmodbus_seen}"; then
 	LIBS="${LIBS_ORIG} ${depLIBS}"
 	AC_CHECK_HEADERS(modbus.h, [nut_have_libmodbus=yes], [nut_have_libmodbus=no], [AC_INCLUDES_DEFAULT])
 	AS_IF([test x"${nut_have_libmodbus}" = xyes ], [
+		AC_CHECK_FUNCS(modbus_new_tcp, [], [
+			nut_have_libmodbus=no
+			AC_REQUIRE([NUT_CHECK_SOCKETLIB])
+			AS_IF([test x"${NETLIBS-}" != x], [
+				AC_MSG_NOTICE([Retry detection of libmodbus TCP support with NETLIBS])
+				unset ac_cv_func_modbus_new_tcp
+				LIBS="${LIBS} ${NETLIBS}"
+				AC_CHECK_FUNCS(modbus_new_tcp, [nut_have_libmodbus=yes], [
+					AS_IF([test x"${NETLIBS_GETADDRS-}" != x], [
+						AC_MSG_NOTICE([Retry detection of libmodbus TCP support with NETLIBS and NETLIBS_GETADDRS])
+						unset ac_cv_func_modbus_new_tcp
+						LIBS="${LIBS} ${NETLIBS_GETADDRS}"
+						AC_CHECK_FUNCS(modbus_new_tcp, [nut_have_libmodbus=yes], [nut_have_libmodbus=no])
+					])
+				])
+			])
+		])
+	])
+	AS_IF([test x"${nut_have_libmodbus}" = xyes ], [
 		AC_CHECK_FUNCS(modbus_new_rtu, [], [nut_have_libmodbus=no])
-		AC_CHECK_FUNCS(modbus_new_tcp, [], [nut_have_libmodbus=no])
 		AC_CHECK_FUNCS(modbus_set_byte_timeout, [], [nut_have_libmodbus=no])
 		AC_CHECK_FUNCS(modbus_set_response_timeout, [], [nut_have_libmodbus=no])
 	])
