@@ -1278,9 +1278,15 @@ happen that you would need to roll and install your own builds in accordance
 with that project's design goals.
 
 Note you may need not just the "Core" IPS package publisher, but also the
-"Extra" one. See OmniOS CE web site for setup details.
+"Extra" one. As of release 151052, it can be attached right in the installer;
+otherwise the `pkg (set-)publisher` commands can be used. See OmniOS CE web
+site for setup details.
 
 ------
+# Optionally, make the environment comfortable, e.g.:
+:; pkg install sudo bash application/mc wget rsync pigz pbzip2 p7zip
+
+# NOTE: OmniOS currently does not deliver clang in its Core/Extra repositories
 :; pkg install \
     developer/build/autoconf developer/build/automake developer/build/libtool \
     build-essential ccache git developer/pkg-config \
@@ -1317,25 +1323,32 @@ and the library+symlinks for all architectures you would need).
 NOTE: As of July 2022, a `libusb-1` package recipe was proposed for the
 `omnios-extra` repository (NUT itself and further dependencies may also
 appear there, per
-link:https://github.com/networkupstools/nut/issues/1498[issue #1498]).
+link:https://github.com/networkupstools/nut/issues/1498[issue #1498]),
+and is available as of release 151052:
+------
+:; pkg install \
+    libusb-1
+------
 
 You may need to set up `ccache` with the same `/usr/lib/ccache` dir used
 in other OS recipes. Assuming your Build Essentials pulled GCC 9 version,
 and ccache is under `/opt/ooce` namespace, that would be like:
 ------
+:; GCCVER=9
 :; mkdir -p /usr/lib/ccache
 :; cd /usr/lib/ccache
 :; ln -fs ../../../opt/ooce/bin/ccache gcc
 :; ln -fs ../../../opt/ooce/bin/ccache g++
 :; ln -fs ../../../opt/ooce/bin/ccache gcpp
-:; ln -fs ../../../opt/ooce/bin/ccache gcc-9
-:; ln -fs ../../../opt/ooce/bin/ccache g++-9
-:; ln -fs ../../../opt/ooce/bin/ccache gcpp-9
+:; ln -fs ../../../opt/ooce/bin/ccache gcc-${GCCVER}
+:; ln -fs ../../../opt/ooce/bin/ccache g++-${GCCVER}
+:; ln -fs ../../../opt/ooce/bin/ccache gcpp-${GCCVER}
 ------
 
 Given that many of the dependencies can get installed into that namespace,
 you may have to specify where `pkg-config` will look for them (note that
-library and binary paths can be architecture bitness-dependent):
+library and binary paths can be architecture bitness-dependent; the
+`ci_build.sh` script should take care of this for many scenarios):
 ------
 :; ./configure PKG_CONFIG_PATH="/opt/ooce/lib/amd64/pkgconfig" --with-cgi
 ------
@@ -1344,12 +1357,12 @@ Note also that the minimal footprint nature of OmniOS CE precludes building
 any large scope easily, so avoid docs and "all drivers" unless you provide
 whatever they need to happen.
 
-NOTE: For Jenkins agents, also need to `pkg install runtime/java/openjdk17`
+NOTE: For Jenkins agents, also need to `pkg install runtime/java/openjdk21`
 for JRE/JDK 17. Java 17 or 21 is required to run Jenkins agents after
 autumn 2024. If updating from older releases, you may need to update default
 implementation, e.g.:
 ----
-:; pkg set-mediator -V 17 java
+:; pkg set-mediator -V 21 java
 ----
 
 
