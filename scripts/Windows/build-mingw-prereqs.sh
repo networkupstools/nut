@@ -57,6 +57,19 @@ prepareEnv() {
 				"${PREFIX}/bin"|"${PREFIX}/bin:"*|*":${PREFIX}/bin:"*|*":${PREFIX}/bin") ;;
 				*) PATH="${PREFIX}/bin:${PATH}" ;;
 			esac
+			case "${PATH}" in
+				*/ccache/*) ;;
+				*) if [ -d "${PREFIX}/lib/ccache/bin" ] ; then
+					# Potentionally customized by builder
+					echo "Injecting MSYS2 ccache symlink collection (under PREFIX) into PATH" >&2
+					PATH="${PREFIX}/lib/ccache/bin:${PATH}"
+				   else
+					if [ -d "${MINGW_PREFIX}/lib/ccache/bin" ] ; then
+						echo "Injecting MSYS2 ccache symlink collection (under MINGW_PREFIX) into PATH" >&2
+						PATH="${MINGW_PREFIX}/lib/ccache/bin:${PATH}"
+					fi
+				   fi ;;
+			esac
 			export ARCH PATH PREFIX
 
 			if ! (command -v sudo) ; then sudo() ( "$@" ) ; fi
