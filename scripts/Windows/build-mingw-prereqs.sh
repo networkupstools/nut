@@ -291,7 +291,7 @@ provide_libmodbus_git() (
 	mkdir -p "./${DEP_DIRNAME}" || exit
 	cd "./${DEP_DIRNAME}" || exit
 
-	"${DLDIR}/${DEP_DIRNAME}/configure" --prefix="$PREFIX" --with-libusb --enable-static --disable-shared --enable-Werror \
+	"${DLDIR}/${DEP_DIRNAME}/configure" --prefix="${PREFIX}" --with-libusb --enable-static --disable-shared --enable-Werror \
 		|| { cat config.log ; exit 1 ; }
 
 	$MAKE || exit
