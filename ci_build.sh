@@ -1070,7 +1070,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     fi
 
     DEFAULT_PKG_CONFIG_PATH="${BUILD_PREFIX}/lib/pkgconfig"
-    SYSPKG_CONFIG_PATH="" # Let the OS guess... usually
+    SYS_PKG_CONFIG_PATH="" # Let the OS guess... usually
+    BUILTIN_PKG_CONFIG_PATH="`pkg-config --variable pc_path pkg-config`" || BUILTIN_PKG_CONFIG_PATH=""
     case "`echo "$CI_OS_NAME" | tr 'A-Z' 'a-z'`" in
         *openindiana*|*omnios*|*solaris*|*illumos*|*sunos*)
             case "$CC$CXX$CFLAGS$CXXFLAGS$LDFLAGS" in
@@ -1159,6 +1160,13 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             PKG_CONFIG_PATH="$SYS_PKG_CONFIG_PATH:$PKG_CONFIG_PATH"
         else
             PKG_CONFIG_PATH="$SYS_PKG_CONFIG_PATH"
+        fi
+    fi
+    if [ -n "$BUILTIN_PKG_CONFIG_PATH" ] ; then
+        if [ -n "$PKG_CONFIG_PATH" ] ; then
+            PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$BUILTIN_PKG_CONFIG_PATH"
+        else
+            PKG_CONFIG_PATH="$BUILTIN_PKG_CONFIG_PATH"
         fi
     fi
     if [ -n "$PKG_CONFIG_PATH" ] ; then
