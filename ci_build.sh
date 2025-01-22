@@ -1096,6 +1096,8 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     esac
                     ;;
             esac
+            # OmniOS CE "Extra" repository
+            if [ -d "/opt/ooce/bin" ] ; then PATH="/opt/ooce/bin:${PATH}" ; fi
             ;;
         *darwin*|*macos*|*osx*)
             # Architecture-dependent base dir, e.g.
