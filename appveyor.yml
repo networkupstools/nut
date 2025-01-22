@@ -23,7 +23,7 @@ platform: x64
 # https://www.appveyor.com/docs/build-cache/
 environment:
   APPVEYOR_SAVE_CACHE_ON_ERROR: true
-  APPVEYOR_CACHE_ENTRY_ZIP_ARGS: -t7z -m0=lzma -mx=9
+  APPVEYOR_CACHE_ENTRY_ZIP_ARGS: -t7z -m0=lzma -mx=6
   CCACHE_DIR: /home/appveyor/.ccache
 
 # https://github.com/networkupstools/nut/blob/Windows-v2.8.0-1/docs/config-prereqs.txt#L951
