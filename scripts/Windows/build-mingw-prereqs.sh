@@ -53,7 +53,10 @@ prepareEnv() {
 			[ -n "${PREFIX-}" ] || PREFIX="${PREFIX_ROOT}/$MINGW_PREFIX"
 			# Normalize away extra slashes, they confuse at least MSYS2 tools
 			PREFIX="`echo "${PREFIX}" | sed 's,//*,/,g'`"
-			PATH="$PREFIX/bin:$PATH"
+			case "${PATH}" in
+				"${PREFIX}/bin"|"${PREFIX}/bin:"*|*":${PREFIX}/bin:"*|*":${PREFIX}/bin") ;;
+				*) PATH="${PREFIX}/bin:${PATH}" ;;
+			esac
 			export ARCH PATH PREFIX
 
 			if ! (command -v sudo) ; then sudo() ( "$@" ) ; fi
