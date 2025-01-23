@@ -1398,6 +1398,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
         CONFIG_OPTS+=("PKG_CONFIG_PATH=${PKG_CONFIG_PATH}")
     fi
 
+    PATH="`echo "${PATH}" | normalize_path`"
+    CCACHE_PATH="`echo "${CCACHE_PATH}" | normalize_path`"
+
     # Note: Potentially there can be spaces in entries for multiple
     # *FLAGS here; this should be okay as long as entry expands to
     # one token when calling shell (may not be the case for distcheck)
@@ -2353,6 +2356,9 @@ bindings)
         CONFIG_OPTS+=("CXX=${CXX}")
         CONFIG_OPTS+=("CPP=${CPP}")
     fi
+
+    PATH="`echo "${PATH}" | normalize_path`"
+    CCACHE_PATH="`echo "${CCACHE_PATH}" | normalize_path`"
 
     RES_CFG=0
     ${CONFIGURE_SCRIPT} "${CONFIG_OPTS[@]}" \
