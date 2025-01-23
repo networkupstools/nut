@@ -189,6 +189,28 @@ fi
 [ -n "$MAKE_FLAGS_VERBOSE" ] || MAKE_FLAGS_VERBOSE="VERBOSE=1 V=1 -s"
 [ -n "$MAKE_FLAGS_CLEAN" ] || MAKE_FLAGS_CLEAN="${MAKE_FLAGS_QUIET}"
 
+normalize_path() {
+    # STDIN->STDOUT: strip duplicate "/" and extra ":" if present,
+    # leave first copy of duplicates in (preferred) place
+    sed -e 's,:::*,:,g' -e 's,^:*,,' -e 's,:*$,,' -e 's,///*,/,g' \
+    | tr ':' '\n' \
+    | ( P=""
+        while IFS='' read D ; do
+            case "${D}" in
+                "") continue ;;
+                /)  ;;
+                */) D="`echo "${D}" | sed 's,/*$,,'`" ;;
+            esac
+            case "${P}" in
+                "${D}"|*":${D}"|"${D}:"*|*":${D}:"*) ;;
+                "") P="${D}" ;;
+                *) P="${P}:${D}" ;;
+            esac
+        done
+        echo "${P}"
+      )
+}
+
 propose_CI_CCACHE_SYMLINKDIR() {
     # This is where many symlinks like "gcc -> ../bin/ccache" reside:
     echo \
@@ -816,7 +838,7 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
                     ;;
             esac
 
-            # Pile it on, strip extra ":" later
+            # Pile it on, strip extra ":" and dedup entries later
             for D in \
                 "/opt/ooce/lib" \
                 "/usr/lib" \
@@ -865,10 +887,7 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
                         fi
                     done
                     if [ "${_ADDSHORT}" = true ] ; then
-                        case "${SYS_PKG_CONFIG_PATH}" in
-                            "${D}/pkgconfig"|*":${D}/pkgconfig"|"${D}/pkgconfig:"*|*":${D}/pkgconfig:"*) ;;
-                            *) SYS_PKG_CONFIG_PATH="${SYS_PKG_CONFIG_PATH}:${D}/pkgconfig" ;;
-                        esac
+                        SYS_PKG_CONFIG_PATH="${SYS_PKG_CONFIG_PATH}:${D}/pkgconfig"
                     fi
                 fi
             done
@@ -975,7 +994,8 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
         fi
     fi
 
-    PKG_CONFIG_PATH="`echo "${PKG_CONFIG_PATH}" | sed -e 's,:::*,:,g' -e 's,^:*,,' -e 's,:*$,,'`"
+    # Normalize
+    PKG_CONFIG_PATH="`echo "${PKG_CONFIG_PATH}" | normalize_path`"
 }
 
 # Would hold full path to the CONFIGURE_SCRIPT="${SCRIPTDIR}/${CONFIGURE_SCRIPT_FILENAME}"
