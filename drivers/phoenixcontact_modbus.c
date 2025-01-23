@@ -217,6 +217,8 @@ void upsdrv_updateinfo(void)
 {
 	uint16_t tab_reg[64];
 	uint16_t actual_code_functions;
+	uint16_t actual_code_functions1;
+	uint16_t actual_code_functions2;
 	uint16_t actual_alarms = 0;
 	uint16_t actual_alarms1 = 0;
 	uint16_t battery_voltage;
@@ -241,8 +243,18 @@ void upsdrv_updateinfo(void)
 
 		tab_reg[1] = CHECK_BIT(actual_alarms1, 2); /* Battery discharged is the 2nd bit of the register 0x3001 */
 		break;
+	case TRIO_UPS:
 	case QUINT_UPS:
 		mrir(modbus_ctx, 29697, 3, tab_reg); /* LB is actually called "shutdown event" on this ups */
+		break;
+	case TRIO_2G_UPS:
+		mrir(modbus_ctx, 0x2000, 1, &actual_code_functions);
+		mrir(modbus_ctx, 0x2002, 1, &actual_code_functions1);
+		mrir(modbus_ctx, 0x3012, 1, &actual_code_functions2);
+
+		tab_reg[0] = CHECK_BIT(actual_code_functions1, 2);
+		tab_reg[2] = CHECK_BIT(actual_code_functions, 5);
+		tab_reg[1] = CHECK_BIT(actual_code_functions2, 16);
 		break;
 	case NONE:
 		fatalx(EXIT_FAILURE, "Unknown UPS model.");
