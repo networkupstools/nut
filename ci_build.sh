@@ -778,28 +778,106 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
     BUILTIN_PKG_CONFIG_PATH="`pkg-config --variable pc_path pkg-config`" || BUILTIN_PKG_CONFIG_PATH=""
     case "`echo "$CI_OS_NAME" | tr 'A-Z' 'a-z'`" in
         *openindiana*|*omnios*|*solaris*|*illumos*|*sunos*)
-            case "$CC$CXX$CFLAGS$CXXFLAGS$LDFLAGS" in
-                *-m64*)
-                    SYS_PKG_CONFIG_PATH="/usr/lib/64/pkgconfig:/usr/lib/amd64/pkgconfig:/usr/lib/sparcv9/pkgconfig:/usr/lib/pkgconfig"
-                    if [ -d "/opt/ooce/lib/64/pkgconfig" ] ; then SYS_PKG_CONFIG_PATH="/opt/ooce/lib/64/pkgconfig:${SYS_PKG_CONFIG_PATH}" ; fi
-                    ;;
-                *-m32*)
-                    SYS_PKG_CONFIG_PATH="/usr/lib/32/pkgconfig:/usr/lib/pkgconfig:/usr/lib/i86pc/pkgconfig:/usr/lib/i386/pkgconfig:/usr/lib/sparcv7/pkgconfig"
-                    if [ -d "/opt/ooce/lib/32/pkgconfig" ] ; then SYS_PKG_CONFIG_PATH="/opt/ooce/lib/32/pkgconfig:${SYS_PKG_CONFIG_PATH}" ; fi
-                    ;;
-                *)
-                    case "${ARCH}${BITS}${ARCH_BITS}" in
-                        *64*)
-                            SYS_PKG_CONFIG_PATH="/usr/lib/64/pkgconfig:/usr/lib/amd64/pkgconfig:/usr/lib/sparcv9/pkgconfig:/usr/lib/pkgconfig"
-                            if [ -d "/opt/ooce/lib/64/pkgconfig" ] ; then SYS_PKG_CONFIG_PATH="/opt/ooce/lib/64/pkgconfig:${SYS_PKG_CONFIG_PATH}" ; fi
-                            ;;
-                        *32*)
-                            SYS_PKG_CONFIG_PATH="/usr/lib/32/pkgconfig:/usr/lib/pkgconfig:/usr/lib/i86pc/pkgconfig:/usr/lib/i386/pkgconfig:/usr/lib/sparcv7/pkgconfig"
-                            if [ -d "/opt/ooce/lib/32/pkgconfig" ] ; then SYS_PKG_CONFIG_PATH="/opt/ooce/lib/32/pkgconfig:${SYS_PKG_CONFIG_PATH}" ; fi
+            _ARCHES="${ARCH-}"
+            _BITS="${BITS-}"
+            _ISA1=""
+
+            [ -n "${_BITS}" ] || \
+            case "${CC}${CXX}${CFLAGS}${CXXFLAGS}${LDFLAGS}" in
+                *-m64*) _BITS=64 ;;
+                *-m32*) _BITS=32 ;;
+                *)  case "${ARCH-}${ARCH_BITS-}" in
+                        *64*|*sparcv9*) _BITS=64 ;;
+                        *32*|*86*|*sparcv7*|*sparc) _BITS=32 ;;
+                        *)  _ISA1="`isainfo | awk '{print $1}'`"
+                            case "${_ISA1}" in
+                                *64*|*sparcv9*) _BITS=64 ;;
+                                *32*|*86*|*sparcv7*|*sparc) _BITS=32 ;;
+                            esac
                             ;;
                     esac
                     ;;
             esac
+
+            # Consider also `gcc -v`/`clang -v`: their "Target:" line exposes the
+            # triplet compiler was built to run on, e.g. "x86_64-pc-solaris2.11"
+            case "${_ARCHES}${ARCH_BITS-}" in
+                *amd64*|*x86_64*) _ARCHES="amd64" ;;
+                *sparcv9*) _ARCHES="sparcv9" ;;
+                *86*) _ARCHES="i86pc i386" ;;
+                *sparcv7*|*sparc) _ARCHES="sparcv7 sparc" ;;
+                *)  [ -n "${_ISA1}" ] || _ISA1="`isainfo | awk '{print $1}'`"
+                    case "${_ISA1}" in
+                        *amd64*|*x86_64*) _ARCHES="amd64" ;;
+                        *sparcv9*) _ARCHES="sparcv9" ;;
+                        *86*) _ARCHES="i86pc i386" ;;
+                        *sparcv7*|*sparc) _ARCHES="sparcv7 sparc" ;;
+                    esac
+                    ;;
+            esac
+
+            # Pile it on, strip extra ":" later
+            for D in \
+                "/opt/ooce/lib" \
+                "/usr/lib" \
+            ; do
+                if [ -d "$D" ] ; then
+                    _ADDSHORT=false
+                    if [ -n "${_BITS}" ] ; then
+                        if [ -d "${D}/${_BITS}/pkgconfig" ] ; then
+                            SYS_PKG_CONFIG_PATH="${SYS_PKG_CONFIG_PATH}:${D}/${_BITS}/pkgconfig"
+                        else
+                            if [ -d "${D}/pkgconfig" ] ; then
+                                case "`LANG=C LC_ALL=C file $(ls -1 $D/*.so | head -1)`" in
+                                    *"ELF ${_BITS}-bit"*) _ADDSHORT=true ;;
+                                esac
+                            fi
+                        fi
+                    fi
+                    for _ARCH in $_ARCHES ; do
+                        if [ -d "${D}/${_ARCH}/pkgconfig" ] ; then
+                            SYS_PKG_CONFIG_PATH="${SYS_PKG_CONFIG_PATH}:${D}/${_ARCH}/pkgconfig"
+                        else
+                            if [ -d "${D}/pkgconfig" ] ; then
+                                case "`LANG=C LC_ALL=C file $(ls -1 $D/*.so | head -1)`" in
+                                    *"ELF 32-bit"*" SPARC "*)
+                                        case "${_ARCH}" in
+                                            sparc|sparcv7) _ADDSHORT=true ;;
+                                        esac
+                                        ;;
+                                    *"ELF 64-bit"*" SPARCV9 "*)
+                                        case "${_ARCH}" in
+                                            sparcv9) _ADDSHORT=true ;;
+                                        esac
+                                        ;;
+                                    *"ELF 32-bit"*" 80386 "*)
+                                        case "${_ARCH}" in
+                                            i386|i86pc) _ADDSHORT=true ;;
+                                        esac
+                                        ;;
+                                    *"ELF 64-bit"*" AMD64 "*)
+                                        case "${_ARCH}" in
+                                            amd64) _ADDSHORT=true ;;
+                                        esac
+                                        ;;
+                                esac
+                            fi
+                        fi
+                    done
+                    if [ "${_ADDSHORT}" = true ] ; then
+                        case "${SYS_PKG_CONFIG_PATH}" in
+                            "${D}/pkgconfig"|*":${D}/pkgconfig"|"${D}/pkgconfig:"*|*":${D}/pkgconfig:"*) ;;
+                            *) SYS_PKG_CONFIG_PATH="${SYS_PKG_CONFIG_PATH}:${D}/pkgconfig" ;;
+                        esac
+                    fi
+                fi
+            done
+
+            # Last option if others are lacking
+            if [ -d /usr/lib/pkgconfig ] ; then
+                SYS_PKG_CONFIG_PATH="${SYS_PKG_CONFIG_PATH}:/usr/lib/pkgconfig"
+            fi
+            unset _ADDSHORT _BITS _ARCH _ARCHES D
 
             # OmniOS CE "Extra" repository
             case "$PATH" in
@@ -896,6 +974,8 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
             PKG_CONFIG_PATH="${DEFAULT_PKG_CONFIG_PATH}"
         fi
     fi
+
+    PKG_CONFIG_PATH="`echo "${PKG_CONFIG_PATH}" | sed -e 's,:::*,:,g' -e 's,^:*,,' -e 's,:*$,,'`"
 }
 
 # Would hold full path to the CONFIGURE_SCRIPT="${SCRIPTDIR}/${CONFIGURE_SCRIPT_FILENAME}"
