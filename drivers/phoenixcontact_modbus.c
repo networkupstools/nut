@@ -68,7 +68,9 @@ typedef enum
 {
 	NONE,
 	QUINT_UPS,
-	QUINT4_UPS
+	QUINT4_UPS,
+	TRIO_UPS,
+	TRIO_2G_UPS
 } models;
 
 /* Variables */
@@ -165,6 +167,22 @@ void upsdrv_initinfo(void)
 		UPSModel = QUINT4_UPS;
 		dstate_setinfo("device.model", QUINT4_40A_UPS_DESCRIPTION);
 		break;
+	case TRIO_5A_UPS_PARTNUMBER:
+		UPSModel = TRIO_UPS;
+		dstate_setinfo("device.model", TRIO_5A_UPS_DESCRIPTION);
+		break
+	case TRIO_2G_5A_UPS_PARTNUMBER:
+		UPSModel = TRIO_2G_UPS;
+		dstate_setinfo("device.model", TRIO_2G_5A_UPS_DESCRIPTION);
+		break
+	case TRIO_2G_10A_UPS_PARTNUMBER:
+		UPSModel = TRIO_2G_UPS;
+		dstate_setinfo("device.model", TRIO_2G_10A_UPS_DESCRIPTION);
+		break
+	case TRIO_2G_10A_UPS_PARTNUMBER:
+		UPSModel = TRIO_2G_UPS;
+		dstate_setinfo("device.model", TRIO_2G_20A_UPS_DESCRIPTION);
+		break
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
 #endif
