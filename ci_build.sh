@@ -972,30 +972,8 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
         return
     fi
 
-    if [ -n "$SYS_PKG_CONFIG_PATH" ] ; then
-        if [ -n "${PKG_CONFIG_PATH-}" ] ; then
-            PKG_CONFIG_PATH="$SYS_PKG_CONFIG_PATH:$PKG_CONFIG_PATH"
-        else
-            PKG_CONFIG_PATH="$SYS_PKG_CONFIG_PATH"
-        fi
-    fi
-    if [ -n "$BUILTIN_PKG_CONFIG_PATH" ] ; then
-        if [ -n "${PKG_CONFIG_PATH-}" ] ; then
-            PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$BUILTIN_PKG_CONFIG_PATH"
-        else
-            PKG_CONFIG_PATH="$BUILTIN_PKG_CONFIG_PATH"
-        fi
-    fi
-    if [ -n "${DEFAULT_PKG_CONFIG_PATH-}" ] ; then
-        if [ -n "$PKG_CONFIG_PATH" ] ; then
-            PKG_CONFIG_PATH="${DEFAULT_PKG_CONFIG_PATH}:${PKG_CONFIG_PATH}"
-        else
-            PKG_CONFIG_PATH="${DEFAULT_PKG_CONFIG_PATH}"
-        fi
-    fi
-
-    # Normalize
-    PKG_CONFIG_PATH="`echo "${PKG_CONFIG_PATH}" | normalize_path`"
+    # Do not check for existence of non-trivial values, we normalize the mess (if any)
+    PKG_CONFIG_PATH="`echo "${DEFAULT_PKG_CONFIG_PATH-}:${SYS_PKG_CONFIG_PATH-}:${PKG_CONFIG_PATH-}:${BUILTIN_PKG_CONFIG_PATH-}" | normalize_path`"
 }
 
 # Would hold full path to the CONFIGURE_SCRIPT="${SCRIPTDIR}/${CONFIGURE_SCRIPT_FILENAME}"
