@@ -2462,6 +2462,7 @@ AS_IF([test "${nut_with_modbus}" != "no"], [
 	dnl detection method (if nut_have_libmodbus_usb=="yes")
 	NUT_REPORT_DRV([build Modbus drivers with RTU USB support], [${nut_have_libmodbus_usb}])
 ])
+AM_CONDITIONAL(WITH_MODBUS_USB, [test "${nut_with_modbus}" = "yes" && test "${nut_have_libmodbus_usb}" = yes && test "${nut_with_usb}" = yes && test "${nut_with_modbus_and_usb}" != "no"])
 
 dnl ----------------------------------------------------------------------
 dnl Check for with-ipmi, and --with-freeipmi (or --with-openipmi)
