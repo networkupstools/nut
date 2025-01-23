@@ -1205,7 +1205,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 
     # Primarily here to ensure libusb-1.0 use on MSYS2/mingw
     # when 0.1 is available too
-    if [ "${CANBUILD_WITH_LIBMODBUS_USB-}" == yes ] ; then
+    if [ "${CANBUILD_WITH_LIBMODBUS_USB-}" = yes ] ; then
         CONFIG_OPTS+=("--with-modbus+usb=yes")
     fi
 
@@ -1538,7 +1538,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # below depending on scenario
     autogen_get_CONFIGURE_SCRIPT
 
-    if [ "$NO_PKG_CONFIG" == "true" ] && [ "$CI_OS_NAME" = "linux" ] && (command -v dpkg) ; then
+    if [ "$NO_PKG_CONFIG" = "true" ] && [ "$CI_OS_NAME" = "linux" ] && (command -v dpkg) ; then
         # This should be done in scratch containers...
         echo "NO_PKG_CONFIG==true : BUTCHER pkg-config package for this test case" >&2
         sudo dpkg -r --force all pkg-config
@@ -2065,7 +2065,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     [ -n "$CI_TIME" ] && echo "`date`: listing files installed into the custom DESTDIR..." && \
         find "$INST_PREFIX" -ls || true
 
-    if [ "$DO_DISTCHECK" == "no" ] ; then
+    if [ "$DO_DISTCHECK" = "no" ] ; then
         echo "Skipping distcheck (doc generation is disabled, it would fail)"
     else
         [ -z "$CI_TIME" ] || echo "`date`: Starting distcheck of currently tested project..."
