@@ -71,6 +71,7 @@ if test -z "${nut_have_libltdl_seen}"; then
 				depCFLAGS="$myCFLAGS"
 				dnl No ltdl-7 here, this codepath is unlikely on Windows where that matters:
 				CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
+				unset ac_cv_search_lt_dlinit
 				AC_SEARCH_LIBS(lt_dlinit, ltdl, [nut_have_libltdl=yes], [])
 			])
 		])
