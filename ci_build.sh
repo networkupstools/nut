@@ -2322,6 +2322,13 @@ bindings)
         CONFIG_OPTS+=("PKG_CONFIG_PATH=${PKG_CONFIG_PATH}")
     fi
 
+    # If detect_platform_PKG_CONFIG_PATH_and_FLAGS() customized anything here,
+    # let configure script know
+    [ -z "${CFLAGS}" ] || export CFLAGS
+    [ -z "${CXXFLAGS}" ] || export CXXFLAGS
+    [ -z "${CPPFLAGS}" ] || export CPPFLAGS
+    [ -z "${LDFLAGS}" ] || export LDFLAGS
+
     # Primarily here to ensure libusb-1.0 use on MSYS2/mingw
     # when 0.1 is available too
     if [ "${CANBUILD_WITH_LIBMODBUS_USB-}" = yes ] ; then
