@@ -1203,6 +1203,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     CONFIG_OPTS+=("--with-nut_monitor=force")
     CONFIG_OPTS+=("--with-pynut=auto")
 
+    # Primarily here to ensure libusb-1.0 use on MSYS2/mingw
+    # when 0.1 is available too
+    if [ "${CANBUILD_WITH_LIBMODBUS_USB-}" == yes ] ; then
+        CONFIG_OPTS+=("--with-modbus+usb=yes")
+    fi
+
     # Similarly for nut-scanner which requires libltdl which
     # is not ubiquitous on CI workers. So unless agent labels
     # declare it should be capable, err on the safe side:
