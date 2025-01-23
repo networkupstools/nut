@@ -1288,7 +1288,7 @@ site for setup details.
 
 # NOTE: OmniOS currently does not deliver clang in its Core/Extra repositories
 :; pkg install \
-    developer/build/autoconf developer/build/automake developer/build/libtool \
+    developer/build/autoconf developer/build/automake developer/build/libtool library/libtool/libltdl \
     build-essential ccache git developer/pkg-config \
     runtime/perl \
     asciidoc \
