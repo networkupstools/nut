@@ -2138,6 +2138,12 @@ bindings)
         --disable-force-nut-version-header \
         --enable-check-NIT --enable-maintainer-mode)
 
+    # Primarily here to ensure libusb-1.0 use on MSYS2/mingw
+    # when 0.1 is available too
+    if [ "${CANBUILD_WITH_LIBMODBUS_USB-}" = yes ] ; then
+        CONFIG_OPTS+=("--with-modbus+usb=yes")
+    fi
+
     # Not default for parameter-less build, to prevent "make check-NIT"
     # from somehow interfering with the running daemons.
     if [ x"${INPLACE_RUNTIME-}" = xtrue ] || [ x"${BUILD_TYPE-}" = xinplace ] ; then
