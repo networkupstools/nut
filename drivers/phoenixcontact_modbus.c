@@ -304,6 +304,7 @@ void upsdrv_updateinfo(void)
 
 	switch (UPSModel)
 	{
+	case TRIO_2G_UPS:
 	case QUINT4_UPS:
 		mrir(modbus_ctx, 0x2006, 1, tab_reg);
 		break;
