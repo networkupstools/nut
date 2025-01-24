@@ -853,6 +853,13 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
                     if [ -n "${_BITS}" ] ; then
                         if [ -d "${D}/${_BITS}/pkgconfig" ] ; then
                             SYS_PKG_CONFIG_PATH="${SYS_PKG_CONFIG_PATH}:${D}/${_BITS}/pkgconfig"
+                            # Here and below: hot-fix for https://github.com/networkupstools/nut/issues/2782
+                            # situation on OmniOS with Extra repository,
+                            # assumed only useful if we use it via pkgconfig
+                            case "${D}" in
+                                /usr/lib) ;;
+                                *) LDFLAGS="${LDFLAGS} -R${D}/${_BITS}" ;;
+                            esac
                         else
                             if [ -d "${D}/pkgconfig" ] ; then
                                 case "`LANG=C LC_ALL=C file $(ls -1 $D/*.so | head -1)`" in
@@ -864,6 +871,10 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
                     for _ARCH in $_ARCHES ; do
                         if [ -d "${D}/${_ARCH}/pkgconfig" ] ; then
                             SYS_PKG_CONFIG_PATH="${SYS_PKG_CONFIG_PATH}:${D}/${_ARCH}/pkgconfig"
+                            case "${D}" in
+                                /usr/lib) ;;
+                                *) LDFLAGS="${LDFLAGS} -R${D}/${_ARCH}" ;;
+                            esac
                         else
                             if [ -d "${D}/pkgconfig" ] ; then
                                 case "`LANG=C LC_ALL=C file $(ls -1 $D/*.so | head -1)`" in
@@ -893,6 +904,10 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
                     done
                     if [ "${_ADDSHORT}" = true ] ; then
                         SYS_PKG_CONFIG_PATH="${SYS_PKG_CONFIG_PATH}:${D}/pkgconfig"
+                        case "${D}" in
+                            /usr/lib) ;;
+                            *) LDFLAGS="${LDFLAGS} -R${D}" ;;
+                        esac
                     fi
                 fi
             done
