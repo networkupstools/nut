@@ -194,7 +194,7 @@ void USBFlushReceive (void)
 {
 	uint uiCount = 0;
 
-	upsdebugx(6, "Flushing USB receive hardware.");
+	upsdebugx(3, "Flushing USB receive.");
 
 	char response_in[USB_RESPONSE_SIZE + 1];
 	while (comm_driver->get_interrupt(udev,
@@ -208,7 +208,8 @@ void USBFlushReceive (void)
 	upsdebugx(6, "Flush Count: %d.", uiCount);
 }
 
-/* This function is called to send the request to the initialized device. */
+
+/* This function is called to send the data request or command to the initialized device. */
 static size_t SendRequest (const char* sRequest)
 {
 	char outbuff[40];
@@ -263,8 +264,6 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
 	size_t i = 0;
 	size_t j = 0;
 
-//	printf ("In 'PowervarGetResponse'\n");
-
 	int Retries = RETRIES;		/* x/2 seconds max with 500000 USEC */
 	ssize_t return_val;
 
@@ -278,8 +277,6 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
 			(usb_ctrl_charbuf)response_in,
 			(usb_ctrl_charbufsize) USB_RESPONSE_SIZE,
 			(usb_ctrl_timeout_msec) 500);
-
-//		upsdebugx(5, "Response: '%s'", response_in);
 
 		if (ret > 0)
 		{
@@ -299,13 +296,6 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
 
 			upsdebugx(5, "Loop Response: '%s'", response_in);
 
-			if (1 == done)
-			{
-				chBuff[i] = ENDCHAR;	/* Put CR at end of response */
-			}
-
-//			ShowStringHex ((const char*)response_in);
-
 			/* Clear response buffer for next chunk */
 			for(j = 0; j <= USB_RESPONSE_SIZE ; j++) response_in[j] = '\0';
 		}
@@ -316,13 +306,13 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
 		}
 	}
 
-	USBFlushReceive ();		/* Clear USB hardware */
-
 //	upsdebugx (3, "!PowervarGetResponse retry (%" PRIiSIZE ", %d)...", return_val, Retries);
 
-//	ShowStringHex ((const char*)chBuff);
+/*	ShowStringHex ((const char*)chBuff);	*/
 
 	upsdebugx (4,"PowervarGetResponse buffer: '%s'",chBuff);
+
+	USBFlushReceive ();		/* Clear USB hardware */
 
 	if (Retries == 0)
 	{
@@ -505,7 +495,8 @@ void upsdrv_initinfo(void)
 	printf ("In upsdrv_initinfo\n");
 
 	/* Get port ready */
-//	SendRequest ((const char*)ENDCHARS);		/* Just get device ready -- flush */
+	SendRequest ((const char*)ENDCHARS);		/* Just get device ready -- flush */
+	USBFlushReceive ();				/* Just flush response */
 //	PowervarGetResponse (sDBuff, BUFFSIZE);		/* Pull any characters */
 //	upsdebugx(5, "Flush response: '%s'", sDBuff);
 

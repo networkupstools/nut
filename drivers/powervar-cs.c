@@ -32,7 +32,6 @@
 
 #include "main.h"
 #include "serial.h"
-//#include "powervar-c.h"
 #include "nut_stdint.h"
 
 /* Prototypes to allow setting pointer before function is defined */
@@ -122,15 +121,43 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
 
 
 /****************************************************************
- * Below are the primary commands that are called by main       *
+ * Below are the primary commands that are called by NUT main   *
  ***************************************************************/
 
 void upsdrv_initups(void)
 {
+	uint32_t ulBaud;
+
 	/* Serial comm init here */
 	upsfd = ser_open(device_path);
-//	ser_set_speed(upsfd, device_path, B9600);
-	ser_set_speed(upsfd, device_path, B115200);
+
+	/* See if there is a custom baudrate available -- generally not */
+	if (getval("pvbaud") == NULL)
+	{
+		printf ("Setting baud to 9600.\n");
+		ser_set_speed(upsfd, device_path, B9600);
+	}
+	else
+	{
+		/* Custom firmware is needed to allow for other baud rates */
+		ulBaud = atoi(getval("pvbaud"));
+
+		if (ulBaud == 38400)
+		{
+			printf ("Setting baud to 38400.\n");
+			ser_set_speed(upsfd, device_path, B38400);
+		}
+		else if (ulBaud == 57600)
+		{
+			printf ("Setting baud to 57600.\n");
+			ser_set_speed(upsfd, device_path, B57600);
+		}
+		else if (ulBaud == 115200)
+		{
+			printf ("Setting baud to 115200.\n");
+			ser_set_speed(upsfd, device_path, B115200);
+		}
+	}
 
 	/*get the UPS in the right frame of mind*/
 	ser_send_pace(upsfd, 100, "%s", COMMAND_END);
@@ -138,8 +165,7 @@ void upsdrv_initups(void)
 	sleep (1);
 }
 
-/* TBD, Implement commands based on capability of the found UPS. */
-/* TBD, Finish implementation of available data */
+/* This function is called on driver startup to initialize variables/commands */
 void upsdrv_initinfo(void)
 {
 	/* Get serial port ready */
@@ -161,30 +187,6 @@ void upsdrv_updateinfo(void)
 }
 
 
-/**********************************************************
- * Powervar support functions for NUT command calls       *
- *********************************************************/
-
-/* static void do_battery_test(void)
-{
-	if (byTSTBatrunPos)
-	{
-		char buffer[32];
-
-		if (getval("battesttime") == NULL)
-		{
-			snprintf(buffer, 3, "%s", DEFAULT_BAT_TEST_TIME);
-		}
-		else
-		{
-			snprintf(buffer, 6, "%s", getval("battesttime"));
-		}
-
-		ser_send(upsfd, "%s%s%s", TST_BATRUN_REQ, buffer, COMMAND_END);
-	}
-}
- */
-
 /**************************************
  * Handlers for NUT command calls     *
  *************************************/
@@ -195,23 +197,10 @@ void upsdrv_help(void)
 	printf("You must set the UPS interface card DIP switch to 9600 BPS\n");
 }
 
+
 void upsdrv_cleanup(void)
 {
 	ser_close(upsfd, device_path);
 }
 
-/* void upsdrv_makevartable(void)
-{
-	addvar(VAR_VALUE, "battesttime", "Change battery test time from the 10 second default.");
-
-	addvar(VAR_VALUE, "disptesttime", "Change display test time from the 10 second default.");
-
-	addvar(VAR_VALUE, "offdelay", "Change shutdown delay time from 0 second default.");
-}
- */
-
-//void upsdrv_shutdown(void)
-//{
-//	ser_send(upsfd, "%s", SHUTDOWN);
-//}
-
+/* End of powervar-cs.c file */
