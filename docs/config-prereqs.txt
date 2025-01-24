@@ -1284,11 +1284,12 @@ site for setup details.
 
 ------
 # Optionally, make the environment comfortable, e.g.:
-:; pkg install sudo bash application/mc wget rsync pigz pbzip2 p7zip
+:; pkg install sudo bash application/mc wget rsync pigz pbzip2 p7zip top
 
 # NOTE: OmniOS currently does not deliver clang in its Core/Extra repositories
 :; pkg install \
-    developer/build/autoconf developer/build/automake developer/build/libtool library/libtool/libltdl \
+    developer/build/autoconf developer/build/automake \
+    developer/build/libtool library/libtool/libltdl \
     build-essential ccache git developer/pkg-config \
     runtime/perl \
     asciidoc \
@@ -1324,17 +1325,17 @@ NOTE: As of July 2022, a `libusb-1` package recipe was proposed for the
 `omnios-extra` repository (NUT itself and further dependencies may also
 appear there, per
 link:https://github.com/networkupstools/nut/issues/1498[issue #1498]),
-and is available as of release 151052:
+and is available as of release 151046:
 ------
 :; pkg install \
     libusb-1
 ------
 
 You may need to set up `ccache` with the same `/usr/lib/ccache` dir used
-in other OS recipes. Assuming your Build Essentials pulled GCC 9 version,
+in other OS recipes. Assuming your Build Essentials pulled GCC 11 version,
 and ccache is under `/opt/ooce` namespace, that would be like:
 ------
-:; GCCVER=9
+:; GCCVER=11
 :; mkdir -p /usr/lib/ccache
 :; cd /usr/lib/ccache
 :; ln -fs ../../../opt/ooce/bin/ccache gcc
