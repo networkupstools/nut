@@ -1354,6 +1354,13 @@ library and binary paths can be architecture bitness-dependent; the
 :; ./configure PKG_CONFIG_PATH="/opt/ooce/lib/amd64/pkgconfig" --with-cgi
 ------
 
+You may also have to fiddle with either `LD_LIBRARY_PATH`, `crle (-c)` or
+`./configure --with-something-libs` options to compensate for lack of `-R`
+linker options in the `pkg-config` information provided by that repository:
+by default the NUT programs can build with the information they get, but
+fail to find the needed shared objects at run-time. More about this situation
+is tracked at https://github.com/networkupstools/nut/issues/2782
+
 Note also that the minimal footprint nature of OmniOS CE precludes building
 any large scope easily, so avoid docs and "all drivers" unless you provide
 whatever they need to happen.
