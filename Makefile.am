@@ -96,10 +96,16 @@ distcheck-light:
 distcheck-light-man:
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_MAN_FLAGS)" distcheck
 
+if HAVE_VALGRIND
 # Make a distcheck (and check in particular) with enabled valgrind and debug info
 memcheck distcheck-valgrind:
 	@echo "See also scripts/valgrind in NUT sources for a helper tool"
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_VALGRIND_FLAGS)" distcheck
+else !HAVE_VALGRIND
+memcheck distcheck-valgrind:
+	@echo "See also scripts/valgrind in NUT sources for a helper tool"
+	@echo "SKIPPED $@ : valgrind was not detected on this system by configure script" >&2
+endif !HAVE_VALGRIND
 
 # workaround the dist generated files that are also part of the distribution
 # Note that distcleancheck is disabled for now, while waiting for a proper
