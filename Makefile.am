@@ -75,6 +75,7 @@ DISTCHECK_VALGRIND_FLAGS = --with-all=auto --with-ssl=auto --with-doc=skip --wit
 
 # Note: this rule uses envvar DISTCHECK_FLAGS expanded at run-time
 DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
+ PKG_CONFIG_PATH='@PKG_CONFIG_PATH@'			\
  --with-systemdsystemunitdir='$${prefix}/lib/systemd/system' \
  --with-systemdsystempresetdir='$${prefix}/usr/lib/systemd/system-preset' \
  --with-systemdshutdowndir='$${prefix}/lib/systemd/system-shutdown' \
