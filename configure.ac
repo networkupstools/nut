@@ -131,6 +131,27 @@ AS_IF([test x"${NUT_SOURCE_GITREV}" = x],
     ])
 AC_CANONICAL_TARGET
 NUT_CHECK_OS
+
+dnl Further below we shuffle variants of these values possibly stripped of
+dnl warnings or with added further values. Here we save the most-original copy
+dnl so it can be passed e.g. to "make distcheck" the way the caller intended.
+NUT_CONFIG_CFLAGS=""
+NUT_CONFIG_CPPFLAGS=""
+NUT_CONFIG_CXXFLAGS=""
+NUT_CONFIG_LDFLAGS=""
+AS_IF([test -n "${CFLAGS-}"   -a x"${CFLAGS-}"   != x" "],
+	[NUT_CONFIG_CFLAGS="${CFLAGS-}"])
+AS_IF([test -n "${CXXFLAGS-}" -a x"${CXXFLAGS-}" != x" "],
+	[NUT_CONFIG_CXXFLAGS="${CXXFLAGS-}"])
+AS_IF([test -n "${CPPFLAGS-}" -a x"${CPPFLAGS-}" != x" "],
+	[NUT_CONFIG_CPPFLAGS="${CPPFLAGS-}"])
+AS_IF([test -n "${LDFLAGS-}"  -a x"${LDFLAGS-}"  != x" "],
+	[NUT_CONFIG_LDFLAGS="${LDFLAGS-}"])
+AC_SUBST([NUT_CONFIG_CFLAGS])
+AC_SUBST([NUT_CONFIG_CXXFLAGS])
+AC_SUBST([NUT_CONFIG_CPPFLAGS])
+AC_SUBST([NUT_CONFIG_LDFLAGS])
+
 NUT_STASH_WARNINGS
 AC_CONFIG_HEADERS([include/config.h])
 AC_PREFIX_DEFAULT(/usr/local/ups)
@@ -158,8 +179,14 @@ dnl experimentation, we do not want to actually mangle the flags provided
 dnl by autoconf - for GCC at least, the rightmost mentions of conflicting
 dnl flags on command line win. We just want to know when it is okay to add
 dnl ours. They may be inherited from "in-place" build setup though.
-test -n "${CONFIG_CFLAGS-}" || CONFIG_CFLAGS="${CFLAGS-}"
+test -n "${CONFIG_CFLAGS-}"   || CONFIG_CFLAGS="${CFLAGS-}"
 test -n "${CONFIG_CXXFLAGS-}" || CONFIG_CXXFLAGS="${CXXFLAGS-}"
+test -n "${CONFIG_CPPFLAGS-}" || CONFIG_CPPFLAGS="${CPPFLAGS-}"
+test -n "${CONFIG_LDFLAGS-}"  || CONFIG_LDFLAGS="${LDFLAGS-}"
+AC_SUBST([CONFIG_CFLAGS])
+AC_SUBST([CONFIG_CXXFLAGS])
+AC_SUBST([CONFIG_CPPFLAGS])
+AC_SUBST([CONFIG_LDFLAGS])
 dnl +-------------------------------------------------------------------
 
 dnl Default to `configure --enable-silent-rules` or `make V=1` for details?
@@ -735,10 +762,14 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         ])
         export NUT_VERSION_DEPLOYED
         dnl # Avoid replacement after re-entering:
-        test -n "${CONFIG_CFLAGS-}" || CONFIG_CFLAGS=" "
+        test -n "${CONFIG_CFLAGS-}"   || CONFIG_CFLAGS=" "
         test -n "${CONFIG_CXXFLAGS-}" || CONFIG_CXXFLAGS=" "
+        test -n "${CONFIG_CPPFLAGS-}" || CONFIG_CPPFLAGS=" "
+        test -n "${CONFIG_LDFLAGS-}"  || CONFIG_LDFLAGS=" "
         export CONFIG_CFLAGS
         export CONFIG_CXXFLAGS
+        export CONFIG_CPPFLAGS
+        export CONFIG_LDFLAGS
 
         AC_MSG_NOTICE([Moving config.log of the original invocation to config.log.inplace-outer just before exec...])
         mv -f config.log config.log.inplace-outer || true
@@ -749,10 +780,14 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         NUT_VERSION_DEPLOYED="<reenter>"
         export NUT_VERSION_DEPLOYED
         dnl # Avoid replacement after re-entering:
-        test -n "${CONFIG_CFLAGS-}" || CONFIG_CFLAGS=" "
+        test -n "${CONFIG_CFLAGS-}"   || CONFIG_CFLAGS=" "
         test -n "${CONFIG_CXXFLAGS-}" || CONFIG_CXXFLAGS=" "
+        test -n "${CONFIG_CPPFLAGS-}" || CONFIG_CPPFLAGS=" "
+        test -n "${CONFIG_LDFLAGS-}"  || CONFIG_LDFLAGS=" "
         export CONFIG_CFLAGS
         export CONFIG_CXXFLAGS
+        export CONFIG_CPPFLAGS
+        export CONFIG_LDFLAGS
 
         AC_MSG_NOTICE([Moving config.log of the original invocation to config.log.inplace-outer just before exec...])
         mv -f config.log config.log.inplace-outer || true
@@ -5590,6 +5625,8 @@ dnl We might wipe their specific options below if consistently applying
 dnl debug-friendly options to everything
 AC_MSG_NOTICE([CONFIG_CFLAGS='${CONFIG_CFLAGS}'])
 AC_MSG_NOTICE([CONFIG_CXXFLAGS='${CONFIG_CXXFLAGS}'])
+AC_MSG_NOTICE([CONFIG_CPPFLAGS='${CONFIG_CPPFLAGS}'])
+AC_MSG_NOTICE([CONFIG_LDFLAGS='${CONFIG_LDFLAGS}'])
 AC_MSG_CHECKING([whether to enable debug info in all NUT binaries])
 nut_with_debuginfo_C="${nut_with_debuginfo}"
 nut_with_debuginfo_CXX="${nut_with_debuginfo}"
