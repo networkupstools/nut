@@ -166,6 +166,9 @@ static TYPE_FD sock_open(const char *fn)
 		fatal_with_errno(EXIT_FAILURE, "listen(%d, %d) failed", fd, DS_LISTEN_BACKLOG);
 	}
 
+	if (!getenv("NUT_QUIET_INIT_LISTENER"))
+		upslogx(LOG_INFO, "Listening on socket %s", sockfn);
+
 #else /* WIN32 */
 
 	fd = CreateNamedPipe(
@@ -187,17 +190,21 @@ static TYPE_FD sock_open(const char *fn)
 	}
 
 	/* Prepare an async wait on a connection on the pipe */
-	memset(&connect_overlapped,0,sizeof(connect_overlapped));
+	memset(&connect_overlapped, 0, sizeof(connect_overlapped));
 	connect_overlapped.hEvent = CreateEvent(NULL, /*Security*/
 			FALSE, /* auto-reset*/
 			FALSE, /* inital state = non signaled*/
 			NULL /* no name*/);
-	if(connect_overlapped.hEvent == NULL ) {
+	if (connect_overlapped.hEvent == NULL) {
 		fatal_with_errno(EXIT_FAILURE, "Can't create event");
 	}
 
 	/* Wait for a connection */
-	ConnectNamedPipe(fd,&connect_overlapped);
+	ConnectNamedPipe(fd, &connect_overlapped);
+
+	if (!getenv("NUT_QUIET_INIT_LISTENER"))
+		upslogx(LOG_INFO, "Listening on named pipe %s", fn);
+
 #endif
 
 	return fd;
@@ -210,7 +217,7 @@ static void sock_disconnect(conn_t *conn)
 	close(conn->fd);
 #else
 	/* FIXME not sure if this is the right way to close a connection */
-	if( conn->read_overlapped.hEvent != INVALID_HANDLE_VALUE) {
+	if (conn->read_overlapped.hEvent != INVALID_HANDLE_VALUE) {
 		CloseHandle(conn->read_overlapped.hEvent);
 		conn->read_overlapped.hEvent = INVALID_HANDLE_VALUE;
 	}
@@ -301,11 +308,11 @@ static void send_to_all(const char *fmt, ...)
 
 		if ((ret < 1) || (ret != (ssize_t)buflen)) {
 #ifndef WIN32
-			upsdebug_with_errno(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
+			upsdebug_with_errno(0, "WARNING: %s: write %" PRIuSIZE " bytes to "
 				"socket %d failed (ret=%" PRIiSIZE "), disconnecting.",
 				__func__, buflen, (int)conn->fd, ret);
 #else
-			upsdebug_with_errno(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
+			upsdebug_with_errno(0, "WARNING: %s: write %" PRIuSIZE " bytes to "
 				"handle %p failed (ret=%" PRIiSIZE "), disconnecting.",
 				__func__, buflen, conn->fd, ret);
 #endif
@@ -324,7 +331,7 @@ static void send_to_all(const char *fmt, ...)
 			dstate_setinfo("driver.parameter.synchronous", "%s",
 				(do_synchronous==1)?"yes":((do_synchronous==0)?"no":"auto"));
 		} else {
-			upsdebugx(6, "%s: write %" PRIiSIZE " bytes to socket %d succeeded "
+			upsdebugx(6, "%s: write %" PRIuSIZE " bytes to socket %d succeeded "
 				"(ret=%" PRIiSIZE "): %s",
 				__func__, buflen, conn->fd, ret, buf);
 		}
@@ -395,11 +402,11 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 		/* Hacky bugfix: throttle down for upsd to read that */
 #ifndef WIN32
 		upsdebug_with_errno(1, "%s: had to throttle down to retry "
-			"writing %" PRIiSIZE " bytes to socket %d (ret=%" PRIiSIZE ") : %s",
+			"writing %" PRIuSIZE " bytes to socket %d (ret=%" PRIiSIZE ") : %s",
 			__func__, buflen, (int)conn->fd, ret, buf);
 #else
 		upsdebug_with_errno(1, "%s: had to throttle down to retry "
-			"writing %" PRIiSIZE " bytes to handle %p (ret=%" PRIiSIZE ") : %s",
+			"writing %" PRIuSIZE " bytes to handle %p (ret=%" PRIiSIZE ") : %s",
 			__func__, buflen, conn->fd, ret, buf);
 #endif
 		usleep(200);
@@ -421,11 +428,11 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 
 	if ((ret < 1) || (ret != (ssize_t)buflen)) {
 #ifndef WIN32
-		upsdebug_with_errno(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
+		upsdebug_with_errno(0, "WARNING: %s: write %" PRIuSIZE " bytes to "
 			"socket %d failed (ret=%" PRIiSIZE "), disconnecting.",
 			__func__, buflen, (int)conn->fd, ret);
 #else
-		upsdebug_with_errno(0, "WARNING: %s: write %" PRIiSIZE " bytes to "
+		upsdebug_with_errno(0, "WARNING: %s: write %" PRIuSIZE " bytes to "
 			"handle %p failed (ret=%" PRIiSIZE "), disconnecting.",
 			__func__, buflen, conn->fd, ret);
 #endif
@@ -446,11 +453,11 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 		return 0;	/* failed */
 	} else {
 #ifndef WIN32
-		upsdebugx(6, "%s: write %" PRIiSIZE " bytes to socket %d succeeded "
+		upsdebugx(6, "%s: write %" PRIuSIZE " bytes to socket %d succeeded "
 			"(ret=%" PRIiSIZE "): %s",
 			__func__, buflen, conn->fd, ret, buf);
 #else
-		upsdebugx(6, "%s: write %" PRIiSIZE " bytes to handle %p succeeded "
+		upsdebugx(6, "%s: write %" PRIuSIZE " bytes to handle %p succeeded "
 			"(ret=%" PRIiSIZE "): %s",
 			__func__, buflen, conn->fd, ret, buf);
 #endif
@@ -855,7 +862,16 @@ static int sock_arg(conn_t *conn, size_t numarg, char **arg)
 			return 1;
 		}
 
-		upslogx(LOG_NOTICE, "Got INSTCMD, but driver lacks a handler");
+		if (cmdparam) {
+			upslogx(LOG_NOTICE,
+				"Got INSTCMD '%s' '%s', but driver lacks a handler",
+				NUT_STRARG(cmdname), NUT_STRARG(cmdparam));
+		} else {
+			upslogx(LOG_NOTICE,
+				"Got INSTCMD '%s', but driver lacks a handler",
+				NUT_STRARG(cmdname));
+		}
+
 		return 1;
 	}
 
@@ -942,7 +958,8 @@ static void sock_read(conn_t *conn)
 
 	if (ret == 0) {
 		int	flags = fcntl(conn->fd, F_GETFL), is_closed = 0;
-		upsdebugx(2, "%s: read() returned 0; flags=%04X O_NDELAY=%04X", __func__, flags, O_NDELAY);
+		upsdebugx(2, "%s: read() returned 0; flags=%04X O_NDELAY=%04X",
+			__func__, (unsigned int)flags, (unsigned int)O_NDELAY);
 		if (flags & O_NDELAY || O_NDELAY == 0) {
 			/* O_NDELAY with zero bytes means nothing to read but
 			 * since read() follows a successful select() with
@@ -1064,7 +1081,7 @@ static void sock_close(void)
 
 char * dstate_init(const char *prog, const char *devname)
 {
-	char	sockname[SMALLBUF];
+	char	sockname[NUT_PATH_MAX];
 
 #ifndef WIN32
 	/* do this here for now */
@@ -1728,7 +1745,7 @@ void alarm_set(const char *buf)
 	if (ret < 0) {
 		/* Should we also try to print the potentially unusable buf?
 		 * Generally - likely not. But if it is short enough...
-		 * Note: LARGEBUF was the original limit mismatched vs alarm_buf
+		 * Note: LARGEBUF was the original limit mismatched vs. alarm_buf
 		 * size before PR #986.
 		 */
 		char	alarm_tmp[LARGEBUF];
@@ -2088,6 +2105,11 @@ void dstate_dump(void)
 	upsdebugx(3, "Entering %s", __func__);
 
 	node = (const st_tree_t *)dstate_getroot();
+	fflush(stderr);
 
 	dstate_tree_dump(node);
+
+	/* Make sure it lands in one piece and is logged where called */
+	fflush(stdout);
+	fflush(stderr);
 }

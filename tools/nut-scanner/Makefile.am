@@ -100,7 +100,7 @@ libnutscan_la_LDFLAGS += -version-info 2:6:0
 # copies of "nut_debug_level" making fun of our debug-logging attempts.
 # One solution to tackle if needed for those cases would be to make some
 # dynamic/shared libnutcommon (etc.)
-libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebug|fatalx|fatal_with_errno|xcalloc|xbasename|snprintfcat|max_threads|curr_threads|nut_report_config_flags|upsdebugx_report_search_paths|nut_prepare_search_paths|print_banner_once)'
+libnutscan_la_LDFLAGS += -export-symbols-regex '^(nutscan_|nut_debug_level|s_upsdebug|fatalx|fatal_with_errno|xcalloc|xbasename|snprintfcat|max_threads|curr_threads|nut_report_config_flags|upsdebugx_report_search_paths|nut_prepare_search_paths|print_banner_once|suggest_doc_links)'
 libnutscan_la_CFLAGS = \
 			-I$(top_builddir)/clients -I$(top_srcdir)/clients \
 			-I$(top_builddir)/include -I$(top_srcdir)/include \
@@ -114,9 +114,21 @@ nut_scanner_CFLAGS = \
 			-I$(top_builddir)/include -I$(top_srcdir)/include
 nut_scanner_LDADD = libnutscan.la
 
+# Hack to allow correct RPATH/RUNPATH like /usr/lib/mps/64 (Mozilla NSS)
+# to be used on Solaris/illumos and similar platforms. For more details,
+# see https://github.com/networkupstools/nut/issues/2674 but in short -
+# we know the libs and options from pkg-config, and then they are well
+# embedded into libnutscan.la, and then the -R/some/path options are
+# chopped away by libtool when linking the program (while for some reason
+# it adds the libraries wanted by libnutscan.la directly as libs wanted
+# by the program, and ALSO they have a link chain through the shared lib).
+# I'd argue this is a libtool bug, but here's a workaround that works...
+nut_scanner_LDFLAGS = $(AM_LDFLAGS)
+
 if WITH_SSL
   libnutscan_la_CFLAGS += $(LIBSSL_CFLAGS)
   libnutscan_la_LIBADD += $(LIBSSL_LIBS)
+  nut_scanner_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH)
 endif WITH_SSL
 if WITH_USB
   libnutscan_la_CFLAGS += $(LIBUSB_CFLAGS)

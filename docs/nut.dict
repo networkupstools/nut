@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3220 utf-8
+personal_ws-1.1 en 3278 utf-8
 AAC
 AAS
 ABI
@@ -22,6 +22,7 @@ AES
 AFE
 AGM
 AIX
+ALARMCRITICAL
 ALTROOT
 AMETEK
 APC's
@@ -46,6 +47,7 @@ Ablerex
 AcceptEnv
 ActivePower
 AdMiN
+Adoptium
 Affero
 Agrain
 Albanese
@@ -127,6 +129,7 @@ BlackOut
 BladeUPS
 BlueOcean
 Bo
+Bocchi
 Bohe
 Borns
 Borri
@@ -313,6 +316,7 @@ ENDFOR
 ENV
 EOC
 EOF
+EOL
 EOLed
 EPEL
 EPERM
@@ -320,6 +324,7 @@ EPFCLCD
 EPO
 EPS
 ESC
+ESS
 ESV
 ESXi
 ETIME
@@ -334,6 +339,7 @@ Effekta
 Egys
 Ekkehard
 Electrys
+Eletronicos
 Elio
 Elizarov
 Eltek
@@ -547,6 +553,7 @@ KOLFF
 KRT
 KRTL
 KRTS
+KSTAR
 KTTS
 Kain
 Kaminski
@@ -601,6 +608,7 @@ LOADPCT
 LOCKFN
 LOCKNAME
 LOTRANS
+LTDA
 LTS
 LUA
 LVM
@@ -640,6 +648,7 @@ MDigest
 MEC
 MEGATAEC
 MERCHANTABILITY
+MF
 MH
 MIBs
 MIMode
@@ -677,6 +686,7 @@ Martinezgarza
 Martín
 Marzouk
 Massimo
+Masterpower
 Matthijs
 MaxLinear
 McKinnon
@@ -737,13 +747,16 @@ NONBLOCK
 NONUT
 NOP
 NOPARENT
+NOTALARM
 NOTBYPASS
 NOTCAL
+NOTECO
 NOTIFYCMD
 NOTIFYFLAG
 NOTIFYFLAGS
 NOTIFYMSG
 NOTOFF
+NOTOTHER
 NQA
 NTP
 NUT's
@@ -769,6 +782,7 @@ Neus
 Niels
 Niklas
 Niro
+Nobreak
 Nobreaks
 Nom
 NotePad
@@ -995,6 +1009,7 @@ RMXL
 RNF
 RNG
 ROF
+RPATH
 RPC
 RPMdrake
 RPT
@@ -1154,6 +1169,8 @@ Sistem
 Sistemas
 SlackPack
 Slackware
+SlaveComputer
+SlaveVersion
 SmartBoost
 SmartNUT
 SmartOnline
@@ -1232,6 +1249,8 @@ Technorama
 Tecnoware
 Tefft
 Telecom
+Temurin
+Termux
 Teurlings
 Thanos
 Thecus
@@ -1357,6 +1376,7 @@ Waldie
 WantedBy
 WatchdogSec
 Waveshare
+Wcovered
 WebFreak
 Werror
 Weverything
@@ -1364,12 +1384,14 @@ Wextra
 WhizBang
 WiX
 Wikipedia
+Willian
 WinMerge
 WinNUT
 WinPower
 Wireshark
 Wl
 Wrede
+Wunreachable
 XAU
 XC
 XCP
@@ -1465,6 +1487,7 @@ apcsmart
 apctest
 apcupsd
 aphel
+api
 apinames
 appveyor
 ar
@@ -1600,6 +1623,8 @@ bullseye
 busport
 busybox
 bv
+bypassOff
+bypassOn
 cStandard
 cablepower
 calloc
@@ -1695,8 +1720,10 @@ cppnit
 cppunit
 cpqpower
 cpsups
+cpu
 cr
 crestfactor
+crit
 criticality
 crlf
 cron
@@ -1763,6 +1790,7 @@ desc
 deschis
 descr
 desde
+designator
 dev
 devctl
 devd
@@ -1836,6 +1864,7 @@ ePDUs
 eaton
 ec
 eco
+ecomode
 edb
 editorconfig
 edl
@@ -1864,6 +1893,7 @@ epdu
 eq
 errno
 esac
+essmode
 esupssmart
 et
 etapro
@@ -1885,6 +1915,7 @@ extradata
 fabula
 facto
 fallthrough
+fasttrack
 fatalx
 fc
 fcb
@@ -1959,6 +1990,7 @@ getopt
 gettext
 gettextize
 getvar
+gif
 gitcache
 github
 gitignore
@@ -2017,14 +2049,17 @@ hpe
 hpux
 href
 htaccess
+htm
 html
 htmlpath
 http
 httpd
 https
 huawei
+hudson
 hunnox
 hwdb
+hwinfo
 hwmon
 hwmonX
 hypervisor
@@ -2034,6 +2069,7 @@ iDialog
 iDowell
 iManufacturer
 iPlug
+iProduct
 iSerial
 iUSB
 ib
@@ -2077,6 +2113,7 @@ initups
 inline
 inlined
 innotech
+innovart
 inode
 inplace
 installable
@@ -2233,6 +2270,7 @@ lifecycle
 linevoltage
 linkdoc
 linksingledoc
+linksrcdoc
 linux
 linuxdoc
 lipo
@@ -2413,6 +2451,7 @@ newvictronups
 nf
 ng
 nhnl
+nhs
 nielchiano
 nitram
 nl
@@ -2424,6 +2463,7 @@ nn
 nnn
 noAuthNoPriv
 nobody's
+nobreak
 nobt
 nodev
 nodownload
@@ -2451,11 +2491,13 @@ novendor
 nowait
 nowarn
 np
+nspr
 nss
 nuget
 num
 numOfBytesFromUPS
 numa
+numbatteries
 numlogins
 numq
 nutclient
@@ -2508,6 +2550,7 @@ optiups
 oq
 os
 ostream
+other's
 otheruser
 outliers
 ovmf
@@ -2536,6 +2579,7 @@ pe
 peasy
 peername
 pem
+perc
 perl
 pfSense
 pfexec
@@ -2729,6 +2773,7 @@ screenshots
 scriptname
 sd
 sdcmd
+sdcommands
 sddelay
 sdk
 sdl
@@ -2751,6 +2796,7 @@ sendmail
 sendsignal
 sendsignalfn
 sendsignalpid
+senoidal
 sequentialized
 ser
 seria
@@ -2824,6 +2870,7 @@ something's
 sp
 spanish
 sparc
+sparcv
 spectype
 spellcheck
 splitaddr
@@ -2881,6 +2928,7 @@ subdirectories
 subdirectory
 subdriver
 subdriver's
+subdrivername
 subdrivers
 subdrv
 sublicense
@@ -2891,6 +2939,7 @@ subnet
 subnets
 subtree
 sudo
+suggestsrcdoc
 suid
 suppressions
 suseconds
@@ -2919,6 +2968,7 @@ syslogd
 systemctl
 systemd
 systemdshutdowndir
+systemdsystempresetdir
 systemdsystemunitdir
 systemdtmpfilesdir
 systemtest
@@ -2949,8 +2999,10 @@ th
 timeframe
 timehead
 timername
+timespec
 timestamp
 timeticks
+timeval
 tios
 tmp
 tmpfiles
@@ -2979,6 +3031,7 @@ ttyc
 ttymode
 ttyp
 tuple
+tuples
 turnon
 tv
 tw
@@ -3049,6 +3102,7 @@ upsdebugx
 upsdev
 upsdrv
 upsdrvctl
+upsdrvquery
 upsdrvsvcctl
 upserror
 upsfetch
@@ -3064,6 +3118,7 @@ upslogx
 upsmon
 upsmon's
 upsname
+upsnotify
 upsonbatt
 upspass
 upspasswd
@@ -3086,6 +3141,8 @@ usbhid
 usbif
 usbinfo
 usbmisc
+usbsubdriver
+usbsubdrvname
 usbups
 usbus
 usd
@@ -3119,6 +3176,7 @@ variadic
 varlow
 varname
 varvalue
+vbat
 vbatt
 vc
 vendorid

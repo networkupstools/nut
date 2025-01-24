@@ -275,6 +275,23 @@ BYPASS;; UPS on bypass (powered, not protecting)
 
 NOTBYPASS;; UPS no longer on bypass
 
+ECO;; UPS in ECO or similar mode (as defined and named by vendor);
+for more details see linkman:upsmon[8].
+
+NOTECO;; UPS no longer in ECO mode (see above)
+
+ALARM;; UPS has one or more active alarms (check ups.alarm);
+for this notification, the `message` can contain a second `%s` placeholder
+to substitute the current value of `ups.alarm`.
+
+NOTALARM;; UPS is no longer in an alarm state (no active alarms)
+
+OTHER;; UPS has at least one unclassified `ups.status` token;
+for this notification, the `message` can contain a second `%s` placeholder
+to substitute the current collection of such tokens.
+
+NOTOTHER;; UPS has no unclassified status tokens anymore
+
 SUSPEND_STARTING;; OS is entering sleep/suspend/hibernate mode
 
 SUSPEND_FINISHED;; OS just finished sleep/suspend/hibernate mode,
@@ -409,6 +426,21 @@ generate a NOTIFY_REPLBATT event.  By default, this happens every 43200
 seconds (12 hours).
 +
 If you need another value, set it here.
+
+*ALARMCRITICAL* '0 | 1'::
+
+NUT normally considers UPS with active alarms as volatile, meaning
+they are observed more closely and may be considered critical/dead
+earlier than in other regular UPS statuses. This is especially true
+for no-communication situations, where UPS in an `ALARM` status will
+be considered lost and system shutdowns may be triggered as a product.
++
+As there is no common standard for what constitutes an alarm, such
+alarm states may in fact be mundane in nature and the behavior above
+unwanted due to possibly resulting in unwarranted system shutdowns.
++
+When this setting is disabled, `upsmon` will consider a UPS in an alarm
+state as not volatile and make it treat the `ALARM` status as any other.
 
 *RUN_AS_USER* 'username'::
 

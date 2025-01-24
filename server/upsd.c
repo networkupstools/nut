@@ -157,7 +157,7 @@ static HANDLE		mutex = INVALID_HANDLE_VALUE;
 static handler_t	*handler = NULL;
 
 	/* pid file */
-static char	pidfn[SMALLBUF];
+static char	pidfn[NUT_PATH_MAX];
 
 	/* set by signal handlers */
 static int	reload_flag = 0, exit_flag = 0;
@@ -1838,6 +1838,8 @@ static void help(const char *arg_progname)
 	printf("  -6		IPv6 only\n");
 
 	nut_report_config_flags();
+
+	printf("\n%s", suggest_doc_links(progname, "ups.conf, upsd.conf and upsd.users"));
 
 	exit(EXIT_SUCCESS);
 }

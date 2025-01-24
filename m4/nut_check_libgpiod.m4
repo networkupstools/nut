@@ -7,11 +7,17 @@ AC_DEFUN([NUT_CHECK_LIBGPIO],
 [
 if test -z "${nut_have_gpio_seen}"; then
 	nut_have_gpio_seen=yes
-	NUT_CHECK_PKGCONFIG
+	AC_REQUIRE([NUT_CHECK_PKGCONFIG])
 
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"
 	LIBS_ORIG="${LIBS}"
+	CFLAGS=""
+	LIBS=""
+	depCFLAGS=""
+	depLIBS=""
+
+	# Store implementation (if any) to be reported by configure.ac:
 	nut_gpio_lib=""
 
 	AS_IF([test x"$have_PKG_CONFIG" = xyes],
@@ -41,16 +47,17 @@ if test -z "${nut_have_gpio_seen}"; then
 			AC_MSG_ERROR(invalid option --with(out)-gpio-includes - see docs/configure.txt)
 			;;
 		*)
-			CFLAGS="${withval}"
+			depCFLAGS="${withval}"
 			;;
 		esac
 	], [
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[CFLAGS="`$PKG_CONFIG --silence-errors --cflags libgpiod 2>/dev/null`" || CFLAGS="-I/usr/include -I/usr/local/include"],
-			[CFLAGS="-I/usr/include -I/usr/local/include"]
+			[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags libgpiod 2>/dev/null`" \
+			 || depCFLAGS="-I/usr/include -I/usr/local/include"],
+			[depCFLAGS="-I/usr/include -I/usr/local/include"]
 		)]
 	)
-	AC_MSG_RESULT([${CFLAGS}])
+	AC_MSG_RESULT([${depCFLAGS}])
 
 	AC_MSG_CHECKING(for libgpiod ldflags)
 	AC_ARG_WITH(gpio-libs,
@@ -61,27 +68,34 @@ if test -z "${nut_have_gpio_seen}"; then
 			AC_MSG_ERROR(invalid option --with(out)-gpio-libs - see docs/configure.txt)
 			;;
 		*)
-			LIBS="${withval}"
+			depLIBS="${withval}"
 			;;
 		esac
 	], [
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[LIBS="`$PKG_CONFIG --silence-errors --libs libgpiod 2>/dev/null`" || LIBS="-lgpiod"],
-			[LIBS="-lgpiod"]
+			[depLIBS="`$PKG_CONFIG --silence-errors --libs libgpiod 2>/dev/null`" \
+			 || depLIBS="-lgpiod"],
+			[depLIBS="-lgpiod"]
 		)]
 	)
-	AC_MSG_RESULT([${LIBS}])
+	AC_MSG_RESULT([${depLIBS}])
 
 	dnl check if gpiod is usable
+	CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
+	LIBS="${LIBS_ORIG} ${depLIBS}"
 	AC_CHECK_HEADERS(gpiod.h, [nut_have_gpio=yes], [nut_have_gpio=no], [AC_INCLUDES_DEFAULT])
 	AC_CHECK_FUNCS(gpiod_chip_open_by_name gpiod_chip_close, [nut_gpio_lib="libgpiod"], [nut_have_gpio=no])
 
 	if test "${nut_have_gpio}" = "yes"; then
-		LIBGPIO_CFLAGS="${CFLAGS}"
-		LIBGPIO_LIBS="${LIBS}"
+		LIBGPIO_CFLAGS="${depCFLAGS}"
+		LIBGPIO_LIBS="${depLIBS}"
 	else
+		dnl FIXME: Report "none" here?
 		nut_gpio_lib=""
 	fi
+
+	unset CFLAGS
+	unset LIBS
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"

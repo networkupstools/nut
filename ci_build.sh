@@ -1043,6 +1043,27 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                         echo "WARNING: Seems we are running with gcc-4.x or older on $CI_OS_NAME, which last had known issues with libgd; disabling CGI for this build"
                         CANBUILD_LIBGD_CGI=no
                         ;;
+                    *)
+                        case "${ARCH}${BITS}${ARCH_BITS}" in
+                            *64*|*sparcv9*) ;;
+                            *)
+                                # GCC-7 (maybe other older compilers) could default
+                                # to 32-bit builds, and the 32-bit libfontconfig.so
+                                # and libfreetype.so are absent for some years now
+                                # (while libgd.so still claims to exist).
+                                echo "WARNING: Seems we are running with gcc on $CI_OS_NAME, which last had known issues with libgd on non-64-bit builds; making CGI optional for this build"
+                                CANBUILD_LIBGD_CGI=auto
+                                ;;
+                        esac
+                        ;;
+                esac
+            else
+                case "${ARCH}${BITS}${ARCH_BITS}" in
+                    *64*|*sparcv9*) ;;
+                    *)
+                        echo "WARNING: Seems we are running with $COMPILER_FAMILY on $CI_OS_NAME, which last had known issues with libgd on non-64-bit builds; making CGI optional for this build"
+                        CANBUILD_LIBGD_CGI=auto
+                        ;;
                 esac
             fi
         fi
@@ -1060,7 +1081,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                     SYS_PKG_CONFIG_PATH="/usr/lib/32/pkgconfig:/usr/lib/pkgconfig:/usr/lib/i86pc/pkgconfig:/usr/lib/i386/pkgconfig:/usr/lib/sparcv7/pkgconfig"
                     ;;
                 *)
-                    case "$ARCH$BITS" in
+                    case "${ARCH}${BITS}${ARCH_BITS}" in
                         *64*)
                             SYS_PKG_CONFIG_PATH="/usr/lib/64/pkgconfig:/usr/lib/amd64/pkgconfig:/usr/lib/sparcv9/pkgconfig:/usr/lib/pkgconfig"
                             ;;
@@ -1181,6 +1202,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # Just make sure relevant install recipes are tested:
     CONFIG_OPTS+=("--with-nut_monitor=force")
     CONFIG_OPTS+=("--with-pynut=auto")
+
+    # Primarily here to ensure libusb-1.0 use on MSYS2/mingw
+    # when 0.1 is available too
+    if [ "${CANBUILD_WITH_LIBMODBUS_USB-}" = yes ] ; then
+        CONFIG_OPTS+=("--with-modbus+usb=yes")
+    fi
 
     # Similarly for nut-scanner which requires libltdl which
     # is not ubiquitous on CI workers. So unless agent labels
@@ -1323,7 +1350,9 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             if [ "${CANBUILD_LIBGD_CGI-}" != "no" ] && [ "${BUILD_LIBGD_CGI-}" != "auto" ]  ; then
                 # Currently --with-all implies this, but better be sure to
                 # really build everything we can to be certain it builds:
-                if $PKG_CONFIG --exists libgd || $PKG_CONFIG --exists libgd2 || $PKG_CONFIG --exists libgd3 || $PKG_CONFIG --exists gdlib || $PKG_CONFIG --exists gd ; then
+                if [ "${CANBUILD_LIBGD_CGI-}" != "auto" ] && (
+                   $PKG_CONFIG --exists libgd || $PKG_CONFIG --exists libgd2 || $PKG_CONFIG --exists libgd3 || $PKG_CONFIG --exists gdlib || $PKG_CONFIG --exists gd 
+                ) ; then
                     CONFIG_OPTS+=("--with-cgi=yes")
                 else
                     # Note: CI-wise, our goal IS to test as much as we can
@@ -1509,7 +1538,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # below depending on scenario
     autogen_get_CONFIGURE_SCRIPT
 
-    if [ "$NO_PKG_CONFIG" == "true" ] && [ "$CI_OS_NAME" = "linux" ] && (command -v dpkg) ; then
+    if [ "$NO_PKG_CONFIG" = "true" ] && [ "$CI_OS_NAME" = "linux" ] && (command -v dpkg) ; then
         # This should be done in scratch containers...
         echo "NO_PKG_CONFIG==true : BUTCHER pkg-config package for this test case" >&2
         sudo dpkg -r --force all pkg-config
@@ -1968,7 +1997,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             done
 
             # TODO: Similar loops for other variations like TESTING,
-            # MGE SHUT vs other serial protocols...
+            # MGE SHUT vs. other serial protocols...
 
             if can_clean_check ; then
                 echo "=== One final try for optional_maintainer_clean_check:"
@@ -2036,7 +2065,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     [ -n "$CI_TIME" ] && echo "`date`: listing files installed into the custom DESTDIR..." && \
         find "$INST_PREFIX" -ls || true
 
-    if [ "$DO_DISTCHECK" == "no" ] ; then
+    if [ "$DO_DISTCHECK" = "no" ] ; then
         echo "Skipping distcheck (doc generation is disabled, it would fail)"
     else
         [ -z "$CI_TIME" ] || echo "`date`: Starting distcheck of currently tested project..."
@@ -2108,6 +2137,12 @@ bindings)
         --with-nut_monitor=auto --with-pynut=auto \
         --disable-force-nut-version-header \
         --enable-check-NIT --enable-maintainer-mode)
+
+    # Primarily here to ensure libusb-1.0 use on MSYS2/mingw
+    # when 0.1 is available too
+    if [ "${CANBUILD_WITH_LIBMODBUS_USB-}" = yes ] ; then
+        CONFIG_OPTS+=("--with-modbus+usb=yes")
+    fi
 
     # Not default for parameter-less build, to prevent "make check-NIT"
     # from somehow interfering with the running daemons.

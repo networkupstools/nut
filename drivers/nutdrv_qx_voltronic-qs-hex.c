@@ -224,19 +224,19 @@ static int	voltronic_qs_hex_preprocess_qs_answer(item_t *item, const int len)
 			switch (item->answer[i + 1])
 			{
 			case 0x00:	/* Escaped because: CR */
-				snprintfcat(refined, sizeof(refined), "%02x", 0x0D);
+				snprintfcat(refined, sizeof(refined), "%02x", (unsigned int)0x0D);
 				break;
 			case 0x01:	/* Escaped because: XON */
-				snprintfcat(refined, sizeof(refined), "%02x", 0x11);
+				snprintfcat(refined, sizeof(refined), "%02x", (unsigned int)0x11);
 				break;
 			case 0x02:	/* Escaped because: XOFF */
-				snprintfcat(refined, sizeof(refined), "%02x", 0x13);
+				snprintfcat(refined, sizeof(refined), "%02x", (unsigned int)0x13);
 				break;
 			case 0x03:	/* Escaped because: LF */
-				snprintfcat(refined, sizeof(refined), "%02x", 0x0A);
+				snprintfcat(refined, sizeof(refined), "%02x", (unsigned int)0x0A);
 				break;
 			case 0x04:	/* Escaped because: space */
-				snprintfcat(refined, sizeof(refined), "%02x", 0x20);
+				snprintfcat(refined, sizeof(refined), "%02x", (unsigned int)0x20);
 				break;
 			default:
 				if (token != 10 && token != 11)

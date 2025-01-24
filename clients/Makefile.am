@@ -25,12 +25,12 @@ $(top_builddir)/common/libparseconf.la: dummy
 
 LDADD_FULL = $(top_builddir)/common/libcommon.la libupsclient.la $(NETLIBS)
 if WITH_SSL
-  LDADD_FULL += $(LIBSSL_LIBS)
+  LDADD_FULL += $(LIBSSL_LIBS) $(LIBSSL_LDFLAGS_RPATH)
 endif
 
 LDADD_CLIENT = $(top_builddir)/common/libcommonclient.la libupsclient.la $(NETLIBS)
 if WITH_SSL
-  LDADD_CLIENT += $(LIBSSL_LIBS)
+  LDADD_CLIENT += $(LIBSSL_LIBS) $(LIBSSL_LDFLAGS_RPATH)
 endif
 
 # by default, link programs in this directory with
@@ -79,6 +79,7 @@ upsc_SOURCES = upsc.c upsclient.h
 upscmd_SOURCES = upscmd.c upsclient.h
 upsrw_SOURCES = upsrw.c upsclient.h
 upslog_SOURCES = upslog.c upsclient.h upslog.h
+upslog_LDADD = $(LDADD_FULL)
 upsmon_SOURCES = upsmon.c upsmon.h upsclient.h
 upsmon_LDADD = $(LDADD_FULL)
 if HAVE_WINDOWS_SOCKETS
@@ -102,7 +103,7 @@ if HAVE_WINDOWS_SOCKETS
   libupsclient_la_LIBADD += -lws2_32
 endif
 if WITH_SSL
-  libupsclient_la_LIBADD += $(LIBSSL_LIBS)
+  libupsclient_la_LIBADD += $(LIBSSL_LDFLAGS_RPATH) $(LIBSSL_LIBS)
 endif
 
 # Below we set API versions of public libraries

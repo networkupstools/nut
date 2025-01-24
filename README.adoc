@@ -7,7 +7,7 @@ Network UPS Tools Overview
 //GH_MARKUP_1095//ifndef::top_srcdir[]
 //GH_MARKUP_1095//include::docs/asciidoc-vars.conf[]
 //GH_MARKUP_1095//endif::top_srcdir[]
-//GH_MARKUP_1095_INCLUDE_BEGIN//7c5e90132 (2023-09-13) docs/asciidoc-vars.conf: fence against re-definitions of website-url and (top_)(src|build)dir attributes
+//GH_MARKUP_1095_INCLUDE_BEGIN//7e01bd198 (2024-10-20) docs/asciidoc-vars.conf: try defining linksrcdoc macro
 ifndef::asciidoc-vars-nut-included[]
 :asciidoc-vars-nut-included:	true
 // NOTE: The big block of comments and definitions below comes from
@@ -39,6 +39,8 @@ ifndef::asciidoc-vars-nut-included[]
 // with shortened names). For our classic documentation renditions, they
 // should resolve to properly defined macros from `docs/asciidoc.conf`
 // (usually named same as the variables defined here, for simplicity):
+// * `linksrcdoc` allows to refer to a source of documentation file
+//   relative to the root of NUT code base.
 // * `linkdoc` allows to refer to a file under `docs/` directory (or
 //   its nut-website rendition).
 // * `xref` substitutes the asciidoc shorthand '<< >>' syntax with
@@ -97,7 +99,7 @@ ifndef::top_builddir[]
 endif::top_builddir[]
 //
 //
-// Address links on GitHub vs docs
+// Address links on GitHub vs. docs
 // (note: 'env-github' attribute is set on GitHub)
 //
 // - when generating docs:
@@ -107,6 +109,10 @@ ifndef::env-github[]
 //     -> xref:<id>[<caption>]
 :xref:		xref:
 :x-s:
+//   * link to doc -> our macro
+//     syntax: {linksrcdoc}<document>
+//     -> linksrcdoc:<document>[]
+:linksrcdoc:	linksrcdoc:
 //   * link to doc -> our macro
 //     syntax: {linkdoc}<document>{ld-s}[<display title>]
 //     -> linkdoc:<document>[<display title>]
@@ -138,6 +144,10 @@ ifdef::env-github[]
 //     -> {website-url}docs/user-manual.chunked/<id>.html[<caption>]
 :xref:		{website-url}docs/user-manual.chunked/
 :x-s:		.html
+//   * link to doc -> our macro
+//     syntax: {linksrcdoc}<document>
+//     -> link:<document>[]
+:linksrcdoc:	link:{top_srcdir}/
 //   * link to doc -> link
 //     syntax: {linkdoc}<document>{ld-s}[<display title>]
 //     -> {website-url}docs/<document>.chunked/index.html[<display title>]

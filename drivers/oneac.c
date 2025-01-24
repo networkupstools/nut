@@ -30,7 +30,7 @@
  * History:
  * - 2 August 2024.  Bill Elliot
  * Just cleaned up formatting per current NUT standards.
- * 
+ *
  * - 7 February 2012.  Bill Elliot
  * Enhancing the driver for additional capabilities and later units.
  *
@@ -51,7 +51,7 @@ int setcmd(const char* varname, const char* setvalue);
 int instcmd(const char *cmdname, const char *extra);
 
 #define DRIVER_NAME	"Oneac EG/ON/OZ/OB UPS driver"
-#define DRIVER_VERSION	"0.83"
+#define DRIVER_VERSION	"0.84"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -125,7 +125,7 @@ static void do_battery_test(void)
 	{
 		snprintf(buffer, 3, "%s", DEFAULT_BAT_TEST_TIME);
 	}
-	else 
+	else
 	{
 		snprintf(buffer, 3, "%s", getval("testtime"));
 
@@ -816,7 +816,19 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	ser_send(upsfd, "%s", SHUTDOWN);
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	/* FIXME: before loop_shutdown_commands(), code directly called
+	 *  here was identical to "shutdown.reboot", while the driver
+	 *  shutdown should more reasonably be "shutdown.return" (when
+	 *  wall power is back) or "shutdown.stayoff". All of these are
+	 *  implemented in instcmd() here nominally (not sure if named
+	 *  correctly - better re-check on hardware).
+	 */
+	int	ret = do_loop_shutdown_commands("shutdown.reboot", NULL);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(ret == STAT_INSTCMD_HANDLED ? EF_EXIT_SUCCESS : EF_EXIT_FAILURE);
 }
 
 void upsdrv_help(void)
@@ -843,13 +855,13 @@ int instcmd(const char *cmdname, const char *extra)
 
 	upsdebugx(2, "In instcmd with %s and extra %s.", cmdname, extra);
 
-	if (!strcasecmp(cmdname, "test.failure.start")) 
+	if (!strcasecmp(cmdname, "test.failure.start"))
 	{
 		ser_send(upsfd,"%s%s",SIM_PWR_FAIL,COMMAND_END);
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	if (!strcasecmp(cmdname, "shutdown.return")) 
+	if (!strcasecmp(cmdname, "shutdown.return"))
 	{
 
 		i = atoi(dstate_getinfo("ups.delay.shutdown"));
@@ -869,25 +881,25 @@ int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	if(!strcasecmp(cmdname, "shutdown.reboot")) 
+	if(!strcasecmp(cmdname, "shutdown.reboot"))
 	{
 		ser_send(upsfd, "%s", SHUTDOWN);
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	if (!strcasecmp(cmdname, "shutdown.stop")) 
+	if (!strcasecmp(cmdname, "shutdown.stop"))
 	{
 		ser_send(upsfd, "%c%s", DELAYED_SHUTDOWN_PREFIX, COMMAND_END);
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	if (!strcasecmp(cmdname, "test.battery.start.quick")) 
+	if (!strcasecmp(cmdname, "test.battery.start.quick"))
 	{
 		do_battery_test();
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	if (!strcasecmp(cmdname, "test.battery.start.deep")) 
+	if (!strcasecmp(cmdname, "test.battery.start.deep"))
 	{
 		ser_send(upsfd, "%s%s", TEST_BATT_DEEP, COMMAND_END);
 		return STAT_INSTCMD_HANDLED;
@@ -907,31 +919,31 @@ int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	if (!strcasecmp(cmdname, "reset.input.minmax")) 
+	if (!strcasecmp(cmdname, "reset.input.minmax"))
 	{
 		ser_send(upsfd, "%c%s", RESET_MIN_MAX, COMMAND_END);
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	if (!strcasecmp(cmdname, "beeper.enable")) 
+	if (!strcasecmp(cmdname, "beeper.enable"))
 	{
 		ser_send(upsfd, "%c%c%s", SETX_BUZZER_PREFIX, BUZZER_ENABLED, COMMAND_END);
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	if (!strcasecmp(cmdname, "beeper.disable")) 
+	if (!strcasecmp(cmdname, "beeper.disable"))
 	{
 		ser_send(upsfd, "%c%c%s", SETX_BUZZER_PREFIX, BUZZER_DISABLED, COMMAND_END);
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	if (!strcasecmp(cmdname, "beeper.mute")) 
+	if (!strcasecmp(cmdname, "beeper.mute"))
 	{
 		ser_send(upsfd,"%c%c%s", SETX_BUZZER_PREFIX, BUZZER_MUTED, COMMAND_END);
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	if (!strcasecmp(cmdname, "test.panel.start")) 
+	if (!strcasecmp(cmdname, "test.panel.start"))
 	{
 		ser_send(upsfd,"%s%s", TEST_INDICATORS, COMMAND_END);
 		return STAT_INSTCMD_HANDLED;

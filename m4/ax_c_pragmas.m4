@@ -117,6 +117,33 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
   dnl In most cases, GCC pragmas are usable by both; in a few others, direct
   dnl use of `#ifdef __clang__` suffices.
   AS_IF([test "${CLANG}" = "yes"], [
+      AC_CACHE_CHECK([for pragma CLANG diagnostic ignored "-Wdeprecated-declarations"],
+        [ax_cv__pragma__clang__diags_ignored_deprecated_declarations],
+        [AC_COMPILE_IFELSE(
+          [AC_LANG_PROGRAM([[void func(void) {
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+}
+    ]], [])],
+          [ax_cv__pragma__clang__diags_ignored_deprecated_declarations=yes],
+          [ax_cv__pragma__clang__diags_ignored_deprecated_declarations=no]
+        )]
+      )
+      AS_IF([test "$ax_cv__pragma__clang__diags_ignored_deprecated_declarations" = "yes"],[
+        AC_DEFINE([HAVE_PRAGMA_CLANG_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS], 1, [define if your compiler has #pragma clang diagnostic ignored "-Wdeprecated-declarations"])
+      ])
+
+      AC_CACHE_CHECK([for pragma CLANG diagnostic ignored "-Wdeprecated-declarations" (outside functions)],
+        [ax_cv__pragma__clang__diags_ignored_deprecated_declarations_besidefunc],
+        [AC_COMPILE_IFELSE(
+          [AC_LANG_PROGRAM([[#pragma clang diagnostic ignored "-Wdeprecated-declarations"]], [])],
+          [ax_cv__pragma__clang__diags_ignored_deprecated_declarations_besidefunc=yes],
+          [ax_cv__pragma__clang__diags_ignored_deprecated_declarations_besidefunc=no]
+        )]
+      )
+      AS_IF([test "$ax_cv__pragma__clang__diags_ignored_deprecated_declarations_besidefunc" = "yes"],[
+        AC_DEFINE([HAVE_PRAGMA_CLANG_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS_BESIDEFUNC], 1, [define if your compiler has #pragma clang diagnostic ignored "-Wdeprecated-declarations" (outside functions)])
+      ])
+
       AC_CACHE_CHECK([for pragma CLANG diagnostic ignored "-Wunreachable-code-return"],
         [ax_cv__pragma__clang__diags_ignored_unreachable_code_return],
         [AC_COMPILE_IFELSE(

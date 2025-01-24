@@ -144,7 +144,8 @@ const char * Usage::s_text[] = {
 	"    <ups_ID> <driver> <port> [<key>=<value>]*",
 	"Notification types:",
 	"    ONLINE, ONBATT, LOWBATT, FSD, COMMOK, COMMBAD, SHUTDOWN, REPLBATT, NOCOMM, NOPARENT,",
-	"    CAL, NOTCAL, OFF, NOTOFF, BYPASS, NOTBYPASS, SUSPEND_STARTING, SUSPEND_FINISHED",
+	"    CAL, NOTCAL, OFF, NOTOFF, BYPASS, NOTBYPASS, ECO, NOTECO, ALARM, NOTALARM,",
+	"    OTHER, NOTOTHER, SUSPEND_STARTING, SUSPEND_FINISHED",
 	"Notification flags:",
 	"    SYSLOG, WALL, EXEC, IGNORE",
 	"User specification:",
@@ -199,6 +200,11 @@ void Usage::print(const std::string & bin) {
 	for (size_t i = 0; i < sizeof(s_text) / sizeof(char *); ++i) {
 		std::cerr << s_text[i] << std::endl;
 	}
+
+	std::cerr
+		/* << std::endl // last line of s_text is blank */
+		<< suggest_doc_links(bin.c_str(), nullptr);
+		/* Method output brings its own endl */
 }
 
 

@@ -30,6 +30,7 @@ upsd_SOURCES = upsd.c user.c conf.c netssl.c sstate.c desc.c		\
  upstype.h user-data.h user.h
 upsd_CFLAGS = $(AM_CFLAGS)
 upsd_LDADD = $(LDADD)
+upsd_LDFLAGS = $(AM_LDFLAGS)
 
 if WITH_WRAP
   upsd_CFLAGS += $(LIBWRAP_CFLAGS)
@@ -38,6 +39,7 @@ endif
 if WITH_SSL
   upsd_CFLAGS += $(LIBSSL_CFLAGS)
   upsd_LDADD += $(LIBSSL_LIBS)
+  upsd_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH)
 endif
 
 # Developer, troubleshooting, or odd automation aid tool:

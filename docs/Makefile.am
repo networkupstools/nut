@@ -70,6 +70,7 @@ IMAGE_LOGO_FILES = \
 	images/ci/OC_logo_merged_140x26.png
 
 IMAGE_LOGO_FILES_JENKINS_NUT = \
+	images/ci/ci-root.css \
 	images/ci/jenkins-nut-large-256px.png \
 	images/ci/jenkins-nut-large-squared.png \
 	images/ci/jenkins-nut-large.pdn \
@@ -348,28 +349,20 @@ CLEANFILES += $(top_builddir)/*.adoc-parsed *.adoc-parsed
 # before rendering into HTML/PDF.
 # Work around some documents that have originally included
 # the asciidoc markup (use double-hash to avoid conversion).
-
-DOCBUILD_FILTER_GITHUB_LINKS = { \
-    $(SED) \
-        -e 's%\(link:https*://github.com/networkupstools/[a-zA-Z0-9./-]*/[1-9][0-9]*/*\[[^]]*\)\#\([1-9][0-9]*\)%\1\#\#\2%g' \
-        -e 's%\(issue\) *\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/nut/issues/\2[\1 \#\#\2]\3%g' \
-        -e 's%\(PR\|pull request\) *\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/nut/pull/\2[\1 \#\#\2]\3%g' \
-        -e 's%\([[ ,]\)\#\([1-9][0-9]*\)\([^0-9]\|$$\)%\1link:https://github.com/networkupstools/nut/issues/\2[\#\#\2]\3%g' \
-        -e 's%\(issue\) networkupstools/\([^ ][^ ]*\)\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/\2/issues/\3[\1 \2\#\#\3]\4%g' \
-        -e 's%\(PR\|pull request\) *networkupstools/\([^ ][^ ]*\)\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/\2/pull/\3[\1 \2\#\#\3]\4%g' \
-        -e 's%\([[ ,]\)networkupstools/\([^ ][^ ]*\)\#\([1-9][0-9]*\)\([^0-9]\|$$\)%\1link:https://github.com/networkupstools/\2/issues/\3[\2\#\#\3]\4%g' \
-        -e 's%\#\(\#[1-9][0-9]*\)%\1%g' \
-; }
-
 # The $< is okay here, it is used in a suffix rule below
-DOCBUILD_CONVERT_GITHUB_LINKS = { \
-    echo "  DOC-ASCIIDOC-GITHUB-LINKS    Parsing GitHub link patterns $< => $@"; \
-    cat "$<" | $(DOCBUILD_FILTER_GITHUB_LINKS) > "$@.tmp.$$$$" \
-    && mv -f "$@.tmp.$$$$" "$@" \
-; }
-
 .adoc.adoc-parsed:
-	@$(DOCBUILD_CONVERT_GITHUB_LINKS)
+	@echo "  DOC-ASCIIDOC-GITHUB-LINKS    Parsing GitHub link patterns $< => $@"; \
+	 cat '$<' | { $(SED) \
+		-e 's%\(link:https*://github.com/networkupstools/[a-zA-Z0-9./-]*/[1-9][0-9]*/*\[[^]]*\)\#\([1-9][0-9]*\)%\1\#\#\2%g' \
+		-e 's%\(issue\) *\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/nut/issues/\2[\1 \#\#\2]\3%g' \
+		-e 's%\(PR\|pull request\) *\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/nut/pull/\2[\1 \#\#\2]\3%g' \
+		-e 's%\([[ ,]\)\#\([1-9][0-9]*\)\([^0-9]\|$$\)%\1link:https://github.com/networkupstools/nut/issues/\2[\#\#\2]\3%g' \
+		-e 's%\(issue\) networkupstools/\([^ ][^ ]*\)\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/\2/issues/\3[\1 \2\#\#\3]\4%g' \
+		-e 's%\(PR\|pull request\) *networkupstools/\([^ ][^ ]*\)\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/\2/pull/\3[\1 \2\#\#\3]\4%g' \
+		-e 's%\([[ ,]\)networkupstools/\([^ ][^ ]*\)\#\([1-9][0-9]*\)\([^0-9]\|$$\)%\1link:https://github.com/networkupstools/\2/issues/\3[\2\#\#\3]\4%g' \
+		-e 's%\#\(\#[1-9][0-9]*\)%\1%g' \
+	 ; } > "$@.tmp.$$$$" \
+	 && mv -f "$@.tmp.$$$$" "$@"
 
 $(top_builddir)/ChangeLog.adoc-parsed: $(top_builddir)/ChangeLog.adoc
 
@@ -378,7 +371,7 @@ $(top_builddir)/ChangeLog: dummy
 	@+echo "  DOC-CHANGELOG-GENERATE-WRAPPER	$@ : call parent Makefile to decide if (re-)generation is needed" \
 	 && cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
 
-# BSD Make dislikes the path resolution here and does not always populate "$<"
+# BSD Make dislikes the path resolution here and does not always populate '$<'
 # (and claims why: "Using $< in a non-suffix rule context is a GNUmake idiom"),
 # but it has a "$?" for "list of dependencies that are newer than the target".
 # For more details see https://man.freebsd.org/cgi/man.cgi
@@ -489,11 +482,15 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) \
 
 # Note we only remove the original target (if present), if it is a directory -
 # e.g. created by "html-chunked" targets.
+
+# NOTE: MKDIR_P may be defined via expanded $(top_builddir)/install-sh
+# so should be run from $(abs_builddir) to be safe, as we jump around
+# the build workspace
 DOCBUILD_BEGIN = { \
     if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
         rm -rf "./$${A2X_OUTDIR}" || true ; \
         test -d "$@" && rm -rf "$@" || true ; \
-        $(MKDIR_P) "./$${A2X_OUTDIR}" || exit ; \
+        _CWD="`pwd`" && (cd '$(abs_builddir)' && $(MKDIR_P) "$${_CWD}/$${A2X_OUTDIR}") || exit ; \
         case "$${A2X_OUTDIR}" in \
             tmp/pdf.*) ln -s ../../images "./$${A2X_OUTDIR}" ;; \
         esac; \
@@ -543,7 +540,7 @@ DOCBUILD_END = { \
 	+@A2X_OUTDIR="tmp/html-single.$(@F).$$$$" ; \
 	 echo "  DOC-HTML Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
-	 $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl "$(<D)/`basename '$(<F)' -prepped`" || RES=$$? ; \
+	 $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl '$<' || RES=$$? ; \
 	 $(DOCBUILD_END) ; \
 	 case "$(@F)" in \
 	    *ChangeLog*) if [ -s '$(top_builddir)/ChangeLog' ] ; then \
@@ -553,7 +550,7 @@ DOCBUILD_END = { \
 	                rm -f "$@"; \
 	                A2X_OUTDIR="tmp/html-single.$(@F).$$$$-retry" ; \
 	                $(DOCBUILD_BEGIN) ; RES=0; rm -f "`basename '$(@F)'`"-contentchecked || true ; \
-	                $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl "$(<D)/`basename '$(<F)' -prepped`" || RES=$$? ; \
+	                $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl '$<' || RES=$$? ; \
 	                $(DOCBUILD_END) ; \
 	                $(MAKE) $(AM_MAKEFLAGS) "`basename '$(@F)'`"-contentchecked || RES=$$? ; \
 	            fi ; \
@@ -566,7 +563,7 @@ DOCBUILD_END = { \
 	@A2X_OUTDIR="tmp/html-chunked.$(@F).$$$$" ; \
 	 echo "  DOC-HTML-CHUNKED Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
-	 $(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl "$(<D)/`basename '$(<F)' -prepped`" || RES=$$? ; \
+	 $(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl '$<' || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
 # Note: non-HTML a2x modes may ignore the destination directory
@@ -575,7 +572,7 @@ DOCBUILD_END = { \
 	@A2X_OUTDIR="tmp/pdf.$(@F).$$$$" ; \
 	 echo "  DOC-PDF  Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
-	 $(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 "$(<D)/`basename '$(<F)' -prepped`" || RES=$$? ; \
+	 $(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 '$<' || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
 # Used below for spellcheck and for .prep-src-docs
@@ -859,9 +856,18 @@ PREP_SRC = $(EXTRA_DIST) $(SPELLCHECK_SRC_DEFAULT)
 # path to locate the sources, so we end up with bogus trees under docs/.
 # Code below tries to detect and truncate this mess, including possible
 # source texts located in/under parent dirs.
+# We also handle man page links (section-aware) for platforms where they
+# differ from common defaults.
+# NOTE: MKDIR_P may be defined via expanded $(top_builddir)/install-sh
+# so should be run from $(abs_builddir) to be safe, as we jump around
+# the build workspace
 $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC)
 	@cd "$(@D)" || exit ; \
 	 linkroot="$(abs_builddir)" ; \
+	 MAN_SECTIONS_DEFAULT=false ; \
+	 if [ x"$(MAN_SECTION_API)$(MAN_SECTION_CFG)$(MAN_SECTION_CMD_SYS)$(MAN_SECTION_CMD_USR)" = x3581 ] ; then \
+	    MAN_SECTIONS_DEFAULT=true ; \
+	 fi ; \
 	 if test x"$(abs_srcdir)" = x"$(abs_builddir)" ; then \
 	    COUNT=0; \
 	    for F in $(PREP_SRC) ; do \
@@ -872,10 +878,16 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC)
 	                    cd "$(abs_top_builddir)" ; \
 	                fi ;; \
 	        esac ; \
-	        if ! test -e "$${F}-prepped" ; then \
-	            touch "$${F}-prepped" || exit ; \
-	            COUNT="`expr $$COUNT + 1`" ; \
-	        fi ; \
+	        if $$MAN_SECTIONS_DEFAULT ; then \
+	            cat ; \
+	        else \
+	            sed \
+	                -e 's,\(linkman:[^ []*\[\)3\],\1$(MAN_SECTION_API)],g' \
+	                -e 's,\(linkman:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
+	                -e 's,\(linkman:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \
+	                -e 's,\(linkman:[^ []*\[\)1\],\1$(MAN_SECTION_CMD_USR)],g' ; \
+	        fi < "$${F}" > "$${F}-prepped" || exit ; \
+	        COUNT="`expr $$COUNT + 1`" ; \
 	    done ; \
 	    if ! test -e "$@" ; then touch "$@" ; fi ; \
 	 else \
@@ -899,18 +911,38 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC)
 	                    cd "$(abs_top_builddir)" ; \
 	                fi ;; \
 	            "$(srcdir)"/*) F="`echo "$$F" | sed 's#^$(srcdir)/*#./#'`" ;; \
+	            */*) ;; \
+	            *) \
+	                linkroot="$(abs_builddir)" ; \
+	                linksrcroot="$(abs_srcdir)" ; \
+	                cd "$(abs_top_builddir)" ;; \
 	        esac ; \
 	        D="`dirname "$$F"`" ; \
-	        $(MKDIR_P) "$${linkroot}/$$D" || { rm -f "$@.working" ; exit 1 ; } ; \
+	        (cd '$(abs_builddir)' && $(MKDIR_P) "$${linkroot}/$$D") || { rm -f "$@.working" ; exit 1 ; } ; \
 	        if ! test -s "$${linkroot}/$$F" && test -s "$${linksrcroot}/$$F" ; then \
 	            echo "  LN     '$${linksrcroot}/$$F' => '$${linkroot}/$$F' (PWD = '`pwd`')" ; \
 	            ln -fs "$${linksrcroot}/$$F" "$${linkroot}/$$F" || { rm -f "$@.working" ; exit 1 ; } ; \
 	            COUNT="`expr $$COUNT + 1`" ; \
 	        fi ; \
-	        if ! test -e "$${linkroot}/$${F}-prepped" ; then \
-	            touch "$${linkroot}/$${F}-prepped" || { rm -f "$@.working" ; exit 1 ; } ; \
-	            COUNT="`expr $$COUNT + 1`" ; \
+	        case "$$F" in \
+	            *.txt|*.adoc) IS_TEXT=true ;; \
+	            *.*) IS_TEXT=false ;; \
+	            *) IS_TEXT=true ;; \
+	        esac; \
+	        if $$IS_TEXT ; then \
+	            grep -w linkman "$${linkroot}/$${F}" > /dev/null || IS_TEXT=false ; \
 	        fi ; \
+	        if $$MAN_SECTIONS_DEFAULT || ! $$IS_TEXT ; then \
+	            cat ; \
+	        else \
+	            sed \
+	                -e 's,\(linkman:[^ []*\[\)3\],\1$(MAN_SECTION_API)],g' \
+	                -e 's,\(linkman:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
+	                -e 's,\(linkman:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \
+	                -e 's,\(linkman:[^ []*\[\)1\],\1$(MAN_SECTION_CMD_USR)],g' ; \
+	        fi < "$${linkroot}/$${F}" > "$${linkroot}/$${F}-prepped" \
+	        || { rm -f "$@.working" ; exit 1 ; } ; \
+	        COUNT="`expr $$COUNT + 1`" ; \
 	    done ; \
 	 fi ; \
 	 if test "$$COUNT" -gt 0 -o ! -e "$@" ; then touch "$@" ; fi

@@ -23,7 +23,7 @@
 #include <libpowerman.h>	/* pm_err_t and other beasts */
 
 #define DRIVER_NAME	"Powerman PDU client driver"
-#define DRIVER_VERSION	"0.14"
+#define DRIVER_VERSION	"0.15"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -135,12 +135,29 @@ void upsdrv_initinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	/* FIXME: shutdown all outlets? */
-	upslogx(LOG_ERR, "shutdown not supported");
-	set_exit_flag(-1);
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
 
+	/*
+	 * WARNING:
+	 * This driver will probably never support this properly:
+	 * In order to be of any use, the driver should be called
+	 * near the end of the system halt script (or a service
+	 * management framework's equivalent, if any). By that
+	 * time we, in all likelyhood, won't have basic network
+	 * capabilities anymore, so we could never send this
+	 * command to the UPS. This is not an error, but rather
+	 * a limitation (on some platforms) of the interface/media
+	 * used for these devices.
+	 */
+
+	/* replace with a proper shutdown function */
+	/* FIXME: shutdown all outlets? */
 	/* OL: this must power cycle the load if possible */
 	/* OB: the load must remain off until the power returns */
+	upslogx(LOG_ERR, "shutdown not supported");
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 /*

@@ -69,9 +69,13 @@ NUT_MONITOR_COMMON = \
 	app/locale/it/LC_MESSAGES/NUT-Monitor.mo \
 	app/locale/ru/LC_MESSAGES/NUT-Monitor.mo
 
-PYNUT_COMMON = \
-	module/nut_telnetlib.py \
+PYNUT_COMMON_CODE = \
+	module/nut_telnetlib.py
+
+PYNUT_COMMON_MISC = \
 	module/README.adoc
+
+PYNUT_COMMON = $(PYNUT_COMMON_CODE) $(PYNUT_COMMON_MISC)
 
 # Note: we both distribute and install the generated *.mo translation files
 # so they are listed above and not in NUT_MONITOR_COMMON_TEMPLATE
@@ -176,21 +180,21 @@ endif WITH_NUT_MONITOR
 if WITH_PYNUT_PY
 pynut_py_sitedir = $(PYTHON_SITE_PACKAGES)
 pynut_py_site_DATA = $(PYNUT_GENERATED_NOEXEC)
-pynut_py_site_SCRIPTS = $(PYNUT_GENERATED_SCRIPT)
+pynut_py_site_SCRIPTS = $(PYNUT_GENERATED_SCRIPT) $(PYNUT_COMMON_CODE)
 endif
 
 
 if WITH_PYNUT_PY2
 pynut_py2_sitedir = $(PYTHON2_SITE_PACKAGES)
 pynut_py2_site_DATA = $(PYNUT_GENERATED_NOEXEC)
-pynut_py2_site_SCRIPTS = $(PYNUT_GENERATED_SCRIPT)
+pynut_py2_site_SCRIPTS = $(PYNUT_GENERATED_SCRIPT) $(PYNUT_COMMON_CODE)
 endif
 
 
 if WITH_PYNUT_PY3
 pynut_py3_sitedir = $(PYTHON3_SITE_PACKAGES)
 pynut_py3_site_DATA = $(PYNUT_GENERATED_NOEXEC)
-pynut_py3_site_SCRIPTS = $(PYNUT_GENERATED_SCRIPT)
+pynut_py3_site_SCRIPTS = $(PYNUT_GENERATED_SCRIPT) $(PYNUT_COMMON_CODE)
 endif
 
 #################################################################

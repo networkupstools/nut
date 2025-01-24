@@ -194,7 +194,7 @@ static void signal_driver_cmd(const ups_t *ups,
 /* TODO: implement WIN32: https://github.com/networkupstools/nut/issues/1916
  * Currently the codepath is not implemented below
  */
-	char	pidfn[SMALLBUF];
+	char	pidfn[NUT_PATH_MAX];
 #endif
 	int	ret;
 
@@ -338,7 +338,7 @@ static void signal_driver(const ups_t *ups) {
 /* handle sending the signal */
 static void stop_driver(const ups_t *ups)
 {
-	char	pidfn[SMALLBUF];
+	char	pidfn[NUT_PATH_MAX];
 	int	ret, i;
 
 	upsdebugx(1, "Stopping UPS: %s", ups->upsname);
@@ -819,7 +819,7 @@ static void status_driver(const ups_t *ups)
 	 */
 	static int	headerShown = 0;
 #ifndef WIN32
-	char	pidfn[SMALLBUF];
+	char	pidfn[NUT_PATH_MAX];
 	int	cmdret = -1;
 #endif
 	char	bufPid[LARGEBUF], *pidStrFromSocket = NULL,
@@ -1023,7 +1023,7 @@ static void status_driver(const ups_t *ups)
 static void start_driver(const ups_t *ups)
 {
 	char	*argv[10];
-	char	dfn[SMALLBUF], dbg[SMALLBUF];
+	char	dfn[NUT_PATH_MAX], dbg[SMALLBUF];
 	int	ret, arg = 0;
 	int	initial_exec_error = exec_error, initial_exec_timeout = exec_timeout, drv_maxretry = maxretry;
 	struct stat	fs;
@@ -1237,13 +1237,18 @@ static void help(const char *arg_progname)
 	printf("              		Fields: UPSNAME UPSDRV RUNNING PF_PID S_RESPONSIVE S_PID S_STATUS\n");
 	printf("              		(PF_* = according to PID file, if any; S_* = via socket protocol)\n");
 
+	printf("\n%s", suggest_doc_links(arg_progname, "ups.conf"));
+#if (defined(WITH_SOLARIS_SMF) && WITH_SOLARIS_SMF) || (defined(HAVE_SYSTEMD) && HAVE_SYSTEMD)
+	printf("NOTE: On this system you should prefer upsdrvsvcctl and nut-driver-enumerator\n");
+#endif
+
 	exit(EXIT_SUCCESS);
 }
 
 static void shutdown_driver(const ups_t *ups)
 {
 	char	*argv[9];
-	char	dfn[SMALLBUF];
+	char	dfn[NUT_PATH_MAX];
 	int	arg = 0;
 
 	upsdebugx(1, "Shutdown UPS: %s", ups->upsname);
@@ -1673,7 +1678,8 @@ int main(int argc, char **argv)
 					"maxstartdelay but now waitpid() returns %" PRIdMAX
 					" and status bits 0x%.*X",
 					tmp->upsname, (intmax_t)tmp->pid,
-					(intmax_t)waitret, (int)(2*sizeof(wstat)), wstat);
+					(intmax_t)waitret, (int)(2*sizeof(wstat)),
+					(unsigned int)wstat);
 
 				if (waitret == tmp->pid) {
 					upsdebugx(1,

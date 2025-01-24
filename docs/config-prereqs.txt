@@ -18,7 +18,7 @@ of new releases.
   up the multi-arch Linux LXC container farm for NUT CI]
 
 Some of the below are alternatives, e.g. compiler toolkits (gcc vs. clang)
-or SSL implementations (OpenSSL vs Mozilla NSS) -- no problem installing
+or SSL implementations (OpenSSL vs. Mozilla NSS) -- no problem installing
 both, at a disk space cost.
 
 [NOTE]
@@ -140,11 +140,18 @@ For development on the road (or a native ARM build) you can use the
 link:https://termux.dev/en/[Termux] project on Android. It provides
 a sufficiently Debian-like operating environment for all intents and
 purposes, but you may have to use their `pkg` wrapper instead of `apt`
-tooling directly.
+tooling directly, and `ldd` may be in a package separate from `binutils`,
+but otherwise the Debian/Ubuntu oriented lists of packages below apply.
 
 You would need at least a couple of gigabytes available on the internal
 phone storage though, especially if using `ccache` or setting up cross
 builds.
+
+The Termux distribution as of this writing seems to lack cppunit packages
+but you can build it from https://www.freedesktop.org/wiki/Software/cppunit/
+e.g. `--with-prefix=${HOME}/nut-deps/usr` and `make install` there.
+A custom `PKG_CONFIG_PATH=${HOME}/nut-deps/usr/lib/pkgconfig` would find
+it during NUT build.
 ======
 
 Debian-like package installations commonly start with an update of
@@ -156,7 +163,7 @@ metadata about recently published package revisions:
 :; apt-get install \
     ccache time \
     git perl curl \
-    make autoconf automake libltdl-dev libtool \
+    make autoconf automake libltdl-dev libtool binutils \
     valgrind \
     cppcheck \
     pkg-config \
@@ -259,7 +266,7 @@ complete environments):
     qemu-user-static
 ------
 
-NOTE: For Jenkins agents, also need to `apt-get install openjdk-11-jdk-headless`.
+NOTE: For Jenkins agents, also need to `apt-get install openjdk-17-jdk-headless`.
 You may have to ensure that `/proc` is mounted in the target chroot
 (or do this from the running container).
 
@@ -431,8 +438,20 @@ other described environments by adding a symlink `/usr/lib/ccache`:
 :; ln -s ../lib64/ccache/ "$ALTROOT"/usr/lib/
 ------
 
-NOTE: For Jenkins agents, also need to `yum install java-11-openjdk-headless`
-(not available for CentOS 6).
+NOTE: For Jenkins agents, also need to install JDK 17 or newer, which is not
+available for CentOS 6 nor 7 directly (in distribution packaging).
+Alternative packaging, such as Temurin from the Adoptium project, is possible
+(checked for at least CentOS 7), see
+link:https://adoptium.net/installation/linux/#_centosrhelfedora_instructions[their
+instructions] for specific details. This may require updated library package
+versions as dependencies from the OS distribution, so you may also have to make
+sure that  your `/etc/yum.repos.d/*` files (certainly `CentOS-Base.repo`, maybe
+also `CentOS-fasttrack.repo` and/or `CentOS-CR.repo`) to use e.g.
+----
+baseurl=https://vault.centos.org/centos/$releasever/os/$basearch/
+----
+lines if the `mirrorlist` ones do not suffice to find living mirrors (WARNING:
+the `/os/` part of the URL would vary for different repository types).
 
 Arch Linux
 ~~~~~~~~~~
@@ -525,7 +544,7 @@ clang version 14.0.6
     done; done)
 ------
 
-Also for CI build agents, a Java environment (JDK11+ since summer 2022) is
+Also for CI build agents, a Java environment (JDK17+ since autumn 2024) is
 required:
 ------
 # Search for available Java versions:
@@ -533,7 +552,10 @@ required:
 
 # Pick one:
 :; pacman -S --needed \
-    jre11-openjdk-headless
+    jre17-openjdk-headless
+
+# If needed to change default implementation, consult:
+:; archlinux-java help
 ------
 
 Slackware Linux 15
@@ -649,7 +671,7 @@ Other common NUT dependencies absent from primary Slackware repositories
 can be found and downloaded (seek `*.txz` package files, although a few
 are named `*.tgz`) from here, and passed to `installpkg`:
 
-* http://www.slackware.com/~alien/slackbuilds/openjdk11/
+* http://www.slackware.com/~alien/slackbuilds/openjdk17/
 * http://www.slackware.com/~alien/slackbuilds/asciidoc/
 * http://www.slackware.com/~alien/slackbuilds/cppunit/
 * http://www.slackware.com/~alien/slackbuilds/lua/ (5.1 in "stable") and
@@ -680,6 +702,15 @@ like this:
 :; installpkg ./www.slackware.com/~alien/slackbuilds/asciidoc/pkg/asciidoc-8.1.0-noarch-2.tgz
 ----
 
+Note that some packages are further separated by Slackware version, e.g. with
+sub-directories for `15.0` and `current`:
+----
+:; wget -r -l1 -nd -R gif,css,jpg,html,htm --remove-listing \
+    http://www.slackware.com/~alien/slackbuilds/openjdk17/pkg64/15.0/
+
+:; installpkg openjdk17-17.0.12_7-x86_64-1alien.txz
+----
+
 Upon community members' recommendations, Sotirov's SlackPack is also considered
 a reputable repository: https://sotirov-bg.net/slackpack/ and should cover most
 if not all of the dependencies required for NUT building (including PowerMan,
@@ -697,6 +728,14 @@ tmpfs on /dev/shm type tmpfs (rw,nosuid,nodev,noexec,relatime,inode64)
 
 FreeBSD 12.2
 ~~~~~~~~~~~~
+
+NOTE: As of 2024, this version is way beyond EOL -- packages have been
+removed from mirrors. A discussion at
+https://forums.freebsd.org/threads/easy-upgrading-from-12-2-rel-in-2024.92695/
+touches on upgrades in such situation. An alternate mirror (that worked to
+bump the system to `openjdk17`, as of this writing in Nov 2024) can be found
+at https://mirror.sg.gs/freebsd-pkg/FreeBSD:12:amd64/quarterly/ and written
+into `/etc/pkg/FreeBSD.conf` similarly to existing `url` entry.
 
 Note that `PATH` for builds on BSD should include `/usr/local/...`:
 
@@ -779,8 +818,8 @@ For compatibility with common setups on other operating systems, can symlink
 suffixed symlinks to compiler tools (e.g. `gcc-10` beside `gcc10` installed
 by package).
 
-NOTE: For Jenkins agents, also need to `pkg install openjdk11` (11 or 17
-required since summer 2022) -- and do note its further OS configuration
+NOTE: For Jenkins agents, also need to `pkg install openjdk11` (17 or 21
+required since autumn 2024) -- and do note its further OS configuration
 suggestions for special filesystem mounts.
 
 Due to BSD specific paths *when not using* an implementation of `pkg-config`
@@ -816,6 +855,10 @@ NOTE: For the purposes of builds with Jenkins CI agents, since summer 2022 it
 requires JDK11 which was first delivered with OpenBSD 6.5. Earlier iterations
 used OpenBSD 6.4 and version nuances in this document may still reflect that.
 
+FIXME: Since autumn 2024, JDK17+ is required. Maybe time to EOL OpenBSD 6.x
+workers, or to SSH into them from a nearby machine's Java agent?.. Alternately,
+consider https://github.com/adoptium/jdk17/blob/master/doc/building.md
+
 During builds, you may have to tell system dispatcher scripts which version
 to use (which feels inconvenient, but on the up-side for CI -- this system
 allows to test many versions of auto-tools in the same agent), e.g.:
@@ -832,7 +875,7 @@ that seems to exceed whatever is available on network mirrors; for example,
 the CD image included `clang` program while it is not available to `pkg_add`,
 at least not via http://ftp.netbsd.hu/mirrors/openbsd/6.5/packages/amd64/
 mirror. The `gcc` version on CD image differed notably from that in the
-networked repository (4.2.x vs 4.9.x).
+networked repository (4.2.x vs. 4.9.x).
 You may have to echo a working base URL (part before "6.5/..." into the
 `/etc/installurl` file, since the old distribution is no longer served by
 default site.
@@ -1076,11 +1119,11 @@ binaries and into `/usr/lib/ccache`:
    )
 ------
 
-NOTE: For Jenkins agents, also need to `pkgin install openjdk11` (will be
-in `JAVA_HOME=/usr/pkg/java/openjdk11`).
+NOTE: For Jenkins agents, also need to `pkgin install openjdk17` (will be
+in `JAVA_HOME=/usr/pkg/java/openjdk17`).
 
-OpenIndiana 2021.10
-~~~~~~~~~~~~~~~~~~~
+OpenIndiana as of releases 2021.10 to 2024.04
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Note that due to IPS and `pkg(5)`, a version of python is part of baseline
 illumos-based OS; this may not be the case on some other illumos distributions
@@ -1121,7 +1164,7 @@ Typical tooling would include:
 :; pkg install \
     asciidoc libxslt \
     docbook/dtds docbook/dsssl docbook/xsl docbook docbook/sgml-common pygments-39 \
-    graphviz expect graphviz-tcl
+    image/graphviz expect graphviz-tcl
 
 # For CGI graph generation - massive packages (X11):
 :; pkg install \
@@ -1132,11 +1175,17 @@ Typical tooling would include:
     library/augeas python/augeas \
     libusb-1 libusbugen system/library/usb/libusb system/header/header-usb driver/usb/ugen \
     libmodbus \
-    neon \
-    net-snmp \
-    powerman \
+    library/neon \
+    system/management/snmp/net-snmp \
+    system/management/powerman \
     freeipmi \
     avahi
+
+# With 2024.04, some packages were split for development vs. run-time
+# and/or based on architecture:
+:; pkg install \
+    system/library/mozilla-nss/header-nss \
+    library/nspr library/nspr/32
 
 :; pkg install \
     lua
@@ -1167,10 +1216,14 @@ filenames, as automated below:
 :; pkg install \
     developer/clang-13 runtime/clang-13
 
+# With OI 2024.04 there's also clang-18 available in the mix:
+:; pkg install \
+    developer/clang-18 runtime/clang-18
+
 # Get clang-cpp-X visible in standard PATH (for CI to reference the right one),
 # and make sure other frontends are exposed with versions (not all OI distro
 # releases have such symlinks packaged right), e.g.:
-:; (cd /usr/bin && for X in 8 9 13 ; do for T in "" "++" "-cpp"; do \
+:; (cd /usr/bin && for X in 8 9 13 18 ; do for T in "" "++" "-cpp"; do \
     ln -fs "../clang/$X.0/bin/clang$T" "clang${T}-${X}" ; \
    done; done)
 
@@ -1207,9 +1260,13 @@ from third-party repositories (e.g. SFE) and/or build from sources.
 
 No pre-packaged `cppcheck` was found, either.
 
-NOTE: For Jenkins agents, also need to `pkg install runtime/java/openjdk11`
-for JRE/JDK 11. Java 11 or 17 is required to run Jenkins agents after
-summer 2022.
+NOTE: For Jenkins agents, also need to `pkg install runtime/java/openjdk17`
+for JRE/JDK 17. Java 17 or 21 is required to run Jenkins agents after
+autumn 2024. If updating from older releases, you may need to update default
+implementation, e.g.:
+----
+:; pkg set-mediator -V 17 java
+----
 
 OmniOS CE (as of release 151036)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1233,6 +1290,17 @@ Note you may need not just the "Core" IPS package publisher, but also the
 
 :; pkg install \
     net-snmp
+
+# For crypto-enabled builds:
+:; pkg install \
+    openssl-3
+
+# By r151046, some packages were split for development vs. run-time;
+# to provide support for Mozilla NSS, you need libraries and headers:
+:; pkg install \
+    system/library/mozilla-nss \
+    system/library/mozilla-nss/header-nss \
+    library/nspr library/nspr/header-nspr
 
 # NOTE: For python, some suitable version should be available since `pkg(5)`
 # tool is written in it. You may specify an additional variant like this
@@ -1276,9 +1344,14 @@ Note also that the minimal footprint nature of OmniOS CE precludes building
 any large scope easily, so avoid docs and "all drivers" unless you provide
 whatever they need to happen.
 
-NOTE: For Jenkins agents, also need to `pkg install runtime/java/openjdk11`
-for JRE/JDK 11. Java 11 or 17 is required to run Jenkins agents after
-summer 2022.
+NOTE: For Jenkins agents, also need to `pkg install runtime/java/openjdk17`
+for JRE/JDK 17. Java 17 or 21 is required to run Jenkins agents after
+autumn 2024. If updating from older releases, you may need to update default
+implementation, e.g.:
+----
+:; pkg set-mediator -V 17 java
+----
+
 
 Solaris 8
 ~~~~~~~~~
@@ -1410,6 +1483,7 @@ NOTE: for `asciidoc`/`a2x` to work, you should `export XML_CATALOG_FILES` with
 the location of packaged resources (`${HOMEBREW_PREFIX}/etc/xml/catalog`).
 On one test system, man page builds spewed warnings like
 `<unknown>:1: SyntaxWarning: invalid escape sequence '\S'`
+due to incompatibility of older asciidoc with new Python syntax requirements,
 but seemed to produce reasonable results otherwise.
 
 Note that ccache is installed in a different location than expected by default
@@ -1429,6 +1503,8 @@ NOTE: For Jenkins agents, also need to `brew install --cask temurin@21`
 for JRE/JDK 21. Java 17 or 21 (an LTS) is required to run Jenkins agents
 after summer 2024.
 
+The compiler is part of Apple's XCode ecosystem. Just try to run `clang`
+in a GUI terminal, and a pop-up will appear offering to install it.
 Note that you would have to create symbolic links to version-numbered names
 of compilers, e.g. `clang-14` and `clang++-14` in both `/usr/local/bin`
 (pointing to `/bin/clang(++)` and in the `ccache` location prepared above
@@ -1452,10 +1528,10 @@ programs.
 
 Further TODO for Windows would include:
 
-* MSVCRT (ubiquitous) vs UCRT (more standards compliant, but since Windows 10)
+* MSVCRT (ubiquitous) vs. UCRT (more standards compliant, but since Windows 10)
   https://docs.microsoft.com/en-us/cpp/porting/upgrade-your-code-to-the-universal-crt?view=msvc-160
 
-* libusb-0.1 vs libusb-1.0
+* libusb-0.1 vs. libusb-1.0
 
 NOTE: Native mingw, MSYS2, etc. builds on Windows are known to suffer from
 interaction with antivirus software which holds executable files open and

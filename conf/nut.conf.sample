@@ -159,3 +159,7 @@ MODE=none
 # be helpful in shell profiles or scripts which process NUT tool outputs.
 #NUT_QUIET_INIT_BANNER=true
 #export NUT_QUIET_INIT_BANNER
+
+# Optionally suppress reporting of sockets the driver programs listen at.
+#NUT_QUIET_INIT_LISTENER=true
+#export NUT_QUIET_INIT_LISTENER

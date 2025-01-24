@@ -58,6 +58,10 @@ SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
  mge-utalk microdowell microsol-apc mge-shut oneac optiups powercom powervar-cs rhino \
  safenet nutdrv_siemens-sitop solis tripplite tripplitesu upscode2 victronups powerpanel \
  blazer_ser ivtscd apcsmart apcsmart-old riello_ser sms_ser bicker_ser
+if HAVE_LINUX_SERIAL_H
+# Temporary, until ported to more OSes
+SERIAL_DRIVERLIST += nhs_ser
+endif HAVE_LINUX_SERIAL_H
 SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
  blazer_usb richcomm_usb riello_usb powervar-cu \
@@ -165,6 +169,8 @@ mge_utalk_SOURCES = mge-utalk.c
 microdowell_SOURCES = microdowell.c
 microsol_apc_SOURCES = microsol-apc.c microsol-common.c
 microsol_apc_LDADD = $(LDADD) -lm
+nhs_ser_SOURCES = nhs_ser.c
+nhs_ser_LDADD = $(LDADD) -lm
 oneac_SOURCES = oneac.c
 optiups_SOURCES = optiups.c
 powercom_SOURCES = powercom.c
@@ -197,9 +203,11 @@ bicker_ser_LDADD = $(LDADD) -lm
 dummy_ups_SOURCES = dummy-ups.c
 dummy_ups_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/clients
 dummy_ups_LDADD = $(LDADD_DRIVERS) $(top_builddir)/clients/libupsclient.la
+dummy_ups_LDFLAGS = $(AM_LDFLAGS)
 if WITH_SSL
   dummy_ups_CFLAGS += $(LIBSSL_CFLAGS)
   dummy_ups_LDADD += $(LIBSSL_LIBS)
+  dummy_ups_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH)
 endif
 
 # Clone drivers (in NUTSW_DRIVERLIST)
@@ -280,6 +288,7 @@ snmp_ups_SOURCES = snmp-ups.c snmp-ups-helpers.c \
 snmp_ups_CFLAGS = $(AM_CFLAGS)
 snmp_ups_CFLAGS += $(LIBNETSNMP_CFLAGS)
 snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS) -lm
+snmp_ups_LDFLAGS = $(AM_LDFLAGS)
 
 if WITH_SSL
 if !WITH_OPENSSL
@@ -287,16 +296,19 @@ if !WITH_OPENSSL
 endif !WITH_OPENSSL
   snmp_ups_CFLAGS += $(LIBSSL_CFLAGS)
   snmp_ups_LDADD += $(LIBSSL_LIBS)
+  snmp_ups_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH)
 endif WITH_SSL
 
 # NEON XML/HTTP
 netxml_ups_SOURCES = netxml-ups.c mge-xml.c
 netxml_ups_LDADD = $(LDADD_DRIVERS) $(LIBNEON_LIBS)
 netxml_ups_CFLAGS = $(AM_CFLAGS)
+netxml_ups_LDFLAGS = $(AM_LDFLAGS)
 
 if WITH_SSL
   netxml_ups_CFLAGS += $(LIBSSL_CFLAGS)
   netxml_ups_LDADD += $(LIBSSL_LIBS)
+  netxml_ups_LDFLAGS += $(LIBSSL_LDFLAGS_RPATH)
 endif
 
 # Powerman
@@ -331,7 +343,7 @@ adelsystem_cbi_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
 # for USB connections. Legacy versions work for Serial and TCP links.
 apc_modbus_SOURCES = apc_modbus.c
 apc_modbus_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
-if WITH_USB
+if WITH_MODBUS_USB
   apc_modbus_SOURCES += $(LIBUSB_IMPL) hidparser.c usb-common.c
   apc_modbus_LDADD += $(LIBUSB_LIBS)
 endif
@@ -372,6 +384,7 @@ nutdrv_qx_SOURCES += $(LIBUSB_IMPL) usb-common.c
 nutdrv_qx_LDADD += $(LIBUSB_LIBS)
 endif
 NUTDRV_QX_SUBDRIVERS = nutdrv_qx_bestups.c nutdrv_qx_blazer-common.c	\
+ nutdrv_qx_innovart31.c	\
  nutdrv_qx_masterguard.c	\
  nutdrv_qx_mecer.c nutdrv_qx_megatec.c nutdrv_qx_megatec-old.c	\
  nutdrv_qx_mustek.c nutdrv_qx_q1.c nutdrv_qx_voltronic.c	\
@@ -397,6 +410,7 @@ dist_noinst_HEADERS = \
  upshandler.h usb-common.h usbhid-ups.h powercom-hid.h compaq-mib.h idowell-hid.h \
  apcsmart.h apcsmart_tabs.h apcsmart-old.h apcupsd-ups.h cyberpower-mib.h riello.h openups-hid.h \
  delta_ups-mib.h nutdrv_qx.h nutdrv_qx_bestups.h nutdrv_qx_blazer-common.h	\
+ nutdrv_qx_innovart31.h	\
  nutdrv_qx_masterguard.h	\
  nutdrv_qx_mecer.h nutdrv_qx_ablerex.h  \
  nutdrv_qx_megatec.h nutdrv_qx_megatec-old.h nutdrv_qx_mustek.h nutdrv_qx_q1.h nutdrv_qx_hunnox.h	\

@@ -189,6 +189,21 @@ Build and install modbus (Serial, TCP) drivers (default: auto-detect)
 
 Note that you need to install libmodbus development package or files.
 
+	--with-modbus+usb
+
+Require a variant of libmodbus with RTU USB support. This feature is
+currently not available in upstream project or OS distribution packages,
+so your NUT build environment should provide a prerequisite build of
+https://github.com/networkupstools/libmodbus/tree/rtu_usb (may be a
+static library build, used from a temporary installation prefix location,
+to avoid potential conflicts with the OS packaged shared library).
+
+At the time of this writing, such constraint can be desirable for the
+linkman:apc_modbus[8] driver which supports different communication media.
+
+For more details please see
+https://github.com/networkupstools/nut/wiki/APC-UPS-with-Modbus-protocol
+
 Manual selection of drivers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -229,9 +244,12 @@ information on how to set up CGI programs.
 Pretty documentation and man pages
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+	--with-docs=<output-format(s)>  (default: no)
 	--with-doc=<output-format(s)>  (default: no)
 
-Build and install NUT documentation file(s).
+Build and install NUT documentation file(s). Note: `--with-doc` is a legacy
+NUT option, and `--with-docs` is an alias that matches the more wide-spread
+equivalent in different packaging frameworks and projects.
 
 This feature requires AsciiDoc 8.6.3 or newer (see https://asciidoc.org).
 
@@ -285,6 +303,21 @@ Example valid formats of this flag:
 * `--with-doc=auto`
 * `--with-doc=pdf,html-chunked`
 * `--with-doc=man=no,pdf=auto,html-single`
+
+Additional flags with regard to documentation generation include:
+
+	--with-docs-man-section-api=<SN>	(default: 3)
+	--with-docs-man-section-cfg=<SN>	(default: 5)
+	--with-docs-man-section-cmd-sys=<SN>	(default: 8)
+	--with-docs-man-section-cmd-usr=<SN>	(default: 1)
+
+Customize man page section identifiers for operating systems whose standards
+do not match defaults listed above for Library and API, Configuration Files,
+System Management Commands and User Commands sections (e.g. Solaris-derived
+systems might use `--with-docs-man-section-cmd-sys=1m`). This impacts not only
+file names of the manual pages, but also cross-links in generated documents.
+Note that use of these flags does not implicitly enable any `--with-docs=...`
+mode, which should still be specified explicitly.
 
 Python support
 ~~~~~~~~~~~~~~
@@ -722,6 +755,21 @@ Use `--with-systemdsystemunitdir(=yes)` to require detection of these
 settings with pkg-config, or fail configuration if not possible.
 
 Use `--with-systemdsystemunitdir=no` to disable this feature altogether.
+
+	--with-systemdsystempresetdir=PATH
+
+Where to install Linux systemd unit presets (lists of services enabled
+or disabled by default). Useless and harmless on other OSes, including
+Linux distributions without systemd, just adding a little noise to the
+configure script output.
+
+Use `--with-systemdsystempresetdir=auto` (default) to detect the settings
+using pkg-config if possible.
+
+Use `--with-systemdsystempresetdir(=yes)` to require detection of these
+settings with pkg-config, or fail configuration if not possible.
+
+Use `--with-systemdsystempresetdir=no` to disable this feature altogether.
 
 	--with-systemdshutdowndir=PATH
 

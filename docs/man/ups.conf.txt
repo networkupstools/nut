@@ -68,6 +68,19 @@ Optional.  Path name of the directory in which the UPS driver executables
 reside.  If you don't specify this, the programs look in a built-in default
 directory, which is often /usr/local/ups/bin.
 
+*statepath*::
+
+Optional.  Path name of the directory in which the UPS drivers should place
+their state sockets for local communication with `upsd` data server, rather
+than the default location that was compiled into the program, which is often
+/var/state/ups.
++
+Note that the drivers must use the same path as `upsd`, so the data server
+would prefer this setting from `ups.conf` global section, if present, over
+its own in `upsd.conf`.
++
+Environment variable `NUT_STATEPATH` set by caller can override this setting.
+
 *maxstartdelay*::
 
 Optional.  Same as the UPS field of the same name, but this is the
@@ -156,6 +169,19 @@ troubleshooting a deployment, without impacting foreground or background
 running mode directly. Command-line option `-D` can only increase this
 verbosity level.
 
+*LIBUSB_DEBUG* 'INTEGER'::
+
+Optional.  For run-time troubleshooting of USB-capable NUT drivers,
+you can specify verbosity of LibUSB specific debugging as a numeric
+value such as `4` ("All messages are emitted").  Should not have any
+practical impact on other NUT drivers.
++
+For more details, including the currently supported values for your
+version of the library, see e.g.:
+
+* https://libusb.sourceforge.io/api-1.0/
+* https://libusb.sourceforge.io/api-1.0/group__libusb__lib.html
+
 UPS FIELDS
 ----------
 
@@ -201,6 +227,31 @@ then the 1s, 2s, and so on.  To exclude a UPS from the shutdown sequence,
 set this to -1.
 +
 The default value for this parameter is 0.
+
+*sdcommands*::
+
+Optional.  Comma-separated list of instant command name(s) to send to
+the UPS when you request its shutdown.
++
+Default logic is built into each driver (where supported) and can be
+referenced here as the `shutdown.default` value.
++
+The primary use-case is for devices whose drivers "natively" support
+trying several commands, but the built-in order of those calls a
+command that is mis-handled by the specific device model (so the
+handling is reported as successful and the loop stops, but nothing
+happens as far as the load power-down is concerned).
++
+Another use-case is differentiation of automated power-off scenarios
+where the UPS and its load should stay "OFF" (e.g. by building emergency
+power-off) vs. those where the load should return to work automatically
+when it is safe to do so.  NOTE: This would *currently* need editing of
+`ups.conf` for such cases before `nutshutdown` sees the file; but could
+be better automated in future NUT releases.
++
+NOTE: User-provided commands may be something other than actual shutdown,
+e.g. a beeper to test that the INSTCMD happened such and when expected,
+and the device was contacted, without impacting the load fed by the UPS.
 
 *allow_killpower*::
 Optional.  This allows you to request `driver.killpower` instant command,
@@ -324,6 +375,18 @@ troubleshooting a deployment, without impacting foreground or background
 running mode directly.  If the global `debug_min` is also set, this
 driver-level setting overrides it.  Command-line option `-D` can only
 increase this verbosity level.
+
+*LIBUSB_DEBUG* 'INTEGER'::
+
+Optional.  For run-time troubleshooting of USB-capable NUT drivers,
+you can specify verbosity of LibUSB specific debugging as a numeric
+value such as `4` ("All messages are emitted").
++
+For more details, including the currently supported values for your
+version of the library, see e.g.:
+
+* https://libusb.sourceforge.io/api-1.0/
+* https://libusb.sourceforge.io/api-1.0/group__libusb__lib.html
 
 INTEGRATION
 -----------

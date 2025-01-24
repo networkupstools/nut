@@ -33,7 +33,7 @@
 #include "nut_stdint.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.49"
+#define USB_DRIVER_VERSION	"0.50"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -94,7 +94,7 @@ void nut_usb_addvars(void)
 	addvar(VAR_VALUE, "usb_hid_ep_out",	"Deeper tuning of USB communications for complex devices");
 
 #ifdef LIBUSB_API_VERSION
-	dstate_setinfo("driver.version.usb", "libusb-%u.%u.%u (API: 0x%x)", v->major, v->minor, v->micro, LIBUSB_API_VERSION);
+	dstate_setinfo("driver.version.usb", "libusb-%u.%u.%u (API: 0x%08X)", v->major, v->minor, v->micro, (unsigned int)LIBUSB_API_VERSION);
 #else  /* no LIBUSB_API_VERSION */
 	dstate_setinfo("driver.version.usb", "libusb-%u.%u.%u", v->major, v->minor, v->micro);
 #endif /* LIBUSB_API_VERSION */
@@ -205,6 +205,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 	int i;
 	int count_open_EACCESS = 0;
 	int count_open_errors = 0;
+	int count_open_attempts = 0;
 
 	/* report descriptor */
 	unsigned char	rdbuf[MAX_REPORT_SIZE];
@@ -309,8 +310,9 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		/* int		if_claimed = 0; */
 		libusb_device	*device = devlist[devnum];
 
+		count_open_attempts++;
 		libusb_get_device_descriptor(device, &dev_desc);
-		upsdebugx(2, "Checking device %" PRIuSIZE " of %" PRIuSIZE " (%04X/%04X)",
+		upsdebugx(2, "Checking device %" PRIuSIZE " of %" PRIiSIZE " (%04X/%04X)",
 			devnum + 1, devcount,
 			dev_desc.idVendor, dev_desc.idProduct);
 
@@ -728,7 +730,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
 # pragma GCC diagnostic pop
 #endif
-			upsdebugx(2, "HID descriptor too long %d (max %u)",
+			upsdebugx(2, "HID descriptor too long %d (max %d)",
 				rdlen, UINT16_MAX);
 			goto next_device;
 		}
@@ -813,23 +815,31 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			nut_libusb_subdriver_defaults(&usb_subdriver);
 	}
 
+	/* If we got here, we did not return a successfully chosen device above */
 	*udevp = NULL;
 	libusb_free_device_list(devlist, 1);
 	upsdebugx(2, "libusb1: No appropriate HID device found");
 	fflush(stdout);
 
-	if (devcount < 1) {
+	if (devcount < 1 || count_open_attempts == 0) {
 		upslogx(LOG_WARNING,
 			"libusb1: Could not open any HID devices: "
-			"no USB buses found");
+			"no USB buses (or devices) found");
 	}
 	else
 	if (count_open_errors > 0
-	||  count_open_errors == count_open_EACCESS
+	&&  count_open_errors == count_open_EACCESS
 	) {
 		upslogx(LOG_WARNING,
 			"libusb1: Could not open any HID devices: "
 			"insufficient permissions on everything");
+		if (count_open_attempts > count_open_errors) {
+			upslogx(LOG_WARNING,
+				"libusb1: except %d devices "
+				"tried but not matching the "
+				"requested criteria",
+				count_open_attempts - count_open_errors);
+		}
 	}
 
 	return -1;
@@ -1090,7 +1100,7 @@ static int nut_libusb_get_interrupt(
 		) {
 			return -1;
 		}
-		ret = (usb_ctrl_charbufsize)bufsize;
+		ret = (usb_ctrl_charbufsize)tmpbufsize;
 	}
 
 	return nut_libusb_strerror(ret, __func__);

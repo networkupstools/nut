@@ -7,11 +7,15 @@ AC_DEFUN([NUT_CHECK_LIBSYSTEMD],
 [
 if test -z "${nut_have_libsystemd_seen}"; then
 	nut_have_libsystemd_seen=yes
-	NUT_CHECK_PKGCONFIG
+	AC_REQUIRE([NUT_CHECK_PKGCONFIG])
 
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"
 	LIBS_ORIG="${LIBS}"
+	CFLAGS=""
+	LIBS=""
+	depCFLAGS=""
+	depLIBS=""
 
 	SYSTEMD_VERSION="none"
 
@@ -58,7 +62,7 @@ if test -z "${nut_have_libsystemd_seen}"; then
 			AC_MSG_ERROR(invalid option --with(out)-libsystemd-includes - see docs/configure.txt)
 			;;
 		*)
-			CFLAGS="${withval}"
+			depCFLAGS="${withval}"
 			;;
 		esac
 	], [
@@ -66,11 +70,12 @@ if test -z "${nut_have_libsystemd_seen}"; then
 		dnl headers are referenced by relative directory
 		dnl and these should be in OS location usually.
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[CFLAGS="`$PKG_CONFIG --silence-errors --cflags libsystemd 2>/dev/null`" || CFLAGS=""],
-			[CFLAGS=""]
+			[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags libsystemd 2>/dev/null`" \
+			 || depCFLAGS=""],
+			[depCFLAGS=""]
 		)]
 	)
-	AC_MSG_RESULT([${CFLAGS}])
+	AC_MSG_RESULT([${depCFLAGS}])
 
 	AC_MSG_CHECKING(for libsystemd ldflags)
 	AC_ARG_WITH(libsystemd-libs,
@@ -81,18 +86,21 @@ if test -z "${nut_have_libsystemd_seen}"; then
 			AC_MSG_ERROR(invalid option --with(out)-libsystemd-libs - see docs/configure.txt)
 			;;
 		*)
-			LIBS="${withval}"
+			depLIBS="${withval}"
 			;;
 		esac
 	], [
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[LIBS="`$PKG_CONFIG --silence-errors --libs libsystemd 2>/dev/null`" || LIBS="-lsystemd"],
-			[LIBS="-lsystemd"]
+			[depLIBS="`$PKG_CONFIG --silence-errors --libs libsystemd 2>/dev/null`" \
+			 || depLIBS="-lsystemd"],
+			[depLIBS="-lsystemd"]
 		)]
 	)
-	AC_MSG_RESULT([${LIBS}])
+	AC_MSG_RESULT([${depLIBS}])
 
 	dnl check if libsystemd is usable
+	CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
+	LIBS="${LIBS_ORIG} ${depLIBS}"
 	AC_CHECK_HEADERS(systemd/sd-daemon.h, [nut_have_libsystemd=yes], [nut_have_libsystemd=no], [AC_INCLUDES_DEFAULT])
 	AC_CHECK_FUNCS(sd_notify, [], [nut_have_libsystemd=no])
 
@@ -100,8 +108,8 @@ if test -z "${nut_have_libsystemd_seen}"; then
 	AS_IF([test x"${nut_have_libsystemd}" = x"yes"], [
 		dnl Check for additional feature support in library (optional)
 		AC_CHECK_FUNCS(sd_booted sd_watchdog_enabled sd_notify_barrier)
-		LIBSYSTEMD_CFLAGS="${CFLAGS}"
-		LIBSYSTEMD_LIBS="${LIBS}"
+		LIBSYSTEMD_CFLAGS="${depCFLAGS}"
+		LIBSYSTEMD_LIBS="${depLIBS}"
 
 		dnl Since systemd 183: https://systemd.io/INHIBITOR_LOCKS/
 		dnl ...or 221: https://www.freedesktop.org/software/systemd/man/latest/sd_bus_call_method.html
@@ -122,6 +130,9 @@ if test -z "${nut_have_libsystemd_seen}"; then
 		AC_MSG_CHECKING(for libsystemd inhibitor interface support)
 		AC_MSG_RESULT([${nut_have_libsystemd_inhibitor}])
 	])
+
+	unset depCFLAGS
+	unset depLIBS
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"

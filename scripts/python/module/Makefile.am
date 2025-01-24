@@ -4,6 +4,10 @@
 # Note: this Makefile is focused on PyPI publication
 # The usual autotools stuff including clean-up is in parent dir
 # (to allow easier mixing of the module and app, if/when desired)
+#
+# NOTE: Due to PEP-0625, the versioned tarball and directory names
+# must be normalized to lower-case, as achieved by setup.py(.in).
+# The module name remains camel-cased as it always was.
 
 # Non-maintainers can at most generate the source layout for python setuptools
 # (having only shell scripting as a prerequisite suffices for that)
@@ -86,6 +90,9 @@ upload publish:
 		if test -x "$(srcdir)/$${B}.in" ; then chmod +x "PyNUTClient/$${B}"; fi ; \
 	 done ; \
 	 cp -pf "$(srcdir)/nut_telnetlib.py" PyNUTClient/ || exit ; \
+	 if [ x"$(abs_srcdir)" != x"$(abs_builddir)" ] ; then \
+		cp -pf "$(srcdir)/nut_telnetlib.py" . || exit ; \
+	 fi ; \
 	 cp -pf "$(srcdir)/README.adoc" README.txt || exit ; \
 	 cp -pf "$(top_srcdir)/LICENSE-GPL3" . || exit ; \
 	 echo "from . import PyNUT" > PyNUTClient/__init__.py || exit

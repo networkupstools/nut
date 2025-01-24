@@ -7,11 +7,15 @@ AC_DEFUN([NUT_CHECK_LIBNEON],
 [
 if test -z "${nut_have_neon_seen}"; then
 	nut_have_neon_seen=yes
-	NUT_CHECK_PKGCONFIG
+	AC_REQUIRE([NUT_CHECK_PKGCONFIG])
 
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"
 	LIBS_ORIG="${LIBS}"
+	CFLAGS=""
+	LIBS=""
+	depCFLAGS=""
+	depLIBS=""
 
 	AS_IF([test x"$have_PKG_CONFIG" = xyes],
 		[dnl See which version of the neon library (if any) is installed
@@ -38,13 +42,14 @@ if test -z "${nut_have_neon_seen}"; then
 			AC_MSG_ERROR(invalid option --with(out)-neon-includes - see docs/configure.txt)
 			;;
 		*)
-			CFLAGS="${withval}"
+			depCFLAGS="${withval}"
 			;;
 		esac
 	], [
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[CFLAGS="`$PKG_CONFIG --silence-errors --cflags neon 2>/dev/null`" || CFLAGS="-I/usr/include/neon -I/usr/local/include/neon"],
-			[CFLAGS="-I/usr/include/neon -I/usr/local/include/neon"]
+			[depCFLAGS="`$PKG_CONFIG --silence-errors --cflags neon 2>/dev/null`" \
+			 || depCFLAGS="-I/usr/include/neon -I/usr/local/include/neon"],
+			[depCFLAGS="-I/usr/include/neon -I/usr/local/include/neon"]
 		)]
 	)
 	AC_MSG_RESULT([${CFLAGS}])
@@ -58,29 +63,32 @@ if test -z "${nut_have_neon_seen}"; then
 			AC_MSG_ERROR(invalid option --with(out)-neon-libs - see docs/configure.txt)
 			;;
 		*)
-			LIBS="${withval}"
+			depLIBS="${withval}"
 			;;
 		esac
 	], [
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[LIBS="`$PKG_CONFIG --silence-errors --libs neon 2>/dev/null`" || LIBS="-lneon"],
-			[LIBS="-lneon"]
+			[depLIBS="`$PKG_CONFIG --silence-errors --libs neon 2>/dev/null`" \
+			 || depLIBS="-lneon"],
+			[depLIBS="-lneon"]
 		)]
 	)
-	AC_MSG_RESULT([${LIBS}])
+	AC_MSG_RESULT([${depLIBS}])
 
 	dnl check if neon is usable
+	CFLAGS="${CFLAGS_ORIG} ${depCFLAGS}"
+	LIBS="${LIBS_ORIG} ${depLIBS}"
 	AC_CHECK_HEADERS(ne_xmlreq.h, [nut_have_neon=yes], [nut_have_neon=no], [AC_INCLUDES_DEFAULT])
 	AC_CHECK_FUNCS(ne_xml_dispatch_request, [], [nut_have_neon=no])
 
 	if test "${nut_have_neon}" = "yes"; then
 		dnl Check for connect timeout support in library (optional)
 		AC_CHECK_FUNCS(ne_set_connect_timeout ne_sock_connect_timeout)
-		LIBNEON_CFLAGS="${CFLAGS}"
-		LIBNEON_LIBS="${LIBS}"
+		LIBNEON_CFLAGS="${depCFLAGS}"
+		LIBNEON_LIBS="${depLIBS}"
 
 		dnl Help ltdl if we can (nut-scanner etc.)
-		for TOKEN in $LIBS ; do
+		for TOKEN in $depLIBS ; do
 			AS_CASE(["${TOKEN}"],
 				[-l*neon*], [
 					AX_REALPATH_LIB([${TOKEN}], [SOPATH_LIBNEON], [])
@@ -95,6 +103,9 @@ if test -z "${nut_have_neon_seen}"; then
 		done
 		unset TOKEN
 	fi
+
+	unset depCFLAGS
+	unset depLIBS
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"

@@ -23,6 +23,8 @@
 #	TESTDIR=/tmp/nut-NIT	to propose a location for "etc" and "run"
 #			mock locations (under some circumstances, the
 #			script can anyway choose to `mktemp` another)
+#	NUT_DEBUG_UPSMON_NOTIFY_SYSLOG=false	To *disable* upsmon
+#			notifications spilling to the script's console.
 #
 # Common sandbox run for testing goes from NUT root build directory like:
 #	DEBUG_SLEEP=600 NUT_PORT=12345 NIT_CASE=testcase_sandbox_start_drivers_after_upsd NUT_FOREGROUND_WITH_PID=true make check-NIT &
@@ -32,7 +34,7 @@
 # ksh, busybox sh...)
 #
 # Copyright
-#	2022-2024 Jim Klimov <jimklimov+nut@gmail.com>
+#	2022-2025 Jim Klimov <jimklimov+nut@gmail.com>
 #
 # License: GPLv2+
 
@@ -354,6 +356,11 @@ if [ "`id -u`" = 0 ]; then
 fi
 
 stop_daemons() {
+    if [ -n "$PID_UPSMON" ] ; then
+        log_info "Stopping test daemons: upsmon via command"
+        upsmon -c stop
+    fi
+
     if [ -n "$PID_UPSD$PID_UPSMON$PID_DUMMYUPS$PID_DUMMYUPS1$PID_DUMMYUPS2" ] ; then
         log_info "Stopping test daemons"
         kill -15 $PID_UPSD $PID_UPSMON $PID_DUMMYUPS $PID_DUMMYUPS1 $PID_DUMMYUPS2 2>/dev/null || return 0
@@ -571,12 +578,33 @@ updatecfg_upsmon_supplies() {
 generatecfg_upsmon_trivial() {
     # Populate the configs for the run
     rm -f "$NUT_STATEPATH/upsmon.sd.log"
-    (  echo 'MINSUPPLIES 0' > "$NUT_CONFPATH/upsmon.conf" || exit
-       echo 'SHUTDOWNCMD "echo \"`date`: TESTING_DUMMY_SHUTDOWN_NOW\" | tee \"'"$NUT_STATEPATH"'/upsmon.sd.log\" "' >> "$NUT_CONFPATH/upsmon.conf" || exit
+    (   echo 'MINSUPPLIES 0' > "$NUT_CONFPATH/upsmon.conf" || exit
+        echo 'SHUTDOWNCMD "echo \"`date`: TESTING_DUMMY_SHUTDOWN_NOW\" | tee \"'"$NUT_STATEPATH"'/upsmon.sd.log\" "' >> "$NUT_CONFPATH/upsmon.conf" || exit
 
-       if [ -n "${NUT_DEBUG_MIN-}" ] ; then
-           echo "DEBUG_MIN ${NUT_DEBUG_MIN}" >> "$NUT_CONFPATH/upsmon.conf" || exit
-       fi
+        NOTIFYTGT=""
+        if [ -x "${TOP_SRCDIR-}/scripts/misc/notifyme-debug" ] ; then
+            echo "NOTIFYCMD \"TEMPDIR='${NUT_STATEPATH}' ${TOP_SRCDIR-}/scripts/misc/notifyme-debug\"" >> "$NUT_CONFPATH/upsmon.conf" || exit
+
+            # NOTE: "SYSLOG" typically ends up in console log of the NIT run and
+            # "EXEC" goes to a log file like tests/NIT/tmp/run/notifyme-399.log
+            NOTIFYTGT="EXEC"
+        fi
+        if [ x"$NUT_DEBUG_UPSMON_NOTIFY_SYSLOG" != xfalse ] ; then
+            [ -n "${NOTIFYTGT}" ] && NOTIFYTGT="${NOTIFYTGT}+SYSLOG" || NOTIFYTGT="SYSLOG"
+        fi
+
+        if [ -n "${NOTIFYTGT}" ]; then
+            if [ -s "${TOP_SRCDIR-}/conf/upsmon.conf.sample.in" ] ; then
+                grep -E '# NOTIFYFLAG .*SYSLOG\+WALL$' \
+                < "${TOP_SRCDIR-}/conf/upsmon.conf.sample.in" \
+                | sed 's,^# \(NOTIFYFLAG[^A-Z_]*[A-Z_]*\)[^A-Z_]*SYSLOG.*$,\1\t'"${NOTIFYTGT}"',' \
+                >> "$NUT_CONFPATH/upsmon.conf" || exit
+            fi
+        fi
+
+        if [ -n "${NUT_DEBUG_MIN-}" ] ; then
+            echo "DEBUG_MIN ${NUT_DEBUG_MIN}" >> "$NUT_CONFPATH/upsmon.conf" || exit
+        fi
     ) || die "Failed to populate temporary FS structure for the NIT: upsmon.conf"
 
     if [ "`id -u`" = 0 ]; then
@@ -1166,21 +1194,47 @@ testcase_sandbox_upsc_query_bogus() {
 testcase_sandbox_upsc_query_timer() {
     log_separator
     log_info "[testcase_sandbox_upsc_query_timer] Test that dummy-ups TIMER action changes the reported state"
-    # Driver is set up to flip ups.status every 5 sec, so check every 3
+
+    # Driver is set up to flip ups.status every 5 sec, so check every 3 sec
+    # with upsc, but we can follow with upslog more intensively. New process
+    # launches can lag a lot on very busy SUTs; hopefully still-running ones
+    # are more responsive in this regard.
+    log_info "Starting upslog daemon"
+    rm -f "${NUT_STATEPATH}/upslog-dummy.log" || true
+    # Start as foregrounded always, so we have a PID to kill easily:
+    upslog -F -i 1 -d 30 -m "dummy@localhost:${NUT_PORT},${NUT_STATEPATH}/upslog-dummy.log" &
+    PID_UPSLOG="$!"
+
     # TODO: Any need to convert to runcmd()?
     OUT1="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT1" ; sleep 3
     OUT2="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT2"
     OUT3=""
     OUT4=""
+    OUT5=""
+
+    # The SUT may be busy, or dummy-ups can have a loop delay
+    # (pollfreq) after reading the file before wrapping around
     if [ x"$OUT1" = x"$OUT2" ]; then
         sleep 3
         OUT3="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT3"
         if [ x"$OUT2" = x"$OUT3" ]; then
             sleep 3
             OUT4="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT4"
+            if [ x"$OUT3" = x"$OUT4" ]; then
+                sleep 8
+                OUT5="`upsc dummy@localhost:$NUT_PORT ups.status`" || die "[testcase_sandbox_upsc_query_timer] upsd does not respond on port ${NUT_PORT} ($?): $OUT4"
+            fi
         fi
     fi
-    if echo "$OUT1$OUT2$OUT3$OUT4" | grep "OB" && echo "$OUT1$OUT2$OUT3$OUT4" | grep "OL" ; then
+
+    log_info "Stopping upslog daemon"
+    kill -15 $PID_UPSLOG 2>/dev/null || true
+    wait $PID_UPSLOG || true
+
+    if (grep " [OB] " "${NUT_STATEPATH}/upslog-dummy.log" && grep " [OL] " "${NUT_STATEPATH}/upslog-dummy.log") \
+    || (grep " \[OB\] " "${NUT_STATEPATH}/upslog-dummy.log" && grep " \[OL\] " "${NUT_STATEPATH}/upslog-dummy.log") \
+    || (echo "$OUT1$OUT2$OUT3$OUT4$OUT5" | grep "OB" && echo "$OUT1$OUT2$OUT3$OUT4$OUT5" | grep "OL") \
+    ; then
         log_info "[testcase_sandbox_upsc_query_timer] PASSED: ups.status flips over time"
         PASSED="`expr $PASSED + 1`"
     else
@@ -1188,6 +1242,8 @@ testcase_sandbox_upsc_query_timer() {
         FAILED="`expr $FAILED + 1`"
         FAILED_FUNCS="$FAILED_FUNCS testcase_sandbox_upsc_query_timer"
     fi
+
+    #rm -f "${NUT_STATEPATH}/upslog-dummy.log" || true
 }
 
 isTestablePython() {
@@ -1667,6 +1723,7 @@ if [ -n "${DEBUG_SLEEP-}" ] ; then
 
     log_info "You may want to press Ctrl+Z now and command 'bg' to the shell, if you did not start '$0 &' backgrounded already"
     log_info "To kill the script early, return it to foreground with 'fg' and press Ctrl+C, or 'kill -2 \$PID_NIT_SCRIPT' (kill -2 $$)"
+    log_info "To trace built programs, check scripts/valgrind/README.adoc and LD_LIBRARY_PATH for this build"
 
     log_info "Remember that in shell/scripting you can probe for '${NUT_CONFPATH}/NIT.env-sandbox-ready' which only appears at this moment"
     touch "${NUT_CONFPATH}/NIT.env-sandbox-ready"

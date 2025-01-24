@@ -69,7 +69,7 @@ void update_ups_states(struct gpioups_t *gpioupsfd);
 static
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
 struct gpioups_t *generic_gpio_open(const char *chipName) {
-	struct gpioups_t *upsfdlocal=xcalloc(sizeof(*upsfdlocal),1);
+	struct gpioups_t *upsfdlocal = xcalloc(1, sizeof(*upsfdlocal));
 	upsfdlocal->runOptions=0; /*	don't use ROPT_REQRES and ROPT_EVMODE yet	*/
 	upsfdlocal->chipName=chipName;
 
@@ -77,7 +77,7 @@ struct gpioups_t *generic_gpio_open(const char *chipName) {
 		fatalx(EXIT_FAILURE, "UPS status calculation rules not specified");
 
 	get_ups_rules(upsfdlocal, (unsigned char *)getval("rules"));
-	upsfdlocal->upsLinesStates = xcalloc(sizeof(int), upsfdlocal->upsLinesCount);
+	upsfdlocal->upsLinesStates = xcalloc(upsfdlocal->upsLinesCount, sizeof(int));
 
 	return upsfdlocal;
 }
@@ -193,7 +193,7 @@ void get_ups_rules(struct gpioups_t *upsfdlocal, unsigned char *rulesString) {
 					lexStatus = 1;
 					upsfdlocal->rulesCount++;
 					upsfdlocal->rules = xrealloc(upsfdlocal->rules, (size_t)(sizeof(upsfdlocal->rules[0])*upsfdlocal->rulesCount));
-					upsfdlocal->rules[upsfdlocal->rulesCount-1] = xcalloc(sizeof(rulesint), 1);
+					upsfdlocal->rules[upsfdlocal->rulesCount-1] = xcalloc(1, sizeof(rulesint));
 					strncpy(upsfdlocal->rules[upsfdlocal->rulesCount-1]->stateName, (char *)(rulesString+startPos), endPos-startPos);
 					upsfdlocal->rules[upsfdlocal->rulesCount-1]->stateName[endPos-startPos] = 0;
 				}
@@ -471,9 +471,13 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/* replace with a proper shutdown function */
 	upslogx(LOG_ERR, "shutdown not supported");
-	set_exit_flag(-1);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 void upsdrv_help(void)
