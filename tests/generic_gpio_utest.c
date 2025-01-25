@@ -336,7 +336,7 @@ int main(int argc, char **argv) {
 				failed = expecting_failure;
 				if(jmp_result) {	/* test case  exiting */
 					if(expecting_failure) failed=0;
-					/* upsdrv_cleanup(); */
+					upsdrv_cleanup();
 				} else {
 					if(expecting_failure) failed=1;
 					device_path = chipNameLocal;
@@ -390,6 +390,9 @@ int main(int argc, char **argv) {
 	done = 1;
 
 	dstate_free();
+	/* Should be safe if we happen to run this twice for
+	 * generic_gpio_common.c, it only frees driver variables once */
+	upsdrv_cleanup();
 
 	/* Return 0 (exit-code OK, boolean false) if no tests failed and some ran */
 	if ( (cases_failed == 0) && (cases_passed > 0) )
