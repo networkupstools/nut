@@ -69,15 +69,18 @@ void update_ups_states(struct gpioups_t *gpioupsfdlocal);
 static
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
 struct gpioups_t *generic_gpio_open(const char *chipName) {
-	struct gpioups_t	*upsfdlocal = xcalloc(1, sizeof(*upsfdlocal));
+	char	*rules = getval("rules");
+	struct gpioups_t	*upsfdlocal = NULL;
+
+	if (!rules)	/* rules is required configuration parameter */
+		fatalx(EXIT_FAILURE, "UPS status calculation rules not specified");
+
+	upsfdlocal = xcalloc(1, sizeof(*upsfdlocal));
 
 	upsfdlocal->runOptions = 0; /*	don't use ROPT_REQRES and ROPT_EVMODE yet	*/
 	upsfdlocal->chipName = chipName;
 
-	if (!testvar("rules"))	/* rules is required configuration parameter */
-		fatalx(EXIT_FAILURE, "UPS status calculation rules not specified");
-
-	get_ups_rules(upsfdlocal, (unsigned char *)getval("rules"));
+	get_ups_rules(upsfdlocal, (unsigned char *)rules);
 	upsfdlocal->upsLinesStates = xcalloc(upsfdlocal->upsLinesCount, sizeof(int));
 
 	return upsfdlocal;
