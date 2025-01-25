@@ -389,6 +389,8 @@ int main(int argc, char **argv) {
 	fclose(testData);
 	done = 1;
 
+	dstate_free();
+
 	/* Return 0 (exit-code OK, boolean false) if no tests failed and some ran */
 	if ( (cases_failed == 0) && (cases_passed > 0) )
 		return 0;
