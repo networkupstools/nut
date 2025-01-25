@@ -192,13 +192,17 @@ endif !HAVE_CXX11
 
 if HAVE_VALGRIND
 # NOTE: "cppnit", if built, requires running from NIT (with NUT_PORT, etc.)
+# Note that FAILED value begins with a space, so we do not echo another
 memcheck: $(check_PROGRAMS)
-	RES=0; for P in $? ; do \
+	@RES=0; FAILED=""; \
+	 for P in $? ; do \
 		case "$$P" in \
 			cppnit|cppnit$(EXEEXT)) if [ "$${NUT_PORT-}" -gt 0 ] 2>/dev/null ; then : ; else echo "SKIPPED: $(VALGRIND) ./$$P : NUT_PORT not prepared" ; continue ; fi ;; \
 		esac ; \
-		$(VALGRIND) ./$$P || { RES=$$? ; echo "FAILED: $(VALGRIND) ./$$P" >&2; } ; \
-	done; exit $$RES
+		$(VALGRIND) ./$$P || { RES=$$? ; echo "FAILED: $(VALGRIND) ./$$P" >&2; FAILED="$$FAILED $$P" ; } ; \
+	 done; \
+	 if [ -n "$$FAILED" ] ; then echo "OVERALL FAILED:$$FAILED" >&2 ; fi ; \
+	 exit $$RES
 else !HAVE_VALGRIND
 memcheck:
 	@echo "SKIPPED $@ : valgrind was not detected on this system by configure script" >&2
