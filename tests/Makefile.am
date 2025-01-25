@@ -197,9 +197,17 @@ memcheck: $(check_PROGRAMS)
 	@RES=0; FAILED=""; \
 	 for P in $? ; do \
 		case "$$P" in \
-			cppnit|cppnit$(EXEEXT)) if [ "$${NUT_PORT-}" -gt 0 ] 2>/dev/null ; then : ; else echo "SKIPPED: $(VALGRIND) ./$$P : NUT_PORT not prepared" ; continue ; fi ;; \
+			cppnit|cppnit$(EXEEXT)) \
+				if [ "$${NUT_PORT-}" -gt 0 ] 2>/dev/null ; then : ; else \
+					echo "SKIPPED: $(VALGRIND) ./$$P : NUT_PORT not prepared" ; \
+					continue ; \
+				fi ;; \
 		esac ; \
-		$(VALGRIND) ./$$P || { RES=$$? ; echo "FAILED: $(VALGRIND) ./$$P" >&2; FAILED="$$FAILED $$P" ; } ; \
+		VALGRIND='$(VALGRIND)' '$(top_srcdir)/scripts/valgrind/valgrind.sh' ./$$P \
+		|| { RES=$$? ; \
+			echo "FAILED: VALGRIND='$(VALGRIND)' '$(top_srcdir)/scripts/valgrind/valgrind.sh' ./$$P" >&2; \
+			FAILED="$$FAILED $$P" ; \
+		} ; \
 	 done; \
 	 if [ -n "$$FAILED" ] ; then echo "OVERALL FAILED:$$FAILED" >&2 ; fi ; \
 	 exit $$RES
