@@ -97,8 +97,13 @@ distcheck-light-man:
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_MAN_FLAGS)" distcheck
 
 if HAVE_VALGRIND
+# Make the check in current build, if possible
+memcheck:
+	@echo "See also scripts/valgrind in NUT sources for a helper tool"
+	+@cd $(builddir)/tests && $(MAKE) $(AM_MAKEFLAGS) -s $@
+
 # Make a distcheck (and check in particular) with enabled valgrind and debug info
-memcheck distcheck-valgrind:
+distcheck-valgrind:
 	@echo "See also scripts/valgrind in NUT sources for a helper tool"
 	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_VALGRIND_FLAGS)" distcheck
 else !HAVE_VALGRIND
