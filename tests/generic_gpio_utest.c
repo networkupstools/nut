@@ -336,7 +336,7 @@ int main(int argc, char **argv) {
 				failed = expecting_failure;
 				if(jmp_result) {	/* test case  exiting */
 					if(expecting_failure) failed=0;
-					upsdrv_cleanup();
+					/* upsdrv_cleanup(); */
 				} else {
 					if(expecting_failure) failed=1;
 					device_path = chipNameLocal;
