@@ -1,6 +1,8 @@
 #!/bin/sh
 
 # Copyright (C) 2024-2025 by Jim Klimov <jimklimov+nut@gmail.com>
+# NOTE: If there are system problems to suppress, re-run the test with
+#    --gen-suppressions=all option, and update the .valgrind.supp file.
 
 SCRIPTDIR="`dirname "$0"`"
 SCRIPTDIR="`cd "$SCRIPTDIR" && pwd`"
