@@ -1,4 +1,23 @@
 {
+   <dash-leak1>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   obj:/usr/bin/dash
+   ...
+   fun:(below main)
+}
+{
+   <dash-leak2>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:strdup
+   obj:/usr/bin/dash
+   ...
+   fun:(below main)
+}
+{
    <socketcall_sendto>
    Memcheck:Param
    socketcall.send(msg)
