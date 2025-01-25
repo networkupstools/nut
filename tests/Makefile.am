@@ -203,9 +203,9 @@ memcheck: $(check_PROGRAMS)
 					continue ; \
 				fi ;; \
 		esac ; \
-		VALGRIND='$(VALGRIND)' '$(top_srcdir)/scripts/valgrind/valgrind.sh' ./$$P \
+		'$(top_builddir)/scripts/valgrind/valgrind.sh' "./$$P" \
 		|| { RES=$$? ; \
-			echo "FAILED: VALGRIND='$(VALGRIND)' '$(top_srcdir)/scripts/valgrind/valgrind.sh' ./$$P" >&2; \
+			echo "FAILED: '$(top_builddir)/scripts/valgrind/valgrind.sh' './$$P'" >&2; \
 			FAILED="$$FAILED $$P" ; \
 		} ; \
 	 done; \

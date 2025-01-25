@@ -5799,6 +5799,7 @@ m4_foreach_w([SCRIPTFILE], [
  scripts/Solaris/postremove
  scripts/Solaris/preproto.pl
  scripts/Solaris/nut
+ scripts/valgrind/valgrind.sh
  tools/gitlog2changelog.py
  tools/nut-snmpinfo.py
 ], [

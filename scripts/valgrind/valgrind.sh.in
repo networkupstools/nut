@@ -8,7 +8,11 @@ SCRIPTDIR="`cd "$SCRIPTDIR" && pwd`"
 LTEXEC=""
 [ -n "${LIBTOOL-}" ] || LIBTOOL="`command -v libtool`" 2>/dev/null
 [ -z "${LIBTOOL}"  ] || LTEXEC="${LIBTOOL} --mode=execute "
-[ -n "${VALGRIND-}"  ] || VALGRIND="valgrind"
+
+# Allow to run un-parsed "sh ${top_srcdir}/scripts/valgrind/valgrind.sh.in"
+# with reasonable success:
+[ -n "${VALGRIND-}" ] || case '@VALGRIND@' in [@]*) ;; *) VALGRIND='@VALGRIND@' ;; esac
+[ -n "${VALGRIND-}" ] || VALGRIND="valgrind"
 
 # TODO: Also wrap tool=callgrind e.g. via $0 symlink name?
 
