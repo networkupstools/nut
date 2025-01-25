@@ -140,3 +140,177 @@
    fun:start_thread
    ...
 }
+
+# Numerous reported leaks seem to be part of CPPUNIT itself, quesce them:
+{
+   <cppunit-fixture-factory>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   #operator new(unsigned long)
+   fun:_Znwm
+   #CppUnit::ConcretTestFixtureFactory<*>::makeFixture()
+   ...
+   #CppUnit::TestFactoryRegistry::makeTest()
+   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
+   ...
+}
+{
+   <cppunit-sync-obj>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   #operator new(unsigned long)
+   fun:_Znwm
+   #CppUnit::SynchronizedObject::SynchronizedObject(CppUnit::SynchronizedObject::SynchronizationObject*)
+   fun:_ZN7CppUnit18SynchronizedObjectC1EPNS0_21SynchronizationObjectE
+   ...
+}
+{
+   <cppunit-test-result>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   #operator new(unsigned long)
+   fun:_Znwm
+   #CppUnit::TestResult::TestResult(CppUnit::SynchronizedObject::SynchronizationObject*)
+   fun:_ZN7CppUnit10TestResultC1EPNS_18SynchronizedObject21SynchronizationObjectE
+   ...
+}
+{
+   <cppunit-test-runner>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   #operator new(unsigned long)
+   fun:_Znwm
+   #CppUnit::TestRunner::TestRunner()
+   fun:_ZN7CppUnit10TestRunnerC1Ev
+   #CppUnit::TextTestRunner::TextTestRunner(CppUnit::Outputter*)
+   fun:_ZN7CppUnit14TextTestRunnerC1EPNS_9OutputterE
+   fun:main
+}
+{
+   <cppunit-text-test-runner>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   #operator new(unsigned long)
+   fun:_Znwm
+   #CppUnit::TextTestRunner::TextTestRunner(CppUnit::Outputter*)
+   fun:_ZN7CppUnit14TextTestRunnerC1EPNS_9OutputterE
+   fun:main
+}
+{
+   <cppunit-test-collector>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   #operator new(unsigned long)
+   fun:_Znwm
+   #CppUnit::TestResultCollector::TestResultCollector(CppUnit::SynchronizedObject::SynchronizationObject*)
+   fun:_ZN7CppUnit19TestResultCollectorC1EPNS_18SynchronizedObject21SynchronizationObjectE
+   #CppUnit::TextTestRunner::TextTestRunner(CppUnit::Outputter*)
+   fun:_ZN7CppUnit14TextTestRunnerC1EPNS_9OutputterE
+   fun:main
+}
+{
+   <cppunit-add-test>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   #operator new(unsigned long)
+   fun:_Znwm
+   #CppUnit::TestSuite::addTest(CppUnit::Test*)
+   fun:_ZN7CppUnit9TestSuite7addTestEPNS_4TestE
+   fun:main
+}
+{
+   <cppunit-add-test-composite>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   #operator new(unsigned long)
+   fun:_Znwm
+   #CppUnit::TestComposite::TestComposite(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)
+   fun:_ZN7CppUnit13TestCompositeC1ERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE
+   ...
+}
+{
+   <cppunit-add-test-case>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   #operator new(unsigned long)
+   fun:_Znwm
+   #CppUnit::TestCase::TestCase(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)
+   fun:_ZN7CppUnit8TestCaseC1ERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE
+   ...
+}
+{
+   <cppunit-test-suite-factory-basemgr>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   #operator new(unsigned long)
+   fun:_Znwm
+   #void std::_Function_base::_Base_manager<std::_Bind<void (ExampleTest::*(ExampleTest*))()> >::_M_create<std::_Bind<void (ExampleTest::*(ExampleTest*))()> >(std::_Any_data&, std::_Bind<void (ExampleTest::*(ExampleTest*))()>&&, std::integral_constant<bool, false>)
+   ###fun:_ZNSt14_Function_base13_Base_managerISt5_BindIFM11ExampleTestFvvEPS2_EEE9_M_createIS7_EEvRSt9_Any_dataOT_St17integral_constantIbLb0EE
+   fun:_ZNSt14_Function_base13_Base_managerISt5_BindIFM11*vvEPS2_EEE9_M_createIS7_EEvRSt9_Any_dataOT_St17integral_constantIbLb0EE
+   ...
+   #CppUnit::TestFactoryRegistry::addTestToSuite(CppUnit::TestSuite*)
+   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
+}
+{
+   <cppunit-test-protector1>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   #operator new(unsigned long)
+   fun:_Znwm
+   #CppUnit::ProtectorChain::protect(CppUnit::Functor const&, CppUnit::ProtectorContext const&)
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   #CppUnit::TestResult::protect(CppUnit::Functor const&, CppUnit::Test*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE
+   ...
+}
+{
+   <cppunit-test-protector2>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   #operator new(unsigned long)
+   fun:_Znwm
+   #CppUnit::ProtectorChain::protect()
+   fun:_ZN7CppUnit14ProtectorChainC1Ev
+   #CppUnit::TestResult::TestResult(CppUnit::SynchronizedObject::SynchronizationObject*)
+   fun:_ZN7CppUnit10TestResultC1EPNS_18SynchronizedObject21SynchronizationObjectE
+   #CppUnit::TextTestRunner::TextTestRunner(CppUnit::Outputter*)
+   fun:_ZN7CppUnit14TextTestRunnerC1EPNS_9OutputterE
+   fun:main
+}
+{
+   <cppunit-runner-collector>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   #operator new(unsigned long)
+   fun:_Znwm
+   obj:*libcppunit*
+   #CppUnit::TestResultCollector::TestResultCollector(CppUnit::SynchronizedObject::SynchronizationObject*)
+   fun:_ZN7CppUnit19TestResultCollectorC1EPNS_18SynchronizedObject21SynchronizationObjectE
+   #CppUnit::TextTestRunner::TextTestRunner(CppUnit::Outputter*)
+   fun:_ZN7CppUnit14TextTestRunnerC1EPNS_9OutputterE
+   fun:main
+}
+{
+   <cppunit-runner-text-test-path>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   #operator new(unsigned long)
+   fun:_Znwm
+   obj:*libcppunit*
+   #CppUnit::TestPath::TestPath(CppUnit::Test*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)
+   fun:_ZN7CppUnit8TestPathC1EPNS_4TestERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE
+   #CppUnit::TestRunner::run(CppUnit::TestResult&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE
+   #CppUnit::TextTestRunner::run(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, bool, bool, bool)
+   fun:_ZN7CppUnit14TextTestRunner3runENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEbbb
+   fun:main
+}
+{
+   <cppunit-new-outputter>
+   ### runner.setOutputter( new CppUnit::CompilerOutputter( ...) ) in main (cpputest.cpp:120)
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   #operator new(unsigned long)
+   fun:_Znwm
+   fun:main
+}
