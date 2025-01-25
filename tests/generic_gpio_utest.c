@@ -101,7 +101,7 @@ int get_test_status(struct gpioups_t *result, int on_fail_path) {
 
 	for (i=0; i<result->rulesCount; i++) {
 		fEof=fscanf(testData, "%s", stateName);
-		if(!strcmp(result->rules[i]->stateName,stateName)) {
+		if(strcmp(result->rules[i]->stateName,stateName)) {
 			cases_failed++;
 			printf("expecting stateName %s, got %s for rule %d\n", stateName, result->rules[i]->stateName, i);
 			return 1;
