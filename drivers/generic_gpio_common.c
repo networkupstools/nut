@@ -35,7 +35,7 @@ struct gpioups_t *generic_gpio_open(const char *chipName);
 #ifndef DRIVERS_MAIN_WITHOUT_MAIN
 static
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
-void generic_gpio_close(struct gpioups_t *gpioupsfdlocal);
+void generic_gpio_close(struct gpioups_t **gpioupsfdptr);
 
 #ifndef DRIVERS_MAIN_WITHOUT_MAIN
 static
@@ -89,24 +89,23 @@ struct gpioups_t *generic_gpio_open(const char *chipName) {
 #ifndef DRIVERS_MAIN_WITHOUT_MAIN
 static
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
-void generic_gpio_close(struct gpioups_t *gpioupsfdlocal) {
-	if (gpioupsfdlocal) {
-		if (gpioupsfdlocal->upsLines) {
-			free(gpioupsfdlocal->upsLines);
+void generic_gpio_close(struct gpioups_t **gpioupsfdptr) {
+	if (gpioupsfdptr && *gpioupsfdptr) {
+		if ((*gpioupsfdptr)->upsLines) {
+			free((*gpioupsfdptr)->upsLines);
 		}
-		if (gpioupsfdlocal->upsLinesStates) {
-			free(gpioupsfdlocal->upsLinesStates);
+		if ((*gpioupsfdptr)->upsLinesStates) {
+			free((*gpioupsfdptr)->upsLinesStates);
 		}
-		if (gpioupsfdlocal->rules) {
+		if ((*gpioupsfdptr)->rules) {
 			int	i;
-			for (i = 0; i < gpioupsfdlocal->rulesCount; i++) {
-				free(gpioupsfdlocal->rules[i]);
+			for (i = 0; i < (*gpioupsfdptr)->rulesCount; i++) {
+				free((*gpioupsfdptr)->rules[i]);
 			}
-			free(gpioupsfdlocal->rules);
+			free((*gpioupsfdptr)->rules);
 		}
-		free(gpioupsfdlocal);
-		/* caller is encouraged to do the same with their copy: */
-		gpioupsfdlocal = NULL;
+		free(*gpioupsfdptr);
+		*gpioupsfdptr = NULL;
 	}
 }
 
@@ -513,7 +512,6 @@ void upsdrv_cleanup(void)
 		/* release gpio library resources	*/
 		gpio_close(gpioupsfd);
 		/* release related generic resources	*/
-		generic_gpio_close(gpioupsfd);
-		gpioupsfd = NULL;
+		generic_gpio_close(&gpioupsfd);
 	}
 }
