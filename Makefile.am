@@ -68,13 +68,14 @@ endif
 # tweak paths not using ${prefix} so `make distcheck` fails for it as
 # it does not play with a `DESTDIR` either.
 
-DISTCHECK_FLAGS = --with-all --with-ssl --with-doc=auto --with-pynut=app --with-nut_monitor=force
-DISTCHECK_LIGHT_FLAGS = --with-all=auto --with-ssl=auto --with-doc=auto --with-pynut=app --with-nut_monitor=force
-DISTCHECK_LIGHT_MAN_FLAGS = --with-all=auto --with-ssl=auto --with-doc=man --with-pynut=app --with-nut_monitor=force
-DISTCHECK_VALGRIND_FLAGS = --with-all=auto --with-ssl=auto --with-doc=skip --with-valgrind CXXFLAGS='$(CXXFLAGS) -g' CFLAGS='$(CFLAGS) -g' --with-pynut=app --with-nut_monitor=force
+DISTCHECK_FLAGS = --with-all --with-ssl --with-doc=auto --with-pynut=app --with-nut_monitor=force CXXFLAGS='@NUT_CONFIG_CXXFLAGS@' CFLAGS='@NUT_CONFIG_CFLAGS@' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@'
+DISTCHECK_LIGHT_FLAGS = --with-all=auto --with-ssl=auto --with-doc=auto --with-pynut=app --with-nut_monitor=force CXXFLAGS='@NUT_CONFIG_CXXFLAGS@' CFLAGS='@NUT_CONFIG_CFLAGS@' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@'
+DISTCHECK_LIGHT_MAN_FLAGS = --with-all=auto --with-ssl=auto --with-doc=man --with-pynut=app --with-nut_monitor=force CXXFLAGS='@NUT_CONFIG_CXXFLAGS@' CFLAGS='@NUT_CONFIG_CFLAGS@' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@'
+DISTCHECK_VALGRIND_FLAGS = --with-all=auto --with-ssl=auto --with-doc=skip --with-valgrind CXXFLAGS='@NUT_CONFIG_CXXFLAGS@ -g' CFLAGS='@NUT_CONFIG_CFLAGS@ -g' CPPFLAGS='@NUT_CONFIG_CPPFLAGS@' LDFLAGS='@NUT_CONFIG_LDFLAGS@' --with-pynut=app --with-nut_monitor=force
 
 # Note: this rule uses envvar DISTCHECK_FLAGS expanded at run-time
 DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
+ PKG_CONFIG_PATH='@PKG_CONFIG_PATH@'			\
  --with-systemdsystemunitdir='$${prefix}/lib/systemd/system' \
  --with-systemdsystempresetdir='$${prefix}/usr/lib/systemd/system-preset' \
  --with-systemdshutdowndir='$${prefix}/lib/systemd/system-shutdown' \
@@ -90,15 +91,26 @@ DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
 # that is meaningful for sub-make program (gets stripped away
 # otherwise and breaks custom distchecks).
 distcheck-light:
-	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_FLAGS)" distcheck
+	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_FLAGS)" distcheck
 
 distcheck-light-man:
-	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_MAN_FLAGS)" distcheck
+	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_MAN_FLAGS)" distcheck
+
+if HAVE_VALGRIND
+# Make the check in current build, if possible
+memcheck:
+	@echo "See also scripts/valgrind in NUT sources for a helper tool"
+	+@cd $(builddir)/tests && $(MAKE) $(AM_MAKEFLAGS) -s $@
 
 # Make a distcheck (and check in particular) with enabled valgrind and debug info
+distcheck-valgrind:
+	@echo "See also scripts/valgrind in NUT sources for a helper tool"
+	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_VALGRIND_FLAGS)" distcheck
+else !HAVE_VALGRIND
 memcheck distcheck-valgrind:
 	@echo "See also scripts/valgrind in NUT sources for a helper tool"
-	+prefix='$${prefix}'; $(MAKE) $(AM_MAKEFLAGS) DISTCHECK_CONFIGURE_FLAGS="$(DISTCHECK_CONFIGURE_FLAGS)" DISTCHECK_FLAGS="$(DISTCHECK_VALGRIND_FLAGS)" distcheck
+	@echo "SKIPPED $@ : valgrind was not detected on this system by configure script" >&2
+endif !HAVE_VALGRIND
 
 # workaround the dist generated files that are also part of the distribution
 # Note that distcleancheck is disabled for now, while waiting for a proper

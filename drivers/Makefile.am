@@ -338,7 +338,7 @@ adelsystem_cbi_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
 # for USB connections. Legacy versions work for Serial and TCP links.
 apc_modbus_SOURCES = apc_modbus.c
 apc_modbus_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
-if WITH_USB
+if WITH_MODBUS_USB
   apc_modbus_SOURCES += $(LIBUSB_IMPL) hidparser.c usb-common.c
   apc_modbus_LDADD += $(LIBUSB_LIBS)
 endif
