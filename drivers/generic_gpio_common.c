@@ -104,6 +104,7 @@ void generic_gpio_close(struct gpioups_t *gpioupsfdlocal) {
 			}
 		}
 		free(gpioupsfdlocal);
+		/* caller is encouraged to do the same with their copy: */
 		gpioupsfdlocal = NULL;
 	}
 }
@@ -507,8 +508,11 @@ void upsdrv_initups(void)
 
 void upsdrv_cleanup(void)
 {
-	/* release gpio library resources	*/
-	gpio_close(gpioupsfd);
-	/* release related generic resources	*/
-	generic_gpio_close(gpioupsfd);
+	if (gpioupsfd) {
+		/* release gpio library resources	*/
+		gpio_close(gpioupsfd);
+		/* release related generic resources	*/
+		generic_gpio_close(gpioupsfd);
+		gpioupsfd = NULL;
+	}
 }
