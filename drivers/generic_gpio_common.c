@@ -102,6 +102,7 @@ void generic_gpio_close(struct gpioups_t *gpioupsfdlocal) {
 			for (i = 0; i < gpioupsfdlocal->rulesCount; i++) {
 				free(gpioupsfdlocal->rules[i]);
 			}
+			free(gpioupsfdlocal->rules);
 		}
 		free(gpioupsfdlocal);
 		/* caller is encouraged to do the same with their copy: */
