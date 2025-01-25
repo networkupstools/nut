@@ -334,10 +334,9 @@ int main(int argc, char **argv) {
 #endif
 				jmp_result = setjmp(env_buffer);
 				failed = expecting_failure;
-				/* Be sure the internal gpioupsfd in driver code is freed before we init it below */
-				upsdrv_cleanup();
 				if(jmp_result) {	/* test case  exiting */
 					if(expecting_failure) failed=0;
+					upsdrv_cleanup();
 				} else {
 					if(expecting_failure) failed=1;
 					device_path = chipNameLocal;
