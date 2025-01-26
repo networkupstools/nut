@@ -745,6 +745,10 @@ https://github.com/networkupstools/nut/milestone/10
  - snmp-ups driver:
    * added support for Eaton EMP002 sensor for ATS16 NM2 sub-driver. [#2286]
    * mapping table updates for apc-mib sub-driver. [#2264]
+   * added support to monitor BayTech RPC3-NC PDUs, with `baytech-rpc3nc-mib`
+     serving same basic data points as were available in `baytech-mib.c`,
+     but checking for a different model OID subtree and different OIDs for
+     the device model information. [#2779]
 
  - usbhid-ups driver:
    * `arduino-hid` subdriver was enhanced from "initial bare bones" experimental
