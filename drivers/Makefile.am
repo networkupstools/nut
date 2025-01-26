@@ -266,7 +266,7 @@ mge_shut_LDADD = $(LDADD) -lm
 # by vendor too) to ease maintenance and codebase fork resynchronisations
 snmp_ups_SOURCES = snmp-ups.c snmp-ups-helpers.c \
  apc-mib.c apc-pdu-mib.c apc-epdu-mib.c \
- baytech-mib.c bestpower-mib.c \
+ baytech-mib.c baytech-rpc3nc-mib.c bestpower-mib.c \
  compaq-mib.c cyberpower-mib.c \
  delta_ups-mib.c \
  eaton-pdu-genesis2-mib.c eaton-pdu-marlin-mib.c eaton-pdu-marlin-helpers.c \
@@ -393,7 +393,7 @@ nutdrv_qx_SOURCES += $(NUTDRV_QX_SUBDRIVERS)
 # distributed by "make dist".
 
 dist_noinst_HEADERS = \
- apc_modbus.h apc-mib.h apc-iem-mib.h apc-hid.h arduino-hid.h baytech-mib.h bcmxcp.h bcmxcp_ser.h	\
+ apc_modbus.h apc-mib.h apc-iem-mib.h apc-hid.h arduino-hid.h baytech-mib.h baytech-rpc3nc-mib.h bcmxcp.h bcmxcp_ser.h	\
  bcmxcp_io.h belkin.h belkin-hid.h bestpower-mib.h blazer.h cps-hid.h dstate.h	\
  dummy-ups.h explore-hid.h gamatronic.h genericups.h	\
  generic_gpio_common.h generic_gpio_libgpiod.h	\
