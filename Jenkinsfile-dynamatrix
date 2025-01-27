@@ -214,7 +214,7 @@ import org.nut.dynamatrix.*;
     if ( env?.BRANCH_NAME ==~ dynacfgPipeline.branchStableRegex ) {
         // For our main branches we want all builds in full,
         // to keep reference for warnings-ng up to date, so do
-        // not limit ny appliesToChangedFilesRegex categories
+        // not limit any appliesToChangedFilesRegex categories
 
         // Be sure to not make noise in long-lived branches'
         // overview pages by enabling quick analysis publishing
