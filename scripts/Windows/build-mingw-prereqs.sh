@@ -206,11 +206,11 @@ provide_libmodbus_git() (
 	# Provide the libmodbus version with RTU USB support
 	PKGCFG_NAME="libmodbus"
 	DEP_PRJNAME="libmodbus-git"
-	#DEP_GITREPO="https://github.com/networkupstools/libmodbus"
-	#DEP_VERSION="rtu_usb"	# Git branch/tag/commit point
+	DEP_GITREPO="https://github.com/networkupstools/libmodbus"
+	DEP_VERSION="rtu_usb"	# Git branch/tag/commit point
 	# Use PR #3 temporarily:
-	DEP_GITREPO="https://github.com/jimklimov/libmodbus"	# TEMP
-	DEP_VERSION="fix-mingw-build"	# TEMP
+	#DEP_GITREPO="https://github.com/jimklimov/libmodbus"	# TEMP
+	#DEP_VERSION="fix-mingw-build"	# TEMP
 	DEP_DIRNAME="${DEP_PRJNAME}-${DEP_VERSION}"
 
 	FORCE=false
