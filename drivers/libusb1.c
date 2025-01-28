@@ -730,8 +730,8 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE) )
 # pragma GCC diagnostic pop
 #endif
-			upsdebugx(2, "HID descriptor too long %d (max %d)",
-				rdlen, UINT16_MAX);
+			upsdebugx(2, "HID descriptor too long %d (max %" PRIuMAX ")",
+				rdlen, (uintmax_t)UINT16_MAX);
 			goto next_device;
 		}
 
