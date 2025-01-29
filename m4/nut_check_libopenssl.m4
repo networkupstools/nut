@@ -98,13 +98,21 @@ if test -z "${nut_have_libopenssl_seen}"; then
 				dnl   (aka 'void (*)(char *)') to 'OPENSSL_sk_freefunc'
 				dnl   (aka 'void (*)(void *)') converts to incompatible
 				dnl   function type [-Werror,-Wcast-function-type-strict]
-				dnl # FIXME: Pick out -I... args of the depCFLAGS
+				dnl # Below: Pick out -I... args of the depCFLAGS
 				dnl # to check locations that actually matter for
 				dnl # the build
-				AS_IF([test -d /usr/ssl-3/include],
-					[depCFLAGS="-isystem /usr/ssl-3/include $depCFLAGS"])
-				AS_IF([test -d /usr/ssl/include],
-					[depCFLAGS="-isystem /usr/ssl/include $depCFLAGS"])
+				addCFLAGS=""
+				for TOKEN in ${depCFLAGS} ; do
+					case "${TOKEN}" in
+						-I*)	TOKENDIR="`echo "$TOKEN" | sed 's,^-I,,'`"
+							case " ${CFLAGS} ${addCFLAGS} " in
+								*" -isystem $TOKENDIR "*) ;;
+								*) addCFLAGS="${addCFLAGS} -isystem $TOKENDIR" ;;
+							esac ;;
+					esac
+				done
+				test -z "${addCFLAGS}" || depCFLAGS="${depCFLAGS} ${addCFLAGS}"
+				unset addCFLAGS
 			])
 		])
 
