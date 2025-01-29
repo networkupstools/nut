@@ -1719,8 +1719,11 @@ static int _apc_modbus_usb_callback(const modbus_usb_device_t *device)
 	_apc_modbus_usb_lib_to_nut(device, &usbdevice);
 
 	current_matcher = best_matcher;
+	upsdebugx(5, "%s: current_matcher=%p", __func__, (void*)current_matcher);
 	while (current_matcher != NULL) {
-		if (current_matcher->match_function(&usbdevice, current_matcher->privdata) == 1) {
+		int ret = current_matcher->match_function(&usbdevice, current_matcher->privdata);
+		upsdebugx(5, "%s: Tried matcher %p returned %d", __func__, (void*)current_matcher, ret);
+		if (ret == 1) {
 			break;
 		}
 
