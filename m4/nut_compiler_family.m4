@@ -203,9 +203,10 @@ dnl    AS_IF([test "x$GXX" = xyes], [CXXFLAGS="$CXXFLAGS -Wno-unknown-warning"])
 
 dnl # There should be no need to include standard system paths (and possibly
 dnl # confuse the compiler assumptions - along with its provided headers)...
-dnl # ideally; in practice however cppunit, net-snmp and some system include
-dnl # files do cause grief to picky compiler settings (more so from third
-dnl # party packages shipped via /usr/local/... namespace):
+dnl # ideally; in practice however cppunit, net-snmp, openssl-3 and some
+dnl # system include files do cause grief to picky compiler settings (more
+dnl # so from third party packages shipped via /usr/local/... namespace);
+dnl # see also e.g. nut_check_libopenssl.m4 for component-specific locations:
     AS_IF([test "x$cross_compiling" != xyes], [
         AS_IF([test "x$CLANGCC" = xyes -o "x$GCC" = xyes], [
 dnl #            CFLAGS="-isystem /usr/include $CFLAGS"

@@ -88,6 +88,26 @@ if test -z "${nut_have_libopenssl_seen}"; then
 		nut_ssl_lib="(OpenSSL)"
 		AC_DEFINE(WITH_SSL, 1, [Define to enable SSL support])
 		AC_DEFINE(WITH_OPENSSL, 1, [Define to enable SSL support using OpenSSL])
+
+		dnl # Repeat some tricks from nut_compiler_family.m4
+		AS_IF([test "x$cross_compiling" != xyes], [
+			AS_IF([test "x$CLANGCC" = xyes -o "x$GCC" = xyes], [
+				dnl # This was hit on OmniOS Extra packaging repo
+				dnl   /usr/ssl-3/include/openssl/safestack.h:205:1:
+				dnl   error: cast from 'sk_OPENSSL_STRING_freefunc'
+				dnl   (aka 'void (*)(char *)') to 'OPENSSL_sk_freefunc'
+				dnl   (aka 'void (*)(void *)') converts to incompatible
+				dnl   function type [-Werror,-Wcast-function-type-strict]
+				dnl # FIXME: Pick out -I... args of the depCFLAGS
+				dnl # to check locations that actually matter for
+				dnl # the build
+				AS_IF([test -d /usr/ssl-3/include],
+					[depCFLAGS="-isystem /usr/ssl-3/include $depCFLAGS"])
+				AS_IF([test -d /usr/ssl/include],
+					[depCFLAGS="-isystem /usr/ssl/include $depCFLAGS"])
+			])
+		])
+
 		LIBSSL_CFLAGS="${depCFLAGS}"
 		LIBSSL_LIBS="${depLIBS}"
 		LIBSSL_REQUIRES="${depREQUIRES}"
