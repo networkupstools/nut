@@ -963,8 +963,9 @@ static int _apc_modbus_reopen(void)
 
 #if defined NUT_MODBUS_HAS_USB
 	/* We might have matched a new device in the modbus_connect callback.
-	 * Because of this we want a new exact matcher. */
-	best_matcher = best_matcher->next;
+	 * Because of this we want a new exact matcher. The method will drop
+	 * the old reopen_matcher from our list starting at best_matcher, and
+	 * from memory. */
 	_apc_modbus_create_reopen_matcher();
 #endif /* defined NUT_MODBUS_HAS_USB */
 
