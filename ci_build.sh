@@ -923,16 +923,6 @@ detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
                 /opt/ooce/bin|*:/opt/ooce/bin|/opt/ooce/bin:*|*:/opt/ooce/bin:*) ;;
                 *) if [ -d "/opt/ooce/bin" ] ; then PATH="/opt/ooce/bin:${PATH}" ; fi ;;
             esac
-
-            if [ -d "/usr/ssl-3/include" ] ; then
-                # Lots of casting between method signatures with void/specific
-                # pointer types "converts to incompatible function type
-                # [-Werror,-Wcast-function-type-strict]" per clang's taste.
-                CFLAGS="${CFLAGS-} -isystem /usr/ssl-3/include"
-                #CPPFLAGS="${CPPFLAGS-} -isystem /usr/ssl-3/include"
-                CXXFLAGS="${CXXFLAGS-} -isystem /usr/ssl-3/include"
-            fi
-
             ;;
         *darwin*|*macos*|*osx*)
             # Architecture-dependent base dir, e.g.
