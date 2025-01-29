@@ -2000,6 +2000,9 @@ void upsdrv_cleanup(void)
 
 #if defined NUT_MODBUS_HAS_USB
 	USBFreeExactMatcher(reopen_matcher);
+	reopen_matcher = NULL;
+
 	USBFreeExactMatcher(regex_matcher);
+	regex_matcher = NULL;
 #endif /* defined NUT_MODBUS_HAS_USB */
 }
