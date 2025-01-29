@@ -311,6 +311,9 @@ void upsdrv_updateinfo(void)
 	case QUINT_UPS:
 		mrir(modbus_ctx, 29745, 1, tab_reg);
 		break;
+	case TRIO_UPS:
+		mrir(modbus_ctx, 29702, 1, tab_reg);
+		break;
 	case NONE:
 		fatalx(EXIT_FAILURE, "Unknown UPS model.");
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
@@ -352,6 +355,10 @@ void upsdrv_updateinfo(void)
 	case QUINT_UPS:
 		mrir(modbus_ctx, 29749, 5, tab_reg);
 		break;
+	case TRIO_UPS:
+	case TRIO_2G_UPS:
+		/*battery.charge is not available for TRIO and TRIO-2G models*/
+		break;
 	case NONE:
 		fatalx(EXIT_FAILURE, "Unknown UPS model.");
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
@@ -382,8 +389,8 @@ void upsdrv_updateinfo(void)
 # pragma GCC diagnostic pop
 #endif
 	}
-
-	dstate_setinfo("battery.charge", "%d", tab_reg[0]);
+	if(UPSModel != TRIO_UPS && UPSModel != TRIO_2G_UPS)
+		dstate_setinfo("battery.charge", "%d", tab_reg[0]);
 	/* dstate_setinfo("battery.runtime",tab_reg[1]*60); */ /* also reported on this address, but less accurately */
 
 	switch (UPSModel)
@@ -407,6 +414,24 @@ void upsdrv_updateinfo(void)
 		break;
 	case QUINT_UPS:
 		mrir(modbus_ctx, 29792, 10, tab_reg);
+		break;
+	case TRIO_UPS:
+		mrir(modbus_ctx, 29700, 1, &battery_voltage);
+		tab_reg[0] = battery_voltage;
+		break;
+	case TRIO_2G_UPS:
+		mrir(modbus_ctx, 0x200A, 1, &battery_voltage);
+		tab_reg[0] = battery_voltage;
+
+		/*battery.temperature variable is not available for TRIO and TRIO-2G models*/
+
+		/*battery.runtime variable is not available for TRIO and TRIO-2G models*/
+
+		mrir(modbus_ctx, ???????????, 1, &battery_capacity);
+		tab_reg[8] = battery_capacity;
+
+		mrir(modbus_ctx, 0x2007, 1, &output_current);
+		tab_reg[6] = output_current;
 		break;
 	case NONE:
 		fatalx(EXIT_FAILURE, "Unknown UPS model.");
@@ -440,10 +465,18 @@ void upsdrv_updateinfo(void)
 	}
 
 	dstate_setinfo("battery.voltage", "%f", (double) (tab_reg[0]) / 1000.0);
-	dstate_setinfo("battery.temperature", "%d", tab_reg[1] - 273);
-	dstate_setinfo("battery.runtime", "%d", tab_reg[3]);
-	dstate_setinfo("battery.capacity", "%d", tab_reg[8] * 10);
-	dstate_setinfo("output.current", "%f", (double) (tab_reg[6]) / 1000.0);
+	if(UPSModel != TRIO_UPS)
+	{		
+		dstate_setinfo("battery.capacity", "%d", tab_reg[8] * 10);
+		dstate_setinfo("output.current", "%f", (double) (tab_reg[6]) / 1000.0);
+
+		if(UPSModel != TRIO_2G_UPS)
+		{
+			dstate_setinfo("battery.temperature", "%d", tab_reg[1] - 273);
+			dstate_setinfo("battery.runtime", "%d", tab_reg[3]);
+		}
+	}
+	
 
 	/* ALARMS */
 
@@ -489,6 +522,45 @@ void upsdrv_updateinfo(void)
 		if (CHECK_BIT(actual_alarms1, 14))
 			alarm_set("Low Battery (Service)");
 
+		break;
+	case TRIO_2G_UPS:
+		tab_reg[0] = 0;
+		actual_alarms = 0;
+		actual_alarms1 = 0;
+
+		mrir(modbus_ctx, 0x3000, 1, &actual_alarms);
+		mrir(modbus_ctx, 0x3001, 1, &actual_alarms1);
+
+		if (CHECK_BIT(actual_alarms, 9))
+			alarm_set("End of life (Resistance)");
+
+		if (CHECK_BIT(????????????))
+			alarm_set("End of life (Time)");
+
+		if (CHECK_BIT(actual_alarms, 10))
+			alarm_set("End of life (Voltage)");
+
+		if (CHECK_BIT(actual_alarms, 3))
+			alarm_set("No Battery");
+
+		if (CHECK_BIT(?????????????))
+			alarm_set("Inconsistent technology");
+
+		if (CHECK_BIT(actual_alarms1, 8))
+			alarm_set("Overload Cutoff");
+
+		if (CHECK_BIT(?????????????))
+			alarm_set("Low Battery (Voltage)");
+
+		if (CHECK_BIT(????????????))
+			alarm_set("Low Battery (Charge)");
+
+		if (CHECK_BIT(?????????????))
+			alarm_set("Low Battery (Time)");
+
+		if (CHECK_BIT(actual_alarms1, 14))
+			alarm_set("Low Battery (Service)");
+		
 		break;
 	case QUINT_UPS:
 		mrir(modbus_ctx, 29840, 1, tab_reg);
