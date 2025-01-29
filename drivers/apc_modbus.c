@@ -1739,6 +1739,16 @@ static int _apc_modbus_usb_callback(const modbus_usb_device_t *device)
 		if (ret == 1) {
 			/* known good hit */
 			break;
+		} else if (ret == 0) {
+			/* known active rejection */
+			upsdebugx(2, "%s: Device does not match - skipping", __func__);
+			/* go to next device that libmodbus would suggest and use this callback again */
+			return -1;
+		} else if (ret == -1) {
+			fatal_with_errno(EXIT_FAILURE, "%s: matcher", __func__);
+		} else if (ret == -2) {
+			upsdebugx(2, "%s: matcher: unspecified error", __func__);
+			return -1;
 		}
 
 		current_matcher = current_matcher->next;

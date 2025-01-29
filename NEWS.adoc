@@ -374,6 +374,10 @@ https://github.com/networkupstools/nut/milestone/11
    to have fixed a Segmentation Fault seen in earlier NUT releases with
    some of the devices supported by this driver. [#2427]
 
+ - apc_modbus driver should now properly handle mismatches of criteria passed
+   to the regular expression matcher (e.g. serial number) allowing several USB
+   devices to be monitored without conflict. [#2609]
+
  - phoenixcontact_modbus driver: Introduced Phoenix Contact QUINT4-UPS/24DC
    management (only new modbus addresses). [#2689, #2716]
 
