@@ -925,6 +925,18 @@ static void _apc_modbus_create_reopen_matcher(void)
 	int r;
 
 	if (reopen_matcher != NULL) {
+		USBDeviceMatcher_t	*curr, *prev = NULL;
+		for (curr = best_matcher; curr != NULL; curr = curr->next) {
+			if (curr == reopen_matcher) {
+				if (prev) {
+					prev->next = curr->next;
+				} else {
+					best_matcher = curr->next;
+				}
+			} else {
+				prev = curr;
+			}
+		}
 		USBFreeExactMatcher(reopen_matcher);
 		reopen_matcher = NULL;
 	}
