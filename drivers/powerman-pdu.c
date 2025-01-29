@@ -75,19 +75,19 @@ static int instcmd(const char *cmdname, const char *extra)
 	/* Power on the outlet */
 	if (!strcasecmp(cmdsuffix, "on")) {
 		rv = pm_node_on(pm, outletname);
-		return (rv==PM_ESUCCESS)?STAT_INSTCMD_HANDLED:STAT_SET_INVALID;
+		return (rv==PM_ESUCCESS)?STAT_INSTCMD_HANDLED:STAT_INSTCMD_INVALID;
 	}
 
 	/* Power off the outlet */
 	if (!strcasecmp(cmdsuffix, "off")) {
 		rv = pm_node_off(pm, outletname);
-		return (rv==PM_ESUCCESS)?STAT_INSTCMD_HANDLED:STAT_SET_INVALID;
+		return (rv==PM_ESUCCESS)?STAT_INSTCMD_HANDLED:STAT_INSTCMD_INVALID;
 	}
 
 	/* Cycle the outlet */
 	if (!strcasecmp(cmdsuffix, "cycle")) {
 		rv = pm_node_cycle(pm, outletname);
-		return (rv==PM_ESUCCESS)?STAT_INSTCMD_HANDLED:STAT_SET_INVALID;
+		return (rv==PM_ESUCCESS)?STAT_INSTCMD_HANDLED:STAT_INSTCMD_INVALID;
 	}
 
 	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);

@@ -1206,6 +1206,12 @@ For extra compiler coverage, we can install a large selection of versions,
 although to meet NUT CI farm expectations we also need to expose "numbered"
 filenames, as automated below:
 ------
+# NOTE: not all compiler versions may be served, some are obsoleted over time.
+# Check current distro repository offers with:
+:; pkg info -r '*clang*' '*gcc*'
+:; pkg search -r '*bin/g++*'
+:; pkg search -r '*bin/clang++*'
+
 :; pkg install \
     gcc-48 gcc-49 gcc-5 gcc-6 gcc-7 gcc-9 gcc-10 gcc-11 \
     clang-80 clang-90 \
@@ -1213,17 +1219,18 @@ filenames, as automated below:
 
 # As of this writing, clang-13 refused to link (claiming issues with
 # --fuse-ld which was never specified) on OI; maybe later it will:
-:; pkg install \
-    developer/clang-13 runtime/clang-13
+#:; pkg install \
+#    developer/clang-13 runtime/clang-13
 
-# With OI 2024.04 there's also clang-18 available in the mix:
+# With OI 2024.04 there's also clang-18 available in the mix, and as of
+# 2025 packaging, clang-19 as well:
 :; pkg install \
-    developer/clang-18 runtime/clang-18
+    developer/clang-19 runtime/clang-19
 
 # Get clang-cpp-X visible in standard PATH (for CI to reference the right one),
 # and make sure other frontends are exposed with versions (not all OI distro
 # releases have such symlinks packaged right), e.g.:
-:; (cd /usr/bin && for X in 8 9 13 18 ; do for T in "" "++" "-cpp"; do \
+:; (cd /usr/bin && for X in 8 9 19 ; do for T in "" "++" "-cpp"; do \
     ln -fs "../clang/$X.0/bin/clang$T" "clang${T}-${X}" ; \
    done; done)
 
@@ -1286,14 +1293,22 @@ site for setup details.
 # Optionally, make the environment comfortable, e.g.:
 :; pkg install sudo bash application/mc wget rsync pigz pbzip2 p7zip top
 
-# NOTE: OmniOS currently does not deliver clang in its Core/Extra repositories
+# NOTE: not all compiler versions may be served, some are obsoleted over time.
+# While OmniOS LTS 151046 offers a range of clang 13 to 17, current stable
+# includes also 18 and 19. OmniOS does not provide implicit (not numbered)
+# packages for clang or gcc. Check your distro repository offers with:
+:; pkg info -r '*clang*' '*gcc*'
+:; pkg search -r '*bin/g++*'
+:; pkg search -r '*bin/clang++*'
+
 :; pkg install \
     developer/build/autoconf developer/build/automake \
     developer/build/libtool library/libtool/libltdl \
     build-essential ccache git developer/pkg-config \
     runtime/perl \
     asciidoc \
-    libgd
+    libgd \
+    developer/clang-17
 
 :; pkg install \
     net-snmp
