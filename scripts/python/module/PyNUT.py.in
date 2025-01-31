@@ -84,6 +84,7 @@ class PyNUTClient :
     __password    = None
     __timeout     = None
     __srv_handler = None
+    __recv_leftover = b''
 
     __version     = "1.7.0"
     __release     = "2024-07-01"
@@ -121,6 +122,19 @@ timeout  : Timeout used to wait for network response
             self.__srv_handler.write( b"LOGOUT\n" )
         except :
             pass
+
+    def __read_until(self, finished_reading_data):
+        data = self.__recv_leftover
+        while (data_end_index := data.find(finished_reading_data)) == -1:
+            data += self.__srv_handler.recv(50)  # nut_telnetlib.py uses 50
+        data_end_index += len(finished_reading_data)
+
+        if data_end_index == len(data):
+            self.__recv_leftover = b''
+        else:
+            self.__recv_leftover = data[data_end_index:]
+            data = data[:data_end_index]
+        return data
 
     def __connect( self ) :
         """ Connects to the defined server
