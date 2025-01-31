@@ -105,7 +105,7 @@ timeout  : Timeout used to wait for network response
         self.__port     = port
         self.__login    = login
         self.__password = password
-        self.__timeout  = 5
+        self.__timeout  = timeout
 
         self.__connect()
 
@@ -141,6 +141,7 @@ if something goes wrong.
 
         self.__srv_handler = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
         self.__srv_handler.connect( (self.__host, self.__port) )
+        self.__srv_handler.settimeout( self.__timeout )
 
         if self.__login != None :
             self.__srv_handler.send( ("USERNAME %s\n" % self.__login).encode('ascii') )
