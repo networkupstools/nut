@@ -1,5 +1,5 @@
 /*vim ts=4*/
-/* powervar-c.c - Serial driver for Powervar UPM UPSs using CUSPP.
+/* powervar-cs.c - Serial driver for Powervar UPM UPSs using CUSPP.
  *
  * Supported Powervar UPS families in this driver:
  * UPM (All)
@@ -45,7 +45,7 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize);
 #include "powervar-cx.h"	/* Common driver defines, variables, and functions */
 
 #define DRIVER_NAME	"Powervar-CS UPS driver"
-#define DRIVER_VERSION	"0.02"
+#define DRIVER_VERSION	"0.04"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -136,6 +136,8 @@ void upsdrv_initups(void)
 	{
 		printf ("Setting baud to 9600.\n");
 		ser_set_speed(upsfd, device_path, B9600);
+
+		upsdebugx (4,"Serial baud set to 9600.");
 	}
 	else
 	{
@@ -146,16 +148,23 @@ void upsdrv_initups(void)
 		{
 			printf ("Setting baud to 38400.\n");
 			ser_set_speed(upsfd, device_path, B38400);
+			upsdebugx (4,"Serial baud set to 38400.");
 		}
 		else if (ulBaud == 57600)
 		{
 			printf ("Setting baud to 57600.\n");
 			ser_set_speed(upsfd, device_path, B57600);
+			upsdebugx (4,"Serial baud set to 57600.");
 		}
-		else if (ulBaud == 115200)
+		else if (ulBaud == 115200)	/* The only other baud known to be available. */
 		{
 			printf ("Setting baud to 115200.\n");
 			ser_set_speed(upsfd, device_path, B115200);
+			upsdebugx (4,"Serial baud set to 115200.");
+		}
+		else
+		{
+			upsdebugx (4,"Serial baud not set!! (%d).", ulBaud);
 		}
 	}
 

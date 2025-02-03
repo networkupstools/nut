@@ -1,11 +1,12 @@
 /*vim ts=4*/
-/* powervar-c.c - Driver for Powervar UPM UPS using CUSPP.
+/* powervar-cu.c - USB Driver for Powervar UPSs using CUSPP.
  *
  * Supported Powervar UPS families in this driver:
- * UPM (All)
+ * UPM Family (All)
+ * GTS Family (All)
  *
  * Copyright (C)
- *     2024 by Bill Elliot <bill@wreassoc.com>
+ *     2024, 2025 by Bill Elliot <bill@wreassoc.com>
  *     (USB comm based on various other drivers)
  *
  * This program is free software; you can redistribute it and/or modify
@@ -39,18 +40,17 @@
 int setcmd(const char* varname, const char* setvalue);
 int instcmd(const char *cmdname, const char *extra);
 static int subdriver_match_func(USBDevice_t *arghd, void *privdata);
-//static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *reply, size_t reply_len);
 static size_t SendRequest (const char* sRequest);
 static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize);
 
 #define BIG_BUFFER		512
 
 /* Two drivers include the following. Provide some identifier for any differences */
-#define PVAR_USB	1	/* This is the USB comm driver */
+//#define PVAR_USB	1	/* This is the USB comm driver */
 #include "powervar-cx.h"	/* Common driver variables and functions */
 
 #define DRIVER_NAME	"Powervar-CU UPS driver"
-#define DRIVER_VERSION	"0.02"
+#define DRIVER_VERSION	"0.04"
 
 /* USB comm stuff here */
 #define USB_RESPONSE_SIZE	8
@@ -65,8 +65,6 @@ static USBDeviceMatcher_t *reopen_matcher = NULL;
 static USBDeviceMatcher_t *regex_matcher = NULL;
 static usb_dev_handle *udev;
 static usb_communication_subdriver_t *comm_driver = &usb_subdriver;
-
-//static unsigned char reply[BIG_BUFFER];
 
 /* USB IDs device table */
 static usb_device_id_t powervar_usb_device_table[] = {
@@ -87,16 +85,6 @@ static USBDeviceMatcher_t subdriver_matcher = {
 	NULL
 };
 
-/* static enum pvar_model_t {
-	PVAR_UNDEFINED = 0,
-	PVAR_GTS,
-	PVAR_UPM,
-*/
-//	PVAR_DYNAMIC			/* If we can define one in the config file */
-/*
-} pvar_model = PVAR_UNDEFINED;
- */
-
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -106,15 +94,6 @@ upsdrv_info_t upsdrv_info = {
 	DRV_EXPERIMENTAL,
 	{ NULL }
 };
-
-
-#define MAX_SEND_TRIES 10
-//#define SEND_WAIT_SEC 0
-//#define SEND_WAIT_NSEC (1000*1000*100)
-
-#define MAX_RECV_TRIES 10
-
-
 
 
 static int subdriver_match_func(USBDevice_t *arghd, void *privdata)
@@ -161,7 +140,6 @@ int match_by_something(usb_dev_handle *argudev, USBDevice_t *arghd, usb_ctrl_cha
 	printf ("In 'match_by_something'\n");
 
 	GetUPSData (PID_REQ, sData, sDataLen);
-//	ret = send_cmd((unsigned char*)"PID", 3, (unsigned char*)sData, sDataLen);
 
 	for (i = 0; i < BIG_BUFFER ; i++)
 	{
@@ -178,7 +156,7 @@ int match_by_something(usb_dev_handle *argudev, USBDevice_t *arghd, usb_ctrl_cha
 
 	if (GetSubstringPosition ((const char*)sData, "CUSPP") == 1)
 	{
-		upsdebugx(3, "UPM CUSPP device found!");
+		upsdebugx(3, "Powervar CUSPP device found!");
 	}
 
 	return 1;
@@ -217,8 +195,9 @@ static size_t SendRequest (const char* sRequest)
 	size_t ReqLen = strlen(sRequest);
 	uint8_t i;
 
-//	ShowStringHex (sRequest);
-
+/*
+	ShowStringHex (sRequest);
+*/
 	/* Clear output buffer area */
 	for(i = 0; i < 40; i++) outbuff[i] = '\0';
 
@@ -233,23 +212,20 @@ static size_t SendRequest (const char* sRequest)
 	outbuff[i] = ENDCHAR;
 	ReqLen++;			/* Add one for added CR */
 
-//	ShowStringHex (outbuff);
+/*
+	ShowStringHex (outbuff);
+*/
 
-//	for(send_try=0; !done && send_try < MAX_SEND_TRIES; send_try++) {
+	ret = comm_driver->set_report(udev, 0,
+		(usb_ctrl_charbuf)outbuff,
+		(usb_ctrl_charbufsize)ReqLen);
 
-//		upsdebugx(6, "send_cmd send_try %d", send_try+1);
+	upsdebugx(5, "set_report ret:   %ld", ret);
 
-		ret = comm_driver->set_report(udev, 0,
-			(usb_ctrl_charbuf)outbuff,
-			(usb_ctrl_charbufsize)ReqLen);
-//			(usb_ctrl_charbufsize)sizeof(outbuff));
-
-		upsdebugx(5, "set_report ret:   %ld", ret);
-
-		if(ret != ReqLen) {
-			upslogx(1, "libusb_set_report() returned %ld instead of %" PRIuSIZE,
-				ret, ReqLen);
-		}
+	if(ret != ReqLen)
+	{
+		upslogx(1, "libusb_set_report() returned %ld instead of %" PRIuSIZE, ret, ReqLen);
+	}
 
 	return ret;
 }
@@ -260,7 +236,6 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
 
 	unsigned char response_in[USB_RESPONSE_SIZE + 2];
 	int ret = 0, done = 0;
-//	int recv_try = 0;
 	size_t i = 0;
 	size_t j = 0;
 
@@ -306,10 +281,6 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
 		}
 	}
 
-//	upsdebugx (3, "!PowervarGetResponse retry (%" PRIiSIZE ", %d)...", return_val, Retries);
-
-/*	ShowStringHex ((const char*)chBuff);	*/
-
 	upsdebugx (4,"PowervarGetResponse buffer: '%s'",chBuff);
 
 	USBFlushReceive ();		/* Clear USB hardware */
@@ -317,7 +288,8 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
 	if (Retries == 0)
 	{
 		upsdebugx (2,"!!PowervarGetResponse timeout...");
-		return_val = 1;					/* Comms error */
+
+		return_val = 1;		/* Comms error */
 	}
 	else
 	{
@@ -326,95 +298,11 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
 			upsdebugx (2,"PowervarGetResponse recovered (%d)...", Retries);
 		}
 
-		return_val = 0;					/* Good comms */
+		return_val = 0;		/* Good comms */
 	}
 
 	return return_val;
 }
-
-//#if 1
-#ifdef never
-static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *reply, size_t reply_len)
-{
-	#define USB_RESPONSE_SIZE	8
-
-	unsigned char buffer_out[40];
-	unsigned char response_in[USB_RESPONSE_SIZE + 2];
-	int ret = 0, done = 0;
-	size_t i = 0;
-	size_t j = 0;
-
-	upsdebugx(3, "send_cmd(msg='%s', msg_len=%u)", msg, (unsigned)msg_len);
-
-	/* Clear buffer areas */
-	for(i = 0; i < 40; i++) buffer_out[i] = '\0';
-	for(i = 0; i < reply_len; i++) reply[i] = '\0';
-	for(i = 0; i < (USB_RESPONSE_SIZE + 2) ; i++) response_in[i] = '\0';
-
-	/* Move command into USB buffer and add terminating character */
-	for(i = 0; i < msg_len; i++)
-	{
-		buffer_out[i] = msg[i];
-	}
-
-	buffer_out[i] = ENDCHAR;
-
-		ret = comm_driver->set_report(udev, 0,
-			(usb_ctrl_charbuf)buffer_out,
-			(usb_ctrl_charbufsize)sizeof(buffer_out));
-
-		upsdebugx(5, "set_report ret:   %d", ret);
-
-		if(ret != sizeof(buffer_out)) {
-			upslogx(1, "libusb_set_report() returned %d instead of %" PRIuSIZE,
-				ret, sizeof(buffer_out));
-		}
-
-#if ! defined(__FreeBSD__)
-		usleep(1000*100); /* TODO: nanosleep */
-#endif
-
-		for (i = 0 ; (done == 0) && (i < reply_len) ; )
-		{
-			upsdebugx(5, "Receive Loop: %ld", i);
-
- 			ret = comm_driver->get_interrupt(udev,
-				(usb_ctrl_charbuf)response_in,
-				(usb_ctrl_charbufsize) USB_RESPONSE_SIZE,
-				(usb_ctrl_timeout_msec) 1000);
-
-			upsdebugx(4, "Response: '%s'", response_in);
-
-			if (ret > 0)
-			{
-				for (j=0 ; j < USB_RESPONSE_SIZE ; j++)
-				{
-					reply[i] = response_in[j];
-
-					if (response_in[j] == ENDCHAR)
-					{
-						upsdebugx(5, "<CR> found.");
-						done = 1;
-						break;
-					}
-
-					i++;
-				}
-
-				/* Clear response buffer for next chunk */
-				for(j = 0; j < USB_RESPONSE_SIZE ; j++) response_in[j] = '\0';
-			}
-			else
-			{
-				upsdebugx(5, "Unexpected return value: %d", ret);
-				break;
-			}
-		}
-
-	return i;
-}
-#endif	/* never  or '1' */
-
 
 
 /****************************************************************
@@ -426,8 +314,7 @@ void upsdrv_initups(void)
 	upsdebugx(2, "In upsdrv_initups");
 
  	char *regex_array[USBMATCHER_REGEXP_ARRAY_LIMIT];
-//	char *value;
-	int r = 1;
+	int ret = 1;
 
 	warn_if_bad_usb_port_filename(device_path);
 
@@ -441,11 +328,14 @@ void upsdrv_initups(void)
 	regex_array[6] = getval("device");
 	regex_array[7] = NULL;
 
-	r = USBNewRegexMatcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
-	if (r==-1) {
+	ret = USBNewRegexMatcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
+	if (ret == -1)
+	{
 		fatal_with_errno(EXIT_FAILURE, "USBNewRegexMatcher");
-	} else if (r) {
-		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[r]);
+	}
+	else if (ret)
+	{
+		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[ret]);
 	}
 
 	/* link the matchers */
@@ -454,8 +344,9 @@ void upsdrv_initups(void)
 	upsdebugx(2, "Trying to open device...)");
 
 	/* Search for the first supported UPS matching the regular expression */
-	r = comm_driver->open_dev(&udev, &curDevice, regex_matcher, match_by_something);
-	if (r < 1) {
+	ret = comm_driver->open_dev(&udev, &curDevice, regex_matcher, match_by_something);
+	if (ret < 1)
+	{
 		fatalx(EXIT_FAILURE, "No matching USB/HID UPS found");
 	}
 
@@ -464,30 +355,29 @@ void upsdrv_initups(void)
 	upslogx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
 
 	/* TBD, I believe all of this supported stuff can come out */
-	r = is_usb_device_supported (powervar_usb_device_table, hd);
+	ret = is_usb_device_supported (powervar_usb_device_table, hd);
 
-	if (r < 0)
+	if (ret < 0)
 	{
-		upsdebugx (3, "supported: r is less than 0.");
+		upsdebugx (3, "supported: ret is less than 0.");
 	}
-	else if(r > 0)
+	else if(ret > 0)
 	{
-		upsdebugx (3, "supported: r is %d.", r);
+		upsdebugx (3, "supported: ret is %d.", ret);
 	}
 
 	upsdebugx(3, "VendorID: %04x", hd->VendorID);
 	upsdebugx(3, "ProductID: %04x", hd->ProductID);
 
 	/* create a new matcher for later reopening */
-	r = USBNewExactMatcher(&reopen_matcher, hd);
-	if (r) {
+	ret = USBNewExactMatcher(&reopen_matcher, hd);
+	if (ret)
+	{
 		fatal_with_errno(EXIT_FAILURE, "USBNewExactMatcher");
 	}
 
 	/* link the two matchers */
 	reopen_matcher->next = regex_matcher;
-
-//	sleep (1);
 }
 
 void upsdrv_initinfo(void)
@@ -497,12 +387,6 @@ void upsdrv_initinfo(void)
 	/* Get port ready */
 	SendRequest ((const char*)ENDCHARS);		/* Just get device ready -- flush */
 	USBFlushReceive ();				/* Just flush response */
-//	PowervarGetResponse (sDBuff, BUFFSIZE);		/* Pull any characters */
-//	upsdebugx(5, "Flush response: '%s'", sDBuff);
-
-//	SendRequest ((const char*)ENDCHARS);		/* Second flush request */
-//	PowervarGetResponse (sDBuff, BUFFSIZE);		/* Pull any characters */
-//	upsdebugx(5, "Flush response2: '%s'", sDBuff);
 
 	PvarCommon_Initinfo ();
 }
@@ -513,13 +397,8 @@ void upsdrv_updateinfo(void)
 {
 	printf ("In upsdrv_updateinfo\n");
 
-	/* Keep moving this down below things that work and the next thing being tried */
-//	fatalx(EXIT_FAILURE, "[%s] USB Development exit.\n", "Move Me");
-
 	status_init();
 	alarm_init();
-
-//	status_set("OFF");
 
 	PvarCommon_Updateinfo ();
 
@@ -529,25 +408,6 @@ void upsdrv_updateinfo(void)
 	dstate_dataok();
 }
 
-/* Items to look into more for implementation:
-
- 	 Low and high output trip points
-	dstate_setinfo("input.transfer.low", "%s", buffer2);
-	dstate_setinfo("input.transfer.high", "%s", buffer);
-
-	 Low Batt at time
-	timevalue = atoi(buffer2) * 60;		Mins to secs
-	dstate_setinfo("battery.runtime.low", "%d", timevalue);
-
-	 Shutdown timer
-	dstate_setinfo("ups.timer.shutdown", "%s", buffer2);
-
-	 Restart timer
-	ser_send (upsfd, "%s%s", GETX_RESTART_COUNT, COMMAND_END);
-	dstate_delinfo("ups.timer.start");
-	dstate_setinfo("ups.timer.start", "%s", buffer2);
-
-*/
 
 /**************************************
  * Handlers for NUT command calls     *

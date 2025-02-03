@@ -51,7 +51,9 @@ int setcmd(const char* varname, const char* setvalue);
 #define BEEPENABLE		"1"
 #define BEEPDISABLE		"0"
 #define BEEPMUTE		"2"
-#define GET_SHUTDOWN_RESP_SIZE	5
+#define GET_SHUTDOWN_RESP_SIZE		5	/* Max chars for variable */
+#define GET_STARTDELAY_RESP_SIZE	5	/* Max chars for variable */
+#define GETX_DATE_RESP_SIZE		6	/* Max chars for variable */
 
 #define ENDCHAR			'\r'
 #define ENDCHARS		"\r\n"
@@ -164,6 +166,7 @@ int setcmd(const char* varname, const char* setvalue);
 #define TST_BATDEP_REQ		"TST.BATDEP.W=1"
 #define TST_BATRUN_REQ		"TST.BATRUN.W="
 #define TST_ABORT_REQ		"TST.ABORT.W=1"
+#define TST_DISPDFLT_REQ	"TST.DISP.W=1"
 #define TST_DISP_REQ		"TST.DISP.W="
 
 #define SET_OFFNOW_REQ		"SET.OFFNOW.W=1"
@@ -173,13 +176,15 @@ int setcmd(const char* varname, const char* setvalue);
 #define SET_OFFON_REQ		"SET.OFFON.W="
 #define SET_OFFSTP_REQ		"SET.OFFSTP.W=1"
 #define SET_AUDIBL_REQ		"SET.AUDIBL.W="
-#define SET_ATOSRT_REQ		"SET.ATOSRT.W="
+#define SET_ATOSRT0_REQ		"SET.ATOSRT.W=0"
+#define SET_ATOSRT1_REQ		"SET.ATOSRT.W=1"
 #define SET_RSTINP_REQ		"SET.RSTINP.W=1"
+
+#define SYS_BATDTE_CMD		"SYS.BATDTE.W="
 
 /* Common CUSPP variables here */
 
 static char UpsFamily [SUBBUFFSIZE];		/* Hold family that was found */
-static u_char sbUPM = FALSE;
 static char UpsProtVersion [SUBBUFFSIZE];	/* Hold protocol version string */
 
 /* Dynamic CUSPP response information positions (0 = data not available) */
@@ -276,7 +281,7 @@ static void GetInitFormatAndOrData (const char* sReq, char* sF, const size_t sFS
 {
 char sRequest[15];
 
-//	printf ("In GetInitFormatAndOrData... \n");
+	upsdebugx (5, "In GetInitFormatAndOrData...");
 
 	if (sFSize)
 	{
@@ -340,7 +345,7 @@ char sRequest[15];
 		upsdebugx (4, "Bypassed requesting '%s' data", sReq);
 	}
 
-//	printf ("Leaving GetInitFormatAndOrData... \n");
+	upsdebugx (5, "Leaving GetInitFormatAndOrData...");
 }
 
 
@@ -604,11 +609,6 @@ void PvarCommon_Initinfo (void)
 		memcpy (UpsFamily, SubBuff, STDREQSIZE);	/* "GTS" or "UPM" */
 		dstate_setinfo("device.description", "%s", UpsFamily);
 		dstate_setinfo("ups.id", "%s", UpsFamily);
-
-		if(!strcmp(SubBuff, FAMILY_UPM))
-		{
-			sbUPM = TRUE;		/* This is a UPM ups */
-		}
 	}
 
 	if (GetSubstringFromBuffer (SubBuff, sDBuff, byUIDModelPos))
@@ -654,7 +654,7 @@ void PvarCommon_Initinfo (void)
 	}
 
 	/* TBD, Put this in the log?? */
-	upsdebugx (2, "Found a '%s' UPS with serial number: '%s'", UpsFamily, SubBuff);
+	upsdebugx (2, "Found a Powervar '%s' UPS with serial number: '%s'", UpsFamily, SubBuff);
 
 	/* Get BAT format and populate needed data string positions... */
 	GetInitFormatAndOrData(BAT_REQ, sFBuff, sizeof(sFBuff), sDBuff, sizeof(sDBuff));
@@ -748,7 +748,7 @@ void PvarCommon_Initinfo (void)
 	{
 		dstate_setinfo("battery.date", "%s (yyyymm)", SubBuff);
 		dstate_setflags("battery.date", ST_FLAG_STRING | ST_FLAG_RW);
-		dstate_setaux("battery.date", 6);
+		dstate_setaux("battery.date", GETX_DATE_RESP_SIZE);
 	}
 
 	/* For now, all are lead acid. */
@@ -789,8 +789,11 @@ void PvarCommon_Initinfo (void)
 		{
 			dstate_setinfo("ups.start.auto", "no");
 		}
+
 		dstate_setflags("ups.start.auto", ST_FLAG_STRING | ST_FLAG_RW);
 		dstate_setaux("ups.start.auto", 3);
+
+		dstate_setinfo("ups.shutdown", "enabled");
 	}
 
 	if (GetSubstringFromBuffer (SubBuff, sDBuff, bySETOffdlyPos))
@@ -912,44 +915,23 @@ void PvarCommon_Initinfo (void)
 		dstate_setinfo("ups.delay.shutdown", "%s", getval("offdelay"));
 	}
 
+	if (getval("startdelay") == NULL)
+	{
+		dstate_setinfo("ups.delay.start", "1");
+	}
+	else
+	{
+		dstate_setinfo("ups.delay.start", "%s", getval("startdelay"));
+	}
+
 	dstate_setflags("ups.delay.shutdown", ST_FLAG_STRING | ST_FLAG_RW);
 	dstate_setaux("ups.delay.shutdown", GET_SHUTDOWN_RESP_SIZE);
 
+	dstate_setflags("ups.delay.start", ST_FLAG_STRING | ST_FLAG_RW);
+	dstate_setaux("ups.delay.start", GET_STARTDELAY_RESP_SIZE);
+
 	upsh.setvar = setcmd;
 	upsh.instcmd = instcmd;
-
-
-/*
-	Stuff to follow up on realated to implementation for initinfo
-
-
-	 Low and high output trip points
-	EliminateLeadingZeroes (sDBuff+73, 3, buffer2, sizeof(buffer2));
-	dstate_setinfo("input.transfer.low", "%s", buffer2);
-	dstate_setflags("input.transfer.low", ST_FLAG_STRING | ST_FLAG_RW );
-	dstate_setaux("input.transfer.low", 3);
-
-	EliminateLeadingZeroes (sDBuff+76, 3, buffer2, sizeof(buffer2));
-	dstate_setinfo("input.transfer.high", "%s", buffer2);
-	dstate_setflags("input.transfer.high", ST_FLAG_STRING | ST_FLAG_RW);
-	dstate_setaux("input.transfer.high", 3);
-
-	 Get output window min/max points from OB or OZ v1.9 or later
-
-	i = atoi(buffer2);		Minimum voltage
-
-	j = atoi(buffer2);		Maximum voltage
-
-	strncpy(buffer2, sDBuff+8, 2);
-	buffer2[2]='\0';
-	k = atoi(buffer2);		Spread between
-
-	dstate_setinfo("input.transfer.low.min", "%3d", i);
-	dstate_setinfo("input.transfer.low.max", "%3d", j-k);
-	dstate_setinfo("input.transfer.high.min", "%3d", i+k);
-	dstate_setinfo("input.transfer.high.max", "%3d", j);
-*/
-
 }
 
 
@@ -958,7 +940,6 @@ void PvarCommon_Updateinfo (void)
 	char sData[BUFFSIZE];
 	char SubString[SUBBUFFSIZE];
 	uint8_t byOnBat = 0;		    /* Keep flag between OUT and BAT groups */
-//	uint8_t byBadBat = 0;		    /* Keep flag for 'RB' logic */
 	char chC;			    /* Character being worked with */
 	int timevalue;
 
@@ -1171,27 +1152,6 @@ void PvarCommon_Updateinfo (void)
 			}
 		}
 
-		/* Handle temperature alarm information...*/
-		/* May not actually be handled by NUT. "No official list of alarm words." */
-/* 		if(GetSubstringFromBuffer (SubString, sData, byALMTempPos))
-		{
-			if (SubString[0] == '1')
-			{
-				alarm_set ("OVERHEAT");
-			}
-		}
- */
-		/* Handle testing alarm information...*/
-		/* UPM only. Set when battery run tests are active. */
-		/* May not actually be handled by NUT. "No official list of alarm words." */
-/* 		if(GetSubstringFromBuffer (SubString, sData, byALMTestngPos))
-		{
-			if (SubString[0] == '1')
-			{
-				alarm_set ("TEST_RUNNING");
-			}
-		}
- */
 		/* Handle testing alarm information...*/
 		/* UPM only. Means Battery Life Test failed. */
 		if(GetSubstringFromBuffer (SubString, sData, byALMTstbadPos))
@@ -1209,17 +1169,6 @@ void PvarCommon_Updateinfo (void)
 		}
 	}
 
-
-	/* Get SYS data next... */
-	if (byPIDSysPos && GetUPSData (SYS_REQ, sData, sizeof (sData)))
-	{
-		/* Handle battery date information...*/
-		if(GetSubstringFromBuffer (SubString, sData, bySYSBatdtePos))
-		{
-			dstate_setinfo ("battery.date", "%s (yyyymm)", SubString);
-		}
-	}
-
 	/* Get EVT data next... */
 	if (byPIDEvtPos && GetUPSData (EVT_REQ, sData, sizeof (sData)))
 	{
@@ -1229,34 +1178,11 @@ void PvarCommon_Updateinfo (void)
 		}
 	}
 
-	/* Need any TST data?? */
-
 
 	alarm_commit();
 	status_commit();
 
 	dstate_dataok();
-
-/* Items to look into more for implementation:
-
- 	 Low and high output trip points
-	dstate_setinfo("input.transfer.low", "%s", buffer2);
-	dstate_setinfo("input.transfer.high", "%s", buffer);
-
-	 Low Batt at time
-	timevalue = atoi(buffer2) * 60;		Mins to secs
-	dstate_setinfo("battery.runtime.low", "%d", timevalue);
-
-	 Shutdown timer
-	dstate_setinfo("ups.timer.shutdown", "%s", buffer2);
-
-	 Restart timer
-	ser_send (upsfd, "%s%s", GETX_RESTART_COUNT, COMMAND_END);
-	dstate_delinfo("ups.timer.start");
-	dstate_setinfo("ups.timer.start", "%s", buffer2);
-
-*/
-
 }
 
 /* Support functions for Powervar UPS drivers */
@@ -1276,15 +1202,43 @@ static void HandleOffDelay (void)
 	char chDly[10];
 	int delay = atoi(dstate_getinfo("ups.delay.shutdown"));
 
+	memset(chBuff, 0, sizeof(chBuff));
+
 	if (delay == 0)
 	{
-		delay = 1;		/* Make it usable */
+		memcpy (chBuff, SET_OFFNOW_REQ, sizeof(SET_OFFNOW_REQ));
+	}
+	else
+	{
+		memcpy (chBuff, SET_OFFDLY_REQ, sizeof(SET_OFFDLY_REQ));
+		sprintf (chDly, "%d", delay);
+		strcat(chBuff, chDly);
 	}
 
+	SendRequest (chBuff);
+}
+
+static void HandleOnDelay (void)
+{
+	char chBuff[32];
+	char chDly[10];
+	int delay = atoi(dstate_getinfo("ups.delay.start"));
+
 	memset(chBuff, 0, sizeof(chBuff));
-	memcpy (chBuff, SET_OFFDLY_REQ, sizeof(SET_OFFDLY_REQ));
-	sprintf (chDly, "%d", delay);
-	strcat(chBuff, chDly);
+
+	if (delay == 0)
+	{
+		memcpy (chBuff, SET_SRTNOW_REQ, sizeof(SET_SRTNOW_REQ));
+	}
+	else
+	{
+		memcpy (chBuff, SET_SRTDLY_REQ, sizeof(SET_SRTDLY_REQ));
+		sprintf (chDly, "%d", delay);
+		strcat(chBuff, chDly);
+	}
+
+	printf ("HanleOnDelayCommand: '%s'\n", chBuff);		/* TBD, remove */
+	ShowStringHex (chBuff);					/* TBD, remove */
 
 	SendRequest (chBuff);
 }
@@ -1297,22 +1251,21 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "pvbaud", "*Possibly* use a baud rate other than the default of 9600.");
 #endif
 
-//	addvar(VAR_VALUE, "battesttime", "Change battery test time from the 10 second default.");
+	addvar(VAR_VALUE, "disptesttime", "Change display test time from the 10 second default (11-255).");
 
-//	addvar(VAR_VALUE, "disptesttime", "Change display test time from the 10 second default.");
+	addvar(VAR_VALUE, "startdelay", "Change start delay time from the 1 second default.");
 
-//	addvar(VAR_VALUE, "offdelay", "Change shutdown delay time from 0 second default.");
+	addvar(VAR_VALUE, "offdelay", "Change shutdown delay time from 0 second default.");
 }
 
 void upsdrv_shutdown(void)
 {
-//	ser_send(upsfd, "%s", SHUTDOWN);
+	SendRequest(SET_OFFNOW_REQ);
 }
 
 
 int instcmd(const char *cmdname, const char *extra)
 {
-//	int i;
 
 	upsdebugx(2, "In instcmd with %s and extra %s.", cmdname, extra);
 
@@ -1386,48 +1339,69 @@ int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	if (!strcasecmp(cmdname, "load.on"))
-	{
-		SendRequest (SET_SRTNOW_REQ);
-		return STAT_INSTCMD_HANDLED;
-	}
-
 	if (!strcasecmp(cmdname, "load.off.delay"))
 	{
 		HandleOffDelay ();
 		return STAT_INSTCMD_HANDLED;
 	}
 
-
-	if (!strcasecmp(cmdname, "shutdown.return"))
+	if (!strcasecmp(cmdname, "load.on"))
 	{
-/* 		i = atoi(dstate_getinfo("ups.delay.shutdown"));
-
-		if ((strncmp (UpsFamily, FAMILY_OZ, FAMILY_SIZE) == 0) ||
-			(strncmp (UpsFamily, FAMILY_OB, FAMILY_SIZE) == 0))
-		{
-			upsdebugx(3, "Shutdown using %c%d...", DELAYED_SHUTDOWN_PREFIX, i);
-			ser_send(upsfd,"%c%d%s", DELAYED_SHUTDOWN_PREFIX, i, COMMAND_END);
-		}
-		else
-		{
-			upsdebugx(3, "Shutdown using %c%03d...", DELAYED_SHUTDOWN_PREFIX, i)
-			ser_send(upsfd, "%c%03d%s", DELAYED_SHUTDOWN_PREFIX, i, COMMAND_END);
-		}
-
+		SendRequest (SET_SRTNOW_REQ);
 		return STAT_INSTCMD_HANDLED;
- */	}
+	}
 
-	if(!strcasecmp(cmdname, "shutdown.reboot"))
+	if (!strcasecmp(cmdname, "load.on.delay"))
 	{
-//		ser_send(upsfd, "%s", SHUTDOWN);
+		HandleOnDelay();
+		return STAT_INSTCMD_HANDLED;
+	}
+
+
+	if (!strcasecmp(cmdname, "shutdown.return") ||
+	    !strcasecmp(cmdname, "shutdown.reboot"))
+	{
+		SendRequest (SET_ATOSRT1_REQ);
+		HandleOffDelay ();
+		return STAT_INSTCMD_HANDLED;
+	}
+
+	if (!strcasecmp(cmdname, "shutdown.stayoff"))
+	{
+		SendRequest (SET_ATOSRT0_REQ);
+		HandleOffDelay ();
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.stop"))
 	{
-//		ser_send(upsfd, "%c%s", DELAYED_SHUTDOWN_PREFIX, COMMAND_END);
+		SendRequest (SET_OFFSTP_REQ);
 		return STAT_INSTCMD_HANDLED;
+	}
+
+	if (!strcasecmp(cmdname, "reset.input.minmax"))
+	{
+		SendRequest (SET_RSTINP_REQ);
+		return STAT_INSTCMD_HANDLED;
+	}
+
+	if (!strcasecmp(cmdname, "test.panel.start"))
+	{
+		char chBuff[16];
+		char chT[5];
+
+		if (getval("disptesttime") == NULL)
+		{
+			SendRequest (TST_DISPDFLT_REQ);
+		}
+		else
+		{
+			memset(chBuff, 0, sizeof(chBuff));
+			memcpy (chBuff, TST_DISP_REQ, sizeof(TST_DISP_REQ));
+			sprintf(chT, "%s", getval("disptesttime"));
+			strcat(chBuff, chT);
+			SendRequest (chBuff);
+		}
 	}
 
 	return STAT_INSTCMD_UNKNOWN;
@@ -1447,6 +1421,18 @@ int setcmd(const char* varname, const char* setvalue)
 		}
 
 		dstate_setinfo("ups.delay.shutdown", "%s", setvalue);
+		return STAT_SET_HANDLED;
+	}
+
+	if (!strcasecmp(varname, "ups.delay.start"))
+	{
+		if (atoi(setvalue) > 65535)
+		{
+			upsdebugx(2, "Too big (>65535)...(%s)", setvalue);
+			return STAT_SET_UNKNOWN;
+		}
+
+		dstate_setinfo("ups.delay.start", "%s", setvalue);
 		return STAT_SET_HANDLED;
 	}
 
@@ -1480,40 +1466,16 @@ int setcmd(const char* varname, const char* setvalue)
 
 	if (!strcasecmp(varname, "battery.date"))
 	{
-/* 		if(strlen(setvalue) == GETX_DATE_RESP_SIZE)
-		{
-			ser_send(upsfd, "%s%s%s", SETX_BATTERY_DATE, setvalue, COMMAND_END);
-			dstate_setinfo("battery.date", "%s (yymmdd)", setvalue);
-			return STAT_SET_HANDLED;
-		}
-		else
-		{
-			return STAT_SET_UNKNOWN;
-		}
- */	}
+		char chBuff[SUBBUFFSIZE];
 
-	if (!strcasecmp(varname, "ups.delay.start"))
-	{
-		if (atoi(setvalue) <= 9999)
+ 		if(strlen(setvalue) == GETX_DATE_RESP_SIZE)
 		{
-//			ser_send(upsfd,"%s%s%s", SETX_RESTART_DELAY, setvalue, COMMAND_END);
+			memset (chBuff, 0, sizeof(chBuff));
+			strcpy (chBuff, SYS_BATDTE_CMD);
+			strcat (chBuff, setvalue);
+			SendRequest(chBuff);
 
-			dstate_setinfo("ups.delay.start", "%s", setvalue);
-			return STAT_SET_HANDLED;
-		}
-		else
-		{
-			return STAT_SET_UNKNOWN;
-		}
-	}
-
-	if (!strcasecmp(varname, "battery.runtime.low"))
-	{
-		if (atoi(setvalue) <= 99)
-		{
-//			ser_send(upsfd,"%s%s%s", SETX_LOWBATT_AT, setvalue, COMMAND_END);
-
-			dstate_setinfo("battery.runtime.low", "%s", setvalue);
+			dstate_setinfo("battery.date", "%s (yyyymm)", setvalue);
 			return STAT_SET_HANDLED;
 		}
 		else
@@ -1526,13 +1488,13 @@ int setcmd(const char* varname, const char* setvalue)
 	{
 		if (!strcasecmp(setvalue, "yes"))
 		{
-//			ser_send(upsfd,"%c0%s", SETX_AUTO_START, COMMAND_END);
+			SendRequest(SET_ATOSRT1_REQ);
 			dstate_setinfo("ups.start.auto", "yes");
 			return STAT_SET_HANDLED;
 		}
 		else if (!strcasecmp(setvalue, "no"))
 		{
-//			ser_send(upsfd,"%c1%s", SETX_AUTO_START, COMMAND_END);
+			SendRequest(SET_ATOSRT0_REQ);
 			dstate_setinfo("ups.start.auto", "no");
 			return STAT_SET_HANDLED;
 		}
