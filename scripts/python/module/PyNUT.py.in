@@ -119,8 +119,12 @@ timeout  : Timeout used to wait for network response
 
     def __read_until(self, finished_reading_data):
         data = self.__recv_leftover
-        while (data_end_index := data.find(finished_reading_data)) == -1:
-            data += self.__srv_handler.recv(50)  # nut_telnetlib.py uses 50
+        while True:
+            data_end_index = data.find(finished_reading_data)
+            if data_end_index == -1:
+                data += self.__srv_handler.recv(50)  # nut_telnetlib.py uses 50
+            else:
+                break
         data_end_index += len(finished_reading_data)
 
         if data_end_index == len(data):
