@@ -203,7 +203,7 @@ void upsdrv_updateinfo(void)
 void upsdrv_help(void)
 {
 	printf("\n---------\nNOTE:\n");
-	printf("You must set the UPS interface card DIP switch to 9600 BPS\n");
+	printf("This driver is for connecting to a serial port at 9600 BPS.\n");
 }
 
 

@@ -341,7 +341,7 @@ void upsdrv_initups(void)
 	/* link the matchers */
 	regex_matcher->next = &subdriver_matcher;
 
-	upsdebugx(2, "Trying to open device...)");
+	upsdebugx(2, "Trying to open USB device...");
 
 	/* Search for the first supported UPS matching the regular expression */
 	ret = comm_driver->open_dev(&udev, &curDevice, regex_matcher, match_by_something);
@@ -416,7 +416,7 @@ void upsdrv_updateinfo(void)
 void upsdrv_help(void)
 {
 	printf("\n---------\nNOTE:\n");
-	printf("You must be talking to a USB unit\n");
+	printf("This driver is for connecting to a USB port.\n");
 }
 
 void upsdrv_cleanup(void)

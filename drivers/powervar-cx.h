@@ -1237,7 +1237,7 @@ static void HandleOnDelay (void)
 		strcat(chBuff, chDly);
 	}
 
-	printf ("HanleOnDelayCommand: '%s'\n", chBuff);		/* TBD, remove */
+	printf ("HandleOnDelayCommand: '%s'\n", chBuff);		/* TBD, remove */
 	ShowStringHex (chBuff);					/* TBD, remove */
 
 	SendRequest (chBuff);
@@ -1247,15 +1247,21 @@ static void HandleOnDelay (void)
 /* Functions called by NUT that impact or use the Powervar UPS driver */
 void upsdrv_makevartable(void)
 {
+	printf("In MakeVarTable function...\n");
+
+	addvar(VAR_VALUE, "startdelay", "Change start delay time from the 1 second default (1-65535).");
+
+	addvar(VAR_VALUE, "offdelay", "Change shutdown delay time from 0 second default (1-65535).");
+
+	printf("Leaving MakeVarTable function...\n");
+
+	addvar(VAR_VALUE, "disptesttime", "Change display test time from the 10 second default (UPM only, 11-255).");
+
 #ifdef PVAR_SERIAL
-	addvar(VAR_VALUE, "pvbaud", "*Possibly* use a baud rate other than the default of 9600.");
+	addvar(VAR_VALUE, "pvbaud", "(UPM dev only) *Possibly* use a baud rate other than the default of 9600.");
 #endif
 
-	addvar(VAR_VALUE, "disptesttime", "Change display test time from the 10 second default (11-255).");
-
-	addvar(VAR_VALUE, "startdelay", "Change start delay time from the 1 second default.");
-
-	addvar(VAR_VALUE, "offdelay", "Change shutdown delay time from 0 second default.");
+	printf("Leaving MakeVarTable function...\n");
 }
 
 void upsdrv_shutdown(void)
