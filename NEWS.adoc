@@ -273,6 +273,12 @@ https://github.com/networkupstools/nut/milestone/11
    * ...should now track the fact of `assumed_LogMax` (typically when firmware
      encoding logic is wrong, and `-1` is resolved by parser). [#1512, #1040]
 
+ - snmp-ups updates:
+   * added support to monitor BayTech RPC3-NC PDUs, with `baytech-rpc3nc-mib`
+     serving same basic data points as were available in `baytech-mib.c`,
+     but checking for a different model OID subtree and different OIDs for
+     the device model information. [#2779]
+
  - Introduced a new driver concept for interaction with OS-reported hardware
    monitoring readings. Currently instantiated as `hwmon_ina219` specifically
    made for Texas Instruments INA219 chip as exposed in the Linux "hwmon"
@@ -745,10 +751,6 @@ https://github.com/networkupstools/nut/milestone/10
  - snmp-ups driver:
    * added support for Eaton EMP002 sensor for ATS16 NM2 sub-driver. [#2286]
    * mapping table updates for apc-mib sub-driver. [#2264]
-   * added support to monitor BayTech RPC3-NC PDUs, with `baytech-rpc3nc-mib`
-     serving same basic data points as were available in `baytech-mib.c`,
-     but checking for a different model OID subtree and different OIDs for
-     the device model information. [#2779]
 
  - usbhid-ups driver:
    * `arduino-hid` subdriver was enhanced from "initial bare bones" experimental
