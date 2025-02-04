@@ -131,6 +131,7 @@ static int nut_debug_level_protocol = -1;
 /* everything else */
 static char	*pidfn = NULL;
 static int	help_only = 0,
+		cli_args_accepted = 0,
 		dump_data = 0; /* Store the update_count requested */
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
 
@@ -796,7 +797,7 @@ int do_loop_shutdown_commands(const char *sdcmds, char **cmdused) {
 			"too deeply nested, this seems to be either "
 			"a NUT programming error or a mis-configuration "
 			"of your 'sdcommands' setting", NUT_STRARG(upsname));
-	}	
+	}
 
 	if (cmdused) {
 		if (*cmdused)
@@ -1833,6 +1834,15 @@ static void exit_cleanup(void)
 	dstate_setinfo("driver.state", "cleanup.exit");
 
 	if (!dump_data && !help_only) {
+		if (!cli_args_accepted && !getenv("NUT_QUIET_INIT_UPSNOTIFY")) {
+			/* Default to not yelling about notification method support (or
+			 * lack thereof) when CLI arguments did not get handled early on.
+			 * Set envvar to cause "upsnotify_report_verbosity = 1" in
+			 * common.c::upsnotify() (if still applicable; if already
+			 * reported - oh well).
+			 */
+			setenv("NUT_QUIET_INIT_UPSNOTIFY", "yes", 0);
+		}
 		upsnotify(NOTIFY_STATE_STOPPING, "exit_cleanup()");
 	}
 
@@ -2333,6 +2343,7 @@ int main(int argc, char **argv)
 			"Try -h for help.");
 	}
 
+	cli_args_accepted = 1;
 	assign_debug_level();
 
 	new_uid = get_user_pwent(user);

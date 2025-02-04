@@ -113,6 +113,11 @@ https://github.com/networkupstools/nut/milestone/11
    now to report human-friendly text instead of internal enum codes. Follow-up
    to [issue #1590, PR #1777, PR #2136]
 
+ - drivers should no longer print warning messages about not-initializing the
+   notification subsystem because not running as a service when they are either
+   started explicitly to show the help message, or when their CLI arguments
+   are fatally wrong (no UPS name, no `port`, invalid trailing keywords...)
+
  - drivers, `upsd`, `upsmon`: reduce "scary noise" about failure to `fopen()`
    the PID file (which most of the time means that no previous instance of
    the daemon was running to potentially conflict with), especially useless
