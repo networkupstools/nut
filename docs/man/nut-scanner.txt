@@ -106,35 +106,45 @@ This option must be requested explicitly, even for a complete scan.
 'serial ports' can be expressed in various forms:
 +
 - 'auto' to scan all serial ports.
-- a single character indicating a port number ('0' (zero) for /dev/ttyS0 and
-  /dev/ttyUSB0 on Linux, '1' for COM1 on Windows, 'a' for /dev/ttya on Solaris...)
+- a single character indicating a port number ('0' (zero) for `/dev/ttyS0` and
+  `/dev/ttyUSB0` on Linux, '1' for `COM1` on Windows, 'a' for `/dev/ttya`
+  on Solaris...)
 - a range of N characters, hyphen separated, describing the range of
-  ports using 'X-Y', where X and Y are characters referring to the port number.
+  ports using `X-Y` syntax, where 'X' and 'Y' are characters referring
+  to the port number.
 - a single port name.
-- a list of ports name, coma separated, like '/dev/ttyS1,/dev/ttyS4'.
+- a list of ports name, comma separated, like `/dev/ttyS1,/dev/ttyS4`.
 
 NETWORK OPTIONS
 ---------------
 
-NOTE: The networked buses (such as SNMP, NetXML, IPMI and "Old NUT") allow to
+[NOTE]
+======
+The networked buses (such as SNMP, NetXML, IPMI and "Old NUT") allow to
 specify several IP (IPv4 or IPv6) address ranges, down to individual single
-IP addresses.  Normally a new range is specified by a set of one `-s` and one
-`-e` options following each other (in any order).  Lone or consecutive `-s` or
-`-e` options present on the command line would translate to single-IP queries.
-Also a `-m` option squashed between two `-s` and `-e` options would be a new
+IP addresses.
+
+Normally a new range is specified by a set of one `-s` and one `-e` options
+following each other (in any order on the command line).
+
+Lone or consecutive `-s` or `-e` options present on the command line would
+translate to single-IP queries.
+
+Also, a `-m` option squashed between two `-s` and `-e` options would be a new
 range, turning those two into single-IP queries.  This feature does not by
 itself recombine "neighboring" addresses into one range, nor even check for
 duplicate or overlapping specifications.
-+
-Also note that some buses require IP address(es) to scan, and others have a
-different behavior when exactly no addresses are specified (it is not currently
-possible to mix the two behaviors in one invocation of the `nut-scanner` tool).
-+
+
 A single-address range may be a host name which would be resolved into one IP
 address by the system resolver. A CIDR using a host name and netmask length
 would be resolved into an IP address and subjected to the mask application,
 to query hosts "near" the named one.
-+
+======
+
+Also note that some buses require IP address(es) to scan, and others have a
+different behavior when exactly no addresses are specified (it is not currently
+possible to mix the two behaviors in one invocation of the `nut-scanner` tool).
+
 Finally note that currently even if multi-threaded support is available, each
 range specification is a separate fan-out of queries constrained by the timeout.
 Requests to scan many single IP addresses will take a while to complete, much
