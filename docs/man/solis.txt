@@ -32,7 +32,8 @@ This driver has been tested with:
 All Solis models are sinusoidal on-line.
 
 In 2009, Schneider Electric acquired Microsol Technologies, and by 2012, the
-entire Microsol line of equipment was being sold under the APC brand.
+entire Microsol line of equipment was being sold under the APC brand. Newer
+devices may be better supported by linkman:microsol-apc[8] driver instead.
 
 EXTRA ARGUMENTS
 ---------------
@@ -40,16 +41,20 @@ EXTRA ARGUMENTS
 This driver support the following extra optional settings in the
 linkman:ups.conf[5].
 
-*battext = n* - (default = 0, no extra battery, where n = Ampere*hour )
+*battext=*'n'::
+Default = 0, no extra battery, where `n` = Ampere*hour.
 
-*prgshut = 1* - (default = 0, no programmable shutdown )
+*prgshut=*'n'::
+Default = 0, no programmable shutdown; `1` to enable one.
 
 COMMANDS
 --------
 
- * shutdown.return - Shut down in .3 minutes and restart in .3 minutes
+*shutdown.return*::
+Shut down in .3 minutes and restart in .3 minutes after that.
 
- * shutdown.stayoff - Shut down in .3 minutes and do not return
+*shutdown.stayoff*::
+Shut down in .3 minutes and do not return.
 
 ISSUES
 ------
@@ -70,6 +75,11 @@ The core driver:
 ~~~~~~~~~~~~~~~~
 
 linkman:nutupsdrv[8]
+
+Driver for newer devices under same brand:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+linkman:microsol-apc[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
