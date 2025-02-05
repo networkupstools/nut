@@ -223,20 +223,24 @@ confidentiality algorithms to use for IPMI 2.0  communication. The authenticatio
 to use for session setup, the integrity algorithm identifies the algorithm to use for session packet signatures, and the
 confidentiality algorithm identifies the algorithm to use for payload encryption (default=3).
  ::
-The following cipher suite ids are currently supported (Authentication; Integrity; Confidentiality):
-
-- '0': None; None; None
-- '1': HMAC-SHA1; None; None
-- '2': HMAC-SHA1; HMAC-SHA1-96; None
-- '3': HMAC-SHA1; HMAC-SHA1-96; AES-CBC-128
-- '6': HMAC-MD5; None; None
-- '7': HMAC-MD5; HMAC-MD5-128; None
-- '8': HMAC-MD5; HMAC-MD5-128; AES-CBC-128
-- '11': HMAC-MD5; MD5-128; None
-- '12': HMAC-MD5; MD5-128; AES-CBC-128
-- '15': HMAC-SHA256; None; None
-- '16': HMAC-SHA256; HMAC_SHA256_128; None
-- '17': HMAC-SHA256; HMAC_SHA256_128; AES-CBC-128
+The following cipher suite IDs are currently supported:
++
+[options="header"]
+|===========================================================================
+| Code | Authentication | Integrity       | Confidentiality
+| '0'  | None           | None            | None
+| '1'  | HMAC-SHA1      | None            | None
+| '2'  | HMAC-SHA1      | HMAC-SHA1-96    | None
+| '3'  | HMAC-SHA1      | HMAC-SHA1-96    | AES-CBC-128
+| '6'  | HMAC-MD5       | None            | None
+| '7'  | HMAC-MD5       | HMAC-MD5-128    | None
+| '8'  | HMAC-MD5       | HMAC-MD5-128    | AES-CBC-128
+| '11' | HMAC-MD5       | MD5-128         | None
+| '12' | HMAC-MD5       | MD5-128         | AES-CBC-128
+| '15' | HMAC-SHA256    | None            | None
+| '16' | HMAC-SHA256    | HMAC_SHA256_128 | None
+| '17' | HMAC-SHA256    | HMAC_SHA256_128 | AES-CBC-128
+|===========================================================================
 
 *--scan-serial* '<port>'*::
 Scans for serial devices (of supported types) on the specified
