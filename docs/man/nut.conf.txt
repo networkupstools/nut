@@ -44,7 +44,6 @@ IMPORTANT NOTES
   not in range would be ignored with a warning message).
 
 Refer to the EXAMPLE section for illustrations.
-----------------
 
 DIRECTIVES
 ----------
