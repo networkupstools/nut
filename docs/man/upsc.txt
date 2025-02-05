@@ -4,7 +4,7 @@ UPSC(8)
 NAME
 ----
 
-upsc - example lightweight UPS client
+upsc - Lightweight read-only NUT client
 
 SYNOPSIS
 --------
@@ -33,9 +33,9 @@ OPTIONS
 *-L* 'host'::
 
   As above, list all UPS names configured at 'host', including their description
-  provided by the remote upsd(8) from ups.conf(5). The hostname defaults to
-  "localhost".  You may optionally add a colon and a port number to override the
-  default port.
+  provided by the remote linkman:upsd[8] from its linkman:ups.conf[5].
+  The hostname defaults to "localhost".  You may optionally add a colon and
+  a port number to override the default port.
 
 *-c* 'ups'::
 
@@ -48,9 +48,10 @@ OPTIONS
 
 'variable'::
 
-  Display the value of this variable only.  By default, upsc retrieves the list
-  of variables from the server and then displays the value for each.  This may
-  be useful in shell scripts to save an additional pipe into grep.
+  Display the value of this variable only.  By default, `upsc` retrieves the
+  list of variables from the server and then displays the value for each.
+  This option may be useful in shell scripts to save an additional pipe into
+  `grep`.
 
 EXAMPLES
 --------
@@ -90,17 +91,17 @@ SCRIPTED MODE
 -------------
 
 If you run this program inside a shell script or similar to get the list of
-devices and variables, you should only consider using output from stdout,
-not stderr.
+devices and variables, you should only consider using output from `stdout`,
+not `stderr`.
 
 
 DIAGNOSTICS
 -----------
 
-upsc will either print a list of UPS names, a list of all supported variables
-and their values on the UPS, or an error message.  If you receive an error,
+`upsc` will either print a list of UPS names, a list of all supported variables
+and their values on the UPS, or an error message.  If you do receive an error,
 make sure you have specified a valid UPS on the command line, that
-linkman:upsd[8] is really running on the other host and that no firewalls are
+linkman:upsd[8] is really running on the other host, and that no firewalls are
 blocking you.
 
 HISTORY
@@ -113,6 +114,8 @@ only talks TCP.  This is why 'upsct' no longer exists.
 SEE ALSO
 --------
 
+linkman:upslog[8],
+linkman:ups.conf[5],
 linkman:upsd[8]
 
 Internet resources:
