@@ -17,10 +17,9 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-The *upscli_splitaddr()* function takes a pointer to the raw UPS
-definition 'buf' and returns pointers to dynamically allocated
-memory in 'upsname' and 'hostname'.  It also copies the port
-number into 'port'.
+The *upscli_splitaddr()* function takes a pointer to the listening address
+definition 'buf' and returns the pointer to dynamically allocated
+memory in 'hostname'.  It also copies the port number into 'port'.
 
 FORMATTING
 ----------
