@@ -64,10 +64,15 @@ This option can be specified several times, for more hardware link-specific
 details; these can be counter-productive in case of USB enumeration changes
 over time:
 +
-| `-U`    | do not report any bus/device/busport details |
-| `-UU`   | report bus and busport, if available |
-| `-UUU`  | report bus/device/busport details |
-| `-UUUU` | report bus/device/busport details, and bcdDevice (limited use and benefit) |
+[options="header",cols="1,3a"]
+|===========================================================================
+| Option count | Practical meaning
+| `-U`    | do not report any `bus`/`device`/`busport` details
+| `-UU`   | report `bus` and `busport`, if available
+| `-UUU`  | report `bus`/`device`/`busport` details
+| `-UUUU` | report `bus`/`device`/`busport` details,
+            and `bcdDevice` (limited use and benefit)
+|===========================================================================
 +
 NOTE: For reliability, it is preferable to match just by vendor and product
 identification, and a serial number if available and unique.
