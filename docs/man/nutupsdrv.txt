@@ -236,6 +236,16 @@ The *STATEPATH* directive in linkman:upsd.conf[5] overrides this variable.
 *upsd* and drivers use either *NUT_STATEPATH* if set, or ALTPIDPATH if set,
 or otherwise the built-in default *STATEPATH*.
 
+*NUT_QUIET_INIT_UPSNOTIFY=true* can be used to prevent daemons which can
+notify service management frameworks (such as systemd) about passing
+their lifecycle milestones from emitting such notifications (including
+those about lack of system support for such modern features, once per run).
+
+*NUT_QUIET_INIT_BANNER=true* can be used to suppress NUT tool name and
+version banner. NOT recommended for services due to adverse troubleshooting
+impact, but may be helpful in shell profiles or scripts which process NUT
+tool outputs.
+
 BUGS
 ----
 
@@ -244,6 +254,12 @@ information.
 
 SEE ALSO
 --------
+
+Configuration:
+~~~~~~~~~~~~~~
+
+- linkman:ups.conf[5]
+- linkman:nut.conf[5]
 
 Server:
 ~~~~~~~
