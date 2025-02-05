@@ -123,6 +123,15 @@ EXTRA_DIST += $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
  $(IMAGE_LOGO_FILES) $(IMAGE_LOGO_FILES_JENKINS_NUT) $(CABLES_IMAGES) $(NUT_SPELL_DICT) \
  docinfo.xml common.xsl xhtml.xsl chunked.xsl asciidoc.txt asciidoc-vars.conf
 
+# NOTE: ALL_TXT_SRC does not include sms-brazil-protocol.txt because it
+# primarily includes samples of configuration files with a lot of Spanish
+# (Brazilian) words which confuse the spell-checker. Adding them to common
+# NUT_SPELL_DICT would compromise its usefulness for purely English documents.
+# FIXME: Add support for custom additional dictionaries for specific document
+# files, e.g. "something.txt.dict" if present? There is precedent and code in
+# nut-website recipes by now...
+EXTRA_DIST += sms-brazil-protocol.txt
+
 ASCIIDOC_HTML_SINGLE = user-manual.html \
 	developer-guide.html \
 	packager-guide.html \
