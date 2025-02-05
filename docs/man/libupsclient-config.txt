@@ -4,7 +4,7 @@ LIBUPSCLIENT-CONFIG(1)
 NAME
 ----
 
-libupsclient-config - script to get information about the installed
+libupsclient-config - Script to get information about the installed
 version of libupsclient
 
 SYNOPSIS
@@ -18,6 +18,10 @@ DESCRIPTION
 *libupsclient-config* is a tool that is used to determine the compiler and
 linker flags that should be used to compile and link programs that use
 *libupsclient* from the Network UPS Tools project.
+
+It allows to simplify build automation for systems without a `pkg-config`
+implementation which would instead use the `libupsclient.pc` file installed
+with the NUT development files.
 
 OPTIONS
 -------
