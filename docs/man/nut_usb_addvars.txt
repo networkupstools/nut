@@ -142,4 +142,4 @@ For more details, including the currently supported values for your version
 of the library, see e.g.:
 
 * https://libusb.sourceforge.io/api-1.0/
-* https://libusb.sourceforge.io/api-1.0/group__libusb__lib.html
+* link:https://libusb.sourceforge.io/api-1.0/group__libusb__lib.html[https://libusb.sourceforge.io/api-1.0/group\__libusb__lib.html]
