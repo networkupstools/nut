@@ -4,15 +4,17 @@ UPSCLI_SPLITADDR(3)
 NAME
 ----
 
-upscli_splitaddr - split a listening address into its components
+upscli_splitaddr - Split a listening address into its components
 
 SYNOPSIS
 --------
 
- #include <upsclient.h>
+------
+	#include <upsclient.h>
 
- int upscli_splitaddr(const char *buf, char **hostname,
-				int *port)
+	int upscli_splitaddr(const char *buf, char **hostname,
+		int *port)
+------
 
 DESCRIPTION
 -----------
@@ -29,18 +31,18 @@ A listening address definition is specified according to this format:
 	<hostname>[:<port>]
 
 Definitions without an explicit port value receive the default value of
-3493.
+'3493'.
 
 MEMORY USAGE
 ------------
 
-You must *free*(3) the pointer 'hostname' when you are done
+You must linkman:free[3] the pointer 'hostname' when you are done
 with it to avoid memory leaks.
 
 RETURN VALUE
 ------------
 
-The *upscli_splitaddr()* function returns 0 on success, or -1 if an
+The *upscli_splitaddr()* function returns '0' on success, or '-1' if an
 error occurs.
 
 SEE ALSO
