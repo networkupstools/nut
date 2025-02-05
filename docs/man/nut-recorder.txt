@@ -74,6 +74,11 @@ The dummy-ups driver:
 
 linkman:dummy-ups[8]
 
+The logging daemon:
+~~~~~~~~~~~~~~~~~~~
+
+linkman:upslog[8]
+
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 
