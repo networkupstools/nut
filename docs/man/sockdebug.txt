@@ -4,7 +4,7 @@ SOCKDEBUG(8)
 NAME
 ----
 
-sockdebug - simple developer/troubleshooting aid utility to communicate
+sockdebug - Simple developer/troubleshooting aid utility to communicate
 with a NUT driver using the socket protocol
 
 SYNOPSIS
@@ -68,9 +68,13 @@ AUTHORS
 
 This manual page was written by Jim Klimov <jimklimov+nut@gmail.com>.
 
-The program was originally written by
-Russell Kroll <rkroll@exploits.org> (POSIX version), and by
-Frederic Bohe <fredericbohe@eaton.com> (Windows version).
+The program is currently maintained as two separate sources, with one
+of them used for a build depending on the target platform:
+
+* `server/sockdebug.c` (POSIX version) was originally written by
+  Russell Kroll <rkroll@exploits.org>, and
+* `server/pipedebug.c` (Windows version) was originally written by
+  Frederic Bohe <fredericbohe@eaton.com>.
 
 SEE ALSO
 --------
