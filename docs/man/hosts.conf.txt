@@ -19,6 +19,10 @@ IMPORTANT NOTES
 
 * Contents of this file should be pure ASCII (character codes
   not in range would be ignored with a warning message).
+* This file does not contain passwords. Read-only monitoring in NUT is
+  anonymous, and the linkman:upsset[8] program asks for credentials in
+  the browser session when commanding a particular UPS (web-server should
+  be secured, as reported to the program by linkman:upsset.conf[5] file).
 
 DIRECTIVES
 ----------

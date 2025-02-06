@@ -26,6 +26,10 @@ linkman:upsset.cgi[8] allows you to try login name and password combinations.
 There is no rate limiting, as the program shuts down between every request.
 Such is the nature of CGI programs.
 
+Credentials are provided to `upsset.cgi` as part of your browsing session,
+so it is highly recommended to set up HTTPS on the web server; ways to do
+so are outside the scope of this document.
+
 Normally, attackers would not be able to access your linkman:upsd[8] server
 directly as it would be protected by the LISTEN directives in
 your linkman:upsd.conf[5] file, tcp-wrappers (if available when NUT was built),
