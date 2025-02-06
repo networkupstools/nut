@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3283 utf-8
+personal_ws-1.1 en 3285 utf-8
 AAC
 AAS
 ABI
@@ -2270,6 +2270,7 @@ liebertgxt
 lifecycle
 linevoltage
 linkdoc
+linkmanext
 linksingledoc
 linksrcdoc
 linux
@@ -3035,6 +3036,7 @@ ttyb
 ttyc
 ttymode
 ttyp
+tunables
 tuple
 tuples
 turnon

@@ -4,7 +4,7 @@ NUT-SCANNER(8)
 NAME
 ----
 
-nut-scanner - scan communication buses for NUT devices
+nut-scanner - Tool to scan communication buses for NUT devices
 
 SYNOPSIS
 --------
@@ -20,17 +20,20 @@ DESCRIPTION
 NUT-compatible devices it has found.
 
 *nut-scanner* can also display the detected devices in various formats,
-including ups.conf, and ensures that the generated devices name are unique
+including `ups.conf`, and ensures that the generated devices name are unique
 across buses.
 
 INSTALLATION
 ------------
 
 *nut-scanner* is only built if libltdl (part of libtool development suite)
-is available. Available options (USB, SNMP, IPMI, ...) will vary according
-to the available compile time and runtime dependencies. For example, if
-Net-SNMP is installed, thus providing libsnmp (.so or .dll) and headers,
-both during compilation and runtime, then SNMP discovery will be available.
+is available.
+
+Available scanning options (USB, SNMP, IPMI, ...) will vary according
+to the available compile-time and run-time dependencies. For example, if
+Net-SNMP is installed, thus providing libsnmp libraries (`*.so` or `*.dll`)
+and header files during compilation, and at least the library files on the
+monitoring system, then SNMP discovery will be available.
 
 OPTIONS
 -------
@@ -42,11 +45,11 @@ DISPLAY OPTIONS
 ---------------
 
 *-Q* | *--disp_nut_conf_with_sanity_check*::
-Display result in the 'ups.conf' format with sanity-check warnings (if any)
+Display result in the `ups.conf` format with sanity-check warnings (if any)
 as comments (default).
 
 *-N* | *--disp_nut_conf*::
-Display result in the 'ups.conf' format.
+Display result in the `ups.conf` format.
 
 *-P* | *--disp_parsable*::
 Display result in a parsable format.
@@ -87,10 +90,13 @@ interface(s) to retrieve XML/HTTP capable devices. No IP required in this mode.
 If IP address ranges are specified, they would be scanned instead of a broadcast.
 
 *-O* | *--oldnut_scan*::
-Scan NUT devices (i.e. upsd daemon) on IP ranging from 'start IP' to 'end IP'.
+Scan NUT devices (i.e. `upsd` daemon) on IP ranging from 'start IP' to 'end IP'.
 
 *-n* | *--nut_simulation_scan*::
-Scan NUT simulated devices (`.dev` files in `$NUT_CONFPATH`).
+Scan NUT simulated devices (`.dev` files in the built-in "sysconfig" location).
++
+WARNING: The `NUT_CONFPATH` environment variable override is not currently
+supported.
 
 *-A* | *--avahi_scan*::
 Scan NUT servers using Avahi request on the current network interface(s).
@@ -285,7 +291,7 @@ Display only scan result. No information on currently scanned bus is displayed.
 *-D* | *--nut_debug_level*::
 Raise the debugging level.  Use this multiple times to see more details.
 
-NOTE: The level of debugging needed depends both on nut-scanner and the
+NOTE: The level of debugging needed depends both on `nut-scanner` and the
 problem you're trying to diagnose.  Therefore, first explain the problem you
 have with `nut-scanner` to a developer/maintainer, before sending them debugging
 output.  More often than not, if you just pick a level, the output may be
@@ -304,8 +310,8 @@ To scan USB devices only:
         port = "192.168.0.42"
 ----
 
-To scan SNMP v1 device with public community on address range 192.168.0.0
-to 192.168.0.255:
+To scan SNMP v1 device with 'public' (default) community on address range
+'192.168.0.0 to 192.168.0.255':
 
 ----
 :; nut-scanner -S -s 192.168.0.0 -e 192.168.0.255
@@ -325,8 +331,8 @@ The same using CIDR notation:
         port = "192.168.0.42"
 ----
 
-To scan NUT servers with a timeout of 10 seconds on IP range 192.168.0.0
-to 192.168.0.127 using CIDR notation:
+To scan NUT servers with a timeout of '10' seconds on IP range '192.168.0.0
+to 192.168.0.127' using CIDR notation:
 
 ----
 :; nut-scanner -O -t 10 -m 192.168.0.0/25
@@ -337,20 +343,21 @@ to 192.168.0.127 using CIDR notation:
 ----
 
 To scan for power supplies, through IPMI (1.5 mode) over the network,
-on address range 192.168.0.0 to 192.168.0.255 using CIDR notation:
+on address range '192.168.0.0 to 192.168.0.255' using CIDR notation:
 
 ----
 :; nut-scanner -I -m 192.168.0.0/24 -b username -B password
 ----
 
-To scan for Eaton serial devices on ports 0 and 1 (`/dev/ttyS0`,
+To scan for Eaton serial devices on ports '0' and '1' (`/dev/ttyS0`,
 `/dev/ttyUSB0`, `/dev/ttyS1` and `/dev/ttyUSB1` on Linux):
 
 ----
 :; nut-scanner --eaton_serial 0-1
 ----
 
-To scan for Eaton serial devices on ports 1 and 2 (`COM1` and `COM2` on Windows):
+To scan for Eaton serial devices on ports '1' and '2' (`COM1` and `COM2`
+on Windows):
 
 ----
 :; nut-scanner --eaton_serial 1-2

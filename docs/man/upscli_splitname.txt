@@ -40,7 +40,7 @@ Definitions without an explicit port value receive the default value of
 MEMORY USAGE
 ------------
 
-You must linkman:free[3] the pointers to 'upsname' and 'hostname'
+You must linkmanext:free[3] the pointers to 'upsname' and 'hostname'
 when you are done with them to avoid memory leaks.
 
 RETURN VALUE

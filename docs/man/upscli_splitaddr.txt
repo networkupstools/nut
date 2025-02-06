@@ -36,7 +36,7 @@ Definitions without an explicit port value receive the default value of
 MEMORY USAGE
 ------------
 
-You must linkman:free[3] the pointer 'hostname' when you are done
+You must linkmanext:free[3] the pointer 'hostname' when you are done
 with it to avoid memory leaks.
 
 RETURN VALUE

@@ -30,8 +30,9 @@ DIRECTIVES
 *MONITOR* 'ups' 'description'::
 
 The 'ups' element is in the form `upsname[@hostname[:port]]`.
-To allow connections to a UPS called "snoopy" on a system called
-"doghouse" that runs upsd on port 7877, it would look like this:
++
+To allow connections to an UPS called "snoopy" on a system called
+"doghouse" that runs `upsd` on port 7877, it would look like this:
 
 	MONITOR snoopy@doghouse:7877 "Joe Cool"
 +

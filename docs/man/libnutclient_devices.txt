@@ -43,7 +43,7 @@ The returned strarr must be freed by 'strarr_free'
 * The *nutclient_get_device_description()* function retrieves the device
   description.
 +
-The returned description string must be freed by linkman:free[3].
+The returned description string must be freed by linkmanext:free[3].
 
 Common arguments:
 

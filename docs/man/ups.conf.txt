@@ -17,7 +17,7 @@ which contains a number of directives that set parameters for that UPS.
 
 A UPS section begins with the name of the UPS in brackets, and continues
 until the next UPS name in brackets or until EOF.  The name "default" is
-used internally in upsd, so you can't use it in this file.
+used internally in linkman:upsd[8], so you can't use it in this file.
 
 You must define the 'driver' and 'port' elements for each entry.  Anything
 after that in a section is optional.  A simple example might look like this:

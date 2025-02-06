@@ -4,7 +4,7 @@ PIJUICE(8)
 NAME
 ----
 
-pijuice - driver for UPS in PiJuice HAT
+pijuice - Driver for UPS in PiJuice HAT
 
 SYNOPSIS
 --------
@@ -45,7 +45,7 @@ This driver is specific to the Linux I2C API, and requires the lm_sensors
 libi2c-dev or its equivalent to compile.
 
 Beware that the SystemIO memory used by the I2C controller is reserved by ACPI.
-If only a native I2C driver (e.g. i2c_i801, as of 3.5.X Linux kernels) is
+If only a native I2C driver (e.g. `i2c_i801`, as of 3.5.X Linux kernels) is
 available, then you'll need to relax the ACPI resources check. For example, you
 can boot with the `acpi_enforce_resources=lax` option.
 

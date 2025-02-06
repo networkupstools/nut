@@ -50,7 +50,7 @@ The *nutscan_add_option_to_device()* adds an optional data in the
 given 'device'. Optional data are made of an 'option_name' and an
 associated 'value', and optionally a 'comment_tag'. Copies of the
 'option_name', 'value' and 'comment_tag' are stored in the 'device',
-so the caller can safely linkman:free[3] all of the original strings
+so the caller can safely linkmanext:free[3] all of the original strings
 used as arguments.
 
 NOTE: A non-`NULL` value of the 'comment_tag' makes the option not-enabled

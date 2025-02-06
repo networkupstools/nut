@@ -23,7 +23,7 @@ the CIDR format given as a string in 'cidr', to two IPs in strings
 pointed by 'start_ip' and 'stop_ip' which can be used as input
 parameters in the scanning functions of the libnutscan API.
 
-It is the caller's responsibility to linkman:free[3] the 'start_ip'
+It is the caller's responsibility to linkmanext:free[3] the 'start_ip'
 and 'stop_ip' strings.
 
 RETURN VALUE

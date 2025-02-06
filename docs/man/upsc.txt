@@ -57,9 +57,9 @@ EXAMPLES
 --------
 
 To list all variables on an UPS named "myups" on a host
-called "mybox", with upsd(8) running on port 1234:
+called "mybox", with linkman:upsd[8] running on port '1234':
 
-    $ upsc myups@mybox:1234
+    :; upsc myups@mybox:1234
     battery.charge: 100.0
     battery.voltage: 13.9
     battery.voltage.nominal: 13.6
@@ -67,20 +67,20 @@ called "mybox", with upsd(8) running on port 1234:
 
 To list the UPSes configured on this system, along with their descriptions:
 
-    $ upsc -L
+    :; upsc -L
     apc: Back-UPS 500
     ppro2: Patriot Pro II
 
 To retrieve the status for all UPSes connected to mybox, using Bourne-shell
 syntax:
 
-    $ for UPS in `upsc -l mybox:1234`; do
+    :; for UPS in `upsc -l mybox:1234`; do
         upsc $UPS ups.status
     done
 
 To list clients connected on "myups":
 
-    $ upsc -c myups
+    :; upsc -c myups
     127.0.0.1
     ::1
     192.168.1.2

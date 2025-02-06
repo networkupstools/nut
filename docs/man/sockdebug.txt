@@ -14,11 +14,11 @@ SYNOPSIS
 
 For example (WIN32 and POSIX builds):
 
-	sockdebug.exe dummy-ups-UPS1
+	:; sockdebug.exe dummy-ups-UPS1
 
 For example (POSIX-compliant systems using an alternate state path):
 
-	sockdebug /var/state/ups/dummy-ups-UPS1
+	:; sockdebug /var/state/ups/dummy-ups-UPS1
 
 DESCRIPTION
 -----------
@@ -60,7 +60,7 @@ in the current directory, and then fall back to configured (built-in) state
 path or the value of `NUT_STATEPATH` environment variable, if set; e.g.:
 +
 ------
-	NUT_STATEPATH=/tmp ./server/sockdebug dummy-ups-UPS1
+:; NUT_STATEPATH=/tmp ./server/sockdebug dummy-ups-UPS1
 ------
 
 AUTHORS

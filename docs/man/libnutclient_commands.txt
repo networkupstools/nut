@@ -56,7 +56,7 @@ Return '1' if supported and '0' if not.
 * The *nutclient_get_device_command_description* function
   retrieves the command description, if any.
 +
-The returned string must be freed by linkman:free[3]
+The returned string must be freed by linkmanext:free[3]
 (see linkman:libnutclient_general[3]).
 
 * The *nutclient_execute_device_command* intends to execute

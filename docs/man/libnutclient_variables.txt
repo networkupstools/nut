@@ -69,7 +69,7 @@ Return '1' if supported and '0' if not.
 * The *nutclient_get_device_variable_description* function retrieves
   the variable description, if any.
 +
-The returned string must be freed by linkman:free[3].
+The returned string must be freed by linkmanext:free[3].
 
 * The *nutclient_get_device_variable_values* returns variable values
   (generally only one).

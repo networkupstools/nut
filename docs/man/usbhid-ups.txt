@@ -39,10 +39,11 @@ At the present time, usbhid-ups supports:
  - some TrippLite models.
 
 For a more complete list, refer to the NUT hardware compatibility list,
-available in the source distribution as data/driver.list, or on the
-NUT website. You may use the "explore" driver option to gather
-information from HID UPSes which are not yet supported; see below for
-details.
+available in the NUT source distribution as `data/driver.list`, or on the
+NUT website.
+
+You may use the `explore` driver option to gather information from HID UPSes
+which are not yet supported, to help add such support; see below for details.
 
 This driver is known to work on:
 
@@ -68,7 +69,7 @@ interface chips, notably "phoenixtec/liebert" and "mge").
 Run the driver program with the `--help` option to see the exact list of
 `subdriver` values it would currently recognize.
 +
-NOTE: this option first checks for exact matches to subdriver identification
+NOTE: This option first checks for exact matches to subdriver identification
 strings, such as `"TrippLite HID 0.85"` (which are prone to bit-rot), and if
 there was no exact match -- retries with a case-insensitive extended regular
 expression.
@@ -252,15 +253,16 @@ problem (while 20 seconds were not enough).
 INSTALLATION
 ------------
 
-This driver is not built by default.  You can build it by using
-"configure --with-usb=yes". Note that it will also install other USB
-drivers.
+This driver may be not built by default.  You can build it by installing
+prerequisites and using `configure --with-usb=yes`. Note that it will also
+install other USB drivers.
 
-You also need to install manually the legacy hotplug files (libhidups
-and libhid.usermap, generally in /etc/hotplug/usb/), or the udev file
-(nut-usbups.rules, generally in /etc/udev/rules.d/) to address the
-permission settings problem. For more information, refer to the README
-file in nut/scripts/hotplug or nut/scripts/udev.
+You also need to install manually the legacy *hotplug* files (`libhidups`
+and `libhid.usermap`, generally in `/etc/hotplug/usb/`), or the *udev* file
+(`nut-usbups.rules`, generally in `/etc/udev/rules.d/`) to address the
+permission settings problem. For more information, refer to the
+`scripts/hotplug/README.adoc` or `scripts/udev/README.adoc` files in NUT
+sources.
 
 IMPLEMENTATION
 --------------
