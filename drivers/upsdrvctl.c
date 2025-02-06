@@ -1192,7 +1192,8 @@ static void help(const char *arg_progname)
 
 	printf("\nListing known driver(s):\n");
 	printf("  -l | list		list all device driver confgurations that can be managed\n");
-	printf("  -l | list <ups>	only try to list the specified device driver confgurations (error if unresolved)\n");
+	printf("  -l | list <ups>	only try to list the specified device driver confgurations\n");
+	printf("              		(error out if the device name is unresolved)\n");
 
 	printf("\nSignalling a running driver:\n");
 	printf("  -c <command>		send <command> via signal to running driver(s)\n");
