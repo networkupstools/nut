@@ -189,8 +189,8 @@ linkman:usbhid-ups[8]
 
 
 [[Starting_drivers]]
-Starting the driver(s)
-~~~~~~~~~~~~~~~~~~~~~~
+Starting the driver(s) in legacy operating systems
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Generally, you can just start the driver(s) for your hardware (all sections
 defined in 'ups.conf') using the following command:
@@ -223,6 +223,7 @@ user account your driver starts as.
 After making changes, try the <<Ownership, Ownership and permissions>>
 step again.
 
+[[Starting_drivers_NDE]]
 Driver(s) as a service
 ~~~~~~~~~~~~~~~~~~~~~~
 
