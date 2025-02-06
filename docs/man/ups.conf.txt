@@ -53,6 +53,25 @@ IMPORTANT NOTES
 
 * Contents of this file should be pure ASCII (character codes
   not in range would be ignored with a warning message).
+* Balance the run-time user permissions to access the file (and perhaps the
+  directory it is in) for only `upsd` and the drivers to be able to read it;
+  write access is not needed. It is common to use `chown root:nut` and
+  `chmod 640` to set up acceptable file permissions.
+  - Packages (and build recipes) typically prepare one set of user and
+    group accounts for NUT. Custom builds with minimal configuration might
+    even use `nobody:nogroup` or similar, which is inherently insecure.
+  - On systems with extra security concerns, NUT drivers, data server
+    should run as separate user accounts which would be members of one
+    same group for shared access to local Unix socket files and the
+    directory they are in, as well for reading `ups.conf`, but different
+    groups for other configuration file access. This would need some
+    daemons to use customized `user`, `group`, `RUN_AS_USER` and/or
+    `RUN_AS_GROUP` settings to override the single built-in value.
+  - Note that the monitoring, logging, etc. clients are networked-only.
+    They do not need access to these files and directories, and can run
+    as an independent user and group altogether.
+  - Keep in mind the security of also any backup copies of this file,
+    e.g. the archive files it might end up in.
 
 GLOBAL DIRECTIVES
 -----------------
