@@ -100,13 +100,16 @@ of most of the known command names.
 
 *upsmon*::
 
-Add the necessary actions for a upsmon process to work.  This is either
-set to "primary" or "secondary".
+Add the necessary actions for an `upsmon` process, and can be viewed as a
+role of a particular client instance to work with this data server instance.
+This is either set to 'primary' (may request FSD) or 'secondary' (follows
+critical situations to shut down when needed).
 +
 Do not attempt to assign actions to upsmon by hand, as you may miss
 something important.  This method of designating a "upsmon user" was
 created so internal capabilities could be changed later on without
-breaking existing installations.
+breaking existing installations (potentially using actions that are
+not exposed for direct assignment).
 
 SEE ALSO
 --------

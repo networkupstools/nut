@@ -114,13 +114,14 @@ on power values below.
 
 The 'username' is a section in your linkman:upsd.users[5] file.
 Whatever password you set in that section must match the 'password'
-set in this file.
+set in this file for the corresponding data server instance.
 
-The type set in that section must also match the 'type' here --
-*primary* or *secondary*.  In general, a primary process is one
-running on the system with the UPS actually plugged into a serial
-port, and a secondary is drawing power from the UPS but can't
-talk to it directly.  See the section on UPS types for more.
+The type set in that section of the data server configuration must also match
+the 'type' here -- *primary* or *secondary* (consider it an "upsmon role").
+In general, a "primary" client process is one running on the system with the
+UPS actually plugged into a serial or USB port, and a "secondary" is drawing
+power from the UPS but can't talk to it directly.
+See the section on UPS types for more.
 
 NOTIFY EVENTS
 -------------
