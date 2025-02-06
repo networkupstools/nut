@@ -269,10 +269,13 @@ Selecting a specific UPS
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 As mentioned above, the driver ignores the "port" value in *ups.conf*.
+
 Unlike previous versions of this driver, it is now possible to control
-multiple UPS units simultaneously with this driver, provided they can
-be distinguished by setting some combination of the device-matching options.
-For instance:
+multiple UPS units simultaneously with instances of this driver running
+in parallel, provided they can be distinguished by setting some combination
+of the device-matching options.
+
+For example:
 
 	[mge]
 		driver = usbhid-ups
@@ -282,6 +285,15 @@ For instance:
 		driver = usbhid-ups
 		port = auto
 		vendorid = 09ae
+
+To monitor devices using the same vendor and product identification (e.g.
+two pieces of the same model), you would need to find a reliable unique
+matching criteria:
+
+* The 'serial' number is the best option, if populated.
+* Link-level `bus`/`device`/`busport` may be unreliable (due to re-enumeration
+  on a whim by the operating system).
+* If nothing else helps, `allow_duplicates` may be an option in some cases.
 
 USB Polling and Interrupt Transfers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
