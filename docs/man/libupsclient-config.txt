@@ -24,6 +24,11 @@ It allows to simplify build automation for systems without a `pkg-config`
 implementation which would instead use the `libupsclient.pc` file installed
 with the NUT development files.
 
+Note that to rebuild current NUT with same settings as the installed NUT
+v2.8.1 or newer, you can use `lib/libupsclient-config --config-flags`,
+where supported.  Note that the `pkg-config` manifest `libupsclient.pc` does
+not easily convey this information.
+
 OPTIONS
 -------
 
@@ -37,6 +42,10 @@ Print the linker flags that are necessary to link a *libupsclient* program.
 
 *--cflags*::
 Print the compiler flags that are necessary to compile a *libupsclient* program.
+
+*--config-flags*::
+Print the flags passed to `configure` script when this installation of NUT
+was originally built (supported since release v2.8.1).
 
 AUTHORS
 -------
