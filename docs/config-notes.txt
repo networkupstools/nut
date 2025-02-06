@@ -166,10 +166,12 @@ You must still set this value, but it does not matter what you set
 it to; a common and good practice is to set 'port' to *auto*, but you
 can put whatever you like.
 
-If you only own one USB UPS, the driver will find it automatically.
+If you only own one USB UPS, the driver will find it automatically
+if it matches the identifiers are built into that driver.
 
 If you own more than one, refer to the driver's manual page for more
-information on matching a specific device.
+information on matching a specific device, or trying specific subdriver
+or protocol options with a currently unknown device.
 ======
 
 NOTE: On Windows systems, the second serial port (COM2), equivalent to
