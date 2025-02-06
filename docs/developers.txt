@@ -188,8 +188,14 @@ It was also seen that cross-builds (e.g. NUT for Windows using mingw on
 Linux) may be unable to define `WIN32` and/or find symbols for linking
 when using a strict-C language standard.
 
-The C++ support expects C++11 or newer (not really configured or tested
-for older C++98 or C++03), modulo features that were deprecated in later
+///////////
+EDITOR NOTE: plus-plus sequences are seen by asciidoc as opening/closing
+tags of "literal" markup, so have to be escaped. But only pairs (the last
+standalone copy in a paragraph should NOT be escaped!)
+///////////
+
+The C\++ support expects C\++11 or newer (not really configured or tested
+for older C\++98 or C\++03), modulo features that were deprecated in later
 language revisions (C++14 onwards) as highlighted by warnings from newer
 compilers.
 
