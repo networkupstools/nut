@@ -498,6 +498,10 @@ Build and install all of the above (the serial, USB, SNMP, XML/HTTP and
 PowerMan drivers, the CGI programs and HTML files, and the upsclient
 library).
 
+You can also use `--with-all=auto` to detect available prerequisites and
+only build everything that we can build on this system (but not fail due
+to inability to request a build of something from the full scope).
+
 Networking transport security
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
