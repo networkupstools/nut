@@ -100,11 +100,17 @@ Build and install the USB drivers (default: auto-detect)
 Note that you need to install the libusb development package or files,
 and that both libusb 0.1 and 1.0 are supported. In case both are
 available, libusb 1.0 takes precedence, and will be used by default.
+
 It is however possible to override this default choice by explicitly
 calling `--with-usb=libusb-0.1` or `--with-usb=libusb-1.0`.
+
 If you do specify the version to use (or `yes` for auto-detection),
 this option would fail if requested (or any) libusb version was not
 found.  The default `auto` value would not fail in such case.
+
+WARNING: If you intend to use the `libmodbus` variant with `libusb`
+support, you would require `libusb-1.0` specifically; the implementation
+or "compat API" of `0.1` is not supported by that library version.
 
 SNMP drivers
 ~~~~~~~~~~~~
@@ -199,6 +205,7 @@ so your NUT build environment should provide a prerequisite build of
 https://github.com/networkupstools/libmodbus/tree/rtu_usb (may be a
 static library build, used from a temporary installation prefix location,
 to avoid potential conflicts with the OS packaged shared library).
+You would also need specifically `libusb-1.0` (not the older API).
 
 At the time of this writing, such constraint can be desirable for the
 linkman:apc_modbus[8] driver which supports different communication media.
