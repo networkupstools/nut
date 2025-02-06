@@ -916,15 +916,15 @@ Various
 	--with-neon-includes, --with-libltdl-includes,
 	--with-powerman-includes="-I/foo/bar"
 
-If your system doesn't have pkg-config and support for any of the above
+If your system doesn't have `pkg-config` and support for any of the above
 libraries isn't found (but you know it is installed), you must specify
 the compiler flags that are needed.
 
 	--with-ssl-libs, --with-usb-libs, --with-snmp-libs,
 	--with-neon-libs, --with-libltdl-libs
-	--with-powerman-libs="-L/foo/bar -labcd -lxyz"
+	--with-powerman-libs="-L/foo/bar -R/foo/bar -labcd -lxyz"
 
-If system doesn't have pkg-config or it fails to provides hints for
+If system doesn't have `pkg-config` or it fails to provides hints for
 some of the settings that are needed to set it up properly and the
 build in defaults are not right, you can specify the correct values
 for your system here.
