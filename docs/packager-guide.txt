@@ -380,12 +380,12 @@ nut-server
 		E) nut-cgi
 
 			Deps:
-			Files: snmp-ups and powernet + manpages
+			Files: snmp-ups and powernet + man pages
 
 		F) nut-doc:
 
 			Deps:
-			Files: dummycons + manpage
+			Files: dummycons + man page
 
 		G) nut-dev:
 
@@ -395,7 +395,7 @@ nut-server
 		H) nut-scanner:
 
 			Deps: hard dependency on `libltdl`; recommends `libsnmp`, `libneon`, and the `libusb` variant (0.1 or 1.0) it was built against.
-			Files: nut-scanner tool and libnutscan + manpages
+			Files: nut-scanner tool and libnutscan + man pages
 
 
 Note: "nut" can be a meta package

@@ -87,7 +87,7 @@ There can be due to various reasons. To fix it, check:
 - your firewall rules. Port '3493/tcp' must be opened to incoming connections,
 - your *tcp-wrappers* configuration (`hosts.allow` and `hosts.deny`) if used.
 
-Refer to the linkman:upsd[8] and linkman:upsd.conf[5] manpages for more
+Refer to the linkman:upsd[8] and linkman:upsd.conf[5] man pages for more
 information.
 
 == I get a 'not listening on...' error from upsd.

@@ -642,7 +642,7 @@ For NUT dependencies and build tools:
 # Note there is no direct "asciidoc" nor "a2x", just the competing project
 # "rubygem-asciidoctor" that NUT currently has no recipes for, so you can
 # not compile man/html/pdf docs here, per the default repository. See below
-# for tools from alternative repositories, which seem to work well. Manpage
+# for tools from alternative repositories, which seem to work well. Man page
 # compilation would require docbook-xml resources; older versions are in
 # this package https://slackbuilds.org/repository/15.0/system/docbook-xml/
 # and recent ones are in not-installed part of main repository:

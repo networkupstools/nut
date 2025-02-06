@@ -84,7 +84,8 @@ Alias /nut/ /usr/local/nut/html/
 
 - Make sure to restart your webserver.
 
-- Configure the CGI scripts.  Manpages can be found from:
+- Configure the CGI scripts.  Man pages can be found from:
++
 ----
 :; man -M /usr/local/nut/man/ upsstats.cgi
 :; man -M /usr/local/nut/man/ upsset.cgi

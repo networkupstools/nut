@@ -267,7 +267,7 @@ The possible documentation type values are:
 * `html-single` for single page HTML,
 * `html-chunked` for multi-paged HTML,
 * `pdf` for a PDF file, and
-* `man` for the usual manpages.
+* `man` for the usual man pages.
 
 Other values understood for this option are listed below:
 
@@ -280,7 +280,7 @@ Other values understood for this option are listed below:
   can not be generated.
 
 * A `--with-doc=no` quietly skips generation of all types of documentation,
-  including manpages.
+  including man pages.
 
 * A `--with-doc=skip` is used to configure some of the `make distcheck*`
   scenarios to re-use man page files built and distributed by the main
