@@ -232,3 +232,15 @@ Drivers used to call `setinfo()` to change the local array, and then would
 call `writeinfo()` to push the array onto the disk, or into the
 mmap/shared memory space.  This introduced a lag since many drivers poll
 quite a few variables during an update.
+
+By 2013 much of the work on NUT for Windows branch (based off the NUT v2.6.5
+release) was completed, adding named pipes as the equivalent to local sockets
+as well as to cross-program signals.  This work got a face-lift and was merged
+into the main code base about a decade later, in 2022.
+
+In April 2023 (eventually released with NUT v2.8.1 and enhanced/fixed in
+later releases), a new use-case was added: interactions of two instances
+of a driver program over the local socket, as an alternative to signals
+for the already-running driver to reload configuration, exit and make way
+for a new instance of the driver daemon, or command the UPS to kill power
+without the overhead of a new connection made by such new instance.
