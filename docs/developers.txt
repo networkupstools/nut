@@ -30,10 +30,12 @@ means you don't have to worry about whether you're running in the
 background or not.
 
 The `upslog_with_errno()` routine prints your message plus the string
-expansion of `errno`. The `upslogx()` just prints the message.
+expansion of current `errno` value. The `upslogx()` just prints the message.
 
 `fatal_with_errno()` and `fatalx()` work the same way, but they
-also `exit(EXIT_FAILURE)` afterwards. Don't call `exit()` directly.
+also `exit(arg)` afterwards, where `arg` is the first argument of the
+`fatal*()` method -- typically `EXIT_FAILURE` or `EXIT_SUCCESS`.
+In most cases, you should not call `exit()` directly.
 
 Debugging information
 ~~~~~~~~~~~~~~~~~~~~~
