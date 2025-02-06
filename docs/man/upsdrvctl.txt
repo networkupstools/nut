@@ -105,9 +105,10 @@ Alias for `list` command.
 COMMANDS
 --------
 
-upsdrvctl supports three commands - start, stop and shutdown.
+`upsdrvctl` supports three active commands -- `start`, `stop` and `shutdown`.
 It also supports passing requests to running drivers using
 `-c COMMAND` syntax, similar to that in some other daemons.
+A couple of helper commands are also available -- `list` and `status`.
 
 They all can take an optional argument which is a UPS name from
 linkman:ups.conf[5].  Without that argument, they operate on every
