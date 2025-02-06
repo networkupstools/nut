@@ -849,7 +849,14 @@ Change the default location of the local Unix sockets created by the drivers
 to interact with the data server `upsd` to report their state and receive
 commands. Default is `/var/state/ups`.
 
+This is also the default location for non-`root` daemons to write a PID file,
+if a separate location is not specified by `--with-altpidpath` option.
+
 The `NUT_STATEPATH` environment variable overrides this at run time.
+
+NOTE: Fun fact: in early iterations of the NUT project, the drivers and the
+data server did exchange information by writing and reading complete state
+files in a commonly accessible location, hence the name.
 
 	--with-powerdownflag=FILEPATH
 
