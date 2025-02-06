@@ -1,7 +1,7 @@
 Configuration notes
 ===================
 
-This chapter describe most of the configuration and use aspects of NUT,
+This chapter describes most of the configuration and use aspects of NUT,
 including establishing communication with the device and configuring safe
 shutdowns when the UPS battery runs out of power.
 
@@ -131,7 +131,7 @@ of the bundled services, which are enabled on a particular deployment.
 Driver configuration
 ~~~~~~~~~~~~~~~~~~~~
 
-Create one section per UPS in 'ups.conf'
+Create one section per UPS in linkman:ups.conf[5] file.
 
 NOTE: The default path for a source installation is `/usr/local/ups/etc`,
 while packaged installation will vary.
@@ -174,8 +174,8 @@ information on matching a specific device, or trying specific subdriver
 or protocol options with a currently unknown device.
 ======
 
-NOTE: On Windows systems, the second serial port (COM2), equivalent to
-"/dev/ttyS1" on Linux, would be "\\\\.\\COM2".
+NOTE: On Windows systems, the second serial port (`COM2`), equivalent to
+`/dev/ttyS1` on Linux, would be `\\\\.\\COM2`.
 
 References: linkman:ups.conf[5],
 linkman:nutupsdrv[8],
@@ -195,7 +195,7 @@ Starting the driver(s) in legacy operating systems
 Generally, you can just start the driver(s) for your hardware (all sections
 defined in 'ups.conf') using the following command:
 
-	upsdrvctl start
+	:; upsdrvctl start
 
 Make sure the driver doesn't report any errors.  It should show a
 few details about the hardware and then enter the background.  You
@@ -344,8 +344,8 @@ use e.g. `cp -pf upsd.users.sample upsd.users` (as `root`) to start out
 with some annotated comments and adapt that to your deployment, the
 copied files should also get the expected safe permissions.
 
-	chown root:nut upsd.conf upsd.users
-	chmod 0640 upsd.conf upsd.users
+	:; chown root:nut upsd.conf upsd.users
+	:; chmod 0640 upsd.conf upsd.users
 
 References: man pages: linkman:upsd.conf[5],
 linkman:upsd.users[5],
@@ -357,7 +357,7 @@ Starting the data server
 
 Start the network data server:
 
-	upsd
+	:; upsd
 
 Make sure it is able to connect to the driver(s) on your system.
 A successful run looks like this:
@@ -408,7 +408,7 @@ Status data
 Make sure that the UPS is providing good status data.
 You can use the `upsc` command-line client for this:
 
-	upsc myupsname@localhost ups.status
+	:; upsc myupsname@localhost ups.status
 
 You should see just one line in response:
 
@@ -428,7 +428,7 @@ All data
 
 Look at all of the status data which is being monitored.
 
-	upsc myupsname@localhost
+	:; upsc myupsname@localhost
 
 What happens now depends on the kind of device and driver you have.
 In the list, you should see `ups.status` with the same value you got
@@ -633,12 +633,12 @@ Reload `upsd`.  Depending on your configuration, you may be able to
 do this without stopping the `upsd` daemon process (if it had saved
 a PID file earlier):
 
-	upsd -c reload
+	:; upsd -c reload
 
 If that doesn't work (check the syslog), just restart it:
 
-	upsd -c stop
-	upsd
+	:; upsd -c stop
+	:; upsd
 
 For systems with integrated service management (Linux systemd,
 illumos/Solaris SMF) their corresponding `reload` or `refresh`
@@ -684,8 +684,8 @@ use e.g. `cp -pf upsmon.conf.sample upsmon.conf` (as `root`) to start out
 with some annotated comments and adapt that to your deployment, the
 copied files should also get the expected safe permissions.
 
-	chown root:nut upsmon.conf
-	chmod 0640 upsmon.conf
+	:; chown root:nut upsmon.conf
+	:; chmod 0640 upsmon.conf
 
 This step has been placed early in the process so you secure this file
 before adding sensitive data in the next step.
@@ -741,7 +741,7 @@ which does customized local shutdown tasks before calling `init` or
 Start upsmon
 ^^^^^^^^^^^^
 
-	upsmon
+	:; upsmon
 
 If it complains about something, then check your configuration.
 
@@ -844,14 +844,14 @@ restarts when power returns.
 The first step is to see how `upsdrvctl` will behave without actually
 turning off the power. To do so, use the `-t` argument:
 
-	upsdrvctl -t shutdown
+	:; upsdrvctl -t shutdown
 
 It will display the sequence without actually calling the drivers.
 
 
 You can finally test a forced shutdown sequence (FSD) using:
 
-	upsmon -c fsd
+	:; upsmon -c fsd
 
 This will execute a full shutdown sequence, as presented in
 <<Shutdown_design,Shutdown design>>, starting from the 3rd step.

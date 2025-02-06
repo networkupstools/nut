@@ -179,6 +179,12 @@ into their operating system.  On the other hand, distributions and appliances
 tend to package "official releases" of projects such as NUT, and so do not
 deliver latest and greatest fixes, new drivers, bugs and other features.
 
+Stable distributions also tend to deliver minor fixes to the version of
+third-party software (like NUT) a particular release of the operating
+system has initially delivered, so those release lines can be years behind
+development in terms of new features (or bug fixes, if they are not trivial
+to patch into the old code base snapshot used to create the package).
+
 [[Installing_source]]
 Installing from source
 ----------------------
@@ -300,6 +306,8 @@ This will build the NUT client and server programs and the
 selected drivers. It will also build any other features that were
 selected during <<Configuration,configuration>> step above.
 
+NOTE: NUT is regularly tested with GNU, BSD and Sun implementations of `make`.
+
 
 Installation
 ^^^^^^^^^^^^
@@ -403,7 +411,7 @@ drivers; this should allow you to follow the below
 instructions. However, don't forget to set up the correct
 permissions later!).
 
-NOTE: if you are using something like udev or devd, make sure
+NOTE: If you are using something like udev or devd, make sure
 these permissions stay set across a reboot.  If they revert to the
 old values, your drivers may fail to start.
 
@@ -489,7 +497,7 @@ the `/tree/` with "`-b`" CLI option for branch selection, like this:
 Testing with CI helper
 ~~~~~~~~~~~~~~~~~~~~~~
 
-NOTE: this uses the `ci_build.sh` script to arrange some rituals and
+NOTE: This uses the `ci_build.sh` script to arrange some rituals and
 settings, in this case primarily to default the choice of drivers to
 auto-detection of what can be built, and to skip building documentation.
 Also note that this script supports many other scenarios for CI and
@@ -668,7 +676,7 @@ Debian, Ubuntu and other derivatives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 NOTE: NUT is packaged and well maintained in these systems.
-The official Debian packager is part of the NUT Team.
+The official Debian packager used to be part of the NUT Team.
 
 Using your preferred method (apt-get, aptitude, Synaptic, ...), install
 the 'nut' package, and optionally the following:

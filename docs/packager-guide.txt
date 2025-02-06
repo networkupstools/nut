@@ -29,7 +29,7 @@ Packaging is a final aim for software. It eases and completes the
 software integration into an OS, and allows users to have an easy
 software installation and support out of the box.
 
-NOTE: making NUT packaging more uniform should help its documentation,
+NOTE: Making NUT packaging more uniform should help its documentation,
 support and maintenance across the supported OSes.
 
 ------------------------------------------------------------------------

@@ -43,13 +43,13 @@ link:https://github.com/[GitHub].
 
 To retrieve the current development tree, use the following command:
 
-	$ git clone git://github.com/networkupstools/nut.git
+	:; git clone git://github.com/networkupstools/nut.git
 
-The configure script and its dependencies are not stored in Git. To generate
+The `configure` script and its dependencies are not stored in Git. To generate
 them, ensure that autoconf, automake and libtool are installed, then run the
 following script in the directory you just checked out:
 
-	$ ./autogen.sh
+	:; ./autogen.sh
 
 NOTE: it is optionally recommended to have Python 2.x or 3.x, and Perl, to
 generate some files included into the `configure` script, presence is checked

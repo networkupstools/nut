@@ -219,8 +219,8 @@ delay the driver or server when waiting for a lock.
 In April 2003, the entire state management subsystem was removed and
 replaced with a single local socket.  The drivers listen for
 connections and push updates asynchronously to any listeners.  They also
-recognize a few commands.  Drivers also dampen updates, and only push
-them out when something actually changes.
+recognize a few commands.  Drivers also dampen the flow of updates, and
+only push them out when something actually changes.
 
 As a result, `upsd` no longer has to poll any files on the disk, and can
 just `select()` all of its file descriptors (fds) and wait for activity.

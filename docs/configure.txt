@@ -12,10 +12,10 @@ and other dependencies on your build environment (referenced just a bit
 below). For common developer iterations, porting to new platforms,
 or in-place testing, running the `./ci_build.sh` script can be a helpful
 one-stop solution.
-+
+
 The NUT linkdoc:packager-guide[Packager Guide], which presents the best
 practices for installing and integrating NUT, is also a good reading.
-+
+
 The link:config-prereqs.txt[Prerequisites for building NUT on different OSes]
 document suggests prerequisite packages with tools and dependencies
 available and needed to build and test as much as possible of NUT on

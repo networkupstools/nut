@@ -14,8 +14,9 @@ Use `snprintf()`.  It's even provided with a compatibility module if the
 target system doesn't have it natively.
 
 If you use `snprintf()` to load some value into a buffer, make sure you
-provide the format string.  Don't use user-provided format strings,
-since that's an easy way to open yourself up to an exploit.
+provide the format string.  Don't use user-provided format strings without
+delicate verification, since that's an easy way to open yourself up to an
+exploit.
 
 Don't use `strcat()`.  We have a neat wrapper for `snprintf()` called
 `snprintfcat()` that allows you to append to `char *` with a format
@@ -25,8 +26,8 @@ Error reporting
 ~~~~~~~~~~~~~~~
 
 Don't call `syslog()` directly.  Use `upslog_with_errno()` and `upslogx()`.
-They may write to the syslog, stderr, or both as appropriate.  This
-means you don't have to worry about whether you're running in the
+They may also write to the `syslog`, `stderr`, or both as appropriate.
+This means you don't have to worry about whether you're running in the
 background or not.
 
 The `upslog_with_errno()` routine prints your message plus the string
@@ -243,14 +244,16 @@ existing code on their workstations or to ensure support for new
 compilers and C standard revisions, e.g. save a local file like this
 to call the common script with pre-sets:
 
-	$ cat _fightwarn-gcc10-gnu17.sh
-	#!/bin/sh
+----
+$ cat _fightwarn-gcc10-gnu17.sh
+#!/bin/sh
 
-	BUILD_TYPE=default-all-errors \
-	CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu17" \
-	CXXFLAGS="-Wall -Wextra -Werror -std=gnu++17" \
-	CC=gcc-10 CXX=g++-10 \
-		./ci_build.sh
+BUILD_TYPE=default-all-errors \
+CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu17" \
+CXXFLAGS="-Wall -Wextra -Werror -std=gnu++17" \
+CC=gcc-10 CXX=g++-10 \
+	./ci_build.sh
+----
 
 ...and then execute it to prepare a workspace, after which you can go
 fixing bugs file-by-file running a `make` after each save to confirm
@@ -271,15 +274,17 @@ For the `ci_build.sh` usage like above, one can instead pass the setting
 via `BUILD_WARNOPT=...`, and require that all emitted warnings are fatal
 for their build, e.g.:
 
-	$ cat _fightwarn-clang9-gnu11.sh
-	#!/bin/sh
+----
+$ cat _fightwarn-clang9-gnu11.sh
+#!/bin/sh
 
-	BUILD_TYPE=default-all-errors \
-	BUILD_WARNOPT=hard BUILD_WARNFATAL=yes \
-	CFLAGS="-std=gnu11" \
-	CXXFLAGS="-std=gnu++11" \
-	CC=clang-9 CXX=clang++-9 CPP=clang-cpp \
-		./ci_build.sh
+BUILD_TYPE=default-all-errors \
+BUILD_WARNOPT=hard BUILD_WARNFATAL=yes \
+CFLAGS="-std=gnu11" \
+CXXFLAGS="-std=gnu++11" \
+CC=clang-9 CXX=clang++-9 CPP=clang-cpp \
+	./ci_build.sh
+----
 
 Finally, for refactoring effort geared particularly for fighting the
 warnings which exist in current codebase, the script contains some
@@ -287,7 +292,7 @@ presets (which would evolve along with codebase quality improvements)
 as `BUILD_TYPE=fightwarn-gcc`, `BUILD_TYPE=fightwarn-clang` or plain
 `BUILD_TYPE=fightwarn`:
 
-	BUILD_TYPE=fightwarn-clang ./ci_build.sh
+	:; BUILD_TYPE=fightwarn-clang ./ci_build.sh
 
 As a rule of thumb, new contributions must not emit any warnings when
 built in GNU99 mode with a `minimal` "difficulty" level of warnings.
@@ -545,9 +550,9 @@ directory of a project (such as NUT codebase). While `.gitignore` rules
 can take care of not adding your local configuration into the SCM, these
 locations can be wiped by a careless `git clean -fdX`. You are advised
 to explore configuring your IDE to store project configurations outside
-the source codebase location, or to track such directories as `nbproject`
-or `nb-cache` as a separate Git repository (not necessarily a submodule
-of NUT nor really diligently tracked) to avoid such surprises.
+the source codebase location, or to track such subdirectories as `nbproject`
+or `nb-cache` or `.idea` as a separate Git repository (not necessarily a
+submodule of NUT nor really diligently tracked) to avoid such surprises.
 
 IDE notes on Windows
 ~~~~~~~~~~~~~~~~~~~~
@@ -944,8 +949,8 @@ touch.  If your function or variable names start pushing important code
 off the right margin of the screen, expect them to meet the byte
 chainsaw sooner or later.
 
-All types defined with typedef should end in `_t`, because this is
-easier to read, and it enables tools (such as indent and emacs) to
+All types defined with `typedef` should end in `_t`, because this is
+easier to read, and it enables tools (such as `indent` and `emacs`) to
 display the source code correctly.
 
 Indenting with tabs vs. spaces
@@ -1066,7 +1071,7 @@ Whenever a function needs to satisfy a particular API, it can end up
 taking arguments that are not used in practice (think a too-trivial
 signal handler). While some compilers offer the facility of decorations
 like `__attribute__(unused)`, this proved not to be a portable solution.
-Also the abilities of newer C++ standard revisions are of no help to
+Also the abilities of newer C/C++ standard revisions are of no help to
 the vast range of existing systems that run NUT today and expect to be
 able to do so tomorrow (hence the required C99+ support noted above).
 
@@ -1112,12 +1117,12 @@ Taking the first step is the hardest part, so PRs are welcome :)
 You can go a long way towards converting your source code to the NUT
 coding style by piping it through the following command:
 
-	indent -kr -i8 -T FILE -l1000 -nhnl
+	:; indent -kr -i8 -T FILE -l1000 -nhnl
 
 This next command does a reasonable job of converting most C++ style
 comments (but not URLs and DOCTYPE strings):
 
-	sed 's#\(^\|[ \t]\)//[ \t]*\(.*\)[ \t]*#/* \2 */#'
+	:; sed 's#\(^\|[ \t]\)//[ \t]*\(.*\)[ \t]*#/* \2 */#'
 
 Emacs users can adjust how tabs are displayed. For example, it is
 possible to set a tab stop to be 3 spaces, rather than the usual 8.
@@ -1411,11 +1416,11 @@ Git access
 
 Anonymous Git checkouts are possible:
 
-	git clone git://github.com/networkupstools/nut.git
+	:; git clone git://github.com/networkupstools/nut.git
 
 or
 
-	git clone https://github.com/networkupstools/nut.git
+	:; git clone https://github.com/networkupstools/nut.git
 
 if it is necessary to get around a pesky firewall that blocks the native
 Git protocol.
@@ -1423,7 +1428,7 @@ Git protocol.
 For a quicker checkout (when you don't need the entire repository history),
 you can limit the depth of the clone:
 
-	git clone --depth 1 git://github.com/networkupstools/nut.git
+	:; git clone --depth 1 git://github.com/networkupstools/nut.git
 
 Mercurial (hg) access
 ~~~~~~~~~~~~~~~~~~~~~
@@ -1450,7 +1455,7 @@ Be aware that the examples in the GitHub blog post might result in a
 checkout that includes all of the current branches, as well as the trunk.
 You are most likely interested in a command line similar to the following:
 
-	svn co https://github.com/networkupstools/nut/trunk nut-trunk-svn
+	:; svn co https://github.com/networkupstools/nut/trunk nut-trunk-svn
 
 Ignoring generated files
 ------------------------
@@ -1572,32 +1577,32 @@ stash pop+ to apply your saved changes.
 Here is an example workflow:
 
 ------------------------------------------------------------------------------
-	git clone -o central git://github.com/networkupstools/nut.git
+	:; git clone -o central git://github.com/networkupstools/nut.git
 
-	cd nut
-	git remote add -f username git://github.com/username/nut.git
+	:; cd nut
+	:; git remote add -f username git://github.com/username/nut.git
 
-	git checkout master
-	git branch my-new-feature
-	git checkout my-new-feature
+	:; git checkout master
+	:; git branch my-new-feature
+	:; git checkout my-new-feature
 
 	# Hack away
 
-	git add changed-file.c
-	git commit -s
+	:; git add changed-file.c
+	:; git commit -s
 
 	# Fix a typo in a file or commit message:
 
-	git commit -s -a --amend
+	:; git commit -s -a --amend
 
 	# Someone committed something to the central repository. Fetch it.
 
-	git fetch central
-	git rebase central/master
+	:; git fetch central
+	:; git rebase central/master
 
 	# Publish your branch to your GitHub repository:
 
-	git push username my-new-feature
+	:; git push username my-new-feature
 ------------------------------------------------------------------------------
 
 If you are new to Git, but are familiar with SVN, some of the following links
