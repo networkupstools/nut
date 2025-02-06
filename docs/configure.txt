@@ -838,15 +838,16 @@ will leave files here.
 	--with-altpidpath=PATH
 
 Programs that normally don't have `root` powers, like the drivers and
-`upsd`, write their pid files here.  By default this is whatever the
+`upsd`, write their PID files here.  By default this is whatever the
 statepath (below) is, as those programs should be able to write there.
 
 The `NUT_ALTPIDPATH` environment variable overrides this at run time.
 
 	--with-statepath=PATH
 
-Change the default location of the state sockets created by the drivers
-to interact with the data server `upsd`. Default is `/var/state/ups`.
+Change the default location of the local Unix sockets created by the drivers
+to interact with the data server `upsd` to report their state and receive
+commands. Default is `/var/state/ups`.
 
 The `NUT_STATEPATH` environment variable overrides this at run time.
 
