@@ -83,7 +83,8 @@ Here is an example to setup a device simulation:
   the <<dev-recording,device recorder>>. Sample files are provided in the
   `data` directory of the NUT source. You can also download these from
   the development repository, such as the
-  link:https://github.com/networkupstools/nut/raw/master/data/evolution500.seq[evolution500.seq].
+  link:https://github.com/networkupstools/nut/raw/master/data/evolution500.seq[evolution500.seq]
+  or from link:https://github.com/networkupstools/nut-ddl/[NUT DDL] collection.
 - copy the simulation file to your sysconfig directory, like `/etc/nut`
   or `/etc/ups`
 - configure NUT for simulation (linkman:ups.conf[5]):
