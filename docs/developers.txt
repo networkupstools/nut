@@ -1361,9 +1361,9 @@ welcome an entry in the link:docs/acknowledgements.txt[] file as well,
 to track and know the industry players who help make NUT better and more
 useful.
 
-It is nice to update the link:NEWS[] file for significant development
+It is nice to update the link:NEWS.adoc[] file for significant development
 to be seen as part of next release, as well as to update the
-link:UPGRADING[] file for potentially breaking changes and similar
+link:UPGRADING.adoc[] file for potentially breaking changes and similar
 heads-up notes for third-party teams (distribution packagers, clients
 and bindings, etc.)
 
