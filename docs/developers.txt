@@ -1305,7 +1305,7 @@ Current preference for suggesting changes is to open a pull request on
 GitHub for the https://github.com/networkupstools/nut/ project.
 
 For some cases, small patches that arrive by mailing list in unified
-format (`diff -u`) as plain text attachments with no HTML and a brief
+format (`diff -Naur`) as plain text attachments with no HTML and a brief
 summary at the top are easy to handle, but sadly also easy to overlook.
 
 If a patch is sent to the nut-upsdev mailing list, it stands a better
@@ -1315,10 +1315,11 @@ for others, or if it is a large change, your best bet is to submit a
 pull request or create an
 link:https://github.com/networkupstools/nut/issues[issue on GitHub].
 
-The issue tracker allows us to track the patches over a longer period
-of time, and it is less likely that a patch will fall through the cracks.
+The issue tracker allows us to track the patches, and related discussion
+for clarifications or a review process, over a longer period of time,
+and it is less likely that a patch will fall through the cracks.
 Posting a reminder to the developers (via the nut-upsdev list) about a
-patch on GitHub is fair game.
+patch on GitHub is fair game, if the maintainers do not react in a few days.
 
 Patch cohesion
 --------------
@@ -1370,9 +1371,9 @@ Source code management
 ----------------------
 
 We currently use a Git repository hosted at GitHub to track changes to
-the NUT source code. This allows you to clone the repository (or fork,
-in GitHub parlance), make changes, and post them online for peer review
-prior to integration.
+the NUT source code. This allows you to "fork" the repository (in GitHub
+parlance), "clone" it to your workstation(s), make a new "branch" with
+your changes, and post them back online for peer review prior to integration.
 
 To obtain permission to commit directly to the common upstream NUT repository,
 you must be prepared to spend a fair amount of time contributing to the
@@ -1479,8 +1480,8 @@ that title is used throughout git.
 
 If your commit is just a change to one component, such as the HCL, upsd or a
 specific driver, prefix your commit message in a way that matches similar
-commits. This helps when searching the repository or tracking down a
-regression.
+commits (typically with the file name(s), check `git log` for inspiration).
+This helps when searching the repository or tracking down a regression.
 
 Referring to previous commits can be tricky. If you are referring to the
 immediate parent of a given commit, it suffices to say "the previous commit".
@@ -1519,6 +1520,7 @@ configuration option.
 For more details see:
 
 * https://github.com/networkupstools/nut/issues/1994
+* https://github.com/networkupstools/nut/wiki/Code-contributions,-PRs,-PGP-and-DCO
 * https://stackoverflow.com/questions/1962094/what-is-the-sign-off-feature-in-git-for
 * https://stackoverflow.com/questions/15015894/git-add-signed-off-by-line-using-format-signoff-not-working
 
