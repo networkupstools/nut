@@ -570,6 +570,16 @@ runs in foreground mode.
 `upsmon.conf` and other configuration files.  If this variable is not set,
 *upsmon* uses a built-in default, which is often `/usr/local/ups/etc`.
 
+*NUT_QUIET_INIT_UPSNOTIFY=true* can be used to prevent daemons which can
+notify service management frameworks (such as systemd) about passing
+their lifecycle milestones from emitting such notifications (including
+those about lack of system support for such modern features, once per run).
+
+*NUT_QUIET_INIT_BANNER=true* can be used to suppress NUT tool name and
+version banner. NOT recommended for services due to adverse troubleshooting
+impact, but may be helpful in shell profiles or scripts which process NUT
+tool outputs.
+
 FILES
 -----
 
