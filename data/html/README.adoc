@@ -56,6 +56,7 @@ b) configure manually
 
 - Now edit your webserver configuration file, adding for
   example (for Apache):
++
 ----
 #Begin Section
 ScriptAlias /nut/cgi-bin/ /usr/local/nut/cgi-bin/
