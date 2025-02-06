@@ -576,8 +576,8 @@ become sufficiently charged.
 
    - generates a `NOTIFY_SHUTDOWN` event
    - waits `FINALDELAY` seconds -- typically `5`
-   - creates the `POWERDOWNFLAG` file in its local filesystem --
-     usually `/etc/killpower`
+   - creates the `POWERDOWNFLAG` file in its local filesystem -- usually
+     `/etc/killpower`, or `/run/nut/killpower` in a temporary file system
    - calls the `SHUTDOWNCMD`
 
 7. On most systems, `init` takes over, kills your processes, syncs and
