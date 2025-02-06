@@ -1102,6 +1102,12 @@ configuration toggle in the GUI. Others may need a plugin, see more at
 https://editorconfig.org/#pre-installed page. There are also command-line
 tools to verify and/or enforce compliance of source files to configuration.
 
+NOTE: A long-standing plan is to define a `clang-format` specification
+for all the different nuances like where we do and don't want spaces
+around parentheses, how to align multi-line conditional expressions, etc.
+in a way that most of the current NUT code base would already conform.
+Taking the first step is the hardest part, so PRs are welcome :)
+
 You can go a long way towards converting your source code to the NUT
 coding style by piping it through the following command:
 
