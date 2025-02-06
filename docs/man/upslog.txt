@@ -63,6 +63,9 @@ The default format string is:
 *-N*::
 Prefix `%UPSHOST%%t` before the format string (whether default or custom).
 Useful when logging many systems into same target.
++
+NOTE: This option DOES NOT currently check if you already have `%UPSHOST%`
+in the formatting string (e.g. specified explicitly).
 
 *-i* 'interval'::
 
