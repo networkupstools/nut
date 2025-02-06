@@ -892,6 +892,12 @@ will the `upsmon` client.  Some drivers may work after resuming, but many
 don't and some UPS devices will require re-initialization, so it's best not
 to keep them running either.
 
+NOTE: Starting with NUT v2.8.3, there is some growing support for system-wide
+sleep on some platforms (e.g. to catch the "going to sleep" event and make
+a note of it in the daemons, to take the least-surprise corrective actions
+after a significant change in system clock readings), but the warnings in
+previous paragraph may still apply.
+
 After stopping NUT driver, server and client you'll have to send the UPS
 the command to shutdown only if the `POWERDOWNFLAG` is present.  Note
 that most likely you'll have to allow for a grace period after calling
