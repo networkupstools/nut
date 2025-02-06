@@ -9,12 +9,19 @@ There are many programs and <<Features,features>> in this
 package.  You should check out the <<Overview,NUT Overview>>
 and other accompanying documentation to see how it all works.
 
-NOTE: NUT does not currently provide proper graphical configuration tools.
+[NOTE]
+======
+NUT does not currently provide proper graphical configuration tools.
 However, there is now support for linkdoc:developer-guide[Augeas,augeas_user],
 which will enable the easier creation of configuration tools.
+
+The linkman:nutconf[8] tool should also help with programmatic manipulation
+of various NUT configuration files.
+
 Moreover, linkman:nut-scanner[8] is available to discover supported devices
 (USB, SNMP, Eaton XML/HTTP and IPMI) and NUT servers (using Avahi or the
 classic connection method).
+======
 
 Details about the configuration files
 -------------------------------------
