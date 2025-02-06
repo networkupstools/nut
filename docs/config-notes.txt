@@ -809,6 +809,9 @@ as an example:
 
 ------------------------------------------------------------------------------
 
+A more elaborate example can be found in NUT sources, e.g.:
+https://github.com/networkupstools/nut/blob/master/scripts/systemd/nutshutdown.in
+
 [WARNING]
 ==============================================================================
 - Be careful that `upsdrvctl shutdown` command will probably power off
