@@ -862,8 +862,8 @@ systems and `"C:\\killpower"` (note the double backslashes) on Windows.
 Things the compiler might need to find
 --------------------------------------
 
-LibGD
-~~~~~
+pkg-config tooling
+~~~~~~~~~~~~~~~~~~
 
 	--with-pkg-config
 
@@ -872,6 +872,9 @@ complete pathname to `pkg-config` which describes `CFLAGS`, `LIBS` and
 possibly other build-time options in `*.pc` files, to use third-party
 libraries. On build systems which support multiple architectures you
 may also want to set `PKG_CONFIG_PATH` to match your current build.
+
+LibGD
+~~~~~
 
 	--with-gd-includes="-I/foo/bar"
 
