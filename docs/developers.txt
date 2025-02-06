@@ -318,14 +318,15 @@ the same inputs, try telling `./ci_build.sh` to loop configuring until
 success (instead of quickly failing), and/or tell `./configure` to use
 another shell at least for the system call-outs, with options like these:
 
-	SHELL=/bin/bash CONFIG_SHELL=/bin/bash CI_SHELL_IS_FLAKY=true \
-	./ci_build.sh
+	:; SHELL=/bin/bash CONFIG_SHELL=/bin/bash CI_SHELL_IS_FLAKY=true \
+	   ./ci_build.sh
 
 Jenkins CI
 ^^^^^^^^^^
 
 Since mid-2021, the NUT CI farm is implemented by several virtual servers
-courteously provided by link:http://fosshost.org[Fosshost] and later by
+courteously provided originally by link:http://fosshost.org[Fosshost] and
+later by
 link:https://www.digitalocean.com/?refcode=d2fbf2b9e082&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge[DigitalOcean].
 
 These run various operating systems as build agents, and a Jenkins instance
@@ -452,7 +453,7 @@ Local private deployments of Travis CI are possible, so if anybody does
 use it and has updated markup to share, they are welcome to post PRs.
 ======
 
-The NUT project on GitHub has integration with Travis CI to test a large
+The NUT project on GitHub had integration with Travis CI to test a large
 set of compiler and option combinations, covering different versions of
 gcc and clang, C standards, and requiring to pass builds at least in a
 mode without warnings (and checking the other cases where any warnings
@@ -1646,7 +1647,8 @@ Even if you do not use your distribution's packages of NUT, installing the
 distribution's list of build dependencies for NUT can reduce the amount of
 trial-and-error when installing dependencies. For instance, in Debian, you
 can run `apt-get build-dep nut` to install all of the auto* tools as well
-as any development libraries and headers.
+as any development libraries and headers -- as known for the version of NUT
+packaged with the OS distribution release you are using.
 
 After running `./autogen.sh`, you can pass your local configuration
 options to `./configure` and run `make` from the top-level directory.
@@ -1673,9 +1675,12 @@ There is also `make distcheck`, which runs an even stricter set of
 tests than `make distcheck-light`, but will not work unless you have all
 of the optional third-party libraries and features installed.
 
-Finally note, that since 2017 the GitHub upstream project is monitored
+Finally note, that since 2017 the GitHub upstream project was monitored
 by Travis CI (in addition to earlier multi-platform buildbots which
-occasionally do not work), replaced since 2021 by a dedicated NUT CI farm.
+occasionally did not work), replaced since 2021 by a dedicated NUT CI farm
+and a number of free cloud CI resources to test some 200-300 scenarios
+with different combinations of build environments and tooling implementations.
+
 This means that if your posted improvements are based on current NUT
 "master" branch, the resulting pull request should get tested for a number of
 scenarios automatically. If your code adds a substantial feature, consider
