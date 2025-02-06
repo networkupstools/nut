@@ -2,11 +2,33 @@ NUT design document
 ===================
 
 This software is designed around a layered scheme with drivers, a
-server and clients.   These layers communicate with text-based
+data server, and clients.   These layers communicate with text-based
 protocols for easier maintenance and diagnostics.
 
 The layering
 ------------
+
+The NUT driver(s) and the data server run on the same system, which
+has some communications media connected to the power device (e.g. a
+serial or USB link, a local IPMI interface, or a network interface
+in the engineering VLAN).  While each driver program talks the device
+vendor-defined protocol over such media, it also talks the local
+NUT Socket protocol to the local data server.
+
+Clients connect to the data server using the common NUT Network protocol
+over TCP, whether on `localhost` or remotely.
+
+One most notable client is `upsmon`, which is responsible for shutdown
+of the system it runs on, when the power situation becomes critical.
+Design-wise, it normally splits into two daemons to minimize security
+risks: one remains with 'root' privileges and is only used to start
+the configured `SHUTDOWNCMD` when the time comes, and the other half
+drops privileges and does the bulk of work.
+
+NOTE: There were requests for enhancement to also implement connectivity
+using the common NUT Network protocol using local sockets, so clients
+running on the same machine as the data server would not have to always
+use the TCP/IP stack; however this is currently not implemented.
 
 image:images/nut_layering.png[NUT layering]
 
