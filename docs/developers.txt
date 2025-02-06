@@ -1276,13 +1276,16 @@ in the vicinity gets a visit.
 Memory leak checking
 ~~~~~~~~~~~~~~~~~~~~
 
-We can't say enough good things about valgrind.  If you do anything with
-dynamic memory in your code, you need to use this.  Just compile with
-`gcc -g` and start the program inside `valgrind`.  Run it through the
-suspected area and then exit cleanly.  valgrind will tell you if you've
-done anything dodgy like freeing regions twice, reading uninitialized
-memory, or if you've leaked memory anywhere.
+We can't say enough good things about valgrind.
 
+If you do anything with dynamic memory in your code, you need to use this.
+Just compile with `gcc -g` and start the program inside `valgrind`.
+Run it through the suspected area and then exit cleanly.  Then valgrind
+will tell you if you've done anything dodgy like freeing regions twice,
+leaving files open, reading uninitialized memory, or if you've leaked
+memory anywhere.
+
+For NUT, there are prepared integrations like `configure --with-valgrind`.
 See also `scripts/valgrind` in NUT sources for a helper tool and resource
 files to suppress common third-party problems.
 
