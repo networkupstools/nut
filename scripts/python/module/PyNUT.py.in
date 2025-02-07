@@ -61,6 +61,8 @@
 #            since Python 3.11/3.13), so we can fall back on a privately
 #            stashed copy until a better solution is developed.
 #
+# 2025-01-31 cgar <github.com/cgarz> - Version 1.8.0
+#            Removed telnetlib dependency. Switched to using socket directly.
 
 import socket
 
@@ -80,8 +82,8 @@ class PyNUTClient :
     __srv_handler = None
     __recv_leftover = b''
 
-    __version     = "1.7.0"
-    __release     = "2024-07-01"
+    __version     = "1.8.0"
+    __release     = "2025-02-07"
 
 
     def __init__( self, host="127.0.0.1", port=3493, login=None, password=None, debug=False, timeout=5 ) :
