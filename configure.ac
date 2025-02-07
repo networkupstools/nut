@@ -2921,6 +2921,44 @@ if test x"${nut_with_nut_monitor}" != xno ; then
 fi
 dnl ### AC_MSG_NOTICE([nut_with_nut_monitor-6: ${nut_with_nut_monitor}])
 
+dnl ${nut_with_pynut}: TODO: arg values to request python 2, 3 or both
+AC_MSG_CHECKING([if we can and should install PyNUT module])
+nut_with_pynut_py=""
+nut_with_pynut_py2=""
+nut_with_pynut_py3=""
+if test x"${nut_with_pynut}" != xno \
+    -a -n "${PYTHON}${PYTHON2}${PYTHON3}" \
+; then
+    if test -n "${PYTHON2}" \
+    && (command -v ${PYTHON2} || which ${PYTHON2}) >/dev/null 2>/dev/null \
+    ; then
+        if ${PYTHON2} -c "import socket" \
+        ; then
+            nut_with_pynut_py2="yes"
+        fi
+    fi
+
+    if test -n "${PYTHON3}" \
+    && (command -v ${PYTHON3} || which ${PYTHON3}) >/dev/null 2>/dev/null \
+    ; then
+        if ${PYTHON3} -c "import socket" \
+        ; then
+            nut_with_pynut_py3="yes"
+        fi
+    fi
+
+    dnl Test same-ness of pythons with sys.version also?
+    if test -n "${PYTHON}" \
+    && (command -v ${PYTHON} || which ${PYTHON}) >/dev/null 2>/dev/null \
+    && test "${PYTHON}" != "${PYTHON2}" -a "${PYTHON}" != "${PYTHON3}" \
+    ; then
+        if ${PYTHON} -c "import socket" \
+        ; then
+            nut_with_pynut_py="yes"
+        fi
+    fi
+fi
+
 if test -z "${nut_with_pynut_py}${nut_with_pynut_py2}${nut_with_pynut_py3}" ; then
     dnl Not all prereqs are available...
     case "${nut_with_pynut}" in
