@@ -35,21 +35,6 @@ and protocol support.
 
 For one practical example, you can research `tests/NIT/nit.sh` in NUT sources.
 
-telnetlib
-^^^^^^^^^
-
-Historically, the `PyNUTClient` class relied on `telnetlib` module for socket
-communications with the NUT data server, which was provided as part of Python
-core installation with tested 2.6+ and 3.* versions. The module was, however,
-marked deprecated since Python 3.11 and not provided since 3.13. Due to this,
-as a quick stop-gap solution, NUT sources provide `nut_telnetlib.py` -- a copy
-of the module from Python 3.10 installation, and no longer should require its
-presence in the Python deployment.
-
-A better solution would be to find or create a new layer for the constrained
-use-case of NUT client interactions with a data server, which do not need the
-fully fledged Telnet-like capabilities.
-
 app
 ~~~
 
