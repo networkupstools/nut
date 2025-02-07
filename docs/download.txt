@@ -45,6 +45,12 @@ To retrieve the current development tree, use the following command:
 
 	:; git clone git://github.com/networkupstools/nut.git
 
+OPTIONALLY you can then fetch known git tags, so semantic versions look
+better (based off a recent release):
+
+	:; cd nut
+	:; git fetch --tags --all
+
 The `configure` script and its dependencies are not stored in Git. To generate
 them, ensure that autoconf, automake and libtool are installed, then run the
 following script in the directory you just checked out:

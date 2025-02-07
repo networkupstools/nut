@@ -488,11 +488,16 @@ copy the proposed-source URL of that "from" part.
 For example, in some PR this says `jimklimov:issue-1234` and links to
 `https://github.com/jimklimov/nut/tree/issue-1234`.
 For manual git-cloning, just paste that URL into the shell and replace
-the `/tree/` with "`-b`" CLI option for branch selection, like this:
+the `/tree/` with "`-b`" CLI option for branch selection; it also helps
+to keep the workspace directory name dedicated to that PR, like this:
 
 	:; cd /tmp
 	### Checkout https://github.com/jimklimov/nut/tree/issue-1234
-	:; git clone https://github.com/jimklimov/nut -b issue-1234
+	:; git clone https://github.com/jimklimov/nut -b issue-1234 nut-issue-1234
+	:; cd nut-issue-1234
+	### OPTIONALLY fetch known git tags, so semantic versions look better
+	:; git fetch --tags --all
+	### Proceed with build (common instructions below)
 
 Testing with CI helper
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -509,6 +514,9 @@ An "in-place" _testing_ build and run would probably go along these lines:
 	:; cd /tmp
 	:; git clone -b master https://github.com/networkupstools/nut
 	:; cd nut
+	### OPTIONALLY fetch known git tags, so semantic versions look better
+	:; git fetch --tags --all
+	### Proceed with build
 	:; ./ci_build.sh inplace
 	### Temporarily stop your original drivers
 	:; ./drivers/nutdrv_qx -a DEVNAME_FROM_UPS_CONF -d1 -DDDDDD \
@@ -563,6 +571,9 @@ This goes similar to usual build and install from Git:
 	:; cd /tmp
 	:; git clone https://github.com/networkupstools/nut
 	:; cd nut
+	### OPTIONALLY fetch known git tags, so semantic versions look better
+	:; git fetch --tags --all
+	### Proceed with build
 	:; ./autogen.sh
 	:; ./configure --enable-inplace-runtime # --maybe-some-other-options
 	:; make -j 4 all && make -j 4 check && sudo make install
@@ -591,6 +602,9 @@ symlinks) and to get them started:
 	:; cd /tmp
 	:; git clone https://github.com/networkupstools/nut
 	:; cd nut
+	### OPTIONALLY fetch known git tags, so semantic versions look better
+	:; git fetch --tags --all
+	### Proceed with build
 	:; ./autogen.sh
 	:; ./configure --enable-inplace-runtime # --maybe-some-other-options
 	:; make -j 4 all && make -j 4 check && \
@@ -643,6 +657,9 @@ e.g.:
 	:; git clone https://github.com/networkupstools/nut
 	:; cd nut
 	:; git checkout -b issue-1234 ### your PR branch name, arbitrary
+	### OPTIONALLY fetch known git tags, so semantic versions look better
+	:; git fetch --tags --all
+	### Proceed with build
 	:; ./autogen.sh
 	:; ./configure --enable-inplace-runtime # --maybe-some-other-options
 	### Iterate your code changes (e.g. PR draft), build and install with:

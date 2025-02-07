@@ -1430,6 +1430,13 @@ you can limit the depth of the clone:
 
 	:; git clone --depth 1 git://github.com/networkupstools/nut.git
 
+
+OPTIONALLY you can then fetch known git tags, so semantic versions look
+better (based off a recent release):
+
+	:; cd nut
+	:; git fetch --tags --all
+
 Mercurial (hg) access
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -1574,13 +1581,18 @@ If you haven't created a commit out of your local changes yet, and you want to
 fetch the latest code, you can also use +git stash+ before pulling, then +git
 stash pop+ to apply your saved changes.
 
-Here is an example workflow:
+Here is an example workflow (using a slightly older `git` command-line syntax,
+so it works verbatim on more platforms):
 
 ------------------------------------------------------------------------------
 	:; git clone -o central git://github.com/networkupstools/nut.git
 
 	:; cd nut
-	:; git remote add -f username git://github.com/username/nut.git
+	:; git remote add -f USERNAME git://github.com/USERNAME/nut.git
+
+	### OPTIONALLY you can then fetch known git tags, so semantic
+	### versions look better (based off a recent release):
+	:; git fetch --tags --all
 
 	:; git checkout master
 	:; git branch my-new-feature
@@ -1602,7 +1614,7 @@ Here is an example workflow:
 
 	# Publish your branch to your GitHub repository:
 
-	:; git push username my-new-feature
+	:; git push USERNAME my-new-feature
 ------------------------------------------------------------------------------
 
 If you are new to Git, but are familiar with SVN, some of the following links
