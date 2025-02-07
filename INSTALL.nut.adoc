@@ -670,6 +670,13 @@ e.g.:
 	    sudo systemctl restart \
 	        nut-driver-enumerator.service nut-monitor nut-server
 
+Note that to contribute your work back to upstream NUT codebase, you would
+need to create a "fork" of https://github.com/networkupstools/nut on GitHub,
+then `git remote add USERNAME https://github.com/USERNAME/nut`, maybe refresh
+the workspace index with `git fetch --all`, and finally `git push USERNAME`
+(possibly follow further instructions from `git` tooling) to create the
+pull request. For more details, see `docs/developers.txt` in NUT sources.
+
 Next steps after an in-place upgrade
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
