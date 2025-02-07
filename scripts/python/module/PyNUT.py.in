@@ -143,9 +143,10 @@ if something goes wrong.
         if self.__debug :
             print( "[DEBUG] Connecting to host" )
 
-        self.__srv_handler = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
-        self.__srv_handler.connect( (self.__host, self.__port) )
-        self.__srv_handler.settimeout( self.__timeout )
+        self.__srv_handler = socket.create_connection(
+            (self.__host, self.__port),
+            self.__timeout
+        )
 
         if self.__login != None :
             self.__srv_handler.send( ("USERNAME %s\n" % self.__login).encode('ascii') )
