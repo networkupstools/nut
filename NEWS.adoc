@@ -531,7 +531,7 @@ relocated into new `shutdown.default` INSTCMD definitions. [#2670]
 
  - the `PyNUTClient` module should no longer rely on presence of a `telnetlib`
    module in the build or execution environment (deprecated in Python 3.11,
-   removed since Python 3.13). [#2183]
+   removed since Python 3.13). [issue #2183, PR #2792]
 
  - the PyPI distribution of the `PyNUTClient` module tarball should now use a
    lower-cased file name (and immediate versioned directory name inside) to
