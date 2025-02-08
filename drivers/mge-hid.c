@@ -659,8 +659,9 @@ static info_lkp_t mge_time_conversion[] = {
 #endif /* HAVE_STRPTIME */
 
 /* The HID path 'UPS.PowerSummary.ConfigVoltage' only reports
-   'battery.voltage.nominal' for specific UPS series. Ignore
-   the value for other series (default behavior). */
+ * 'battery.voltage.nominal' for specific UPS series.
+ * Ignore the value for other series (default behavior).
+ */
 static const char *mge_battery_voltage_nominal_fun(double value)
 {
 	switch (mge_type & 0xFF00)	/* Ignore model byte */
@@ -690,8 +691,9 @@ static info_lkp_t mge_battery_voltage_nominal[] = {
 };
 
 /* The HID path 'UPS.PowerSummary.Voltage' only reports
-   'battery.voltage' for specific UPS series. Ignore the
-   value for other series (default behavior). */
+ * 'battery.voltage' for specific UPS series.
+ * Ignore the value for other series (default behavior).
+ */
 static const char *mge_battery_voltage_fun(double value)
 {
 	switch (mge_type & 0xFF00)	/* Ignore model byte */
@@ -1146,29 +1148,29 @@ static const char *eaton_input_eco_mode_auto_on_fun(double value)
 
 	/* Check if input.bypass.switch.on is disabled and set it to 'on' */
 	bypass_switch_on_str = dstate_getinfo("input.bypass.switch.on");
-    if (!strcmp(bypass_switch_on_str, "disabled")) {
-	    setvar("input.bypass.switch.on", "on");
+	if (!strcmp(bypass_switch_on_str, "disabled")) {
+		setvar("input.bypass.switch.on", "on");
 	} else {
 		upsdebugx(1, "Bypass switch on state is: %s , must be disabled before switching on", bypass_switch_on_str);
-	    return NULL;
+		return NULL;
 	}
 
 	/* Check if input.eco.switchable is normal and set it to 'ECO' */
 	eco_switchable_str = dstate_getinfo("input.eco.switchable");
-    if (!strcmp(eco_switchable_str, "normal")) {
-        setvar("input.eco.switchable", "ECO");
+	if (!strcmp(eco_switchable_str, "normal")) {
+		setvar("input.eco.switchable", "ECO");
 	} else {
 		upsdebugx(1, "ECO switch state is: %s , must be normal before switching to ECO", eco_switchable_str);
 		return NULL;
 	}
 
-    /* Check if input.bypass.switch.off is disabled and set it to 'off' */
+	/* Check if input.bypass.switch.off is disabled and set it to 'off' */
 	bypass_switch_off_str = dstate_getinfo("input.bypass.switch.off");
-    if (!strcmp(bypass_switch_off_str, "disabled")) {
-        setvar("input.bypass.switch.off", "off");
+	if (!strcmp(bypass_switch_off_str, "disabled")) {
+		setvar("input.bypass.switch.off", "off");
 	} else {
 		upsdebugx(1, "Bypass switch off state is: %s , must be disabled before switching off", bypass_switch_off_str);
-	    return NULL;
+		return NULL;
 	}
 	upsdebugx(1, "%s: ECO Mode was enabled after switching to Bypass Mode", __func__);
 	return NULL;
@@ -2121,7 +2123,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "ecomode.enable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "1", HU_TYPE_CMD, eaton_input_eco_mode_on_off_info },
 	{ "essmode.enable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "2", HU_TYPE_CMD, NULL },
 	{ "essmode.disable", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "0", HU_TYPE_CMD, NULL },
-    /* Command to switch ECO(HE) Mode with switch to Automatic Bypass Mode on befor */
+	/* Command to switch ECO(HE) Mode with switch to Automatic Bypass Mode on before */
 	{ "ecomode.start.auto", 0, 0, "UPS.PowerConverter.Input.[5].Switchable", NULL, "1", HU_TYPE_CMD, eaton_input_eco_mode_auto_on_info },
 
 	/* Command to switch Automatic Bypass Mode on/off */
