@@ -24,6 +24,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  * History:
+ * - 7 February 2025, Bill Elliot
+ * Working well with USB (or serial for -cs driver)
+ * - 2 December 2024.  Bill Elliot
+ * Started to work on common variable and function file so this driver and the
+ *  serial (-cs) driver can make use of the same protocol related functions.
  * - 2 October 2024.  Bill Elliot
  * Used pieces of oneac.c driver to get jump-started.
  *
@@ -49,8 +54,8 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize);
 //#define PVAR_USB	1	/* This is the USB comm driver */
 #include "powervar-cx.h"	/* Common driver variables and functions */
 
-#define DRIVER_NAME	"Powervar-CU UPS driver"
-#define DRIVER_VERSION	"0.04"
+#define DRIVER_NAME	"Powervar-CU UPS driver (USB)"
+#define DRIVER_VERSION	"0.10"
 
 /* USB comm stuff here */
 #define USB_RESPONSE_SIZE	8
@@ -91,7 +96,7 @@ upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
 	DRIVER_VERSION,
 	"Bill Elliot <bill@wreassoc.com>",
-	DRV_EXPERIMENTAL,
+	DRV_BETA,
 	{ NULL }
 };
 
@@ -171,10 +176,10 @@ int match_by_something(usb_dev_handle *argudev, USBDevice_t *arghd, usb_ctrl_cha
 void USBFlushReceive (void)
 {
 	uint uiCount = 0;
+	char response_in[USB_RESPONSE_SIZE + 1];
 
 	upsdebugx(3, "Flushing USB receive.");
 
-	char response_in[USB_RESPONSE_SIZE + 1];
 	while (comm_driver->get_interrupt(udev,
 			(usb_ctrl_charbuf)response_in,
 			(usb_ctrl_charbufsize) USB_RESPONSE_SIZE,
@@ -187,7 +192,7 @@ void USBFlushReceive (void)
 }
 
 
-/* This function is called to send the data request or command to the initialized device. */
+/* This function is called to send the data request to the initialized device. */
 static size_t SendRequest (const char* sRequest)
 {
 	char outbuff[40];
@@ -230,7 +235,9 @@ static size_t SendRequest (const char* sRequest)
 	return ret;
 }
 
-
+/* Get the response from the UPS */
+/* chBuff is the buffer to receive the response into */
+/* BuffSize is the size, in chars, of chBuff */
 static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
 {
 
@@ -239,10 +246,11 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
 	size_t i = 0;
 	size_t j = 0;
 
-	int Retries = RETRIES;		/* x/2 seconds max with 500000 USEC */
-	ssize_t return_val;
+//	int Retries = RETRIES;		/* x/2 seconds max with 500000 USEC */
+	ssize_t return_val = 0;
 
-	for(i = 0; i < (USB_RESPONSE_SIZE + 2) ; i++) response_in[i] = '\0';
+//	for(i = 0; i < (USB_RESPONSE_SIZE + 2) ; i++) response_in[i] = '\0';
+	memset(response_in, 0, sizeof(response_in));
 
 	for (i = 0 ; (done == 0) && (i < BuffSize) ; )
 	{
@@ -272,7 +280,8 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
 			upsdebugx(5, "Loop Response: '%s'", response_in);
 
 			/* Clear response buffer for next chunk */
-			for(j = 0; j <= USB_RESPONSE_SIZE ; j++) response_in[j] = '\0';
+			memset(response_in, 0, sizeof(response_in));
+//			for(j = 0; j <= USB_RESPONSE_SIZE ; j++) response_in[j] = '\0';
 		}
 		else
 		{
@@ -285,21 +294,22 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
 
 	USBFlushReceive ();		/* Clear USB hardware */
 
-	if (Retries == 0)
-	{
-		upsdebugx (2,"!!PowervarGetResponse timeout...");
-
-		return_val = 1;		/* Comms error */
-	}
-	else
-	{
-		if (Retries < RETRIES)
-		{
-			upsdebugx (2,"PowervarGetResponse recovered (%d)...", Retries);
-		}
-
-		return_val = 0;		/* Good comms */
-	}
+//	Hmmm, this doesn't do anything. Fix it?
+//	if (Retries == 0)
+//	{
+//		upsdebugx (2,"!!PowervarGetResponse timeout...");
+//
+//		return_val = 1;		/* Comms error */
+//	}
+//	else
+//	{
+//		if (Retries < RETRIES)
+//		{
+//			upsdebugx (2,"PowervarGetResponse recovered (%d)...", Retries);
+//		}
+//
+//		return_val = 0;		/* Good comms */
+//	}
 
 	return return_val;
 }
@@ -355,7 +365,7 @@ void upsdrv_initups(void)
 	upslogx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
 
 	/* TBD, I believe all of this supported stuff can come out */
-	ret = is_usb_device_supported (powervar_usb_device_table, hd);
+/* 	ret = is_usb_device_supported (powervar_usb_device_table, hd);
 
 	if (ret < 0)
 	{
@@ -365,7 +375,7 @@ void upsdrv_initups(void)
 	{
 		upsdebugx (3, "supported: ret is %d.", ret);
 	}
-
+ */
 	upsdebugx(3, "VendorID: %04x", hd->VendorID);
 	upsdebugx(3, "ProductID: %04x", hd->ProductID);
 
@@ -405,6 +415,7 @@ void upsdrv_updateinfo(void)
 	alarm_commit();
 	status_commit();
 
+	/* TBD, What if we lose comms in call to common function?? */
 	dstate_dataok();
 }
 
@@ -416,7 +427,7 @@ void upsdrv_updateinfo(void)
 void upsdrv_help(void)
 {
 	printf("\n---------\nNOTE:\n");
-	printf("This driver is for connecting to a USB port.\n");
+	printf("This driver is for connecting to a Powervar UPS USB port.\n");
 }
 
 void upsdrv_cleanup(void)

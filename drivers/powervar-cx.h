@@ -19,6 +19,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  * History:
+ * - 7 February 2025, Bill Elliot
+ * Working well with USB (...-cu) or serial (...-cs)
  * - 2 December 2024.  Bill Elliot
  * Breaking out common items for serial and USB drivers. This file is not
  *  intended to be compiled as a stand-alone file but is to be included
@@ -43,6 +45,7 @@ int setcmd(const char* varname, const char* setvalue);
 /*misc stuff*/
 #define BUFFSIZE		512
 #define SUBBUFFSIZE		48
+#define REQBUFFSIZE		40
 #define STDREQSIZE		3	/* Length of all primary requests */
 
 /* For use in some instant commands...if requested */
@@ -98,7 +101,6 @@ int setcmd(const char* varname, const char* setvalue);
 #define PID_BUZ_SUB		"BUZ"
 #define PID_EVT_SUB		"EVT"
 
-
 #define UID_REQ			"UID"
 #define UID_MANUF_SUB		"MANUF"
 #define UID_MODEL_SUB		"MODEL"
@@ -112,6 +114,7 @@ int setcmd(const char* varname, const char* setvalue);
 #define BAT_TMLEFT_SUB		"TMLEFT"
 #define BAT_ESTCRG_SUB		"ESTCRG"
 #define BAT_TEMP_SUB		"TEMP"
+#define BAT_PVOLT_SUB		"PVOLT"
 
 #define INP_FMT_REQ		"INP"
 #define INP_DATA_REQ		"INP.1"
@@ -164,9 +167,7 @@ int setcmd(const char* varname, const char* setvalue);
 /* Control requests */
 #define TST_BATQCK_REQ		"TST.BATQCK.W=1"
 #define TST_BATDEP_REQ		"TST.BATDEP.W=1"
-#define TST_BATRUN_REQ		"TST.BATRUN.W="
 #define TST_ABORT_REQ		"TST.ABORT.W=1"
-#define TST_DISPDFLT_REQ	"TST.DISP.W=1"
 #define TST_DISP_REQ		"TST.DISP.W="
 
 #define SET_OFFNOW_REQ		"SET.OFFNOW.W=1"
@@ -217,6 +218,7 @@ static uint8_t byBATTmleftPos = 0;
 static uint8_t byBATEstcrgPos = 0;
 static uint8_t byBATVoltPos = 0;
 static uint8_t byBATTempPos = 0;
+static uint8_t byBATPVoltPos = 0;
 
 static uint8_t byINPStatusPos = 0;
 static uint8_t byINPFreqPos = 0;
@@ -271,6 +273,40 @@ static uint8_t byEVTUptimePos = 0;
 /******************************************
  * Functions for getting strings from UPS *
  ******************************************/
+
+/* A data dumper...for debug use */
+/* Just prints out contents of buffer but in hex representation then ASCII */
+void ShowStringHex (const char* pS)
+{
+	size_t Len = strlen(pS);
+	uint32_t i = 0;
+
+	/* Limit length to USB packet size for now (plus a little bit) */
+	if (Len > BUFFSIZE)
+	{
+		Len = BUFFSIZE;
+	}
+
+	/* Show individual character hex values */
+	printf ("Hex|ASCII: ");
+	do
+	{
+		printf ("%02X ", pS[i++]);
+	} while (i <= (Len - 1));
+
+	printf ("| ");			/* Divide hex from ASCII */
+
+	i = 0;
+	/* Show individual printable characters or dot '.' */
+	do
+	{
+		printf ("%c", pS[i] > 32 ? pS[i] : '.');
+		i++;
+	} while (i <= (Len - 1));
+
+	printf ("%s", COMMAND_END);	/* Just finish the line */
+}
+
 
 /* Get the FORMAT and/or data for the requested CUSPP group.
    This is used during initialization to establish the substring position values
@@ -376,6 +412,32 @@ uint8_t byReturn = 1;		/* Set up for good return, '0' is bad */
 
 	return byReturn;
 }
+
+/***************************************************
+ * Functions for handling commands sent to the UPS *
+ ***************************************************/
+
+/* This function is called to send commands to the initialized device. */
+/* It then clears the USB hardware by pulling any response from the UPS */
+static size_t SendCommand (const char* sCmd)
+{
+	size_t ret = 0;
+	char chInBuff[REQBUFFSIZE];
+
+	memset(chInBuff, 0, sizeof(chInBuff));
+
+	ShowStringHex (sCmd);					/* TBD, remove */
+
+	ret = SendRequest(sCmd);
+
+	PowervarGetResponse (chInBuff, sizeof(chInBuff));
+	ShowStringHex (chInBuff);					/* TBD, remove */
+
+	/* Anything we want to do with the response or return value?? */
+
+	return ret;
+}
+
 
 
 /***************************************
@@ -491,39 +553,6 @@ char* chTok;
 	}
 
 	return uiReturn;
-}
-
-
-/* Just prints out contents of buffer but in hex representation then ASCII */
-void ShowStringHex (const char* pS)
-{
-	size_t Len = strlen(pS);
-	uint32_t i = 0;
-
-	/* Limit length to USB packet size for now (plus a little bit) */
-	if (Len > BUFFSIZE)
-	{
-		Len = BUFFSIZE;
-	}
-
-	/* Show individual character hex values */
-	printf ("Hex|ASCII: ");
-	do
-	{
-		printf ("%02X ", pS[i++]);
-	} while (i <= (Len - 1));
-
-	printf ("| ");			/* Divide hex from ASCII */
-
-	i = 0;
-	/* Show individual printable characters or dot '.' */
-	do
-	{
-		printf ("%c", pS[i] > 32 ? pS[i] : '.');
-		i++;
-	} while (i <= (Len - 1));
-
-	printf ("%s", COMMAND_END);	/* Just finish the line */
 }
 
 
@@ -666,11 +695,13 @@ void PvarCommon_Initinfo (void)
 		byBATEstcrgPos = GetSubstringPosition (sFBuff, BAT_ESTCRG_SUB);
 		byBATVoltPos = GetSubstringPosition (sFBuff, X_VOLT_SUB);
 		byBATTempPos = GetSubstringPosition (sFBuff, X_TEMP_SUB);
+		byBATPVoltPos = GetSubstringPosition (sFBuff, BAT_PVOLT_SUB);
 	}
 
 	if (GetSubstringFromBuffer (SubBuff, sDBuff, byBATVoltPos))
 	{
-		dstate_setinfo("battery.voltage.nominal", "%s", (atoi(SubBuff) < 300 ? "24" : "48"));
+		Vlts = atoi(SubBuff);
+		dstate_setinfo("battery.voltage.nominal", "%s", (Vlts < 36 ? (Vlts < 18 ? "12" : "24") : "48"));
 	}
 
 	/* Get INP format and populate needed data string positions... */
@@ -723,20 +754,21 @@ void PvarCommon_Initinfo (void)
 		dstate_setinfo("input.frequency.nominal", "%s", SubBuff);
 	}
 
+	/* Keep the next two 'if's' together as they potentially share Vlts information */
 	if (GetSubstringFromBuffer (SubBuff, sDBuff, bySYSOutvltPos))
 	{
 		dstate_setinfo("output.voltage.nominal", "%s", SubBuff);
 		Vlts = atoi(SubBuff);		/* Keep for nominal current calc */
 	}
 
-	if (GetSubstringFromBuffer (SubBuff, sDBuff, bySYSOutfrqPos))
-	{
-		dstate_setinfo("output.frequency.nominal", "%s", SubBuff);
-	}
-
 	if (GetSubstringFromBuffer (SubBuff, sDBuff, bySYSOutvaPos))
 	{
 		dstate_setinfo("output.current.nominal", "%d", atoi(SubBuff)/Vlts);
+	}
+
+	if (GetSubstringFromBuffer (SubBuff, sDBuff, bySYSOutfrqPos))
+	{
+		dstate_setinfo("output.frequency.nominal", "%s", SubBuff);
 	}
 
 	if (GetSubstringFromBuffer (SubBuff, sDBuff, bySYSBtstdyPos))
@@ -751,8 +783,15 @@ void PvarCommon_Initinfo (void)
 		dstate_setaux("battery.date", GETX_DATE_RESP_SIZE);
 	}
 
-	/* For now, all are lead acid. */
-	dstate_setinfo("battery.type", "%s", "PbAc");
+	if (byBATPVoltPos != 0)
+	{
+		dstate_setinfo("battery.type", "%s", "LFP");
+	}
+	else
+	{
+		/* For now, all others are lead acid. */
+		dstate_setinfo("battery.type", "%s", "PbAc");
+	}
 
 	if (GetSubstringFromBuffer (SubBuff, sDBuff, bySYSOvrlodPos))
 	{
@@ -1185,62 +1224,55 @@ void PvarCommon_Updateinfo (void)
 	dstate_dataok();
 }
 
+
 /* Support functions for Powervar UPS drivers */
 static void HandleBeeper (char* chS)
 {
-	char chBuff[15];
+	char chBuff[18];
 
 	memset(chBuff, 0, sizeof(chBuff));
-	memcpy (chBuff, SET_AUDIBL_REQ, sizeof(SET_AUDIBL_REQ));
-	strcat(chBuff, chS);
-	SendRequest (chBuff);
+	sprintf(chBuff, "%s%s", SET_AUDIBL_REQ, chS);
+
+	SendCommand (chBuff);
 }
 
 static void HandleOffDelay (void)
 {
-	char chBuff[32];
-	char chDly[10];
+	char chOutBuff[32];
 	int delay = atoi(dstate_getinfo("ups.delay.shutdown"));
 
-	memset(chBuff, 0, sizeof(chBuff));
+	memset(chOutBuff, 0, sizeof(chOutBuff));
 
-	if (delay == 0)
+	if (0 == delay)
 	{
-		memcpy (chBuff, SET_OFFNOW_REQ, sizeof(SET_OFFNOW_REQ));
-	}
-	else
-	{
-		memcpy (chBuff, SET_OFFDLY_REQ, sizeof(SET_OFFDLY_REQ));
-		sprintf (chDly, "%d", delay);
-		strcat(chBuff, chDly);
+		delay++;		/* Make it '1' */
 	}
 
-	SendRequest (chBuff);
+	sprintf(chOutBuff, "%s%d", SET_OFFDLY_REQ, delay);
+
+	printf ("HandleOffDelayCommand: '%s'\n", chOutBuff);		/* TBD, remove */
+
+	SendCommand (chOutBuff);
 }
 
 static void HandleOnDelay (void)
 {
 	char chBuff[32];
-	char chDly[10];
-	int delay = atoi(dstate_getinfo("ups.delay.start"));
 
 	memset(chBuff, 0, sizeof(chBuff));
 
-	if (delay == 0)
+	if (dstate_getinfo("ups.delay.start") == NULL)
 	{
-		memcpy (chBuff, SET_SRTNOW_REQ, sizeof(SET_SRTNOW_REQ));
+		sprintf(chBuff,"%s1", SET_SRTDLY_REQ);
 	}
 	else
 	{
-		memcpy (chBuff, SET_SRTDLY_REQ, sizeof(SET_SRTDLY_REQ));
-		sprintf (chDly, "%d", delay);
-		strcat(chBuff, chDly);
+		sprintf(chBuff,"%s%s", SET_SRTDLY_REQ, dstate_getinfo("ups.delay.start"));
 	}
 
 	printf ("HandleOnDelayCommand: '%s'\n", chBuff);		/* TBD, remove */
-	ShowStringHex (chBuff);					/* TBD, remove */
 
-	SendRequest (chBuff);
+	SendCommand (chBuff);
 }
 
 
@@ -1253,8 +1285,6 @@ void upsdrv_makevartable(void)
 
 	addvar(VAR_VALUE, "offdelay", "Change shutdown delay time from 0 second default (1-65535).");
 
-	printf("Leaving MakeVarTable function...\n");
-
 	addvar(VAR_VALUE, "disptesttime", "Change display test time from the 10 second default (UPM only, 11-255).");
 
 #ifdef PVAR_SERIAL
@@ -1266,7 +1296,8 @@ void upsdrv_makevartable(void)
 
 void upsdrv_shutdown(void)
 {
-	SendRequest(SET_OFFNOW_REQ);
+	printf ("Shutdown!\n");		/* TBD, REMOVE!! */
+	HandleOffDelay ();
 }
 
 
@@ -1277,88 +1308,91 @@ int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "test.battery.start.quick"))
 	{
-		SendRequest (TST_BATQCK_REQ);
+		printf ("t.b.s.q\n");		/* TBD, REMOVE!! */
+		SendCommand (TST_BATQCK_REQ);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.battery.start.deep"))
 	{
-		SendRequest (TST_BATDEP_REQ);
+		printf ("t.b.s.d\n");		/* TBD, REMOVE!! */
+		SendCommand (TST_BATDEP_REQ);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.battery.stop"))
 	{
-		SendRequest (TST_ABORT_REQ);
+		printf ("t.b.s\n");		/* TBD, REMOVE!! */
+		SendCommand (TST_ABORT_REQ);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.failure.start"))
 	{
-		SendRequest (TST_BATDEP_REQ);
+		printf ("t.f.s\n");		/* TBD, REMOVE!! */
+		SendCommand (TST_BATDEP_REQ);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.failure.stop"))
 	{
-		SendRequest (TST_ABORT_REQ);
+		printf ("t.f.stp\n");		/* TBD, REMOVE!! */
+		SendCommand (TST_ABORT_REQ);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.stop"))
 	{
-		SendRequest (SET_OFFSTP_REQ);
+		printf ("shd.stp\n");		/* TBD, REMOVE!! */
+		SendCommand (SET_OFFSTP_REQ);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "beeper.enable"))
 	{
-		char chBuff[15];
-
-		memcpy (chBuff, SET_AUDIBL_REQ, sizeof(SET_AUDIBL_REQ));
-		strcat(chBuff,"1");
-		SendRequest (chBuff);
-		return STAT_INSTCMD_HANDLED;
-	}
-
-	if (!strcasecmp(cmdname, "beeper.enable"))
-	{
+		printf ("b.e\n");		/* TBD, REMOVE!! */
 		HandleBeeper (BEEPENABLE);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "beeper.disable"))
 	{
+		printf ("b.d\n");		/* TBD, REMOVE!! */
 		HandleBeeper (BEEPDISABLE);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "beeper.mute"))
 	{
+		printf ("b.m\n");		/* TBD, REMOVE!! */
 		HandleBeeper (BEEPMUTE);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "load.off"))
 	{
-		SendRequest (SET_OFFNOW_REQ);
+		printf ("l.of\n");		/* TBD, REMOVE!! */
+		SendCommand (SET_OFFNOW_REQ);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "load.off.delay"))
 	{
+		printf ("l.of.d\n");		/* TBD, REMOVE!! */
 		HandleOffDelay ();
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "load.on"))
 	{
-		SendRequest (SET_SRTNOW_REQ);
+		printf ("l.on\n");		/* TBD, REMOVE!! */
+		SendCommand (SET_SRTNOW_REQ);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "load.on.delay"))
 	{
+		printf ("l.on.d\n");		/* TBD, REMOVE!! */
 		HandleOnDelay();
 		return STAT_INSTCMD_HANDLED;
 	}
@@ -1367,51 +1401,52 @@ int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "shutdown.return") ||
 	    !strcasecmp(cmdname, "shutdown.reboot"))
 	{
-		SendRequest (SET_ATOSRT1_REQ);
+		printf ("sd.rt & sd.rb\n");		/* TBD, REMOVE!! */
+		SendCommand (SET_ATOSRT1_REQ);
 		HandleOffDelay ();
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.stayoff"))
 	{
-		SendRequest (SET_ATOSRT0_REQ);
+		printf ("sd.styof\n");		/* TBD, REMOVE!! */
+		SendCommand (SET_ATOSRT0_REQ);
 		HandleOffDelay ();
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.stop"))
 	{
-		SendRequest (SET_OFFSTP_REQ);
+		printf ("sd.stp\n");		/* TBD, REMOVE!! */
+		SendCommand (SET_OFFSTP_REQ);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "reset.input.minmax"))
 	{
-		SendRequest (SET_RSTINP_REQ);
+		printf ("r.i.mm\n");		/* TBD, REMOVE!! */
+		SendCommand (SET_RSTINP_REQ);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.panel.start"))
 	{
-		char chBuff[16];
-		char chT[5];
+		printf ("t.p.s\n");		/* TBD, REMOVE!! */
+		char chBuff[REQBUFFSIZE];
+		uint ShowTime = 10;
 
-		if (getval("disptesttime") == NULL)
+		if (getval("disptesttime") != NULL)
 		{
-			SendRequest (TST_DISPDFLT_REQ);
+			ShowTime = atoi(getval("disptesttime"));
 		}
-		else
-		{
-			memset(chBuff, 0, sizeof(chBuff));
-			memcpy (chBuff, TST_DISP_REQ, sizeof(TST_DISP_REQ));
-			sprintf(chT, "%s", getval("disptesttime"));
-			strcat(chBuff, chT);
-			SendRequest (chBuff);
-		}
+
+		memset(chBuff, 0, sizeof(chBuff));
+
+		sprintf(chBuff, "%s%d", TST_DISP_REQ, ShowTime);
+		SendCommand (chBuff);
 	}
 
 	return STAT_INSTCMD_UNKNOWN;
-
 }
 
 int setcmd(const char* varname, const char* setvalue)
@@ -1440,34 +1475,6 @@ int setcmd(const char* varname, const char* setvalue)
 
 		dstate_setinfo("ups.delay.start", "%s", setvalue);
 		return STAT_SET_HANDLED;
-	}
-
-	if (!strcasecmp(varname, "input.transfer.low"))
-	{
-/* 		if (SetOutputAllow(setvalue, dstate_getinfo("input.transfer.high")))
-		{
-			return STAT_SET_UNKNOWN;
-		}
-		else
-		{
-			dstate_setinfo("input.transfer.low" , "%s", setvalue);
-			return STAT_SET_HANDLED;
-		}
- */
-	}
-
-	if (!strcasecmp(varname, "input.transfer.high"))
-	{
-/* 		if (SetOutputAllow(dstate_getinfo("input.transfer.low"), setvalue))
-		{
-			return STAT_SET_UNKNOWN;
-		}
-		else
-		{
-			dstate_setinfo("input.transfer.high" , "%s", setvalue);
-			return STAT_SET_HANDLED;
-		}
- */
 	}
 
 	if (!strcasecmp(varname, "battery.date"))

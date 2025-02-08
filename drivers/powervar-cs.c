@@ -44,8 +44,8 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize);
 #define PVAR_SERIAL	1	/* This is the serial comm driver */
 #include "powervar-cx.h"	/* Common driver defines, variables, and functions */
 
-#define DRIVER_NAME	"Powervar-CS UPS driver"
-#define DRIVER_VERSION	"0.04"
+#define DRIVER_NAME	"Powervar-CS UPS driver (Serial)"
+#define DRIVER_VERSION	"0.10"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -168,7 +168,7 @@ void upsdrv_initups(void)
 		}
 	}
 
-	/*get the UPS in the right frame of mind*/
+	/*get the UPS in the right frame of mind */
 	ser_send_pace(upsfd, 100, "%s", COMMAND_END);
 	ser_send_pace(upsfd, 100, "%s", COMMAND_END);
 	sleep (1);
@@ -203,7 +203,7 @@ void upsdrv_updateinfo(void)
 void upsdrv_help(void)
 {
 	printf("\n---------\nNOTE:\n");
-	printf("This driver is for connecting to a serial port at 9600 BPS.\n");
+	printf("This driver is for connecting to a Powervar UPS serial port at 9600 BPS.\n");
 }
 
 
