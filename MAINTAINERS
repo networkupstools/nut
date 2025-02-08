@@ -64,6 +64,15 @@ P: Greg Troxel
 M: gdt@lexort.com
 S: Maintained: pkgsrc (sysutils/ups-nut)
 
+CI, tests and recipes
+=====================
+
+P: Evgeny "Jim" Klimov
+M: jimklimov+nut@gmail.com
+S: Maintained or Supported: numerous CI recipes, tests and OS integration
+S: scripts: NDE (NUT Driver Enumerator), NIT (NUT Integration Test suite),
+S: Jenkins-Dynamatrix, automake/autoconf/m4 scripting, asciidoc documentation.
+
 Everything else
 ===============
 

@@ -446,11 +446,14 @@ UPS Shutdowns
 
 upsdrvctl can also shut down (power down) all of your UPS hardware.
 
-WARNING: if you play around with this command, expect your filesystems
+[WARNING]
+=========
+If you play around with this command, expect your filesystems
 to die.  Don't power off your computers unless they're ready for it:
 
 	/usr/local/ups/sbin/upsdrvctl shutdown
 	/usr/local/ups/sbin/upsdrvctl shutdown sparky
+=========
 
 You should read the {xref}UPS_shutdown{x-s}[Configuring automatic UPS shutdowns]
 chapter to learn more about when to use this feature.  If called at the wrong
@@ -598,6 +601,7 @@ not have any effect on your system.
 
 A driver that supports read/write variables will give results like this:
 
+----
 	$ upsrw sparky@localhost
 
 	( many skipped )
@@ -610,12 +614,15 @@ A driver that supports read/write variables will give results like this:
 	Option: "0"
 
 	( more skipped )
+----
 
 On the other hand, one that doesn't support them won't print anything:
 
+----
 	$ upsrw fenton@gearbox
 
 	( nothing )
+----
 
 `upsrw` requires administrator powers to change settings in the hardware.
 Refer to {linkman2}upsd.users{lm-s}upsd.users{lm-c}5{lm-e} for information on defining
@@ -631,6 +638,7 @@ hardware/drivers support them.
 
 Use the -l command to list them, like this:
 
+----
 	$ upscmd -l sparky@localhost
 	Instant commands supported on UPS [sparky@localhost]:
 
@@ -639,6 +647,7 @@ Use the -l command to list them, like this:
 	calibrate.start - Start run time calibration
 	calibrate.stop - Stop run time calibration
 	...
+----
 
 `upscmd` requires administrator powers to start instant commands.
 To define users and passwords in `upsd`, see
@@ -733,6 +742,14 @@ approach and custom NUT CI testing on multiple platforms.
 Major release jumps are mostly due to large changes to the features
 list.  There have also been a number of architectural changes which
 may not be noticeable to most users, but which can impact developers.
+
+Since NUT v2.8.2 or so, development iterations have additional version
+components, to account for the amount of commits on the main branch
+(`master`) since the last known Git tag, and amount of commits on the
+developed feature branch that are unique to it compared to main branch.
+This allows for a reasonably growing version of stable baseline and
+local development, so that experimental packages can be installed as
+upgrades (or well-exposed downgrades).
 
 Backwards and Forwards Compatibility
 ------------------------------------

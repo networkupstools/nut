@@ -12,10 +12,10 @@ and other dependencies on your build environment (referenced just a bit
 below). For common developer iterations, porting to new platforms,
 or in-place testing, running the `./ci_build.sh` script can be a helpful
 one-stop solution.
-+
+
 The NUT linkdoc:packager-guide[Packager Guide], which presents the best
 practices for installing and integrating NUT, is also a good reading.
-+
+
 The link:config-prereqs.txt[Prerequisites for building NUT on different OSes]
 document suggests prerequisite packages with tools and dependencies
 available and needed to build and test as much as possible of NUT on
@@ -38,8 +38,9 @@ Network UPS Tools upsd 2.8.1
 Network UPS Tools version 2.8.1 configured with flags: --with-all=auto --with-doc=skip ...
 ----
 
-A more industrial approach is to use `lib/libupsclient-config --config-flags`
-where supported.
+A more industrial approach is to use `lib/libupsclient-config --config-flags`,
+where supported.  Note that the `pkg-config` manifest `libupsclient.pc` does
+not easily convey this information.
 
 Keeping a report of NUT configuration
 -------------------------------------
@@ -64,15 +65,16 @@ filesystem access permissions and configuration file locations.
 
 Tries to detect and pre-set `configure` defaults for run-time settings
 (which you can still override if needed, but no longer *must* specify
-explicitly to be on same page as the existing setup), e.g.:
+explicitly to be on same page as the existing setup), most notably:
 
-* --sysconfdir
-* --with-user
-* --with-group
+* `--sysconfdir`
+* `--with-user`
+* `--with-group`
 
 If the installed NUT version supports reporting of `CONFIG_FLAGS` used
 during its build, the `configure` script will try to take those values
-into account when running in this mode.
+into account when running in this mode (and so use the same program and
+data installation paths, for example).
 
 NOTE: This does not currently rely on the configuration report optionally
 installed by `--enable-keep_nut_report_feature` above, but might do so
@@ -98,11 +100,17 @@ Build and install the USB drivers (default: auto-detect)
 Note that you need to install the libusb development package or files,
 and that both libusb 0.1 and 1.0 are supported. In case both are
 available, libusb 1.0 takes precedence, and will be used by default.
+
 It is however possible to override this default choice by explicitly
 calling `--with-usb=libusb-0.1` or `--with-usb=libusb-1.0`.
+
 If you do specify the version to use (or `yes` for auto-detection),
 this option would fail if requested (or any) libusb version was not
 found.  The default `auto` value would not fail in such case.
+
+WARNING: If you intend to use the `libmodbus` variant with `libusb`
+support, you would require `libusb-1.0` specifically; the implementation
+or "compat API" of `0.1` is not supported by that library version.
 
 SNMP drivers
 ~~~~~~~~~~~~
@@ -197,6 +205,7 @@ so your NUT build environment should provide a prerequisite build of
 https://github.com/networkupstools/libmodbus/tree/rtu_usb (may be a
 static library build, used from a temporary installation prefix location,
 to avoid potential conflicts with the OS packaged shared library).
+You would also need specifically `libusb-1.0` (not the older API).
 
 At the time of this writing, such constraint can be desirable for the
 linkman:apc_modbus[8] driver which supports different communication media.
@@ -258,7 +267,7 @@ The possible documentation type values are:
 * `html-single` for single page HTML,
 * `html-chunked` for multi-paged HTML,
 * `pdf` for a PDF file, and
-* `man` for the usual manpages.
+* `man` for the usual man pages.
 
 Other values understood for this option are listed below:
 
@@ -271,7 +280,7 @@ Other values understood for this option are listed below:
   can not be generated.
 
 * A `--with-doc=no` quietly skips generation of all types of documentation,
-  including manpages.
+  including man pages.
 
 * A `--with-doc=skip` is used to configure some of the `make distcheck*`
   scenarios to re-use man page files built and distributed by the main
@@ -488,6 +497,10 @@ I want it all!
 Build and install all of the above (the serial, USB, SNMP, XML/HTTP and
 PowerMan drivers, the CGI programs and HTML files, and the upsclient
 library).
+
+You can also use `--with-all=auto` to detect available prerequisites and
+only build everything that we can build on this system (but not fail due
+to inability to request a build of something from the full scope).
 
 Networking transport security
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -825,17 +838,25 @@ will leave files here.
 	--with-altpidpath=PATH
 
 Programs that normally don't have `root` powers, like the drivers and
-`upsd`, write their pid files here.  By default this is whatever the
+`upsd`, write their PID files here.  By default this is whatever the
 statepath (below) is, as those programs should be able to write there.
 
 The `NUT_ALTPIDPATH` environment variable overrides this at run time.
 
 	--with-statepath=PATH
 
-Change the default location of the state sockets created by the drivers
-to interact with the data server `upsd`. Default is `/var/state/ups`.
+Change the default location of the local Unix sockets created by the drivers
+to interact with the data server `upsd` to report their state and receive
+commands. Default is `/var/state/ups`.
+
+This is also the default location for non-`root` daemons to write a PID file,
+if a separate location is not specified by `--with-altpidpath` option.
 
 The `NUT_STATEPATH` environment variable overrides this at run time.
+
+NOTE: Fun fact: in early iterations of the NUT project, the drivers and the
+data server did exchange information by writing and reading complete state
+files in a commonly accessible location, hence the name.
 
 	--with-powerdownflag=FILEPATH
 
@@ -848,8 +869,8 @@ systems and `"C:\\killpower"` (note the double backslashes) on Windows.
 Things the compiler might need to find
 --------------------------------------
 
-LibGD
-~~~~~
+pkg-config tooling
+~~~~~~~~~~~~~~~~~~
 
 	--with-pkg-config
 
@@ -858,6 +879,9 @@ complete pathname to `pkg-config` which describes `CFLAGS`, `LIBS` and
 possibly other build-time options in `*.pc` files, to use third-party
 libraries. On build systems which support multiple architectures you
 may also want to set `PKG_CONFIG_PATH` to match your current build.
+
+LibGD
+~~~~~
 
 	--with-gd-includes="-I/foo/bar"
 
@@ -899,15 +923,15 @@ Various
 	--with-neon-includes, --with-libltdl-includes,
 	--with-powerman-includes="-I/foo/bar"
 
-If your system doesn't have pkg-config and support for any of the above
+If your system doesn't have `pkg-config` and support for any of the above
 libraries isn't found (but you know it is installed), you must specify
 the compiler flags that are needed.
 
 	--with-ssl-libs, --with-usb-libs, --with-snmp-libs,
 	--with-neon-libs, --with-libltdl-libs
-	--with-powerman-libs="-L/foo/bar -labcd -lxyz"
+	--with-powerman-libs="-L/foo/bar -R/foo/bar -labcd -lxyz"
 
-If system doesn't have pkg-config or it fails to provides hints for
+If system doesn't have `pkg-config` or it fails to provides hints for
 some of the settings that are needed to set it up properly and the
 build in defaults are not right, you can specify the correct values
 for your system here.

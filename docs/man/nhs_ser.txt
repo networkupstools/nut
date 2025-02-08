@@ -4,7 +4,7 @@ NHS_SER(8)
 NAME
 ----
 
-nhs_ser - driver for NHS Nobreaks, senoidal line, with serial port
+nhs_ser - Driver for NHS Nobreaks, senoidal line, with serial port
 
 SYNOPSIS
 --------

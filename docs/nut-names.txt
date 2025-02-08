@@ -117,8 +117,8 @@ Variables
 device: General unit information
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-NOTE: some of these data will be redundant with ups.* information
-during a transition period. The ups.* data will then be removed.
+NOTE: Some of these data will be redundant with `ups.*` information
+during a transition period. The `ups.*` data will then be removed.
 
 [options="header"]
 |====================================================================================

@@ -19,7 +19,7 @@ it via files in standard path names.
 
 A sandbox prepared by this script can be used for `upsmon` testing:
 
-````
+----
 :; make check-NIT-sandbox-devel &
 
 # Wait for sandbox, e.g. test that "${NUT_CONFPATH}/NIT.env-sandbox-ready"
@@ -32,4 +32,4 @@ A sandbox prepared by this script can be used for `upsmon` testing:
     "$NUT_STATEPATH" "$NUT_STATEPATH" 'dummy' "$NUT_PORT" \
     'dummy-admin' "${TESTPASS_UPSMON_PRIMARY}" \
     > "${NUT_CONFPATH}/upsmon.conf"
-````
+----

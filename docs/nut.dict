@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3281 utf-8
+personal_ws-1.1 en 3287 utf-8
 AAC
 AAS
 ABI
@@ -768,6 +768,7 @@ Nadav
 Nagios
 Nash
 NaturalDocs
+Naur
 Necedah
 NetBSD
 NetBeans
@@ -1334,6 +1335,7 @@ VER
 VERFW
 VFI
 VIB
+VLAN
 VM
 VMIN
 VMM
@@ -2270,6 +2272,7 @@ liebertgxt
 lifecycle
 linevoltage
 linkdoc
+linkmanext
 linksingledoc
 linksrcdoc
 linux
@@ -2596,6 +2599,7 @@ pigz
 pijuice
 pinout
 pinouts
+pipedebug
 pipename
 pixmaps
 pkg
@@ -2878,6 +2882,7 @@ spectype
 spellcheck
 splitaddr
 splitname
+squasher
 sr
 src
 srcdir
@@ -3033,6 +3038,7 @@ ttyb
 ttyc
 ttymode
 ttyp
+tunables
 tuple
 tuples
 turnon

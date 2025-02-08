@@ -122,7 +122,7 @@ FIXME (POST):
   link:https://git.launchpad.net/ubuntu/+source/nut/tree/debian/tests/test-nut.py[The NUT testing script]
   is available in the link:https://code.edge.launchpad.net/qa-regression-testing[Ubuntu QA Regression Testing suite].
 +
-  It installs NUT packages, configures it with the dummy-ups driver, changes
+It installs NUT packages, configures it with the dummy-ups driver, changes
   a few data points and checks that these are well propagated with upsc.
 
 - similar approach is explored in NIT (NUT Integration Testing) suite,

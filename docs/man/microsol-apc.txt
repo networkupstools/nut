@@ -36,16 +36,20 @@ EXTRA ARGUMENTS
 This driver support the following extra optional settings in the
 linkman:ups.conf[5].
 
-*battext = n* - (default = 0, no extra battery, where n = Ampere*hour )
+*battext=*'n'::
+Default = 0, no extra battery, where `n` = Ampere*hour.
 
-*prgshut = 1* - (default = 0, no programmable shutdown )
+*prgshut=*'n'::
+Default = 0, no programmable shutdown; `1` to enable one.
 
 COMMANDS
 --------
 
- * shutdown.return - Shut down in .3 minutes and restart in .3 minutes
+*shutdown.return*::
+Shut down in .3 minutes and restart in .3 minutes after that.
 
- * shutdown.stayoff - Shut down in .3 minutes and do not return
+*shutdown.stayoff*::
+Shut down in .3 minutes and do not return.
 
 ISSUES
 ------
@@ -70,6 +74,11 @@ The core driver:
 ~~~~~~~~~~~~~~~~
 
 linkman:nutupsdrv[8]
+
+Driver for older devices under same brand:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+linkman:solis[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

@@ -22,7 +22,7 @@ SUPPORTED HARDWARE
 
 The *al175* driver is known to work with the following UPSes:
 
-    Eltek MPSU4000 with AL175 alarm module
+* Eltek MPSU4000 with AL175 alarm module
 
 It may also work with other UPSes equipped with AL175 alarm module,
 but they have not been tested.
