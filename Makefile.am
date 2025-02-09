@@ -199,7 +199,7 @@ spellcheck spellcheck-interactive:
 # texts, man pages and HTML rendering of man pages, as enabled by tools.
 doc spellcheck-sortdict spellcheck-report-dict-usage \
 all-docs check-docs \
-man all-man man-man check-man html-man all-html:
+man all-man man-man check-man check-man-man html-man all-html:
 	+cd $(abs_top_builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/.prep-src-docs
 	+cd $(abs_top_builddir)/docs/man && $(MAKE) $(AM_MAKEFLAGS) -s $(abs_top_builddir)/docs/man/.prep-src-docs
 	+cd $(abs_top_builddir)/docs && $(MAKE) $(AM_MAKEFLAGS) $@

@@ -340,7 +340,7 @@ check-html-chunked: $(ASCIIDOC_HTML_CHUNKED)
 # Note: default `make all` in the man directory caters to drivers etc.
 # chosen during configure script execution. The "all-man" and "all-html"
 # rules build everything documented.
-check-man all-man man-man all-html html-man:
+check-man check-man-man all-man man-man all-html html-man:
 	+cd $(abs_top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile $@
 
 man:
@@ -783,7 +783,7 @@ DISTCLEANFILES = $(NUT_SPELL_DICT).bak-pre-sorting .$(NUT_SPELL_DICT).sorted $(N
 # any future re-runs). We also must update all relevant *-spellchecked
 # touch-files after "make spellcheck-sortdict" which updates "nut.dict"
 # file which is a prerequisite for docs checks.
-spellcheck-interactive: 
+spellcheck-interactive:
 	@cp -pf $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting
 	+@FAILED="" ; for docsrc in $(SPELLCHECK_SRC); do \
 		if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \

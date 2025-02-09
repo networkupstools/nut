@@ -1003,7 +1003,7 @@ check-local: check-man-txt check-man-pages
 	@echo "Man-page generation was not done, so pregenerated pages were sanity-checked (if any)" >&2
 endif
 
-check-man: check-man-txt check-man-pages check-html-man
+check-man check-man-man: check-man-txt check-man-pages check-html-man
 
 # the "for" loops might better use $^ but it might be not portable
 check-man-html: check-html-man

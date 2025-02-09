@@ -3334,7 +3334,11 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 		else
 			if test "${can_build_doc_man}" = yes ; then
 				AC_MSG_RESULT(yes)
-				DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
+				AS_IF([test x"${nut_doc_build_target_base}" = xman],
+					dnl Use "man-man" target, otherwise Makefile
+					dnl is satisfied that directory "man" exists:
+					[DOC_BUILD_LIST="${DOC_BUILD_LIST} man-man"],
+					[DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"])
 			else
 				AC_MSG_RESULT(no)
 				if test "${nut_doc_build_target_flag}" = "yes" ; then
@@ -3399,6 +3403,7 @@ NUT_REPORT_FEATURE([build specific documentation format(s)], [${nut_with_doc}], 
 DOC_CHECK_LIST=""
 if test "${nut_with_doc}" = yes ; then
 	for V in $DOC_BUILD_LIST ; do
+		if test x"$V" = xman-man ; then V=man ; fi
 		DOC_CHECK_LIST="$DOC_CHECK_LIST check-$V"
 	done
 fi
