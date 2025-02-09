@@ -2307,7 +2307,12 @@ bindings)
     pushd "./bindings/${BINDING}" && ./ci_build.sh
     ;;
 ""|inplace|doc*)
-    echo "WARNING: No BUILD_TYPE was specified, doing a minimal default ritual without any *required* build products and with developer-oriented options" >&2
+    if [ x"${BUILD_TYPE}" = x ] ; then
+        _msg="No BUILD_TYPE"
+    else
+        _msg="BUILD_TYPE='${BUILD_TYPE}'"
+    fi
+    echo "WARNING: ${_msg} was specified, doing a minimal default ritual without any *required* build products and with developer-oriented options" >&2
     if [ -n "${BUILD_WARNOPT}${BUILD_WARNFATAL}" ]; then
         echo "WARNING: BUILD_WARNOPT and BUILD_WARNFATAL settings are ignored in this mode (warnings are always enabled and fatal for these developer-oriented builds)" >&2
         sleep 5
