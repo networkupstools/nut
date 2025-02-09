@@ -35,7 +35,7 @@ struct gpioups_t *generic_gpio_open(const char *chipName);
 #ifndef DRIVERS_MAIN_WITHOUT_MAIN
 static
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
-void generic_gpio_close(struct gpioups_t *gpioupsfd);
+void generic_gpio_close(struct gpioups_t **gpioupsfdptr);
 
 #ifndef DRIVERS_MAIN_WITHOUT_MAIN
 static
@@ -60,7 +60,7 @@ int calc_rule_states(int upsLinesStates[], int cRules[], int subCount, int sInde
 #ifndef DRIVERS_MAIN_WITHOUT_MAIN
 static
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
-void update_ups_states(struct gpioups_t *gpioupsfd);
+void update_ups_states(struct gpioups_t *gpioupsfdlocal);
 
 /*
  * allocate common data structures and process/check rules
@@ -69,15 +69,19 @@ void update_ups_states(struct gpioups_t *gpioupsfd);
 static
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
 struct gpioups_t *generic_gpio_open(const char *chipName) {
-	struct gpioups_t *upsfdlocal=xcalloc(sizeof(*upsfdlocal),1);
-	upsfdlocal->runOptions=0; /*	don't use ROPT_REQRES and ROPT_EVMODE yet	*/
-	upsfdlocal->chipName=chipName;
+	char	*rules = getval("rules");
+	struct gpioups_t	*upsfdlocal = NULL;
 
-	if(!testvar("rules"))	/* rules is required configuration parameter */
+	if (!rules)	/* rules is required configuration parameter */
 		fatalx(EXIT_FAILURE, "UPS status calculation rules not specified");
 
-	get_ups_rules(upsfdlocal, (unsigned char *)getval("rules"));
-	upsfdlocal->upsLinesStates = xcalloc(sizeof(int), upsfdlocal->upsLinesCount);
+	upsfdlocal = xcalloc(1, sizeof(*upsfdlocal));
+
+	upsfdlocal->runOptions = 0; /*	don't use ROPT_REQRES and ROPT_EVMODE yet	*/
+	upsfdlocal->chipName = chipName;
+
+	get_ups_rules(upsfdlocal, (unsigned char *)rules);
+	upsfdlocal->upsLinesStates = xcalloc(upsfdlocal->upsLinesCount, sizeof(int));
 
 	return upsfdlocal;
 }
@@ -88,22 +92,23 @@ struct gpioups_t *generic_gpio_open(const char *chipName) {
 #ifndef DRIVERS_MAIN_WITHOUT_MAIN
 static
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
-void generic_gpio_close(struct gpioups_t *gpioupsfdlocal) {
-	if (gpioupsfdlocal) {
-		if (gpioupsfdlocal->upsLines) {
-			free(gpioupsfdlocal->upsLines);
+void generic_gpio_close(struct gpioups_t **gpioupsfdptr) {
+	if (gpioupsfdptr && *gpioupsfdptr) {
+		if ((*gpioupsfdptr)->upsLines) {
+			free((*gpioupsfdptr)->upsLines);
 		}
-		if (gpioupsfdlocal->upsLinesStates) {
-			free(gpioupsfdlocal->upsLinesStates);
+		if ((*gpioupsfdptr)->upsLinesStates) {
+			free((*gpioupsfdptr)->upsLinesStates);
 		}
-		if (gpioupsfdlocal->rules) {
-			int i;
-			for (i=0; i < gpioupsfdlocal->rulesCount; i++) {
-				free(gpioupsfdlocal->rules[i]);
+		if ((*gpioupsfdptr)->rules) {
+			int	i;
+			for (i = 0; i < (*gpioupsfdptr)->rulesCount; i++) {
+				free((*gpioupsfdptr)->rules[i]);
 			}
+			free((*gpioupsfdptr)->rules);
 		}
-		free(gpioupsfdlocal);
-		gpioupsfdlocal = NULL;
+		free(*gpioupsfdptr);
+		*gpioupsfdptr = NULL;
 	}
 }
 
@@ -114,12 +119,12 @@ void generic_gpio_close(struct gpioups_t *gpioupsfdlocal) {
 static
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
 void add_rule_item(struct gpioups_t *upsfdlocal, int newValue) {
-	int     subCount = (upsfdlocal->rules[upsfdlocal->rulesCount-1]) ? upsfdlocal->rules[upsfdlocal->rulesCount-1]->subCount+1 : 1;
-	int     itemSize = subCount*sizeof(upsfdlocal->rules[0]->cRules[0])+sizeof(rulesint);
+	int	subCount = (upsfdlocal->rules[upsfdlocal->rulesCount - 1]) ? upsfdlocal->rules[upsfdlocal->rulesCount - 1]->subCount + 1 : 1;
+	int	itemSize = subCount * sizeof(upsfdlocal->rules[0]->cRules[0]) + sizeof(rulesint);
 
-	upsfdlocal->rules[upsfdlocal->rulesCount-1] = xrealloc(upsfdlocal->rules[upsfdlocal->rulesCount-1], itemSize);
-	upsfdlocal->rules[upsfdlocal->rulesCount-1]->subCount = subCount;
-	upsfdlocal->rules[upsfdlocal->rulesCount-1]->cRules[subCount-1] = newValue;
+	upsfdlocal->rules[upsfdlocal->rulesCount - 1] = xrealloc(upsfdlocal->rules[upsfdlocal->rulesCount - 1], itemSize);
+	upsfdlocal->rules[upsfdlocal->rulesCount - 1]->subCount = subCount;
+	upsfdlocal->rules[upsfdlocal->rulesCount - 1]->cRules[subCount - 1] = newValue;
 }
 
 /*
@@ -131,7 +136,7 @@ void add_rule_item(struct gpioups_t *upsfdlocal, int newValue) {
 static
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
 int get_rule_lex(unsigned char *rulesBuff, int *startPos, int *endPos) {
-	static unsigned char lexType[256]={
+	static unsigned char lexType[256] = {
 		  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,    /*   00 0x00	*/
 		  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,	/*	 16	0x10	*/
 		  0,  0,  0,  0,  0,  0,'&',  0,  0,  0,  0,  0,  0,  0,  0,  0,	/*	 32	0x20	*/
@@ -149,11 +154,11 @@ int get_rule_lex(unsigned char *rulesBuff, int *startPos, int *endPos) {
 		  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,	/*	224	0xe0	*/
 		  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0		/*	240	0xf0	*/
 	};
-	unsigned char lexTypeChr = lexType[rulesBuff[*startPos]];
+	unsigned char	lexTypeChr = lexType[rulesBuff[*startPos]];
 
-	*endPos = (*startPos)+1;
-	if(lexTypeChr == 'a' || lexTypeChr == '0') {
-		for(; lexType[rulesBuff[*endPos]] == lexTypeChr; (*endPos)++);
+	*endPos = (*startPos) + 1;
+	if (lexTypeChr == 'a' || lexTypeChr == '0') {
+		for (; lexType[rulesBuff[*endPos]] == lexTypeChr; (*endPos)++);
 	}
 	return (int)lexTypeChr;
 }
@@ -165,19 +170,19 @@ int get_rule_lex(unsigned char *rulesBuff, int *startPos, int *endPos) {
 static
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
 void get_ups_rules(struct gpioups_t *upsfdlocal, unsigned char *rulesString) {
-	/*	statename=[^]line[&||[line]]	*/
-	char    lexBuff[33];
-	int     startPos = 0, endPos;
-	int     lexType;
-	int lexStatus = 0;
+	/*	statename = [^]line[&||[line]]	*/
+	char	lexBuff[33];
+	int	startPos = 0, endPos;
+	int	lexType;
+	int	lexStatus = 0;
 	int	i, j, k;
 	int	tranformationDelta;
 
 	upsdebugx(4, "rules = [%s]", rulesString);
 	/* state machine to process rules definition */
-	while((lexType=get_rule_lex(rulesString, &startPos, &endPos)) > 0 && lexStatus >= 0) {
+	while ((lexType = get_rule_lex(rulesString, &startPos, &endPos)) > 0 && lexStatus >= 0) {
 		memset(lexBuff, 0, sizeof(lexBuff));
-		strncpy(lexBuff, (char *)(rulesString+startPos), endPos-startPos);
+		strncpy(lexBuff, (char *)(rulesString + startPos), endPos - startPos);
 		upsdebugx(4,
 			"rules start %d, end %d, lexType %d, lex [%s]",
 			startPos,
@@ -187,20 +192,20 @@ void get_ups_rules(struct gpioups_t *upsfdlocal, unsigned char *rulesString) {
 		);
 		switch(lexStatus) {
 			case 0:
-				if(lexType != 'a') {
-					lexStatus=-1;
+				if (lexType != 'a') {
+					lexStatus = -1;
 				} else {
 					lexStatus = 1;
 					upsfdlocal->rulesCount++;
 					upsfdlocal->rules = xrealloc(upsfdlocal->rules, (size_t)(sizeof(upsfdlocal->rules[0])*upsfdlocal->rulesCount));
-					upsfdlocal->rules[upsfdlocal->rulesCount-1] = xcalloc(sizeof(rulesint), 1);
-					strncpy(upsfdlocal->rules[upsfdlocal->rulesCount-1]->stateName, (char *)(rulesString+startPos), endPos-startPos);
-					upsfdlocal->rules[upsfdlocal->rulesCount-1]->stateName[endPos-startPos] = 0;
+					upsfdlocal->rules[upsfdlocal->rulesCount -1 ] = xcalloc(1, sizeof(rulesint));
+					strncpy(upsfdlocal->rules[upsfdlocal->rulesCount - 1]->stateName, (char *)(rulesString + startPos), endPos - startPos);
+					upsfdlocal->rules[upsfdlocal->rulesCount - 1]->stateName[endPos - startPos] = 0;
 				}
 			break;
 
 			case 1:
-				if(lexType != '=') {
+				if (lexType != '=') {
 					lexStatus = -1;
 				} else {
 					lexStatus = 2;
@@ -208,35 +213,35 @@ void get_ups_rules(struct gpioups_t *upsfdlocal, unsigned char *rulesString) {
 			break;
 
 			case 2:
-				if(lexType == '^') {
+				if (lexType == '^') {
 					lexStatus = 3;
 					add_rule_item(upsfdlocal, RULES_CMD_NOT);
-				} else if(lexType == '0') {
+				} else if (lexType == '0') {
 					lexStatus = 4;
-					add_rule_item(upsfdlocal, atoi((char *)(rulesString+startPos)));
+					add_rule_item(upsfdlocal, atoi((char *)(rulesString + startPos)));
 				} else {
 					lexStatus = -1;
 				}
 			break;
 
 			case 3:
-				if(lexType != '0') {
+				if (lexType != '0') {
 					lexStatus = -1;
 				} else {
 					lexStatus = 4;
-					add_rule_item(upsfdlocal, atoi((char *)(rulesString+startPos)));
+					add_rule_item(upsfdlocal, atoi((char *)(rulesString + startPos)));
 				}
 			break;
 
 			case 4:
-				if(lexType == '&') {
+				if (lexType == '&') {
 					lexStatus = 2;
 					add_rule_item(upsfdlocal, RULES_CMD_AND);
-				} else if(lexType == '|') {
+				} else if (lexType == '|') {
 					lexStatus = 2;
 					add_rule_item(upsfdlocal, RULES_CMD_OR);
 				}
-				else if(lexType == ';') {
+				else if (lexType == ';') {
 					lexStatus = 0;
 				} else {
 					lexStatus = -1;
@@ -247,22 +252,22 @@ void get_ups_rules(struct gpioups_t *upsfdlocal, unsigned char *rulesString) {
 				lexStatus = -1;
 			break;
 		}
-		if(lexStatus == -1)
+		if (lexStatus == -1)
 			fatalx(LOG_ERR, "Line processing rule error at position %d", startPos);
 		startPos = endPos;
 	}
-	if(lexType == 0 && lexStatus != 0)
+	if (lexType == 0 && lexStatus != 0)
 		fatalx(LOG_ERR, "Line processing rule error at position %d", startPos);
 
 	/* debug printout for extracted rules */
 	upsdebugx(4, "rules count [%d]", upsfdlocal->rulesCount);
-	for(i = 0; i < upsfdlocal->rulesCount; i++) {
+	for (i = 0; i < upsfdlocal->rulesCount; i++) {
 		upsdebugx(4,
 			"rule state name [%s], subcount %d",
 			upsfdlocal->rules[i]->stateName,
 			upsfdlocal->rules[i]->subCount
 		);
-		for(j = 0; j<upsfdlocal->rules[i]->subCount; j++) {
+		for (j = 0; j<upsfdlocal->rules[i]->subCount; j++) {
 			upsdebugx(4,
 				"[%s] substate %d [%d]",
 				upsfdlocal->rules[i]->stateName,
@@ -275,21 +280,21 @@ void get_ups_rules(struct gpioups_t *upsfdlocal, unsigned char *rulesString) {
 	/* get gpio lines used in rules, find max line number used to check with chip lines count*/
 	upsfdlocal->upsLinesCount = 0;
 	upsfdlocal->upsMaxLine = 0;
-	for(i = 0; i < upsfdlocal->rulesCount; i++) {
-		for(j = 0; j < upsfdlocal->rules[i]->subCount; j++) {
-			int pinOnList = 0;
-			for(k = 0; k < upsfdlocal->upsLinesCount && !pinOnList; k++) {
-				if(upsfdlocal->upsLines[k] == upsfdlocal->rules[i]->cRules[j]) {
+	for (i = 0; i < upsfdlocal->rulesCount; i++) {
+		for (j = 0; j < upsfdlocal->rules[i]->subCount; j++) {
+			int	pinOnList = 0;
+			for (k = 0; k < upsfdlocal->upsLinesCount && !pinOnList; k++) {
+				if (upsfdlocal->upsLines[k] == upsfdlocal->rules[i]->cRules[j]) {
 					pinOnList = 1;
 				}
 			}
-			if(!pinOnList) {
-				if(upsfdlocal->rules[i]->cRules[j] >= 0) {
+			if (!pinOnList) {
+				if (upsfdlocal->rules[i]->cRules[j] >= 0) {
 					upsfdlocal->upsLinesCount++;
 					upsfdlocal->upsLines = xrealloc(upsfdlocal->upsLines, sizeof(upsfdlocal->upsLines[0])*upsfdlocal->upsLinesCount);
-					upsfdlocal->upsLines[upsfdlocal->upsLinesCount-1] = upsfdlocal->rules[i]->cRules[j];
-					if(upsfdlocal->upsLines[upsfdlocal->upsLinesCount-1] > upsfdlocal->upsMaxLine) {
-						upsfdlocal->upsMaxLine = upsfdlocal->upsLines[upsfdlocal->upsLinesCount-1];
+					upsfdlocal->upsLines[upsfdlocal->upsLinesCount - 1] = upsfdlocal->rules[i]->cRules[j];
+					if (upsfdlocal->upsLines[upsfdlocal->upsLinesCount - 1] > upsfdlocal->upsMaxLine) {
+						upsfdlocal->upsMaxLine = upsfdlocal->upsLines[upsfdlocal->upsLinesCount - 1];
 					}
 				}
 			}
@@ -297,23 +302,23 @@ void get_ups_rules(struct gpioups_t *upsfdlocal, unsigned char *rulesString) {
 	}
 
 	upsdebugx(4, "UPS line count = %d", upsfdlocal->upsLinesCount);
-	for(i = 0; i < upsfdlocal->upsLinesCount; i++) {
+	for (i = 0; i < upsfdlocal->upsLinesCount; i++) {
 		upsdebugx(4, "UPS line%d number %d", i, upsfdlocal->upsLines[i]);
 	}
 
 	/* transform lines to indexes for easier state calculation */
 	tranformationDelta = upsfdlocal->upsMaxLine - RULES_CMD_LAST + 1;
-	for(i = 0; i < upsfdlocal->rulesCount; i++) {
-		for(j = 0; j < upsfdlocal->rules[i]->subCount; j++) {
-			if(upsfdlocal->rules[i]->cRules[j] >= 0) {
+	for (i = 0; i < upsfdlocal->rulesCount; i++) {
+		for (j = 0; j < upsfdlocal->rules[i]->subCount; j++) {
+			if (upsfdlocal->rules[i]->cRules[j] >= 0) {
 				upsfdlocal->rules[i]->cRules[j] -= tranformationDelta;
 			}
 		}
 	}
-	for(k = 0; k < upsfdlocal->upsLinesCount; k++) {
-		for(i = 0; i < upsfdlocal->rulesCount; i++) {
-			for(j = 0; j < upsfdlocal->rules[i]->subCount; j++) {
-				if((upsfdlocal->rules[i]->cRules[j] + tranformationDelta) == upsfdlocal->upsLines[k]) {
+	for (k = 0; k < upsfdlocal->upsLinesCount; k++) {
+		for (i = 0; i < upsfdlocal->rulesCount; i++) {
+			for (j = 0; j < upsfdlocal->rules[i]->subCount; j++) {
+				if ((upsfdlocal->rules[i]->cRules[j] + tranformationDelta) == upsfdlocal->upsLines[k]) {
 					upsfdlocal->rules[i]->cRules[j] = k;
 				}
 			}
@@ -322,13 +327,13 @@ void get_ups_rules(struct gpioups_t *upsfdlocal, unsigned char *rulesString) {
 
 	/* debug printout of transformed lines numbers */
 	upsdebugx(4, "rules count [%d] translated", upsfdlocal->rulesCount);
-	for(i = 0; i < upsfdlocal->rulesCount; i++) {
+	for (i = 0; i < upsfdlocal->rulesCount; i++) {
 		upsdebugx(4,
 			"rule state name [%s], subcount %d translated",
 			upsfdlocal->rules[i]->stateName,
 			upsfdlocal->rules[i]->subCount
 		);
-		for(j = 0; j < upsfdlocal->rules[i]->subCount; j++) {
+		for (j = 0; j < upsfdlocal->rules[i]->subCount; j++) {
 			upsdebugx(4,
 				"[%s] substate %d [%d]",
 				upsfdlocal->rules[i]->stateName, j,
@@ -345,11 +350,12 @@ void get_ups_rules(struct gpioups_t *upsfdlocal, unsigned char *rulesString) {
 static
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
 int calc_rule_states(int upsLinesStates[], int cRules[], int subCount, int sIndex) {
-	int ruleVal = 0;
-	int iopStart = sIndex;
-	int rs;
-	if(iopStart < subCount) { /* calculate left side */
-		if(cRules[iopStart] >= 0) {
+	int	ruleVal = 0;
+	int	iopStart = sIndex;
+	int	rs;
+
+	if (iopStart < subCount) { /* calculate left side */
+		if (cRules[iopStart] >= 0) {
 			ruleVal = upsLinesStates[cRules[iopStart]];
 		} else {
 			iopStart++;
@@ -357,13 +363,14 @@ int calc_rule_states(int upsLinesStates[], int cRules[], int subCount, int sInde
 		}
 		iopStart++;
 	}
-	for(; iopStart < subCount; iopStart++) { /* right side calculation */
-		if(cRules[iopStart] == RULES_CMD_OR) {
-			ruleVal = ruleVal || calc_rule_states(upsLinesStates, cRules, subCount, iopStart+1);
+
+	for (; iopStart < subCount; iopStart++) { /* right side calculation */
+		if (cRules[iopStart] == RULES_CMD_OR) {
+			ruleVal = ruleVal || calc_rule_states(upsLinesStates, cRules, subCount, iopStart + 1);
 			break;
 		} else {
 			iopStart++;
-			if(cRules[iopStart] == RULES_CMD_NOT) {
+			if (cRules[iopStart] == RULES_CMD_NOT) {
 				iopStart++;
 				rs = !upsLinesStates[cRules[iopStart]];
 			} else {
@@ -384,39 +391,39 @@ int calc_rule_states(int upsLinesStates[], int cRules[], int subCount, int sInde
 static
 #endif /* DRIVERS_MAIN_WITHOUT_MAIN */
 void update_ups_states(struct gpioups_t *gpioupsfdlocal) {
-	int batLow = 0;
-	int bypass = 0;
-	int chargerStatusSet = 0;
-	int ruleNo;
+	int	batLow = 0;
+	int	bypass = 0;
+	int	chargerStatusSet = 0;
+	int	ruleNo;
 
 	status_init();
 
-	for(ruleNo = 0; ruleNo < gpioupsfdlocal->rulesCount; ruleNo++) {
+	for (ruleNo = 0; ruleNo < gpioupsfdlocal->rulesCount; ruleNo++) {
 		gpioupsfdlocal->rules[ruleNo]->currVal =
 			calc_rule_states(
 				gpioupsfdlocal->upsLinesStates,
 				gpioupsfdlocal->rules[ruleNo]->cRules,
 				gpioupsfdlocal->rules[ruleNo]->subCount, 0
 			);
-		if(gpioupsfdlocal->rules[ruleNo]->currVal) {
+		if (gpioupsfdlocal->rules[ruleNo]->currVal) {
 			status_set(gpioupsfdlocal->rules[ruleNo]->stateName);
 
-			if(!strcmp(gpioupsfdlocal->rules[ruleNo]->stateName, "CHRG")) {
+			if (!strcmp(gpioupsfdlocal->rules[ruleNo]->stateName, "CHRG")) {
 				dstate_setinfo("battery.charger.status", "%s", "charging");
 				chargerStatusSet++;
 			}
-			if(!strcmp(gpioupsfdlocal->rules[ruleNo]->stateName, "DISCHRG")) {
+			if (!strcmp(gpioupsfdlocal->rules[ruleNo]->stateName, "DISCHRG")) {
 				dstate_setinfo("battery.charger.status", "%s", "discharging");
 				chargerStatusSet++;
 			}
-			if(!strcmp(gpioupsfdlocal->rules[ruleNo]->stateName, "LB")) {
+			if (!strcmp(gpioupsfdlocal->rules[ruleNo]->stateName, "LB")) {
 				batLow = 1;
 			}
-			if(!strcmp(gpioupsfdlocal->rules[ruleNo]->stateName, "BYPASS")) {
+			if (!strcmp(gpioupsfdlocal->rules[ruleNo]->stateName, "BYPASS")) {
 				bypass = 1;
 			}
 		}
-		if(gpioupsfdlocal->aInfoAvailable &&
+		if (gpioupsfdlocal->aInfoAvailable &&
 			gpioupsfdlocal->rules[ruleNo]->archVal != gpioupsfdlocal->rules[ruleNo]->currVal) {
 			upslogx(LOG_WARNING, "UPS state [%s] changed to %d",
 				gpioupsfdlocal->rules[ruleNo]->stateName,
@@ -426,19 +433,19 @@ void update_ups_states(struct gpioups_t *gpioupsfdlocal) {
 		gpioupsfdlocal->rules[ruleNo]->archVal = gpioupsfdlocal->rules[ruleNo]->currVal;
 	}
 
-	if(chargerStatusSet <= 0) {
+	if (chargerStatusSet <= 0) {
 		dstate_delinfo("battery.charger.status");
 	}
 
-	if(dstate_getinfo("battery.charge.low")!=NULL) {
-		if(batLow) {
+	if (dstate_getinfo("battery.charge.low") != NULL) {
+		if (batLow) {
 			dstate_setinfo("battery.charge", "%s", dstate_getinfo("battery.charge.low"));
 		} else {
 			dstate_setinfo("battery.charge", "%s", "100");
 		}
 	}
 
-	if(bypass) {
+	if (bypass) {
 		dstate_delinfo("battery.charge");
 	}
 
@@ -449,10 +456,10 @@ void update_ups_states(struct gpioups_t *gpioupsfdlocal) {
 
 void upsdrv_initinfo(void)
 {
-	if(testvar("mfr")) {
+	if (testvar("mfr")) {
 		dstate_setinfo("device.mfr", "%s", getval("mfr"));
 	}
-	if(testvar("model")) {
+	if (testvar("model")) {
 		dstate_setinfo("device.model", "%s", getval("model"));
 	}
 }
@@ -495,17 +502,19 @@ void upsdrv_makevartable(void)
 void upsdrv_initups(void)
 {
 	/* prepare rules and allocate related structures */
-	gpioupsfd=generic_gpio_open(device_path);
+	gpioupsfd = generic_gpio_open(device_path);
 	/* open GPIO chip and check pin consistence */
-	if(gpioupsfd) {
+	if (gpioupsfd) {
 		gpio_open(gpioupsfd);
 	}
 }
 
 void upsdrv_cleanup(void)
 {
-	/* release gpio library resources	*/
-	gpio_close(gpioupsfd);
-	/* release related generic resources	*/
-	generic_gpio_close(gpioupsfd);
+	if (gpioupsfd) {
+		/* release gpio library resources	*/
+		gpio_close(gpioupsfd);
+		/* release related generic resources	*/
+		generic_gpio_close(&gpioupsfd);
+	}
 }

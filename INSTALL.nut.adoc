@@ -99,7 +99,7 @@ ifndef::top_builddir[]
 endif::top_builddir[]
 //
 //
-// Address links on GitHub vs docs
+// Address links on GitHub vs. docs
 // (note: 'env-github' attribute is set on GitHub)
 //
 // - when generating docs:
@@ -178,6 +178,12 @@ Packagers have done an excellent and hard work at improving NUT integration
 into their operating system.  On the other hand, distributions and appliances
 tend to package "official releases" of projects such as NUT, and so do not
 deliver latest and greatest fixes, new drivers, bugs and other features.
+
+Stable distributions also tend to deliver minor fixes to the version of
+third-party software (like NUT) a particular release of the operating
+system has initially delivered, so those release lines can be years behind
+development in terms of new features (or bug fixes, if they are not trivial
+to patch into the old code base snapshot used to create the package).
 
 [[Installing_source]]
 Installing from source
@@ -300,17 +306,38 @@ This will build the NUT client and server programs and the
 selected drivers. It will also build any other features that were
 selected during <<Configuration,configuration>> step above.
 
+NOTE: NUT is regularly tested with GNU, BSD and Sun implementations of `make`.
+
 
 Installation
 ^^^^^^^^^^^^
 
 [NOTE]
 =====================================================================
+You should now gain privileges for installing software if necessary, e.g.:
 
-you should now gain privileges for installing software if necessary:
+	su -
 
-	su
+or prefix installation (not build/check!) commands with `sudo`, e.g.:
 
+	sudo make install ...
+=====================================================================
+
+[NOTE]
+=====================================================================
+If you install NUT for direct consumption on the system that has just
+built it from source, you might be aided for some of the steps listed
+and explained below by running (as `root`):
+
+	make install-as-root
+
+This should not only install the software, but also create directories
+such as the state path, assign ownership and access permissions to
+certain directories and sample configuration files which NUT user
+and/or group accounts should be able to read and/or write, and, on
+some platforms, also (re-)start the NUT daemons/services.
+
+See above "System User creation", that should be done first!
 =====================================================================
 
 Install the files to a system level directory:
@@ -328,7 +355,7 @@ have created.
 
 If you are packaging this software, then you will probably want to
 use the DESTDIR variable to redirect the build into another place,
-i.e.:
+also known as a "prototype directory" or a "staging area", i.e.:
 
 	make DESTDIR=/tmp/package install
 	make DESTDIR=/tmp/package install-conf
@@ -337,9 +364,12 @@ i.e.:
 State path creation
 ^^^^^^^^^^^^^^^^^^^
 
+NOTE: See above about `make install-as-root`, if you use that -- skip
+this step here.
+
 Create the state path directory for the driver(s) and server to use
 for storing UPS status data and other auxiliary files, and make it
-group-writable by the group of the system user you created.
+group-writable by the group of the system user you created, e.g.:
 
 	mkdir -p /var/state/ups
 	chmod 0770 /var/state/ups
@@ -381,7 +411,7 @@ drivers; this should allow you to follow the below
 instructions. However, don't forget to set up the correct
 permissions later!).
 
-NOTE: if you are using something like udev or devd, make sure
+NOTE: If you are using something like udev or devd, make sure
 these permissions stay set across a reboot.  If they revert to the
 old values, your drivers may fail to start.
 
@@ -458,16 +488,21 @@ copy the proposed-source URL of that "from" part.
 For example, in some PR this says `jimklimov:issue-1234` and links to
 `https://github.com/jimklimov/nut/tree/issue-1234`.
 For manual git-cloning, just paste that URL into the shell and replace
-the `/tree/` with "`-b`" CLI option for branch selection, like this:
+the `/tree/` with "`-b`" CLI option for branch selection; it also helps
+to keep the workspace directory name dedicated to that PR, like this:
 
 	:; cd /tmp
 	### Checkout https://github.com/jimklimov/nut/tree/issue-1234
-	:; git clone https://github.com/jimklimov/nut -b issue-1234
+	:; git clone https://github.com/jimklimov/nut -b issue-1234 nut-issue-1234
+	:; cd nut-issue-1234
+	### OPTIONALLY fetch known git tags, so semantic versions look better
+	:; git fetch --tags --all
+	### Proceed with build (common instructions below)
 
 Testing with CI helper
 ~~~~~~~~~~~~~~~~~~~~~~
 
-NOTE: this uses the `ci_build.sh` script to arrange some rituals and
+NOTE: This uses the `ci_build.sh` script to arrange some rituals and
 settings, in this case primarily to default the choice of drivers to
 auto-detection of what can be built, and to skip building documentation.
 Also note that this script supports many other scenarios for CI and
@@ -479,6 +514,9 @@ An "in-place" _testing_ build and run would probably go along these lines:
 	:; cd /tmp
 	:; git clone -b master https://github.com/networkupstools/nut
 	:; cd nut
+	### OPTIONALLY fetch known git tags, so semantic versions look better
+	:; git fetch --tags --all
+	### Proceed with build
 	:; ./ci_build.sh inplace
 	### Temporarily stop your original drivers
 	:; ./drivers/nutdrv_qx -a DEVNAME_FROM_UPS_CONF -d1 -DDDDDD \
@@ -533,6 +571,9 @@ This goes similar to usual build and install from Git:
 	:; cd /tmp
 	:; git clone https://github.com/networkupstools/nut
 	:; cd nut
+	### OPTIONALLY fetch known git tags, so semantic versions look better
+	:; git fetch --tags --all
+	### Proceed with build
 	:; ./autogen.sh
 	:; ./configure --enable-inplace-runtime # --maybe-some-other-options
 	:; make -j 4 all && make -j 4 check && sudo make install
@@ -561,6 +602,9 @@ symlinks) and to get them started:
 	:; cd /tmp
 	:; git clone https://github.com/networkupstools/nut
 	:; cd nut
+	### OPTIONALLY fetch known git tags, so semantic versions look better
+	:; git fetch --tags --all
+	### Proceed with build
 	:; ./autogen.sh
 	:; ./configure --enable-inplace-runtime # --maybe-some-other-options
 	:; make -j 4 all && make -j 4 check && \
@@ -613,6 +657,9 @@ e.g.:
 	:; git clone https://github.com/networkupstools/nut
 	:; cd nut
 	:; git checkout -b issue-1234 ### your PR branch name, arbitrary
+	### OPTIONALLY fetch known git tags, so semantic versions look better
+	:; git fetch --tags --all
+	### Proceed with build
 	:; ./autogen.sh
 	:; ./configure --enable-inplace-runtime # --maybe-some-other-options
 	### Iterate your code changes (e.g. PR draft), build and install with:
@@ -622,6 +669,13 @@ e.g.:
 	    sudo systemd-tmpfiles --create && \
 	    sudo systemctl restart \
 	        nut-driver-enumerator.service nut-monitor nut-server
+
+Note that to contribute your work back to upstream NUT codebase, you would
+need to create a "fork" of https://github.com/networkupstools/nut on GitHub,
+then `git remote add USERNAME https://github.com/USERNAME/nut`, maybe refresh
+the workspace index with `git fetch --all`, and finally `git push USERNAME`
+(possibly follow further instructions from `git` tooling) to create the
+pull request. For more details, see `docs/developers.txt` in NUT sources.
 
 Next steps after an in-place upgrade
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -646,7 +700,7 @@ Debian, Ubuntu and other derivatives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 NOTE: NUT is packaged and well maintained in these systems.
-The official Debian packager is part of the NUT Team.
+The official Debian packager used to be part of the NUT Team.
 
 Using your preferred method (apt-get, aptitude, Synaptic, ...), install
 the 'nut' package, and optionally the following:

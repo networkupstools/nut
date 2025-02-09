@@ -86,14 +86,20 @@ if test -z "${nut_have_libusb_seen}"; then
 		 nut_usb_lib="(libusb-1.0)"
 		 dnl ...except on Windows, where we support libusb-0.1(-compat)
 		 dnl better so far (allow manual specification though, to let
-		 dnl someone finally develop the on-par support):
+		 dnl someone finally develop the on-par support), see also
+		 dnl https://github.com/networkupstools/nut/issues/1507
+		 dnl Note this may upset detection of libmodbus RTU USB support.
 		 AS_IF([test x"${LIBUSB_0_1_VERSION}" != xnone], [
 			AS_CASE(["${target_os}"],
 				[*mingw*], [
 					AS_IF([test x"$build" = x"$host"], [
-						AC_MSG_NOTICE([mingw/MSYS2 native builds prefer libusb-0.1(-compat) over libusb-1.0 if both are available])
-						LIBUSB_VERSION="${LIBUSB_0_1_VERSION}"
-						nut_usb_lib="(libusb-0.1)"
+						AS_IF([test "${nut_with_modbus_and_usb}" = "yes"], [
+							AC_MSG_NOTICE(["Normally" mingw/MSYS2 native builds prefer libusb-0.1(-compat) over libusb-1.0 if both are available, but you requested --with-modbus+usb so preferring libusb-1.0 in this build])
+						], [
+							AC_MSG_NOTICE([mingw/MSYS2 native builds prefer libusb-0.1(-compat) over libusb-1.0 if both are available until https://github.com/networkupstools/nut/issues/1507 is solved])
+							LIBUSB_VERSION="${LIBUSB_0_1_VERSION}"
+							nut_usb_lib="(libusb-0.1)"
+						])
 						],[
 						AC_MSG_NOTICE([mingw cross-builds prefer libusb-1.0 over libusb-0.1(-compat) if both are available])
 						])

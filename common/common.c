@@ -158,6 +158,9 @@ static int would_reopen_sdbus(int r) {
 		case EPERM:
 		case EACCES:
 			return 0;
+
+		default:
+			break;
 	}
 
 	return 1;
@@ -678,9 +681,15 @@ const char *suggest_doc_links(const char *progname, const char *progconf) {
 		snprintf(buf, sizeof(buf),
 			"For more information please ");
 #if defined(WITH_DOCS) && WITH_DOCS
+		/* FIXME: Currently all NUT tools and drivers are in same
+		 *  man page section for "System Management Programs".
+		 *  If this ever changes (e.g. clients like `upsc` can be
+		 *  a "User Program" just as well), we may need an extra
+		    method argument here.
+		 */
 		snprintfcat(buf, sizeof(buf),
-			"Read The Fine Manual ('man %s') and/or ",
-			buf2);
+			"Read The Fine Manual ('man %s %s') and/or ",
+			MAN_SECTION_CMD_SYS, buf2);
 #endif
 		snprintfcat(buf, sizeof(buf),
 			"see\n\t%s/docs/man/%s.html\n",
@@ -1003,11 +1012,7 @@ char * getprocname(pid_t pid)
 	 */
 	char	*procname = NULL;
 	size_t	procnamelen = 0;
-#ifdef UNIX_PATH_MAX
-	char	pathname[UNIX_PATH_MAX];
-#else
-	char	pathname[PATH_MAX];
-#endif
+	char	pathname[NUT_PATH_MAX];
 	struct stat	st;
 
 #ifdef WIN32
@@ -1464,11 +1469,7 @@ int compareprocname(pid_t pid, const char *procname, const char *progname)
 	size_t	procbasenamelen = 0, progbasenamelen = 0;
 	/* Track where the last dot is in the basename; 0 means none */
 	size_t	procbasenamedot = 0, progbasenamedot = 0;
-#ifdef UNIX_PATH_MAX
-	char	procbasename[UNIX_PATH_MAX], progbasename[UNIX_PATH_MAX];
-#else
-	char	procbasename[PATH_MAX], progbasename[PATH_MAX];
-#endif
+	char	procbasename[NUT_PATH_MAX], progbasename[NUT_PATH_MAX];
 
 	if (checkprocname_ignored(__func__)) {
 		ret = -3;
@@ -1660,7 +1661,7 @@ finish:
    depending on the .exe path */
 char * getfullpath(char * relative_path)
 {
-	char buf[MAX_PATH];
+	char buf[NUT_PATH_MAX];
 	if ( GetModuleFileName(NULL, buf, sizeof(buf)) == 0 ) {
 		return NULL;
 	}
@@ -1681,7 +1682,7 @@ char * getfullpath(char * relative_path)
 void writepid(const char *name)
 {
 #ifndef WIN32
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX];
 	FILE	*pidf;
 	mode_t	mask;
 
@@ -2060,7 +2061,7 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 #ifndef WIN32
 int sendsignal(const char *progname, int sig, int check_current_progname)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX];
 
 	snprintf(fn, sizeof(fn), "%s/%s.pid", rootpidpath(), progname);
 
@@ -2793,7 +2794,7 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 {
 	int	ret, errno_orig = errno;
 	size_t	bufsize = LARGEBUF;
-	char	*buf = xcalloc(sizeof(char), bufsize);
+	char	*buf = xcalloc(bufsize, sizeof(char));
 
 	/* Be pedantic about our limitations */
 	bufsize *= sizeof(char);
@@ -3079,11 +3080,7 @@ const char * rootpidpath(void)
 /* Die with a standard message if socket filename is too long */
 void check_unix_socket_filename(const char *fn) {
 	size_t len = strlen(fn);
-#ifdef UNIX_PATH_MAX
-	size_t max = UNIX_PATH_MAX;
-#else
-	size_t max = PATH_MAX;
-#endif
+	size_t max = NUT_PATH_MAX;
 #ifndef WIN32
 	struct sockaddr_un	ssaddr;
 	max = sizeof(ssaddr.sun_path);
@@ -3099,6 +3096,8 @@ void check_unix_socket_filename(const char *fn) {
 	 * varying 104-108 bytes (UNIX_PATH_MAX)
 	 * as opposed to PATH_MAX or MAXPATHLEN
 	 * typically of a kilobyte range.
+	 * We define NUT_PATH_MAX as the greatest
+	 * value of them all.
 	 */
 	fatalx(EXIT_FAILURE,
 		"Can't create a unix domain socket: pathname '%s' "
@@ -3726,7 +3725,7 @@ void nut_prepare_search_paths(void) {
 	count_builtin = i + 1;	/* +1 for the NULL */
 
 	/* Bytes inside should all be zeroed... */
-	filtered_search_paths = xcalloc(sizeof(const char *), count_builtin);
+	filtered_search_paths = xcalloc(count_builtin, sizeof(const char *));
 
 	/* FIXME: here "count_builtin" means size of filtered_search_paths[]
 	 * and may later be more, if we would consider other data sources */
@@ -3881,12 +3880,12 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 	DIR *dp;
 	struct dirent *dirp;
 	char *libname_path = NULL, *libname_alias = NULL;
-	char current_test_path[LARGEBUF];
+	char current_test_path[NUT_PATH_MAX];
 
 	upsdebugx(3, "%s('%s', %" PRIuSIZE ", '%s', %i): Entering method...",
 		__func__, base_libname, base_libname_length, dirname, index);
 
-	memset(current_test_path, 0, LARGEBUF);
+	memset(current_test_path, 0, sizeof(current_test_path));
 
 	if ((dp = opendir(dirname)) == NULL) {
 		if (index >= 0) {
@@ -3929,7 +3928,7 @@ static char * get_libname_in_dir(const char* base_libname, size_t base_libname_l
 				continue;
 			}
 
-			snprintf(current_test_path, LARGEBUF, "%s/%s", dirname, dirp->d_name);
+			snprintf(current_test_path, sizeof(current_test_path), "%s/%s", dirname, dirp->d_name);
 #if HAVE_DECL_REALPATH
 			libname_path = realpath(current_test_path, NULL);
 #else
@@ -4289,7 +4288,7 @@ int match_regex_hex(const regex_t *preg, const int n)
 {
 	char	buf[10];
 
-	snprintf(buf, sizeof(buf), "%04x", n);
+	snprintf(buf, sizeof(buf), "%04x", (unsigned int)n);
 
 	return match_regex(preg, buf);
 }

@@ -3,7 +3,7 @@
  *  Copyright (C)
  *  2003 - 2008 Arnaud Quette <arnaud.quette@free.fr>
  *  2005 - 2006 Peter Selinger <selinger@users.sourceforge.net>
- *  2020 - 2024 Jim Klimov <jimklimov+nut@gmail.com>
+ *  2020 - 2025 Jim Klimov <jimklimov+nut@gmail.com>
  *  2024        Alejandro González <me@alegon.dev>
  *
  *  Note: this subdriver was initially generated as a "stub" by the
@@ -32,7 +32,7 @@
 #include "cps-hid.h"
 #include "usb-common.h"
 
-#define CPS_HID_VERSION      "CyberPower HID 0.82"
+#define CPS_HID_VERSION      "CyberPower HID 0.83"
 
 /* Cyber Power Systems */
 #define CPS_VENDORID 0x0764
@@ -54,10 +54,13 @@
  * For some devices, the reported battery voltage is off by factor
  * of 1.5 so we need to apply a scale factor to it to get the real
  * battery voltage. By default, the factor is 1 (no scaling).
+ * Similarly, some firmwares do not report the exponent well, so
+ * frequency values are seen as e.g. "499.0" (in "0.1 Hz" units not
+ * explicitly stated), instead of "49.9 Hz".
  */
-static double	battery_scale = 1;
-static int	might_need_battery_scale = 0;
-static int	battery_scale_checked = 0;
+static double	battery_scale = 1, input_freq_scale = 1, output_freq_scale = 1;
+static int	might_need_battery_scale = 0, might_need_freq_scale = 0;
+static int	battery_scale_checked = 0, input_freq_scale_checked = 0, output_freq_scale_checked = 0;
 
 /*! If the ratio of the battery voltage to the nominal battery voltage exceeds
  * this factor, we assume that the battery voltage needs to be scaled by 2/3.
@@ -69,6 +72,8 @@ static void *cps_battery_scale(USBDevice_t *device)
 	NUT_UNUSED_VARIABLE(device);
 
 	might_need_battery_scale = 1;
+	might_need_freq_scale = 1;
+
 	return NULL;
 }
 
@@ -86,6 +91,153 @@ static usb_device_id_t cps_usb_device_table[] = {
 
 	/* Terminating entry */
 	{ 0, 0, NULL }
+};
+
+/*! Adjusts frequency if it is order(s) of magnitude off
+ * is_input = 1 for input.frequency and 0 for output.frequency
+ */
+static void cps_adjust_frequency_scale(double freq_report, int is_input)
+{
+	const char *freq_low_str, *freq_high_str, *freq_nom_str;
+	double freq_low = 0, freq_high = 0, freq_nom = 0;
+
+	if ((is_input && input_freq_scale_checked) || (!is_input && output_freq_scale_checked))
+		return;
+
+	/* May be not available from device itself; but still
+	 * may be set by user as default/override options;
+	 * if not, we default for 50Hz and/or 60Hz range +- 10%.
+	 */
+	freq_nom_str = dstate_getinfo(is_input ? "input.frequency.nominal" : "output.frequency.nominal");
+	freq_low_str = dstate_getinfo(is_input ? "input.frequency.low" : "output.frequency.low");
+	freq_high_str = dstate_getinfo(is_input ? "input.frequency.high" : "output.frequency.high");
+
+	if (freq_nom_str)
+		freq_nom = strtod(freq_nom_str, NULL);
+	if (freq_low_str)
+		freq_low = strtod(freq_low_str, NULL);
+	if (freq_high_str)
+		freq_high = strtod(freq_high_str, NULL);
+
+	if (d_equal(freq_nom, 0)) {
+		if (45 < freq_low && freq_low <= 50)
+			freq_nom = 50;
+		else if (50 <= freq_high && freq_high <= 55)
+			freq_nom = 50;
+		else if (45 < freq_report && freq_report <= 55)
+			freq_nom = 50;
+		else if (450 < freq_report && freq_report <= 550)
+			freq_nom = 50;
+		else if (55 < freq_low && freq_low <= 60)
+			freq_nom = 60;
+		else if (60 <= freq_high && freq_high <= 65)
+			freq_nom = 60;
+		else if (55 < freq_report && freq_report <= 65)
+			freq_nom = 60;
+		else if (550 < freq_report && freq_report <= 650)
+			freq_nom = 60;
+
+		upsdebugx(3, "%s: '%sput.frequency.nominal' is %s, guessed %0.1f%s",
+			__func__, is_input ? "in" : "out", NUT_STRARG(freq_nom_str),
+			d_equal(freq_nom, 0) ? 55 : freq_nom,
+			d_equal(freq_nom, 0) ? " (50 or 60Hz range)" : "");
+	}
+
+	if (d_equal(freq_low, 0)) {
+		if (d_equal(freq_nom, 0))
+			freq_low = 45.0;
+		else
+			freq_low = freq_nom * 0.95;
+
+		upsdebugx(3, "%s: '%sput.frequency.low' is %s, defaulting to %0.1f",
+			__func__, is_input ? "in" : "out", NUT_STRARG(freq_low_str), freq_low);
+	}
+
+	if (d_equal(freq_high, 0)) {
+		if (d_equal(freq_nom, 0))
+			freq_high = 65.0;
+		else
+			freq_high = freq_nom * 1.05;
+
+		upsdebugx(3, "%s: '%sput.frequency.high' is %s, defaulting to %0.1f",
+			__func__, is_input ? "in" : "out", NUT_STRARG(freq_high_str), freq_high);
+	}
+
+	if (freq_low <= freq_report && freq_report <= freq_high) {
+		if (is_input) {
+			input_freq_scale = 1.0;
+			input_freq_scale_checked = 1;
+		} else {
+			output_freq_scale = 1.0;
+			output_freq_scale_checked = 1;
+		}
+		/* We should be here once per freq type... */
+		upsdebugx(1, "%s: Determined scaling factor "
+			"needed for '%sput.frequency': 1.0",
+			__func__, is_input ? "in" : "out");
+	}
+	else
+	if (freq_low <= freq_report/10.0 && freq_report/10.0 <= freq_high) {
+		if (is_input) {
+			input_freq_scale = 0.1;
+			input_freq_scale_checked = 1;
+		} else {
+			output_freq_scale = 0.1;
+			output_freq_scale_checked = 1;
+		}
+		/* We should be here once per freq type... */
+		upsdebugx(1, "%s: Determined scaling factor "
+			"needed for '%sput.frequency': 0.1",
+			__func__, is_input ? "in" : "out");
+	}
+	else
+	{
+		/* We might return here, so do not log too loudly */
+		upsdebugx(2, "%s: Could not determine scaling factor "
+			"needed for '%sput.frequency', will report "
+			"it as is (and might detect better later)",
+			__func__, is_input ? "in" : "out");
+	}
+}
+
+/* returns statically allocated string - must not use it again before
+   done with result! */
+static const char *cps_input_freq_fun(double value)
+{
+	static char	buf[8];
+
+	if (might_need_freq_scale) {
+		cps_adjust_frequency_scale(value, 1);
+	}
+
+	upsdebugx(5, "%s: input_freq_scale = %.3f", __func__, input_freq_scale);
+	snprintf(buf, sizeof(buf), "%.1f", input_freq_scale * value);
+
+	return buf;
+}
+
+static info_lkp_t cps_input_freq[] = {
+	{ 0, NULL, &cps_input_freq_fun, NULL }
+};
+
+/* returns statically allocated string - must not use it again before
+   done with result! */
+static const char *cps_output_freq_fun(double value)
+{
+	static char	buf[8];
+
+	if (might_need_freq_scale) {
+		cps_adjust_frequency_scale(value, 0);
+	}
+
+	upsdebugx(5, "%s: output_freq_scale = %.3f", __func__, output_freq_scale);
+	snprintf(buf, sizeof(buf), "%.1f", output_freq_scale * value);
+
+	return buf;
+}
+
+static info_lkp_t cps_output_freq[] = {
+	{ 0, NULL, &cps_output_freq_fun, NULL }
 };
 
 /*! Adjusts @a battery_scale if voltage is well above nominal.
@@ -247,18 +399,22 @@ static hid_info_t cps_hid2nut[] = {
   { "BOOL", 0, 0, "UPS.Output.Overload", NULL, NULL, 0, overload_info },
 
   /* Input page */
-  { "input.frequency", 0, 0, "UPS.Input.Frequency", NULL, "%.1f", 0, NULL },
+  /* FIXME: Check if something like "UPS.Flow([N]?).ConfigFrequency"
+   *  is available for "input.frequency.nominal" */
+  { "input.frequency", 0, 0, "UPS.Input.Frequency", NULL, "%.1f", 0, cps_input_freq },
   { "input.voltage.nominal", 0, 0, "UPS.Input.ConfigVoltage", NULL, "%.0f", 0, NULL },
   { "input.voltage", 0, 0, "UPS.Input.Voltage", NULL, "%.1f", 0, NULL },
   { "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.LowVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
   { "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.HighVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
-  /* used by CP1350EPFCLCD */
+  /* used by CP1350EPFCLCD; why oh why "UPS.Output"?.. */
   { "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Output.LowVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
   { "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Output.HighVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
   { "input.sensitivity", ST_FLAG_RW | ST_FLAG_STRING, 0, "UPS.Output.CPSInputSensitivity", NULL, "%s", HU_FLAG_SEMI_STATIC | HU_FLAG_ENUM, cps_sensitivity_info },
 
   /* Output page */
-  { "output.frequency", 0, 0, "UPS.Output.Frequency", NULL, "%.1f", 0, NULL },
+  /* FIXME: Check if something like "UPS.Flow([N]?).ConfigFrequency"
+   *  is available for "output.frequency.nominal" */
+  { "output.frequency", 0, 0, "UPS.Output.Frequency", NULL, "%.1f", 0, cps_output_freq },
   { "output.voltage", 0, 0, "UPS.Output.Voltage", NULL, "%.1f", 0, NULL },
   { "output.voltage.nominal", 0, 0, "UPS.Output.ConfigVoltage", NULL, "%.0f", 0, NULL },
 
@@ -336,7 +492,8 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 			"NOT Attempting Report Descriptor fix for UPS: "
 			"Vendor: %04x, Product: %04x "
 			"(vendor/product not matched)",
-			vendorID, productID);
+			(unsigned int)vendorID,
+			(unsigned int)productID);
 		return 0;
 	}
 
@@ -345,12 +502,15 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 			"NOT Attempting Report Descriptor fix for UPS: "
 			"Vendor: %04x, Product: %04x "
 			"(got disable_fix_report_desc in config)",
-			vendorID, productID);
+			(unsigned int)vendorID,
+			(unsigned int)productID);
 		return 0;
 	}
 
 	upsdebugx(3, "Attempting Report Descriptor fix for UPS: "
-		"Vendor: %04x, Product: %04x", vendorID, productID);
+		"Vendor: %04x, Product: %04x",
+		(unsigned int)vendorID,
+		(unsigned int)productID);
 
 	/* Apply the fix cautiously by looking for input voltage,
 	 * high voltage transfer and output voltage report usages.
@@ -512,7 +672,8 @@ static int cps_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 			"SKIPPED Report Descriptor fix for UPS: "
 			"Vendor: %04x, Product: %04x "
 			"(problematic conditions not matched)",
-			vendorID, productID);
+			(unsigned int)vendorID,
+			(unsigned int)productID);
 	}
 
 	return retval;

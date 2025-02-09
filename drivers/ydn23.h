@@ -181,7 +181,7 @@ static inline void ydn23_checksum(const char *buf, size_t len, char* out)
 		sum += buf[i];
 	sum %= 65536;
 
-	snprintf(fbuf, 7, "%04X", (uint16_t) ~sum + 1);
+	snprintf(fbuf, 7, "%04X", (unsigned int)((uint16_t) ~sum + 1));
 	memcpy(out, fbuf, 5);
 }
 

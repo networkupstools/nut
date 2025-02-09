@@ -204,7 +204,7 @@ getver_default() {
         NUT_VERSION_DEFAULT3_DOTS="`expr $NUT_VERSION_DEFAULT3_DOTS + 1`"
     done
     while [ "${NUT_VERSION_DEFAULT3_DOTS}" -gt 2 ] ; do
-        NUT_VERSION_DEFAULT3="`echo "${NUT_VERSION_DEFAULT3}" | sed 's,\.[0-9][0-9]*$,,'`"
+        NUT_VERSION_DEFAULT3="`echo "${NUT_VERSION_DEFAULT3}" | sed 's,\.[0-9][0-9]*[^.]*$,,'`"
         NUT_VERSION_DEFAULT3_DOTS="`expr $NUT_VERSION_DEFAULT3_DOTS - 1`"
     done
 

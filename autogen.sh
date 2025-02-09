@@ -175,7 +175,7 @@ echo "----------------------------------------------------------------------"
 echo "Please note that on some systems the routine below can complain that "
 echo "  > configure.ac: warning: AC_INIT: not a literal: m4_esyscmd_s(...)"
 echo "but still does the right thing about PACKAGE_VERSION and PACKAGE_URL settings."
-echo "Check if your distro provides an 'autoconf-archive' package anf if it helps."
+echo "Check if your distro provides an 'autoconf-archive' package and if it helps."
 echo "Please post an issue in NUT bug tracker with platform details if it does not."
 echo "----------------------------------------------------------------------"
 

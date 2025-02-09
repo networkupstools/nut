@@ -9,9 +9,11 @@ nutscan_new_device - Create a new nutscan_device_t structure.
 SYNOPSIS
 --------
 
- #include <nut-scan.h>
+------
+	#include <nut-scan.h>
 
- nutscan_device_t * nutscan_new_device(void);
+	nutscan_device_t * nutscan_new_device(void);
+------
 
 DESCRIPTION
 -----------

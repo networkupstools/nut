@@ -661,6 +661,7 @@ void * Signal::HandlerThread<H>::main(void * comm_pipe_read_end) {
 				::pthread_exit(nullptr);
 
 			case HT_SIGNAL:
+				{	// scoping
 				// Read signal number
 				read_out = ::read(rfd, &word, sizeof(word));
 
@@ -680,6 +681,37 @@ void * Signal::HandlerThread<H>::main(void * comm_pipe_read_end) {
 
 				// Handle signal
 				handler(sig);
+				}	// scoping
+				break;
+
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+			/* Must not occur thanks to enum.
+			 * But otherwise we can see
+			 *   error: 'switch' missing 'default' label [-Werror,-Wswitch-default]
+			 * from some overly zealous compilers.
+			 */
+			default:
+				throw std::logic_error("INTERNAL ERROR: Unexpected default case reached");
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 		}
 	}
 

@@ -3,7 +3,7 @@
    Copyright (C)
 	2002	Russell Kroll <rkroll@exploits.org>
 	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
-	2020 - 2024	Jim Klimov <jimklimov+nut@gmail.com>
+	2020 - 2025	Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -1622,7 +1622,7 @@ ssize_t upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen)
 /* split upsname[@hostname[:port]] into separate components */
 int upscli_splitname(const char *buf, char **upsname, char **hostname, uint16_t *port)
 {
-	char	*s, tmp[SMALLBUF], *last = NULL;
+	char	*sat, *ssc, tmp[SMALLBUF], *last = NULL;
 
 	/* paranoia */
 	if ((!buf) || (!upsname) || (!hostname) || (!port)) {
@@ -1634,10 +1634,11 @@ int upscli_splitname(const char *buf, char **upsname, char **hostname, uint16_t 
 		return -1;
 	}
 
-	s = strchr(tmp, '@');
+	sat = strchr(tmp, '@');
+	ssc = strchr(tmp, ':');
 
 	/* someone passed a "@hostname" string? */
-	if (s == tmp) {
+	if (sat == tmp) {
 		fprintf(stderr, "upscli_splitname: got empty upsname string\n");
 		return -1;
 	}
@@ -1653,13 +1654,20 @@ int upscli_splitname(const char *buf, char **upsname, char **hostname, uint16_t 
 		return -1;
 	}
 
-	/*
+/*
 	fprintf(stderr, "upscli_splitname3: got buf='%s', tmp='%s', upsname='%s', possible hostname:port='%s'\n",
-		NUT_STRARG(buf), NUT_STRARG(tmp), NUT_STRARG(*upsname), NUT_STRARG((s ? s+1 : s)));
-	*/
+		NUT_STRARG(buf), NUT_STRARG(tmp), NUT_STRARG(*upsname), NUT_STRARG((sat ? sat+1 : sat)));
+ */
 
 	/* only a upsname is specified, fill in defaults */
-	if (s == NULL) {
+	if (sat == NULL) {
+		if (ssc) {
+			/* TOTHINK: Consult isdigit(ssc+1) to shortcut
+			 *  `upsname:port` into `upsname@localhost:port`? */
+			fprintf(stderr, "upscli_splitname: port specified, but not a hostname\n");
+			return -1;
+		}
+
 		if ((*hostname = xstrdup("localhost")) == NULL) {
 			fprintf(stderr, "upscli_splitname: xstrdup failed\n");
 			return -1;
@@ -1670,12 +1678,12 @@ int upscli_splitname(const char *buf, char **upsname, char **hostname, uint16_t 
 	}
 
 	/* someone passed a "upsname@" string? */
-	if (!(*(s+1))) {
+	if (!(*(sat+1))) {
 		fprintf(stderr, "upscli_splitname: got the @ separator and then an empty hostname[:port] string\n");
 		return -1;
 	}
 
-	return upscli_splitaddr(s+1, hostname, port);
+	return upscli_splitaddr(sat+1, hostname, port);
 }
 
 /* split hostname[:port] into separate components */

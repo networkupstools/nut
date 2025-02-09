@@ -227,7 +227,7 @@ void upsdrv_initinfo(void)
 				value+=(1<<(unsigned short int)(bitn - 0));
 		}
 		num_inphases=value;
-		dstate_setinfo("input.phases", "%d", value);
+		dstate_setinfo("input.phases", "%u", value);
 
 		/* output: from bit 4 to bit 5  (2 bits)*/
 		for (value=0,bitn=4;bitn<6;bitn++) {
@@ -235,7 +235,7 @@ void upsdrv_initinfo(void)
 				value+=(1<<(unsigned short int)(bitn - 4));
 		}
 		num_outphases=value;
-		dstate_setinfo("output.phases", "%d", value);
+		dstate_setinfo("output.phases", "%u", value);
 
 		if (reply[5] & (1<<4)) {	/* ISOFFLINE */
 			dstate_setinfo("ups.type", "offline") ;

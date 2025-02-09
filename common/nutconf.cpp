@@ -927,7 +927,7 @@ bool GenericConfiguration::writeTo(NutStream & ostream) const
 }
 
 
-bool GenericConfiguration::get(const std::string & section, const std::string & entry, ConfigParamList & params) const
+bool GenericConfiguration::get(const std::string & section, const std::string & entry, ConfigParamList & params, bool caseSensitive) const
 {
 	// Get section
 	SectionMap::const_iterator section_iter = sections.find(section);
@@ -938,9 +938,22 @@ bool GenericConfiguration::get(const std::string & section, const std::string & 
 	const GenericConfigSection::EntryMap & entries = section_iter->second.entries;
 
 	GenericConfigSection::EntryMap::const_iterator entry_iter = entries.find(entry);
-	if (entry_iter == entries.end())
-		return false;
+	if (entry_iter == entries.end()) {
+		if (caseSensitive)
+			return false;
 
+		// Another pass, maybe slower and inefficient, for case-insensitive matching
+		// We are already at one end of the entries, so scroll back to beginning
+		GenericConfigSection::EntryMap::const_iterator entry_begin = entries.begin();
+		for (; entry_iter != entry_begin; entry_iter--) {
+			if (!(::strcasecmp(entry_iter->first.c_str(), entry.c_str())))
+				goto found;
+		}
+
+		return false;
+	}
+
+found:
 	// Provide parameters values
 	params = entry_iter->second.values;
 
@@ -1025,13 +1038,13 @@ void GenericConfiguration::removeSection(const std::string & section)
 }
 
 
-std::string GenericConfiguration::getStr(const std::string & section, const std::string & entry) const
+std::string GenericConfiguration::getStr(const std::string & section, const std::string & entry, bool caseSensitive) const
 {
 	std::string str;
 
 	ConfigParamList params;
 
-	if (!get(section, entry, params))
+	if (!get(section, entry, params, caseSensitive))
 		return str;
 
 	if (params.empty())

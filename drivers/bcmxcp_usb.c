@@ -231,7 +231,7 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 		/* Now validate XCP frame */
 		/* Check header */
 		if ( my_buf[0] != PW_COMMAND_START_BYTE ) {
-			upsdebugx(2, "get_answer: wrong header 0xab vs %02x", my_buf[0]);
+			upsdebugx(2, "get_answer: wrong header 0xab vs. %02x", my_buf[0]);
 			/* Sometime we read something wrong. bad cables? bad ports? */
 			my_buf = memchr(my_buf, PW_COMMAND_START_BYTE, bytes_read);
 			if (!my_buf)
@@ -266,11 +266,11 @@ ssize_t get_answer(unsigned char *data, unsigned char command)
 		/* Test the Sequence # */
 		sequence = my_buf[3];
 		if ((sequence & PW_SEQ_MASK) != seq_num) {
-			nutusb_comm_fail("get_answer: not the right sequence received %x!!!\n", (sequence & PW_SEQ_MASK));
+			nutusb_comm_fail("get_answer: not the right sequence received %x!!!\n", (unsigned int)(sequence & PW_SEQ_MASK));
 			return -1;
 		}
 		else {
-			upsdebugx(2, "get_answer: sequence number (%x) is ok", (sequence & PW_SEQ_MASK));
+			upsdebugx(2, "get_answer: sequence number (%x) is ok", (unsigned int)(sequence & PW_SEQ_MASK));
 		}
 
 		/* Validate checksum */

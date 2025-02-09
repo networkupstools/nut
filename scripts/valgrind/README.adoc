@@ -9,6 +9,11 @@ Example use-case:
     ./scripts/valgrind/valgrind.sh ./tools/nut-scanner/nut-scanner -DDDDDD -m auto
 ----
 
+Note that the script is generated under `${top_builddir}` by `configure` from
+a template file located in `${top_srcdir}/scripts/valgrind/valgrind.sh.in`.
+You might be able to run it directly, falling back to a `valgrind` program in
+your `PATH`, if any.
+
 See also:
 
 * link:https://wiki.wxwidgets.org/Valgrind_Suppression_File_Howto[Valgrind Suppression File How-to]

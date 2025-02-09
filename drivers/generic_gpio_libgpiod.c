@@ -107,7 +107,7 @@ static void reserve_lines_libgpiod(struct gpioups_t *gpioupsfdlocal, int inner) 
  * and check lines numbers validity - consistency with h/w chip
  */
 void gpio_open(struct gpioups_t *gpioupsfdlocal) {
-	struct libgpiod_data_t *libgpiod_data = xcalloc(sizeof(struct libgpiod_data_t),1);
+	struct libgpiod_data_t *libgpiod_data = xcalloc(1, sizeof(struct libgpiod_data_t));
 	gpioupsfdlocal->lib_data = libgpiod_data;
 
 	libgpiod_data->gpioChipHandle = gpiod_chip_open_by_name(gpioupsfdlocal->chipName);

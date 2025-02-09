@@ -51,6 +51,7 @@
 #include "raritan-pdu-mib.h"
 #include "raritan-px2-mib.h"
 #include "baytech-mib.h"
+#include "baytech-rpc3nc-mib.h"
 #include "compaq-mib.h"
 #include "bestpower-mib.h"
 #include "cyberpower-mib.h"
@@ -101,6 +102,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&apc_pdu_epdu,		/* This struct comes from : apc-epdu-mib.c */
 	&apc,				/* This struct comes from : apc-mib.c */
 	&baytech,			/* This struct comes from : baytech-mib.c */
+	&baytech_rpc3nc,		/* This struct comes from : baytech-rpc3nc-mib.c */
 	&bestpower,			/* This struct comes from : bestpower-mib.c */
 	&compaq,			/* This struct comes from : compaq-mib.c */
 	&cyberpower,		/* This struct comes from : cyberpower-mib.c */
@@ -174,7 +176,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION	"1.32"
+#define DRIVER_VERSION	"1.33"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -1170,7 +1172,7 @@ static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 
 			/* Error throttling otherwise */
 			numerr++;
-			upsdebugx(4, "%s: numerr++ (total=%i)", __func__, numerr);
+			upsdebugx(4, "%s: numerr++ (total=%u)", __func__, numerr);
 
 			if ((numerr == SU_ERR_LIMIT) || ((numerr % SU_ERR_RATE) == 0)) {
 				upslogx(LOG_WARNING, "[%s] Warning: excessive poll "
@@ -4181,7 +4183,7 @@ static void mibconf_err(const char *errmsg)
 /* load *mib.conf into an snmp_info_t structure */
 void read_mibconf(char *mib)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX];
 	PCONF_CTX_t	ctx;
 	int	numerrors = 0;
 

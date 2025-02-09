@@ -67,6 +67,15 @@
 #
 #  driverpath: OPTIONAL. Used for custom setups. See man page for details.
 #
+#   statepath: OPTIONAL. Used for custom setups. Tell drivers to place their
+#              state sockets for communication with 'upsd' in 'path' rather
+#              than the default location that was compiled into the program.
+#              Note that the drivers must use the same path as 'upsd', so the
+#              data server would prefer this setting from `ups.conf` global
+#              section, if present, over its own in `upsd.conf`.
+#              Environment variable NUT_STATEPATH set by caller can override
+#              this setting.
+#
 #      nowait: OPTIONAL. Tell upsdrvctl to not wait at all for the driver(s)
 #              to execute the requested command. Fire and forget.
 #

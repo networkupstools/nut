@@ -352,7 +352,7 @@ float get_float(const unsigned char *data)
 	}
 
 	/* Never happens */
-	upslogx(LOG_ERR, "s = %d, e = %d, f = %lu\n", s, e, f);
+	upslogx(LOG_ERR, "s = %d, e = %d, f = %ld", s, e, f);
 	return 0;
 }
 
@@ -856,7 +856,7 @@ void init_ups_meter_map(const unsigned char *map, unsigned char len)
 			bcmxcp_meter_map[iIndex].meter_block_index = iOffset;
 
 			/* Debug info */
-			upsdebugx(2, "%04d\t%04d\t%2x\t%s", iIndex, iOffset, bcmxcp_meter_map[iIndex].format,
+			upsdebugx(2, "%04u\t%04u\t%2x\t%s", iIndex, iOffset, bcmxcp_meter_map[iIndex].format,
 					(bcmxcp_meter_map[iIndex].nut_entity == NULL ? "None" :bcmxcp_meter_map[iIndex].nut_entity));
 
 			iOffset += 4;
@@ -1247,8 +1247,8 @@ void init_limit(void)
 
 		if (value != 0) {
 			value /= 100;
-			dstate_setinfo("input.frequency.low", "%u", fnom - value);
-			dstate_setinfo("input.frequency.high", "%u", fnom + value);
+			dstate_setinfo("input.frequency.low",  "%d", fnom - value);
+			dstate_setinfo("input.frequency.high", "%d", fnom + value);
 		}
 	}
 
@@ -1271,7 +1271,7 @@ void init_limit(void)
 	if (bcmxcp_status.shutdowndelay > bcmxcp_status.lowbatt)
 		upslogx(LOG_WARNING,
 			"Shutdown delay longer than battery capacity when Low Battery "
-			"warning is given. (max %d seconds)", bcmxcp_status.lowbatt);
+			"warning is given. (max %u seconds)", bcmxcp_status.lowbatt);
 
 	/* Horn Status: */
 	value = answer[BCMXCP_EXT_LIMITS_BLOCK_HORN_STATUS];

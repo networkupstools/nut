@@ -189,11 +189,30 @@ fi
 [ -n "$MAKE_FLAGS_VERBOSE" ] || MAKE_FLAGS_VERBOSE="VERBOSE=1 V=1 -s"
 [ -n "$MAKE_FLAGS_CLEAN" ] || MAKE_FLAGS_CLEAN="${MAKE_FLAGS_QUIET}"
 
-# This is where many symlinks like "gcc -> ../bin/ccache" reside
-# (note: a "-" value requests to NOT use a CI_CCACHE_SYMLINKDIR;
-# ccache may still be used via prefixing if the tool is found in
-# the PATH, unless you export CI_CCACHE_USE=no also):
+normalize_path() {
+    # STDIN->STDOUT: strip duplicate "/" and extra ":" if present,
+    # leave first copy of duplicates in (preferred) place
+    sed -e 's,:::*,:,g' -e 's,^:*,,' -e 's,:*$,,' -e 's,///*,/,g' \
+    | tr ':' '\n' \
+    | ( P=""
+        while IFS='' read D ; do
+            case "${D}" in
+                "") continue ;;
+                /)  ;;
+                */) D="`echo "${D}" | sed 's,/*$,,'`" ;;
+            esac
+            case "${P}" in
+                "${D}"|*":${D}"|"${D}:"*|*":${D}:"*) ;;
+                "") P="${D}" ;;
+                *) P="${P}:${D}" ;;
+            esac
+        done
+        echo "${P}"
+      )
+}
+
 propose_CI_CCACHE_SYMLINKDIR() {
+    # This is where many symlinks like "gcc -> ../bin/ccache" reside:
     echo \
         "/usr/lib/ccache" \
         "/mingw64/lib/ccache/bin" \
@@ -207,30 +226,270 @@ propose_CI_CCACHE_SYMLINKDIR() {
         echo "${HOMEBREW_PREFIX}/opt/ccache/libexec"
     fi
 }
-if [ -z "${CI_CCACHE_SYMLINKDIR-}" ] ; then
-    for D in `propose_CI_CCACHE_SYMLINKDIR` ; do
-        if [ -d "$D" ] ; then
-            if ( ls -la "$D" | grep -e ' -> .*ccache' >/dev/null) \
-            || ( test -n "`find "$D" -maxdepth 1 -type f -exec grep -li ccache '{}' \;`" ) \
-            ; then
-                CI_CCACHE_SYMLINKDIR="$D" && break
-            else
-                echo "WARNING: Found potential CI_CCACHE_SYMLINKDIR='$D' but it did not host expected symlink patterns, skipped" >&2
+
+ensure_CI_CCACHE_SYMLINKDIR_envvar() {
+    # Populate CI_CCACHE_SYMLINKDIR envvar (if not yet populated e.g. by caller)
+    # with location of symlinks like "gcc -> ../bin/ccache" to use
+    # NOTE: a caller-provided value of "-" requests the script to NOT use
+    # a CI_CCACHE_SYMLINKDIR; however ccache may still be used via prefixing
+    # to compiler command, if the tool is found in the PATH, e.g. by calling
+    # optional_ensure_ccache(), unless you export CI_CCACHE_USE=no also.
+
+    if [ -z "${CI_CCACHE_SYMLINKDIR-}" ] ; then
+        for D in `propose_CI_CCACHE_SYMLINKDIR` ; do
+            if [ -d "$D" ] ; then
+                if ( ls -la "$D" | grep -e ' -> .*ccache' >/dev/null) \
+                || ( test -n "`find "$D" -maxdepth 1 -type f -exec grep -li ccache '{}' \;`" ) \
+                ; then
+                    CI_CCACHE_SYMLINKDIR="$D" && break
+                else
+                    echo "WARNING: Found potential CI_CCACHE_SYMLINKDIR='$D' but it did not host expected symlink patterns, skipped" >&2
+                fi
+            fi
+        done
+
+        if [ -n "${CI_CCACHE_SYMLINKDIR-}" ] ; then
+            echo "INFO: Detected CI_CCACHE_SYMLINKDIR='$CI_CCACHE_SYMLINKDIR'; specify another explicitly if desired" >&2
+        else
+            echo "WARNING: Did not find any CI_CCACHE_SYMLINKDIR; specify one explicitly if desired" >&2
+        fi
+    else
+        if [ x"${CI_CCACHE_SYMLINKDIR-}" = x- ] ; then
+            echo "INFO: Empty CI_CCACHE_SYMLINKDIR was explicitly requested" >&2
+            CI_CCACHE_SYMLINKDIR=""
+        fi
+    fi
+}
+
+optional_prepare_ccache() {
+    # Prepare CCACHE_* variables and directories, determine if we HAVE_CCACHE
+    # See also optional_ensure_ccache(), optional_prepare_compiler_family(),
+    # ensure_CI_CCACHE_SYMLINKDIR_envvar()
+    echo "PATH='$PATH' before possibly applying CCACHE into the mix"
+    ( echo "$PATH" | grep ccache ) >/dev/null && echo "WARNING: ccache is already in PATH"
+    if [ -n "$CC" ]; then
+        echo "CC='$CC' before possibly applying CCACHE into the mix"
+        $CC --version $CFLAGS || \
+        $CC --version || true
+    fi
+
+    if [ -n "$CXX" ]; then
+        echo "CXX='$CXX' before possibly applying CCACHE into the mix"
+        $CXX --version $CXXFLAGS || \
+        $CXX --version || true
+    fi
+
+    if [ x"${CI_CCACHE_USE-}" = xno ]; then
+        HAVE_CCACHE=no
+        CI_CCACHE_SYMLINKDIR=""
+        echo "WARNING: Caller required to not use ccache even if available" >&2
+    else
+        if [ -n "${CI_CCACHE_SYMLINKDIR}" ]; then
+            # Tell ccache the PATH without itself in it, to avoid loops processing
+            PATH="`echo "$PATH" | sed -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?$,,' -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?$,,'`"
+        fi
+        CCACHE_PATH="$PATH"
+        CCACHE_DIR="${HOME}/.ccache"
+        export CCACHE_PATH CCACHE_DIR PATH
+        HAVE_CCACHE=no
+        if (command -v ccache || which ccache) \
+        && ( [ -z "${CI_CCACHE_SYMLINKDIR}" ] || ls -la "${CI_CCACHE_SYMLINKDIR}" ) \
+        ; then
+            HAVE_CCACHE=yes
+        fi
+        mkdir -p "${CCACHE_DIR}"/ || HAVE_CCACHE=no
+    fi
+}
+
+is_gnucc() {
+    if [ -n "$1" ] && LANG=C "$1" --version 2>&1 | grep 'Free Software Foundation' > /dev/null ; then true ; else false ; fi
+}
+
+is_clang() {
+    if [ -n "$1" ] && LANG=C "$1" --version 2>&1 | grep 'clang version' > /dev/null ; then true ; else false ; fi
+}
+
+filter_version() {
+    # Starting with number like "6.0.0" or "7.5.0-il-0" is fair game,
+    # but a "gcc-4.4.4-il-4" (starting with "gcc") is not
+    sed -e 's,^.* \([0-9][0-9]*\.[0-9][^ ),]*\).*$,\1,' -e 's, .*$,,' | grep -E '^[0-9]' | head -1
+}
+
+ver_gnucc() {
+    [ -n "$1" ] && LANG=C "$1" --version 2>&1 | grep -i gcc | filter_version
+}
+
+ver_clang() {
+    [ -n "$1" ] && LANG=C "$1" --version 2>&1 | grep -i 'clang' | filter_version
+}
+
+optional_prepare_compiler_family() {
+    # Populate CC, CXX, CPP envvars according to actual tools used/requested
+    # Remember them as COMPILER_FAMILY
+    # See also: optional_prepare_ccache(), ensure_CI_CCACHE_SYMLINKDIR_envvar(),
+    # optional_prepare_compiler_family()
+    COMPILER_FAMILY=""
+    if [ -n "$CC" -a -n "$CXX" ]; then
+        if is_gnucc "$CC" && is_gnucc "$CXX" ; then
+            COMPILER_FAMILY="GCC"
+            export CC CXX
+        elif is_clang "$CC" && is_clang "$CXX" ; then
+            COMPILER_FAMILY="CLANG"
+            export CC CXX
+        fi
+    else
+        # Generally we prefer GCC unless it is very old so we can't impact
+        # its warnings and complaints.
+        if is_gnucc "gcc" && is_gnucc "g++" ; then
+            # Autoconf would pick this by default
+            COMPILER_FAMILY="GCC"
+            [ -n "$CC" ] || CC=gcc
+            [ -n "$CXX" ] || CXX=g++
+            export CC CXX
+        elif is_gnucc "cc" && is_gnucc "c++" ; then
+            COMPILER_FAMILY="GCC"
+            [ -n "$CC" ] || CC=cc
+            [ -n "$CXX" ] || CXX=c++
+            export CC CXX
+        fi
+
+        if ( [ "$COMPILER_FAMILY" = "GCC" ] && \
+            case "`ver_gnucc "$CC"`" in
+                [123].*) true ;;
+                4.[0123][.,-]*) true ;;
+                4.[0123]) true ;;
+                *) false ;;
+            esac && \
+            case "`ver_gnucc "$CXX"`" in
+                [123].*) true ;;
+                4.[0123][.,-]*) true ;;
+                4.[0123]) true ;;
+                *) false ;;
+            esac
+        ) ; then
+            echo "NOTE: default GCC here is very old, do we have a CLANG instead?.." >&2
+            COMPILER_FAMILY="GCC_OLD"
+        fi
+
+        if [ -z "$COMPILER_FAMILY" ] || [ "$COMPILER_FAMILY" = "GCC_OLD" ]; then
+            if is_clang "clang" && is_clang "clang++" ; then
+                # Autoconf would pick this by default
+                [ "$COMPILER_FAMILY" = "GCC_OLD" ] && CC="" && CXX=""
+                COMPILER_FAMILY="CLANG"
+                [ -n "$CC" ]  || CC=clang
+                [ -n "$CXX" ] || CXX=clang++
+                export CC CXX
+            elif is_clang "cc" && is_clang "c++" ; then
+                [ "$COMPILER_FAMILY" = "GCC_OLD" ] && CC="" && CXX=""
+                COMPILER_FAMILY="CLANG"
+                [ -n "$CC" ]  || CC=cc
+                [ -n "$CXX" ] || CXX=c++
+                export CC CXX
             fi
         fi
-    done
 
-    if [ -n "${CI_CCACHE_SYMLINKDIR-}" ] ; then
-        echo "INFO: Detected CI_CCACHE_SYMLINKDIR='$CI_CCACHE_SYMLINKDIR'; specify another explicitly if desired" >&2
+        if [ "$COMPILER_FAMILY" = "GCC_OLD" ]; then
+            COMPILER_FAMILY="GCC"
+        fi
+    fi
+
+    if [ -n "$CPP" ] ; then
+        # Note: can be a multi-token name like "clang -E" or just not a full pathname
+        ( [ -x "$CPP" ] || $CPP --help >/dev/null 2>/dev/null ) && export CPP
     else
-        echo "WARNING: Did not find any CI_CCACHE_SYMLINKDIR; specify one explicitly if desired" >&2
+        # Avoid "cpp" directly as it may be too "traditional"
+        case "$COMPILER_FAMILY" in
+            CLANG*|GCC*) CPP="$CC -E" && export CPP ;;
+            *) if is_gnucc "cpp" ; then
+                CPP=cpp && export CPP
+               fi ;;
+        esac
     fi
-else
-    if [ x"${CI_CCACHE_SYMLINKDIR-}" = x- ] ; then
-        echo "INFO: Empty CI_CCACHE_SYMLINKDIR was explicitly requested" >&2
-        CI_CCACHE_SYMLINKDIR=""
+}
+
+optional_ensure_ccache() {
+    # Prepare PATH, CC, CXX envvars to use ccache (if enabled, applicable and available)
+    # See also optional_prepare_ccache()
+    if [ "$HAVE_CCACHE" = yes ] && [ "${COMPILER_FAMILY}" = GCC -o "${COMPILER_FAMILY}" = CLANG ]; then
+        if [ -n "${CI_CCACHE_SYMLINKDIR}" ]; then
+            echo "INFO: Using ccache via PATH preferring tool names in ${CI_CCACHE_SYMLINKDIR}" >&2
+            PATH="${CI_CCACHE_SYMLINKDIR}:$PATH"
+            export PATH
+        else
+            case "$CC" in
+                "") ;; # skip
+                *ccache*) ;; # already requested to use ccache
+                *) CC="ccache $CC" ;;
+            esac
+            case "$CXX" in
+                "") ;; # skip
+                *ccache*) ;; # already requested to use ccache
+                *) CXX="ccache $CXX" ;;
+            esac
+            # No-op for CPP currently
+        fi
+        if [ -n "$CC" ] && [ -n "${CI_CCACHE_SYMLINKDIR}" ]; then
+          if [ -x "${CI_CCACHE_SYMLINKDIR}/`basename "$CC"`" ]; then
+            case "$CC" in
+                *ccache*) ;;
+                */*) DIR_CC="`dirname "$CC"`" && [ -n "$DIR_CC" ] && DIR_CC="`cd "$DIR_CC" && pwd `" && [ -n "$DIR_CC" ] && [ -d "$DIR_CC" ] || DIR_CC=""
+                    [ -z "$CCACHE_PATH" ] && CCACHE_PATH="$DIR_CC" || \
+                    if echo "$CCACHE_PATH" | grep -E '(^'"$DIR_CC"':.*|^'"$DIR_CC"'$|:'"$DIR_CC"':|:'"$DIR_CC"'$)' ; then
+                        CCACHE_PATH="$DIR_CC:$CCACHE_PATH"
+                    fi
+                    ;;
+            esac
+            CC="${CI_CCACHE_SYMLINKDIR}/`basename "$CC"`"
+          else
+            CC="ccache $CC"
+          fi
+        fi
+        if [ -n "$CXX" ] && [ -n "${CI_CCACHE_SYMLINKDIR}" ]; then
+          if [ -x "${CI_CCACHE_SYMLINKDIR}/`basename "$CXX"`" ]; then
+            case "$CXX" in
+                *ccache*) ;;
+                */*) DIR_CXX="`dirname "$CXX"`" && [ -n "$DIR_CXX" ] && DIR_CXX="`cd "$DIR_CXX" && pwd `" && [ -n "$DIR_CXX" ] && [ -d "$DIR_CXX" ] || DIR_CXX=""
+                    [ -z "$CCACHE_PATH" ] && CCACHE_PATH="$DIR_CXX" || \
+                    if echo "$CCACHE_PATH" | grep -E '(^'"$DIR_CXX"':.*|^'"$DIR_CXX"'$|:'"$DIR_CXX"':|:'"$DIR_CXX"'$)' ; then
+                        CCACHE_PATH="$DIR_CXX:$CCACHE_PATH"
+                    fi
+                    ;;
+            esac
+            CXX="${CI_CCACHE_SYMLINKDIR}/`basename "$CXX"`"
+          else
+            CXX="ccache $CXX"
+          fi
+        fi
+        if [ -n "$CPP" ] && [ -n "${CI_CCACHE_SYMLINKDIR}" ] \
+        && [ -x "${CI_CCACHE_SYMLINKDIR}/`basename "$CPP"`" ]; then
+            case "$CPP" in
+                *ccache*) ;;
+                */*) DIR_CPP="`dirname "$CPP"`" && [ -n "$DIR_CPP" ] && DIR_CPP="`cd "$DIR_CPP" && pwd `" && [ -n "$DIR_CPP" ] && [ -d "$DIR_CPP" ] || DIR_CPP=""
+                    [ -z "$CCACHE_PATH" ] && CCACHE_PATH="$DIR_CPP" || \
+                    if echo "$CCACHE_PATH" | grep -E '(^'"$DIR_CPP"':.*|^'"$DIR_CPP"'$|:'"$DIR_CPP"':|:'"$DIR_CPP"'$)' ; then
+                        CCACHE_PATH="$DIR_CPP:$CCACHE_PATH"
+                    fi
+                    ;;
+            esac
+            CPP="${CI_CCACHE_SYMLINKDIR}/`basename "$CPP"`"
+        else
+            : # CPP="ccache $CPP"
+        fi
+
+        CCACHE_BASEDIR="${PWD}"
+        export CCACHE_BASEDIR
+
+        return 0
     fi
-fi
+
+    # Not enabled or incompatible compiler
+    # Still, if ccache somehow gets used, let it
+    # know the correct BASEDIR of the built project
+    CCACHE_BASEDIR="${PWD}"
+    export CCACHE_BASEDIR
+
+    return 1
+}
 
 if [ -z "$TMPDIR" ]; then
     echo "WARNING: TMPDIR not set, trying to guess"
@@ -429,38 +688,43 @@ fi
 [ -n "$CI_OS_NAME" ] || CI_OS_NAME="$TRAVIS_OS_NAME"
 
 case "${CI_OS_NAME}" in
-	windows*)
-		# At the moment WIN32 builds are quite particular in their
-		# desires, for headers to declare what is needed, and yet
-		# there is currently not much real variation in supportable
-		# build environment (mingw variants). Lest we hardcode
-		# stuff in configure script, define some here:
-		case "$CFLAGS" in
-			*-D_POSIX=*) ;;
-			*) CFLAGS="$CFLAGS -D_POSIX=1" ;;
-		esac
-		case "$CFLAGS" in
-			*-D_POSIX_C_SOURCE=*) ;;
-			*) CFLAGS="$CFLAGS -D_POSIX_C_SOURCE=200112L" ;;
-		esac
-		case "$CFLAGS" in
-			*-D_WIN32_WINNT=*) ;;
-			*) CFLAGS="$CFLAGS -D_WIN32_WINNT=0xffff" ;;
-		esac
+    windows-msys2)
+        # No-op: we seem to pass builds on MSYS2 anyway even without
+        # these flags, and a populated CFLAGS happens to be toxic to
+        # ccache builds in that distribution (as of 2022-2025 at least)
+        ;;
+    windows*)
+        # At the moment WIN32 builds are quite particular in their
+        # desires, for headers to declare what is needed, and yet
+        # there is currently not much real variation in supportable
+        # build environment (mingw variants). Lest we hardcode
+        # stuff in configure script, define some here:
+        case "$CFLAGS" in
+            *-D_POSIX=*) ;;
+            *) CFLAGS="$CFLAGS -D_POSIX=1" ;;
+        esac
+        case "$CFLAGS" in
+            *-D_POSIX_C_SOURCE=*) ;;
+            *) CFLAGS="$CFLAGS -D_POSIX_C_SOURCE=200112L" ;;
+        esac
+        case "$CFLAGS" in
+            *-D_WIN32_WINNT=*) ;;
+            *) CFLAGS="$CFLAGS -D_WIN32_WINNT=0xffff" ;;
+        esac
 
-		case "$CXXFLAGS" in
-			*-D_POSIX=*) ;;
-			*) CXXFLAGS="$CXXFLAGS -D_POSIX=1" ;;
-		esac
-		case "$CXXFLAGS" in
-			*-D_POSIX_C_SOURCE=*) ;;
-			*) CXXFLAGS="$CXXFLAGS -D_POSIX_C_SOURCE=200112L" ;;
-		esac
-		case "$CXXFLAGS" in
-			*-D_WIN32_WINNT=*) ;;
-			*) CXXFLAGS="$CXXFLAGS -D_WIN32_WINNT=0xffff" ;;
-		esac
-		;;
+        case "$CXXFLAGS" in
+            *-D_POSIX=*) ;;
+            *) CXXFLAGS="$CXXFLAGS -D_POSIX=1" ;;
+        esac
+        case "$CXXFLAGS" in
+            *-D_POSIX_C_SOURCE=*) ;;
+            *) CXXFLAGS="$CXXFLAGS -D_POSIX_C_SOURCE=200112L" ;;
+        esac
+        case "$CXXFLAGS" in
+            *-D_WIN32_WINNT=*) ;;
+            *) CXXFLAGS="$CXXFLAGS -D_WIN32_WINNT=0xffff" ;;
+        esac
+        ;;
 esac
 
 # Analyze some environmental choices
@@ -475,12 +739,262 @@ if [ -z "${CANBUILD_LIBGD_CGI-}" ]; then
     # See also below for some compiler-dependent decisions
 fi
 
+detect_platform_CANBUILD_LIBGD_CGI() {
+    # Call after optional_prepare_compiler_family()!
+    if [ -z "${CANBUILD_LIBGD_CGI-}" ]; then
+        if [[ "$CI_OS_NAME" = "openindiana" ]] ; then
+            # For some reason, here gcc-4.x (4.4.4, 4.9) have a problem with
+            # configure-time checks of libgd; newer compilers fare okay.
+            # Feel free to revise this if the distro packages are fixed
+            # (or the way configure script and further build uses them).
+            # UPDATE: Per https://github.com/networkupstools/nut/pull/1089
+            # This is a systems issue (in current OpenIndiana 2021.04 built
+            # with a newer GCC version, the older GCC is not ABI compatible
+            # with the libgd shared object file). Maybe this warrants later
+            # caring about not just the CI_OS_NAME but also CI_OS_RELEASE...
+            if [[ "$COMPILER_FAMILY" = "GCC" ]]; then
+                case "`LANG=C $CC --version | head -1`" in
+                    *[\ -][01234].*)
+                        echo "WARNING: Seems we are running with gcc-4.x or older on $CI_OS_NAME, which last had known issues with libgd; disabling CGI for this build"
+                        CANBUILD_LIBGD_CGI=no
+                        ;;
+                    *)
+                        case "${ARCH}${BITS}${ARCH_BITS}" in
+                            *64*|*sparcv9*) ;;
+                            *)
+                                # GCC-7 (maybe other older compilers) could default
+                                # to 32-bit builds, and the 32-bit libfontconfig.so
+                                # and libfreetype.so are absent for some years now
+                                # (while libgd.so still claims to exist).
+                                echo "WARNING: Seems we are running with gcc on $CI_OS_NAME, which last had known issues with libgd on non-64-bit builds; making CGI optional for this build"
+                                CANBUILD_LIBGD_CGI=auto
+                                ;;
+                        esac
+                        ;;
+                esac
+            else
+                case "${ARCH}${BITS}${ARCH_BITS}" in
+                    *64*|*sparcv9*) ;;
+                    *)
+                        echo "WARNING: Seems we are running with $COMPILER_FAMILY on $CI_OS_NAME, which last had known issues with libgd on non-64-bit builds; making CGI optional for this build"
+                        CANBUILD_LIBGD_CGI=auto
+                        ;;
+                esac
+            fi
+        fi
+    fi
+}
+
 if [ -z "${PKG_CONFIG-}" ]; then
     # Default to using one from PATH, if any - mostly for config tuning done
     # below in this script
     # DO NOT "export" it here so configure script can find one for the build
     PKG_CONFIG="pkg-config"
 fi
+
+detect_platform_PKG_CONFIG_PATH_and_FLAGS() {
+    # Some systems want a custom PKG_CONFIG_PATH which would be prepended
+    # to whatever the callers might have provided as their PKG_CONFIG_PATH.
+    # Optionally provided by some CI build scenarios: DEFAULT_PKG_CONFIG_PATH
+    # On some platforms also barges in to CONFIG_OPTS[] (should exist!),
+    # PATH, CFLAGS, CXXFLAGS, LDFLAGS, XML_CATALOG_FILES et al.
+    #
+    # Caller can override by OVERRIDE_PKG_CONFIG_PATH (ignore other values
+    # then, including a PKG_CONFIG_PATH), where a "-" value leaves it empty.
+    SYS_PKG_CONFIG_PATH="" # Let the OS guess... usually
+    BUILTIN_PKG_CONFIG_PATH="`pkg-config --variable pc_path pkg-config`" || BUILTIN_PKG_CONFIG_PATH=""
+    case "`echo "$CI_OS_NAME" | tr 'A-Z' 'a-z'`" in
+        *openindiana*|*omnios*|*solaris*|*illumos*|*sunos*)
+            _ARCHES="${ARCH-}"
+            _BITS="${BITS-}"
+            _ISA1=""
+
+            [ -n "${_BITS}" ] || \
+            case "${CC}${CXX}${CFLAGS}${CXXFLAGS}${LDFLAGS}" in
+                *-m64*) _BITS=64 ;;
+                *-m32*) _BITS=32 ;;
+                *)  case "${ARCH-}${ARCH_BITS-}" in
+                        *64*|*sparcv9*) _BITS=64 ;;
+                        *32*|*86*|*sparcv7*|*sparc) _BITS=32 ;;
+                        *)  _ISA1="`isainfo | awk '{print $1}'`"
+                            case "${_ISA1}" in
+                                *64*|*sparcv9*) _BITS=64 ;;
+                                *32*|*86*|*sparcv7*|*sparc) _BITS=32 ;;
+                            esac
+                            ;;
+                    esac
+                    ;;
+            esac
+
+            # Consider also `gcc -v`/`clang -v`: their "Target:" line exposes the
+            # triplet compiler was built to run on, e.g. "x86_64-pc-solaris2.11"
+            case "${_ARCHES}${ARCH_BITS-}" in
+                *amd64*|*x86_64*) _ARCHES="amd64" ;;
+                *sparcv9*) _ARCHES="sparcv9" ;;
+                *86*) _ARCHES="i86pc i386" ;;
+                *sparcv7*|*sparc) _ARCHES="sparcv7 sparc" ;;
+                *)  [ -n "${_ISA1}" ] || _ISA1="`isainfo | awk '{print $1}'`"
+                    case "${_ISA1}" in
+                        *amd64*|*x86_64*) _ARCHES="amd64" ;;
+                        *sparcv9*) _ARCHES="sparcv9" ;;
+                        *86*) _ARCHES="i86pc i386" ;;
+                        *sparcv7*|*sparc) _ARCHES="sparcv7 sparc" ;;
+                    esac
+                    ;;
+            esac
+
+            # Pile it on, strip extra ":" and dedup entries later
+            for D in \
+                "/opt/ooce/lib" \
+                "/usr/lib" \
+            ; do
+                if [ -d "$D" ] ; then
+                    _ADDSHORT=false
+                    if [ -n "${_BITS}" ] ; then
+                        if [ -d "${D}/${_BITS}/pkgconfig" ] ; then
+                            SYS_PKG_CONFIG_PATH="${SYS_PKG_CONFIG_PATH}:${D}/${_BITS}/pkgconfig"
+                            # Here and below: hot-fix for https://github.com/networkupstools/nut/issues/2782
+                            # situation on OmniOS with Extra repository,
+                            # assumed only useful if we use it via pkgconfig
+                            case "${D}" in
+                                /usr/lib) ;;
+                                *) LDFLAGS="${LDFLAGS} -R${D}/${_BITS}" ;;
+                            esac
+                        else
+                            if [ -d "${D}/pkgconfig" ] ; then
+                                case "`LANG=C LC_ALL=C file $(ls -1 $D/*.so | head -1)`" in
+                                    *"ELF ${_BITS}-bit"*) _ADDSHORT=true ;;
+                                esac
+                            fi
+                        fi
+                    fi
+                    for _ARCH in $_ARCHES ; do
+                        if [ -d "${D}/${_ARCH}/pkgconfig" ] ; then
+                            SYS_PKG_CONFIG_PATH="${SYS_PKG_CONFIG_PATH}:${D}/${_ARCH}/pkgconfig"
+                            case "${D}" in
+                                /usr/lib) ;;
+                                *) LDFLAGS="${LDFLAGS} -R${D}/${_ARCH}" ;;
+                            esac
+                        else
+                            if [ -d "${D}/pkgconfig" ] ; then
+                                case "`LANG=C LC_ALL=C file $(ls -1 $D/*.so | head -1)`" in
+                                    *"ELF 32-bit"*" SPARC "*)
+                                        case "${_ARCH}" in
+                                            sparc|sparcv7) _ADDSHORT=true ;;
+                                        esac
+                                        ;;
+                                    *"ELF 64-bit"*" SPARCV9 "*)
+                                        case "${_ARCH}" in
+                                            sparcv9) _ADDSHORT=true ;;
+                                        esac
+                                        ;;
+                                    *"ELF 32-bit"*" 80386 "*)
+                                        case "${_ARCH}" in
+                                            i386|i86pc) _ADDSHORT=true ;;
+                                        esac
+                                        ;;
+                                    *"ELF 64-bit"*" AMD64 "*)
+                                        case "${_ARCH}" in
+                                            amd64) _ADDSHORT=true ;;
+                                        esac
+                                        ;;
+                                esac
+                            fi
+                        fi
+                    done
+                    if [ "${_ADDSHORT}" = true ] ; then
+                        SYS_PKG_CONFIG_PATH="${SYS_PKG_CONFIG_PATH}:${D}/pkgconfig"
+                        case "${D}" in
+                            /usr/lib) ;;
+                            *) LDFLAGS="${LDFLAGS} -R${D}" ;;
+                        esac
+                    fi
+                fi
+            done
+
+            # Last option if others are lacking
+            if [ -d /usr/lib/pkgconfig ] ; then
+                SYS_PKG_CONFIG_PATH="${SYS_PKG_CONFIG_PATH}:/usr/lib/pkgconfig"
+            fi
+            unset _ADDSHORT _BITS _ARCH _ARCHES D
+
+            # OmniOS CE "Extra" repository
+            case "$PATH" in
+                /opt/ooce/bin|*:/opt/ooce/bin|/opt/ooce/bin:*|*:/opt/ooce/bin:*) ;;
+                *) if [ -d "/opt/ooce/bin" ] ; then PATH="/opt/ooce/bin:${PATH}" ; fi ;;
+            esac
+            ;;
+        *darwin*|*macos*|*osx*)
+            # Architecture-dependent base dir, e.g.
+            # * /usr/local on macos x86
+            # * /opt/homebrew on macos Apple Silicon
+            if [ -n "${HOMEBREW_PREFIX-}" -a -d "${HOMEBREW_PREFIX-}" ]; then
+                echo "Homebrew: export general pkg-config location and C/C++/LD flags for the platform"
+                SYS_PKG_CONFIG_PATH="${HOMEBREW_PREFIX}/lib/pkgconfig"
+                CFLAGS="${CFLAGS-} -Wno-poison-system-directories -Wno-deprecated-declarations -isystem ${HOMEBREW_PREFIX}/include -I${HOMEBREW_PREFIX}/include"
+                #CPPFLAGS="${CPPFLAGS-} -Wno-poison-system-directories -Wno-deprecated-declarations -isystem ${HOMEBREW_PREFIX}/include -I${HOMEBREW_PREFIX}/include"
+                CXXFLAGS="${CXXFLAGS-} -Wno-poison-system-directories -isystem ${HOMEBREW_PREFIX}/include -I${HOMEBREW_PREFIX}/include"
+                LDFLAGS="${LDFLAGS-} -L${HOMEBREW_PREFIX}/lib"
+
+                # Net-SNMP "clashes" with system-provided tools (but no header/lib)
+                # so explicit args are needed
+                checkFSobj="${HOMEBREW_PREFIX}/opt/net-snmp/lib/pkgconfig"
+                if [ -d "$checkFSobj" -a ! -e "${HOMEBREW_PREFIX}/lib/pkgconfig/netsnmp.pc" ] ; then
+                    echo "Homebrew: export pkg-config location for Net-SNMP"
+                    SYS_PKG_CONFIG_PATH="$SYS_PKG_CONFIG_PATH:$checkFSobj"
+                    #echo "Homebrew: export flags for Net-SNMP"
+                    #CONFIG_OPTS+=("--with-snmp-includes=-isystem ${HOMEBREW_PREFIX}/opt/net-snmp/include -I${HOMEBREW_PREFIX}/opt/net-snmp/include")
+                    #CONFIG_OPTS+=("--with-snmp-libs=-L${HOMEBREW_PREFIX}/opt/net-snmp/lib")
+                fi
+
+                if [ -d "${HOMEBREW_PREFIX}/opt/net-snmp/include" -a -d "${HOMEBREW_PREFIX}/include/openssl" ]; then
+                    # TODO? Check netsnmp.pc for Libs.private with
+                    #   -L/opt/homebrew/opt/openssl@1.1/lib
+                    # or
+                    #   -L/usr/local/opt/openssl@3/lib
+                    # among other options to derive the exact version
+                    # it wants, and serve that include path here
+                    echo "Homebrew: export configure options for Net-SNMP with default OpenSSL headers (too intimate on Homebrew)"
+                    CONFIG_OPTS+=("--with-snmp-includes=-isystem ${HOMEBREW_PREFIX}/opt/net-snmp/include -I${HOMEBREW_PREFIX}/opt/net-snmp/include -isystem ${HOMEBREW_PREFIX}/include -I${HOMEBREW_PREFIX}/include")
+                    CONFIG_OPTS+=("--with-snmp-libs=-L${HOMEBREW_PREFIX}/opt/net-snmp/lib -lnetsnmp")
+                fi
+
+                # A bit hackish to check this outside `configure`, but...
+                if [ -s "${HOMEBREW_PREFIX-}/include/ltdl.h" ] ; then
+                    echo "Homebrew: export flags for LibLTDL"
+                    # The m4 script clear default CFLAGS/LIBS so benefit from new ones
+                    CONFIG_OPTS+=("--with-libltdl-includes=-isystem ${HOMEBREW_PREFIX}/include -I${HOMEBREW_PREFIX}/include")
+                    CONFIG_OPTS+=("--with-libltdl-libs=-L${HOMEBREW_PREFIX}/lib -lltdl")
+                fi
+
+                if [ -z "${XML_CATALOG_FILES-}" ] ; then
+                    checkFSobj="${HOMEBREW_PREFIX}/etc/xml/catalog"
+                    if [ -e "$checkFSobj" ] ; then
+                        echo "Homebrew: export XML_CATALOG_FILES='$checkFSobj' for asciidoc et al"
+                        XML_CATALOG_FILES="$checkFSobj"
+                        export XML_CATALOG_FILES
+                    fi
+                fi
+            else
+                echo "WARNING: It seems you are building on MacOS, but HOMEBREW_PREFIX is not set or valid."
+                echo 'If you do use this build system, try running   eval "$(brew shellenv)"'
+                echo "in your terminal or shell profile, it can help with auto-detection of some features!"
+            fi
+            ;;
+    esac
+
+    if [ -n "${OVERRIDE_PKG_CONFIG_PATH-}" ] ; then
+        if [ x"${OVERRIDE_PKG_CONFIG_PATH}" = x- ] ; then
+            PKG_CONFIG_PATH=""
+        else
+            PKG_CONFIG_PATH="${OVERRIDE_PKG_CONFIG_PATH}"
+        fi
+        return
+    fi
+
+    # Do not check for existence of non-trivial values, we normalize the mess (if any)
+    PKG_CONFIG_PATH="`echo "${DEFAULT_PKG_CONFIG_PATH-}:${SYS_PKG_CONFIG_PATH-}:${PKG_CONFIG_PATH-}:${BUILTIN_PKG_CONFIG_PATH-}" | normalize_path`"
+}
 
 # Would hold full path to the CONFIGURE_SCRIPT="${SCRIPTDIR}/${CONFIGURE_SCRIPT_FILENAME}"
 CONFIGURE_SCRIPT=""
@@ -856,6 +1370,7 @@ fi
 
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 
+ensure_CI_CCACHE_SYMLINKDIR_envvar
 echo "Build host settings:"
 set | grep -E '^(PATH|[^ ]*CCACHE[^ ]*|CI_[^ ]*|OS_[^ ]*|CANBUILD_[^ ]*|NODE_LABELS|MAKE|C[^ ]*FLAGS|LDFLAGS|ARCH[^ ]*|BITS[^ ]*|CC|CXX|CPP|DO_[^ ]*|BUILD_[^ ]*)=' || true
 uname -a
@@ -883,42 +1398,10 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     BUILD_PREFIX="$PWD/tmp"
     INST_PREFIX="$PWD/.inst"
 
-    echo "PATH='$PATH' before possibly applying CCACHE into the mix"
-    ( echo "$PATH" | grep ccache ) >/dev/null && echo "WARNING: ccache is already in PATH"
-    if [ -n "$CC" ]; then
-        echo "CC='$CC' before possibly applying CCACHE into the mix"
-        $CC --version $CFLAGS || \
-        $CC --version || true
-    fi
-
-    if [ -n "$CXX" ]; then
-        echo "CXX='$CXX' before possibly applying CCACHE into the mix"
-        $CXX --version $CXXFLAGS || \
-        $CXX --version || true
-    fi
-
-    if [ x"${CI_CCACHE_USE-}" = xno ]; then
-        HAVE_CCACHE=no
-        CI_CCACHE_SYMLINKDIR=""
-        echo "WARNING: Caller required to not use ccache even if available" >&2
-    else
-        if [ -n "${CI_CCACHE_SYMLINKDIR}" ]; then
-            # Tell ccache the PATH without itself in it, to avoid loops processing
-            PATH="`echo "$PATH" | sed -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?$,,' -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?$,,'`"
-        fi
-        CCACHE_PATH="$PATH"
-        CCACHE_DIR="${HOME}/.ccache"
-        export CCACHE_PATH CCACHE_DIR PATH
-        HAVE_CCACHE=no
-        if (command -v ccache || which ccache) \
-        && ( [ -z "${CI_CCACHE_SYMLINKDIR}" ] || ls -la "${CI_CCACHE_SYMLINKDIR}" ) \
-        ; then
-            HAVE_CCACHE=yes
-        fi
-        mkdir -p "${CCACHE_DIR}"/ || HAVE_CCACHE=no
-    fi
-
+    optional_prepare_ccache
     ccache_stats "before"
+
+    optional_prepare_compiler_family
 
     CONFIG_OPTS=()
     COMMON_CFLAGS=""
@@ -926,242 +1409,17 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     EXTRA_CPPFLAGS=""
     EXTRA_CXXFLAGS=""
 
-    is_gnucc() {
-        if [ -n "$1" ] && LANG=C "$1" --version 2>&1 | grep 'Free Software Foundation' > /dev/null ; then true ; else false ; fi
-    }
+    detect_platform_CANBUILD_LIBGD_CGI
 
-    is_clang() {
-        if [ -n "$1" ] && LANG=C "$1" --version 2>&1 | grep 'clang version' > /dev/null ; then true ; else false ; fi
-    }
-
-    filter_version() {
-        # Starting with number like "6.0.0" or "7.5.0-il-0" is fair game,
-        # but a "gcc-4.4.4-il-4" (starting with "gcc") is not
-        sed -e 's,^.* \([0-9][0-9]*\.[0-9][^ ),]*\).*$,\1,' -e 's, .*$,,' | grep -E '^[0-9]' | head -1
-    }
-
-    ver_gnucc() {
-        [ -n "$1" ] && LANG=C "$1" --version 2>&1 | grep -i gcc | filter_version
-    }
-
-    ver_clang() {
-        [ -n "$1" ] && LANG=C "$1" --version 2>&1 | grep -i 'clang' | filter_version
-    }
-
-    COMPILER_FAMILY=""
-    if [ -n "$CC" -a -n "$CXX" ]; then
-        if is_gnucc "$CC" && is_gnucc "$CXX" ; then
-            COMPILER_FAMILY="GCC"
-            export CC CXX
-        elif is_clang "$CC" && is_clang "$CXX" ; then
-            COMPILER_FAMILY="CLANG"
-            export CC CXX
-        fi
-    else
-        # Generally we prefer GCC unless it is very old so we can't impact
-        # its warnings and complaints.
-        if is_gnucc "gcc" && is_gnucc "g++" ; then
-            # Autoconf would pick this by default
-            COMPILER_FAMILY="GCC"
-            [ -n "$CC" ] || CC=gcc
-            [ -n "$CXX" ] || CXX=g++
-            export CC CXX
-        elif is_gnucc "cc" && is_gnucc "c++" ; then
-            COMPILER_FAMILY="GCC"
-            [ -n "$CC" ] || CC=cc
-            [ -n "$CXX" ] || CXX=c++
-            export CC CXX
-        fi
-
-        if ( [ "$COMPILER_FAMILY" = "GCC" ] && \
-            case "`ver_gnucc "$CC"`" in
-                [123].*) true ;;
-                4.[0123][.,-]*) true ;;
-                4.[0123]) true ;;
-                *) false ;;
-            esac && \
-            case "`ver_gnucc "$CXX"`" in
-                [123].*) true ;;
-                4.[0123][.,-]*) true ;;
-                4.[0123]) true ;;
-                *) false ;;
-            esac
-        ) ; then
-            echo "NOTE: default GCC here is very old, do we have a CLANG instead?.." >&2
-            COMPILER_FAMILY="GCC_OLD"
-        fi
-
-        if [ -z "$COMPILER_FAMILY" ] || [ "$COMPILER_FAMILY" = "GCC_OLD" ]; then
-            if is_clang "clang" && is_clang "clang++" ; then
-                # Autoconf would pick this by default
-                [ "$COMPILER_FAMILY" = "GCC_OLD" ] && CC="" && CXX=""
-                COMPILER_FAMILY="CLANG"
-                [ -n "$CC" ]  || CC=clang
-                [ -n "$CXX" ] || CXX=clang++
-                export CC CXX
-            elif is_clang "cc" && is_clang "c++" ; then
-                [ "$COMPILER_FAMILY" = "GCC_OLD" ] && CC="" && CXX=""
-                COMPILER_FAMILY="CLANG"
-                [ -n "$CC" ]  || CC=cc
-                [ -n "$CXX" ] || CXX=c++
-                export CC CXX
-            fi
-        fi
-
-        if [ "$COMPILER_FAMILY" = "GCC_OLD" ]; then
-            COMPILER_FAMILY="GCC"
-        fi
-    fi
-
-    if [ -n "$CPP" ] ; then
-        # Note: can be a multi-token name like "clang -E" or just not a full pathname
-        ( [ -x "$CPP" ] || $CPP --help >/dev/null 2>/dev/null ) && export CPP
-    else
-        # Avoid "cpp" directly as it may be too "traditional"
-        case "$COMPILER_FAMILY" in
-            CLANG*|GCC*) CPP="$CC -E" && export CPP ;;
-            *) if is_gnucc "cpp" ; then
-                CPP=cpp && export CPP
-               fi ;;
-        esac
-    fi
-
-    if [ -z "${CANBUILD_LIBGD_CGI-}" ]; then
-        if [[ "$CI_OS_NAME" = "openindiana" ]] ; then
-            # For some reason, here gcc-4.x (4.4.4, 4.9) have a problem with
-            # configure-time checks of libgd; newer compilers fare okay.
-            # Feel free to revise this if the distro packages are fixed
-            # (or the way configure script and further build uses them).
-            # UPDATE: Per https://github.com/networkupstools/nut/pull/1089
-            # This is a systems issue (in current OpenIndiana 2021.04 built
-            # with a newer GCC version, the older GCC is not ABI compatible
-            # with the libgd shared object file). Maybe this warrants later
-            # caring about not just the CI_OS_NAME but also CI_OS_RELEASE...
-            if [[ "$COMPILER_FAMILY" = "GCC" ]]; then
-                case "`LANG=C $CC --version | head -1`" in
-                    *[\ -][01234].*)
-                        echo "WARNING: Seems we are running with gcc-4.x or older on $CI_OS_NAME, which last had known issues with libgd; disabling CGI for this build"
-                        CANBUILD_LIBGD_CGI=no
-                        ;;
-                    *)
-                        case "${ARCH}${BITS}${ARCH_BITS}" in
-                            *64*|*sparcv9*) ;;
-                            *)
-                                # GCC-7 (maybe other older compilers) could default
-                                # to 32-bit builds, and the 32-bit libfontconfig.so
-                                # and libfreetype.so are absent for some years now
-                                # (while libgd.so still claims to exist).
-                                echo "WARNING: Seems we are running with gcc on $CI_OS_NAME, which last had known issues with libgd on non-64-bit builds; making CGI optional for this build"
-                                CANBUILD_LIBGD_CGI=auto
-                                ;;
-                        esac
-                        ;;
-                esac
-            else
-                case "${ARCH}${BITS}${ARCH_BITS}" in
-                    *64*|*sparcv9*) ;;
-                    *)
-                        echo "WARNING: Seems we are running with $COMPILER_FAMILY on $CI_OS_NAME, which last had known issues with libgd on non-64-bit builds; making CGI optional for this build"
-                        CANBUILD_LIBGD_CGI=auto
-                        ;;
-                esac
-            fi
-        fi
-    fi
-
+    # Prepend or use this build's preferred artifacts, if any
     DEFAULT_PKG_CONFIG_PATH="${BUILD_PREFIX}/lib/pkgconfig"
-    SYSPKG_CONFIG_PATH="" # Let the OS guess... usually
-    case "`echo "$CI_OS_NAME" | tr 'A-Z' 'a-z'`" in
-        *openindiana*|*omnios*|*solaris*|*illumos*|*sunos*)
-            case "$CC$CXX$CFLAGS$CXXFLAGS$LDFLAGS" in
-                *-m64*)
-                    SYS_PKG_CONFIG_PATH="/usr/lib/64/pkgconfig:/usr/lib/amd64/pkgconfig:/usr/lib/sparcv9/pkgconfig:/usr/lib/pkgconfig"
-                    ;;
-                *-m32*)
-                    SYS_PKG_CONFIG_PATH="/usr/lib/32/pkgconfig:/usr/lib/pkgconfig:/usr/lib/i86pc/pkgconfig:/usr/lib/i386/pkgconfig:/usr/lib/sparcv7/pkgconfig"
-                    ;;
-                *)
-                    case "${ARCH}${BITS}${ARCH_BITS}" in
-                        *64*)
-                            SYS_PKG_CONFIG_PATH="/usr/lib/64/pkgconfig:/usr/lib/amd64/pkgconfig:/usr/lib/sparcv9/pkgconfig:/usr/lib/pkgconfig"
-                            ;;
-                        *32*)
-                            SYS_PKG_CONFIG_PATH="/usr/lib/32/pkgconfig:/usr/lib/pkgconfig:/usr/lib/i86pc/pkgconfig:/usr/lib/i386/pkgconfig:/usr/lib/sparcv7/pkgconfig"
-                            ;;
-                    esac
-                    ;;
-            esac
-            ;;
-        *darwin*|*macos*|*osx*)
-            # Architecture-dependent base dir, e.g.
-            # * /usr/local on macos x86
-            # * /opt/homebrew on macos Apple Silicon
-            if [ -n "${HOMEBREW_PREFIX-}" -a -d "${HOMEBREW_PREFIX-}" ]; then
-                echo "Homebrew: export general pkg-config location and C/C++/LD flags for the platform"
-                SYS_PKG_CONFIG_PATH="${HOMEBREW_PREFIX}/lib/pkgconfig"
-                CFLAGS="${CFLAGS-} -Wno-poison-system-directories -Wno-deprecated-declarations -isystem ${HOMEBREW_PREFIX}/include -I${HOMEBREW_PREFIX}/include"
-                #CPPFLAGS="${CPPFLAGS-} -Wno-poison-system-directories -Wno-deprecated-declarations -isystem ${HOMEBREW_PREFIX}/include -I${HOMEBREW_PREFIX}/include"
-                CXXFLAGS="${CXXFLAGS-} -Wno-poison-system-directories -isystem ${HOMEBREW_PREFIX}/include -I${HOMEBREW_PREFIX}/include"
-                LDFLAGS="${LDFLAGS-} -L${HOMEBREW_PREFIX}/lib"
-
-                # Net-SNMP "clashes" with system-provided tools (but no header/lib)
-                # so explicit args are needed
-                checkFSobj="${HOMEBREW_PREFIX}/opt/net-snmp/lib/pkgconfig"
-                if [ -d "$checkFSobj" -a ! -e "${HOMEBREW_PREFIX}/lib/pkgconfig/netsnmp.pc" ] ; then
-                    echo "Homebrew: export pkg-config location for Net-SNMP"
-                    SYS_PKG_CONFIG_PATH="$SYS_PKG_CONFIG_PATH:$checkFSobj"
-                    #echo "Homebrew: export flags for Net-SNMP"
-                    #CONFIG_OPTS+=("--with-snmp-includes=-isystem ${HOMEBREW_PREFIX}/opt/net-snmp/include -I${HOMEBREW_PREFIX}/opt/net-snmp/include")
-                    #CONFIG_OPTS+=("--with-snmp-libs=-L${HOMEBREW_PREFIX}/opt/net-snmp/lib")
-                fi
-
-                if [ -d "${HOMEBREW_PREFIX}/opt/net-snmp/include" -a -d "${HOMEBREW_PREFIX}/include/openssl" ]; then
-                    # TODO? Check netsnmp.pc for Libs.private with
-                    #   -L/opt/homebrew/opt/openssl@1.1/lib
-                    # or
-                    #   -L/usr/local/opt/openssl@3/lib
-                    # among other options to derive the exact version
-                    # it wants, and serve that include path here
-                    echo "Homebrew: export configure options for Net-SNMP with default OpenSSL headers (too intimate on Homebrew)"
-                    CONFIG_OPTS+=("--with-snmp-includes=-isystem ${HOMEBREW_PREFIX}/opt/net-snmp/include -I${HOMEBREW_PREFIX}/opt/net-snmp/include -isystem ${HOMEBREW_PREFIX}/include -I${HOMEBREW_PREFIX}/include")
-                    CONFIG_OPTS+=("--with-snmp-libs=-L${HOMEBREW_PREFIX}/opt/net-snmp/lib -lnetsnmp")
-                fi
-
-                # A bit hackish to check this outside `configure`, but...
-                if [ -s "${HOMEBREW_PREFIX-}/include/ltdl.h" ] ; then
-                    echo "Homebrew: export flags for LibLTDL"
-                    # The m4 script clear default CFLAGS/LIBS so benefit from new ones
-                    CONFIG_OPTS+=("--with-libltdl-includes=-isystem ${HOMEBREW_PREFIX}/include -I${HOMEBREW_PREFIX}/include")
-                    CONFIG_OPTS+=("--with-libltdl-libs=-L${HOMEBREW_PREFIX}/lib -lltdl")
-                fi
-
-                if [ -z "${XML_CATALOG_FILES-}" ] ; then
-                    checkFSobj="${HOMEBREW_PREFIX}/etc/xml/catalog"
-                    if [ -e "$checkFSobj" ] ; then
-                        echo "Homebrew: export XML_CATALOG_FILES='$checkFSobj' for asciidoc et al"
-                        XML_CATALOG_FILES="$checkFSobj"
-                        export XML_CATALOG_FILES
-                    fi
-                fi
-            else
-                echo "WARNING: It seems you are building on MacOS, but HOMEBREW_PREFIX is not set or valid."
-                echo 'If you do use this build system, try running   eval "$(brew shellenv)"'
-                echo "in your terminal or shell profile, it can help with auto-detection of some features!"
-            fi
-            ;;
-    esac
-    if [ -n "$SYS_PKG_CONFIG_PATH" ] ; then
-        if [ -n "$PKG_CONFIG_PATH" ] ; then
-            PKG_CONFIG_PATH="$SYS_PKG_CONFIG_PATH:$PKG_CONFIG_PATH"
-        else
-            PKG_CONFIG_PATH="$SYS_PKG_CONFIG_PATH"
-        fi
-    fi
+    detect_platform_PKG_CONFIG_PATH_and_FLAGS
     if [ -n "$PKG_CONFIG_PATH" ] ; then
-        CONFIG_OPTS+=("PKG_CONFIG_PATH=${DEFAULT_PKG_CONFIG_PATH}:${PKG_CONFIG_PATH}")
-    else
-        CONFIG_OPTS+=("PKG_CONFIG_PATH=${DEFAULT_PKG_CONFIG_PATH}")
+        CONFIG_OPTS+=("PKG_CONFIG_PATH=${PKG_CONFIG_PATH}")
     fi
+
+    PATH="`echo "${PATH}" | normalize_path`"
+    CCACHE_PATH="`echo "${CCACHE_PATH}" | normalize_path`"
 
     # Note: Potentially there can be spaces in entries for multiple
     # *FLAGS here; this should be okay as long as entry expands to
@@ -1202,6 +1460,12 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # Just make sure relevant install recipes are tested:
     CONFIG_OPTS+=("--with-nut_monitor=force")
     CONFIG_OPTS+=("--with-pynut=auto")
+
+    # Primarily here to ensure libusb-1.0 use on MSYS2/mingw
+    # when 0.1 is available too
+    if [ "${CANBUILD_WITH_LIBMODBUS_USB-}" = yes ] ; then
+        CONFIG_OPTS+=("--with-modbus+usb=yes")
+    fi
 
     # Similarly for nut-scanner which requires libltdl which
     # is not ubiquitous on CI workers. So unless agent labels
@@ -1345,7 +1609,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
                 # Currently --with-all implies this, but better be sure to
                 # really build everything we can to be certain it builds:
                 if [ "${CANBUILD_LIBGD_CGI-}" != "auto" ] && (
-                   $PKG_CONFIG --exists libgd || $PKG_CONFIG --exists libgd2 || $PKG_CONFIG --exists libgd3 || $PKG_CONFIG --exists gdlib || $PKG_CONFIG --exists gd 
+                   $PKG_CONFIG --exists libgd || $PKG_CONFIG --exists libgd2 || $PKG_CONFIG --exists libgd3 || $PKG_CONFIG --exists gdlib || $PKG_CONFIG --exists gd
                 ) ; then
                     CONFIG_OPTS+=("--with-cgi=yes")
                 else
@@ -1402,72 +1666,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # NOTE: The case "$BUILD_TYPE" above was about setting CONFIG_OPTS.
     # There is another below for running actual scenarios.
 
-    if [ "$HAVE_CCACHE" = yes ] && [ "${COMPILER_FAMILY}" = GCC -o "${COMPILER_FAMILY}" = CLANG ]; then
-        if [ -n "${CI_CCACHE_SYMLINKDIR}" ]; then
-            echo "INFO: Using ccache via PATH preferring tool names in ${CI_CCACHE_SYMLINKDIR}" >&2
-            PATH="${CI_CCACHE_SYMLINKDIR}:$PATH"
-            export PATH
-        else
-            case "$CC" in
-                "") ;; # skip
-                *ccache*) ;; # already requested to use ccache
-                *) CC="ccache $CC" ;;
-            esac
-            case "$CXX" in
-                "") ;; # skip
-                *ccache*) ;; # already requested to use ccache
-                *) CXX="ccache $CXX" ;;
-            esac
-            # No-op for CPP currently
-        fi
-        if [ -n "$CC" ] && [ -n "${CI_CCACHE_SYMLINKDIR}" ]; then
-          if [ -x "${CI_CCACHE_SYMLINKDIR}/`basename "$CC"`" ]; then
-            case "$CC" in
-                *ccache*) ;;
-                */*) DIR_CC="`dirname "$CC"`" && [ -n "$DIR_CC" ] && DIR_CC="`cd "$DIR_CC" && pwd `" && [ -n "$DIR_CC" ] && [ -d "$DIR_CC" ] || DIR_CC=""
-                    [ -z "$CCACHE_PATH" ] && CCACHE_PATH="$DIR_CC" || \
-                    if echo "$CCACHE_PATH" | grep -E '(^'"$DIR_CC"':.*|^'"$DIR_CC"'$|:'"$DIR_CC"':|:'"$DIR_CC"'$)' ; then
-                        CCACHE_PATH="$DIR_CC:$CCACHE_PATH"
-                    fi
-                    ;;
-            esac
-            CC="${CI_CCACHE_SYMLINKDIR}/`basename "$CC"`"
-          else
-            CC="ccache $CC"
-          fi
-        fi
-        if [ -n "$CXX" ] && [ -n "${CI_CCACHE_SYMLINKDIR}" ]; then
-          if [ -x "${CI_CCACHE_SYMLINKDIR}/`basename "$CXX"`" ]; then
-            case "$CXX" in
-                *ccache*) ;;
-                */*) DIR_CXX="`dirname "$CXX"`" && [ -n "$DIR_CXX" ] && DIR_CXX="`cd "$DIR_CXX" && pwd `" && [ -n "$DIR_CXX" ] && [ -d "$DIR_CXX" ] || DIR_CXX=""
-                    [ -z "$CCACHE_PATH" ] && CCACHE_PATH="$DIR_CXX" || \
-                    if echo "$CCACHE_PATH" | grep -E '(^'"$DIR_CXX"':.*|^'"$DIR_CXX"'$|:'"$DIR_CXX"':|:'"$DIR_CXX"'$)' ; then
-                        CCACHE_PATH="$DIR_CXX:$CCACHE_PATH"
-                    fi
-                    ;;
-            esac
-            CXX="${CI_CCACHE_SYMLINKDIR}/`basename "$CXX"`"
-          else
-            CXX="ccache $CXX"
-          fi
-        fi
-        if [ -n "$CPP" ] && [ -n "${CI_CCACHE_SYMLINKDIR}" ] \
-        && [ -x "${CI_CCACHE_SYMLINKDIR}/`basename "$CPP"`" ]; then
-            case "$CPP" in
-                *ccache*) ;;
-                */*) DIR_CPP="`dirname "$CPP"`" && [ -n "$DIR_CPP" ] && DIR_CPP="`cd "$DIR_CPP" && pwd `" && [ -n "$DIR_CPP" ] && [ -d "$DIR_CPP" ] || DIR_CPP=""
-                    [ -z "$CCACHE_PATH" ] && CCACHE_PATH="$DIR_CPP" || \
-                    if echo "$CCACHE_PATH" | grep -E '(^'"$DIR_CPP"':.*|^'"$DIR_CPP"'$|:'"$DIR_CPP"':|:'"$DIR_CPP"'$)' ; then
-                        CCACHE_PATH="$DIR_CPP:$CCACHE_PATH"
-                    fi
-                    ;;
-            esac
-            CPP="${CI_CCACHE_SYMLINKDIR}/`basename "$CPP"`"
-        else
-            : # CPP="ccache $CPP"
-        fi
-
+    if optional_ensure_ccache ; then
         # Note: Potentially there can be spaces in entries for multiword
         # "ccache gcc" here; this should be okay as long as entry expands to
         # one token when calling shell (may not be the case for distcheck)
@@ -1478,8 +1677,6 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 
     # Build and check this project; note that zprojects always have an autogen.sh
     [ -z "$CI_TIME" ] || echo "`date`: Starting build of currently tested project..."
-    CCACHE_BASEDIR="${PWD}"
-    export CCACHE_BASEDIR
 
     # Numerous per-compiler variants defined in configure.ac, including
     # aliases "minimal", "medium", "hard", "all"
@@ -1532,7 +1729,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     # below depending on scenario
     autogen_get_CONFIGURE_SCRIPT
 
-    if [ "$NO_PKG_CONFIG" == "true" ] && [ "$CI_OS_NAME" = "linux" ] && (command -v dpkg) ; then
+    if [ "$NO_PKG_CONFIG" = "true" ] && [ "$CI_OS_NAME" = "linux" ] && (command -v dpkg) ; then
         # This should be done in scratch containers...
         echo "NO_PKG_CONFIG==true : BUTCHER pkg-config package for this test case" >&2
         sudo dpkg -r --force all pkg-config
@@ -1991,7 +2188,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
             done
 
             # TODO: Similar loops for other variations like TESTING,
-            # MGE SHUT vs other serial protocols...
+            # MGE SHUT vs. other serial protocols...
 
             if can_clean_check ; then
                 echo "=== One final try for optional_maintainer_clean_check:"
@@ -2059,7 +2256,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
     [ -n "$CI_TIME" ] && echo "`date`: listing files installed into the custom DESTDIR..." && \
         find "$INST_PREFIX" -ls || true
 
-    if [ "$DO_DISTCHECK" == "no" ] ; then
+    if [ "$DO_DISTCHECK" = "no" ] ; then
         echo "Skipping distcheck (doc generation is disabled, it would fail)"
     else
         [ -z "$CI_TIME" ] || echo "`date`: Starting distcheck of currently tested project..."
@@ -2093,6 +2290,8 @@ bindings)
     fi
     echo ""
 
+    # NOTE: Alternative to optional_prepare_ccache()
+    # FIXME: Can these be united and de-duplicated?
     if [ -n "${CI_CCACHE_SYMLINKDIR}" ] && [ -d "${CI_CCACHE_SYMLINKDIR}" ] ; then
         PATH="`echo "$PATH" | sed -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?:,,' -e 's,:'"${CI_CCACHE_SYMLINKDIR}"'/?$,,' -e 's,^'"${CI_CCACHE_SYMLINKDIR}"'/?$,,'`"
         CCACHE_PATH="$PATH"
@@ -2101,8 +2300,14 @@ bindings)
             echo "INFO: Using ccache via PATH preferring tool names in ${CI_CCACHE_SYMLINKDIR}" >&2
             PATH="${CI_CCACHE_SYMLINKDIR}:$PATH"
             export CCACHE_PATH CCACHE_DIR PATH
+            HAVE_CCACHE=yes
+            mkdir -p "${CCACHE_DIR}"/ || HAVE_CCACHE=no
+        else
+            HAVE_CCACHE=no
         fi
     fi
+
+    optional_prepare_compiler_family
 
     cd "${SCRIPTDIR}"
 
@@ -2132,6 +2337,17 @@ bindings)
         --disable-force-nut-version-header \
         --enable-check-NIT --enable-maintainer-mode)
 
+    detect_platform_PKG_CONFIG_PATH_and_FLAGS
+    if [ -n "$PKG_CONFIG_PATH" ] ; then
+        CONFIG_OPTS+=("PKG_CONFIG_PATH=${PKG_CONFIG_PATH}")
+    fi
+
+    # Primarily here to ensure libusb-1.0 use on MSYS2/mingw
+    # when 0.1 is available too
+    if [ "${CANBUILD_WITH_LIBMODBUS_USB-}" = yes ] ; then
+        CONFIG_OPTS+=("--with-modbus+usb=yes")
+    fi
+
     # Not default for parameter-less build, to prevent "make check-NIT"
     # from somehow interfering with the running daemons.
     if [ x"${INPLACE_RUNTIME-}" = xtrue ] || [ x"${BUILD_TYPE-}" = xinplace ] ; then
@@ -2151,6 +2367,47 @@ bindings)
         # WARNING: Watch out for whitespaces, not handled here!
         CONFIG_OPTS+=("--with-python=${PYTHON}")
     fi
+
+    if optional_ensure_ccache ; then
+        # Note: Potentially there can be spaces in entries for multiword
+        # "ccache gcc" here; this should be okay as long as entry expands to
+        # one token when calling shell (may not be the case for distcheck)
+        CONFIG_OPTS+=("CC=${CC}")
+        CONFIG_OPTS+=("CXX=${CXX}")
+        CONFIG_OPTS+=("CPP=${CPP}")
+    fi
+
+    # If detect_platform_PKG_CONFIG_PATH_and_FLAGS() customized anything here,
+    # let configure script know
+    _EXPORT_FLAGS=true
+    case "${CI_OS_NAME}" in
+        windows-msys2)
+            if [ "$HAVE_CCACHE" = yes ] ; then
+                # NO-OP: Its ccache gets confused, apparently parsing the flags as one parameter
+                #   configure:6064: checking whether the C compiler works
+                #   configure:6086: /mingw64/lib/ccache/bin/gcc  -D_POSIX=1 -D_POSIX_C_SOURCE=200112L -D_WIN32_WINNT=0xffff   conftest.c  >&5
+                #   Cannot create temporary file in C:\msys64\home\abuild\nut-win\ -D_POSIX=1 -D_POSIX_C_SOURCE=200112L -D_WIN32_WINNT=0xffff\: No such file or directory
+                # FIXME: Detect better if this bites us on the current system?
+                _EXPORT_FLAGS=false
+            fi
+            ;;
+    esac
+
+    if [ "${_EXPORT_FLAGS}" = true ] ; then
+            [ -z "${CFLAGS}" ]   || export CFLAGS
+            [ -z "${CXXFLAGS}" ] || export CXXFLAGS
+            [ -z "${CPPFLAGS}" ] || export CPPFLAGS
+            [ -z "${LDFLAGS}" ]  || export LDFLAGS
+    else
+            # NOTE: Passing via CONFIG_OPTS also fails
+            [ -z "${CFLAGS}" ]   || echo "WARNING: SKIP: On '${CI_OS_NAME}' with ccache used, can not export CFLAGS='${CFLAGS}'" >&2
+            [ -z "${CXXFLAGS}" ] || echo "WARNING: SKIP: On '${CI_OS_NAME}' with ccache used, can not export CXXFLAGS='${CXXFLAGS}'" >&2
+            [ -z "${CPPFLAGS}" ] || echo "WARNING: SKIP: On '${CI_OS_NAME}' with ccache used, can not export CPPFLAGS='${CPPFLAGS}'" >&2
+            [ -z "${LDFLAGS}" ]  || echo "WARNING: SKIP: On '${CI_OS_NAME}' with ccache used, can not export LDFLAGS='${LDFLAGS}'" >&2
+    fi
+
+    PATH="`echo "${PATH}" | normalize_path`"
+    CCACHE_PATH="`echo "${CCACHE_PATH}" | normalize_path`"
 
     RES_CFG=0
     ${CONFIGURE_SCRIPT} "${CONFIG_OPTS[@]}" \

@@ -149,7 +149,7 @@ typedef struct {
  * To move or not to move?..
  */
 static struct {
-	int	type;
+	unsigned int	type;
 	const	char	*name;
 	char	*msg;	/* NULL until overridden */
 	const char	*stockmsg;

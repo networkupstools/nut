@@ -651,12 +651,12 @@ void upsdrv_initinfo(void)
 	if (get_transfer_voltage_low() && max_low_transfer) {
 		dstate_setflags("input.transfer.low", ST_FLAG_RW);
 		for (i = min_low_transfer; i <= max_low_transfer; i++)
-			dstate_addenum("input.transfer.low", "%d", i);
+			dstate_addenum("input.transfer.low", "%u", i);
 	}
 	if (get_transfer_voltage_high() && max_low_transfer) {
 		dstate_setflags("input.transfer.high", ST_FLAG_RW);
 		for (i = min_high_transfer; i <= max_high_transfer; i++)
-			dstate_addenum("input.transfer.high", "%d", i);
+			dstate_addenum("input.transfer.high", "%u", i);
 	}
 	if (get_sensitivity()) {
 		dstate_setflags("input.sensitivity", ST_FLAG_RW);
@@ -836,7 +836,7 @@ void upsdrv_updateinfo(void)
 			}
 		}
 		if (contacts_set)
-			dstate_setinfo("ups.contacts", "%02X", flags);
+			dstate_setinfo("ups.contacts", "%02X", (unsigned int)flags);
 	}
 
 	/* if we are here, status is valid */
