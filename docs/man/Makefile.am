@@ -1130,13 +1130,13 @@ DOCBUILD_END = { \
 	 echo "  DOC-MAN-HTML Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 $(ASCIIDOC) --backend=xhtml11 $${A2X_VERBOSE} \
-		--attribute localdate="`TZ=UTC date +%Y-%m-%d`" \
-		--attribute localtime="`TZ=UTC date +%H:%M:%S`" \
-		--attribute nutversion="@PACKAGE_VERSION@" \
-		--attribute srcdir="$(abs_srcdir)/" \
-		--attribute builddir="$(abs_builddir)/" \
-		--attribute top_srcdir="$(abs_top_srcdir)/" \
-		--attribute top_builddir="$(abs_top_builddir)/" \
+		--attribute=localdate="`TZ=UTC date +%Y-%m-%d`" \
+		--attribute=localtime="`TZ=UTC date +%H:%M:%S`" \
+		--attribute=nutversion="@PACKAGE_VERSION@" \
+		--attribute=srcdir="$(abs_srcdir)/" \
+		--attribute=builddir="$(abs_builddir)/" \
+		--attribute=top_srcdir="$(abs_top_srcdir)/" \
+		--attribute=top_builddir="$(abs_top_builddir)/" \
 		-o "$${A2X_OUTDIR}/$(@F)" '$<' || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
@@ -1144,13 +1144,13 @@ DOCBUILD_END = { \
 ### This parameter is currently required; see docs/Makefile.am for more detail.
 A2X_MANPAGE_OPTS = --doctype manpage --format manpage $${A2X_VERBOSE} \
 	--xsltproc-opts="--nonet" \
-	--attribute mansource="Network UPS Tools" \
-	--attribute manversion="@PACKAGE_VERSION@" \
-	--attribute manmanual="NUT Manual" \
-	--attribute srcdir="$(abs_srcdir)/" \
-	--attribute builddir="$(abs_builddir)/" \
-	--attribute top_srcdir="$(abs_top_srcdir)/" \
-	--attribute top_builddir="$(abs_top_builddir)/" \
+	--attribute=mansource="Network UPS Tools" \
+	--attribute=manversion="@PACKAGE_VERSION@" \
+	--attribute=manmanual="NUT Manual" \
+	--attribute=srcdir="$(abs_srcdir)/" \
+	--attribute=builddir="$(abs_builddir)/" \
+	--attribute=top_srcdir="$(abs_top_srcdir)/" \
+	--attribute=top_builddir="$(abs_top_builddir)/" \
 	--destination-dir="$${A2X_OUTDIR}"
 
 .txt-prepped.$(MAN_SECTION_CMD_USR):
