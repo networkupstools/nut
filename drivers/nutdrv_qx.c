@@ -77,6 +77,8 @@
 #include "nutdrv_qx_megatec-old.h"
 #include "nutdrv_qx_mustek.h"
 #include "nutdrv_qx_q1.h"
+#include "nutdrv_qx_q2.h"
+#include "nutdrv_qx_q6.h"
 #include "nutdrv_qx_voltronic.h"
 #include "nutdrv_qx_voltronic-qs.h"
 #include "nutdrv_qx_voltronic-qs-hex.h"
@@ -99,6 +101,8 @@ static subdriver_t	*subdriver_list[] = {
 	&hunnox_subdriver,
 	&ablerex_subdriver,
 	&innovart31_subdriver,
+	&q2_subdriver,
+	&q6_subdriver,
 	/* Fallback Q1 subdriver */
 	&q1_subdriver,
 	NULL
@@ -255,6 +259,19 @@ int qx_multiply_battvolt(item_t *item, char *value, const size_t valuelen) {
 	}
 
 	snprintf(value, valuelen, "%.2f", s * batt.packs);
+	return 0;
+}
+
+/* Convert kilo-values to their full representation */
+int qx_multiply_x1000(item_t *item, char *value, const size_t valuelen) {
+	float s = 0;
+
+	if (sscanf(item->value, "%f", &s) != 1) {
+		upsdebugx(2, "unparsable ss.ss %s", item->value);
+		return -1;
+	}
+
+	snprintf(value, valuelen, "%.2f", s * 1000.0);
 	return 0;
 }
 
