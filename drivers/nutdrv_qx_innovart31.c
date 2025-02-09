@@ -191,11 +191,11 @@ static int	innovart31_claim(void)
 	};
 	int vari;
 	char *sp;
+	item_t *item;
 
 	for (vari = 0; mandatory[vari].var; vari++) {
 		sp = mandatory[vari].var;
-
-		item_t	*item = find_nut_info(sp, 0, 0);
+		item = find_nut_info(sp, 0, 0);
 
 		/* Don't know what happened */
 		if (!item)
