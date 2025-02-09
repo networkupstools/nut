@@ -186,10 +186,12 @@ static int	q6_process_topology_bits(item_t *item, char *value, const size_t valu
 	return 0;
 }
 
-/* This function allows the subdriver to "claim" a device: return 1 if the device is supported by this subdriver, else 0 */
+/* This function allows the subdriver to "claim" a device:
+ * return 1 if the device is supported by this subdriver, else 0
+ */
 static int	q6_claim(void)
 {
-	/* We need Q6, Q1, and WA to use this subdriver (only if user hasn't requested 'nooutstats' flag */
+	/* We need Q6, Q1, and WA to use this subdriver (WA only if user hasn't requested 'nooutstats' flag) */
 	/* TODO think whether we should check for BPS (and bypass-related variables) too */
 	struct {
 		char	*var;
