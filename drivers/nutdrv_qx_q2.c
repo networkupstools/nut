@@ -272,8 +272,8 @@ static void	q2_initups(void)
 /* Subdriver-specific initinfo */
 static void	q2_initinfo(void)
 {
-	dstate_setinfo("input.phases", "%u", 3);
-	dstate_setinfo("output.phases", "%u", 3);
+	dstate_setinfo("input.phases", "%d", 3);
+	dstate_setinfo("output.phases", "%d", 3);
 }
 
 /* Subdriver-specific flags/vars */
