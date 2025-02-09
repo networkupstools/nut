@@ -1331,44 +1331,59 @@ optional_dist_clean_check() {
     return 0
 }
 
-if [ "$1" = inplace ] && [ -z "$BUILD_TYPE" ] ; then
-    shift
-    BUILD_TYPE="inplace"
-fi
-
-if [ "$1" = spellcheck -o "$1" = spellcheck-interactive ] && [ -z "$BUILD_TYPE" ] ; then
-    # Note: this is a little hack to reduce typing
-    # and scrolling in (docs) developer iterations.
-    case "$CI_OS_NAME" in
-        windows-msys2)
-            # https://github.com/msys2/MSYS2-packages/issues/2088
-            echo "=========================================================================="
-            echo "WARNING: some MSYS2 builds of aspell are broken with 'tex' support"
-            echo "Are you sure you run this in a functional build environment? Ctrl+C if not"
-            echo "=========================================================================="
-            sleep 5
+# Link a few BUILD_TYPEs to command-line arguments
+if [ -z "$BUILD_TYPE" ] ; then
+    case "$1" in
+        inplace)
+            # Note: causes a developer-style build (not CI)
+            shift
+            BUILD_TYPE="inplace"
             ;;
-        *)  if ! (command -v aspell) 2>/dev/null >/dev/null ; then
-                echo "=========================================================================="
-                echo "WARNING: Seems you do not have 'aspell' in PATH (but maybe NUT configure"
-                echo "script would find the spellchecking toolkit elsewhere)"
-                echo "Are you sure you run this in a functional build environment? Ctrl+C if not"
-                echo "=========================================================================="
-                sleep 5
+
+
+        win64|cross-windows-mingw64) BUILD_TYPE="cross-windows-mingw64" ; shift ;;
+
+        win32|cross-windows-mingw32) BUILD_TYPE="cross-windows-mingw32" ; shift ;;
+
+        win|cross-windows-mingw) BUILD_TYPE="cross-windows-mingw" ; shift ;;
+
+        spellcheck|spellcheck-interactive)
+            # Note: this is a little hack to reduce typing
+            # and scrolling in (docs) developer iterations.
+            case "$CI_OS_NAME" in
+                windows-msys2)
+                    # https://github.com/msys2/MSYS2-packages/issues/2088
+                    echo "=========================================================================="
+                    echo "WARNING: some MSYS2 builds of aspell are broken with 'tex' support"
+                    echo "Are you sure you run this in a functional build environment? Ctrl+C if not"
+                    echo "=========================================================================="
+                    sleep 5
+                    ;;
+                *)  if ! (command -v aspell) 2>/dev/null >/dev/null ; then
+                        echo "=========================================================================="
+                        echo "WARNING: Seems you do not have 'aspell' in PATH (but maybe NUT configure"
+                        echo "script would find the spellchecking toolkit elsewhere)"
+                        echo "Are you sure you run this in a functional build environment? Ctrl+C if not"
+                        echo "=========================================================================="
+                        sleep 5
+                    fi
+                    ;;
+            esac >&2
+            if [ -s Makefile ] && [ -s docs/Makefile ]; then
+                echo "Processing quick and quiet spellcheck with already existing recipe files, will only report errors if any ..."
+                build_to_only_catch_errors_target $1 ; exit
+            else
+                # TODO: Actually do it (default-spellcheck-interactive)?
+                if [ "$1" = spellcheck-interactive ] ; then
+                    echo "Only CI-building 'spellcheck', please do the interactive part manually if needed" >&2
+                fi
+                BUILD_TYPE="default-spellcheck"
+                shift
             fi
             ;;
-    esac >&2
-    if [ -s Makefile ] && [ -s docs/Makefile ]; then
-        echo "Processing quick and quiet spellcheck with already existing recipe files, will only report errors if any ..."
-        build_to_only_catch_errors_target $1 ; exit
-    else
-        # TODO: Actually do it (default-spellcheck-interactive)?
-        if [ "$1" = spellcheck-interactive ] ; then
-            echo "Only CI-building 'spellcheck', please do the interactive part manually if needed" >&2
-        fi
-        BUILD_TYPE="default-spellcheck"
-        shift
-    fi
+
+        *) echo "WARNING: Command-line argument '$1' wsa not recognized as a BUILD_TYPE alias" >&2 ;;
+    esac
 fi
 
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
