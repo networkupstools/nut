@@ -1137,6 +1137,11 @@ DOCBUILD_END = { \
 		--attribute=builddir="$(abs_builddir)/" \
 		--attribute=top_srcdir="$(abs_top_srcdir)/" \
 		--attribute=top_builddir="$(abs_top_builddir)/" \
+		--attribute=MAN_SECTION_API_BASE='@MAN_SECTION_API_BASE@' \
+		--attribute=MAN_SECTION_CFG_BASE='@MAN_SECTION_CFG_BASE@' \
+		--attribute=MAN_SECTION_CMD_SYS_BASE='@MAN_SECTION_CMD_SYS_BASE@' \
+		--attribute=MAN_SECTION_CMD_USR_BASE='@MAN_SECTION_CMD_USR_BASE@' \
+		--attribute=NUT_WEBSITE_BASE='@NUT_WEBSITE_BASE@' \
 		-o "$${A2X_OUTDIR}/$(@F)" '$<' || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
