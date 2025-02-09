@@ -1340,6 +1340,12 @@ if [ -z "$BUILD_TYPE" ] ; then
             BUILD_TYPE="inplace"
             ;;
 
+        docs|docs=*|doc|doc=*)
+            # Note: causes a developer-style build (not CI)
+            # Arg will be passed to configure script as `--with-$1`
+            BUILD_TYPE="$1"
+            shift
+            ;;
 
         win64|cross-windows-mingw64) BUILD_TYPE="cross-windows-mingw64" ; shift ;;
 
@@ -2300,7 +2306,7 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 bindings)
     pushd "./bindings/${BINDING}" && ./ci_build.sh
     ;;
-""|inplace)
+""|inplace|doc*)
     echo "WARNING: No BUILD_TYPE was specified, doing a minimal default ritual without any *required* build products and with developer-oriented options" >&2
     if [ -n "${BUILD_WARNOPT}${BUILD_WARNFATAL}" ]; then
         echo "WARNING: BUILD_WARNOPT and BUILD_WARNFATAL settings are ignored in this mode (warnings are always enabled and fatal for these developer-oriented builds)" >&2
@@ -2350,10 +2356,15 @@ bindings)
         --enable-warnings --enable-Werror \
         --enable-keep_nut_report_feature \
         --with-all=auto --with-cgi=auto --with-serial=auto \
-        --with-dev=auto --with-doc=skip \
+        --with-dev=auto \
         --with-nut_monitor=auto --with-pynut=auto \
         --disable-force-nut-version-header \
         --enable-check-NIT --enable-maintainer-mode)
+
+    case x"${BUILD_TYPE}" in
+        xdoc*) CONFIG_OPTS+=("--with-${BUILD_TYPE}") ;;
+        *) CONFIG_OPTS+=("--with-doc=skip") ;;
+    esac
 
     detect_platform_PKG_CONFIG_PATH_and_FLAGS
     if [ -n "$PKG_CONFIG_PATH" ] ; then
