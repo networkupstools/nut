@@ -1284,9 +1284,11 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC)
 	                fi ;; \
 	        esac ; \
 	        if $$MAN_SECTIONS_DEFAULT ; then \
-	            cat ; \
+	            sed \
+	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 @NUT_WEBSITE_BASE@/,' ; \
 	        else \
 	            sed \
+	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 @NUT_WEBSITE_BASE@/,' \
 	                -e 's,\(linkman:[^ []*\[\)3\],\1$(MAN_SECTION_API)],g' \
 	                -e 's,\(linkman:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
 	                -e 's,\(linkman:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \
@@ -1341,9 +1343,11 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC)
 	            grep -w linkman "$${linkroot}/$${F}" > /dev/null || IS_TEXT=false ; \
 	        fi ; \
 	        if $$MAN_SECTIONS_DEFAULT || ! $$IS_TEXT ; then \
-	            cat ; \
+	            sed \
+	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 @NUT_WEBSITE_BASE@/,' ; \
 	        else \
 	            sed \
+	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 @NUT_WEBSITE_BASE@/,' \
 	                -e 's,\(linkman:[^ []*\[\)3\],\1$(MAN_SECTION_API)],g' \
 	                -e 's,\(linkman:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
 	                -e 's,\(linkman:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \
