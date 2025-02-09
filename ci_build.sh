@@ -22,6 +22,9 @@ SCRIPT_ARGS=("$@")
 # (and then easily `make` to iterate fixes), like this:
 #   CI_REQUIRE_GOOD_GITIGNORE="false" CI_FAILFAST=true DO_CLEAN_CHECK=no BUILD_TYPE=fightwarn ./ci_build.sh
 #
+# For in-place build configurations you can pass `INPLACE_RUNTIME=true`
+# (for common BUILD_TYPE's) or call `./ci_build.sh inplace`
+#
 # For out-of-tree builds you can specify a CI_BUILDDIR (absolute or relative
 # to SCRIPTDIR - not current path), or just call .../ci_build.sh while being
 # in a different directory and then it would be used with a warning. This may
