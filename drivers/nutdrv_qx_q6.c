@@ -20,7 +20,6 @@
  */
 
 #include "main.h"
-#include "nut_float.h"	/* for fabs() */
 #include "nutdrv_qx.h"
 #include "nutdrv_qx_blazer-common.h"
 
@@ -191,6 +190,7 @@ static int	q6_process_topology_bits(item_t *item, char *value, const size_t valu
 static int	q6_claim(void)
 {
 	/* We need Q6, Q1, and WA to use this subdriver (only if user hasn't requested 'nooutstats' flag */
+	/* TODO think whether we should check for BPS (and bypass-related variables) too */
 	struct {
 		char	*var;
 		char	*cmd;
@@ -281,49 +281,6 @@ static void	q6_makevartable(void)
 	addvar(VAR_FLAG, "nooutstats", "Skip reading output load stats information from UPS");
 
 	blazer_makevartable_light();
-}
-
-void upsdrv_updateinfo(void) {
-	const char *i_L1N = dstate_getinfo("input.L1-N.voltage");
-	const char *i_L2N = dstate_getinfo("input.L2-N.voltage");
-	const char *i_L3N = dstate_getinfo("input.L3-N.voltage");
-	const char *o_L1N = dstate_getinfo("output.L1-N.voltage");
-	const char *o_L2N = dstate_getinfo("output.L2-N.voltage");
-	const char *o_L3N = dstate_getinfo("output.L3-N.voltage");
-	const double thr = 10.0; /* threshold for comparison; mb better to use user-defined variable */
-
-	unsigned int inphases = 0, outphases = 0;
-	double L1N, L2N, L3N;
-
-	if (i_L1N && i_L2N && i_L3N) {
-		L1N = strtod(i_L1N, NULL);
-		L2N = strtod(i_L2N, NULL);
-		L3N = strtod(i_L3N, NULL);
-
-		if (fabs(L1N) >= thr)
-			inphases++;
-		if (fabs(L2N) >= thr)
-			inphases++;
-		if (fabs(L2N) >= thr)
-			inphases++;
-
-		dstate_setinfo("input.phases", "%u", inphases);
-	}
-
-	if (o_L1N && o_L2N && o_L3N) {
-		L1N = strtod(o_L1N, NULL);
-		L2N = strtod(o_L2N, NULL);
-		L3N = strtod(o_L3N, NULL);
-
-		if (fabs(L1N) >= thr)
-			outphases++;
-		if (fabs(L2N) >= thr)
-			outphases++;
-		if (fabs(L2N) >= thr)
-			outphases++;
-
-		dstate_setinfo("output.phases", "%u", outphases);
-	}
 }
 
 /* Subdriver interface */

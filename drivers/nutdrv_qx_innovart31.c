@@ -190,11 +190,10 @@ static int	innovart31_claim(void)
 		{ NULL, NULL}
 	};
 	int vari;
-	char *sp, *cmd;
+	char *sp;
 
 	for (vari = 0; mandatory[vari].var; vari++) {
 		sp = mandatory[vari].var;
-		cmd = mandatory[vari].cmd;
 
 		item_t	*item = find_nut_info(sp, 0, 0);
 
