@@ -222,7 +222,7 @@ Q2, Q6 PROTOCOLS
 ~~~~~~~~~~~~~~~~
 
 *nooutstats*::
-Some UPSes doesn't support `WA' command which returns output load stats. Using this flag will make the driver ignore these requests.
+Some UPSes don't support `WA` command which returns output load stats. Using this flag will make the driver ignore these requests.
 
 
 VOLTRONIC-QS, VOLTRONIC-QS-HEX PROTOCOLS
