@@ -20,9 +20,24 @@
 #EGREP = egrep
 EGREP = grep -E
 
-all:
+ALL_TGT =
+if WITH_MANS
+ALL_TGT += all-man
+endif WITH_MANS
+if WITH_HTML_SINGLE
+ALL_TGT += all-html
+else !WITH_HTML_SINGLE
+if WITH_HTML_CHUNKED
+ALL_TGT += all-html
+endif WITH_HTML_CHUNKED
+endif !WITH_HTML_SINGLE
 
-all-am-local all-local: $(abs_top_builddir)/docs/man/.prep-src-docs
+all: $(abs_top_builddir)/docs/man/.prep-src-docs
+	+@case "$(ALL_TGT)" in \
+	  *all-*) \
+		echo "  DOC-FOLLOW-UP	Basic 'make $@' in `pwd` is done, following up with 'make $(ALL_TGT)' to ensure complex document types (if enabled)" ; \
+		$(MAKE) $(AM_MAKEFLAGS) $(ALL_TGT) ; exit ;; \
+	  esac ; exit 0
 
 # Base configuration and client manpages, always installed
 SRC_CONF_PAGES = \
