@@ -340,7 +340,7 @@ check-html-chunked: $(ASCIIDOC_HTML_CHUNKED)
 # Note: default `make all` in the man directory caters to drivers etc.
 # chosen during configure script execution. The "all-man" and "all-html"
 # rules build everything documented.
-check-man all-man man-man all-html html-man:
+check-man check-man-man all-man man-man all-html html-man:
 	+cd $(abs_top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile $@
 
 man:
@@ -466,6 +466,11 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) \
     --attribute=builddir="$(abs_builddir)/" \
     --attribute=top_srcdir="$(abs_top_srcdir)/" \
     --attribute=top_builddir="$(abs_top_builddir)/" \
+    --attribute=MAN_SECTION_API_BASE='@MAN_SECTION_API_BASE@' \
+    --attribute=MAN_SECTION_CFG_BASE='@MAN_SECTION_CFG_BASE@' \
+    --attribute=MAN_SECTION_CMD_SYS_BASE='@MAN_SECTION_CMD_SYS_BASE@' \
+    --attribute=MAN_SECTION_CMD_USR_BASE='@MAN_SECTION_CMD_USR_BASE@' \
+    --attribute=NUT_WEBSITE_BASE='@NUT_WEBSITE_BASE@' \
     -a toc -a numbered --destination-dir=$${A2X_OUTDIR}
 # NOTE: a2x newer than 8.6.8 says "--destination-dir" is only valid for HTML.
 # As of version 8.6.9 it lies, and the argument is required for our distcheck
@@ -783,7 +788,7 @@ DISTCLEANFILES = $(NUT_SPELL_DICT).bak-pre-sorting .$(NUT_SPELL_DICT).sorted $(N
 # any future re-runs). We also must update all relevant *-spellchecked
 # touch-files after "make spellcheck-sortdict" which updates "nut.dict"
 # file which is a prerequisite for docs checks.
-spellcheck-interactive: 
+spellcheck-interactive:
 	@cp -pf $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting
 	+@FAILED="" ; for docsrc in $(SPELLCHECK_SRC); do \
 		if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
@@ -888,9 +893,11 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC)
 	                fi ;; \
 	        esac ; \
 	        if $$MAN_SECTIONS_DEFAULT ; then \
-	            cat ; \
+	            sed \
+	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 @NUT_WEBSITE_BASE@/,' ; \
 	        else \
 	            sed \
+	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 @NUT_WEBSITE_BASE@/,' \
 	                -e 's,\(linkman:[^ []*\[\)3\],\1$(MAN_SECTION_API)],g' \
 	                -e 's,\(linkman:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
 	                -e 's,\(linkman:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \
@@ -942,9 +949,11 @@ $(abs_top_builddir)/docs/.prep-src-docs: $(PREP_SRC)
 	            grep -w linkman "$${linkroot}/$${F}" > /dev/null || IS_TEXT=false ; \
 	        fi ; \
 	        if $$MAN_SECTIONS_DEFAULT || ! $$IS_TEXT ; then \
-	            cat ; \
+	            sed \
+	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 @NUT_WEBSITE_BASE@/,' ; \
 	        else \
 	            sed \
+	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 @NUT_WEBSITE_BASE@/,' \
 	                -e 's,\(linkman:[^ []*\[\)3\],\1$(MAN_SECTION_API)],g' \
 	                -e 's,\(linkman:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
 	                -e 's,\(linkman:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \

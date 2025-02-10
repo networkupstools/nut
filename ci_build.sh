@@ -22,6 +22,9 @@ SCRIPT_ARGS=("$@")
 # (and then easily `make` to iterate fixes), like this:
 #   CI_REQUIRE_GOOD_GITIGNORE="false" CI_FAILFAST=true DO_CLEAN_CHECK=no BUILD_TYPE=fightwarn ./ci_build.sh
 #
+# For in-place build configurations you can pass `INPLACE_RUNTIME=true`
+# (for common BUILD_TYPE's) or call `./ci_build.sh inplace`
+#
 # For out-of-tree builds you can specify a CI_BUILDDIR (absolute or relative
 # to SCRIPTDIR - not current path), or just call .../ci_build.sh while being
 # in a different directory and then it would be used with a warning. This may
@@ -1328,44 +1331,65 @@ optional_dist_clean_check() {
     return 0
 }
 
-if [ "$1" = inplace ] && [ -z "$BUILD_TYPE" ] ; then
-    shift
-    BUILD_TYPE="inplace"
-fi
-
-if [ "$1" = spellcheck -o "$1" = spellcheck-interactive ] && [ -z "$BUILD_TYPE" ] ; then
-    # Note: this is a little hack to reduce typing
-    # and scrolling in (docs) developer iterations.
-    case "$CI_OS_NAME" in
-        windows-msys2)
-            # https://github.com/msys2/MSYS2-packages/issues/2088
-            echo "=========================================================================="
-            echo "WARNING: some MSYS2 builds of aspell are broken with 'tex' support"
-            echo "Are you sure you run this in a functional build environment? Ctrl+C if not"
-            echo "=========================================================================="
-            sleep 5
+# Link a few BUILD_TYPEs to command-line arguments
+if [ -z "$BUILD_TYPE" ] ; then
+    case "$1" in
+        inplace)
+            # Note: causes a developer-style build (not CI)
+            shift
+            BUILD_TYPE="inplace"
             ;;
-        *)  if ! (command -v aspell) 2>/dev/null >/dev/null ; then
-                echo "=========================================================================="
-                echo "WARNING: Seems you do not have 'aspell' in PATH (but maybe NUT configure"
-                echo "script would find the spellchecking toolkit elsewhere)"
-                echo "Are you sure you run this in a functional build environment? Ctrl+C if not"
-                echo "=========================================================================="
-                sleep 5
+
+        docs|docs=*|doc|doc=*)
+            # Note: causes a developer-style build (not CI)
+            # Arg will be passed to configure script as `--with-$1`
+            BUILD_TYPE="$1"
+            shift
+            ;;
+
+        win64|cross-windows-mingw64) BUILD_TYPE="cross-windows-mingw64" ; shift ;;
+
+        win32|cross-windows-mingw32) BUILD_TYPE="cross-windows-mingw32" ; shift ;;
+
+        win|cross-windows-mingw) BUILD_TYPE="cross-windows-mingw" ; shift ;;
+
+        spellcheck|spellcheck-interactive)
+            # Note: this is a little hack to reduce typing
+            # and scrolling in (docs) developer iterations.
+            case "$CI_OS_NAME" in
+                windows-msys2)
+                    # https://github.com/msys2/MSYS2-packages/issues/2088
+                    echo "=========================================================================="
+                    echo "WARNING: some MSYS2 builds of aspell are broken with 'tex' support"
+                    echo "Are you sure you run this in a functional build environment? Ctrl+C if not"
+                    echo "=========================================================================="
+                    sleep 5
+                    ;;
+                *)  if ! (command -v aspell) 2>/dev/null >/dev/null ; then
+                        echo "=========================================================================="
+                        echo "WARNING: Seems you do not have 'aspell' in PATH (but maybe NUT configure"
+                        echo "script would find the spellchecking toolkit elsewhere)"
+                        echo "Are you sure you run this in a functional build environment? Ctrl+C if not"
+                        echo "=========================================================================="
+                        sleep 5
+                    fi
+                    ;;
+            esac >&2
+            if [ -s Makefile ] && [ -s docs/Makefile ]; then
+                echo "Processing quick and quiet spellcheck with already existing recipe files, will only report errors if any ..."
+                build_to_only_catch_errors_target $1 ; exit
+            else
+                # TODO: Actually do it (default-spellcheck-interactive)?
+                if [ "$1" = spellcheck-interactive ] ; then
+                    echo "Only CI-building 'spellcheck', please do the interactive part manually if needed" >&2
+                fi
+                BUILD_TYPE="default-spellcheck"
+                shift
             fi
             ;;
-    esac >&2
-    if [ -s Makefile ] && [ -s docs/Makefile ]; then
-        echo "Processing quick and quiet spellcheck with already existing recipe files, will only report errors if any ..."
-        build_to_only_catch_errors_target $1 ; exit
-    else
-        # TODO: Actually do it (default-spellcheck-interactive)?
-        if [ "$1" = spellcheck-interactive ] ; then
-            echo "Only CI-building 'spellcheck', please do the interactive part manually if needed" >&2
-        fi
-        BUILD_TYPE="default-spellcheck"
-        shift
-    fi
+
+        *) echo "WARNING: Command-line argument '$1' wsa not recognized as a BUILD_TYPE alias" >&2 ;;
+    esac
 fi
 
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
@@ -2282,8 +2306,13 @@ default|default-alldrv|default-alldrv:no-distcheck|default-all-errors|default-sp
 bindings)
     pushd "./bindings/${BINDING}" && ./ci_build.sh
     ;;
-""|inplace)
-    echo "WARNING: No BUILD_TYPE was specified, doing a minimal default ritual without any *required* build products and with developer-oriented options" >&2
+""|inplace|doc*)
+    if [ x"${BUILD_TYPE}" = x ] ; then
+        _msg="No BUILD_TYPE"
+    else
+        _msg="BUILD_TYPE='${BUILD_TYPE}'"
+    fi
+    echo "WARNING: ${_msg} was specified, doing a minimal default ritual without any *required* build products and with developer-oriented options" >&2
     if [ -n "${BUILD_WARNOPT}${BUILD_WARNFATAL}" ]; then
         echo "WARNING: BUILD_WARNOPT and BUILD_WARNFATAL settings are ignored in this mode (warnings are always enabled and fatal for these developer-oriented builds)" >&2
         sleep 5
@@ -2332,10 +2361,15 @@ bindings)
         --enable-warnings --enable-Werror \
         --enable-keep_nut_report_feature \
         --with-all=auto --with-cgi=auto --with-serial=auto \
-        --with-dev=auto --with-doc=skip \
+        --with-dev=auto \
         --with-nut_monitor=auto --with-pynut=auto \
         --disable-force-nut-version-header \
         --enable-check-NIT --enable-maintainer-mode)
+
+    case x"${BUILD_TYPE}" in
+        xdoc*) CONFIG_OPTS+=("--with-${BUILD_TYPE}") ;;
+        *) CONFIG_OPTS+=("--with-doc=skip") ;;
+    esac
 
     detect_platform_PKG_CONFIG_PATH_and_FLAGS
     if [ -n "$PKG_CONFIG_PATH" ] ; then

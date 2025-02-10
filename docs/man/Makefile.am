@@ -20,9 +20,24 @@
 #EGREP = egrep
 EGREP = grep -E
 
-all:
+ALL_TGT =
+if WITH_MANS
+ALL_TGT += all-man
+endif WITH_MANS
+if WITH_HTML_SINGLE
+ALL_TGT += all-html
+else !WITH_HTML_SINGLE
+if WITH_HTML_CHUNKED
+ALL_TGT += all-html
+endif WITH_HTML_CHUNKED
+endif !WITH_HTML_SINGLE
 
-all-am-local all-local: $(abs_top_builddir)/docs/man/.prep-src-docs
+all: $(abs_top_builddir)/docs/man/.prep-src-docs
+	+@case "$(ALL_TGT)" in \
+	  *all-*) \
+		echo "  DOC-FOLLOW-UP	Basic 'make $@' in `pwd` is done, following up with 'make $(ALL_TGT)' to ensure complex document types (if enabled)" ; \
+		$(MAKE) $(AM_MAKEFLAGS) $(ALL_TGT) ; exit ;; \
+	  esac ; exit 0
 
 # Base configuration and client manpages, always installed
 SRC_CONF_PAGES = \
@@ -1003,7 +1018,7 @@ check-local: check-man-txt check-man-pages
 	@echo "Man-page generation was not done, so pregenerated pages were sanity-checked (if any)" >&2
 endif
 
-check-man: check-man-txt check-man-pages check-html-man
+check-man check-man-man: check-man-txt check-man-pages check-html-man
 
 # the "for" loops might better use $^ but it might be not portable
 check-man-html: check-html-man
@@ -1130,13 +1145,18 @@ DOCBUILD_END = { \
 	 echo "  DOC-MAN-HTML Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 $(ASCIIDOC) --backend=xhtml11 $${A2X_VERBOSE} \
-		--attribute localdate="`TZ=UTC date +%Y-%m-%d`" \
-		--attribute localtime="`TZ=UTC date +%H:%M:%S`" \
-		--attribute nutversion="@PACKAGE_VERSION@" \
-		--attribute srcdir="$(abs_srcdir)/" \
-		--attribute builddir="$(abs_builddir)/" \
-		--attribute top_srcdir="$(abs_top_srcdir)/" \
-		--attribute top_builddir="$(abs_top_builddir)/" \
+		--attribute=localdate="`TZ=UTC date +%Y-%m-%d`" \
+		--attribute=localtime="`TZ=UTC date +%H:%M:%S`" \
+		--attribute=nutversion="@PACKAGE_VERSION@" \
+		--attribute=srcdir="$(abs_srcdir)/" \
+		--attribute=builddir="$(abs_builddir)/" \
+		--attribute=top_srcdir="$(abs_top_srcdir)/" \
+		--attribute=top_builddir="$(abs_top_builddir)/" \
+		--attribute=MAN_SECTION_API_BASE='@MAN_SECTION_API_BASE@' \
+		--attribute=MAN_SECTION_CFG_BASE='@MAN_SECTION_CFG_BASE@' \
+		--attribute=MAN_SECTION_CMD_SYS_BASE='@MAN_SECTION_CMD_SYS_BASE@' \
+		--attribute=MAN_SECTION_CMD_USR_BASE='@MAN_SECTION_CMD_USR_BASE@' \
+		--attribute=NUT_WEBSITE_BASE='@NUT_WEBSITE_BASE@' \
 		-o "$${A2X_OUTDIR}/$(@F)" '$<' || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
 
@@ -1144,13 +1164,13 @@ DOCBUILD_END = { \
 ### This parameter is currently required; see docs/Makefile.am for more detail.
 A2X_MANPAGE_OPTS = --doctype manpage --format manpage $${A2X_VERBOSE} \
 	--xsltproc-opts="--nonet" \
-	--attribute mansource="Network UPS Tools" \
-	--attribute manversion="@PACKAGE_VERSION@" \
-	--attribute manmanual="NUT Manual" \
-	--attribute srcdir="$(abs_srcdir)/" \
-	--attribute builddir="$(abs_builddir)/" \
-	--attribute top_srcdir="$(abs_top_srcdir)/" \
-	--attribute top_builddir="$(abs_top_builddir)/" \
+	--attribute=mansource="Network UPS Tools" \
+	--attribute=manversion="@PACKAGE_VERSION@" \
+	--attribute=manmanual="NUT Manual" \
+	--attribute=srcdir="$(abs_srcdir)/" \
+	--attribute=builddir="$(abs_builddir)/" \
+	--attribute=top_srcdir="$(abs_top_srcdir)/" \
+	--attribute=top_builddir="$(abs_top_builddir)/" \
 	--destination-dir="$${A2X_OUTDIR}"
 
 .txt-prepped.$(MAN_SECTION_CMD_USR):
@@ -1284,9 +1304,11 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC)
 	                fi ;; \
 	        esac ; \
 	        if $$MAN_SECTIONS_DEFAULT ; then \
-	            cat ; \
+	            sed \
+	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 @NUT_WEBSITE_BASE@/,' ; \
 	        else \
 	            sed \
+	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 @NUT_WEBSITE_BASE@/,' \
 	                -e 's,\(linkman:[^ []*\[\)3\],\1$(MAN_SECTION_API)],g' \
 	                -e 's,\(linkman:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
 	                -e 's,\(linkman:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \
@@ -1341,9 +1363,11 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC)
 	            grep -w linkman "$${linkroot}/$${F}" > /dev/null || IS_TEXT=false ; \
 	        fi ; \
 	        if $$MAN_SECTIONS_DEFAULT || ! $$IS_TEXT ; then \
-	            cat ; \
+	            sed \
+	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 @NUT_WEBSITE_BASE@/,' ; \
 	        else \
 	            sed \
+	                -e 's,\(home page:\) https://www.networkupstools.org/*$$,\1 @NUT_WEBSITE_BASE@/,' \
 	                -e 's,\(linkman:[^ []*\[\)3\],\1$(MAN_SECTION_API)],g' \
 	                -e 's,\(linkman:[^ []*\[\)5\],\1$(MAN_SECTION_CFG)],g' \
 	                -e 's,\(linkman:[^ []*\[\)8\],\1$(MAN_SECTION_CMD_SYS)],g' \
