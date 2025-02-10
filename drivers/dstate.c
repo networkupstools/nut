@@ -1648,7 +1648,11 @@ int status_get(const char *buf)
 	if (!s)
 		return 0;
 
-	offset = status_buf - s;
+	offset = s - status_buf;
+#if 0
+	upsdebugx(3, "%s: '%s' in '%s': offset=%" PRIuSIZE" buflen=%" PRIuSIZE" s[buflen]='0x%2X'\n",
+		__func__, buf, status_buf, offset, buflen, s[buflen]);
+#endif
 	if (offset == 0 || status_buf[offset - 1] == ' ') {
 		/* We have hit the start of token */
 		if (s[buflen] == '\0' || s[buflen] == ' ') {
