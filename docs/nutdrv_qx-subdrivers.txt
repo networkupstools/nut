@@ -1178,6 +1178,8 @@ For more details, have a look at the currently available subdrivers:
 - +nutdrv_qx_megatec-old.+{+c+,+h+}
 - +nutdrv_qx_mustek.+{+c+,+h+}
 - +nutdrv_qx_q1.+{+c+,+h+}
+- +nutdrv_qx_q2.+{+c+,+h+}
+- +nutdrv_qx_q6.+{+c+,+h+}
 - +nutdrv_qx_voltronic.+{+c+,+h+}
 - +nutdrv_qx_voltronic-qs.+{+c+,+h+}
 - +nutdrv_qx_voltronic-qs-hex.+{+c+,+h+}

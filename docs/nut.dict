@@ -646,7 +646,6 @@ MBATTCHG
 MCU
 MDigest
 MEC
-MEGATAEC
 MERCHANTABILITY
 MF
 MH
@@ -2482,6 +2481,7 @@ nolock
 nombattvolt
 noncommercially
 noout
+nooutstats
 norating
 noro
 noscanlangid
