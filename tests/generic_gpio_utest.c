@@ -388,10 +388,10 @@ int main(int argc, char **argv) {
 	/* FIXME: Standalone test with driver-program dependencies? */
 	status_init();
 	nut_debug_level = 6;
-	status_set("OL");
+	status_set(" OL ");
 	status_set("OL BOOST");
-	status_set("OB");
-	status_set("BOOST");
+	status_set("OB ");
+	status_set(" BOOST");
 	status_commit();
 	valueStr = dstate_getinfo("ups.status");
 	nut_debug_level = 0;
