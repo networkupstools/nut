@@ -1668,6 +1668,39 @@ int status_get(const char *buf)
 /* add a status element */
 void status_set(const char *buf)
 {
+#if 0
+	upsdebugx(3, "%s: '%s'\n", __func__, buf);
+#endif
+	if (strstr(buf, " ")) {
+		/* Recurse adding each sub-status one by one (avoid duplicates)
+		 * We frown upon adding "A FEW TOKENS" at once, but in e.g.
+		 * snmp-ups subdrivers with a mapping table this is not easily
+		 * avoidable...
+		 */
+		char	*tmp = xstrdup(buf), *p = tmp, *s = tmp;
+		while (*p) {
+			if (*p == ' ') {
+				*p = '\0';
+				if (s != p) {
+					/* Only recurse to set non-trivial tokens */
+					status_set(s);
+				}
+				p++;
+				s = p;	/* Start of new word... or a consecutive space to ignore on next cycle */
+			} else {
+				p++;
+			}
+		}
+
+		if (s != p) {
+			/* Last valid token did end with (*p=='\0') */
+			status_set(s);
+		}
+
+		free(tmp);
+		return;
+	}
+
 	if (ignorelb && !strcasecmp(buf, "LB")) {
 		upsdebugx(2, "%s: ignoring LB flag from device", __func__);
 		return;
