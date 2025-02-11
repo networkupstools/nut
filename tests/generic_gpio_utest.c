@@ -143,7 +143,6 @@ int main(int argc, char **argv) {
 	char testDescFileNameBuf[LARGEBUF];
 	char *testDescFileName = "generic_gpio_test.txt";
 	unsigned int i;
-	const char	*valueStr = NULL;
 
 	test_with_exit=0;
 
@@ -384,26 +383,6 @@ int main(int argc, char **argv) {
 			}
 		}
 	}
-
-	/* FIXME: Standalone test with driver-program dependencies? */
-	status_init();
-	nut_debug_level = 6;
-	status_set(" OL ");
-	status_set("OL BOOST");
-	status_set("OB ");
-	status_set(" BOOST");
-	status_commit();
-	valueStr = dstate_getinfo("ups.status");
-	nut_debug_level = 0;
-	if (!strcmp(valueStr, "OL BOOST OB")) {
-		printf("pass");
-		cases_passed++;
-	} else {
-		printf("fail");
-		cases_failed++;
-	}
-	i++;
-	printf(" test for ups.status: '%s'; any duplicates?\n", NUT_STRARG(valueStr));
 
 	printf("test_rules completed. Total cases %d, passed %d, failed %d\n",
 		cases_passed+cases_failed, cases_passed, cases_failed);
