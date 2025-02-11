@@ -1644,11 +1644,16 @@ int status_get(const char *buf)
 	s = strstr(status_buf, buf);
 	buflen = strlen(buf);
 
-	/* not found */
-	if (!s)
+repeat:
+	/* not found or hit end of line */
+	if (!s || !*s)
 		return 0;
 
-	offset = status_buf - s;
+	offset = s - status_buf;
+#if 0
+	upsdebugx(3, "%s: '%s' in '%s': offset=%" PRIuSIZE" buflen=%" PRIuSIZE" s[buflen]='0x%2X'\n",
+		__func__, buf, status_buf, offset, buflen, s[buflen]);
+#endif
 	if (offset == 0 || status_buf[offset - 1] == ' ') {
 		/* We have hit the start of token */
 		if (s[buflen] == '\0' || s[buflen] == ' ') {
@@ -1658,12 +1663,46 @@ int status_get(const char *buf)
 	}
 
 	/* buf was a substring of some other token */
-	return 0;
+	s = strstr(s + 1, buf);
+	goto repeat;
 }
 
 /* add a status element */
 void status_set(const char *buf)
 {
+#if 0
+	upsdebugx(3, "%s: '%s'\n", __func__, buf);
+#endif
+	if (strstr(buf, " ")) {
+		/* Recurse adding each sub-status one by one (avoid duplicates)
+		 * We frown upon adding "A FEW TOKENS" at once, but in e.g.
+		 * snmp-ups subdrivers with a mapping table this is not easily
+		 * avoidable...
+		 */
+		char	*tmp = xstrdup(buf), *p = tmp, *s = tmp;
+		while (*p) {
+			if (*p == ' ') {
+				*p = '\0';
+				if (s != p) {
+					/* Only recurse to set non-trivial tokens */
+					status_set(s);
+				}
+				p++;
+				s = p;	/* Start of new word... or a consecutive space to ignore on next cycle */
+			} else {
+				p++;
+			}
+		}
+
+		if (s != p) {
+			/* Last valid token did end with (*p=='\0') */
+			status_set(s);
+		}
+
+		free(tmp);
+		return;
+	}
+
 	if (ignorelb && !strcasecmp(buf, "LB")) {
 		upsdebugx(2, "%s: ignoring LB flag from device", __func__);
 		return;

@@ -247,6 +247,10 @@ Possible values for status_set:
 	BOOST   -- UPS is boosting incoming voltage
 	FSD     -- Forced Shutdown (restricted use, see the note below)
 
+Internally, an `ALARM` value would be added (typically as first in the list)
+if the `ups.alarm` is currently not empty. For more details, see below in
+`alarm_set()` description.
+
 Anything else will not be recognized by the usual clients expecting a
 particular NUT standard release.  New tokens may appear over time, but
 driver developers should coordinate with the nut-upsdev list before creating

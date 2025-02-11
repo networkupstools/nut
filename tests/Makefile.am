@@ -116,6 +116,11 @@ endif !WITH_GPIO
 CLEANFILES += generic_gpio_libgpiod.c generic_gpio_common.c
 EXTRA_DIST += generic_gpio_utest.h generic_gpio_test.txt
 
+TESTS += driver_methods_utest
+driver_methods_utest_SOURCES = driver_methods_utest.c
+driver_methods_utest_LDADD = $(top_builddir)/drivers/libdummy_mockdrv.la
+driver_methods_utest_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
+
 # Make sure out-of-dir dependencies exist (especially when dev-building parts):
 $(top_builddir)/drivers/libdummy_mockdrv.la \
 $(top_builddir)/common/libnutconf.la \

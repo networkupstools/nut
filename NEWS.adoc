@@ -479,8 +479,8 @@ relocated into new `shutdown.default` INSTCMD definitions. [#2670]
    * custom `distcheck-something` targets did not inherit `DISTCHECK_FLAGS`
      properly. [#2541]
    * added `status_get()` in NUT driver state API, to check if a status
-     token string had been set recently, and to avoid duplicate settings.
-     [PR #2565]
+     token string had been set recently, and to avoid duplicate settings;
+     fixed `status_set()` for multi-token arguments. [PR #2565, issue #2708]
    * local socket/pipe protocol introduced a `LOGOUT` command for cleaner
      disconnection handling. [#2572]
    * codebase adapted to the liking of `clang-18` and newer revisions of

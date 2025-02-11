@@ -47,9 +47,11 @@ const char	*progname = NULL, *upsname = NULL, *device_name = NULL;
 
 /* may be set by the driver to wake up while in dstate_poll_fds */
 TYPE_FD	extrafd = ERROR_FD;
-#ifdef WIN32
+#ifndef DRIVERS_MAIN_WITHOUT_MAIN
+# ifdef WIN32
 static HANDLE	mutex = INVALID_HANDLE_VALUE;
-#endif
+# endif	/* WIN32 */
+#endif	/* DRIVERS_MAIN_WITHOUT_MAIN */
 
 /* Set by INSTCMD to killpower or by running `drivername -k` to
  * help differentiate calls into upsdrv_shutdown() and further
