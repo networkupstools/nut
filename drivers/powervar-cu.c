@@ -7,7 +7,7 @@
  *
  * Copyright (C)
  *     2024, 2025 by Bill Elliot <bill@wreassoc.com>
- *     (USB comm based on various other drivers)
+ *     (USB comms based on tripplite_usb.c and other drivers)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,7 +40,6 @@
 
 #include "usb-common.h"
 
-
 /* Prototypes to allow setting pointer before function is defined */
 int setcmd(const char* varname, const char* setvalue);
 int instcmd(const char *cmdname, const char *extra);
@@ -51,15 +50,19 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize);
 #define BIG_BUFFER		512
 
 /* Two drivers include the following. Provide some identifier for any differences */
-//#define PVAR_USB	1	/* This is the USB comm driver */
+#define PVAR_USB	1	/* This is the USB comm driver */
+
+/* Flag indicating a disconnected USB cable...and need to reconnect */
+static uint ReconnectFlag = 0;
+
 #include "powervar-cx.h"	/* Common driver variables and functions */
 
 #define DRIVER_NAME	"Powervar-CU UPS driver (USB)"
-#define DRIVER_VERSION	"0.10"
+#define DRIVER_VERSION	"0.80"
 
 /* USB comm stuff here */
 #define USB_RESPONSE_SIZE	8
-#define RETRIES 		4
+#define MAX_CNCT_ATTMPTS	60	/* x calls to upsdrv_updateinfo */
 
 /* Powervar */
 #define POWERVAR_VENDORID	0x4234
@@ -142,7 +145,7 @@ int match_by_something(usb_dev_handle *argudev, USBDevice_t *arghd, usb_ctrl_cha
 	NUT_UNUSED_VARIABLE(rdbuf);
 	NUT_UNUSED_VARIABLE(rdlen);
 
-	printf ("In 'match_by_something'\n");
+/*	printf ("In 'match_by_something'\n");  */
 
 	GetUPSData (PID_REQ, sData, sDataLen);
 
@@ -154,12 +157,13 @@ int match_by_something(usb_dev_handle *argudev, USBDevice_t *arghd, usb_ctrl_cha
 		}
 	}
 
+	/* Just trying to be nice to the terminal output by dropping the CR*/
 	sData[i] = 0;
 	upsdebugx(3, "'GetUPSData' returned '%s', i: %d, with ret: %d", sData, i, ret);
 	sData[i] = ENDCHAR;
-	sData[i+1] = 0;		/* Force trailing null? */
+	sData[i+1] = 0;		/* Force trailing null */
 
-	if (GetSubstringPosition ((const char*)sData, "CUSPP") == 1)
+	if (GetSubstringPosition ((const char*)sData, PID_PROT_DATA) == 1)
 	{
 		upsdebugx(3, "Powervar CUSPP device found!");
 	}
@@ -247,7 +251,7 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
 	size_t j = 0;
 
 //	int Retries = RETRIES;		/* x/2 seconds max with 500000 USEC */
-	ssize_t return_val = 0;
+	ssize_t return_val = 1;		/* Set up for a bad return */
 
 //	for(i = 0; i < (USB_RESPONSE_SIZE + 2) ; i++) response_in[i] = '\0';
 	memset(response_in, 0, sizeof(response_in));
@@ -285,7 +289,11 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
 		}
 		else
 		{
-			upsdebugx(5, "Unexpected return value: %d", ret);
+			if (ret < 0)	/* TBD, Remove!! */
+			{
+				printf("USB send returned: %d\n", ret);
+			}
+			upsdebugx(1, "Unexpected return value: %d", ret);
 			break;
 		}
 	}
@@ -293,6 +301,16 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
 	upsdebugx (4,"PowervarGetResponse buffer: '%s'",chBuff);
 
 	USBFlushReceive ();		/* Clear USB hardware */
+
+	if (ret > 0)
+	{
+		return_val = 0;		/* Comms OK */
+	}
+	else if (ret < 0)
+	{
+		//Set driver status flag here?
+		ReconnectFlag = 1;	/* Attempt reconnection */
+	}
 
 //	Hmmm, this doesn't do anything. Fix it?
 //	if (Retries == 0)
@@ -405,18 +423,51 @@ void upsdrv_initinfo(void)
 /* This function is called regularly for data updates. */
 void upsdrv_updateinfo(void)
 {
+	int ret;
+	static int CnctAttempts = 0;
+
 	printf ("In upsdrv_updateinfo\n");
 
-	status_init();
-	alarm_init();
+	if (ReconnectFlag)
+	{
+		dstate_setinfo("driver.state", "reconnect.trying");
+		upslogx(LOG_WARNING, "USB device may be detached.");
+		upslogx(LOG_NOTICE, "USB reconnect attempt: %d.", ++CnctAttempts);
+		upsdebugx(4, "USB reconnect attempt: %d", CnctAttempts);
+
+		hd = NULL;
+
+		ret = comm_driver->open_dev(&udev, &curDevice, reopen_matcher, match_by_something);
+		if (ret < 1)
+		{
+			if(CnctAttempts >= MAX_CNCT_ATTMPTS)
+			{
+				upsdebugx(4, "Exceeded max reconnect attemtps.");
+				fatalx(EXIT_FAILURE, "Exceeded max reconnect attempts.");
+			}
+			else
+			{
+				upslogx(LOG_INFO, "USB reconnect attempt %d failed.", CnctAttempts);
+				upslogx(LOG_INFO, "Will try another reconnect in a bit.");
+				dstate_datastale();
+				return;
+			}
+		}
+
+		upsdebugx(4, "USB device reconnected!");
+		ReconnectFlag = 0;	/* Show good for now */
+		CnctAttempts = 0;
+
+		hd = &curDevice;
+
+		upslogx(LOG_NOTICE, "USB reconnect successful");
+		dstate_setinfo("driver.state", "reconnect.updateinfo");
+		upsdrv_initinfo();
+
+		dstate_setinfo("driver.state", "quiet");
+	}
 
 	PvarCommon_Updateinfo ();
-
-	alarm_commit();
-	status_commit();
-
-	/* TBD, What if we lose comms in call to common function?? */
-	dstate_dataok();
 }
 
 

@@ -2,7 +2,7 @@
 /* powervar-cx.c - Common items for Powervar UPS CUSPP drivers.
  *
  * Copyright (C)
- *     2024 by Bill Elliot <bill@wreassoc.com>
+ *     2024, 2025 by Bill Elliot <bill@wreassoc.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,8 +39,8 @@ int setcmd(const char* varname, const char* setvalue);
 
 
 /* Common CUSPP stuff here */
-#define FALSE			0
-#define TRUE			1
+//#define FALSE			0
+//#define TRUE			1
 
 /*misc stuff*/
 #define BUFFSIZE		512
@@ -517,7 +517,6 @@ char* chSrc;
 char* chTok;
 
 	/* Make a local copy of the source string so strtok doesn't corrupt original. */
-	/*  [TBD, -OR- pass chResponse buffer by value??] */
 	strcpy (WorkBuffer, chResponse);
 
 	/* Find the '=' in the response string and get past it */

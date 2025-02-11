@@ -5,7 +5,7 @@
  * UPM (All)
  *
  * Copyright (C)
- *     2024 by Bill Elliot <bill@wreassoc.com>
+ *     2024, 2025 by Bill Elliot <bill@wreassoc.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize);
 #include "powervar-cx.h"	/* Common driver defines, variables, and functions */
 
 #define DRIVER_NAME	"Powervar-CS UPS driver (Serial)"
-#define DRIVER_VERSION	"0.10"
+#define DRIVER_VERSION	"0.80"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
