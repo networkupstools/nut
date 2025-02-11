@@ -39,8 +39,6 @@ int setcmd(const char* varname, const char* setvalue);
 
 
 /* Common CUSPP stuff here */
-//#define FALSE			0
-//#define TRUE			1
 
 /*misc stuff*/
 #define BUFFSIZE		512
@@ -49,8 +47,6 @@ int setcmd(const char* varname, const char* setvalue);
 #define STDREQSIZE		3	/* Length of all primary requests */
 
 /* For use in some instant commands...if requested */
-#define DEFAULT_BAT_TEST_TIME 	"10"	/* TST.BATRUN */
-#define DEFAULT_DISP_TEST_TIME	"10"	/* TST.DISP */
 #define BEEPENABLE		"1"
 #define BEEPDISABLE		"0"
 #define BEEPMUTE		"2"
@@ -58,21 +54,16 @@ int setcmd(const char* varname, const char* setvalue);
 #define GET_STARTDELAY_RESP_SIZE	5	/* Max chars for variable */
 #define GETX_DATE_RESP_SIZE		6	/* Max chars for variable */
 
+#define IGNCHARS		"\n"
 #define ENDCHAR			'\r'
-#define ENDCHARS		"\r\n"
+#define COMMAND_END		"\r\n"
 #define CHAR_EQ			'='
-#define IGNCHARS 		"\n"
-#define COMMAND_END 		"\r\n"
 #define FORMAT_TAIL		".FORMAT"
 #define DATADELIM		";\r"
 #define FRMTDELIM		";.\r"
 #define DONT_UNDERSTAND		'?'
 
-/*Information requests -- CUSPP*/
-
-/*Anticipated FAMILY responses*/
-#define FAMILY_GTS		"GTS"
-#define FAMILY_UPM		"UPM"
+/* Information requests -- CUSPP */
 
 /* Some common substrings */
 #define X_STATUS_SUB		"STATUS"
@@ -276,12 +267,13 @@ static uint8_t byEVTUptimePos = 0;
 
 /* A data dumper...for debug use */
 /* Just prints out contents of buffer but in hex representation then ASCII */
+#ifdef never
 void ShowStringHex (const char* pS)
 {
 	size_t Len = strlen(pS);
 	uint32_t i = 0;
 
-	/* Limit length to USB packet size for now (plus a little bit) */
+	/* Limit length to USB buffer size for now */
 	if (Len > BUFFSIZE)
 	{
 		Len = BUFFSIZE;
@@ -304,8 +296,9 @@ void ShowStringHex (const char* pS)
 		i++;
 	} while (i <= (Len - 1));
 
-	printf ("%s", COMMAND_END);	/* Just finish the line */
+	printf (COMMAND_END);		/* Just finish the line */
 }
+#endif
 
 
 /* Get the FORMAT and/or data for the requested CUSPP group.
@@ -316,6 +309,7 @@ void ShowStringHex (const char* pS)
 static void GetInitFormatAndOrData (const char* sReq, char* sF, const size_t sFSize, char* sD, const size_t sDSize)
 {
 char sRequest[15];
+uint SendTries = 0;
 
 	upsdebugx (5, "In GetInitFormatAndOrData...");
 
@@ -328,23 +322,30 @@ char sRequest[15];
 		/* Get sReq.FORMAT response */
 		upsdebugx (2, "Requesting '%s'", sRequest);
 
-		SendRequest ((const char*)sRequest);
-
-		if(PowervarGetResponse (sF, sFSize))
+		do
 		{
-			fatalx(EXIT_FAILURE, "'%s.FORMAT' timeout getting UPS data on %s\n", sReq, device_path);
-		}
+			SendRequest ((const char*)sRequest);
 
-		if ((sF[0] == '?') || (strncmp(sReq, sF, STDREQSIZE) != 0))
-		{
-			if (sF[0] != DONT_UNDERSTAND)
+			if(PowervarGetResponse (sF, sFSize))
 			{
-				upsdebugx (4, "[GetInitF] unexpected response: '%s'", sF);
+				fatalx(EXIT_FAILURE, "'%s.FORMAT' timeout getting UPS data on %s\n", sReq, device_path);
 			}
 
-			sF[0] = 0;		/* Show invalid response */
-			/* TBD, Retry?? */
-		}
+			if ((sF[0] == DONT_UNDERSTAND) || (strncmp(sReq, sF, STDREQSIZE) != 0))
+			{
+				if (sF[0] != DONT_UNDERSTAND)
+				{
+					upsdebugx (4, "[GetInitF] unexpected response: '%s'", sF);
+				}
+
+				sF[0] = 0;	/* Show invalid response */
+			}
+			else
+			{
+				break;		/* Valid response */
+			}
+
+		} while (++SendTries < 2);
 	}
 	else
 	{
@@ -358,23 +359,30 @@ char sRequest[15];
 		/* Get sReq data */
 		upsdebugx (2, "Requesting '%s' data", sReq);
 
-		SendRequest((const char*)sReq);
-
-		if(PowervarGetResponse (sD, sDSize))
+		do
 		{
-			fatalx(EXIT_FAILURE, "'%s' timeout getting UPS data on '%s'\n", sReq, device_path);
-		}
 
-		if ((sD[0] == '?') || (strncmp(sReq, sD, STDREQSIZE) != 0))
-		{
-			if (sD[0] != DONT_UNDERSTAND)
+			SendRequest((const char*)sReq);
+
+			if(PowervarGetResponse (sD, sDSize))
 			{
-				upsdebugx (4, "[GetInitD] unexpected response: '%s'", sD);
+				fatalx(EXIT_FAILURE, "'%s' timeout getting UPS data on '%s'\n", sReq, device_path);
 			}
 
-			sD[0] = 0;		/* Show invalid response */
-			/* TBD, Retry?? */
-		}
+			if ((sD[0] == '?') || (strncmp(sReq, sD, STDREQSIZE) != 0))
+			{
+				if (sD[0] != DONT_UNDERSTAND)
+				{
+					upsdebugx (4, "[GetInitD] unexpected response: '%s'", sD);
+				}
+
+				sD[0] = 0;	/* Show invalid response */
+			}
+			else
+			{
+				break;		/* Valid response */
+			}
+		} while (++SendTries < 2);
 	}
 	else
 	{
@@ -392,23 +400,33 @@ char sRequest[15];
 static uint8_t GetUPSData (char* sReq, char* sD, const size_t sDSize)
 {
 uint8_t byReturn = 1;		/* Set up for good return, '0' is bad */
+uint SendTries = 0;		/* Try sending request twice */
 
 	memset(sD, 0, sDSize);
 
 	/* Get sReq data */
 	upsdebugx (2, "Requesting %s update", sReq);
 
-	SendRequest((const char*)sReq);
-
-	if((PowervarGetResponse (sD, sDSize) != 0) || (strncmp(sReq, sD, STDREQSIZE) != 0))
+	do
 	{
-		byReturn = 0;		/* Show invalid data */
+		SendRequest((const char*)sReq);
 
-		if (sD[0] != DONT_UNDERSTAND)
+		if((PowervarGetResponse (sD, sDSize) != 0) || (strncmp(sReq, sD, STDREQSIZE) != 0))
 		{
-			upsdebugx (3, "GetUPSData invalid response: '%s', %d", sD, strncmp(sReq, sD, STDREQSIZE));
+			byReturn = 0;		/* Show invalid data */
+
+			if (sD[0] != DONT_UNDERSTAND)
+			{
+				upsdebugx (3, "GetUPSData invalid response: '%s', %d", sD, strncmp(sReq, sD, STDREQSIZE));
+			}
 		}
-	}
+		else
+		{
+			byReturn = 1;		/* Valid data */
+			break;
+		}
+
+	} while (++SendTries < 2);
 
 	return byReturn;
 }
@@ -426,12 +444,9 @@ static size_t SendCommand (const char* sCmd)
 
 	memset(chInBuff, 0, sizeof(chInBuff));
 
-	ShowStringHex (sCmd);					/* TBD, remove */
-
 	ret = SendRequest(sCmd);
 
 	PowervarGetResponse (chInBuff, sizeof(chInBuff));
-	ShowStringHex (chInBuff);					/* TBD, remove */
 
 	/* Anything we want to do with the response or return value?? */
 
@@ -453,7 +468,7 @@ static size_t SendCommand (const char* sCmd)
 static uint GetSubstringFromBuffer (char* chDst, const char* chSrc, const uint SubPosition)
 {
 uint RetVal = 0;		/* Start with a bad return value */
-char WorkBuffer [BUFFSIZE];	/* Copy of passed in buffer */
+char WorkBuffer [BUFFSIZE];	/* For copy of passed in buffer */
 char* chWork;			/* Pointer into working buffer */
 char* chTok;			/* Pointer to token */
 uint Pos;			/* Token position down-counter */
@@ -461,7 +476,6 @@ uint Pos;			/* Token position down-counter */
 	if (SubPosition)	/* Don't accept a '0' request */
 	{
 		/* Make a local copy of the source string so strtok doesn't corrupt original. */
-		/*  [TBD, -OR- pass chSrc buffer by value??] */
 		strcpy (WorkBuffer, chSrc);
 
 		/* Get to '=' of request response and then point at next character... */
@@ -509,12 +523,12 @@ uint Pos;			/* Token position down-counter */
 /* This function finds the position of a substring in a CUSPP Format response. */
 static uint GetSubstringPosition (const char* chResponse, const char* chSub)
 {
-uint uiReturn = 0;
-uint uiPos = 1;
+uint uiReturn = 0;		/* Substring position or 0 if not found */
+uint uiPos = 1;			/* Substring position counter */
 uint uiLen = 0;
 char WorkBuffer [BUFFSIZE];
 char* chSrc;
-char* chTok;
+char* chTok;			/* Individual tokens as they are found */
 
 	/* Make a local copy of the source string so strtok doesn't corrupt original. */
 	strcpy (WorkBuffer, chResponse);
@@ -565,6 +579,7 @@ void PvarCommon_Initinfo (void)
 	char sFBuff[BUFFSIZE];
 	char sDBuff[BUFFSIZE];
 	char SubBuff[SUBBUFFSIZE];
+	char Msg[SUBBUFFSIZE + REQBUFFSIZE + 60];
 
 	/* First, try to get UPM PID.FORMAT response. All UPSs with CUSPP should reply
 	 *  to this request so we can confirm that it is a Powervar UPS.
@@ -681,8 +696,9 @@ void PvarCommon_Initinfo (void)
 		}
 	}
 
-	/* TBD, Put this in the log?? */
-	upsdebugx (2, "Found a Powervar '%s' UPS with serial number: '%s'", UpsFamily, SubBuff);
+	sprintf (Msg, "Found a Powervar '%s' UPS with serial number: '%s'", UpsFamily, SubBuff);
+	upsdebugx (2, "%s", Msg);
+	upslogx(LOG_INFO, "%s", Msg);
 
 	/* Get BAT format and populate needed data string positions... */
 	GetInitFormatAndOrData(BAT_REQ, sFBuff, sizeof(sFBuff), sDBuff, sizeof(sDBuff));
@@ -1249,8 +1265,6 @@ static void HandleOffDelay (void)
 
 	sprintf(chOutBuff, "%s%d", SET_OFFDLY_REQ, delay);
 
-	printf ("HandleOffDelayCommand: '%s'\n", chOutBuff);		/* TBD, remove */
-
 	SendCommand (chOutBuff);
 }
 
@@ -1269,8 +1283,6 @@ static void HandleOnDelay (void)
 		sprintf(chBuff,"%s%s", SET_SRTDLY_REQ, dstate_getinfo("ups.delay.start"));
 	}
 
-	printf ("HandleOnDelayCommand: '%s'\n", chBuff);		/* TBD, remove */
-
 	SendCommand (chBuff);
 }
 
@@ -1278,8 +1290,6 @@ static void HandleOnDelay (void)
 /* Functions called by NUT that impact or use the Powervar UPS driver */
 void upsdrv_makevartable(void)
 {
-	printf("In MakeVarTable function...\n");
-
 	addvar(VAR_VALUE, "startdelay", "Change start delay time from the 1 second default (1-65535).");
 
 	addvar(VAR_VALUE, "offdelay", "Change shutdown delay time from 0 second default (1-65535).");
@@ -1289,13 +1299,10 @@ void upsdrv_makevartable(void)
 #ifdef PVAR_SERIAL
 	addvar(VAR_VALUE, "pvbaud", "(UPM dev only) *Possibly* use a baud rate other than the default of 9600.");
 #endif
-
-	printf("Leaving MakeVarTable function...\n");
 }
 
 void upsdrv_shutdown(void)
 {
-	printf ("Shutdown!\n");		/* TBD, REMOVE!! */
 	HandleOffDelay ();
 }
 
@@ -1307,91 +1314,78 @@ int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "test.battery.start.quick"))
 	{
-		printf ("t.b.s.q\n");		/* TBD, REMOVE!! */
 		SendCommand (TST_BATQCK_REQ);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.battery.start.deep"))
 	{
-		printf ("t.b.s.d\n");		/* TBD, REMOVE!! */
 		SendCommand (TST_BATDEP_REQ);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.battery.stop"))
 	{
-		printf ("t.b.s\n");		/* TBD, REMOVE!! */
 		SendCommand (TST_ABORT_REQ);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.failure.start"))
 	{
-		printf ("t.f.s\n");		/* TBD, REMOVE!! */
 		SendCommand (TST_BATDEP_REQ);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.failure.stop"))
 	{
-		printf ("t.f.stp\n");		/* TBD, REMOVE!! */
 		SendCommand (TST_ABORT_REQ);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.stop"))
 	{
-		printf ("shd.stp\n");		/* TBD, REMOVE!! */
 		SendCommand (SET_OFFSTP_REQ);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "beeper.enable"))
 	{
-		printf ("b.e\n");		/* TBD, REMOVE!! */
 		HandleBeeper (BEEPENABLE);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "beeper.disable"))
 	{
-		printf ("b.d\n");		/* TBD, REMOVE!! */
 		HandleBeeper (BEEPDISABLE);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "beeper.mute"))
 	{
-		printf ("b.m\n");		/* TBD, REMOVE!! */
 		HandleBeeper (BEEPMUTE);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "load.off"))
 	{
-		printf ("l.of\n");		/* TBD, REMOVE!! */
 		SendCommand (SET_OFFNOW_REQ);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "load.off.delay"))
 	{
-		printf ("l.of.d\n");		/* TBD, REMOVE!! */
 		HandleOffDelay ();
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "load.on"))
 	{
-		printf ("l.on\n");		/* TBD, REMOVE!! */
 		SendCommand (SET_SRTNOW_REQ);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "load.on.delay"))
 	{
-		printf ("l.on.d\n");		/* TBD, REMOVE!! */
 		HandleOnDelay();
 		return STAT_INSTCMD_HANDLED;
 	}
@@ -1400,7 +1394,6 @@ int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "shutdown.return") ||
 	    !strcasecmp(cmdname, "shutdown.reboot"))
 	{
-		printf ("sd.rt & sd.rb\n");		/* TBD, REMOVE!! */
 		SendCommand (SET_ATOSRT1_REQ);
 		HandleOffDelay ();
 		return STAT_INSTCMD_HANDLED;
@@ -1408,7 +1401,6 @@ int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "shutdown.stayoff"))
 	{
-		printf ("sd.styof\n");		/* TBD, REMOVE!! */
 		SendCommand (SET_ATOSRT0_REQ);
 		HandleOffDelay ();
 		return STAT_INSTCMD_HANDLED;
@@ -1416,21 +1408,18 @@ int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "shutdown.stop"))
 	{
-		printf ("sd.stp\n");		/* TBD, REMOVE!! */
 		SendCommand (SET_OFFSTP_REQ);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "reset.input.minmax"))
 	{
-		printf ("r.i.mm\n");		/* TBD, REMOVE!! */
 		SendCommand (SET_RSTINP_REQ);
 		return STAT_INSTCMD_HANDLED;
 	}
 
 	if (!strcasecmp(cmdname, "test.panel.start"))
 	{
-		printf ("t.p.s\n");		/* TBD, REMOVE!! */
 		char chBuff[REQBUFFSIZE];
 		uint ShowTime = 10;
 

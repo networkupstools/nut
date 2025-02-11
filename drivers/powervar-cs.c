@@ -134,7 +134,6 @@ void upsdrv_initups(void)
 	/* See if there is a custom baudrate available -- generally not */
 	if (getval("pvbaud") == NULL)
 	{
-		printf ("Setting baud to 9600.\n");
 		ser_set_speed(upsfd, device_path, B9600);
 
 		upsdebugx (4,"Serial baud set to 9600.");
@@ -146,19 +145,16 @@ void upsdrv_initups(void)
 
 		if (ulBaud == 38400)
 		{
-			printf ("Setting baud to 38400.\n");
 			ser_set_speed(upsfd, device_path, B38400);
 			upsdebugx (4,"Serial baud set to 38400.");
 		}
 		else if (ulBaud == 57600)
 		{
-			printf ("Setting baud to 57600.\n");
 			ser_set_speed(upsfd, device_path, B57600);
 			upsdebugx (4,"Serial baud set to 57600.");
 		}
 		else if (ulBaud == 115200)	/* The only other baud known to be available. */
 		{
-			printf ("Setting baud to 115200.\n");
 			ser_set_speed(upsfd, device_path, B115200);
 			upsdebugx (4,"Serial baud set to 115200.");
 		}

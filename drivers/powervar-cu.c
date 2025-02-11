@@ -136,7 +136,7 @@ static int subdriver_match_func(USBDevice_t *arghd, void *privdata)
 
 int match_by_something(usb_dev_handle *argudev, USBDevice_t *arghd, usb_ctrl_charbuf rdbuf, usb_ctrl_charbufsize rdlen)
 {
-	int i, ret = 0;
+	int i;
 	char sData[BIG_BUFFER];
 	size_t sDataLen = BIG_BUFFER;
 
@@ -144,8 +144,6 @@ int match_by_something(usb_dev_handle *argudev, USBDevice_t *arghd, usb_ctrl_cha
 	NUT_UNUSED_VARIABLE(arghd);
 	NUT_UNUSED_VARIABLE(rdbuf);
 	NUT_UNUSED_VARIABLE(rdlen);
-
-/*	printf ("In 'match_by_something'\n");  */
 
 	GetUPSData (PID_REQ, sData, sDataLen);
 
@@ -157,10 +155,11 @@ int match_by_something(usb_dev_handle *argudev, USBDevice_t *arghd, usb_ctrl_cha
 		}
 	}
 
-	/* Just trying to be nice to the terminal output by dropping the CR*/
+	/* Just trying to be nice to the terminal output by keeping the CR out of string... */
 	sData[i] = 0;
-	upsdebugx(3, "'GetUPSData' returned '%s', i: %d, with ret: %d", sData, i, ret);
-	sData[i] = ENDCHAR;
+	upsdebugx(3, "'GetUPSData' returned '%s', i: %d", sData, i);
+	sData[i] = ENDCHAR;	/* ... until here. */
+
 	sData[i+1] = 0;		/* Force trailing null */
 
 	if (GetSubstringPosition ((const char*)sData, PID_PROT_DATA) == 1)
@@ -177,6 +176,8 @@ int match_by_something(usb_dev_handle *argudev, USBDevice_t *arghd, usb_ctrl_cha
  **********************************/
 
 /* This function is called to flush the USB hardware of any remaining data */
+/* Would like to find a way to avoid 'nut_libusb_get_interrupt: Connection timed out' */
+/*  debug level 2 message. */
 void USBFlushReceive (void)
 {
 	uint uiCount = 0;
@@ -197,6 +198,7 @@ void USBFlushReceive (void)
 
 
 /* This function is called to send the data request to the initialized device. */
+/* Return value should be >0 for success. */
 static size_t SendRequest (const char* sRequest)
 {
 	char outbuff[40];
@@ -204,9 +206,6 @@ static size_t SendRequest (const char* sRequest)
 	size_t ReqLen = strlen(sRequest);
 	uint8_t i;
 
-/*
-	ShowStringHex (sRequest);
-*/
 	/* Clear output buffer area */
 	for(i = 0; i < 40; i++) outbuff[i] = '\0';
 
@@ -220,10 +219,6 @@ static size_t SendRequest (const char* sRequest)
 
 	outbuff[i] = ENDCHAR;
 	ReqLen++;			/* Add one for added CR */
-
-/*
-	ShowStringHex (outbuff);
-*/
 
 	ret = comm_driver->set_report(udev, 0,
 		(usb_ctrl_charbuf)outbuff,
@@ -244,16 +239,13 @@ static size_t SendRequest (const char* sRequest)
 /* BuffSize is the size, in chars, of chBuff */
 static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
 {
-
 	unsigned char response_in[USB_RESPONSE_SIZE + 2];
 	int ret = 0, done = 0;
 	size_t i = 0;
 	size_t j = 0;
 
-//	int Retries = RETRIES;		/* x/2 seconds max with 500000 USEC */
 	ssize_t return_val = 1;		/* Set up for a bad return */
 
-//	for(i = 0; i < (USB_RESPONSE_SIZE + 2) ; i++) response_in[i] = '\0';
 	memset(response_in, 0, sizeof(response_in));
 
 	for (i = 0 ; (done == 0) && (i < BuffSize) ; )
@@ -285,14 +277,9 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
 
 			/* Clear response buffer for next chunk */
 			memset(response_in, 0, sizeof(response_in));
-//			for(j = 0; j <= USB_RESPONSE_SIZE ; j++) response_in[j] = '\0';
 		}
 		else
 		{
-			if (ret < 0)	/* TBD, Remove!! */
-			{
-				printf("USB send returned: %d\n", ret);
-			}
 			upsdebugx(1, "Unexpected return value: %d", ret);
 			break;
 		}
@@ -300,34 +287,15 @@ static ssize_t PowervarGetResponse (char* chBuff, const size_t BuffSize)
 
 	upsdebugx (4,"PowervarGetResponse buffer: '%s'",chBuff);
 
-	USBFlushReceive ();		/* Clear USB hardware */
-
 	if (ret > 0)
 	{
+		USBFlushReceive ();	/* Clear USB hardware */
 		return_val = 0;		/* Comms OK */
 	}
-	else if (ret < 0)
+	else
 	{
-		//Set driver status flag here?
 		ReconnectFlag = 1;	/* Attempt reconnection */
 	}
-
-//	Hmmm, this doesn't do anything. Fix it?
-//	if (Retries == 0)
-//	{
-//		upsdebugx (2,"!!PowervarGetResponse timeout...");
-//
-//		return_val = 1;		/* Comms error */
-//	}
-//	else
-//	{
-//		if (Retries < RETRIES)
-//		{
-//			upsdebugx (2,"PowervarGetResponse recovered (%d)...", Retries);
-//		}
-//
-//		return_val = 0;		/* Good comms */
-//	}
 
 	return return_val;
 }
@@ -346,11 +314,11 @@ void upsdrv_initups(void)
 
 	warn_if_bad_usb_port_filename(device_path);
 
-	/* process the UPS selection options */
+	/* Process the UPS selection options */
 	regex_array[0] = NULL; /* handled by USB IDs device table */
 	regex_array[1] = getval("productid");
-	regex_array[2] = getval("vendor"); /* vendor string */
-	regex_array[3] = getval("product"); /* product string */
+	regex_array[2] = getval("vendor");	/* vendor string */
+	regex_array[3] = getval("product"); 	/* product string */
 	regex_array[4] = getval("serial");
 	regex_array[5] = NULL;
 	regex_array[6] = getval("device");
@@ -382,18 +350,6 @@ void upsdrv_initups(void)
 
 	upslogx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown", hd->Product ? hd->Product : "unknown");
 
-	/* TBD, I believe all of this supported stuff can come out */
-/* 	ret = is_usb_device_supported (powervar_usb_device_table, hd);
-
-	if (ret < 0)
-	{
-		upsdebugx (3, "supported: ret is less than 0.");
-	}
-	else if(ret > 0)
-	{
-		upsdebugx (3, "supported: ret is %d.", ret);
-	}
- */
 	upsdebugx(3, "VendorID: %04x", hd->VendorID);
 	upsdebugx(3, "ProductID: %04x", hd->ProductID);
 
@@ -410,10 +366,10 @@ void upsdrv_initups(void)
 
 void upsdrv_initinfo(void)
 {
-	printf ("In upsdrv_initinfo\n");
+	upsdebugx(3, "In upsdrv_initinfo");
 
 	/* Get port ready */
-	SendRequest ((const char*)ENDCHARS);		/* Just get device ready -- flush */
+	SendRequest ((const char*)COMMAND_END);		/* Just get device ready -- flush */
 	USBFlushReceive ();				/* Just flush response */
 
 	PvarCommon_Initinfo ();
@@ -426,7 +382,7 @@ void upsdrv_updateinfo(void)
 	int ret;
 	static int CnctAttempts = 0;
 
-	printf ("In upsdrv_updateinfo\n");
+	upsdebugx(3, "In upsdrv_updateinfo");
 
 	if (ReconnectFlag)
 	{
