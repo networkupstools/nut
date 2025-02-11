@@ -275,6 +275,19 @@ int qx_multiply_x1000(item_t *item, char *value, const size_t valuelen) {
 	return 0;
 }
 
+/* Convert minutes to seconds */
+int qx_multiply_m2s(item_t *item, char *value, const size_t valuelen) {
+	float s = 0;
+
+	if (sscanf(item->value, "%f", &s) != 1) {
+		upsdebugx(2, "unparsable ss.ss %s", item->value);
+		return -1;
+	}
+
+	snprintf(value, valuelen, "%.0f", s * 60.0);
+	return 0;
+}
+
 /* Fill batt.volt.act and guesstimate the battery charge
  * if it isn't already available. */
 static int	qx_battery(void)
