@@ -1644,8 +1644,9 @@ int status_get(const char *buf)
 	s = strstr(status_buf, buf);
 	buflen = strlen(buf);
 
-	/* not found */
-	if (!s)
+repeat:
+	/* not found or hit end of line */
+	if (!s || !*s)
 		return 0;
 
 	offset = s - status_buf;
@@ -1662,7 +1663,8 @@ int status_get(const char *buf)
 	}
 
 	/* buf was a substring of some other token */
-	return 0;
+	s = strstr(s + 1, buf);
+	goto repeat;
 }
 
 /* add a status element */
