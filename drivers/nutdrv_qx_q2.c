@@ -58,7 +58,7 @@ static item_t	q2_qx2nut[] = {
 	{ "output.L3.load",			0,	NULL,	"Q2\r",	"",	118,	'(',	"",	51,	53,	"%.0f",	0,	NULL,	NULL,	NULL },
 	{ "ups.temperature",		0,	NULL,	"Q2\r",	"",	118,	'(',	"",	66,	69,	"%.1f",	0,	NULL,	NULL,	NULL },
 	{ "battery.voltage",		0,	NULL,	"Q2\r",	"",	118,	'(',	"",	60,	64,	"%.1f",	0,	NULL,	NULL,	qx_multiply_battvolt },
-	{ "battery.runtime",		0,	NULL,	"Q2\r",	"",	118,	'(',	"",	80,	85,	"%.0f",	0,	NULL,	NULL,	NULL },
+	{ "battery.runtime",		0,	NULL,	"Q2\r",	"",	118,	'(',	"",	80,	85,	"%.2f",	0,	NULL,	NULL,	qx_multiply_m2s },
 	{ "battery.charge",			0,	NULL,	"Q2\r",	"",	118,	'(',	"",	87,	89,	"%.0f",	0,	NULL,	NULL,	NULL },
 	{ "experimental.input.topology",	0,	NULL,	"Q2\r",	"",	118,	'(',	"",	115,	115,	"%s",	QX_FLAG_STATIC,		NULL,	NULL,	q2_process_topology_bits },	/* Input transformer topology */
 	{ "experimental.output.topology",	0,	NULL,	"Q2\r",	"",	118,	'(',	"",	116,	116,	"%s",	QX_FLAG_STATIC,		NULL,	NULL,	q2_process_topology_bits },	/* Output transformer topology */
