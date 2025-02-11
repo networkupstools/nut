@@ -47,6 +47,24 @@ static char * pass_fail[2] = {"pass", "fail"};
 void upsdrv_cleanup(void) {}
 void upsdrv_shutdown(void) {}
 
+static void report_pass(void) {
+	printf("%s", pass_fail[0]);
+	cases_passed++;
+}
+
+static void report_fail(void) {
+	printf("%s", pass_fail[1]);
+	cases_failed++;
+}
+
+static int report_0_means_pass(int i) {
+	if (i == 0) {
+		report_pass();
+	} else {
+		report_fail();
+	}
+	return i;
+}
 int main(int argc, char **argv) {
 	const char	*valueStr = NULL;
 
@@ -66,13 +84,7 @@ int main(int argc, char **argv) {
 	status_commit();
 	valueStr = dstate_getinfo("ups.status");
 	nut_debug_level = 0;
-	if (!strcmp(valueStr, "OL BOOST OB")) {
-		printf("%s", pass_fail[0]);
-		cases_passed++;
-	} else {
-		printf("%s", pass_fail[1]);
-		cases_failed++;
-	}
+	report_0_means_pass(strcmp(valueStr, "OL BOOST OB"));
 	printf(" test for ups.status: '%s'; any duplicates?\n", NUT_STRARG(valueStr));
 
 	/* finish */
