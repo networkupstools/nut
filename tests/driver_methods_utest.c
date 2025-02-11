@@ -105,6 +105,20 @@ int main(int argc, char **argv) {
 	report_0_means_pass(strcmp(valueStr, "Test alarm 1 Test alarm 2 Test alarm 1"));
 	printf(" test for ups.alarm: '%s'; got 3 alarms?\n", NUT_STRARG(valueStr));
 
+	/* test case #4, build on top of #1 and #2 */
+	/* Note: normally we re-init and re-set the values */
+	status_set("BOO");
+	status_set("BOO");
+	status_set("OST");
+	status_set("OST");
+	status_set("OOS");
+	status_set("OOS");
+	status_commit();
+	valueStr = dstate_getinfo("ups.status");
+	nut_debug_level = 0;
+	report_0_means_pass(strcmp(valueStr, "ALARM OL BOOST OB BOO OST OOS"));
+	printf(" test for ups.status: '%s'; any duplicates?\n", NUT_STRARG(valueStr));
+
 	/* finish */
 	printf("test_rules completed. Total cases %d, passed %d, failed %d\n",
 		cases_passed+cases_failed, cases_passed, cases_failed);
