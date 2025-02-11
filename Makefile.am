@@ -15,9 +15,9 @@
 # missing e.g. PDF and HTML which then pop up in `make check` footprint,
 # or misses a .prep-src-docs stage needed to pattern-make man page files
 # with some "make" implementations...
-all all-am-local all-local: all-recursive
-	+@$(MAKE) $(AM_MAKEFLAGS) doc
-	+@$(MAKE) $(AM_MAKEFLAGS) doc
+#all all-am-local all-local: all-recursive
+#	+@$(MAKE) $(AM_MAKEFLAGS) doc
+#	+@$(MAKE) $(AM_MAKEFLAGS) doc
 
 # include directory for aclocal
 ACLOCAL_AMFLAGS = -I m4
