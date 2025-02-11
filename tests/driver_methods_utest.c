@@ -91,12 +91,19 @@ int main(int argc, char **argv) {
 	alarm_init();
 	alarm_set("Test alarm 1");
 	alarm_set("Test alarm 2");
+	alarm_set("Test alarm 1");
 	alarm_commit();
 	/* Note: normally we re-init and re-set the values */
 	status_commit();
 	valueStr = dstate_getinfo("ups.status");
 	report_0_means_pass(strcmp(valueStr, "ALARM OL BOOST OB"));
 	printf(" test for ups.status: '%s'; got alarm?\n", NUT_STRARG(valueStr));
+
+	/* test case #3, build on top of #2 */
+	valueStr = dstate_getinfo("ups.alarm");
+	/* NOTE: no dedup here! */
+	report_0_means_pass(strcmp(valueStr, "Test alarm 1 Test alarm 2 Test alarm 1"));
+	printf(" test for ups.alarm: '%s'; got 3 alarms?\n", NUT_STRARG(valueStr));
 
 	/* finish */
 	printf("test_rules completed. Total cases %d, passed %d, failed %d\n",
