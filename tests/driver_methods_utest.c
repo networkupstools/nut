@@ -87,6 +87,17 @@ int main(int argc, char **argv) {
 	report_0_means_pass(strcmp(valueStr, "OL BOOST OB"));
 	printf(" test for ups.status: '%s'; any duplicates?\n", NUT_STRARG(valueStr));
 
+	/* test case #2, build on top of #1 */
+	alarm_init();
+	alarm_set("Test alarm 1");
+	alarm_set("Test alarm 2");
+	alarm_commit();
+	/* Note: normally we re-init and re-set the values */
+	status_commit();
+	valueStr = dstate_getinfo("ups.status");
+	report_0_means_pass(strcmp(valueStr, "ALARM OL BOOST OB"));
+	printf(" test for ups.status: '%s'; got alarm?\n", NUT_STRARG(valueStr));
+
 	/* finish */
 	printf("test_rules completed. Total cases %d, passed %d, failed %d\n",
 		cases_passed+cases_failed, cases_passed, cases_failed);
