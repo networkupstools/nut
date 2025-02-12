@@ -100,16 +100,21 @@ static info_lkp_t netvision_onbatt_info[] = {
 #define NETVISION_OID_CONTROL_STATUS 	     ".1.3.6.1.4.1.4555.1.1.1.1.8.1"
 #define NETVISION_OID_CONTROL_SHUTDOWN_DELAY ".1.3.6.1.4.1.4555.1.1.1.1.8.2"
 
+/*
+ * some of the output sources below are set to empty string; because we
+ * don't know from here if we are online or on batteries.
+ * In this case upsAlarmOnBattery will set the appropriate status.
+ */
 static info_lkp_t netvision_output_info[] = {
-	info_lkp_default(1, ""),	/* output source other   */
-	info_lkp_default(2, ""),	/* output source none    */
-	info_lkp_default(3, "OL"),	/* output source normal  */
-	info_lkp_default(4, "OL BYPASS"),	/* output source bypass  */
-	info_lkp_default(5, "OB"),	/* output source battery */
-	info_lkp_default(6, "OL BOOST"),	/* output source booster */
-	info_lkp_default(7, "OL TRIM"),	/* output source reducer */
-	info_lkp_default(8, "OL"),	/* output source standby */
-	info_lkp_default(9, ""),	/* output source ecomode */
+	info_lkp_default(1, ""),	/* output source unknown   */
+	info_lkp_default(2, ""),	/* output source inverter  */
+	info_lkp_default(3, "OL"),	/* output source mains  */
+	info_lkp_default(4, ""),	/* output source ecomode  */
+	info_lkp_default(5, "OL BYPASS"), /* output source bypass */
+	info_lkp_default(6, "OFF"),	/* output source standby */
+	info_lkp_default(7, "OL BYPASS"), /* output source maintenance bypass */
+	info_lkp_default(8, "OFF"),	/* output source off */
+	info_lkp_default(9, ""),	/* output source normal */
 	info_lkp_sentinel
 };
 
