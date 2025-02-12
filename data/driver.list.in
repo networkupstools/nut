@@ -1147,6 +1147,11 @@
 "PowerTech"	"ups"	"1"	"Comp1000"	"DTR cable power"	"genericups upstype=3"
 "PowerTech"	"ups"	"2"	"SMK-800"	""	"blazer_ser"
 
+"Powervar"	"ups"	"5"	"GTS Series"	"USB"		"powervar-cu"
+"Powervar"	"ups"	"5"	"UPM Series"	"USB"		"powervar-cu"
+"Powervar"	"ups"	"5"	"UPM Series"	"Serial"	"powervar-cs"
+"Powervar"	"ups"	"5"	"UPM Series"	"USB"		"usbhid-ups"
+
 "PowerWalker"	"ups"	"2"	"Line-Interactive VI 1000"	""	"blazer_ser"
 "PowerWalker"	"ups"	"2"	"Line-Interactive VI 400/800"	""	"blazer_ser"
 "PowerWalker"	"ups"	"2"	"Line-Interactive VI 600"	""	"blazer_ser"

@@ -955,7 +955,7 @@ void PvarCommon_Initinfo (void)
 		dstate_addcmd("reset.input.minmax");
 	}
 
-	if(byTSTDispPos)
+	if(byTSTDispPos)	/* UPM only */
 	{
 		dstate_addcmd("test.panel.start");
 	}

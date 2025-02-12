@@ -1,0 +1,122 @@
+POWERVAR(8)
+========
+
+NAME
+----
+
+powervar-cu - Driver for Powervar GTS and UPM Series UPS equipment (USB)
+powervar-cs - Driver for Powervar UPM Series UPS equipment (Serial)
+
+SYNOPSIS
+--------
+
+*powervar-cx* -h
+
+*powervar-cx* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
+powervar driver.  For information about the core driver, see
+linkman:nutupsdrv[8].
+
+SUPPORTED HARDWARE
+------------------
+
+This driver supports two Powervar UPS families:
+
+ - UPM (Either USB or Serial)
+ - GTS (USB only)
+
+EXTRA ARGUMENTS
+---------------
+
+This driver supports the following optional settings in the
+linkman:ups.conf[5] file:
+
+*startdelay*='num'::
+Change startup delay time from 1 second default.
+
+*offdelay*='num'::
+Change shutdown delay time from 0 second default.
+
+*disptesttime*='num'::
+Change display test time from the 10 second default (UPM only).
+
+INSTANT COMMANDS
+----------------
+
+This driver supports the following Instant Commands.
+(See linkman:upscmd[8])
+
+All GTS and UPM UPS units
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*beeper.disable*::
+Disable the UPS beeper
+
+*beeper.enable*::
+Enable the UPS beeper
+
+*beeper.mute*::
+Temporarily mute the UPS beeper
+
+*shutdown.return*::
+Turn off the load possibly after a delay and return when power is back.
+
+*shutdown.stop*::
+Stop a shutdown in progress.
+
+*shutdown.reboot*::
+Shut down the load briefly while rebooting the UPS.
+
+*shutdown.stayoff*::
+Turn off the load and remain off.
+
+*test.battery.start.deep*::
+Start a "deep" battery test.  This test runs the UPS until the low
+battery point and then returns to the AC line.
+
+*test.battery.start.quick*::
+Start a "quick" battery test.  The default time is 2 minutes.  This
+time can be set in the *ups.conf* file.  See *testime* above.
+
+*test.battery.stop*::
+Stops a battery test that is in progress.
+
+*test.failure.start*::
+Starts a simulation of an input power failure.
+
+*test.failure.stop*::
+Stops a simulation of an input power failure.
+
+All UPM UPS units
+~~~~~~~~~~~~~~~~
+
+*test.panel.start*::
+Start testing the UPS panel.
+
+*reset.input.minmax*::
+Reset minimum and maximum input voltage status.
+
+Writable Variables
+------------------
+
+See linkman:upsrw[8] to see what variables are writable for the UPS.
+
+
+AUTHORS
+-------
+
+* Bill Elliot <bill@wreassoc.com>
+
+SEE ALSO
+--------
+
+The core driver:
+~~~~~~~~~~~~~~~~
+
+linkman:nutupsdrv[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+
+The NUT (Network UPS Tools) home page: https://www.networkupstools.org/
