@@ -510,6 +510,7 @@ SRC_SERIAL_PAGES = \
 	optiups.txt	\
 	powercom.txt 	\
 	powerpanel.txt	\
+	powervar-cx.txt \
 	rhino.txt		\
 	riello_ser.txt	\
 	sms_ser.txt \
@@ -565,6 +566,7 @@ MAN_SERIAL_PAGES = \
 	optiups.$(MAN_SECTION_CMD_SYS)	\
 	powercom.$(MAN_SECTION_CMD_SYS) 	\
 	powerpanel.$(MAN_SECTION_CMD_SYS)	\
+	powervar-cx.$(MAN_SECTION_CMD_SYS)	\
 	rhino.$(MAN_SECTION_CMD_SYS)		\
 	riello_ser.$(MAN_SECTION_CMD_SYS)	\
 	sms_ser.$(MAN_SECTION_CMD_SYS) \
@@ -625,6 +627,7 @@ HTML_SERIAL_MANS = \
 	optiups.html	\
 	powercom.html 	\
 	powerpanel.html	\
+	powervar-cx.html \
 	rhino.html		\
 	riello_ser.html	\
 	sms_ser.html \
@@ -665,6 +668,7 @@ SRC_USB_LIBUSB_PAGES = \
 	blazer_usb.txt	\
 	nutdrv_atcl_usb.txt \
 	nut_usb_addvars.txt \
+	powervar-cx.txt \
 	richcomm_usb.txt \
 	riello_usb.txt	\
 	tripplite_usb.txt \
@@ -677,6 +681,7 @@ MAN_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.$(MAN_SECTION_CMD_SYS) \
 	blazer_usb.$(MAN_SECTION_CMD_SYS) \
 	nutdrv_atcl_usb.$(MAN_SECTION_CMD_SYS) \
+	powervar-cx.$(MAN_SECTION_CMD_SYS) \
 	richcomm_usb.$(MAN_SECTION_CMD_SYS) \
 	riello_usb.$(MAN_SECTION_CMD_SYS)	\
 	tripplite_usb.$(MAN_SECTION_CMD_SYS) \
@@ -691,6 +696,7 @@ HTML_USB_LIBUSB_MANS = \
 	bcmxcp_usb.html \
 	blazer_usb.html	\
 	nutdrv_atcl_usb.html \
+	powervar-cx.html \
 	richcomm_usb.html \
 	riello_usb.html	\
 	tripplite_usb.html \
