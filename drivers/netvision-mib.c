@@ -25,7 +25,7 @@
 
 #include "netvision-mib.h"
 
-#define NETVISION_MIB_VERSION			"0.44"
+#define NETVISION_MIB_VERSION			"0.45"
 
 #define NETVISION_SYSOID				".1.3.6.1.4.1.4555.1.1.1"
 
@@ -108,13 +108,13 @@ static info_lkp_t netvision_onbatt_info[] = {
 static info_lkp_t netvision_output_info[] = {
 	info_lkp_default(1, ""),	/* output source unknown   */
 	info_lkp_default(2, ""),	/* output source inverter  */
-	info_lkp_default(3, "OL"),	/* output source mains  */
-	info_lkp_default(4, ""),	/* output source ecomode  */
-	info_lkp_default(5, "OL BYPASS"), /* output source bypass */
-	info_lkp_default(6, "OFF"),	/* output source standby */
+	info_lkp_default(3, "OL"),	/* output source mains     */
+	info_lkp_default(4, ""),	/* output source ecomode   */
+	info_lkp_default(5, "OL BYPASS"), /* output source bypass  */
+	info_lkp_default(6, "OFF"),	/* output source standby   */
 	info_lkp_default(7, "OL BYPASS"), /* output source maintenance bypass */
-	info_lkp_default(8, "OFF"),	/* output source off */
-	info_lkp_default(9, ""),	/* output source normal */
+	info_lkp_default(8, "OFF"),	/* output source off       */
+	info_lkp_default(9, ""),	/* output source normal    */
 	info_lkp_sentinel
 };
 
