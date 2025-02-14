@@ -285,6 +285,8 @@ https://github.com/networkupstools/nut/milestone/11
      serving same basic data points as were available in `baytech-mib.c`,
      but checking for a different model OID subtree and different OIDs for
      the device model information. [#2779]
+   * fixed `netvision-mib`: sync `netvision_output_info` with currently
+     available `SOCOMECUPS-MIB.txt`. [#2803]
 
  - Introduced a new driver concept for interaction with OS-reported hardware
    monitoring readings. Currently instantiated as `hwmon_ina219` specifically
