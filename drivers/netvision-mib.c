@@ -106,6 +106,22 @@ static info_lkp_t netvision_onbatt_info[] = {
  * In this case upsAlarmOnBattery will set the appropriate status.
  */
 static info_lkp_t netvision_output_info[] = {
+#if 0
+	/* For reference: from the times before Git until SVN, this mapping
+	 * was defined as stashed away in this block of code. It was wrong
+	 * at least for MASTERYS 3/3 SYSTEM 60 kVA UPS devices described in
+	 * pull request https://github.com/networkupstools/nut/pull/2803
+	 */
+	info_lkp_default(1, ""),	/* output source other   */
+	info_lkp_default(2, ""),	/* output source none    */
+	info_lkp_default(3, "OL"),	/* output source normal  */
+	info_lkp_default(4, "OL BYPASS"),	/* output source bypass  */
+	info_lkp_default(5, "OB"),	/* output source battery */
+	info_lkp_default(6, "OL BOOST"),	/* output source booster */
+	info_lkp_default(7, "OL TRIM"),	/* output source reducer */
+	info_lkp_default(8, "OL"),	/* output source standby */
+	info_lkp_default(9, ""),	/* output source ecomode */
+#else
 	info_lkp_default(1, ""),	/* output source unknown   */
 	info_lkp_default(2, ""),	/* output source inverter  */
 	info_lkp_default(3, "OL"),	/* output source mains     */
@@ -115,6 +131,7 @@ static info_lkp_t netvision_output_info[] = {
 	info_lkp_default(7, "OL BYPASS"), /* output source maintenance bypass */
 	info_lkp_default(8, "OFF"),	/* output source off       */
 	info_lkp_default(9, ""),	/* output source normal    */
+#endif
 	info_lkp_sentinel
 };
 
