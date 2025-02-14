@@ -9,6 +9,28 @@
 @NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export CCACHE_PATH=@CCACHE_PATH@
 @NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export PATH=@PATH_DURING_CONFIGURE@
 
+# include directory for aclocal
+ACLOCAL_AMFLAGS = -I m4
+
+# Autotools' SUBDIRS (our values are listed below) allow for powerful recursive
+# recipe automation, with one notable weakness: the dirs are processed in a
+# loop sequentially, even in parallel builds (each such sub-make is parallel
+# then). In our case, the HTML/PDF render of ChangeLog can take a minute of
+# work in "docs" while we are not building anything in other dirs. On the up
+# side, that approach does allow for dirs with dependencies to get built first.
+#
+# The commonly suggested way out of this predicament is to consolidate numerous
+# Makefile.am recipes into one, which alone properly defines all the needed
+# interdependecies that are "known" to one instance of the `make` process.
+# This however loses the ability to quickly e.g. `cd tests && make check`, so
+# the next layer is to re-introduce Makefiles in sub-directories that define
+# a few popular targets to perform via the one big top-level Makefile.
+#
+# List of source subdirectories to build and distribute. The order matters, as
+# several subdirectories depend on stuff in "common" or tools being built first
+SUBDIRS = include common clients conf data drivers tools \
+  lib scripts server tests docs
+
 # First target often defines default behavior: all
 # We start with a pass to `make all` in `common` dir because our wild recipes
 # (with other subdirs ensuring the libraries they need have been built) can
@@ -21,14 +43,6 @@ all all-am-local all-local:
 	+@cd common && $(MAKE) $(AM_MAKEFLAGS) all
 	+@$(MAKE) $(AM_MAKEFLAGS) all-recursive
 #	+@$(MAKE) $(AM_MAKEFLAGS) doc
-
-# include directory for aclocal
-ACLOCAL_AMFLAGS = -I m4
-
-# subdirectories to build and distribute. The order matters, as
-# several subdirectories depend on stuff in "common" or tools being built first
-SUBDIRS = include common clients conf data drivers tools \
-  lib scripts server tests docs
 
 bindir = @bindir@
 sbindir = @sbindir@
