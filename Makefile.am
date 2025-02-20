@@ -26,10 +26,39 @@ ACLOCAL_AMFLAGS = -I m4
 # the next layer is to re-introduce Makefiles in sub-directories that define
 # a few popular targets to perform via the one big top-level Makefile.
 #
-# List of source subdirectories to build and distribute. The order matters, as
-# several subdirectories depend on stuff in "common" or tools being built first
+# Our approach here is to merge the two solutions: do use SUBDIRS the way
+# autotools handle them for the hordes of `*-recursive` targets for us, but
+# define more explicitly the targets for hot code paths (all, check) so that
+# they can run first for certain different directories (in parallel if asked
+# to) with "knowledge" of dependencies, and then a bit wastefully maybe re-run
+# those directories via autotools integration. They should be quick no-ops by
+# then in the anticipated common use-cases.
+#
+# List of source subdirectories to build and distribute, used to spawn automake
+# (alas sequential) target recipes. The order matters, as several subdirectories
+# depend on stuff in "common" or tools being built first!
 SUBDIRS = include common clients conf data drivers tools \
   lib scripts server tests docs
+
+# Note: not generated from SUBDIRS, because not all are recursive:
+SUBDIRS_ALL_RECURSIVE = \
+	all/include \
+	all/common \
+	all/clients \
+	all/conf \
+	all-recursive/data \
+	all/docs/man \
+	all/docs \
+	all-recursive/docs \
+	all/drivers \
+	all/tools/nut-scanner \
+	all/tools/nutconf \
+	all-recursive/tools \
+	all/lib \
+	all-recursive/scripts \
+	all/server \
+	all/tests/NIT \
+	all-recursive/tests
 
 # First target often defines default behavior: all
 # We start with a pass to `make all` in `common` dir because our wild recipes
@@ -39,9 +68,13 @@ SUBDIRS = include common clients conf data drivers tools \
 # with some "make" implementations...
 # Just in case we followed up with "make doc", since our wild recipes could end
 # up writing into same files and so corrupting them (fixes applied, but...)
-all all-am-local all-local:
-	+@cd common && $(MAKE) $(AM_MAKEFLAGS) all
-	+@$(MAKE) $(AM_MAKEFLAGS) all-recursive
+
+all: $(SUBDIRS_ALL_RECURSIVE)
+
+#all all-am-local all-local:
+#	+@cd common && $(MAKE) $(AM_MAKEFLAGS) all
+#	+@$(MAKE) $(AM_MAKEFLAGS) all-recursive
+#	+@$(MAKE) $(AM_MAKEFLAGS) doc
 #	+@$(MAKE) $(AM_MAKEFLAGS) doc
 
 bindir = @bindir@
@@ -74,6 +107,70 @@ EXTRA_DIST += autogen.sh
 if KEEP_NUT_REPORT
 nodist_data_DATA = config.nut_report_feature.log
 endif
+
+# Not too different from automake generated recursive rules at first sight,
+# but here we do not loop all subdirs sequentially - instead, a sub-make
+# (maybe parallel itself and with parallel flags passed) with a certain
+# target in specified dir is the goal, all as separate targets for this
+# level's Makefile:
+SUBDIR_TGT_RULE = ( \
+	TGT="`echo '$@' | awk -F/ '{print $$1}'`" ; \
+	DIR="`echo '$@' | sed 's,^[^/]*/,,'`" ; \
+	echo "  SUBDIR-MAKE       $$TGT in $$DIR" ; \
+	cd "$(abs_builddir)/$${DIR}" && \
+	$(MAKE) $(AM_MAKEFLAGS) "$${TGT}" || exit ; \
+	echo "  SUBDIR-MAKE       SUCCESS: $$TGT in $$DIR" ; \
+	)
+
+# Handle all SUBDIRS_ALL_RECURSIVE in a way that dependencies can be specified,
+# and portably to different make program implementations. Note we may revisit
+# some dirs via "all-recursive" of a parent after "all" in them first, but it is
+# expected to be a quick no-op (beneficial overall in parallel make situation):
+
+all/include \
+all/conf \
+all/docs \
+all/docs/man \
+all-recursive/data \
+all-recursive/scripts :
+	+@$(SUBDIR_TGT_RULE)
+
+all-recursive/docs: all/docs all/docs/man
+	+@$(SUBDIR_TGT_RULE)
+
+all/common: all/include
+	+@$(SUBDIR_TGT_RULE)
+
+all/lib: all/common
+	+@$(SUBDIR_TGT_RULE)
+
+all/clients: all/lib
+	+@$(SUBDIR_TGT_RULE)
+
+all/server: all/common
+	+@$(SUBDIR_TGT_RULE)
+
+all/drivers: all/lib
+	+@$(SUBDIR_TGT_RULE)
+
+all/tools/nut-scanner: all/lib
+	+@$(SUBDIR_TGT_RULE)
+
+all/tools/nutconf: all/lib
+	+@$(SUBDIR_TGT_RULE)
+
+all-recursive/tools: all/tools/nutconf all/tools/nut-scanner
+	+@$(SUBDIR_TGT_RULE)
+
+# At least prereqs for NIT, maybe for certain compiled tests too:
+all/tests/NIT: all/clients all/server all/drivers all-recursive/tools all-recursive/data
+	+@$(SUBDIR_TGT_RULE)
+
+all/tests: all/common all/lib all/drivers
+	+@$(SUBDIR_TGT_RULE)
+
+all-recursive/tests: all/tests/NIT all/tests
+	+@$(SUBDIR_TGT_RULE)
 
 # ----------------------------------------------------------------------
 # flags to pass to ./configure when calling "make distcheck" and "make
