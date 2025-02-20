@@ -37,6 +37,7 @@ endif !WITH_HTML_SINGLE
 all: $(abs_top_builddir)/docs/man/.prep-src-docs
 	+@case "$(ALL_TGT)" in \
 	  *all-*) \
+		if [ x"$(DOCS_NO_MAN)" = xtrue ] ; then echo "  DOCS_NO_MAN     SKIP: $@ called in docs/man/Makefile" ; exit 0 ; fi ; \
 		echo "  DOC-FOLLOW-UP	Basic 'make $@' in `pwd` is done, following up with 'make $(ALL_TGT)' to ensure complex document types (if enabled)" ; \
 		$(MAKE) $(AM_MAKEFLAGS) $(ALL_TGT) ; exit ;; \
 	  esac ; exit 0

@@ -129,11 +129,13 @@ SUBDIR_TGT_RULE = ( \
 
 all/include \
 all/conf \
-all/docs \
 all/docs/man \
 all-recursive/data \
 all-recursive/scripts :
 	+@$(SUBDIR_TGT_RULE)
+
+all/docs:
+	+@DOCS_NO_MAN=true; export DOCS_NO_MAN; $(SUBDIR_TGT_RULE)
 
 all-recursive/docs: all/docs all/docs/man
 	+@$(SUBDIR_TGT_RULE)
