@@ -47,14 +47,14 @@
 #ifndef WIN32
 	static char	*sockfn = NULL;
 #else
-	static OVERLAPPED connect_overlapped;
+	static OVERLAPPED	connect_overlapped;
 	static char	*pipename = NULL;
 #endif
-	static int	stale = 1, alarm_active = 0, ignorelb = 0;
+	static int	stale = 1, alarm_active = 0, alarm_status = 0, ignorelb = 0;
 	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[ST_MAX_VALUE_LEN];
-	static st_tree_t	*dtree_root = NULL;
 	static conn_t	*connhead = NULL;
-	static cmdlist_t *cmdhead = NULL;
+	static st_tree_t	*dtree_root = NULL;
+	static cmdlist_t	*cmdhead = NULL;
 
 	struct ups_handler	upsh;
 
@@ -1629,6 +1629,7 @@ void status_init(void)
 	}
 
 	memset(status_buf, 0, sizeof(status_buf));
+	alarm_status = 0;
 }
 
 /* check if a status element has been set, return 0 if not, 1 if yes
@@ -1714,10 +1715,11 @@ void status_set(const char *buf)
 		 * the possibility...
 		 */
 		upsdebugx(2, "%s: (almost) ignoring ALARM set as a status", __func__);
-		if (!alarm_active && strlen(alarm_buf) == 0) {
+		if (!alarm_status && !alarm_active && strlen(alarm_buf) == 0) {
 			alarm_init();	/* no-op currently, but better be proper about it */
 			alarm_set("[N/A]");
 		}
+		alarm_status++;
 		return;
 	}
 
@@ -1768,8 +1770,14 @@ void status_commit(void)
 	 * and only add the token here so it remains first.
 	 * NOTE: alarm_commit() must be executed before status_commit() for
 	 * this report to work!
+	 * * If a driver only called status_set("ALARM") and did not bother
+	 *   with alarm_commit(), the "ups.alarm" value queries return NULL
+	 *   although the "ups.status" value would report an ALARM token.
+	 * * If a driver properly used alarm_init() and alarm_set(), but then
+	 *   called status_commit() before alarm_commit(), the "ups.status"
+	 *   value would not know to report an ALARM token.
 	 */
-	if (alarm_active) {
+	if (alarm_active || alarm_status) {
 		dstate_setinfo("ups.status", "ALARM %s", status_buf);
 	} else {
 		dstate_setinfo("ups.status", "%s", status_buf);
