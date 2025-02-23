@@ -111,6 +111,21 @@ link:http://tools.ietf.org/html/rfc3339[RFC 3339].
 
 Other representations from those specifications are not necessarily supported.
 
+[NOTE]
+======
+Values of certain variables may be propagated from device reports formally
+as opaque strings, which happen to convey a date/time value (commonly the
+device or battery manufacture date, replacement date, last self-test or
+calibration time stamp, device clock, etc.) in some format, not necessarily
+a standard one.
+
+While the drivers may convert them from original vendor-provided markup
+to the standard Time and Date format described above (if the formula is
+known for certain -- e.g. which locale is used by the device, which part
+of that string is the year/month/day, or how to add offset or prefix for
+the year, etc.), they are not generally required to do so.
+======
+
 Variables
 ---------
 
