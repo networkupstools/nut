@@ -5685,6 +5685,7 @@ AC_CONFIG_FILES([
  scripts/augeas/nutupssetconf.aug
  scripts/avahi/nut.service
  scripts/devd/Makefile
+ scripts/external_apis/Makefile
  scripts/hotplug/Makefile
  scripts/hotplug/libhidups
  scripts/HP-UX/nut.psf

@@ -1,0 +1,17 @@
+[Unit]
+Description=Enphase API monitor for NUT dummy-ups %I
+PartOf=nut-driver.target
+Before=nut-driver@%i.service
+
+[Service]
+SyslogIdentifier=%N
+User=nut
+# replace -s with -x to start in nocomms (no network apis)
+ExecStartPre=/usr/local/libexec/enphase-monitor -s %I
+ExecStart=/usr/local/libexec/enphase-monitor %I
+Type=exec
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=nut-driver@%i.service
