@@ -1708,6 +1708,19 @@ void status_set(const char *buf)
 		return;
 	}
 
+	if (!strcasecmp(buf, "ALARM")) {
+		/* Drivers really should not raise alarms this way,
+		 * but for the sake of third-party forks, we handle
+		 * the possibility...
+		 */
+		upsdebugx(2, "%s: (almost) ignoring ALARM set as a status", __func__);
+		if (!alarm_active && strlen(alarm_buf) == 0) {
+			alarm_init();	/* no-op currently, but better be proper about it */
+			alarm_set("[N/A]");
+		}
+		return;
+	}
+
 	if (status_get(buf)) {
 		upsdebugx(2, "%s: status was already set: %s", __func__, buf);
 		return;
@@ -1751,7 +1764,10 @@ void status_commit(void)
 
 	/* NOTE: Not sure if any clients rely on ALARM being first if raised,
 	 * but note that if someone also uses status_set("ALARM") we can end
-	 * up with a duplicate...
+	 * up with a "[N/A]" alarm value injected (if no other alarm was set)
+	 * and only add the token here so it remains first.
+	 * NOTE: alarm_commit() must be executed before status_commit() for
+	 * this report to work!
 	 */
 	if (alarm_active) {
 		dstate_setinfo("ups.status", "ALARM %s", status_buf);
