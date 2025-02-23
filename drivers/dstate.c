@@ -1650,7 +1650,7 @@ repeat:
 		return 0;
 
 	offset = s - status_buf;
-#if 0
+#ifdef DEBUG
 	upsdebugx(3, "%s: '%s' in '%s': offset=%" PRIuSIZE" buflen=%" PRIuSIZE" s[buflen]='0x%2X'\n",
 		__func__, buf, status_buf, offset, buflen, s[buflen]);
 #endif
@@ -1670,7 +1670,7 @@ repeat:
 /* add a status element */
 void status_set(const char *buf)
 {
-#if 0
+#ifdef DEBUG
 	upsdebugx(3, "%s: '%s'\n", __func__, buf);
 #endif
 	if (strstr(buf, " ")) {
