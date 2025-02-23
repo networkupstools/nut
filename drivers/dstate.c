@@ -1778,6 +1778,11 @@ void status_commit(void)
 	 * * If a driver properly used alarm_init() and alarm_set(), but then
 	 *   called status_commit() before alarm_commit(), the "ups.status"
 	 *   value would not know to report an ALARM token, as before.
+	 * * If a driver used both status_set("ALARM") and alarm_set() later,
+	 *   the injected "[N/A]" value of the alarm (if that's its complete
+	 *   value) would be overwritten by the explicitly assigned contents,
+	 *   and an explicit alarm_commit() would be required for proper
+	 *   reporting from a non-sloppy driver.
 	 */
 
 	if (!alarm_active && alarm_status && !strcmp(alarm_buf, "[N/A]")) {
@@ -1811,10 +1816,10 @@ void alarm_init(void)
 void alarm_set(const char *buf)
 {
 	int ret;
-	if (strlen(alarm_buf) > 0) {
-		ret = snprintfcat(alarm_buf, sizeof(alarm_buf), " %s", buf);
+	if (strlen(alarm_buf) < 1 || (alarm_status && !strcmp(alarm_buf, "[N/A]"))) {
+		ret = snprintf(alarm_buf, sizeof(alarm_buf), "%s", buf);
 	} else {
-		ret = snprintfcat(alarm_buf, sizeof(alarm_buf), "%s", buf);
+		ret = snprintfcat(alarm_buf, sizeof(alarm_buf), " %s", buf);
 	}
 
 	if (ret < 0) {
