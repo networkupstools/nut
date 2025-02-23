@@ -90,7 +90,7 @@ int main(int argc, char **argv) {
 	/* test case #2, build on top of #1 */
 	alarm_init();
 	alarm_set("Test alarm 1");
-	alarm_set("Test alarm 2");
+	alarm_set("[Test alarm 2]");
 	alarm_set("Test alarm 1");
 	alarm_commit();
 	/* Note: normally we re-init and re-set the values */
@@ -102,7 +102,7 @@ int main(int argc, char **argv) {
 	/* test case #3, build on top of #2 */
 	valueStr = dstate_getinfo("ups.alarm");
 	/* NOTE: no dedup here! */
-	report_0_means_pass(strcmp(valueStr, "Test alarm 1 Test alarm 2 Test alarm 1"));
+	report_0_means_pass(strcmp(valueStr, "Test alarm 1 [Test alarm 2] Test alarm 1"));
 	printf(" test for ups.alarm: '%s'; got 3 alarms?\n", NUT_STRARG(valueStr));
 
 	/* test case #4, build on top of #1 and #2 */
