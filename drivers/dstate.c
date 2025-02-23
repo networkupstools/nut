@@ -1749,6 +1749,10 @@ void status_commit(void)
 		break;
 	}
 
+	/* NOTE: Not sure if any clients rely on ALARM being first if raised,
+	 * but note that if someone also uses status_set("ALARM") we can end
+	 * up with a duplicate...
+	 */
 	if (alarm_active) {
 		dstate_setinfo("ups.status", "ALARM %s", status_buf);
 	} else {

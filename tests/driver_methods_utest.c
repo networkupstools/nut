@@ -65,6 +65,7 @@ static int report_0_means_pass(int i) {
 	}
 	return i;
 }
+
 int main(int argc, char **argv) {
 	const char	*valueStr = NULL;
 
@@ -115,9 +116,44 @@ int main(int argc, char **argv) {
 	status_set("OOS");
 	status_commit();
 	valueStr = dstate_getinfo("ups.status");
-	nut_debug_level = 0;
 	report_0_means_pass(strcmp(valueStr, "ALARM OL BOOST OB BOO OST OOS"));
 	printf(" test for ups.status: '%s'; any duplicates?\n", NUT_STRARG(valueStr));
+
+	/* test case #5+#6 from scratch */
+	status_init();
+	alarm_init();
+	status_set("OL BOOST");
+	status_set("ALARM");
+	status_set("OB");
+	alarm_set("[Test alarm 2]");
+	alarm_commit();
+	status_commit();
+
+	valueStr = dstate_getinfo("ups.status");
+	report_0_means_pass(strcmp(valueStr, "ALARM OL BOOST ALARM OB"));
+	printf(" test for ups.status with explicit ALARM set via status_set(): '%s'; any duplicate ALARM?\n", NUT_STRARG(valueStr));
+
+	valueStr = dstate_getinfo("ups.alarm");
+	report_0_means_pass(strcmp(valueStr, "[Test alarm 2]"));
+	printf(" test for ups.alarm with explicit ALARM set via status_set(): '%s'; got 1 alarms\n", NUT_STRARG(valueStr));
+
+	/* test case #7+#8 from scratch */
+	status_init();
+	alarm_init();
+	status_set("OL BOOST");
+	status_set("ALARM");
+	status_set("OB");
+	alarm_commit();
+	status_commit();
+
+	valueStr = dstate_getinfo("ups.status");
+	report_0_means_pass(strcmp(valueStr, "OL BOOST ALARM OB"));
+	printf(" test for ups.status with explicit ALARM set via status_set() and no extra alarm_set(): '%s'; any duplicate ALARM?\n", NUT_STRARG(valueStr));
+
+	valueStr = dstate_getinfo("ups.alarm");
+	/* report_0_means_pass(strcmp(NUT_STRARG(valueStr), "")); */
+	report_0_means_pass(valueStr != NULL);	/* pass if valueStr is NULL */
+	printf(" test for ups.alarm with explicit ALARM set via status_set() and no extra alarm_set(): '%s'; got no alarms\n", NUT_STRARG(valueStr));
 
 	/* finish */
 	printf("test_rules completed. Total cases %d, passed %d, failed %d\n",
