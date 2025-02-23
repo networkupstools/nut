@@ -1768,16 +1768,24 @@ void status_commit(void)
 	 * but note that if someone also uses status_set("ALARM") we can end
 	 * up with a "[N/A]" alarm value injected (if no other alarm was set)
 	 * and only add the token here so it remains first.
+	 *
 	 * NOTE: alarm_commit() must be executed before status_commit() for
 	 * this report to work!
 	 * * If a driver only called status_set("ALARM") and did not bother
-	 *   with alarm_commit(), the "ups.alarm" value queries return NULL
-	 *   although the "ups.status" value would report an ALARM token.
+	 *   with alarm_commit(), the "ups.alarm" value queries would have
+	 *   returned NULL if not for the "sloppy driver" fix below, although
+	 *   the "ups.status" value would report an ALARM token.
 	 * * If a driver properly used alarm_init() and alarm_set(), but then
 	 *   called status_commit() before alarm_commit(), the "ups.status"
-	 *   value would not know to report an ALARM token.
+	 *   value would not know to report an ALARM token, as before.
 	 */
-	if (alarm_active || alarm_status) {
+
+	if (!alarm_active && alarm_status && !strcmp(alarm_buf, "[N/A]")) {
+		upsdebugx(2, "%s: Assume sloppy driver coding that ignored alarm methods and used status_set(\"ALARM\") instead: commit the injected N/A ups.alarm value", __func__);
+		alarm_commit();
+	}
+
+	if (alarm_active) {
 		dstate_setinfo("ups.status", "ALARM %s", status_buf);
 	} else {
 		dstate_setinfo("ups.status", "%s", status_buf);

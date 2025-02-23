@@ -189,8 +189,12 @@ int main(int argc, char **argv) {
 	printf(" test for ups.status with explicit ALARM set via status_set() and no extra alarm_set() nor alarm_commit(): '%s'; is ALARM reported?\n", NUT_STRARG(valueStr));
 
 	valueStr = dstate_getinfo("ups.alarm");
-	report_0_means_pass(valueStr != NULL);	/* pass if valueStr is NULL */
+/*
+	report_0_means_pass(valueStr != NULL);	// pass if valueStr is NULL
 	printf(" test for ups.alarm  with explicit ALARM set via status_set() and no extra alarm_set() nor alarm_commit(): '%s'; got no alarms spelled out\n", NUT_STRARG(valueStr));
+*/
+	report_0_means_pass(strcmp(NUT_STRARG(valueStr), "[N/A]"));
+	printf(" test for ups.alarm  with explicit ALARM set via status_set() and no extra alarm_set() nor alarm_commit(): '%s'; got 1 (injected) alarm\n", NUT_STRARG(valueStr));
 
 	/* finish */
 	printf("test_rules completed. Total cases %d, passed %d, failed %d\n",
