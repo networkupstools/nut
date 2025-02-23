@@ -69,7 +69,7 @@
 /* --------------------------------------------------------------- */
 
 #define DRIVER_NAME	"MGE UPS SYSTEMS/U-Talk driver"
-#define DRIVER_VERSION	"0.97"
+#define DRIVER_VERSION	"0.98"
 
 
 /* driver description structure */
@@ -775,7 +775,8 @@ static int get_ups_status(void)
 		if (exit_flag != 0)
 			return FALSE;
 
-		/* must clear status buffer before each round */
+		/* must clear alarm and status buffers before each round */
+		alarm_init();
 		status_init();
 
 		/* system status */
@@ -803,11 +804,10 @@ static int get_ups_status(void)
 			}
 			/* buf[2] not used */
 			if (buf[1] == '1')
-				status_set("COMMFAULT"); /* self-invented */
+				alarm_set("COMMFAULT"); /* self-invented */
 				/* FIXME: better to call datastale()?! */
 			if (buf[0] == '1')
-				status_set("ALARM");     /* self-invented */
-				/* FIXME: better to use ups.alarm */
+				alarm_set("DEVICEALARM");     /* self-invented */
 		}  /* if strlen */
 
 		/* battery status */
@@ -866,6 +866,7 @@ static int get_ups_status(void)
 
 	} while ( !ok && tries++ < MAXTRIES );
 
+	alarm_commit();
 	status_commit();
 
 	return ok;
