@@ -65,6 +65,7 @@ static int report_0_means_pass(int i) {
 	}
 	return i;
 }
+
 int main(int argc, char **argv) {
 	const char	*valueStr = NULL;
 
@@ -90,7 +91,7 @@ int main(int argc, char **argv) {
 	/* test case #2, build on top of #1 */
 	alarm_init();
 	alarm_set("Test alarm 1");
-	alarm_set("Test alarm 2");
+	alarm_set("[Test alarm 2]");
 	alarm_set("Test alarm 1");
 	alarm_commit();
 	/* Note: normally we re-init and re-set the values */
@@ -102,7 +103,7 @@ int main(int argc, char **argv) {
 	/* test case #3, build on top of #2 */
 	valueStr = dstate_getinfo("ups.alarm");
 	/* NOTE: no dedup here! */
-	report_0_means_pass(strcmp(valueStr, "Test alarm 1 Test alarm 2 Test alarm 1"));
+	report_0_means_pass(strcmp(valueStr, "Test alarm 1 [Test alarm 2] Test alarm 1"));
 	printf(" test for ups.alarm: '%s'; got 3 alarms?\n", NUT_STRARG(valueStr));
 
 	/* test case #4, build on top of #1 and #2 */
@@ -115,9 +116,107 @@ int main(int argc, char **argv) {
 	status_set("OOS");
 	status_commit();
 	valueStr = dstate_getinfo("ups.status");
-	nut_debug_level = 0;
 	report_0_means_pass(strcmp(valueStr, "ALARM OL BOOST OB BOO OST OOS"));
 	printf(" test for ups.status: '%s'; any duplicates?\n", NUT_STRARG(valueStr));
+
+	/* test case #5+#6 from scratch */
+	status_init();
+	alarm_init();
+	status_set("OL BOOST");
+	status_set("ALARM");
+	status_set("OB");
+	alarm_set("[Test alarm 2]");
+	alarm_commit();
+	status_commit();
+
+	valueStr = dstate_getinfo("ups.status");
+	report_0_means_pass(strcmp(valueStr, "ALARM OL BOOST OB"));
+	printf(" test for ups.status with explicit ALARM set via status_set() and alarm_set() was not used first: '%s'; any duplicate ALARM?\n", NUT_STRARG(valueStr));
+
+	valueStr = dstate_getinfo("ups.alarm");
+	report_0_means_pass(strcmp(valueStr, "[Test alarm 2]"));
+	printf(" test for ups.alarm  with explicit ALARM set via status_set() and alarm_set() was not used first: '%s'; got 1 alarm (injected N/A replaced by later explicit text)\n", NUT_STRARG(valueStr));
+
+	/* test case #7+#8 from scratch */
+	status_init();
+	alarm_init();
+	status_set("OL BOOST");
+	alarm_set("[Test alarm 2]");
+	status_set("ALARM");
+	status_set("OB");
+	alarm_commit();
+	status_commit();
+
+	valueStr = dstate_getinfo("ups.status");
+	report_0_means_pass(strcmp(valueStr, "ALARM OL BOOST OB"));
+	printf(" test for ups.status with explicit ALARM set via status_set() and alarm_set() was used first: '%s'; any duplicate ALARM?\n", NUT_STRARG(valueStr));
+
+	valueStr = dstate_getinfo("ups.alarm");
+	report_0_means_pass(strcmp(valueStr, "[Test alarm 2]"));
+	printf(" test for ups.alarm  with explicit ALARM set via status_set() and alarm_set() was used first: '%s'; got 1 alarm (none injected)\n", NUT_STRARG(valueStr));
+
+	/* test case #9+#10 from scratch */
+	status_init();
+	alarm_init();
+	status_set("OL BOOST");
+	status_set("ALARM");
+	status_set("OB");
+	alarm_commit();
+	status_commit();
+
+	valueStr = dstate_getinfo("ups.status");
+	report_0_means_pass(strcmp(valueStr, "ALARM OL BOOST OB"));
+	printf(" test for ups.status with explicit ALARM set via status_set() and no extra alarm_set(): '%s'; any duplicate ALARM?\n", NUT_STRARG(valueStr));
+
+	valueStr = dstate_getinfo("ups.alarm");
+	report_0_means_pass(strcmp(NUT_STRARG(valueStr), "[N/A]"));
+	printf(" test for ups.alarm  with explicit ALARM set via status_set() and no extra alarm_set(): '%s'; got 1 (injected) alarm\n", NUT_STRARG(valueStr));
+
+	/* test case #11+#12 from scratch */
+	/* flush ups.alarm report */
+	alarm_init();
+	alarm_commit();
+
+	status_init();
+	alarm_init();
+	status_set("OL BOOST");
+	status_set("ALARM");
+	status_set("OB");
+	status_commit();
+
+	valueStr = dstate_getinfo("ups.status");
+	report_0_means_pass(strcmp(valueStr, "ALARM OL BOOST OB"));
+	printf(" test for ups.status with explicit ALARM set via status_set() and no extra alarm_set() nor alarm_commit(): '%s'; is ALARM reported?\n", NUT_STRARG(valueStr));
+
+	valueStr = dstate_getinfo("ups.alarm");
+/*
+	report_0_means_pass(valueStr != NULL);	// pass if valueStr is NULL
+	printf(" test for ups.alarm  with explicit ALARM set via status_set() and no extra alarm_set() nor alarm_commit(): '%s'; got no alarms spelled out\n", NUT_STRARG(valueStr));
+*/
+	report_0_means_pass(strcmp(NUT_STRARG(valueStr), "[N/A]"));
+	printf(" test for ups.alarm  with explicit ALARM set via status_set() and no extra alarm_set() nor alarm_commit(): '%s'; got 1 (injected) alarm\n", NUT_STRARG(valueStr));
+
+	/* test case #13+#14 from scratch */
+	/* flush ups.alarm report */
+	alarm_init();
+	alarm_commit();
+
+	status_init();
+	alarm_init();
+	status_set("OL BOOST");
+	alarm_set("[N/A]");
+	alarm_set("[Test alarm 2]");
+	status_set("OB");
+	alarm_commit();
+	status_commit();
+
+	valueStr = dstate_getinfo("ups.status");
+	report_0_means_pass(strcmp(valueStr, "ALARM OL BOOST OB"));
+	printf(" test for ups.status with explicit alarm_set(N/A) and another alarm_set(): '%s'; is ALARM reported?\n", NUT_STRARG(valueStr));
+
+	valueStr = dstate_getinfo("ups.alarm");
+	report_0_means_pass(strcmp(valueStr, "[N/A] [Test alarm 2]"));
+	printf(" test for ups.alarm  with explicit alarm_set(N/A) and another alarm_set(): '%s'; got both alarms, namesake of not-injected is not overwritten\n", NUT_STRARG(valueStr));
 
 	/* finish */
 	printf("test_rules completed. Total cases %d, passed %d, failed %d\n",
