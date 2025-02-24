@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3293 utf-8
+personal_ws-1.1 en 3317 utf-8
 AAC
 AAS
 ABI
@@ -353,6 +353,7 @@ Eriksson
 Evgeny
 Exar
 ExecCGI
+ExecStart
 ExecStartPre
 FD
 FEMEA
@@ -410,6 +411,7 @@ GNUmakefile
 GObject
 GPIO
 GPL
+GPLv
 GPSER
 GRs
 GTK
@@ -540,6 +542,7 @@ JRE
 JSON
 JVM
 JW
+JWT
 Jageson
 Jarosch
 Jasuny
@@ -606,7 +609,9 @@ LISTRW
 LISTVARS
 LLDB
 LLNC
+LOADKWH
 LOADPCT
+LOCALSTATE
 LOCKFN
 LOCKNAME
 LOTRANS
@@ -899,6 +904,7 @@ PaaS
 Pac
 PackageRequired
 Parisi
+PartOf
 Patrik
 Pavel
 Pawe
@@ -1039,6 +1045,7 @@ René
 Repotec's
 Repoteck
 RequireAny
+RestartSec
 Richthof
 Rickard
 Ridgway
@@ -1064,12 +1071,14 @@ SDE
 SDFLAG
 SDR
 SDT
+SECCTRL
 SELFTEST
 SELinux
 SENTR
 SER
 SERIALNO
 SERVER's
+SESS
 SETFL
 SETINFOs
 SETLK
@@ -1117,6 +1126,7 @@ SPECs
 SPLY
 SPS
 SRC
+SSD
 SSSS
 STARTTLS
 STB
@@ -1158,6 +1168,7 @@ SerialNumber
 Serv
 Serveur
 SetRWVar
+Shambarger
 Shara
 ShareAlike
 Shaul
@@ -1632,6 +1643,7 @@ bypassOff
 bypassOn
 cStandard
 cablepower
+calc
 calloc
 cb
 cbe
@@ -1700,6 +1712,7 @@ collectd
 command's
 commandlen
 committer
+comms
 compat
 compilerPath
 conf
@@ -1928,6 +1941,7 @@ fatalx
 fc
 fcb
 fcntl
+fcontext
 fd
 fdX
 fds
@@ -2167,6 +2181,7 @@ ish
 iso
 isolator
 iter
+ivp
 ivtscd
 jNUT
 jNut
@@ -2179,6 +2194,7 @@ jimklimov
 journalctl
 jpeg
 jpg
+jq
 jre
 json
 kVA
@@ -2285,6 +2301,7 @@ linuxdoc
 lipo
 listDeviceClients
 littleguy
+livedata
 lk
 lldb
 llvm
@@ -2475,6 +2492,7 @@ noAuthNoPriv
 nobody's
 nobreak
 nobt
+nocomms
 nodev
 nodownload
 noexec
@@ -2556,6 +2574,7 @@ openlog
 openmp
 openssh
 openssl
+oper
 optimizations
 optiups
 oq
@@ -2623,6 +2642,8 @@ pollfreq
 pollinterval
 pollonly
 popa
+portfile
+portfiles
 portname
 porttype
 posix
@@ -2733,6 +2754,7 @@ repotec
 req
 resetter
 resolv
+restoreconf
 resync
 ret
 retrydelay
@@ -2797,11 +2819,13 @@ se
 searchable
 secLevel
 secName
+secctrl
 secretpass
 securityLevel
 securityName
 sed
 selftest
+semanage
 semver
 sendback
 sendline

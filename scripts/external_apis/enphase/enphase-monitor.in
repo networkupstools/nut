@@ -36,7 +36,7 @@
 #
 #   DISABLE_METERS= # any value to disable power reporting
 #   ENVOY_HOST="envoy.local" # ip/hostname of IQ Gateway on local network
-#   STATE_DIR="/var/lib/ups" # writable directory for portfile/tokens
+#   STATE_DIR="$NUT_STATEPATH" # (e.g. "/var/lib/ups") # writable directory for portfile/tokens
 #   POLLFREQ=60 # seconds between API queries, min 5
 #   POLLFREQALERT=20 # seconds between API queries when on battery, min 5
 #   TOKEN_FILE="enphase-<ups>.token" # path defaults to STATE_DIR
@@ -83,8 +83,8 @@
 # Environment (optional):
 #   CONFIG_FILE - override default <config>
 #   UPS - set a default <ups>
-#   NUT_SYSCONFIG - default <config> directory (/etc/ups)
-#   NUT_LOCALSTATE - default for STATE_DIR (/var/lib/ups)
+#   NUT_SYSCONFIG - default <config> directory (NUT_CONFPATH, e.g. /etc/ups)
+#   NUT_LOCALSTATE - default for STATE_DIR (NUT_STATEPATH, e.g. /var/lib/ups)
 #
 # === INSTALL ===
 #
@@ -92,7 +92,7 @@
 #
 # Create an entry in /etc/ups/ups.conf (as above)
 #
-# Copy enphase-monitor to some <INSTALL-DIR> (eg /usr/local/libexec)
+# Copy enphase-monitor to some <INSTALL-DIR> (e.g. /usr/local/libexec)
 #
 # Create a <config> file with required variables.  If only <ups>
 # used to start the monitor, is looks for `/etc/ups/enphase-<ups>.conf`
@@ -105,7 +105,7 @@
 #  $ chown <nut-user>:<nut-group> <STATE_DIR>/<portfile>
 #
 # If using SELinux, ensure NUT's dummy-ups has access to the <portfile>
-# (even in /var/lib/ups!) by adding a label, eg.
+# (even in /var/lib/ups!) by adding a label, e.g.
 #
 #   $ semanage fcontext -a -t nut_conf_t <STATE_DIR>/<portfile>
 #   $ restoreconf -F <STATE_DIR>/<portfile>

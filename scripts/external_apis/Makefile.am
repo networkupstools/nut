@@ -6,7 +6,7 @@ EXTRA_DIST = \
 	enphase/enphase-monitor.in \
 	enphase/enphase-monitor@.service.in
 
-SPELLCHECK_SRC = README.adoc
+SPELLCHECK_SRC = README.adoc enphase/README.adoc
 
 # Handle optional installation:
 if ENABLE_EXTAPI_ENPHASE
