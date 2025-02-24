@@ -8,6 +8,24 @@ EXTRA_DIST = \
 
 SPELLCHECK_SRC = README.adoc
 
+# Handle optional installation:
+if ENABLE_EXTAPI_ENPHASE
+
+extapi_enphase_datadir = @datadir@/external_apis/enphase
+extapi_enphase_data_DATA = enphase/README.adoc
+
+extapi_enphase_execdir = @libexec@
+extapi_enphase_exec_SCRIPTS = enphase/enphase-monitor
+
+if HAVE_SYSTEMD
+
+systemdsystemunit_DATA = \
+	enphase/enphase-monitor@.service
+
+endif HAVE_SYSTEMD
+
+endif ENABLE_EXTAPI_ENPHASE
+
 # NOTE: Due to portability, we do not use a GNU percent-wildcard extension.
 # We also have to export some variables that may be tainted by relative
 # paths when parsing the other makefile (e.g. MKDIR_P that may be defined

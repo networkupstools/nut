@@ -5465,6 +5465,39 @@ dnl Use these at best for tests (e.g. nutconf), not production code:
 AC_DEFINE_UNQUOTED([ABS_TOP_SRCDIR], ["${ABS_TOP_SRCDIR}"], [NUT source directory when the build was configured])
 AC_DEFINE_UNQUOTED([ABS_TOP_BUILDDIR], ["${ABS_TOP_BUILDDIR}"], [NUT build directory when the build was configured])
 
+AC_MSG_CHECKING([whether to install External API integration script: Enphase Monitor])
+nut_with_extapi_enphase="no"
+AC_ARG_ENABLE([extapi-enphase],
+	AS_HELP_STRING([--enable-extapi-enphase=(yes|auto|no)], [Enable installation of integration script for External API: Enphase Monitor (default: no)]),
+[
+	case "${enableval}" in
+	yes|"")
+		nut_enable_extapi_enphase="auto"
+		;;
+	auto|no)
+		nut_enable_extapi_enphase="${enableval}"
+		;;
+	*)
+		AC_MSG_ERROR([Unexpected argument for --enable-extapi-enphase=${enableval}])
+		;;
+	esac
+], [])
+
+if test x"$nut_enable_extapi_enphase" != xno ; then
+	dnl Depends on usability of further programs and bash version
+	dnl Luckily the script checks that itself, before handling CLI args
+	/usr/bin/env bash "${ABS_TOP_SRCDIR}/scripts/external_apis/enphase/enphase-monitor.in" --help >/dev/null \
+	&& nut_can_extapi_enphase="yes" \
+	|| nut_can_extapi_enphase="no"
+
+	if test x"$nut_enable_extapi_enphase" = xyes && x"$nut_can_extapi_enphase" = xno ; then
+		AC_MSG_ERROR([Caller required installation --enable-extapi-enphase but the system can not run it])
+	fi
+	nut_enable_extapi_enphase="${nut_can_extapi_enphase}"
+fi
+AC_MSG_RESULT([${nut_enable_extapi_enphase}])
+AM_CONDITIONAL(ENABLE_EXTAPI_ENPHASE, test x"$nut_enable_extapi_enphase" = x"yes")
+
 AC_MSG_CHECKING([whether to customize ${TOP_BUILDDIR}/scripts/systemd/nut-common-tmpfiles.conf.in for this system])
 dnl TOTHINK: Some distributions make the directories below owned
 dnl by "root:${RUN_AS_GROUP}" with 77x permissions. Is it safer?..

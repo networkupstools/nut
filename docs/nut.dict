@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3292 utf-8
+personal_ws-1.1 en 3293 utf-8
 AAC
 AAS
 ABI
@@ -1916,6 +1916,7 @@ execfuse
 executables
 executeCommand
 execve
+extapi
 extern
 externalConsole
 extradata
