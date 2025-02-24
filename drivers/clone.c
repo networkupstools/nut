@@ -147,7 +147,7 @@ static int parse_args(size_t numargs, char **arg)
 		if (!strcasecmp(arg[1], "battery.charge")) {
 			battery.charge.act = strtod(arg[2], NULL);
 
-			dstate_setinfo("battery.charge.low", "%g", battery.charge.low);
+			dstate_setinfo("battery.charge.low", "%f", battery.charge.low);
 			dstate_setflags("battery.charge.low", ST_FLAG_RW | ST_FLAG_STRING);
 			dstate_setaux("battery.charge.low", 3);
 		}
@@ -155,7 +155,7 @@ static int parse_args(size_t numargs, char **arg)
 		if (!strcasecmp(arg[1], "battery.runtime")) {
 			battery.runtime.act = strtod(arg[2], NULL);
 
-			dstate_setinfo("battery.runtime.low", "%g", battery.runtime.low);
+			dstate_setinfo("battery.runtime.low", "%f", battery.runtime.low);
 			dstate_setflags("battery.runtime.low", ST_FLAG_RW | ST_FLAG_STRING);
 			dstate_setaux("battery.runtime.low", 4);
 		}
@@ -518,13 +518,13 @@ static int setvar(const char *varname, const char *val)
 {
 	if (!strcasecmp(varname, "battery.charge.low")) {
 		battery.charge.low = strtod(val, NULL);
-		dstate_setinfo("battery.charge.low", "%g", battery.charge.low);
+		dstate_setinfo("battery.charge.low", "%f", battery.charge.low);
 		return STAT_SET_HANDLED;
 	}
 
 	if (!strcasecmp(varname, "battery.runtime.low")) {
 		battery.runtime.low = strtod(val, NULL);
-		dstate_setinfo("battery.runtime.low", "%g", battery.runtime.low);
+		dstate_setinfo("battery.runtime.low", "%f", battery.runtime.low);
 		return STAT_SET_HANDLED;
 	}
 

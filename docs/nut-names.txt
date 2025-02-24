@@ -87,6 +87,36 @@ and in certain cases detailed below there may be a variable component
 in the practical values (e.g. the `n` in `ambient.n.temperature.alarm`
 variable or `outlet.n.load.off` command names).
 
+Numeric format
+--------------
+
+Depending on the use-case, decimal numbers may be represented as integers
+or as floating-point numbers with a dot character as the separator for the
+fractional part (typically one or two digits long).  Leading zeroes may be
+present. Leading (negative) sign characters are possible, although use-cases
+for them are rare (if any).
+
+Spaces or commas must not be used inside the numeric values.
+
+Scientific notation (with mantissa/exponent) must not be used to represent
+numeric values set into variables, to serve the values as exact as we have
+them and keep the client-side parsing simple and predictable.
+
+For example: "01200.2" and "1200.20" are valid, while "1,200.20" and "1200,20"
+and "1 200.20" and "1.2e4" are invalid.
+
+Programming note: floating-point numbers should be emitted using the `%f`
+format specifier in the C `printf` family of methods and derived methods
+(including NUT `dstate_setinfo()` in the driver code). Specifiers like `%e`
+and `%g` which can emit the scientific notation should be avoided when setting
+variable values (directly in code or when providing format string patterns in
+mapping tables). They may however be used in debug traces, where reasonable.
+
+Note that in some cases (e.g. USB vendor and product identifiers) technically
+numeric values may be reported as hexadecimal and should be treated generally
+as opaque strings (with the consumer ascribing a known meaning to certain
+variable names).
+
 Time and Date format
 --------------------
 
@@ -110,6 +140,21 @@ and the publicly available RFC at
 link:http://tools.ietf.org/html/rfc3339[RFC 3339].
 
 Other representations from those specifications are not necessarily supported.
+
+[NOTE]
+======
+Values of certain variables may be propagated from device reports formally
+as opaque strings, which happen to convey a date/time value (commonly the
+device or battery manufacture date, replacement date, last self-test or
+calibration time stamp, device clock, etc.) in some format, not necessarily
+a standard one.
+
+While the drivers may convert them from original vendor-provided markup
+to the standard Time and Date format described above (if the formula is
+known for certain -- e.g. which locale is used by the device, which part
+of that string is the year/month/day, or how to add offset or prefix for
+the year, etc.), they are not generally required to do so.
+======
 
 Variables
 ---------
