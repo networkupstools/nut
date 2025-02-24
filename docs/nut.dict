@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3291 utf-8
+personal_ws-1.1 en 3292 utf-8
 AAC
 AAS
 ABI
@@ -243,6 +243,7 @@ DELPHYS
 DELRANGE
 DES
 DESTDIR
+DEVICEALARM
 DEVNAME
 DF
 DHEA

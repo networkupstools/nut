@@ -117,6 +117,14 @@ Changes from 2.8.2 to 2.8.3
   other devices using that MIB (negatively, if the older mappings were
   indeed correct for any practical cases, and were not a typo). [#2803]
 
+- mge-utalk driver will no longer set non-standard status values `COMMFAULT`
+  and `ALARM` (for a specific status bit); instead, it will set modern
+  `ups.alarm` with values `COMMFAULT` and/or `DEVICEALARM` (and raise
+  an `ALARM` in `ups.status` for either, as standard alarms go). If your
+  clients (e.g. custom parsing scripts) for devices supported by this driver
+  depended on those non-standard tokens in `ups.status`, they would have to
+  be updated to handle the new token values in `ups.alarm` instead. [#2708]
+
 - Added support for `lbrb_log_delay_sec=N` setting to delay propagation of
   `LB` or `LB+RB` state (buggy with APC BXnnnnMI devices/firmwares issued
   circa 2023-2024 which flood the logs with spurious LOWBATT and REPLACEBATT
