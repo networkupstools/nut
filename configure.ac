@@ -5686,6 +5686,7 @@ AC_CONFIG_FILES([
  scripts/avahi/nut.service
  scripts/devd/Makefile
  scripts/external_apis/Makefile
+ scripts/external_apis/enphase/enphase-monitor@.service
  scripts/hotplug/Makefile
  scripts/hotplug/libhidups
  scripts/HP-UX/nut.psf
@@ -5739,9 +5740,10 @@ m4_foreach_w([SCRIPTFILE], [
  scripts/HP-UX/postinstall
  scripts/RedHat/upsd
  scripts/RedHat/upsmon
+ scripts/augeas/gen-nutupsconf-aug.py
+ scripts/external_apis/enphase/enphase-monitor
  scripts/python/app/NUT-Monitor-py2gtk2
  scripts/python/app/NUT-Monitor-py3qt5
- scripts/augeas/gen-nutupsconf-aug.py
  scripts/python/module/test_nutclient.py
  scripts/upsdrvsvcctl/nut-driver-enumerator.sh
  scripts/upsdrvsvcctl/upsdrvsvcctl

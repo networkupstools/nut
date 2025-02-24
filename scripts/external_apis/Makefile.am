@@ -3,8 +3,8 @@
 EXTRA_DIST = \
 	README.adoc \
 	enphase/README.adoc \
-	enphase/enphase-monitor \
-	enphase/enphase-monitor@.service
+	enphase/enphase-monitor.in \
+	enphase/enphase-monitor@.service.in
 
 SPELLCHECK_SRC = README.adoc
 
@@ -28,6 +28,8 @@ SPELLCHECK_SRC = README.adoc
 spellcheck spellcheck-interactive spellcheck-sortdict:
 	+$(MAKE) -f $(top_builddir)/docs/Makefile $(AM_MAKEFLAGS) MKDIR_P="$(MKDIR_P)" builddir="$(builddir)" srcdir="$(srcdir)" top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)" SPELLCHECK_SRC="$(SPELLCHECK_SRC)" SPELLCHECK_SRCDIR="$(srcdir)" SPELLCHECK_BUILDDIR="$(builddir)" $@
 
-CLEANFILES = *-spellchecked enphase/*-spellchecked
+CLEANFILES = *-spellchecked enphase/*-spellchecked \
+	enphase/enphase-monitor \
+	enphase/enphase-monitor@.service
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
