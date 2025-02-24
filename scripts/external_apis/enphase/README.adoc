@@ -1,26 +1,26 @@
 Enphase Monitor for dummy-ups
 =============================
 
-Enphase Monitor is a bash-script that queries the local IQ Gateway's
-API and makes "Grid On/Off" and Battery State-Of-Charge status
-available to NUT's dummy-ups driver by updating it's "port" file
-(see the dummy-ups(8) man page)
+The Enphase Monitor is a `bash` script that queries the local IQ Gateway's
+API, and makes "Grid On/Off" and Battery State-Of-Charge status
+available to NUT's `dummy-ups` driver by updating its "port" file
+(see the linkman:dummy-ups[8] man page).
 
-enphase-monitor supports the following:
+The `enphase-monitor` script supports the following:
 
- - auto-login to enlighten.enphaseenergy.com to generate and auto-renew
+ - auto-login to 'enlighten.enphaseenergy.com' to generate and auto-renew
    tokens for local Gateway API access (tokens are cached until expiration)
  - retains any (non-generated) values in the "port" file
  - gracefully handles split-phase or 3-phase input/output values
- - calculates derived values such as battery voltage, runtime and "ups.load"
+ - calculates derived values such as battery voltage, runtime and `ups.load`
  - handles no-comms with temporary rename of the port file (indicates
    "stale data")
- - dedicated config-file (for login, API query timing etc.)
+ - dedicated configuration file (for login, API query timing, etc.)
  - enforces access permissions on files containing secrets
  - is fully self-documented (leading comment in the script included below)
  - GPLv3 licensed
- - minimal requirements: bash, jq, base64 and curl
- - includes systemd service for use with dummy-ups
+ - minimal requirements: `bash`, `jq`, `base64` and `curl`
+ - includes a sample instantiated systemd service for use with `dummy-ups`
  - includes a "TEST" mode that loops through various states and
    randomly expires the token
 
@@ -30,7 +30,7 @@ Documentation
 -------------
 
 The script is self-documented, but the following is the script's leading
-comments with installation instructions and configuration reference:
+comments block with installation instructions and configuration reference:
 
 ----
 Usage: enphase-monitor [ <options> ] -c <config> | <ups>
