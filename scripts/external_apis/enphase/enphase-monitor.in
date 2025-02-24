@@ -173,8 +173,26 @@
 # shellcheck disable=SC2076
 
 # install defaults
-NUT_SYSCONFIG=${NUT_SYSCONFIG:-/etc/ups}
-NUT_LOCALSTATE=${NUT_LOCALSTATE:-/var/lib/ups}
+
+# Script configuration file location, defaults to NUT configuration location:
+NUT_CONFPATH=${NUT_CONFPATH:-@CONFPATH@}
+NUT_SYSCONFIG=${NUT_SYSCONFIG:-$NUT_CONFPATH}
+
+# Location where we write the data file for dummy-ups to process and publish.
+# Should not be in a tmpfs, as we may inherit some manually added data points
+# that we want to retain across reboots. On systems with wear-prone storage
+# (flash/SSD), you can fiddle with a "manually-made" file that would be copied
+# into a tmpfs, and have the script pick up that tmpfs location with initially
+# inherited data points.
+# Does not have to be among NUT common directories (/var/lib/ups is another
+# reasonable option), but should be writeable to this script (see service
+# definition for run-time user involved) and readable for NUT driver run-time
+# user account.
+# The corresponding dummy-ups section in ups.conf should refer to file name
+# under this location in its "port" definition (path may be skipped if this
+# is NUT_CONFPATH).
+NUT_STATEPATH=${NUT_STATEPATH:-@STATEPATH@}
+NUT_LOCALSTATE=${NUT_LOCALSTATE:-$NUT_STATEPATH}
 
 # these can be changed
 ENPHASE_LOGIN="https://enlighten.enphaseenergy.com/login/login.json?"

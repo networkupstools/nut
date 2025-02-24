@@ -18,7 +18,12 @@ SyslogIdentifier=%N
 # secured installations, customize this via a drop-in systemd file with a
 # different dedicated account:
 User=@RUN_AS_USER@
-# First run once to scrap obsolete data from the file
+# NOTE: On systems with wear-prone storage (flash/SSD), you can fiddle with
+# a "manually-made" file that would be copied into a tmpfs, and have the
+# script (and dummy-ups driver) pick up that tmpfs location with initially
+# inherited data points, e.g.:
+### ExecStartPre=/bin/cp @CONFPATH@/enphase-%I.default /dev/shm/nut/enphase-%I.seq
+# First run once to scrap obsolete data from the existing file
 # Replace -s with -x to start in nocomms (no network APIs) below:
 ExecStartPre=@libexec@/enphase-monitor -s %I
 # Start as the continuously running service
