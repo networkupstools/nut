@@ -547,6 +547,8 @@ relocated into new `shutdown.default` INSTCMD definitions. [#2670]
    match the requirements of link:https://peps.python.org/pep-0625/[PEP-0625].
    The Python module name (and its directory) should remain camel-cased. [#2773]
 
+ - added man page for the `NUT-Monitor` Python UI client.
+
  - enabled installation of built single-file PDF and HTML (including man page
    renditions) under the configured `docdir`. It seems previously they were
    only built (if requested) but not installed via `make`, unlike the common
