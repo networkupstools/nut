@@ -1,15 +1,31 @@
+# Network UPS Tools (NUT) systemd integration
+# Copyright (C) 2025 by Scott Shambarger
+# Copyright (C) 2025 by NUT contributors
+# Distributed under the terms of GPLv3+
+# See https://networkupstools.org/
+# and https://github.com/networkupstools/nut/
+
 [Unit]
 Description=Enphase API monitor for NUT dummy-ups %I
 PartOf=nut-driver.target
+# NOTE: Works with individual service instances prepared by nut-driver-enumerator
 Before=nut-driver@%i.service
 
 [Service]
 SyslogIdentifier=%N
-User=nut
-# replace -s with -x to start in nocomms (no network apis)
-ExecStartPre=/usr/local/libexec/enphase-monitor -s %I
-ExecStart=/usr/local/libexec/enphase-monitor %I
+# NOTE: Does not have to be same run-time account as NUT daemons, just the
+# files created by it should be readable by the dummy-ups daemon. For more
+# secured installations, customize this via a drop-in systemd file with a
+# different dedicated account:
+User=@RUN_AS_USER@
+# First run once to scrap obsolete data from the file
+# Replace -s with -x to start in nocomms (no network APIs) below:
+ExecStartPre=@libexec@/enphase-monitor -s %I
+# Start as the continuously running service
+ExecStart=@libexec@/enphase-monitor %I
 Type=exec
+# Restart really always, do not stop trying:
+StartLimitInterval=0
 Restart=always
 RestartSec=30
 
