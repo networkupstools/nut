@@ -6,6 +6,14 @@ API, and makes "Grid On/Off" and Battery State-Of-Charge status
 available to NUT's `dummy-ups` driver by updating its "port" file
 (see the linkman:dummy-ups[8] man page).
 
+NOTE: Location where we write the data file for `dummy-ups` to process and
+publish should not be in a temporary file system, as we may inherit some
+manually added data points in the file that we want to retain across reboots.
+On systems with wear-prone storage (flash/SSD), you can fiddle with a
+"manually-made" file that would be copied into a tmpfs mount point, and
+have the script (and `dummy-ups` driver) pick up *that* tmpfs location
+with initially inherited data points.
+
 The `enphase-monitor` script supports the following:
 
  - auto-login to 'enlighten.enphaseenergy.com' to generate and auto-renew
