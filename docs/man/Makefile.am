@@ -20,6 +20,8 @@
 #EGREP = egrep
 EGREP = grep -E
 
+SRC_ALL_PAGES =
+
 ALL_TGT =
 if WITH_MANS
 ALL_TGT += all-man
@@ -107,7 +109,9 @@ SRC_CLIENT_PAGES += nut.exe.txt
 if WITH_MANS
 MAN_CLIENT_PAGES += nut.exe.$(MAN_SECTION_CMD_SYS)
 endif WITH_MANS
-endif HAVE_WINDOWS
+else !HAVE_WINDOWS
+SRC_ALL_PAGES += nut.exe.txt
+endif !HAVE_WINDOWS
 
 man@MAN_SECTION_CMD_SYS_BASE@_MANS = $(MAN_CLIENT_PAGES)
 
@@ -895,7 +899,7 @@ endif
 
 # distribute everything, even those not installed by default
 # Note that 'dist' target requires AsciiDoc!
-SRC_ALL_PAGES = \
+SRC_ALL_PAGES += \
 	$(SRC_CONF_PAGES) \
 	$(SRC_CLIENT_PAGES) \
 	$(SRC_TOOL_PAGES) \
