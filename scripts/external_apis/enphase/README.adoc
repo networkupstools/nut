@@ -26,7 +26,7 @@ The `enphase-monitor` script supports the following:
  - dedicated configuration file (for login, API query timing, etc.)
  - enforces access permissions on files containing secrets
  - is fully self-documented (leading comment in the script included below)
- - GPLv3 licensed
+ - GPLv2 licensed
  - minimal requirements: `bash`, `jq`, `base64` and `curl`
  - includes a sample instantiated systemd service for use with `dummy-ups`
  - includes a "TEST" mode that loops through various states and
