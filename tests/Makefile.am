@@ -11,7 +11,9 @@
 
 SUBDIRS = . NIT
 
-all: $(TESTS)
+# Note: a few duplicate mentions are possible here, but a decent make should
+# handle that properly
+all: $(TESTS) $(check_PROGRAMS) $(check_SCRIPTS)
 
 EXTRA_DIST = nut-driver-enumerator-test.sh nut-driver-enumerator-test--ups.conf
 
