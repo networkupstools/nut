@@ -20,6 +20,8 @@
 #EGREP = egrep
 EGREP = grep -E
 
+SRC_ALL_PAGES =
+
 ALL_TGT =
 if WITH_MANS
 ALL_TGT += all-man
@@ -107,7 +109,29 @@ SRC_CLIENT_PAGES += nut.exe.txt
 if WITH_MANS
 MAN_CLIENT_PAGES += nut.exe.$(MAN_SECTION_CMD_SYS)
 endif WITH_MANS
-endif HAVE_WINDOWS
+else !HAVE_WINDOWS
+SRC_ALL_PAGES += nut.exe.txt
+endif !HAVE_WINDOWS
+
+if WITH_NUT_MONITOR
+SRC_CLIENT_PAGES += NUT-Monitor.txt
+if WITH_MANS
+MAN_CLIENT_PAGES += \
+	NUT-Monitor-py2gtk2.$(MAN_SECTION_CMD_SYS) \
+	NUT-Monitor-py3qt5.$(MAN_SECTION_CMD_SYS) \
+	NUT-Monitor.$(MAN_SECTION_CMD_SYS)
+
+# Alias page for one text describing two commands:
+NUT-Monitor-py2gtk2.$(MAN_SECTION_CMD_SYS): NUT-Monitor.$(MAN_SECTION_CMD_SYS)
+	touch $@
+
+NUT-Monitor-py3qt5.$(MAN_SECTION_CMD_SYS): NUT-Monitor.$(MAN_SECTION_CMD_SYS)
+	touch $@
+
+endif WITH_MANS
+else !WITH_NUT_MONITOR
+SRC_ALL_PAGES += NUT-Monitor.txt
+endif !WITH_NUT_MONITOR
 
 man@MAN_SECTION_CMD_SYS_BASE@_MANS = $(MAN_CLIENT_PAGES)
 
@@ -127,6 +151,10 @@ HTML_CLIENT_MANS = \
 if HAVE_WINDOWS
 HTML_CLIENT_MANS += nut.exe.html
 endif HAVE_WINDOWS
+
+if WITH_NUT_MONITOR
+HTML_CLIENT_MANS += NUT-Monitor.html
+endif WITH_NUT_MONITOR
 
 SRC_TOOL_PAGES = nut-scanner.txt nut-recorder.txt nutconf.txt
 
@@ -895,7 +923,7 @@ endif
 
 # distribute everything, even those not installed by default
 # Note that 'dist' target requires AsciiDoc!
-SRC_ALL_PAGES = \
+SRC_ALL_PAGES += \
 	$(SRC_CONF_PAGES) \
 	$(SRC_CLIENT_PAGES) \
 	$(SRC_TOOL_PAGES) \

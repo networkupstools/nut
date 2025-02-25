@@ -183,6 +183,7 @@ spellcheck spellcheck-interactive:
 	(cd $(builddir)/scripts/Solaris && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
 	(cd $(builddir)/scripts/Windows && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
 	(cd $(builddir)/scripts/devd && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
+	(cd $(builddir)/scripts/external_apis && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
 	(cd $(builddir)/scripts/hotplug && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
 	(cd $(builddir)/scripts/installer && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
 	(cd $(builddir)/scripts/python && $(MAKE) $(AM_MAKEFLAGS) -s $@) || RES=$$? ; \
@@ -599,139 +600,147 @@ endif
 # distros that do not follow current naming in NUT code base.
 install-as-root:
 	@+echo "$@: starting (no-op if not root)" >&2 ; \
-	 case "@target_os@" in *mingw*) exit 0;; esac ; \
-	 if [ x"@host_os@" != x"@build_os@" ]; then exit 0 ; fi ; \
-	 if [ x"@target_os@" != x"@build_os@" ]; then exit 0 ; fi ; \
-	 prefix="@prefix@"; \
+	 case "@target_os@" in *mingw*) echo "$@: SKIP: not supported for this target_os='@target_os@'" >&2 ; exit 0;; esac ; \
+	 if [ x"@host_os@" != x"@build_os@" ]; then echo "$@: SKIP: build_os='@build_os@' is not host_os='@host_os@'" >&2 ; exit 0 ; fi ; \
+	 if [ x"@target_os@" != x"@build_os@" ]; then echo "$@: SKIP: build_os='@build_os@' is not target_os='@target_os@'" >&2 ; exit 0 ; fi ; \
 	 if (command -v id) && [ x"`id -u`" = x0 ] ; then \
-		if [ x"$(DESTDIR)" = x -o x"$(DESTDIR)" = x/ ] ; then \
-			if $(HAVE_SYSTEMD) ; then \
+		echo "$@: we seem to be root, PROCEEDING" >&2 ; \
+	 else \
+		echo "$@: SKIP: we seem to NOT be root" >&2 ; \
+		exit 0 ; \
+	 fi ; \
+	 prefix="@prefix@"; \
+	 if [ x"$(DESTDIR)" = x -o x"$(DESTDIR)" = x/ ] ; then \
+		if $(HAVE_SYSTEMD) ; then \
+			echo "$@: Stop NUT services, if any" >&2 ; \
+			@SYSTEMD_SYSTEMCTL_PROGRAM@ stop nut-monitor.service nut-server.service || true ; \
+			@SYSTEMD_SYSTEMCTL_PROGRAM@ stop nut-driver.service || true ; \
+			@SYSTEMD_SYSTEMCTL_PROGRAM@ stop nut-driver.target || true ; \
+			@SYSTEMD_SYSTEMCTL_PROGRAM@ stop nut.target || true ; \
+		fi ; \
+		if $(WITH_SOLARIS_SMF) || $(WITH_SOLARIS_INIT) ; then \
+			if $(WITH_SOLARIS_SMF) ; then \
 				echo "$@: Stop NUT services, if any" >&2 ; \
-				@SYSTEMD_SYSTEMCTL_PROGRAM@ stop nut-monitor.service nut-server.service || true ; \
-				@SYSTEMD_SYSTEMCTL_PROGRAM@ stop nut-driver.service || true ; \
-				@SYSTEMD_SYSTEMCTL_PROGRAM@ stop nut-driver.target || true ; \
-				@SYSTEMD_SYSTEMCTL_PROGRAM@ stop nut.target || true ; \
+				SMF_ACTIVE="`/usr/bin/svcs -a -Hostate,fmri | grep svc:/system/power/ | grep -v disabled | awk '{print $$2}'`" ; \
+				for S in $$SMF_ACTIVE ; do \
+					/usr/sbin/svcadm disable -ts $$S || true ; \
+				done ; \
 			fi ; \
-			if $(WITH_SOLARIS_SMF) || $(WITH_SOLARIS_INIT) ; then \
-				if $(WITH_SOLARIS_SMF) ; then \
-					echo "$@: Stop NUT services, if any" >&2 ; \
-					SMF_ACTIVE="`/usr/bin/svcs -a -Hostate,fmri | grep svc:/system/power/ | grep -v disabled | awk '{print $$2}'`" ; \
-					for S in $$SMF_ACTIVE ; do \
-						/usr/sbin/svcadm disable -ts $$S || true ; \
-					done ; \
-				fi ; \
-				$(top_builddir)/scripts/Solaris/preremove \
-				|| exit ; \
-			fi ; \
+			$(top_builddir)/scripts/Solaris/preremove \
+			|| exit ; \
 		fi ; \
-		$(MAKE) $(AM_FLAGS) DESTDIR="$(DESTDIR)" install || exit ; \
-		if [ x"$(DESTDIR)" = x -o x"$(DESTDIR)" = x/ ] ; then \
-			if $(WITH_SOLARIS_SMF) || $(WITH_SOLARIS_INIT) ; then \
-				$(top_builddir)/scripts/Solaris/preinstall && \
-				$(top_builddir)/scripts/Solaris/postinstall ; \
-				exit ; \
-			fi ; \
+	 fi ; \
+	 $(MAKE) $(AM_FLAGS) DESTDIR="$(DESTDIR)" install || exit ; \
+	 if [ x"$(DESTDIR)" = x -o x"$(DESTDIR)" = x/ ] ; then \
+		if $(WITH_SOLARIS_SMF) || $(WITH_SOLARIS_INIT) ; then \
+			$(top_builddir)/scripts/Solaris/preinstall && \
+			$(top_builddir)/scripts/Solaris/postinstall ; \
+			exit ; \
 		fi ; \
-		echo "  MKDIR   $(DESTDIR)/@STATEPATH@ $(DESTDIR)/@STATEPATH@/upssched" >&2 ; \
-		$(MKDIR_P) "$(DESTDIR)/@STATEPATH@/upssched" && \
-		for D in "@PIDPATH@" "@ALTPIDPATH@" "@ALTSTATEPATH@" "@CONFPATH@" ; do \
+	 fi ; \
+	 echo "  MKDIR   $(DESTDIR)/@STATEPATH@ $(DESTDIR)/@STATEPATH@/upssched" >&2 ; \
+	 $(MKDIR_P) "$(DESTDIR)/@STATEPATH@/upssched" && \
+	 for D in "@PIDPATH@" "@ALTPIDPATH@" "@ALTSTATEPATH@" "@CONFPATH@" ; do \
+		case x"$$D" in \
+		x|x@*) ;; \
+		*)	echo "  MKDIR   $(DESTDIR)/$$D" >&2 ; \
+			$(MKDIR_P) "$(DESTDIR)/$$D" \
+			|| exit ;; \
+		esac ; \
+	 done ; \
+	 if (command -v chmod) ; then \
+		echo "  CHMOD(0770)   $(DESTDIR)/@STATEPATH@/upssched" >&2 ; \
+		chmod 0770 "$(DESTDIR)/@STATEPATH@/upssched" \
+		|| exit ; \
+		for D in "@STATEPATH@" "@PIDPATH@" "@ALTPIDPATH@" "@ALTSTATEPATH@" ; do \
 			case x"$$D" in \
-			x|x@*) ;; \
-			*)	echo "  MKDIR   $(DESTDIR)/$$D" >&2 ; \
-				$(MKDIR_P) "$(DESTDIR)/$$D" \
+			x|x@*|x/run|x/var/run|x/tmp|x/var/tmp|x/dev/shm|x/etc|x/var|x/usr|x/usr/local|x/usr/local/etc|x/usr/etc) ;; \
+			*)	echo "  CHMOD(0770)   $(DESTDIR)/$$D" >&2 ; \
+				chmod 0770 "$(DESTDIR)/$$D" \
 				|| exit ;; \
 			esac ; \
 		done ; \
-		if (command -v chmod) ; then \
-			echo "  CHMOD(0770)   $(DESTDIR)/@STATEPATH@/upssched" >&2 ; \
-			chmod 0770 "$(DESTDIR)/@STATEPATH@/upssched" \
+		case x"@CONFPATH@" in \
+			x|x@*|x/run|x/var/run|x/tmp|x/var/tmp|x/dev/shm|x/etc|x/var|x/usr|x/usr/local|x/usr/local/etc|x/usr/etc) ;; \
+			*)	echo "  CHMOD(0751)   $(DESTDIR)/@CONFPATH@" >&2 ; \
+				chmod 0751 "$(DESTDIR)/@CONFPATH@" \
+				|| exit ;; \
+		esac ; \
+		for F in hosts.conf.sample upsstats-single.html.sample upsstats.html.sample upsset.conf.sample ; do \
+			echo "  CHMOD(0644)   CGI: $(DESTDIR)/@CONFPATH@/$$F" >&2 ; \
+			chmod 0644 "$(DESTDIR)/@CONFPATH@/$$F" \
+			|| { if $(WITH_CGI) ; then exit 1 ; else true ; fi ; } ; \
+		done ; \
+		for F in nut.conf.sample ups.conf.sample upsd.conf.sample upsd.users.sample upsmon.conf.sample upssched.conf.sample ; do \
+			echo "  CHMOD(0640)   $(DESTDIR)/@CONFPATH@/$$F" >&2 ; \
+			chmod 0640 "$(DESTDIR)/@CONFPATH@/$$F" \
 			|| exit ; \
-			for D in "@STATEPATH@" "@PIDPATH@" "@ALTPIDPATH@" "@ALTSTATEPATH@" ; do \
-				case x"$$D" in \
-				x|x@*|x/run|x/var/run|x/tmp|x/var/tmp|x/dev/shm|x/etc|x/var|x/usr|x/usr/local|x/usr/local/etc|x/usr/etc) ;; \
-				*)	echo "  CHMOD(0770)   $(DESTDIR)/$$D" >&2 ; \
-					chmod 0770 "$(DESTDIR)/$$D" \
-					|| exit ;; \
-				esac ; \
-			done ; \
-			case x"@CONFPATH@" in \
-				x|x@*|x/run|x/var/run|x/tmp|x/var/tmp|x/dev/shm|x/etc|x/var|x/usr|x/usr/local|x/usr/local/etc|x/usr/etc) ;; \
-				*)	echo "  CHMOD(0751)   $(DESTDIR)/@CONFPATH@" >&2 ; \
-					chmod 0751 "$(DESTDIR)/@CONFPATH@" \
-					|| exit ;; \
+		done ; \
+	 else \
+		echo "$@: WARNING: Can not CHMOD created locations!" >&2 ; \
+	 fi ; \
+	 if (command -v chown) && test 0 -lt "`id -u '@RUN_AS_USER@'`" \
+	 && ( test 0 -lt "`getent group '@RUN_AS_GROUP@' | awk -F: '{print $$3}'`" || test 0 -lt "`id -g '@RUN_AS_GROUP@'`" ) \
+	 ; then \
+		echo "  CHOWN(@RUN_AS_USER@:@RUN_AS_GROUP@)   $(DESTDIR)/@STATEPATH@/upssched" >&2 ; \
+		chown "@RUN_AS_USER@:@RUN_AS_GROUP@" "$(DESTDIR)/@STATEPATH@/upssched" \
+		|| exit ; \
+		for D in "@STATEPATH@" "@PIDPATH@" "@ALTPIDPATH@" "@ALTSTATEPATH@" ; do \
+			case x"$$D" in \
+			x|x@*|x/run|x/var/run|x/tmp|x/var/tmp|x/dev/shm|x/etc|x/var|x/usr|x/usr/local|x/usr/local/etc|x/usr/etc) ;; \
+			*)	echo "  CHOWN(@RUN_AS_USER@:@RUN_AS_GROUP@)   $(DESTDIR)/$$D" >&2 ; \
+				chown "@RUN_AS_USER@:@RUN_AS_GROUP@" "$(DESTDIR)/$$D" \
+				|| exit ;; \
 			esac ; \
-			for F in hosts.conf.sample upsstats-single.html.sample upsstats.html.sample upsset.conf.sample ; do \
-				echo "  CHMOD(0644)   CGI: $(DESTDIR)/@CONFPATH@/$$F" >&2 ; \
-				chmod 0644 "$(DESTDIR)/@CONFPATH@/$$F" \
-				|| { if $(WITH_CGI) ; then exit 1 ; else true ; fi ; } ; \
-			done ; \
-			for F in nut.conf.sample ups.conf.sample upsd.conf.sample upsd.users.sample upsmon.conf.sample upssched.conf.sample ; do \
-				echo "  CHMOD(0640)   $(DESTDIR)/@CONFPATH@/$$F" >&2 ; \
-				chmod 0640 "$(DESTDIR)/@CONFPATH@/$$F" \
-				|| exit ; \
-			done ; \
-		else \
-			echo "$@: WARNING: Can not CHMOD created locations!" >&2 ; \
-		fi ; \
-		if (command -v chown) && test 0 -lt "`id -u '@RUN_AS_USER@'`" \
-		&& ( test 0 -lt "`getent group '@RUN_AS_GROUP@' | awk -F: '{print $$3}'`" || test 0 -lt "`id -g '@RUN_AS_GROUP@'`" ) \
-		; then \
-			echo "  CHOWN(@RUN_AS_USER@:@RUN_AS_GROUP@)   $(DESTDIR)/@STATEPATH@/upssched" >&2 ; \
-			chown "@RUN_AS_USER@:@RUN_AS_GROUP@" "$(DESTDIR)/@STATEPATH@/upssched" \
+		done ; \
+		case x"@CONFPATH@" in \
+			x|x@*|x/run|x/var/run|x/tmp|x/var/tmp|x/dev/shm|x/etc|x/var|x/usr|x/usr/local|x/usr/local/etc|x/usr/etc) ;; \
+			*)	echo "  CHOWN(root:@RUN_AS_GROUP@)   $(DESTDIR)/@CONFPATH@" >&2 ; \
+				chown "root:@RUN_AS_GROUP@" "$(DESTDIR)/@CONFPATH@" \
+				|| exit ;; \
+		esac ; \
+		for F in hosts.conf.sample upsstats-single.html.sample upsstats.html.sample upsset.conf.sample ; do \
+			echo "  CHOWN(root:@RUN_AS_GROUP@)   CGI: $(DESTDIR)/@CONFPATH@/$$F" >&2 ; \
+			chown "root:@RUN_AS_GROUP@" "$(DESTDIR)/@CONFPATH@/$$F" \
+			|| { if $(WITH_CGI) ; then exit 1 ; else true ; fi ; } ; \
+		done ; \
+		for F in nut.conf.sample ups.conf.sample upsd.conf.sample upsd.users.sample upsmon.conf.sample upssched.conf.sample ; do \
+			echo "  CHOWN(root:@RUN_AS_GROUP@)   $(DESTDIR)/@CONFPATH@/$$F" >&2 ; \
+			chown "root:@RUN_AS_GROUP@" "$(DESTDIR)/@CONFPATH@/$$F" \
 			|| exit ; \
-			for D in "@STATEPATH@" "@PIDPATH@" "@ALTPIDPATH@" "@ALTSTATEPATH@" ; do \
-				case x"$$D" in \
-				x|x@*|x/run|x/var/run|x/tmp|x/var/tmp|x/dev/shm|x/etc|x/var|x/usr|x/usr/local|x/usr/local/etc|x/usr/etc) ;; \
-				*)	echo "  CHOWN(@RUN_AS_USER@:@RUN_AS_GROUP@)   $(DESTDIR)/$$D" >&2 ; \
-					chown "@RUN_AS_USER@:@RUN_AS_GROUP@" "$(DESTDIR)/$$D" \
-					|| exit ;; \
-				esac ; \
-			done ; \
-			case x"@CONFPATH@" in \
-				x|x@*|x/run|x/var/run|x/tmp|x/var/tmp|x/dev/shm|x/etc|x/var|x/usr|x/usr/local|x/usr/local/etc|x/usr/etc) ;; \
-				*)	echo "  CHOWN(root:@RUN_AS_GROUP@)   $(DESTDIR)/@CONFPATH@" >&2 ; \
-					chown "root:@RUN_AS_GROUP@" "$(DESTDIR)/@CONFPATH@" \
-					|| exit ;; \
-			esac ; \
-			for F in hosts.conf.sample upsstats-single.html.sample upsstats.html.sample upsset.conf.sample ; do \
-				echo "  CHOWN(root:@RUN_AS_GROUP@)   CGI: $(DESTDIR)/@CONFPATH@/$$F" >&2 ; \
-				chown "root:@RUN_AS_GROUP@" "$(DESTDIR)/@CONFPATH@/$$F" \
-				|| { if $(WITH_CGI) ; then exit 1 ; else true ; fi ; } ; \
-			done ; \
-			for F in nut.conf.sample ups.conf.sample upsd.conf.sample upsd.users.sample upsmon.conf.sample upssched.conf.sample ; do \
-				echo "  CHOWN(root:@RUN_AS_GROUP@)   $(DESTDIR)/@CONFPATH@/$$F" >&2 ; \
-				chown "root:@RUN_AS_GROUP@" "$(DESTDIR)/@CONFPATH@/$$F" \
-				|| exit ; \
-			done ; \
-		else \
-			echo "$@: WARNING: Can not CHOWN created locations!" >&2 ; \
-		fi ; \
-		if [ x"$(DESTDIR)" = x -o x"$(DESTDIR)" = x/ ] ; then \
-			if $(HAVE_SYSTEMD) ; then \
-				echo "$@: Activate default systemd layout, restart services:" >&2 ; \
-				if $(WITH_SYSTEMD_TMPFILES) ; then \
-					echo "$@: Apply systemd-tmpfiles presets" >&2 ; \
-					@SYSTEMD_TMPFILES_PROGRAM@ --create || exit ; \
-				fi ; \
-				echo "$@: Learn systemd definition changes" >&2 ; \
-				@SYSTEMD_SYSTEMCTL_PROGRAM@ daemon-reload || exit ; \
-				if $(WITH_SYSTEMD_PRESET) ; then \
-					echo "$@: Apply systemd enabled/disabled service presets" >&2 ; \
-					@SYSTEMD_SYSTEMCTL_PROGRAM@ preset-all || exit ; \
-				else \
-					echo "$@: Apply systemd enabled/disabled service defaults" >&2 ; \
-					@SYSTEMD_SYSTEMCTL_PROGRAM@ disable nut.target nut-driver.target nut-monitor nut-server nut-driver-enumerator.path nut-driver-enumerator.service || exit ; \
-					@SYSTEMD_SYSTEMCTL_PROGRAM@ enable  nut.target nut-driver.target nut-monitor nut-server nut-driver-enumerator.path nut-driver-enumerator.service || exit ; \
-				fi ; \
-				echo "$@: Reconfigure nut-driver-enumerator (service instance wrapping)" >&2 ; \
-				@SYSTEMD_SYSTEMCTL_PROGRAM@ restart udev || true ; \
-				$(top_builddir)/scripts/upsdrvsvcctl/nut-driver-enumerator.sh --reconfigure || { RES=$$?; if [ $$RES != 42 ] ; then exit $$RES ; fi ; } ; \
-				echo "$@: Restart NUT services" >&2 ; \
-				@SYSTEMD_SYSTEMCTL_PROGRAM@ restart nut-driver-enumerator.service nut-monitor.service nut-server.service || exit ; \
+		done ; \
+	 else \
+		echo "$@: WARNING: Can not CHOWN created locations!" >&2 ; \
+	 fi ; \
+	 if [ x"$(DESTDIR)" = x -o x"$(DESTDIR)" = x/ ] ; then \
+		applied_udev=false ; \
+		if $(HAVE_SYSTEMD) ; then \
+			echo "$@: Activate default systemd layout, restart services:" >&2 ; \
+			if $(WITH_SYSTEMD_TMPFILES) ; then \
+				echo "$@: Apply systemd-tmpfiles presets" >&2 ; \
+				@SYSTEMD_TMPFILES_PROGRAM@ --create || exit ; \
 			fi ; \
+			echo "$@: Learn systemd definition changes" >&2 ; \
+			@SYSTEMD_SYSTEMCTL_PROGRAM@ daemon-reload || exit ; \
+			if $(WITH_SYSTEMD_PRESET) ; then \
+				echo "$@: Apply systemd enabled/disabled service presets" >&2 ; \
+				@SYSTEMD_SYSTEMCTL_PROGRAM@ preset-all || exit ; \
+			else \
+				echo "$@: Apply systemd enabled/disabled service defaults" >&2 ; \
+				@SYSTEMD_SYSTEMCTL_PROGRAM@ disable nut.target nut-driver.target nut-monitor nut-server nut-driver-enumerator.path nut-driver-enumerator.service || exit ; \
+				@SYSTEMD_SYSTEMCTL_PROGRAM@ enable  nut.target nut-driver.target nut-monitor nut-server nut-driver-enumerator.path nut-driver-enumerator.service || exit ; \
+			fi ; \
+			echo "$@: Reconfigure nut-driver-enumerator (service instance wrapping)" >&2 ; \
+			@SYSTEMD_SYSTEMCTL_PROGRAM@ restart udev && applied_udev=true || true ; \
+			$(top_builddir)/scripts/upsdrvsvcctl/nut-driver-enumerator.sh --reconfigure || { RES=$$?; if [ $$RES != 42 ] ; then exit $$RES ; fi ; } ; \
+			echo "$@: Restart NUT services" >&2 ; \
+			@SYSTEMD_SYSTEMCTL_PROGRAM@ restart nut-driver-enumerator.service nut-monitor.service nut-server.service || exit ; \
 		fi ; \
-		echo "$@: finished" >&2 ; \
-	 fi
+		if ! $${applied_udev} && (command -v udevadm); then \
+			udevadm control --reload-rules && udevadm trigger && applied_udev=true || true ; \
+		fi ; \
+	 fi ; \
+	 echo "$@: finished SUCCESSFULLY" >&2
 
 # Clean the dist tarball and packages
 MAINTAINERCLEANFILES_DISTBALL = nut-*.tar.gz

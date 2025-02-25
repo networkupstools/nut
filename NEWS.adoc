@@ -41,6 +41,9 @@ https://github.com/networkupstools/nut/milestone/9
 
  - (expected) Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0+
 
+ - added `scripts/external_apis` with an example script integrating a
+   non-native protocol with NUT; that example can be installed using
+   `configure --enable-extapi-enphase`. [issue #2807, PR #2813]
 
 PLANNED: Release notes for NUT 2.8.3 - what's new since 2.8.2
 -------------------------------------------------------------
@@ -546,6 +549,8 @@ relocated into new `shutdown.default` INSTCMD definitions. [#2670]
    lower-cased file name (and immediate versioned directory name inside) to
    match the requirements of link:https://peps.python.org/pep-0625/[PEP-0625].
    The Python module name (and its directory) should remain camel-cased. [#2773]
+
+ - added man page for the `NUT-Monitor` Python UI client.
 
  - enabled installation of built single-file PDF and HTML (including man page
    renditions) under the configured `docdir`. It seems previously they were
