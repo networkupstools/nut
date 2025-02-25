@@ -184,6 +184,8 @@ https://github.com/networkupstools/nut/milestone/11
    * introduced `innovart31` protocol support for Innova RT 3/1 UPSes. [#2712, #2798]
    * introduced `q2` and `q6` protocol support; currently also based/tested
      on Innova devices, but other models than RT 3/1. [#2798]
+   * introduced a `gtec` subdriver and protocol, tested over USB with a
+     Gtec ZP120N device. [#2818]
    * extended Voltronic protocol to support longer numbers as remaining
      `battery.runtime` value. [#2765]
 
