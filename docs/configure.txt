@@ -619,6 +619,31 @@ Change the facility used when writing to the log file.  Read the man
 page for `openlog` to get some idea of what's available on your system.
 Default is `LOG_DAEMON`.
 
+External API integration scripts
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Sometimes as a developer or user you need to interact with a device for
+which a "proper" NUT driver does not yet exist (or is not in your version),
+but some proof-of-concept script can be good enough to collect some data.
+
+In some cases, an UPS does not support local monitoring at all, but has
+a network port for cloud-based monitoring through its vendor's portal.
+
+Such data can be converted and fed into the NUT `dummy-ups` driver, and so
+represented in the NUT ecosystem, by rewriting the "sequence" file whose
+contents it processes in a loop (see linkman:dummy-ups[8] for more details).
+
+NUT provides sample scripts for such integration, which can be used if you
+have a suitable use-case, or provide inspiration for you to begin experiments
+with a new device and (as often happens) a shell or Python script polling
+it for information. For more details, see `scripts/external_apis` in NUT
+sources (and pull requests with more integrations would be welcome there).
+
+	--enable-extapi-enphase=(yes|auto|no)
+
+Enable installation of integration script for External API: Enphase Monitor
+(default: no)
+
 
 Installation directories
 ------------------------

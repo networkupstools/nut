@@ -41,6 +41,9 @@ https://github.com/networkupstools/nut/milestone/9
 
  - (expected) Bug fixes for fallout possible due to "fightwarn" effort in 2.8.0+
 
+ - added `scripts/external_apis` with an example script integrating a
+   non-native protocol with NUT; that example can be installed using
+   `configure --enable-extapi-enphase`. [issue #2807, PR #2813]
 
 PLANNED: Release notes for NUT 2.8.3 - what's new since 2.8.2
 -------------------------------------------------------------
