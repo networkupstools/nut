@@ -35,12 +35,20 @@ static int	gtec_process_status(item_t *item, char *value, const size_t valuelen)
 
 	upsdebugx(10, "%s: Processing status letters %s", __func__, item->value);
 
+	/* NOTE: The main driver calls status_init() and alarm_init()      *
+	 * for us in nutdrv_qx.c::upsdrv_updateinfo()                      */
+	/* TOTHINK: Should we status_set() the encountered letters where we
+	 * assign "val" below? It is generally possible that states overlap
+	 * e.g. "!OL + LB", but is it possible on this device?
+	 */
+
 	for (letters = item->value; *letters; letters++)
 	{
 		switch (*letters)
 		{
 		case 'A': /* Utility fail */
 
+			/* FIXME: Isn't this same as the more common "OB"? */
 			val = "!OL";
 			break;
 
@@ -56,7 +64,7 @@ static int	gtec_process_status(item_t *item, char *value, const size_t valuelen)
 
 		case 'D': /* UPS failed */
 
-			dstate_setinfo("ups.alarm", "UPS failed");
+			alarm_set("UPS failed");
 			break;
 
 		case 'E': /* Test in progress */
@@ -71,12 +79,12 @@ static int	gtec_process_status(item_t *item, char *value, const size_t valuelen)
 
 		case 'G': /* Site fault */
 
-			dstate_setinfo("ups.alarm", "Site fault");
+			alarm_set("Site fault");
 			break;
 
 		case 'H': /* EPROM fail */
 
-			dstate_setinfo("ups.alarm", "EPROM fail");
+			alarm_set("EPROM fail");
 			break;
 
 		case 'I': /* Test passed - Result: OK */
@@ -112,6 +120,9 @@ static int	gtec_process_status(item_t *item, char *value, const size_t valuelen)
 			upsdebugx(2, "%s: ignoring unknown status character %c", __func__, *letters);
 		}
 	}
+
+	/* NOTE: The main driver calls status_commit() and alarm_commit()  *
+	 * for us in nutdrv_qx.c::upsdrv_updateinfo()                      */
 
 	snprintf(value, valuelen, "%s", val);
 	return 0;
