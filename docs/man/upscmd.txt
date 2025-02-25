@@ -4,7 +4,7 @@ UPSCMD(8)
 NAME
 ----
 
-upscmd - UPS administration program for instant commands
+upscmd - Network UPS Tools device/driver instant commands administration tool
 
 SYNOPSIS
 --------
@@ -19,6 +19,10 @@ DESCRIPTION
 -----------
 
 *upscmd* allows you to invoke "instant commands" in your UPS hardware.
+It sends commands via the server linkman:upsd[8] to your driver, which
+manages the hardware for you.  You must use credentials defined in
+linkman:upsd.users[5] file on that data server with appropriate permissions.
+
 Not all hardware supports this, so check the list with -l to see if anything
 will work on your equipment.
 

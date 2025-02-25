@@ -30,6 +30,16 @@ AC_INIT([nut],
 dnl See docs/maintainer-guide.txt about releases - updating the version
 dnl above is a small part of the consistent ritual!
 
+dnl PACKAGE_URL="https://www.networkupstools.org/" for development iterations
+dnl or "https://www.networkupstools.org/historic/v1.2.3/index.html" for release
+dnl snapshots further set in stone. Either way, there should be a slash and
+dnl either a filename, or nothing. Adding a bogus filename and chopping it
+dnl off by `dirname` should do the trick.
+dnl NOTE: the resulting NUT_WEBSITE_BASE string does not end with a slash!
+NUT_WEBSITE_BASE="`dirname "${PACKAGE_URL}index.html"`"
+dnl Fallback, no trailing slash!
+test -n "${NUT_WEBSITE_BASE-}" || NUT_WEBSITE_BASE='https://www.networkupstools.org'
+
 dnl Note: this refers to GITREV at the time of configure script running
 dnl primarily for better messaging in the script itself (also to render
 dnl the PDF documentation revision history via docs/docinfo.xml.in).
@@ -121,6 +131,27 @@ AS_IF([test x"${NUT_SOURCE_GITREV}" = x],
     ])
 AC_CANONICAL_TARGET
 NUT_CHECK_OS
+
+dnl Further below we shuffle variants of these values possibly stripped of
+dnl warnings or with added further values. Here we save the most-original copy
+dnl so it can be passed e.g. to "make distcheck" the way the caller intended.
+NUT_CONFIG_CFLAGS=""
+NUT_CONFIG_CPPFLAGS=""
+NUT_CONFIG_CXXFLAGS=""
+NUT_CONFIG_LDFLAGS=""
+AS_IF([test -n "${CFLAGS-}"   -a x"${CFLAGS-}"   != x" "],
+	[NUT_CONFIG_CFLAGS="${CFLAGS-}"])
+AS_IF([test -n "${CXXFLAGS-}" -a x"${CXXFLAGS-}" != x" "],
+	[NUT_CONFIG_CXXFLAGS="${CXXFLAGS-}"])
+AS_IF([test -n "${CPPFLAGS-}" -a x"${CPPFLAGS-}" != x" "],
+	[NUT_CONFIG_CPPFLAGS="${CPPFLAGS-}"])
+AS_IF([test -n "${LDFLAGS-}"  -a x"${LDFLAGS-}"  != x" "],
+	[NUT_CONFIG_LDFLAGS="${LDFLAGS-}"])
+AC_SUBST([NUT_CONFIG_CFLAGS])
+AC_SUBST([NUT_CONFIG_CXXFLAGS])
+AC_SUBST([NUT_CONFIG_CPPFLAGS])
+AC_SUBST([NUT_CONFIG_LDFLAGS])
+
 NUT_STASH_WARNINGS
 AC_CONFIG_HEADERS([include/config.h])
 AC_PREFIX_DEFAULT(/usr/local/ups)
@@ -148,8 +179,14 @@ dnl experimentation, we do not want to actually mangle the flags provided
 dnl by autoconf - for GCC at least, the rightmost mentions of conflicting
 dnl flags on command line win. We just want to know when it is okay to add
 dnl ours. They may be inherited from "in-place" build setup though.
-test -n "${CONFIG_CFLAGS-}" || CONFIG_CFLAGS="${CFLAGS-}"
+test -n "${CONFIG_CFLAGS-}"   || CONFIG_CFLAGS="${CFLAGS-}"
 test -n "${CONFIG_CXXFLAGS-}" || CONFIG_CXXFLAGS="${CXXFLAGS-}"
+test -n "${CONFIG_CPPFLAGS-}" || CONFIG_CPPFLAGS="${CPPFLAGS-}"
+test -n "${CONFIG_LDFLAGS-}"  || CONFIG_LDFLAGS="${LDFLAGS-}"
+AC_SUBST([CONFIG_CFLAGS])
+AC_SUBST([CONFIG_CXXFLAGS])
+AC_SUBST([CONFIG_CPPFLAGS])
+AC_SUBST([CONFIG_LDFLAGS])
 dnl +-------------------------------------------------------------------
 
 dnl Default to `configure --enable-silent-rules` or `make V=1` for details?
@@ -199,6 +236,21 @@ dnl # if autoconf does not set any options, use default/moderate optimizations
 CFLAGS=${CFLAGS-"-O"}
 dnl # Not so far a legacy, added for consistency in 2024 :)
 CXXFLAGS=${CXXFLAGS-"-O"}
+
+dnl Check for various integer types
+AC_TYPE_SSIZE_T
+AC_TYPE_INTMAX_T
+AC_TYPE_INT8_T
+AC_TYPE_INT16_T
+AC_TYPE_INT32_T
+AC_TYPE_INT64_T
+
+AC_TYPE_SIZE_T
+AC_TYPE_UINTMAX_T
+AC_TYPE_UINT8_T
+AC_TYPE_UINT16_T
+AC_TYPE_UINT32_T
+AC_TYPE_UINT64_T
 
 dnl +-------------------------------------------------------------------
 
@@ -284,7 +336,20 @@ AS_IF([test x"${GETENT}" != x], [
 	],[
 	AS_IF([test x"${ID}" != x], [
 		PROBE_OS_USER="${ID} -u "
-		PROBE_OS_GROUP="${ID} -g "
+		AS_IF([test -r "/etc/groups"], [
+			dnl FIXME: For command prefix usage like used in this
+			dnl  script, we might be better off defining a shell
+			dnl  function and referring to it. Grep would catch
+			dnl  also user names that have a group as secondary!
+			PROBE_OS_GROUP="cat /etc/groups | grep -w "
+			], [
+			dnl This shows groups of a USER with specified name!
+			dnl But to probe for cases where string names are
+			dnl same (e.g. "nut" or "ups") this might be good
+			dnl enough.
+			PROBE_OS_GROUP="${ID} -g "
+			])
+		AC_MSG_WARN([Can not PROPERLY check existence of group accounts on this system, but can try best-effort])
 		],[
 		AC_MSG_WARN([Can not check existence of user and group accounts on this system])
 		])
@@ -297,7 +362,7 @@ dnl certain other configure options (e.g. "in-place replacement")
 RUN_AS_USER="nobody"
 RUN_AS_GROUP="nobody"
 AS_IF([test -n "`${PROBE_OS_GROUP} nogroup`" && ! test -n "`${PROBE_OS_GROUP} "${RUN_AS_GROUP}"`"],
-    [RUN_AS_GROUP="nogroup"]
+	[RUN_AS_GROUP="nogroup"]
 )
 
 dnl NOTE: NUT legacy default, keep as is for least surprise
@@ -453,7 +518,11 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         && test x"${CONFIG_FLAGS_DEPLOYED}" != x \
         || CONFIG_FLAGS_DEPLOYED=""
 
-        NUT_VERSION_DEPLOYED="`"${DEPLOYED_TOOL}" -DV 2>&1 | grep 'configured with flags:' | head -1 | sed 's,^.*Network UPS Tools version \(.*\) configured with flags:.*$,\1,'`" \
+        dnl NOTE: Currntly NUT_VERSION_DEPLOYED is just informative (or a flag
+        dnl that we've "reentered" the configuration script), so we tolerate a
+        dnl better detailed string that is more than just a version, e.g.:
+        dnl   2.8.2.1829-1829-g8f8a4f417 (development iteration after 2.8.2) built with gcc (Debian 10.2.1-6) 10.2.1 20210110
+        NUT_VERSION_DEPLOYED="`"${DEPLOYED_TOOL}" -DV 2>&1 | grep 'configured with flags:' | head -1 | sed -e 's,^.*Network UPS Tools version \(.*\) configured with flags:.*$,\1,' -e 's, and *$,,'`" \
         && test x"${NUT_VERSION_DEPLOYED}" != x \
         || NUT_VERSION_DEPLOYED=""
 
@@ -693,10 +762,14 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         ])
         export NUT_VERSION_DEPLOYED
         dnl # Avoid replacement after re-entering:
-        test -n "${CONFIG_CFLAGS-}" || CONFIG_CFLAGS=" "
+        test -n "${CONFIG_CFLAGS-}"   || CONFIG_CFLAGS=" "
         test -n "${CONFIG_CXXFLAGS-}" || CONFIG_CXXFLAGS=" "
+        test -n "${CONFIG_CPPFLAGS-}" || CONFIG_CPPFLAGS=" "
+        test -n "${CONFIG_LDFLAGS-}"  || CONFIG_LDFLAGS=" "
         export CONFIG_CFLAGS
         export CONFIG_CXXFLAGS
+        export CONFIG_CPPFLAGS
+        export CONFIG_LDFLAGS
 
         AC_MSG_NOTICE([Moving config.log of the original invocation to config.log.inplace-outer just before exec...])
         mv -f config.log config.log.inplace-outer || true
@@ -707,10 +780,14 @@ AS_IF([test x"$nut_enable_inplace_runtime" = xyes -a x"${NUT_VERSION_DEPLOYED-}"
         NUT_VERSION_DEPLOYED="<reenter>"
         export NUT_VERSION_DEPLOYED
         dnl # Avoid replacement after re-entering:
-        test -n "${CONFIG_CFLAGS-}" || CONFIG_CFLAGS=" "
+        test -n "${CONFIG_CFLAGS-}"   || CONFIG_CFLAGS=" "
         test -n "${CONFIG_CXXFLAGS-}" || CONFIG_CXXFLAGS=" "
+        test -n "${CONFIG_CPPFLAGS-}" || CONFIG_CPPFLAGS=" "
+        test -n "${CONFIG_LDFLAGS-}"  || CONFIG_LDFLAGS=" "
         export CONFIG_CFLAGS
         export CONFIG_CXXFLAGS
+        export CONFIG_CPPFLAGS
+        export CONFIG_LDFLAGS
 
         AC_MSG_NOTICE([Moving config.log of the original invocation to config.log.inplace-outer just before exec...])
         mv -f config.log config.log.inplace-outer || true
@@ -747,6 +824,8 @@ AS_IF([test x"${NUT_SOURCE_GITREV}" = x],
         [NUT_REPORT([configured version], [${PACKAGE_VERSION} ${NUT_SOURCE_GITREV_DEVREL}])],
         [NUT_REPORT([configured version], [${PACKAGE_VERSION} (${NUT_SOURCE_GITREV}) ${NUT_SOURCE_GITREV_DEVREL}])])
     ])
+NUT_REPORT([Documentation website base URL], [${NUT_WEBSITE_BASE}])
+AC_DEFINE_UNQUOTED([NUT_WEBSITE_BASE], "${NUT_WEBSITE_BASE}", [Documentation website base URL, no trailing slash])
 
 dnl Note: the compiler/pragma/attr methods below are custom for NUT codebase:
 NUT_COMPILER_FAMILY
@@ -794,6 +873,10 @@ CODE_TIMEINCL="
 # endif
 #endif
 "
+
+dnl TEMPORARY to allow certain linux-only buildable drivers
+AC_CHECK_HEADERS_ONCE([linux/serial.h])
+AM_CONDITIONAL(HAVE_LINUX_SERIAL_H, test x"${ac_cv_header_linux_serial_h}" = xyes)
 
 AC_CHECK_HEADERS_ONCE([fcntl.h sys/stat.h sys/socket.h netdb.h])
 AC_CHECK_FUNCS(flock lockf fcvt fcvtl dup dup2 abs_val abs)
@@ -2114,6 +2197,12 @@ dnl the usual builds can pass by default on systems without asciidoc.
 NUT_ARG_WITH([docs], [build and install documentation (alias to --with-doc)], [man=auto])
 NUT_ARG_WITH([doc], [build and install documentation (see docs/configure.txt for many variants of the option)], [${nut_with_docs}])
 
+dnl NOTE: Sections may be strings, not pure numbers, on some platforms:
+NUT_ARG_WITH([docs-man-section-api], [man page section for library APIs], [3])
+NUT_ARG_WITH([docs-man-section-cfg], [man page section for configuration files], [5])
+NUT_ARG_WITH([docs-man-section-cmd-sys], [man page section for system management commands], [8])
+NUT_ARG_WITH([docs-man-section-cmd-usr], [man page section for user commands], [1])
+
 dnl NOTE: Until X-Mas 2021, the default was "legacy" (now "medium")
 NUT_ARG_ENABLE([warnings],
     [enable warning presets that were picked as useful in maintainership and CI practice (variants include gcc-minimal, gcc-medium, gcc-hard, clang-minimal, clang-medium, clang-hard, all; auto-choosers: hard, medium, minimal, yes=auto='gcc or clang or all at hardcoded default difficulty')],
@@ -2408,6 +2497,7 @@ AS_IF([test "${nut_with_modbus}" != "no"], [
 	dnl detection method (if nut_have_libmodbus_usb=="yes")
 	NUT_REPORT_DRV([build Modbus drivers with RTU USB support], [${nut_have_libmodbus_usb}])
 ])
+AM_CONDITIONAL(WITH_MODBUS_USB, [test "${nut_with_modbus}" = "yes" && test "${nut_have_libmodbus_usb}" = yes && test "${nut_with_usb}" = yes && test "${nut_with_modbus_and_usb}" != "no"])
 
 dnl ----------------------------------------------------------------------
 dnl Check for with-ipmi, and --with-freeipmi (or --with-openipmi)
@@ -2831,77 +2921,7 @@ if test x"${nut_with_nut_monitor}" != xno ; then
 fi
 dnl ### AC_MSG_NOTICE([nut_with_nut_monitor-6: ${nut_with_nut_monitor}])
 
-dnl Check if we can use distributed or fallback telnetlib module for PyNUTClient
-nut_have_telnetlib_py=""
-nut_have_telnetlib_py2=""
-nut_have_telnetlib_py3=""
-if test x"${nut_with_pynut}" != xno \
-    -a -n "${PYTHON}${PYTHON2}${PYTHON3}" \
-; then
-    if test -n "${PYTHON2_VERSION_INFO_REPORT}" ; then
-        AC_MSG_CHECKING([if we can use stock Python2 telnetlib module provided with interpreter ${PYTHON2}])
-        if ${PYTHON2} -c "import telnetlib" \
-        ; then
-            nut_have_telnetlib_py2="yes"
-        else
-            nut_have_telnetlib_py2="no"
-        fi
-        AC_MSG_RESULT([${nut_have_telnetlib_py2}])
-    fi
-
-    if test -n "${PYTHON3_VERSION_INFO_REPORT}" ; then
-        AC_MSG_CHECKING([if we can use stock Python3 telnetlib module for PyNUTClient provided with interpreter ${PYTHON3} (note for warnings from Python 3.11 and beyond: we have a fallback nut_telnetlib module just in case)])
-        if ${PYTHON3} -c "import telnetlib" \
-        ; then
-            nut_have_telnetlib_py3="yes"
-        else
-            nut_have_telnetlib_py3="no"
-        fi
-        AC_MSG_RESULT([${nut_have_telnetlib_py3}])
-
-        if test x"${nut_have_telnetlib_py3}" = x"no" ; then
-            dnl We have a stashed copy from Python 3.10, so
-            dnl this line essentially checks for presence of
-            dnl a usable interpreter implementation compatible
-            dnl with Python 3.x syntax.
-            AC_MSG_CHECKING([if we can use fallback Python3 nut_telnetlib module for PyNUTClient])
-            if (cd "${srcdir}"/scripts/python/module && ${PYTHON3} -c "import nut_telnetlib as telnetlib") \
-            ; then
-                nut_have_telnetlib_py3="yes"
-            fi
-            AC_MSG_RESULT([${nut_have_telnetlib_py3}])
-        fi
-    fi
-
-    dnl Test same-ness of pythons with sys.version also?
-    if test -n "${PYTHON_VERSION_INFO_REPORT}" \
-    && test x"${PYTHON_VERSION_INFO_REPORT}" != x"${PYTHON3_VERSION_INFO_REPORT}" \
-    && test x"${PYTHON_VERSION_INFO_REPORT}" != x"${PYTHON2_VERSION_INFO_REPORT}" \
-    ; then
-        AC_MSG_CHECKING([if we can use stock Python telnetlib module for PyNUTClient provided with interpreter ${PYTHON} (note for warnings from Python 3.11 and beyond: we have a fallback nut_telnetlib module just in case)])
-        if ${PYTHON} -c "import telnetlib" \
-        ; then
-            nut_have_telnetlib_py="yes"
-        else
-            nut_have_telnetlib_py="no"
-        fi
-        AC_MSG_RESULT([${nut_have_telnetlib_py}])
-
-        if test x"${nut_have_telnetlib_py}" = x"no" ; then
-            dnl See comments above
-            AC_MSG_CHECKING([if we can use fallback Python nut_telnetlib module for PyNUTClient])
-            if (cd "${srcdir}"/scripts/python/module && ${PYTHON} -c "import nut_telnetlib as telnetlib") \
-            ; then
-                nut_have_telnetlib_py="yes"
-            fi
-            AC_MSG_RESULT([${nut_have_telnetlib_py}])
-        fi
-    fi
-fi
-
-dnl ${nut_with_pynut}: TODO: arg values to request Python 2, 3 or both
-dnl Note that per block above, nut_have_telnetlib_py* values are definitive
-dnl if checked, or empty if skipped (no such Python, not nut_with_pynut, etc.)
+dnl ${nut_with_pynut}: TODO: arg values to request python 2, 3 or both
 AC_MSG_CHECKING([if we can and should install PyNUT module])
 nut_with_pynut_py=""
 nut_with_pynut_py2=""
@@ -2909,16 +2929,33 @@ nut_with_pynut_py3=""
 if test x"${nut_with_pynut}" != xno \
     -a -n "${PYTHON}${PYTHON2}${PYTHON3}" \
 ; then
-    if test x"${nut_have_telnetlib_py2}" = x"yes" ; then
-        nut_with_pynut_py2="yes"
+    if test -n "${PYTHON2}" \
+    && (command -v ${PYTHON2} || which ${PYTHON2}) >/dev/null 2>/dev/null \
+    ; then
+        if ${PYTHON2} -c "import socket" \
+        ; then
+            nut_with_pynut_py2="yes"
+        fi
     fi
 
-    if test x"${nut_have_telnetlib_py3}" = x"yes" ; then
-        nut_with_pynut_py3="yes"
+    if test -n "${PYTHON3}" \
+    && (command -v ${PYTHON3} || which ${PYTHON3}) >/dev/null 2>/dev/null \
+    ; then
+        if ${PYTHON3} -c "import socket" \
+        ; then
+            nut_with_pynut_py3="yes"
+        fi
     fi
 
-    if test x"${nut_have_telnetlib_py}" = x"yes" ; then
-        nut_with_pynut_py="yes"
+    dnl Test same-ness of pythons with sys.version also?
+    if test -n "${PYTHON}" \
+    && (command -v ${PYTHON} || which ${PYTHON}) >/dev/null 2>/dev/null \
+    && test "${PYTHON}" != "${PYTHON2}" -a "${PYTHON}" != "${PYTHON3}" \
+    ; then
+        if ${PYTHON} -c "import socket" \
+        ; then
+            nut_with_pynut_py="yes"
+        fi
     fi
 fi
 
@@ -3297,7 +3334,11 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 		else
 			if test "${can_build_doc_man}" = yes ; then
 				AC_MSG_RESULT(yes)
-				DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
+				AS_IF([test x"${nut_doc_build_target_base}" = xman],
+					dnl Use "man-man" target, otherwise Makefile
+					dnl is satisfied that directory "man" exists:
+					[DOC_BUILD_LIST="${DOC_BUILD_LIST} man-man"],
+					[DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"])
 			else
 				AC_MSG_RESULT(no)
 				if test "${nut_doc_build_target_flag}" = "yes" ; then
@@ -3362,6 +3403,7 @@ NUT_REPORT_FEATURE([build specific documentation format(s)], [${nut_with_doc}], 
 DOC_CHECK_LIST=""
 if test "${nut_with_doc}" = yes ; then
 	for V in $DOC_BUILD_LIST ; do
+		if test x"$V" = xman-man ; then V=man ; fi
 		DOC_CHECK_LIST="$DOC_CHECK_LIST check-$V"
 	done
 fi
@@ -3415,6 +3457,37 @@ if echo "${DOC_SKIPBUILD_LIST}" | grep -w "pdf" >/dev/null ; then
 fi
 AM_CONDITIONAL(WITH_PDFS, test "${WITH_PDFS}" = "yes")
 AM_CONDITIONAL(SKIP_PDFS, test "${SKIP_PDFS}" = "yes")
+
+dnl NOTE: Sections may be strings, not pure numbers, on some platforms:
+MAN_SECTION_API="${nut_with_docs_man_section_api}"
+MAN_SECTION_CFG="${nut_with_docs_man_section_cfg}"
+MAN_SECTION_CMD_SYS="${nut_with_docs_man_section_cmd_sys}"
+MAN_SECTION_CMD_USR="${nut_with_docs_man_section_cmd_usr}"
+
+MAN_SECTION_API_BASE="`echo "${MAN_SECTION_API}" | sed 's/^\(@<:@0-9@:>@*\)@<:@^0-9@:>@.*$/\1/'`"
+MAN_SECTION_CFG_BASE="`echo "${MAN_SECTION_CFG}" | sed 's/^\(@<:@0-9@:>@*\)@<:@^0-9@:>@.*$/\1/'`"
+MAN_SECTION_CMD_SYS_BASE="`echo "${MAN_SECTION_CMD_SYS}" | sed 's/^\(@<:@0-9@:>@*\)@<:@^0-9@:>@.*$/\1/'`"
+MAN_SECTION_CMD_USR_BASE="`echo "${MAN_SECTION_CMD_USR}" | sed 's/^\(@<:@0-9@:>@*\)@<:@^0-9@:>@.*$/\1/'`"
+
+AC_DEFINE_UNQUOTED([MAN_SECTION_API], ["${MAN_SECTION_API}"], [man page section for library APIs])
+AC_DEFINE_UNQUOTED([MAN_SECTION_CFG], ["${MAN_SECTION_CFG}"], [man page section for configuration files])
+AC_DEFINE_UNQUOTED([MAN_SECTION_CMD_SYS], ["${MAN_SECTION_CMD_SYS}"], [man page section for system management commands])
+AC_DEFINE_UNQUOTED([MAN_SECTION_CMD_USR], ["${MAN_SECTION_CMD_USR}"], [man page section for user commands])
+
+AC_DEFINE_UNQUOTED([MAN_SECTION_API_BASE], ["${MAN_SECTION_API_BASE}"], [base (number only) man page section for library APIs])
+AC_DEFINE_UNQUOTED([MAN_SECTION_CFG_BASE], ["${MAN_SECTION_CFG_BASE}"], [base (number only) man page section for configuration files])
+AC_DEFINE_UNQUOTED([MAN_SECTION_CMD_SYS_BASE], ["${MAN_SECTION_CMD_SYS_BASE}"], [base (number only) man page section for system management commands])
+AC_DEFINE_UNQUOTED([MAN_SECTION_CMD_USR_BASE], ["${MAN_SECTION_CMD_USR_BASE}"], [base (number only) man page section for user commands])
+
+AC_SUBST(MAN_SECTION_API)
+AC_SUBST(MAN_SECTION_CFG)
+AC_SUBST(MAN_SECTION_CMD_SYS)
+AC_SUBST(MAN_SECTION_CMD_USR)
+
+AC_SUBST(MAN_SECTION_API_BASE)
+AC_SUBST(MAN_SECTION_CFG_BASE)
+AC_SUBST(MAN_SECTION_CMD_SYS_BASE)
+AC_SUBST(MAN_SECTION_CMD_USR_BASE)
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-dev
@@ -3944,11 +4017,17 @@ AC_ARG_WITH([systemdsystemunitdir],
 case "${systemdsystemunitdir}" in
 	yes|auto|"")
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd 2>/dev/null`" && test -n "$systemdsystemunitdir" || systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir libsystemd 2>/dev/null`"],
-			[AS_IF([test "${systemdsystemunitdir}" = yes],
+			[def_systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd 2>/dev/null`" && test -n "$def_systemdsystemunitdir" || \
+			 def_systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir libsystemd 2>/dev/null`" || def_systemdsystemunitdir=""],
+			[def_systemdsystemunitdir=""])
+
+		AS_IF([test x"${def_systemdsystemunitdir}" = x], [
+			AS_IF([test "${systemdsystemunitdir}" = yes],
 				[AC_MSG_ERROR([--with-systemdsystemunitdir=${systemdsystemunitdir} was requested, but PKG_CONFIG could not be queried for the system settings])])
-			 systemdsystemunitdir=""
-			])
+			systemdsystemunitdir=""
+			], [systemdsystemunitdir="${def_systemdsystemunitdir}"])
+
+		unset def_systemdsystemunitdir
 		;;
 	no)
 		systemdsystemunitdir=""
@@ -3976,6 +4055,51 @@ dnl This option is only provided so that make distcheck can override it,
 dnl otherwise we ask pkg-config whenever --with-systemdsystemunitdir is
 dnl given
 
+AC_PATH_PROG([SYSTEMD_SYSTEMCTL_PROGRAM], [systemctl], [/usr/bin/systemctl])
+
+dnl Similarly for presets (list of svcs enabled/disabled by default)
+AC_MSG_CHECKING(whether to install systemd preset files)
+AC_ARG_WITH([systemdsystempresetdir],
+	[AS_HELP_STRING([--with-systemdsystempresetdir=DIR], [Directory for systemd preset files (auto)])],
+	[systemdsystempresetdir="${withval}"],
+	[systemdsystempresetdir="auto"])
+
+dnl Note: this option is enabled only if systemdsystemunitdir is not trivial
+if test -n "${systemdsystemunitdir}"; then
+	case "${systemdsystempresetdir}" in
+	yes|auto|"")
+		AS_IF([test x"$have_PKG_CONFIG" = xyes],
+			[def_systemdsystempresetdir="`$PKG_CONFIG --variable=systemdsystempresetdir systemd 2>/dev/null`" && test -n "$def_systemdsystempresetdir" || \
+			 def_systemdsystempresetdir="`$PKG_CONFIG --variable=systemdsystempresetdir libsystemd 2>/dev/null`" || def_systemdsystempresetdir=""],
+			[def_systemdsystempresetdir=""])
+
+		AS_IF([test x"${def_systemdsystempresetdir}" = x], [
+			AS_IF([test "${systemdsystempresetdir}" = yes],
+				[AC_MSG_ERROR([--with-systemdsystempresetdir=${systemdsystempresetdir} was requested, but PKG_CONFIG could not be queried for the system settings])])
+			systemdsystempresetdir=""
+			], [systemdsystempresetdir="${def_systemdsystempresetdir}"])
+
+		unset def_systemdsystempresetdir
+		;;
+	no)
+		systemdsystempresetdir=""
+		;;
+	*)
+		AS_IF([test -d "${systemdsystempresetdir}"], [],
+			[AC_MSG_WARN([--with-systemdsystempresetdir='${systemdsystempresetdir}' was requested, but that location does not currently exist in build environment - just so you know...])])
+		;;
+	esac
+fi
+if test "${systemdsystempresetdir}" = "auto" ; then systemdsystempresetdir=""; fi
+if test -n "${systemdsystempresetdir}"; then
+	AC_MSG_RESULT(using ${systemdsystempresetdir})
+	NUT_REPORT_PATH_INTEGRATIONS([Service unit presets for systemd], [${systemdsystempresetdir}])
+else
+	AC_MSG_RESULT(no)
+fi
+AM_CONDITIONAL([WITH_SYSTEMD_PRESET], [test x"${systemdsystempresetdir}" != "x"])
+
+dnl Similarly for shutdown integration hooks
 AC_MSG_CHECKING(whether to install systemd shutdown files)
 AC_ARG_WITH([systemdshutdowndir],
 	AS_HELP_STRING([--with-systemdshutdowndir=DIR], [Directory for systemd shutdown scripts (auto)]),
@@ -3986,11 +4110,17 @@ if test -n "${systemdsystemunitdir}"; then
 	case "${systemdshutdowndir}" in
 	yes|auto|"")
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir systemd 2>/dev/null`" && test -n "$systemdshutdowndir" || systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir libsystemd 2>/dev/null`"],
-			[AS_IF([test "${systemdshutdowndir}" = yes],
+			[def_systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir systemd 2>/dev/null`" && test -n "$def_systemdshutdowndir" || \
+			 def_systemdshutdowndir="`$PKG_CONFIG --variable=systemdshutdowndir libsystemd 2>/dev/null`" || def_systemdshutdowndir=""],
+			[def_systemdshutdowndir=""])
+
+		AS_IF([test x"${def_systemdshutdowndir}" = x], [
+			AS_IF([test "${systemdshutdowndir}" = yes],
 				[AC_MSG_ERROR([--with-systemdshutdowndir=${systemdshutdowndir} was requested, but PKG_CONFIG could not be queried for the system settings])])
-			 systemdshutdowndir=""
-			])
+			systemdshutdowndir=""
+			], [systemdshutdowndir="${def_systemdshutdowndir}"])
+
+		unset def_systemdshutdowndir
 		;;
 	no)
 		systemdshutdowndir=""
@@ -4008,6 +4138,7 @@ if test -n "${systemdshutdowndir}"; then
 else
 	AC_MSG_RESULT(no)
 fi
+AM_CONDITIONAL([WITH_SYSTEMD_SHUTDOWN], [test x"${systemdshutdowndir}" != "x"])
 
 dnl Note: if (systemd-)tmpfiles tech is present, it can be useful even for
 dnl daemons starting not as systemd units, to pre-create /var/run/nut etc.
@@ -4019,11 +4150,17 @@ AC_ARG_WITH([systemdtmpfilesdir],
 case "${systemdtmpfilesdir}" in
 	yes|auto|"")
 		AS_IF([test x"$have_PKG_CONFIG" = xyes],
-			[systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir systemd 2>/dev/null`" && test -n "$systemdtmpfilesdir" || systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir libsystemd 2>/dev/null`"],
-			[AS_IF([test "${systemdtmpfilesdir}" = yes],
+			[def_systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir systemd 2>/dev/null`" && test -n "$def_systemdtmpfilesdir" || \
+			 def_systemdtmpfilesdir="`$PKG_CONFIG --variable=tmpfilesdir libsystemd 2>/dev/null`" || def_systemdtmpfilesdir=""],
+			[def_systemdtmpfilesdir=""])
+
+		AS_IF([test x"${def_systemdtmpfilesdir}" = x], [
+			AS_IF([test "${systemdtmpfilesdir}" = yes],
 				[AC_MSG_ERROR([--with-systemdtmpfilesdir=${systemdtmpfilesdir} was requested, but PKG_CONFIG could not be queried for the system settings])])
-			 systemdtmpfilesdir=""
-			])
+			systemdtmpfilesdir=""
+			], [systemdtmpfilesdir="${def_systemdtmpfilesdir}"])
+
+		unset def_systemdtmpfilesdir
 		;;
 	no)
 		systemdtmpfilesdir=""
@@ -4040,6 +4177,7 @@ if test -n "${systemdtmpfilesdir}"; then
 else
 	AC_MSG_RESULT(no)
 fi
+AM_CONDITIONAL([WITH_SYSTEMD_TMPFILES], [test x"${systemdtmpfilesdir}" != "x"])
 
 dnl What pathname would we embed into unit files ExecStartPre?
 dnl TODO? Any need to make it a --with-... argument?
@@ -4114,6 +4252,8 @@ AS_IF([test x"${with_libsystemd}" = xyes && test x"${SYSTEMD_SUPPORTS_DAEMON_TYP
 	dnl needed for `upsd -c reload` in legacy scripts and old habits to work:
 	SYSTEMD_DAEMON_ARGS_UPSD="-FF"
 	SYSTEMD_DAEMON_TYPE_UPSD="notify"
+	SYSTEMD_DAEMON_ARGS_UPSLOG="-F"
+	SYSTEMD_DAEMON_TYPE_UPSLOG="notify"
 	SYSTEMD_DAEMON_ARGS_UPSMON="-F"
 	SYSTEMD_DAEMON_TYPE_UPSMON="notify"
 	SYSTEMD_DAEMON_ARGS_DRIVER="-FF"
@@ -4130,29 +4270,36 @@ AS_IF([test x"${with_libsystemd}" = xyes && test x"${SYSTEMD_SUPPORTS_DAEMON_TYP
 	SYSTEMD_DAEMON_NOTIFYACCESS_DRIVER="NotifyAccess=all"
 	dnl Similar for UPSMON with its two processes:
 	SYSTEMD_DAEMON_NOTIFYACCESS_UPSMON="NotifyAccess=all"
-	dnl UPSD is started directly by systemd and do not fork:
+	dnl UPSD is started directly by systemd and does not fork:
 	SYSTEMD_DAEMON_NOTIFYACCESS_UPSD="NotifyAccess=main"
+	dnl Similarly for upslog (per settings above):
+	SYSTEMD_DAEMON_NOTIFYACCESS_UPSLOG="NotifyAccess=main"
 	dnl Note: at this time we do not pre-define watchdog settings,
 	dnl to avoid breaking something by a poorly hardcoded guess.
 	dnl This is something end-users should do for their deployment,
 	dnl especially for drivers
 	SYSTEMD_DAEMON_WATCHDOG_DRIVER="#WatchdogSec=240s"
 	SYSTEMD_DAEMON_WATCHDOG_UPSD="#WatchdogSec=240s"
+	SYSTEMD_DAEMON_WATCHDOG_UPSLOG="#WatchdogSec=240s"
 	SYSTEMD_DAEMON_WATCHDOG_UPSMON="#WatchdogSec=240s"
 	], [
 	dnl "Usual" daemons that happen to be spawned by systemd
 	SYSTEMD_DAEMON_ARGS_UPSD="-F"
 	SYSTEMD_DAEMON_TYPE_UPSD="simple"
+	SYSTEMD_DAEMON_ARGS_UPSLOG="-F"
+	SYSTEMD_DAEMON_TYPE_UPSLOG="simple"
 	SYSTEMD_DAEMON_ARGS_UPSMON="-F"
 	SYSTEMD_DAEMON_TYPE_UPSMON="simple"
 	SYSTEMD_DAEMON_ARGS_DRIVER=""
 	SYSTEMD_DAEMON_TYPE_DRIVER="forking"
 	SYSTEMD_DAEMON_NOTIFYACCESS_DRIVER=""
 	SYSTEMD_DAEMON_NOTIFYACCESS_UPSD=""
+	SYSTEMD_DAEMON_NOTIFYACCESS_UPSLOG=""
 	SYSTEMD_DAEMON_NOTIFYACCESS_UPSMON=""
 	dnl Watchdog should not be configured for not-notifying units, right?
 	SYSTEMD_DAEMON_WATCHDOG_DRIVER="#WatchdogSec=240s"
 	SYSTEMD_DAEMON_WATCHDOG_UPSD="#WatchdogSec=240s"
+	SYSTEMD_DAEMON_WATCHDOG_UPSLOG="#WatchdogSec=240s"
 	SYSTEMD_DAEMON_WATCHDOG_UPSMON="#WatchdogSec=240s"
 	])
 
@@ -4669,6 +4816,14 @@ NUT_DATADIR="${conftemp}"
 NUT_REPORT_SETTING_PATH([Data file path],
     NUT_DATADIR, "${conftemp}", [Default path for data files])
 
+dnl same for mandir
+conftemp="${mandir}"
+eval conftemp=\"${conftemp}\"
+eval conftemp=\"${conftemp}\"
+NUT_MANDIR="${conftemp}"
+NUT_REPORT_SETTING_PATH([Man page path],
+    NUT_MANDIR, "${conftemp}", [Default path for man page files])
+
 dnl same for bindir
 conftemp="${bindir}"
 eval conftemp=\"${conftemp}\"
@@ -4828,6 +4983,7 @@ AC_SUBST(NUT_SOURCE_GITREV)
 AC_SUBST(NUT_SOURCE_GITREV_IS_RELEASE)
 AC_SUBST(NUT_SOURCE_GITREV_SEMVER)
 AC_SUBST(NUT_SOURCE_GITREV_NUMERIC)
+AC_SUBST(NUT_WEBSITE_BASE)
 AC_SUBST(LIBSSL_CFLAGS)
 AC_SUBST(LIBSSL_LIBS)
 AC_SUBST(LIBSSL_LDFLAGS_RPATH)
@@ -4862,14 +5018,18 @@ AC_SUBST(LIBSYSTEMD_CFLAGS)
 AC_SUBST(LIBSYSTEMD_LIBS)
 AC_SUBST(SYSTEMD_DAEMON_ARGS_UPSD)
 AC_SUBST(SYSTEMD_DAEMON_TYPE_UPSD)
+AC_SUBST(SYSTEMD_DAEMON_ARGS_UPSLOG)
+AC_SUBST(SYSTEMD_DAEMON_TYPE_UPSLOG)
 AC_SUBST(SYSTEMD_DAEMON_ARGS_UPSMON)
 AC_SUBST(SYSTEMD_DAEMON_TYPE_UPSMON)
 AC_SUBST(SYSTEMD_DAEMON_ARGS_DRIVER)
 AC_SUBST(SYSTEMD_DAEMON_TYPE_DRIVER)
 AC_SUBST(SYSTEMD_DAEMON_NOTIFYACCESS_DRIVER)
 AC_SUBST(SYSTEMD_DAEMON_NOTIFYACCESS_UPSD)
+AC_SUBST(SYSTEMD_DAEMON_NOTIFYACCESS_UPSLOG)
 AC_SUBST(SYSTEMD_DAEMON_NOTIFYACCESS_UPSMON)
 AC_SUBST(SYSTEMD_DAEMON_WATCHDOG_UPSD)
+AC_SUBST(SYSTEMD_DAEMON_WATCHDOG_UPSLOG)
 AC_SUBST(SYSTEMD_DAEMON_WATCHDOG_UPSMON)
 AC_SUBST(SYSTEMD_DAEMON_WATCHDOG_DRIVER)
 AC_SUBST(SYSTEMD_TMPFILES_PROGRAM)
@@ -4892,6 +5052,7 @@ AC_SUBST(BINDIR)
 AC_SUBST(LIBDIR)
 AC_SUBST(PKGCONFIGDIR)
 AC_SUBST(NUT_DATADIR, [`eval echo "${NUT_DATADIR}"`])
+AC_SUBST(NUT_MANDIR, [`eval echo "${NUT_MANDIR}"`])
 AC_SUBST(NUT_LIBEXECDIR, [`eval echo "${LIBEXECDIR}"`])
 AC_SUBST(DRVPATH)
 AC_SUBST(SBINDIR)
@@ -4909,6 +5070,7 @@ AC_SUBST(htmldocdir)
 AC_SUBST(htmlmandir)
 AC_SUBST(pkgconfigdir)
 AC_SUBST(systemdsystemunitdir)
+AC_SUBST(systemdsystempresetdir)
 AC_SUBST(systemdshutdowndir)
 AC_SUBST(systemdtmpfilesdir)
 AC_SUBST(auglensdir)
@@ -5026,6 +5188,10 @@ dnl #    some clang versions sanity-check Doxygen style comments, but do not
 dnl #    recognize "\retval" key word. These options try to both ignore the
 dnl #    problematic area, and to add it as recognized (TODO: scripted check
 dnl #    for abilities of the current build's compiler instead)
+dnl # -Wno-missing-include-dirs -- do not break on missing include directories,
+dnl #    whether from user-provided config options, or pkg-config, or our own
+dnl #    ci_build.sh preparations (e.g. -I${top_srcdir}/tmp/include when it
+dnl #    is not populated yet)
 dnl ### Special exclusion picks for clang-medium (same as hard, plus...):
 dnl # -Wno-global-constructors -- using "const something" out of method context
 dnl #    potentially impacts start-up time and may be prone to race conditions
@@ -5071,12 +5237,12 @@ AS_CASE(["${nut_enable_warnings}"],
         CXXFLAGS="${CXXFLAGS} -Wall"
         ],
     [clang-hard], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage"
         ],
     [clang-medium], [
-        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-conversion -Wno-incompatible-pointer-types-discards-qualifiers -Wno-incompatible-function-pointer-types-strict -Wno-nullable-to-nonnull-conversion"
-        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-global-constructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-nullable-to-nonnull-conversion"
+        CFLAGS="${CFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -pedantic -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-float-conversion -Wno-double-promotion -Wno-implicit-float-conversion -Wno-conversion -Wno-incompatible-pointer-types-discards-qualifiers -Wno-incompatible-function-pointer-types-strict -Wno-nullable-to-nonnull-conversion"
+        CXXFLAGS="${CXXFLAGS} -ferror-limit=0 -Wno-system-headers -Wno-missing-include-dirs -Wall -Wextra -Weverything -Wno-disabled-macro-expansion -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -Wno-documentation -fcomment-block-commands=retval -Wno-documentation-unknown-command -Wno-cast-qual -Wno-c++98-compat-pedantic -Wno-c++98-compat -Wno-exit-time-destructors -Wno-global-constructors -Wno-fuse-ld-path -Wno-unsafe-buffer-usage -Wno-nullable-to-nonnull-conversion"
         ],
     [clang-minimal], [
         CFLAGS="${CFLAGS} -ferror-limit=0 -Wall -Wextra -Wno-documentation -Wno-documentation-unknown-command -fcomment-block-commands=retval"
@@ -5299,6 +5465,39 @@ dnl Use these at best for tests (e.g. nutconf), not production code:
 AC_DEFINE_UNQUOTED([ABS_TOP_SRCDIR], ["${ABS_TOP_SRCDIR}"], [NUT source directory when the build was configured])
 AC_DEFINE_UNQUOTED([ABS_TOP_BUILDDIR], ["${ABS_TOP_BUILDDIR}"], [NUT build directory when the build was configured])
 
+AC_MSG_CHECKING([whether to install External API integration script: Enphase Monitor])
+nut_with_extapi_enphase="no"
+AC_ARG_ENABLE([extapi-enphase],
+	AS_HELP_STRING([--enable-extapi-enphase=(yes|auto|no)], [Enable installation of integration script for External API: Enphase Monitor (default: no)]),
+[
+	case "${enableval}" in
+	yes|"")
+		nut_enable_extapi_enphase="auto"
+		;;
+	auto|no)
+		nut_enable_extapi_enphase="${enableval}"
+		;;
+	*)
+		AC_MSG_ERROR([Unexpected argument for --enable-extapi-enphase=${enableval}])
+		;;
+	esac
+], [])
+
+if test x"$nut_enable_extapi_enphase" != xno ; then
+	dnl Depends on usability of further programs and bash version
+	dnl Luckily the script checks that itself, before handling CLI args
+	/usr/bin/env bash "${ABS_TOP_SRCDIR}/scripts/external_apis/enphase/enphase-monitor.in" --help >/dev/null \
+	&& nut_can_extapi_enphase="yes" \
+	|| nut_can_extapi_enphase="no"
+
+	if test x"$nut_enable_extapi_enphase" = xyes && x"$nut_can_extapi_enphase" = xno ; then
+		AC_MSG_ERROR([Caller required installation --enable-extapi-enphase but the system can not run it])
+	fi
+	nut_enable_extapi_enphase="${nut_can_extapi_enphase}"
+fi
+AC_MSG_RESULT([${nut_enable_extapi_enphase}])
+AM_CONDITIONAL(ENABLE_EXTAPI_ENPHASE, test x"$nut_enable_extapi_enphase" = x"yes")
+
 AC_MSG_CHECKING([whether to customize ${TOP_BUILDDIR}/scripts/systemd/nut-common-tmpfiles.conf.in for this system])
 dnl TOTHINK: Some distributions make the directories below owned
 dnl by "root:${RUN_AS_GROUP}" with 77x permissions. Is it safer?..
@@ -5415,6 +5614,8 @@ dnl We might wipe their specific options below if consistently applying
 dnl debug-friendly options to everything
 AC_MSG_NOTICE([CONFIG_CFLAGS='${CONFIG_CFLAGS}'])
 AC_MSG_NOTICE([CONFIG_CXXFLAGS='${CONFIG_CXXFLAGS}'])
+AC_MSG_NOTICE([CONFIG_CPPFLAGS='${CONFIG_CPPFLAGS}'])
+AC_MSG_NOTICE([CONFIG_LDFLAGS='${CONFIG_LDFLAGS}'])
 AC_MSG_CHECKING([whether to enable debug info in all NUT binaries])
 nut_with_debuginfo_C="${nut_with_debuginfo}"
 nut_with_debuginfo_CXX="${nut_with_debuginfo}"
@@ -5517,6 +5718,8 @@ AC_CONFIG_FILES([
  scripts/augeas/nutupssetconf.aug
  scripts/avahi/nut.service
  scripts/devd/Makefile
+ scripts/external_apis/Makefile
+ scripts/external_apis/enphase/enphase-monitor@.service
  scripts/hotplug/Makefile
  scripts/hotplug/libhidups
  scripts/HP-UX/nut.psf
@@ -5527,8 +5730,11 @@ AC_CONFIG_FILES([
  scripts/python/module/setup.py
  scripts/upsdrvsvcctl/Makefile
  scripts/systemd/Makefile
+ scripts/systemd/nut.target
  scripts/systemd/nut-common-tmpfiles.conf
+ scripts/systemd/nut-driver.target
  scripts/systemd/nut-driver@.service
+ scripts/systemd/nut-logger.service
  scripts/systemd/nut-monitor.service
  scripts/systemd/nut-server.service
  scripts/systemd/nut-driver-enumerator.service
@@ -5538,6 +5744,7 @@ AC_CONFIG_FILES([
  scripts/systemd/nut-driver-enumerator-daemon-activator.path
  scripts/Solaris/nut-driver-enumerator.xml
  scripts/Solaris/nut-driver.xml
+ scripts/Solaris/nut-logger.xml
  scripts/Solaris/nut-monitor.xml
  scripts/Solaris/nut-server.xml
  scripts/Solaris/nut.xml
@@ -5566,14 +5773,16 @@ m4_foreach_w([SCRIPTFILE], [
  scripts/HP-UX/postinstall
  scripts/RedHat/upsd
  scripts/RedHat/upsmon
+ scripts/augeas/gen-nutupsconf-aug.py
+ scripts/external_apis/enphase/enphase-monitor
  scripts/python/app/NUT-Monitor-py2gtk2
  scripts/python/app/NUT-Monitor-py3qt5
- scripts/augeas/gen-nutupsconf-aug.py
  scripts/python/module/test_nutclient.py
  scripts/upsdrvsvcctl/nut-driver-enumerator.sh
  scripts/upsdrvsvcctl/upsdrvsvcctl
  scripts/systemd/nutshutdown
  scripts/Solaris/svc-nut-server
+ scripts/Solaris/svc-nut-logger
  scripts/Solaris/svc-nut-monitor
  scripts/Solaris/precheck.py
  scripts/Solaris/preinstall
@@ -5582,6 +5791,7 @@ m4_foreach_w([SCRIPTFILE], [
  scripts/Solaris/postremove
  scripts/Solaris/preproto.pl
  scripts/Solaris/nut
+ scripts/valgrind/valgrind.sh
  tools/gitlog2changelog.py
  tools/nut-snmpinfo.py
 ], [

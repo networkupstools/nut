@@ -4,7 +4,7 @@ IVTSCD(8)
 NAME
 ----
 
-ivtscd - driver for the IVT Solar Controller Device
+ivtscd - Driver for the IVT Solar Controller Device
 
 SYNOPSIS
 --------

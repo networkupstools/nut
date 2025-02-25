@@ -1,14 +1,22 @@
 # Network UPS Tools (NUT) systemd integration
-# Copyright (C) 2011-2024 by NUT contirbutors
+# Copyright (C) 2011-2025 by NUT contributors
 # Distributed under the terms of GPLv2+
 # See https://networkupstools.org/
 # and https://github.com/networkupstools/nut/
 
 [Unit]
 Description=Network UPS Tools - target for power device drivers, data server and monitoring client (if enabled) on this system
-After=local-fs.target nut-driver.target nut-server.service nut-monitor.service
+After=local-fs.target nut-driver.target nut-server.service nut-monitor.service nut-logger.service
 Wants=local-fs.target nut-driver.target nut-server.service nut-monitor.service
 # network.target
+# nut-logger.service ### not enabled by default
+
+# TODO: Dedicated man pages?
+Documentation=man:ups.conf(@MAN_SECTION_CFG@)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/ups.conf.html
+
+Documentation=man:nut.conf(@MAN_SECTION_CFG@)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/nut.conf.html
 
 [Install]
 WantedBy=multi-user.target

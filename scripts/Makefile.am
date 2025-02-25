@@ -31,7 +31,7 @@ EXTRA_DIST = \
     Windows/halt.c \
     Windows/Makefile
 
-SUBDIRS = augeas devd hotplug installer python systemd udev ufw Solaris Windows upsdrvsvcctl
+SUBDIRS = augeas devd hotplug installer python systemd udev ufw Solaris Windows upsdrvsvcctl external_apis
 
 SPELLCHECK_SRC = README.adoc RedHat/README.adoc usb_resetter/README.adoc valgrind/README.adoc
 

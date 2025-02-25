@@ -8,7 +8,7 @@ AC_DEFUN([NUT_CHECK_LIBNETSNMP],
 [
 if test -z "${nut_have_libnetsnmp_seen}"; then
 	nut_have_libnetsnmp_seen=yes
-	NUT_CHECK_PKGCONFIG
+	AC_REQUIRE([NUT_CHECK_PKGCONFIG])
 	AC_LANG_PUSH([C])
 
 	dnl save CFLAGS and LIBS
@@ -165,6 +165,7 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 					dnl # arguments when building "if WITH_SNMP_STATIC" recipe blocks!
 					dnl # For a practical example, see tools/nut-scanner/Makefile.am.
 					depLIBS="`echo " $depLIBS" | sed 's/ -l/ -Wl,-l/g'`"
+					LIBS="${LIBS_ORIG} ${depLIBS}"
 					AS_UNSET([ac_cv_func_init_snmp])
 					AC_CHECK_FUNCS(init_snmp, [
 						nut_have_libnetsnmp=yes

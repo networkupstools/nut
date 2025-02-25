@@ -44,12 +44,42 @@ Changes from 2.8.2 to 2.8.3
   Please use it, it immensely helps with community troubleshooting!
   [issue #1949]
 
+- When packaging or custom-building for (Linux) distributions with systemd,
+  you can now take advantage of `nut-systemd.preset` file to enable or
+  disable certain NUT units by default; its comments document each choice.
+  [issue #2721]
+
+- Reference packages prepared by `make package` should now separate the
+  `PACKAGE_VERSION` from the platform-dependent prefix by a dash character
+  in the ultimate package file name. Previously they were glued together
+  for some platform targets (HPUX, Solaris). Solaris SVR4 package file names
+  should new differentiate `i386` vs. `amd64` and `sparc` vs. `sparcv9`,
+  depending on `target_cpu` of the build. If you had any scripts relying
+  on the older pattern, they may have to be updated.
+
+- the PyPI distribution of the `PyNUTClient` module tarball should now use a
+  lower-cased file name (and immediate versioned directory name inside) to
+  match the requirements of link:https://peps.python.org/pep-0625/[PEP-0625].
+  The Python module name (and its directory) should remain camel-cased.
+  OS distribution package recipes that deliver the module separately (e.g.
+  as part of Python ecosystem rather than NUT) may have to adjust. [#2773]
+
+- Updated man page generation with `configure` script options to specify that
+  manual sections on the target platform differ from (Linux-based) defaults
+  hard-coded into page sources; this should allow to simplify NUT packaging
+  recipe maintenance in distributions (no more updating patches for changed
+  or added documentation sources)
+
 - `upsmon` should now integrate natively with systemd-driven OS sleep events
   (built with systemd version 221 or newer "inhibitor interface"), so various
   hacks previously packaged into `/usr/lib/systemd/system-sleep/` scripts or
   units requiring/conflicting with the `sleep.target` may be obsolete.
   For fallback with older systemd, a `nut-sleep.service` is provided now.
   [#1070, #2596, #2597]
+
+- Added systemd and SMF service integration for `upslog` as a `nut-logger`
+  service (disabled by default, needs a `upslog.conf` file to deliver the
+  `UPSLOG_ARGS=...` setting for actual monitoring and logging). [#1803]
 
 - Handling of per-UPS `ALARM` state was introduced to `upsmon`, allowing it
   to optionally treat it as a factor in deciding that the device is in a
@@ -59,13 +89,41 @@ Changes from 2.8.2 to 2.8.3
   some alarms can contribute to unwanted/early shutdowns. For this reason
   a `0|1` setting `ALARMCRITICAL` was introduced into `upsmon.conf` (default
   is `1`), for such users to be able to prevent their `upsmon` from treating
-  the `ALARM` status as overly severe when it is not in fact. [#2658]
+  the `ALARM` status as overly severe when it is not in fact. [#2658, #415]
 
-- `usbhid-ups` subdriver `PowerCOM HID` subdriver sent UPS `shutdown` and
+- `usbhid-ups` and `netxml-ups` updated to handle "No battery installed!"
+  alarm also to set the `RB` (Replace Battery) value in `ups.status`.
+  This may cause dual triggering of notifications (as an `ALARM` generally
+  and as an important `REPLBATT` status in particular) in `upsmon`, but
+  better safe than sorry. [#415]
+
+- `usbhid-ups` subdriver `PowerCOM HID` seemingly sent UPS `shutdown` and
   `stayoff` commands in wrong byte order, at least for devices currently
   in the field. Driver now sends the commands in a way that satisfies new
   devices; just in case a flag toggle `powercom_sdcmd_byte_order_fallback`
   was added to set the old behavior (if some devices do need it). [PR #2480]
+
+- `usbhid-ups` subdriver `CyberPower HID` default `pollfreq` sped up to
+  12 seconds (common default is 30 seconds). Feedback is welcome if this
+  improves connection stability or overwhelms the UPS controller instead.
+  [issue #1689, PR #2718]
+
+- `usbhid-ups` subdriver `CyberPower HID` default `offdelay` is set to 60
+  and `ondelay` to 120 seconds, in accordance with man page suggestions;
+  users with custom settings not divisible by 60 will be loudly warned. [#1394]
+
+- `snmp-ups` subdriver `netvision-mib`: synchronized `netvision_output_info`
+  with the currently available `SOCOMECUPS-MIB.txt`; this can impact some
+  other devices using that MIB (negatively, if the older mappings were
+  indeed correct for any practical cases, and were not a typo). [#2803]
+
+- mge-utalk driver will no longer set non-standard status values `COMMFAULT`
+  and `ALARM` (for a specific status bit); instead, it will set modern
+  `ups.alarm` with values `COMMFAULT` and/or `DEVICEALARM` (and raise
+  an `ALARM` in `ups.status` for either, as standard alarms go). If your
+  clients (e.g. custom parsing scripts) for devices supported by this driver
+  depended on those non-standard tokens in `ups.status`, they would have to
+  be updated to handle the new token values in `ups.alarm` instead. [#2708]
 
 - Added support for `lbrb_log_delay_sec=N` setting to delay propagation of
   `LB` or `LB+RB` state (buggy with APC BXnnnnMI devices/firmwares issued
@@ -94,6 +152,11 @@ Changes from 2.8.2 to 2.8.3
   during document generation. Resource-constrained builders (working from
   a Git workspace, not tarball archives) may have to set it to `false` when
   calling `make` for NUT. [#2510]
+
+- Drivers should now be able to set `STATEPATH` via `ups.conf` to match `upsd`
+  custom configuration ability; in fact, the data server would prefer the
+  value from `ups.conf` over the one in `upsd.conf`, if both are present.
+  Note that `NUT_STATEPATH` environment variable trumps both. [issue #694]
 
 - NUT products like `nut-scanner`, which dynamically load shared libraries
   at run-time without persistent pre-linking, should now know the library
@@ -237,7 +300,7 @@ Changes from 2.8.0 to 2.8.1
 - The `upsd.conf` listing of `LISTEN` addresses was previously inverted
   (the last listed address was applied first), which was counter-intuitive
   and fixed for this release. If user configurations somehow relied on this
-  order (e.g. to prioritize IPv6 vs IPv4 listeners), configuration changes
+  order (e.g. to prioritize IPv6 vs. IPv4 listeners), configuration changes
   may be needed. [#2012]
 
 - The `upsd` configured to listen on IPv6 addresses should handle only

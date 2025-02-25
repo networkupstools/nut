@@ -15,9 +15,10 @@ with codecs.open(os.path.join(here, "README.txt"), encoding="utf-8") as fh:
     long_description = "\n" + fh.read()
 
 setup(
-    name =	"PyNUTClient",
+    name =	"pynutclient",	### "PyNUTClient" lower-cased due to PEP-0625
     version =	'@NUT_SOURCE_GITREV_NUMERIC@',
     author =	"The Network UPS Tools project",
+    license =	"GPL-3.0-or-later",
     license_files =	('LICENSE-GPL3',),
     author_email =	"jimklimov+nut@gmail.com",
     description =	"Python client bindings for NUT",
@@ -30,15 +31,14 @@ setup(
     #data_files =	[('', ['tox.ini'])],
     #scripts    =	['PyNUTClient/test_nutclient.py', 'PyNUTClient/__init__.py'],
     python_requires =	'>=2.6',
-    # NOTE: telnetlib.py is part of Python core for tested 2.x and 3.x versions,
-    # not something 'pip' can download as a package. It is deprecated since 3.11
-    # and removed since 3.13, so as a hotfix, NUT provides a copy nut_telnetlib.py
-    # (taken from Python 3.10 - the latest one without a deprecation warning).
-    # install_requires =	['telnetlib'],
     keywords =	['pypi', 'cicd', 'python', 'nut', 'Network UPS Tools'],
     classifiers = [
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
+        "Intended Audience :: System Administrators",
+        "Topic :: System :: Monitoring",
+        "Topic :: System :: Systems Administration",
+        "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
         "Programming Language :: Python :: 2.6",
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",

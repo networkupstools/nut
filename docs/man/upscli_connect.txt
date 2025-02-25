@@ -4,14 +4,16 @@ UPSCLI_CONNECT(3)
 NAME
 ----
 
-upscli_connect - Open a connection to a NUT upsd
+upscli_connect - Open a connection to a NUT upsd data server
 
 SYNOPSIS
 --------
 
- #include <upsclient.h>
+------
+	#include <upsclient.h>
 
- int upscli_connect(UPSCONN_t *ups, const char *host, uint16_t port, int flags);
+	int upscli_connect(UPSCONN_t *ups, const char *host, uint16_t port, int flags);
+------
 
 DESCRIPTION
 -----------
@@ -42,7 +44,7 @@ RETURN VALUE
 ------------
 
 The *upscli_connect()* function modifies the `UPSCONN_t` structure and
-returns 0 on success, or -1 if an error occurs.
+returns '0' on success, or '-1' if an error occurs.
 
 SEE ALSO
 --------

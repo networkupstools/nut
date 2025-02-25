@@ -4,7 +4,8 @@ CLONE(8)
 NAME
 ----
 
-clone - clone an UPS, treating its outlet as if it were an UPS (with shutdown INSTCMD support)
+clone - Clone an UPS, treating its outlet as if it were an UPS
+        (with shutdown INSTCMD support)
 
 SYNOPSIS
 --------
@@ -20,12 +21,14 @@ linkman:nutupsdrv[8].
 DESCRIPTION
 -----------
 
-This driver, which sits on top of another driver socket, allows users to group
-clients to a particular outlet of a device and deal with this output as if it
-were a normal UPS.  Unlike the linkman:clone-outlet[8] driver, this driver
-represents a manageable device for that can be used both for monitoring and
-for client computer and UPS/ePDU outlet shutdowns (it supports sending
-relevant instant commands during run time).
+This driver, which sits on top of another driver's local UNIX socket file
+(or Windows named pipe), allows users to group clients to a particular
+outlet of a device and deal with this output as if it were a normal UPS.
+
+Unlike the linkman:clone-outlet[8] driver, this driver represents a
+manageable device that can be used both for monitoring and for client
+computer and UPS/ePDU outlet shutdowns (it supports sending relevant
+instant commands during run time).
 
 Unlike linkman:dummy-ups[8], this driver does not require a running `upsd`
 data server nor use the networked NUT protocol to talk to the "real" driver
@@ -74,8 +77,8 @@ This driver supports the following settings:
 
 *port*='drivername-devicename'::
 Required. The standard NUT driver `port` setting, here it provides the name
-of the local Unix socket (or named Windows pipe) for connection to the "real"
-driver.
+of the local Unix socket file (or Windows named pipe) for connection to the
+"real" device driver.
 
 *load.off*='command'::
 Recommended.  Set the command on the "real" UPS driver that will be used to
@@ -172,15 +175,15 @@ IMPORTANT
 ---------
 
 Unlike a real UPS, you should *not* configure a upsmon primary mode for this
-driver.  When a upsmon primary sees the OB LB flags and tells the upsd server
-it is OK to initiate the shutdown sequence, the server will latch the FSD
-status and it will not be possible to restart the systems connected without
-restarting the upsd server.
+driver.  When a linkman:upsmon[8] primary sees the `OB LB` flags and tells the
+linkman:upsd[8] data server that it is OK to initiate the shutdown sequence,
+the server will latch the FSD status, and it will not be possible to restart
+the systems connected without restarting the `upsd` server.
 
 This will be a problem if the power returns after the clone UPS initiated
-the shutdown sequence on it's outlet, but returns before the real UPS begins
-shutting down. The solution is in the clone driver, that will insert the
-FSD flag if needed without the help of a upsmon primary.
+the shutdown sequence on its outlet, but returns before the real UPS begins
+shutting down. The solution is in the `clone` driver itself, that will insert
+the FSD flag if needed without the help of an upsmon primary.
 
 CAVEATS
 -------

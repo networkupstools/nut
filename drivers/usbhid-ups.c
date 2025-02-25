@@ -29,7 +29,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.58"
+#define DRIVER_VERSION	"0.60"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
@@ -293,6 +293,7 @@ static status_lkp_t status_info[] = {
 	{ "bypassauto", STATUS(BYPASSAUTO) },
 	{ "bypassman", STATUS(BYPASSMAN) },
 	{ "ecomode", STATUS(ECOMODE) },
+	{ "essmode", STATUS(ESSMODE) },
 	{ "off", STATUS(OFF) },
 	{ "cal", STATUS(CALIB) },
 	{ "overheat", STATUS(OVERHEAT) },
@@ -387,7 +388,7 @@ info_lkp_t bypass_manual_info[] = {
 info_lkp_t eco_mode_info[] = {
 	{ 0, "normal", NULL, NULL },
     { 1, "ecomode", NULL, NULL },
-    { 2, "ESS", NULL, NULL }, /* makes sense for UPS that implements this mode */
+    { 2, "essmode", NULL, NULL },
     { 0, NULL, NULL, NULL }
 };
 /* note: this value is reverted (0=set, 1=not set). We report "being
@@ -570,7 +571,7 @@ static const char *hex_conversion_fun(double value)
 {
 	static char buf[20];
 
-	snprintf(buf, sizeof(buf), "%08lx", (long)value);
+	snprintf(buf, sizeof(buf), "%08lx", (unsigned long)value);
 
 	return buf;
 }
@@ -987,28 +988,29 @@ int setvar(const char *varname, const char *val)
 
 void upsdrv_shutdown(void)
 {
-	upsdebugx(1, "upsdrv_shutdown...");
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
 
-	/* Try to shutdown with delay */
-	if (instcmd("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
-		/* Shutdown successful */
-		return;
-	}
+	char	*cmd_used = NULL;
 
-	/* If the above doesn't work, try shutdown.reboot */
-	if (instcmd("shutdown.reboot", NULL) == STAT_INSTCMD_HANDLED) {
-		/* Shutdown successful */
-		return;
-	}
+	upsdebugx(1, "%s...", __func__);
 
-	/* If the above doesn't work, try load.off.delay */
-	if (instcmd("load.off.delay", NULL) == STAT_INSTCMD_HANDLED) {
-		/* Shutdown successful */
+	/* By default:
+	 * - Try to shutdown with delay
+	 * - If the above doesn't work, try shutdown.reboot
+	 * - If the above doesn't work, try load.off.delay
+	 * - Finally, try shutdown.stayoff
+	 */
+	if (do_loop_shutdown_commands("shutdown.return,shutdown.reboot,load.off.delay,shutdown.stayoff", &cmd_used) == STAT_INSTCMD_HANDLED) {
+		upslogx(LOG_INFO, "Shutdown successful with '%s'", NUT_STRARG(cmd_used));
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_SUCCESS);
 		return;
 	}
 
 	upslogx(LOG_ERR, "Shutdown failed!");
-	set_exit_flag(-1);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 void upsdrv_help(void)
@@ -1023,9 +1025,7 @@ void upsdrv_help(void)
 			printf(", ");
 		printf("\"%s\"", subdriver_list[i]->name);
 	}
-	printf("\n\n");
-
-	printf("Read The Fine Manual ('man 8 usbhid-ups')\n");
+	printf("\n");
 }
 
 void upsdrv_makevartable(void)
@@ -1040,21 +1040,22 @@ void upsdrv_makevartable(void)
 	addvar (VAR_VALUE, HU_VAR_LOWBATT, temp);
 
 	snprintf(temp, sizeof(temp),
-		"Set shutdown delay, in seconds (default=%s)",
-		DEFAULT_OFFDELAY);
+		"Set shutdown delay, in seconds (default=%s, or %s for CPS devices)",
+		DEFAULT_OFFDELAY, DEFAULT_OFFDELAY_CPS);
 	addvar(VAR_VALUE, HU_VAR_OFFDELAY, temp);
 
 	snprintf(temp, sizeof(temp),
-		"Set startup delay, in seconds (default=%s)",
-		DEFAULT_ONDELAY);
+		"Set startup delay, in seconds (default=%s, or %s for CPS devices)",
+		DEFAULT_ONDELAY, DEFAULT_ONDELAY_CPS);
 	addvar(VAR_VALUE, HU_VAR_ONDELAY, temp);
 
 	snprintf(temp, sizeof(temp),
-		"Set polling frequency, in seconds, to reduce data flow (default=%d)",
-		DEFAULT_POLLFREQ);
+		"Set polling frequency, in seconds, to reduce data flow "
+		"(default=%d, or %d for CPS devices)",
+		DEFAULT_POLLFREQ, DEFAULT_POLLFREQ_CPS);
 	addvar(VAR_VALUE, HU_VAR_POLLFREQ, temp);
 
-	addvar(VAR_FLAG, "pollonly", "Don't use interrupt pipe, only use polling");
+	addvar(VAR_FLAG, "pollonly", "Don't use interrupt pipe, only use polling (recommended for CPS devices)");
 
 	addvar(VAR_VALUE, "interrupt_pipe_no_events_tolerance", "How many times in a row do we tolerate \"Got 0 HID objects\" from USB interrupts?");
 
@@ -1290,10 +1291,20 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("driver.version.data", "%s", subdriver->name);
 
-	/* init polling frequency */
+	/* init polling frequency for full updates */
 	val = getval(HU_VAR_POLLFREQ);
 	if (val) {
 		pollfreq = atoi(val);
+#if !((defined SHUT_MODE) && SHUT_MODE)
+	} else {
+		/* note, there is also 'pollinterval'/poll_interval (C var)
+		 * common delay between main.c loops */
+		if (subdriver == &cps_subdriver) {
+			upslogx(LOG_INFO, "Defaulting '%s' to %d for CPS devices",
+				HU_VAR_POLLFREQ, DEFAULT_POLLFREQ_CPS);
+			pollfreq = DEFAULT_POLLFREQ_CPS;
+		}
+#endif
 	}
 
 	dstate_setinfo("driver.parameter.pollfreq", "%d", pollfreq);
@@ -1301,6 +1312,13 @@ void upsdrv_initinfo(void)
 	/* ignore (broken) interrupt pipe */
 	if (testvar("pollonly")) {
 		use_interrupt_pipe = FALSE;
+#if !((defined SHUT_MODE) && SHUT_MODE)
+	} else {
+		if (subdriver == &cps_subdriver) {
+			upslogx(LOG_WARNING, "You may want to set 'pollonly' "
+				"flag on CPS devices");
+		}
+#endif
 	}
 
 	val = getval("interrupt_pipe_no_events_tolerance");
@@ -1397,6 +1415,27 @@ void upsdrv_initups(void)
 	subdriver_matcher->next = regex_matcher;
 #endif /* SHUT_MODE / USB */
 
+	/* First activate the few tweaks which can impact device detection */
+
+	/* Activate Powercom tweaks */
+	if (testvar("interruptonly")) {
+		interrupt_only = 1;
+	}
+
+	val = getval("interruptsize");
+	if (val) {
+		int ipv = atoi(val);
+		if (ipv > 0) {
+			interrupt_size = (unsigned int)ipv;
+		} else {
+			fatalx(EXIT_FAILURE, "Error: invalid interruptsize: %d", ipv);
+		}
+	}
+
+	if (testvar("disable_fix_report_desc")) {
+		disable_fix_report_desc = 1;
+	}
+
 	/* Search for the first supported UPS matching the
 	   regular expression (USB) or device_path (SHUT) */
 	ret = comm_driver->open_dev(&udev, &curDevice, subdriver_matcher, &callback);
@@ -1409,10 +1448,7 @@ void upsdrv_initups(void)
 		hd->Vendor ? hd->Vendor : "unknown",
 		hd->Product ? hd->Product : "unknown");
 
-	/* Activate Powercom tweaks */
-	if (testvar("interruptonly")) {
-		interrupt_only = 1;
-	}
+	/* Later activate the relatively cosmetic tweaks */
 
 	/* Activate Cyberpower/APC tweaks */
 	if (testvar("onlinedischarge") || testvar("onlinedischarge_onbattery")) {
@@ -1542,24 +1578,11 @@ void upsdrv_initups(void)
 		lbrb_log_delay_without_calibrating = 1;
 	}
 
-	if (testvar("disable_fix_report_desc")) {
-		disable_fix_report_desc = 1;
-	}
-
-	val = getval("interruptsize");
-	if (val) {
-		int ipv = atoi(val);
-		if (ipv > 0) {
-			interrupt_size = (unsigned int)ipv;
-		} else {
-			fatalx(EXIT_FAILURE, "Error: invalid interruptsize: %d", ipv);
-		}
-	}
-
 	if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
 		fatalx(EXIT_FAILURE, "Can't initialize data from HID UPS");
 	}
 
+	/* Set values below from user settings only if supported by UPS */
 	if (dstate_getinfo("battery.charge.low")) {
 		/* Retrieve user defined battery settings */
 		val = getval(HU_VAR_LOWBATT);
@@ -1572,7 +1595,15 @@ void upsdrv_initups(void)
 		/* Retrieve user defined delay settings */
 		val = getval(HU_VAR_ONDELAY);
 		if (val) {
-			dstate_setinfo("ups.delay.start", "%ld", strtol(val, NULL, 10));
+			long	l = strtol(val, NULL, 10);
+#if !((defined SHUT_MODE) && SHUT_MODE)
+			if (subdriver == &cps_subdriver
+			 && (l < 60 || l % 60)
+			) {
+				upslogx(LOG_WARNING, "CPS devices tend to round delays by 60 sec down (ondelay=120 is the suggested minimum; see more in the man page)");
+			}
+#endif
+			dstate_setinfo("ups.delay.start", "%ld", l);
 		}
 	}
 
@@ -1580,10 +1611,21 @@ void upsdrv_initups(void)
 		/* Retrieve user defined delay settings */
 		val = getval(HU_VAR_OFFDELAY);
 		if (val) {
-			dstate_setinfo("ups.delay.shutdown", "%ld", strtol(val, NULL, 10));
+			long	l = strtol(val, NULL, 10);
+#if !((defined SHUT_MODE) && SHUT_MODE)
+			if (subdriver == &cps_subdriver
+			 && (l > 0 && (l < 60 || l % 60))
+			) {
+				/* Note: zero and negative values may
+				 * have special meanings for the firmware */
+				upslogx(LOG_WARNING, "CPS devices tend to round delays by 60 sec down (offdelay=60 is the suggested minimum; see more in the man page)");
+			}
+#endif
+			dstate_setinfo("ups.delay.shutdown", "%ld", l);
 		}
 	}
 
+	/* Enable instant commands below only if supported by UPS */
 	if (find_nut_info("load.off.delay")) {
 		/* Adds default with a delay value of '0' (= immediate) */
 		dstate_addcmd("load.off");
@@ -2136,7 +2178,7 @@ static void ups_alarm_set(void)
 	}
 	/*if (ups_status & STATUS(ECOMODE)) {
 		alarm_set("ECO(HE) mode!");
-	}*/ /* disable alarm for eco as we dont want raise alarm ? */ 
+	}*/ /* disable alarm for eco as we dont want raise alarm ? */
 }
 
 /* Return the current value of ups_status */
@@ -2408,7 +2450,7 @@ static void ups_status_set(void)
 	if (ups_status & STATUS(OVERLOAD)) {
 		status_set("OVER");		/* overload */
 	}
-	if (ups_status & STATUS(REPLACEBATT)) {
+	if ((ups_status & STATUS(REPLACEBATT)) || (ups_status & STATUS(NOBATTERY))) {
 		if (lbrb_log_delay_sec < 1
 		|| (!isCalibrating && !lbrb_log_delay_without_calibrating)
 		|| !last_lb_start	/* Calibration ended (not LB anymore) */
@@ -2444,7 +2486,10 @@ static void ups_status_set(void)
 		status_set("BYPASS");		/* on bypass */
 	}
 	if (ups_status & STATUS(ECOMODE)) {
-		status_set("ECO");		/* on ECO Mode */
+		status_set("ECO");		/* on ECO(HE) Mode */
+	}
+	if (ups_status & STATUS(ESSMODE)) {
+		status_set("ESS");		/* on ESS Mode */
 	}
 	if (ups_status & STATUS(OFF)) {
 		status_set("OFF");		/* ups is off */

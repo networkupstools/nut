@@ -208,6 +208,13 @@ extern const char *UPS_VERSION;
  * have an end-of-line char of its own. */
 const char *describe_NUT_VERSION_once(void);
 
+/* Return a buffer with a (possibly multiline) string that can be printed
+ * as part of program help/usage message. Caller should not free() the buffer.
+ * Optional "progconf" allows to suggest config file(s) to study as well.
+ * NOTE: the string in buffer starts with text and ends with one EOL char.
+ */
+const char *suggest_doc_links(const char *progname, const char *progconf);
+
 /* Based on NUT_QUIET_INIT_BANNER envvar (present and empty or "true")
  * hide the NUT tool name+version banners; show them by default */
 int banner_is_disabled(void);
@@ -537,6 +544,25 @@ char * get_libname(const char* base_libname);
 /** @brief (Minimum) Size that a string must have to hold a UUID4 (i.e. UUID4 length + the terminating null character). */
 #define UUID4_LEN	37
 
+#define NUT_PATH_MAX	SMALLBUF
+#if (defined(PATH_MAX)) && PATH_MAX > NUT_PATH_MAX
+# undef NUT_PATH_MAX
+# define NUT_PATH_MAX	PATH_MAX
+#endif
+#if (defined(MAX_PATH)) && MAX_PATH > NUT_PATH_MAX
+/* PATH_MAX is the POSIX equivalent for Microsoft's MAX_PATH */
+# undef NUT_PATH_MAX
+# define NUT_PATH_MAX	MAX_PATH
+#endif
+#if (defined(UNIX_PATH_MAX)) && UNIX_PATH_MAX > NUT_PATH_MAX
+# undef NUT_PATH_MAX
+# define NUT_PATH_MAX	UNIX_PATH_MAX
+#endif
+#if (defined(MAXPATHLEN)) && MAXPATHLEN > NUT_PATH_MAX
+# undef NUT_PATH_MAX
+# define NUT_PATH_MAX	MAXPATHLEN
+#endif
+
 /* Provide declarations for getopt() global variables */
 
 #ifdef NEED_GETOPT_H
@@ -559,6 +585,15 @@ extern int optind;
 #	define seteuid(x) setresuid(-1,x,-1)    /* Works for HP-UX 10.20 */
 #	define setegid(x) setresgid(-1,x,-1)    /* Works for HP-UX 10.20 */
 #endif
+
+/* Several NUT programs define their set_exit_flag(int) methods
+ * which accept a signal code or similar parameter. Commonly they
+ * also accept a few negative values summarized below, to just
+ * exit (typically after completing a processing loop) with one
+ * of C standard exit codes.
+ */
+#define EF_EXIT_FAILURE	-1	/* eventually exit(EXIT_FAILURE); */
+#define EF_EXIT_SUCCESS	-2	/* eventually exit(EXIT_SUCCESS); */
 
 #ifdef WIN32
 /* FIXME : this might not be the optimal mapping between syslog and ReportEvent*/

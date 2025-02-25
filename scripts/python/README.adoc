@@ -18,8 +18,8 @@ sensitive):
 
     import PyNUT
 
-This module provides a `PyNUTClient` class that can be used to connect and
-get data from an `upsd` data server.
+This module provides a `(PyNUT.)PyNUTClient` class that can be used to connect
+and get data from an `upsd` data server.
 
 To install the `PyNUT` module on Debian/Ubuntu, copy it to:
 `/usr/share/python-support/python-pynut/`
@@ -35,26 +35,14 @@ and protocol support.
 
 For one practical example, you can research `tests/NIT/nit.sh` in NUT sources.
 
-telnetlib
-^^^^^^^^^
-
-Historically, the `PyNUTClient` class relied on `telnetlib` module for socket
-communications with the NUT data server, which was provided as part of Python
-core installation with tested 2.6+ and 3.* versions. The module was, however,
-marked deprecated since Python 3.11 and not provided since 3.13. Due to this,
-as a quick stop-gap solution, NUT sources provide `nut_telnetlib.py` - a copy
-of the module from Python 3.10 installation, and no longer should require its
-presence in the Python deployment.
-
-A better solution would be to find or create a new layer for the constrained
-use-case of NUT client interactions with a data server, which do not need the
-fully fledged Telnet-like capabilities.
-
 app
 ~~~
 
 This directory contains the `NUT-Monitor` UI application, which uses the
 `PyNUT` class, along with its own resources.
+
+NOTE: Do not mistake it for `nut-monitor` service for the `upsmon` client in
+some distributions' NUT packaging.
 
 There are two closely related separate implementations, for Python 2 with GTK2
 and for Python 3 with Qt5. Both can be installed at the same time, if your
@@ -72,5 +60,6 @@ To install it, you will either need to keep the files together, or to install:
 - finally, `nut-monitor-py2gtk2.desktop` and/or `nut-monitor-py3qt5.desktop`
   (optionally symlinked as `nut-monitor.desktop`) to `/usr/share/applications/`
 
-The `PyNUT` module can be kept nearby, or must be installed as a "site" or "vendor"
-provided script into your Python modules location. See the wrapper script for more technical details.
+The `PyNUT` module can be kept nearby, or must be installed as a "site" or
+"vendor" provided script into your Python modules location. See the wrapper
+scripts of the app for more technical details.

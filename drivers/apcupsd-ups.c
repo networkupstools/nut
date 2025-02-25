@@ -57,7 +57,7 @@ typedef struct pollfd {
 #include "nut_stdint.h"
 
 #define DRIVER_NAME	"apcupsd network client UPS driver"
-#define DRIVER_VERSION	"0.72"
+#define DRIVER_VERSION	"0.73"
 
 #define POLL_INTERVAL_MIN 10
 
@@ -363,9 +363,13 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	/* replace with a proper shutdown function */
 	upslogx(LOG_ERR, "shutdown not supported");
-	set_exit_flag(-1);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 void upsdrv_help(void)

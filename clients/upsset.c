@@ -194,7 +194,7 @@ static void upsset_hosts_err(const char *errmsg)
 /* this defaults to wherever we are now, ups and function-wise */
 static void do_pickups(const char *currfunc)
 {
-	char	hostfn[SMALLBUF];
+	char	hostfn[NUT_PATH_MAX];
 	PCONF_CTX_t	ctx;
 
 	snprintf(hostfn, sizeof(hostfn), "%s/hosts.conf", confpath());
@@ -1020,7 +1020,7 @@ static void upsset_conf_err(const char *errmsg)
 /* see if the user has confirmed their cgi directory's secure state */
 static void check_conf(void)
 {
-	char	fn[SMALLBUF];
+	char	fn[NUT_PATH_MAX];
 	PCONF_CTX_t	ctx;
 
 	snprintf(fn, sizeof(fn), "%s/upsset.conf", confpath());

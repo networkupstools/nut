@@ -3,6 +3,7 @@
    Copyright (C)
      1998  Russell Kroll <rkroll@exploits.org>
      2012  Arnaud Quette <arnaud.quette.free.fr>
+     2017  Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
      2020-2024  Jim Klimov <jimklimov+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
@@ -175,6 +176,9 @@ static int nut_debug_level_global = -1;
  */
 static int nut_debug_level_args = 0;
 
+/* pre-declare internal methods */
+static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize);
+
 static void setflag(int *val, int flag)
 {
 	*val |= flag;
@@ -286,7 +290,7 @@ static unsigned __stdcall async_notify(LPVOID param)
 }
 #endif
 
-static void notify(const char *notice, int flags, const char *ntype,
+static void notify(const char *notice, unsigned int flags, const char *ntype,
 			const char *upsname)
 {
 #ifndef WIN32
@@ -295,7 +299,7 @@ static void notify(const char *notice, int flags, const char *ntype,
 #endif
 
 	upsdebugx(6, "%s: sending notification for [%s]: type %s with flags 0x%04x: %s",
-		__func__, upsname, ntype, flags, notice);
+		__func__, upsname ? upsname : "upsmon itself", ntype, flags, notice);
 
 	if (flag_isset(flags, NOTIFY_IGNORE)) {
 		upsdebugx(6, "%s: NOTIFY_IGNORE", __func__);
@@ -376,7 +380,7 @@ static void notify(const char *notice, int flags, const char *ntype,
 #endif
 }
 
-static void do_notify(const utype_t *ups, int ntype)
+static void do_notify(const utype_t *ups, unsigned int ntype, const char *extra)
 {
 	int	i;
 	char	msg[SMALLBUF], *upsname = NULL;
@@ -387,7 +391,11 @@ static void do_notify(const utype_t *ups, int ntype)
 
 	for (i = 0; notifylist[i].name != NULL; i++) {
 		if (notifylist[i].type == ntype) {
-			upsdebugx(2, "%s: ntype 0x%04x (%s)", __func__, ntype,
+			const char	*msgfmt = (notifylist[i].msg ? notifylist[i].msg : notifylist[i].stockmsg);
+			char	*s = strstr(msgfmt, "%s");
+
+			upsdebugx(2, "%s: ntype 0x%04x (%s)",
+				__func__, ntype,
 				notifylist[i].name);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
@@ -398,9 +406,33 @@ static void do_notify(const utype_t *ups, int ntype)
 #ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
-			snprintf(msg, sizeof(msg),
-				notifylist[i].msg ? notifylist[i].msg : notifylist[i].stockmsg,
-				ups ? ups->sys : "");
+			if (s) {
+				/* FIXME: Check user inputs to rule out
+				 *  any *OTHER* formatting characters.
+				 *  NOTE: Not addressing now, PR pending
+				 *  and queued for NUT v2.8.4 */
+
+				/* Got at least one "%s" */
+				if (strstr(s + 1, "%s")) {
+					/* Got a second "%s" */
+					/* FIXME: if (extra != NULL) and we
+					 *  only have one "%s", plaster another
+					 *  to "msgfmt" and follow this path?
+					 */
+					snprintf(msg, sizeof(msg),
+						msgfmt,
+						upsname ? upsname : "",
+						NUT_STRARG(extra));
+				} else {
+					snprintf(msg, sizeof(msg),
+						msgfmt,
+						upsname ? upsname : "");
+				}
+			} else {
+				/* No "%s" in this msgfmt! e.g. NOTIFY_NOPARENT,
+				 * SUSPEND_STARTING, SUSPEND_FINISHED ... */
+				snprintf(msg, sizeof(msg), "%s", msgfmt);
+			}
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
@@ -597,7 +629,7 @@ static void ups_is_alive(utype_t *ups)
 
 	/* only notify for 0->1 transitions (to ignore the first connect) */
 	if (ups->commstate == 0)
-		do_notify(ups, NOTIFY_COMMOK);
+		do_notify(ups, NOTIFY_COMMOK, NULL);
 
 	ups->commstate = 1;
 }
@@ -612,7 +644,7 @@ static void ups_is_gone(utype_t *ups)
 		ups->commstate = 0;
 
 		/* COMMBAD is the initial loss of communications */
-		do_notify(ups, NOTIFY_COMMBAD);
+		do_notify(ups, NOTIFY_COMMBAD, NULL);
 		return;
 	}
 
@@ -625,7 +657,7 @@ static void ups_is_gone(utype_t *ups)
 	/* now only complain if we haven't lately */
 	if ((now - ups->lastncwarn) > nocommwarntime) {
 		/* NOCOMM indicates a persistent condition */
-		do_notify(ups, NOTIFY_NOCOMM);
+		do_notify(ups, NOTIFY_NOCOMM, NULL);
 		ups->lastncwarn = now;
 	}
 }
@@ -672,7 +704,7 @@ static void ups_is_off(utype_t *ups)
 	upsdebugx(3, "%s: %s (first time)", __func__, ups->sys);
 
 	/* must have changed from !OFF to OFF, so notify */
-	do_notify(ups, NOTIFY_OFF);
+	do_notify(ups, NOTIFY_OFF, NULL);
 	setflag(&ups->status, ST_OFF);
 }
 
@@ -682,7 +714,7 @@ static void ups_is_notoff(utype_t *ups)
 	ups->offsince = 0;
 	ups->offstate = 0;
 	if (flag_isset(ups->status, ST_OFF)) {	/* actual change */
-		do_notify(ups, NOTIFY_NOTOFF);
+		do_notify(ups, NOTIFY_NOTOFF, NULL);
 		clearflag(&ups->status, ST_OFF);
 		try_restore_pollfreq(ups);
 	}
@@ -703,7 +735,7 @@ static void ups_is_bypass(utype_t *ups)
 
 	/* must have changed from !BYPASS to BYPASS, so notify */
 
-	do_notify(ups, NOTIFY_BYPASS);
+	do_notify(ups, NOTIFY_BYPASS, NULL);
 	setflag(&ups->status, ST_BYPASS);
 }
 
@@ -712,7 +744,7 @@ static void ups_is_notbypass(utype_t *ups)
 	/* Called when BYPASS is NOT among known states */
 	ups->bypassstate = 0;
 	if (flag_isset(ups->status, ST_BYPASS)) {	/* actual change */
-		do_notify(ups, NOTIFY_NOTBYPASS);
+		do_notify(ups, NOTIFY_NOTBYPASS, NULL);
 		clearflag(&ups->status, ST_BYPASS);
 		try_restore_pollfreq(ups);
 	}
@@ -739,7 +771,11 @@ static void ups_is_eco(utype_t *ups)
 
 	/* must have changed from !ECO to ECO, so notify */
 
-	do_notify(ups, NOTIFY_ECO);
+	/* FIXME: Dig in driver/vendor specific info points to discern
+	 *  ECO, HE, ESS, ABM and other fancy words, with optional extra
+	 *  string argument?
+	 */
+	do_notify(ups, NOTIFY_ECO, NULL);
 	setflag(&ups->status, ST_ECO);
 }
 
@@ -748,7 +784,7 @@ static void ups_is_noteco(utype_t *ups)
 	/* Called when ECO is NOT among known states */
 	ups->ecostate = 0;
 	if (flag_isset(ups->status, ST_ECO)) {	/* actual change */
-		do_notify(ups, NOTIFY_NOTECO);
+		do_notify(ups, NOTIFY_NOTECO, NULL);
 		clearflag(&ups->status, ST_ECO);
 		try_restore_pollfreq(ups);
 	}
@@ -756,8 +792,26 @@ static void ups_is_noteco(utype_t *ups)
 
 static void ups_is_alarm(utype_t *ups)
 {
-	if (flag_isset(ups->status, ST_ALARM)) { 	/* no change */
-		upsdebugx(4, "%s: %s (no change)", __func__, ups->sys);
+	/* Track the earlier reported string, re-notify if needed */
+	static char	alarms_prev[SMALLBUF];
+	char	alarms[SMALLBUF];
+
+	if (flag_isset(ups->status, ST_ALARM)) { 	/* potentially no change */
+		/* TODO: add device.alarm.count? */
+		if (get_var(ups, "alarm", alarms, sizeof(alarms)) == 0) {
+			if (!strcmp(alarms_prev, alarms)) {
+				upsdebugx(4, "%s: %s (no change)", __func__, ups->sys);
+			} else {
+				upsdebugx(4, "%s: %s: updated ups.alarm value is %s",
+					__func__, ups->sys, alarms);
+				strncpy(alarms_prev, alarms, sizeof(alarms_prev));
+				/* FIXME: Check for two "%s" placeholders? */
+				do_notify(ups, NOTIFY_ALARM, alarms);
+			}
+		} else {
+			upsdebugx(4, "%s: %s: still on alarm, failed to get current ups.alarm value",
+				__func__, ups->sys);
+		}
 		return;
 	}
 
@@ -769,7 +823,20 @@ static void ups_is_alarm(utype_t *ups)
 
 	/* must have changed from !ALARM to ALARM, so notify */
 
-	do_notify(ups, NOTIFY_ALARM);
+	/* Pass `ups.status` string as the extra argument,
+	 * so if the formatting string allows - it is detailed
+	 * in the notification. */
+	if (get_var(ups, "alarm", alarms, sizeof(alarms)) == 0) {
+		upsdebugx(4, "%s: %s: current ups.alarm value is %s",
+			__func__, ups->sys, alarms);
+		do_notify(ups, NOTIFY_ALARM, alarms);
+	} else {
+		upsdebugx(4, "%s: %s: failed to get current ups.alarm value",
+			__func__, ups->sys);
+		do_notify(ups, NOTIFY_ALARM, NULL);
+		alarms[0] = '\0';
+	}
+	strncpy(alarms_prev, alarms, sizeof(alarms_prev));
 	setflag(&ups->status, ST_ALARM);
 }
 
@@ -778,7 +845,7 @@ static void ups_is_notalarm(utype_t *ups)
 	/* Called when ALARM is NOT among known states */
 	ups->alarmstate = 0;
 	if (flag_isset(ups->status, ST_ALARM)) {	/* actual change */
-		do_notify(ups, NOTIFY_NOTALARM);
+		do_notify(ups, NOTIFY_NOTALARM, NULL);
 		clearflag(&ups->status, ST_ALARM);
 		try_restore_pollfreq(ups);
 	}
@@ -799,7 +866,7 @@ static void ups_on_batt(utype_t *ups)
 
 	/* must have changed from OL to OB, so notify */
 
-	do_notify(ups, NOTIFY_ONBATT);
+	do_notify(ups, NOTIFY_ONBATT, NULL);
 	setflag(&ups->status, ST_ONBATT);
 	clearflag(&ups->status, ST_ONLINE);
 }
@@ -817,7 +884,7 @@ static void ups_on_line(utype_t *ups)
 
 	/* ignore the first OL at startup, otherwise send the notifier */
 	if (ups->linestate != -1)
-		do_notify(ups, NOTIFY_ONLINE);
+		do_notify(ups, NOTIFY_ONLINE, NULL);
 
 	ups->linestate = 1;
 
@@ -855,7 +922,7 @@ static void doshutdown(void)
 	upslogx(LOG_CRIT, "Executing automatic power-fail shutdown");
 	wall("Executing automatic power-fail shutdown\n");
 
-	do_notify(NULL, NOTIFY_SHUTDOWN);
+	do_notify(NULL, NOTIFY_SHUTDOWN, NULL);
 
 	sleep(finaldelay);
 
@@ -1026,6 +1093,14 @@ static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize)
 		query[0] = "VAR";
 		query[1] = ups->upsname;
 		query[2] = "ups.status";
+		numq = 3;
+	}
+
+	if (!strcmp(var, "alarm")) {
+		/* Opaque string */
+		query[0] = "VAR";
+		query[1] = ups->upsname;
+		query[2] = "ups.alarm";
 		numq = 3;
 	}
 
@@ -1297,8 +1372,8 @@ static int is_ups_critical(utype_t *ups)
 				"%s: seems that UPS [%s] is OB+LB now, "
 				"but OBLBDURATION=%d - not declaring "
 				"a critical state just now, but will "
-				"bump the polling rate to %d (from "
-				"POLLFREQALERT=%d) and wait to see "
+				"bump the polling rate to %u (from "
+				"POLLFREQALERT=%u) and wait to see "
 				"if this situation dissipates soon",
 				__func__, ups->upsname,
 				oblbdurationtime,
@@ -1416,7 +1491,7 @@ static void ups_low_batt(utype_t *ups)
 
 	/* must have changed from !LB to LB, so notify */
 
-	do_notify(ups, NOTIFY_LOWBATT);
+	do_notify(ups, NOTIFY_LOWBATT, NULL);
 	setflag(&ups->status, ST_LOWBATT);
 }
 
@@ -1427,7 +1502,7 @@ static void upsreplbatt(utype_t *ups)
 	time(&now);
 
 	if ((now - ups->lastrbwarn) > rbwarntime) {
-		do_notify(ups, NOTIFY_REPLBATT);
+		do_notify(ups, NOTIFY_REPLBATT, NULL);
 		ups->lastrbwarn = now;
 	}
 }
@@ -1443,7 +1518,7 @@ static void ups_is_cal(utype_t *ups)
 
 	/* must have changed from !CAL to CAL, so notify */
 
-	do_notify(ups, NOTIFY_CAL);
+	do_notify(ups, NOTIFY_CAL, NULL);
 	setflag(&ups->status, ST_CAL);
 }
 
@@ -1451,7 +1526,7 @@ static void ups_is_notcal(utype_t *ups)
 {
 	/* Called when CAL is NOT among known states */
 	if (flag_isset(ups->status, ST_CAL)) {	/* actual change */
-		do_notify(ups, NOTIFY_NOTCAL);
+		do_notify(ups, NOTIFY_NOTCAL, NULL);
 		clearflag(&ups->status, ST_CAL);
 		try_restore_pollfreq(ups);
 	}
@@ -1468,7 +1543,7 @@ static void ups_fsd(utype_t *ups)
 
 	/* must have changed from !FSD to FSD, so notify */
 
-	do_notify(ups, NOTIFY_FSD);
+	do_notify(ups, NOTIFY_FSD, NULL);
 	setflag(&ups->status, ST_FSD);
 }
 
@@ -1519,7 +1594,18 @@ static void redefine_ups(utype_t *ups, unsigned int pv, const char *un,
 	ups->retain = 1;
 
 	if (ups->pv != pv) {
-		upslogx(LOG_INFO, "UPS [%s]: redefined power value to %d",
+		/* TOCHECK: We start a config loading loop with totalpv=0
+		 * initially or in reload_conf(), and ignore duplicates
+		 * in addups() unless reloading. If we reload a config
+		 * with two definitions of same ups->sys name, will their
+		 * power values be not ignored and add up? Should we
+		 * subtract the older value from totalpv here? How do
+		 * we differentiate (cookie?) first seeing an ups->sys
+		 * which we knew about earlier during a reload_conf()
+		 * from seeing it again? This is a somewhat rare case
+		 * of self-inflicted pain, if it does even happen :)
+		 */
+		upslogx(LOG_INFO, "UPS [%s]: redefined power value to %u",
 			ups->sys, pv);
 		ups->pv = pv;
 	}
@@ -1595,7 +1681,8 @@ static void redefine_ups(utype_t *ups, unsigned int pv, const char *un,
 	/* secondary|slave -> primary|master */
 	if ( (   (!strcasecmp(managerialOption, "primary"))
 	      || (!strcasecmp(managerialOption, "master"))  )
-	     && (!flag_isset(ups->status, ST_PRIMARY)) ) {
+	     && (!flag_isset(ups->status, ST_PRIMARY))
+	) {
 		upslogx(LOG_INFO, "UPS [%s]: redefined as a primary", ups->sys);
 		setflag(&ups->status, ST_PRIMARY);
 
@@ -1607,7 +1694,8 @@ static void redefine_ups(utype_t *ups, unsigned int pv, const char *un,
 	/* primary|master -> secondary|slave */
 	if ( (   (!strcasecmp(managerialOption, "secondary"))
 	      || (!strcasecmp(managerialOption, "slave"))  )
-	     && (flag_isset(ups->status, ST_PRIMARY)) ) {
+	     && (flag_isset(ups->status, ST_PRIMARY))
+	) {
 		upslogx(LOG_INFO, "UPS [%s]: redefined as a secondary", ups->sys);
 		clearflag(&ups->status, ST_PRIMARY);
 		return;
@@ -1681,7 +1769,8 @@ static void addups(int reloading, const char *sys, const char *pvs,
 		tmp = tmp->next;
 	}
 
-	tmp = xmalloc(sizeof(utype_t));
+	tmp = xcalloc(1, sizeof(utype_t));
+	/* TOTHINK: init (UPSCONN_t)tmp->conn struct fields too? */
 	tmp->sys = xstrdup(sys);
 	tmp->pv = pv;
 
@@ -1692,11 +1781,16 @@ static void addups(int reloading, const char *sys, const char *pvs,
 
 	tmp->pw = xstrdup(pw);
 	tmp->status = 0;
+	tmp->status_tokens = NULL;
 	tmp->retain = 1;
 
-	/* ignore initial COMMOK and ONLINE by default */
+	/* ignore initial COMMOK, ONLINE, etc. by default */
 	tmp->commstate = -1;
 	tmp->linestate = -1;
+	tmp->offstate = -1;
+	tmp->bypassstate = -1;
+	tmp->ecostate = -1;
+	tmp->alarmstate = -1;
 
 	/* forget poll-failure logging throttling */
 	tmp->pollfail_log_throttle_count = -1;
@@ -1706,6 +1800,9 @@ static void addups(int reloading, const char *sys, const char *pvs,
 	tmp->lastnoncrit = 0;
 	tmp->lastrbwarn = 0;
 	tmp->lastncwarn = 0;
+
+	tmp->offsince = 0;
+	tmp->oblbsince = 0;
 
 	if (   (!strcasecmp(managerialOption, "primary"))
 	    || (!strcasecmp(managerialOption, "master"))  ) {
@@ -1722,7 +1819,7 @@ static void addups(int reloading, const char *sys, const char *pvs,
 	/* Negative debug value may be set by help() to be really quiet */
 	if (nut_debug_level > -1) {
 		if (tmp->pv)
-			upslogx(LOG_INFO, "UPS: %s (%s) (power value %d)", tmp->sys,
+			upslogx(LOG_INFO, "UPS: %s (%s) (power value %u)", tmp->sys,
 				flag_isset(tmp->status, ST_PRIMARY) ? "primary" : "secondary",
 				tmp->pv);
 		else
@@ -2248,6 +2345,14 @@ static void ups_free(utype_t *ups)
 	free(ups->hostname);
 	free(ups->un);
 	free(ups->pw);
+
+	/* We usually free and nullify these as we have no use for them,
+	 * but if something remains (had active alert etc.) - do it here: */
+	if (ups->status_tokens) {
+		state_infofree(ups->status_tokens);
+		ups->status_tokens = NULL;
+	}
+
 	free(ups);
 }
 
@@ -2272,6 +2377,7 @@ static void upsmon_cleanup(void)
 	free(shutdowncmd);
 	free(notifycmd);
 	free(powerdownflag);
+	free(configfile);
 
 	for (i = 0; notifylist[i].name != NULL; i++) {
 		free(notifylist[i].msg);
@@ -2429,7 +2535,9 @@ static int try_connect(utype_t *ups)
 /* deal with the contents of STATUS or ups.status for this ups */
 static void parse_status(utype_t *ups, char *status)
 {
-	char	*statword, *ptr;
+	char	*statword, *ptr, other_stat_words[SMALLBUF];
+	int	handled_stat_words = 0, changed_other_stat_words = 0;
+	st_tree_timespec_t	st_start;
 
 	clear_alarm();
 
@@ -2462,41 +2570,179 @@ static void parse_status(utype_t *ups, char *status)
 		ups_is_notalarm(ups);
 
 	statword = status;
+	/* Track what status tokens we no longer see */
+	state_get_timestamp(&st_start);
+	other_stat_words[0] = '\0';
 
 	/* split up the status words and parse each one separately */
 	while (statword != NULL) {
+		int	handled = 0;
+
 		ptr = strchr(statword, ' ');
 		if (ptr)
 			*ptr++ = '\0';
 
 		upsdebugx(3, "parsing: [%s]", statword);
+		handled_stat_words++;
 
-		if (!strcasecmp(statword, "OL"))
+		/* Keep in sync with "Status data" chapter of docs/new-drivers.txt */
+		if (!strcasecmp(statword, "OL")) {
 			ups_on_line(ups);
-		if (!strcasecmp(statword, "OB"))
+			handled++;
+		}
+		else if (!strcasecmp(statword, "OB")) {
 			ups_on_batt(ups);
-		if (!strcasecmp(statword, "LB"))
+			handled++;
+		}
+		else if (!strcasecmp(statword, "LB")) {
 			ups_low_batt(ups);
-		if (!strcasecmp(statword, "RB"))
+			handled++;
+		}
+		else if (!strcasecmp(statword, "RB")) {
 			upsreplbatt(ups);
-		if (!strcasecmp(statword, "CAL"))
+			handled++;
+		}
+		else if (!strcasecmp(statword, "CAL")) {
 			ups_is_cal(ups);
-		if (!strcasecmp(statword, "OFF"))
+			handled++;
+		}
+		else if (!strcasecmp(statword, "OFF")) {
 			ups_is_off(ups);
-		if (!strcasecmp(statword, "BYPASS"))
+			handled++;
+		}
+		else if (!strcasecmp(statword, "BYPASS")) {
 			ups_is_bypass(ups);
-		if (!strcasecmp(statword, "ECO"))
+			handled++;
+		}
+		else if (!strcasecmp(statword, "ECO")) {
 			ups_is_eco(ups);
-		if (!strcasecmp(statword, "ALARM"))
+			handled++;
+		}
+		else if (!strcasecmp(statword, "ALARM")) {
 			ups_is_alarm(ups);
+			handled++;
+		}
 		/* do it last to override any possible OL */
-		if (!strcasecmp(statword, "FSD"))
+		else if (!strcasecmp(statword, "FSD")) {
 			ups_fsd(ups);
+			handled++;
+		}
+		/* Known standard status tokens, some being obsoleted, no upsmon reaction assigned */
+		else if (
+		    !strcasecmp(statword, "HB")
+		 || !strcasecmp(statword, "CHRG")
+		 || !strcasecmp(statword, "DISCHRG")
+		 || !strcasecmp(statword, "OVER")
+		 || !strcasecmp(statword, "TRIM")
+		 || !strcasecmp(statword, "BOOST")
+		) {
+			/* FIXME: Do we want these logged similar to OTHERs? */
+			upsdebugx(4, "Known and ignored status token: [%s]", statword);
+			handled++;
+		}
+
+		if (!handled) {
+			/* NOTE: Could just state_getinfo() but then
+			 *  to refresh the timestamp we'd need to walk
+			 *  it again. So replicating a bit of that code. */
+			st_tree_t	*sttmp = (ups->status_tokens ? state_tree_find(ups->status_tokens, statword) : NULL);
+
+			/* Driver reported something non-standard? */
+			upsdebugx(4, "Unexpected status token: [%s]", statword);
+
+			snprintfcat(other_stat_words,
+				sizeof(other_stat_words), "%s%s",
+				*other_stat_words ? " " : "",
+				statword);
+
+			/* Part of our job is to update the timestamp,
+			 * so we can report which tokens disappeared
+			 * and eject them from the list.
+			 *
+			 * The recorded value currently does not matter.
+			 *
+			 * FIXME: Use the value as e.g. "0"/"1" and
+			 *  maybe the state->aux as counter, to track
+			 *  and report that the non-standard token
+			 *  was seen more than once?
+			 */
+			if (sttmp) {
+				/* Start from the discovered node to shortcut to
+				 * (static) st_tree_node_refresh_timestamp(sttmp)
+				 * and complete the info-setting quickly.
+				 */
+				state_setinfo(&sttmp, statword, "1");
+			} else {
+				/* This token was not seen last time => new state
+				 * Handle with a notification type "OTHER"
+				 * to report the new un-handled status. */
+				changed_other_stat_words++;
+				upsdebugx(5, "Unexpected status token: [%s]: appeared", statword);
+				state_setinfo(&(ups->status_tokens), statword, "1");
+			}
+		}
 
 		update_crittimer(ups);
 
 		statword = ptr;
 	}
+
+	if (ups->status_tokens) {
+		st_tree_t	*node = ups->status_tokens, *sttmp = node;
+
+		/* Scroll to the leftmost entry for alphanumeric sorted processing */
+		while (sttmp) {
+			node = sttmp;
+			sttmp = sttmp->left;
+		}
+
+		/* Go from left to right, on a freeing spree if need be */
+		while (node) {
+			sttmp = node->right;
+			if (st_tree_node_compare_timestamp(node, &st_start) < 0) {
+				upsdebugx(5, "Unexpected status token: [%s]: disappeared",
+					NUT_STRARG(node->var));
+				changed_other_stat_words++;
+
+				/* whatever is on the left, hang it off current right */
+				if (node->right) {
+					node->right->left = node->left;	/* May be NULL*/
+				}
+				/* whatever is on the right, hang it off current left */
+				if (node->left) {
+					node->left->right = node->right;	/* May be NULL*/
+				}
+
+				if (node == ups->status_tokens) {
+					ups->status_tokens = node->left ? node->left : node->right;
+				}
+
+				/* forget the neighbors before dropping the remaining
+				 * "tree" of one node */
+				node->right = NULL;
+				node->left = NULL;
+
+				state_infofree(node);
+			}
+			node = sttmp;
+		}
+	}
+
+	if (changed_other_stat_words) {
+		if (*other_stat_words) {
+			do_notify(ups, NOTIFY_OTHER, other_stat_words);
+		} else {
+			do_notify(ups, NOTIFY_NOTOTHER, NULL);
+
+			/* No words remain, drop the tree if still there */
+			if (ups->status_tokens) {
+				state_infofree(ups->status_tokens);
+				ups->status_tokens = NULL;
+			}
+		}
+	}
+
+	upsdebugx(3, "Handled %d status tokens", handled_stat_words);
 }
 
 /* see what the status of the UPS is and handle any changes */
@@ -2590,7 +2836,7 @@ static void pollups(utype_t *ups)
 				upslogx(LOG_ERR, "Poll UPS [%s] failure state code "
 					"changed from %d to %d; "
 					"report below will only be repeated to syslog "
-					"every %d polling loop cycles (%d sec):",
+					"every %d polling loop cycles (%u sec):",
 					ups->sys, ups->pollfail_log_throttle_state,
 					upserror, pollfail_log_throttle_max,
 					pollfail_log_throttle_max * pollfreq);
@@ -2776,6 +3022,8 @@ static void help(const char *arg_progname)
 
 	nut_report_config_flags();
 
+	printf("\n%s", suggest_doc_links(arg_progname, "upsmon.conf"));
+
 	exit(EXIT_SUCCESS);
 }
 
@@ -2955,8 +3203,8 @@ static void reload_conf(void)
 
 	/* see if the user just blew off a foot */
 	if (totalpv < minsupplies) {
-		upslogx(LOG_CRIT, "Fatal error: total power value (%d) less "
-			"than MINSUPPLIES (%d)", totalpv, minsupplies);
+		upslogx(LOG_CRIT, "Fatal error: total power value (%u) less "
+			"than MINSUPPLIES (%u)", totalpv, minsupplies);
 
 		fatalx(EXIT_FAILURE, "Impossible power configuration, unable to continue");
 	}
@@ -2994,7 +3242,7 @@ static void check_parent(void)
 		return;
 
 	lastwarn = now;
-	do_notify(NULL, NOTIFY_NOPARENT);
+	do_notify(NULL, NOTIFY_NOPARENT, NULL);
 
 	/* also do this in case the notifier isn't being effective */
 	upslogx(LOG_ALERT, "Parent died - shutdown impossible");
@@ -3330,8 +3578,8 @@ int main(int argc, char *argv[])
 	if (totalpv < minsupplies) {
 		printf("\nFatal error: insufficient power configured!\n\n");
 
-		printf("Sum of power values........: %d\n", totalpv);
-		printf("Minimum value (MINSUPPLIES): %d\n", minsupplies);
+		printf("Sum of power values........: %u\n", totalpv);
+		printf("Minimum value (MINSUPPLIES): %u\n", minsupplies);
 
 		printf("\nEdit your upsmon.conf and change the values.\n");
 		exit(EXIT_FAILURE);
@@ -3377,11 +3625,13 @@ int main(int argc, char *argv[])
 
 	while (exit_flag == 0) {
 		utype_t	*ups;
-		time_t	start, end, now;
+		time_t	ttNow;
+		struct timeval	start, end, now;
 #ifndef WIN32
-		time_t	prev;
+		struct timeval	prev;
 #endif
 		double	dt = 0;
+		int	sleep_overhead_tolerance = 5;
 
 		if (isInhibitSupported())
 			init_Inhibitor(prog);
@@ -3425,7 +3675,7 @@ int main(int argc, char *argv[])
 		}
 		if (sleep_inhibitor_status == 1) {
 			/* Preparing for sleep */
-			do_notify(NULL, NOTIFY_SUSPEND_STARTING);
+			do_notify(NULL, NOTIFY_SUSPEND_STARTING, NULL);
 			upslogx(LOG_INFO, "%s: Processing OS going to sleep", prog);
 			Uninhibit(&sleep_inhibitor_fd);
 
@@ -3463,17 +3713,18 @@ int main(int argc, char *argv[])
 
 		switch (sleep_inhibitor_status) {
 			case 0:	/* Waking up */
-				do_notify(NULL, NOTIFY_SUSPEND_FINISHED);
+				do_notify(NULL, NOTIFY_SUSPEND_FINISHED, NULL);
 				upslogx(LOG_INFO, "%s: Processing OS wake-up after sleep", prog);
 				upsnotify(NOTIFY_STATE_WATCHDOG, NULL);
 
 				upsnotify(NOTIFY_STATE_RELOADING, NULL);
 				init_Inhibitor(prog);
 
-				time(&now);
+				gettimeofday(&now, NULL);
+				time(&ttNow);
 				for (ups = firstups; ups != NULL; ups = ups->next) {
 					ups->status = 0;
-					ups->lastpoll = now;
+					ups->lastpoll = ttNow;
 				}
 
 				set_reload_flag(1);
@@ -3511,38 +3762,63 @@ int main(int argc, char *argv[])
 		/* reap children that have exited */
 		waitpid(-1, NULL, WNOHANG);
 
-		time(&start);
+		gettimeofday(&start, NULL);
+		upsdebugx(4, "Beginning %u-sec delay between main loop cycles", sleepval);
 		if (isPreparingForSleepSupported()) {
 			sleep_inhibitor_status = -2;
+			/* talking to sdbus and/or many short sleeps
+			 * on congested systems can take time */
+			sleep_overhead_tolerance = 15;
 			now = start;
 
-			while (sleep_inhibitor_status < 0 && dt < sleepval) {
+			while (sleep_inhibitor_status < 0 && dt < sleepval && !exit_flag) {
 				prev = now;
+				upsdebugx(7, "delay between main loop cycles: before sleep 1...");
+				/* WARNING: This call can take several seconds itself
+				 * on some systems, seen e.g. with Ubuntu in WSL after
+				 * the PC spent some life-time sleeping */
 				sleep(1);
+				upsdebugx(7, "delay between main loop cycles: after sleep 1...");
 				sleep_inhibitor_status = isPreparingForSleep();
-				time(&now);
-				dt = difftime(now, start);
-				upsdebugx(7, "start=%" PRIiMAX " now=%" PRIiMAX " dt=%g sleepval=%u sleep_inhibitor_status=%d",
-					(intmax_t)start, (intmax_t)now, dt, sleepval, sleep_inhibitor_status);
-				if (dt > (sleepval + 5) || difftime(now, prev) > 5) {
-					upsdebugx(2, "It seems we have slept without warning or the system clock was changed");
+				upsdebugx(7, "delay between main loop cycles: after isPreparingForSleep()...");
+				gettimeofday(&now, NULL);
+				dt = difftimeval(now, start);
+				upsdebugx(7, "start=%" PRIiMAX ".%06" PRIiMAX
+					" prev=%" PRIiMAX ".%06" PRIiMAX
+					" now=%" PRIiMAX ".%06" PRIiMAX
+					" dt=%.06f sleepval=%u sleep_inhibitor_status=%d",
+					(intmax_t)start.tv_sec, (intmax_t)start.tv_usec,
+					(intmax_t)prev.tv_sec, (intmax_t)prev.tv_usec,
+					(intmax_t)now.tv_sec, (intmax_t)now.tv_usec,
+					dt, sleepval, sleep_inhibitor_status);
+				if (dt > (sleepval + sleep_overhead_tolerance) || difftimeval(now, prev) > sleep_overhead_tolerance) {
+					upsdebugx(2, "It seems we have slept without warning or the system clock was changed (while in delay between main loop cycles)");
 					if (sleep_inhibitor_status < 0)
 						sleep_inhibitor_status = 0;	/* behave as woken up */
 				} else if (dt < 0) {
-					upsdebugx(2, "It seems the system clock was changed into the past");
+					upsdebugx(2, "It seems the system clock was changed into the past (while in delay between main loop cycles)");
 					sleep_inhibitor_status = 0;	/* behave as woken up */
 				}
 			}
 
 			if (sleep_inhibitor_status >= 0) {
+				gettimeofday(&end, NULL);
+				upsdebugx(4, "%u-sec delay between main loop cycles finished, took %.06f",
+					sleepval, difftimeval(end, start));
 				upsdebugx(2, "Aborting polling delay between main loop cycles because OS is preparing for sleep or just woke up");
 				goto end_loop_cycle;
 			}
+
+			/* NOTE: if exit_flag was raised in sleep-loop above,
+			 * so we aborted it, we end soon after ifdef/endif,
+			 * and so not handling here specially */
 		} else {
 			/* sleep tight */
 			sleep(sleepval);
 		}
-		time(&end);
+		gettimeofday(&end, NULL);
+		upsdebugx(4, "%u-sec delay between main loop cycles finished, took %.06f",
+			sleepval, difftimeval(end, start));
 #else
 		maxhandle = 0;
 		memset(&handles, 0, sizeof(handles));
@@ -3560,9 +3836,12 @@ int main(int argc, char *argv[])
 		handles[maxhandle] = pipe_connection_overlapped.hEvent;
 		maxhandle++;
 
-		time(&start);
+		gettimeofday(&start, NULL);
+		upsdebugx(4, "Beginning %u-sec delay between main loop cycles", sleepval);
 		ret = WaitForMultipleObjects(maxhandle, handles, FALSE, sleepval*1000);
-		time(&end);
+		gettimeofday(&end, NULL);
+		upsdebugx(4, "%u-sec delay between main loop cycles finished, took %.06f",
+			sleepval, difftimeval(end, start));
 
 		if (ret == WAIT_FAILED) {
 			upslogx(LOG_ERR, "Wait failed");
@@ -3611,8 +3890,8 @@ int main(int argc, char *argv[])
 
 		/* General-purpose handling of time jumps for OSes/run-times
 		 * without NUT direct support for suspend/inhibit */
-		dt = difftime(end, start);
-		if (dt > (sleepval + 5)) {
+		dt = difftimeval(end, start);
+		if (dt > (sleepval + sleep_overhead_tolerance)) {
 			upsdebugx(2, "It seems we have slept without warning or the system clock was changed");
 			if (sleep_inhibitor_status < 0)
 				sleep_inhibitor_status = 0;	/* behave as woken up */

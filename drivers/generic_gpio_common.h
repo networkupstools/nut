@@ -75,7 +75,7 @@ void gpio_close(struct gpioups_t *gpioupsfd);
 # ifdef DRIVERS_MAIN_WITHOUT_MAIN
 /* Methods externalized for unit-tests, otherwise private to this module */
 struct gpioups_t *generic_gpio_open(const char *chipName);
-void generic_gpio_close(struct gpioups_t *gpioupsfd);
+void generic_gpio_close(struct gpioups_t **gpioupsfdptr);
 void get_ups_rules(struct gpioups_t *upsfd, unsigned char *rulesString);
 void add_rule_item(struct gpioups_t *upsfd, int newValue);
 int get_rule_lex(unsigned char *rulesBuff, int *startPos, int *endPos);

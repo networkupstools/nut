@@ -1,5 +1,5 @@
 # Network UPS Tools (NUT) systemd integration
-# Copyright (C) 2011-2024 by NUT contirbutors
+# Copyright (C) 2011-2025 by NUT contributors
 # Distributed under the terms of GPLv2+
 # See https://networkupstools.org/
 # and https://github.com/networkupstools/nut/
@@ -20,6 +20,13 @@ After=local-fs.target
 
 # Propagate stopping of the target:
 PartOf=nut-driver.target
+
+Documentation=man:upsdrvsvcctl(@MAN_SECTION_CMD_SYS@)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/upsdrvsvcctl.html
+Documentation=man:ups.conf(@MAN_SECTION_CFG@)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/ups.conf.html
+Documentation=man:nut.conf(@MAN_SECTION_CFG@)
+Documentation=@NUT_WEBSITE_BASE@/docs/man/nut.conf.html
 
 # Note: The choice of "network.target" allows to schedule this unit
 # roughly when the network stack of this OS is ready (e.g. that the

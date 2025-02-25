@@ -2,6 +2,7 @@
  *
  *  Copyright (C)
  *    2017  Spiros Ioannou <sivann@inaccess.com>
+ *    2024  Ricardo Rodriguez <rikyrod2001@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,15 +23,38 @@
 
 #include "main.h"
 #include <modbus.h>
+#include "nut_stdint.h"
 
 #define DRIVER_NAME	"NUT PhoenixContact Modbus driver"
-#define DRIVER_VERSION	"0.05"
+#define DRIVER_VERSION	"0.06"
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define MODBUS_SLAVE_ID 192
 
+#define QUINT_5A_UPS_1_3AH_BATTERY_PARTNUMBER 2320254
+#define QUINT_5A_UPS_1_3AH_BATTERY_DESCRIPTION "QUINT-UPS/24DC/24DC/5/1.3AH"
+
+#define QUINT_10A_UPS_PARTNUMBER 2320225
+#define QUINT_10A_UPS_DESCRIPTION "QUINT-UPS/24DC/24DC/10"
+
+#define QUINT_20A_UPS_PARTNUMBER 2320238
+#define QUINT_20A_UPS_DESCRIPTION "QUINT-UPS/24DC/24DC/20"
+
+#define QUINT_40A_UPS_PARTNUMBER 2320241
+#define QUINT_40A_UPS_DESCRIPTION "QUINT-UPS/24DC/24DC/40"
+
+#define QUINT4_10A_UPS_PARTNUMBER 2907067
+#define QUINT4_10A_UPS_DESCRIPTION "QUINT4-UPS/24DC/24DC/10/USB"
+
+#define QUINT4_20A_UPS_PARTNUMBER 2907072
+#define QUINT4_20A_UPS_DESCRIPTION "QUINT4-UPS/24DC/24DC/20/USB"
+
+#define QUINT4_40A_UPS_PARTNUMBER 2907078
+#define QUINT4_40A_UPS_DESCRIPTION "QUINT4-UPS/24DC/24DC/40/USB"
+
 typedef enum
 {
+	NONE,
 	QUINT_UPS,
 	QUINT4_UPS
 } models;
@@ -41,13 +65,13 @@ static int errcount = 0;
 
 static int mrir(modbus_t * arg_ctx, int addr, int nb, uint16_t * dest);
 
-static models UPSModel;
+static models UPSModel = NONE;
 
 /*
 	For the QUINT ups (first implementation of the driver) the modbus addresses
 	are reported in dec format,for the QUINT4 ups they are reported in hex format.
 	The difference is caused from the way they are reported in the datasheet,
-	keeping them in the same format as the datasheet make more simple the maintenence 
+	keeping them in the same format as the datasheet make more simple the maintenence
 	of the driver avoiding conversions while coding.
 */
 
@@ -63,27 +87,100 @@ upsdrv_info_t upsdrv_info = {
 void upsdrv_initinfo(void)
 {
 	uint16_t FWVersion;
+	uint16_t PartNumber1;
+	uint16_t PartNumber2;
+	uint16_t PartNumber3;
+	uint16_t PartNumber4;
+	uint64_t PartNumber;
+
 	upsdebugx(2, "upsdrv_initinfo");
 
 	dstate_setinfo("device.mfr", "Phoenix Contact");
 
 	/* upsh.instcmd = instcmd; */
-	/* upsh.setvar = setvar; */	
+	/* upsh.setvar = setvar; */
 
 	mrir(modbus_ctx, 0x0004, 1, &FWVersion);
+	dstate_setinfo("ups.firmware", "%" PRIu16, FWVersion);
 
-	if (FWVersion == 544)
+	mrir(modbus_ctx, 0x0005, 1, &PartNumber1);
+	mrir(modbus_ctx, 0x0006, 1, &PartNumber2);
+	mrir(modbus_ctx, 0x0007, 1, &PartNumber3);
+	mrir(modbus_ctx, 0x0008, 1, &PartNumber4);
+
+	/*	Method provided from Phoenix Conatct to establish the UPS model:
+		Read registers from 0x0005 to 0x0008 and "concatenate" them with the order
+		0x0008 0x0007 0x0006 0x0005 in hex form, convert the obtained number from hex to dec.
+		The first 7 most significant digits of the number in dec form are the part number of
+		the UPS.*/
+
+	PartNumber = (PartNumber4 * 65536) + PartNumber3;
+	PartNumber = (PartNumber * 65536) + PartNumber2;
+	PartNumber = (PartNumber * 65536) + PartNumber1;
+
+	while(PartNumber > 10000000)
 	{
+		PartNumber /= 10;
+	}
+
+	switch(PartNumber)
+	{
+	case QUINT_5A_UPS_1_3AH_BATTERY_PARTNUMBER:
 		UPSModel = QUINT_UPS;
-		dstate_setinfo("device.model", "QUINT-UPS/24DC");
-	}
-	else if (FWVersion == 305)
-	{
+		dstate_setinfo("device.model", QUINT_5A_UPS_1_3AH_BATTERY_DESCRIPTION);
+		break;
+	case QUINT_10A_UPS_PARTNUMBER:
+		UPSModel = QUINT_UPS;
+		dstate_setinfo("device.model", QUINT_10A_UPS_DESCRIPTION);
+		break;
+	case QUINT_20A_UPS_PARTNUMBER:
+		UPSModel = QUINT_UPS;
+		dstate_setinfo("device.model", QUINT_20A_UPS_DESCRIPTION);
+		break;
+	case QUINT_40A_UPS_PARTNUMBER:
+		UPSModel = QUINT_UPS;
+		dstate_setinfo("device.model", QUINT_40A_UPS_DESCRIPTION);
+		break;
+	case QUINT4_10A_UPS_PARTNUMBER:
 		UPSModel = QUINT4_UPS;
-		dstate_setinfo("device.model", "QUINT4-UPS/24DC");
+		dstate_setinfo("device.model", QUINT4_10A_UPS_DESCRIPTION);
+		break;
+	case QUINT4_20A_UPS_PARTNUMBER:
+		UPSModel = QUINT4_UPS;
+		dstate_setinfo("device.model", QUINT4_20A_UPS_DESCRIPTION);
+		break;
+	case QUINT4_40A_UPS_PARTNUMBER:
+		UPSModel = QUINT4_UPS;
+		dstate_setinfo("device.model", QUINT4_40A_UPS_DESCRIPTION);
+		break;
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+# pragma GCC diagnostic ignored "-Wcovered-switch-default"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+# pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
+/* Older CLANG (e.g. clang-3.4) seems to not support the GCC pragmas above */
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunreachable-code"
+# pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+		/* All enum cases defined as of the time of coding
+		 * have been covered above. Handle later definitions,
+		 * memory corruptions and buggy inputs below...
+		 */
+	default:
+		fatalx(EXIT_FAILURE, "Unknown UPS part number: %" PRIu64, PartNumber);
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
+#if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
+# pragma GCC diagnostic pop
+#endif
 	}
-
-	dstate_setinfo("ups.firmware", "%d", FWVersion);
 }
 
 void upsdrv_updateinfo(void)
@@ -117,7 +214,8 @@ void upsdrv_updateinfo(void)
 	case QUINT_UPS:
 		mrir(modbus_ctx, 29697, 3, tab_reg); /* LB is actually called "shutdown event" on this ups */
 		break;
-
+	case NONE:
+		fatalx(EXIT_FAILURE, "Unknown UPS model.");
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
 #endif
@@ -133,12 +231,12 @@ void upsdrv_updateinfo(void)
 # pragma clang diagnostic ignored "-Wunreachable-code"
 # pragma clang diagnostic ignored "-Wcovered-switch-default"
 #endif
-                /* All enum cases defined as of the time of coding
-                 * have been covered above. Handle later definitions,
-                 * memory corruptions and buggy inputs below...
+		/* All enum cases defined as of the time of coding
+		 * have been covered above. Handle later definitions,
+		 * memory corruptions and buggy inputs below...
 		 */
 	default:
-		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
+		fatalx(EXIT_FAILURE, "Unknown UPS model.");
 #ifdef __clang__
 # pragma clang diagnostic pop
 #endif
@@ -159,7 +257,7 @@ void upsdrv_updateinfo(void)
 	}
 
 	if (tab_reg[1]) {
-		status_set("LB");	
+		status_set("LB");
 	}
 
 	switch (UPSModel)
@@ -170,7 +268,8 @@ void upsdrv_updateinfo(void)
 	case QUINT_UPS:
 		mrir(modbus_ctx, 29745, 1, tab_reg);
 		break;
-
+	case NONE:
+		fatalx(EXIT_FAILURE, "Unknown UPS model.");
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
 #endif
@@ -186,12 +285,12 @@ void upsdrv_updateinfo(void)
 # pragma clang diagnostic ignored "-Wunreachable-code"
 # pragma clang diagnostic ignored "-Wcovered-switch-default"
 #endif
-                /* All enum cases defined as of the time of coding
-                 * have been covered above. Handle later definitions,
-                 * memory corruptions and buggy inputs below...
+		/* All enum cases defined as of the time of coding
+		 * have been covered above. Handle later definitions,
+		 * memory corruptions and buggy inputs below...
 		 */
 	default:
-		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
+		fatalx(EXIT_FAILURE, "Unknown UPS model.");
 #ifdef __clang__
 # pragma clang diagnostic pop
 #endif
@@ -210,7 +309,8 @@ void upsdrv_updateinfo(void)
 	case QUINT_UPS:
 		mrir(modbus_ctx, 29749, 5, tab_reg);
 		break;
-
+	case NONE:
+		fatalx(EXIT_FAILURE, "Unknown UPS model.");
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
 #endif
@@ -226,12 +326,12 @@ void upsdrv_updateinfo(void)
 # pragma clang diagnostic ignored "-Wunreachable-code"
 # pragma clang diagnostic ignored "-Wcovered-switch-default"
 #endif
-                /* All enum cases defined as of the time of coding
-                 * have been covered above. Handle later definitions,
-                 * memory corruptions and buggy inputs below...
+		/* All enum cases defined as of the time of coding
+		 * have been covered above. Handle later definitions,
+		 * memory corruptions and buggy inputs below...
 		 */
 	default:
-		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
+		fatalx(EXIT_FAILURE, "Unknown UPS model.");
 #ifdef __clang__
 # pragma clang diagnostic pop
 #endif
@@ -265,7 +365,8 @@ void upsdrv_updateinfo(void)
 	case QUINT_UPS:
 		mrir(modbus_ctx, 29792, 10, tab_reg);
 		break;
-
+	case NONE:
+		fatalx(EXIT_FAILURE, "Unknown UPS model.");
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
 #endif
@@ -281,12 +382,12 @@ void upsdrv_updateinfo(void)
 # pragma clang diagnostic ignored "-Wunreachable-code"
 # pragma clang diagnostic ignored "-Wcovered-switch-default"
 #endif
-                /* All enum cases defined as of the time of coding
-                 * have been covered above. Handle later definitions,
-                 * memory corruptions and buggy inputs below...
+		/* All enum cases defined as of the time of coding
+		 * have been covered above. Handle later definitions,
+		 * memory corruptions and buggy inputs below...
 		 */
 	default:
-		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
+		fatalx(EXIT_FAILURE, "Unknown UPS model.");
 #ifdef __clang__
 # pragma clang diagnostic pop
 #endif
@@ -313,7 +414,7 @@ void upsdrv_updateinfo(void)
 		actual_alarms1 = 0;
 
 		mrir(modbus_ctx, 0x3000, 1, &actual_alarms);
-		mrir(modbus_ctx, 0x3000, 1, &actual_alarms1);
+		mrir(modbus_ctx, 0x3001, 1, &actual_alarms1);
 
 		if (CHECK_BIT(actual_alarms, 9) && CHECK_BIT(actual_alarms, 9))
 			alarm_set("End of life (Resistance)");
@@ -373,7 +474,8 @@ void upsdrv_updateinfo(void)
 		if (CHECK_BIT(tab_reg[0], 16))
 			alarm_set("Low Battery (Service)");
 		break;
-
+	case NONE:
+		fatalx(EXIT_FAILURE, "Unknown UPS model.");
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && ( (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT) || (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE) )
 # pragma GCC diagnostic push
 #endif
@@ -389,12 +491,12 @@ void upsdrv_updateinfo(void)
 # pragma clang diagnostic ignored "-Wunreachable-code"
 # pragma clang diagnostic ignored "-Wcovered-switch-default"
 #endif
-                /* All enum cases defined as of the time of coding
-                 * have been covered above. Handle later definitions,
-                 * memory corruptions and buggy inputs below...
+		/* All enum cases defined as of the time of coding
+		 * have been covered above. Handle later definitions,
+		 * memory corruptions and buggy inputs below...
 		 */
 	default:
-		fatalx(EXIT_FAILURE, "Uknown UPS firmware version.");
+		fatalx(EXIT_FAILURE, "Unknown UPS model.");
 #ifdef __clang__
 # pragma clang diagnostic pop
 #endif
@@ -415,9 +517,26 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	/*
+	 * WARNING: When using RTU TCP, this driver will probably
+	 * never support shutdowns properly, except on some systems:
+	 * In order to be of any use, the driver should be called
+	 * near the end of the system halt script (or a service
+	 * management framework's equivalent, if any). By that
+	 * time we, in all likelyhood, won't have basic network
+	 * capabilities anymore, so we could never send this
+	 * command to the UPS. This is not an error, but rather
+	 * a limitation (on some platforms) of the interface/media
+	 * used for these devices.
+	 */
+
 	/* replace with a proper shutdown function */
 	upslogx(LOG_ERR, "shutdown not supported");
-	set_exit_flag(-1);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 void upsdrv_help(void)

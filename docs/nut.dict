@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3246 utf-8
+personal_ws-1.1 en 3317 utf-8
 AAC
 AAS
 ABI
@@ -129,6 +129,7 @@ BlackOut
 BladeUPS
 BlueOcean
 Bo
+Bocchi
 Bohe
 Borns
 Borri
@@ -242,6 +243,7 @@ DELPHYS
 DELRANGE
 DES
 DESTDIR
+DEVICEALARM
 DEVNAME
 DF
 DHEA
@@ -338,17 +340,20 @@ Effekta
 Egys
 Ekkehard
 Electrys
+Eletronicos
 Elio
 Elizarov
 Eltek
 Emilien
 Energia
 EnergySaving
+Enphase's
 Erikson
 Eriksson
 Evgeny
 Exar
 ExecCGI
+ExecStart
 ExecStartPre
 FD
 FEMEA
@@ -406,6 +411,7 @@ GNUmakefile
 GObject
 GPIO
 GPL
+GPLv
 GPSER
 GRs
 GTK
@@ -536,6 +542,7 @@ JRE
 JSON
 JVM
 JW
+JWT
 Jageson
 Jarosch
 Jasuny
@@ -551,6 +558,7 @@ KOLFF
 KRT
 KRTL
 KRTS
+KSTAR
 KTTS
 Kain
 Kaminski
@@ -601,10 +609,13 @@ LISTRW
 LISTVARS
 LLDB
 LLNC
+LOADKWH
 LOADPCT
+LOCALSTATE
 LOCKFN
 LOCKNAME
 LOTRANS
+LTDA
 LTS
 LUA
 LVM
@@ -642,7 +653,6 @@ MBATTCHG
 MCU
 MDigest
 MEC
-MEGATAEC
 MERCHANTABILITY
 MF
 MH
@@ -752,6 +762,7 @@ NOTIFYFLAG
 NOTIFYFLAGS
 NOTIFYMSG
 NOTOFF
+NOTOTHER
 NQA
 NTP
 NUT's
@@ -763,6 +774,7 @@ Nadav
 Nagios
 Nash
 NaturalDocs
+Naur
 Necedah
 NetBSD
 NetBeans
@@ -777,6 +789,7 @@ Neus
 Niels
 Niklas
 Niro
+Nobreak
 Nobreaks
 Nom
 NotePad
@@ -891,6 +904,7 @@ PaaS
 Pac
 PackageRequired
 Parisi
+PartOf
 Patrik
 Pavel
 Pawe
@@ -1031,6 +1045,7 @@ René
 Repotec's
 Repoteck
 RequireAny
+RestartSec
 Richthof
 Rickard
 Ridgway
@@ -1056,12 +1071,14 @@ SDE
 SDFLAG
 SDR
 SDT
+SECCTRL
 SELFTEST
 SELinux
 SENTR
 SER
 SERIALNO
 SERVER's
+SESS
 SETFL
 SETINFOs
 SETLK
@@ -1097,6 +1114,7 @@ SNR
 SOCK
 SOCKADDR
 SOCKLEN
+SOCOMECUPS
 SOFF
 SOLA
 SOMECO
@@ -1108,6 +1126,7 @@ SPECs
 SPLY
 SPS
 SRC
+SSD
 SSSS
 STARTTLS
 STB
@@ -1149,6 +1168,7 @@ SerialNumber
 Serv
 Serveur
 SetRWVar
+Shambarger
 Shara
 ShareAlike
 Shaul
@@ -1244,6 +1264,7 @@ Tecnoware
 Tefft
 Telecom
 Temurin
+Termux
 Teurlings
 Thanos
 Thecus
@@ -1327,6 +1348,7 @@ VER
 VERFW
 VFI
 VIB
+VLAN
 VM
 VMIN
 VMM
@@ -1377,6 +1399,7 @@ Wextra
 WhizBang
 WiX
 Wikipedia
+Willian
 WinMerge
 WinNUT
 WinPower
@@ -1479,7 +1502,9 @@ apcsmart
 apctest
 apcupsd
 aphel
+api
 apinames
+apis
 appveyor
 ar
 architecting
@@ -1618,6 +1643,7 @@ bypassOff
 bypassOn
 cStandard
 cablepower
+calc
 calloc
 cb
 cbe
@@ -1686,6 +1712,7 @@ collectd
 command's
 commandlen
 committer
+comms
 compat
 compilerPath
 conf
@@ -1711,9 +1738,12 @@ cppnit
 cppunit
 cpqpower
 cpsups
+cpu
 cr
 crestfactor
+crit
 criticality
+crle
 crlf
 cron
 crontab
@@ -1779,6 +1809,7 @@ desc
 deschis
 descr
 desde
+designator
 dev
 devctl
 devd
@@ -1872,6 +1903,7 @@ endl
 energizerups
 energysave
 english
+enphase
 enum
 env
 envvar
@@ -1897,6 +1929,7 @@ execfuse
 executables
 executeCommand
 execve
+extapi
 extern
 externalConsole
 extradata
@@ -1908,6 +1941,7 @@ fatalx
 fc
 fcb
 fcntl
+fcontext
 fd
 fdX
 fds
@@ -2047,6 +2081,7 @@ huawei
 hudson
 hunnox
 hwdb
+hwinfo
 hwmon
 hwmonX
 hypervisor
@@ -2056,6 +2091,7 @@ iDialog
 iDowell
 iManufacturer
 iPlug
+iProduct
 iSerial
 iUSB
 ib
@@ -2099,6 +2135,7 @@ initups
 inline
 inlined
 innotech
+innovart
 inode
 inplace
 installable
@@ -2144,6 +2181,7 @@ ish
 iso
 isolator
 iter
+ivp
 ivtscd
 jNUT
 jNut
@@ -2156,6 +2194,7 @@ jimklimov
 journalctl
 jpeg
 jpg
+jq
 jre
 json
 kVA
@@ -2254,6 +2293,7 @@ liebertgxt
 lifecycle
 linevoltage
 linkdoc
+linkmanext
 linksingledoc
 linksrcdoc
 linux
@@ -2261,6 +2301,7 @@ linuxdoc
 lipo
 listDeviceClients
 littleguy
+livedata
 lk
 lldb
 llvm
@@ -2418,6 +2459,7 @@ natively
 nb
 nbproject
 nbr
+nc
 nd
 nds
 netcat
@@ -2436,6 +2478,7 @@ newvictronups
 nf
 ng
 nhnl
+nhs
 nielchiano
 nitram
 nl
@@ -2447,7 +2490,9 @@ nn
 nnn
 noAuthNoPriv
 nobody's
+nobreak
 nobt
+nocomms
 nodev
 nodownload
 noexec
@@ -2460,6 +2505,7 @@ nolock
 nombattvolt
 noncommercially
 noout
+nooutstats
 norating
 noro
 noscanlangid
@@ -2480,6 +2526,7 @@ nuget
 num
 numOfBytesFromUPS
 numa
+numbatteries
 numlogins
 numq
 nutclient
@@ -2527,11 +2574,13 @@ openlog
 openmp
 openssh
 openssl
+oper
 optimizations
 optiups
 oq
 os
 ostream
+other's
 otheruser
 outliers
 ovmf
@@ -2560,6 +2609,7 @@ pe
 peasy
 peername
 pem
+perc
 perl
 pfSense
 pfexec
@@ -2574,6 +2624,7 @@ pigz
 pijuice
 pinout
 pinouts
+pipedebug
 pipename
 pixmaps
 pkg
@@ -2591,6 +2642,8 @@ pollfreq
 pollinterval
 pollonly
 popa
+portfile
+portfiles
 portname
 porttype
 posix
@@ -2701,6 +2754,7 @@ repotec
 req
 resetter
 resolv
+restoreconf
 resync
 ret
 retrydelay
@@ -2724,6 +2778,7 @@ roadmap
 rootca
 rootfs
 rootfs'es
+rpc
 rq
 rqt
 rsa
@@ -2753,6 +2808,7 @@ screenshots
 scriptname
 sd
 sdcmd
+sdcommands
 sddelay
 sdk
 sdl
@@ -2763,11 +2819,13 @@ se
 searchable
 secLevel
 secName
+secctrl
 secretpass
 securityLevel
 securityName
 sed
 selftest
+semanage
 semver
 sendback
 sendline
@@ -2775,6 +2833,7 @@ sendmail
 sendsignal
 sendsignalfn
 sendsignalpid
+senoidal
 sequentialized
 ser
 seria
@@ -2848,10 +2907,12 @@ something's
 sp
 spanish
 sparc
+sparcv
 spectype
 spellcheck
 splitaddr
 splitname
+squasher
 sr
 src
 srcdir
@@ -2905,6 +2966,7 @@ subdirectories
 subdirectory
 subdriver
 subdriver's
+subdrivername
 subdrivers
 subdrv
 sublicense
@@ -2944,6 +3006,7 @@ syslogd
 systemctl
 systemd
 systemdshutdowndir
+systemdsystempresetdir
 systemdsystemunitdir
 systemdtmpfilesdir
 systemtest
@@ -2974,8 +3037,10 @@ th
 timeframe
 timehead
 timername
+timespec
 timestamp
 timeticks
+timeval
 tios
 tmp
 tmpfiles
@@ -3003,7 +3068,9 @@ ttyb
 ttyc
 ttymode
 ttyp
+tunables
 tuple
+tuples
 turnon
 tv
 tw
@@ -3074,6 +3141,7 @@ upsdebugx
 upsdev
 upsdrv
 upsdrvctl
+upsdrvquery
 upsdrvsvcctl
 upserror
 upsfetch
@@ -3112,6 +3180,8 @@ usbhid
 usbif
 usbinfo
 usbmisc
+usbsubdriver
+usbsubdrvname
 usbups
 usbus
 usd
@@ -3145,6 +3215,7 @@ variadic
 varlow
 varname
 varvalue
+vbat
 vbatt
 vc
 vendorid

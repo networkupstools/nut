@@ -38,7 +38,7 @@
 #else
 # define DRIVER_NAME "NUT APC Modbus driver without USB support"
 #endif
-#define DRIVER_VERSION "0.10"
+#define DRIVER_VERSION "0.11"
 
 #if defined NUT_MODBUS_HAS_USB
 
@@ -1569,7 +1569,31 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	modbus_write_register(modbus_ctx, APC_MODBUS_OUTLETCOMMAND_BF_REG, APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_SHUTDOWN | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_MAIN_OUTLET_GROUP);
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
+	/*
+	 * WARNING: When using RTU TCP, this driver will probably
+	 * never support shutdowns properly, except on some systems:
+	 * In order to be of any use, the driver should be called
+	 * near the end of the system halt script (or a service
+	 * management framework's equivalent, if any). By that
+	 * time we, in all likelyhood, won't have basic network
+	 * capabilities anymore, so we could never send this
+	 * command to the UPS. This is not an error, but rather
+	 * a limitation (on some platforms) of the interface/media
+	 * used for these devices.
+	 */
+
+	/* FIXME: got no direct equivalent in apc_modbus_command_map[]
+	 *  used for instcmd above. Investigate if we can add this
+	 *  combo into that map and name it as an INSTCMD to call by
+	 *  this driver's standard approach.
+	 */
+	modbus_write_register(modbus_ctx,
+		APC_MODBUS_OUTLETCOMMAND_BF_REG,
+		APC_MODBUS_OUTLETCOMMAND_BF_CMD_OUTPUT_SHUTDOWN | APC_MODBUS_OUTLETCOMMAND_BF_TARGET_MAIN_OUTLET_GROUP
+	);
 }
 
 void upsdrv_help(void)

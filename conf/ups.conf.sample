@@ -67,6 +67,15 @@
 #
 #  driverpath: OPTIONAL. Used for custom setups. See man page for details.
 #
+#   statepath: OPTIONAL. Used for custom setups. Tell drivers to place their
+#              state sockets for communication with 'upsd' in 'path' rather
+#              than the default location that was compiled into the program.
+#              Note that the drivers must use the same path as 'upsd', so the
+#              data server would prefer this setting from `ups.conf` global
+#              section, if present, over its own in `upsd.conf`.
+#              Environment variable NUT_STATEPATH set by caller can override
+#              this setting.
+#
 #      nowait: OPTIONAL. Tell upsdrvctl to not wait at all for the driver(s)
 #              to execute the requested command. Fire and forget.
 #
@@ -159,6 +168,12 @@ maxretry = 3
 #          a UPS from the shutdown sequence, set this to -1.
 #
 #          The default value for this parameter is 0.
+#
+# sdcommands: OPTIONAL.  Comma-separated list of instant command name(s)
+#          to send to the UPS when you request its shutdown.  For more
+#          details about relevant use-cases see the ups.conf manual page.
+#
+#          The default value is built into each driver (where supported).
 #
 #    desc: optional, to keep a note of the UPS purpose, location, etc.
 #

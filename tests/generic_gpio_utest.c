@@ -101,7 +101,7 @@ int get_test_status(struct gpioups_t *result, int on_fail_path) {
 
 	for (i=0; i<result->rulesCount; i++) {
 		fEof=fscanf(testData, "%s", stateName);
-		if(!strcmp(result->rules[i]->stateName,stateName)) {
+		if(strcmp(result->rules[i]->stateName,stateName)) {
 			cases_failed++;
 			printf("expecting stateName %s, got %s for rule %d\n", stateName, result->rules[i]->stateName, i);
 			return 1;
@@ -210,25 +210,25 @@ int main(int argc, char **argv) {
 #endif
 		if(fEof!=EOF) {
 			if(!strcmp(testType, "rules")) {
-				struct gpioups_t *upsfdtest=xcalloc(sizeof(*upsfdtest),1);
+				struct gpioups_t *upsfdtest = xcalloc(1, sizeof(*upsfdtest));
+				/* NOTE: here and below, freed by generic_gpio_close(&upsfdtest) */
 				jmp_result = setjmp(env_buffer);
 				if(jmp_result) {	/* test case  exiting */
-					generic_gpio_close(upsfdtest);
 					printf("%s %s test rule %u [%s]\n", pass_fail[get_test_status(upsfdtest, 1)], testType, i, rules);
 				} else { /* run test case */
 					get_ups_rules(upsfdtest, (unsigned char *)rules);
-					generic_gpio_close(upsfdtest);
 					printf("%s %s test rule %u [%s]\n", pass_fail[get_test_status(upsfdtest, 0)], testType, i, rules);
 				}
+				generic_gpio_close(&upsfdtest);
 			}
 			if(!strcmp(testType, "states")) {
 				int expectedStateValue;
 				int calculatedStateValue;
-				struct gpioups_t *upsfdtest=xcalloc(sizeof(*upsfdtest),1);
+				struct gpioups_t *upsfdtest = xcalloc(1, sizeof(*upsfdtest));
 				int j;
 
 				get_ups_rules(upsfdtest, (unsigned char *)rules);
-				upsfdtest->upsLinesStates=xcalloc(sizeof(int),upsfdtest->upsLinesCount);
+				upsfdtest->upsLinesStates = xcalloc(upsfdtest->upsLinesCount, sizeof(int));
 				for (j=0; j < upsfdtest->upsLinesCount; j++) {
 					fEof=fscanf(testData, "%d", &upsfdtest->upsLinesStates[j]);
 				}
@@ -248,14 +248,14 @@ int main(int argc, char **argv) {
 						cases_failed++;
 					}
 				}
-				generic_gpio_close(upsfdtest);
+				generic_gpio_close(&upsfdtest);
 			}
 			if(!strcmp(testType, "update")) {
 				char upsStatus[256];
 				char chargeStatus[256];
 				char chargeLow[256];
 				char charge[256];
-				struct gpioups_t *upsfdtest=xcalloc(sizeof(*upsfdtest),1);
+				struct gpioups_t *upsfdtest = xcalloc(1, sizeof(*upsfdtest));
 				int j;
 
 				/* "volatile" trickery to avoid the likes of:
@@ -268,7 +268,7 @@ int main(int argc, char **argv) {
 				const char * volatile currCharge = NULL;
 
 				get_ups_rules(upsfdtest, (unsigned char *)rules);
-				upsfdtest->upsLinesStates=xcalloc(sizeof(int),upsfdtest->upsLinesCount);
+				upsfdtest->upsLinesStates = xcalloc(upsfdtest->upsLinesCount, sizeof(int));
 				for (j = 0; j < upsfdtest->upsLinesCount; j++) {
 					fEof=fscanf(testData, "%d", &upsfdtest->upsLinesStates[j]);
 				}
@@ -281,7 +281,6 @@ int main(int argc, char **argv) {
 				jmp_result = setjmp(env_buffer);
 				if (jmp_result) {
 					failed=1;
-					generic_gpio_close(upsfdtest);
 				} else {
 					update_ups_states(upsfdtest);
 					currUpsStatus=dstate_getinfo("ups.status");
@@ -292,8 +291,8 @@ int main(int argc, char **argv) {
 					if(!strcmp(chargeStatus,".") && currChargerStatus!=NULL) failed=1;
 					if( strcmp(chargeLow,".") && strcmp(charge,".") && (!currCharge || strcmp(currCharge, charge))) failed=1;
 					if(!strcmp(chargeLow,".") && !strcmp(charge,".") && currCharge!=NULL) failed=1;
-					generic_gpio_close(upsfdtest);
 				}
+				generic_gpio_close(&upsfdtest);
 				printf("%s %s test rule %u [%s] ([%s] %s %s (%s)) ([%s] %s %s)\n",
 					pass_fail[failed], testType, i, rules,
 					upsStatus, chargeStatus, charge, chargeLow,
@@ -389,6 +388,11 @@ int main(int argc, char **argv) {
 		cases_passed+cases_failed, cases_passed, cases_failed);
 	fclose(testData);
 	done = 1;
+
+	dstate_free();
+	/* Should be safe if we happen to run this twice for
+	 * generic_gpio_common.c, it only frees driver variables once */
+	upsdrv_cleanup();
 
 	/* Return 0 (exit-code OK, boolean false) if no tests failed and some ran */
 	if ( (cases_failed == 0) && (cases_passed > 0) )

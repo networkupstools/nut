@@ -58,7 +58,7 @@
 #	define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.37"
+#define DRIVER_VERSION	"0.40"
 
 #ifdef QX_SERIAL
 #	include "serial.h"
@@ -71,11 +71,14 @@
 /* Include all known subdrivers */
 #include "nutdrv_qx_bestups.h"
 #include "nutdrv_qx_hunnox.h"
+#include "nutdrv_qx_innovart31.h"
 #include "nutdrv_qx_mecer.h"
 #include "nutdrv_qx_megatec.h"
 #include "nutdrv_qx_megatec-old.h"
 #include "nutdrv_qx_mustek.h"
 #include "nutdrv_qx_q1.h"
+#include "nutdrv_qx_q2.h"
+#include "nutdrv_qx_q6.h"
 #include "nutdrv_qx_voltronic.h"
 #include "nutdrv_qx_voltronic-qs.h"
 #include "nutdrv_qx_voltronic-qs-hex.h"
@@ -97,6 +100,9 @@ static subdriver_t	*subdriver_list[] = {
 	&masterguard_subdriver,
 	&hunnox_subdriver,
 	&ablerex_subdriver,
+	&innovart31_subdriver,
+	&q2_subdriver,
+	&q6_subdriver,
 	/* Fallback Q1 subdriver */
 	&q1_subdriver,
 	NULL
@@ -253,6 +259,32 @@ int qx_multiply_battvolt(item_t *item, char *value, const size_t valuelen) {
 	}
 
 	snprintf(value, valuelen, "%.2f", s * batt.packs);
+	return 0;
+}
+
+/* Convert kilo-values to their full representation */
+int qx_multiply_x1000(item_t *item, char *value, const size_t valuelen) {
+	float s = 0;
+
+	if (sscanf(item->value, "%f", &s) != 1) {
+		upsdebugx(2, "unparsable ss.ss %s", item->value);
+		return -1;
+	}
+
+	snprintf(value, valuelen, "%.2f", s * 1000.0);
+	return 0;
+}
+
+/* Convert minutes to seconds */
+int qx_multiply_m2s(item_t *item, char *value, const size_t valuelen) {
+	float s = 0;
+
+	if (sscanf(item->value, "%f", &s) != 1) {
+		upsdebugx(2, "unparsable ss.ss %s", item->value);
+		return -1;
+	}
+
+	snprintf(value, valuelen, "%.0f", s * 60.0);
 	return 0;
 }
 
@@ -935,7 +967,7 @@ static int 	hunnox_protocol(int asking_for)
 
 	switch (hunnox_step) {
 		case 0:
-			upsdebugx(3, "asking for: %02X", 0x00);
+			upsdebugx(3, "asking for: %02X", (unsigned int)0x00);
 			usb_get_string(udev, 0x00,
 				langid_fix_local, (usb_ctrl_charbuf)buf, 1026);
 			usb_get_string(udev, 0x00,
@@ -946,21 +978,21 @@ static int 	hunnox_protocol(int asking_for)
 			break;
 		case 1:
 			if (asking_for != 0x0d) {
-				upsdebugx(3, "asking for: %02X", 0x0d);
+				upsdebugx(3, "asking for: %02X", (unsigned int)0x0d);
 				usb_get_string(udev, 0x0d,
 					langid_fix_local, (usb_ctrl_charbuf)buf, 102);
 			}
 			break;
 		case 2:
 			if (asking_for != 0x03) {
-				upsdebugx(3, "asking for: %02X", 0x03);
+				upsdebugx(3, "asking for: %02X", (unsigned int)0x03);
 				usb_get_string(udev, 0x03,
 					langid_fix_local, (usb_ctrl_charbuf)buf, 102);
 			}
 			break;
 		case 3:
 			if (asking_for != 0x0c) {
-				upsdebugx(3, "asking for: %02X", 0x0c);
+				upsdebugx(3, "asking for: %02X", (unsigned int)0x0c);
 				usb_get_string(udev, 0x0c,
 					langid_fix_local, (usb_ctrl_charbuf)buf, 102);
 			}
@@ -1186,7 +1218,7 @@ static int	fabula_command(const char *cmd, char *buf, size_t buflen)
 
 	}
 
-	upsdebugx(4, "command index: 0x%02x", index);
+	upsdebugx(4, "command index: 0x%02x", (unsigned int)index);
 
 	/* Send command/Read reply */
 	ret = usb_get_string_simple(udev, index, (usb_ctrl_charbuf)buf, buflen);
@@ -1311,7 +1343,7 @@ static int	hunnox_command(const char *cmd, char *buf, size_t buflen)
 
 	}
 
-	upsdebugx(4, "command index: 0x%02x", index);
+	upsdebugx(4, "command index: 0x%02x", (unsigned int)index);
 
 /*	if (hunnox_patch) { */
 		/* Enable lock-step protocol for Hunnox */
@@ -2769,11 +2801,18 @@ int	setvar(const char *varname, const char *val)
 /* Try to shutdown the UPS */
 void	upsdrv_shutdown(void)
 {
+	/* Only implement "shutdown.default"; do not invoke
+	 * general handling of other `sdcommands` here */
+
 	int		retry;
 	item_t		*item;
 	const char	*val;
 
 	upsdebugx(1, "%s...", __func__);
+
+	/* FIXME: Use common "sdcommands" feature to
+	 * replace tunables used below ("stayoff" etc).
+	 */
 
 	/* Get user-defined delays */
 
@@ -2783,7 +2822,8 @@ void	upsdrv_shutdown(void)
 	/* Don't know what happened */
 	if (!item) {
 		upslogx(LOG_ERR, "Unable to set start delay");
-		set_exit_flag(-1);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
 		return;
 	}
 
@@ -2798,7 +2838,8 @@ void	upsdrv_shutdown(void)
 
 	if (val && setvar(item->info_type, val) != STAT_SET_HANDLED) {
 		upslogx(LOG_ERR, "Start delay '%s' out of range", val);
-		set_exit_flag(-1);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
 		return;
 	}
 
@@ -2808,7 +2849,8 @@ void	upsdrv_shutdown(void)
 	/* Don't know what happened */
 	if (!item) {
 		upslogx(LOG_ERR, "Unable to set shutdown delay");
-		set_exit_flag(-1);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
 		return;
 	}
 
@@ -2823,13 +2865,13 @@ void	upsdrv_shutdown(void)
 
 	if (val && setvar(item->info_type, val) != STAT_SET_HANDLED) {
 		upslogx(LOG_ERR, "Shutdown delay '%s' out of range", val);
-		set_exit_flag(-1);
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_FAILURE);
 		return;
 	}
 
 	/* Stop pending shutdowns */
 	if (find_nut_info("shutdown.stop", QX_FLAG_CMD, QX_FLAG_SKIP)) {
-
 		for (retry = 1; retry <= MAXTRIES; retry++) {
 
 			if (instcmd("shutdown.stop", NULL) != STAT_INSTCMD_HANDLED) {
@@ -2843,34 +2885,30 @@ void	upsdrv_shutdown(void)
 		if (retry > MAXTRIES) {
 			upslogx(LOG_NOTICE, "No shutdown pending");
 		}
-
 	}
 
 	/* Shutdown */
 	for (retry = 1; retry <= MAXTRIES; retry++) {
-
 		if (testvar("stayoff")) {
-
 			if (instcmd("shutdown.stayoff", NULL) != STAT_INSTCMD_HANDLED) {
 				continue;
 			}
-
 		} else {
-
 			if (instcmd("shutdown.return", NULL) != STAT_INSTCMD_HANDLED) {
 				continue;
 			}
-
 		}
 
 		upslogx(LOG_ERR, "Shutting down in %s seconds",
 			dstate_getinfo("ups.delay.shutdown"));
-		set_exit_flag(-2);	/* EXIT_SUCCESS */
+		if (handling_upsdrv_shutdown > 0)
+			set_exit_flag(EF_EXIT_SUCCESS);
 		return;
 	}
 
 	upslogx(LOG_ERR, "Shutdown failed!");
-	set_exit_flag(-1);
+	if (handling_upsdrv_shutdown > 0)
+		set_exit_flag(EF_EXIT_FAILURE);
 }
 
 #ifdef QX_USB
@@ -2907,13 +2945,13 @@ void	upsdrv_help(void)
 	 * are listed in usbsubdriver[] array (just above in this
 	 * source file).
 	 */
-	printf("\nAcceptable values for 'subdriver' via -x or ups.conf in this driver: ");
+	printf("\nAcceptable values for USB 'subdriver' via -x or ups.conf in this driver: ");
 	for (i = 0; usbsubdriver[i].name != NULL; i++) {
 		if (i>0)
 			printf(", ");
 		printf("%s", usbsubdriver[i].name);
 	}
-	printf("\n\n");
+	printf("\n");
 # endif	/* QX_USB*/
 
 	/* Protocols are the first token from "name" field in
@@ -2936,10 +2974,8 @@ void	upsdrv_help(void)
 			printf(", ");
 		printf("%s", subdrv_name);
 	}
-	printf("\n\n");
+	printf("\n");
 #endif	/* TESTING */
-
-	printf("Read The Fine Manual ('man 8 nutdrv_qx')\n");
 }
 
 /* Adding flags/vars */
@@ -3308,7 +3344,7 @@ void	upsdrv_initups(void)
 				langid_fix = (int)u_langid_fix;
 				upsdebugx(2,
 					"Language ID workaround enabled (using '0x%x')",
-					langid_fix);
+					(unsigned int)langid_fix);
 			}
 		}
 
@@ -3319,7 +3355,7 @@ void	upsdrv_initups(void)
 
 			if (!regex_array[0] || !regex_array[1]) {
 				fatalx(EXIT_FAILURE,
-					"When specifying a subdriver, "
+					"When specifying a USB 'subdriver', "
 					"'vendorid' and 'productid' are mandatory.");
 			}
 
@@ -3406,7 +3442,7 @@ void	upsdrv_initups(void)
 				upsdebugx(1,
 					"First supported language ID: 0x%x "
 					"(please report to the NUT maintainer!)",
-					langid);
+					(unsigned int)langid);
 			}
 		}
 
