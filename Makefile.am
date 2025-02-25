@@ -713,6 +713,7 @@ install-as-root:
 		echo "$@: WARNING: Can not CHOWN created locations!" >&2 ; \
 	 fi ; \
 	 if [ x"$(DESTDIR)" = x -o x"$(DESTDIR)" = x/ ] ; then \
+		applied_udev=false ; \
 		if $(HAVE_SYSTEMD) ; then \
 			echo "$@: Activate default systemd layout, restart services:" >&2 ; \
 			if $(WITH_SYSTEMD_TMPFILES) ; then \
@@ -730,10 +731,13 @@ install-as-root:
 				@SYSTEMD_SYSTEMCTL_PROGRAM@ enable  nut.target nut-driver.target nut-monitor nut-server nut-driver-enumerator.path nut-driver-enumerator.service || exit ; \
 			fi ; \
 			echo "$@: Reconfigure nut-driver-enumerator (service instance wrapping)" >&2 ; \
-			@SYSTEMD_SYSTEMCTL_PROGRAM@ restart udev || true ; \
+			@SYSTEMD_SYSTEMCTL_PROGRAM@ restart udev && applied_udev=true || true ; \
 			$(top_builddir)/scripts/upsdrvsvcctl/nut-driver-enumerator.sh --reconfigure || { RES=$$?; if [ $$RES != 42 ] ; then exit $$RES ; fi ; } ; \
 			echo "$@: Restart NUT services" >&2 ; \
 			@SYSTEMD_SYSTEMCTL_PROGRAM@ restart nut-driver-enumerator.service nut-monitor.service nut-server.service || exit ; \
+		fi ; \
+		if ! $${applied_udev} && (command -v udevadm); then \
+			udevadm control --reload-rules && udevadm trigger && applied_udev=true || true ; \
 		fi ; \
 	 fi ; \
 	 echo "$@: finished SUCCESSFULLY" >&2
