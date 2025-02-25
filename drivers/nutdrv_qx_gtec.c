@@ -28,7 +28,7 @@
 #define GTEC_VERSION "Gtec 0.01"
 
 /* Process status letters */
-int	gtec_process_status(item_t *item, char *value, const size_t valuelen)
+static int	gtec_process_status(item_t *item, char *value, const size_t valuelen)
 {
 	char	*val = "OFF";
 	char	*letters;
