@@ -133,8 +133,7 @@ all/include \
 all/conf \
 all/docs/man \
 all/lib \
-all-recursive/data \
-all-recursive/scripts :
+all-recursive/data:
 	+@$(SUBDIR_TGT_RULE)
 
 all/docs:
@@ -176,6 +175,17 @@ all/tests: all/common all/drivers
 	+@$(SUBDIR_TGT_RULE)
 
 all-recursive/tests: all/tests/NIT all/tests
+	+@$(SUBDIR_TGT_RULE)
+
+if HAVE_WINDOWS
+all/scripts/Windows: all/common
+	+@$(SUBDIR_TGT_RULE)
+else !HAVE_WINDOWS
+all/scripts/Windows:
+	+@$(SUBDIR_TGT_RULE)
+endif !HAVE_WINDOWS
+
+all-recursive/scripts: all/scripts/Windows
 	+@$(SUBDIR_TGT_RULE)
 
 # ----------------------------------------------------------------------
