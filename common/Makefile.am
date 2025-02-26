@@ -46,7 +46,6 @@ else !BUILDING_IN_TREE
 	else \
 		ln -s -f "$(top_srcdir)/common/common.c" "$@" ; \
 	fi
-# CLEANFILES += $(builddir)/common.c
 endif !BUILDING_IN_TREE
 
 $(top_builddir)/include/nut_version.h:
@@ -169,7 +168,8 @@ MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 # NOTE: Do not clean ".deps" in SUBDIRS of the main project,
 # the root Makefile.am takes care of that!
-#clean-local:
+clean-local:
+	if test -L $(builddir)/common.c || test -h $(builddir)/common.c ; then rm -f $(builddir)/common.c ; fi
 #	$(AM_V_at)rm -rf $(builddir)/.deps
 
 # Helper for only the enabled libs to get built:
