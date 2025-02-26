@@ -158,7 +158,7 @@ all/drivers: all/lib
 all/tools/nut-scanner: all/lib
 	+@$(SUBDIR_TGT_RULE)
 
-all/tools/nutconf: all/lib
+all/tools/nutconf: all/tools/nut-scanner
 	+@$(SUBDIR_TGT_RULE)
 
 all-recursive/tools: all/tools/nutconf all/tools/nut-scanner
