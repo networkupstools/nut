@@ -24,8 +24,8 @@ ACLOCAL_AMFLAGS = -I m4
 
 # subdirectories to build and distribute. The order matters, as
 # several subdirectories depend on stuff in "common" or tools being built first
-SUBDIRS = include common clients conf data docs drivers tools \
-  lib scripts server tests
+SUBDIRS = include common clients conf data drivers tools \
+  lib scripts server tests docs
 
 bindir = @bindir@
 sbindir = @sbindir@
