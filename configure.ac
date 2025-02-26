@@ -5731,6 +5731,7 @@ AC_CONFIG_FILES([
  include/Makefile
  lib/libupsclient.pc
  lib/libnutclient.pc
+ lib/libnutconf.pc
  lib/libnutclientstub.pc
  lib/libnutscan.pc
  lib/Makefile

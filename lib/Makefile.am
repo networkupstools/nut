@@ -18,6 +18,9 @@ EXTRA_DIST = README.adoc
 if WITH_DEV
 if WITH_PKG_CONFIG
  pkgconfig_DATA = libupsclient.pc libnutscan.pc libnutclient.pc libnutclientstub.pc
+if WITH_NUTCONF
+ pkgconfig_DATA += libnutconf.pc
+endif WITH_NUTCONF
 else !WITH_PKG_CONFIG
  bin_SCRIPTS = libupsclient-config
 endif !WITH_PKG_CONFIG
