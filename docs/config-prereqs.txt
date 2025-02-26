@@ -114,6 +114,9 @@ important build target. Related common operating systems include
 Ubuntu and customized distros for Raspberry Pi, Proxmox, as well
 as many others.
 
+For some (newer) distributions, `apt` or other front-ends may be
+preferable to `apt-get`, but otherwise the commands are equivalent.
+
 The package list below should largely apply to those as well,
 however note that some well-known package names tend to differ.
 A few of those are noted below.
@@ -168,6 +171,11 @@ metadata about recently published package revisions:
     cppcheck \
     pkg-config \
     gcc g++ clang
+
+# To debug eventual core dump files, or trace programs with an IDE like
+# NetBeans (perhaps remotely), you may want the GNU Debugger program:
+:; apt-get install \
+    gdb
 
 # NOTE: Older Debian-like distributions may lack a "libtool-bin"
 :; apt-get install \
@@ -325,6 +333,8 @@ Set up CentOS packages for NUT
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Instructions below apply to both CentOS 6 and 7 (a few nuances for 6 commented).
+For newer distributions, `dnf` may be preferable to `yum`, but otherwise the
+commands are equivalent.
 
 General developer system helpers mentioned in link:ci-farm-lxc-setup.txt[]:
 ------
@@ -369,6 +379,11 @@ drivers in distro packaging of NUT. Resolution and doc PRs are welcome.
     cppcheck \
     pkgconfig \
     gcc gcc-c++ clang
+
+# To debug eventual core dump files, or trace programs with an IDE like
+# NetBeans (perhaps remotely), you may want the GNU Debugger program:
+:; yum install \
+    gdb
 
 # See comments below, python version and package naming depends on distro
 :; yum install \
@@ -475,6 +490,11 @@ Install tools and prerequisites for NUT:
     vim python perl \
     pkgconf \
     cppcheck valgrind
+
+# To debug eventual core dump files, or trace programs with an IDE like
+# NetBeans (perhaps remotely), you may want the GNU Debugger program:
+:; pacman -S --needed \
+    gdb
 
 # For spell-checking, highly recommended if you would propose pull requests:
 :; pacman -S --needed \
@@ -636,6 +656,10 @@ For NUT dependencies and build tools:
     pkg-config \
     gcc llvm
 
+# To debug eventual core dump files, or trace programs with an IDE like
+# NetBeans (perhaps remotely), you may want the GNU Debugger program:
+:; slackpkg-install gdb
+
 # For spell-checking, highly recommended if you would propose pull requests:
 :; slackpkg-install aspell{,-en}
 
@@ -762,6 +786,11 @@ below.
     cppcheck \
     pkgconf \
     gcc clang
+
+# To debug eventual core dump files, or trace programs with an IDE like
+# NetBeans (perhaps remotely), you may want the GNU Debugger program:
+:; pkg install \
+    gdb
 
 # See comments below, python version and package naming depends on distro
 :; pkg install \
@@ -898,6 +927,11 @@ default site.
     cppcheck \
     pkgconf \
     gcc clang
+
+# To debug eventual core dump files, or trace programs with an IDE like
+# NetBeans (perhaps remotely), you may want the GNU Debugger program:
+:; pkg_add install \
+    gdb
 
 # See comments below, python version and package naming depends on distro
 :; pkg_add \
@@ -1149,6 +1183,11 @@ Typical tooling would include:
     pkg-config \
     gnu-binutils developer/linker
 
+# To debug eventual core dump files, or trace programs with an IDE like
+# NetBeans (perhaps remotely), you may want the GNU Debugger program:
+:; pkg install \
+    gdb
+
 # NOTE: For python, some suitable version should be available since `pkg(5)`
 # tool is written in it. Similarly, many system tools are written in perl
 # so some version should be installed. You may specify additional variants
@@ -1320,6 +1359,12 @@ site for setup details.
     libgd \
     developer/clang-17
 
+# To debug eventual core dump files, or trace programs with an IDE like
+# NetBeans (perhaps remotely), you may want the GNU Debugger program:
+:; pkg install \
+    gdb
+
+# May be or not be provided, depending on distro age:
 :; pkg install \
     net-snmp
 
@@ -1529,6 +1574,10 @@ Currently known dependencies for basic build include:
         libusb neon net-snmp \
         nss openssl \
         libmodbus freeipmi powerman
+
+# To debug eventual core dump files, or trace programs with an IDE like
+# NetBeans (perhaps remotely), you may want the GNU Debugger program:
+:; brew install gdb
 
 # Recommended:
 :; brew install curl wget midnight-commander
