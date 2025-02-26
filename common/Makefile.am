@@ -37,9 +37,16 @@ else !BUILDING_IN_TREE
 # Surprisingly, for some "make" implementations this dependency means
 # that the "common.c" required for builds below will be seeked in the
 # current directory. So for out-of-tree builds like distcheck, we have
-# to symlink the "real" source to build area:
+# to symlink the "real" source to build area. And then when we handle
+# subsequent dependencies, we already have a filename that "make" now
+# discovers and is confused about:
   common.c: $(top_builddir)/include/nut_version.h $(srcdir)/common.c
-	test -s "$@" || ln -s -f "$(top_srcdir)/common/common.c" "$@"
+	if [ x"$(abs_top_srcdir)" = x"$(abs_top_builddir)" ] || test -s "$@" ; then \
+		exit 0 ; \
+	else \
+		ln -s -f "$(top_srcdir)/common/common.c" "$@" ; \
+	fi
+# CLEANFILES += $(builddir)/common.c
 endif !BUILDING_IN_TREE
 
 $(top_builddir)/include/nut_version.h:
