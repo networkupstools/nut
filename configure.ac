@@ -4732,6 +4732,18 @@ dnl    * System z (64bit only - s390x; z990 and above)
 dnl Even if the tool does basically start, on some QEMU systems it crashes
 dnl later (e.g. claims Signal 11 in tear-down after a successful test), so
 dnl we support an explicit --without-valgrind (aka --with-valgrind=no) too.
+dnl In some versions of OpenIndiana it was also seen to fail with SIGILL
+dnl when running `valgrind /bin/sh <whatever>` and even `valgrind /bin/true`
+dnl but succeeded for other programs; and those failures left a log of core
+dnl dump files on the CI build agent:
+dnl    vex x86->IR: unhandled instruction bytes: 0x2E 0x8D 0x74 0x26
+dnl    ==360612== valgrind: Unrecognised instruction at address 0x3ffe291b.
+dnl    ==360612==    at 0x3FFE291B: strchr (in /lib/ld.so.1)
+dnl    ==360612==    by 0x3FFCEB5B: procenv_user (in /lib/ld.so.1)
+dnl    ==360612==    by 0x3FFCB34A: setup (in /lib/ld.so.1)
+dnl    ==360612==    by 0x3FFDBC49: _setup (in /lib/ld.so.1)
+dnl    ==360612==    by 0x3FFC0D94: _rt_boot (in /lib/ld.so.1)
+dnl    ==360612==    by 0x37FEFE46: ???
 AS_IF([test -n "${VALGRIND}"], [
 	AC_MSG_CHECKING([whether valgrind is usable on current platform])
 	AS_IF([( ${VALGRIND} --help >/dev/null 2>/dev/null )],
