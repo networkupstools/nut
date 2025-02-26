@@ -103,10 +103,17 @@ all-fanout-maybe:
 # Just in case we followed up with "make doc", since our wild recipes could end
 # up writing into same files and so corrupting them (fixes applied, but...)
 
+# FIXME: Alas, we still tend to step on our toes when making everything at
+# once from scratch, so still do benefit from pre-making the libraries:
+all-fanout-staged:
+	+$(MAKE) $(AM_MAKEFLAGS) all/include
+	+$(MAKE) $(AM_MAKEFLAGS) all/common
+	+$(MAKE) $(AM_MAKEFLAGS) all-fanout-libs
+	+$(MAKE) $(AM_MAKEFLAGS) all-fanout-subdirs
 
 all-fanout-subdirs: $(SUBDIRS_ALL_RECURSIVE)
 
-all-libs-local: $(SUBDIRS_ALL_LIBS_LOCAL)
+all-fanout-libs all-libs-local: $(SUBDIRS_ALL_LIBS_LOCAL)
 
 #all all-am-local all-local:
 #	+@cd common && $(MAKE) $(AM_MAKEFLAGS) all
