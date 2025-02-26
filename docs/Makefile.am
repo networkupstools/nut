@@ -215,13 +215,15 @@ pdf_DATA = $(ASCIIDOC_PDFS)
 endif
 
 # the "for" loops might better use $^ but it might be not portable
-check-pdf: $(ASCIIDOC_PDF)
+check-pdf: .check-pdf
+.check-pdf: $(ASCIIDOC_PDF) Makefile
 	@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	for F in $(ASCIIDOC_PDF) ; do \
 	    test -s "$$F" && { file "$$F" | $(EGREP) -i 'PDF document' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
 	done; if test -n "$$FAILED" ; then \
 	    echo "FAILED PDF sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
 	fi; echo "PASSED PDF sanity check"; exit 0
+	@touch $@
 
 # Regarding ChangeLog check: sometimes asciidoc gives up early
 # (we have megabytes of text and thousands of sections here).
@@ -244,7 +246,8 @@ check-pdf: $(ASCIIDOC_PDF)
 # (either with different e-mails, or if different author's work
 # is interleaved during the day, e.g. many PRs merged, and no
 # CHANGELOG_REQUIRE_GROUP_BY_DATE_AUTHOR=true setting was in place.
-# NOTE: No dependencies, avoids (re-)generation and log messages.
+# NOTE: No dependencies, avoids (re-)generation and log messages
+# but causes re-run of the check every time.
 ChangeLog.html-contentchecked:
 	@FAILED=""; \
 	 if [ -s '$(top_builddir)/ChangeLog' ] && [ -s ChangeLog.html ] ; then \
@@ -309,7 +312,8 @@ ChangeLog.html-contentchecked:
 	 fi ; \
 	 exit 1
 
-check-html-single: $(ASCIIDOC_HTML_SINGLE)
+check-html-single: .check-html-single
+.check-html-single: $(ASCIIDOC_HTML_SINGLE) Makefile
 	+@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	 for F in $(ASCIIDOC_HTML_SINGLE) ; do \
 	    test -s "$$F" && { file "$$F" | $(EGREP) -i '(XML|HTML.*document)' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
@@ -321,8 +325,10 @@ check-html-single: $(ASCIIDOC_HTML_SINGLE)
 	 done; if test -n "$$FAILED" ; then \
 	    echo "FAILED HTML-single sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
 	 fi; echo "PASSED HTML-single sanity check"; exit 0
+	@touch $@
 
-check-html-chunked: $(ASCIIDOC_HTML_CHUNKED)
+check-html-chunked: .check-html-chunked
+.check-html-chunked: $(ASCIIDOC_HTML_CHUNKED) Makefile
 	@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	for D in $(ASCIIDOC_HTML_CHUNKED); do \
 	    for F in "$$D"/*.html ; do \
@@ -334,6 +340,7 @@ check-html-chunked: $(ASCIIDOC_HTML_CHUNKED)
 	done; if test -n "$$FAILED" ; then \
 	    echo "FAILED HTML-chunked sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
 	fi; echo "PASSED HTML-chunked sanity check"; exit 0
+	@touch $@
 
 # Note: usually the results from man-page check will be reported twice:
 # once as a SUBDIRS child makefile, and once via DOC_CHECK_LIST expansion
@@ -346,7 +353,7 @@ check-man check-man-man all-man man-man all-html html-man:
 man:
 	+cd $(abs_top_builddir)/docs/man/ && $(MAKE) $(AM_MAKEFLAGS) -f Makefile all
 
-CLEANFILES = *.xml *.html *.pdf *-spellchecked *-contentchecked docbook-xsl.css docinfo.xml.in.tmp
+CLEANFILES = *.xml *.html *.pdf *-spellchecked *-contentchecked .check-* docbook-xsl.css docinfo.xml.in.tmp
 CLEANFILES += $(top_builddir)/INSTALL.nut $(top_builddir)/UPGRADING $(top_builddir)/NEWS $(top_builddir)/ChangeLog.adoc $(top_builddir)/README
 CLEANFILES += $(top_builddir)/*.adoc-parsed *.adoc-parsed
 
