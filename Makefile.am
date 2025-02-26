@@ -152,26 +152,28 @@ all/common: all/include
 all/clients: all/common
 	+@$(SUBDIR_TGT_RULE)
 
+# clients only needed for dummy-ups, but we do wholesale dirs at the moment...
+all/drivers: all/clients # all/common
+	+@$(SUBDIR_TGT_RULE)
+
 all/server: all/common
 	+@$(SUBDIR_TGT_RULE)
 
-all/drivers: all/common
+all/tools/nut-scanner: all/drivers # all/common
 	+@$(SUBDIR_TGT_RULE)
 
-all/tools/nut-scanner: all/common
-	+@$(SUBDIR_TGT_RULE)
-
+# libnutscan only needed for nutconf, but we do wholesale dirs at the moment...
 all/tools/nutconf: all/tools/nut-scanner
 	+@$(SUBDIR_TGT_RULE)
 
-all-recursive/tools: all/tools/nutconf all/tools/nut-scanner
+all-recursive/tools: all/tools/nutconf # all/tools/nut-scanner
 	+@$(SUBDIR_TGT_RULE)
 
 # At least prereqs for NIT, maybe for certain compiled tests too:
 all/tests/NIT: all/clients all/server all/drivers all-recursive/tools all-recursive/data
 	+@$(SUBDIR_TGT_RULE)
 
-all/tests: all/common all/drivers
+all/tests: all/drivers # all/common all/clients
 	+@$(SUBDIR_TGT_RULE)
 
 all-recursive/tests: all/tests/NIT all/tests
