@@ -334,24 +334,11 @@
    fun:main
 }
 {
-   <report_pass_printf>
+   <openindiana_malloc_printf>
    Memcheck:Leak
-   match-leak-kinds: reachable
    fun:malloc
    ...
    fun:printf
-   fun:report_pass
-   ...
-   fun:main
-}
-{
-   <report_fail_printf>
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:malloc
-   ...
-   fun:printf
-   fun:report_fail
    ...
    fun:main
 }
