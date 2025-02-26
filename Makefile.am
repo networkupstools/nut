@@ -10,14 +10,14 @@
 @NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export PATH=@PATH_DURING_CONFIGURE@
 
 # First target often defines default behavior: all
-# We follow up with another pass to `make doc` because our wild recipes
-# sometimes preclude generating all of them on the first pass (FIXME!)
-# missing e.g. PDF and HTML which then pop up in `make check` footprint,
-# or misses a .prep-src-docs stage needed to pattern-make man page files
+# We start with a pass to `make all` in `common` dir because our wild recipes
+# (with other subdirs ensuring the libraries they need have been built) can
+# sometimes cause parallel compilation and library generation for same files
+# driven by different make processes that do not know they aim for same goal,
 # with some "make" implementations...
-#all all-am-local all-local: all-recursive
-#	+@$(MAKE) $(AM_MAKEFLAGS) doc
-#	+@$(MAKE) $(AM_MAKEFLAGS) doc
+all all-am-local all-local:
+	+@cd common && $(MAKE) $(AM_MAKEFLAGS) all
+	+@$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
 # include directory for aclocal
 ACLOCAL_AMFLAGS = -I m4
