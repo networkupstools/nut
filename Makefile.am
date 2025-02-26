@@ -15,9 +15,12 @@
 # sometimes cause parallel compilation and library generation for same files
 # driven by different make processes that do not know they aim for same goal,
 # with some "make" implementations...
+# Just in case we followed up with "make doc", since our wild recipes could end
+# up writing into same files and so corrupting them (fixes applied, but...)
 all all-am-local all-local:
 	+@cd common && $(MAKE) $(AM_MAKEFLAGS) all
 	+@$(MAKE) $(AM_MAKEFLAGS) all-recursive
+#	+@$(MAKE) $(AM_MAKEFLAGS) doc
 
 # include directory for aclocal
 ACLOCAL_AMFLAGS = -I m4
