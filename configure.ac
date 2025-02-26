@@ -4717,11 +4717,12 @@ dnl processor type
 AC_DEFINE_UNQUOTED(CPU_TYPE, ["$target_cpu"], [Define processor type])
 
 dnl Can use valgrind for memory-leak testing, if present
-with_valgrind="auto"
+dnl FIXME: Set to "auto" after ensuring that we pass on all NUT CI farm platforms
+with_valgrind="no"
 AC_PATH_PROGS([VALGRIND], [valgrind], [none])
 dnl Caller can provide a specific valgrind implementation to use:
 AC_ARG_WITH(valgrind,
-	AS_HELP_STRING([--with-valgrind=(yes|no|auto|PATH)], [whether to use valgrind for memory-leak testing (auto)]),
+	AS_HELP_STRING([--with-valgrind=(yes|no|auto|PATH)], [whether to use valgrind for memory-leak testing (no)]),
 [
 	dnl ### echo "Caller said: '${withval}'... Discovered tool: '${VALGRIND}'... "
 	case "${withval}" in
