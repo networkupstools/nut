@@ -18,10 +18,10 @@ EXTRA_DIST = README.adoc libupsclient-config.in *.pc.in
 if WITH_DEV
 if WITH_PKG_CONFIG
  pkgconfig_DATA = libupsclient.pc libnutscan.pc libnutclient.pc libnutclientstub.pc
-else
+else !WITH_PKG_CONFIG
  bin_SCRIPTS = libupsclient-config
-endif
-endif
+endif !WITH_PKG_CONFIG
+endif WITH_DEV
 
 CLEANFILES = *-spellchecked README
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
