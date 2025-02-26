@@ -41,11 +41,12 @@ else !BUILDING_IN_TREE
 # subsequent dependencies, we already have a filename that "make" now
 # discovers and is confused about:
   common.c: $(top_builddir)/include/nut_version.h $(srcdir)/common.c
-	if [ x"$(abs_top_srcdir)" = x"$(abs_top_builddir)" ] || test -s "$@" ; then \
+	@if [ x"$(abs_top_srcdir)" = x"$(abs_top_builddir)" ] || test -s "$@" ; then \
 		exit 0 ; \
-	else \
+	 else \
+		echo "  LN         $(top_srcdir)/common/common.c => $@ (relative to `pwd`)" ; \
 		ln -s -f "$(top_srcdir)/common/common.c" "$@" ; \
-	fi
+	 fi
 endif !BUILDING_IN_TREE
 
 $(top_builddir)/include/nut_version.h:
