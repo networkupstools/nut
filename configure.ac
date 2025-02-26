@@ -4746,12 +4746,20 @@ dnl    ==360612==    by 0x3FFC0D94: _rt_boot (in /lib/ld.so.1)
 dnl    ==360612==    by 0x37FEFE46: ???
 AS_IF([test -n "${VALGRIND}"], [
 	AC_MSG_CHECKING([whether valgrind is usable on current platform])
-	AS_IF([( ${VALGRIND} --help >/dev/null 2>/dev/null )],
-		[AS_IF([( ${VALGRIND} /bin/sh -c true >/dev/null 2>/dev/null )],
+	AS_IF([( ${VALGRIND} --help >/dev/null 2>/dev/null )], [
+		TESTCMD="/bin/sh -c true"
+		echo 'int main(void) { return 0; }' > test-true.c && \
+		${CC} ${CFLAGS} test-true.c -o test-true && \
+		./test-true && \
+		TESTCMD="./test-true"
+		AS_IF([( ${VALGRIND} $TESTCMD >/dev/null 2>/dev/null )],
 			[AC_MSG_RESULT([yes])],
 			[AC_MSG_RESULT([no])
 			 VALGRIND="none"
-			])],
+			])
+		rm -f ./test-true ./test-true.c
+		unset TESTCMD
+		],
 		[AC_MSG_RESULT([no])
 		 VALGRIND="none"
 		])
