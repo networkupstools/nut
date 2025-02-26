@@ -211,6 +211,7 @@ all/tests: all/drivers # all/common all/clients
 all-recursive/tests: all/tests/NIT all/tests
 	+@$(SUBDIR_TGT_RULE)
 
+if HAVE_MINGW_RESGEN
 if HAVE_WINDOWS
 all/scripts/Windows: all/common
 	+@$(SUBDIR_TGT_RULE)
@@ -218,6 +219,10 @@ else !HAVE_WINDOWS
 all/scripts/Windows:
 	+@$(SUBDIR_TGT_RULE)
 endif !HAVE_WINDOWS
+else !HAVE_MINGW_RESGEN
+all/scripts/Windows:
+	+@$(SUBDIR_TGT_RULE)
+endif !HAVE_MINGW_RESGEN
 
 all-recursive/scripts: all/scripts/Windows
 	+@$(SUBDIR_TGT_RULE)
