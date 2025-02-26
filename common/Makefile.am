@@ -31,13 +31,13 @@ libnutconf_la_SOURCES = nutconf.cpp nutstream.cpp nutwriter.cpp nutipc.cpp
 # BUILT_SOURCES (in ../include) will ensure nut_version.h will
 # be built before anything else... but do depend on its build area:
 if BUILDING_IN_TREE
-  # No need for symlink hack
+# No need for symlink hack
   common.c: $(top_builddir)/include/nut_version.h
 else !BUILDING_IN_TREE
-  # Surprisingly, for some "make" implementations this dependency means
-  # that the "common.c" required for builds below will be seeked in the
-  # current directory. So for out-of-tree builds like distcheck, we have
-  # to symlink the "real" source to build area:
+# Surprisingly, for some "make" implementations this dependency means
+# that the "common.c" required for builds below will be seeked in the
+# current directory. So for out-of-tree builds like distcheck, we have
+# to symlink the "real" source to build area:
   common.c: $(top_builddir)/include/nut_version.h $(srcdir)/common.c
 	test -s "$@" || ln -s -f "$(top_srcdir)/common/common.c" "$@"
 endif !BUILDING_IN_TREE
