@@ -137,8 +137,21 @@ SUBDIR_TGT_RULE = ( \
 	echo "  SUBDIR-MAKE       SUCCESS: 'make $$TGT' in $$DIR" ; \
 	)
 
-# First shot
-$(SUBDIRS_ALL_LIBS_LOCAL): all/include
+# A way to quickly handle SUBDIRS_ALL_LIBS_LOCAL as dependency for all others
+# (aka `make all-libs-local` also in root dir):
+all-libs-local/common: all/include
+	+@$(SUBDIR_TGT_RULE)
+
+all-libs-local/clients: all-libs-local/common
+	+@$(SUBDIR_TGT_RULE)
+
+all-libs-local/drivers: all-libs-local/common
+	+@$(SUBDIR_TGT_RULE)
+
+all-libs-local/tests: all-libs-local/common
+	+@$(SUBDIR_TGT_RULE)
+
+all-libs-local/tools/nut-scanner: all-libs-local/drivers all-libs-local/clients
 	+@$(SUBDIR_TGT_RULE)
 
 # Handle all SUBDIRS_ALL_RECURSIVE in a way that dependencies can be specified,
