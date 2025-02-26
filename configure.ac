@@ -4718,53 +4718,7 @@ AC_DEFINE_UNQUOTED(CPU_TYPE, ["$target_cpu"], [Define processor type])
 
 dnl Can use valgrind for memory-leak testing, if present
 AC_PATH_PROGS([VALGRIND], [valgrind], [none])
-dnl Even if the tool is installed, it may be not usable on build platform.
-dnl QEMU may further complicate things, providing CPUs that formally match
-dnl a supported family but crash in practice, or hopefully rejected early:
-dnl valgrind: fatal error: unsupported CPU.
-dnl    Supported CPUs are:
-dnl    * x86 (practically any; Pentium-I or above), AMD Athlon or above)
-dnl    * AMD Athlon64/Opteron
-dnl    * ARM (armv7)
-dnl    * MIPS (mips32 and above; mips64 and above)
-dnl    * PowerPC (most; ppc405 and above)
-dnl    * System z (64bit only - s390x; z990 and above)
-dnl Even if the tool does basically start, on some QEMU systems it crashes
-dnl later (e.g. claims Signal 11 in tear-down after a successful test), so
-dnl we support an explicit --without-valgrind (aka --with-valgrind=no) too.
-dnl In some versions of OpenIndiana it was also seen to fail with SIGILL
-dnl when running `valgrind /bin/sh <whatever>` and even `valgrind /bin/true`
-dnl but succeeded for other programs; and those failures left a log of core
-dnl dump files on the CI build agent:
-dnl    vex x86->IR: unhandled instruction bytes: 0x2E 0x8D 0x74 0x26
-dnl    ==360612== valgrind: Unrecognised instruction at address 0x3ffe291b.
-dnl    ==360612==    at 0x3FFE291B: strchr (in /lib/ld.so.1)
-dnl    ==360612==    by 0x3FFCEB5B: procenv_user (in /lib/ld.so.1)
-dnl    ==360612==    by 0x3FFCB34A: setup (in /lib/ld.so.1)
-dnl    ==360612==    by 0x3FFDBC49: _setup (in /lib/ld.so.1)
-dnl    ==360612==    by 0x3FFC0D94: _rt_boot (in /lib/ld.so.1)
-dnl    ==360612==    by 0x37FEFE46: ???
-AS_IF([test -n "${VALGRIND}"], [
-	AC_MSG_CHECKING([whether valgrind is usable on current platform])
-	AS_IF([( ${VALGRIND} --help >/dev/null 2>/dev/null )], [
-		TESTCMD="/bin/sh -c true"
-		echo 'int main(void) { return 0; }' > test-true.c && \
-		${CC} ${CFLAGS} test-true.c -o test-true && \
-		./test-true && \
-		TESTCMD="./test-true"
-		AS_IF([( ${VALGRIND} $TESTCMD >/dev/null 2>/dev/null )],
-			[AC_MSG_RESULT([yes])],
-			[AC_MSG_RESULT([no])
-			 VALGRIND="none"
-			])
-		rm -f ./test-true ./test-true.c
-		unset TESTCMD
-		],
-		[AC_MSG_RESULT([no])
-		 VALGRIND="none"
-		])
-])
-AC_MSG_CHECKING(whether to use valgrind for memory-leak testing)
+dnl Caller can provide a specific valgrind implementation to use:
 AC_ARG_WITH(valgrind,
 	AS_HELP_STRING([--with-valgrind=PATH], [whether to use valgrind for memory-leak testing]),
 [
@@ -4794,7 +4748,58 @@ AC_ARG_WITH(valgrind,
 	esac
 ], [])
 
-if test "x${with_valgrind}" = xauto; then
+dnl Even if the tool is installed, it may be not usable on build platform.
+dnl QEMU may further complicate things, providing CPUs that formally match
+dnl a supported family but crash in practice, or hopefully rejected early:
+dnl valgrind: fatal error: unsupported CPU.
+dnl    Supported CPUs are:
+dnl    * x86 (practically any; Pentium-I or above), AMD Athlon or above)
+dnl    * AMD Athlon64/Opteron
+dnl    * ARM (armv7)
+dnl    * MIPS (mips32 and above; mips64 and above)
+dnl    * PowerPC (most; ppc405 and above)
+dnl    * System z (64bit only - s390x; z990 and above)
+dnl Even if the tool does basically start, on some QEMU systems it crashes
+dnl later (e.g. claims Signal 11 in tear-down after a successful test), so
+dnl we support an explicit --without-valgrind (aka --with-valgrind=no) too.
+dnl In some versions of OpenIndiana it was also seen to fail with SIGILL
+dnl when running `valgrind /bin/sh <whatever>` and even `valgrind /bin/true`
+dnl but succeeded for other programs; and those failures left a log of core
+dnl dump files on the CI build agent:
+dnl    vex x86->IR: unhandled instruction bytes: 0x2E 0x8D 0x74 0x26
+dnl    ==360612== valgrind: Unrecognised instruction at address 0x3ffe291b.
+dnl    ==360612==    at 0x3FFE291B: strchr (in /lib/ld.so.1)
+dnl    ==360612==    by 0x3FFCEB5B: procenv_user (in /lib/ld.so.1)
+dnl    ==360612==    by 0x3FFCB34A: setup (in /lib/ld.so.1)
+dnl    ==360612==    by 0x3FFDBC49: _setup (in /lib/ld.so.1)
+dnl    ==360612==    by 0x3FFC0D94: _rt_boot (in /lib/ld.so.1)
+dnl    ==360612==    by 0x37FEFE46: ???
+AS_IF([test -n "${VALGRIND}" && test x"${VALGRIND}" != xnone && test "x${with_valgrind}" != xno], [
+	AC_MSG_CHECKING([whether valgrind is usable on current platform])
+	AS_IF([( ${VALGRIND} --help >/dev/null 2>/dev/null )], [
+		TESTCMD="/bin/sh -c true"
+		echo 'int main(void) { return 0; }' > test-true.c && \
+		${CC} ${CFLAGS} test-true.c -o test-true && \
+		./test-true && \
+		TESTCMD="./test-true"
+		AS_IF([( ${VALGRIND} $TESTCMD >/dev/null 2>/dev/null )],
+			[AC_MSG_RESULT([yes])],
+			[AC_MSG_RESULT([no])
+			 VALGRIND="none"
+			])
+		rm -f ./test-true ./test-true.c
+		unset TESTCMD
+		],
+		[AC_MSG_RESULT([no])
+		 VALGRIND="none"
+		])
+
+	AS_IF([test "x$VALGRIND" = "xnone" && test "x${with_valgrind}" = "xyes"], [
+		AC_MSG_ERROR([valgrind requested but '${VALGRIND}' is not usable])
+	])
+])
+
+if test "x${with_valgrind}" = "xauto"; then
 	if test "x$VALGRIND" = "xnone"; then
 		with_valgrind="no"
 	else
@@ -4802,7 +4807,8 @@ if test "x${with_valgrind}" = xauto; then
 	fi
 fi
 
-if test "x${with_valgrind}" = xyes; then
+AC_MSG_CHECKING(whether to use valgrind for memory-leak testing)
+if test "x${with_valgrind}" = "xyes"; then
 	AC_MSG_RESULT(using ${VALGRIND})
 	AC_MSG_NOTICE([Do not forget to build with debug (e.g. pass '-g' in CFLAGS for GCC) for best results with valgrind tests])
 else
