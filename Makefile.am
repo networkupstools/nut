@@ -17,7 +17,9 @@ ACLOCAL_AMFLAGS = -I m4
 # loop sequentially, even in parallel builds (each such sub-make is parallel
 # then). In our case, the HTML/PDF render of ChangeLog can take a minute of
 # work in "docs" while we are not building anything in other dirs. On the up
-# side, that approach does allow for dirs with dependencies to get built first.
+# side, that approach does allow for dirs with dependencies to get built first
+# deterministically. For more details search for "am__recursive_targets" in the
+# generated Makefile.
 #
 # The commonly suggested way out of this predicament is to consolidate numerous
 # Makefile.am recipes into one, which alone properly defines all the needed
@@ -71,7 +73,28 @@ SUBDIRS_ALL_LIBS_LOCAL = \
 	all-libs-local/tests   \
 	all-libs-local/tools/nut-scanner
 
-# First target often defines default behavior: all
+# First target often defines default behavior, and in automake is always at least:
+#   all: all-recursive
+# with maybe custom dependencies of "all:" from a Makefile.am tacked on too
+# (which used to cause us a lot of headache, building same things twice at
+# the same time).
+
+#all all-recursive all-am-local all-local: all-fanout-maybe
+all-recursive: all-fanout-maybe
+
+# Run the standard build if going sequential (or with unknown MAKEFLAGS),
+# or fanout if parallel (presuming GNU/BSD/Sun make at least):
+all-fanout-maybe:
+	+@if [ x"$(NUT_MAKE_SKIP_FANOUT)" = xtrue ] ; then \
+		echo "  SUBDIR-MAKE       $@: skip optimization for parallel make - NUT_MAKE_SKIP_FANOUT is set" ; exit 0 ; \
+	  fi ; \
+	  case "-$(MAKEFLAGS) $(AM_MAKEFLAGS)" in \
+		*-j|*-j" "*|*-{j,l}{0,1,2,3,4,5,6,7,8,9}*|*{-l,--jobs,--load-average,--max-load}" "{-,0,1,2,3,4,5,6,7,8,9}*) \
+			echo "  SUBDIR-MAKE       $@: implement optimization for parallel make as 'make all-fanout-subdirs'" ; \
+			$(MAKE) $(AM_MAKEFLAGS) all-fanout-subdirs ;; \
+		*)	echo "  SUBDIR-MAKE       $@: skip optimization for parallel make - we seem to run sequentially now, seen MAKEFLAGS='$(MAKEFLAGS)' AM_MAKEFLAGS='$(AM_MAKEFLAGS)'" ;; \
+	  esac
+
 # We start with a pass to `make all` in `common` dir because our wild recipes
 # (with other subdirs ensuring the libraries they need have been built) can
 # sometimes cause parallel compilation and library generation for same files
@@ -80,7 +103,6 @@ SUBDIRS_ALL_LIBS_LOCAL = \
 # Just in case we followed up with "make doc", since our wild recipes could end
 # up writing into same files and so corrupting them (fixes applied, but...)
 
-all: $(SUBDIRS_ALL_RECURSIVE)
 
 all-fanout-subdirs: $(SUBDIRS_ALL_RECURSIVE)
 
