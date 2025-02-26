@@ -1051,7 +1051,8 @@ check-man check-man-man: check-man-txt check-man-pages check-html-man
 # the "for" loops might better use $^ but it might be not portable
 check-man-html: check-html-man
 
-check-html-man: $(HTML_MANS)
+check-html-man: .check-html-man
+.check-html-man: $(HTML_MANS) Makefile
 	@FAILED=""; CHECKED=0; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	for F in $(HTML_MANS) ; do \
 	    CHECKED="`expr $$CHECKED + 1`"; \
@@ -1059,12 +1060,14 @@ check-html-man: $(HTML_MANS)
 	done; if test -n "$$FAILED" ; then \
 	    echo "FAILED HTML-man sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
 	fi; echo "PASSED HTML-man sanity check (checked $$CHECKED files)"; exit 0
+	@touch $@
 
 # Note: many man-pages here have code samples and are mis-identified as C code
 check-man-page: check-man-pages
 
 # Man-pages may be pre-generated (srcdir), or re-built (builddir)
-check-man-pages: $(MAN_MANS)
+check-man-pages: .check-man-pages
+.check-man-pages: $(MAN_MANS) Makefile
 	@FAILED=""; CHECKED=0; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	for F in $(MAN_MANS) ; do \
 	    CHECKED="`expr $$CHECKED + 1`"; \
@@ -1077,12 +1080,14 @@ check-man-pages: $(MAN_MANS)
 	      echo "BUILDDIR:"; cd "$(abs_builddir)/" && file $$FAILED ; \
 	    ) >&2 ; exit 1; \
 	fi; echo "PASSED man-page sanity check (checked $$CHECKED files)"; exit 0
+	@touch $@
 
 check-man-source: check-man-txt
 
 # Note: (GNU) make can helpfully add VPATH to the short source filenames
 # which we had listed above, so the "case" below handles two possibilities
-check-man-txt: $(SRC_ALL_PAGES)
+check-man-txt: .check-man-txt
+.check-man-txt: $(SRC_ALL_PAGES) Makefile
 	@FAILED=""; CHECKED=0; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	( cd $(abs_srcdir) ) || exit; \
 	for F in $(SRC_ALL_PAGES) ; do \
@@ -1095,8 +1100,9 @@ check-man-txt: $(SRC_ALL_PAGES)
 	done; if test -n "$$FAILED" ; then \
 	    echo "FAILED man-source sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
 	fi; echo "PASSED man-source sanity check (checked $$CHECKED files)"; exit 0
+	@touch $@
 
-CLEANFILES = *-spellchecked .prep-src-docs *-prepped
+CLEANFILES = *-spellchecked .prep-src-docs *-prepped .check-*
 
 SUFFIXES = .txt-prepped .txt .html .$(MAN_SECTION_CMD_USR) .$(MAN_SECTION_API) .$(MAN_SECTION_CFG) .$(MAN_SECTION_CMD_SYS)
 
