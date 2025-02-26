@@ -26,8 +26,8 @@ EXTRA_DIST = \
     usb_resetter/README.adoc \
     usb_resetter/nut-driver.service \
     valgrind/README.adoc \
-    valgrind/.valgrind.supp \
-    valgrind/valgrind.sh \
+    valgrind/.valgrind.supp.in \
+    valgrind/valgrind.sh.in \
     Windows/halt.c \
     Windows/Makefile
 
