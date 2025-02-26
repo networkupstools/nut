@@ -116,10 +116,10 @@ endif
 SUBDIR_TGT_RULE = ( \
 	TGT="`echo '$@' | awk -F/ '{print $$1}'`" ; \
 	DIR="`echo '$@' | sed 's,^[^/]*/,,'`" ; \
-	echo "  SUBDIR-MAKE       $$TGT in $$DIR" ; \
+	echo "  SUBDIR-MAKE       STARTING: 'make $$TGT' in $$DIR ..." ; \
 	cd "$(abs_builddir)/$${DIR}" && \
-	$(MAKE) $(AM_MAKEFLAGS) "$${TGT}" || exit ; \
-	echo "  SUBDIR-MAKE       SUCCESS: $$TGT in $$DIR" ; \
+	$(MAKE) $(AM_MAKEFLAGS) "$${TGT}" || { RES=$$?; echo "  SUBDIR-MAKE       FAILURE: 'make $$TGT' in $$DIR" >&2 ; exit $$RES ; } ; \
+	echo "  SUBDIR-MAKE       SUCCESS: 'make $$TGT' in $$DIR" ; \
 	)
 
 # Handle all SUBDIRS_ALL_RECURSIVE in a way that dependencies can be specified,
