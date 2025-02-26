@@ -136,7 +136,7 @@ ASCIIDOC_HTML_SINGLE = user-manual.html \
 	developer-guide.html \
 	packager-guide.html \
 	release-notes.html \
-	ChangeLog.html \
+	$(top_builddir)/docs/ChangeLog.html \
 	solaris-usb.html \
 	cables.html \
 	FAQ.html
@@ -145,7 +145,7 @@ ASCIIDOC_HTML_CHUNKED = user-manual.chunked \
 	developer-guide.chunked \
 	packager-guide.chunked \
 	release-notes.chunked \
-	ChangeLog.chunked \
+	$(top_builddir)/docs/ChangeLog.chunked \
 	solaris-usb.chunked \
 	cables.chunked \
 	FAQ.chunked
@@ -154,7 +154,7 @@ ASCIIDOC_PDF = user-manual.pdf \
 	developer-guide.pdf \
 	packager-guide.pdf \
 	release-notes.pdf \
-	ChangeLog.pdf \
+	$(top_builddir)/docs/ChangeLog.pdf \
 	solaris-usb.pdf \
 	cables.pdf \
 	FAQ.pdf
@@ -387,6 +387,11 @@ CLEANFILES += $(top_builddir)/*.adoc-parsed *.adoc-parsed
 
 $(top_builddir)/ChangeLog.adoc-parsed: $(top_builddir)/ChangeLog.adoc
 
+.ChangeLog.adoc-parsed.latest: $(top_builddir)/ChangeLog.adoc-parsed
+	@touch -r '$<' '$@' || touch '$@'
+
+CLEANFILES += .ChangeLog.adoc-parsed.latest
+
 dummy:
 $(top_builddir)/ChangeLog: dummy
 	@+echo "  DOC-CHANGELOG-GENERATE-WRAPPER	$@ : call parent Makefile to decide if (re-)generation is needed" \
@@ -453,8 +458,26 @@ user-manual.html user-manual.chunked user-manual.pdf: $(FULL_USER_MANUAL_DEPS)
 developer-guide.html developer-guide.chunked developer-guide.pdf: $(FULL_DEVELOPER_GUIDE_DEPS)
 packager-guide.html packager-guide.chunked packager-guide.pdf: packager-guide.txt asciidoc.conf
 release-notes.html release-notes.chunked release-notes.pdf: release-notes.txt $(top_builddir)/NEWS.adoc-parsed $(top_builddir)/UPGRADING.adoc-parsed asciidoc.conf
-ChangeLog.html ChangeLog.chunked ChangeLog.pdf: ChangeLog.txt $(top_builddir)/ChangeLog.adoc-parsed asciidoc.conf
 solaris-usb.html solaris-usb.chunked solaris-usb.pdf: solaris-usb.txt asciidoc.conf
+
+# We intentionally evaluate that the original generated ChangeLog file is
+# up to date (from dist or against git) every time we look at it. However
+# we do want to skip re-generation of heavy file formats afterwards if it
+# is still valid (for make, a need for re-evaluation without timestamps
+# to look at is cause to run a recipe always). We define recipes outside
+# the suffix-based handling and require *them* for default target builds.
+ChangeLog.html ChangeLog.chunked ChangeLog.pdf: ChangeLog.txt .ChangeLog.adoc-parsed.latest asciidoc.conf
+$(top_builddir)/docs/ChangeLog.html $(top_builddir)/docs/ChangeLog.chunked $(top_builddir)/docs/ChangeLog.pdf: ChangeLog.txt $(top_builddir)/ChangeLog.adoc-parsed asciidoc.conf
+	@+if [ x"`find '$(@F)' -newer '$(top_builddir)/ChangeLog.adoc-parsed'`" != x ] ; then \
+		echo "  DOC-CHANGELOG-RENDER-WRAPPER	SKIP: `pwd`/$(@F) already exists and is newer than ChangeLog.adoc-parsed" ; \
+		ls -lad `pwd` $@ ChangeLog.txt $(top_builddir)/ChangeLog.adoc-parsed asciidoc.conf $(top_builddir)/ChangeLog $(top_builddir)/ChangeLog.adoc .ChangeLog.adoc-parsed.latest || true ; \
+		exit 0 ; \
+	  else \
+		echo "  DOC-CHANGELOG-RENDER-WRAPPER	`pwd`/$(@F) does not already exist or is older than ChangeLog.adoc-parsed" ; \
+		ls -lad `pwd` $@ ChangeLog.txt $(top_builddir)/ChangeLog.adoc-parsed asciidoc.conf $(top_builddir)/ChangeLog $(top_builddir)/ChangeLog.adoc .ChangeLog.adoc-parsed.latest || true ; \
+		$(MAKE) $(AM_MAKEFLAGS) $(@F) || exit ; \
+		echo "  DOC-CHANGELOG-RENDER-WRAPPER	`pwd`/$(@F): SUCCESS" ; \
+	  fi
 
 # Note: without the "-v", asciidoc (circa 8.6.2) sometimes hangs when
 # generating the chunked HTML. In this case, export the environment
