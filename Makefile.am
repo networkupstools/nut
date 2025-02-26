@@ -60,6 +60,17 @@ SUBDIRS_ALL_RECURSIVE = \
 	all/tests/NIT \
 	all-recursive/tests
 
+# Library creation happens in a number of subdirectories, may be optional
+# (e.g. C++ ones are not built without a suitable compiler and enablement).
+# List maintenance is aided by this query:
+#   git grep -E 'LTLIBRARIES' '*.am'
+SUBDIRS_ALL_LIBS_LOCAL = \
+	all-libs-local/clients \
+	all-libs-local/common  \
+	all-libs-local/drivers \
+	all-libs-local/tests   \
+	all-libs-local/tools/nut-scanner
+
 # First target often defines default behavior: all
 # We start with a pass to `make all` in `common` dir because our wild recipes
 # (with other subdirs ensuring the libraries they need have been built) can
@@ -70,6 +81,10 @@ SUBDIRS_ALL_RECURSIVE = \
 # up writing into same files and so corrupting them (fixes applied, but...)
 
 all: $(SUBDIRS_ALL_RECURSIVE)
+
+all-fanout-subdirs: $(SUBDIRS_ALL_RECURSIVE)
+
+all-libs-local: $(SUBDIRS_ALL_LIBS_LOCAL)
 
 #all all-am-local all-local:
 #	+@cd common && $(MAKE) $(AM_MAKEFLAGS) all
@@ -121,6 +136,10 @@ SUBDIR_TGT_RULE = ( \
 	$(MAKE) $(AM_MAKEFLAGS) "$${TGT}" || { RES=$$?; echo "  SUBDIR-MAKE       FAILURE: 'make $$TGT' in $$DIR" >&2 ; exit $$RES ; } ; \
 	echo "  SUBDIR-MAKE       SUCCESS: 'make $$TGT' in $$DIR" ; \
 	)
+
+# First shot
+$(SUBDIRS_ALL_LIBS_LOCAL): all/include
+	+@$(SUBDIR_TGT_RULE)
 
 # Handle all SUBDIRS_ALL_RECURSIVE in a way that dependencies can be specified,
 # and portably to different make program implementations. Note we may revisit
