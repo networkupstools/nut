@@ -196,8 +196,6 @@ all/docs/man \
 all/lib \
 .ChangeLog.adoc-parsed.latest/docs \
 ChangeLog.adoc-parsed/docs \
-ChangeLog.adoc/. \
-ChangeLog/. \
 all-recursive/data:
 	+@$(SUBDIR_TGT_RULE)
 
@@ -212,7 +210,7 @@ all/docs:
 		*pdf*|*html-single*|*html-chunked*) \
 			MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY="$(MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY)" \
 			export MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY && \
-			$(MAKE) $(AM_MAKEFLAGS) MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY="$(MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY)" ChangeLog.adoc/. && \
+			$(MAKE) $(AM_MAKEFLAGS) MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY="$(MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY)" ChangeLog.adoc && \
 			$(MAKE) $(AM_MAKEFLAGS) MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY="$(MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY)" .ChangeLog.adoc-parsed.latest/docs ;; \
 		*) ;; \
 	  esac
