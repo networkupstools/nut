@@ -391,7 +391,7 @@ CLEANFILES += $(top_builddir)/*.adoc-parsed *.adoc-parsed
 $(top_builddir)/ChangeLog.adoc-parsed: $(top_builddir)/ChangeLog.adoc
 
 .ChangeLog.adoc-parsed.latest: $(top_builddir)/ChangeLog.adoc-parsed
-	@touch -r '$<' '$@' || touch '$@'
+	@[ x"$?" != x ] && touch -r '$?' '$@' || touch '$@'
 
 CLEANFILES += .ChangeLog.adoc-parsed.latest
 
