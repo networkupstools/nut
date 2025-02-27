@@ -435,7 +435,7 @@ $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	     test -n "$@" && { printf '=== Failed to generate the ChangeLog\n\n%s\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n' "$${MSG}" > "$@" ; } ; \
 	     exit ; \
 	 } ; \
-	 if [ x"`find '$@' -newer "$${INPUT}" 2>/dev/null`" != x ] ; then echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : SKIP (keep existing)"; rm -f "$@.tmp.$$$$"; exit 0 ; fi ; \
+	 if [ -s '$@' ] && [ x"`find '$@' -newer "$${INPUT}" 2>/dev/null`" != x ] ; then echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : SKIP (keep existing)"; rm -f "$@.tmp.$$$$"; exit 0 ; fi ; \
 	 W=0 ; \
 	 if [ "$(MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY)" -gt 0 ] 2>/dev/null ; then \
 	        echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : Block for up to $(MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY) sec, maybe another thread will make the file first" ; \
@@ -487,7 +487,7 @@ solaris-usb.html solaris-usb.chunked solaris-usb.pdf: solaris-usb.txt asciidoc.c
 # the suffix-based handling and require *them* for default target builds.
 ChangeLog.html ChangeLog.chunked ChangeLog.pdf: ChangeLog.txt .ChangeLog.adoc-parsed.latest asciidoc.conf
 $(top_builddir)/docs/ChangeLog.html $(top_builddir)/docs/ChangeLog.chunked $(top_builddir)/docs/ChangeLog.pdf: ChangeLog.txt $(top_builddir)/ChangeLog.adoc-parsed asciidoc.conf
-	@+if [ x"`find '$(@F)' -newer '$(top_builddir)/ChangeLog.adoc-parsed'`" != x ] ; then \
+	@+if [ -s '$(@F)' ] && [ x"`find '$(@F)' -newer '$(top_builddir)/ChangeLog.adoc-parsed'`" != x ] ; then \
 		echo "  DOC-CHANGELOG-RENDER-WRAPPER	SKIP: `pwd`/$(@F) already exists and is newer than ChangeLog.adoc-parsed" ; \
 		if [ x"$(MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG)" != xno ] ; then \
 			ls -lad `pwd` $@ ChangeLog.txt $(top_builddir)/ChangeLog.adoc-parsed asciidoc.conf $(top_builddir)/ChangeLog $(top_builddir)/ChangeLog.adoc .ChangeLog.adoc-parsed.latest || true ; \
