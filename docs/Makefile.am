@@ -384,6 +384,9 @@ CLEANFILES += $(top_builddir)/*.adoc-parsed *.adoc-parsed
 		-e 's%\#\(\#[1-9][0-9]*\)%\1%g' \
 	 ; } > "$@.tmp.$$$$" \
 	 && mv -f "$@.tmp.$$$$" "$@"
+	@if [ x'$@' = x'$(top_builddir)/ChangeLog.adoc-parsed' ] ; then \
+		touch -r '$@' '$(top_builddir)/docs/.ChangeLog.adoc-parsed.latest' || touch '$(top_builddir)/docs/.ChangeLog.adoc-parsed.latest' ; \
+	 fi
 
 $(top_builddir)/ChangeLog.adoc-parsed: $(top_builddir)/ChangeLog.adoc
 
