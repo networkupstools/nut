@@ -662,13 +662,17 @@ $(abs_top_builddir)/ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	    else \
 	        if test x"$(abs_top_srcdir)" != x"$(abs_top_builddir)" -a -s ./ChangeLog ; then \
 	            echo "  DOC-CHANGELOG-GENERATE        $@ : SKIP (keep existing)" ; \
-	            echo "Using distributed ChangeLog file from sources" >&2 ; \
-	            rm -f "$@" || true ; \
-	            cp -pf ./ChangeLog "$@" || { cat ./ChangeLog > "$@" ; touch -r ./ChangeLog "$@" || true ; } ; \
+	            if ! diff ./ChangeLog "$@" >/dev/null 2>/dev/null ; then \
+	                echo "Using distributed ChangeLog file from sources (and builddir is not srcdir)" >&2 ; \
+	                rm -f "$@" || true ; \
+	                cp -pf ./ChangeLog "$@" || { cat ./ChangeLog > "$@" ; touch -r ./ChangeLog "$@" || true ; } ; \
+	            else \
+	                echo "Using distributed ChangeLog file from sources (and builddir already has content identical to one in srcdir)" >&2 ; \
+	            fi ; \
 	        else \
 	            if test -s "$@" ; then \
 	                echo "  DOC-CHANGELOG-GENERATE        $@ : SKIP (keep existing)" ; \
-	                echo "Using distributed ChangeLog file from sources" >&2 ; \
+	                echo "Using distributed ChangeLog file from sources (and builddir is srcdir)" >&2 ; \
 	            else \
 	                echo "  DOC-CHANGELOG-GENERATE        $@ : FAILED (non-fatal)" >&2 ; \
 	                printf "Failed to generate the ChangeLog.\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n" > "$@" ; \
