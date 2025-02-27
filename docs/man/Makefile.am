@@ -1334,8 +1334,17 @@ PREP_SRC = $(LINKMAN_INCLUDE_GENERATED) $(SRC_ALL_PAGES) asciidoc.conf
 # NOTE: MKDIR_P may be defined via expanded $(top_builddir)/install-sh
 # so should be run from $(abs_builddir) to be safe, as we jump around
 # the build workspace
+# NOTE: For DOCS_NO_MAN case we expect that the top-level Makefile caused
+# parallel runs of several directories, so we can reasonably wait some
+# time for the target file to just appear.
 $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC)
 	@cd "$(@D)" || exit ; \
+	 if [ x"$(DOCS_NO_MAN)" = xtrue ] ; then \
+	    echo "  DOCS_NO_MAN     BLOCK: $@ called in docs/man/Makefile : waiting for other thread to complete this target" ; \
+	    W=0 ; while [ "$${W}" -lt 60 ] && ( [ \! -e '$@' ] || find $(PREP_SRC) \! -newer '$@' 2>/dev/null >/dev/null ) ; do sleep 1 ; W="`expr $$W + 1`"; done ; \
+	    echo "  DOCS_NO_MAN     SKIP: $@ called in docs/man/Makefile : waited $$W seconds" ; \
+	    exit 0 ; \
+	 fi ; \
 	 linkroot="$(abs_builddir)" ; \
 	 MAN_SECTIONS_DEFAULT=false ; \
 	 if [ x"$(MAN_SECTION_API)$(MAN_SECTION_CFG)$(MAN_SECTION_CMD_SYS)$(MAN_SECTION_CMD_USR)" = x3581 ] ; then \
