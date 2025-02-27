@@ -384,7 +384,7 @@ NUTDRV_QX_SUBDRIVERS = nutdrv_qx_bestups.c nutdrv_qx_blazer-common.c	\
  nutdrv_qx_mecer.c nutdrv_qx_megatec.c nutdrv_qx_megatec-old.c	\
  nutdrv_qx_mustek.c nutdrv_qx_q1.c nutdrv_qx_q2.c nutdrv_qx_q6.c nutdrv_qx_voltronic.c	\
  nutdrv_qx_voltronic-qs.c nutdrv_qx_voltronic-qs-hex.c nutdrv_qx_zinto.c	\
- nutdrv_qx_hunnox.c nutdrv_qx_ablerex.c
+ nutdrv_qx_hunnox.c nutdrv_qx_ablerex.c nutdrv_qx_gtec.c
 nutdrv_qx_SOURCES += $(NUTDRV_QX_SUBDRIVERS)
 
 # ----------------------------------------------------------------------
@@ -405,9 +405,7 @@ dist_noinst_HEADERS = \
  upshandler.h usb-common.h usbhid-ups.h powercom-hid.h compaq-mib.h idowell-hid.h \
  apcsmart.h apcsmart_tabs.h apcsmart-old.h apcupsd-ups.h cyberpower-mib.h riello.h openups-hid.h \
  delta_ups-mib.h nutdrv_qx.h nutdrv_qx_bestups.h nutdrv_qx_blazer-common.h	\
- nutdrv_qx_innovart31.h	\
- nutdrv_qx_masterguard.h	\
- nutdrv_qx_mecer.h nutdrv_qx_ablerex.h  \
+ nutdrv_qx_gtec.h nutdrv_qx_innovart31.h nutdrv_qx_masterguard.h nutdrv_qx_mecer.h nutdrv_qx_ablerex.h	\
  nutdrv_qx_megatec.h nutdrv_qx_megatec-old.h nutdrv_qx_mustek.h nutdrv_qx_q1.h nutdrv_qx_q2.h nutdrv_qx_q6.h nutdrv_qx_hunnox.h	\
  nutdrv_qx_voltronic.h nutdrv_qx_voltronic-qs.h nutdrv_qx_voltronic-qs-hex.h nutdrv_qx_zinto.h \
  upsdrvquery.h \

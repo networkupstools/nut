@@ -30,8 +30,8 @@ refers to this large family of similar dialects as the 'Megatec Q*' or
 
 The *nutdrv_qx* driver is known to work with various UPSes from
 'Armac', 'Blazer', 'Energy Sistem', 'Fenton Technologies', 'General Electric',
-'Hunnox', 'Masterguard', 'Mustek', 'Powercool', 'Voltronic Power', 'SKE'
-(rebranded by many, many -- have I said many? -- others...
+'Gtec', 'Hunnox', 'Masterguard', 'Mustek', 'Powercool', 'Voltronic Power',
+'SKE' (rebranded by many, many -- have I said many? -- others...
 
 Long story short: if your UPS came with a software called 'Viewpower',
 chances are high that it works with this driver with one of the
@@ -79,7 +79,7 @@ If you set stayoff in linkman:ups.conf[5] when FSD arises the UPS will call a *s
 
 *protocol =* 'string'::
 Skip autodetection of the protocol to use and only use the one specified.
-Supported values: 'bestups', 'hunnox', 'innovart31', 'masterguard', 'mecer', 'megatec', 'megatec/old', 'mustek', 'q1', 'q2', 'q6', 'voltronic', 'voltronic-qs', 'voltronic-qs-hex' and 'zinto'.
+Supported values: 'bestups', 'gtec', 'hunnox', 'innovart31', 'masterguard', 'mecer', 'megatec', 'megatec/old', 'mustek', 'q1', 'q2', 'q6', 'voltronic', 'voltronic-qs', 'voltronic-qs-hex' and 'zinto'.
 +
 Run the driver program with the `--help` option to see the exact list of
 `protocol` values it would currently recognize.
@@ -374,7 +374,7 @@ include::nut_usb_addvars.txt[]
 
 *subdriver =* 'string'::
 Select a serial-over-USB subdriver to use.
-You have a choice between *cypress*, *fabula*, *fuji*, *hunnox*, *ippon*, *krauler*, *phoenix*, *phoenixtec*, *sgs*, *snr*,  *armac* and *ablerex*.
+You have a choice between *ablerex*, *armac*, *cypress*, *fabula*, *fuji*, *gtec*, *hunnox*, *ippon*, *krauler*, *phoenix*, *phoenixtec*, *sgs* and *snr*.
 +
 Run the driver program with the `--help` option to see the exact list of
 `subdriver` values it would currently recognize.
@@ -404,6 +404,38 @@ the older standalone `richcomm_usb` driver.
 *'fabula' subdriver*::
 This subdriver, meant to be used with the 'megatec' protocol, does *not* support the various *test.battery* commands.
 Plus, the *shutdown.return* command ignores the values set in 'ups.delay.start'/*ondelay* and makes the UPS turn on the load as soon as power is back.
+
+*'gtec' subdriver*::
+Currently, the Gtec specific support is only known to work with USB devices
+(tested with a Gtec ZP120N), and was not seen with Serial port.
++
+This mode is not automatically detected, and should be enabled manually in
+your 'ups.conf', e.g.:
++
+----
+[gtec-ups]
+    driver = "nutdrv_qx"
+    port = "auto"
+    subdriver = "gtec"
+    protocol = "gtec"
+----
++
+Other subdrivers and protocol implementations (including linkman:blazer_usb[8])
+sort of work, but both have two problems:
++
+* They use the simple "Q1" query, which doesn't report the result of
+  the latest battery test.
+  - For some reason the UPS reports normal battery voltage even when
+    the battery is completely disconnected.
+    So you won't know the battery is dead until a power failure.
+  - This driver sends the more advanced "Q4" request instead.
+    Here the answer includes status letters with more information
+    than the Q1 binary flags, including battery status.
+* USB reply is read in 8-byte chunks, which causes the UPS to disconnect
+  from USB. The UPS reconnects in a second, but it still breaks the
+  initialization of `nutdrv_qx`, where the query is sent twice in a
+  short time (unlike `blazer_usb`).
+  - The solution is simple: read the whole reply at once.
 
 *'hunnox' subdriver*::
 This protocol subdriver is closely related to 'fabula' one, with a few tweaks for devices not directly supported by that driver.

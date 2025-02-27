@@ -58,7 +58,7 @@
 #	define DRIVER_NAME	"Generic Q* Serial driver"
 #endif	/* QX_USB */
 
-#define DRIVER_VERSION	"0.40"
+#define DRIVER_VERSION	"0.41"
 
 #ifdef QX_SERIAL
 #	include "serial.h"
@@ -85,6 +85,7 @@
 #include "nutdrv_qx_zinto.h"
 #include "nutdrv_qx_masterguard.h"
 #include "nutdrv_qx_ablerex.h"
+#include "nutdrv_qx_gtec.h"
 
 /* Reference list of available non-USB subdrivers */
 static subdriver_t	*subdriver_list[] = {
@@ -103,6 +104,7 @@ static subdriver_t	*subdriver_list[] = {
 	&innovart31_subdriver,
 	&q2_subdriver,
 	&q6_subdriver,
+	&gtec_subdriver,
 	/* Fallback Q1 subdriver */
 	&q1_subdriver,
 	NULL
@@ -1870,6 +1872,79 @@ static void	*ablerex_subdriver_fun(USBDevice_t *device)
 	return NULL;
 }
 
+/* Gtec communication subdriver (based on Cypress) */
+static int	gtec_command(const char *cmd, char *buf, size_t buflen)
+{
+	char	tmp[SMALLBUF];
+	int	ret = 0;
+	size_t	i;
+
+	if (buflen > INT_MAX) {
+		upsdebugx(3, "%s: requested to read too much (%" PRIuSIZE "), "
+			"reducing buflen to (INT_MAX-1)",
+			__func__, buflen);
+		buflen = (INT_MAX - 1);
+	}
+
+	/* Send command */
+	memset(tmp, 0, sizeof(tmp));
+	snprintf(tmp, sizeof(tmp), "%s", cmd);
+
+	for (i = 0; i < strlen(tmp); i += (size_t)ret) {
+
+		/* Write data in 8-byte chunks */
+		/* ret = usb->set_report(udev, 0, (unsigned char *)&tmp[i], 8); */
+		ret = usb_control_msg(udev,
+			USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+			0x09, 0x02, 0,
+			(usb_ctrl_charbuf)&tmp[i], 8, 5000);
+
+		if (ret <= 0) {
+			upsdebugx(3, "send: %s (%d)",
+				ret ? nut_usb_strerror(ret) : "timeout",
+				ret);
+			return ret;
+		}
+
+	}
+
+	upsdebugx(3, "send: %.*s", (int)strcspn(tmp, "\r"), tmp);
+
+	/* Read reply */
+	memset(buf, 0, buflen);
+
+	for (i = 0; (i <= buflen-128) && (memchr(buf, '\r', buflen) == NULL); i += (size_t)ret) {
+
+		/* Read data in 8-byte chunks */
+		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
+		ret = usb_interrupt_read(udev,
+			0x81,
+			(usb_ctrl_charbuf)&buf[i], 128, 1000);
+
+		/* Any errors here mean that we are unable to read a reply
+		 * (which will happen after successfully writing a command
+		 * to the UPS) */
+		if (ret <= 0) {
+			upsdebugx(3, "read: %s (%d)",
+				ret ? nut_usb_strerror(ret) : "timeout",
+				ret);
+			return ret;
+		}
+
+		snprintf(tmp, sizeof(tmp), "read [% 3d]", (int)i);
+		upsdebug_hex(5, tmp, &buf[i], (size_t)ret);
+
+	}
+
+	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+
+	if (i > INT_MAX) {
+		upsdebugx(3, "%s: read too much (%" PRIuSIZE ")", __func__, i);
+		return -1;
+	}
+	return (int)i;
+}
+
 static struct {
 	bool_t	initialized;
 	bool_t	ok;
@@ -2929,6 +3004,7 @@ void	upsdrv_shutdown(void)
 			{ "snr", &snr_command },
 			{ "ablerex", &ablerex_command },
 			{ "armac", &armac_command },
+			{ "gtec", &gtec_command },
 			{ NULL, NULL }
 		};
 #	endif
