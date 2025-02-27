@@ -529,6 +529,12 @@ relocated into new `shutdown.default` INSTCMD definitions. [#2670]
  - added `scripts/valgrind` with a helper script and suppression file to
    ignore common third-party problems. [#2511]
 
+ - fixed `configure --with-valgrind=PATH` vs. detection of its usability;
+   fixed some portability issues with detection of usability per se, tried
+   `--with-valgrind=auto` the default to auto-detect and use the feature
+   (in tests) wherever possible, but too many NUT CI farm agents disagreed;
+   so for now the default is `no`. [#2823]
+
  - when drivers dump collected data (during troubleshooting), flush `stdout`
    buffer immediately for sane logging (especially on Windows). [PR #2699]
 
