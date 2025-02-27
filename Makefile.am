@@ -52,7 +52,7 @@ SUBDIRS_ALL_RECURSIVE = \
 	all/docs/man \
 	all/docs \
 	all-recursive/docs \
-	all/drivers \
+	all-drivers \
 	all/tools/nut-scanner \
 	all/tools/nutconf \
 	all-recursive/tools \
@@ -162,7 +162,7 @@ SUBDIR_TGT_RULE = ( \
 	DIR="`echo '$@' | sed 's,^[^/]*/,,'`" ; \
 	echo "  SUBDIR-MAKE       STARTING: 'make $$TGT' in $$DIR ..." ; \
 	cd "$(abs_builddir)/$${DIR}" && \
-	$(MAKE) $(AM_MAKEFLAGS) "$${TGT}" || { RES=$$?; echo "  SUBDIR-MAKE       FAILURE: 'make $$TGT' in $$DIR" >&2 ; exit $$RES ; } ; \
+	$(MAKE) $(AM_MAKEFLAGS) $${SUBDIR_TGT_MAKEFLAGS-} "$${TGT}" || { RES=$$?; echo "  SUBDIR-MAKE       FAILURE: 'make $$TGT' in $$DIR" >&2 ; exit $$RES ; } ; \
 	echo "  SUBDIR-MAKE       SUCCESS: 'make $$TGT' in $$DIR" ; \
 	)
 
@@ -240,22 +240,25 @@ all/clients: all/common all-libs-local/clients
 # only libupsclient is needed for dummy-ups,
 # but we do wholesale subdir all-libs-local at the moment...
 if SOME_DRIVERS
-all/drivers: all-libs-local/clients all-libs-local/common
+all/drivers all-drivers: all-libs-local/clients all-libs-local/common
 	+@$(SUBDIR_TGT_RULE)
 else !SOME_DRIVERS
 # We build all drivers, let dummy-ups be built with respect for
 # libupsclient while not blocking other driver builds on that.
-# FIXME: Define an equivalent of DOCS_NO_MAN to let other drivers
-# build in a separate target, then "all/drivers" should depend on
-# both "dummy-ups" and "the rest". Currently this build sequence
-# may be still ordered...
+# NUTSW_DRIVERLIST_DUMMY_UPS acts as an equivalent of DOCS_NO_MAN
+# in a way, to let other (non dummy-ups) drivers get built in a
+# separate target with separate dependency trail, then "all-drivers"
+# should depend on both "dummy-ups" and the rest in so constrained
+# "all/drivers". This allows to ultimately not order one after another.
 # NOTE: dummy-ups relies on libdummy_upsdrvquery.la so requires
 # all-libs-local/drivers too.
 dummy-ups$(EXEEXT)/drivers: all-libs-local/clients all-libs-local/common all-libs-local/drivers
 	+@$(SUBDIR_TGT_RULE)
 
-all/drivers: dummy-ups$(EXEEXT)/drivers all/common all-libs-local/drivers
-	+@$(SUBDIR_TGT_RULE)
+all/drivers: all/common all-libs-local/drivers
+	+@SUBDIR_TGT_MAKEFLAGS='NUTSW_DRIVERLIST_DUMMY_UPS='; export SUBDIR_TGT_MAKEFLAGS; $(SUBDIR_TGT_RULE)
+
+all-drivers: dummy-ups$(EXEEXT)/drivers all/drivers
 endif !SOME_DRIVERS
 
 all/server: all-libs-local/common
@@ -273,7 +276,7 @@ all-recursive/tools: all/tools/nutconf all/tools/nut-scanner
 	+@$(SUBDIR_TGT_RULE)
 
 # At least prereqs for NIT, maybe for certain compiled tests too:
-all/tests/NIT: all/clients all/server all/drivers all-recursive/tools all-recursive/data
+all/tests/NIT: all/clients all/server all-drivers all-recursive/tools all-recursive/data
 	+@$(SUBDIR_TGT_RULE)
 
 all/tests: all-libs-local/tests all-libs-local/drivers all-libs-local/common all-libs-local/clients

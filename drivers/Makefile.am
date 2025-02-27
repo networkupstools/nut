@@ -51,7 +51,10 @@ if HAVE_LIBREGEX
   AM_CFLAGS += $(LIBREGEX_CFLAGS)
 endif
 
-NUTSW_DRIVERLIST = dummy-ups clone clone-outlet apcupsd-ups skel
+# Allow top-level Makefile override NUTSW_DRIVERLIST_DUMMY_UPS="" to run
+# a build scenario without this driver (it is in a different dependency)
+NUTSW_DRIVERLIST_DUMMY_UPS = dummy-ups
+NUTSW_DRIVERLIST = $(NUTSW_DRIVERLIST_DUMMY_UPS) clone clone-outlet apcupsd-ups skel
 SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
  bestfortress bestuferrups bestups etapro everups 	\
  gamatronic genericups isbmex liebert liebert-esp2 liebert-gxe masterguard metasys	\
