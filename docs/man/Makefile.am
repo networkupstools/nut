@@ -1338,6 +1338,7 @@ PREP_SRC = $(LINKMAN_INCLUDE_GENERATED) $(SRC_ALL_PAGES) asciidoc.conf
 # parallel runs of several directories, so we can reasonably wait some
 # time for the target file to just appear.
 MAINTAINER_DOCS_PREP_MAN_DELAY = 60
+prep-src-docs: $(abs_top_builddir)/docs/man/.prep-src-docs
 $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC)
 	@cd "$(@D)" || exit ; \
 	 if [ x"$(DOCS_NO_MAN)" = xtrue ] ; then \
