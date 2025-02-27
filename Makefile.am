@@ -249,7 +249,9 @@ else !SOME_DRIVERS
 # build in a separate target, then "all/drivers" should depend on
 # both "dummy-ups" and "the rest". Currently this build sequence
 # may be still ordered...
-dummy-ups$(EXEEXT)/drivers: all-libs-local/clients all-libs-local/common
+# NOTE: dummy-ups relies on libdummy_upsdrvquery.la so requires
+# all-libs-local/drivers too.
+dummy-ups$(EXEEXT)/drivers: all-libs-local/clients all-libs-local/common all-libs-local/drivers
 	+@$(SUBDIR_TGT_RULE)
 
 all/drivers: dummy-ups$(EXEEXT)/drivers all/common all-libs-local/drivers
