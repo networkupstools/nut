@@ -412,6 +412,11 @@ endif !WITH_PDF_NONASCII_TITLES
 
 MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG = no
 
+# Timeout for ChangeLog.adoc rule to wait for competing threads to maybe create
+# (or start creating) the file first - then this "make" thread just waits for
+# it to be done, and exits, as the goal is fulfilled.
+MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY = 10
+
 # Probably due to the web of makefiles and an overwhelmed job server in some
 # implementations, during parallel builds we can end up scheduling several
 # threads creating this asciidoc (and adoc-parsed later). This step only
@@ -430,10 +435,18 @@ $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	     test -n "$@" && { printf '=== Failed to generate the ChangeLog\n\n%s\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n' "$${MSG}" > "$@" ; } ; \
 	     exit ; \
 	 } ; \
-	 W=0 ; while [ "$${W}" -lt 10 ] && [ x"`find '$@.tmp.'* '$@' -newer "$${INPUT}" 2>/dev/null`" = x ] ; do sleep 1 ; W="`expr $$W + 1`"; done ; touch "$@.tmp.$$$$"; \
 	 if [ x"`find '$@' -newer "$${INPUT}" 2>/dev/null`" != x ] ; then echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : SKIP (keep existing)"; rm -f "$@.tmp.$$$$"; exit 0 ; fi ; \
-	 if [ -s "$@" ] ; then echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@: RE-GENERATE" ; else echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@: GENERATE" ; fi ; \
+	 W=0 ; \
+	 if [ "$(MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY)" -gt 0 ] 2>/dev/null ; then \
+	        echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : Block for up to $(MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY) sec, maybe another thread will make the file first" ; \
+	        while [ "$${W}" -lt "$(MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY)" ] && [ x"`find '$@.tmp.'* '$@' -newer "$${INPUT}" 2>/dev/null`" = x ] ; do sleep 1 ; W="`expr $$W + 1`"; done ; touch "$@.tmp.$$$$"; \
+	        if [ x"`find '$@' -newer "$${INPUT}" 2>/dev/null`" != x ] ; then echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : SKIP (keep existing)"; rm -f "$@.tmp.$$$$"; exit 0 ; fi ; \
+	 fi ; \
+	 if [ -s "$@" ] ; then echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : RE-GENERATE" ; else echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : GENERATE" ; fi ; \
 	 { if [ x"$(MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG)" != xno ] ; then ls -la "$${INPUT}" "$@" || true ; stat "$${INPUT}" "$@" || true ; fi ; } ; \
+	 if [ "$(MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY)" -gt 0 ] 2>/dev/null ; then \
+	        echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : PROCEED, waited for $${W} sec" ; \
+	 fi ; \
 	 printf "ifdef::txt[]\n== Very detailed Change Log\n"$(A2X_ASCII_IDS)"endif::txt[]\n\n" > "$@.tmp.$$$$" \
 	 && TABCHAR="`printf '\t'`" \
 	 && $(SED) \
