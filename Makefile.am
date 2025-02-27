@@ -194,10 +194,27 @@ all/include \
 all/conf \
 all/docs/man \
 all/lib \
+.ChangeLog.adoc-parsed.latest/docs \
+ChangeLog.adoc-parsed/docs \
+ChangeLog.adoc/. \
+ChangeLog/. \
 all-recursive/data:
 	+@$(SUBDIR_TGT_RULE)
 
+# Note: we optionally sort of depend on ChangeLog.adoc so it is pre-made and
+# pre-processed for html/pdf renders (if any are requested), so they surely
+# do not compete for it to be made by independent "make" processes later on.
+# BUT we do not want to (re-)build ChangeLog if no (relevant) DOC_BUILD_LIST
+# types are enabled.
 all/docs:
+	+@case "@DOC_BUILD_LIST@" in \
+		*pdf*|*html-single*|*html-chunked*) \
+			MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY=0 && \
+			export MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY && \
+			$(MAKE) $(AM_MAKEFLAGS) MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY="$${MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY}" ChangeLog.adoc/. && \
+			$(MAKE) $(AM_MAKEFLAGS) MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY="$${MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY}" .ChangeLog.adoc-parsed.latest/docs ;; \
+		*) ;; \
+	  esac
 	+@DOCS_NO_MAN=true; export DOCS_NO_MAN; $(SUBDIR_TGT_RULE)
 
 all-recursive/docs: all/docs all/docs/man
