@@ -601,7 +601,7 @@ DOCBUILD_END = { \
 *.html: common.xsl xhtml.xsl
 .txt-prepped.html:
 	+@A2X_OUTDIR="tmp/html-single.$(@F).$$$$" ; \
-	 echo "  DOC-HTML Generating $@"; \
+	 echo "  DOC-HTML	Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl '$<' || RES=$$? ; \
 	 $(DOCBUILD_END) ; \
@@ -609,7 +609,7 @@ DOCBUILD_END = { \
 	    *ChangeLog*) if [ -s '$(top_builddir)/ChangeLog' ] ; then \
 	            $(MAKE) $(AM_MAKEFLAGS) "`basename '$(@F)'`"-contentchecked || RES=$$? ; \
 	            if [ "$$RES" != 0 ] ; then \
-	                echo "  DOC-HTML Generating $@ (retry once)" >&2; \
+	                echo "  DOC-HTML	Generating $@ (retry once)" >&2; \
 	                rm -f "$@"; \
 	                A2X_OUTDIR="tmp/html-single.$(@F).$$$$-retry" ; \
 	                $(DOCBUILD_BEGIN) ; RES=0; rm -f "`basename '$(@F)'`"-contentchecked || true ; \
@@ -621,10 +621,16 @@ DOCBUILD_END = { \
 	 esac ; \
 	 exit $$RES
 
+# Note: extra age check here because *.chunked is a directory and not all
+# "make" implementations check its age vs. source files, just always build:
 *.chunked: common.xsl chunked.xsl
 .txt-prepped.chunked:
-	@A2X_OUTDIR="tmp/html-chunked.$(@F).$$$$" ; \
-	 echo "  DOC-HTML-CHUNKED Generating $@"; \
+	@if [ -d "$@" ] && [ x"`find '$@' -newer "$<" 2>/dev/null`" != x ] ; then \
+	    echo "  DOC-HTML-CHUNKED	SKIP: keep existing $@"; \
+	    exit 0 ; \
+	 fi ; \
+	 A2X_OUTDIR="tmp/html-chunked.$(@F).$$$$" ; \
+	 echo "  DOC-HTML-CHUNKED	Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 $(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl '$<' || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
@@ -633,7 +639,7 @@ DOCBUILD_END = { \
 *.pdf: docinfo.xml
 .txt-prepped.pdf:
 	@A2X_OUTDIR="tmp/pdf.$(@F).$$$$" ; \
-	 echo "  DOC-PDF  Generating $@"; \
+	 echo "  DOC-PDF	Generating $@"; \
 	 $(DOCBUILD_BEGIN) ; RES=0; \
 	 $(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 '$<' || RES=$$? ; \
 	 $(DOCBUILD_END) ; exit $$RES
