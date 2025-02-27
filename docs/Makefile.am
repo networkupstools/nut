@@ -410,6 +410,8 @@ else !WITH_PDF_NONASCII_TITLES
 A2X_ASCII_IDS = ":ascii-ids:\n"
 endif !WITH_PDF_NONASCII_TITLES
 
+MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG = no
+
 # Probably due to the web of makefiles and an overwhelmed job server in some
 # implementations, during parallel builds we can end up scheduling several
 # threads creating this asciidoc (and adoc-parsed later). This step only
@@ -431,6 +433,7 @@ $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	 W=10 ; while [ "$${W}" -gt 0 ] && find '$@.tmp.'* '$@' -newer "$${INPUT}" 2>/dev/null >/dev/null ; do sleep 1 ; W="`expr $$W - 1`"; done ; touch "$@.tmp.$$$$"; \
 	 if [ x"`find '$@' -newer "$${INPUT}" 2>/dev/null`" != x ] ; then echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : SKIP (keep existing)"; rm -f "$@.tmp.$$$$"; exit 0 ; fi ; \
 	 if [ -s "$@" ] ; then echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@: RE-GENERATE" ; else echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@: GENERATE" ; fi ; \
+	 { if [ x"$(MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG)" != xno ] ; then ls -la "$${INPUT}" "$@" || true ; stat "$${INPUT}" "$@" || true ; fi ; } ; \
 	 printf "ifdef::txt[]\n== Very detailed Change Log\n"$(A2X_ASCII_IDS)"endif::txt[]\n\n" > "$@.tmp.$$$$" \
 	 && TABCHAR="`printf '\t'`" \
 	 && $(SED) \
@@ -473,12 +476,20 @@ ChangeLog.html ChangeLog.chunked ChangeLog.pdf: ChangeLog.txt .ChangeLog.adoc-pa
 $(top_builddir)/docs/ChangeLog.html $(top_builddir)/docs/ChangeLog.chunked $(top_builddir)/docs/ChangeLog.pdf: ChangeLog.txt $(top_builddir)/ChangeLog.adoc-parsed asciidoc.conf
 	@+if [ x"`find '$(@F)' -newer '$(top_builddir)/ChangeLog.adoc-parsed'`" != x ] ; then \
 		echo "  DOC-CHANGELOG-RENDER-WRAPPER	SKIP: `pwd`/$(@F) already exists and is newer than ChangeLog.adoc-parsed" ; \
-		ls -lad `pwd` $@ ChangeLog.txt $(top_builddir)/ChangeLog.adoc-parsed asciidoc.conf $(top_builddir)/ChangeLog $(top_builddir)/ChangeLog.adoc .ChangeLog.adoc-parsed.latest || true ; \
+		if [ x"$(MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG)" != xno ] ; then \
+			ls -lad `pwd` $@ ChangeLog.txt $(top_builddir)/ChangeLog.adoc-parsed asciidoc.conf $(top_builddir)/ChangeLog $(top_builddir)/ChangeLog.adoc .ChangeLog.adoc-parsed.latest || true ; \
+			stat `pwd` $@ ChangeLog.txt $(top_builddir)/ChangeLog.adoc-parsed asciidoc.conf $(top_builddir)/ChangeLog $(top_builddir)/ChangeLog.adoc .ChangeLog.adoc-parsed.latest || true ; \
+		fi ; \
 		exit 0 ; \
 	  else \
 		echo "  DOC-CHANGELOG-RENDER-WRAPPER	`pwd`/$(@F) does not already exist or is older than ChangeLog.adoc-parsed" ; \
-		ls -lad `pwd` $@ ChangeLog.txt $(top_builddir)/ChangeLog.adoc-parsed asciidoc.conf $(top_builddir)/ChangeLog $(top_builddir)/ChangeLog.adoc .ChangeLog.adoc-parsed.latest || true ; \
-		$(MAKE) $(AM_MAKEFLAGS) $(@F) || exit ; \
+		if [ x"$(MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG)" != xno ] ; then \
+			ls -lad `pwd` $@ ChangeLog.txt $(top_builddir)/ChangeLog.adoc-parsed asciidoc.conf $(top_builddir)/ChangeLog $(top_builddir)/ChangeLog.adoc .ChangeLog.adoc-parsed.latest || true ; \
+			stat `pwd` $@ ChangeLog.txt $(top_builddir)/ChangeLog.adoc-parsed asciidoc.conf $(top_builddir)/ChangeLog $(top_builddir)/ChangeLog.adoc .ChangeLog.adoc-parsed.latest || true ; \
+			time $(MAKE) $(AM_MAKEFLAGS) $(@F) || exit ; \
+		else \
+			$(MAKE) $(AM_MAKEFLAGS) $(@F) || exit ; \
+		fi ; \
 		echo "  DOC-CHANGELOG-RENDER-WRAPPER	`pwd`/$(@F): SUCCESS" ; \
 	  fi
 
