@@ -664,7 +664,7 @@ $(abs_top_builddir)/ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	            echo "  DOC-CHANGELOG-GENERATE        $@ : SKIP (keep existing)" ; \
 	            echo "Using distributed ChangeLog file from sources" >&2 ; \
 	            rm -f "$@" || true ; \
-	            cat ./ChangeLog > "$@" ; \
+	            cp -pf ./ChangeLog "$@" || { cat ./ChangeLog > "$@" ; touch -r ./ChangeLog "$@" || true ; } ; \
 	        else \
 	            if test -s "$@" ; then \
 	                echo "  DOC-CHANGELOG-GENERATE        $@ : SKIP (keep existing)" ; \
