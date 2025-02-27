@@ -227,10 +227,10 @@ else !SOME_DRIVERS
 # build in a separate target, then "all/drivers" should depend on
 # both "dummy-ups" and "the rest". Currently this build sequence
 # may be still ordered...
-dummy-ups/drivers: all-libs-local/clients all-libs-local/common
+dummy-ups$(EXEEXT)/drivers: all-libs-local/clients all-libs-local/common
 	+@$(SUBDIR_TGT_RULE)
 
-all/drivers: dummy-ups/drivers all/common all-libs-local/drivers
+all/drivers: dummy-ups$(EXEEXT)/drivers all/common all-libs-local/drivers
 	+@$(SUBDIR_TGT_RULE)
 endif !SOME_DRIVERS
 
