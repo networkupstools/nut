@@ -49,9 +49,6 @@ SUBDIRS_ALL_RECURSIVE = \
 	all/clients \
 	all/conf \
 	all-recursive/data \
-	all/docs/man \
-	all/docs \
-	all-recursive/docs \
 	all-drivers \
 	all/tools/nut-scanner \
 	all/tools/nutconf \
@@ -60,6 +57,10 @@ SUBDIRS_ALL_RECURSIVE = \
 	all-recursive/scripts \
 	all/server \
 	all/tests/NIT \
+	all/tests \
+	all/docs/man \
+	all/docs \
+	all-recursive/docs \
 	all-recursive/tests
 
 # Library creation happens in a number of subdirectories, may be optional
