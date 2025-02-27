@@ -430,7 +430,7 @@ $(top_builddir)/ChangeLog.adoc: $(top_builddir)/ChangeLog
 	     test -n "$@" && { printf '=== Failed to generate the ChangeLog\n\n%s\n\nNOTE: See https://github.com/networkupstools/nut/commits/master for change history.\n\n' "$${MSG}" > "$@" ; } ; \
 	     exit ; \
 	 } ; \
-	 W=10 ; while [ "$${W}" -gt 0 ] && find '$@.tmp.'* '$@' -newer "$${INPUT}" 2>/dev/null >/dev/null ; do sleep 1 ; W="`expr $$W - 1`"; done ; touch "$@.tmp.$$$$"; \
+	 W=10 ; while [ "$${W}" -gt 0 ] && [ x"`find '$@.tmp.'* '$@' -newer "$${INPUT}" 2>/dev/null`" = x ] ; do sleep 1 ; W="`expr $$W - 1`"; done ; touch "$@.tmp.$$$$"; \
 	 if [ x"`find '$@' -newer "$${INPUT}" 2>/dev/null`" != x ] ; then echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@ : SKIP (keep existing)"; rm -f "$@.tmp.$$$$"; exit 0 ; fi ; \
 	 if [ -s "$@" ] ; then echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@: RE-GENERATE" ; else echo "  DOC-CHANGELOG-ASCIIDOC	$${INPUT} => $@: GENERATE" ; fi ; \
 	 { if [ x"$(MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG)" != xno ] ; then ls -la "$${INPUT}" "$@" || true ; stat "$${INPUT}" "$@" || true ; fi ; } ; \

@@ -1341,7 +1341,7 @@ $(abs_top_builddir)/docs/man/.prep-src-docs: $(PREP_SRC)
 	@cd "$(@D)" || exit ; \
 	 if [ x"$(DOCS_NO_MAN)" = xtrue ] ; then \
 	    echo "  DOCS_NO_MAN     BLOCK: $@ called in docs/man/Makefile : waiting for other thread to complete this target" ; \
-	    W=0 ; while [ "$${W}" -lt 60 ] && ( [ \! -e '$@' ] || find $(PREP_SRC) \! -newer '$@' 2>/dev/null >/dev/null ) ; do sleep 1 ; W="`expr $$W + 1`"; done ; \
+	    W=0 ; while [ "$${W}" -lt 60 ] && ( [ \! -e '$@' ] || [ x"`find $(PREP_SRC) \! -newer '$@' 2>/dev/null`" = x ] ) ; do sleep 1 ; W="`expr $$W + 1`"; done ; \
 	    echo "  DOCS_NO_MAN     SKIP: $@ called in docs/man/Makefile : waited $$W seconds" ; \
 	    exit 0 ; \
 	 fi ; \
