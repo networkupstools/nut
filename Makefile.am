@@ -208,10 +208,12 @@ MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY = 0
 all/docs:
 	+@case "@DOC_BUILD_LIST@" in \
 		*pdf*|*html-single*|*html-chunked*) \
+			echo "  DOC-CHANGELOG-ASCIIDOC	Pre-generate ChangeLog artifacts before the bulk of $@ ..." ; \
 			MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY="$(MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY)" \
 			export MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY && \
 			$(MAKE) $(AM_MAKEFLAGS) MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY="$(MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY)" ChangeLog.adoc && \
-			$(MAKE) $(AM_MAKEFLAGS) MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY="$(MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY)" .ChangeLog.adoc-parsed.latest/docs ;; \
+			$(MAKE) $(AM_MAKEFLAGS) MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY="$(MAINTAINER_ASCIIDOCS_CHANGELOG_DELAY)" .ChangeLog.adoc-parsed.latest/docs && \
+			echo "  DOC-CHANGELOG-ASCIIDOC	Pre-generate ChangeLog artifacts before the bulk of $@ : SUCCESS" ;; \
 		*) ;; \
 	  esac
 	+@DOCS_NO_MAN=true; export DOCS_NO_MAN; $(SUBDIR_TGT_RULE)
