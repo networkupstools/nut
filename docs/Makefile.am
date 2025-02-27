@@ -364,6 +364,8 @@ CLEANFILES += $(top_builddir)/*.adoc-parsed *.adoc-parsed
 
 ### TODO: general automatic dependency generation
 
+MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG = no
+
 # Prepare text files (currently a manually tracked list)
 # with known presence of GitHub links to convert them from
 # short <hash><number> notation into asciidoc link markup
@@ -372,7 +374,19 @@ CLEANFILES += $(top_builddir)/*.adoc-parsed *.adoc-parsed
 # the asciidoc markup (use double-hash to avoid conversion).
 # The $< is okay here, it is used in a suffix rule below
 .adoc.adoc-parsed:
-	@echo "  DOC-ASCIIDOC-GITHUB-LINKS    Parsing GitHub link patterns $< => $@"; \
+	@if [ -s '$@' ] && [ x"`find '$@' -newer '$<'`" != x ] ; then \
+		echo "  DOC-ASCIIDOC-GITHUB-LINKS    SKIP: $@ already exists and is newer than $<" ; \
+		if [ x"$(MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG)" != xno ] ; then \
+			ls -lad $@ $< || true ; \
+			stat $@ $< || true ; \
+		fi ; \
+		exit 0 ; \
+	 fi ; \
+	 echo "  DOC-ASCIIDOC-GITHUB-LINKS    Parsing GitHub link patterns $< => $@"; \
+	 if [ x"$(MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG)" != xno ] ; then \
+		ls -lad $@ $< || true ; \
+		stat $@ $< || true ; \
+	 fi ; \
 	 cat '$<' | { $(SED) \
 		-e 's%\(link:https*://github.com/networkupstools/[a-zA-Z0-9./-]*/[1-9][0-9]*/*\[[^]]*\)\#\([1-9][0-9]*\)%\1\#\#\2%g' \
 		-e 's%\(issue\) *\#\([1-9][0-9]*\)\([^0-9]\|$$\)%link:https://github.com/networkupstools/nut/issues/\2[\1 \#\#\2]\3%g' \
@@ -409,8 +423,6 @@ A2X_ASCII_IDS =
 else !WITH_PDF_NONASCII_TITLES
 A2X_ASCII_IDS = ":ascii-ids:\n"
 endif !WITH_PDF_NONASCII_TITLES
-
-MAINTAINER_ASCIIDOCS_CHANGELOG_DEBUG = no
 
 # Timeout for ChangeLog.adoc rule to wait for competing threads to maybe create
 # (or start creating) the file first - then this "make" thread just waits for
